@@ -1,0 +1,38 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/typescript-node
+{
+  "name": "Node.js with TypeScript DevContainer",
+  // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+  "image": "mcr.microsoft.com/devcontainers/typescript-node",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "streetsidesoftware.code-spell-checker",
+        "ms-vsliveshare.vsliveshare",
+        "dbaeumer.vscode-eslint",
+        "GrapeCity.gc-excelviewer",
+        "mhutchie.git-graph",
+        "donjayamanne.githistory",
+        "GitHub.vscode-pull-request-github",
+        "MS-CEINTL.vscode-language-pack-ja",
+        "Orta.vscode-jest",
+        "firsttris.vscode-jest-runner",
+        "yzhang.markdown-all-in-one",
+        "shd101wyy.markdown-preview-enhanced",
+        "DavidAnson.vscode-markdownlint",
+        "leizongmin.node-module-intellisense",
+        "idered.npm",
+        "esbenp.prettier-vscode",
+        "rvest.vs-code-prettier-eslint"
+      ],
+      "settings": {
+        "jestrunner.configPath": "./jest.config.js", // Jest 設定ファイルのパス
+        "jestrunner.jestCommand": "npm run test --", // Jest のコマンド
+        "jestrunner.codeLens": ["run", "watch", "coverage", "debug"]
+      }
+    }
+  },
+
+  // Use 'postCreateCommand' to run commands after the container is created.
+  "postCreateCommand": "npm install"
+}
