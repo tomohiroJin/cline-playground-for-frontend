@@ -1,75 +1,110 @@
-# devcontainer-typescript
+# 絵合わせパズル
 
-このリポジトリは、TypeScript の開発環境を VS Code の Dev Container 上に構築するサンプルを提供します。  
-Docker コンテナ上で安定した Node.js + TypeScript 環境が用意されるため、ホスト OS に依存しない再現性の高い開発が可能になります。
+TypeScriptとReactで作成された、ブラウザで遊べる絵合わせパズルゲームです。
 
-## 特徴
+## 機能
 
-- **Node.js 環境**：Dev Container 内で Node.js (LTS) を利用できるため、ローカル環境の汚染なしに開発できます。
-- **TypeScript 対応**：`typescript` やサンプルの `tsconfig.json` をあらかじめ用意しています。
-- **VS Code 拡張機能同梱**：`.devcontainer/devcontainer.json` で VS Code の拡張機能がプリインストールされるため、豊富な補完やデバッグ、リンティング体験がコンテナ内で完結します。
+- 好きな画像をアップロードしてパズルにできます
+- 2x2から32x32まで、様々な難易度を選択できます
+- ドラッグ＆ドロップでピースを移動できます
+- 正しい位置にピースを配置すると固定されます
+- 経過時間の表示機能があります
+- ヒントモードで元の画像を薄く表示できます
+- スマホ・タブレットにも対応しています
 
-## 必要要件
+## 技術スタック
 
-- [Docker](https://www.docker.com/) がインストールされていること
-- [Visual Studio Code](https://code.visualstudio.com/)
-- [Remote Development 拡張機能パック](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack)（特に「Remote - Containers」）
+- **言語**: TypeScript
+- **フレームワーク**: React
+- **スタイリング**: styled-components
+- **状態管理**: Jotai
+- **ルーティング**: React Router
+- **テスト**: Jest
 
-## 開発環境のセットアップ
+## インストール方法
 
-1. **リポジトリをクローン**  
+```bash
+# リポジトリをクローン
+git clone https://github.com/yourusername/puzzle-game.git
+cd puzzle-game
 
-   ```bash
-   git clone https://github.com/tomohiroJin/devcontainer-typescript.git
-   cd devcontainer-typescript
-   ```
+# 依存パッケージをインストール
+npm install
 
-2. **VS Code でフォルダを開く**  
-   VS Code でこのディレクトリを開きます。
+# 開発サーバーを起動
+npm start
+```
 
-3. **Dev Container で開く**  
-   コマンドパレット (`F1` または `Ctrl+Shift+P`) から `Remote-Containers: Open Folder in Container...` を選択し、このプロジェクトフォルダを指定します。VS Code は自動的にコンテナをビルド・起動し、開発環境が整います。
+## 使い方
 
-## プロジェクトの利用方法
+1. トップページで画像をアップロードします（10MB以下）
+2. 難易度（分割数）を選択します
+3. 「パズルを開始」ボタンをクリックします
+4. ピースをドラッグ＆ドロップして正しい位置に配置します
+5. すべてのピースを正しく配置するとパズルが完成します
 
-- **ビルド**：  
+## プロジェクト構成
 
-  ```bash
-  npm run build
-  ```
+```
+src/
+  ├── components/       # 再利用可能なコンポーネント
+  │   ├── atoms/        # 最小単位のコンポーネント
+  │   ├── molecules/    # atomsを組み合わせたコンポーネント
+  │   ├── organisms/    # 複雑なコンポーネント
+  │   └── templates/    # ページのレイアウト
+  ├── pages/            # ルーティングされるページコンポーネント
+  ├── hooks/            # カスタムフック
+  ├── utils/            # ユーティリティ関数
+  ├── types/            # 型定義
+  ├── store/            # Jotaiの状態管理
+  ├── App.tsx           # アプリケーションのルートコンポーネント
+  └── index.tsx         # エントリーポイント
+```
 
-  `dist` ディレクトリにトランスパイル後の JavaScript ファイルが出力されます。
+## テスト
 
-- **テスト**：  
-  テストスクリプトを `package.json` に定義している場合、以下で実行可能です。
+```bash
+# テストを実行
+npm test
 
-  ```bash
-  npm test
-  ```
+# テストカバレッジを確認
+npm run test:coverage
+```
 
-- **ESLint / Prettier の実行**：  
-  コード整形や静的解析は次のコマンドで可能です（`npm scripts` に応じて調整してください）。
+## 開発者向け情報
 
-  ```bash
-  npm run lint
-  npm run format
-  ```
+### アーキテクチャ
 
-## カスタマイズ
+このプロジェクトはアトミックデザインパターンに基づいて構築されています。コンポーネントは以下のように分類されています：
 
-- **パッケージ追加**：  
-  必要な NPM パッケージは、コンテナ内ターミナルで `npm install <package>` を実行して追加します。
+- **Atoms**: 最小単位のコンポーネント（ボタン、入力フィールドなど）
+- **Molecules**: 複数のAtomsを組み合わせたコンポーネント（フォーム、カードなど）
+- **Organisms**: 複雑な機能を持つコンポーネント（ヘッダー、フッター、パズルボードなど）
+- **Templates**: ページのレイアウトを定義するコンポーネント
+- **Pages**: 実際のページコンポーネント
 
-- **Dev Container 設定の変更**：  
-  `.devcontainer/devcontainer.json` を編集することで、インストールする拡張機能や Node.js のバージョン、コンテナ設定をカスタマイズできます。
+状態管理にはJotaiを使用しており、アトムベースのアプローチで状態を管理しています。
 
-- **ESLint / Prettier のルール調整**：  
-  `.eslintrc.js` や `.prettierrc` ファイルを編集して、コーディング規約や整形ルールをプロジェクトに合わせて変更可能です。
+### 主要なカスタムフック
+
+- `usePuzzle`: パズルの状態と操作を管理するフック
+- `useHintMode`: ヒントモードの状態を管理するフック
 
 ## ライセンス
 
-このプロジェクトは [MIT License](./LICENSE) の下でライセンスされています。自由にご利用・改変いただけます。
+MIT
 
----
+## 作者
 
-このリポジトリを活用することで、VS Code と Docker による再現性・移植性の高い TypeScript 開発環境を手軽に構築できます。是非活用してみてください。
+あなたの名前
+
+## 謝辞
+
+このプロジェクトは以下のオープンソースライブラリを使用しています：
+
+- React
+- TypeScript
+- styled-components
+- Jotai
+- React Router
+- Jest
