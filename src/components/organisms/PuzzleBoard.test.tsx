@@ -4,6 +4,14 @@ import { render, screen } from '@testing-library/react';
 import PuzzleBoard, { PuzzleBoardProps } from './PuzzleBoard';
 import { PuzzlePiece as PuzzlePieceType } from '../../store/atoms';
 
+// PuzzlePieceコンポーネントをモック化
+jest.mock('../molecules/PuzzlePiece', () => {
+  return jest.fn(() => <div data-testid="puzzle-piece" />);
+});
+
+// モックをインポート
+import PuzzlePiece from '../molecules/PuzzlePiece';
+
 // ダミーデータ（テスト用）
 const dummyPieces: PuzzlePieceType[] = [
   {
@@ -11,6 +19,24 @@ const dummyPieces: PuzzlePieceType[] = [
     currentPosition: { row: 0, col: 0 },
     correctPosition: { row: 0, col: 0 },
     isEmpty: false,
+  },
+  {
+    id: 2,
+    currentPosition: { row: 0, col: 1 },
+    correctPosition: { row: 0, col: 1 },
+    isEmpty: false,
+  },
+  {
+    id: 3,
+    currentPosition: { row: 1, col: 0 },
+    correctPosition: { row: 1, col: 0 },
+    isEmpty: false,
+  },
+  {
+    id: 4,
+    currentPosition: { row: 1, col: 1 },
+    correctPosition: { row: 1, col: 1 },
+    isEmpty: true,
   },
 ];
 
@@ -30,6 +56,58 @@ const defaultProps: PuzzleBoardProps = {
 };
 
 describe('パズルボードコンポーネント', () => {
+  beforeEach(() => {
+    // テスト前にモックをリセット
+    (PuzzlePiece as jest.Mock).mockClear();
+  });
+
+  describe('パズルを表示するボード', () => {
+    it('ボードのサイズに合わせて分割された枠が表示される', () => {
+      render(<PuzzleBoard {...defaultProps} />);
+
+      expect(screen.getByTitle('ボードグリッド')).toBeInTheDocument();
+      expect(screen.getAllByTitle('ボードセル')).toHaveLength(4);
+    });
+
+    describe('パズルピースの表示', () => {
+      it('ピースの数だけパズルピースのコンポーネントが作成されること', () => {
+        render(<PuzzleBoard {...defaultProps} pieces={dummyPieces} />);
+
+        // PuzzlePieceコンポーネントが4回呼び出されたことを確認
+        expect(PuzzlePiece).toHaveBeenCalledTimes(dummyPieces.length);
+      });
+
+      describe('パズルピースのコンポーネントへの受け渡し', () => {
+        const boardRef = { current: document.createElement('div') };
+        jest.spyOn(React, 'useRef').mockReturnValue(boardRef);
+
+        beforeEach(() => {
+          render(<PuzzleBoard {...defaultProps} pieces={dummyPieces} />);
+        });
+
+        it('コンポーネントに必要な共通のデフォルトプロパティが渡されていること', () => {
+          const props = (PuzzlePiece as jest.Mock).mock.calls[0][0];
+
+          expect(props.imageUrl).toBe(defaultProps.imageUrl);
+          expect(props.originalWidth).toBe(defaultProps.originalWidth);
+          expect(props.originalHeight).toBe(defaultProps.originalHeight);
+          expect(props.division).toBe(defaultProps.division);
+          expect(props.boardRef).toBe(boardRef);
+          expect(typeof props.onDragStart).toBe('function');
+          expect(typeof props.onDragEnd).toBe('function');
+        });
+
+        it.each(dummyPieces.map((piece, index) => [index, piece]))(
+          'コンポーネント %d に正しい piece プロパティが渡されていること',
+          (index, piece) => {
+            const props = (PuzzlePiece as jest.Mock).mock.calls[index][0];
+            expect(props.piece).toEqual(piece);
+          }
+        );
+      });
+    });
+  });
+
   describe('HintToggleButton', () => {
     it('ヒントモードがfalseの時は「ヒントを表示」ボタンが表示されていること', () => {
       render(<PuzzleBoard {...defaultProps} hintMode={false} />);

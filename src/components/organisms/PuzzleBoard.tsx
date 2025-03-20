@@ -93,19 +93,17 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   };
 
   // グリッドセルを生成
-  const renderGridCells = () => {
-    const cells = [];
-    for (let i = 0; i < division * division; i++) {
-      cells.push(<GridCell key={i} />);
-    }
-    return cells;
-  };
+  const renderGridCells = Array.from({ length: division * division }, (_, i) => (
+    <GridCell title="ボードセル" key={i} />
+  ));
 
   return (
     <BoardContainer>
       <Board width={boardWidth} height={boardHeight} ref={boardRef}>
         {/* グリッド線 */}
-        <BoardGrid division={division}>{renderGridCells()}</BoardGrid>
+        <BoardGrid title="ボードグリッド" division={division}>
+          {renderGridCells}
+        </BoardGrid>
 
         {/* パズルピース */}
         {pieces.map(piece => (
@@ -134,7 +132,7 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
         )}
 
         {/* ヒントモード（背景に元の画像を薄く表示） */}
-        {hintMode && !completed && <HintImage imageUrl={imageUrl} title="ヒント画像" />}
+        {hintMode && !completed && <HintImage $imageUrl={imageUrl} title="ヒント画像" />}
       </Board>
 
       <StatusBar>
