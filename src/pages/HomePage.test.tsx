@@ -96,6 +96,14 @@ const mockUseHintMode: ReturnType<typeof useHintModeHook.useHintMode> = {
   disableHintMode: jest.fn(),
 };
 
+// renderHomePage ヘルパー関数の定義
+const renderHomePage = () =>
+  render(
+    <Provider>
+      <HomePage />
+    </Provider>
+  );
+
 describe('HomePage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -108,11 +116,7 @@ describe('HomePage', () => {
   });
 
   it('初期状態では設定セクションが表示されること', () => {
-    render(
-      <Provider>
-        <HomePage />
-      </Provider>
-    );
+    renderHomePage();
 
     // 設定セクションの要素が表示されていることを確認
     expect(screen.getByTestId('image-uploader')).toBeInTheDocument();
@@ -125,22 +129,14 @@ describe('HomePage', () => {
 
   describe('ユーザーが好きな画像をアップロードできる', () => {
     it('画面を表示するとアップロードするための画像をアップロードするボタンが表示されている', () => {
-      render(
-        <Provider>
-          <HomePage />
-        </Provider>
-      );
+      renderHomePage();
 
       // 画像アップロードボタンが表示されていることを確認
       expect(screen.getByTestId('mock-upload-button')).toBeInTheDocument();
     });
 
     it('ボタンをクリックすると画像を選択して好きな画像をアップロードすることができる', () => {
-      render(
-        <Provider>
-          <HomePage />
-        </Provider>
-      );
+      renderHomePage();
 
       // 画像アップロードボタンをクリック
       fireEvent.click(screen.getByTestId('mock-upload-button'));
@@ -155,11 +151,7 @@ describe('HomePage', () => {
   });
 
   it('難易度が変更されると状態が更新されること', () => {
-    render(
-      <Provider>
-        <HomePage />
-      </Provider>
-    );
+    renderHomePage();
 
     // 難易度セレクターの値を変更
     fireEvent.change(screen.getByTestId('difficulty-select'), {
@@ -170,43 +162,51 @@ describe('HomePage', () => {
     expect(mockUsePuzzle.setDivision).toHaveBeenCalledWith(5);
   });
 
-  it('パズル開始ボタンをクリックするとゲームが開始されること', () => {
-    // imageUrlとoriginalImageSizeを設定
-    mockUsePuzzle.imageUrl = 'test-image.jpg';
-    mockUsePuzzle.originalImageSize = { width: 800, height: 600 };
+  describe('パズルを開始ボタンをクリックするとゲームが開始される', () => {
+    it("画面を表示すると'パズルを開始'ボタンが表示されること", () => {
+      renderHomePage();
 
-    render(
-      <Provider>
-        <HomePage />
-      </Provider>
-    );
+      // パズルを開始ボタンが表示されていることを確認
+      expect(screen.getByText('パズルを開始')).toBeInTheDocument();
+    });
 
-    // パズル開始ボタンをクリック
-    fireEvent.click(screen.getByText('パズルを開始'));
+    it("画像が選択されていない場合は'パズルを開始'ボタンが利用できないこと", () => {
+      renderHomePage();
 
-    // initializePuzzleが呼ばれたことを確認
-    expect(mockUsePuzzle.initializePuzzle).toHaveBeenCalled();
-  });
+      // パズルを開始ボタンが利用できないことを確認
+      expect(screen.getByText('パズルを開始')).toBeDisabled();
+    });
 
-  it('ゲーム開始後はパズルボードが表示されること', () => {
-    // imageUrlとoriginalImageSizeを設定
-    mockUsePuzzle.imageUrl = 'test-image.jpg';
-    mockUsePuzzle.originalImageSize = { width: 800, height: 600 };
+    it("画像が選択されている場合は'パズルを開始'ボタンが利用できること", () => {
+      // imageUrlを設定
+      mockUsePuzzle.imageUrl = 'test-image.jpg';
+      mockUsePuzzle.originalImageSize = { width: 800, height: 600 };
 
-    render(
-      <Provider>
-        <HomePage />
-      </Provider>
-    );
+      renderHomePage();
 
-    // パズル開始ボタンをクリック
-    fireEvent.click(screen.getByText('パズルを開始'));
+      // パズルを開始ボタンが利用できることを確認
+      expect(screen.getByText('パズルを開始')).not.toBeDisabled();
+    });
 
-    // パズルボードが表示されていることを確認
-    expect(screen.getByTestId('puzzle-board')).toBeInTheDocument();
+    it('パズルを開始ボタンをクリックするとゲームが初期化されてパズルボードが表示されること', () => {
+      // imageUrlとoriginalImageSizeを設定
+      mockUsePuzzle.imageUrl = 'test-image.jpg';
+      mockUsePuzzle.originalImageSize = { width: 800, height: 600 };
 
-    // 設定セクションが表示されていないことを確認
-    expect(screen.queryByTestId('image-uploader')).not.toBeInTheDocument();
+      renderHomePage();
+
+      // パズル開始ボタンをクリック
+      fireEvent.click(screen.getByText('パズルを開始'));
+
+      // initializePuzzleが呼ばれたことを確認
+      expect(mockUsePuzzle.initializePuzzle).toHaveBeenCalled();
+
+      // パズルボードが表示されていることを確認
+      expect(screen.getByTestId('puzzle-board')).toBeInTheDocument();
+
+      // 設定セクションが表示されていないことを確認
+      expect(screen.queryByTestId('image-uploader')).not.toBeInTheDocument();
+    });
   });
 
   it('ピース移動ボタンをクリックするとmovePieceが呼ばれること', () => {
@@ -214,11 +214,7 @@ describe('HomePage', () => {
     mockUsePuzzle.imageUrl = 'test-image.jpg';
     mockUsePuzzle.originalImageSize = { width: 800, height: 600 };
 
-    render(
-      <Provider>
-        <HomePage />
-      </Provider>
-    );
+    renderHomePage();
 
     // パズル開始ボタンをクリック
     fireEvent.click(screen.getByText('パズルを開始'));
@@ -235,11 +231,7 @@ describe('HomePage', () => {
     mockUsePuzzle.imageUrl = 'test-image.jpg';
     mockUsePuzzle.originalImageSize = { width: 800, height: 600 };
 
-    render(
-      <Provider>
-        <HomePage />
-      </Provider>
-    );
+    renderHomePage();
 
     // パズル開始ボタンをクリック
     fireEvent.click(screen.getByText('パズルを開始'));
@@ -256,11 +248,7 @@ describe('HomePage', () => {
     mockUsePuzzle.imageUrl = 'test-image.jpg';
     mockUsePuzzle.originalImageSize = { width: 800, height: 600 };
 
-    render(
-      <Provider>
-        <HomePage />
-      </Provider>
-    );
+    renderHomePage();
 
     // パズル開始ボタンをクリック
     fireEvent.click(screen.getByText('パズルを開始'));
@@ -277,11 +265,7 @@ describe('HomePage', () => {
     mockUsePuzzle.imageUrl = 'test-image.jpg';
     mockUsePuzzle.originalImageSize = { width: 800, height: 600 };
 
-    render(
-      <Provider>
-        <HomePage />
-      </Provider>
-    );
+    renderHomePage();
 
     // パズル開始ボタンをクリック
     fireEvent.click(screen.getByText('パズルを開始'));
@@ -303,11 +287,7 @@ describe('HomePage', () => {
     // パズルが完成した状態にする
     mockUsePuzzle.completed = true;
 
-    render(
-      <Provider>
-        <HomePage />
-      </Provider>
-    );
+    renderHomePage();
 
     // パズル開始ボタンをクリック
     fireEvent.click(screen.getByText('パズルを開始'));
