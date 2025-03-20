@@ -111,7 +111,7 @@ export const HintImage = styled.div<{ $imageUrl: string }>`
   width: 100%;
   height: 100%;
   background-image: url(${props => props.$imageUrl});
-  background-size: cover;
+  background-size: 100% 100%;
   opacity: 0.3;
   pointer-events: none;
   z-index: 0;

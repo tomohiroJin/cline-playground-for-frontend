@@ -41,9 +41,6 @@ export const PieceImage = styled.div<{
   width: 100%;
   height: 100%;
   background-image: url(${props => props.$imageUrl});
-  background-size: ${props => props.$originalWidth}px ${props => props.$originalHeight}px;
-  background-position: ${props =>
-    `-${(props.$col * props.$originalWidth) / props.$division}px -${
-      (props.$row * props.$originalHeight) / props.$division
-    }px`};
+  background-size: ${props => props.$division * 100}% ${props => props.$division * 100}%;
+  background-position: ${props => `-${props.$col * 100}% -${props.$row * 100}%`};
 `;
