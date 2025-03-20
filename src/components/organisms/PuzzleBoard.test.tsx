@@ -29,7 +29,7 @@ const defaultProps: PuzzleBoardProps = {
   onToggleHint: jest.fn(),
 };
 
-describe('PuzzleBoard コンポーネントのテスト', () => {
+describe('パズルボードコンポーネント', () => {
   it('経過時間が表示される', () => {
     render(<PuzzleBoard {...defaultProps} />);
     expect(screen.getByText(/経過時間:/)).toBeInTheDocument();
@@ -41,10 +41,46 @@ describe('PuzzleBoard コンポーネントのテスト', () => {
     expect(screen.getByText(/所要時間:/)).toBeInTheDocument();
   });
 
-  it('ヒントボタンのテキストが切り替わる', () => {
-    const { rerender } = render(<PuzzleBoard {...defaultProps} hintMode={false} />);
-    expect(screen.getByText('ヒントを表示')).toBeInTheDocument();
-    rerender(<PuzzleBoard {...defaultProps} hintMode={true} />);
-    expect(screen.getByText('ヒントを隠す')).toBeInTheDocument();
+  describe('HintToggleButton', () => {
+    it('ヒントモードがfalseの時は「ヒントを表示」ボタンが表示されていること', () => {
+      render(<PuzzleBoard {...defaultProps} hintMode={false} />);
+
+      expect(screen.getByText('ヒントを表示')).toBeInTheDocument();
+    });
+
+    it('ヒントモードがtrueの時は「ヒントを隠す」が表示されていること', () => {
+      render(<PuzzleBoard {...defaultProps} hintMode={true} />);
+
+      expect(screen.getByText('ヒントを隠す')).toBeInTheDocument();
+    });
+
+    it('ヒントボタンがクリックされた時にonToggleHintが呼ばれること', () => {
+      render(<PuzzleBoard {...defaultProps} />);
+
+      const hintButton = screen.getByText('ヒントを表示');
+      hintButton.click();
+
+      expect(defaultProps.onToggleHint).toHaveBeenCalled();
+    });
+  });
+
+  describe('HintImage', () => {
+    it('ヒントモードがtrueで完成前の場合ヒントの画像が表示されること', () => {
+      render(<PuzzleBoard {...defaultProps} hintMode={true} completed={false} />);
+
+      expect(screen.getByTitle('ヒント画像')).toBeInTheDocument();
+    });
+
+    it('ヒントモードがfalseの時はヒントの画像が表示されないこと', () => {
+      render(<PuzzleBoard {...defaultProps} hintMode={false} />);
+
+      expect(screen.queryByTitle('ヒント画像')).toBeNull();
+    });
+
+    it('ヒントモードがtrueで完成済みの場合ヒントの画像が表示されないこと', () => {
+      render(<PuzzleBoard {...defaultProps} hintMode={true} completed={true} />);
+
+      expect(screen.queryByTitle('ヒント画像')).toBeNull();
+    });
   });
 });

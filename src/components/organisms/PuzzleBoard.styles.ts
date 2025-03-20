@@ -89,7 +89,7 @@ export const ElapsedTime = styled.div`
   color: #333;
 `;
 
-export const HintToggle = styled.button<{ active: string }>`
+export const HintToggleButton = styled.button<{ active: string }>`
   background-color: ${props => (props.active ? '#4caf50' : '#f8f8f8')};
   color: ${props => (props.active ? 'white' : '#333')};
   padding: 5px 10px;
@@ -102,4 +102,17 @@ export const HintToggle = styled.button<{ active: string }>`
   &:hover {
     background-color: ${props => (props.active ? '#45a049' : '#e8e8e8')};
   }
+`;
+
+export const HintImage = styled.div<{ imageUrl: string }>`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url(${props => props.imageUrl});
+  background-size: cover;
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: 0;
 `;

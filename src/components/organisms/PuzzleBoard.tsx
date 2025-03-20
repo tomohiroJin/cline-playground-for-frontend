@@ -10,7 +10,8 @@ import {
   RestartButton,
   StatusBar,
   ElapsedTime,
-  HintToggle,
+  HintToggleButton,
+  HintImage,
 } from './PuzzleBoard.styles';
 import { PuzzlePiece as PuzzlePieceType } from '../../store/atoms';
 import PuzzlePiece from '../molecules/PuzzlePiece';
@@ -133,29 +134,14 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
         )}
 
         {/* ヒントモード（背景に元の画像を薄く表示） */}
-        {hintMode && !completed && (
-          <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              backgroundImage: `url(${imageUrl})`,
-              backgroundSize: 'cover',
-              opacity: 0.3,
-              pointerEvents: 'none',
-              zIndex: 0,
-            }}
-          />
-        )}
+        {hintMode && !completed && <HintImage imageUrl={imageUrl} title="ヒント画像" />}
       </Board>
 
       <StatusBar>
         <ElapsedTime>経過時間: {formatElapsedTime(elapsedTime)}</ElapsedTime>
-        <HintToggle active={hintMode ? 'true' : 'false'} onClick={onToggleHint}>
+        <HintToggleButton active={hintMode ? 'true' : 'false'} onClick={onToggleHint}>
           {hintMode ? 'ヒントを隠す' : 'ヒントを表示'}
-        </HintToggle>
+        </HintToggleButton>
       </StatusBar>
     </BoardContainer>
   );
