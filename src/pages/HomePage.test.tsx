@@ -123,21 +123,34 @@ describe('HomePage', () => {
     expect(screen.queryByTestId('puzzle-board')).not.toBeInTheDocument();
   });
 
-  it('画像がアップロードされると状態が更新されること', () => {
-    render(
-      <Provider>
-        <HomePage />
-      </Provider>
-    );
+  describe('ユーザーが好きな画像をアップロードできる', () => {
+    it('画面を表示するとアップロードするための画像をアップロードするボタンが表示されている', () => {
+      render(
+        <Provider>
+          <HomePage />
+        </Provider>
+      );
 
-    // 画像アップロードボタンをクリック
-    fireEvent.click(screen.getByTestId('mock-upload-button'));
+      // 画像アップロードボタンが表示されていることを確認
+      expect(screen.getByTestId('mock-upload-button')).toBeInTheDocument();
+    });
 
-    // setImageUrlとsetOriginalImageSizeが呼ばれたことを確認
-    expect(mockUsePuzzle.setImageUrl).toHaveBeenCalledWith('test-image.jpg');
-    expect(mockUsePuzzle.setOriginalImageSize).toHaveBeenCalledWith({
-      width: 800,
-      height: 600,
+    it('ボタンをクリックすると画像を選択して好きな画像をアップロードすることができる', () => {
+      render(
+        <Provider>
+          <HomePage />
+        </Provider>
+      );
+
+      // 画像アップロードボタンをクリック
+      fireEvent.click(screen.getByTestId('mock-upload-button'));
+
+      // setImageUrlとsetOriginalImageSizeが呼ばれたことを確認
+      expect(mockUsePuzzle.setImageUrl).toHaveBeenCalledWith('test-image.jpg');
+      expect(mockUsePuzzle.setOriginalImageSize).toHaveBeenCalledWith({
+        width: 800,
+        height: 600,
+      });
     });
   });
 
