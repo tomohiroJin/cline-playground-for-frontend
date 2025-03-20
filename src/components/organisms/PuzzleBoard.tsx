@@ -64,13 +64,8 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   // ボードへの参照
   const boardRef = useRef<HTMLDivElement>(null);
 
-  // ピースのドラッグ開始ハンドラ
-  const handleDragStart = (pieceId: number) => {
-    // スライドパズル方式では使用しない
-  };
-
-  // ピースのドラッグ終了ハンドラ
-  const handleDragEnd = (pieceId: number, row: number, col: number) => {
+  // ピースをスライドさせる
+  const handleSlidePiece = (pieceId: number, row: number, col: number) => {
     // スライドパズル方式では、空白ピースの隣接位置にあるピースのみ移動できる
     if (emptyPosition) {
       const piece = pieces.find(p => p.id === pieceId);
@@ -116,8 +111,7 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
             pieceWidth={pieceWidth}
             pieceHeight={pieceHeight}
             division={division}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
+            onClick={handleSlidePiece}
             boardRef={boardRef}
           />
         ))}
