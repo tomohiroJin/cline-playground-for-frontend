@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import PuzzleBoard from './PuzzleBoard';
+import PuzzleBoard, { PuzzleBoardProps } from './PuzzleBoard';
 import { PuzzlePiece as PuzzlePieceType } from '../../store/atoms';
 
 // ダミーデータ（テスト用）
@@ -14,7 +14,7 @@ const dummyPieces: PuzzlePieceType[] = [
   },
 ];
 
-const defaultProps = {
+const defaultProps: PuzzleBoardProps = {
   imageUrl: 'test.png',
   originalWidth: 400,
   originalHeight: 400,

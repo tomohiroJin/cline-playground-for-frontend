@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef } from 'react';
 import {
   BoardContainer,
   Board,
@@ -11,13 +11,13 @@ import {
   StatusBar,
   ElapsedTime,
   HintToggle,
-} from "./PuzzleBoard.styles";
-import { PuzzlePiece as PuzzlePieceType } from "../../store/atoms";
-import PuzzlePiece from "../molecules/PuzzlePiece";
-import { formatElapsedTime } from "../../utils/puzzle-utils";
+} from './PuzzleBoard.styles';
+import { PuzzlePiece as PuzzlePieceType } from '../../store/atoms';
+import PuzzlePiece from '../molecules/PuzzlePiece';
+import { formatElapsedTime } from '../../utils/puzzle-utils';
 
 // プロパティの型定義
-interface PuzzleBoardProps {
+export interface PuzzleBoardProps {
   imageUrl: string;
   originalWidth: number;
   originalHeight: number;
@@ -72,7 +72,7 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   const handleDragEnd = (pieceId: number, row: number, col: number) => {
     // スライドパズル方式では、空白ピースの隣接位置にあるピースのみ移動できる
     if (emptyPosition) {
-      const piece = pieces.find((p) => p.id === pieceId);
+      const piece = pieces.find(p => p.id === pieceId);
       if (piece && !piece.isEmpty) {
         // ピースの現在位置
         const currentRow = piece.currentPosition.row;
@@ -80,10 +80,8 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
 
         // 空白ピースの隣接位置かどうかをチェック
         const isAdjacent =
-          (Math.abs(currentRow - emptyPosition.row) === 1 &&
-            currentCol === emptyPosition.col) ||
-          (Math.abs(currentCol - emptyPosition.col) === 1 &&
-            currentRow === emptyPosition.row);
+          (Math.abs(currentRow - emptyPosition.row) === 1 && currentCol === emptyPosition.col) ||
+          (Math.abs(currentCol - emptyPosition.col) === 1 && currentRow === emptyPosition.row);
 
         if (isAdjacent) {
           // 空白ピースの位置に移動
@@ -109,7 +107,7 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
         <BoardGrid division={division}>{renderGridCells()}</BoardGrid>
 
         {/* パズルピース */}
-        {pieces.map((piece) => (
+        {pieces.map(piece => (
           <PuzzlePiece
             key={piece.id}
             piece={piece}
@@ -129,9 +127,7 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
         {completed && (
           <CompletionOverlay>
             <CompletionMessage>パズル完成！</CompletionMessage>
-            <CompletionTime>
-              所要時間: {formatElapsedTime(elapsedTime)}
-            </CompletionTime>
+            <CompletionTime>所要時間: {formatElapsedTime(elapsedTime)}</CompletionTime>
             <RestartButton onClick={onReset}>もう一度挑戦</RestartButton>
           </CompletionOverlay>
         )}
@@ -140,15 +136,15 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
         {hintMode && !completed && (
           <div
             style={{
-              position: "absolute",
+              position: 'absolute',
               top: 0,
               left: 0,
-              width: "100%",
-              height: "100%",
+              width: '100%',
+              height: '100%',
               backgroundImage: `url(${imageUrl})`,
-              backgroundSize: "cover",
+              backgroundSize: 'cover',
               opacity: 0.3,
-              pointerEvents: "none",
+              pointerEvents: 'none',
               zIndex: 0,
             }}
           />
@@ -157,8 +153,8 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
 
       <StatusBar>
         <ElapsedTime>経過時間: {formatElapsedTime(elapsedTime)}</ElapsedTime>
-        <HintToggle active={hintMode} onClick={onToggleHint}>
-          {hintMode ? "ヒントを隠す" : "ヒントを表示"}
+        <HintToggle active={hintMode ? 'true' : 'false'} onClick={onToggleHint}>
+          {hintMode ? 'ヒントを隠す' : 'ヒントを表示'}
         </HintToggle>
       </StatusBar>
     </BoardContainer>

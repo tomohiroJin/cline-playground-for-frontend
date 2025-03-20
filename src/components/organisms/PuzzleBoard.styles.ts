@@ -1,4 +1,4 @@
-import styled from "styled-components";
+import styled from 'styled-components';
 
 export const BoardContainer = styled.div`
   display: flex;
@@ -9,8 +9,8 @@ export const BoardContainer = styled.div`
 
 export const Board = styled.div<{ width: number; height: number }>`
   position: relative;
-  width: ${(props) => props.width}px;
-  height: ${(props) => props.height}px;
+  width: ${props => props.width}px;
+  height: ${props => props.height}px;
   background-color: #f0f0f0;
   border: 2px solid #ccc;
   border-radius: 4px;
@@ -25,8 +25,8 @@ export const BoardGrid = styled.div<{ division: number }>`
   right: 0;
   bottom: 0;
   display: grid;
-  grid-template-columns: repeat(${(props) => props.division}, 1fr);
-  grid-template-rows: repeat(${(props) => props.division}, 1fr);
+  grid-template-columns: repeat(${props => props.division}, 1fr);
+  grid-template-rows: repeat(${props => props.division}, 1fr);
   pointer-events: none;
 `;
 
@@ -89,9 +89,9 @@ export const ElapsedTime = styled.div`
   color: #333;
 `;
 
-export const HintToggle = styled.button<{ active: boolean }>`
-  background-color: ${(props) => (props.active ? "#4caf50" : "#f8f8f8")};
-  color: ${(props) => (props.active ? "white" : "#333")};
+export const HintToggle = styled.button<{ active: string }>`
+  background-color: ${props => (props.active ? '#4caf50' : '#f8f8f8')};
+  color: ${props => (props.active ? 'white' : '#333')};
   padding: 5px 10px;
   border: 1px solid #ccc;
   border-radius: 4px;
@@ -100,6 +100,6 @@ export const HintToggle = styled.button<{ active: boolean }>`
   transition: all 0.3s;
 
   &:hover {
-    background-color: ${(props) => (props.active ? "#45a049" : "#e8e8e8")};
+    background-color: ${props => (props.active ? '#45a049' : '#e8e8e8')};
   }
 `;
