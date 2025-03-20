@@ -1,4 +1,4 @@
-import { atom } from "jotai";
+import { atom } from 'jotai';
 
 // アップロードされた画像のURL
 export const imageUrlAtom = atom<string | null>(null);
@@ -15,8 +15,8 @@ export const puzzleDivisionAtom = atom<number>(4); // デフォルトは4x4=16�
 // パズルのピース情報
 export interface PuzzlePiece {
   id: number; // 0は空白を表す
-  correctPosition: { row: number; col: number };
-  currentPosition: { row: number; col: number };
+  correctPosition: { row: number; col: number }; // 正しい位置
+  currentPosition: { row: number; col: number }; // 現在の位置
   isEmpty: boolean; // 空白ピースかどうか
 }
 
@@ -24,9 +24,7 @@ export interface PuzzlePiece {
 export const puzzlePiecesAtom = atom<PuzzlePiece[]>([]);
 
 // 空白ピースの位置
-export const emptyPiecePositionAtom = atom<{ row: number; col: number } | null>(
-  null
-);
+export const emptyPiecePositionAtom = atom<{ row: number; col: number } | null>(null);
 
 // パズルの開始時間
 export const puzzleStartTimeAtom = atom<number | null>(null);

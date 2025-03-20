@@ -1,11 +1,11 @@
-import React from "react";
-import { renderHook, act } from "@testing-library/react";
-import { usePuzzle } from "./usePuzzle";
-import { Provider } from "jotai";
-import * as puzzleUtils from "../utils/puzzle-utils";
+import React from 'react';
+import { renderHook, act } from '@testing-library/react';
+import { usePuzzle } from './usePuzzle';
+import { Provider } from 'jotai';
+import * as puzzleUtils from '../utils/puzzle-utils';
 
 // モック
-jest.mock("../utils/puzzle-utils", () => ({
+jest.mock('../utils/puzzle-utils', () => ({
   generatePuzzlePieces: jest.fn(),
   shufflePuzzlePieces: jest.fn(),
   isPuzzleCompleted: jest.fn(),
@@ -48,14 +48,12 @@ const renderHookWithJotai = <Result, Props>(
   initialProps?: Props
 ) => {
   return renderHook(callback, {
-    wrapper: ({ children }: { children: React.ReactNode }) => (
-      <Provider>{children}</Provider>
-    ),
+    wrapper: ({ children }: { children: React.ReactNode }) => <Provider>{children}</Provider>,
     initialProps,
   });
 };
 
-describe("usePuzzle", () => {
+describe('usePuzzle', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
@@ -76,14 +74,14 @@ describe("usePuzzle", () => {
     ]);
 
     // Date.nowのモック
-    jest.spyOn(Date, "now").mockReturnValue(1000);
+    jest.spyOn(Date, 'now').mockReturnValue(1000);
   });
 
   afterEach(() => {
     jest.restoreAllMocks();
   });
 
-  it("初期状態が正しく設定されていること", () => {
+  it('初期状態が正しく設定されていること', () => {
     const { result } = renderHookWithJotai(() => usePuzzle());
 
     expect(result.current.imageUrl).toBeNull();
@@ -95,12 +93,12 @@ describe("usePuzzle", () => {
     expect(result.current.completed).toBe(false);
   });
 
-  it("initializePuzzleを呼び出すとパズルが初期化されること", () => {
+  it('initializePuzzleを呼び出すとパズルが初期化されること', () => {
     const { result } = renderHookWithJotai(() => usePuzzle());
 
     // 画像URLを設定
     act(() => {
-      result.current.setImageUrl("test.jpg");
+      result.current.setImageUrl('test.jpg');
     });
 
     // divisionを設定
@@ -117,11 +115,7 @@ describe("usePuzzle", () => {
     expect(puzzleUtils.generatePuzzlePieces).toHaveBeenCalledWith(4);
 
     // shufflePuzzlePiecesが呼ばれたことを確認
-    expect(puzzleUtils.shufflePuzzlePieces).toHaveBeenCalledWith(
-      mockPieces,
-      mockEmptyPosition,
-      4
-    );
+    expect(puzzleUtils.shufflePuzzlePieces).toHaveBeenCalledWith(mockPieces, mockEmptyPosition, 4);
 
     // 状態が更新されたことを確認
     expect(result.current.pieces).toEqual(mockPieces);
@@ -129,7 +123,7 @@ describe("usePuzzle", () => {
     expect(result.current.completed).toBe(false);
   });
 
-  it("画像URLが設定されていない場合はinitializePuzzleが何もしないこと", () => {
+  it('画像URLが設定されていない場合はinitializePuzzleが何もしないこと', () => {
     const { result } = renderHookWithJotai(() => usePuzzle());
 
     // パズルを初期化（画像URLなし）
@@ -144,12 +138,12 @@ describe("usePuzzle", () => {
     expect(result.current.pieces).toEqual([]);
   });
 
-  it("movePieceを呼び出すとピースが移動すること", () => {
+  it('movePieceを呼び出すとピースが移動すること', () => {
     const { result } = renderHookWithJotai(() => usePuzzle());
 
     // 画像URLを設定
     act(() => {
-      result.current.setImageUrl("test.jpg");
+      result.current.setImageUrl('test.jpg');
     });
 
     // divisionを設定
@@ -177,42 +171,60 @@ describe("usePuzzle", () => {
     expect(puzzleUtils.isPuzzleCompleted).toHaveBeenCalled();
   });
 
-  it("パズルが完成するとcompletedがtrueになること", () => {
-    const { result } = renderHookWithJotai(() => usePuzzle());
+  describe('completed', () => {
+    const setupInitializedPuzzle = () => {
+      const { result } = renderHookWithJotai(() => usePuzzle());
 
-    // 画像URLを設定
-    act(() => {
-      result.current.setImageUrl("test.jpg");
+      // 画像URLを設定
+      act(() => {
+        result.current.setImageUrl('test.jpg');
+      });
+
+      // divisionを設定
+      act(() => {
+        result.current.setDivision(4);
+      });
+
+      // パズルを初期化
+      act(() => {
+        result.current.initializePuzzle();
+      });
+
+      return result;
+    };
+
+    it('パズルが完成していない場合はcompletedがfalseになること', () => {
+      const result = setupInitializedPuzzle();
+
+      // isPuzzleCompletedのモックを設定（未完成状態）
+      (puzzleUtils.isPuzzleCompleted as jest.Mock).mockReturnValue(false);
+
+      // completedがfalseになったことを確認
+      expect(result.current.completed).toBe(false);
     });
 
-    // divisionを設定
-    act(() => {
-      result.current.setDivision(4);
+    it('パズルが完成するとcompletedがtrueになること', () => {
+      const result = setupInitializedPuzzle();
+
+      // isPuzzleCompletedのモックを設定（完成状態）
+      (puzzleUtils.isPuzzleCompleted as jest.Mock).mockReturnValue(true);
+
+      // ピースを移動
+      act(() => {
+        result.current.movePiece(1, 0, 1); // id=1のピースを(0,1)に移動
+      });
+
+      // completedがtrueになったことを確認
+      expect(result.current.completed).toBe(true);
     });
-
-    // パズルを初期化
-    act(() => {
-      result.current.initializePuzzle();
-    });
-
-    // isPuzzleCompletedのモックを設定（完成状態）
-    (puzzleUtils.isPuzzleCompleted as jest.Mock).mockReturnValue(true);
-
-    // ピースを移動
-    act(() => {
-      result.current.movePiece(1, 0, 1); // id=1のピースを(0,1)に移動
-    });
-
-    // completedがtrueになったことを確認
-    expect(result.current.completed).toBe(true);
   });
 
-  it("resetPuzzleを呼び出すとパズルがリセットされること", () => {
+  it('resetPuzzleを呼び出すとパズルがリセットされること', () => {
     const { result } = renderHookWithJotai(() => usePuzzle());
 
     // 画像URLを設定
     act(() => {
-      result.current.setImageUrl("test.jpg");
+      result.current.setImageUrl('test.jpg');
     });
 
     // divisionを設定

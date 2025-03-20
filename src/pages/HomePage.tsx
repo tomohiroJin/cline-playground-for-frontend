@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import ImageUploader from "../components/molecules/ImageUploader";
 import DifficultySelector from "../components/molecules/DifficultySelector";
@@ -154,29 +154,32 @@ const HomePage: React.FC = () => {
       ) : (
         <GameSection>
           {imageUrl && originalImageSize && (
-            <PuzzleBoard
-              imageUrl={imageUrl}
-              originalWidth={originalImageSize.width}
-              originalHeight={originalImageSize.height}
-              pieces={pieces}
-              division={division}
-              elapsedTime={elapsedTime}
-              completed={completed}
-              hintMode={hintModeEnabled}
-              emptyPosition={emptyPosition}
-              onPieceMove={handlePieceMove}
-              onReset={handleResetGame}
-              onToggleHint={toggleHintMode}
-            />
-          )}
-          {!completed && (
-            <StartButton onClick={handleEndGame}>
-              ゲームを終了して設定に戻る
-            </StartButton>
+            <>
+              <PuzzleBoard
+                imageUrl={imageUrl}
+                originalWidth={originalImageSize.width}
+                originalHeight={originalImageSize.height}
+                pieces={pieces}
+                division={division}
+                elapsedTime={elapsedTime}
+                completed={completed}
+                hintMode={hintModeEnabled}
+                emptyPosition={emptyPosition}
+                onPieceMove={handlePieceMove}
+                onReset={handleResetGame}
+                onToggleHint={toggleHintMode}
+              />
+              {completed ? (
+                <div>パズルが完成しました！</div>
+              ) : (
+                <StartButton onClick={handleEndGame}>
+                  ゲームを終了して設定に戻る
+                </StartButton>
+              )}
+            </>
           )}
         </GameSection>
       )}
-
       <Instructions>
         <InstructionsTitle>遊び方</InstructionsTitle>
         <InstructionsList>
