@@ -1,5 +1,5 @@
-import * as puzzleUtils from "./puzzle-utils";
-import { PuzzlePiece } from "../store/atoms";
+import * as puzzleUtils from './puzzle-utils';
+import { PuzzlePiece } from '../store/atoms';
 
 const {
   getImageSize,
@@ -14,7 +14,7 @@ const {
 class MockImage {
   onload: () => void = () => {};
   onerror: () => void = () => {};
-  src: string = "";
+  src: string = '';
   width: number = 0;
   height: number = 0;
 
@@ -30,21 +30,21 @@ class MockImage {
 // @ts-ignore - HTMLImageElementとの互換性エラーを無視
 global.Image = MockImage as any;
 
-describe("puzzle-utils", () => {
-  describe("getImageSize", () => {
-    it("画像のサイズを正しく取得できること", async () => {
-      const size = await getImageSize("dummy-url.jpg");
+describe('puzzle-utils', () => {
+  describe('getImageSize', () => {
+    it('画像のサイズを正しく取得できること', async () => {
+      const size = await getImageSize('dummy-url.jpg');
       expect(size).toEqual({ width: 100, height: 200 });
     });
 
-    it("画像の読み込みに失敗した場合はエラーをスローすること", async () => {
+    it('画像の読み込みに失敗した場合はエラーをスローすること', async () => {
       // モックをオーバーライド
       const originalImage = global.Image;
 
       class ErrorMockImage {
         onload: () => void = () => {};
         onerror: () => void = () => {};
-        src: string = "";
+        src: string = '';
 
         constructor() {
           setTimeout(() => {
@@ -56,17 +56,15 @@ describe("puzzle-utils", () => {
       // @ts-ignore - HTMLImageElementとの互換性エラーを無視
       global.Image = ErrorMockImage as any;
 
-      await expect(getImageSize("invalid-url.jpg")).rejects.toThrow(
-        "画像の読み込みに失敗しました"
-      );
+      await expect(getImageSize('invalid-url.jpg')).rejects.toThrow('画像の読み込みに失敗しました');
 
       // モックを元に戻す
       global.Image = originalImage;
     });
   });
 
-  describe("generatePuzzlePieces", () => {
-    it("指定された分割数に応じたパズルピースを生成すること", () => {
+  describe('generatePuzzlePieces', () => {
+    it('指定された分割数に応じたパズルピースを生成すること', () => {
       const result = generatePuzzlePieces(3);
       const pieces = result.pieces;
 
@@ -101,9 +99,9 @@ describe("puzzle-utils", () => {
     });
   });
 
-  describe("shufflePuzzlePieces", () => {
+  describe('shufflePuzzlePieces', () => {
     // このテストはTypeScriptの型の問題でスキップ
-    it("パズルピースの位置をシャッフルすること", () => {
+    it('パズルピースの位置をシャッフルすること', () => {
       // テスト用のピースを作成
       const pieces: PuzzlePiece[] = [
         {
@@ -138,8 +136,8 @@ describe("puzzle-utils", () => {
     });
   });
 
-  describe("isPuzzleCompleted", () => {
-    it("全てのピースが正しい位置にある場合はtrueを返すこと", () => {
+  describe('isPuzzleCompleted', () => {
+    it('全てのピースが正しい位置にある場合はtrueを返すこと', () => {
       const pieces: PuzzlePiece[] = [
         {
           id: 0,
@@ -158,7 +156,7 @@ describe("puzzle-utils", () => {
       expect(isPuzzleCompleted(pieces)).toBe(true);
     });
 
-    it("一部のピースが正しくない位置にある場合はfalseを返すこと", () => {
+    it('一部のピースが正しくない位置にある場合はfalseを返すこと', () => {
       const pieces: PuzzlePiece[] = [
         {
           id: 0,
@@ -178,32 +176,34 @@ describe("puzzle-utils", () => {
     });
   });
 
-  describe("formatElapsedTime", () => {
-    it("経過時間を正しくフォーマットすること", () => {
-      expect(formatElapsedTime(0)).toBe("00:00");
-      expect(formatElapsedTime(59)).toBe("00:59");
-      expect(formatElapsedTime(60)).toBe("01:00");
-      expect(formatElapsedTime(65)).toBe("01:05");
-      expect(formatElapsedTime(3599)).toBe("59:59");
-      expect(formatElapsedTime(3600)).toBe("60:00");
+  describe('formatElapsedTime', () => {
+    test.each([
+      [0, '00:00'],
+      [59, '00:59'],
+      [60, '01:00'],
+      [65, '01:05'],
+      [3599, '59:59'],
+      [3600, '60:00'],
+    ])('経過時間が %i の場合は %s が表示されること', (seconds, expected) => {
+      expect(formatElapsedTime(seconds)).toBe(expected);
     });
   });
 
-  describe("checkImageFileSize", () => {
-    it("ファイルサイズが制限内の場合はtrueを返すこと", () => {
-      const file = new File(["dummy content"], "test.jpg", {
-        type: "image/jpeg",
+  describe('checkImageFileSize', () => {
+    it('ファイルサイズが制限内の場合はtrueを返すこと', () => {
+      const file = new File(['dummy content'], 'test.jpg', {
+        type: 'image/jpeg',
       });
-      Object.defineProperty(file, "size", { value: 5 * 1024 * 1024 }); // 5MB
+      Object.defineProperty(file, 'size', { value: 5 * 1024 * 1024 }); // 5MB
 
       expect(checkImageFileSize(file, 10)).toBe(true);
     });
 
-    it("ファイルサイズが制限を超える場合はfalseを返すこと", () => {
-      const file = new File(["dummy content"], "test.jpg", {
-        type: "image/jpeg",
+    it('ファイルサイズが制限を超える場合はfalseを返すこと', () => {
+      const file = new File(['dummy content'], 'test.jpg', {
+        type: 'image/jpeg',
       });
-      Object.defineProperty(file, "size", { value: 15 * 1024 * 1024 }); // 15MB
+      Object.defineProperty(file, 'size', { value: 15 * 1024 * 1024 }); // 15MB
 
       expect(checkImageFileSize(file, 10)).toBe(false);
     });
