@@ -30,17 +30,6 @@ const defaultProps: PuzzleBoardProps = {
 };
 
 describe('パズルボードコンポーネント', () => {
-  it('経過時間が表示される', () => {
-    render(<PuzzleBoard {...defaultProps} />);
-    expect(screen.getByText(/経過時間:/)).toBeInTheDocument();
-  });
-
-  it('完成時にオーバーレイが表示される', () => {
-    render(<PuzzleBoard {...defaultProps} completed={true} elapsedTime={60} />);
-    expect(screen.getByText('パズル完成！')).toBeInTheDocument();
-    expect(screen.getByText(/所要時間:/)).toBeInTheDocument();
-  });
-
   describe('HintToggleButton', () => {
     it('ヒントモードがfalseの時は「ヒントを表示」ボタンが表示されていること', () => {
       render(<PuzzleBoard {...defaultProps} hintMode={false} />);
@@ -82,5 +71,19 @@ describe('パズルボードコンポーネント', () => {
 
       expect(screen.queryByTitle('ヒント画像')).toBeNull();
     });
+  });
+
+  it('経過時間が表示される', () => {
+    render(<PuzzleBoard {...defaultProps} />);
+
+    expect(screen.getByText(/経過時間:/)).toBeInTheDocument();
+  });
+
+  it('完成の場合オーバーレイが表示される', () => {
+    render(<PuzzleBoard {...defaultProps} completed={true} elapsedTime={60} />);
+
+    expect(screen.getByText('パズル完成！')).toBeInTheDocument();
+    expect(screen.getByText(/所要時間:/)).toBeInTheDocument();
+    expect(screen.getByText('もう一度挑戦')).toBeInTheDocument();
   });
 });
