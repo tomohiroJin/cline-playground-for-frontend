@@ -36,10 +36,10 @@ export const ErrorMessage = styled.p`
   margin-top: 5px;
 `;
 
-export const ImagePreview = styled.div<{ hasImage: boolean }>`
+export const ImagePreview = styled.div<{ $hasImage: boolean }>`
   width: 300px;
   height: 200px;
-  border: 2px dashed ${props => (props.hasImage ? '#4caf50' : '#cccccc')};
+  border: 2px dashed ${props => (props.$hasImage ? '#4caf50' : '#cccccc')};
   border-radius: 4px;
   display: flex;
   align-items: center;
