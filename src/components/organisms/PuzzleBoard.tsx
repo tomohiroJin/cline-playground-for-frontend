@@ -66,6 +66,9 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
 
   // ピースをスライドさせる
   const handleSlidePiece = (pieceId: number, row: number, col: number) => {
+    // 完成済みの場合は何もしない
+    if (completed) return;
+
     // スライドパズル方式では、空白ピースの隣接位置にあるピースのみ移動できる
     if (emptyPosition) {
       const piece = pieces.find(p => p.id === pieceId);

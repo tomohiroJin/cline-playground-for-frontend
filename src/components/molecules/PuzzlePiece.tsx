@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { PieceContainer, PieceImage } from './PuzzlePiece.styles';
 import { PuzzlePiece as PuzzlePieceType } from '../../store/atoms';
 
@@ -30,7 +30,7 @@ const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
   boardRef,
 }) => {
   // 状態
-  const [position, setPosition] = React.useState({
+  const [position, setPosition] = useState({
     x: piece.currentPosition.col * pieceWidth,
     y: piece.currentPosition.row * pieceHeight,
   });
@@ -44,12 +44,13 @@ const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
   };
 
   // ピースの位置が変更されたときに状態を更新
-  React.useEffect(() => {
+  useEffect(() => {
+    // 位置を更新
     setPosition({
       x: piece.currentPosition.col * pieceWidth,
       y: piece.currentPosition.row * pieceHeight,
     });
-  }, [piece.currentPosition, pieceWidth, pieceHeight]);
+  }, [piece.currentPosition.row, piece.currentPosition.col, pieceWidth, pieceHeight]);
 
   return (
     <PieceContainer
