@@ -93,8 +93,7 @@ describe('パズルボードコンポーネント', () => {
           expect(props.originalHeight).toBe(defaultProps.originalHeight);
           expect(props.division).toBe(defaultProps.division);
           expect(props.boardRef).toBe(boardRef);
-          expect(typeof props.onDragStart).toBe('function');
-          expect(typeof props.onDragEnd).toBe('function');
+          expect(typeof props.onClick).toBe('function');
         });
 
         it.each(dummyPieces.map((piece, index) => [index, piece]))(
