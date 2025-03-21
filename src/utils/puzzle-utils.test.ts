@@ -100,7 +100,6 @@ describe('puzzle-utils', () => {
   });
 
   describe('shufflePuzzlePieces', () => {
-    // このテストはTypeScriptの型の問題でスキップ
     it('パズルピースの位置をシャッフルすること', () => {
       // テスト用のピースを作成
       const pieces: PuzzlePiece[] = [
@@ -133,6 +132,57 @@ describe('puzzle-utils', () => {
 
       // シャッフル後も全てのピースが存在すること
       expect(result.pieces.length).toBe(pieces.length);
+    });
+
+    it('シャッフル時に空白ピースの位置情報が正しく更新されること', () => {
+      // テスト用のピースを作成
+      const pieces: PuzzlePiece[] = [
+        {
+          id: 0,
+          correctPosition: { row: 0, col: 0 },
+          currentPosition: { row: 0, col: 0 },
+          isEmpty: false,
+        },
+        {
+          id: 1,
+          correctPosition: { row: 0, col: 1 },
+          currentPosition: { row: 0, col: 1 },
+          isEmpty: false,
+        },
+        {
+          id: 2,
+          correctPosition: { row: 0, col: 2 },
+          currentPosition: { row: 0, col: 2 },
+          isEmpty: true, // 空白ピース
+        },
+      ];
+
+      const emptyPosition = { row: 0, col: 2 };
+      const division = 3;
+
+      // シャッフルの回数を1回に制限し、動作を予測可能にする
+      // getAdjacentPositionsのモックを作成して、隣接位置を固定
+      const getAdjacentPositionsSpy = jest
+        .spyOn(puzzleUtils, 'getAdjacentPositions')
+        .mockReturnValue([{ row: 0, col: 1 }]);
+
+      const result = shufflePuzzlePieces(pieces, emptyPosition, division, 1);
+
+      // モックをリストア
+      getAdjacentPositionsSpy.mockRestore();
+
+      // 空白ピースの位置情報が更新されていること
+      const emptyPiece = result.pieces.find(p => p.isEmpty);
+      expect(emptyPiece).toBeDefined();
+      expect(emptyPiece?.currentPosition).toEqual({ row: 0, col: 1 });
+
+      // emptyPositionも更新されていること
+      expect(result.emptyPosition).toEqual({ row: 0, col: 1 });
+
+      // 移動したピースの位置情報も更新されていること
+      const movedPiece = result.pieces.find(p => p.id === 1);
+      expect(movedPiece).toBeDefined();
+      expect(movedPiece?.currentPosition).toEqual({ row: 0, col: 2 });
     });
   });
 

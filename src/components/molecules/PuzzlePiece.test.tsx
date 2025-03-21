@@ -87,4 +87,32 @@ describe('パズルピース', () => {
     const element = container.firstChild as HTMLElement;
     expect(element).toHaveStyle('transform: translate(50px, 50px)');
   });
+
+  it('空白ピースの場合は画像が表示されないこと', () => {
+    const defaultProps = {
+      imageUrl: 'test-image.jpg',
+      originalWidth: 100,
+      originalHeight: 100,
+      pieceWidth: 50,
+      pieceHeight: 50,
+      division: 2,
+      onClick: jest.fn(),
+      boardRef: React.createRef(),
+    };
+
+    // 空白ピースを作成
+    const emptyPiece: PuzzlePieceType = {
+      ...mockPiece,
+      isEmpty: true,
+    };
+
+    const { container } = render(
+      <PuzzlePiece {...defaultProps} piece={emptyPiece} boardRef={React.createRef()} />
+    );
+
+    // PieceImageコンポーネントが存在しないことを確認
+    const pieceContainer = container.firstChild as HTMLElement;
+    expect(pieceContainer).toBeInTheDocument();
+    expect(pieceContainer.children.length).toBe(0);
+  });
 });

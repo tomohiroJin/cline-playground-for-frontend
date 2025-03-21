@@ -63,14 +63,16 @@ const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
       }}
       onClick={handleClick}
     >
-      <PieceImage
-        $imageUrl={imageUrl}
-        $originalWidth={originalWidth}
-        $originalHeight={originalHeight}
-        $row={piece.correctPosition.row}
-        $col={piece.correctPosition.col}
-        $division={division}
-      />
+      {!piece.isEmpty && (
+        <PieceImage
+          $imageUrl={imageUrl}
+          $originalWidth={originalWidth}
+          $originalHeight={originalHeight}
+          $row={piece.correctPosition.row}
+          $col={piece.correctPosition.col}
+          $division={division}
+        />
+      )}
     </PieceContainer>
   );
 };

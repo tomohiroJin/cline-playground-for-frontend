@@ -96,6 +96,14 @@ export const shufflePuzzlePieces = (
         ...currentEmptyPos,
       };
 
+      // 空白ピースを見つけて位置を更新
+      const emptyPieceIndex = shuffledPieces.findIndex(p => p.isEmpty);
+      if (emptyPieceIndex !== -1) {
+        shuffledPieces[emptyPieceIndex].currentPosition = {
+          ...selectedPos,
+        };
+      }
+
       // 空白の位置を更新
       currentEmptyPos = { ...selectedPos };
     }

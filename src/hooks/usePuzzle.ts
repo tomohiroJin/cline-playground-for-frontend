@@ -1,5 +1,5 @@
-import { useAtom } from "jotai";
-import { useCallback, useEffect } from "react";
+import { useAtom } from 'jotai';
+import { useCallback, useEffect } from 'react';
 import {
   imageUrlAtom,
   originalImageSizeAtom,
@@ -10,13 +10,13 @@ import {
   puzzleElapsedTimeAtom,
   puzzleCompletedAtom,
   PuzzlePiece,
-} from "../store/atoms";
+} from '../store/atoms';
 import {
   generatePuzzlePieces,
   shufflePuzzlePieces,
   isPuzzleCompleted,
   getAdjacentPositions,
-} from "../utils/puzzle-utils";
+} from '../utils/puzzle-utils';
 
 /**
  * パズルの状態と操作を管理するカスタムフック
@@ -24,9 +24,7 @@ import {
 export const usePuzzle = () => {
   // 状態
   const [imageUrl, setImageUrl] = useAtom(imageUrlAtom);
-  const [originalImageSize, setOriginalImageSize] = useAtom(
-    originalImageSizeAtom
-  );
+  const [originalImageSize, setOriginalImageSize] = useAtom(originalImageSizeAtom);
   const [division, setDivision] = useAtom(puzzleDivisionAtom);
   const [pieces, setPieces] = useAtom(puzzlePiecesAtom);
   const [emptyPosition, setEmptyPosition] = useAtom(emptyPiecePositionAtom);
@@ -39,12 +37,14 @@ export const usePuzzle = () => {
     if (!imageUrl) return;
 
     // パズルのピースを生成
-    const { pieces: newPieces, emptyPosition: newEmptyPosition } =
-      generatePuzzlePieces(division);
+    const { pieces: newPieces, emptyPosition: newEmptyPosition } = generatePuzzlePieces(division);
 
     // パズルのピースをシャッフル
-    const { pieces: shuffledPieces, emptyPosition: shuffledEmptyPosition } =
-      shufflePuzzlePieces(newPieces, newEmptyPosition, division);
+    const { pieces: shuffledPieces, emptyPosition: shuffledEmptyPosition } = shufflePuzzlePieces(
+      newPieces,
+      newEmptyPosition,
+      division
+    );
 
     // 状態を更新
     setPieces(shuffledPieces);
@@ -52,24 +52,16 @@ export const usePuzzle = () => {
     setStartTime(Date.now());
     setElapsedTime(0);
     setCompleted(false);
-  }, [
-    imageUrl,
-    division,
-    setPieces,
-    setEmptyPosition,
-    setStartTime,
-    setElapsedTime,
-    setCompleted,
-  ]);
+  }, [imageUrl, division, setPieces, setEmptyPosition, setStartTime, setElapsedTime, setCompleted]);
 
   // パズルのピースを移動する
   const movePiece = useCallback(
     (pieceId: number, newRow: number, newCol: number) => {
       if (completed || !emptyPosition) return;
 
-      setPieces((currentPieces) => {
+      setPieces(currentPieces => {
         // 移動するピースを見つける
-        const pieceIndex = currentPieces.findIndex((p) => p.id === pieceId);
+        const pieceIndex = currentPieces.findIndex(p => p.id === pieceId);
         if (pieceIndex === -1) return currentPieces;
 
         const piece = currentPieces[pieceIndex];
@@ -79,17 +71,15 @@ export const usePuzzle = () => {
 
         // 移動先が空白ピースの位置かチェック
         if (newRow !== emptyPosition.row || newCol !== emptyPosition.col) {
-          // 修正: 空白ピースではなく移動先の座標を使って隣接位置を取得
+          // 修正: ピースの現在位置を使って隣接位置を取得
           const adjacentPositions = getAdjacentPositions(
-            newRow,
-            newCol,
+            piece.currentPosition.row,
+            piece.currentPosition.col,
             division
           );
 
           const isAdjacent = adjacentPositions.some(
-            (pos) =>
-              pos.row === piece.currentPosition.row &&
-              pos.col === piece.currentPosition.col
+            pos => pos.row === emptyPosition.row && pos.col === emptyPosition.col
           );
 
           if (!isAdjacent) {
@@ -107,6 +97,17 @@ export const usePuzzle = () => {
         };
 
         // 空白ピースの位置を更新
+        const emptyPieceIndex = currentPieces.findIndex(p => p.isEmpty);
+        if (emptyPieceIndex !== -1) {
+          updatedPieces[emptyPieceIndex] = {
+            ...updatedPieces[emptyPieceIndex],
+            currentPosition: {
+              row: piece.currentPosition.row,
+              col: piece.currentPosition.col,
+            },
+          };
+        }
+
         setEmptyPosition({
           row: piece.currentPosition.row,
           col: piece.currentPosition.col,
@@ -121,14 +122,7 @@ export const usePuzzle = () => {
         return updatedPieces;
       });
     },
-    [
-      completed,
-      emptyPosition,
-      division,
-      setPieces,
-      setEmptyPosition,
-      setCompleted,
-    ]
+    [completed, emptyPosition, division, setPieces, setEmptyPosition, setCompleted]
   );
 
   // 経過時間を更新する
