@@ -1,20 +1,18 @@
-import { PuzzlePiece } from "../store/atoms";
+import { PuzzlePiece } from '../store/atoms';
 
 /**
  * 画像をロードしてサイズを取得する
  * @param url 画像のURL
  * @returns 画像のサイズ（幅と高さ）を含むPromise
  */
-export const getImageSize = (
-  url: string
-): Promise<{ width: number; height: number }> => {
+export const getImageSize = (url: string): Promise<{ width: number; height: number }> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
       resolve({ width: img.width, height: img.height });
     };
     img.onerror = () => {
-      reject(new Error("画像の読み込みに失敗しました"));
+      reject(new Error('画像の読み込みに失敗しました'));
     };
     img.src = url;
   });
@@ -89,9 +87,7 @@ export const shufflePuzzlePieces = (
 
     // 選択されたピースと空白を交換
     const selectedPieceIndex = shuffledPieces.findIndex(
-      (p) =>
-        p.currentPosition.row === selectedPos.row &&
-        p.currentPosition.col === selectedPos.col
+      p => p.currentPosition.row === selectedPos.row && p.currentPosition.col === selectedPos.col
     );
 
     if (selectedPieceIndex !== -1) {
@@ -154,10 +150,12 @@ export const getAdjacentPositions = (
  * @returns 完成していればtrue、そうでなければfalse
  */
 export const isPuzzleCompleted = (pieces: PuzzlePiece[]): boolean => {
+  // 空きピース以外のすべてのピースが正しい位置にあるかをチェック
   return pieces.every(
-    (piece) =>
-      piece.correctPosition.row === piece.currentPosition.row &&
-      piece.correctPosition.col === piece.currentPosition.col
+    piece =>
+      piece.isEmpty || // 空きピースは位置をチェックしない
+      (piece.correctPosition.row === piece.currentPosition.row &&
+        piece.correctPosition.col === piece.currentPosition.col)
   );
 };
 
@@ -170,8 +168,8 @@ export const formatElapsedTime = (seconds: number): string => {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
 
-  const formattedMinutes = String(minutes).padStart(2, "0");
-  const formattedSeconds = String(remainingSeconds).padStart(2, "0");
+  const formattedMinutes = String(minutes).padStart(2, '0');
+  const formattedSeconds = String(remainingSeconds).padStart(2, '0');
 
   return `${formattedMinutes}:${formattedSeconds}`;
 };
@@ -182,10 +180,7 @@ export const formatElapsedTime = (seconds: number): string => {
  * @param maxSizeInMB 最大サイズ（MB）
  * @returns サイズが制限内ならtrue、そうでなければfalse
  */
-export const checkImageFileSize = (
-  file: File,
-  maxSizeInMB: number
-): boolean => {
+export const checkImageFileSize = (file: File, maxSizeInMB: number): boolean => {
   const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
   return file.size <= maxSizeInBytes;
 };

@@ -174,6 +174,56 @@ describe('puzzle-utils', () => {
 
       expect(isPuzzleCompleted(pieces)).toBe(false);
     });
+
+    it('空きピースが正しくない位置にあっても、他のピースが全て正しい位置にある場合はtrueを返すこと', () => {
+      const pieces: PuzzlePiece[] = [
+        {
+          id: 0,
+          correctPosition: { row: 0, col: 0 },
+          currentPosition: { row: 0, col: 0 },
+          isEmpty: false,
+        },
+        {
+          id: 1,
+          correctPosition: { row: 0, col: 1 },
+          currentPosition: { row: 0, col: 1 },
+          isEmpty: false,
+        },
+        {
+          id: 2,
+          correctPosition: { row: 0, col: 2 },
+          currentPosition: { row: 1, col: 2 }, // 正しくない位置
+          isEmpty: true, // 空きピース
+        },
+      ];
+
+      expect(isPuzzleCompleted(pieces)).toBe(true);
+    });
+
+    it('空きピースが正しい位置にあっても、他のピースが正しくない位置にある場合はfalseを返すこと', () => {
+      const pieces: PuzzlePiece[] = [
+        {
+          id: 0,
+          correctPosition: { row: 0, col: 0 },
+          currentPosition: { row: 1, col: 0 }, // 正しくない位置
+          isEmpty: false,
+        },
+        {
+          id: 1,
+          correctPosition: { row: 0, col: 1 },
+          currentPosition: { row: 0, col: 1 },
+          isEmpty: false,
+        },
+        {
+          id: 2,
+          correctPosition: { row: 0, col: 2 },
+          currentPosition: { row: 0, col: 2 }, // 正しい位置
+          isEmpty: true, // 空きピース
+        },
+      ];
+
+      expect(isPuzzleCompleted(pieces)).toBe(false);
+    });
   });
 
   describe('formatElapsedTime', () => {
