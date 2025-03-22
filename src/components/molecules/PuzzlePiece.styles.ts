@@ -12,7 +12,7 @@ export const PieceContainer = styled.div<{
   cursor: ${props => (props.$isEmpty ? 'default' : 'pointer')};
   border: 2px solid ${props => (props.$isEmpty ? 'transparent' : '#fff')};
   box-shadow: ${props => (props.$isEmpty ? 'none' : '0 0 5px rgba(0, 0, 0, 0.3)')};
-  transition: transform 0.2s;
+  transition: transform 0.2s, background-color 0.5s;
   z-index: 1;
   user-select: none;
   overflow: hidden;

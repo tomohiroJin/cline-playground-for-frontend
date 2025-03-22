@@ -13,6 +13,7 @@ interface PuzzlePieceProps {
   division: number;
   onClick: (pieceId: number, row: number, col: number) => void;
   boardRef: React.RefObject<HTMLDivElement | null>;
+  completed?: boolean; // パズルが完成したかどうか
 }
 
 /**
@@ -28,6 +29,7 @@ const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
   division,
   onClick,
   boardRef,
+  completed = false,
 }) => {
   // 状態
   const [position, setPosition] = useState({
@@ -54,16 +56,18 @@ const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
 
   return (
     <PieceContainer
-      $isEmpty={piece.isEmpty}
+      $isEmpty={piece.isEmpty && !completed}
       $isDragging={false}
       $width={pieceWidth}
       $height={pieceHeight}
       style={{
         transform: `translate(${position.x}px, ${position.y}px)`,
+        backgroundColor: piece.isEmpty && completed ? 'transparent' : undefined,
       }}
       onClick={handleClick}
     >
-      {!piece.isEmpty && (
+      {/* 空白ピースでも、パズルが完成していれば画像を表示する */}
+      {(!piece.isEmpty || completed) && (
         <PieceImage
           $imageUrl={imageUrl}
           $originalWidth={originalWidth}
