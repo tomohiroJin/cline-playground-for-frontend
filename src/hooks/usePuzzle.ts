@@ -71,7 +71,7 @@ export const usePuzzle = () => {
 
         // 移動先が空白ピースの位置かチェック
         if (newRow !== emptyPosition.row || newCol !== emptyPosition.col) {
-          // 修正: ピースの現在位置を使って隣接位置を取得
+          // ピースの現在位置を使って隣接位置を取得
           const adjacentPositions = getAdjacentPositions(
             piece.currentPosition.row,
             piece.currentPosition.col,

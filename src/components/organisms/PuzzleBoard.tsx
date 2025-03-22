@@ -69,25 +69,27 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
     // 完成済みの場合は何もしない
     if (completed) return;
 
-    // スライドパズル方式では、空白ピースの隣接位置にあるピースのみ移動できる
-    if (emptyPosition) {
-      const piece = pieces.find(p => p.id === pieceId);
-      if (piece && !piece.isEmpty) {
-        // ピースの現在位置
-        const currentRow = piece.currentPosition.row;
-        const currentCol = piece.currentPosition.col;
+    // 空白スペースが存在しなければ処理終了
+    if (!emptyPosition) return;
 
-        // 空白ピースの隣接位置かどうかをチェック
-        const isAdjacent =
-          (Math.abs(currentRow - emptyPosition.row) === 1 && currentCol === emptyPosition.col) ||
-          (Math.abs(currentCol - emptyPosition.col) === 1 && currentRow === emptyPosition.row);
+    const piece = pieces.find(p => p.id === pieceId);
+    // 対象のピースが存在しない、または空の場合は処理終了
+    if (!piece || piece.isEmpty) return;
 
-        if (isAdjacent) {
-          // 空白ピースの位置に移動
-          onPieceMove(pieceId, emptyPosition.row, emptyPosition.col);
-        }
-      }
-    }
+    // ピースの現在位置
+    const currentRow = piece.currentPosition.row;
+    const currentCol = piece.currentPosition.col;
+
+    // 空白ピースの隣接位置かどうかをチェック
+    const isAdjacent =
+      (Math.abs(currentRow - emptyPosition.row) === 1 && currentCol === emptyPosition.col) ||
+      (Math.abs(currentCol - emptyPosition.col) === 1 && currentRow === emptyPosition.row);
+
+    // 隣接していなければ処理終了
+    if (!isAdjacent) return;
+
+    // 空白ピースの位置に移動
+    onPieceMove(pieceId, emptyPosition.row, emptyPosition.col);
   };
 
   // グリッドセルを生成
