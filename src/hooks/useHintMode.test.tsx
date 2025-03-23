@@ -1,7 +1,7 @@
-import React from "react";
-import { renderHook, act } from "@testing-library/react";
-import { useHintMode } from "./useHintMode";
-import { Provider } from "jotai";
+import React from 'react';
+import { renderHook, act } from '@testing-library/react';
+import { useHintMode } from './useHintMode';
+import { Provider } from 'jotai';
 
 // Providerでラップするためのユーティリティ関数
 const renderHookWithJotai = <Result, Props>(
@@ -9,76 +9,61 @@ const renderHookWithJotai = <Result, Props>(
   initialProps?: Props
 ) => {
   return renderHook(callback, {
-    wrapper: ({ children }: { children: React.ReactNode }) => (
-      <Provider>{children}</Provider>
-    ),
+    wrapper: ({ children }: { children: React.ReactNode }) => <Provider>{children}</Provider>,
     initialProps,
   });
 };
 
-describe("useHintMode", () => {
-  it("初期状態ではヒントモードが無効であること", () => {
+describe('useHintMode', () => {
+  it('初期状態ではヒントは非表示である', () => {
     const { result } = renderHookWithJotai(() => useHintMode());
+
     expect(result.current.hintModeEnabled).toBe(false);
   });
 
-  it("toggleHintModeを呼び出すとヒントモードが切り替わること", () => {
-    const { result } = renderHookWithJotai(() => useHintMode());
-
-    // 初期状態は無効
-    expect(result.current.hintModeEnabled).toBe(false);
-
-    // 有効に切り替え
-    act(() => {
-      result.current.toggleHintMode();
+  describe('ヒント表示状態の切り替え', () => {
+    it('ユーザーが『ヒント表示』操作を行うと、ヒントが表示される', () => {
+      const { result } = renderHookWithJotai(() => useHintMode());
+      act(() => {
+        result.current.enableHintMode();
+      });
+      expect(result.current.hintModeEnabled).toBe(true);
     });
-    expect(result.current.hintModeEnabled).toBe(true);
 
-    // 無効に切り替え
-    act(() => {
-      result.current.toggleHintMode();
+    it('ユーザーが『ヒント表示切替』操作を行うと、ヒントの表示状態が反転する', () => {
+      const { result } = renderHookWithJotai(() => useHintMode());
+
+      act(() => {
+        result.current.toggleHintMode();
+        result.current.toggleHintMode();
+      });
+
+      expect(result.current.hintModeEnabled).toBe(false);
     });
-    expect(result.current.hintModeEnabled).toBe(false);
   });
 
-  it("enableHintModeを呼び出すとヒントモードが有効になること", () => {
+  it('ユーザーが『ヒント表示』操作を行うと、ヒントが表示になる', () => {
     const { result } = renderHookWithJotai(() => useHintMode());
 
-    // 初期状態は無効
-    expect(result.current.hintModeEnabled).toBe(false);
-
-    // 有効にする
     act(() => {
       result.current.enableHintMode();
     });
-    expect(result.current.hintModeEnabled).toBe(true);
 
-    // すでに有効な状態で再度有効にしても変わらない
-    act(() => {
-      result.current.enableHintMode();
-    });
     expect(result.current.hintModeEnabled).toBe(true);
   });
 
-  it("disableHintModeを呼び出すとヒントモードが無効になること", () => {
+  it('ユーザーが『ヒント非表示』操作を行うと、ヒントが非表示になる', () => {
     const { result } = renderHookWithJotai(() => useHintMode());
 
-    // まず有効にする
+    // 一度表示にしてから非表示にする
     act(() => {
       result.current.enableHintMode();
     });
-    expect(result.current.hintModeEnabled).toBe(true);
 
-    // 無効にする
     act(() => {
       result.current.disableHintMode();
     });
-    expect(result.current.hintModeEnabled).toBe(false);
 
-    // すでに無効な状態で再度無効にしても変わらない
-    act(() => {
-      result.current.disableHintMode();
-    });
     expect(result.current.hintModeEnabled).toBe(false);
   });
 });
