@@ -32,6 +32,17 @@ export const usePuzzle = () => {
   const [elapsedTime, setElapsedTime] = useAtom(puzzleElapsedTimeAtom);
   const [completed, setCompleted] = useAtom(puzzleCompletedAtom);
 
+  /**
+   * 分割数に基づいてシャッフル回数を計算する
+   * @param division 分割数
+   * @returns シャッフル回数
+   */
+  const calculateShuffleMoves = (division: number): number => {
+    const totalPieces = division * division; // 総ピース数
+    const shuffleFactor = division * 2; // 分割された数全てが 2 回移動する
+    return totalPieces * shuffleFactor;
+  };
+
   // パズルを初期化する
   const initializePuzzle = useCallback(() => {
     if (!imageUrl) return;
@@ -43,7 +54,8 @@ export const usePuzzle = () => {
     const { pieces: shuffledPieces, emptyPosition: shuffledEmptyPosition } = shufflePuzzlePieces(
       newPieces,
       newEmptyPosition,
-      division
+      division,
+      calculateShuffleMoves(division)
     );
 
     // 状態を更新
@@ -56,7 +68,7 @@ export const usePuzzle = () => {
 
   // パズルのピースを移動する
   const movePiece = useCallback(
-    (pieceId: number, newRow: number, newCol: number) => {
+    (pieceId: number) => {
       if (completed || !emptyPosition) return;
 
       setPieces(currentPieces => {
@@ -69,23 +81,16 @@ export const usePuzzle = () => {
         // 空白ピースは移動できない
         if (piece.isEmpty) return currentPieces;
 
-        // 移動先が空白ピースの位置かチェック
-        if (newRow !== emptyPosition.row || newCol !== emptyPosition.col) {
-          // ピースの現在位置を使って隣接位置を取得
-          const adjacentPositions = getAdjacentPositions(
-            piece.currentPosition.row,
-            piece.currentPosition.col,
-            division
-          );
-
-          const isAdjacent = adjacentPositions.some(
-            pos => pos.row === emptyPosition.row && pos.col === emptyPosition.col
-          );
-
-          if (!isAdjacent) {
-            return currentPieces; // 隣接していない場合は移動できない
-          }
-        }
+        // 対象ピースの現在位置から隣接位置を取得して空白位置と比較
+        const adjacentPositions = getAdjacentPositions(
+          piece.currentPosition.row,
+          piece.currentPosition.col,
+          division
+        );
+        const isAdjacent = adjacentPositions.some(
+          pos => pos.row === emptyPosition.row && pos.col === emptyPosition.col
+        );
+        if (!isAdjacent) return currentPieces;
 
         // 新しい位置に更新
         const updatedPieces = [...currentPieces];
@@ -114,8 +119,7 @@ export const usePuzzle = () => {
         });
 
         // パズルが完成したかチェック
-        const isCompleted = isPuzzleCompleted(updatedPieces);
-        if (isCompleted) {
+        if (isPuzzleCompleted(updatedPieces)) {
           setCompleted(true);
         }
 

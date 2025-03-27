@@ -81,16 +81,40 @@ describe('usePuzzle', () => {
     jest.restoreAllMocks();
   });
 
-  it('初期状態が正しく設定されていること', () => {
-    const { result } = renderHookWithJotai(() => usePuzzle());
+  describe('usePuzzle 初期状態の振る舞い', () => {
+    let result: { current: any };
+    beforeEach(() => {
+      const hook = renderHookWithJotai(() => usePuzzle());
+      result = hook.result;
+    });
 
-    expect(result.current.imageUrl).toBeNull();
-    expect(result.current.originalImageSize).toBeNull();
-    expect(result.current.division).toBe(4); // デフォルト値
-    expect(result.current.pieces).toEqual([]);
-    expect(result.current.emptyPosition).toBeNull();
-    expect(result.current.elapsedTime).toBe(0);
-    expect(result.current.completed).toBe(false);
+    it('画像URLはnullから始まる', () => {
+      expect(result.current.imageUrl).toBeNull();
+    });
+
+    it('オリジナル画像サイズはnullから始まる', () => {
+      expect(result.current.originalImageSize).toBeNull();
+    });
+
+    it('divisionはデフォルト値の4から始まる', () => {
+      expect(result.current.division).toBe(4);
+    });
+
+    it('パズルpiecesは空配列から始まる', () => {
+      expect(result.current.pieces).toEqual([]);
+    });
+
+    it('空白位置はnullから始まる', () => {
+      expect(result.current.emptyPosition).toBeNull();
+    });
+
+    it('経過時間は0から始まる', () => {
+      expect(result.current.elapsedTime).toBe(0);
+    });
+
+    it('completedはfalseから始まる', () => {
+      expect(result.current.completed).toBe(false);
+    });
   });
 
   it('initializePuzzleを呼び出すとパズルが初期化されること', () => {
@@ -115,7 +139,12 @@ describe('usePuzzle', () => {
     expect(puzzleUtils.generatePuzzlePieces).toHaveBeenCalledWith(4);
 
     // shufflePuzzlePiecesが呼ばれたことを確認
-    expect(puzzleUtils.shufflePuzzlePieces).toHaveBeenCalledWith(mockPieces, mockEmptyPosition, 4);
+    expect(puzzleUtils.shufflePuzzlePieces).toHaveBeenCalledWith(
+      mockPieces,
+      mockEmptyPosition,
+      4,
+      128
+    );
 
     // 状態が更新されたことを確認
     expect(result.current.pieces).toEqual(mockPieces);
@@ -139,7 +168,7 @@ describe('usePuzzle', () => {
   });
 
   describe('movePiece', () => {
-    // DRY: 共通のパズルセットアップ関数を定義
+    // 共通のパズルセットアップ関数を定義
     const setupCustomPuzzle = (
       getAdjacentPositionsImpl: (row: number, col: number) => { row: number; col: number }[]
     ) => {
@@ -194,8 +223,9 @@ describe('usePuzzle', () => {
 
       const initialPieces = JSON.parse(JSON.stringify(result.current.pieces));
       act(() => {
-        result.current.movePiece(0, 1, 0);
+        result.current.movePiece(0);
       });
+
       expect(result.current.pieces).not.toEqual(initialPieces);
     });
 
@@ -216,8 +246,9 @@ describe('usePuzzle', () => {
         result.current.initializePuzzle();
       });
       act(() => {
-        result.current.movePiece(0, 1, 0);
+        result.current.movePiece(0);
       });
+
       const movedPiece = result.current.pieces.find(p => p.id === 0);
       expect(movedPiece).toBeDefined();
       expect(movedPiece?.currentPosition).toEqual({ row: 1, col: 0 });
@@ -243,9 +274,10 @@ describe('usePuzzle', () => {
         result.current.initializePuzzle();
       });
       act(() => {
-        result.current.movePiece(0, 1, 0);
+        result.current.movePiece(0);
       });
-      expect(result.current.emptyPosition).toEqual({ row: 0, col: 0 });
+
+      expect(result.current.emptyPosition).toEqual({ row: 1, col: 0 });
     });
   });
 
@@ -329,7 +361,7 @@ describe('usePuzzle', () => {
 
       // ピースを移動（空白ピースの位置を指定）
       act(() => {
-        result.current.movePiece(0, 1, 0); // id=0のピースを空白ピースの位置(1,0)に移動
+        result.current.movePiece(0); // id=0のピースを空白ピースの位置(1,0)に移動
       });
 
       // completedがtrueになったことを確認

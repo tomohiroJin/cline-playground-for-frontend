@@ -223,7 +223,7 @@ describe('HomePage', () => {
     fireEvent.click(screen.getByTestId('mock-piece-move'));
 
     // movePieceが呼ばれたことを確認
-    expect(mockUsePuzzle.movePiece).toHaveBeenCalledWith(1, 0, 0);
+    expect(mockUsePuzzle.movePiece).toHaveBeenCalledWith(1);
   });
 
   it('リセットボタンをクリックするとresetPuzzleが呼ばれること', () => {

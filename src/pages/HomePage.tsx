@@ -60,7 +60,7 @@ const HomePage: React.FC = () => {
 
   // ピースが移動されたときの処理
   const handlePieceMove = (pieceId: number, row: number, col: number) => {
-    movePiece(pieceId, row, col);
+    movePiece(pieceId);
   };
 
   // ゲームをリセットする
