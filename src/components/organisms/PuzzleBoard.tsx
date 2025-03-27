@@ -117,7 +117,6 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
             pieceHeight={pieceHeight}
             division={division}
             onClick={handleSlidePiece}
-            boardRef={boardRef}
             completed={completed}
           />
         ))}

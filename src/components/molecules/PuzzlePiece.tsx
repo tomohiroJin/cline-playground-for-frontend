@@ -12,7 +12,6 @@ interface PuzzlePieceProps {
   pieceHeight: number;
   division: number;
   onClick: (pieceId: number, row: number, col: number) => void;
-  boardRef: React.RefObject<HTMLDivElement | null>;
   completed?: boolean; // パズルが完成したかどうか
 }
 
@@ -28,7 +27,6 @@ const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
   pieceHeight,
   division,
   onClick,
-  boardRef,
   completed = false,
 }) => {
   // 状態
@@ -56,13 +54,13 @@ const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
 
   return (
     <PieceContainer
-      $isEmpty={piece.isEmpty && !completed}
+      $isEmpty={piece.isEmpty}
       $isDragging={false}
       $width={pieceWidth}
       $height={pieceHeight}
+      $completed={completed}
       style={{
         transform: `translate(${position.x}px, ${position.y}px)`,
-        backgroundColor: piece.isEmpty && completed ? 'transparent' : undefined,
       }}
       onClick={handleClick}
     >

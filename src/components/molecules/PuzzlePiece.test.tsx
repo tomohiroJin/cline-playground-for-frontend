@@ -23,7 +23,6 @@ describe('パズルピース', () => {
         pieceHeight={50}
         division={2}
         onClick={jest.fn()}
-        boardRef={React.createRef()}
       />
     );
 
@@ -44,7 +43,6 @@ describe('パズルピース', () => {
         pieceHeight={50}
         division={2}
         onClick={onClick}
-        boardRef={React.createRef()}
       />
     );
 
@@ -75,13 +73,12 @@ describe('パズルピース', () => {
       <PuzzlePiece
         {...defaultProps}
         piece={{ ...mockPiece, currentPosition: { row: 0, col: 0 } }}
-        boardRef={React.createRef()}
       />
     );
 
     // piece.currentPosition を更新して再レンダリング
     const updatedPiece = { ...mockPiece, currentPosition: { row: 1, col: 1 } };
-    rerender(<PuzzlePiece {...defaultProps} piece={updatedPiece} boardRef={React.createRef()} />);
+    rerender(<PuzzlePiece {...defaultProps} piece={updatedPiece} />);
 
     // 位置変更後の transform を検証
     const element = container.firstChild as HTMLElement;
@@ -106,9 +103,7 @@ describe('パズルピース', () => {
       isEmpty: true,
     };
 
-    const { container } = render(
-      <PuzzlePiece {...defaultProps} piece={emptyPiece} boardRef={React.createRef()} />
-    );
+    const { container } = render(<PuzzlePiece {...defaultProps} piece={emptyPiece} />);
 
     // PieceImageコンポーネントが存在しないことを確認
     const pieceContainer = container.firstChild as HTMLElement;

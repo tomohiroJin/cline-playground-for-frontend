@@ -5,6 +5,7 @@ export const PieceContainer = styled.div<{
   $isDragging: boolean;
   $width: number;
   $height: number;
+  $completed: boolean;
 }>`
   position: absolute;
   width: ${props => props.$width}px;
@@ -17,7 +18,7 @@ export const PieceContainer = styled.div<{
   user-select: none;
   overflow: hidden;
   touch-action: none; /* タッチデバイスでのスクロールを防止 */
-  background-color: ${props => (props.$isEmpty ? '#f0f0f0' : 'transparent')};
+  background-color: ${props => (!props.$completed && props.$isEmpty ? 'transparent' : 'initial')};
 
   &:hover {
     ${props =>
