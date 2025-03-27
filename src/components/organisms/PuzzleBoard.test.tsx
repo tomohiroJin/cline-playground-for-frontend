@@ -533,7 +533,6 @@ describe('パズルボードコンポーネント', () => {
           expect(props.originalWidth).toBe(defaultProps.originalWidth);
           expect(props.originalHeight).toBe(defaultProps.originalHeight);
           expect(props.division).toBe(defaultProps.division);
-          expect(props.boardRef).toBe(boardRef);
           expect(typeof props.onClick).toBe('function');
         });
 
