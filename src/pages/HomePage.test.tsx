@@ -6,6 +6,20 @@ import * as usePuzzleHook from '../hooks/usePuzzle';
 import * as useHintModeHook from '../hooks/useHintMode';
 
 // モック
+jest.mock('../components/molecules/DefaultImageSelector', () => ({
+  __esModule: true,
+  default: ({ onImageSelect }: { onImageSelect: Function }) => (
+    <div data-testid="default-image-selector">
+      <button
+        onClick={() => onImageSelect('default-image.jpg', 800, 600)}
+        data-testid="mock-default-image-button"
+      >
+        デフォルト画像を選択
+      </button>
+    </div>
+  ),
+}));
+
 jest.mock('../components/molecules/ImageUploader', () => ({
   __esModule: true,
   default: ({ onImageUpload }: { onImageUpload: Function }) => (
@@ -120,11 +134,81 @@ describe('HomePage', () => {
 
     // 設定セクションの要素が表示されていることを確認
     expect(screen.getByTestId('image-uploader')).toBeInTheDocument();
+    expect(screen.queryByTestId('default-image-selector')).not.toBeInTheDocument();
     expect(screen.getByTestId('difficulty-selector')).toBeInTheDocument();
     expect(screen.getByText('パズルを開始')).toBeInTheDocument();
 
     // ゲームセクションが表示されていないことを確認
     expect(screen.queryByTestId('puzzle-board')).not.toBeInTheDocument();
+  });
+
+  describe('画像ソースモードの切り替え', () => {
+    it('初期状態では画像アップロードモードが表示されていること', () => {
+      renderHomePage();
+
+      // 画像アップロードが表示されていることを確認
+      expect(screen.getByTestId('image-uploader')).toBeInTheDocument();
+      expect(screen.queryByTestId('default-image-selector')).not.toBeInTheDocument();
+
+      // 切り替えボタンが表示されていることを確認
+      const uploadButtons = screen.getAllByText('画像をアップロード');
+      expect(uploadButtons.length).toBeGreaterThan(0);
+      expect(screen.getByText('デフォルト画像から選択')).toBeInTheDocument();
+    });
+
+    it('デフォルト画像選択ボタンをクリックするとデフォルト画像選択モードに切り替わること', () => {
+      renderHomePage();
+
+      // デフォルト画像選択ボタンをクリック
+      fireEvent.click(screen.getByText('デフォルト画像から選択'));
+
+      // デフォルト画像選択が表示されていることを確認
+      expect(screen.queryByTestId('image-uploader')).not.toBeInTheDocument();
+      expect(screen.getByTestId('default-image-selector')).toBeInTheDocument();
+    });
+
+    it('画像アップロードボタンをクリックすると画像アップロードモードに切り替わること', () => {
+      renderHomePage();
+
+      // デフォルト画像選択ボタンをクリック
+      fireEvent.click(screen.getByText('デフォルト画像から選択'));
+
+      // 画像アップロードボタンをクリック
+      fireEvent.click(screen.getByText('画像をアップロード'));
+
+      // 画像アップロードが表示されていることを確認
+      expect(screen.getByTestId('image-uploader')).toBeInTheDocument();
+      expect(screen.queryByTestId('default-image-selector')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('ユーザーがデフォルト画像を選択できる', () => {
+    it('デフォルト画像選択モードに切り替えるとデフォルト画像を選択するボタンが表示されている', () => {
+      renderHomePage();
+
+      // デフォルト画像選択モードに切り替え
+      fireEvent.click(screen.getByText('デフォルト画像から選択'));
+
+      // デフォルト画像選択ボタンが表示されていることを確認
+      expect(screen.getByTestId('mock-default-image-button')).toBeInTheDocument();
+    });
+
+    it('ボタンをクリックするとデフォルト画像を選択できる', () => {
+      renderHomePage();
+
+      // デフォルト画像選択モードに切り替え
+      fireEvent.click(screen.getByText('デフォルト画像から選択'));
+
+      // デフォルト画像選択ボタンをクリック
+      fireEvent.click(screen.getByTestId('mock-default-image-button'));
+
+      // setImageUrlとsetOriginalImageSizeが呼ばれたことを確認
+      expect(mockUsePuzzle.setImageUrl).toHaveBeenCalledWith('default-image.jpg');
+      expect(mockUsePuzzle.setOriginalImageSize).toHaveBeenCalledWith({
+        width: 800,
+        height: 600,
+      });
+    });
   });
 
   describe('ユーザーが好きな画像をアップロードできる', () => {
