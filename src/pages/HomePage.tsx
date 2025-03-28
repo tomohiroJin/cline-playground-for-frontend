@@ -9,6 +9,7 @@ import {
   InstructionsList,
 } from './HomePage.styles';
 import ImageUploader from '../components/molecules/ImageUploader';
+import DefaultImageSelector from '../components/molecules/DefaultImageSelector';
 import DifficultySelector from '../components/molecules/DifficultySelector';
 import PuzzleBoard from '../components/organisms/PuzzleBoard';
 import { usePuzzle } from '../hooks/usePuzzle';
@@ -77,6 +78,7 @@ const HomePage: React.FC = () => {
     <HomeContainer>
       {!gameStarted ? (
         <SetupSection>
+          <DefaultImageSelector onImageSelect={handleImageUpload} />
           <ImageUploader onImageUpload={handleImageUpload} maxSizeInMB={10} />
           <DifficultySelector
             value={division}
@@ -117,7 +119,7 @@ const HomePage: React.FC = () => {
       <Instructions>
         <InstructionsTitle>遊び方</InstructionsTitle>
         <InstructionsList>
-          <li>画像をアップロードして、難易度を選択します。</li>
+          <li>デフォルト画像から選択するか、画像をアップロードして、難易度を選択します。</li>
           <li>「パズルを開始」ボタンをクリックすると、パズルが始まります。</li>
           <li>空白の隣にあるピースをクリックすると、そのピースが空白の位置に移動します。</li>
           <li>すべてのピースを正しい位置に戻すと、パズルが完成します。</li>
