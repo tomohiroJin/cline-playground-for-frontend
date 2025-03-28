@@ -32,14 +32,17 @@ describe('DefaultImageSelector', () => {
     // タイトルが表示されていることを確認
     expect(screen.getByText('デフォルト画像から選択')).toBeInTheDocument();
 
-    // 3つの画像が表示されていることを確認
+    // 6つの画像が表示されていることを確認
     const images = screen.getAllByRole('img');
-    expect(images).toHaveLength(3);
+    expect(images).toHaveLength(6);
 
     // 画像のsrc属性を確認
-    expect(images[0]).toHaveAttribute('src', '/images/default/nature1.jpg');
-    expect(images[1]).toHaveAttribute('src', '/images/default/nature2.jpg');
-    expect(images[2]).toHaveAttribute('src', '/images/default/nature3.jpg');
+    expect(images[0]).toHaveAttribute('src', '/images/default/mountain_landscape.jpg');
+    expect(images[1]).toHaveAttribute('src', '/images/default/forest_landscape.jpg');
+    expect(images[2]).toHaveAttribute('src', '/images/default/beach_landscape.jpg');
+    expect(images[3]).toHaveAttribute('src', '/images/default/cat_office.png');
+    expect(images[4]).toHaveAttribute('src', '/images/default/digital_boy.png');
+    expect(images[5]).toHaveAttribute('src', '/images/default/playful_doodle.png');
   });
 
   it('画像をクリックすると選択状態になり、onImageSelectが呼ばれること', async () => {
@@ -51,13 +54,13 @@ describe('DefaultImageSelector', () => {
 
     // getImageSizeが呼ばれたことを確認
     expect(puzzleUtils.getImageSize).toHaveBeenCalledWith(
-      'http://localhost:3000/images/default/nature1.jpg'
+      'http://localhost:3000/images/default/mountain_landscape.jpg'
     );
 
     // onImageSelectが正しいパラメータで呼ばれたことを確認
     await waitFor(() => {
       expect(mockOnImageSelect).toHaveBeenCalledWith(
-        'http://localhost:3000/images/default/nature1.jpg',
+        'http://localhost:3000/images/default/mountain_landscape.jpg',
         mockImageSize.width,
         mockImageSize.height
       );

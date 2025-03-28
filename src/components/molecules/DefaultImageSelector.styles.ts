@@ -19,7 +19,7 @@ export const ImagesGrid = styled.div`
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
   width: 100%;
-  max-width: 500px;
+  max-width: 600px;
 `;
 
 export const ImageItem = styled.div<{ $isSelected: boolean }>`
@@ -38,7 +38,7 @@ export const ImageItem = styled.div<{ $isSelected: boolean }>`
 
 export const DefaultImage = styled.img`
   width: 100%;
-  height: 120px;
+  height: 150px;
   object-fit: cover;
   display: block;
 `;

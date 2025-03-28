@@ -13,18 +13,33 @@ import {
 const DEFAULT_IMAGES = [
   {
     id: 1,
-    src: '/images/default/nature1.jpg',
-    alt: '自然の風景1',
+    src: '/images/default/mountain_landscape.jpg',
+    alt: '山の風景',
   },
   {
     id: 2,
-    src: '/images/default/nature2.jpg',
-    alt: '自然の風景2',
+    src: '/images/default/forest_landscape.jpg',
+    alt: '森の風景',
   },
   {
     id: 3,
-    src: '/images/default/nature3.jpg',
-    alt: '自然の風景3',
+    src: '/images/default/beach_landscape.jpg',
+    alt: '海辺の風景',
+  },
+  {
+    id: 4,
+    src: '/images/default/cat_office.png',
+    alt: '猫のオフィス',
+  },
+  {
+    id: 5,
+    src: '/images/default/digital_boy.png',
+    alt: 'デジタル時代の少年',
+  },
+  {
+    id: 6,
+    src: '/images/default/playful_doodle.png',
+    alt: '遊び心の落書き',
   },
 ];
 
