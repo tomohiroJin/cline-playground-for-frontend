@@ -7,6 +7,8 @@ import {
   Instructions,
   InstructionsTitle,
   InstructionsList,
+  ToggleButtonsContainer,
+  ToggleButton,
 } from './HomePage.styles';
 import ImageUploader from '../components/molecules/ImageUploader';
 import DefaultImageSelector from '../components/molecules/DefaultImageSelector';
@@ -41,6 +43,9 @@ const HomePage: React.FC = () => {
 
   // ゲームが開始されているかどうか
   const [gameStarted, setGameStarted] = useState(false);
+
+  // 画像ソースモード（'upload'または'default'）
+  const [imageSourceMode, setImageSourceMode] = useState<'upload' | 'default'>('upload');
 
   // 画像がアップロードされたときの処理
   const handleImageUpload = (url: string, width: number, height: number) => {
@@ -78,8 +83,27 @@ const HomePage: React.FC = () => {
     <HomeContainer>
       {!gameStarted ? (
         <SetupSection>
-          <DefaultImageSelector onImageSelect={handleImageUpload} />
-          <ImageUploader onImageUpload={handleImageUpload} maxSizeInMB={10} />
+          <ToggleButtonsContainer>
+            <ToggleButton
+              $isActive={imageSourceMode === 'upload'}
+              onClick={() => setImageSourceMode('upload')}
+            >
+              画像をアップロード
+            </ToggleButton>
+            <ToggleButton
+              $isActive={imageSourceMode === 'default'}
+              onClick={() => setImageSourceMode('default')}
+            >
+              デフォルト画像から選択
+            </ToggleButton>
+          </ToggleButtonsContainer>
+
+          {imageSourceMode === 'upload' ? (
+            <ImageUploader onImageUpload={handleImageUpload} maxSizeInMB={10} />
+          ) : (
+            <DefaultImageSelector onImageSelect={handleImageUpload} />
+          )}
+
           <DifficultySelector
             value={division}
             onChange={handleDifficultyChange}
@@ -119,7 +143,7 @@ const HomePage: React.FC = () => {
       <Instructions>
         <InstructionsTitle>遊び方</InstructionsTitle>
         <InstructionsList>
-          <li>デフォルト画像から選択するか、画像をアップロードして、難易度を選択します。</li>
+          <li>画像をアップロードするか、デフォルト画像から選択して、難易度を選択します。</li>
           <li>「パズルを開始」ボタンをクリックすると、パズルが始まります。</li>
           <li>空白の隣にあるピースをクリックすると、そのピースが空白の位置に移動します。</li>
           <li>すべてのピースを正しい位置に戻すと、パズルが完成します。</li>
