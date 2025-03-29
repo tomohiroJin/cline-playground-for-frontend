@@ -11,8 +11,9 @@ export const PieceContainer = styled.div<{
   width: ${props => props.$width}px;
   height: ${props => props.$height}px;
   cursor: ${props => (props.$isEmpty ? 'default' : 'pointer')};
-  border: 2px solid ${props => (props.$isEmpty ? 'transparent' : '#fff')};
-  box-shadow: ${props => (props.$isEmpty ? 'none' : '0 0 5px rgba(0, 0, 0, 0.3)')};
+  border: 2px solid ${props => (props.$isEmpty || props.$completed ? 'transparent' : '#fff')};
+  box-shadow: ${props =>
+    props.$isEmpty || props.$completed ? 'none' : '0 0 5px rgba(0, 0, 0, 0.3)'};
   transition: transform 0.2s, background-color 0.5s;
   z-index: 1;
   user-select: none;
