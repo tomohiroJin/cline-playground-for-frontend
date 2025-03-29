@@ -18,7 +18,7 @@ export const Board = styled.div<{ width: number; height: number }>`
   touch-action: none; /* タッチデバイスでのスクロールを防止 */
 `;
 
-export const BoardGrid = styled.div<{ division: number }>`
+export const BoardGrid = styled.div<{ division: number; $completed?: boolean }>`
   position: absolute;
   top: 0;
   left: 0;
@@ -30,8 +30,8 @@ export const BoardGrid = styled.div<{ division: number }>`
   pointer-events: none;
 `;
 
-export const GridCell = styled.div`
-  border: 1px dashed rgba(0, 0, 0, 0.1);
+export const GridCell = styled.div<{ $completed?: boolean }>`
+  border: ${props => (props.$completed ? 'none' : '1px dashed rgba(0, 0, 0, 0.1)')};
 `;
 
 export const CompletionOverlay = styled.div`

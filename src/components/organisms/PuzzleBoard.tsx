@@ -94,14 +94,14 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
 
   // グリッドセルを生成
   const renderGridCells = Array.from({ length: division * division }, (_, i) => (
-    <GridCell title="ボードセル" key={i} />
+    <GridCell title="ボードセル" key={i} $completed={completed} />
   ));
 
   return (
     <BoardContainer>
       <Board width={boardWidth} height={boardHeight} ref={boardRef}>
         {/* グリッド線 */}
-        <BoardGrid title="ボードグリッド" division={division}>
+        <BoardGrid title="ボードグリッド" division={division} $completed={completed}>
           {renderGridCells}
         </BoardGrid>
 
