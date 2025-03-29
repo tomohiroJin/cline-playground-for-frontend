@@ -22,7 +22,8 @@
         "leizongmin.node-module-intellisense",
         "idered.npm",
         "esbenp.prettier-vscode",
-        "rvest.vs-code-prettier-eslint"
+        "rvest.vs-code-prettier-eslint",
+        "saoudrizwan.claude-dev"
       ],
       "settings": {
         "jestrunner.configPath": "./jest.config.js",
