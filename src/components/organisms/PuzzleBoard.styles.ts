@@ -116,3 +116,35 @@ export const HintImage = styled.div<{ $imageUrl: string }>`
   pointer-events: none;
   z-index: 0;
 `;
+
+export const OverlayToggleButton = styled.button<{ active: string }>`
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(255, 255, 255, 0.7);
+  color: #333;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #ccc;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  z-index: 30;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.9);
+  }
+`;
+
+export const EyeIcon = styled.span`
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+`;

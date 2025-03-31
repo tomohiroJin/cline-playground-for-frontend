@@ -37,8 +37,6 @@ const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
 
   // クリックイベントハンドラ
   const handleClick = () => {
-    if (piece.isEmpty) return;
-
     // 親コンポーネントに通知
     onClick(piece.id, piece.currentPosition.row, piece.currentPosition.col);
   };

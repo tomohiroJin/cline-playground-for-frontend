@@ -30,9 +30,11 @@ const HomePage: React.FC = () => {
     division,
     setDivision,
     pieces,
+    setPieces,
     emptyPosition,
     elapsedTime,
     completed,
+    setCompleted,
     initializePuzzle,
     movePiece,
     resetPuzzle,
@@ -46,6 +48,17 @@ const HomePage: React.FC = () => {
 
   // 画像ソースモード（'upload'または'default'）
   const [imageSourceMode, setImageSourceMode] = useState<'upload' | 'default'>('upload');
+
+  // イースターエッグ: 空白パネルのクリック回数
+  const [emptyPanelClicks, setEmptyPanelClicks] = useState(0);
+
+  // 空白パネルがクリックされたときの処理
+  const handleEmptyPanelClick = () => {
+    // 完成していない場合のみカウント
+    if (!completed) {
+      setEmptyPanelClicks(prev => prev + 1);
+    }
+  };
 
   // 画像がアップロードされたときの処理
   const handleImageUpload = (url: string, width: number, height: number) => {
@@ -130,11 +143,33 @@ const HomePage: React.FC = () => {
                 onPieceMove={handlePieceMove}
                 onReset={handleResetGame}
                 onToggleHint={toggleHintMode}
+                onEmptyPanelClick={handleEmptyPanelClick}
               />
               {completed ? (
                 <div>パズルが完成しました！</div>
               ) : (
-                <StartButton onClick={handleEndGame}>ゲームを終了して設定に戻る</StartButton>
+                <>
+                  <StartButton onClick={handleEndGame}>ゲームを終了して設定に戻る</StartButton>
+                  {/* イースターエッグ：空白パネルを10回クリックすると表示されるテスト用ボタン */}
+                  {emptyPanelClicks >= 10 && (
+                    <StartButton
+                      onClick={() => {
+                        // パズルを強制的に完成状態にする
+                        const correctPieces = pieces.map(piece => ({
+                          ...piece,
+                          currentPosition: { ...piece.correctPosition },
+                        }));
+                        setPieces(correctPieces);
+                        setCompleted(true);
+                        // クリック回数をリセット
+                        setEmptyPanelClicks(0);
+                      }}
+                      style={{ marginTop: '10px', backgroundColor: '#ff9800' }}
+                    >
+                      テスト：パズルを完成させる
+                    </StartButton>
+                  )}
+                </>
               )}
             </>
           )}
