@@ -127,29 +127,19 @@ export const getAdjacentPositions = (
   col: number,
   division: number
 ): { row: number; col: number }[] => {
-  const positions: { row: number; col: number }[] = [];
+  const directions = [
+    { rowOffset: -1, colOffset: 0 }, // 上
+    { rowOffset: 1, colOffset: 0 }, // 下
+    { rowOffset: 0, colOffset: -1 }, // 左
+    { rowOffset: 0, colOffset: 1 }, // 右
+  ];
 
-  // 上
-  if (row > 0) {
-    positions.push({ row: row - 1, col });
-  }
-
-  // 下
-  if (row < division - 1) {
-    positions.push({ row: row + 1, col });
-  }
-
-  // 左
-  if (col > 0) {
-    positions.push({ row, col: col - 1 });
-  }
-
-  // 右
-  if (col < division - 1) {
-    positions.push({ row, col: col + 1 });
-  }
-
-  return positions;
+  return directions
+    .map(({ rowOffset, colOffset }) => ({
+      row: row + rowOffset,
+      col: col + colOffset,
+    }))
+    .filter(({ row, col }) => row >= 0 && row < division && col >= 0 && col < division);
 };
 
 /**

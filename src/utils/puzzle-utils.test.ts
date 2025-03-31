@@ -308,4 +308,61 @@ describe('puzzle-utils', () => {
       expect(checkImageFileSize(file, 10)).toBe(false);
     });
   });
+
+  describe('getAdjacentPositions', () => {
+    it('指定された位置の隣接位置を正しく取得できること（中央の場合）', () => {
+      const row = 1;
+      const col = 1;
+      const division = 3;
+
+      const result = puzzleUtils.getAdjacentPositions(row, col, division);
+
+      expect(result).toEqual([
+        { row: 0, col: 1 }, // 上
+        { row: 2, col: 1 }, // 下
+        { row: 1, col: 0 }, // 左
+        { row: 1, col: 2 }, // 右
+      ]);
+    });
+
+    it('指定された位置の隣接位置を正しく取得できること（左上の場合）', () => {
+      const row = 0;
+      const col = 0;
+      const division = 3;
+
+      const result = puzzleUtils.getAdjacentPositions(row, col, division);
+
+      expect(result).toEqual([
+        { row: 1, col: 0 }, // 下
+        { row: 0, col: 1 }, // 右
+      ]);
+    });
+
+    it('指定された位置の隣接位置を正しく取得できること（右下の場合）', () => {
+      const row = 2;
+      const col = 2;
+      const division = 3;
+
+      const result = puzzleUtils.getAdjacentPositions(row, col, division);
+
+      expect(result).toEqual([
+        { row: 1, col: 2 }, // 上
+        { row: 2, col: 1 }, // 左
+      ]);
+    });
+
+    it('指定された位置の隣接位置を正しく取得できること（境界線上の場合）', () => {
+      const row = 0;
+      const col = 1;
+      const division = 3;
+
+      const result = puzzleUtils.getAdjacentPositions(row, col, division);
+
+      expect(result).toEqual([
+        { row: 1, col: 1 }, // 下
+        { row: 0, col: 0 }, // 左
+        { row: 0, col: 2 }, // 右
+      ]);
+    });
+  });
 });
