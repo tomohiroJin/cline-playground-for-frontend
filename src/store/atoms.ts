@@ -37,3 +37,6 @@ export const puzzleCompletedAtom = atom<boolean>(false);
 
 // ヒントモードが有効かどうか
 export const hintModeEnabledAtom = atom<boolean>(false);
+
+// 完成オーバーレイの表示状態
+export const completionOverlayVisibleAtom = atom<boolean>(true);

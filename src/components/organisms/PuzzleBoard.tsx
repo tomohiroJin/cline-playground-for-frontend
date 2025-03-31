@@ -12,10 +12,13 @@ import {
   ElapsedTime,
   HintToggleButton,
   HintImage,
+  OverlayToggleButton,
+  EyeIcon,
 } from './PuzzleBoard.styles';
 import { PuzzlePiece as PuzzlePieceType } from '../../store/atoms';
 import PuzzlePiece from '../molecules/PuzzlePiece';
 import { formatElapsedTime } from '../../utils/puzzle-utils';
+import { useCompletionOverlay } from '../../hooks/useCompletionOverlay';
 
 // プロパティの型定義
 export interface PuzzleBoardProps {
@@ -31,6 +34,7 @@ export interface PuzzleBoardProps {
   onPieceMove: (pieceId: number, row: number, col: number) => void;
   onReset: () => void;
   onToggleHint: () => void;
+  onEmptyPanelClick?: () => void; // 空白パネルがクリックされたときのコールバック
 }
 
 /**
@@ -49,7 +53,11 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   onPieceMove,
   onReset,
   onToggleHint,
+  onEmptyPanelClick,
 }) => {
+  // 完成オーバーレイの表示/非表示を管理
+  const { overlayVisible, toggleOverlay } = useCompletionOverlay();
+
   // ボードのサイズを計算
   const maxBoardWidth = 600;
   const aspectRatio = originalHeight / originalWidth;
@@ -65,7 +73,7 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   const boardRef = useRef<HTMLDivElement>(null);
 
   // ピースをスライドさせる
-  const handleSlidePiece = (pieceId: number, row: number, col: number) => {
+  const handleSlidePiece = (pieceId: number) => {
     // 完成済みの場合は何もしない
     if (completed) return;
 
@@ -73,8 +81,17 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
     if (!emptyPosition) return;
 
     const piece = pieces.find(p => p.id === pieceId);
-    // 対象のピースが存在しない、または空の場合は処理終了
-    if (!piece || piece.isEmpty) return;
+    // 対象のピースが存在しない場合は処理終了
+    if (!piece) return;
+
+    // 空白ピースがクリックされた場合
+    if (piece.isEmpty) {
+      // 空白パネルクリックのコールバックがあれば呼び出す
+      if (onEmptyPanelClick) {
+        onEmptyPanelClick();
+      }
+      return;
+    }
 
     // ピースの現在位置
     const currentRow = piece.currentPosition.row;
@@ -122,12 +139,23 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
         ))}
 
         {/* 完成時のオーバーレイ */}
-        {completed && (
+        {completed && overlayVisible && (
           <CompletionOverlay>
             <CompletionMessage>パズル完成！</CompletionMessage>
             <CompletionTime>所要時間: {formatElapsedTime(elapsedTime)}</CompletionTime>
             <RestartButton onClick={onReset}>もう一度挑戦</RestartButton>
           </CompletionOverlay>
+        )}
+
+        {/* 完成時のオーバーレイ表示/非表示切り替えボタン */}
+        {completed && (
+          <OverlayToggleButton
+            active={overlayVisible ? 'true' : 'false'}
+            onClick={toggleOverlay}
+            title={overlayVisible ? 'オーバーレイを非表示' : 'オーバーレイを表示'}
+          >
+            <EyeIcon>{overlayVisible ? '👁️' : '👁️‍🗨️'}</EyeIcon>
+          </OverlayToggleButton>
         )}
 
         {/* ヒントモード（背景に元の画像を薄く表示） */}

@@ -3,6 +3,12 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import PuzzleBoard, { PuzzleBoardProps } from './PuzzleBoard';
 import { PuzzlePiece as PuzzlePieceType } from '../../store/atoms';
+import { useCompletionOverlay } from '../../hooks/useCompletionOverlay';
+
+// useCompletionOverlayフックをモック化
+jest.mock('../../hooks/useCompletionOverlay', () => ({
+  useCompletionOverlay: jest.fn(),
+}));
 
 // PuzzlePieceコンポーネントをモック化
 jest.mock('../molecules/PuzzlePiece', () => {
@@ -92,9 +98,21 @@ describe('パズルボードコンポーネント', () => {
     return pieces;
   };
 
+  // モックトグル関数
+  const mockToggleOverlay = jest.fn();
+
   beforeEach(() => {
     // テスト前にモックをリセット
     (PuzzlePiece as jest.Mock).mockClear();
+    mockToggleOverlay.mockClear();
+
+    // useCompletionOverlayフックのモックを設定
+    (useCompletionOverlay as jest.Mock).mockReturnValue({
+      overlayVisible: true,
+      toggleOverlay: mockToggleOverlay,
+      showOverlay: jest.fn(),
+      hideOverlay: jest.fn(),
+    });
   });
 
   describe('パズルを表示するボード', () => {
@@ -596,11 +614,63 @@ describe('パズルボードコンポーネント', () => {
     expect(screen.getByText(/経過時間:/)).toBeInTheDocument();
   });
 
-  it('完成の場合オーバーレイが表示される', () => {
-    render(<PuzzleBoard {...defaultProps} completed={true} elapsedTime={60} />);
+  describe('完成オーバーレイ', () => {
+    it('完成の場合かつoverlayVisibleがtrueの場合、オーバーレイが表示される', () => {
+      // overlayVisibleをtrueに設定
+      (useCompletionOverlay as jest.Mock).mockReturnValue({
+        overlayVisible: true,
+        toggleOverlay: mockToggleOverlay,
+        showOverlay: jest.fn(),
+        hideOverlay: jest.fn(),
+      });
 
-    expect(screen.getByText('パズル完成！')).toBeInTheDocument();
-    expect(screen.getByText(/所要時間:/)).toBeInTheDocument();
-    expect(screen.getByText('もう一度挑戦')).toBeInTheDocument();
+      render(<PuzzleBoard {...defaultProps} completed={true} elapsedTime={60} />);
+
+      expect(screen.getByText('パズル完成！')).toBeInTheDocument();
+      expect(screen.getByText(/所要時間:/)).toBeInTheDocument();
+      expect(screen.getByText('もう一度挑戦')).toBeInTheDocument();
+    });
+
+    it('完成の場合でもoverlayVisibleがfalseの場合、オーバーレイは表示されない', () => {
+      // overlayVisibleをfalseに設定
+      (useCompletionOverlay as jest.Mock).mockReturnValue({
+        overlayVisible: false,
+        toggleOverlay: mockToggleOverlay,
+        showOverlay: jest.fn(),
+        hideOverlay: jest.fn(),
+      });
+
+      render(<PuzzleBoard {...defaultProps} completed={true} elapsedTime={60} />);
+
+      expect(screen.queryByText('パズル完成！')).toBeNull();
+      expect(screen.queryByText(/所要時間:/)).toBeNull();
+      expect(screen.queryByText('もう一度挑戦')).toBeNull();
+    });
+
+    it('完成時にオーバーレイトグルボタンが表示される', () => {
+      render(<PuzzleBoard {...defaultProps} completed={true} />);
+
+      // タイトル属性でボタンを検索
+      const toggleButton = screen.getByTitle(/オーバーレイを/);
+      expect(toggleButton).toBeInTheDocument();
+    });
+
+    it('オーバーレイトグルボタンをクリックするとtoggleOverlayが呼び出される', () => {
+      render(<PuzzleBoard {...defaultProps} completed={true} />);
+
+      // タイトル属性でボタンを検索
+      const toggleButton = screen.getByTitle(/オーバーレイを/);
+      fireEvent.click(toggleButton);
+
+      expect(mockToggleOverlay).toHaveBeenCalled();
+    });
+
+    it('未完成の場合はオーバーレイトグルボタンは表示されない', () => {
+      render(<PuzzleBoard {...defaultProps} completed={false} />);
+
+      // タイトル属性でボタンを検索
+      const toggleButton = screen.queryByTitle(/オーバーレイを/);
+      expect(toggleButton).toBeNull();
+    });
   });
 });
