@@ -1,7 +1,34 @@
 import { PuzzlePiece } from '../store/atoms';
 
+type Position = { row: number; col: number };
+
+/**
+ * 空白ピースの位置を更新する
+ *
+ * @param pieces パズルのピース配列
+ * @param newEmptyPosition 新しい空白ピースの位置
+ * @returns 更新されたピース配列
+ */
+const updateEmptyPiecePosition = (
+  pieces: PuzzlePiece[],
+  newEmptyPosition: Position
+): PuzzlePiece[] => {
+  const updatedPieces = [...pieces];
+  const emptyPieceIndex = updatedPieces.findIndex(p => p.isEmpty);
+
+  if (emptyPieceIndex !== -1) {
+    updatedPieces[emptyPieceIndex] = {
+      ...updatedPieces[emptyPieceIndex],
+      currentPosition: { ...newEmptyPosition },
+    };
+  }
+
+  return updatedPieces;
+};
+
 /**
  * 画像をロードしてサイズを取得する
+ *
  * @param url 画像のURL
  * @returns 画像のサイズ（幅と高さ）を含むPromise
  */
@@ -20,12 +47,17 @@ export const getImageSize = (url: string): Promise<{ width: number; height: numb
 
 /**
  * パズルのピースを生成する（スライドパズル方式）
+ *
  * @param division 分割数（例：4なら4x4=16ピース）
  * @returns パズルのピース配列と空白ピースの位置
  */
 export const generatePuzzlePieces = (
   division: number
-): { pieces: PuzzlePiece[]; emptyPosition: { row: number; col: number } } => {
+): { pieces: PuzzlePiece[]; emptyPosition: Position } => {
+  if (division <= 0) {
+    throw new Error('division must be greater than 0');
+  }
+
   const pieces: PuzzlePiece[] = [];
 
   // 右下を空白にする
@@ -56,6 +88,7 @@ export const generatePuzzlePieces = (
 
 /**
  * パズルのピースをシャッフルする（スライドパズル方式）
+ *
  * @param pieces パズルのピース配列
  * @param emptyPosition 空白ピースの位置
  * @param division 分割数
@@ -64,48 +97,48 @@ export const generatePuzzlePieces = (
  */
 export const shufflePuzzlePieces = (
   pieces: PuzzlePiece[],
-  emptyPosition: { row: number; col: number },
+  emptyPosition: Position,
   division: number,
   moves: number = 100
-): { pieces: PuzzlePiece[]; emptyPosition: { row: number; col: number } } => {
-  // ピースの配列をコピー
-  const shuffledPieces = [...pieces];
+): { pieces: PuzzlePiece[]; emptyPosition: Position } => {
+  if (division <= 0) {
+    throw new Error('division must be greater than 0');
+  }
+  if (pieces.length === 0) {
+    throw new Error('pieces array must not be empty');
+  }
+
+  let shuffledPieces = [...pieces];
   let currentEmptyPos = { ...emptyPosition };
 
-  // 指定された回数だけランダムに移動
   for (let i = 0; i < moves; i++) {
-    // 空白の隣接ピースを取得
     const adjacentPositions = getAdjacentPositions(
       currentEmptyPos.row,
       currentEmptyPos.col,
       division
     );
 
-    // ランダムに1つ選択
-    const randomIndex = Math.floor(Math.random() * adjacentPositions.length);
-    const selectedPos = adjacentPositions[randomIndex];
-
-    // 選択されたピースと空白を交換
-    const selectedPieceIndex = shuffledPieces.findIndex(
-      p => p.currentPosition.row === selectedPos.row && p.currentPosition.col === selectedPos.col
+    // ピースのインデックスをキャッシュ
+    const pieceIndexMap = new Map(
+      shuffledPieces.map((piece, index) => [
+        `${piece.currentPosition.row},${piece.currentPosition.col}`,
+        index,
+      ])
     );
 
-    if (selectedPieceIndex !== -1) {
-      // 選択されたピースを空白の位置に移動
-      shuffledPieces[selectedPieceIndex].currentPosition = {
-        ...currentEmptyPos,
-      };
+    let moved = false;
+    while (!moved) {
+      const randomIndex = Math.floor(Math.random() * adjacentPositions.length);
+      const selectedPos = adjacentPositions[randomIndex];
 
-      // 空白ピースを見つけて位置を更新
-      const emptyPieceIndex = shuffledPieces.findIndex(p => p.isEmpty);
-      if (emptyPieceIndex !== -1) {
-        shuffledPieces[emptyPieceIndex].currentPosition = {
-          ...selectedPos,
-        };
+      const selectedPieceIndex = pieceIndexMap.get(`${selectedPos.row},${selectedPos.col}`);
+
+      if (selectedPieceIndex !== undefined) {
+        shuffledPieces[selectedPieceIndex].currentPosition = { ...currentEmptyPos };
+        shuffledPieces = updateEmptyPiecePosition(shuffledPieces, selectedPos);
+        currentEmptyPos = { ...selectedPos };
+        moved = true; // 移動が発生した場合にループを終了
       }
-
-      // 空白の位置を更新
-      currentEmptyPos = { ...selectedPos };
     }
   }
 
@@ -117,25 +150,22 @@ export const shufflePuzzlePieces = (
 
 /**
  * 指定された位置の隣接位置を取得する
+ *
  * @param row 行
  * @param col 列
  * @param division 分割数
  * @returns 隣接位置の配列
  */
-export const getAdjacentPositions = (
-  row: number,
-  col: number,
-  division: number
-): { row: number; col: number }[] => {
-  const directions = [
-    { rowOffset: -1, colOffset: 0 }, // 上
-    { rowOffset: 1, colOffset: 0 }, // 下
-    { rowOffset: 0, colOffset: -1 }, // 左
-    { rowOffset: 0, colOffset: 1 }, // 右
+export const getAdjacentPositions = (row: number, col: number, division: number): Position[] => {
+  const directions: Position[] = [
+    { row: -1, col: 0 }, // 上
+    { row: 1, col: 0 }, // 下
+    { row: 0, col: -1 }, // 左
+    { row: 0, col: 1 }, // 右
   ];
 
   return directions
-    .map(({ rowOffset, colOffset }) => ({
+    .map(({ row: rowOffset, col: colOffset }) => ({
       row: row + rowOffset,
       col: col + colOffset,
     }))
@@ -144,6 +174,7 @@ export const getAdjacentPositions = (
 
 /**
  * パズルが完成したかどうかをチェックする
+ *
  * @param pieces パズルのピース配列
  * @returns 完成していればtrue、そうでなければfalse
  */
@@ -159,6 +190,7 @@ export const isPuzzleCompleted = (pieces: PuzzlePiece[]): boolean => {
 
 /**
  * 経過時間をフォーマットする（mm:ss形式）
+ *
  * @param seconds 経過秒数
  * @returns フォーマットされた時間文字列
  */
@@ -166,19 +198,17 @@ export const formatElapsedTime = (seconds: number): string => {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
 
-  const formattedMinutes = String(minutes).padStart(2, '0');
-  const formattedSeconds = String(remainingSeconds).padStart(2, '0');
-
-  return `${formattedMinutes}:${formattedSeconds}`;
+  return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
 };
 
 /**
- * 画像ファイルのサイズをチェックする
- * @param file 画像ファイル
+ * ファイルのサイズをチェックする
+ *
+ * @param file ファイル
  * @param maxSizeInMB 最大サイズ（MB）
  * @returns サイズが制限内ならtrue、そうでなければfalse
  */
-export const checkImageFileSize = (file: File, maxSizeInMB: number): boolean => {
+export const checkFileSize = (file: File, maxSizeInMB: number): boolean => {
   const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
   return file.size <= maxSizeInBytes;
 };

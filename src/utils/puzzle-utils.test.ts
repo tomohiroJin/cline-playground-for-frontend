@@ -7,7 +7,7 @@ const {
   shufflePuzzlePieces,
   isPuzzleCompleted,
   formatElapsedTime,
-  checkImageFileSize,
+  checkFileSize: checkImageFileSize,
 } = puzzleUtils;
 
 // モックの作成
@@ -100,28 +100,30 @@ describe('puzzle-utils', () => {
   });
 
   describe('shufflePuzzlePieces', () => {
+    const createTestPieces = (): PuzzlePiece[] => [
+      {
+        id: 0,
+        correctPosition: { row: 0, col: 0 },
+        currentPosition: { row: 0, col: 0 },
+        isEmpty: false,
+      },
+      {
+        id: 1,
+        correctPosition: { row: 0, col: 1 },
+        currentPosition: { row: 0, col: 1 },
+        isEmpty: false,
+      },
+      {
+        id: 2,
+        correctPosition: { row: 0, col: 2 },
+        currentPosition: { row: 0, col: 2 },
+        isEmpty: true,
+      },
+    ];
+
     it('パズルピースの位置をシャッフルすること', () => {
       // テスト用のピースを作成
-      const pieces: PuzzlePiece[] = [
-        {
-          id: 0,
-          correctPosition: { row: 0, col: 0 },
-          currentPosition: { row: 0, col: 0 },
-          isEmpty: false,
-        },
-        {
-          id: 1,
-          correctPosition: { row: 0, col: 1 },
-          currentPosition: { row: 0, col: 1 },
-          isEmpty: false,
-        },
-        {
-          id: 2,
-          correctPosition: { row: 0, col: 2 },
-          currentPosition: { row: 0, col: 2 },
-          isEmpty: true,
-        },
-      ];
+      const pieces = createTestPieces();
 
       const emptyPosition = { row: 0, col: 2 };
       const division = 3;
@@ -136,26 +138,7 @@ describe('puzzle-utils', () => {
 
     it('シャッフル時に空白ピースの位置情報が正しく更新されること', () => {
       // テスト用のピースを作成
-      const pieces: PuzzlePiece[] = [
-        {
-          id: 0,
-          correctPosition: { row: 0, col: 0 },
-          currentPosition: { row: 0, col: 0 },
-          isEmpty: false,
-        },
-        {
-          id: 1,
-          correctPosition: { row: 0, col: 1 },
-          currentPosition: { row: 0, col: 1 },
-          isEmpty: false,
-        },
-        {
-          id: 2,
-          correctPosition: { row: 0, col: 2 },
-          currentPosition: { row: 0, col: 2 },
-          isEmpty: true, // 空白ピース
-        },
-      ];
+      const pieces = createTestPieces();
 
       const emptyPosition = { row: 0, col: 2 };
       const division = 3;
@@ -183,6 +166,41 @@ describe('puzzle-utils', () => {
       const movedPiece = result.pieces.find(p => p.id === 1);
       expect(movedPiece).toBeDefined();
       expect(movedPiece?.currentPosition).toEqual({ row: 0, col: 2 });
+    });
+
+    it('シャッフル回数が0の場合、ピースの位置が変更されないこと', () => {
+      const pieces = createTestPieces();
+      const emptyPosition = { row: 0, col: 2 };
+      const division = 3;
+
+      const result = shufflePuzzlePieces(pieces, emptyPosition, division, 0);
+
+      expect(result.pieces).toEqual(pieces);
+      expect(result.emptyPosition).toEqual(emptyPosition);
+    });
+
+    it('隣接位置が1つしかない場合でも正しく動作すること', () => {
+      const pieces = [
+        {
+          id: 0,
+          correctPosition: { row: 0, col: 0 },
+          currentPosition: { row: 0, col: 0 },
+          isEmpty: true,
+        },
+        {
+          id: 1,
+          correctPosition: { row: 0, col: 1 },
+          currentPosition: { row: 0, col: 1 },
+          isEmpty: false,
+        },
+      ];
+
+      const emptyPosition = { row: 0, col: 0 }; // 左上隅
+      const division = 2;
+
+      const result = shufflePuzzlePieces(pieces, emptyPosition, division, 1);
+
+      expect(result.emptyPosition).not.toEqual(emptyPosition);
     });
   });
 

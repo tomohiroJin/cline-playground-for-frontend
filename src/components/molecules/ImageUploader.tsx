@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { checkImageFileSize, getImageSize } from '../../utils/puzzle-utils';
+import { checkFileSize, getImageSize } from '../../utils/puzzle-utils';
 import {
   UploaderContainer,
   UploadButton,
@@ -44,7 +44,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     const file = files[0];
 
     // ファイルサイズをチェック
-    if (!checkImageFileSize(file, maxSizeInMB)) {
+    if (!checkFileSize(file, maxSizeInMB)) {
       setError(`画像サイズが大きすぎます。${maxSizeInMB}MB以下の画像を選択してください。`);
       return;
     }

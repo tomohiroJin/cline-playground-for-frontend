@@ -1,11 +1,11 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ImageUploader from './ImageUploader';
-import { checkImageFileSize, getImageSize } from '../../utils/puzzle-utils';
+import { checkFileSize, getImageSize } from '../../utils/puzzle-utils';
 
 jest.mock('../../utils/puzzle-utils');
 
-const mockedCheckImageFileSize = checkImageFileSize as jest.Mock;
+const mockedCheckImageFileSize = checkFileSize as jest.Mock;
 const mockedGetImageSize = getImageSize as jest.Mock;
 
 describe('ImageUploader', () => {
