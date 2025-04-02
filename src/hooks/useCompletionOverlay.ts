@@ -9,17 +9,23 @@ export const useCompletionOverlay = () => {
   // 状態
   const [overlayVisible, setOverlayVisible] = useAtom(completionOverlayVisibleAtom);
 
-  // オーバーレイの表示/非表示を切り替える
+  /**
+   * オーバーレイの表示状態を切り替える
+   */
   const toggleOverlay = useCallback(() => {
     setOverlayVisible(prev => !prev);
   }, [setOverlayVisible]);
 
-  // オーバーレイを表示する
+  /**
+   * オーバーレイを表示する
+   */
   const showOverlay = useCallback(() => {
     setOverlayVisible(true);
   }, [setOverlayVisible]);
 
-  // オーバーレイを非表示にする
+  /**
+   * オーバーレイを非表示にする
+   */
   const hideOverlay = useCallback(() => {
     setOverlayVisible(false);
   }, [setOverlayVisible]);
