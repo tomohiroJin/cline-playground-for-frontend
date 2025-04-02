@@ -120,6 +120,14 @@ const renderHomePage = () =>
     </Provider>
   );
 
+// 共通ヘルパー関数
+const setupGameStartedState = () => {
+  mockUsePuzzle.imageUrl = 'test-image.jpg';
+  mockUsePuzzle.originalImageSize = { width: 800, height: 600 };
+  renderHomePage();
+  fireEvent.click(screen.getByText('パズルを開始'));
+};
+
 describe('HomePage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -296,67 +304,29 @@ describe('HomePage', () => {
   });
 
   it('ピース移動ボタンをクリックするとmovePieceが呼ばれること', () => {
-    // imageUrlとoriginalImageSizeを設定
-    mockUsePuzzle.imageUrl = 'test-image.jpg';
-    mockUsePuzzle.originalImageSize = { width: 800, height: 600 };
+    setupGameStartedState(); // 共通ロジックを利用
 
-    renderHomePage();
-
-    // パズル開始ボタンをクリック
-    fireEvent.click(screen.getByText('パズルを開始'));
-
-    // ピース移動ボタンをクリック
     fireEvent.click(screen.getByTestId('mock-piece-move'));
-
-    // movePieceが呼ばれたことを確認
     expect(mockUsePuzzle.movePiece).toHaveBeenCalledWith(1);
   });
 
   it('リセットボタンをクリックするとresetPuzzleが呼ばれること', () => {
-    // imageUrlとoriginalImageSizeを設定
-    mockUsePuzzle.imageUrl = 'test-image.jpg';
-    mockUsePuzzle.originalImageSize = { width: 800, height: 600 };
+    setupGameStartedState();
 
-    renderHomePage();
-
-    // パズル開始ボタンをクリック
-    fireEvent.click(screen.getByText('パズルを開始'));
-
-    // リセットボタンをクリック
     fireEvent.click(screen.getByTestId('mock-reset'));
-
-    // resetPuzzleが呼ばれたことを確認
     expect(mockUsePuzzle.resetPuzzle).toHaveBeenCalled();
   });
 
   it('ヒント切替ボタンをクリックするとtoggleHintModeが呼ばれること', () => {
-    // imageUrlとoriginalImageSizeを設定
-    mockUsePuzzle.imageUrl = 'test-image.jpg';
-    mockUsePuzzle.originalImageSize = { width: 800, height: 600 };
+    setupGameStartedState();
 
-    renderHomePage();
-
-    // パズル開始ボタンをクリック
-    fireEvent.click(screen.getByText('パズルを開始'));
-
-    // ヒント切替ボタンをクリック
     fireEvent.click(screen.getByTestId('mock-toggle-hint'));
-
-    // toggleHintModeが呼ばれたことを確認
     expect(mockUseHintMode.toggleHintMode).toHaveBeenCalled();
   });
 
   it('ゲーム終了ボタンをクリックするとゲームが終了すること', () => {
-    // imageUrlとoriginalImageSizeを設定
-    mockUsePuzzle.imageUrl = 'test-image.jpg';
-    mockUsePuzzle.originalImageSize = { width: 800, height: 600 };
+    setupGameStartedState();
 
-    renderHomePage();
-
-    // パズル開始ボタンをクリック
-    fireEvent.click(screen.getByText('パズルを開始'));
-
-    // ゲーム終了ボタンをクリック
     fireEvent.click(screen.getByText('ゲームを終了して設定に戻る'));
 
     // 設定セクションが表示されていることを確認
@@ -367,16 +337,10 @@ describe('HomePage', () => {
   });
 
   it("パズルが完成すると'パズルが完成しました！'と表示されること", async () => {
-    // imageUrlとoriginalImageSizeを設定
-    mockUsePuzzle.imageUrl = 'test-image.jpg';
-    mockUsePuzzle.originalImageSize = { width: 800, height: 600 };
     // パズルが完成した状態にする
     mockUsePuzzle.completed = true;
 
-    renderHomePage();
-
-    // パズル開始ボタンをクリック
-    fireEvent.click(screen.getByText('パズルを開始'));
+    setupGameStartedState();
 
     // パズルボードが表示されていることを確認
     expect(screen.getByTestId('puzzle-board')).toBeInTheDocument();
