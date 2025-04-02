@@ -10,6 +10,14 @@ const {
   checkFileSize: checkImageFileSize,
 } = puzzleUtils;
 
+// ヘルパー関数を追加
+const createPuzzlePiece = (id: number, row: number, col: number, isEmpty: boolean) => ({
+  id,
+  correctPosition: { row, col },
+  currentPosition: { row, col },
+  isEmpty,
+});
+
 // モックの作成
 class MockImage {
   onload: () => void = () => {};
@@ -19,11 +27,11 @@ class MockImage {
   height: number = 0;
 
   constructor() {
-    setTimeout(() => {
+    Promise.resolve().then(() => {
       this.width = 100;
       this.height = 200;
       this.onload();
-    }, 0);
+    });
   }
 }
 
@@ -47,9 +55,9 @@ describe('puzzle-utils', () => {
         src: string = '';
 
         constructor() {
-          setTimeout(() => {
+          Promise.resolve().then(() => {
             this.onerror();
-          }, 0);
+          });
         }
       }
 
@@ -100,33 +108,20 @@ describe('puzzle-utils', () => {
   });
 
   describe('shufflePuzzlePieces', () => {
+    // 共通変数の定義
+    const division = 3;
+    const emptyPosition = { row: 0, col: 2 };
+
     const createTestPieces = (): PuzzlePiece[] => [
-      {
-        id: 0,
-        correctPosition: { row: 0, col: 0 },
-        currentPosition: { row: 0, col: 0 },
-        isEmpty: false,
-      },
-      {
-        id: 1,
-        correctPosition: { row: 0, col: 1 },
-        currentPosition: { row: 0, col: 1 },
-        isEmpty: false,
-      },
-      {
-        id: 2,
-        correctPosition: { row: 0, col: 2 },
-        currentPosition: { row: 0, col: 2 },
-        isEmpty: true,
-      },
+      createPuzzlePiece(0, 0, 0, false),
+      createPuzzlePiece(1, 0, 1, false),
+      createPuzzlePiece(2, 0, 2, true),
     ];
 
     it('パズルピースの位置をシャッフルすること', () => {
       // テスト用のピースを作成
       const pieces = createTestPieces();
 
-      const emptyPosition = { row: 0, col: 2 };
-      const division = 3;
       const result = shufflePuzzlePieces(pieces, emptyPosition, division, 1);
 
       // 元の配列が変更されていないこと
@@ -137,21 +132,15 @@ describe('puzzle-utils', () => {
     });
 
     it('シャッフル時に空白ピースの位置情報が正しく更新されること', () => {
-      // テスト用のピースを作成
       const pieces = createTestPieces();
 
-      const emptyPosition = { row: 0, col: 2 };
-      const division = 3;
-
-      // シャッフルの回数を1回に制限し、動作を予測可能にする
-      // getAdjacentPositionsのモックを作成して、隣接位置を固定
+      // getAdjacentPositionsのモック作成（隣接位置を固定）
       const getAdjacentPositionsSpy = jest
         .spyOn(puzzleUtils, 'getAdjacentPositions')
         .mockReturnValue([{ row: 0, col: 1 }]);
 
       const result = shufflePuzzlePieces(pieces, emptyPosition, division, 1);
 
-      // モックをリストア
       getAdjacentPositionsSpy.mockRestore();
 
       // 空白ピースの位置情報が更新されていること
@@ -170,8 +159,6 @@ describe('puzzle-utils', () => {
 
     it('シャッフル回数が0の場合、ピースの位置が変更されないこと', () => {
       const pieces = createTestPieces();
-      const emptyPosition = { row: 0, col: 2 };
-      const division = 3;
 
       const result = shufflePuzzlePieces(pieces, emptyPosition, division, 0);
 
@@ -180,45 +167,22 @@ describe('puzzle-utils', () => {
     });
 
     it('隣接位置が1つしかない場合でも正しく動作すること', () => {
-      const pieces = [
-        {
-          id: 0,
-          correctPosition: { row: 0, col: 0 },
-          currentPosition: { row: 0, col: 0 },
-          isEmpty: true,
-        },
-        {
-          id: 1,
-          correctPosition: { row: 0, col: 1 },
-          currentPosition: { row: 0, col: 1 },
-          isEmpty: false,
-        },
-      ];
+      const pieces = [createPuzzlePiece(0, 0, 0, true), createPuzzlePiece(1, 0, 1, false)];
 
-      const emptyPosition = { row: 0, col: 0 }; // 左上隅
-      const division = 2;
+      const customEmptyPosition = { row: 0, col: 0 }; // 左上隅
+      const customDivision = 2;
 
-      const result = shufflePuzzlePieces(pieces, emptyPosition, division, 1);
+      const result = shufflePuzzlePieces(pieces, customEmptyPosition, customDivision, 1);
 
-      expect(result.emptyPosition).not.toEqual(emptyPosition);
+      expect(result.emptyPosition).not.toEqual(customEmptyPosition);
     });
   });
 
   describe('isPuzzleCompleted', () => {
     it('全てのピースが正しい位置にある場合はtrueを返すこと', () => {
       const pieces: PuzzlePiece[] = [
-        {
-          id: 0,
-          correctPosition: { row: 0, col: 0 },
-          currentPosition: { row: 0, col: 0 },
-          isEmpty: false,
-        },
-        {
-          id: 1,
-          correctPosition: { row: 0, col: 1 },
-          currentPosition: { row: 0, col: 1 },
-          isEmpty: false,
-        },
+        createPuzzlePiece(0, 0, 0, false),
+        createPuzzlePiece(1, 0, 1, false),
       ];
 
       expect(isPuzzleCompleted(pieces)).toBe(true);
@@ -226,17 +190,10 @@ describe('puzzle-utils', () => {
 
     it('一部のピースが正しくない位置にある場合はfalseを返すこと', () => {
       const pieces: PuzzlePiece[] = [
+        createPuzzlePiece(0, 0, 0, false),
         {
-          id: 0,
-          correctPosition: { row: 0, col: 0 },
-          currentPosition: { row: 0, col: 0 },
-          isEmpty: false,
-        },
-        {
-          id: 1,
-          correctPosition: { row: 0, col: 1 },
+          ...createPuzzlePiece(1, 0, 1, false),
           currentPosition: { row: 1, col: 0 }, // 正しくない位置
-          isEmpty: false,
         },
       ];
 
@@ -245,23 +202,11 @@ describe('puzzle-utils', () => {
 
     it('空きピースが正しくない位置にあっても、他のピースが全て正しい位置にある場合はtrueを返すこと', () => {
       const pieces: PuzzlePiece[] = [
+        createPuzzlePiece(0, 0, 0, false),
+        createPuzzlePiece(1, 0, 1, false),
         {
-          id: 0,
-          correctPosition: { row: 0, col: 0 },
-          currentPosition: { row: 0, col: 0 },
-          isEmpty: false,
-        },
-        {
-          id: 1,
-          correctPosition: { row: 0, col: 1 },
-          currentPosition: { row: 0, col: 1 },
-          isEmpty: false,
-        },
-        {
-          id: 2,
-          correctPosition: { row: 0, col: 2 },
+          ...createPuzzlePiece(2, 0, 2, true),
           currentPosition: { row: 1, col: 2 }, // 正しくない位置
-          isEmpty: true, // 空きピース
         },
       ];
 
@@ -271,23 +216,11 @@ describe('puzzle-utils', () => {
     it('空きピースが正しい位置にあっても、他のピースが正しくない位置にある場合はfalseを返すこと', () => {
       const pieces: PuzzlePiece[] = [
         {
-          id: 0,
-          correctPosition: { row: 0, col: 0 },
+          ...createPuzzlePiece(0, 0, 0, false),
           currentPosition: { row: 1, col: 0 }, // 正しくない位置
-          isEmpty: false,
         },
-        {
-          id: 1,
-          correctPosition: { row: 0, col: 1 },
-          currentPosition: { row: 0, col: 1 },
-          isEmpty: false,
-        },
-        {
-          id: 2,
-          correctPosition: { row: 0, col: 2 },
-          currentPosition: { row: 0, col: 2 }, // 正しい位置
-          isEmpty: true, // 空きピース
-        },
+        createPuzzlePiece(1, 0, 1, false),
+        createPuzzlePiece(2, 0, 2, true),
       ];
 
       expect(isPuzzleCompleted(pieces)).toBe(false);

@@ -87,6 +87,22 @@ export const generatePuzzlePieces = (
 };
 
 /**
+ * シャッフルの入力を検証する
+ *
+ * @param pieces パズルのピース配列
+ * @param division 分割数
+ * @throws {Error} divisionが0以下の場合、またはpiecesが空の場合
+ */
+const validateShuffleInputs = (pieces: PuzzlePiece[], division: number): void => {
+  if (division <= 0) {
+    throw new Error('division must be greater than 0');
+  }
+  if (pieces.length === 0) {
+    throw new Error('pieces array must not be empty');
+  }
+};
+
+/**
  * パズルのピースをシャッフルする（スライドパズル方式）
  *
  * @param pieces パズルのピース配列
@@ -101,12 +117,7 @@ export const shufflePuzzlePieces = (
   division: number,
   moves: number = 100
 ): { pieces: PuzzlePiece[]; emptyPosition: Position } => {
-  if (division <= 0) {
-    throw new Error('division must be greater than 0');
-  }
-  if (pieces.length === 0) {
-    throw new Error('pieces array must not be empty');
-  }
+  validateShuffleInputs(pieces, division);
 
   let shuffledPieces = [...pieces];
   let currentEmptyPos = { ...emptyPosition };
