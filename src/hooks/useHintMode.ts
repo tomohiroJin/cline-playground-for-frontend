@@ -1,25 +1,31 @@
-import { useAtom } from "jotai";
-import { useCallback } from "react";
-import { hintModeEnabledAtom } from "../store/atoms";
+import { useAtom } from 'jotai';
+import { useCallback } from 'react';
+import { hintModeEnabledAtom } from '../store/atoms';
 
 /**
  * ヒントモードの状態と操作を管理するカスタムフック
  */
 export const useHintMode = () => {
-  // 状態
+  // ヒントモードの状態
   const [hintModeEnabled, setHintModeEnabled] = useAtom(hintModeEnabledAtom);
 
-  // ヒントモードを切り替える
+  /**
+   * ヒントモードのトグル
+   */
   const toggleHintMode = useCallback(() => {
-    setHintModeEnabled((prev) => !prev);
+    setHintModeEnabled(prev => !prev);
   }, [setHintModeEnabled]);
 
-  // ヒントモードを有効にする
+  /**
+   * ヒントモードを有効にする
+   */
   const enableHintMode = useCallback(() => {
     setHintModeEnabled(true);
   }, [setHintModeEnabled]);
 
-  // ヒントモードを無効にする
+  /**
+   * ヒントモードを無効にする
+   */
   const disableHintMode = useCallback(() => {
     setHintModeEnabled(false);
   }, [setHintModeEnabled]);
