@@ -282,21 +282,6 @@ describe('usePuzzle', () => {
   });
 
   describe('completed', () => {
-    const setupInitializedPuzzle = () => {
-      const { result } = renderHookWithJotai(() => usePuzzle());
-
-      // 画像URLを設定
-      act(() => {
-        result.current.setImageUrl('test.jpg');
-      });
-
-      // divisionを設定
-      act(() => {
-        result.current.setDivision(4);
-      });
-    };
-
-    // パズルを初期化
     it('パズルが完成するとcompletedがtrueになること', () => {
       // カスタムモックピースを作成
       const customMockPieces = [
@@ -335,11 +320,8 @@ describe('usePuzzle', () => {
 
       // 隣接位置のモックを設定
       (puzzleUtils.getAdjacentPositions as jest.Mock).mockImplementation((row, col) => {
-        // id=0のピース（位置: 0,0）の隣接位置を返す
         if (row === 0 && col === 0) {
-          return [
-            { row: 1, col: 0 }, // 下（空白ピースの位置）
-          ];
+          return [{ row: 1, col: 0 }]; // 下（空白ピースの位置）
         }
         return [];
       });
