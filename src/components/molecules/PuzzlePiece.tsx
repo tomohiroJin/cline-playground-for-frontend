@@ -29,25 +29,34 @@ const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
   onClick,
   completed = false,
 }) => {
-  // 状態
-  const [position, setPosition] = useState({
+  /**
+   * ピースの位置を計算する関数
+   *
+   * @param piece - ピースの情報
+   * @param pieceWidth - ピースの幅
+   * @param pieceHeight - ピースの高さ
+   * @returns ピースの位置を表すオブジェクト
+   */
+  const calculatePosition = (piece: PuzzlePieceType, pieceWidth: number, pieceHeight: number) => ({
     x: piece.currentPosition.col * pieceWidth,
     y: piece.currentPosition.row * pieceHeight,
   });
 
-  // クリックイベントハンドラ
-  const handleClick = () => {
-    // 親コンポーネントに通知
-    onClick(piece.id, piece.currentPosition.row, piece.currentPosition.col);
-  };
+  /**
+   * ピースの位置を計算する
+   */
+  const [position, setPosition] = useState(calculatePosition(piece, pieceWidth, pieceHeight));
 
-  // ピースの位置が変更されたときに状態を更新
+  /**
+   * ピースがクリックされたときの処理
+   */
+  const handleClick = () => onClick(piece.id, piece.currentPosition.row, piece.currentPosition.col);
+
+  /**
+   * ピースの位置を更新する
+   */
   useEffect(() => {
-    // 位置を更新
-    setPosition({
-      x: piece.currentPosition.col * pieceWidth,
-      y: piece.currentPosition.row * pieceHeight,
-    });
+    setPosition(calculatePosition(piece, pieceWidth, pieceHeight));
   }, [piece.currentPosition.row, piece.currentPosition.col, pieceWidth, pieceHeight]);
 
   return (
