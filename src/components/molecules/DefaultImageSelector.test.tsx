@@ -11,17 +11,21 @@ jest.mock('../../utils/puzzle-utils', () => ({
 describe('DefaultImageSelector', () => {
   const mockOnImageSelect = jest.fn();
   const mockImageSize = { width: 800, height: 600 };
+  const defaultImages = [
+    '/images/default/mountain_landscape.jpg',
+    '/images/default/forest_landscape.jpg',
+    '/images/default/beach_landscape.jpg',
+    '/images/default/cat_office.png',
+    '/images/default/digital_boy.png',
+    '/images/default/playful_doodle.png',
+  ];
 
   beforeEach(() => {
     jest.clearAllMocks();
-    // getImageSizeのモック実装
     (puzzleUtils.getImageSize as jest.Mock).mockResolvedValue(mockImageSize);
 
-    // windowのlocationをモック
     Object.defineProperty(window, 'location', {
-      value: {
-        origin: 'http://localhost:3000',
-      },
+      value: { origin: 'http://localhost:3000' },
       writable: true,
     });
   });
@@ -32,63 +36,47 @@ describe('DefaultImageSelector', () => {
     // タイトルが表示されていることを確認
     expect(screen.getByText('デフォルト画像から選択')).toBeInTheDocument();
 
-    // 6つの画像が表示されていることを確認
+    // 画像が正しく表示されていることを確認
     const images = screen.getAllByRole('img');
-    expect(images).toHaveLength(6);
-
-    // 画像のsrc属性を確認
-    expect(images[0]).toHaveAttribute('src', '/images/default/mountain_landscape.jpg');
-    expect(images[1]).toHaveAttribute('src', '/images/default/forest_landscape.jpg');
-    expect(images[2]).toHaveAttribute('src', '/images/default/beach_landscape.jpg');
-    expect(images[3]).toHaveAttribute('src', '/images/default/cat_office.png');
-    expect(images[4]).toHaveAttribute('src', '/images/default/digital_boy.png');
-    expect(images[5]).toHaveAttribute('src', '/images/default/playful_doodle.png');
+    expect(images).toHaveLength(defaultImages.length);
+    defaultImages.forEach((src, index) => {
+      expect(images[index]).toHaveAttribute('src', src);
+    });
   });
 
   it('画像をクリックすると選択状態になり、onImageSelectが呼ばれること', async () => {
     render(<DefaultImageSelector onImageSelect={mockOnImageSelect} />);
 
-    // 最初の画像をクリック
     const firstImage = screen.getAllByRole('img')[0];
     fireEvent.click(firstImage);
 
-    // getImageSizeが呼ばれたことを確認
-    expect(puzzleUtils.getImageSize).toHaveBeenCalledWith(
-      'http://localhost:3000/images/default/mountain_landscape.jpg'
-    );
+    const expectedUrl = `${window.location.origin}${defaultImages[0]}`;
+    expect(puzzleUtils.getImageSize).toHaveBeenCalledWith(expectedUrl);
 
-    // onImageSelectが正しいパラメータで呼ばれたことを確認
     await waitFor(() => {
       expect(mockOnImageSelect).toHaveBeenCalledWith(
-        'http://localhost:3000/images/default/mountain_landscape.jpg',
+        expectedUrl,
         mockImageSize.width,
         mockImageSize.height
       );
     });
 
-    // 選択状態のインジケータが表示されていることを確認
     expect(screen.getByText('✓')).toBeInTheDocument();
   });
 
   it('別の画像を選択すると選択状態が切り替わること', async () => {
     render(<DefaultImageSelector onImageSelect={mockOnImageSelect} />);
 
-    // 最初の画像をクリック
     const images = screen.getAllByRole('img');
     fireEvent.click(images[0]);
 
-    // 選択状態のインジケータが表示されていることを確認
     await waitFor(() => {
       expect(screen.getByText('✓')).toBeInTheDocument();
     });
 
-    // 2番目の画像をクリック
     fireEvent.click(images[1]);
 
-    // getImageSizeが2回呼ばれたことを確認
     expect(puzzleUtils.getImageSize).toHaveBeenCalledTimes(2);
-
-    // onImageSelectが2回呼ばれたことを確認
     await waitFor(() => {
       expect(mockOnImageSelect).toHaveBeenCalledTimes(2);
     });
