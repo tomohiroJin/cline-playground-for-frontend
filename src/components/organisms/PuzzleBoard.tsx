@@ -20,8 +20,24 @@ import PuzzlePiece from '../molecules/PuzzlePiece';
 import { formatElapsedTime } from '../../utils/puzzle-utils';
 import { useCompletionOverlay } from '../../hooks/useCompletionOverlay';
 
-// プロパティの型定義
-export interface PuzzleBoardProps {
+/**
+ * パズルボードコンポーネントのプロパティの型定義
+ *
+ * @param imageUrl - 画像のURL
+ * @param originalWidth - 元の画像の幅
+ * @param originalHeight - 元の画像の高さ
+ * @param pieces - パズルのピースの配列
+ * @param division - パズルの分割数
+ * @param elapsedTime - 経過時間
+ * @param completed - ゲームの完了状態
+ * @param hintMode - ヒントモードの有効状態
+ * @param emptyPosition - 空のピースの位置
+ * @param onPieceMove - ピースを移動する関数
+ * @param onReset - ゲームをリセットする関数
+ * @param onToggleHint - ヒントモードを切り替える関数
+ * @param onEmptyPanelClick - 空のパネルをクリックしたときの処理
+ */
+export type PuzzleBoardProps = {
   imageUrl: string;
   originalWidth: number;
   originalHeight: number;
@@ -35,7 +51,7 @@ export interface PuzzleBoardProps {
   onReset: () => void;
   onToggleHint: () => void;
   onEmptyPanelClick?: () => void; // 空白パネルがクリックされたときのコールバック
-}
+};
 
 /**
  * パズルボードコンポーネント
@@ -59,70 +75,41 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   const { overlayVisible, toggleOverlay } = useCompletionOverlay();
 
   // ボードのサイズを計算
-  const maxBoardWidth = 600;
-  const aspectRatio = originalHeight / originalWidth;
-
-  const boardWidth = Math.min(maxBoardWidth, originalWidth);
-  const boardHeight = boardWidth * aspectRatio;
-
-  // ピースのサイズを計算
-  const pieceWidth = boardWidth / division;
-  const pieceHeight = boardHeight / division;
+  const { boardWidth, boardHeight, pieceWidth, pieceHeight } = calculateBoardAndPieceSizes(
+    originalWidth,
+    originalHeight,
+    division
+  );
 
   // ボードへの参照
   const boardRef = useRef<HTMLDivElement>(null);
 
   // ピースをスライドさせる
   const handleSlidePiece = (pieceId: number) => {
-    // 完成済みの場合は何もしない
-    if (completed) return;
-
-    // 空白スペースが存在しなければ処理終了
-    if (!emptyPosition) return;
+    if (completed || !emptyPosition) return;
 
     const piece = pieces.find(p => p.id === pieceId);
-    // 対象のピースが存在しない場合は処理終了
     if (!piece) return;
 
-    // 空白ピースがクリックされた場合
     if (piece.isEmpty) {
-      // 空白パネルクリックのコールバックがあれば呼び出す
-      if (onEmptyPanelClick) {
-        onEmptyPanelClick();
-      }
+      onEmptyPanelClick?.();
       return;
     }
 
-    // ピースの現在位置
-    const currentRow = piece.currentPosition.row;
-    const currentCol = piece.currentPosition.col;
+    if (!isAdjacentToEmpty(piece.currentPosition, emptyPosition)) return;
 
-    // 空白ピースの隣接位置かどうかをチェック
-    const isAdjacent =
-      (Math.abs(currentRow - emptyPosition.row) === 1 && currentCol === emptyPosition.col) ||
-      (Math.abs(currentCol - emptyPosition.col) === 1 && currentRow === emptyPosition.row);
-
-    // 隣接していなければ処理終了
-    if (!isAdjacent) return;
-
-    // 空白ピースの位置に移動
     onPieceMove(pieceId, emptyPosition.row, emptyPosition.col);
   };
 
   // グリッドセルを生成
-  const renderGridCells = Array.from({ length: division * division }, (_, i) => (
-    <GridCell title="ボードセル" key={i} $completed={completed} />
-  ));
+  const renderGridCells = createGridCells(division, completed);
 
   return (
     <BoardContainer>
       <Board width={boardWidth} height={boardHeight} ref={boardRef}>
-        {/* グリッド線 */}
         <BoardGrid title="ボードグリッド" division={division} $completed={completed}>
           {renderGridCells}
         </BoardGrid>
-
-        {/* パズルピース */}
         {pieces.map(piece => (
           <PuzzlePiece
             key={piece.id}
@@ -137,8 +124,6 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
             completed={completed}
           />
         ))}
-
-        {/* 完成時のオーバーレイ */}
         {completed && overlayVisible && (
           <CompletionOverlay>
             <CompletionMessage>パズル完成！</CompletionMessage>
@@ -146,8 +131,6 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
             <RestartButton onClick={onReset}>もう一度挑戦</RestartButton>
           </CompletionOverlay>
         )}
-
-        {/* 完成時のオーバーレイ表示/非表示切り替えボタン */}
         {completed && (
           <OverlayToggleButton
             active={overlayVisible ? 'true' : 'false'}
@@ -157,11 +140,8 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
             <EyeIcon>{overlayVisible ? '👁️' : '👁️‍🗨️'}</EyeIcon>
           </OverlayToggleButton>
         )}
-
-        {/* ヒントモード（背景に元の画像を薄く表示） */}
         {hintMode && !completed && <HintImage $imageUrl={imageUrl} title="ヒント画像" />}
       </Board>
-
       <StatusBar>
         <ElapsedTime>経過時間: {formatElapsedTime(elapsedTime)}</ElapsedTime>
         <HintToggleButton active={hintMode ? 'true' : 'false'} onClick={onToggleHint}>
@@ -171,5 +151,58 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
     </BoardContainer>
   );
 };
+
+/**
+ * ボードとピースのサイズを計算する関数
+ *
+ * @param originalWidth - 元の画像の幅
+ * @param originalHeight - 元の画像の高さ
+ * @param division - 分割数
+ * @return ボードとピースのサイズを含むオブジェクト
+ */
+const calculateBoardAndPieceSizes = (
+  originalWidth: number,
+  originalHeight: number,
+  division: number
+) => {
+  const maxBoardWidth = 600;
+  const aspectRatio = originalHeight / originalWidth;
+  const boardWidth = Math.min(maxBoardWidth, originalWidth);
+  const boardHeight = boardWidth * aspectRatio;
+  const pieceWidth = boardWidth / division;
+  const pieceHeight = boardHeight / division;
+  return { boardWidth, boardHeight, pieceWidth, pieceHeight };
+};
+
+/**
+ * ピースが空のピースに隣接しているかどうかを判定する関数
+ *
+ * @param currentPosition - 現在のピースの位置
+ * @param emptyPosition - 空のピースの位置
+ * @return 隣接している場合はtrue、そうでない場合はfalse
+ */
+const isAdjacentToEmpty = (
+  currentPosition: { row: number; col: number },
+  emptyPosition: { row: number; col: number }
+) => {
+  const { row: currentRow, col: currentCol } = currentPosition;
+  const { row: emptyRow, col: emptyCol } = emptyPosition;
+  return (
+    (Math.abs(currentRow - emptyRow) === 1 && currentCol === emptyCol) ||
+    (Math.abs(currentCol - emptyCol) === 1 && currentRow === emptyRow)
+  );
+};
+
+/**
+ * グリッドセルを生成する関数
+ *
+ * @param division - 分割数
+ * @param completed - 完了状態
+ * @return グリッドセルの配列
+ */
+const createGridCells = (division: number, completed: boolean) =>
+  Array.from({ length: division * division }, (_, i) => (
+    <GridCell title="ボードセル" key={i} $completed={completed} />
+  ));
 
 export default PuzzleBoard;
