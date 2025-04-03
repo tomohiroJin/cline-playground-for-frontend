@@ -76,6 +76,17 @@ const defaultProps: PuzzleBoardProps = {
   onToggleHint: jest.fn(),
 };
 
+// テスト用のピースをクリックするヘルパー関数
+const clickPiece = (row: number, col: number) => {
+  const piece = screen
+    .getAllByTestId('puzzle-piece')
+    .find(
+      p => p.getAttribute('data-row') === String(row) && p.getAttribute('data-col') === String(col)
+    );
+  if (piece) fireEvent.click(piece);
+  return piece;
+};
+
 describe('パズルボードコンポーネント', () => {
   // テスト用のピースデータを作成する関数
   const createTestPieces = (
@@ -125,92 +136,60 @@ describe('パズルボードコンポーネント', () => {
 
     describe('ピースのスライド移動', () => {
       it('空白ピースに隣接するピースをクリックすると、onPieceMoveが呼び出される', () => {
-        // 3x3のパズルで中央が空白
-        const emptyRow = 1;
-        const emptyCol = 1;
+        const emptyRow = 1,
+          emptyCol = 1;
         const testPieces = createTestPieces(3, emptyRow, emptyCol);
         const onPieceMove = jest.fn();
+        render(
+          <PuzzleBoard
+            {...defaultProps}
+            pieces={testPieces}
+            emptyPosition={{ row: emptyRow, col: emptyCol }}
+            onPieceMove={onPieceMove}
+          />
+        );
 
-        const props: PuzzleBoardProps = {
-          ...defaultProps,
-          pieces: testPieces,
-          emptyPosition: { row: emptyRow, col: emptyCol },
-          onPieceMove,
-        };
-
-        render(<PuzzleBoard {...props} />);
-
-        // 空白の上のピース（隣接している）をクリック
-        const topPiece = screen
-          .getAllByTestId('puzzle-piece')
-          .find(
-            piece =>
-              piece.getAttribute('data-row') === '0' && piece.getAttribute('data-col') === '1'
-          );
-
-        if (topPiece) {
-          fireEvent.click(topPiece);
-          // onPieceMoveが正しいパラメータで呼び出されたことを確認
-          expect(onPieceMove).toHaveBeenCalledWith(
-            Number(topPiece.getAttribute('data-piece-id')),
-            emptyRow,
-            emptyCol
-          );
-        }
+        const topPiece = clickPiece(0, 1);
+        expect(onPieceMove).toHaveBeenCalledWith(
+          Number(topPiece?.getAttribute('data-piece-id')),
+          emptyRow,
+          emptyCol
+        );
       });
 
       it('空白ピースに隣接しないピースをクリックしても、onPieceMoveは呼び出されない', () => {
-        // 3x3のパズルで中央が空白
-        const emptyRow = 1;
-        const emptyCol = 1;
+        const emptyRow = 1,
+          emptyCol = 1;
         const testPieces = createTestPieces(3, emptyRow, emptyCol);
         const onPieceMove = jest.fn();
+        render(
+          <PuzzleBoard
+            {...defaultProps}
+            pieces={testPieces}
+            emptyPosition={{ row: emptyRow, col: emptyCol }}
+            onPieceMove={onPieceMove}
+          />
+        );
 
-        const props: PuzzleBoardProps = {
-          ...defaultProps,
-          pieces: testPieces,
-          emptyPosition: { row: emptyRow, col: emptyCol },
-          onPieceMove,
-        };
-
-        render(<PuzzleBoard {...props} />);
-
-        // 右下のピース（隣接していない）をクリック
-        const cornerPiece = screen
-          .getAllByTestId('puzzle-piece')
-          .find(
-            piece =>
-              piece.getAttribute('data-row') === '2' && piece.getAttribute('data-col') === '2'
-          );
-
-        fireEvent.click(cornerPiece!);
-        // onPieceMoveが呼び出されないことを確認
+        clickPiece(2, 2);
         expect(onPieceMove).not.toHaveBeenCalled();
       });
 
       it('空白ピースをクリックしても何も起こらない', () => {
-        // 3x3のパズルで中央が空白
-        const emptyRow = 1;
-        const emptyCol = 1;
+        const emptyRow = 1,
+          emptyCol = 1;
         const testPieces = createTestPieces(3, emptyRow, emptyCol);
         const onPieceMove = jest.fn();
+        render(
+          <PuzzleBoard
+            {...defaultProps}
+            pieces={testPieces}
+            emptyPosition={{ row: emptyRow, col: emptyCol }}
+            onPieceMove={onPieceMove}
+          />
+        );
 
-        const props: PuzzleBoardProps = {
-          ...defaultProps,
-          pieces: testPieces,
-          emptyPosition: { row: emptyRow, col: emptyCol },
-          onPieceMove,
-        };
-
-        render(<PuzzleBoard {...props} />);
-
-        // 空白ピースをクリック
-        const emptyPiece = screen
-          .getAllByTestId('puzzle-piece')
-          .find(piece => piece.getAttribute('data-is-empty') === 'true');
-
-        fireEvent.click(emptyPiece!);
-        // onPieceMoveが呼び出されないことを確認
+        clickPiece(emptyRow, emptyCol);
         expect(onPieceMove).not.toHaveBeenCalled();
       });
     });
@@ -616,14 +595,12 @@ describe('パズルボードコンポーネント', () => {
 
   describe('完成オーバーレイ', () => {
     it('完成の場合かつoverlayVisibleがtrueの場合、オーバーレイが表示される', () => {
-      // overlayVisibleをtrueに設定
       (useCompletionOverlay as jest.Mock).mockReturnValue({
         overlayVisible: true,
         toggleOverlay: mockToggleOverlay,
         showOverlay: jest.fn(),
         hideOverlay: jest.fn(),
       });
-
       render(<PuzzleBoard {...defaultProps} completed={true} elapsedTime={60} />);
 
       expect(screen.getByText('パズル完成！')).toBeInTheDocument();
@@ -632,14 +609,12 @@ describe('パズルボードコンポーネント', () => {
     });
 
     it('完成の場合でもoverlayVisibleがfalseの場合、オーバーレイは表示されない', () => {
-      // overlayVisibleをfalseに設定
       (useCompletionOverlay as jest.Mock).mockReturnValue({
         overlayVisible: false,
         toggleOverlay: mockToggleOverlay,
         showOverlay: jest.fn(),
         hideOverlay: jest.fn(),
       });
-
       render(<PuzzleBoard {...defaultProps} completed={true} elapsedTime={60} />);
 
       expect(screen.queryByText('パズル完成！')).toBeNull();
@@ -647,21 +622,9 @@ describe('パズルボードコンポーネント', () => {
       expect(screen.queryByText('もう一度挑戦')).toBeNull();
     });
 
-    it('完成時にオーバーレイトグルボタンが表示される', () => {
-      render(<PuzzleBoard {...defaultProps} completed={true} />);
-
-      // タイトル属性でボタンを検索
-      const toggleButton = screen.getByTitle(/オーバーレイを/);
-      expect(toggleButton).toBeInTheDocument();
-    });
-
     it('オーバーレイトグルボタンをクリックするとtoggleOverlayが呼び出される', () => {
       render(<PuzzleBoard {...defaultProps} completed={true} />);
-
-      // タイトル属性でボタンを検索
-      const toggleButton = screen.getByTitle(/オーバーレイを/);
-      fireEvent.click(toggleButton);
-
+      fireEvent.click(screen.getByTitle(/オーバーレイを/));
       expect(mockToggleOverlay).toHaveBeenCalled();
     });
 
