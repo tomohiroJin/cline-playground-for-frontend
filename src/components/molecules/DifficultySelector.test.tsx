@@ -3,8 +3,13 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import DifficultySelector from './DifficultySelector';
 
 describe('DifficultySelector Component', () => {
+  const setup = (value = 4, onChange = jest.fn()) => {
+    render(<DifficultySelector value={value} onChange={onChange} />);
+    return { onChange };
+  };
+
   test('コンポーネントが正しくレンダリングされる', () => {
-    render(<DifficultySelector value={4} onChange={jest.fn()} />);
+    setup();
     // ラベルの確認
     expect(screen.getByLabelText(/難易度を選択/i)).toBeInTheDocument();
     // オプション数の確認 (9種類の難易度)
@@ -15,7 +20,7 @@ describe('DifficultySelector Component', () => {
 
   test('選択が変更された際に onChange が呼ばれる', () => {
     const onChangeMock = jest.fn();
-    render(<DifficultySelector value={4} onChange={onChangeMock} />);
+    setup(4, onChangeMock);
 
     const select = screen.getByLabelText(/難易度を選択/i);
     fireEvent.change(select, { target: { value: '6' } });

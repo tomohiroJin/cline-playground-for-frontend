@@ -34,6 +34,7 @@ export const usePuzzle = () => {
 
   /**
    * 分割数に基づいてシャッフル回数を計算する
+   *
    * @param division 分割数
    * @returns シャッフル回数
    */
@@ -43,7 +44,9 @@ export const usePuzzle = () => {
     return totalPieces * shuffleFactor;
   };
 
-  // パズルを初期化する
+  /**
+   * パズルを初期化する
+   */
   const initializePuzzle = useCallback(() => {
     if (!imageUrl) return;
 
@@ -66,59 +69,91 @@ export const usePuzzle = () => {
     setCompleted(false);
   }, [imageUrl, division, setPieces, setEmptyPosition, setStartTime, setElapsedTime, setCompleted]);
 
-  // パズルのピースを移動する
+  /**
+   * 指定されたピースが空白ピースと隣接しているかを確認する
+   *
+   * @param piece 移動するピース
+   * @param emptyPosition 空白ピースの位置
+   * @param division パズルの分割数
+   * @returns 隣接していればtrue、そうでなければfalse
+   */
+  const isPieceAdjacentToEmpty = (
+    piece: PuzzlePiece,
+    emptyPosition: { row: number; col: number },
+    division: number
+  ): boolean => {
+    const adjacentPositions = getAdjacentPositions(
+      piece.currentPosition.row,
+      piece.currentPosition.col,
+      division
+    );
+    return adjacentPositions.some(
+      pos => pos.row === emptyPosition.row && pos.col === emptyPosition.col
+    );
+  };
+
+  /**
+   * ピースを移動し、更新されたピース配列を返す
+   *
+   * @param currentPieces 現在のピース配列
+   * @param pieceIndex 移動するピースのインデックス
+   * @param emptyPosition 空白ピースの位置
+   * @returns 更新されたピース配列
+   */
+  const updatePiecesWithMove = (
+    currentPieces: PuzzlePiece[],
+    pieceIndex: number,
+    emptyPosition: { row: number; col: number }
+  ): PuzzlePiece[] => {
+    const piece = currentPieces[pieceIndex];
+    const updatedPieces = [...currentPieces];
+
+    // ピースを空白の位置に移動
+    updatedPieces[pieceIndex] = {
+      ...piece,
+      currentPosition: { ...emptyPosition },
+    };
+
+    // 空白ピースの位置を更新
+    const emptyPieceIndex = currentPieces.findIndex(p => p.isEmpty);
+    if (emptyPieceIndex !== -1) {
+      updatedPieces[emptyPieceIndex] = {
+        ...updatedPieces[emptyPieceIndex],
+        currentPosition: {
+          row: piece.currentPosition.row,
+          col: piece.currentPosition.col,
+        },
+      };
+    }
+
+    return updatedPieces;
+  };
+
+  /**
+   * ピースを移動する
+   *
+   * @param pieceId 移動するピースのID
+   */
   const movePiece = useCallback(
     (pieceId: number) => {
       if (completed || !emptyPosition) return;
 
       setPieces(currentPieces => {
-        // 移動するピースを見つける
         const pieceIndex = currentPieces.findIndex(p => p.id === pieceId);
         if (pieceIndex === -1) return currentPieces;
 
         const piece = currentPieces[pieceIndex];
-
-        // 空白ピースは移動できない
         if (piece.isEmpty) return currentPieces;
 
-        // 対象ピースの現在位置から隣接位置を取得して空白位置と比較
-        const adjacentPositions = getAdjacentPositions(
-          piece.currentPosition.row,
-          piece.currentPosition.col,
-          division
-        );
-        const isAdjacent = adjacentPositions.some(
-          pos => pos.row === emptyPosition.row && pos.col === emptyPosition.col
-        );
-        if (!isAdjacent) return currentPieces;
+        if (!isPieceAdjacentToEmpty(piece, emptyPosition, division)) return currentPieces;
 
-        // 新しい位置に更新
-        const updatedPieces = [...currentPieces];
-
-        // ピースを空白の位置に移動
-        updatedPieces[pieceIndex] = {
-          ...piece,
-          currentPosition: { ...emptyPosition },
-        };
-
-        // 空白ピースの位置を更新
-        const emptyPieceIndex = currentPieces.findIndex(p => p.isEmpty);
-        if (emptyPieceIndex !== -1) {
-          updatedPieces[emptyPieceIndex] = {
-            ...updatedPieces[emptyPieceIndex],
-            currentPosition: {
-              row: piece.currentPosition.row,
-              col: piece.currentPosition.col,
-            },
-          };
-        }
+        const updatedPieces = updatePiecesWithMove(currentPieces, pieceIndex, emptyPosition);
 
         setEmptyPosition({
           row: piece.currentPosition.row,
           col: piece.currentPosition.col,
         });
 
-        // パズルが完成したかチェック
         if (isPuzzleCompleted(updatedPieces)) {
           setCompleted(true);
         }
@@ -129,7 +164,9 @@ export const usePuzzle = () => {
     [completed, emptyPosition, division, setPieces, setEmptyPosition, setCompleted]
   );
 
-  // 経過時間を更新する
+  /**
+   * パズルの状態を監視し、時間を更新する
+   */
   useEffect(() => {
     if (!startTime || completed) return;
 
@@ -142,7 +179,9 @@ export const usePuzzle = () => {
     return () => clearInterval(intervalId);
   }, [startTime, completed, setElapsedTime]);
 
-  // パズルをリセットする
+  /**
+   * パズルをリセットする
+   */
   const resetPuzzle = useCallback(() => {
     initializePuzzle();
   }, [initializePuzzle]);

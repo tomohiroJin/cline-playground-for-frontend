@@ -1,42 +1,94 @@
 import { atom } from 'jotai';
 
-// アップロードされた画像のURL
-export const imageUrlAtom = atom<string | null>(null);
-
-// 元の画像のサイズ
-export const originalImageSizeAtom = atom<{
-  width: number;
-  height: number;
-} | null>(null);
-
-// パズルの分割数
-export const puzzleDivisionAtom = atom<number>(4); // デフォルトは4x4=16ピース
-
-// パズルのピース情報
-export interface PuzzlePiece {
-  id: number; // 0は空白を表す
-  correctPosition: { row: number; col: number }; // 正しい位置
-  currentPosition: { row: number; col: number }; // 現在の位置
-  isEmpty: boolean; // 空白ピースかどうか
+/**
+ * 共通のアトム作成ヘルパー関数
+ *
+ * @template T - アトムのデータ型
+ * @param defaultValue - アトムの初期値
+ * @returns アトム
+ */
+function createAtom<T>(defaultValue: T) {
+  return atom<T>(defaultValue);
 }
 
-// パズルのピース配列
-export const puzzlePiecesAtom = atom<PuzzlePiece[]>([]);
+/**
+ * 座標を表す型
+ */
+export type Position = { row: number; col: number };
 
-// 空白ピースの位置
-export const emptyPiecePositionAtom = atom<{ row: number; col: number } | null>(null);
+// 初期値の定数
+const DEFAULT_PUZZLE_DIVISION = 4;
+const DEFAULT_PUZZLE_ELAPSED_TIME = 0;
 
-// パズルの開始時間
-export const puzzleStartTimeAtom = atom<number | null>(null);
+/**
+ * アップロードされた画像のURLを管理するアトム
+ */
+export const imageUrlAtom = createAtom<string | null>(null);
 
-// パズルの経過時間（秒）
-export const puzzleElapsedTimeAtom = atom<number>(0);
+/**
+ * 画像サイズを表す型
+ *
+ * - `width`: 画像の幅
+ * - `height`: 画像の高さ
+ */
+export type ImageSize = { width: number; height: number };
 
-// パズルが完成したかどうか
-export const puzzleCompletedAtom = atom<boolean>(false);
+/**
+ * 元の画像のサイズを管理するアトム
+ */
+export const originalImageSizeAtom = createAtom<ImageSize | null>(null);
 
-// ヒントモードが有効かどうか
-export const hintModeEnabledAtom = atom<boolean>(false);
+/**
+ * パズルの分割数（デフォルトは4x4=16ピース）を管理するアトム
+ */
+export const puzzleDivisionAtom = createAtom<number>(DEFAULT_PUZZLE_DIVISION);
 
-// 完成オーバーレイの表示状態
-export const completionOverlayVisibleAtom = atom<boolean>(true);
+/**
+ * パズルのピース情報を表す型
+ *
+ * - `id`: ピースの識別子（0は空白を表す）
+ * - `correctPosition`: ピースの正しい位置
+ * - `currentPosition`: ピースの現在の位置
+ * - `isEmpty`: 空白ピースかどうか
+ */
+export type PuzzlePiece = {
+  id: number;
+  correctPosition: Position;
+  currentPosition: Position;
+  isEmpty: boolean;
+};
+
+/**
+ * パズルのピース配列を管理するアトム
+ */
+export const puzzlePiecesAtom = createAtom<PuzzlePiece[]>([]);
+
+/**
+ * 空白ピースの位置を管理するアトム
+ */
+export const emptyPiecePositionAtom = createAtom<Position | null>(null);
+
+/**
+ * パズルの開始時間（タイムスタンプ）を管理するアトム
+ */
+export const puzzleStartTimeAtom = createAtom<number | null>(null);
+
+/**
+ * パズルの経過時間（秒）を管理するアトム
+ */
+export const puzzleElapsedTimeAtom = createAtom<number>(DEFAULT_PUZZLE_ELAPSED_TIME);
+
+/**
+ * パズルが完成したかどうかを管理するアトム
+ */
+export const puzzleCompletedAtom = createAtom<boolean>(false);
+
+/**
+ * ヒントモードが有効かどうかを管理するアトム
+ */
+export const hintModeEnabledAtom = createAtom<boolean>(false);
+
+/**
+ * 完成オーバーレイの表示状態を管理するアトム
+ */
+export const completionOverlayVisibleAtom = createAtom<boolean>(true);

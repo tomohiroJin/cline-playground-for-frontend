@@ -43,10 +43,42 @@ const DEFAULT_IMAGES = [
   },
 ];
 
-// プロパティの型定義
-interface DefaultImageSelectorProps {
+/**
+ * デフォルト画像選択コンポーネントのプロパティ
+ */
+type DefaultImageSelectorProps = {
   onImageSelect: (url: string, width: number, height: number) => void;
-}
+};
+
+/**
+ * エラーハンドリング関数
+ *
+ * @param error - エラーオブジェクト
+ * @returns {void}
+ */
+const handleImageLoadError = (error: unknown) => {
+  console.error('デフォルト画像の読み込みに失敗しました:', error);
+};
+
+/**
+ * 画像サイズを取得し、親コンポーネントに通知する
+ *
+ * @param image - 画像オブジェクト
+ * @param onImageSelect - 画像選択時のコールバック関数
+ * @returns {Promise<void>}
+ */
+const fetchImageDetailsAndNotify = async (
+  image: { id: number; src: string },
+  onImageSelect: (url: string, width: number, height: number) => void
+) => {
+  try {
+    const fullPath = `${window.location.origin}${image.src}`;
+    const { width, height } = await getImageSize(fullPath);
+    onImageSelect(fullPath, width, height);
+  } catch (err) {
+    handleImageLoadError(err);
+  }
+};
 
 /**
  * デフォルト画像選択コンポーネント
@@ -57,21 +89,8 @@ const DefaultImageSelector: React.FC<DefaultImageSelectorProps> = ({ onImageSele
 
   // 画像が選択されたときの処理
   const handleImageSelect = async (image: { id: number; src: string }) => {
-    try {
-      // 画像のフルパスを取得
-      const fullPath = `${window.location.origin}${image.src}`;
-
-      // 画像のサイズを取得
-      const { width, height } = await getImageSize(fullPath);
-
-      // 選択状態を更新
-      setSelectedImageId(image.id);
-
-      // 親コンポーネントに通知
-      onImageSelect(fullPath, width, height);
-    } catch (err) {
-      console.error('デフォルト画像の読み込みに失敗しました:', err);
-    }
+    setSelectedImageId(image.id);
+    await fetchImageDetailsAndNotify(image, onImageSelect);
   };
 
   return (
