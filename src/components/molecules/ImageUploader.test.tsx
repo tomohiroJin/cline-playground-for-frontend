@@ -26,22 +26,25 @@ describe('ImageUploader', () => {
     fireEvent.change(input, { target: { files: [file] } });
   };
 
-  test('画像が未選択の場合、アップロードのテキストが表示される', () => {
+  /** ボタンをクリックしてファイル選択をシミュレート */
+  const clickAndSimulateFileInputChange = () => {
+    fireEvent.click(screen.getByText('画像を選択'));
+    simulateFileInputChange();
+  };
+
+  test('画像が未選択の場合、アップロードを促すテキストが表示される', () => {
     render(<ImageUploader onImageUpload={jest.fn()} />);
     expect(screen.getByText('画像をアップロードしてください')).toBeInTheDocument();
   });
 
-  test('正しい画像をアップロードすると onImageUpload が呼ばれ、プレビューが表示される', async () => {
+  test('正しい画像をアップロードすると、プレビューが表示され、onImageUpload が呼ばれる', async () => {
     mockedCheckImageFileSize.mockReturnValue(true);
     mockedGetImageSize.mockResolvedValue({ width: 100, height: 100 });
 
     const onImageUpload = jest.fn();
     render(<ImageUploader onImageUpload={onImageUpload} />);
 
-    // 「画像を選択」ボタンをクリック
-    fireEvent.click(screen.getByText('画像を選択'));
-
-    simulateFileInputChange();
+    clickAndSimulateFileInputChange();
 
     await waitFor(() => expect(onImageUpload).toHaveBeenCalledWith('blob://test', 100, 100));
     expect(screen.getByAltText('プレビュー')).toBeInTheDocument();
@@ -53,9 +56,7 @@ describe('ImageUploader', () => {
     const onImageUpload = jest.fn();
     render(<ImageUploader onImageUpload={onImageUpload} maxSizeInMB={5} />);
 
-    fireEvent.click(screen.getByText('画像を選択'));
-
-    simulateFileInputChange();
+    clickAndSimulateFileInputChange();
 
     await waitFor(() =>
       expect(
