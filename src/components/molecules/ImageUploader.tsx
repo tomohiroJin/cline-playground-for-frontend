@@ -22,48 +22,78 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   onImageUpload,
   maxSizeInMB = 10, // デフォルトは10MB
 }) => {
-  // 状態
+  /**
+   * プレビューURLの状態
+   */
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  /**
+   * エラーメッセージの状態
+   */
   const [error, setError] = useState<string | null>(null);
 
-  // ファイル入力への参照
+  /**
+   * ファイル入力の参照
+   */
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ファイル選択ボタンをクリックしたときの処理
+  /**
+   * ファイルサイズを検証する関数
+   *
+   * @param file - 検証するファイル
+   * @param maxSizeInMB - 最大サイズ（MB）
+   * @returns バリデーション結果
+   */
+  const validateFileSize = (file: File, maxSizeInMB: number): boolean => {
+    if (!checkFileSize(file, maxSizeInMB)) {
+      setError(`画像サイズが大きすぎます。${maxSizeInMB}MB以下の画像を選択してください。`);
+      return false;
+    }
+    return true;
+  };
+
+  /**
+   * ファイルを処理する関数
+   *
+   * @param file - 処理するファイル
+   */
+  const processFile = async (file: File) => {
+    try {
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+      setError(null);
+
+      const { width, height } = await getImageSize(url);
+      onImageUpload(url, width, height);
+    } catch {
+      setError('画像の読み込みに失敗しました。別の画像を試してください。');
+    }
+  };
+
+  /**
+   * ボタンがクリックされたときの処理
+   */
   const handleButtonClick = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
 
-  // ファイルが選択されたときの処理
+  /**
+   * ファイルが変更されたときの処理
+   *
+   * @param event - イベント
+   */
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
     const file = files[0];
 
-    // ファイルサイズをチェック
-    if (!checkFileSize(file, maxSizeInMB)) {
-      setError(`画像サイズが大きすぎます。${maxSizeInMB}MB以下の画像を選択してください。`);
-      return;
-    }
+    // ファイルサイズを検証
+    if (!validateFileSize(file, maxSizeInMB)) return;
 
-    try {
-      // 画像のプレビューURLを作成
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
-      setError(null);
-
-      // 画像のサイズを取得
-      const { width, height } = await getImageSize(url);
-
-      // 親コンポーネントに通知
-      onImageUpload(url, width, height);
-    } catch (err) {
-      setError('画像の読み込みに失敗しました。別の画像を試してください。');
-      console.error(err);
-    }
+    // ファイルを処理
+    await processFile(file);
   };
 
   return (
