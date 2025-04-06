@@ -48,6 +48,7 @@ export const CompletionOverlay = styled.div`
   color: white;
   font-size: 1.5rem;
   z-index: 20;
+  cursor: pointer;
 `;
 
 export const CompletionMessage = styled.h2`
@@ -147,4 +148,46 @@ export const EyeIcon = styled.span`
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
+`;
+
+export const VideoOverlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.9);
+  z-index: 30;
+`;
+
+export const VideoPlayer = styled.video`
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+`;
+
+export const CloseButton = styled.button`
+  position: absolute;
+  top: 10px;
+  left: 10px; /* 右上から左上に変更 */
+  background-color: rgba(255, 255, 255, 0.7);
+  color: #333;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #ccc;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  z-index: 40;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.9);
+  }
 `;
