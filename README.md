@@ -28,8 +28,8 @@ TypeScriptとReactで作成された、ブラウザで遊べる絵合わせパ�
 
 ```bash
 # リポジトリをクローン
-git clone https://github.com/yourusername/puzzle-game.git
-cd puzzle-game
+git clone https://github.com/tomohiroJin/cline-playground-for-frontend.git
+cd cline-playground-for-frontend
 
 # 依存パッケージをインストール
 npm install
