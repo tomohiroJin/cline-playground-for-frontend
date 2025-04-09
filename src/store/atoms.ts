@@ -92,3 +92,13 @@ export const hintModeEnabledAtom = createAtom<boolean>(false);
  * 完成オーバーレイの表示状態を管理するアトム
  */
 export const completionOverlayVisibleAtom = createAtom<boolean>(true);
+
+/**
+ * 動画再生モードの状態を管理するアトム
+ */
+export const videoPlaybackEnabledAtom = createAtom<boolean>(false);
+
+/**
+ * 再生する動画のURLを管理するアトム
+ */
+export const videoUrlAtom = createAtom<string | null>(null);

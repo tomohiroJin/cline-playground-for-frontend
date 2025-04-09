@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useCallback } from 'react';
 import {
   BoardContainer,
   Board,
@@ -14,11 +14,15 @@ import {
   HintImage,
   OverlayToggleButton,
   EyeIcon,
+  VideoOverlay,
+  VideoPlayer,
+  CloseButton,
 } from './PuzzleBoard.styles';
 import { PuzzlePiece as PuzzlePieceType } from '../../store/atoms';
 import PuzzlePiece from '../molecules/PuzzlePiece';
 import { formatElapsedTime } from '../../utils/puzzle-utils';
 import { useCompletionOverlay } from '../../hooks/useCompletionOverlay';
+import { useVideoPlayback } from '../../hooks/useVideoPlayback';
 
 /**
  * パズルボードコンポーネントのプロパティの型定義
@@ -73,6 +77,16 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
 }) => {
   // 完成オーバーレイの表示/非表示を管理
   const { overlayVisible, toggleOverlay } = useCompletionOverlay();
+
+  // 動画再生の状態と操作を管理
+  const {
+    videoPlaybackEnabled,
+    videoUrl,
+    enableVideoPlayback,
+    disableVideoPlayback,
+    getVideoUrlFromImage,
+    setVideo,
+  } = useVideoPlayback();
 
   // ボードのサイズを計算
   const { boardWidth, boardHeight, pieceWidth, pieceHeight } = calculateBoardAndPieceSizes(
@@ -130,6 +144,35 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
             <CompletionTime>所要時間: {formatElapsedTime(elapsedTime)}</CompletionTime>
             <RestartButton onClick={onReset}>もう一度挑戦</RestartButton>
           </CompletionOverlay>
+        )}
+
+        {completed && !overlayVisible && (
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              cursor: 'pointer',
+              zIndex: 10,
+            }}
+            onClick={() => {
+              const videoUrl = getVideoUrlFromImage(imageUrl);
+              if (videoUrl) {
+                setVideo(videoUrl);
+              }
+            }}
+          />
+        )}
+
+        {videoPlaybackEnabled && videoUrl && (
+          <VideoOverlay>
+            <VideoPlayer src={videoUrl} autoPlay controls onEnded={disableVideoPlayback} />
+            <CloseButton onClick={disableVideoPlayback} title="動画を閉じる">
+              ✕
+            </CloseButton>
+          </VideoOverlay>
         )}
         {completed && (
           <OverlayToggleButton
