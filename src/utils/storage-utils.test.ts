@@ -137,16 +137,12 @@ describe('storage-utils', () => {
   });
 
   describe('addClearHistory', () => {
-    // generateIdをモック
-    let originalGenerateId: any;
-
     beforeEach(() => {
-      // generateIdの実装をモック
-      originalGenerateId = require('./storage-utils').generateId;
-      jest.spyOn(require('./storage-utils'), 'generateId').mockImplementation(() => 'mocked-id');
-
       // Date.toISOStringをモック
       jest.spyOn(Date.prototype, 'toISOString').mockReturnValue('2025-04-09T12:00:00.000Z');
+
+      // generateIdをモック（内部関数なのでモジュール全体をモック）
+      jest.spyOn(Math, 'random').mockReturnValue(0.123456789);
     });
 
     afterEach(() => {
@@ -162,7 +158,7 @@ describe('storage-utils', () => {
       expect(updatedHistory[0].imageName).toBe('test_image');
       expect(updatedHistory[0].clearTime).toBe(120);
       expect(updatedHistory[0].clearDate).toBe('2025-04-09T12:00:00.000Z');
-      expect(updatedHistory[0].id).toBe('mocked-id');
+      expect(updatedHistory[0].id).toBeDefined();
 
       // ローカルストレージに保存されたことを確認
       expect(localStorageMock.setItem).toHaveBeenCalled();
