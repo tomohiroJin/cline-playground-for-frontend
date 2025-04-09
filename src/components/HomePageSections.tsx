@@ -211,23 +211,22 @@ export const GameSectionComponent: React.FC<GameSectionProps> = ({
           onReset={handleResetGame}
           onToggleHint={toggleHintMode}
           onEmptyPanelClick={handleEmptyPanelClick}
+          onEndGame={handleEndGame}
         />
-        {completed ? (
-          <div>パズルが完成しました！</div>
-        ) : (
-          <>
-            <StartButton onClick={handleEndGame}>ゲームを終了して設定に戻る</StartButton>
-            {completed}
-            {emptyPanelClicks >= 10 && (
-              <StartButton
-                onClick={() => completePuzzle(pieces, setPieces, setCompleted)}
-                style={{ marginTop: '10px', backgroundColor: '#ff9800' }}
-              >
-                テスト：パズルを完成させる
-              </StartButton>
-            )}
-          </>
-        )}
+        <>
+          {completed && <div>パズルが完成しました！</div>}
+          <StartButton onClick={handleEndGame} style={{ marginTop: completed ? '10px' : '0' }}>
+            {completed ? '設定に戻る' : 'ゲームを終了して設定に戻る'}
+          </StartButton>
+          {!completed && emptyPanelClicks >= 10 && (
+            <StartButton
+              onClick={() => completePuzzle(pieces, setPieces, setCompleted)}
+              style={{ marginTop: '10px', backgroundColor: '#ff9800' }}
+            >
+              テスト：パズルを完成させる
+            </StartButton>
+          )}
+        </>
       </>
     )}
   </GameSection>

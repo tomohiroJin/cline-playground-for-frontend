@@ -40,6 +40,7 @@ import { useVideoPlayback } from '../../hooks/useVideoPlayback';
  * @param onReset - ゲームをリセットする関数
  * @param onToggleHint - ヒントモードを切り替える関数
  * @param onEmptyPanelClick - 空のパネルをクリックしたときの処理
+ * @param onEndGame - ゲームを終了して設定に戻る関数
  */
 export type PuzzleBoardProps = {
   imageUrl: string;
@@ -55,6 +56,7 @@ export type PuzzleBoardProps = {
   onReset: () => void;
   onToggleHint: () => void;
   onEmptyPanelClick?: () => void; // 空白パネルがクリックされたときのコールバック
+  onEndGame?: () => void; // ゲームを終了して設定に戻る関数
 };
 
 /**
@@ -74,6 +76,7 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   onReset,
   onToggleHint,
   onEmptyPanelClick,
+  onEndGame,
 }) => {
   // 完成オーバーレイの表示/非表示を管理
   const { overlayVisible, toggleOverlay } = useCompletionOverlay();
@@ -143,6 +146,14 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
             <CompletionMessage>パズル完成！</CompletionMessage>
             <CompletionTime>所要時間: {formatElapsedTime(elapsedTime)}</CompletionTime>
             <RestartButton onClick={onReset}>もう一度挑戦</RestartButton>
+            {onEndGame && (
+              <RestartButton
+                onClick={onEndGame}
+                style={{ marginTop: '10px', backgroundColor: '#2196F3' }}
+              >
+                設定に戻る
+              </RestartButton>
+            )}
           </CompletionOverlay>
         )}
 
