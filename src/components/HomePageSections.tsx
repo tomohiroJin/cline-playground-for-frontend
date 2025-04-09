@@ -211,9 +211,15 @@ export const GameSectionComponent: React.FC<GameSectionProps> = ({
           onReset={handleResetGame}
           onToggleHint={toggleHintMode}
           onEmptyPanelClick={handleEmptyPanelClick}
+          onEndGame={handleEndGame}
         />
         {completed ? (
-          <div>パズルが完成しました！</div>
+          <>
+            <div>パズルが完成しました！</div>
+            <StartButton onClick={handleEndGame} style={{ marginTop: '10px' }}>
+              設定に戻る
+            </StartButton>
+          </>
         ) : (
           <>
             <StartButton onClick={handleEndGame}>ゲームを終了して設定に戻る</StartButton>
