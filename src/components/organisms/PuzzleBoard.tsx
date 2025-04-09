@@ -1,4 +1,4 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useEffect } from 'react';
 import {
   BoardContainer,
   Board,
@@ -23,6 +23,7 @@ import PuzzlePiece from '../molecules/PuzzlePiece';
 import { formatElapsedTime } from '../../utils/puzzle-utils';
 import { useCompletionOverlay } from '../../hooks/useCompletionOverlay';
 import { useVideoPlayback } from '../../hooks/useVideoPlayback';
+import { addClearHistory, extractImageName } from '../../utils/storage-utils';
 
 /**
  * パズルボードコンポーネントのプロパティの型定義
@@ -80,6 +81,14 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
 }) => {
   // 完成オーバーレイの表示/非表示を管理
   const { overlayVisible, toggleOverlay } = useCompletionOverlay();
+
+  // パズル完成時にクリア履歴を保存
+  useEffect(() => {
+    if (completed) {
+      const imageName = extractImageName(imageUrl);
+      addClearHistory(imageName, elapsedTime);
+    }
+  }, [completed, imageUrl, elapsedTime]);
 
   // 動画再生の状態と操作を管理
   const {

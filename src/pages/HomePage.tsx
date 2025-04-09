@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   HomeContainer,
   Instructions,
   InstructionsTitle,
   InstructionsList,
 } from './HomePage.styles';
+import ClearHistoryList from '../components/molecules/ClearHistoryList';
+import { getClearHistory, ClearHistory } from '../utils/storage-utils';
 import { SetupSectionComponent, GameSectionComponent } from '../components/HomePageSections';
 import { useGameState } from '../hooks/useGameState';
 
@@ -12,6 +14,10 @@ import { useGameState } from '../hooks/useGameState';
  * ホームページコンポーネント
  */
 const HomePage: React.FC = () => {
+  // クリア履歴の状態
+  const [clearHistory, setClearHistory] = useState<ClearHistory[]>([]);
+
+  // 状態管理をフックに移動
   const {
     toggleHintMode,
     gameStarted,
@@ -25,7 +31,13 @@ const HomePage: React.FC = () => {
     handleEndGame,
     handleEmptyPanelClick,
     gameState,
-  } = useGameState(); // 状態管理をフックに移動
+  } = useGameState();
+
+  // ゲームの状態が変わったときにクリア履歴を更新
+  useEffect(() => {
+    const history = getClearHistory();
+    setClearHistory(history);
+  }, [gameStarted]); // gameStartedが変わったとき（ゲーム終了時など）に履歴を更新
   return (
     <HomeContainer>
       {!gameStarted ? (
@@ -60,6 +72,9 @@ const HomePage: React.FC = () => {
           <li>「ヒントを表示」ボタンをクリックすると、元の画像が薄く表示されます。</li>
         </InstructionsList>
       </Instructions>
+
+      {/* クリア履歴の表示 */}
+      {!gameStarted && <ClearHistoryList history={clearHistory} />}
     </HomeContainer>
   );
 };
