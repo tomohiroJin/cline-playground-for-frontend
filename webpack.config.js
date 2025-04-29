@@ -1,5 +1,6 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin'); // 追加
 
 module.exports = {
   mode: 'development',
@@ -23,7 +24,7 @@ module.exports = {
         use: ['style-loader', 'css-loader'],
       },
       {
-        test: /\.(png|jpg|jpeg|gif|svg)$/,
+        test: /\.(png|jpg|jpeg|gif|svg|mp4)$/, // 動画も含める
         type: 'asset/resource',
       },
     ],
@@ -31,6 +32,17 @@ module.exports = {
   plugins: [
     new HtmlWebpackPlugin({
       template: './public/index.html',
+    }),
+    new CopyWebpackPlugin({
+      patterns: [
+        {
+          from: path.resolve(__dirname, 'public'), // public フォルダ
+          to: path.resolve(__dirname, 'dist'), // dist フォルダ
+          globOptions: {
+            ignore: ['**/index.html'], // index.html は除外
+          },
+        },
+      ],
     }),
   ],
   devServer: {
