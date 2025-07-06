@@ -1,12 +1,4 @@
 import React from 'react';
-import {
-  SelectorContainer,
-  Label,
-  SelectWrapper,
-  StyledSelect,
-  SelectArrow,
-  Description,
-} from './DifficultySelector.styles';
 
 /**
  * 難易度選択コンポーネントのプロパティ
@@ -61,27 +53,30 @@ const DifficultySelector: React.FC<DifficultySelectorProps> = ({
   };
 
   return (
-    <SelectorContainer>
-      <Label htmlFor="difficulty-select">難易度を選択</Label>
-      <SelectWrapper>
-        <StyledSelect
+    <div className="flex flex-col items-center mb-5">
+      <label htmlFor="difficulty-select" className="text-base mb-2 text-gray-800">
+        難易度を選択
+      </label>
+      <div className="relative w-52">
+        <select
           id="difficulty-select"
           value={value}
           onChange={handleChange}
           disabled={disabled}
+          className="w-full p-2 border rounded appearance-none bg-white text-base cursor-pointer focus:outline-none focus:border-green-500"
         >
           {difficultyOptions.map(option => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>
           ))}
-        </StyledSelect>
-        <SelectArrow />
-      </SelectWrapper>
-      <Description>
+        </select>
+        <div className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-800" />
+      </div>
+      <p className="text-sm text-gray-600 mt-1">
         {difficultyOptions.find(option => option.value === value)?.description || ''}
-      </Description>
-    </SelectorContainer>
+      </p>
+    </div>
   );
 };
 

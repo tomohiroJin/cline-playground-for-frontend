@@ -20,7 +20,7 @@ TypeScriptとReactで作成された、ブラウザで遊べる絵合わせパ�
 
 - **言語**: TypeScript
 - **フレームワーク**: React
-- **スタイリング**: styled-components
+- **スタイリング**: Tailwind CSS
 - **状態管理**: Jotai
 - **ルーティング**: React Router
 - **テスト**: Jest
@@ -130,7 +130,7 @@ MIT
 
 - React
 - TypeScript
-- styled-components
+- Tailwind CSS
 - Jotai
 - React Router
 - Jest

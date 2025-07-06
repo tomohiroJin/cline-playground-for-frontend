@@ -1,23 +1,5 @@
 import React, { useRef, useCallback, useEffect } from 'react';
-import {
-  BoardContainer,
-  Board,
-  BoardGrid,
-  GridCell,
-  CompletionOverlay,
-  CompletionMessage,
-  CompletionTime,
-  RestartButton,
-  StatusBar,
-  ElapsedTime,
-  HintToggleButton,
-  HintImage,
-  OverlayToggleButton,
-  EyeIcon,
-  VideoOverlay,
-  VideoPlayer,
-  CloseButton,
-} from './PuzzleBoard.styles';
+
 import { PuzzlePiece as PuzzlePieceType } from '../../store/atoms';
 import PuzzlePiece from '../molecules/PuzzlePiece';
 import { formatElapsedTime } from '../../utils/puzzle-utils';
@@ -131,11 +113,28 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   const renderGridCells = createGridCells(division, completed);
 
   return (
-    <BoardContainer>
-      <Board width={boardWidth} height={boardHeight} ref={boardRef}>
-        <BoardGrid title="ボードグリッド" division={division} $completed={completed}>
+    <div className="flex flex-col items-center mb-5">
+      <div
+        ref={boardRef}
+        className="relative bg-gray-100 border-2 border-gray-300 rounded overflow-hidden touch-none"
+        style={{ width: boardWidth, height: boardHeight }}
+      >
+        <div
+          title="ボードグリッド"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'grid',
+            gridTemplateColumns: `repeat(${division}, 1fr)`,
+            gridTemplateRows: `repeat(${division}, 1fr)`,
+            pointerEvents: 'none',
+          }}
+        >
           {renderGridCells}
-        </BoardGrid>
+        </div>
         {pieces.map(piece => (
           <PuzzlePiece
             key={piece.id}
@@ -151,32 +150,29 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
           />
         ))}
         {completed && overlayVisible && (
-          <CompletionOverlay>
-            <CompletionMessage>パズル完成！</CompletionMessage>
-            <CompletionTime>所要時間: {formatElapsedTime(elapsedTime)}</CompletionTime>
-            <RestartButton onClick={onReset}>もう一度挑戦</RestartButton>
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-white text-xl z-20 cursor-pointer">
+            <h2 className="mb-5">パズル完成！</h2>
+            <p className="text-lg mb-5">所要時間: {formatElapsedTime(elapsedTime)}</p>
+            <button
+              className="bg-green-500 text-white px-5 py-2 rounded hover:bg-green-600"
+              onClick={onReset}
+            >
+              もう一度挑戦
+            </button>
             {onEndGame && (
-              <RestartButton
+              <button
+                className="bg-blue-500 text-white px-5 py-2 rounded hover:bg-blue-600 mt-2"
                 onClick={onEndGame}
-                style={{ marginTop: '10px', backgroundColor: '#2196F3' }}
               >
                 設定に戻る
-              </RestartButton>
+              </button>
             )}
-          </CompletionOverlay>
+          </div>
         )}
 
         {completed && !overlayVisible && (
           <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              cursor: 'pointer',
-              zIndex: 10,
-            }}
+            className="absolute inset-0 cursor-pointer z-10"
             onClick={() => {
               const videoUrl = getVideoUrlFromImage(imageUrl);
               if (videoUrl) {
@@ -187,31 +183,50 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
         )}
 
         {videoPlaybackEnabled && videoUrl && (
-          <VideoOverlay>
-            <VideoPlayer src={videoUrl} autoPlay controls onEnded={disableVideoPlayback} />
-            <CloseButton onClick={disableVideoPlayback} title="動画を閉じる">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/90 z-30">
+            <video
+              src={videoUrl}
+              autoPlay
+              controls
+              onEnded={disableVideoPlayback}
+              className="max-w-full max-h-full object-contain"
+            />
+            <button
+              className="absolute top-2 left-2 bg-white/70 w-9 h-9 flex items-center justify-center rounded-full border"
+              onClick={disableVideoPlayback}
+              title="動画を閉じる"
+            >
               ✕
-            </CloseButton>
-          </VideoOverlay>
+            </button>
+          </div>
         )}
         {completed && (
-          <OverlayToggleButton
-            active={overlayVisible ? 'true' : 'false'}
+          <button
+            className={`absolute top-2 right-2 w-9 h-9 rounded-full border flex items-center justify-center bg-white/70 z-30`}
             onClick={toggleOverlay}
             title={overlayVisible ? 'オーバーレイを非表示' : 'オーバーレイを表示'}
           >
-            <EyeIcon>{overlayVisible ? '👁️' : '👁️‍🗨️'}</EyeIcon>
-          </OverlayToggleButton>
+            <span>{overlayVisible ? '👁️' : '👁️‍🗨️'}</span>
+          </button>
         )}
-        {hintMode && !completed && <HintImage $imageUrl={imageUrl} title="ヒント画像" />}
-      </Board>
-      <StatusBar>
-        <ElapsedTime>経過時間: {formatElapsedTime(elapsedTime)}</ElapsedTime>
-        <HintToggleButton active={hintMode ? 'true' : 'false'} onClick={onToggleHint}>
+        {hintMode && !completed && (
+          <div
+            title="ヒント画像"
+            className="absolute inset-0 opacity-30 pointer-events-none z-0"
+            style={{ backgroundImage: `url(${imageUrl})`, backgroundSize: '100% 100%' }}
+          />
+        )}
+      </div>
+      <div className="flex justify-between w-full mt-2 p-2 bg-gray-100 rounded">
+        <div className="text-sm text-gray-800">経過時間: {formatElapsedTime(elapsedTime)}</div>
+        <button
+          className={`px-2 py-1 border rounded text-sm ${hintMode ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-800'}`}
+          onClick={onToggleHint}
+        >
           {hintMode ? 'ヒントを隠す' : 'ヒントを表示'}
-        </HintToggleButton>
-      </StatusBar>
-    </BoardContainer>
+        </button>
+      </div>
+    </div>
   );
 };
 
@@ -265,7 +280,11 @@ const isAdjacentToEmpty = (
  */
 const createGridCells = (division: number, completed: boolean) =>
   Array.from({ length: division * division }, (_, i) => (
-    <GridCell title="ボードセル" key={i} $completed={completed} />
+    <div
+      title="ボードセル"
+      key={i}
+      className={completed ? '' : 'border border-dashed border-black/10'}
+    />
   ));
 
 export default PuzzleBoard;

@@ -1,13 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { getImageSize } from '../../utils/puzzle-utils';
-import {
-  SelectorContainer,
-  Title,
-  ImagesGrid,
-  ImageItem,
-  DefaultImage,
-  SelectedIndicator,
-} from './DefaultImageSelector.styles';
 
 // デフォルト画像の定義
 const DEFAULT_IMAGES = [
@@ -94,21 +86,25 @@ const DefaultImageSelector: React.FC<DefaultImageSelectorProps> = ({ onImageSele
   };
 
   return (
-    <SelectorContainer>
-      <Title>デフォルト画像から選択</Title>
-      <ImagesGrid>
+    <div className="flex flex-col items-center mb-5 w-full">
+      <h3 className="mb-2 text-lg text-gray-800">デフォルト画像から選択</h3>
+      <div className="grid grid-cols-3 gap-2 w-full max-w-[600px]">
         {DEFAULT_IMAGES.map(image => (
-          <ImageItem
+          <div
             key={image.id}
-            $isSelected={selectedImageId === image.id}
+            className={`relative cursor-pointer rounded overflow-hidden border-2 transition-transform ${selectedImageId === image.id ? 'border-green-500' : 'border-transparent'} hover:scale-105 hover:shadow`}
             onClick={() => handleImageSelect(image)}
           >
-            <DefaultImage src={image.src} alt={image.alt} />
-            {selectedImageId === image.id && <SelectedIndicator>✓</SelectedIndicator>}
-          </ImageItem>
+            <img src={image.src} alt={image.alt} className="w-full h-[150px] object-cover block" />
+            {selectedImageId === image.id && (
+              <div className="absolute top-1 right-1 bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">
+                ✓
+              </div>
+            )}
+          </div>
         ))}
-      </ImagesGrid>
-    </SelectorContainer>
+      </div>
+    </div>
   );
 };
 

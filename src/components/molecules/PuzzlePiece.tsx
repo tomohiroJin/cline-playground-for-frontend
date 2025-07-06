@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { PieceContainer, PieceImage } from './PuzzlePiece.styles';
 import { PuzzlePiece as PuzzlePieceType } from '../../store/atoms';
 
 // プロパティの型定義
@@ -60,29 +59,31 @@ const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
   }, [piece.currentPosition.row, piece.currentPosition.col, pieceWidth, pieceHeight]);
 
   return (
-    <PieceContainer
-      $isEmpty={piece.isEmpty}
-      $isDragging={false}
-      $width={pieceWidth}
-      $height={pieceHeight}
-      $completed={completed}
+    <div
+      className={`absolute transition-transform ${
+        piece.isEmpty || completed ? '' : 'border-2 border-white shadow'
+      } select-none overflow-hidden touch-none`}
       style={{
+        width: pieceWidth,
+        height: pieceHeight,
         transform: `translate(${position.x}px, ${position.y}px)`,
+        cursor: piece.isEmpty ? 'default' : 'pointer',
+        backgroundColor: !completed && piece.isEmpty ? 'transparent' : 'initial',
       }}
       onClick={handleClick}
     >
       {/* 空白ピースでも、パズルが完成していれば画像を表示する */}
       {(!piece.isEmpty || completed) && (
-        <PieceImage
-          $imageUrl={imageUrl}
-          $originalWidth={originalWidth}
-          $originalHeight={originalHeight}
-          $row={piece.correctPosition.row}
-          $col={piece.correctPosition.col}
-          $division={division}
+        <div
+          className="w-full h-full"
+          style={{
+            backgroundImage: `url(${imageUrl})`,
+            backgroundSize: `${division * 100}% ${division * 100}%`,
+            backgroundPosition: `-${piece.correctPosition.col * 100}% -${piece.correctPosition.row * 100}%`,
+          }}
         />
       )}
-    </PieceContainer>
+    </div>
   );
 };
 

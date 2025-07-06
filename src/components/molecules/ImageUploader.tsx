@@ -1,13 +1,5 @@
 import React, { useRef, useState } from 'react';
 import { checkFileSize, getImageSize } from '../../utils/puzzle-utils';
-import {
-  UploaderContainer,
-  UploadButton,
-  ErrorMessage,
-  ImagePreview,
-  PreviewImage,
-  UploadText,
-} from './ImageUploader.styles';
 
 // プロパティの型定義
 interface ImageUploaderProps {
@@ -97,16 +89,25 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   };
 
   return (
-    <UploaderContainer>
-      <ImagePreview $hasImage={!!previewUrl}>
+    <div className="flex flex-col items-center mb-5">
+      <div
+        className={`w-[300px] h-[200px] border-2 rounded flex items-center justify-center mb-2 overflow-hidden border-dashed ${
+          previewUrl ? 'border-green-500' : 'border-gray-300'
+        }`}
+      >
         {previewUrl ? (
-          <PreviewImage src={previewUrl} alt="プレビュー" />
+          <img src={previewUrl} alt="プレビュー" className="max-w-full max-h-full object-contain" />
         ) : (
-          <UploadText>画像をアップロードしてください</UploadText>
+          <p className="text-gray-600 text-base">画像をアップロードしてください</p>
         )}
-      </ImagePreview>
+      </div>
 
-      <UploadButton onClick={handleButtonClick}>画像を選択</UploadButton>
+      <button
+        className="bg-green-500 text-white py-2 px-5 rounded mb-2 hover:bg-green-600 disabled:bg-gray-400"
+        onClick={handleButtonClick}
+      >
+        画像を選択
+      </button>
 
       <input
         type="file"
@@ -116,8 +117,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         style={{ display: 'none' }}
       />
 
-      {error && <ErrorMessage>{error}</ErrorMessage>}
-    </UploaderContainer>
+      {error && <p className="text-red-600 text-sm mt-1">{error}</p>}
+    </div>
   );
 };
 

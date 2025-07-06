@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  SetupSection,
-  GameSection,
-  ToggleButtonsContainer,
-  ToggleButton,
-  StartButton,
-} from '../pages/HomePage.styles';
+
 import ImageUploader from '../components/molecules/ImageUploader';
 import DefaultImageSelector from '../components/molecules/DefaultImageSelector';
 import DifficultySelector from '../components/molecules/DifficultySelector';
@@ -58,31 +52,35 @@ export const SetupSectionComponent: React.FC<SetupSectionProps> = ({
   originalImageSize,
   division,
 }) => (
-  <SetupSection>
-    <ToggleButtonsContainer>
-      <ToggleButton
-        $isActive={imageSourceMode === 'upload'}
+  <section className="flex flex-col items-center mb-8 p-5 bg-white rounded-lg shadow w-full max-w-[600px]">
+    <div className="flex justify-center mb-5 w-full">
+      <button
+        className={`px-4 py-2 border text-sm ${imageSourceMode === 'upload' ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-800'}`}
         onClick={() => setImageSourceMode('upload')}
       >
         画像をアップロード
-      </ToggleButton>
-      <ToggleButton
-        $isActive={imageSourceMode === 'default'}
+      </button>
+      <button
+        className={`px-4 py-2 border text-sm ${imageSourceMode === 'default' ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-800'}`}
         onClick={() => setImageSourceMode('default')}
       >
         デフォルト画像から選択
-      </ToggleButton>
-    </ToggleButtonsContainer>
+      </button>
+    </div>
     {imageSourceMode === 'upload' ? (
       <ImageUploader onImageUpload={handleImageUpload} maxSizeInMB={10} />
     ) : (
       <DefaultImageSelector onImageSelect={handleImageUpload} />
     )}
     <DifficultySelector value={division} onChange={handleDifficultyChange} disabled={!imageUrl} />
-    <StartButton onClick={handleStartGame} disabled={!imageUrl || !originalImageSize}>
+    <button
+      className="bg-green-500 text-white py-3 px-6 rounded mt-5 disabled:bg-gray-400"
+      onClick={handleStartGame}
+      disabled={!imageUrl || !originalImageSize}
+    >
       パズルを開始
-    </StartButton>
-  </SetupSection>
+    </button>
+  </section>
 );
 
 /**
@@ -194,7 +192,7 @@ export const GameSectionComponent: React.FC<GameSectionProps> = ({
   setPieces,
   setCompleted,
 }) => (
-  <GameSection>
+  <section className="flex flex-col items-center w-full">
     {imageUrl && originalImageSize && (
       <>
         <PuzzleBoard
@@ -215,19 +213,24 @@ export const GameSectionComponent: React.FC<GameSectionProps> = ({
         />
         <>
           {completed && <div>パズルが完成しました！</div>}
-          <StartButton onClick={handleEndGame} style={{ marginTop: completed ? '10px' : '0' }}>
+          <button
+            className="bg-green-500 text-white py-3 px-6 rounded mt-2"
+            onClick={handleEndGame}
+            style={{ marginTop: completed ? '10px' : '0' }}
+          >
             {completed ? '設定に戻る' : 'ゲームを終了して設定に戻る'}
-          </StartButton>
+          </button>
           {!completed && emptyPanelClicks >= 10 && (
-            <StartButton
+            <button
+              className="bg-orange-500 text-white py-3 px-6 rounded mt-2"
               onClick={() => completePuzzle(pieces, setPieces, setCompleted)}
-              style={{ marginTop: '10px', backgroundColor: '#ff9800' }}
+              style={{ marginTop: '10px' }}
             >
               テスト：パズルを完成させる
-            </StartButton>
+            </button>
           )}
         </>
       </>
     )}
-  </GameSection>
+  </section>
 );

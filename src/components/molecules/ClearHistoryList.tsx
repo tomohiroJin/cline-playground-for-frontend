@@ -1,7 +1,6 @@
 import React from 'react';
 import { ClearHistory } from '../../utils/storage-utils';
 import { formatElapsedTime } from '../../utils/puzzle-utils';
-import styled from 'styled-components';
 
 /**
  * クリア履歴リストのプロパティの型定義
@@ -17,19 +16,26 @@ type ClearHistoryListProps = {
  */
 const ClearHistoryList: React.FC<ClearHistoryListProps> = ({ history }) => {
   if (history.length === 0) {
-    return <EmptyMessage>クリア履歴はありません</EmptyMessage>;
+    return (
+      <div className="text-center p-5 text-gray-600 italic">クリア履歴はありません</div>
+    );
   }
 
   return (
-    <HistoryContainer>
-      <HistoryTitle>クリア履歴</HistoryTitle>
-      <HistoryList>
+    <div className="mt-5 w-full max-w-[600px] bg-gray-100 rounded-lg p-4 shadow">
+      <h3 className="text-lg mb-3 text-gray-800 border-b-2 border-gray-300 pb-2">クリア履歴</h3>
+      <ul className="list-none p-0 m-0 max-h-[300px] overflow-y-auto">
         {history.map(entry => (
-          <HistoryItem key={entry.id}>
-            <ImageName>{entry.imageName}</ImageName>
-            <ClearInfo>
-              <ClearTime>クリアタイム: {formatElapsedTime(entry.clearTime)}</ClearTime>
-              <ClearDate>
+          <li
+            key={entry.id}
+            className="p-3 border-b border-gray-300 flex justify-between items-center last:border-b-0 hover:bg-gray-200"
+          >
+            <div className="font-bold text-blue-600">{entry.imageName}</div>
+            <div className="flex flex-col items-end">
+              <div className="font-bold text-green-600">
+                クリアタイム: {formatElapsedTime(entry.clearTime)}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
                 {new Date(entry.clearDate).toLocaleDateString('ja-JP', {
                   year: 'numeric',
                   month: '2-digit',
@@ -37,85 +43,13 @@ const ClearHistoryList: React.FC<ClearHistoryListProps> = ({ history }) => {
                   hour: '2-digit',
                   minute: '2-digit',
                 })}
-              </ClearDate>
-            </ClearInfo>
-          </HistoryItem>
+              </div>
+            </div>
+          </li>
         ))}
-      </HistoryList>
-    </HistoryContainer>
+      </ul>
+    </div>
   );
 };
-
-// スタイル定義
-const HistoryContainer = styled.div`
-  margin-top: 20px;
-  width: 100%;
-  max-width: 600px;
-  background-color: #f5f5f5;
-  border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-`;
-
-const HistoryTitle = styled.h3`
-  font-size: 18px;
-  margin-bottom: 12px;
-  color: #333;
-  border-bottom: 2px solid #ddd;
-  padding-bottom: 8px;
-`;
-
-const HistoryList = styled.ul`
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  max-height: 300px;
-  overflow-y: auto;
-`;
-
-const HistoryItem = styled.li`
-  padding: 12px;
-  border-bottom: 1px solid #ddd;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  &:last-child {
-    border-bottom: none;
-  }
-
-  &:hover {
-    background-color: #eaeaea;
-  }
-`;
-
-const ImageName = styled.div`
-  font-weight: bold;
-  color: #2196f3;
-`;
-
-const ClearInfo = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-`;
-
-const ClearTime = styled.div`
-  font-weight: bold;
-  color: #4caf50;
-`;
-
-const ClearDate = styled.div`
-  font-size: 12px;
-  color: #757575;
-  margin-top: 4px;
-`;
-
-const EmptyMessage = styled.div`
-  text-align: center;
-  padding: 20px;
-  color: #757575;
-  font-style: italic;
-`;
 
 export default ClearHistoryList;

@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import {
-  HomeContainer,
-  Instructions,
-  InstructionsTitle,
-  InstructionsList,
-} from './HomePage.styles';
 import ClearHistoryList from '../components/molecules/ClearHistoryList';
 import { getClearHistory, ClearHistory } from '../utils/storage-utils';
-import { SetupSectionComponent, GameSectionComponent } from '../components/HomePageSections';
+import {
+  SetupSectionComponent,
+  GameSectionComponent,
+} from '../components/HomePageSections';
 import { useGameState } from '../hooks/useGameState';
 
 /**
@@ -39,7 +36,7 @@ const HomePage: React.FC = () => {
     setClearHistory(history);
   }, [gameStarted]); // gameStartedが変わったとき（ゲーム終了時など）に履歴を更新
   return (
-    <HomeContainer>
+    <div className="flex flex-col items-center">
       {!gameStarted ? (
         <SetupSectionComponent
           imageSourceMode={imageSourceMode}
@@ -62,20 +59,20 @@ const HomePage: React.FC = () => {
           handleEmptyPanelClick={handleEmptyPanelClick}
         />
       )}
-      <Instructions>
-        <InstructionsTitle>遊び方</InstructionsTitle>
-        <InstructionsList>
+      <div className="my-5 p-4 bg-gray-100 border-l-4 border-green-500 rounded w-full max-w-[600px]">
+        <h3 className="mt-0 text-gray-800">遊び方</h3>
+        <ul className="mt-2 pl-5 text-gray-700 list-disc">
           <li>画像をアップロードするか、デフォルト画像から選択して、難易度を選択します。</li>
           <li>「パズルを開始」ボタンをクリックすると、パズルが始まります。</li>
           <li>空白の隣にあるピースをクリックすると、そのピースが空白の位置に移動します。</li>
           <li>すべてのピースを正しい位置に戻すと、パズルが完成します。</li>
           <li>「ヒントを表示」ボタンをクリックすると、元の画像が薄く表示されます。</li>
-        </InstructionsList>
-      </Instructions>
+        </ul>
+      </div>
 
       {/* クリア履歴の表示 */}
       {!gameStarted && <ClearHistoryList history={clearHistory} />}
-    </HomeContainer>
+    </div>
   );
 };
 
