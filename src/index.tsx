@@ -1,5 +1,5 @@
-import React from 'react';
 import { createRoot } from 'react-dom/client';
+import { StrictMode } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 
@@ -16,9 +16,9 @@ const root = createRoot(container);
 
 // アプリケーションをレンダリング
 root.render(
-  <React.StrictMode>
+  <StrictMode>
     <BrowserRouter>
       <App />
     </BrowserRouter>
-  </React.StrictMode>
+  </StrictMode>
 );

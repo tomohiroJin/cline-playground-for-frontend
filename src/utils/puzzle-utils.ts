@@ -119,7 +119,9 @@ export const shufflePuzzlePieces = (
 ): { pieces: PuzzlePiece[]; emptyPosition: Position } => {
   validateShuffleInputs(pieces, division);
 
+  // eslint-disable-next-line
   let shuffledPieces = [...pieces];
+  // eslint-disable-next-line
   let currentEmptyPos = { ...emptyPosition };
 
   for (let i = 0; i < moves; i++) {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import HomePage from './HomePage';
 import { useGameState } from '../hooks/useGameState';
 import { getClearHistory } from '../utils/storage-utils';
@@ -10,6 +10,7 @@ jest.mock('../utils/storage-utils');
 jest.mock('../components/molecules/ClearHistoryList', () => {
   return {
     __esModule: true,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     default: ({ history }: { history: any[] }) => (
       <div data-testid="clear-history-list">
         {history.length > 0 ? (

@@ -1,5 +1,5 @@
 import React from 'react';
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { usePuzzle } from './usePuzzle';
 import { Provider } from 'jotai';
 import * as puzzleUtils from '../utils/puzzle-utils';
@@ -82,6 +82,7 @@ describe('usePuzzle', () => {
   });
 
   describe('usePuzzle 初期状態の振る舞い', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let result: { current: any };
     beforeEach(() => {
       const hook = renderHookWithJotai(() => usePuzzle());

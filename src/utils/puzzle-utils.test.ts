@@ -35,8 +35,7 @@ class MockImage {
   }
 }
 
-// @ts-ignore - HTMLImageElementとの互換性エラーを無視
-global.Image = MockImage as any;
+global.Image = MockImage as unknown as typeof Image;
 
 describe('puzzle-utils', () => {
   describe('getImageSize', () => {
@@ -61,8 +60,7 @@ describe('puzzle-utils', () => {
         }
       }
 
-      // @ts-ignore - HTMLImageElementとの互換性エラーを無視
-      global.Image = ErrorMockImage as any;
+      global.Image = ErrorMockImage as unknown as typeof Image;
 
       await expect(getImageSize('invalid-url.jpg')).rejects.toThrow('画像の読み込みに失敗しました');
 

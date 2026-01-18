@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import {
   BoardContainer,
   Board,
@@ -91,14 +91,8 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   }, [completed, imageUrl, elapsedTime]);
 
   // 動画再生の状態と操作を管理
-  const {
-    videoPlaybackEnabled,
-    videoUrl,
-    enableVideoPlayback,
-    disableVideoPlayback,
-    getVideoUrlFromImage,
-    setVideo,
-  } = useVideoPlayback();
+  const { videoPlaybackEnabled, videoUrl, disableVideoPlayback, getVideoUrlFromImage, setVideo } =
+    useVideoPlayback();
 
   // ボードのサイズを計算
   const { boardWidth, boardHeight, pieceWidth, pieceHeight } = calculateBoardAndPieceSizes(
