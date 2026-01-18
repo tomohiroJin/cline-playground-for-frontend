@@ -1,0 +1,70 @@
+
+> puzzle-game@1.0.0 test
+> jest
+
+PASS src/hooks/useGameState.test.ts (9.866 s)
+PASS src/components/molecules/PuzzlePiece.test.tsx (9.924 s)
+PASS src/components/molecules/ImageUploader.test.tsx (9.961 s)
+PASS src/components/molecules/DifficultySelector.test.tsx (10.46 s)
+PASS src/hooks/useHintMode.test.tsx (10.653 s)
+PASS src/components/molecules/ClearHistoryList.test.tsx (11.277 s)
+PASS src/components/HomePageSections.test.tsx (11.622 s)
+PASS src/components/organisms/PuzzleBoard.test.tsx (12.491 s)
+PASS src/utils/storage-utils.test.ts (13.531 s)
+FAIL src/components/molecules/DefaultImageSelector.test.tsx (15.268 s)
+  ● DefaultImageSelector › デフォルト画像が表示されること
+
+    TypeError: Cannot redefine property: location
+        at Function.defineProperty (<anonymous>)
+
+      25 |     (puzzleUtils.getImageSize as jest.Mock).mockResolvedValue(mockImageSize);
+      26 |
+    > 27 |     Object.defineProperty(window, 'location', {
+         |            ^
+      28 |       value: { origin: 'http://localhost:3000' },
+      29 |       writable: true,
+      30 |     });
+
+      at Object.<anonymous> (src/components/molecules/DefaultImageSelector.test.tsx:27:12)
+
+  ● DefaultImageSelector › 画像をクリックすると選択状態になり、onImageSelectが呼ばれること
+
+    TypeError: Cannot redefine property: location
+        at Function.defineProperty (<anonymous>)
+
+      25 |     (puzzleUtils.getImageSize as jest.Mock).mockResolvedValue(mockImageSize);
+      26 |
+    > 27 |     Object.defineProperty(window, 'location', {
+         |            ^
+      28 |       value: { origin: 'http://localhost:3000' },
+      29 |       writable: true,
+      30 |     });
+
+      at Object.<anonymous> (src/components/molecules/DefaultImageSelector.test.tsx:27:12)
+
+  ● DefaultImageSelector › 別の画像を選択すると選択状態が切り替わること
+
+    TypeError: Cannot redefine property: location
+        at Function.defineProperty (<anonymous>)
+
+      25 |     (puzzleUtils.getImageSize as jest.Mock).mockResolvedValue(mockImageSize);
+      26 |
+    > 27 |     Object.defineProperty(window, 'location', {
+         |            ^
+      28 |       value: { origin: 'http://localhost:3000' },
+      29 |       writable: true,
+      30 |     });
+
+      at Object.<anonymous> (src/components/molecules/DefaultImageSelector.test.tsx:27:12)
+
+PASS src/hooks/usePuzzle.test.tsx (12.389 s)
+PASS src/utils/puzzle-utils.test.ts (12.236 s)
+PASS src/pages/HomePage.test.tsx (16.096 s)
+PASS src/hooks/useVideoPlayback.test.tsx (10.105 s)
+PASS src/hooks/useCompletionOverlay.test.tsx (9.301 s)
+
+Test Suites: 1 failed, 14 passed, 15 total
+Tests:       3 failed, 95 passed, 98 total
+Snapshots:   0 total
+Time:        28.668 s
+Ran all test suites.

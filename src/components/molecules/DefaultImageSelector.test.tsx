@@ -24,10 +24,10 @@ describe('DefaultImageSelector', () => {
     jest.clearAllMocks();
     (puzzleUtils.getImageSize as jest.Mock).mockResolvedValue(mockImageSize);
 
-    Object.defineProperty(window, 'location', {
-      value: { origin: 'http://localhost:3000' },
-      writable: true,
-    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (window as any).location;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).location = { origin: 'http://localhost:3000' };
   });
 
   it('デフォルト画像が表示されること', () => {
