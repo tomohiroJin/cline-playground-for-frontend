@@ -1,57 +1,25 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import styled from 'styled-components';
-import HomePage from './pages/HomePage';
-
-// アプリケーションのルートコンテナ
-const AppContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-`;
-
-// ヘッダーコンポーネント
-const Header = styled.header`
-  text-align: center;
-  margin-bottom: 30px;
-`;
-
-// タイトルコンポーネント
-const Title = styled.h1`
-  color: #333;
-  font-size: 2rem;
-`;
-
-// フッターコンポーネント
-const Footer = styled.footer`
-  margin-top: auto;
-  text-align: center;
-  padding: 20px 0;
-  color: #666;
-  font-size: 0.9rem;
-`;
+import GameMenuPage from './pages/GameMenuPage';
+import PuzzleGame from './pages/games/PuzzleGame';
+import FallingBlockGame from './pages/games/FallingBlockGame';
+import AirHockeyGame from './pages/games/AirHockeyGame';
+import RacingGame from './pages/games/RacingGame';
 
 /**
  * アプリケーションのルートコンポーネント
  */
 const App: React.FC = () => {
   return (
-    <AppContainer>
-      <Header>
-        <Title>絵合わせパズル</Title>
-      </Header>
-      
+    <>
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<GameMenuPage />} />
+        <Route path="/puzzle" element={<PuzzleGame />} />
+        <Route path="/falling-block" element={<FallingBlockGame />} />
+        <Route path="/air-hockey" element={<AirHockeyGame />} />
+        <Route path="/racing" element={<RacingGame />} />
       </Routes>
-      
-      <Footer>
-        <p>© 2025 絵合わせパズル</p>
-      </Footer>
-    </AppContainer>
+    </>
   );
 };
 

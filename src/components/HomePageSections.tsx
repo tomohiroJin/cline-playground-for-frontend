@@ -97,26 +97,6 @@ export type Position = {
 };
 
 /**
- * パズルの完成時の処理を行います。
- *
- * @param pieces - パズルのピースの配列
- * @param setPieces - パズルのピースを設定する関数
- * @param setCompleted - ゲームの完了状態を設定する関数
- */
-const completePuzzle = (
-  pieces: PuzzlePiece[],
-  setPieces: React.Dispatch<React.SetStateAction<PuzzlePiece[]>>,
-  setCompleted: React.Dispatch<React.SetStateAction<boolean>>
-) => {
-  const correctPieces = pieces.map(piece => ({
-    ...piece,
-    currentPosition: { ...piece.correctPosition },
-  }));
-  setPieces(correctPieces);
-  setCompleted(true);
-};
-
-/**
  * GameSection コンポーネントのプロパティの型定義
  *
  * @param imageUrl - アップロードされた画像のURL
@@ -133,13 +113,12 @@ const completePuzzle = (
  * @param handleEmptyPanelClick - 空のパネルをクリックしたときの処理
  * @param handleEndGame - ゲームを終了する関数
  * @param emptyPanelClicks - 空のパネルがクリックされた回数
- * @param setPieces - パズルのピースを設定する関数
- * @param setCompleted - ゲームの完了状態を設定する関数
+ * @param onSolve - パズルを完成させる関数（デバッグ用）
  */
 export type GameSectionProps = {
   imageUrl: string | null;
   originalImageSize: { width: number; height: number } | null;
-  pieces: PuzzlePiece[];
+  pieces: ReadonlyArray<PuzzlePiece>;
   division: number;
   elapsedTime: number;
   completed: boolean;
@@ -151,8 +130,7 @@ export type GameSectionProps = {
   handleEmptyPanelClick: () => void;
   handleEndGame: () => void;
   emptyPanelClicks: number;
-  setPieces: React.Dispatch<React.SetStateAction<PuzzlePiece[]>>;
-  setCompleted: React.Dispatch<React.SetStateAction<boolean>>;
+  onSolve: () => void;
 };
 
 /**
@@ -172,8 +150,7 @@ export type GameSectionProps = {
  * @param handleEmptyPanelClick - 空のパネルをクリックしたときの処理
  * @param handleEndGame - ゲームを終了する関数
  * @param emptyPanelClicks - 空のパネルがクリックされた回数
- * @param setPieces - パズルのピースを設定する関数
- * @param setCompleted - ゲームの完了状態を設定する関数
+ * @param onSolve - パズルを完成させる関数
  * @returns ゲームセクションコンポーネント
  */
 export const GameSectionComponent: React.FC<GameSectionProps> = ({
@@ -191,8 +168,7 @@ export const GameSectionComponent: React.FC<GameSectionProps> = ({
   handleEmptyPanelClick,
   handleEndGame,
   emptyPanelClicks,
-  setPieces,
-  setCompleted,
+  onSolve,
 }) => (
   <GameSection>
     {imageUrl && originalImageSize && (
@@ -220,7 +196,7 @@ export const GameSectionComponent: React.FC<GameSectionProps> = ({
           </StartButton>
           {!completed && emptyPanelClicks >= 10 && (
             <StartButton
-              onClick={() => completePuzzle(pieces, setPieces, setCompleted)}
+              onClick={onSolve}
               style={{ marginTop: '10px', backgroundColor: '#ff9800' }}
             >
               テスト：パズルを完成させる

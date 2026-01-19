@@ -4,16 +4,16 @@ import {
   Instructions,
   InstructionsTitle,
   InstructionsList,
-} from './HomePage.styles';
-import ClearHistoryList from '../components/molecules/ClearHistoryList';
-import { getClearHistory, ClearHistory } from '../utils/storage-utils';
-import { SetupSectionComponent, GameSectionComponent } from '../components/HomePageSections';
-import { useGameState } from '../hooks/useGameState';
+} from '../HomePage.styles';
+import ClearHistoryList from '../../components/molecules/ClearHistoryList';
+import { getClearHistory, ClearHistory } from '../../utils/storage-utils';
+import { SetupSectionComponent, GameSectionComponent } from '../../components/HomePageSections';
+import { useGameState } from '../../hooks/useGameState';
 
 /**
  * ホームページコンポーネント
  */
-const HomePage: React.FC = () => {
+const PuzzleGame: React.FC = () => {
   // クリア履歴の状態
   const [clearHistory, setClearHistory] = useState<ClearHistory[]>([]);
 
@@ -82,4 +82,4 @@ const HomePage: React.FC = () => {
   );
 };
 
-export default HomePage;
+export default PuzzleGame;

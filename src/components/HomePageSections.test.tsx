@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { SetupSectionComponent, GameSectionComponent } from './HomePageSections';
 import { PuzzlePiece } from '../store/atoms';
+import { toPieceId, toCoordinate } from '../domain/types';
 
 describe('SetupSectionComponent', () => {
   const mockSetImageSourceMode = jest.fn();
@@ -58,14 +59,13 @@ describe('GameSectionComponent', () => {
   const mockToggleHintMode = jest.fn();
   const mockHandleEmptyPanelClick = jest.fn();
   const mockHandleEndGame = jest.fn();
-  const mockSetPieces = jest.fn();
-  const mockSetCompleted = jest.fn();
+  const mockOnSolve = jest.fn();
 
   const mockPieces: PuzzlePiece[] = [
     {
-      id: 1,
-      correctPosition: { row: 0, col: 0 },
-      currentPosition: { row: 0, col: 0 },
+      id: toPieceId(1),
+      correctPosition: { row: toCoordinate(0), col: toCoordinate(0) },
+      currentPosition: { row: toCoordinate(0), col: toCoordinate(0) },
       isEmpty: false,
     },
   ];
@@ -80,15 +80,14 @@ describe('GameSectionComponent', () => {
         elapsedTime={0}
         completed={false}
         hintModeEnabled={false}
-        emptyPosition={{ row: 0, col: 0 }}
+        emptyPosition={{ row: toCoordinate(0), col: toCoordinate(0) }}
         handlePieceMove={mockHandlePieceMove}
         handleResetGame={mockHandleResetGame}
         toggleHintMode={mockToggleHintMode}
         handleEmptyPanelClick={mockHandleEmptyPanelClick}
         handleEndGame={mockHandleEndGame}
         emptyPanelClicks={0}
-        setPieces={mockSetPieces}
-        setCompleted={mockSetCompleted}
+        onSolve={mockOnSolve}
       />
     );
 
@@ -105,15 +104,14 @@ describe('GameSectionComponent', () => {
         elapsedTime={0}
         completed={true}
         hintModeEnabled={false}
-        emptyPosition={{ row: 0, col: 0 }}
+        emptyPosition={{ row: toCoordinate(0), col: toCoordinate(0) }}
         handlePieceMove={mockHandlePieceMove}
         handleResetGame={mockHandleResetGame}
         toggleHintMode={mockToggleHintMode}
         handleEmptyPanelClick={mockHandleEmptyPanelClick}
         handleEndGame={mockHandleEndGame}
         emptyPanelClicks={0}
-        setPieces={mockSetPieces}
-        setCompleted={mockSetCompleted}
+        onSolve={mockOnSolve}
       />
     );
 
