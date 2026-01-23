@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { GlassCard } from '../components/atoms/GlassCard';
 import puzzleCardBg from '../assets/images/puzzle_card_bg.png';
+import airHockeyCardBg from '../assets/images/air_hockey_card_bg.png';
 
 const PageContainer = styled.div`
   display: flex;
@@ -178,13 +179,19 @@ const GameListPage: React.FC = () => {
           </CardContent>
         </GameCardContainer>
 
-        <ComingSoonCard>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem', opacity: 0.5 }}>🚧</div>
-          <h3 style={{ color: 'var(--text-secondary)' }}>Coming Soon</h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            New games in development
-          </p>
-        </ComingSoonCard>
+        <GameCardContainer onClick={() => navigate('/air-hockey')}>
+          <CardImageArea style={{ backgroundImage: `url(${airHockeyCardBg})` }}>🏒</CardImageArea>
+          <CardContent>
+            <GameTitle>Air Hockey</GameTitle>
+            <GameDescription>
+              アイテムや障害物が登場する、ハイスピードなエアホッケー対戦！
+              スプリットパックや透明化など、多彩なギミックでCPUに挑もう。
+            </GameDescription>
+            <PlayButton>
+              Play Now <span>→</span>
+            </PlayButton>
+          </CardContent>
+        </GameCardContainer>
       </BentoGrid>
     </PageContainer>
   );
