@@ -11,13 +11,14 @@ export const useGameState = () => {
     division,
     setDivision,
     pieces,
+    setPieces,
     emptyPosition,
     elapsedTime,
     completed,
+    setCompleted,
     initializePuzzle,
     movePiece,
     resetPuzzle,
-    solvePuzzle,
   } = usePuzzle();
 
   const { hintModeEnabled, toggleHintMode } = useHintMode();
@@ -85,13 +86,6 @@ export const useGameState = () => {
   };
 
   /**
-   * パズルを完成させます（デバッグ用）。
-   */
-  const handleSolvePuzzle = () => {
-    solvePuzzle();
-  };
-
-  /**
    * ゲームを終了します。
    * ゲーム開始状態を解除します。
    */
@@ -109,7 +103,6 @@ export const useGameState = () => {
     handleStartGame,
     handlePieceMove,
     handleResetGame,
-    handleSolvePuzzle,
     handleEndGame,
     handleEmptyPanelClick,
     gameState: {
@@ -122,6 +115,8 @@ export const useGameState = () => {
       hintModeEnabled,
       emptyPosition,
       emptyPanelClicks,
+      setPieces,
+      setCompleted,
     },
   };
 };

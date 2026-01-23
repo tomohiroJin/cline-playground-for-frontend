@@ -3,14 +3,12 @@ import { render, fireEvent } from '@testing-library/react';
 import PuzzlePiece from './PuzzlePiece';
 import { PuzzlePiece as PuzzlePieceType } from '../../store/atoms';
 
-import { toPieceId, toCoordinate } from '../../domain/types';
-
 // モックデータ
 const mockPiece: PuzzlePieceType = {
-  id: toPieceId(1),
+  id: 1,
   isEmpty: false,
-  currentPosition: { row: toCoordinate(0), col: toCoordinate(0) },
-  correctPosition: { row: toCoordinate(0), col: toCoordinate(0) },
+  currentPosition: { row: 0, col: 0 },
+  correctPosition: { row: 0, col: 0 },
 };
 
 // 共通のデフォルトプロパティ
@@ -30,7 +28,7 @@ describe('パズルピース', () => {
     const { container } = render(
       <PuzzlePiece
         {...defaultProps}
-        piece={{ ...mockPiece, currentPosition: { row: toCoordinate(0), col: toCoordinate(0) } }}
+        piece={{ ...mockPiece, currentPosition: { row: 0, col: 0 } }}
       />
     );
 
@@ -59,14 +57,11 @@ describe('パズルピース', () => {
     const { container, rerender } = render(
       <PuzzlePiece
         {...defaultProps}
-        piece={{ ...mockPiece, currentPosition: { row: toCoordinate(0), col: toCoordinate(0) } }}
+        piece={{ ...mockPiece, currentPosition: { row: 0, col: 0 } }}
       />
     );
 
-    const updatedPiece = {
-      ...mockPiece,
-      currentPosition: { row: toCoordinate(1), col: toCoordinate(1) },
-    };
+    const updatedPiece = { ...mockPiece, currentPosition: { row: 1, col: 1 } };
     rerender(<PuzzlePiece {...defaultProps} piece={updatedPiece} />);
 
     const element = container.firstChild as HTMLElement;

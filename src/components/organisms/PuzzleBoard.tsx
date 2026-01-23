@@ -47,7 +47,7 @@ export type PuzzleBoardProps = {
   imageUrl: string;
   originalWidth: number;
   originalHeight: number;
-  pieces: ReadonlyArray<PuzzlePieceType>;
+  pieces: PuzzlePieceType[];
   division: number;
   elapsedTime: number;
   completed: boolean;

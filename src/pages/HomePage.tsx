@@ -30,7 +30,6 @@ const HomePage: React.FC = () => {
     handleResetGame,
     handleEndGame,
     handleEmptyPanelClick,
-    handleSolvePuzzle,
     gameState,
   } = useGameState();
 
@@ -62,7 +61,6 @@ const HomePage: React.FC = () => {
           handleResetGame={handleResetGame}
           handleEndGame={handleEndGame}
           handleEmptyPanelClick={handleEmptyPanelClick}
-          onSolve={handleSolvePuzzle}
         />
       )}
       <Instructions>

@@ -3,12 +3,20 @@ import { useCallback, useEffect } from 'react';
 import {
   imageUrlAtom,
   originalImageSizeAtom,
-  puzzleStateAtom,
+  puzzleDivisionAtom,
+  puzzlePiecesAtom,
+  emptyPiecePositionAtom,
   puzzleStartTimeAtom,
   puzzleElapsedTimeAtom,
+  puzzleCompletedAtom,
+  PuzzlePiece,
 } from '../store/atoms';
-import { generateBoard, shuffleBoard, movePiece, solveBoard } from '../domain/puzzle';
-import { toPieceId } from '../domain/types';
+import {
+  generatePuzzlePieces,
+  shufflePuzzlePieces,
+  isPuzzleCompleted,
+  getAdjacentPositions,
+} from '../utils/puzzle-utils';
 
 /**
  * パズルの状態と操作を管理するカスタムフック
@@ -17,38 +25,24 @@ export const usePuzzle = () => {
   // 状態
   const [imageUrl, setImageUrl] = useAtom(imageUrlAtom);
   const [originalImageSize, setOriginalImageSize] = useAtom(originalImageSizeAtom);
-
-  // ドメイン状態（単一のアトムに統合）
-  const [puzzleState, setPuzzleState] = useAtom(puzzleStateAtom);
-
+  const [division, setDivision] = useAtom(puzzleDivisionAtom);
+  const [pieces, setPieces] = useAtom(puzzlePiecesAtom);
+  const [emptyPosition, setEmptyPosition] = useAtom(emptyPiecePositionAtom);
   const [startTime, setStartTime] = useAtom(puzzleStartTimeAtom);
   const [elapsedTime, setElapsedTime] = useAtom(puzzleElapsedTimeAtom);
-
-  // 以前のAPIとの互換性のための派生値
-  // コンポーネント側で domain types を使うように修正するのが理想だが、
-  // 一旦ここで展開して返すことで修正範囲をフック内に留めることも可能。
-  // ただし、型安全性を高めるため、可能な限りドメイン型をそのまま露出させる。
-  const { pieces, division, emptyPosition, completed } = puzzleState;
+  const [completed, setCompleted] = useAtom(puzzleCompletedAtom);
 
   /**
    * 分割数に基づいてシャッフル回数を計算する
+   *
+   * @param division 分割数
+   * @returns シャッフル回数
    */
-  const calculateShuffleMoves = (div: number): number => {
-    const totalPieces = div * div;
-    const shuffleFactor = div * 2;
+  const calculateShuffleMoves = (division: number): number => {
+    const totalPieces = division * division; // 総ピース数
+    const shuffleFactor = division * 2; // 分割された数全てが 2 回移動する
     return totalPieces * shuffleFactor;
   };
-
-  /**
-   * 分割数を変更するハンドラ（状態更新も含む）
-   */
-  const setDivision = useCallback(
-    (newDivision: number) => {
-      if (newDivision <= 0) return;
-      setPuzzleState(generateBoard(newDivision));
-    },
-    [setPuzzleState]
-  );
 
   /**
    * パズルを初期化する
@@ -56,46 +50,121 @@ export const usePuzzle = () => {
   const initializePuzzle = useCallback(() => {
     if (!imageUrl) return;
 
-    // 1. 生成
-    let newState = generateBoard(division);
+    // パズルのピースを生成
+    const { pieces: newPieces, emptyPosition: newEmptyPosition } = generatePuzzlePieces(division);
 
-    // 2. シャッフル
-    newState = shuffleBoard(
-      newState,
-      calculateShuffleMoves(division),
-      Math.random // 純粋関数に乱数生成器を注入
+    // パズルのピースをシャッフル
+    const { pieces: shuffledPieces, emptyPosition: shuffledEmptyPosition } = shufflePuzzlePieces(
+      newPieces,
+      newEmptyPosition,
+      division,
+      calculateShuffleMoves(division)
     );
 
-    // 状態更新
-    setPuzzleState(newState);
+    // 状態を更新
+    setPieces(shuffledPieces);
+    setEmptyPosition(shuffledEmptyPosition);
     setStartTime(Date.now());
     setElapsedTime(0);
-  }, [imageUrl, division, setPuzzleState, setStartTime, setElapsedTime]);
+    setCompleted(false);
+  }, [imageUrl, division, setPieces, setEmptyPosition, setStartTime, setElapsedTime, setCompleted]);
+
+  /**
+   * 指定されたピースが空白ピースと隣接しているかを確認する
+   *
+   * @param piece 移動するピース
+   * @param emptyPosition 空白ピースの位置
+   * @param division パズルの分割数
+   * @returns 隣接していればtrue、そうでなければfalse
+   */
+  const isPieceAdjacentToEmpty = (
+    piece: PuzzlePiece,
+    emptyPosition: { row: number; col: number },
+    division: number
+  ): boolean => {
+    const adjacentPositions = getAdjacentPositions(
+      piece.currentPosition.row,
+      piece.currentPosition.col,
+      division
+    );
+    return adjacentPositions.some(
+      pos => pos.row === emptyPosition.row && pos.col === emptyPosition.col
+    );
+  };
+
+  /**
+   * ピースを移動し、更新されたピース配列を返す
+   *
+   * @param currentPieces 現在のピース配列
+   * @param pieceIndex 移動するピースのインデックス
+   * @param emptyPosition 空白ピースの位置
+   * @returns 更新されたピース配列
+   */
+  const updatePiecesWithMove = (
+    currentPieces: PuzzlePiece[],
+    pieceIndex: number,
+    emptyPosition: { row: number; col: number }
+  ): PuzzlePiece[] => {
+    const piece = currentPieces[pieceIndex];
+    const updatedPieces = [...currentPieces];
+
+    // ピースを空白の位置に移動
+    updatedPieces[pieceIndex] = {
+      ...piece,
+      currentPosition: { ...emptyPosition },
+    };
+
+    // 空白ピースの位置を更新
+    const emptyPieceIndex = currentPieces.findIndex(p => p.isEmpty);
+    if (emptyPieceIndex !== -1) {
+      updatedPieces[emptyPieceIndex] = {
+        ...updatedPieces[emptyPieceIndex],
+        currentPosition: {
+          row: piece.currentPosition.row,
+          col: piece.currentPosition.col,
+        },
+      };
+    }
+
+    return updatedPieces;
+  };
 
   /**
    * ピースを移動する
+   *
+   * @param pieceId 移動するピースのID
    */
-  const handleMovePiece = useCallback(
-    (pieceIdAsNumber: number) => {
-      // 完了していたら何もしない
-      if (puzzleState.completed) return;
+  const movePiece = useCallback(
+    (pieceId: number) => {
+      if (completed || !emptyPosition) return;
 
-      const pieceId = toPieceId(pieceIdAsNumber);
-      const result = movePiece(puzzleState, pieceId);
+      setPieces(currentPieces => {
+        const pieceIndex = currentPieces.findIndex(p => p.id === pieceId);
+        if (pieceIndex === -1) return currentPieces;
 
-      if (result.ok) {
-        setPuzzleState(result.value);
-        // 完了判定は movePiece 内で行われ、state.completed に反映されている
-        // 必要ならここでエフェクトをトリガーできるが、基本は宣言的UIに任せる
-      } else {
-        // エラーハンドリング（必要ならログ出力など）
-        // console.warn(result.error);
-      }
+        const piece = currentPieces[pieceIndex];
+        if (piece.isEmpty) return currentPieces;
+
+        if (!isPieceAdjacentToEmpty(piece, emptyPosition, division)) return currentPieces;
+
+        const updatedPieces = updatePiecesWithMove(currentPieces, pieceIndex, emptyPosition);
+
+        setEmptyPosition({
+          row: piece.currentPosition.row,
+          col: piece.currentPosition.col,
+        });
+
+        if (isPuzzleCompleted(updatedPieces)) {
+          setCompleted(true);
+        }
+
+        return updatedPieces;
+      });
     },
-    [puzzleState, setPuzzleState]
+    [completed, emptyPosition, division, setPieces, setEmptyPosition, setCompleted]
   );
 
-  /*
+  /**
    * パズルの状態を監視し、時間を更新する
    */
   useEffect(() => {
@@ -117,30 +186,21 @@ export const usePuzzle = () => {
     initializePuzzle();
   }, [initializePuzzle]);
 
-  /**
-   * パズルを完成させる（デバッグ/チート用）
-   */
-  const solvePuzzle = useCallback(() => {
-    if (puzzleState.completed) return;
-    setPuzzleState(solveBoard(puzzleState));
-  }, [puzzleState, setPuzzleState]);
-
   return {
     imageUrl,
     setImageUrl,
     originalImageSize,
     setOriginalImageSize,
     division,
-    setDivision, // 独自のハンドラに置き換え
+    setDivision,
     pieces,
-    // setPieces, // 削除
+    setPieces,
     emptyPosition,
     elapsedTime,
     completed,
-    // setCompleted, // 削除
+    setCompleted,
     initializePuzzle,
-    movePiece: handleMovePiece,
+    movePiece,
     resetPuzzle,
-    solvePuzzle,
   };
 };

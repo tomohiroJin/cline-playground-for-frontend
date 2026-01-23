@@ -11,14 +11,14 @@ jest.mock('./usePuzzle', () => ({
     division: 3,
     setDivision: jest.fn(),
     pieces: [],
-
+    setPieces: jest.fn(),
     emptyPosition: 0,
     elapsedTime: 0,
     completed: false,
+    setCompleted: jest.fn(),
     initializePuzzle: jest.fn(),
     movePiece: jest.fn(),
     resetPuzzle: jest.fn(),
-    solvePuzzle: jest.fn(),
   }),
 }));
 
