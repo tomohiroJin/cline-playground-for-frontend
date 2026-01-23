@@ -5,7 +5,7 @@ import {
   ToggleButtonsContainer,
   ToggleButton,
   StartButton,
-} from '../pages/HomePage.styles';
+} from '../pages/PuzzlePage.styles';
 import ImageUploader from '../components/molecules/ImageUploader';
 import DefaultImageSelector from '../components/molecules/DefaultImageSelector';
 import DifficultySelector from '../components/molecules/DifficultySelector';

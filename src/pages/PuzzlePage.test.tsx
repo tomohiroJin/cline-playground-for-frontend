@@ -1,12 +1,16 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import HomePage from './HomePage';
+import PuzzlePage from './PuzzlePage';
 import { useGameState } from '../hooks/useGameState';
 import { getClearHistory } from '../utils/storage-utils';
 
 // モックの設定
 jest.mock('../hooks/useGameState');
 jest.mock('../utils/storage-utils');
+jest.mock('../components/HomePageSections', () => ({
+  SetupSectionComponent: () => <div data-testid="setup-section">Setup Section</div>,
+  GameSectionComponent: () => <div data-testid="game-section">Game Section</div>,
+}));
 jest.mock('../components/molecules/ClearHistoryList', () => {
   return {
     __esModule: true,
@@ -29,7 +33,7 @@ jest.mock('../components/molecules/ClearHistoryList', () => {
   };
 });
 
-describe('HomePage', () => {
+describe('PuzzlePage', () => {
   // モックの初期化
   beforeEach(() => {
     // useGameStateのモック
@@ -71,7 +75,7 @@ describe('HomePage', () => {
 
   // 基本的なレンダリングテスト
   it('基本的なコンポーネントがレンダリングされる', () => {
-    render(<HomePage />);
+    render(<PuzzlePage />);
 
     // 遊び方の説明が表示されていることを確認
     expect(screen.getByText('遊び方')).toBeInTheDocument();
@@ -80,7 +84,7 @@ describe('HomePage', () => {
 
   // クリア履歴表示のテスト（履歴なし）
   it('クリア履歴がない場合は「クリア履歴はありません」と表示される', async () => {
-    render(<HomePage />);
+    render(<PuzzlePage />);
 
     // クリア履歴リストが表示されていることを確認
     const historyList = screen.getByTestId('clear-history-list');
@@ -111,7 +115,7 @@ describe('HomePage', () => {
     // getClearHistoryのモックを更新
     (getClearHistory as jest.Mock).mockReturnValue(mockHistory);
 
-    render(<HomePage />);
+    render(<PuzzlePage />);
 
     // クリア履歴リストが表示されていることを確認
     const historyList = screen.getByTestId('clear-history-list');
@@ -154,7 +158,7 @@ describe('HomePage', () => {
       },
     });
 
-    render(<HomePage />);
+    render(<PuzzlePage />);
 
     // クリア履歴リストが表示されていないことを確認
     expect(screen.queryByTestId('clear-history-list')).not.toBeInTheDocument();
@@ -163,7 +167,7 @@ describe('HomePage', () => {
   // ゲーム状態変更時にクリア履歴が更新されるテスト
   it('ゲーム状態が変わるとクリア履歴が更新される', async () => {
     // 初期レンダリング（ゲーム開始前）
-    const { rerender } = render(<HomePage />);
+    const { rerender } = render(<PuzzlePage />);
 
     // getClearHistoryが呼ばれたことを確認
     expect(getClearHistory).toHaveBeenCalledTimes(1);
@@ -197,7 +201,7 @@ describe('HomePage', () => {
     });
 
     // 再レンダリング（ゲーム開始後）
-    rerender(<HomePage />);
+    rerender(<PuzzlePage />);
 
     // useGameStateのモックを更新（ゲーム終了状態）
     (useGameState as jest.Mock).mockReturnValue({
@@ -241,7 +245,7 @@ describe('HomePage', () => {
     (getClearHistory as jest.Mock).mockReturnValue(mockHistory);
 
     // 再レンダリング（ゲーム終了後）
-    rerender(<HomePage />);
+    rerender(<PuzzlePage />);
 
     // getClearHistoryが再度呼ばれたことを確認
     expect(getClearHistory).toHaveBeenCalledTimes(3);

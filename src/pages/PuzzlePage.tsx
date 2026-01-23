@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import {
-  HomeContainer,
+  PuzzlePageContainer,
   Instructions,
   InstructionsTitle,
   InstructionsList,
-} from './HomePage.styles';
+} from './PuzzlePage.styles';
 import ClearHistoryList from '../components/molecules/ClearHistoryList';
 import { getClearHistory, ClearHistory } from '../utils/storage-utils';
 import { SetupSectionComponent, GameSectionComponent } from '../components/HomePageSections';
 import { useGameState } from '../hooks/useGameState';
 
 /**
- * ホームページコンポーネント
+ * パズルゲームページコンポーネント
  */
-const HomePage: React.FC = () => {
+const PuzzlePage: React.FC = () => {
   // クリア履歴の状態
   const [clearHistory, setClearHistory] = useState<ClearHistory[]>([]);
 
@@ -40,7 +40,7 @@ const HomePage: React.FC = () => {
     setClearHistory(history);
   }, [gameStarted]); // gameStartedが変わったとき（ゲーム終了時など）に履歴を更新
   return (
-    <HomeContainer>
+    <PuzzlePageContainer>
       {!gameStarted ? (
         <SetupSectionComponent
           imageSourceMode={imageSourceMode}
@@ -76,8 +76,8 @@ const HomePage: React.FC = () => {
 
       {/* クリア履歴の表示 */}
       {!gameStarted && <ClearHistoryList history={clearHistory} />}
-    </HomeContainer>
+    </PuzzlePageContainer>
   );
 };
 
-export default HomePage;
+export default PuzzlePage;

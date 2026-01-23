@@ -1,0 +1,24 @@
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import GameListPage from './GameListPage';
+
+// 画像インポートのモック
+jest.mock('../assets/images/puzzle_card_bg.png', () => 'puzzle_card_bg.png');
+
+describe('GameListPage', () => {
+  it('ゲームリストページが正しくレンダリングされること', () => {
+    render(
+      <MemoryRouter>
+        <GameListPage />
+      </MemoryRouter>
+    );
+
+    // タイトルと説明文が表示されていることを確認
+    expect(screen.getByText('Game Platform')).toBeInTheDocument();
+    expect(screen.getByText(/厳選されたインタラクティブなゲーム体験/)).toBeInTheDocument();
+
+    // プレイボタンが表示されていることを確認
+    expect(screen.getByText(/Play Now/)).toBeInTheDocument();
+  });
+});
