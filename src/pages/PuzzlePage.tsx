@@ -7,7 +7,7 @@ import {
 } from './PuzzlePage.styles';
 import ClearHistoryList from '../components/molecules/ClearHistoryList';
 import { getClearHistory, ClearHistory } from '../utils/storage-utils';
-import { SetupSectionComponent, GameSectionComponent } from '../components/HomePageSections';
+import { SetupSectionComponent, GameSectionComponent } from '../components/PuzzleSections';
 import { useGameState } from '../hooks/useGameState';
 
 /**

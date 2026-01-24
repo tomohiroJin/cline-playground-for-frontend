@@ -19,6 +19,6 @@ describe('GameListPage', () => {
     expect(screen.getByText(/厳選されたインタラクティブなゲーム体験/)).toBeInTheDocument();
 
     // プレイボタンが表示されていることを確認
-    expect(screen.getByText(/Play Now/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Play Now/)).toHaveLength(2);
   });
 });

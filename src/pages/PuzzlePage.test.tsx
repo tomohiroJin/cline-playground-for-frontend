@@ -7,7 +7,7 @@ import { getClearHistory } from '../utils/storage-utils';
 // モックの設定
 jest.mock('../hooks/useGameState');
 jest.mock('../utils/storage-utils');
-jest.mock('../components/HomePageSections', () => ({
+jest.mock('../components/PuzzleSections', () => ({
   SetupSectionComponent: () => <div data-testid="setup-section">Setup Section</div>,
   GameSectionComponent: () => <div data-testid="game-section">Game Section</div>,
 }));

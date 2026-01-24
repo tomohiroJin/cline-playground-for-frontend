@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { SetupSectionComponent, GameSectionComponent } from './HomePageSections';
+import { SetupSectionComponent, GameSectionComponent } from './PuzzleSections';
 import { PuzzlePiece } from '../store/atoms';
 
 describe('SetupSectionComponent', () => {
