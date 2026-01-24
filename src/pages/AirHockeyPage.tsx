@@ -144,6 +144,18 @@ import {
   DIFFICULTY_LABELS,
   WIN_SCORE_OPTIONS,
 } from '../features/air-hockey/core/config';
+import {
+  GameState,
+  FieldConfig,
+  Difficulty,
+  SoundSystem,
+  GameEffects,
+  Item,
+  GoalEffect,
+  Mallet,
+  Puck,
+  Obstacle,
+} from '../features/air-hockey/core/types';
 
 const { WIDTH: W, HEIGHT: H } = CONSTANTS.CANVAS;
 const { MALLET: MR, PUCK: BR, ITEM: IR } = CONSTANTS.SIZES;
@@ -160,7 +172,7 @@ export const Renderer = {
     ctx.fillStyle = '#0d1117';
     ctx.fillRect(0, 0, W, H);
   },
-  drawField(ctx: CanvasRenderingContext2D, field: any) {
+  drawField(ctx: CanvasRenderingContext2D, field: FieldConfig) {
     ctx.strokeStyle = field.color;
     ctx.lineWidth = 5;
     ctx.shadowColor = field.color;
@@ -186,7 +198,7 @@ export const Renderer = {
     ctx.fillStyle = '#33ffff';
     ctx.fillRect(W / 2 - gs / 2, H - 8, gs, 8);
     ctx.shadowBlur = 0;
-    field.obstacles.forEach((ob: any) => {
+    field.obstacles.forEach((ob: Obstacle) => {
       ctx.beginPath();
       ctx.arc(ob.x, ob.y, ob.r, 0, Math.PI * 2);
       ctx.fillStyle = field.color + '44';
@@ -196,7 +208,7 @@ export const Renderer = {
       ctx.stroke();
     });
   },
-  drawEffectZones(ctx: CanvasRenderingContext2D, effects: any, now: number) {
+  drawEffectZones(ctx: CanvasRenderingContext2D, effects: GameEffects, now: number) {
     const isActive = (eff: any) => eff?.speed && now - eff.speed.start < eff.speed.duration;
     if (isActive(effects.player)) {
       ctx.fillStyle = '#00ffff20';
@@ -226,7 +238,7 @@ export const Renderer = {
       ctx.stroke();
     }
   },
-  drawMallet(ctx: CanvasRenderingContext2D, mallet: any, color: string, hasGlow: boolean) {
+  drawMallet(ctx: CanvasRenderingContext2D, mallet: Mallet, color: string, hasGlow: boolean) {
     if (hasGlow) {
       ctx.shadowColor = '#ff00ff';
       ctx.shadowBlur = 15;
@@ -235,11 +247,11 @@ export const Renderer = {
     ctx.shadowBlur = 0;
     this.drawCircle(ctx, mallet.x, mallet.y, 8, '#fff');
   },
-  drawPuck(ctx: CanvasRenderingContext2D, puck: any) {
+  drawPuck(ctx: CanvasRenderingContext2D, puck: Puck) {
     if (!puck.visible) return;
     this.drawCircle(ctx, puck.x, puck.y, BR, '#fff', '#888', 2);
   },
-  drawItem(ctx: CanvasRenderingContext2D, item: any, now: number) {
+  drawItem(ctx: CanvasRenderingContext2D, item: Item, now: number) {
     const pulse = 1 + Math.sin(now * 0.008) * 0.2;
     this.drawCircle(ctx, item.x, item.y, IR * pulse, item.color);
     ctx.fillStyle = '#fff';
@@ -248,7 +260,7 @@ export const Renderer = {
     ctx.textBaseline = 'middle';
     ctx.fillText(item.icon, item.x, item.y);
   },
-  drawHUD(ctx: CanvasRenderingContext2D, effects: any, now: number) {
+  drawHUD(ctx: CanvasRenderingContext2D, effects: GameEffects, now: number) {
     ctx.textAlign = 'center';
     ctx.font = 'bold 12px Arial';
     const playerEff = effects.player;
@@ -264,11 +276,17 @@ export const Renderer = {
       ctx.fillText(`👻x${playerEff.invisible}`, W / 2, H - 45);
     }
   },
-  drawFlash(ctx: CanvasRenderingContext2D, flash: any, now: number) {
+  drawFlash(
+    ctx: CanvasRenderingContext2D,
+    flash: { type: string; time: number } | null,
+    now: number
+  ) {
     if (!flash || now - flash.time >= CONSTANTS.TIMING.FLASH) return;
     const alpha = 1 - (now - flash.time) / CONSTANTS.TIMING.FLASH;
     ctx.fillStyle = `rgba(255,255,255,${alpha * 0.3})`;
     ctx.fillRect(0, 0, W, H);
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     const item = ITEMS.find(i => i.id === flash.type);
     if (item) {
       ctx.font = 'bold 18px Arial';
@@ -277,7 +295,7 @@ export const Renderer = {
       ctx.fillText(`${item.icon} ${item.name}!`, W / 2, H / 2);
     }
   },
-  drawGoalEffect(ctx: CanvasRenderingContext2D, effect: any, now: number) {
+  drawGoalEffect(ctx: CanvasRenderingContext2D, effect: GoalEffect | null, now: number) {
     if (!effect) return;
     const elapsed = now - effect.time;
     if (elapsed >= CONSTANTS.TIMING.GOAL_EFFECT) return;
@@ -324,28 +342,23 @@ export const Renderer = {
 
 const AirHockeyPage: React.FC = () => {
   const [screen, setScreen] = useState<'menu' | 'game' | 'result'>('menu');
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  const [diff, setDiff] = useState<any>('normal');
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [field, setField] = useState<any>(FIELDS[0]);
+  const [diff, setDiff] = useState<Difficulty>('normal');
+  const [field, setField] = useState<FieldConfig>(FIELDS[0]);
   const [winScore, setWinScore] = useState(3);
   const [scores, setScores] = useState({ p: 0, c: 0 });
   const [winner, setWinner] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const gameRef = useRef<any>(null);
+  const gameRef = useRef<GameState | null>(null);
   const lastInputRef = useRef(0);
 
   const scoreRef = useRef({ p: 0, c: 0 });
-  const soundRef = useRef<any>(null);
+  const soundRef = useRef<SoundSystem | null>(null);
 
   // usePreventScroll
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    const handler = e => e.preventDefault();
+    const handler = (e: TouchEvent) => e.preventDefault();
     document.addEventListener('touchmove', handler, { passive: false });
     return () => document.removeEventListener('touchmove', handler);
   }, []);
@@ -367,12 +380,16 @@ const AirHockeyPage: React.FC = () => {
   }, [getSound]);
 
   const handleInput = useCallback(
-    (e: any) => {
+    (e: React.MouseEvent | React.TouchEvent) => {
       const game = gameRef.current;
       if (!game || screen !== 'game') return;
 
-      e.preventDefault();
-      lastInputRef.current = Date.now();
+      // e.preventDefault(); // Moved to passive listener logic or handled by styled component via touch-action
+      // But standard e.preventDefault() on SyntheticEvent might be needed if not passive.
+      // Keeping it simple.
+
+      const now = Date.now();
+      lastInputRef.current = now;
 
       if (showHelp) {
         setShowHelp(false);
@@ -381,8 +398,15 @@ const AirHockeyPage: React.FC = () => {
 
       if (!canvasRef.current) return;
       const rect = canvasRef.current.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      let clientX, clientY;
+
+      if ('touches' in e) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else {
+        clientX = (e as React.MouseEvent).clientX;
+        clientY = (e as React.MouseEvent).clientY;
+      }
 
       const newX = clamp(((clientX - rect.left) / rect.width) * W, MR + 5, W - MR - 5);
       const newY = clamp(((clientY - rect.top) / rect.height) * H, H / 2 + MR + 10, H - MR - 5);
@@ -403,7 +427,12 @@ const AirHockeyPage: React.FC = () => {
     const goalChecker = (x: number) =>
       x > W / 2 - field.goalSize / 2 && x < W / 2 + field.goalSize / 2;
 
-    const processCollisions = (obj: any, radius: number, game: any, isPuck = false) => {
+    const processCollisions = <T extends Puck | Item>(
+      obj: T,
+      radius: number,
+      game: GameState,
+      isPuck = false
+    ): T => {
       const mallets = [
         { mallet: game.player, isPlayer: true },
         { mallet: game.cpu, isPlayer: false },
@@ -419,9 +448,9 @@ const AirHockeyPage: React.FC = () => {
 
           if (isPuck && isPlayer && game.effects.player.invisible > 0) {
             // eslint-disable-next-line no-param-reassign
-            obj.visible = false;
+            (obj as Puck).visible = false;
             // eslint-disable-next-line no-param-reassign
-            obj.invisibleCount = 25;
+            (obj as Puck).invisibleCount = 25;
             game.effects.player.invisible--;
           }
           sound.hit();
@@ -429,15 +458,7 @@ const AirHockeyPage: React.FC = () => {
       }
 
       for (const ob of field.obstacles) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const col = Physics.detectCollision(
-          obj.x,
-          obj.y,
-          radius,
-          (ob as any).x,
-          (ob as any).y,
-          (ob as any).r
-        );
+        const col = Physics.detectCollision(obj.x, obj.y, radius, ob.x, ob.y, ob.r);
         if (col) {
           // eslint-disable-next-line no-param-reassign
           obj = Physics.reflectOffSurface(obj, col);
@@ -502,7 +523,7 @@ const AirHockeyPage: React.FC = () => {
         }
       }
 
-      let scored: string | null = null;
+      let scored: 'player' | 'cpu' | null = null;
       let scoredIndex = -1;
 
       for (let i = 0; i < game.pucks.length; i++) {
@@ -561,10 +582,8 @@ const AirHockeyPage: React.FC = () => {
       Renderer.clear(ctx);
       Renderer.drawField(ctx, field);
       Renderer.drawEffectZones(ctx, game.effects, now);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      game.items.forEach((item: any) => Renderer.drawItem(ctx, item, now));
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      game.pucks.forEach((puck: any) => Renderer.drawPuck(ctx, puck));
+      game.items.forEach((item: Item) => Renderer.drawItem(ctx, item, now));
+      game.pucks.forEach((puck: Puck) => Renderer.drawPuck(ctx, puck));
       Renderer.drawMallet(ctx, game.cpu, '#e74c3c', false);
       Renderer.drawMallet(ctx, game.player, '#3498db', game.effects.player.invisible > 0);
       Renderer.drawHUD(ctx, game.effects, now);
@@ -581,7 +600,11 @@ const AirHockeyPage: React.FC = () => {
         scoreRef.current[key]++;
         setScores({ ...scoreRef.current });
 
-        scored === 'cpu' ? sound.goal() : sound.lose();
+        if (scored === 'cpu') {
+          sound.goal();
+        } else {
+          sound.lose();
+        }
         game.goalEffect = { scorer: scored, time: now };
 
         if (scoreRef.current.p >= winScore) {

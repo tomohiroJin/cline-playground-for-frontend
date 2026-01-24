@@ -1,4 +1,5 @@
 import { CONSTANTS } from './constants';
+import { Entity } from './types';
 
 const { WIDTH: W, HEIGHT: H } = CONSTANTS.CANVAS;
 
@@ -17,14 +18,14 @@ export const Physics = {
     }
     return null;
   },
-  resolveCollision(
-    obj: any,
-    collision: any,
+  resolveCollision<T extends Entity>(
+    obj: T,
+    collision: { nx: number; ny: number; penetration: number },
     power: number,
     sourceVx = 0,
     sourceVy = 0,
     factor = 0.3
-  ) {
+  ): T {
     const { nx, ny, penetration } = collision;
     return {
       ...obj,
@@ -34,7 +35,10 @@ export const Physics = {
       vy: ny * power + sourceVy * factor,
     };
   },
-  reflectOffSurface(obj: any, collision: any) {
+  reflectOffSurface<T extends Entity>(
+    obj: T,
+    collision: { nx: number; ny: number; penetration: number }
+  ): T {
     const { nx, ny, penetration } = collision;
     const dot = obj.vx * nx + obj.vy * ny;
     return {
@@ -45,12 +49,12 @@ export const Physics = {
       vy: (obj.vy - 2 * dot * ny) * 0.9,
     };
   },
-  applyWallBounce(
-    obj: any,
+  applyWallBounce<T extends Entity>(
+    obj: T,
     radius: number,
     goalChecker: (x: number) => boolean,
     onBounce: () => void
-  ) {
+  ): T {
     let { x, y, vx, vy } = obj;
     let bounced = false;
 
@@ -78,7 +82,7 @@ export const Physics = {
     if (bounced && onBounce) onBounce();
     return { ...obj, x, y, vx, vy };
   },
-  applyFriction(obj: any) {
+  applyFriction<T extends Entity>(obj: T): T {
     let { vx, vy } = obj;
     vx *= CONSTANTS.PHYSICS.FRICTION;
     vy *= CONSTANTS.PHYSICS.FRICTION;

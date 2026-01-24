@@ -1,4 +1,6 @@
-export const FIELDS = [
+import { FieldConfig, ItemType } from './types';
+
+export const FIELDS: readonly FieldConfig[] = [
   { id: 'classic', name: 'Original', goalSize: 80, color: '#00d4ff', obstacles: [] },
   { id: 'wide', name: 'Wide', goalSize: 120, color: '#00ff88', obstacles: [] },
   {
@@ -17,9 +19,9 @@ export const FIELDS = [
 ] as const;
 
 export const ITEMS = [
-  { id: 'split', name: 'Split', color: '#FF6B6B', icon: '◆' },
-  { id: 'speed', name: 'Speed', color: '#4ECDC4', icon: '⚡' },
-  { id: 'invisible', name: 'Hide', color: '#9B59B6', icon: '👻' },
+  { id: 'split' as ItemType, name: 'Split', color: '#FF6B6B', icon: '◆' },
+  { id: 'speed' as ItemType, name: 'Speed', color: '#4ECDC4', icon: '⚡' },
+  { id: 'invisible' as ItemType, name: 'Hide', color: '#9B59B6', icon: '👻' },
 ] as const;
 
 export const DIFFICULTY_OPTIONS = ['easy', 'normal', 'hard'] as const;
