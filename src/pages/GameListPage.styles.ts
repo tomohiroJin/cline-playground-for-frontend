@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 import { GlassCard } from '../components/atoms/GlassCard';
-import puzzleCardBg from '../assets/images/puzzle_card_bg.png';
+import puzzleCardBg from '../assets/images/puzzle_card_bg.webp';
 
 export const PageContainer = styled.div`
   display: flex;

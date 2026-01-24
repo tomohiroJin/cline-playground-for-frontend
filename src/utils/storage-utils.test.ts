@@ -41,7 +41,7 @@ describe('storage-utils', () => {
     });
 
     it('ファイルパスからファイル名を抽出する', () => {
-      const filePath = '/images/default/sunset_candy_shop.png';
+      const filePath = '/images/default/sunset_candy_shop.webp';
       expect(extractImageName(filePath)).toBe('sunset_candy_shop');
     });
 

@@ -13,32 +13,32 @@ import {
 const DEFAULT_IMAGES = [
   {
     id: 1,
-    src: '/images/default/camel_in_the_desert.png',
+    src: '/images/default/camel_in_the_desert.webp',
     alt: '砂漠の中のキャメル',
   },
   {
     id: 2,
-    src: '/images/default/chalk_drawing_kids.png',
+    src: '/images/default/chalk_drawing_kids.webp',
     alt: 'チョークで落書きをする子供達',
   },
   {
     id: 3,
-    src: '/images/default/hokusai_kangchenjunga.png',
+    src: '/images/default/hokusai_kangchenjunga.webp',
     alt: 'カンチェンジュンガの北斎',
   },
   {
     id: 4,
-    src: '/images/default/moonlight_dancer.png',
+    src: '/images/default/moonlight_dancer.webp',
     alt: '月明かりのダンサー',
   },
   {
     id: 5,
-    src: '/images/default/sunset_candy_shop.png',
+    src: '/images/default/sunset_candy_shop.webp',
     alt: '夕焼けの駄菓子屋',
   },
   {
     id: 6,
-    src: '/images/default/midnight_times_square.png',
+    src: '/images/default/midnight_times_square.webp',
     alt: '真夜中のタイムズスクエア',
   },
 ];

@@ -24,7 +24,7 @@ module.exports = {
         use: ['style-loader', 'css-loader'],
       },
       {
-        test: /\.(png|jpg|jpeg|gif|svg|mp4)$/, // 動画も含める
+        test: /\.(png|jpg|jpeg|gif|svg|mp4|webp)$/, // 動画も含める
         type: 'asset/resource',
       },
     ],

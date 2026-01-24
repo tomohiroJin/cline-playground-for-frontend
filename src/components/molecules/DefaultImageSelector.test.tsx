@@ -12,12 +12,12 @@ describe('DefaultImageSelector', () => {
   const mockOnImageSelect = jest.fn();
   const mockImageSize = { width: 800, height: 600 };
   const defaultImages = [
-    '/images/default/camel_in_the_desert.png',
-    '/images/default/chalk_drawing_kids.png',
-    '/images/default/hokusai_kangchenjunga.png',
-    '/images/default/moonlight_dancer.png',
-    '/images/default/sunset_candy_shop.png',
-    '/images/default/midnight_times_square.png',
+    '/images/default/camel_in_the_desert.webp',
+    '/images/default/chalk_drawing_kids.webp',
+    '/images/default/hokusai_kangchenjunga.webp',
+    '/images/default/moonlight_dancer.webp',
+    '/images/default/sunset_candy_shop.webp',
+    '/images/default/midnight_times_square.webp',
   ];
 
   beforeEach(() => {

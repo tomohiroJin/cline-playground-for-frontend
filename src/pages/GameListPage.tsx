@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import puzzleCardBg from '../assets/images/puzzle_card_bg.png';
-import airHockeyCardBg from '../assets/images/air_hockey_card_bg.png';
+import puzzleCardBg from '../assets/images/puzzle_card_bg.webp';
+import airHockeyCardBg from '../assets/images/air_hockey_card_bg.webp';
 import {
   PageContainer,
   HeroSection,

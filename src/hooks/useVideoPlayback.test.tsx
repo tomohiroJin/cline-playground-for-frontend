@@ -71,7 +71,7 @@ describe('useVideoPlayback', () => {
   it('getVideoUrlFromImage が画像URLから正しい動画URLを生成すること', () => {
     const { result } = renderHook(() => useVideoPlayback(), { wrapper });
 
-    const imageUrl = '/images/default/camel_in_the_desert.png';
+    const imageUrl = '/images/default/camel_in_the_desert.webp';
     const expectedVideoUrl = '/videos/default/camel_in_the_desert.mp4';
 
     expect(result.current.getVideoUrlFromImage(imageUrl)).toBe(expectedVideoUrl);

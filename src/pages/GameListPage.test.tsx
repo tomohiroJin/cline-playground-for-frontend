@@ -4,7 +4,8 @@ import { MemoryRouter } from 'react-router-dom';
 import GameListPage from './GameListPage';
 
 // 画像インポートのモック
-jest.mock('../assets/images/puzzle_card_bg.png', () => 'puzzle_card_bg.png');
+jest.mock('../assets/images/puzzle_card_bg.webp', () => 'puzzle_card_bg.webp');
+jest.mock('../assets/images/air_hockey_card_bg.webp', () => 'air_hockey_card_bg.webp');
 
 describe('GameListPage', () => {
   it('ゲームリストページが正しくレンダリングされること', () => {
