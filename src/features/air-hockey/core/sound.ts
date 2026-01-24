@@ -1,9 +1,9 @@
 export const createSoundSystem = () => {
   let audioCtx: AudioContext | null = null;
   const getContext = () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (!audioCtx)
-      audioCtx = new ((window as any).AudioContext || (window as any).webkitAudioContext)();
+    const w = window as Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext };
+    const AudioContextClass = w.AudioContext || w.webkitAudioContext;
+    if (!audioCtx && AudioContextClass) audioCtx = new AudioContextClass();
     return audioCtx;
   };
   const playTone = (freq: number, type: OscillatorType, duration: number, volume = 0.3) => {
@@ -20,11 +20,11 @@ export const createSoundSystem = () => {
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
       osc.start();
       osc.stop(ctx.currentTime + duration);
-    } catch (e) {
+    } catch {
       /* Audio not supported */
     }
   };
-  const playSequence = (notes: any[]) => {
+  const playSequence = (notes: [number, OscillatorType, number, number][]) => {
     notes.forEach(([freq, type, dur, vol], i) => {
       setTimeout(() => playTone(freq, type, dur, vol), i * 100);
     });

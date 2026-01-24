@@ -1,8 +1,19 @@
-const path = require('path');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
-const CopyWebpackPlugin = require('copy-webpack-plugin'); // 追加
+import path from 'path';
+import HtmlWebpackPlugin from 'html-webpack-plugin';
+import CopyWebpackPlugin from 'copy-webpack-plugin';
+import { Configuration as WebpackConfiguration } from 'webpack';
+import { Configuration as WebpackDevServerConfiguration } from 'webpack-dev-server';
+import { fileURLToPath } from 'url';
 
-module.exports = {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Combine types for devServer support
+interface Configuration extends WebpackConfiguration {
+  devServer?: WebpackDevServerConfiguration;
+}
+
+const config: Configuration = {
   mode: 'development',
   entry: './src/index.tsx',
   output: {
@@ -24,7 +35,7 @@ module.exports = {
         use: ['style-loader', 'css-loader'],
       },
       {
-        test: /\.(png|jpg|jpeg|gif|svg|mp4|webp)$/, // 動画も含める
+        test: /\.(png|jpg|jpeg|gif|svg|mp4|webp)$/,
         type: 'asset/resource',
       },
     ],
@@ -36,10 +47,10 @@ module.exports = {
     new CopyWebpackPlugin({
       patterns: [
         {
-          from: path.resolve(__dirname, 'public'), // public フォルダ
-          to: path.resolve(__dirname, 'dist'), // dist フォルダ
+          from: path.resolve(__dirname, 'public'),
+          to: path.resolve(__dirname, 'dist'),
           globOptions: {
-            ignore: ['**/index.html'], // index.html は除外
+            ignore: ['**/index.html'],
           },
         },
       ],
@@ -55,3 +66,5 @@ module.exports = {
     historyApiFallback: true,
   },
 };
+
+export default config;

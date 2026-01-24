@@ -33,7 +33,7 @@ describe('Physics Module', () => {
     const noOp = () => {};
 
     it('should bounce off left wall', () => {
-      const W = 300; // Assuming const from file, but logic uses args
+      // Assuming const from file, but logic uses args
       // We need to inject W/H or assume standard. The function uses W/H from closure.
       // Limitation: The exported function in AirHockeyPage closes over W/H constants.
       // This confirms we need to extract constants or the module properly.

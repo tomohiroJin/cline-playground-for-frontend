@@ -2,7 +2,7 @@ import { CONSTANTS } from './constants';
 import { GameState, Mallet, Puck, Item, ItemType } from './types';
 
 const { WIDTH: W, HEIGHT: H } = CONSTANTS.CANVAS;
-const { MALLET: MR, PUCK: BR, ITEM: IR } = CONSTANTS.SIZES;
+const { ITEM: IR } = CONSTANTS.SIZES;
 
 const randomRange = (min: number, max: number) => Math.random() * (max - min) + min;
 

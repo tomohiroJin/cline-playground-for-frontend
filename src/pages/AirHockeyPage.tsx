@@ -150,6 +150,7 @@ import {
   Difficulty,
   SoundSystem,
   GameEffects,
+  EffectState,
   Item,
   GoalEffect,
   Mallet,
@@ -209,7 +210,7 @@ export const Renderer = {
     });
   },
   drawEffectZones(ctx: CanvasRenderingContext2D, effects: GameEffects, now: number) {
-    const isActive = (eff: any) => eff?.speed && now - eff.speed.start < eff.speed.duration;
+    const isActive = (eff: EffectState) => eff?.speed && now - eff.speed.start < eff.speed.duration;
     if (isActive(effects.player)) {
       ctx.fillStyle = '#00ffff20';
       ctx.fillRect(5, H / 2, W - 10, H / 2 - 5);
@@ -535,12 +536,12 @@ const AirHockeyPage: React.FC = () => {
           game.effects.cpu.speed &&
           now - game.effects.cpu.speed.start < game.effects.cpu.speed.duration;
 
-        let mult = 1;
-        if (playerSpeedActive) mult = puck.y > H / 2 ? 0.5 : 1.5;
-        if (cpuSpeedActive) mult = puck.y < H / 2 ? 0.5 : 1.5;
+        let speedMultiplier = 1;
+        if (playerSpeedActive) speedMultiplier = puck.y > H / 2 ? 0.5 : 1.5;
+        if (cpuSpeedActive) speedMultiplier = puck.y < H / 2 ? 0.5 : 1.5;
 
-        puck.x += puck.vx * mult;
-        puck.y += puck.vy * mult;
+        puck.x += puck.vx * speedMultiplier;
+        puck.y += puck.vy * speedMultiplier;
 
         if (!puck.visible) {
           puck.invisibleCount--;
