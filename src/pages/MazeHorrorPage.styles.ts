@@ -25,12 +25,6 @@ const fadeIn = keyframes`
   to { opacity: 1; }
 `;
 
-const float = keyframes`
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
-`;
-
 export const Canvas = styled.canvas`
   display: block;
   max-width: 100%;
@@ -95,10 +89,6 @@ export const MenuContainer = styled.div`
   width: 100%;
   max-width: 20rem;
 `;
-
-interface DiffButtonProps {
-  $colorInfo: { from: string; to: string; border: string };
-}
 
 export const DiffButton = styled.button<{ $gradientClass: string }>`
   padding: 1rem 2rem;

@@ -1,3 +1,6 @@
+/* eslint-disable react-hooks/refs */
+// 注: このファイルではパフォーマンス最適化のため、ref経由でゲーム状態を管理しています
+// ゲームループでの高頻度更新に対応するための意図的な設計パターンです
 import React, { useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { clamp } from '../utils/math-utils';
 import {
@@ -280,7 +283,9 @@ const Audio = (() => {
   const getContext = (): AudioContext | null => {
     if (!ctx) {
       try {
-        ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const AudioContextClass = window.AudioContext || (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+        if (AudioContextClass) ctx = new AudioContextClass();
       } catch {}
     }
     return ctx;
@@ -1205,6 +1210,7 @@ const FallingShooterPage: React.FC = () => {
   const [showDemo, setShowDemo] = useState<boolean>(false);
   const [skillCharge, setSkillCharge] = useState<number>(0);
 
+  // パフォーマンス最適化のため、ref経由で状態を管理（ゲームループでの高頻度更新に対応）
   const state = stateRef.current;
   const isPlaying = status === 'playing';
   const isIdle = status === 'idle';

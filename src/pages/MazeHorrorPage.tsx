@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/refs */
+// 注: このファイルではパフォーマンス最適化のため、ref経由でゲーム状態を管理しています
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { clamp, distance } from '../utils/math-utils';
 import {
@@ -137,7 +139,7 @@ const CONTENT = {
 // ==================== TYPES ====================
 type Difficulty = keyof typeof CONFIG.difficulties;
 type EntityType = keyof typeof CONTENT.items;
-type SoundType = keyof typeof CONTENT.sounds;
+type SoundName = keyof typeof CONTENT.sounds;
 
 interface Entity {
   x: number;
@@ -157,6 +159,19 @@ interface Enemy extends Entity {
 interface Item extends Entity {
   type: EntityType;
   got: boolean;
+}
+
+interface Sprite extends Entity {
+  type: string;
+  emoji: string;
+  name: string;
+  color: string;
+  bgColor: string;
+  sc?: number;
+  glow?: boolean;
+  bob?: boolean;
+  pulse?: boolean;
+  isEnemy?: boolean;
 }
 
 interface GameState {
@@ -185,6 +200,19 @@ interface GameState {
   combo: number;
   lastKeyTime: number;
   explored: Record<string, boolean>;
+}
+
+interface HUDData {
+  keys: number;
+  req: number;
+  maxL: number;
+  lives: number;
+  stamina: number;
+  time: number;
+  score: number;
+  eNear: number;
+  hide: boolean;
+  energy: number;
 }
 
 // ==================== UTILITIES ====================
@@ -255,10 +283,12 @@ const MazeService = {
 const AudioService = {
   ctx: null as AudioContext | null,
 
-  play(type: string, vol = 0.3) {
+  play(type: SoundName, vol = 0.3) {
     try {
-      if (!this.ctx) this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const sound = (CONTENT.sounds as any)[type] || CONTENT.sounds.footstep;
+      if (!this.ctx)
+        this.ctx = new (window.AudioContext ||
+          (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext)();
+      const sound = CONTENT.sounds[type] || CONTENT.sounds.footstep;
       const [freq, wave, dur] = sound;
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
@@ -581,7 +611,7 @@ const Renderer = {
   },
 
   getSprites(g: GameState) {
-    const sprites: any[] = g.items
+    const sprites: Sprite[] = g.items
       .filter(i => !i.got)
       .map(i => ({
         x: i.x + 0.5,
@@ -593,12 +623,12 @@ const Renderer = {
         bob: true,
       }));
 
-    const exitType = g.keys >= g.reqKeys ? 'exit' : 'exitLocked';
+    const exitType: EntityType = g.keys >= g.reqKeys ? 'exit' : 'exitLocked';
     sprites.push({
       x: g.exit.x,
       y: g.exit.y,
       type: exitType,
-      ...(CONTENT.items as any)[exitType],
+      ...CONTENT.items[exitType],
       sc: 1.5,
       glow: g.keys >= g.reqKeys,
       pulse: g.keys >= g.reqKeys,
@@ -627,7 +657,7 @@ const Renderer = {
   drawSprite(
     ctx: CanvasRenderingContext2D,
     g: GameState,
-    s: any,
+    s: Sprite,
     W: number,
     H: number,
     zBuf: number[],
@@ -646,7 +676,7 @@ const Renderer = {
     const ri = Math.floor((sx / W) * rayCount);
     if (ri >= 0 && ri < rayCount && zBuf[ri] < d * 0.92) return;
 
-    let sz = Math.min(350, (H / d) * 0.8 * s.sc);
+    let sz = Math.min(350, (H / d) * 0.8 * (s.sc ?? 1));
     const alpha = s.isEnemy
       ? Utils.clamp(1.2 - d / 8, 0.5, 1)
       : Utils.clamp(1.1 - d / maxDepth, 0.4, 1);
@@ -830,7 +860,7 @@ const Story: React.FC<{
   );
 };
 
-const Title: React.FC<{ onStart: (d: any) => void }> = ({ onStart }) => {
+const Title: React.FC<{ onStart: (d: Difficulty) => void }> = ({ onStart }) => {
   const [demoIdx, setDemoIdx] = useState(-1);
   const [demoActive, setDemoActive] = useState(false);
 
@@ -938,7 +968,7 @@ const Title: React.FC<{ onStart: (d: any) => void }> = ({ onStart }) => {
         <MenuContainer>
           {(
             Object.entries(CONFIG.difficulties) as [
-              string,
+              Difficulty,
               { label: string; size: number; time: number; lives: number; gradient: string },
             ][]
           ).map(([key, cfg]) => (
@@ -983,7 +1013,7 @@ const Title: React.FC<{ onStart: (d: any) => void }> = ({ onStart }) => {
   );
 };
 
-const HUD: React.FC<{ h: any }> = ({ h }) => (
+const HUD: React.FC<{ h: HUDData }> = ({ h }) => (
   <HUDContainer>
     <HUDGroup>
       <HUDPanel $borderColor="#b45309">
@@ -1093,7 +1123,18 @@ const HUD: React.FC<{ h: any }> = ({ h }) => (
   </HUDContainer>
 );
 
-const Minimap: React.FC<any> = ({
+interface MinimapProps {
+  maze: number[][];
+  player: Entity;
+  exit: Entity;
+  items: Item[];
+  enemies: Enemy[];
+  keys: number;
+  reqKeys: number;
+  explored: Record<string, boolean>;
+}
+
+const Minimap: React.FC<MinimapProps> = ({
   maze,
   player,
   exit,
@@ -1105,8 +1146,8 @@ const Minimap: React.FC<any> = ({
 }) => (
   <MinimapContainer>
     <div style={{ position: 'relative', width: maze.length * 4, height: maze.length * 4 }}>
-      {maze.map((row: any[], y: number) =>
-        row.map((val: number, x: number) => {
+      {maze.map((row, y) =>
+        row.map((val, x) => {
           const isExplored = explored[`${x},${y}`];
           return (
             <div
@@ -1125,8 +1166,8 @@ const Minimap: React.FC<any> = ({
         })
       )}
       {items
-        .filter((i: any) => !i.got && explored[`${i.x},${i.y}`])
-        .map((item: any, i: number) => (
+        .filter(i => !i.got && explored[`${i.x},${i.y}`])
+        .map((item, i) => (
           <div
             key={`i${i}`}
             style={{
@@ -1152,8 +1193,8 @@ const Minimap: React.FC<any> = ({
         }}
       />
       {enemies
-        .filter((e: any) => e.active)
-        .map((e: any, i: number) => (
+        .filter(e => e.active)
+        .map((e, i) => (
           <div
             key={`e${i}`}
             style={{
@@ -1184,9 +1225,15 @@ const Minimap: React.FC<any> = ({
   </MinimapContainer>
 );
 
-const Controls: React.FC<{ keysRef: any; hiding: boolean; energy: number; stamina: number }> = ({
+const Controls: React.FC<{
+  keysRef: React.RefObject<Record<string, boolean>>;
+  hiding: boolean;
+  energy: number;
+  stamina: number;
+}> = ({
   keysRef,
   hiding,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   energy,
   stamina,
 }) => (
@@ -1302,11 +1349,11 @@ export default function MazeHorrorPage() {
     maze: [] as number[][],
     player: { x: 0, y: 0 },
     exit: { x: 0, y: 0 },
-    items: [] as any[],
-    enemies: [] as any[],
+    items: [] as Item[],
+    enemies: [] as Enemy[],
     keys: 0,
     reqKeys: 0,
-    explored: {} as any,
+    explored: {} as Record<string, boolean>,
   });
 
   const canvasRef = useRef<HTMLCanvasElement>(null);

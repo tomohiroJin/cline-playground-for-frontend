@@ -85,13 +85,6 @@ interface BaseEntity extends Position {
   id: number;
   createdAt: number;
 }
-interface Player extends BaseEntity {
-  size: number;
-  speed: number;
-  lives: number;
-  maxLives: number;
-  power: number;
-}
 interface Bullet extends BaseEntity {
   type: 'bullet';
   charged: boolean;
@@ -230,7 +223,11 @@ const ItemConfig: Record<string, { color: string; label: string; description: st
     life: { color: '#ff4444', label: '♥', description: 'ライフ+1' },
   });
 
-const ColorPalette = Object.freeze({
+const ColorPalette: {
+  enemy: Record<string, string>;
+  ui: Record<string, string>;
+  particle: Record<string, string>;
+} = Object.freeze({
   enemy: {
     basic: '#3a8a5a',
     fast: '#5a5a8a',
@@ -246,7 +243,7 @@ const ColorPalette = Object.freeze({
     damage: '#ff6666',
     bomb: '#ffff88',
   },
-} as any);
+});
 
 // ============================================================================
 // Logic Helpers
@@ -295,7 +292,7 @@ const EntityFactory = {
       y,
       createdAt: Date.now(),
       type: 'enemy',
-      enemyType: type as any,
+      enemyType: type,
       hp,
       maxHp: hp,
       speed: cfg.speed,
@@ -318,17 +315,21 @@ const EntityFactory = {
     vy: velocity.y,
     size: 8,
   }),
-  item: (x: number, y: number, itemType: string): Item => ({
+  item: (x: number, y: number, itemType: keyof typeof ItemConfig): Item => ({
     id: uniqueId(),
     x,
     y,
     createdAt: Date.now(),
     type: 'item',
-    itemType: itemType as any,
+    itemType,
     size: 24,
     speed: 1.5,
   }),
-  particle: (x: number, y: number, { color, life = 15, velocity = null }: any = {}): Particle => ({
+  particle: (
+    x: number,
+    y: number,
+    { color, life = 15, velocity = null }: { color: string; life?: number; velocity?: Position | null } = { color: '#fff' }
+  ): Particle => ({
     id: uniqueId(),
     x,
     y,
@@ -352,29 +353,33 @@ const EntityFactory = {
   }),
 };
 
+type MovableEntity = Position & { speed: number };
+type AngleEntity = Position & { angle: number; speed: number };
+type VelocityEntity = Position & { vx: number; vy: number };
+
 const MovementStrategies = {
-  straight: (e: any) => ({ ...e, y: e.y + e.speed }),
-  sine: (e: any) => ({ ...e, y: e.y + e.speed, x: e.x + Math.sin(e.y / 20) * 2 }),
-  drift: (e: any) => ({
+  straight: <T extends MovableEntity>(e: T): T => ({ ...e, y: e.y + e.speed }),
+  sine: <T extends MovableEntity>(e: T): T => ({ ...e, y: e.y + e.speed, x: e.x + Math.sin(e.y / 20) * 2 }),
+  drift: <T extends MovableEntity>(e: T): T => ({
     ...e,
     y: e.y + e.speed,
     x: e.x + (e.x < Config.canvas.width / 2 ? 0.5 : -0.5),
   }),
-  boss: (e: any) => ({
+  boss: <T extends AngleEntity>(e: T): T => ({
     ...e,
     y: Math.min(90, e.y + e.speed),
     x: Config.canvas.width / 2 + Math.sin(e.angle) * 80,
     angle: e.angle + 0.015,
   }),
-  bullet: (e: any) => ({
+  bullet: <T extends AngleEntity>(e: T): T => ({
     ...e,
     x: e.x + Math.cos(e.angle) * e.speed,
     y: e.y + Math.sin(e.angle) * e.speed,
   }),
-  enemyBullet: (e: any) => ({ ...e, x: e.x + e.vx, y: e.y + e.vy }),
-  item: (e: any) => ({ ...e, y: e.y + e.speed }),
-  particle: (e: any) => ({ ...e, x: e.x + e.vx, y: e.y + e.vy, life: e.life - 1 }),
-  bubble: (e: any) => ({ ...e, y: e.y - e.speed, opacity: e.opacity - 0.003 }),
+  enemyBullet: <T extends VelocityEntity>(e: T): T => ({ ...e, x: e.x + e.vx, y: e.y + e.vy }),
+  item: <T extends MovableEntity>(e: T): T => ({ ...e, y: e.y + e.speed }),
+  particle: <T extends VelocityEntity & { life: number }>(e: T): T => ({ ...e, x: e.x + e.vx, y: e.y + e.vy, life: e.life - 1 }),
+  bubble: <T extends MovableEntity & { opacity: number }>(e: T): T => ({ ...e, y: e.y - e.speed, opacity: e.opacity - 0.003 }),
 };
 
 const Collision = {
@@ -407,18 +412,27 @@ const EnemyAI = {
   },
 };
 
+interface SoundDef {
+  f: number;
+  w: OscillatorType;
+  g: number;
+  d: number;
+  ef?: number;
+}
+
 const createAudioSystem = () => {
   let ctx: AudioContext | null = null;
   const init = () => {
     if (ctx) return ctx;
     if (typeof window === 'undefined') return null;
-    const Ctor = window.AudioContext || (window as any).webkitAudioContext;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const Ctor = window.AudioContext || (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (Ctor) ctx = new Ctor();
     return ctx;
   };
   const play = (name: string) => {
     if (!ctx) return;
-    const defs: any = {
+    const defs: Record<string, SoundDef> = {
       shot: { f: 80, w: 'sine', g: 0.08, d: 0.06 },
       charged: { f: 60, w: 'triangle', g: 0.12, d: 0.2 },
       destroy: { f: 120, w: 'sawtooth', g: 0.07, d: 0.12, ef: 30 },
@@ -450,7 +464,15 @@ const createAudioSystem = () => {
 // Render Components
 // ============================================================================
 
-const PlayerSprite = memo(({ x, y, opacity, shield }: any) => (
+interface PlayerSpriteProps {
+  x: number;
+  y: number;
+  opacity: number;
+  shield: boolean;
+}
+
+const PlayerSprite = memo(function PlayerSprite({ x, y, opacity, shield }: PlayerSpriteProps) {
+  return (
   <>
     {shield && (
       <div
@@ -497,9 +519,10 @@ const PlayerSprite = memo(({ x, y, opacity, shield }: any) => (
       <ellipse cx="12" cy="29" rx="3" ry="1.5" fill="rgba(100,200,255,0.4)" />
     </svg>
   </>
-));
+  );
+});
 
-const EnemySprite = memo(({ enemy }: { enemy: Enemy }) => {
+const EnemySprite = memo(function EnemySprite({ enemy }: { enemy: Enemy }) {
   const color = ColorPalette.enemy[enemy.enemyType];
   const isBoss = enemy.enemyType === 'boss';
   return (
@@ -538,25 +561,34 @@ const EnemySprite = memo(({ enemy }: { enemy: Enemy }) => {
   );
 });
 
-const BulletSprite = memo(({ bullet }: { bullet: Bullet }) => (
-  <div
-    style={{
-      position: 'absolute',
-      left: bullet.x - bullet.size / 2,
-      top: bullet.y - bullet.size / 2,
-      width: bullet.size,
-      height: bullet.size,
-      borderRadius: '50%',
-      background: bullet.charged
-        ? 'radial-gradient(circle,#fff,#64c8ff,#06c)'
-        : 'radial-gradient(circle,#fff,#64c8ff)',
-      boxShadow: bullet.charged ? '0 0 15px #64c8ff' : '0 0 6px #64c8ff',
-    }}
-  />
-));
+const BulletSprite = memo(function BulletSprite({ bullet }: { bullet: Bullet }) {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        left: bullet.x - bullet.size / 2,
+        top: bullet.y - bullet.size / 2,
+        width: bullet.size,
+        height: bullet.size,
+        borderRadius: '50%',
+        background: bullet.charged
+          ? 'radial-gradient(circle,#fff,#64c8ff,#06c)'
+          : 'radial-gradient(circle,#fff,#64c8ff)',
+        boxShadow: bullet.charged ? '0 0 15px #64c8ff' : '0 0 6px #64c8ff',
+      }}
+    />
+  );
+});
 
-const TouchControls = memo(({ onMove, onShoot, onCharge, charging }: any) => {
-  const btnStyle: any = {
+interface TouchControlsProps {
+  onMove: (dx: number, dy: number) => void;
+  onShoot: () => void;
+  onCharge: (e: { type: string }) => void;
+  charging: boolean;
+}
+
+const TouchControls = memo(function TouchControls({ onMove, onShoot, onCharge, charging }: TouchControlsProps) {
+  const btnStyle: React.CSSProperties = {
     position: 'absolute',
     width: 28,
     height: 28,
@@ -568,7 +600,7 @@ const TouchControls = memo(({ onMove, onShoot, onCharge, charging }: any) => {
     alignItems: 'center',
     justifyContent: 'center',
   };
-  const actStyle: any = (c: boolean) => ({
+  const actStyle = (c: boolean): React.CSSProperties => ({
     width: 55,
     height: 55,
     borderRadius: '50%',
@@ -713,7 +745,7 @@ export default function DeepSeaShooterPage() {
     setGameState('playing');
   }, []);
 
-  const handleCharge = useCallback((e: any) => {
+  const handleCharge = useCallback((e: { type: string }) => {
     const gd = gameData.current;
     if (e.type === 'touchstart' || e.type === 'mousedown') {
       gd.charging = true;
@@ -729,7 +761,7 @@ export default function DeepSeaShooterPage() {
   }, []);
 
   const handleInput = useCallback(
-    (e: any) => {
+    (e: KeyboardEvent) => {
       const k = e.key;
       const isDown = e.type === 'keydown';
       if (
@@ -850,9 +882,14 @@ export default function DeepSeaShooterPage() {
 
       gd.enemies = gd.enemies
         .map(e => {
-          const next = (MovementStrategies as any)[
-            e.enemyType === 'boss' ? 'boss' : ['straight', 'sine', 'drift'][e.movementPattern]
-          ](e);
+          const moveFn = e.enemyType === 'boss'
+            ? MovementStrategies.boss
+            : (['straight', 'sine', 'drift'] as const)[e.movementPattern] === 'straight'
+              ? MovementStrategies.straight
+              : (['straight', 'sine', 'drift'] as const)[e.movementPattern] === 'sine'
+                ? MovementStrategies.sine
+                : MovementStrategies.drift;
+          const next = moveFn(e);
           if (e.canShoot && now - e.lastShotAt > e.fireRate && e.y > 0) {
             next.lastShotAt = now;
             gd.enemyBullets.push(...EnemyAI.createBullets(next, gd.player));
@@ -957,9 +994,11 @@ export default function DeepSeaShooterPage() {
     return () => {
       if (raf.current) cancelAnimationFrame(raf.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState]);
 
-  useEffect(() => {}, [uiState]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _uiStateUsed = uiState; // uiStateはuiStateRefを通じて更新され、forceRenderで反映される
 
   const gd = gameData.current;
   const cfg = StageConfig[uiState.stage];

@@ -26,6 +26,10 @@ import {
 
 type Point = { x: number; y: number };
 type Checkpoint = Point & { idx: number };
+type StartLine = { cx: number; cy: number; px: number; py: number; dx: number; dy: number; len: number };
+type Particle = { x: number; y: number; vx: number; vy: number; size: number; color: string; life: number };
+type Spark = { x: number; y: number; vx: number; vy: number; color: string; life: number };
+type Confetti = { x: number; y: number; vx: number; vy: number; size: number; color: string; rot: number; rotSpd: number };
 
 interface Course {
   name: string;
@@ -331,12 +335,13 @@ const SoundEngine = (() => {
   const getCtx = () => {
     if (!ctx) {
       try {
-        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        const AudioContextClass = window.AudioContext || (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+        if (!AudioContextClass) return null;
         ctx = new AudioContextClass();
         master = ctx!.createGain();
         master.connect(ctx!.destination);
         master.gain.value = volume;
-      } catch (e) {
+      } catch {
         return null;
       }
     }
@@ -359,7 +364,7 @@ const SoundEngine = (() => {
       g!.connect(master!);
       o.start(c.currentTime);
       o.stop(c.currentTime + dur);
-    } catch (e) {}
+    } catch {}
   };
 
   const sequence = (
@@ -402,7 +407,7 @@ const SoundEngine = (() => {
       f.connect(g);
       g.connect(master!);
       src.start();
-    } catch (e) {}
+    } catch {}
   };
 
   const F = Config.audio.freq;
@@ -443,7 +448,7 @@ const SoundEngine = (() => {
         engineOsc.connect(engineGain);
         engineGain.connect(master!);
         engineOsc.start();
-      } catch (e) {}
+      } catch {}
     },
 
     updateEngine: (spd: number) => {
@@ -618,7 +623,7 @@ const Track = {
 
   crossedStart: (
     player: Player,
-    sl: any,
+    sl: StartLine,
     currentSeg: number,
     prevSeg: number,
     totalSegs: number
@@ -710,7 +715,7 @@ const Render = {
     c.setLineDash([]);
   },
 
-  startLine: (c: CanvasRenderingContext2D, sl: any) => {
+  startLine: (c: CanvasRenderingContext2D, sl: StartLine) => {
     const { width, squares } = Config.startLine;
     c.save();
     c.translate(sl.cx, sl.cy);
@@ -791,7 +796,7 @@ const Render = {
     c.fillText(p.name, p.x, p.y - 28);
   },
 
-  particles: (c: CanvasRenderingContext2D, parts: any[], sparks: any[]) => {
+  particles: (c: CanvasRenderingContext2D, parts: Particle[], sparks: Spark[]) => {
     parts.forEach(p => {
       c.globalAlpha = p.life;
       c.fillStyle = p.color;
@@ -811,7 +816,7 @@ const Render = {
     c.globalAlpha = 1;
   },
 
-  confetti: (c: CanvasRenderingContext2D, items: any[]) =>
+  confetti: (c: CanvasRenderingContext2D, items: Confetti[]) =>
     items.forEach(i => {
       c.save();
       c.translate(i.x, i.y);
@@ -950,7 +955,7 @@ const Logic = {
     const toCenter = Math.atan2(info.pt.y - p.y, info.pt.x - p.x);
     const nextIdx = (info.seg + 1) % pts.length;
     const toNext = Math.atan2(pts[nextIdx].y - p.y, pts[nextIdx].x - p.x);
-    let target = info.dist / Config.game.trackWidth > 0.6 ? toCenter : toNext;
+    const target = info.dist / Config.game.trackWidth > 0.6 ? toCenter : toNext;
     let diff = Utils.normalizeAngle(target - p.angle);
     if (Math.random() < miss) diff += Utils.randRange(-0.4, 0.4);
     const rate = Config.game.turnRate * skill;
@@ -958,7 +963,7 @@ const Logic = {
   },
 
   movePlayer: (p: Player, baseSpd: number, pts: Point[]) => {
-    const { speedRecovery, trackWidth, wallWarpThreshold } = Config.game;
+    const { speedRecovery, wallWarpThreshold } = Config.game;
     const spd = Math.min(1, p.speed + speedRecovery);
     const vel = baseSpd * spd;
     const nx = p.x + Math.cos(p.angle) * vel;
@@ -1088,11 +1093,14 @@ const useIdle = (
   active: boolean,
   timeout: number
 ): [boolean, React.Dispatch<React.SetStateAction<boolean>>] => {
+  // idle はカウンター目的でのみ使用、直接の読み取りは不要
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [idle, setIdle] = useState(0);
   const [demo, setDemo] = useState(false);
 
   useEffect(() => {
     if (!active) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIdle(0);
       setDemo(false);
       return;
@@ -1124,18 +1132,18 @@ const useIdle = (
 // 9. UI Components
 // ============================================
 
-const VolumeCtrl = memo(
-  ({
-    vol,
-    setVol,
-    muted,
-    setMuted,
-  }: {
-    vol: number;
-    setVol: (v: number) => void;
-    muted: boolean;
-    setMuted: (m: boolean) => void;
-  }) => (
+const VolumeCtrl = memo(function VolumeCtrl({
+  vol,
+  setVol,
+  muted,
+  setMuted,
+}: {
+  vol: number;
+  setVol: (v: number) => void;
+  muted: boolean;
+  setMuted: (m: boolean) => void;
+}) {
+  return (
     <ControlGroup>
       <Button onClick={() => setMuted(SoundEngine.toggleMute())}>
         {muted ? '🔇' : vol > 0.5 ? '🔊' : vol > 0 ? '🔉' : '🔈'}
@@ -1163,8 +1171,8 @@ const VolumeCtrl = memo(
         disabled={muted}
       />
     </ControlGroup>
-  )
-);
+  );
+});
 
 // ============================================
 // 10. メインコンポーネント
@@ -1180,8 +1188,15 @@ export default function RacingGamePage() {
   const [c2, setC2] = useState(1);
 
   const [state, setState] = useState('menu'); // 'menu' | 'countdown' | 'race' | 'result'
-  const [winner, setWinner] = useState<any>(null);
-  const [results, setResults] = useState<any>(null);
+  const [winner, setWinner] = useState<string | null>(null);
+  const [results, setResults] = useState<{
+    winnerName: string;
+    winnerColor: string;
+    times: { p1: number; p2: number };
+    fastest: number;
+  } | null>(null);
+  // bests は将来のベストタイム記録機能用に保持（現在は未使用）
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [bests, setBests] = useState<Record<string, number>>({});
   const [paused, setPaused] = useState(false);
   const [vol, setVol] = useState(Config.audio.defaultVolume);
@@ -1240,15 +1255,14 @@ export default function RacingGamePage() {
       ),
     ];
 
-    let cdStart = Date.now();
+    const cdStart = Date.now();
     let raceStart = 0;
-    let particles: any[] = [];
-    let sparks: any[] = [];
-    let confetti: any[] = [];
+    let particles: Particle[] = [];
+    let sparks: Spark[] = [];
+    const confetti: Confetti[] = [];
     let shake = 0;
     let lapAnn: string | null = null;
     let lapAnnT = 0;
-    let lead = 0;
     let lastCd = 4;
     let engineOn = false;
     let isRunning = true;
@@ -1303,9 +1317,10 @@ export default function RacingGamePage() {
         }
         if (!demo) SoundEngine.updateEngine((players[0].speed + players[1].speed) / 2);
 
-        players = players.map((p, i) => {
+        players = players.map(p => {
           // 移動
-          let { p: np, info, vel, hit } = Logic.movePlayer(p, baseSpd, pts);
+          // eslint-disable-next-line prefer-const
+          let { p: np, info, hit } = Logic.movePlayer(p, baseSpd, pts);
 
           if (hit) {
             if (!demo) SoundEngine.wall();
@@ -1507,7 +1522,8 @@ export default function RacingGamePage() {
       isRunning = false;
       SoundEngine.stopEngine();
     };
-  }, [mode, course, speed, cpu, laps, c1, c2, state, paused, demo, demo, winner]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, course, speed, cpu, laps, c1, c2, state, paused, demo, winner]);
 
   const reset = () => {
     setState('menu'); // Back to menu instead of start

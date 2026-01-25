@@ -1,4 +1,4 @@
-import styled, { keyframes, css } from 'styled-components';
+import styled from 'styled-components';
 
 export const PageContainer = styled.div`
   width: 100%;
@@ -32,12 +32,6 @@ export const CanvasLayer = styled.canvas`
   left: 0;
   width: 100%;
   height: 100%;
-`;
-
-const pulse = keyframes`
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.1); opacity: 0.8; }
-  100% { transform: scale(1); opacity: 1; }
 `;
 
 export const StartScreen = styled.div`
