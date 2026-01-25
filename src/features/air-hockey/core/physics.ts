@@ -1,12 +1,8 @@
 import { CONSTANTS } from './constants';
 import { Entity } from './types';
+import { distance, magnitude } from '../../../utils/math-utils';
 
 const { WIDTH: W, HEIGHT: H } = CONSTANTS.CANVAS;
-
-// Pure utils
-const distance = (x1: number, y1: number, x2: number, y2: number) =>
-  Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
-const magnitude = (vx: number, vy: number) => Math.sqrt(vx ** 2 + vy ** 2);
 
 export const Physics = {
   detectCollision(ax: number, ay: number, ar: number, bx: number, by: number, br: number) {

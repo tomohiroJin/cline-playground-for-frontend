@@ -1,6 +1,7 @@
 import { PuzzlePiece } from '../store/atoms';
+import { GridPosition } from '../types/geometry';
 
-type Position = { row: number; col: number };
+type Position = GridPosition;
 
 /**
  * 空白ピースの位置を更新する
@@ -147,7 +148,10 @@ export const shufflePuzzlePieces = (
       const selectedPieceIndex = pieceIndexMap.get(`${selectedPos.row},${selectedPos.col}`);
 
       if (selectedPieceIndex !== undefined) {
-        shuffledPieces[selectedPieceIndex].currentPosition = { ...currentEmptyPos };
+        // 不変更新: 新しい配列を作成し、選択されたピースのみ更新
+        shuffledPieces = shuffledPieces.map((piece, i) =>
+          i === selectedPieceIndex ? { ...piece, currentPosition: { ...currentEmptyPos } } : piece
+        );
         shuffledPieces = updateEmptyPiecePosition(shuffledPieces, selectedPos);
         currentEmptyPos = { ...selectedPos };
         moved = true; // 移動が発生した場合にループを終了

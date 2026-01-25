@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, ReactNode } from 'react';
+import { clamp } from '../utils/math-utils';
 import {
   PageContainer,
   Header,
@@ -264,7 +265,6 @@ const DEMO_SLIDES: DemoSlide[] = [
 // ============================================================================
 const uid = (): string => Math.random().toString(36).slice(2);
 const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
-const clamp = (val: number, min: number, max: number): number => Math.max(min, Math.min(max, val));
 const calcTiming = (
   { base, min, decay, stageMult }: TimingConfig,
   time: number,

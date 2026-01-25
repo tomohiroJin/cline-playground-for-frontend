@@ -1,12 +1,13 @@
 import { CONSTANTS } from './constants';
 import { GameState, Difficulty, Vector } from './types';
+import { clamp, randomRange, distance } from '../../../utils/math-utils';
 
 const { WIDTH: W, HEIGHT: H } = CONSTANTS.CANVAS;
 
-const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
-const randomRange = (min: number, max: number) => Math.random() * (max - min) + min;
-const distance = (x1: number, y1: number, x2: number, y2: number) =>
-  Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+/**
+ * CpuAI.update の戻り値型
+ */
+export type CpuUpdateResult = Pick<GameState, 'cpu' | 'cpuTarget' | 'cpuTargetTime'>;
 
 export const CpuAI = {
   calculateTarget(game: GameState, difficulty: Difficulty, now: number): Vector {
@@ -23,44 +24,63 @@ export const CpuAI = {
     }
     return game.cpuTarget!;
   },
-  update(game: GameState, difficulty: Difficulty, now: number) {
-    // Sync target state logic
-    if (!game.cpuTarget || now - game.cpuTargetTime > 2000) {
+
+  /**
+   * CPUの状態を更新（不変更新）
+   * @returns 更新された状態を含むPartial<GameState>、またはスキップ時はnull
+   */
+  update(game: GameState, difficulty: Difficulty, now: number): CpuUpdateResult | null {
+    let cpuTarget = game.cpuTarget;
+    let cpuTargetTime = game.cpuTargetTime;
+
+    // ターゲット状態の同期ロジック
+    if (!cpuTarget || now - cpuTargetTime > 2000) {
       const target = this.calculateTarget(game, difficulty, now);
-      if (target !== game.cpuTarget) {
-        game.cpuTarget = target;
-        game.cpuTargetTime = now;
+      if (target !== cpuTarget) {
+        cpuTarget = target;
+        cpuTargetTime = now;
       }
     }
 
-    let target = game.cpuTarget!;
-    // Re-verify intercept logic or others that override random patrol
+    let target = cpuTarget!;
+    // インターセプトロジックの再検証
     const immediateTarget = this.calculateTarget(game, difficulty, now);
-    if (
-      !game.cpuTarget ||
-      (immediateTarget.y !== game.cpuTarget.y && immediateTarget.x !== game.cpuTarget.x)
-    ) {
+    if (!cpuTarget || (immediateTarget.y !== cpuTarget.y && immediateTarget.x !== cpuTarget.x)) {
       target = immediateTarget;
     }
 
     if (difficulty === 'easy') {
-      target = { ...target };
-      target.x = target.x * 0.3 + (W / 2) * 0.7;
-      if (Math.random() < 0.03) return;
+      target = {
+        x: target.x * 0.3 + (W / 2) * 0.7,
+        y: target.y,
+      };
+      if (Math.random() < 0.03) return null; // スキップ
     }
-    target.x = clamp(target.x, 60, W - 60);
-    target.y = clamp(target.y, 50, H / 2 - 50);
-    const dx = target.x - game.cpu.x;
-    const dy = target.y - game.cpu.y;
+
+    const clampedTargetX = clamp(target.x, 60, W - 60);
+    const clampedTargetY = clamp(target.y, 50, H / 2 - 50);
+    const dx = clampedTargetX - game.cpu.x;
+    const dy = clampedTargetY - game.cpu.y;
     const dist = distance(0, 0, dx, dy);
+
+    let newVx: number;
+    let newVy: number;
     if (dist > 3) {
       const speed = Math.min(dist * 0.08, CONSTANTS.CPU[difficulty]);
-      game.cpu.vx = (dx / dist) * speed;
-      game.cpu.vy = (dy / dist) * speed;
+      newVx = (dx / dist) * speed;
+      newVy = (dy / dist) * speed;
     } else {
-      game.cpu.vx = game.cpu.vy = 0;
+      newVx = 0;
+      newVy = 0;
     }
-    game.cpu.x = clamp(game.cpu.x + game.cpu.vx, 50, W - 50);
-    game.cpu.y = clamp(game.cpu.y + game.cpu.vy, 40, H / 2 - 40);
+
+    const newX = clamp(game.cpu.x + newVx, 50, W - 50);
+    const newY = clamp(game.cpu.y + newVy, 40, H / 2 - 40);
+
+    return {
+      cpu: { ...game.cpu, x: newX, y: newY, vx: newVx, vy: newVy },
+      cpuTarget,
+      cpuTargetTime,
+    };
   },
 };

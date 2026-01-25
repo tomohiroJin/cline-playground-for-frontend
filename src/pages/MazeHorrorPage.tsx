@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { clamp, distance } from '../utils/math-utils';
 import {
   PageContainer,
   Canvas,
@@ -188,9 +189,8 @@ interface GameState {
 
 // ==================== UTILITIES ====================
 const Utils = {
-  clamp: (v: number, min: number, max: number) => Math.max(min, Math.min(max, v)),
-  dist: (x1: number, y1: number, x2: number, y2: number) =>
-    Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2),
+  clamp,
+  dist: distance,
   manhattan: (x1: number, y1: number, x2: number, y2: number) =>
     Math.abs(x2 - x1) + Math.abs(y2 - y1),
   normAngle: (a: number) => {

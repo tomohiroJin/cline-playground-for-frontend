@@ -14,24 +14,26 @@ describe('CpuAI Module', () => {
     const now = 1000;
 
     // Calculate once to set target
-    CpuAI.update(game, diff, now);
+    const result = CpuAI.update(game, diff, now);
 
     // Expect target to be predicted puck position
-    expect(game.cpuTarget).not.toBeNull();
+    expect(result).not.toBeNull();
+    expect(result?.cpuTarget).not.toBeNull();
     // Prediction logic: x + vx * factor. Factor is 4 for normal.
     // 100 + 0 * 4 = 100.
-    expect(game.cpuTarget?.x).toBe(100);
+    expect(result?.cpuTarget?.x).toBe(100);
   });
 
   it('should return to home position if out of bounds', () => {
     const game = EntityFactory.createGameState();
     game.cpu.x = 10; // Out of bounds (< 50)
 
-    CpuAI.update(game, 'normal', 1000);
+    const result = CpuAI.update(game, 'normal', 1000);
 
+    // 不変更新パターン: 結果を検証
+    expect(result).not.toBeNull();
     // Logic forces return to center-ish
-    // If calculateTarget returns center, update will move towards it.
-    // We can't check specific position easily after one frame, but we can verify calculateTarget logic.
+    // We can verify calculateTarget logic returns center position.
     const target = CpuAI.calculateTarget(game, 'normal', 1000);
     expect(target.x).toBe(150); // W/2
     expect(target.y).toBe(80);

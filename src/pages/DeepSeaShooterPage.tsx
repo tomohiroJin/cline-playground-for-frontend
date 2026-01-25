@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback, memo, useReducer } from 'react';
 import styled from 'styled-components';
 import { PageContainer } from './DeepSeaShooterPage.styles';
+import {
+  clamp as baseClamp,
+  randomRange,
+  randomInt as baseRandomInt,
+  distance as baseDistance,
+} from '../utils/math-utils';
 
 // ============================================================================
 // Styled Components (Containers & Static UI)
@@ -246,9 +252,10 @@ const ColorPalette = Object.freeze({
 // Logic Helpers
 // ============================================================================
 
-const clamp = (min: number, max: number) => (value: number) => Math.max(min, Math.min(max, value));
-const randomFloat = (min: number, max: number) => Math.random() * (max - min) + min;
-const randomInt = (min: number, max: number) => Math.floor(randomFloat(min, max + 1));
+// math-utils をラップ（このモジュール固有のシグネチャを維持）
+const clamp = (min: number, max: number) => (value: number) => baseClamp(value, min, max);
+const randomFloat = randomRange;
+const randomInt = baseRandomInt;
 function randomChoice<T>(arr: T[]): T {
   return arr[randomInt(0, arr.length - 1)];
 }
@@ -256,7 +263,7 @@ const uniqueId = (() => {
   let id = 0;
   return () => ++id + Math.random();
 })();
-const distance = (a: Position, b: Position) => Math.hypot(a.x - b.x, a.y - b.y);
+const distance = (a: Position, b: Position) => baseDistance(a.x, a.y, b.x, b.y);
 const normalize = ({ x, y }: Position) => {
   const m = Math.hypot(x, y);
   return m === 0 ? { x: 0, y: 0 } : { x: x / m, y: y / m };

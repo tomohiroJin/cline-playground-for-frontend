@@ -1,4 +1,5 @@
 import { atom } from 'jotai';
+import { GridPosition } from '../types/geometry';
 
 /**
  * 共通のアトム作成ヘルパー関数
@@ -12,9 +13,10 @@ function createAtom<T>(defaultValue: T) {
 }
 
 /**
- * 座標を表す型
+ * 座標を表す型（後方互換性のためのエイリアス）
+ * @deprecated GridPositionを直接使用してください
  */
-export type Position = { row: number; col: number };
+export type Position = GridPosition;
 
 // 初期値の定数
 const DEFAULT_PUZZLE_DIVISION = 4;

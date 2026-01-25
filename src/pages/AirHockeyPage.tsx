@@ -136,6 +136,7 @@ import { CpuAI } from '../features/air-hockey/core/ai';
 import { EntityFactory } from '../features/air-hockey/core/entities';
 import { applyItemEffect } from '../features/air-hockey/core/items';
 import { createSoundSystem } from '../features/air-hockey/core/sound';
+import { clamp, randomRange, magnitude } from '../utils/math-utils';
 import { CONSTANTS } from '../features/air-hockey/core/constants';
 import {
   FIELDS,
@@ -161,10 +162,7 @@ import {
 const { WIDTH: W, HEIGHT: H } = CONSTANTS.CANVAS;
 const { MALLET: MR, PUCK: BR, ITEM: IR } = CONSTANTS.SIZES;
 
-// Helper - Keeping local for now if used by Renderer or logic not fully extracted
-const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
-const randomRange = (min: number, max: number) => Math.random() * (max - min) + min;
-const magnitude = (vx: number, vy: number) => Math.sqrt(vx ** 2 + vy ** 2);
+// Helper - randomChoice is specific to this module
 const randomChoice = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
 // Renderer Module - Single Responsibility (Presentation)
@@ -494,7 +492,12 @@ const AirHockeyPage: React.FC = () => {
         setShowHelp(true);
       }
 
-      CpuAI.update(game, diff, now);
+      const cpuUpdate = CpuAI.update(game, diff, now);
+      if (cpuUpdate) {
+        game.cpu = cpuUpdate.cpu;
+        game.cpuTarget = cpuUpdate.cpuTarget;
+        game.cpuTargetTime = cpuUpdate.cpuTargetTime;
+      }
 
       if (now - game.lastItemSpawn > CONSTANTS.TIMING.ITEM_SPAWN && game.items.length < 2) {
         game.items.push(EntityFactory.createItem(randomChoice(ITEMS), Math.random() > 0.5));
@@ -518,7 +521,10 @@ const AirHockeyPage: React.FC = () => {
               : null; // CPU scores into Bottom goal
 
         if (scoredTarget) {
-          applyItemEffect(game, item, scoredTarget, now);
+          const itemEffect = applyItemEffect(game, item, scoredTarget, now);
+          if (itemEffect.pucks) game.pucks = itemEffect.pucks;
+          if (itemEffect.effects) game.effects = itemEffect.effects;
+          if (itemEffect.flash) game.flash = itemEffect.flash;
           sound.item();
           game.items.splice(i, 1);
         }
