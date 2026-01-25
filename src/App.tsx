@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import PuzzlePage from './pages/PuzzlePage';
 import GameListPage from './pages/GameListPage';
 import AirHockeyPage from './pages/AirHockeyPage';
+import RacingGamePage from './pages/RacingGamePage';
 import { GlobalStyle } from './styles/GlobalStyle';
 
 // アプリケーションのルートコンテナ
@@ -84,6 +85,7 @@ const App: React.FC = () => {
           <Route path="/" element={<GameListPage />} />
           <Route path="/puzzle" element={<PuzzlePage />} />
           <Route path="/air-hockey" element={<AirHockeyPage />} />
+          <Route path="/racing" element={<RacingGamePage />} />
         </Routes>
 
         <Footer>

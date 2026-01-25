@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import puzzleCardBg from '../assets/images/puzzle_card_bg.webp';
 import airHockeyCardBg from '../assets/images/air_hockey_card_bg.webp';
+import racingCardBg from '../assets/images/racing_card_bg.webp';
 import {
   PageContainer,
   HeroSection,
@@ -48,6 +49,20 @@ const GameListPage: React.FC = () => {
             <GameDescription>
               アイテムや障害物が登場する、ハイスピードなエアホッケー対戦！
               スプリットパックや透明化など、多彩なギミックでCPUに挑もう。
+            </GameDescription>
+            <PlayButton>
+              Play Now <span>→</span>
+            </PlayButton>
+          </CardContent>
+        </GameCardContainer>
+
+        <GameCardContainer onClick={() => navigate('/racing')}>
+          <CardImageArea $bgImage={racingCardBg} />
+          <CardContent>
+            <CardTitle>Racing Game</CardTitle>
+            <GameDescription>
+              ダイナミックなコースを駆け抜ける、トップダウンレーシング！
+              2P対戦やCPU戦、多彩なコースとカスタマイズで最速を目指せ。
             </GameDescription>
             <PlayButton>
               Play Now <span>→</span>
