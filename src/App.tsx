@@ -6,6 +6,8 @@ import GameListPage from './pages/GameListPage';
 import AirHockeyPage from './pages/AirHockeyPage';
 import RacingGamePage from './pages/RacingGamePage';
 import FallingShooterPage from './pages/FallingShooterPage';
+import MazeHorrorPage from './pages/MazeHorrorPage';
+import DeepSeaShooterPage from './pages/DeepSeaShooterPage';
 import { GlobalStyle } from './styles/GlobalStyle';
 
 // アプリケーションのルートコンテナ
@@ -88,6 +90,8 @@ const App: React.FC = () => {
           <Route path="/air-hockey" element={<AirHockeyPage />} />
           <Route path="/racing" element={<RacingGamePage />} />
           <Route path="/falling-shooter" element={<FallingShooterPage />} />
+          <Route path="/maze-horror" element={<MazeHorrorPage />} />
+          <Route path="/deep-sea-shooter" element={<DeepSeaShooterPage />} />
         </Routes>
 
         <Footer>

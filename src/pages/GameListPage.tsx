@@ -4,6 +4,8 @@ import puzzleCardBg from '../assets/images/puzzle_card_bg.webp';
 import airHockeyCardBg from '../assets/images/air_hockey_card_bg.webp';
 import racingCardBg from '../assets/images/racing_card_bg.webp';
 import fallingShooterCardBg from '../assets/images/falling_shooter_card_bg.png';
+import mazeHorrorCardBg from '../assets/images/maze_horror_card_bg.png';
+import deepSeaShooterCardBg from '../assets/images/deep_sea_shooter_card_bg.png';
 import {
   PageContainer,
   HeroSection,
@@ -78,6 +80,36 @@ const GameListPage: React.FC = () => {
             <GameDescription>
               迫りくるブロックを撃ち落とせ！ パズルとシューティングが融合した新感覚ゲーム。
               必殺技やパワーアップを駆使してハイスコアを目指そう。
+            </GameDescription>
+            <PlayButton>
+              Play Now <span>→</span>
+            </PlayButton>
+          </CardContent>
+        </GameCardContainer>
+
+        <GameCardContainer onClick={() => navigate('/maze-horror')}>
+          <CardImageArea $bgImage={mazeHorrorCardBg} />
+          <CardContent>
+            <CardTitle>Labyrinth of Shadows</CardTitle>
+            <GameDescription>
+              迫りくる影から逃げながら鍵を集める3D迷宮ホラー。
+              音を頼りに敵の位置を把握し、隠れながら脱出を目指せ。
+              恐怖と緊張感のあるかくれんぼアクション。
+            </GameDescription>
+            <PlayButton>
+              Play Now <span>→</span>
+            </PlayButton>
+          </CardContent>
+        </GameCardContainer>
+
+        <GameCardContainer onClick={() => navigate('/deep-sea-shooter')}>
+          <CardImageArea $bgImage={deepSeaShooterCardBg} />
+          <CardContent>
+            <CardTitle>Deep Sea Interceptor</CardTitle>
+            <GameDescription>
+              深海を舞台にした縦スクロールシューティング。
+              チャージショットとアイテムを駆使して、迫りくる深海の脅威を撃退せよ。
+              美しい深海のビジュアルと爽快な破壊エフェクト。
             </GameDescription>
             <PlayButton>
               Play Now <span>→</span>
