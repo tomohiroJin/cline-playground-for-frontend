@@ -644,7 +644,8 @@ export default function DeepSeaShooterPage() {
     highScore: 0,
     power: 1,
     spreadTime: 0,
-    shield: false,
+    shieldEndTime: 0,
+    speedLevel: 0,
   });
   const [, forceRender] = useReducer(x => x + 1, 0) as [number, () => void];
 
@@ -698,7 +699,8 @@ export default function DeepSeaShooterPage() {
       lives: 3,
       power: 1,
       stage: 1,
-      shield: false,
+      shieldEndTime: 0,
+      speedLevel: 0,
       spreadTime: 0,
     }));
     setGameState('playing');
@@ -799,8 +801,9 @@ export default function DeepSeaShooterPage() {
       if (k['ArrowRight'] || k['d']) dx = 1;
       if (k['ArrowUp'] || k['w']) dy = -1;
       if (k['ArrowDown'] || k['s']) dy = 1;
-      gd.player.x = clamp(15, Config.canvas.width - 15)(gd.player.x + dx * Config.player.speed);
-      gd.player.y = clamp(15, Config.canvas.height - 50)(gd.player.y + dy * Config.player.speed);
+      const speed = Config.player.speed + (uiStateRef.current.speedLevel || 0);
+      gd.player.x = clamp(15, Config.canvas.width - 15)(gd.player.x + dx * speed);
+      gd.player.y = clamp(15, Config.canvas.height - 50)(gd.player.y + dy * speed);
 
       // Charge
       if (gd.charging) gd.chargeLevel = Math.min(1, (now - gd.chargeStartTime) / 800);
@@ -844,7 +847,7 @@ export default function DeepSeaShooterPage() {
             e.enemyType === 'boss' ? 'boss' : ['straight', 'sine', 'drift'][e.movementPattern]
           ](e);
           if (e.canShoot && now - e.lastShotAt > e.fireRate && e.y > 0) {
-            e.lastShotAt = now;
+            next.lastShotAt = now;
             gd.enemyBullets.push(...EnemyAI.createBullets(next, gd.player));
           }
           return next;
@@ -886,7 +889,14 @@ export default function DeepSeaShooterPage() {
           // Apply item effect
           audio.current.play('item');
           if (i.itemType === 'power') uiStateRef.current.power++;
-          if (i.itemType === 'shield') uiStateRef.current.shield = true;
+          if (i.itemType === 'shield') uiStateRef.current.shieldEndTime = now + 8000;
+          if (i.itemType === 'speed')
+            uiStateRef.current.speedLevel = Math.min(3, (uiStateRef.current.speedLevel || 0) + 1);
+          if (i.itemType === 'life')
+            uiStateRef.current.lives = Math.min(
+              Config.player.maxLives,
+              uiStateRef.current.lives + 1
+            );
           if (i.itemType === 'spread') uiStateRef.current.spreadTime = now + 10000;
           if (i.itemType === 'bomb') {
             gd.enemies.forEach(e => {
@@ -902,7 +912,7 @@ export default function DeepSeaShooterPage() {
       });
 
       // Collision: Player -> Enemy/Bullet
-      if (!gd.invincible && !uiStateRef.current.shield) {
+      if (!gd.invincible && now > (uiStateRef.current.shieldEndTime || 0)) {
         let hit = false;
         if (gd.enemies.some(e => Collision.playerEnemy(gd.player, e))) hit = true;
         if (gd.enemyBullets.some(b => Collision.playerEnemyBullet(gd.player, b))) hit = true;
@@ -1043,6 +1053,7 @@ export default function DeepSeaShooterPage() {
           {'♥'.repeat(Math.max(0, uiState.lives))}
         </div>
         <div style={{ position: 'absolute', top: 36, right: 8, color: '#fa6', fontSize: 9 }}>
+          {/* eslint-disable-next-line */}
           POW: {uiState.power} {uiState.spreadTime > Date.now() ? '| 3WAY' : ''}
         </div>
 
@@ -1050,8 +1061,10 @@ export default function DeepSeaShooterPage() {
         <PlayerSprite
           x={gd.player.x}
           y={gd.player.y}
+          // eslint-disable-next-line
           opacity={gd.invincible && Math.floor(Date.now() / 100) % 2 === 0 ? 0.5 : 1}
-          shield={uiState.shield}
+          // eslint-disable-next-line
+          shield={Date.now() < uiState.shieldEndTime}
         />
         {gd.bullets.map(b => (
           <BulletSprite key={b.id} bullet={b} />
