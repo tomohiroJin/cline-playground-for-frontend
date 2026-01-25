@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import puzzleCardBg from '../assets/images/puzzle_card_bg.webp';
 import airHockeyCardBg from '../assets/images/air_hockey_card_bg.webp';
 import racingCardBg from '../assets/images/racing_card_bg.webp';
+import fallingShooterCardBg from '../assets/images/falling_shooter_card_bg.png';
 import {
   PageContainer,
   HeroSection,
@@ -63,6 +64,20 @@ const GameListPage: React.FC = () => {
             <GameDescription>
               ダイナミックなコースを駆け抜ける、トップダウンレーシング！
               2P対戦やCPU戦、多彩なコースとカスタマイズで最速を目指せ。
+            </GameDescription>
+            <PlayButton>
+              Play Now <span>→</span>
+            </PlayButton>
+          </CardContent>
+        </GameCardContainer>
+
+        <GameCardContainer onClick={() => navigate('/falling-shooter')}>
+          <CardImageArea $bgImage={fallingShooterCardBg} />
+          <CardContent>
+            <CardTitle>Falldown Shooter</CardTitle>
+            <GameDescription>
+              迫りくるブロックを撃ち落とせ！ パズルとシューティングが融合した新感覚ゲーム。
+              必殺技やパワーアップを駆使してハイスコアを目指そう。
             </GameDescription>
             <PlayButton>
               Play Now <span>→</span>

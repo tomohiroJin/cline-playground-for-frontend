@@ -60,9 +60,10 @@ export const GameCardContainer = styled(GlassCard)`
   padding: 0;
 `;
 
-export const CardImageArea = styled.div<{ $bgImage?: string }>`
+export const CardImageArea = styled.div<{ $bgImage?: string; $customBg?: string }>`
   height: 220px;
-  background-image: url(${props => props.$bgImage || puzzleCardBg});
+  background: ${props =>
+    props.$bgImage ? `url(${props.$bgImage})` : props.$customBg || `url(${puzzleCardBg})`};
   background-size: cover;
   background-position: center;
   display: flex;
