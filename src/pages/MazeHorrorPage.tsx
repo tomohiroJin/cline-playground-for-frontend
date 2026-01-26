@@ -286,8 +286,10 @@ const AudioService = {
   play(type: SoundName, vol = 0.3) {
     try {
       if (!this.ctx)
-        this.ctx = new (window.AudioContext ||
-          (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext)();
+        this.ctx = new (
+          window.AudioContext ||
+          (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+        )();
       const sound = CONTENT.sounds[type] || CONTENT.sounds.footstep;
       const [freq, wave, dur] = sound;
       const osc = this.ctx.createOscillator();
@@ -1240,11 +1242,15 @@ const Controls: React.FC<{
   <ControlsContainer>
     <ControlBtn
       $variant="dpad"
-      onTouchStart={e => {
+      onPointerDown={e => {
         e.preventDefault();
         keysRef.current['a'] = true;
       }}
-      onTouchEnd={e => {
+      onPointerUp={e => {
+        e.preventDefault();
+        keysRef.current['a'] = false;
+      }}
+      onPointerLeave={e => {
         e.preventDefault();
         keysRef.current['a'] = false;
       }}
@@ -1254,11 +1260,15 @@ const Controls: React.FC<{
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
       <ControlBtn
         $variant="dpad"
-        onTouchStart={e => {
+        onPointerDown={e => {
           e.preventDefault();
           keysRef.current['w'] = true;
         }}
-        onTouchEnd={e => {
+        onPointerUp={e => {
+          e.preventDefault();
+          keysRef.current['w'] = false;
+        }}
+        onPointerLeave={e => {
           e.preventDefault();
           keysRef.current['w'] = false;
         }}
@@ -1267,11 +1277,15 @@ const Controls: React.FC<{
       </ControlBtn>
       <ControlBtn
         $variant="dpad"
-        onTouchStart={e => {
+        onPointerDown={e => {
           e.preventDefault();
           keysRef.current['s'] = true;
         }}
-        onTouchEnd={e => {
+        onPointerUp={e => {
+          e.preventDefault();
+          keysRef.current['s'] = false;
+        }}
+        onPointerLeave={e => {
           e.preventDefault();
           keysRef.current['s'] = false;
         }}
@@ -1281,11 +1295,15 @@ const Controls: React.FC<{
     </div>
     <ControlBtn
       $variant="dpad"
-      onTouchStart={e => {
+      onPointerDown={e => {
         e.preventDefault();
         keysRef.current['d'] = true;
       }}
-      onTouchEnd={e => {
+      onPointerUp={e => {
+        e.preventDefault();
+        keysRef.current['d'] = false;
+      }}
+      onPointerLeave={e => {
         e.preventDefault();
         keysRef.current['d'] = false;
       }}
@@ -1296,11 +1314,15 @@ const Controls: React.FC<{
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginLeft: '2rem' }}>
       <ControlBtn
         $variant="shift"
-        onTouchStart={e => {
+        onPointerDown={e => {
           e.preventDefault();
           keysRef.current['shift'] = true;
         }}
-        onTouchEnd={e => {
+        onPointerUp={e => {
+          e.preventDefault();
+          keysRef.current['shift'] = false;
+        }}
+        onPointerLeave={e => {
           e.preventDefault();
           keysRef.current['shift'] = false;
         }}
@@ -1310,11 +1332,15 @@ const Controls: React.FC<{
       </ControlBtn>
       <ControlBtn
         $variant="action"
-        onTouchStart={e => {
+        onPointerDown={e => {
           e.preventDefault();
           keysRef.current[' '] = true;
         }}
-        onTouchEnd={e => {
+        onPointerUp={e => {
+          e.preventDefault();
+          keysRef.current[' '] = false;
+        }}
+        onPointerLeave={e => {
           e.preventDefault();
           keysRef.current[' '] = false;
         }}

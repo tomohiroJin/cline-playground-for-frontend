@@ -1,15 +1,18 @@
 import styled, { keyframes, css } from 'styled-components';
 
 export const PageContainer = styled.div`
-  width: 100%;
-  height: 100vh;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  padding-top: 80px;
+  box-sizing: border-box;
+  height: 100dvh;
   background: linear-gradient(to bottom, #030712, #111827, #000000);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   color: white;
-  position: relative;
   overflow: hidden;
   font-family: sans-serif;
 `;
@@ -29,6 +32,9 @@ export const Canvas = styled.canvas`
   display: block;
   max-width: 100%;
   max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
   box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
 `;
 
@@ -53,9 +59,9 @@ export const TitleContainer = styled.div`
 `;
 
 export const TitleMain = styled.h1`
-  font-size: 3.75rem;
+  font-size: 3rem;
   font-weight: bold;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
   letter-spacing: 0.05em;
   text-shadow:
     0 0 40px #dc2626,
@@ -63,7 +69,7 @@ export const TitleMain = styled.h1`
   color: white;
 
   @media (min-width: 768px) {
-    font-size: 4.5rem;
+    font-size: 4rem;
   }
 `;
 
@@ -77,24 +83,24 @@ export const TitleSub = styled.p`
 
 export const TitleJapanese = styled.p`
   color: #6b7280;
-  font-size: 0.875rem;
-  margin-bottom: 2rem;
+  font-size: 0.75rem;
+  margin-bottom: 1.5rem;
 `;
 
 export const MenuContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 2rem;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
   width: 100%;
-  max-width: 20rem;
+  max-width: 18rem;
 `;
 
 export const DiffButton = styled.button<{ $gradientClass: string }>`
-  padding: 1rem 2rem;
+  padding: 0.75rem 1.5rem;
   border-radius: 0.75rem;
   font-weight: bold;
-  font-size: 1.125rem;
+  font-size: 1rem;
   transition: all 0.2s;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   border: 1px solid;
@@ -202,16 +208,19 @@ export const BarFill = styled.div<{ $percent: number; $color: string }>`
 
 export const MinimapContainer = styled.div`
   position: absolute;
-  bottom: 6rem;
+  bottom: 2rem;
   left: 0.75rem;
   background-color: rgba(0, 0, 0, 0.8);
   padding: 0.5rem;
   border-radius: 0.5rem;
   border: 1px solid rgba(255, 255, 255, 0.2);
   z-index: 10;
+  transform: scale(0.8);
+  transform-origin: bottom left;
 
   @media (min-width: 768px) {
     bottom: 2rem;
+    transform: none;
   }
 `;
 
@@ -340,9 +349,9 @@ export const DemoDot = styled.div<{ $active: boolean }>`
 export const HelpPanel = styled.div`
   background-color: rgba(0, 0, 0, 0.5);
   border-radius: 0.75rem;
-  padding: 1.25rem;
+  padding: 1rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  max-width: 20rem;
+  max-width: 18rem;
   text-align: center;
 `;
 
