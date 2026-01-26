@@ -1,14 +1,20 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense, lazy } from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
 import styled from 'styled-components';
-import PuzzlePage from './pages/PuzzlePage';
+import LoadingSpinner from './components/atoms/LoadingSpinner';
+import ErrorBoundary from './components/ErrorBoundary';
+
 import GameListPage from './pages/GameListPage';
-import AirHockeyPage from './pages/AirHockeyPage';
-import RacingGamePage from './pages/RacingGamePage';
-import FallingShooterPage from './pages/FallingShooterPage';
-import MazeHorrorPage from './pages/MazeHorrorPage';
-import DeepSeaShooterPage from './pages/DeepSeaShooterPage';
 import { GlobalStyle } from './styles/GlobalStyle';
+
+const PuzzlePage = lazy(() => import('./pages/PuzzlePage'));
+const AirHockeyPage = lazy(() => import('./pages/AirHockeyPage'));
+const RacingGamePage = lazy(() => import('./pages/RacingGamePage'));
+const FallingShooterPage = lazy(() => import('./pages/FallingShooterPage'));
+const MazeHorrorPage = lazy(() => import('./pages/MazeHorrorPage'));
+const DeepSeaShooterPage = lazy(
+  () => import(/* webpackChunkName: "DeepSeaShooterPage" */ './pages/DeepSeaShooterPage')
+);
 
 // アプリケーションのルートコンテナ
 const AppContainer = styled.div`
@@ -84,15 +90,25 @@ const App: React.FC = () => {
           </Title>
         </Header>
 
-        <Routes>
-          <Route path="/" element={<GameListPage />} />
-          <Route path="/puzzle" element={<PuzzlePage />} />
-          <Route path="/air-hockey" element={<AirHockeyPage />} />
-          <Route path="/racing" element={<RacingGamePage />} />
-          <Route path="/falling-shooter" element={<FallingShooterPage />} />
-          <Route path="/maze-horror" element={<MazeHorrorPage />} />
-          <Route path="/deep-sea-shooter" element={<DeepSeaShooterPage />} />
-        </Routes>
+        <ErrorBoundary>
+          <Suspense
+            fallback={
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '50px' }}>
+                <LoadingSpinner size="large" message="Loading game..." />
+              </div>
+            }
+          >
+            <Routes>
+              <Route path="/" element={<GameListPage />} />
+              <Route path="/puzzle" element={<PuzzlePage />} />
+              <Route path="/air-hockey" element={<AirHockeyPage />} />
+              <Route path="/racing" element={<RacingGamePage />} />
+              <Route path="/falling-shooter" element={<FallingShooterPage />} />
+              <Route path="/maze-horror" element={<MazeHorrorPage />} />
+              <Route path="/deep-sea-shooter" element={<DeepSeaShooterPage />} />
+            </Routes>
+          </Suspense>
+        </ErrorBoundary>
 
         <Footer>
           <p>© 2025 Game Platform</p>

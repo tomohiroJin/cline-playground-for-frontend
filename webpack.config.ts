@@ -18,7 +18,9 @@ const config: Configuration = {
   entry: './src/index.tsx',
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'bundle.js',
+    filename: '[name].bundle.js',
+    chunkFilename: '[name].[contenthash].chunk.js',
+    clean: true,
   },
   resolve: {
     extensions: ['.tsx', '.ts', '.js'],

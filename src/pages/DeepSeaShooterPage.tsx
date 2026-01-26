@@ -328,7 +328,11 @@ const EntityFactory = {
   particle: (
     x: number,
     y: number,
-    { color, life = 15, velocity = null }: { color: string; life?: number; velocity?: Position | null } = { color: '#fff' }
+    {
+      color,
+      life = 15,
+      velocity = null,
+    }: { color: string; life?: number; velocity?: Position | null } = { color: '#fff' }
   ): Particle => ({
     id: uniqueId(),
     x,
@@ -359,7 +363,11 @@ type VelocityEntity = Position & { vx: number; vy: number };
 
 const MovementStrategies = {
   straight: <T extends MovableEntity>(e: T): T => ({ ...e, y: e.y + e.speed }),
-  sine: <T extends MovableEntity>(e: T): T => ({ ...e, y: e.y + e.speed, x: e.x + Math.sin(e.y / 20) * 2 }),
+  sine: <T extends MovableEntity>(e: T): T => ({
+    ...e,
+    y: e.y + e.speed,
+    x: e.x + Math.sin(e.y / 20) * 2,
+  }),
   drift: <T extends MovableEntity>(e: T): T => ({
     ...e,
     y: e.y + e.speed,
@@ -378,8 +386,17 @@ const MovementStrategies = {
   }),
   enemyBullet: <T extends VelocityEntity>(e: T): T => ({ ...e, x: e.x + e.vx, y: e.y + e.vy }),
   item: <T extends MovableEntity>(e: T): T => ({ ...e, y: e.y + e.speed }),
-  particle: <T extends VelocityEntity & { life: number }>(e: T): T => ({ ...e, x: e.x + e.vx, y: e.y + e.vy, life: e.life - 1 }),
-  bubble: <T extends MovableEntity & { opacity: number }>(e: T): T => ({ ...e, y: e.y - e.speed, opacity: e.opacity - 0.003 }),
+  particle: <T extends VelocityEntity & { life: number }>(e: T): T => ({
+    ...e,
+    x: e.x + e.vx,
+    y: e.y + e.vy,
+    life: e.life - 1,
+  }),
+  bubble: <T extends MovableEntity & { opacity: number }>(e: T): T => ({
+    ...e,
+    y: e.y - e.speed,
+    opacity: e.opacity - 0.003,
+  }),
 };
 
 const Collision = {
@@ -426,7 +443,9 @@ const createAudioSystem = () => {
     if (ctx) return ctx;
     if (typeof window === 'undefined') return null;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const Ctor = window.AudioContext || (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    const Ctor =
+      window.AudioContext ||
+      (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (Ctor) ctx = new Ctor();
     return ctx;
   };
@@ -473,52 +492,60 @@ interface PlayerSpriteProps {
 
 const PlayerSprite = memo(function PlayerSprite({ x, y, opacity, shield }: PlayerSpriteProps) {
   return (
-  <>
-    {shield && (
-      <div
-        style={{
-          position: 'absolute',
-          left: x - 20,
-          top: y - 20,
-          width: 40,
-          height: 40,
-          borderRadius: '50%',
-          border: '2px solid #4af',
-          opacity: 0.5,
-          animation: 'pulse 0.5s infinite',
-        }}
-      />
-    )}
-    <svg
-      style={{ position: 'absolute', left: x - 10, top: y - 10, opacity }}
-      width={20}
-      height={26}
-      viewBox="0 0 24 32"
-    >
-      <defs>
-        <linearGradient id="subGrad" x1="0%" y1="0%" x2="100%">
-          <stop offset="0%" stopColor="#1a3a5c" />
-          <stop offset="50%" stopColor="#2d5a87" />
-          <stop offset="100%" stopColor="#1a3a5c" />
-        </linearGradient>
-      </defs>
-      <ellipse
-        cx="12"
-        cy="17"
-        rx="8"
-        ry="11"
-        fill="url(#subGrad)"
-        stroke="#4a8ac7"
-        strokeWidth="0.7"
-      />
-      <ellipse cx="12" cy="13" rx="4" ry="2.5" fill="#0a1520" stroke="#4a8ac7" strokeWidth="0.3" />
-      <rect x="10" y="3" width="4" height="5" fill="#3a6a9c" />
-      <rect x="9" y="1" width="6" height="2" fill="#4a8ac7" rx="0.5" />
-      <path d="M4 18 L2 22 L7 20 Z" fill="#2d5a87" />
-      <path d="M20 18 L22 22 L17 20 Z" fill="#2d5a87" />
-      <ellipse cx="12" cy="29" rx="3" ry="1.5" fill="rgba(100,200,255,0.4)" />
-    </svg>
-  </>
+    <>
+      {shield && (
+        <div
+          style={{
+            position: 'absolute',
+            left: x - 20,
+            top: y - 20,
+            width: 40,
+            height: 40,
+            borderRadius: '50%',
+            border: '2px solid #4af',
+            opacity: 0.5,
+            animation: 'pulse 0.5s infinite',
+          }}
+        />
+      )}
+      <svg
+        style={{ position: 'absolute', left: x - 10, top: y - 10, opacity }}
+        width={20}
+        height={26}
+        viewBox="0 0 24 32"
+      >
+        <defs>
+          <linearGradient id="subGrad" x1="0%" y1="0%" x2="100%">
+            <stop offset="0%" stopColor="#1a3a5c" />
+            <stop offset="50%" stopColor="#2d5a87" />
+            <stop offset="100%" stopColor="#1a3a5c" />
+          </linearGradient>
+        </defs>
+        <ellipse
+          cx="12"
+          cy="17"
+          rx="8"
+          ry="11"
+          fill="url(#subGrad)"
+          stroke="#4a8ac7"
+          strokeWidth="0.7"
+        />
+        <ellipse
+          cx="12"
+          cy="13"
+          rx="4"
+          ry="2.5"
+          fill="#0a1520"
+          stroke="#4a8ac7"
+          strokeWidth="0.3"
+        />
+        <rect x="10" y="3" width="4" height="5" fill="#3a6a9c" />
+        <rect x="9" y="1" width="6" height="2" fill="#4a8ac7" rx="0.5" />
+        <path d="M4 18 L2 22 L7 20 Z" fill="#2d5a87" />
+        <path d="M20 18 L22 22 L17 20 Z" fill="#2d5a87" />
+        <ellipse cx="12" cy="29" rx="3" ry="1.5" fill="rgba(100,200,255,0.4)" />
+      </svg>
+    </>
   );
 });
 
@@ -587,7 +614,12 @@ interface TouchControlsProps {
   charging: boolean;
 }
 
-const TouchControls = memo(function TouchControls({ onMove, onShoot, onCharge, charging }: TouchControlsProps) {
+const TouchControls = memo(function TouchControls({
+  onMove,
+  onShoot,
+  onCharge,
+  charging,
+}: TouchControlsProps) {
   const btnStyle: React.CSSProperties = {
     position: 'absolute',
     width: 28,
@@ -674,6 +706,7 @@ const TouchControls = memo(function TouchControls({ onMove, onShoot, onCharge, c
   );
 });
 
+// Main component export
 export default function DeepSeaShooterPage() {
   const [gameState, setGameState] = useState<'title' | 'playing' | 'gameover' | 'ending'>('title');
   const [uiState, setUiState] = useState({
@@ -882,13 +915,14 @@ export default function DeepSeaShooterPage() {
 
       gd.enemies = gd.enemies
         .map(e => {
-          const moveFn = e.enemyType === 'boss'
-            ? MovementStrategies.boss
-            : (['straight', 'sine', 'drift'] as const)[e.movementPattern] === 'straight'
-              ? MovementStrategies.straight
-              : (['straight', 'sine', 'drift'] as const)[e.movementPattern] === 'sine'
-                ? MovementStrategies.sine
-                : MovementStrategies.drift;
+          const moveFn =
+            e.enemyType === 'boss'
+              ? MovementStrategies.boss
+              : (['straight', 'sine', 'drift'] as const)[e.movementPattern] === 'straight'
+                ? MovementStrategies.straight
+                : (['straight', 'sine', 'drift'] as const)[e.movementPattern] === 'sine'
+                  ? MovementStrategies.sine
+                  : MovementStrategies.drift;
           const next = moveFn(e);
           if (e.canShoot && now - e.lastShotAt > e.fireRate && e.y > 0) {
             next.lastShotAt = now;
