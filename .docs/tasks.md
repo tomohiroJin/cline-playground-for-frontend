@@ -1,0 +1,246 @@
+# タスク一覧・進捗管理
+
+## 進捗サマリー
+
+| フェーズ | 状況 | 完了タスク |
+|---------|------|-----------|
+| フェーズ1: 品質基盤強化 | 未着手 | 0/4 |
+| フェーズ2: アクセシビリティ | 未着手 | 0/4 |
+| フェーズ3: テスト充実 | 未着手 | 0/3 |
+| フェーズ4: エンゲージメント | 未着手 | 0/3 |
+| **合計** | **0%** | **0/14** |
+
+---
+
+## フェーズ1: 品質基盤強化
+
+### 1.1 コード分割（React.lazy + Suspense）
+
+- [ ] `src/App.tsx`の修正
+  - [ ] React.lazyでゲームページをインポート
+  - [ ] Suspenseでルートをラップ
+  - [ ] GameListPageは同期インポートのまま
+- [ ] ビルド確認（チャンク分割）
+
+**ファイル**: `src/App.tsx`
+**ステータス**: 未着手
+
+---
+
+### 1.2 LoadingSpinnerコンポーネント作成
+
+- [ ] `src/components/atoms/LoadingSpinner.tsx`作成
+  - [ ] スピナーアニメーション実装
+  - [ ] サイズバリエーション（small/medium/large）
+  - [ ] オプションメッセージ対応
+  - [ ] ARIA属性追加
+- [ ] スタイル実装（グラスモーフィズム）
+
+**ファイル**: `src/components/atoms/LoadingSpinner.tsx`
+**ステータス**: 未着手
+
+---
+
+### 1.3 ErrorBoundaryコンポーネント作成
+
+- [ ] `src/components/ErrorBoundary.tsx`作成
+  - [ ] エラーキャッチ実装
+  - [ ] フォールバックUI
+  - [ ] リトライ機能
+  - [ ] ホームへ戻るリンク
+- [ ] App.tsxでラップ
+
+**ファイル**: `src/components/ErrorBoundary.tsx`
+**ステータス**: 未着手
+
+---
+
+### 1.4 メタタグ追加
+
+- [ ] `public/index.html`修正
+  - [ ] descriptionメタタグ
+  - [ ] keywordsメタタグ
+  - [ ] OGPタグ（og:title, og:description, og:image, og:type）
+  - [ ] Twitterカードタグ
+  - [ ] タイトル更新（「Game Platform」）
+
+**ファイル**: `public/index.html`
+**ステータス**: 未着手
+
+---
+
+## フェーズ2: アクセシビリティ改善
+
+### 2.1 セマンティックHTML導入
+
+- [ ] `src/App.tsx`修正
+  - [ ] `<main>`要素追加
+  - [ ] `<nav>`要素追加
+  - [ ] role属性追加
+- [ ] 各ページに`<section>`追加
+
+**ファイル**: `src/App.tsx`, 各ページ
+**ステータス**: 未着手
+
+---
+
+### 2.2 ARIA属性追加
+
+- [ ] `src/pages/GameListPage.tsx`
+  - [ ] ゲームカードにaria-label
+  - [ ] リンクにaria-describedby
+- [ ] 各ゲームページ
+  - [ ] Canvasにrole="img"とaria-label
+  - [ ] ボタンにaria-pressed（該当箇所）
+- [ ] モレキュール/オーガニズム
+  - [ ] インタラクティブ要素のラベル
+
+**ステータス**: 未着手
+
+---
+
+### 2.3 カラーコントラスト修正
+
+- [ ] `src/styles/GlobalStyle.ts`修正
+  - [ ] --text-secondary の明度向上
+  - [ ] ボタンテキスト色の調整
+- [ ] コントラスト比検証（4.5:1以上）
+
+**ファイル**: `src/styles/GlobalStyle.ts`
+**ステータス**: 未着手
+
+---
+
+### 2.4 画像alt属性追加
+
+- [ ] `src/pages/GameListPage.tsx`
+  - [ ] ゲーム画像にalt追加
+- [ ] パズル関連コンポーネント
+  - [ ] DefaultImageSelectorの画像にalt
+  - [ ] アップロード画像にalt
+
+**ステータス**: 未着手
+
+---
+
+## フェーズ3: テスト充実
+
+### 3.1 ゲームページテスト作成
+
+- [ ] `src/pages/FallingShooterPage.test.tsx`
+  - [ ] レンダリングテスト
+  - [ ] 状態遷移テスト
+  - [ ] UI表示テスト
+- [ ] `src/pages/DeepSeaShooterPage.test.tsx`
+  - [ ] レンダリングテスト
+  - [ ] 状態遷移テスト
+  - [ ] UI表示テスト
+- [ ] `src/pages/MazeHorrorPage.test.tsx`
+  - [ ] レンダリングテスト
+  - [ ] 状態遷移テスト
+  - [ ] UI表示テスト
+- [ ] `src/pages/RacingGamePage.test.tsx`
+  - [ ] レンダリングテスト
+  - [ ] 状態遷移テスト
+  - [ ] UI表示テスト
+
+**ステータス**: 未着手
+
+---
+
+### 3.2 useGameStateテスト作成
+
+- [ ] `src/hooks/useGameState.test.ts`
+  - [ ] 初期状態テスト
+  - [ ] 難易度変更テスト
+  - [ ] ゲーム開始/終了テスト
+  - [ ] リセットテスト
+  - [ ] ヒントモードテスト
+
+**ファイル**: `src/hooks/useGameState.test.ts`
+**ステータス**: 未着手
+
+---
+
+### 3.3 カバレッジ設定
+
+- [ ] `package.json`修正
+  - [ ] collectCoverage設定
+  - [ ] coverageThreshold設定
+  - [ ] collectCoverageFrom設定
+- [ ] カバレッジレポート確認
+
+**ファイル**: `package.json`
+**ステータス**: 未着手
+
+---
+
+## フェーズ4: エンゲージメント向上
+
+### 4.1 ハイスコア永続化
+
+- [ ] `src/utils/score-storage.ts`作成
+  - [ ] IndexedDB初期化
+  - [ ] saveScore関数
+  - [ ] getHighScore関数
+  - [ ] getScoreHistory関数
+  - [ ] clearScores関数
+- [ ] 各ゲームページへの統合
+
+**ファイル**: `src/utils/score-storage.ts`
+**ステータス**: 未着手
+
+---
+
+### 4.2 SNSシェア機能
+
+- [ ] `src/components/molecules/ShareButton.tsx`作成
+  - [ ] Twitter/X共有
+  - [ ] Web Share API対応
+  - [ ] 共有テキスト生成
+- [ ] 結果画面への配置
+
+**ファイル**: `src/components/molecules/ShareButton.tsx`
+**ステータス**: 未着手
+
+---
+
+### 4.3 設定パネル
+
+- [ ] `src/components/organisms/SettingsPanel.tsx`作成
+  - [ ] 音量スライダー（master, sfx, bgm）
+  - [ ] 操作設定セレクト
+  - [ ] FPS表示トグル
+  - [ ] アニメーション軽減トグル
+- [ ] `src/utils/settings-storage.ts`作成
+  - [ ] localStorage永続化
+  - [ ] デフォルト値設定
+- [ ] ヘッダーへの設定アイコン追加
+
+**ファイル**: `src/components/organisms/SettingsPanel.tsx`, `src/utils/settings-storage.ts`
+**ステータス**: 未着手
+
+---
+
+## 検証タスク
+
+### 各フェーズ完了時
+
+- [ ] `npm run lint` - エラー0件
+- [ ] `npm test` - 全テスト通過
+- [ ] `npm run build` - ビルド成功
+- [ ] 手動確認 - 機能動作確認
+
+### アクセシビリティ検証
+
+- [ ] Lighthouse監査（a11yスコア90以上）
+- [ ] キーボードナビゲーション確認
+- [ ] スクリーンリーダーテスト
+
+---
+
+## 変更履歴
+
+| 日付 | 内容 | 担当 |
+|------|------|------|
+| 2025-01-26 | 初版作成 | - |
