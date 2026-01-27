@@ -1,66 +1,94 @@
-import { renderHook } from '@testing-library/react';
-import { act } from 'react';
+import { renderHook, act } from '@testing-library/react';
 import { useGameState } from './useGameState';
-
-jest.mock('./usePuzzle', () => ({
-  usePuzzle: () => ({
-    imageUrl: '',
-    setImageUrl: jest.fn(),
-    originalImageSize: { width: 0, height: 0 },
-    setOriginalImageSize: jest.fn(),
-    division: 3,
-    setDivision: jest.fn(),
-    pieces: [],
-    setPieces: jest.fn(),
-    emptyPosition: 0,
-    elapsedTime: 0,
-    completed: false,
-    setCompleted: jest.fn(),
-    initializePuzzle: jest.fn(),
-    movePiece: jest.fn(),
-    resetPuzzle: jest.fn(),
-  }),
-}));
-
-jest.mock('./useHintMode', () => ({
-  useHintMode: () => ({
-    hintModeEnabled: false,
-    toggleHintMode: jest.fn(),
-  }),
-}));
+import { Provider } from 'jotai';
 
 describe('useGameState', () => {
-  it('初期状態ではゲームが開始されておらず、画像ソースモードがアップロードで、空のパネルクリック数が0である', () => {
-    const { result } = renderHook(() => useGameState());
+  test('初期状態が正しいこと', () => {
+    const { result } = renderHook(() => useGameState(), { wrapper: Provider });
 
     expect(result.current.gameStarted).toBe(false);
     expect(result.current.imageSourceMode).toBe('upload');
-    expect(result.current.gameState.emptyPanelClicks).toBe(0);
+    expect(result.current.gameState.hintModeEnabled).toBe(false);
+    expect(result.current.gameState.division).toBe(4); // Default division
   });
 
-  it('画像をアップロードすると、指定されたURLと画像サイズが設定される', () => {
-    const { result } = renderHook(() => useGameState());
+  test('画像アップロードが正しく動作すること', () => {
+    const { result } = renderHook(() => useGameState(), { wrapper: Provider });
+    const dummyUrl = 'blob:dummy';
+    const width = 800;
+    const height = 600;
 
     act(() => {
-      result.current.handleImageUpload('test-url', 100, 200);
+      result.current.handleImageUpload(dummyUrl, width, height);
     });
 
-    expect(result.current.gameState.imageUrl).toBe('');
-    expect(result.current.gameState.originalImageSize).toEqual({ width: 0, height: 0 });
+    expect(result.current.gameState.imageUrl).toBe(dummyUrl);
+    expect(result.current.gameState.originalImageSize).toEqual({ width, height });
   });
 
-  it('ゲームを開始すると、ゲームが開始状態になる', () => {
-    const { result } = renderHook(() => useGameState());
+  test('難易度変更が正しく動作すること', () => {
+    const { result } = renderHook(() => useGameState(), { wrapper: Provider });
+
+    act(() => {
+      result.current.handleDifficultyChange(4);
+    });
+
+    expect(result.current.gameState.division).toBe(4);
+  });
+
+  test('ゲーム開始が正しく動作すること', () => {
+    const { result } = renderHook(() => useGameState(), { wrapper: Provider });
+
+    // 画像を設定しておく
+    act(() => {
+      result.current.handleImageUpload('blob:dummy', 800, 600);
+    });
 
     act(() => {
       result.current.handleStartGame();
     });
 
     expect(result.current.gameStarted).toBe(true);
+    // パズルが初期化されている（ピースが生成されている）こと確認
+    expect(result.current.gameState.pieces.length).toBeGreaterThan(0);
   });
 
-  it('空のパネルをクリックすると、クリック数が1増加する', () => {
-    const { result } = renderHook(() => useGameState());
+  test('ゲーム終了・リセットが正しく動作すること', () => {
+    const { result } = renderHook(() => useGameState(), { wrapper: Provider });
+
+    // 画像セット & 開始
+    act(() => {
+      result.current.handleImageUpload('blob:dummy', 800, 600);
+      result.current.handleStartGame();
+    });
+
+    expect(result.current.gameStarted).toBe(true);
+
+    // 終了
+    act(() => {
+      result.current.handleEndGame();
+    });
+    expect(result.current.gameStarted).toBe(false);
+
+    // リセット（内部でinitializePuzzle呼ばれる）
+    // リセット動作を確認するために、再度開始してからリセット
+    act(() => {
+      result.current.handleStartGame();
+    });
+    // 開始直後のstartTime
+    // const startTime1 = result.current.gameState.elapsedTime;
+
+    act(() => {
+      result.current.handleResetGame();
+    });
+    // Reset calls initializePuzzle, which resets elapsedTime to 0
+    expect(result.current.gameState.elapsedTime).toBe(0);
+  });
+
+  test('空パネルクリックのカウントテスト', () => {
+    const { result } = renderHook(() => useGameState(), { wrapper: Provider });
+
+    expect(result.current.gameState.emptyPanelClicks).toBe(0);
 
     act(() => {
       result.current.handleEmptyPanelClick();
@@ -69,24 +97,21 @@ describe('useGameState', () => {
     expect(result.current.gameState.emptyPanelClicks).toBe(1);
   });
 
-  it('画像ソースモードを変更すると、指定されたモードに切り替わる', () => {
-    const { result } = renderHook(() => useGameState());
+  test('ヒントモードの切り替えが正しく動作すること', () => {
+    const { result } = renderHook(() => useGameState(), { wrapper: Provider });
+
+    expect(result.current.gameState.hintModeEnabled).toBe(false);
 
     act(() => {
-      result.current.setImageSourceMode('default');
+      result.current.toggleHintMode();
     });
 
-    expect(result.current.imageSourceMode).toBe('default');
-  });
-
-  it('ゲームを終了すると、ゲームが未開始状態になる', () => {
-    const { result } = renderHook(() => useGameState());
+    expect(result.current.gameState.hintModeEnabled).toBe(true);
 
     act(() => {
-      result.current.handleStartGame();
-      result.current.handleEndGame();
+      result.current.toggleHintMode();
     });
 
-    expect(result.current.gameStarted).toBe(false);
+    expect(result.current.gameState.hintModeEnabled).toBe(false);
   });
 });
