@@ -8,6 +8,7 @@ import {
   distance as baseDistance,
 } from '../utils/math-utils';
 import { saveScore, getHighScore } from '../utils/score-storage';
+import { ShareButton } from '../components/molecules/ShareButton';
 
 // ============================================================================
 // Styled Components (Containers & Static UI)
@@ -1089,6 +1090,12 @@ export default function DeepSeaShooterPage() {
             <h1 style={{ color: '#f66' }}>MISSION FAILED</h1>
             <p>SCORE: {uiState.score}</p>
             <p style={{ fontSize: 12, color: '#aaa' }}>HIGH SCORE: {uiState.highScore}</p>
+            <div style={{ margin: '15px 0' }}>
+              <ShareButton
+                text={`Deep Sea Shooterで${uiState.score}点を獲得しました！`}
+                hashtags={['DeepSeaShooter', 'GamePlatform']}
+              />
+            </div>
             <Button onClick={startGame}>RETRY</Button>
             <Button onClick={() => setGameState('title')}>TITLE</Button>
           </FullScreenOverlay>
@@ -1104,6 +1111,12 @@ export default function DeepSeaShooterPage() {
             <h1 style={{ color: '#6ac' }}>MISSION COMPLETE</h1>
             <p>FINAL SCORE: {uiState.score}</p>
             <p style={{ fontSize: 12, color: '#aaa' }}>HIGH SCORE: {uiState.highScore}</p>
+            <div style={{ margin: '15px 0' }}>
+              <ShareButton
+                text={`Deep Sea Shooterをクリア！スコア: ${uiState.score}点`}
+                hashtags={['DeepSeaShooter', 'GamePlatform']}
+              />
+            </div>
             <Button $primary onClick={() => setGameState('title')}>
               RETURN TO TITLE
             </Button>

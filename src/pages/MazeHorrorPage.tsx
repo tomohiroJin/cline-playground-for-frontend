@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { clamp, distance } from '../utils/math-utils';
 import { saveScore, getHighScore } from '../utils/score-storage';
+import { ShareButton } from '../components/molecules/ShareButton';
 import {
   PageContainer,
   Canvas,
@@ -814,37 +815,59 @@ const Story: React.FC<{
         ))}
       </div>
 
-      {type === 'victory' && ready && (
-        <ModalContent style={{ marginTop: '2rem' }}>
+      {type !== 'intro' && ready && (
+        <ModalContent style={{ marginTop: '1.5rem', width: '100%', maxWidth: '32rem' }}>
           <h3
             style={{
-              color: '#facc15',
+              color: type === 'victory' ? '#facc15' : '#ef4444',
               fontSize: '1.25rem',
               fontWeight: 'bold',
               marginBottom: '1rem',
             }}
           >
-            🏆 クリア結果
+            {type === 'victory' ? '🏆 クリア結果' : '💀 結果'}
           </h3>
-          <div style={{ display: 'flex', gap: '2rem', color: 'white' }}>
+          <div
+            style={{
+              display: 'flex',
+              gap: '2rem',
+              color: 'white',
+              justifyContent: 'center',
+              marginBottom: '1rem',
+            }}
+          >
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#facc15' }}>
+              <div
+                style={{
+                  fontSize: '1.875rem',
+                  fontWeight: 'bold',
+                  color: type === 'victory' ? '#facc15' : 'white',
+                }}
+              >
                 {(score || 0).toLocaleString()}
               </div>
               <div style={{ fontSize: '0.875rem', color: '#9ca3af' }}>スコア</div>
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#22d3ee' }}>
-                {time || 0}秒
+            {type === 'victory' && (
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#22d3ee' }}>
+                  {time || 0}秒
+                </div>
+                <div style={{ fontSize: '0.875rem', color: '#9ca3af' }}>クリアタイム</div>
               </div>
-              <div style={{ fontSize: '0.875rem', color: '#9ca3af' }}>クリアタイム</div>
-            </div>
+            )}
           </div>
           {highScore !== undefined && (
-            <div style={{ marginTop: '1rem', color: '#fbbf24', fontSize: '1rem' }}>
+            <div style={{ color: '#fbbf24', fontSize: '1rem', marginBottom: '1rem' }}>
               HIGH SCORE: {highScore.toLocaleString()}
             </div>
           )}
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <ShareButton
+              text={`Maze Horrorを${type === 'victory' ? 'クリア！' : 'プレイ！'} スコア: ${score}点`}
+              hashtags={['MazeHorror', 'GamePlatform']}
+            />
+          </div>
         </ModalContent>
       )}
 

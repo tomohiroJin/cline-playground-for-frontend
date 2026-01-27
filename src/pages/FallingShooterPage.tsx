@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/refs */
 import { saveScore, getHighScore } from '../utils/score-storage';
+import { ShareButton } from '../components/molecules/ShareButton';
 
 // 注: このファイルではパフォーマンス最適化のため、ref経由でゲーム状態を管理しています
 // ゲームループでの高頻度更新に対応するための意図的な設計パターンです
@@ -980,6 +981,12 @@ const GameOverScreen: React.FC<{ score: number; onRetry: () => void; onTitle: ()
   <OverlayComponent>
     <OverlayTitle $color="#ef4444">Game Over</OverlayTitle>
     <OverlayText $color="white">Score: {score}</OverlayText>
+    <div style={{ marginBottom: '1rem' }}>
+      <ShareButton
+        text={`Falling Shooterで${score}点を獲得しました！`}
+        hashtags={['FallingShooter', 'GamePlatform']}
+      />
+    </div>
     <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
       <Button onClick={onRetry}>Retry</Button>
       <Button onClick={onTitle} $variant="secondary">
@@ -1064,6 +1071,12 @@ const EndingScreen: React.FC<{ score: number; onRetry: () => void; onTitle: () =
     <Fireworks />
     <OverlayTitle $color="#facc15">🎊 Clear! 🎊</OverlayTitle>
     <OverlayText $color="#67e8f9">Score: {score}</OverlayText>
+    <div style={{ marginBottom: '1rem' }}>
+      <ShareButton
+        text={`Falling Shooterをクリア！スコア: ${score}点`}
+        hashtags={['FallingShooter', 'GamePlatform']}
+      />
+    </div>
     <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
       <Button onClick={onRetry}>Again</Button>
       <Button onClick={onTitle} $variant="secondary">

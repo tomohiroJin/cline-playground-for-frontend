@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, memo, useCallback } from 'react';
 import { saveScore, getHighScore } from '../utils/score-storage';
+import { ShareButton } from '../components/molecules/ShareButton';
 import {
   PageContainer,
   GameContainer,
@@ -1757,6 +1758,12 @@ export default function RacingGamePage() {
                 {bests[`c${course}-l${laps}`]
                   ? Utils.formatTime(bests[`c${course}-l${laps}`])
                   : '--:--.-'}
+              </div>
+              <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center' }}>
+                <ShareButton
+                  text={`Racing Gameで${Utils.formatTime(results.times.p1)}のタイムを出しました！`}
+                  hashtags={['RacingGame', 'GamePlatform']}
+                />
               </div>
               <div style={{ marginTop: '2rem' }}>
                 <ActionButton

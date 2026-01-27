@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { saveScore, getHighScore } from '../utils/score-storage';
+import { ShareButton } from '../components/molecules/ShareButton';
 import styled from 'styled-components';
 import { GlassCard } from '../components/atoms/GlassCard';
 
@@ -734,6 +735,12 @@ const AirHockeyPage: React.FC = () => {
           <p style={{ fontSize: '2rem', color: 'white', fontWeight: 'bold', marginBottom: '20px' }}>
             {scores.p} - {scores.c}
           </p>
+          <div style={{ marginBottom: '1.5rem' }}>
+            <ShareButton
+              text={`Air Hockeyで${winner === 'player' ? '勝利' : '敗北'}！ スコア: ${scores.p} - ${scores.c}`}
+              hashtags={['AirHockey', 'GamePlatform']}
+            />
+          </div>
           <StartButton onClick={() => setScreen('menu')}>BACK TO MENU</StartButton>
         </MenuCard>
       )}

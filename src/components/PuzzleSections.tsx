@@ -11,6 +11,7 @@ import DefaultImageSelector from '../components/molecules/DefaultImageSelector';
 import DifficultySelector from '../components/molecules/DifficultySelector';
 import PuzzleBoard from '../components/organisms/PuzzleBoard';
 import { PuzzlePiece } from '../store/atoms';
+import { ShareButton } from './molecules/ShareButton';
 
 /**
  * SetupSectionコンポーネントのプロパティの型定義
@@ -214,7 +215,23 @@ export const GameSectionComponent: React.FC<GameSectionProps> = ({
           onEndGame={handleEndGame}
         />
         <>
-          {completed && <div>パズルが完成しました！</div>}
+          {completed && (
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '10px',
+                margin: '10px 0',
+              }}
+            >
+              <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>パズルが完成しました！</div>
+              <ShareButton
+                text={`パズル（${division}x${division}）をクリアしました！ タイム: ${elapsedTime}秒`}
+                hashtags={['PuzzleGame', 'GamePlatform']}
+              />
+            </div>
+          )}
           <StartButton onClick={handleEndGame} style={{ marginTop: completed ? '10px' : '0' }}>
             {completed ? '設定に戻る' : 'ゲームを終了して設定に戻る'}
           </StartButton>
