@@ -3,6 +3,7 @@ import { Routes, Route, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import LoadingSpinner from './components/atoms/LoadingSpinner';
 import ErrorBoundary from './components/ErrorBoundary';
+import { SettingsPanel } from './components/organisms/SettingsPanel'; // Import SettingsPanel
 
 import GameListPage from './pages/GameListPage';
 import { GlobalStyle } from './styles/GlobalStyle';
@@ -59,6 +60,30 @@ const Title = styled.h1`
   }
 `;
 
+const SettingsButton = styled.button`
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 1.2rem;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-50%) rotate(45deg);
+  }
+`;
+
 // フッターコンポーネント
 const Footer = styled.footer`
   margin-top: auto;
@@ -73,6 +98,8 @@ const Footer = styled.footer`
  * アプリケーションのルートコンポーネント
  */
 const App: React.FC = () => {
+  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false); // Settings state
+
   // プレミアムテーマを適用
   useEffect(() => {
     document.body.classList.add('premium-theme');
@@ -90,8 +117,13 @@ const App: React.FC = () => {
             <Title>
               <Link to="/">Game Platform</Link>
             </Title>
+            <SettingsButton onClick={() => setIsSettingsOpen(true)} aria-label="設定を開く">
+              ⚙
+            </SettingsButton>
           </nav>
         </Header>
+
+        {isSettingsOpen && <SettingsPanel onClose={() => setIsSettingsOpen(false)} />}
 
         <ErrorBoundary>
           <Suspense
