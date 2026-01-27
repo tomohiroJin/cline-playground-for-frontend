@@ -1040,7 +1040,7 @@ export default function DeepSeaShooterPage() {
   if (gameState === 'title')
     return (
       <PageContainer>
-        <StyledGameContainer>
+        <StyledGameContainer role="region" aria-label="深海シューティングゲーム画面" tabIndex={0}>
           <FullScreenOverlay $bg="linear-gradient(180deg,#0a1a2a,#020810)">
             <GameTitle>深海迎撃</GameTitle>
             <GameSubTitle>DEEP SEA INTERCEPTOR</GameSubTitle>

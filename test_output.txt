@@ -1,70 +1,488 @@
 
 > puzzle-game@1.0.0 test
-> jest
+> jest src/pages/AirHockeyPage.test.tsx src/pages/DeepSeaShooterPage.test.tsx src/pages/FallingShooterPage.test.tsx src/pages/GameListPage.test.tsx src/pages/MazeHorrorPage.test.tsx src/pages/PuzzlePage.test.tsx src/pages/RacingGamePage.test.tsx
 
-PASS src/hooks/useGameState.test.ts (9.866 s)
-PASS src/components/molecules/PuzzlePiece.test.tsx (9.924 s)
-PASS src/components/molecules/ImageUploader.test.tsx (9.961 s)
-PASS src/components/molecules/DifficultySelector.test.tsx (10.46 s)
-PASS src/hooks/useHintMode.test.tsx (10.653 s)
-PASS src/components/molecules/ClearHistoryList.test.tsx (11.277 s)
-PASS src/components/HomePageSections.test.tsx (11.622 s)
-PASS src/components/organisms/PuzzleBoard.test.tsx (12.491 s)
-PASS src/utils/storage-utils.test.ts (13.531 s)
-FAIL src/components/molecules/DefaultImageSelector.test.tsx (15.268 s)
-  ● DefaultImageSelector › デフォルト画像が表示されること
+PASS src/pages/MazeHorrorPage.test.tsx (6.294 s)
+FAIL src/pages/DeepSeaShooterPage.test.tsx (6.039 s)
+  ● DeepSeaShooterPage › GAME STARTボタンをクリックするとゲームが開始すること
 
-    TypeError: Cannot redefine property: location
-        at Function.defineProperty (<anonymous>)
+    TestingLibraryElementError: Unable to find an element with the text: GAME START. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
 
-      25 |     (puzzleUtils.getImageSize as jest.Mock).mockResolvedValue(mockImageSize);
-      26 |
-    > 27 |     Object.defineProperty(window, 'location', {
-         |            ^
-      28 |       value: { origin: 'http://localhost:3000' },
-      29 |       writable: true,
-      30 |     });
+    Ignored nodes: comments, script, style
+    [36m<body>[39m
+      [36m<div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"sc-beySbL hbOWbz"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33maria-label[39m=[32m"深海シューティングゲーム画面"[39m
+            [33mclass[39m=[32m"sc-cyZbSl jzlOTV"[39m
+            [33mrole[39m=[32m"region"[39m
+            [33mtabindex[39m=[32m"0"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"sc-lnskGQ jUWTUo"[39m
+            [36m>[39m
+              [36m<h1[39m
+                [33mclass[39m=[32m"sc-iKOlBD dXxgPU"[39m
+              [36m>[39m
+                [0m深海迎撃[0m
+              [36m</h1>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"sc-gjLKRm edzMGN"[39m
+              [36m>[39m
+                [0mDEEP SEA INTERCEPTOR[0m
+              [36m</p>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"sc-eAKupd dpSlkQ"[39m
+              [36m>[39m
+                [36m<p>[39m
+                  [0m移動: 矢印キー[0m
+                [36m</p>[39m
+                [36m<p>[39m
+                  [0mショット: Z[0m
+                [36m</p>[39m
+                [36m<p>[39m
+                  [0mチャージ: X[0m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"sc-bZHTEM exQeZN"[39m
+              [36m>[39m
+                [0mSTART GAME[0m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</body>[39m
 
-      at Object.<anonymous> (src/components/molecules/DefaultImageSelector.test.tsx:27:12)
+      35 |     render(<DeepSeaShooterPage />);
+      36 |
+    > 37 |     const startButton = screen.getByText('GAME START');
+         |                                ^
+      38 |     fireEvent.click(startButton);
+      39 |
+      40 |     // ゲーム開始状態（タイトルが消える、またはスコア表示など）
 
-  ● DefaultImageSelector › 画像をクリックすると選択状態になり、onImageSelectが呼ばれること
+      at Object.getElementError (node_modules/@testing-library/dom/dist/config.js:37:19)
+      at node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+      at node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.<anonymous> (src/pages/DeepSeaShooterPage.test.tsx:37:32)
 
-    TypeError: Cannot redefine property: location
-        at Function.defineProperty (<anonymous>)
+PASS src/pages/PuzzlePage.test.tsx (6.508 s)
+PASS src/pages/RacingGamePage.test.tsx (6.318 s)
+  ● Console
 
-      25 |     (puzzleUtils.getImageSize as jest.Mock).mockResolvedValue(mockImageSize);
-      26 |
-    > 27 |     Object.defineProperty(window, 'location', {
-         |            ^
-      28 |       value: { origin: 'http://localhost:3000' },
-      29 |       writable: true,
-      30 |     });
+    console.error
+      Game Loop Error: TypeError: c.roundRect is not a function
+          at Object.kart (/workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.tsx:796:7)
+          at /workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.tsx:1468:30
+          at Array.forEach (<anonymous>)
+          at draw (/workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.tsx:1468:10)
+          at loop (/workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.tsx:1538:7)
+          at /workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.tsx:1548:7
+          at Object.react_stack_bottom_frame (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+          at runWithFiberInDEV (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+          at commitHookEffectListMount (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+          at commitHookPassiveMountEffects (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+          at commitPassiveMountOnFiber (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+          at recursivelyTraversePassiveMountEffects (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:15439:11)
+          at commitPassiveMountOnFiber (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:15519:11)
+          at flushPassiveEffects (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:18432:9)
+          at /workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:17923:15
+          at flushActQueue (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react/cjs/react.development.js:590:34)
+          at process.env.NODE_ENV.exports.act (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react/cjs/react.development.js:884:10)
+          at /workspaces/claym/local/cline-playground-for-frontend/node_modules/@testing-library/react/dist/act-compat.js:46:25
+          at renderRoot (/workspaces/claym/local/cline-playground-for-frontend/node_modules/@testing-library/react/dist/pure.js:189:26)
+          at render (/workspaces/claym/local/cline-playground-for-frontend/node_modules/@testing-library/react/dist/pure.js:291:10)
+          at Object.<anonymous> (/workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.test.tsx:24:11)
+          at Promise.finally.completed (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:1557:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:1497:10)
+          at _callCircusTest (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:1007:40)
+          at processTicksAndRejections (node:internal/process/task_queues:95:5)
+          at _runTest (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:947:3)
+          at /workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:849:7
+          at _runTestsForDescribeBlock (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:862:11)
+          at _runTestsForDescribeBlock (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+          at run (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:761:3)
+          at runAndTransformResultsToJestFormat (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:1918:21)
+          at jestAdapter (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/runner.js:101:19)
+          at runTestInternal (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-runner/build/testWorker.js:275:16)
+          at runTest (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-runner/build/testWorker.js:343:7)
+          at Object.worker (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-runner/build/testWorker.js:497:12)
 
-      at Object.<anonymous> (src/components/molecules/DefaultImageSelector.test.tsx:27:12)
+      1548 |       loop();
+      1549 |     } catch (e) {
+    > 1550 |       console.error('Game Loop Error:', e);
+           |               ^
+      1551 |     }
+      1552 |     return () => {
+      1553 |       isRunning = false;
 
-  ● DefaultImageSelector › 別の画像を選択すると選択状態が切り替わること
+      at src/pages/RacingGamePage.tsx:1550:15
+      at Object.react_stack_bottom_frame (node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at commitHookEffectListMount (node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+      at commitHookPassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:15439:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15519:11)
+      at flushPassiveEffects (node_modules/react-dom/cjs/react-dom-client.development.js:18432:9)
+      at node_modules/react-dom/cjs/react-dom-client.development.js:17923:15
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at Object.<anonymous> (src/pages/RacingGamePage.test.tsx:24:11)
 
-    TypeError: Cannot redefine property: location
-        at Function.defineProperty (<anonymous>)
+    console.error
+      Game Loop Error: TypeError: c.roundRect is not a function
+          at Object.kart (/workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.tsx:796:7)
+          at /workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.tsx:1468:30
+          at Array.forEach (<anonymous>)
+          at draw (/workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.tsx:1468:10)
+          at loop (/workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.tsx:1538:7)
+          at /workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.tsx:1548:7
+          at Object.react_stack_bottom_frame (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+          at runWithFiberInDEV (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+          at commitHookEffectListMount (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+          at commitHookPassiveMountEffects (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+          at commitPassiveMountOnFiber (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+          at recursivelyTraversePassiveMountEffects (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:15439:11)
+          at commitPassiveMountOnFiber (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:15519:11)
+          at flushPassiveEffects (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:18432:9)
+          at /workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:17923:15
+          at flushActQueue (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react/cjs/react.development.js:590:34)
+          at process.env.NODE_ENV.exports.act (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react/cjs/react.development.js:884:10)
+          at /workspaces/claym/local/cline-playground-for-frontend/node_modules/@testing-library/react/dist/act-compat.js:46:25
+          at renderRoot (/workspaces/claym/local/cline-playground-for-frontend/node_modules/@testing-library/react/dist/pure.js:189:26)
+          at render (/workspaces/claym/local/cline-playground-for-frontend/node_modules/@testing-library/react/dist/pure.js:291:10)
+          at Object.<anonymous> (/workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.test.tsx:29:11)
+          at Promise.finally.completed (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:1557:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:1497:10)
+          at _callCircusTest (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:1007:40)
+          at processTicksAndRejections (node:internal/process/task_queues:95:5)
+          at _runTest (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:947:3)
+          at /workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:849:7
+          at _runTestsForDescribeBlock (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:862:11)
+          at _runTestsForDescribeBlock (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+          at run (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:761:3)
+          at runAndTransformResultsToJestFormat (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:1918:21)
+          at jestAdapter (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/runner.js:101:19)
+          at runTestInternal (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-runner/build/testWorker.js:275:16)
+          at runTest (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-runner/build/testWorker.js:343:7)
+          at Object.worker (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-runner/build/testWorker.js:497:12)
 
-      25 |     (puzzleUtils.getImageSize as jest.Mock).mockResolvedValue(mockImageSize);
-      26 |
-    > 27 |     Object.defineProperty(window, 'location', {
-         |            ^
-      28 |       value: { origin: 'http://localhost:3000' },
-      29 |       writable: true,
-      30 |     });
+      1548 |       loop();
+      1549 |     } catch (e) {
+    > 1550 |       console.error('Game Loop Error:', e);
+           |               ^
+      1551 |     }
+      1552 |     return () => {
+      1553 |       isRunning = false;
 
-      at Object.<anonymous> (src/components/molecules/DefaultImageSelector.test.tsx:27:12)
+      at src/pages/RacingGamePage.tsx:1550:15
+      at Object.react_stack_bottom_frame (node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at commitHookEffectListMount (node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+      at commitHookPassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:15439:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15519:11)
+      at flushPassiveEffects (node_modules/react-dom/cjs/react-dom-client.development.js:18432:9)
+      at node_modules/react-dom/cjs/react-dom-client.development.js:17923:15
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at Object.<anonymous> (src/pages/RacingGamePage.test.tsx:29:11)
 
-PASS src/hooks/usePuzzle.test.tsx (12.389 s)
-PASS src/utils/puzzle-utils.test.ts (12.236 s)
-PASS src/pages/HomePage.test.tsx (16.096 s)
-PASS src/hooks/useVideoPlayback.test.tsx (10.105 s)
-PASS src/hooks/useCompletionOverlay.test.tsx (9.301 s)
+    console.error
+      Game Loop Error: TypeError: c.roundRect is not a function
+          at Object.kart (/workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.tsx:796:7)
+          at /workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.tsx:1468:30
+          at Array.forEach (<anonymous>)
+          at draw (/workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.tsx:1468:10)
+          at loop (/workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.tsx:1538:7)
+          at /workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.tsx:1548:7
+          at Object.react_stack_bottom_frame (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+          at runWithFiberInDEV (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+          at commitHookEffectListMount (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+          at commitHookPassiveMountEffects (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+          at commitPassiveMountOnFiber (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+          at recursivelyTraversePassiveMountEffects (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:15439:11)
+          at commitPassiveMountOnFiber (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:15519:11)
+          at flushPassiveEffects (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:18432:9)
+          at /workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:17923:15
+          at flushActQueue (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react/cjs/react.development.js:590:34)
+          at process.env.NODE_ENV.exports.act (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react/cjs/react.development.js:884:10)
+          at /workspaces/claym/local/cline-playground-for-frontend/node_modules/@testing-library/react/dist/act-compat.js:46:25
+          at renderRoot (/workspaces/claym/local/cline-playground-for-frontend/node_modules/@testing-library/react/dist/pure.js:189:26)
+          at render (/workspaces/claym/local/cline-playground-for-frontend/node_modules/@testing-library/react/dist/pure.js:291:10)
+          at Object.<anonymous> (/workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.test.tsx:37:11)
+          at Promise.finally.completed (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:1557:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:1497:10)
+          at _callCircusTest (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:1007:40)
+          at processTicksAndRejections (node:internal/process/task_queues:95:5)
+          at _runTest (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:947:3)
+          at /workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:849:7
+          at _runTestsForDescribeBlock (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:862:11)
+          at _runTestsForDescribeBlock (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+          at run (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:761:3)
+          at runAndTransformResultsToJestFormat (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:1918:21)
+          at jestAdapter (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/runner.js:101:19)
+          at runTestInternal (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-runner/build/testWorker.js:275:16)
+          at runTest (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-runner/build/testWorker.js:343:7)
+          at Object.worker (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-runner/build/testWorker.js:497:12)
 
-Test Suites: 1 failed, 14 passed, 15 total
-Tests:       3 failed, 95 passed, 98 total
+      1548 |       loop();
+      1549 |     } catch (e) {
+    > 1550 |       console.error('Game Loop Error:', e);
+           |               ^
+      1551 |     }
+      1552 |     return () => {
+      1553 |       isRunning = false;
+
+      at src/pages/RacingGamePage.tsx:1550:15
+      at Object.react_stack_bottom_frame (node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at commitHookEffectListMount (node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+      at commitHookPassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:15439:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15519:11)
+      at flushPassiveEffects (node_modules/react-dom/cjs/react-dom-client.development.js:18432:9)
+      at node_modules/react-dom/cjs/react-dom-client.development.js:17923:15
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at Object.<anonymous> (src/pages/RacingGamePage.test.tsx:37:11)
+
+    console.error
+      Game Loop Error: TypeError: c.roundRect is not a function
+          at Object.kart (/workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.tsx:796:7)
+          at /workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.tsx:1468:30
+          at Array.forEach (<anonymous>)
+          at draw (/workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.tsx:1468:10)
+          at loop (/workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.tsx:1538:7)
+          at /workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.tsx:1548:7
+          at Object.react_stack_bottom_frame (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+          at runWithFiberInDEV (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+          at commitHookEffectListMount (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+          at commitHookPassiveMountEffects (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+          at commitPassiveMountOnFiber (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+          at recursivelyTraversePassiveMountEffects (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:15439:11)
+          at commitPassiveMountOnFiber (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:15519:11)
+          at flushPassiveEffects (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:18432:9)
+          at /workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:17923:15
+          at flushActQueue (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react/cjs/react.development.js:590:34)
+          at process.env.NODE_ENV.exports.act (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react/cjs/react.development.js:884:10)
+          at /workspaces/claym/local/cline-playground-for-frontend/node_modules/@testing-library/react/dist/act-compat.js:46:25
+          at renderRoot (/workspaces/claym/local/cline-playground-for-frontend/node_modules/@testing-library/react/dist/pure.js:189:26)
+          at render (/workspaces/claym/local/cline-playground-for-frontend/node_modules/@testing-library/react/dist/pure.js:291:10)
+          at Object.<anonymous> (/workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.test.tsx:43:11)
+          at Promise.finally.completed (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:1557:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:1497:10)
+          at _callCircusTest (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:1007:40)
+          at processTicksAndRejections (node:internal/process/task_queues:95:5)
+          at _runTest (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:947:3)
+          at /workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:849:7
+          at _runTestsForDescribeBlock (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:862:11)
+          at _runTestsForDescribeBlock (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+          at run (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:761:3)
+          at runAndTransformResultsToJestFormat (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:1918:21)
+          at jestAdapter (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/runner.js:101:19)
+          at runTestInternal (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-runner/build/testWorker.js:275:16)
+          at runTest (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-runner/build/testWorker.js:343:7)
+          at Object.worker (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-runner/build/testWorker.js:497:12)
+
+      1548 |       loop();
+      1549 |     } catch (e) {
+    > 1550 |       console.error('Game Loop Error:', e);
+           |               ^
+      1551 |     }
+      1552 |     return () => {
+      1553 |       isRunning = false;
+
+      at src/pages/RacingGamePage.tsx:1550:15
+      at Object.react_stack_bottom_frame (node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at commitHookEffectListMount (node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+      at commitHookPassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:15439:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15519:11)
+      at flushPassiveEffects (node_modules/react-dom/cjs/react-dom-client.development.js:18432:9)
+      at node_modules/react-dom/cjs/react-dom-client.development.js:17923:15
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at Object.<anonymous> (src/pages/RacingGamePage.test.tsx:43:11)
+
+    console.error
+      Game Loop Error: TypeError: c.roundRect is not a function
+          at Object.kart (/workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.tsx:796:7)
+          at /workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.tsx:1468:30
+          at Array.forEach (<anonymous>)
+          at draw (/workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.tsx:1468:10)
+          at loop (/workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.tsx:1538:7)
+          at /workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.tsx:1548:7
+          at Object.react_stack_bottom_frame (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+          at runWithFiberInDEV (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+          at commitHookEffectListMount (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+          at commitHookPassiveMountEffects (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+          at commitPassiveMountOnFiber (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+          at recursivelyTraversePassiveMountEffects (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:15439:11)
+          at commitPassiveMountOnFiber (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:15519:11)
+          at flushPassiveEffects (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:18432:9)
+          at /workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:17923:15
+          at flushActQueue (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react/cjs/react.development.js:590:34)
+          at process.env.NODE_ENV.exports.act (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react/cjs/react.development.js:884:10)
+          at /workspaces/claym/local/cline-playground-for-frontend/node_modules/@testing-library/react/dist/act-compat.js:46:25
+          at renderRoot (/workspaces/claym/local/cline-playground-for-frontend/node_modules/@testing-library/react/dist/pure.js:189:26)
+          at render (/workspaces/claym/local/cline-playground-for-frontend/node_modules/@testing-library/react/dist/pure.js:291:10)
+          at Object.<anonymous> (/workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.test.tsx:52:11)
+          at Promise.finally.completed (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:1557:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:1497:10)
+          at _callCircusTest (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:1007:40)
+          at processTicksAndRejections (node:internal/process/task_queues:95:5)
+          at _runTest (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:947:3)
+          at /workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:849:7
+          at _runTestsForDescribeBlock (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:862:11)
+          at _runTestsForDescribeBlock (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+          at run (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:761:3)
+          at runAndTransformResultsToJestFormat (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:1918:21)
+          at jestAdapter (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/runner.js:101:19)
+          at runTestInternal (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-runner/build/testWorker.js:275:16)
+          at runTest (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-runner/build/testWorker.js:343:7)
+          at Object.worker (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-runner/build/testWorker.js:497:12)
+
+      1548 |       loop();
+      1549 |     } catch (e) {
+    > 1550 |       console.error('Game Loop Error:', e);
+           |               ^
+      1551 |     }
+      1552 |     return () => {
+      1553 |       isRunning = false;
+
+      at src/pages/RacingGamePage.tsx:1550:15
+      at Object.react_stack_bottom_frame (node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at commitHookEffectListMount (node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+      at commitHookPassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:15439:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15519:11)
+      at flushPassiveEffects (node_modules/react-dom/cjs/react-dom-client.development.js:18432:9)
+      at node_modules/react-dom/cjs/react-dom-client.development.js:17923:15
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at Object.<anonymous> (src/pages/RacingGamePage.test.tsx:52:11)
+
+    console.error
+      Game Loop Error: TypeError: c.roundRect is not a function
+          at Object.kart (/workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.tsx:796:7)
+          at /workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.tsx:1468:30
+          at Array.forEach (<anonymous>)
+          at draw (/workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.tsx:1468:10)
+          at loop (/workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.tsx:1538:7)
+          at /workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.tsx:1548:7
+          at Object.react_stack_bottom_frame (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+          at runWithFiberInDEV (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+          at commitHookEffectListMount (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+          at commitHookPassiveMountEffects (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+          at commitPassiveMountOnFiber (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+          at recursivelyTraversePassiveMountEffects (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:15439:11)
+          at commitPassiveMountOnFiber (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:15519:11)
+          at flushPassiveEffects (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:18432:9)
+          at flushPendingEffects (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:18358:14)
+          at flushSpawnedWork (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:18323:44)
+          at commitRoot (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:17955:9)
+          at performWorkOnRoot (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:16667:15)
+          at performSyncWorkOnRoot (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:18972:7)
+          at flushSyncWorkAcrossRoots_impl (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:18814:21)
+          at processRootScheduleInMicrotask (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:18853:9)
+          at /workspaces/claym/local/cline-playground-for-frontend/node_modules/react-dom/cjs/react-dom-client.development.js:18982:11
+          at flushActQueue (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react/cjs/react.development.js:590:34)
+          at process.env.NODE_ENV.exports.act (/workspaces/claym/local/cline-playground-for-frontend/node_modules/react/cjs/react.development.js:884:10)
+          at /workspaces/claym/local/cline-playground-for-frontend/node_modules/@testing-library/react/dist/act-compat.js:46:25
+          at Object.eventWrapper (/workspaces/claym/local/cline-playground-for-frontend/node_modules/@testing-library/react/dist/pure.js:106:28)
+          at fireEvent (/workspaces/claym/local/cline-playground-for-frontend/node_modules/@testing-library/dom/dist/events.js:12:35)
+          at Function.fireEvent.<computed> [as click] (/workspaces/claym/local/cline-playground-for-frontend/node_modules/@testing-library/dom/dist/events.js:110:36)
+          at Function.fireEvent.<computed> [as click] (/workspaces/claym/local/cline-playground-for-frontend/node_modules/@testing-library/react/dist/fire-event.js:15:52)
+          at Object.<anonymous> (/workspaces/claym/local/cline-playground-for-frontend/src/pages/RacingGamePage.test.tsx:54:15)
+          at Promise.finally.completed (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:1557:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:1497:10)
+          at _callCircusTest (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:1007:40)
+          at processTicksAndRejections (node:internal/process/task_queues:95:5)
+          at _runTest (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:947:3)
+          at /workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:849:7
+          at _runTestsForDescribeBlock (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:862:11)
+          at _runTestsForDescribeBlock (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+          at run (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:761:3)
+          at runAndTransformResultsToJestFormat (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/jestAdapterInit.js:1918:21)
+          at jestAdapter (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-circus/build/runner.js:101:19)
+          at runTestInternal (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-runner/build/testWorker.js:275:16)
+          at runTest (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-runner/build/testWorker.js:343:7)
+          at Object.worker (/workspaces/claym/local/cline-playground-for-frontend/node_modules/jest-runner/build/testWorker.js:497:12)
+
+      1548 |       loop();
+      1549 |     } catch (e) {
+    > 1550 |       console.error('Game Loop Error:', e);
+           |               ^
+      1551 |     }
+      1552 |     return () => {
+      1553 |       isRunning = false;
+
+      at src/pages/RacingGamePage.tsx:1550:15
+      at Object.react_stack_bottom_frame (node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at commitHookEffectListMount (node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+      at commitHookPassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:15439:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15519:11)
+      at flushPassiveEffects (node_modules/react-dom/cjs/react-dom-client.development.js:18432:9)
+      at flushPendingEffects (node_modules/react-dom/cjs/react-dom-client.development.js:18358:14)
+      at flushSpawnedWork (node_modules/react-dom/cjs/react-dom-client.development.js:18323:44)
+      at commitRoot (node_modules/react-dom/cjs/react-dom-client.development.js:17955:9)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:16667:15)
+      at performSyncWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:18972:7)
+      at flushSyncWorkAcrossRoots_impl (node_modules/react-dom/cjs/react-dom-client.development.js:18814:21)
+      at processRootScheduleInMicrotask (node_modules/react-dom/cjs/react-dom-client.development.js:18853:9)
+      at node_modules/react-dom/cjs/react-dom-client.development.js:18982:11
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at Object.eventWrapper (node_modules/@testing-library/react/dist/pure.js:106:28)
+      at fireEvent (node_modules/@testing-library/dom/dist/events.js:12:35)
+      at Function.fireEvent.<computed> [as click] (node_modules/@testing-library/dom/dist/events.js:110:36)
+      at Function.fireEvent.<computed> [as click] (node_modules/@testing-library/react/dist/fire-event.js:15:52)
+      at Object.<anonymous> (src/pages/RacingGamePage.test.tsx:54:15)
+
+PASS src/pages/FallingShooterPage.test.tsx (10.637 s)
+PASS src/pages/AirHockeyPage.test.tsx (10.397 s)
+PASS src/pages/GameListPage.test.tsx (9.014 s)
+
+Test Suites: 1 failed, 6 passed, 7 total
+Tests:       1 failed, 21 passed, 22 total
 Snapshots:   0 total
-Time:        28.668 s
-Ran all test suites.
+Time:        22.211 s
+Ran all test suites matching src/pages/AirHockeyPage.test.tsx|src/pages/DeepSeaShooterPage.test.tsx|src/pages/FallingShooterPage.test.tsx|src/pages/GameListPage.test.tsx|src/pages/MazeHorrorPage.test.tsx|src/pages/PuzzlePage.test.tsx|src/pages/RacingGamePage.test.tsx.

@@ -25,6 +25,7 @@ export const Title = styled.h2`
   font-weight: 800;
   background: linear-gradient(to right, #4facfe 0%, #00f2fe 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   text-shadow: 0 0 20px rgba(79, 172, 254, 0.5);
   margin-bottom: 0.5rem;
@@ -250,7 +251,7 @@ export const CheckpointAnnounce = styled.div`
   }
 `;
 
-export const Btn = styled.button<{ sel?: boolean; $color?: string }>`
+export const Btn = styled.button<{ $sel?: boolean; $color?: string }>`
   padding: 0.5rem 1rem;
   border-radius: 6px;
   font-size: 0.85rem;
@@ -258,27 +259,27 @@ export const Btn = styled.button<{ sel?: boolean; $color?: string }>`
   transition: all 0.2s ease;
   border: none;
   cursor: pointer;
-  background: ${props => (props.sel ? props.$color || '#4facfe' : 'rgba(255, 255, 255, 0.1)')};
-  color: ${props => (props.sel ? 'white' : 'rgba(255, 255, 255, 0.7)')};
-  box-shadow: ${props => (props.sel ? `0 0 15px ${props.$color || '#4facfe'}80` : 'none')};
-  transform: ${props => (props.sel ? 'translateY(-1px)' : 'none')};
+  background: ${props => (props.$sel ? props.$color || '#4facfe' : 'rgba(255, 255, 255, 0.1)')};
+  color: ${props => (props.$sel ? 'white' : 'rgba(255, 255, 255, 0.7)')};
+  box-shadow: ${props => (props.$sel ? `0 0 15px ${props.$color || '#4facfe'}80` : 'none')};
+  transform: ${props => (props.$sel ? 'translateY(-1px)' : 'none')};
 
   &:hover {
-    background: ${props => (props.sel ? props.$color || '#4facfe' : 'rgba(255, 255, 255, 0.15)')};
+    background: ${props => (props.$sel ? props.$color || '#4facfe' : 'rgba(255, 255, 255, 0.15)')};
     color: white;
   }
 `;
 
-export const ColorBtn = styled.button<{ color: string; sel?: boolean; label?: string }>`
+export const ColorBtn = styled.button<{ $color: string; $sel?: boolean; label?: string }>`
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  border: 2px solid ${props => (props.sel ? '#fff' : 'transparent')};
-  background-color: ${props => props.color};
+  border: 2px solid ${props => (props.$sel ? '#fff' : 'transparent')};
+  background-color: ${props => props.$color};
   cursor: pointer;
   transition: transform 0.2s;
-  box-shadow: ${props => (props.sel ? `0 0 10px ${props.color}` : 'none')};
-  transform: ${props => (props.sel ? 'scale(1.2)' : 'scale(1)')};
+  box-shadow: ${props => (props.$sel ? `0 0 10px ${props.$color}` : 'none')};
+  transform: ${props => (props.$sel ? 'scale(1.2)' : 'scale(1)')};
 
   &:hover {
     transform: scale(1.2);

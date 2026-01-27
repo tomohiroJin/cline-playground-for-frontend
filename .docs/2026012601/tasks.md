@@ -6,9 +6,9 @@
 |---------|------|-----------|
 | フェーズ1: 品質基盤強化 | 完了 | 4/4 |
 | フェーズ2: アクセシビリティ | 完了 | 4/4 |
-| フェーズ3: テスト充実 | 未着手 | 0/3 |
+| フェーズ3: テスト充実 | 進行中 | 1/3 |
 | フェーズ4: エンゲージメント | 未着手 | 0/3 |
-| **合計** | **57%** | **8/14** |
+| **合計** | **64%** | **9/14** |
 
 ---
 
@@ -127,24 +127,24 @@
 
 ### 3.1 ゲームページテスト作成
 
-- [ ] `src/pages/FallingShooterPage.test.tsx`
-  - [ ] レンダリングテスト
-  - [ ] 状態遷移テスト
-  - [ ] UI表示テスト
-- [ ] `src/pages/DeepSeaShooterPage.test.tsx`
-  - [ ] レンダリングテスト
-  - [ ] 状態遷移テスト
-  - [ ] UI表示テスト
-- [ ] `src/pages/MazeHorrorPage.test.tsx`
-  - [ ] レンダリングテスト
-  - [ ] 状態遷移テスト
-  - [ ] UI表示テスト
-- [ ] `src/pages/RacingGamePage.test.tsx`
-  - [ ] レンダリングテスト
-  - [ ] 状態遷移テスト
-  - [ ] UI表示テスト
+- [x] `src/pages/FallingShooterPage.test.tsx`
+  - [x] レンダリングテスト
+  - [x] 状態遷移テスト
+  - [x] UI表示テスト
+- [x] `src/pages/DeepSeaShooterPage.test.tsx`
+  - [x] レンダリングテスト
+  - [x] 状態遷移テスト
+  - [x] UI表示テスト
+- [x] `src/pages/MazeHorrorPage.test.tsx`
+  - [x] レンダリングテスト
+  - [x] 状態遷移テスト
+  - [x] UI表示テスト
+- [x] `src/pages/RacingGamePage.test.tsx`
+  - [x] レンダリングテスト
+  - [x] 状態遷移テスト
+  - [x] UI表示テスト
 
-**ステータス**: 未着手
+**ステータス**: 完了
 
 ---
 

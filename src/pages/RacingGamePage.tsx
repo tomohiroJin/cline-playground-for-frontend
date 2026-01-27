@@ -1544,10 +1544,15 @@ export default function RacingGamePage() {
       for (let i = 0; i < Config.game.confettiCount; i++) confetti.push(Entity.confetti());
     }
 
-    loop();
+    try {
+      loop();
+    } catch (e) {
+      console.error('Game Loop Error:', e);
+    }
     return () => {
       isRunning = false;
       SoundEngine.stopEngine();
+      SoundEngine.cleanup();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, course, speed, cpu, laps, c1, c2, state, paused, demo, winner]);
@@ -1583,10 +1588,10 @@ export default function RacingGamePage() {
 
               <ControlGroup style={{ padding: '0.25rem 0.5rem' }}>
                 <Label style={{ fontSize: '0.8rem' }}>Mode</Label>
-                <Btn sel={mode === '2p'} onClick={() => setMode('2p')} $color="#10b981">
+                <Btn $sel={mode === '2p'} onClick={() => setMode('2p')} $color="#10b981">
                   👫2人
                 </Btn>
-                <Btn sel={mode === 'cpu'} onClick={() => setMode('cpu')} $color="#a855f7">
+                <Btn $sel={mode === 'cpu'} onClick={() => setMode('cpu')} $color="#a855f7">
                   🤖CPU
                 </Btn>
               </ControlGroup>
@@ -1595,7 +1600,7 @@ export default function RacingGamePage() {
                 <ControlGroup style={{ padding: '0.25rem 0.5rem' }}>
                   <Label style={{ fontSize: '0.8rem' }}>CPU Level</Label>
                   {Options.cpu.map((c, i) => (
-                    <Btn key={i} sel={cpu === i} onClick={() => setCpu(i)} $color="#f97316">
+                    <Btn key={i} $sel={cpu === i} onClick={() => setCpu(i)} $color="#f97316">
                       {c.label.split(' ')[0]}
                     </Btn>
                   ))}
@@ -1608,8 +1613,8 @@ export default function RacingGamePage() {
                   {Colors.car.map((c, i) => (
                     <ColorBtn
                       key={i}
-                      color={c}
-                      sel={c1 === i}
+                      $color={c}
+                      $sel={c1 === i}
                       onClick={() => setC1(i)}
                       label={`P1 Color ${i + 1}`}
                     />
@@ -1623,8 +1628,8 @@ export default function RacingGamePage() {
                   {Colors.car.map((c, i) => (
                     <ColorBtn
                       key={i}
-                      color={c}
-                      sel={c2 === i}
+                      $color={c}
+                      $sel={c2 === i}
                       onClick={() => setC2(i)}
                       label={`P2 Color ${i + 1}`}
                     />
@@ -1662,7 +1667,7 @@ export default function RacingGamePage() {
               <ControlGroup style={{ padding: '0.25rem 0.5rem' }}>
                 <Label style={{ fontSize: '0.8rem' }}>Speed</Label>
                 {Options.speed.map((s, i) => (
-                  <Btn key={i} sel={speed === i} onClick={() => setSpeed(i)} $color="#3b82f6">
+                  <Btn key={i} $sel={speed === i} onClick={() => setSpeed(i)} $color="#3b82f6">
                     {s.label.split(' ')[0]}
                   </Btn>
                 ))}
@@ -1671,7 +1676,7 @@ export default function RacingGamePage() {
               <ControlGroup style={{ padding: '0.25rem 0.5rem' }}>
                 <Label style={{ fontSize: '0.8rem' }}>Laps</Label>
                 {Options.laps.map(l => (
-                  <Btn key={l} sel={laps === l} onClick={() => setLaps(l)} $color="#ec4899">
+                  <Btn key={l} $sel={laps === l} onClick={() => setLaps(l)} $color="#ec4899">
                     {l}周
                   </Btn>
                 ))}

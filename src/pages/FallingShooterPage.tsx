@@ -818,7 +818,7 @@ interface CellProps {
 const CellComponent: React.FC<CellProps> = ({ x, y, color, size, power }) => {
   const p = power ? POWER_TYPES[power] : null;
   return (
-    <CellWrapper x={x} y={y} size={size} color={p?.color || color} $hasPower={!!p}>
+    <CellWrapper $x={x} $y={y} $size={size} $color={p?.color || color} $hasPower={!!p}>
       {p?.icon}
     </CellWrapper>
   );
@@ -833,10 +833,10 @@ const BulletView: React.FC<BulletViewProps> = ({ bullet, size }) => {
   const isDownshot = bullet.dy > 0;
   return (
     <BulletWrapper
-      x={bullet.x}
-      y={bullet.y}
-      size={size}
-      color={isDownshot ? '#9932CC' : bullet.pierce ? '#0F0' : '#facc15'}
+      $x={bullet.x}
+      $y={bullet.y}
+      $size={size}
+      $color={isDownshot ? '#9932CC' : bullet.pierce ? '#0F0' : '#facc15'}
       $pierce={bullet.pierce}
       $downshot={isDownshot}
     />
@@ -850,7 +850,7 @@ interface PlayerShipProps {
 }
 
 const PlayerShip: React.FC<PlayerShipProps> = ({ x, y, size }) => (
-  <PlayerWrapper x={x} y={y} size={size}>
+  <PlayerWrapper $x={x} $y={y} $size={size}>
     <svg viewBox="0 0 40 40" style={{ filter: 'drop-shadow(0 0 4px cyan)' }}>
       <polygon points="20,4 36,36 20,28 4,36" fill="#0FF" stroke="#FFF" strokeWidth="2" />
     </svg>
@@ -866,7 +866,7 @@ const LaserEffectComponent: React.FC<{ x: number; size: number; height: number }
   useEffect(() => {
     setTimeout(() => setVisible(false), 300);
   }, []);
-  return visible ? <Laser x={x} size={size} height={height} /> : null;
+  return visible ? <Laser $x={x} $size={size} $height={height} /> : null;
 };
 
 const ExplosionEffectComponent: React.FC<{ x: number; y: number; size: number }> = ({
@@ -878,7 +878,7 @@ const ExplosionEffectComponent: React.FC<{ x: number; y: number; size: number }>
   useEffect(() => {
     setTimeout(() => setVisible(false), 250);
   }, []);
-  return visible ? <Explosion x={x} y={y} size={size} /> : null;
+  return visible ? <Explosion $x={x} $y={y} $size={size} /> : null;
 };
 
 const BlastEffectComponent: React.FC<{ visible: boolean }> = ({ visible }) =>
@@ -895,7 +895,7 @@ const SkillGauge: React.FC<SkillGaugeProps> = ({ charge, onUseSkill }) => {
     <SkillGaugeContainer>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <GaugeBar>
-          <GaugeFill width={charge} isFull={isFull} />
+          <GaugeFill $width={charge} $isFull={isFull} />
         </GaugeBar>
         <span style={{ fontSize: '0.875rem', fontWeight: 'bold' }}>{Math.floor(charge)}%</span>
       </div>
@@ -905,7 +905,7 @@ const SkillGauge: React.FC<SkillGaugeProps> = ({ charge, onUseSkill }) => {
             <SkillBtn
               key={key}
               onClick={() => onUseSkill(key)}
-              color={skill.color}
+              $color={skill.color}
               title={`${skill.name}: ${skill.desc}`}
             >
               <span style={{ fontSize: '1.25rem' }}>{skill.icon}</span>
@@ -926,7 +926,7 @@ const PowerUpIndicator: React.FC<{ powers: Powers }> = ({ powers }) => {
   return (
     <PowerIndicator>
       {active.map(([k]) => (
-        <PowerBadge key={k} color={POWER_TYPES[k].color}>
+        <PowerBadge key={k} $color={POWER_TYPES[k].color}>
           {POWER_TYPES[k].icon}
         </PowerBadge>
       ))}
@@ -941,11 +941,11 @@ const StatusBar: React.FC<{ stage: number; lines: number; linesNeeded: number; s
   score,
 }) => (
   <StatusBarContainer>
-    <StatusBadge color="#9333ea">ST{stage}</StatusBadge>
-    <StatusBadge color="#16a34a">
+    <StatusBadge $color="#9333ea">ST{stage}</StatusBadge>
+    <StatusBadge $color="#16a34a">
       {lines}/{linesNeeded}
     </StatusBadge>
-    <StatusBadge color="#2563eb">{score}</StatusBadge>
+    <StatusBadge $color="#2563eb">{score}</StatusBadge>
   </StatusBarContainer>
 );
 
@@ -957,7 +957,7 @@ const OverlayComponent: React.FC<{ children: ReactNode }> = ({ children }) => (
 
 const StartScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => (
   <OverlayComponent>
-    <OverlayTitle color="#22d3ee">落ち物シューティング</OverlayTitle>
+    <OverlayTitle $color="#22d3ee">落ち物シューティング</OverlayTitle>
     <OverlayText>← → Space</OverlayText>
     <Button onClick={onStart}>Start</Button>
   </OverlayComponent>
@@ -965,7 +965,7 @@ const StartScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => (
 
 const ClearScreen: React.FC<{ stage: number; onNext: () => void }> = ({ stage, onNext }) => (
   <OverlayComponent>
-    <OverlayTitle color="#4ade80">🎉 Stage {stage} Clear!</OverlayTitle>
+    <OverlayTitle $color="#4ade80">🎉 Stage {stage} Clear!</OverlayTitle>
     <Button onClick={onNext}>Next</Button>
   </OverlayComponent>
 );
@@ -976,11 +976,11 @@ const GameOverScreen: React.FC<{ score: number; onRetry: () => void; onTitle: ()
   onTitle,
 }) => (
   <OverlayComponent>
-    <OverlayTitle color="#ef4444">Game Over</OverlayTitle>
-    <OverlayText color="white">Score: {score}</OverlayText>
+    <OverlayTitle $color="#ef4444">Game Over</OverlayTitle>
+    <OverlayText $color="white">Score: {score}</OverlayText>
     <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
       <Button onClick={onRetry}>Retry</Button>
-      <Button onClick={onTitle} variant="secondary">
+      <Button onClick={onTitle} $variant="secondary">
         Title
       </Button>
     </div>
@@ -1060,11 +1060,11 @@ const EndingScreen: React.FC<{ score: number; onRetry: () => void; onTitle: () =
 }) => (
   <OverlayComponent>
     <Fireworks />
-    <OverlayTitle color="#facc15">🎊 Clear! 🎊</OverlayTitle>
-    <OverlayText color="#67e8f9">Score: {score}</OverlayText>
+    <OverlayTitle $color="#facc15">🎊 Clear! 🎊</OverlayTitle>
+    <OverlayText $color="#67e8f9">Score: {score}</OverlayText>
     <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
       <Button onClick={onRetry}>Again</Button>
-      <Button onClick={onTitle} variant="secondary">
+      <Button onClick={onTitle} $variant="secondary">
         Title
       </Button>
     </div>
@@ -1099,7 +1099,7 @@ const DemoScreen: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => {
           style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginBottom: '1rem' }}
         >
           {DEMO_SLIDES.map((_, i) => (
-            <DemoDot key={i} active={i === index} />
+            <DemoDot key={i} $active={i === index} />
           ))}
         </div>
         <p style={{ color: '#6b7280', fontSize: '0.75rem' }}>タップまたはマウス移動で戻る</p>
@@ -1512,10 +1512,11 @@ const FallingShooterPage: React.FC = () => {
         )}
 
         <GameArea
-          width={W * SZ}
-          height={H * SZ}
+          $width={W * SZ}
+          $height={H * SZ}
           role="region"
           aria-label="シューティングパズルゲーム画面"
+          tabIndex={0}
         >
           {state.grid.map((row, y) =>
             row.map(
@@ -1550,13 +1551,13 @@ const FallingShooterPage: React.FC = () => {
           <BlastEffectComponent visible={showBlast} />
           <PlayerShip x={playerX} y={state.playerY} size={SZ} />
 
-          <DangerLine top={SZ * CONFIG.dangerLine} />
+          <DangerLine $top={SZ * CONFIG.dangerLine} />
         </GameArea>
       </div>
 
       <ControlsContainer>
         <ControlBtn onClick={moveLeft}>←</ControlBtn>
-        <ControlBtn onClick={fire} variant="fire">
+        <ControlBtn onClick={fire} $variant="fire">
           🎯
         </ControlBtn>
         <ControlBtn onClick={moveRight}>→</ControlBtn>
