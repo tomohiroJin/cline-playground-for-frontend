@@ -17,7 +17,7 @@ export const GlobalStyle = createGlobalStyle`
   body.premium-theme {
     --bg-gradient: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
     --text-primary: #ffffff;
-    --text-secondary: rgba(255, 255, 255, 0.7);
+    --text-secondary: rgba(255, 255, 255, 0.75);
     --accent-color: #00d2ff;
     --glass-bg: rgba(255, 255, 255, 0.05);
     --glass-border: rgba(255, 255, 255, 0.1);

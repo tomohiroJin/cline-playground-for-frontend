@@ -1532,7 +1532,14 @@ export default function MazeHorrorPage() {
 
   return (
     <PageContainer>
-      <Canvas ref={canvasRef} width={CONFIG.render.width} height={CONFIG.render.height} />
+      <Canvas
+        ref={canvasRef}
+        width={CONFIG.render.width}
+        height={CONFIG.render.height}
+        role="img"
+        aria-label="3D迷宮ホラーゲーム画面"
+        tabIndex={0}
+      />
       <HUD h={hud} />
       <Controls keysRef={keysRef} hiding={hud.hide} energy={hud.energy} stamina={hud.stamina} />
       {mapData.maze.length > 0 && <Minimap {...mapData} />}

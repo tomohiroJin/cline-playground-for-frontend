@@ -284,7 +284,9 @@ const Audio = (() => {
     if (!ctx) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const AudioContextClass = window.AudioContext || (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+        const AudioContextClass =
+          window.AudioContext ||
+          (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
         if (AudioContextClass) ctx = new AudioContextClass();
       } catch {}
     }
@@ -1509,7 +1511,12 @@ const FallingShooterPage: React.FC = () => {
           <EndingScreen score={state.score} onRetry={resetGame} onTitle={goToTitle} />
         )}
 
-        <GameArea width={W * SZ} height={H * SZ}>
+        <GameArea
+          width={W * SZ}
+          height={H * SZ}
+          role="region"
+          aria-label="シューティングパズルゲーム画面"
+        >
           {state.grid.map((row, y) =>
             row.map(
               (color, x) =>

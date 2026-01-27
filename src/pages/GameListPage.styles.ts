@@ -12,7 +12,7 @@ export const PageContainer = styled.div`
   margin: 0 auto;
 `;
 
-export const HeroSection = styled.div`
+export const HeroSection = styled.header`
   text-align: center;
   margin-bottom: 60px;
   animation: fadeIn 1s ease-out;
@@ -33,6 +33,7 @@ export const HeroTitle = styled.h2`
   font-size: 3.5rem;
   margin-bottom: 16px;
   background: linear-gradient(to right, #fff, #a5f3fc);
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   text-shadow: 0 0 30px rgba(0, 210, 255, 0.3);
@@ -45,7 +46,7 @@ export const HeroSubtitle = styled.p`
   margin: 0 auto;
 `;
 
-export const BentoGrid = styled.div`
+export const BentoGrid = styled.section`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 24px;

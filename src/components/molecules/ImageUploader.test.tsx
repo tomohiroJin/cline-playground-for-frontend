@@ -47,7 +47,7 @@ describe('ImageUploader', () => {
     clickAndSimulateFileInputChange();
 
     await waitFor(() => expect(onImageUpload).toHaveBeenCalledWith('blob://test', 100, 100));
-    expect(screen.getByAltText('プレビュー')).toBeInTheDocument();
+    expect(screen.getByAltText('アップロードされた画像のプレビュー')).toBeInTheDocument();
   });
 
   test('ファイルサイズが大きすぎる場合、エラーメッセージが表示され、onImageUpload は呼ばれない', async () => {

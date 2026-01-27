@@ -26,10 +26,35 @@ import {
 
 type Point = { x: number; y: number };
 type Checkpoint = Point & { idx: number };
-type StartLine = { cx: number; cy: number; px: number; py: number; dx: number; dy: number; len: number };
-type Particle = { x: number; y: number; vx: number; vy: number; size: number; color: string; life: number };
+type StartLine = {
+  cx: number;
+  cy: number;
+  px: number;
+  py: number;
+  dx: number;
+  dy: number;
+  len: number;
+};
+type Particle = {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  size: number;
+  color: string;
+  life: number;
+};
 type Spark = { x: number; y: number; vx: number; vy: number; color: string; life: number };
-type Confetti = { x: number; y: number; vx: number; vy: number; size: number; color: string; rot: number; rotSpd: number };
+type Confetti = {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  size: number;
+  color: string;
+  rot: number;
+  rotSpd: number;
+};
 
 interface Course {
   name: string;
@@ -335,7 +360,9 @@ const SoundEngine = (() => {
   const getCtx = () => {
     if (!ctx) {
       try {
-        const AudioContextClass = window.AudioContext || (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+        const AudioContextClass =
+          window.AudioContext ||
+          (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
         if (!AudioContextClass) return null;
         ctx = new AudioContextClass();
         master = ctx!.createGain();
@@ -1546,7 +1573,7 @@ export default function RacingGamePage() {
         </div>
 
         <CanvasContainer>
-          <Canvas ref={canvasRef} />
+          <Canvas ref={canvasRef} role="img" aria-label="レーシングゲーム画面" tabIndex={0} />
 
           {state === 'menu' && (
             <Overlay>

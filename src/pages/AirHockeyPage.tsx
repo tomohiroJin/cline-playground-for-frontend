@@ -695,6 +695,9 @@ const AirHockeyPage: React.FC = () => {
             onMouseDown={handleInput}
             onTouchMove={handleInput}
             onTouchStart={handleInput}
+            role="img"
+            aria-label="エアホッケーゲーム画面"
+            tabIndex={0}
           />
         </>
       )}

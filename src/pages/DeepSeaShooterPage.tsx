@@ -1088,7 +1088,11 @@ export default function DeepSeaShooterPage() {
 
   return (
     <PageContainer>
-      <StyledGameContainer style={{ background: `linear-gradient(180deg,${cfg.bg},#010408)` }}>
+      <StyledGameContainer
+        style={{ background: `linear-gradient(180deg,${cfg.bg},#010408)` }}
+        role="region"
+        aria-label="深海シューティングゲーム画面"
+      >
         {gd.bubbles.map(b => (
           <div
             key={b.id}

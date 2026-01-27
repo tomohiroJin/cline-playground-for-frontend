@@ -48,6 +48,7 @@ const Title = styled.h1`
   a {
     text-decoration: none;
     background: linear-gradient(to right, #fff, #bbb);
+    background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     transition: opacity 0.3s;
@@ -85,9 +86,11 @@ const App: React.FC = () => {
       <GlobalStyle />
       <AppContainer>
         <Header>
-          <Title>
-            <Link to="/">Game Platform</Link>
-          </Title>
+          <nav aria-label="Global Navigation">
+            <Title>
+              <Link to="/">Game Platform</Link>
+            </Title>
+          </nav>
         </Header>
 
         <ErrorBoundary>
@@ -98,15 +101,17 @@ const App: React.FC = () => {
               </div>
             }
           >
-            <Routes>
-              <Route path="/" element={<GameListPage />} />
-              <Route path="/puzzle" element={<PuzzlePage />} />
-              <Route path="/air-hockey" element={<AirHockeyPage />} />
-              <Route path="/racing" element={<RacingGamePage />} />
-              <Route path="/falling-shooter" element={<FallingShooterPage />} />
-              <Route path="/maze-horror" element={<MazeHorrorPage />} />
-              <Route path="/deep-sea-shooter" element={<DeepSeaShooterPage />} />
-            </Routes>
+            <main id="main-content" role="main">
+              <Routes>
+                <Route path="/" element={<GameListPage />} />
+                <Route path="/puzzle" element={<PuzzlePage />} />
+                <Route path="/air-hockey" element={<AirHockeyPage />} />
+                <Route path="/racing" element={<RacingGamePage />} />
+                <Route path="/falling-shooter" element={<FallingShooterPage />} />
+                <Route path="/maze-horror" element={<MazeHorrorPage />} />
+                <Route path="/deep-sea-shooter" element={<DeepSeaShooterPage />} />
+              </Routes>
+            </main>
           </Suspense>
         </ErrorBoundary>
 

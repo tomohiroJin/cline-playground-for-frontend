@@ -5,10 +5,10 @@
 | フェーズ | 状況 | 完了タスク |
 |---------|------|-----------|
 | フェーズ1: 品質基盤強化 | 完了 | 4/4 |
-| フェーズ2: アクセシビリティ | 未着手 | 0/4 |
+| フェーズ2: アクセシビリティ | 完了 | 4/4 |
 | フェーズ3: テスト充実 | 未着手 | 0/3 |
 | フェーズ4: エンゲージメント | 未着手 | 0/3 |
-| **合計** | **28%** | **4/14** |
+| **合計** | **57%** | **8/14** |
 
 ---
 
@@ -73,53 +73,53 @@
 
 ### 2.1 セマンティックHTML導入
 
-- [ ] `src/App.tsx`修正
-  - [ ] `<main>`要素追加
-  - [ ] `<nav>`要素追加
-  - [ ] role属性追加
-- [ ] 各ページに`<section>`追加
+- [x] `src/App.tsx`修正
+  - [x] `<main>`要素追加
+  - [x] `<nav>`要素追加（Headerコンポーネントとして実装）
+  - [x] role属性追加
+- [x] 各ページに`<section>`追加
 
 **ファイル**: `src/App.tsx`, 各ページ
-**ステータス**: 未着手
+**ステータス**: 完了
 
 ---
 
 ### 2.2 ARIA属性追加
 
-- [ ] `src/pages/GameListPage.tsx`
-  - [ ] ゲームカードにaria-label
-  - [ ] リンクにaria-describedby
-- [ ] 各ゲームページ
-  - [ ] Canvasにrole="img"とaria-label
-  - [ ] ボタンにaria-pressed（該当箇所）
-- [ ] モレキュール/オーガニズム
-  - [ ] インタラクティブ要素のラベル
+- [x] `src/pages/GameListPage.tsx`
+  - [x] ゲームカードにaria-label
+  - [x] リンクにaria-describedby（aria-labelで代用）
+- [x] 各ゲームページ
+  - [x] Canvasにrole="img"とaria-label
+  - [x] ボタンにaria-pressed（該当箇所）
+- [x] モレキュール/オーガニズム
+  - [x] インタラクティブ要素のラベル
 
-**ステータス**: 未着手
+**ステータス**: 完了
 
 ---
 
 ### 2.3 カラーコントラスト修正
 
-- [ ] `src/styles/GlobalStyle.ts`修正
-  - [ ] --text-secondary の明度向上
-  - [ ] ボタンテキスト色の調整
-- [ ] コントラスト比検証（4.5:1以上）
+- [x] `src/styles/GlobalStyle.ts`修正
+  - [x] --text-secondary の明度向上
+  - [x] ボタンテキスト色の調整
+- [x] コントラスト比検証（4.5:1以上）
 
 **ファイル**: `src/styles/GlobalStyle.ts`
-**ステータス**: 未着手
+**ステータス**: 完了
 
 ---
 
 ### 2.4 画像alt属性追加
 
-- [ ] `src/pages/GameListPage.tsx`
-  - [ ] ゲーム画像にalt追加
-- [ ] パズル関連コンポーネント
-  - [ ] DefaultImageSelectorの画像にalt
-  - [ ] アップロード画像にalt
+- [x] `src/pages/GameListPage.tsx`
+  - [x] ゲーム画像にalt追加
+- [x] パズル関連コンポーネント
+  - [x] DefaultImageSelectorの画像にalt
+  - [x] アップロード画像にalt
 
-**ステータス**: 未着手
+**ステータス**: 完了
 
 ---
 

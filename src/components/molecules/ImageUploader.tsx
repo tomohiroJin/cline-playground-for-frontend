@@ -100,7 +100,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     <UploaderContainer>
       <ImagePreview $hasImage={!!previewUrl}>
         {previewUrl ? (
-          <PreviewImage src={previewUrl} alt="プレビュー" />
+          <PreviewImage src={previewUrl} alt="アップロードされた画像のプレビュー" />
         ) : (
           <UploadText>画像をアップロードしてください</UploadText>
         )}
