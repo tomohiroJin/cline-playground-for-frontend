@@ -1,4 +1,6 @@
 /* eslint-disable react-hooks/refs */
+import { saveScore, getHighScore } from '../utils/score-storage';
+
 // 注: このファイルではパフォーマンス最適化のため、ref経由でゲーム状態を管理しています
 // ゲームループでの高頻度更新に対応するための意図的な設計パターンです
 import React, { useState, useEffect, useCallback, useRef, ReactNode } from 'react';
@@ -1210,7 +1212,9 @@ const FallingShooterPage: React.FC = () => {
   const [showBlast, setShowBlast] = useState<boolean>(false);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const [showDemo, setShowDemo] = useState<boolean>(false);
+
   const [skillCharge, setSkillCharge] = useState<number>(0);
+  const [highScore, setHighScore] = useState<number>(0);
 
   // パフォーマンス最適化のため、ref経由で状態を管理（ゲームループでの高頻度更新に対応）
   const state = stateRef.current;
@@ -1229,6 +1233,14 @@ const FallingShooterPage: React.FC = () => {
     },
     [soundEnabled]
   );
+
+  const loadHighScore = useCallback(() => {
+    getHighScore('falling-shooter').then(setHighScore);
+  }, []);
+
+  useEffect(() => {
+    loadHighScore();
+  }, [loadHighScore]);
 
   // Skill charge effect
   useEffect(() => {
@@ -1472,6 +1484,9 @@ const FallingShooterPage: React.FC = () => {
 
       if (GameLogic.isGameOver(clearedGrid)) {
         playSound(Audio.over);
+        saveScore('falling-shooter', state.score)
+          .then(() => loadHighScore())
+          .catch(err => console.error(err));
         setStatus('over');
       }
     },
@@ -1486,6 +1501,11 @@ const FallingShooterPage: React.FC = () => {
 
       <Header>
         <Title>落ち物シューティング</Title>
+        <div
+          style={{ fontSize: '0.9rem', color: '#fbbf24', marginLeft: 'auto', marginRight: '1rem' }}
+        >
+          High Score: {highScore}
+        </div>
         <IconButton onClick={() => setSoundEnabled(s => !s)}>
           {soundEnabled ? '🔊' : '🔇'}
         </IconButton>
