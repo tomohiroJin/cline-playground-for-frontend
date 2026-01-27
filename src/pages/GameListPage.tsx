@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import puzzleCardBg from '../assets/images/puzzle_card_bg.webp';
 import airHockeyCardBg from '../assets/images/air_hockey_card_bg.webp';
 import racingCardBg from '../assets/images/racing_card_bg.webp';
-import fallingShooterCardBg from '../assets/images/falling_shooter_card_bg.png';
-import mazeHorrorCardBg from '../assets/images/maze_horror_card_bg.png';
-import deepSeaShooterCardBg from '../assets/images/deep_sea_shooter_card_bg.png';
+import fallingShooterCardBg from '../assets/images/falling_shooter_card_bg.webp';
+import mazeHorrorCardBg from '../assets/images/maze_horror_card_bg.webp';
+import deepSeaShooterCardBg from '../assets/images/deep_sea_shooter_card_bg.webp';
 import {
   PageContainer,
   HeroSection,
@@ -76,11 +76,7 @@ const GameListPage: React.FC = () => {
             $bgImage={airHockeyCardBg}
             role="img"
             aria-label="Air Hockeyのゲーム画面プレビュー"
-          >
-            <span role="img" aria-label="ホッケーアイコン" style={{ fontSize: '3rem' }}>
-              🏒
-            </span>
-          </CardImageArea>
+          ></CardImageArea>
           <CardContent>
             <CardTitle>Air Hockey</CardTitle>
             <GameDescription>
