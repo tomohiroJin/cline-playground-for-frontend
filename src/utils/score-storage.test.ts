@@ -1,4 +1,4 @@
-import { saveScore, getHighScore, getScores, clearScores, ScoreRecord } from './score-storage';
+import { saveScore, getHighScore, getScores, clearScores } from './score-storage';
 
 describe('score-storage', () => {
   const TEST_GAME_ID = 'test-game';

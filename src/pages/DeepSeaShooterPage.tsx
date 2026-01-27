@@ -7,6 +7,7 @@ import {
   randomInt as baseRandomInt,
   distance as baseDistance,
 } from '../utils/math-utils';
+import { saveScore, getHighScore } from '../utils/score-storage';
 
 // ============================================================================
 // Styled Components (Containers & Static UI)
@@ -744,6 +745,12 @@ export default function DeepSeaShooterPage() {
   const audio = useRef(createAudioSystem());
   const raf = useRef<number | null>(null);
 
+  useEffect(() => {
+    getHighScore('deep_sea_shooter').then(h => {
+      setUiState(prev => ({ ...prev, highScore: h }));
+    });
+  }, []);
+
   const startGame = useCallback(() => {
     audio.current.init();
     gameData.current = {
@@ -775,6 +782,10 @@ export default function DeepSeaShooterPage() {
       speedLevel: 0,
       spreadTime: 0,
     }));
+    // Start game with loaded high score
+    getHighScore('deep_sea_shooter').then(highScore => {
+      setUiState(p => ({ ...p, highScore }));
+    });
     setGameState('playing');
   }, []);
 
@@ -999,8 +1010,14 @@ export default function DeepSeaShooterPage() {
           audio.current.play('destroy');
           uiStateRef.current.lives--;
           setUiState({ ...uiStateRef.current });
-          if (uiStateRef.current.lives <= 0) setGameState('gameover');
-          else {
+          if (uiStateRef.current.lives <= 0) {
+            setGameState('gameover');
+            saveScore('deep_sea_shooter', uiStateRef.current.score);
+            // Update local high score if beaten
+            if (uiStateRef.current.score > uiStateRef.current.highScore) {
+              setUiState({ ...uiStateRef.current, highScore: uiStateRef.current.score });
+            }
+          } else {
             gd.invincible = true;
             gd.invincibleEndTime = now + 2000;
           }
@@ -1018,6 +1035,10 @@ export default function DeepSeaShooterPage() {
           setUiState({ ...uiStateRef.current });
         } else {
           setGameState('ending');
+          saveScore('deep_sea_shooter', uiStateRef.current.score);
+          if (uiStateRef.current.score > uiStateRef.current.highScore) {
+            setUiState({ ...uiStateRef.current, highScore: uiStateRef.current.score });
+          }
         }
       }
 
@@ -1052,6 +1073,9 @@ export default function DeepSeaShooterPage() {
             <Button $primary onClick={startGame}>
               START GAME
             </Button>
+            <div style={{ marginTop: 20, fontSize: 12, color: '#aaa' }}>
+              HIGH SCORE: {uiState.highScore}
+            </div>
           </FullScreenOverlay>
         </StyledGameContainer>
       </PageContainer>
@@ -1064,6 +1088,7 @@ export default function DeepSeaShooterPage() {
           <FullScreenOverlay $bg="#1a0a0a">
             <h1 style={{ color: '#f66' }}>MISSION FAILED</h1>
             <p>SCORE: {uiState.score}</p>
+            <p style={{ fontSize: 12, color: '#aaa' }}>HIGH SCORE: {uiState.highScore}</p>
             <Button onClick={startGame}>RETRY</Button>
             <Button onClick={() => setGameState('title')}>TITLE</Button>
           </FullScreenOverlay>
@@ -1078,6 +1103,7 @@ export default function DeepSeaShooterPage() {
           <FullScreenOverlay $bg="#0a1a2a">
             <h1 style={{ color: '#6ac' }}>MISSION COMPLETE</h1>
             <p>FINAL SCORE: {uiState.score}</p>
+            <p style={{ fontSize: 12, color: '#aaa' }}>HIGH SCORE: {uiState.highScore}</p>
             <Button $primary onClick={() => setGameState('title')}>
               RETURN TO TITLE
             </Button>
@@ -1132,6 +1158,18 @@ export default function DeepSeaShooterPage() {
           }}
         >
           SCORE: {uiState.score}
+        </div>
+        <div
+          style={{
+            position: 'absolute',
+            top: 8,
+            right: 120,
+            color: '#aaa',
+            fontSize: 10,
+            fontWeight: 'bold',
+          }}
+        >
+          HI: {uiState.highScore}
         </div>
         <div style={{ position: 'absolute', top: 22, right: 8, color: '#f66', fontSize: 12 }}>
           {'♥'.repeat(Math.max(0, uiState.lives))}

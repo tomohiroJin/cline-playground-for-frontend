@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, memo, useCallback } from 'react';
+import { saveScore, getHighScore } from '../utils/score-storage';
 import {
   PageContainer,
   GameContainer,
@@ -1235,6 +1236,21 @@ export default function RacingGamePage() {
 
   // Sound Cleanup
   useEffect(() => {
+    // Load best times
+    const loadBests = async () => {
+      const newBests: Record<string, number> = {};
+      for (let c = 0; c < Courses.length; c++) {
+        for (const l of Options.laps) {
+          const key = `c${c}-l${l}`;
+          // eslint-disable-next-line no-await-in-loop
+          const time = await getHighScore('racing', key, 'asc');
+          if (time > 0) newBests[key] = time;
+        }
+      }
+      setBests(newBests);
+    };
+    loadBests();
+
     return () => SoundEngine.cleanup();
   }, []);
 
@@ -1434,15 +1450,26 @@ export default function RacingGamePage() {
       if (finished && !demo) {
         setState('result');
         const winName = players.find(p => p.lap > maxLaps)?.name || 'Unknown';
+        const p1Time = players[0].lapTimes.reduce((a, b) => a + b, 0);
+        const p2Time = players[1].lapTimes.reduce((a, b) => a + b, 0);
+
         setResults({
           winnerName: winName,
           winnerColor: players.find(p => p.name === winName)?.color || '#fff',
-          times: {
-            p1: players[0].lapTimes.reduce((a, b) => a + b, 0),
-            p2: players[1].lapTimes.reduce((a, b) => a + b, 0),
-          },
+          times: { p1: p1Time, p2: p2Time },
           fastest: Utils.min([...players[0].lapTimes, ...players[1].lapTimes]),
         });
+
+        // Save score if P1 (human) finished
+        if (players[0].lap === maxLaps + 1) {
+          const key = `c${course}-l${laps}`;
+          saveScore('racing', p1Time, key).then(() => {
+            getHighScore('racing', key, 'asc').then(t => {
+              setBests(prev => ({ ...prev, [key]: t }));
+            });
+          });
+        }
+
         isRunning = false;
       }
     };
@@ -1575,6 +1602,12 @@ export default function RacingGamePage() {
         <div style={{ textAlign: 'center' }}>
           <Title>Racing Game</Title>
           <SubTitle>{Courses[Utils.clamp(course, 0, Courses.length - 1)]?.name || ''}</SubTitle>
+          <div style={{ color: '#fbbf24', fontSize: '1rem', marginTop: '0.5rem' }}>
+            Best:{' '}
+            {bests[`c${course}-l${laps}`]
+              ? Utils.formatTime(bests[`c${course}-l${laps}`])
+              : '--:--.-'}
+          </div>
         </div>
 
         <CanvasContainer>
@@ -1719,6 +1752,12 @@ export default function RacingGamePage() {
                   <span>Fastest Lap:</span> <span>{Utils.formatTime(results.fastest)}</span>
                 </ResultRow>
               </ResultCard>
+              <div style={{ color: '#fbbf24', fontSize: '1.2rem', marginTop: '1rem' }}>
+                Best:{' '}
+                {bests[`c${course}-l${laps}`]
+                  ? Utils.formatTime(bests[`c${course}-l${laps}`])
+                  : '--:--.-'}
+              </div>
               <div style={{ marginTop: '2rem' }}>
                 <ActionButton
                   onClick={reset}

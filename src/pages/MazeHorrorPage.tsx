@@ -2,6 +2,7 @@
 // 注: このファイルではパフォーマンス最適化のため、ref経由でゲーム状態を管理しています
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { clamp, distance } from '../utils/math-utils';
+import { saveScore, getHighScore } from '../utils/score-storage';
 import {
   PageContainer,
   Canvas,
@@ -213,6 +214,7 @@ interface HUDData {
   eNear: number;
   hide: boolean;
   energy: number;
+  highScore: number;
 }
 
 // ==================== UTILITIES ====================
@@ -788,7 +790,8 @@ const Story: React.FC<{
   onDone: () => void;
   score?: number;
   time?: number;
-}> = ({ type, onDone, score, time }) => {
+  highScore?: number;
+}> = ({ type, onDone, score, time, highScore }) => {
   const [idx, setIdx] = useState(0);
   const [ready, setReady] = useState(false);
   const lines = CONTENT.stories[type] || CONTENT.stories.intro;
@@ -837,6 +840,11 @@ const Story: React.FC<{
               <div style={{ fontSize: '0.875rem', color: '#9ca3af' }}>クリアタイム</div>
             </div>
           </div>
+          {highScore !== undefined && (
+            <div style={{ marginTop: '1rem', color: '#fbbf24', fontSize: '1rem' }}>
+              HIGH SCORE: {highScore.toLocaleString()}
+            </div>
+          )}
         </ModalContent>
       )}
 
@@ -862,7 +870,10 @@ const Story: React.FC<{
   );
 };
 
-const Title: React.FC<{ onStart: (d: Difficulty) => void }> = ({ onStart }) => {
+const Title: React.FC<{
+  onStart: (d: Difficulty) => void;
+  highScores: Record<string, number>;
+}> = ({ onStart, highScores }) => {
   const [demoIdx, setDemoIdx] = useState(-1);
   const [demoActive, setDemoActive] = useState(false);
 
@@ -983,6 +994,9 @@ const Title: React.FC<{ onStart: (d: Difficulty) => void }> = ({ onStart }) => {
                   </div>
                   <div>
                     {cfg.time}秒 | ❤️×{cfg.lives}
+                  </div>
+                  <div style={{ color: '#fbbf24', fontSize: '0.75rem' }}>
+                    HI: {highScores[key] || 0}
                   </div>
                 </ButtonInfo>
               </ButtonContent>
@@ -1119,6 +1133,9 @@ const HUD: React.FC<{ h: HUDData }> = ({ h }) => (
       <HUDPanel>
         <div style={{ color: '#facc15', fontSize: '0.875rem', fontWeight: 'bold' }}>
           SCORE: {h.score.toLocaleString()}
+        </div>
+        <div style={{ color: '#fbbf24', fontSize: '0.7rem', opacity: 0.8 }}>
+          HI: {h.highScore.toLocaleString()}
         </div>
       </HUDPanel>
     </HUDGroup>
@@ -1370,6 +1387,7 @@ export default function MazeHorrorPage() {
     eNear: 0,
     score: 0,
     stamina: 100,
+    highScore: 0,
   });
   const [mapData, setMapData] = useState({
     maze: [] as number[][],
@@ -1386,21 +1404,40 @@ export default function MazeHorrorPage() {
   const gameRef = useRef<GameState | null>(null);
   const keysRef = useRef<Record<string, boolean>>({});
   const rafRef = useRef<number | null>(null);
+  const [highScores, setHighScores] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    Promise.all(Object.keys(CONFIG.difficulties).map(d => getHighScore('maze_horror', d))).then(
+      scores => {
+        const newScores: Record<string, number> = {};
+        Object.keys(CONFIG.difficulties).forEach((k, i) => {
+          newScores[k] = scores[i];
+        });
+        setHighScores(newScores);
+      }
+    );
+  }, []);
 
   const endGame = useCallback(
     (type: keyof typeof CONTENT.stories) => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
       const g = gameRef.current;
-      if (g)
+      if (g) {
         setResultData({
           score: g.score,
           time: Math.floor((CONFIG.difficulties[diff].time * 1000 - g.time) / 1000),
         });
+        saveScore('maze_horror', g.score, diff).then(() => {
+          if (g.score > (highScores[diff] || 0)) {
+            setHighScores(prev => ({ ...prev, [diff]: g.score }));
+          }
+        });
+      }
       setStoryType(type);
       setScreen('story');
     },
-    [diff]
+    [diff, highScores]
   );
 
   const startGame = useCallback((d: Difficulty) => {
@@ -1497,6 +1534,7 @@ export default function MazeHorrorPage() {
         eNear: Math.max(0, 1 - closestEnemy / 7),
         score: g.score,
         stamina: Math.round(g.player.stamina),
+        highScore: highScores[diff] || 0,
       });
 
       setMapData({
@@ -1517,9 +1555,9 @@ export default function MazeHorrorPage() {
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [screen, endGame]);
+  }, [screen, endGame, diff, highScores]);
 
-  if (screen === 'title') return <Title onStart={startGame} />;
+  if (screen === 'title') return <Title onStart={startGame} highScores={highScores} />;
   if (screen === 'story')
     return (
       <Story
@@ -1527,6 +1565,7 @@ export default function MazeHorrorPage() {
         onDone={onStoryDone}
         score={resultData.score}
         time={resultData.time}
+        highScore={highScores[diff]}
       />
     );
 

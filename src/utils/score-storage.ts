@@ -39,10 +39,15 @@ export const saveScore = async (
  * 指定されたゲーム（および難易度）のハイスコアを取得する
  * @param gameId ゲームID
  * @param difficulty 難易度（任意）
+ * @param sortOrder ソート順 ('desc': 降順 [高スコア優先], 'asc': 昇順 [低タイム優先])
  * @returns ハイスコア（存在しない場合は0）
  */
-export const getHighScore = async (gameId: string, difficulty?: string): Promise<number> => {
-  const scores = await getScores(gameId, undefined, difficulty); // 全件取得
+export const getHighScore = async (
+  gameId: string,
+  difficulty?: string,
+  sortOrder: 'asc' | 'desc' = 'desc'
+): Promise<number> => {
+  const scores = await getScores(gameId, undefined, difficulty, sortOrder); // 全件取得
   if (scores.length === 0) return 0;
 
   // getScoresでソート済み
@@ -54,19 +59,21 @@ export const getHighScore = async (gameId: string, difficulty?: string): Promise
  * @param gameId ゲームID
  * @param limit 取得件数制限
  * @param difficulty 難易度
- * @returns スコア履歴（スコア降順）
+ * @param sortOrder ソート順 ('desc': 降順, 'asc': 昇順)
+ * @returns スコア履歴
  */
 export const getScores = async (
   gameId: string,
   limit?: number,
-  difficulty?: string
+  difficulty?: string,
+  sortOrder: 'asc' | 'desc' = 'desc'
 ): Promise<ScoreRecord[]> => {
   try {
     const key = getStorageKey(gameId, difficulty);
     const scores = getScoresInternal(key);
 
-    // スコア降順にソート
-    scores.sort((a, b) => b.score - a.score);
+    // ソート
+    scores.sort((a, b) => (sortOrder === 'desc' ? b.score - a.score : a.score - b.score));
 
     if (limit && limit > 0) {
       return scores.slice(0, limit);

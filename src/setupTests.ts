@@ -7,14 +7,20 @@ Object.assign(global, { TextEncoder, TextDecoder });
 // requestAnimationFrame / cancelAnimationFrame Polyfill
 if (typeof window !== 'undefined') {
   if (!window.requestAnimationFrame) {
-    (window as any).requestAnimationFrame = (callback: FrameRequestCallback) => {
-      return setTimeout(() => callback(Date.now()), 0);
-    };
+    Object.defineProperty(window, 'requestAnimationFrame', {
+      value: (callback: FrameRequestCallback) => {
+        return setTimeout(() => callback(Date.now()), 0);
+      },
+      writable: true,
+    });
   }
   if (!window.cancelAnimationFrame) {
-    (window as any).cancelAnimationFrame = (id: number) => {
-      clearTimeout(id);
-    };
+    Object.defineProperty(window, 'cancelAnimationFrame', {
+      value: (id: number) => {
+        clearTimeout(id);
+      },
+      writable: true,
+    });
   }
 }
 

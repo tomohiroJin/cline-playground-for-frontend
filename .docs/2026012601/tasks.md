@@ -7,8 +7,8 @@
 | フェーズ1: 品質基盤強化 | 完了 | 4/4 |
 | フェーズ2: アクセシビリティ | 完了 | 4/4 |
 | フェーズ3: テスト充実 | 完了 | 3/3 |
-| フェーズ4: エンゲージメント | 未着手 | 0/3 |
-| **合計** | **79%** | **11/14** |
+| フェーズ4: エンゲージメント | 進行中 | 1/3 |
+| **合計** | **86%** | **12/14** |
 
 ---
 
@@ -179,16 +179,21 @@
 
 ### 4.1 ハイスコア永続化
 
-- [ ] `src/utils/score-storage.ts`作成
-  - [ ] IndexedDB初期化
-  - [ ] saveScore関数
-  - [ ] getHighScore関数
-  - [ ] getScoreHistory関数
-  - [ ] clearScores関数
-- [ ] 各ゲームページへの統合
+- [x] `src/utils/score-storage.ts`作成
+  - [x] IndexedDB初期化 (LocalStorageを使用した非同期インターフェース)
+  - [x] saveScore関数
+  - [x] getHighScore関数
+  - [x] getScoreHistory関数 (getScoresとして実装)
+  - [x] clearScores関数
+- [x] 各ゲームページへの統合
+  - [x] Falling Shooter
+  - [x] Deep Sea Shooter
+  - [x] Maze Horror
+  - [x] Air Hockey
+  - [x] Racing Game
 
 **ファイル**: `src/utils/score-storage.ts`
-**ステータス**: 未着手
+**ステータス**: 完了
 
 ---
 

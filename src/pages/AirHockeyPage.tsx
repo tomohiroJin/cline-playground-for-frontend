@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { saveScore, getHighScore } from '../utils/score-storage';
 import styled from 'styled-components';
 import { GlassCard } from '../components/atoms/GlassCard';
 
@@ -347,6 +348,7 @@ const AirHockeyPage: React.FC = () => {
   const [scores, setScores] = useState({ p: 0, c: 0 });
   const [winner, setWinner] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
+  const [highScore, setHighScore] = useState(0);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<GameState | null>(null);
@@ -361,6 +363,22 @@ const AirHockeyPage: React.FC = () => {
     document.addEventListener('touchmove', handler, { passive: false });
     return () => document.removeEventListener('touchmove', handler);
   }, []);
+
+  // Load High Score
+  useEffect(() => {
+    getHighScore('air_hockey', `${diff}_${winScore}`).then(setHighScore);
+  }, [diff, winScore]);
+
+  // Save Score on Result
+  useEffect(() => {
+    if (screen === 'result') {
+      const margin = scoreRef.current.p - scoreRef.current.c;
+      const key = `${diff}_${winScore}`;
+      saveScore('air_hockey', margin, key).then(() => {
+        getHighScore('air_hockey', key).then(setHighScore);
+      });
+    }
+  }, [screen, diff, winScore]);
 
   const getSound = useCallback(() => {
     if (!soundRef.current) soundRef.current = createSoundSystem();
@@ -677,6 +695,9 @@ const AirHockeyPage: React.FC = () => {
           </OptionContainer>
 
           <StartButton onClick={startGame}>START</StartButton>
+          <div style={{ marginTop: '1rem', color: 'var(--accent-color)', fontWeight: 'bold' }}>
+            Best Margin: {highScore > 0 ? '+' + highScore : highScore}
+          </div>
         </MenuCard>
       )}
 

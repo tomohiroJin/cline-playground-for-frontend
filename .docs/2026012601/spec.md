@@ -377,12 +377,13 @@ interface ScoreStorage {
 }
 ```
 
-#### IndexedDB構造
+#### 永続化ストレージ
+初期実装では `localStorage` を使用するが、将来的な `IndexedDB` への移行を見据えて非同期インターフェースを採用する。
 
 ```typescript
-// Database: GamePlatformDB
-// Object Store: scores
-// Index: gameId, timestamp
+// Storage Key Structure
+// format: game_score_${gameId}_${difficulty}
+// value: JSON.stringify(ScoreRecord[])
 ```
 
 ---
