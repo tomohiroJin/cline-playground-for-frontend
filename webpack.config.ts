@@ -20,6 +20,7 @@ const config: Configuration = {
     path: path.resolve(__dirname, 'dist'),
     filename: '[name].bundle.js',
     chunkFilename: '[name].[contenthash].chunk.js',
+    publicPath: 'auto',
     clean: true,
   },
   resolve: {
@@ -58,6 +59,16 @@ const config: Configuration = {
       ],
     }),
   ],
+  optimization: {
+    splitChunks: {
+      chunks: 'all',
+    },
+    runtimeChunk: 'single',
+  },
+  performance: {
+    maxAssetSize: 400000,
+    maxEntrypointSize: 400000,
+  },
   devServer: {
     static: {
       directory: path.join(__dirname, 'public'),
