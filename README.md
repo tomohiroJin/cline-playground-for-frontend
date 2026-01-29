@@ -109,6 +109,12 @@ npm run test:coverage
 
 状態管理にはJotaiを使用しており、アトムベースのアプローチで状態を管理しています。
 
+### スタイル注入（styled-components）に関する注意
+
+本番ビルドでは `styled-components` が CSSOM（`insertRule`）でスタイルを注入します。  
+このとき `createGlobalStyle` 内に `@import` があると注入に失敗し、`npm run preview` など本番相当でスタイルが空になることがあります。  
+そのため、フォント読み込みは `public/index.html` の `<link rel="stylesheet">` で行い、`createGlobalStyle` には `@import` を書かない方針とします。
+
 ### 主要なカスタムフック
 
 - `usePuzzle`: パズルの状態と操作を管理するフック

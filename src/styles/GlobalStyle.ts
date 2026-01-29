@@ -1,8 +1,6 @@
 import { createGlobalStyle } from 'styled-components';
 
 export const GlobalStyle = createGlobalStyle`
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
-
   :root {
     --bg-gradient: linear-gradient(135deg, #0cebeb, #20e3b2, #29ffc6); /* 鮮やかなティール系グラデーション（初期値） - ダークモードで上書き推奨 */
     --text-primary: #333;
