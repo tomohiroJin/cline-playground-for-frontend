@@ -7,7 +7,6 @@ import fallingShooterCardBg from '../assets/images/falling_shooter_card_bg.webp'
 import mazeHorrorCardBg from '../assets/images/maze_horror_card_bg.webp';
 import deepSeaShooterCardBg from '../assets/images/deep_sea_shooter_card_bg.webp';
 import nonBrakeDescentCardBg from '../assets/images/non_brake_descent_card_bg.webp';
-import ipneMvp0Bg from '../assets/images/ipne_mvp0_card_bg.webp';
 import {
   PageContainer,
   HeroSection,
@@ -33,34 +32,6 @@ const GameListPage: React.FC = () => {
       </HeroSection>
 
       <BentoGrid aria-label="提供中のゲーム一覧">
-        <GameCardContainer
-          onClick={() => navigate('/ipne-mvp0')}
-          role="button"
-          aria-label="IPNE MVP0 ゲームをプレイする"
-          tabIndex={0}
-          onKeyDown={e => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              navigate('/ipne-mvp0');
-            }
-          }}
-        >
-          <CardImageArea
-            $bgImage={ipneMvp0Bg}
-            role="img"
-            aria-label="IPNE MVP0のゲーム画面プレビュー"
-          />
-          <CardContent>
-            <CardTitle>IPNE MVP0</CardTitle>
-            <GameDescription>
-              歩いて脱出するだけの最小限の迷宮探索。 シンプル操作で挑む、原点回帰のダンジョン。
-            </GameDescription>
-            <PlayButton aria-hidden="true" tabIndex={-1}>
-              Play Now <span>→</span>
-            </PlayButton>
-          </CardContent>
-        </GameCardContainer>
-
         <GameCardContainer
           onClick={() => navigate('/puzzle')}
           role="button"
