@@ -18,14 +18,14 @@ const testConfig: MazeConfig = {
 describe('mazeGenerator', () => {
   describe('generateMaze', () => {
     test('指定サイズの迷路を生成する', () => {
-      const maze = generateMaze(testConfig);
+      const { grid: maze } = generateMaze(testConfig);
 
       expect(maze.length).toBe(testConfig.height);
       expect(maze[0].length).toBe(testConfig.width);
     });
 
     test('外周が壁で囲まれている', () => {
-      const maze = generateMaze(testConfig);
+      const { grid: maze } = generateMaze(testConfig);
 
       // 上下の外周チェック
       for (let x = 0; x < testConfig.width; x++) {
@@ -41,7 +41,7 @@ describe('mazeGenerator', () => {
     });
 
     test('床タイルが存在する', () => {
-      const maze = generateMaze(testConfig);
+      const { grid: maze } = generateMaze(testConfig);
       let floorCount = 0;
 
       for (let y = 0; y < testConfig.height; y++) {
@@ -56,21 +56,42 @@ describe('mazeGenerator', () => {
       expect(floorCount).toBeGreaterThan(100);
     });
 
-    test('迷路がランダムに生成される（複数回生成で少なくとも1回は異なる）', () => {
-      const mazes = [];
-      const attempts = 5;
+    test('BSP生成された部屋情報が返される', () => {
+      const { rooms } = generateMaze(testConfig);
 
-      // 複数回生成して、少なくとも1つは異なる迷路が生成されることを確認
-      for (let i = 0; i < attempts; i++) {
-        mazes.push(generateMaze(testConfig));
+      // 部屋が生成されている
+      expect(rooms.length).toBeGreaterThan(0);
+
+      // 各部屋にはrect, center, tilesがある
+      for (const room of rooms) {
+        expect(room.rect).toBeDefined();
+        expect(room.center).toBeDefined();
+        expect(room.tiles).toBeDefined();
+        expect(room.tiles!.length).toBeGreaterThan(0);
+
+        // tilesはrect内に収まっている
+        for (const tile of room.tiles!) {
+          expect(tile.x).toBeGreaterThanOrEqual(room.rect.x);
+          expect(tile.x).toBeLessThan(room.rect.x + room.rect.width);
+          expect(tile.y).toBeGreaterThanOrEqual(room.rect.y);
+          expect(tile.y).toBeLessThan(room.rect.y + room.rect.height);
+        }
       }
+    });
 
-      // 文字列化して比較
-      const stringified = mazes.map(m => JSON.stringify(m));
+    test('部屋タイルは通路ではなく実際の部屋内座標である', () => {
+      const { grid: maze, rooms } = generateMaze(testConfig);
 
-      // 少なくとも1つは異なる迷路が生成されていることを確認
-      const allSame = stringified.every(str => str === stringified[0]);
-      expect(allSame).toBe(false);
+      // 各部屋のtilesは実際に床タイルになっている
+      for (const room of rooms) {
+        for (const tile of room.tiles!) {
+          expect(maze[tile.y][tile.x]).toBe(TileType.FLOOR);
+        }
+
+        // 部屋は最小サイズ以上
+        expect(room.rect.width).toBeGreaterThanOrEqual(testConfig.minRoomSize - 2);
+        expect(room.rect.height).toBeGreaterThanOrEqual(testConfig.minRoomSize - 2);
+      }
     });
   });
 });

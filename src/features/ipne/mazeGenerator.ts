@@ -11,10 +11,16 @@ interface BSPNode {
   right?: BSPNode;
 }
 
+/** 迷路生成結果 */
+export interface MazeResult {
+  grid: GameMap;
+  rooms: Room[];
+}
+
 /**
  * 迷路を自動生成する
  */
-export function generateMaze(config: MazeConfig): GameMap {
+export function generateMaze(config: MazeConfig): MazeResult {
   // 初期グリッド（全て壁）
   const grid: GameMap = Array.from({ length: config.height }, () =>
     Array(config.width).fill(TileType.WALL)
@@ -44,7 +50,18 @@ export function generateMaze(config: MazeConfig): GameMap {
   // ループを追加（探索の幅を広げる）
   addLoops(grid, rooms, config.loopCount, config.corridorWidth);
 
-  return grid;
+  // 各部屋にtilesを追加（部屋内の床タイル座標リスト）
+  for (const room of rooms) {
+    room.tiles = [];
+    const { x, y, width, height } = room.rect;
+    for (let dy = 0; dy < height; dy++) {
+      for (let dx = 0; dx < width; dx++) {
+        room.tiles.push({ x: x + dx, y: y + dy });
+      }
+    }
+  }
+
+  return { grid, rooms };
 }
 
 /**
