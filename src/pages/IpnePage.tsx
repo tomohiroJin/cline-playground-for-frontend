@@ -1,5 +1,5 @@
 /**
- * IPNE MVP0 ゲームページ
+ * IPNE ゲームページ
  * シンプルな迷路ゲーム - タイトル→プロローグ→ゲーム→クリア の画面遷移
  */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -15,7 +15,7 @@ import {
   GameMap,
   Player,
   ScreenStateValue,
-} from '../features/ipne-mvp0';
+} from '../features/ipne';
 import {
   PageContainer,
   Overlay,
@@ -33,9 +33,9 @@ import {
   ClearMessage,
   RetryButton,
   BackToTitleButton,
-} from './IpneMvp0Page.styles';
-import titleBg from '../assets/images/ipne_mvp0_title_bg.webp';
-import prologueBg from '../assets/images/ipne_mvp0_prologue_bg.webp';
+} from './IpnePage.styles';
+import titleBg from '../assets/images/ipne_title_bg.webp';
+import prologueBg from '../assets/images/ipne_prologue_bg.webp';
 
 // 描画設定
 const CONFIG = {
@@ -300,9 +300,9 @@ const GameScreen: React.FC<{
 };
 
 /**
- * IPNE MVP0 メインページコンポーネント
+ * IPNE メインページコンポーネント
  */
-const IpneMvp0Page: React.FC = () => {
+const IpnePage: React.FC = () => {
   const [screen, setScreen] = useState<ScreenStateValue>(ScreenState.TITLE);
   const [map, setMap] = useState<GameMap>([]);
   const [player, setPlayer] = useState<Player>({ x: 0, y: 0 });
@@ -363,4 +363,4 @@ const IpneMvp0Page: React.FC = () => {
   );
 };
 
-export default IpneMvp0Page;
+export default IpnePage;
