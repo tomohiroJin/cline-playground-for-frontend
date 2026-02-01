@@ -30,7 +30,7 @@ export const PageContainer = styled.div`
 `;
 
 // オーバーレイ（タイトル/プロローグ/クリア画面用）
-export const Overlay = styled.div`
+export const Overlay = styled.div<{ $bgImage?: string }>`
   position: absolute;
   inset: 0;
   display: flex;
@@ -38,7 +38,12 @@ export const Overlay = styled.div`
   align-items: center;
   justify-content: center;
   z-index: 50;
-  background: rgba(0, 0, 0, 0.85);
+  background: ${props =>
+    props.$bgImage
+      ? `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url(${props.$bgImage})`
+      : 'rgba(0, 0, 0, 0.85)'};
+  background-size: cover;
+  background-position: center;
   animation: ${fadeIn} 0.5s ease-out;
 `;
 
@@ -103,7 +108,7 @@ export const StoryText = styled.p<{ $active: boolean }>`
   opacity: ${props => (props.$active ? 1 : 0.3)};
   text-shadow: ${props => (props.$active ? '0 0 30px rgba(255,255,255,0.5)' : 'none')};
   text-align: center;
-  max-width: 80%;
+  width: 100%;
 `;
 
 export const SkipButton = styled.button`

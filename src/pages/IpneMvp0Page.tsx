@@ -20,8 +20,6 @@ import {
   PageContainer,
   Overlay,
   TitleContainer,
-  TitleMain,
-  TitleSub,
   StartButton,
   StoryText,
   SkipButton,
@@ -36,6 +34,8 @@ import {
   RetryButton,
   BackToTitleButton,
 } from './IpneMvp0Page.styles';
+import titleBg from '../assets/images/ipne_mvp0_title_bg.webp';
+import prologueBg from '../assets/images/ipne_mvp0_prologue_bg.webp';
 
 // 描画設定
 const CONFIG = {
@@ -49,20 +49,22 @@ const CONFIG = {
 
 // プロローグテキスト
 const PROLOGUE_TEXTS = [
-  '迷宮に迷い込んだあなた...',
-  'ゴールを目指して進め。',
-  '矢印キーまたは WASD で移動。',
+  '古代遺跡の調査中、突如として通路が崩落した。',
+  '閉じ込められたあなたは、唯一の脱出口を探す。',
+  'デジタルマップを頼りに、迷宮を進め。',
 ];
 
 /**
  * タイトル画面コンポーネント
  */
 const TitleScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => (
-  <Overlay>
+  <Overlay $bgImage={titleBg}>
     <TitleContainer>
-      <TitleMain>IPNE MVP0</TitleMain>
-      <TitleSub>迷宮からの脱出</TitleSub>
-      <StartButton onClick={onStart} aria-label="ゲームを開始">
+      <StartButton
+        onClick={onStart}
+        aria-label="ゲームを開始"
+        style={{ marginTop: '60vh' }}
+      >
         ゲームを開始
       </StartButton>
     </TitleContainer>
@@ -85,8 +87,18 @@ const PrologueScreen: React.FC<{ onSkip: () => void }> = ({ onSkip }) => {
   }, [textIndex]);
 
   return (
-    <Overlay>
-      <div style={{ maxWidth: '36rem', textAlign: 'center', padding: '0 2rem' }}>
+    <Overlay $bgImage={prologueBg}>
+      <div
+        style={{
+          width: '100%',
+          maxWidth: '48rem',
+          textAlign: 'center',
+          padding: '0 2rem',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}
+      >
         {PROLOGUE_TEXTS.slice(0, textIndex + 1).map((text, i) => (
           <StoryText key={i} $active={i === textIndex}>
             {text}

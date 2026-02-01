@@ -19,7 +19,6 @@ describe('IpneMvp0Page', () => {
   describe('タイトル画面', () => {
     test('タイトル画面が正しく表示されること', () => {
       render(<IpneMvp0Page />);
-      expect(screen.getByText('IPNE MVP0')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /ゲームを開始/i })).toBeInTheDocument();
     });
 
@@ -29,7 +28,7 @@ describe('IpneMvp0Page', () => {
       fireEvent.click(startButton);
 
       await waitFor(() => {
-        expect(screen.queryByText('IPNE MVP0')).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /ゲームを開始/i })).not.toBeInTheDocument();
       });
     });
   });
@@ -82,8 +81,7 @@ describe('IpneMvp0Page', () => {
     test('タイトルから開始した場合、正しく初期化されること', () => {
       render(<IpneMvp0Page />);
 
-      // タイトル画面が表示される
-      expect(screen.getByText('IPNE MVP0')).toBeInTheDocument();
+      // タイトル画面が表示される（ゲーム開始ボタンで確認）
       expect(screen.getByRole('button', { name: /ゲームを開始/i })).toBeInTheDocument();
     });
 
