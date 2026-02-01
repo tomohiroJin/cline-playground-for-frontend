@@ -82,6 +82,11 @@ export function drawAutoMap(
   goalPos: Position,
   isFullScreen: boolean
 ): void {
+  // Canvas要素のチェック
+  if (!ctx || !ctx.canvas) {
+    return;
+  }
+
   const mapWidth = map[0].length;
   const mapHeight = map.length;
 

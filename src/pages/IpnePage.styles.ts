@@ -281,3 +281,28 @@ export const BackToTitleButton = styled.button`
     color: white;
   }
 `;
+
+// マップ切替ボタン
+export const MapToggleButton = styled.button`
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  font-size: 1.5rem;
+  color: white;
+  transition: all 0.2s;
+  z-index: 10;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+`;

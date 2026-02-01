@@ -8,6 +8,7 @@ import {
   createPlayer,
   movePlayer,
   findStartPosition,
+  findGoalPosition,
   isGoal,
   Direction,
   ScreenState,
@@ -15,6 +16,10 @@ import {
   GameMap,
   Player,
   ScreenStateValue,
+  AutoMapState,
+  initExploration,
+  updateExploration,
+  drawAutoMap,
 } from '../features/ipne';
 import {
   PageContainer,
@@ -33,6 +38,7 @@ import {
   ClearMessage,
   RetryButton,
   BackToTitleButton,
+  MapToggleButton,
 } from './IpnePage.styles';
 import titleBg from '../assets/images/ipne_title_bg.webp';
 import prologueBg from '../assets/images/ipne_prologue_bg.webp';
@@ -138,8 +144,11 @@ export const ClearScreen: React.FC<{
 const GameScreen: React.FC<{
   map: GameMap;
   player: Player;
+  mapState: AutoMapState;
+  goalPos: { x: number; y: number };
   onMove: (direction: (typeof Direction)[keyof typeof Direction]) => void;
-}> = ({ map, player, onMove }) => {
+  onMapToggle: () => void;
+}> = ({ map, player, mapState, goalPos, onMove, onMapToggle }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const keysRef = useRef<Record<string, boolean>>({});
 
@@ -154,15 +163,25 @@ const GameScreen: React.FC<{
     // 空マップの場合は描画しない
     if (map.length === 0 || !map[0]) return;
 
-    const { tileSize, wallColor, floorColor, goalColor, startColor, playerColor } = CONFIG;
+    const mapWidth = map[0].length;
+    const mapHeight = map.length;
+    const { wallColor, floorColor, goalColor, startColor, playerColor } = CONFIG;
+
+    // タイルサイズを動的に計算（最大800x600のCanvas）
+    const maxCanvasWidth = 800;
+    const maxCanvasHeight = 600;
+    const tileSize = Math.min(
+      Math.floor(maxCanvasWidth / mapWidth),
+      Math.floor(maxCanvasHeight / mapHeight)
+    );
 
     // キャンバスサイズ設定
-    canvas.width = map[0].length * tileSize;
-    canvas.height = map.length * tileSize;
+    canvas.width = mapWidth * tileSize;
+    canvas.height = mapHeight * tileSize;
 
     // マップ描画
-    for (let y = 0; y < map.length; y++) {
-      for (let x = 0; x < map[y].length; x++) {
+    for (let y = 0; y < mapHeight; y++) {
+      for (let x = 0; x < mapWidth; x++) {
         const tile = map[y][x];
         let color = floorColor;
 
@@ -190,12 +209,25 @@ const GameScreen: React.FC<{
       Math.PI * 2
     );
     ctx.fill();
-  }, [map, player]);
+
+    // 自動マップ描画
+    if (mapState.isMapVisible) {
+      drawAutoMap(ctx, map, mapState.exploration, player, goalPos, mapState.isFullScreen);
+    }
+  }, [map, player, mapState, goalPos]);
 
   // キーボード入力
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
+
+      // マップ切替（Mキー）
+      if (key === 'm') {
+        e.preventDefault();
+        onMapToggle();
+        return;
+      }
+
       if (keysRef.current[key]) return; // 連続入力防止
       keysRef.current[key] = true;
 
@@ -233,7 +265,7 @@ const GameScreen: React.FC<{
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);
     };
-  }, [onMove]);
+  }, [onMove, onMapToggle]);
 
   // モバイル用タッチ操作
   const handleTouchMove = useCallback(
@@ -245,6 +277,9 @@ const GameScreen: React.FC<{
 
   return (
     <GameRegion role="region" aria-label="ゲーム画面">
+      <MapToggleButton onClick={onMapToggle} aria-label="マップ表示切替">
+        🗺️
+      </MapToggleButton>
       <Canvas
         ref={canvasRef}
         role="img"
@@ -306,14 +341,32 @@ const IpnePage: React.FC = () => {
   const [screen, setScreen] = useState<ScreenStateValue>(ScreenState.TITLE);
   const [map, setMap] = useState<GameMap>([]);
   const [player, setPlayer] = useState<Player>({ x: 0, y: 0 });
+  const [goalPos, setGoalPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [mapState, setMapState] = useState<AutoMapState>({
+    exploration: [],
+    isMapVisible: true,
+    isFullScreen: false,
+  });
 
   // ゲーム初期化
   const initGame = useCallback(() => {
     const newMap = createMap();
     const startPos = findStartPosition(newMap);
-    if (startPos) {
+    const goal = findGoalPosition(newMap);
+
+    if (startPos && goal) {
       setMap(newMap);
       setPlayer(createPlayer(startPos.x, startPos.y));
+      setGoalPos(goal);
+
+      // 探索状態を初期化
+      const exploration = initExploration(newMap[0].length, newMap.length);
+      const updatedExploration = updateExploration(exploration, startPos);
+      setMapState({
+        exploration: updatedExploration,
+        isMapVisible: true,
+        isFullScreen: false,
+      });
     }
   }, []);
 
@@ -342,6 +395,12 @@ const IpnePage: React.FC = () => {
       const newPlayer = movePlayer(player, direction, map);
       setPlayer(newPlayer);
 
+      // 探索状態を更新
+      setMapState(prev => ({
+        ...prev,
+        exploration: updateExploration(prev.exploration, newPlayer),
+      }));
+
       // ゴール判定
       if (isGoal(map, newPlayer.x, newPlayer.y)) {
         setScreen(ScreenState.CLEAR);
@@ -350,12 +409,29 @@ const IpnePage: React.FC = () => {
     [player, map]
   );
 
+  // マップ表示切替ハンドラー
+  const handleMapToggle = useCallback(() => {
+    setMapState(prev => ({
+      ...prev,
+      isFullScreen: !prev.isFullScreen,
+    }));
+  }, []);
+
   // 画面に応じたコンテンツをレンダリング
   return (
     <PageContainer>
       {screen === ScreenState.TITLE && <TitleScreen onStart={handleStartGame} />}
       {screen === ScreenState.PROLOGUE && <PrologueScreen onSkip={handleSkipPrologue} />}
-      {screen === ScreenState.GAME && <GameScreen map={map} player={player} onMove={handleMove} />}
+      {screen === ScreenState.GAME && (
+        <GameScreen
+          map={map}
+          player={player}
+          mapState={mapState}
+          goalPos={goalPos}
+          onMove={handleMove}
+          onMapToggle={handleMapToggle}
+        />
+      )}
       {screen === ScreenState.CLEAR && (
         <ClearScreen onRetry={handleRetry} onBackToTitle={handleBackToTitle} />
       )}
