@@ -131,40 +131,31 @@ export const GameRegion = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   width: 100%;
   height: 100%;
-  padding-top: 1rem;
+  gap: 1rem;
 `;
 
 export const Canvas = styled.canvas`
   display: block;
   max-width: 100%;
-  max-height: 55vh;
+  max-height: 60vh;
   width: auto;
   height: auto;
   object-fit: contain;
   border-radius: 0.5rem;
   box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
-  margin-bottom: auto;
-  margin-top: 1rem;
 `;
 
 // モバイル操作用コントロール
 export const ControlsContainer = styled.div`
-  position: absolute;
-  bottom: 1rem;
-  left: 0;
-  right: 0;
   display: flex;
   justify-content: center;
   gap: 0.5rem;
   z-index: 10;
   padding: 0 1rem;
-
-  @media (min-width: 768px) {
-    bottom: 2rem;
-  }
+  flex-shrink: 0;
 `;
 
 export const ControlButton = styled.button<{ $position: 'left' | 'right' | 'up' | 'down' }>`

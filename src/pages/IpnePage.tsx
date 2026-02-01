@@ -446,13 +446,26 @@ const GameScreen: React.FC<{
     };
   }, [onMove, onMapToggle, debugState.enabled, onDebugToggle]);
 
-  // モバイル用タッチ操作
-  const handleTouchMove = useCallback(
-    (direction: (typeof Direction)[keyof typeof Direction]) => {
+  // D-pad押下開始時のハンドラー
+  const handleDPadPointerDown = useCallback(
+    (direction: DirectionValue) => {
+      const currentTime = Date.now();
+      // 最初の1マス目は即座に移動
       onMove(direction);
+      // 連続移動状態を開始
+      movementStateRef.current = startMovement(
+        movementStateRef.current,
+        direction,
+        currentTime
+      );
     },
     [onMove]
   );
+
+  // D-pad離し時のハンドラー
+  const handleDPadPointerUp = useCallback((direction: DirectionValue) => {
+    movementStateRef.current = stopMovement(movementStateRef.current, direction);
+  }, []);
 
   return (
     <GameRegion role="region" aria-label="ゲーム画面">
@@ -471,8 +484,11 @@ const GameScreen: React.FC<{
             $direction="up"
             onPointerDown={e => {
               e.preventDefault();
-              handleTouchMove(Direction.UP);
+              handleDPadPointerDown(Direction.UP);
             }}
+            onPointerUp={() => handleDPadPointerUp(Direction.UP)}
+            onPointerLeave={() => handleDPadPointerUp(Direction.UP)}
+            onPointerCancel={() => handleDPadPointerUp(Direction.UP)}
             aria-label="上に移動"
           >
             ▲
@@ -481,8 +497,11 @@ const GameScreen: React.FC<{
             $direction="left"
             onPointerDown={e => {
               e.preventDefault();
-              handleTouchMove(Direction.LEFT);
+              handleDPadPointerDown(Direction.LEFT);
             }}
+            onPointerUp={() => handleDPadPointerUp(Direction.LEFT)}
+            onPointerLeave={() => handleDPadPointerUp(Direction.LEFT)}
+            onPointerCancel={() => handleDPadPointerUp(Direction.LEFT)}
             aria-label="左に移動"
           >
             ◀
@@ -491,8 +510,11 @@ const GameScreen: React.FC<{
             $direction="right"
             onPointerDown={e => {
               e.preventDefault();
-              handleTouchMove(Direction.RIGHT);
+              handleDPadPointerDown(Direction.RIGHT);
             }}
+            onPointerUp={() => handleDPadPointerUp(Direction.RIGHT)}
+            onPointerLeave={() => handleDPadPointerUp(Direction.RIGHT)}
+            onPointerCancel={() => handleDPadPointerUp(Direction.RIGHT)}
             aria-label="右に移動"
           >
             ▶
@@ -501,8 +523,11 @@ const GameScreen: React.FC<{
             $direction="down"
             onPointerDown={e => {
               e.preventDefault();
-              handleTouchMove(Direction.DOWN);
+              handleDPadPointerDown(Direction.DOWN);
             }}
+            onPointerUp={() => handleDPadPointerUp(Direction.DOWN)}
+            onPointerLeave={() => handleDPadPointerUp(Direction.DOWN)}
+            onPointerCancel={() => handleDPadPointerUp(Direction.DOWN)}
             aria-label="下に移動"
           >
             ▼
