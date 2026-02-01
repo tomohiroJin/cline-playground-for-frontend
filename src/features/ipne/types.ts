@@ -1,5 +1,5 @@
 /**
- * IPNE MVP0 ゲームの型定義
+ * IPNE ゲームの型定義
  */
 
 /** タイルの種類 */
@@ -53,4 +53,38 @@ export interface GameState {
   player: Player;
   screen: ScreenStateValue;
   isCleared: boolean;
+}
+
+// ===== 迷路生成関連の型定義 =====
+
+/** BSP分割用の矩形領域 */
+export interface Rectangle {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** 部屋データ */
+export interface Room {
+  rect: Rectangle;
+  center: Position;
+}
+
+/** 通路データ */
+export interface Corridor {
+  start: Position;
+  end: Position;
+  horizontal: boolean;
+}
+
+/** 迷路生成設定 */
+export interface MazeConfig {
+  width: number; // 60-80
+  height: number; // 60-80
+  minRoomSize: number; // 6
+  maxRoomSize: number; // 10
+  corridorWidth: number; // 3-4
+  maxDepth: number; // 3-4（5-16部屋）
+  loopCount: number; // 0-2
 }

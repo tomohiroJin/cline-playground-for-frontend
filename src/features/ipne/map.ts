@@ -1,38 +1,122 @@
 /**
  * マップ生成モジュール
- * 固定の迷路マップを定義
+ * BSPアルゴリズムによる自動生成迷路
  */
 
-import { GameMap, TileTypeValue } from './types';
+import { GameMap, MazeConfig, TileType } from './types';
+import { generateMaze } from './mazeGenerator';
+import { placeStart, placeGoal } from './pathfinder';
 
 /**
- * 固定の迷路マップを生成
- * 2〜3分で完了できるサイズの迷路
- *
- * 凡例:
- * 0 = 床（通行可能）
- * 1 = 壁（通行不可）
- * 2 = ゴール
- * 3 = スタート
+ * デフォルトの迷路生成設定
  */
-export const createMap = (): GameMap => {
-  // 15x11のマップ（外周は壁）
-  const map: TileTypeValue[][] = [
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [1, 3, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
-    [1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1],
-    [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
-    [1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1],
-    [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
-    [1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1],
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  ];
-
-  return map;
+const DEFAULT_CONFIG: MazeConfig = {
+  width: 70,
+  height: 70,
+  minRoomSize: 6,
+  maxRoomSize: 10,
+  corridorWidth: 3,
+  maxDepth: 4,
+  loopCount: 1,
 };
+
+/**
+ * 迷路マップを自動生成する
+ *
+ * @param config - 迷路生成設定（省略時はデフォルト設定を使用）
+ * @returns 生成された迷路マップ（スタートとゴール配置済み）
+ */
+export const createMap = (config: MazeConfig = DEFAULT_CONFIG): GameMap => {
+  // BSPアルゴリズムで迷路生成
+  const maze = generateMaze(config);
+
+  // 部屋を抽出（スタート/ゴール配置に使用）
+  const rooms = extractRooms(maze);
+
+  // スタート位置を配置
+  const startPos = placeStart(rooms);
+
+  // ゴール位置を配置（スタートから最遠地点）
+  const goalPos = placeGoal(maze, startPos);
+
+  // スタート/ゴールタイルを配置
+  maze[startPos.y][startPos.x] = TileType.START;
+  maze[goalPos.y][goalPos.x] = TileType.GOAL;
+
+  return maze;
+};
+
+/**
+ * 迷路から部屋領域を抽出
+ */
+function extractRooms(map: GameMap) {
+  const rooms = [];
+  const visited = new Set<string>();
+
+  for (let y = 1; y < map.length - 1; y++) {
+    for (let x = 1; x < map[0].length - 1; x++) {
+      if (map[y][x] === TileType.FLOOR && !visited.has(`${x},${y}`)) {
+        const room = floodFill(map, x, y, visited);
+        if (room) {
+          rooms.push(room);
+        }
+      }
+    }
+  }
+
+  return rooms;
+}
+
+/**
+ * 塗りつぶしアルゴリズムで部屋を検出
+ */
+function floodFill(map: GameMap, startX: number, startY: number, visited: Set<string>) {
+  const queue = [{ x: startX, y: startY }];
+  const tiles = [];
+  let minX = startX,
+    maxX = startX,
+    minY = startY,
+    maxY = startY;
+
+  while (queue.length > 0) {
+    const { x, y } = queue.shift()!;
+    const key = `${x},${y}`;
+
+    if (visited.has(key)) continue;
+    if (y < 0 || y >= map.length || x < 0 || x >= map[0].length) continue;
+    if (map[y][x] !== TileType.FLOOR) continue;
+
+    visited.add(key);
+    tiles.push({ x, y });
+
+    minX = Math.min(minX, x);
+    maxX = Math.max(maxX, x);
+    minY = Math.min(minY, y);
+    maxY = Math.max(maxY, y);
+
+    queue.push({ x: x + 1, y });
+    queue.push({ x: x - 1, y });
+    queue.push({ x, y: y + 1 });
+    queue.push({ x, y: y - 1 });
+  }
+
+  if (tiles.length > 0) {
+    return {
+      rect: {
+        x: minX,
+        y: minY,
+        width: maxX - minX + 1,
+        height: maxY - minY + 1,
+      },
+      center: {
+        x: Math.floor((minX + maxX) / 2),
+        y: Math.floor((minY + maxY) / 2),
+      },
+    };
+  }
+
+  return null;
+}
 
 /**
  * マップの幅を取得
