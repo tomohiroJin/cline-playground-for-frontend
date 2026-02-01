@@ -31,7 +31,38 @@ export const createMap = (config: MazeConfig = DEFAULT_CONFIG): GameMap => {
   const maze = generateMaze(config);
 
   // 部屋を抽出（スタート/ゴール配置に使用）
-  const rooms = extractRooms(maze);
+  let rooms = extractRooms(maze);
+
+  // 部屋が見つからない場合は、フォールバック: 最初の床タイルを探す
+  if (rooms.length === 0) {
+    for (let y = 1; y < maze.length - 1; y++) {
+      for (let x = 1; x < maze[0].length - 1; x++) {
+        if (maze[y][x] === TileType.FLOOR) {
+          rooms = [
+            {
+              rect: { x, y, width: 1, height: 1 },
+              center: { x, y },
+            },
+          ];
+          break;
+        }
+      }
+      if (rooms.length > 0) break;
+    }
+  }
+
+  // それでも部屋が見つからない場合は、中心を使用
+  if (rooms.length === 0) {
+    const centerX = Math.floor(maze[0].length / 2);
+    const centerY = Math.floor(maze.length / 2);
+    maze[centerY][centerX] = TileType.FLOOR; // 強制的に床に
+    rooms = [
+      {
+        rect: { x: centerX, y: centerY, width: 1, height: 1 },
+        center: { x: centerX, y: centerY },
+      },
+    ];
+  }
 
   // スタート位置を配置
   const startPos = placeStart(rooms);
