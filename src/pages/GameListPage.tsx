@@ -7,7 +7,7 @@ import fallingShooterCardBg from '../assets/images/falling_shooter_card_bg.webp'
 import mazeHorrorCardBg from '../assets/images/maze_horror_card_bg.webp';
 import deepSeaShooterCardBg from '../assets/images/deep_sea_shooter_card_bg.webp';
 import nonBrakeDescentCardBg from '../assets/images/non_brake_descent_card_bg.webp';
-import ipneMvp0CardBg from '../assets/images/ipne_mvp0_card_bg.webp';
+import ipneCardBg from '../assets/images/ipne_card_bg.webp';
 import {
   PageContainer,
   HeroSection,
@@ -239,24 +239,24 @@ const GameListPage: React.FC = () => {
         </GameCardContainer>
 
         <GameCardContainer
-          onClick={() => navigate('/ipne-mvp0')}
+          onClick={() => navigate('/ipne')}
           role="button"
-          aria-label="IPNE MVP0 ゲームをプレイする"
+          aria-label="IPNE ゲームをプレイする"
           tabIndex={0}
           onKeyDown={e => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
-              navigate('/ipne-mvp0');
+              navigate('/ipne');
             }
           }}
         >
           <CardImageArea
-            $bgImage={ipneMvp0CardBg}
+            $bgImage={ipneCardBg}
             role="img"
-            aria-label="IPNE MVP0のゲーム画面プレビュー"
+            aria-label="IPNEのゲーム画面プレビュー"
           />
           <CardContent>
-            <CardTitle>IPNE MVP0</CardTitle>
+            <CardTitle>IPNE</CardTitle>
             <GameDescription>
               シンプルな迷路脱出ゲーム。
               ゴールを目指して迷宮を探索し、脱出を目指せ。

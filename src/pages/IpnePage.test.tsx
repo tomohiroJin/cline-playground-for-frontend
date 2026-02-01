@@ -1,29 +1,39 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import IpneMvp0Page, { ClearScreen } from './IpneMvp0Page';
+import IpnePage, { ClearScreen } from './IpnePage';
 
-// requestAnimationFrameのモック
+// requestAnimationFrameのモック（無限ループを防ぐため、コールバックは非同期で実行しない）
+let rafCallbacks: FrameRequestCallback[] = [];
+let rafId = 0;
+
 beforeAll(() => {
-  jest.spyOn(window, 'requestAnimationFrame').mockImplementation(cb => {
-    cb(0);
-    return 1;
+  jest.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
+    rafId++;
+    rafCallbacks.push(cb);
+    // コールバックは即座に実行せず、IDだけを返す
+    return rafId;
   });
   jest.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
+});
+
+beforeEach(() => {
+  rafCallbacks = [];
+  rafId = 0;
 });
 
 afterAll(() => {
   jest.restoreAllMocks();
 });
 
-describe('IpneMvp0Page', () => {
+describe('IpnePage', () => {
   describe('タイトル画面', () => {
     test('タイトル画面が正しく表示されること', () => {
-      render(<IpneMvp0Page />);
+      render(<IpnePage />);
       expect(screen.getByRole('button', { name: /ゲームを開始/i })).toBeInTheDocument();
     });
 
     test('ゲーム開始ボタンをクリックするとプロローグ画面に遷移すること', async () => {
-      render(<IpneMvp0Page />);
+      render(<IpnePage />);
       const startButton = screen.getByRole('button', { name: /ゲームを開始/i });
       fireEvent.click(startButton);
 
@@ -35,7 +45,7 @@ describe('IpneMvp0Page', () => {
 
   describe('プロローグ画面', () => {
     test('プロローグ画面でスキップボタンが表示されること', async () => {
-      render(<IpneMvp0Page />);
+      render(<IpnePage />);
       // タイトル画面からプロローグへ遷移
       fireEvent.click(screen.getByRole('button', { name: /ゲームを開始/i }));
 
@@ -47,7 +57,7 @@ describe('IpneMvp0Page', () => {
 
   describe('ゲーム画面', () => {
     test('ゲーム画面にCanvasが表示されること', async () => {
-      render(<IpneMvp0Page />);
+      render(<IpnePage />);
       // タイトル→プロローグ→ゲームへ遷移
       fireEvent.click(screen.getByRole('button', { name: /ゲームを開始/i }));
       await waitFor(() => {
@@ -63,7 +73,7 @@ describe('IpneMvp0Page', () => {
 
   describe('アクセシビリティ', () => {
     test('ゲーム領域に適切なaria属性が設定されていること', async () => {
-      render(<IpneMvp0Page />);
+      render(<IpnePage />);
       fireEvent.click(screen.getByRole('button', { name: /ゲームを開始/i }));
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /スキップ/i })).toBeInTheDocument();
@@ -79,14 +89,14 @@ describe('IpneMvp0Page', () => {
 
   describe('画面遷移の状態初期化', () => {
     test('タイトルから開始した場合、正しく初期化されること', () => {
-      render(<IpneMvp0Page />);
+      render(<IpnePage />);
 
       // タイトル画面が表示される（ゲーム開始ボタンで確認）
       expect(screen.getByRole('button', { name: /ゲームを開始/i })).toBeInTheDocument();
     });
 
     test('プロローグをスキップ後、ゲーム画面が表示されること', async () => {
-      render(<IpneMvp0Page />);
+      render(<IpnePage />);
 
       // タイトル→プロローグ
       fireEvent.click(screen.getByRole('button', { name: /ゲームを開始/i }));

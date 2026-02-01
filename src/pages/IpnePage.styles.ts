@@ -134,12 +134,13 @@ export const GameRegion = styled.div`
   justify-content: center;
   width: 100%;
   height: 100%;
+  gap: 1rem;
 `;
 
 export const Canvas = styled.canvas`
   display: block;
   max-width: 100%;
-  max-height: 70vh;
+  max-height: 60vh;
   width: auto;
   height: auto;
   object-fit: contain;
@@ -149,19 +150,12 @@ export const Canvas = styled.canvas`
 
 // モバイル操作用コントロール
 export const ControlsContainer = styled.div`
-  position: absolute;
-  bottom: 1rem;
-  left: 0;
-  right: 0;
   display: flex;
   justify-content: center;
   gap: 0.5rem;
   z-index: 10;
   padding: 0 1rem;
-
-  @media (min-width: 768px) {
-    bottom: 2rem;
-  }
+  flex-shrink: 0;
 `;
 
 export const ControlButton = styled.button<{ $position: 'left' | 'right' | 'up' | 'down' }>`
@@ -279,5 +273,30 @@ export const BackToTitleButton = styled.button`
   &:hover {
     background: rgba(75, 85, 99, 0.3);
     color: white;
+  }
+`;
+
+// マップ切替ボタン
+export const MapToggleButton = styled.button`
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  font-size: 1.5rem;
+  color: white;
+  transition: all 0.2s;
+  z-index: 10;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+  }
+
+  &:active {
+    transform: scale(0.95);
   }
 `;

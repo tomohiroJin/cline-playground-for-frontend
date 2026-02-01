@@ -7,7 +7,7 @@ import GameListPage from './GameListPage';
 jest.mock('../assets/images/puzzle_card_bg.webp', () => 'puzzle_card_bg.webp');
 jest.mock('../assets/images/air_hockey_card_bg.webp', () => 'air_hockey_card_bg.webp');
 jest.mock('../assets/images/non_brake_descent_card_bg.webp', () => 'non_brake_descent_card_bg.webp');
-jest.mock('../assets/images/ipne_mvp0_card_bg.webp', () => 'ipne_mvp0_card_bg.webp');
+jest.mock('../assets/images/ipne_card_bg.webp', () => 'ipne_card_bg.webp');
 
 describe('GameListPage', () => {
   it('ゲームリストページが正しくレンダリングされること', () => {
