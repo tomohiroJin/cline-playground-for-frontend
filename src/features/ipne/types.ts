@@ -88,3 +88,21 @@ export interface MazeConfig {
   maxDepth: number; // 3-4（5-16部屋）
   loopCount: number; // 0-2
 }
+
+// ===== 自動マッピング関連の型定義 =====
+
+/** タイルの探索状態 */
+export const ExplorationState = {
+  UNEXPLORED: 0, // 未探索（非表示）
+  EXPLORED: 1, // 通過済み（線表示）
+  VISIBLE: 2, // 可視（隣接タイル）
+} as const;
+
+export type ExplorationStateValue = (typeof ExplorationState)[keyof typeof ExplorationState];
+
+/** 自動マッピング状態 */
+export interface AutoMapState {
+  exploration: ExplorationStateValue[][];
+  isMapVisible: boolean; // 常時表示ON/OFF
+  isFullScreen: boolean; // 全画面モード
+}

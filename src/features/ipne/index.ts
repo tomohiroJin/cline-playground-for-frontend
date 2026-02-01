@@ -1,9 +1,9 @@
 /**
- * IPNE MVP0 ゲームロジック エクスポート
+ * IPNE ゲームロジック エクスポート
  */
 
 // 型定義
-export { TileType, Direction, ScreenState } from './types';
+export { TileType, Direction, ScreenState, ExplorationState } from './types';
 export type {
   TileTypeValue,
   GameMap,
@@ -12,6 +12,12 @@ export type {
   DirectionValue,
   ScreenStateValue,
   GameState,
+  MazeConfig,
+  Room,
+  Rectangle,
+  Corridor,
+  ExplorationStateValue,
+  AutoMapState,
 } from './types';
 
 // マップ
@@ -25,3 +31,6 @@ export { isWall, canMove } from './collision';
 
 // ゴール判定
 export { isGoal, findGoalPosition, findStartPosition } from './goal';
+
+// 自動マッピング
+export { initExploration, updateExploration, isGoalDiscovered, drawAutoMap } from './autoMapping';
