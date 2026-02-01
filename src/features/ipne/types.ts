@@ -69,6 +69,7 @@ export interface Rectangle {
 export interface Room {
   rect: Rectangle;
   center: Position;
+  tiles?: Position[]; // 実際の床タイル座標リスト（境界ボックス内の壁を避けるため）
 }
 
 /** 通路データ */

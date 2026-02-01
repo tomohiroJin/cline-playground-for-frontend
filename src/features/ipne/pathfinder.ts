@@ -58,15 +58,42 @@ export function calculateDistances(map: GameMap, start: Position): Map<string, n
 /**
  * スタート位置を配置（外周付近の部屋からランダムに選択）
  */
-export function placeStart(rooms: Room[]): Position {
+export function placeStart(rooms: Room[], mapWidth?: number, mapHeight?: number): Position {
   if (rooms.length === 0) {
     throw new Error('No rooms available for start placement');
   }
 
-  // ランダムに部屋を選択
-  const room = rooms[Math.floor(Math.random() * rooms.length)];
+  // 外周付近の部屋を優先（マップサイズが分かる場合）
+  let candidateRooms = rooms;
+  if (mapWidth && mapHeight) {
+    const perimeterDistance = 10;
+    const perimeterRooms = rooms.filter(room => {
+      const centerX = room.center.x;
+      const centerY = room.center.y;
+      return (
+        centerX < perimeterDistance ||
+        centerX > mapWidth - perimeterDistance ||
+        centerY < perimeterDistance ||
+        centerY > mapHeight - perimeterDistance
+      );
+    });
 
-  // 部屋の中心付近にランダム配置
+    // 外周付近の部屋があればそれを使用、なければ全部屋から選択
+    if (perimeterRooms.length > 0) {
+      candidateRooms = perimeterRooms;
+    }
+  }
+
+  // 候補からランダムに部屋を選択
+  const room = candidateRooms[Math.floor(Math.random() * candidateRooms.length)];
+
+  // 部屋の実際のタイル座標リストがあればそこから選択（壁を避ける）
+  if (room.tiles && room.tiles.length > 0) {
+    const randomTile = room.tiles[Math.floor(Math.random() * room.tiles.length)];
+    return randomTile;
+  }
+
+  // tilesがない場合は、部屋の中心付近にランダム配置（後方互換性）
   const { x, y, width, height } = room.rect;
   const startX = x + Math.floor(Math.random() * width);
   const startY = y + Math.floor(Math.random() * height);

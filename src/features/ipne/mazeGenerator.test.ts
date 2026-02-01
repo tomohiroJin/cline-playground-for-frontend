@@ -56,17 +56,21 @@ describe('mazeGenerator', () => {
       expect(floorCount).toBeGreaterThan(100);
     });
 
-    test('毎回異なる迷路が生成される', () => {
-      const maze1 = generateMaze(testConfig);
-      const maze2 = generateMaze(testConfig);
+    test('迷路がランダムに生成される（複数回生成で少なくとも1回は異なる）', () => {
+      const mazes = [];
+      const attempts = 5;
 
-      // 配列の文字列表現を比較
-      const str1 = JSON.stringify(maze1);
-      const str2 = JSON.stringify(maze2);
+      // 複数回生成して、少なくとも1つは異なる迷路が生成されることを確認
+      for (let i = 0; i < attempts; i++) {
+        mazes.push(generateMaze(testConfig));
+      }
 
-      // 異なる迷路が生成されていることを確認
-      // （ランダム性により、稀に同じになる可能性もあるが、確率的に低い）
-      expect(str1).not.toBe(str2);
+      // 文字列化して比較
+      const stringified = mazes.map(m => JSON.stringify(m));
+
+      // 少なくとも1つは異なる迷路が生成されていることを確認
+      const allSame = stringified.every(str => str === stringified[0]);
+      expect(allSame).toBe(false);
     });
   });
 });

@@ -413,7 +413,7 @@ const IpnePage: React.FC = () => {
   const handleMapToggle = useCallback(() => {
     setMapState(prev => ({
       ...prev,
-      isFullScreen: !prev.isFullScreen,
+      isMapVisible: !prev.isMapVisible,
     }));
   }, []);
 

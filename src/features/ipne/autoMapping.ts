@@ -118,19 +118,19 @@ export function drawAutoMap(
   ctx.lineWidth = 2;
   ctx.strokeRect(mapX, mapY, mapSize, mapSize);
 
-  // 探索済みエリアを描画（通過済みのみ）
-  ctx.strokeStyle = 'rgba(100, 150, 255, 0.6)';
-  ctx.lineWidth = 1;
-
+  // 探索エリアを描画（可視・通過済み）
   for (let y = 0; y < mapHeight; y++) {
     for (let x = 0; x < mapWidth; x++) {
-      if (exploration[y][x] === ExplorationState.EXPLORED) {
-        const px = mapX + x * tileSize;
-        const py = mapY + y * tileSize;
+      const state = exploration[y][x];
+      const px = mapX + x * tileSize;
+      const py = mapY + y * tileSize;
+      const centerX = px + tileSize / 2;
+      const centerY = py + tileSize / 2;
 
-        // 十字線で通過済みを表現
-        const centerX = px + tileSize / 2;
-        const centerY = py + tileSize / 2;
+      if (state === ExplorationState.EXPLORED) {
+        // 通過済み: 十字線（濃い青）
+        ctx.strokeStyle = 'rgba(100, 150, 255, 0.6)';
+        ctx.lineWidth = 1;
         const crossSize = tileSize * 0.3;
 
         ctx.beginPath();
@@ -139,6 +139,12 @@ export function drawAutoMap(
         ctx.moveTo(centerX, centerY - crossSize);
         ctx.lineTo(centerX, centerY + crossSize);
         ctx.stroke();
+      } else if (state === ExplorationState.VISIBLE) {
+        // 可視: 小さな点（淡い青）
+        ctx.fillStyle = 'rgba(100, 150, 255, 0.3)';
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, tileSize * 0.15, 0, Math.PI * 2);
+        ctx.fill();
       }
     }
   }

@@ -64,8 +64,8 @@ export const createMap = (config: MazeConfig = DEFAULT_CONFIG): GameMap => {
     ];
   }
 
-  // スタート位置を配置
-  const startPos = placeStart(rooms);
+  // スタート位置を配置（外周付近の部屋を優先）
+  const startPos = placeStart(rooms, maze[0].length, maze.length);
 
   // ゴール位置を配置（スタートから最遠地点）
   const goalPos = placeGoal(maze, startPos);
@@ -143,6 +143,7 @@ function floodFill(map: GameMap, startX: number, startY: number, visited: Set<st
         x: Math.floor((minX + maxX) / 2),
         y: Math.floor((minY + maxY) / 2),
       },
+      tiles, // 実際の床タイル座標リストを保持
     };
   }
 
