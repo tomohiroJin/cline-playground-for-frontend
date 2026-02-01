@@ -17,6 +17,9 @@ const NonBrakeDescentPage = lazy(() => import('./pages/NonBrakeDescentPage'));
 const DeepSeaShooterPage = lazy(
   () => import(/* webpackChunkName: "DeepSeaShooterPage" */ './pages/DeepSeaShooterPage')
 );
+const IpneMvp0Page = lazy(
+  () => import(/* webpackChunkName: "IpneMvp0Page" */ './pages/IpneMvp0Page')
+);
 
 // アプリケーションのルートコンテナ
 const AppContainer = styled.div`
@@ -144,6 +147,7 @@ const App: React.FC = () => {
                 <Route path="/maze-horror" element={<MazeHorrorPage />} />
                 <Route path="/non-brake-descent" element={<NonBrakeDescentPage />} />
                 <Route path="/deep-sea-shooter" element={<DeepSeaShooterPage />} />
+                <Route path="/ipne-mvp0" element={<IpneMvp0Page />} />
               </Routes>
             </main>
           </Suspense>
