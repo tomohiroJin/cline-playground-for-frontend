@@ -361,7 +361,7 @@ const IpnePage: React.FC = () => {
 
       // 探索状態を初期化
       const exploration = initExploration(newMap[0].length, newMap.length);
-      const updatedExploration = updateExploration(exploration, startPos);
+      const updatedExploration = updateExploration(exploration, startPos, newMap);
       setMapState({
         exploration: updatedExploration,
         isMapVisible: true,
@@ -398,7 +398,7 @@ const IpnePage: React.FC = () => {
       // 探索状態を更新
       setMapState(prev => ({
         ...prev,
-        exploration: updateExploration(prev.exploration, newPlayer),
+        exploration: updateExploration(prev.exploration, newPlayer, map),
       }));
 
       // ゴール判定
@@ -409,12 +409,21 @@ const IpnePage: React.FC = () => {
     [player, map]
   );
 
-  // マップ表示切替ハンドラー
+  // マップ表示切替ハンドラー（小窓 → 全画面 → 非表示 → 小窓）
   const handleMapToggle = useCallback(() => {
-    setMapState(prev => ({
-      ...prev,
-      isMapVisible: !prev.isMapVisible,
-    }));
+    setMapState(prev => {
+      // 現在の状態に応じて次の状態に遷移
+      if (!prev.isMapVisible) {
+        // 非表示 → 小窓
+        return { ...prev, isMapVisible: true, isFullScreen: false };
+      } else if (!prev.isFullScreen) {
+        // 小窓 → 全画面
+        return { ...prev, isMapVisible: true, isFullScreen: true };
+      } else {
+        // 全画面 → 非表示
+        return { ...prev, isMapVisible: false, isFullScreen: false };
+      }
+    });
   }, []);
 
   // 画面に応じたコンテンツをレンダリング

@@ -63,10 +63,35 @@ export function placeStart(rooms: Room[], mapWidth?: number, mapHeight?: number)
     throw new Error('No rooms available for start placement');
   }
 
-  // 外周付近の部屋を優先（マップサイズが分かる場合）
-  let candidateRooms = rooms;
+  const perimeterDistance = 10;
+
+  // マップサイズが指定されている場合は外周タイルのみから選択
   if (mapWidth && mapHeight) {
-    const perimeterDistance = 10;
+    // 全部屋の床タイルから外周付近のタイルのみを抽出
+    const perimeterTiles: Position[] = [];
+
+    for (const room of rooms) {
+      if (room.tiles && room.tiles.length > 0) {
+        for (const tile of room.tiles) {
+          // タイル座標が外周付近かチェック
+          if (
+            tile.x < perimeterDistance ||
+            tile.x >= mapWidth - perimeterDistance ||
+            tile.y < perimeterDistance ||
+            tile.y >= mapHeight - perimeterDistance
+          ) {
+            perimeterTiles.push(tile);
+          }
+        }
+      }
+    }
+
+    // 外周タイルがあればそこから選択
+    if (perimeterTiles.length > 0) {
+      return perimeterTiles[Math.floor(Math.random() * perimeterTiles.length)];
+    }
+
+    // 外周タイルがない場合は、外周付近の部屋（中心座標ベース）から選択
     const perimeterRooms = rooms.filter(room => {
       const centerX = room.center.x;
       const centerY = room.center.y;
@@ -78,19 +103,20 @@ export function placeStart(rooms: Room[], mapWidth?: number, mapHeight?: number)
       );
     });
 
-    // 外周付近の部屋があればそれを使用、なければ全部屋から選択
     if (perimeterRooms.length > 0) {
-      candidateRooms = perimeterRooms;
+      const room = perimeterRooms[Math.floor(Math.random() * perimeterRooms.length)];
+      if (room.tiles && room.tiles.length > 0) {
+        return room.tiles[Math.floor(Math.random() * room.tiles.length)];
+      }
     }
   }
 
-  // 候補からランダムに部屋を選択
-  const room = candidateRooms[Math.floor(Math.random() * candidateRooms.length)];
+  // フォールバック: 全部屋からランダム選択
+  const room = rooms[Math.floor(Math.random() * rooms.length)];
 
   // 部屋の実際のタイル座標リストがあればそこから選択（壁を避ける）
   if (room.tiles && room.tiles.length > 0) {
-    const randomTile = room.tiles[Math.floor(Math.random() * room.tiles.length)];
-    return randomTile;
+    return room.tiles[Math.floor(Math.random() * room.tiles.length)];
   }
 
   // tilesがない場合は、部屋の中心付近にランダム配置（後方互換性）

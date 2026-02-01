@@ -2,7 +2,7 @@
  * 自動マッピング機能
  * プレイヤーの移動に応じて探索状態を更新し、マップを描画する
  */
-import { ExplorationState, ExplorationStateValue, Position, GameMap } from './types';
+import { ExplorationState, ExplorationStateValue, Position, GameMap, TileType } from './types';
 
 /**
  * 探索状態を初期化（全て未探索）
@@ -14,11 +14,12 @@ export function initExploration(width: number, height: number): ExplorationState
 /**
  * 探索状態を更新
  * - プレイヤー位置を「通過済み」に
- * - 隣接8マスを「可視」に
+ * - 隣接8マスを「可視」に（ただし壁は除外）
  */
 export function updateExploration(
   exploration: ExplorationStateValue[][],
-  player: Position
+  player: Position,
+  map: GameMap
 ): ExplorationStateValue[][] {
   // 新しい配列を作成（イミュータブル）
   const updated = exploration.map(row => [...row]);
@@ -32,7 +33,7 @@ export function updateExploration(
     updated[y][x] = ExplorationState.EXPLORED;
   }
 
-  // 隣接8マスを可視に
+  // 隣接8マスを可視に（壁は除外）
   for (let dy = -1; dy <= 1; dy++) {
     for (let dx = -1; dx <= 1; dx++) {
       if (dx === 0 && dy === 0) continue; // 中心（プレイヤー位置）はスキップ
@@ -41,6 +42,11 @@ export function updateExploration(
       const ny = y + dy;
 
       if (ny >= 0 && ny < height && nx >= 0 && nx < width) {
+        // 壁タイルは可視にしない
+        if (map[ny][nx] === TileType.WALL) {
+          continue;
+        }
+
         // 未探索の場合のみ可視にする（通過済みは上書きしない）
         if (updated[ny][nx] === ExplorationState.UNEXPLORED) {
           updated[ny][nx] = ExplorationState.VISIBLE;
