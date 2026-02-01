@@ -156,3 +156,47 @@ export function isConnected(map: GameMap, start: Position, goal: Position): bool
   const key = `${goal.x},${goal.y}`;
   return distances.has(key);
 }
+
+/**
+ * スタートからゴールまでの最短経路を計算
+ * @returns 経路（スタートからゴールまでの座標配列）、到達不可能な場合は空配列
+ */
+export function findPath(map: GameMap, start: Position, goal: Position): Position[] {
+  const distances = calculateDistances(map, start);
+  const goalKey = `${goal.x},${goal.y}`;
+
+  // ゴールに到達不可能
+  if (!distances.has(goalKey)) {
+    return [];
+  }
+
+  // ゴールから逆算してパスを構築
+  const path: Position[] = [goal];
+  let current = goal;
+
+  while (current.x !== start.x || current.y !== start.y) {
+    const currentDist = distances.get(`${current.x},${current.y}`)!;
+
+    // 4方向から距離が1小さい隣接タイルを探す
+    const directions = [
+      { x: 0, y: -1 },
+      { x: 0, y: 1 },
+      { x: -1, y: 0 },
+      { x: 1, y: 0 },
+    ];
+
+    for (const dir of directions) {
+      const prev: Position = { x: current.x + dir.x, y: current.y + dir.y };
+      const prevKey = `${prev.x},${prev.y}`;
+      const prevDist = distances.get(prevKey);
+
+      if (prevDist !== undefined && prevDist === currentDist - 1) {
+        path.unshift(prev);
+        current = prev;
+        break;
+      }
+    }
+  }
+
+  return path;
+}

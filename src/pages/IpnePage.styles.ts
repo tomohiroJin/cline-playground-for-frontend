@@ -131,20 +131,23 @@ export const GameRegion = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   width: 100%;
   height: 100%;
+  padding-top: 1rem;
 `;
 
 export const Canvas = styled.canvas`
   display: block;
   max-width: 100%;
-  max-height: 70vh;
+  max-height: 55vh;
   width: auto;
   height: auto;
   object-fit: contain;
   border-radius: 0.5rem;
   box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+  margin-bottom: auto;
+  margin-top: 1rem;
 `;
 
 // モバイル操作用コントロール

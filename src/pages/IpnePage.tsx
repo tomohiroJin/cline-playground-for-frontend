@@ -20,6 +20,25 @@ import {
   initExploration,
   updateExploration,
   drawAutoMap,
+  calculateViewport,
+  getCanvasSize,
+  Viewport,
+  VIEWPORT_CONFIG,
+  DebugState,
+  initDebugState,
+  toggleDebugOption,
+  drawDebugPanel,
+  drawCoordinateOverlay,
+  findPath,
+  Position,
+  DirectionValue,
+  MovementState,
+  getDirectionFromKey,
+  startMovement,
+  stopMovement,
+  updateMovement,
+  INITIAL_MOVEMENT_STATE,
+  DEFAULT_MOVEMENT_CONFIG,
 } from '../features/ipne';
 import {
   PageContainer,
@@ -45,7 +64,6 @@ import prologueBg from '../assets/images/ipne_prologue_bg.webp';
 
 // 描画設定
 const CONFIG = {
-  tileSize: 32,
   playerColor: '#667eea',
   wallColor: '#374151',
   floorColor: '#1f2937',
@@ -146,11 +164,14 @@ const GameScreen: React.FC<{
   player: Player;
   mapState: AutoMapState;
   goalPos: { x: number; y: number };
+  debugState: DebugState;
   onMove: (direction: (typeof Direction)[keyof typeof Direction]) => void;
   onMapToggle: () => void;
-}> = ({ map, player, mapState, goalPos, onMove, onMapToggle }) => {
+  onDebugToggle: (option: keyof Omit<DebugState, 'enabled'>) => void;
+}> = ({ map, player, mapState, goalPos, debugState, onMove, onMapToggle, onDebugToggle }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const keysRef = useRef<Record<string, boolean>>({});
+  const movementStateRef = useRef<MovementState>(INITIAL_MOVEMENT_STATE);
+  const animationFrameRef = useRef<number | null>(null);
 
   // Canvas描画
   useEffect(() => {
@@ -167,22 +188,74 @@ const GameScreen: React.FC<{
     const mapHeight = map.length;
     const { wallColor, floorColor, goalColor, startColor, playerColor } = CONFIG;
 
-    // タイルサイズを動的に計算（最大800x600のCanvas）
-    const maxCanvasWidth = 800;
-    const maxCanvasHeight = 600;
-    const tileSize = Math.min(
-      Math.floor(maxCanvasWidth / mapWidth),
-      Math.floor(maxCanvasHeight / mapHeight)
-    );
+    // デバッグモードで全体表示の場合とビューポート表示の場合で分岐
+    const useFullMap = debugState.enabled && debugState.showFullMap;
 
-    // キャンバスサイズ設定
-    canvas.width = mapWidth * tileSize;
-    canvas.height = mapHeight * tileSize;
+    let tileSize: number;
+    let offsetX = 0;
+    let offsetY = 0;
+    let viewport: Viewport;
+
+    if (useFullMap) {
+      // 全体マップ表示：マップ全体が収まるようにタイルサイズを計算
+      const canvasSize = getCanvasSize();
+      canvas.width = canvasSize.width;
+      canvas.height = canvasSize.height;
+      tileSize = Math.min(
+        Math.floor(canvasSize.width / mapWidth),
+        Math.floor(canvasSize.height / mapHeight)
+      );
+      // 中央揃え
+      offsetX = Math.floor((canvasSize.width - mapWidth * tileSize) / 2);
+      offsetY = Math.floor((canvasSize.height - mapHeight * tileSize) / 2);
+      // ダミーのビューポート（全体表示用）
+      viewport = { x: 0, y: 0, width: mapWidth, height: mapHeight, tileSize };
+    } else {
+      // 通常のビューポート表示
+      viewport = calculateViewport(player, mapWidth, mapHeight);
+      tileSize = viewport.tileSize;
+      const canvasSize = getCanvasSize();
+      canvas.width = canvasSize.width;
+      canvas.height = canvasSize.height;
+    }
+
+    // 背景をクリア
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // スタート位置を探す（パス描画用）
+    let startPos: Position | null = null;
+    for (let y = 0; y < mapHeight && !startPos; y++) {
+      for (let x = 0; x < mapWidth; x++) {
+        if (map[y][x] === TileType.START) {
+          startPos = { x, y };
+          break;
+        }
+      }
+    }
+
+    // パス計算（デバッグモードでパス表示が有効な場合）
+    let path: Position[] = [];
+    if (debugState.enabled && debugState.showPath && startPos) {
+      path = findPath(map, startPos, goalPos);
+    }
 
     // マップ描画
-    for (let y = 0; y < mapHeight; y++) {
-      for (let x = 0; x < mapWidth; x++) {
-        const tile = map[y][x];
+    const drawTileCount = useFullMap ? mapWidth * mapHeight : viewport.width * viewport.height;
+    const drawWidth = useFullMap ? mapWidth : viewport.width;
+    const drawHeight = useFullMap ? mapHeight : viewport.height;
+
+    for (let vy = 0; vy < drawHeight; vy++) {
+      for (let vx = 0; vx < drawWidth; vx++) {
+        const worldX = useFullMap ? vx : viewport.x + vx;
+        const worldY = useFullMap ? vy : viewport.y + vy;
+
+        // マップ範囲外は描画しない
+        if (worldX < 0 || worldX >= mapWidth || worldY < 0 || worldY >= mapHeight) {
+          continue;
+        }
+
+        const tile = map[worldY][worldX];
         let color = floorColor;
 
         if (tile === TileType.WALL) color = wallColor;
@@ -190,31 +263,112 @@ const GameScreen: React.FC<{
         else if (tile === TileType.START) color = startColor;
 
         ctx.fillStyle = color;
-        ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+        ctx.fillRect(offsetX + vx * tileSize, offsetY + vy * tileSize, tileSize, tileSize);
 
-        // グリッド線
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-        ctx.strokeRect(x * tileSize, y * tileSize, tileSize, tileSize);
+        // グリッド線（全体表示時は省略）
+        if (!useFullMap) {
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+          ctx.strokeRect(offsetX + vx * tileSize, offsetY + vy * tileSize, tileSize, tileSize);
+        }
       }
     }
 
-    // プレイヤー描画（円）
+    // パス描画（デバッグモードでパス表示が有効な場合）
+    if (debugState.enabled && debugState.showPath && path.length > 1) {
+      ctx.strokeStyle = '#ff00ff';
+      ctx.lineWidth = Math.max(2, tileSize / 4);
+      ctx.beginPath();
+
+      for (let i = 0; i < path.length; i++) {
+        const p = path[i];
+        const screenX = useFullMap
+          ? offsetX + p.x * tileSize + tileSize / 2
+          : (p.x - viewport.x) * tileSize + tileSize / 2;
+        const screenY = useFullMap
+          ? offsetY + p.y * tileSize + tileSize / 2
+          : (p.y - viewport.y) * tileSize + tileSize / 2;
+
+        if (i === 0) {
+          ctx.moveTo(screenX, screenY);
+        } else {
+          ctx.lineTo(screenX, screenY);
+        }
+      }
+      ctx.stroke();
+    }
+
+    // プレイヤー描画
+    const playerScreenX = useFullMap
+      ? offsetX + player.x * tileSize + tileSize / 2
+      : (player.x - viewport.x) * tileSize + tileSize / 2;
+    const playerScreenY = useFullMap
+      ? offsetY + player.y * tileSize + tileSize / 2
+      : (player.y - viewport.y) * tileSize + tileSize / 2;
+
+    const playerRadius = useFullMap ? Math.max(tileSize / 2 - 1, 2) : tileSize / 2 - 4;
+
     ctx.fillStyle = playerColor;
     ctx.beginPath();
-    ctx.arc(
-      player.x * tileSize + tileSize / 2,
-      player.y * tileSize + tileSize / 2,
-      tileSize / 2 - 4,
-      0,
-      Math.PI * 2
-    );
+    ctx.arc(playerScreenX, playerScreenY, playerRadius, 0, Math.PI * 2);
     ctx.fill();
 
-    // 自動マップ描画
-    if (mapState.isMapVisible) {
+    // プレイヤーの縁取り（視認性向上）
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.lineWidth = useFullMap ? 1 : 2;
+    ctx.beginPath();
+    ctx.arc(playerScreenX, playerScreenY, playerRadius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // 自動マップ描画（全体表示モードでは非表示）
+    if (mapState.isMapVisible && !useFullMap) {
       drawAutoMap(ctx, map, mapState.exploration, player, goalPos, mapState.isFullScreen);
     }
-  }, [map, player, mapState, goalPos]);
+
+    // デバッグ情報描画
+    if (debugState.enabled) {
+      drawDebugPanel(ctx, debugState, {
+        playerX: player.x,
+        playerY: player.y,
+        viewportX: viewport.x,
+        viewportY: viewport.y,
+        mapWidth,
+        mapHeight,
+      });
+
+      // 座標オーバーレイ
+      if (debugState.showCoordinates) {
+        drawCoordinateOverlay(ctx, player.x, player.y, playerScreenX, playerScreenY);
+      }
+    }
+  }, [map, player, mapState, goalPos, debugState]);
+
+  // 連続移動のアニメーションループ
+  useEffect(() => {
+    const tick = () => {
+      const currentTime = Date.now();
+      const { shouldMove, newState } = updateMovement(
+        movementStateRef.current,
+        currentTime,
+        DEFAULT_MOVEMENT_CONFIG
+      );
+
+      movementStateRef.current = newState;
+
+      if (shouldMove && newState.activeDirection) {
+        onMove(newState.activeDirection);
+      }
+
+      animationFrameRef.current = requestAnimationFrame(tick);
+    };
+
+    animationFrameRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [onMove]);
 
   // キーボード入力
   useEffect(() => {
@@ -228,32 +382,57 @@ const GameScreen: React.FC<{
         return;
       }
 
-      if (keysRef.current[key]) return; // 連続入力防止
-      keysRef.current[key] = true;
+      // デバッグモード時のキー（Shift + キーで操作、移動キーと競合しない）
+      if (debugState.enabled && e.shiftKey) {
+        if (key === 'd') {
+          e.preventDefault();
+          onDebugToggle('showPanel');
+          return;
+        } else if (key === 'f') {
+          e.preventDefault();
+          onDebugToggle('showFullMap');
+          return;
+        } else if (key === 'c') {
+          e.preventDefault();
+          onDebugToggle('showCoordinates');
+          return;
+        } else if (key === 'p') {
+          e.preventDefault();
+          onDebugToggle('showPath');
+          return;
+        }
+      }
 
-      if (key === 'w' || key === 'arrowup') {
+      // 移動キーの場合、連続移動状態を開始
+      const direction = getDirectionFromKey(e.key);
+      if (direction) {
         e.preventDefault();
-        onMove(Direction.UP);
-      } else if (key === 's' || key === 'arrowdown') {
-        e.preventDefault();
-        onMove(Direction.DOWN);
-      } else if (key === 'a' || key === 'arrowleft') {
-        e.preventDefault();
-        onMove(Direction.LEFT);
-      } else if (key === 'd' || key === 'arrowright') {
-        e.preventDefault();
-        onMove(Direction.RIGHT);
+        const currentTime = Date.now();
+
+        // 最初の1マス目は即座に移動
+        if (movementStateRef.current.activeDirection !== direction) {
+          onMove(direction);
+        }
+
+        movementStateRef.current = startMovement(
+          movementStateRef.current,
+          direction,
+          currentTime
+        );
       }
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
-      const key = e.key.toLowerCase();
-      keysRef.current[key] = false;
+      // 移動キーの場合、連続移動状態を停止
+      const direction = getDirectionFromKey(e.key);
+      if (direction) {
+        movementStateRef.current = stopMovement(movementStateRef.current, direction);
+      }
     };
 
     // フォーカス喪失時にすべてのキー状態をリセット
     const handleBlur = () => {
-      keysRef.current = {};
+      movementStateRef.current = INITIAL_MOVEMENT_STATE;
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -265,7 +444,7 @@ const GameScreen: React.FC<{
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);
     };
-  }, [onMove, onMapToggle]);
+  }, [onMove, onMapToggle, debugState.enabled, onDebugToggle]);
 
   // モバイル用タッチ操作
   const handleTouchMove = useCallback(
@@ -347,6 +526,7 @@ const IpnePage: React.FC = () => {
     isMapVisible: true,
     isFullScreen: false,
   });
+  const [debugState, setDebugState] = useState<DebugState>(() => initDebugState());
 
   // ゲーム初期化
   const initGame = useCallback(() => {
@@ -426,6 +606,14 @@ const IpnePage: React.FC = () => {
     });
   }, []);
 
+  // デバッグオプション切替ハンドラー
+  const handleDebugToggle = useCallback(
+    (option: keyof Omit<DebugState, 'enabled'>) => {
+      setDebugState(prev => toggleDebugOption(prev, option));
+    },
+    []
+  );
+
   // 画面に応じたコンテンツをレンダリング
   return (
     <PageContainer>
@@ -437,8 +625,10 @@ const IpnePage: React.FC = () => {
           player={player}
           mapState={mapState}
           goalPos={goalPos}
+          debugState={debugState}
           onMove={handleMove}
           onMapToggle={handleMapToggle}
+          onDebugToggle={handleDebugToggle}
         />
       )}
       {screen === ScreenState.CLEAR && (

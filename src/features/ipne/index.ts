@@ -32,5 +32,41 @@ export { isWall, canMove } from './collision';
 // ゴール判定
 export { isGoal, findGoalPosition, findStartPosition } from './goal';
 
+// 経路探索
+export { findPath } from './pathfinder';
+
 // 自動マッピング
 export { initExploration, updateExploration, isGoalDiscovered, drawAutoMap } from './autoMapping';
+
+// ビューポート
+export {
+  calculateViewport,
+  worldToScreen,
+  isPlayerInViewport,
+  getCanvasSize,
+  VIEWPORT_CONFIG,
+} from './viewport';
+export type { Viewport } from './viewport';
+
+// デバッグ
+export {
+  isDebugMode,
+  initDebugState,
+  toggleDebugOption,
+  drawDebugPanel,
+  drawCoordinateOverlay,
+  DEFAULT_DEBUG_STATE,
+} from './debug';
+export type { DebugState } from './debug';
+
+// 連続移動
+export {
+  getDirectionFromKey,
+  isMovementKey,
+  startMovement,
+  stopMovement,
+  updateMovement,
+  DEFAULT_MOVEMENT_CONFIG,
+  INITIAL_MOVEMENT_STATE,
+} from './movement';
+export type { MovementConfig, MovementState } from './movement';

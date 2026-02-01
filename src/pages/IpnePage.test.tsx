@@ -2,13 +2,23 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import IpnePage, { ClearScreen } from './IpnePage';
 
-// requestAnimationFrameのモック
+// requestAnimationFrameのモック（無限ループを防ぐため、コールバックは非同期で実行しない）
+let rafCallbacks: FrameRequestCallback[] = [];
+let rafId = 0;
+
 beforeAll(() => {
-  jest.spyOn(window, 'requestAnimationFrame').mockImplementation(cb => {
-    cb(0);
-    return 1;
+  jest.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
+    rafId++;
+    rafCallbacks.push(cb);
+    // コールバックは即座に実行せず、IDだけを返す
+    return rafId;
   });
   jest.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
+});
+
+beforeEach(() => {
+  rafCallbacks = [];
+  rafId = 0;
 });
 
 afterAll(() => {

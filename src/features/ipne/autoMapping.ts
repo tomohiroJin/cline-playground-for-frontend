@@ -168,8 +168,18 @@ export function drawAutoMap(
   const playerX = mapX + player.x * tileSize + tileSize / 2;
   const playerY = mapY + player.y * tileSize + tileSize / 2;
 
+  // プレイヤーマーカーを視認可能なサイズに（最小4px）
+  const playerRadius = Math.max(tileSize * 0.4, 4);
+
   ctx.fillStyle = '#667eea';
   ctx.beginPath();
-  ctx.arc(playerX, playerY, tileSize * 0.4, 0, Math.PI * 2);
+  ctx.arc(playerX, playerY, playerRadius, 0, Math.PI * 2);
   ctx.fill();
+
+  // プレイヤー位置をより見やすくするための白い縁取り
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(playerX, playerY, playerRadius, 0, Math.PI * 2);
+  ctx.stroke();
 }

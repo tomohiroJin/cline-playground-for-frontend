@@ -9,7 +9,9 @@
 | フェーズ2: 自動マッピング | ✅ 完了 | 4/4 |
 | フェーズ3: ゲーム画面統合 | ✅ 完了 | 3/3 |
 | フェーズ4: 調整・検証 | ⚠️ 一部完了 | 2/6 |
-| **合計** | **82%** | **18/22** |
+| フェーズ5: 動作確認FB対応 | ✅ 完了 | 5/5 |
+| フェーズ6: UI/操作性改善 | ✅ 完了 | 4/4 |
+| **合計** | **92%** | **27/30** |
 
 ---
 
@@ -41,7 +43,7 @@
   - [x] スタート：外周付近の部屋に配置
   - [x] ゴール：最遠地点に配置
 - [x] 迷路サイズ調整（1、2分規模：60x60〜80x80）
-  > 実装値: 70x70、maxDepth=4（5-16部屋）、corridorWidth=3、loopCount=1
+  > 実装値: 70x70、maxDepth=5（8-32部屋）、corridorWidth=3、loopCount=2（Phase 5で更新）
 
 ---
 
@@ -91,7 +93,7 @@
   - [x] 部屋数調整
     > maxDepth=4で5-16部屋を生成
 - [x] `npm test` 実行で全体パスを確認
-  > ✅ 37テストスイート、214テスト全てパス
+  > ✅ 38テストスイート、228テスト全てパス（Phase 5完了後）
 
 ### プレイ体験検証（手動）
 
@@ -119,10 +121,145 @@
 
 ---
 
+## フェーズ5: 動作確認フィードバック対応
+
+> 手動テストで発見された5つの問題に対応
+
+### 5.1 ビューポート/カメラシステム（課題#2, #3対応）
+
+- [x] `src/features/ipne/viewport.ts` 新規作成
+  - [x] `Viewport` 型定義（x, y, width, height, tileSize）
+  - [x] `VIEWPORT_CONFIG` 定数（15x11タイル、48px固定）
+    > Phase 5初期値は25x18/32px、Phase 6で15x11/48pxに調整
+  - [x] `calculateViewport()` 関数実装
+    - [x] プレイヤー中心配置
+    - [x] マップ端でのクランプ処理
+- [x] `src/features/ipne/viewport.test.ts` 新規作成
+  - [x] ビューポート計算テスト
+  - [x] 端クランプテスト
+  > カバレッジ100%達成
+- [x] `src/pages/IpnePage.tsx` Canvas描画更新
+  - [x] ビューポート内タイルのみ描画
+  - [x] プレイヤーをビューポート相対座標で描画
+  - [x] タイルサイズ48px固定（Phase 6で更新）
+- [x] `src/features/ipne/index.ts` エクスポート追加
+
+### 5.2 ミニマップ位置調整（課題#1対応）
+
+- [x] `src/features/ipne/autoMapping.ts` 修正
+  - [x] 小窓モード位置を右上に固定（D-padと重ならない）
+  - [x] プレイヤーマーカー最小サイズ保証（4px以上）
+  - [x] プレイヤーマーカーに白い縁取りを追加（視認性向上）
+
+### 5.3 迷路複雑化（課題#4対応）
+
+- [x] `src/features/ipne/map.ts` DEFAULT_CONFIG 更新
+  - [x] `maxDepth: 4 → 5`（部屋数増加）
+  - [x] `loopCount: 1 → 2`（分岐増加）
+
+### 5.4 デバッグモード（課題#5対応）
+
+- [x] `src/features/ipne/debug.ts` 新規作成
+  - [x] `isDebugMode()` 関数（URLパラメータ `?debug=1` 判定）
+  - [x] `DebugState` 型定義（`showPanel` 追加）
+  - [x] `initDebugState()` 関数
+  - [x] `toggleDebugOption()` 関数
+  - [x] `drawDebugPanel()` 関数（`showPanel` で表示制御）
+  - [x] `drawCoordinateOverlay()` 関数
+- [x] `src/features/ipne/pathfinder.ts` に `findPath()` 関数追加
+  - [x] スタート→ゴールの最短経路を計算
+- [x] `src/pages/IpnePage.tsx` デバッグUI追加
+  - [x] `Shift+D` キーでデバッグパネル表示切替（移動キーと競合しない）
+  - [x] `Shift+F` キーで迷路全体表示切替（実際に全体マップを描画）
+  - [x] `Shift+C` キーで座標表示切替
+  - [x] `Shift+P` キーでパス表示切替（実際に最短経路を描画）
+- [x] `src/features/ipne/debug.test.ts` テスト追加
+  - [x] toggleDebugOption のテスト（8テスト）
+
+### 5.5 テスト・検証
+
+- [x] 全テスト実行 `npm test`
+  > ✅ 38テストスイート、228テスト全てパス
+- [ ] 手動動作確認
+  - [ ] プレイヤー周辺のみ表示される
+  - [ ] ゴールが最初から見えない
+  - [ ] プレイヤーが視認できる
+  - [ ] ミニマップがD-padと重ならない
+  - [ ] `/ipne?debug=1` でデバッグモード有効
+
+---
+
+## フェーズ6: UI/操作性改善
+
+> Phase 5の手動テストでのフィードバック対応
+
+### 6.1 ビューポートサイズ調整（課題#1対応）
+
+- [x] `src/features/ipne/viewport.ts` 修正
+  - [x] `tilesX: 25 → 15`（視界を狭くして探索感を増す）
+  - [x] `tilesY: 18 → 11`（視界を狭くして探索感を増す）
+  - [x] `tileSize: 32 → 48`（プレイヤーを見やすくするため拡大）
+  - [x] Canvas解像度: 800x576px → 720x528px
+- [x] `src/features/ipne/viewport.test.ts` テスト更新
+  - [x] 新しい設定値に合わせてテスト修正
+
+### 6.2 メイン画面位置調整（課題#2対応）
+
+- [x] `src/pages/IpnePage.styles.ts` 修正
+  - [x] `GameRegion`: `justify-content: flex-start` に変更
+  - [x] `Canvas`: `max-height: 55vh`、`margin-top: 1rem`、`margin-bottom: auto` 追加
+  - [x] D-padコントローラーとの重なりを回避
+
+### 6.3 連続移動機能（課題#4対応）
+
+- [x] `src/features/ipne/movement.ts` 新規作成
+  - [x] `MovementConfig` 型定義（moveInterval, initialDelay）
+  - [x] `DEFAULT_MOVEMENT_CONFIG` 定数（100ms間隔、150ms初回遅延）
+  - [x] `MovementState` 型定義（activeDirection, pressStartTime, lastMoveTime, isRepeating）
+  - [x] `getDirectionFromKey()` 関数実装
+  - [x] `isMovementKey()` 関数実装
+  - [x] `startMovement()` 関数実装
+  - [x] `stopMovement()` 関数実装
+  - [x] `updateMovement()` 関数実装
+- [x] `src/features/ipne/movement.test.ts` 新規作成
+  - [x] 設定値テスト
+  - [x] キー→方向変換テスト
+  - [x] 連続移動状態管理テスト
+  > カバレッジ100%達成
+- [x] `src/features/ipne/index.ts` エクスポート追加
+- [x] `src/pages/IpnePage.tsx` 連続移動統合
+  - [x] `requestAnimationFrame` ベースの連続移動処理
+  - [x] 最初の1マスは即座に移動、その後連続移動
+  - [x] キー押下継続で自動移動
+  - [x] 壁に当たると連続移動が継続（壁で止まる）
+- [x] `src/pages/IpnePage.test.tsx` モック更新
+  - [x] `requestAnimationFrame` の無限ループ防止
+
+### 6.4 デバッグモードドキュメント（課題#3対応）
+
+- [x] `.docs/ipne/debug-mode.md` 新規作成
+  - [x] 有効化方法（`/ipne?debug=1`）
+  - [x] キーボードショートカット説明
+  - [x] 各デバッグ機能の詳細
+
+### 6.5 テスト・検証
+
+- [x] 全テスト実行 `npm test`
+  > ✅ 11テストスイート（ipne関連）、89テスト全てパス
+- [x] TypeScriptコンパイル確認 `npx tsc --noEmit`
+  > ✅ エラーなし
+- [ ] 手動動作確認
+  - [ ] メイン画面が大きくなり、迷路全体が見えない
+  - [ ] メイン画面とD-padが重ならない
+  - [ ] キー押し続けで連続移動できる
+  - [ ] 移動速度が適切（秒速10マス）
+
+---
+
 ## 依存関係
 
 ```
-フェーズ0 → フェーズ1 → フェーズ2 → フェーズ3 → フェーズ4
+フェーズ0 → フェーズ1 → フェーズ2 → フェーズ3 → フェーズ4 → フェーズ5 → フェーズ6
          ↘            ↗
            並行可能
 ```
@@ -131,6 +268,8 @@
 - フェーズ1（迷路生成）とフェーズ2（マッピング）は一部並行可能
 - フェーズ3（統合）はフェーズ1・2の完了後
 - フェーズ4（調整・検証）は全フェーズ完了後
+- **フェーズ5（FB対応）はフェーズ4の手動テスト後に実施**
+- **フェーズ6（UI/操作性改善）はフェーズ5の手動テスト後に実施**
 
 ---
 

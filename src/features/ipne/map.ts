@@ -16,8 +16,8 @@ const DEFAULT_CONFIG: MazeConfig = {
   minRoomSize: 6,
   maxRoomSize: 10,
   corridorWidth: 3,
-  maxDepth: 4,
-  loopCount: 1,
+  maxDepth: 5, // 4 → 5（部屋数増加：8-32）
+  loopCount: 2, // 1 → 2（分岐増加）
 };
 
 /**
