@@ -405,3 +405,243 @@ export const MapToggleButton = styled.button`
     transform: scale(0.95);
   }
 `;
+
+// ===== MVP3: 職業選択画面 =====
+
+export const ClassSelectContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  padding: 2rem;
+`;
+
+export const ClassSelectTitle = styled.h2`
+  font-size: 2rem;
+  font-weight: bold;
+  color: #fbbf24;
+  text-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+  margin-bottom: 1rem;
+`;
+
+export const ClassCardsContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+`;
+
+export const ClassCard = styled.button<{ $selected?: boolean; $classType: 'warrior' | 'thief' }>`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem;
+  width: 180px;
+  background: ${props =>
+    props.$selected
+      ? props.$classType === 'warrior'
+        ? 'rgba(220, 38, 38, 0.3)'
+        : 'rgba(34, 197, 94, 0.3)'
+      : 'rgba(255, 255, 255, 0.1)'};
+  border: 2px solid ${props =>
+    props.$selected
+      ? props.$classType === 'warrior'
+        ? '#dc2626'
+        : '#22c55e'
+      : 'rgba(255, 255, 255, 0.3)'};
+  border-radius: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    transform: scale(1.05);
+    background: ${props =>
+      props.$classType === 'warrior'
+        ? 'rgba(220, 38, 38, 0.25)'
+        : 'rgba(34, 197, 94, 0.25)'};
+  }
+`;
+
+export const ClassIcon = styled.div<{ $classType: 'warrior' | 'thief' }>`
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+`;
+
+export const ClassName = styled.div`
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 0.5rem;
+`;
+
+export const ClassDescription = styled.div`
+  font-size: 0.75rem;
+  color: #9ca3af;
+  text-align: center;
+  line-height: 1.4;
+`;
+
+export const ClassStats = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.75rem;
+  font-size: 0.7rem;
+  color: #d1d5db;
+`;
+
+export const ClassSelectButton = styled.button<{ $disabled?: boolean }>`
+  padding: 1rem 3rem;
+  font-size: 1.125rem;
+  font-weight: bold;
+  color: white;
+  background: ${props =>
+    props.$disabled
+      ? 'rgba(107, 114, 128, 0.5)'
+      : 'linear-gradient(to right, #667eea, #764ba2)'};
+  border: none;
+  border-radius: 0.75rem;
+  cursor: ${props => (props.$disabled ? 'not-allowed' : 'pointer')};
+  transition: all 0.2s;
+  box-shadow: ${props =>
+    props.$disabled ? 'none' : '0 4px 15px rgba(102, 126, 234, 0.4)'};
+
+  &:hover {
+    transform: ${props => (props.$disabled ? 'none' : 'scale(1.05)')};
+  }
+`;
+
+// ===== MVP3: レベルアップオーバーレイ =====
+
+export const LevelUpOverlay = styled.div`
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 100;
+  animation: ${fadeIn} 0.3s ease-out;
+`;
+
+export const LevelUpTitle = styled.h2`
+  font-size: 2rem;
+  font-weight: bold;
+  color: #fbbf24;
+  text-shadow: 0 0 30px rgba(251, 191, 36, 0.6);
+  margin-bottom: 0.5rem;
+`;
+
+export const LevelUpSubtitle = styled.p`
+  color: #9ca3af;
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+`;
+
+export const LevelUpChoicesContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 320px;
+  padding: 0 1rem;
+`;
+
+export const LevelUpChoice = styled.button<{ $disabled?: boolean }>`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.875rem 1rem;
+  background: ${props =>
+    props.$disabled ? 'rgba(107, 114, 128, 0.3)' : 'rgba(255, 255, 255, 0.1)'};
+  border: 1px solid ${props =>
+    props.$disabled ? 'rgba(107, 114, 128, 0.5)' : 'rgba(255, 255, 255, 0.3)'};
+  border-radius: 0.5rem;
+  cursor: ${props => (props.$disabled ? 'not-allowed' : 'pointer')};
+  transition: all 0.2s;
+  opacity: ${props => (props.$disabled ? 0.5 : 1)};
+
+  &:hover {
+    background: ${props =>
+      props.$disabled ? 'rgba(107, 114, 128, 0.3)' : 'rgba(255, 255, 255, 0.2)'};
+    transform: ${props => (props.$disabled ? 'none' : 'translateX(4px)')};
+  }
+`;
+
+export const LevelUpChoiceLabel = styled.span`
+  color: white;
+  font-weight: bold;
+  font-size: 0.95rem;
+`;
+
+export const LevelUpChoiceValue = styled.span<{ $disabled?: boolean }>`
+  color: ${props => (props.$disabled ? '#6b7280' : '#22c55e')};
+  font-size: 0.85rem;
+`;
+
+// ===== MVP3: ステータス表示 =====
+
+export const StatsDisplay = styled.div`
+  position: absolute;
+  top: 3rem;
+  left: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  z-index: 20;
+`;
+
+export const StatRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.7rem;
+  color: #d1d5db;
+`;
+
+export const StatLabel = styled.span`
+  color: #9ca3af;
+`;
+
+export const StatValue = styled.span`
+  color: white;
+  font-weight: bold;
+`;
+
+export const ExperienceBar = styled.div`
+  position: absolute;
+  top: 2.5rem;
+  left: 1rem;
+  width: 200px;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.25rem;
+  overflow: hidden;
+  z-index: 20;
+`;
+
+export const ExperienceBarFill = styled.div<{ $ratio: number }>`
+  width: ${props => `${Math.max(0, Math.min(1, props.$ratio)) * 100}%`};
+  height: 100%;
+  background: linear-gradient(to right, #a855f7, #ec4899);
+  transition: width 0.3s ease;
+`;
+
+export const LevelBadge = styled.div`
+  position: absolute;
+  top: 1rem;
+  left: 210px;
+  background: linear-gradient(to right, #a855f7, #ec4899);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: bold;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  z-index: 20;
+`;
