@@ -15,8 +15,8 @@ export interface MovementConfig {
 
 /** デフォルトの移動設定 */
 export const DEFAULT_MOVEMENT_CONFIG: MovementConfig = {
-  moveInterval: 100, // 100ms間隔（秒速10マス）
-  initialDelay: 150, // 初回は150ms後に連続移動開始
+  moveInterval: 140, // 140ms間隔（秒速7マス程度）
+  initialDelay: 180, // 初回は180ms後に連続移動開始
 };
 
 /** 連続移動状態 */

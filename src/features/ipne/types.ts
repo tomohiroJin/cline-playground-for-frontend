@@ -25,6 +25,12 @@ export interface Position {
 export interface Player {
   x: number;
   y: number;
+  hp: number;
+  maxHp: number;
+  direction: DirectionValue;
+  isInvincible: boolean;
+  invincibleUntil: number;
+  attackCooldownUntil: number;
 }
 
 /** 移動方向 */
@@ -43,6 +49,7 @@ export const ScreenState = {
   PROLOGUE: 'prologue',
   GAME: 'game',
   CLEAR: 'clear',
+  GAME_OVER: 'game_over',
 } as const;
 
 export type ScreenStateValue = (typeof ScreenState)[keyof typeof ScreenState];
@@ -53,6 +60,8 @@ export interface GameState {
   player: Player;
   screen: ScreenStateValue;
   isCleared: boolean;
+  enemies: Enemy[];
+  items: Item[];
 }
 
 // ===== 迷路生成関連の型定義 =====
@@ -106,4 +115,75 @@ export interface AutoMapState {
   exploration: ExplorationStateValue[][];
   isMapVisible: boolean; // 常時表示ON/OFF
   isFullScreen: boolean; // 全画面モード
+}
+
+/** 敵の種類 */
+export const EnemyType = {
+  PATROL: 'patrol',
+  CHARGE: 'charge',
+  FLEE: 'flee',
+  BOSS: 'boss',
+} as const;
+
+export type EnemyTypeValue = (typeof EnemyType)[keyof typeof EnemyType];
+
+/** 敵の状態 */
+export const EnemyState = {
+  IDLE: 'idle',
+  PATROL: 'patrol',
+  CHASE: 'chase',
+  ATTACK: 'attack',
+  FLEE: 'flee',
+  RETURN: 'return',
+  KNOCKBACK: 'knockback',
+} as const;
+
+export type EnemyStateValue = (typeof EnemyState)[keyof typeof EnemyState];
+
+/** 敵データ */
+export interface Enemy {
+  id: string;
+  x: number;
+  y: number;
+  type: EnemyTypeValue;
+  hp: number;
+  maxHp: number;
+  damage: number;
+  speed: number;
+  detectionRange: number;
+  chaseRange?: number;
+  attackRange: number;
+  attackCooldownUntil: number;
+  state: EnemyStateValue;
+  patrolPath?: Position[];
+  patrolIndex?: number;
+  homePosition: Position;
+  lastKnownPlayerPos?: Position;
+  lastSeenAt?: number;
+  lastMoveAt?: number;
+  knockbackUntil?: number;
+  knockbackDirection?: DirectionValue;
+}
+
+/** アイテム種別 */
+export const ItemType = {
+  HEALTH_SMALL: 'health_small',
+  HEALTH_LARGE: 'health_large',
+} as const;
+
+export type ItemTypeValue = (typeof ItemType)[keyof typeof ItemType];
+
+/** アイテムデータ */
+export interface Item {
+  id: string;
+  x: number;
+  y: number;
+  type: ItemTypeValue;
+  healAmount: number;
+}
+
+/** 戦闘の一時状態 */
+export interface CombatState {
+  lastAttackAt: number;
+  lastDamageAt: number;
 }
