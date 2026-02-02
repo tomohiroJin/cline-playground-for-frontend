@@ -7,6 +7,9 @@ import { healPlayer } from './player';
 const ITEM_CONFIGS = {
   [ItemType.HEALTH_SMALL]: { healAmount: 3 },
   [ItemType.HEALTH_LARGE]: { healAmount: 7 },
+  [ItemType.HEALTH_FULL]: { healAmount: 999 },
+  [ItemType.LEVEL_UP]: { healAmount: 0 },
+  [ItemType.MAP_REVEAL]: { healAmount: 0 },
 } as const;
 
 const SPAWN_CONFIG = {

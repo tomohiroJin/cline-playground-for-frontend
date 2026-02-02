@@ -1,7 +1,7 @@
 import {
   createPatrolEnemy,
   createChargeEnemy,
-  createFleeEnemy,
+  createSpecimenEnemy,
   createBoss,
   damageEnemy,
   isEnemyAlive,
@@ -25,10 +25,10 @@ describe('enemy', () => {
     expect(charge.damage).toBe(2);
     expect(charge.speed).toBe(5);
 
-    const flee = createFleeEnemy(3, 3);
-    expect(flee.hp).toBe(1);
-    expect(flee.damage).toBe(0);
-    expect(flee.speed).toBe(6);
+    const specimen = createSpecimenEnemy(3, 3);
+    expect(specimen.hp).toBe(1);
+    expect(specimen.damage).toBe(0);
+    expect(specimen.speed).toBe(6);
 
     const boss = createBoss(4, 4);
     expect(boss.hp).toBe(12);

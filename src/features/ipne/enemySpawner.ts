@@ -2,13 +2,13 @@
  * 敵配置ロジック
  */
 import { Enemy, EnemyType, EnemyTypeValue, Position, Room } from './types';
-import { createBoss, createChargeEnemy, createFleeEnemy, createPatrolEnemy } from './enemy';
+import { createBoss, createChargeEnemy, createSpecimenEnemy, createPatrolEnemy } from './enemy';
 
 const SPAWN_CONFIG = {
   total: 25,
   patrol: 13,
   charge: 8,
-  flee: 4,
+  specimen: 4,
 } as const;
 
 const MAX_PER_ROOM = 3;
@@ -57,7 +57,7 @@ export const distributeEnemyTypes = (): EnemyTypeValue[] => {
   const types: EnemyTypeValue[] = [];
   for (let i = 0; i < SPAWN_CONFIG.patrol; i++) types.push(EnemyType.PATROL);
   for (let i = 0; i < SPAWN_CONFIG.charge; i++) types.push(EnemyType.CHARGE);
-  for (let i = 0; i < SPAWN_CONFIG.flee; i++) types.push(EnemyType.FLEE);
+  for (let i = 0; i < SPAWN_CONFIG.specimen; i++) types.push(EnemyType.SPECIMEN);
   return shuffle(types);
 };
 
@@ -96,7 +96,7 @@ export const spawnEnemies = (
           ? createPatrolEnemy(position.x, position.y)
           : type === EnemyType.CHARGE
             ? createChargeEnemy(position.x, position.y)
-            : createFleeEnemy(position.x, position.y);
+            : createSpecimenEnemy(position.x, position.y);
       enemies.push(enemy);
       usedPositions.push(position);
     }

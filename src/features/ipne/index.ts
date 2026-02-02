@@ -94,7 +94,7 @@ export {
   createEnemy,
   createPatrolEnemy,
   createChargeEnemy,
-  createFleeEnemy,
+  createSpecimenEnemy,
   createBoss,
   isEnemyAlive,
   damageEnemy,

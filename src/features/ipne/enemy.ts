@@ -20,7 +20,15 @@ const ENEMY_CONFIGS = {
     chaseRange: 10,
     attackRange: 1,
   },
-  [EnemyType.FLEE]: {
+  [EnemyType.RANGED]: {
+    hp: 2,
+    damage: 1,
+    speed: 3,
+    detectionRange: 7,
+    chaseRange: 10,
+    attackRange: 4,
+  },
+  [EnemyType.SPECIMEN]: {
     hp: 1,
     damage: 0,
     speed: 6,
@@ -82,8 +90,8 @@ export const createChargeEnemy = (x: number, y: number): Enemy => {
   return createEnemy(EnemyType.CHARGE, x, y);
 };
 
-export const createFleeEnemy = (x: number, y: number): Enemy => {
-  return createEnemy(EnemyType.FLEE, x, y);
+export const createSpecimenEnemy = (x: number, y: number): Enemy => {
+  return createEnemy(EnemyType.SPECIMEN, x, y);
 };
 
 export const createBoss = (x: number, y: number): Enemy => {

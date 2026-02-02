@@ -96,12 +96,16 @@ const CONFIG = {
   enemyColors: {
     patrol: '#6b21a8',
     charge: '#991b1b',
-    flee: '#1e3a5f',
+    ranged: '#c2410c',
+    specimen: '#1e3a5f',
     boss: '#7c2d12',
   },
   itemColors: {
     health_small: '#22c55e',
     health_large: '#ef4444',
+    health_full: '#fbbf24',
+    level_up: '#f0abfc',
+    map_reveal: '#a16207',
   },
 };
 

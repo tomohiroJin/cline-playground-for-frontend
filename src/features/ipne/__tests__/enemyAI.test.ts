@@ -6,7 +6,7 @@ import {
   updateFleeEnemy,
   generatePatrolPath,
 } from '../enemyAI';
-import { createPatrolEnemy, createFleeEnemy } from '../enemy';
+import { createPatrolEnemy, createSpecimenEnemy } from '../enemy';
 import { EnemyState } from '../types';
 import { createTestMap, createTestPlayer } from './testUtils';
 
@@ -55,9 +55,9 @@ describe('enemyAI', () => {
     expect(updated.y).toBe(1);
   });
 
-  test('逃走移動がプレイヤーから離れること', () => {
+  test('標本型移動がプレイヤーから離れること', () => {
     const map = createTestMap();
-    const enemy = createFleeEnemy(3, 3);
+    const enemy = createSpecimenEnemy(3, 3);
     const player = createTestPlayer(2, 3);
 
     const updated = updateFleeEnemy(enemy, player, map, 0);

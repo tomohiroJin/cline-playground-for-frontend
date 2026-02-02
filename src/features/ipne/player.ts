@@ -2,13 +2,43 @@
  * プレイヤー操作モジュール
  */
 
-import { Player, GameMap, DirectionValue, Direction } from './types';
+import {
+  Player,
+  GameMap,
+  DirectionValue,
+  Direction,
+  PlayerClass,
+  PlayerClassValue,
+  PlayerStats,
+} from './types';
 import { canMove } from './collision';
+
+/** 職業別初期能力値 */
+const INITIAL_STATS: Record<PlayerClassValue, PlayerStats> = {
+  [PlayerClass.WARRIOR]: {
+    attackPower: 2,
+    attackRange: 1,
+    moveSpeed: 4,
+    attackSpeed: 1.0,
+    healBonus: 0,
+  },
+  [PlayerClass.THIEF]: {
+    attackPower: 1,
+    attackRange: 1,
+    moveSpeed: 6,
+    attackSpeed: 1.0,
+    healBonus: 0,
+  },
+};
 
 /**
  * プレイヤーを作成
  */
-export const createPlayer = (x: number, y: number): Player => {
+export const createPlayer = (
+  x: number,
+  y: number,
+  playerClass: PlayerClassValue = PlayerClass.WARRIOR
+): Player => {
   return {
     x,
     y,
@@ -18,6 +48,12 @@ export const createPlayer = (x: number, y: number): Player => {
     isInvincible: false,
     invincibleUntil: 0,
     attackCooldownUntil: 0,
+    // MVP3追加
+    playerClass,
+    level: 1,
+    killCount: 0,
+    stats: { ...INITIAL_STATS[playerClass] },
+    slowedUntil: 0,
   };
 };
 

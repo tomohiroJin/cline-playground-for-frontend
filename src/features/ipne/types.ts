@@ -21,18 +21,6 @@ export interface Position {
   y: number;
 }
 
-/** プレイヤー状態 */
-export interface Player {
-  x: number;
-  y: number;
-  hp: number;
-  maxHp: number;
-  direction: DirectionValue;
-  isInvincible: boolean;
-  invincibleUntil: number;
-  attackCooldownUntil: number;
-}
-
 /** 移動方向 */
 export const Direction = {
   UP: 'up',
@@ -46,6 +34,7 @@ export type DirectionValue = (typeof Direction)[keyof typeof Direction];
 /** ゲーム画面の状態 */
 export const ScreenState = {
   TITLE: 'title',
+  CLASS_SELECT: 'class_select',
   PROLOGUE: 'prologue',
   GAME: 'game',
   CLEAR: 'clear',
@@ -54,14 +43,134 @@ export const ScreenState = {
 
 export type ScreenStateValue = (typeof ScreenState)[keyof typeof ScreenState];
 
-/** ゲーム全体の状態 */
-export interface GameState {
-  map: GameMap;
-  player: Player;
-  screen: ScreenStateValue;
-  isCleared: boolean;
-  enemies: Enemy[];
-  items: Item[];
+// ===== 職業関連の型定義 =====
+
+/** 職業の種類 */
+export const PlayerClass = {
+  WARRIOR: 'warrior',
+  THIEF: 'thief',
+} as const;
+
+export type PlayerClassValue = (typeof PlayerClass)[keyof typeof PlayerClass];
+
+/** 可視性の種類 */
+export type VisibilityType = 'none' | 'faint';
+
+/** 職業設定 */
+export interface ClassConfig {
+  name: string;
+  description: string;
+  trapVisibility: VisibilityType;
+  wallVisibility: VisibilityType;
+}
+
+// ===== 成長関連の型定義 =====
+
+/** 能力値の種類 */
+export const StatType = {
+  ATTACK_POWER: 'attackPower',
+  ATTACK_RANGE: 'attackRange',
+  MOVE_SPEED: 'moveSpeed',
+  ATTACK_SPEED: 'attackSpeed',
+  HEAL_BONUS: 'healBonus',
+} as const;
+
+export type StatTypeValue = (typeof StatType)[keyof typeof StatType];
+
+/** プレイヤー能力値 */
+export interface PlayerStats {
+  attackPower: number;
+  attackRange: number;
+  moveSpeed: number;
+  attackSpeed: number;
+  healBonus: number;
+}
+
+/** レベルアップ選択肢 */
+export interface LevelUpChoice {
+  stat: StatTypeValue;
+  increase: number;
+  description: string;
+}
+
+// ===== 罠関連の型定義 =====
+
+/** 罠の種類 */
+export const TrapType = {
+  DAMAGE: 'damage',
+  SLOW: 'slow',
+  ALERT: 'alert',
+} as const;
+
+export type TrapTypeValue = (typeof TrapType)[keyof typeof TrapType];
+
+/** 罠の状態 */
+export const TrapState = {
+  HIDDEN: 'hidden',
+  REVEALED: 'revealed',
+  TRIGGERED: 'triggered',
+} as const;
+
+export type TrapStateValue = (typeof TrapState)[keyof typeof TrapState];
+
+/** 罠データ */
+export interface Trap {
+  id: string;
+  x: number;
+  y: number;
+  type: TrapTypeValue;
+  state: TrapStateValue;
+  isVisibleToThief: boolean;
+  cooldownUntil?: number;
+}
+
+// ===== 壁関連の型定義 =====
+
+/** 壁の種類 */
+export const WallType = {
+  NORMAL: 'normal',
+  BREAKABLE: 'breakable',
+  PASSABLE: 'passable',
+  INVISIBLE: 'invisible',
+} as const;
+
+export type WallTypeValue = (typeof WallType)[keyof typeof WallType];
+
+/** 壁の状態 */
+export const WallState = {
+  INTACT: 'intact',
+  DAMAGED: 'damaged',
+  BROKEN: 'broken',
+  REVEALED: 'revealed',
+} as const;
+
+export type WallStateValue = (typeof WallState)[keyof typeof WallState];
+
+/** 壁データ */
+export interface Wall {
+  x: number;
+  y: number;
+  type: WallTypeValue;
+  state: WallStateValue;
+  hp?: number;
+}
+
+/** プレイヤー状態 */
+export interface Player {
+  x: number;
+  y: number;
+  hp: number;
+  maxHp: number;
+  direction: DirectionValue;
+  isInvincible: boolean;
+  invincibleUntil: number;
+  attackCooldownUntil: number;
+  // MVP3追加
+  playerClass: PlayerClassValue;
+  level: number;
+  killCount: number;
+  stats: PlayerStats;
+  slowedUntil: number;
 }
 
 // ===== 迷路生成関連の型定義 =====
@@ -78,7 +187,7 @@ export interface Rectangle {
 export interface Room {
   rect: Rectangle;
   center: Position;
-  tiles?: Position[]; // 実際の床タイル座標リスト（境界ボックス内の壁を避けるため）
+  tiles?: Position[];
 }
 
 /** 通路データ */
@@ -90,22 +199,22 @@ export interface Corridor {
 
 /** 迷路生成設定 */
 export interface MazeConfig {
-  width: number; // 60-80
-  height: number; // 60-80
-  minRoomSize: number; // 6
-  maxRoomSize: number; // 10
-  corridorWidth: number; // 3-4
-  maxDepth: number; // 3-4（5-16部屋）
-  loopCount: number; // 0-2
+  width: number;
+  height: number;
+  minRoomSize: number;
+  maxRoomSize: number;
+  corridorWidth: number;
+  maxDepth: number;
+  loopCount: number;
 }
 
 // ===== 自動マッピング関連の型定義 =====
 
 /** タイルの探索状態 */
 export const ExplorationState = {
-  UNEXPLORED: 0, // 未探索（非表示）
-  EXPLORED: 1, // 通過済み（線表示）
-  VISIBLE: 2, // 可視（隣接タイル）
+  UNEXPLORED: 0,
+  EXPLORED: 1,
+  VISIBLE: 2,
 } as const;
 
 export type ExplorationStateValue = (typeof ExplorationState)[keyof typeof ExplorationState];
@@ -113,15 +222,18 @@ export type ExplorationStateValue = (typeof ExplorationState)[keyof typeof Explo
 /** 自動マッピング状態 */
 export interface AutoMapState {
   exploration: ExplorationStateValue[][];
-  isMapVisible: boolean; // 常時表示ON/OFF
-  isFullScreen: boolean; // 全画面モード
+  isMapVisible: boolean;
+  isFullScreen: boolean;
 }
+
+// ===== 敵関連の型定義 =====
 
 /** 敵の種類 */
 export const EnemyType = {
   PATROL: 'patrol',
   CHARGE: 'charge',
-  FLEE: 'flee',
+  RANGED: 'ranged',
+  SPECIMEN: 'specimen',
   BOSS: 'boss',
 } as const;
 
@@ -165,10 +277,15 @@ export interface Enemy {
   knockbackDirection?: DirectionValue;
 }
 
+// ===== アイテム関連の型定義 =====
+
 /** アイテム種別 */
 export const ItemType = {
   HEALTH_SMALL: 'health_small',
   HEALTH_LARGE: 'health_large',
+  HEALTH_FULL: 'health_full',
+  LEVEL_UP: 'level_up',
+  MAP_REVEAL: 'map_reveal',
 } as const;
 
 export type ItemTypeValue = (typeof ItemType)[keyof typeof ItemType];
@@ -182,8 +299,26 @@ export interface Item {
   healAmount: number;
 }
 
+// ===== 戦闘関連の型定義 =====
+
 /** 戦闘の一時状態 */
 export interface CombatState {
   lastAttackAt: number;
   lastDamageAt: number;
+}
+
+// ===== ゲーム状態 =====
+
+/** ゲーム全体の状態 */
+export interface GameState {
+  map: GameMap;
+  player: Player;
+  screen: ScreenStateValue;
+  isCleared: boolean;
+  enemies: Enemy[];
+  items: Item[];
+  // MVP3追加
+  traps: Trap[];
+  walls: Wall[];
+  isLevelUpPending: boolean;
 }

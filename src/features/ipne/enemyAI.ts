@@ -363,7 +363,7 @@ export const updateEnemyAI = (
     case EnemyType.CHARGE:
     case EnemyType.BOSS:
       return updateChargeEnemy(resolved, player, map, currentTime);
-    case EnemyType.FLEE:
+    case EnemyType.SPECIMEN:
       return updateFleeEnemy(resolved, player, map, currentTime);
     default:
       return resolved;
