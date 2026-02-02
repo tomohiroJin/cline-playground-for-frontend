@@ -4,7 +4,7 @@
  */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  createMap,
+  createMapWithRooms,
   createPlayer,
   movePlayer,
   findStartPosition,
@@ -15,6 +15,10 @@ import {
   TileType,
   GameMap,
   Player,
+  Enemy,
+  Item,
+  Room,
+  CombatState,
   ScreenStateValue,
   AutoMapState,
   initExploration,
@@ -23,7 +27,6 @@ import {
   calculateViewport,
   getCanvasSize,
   Viewport,
-  VIEWPORT_CONFIG,
   DebugState,
   initDebugState,
   toggleDebugOption,
@@ -39,6 +42,19 @@ import {
   updateMovement,
   INITIAL_MOVEMENT_STATE,
   DEFAULT_MOVEMENT_CONFIG,
+  EnemyState,
+  EnemyType,
+  spawnEnemies,
+  spawnItems,
+  updateEnemiesWithContact,
+  playerAttack,
+  damagePlayer,
+  canPickupItem,
+  pickupItem,
+  getEnemyAtPosition,
+  COMBAT_CONFIG,
+  updatePlayerDirection,
+  canMove,
 } from '../features/ipne';
 import {
   PageContainer,
@@ -58,6 +74,14 @@ import {
   RetryButton,
   BackToTitleButton,
   MapToggleButton,
+  HPBarContainer,
+  HPBarFill,
+  HPBarText,
+  AttackButton,
+  GameOverContainer,
+  GameOverTitle,
+  GameOverButton,
+  DamageOverlay,
 } from './IpnePage.styles';
 import titleBg from '../assets/images/ipne_title_bg.webp';
 import prologueBg from '../assets/images/ipne_prologue_bg.webp';
@@ -69,6 +93,16 @@ const CONFIG = {
   floorColor: '#1f2937',
   goalColor: '#10b981',
   startColor: '#3b82f6',
+  enemyColors: {
+    patrol: '#6b21a8',
+    charge: '#991b1b',
+    flee: '#1e3a5f',
+    boss: '#7c2d12',
+  },
+  itemColors: {
+    health_small: '#22c55e',
+    health_large: '#ef4444',
+  },
 };
 
 // プロローグテキスト
@@ -157,21 +191,68 @@ export const ClearScreen: React.FC<{
 );
 
 /**
+ * ゲームオーバー画面コンポーネント
+ */
+const GameOverScreen: React.FC<{
+  onRetry: () => void;
+  onBackToTitle: () => void;
+}> = ({ onRetry, onBackToTitle }) => (
+  <Overlay>
+    <GameOverContainer>
+      <GameOverTitle>GAME OVER</GameOverTitle>
+      <GameOverButton onClick={onRetry}>リトライ</GameOverButton>
+      <GameOverButton onClick={onBackToTitle}>タイトルへ</GameOverButton>
+    </GameOverContainer>
+  </Overlay>
+);
+
+/**
  * ゲーム画面コンポーネント
  */
 const GameScreen: React.FC<{
   map: GameMap;
   player: Player;
+  enemies: Enemy[];
+  items: Item[];
   mapState: AutoMapState;
   goalPos: { x: number; y: number };
   debugState: DebugState;
   onMove: (direction: (typeof Direction)[keyof typeof Direction]) => void;
+  onTurn: (direction: (typeof Direction)[keyof typeof Direction]) => void;
+  onAttack: () => void;
   onMapToggle: () => void;
   onDebugToggle: (option: keyof Omit<DebugState, 'enabled'>) => void;
-}> = ({ map, player, mapState, goalPos, debugState, onMove, onMapToggle, onDebugToggle }) => {
+  attackEffect?: { position: Position; until: number };
+  lastDamageAt: number;
+}> = ({
+  map,
+  player,
+  enemies,
+  items,
+  mapState,
+  goalPos,
+  debugState,
+  onMove,
+  onTurn,
+  onAttack,
+  onMapToggle,
+  onDebugToggle,
+  attackEffect,
+  lastDamageAt,
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const movementStateRef = useRef<MovementState>(INITIAL_MOVEMENT_STATE);
   const animationFrameRef = useRef<number | null>(null);
+  const attackHoldRef = useRef(false);
+  const [renderTime, setRenderTime] = useState(Date.now());
+
+  // 点滅表現用の再描画トリガー
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRenderTime(Date.now());
+    }, 100);
+    return () => clearInterval(interval);
+  }, []);
 
   // Canvas描画
   useEffect(() => {
@@ -186,7 +267,9 @@ const GameScreen: React.FC<{
 
     const mapWidth = map[0].length;
     const mapHeight = map.length;
-    const { wallColor, floorColor, goalColor, startColor, playerColor } = CONFIG;
+    const { wallColor, floorColor, goalColor, startColor, playerColor, enemyColors, itemColors } =
+      CONFIG;
+    const now = renderTime;
 
     // デバッグモードで全体表示の場合とビューポート表示の場合で分岐
     const useFullMap = debugState.enabled && debugState.showFullMap;
@@ -241,7 +324,6 @@ const GameScreen: React.FC<{
     }
 
     // マップ描画
-    const drawTileCount = useFullMap ? mapWidth * mapHeight : viewport.width * viewport.height;
     const drawWidth = useFullMap ? mapWidth : viewport.width;
     const drawHeight = useFullMap ? mapHeight : viewport.height;
 
@@ -273,6 +355,19 @@ const GameScreen: React.FC<{
       }
     }
 
+    const toScreenPosition = (pos: Position): Position => {
+      if (useFullMap) {
+        return {
+          x: offsetX + pos.x * tileSize + tileSize / 2,
+          y: offsetY + pos.y * tileSize + tileSize / 2,
+        };
+      }
+      return {
+        x: (pos.x - viewport.x) * tileSize + tileSize / 2,
+        y: (pos.y - viewport.y) * tileSize + tileSize / 2,
+      };
+    };
+
     // パス描画（デバッグモードでパス表示が有効な場合）
     if (debugState.enabled && debugState.showPath && path.length > 1) {
       ctx.strokeStyle = '#ff00ff';
@@ -297,27 +392,88 @@ const GameScreen: React.FC<{
       ctx.stroke();
     }
 
+    // アイテム描画
+    for (const item of items) {
+      const screenPos = toScreenPosition(item);
+      const size = useFullMap ? Math.max(tileSize / 3, 2) : tileSize / 3;
+      ctx.fillStyle = itemColors[item.type];
+      ctx.fillRect(screenPos.x - size / 2, screenPos.y - size / 2, size, size);
+    }
+
+    // 敵描画
+    for (const enemy of enemies) {
+      if (
+        enemy.x < viewport.x - 1 ||
+        enemy.x > viewport.x + viewport.width + 1 ||
+        enemy.y < viewport.y - 1 ||
+        enemy.y > viewport.y + viewport.height + 1
+      ) {
+        if (!useFullMap) continue;
+      }
+
+      const blinkOff = enemy.state === EnemyState.KNOCKBACK && Math.floor(now / 100) % 2 === 1;
+      if (blinkOff) continue;
+
+      const enemyScreen = toScreenPosition(enemy);
+      const baseRadius = useFullMap ? Math.max(tileSize / 2 - 1, 2) : tileSize / 2 - 3;
+      const radius = enemy.type === EnemyType.BOSS ? baseRadius * 1.4 : baseRadius;
+      ctx.fillStyle = enemyColors[enemy.type];
+      ctx.beginPath();
+      ctx.arc(enemyScreen.x, enemyScreen.y, radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 攻撃エフェクト描画
+    if (attackEffect && now < attackEffect.until) {
+      const effectPos = attackEffect.position;
+      const screen = toScreenPosition(effectPos);
+      const size = useFullMap ? tileSize : tileSize * 0.9;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(screen.x - size / 2, screen.y - size / 2, size, size);
+    }
+
     // プレイヤー描画
-    const playerScreenX = useFullMap
-      ? offsetX + player.x * tileSize + tileSize / 2
-      : (player.x - viewport.x) * tileSize + tileSize / 2;
-    const playerScreenY = useFullMap
-      ? offsetY + player.y * tileSize + tileSize / 2
-      : (player.y - viewport.y) * tileSize + tileSize / 2;
-
+    const playerScreen = toScreenPosition(player);
     const playerRadius = useFullMap ? Math.max(tileSize / 2 - 1, 2) : tileSize / 2 - 4;
+    const isBlinkOff = player.isInvincible && Math.floor(now / 100) % 2 === 1;
 
-    ctx.fillStyle = playerColor;
-    ctx.beginPath();
-    ctx.arc(playerScreenX, playerScreenY, playerRadius, 0, Math.PI * 2);
-    ctx.fill();
+    if (!isBlinkOff) {
+      ctx.fillStyle = playerColor;
+      ctx.beginPath();
+      ctx.arc(playerScreen.x, playerScreen.y, playerRadius, 0, Math.PI * 2);
+      ctx.fill();
 
-    // プレイヤーの縁取り（視認性向上）
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-    ctx.lineWidth = useFullMap ? 1 : 2;
-    ctx.beginPath();
-    ctx.arc(playerScreenX, playerScreenY, playerRadius, 0, Math.PI * 2);
-    ctx.stroke();
+      // プレイヤーの縁取り（視認性向上）
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.lineWidth = useFullMap ? 1 : 2;
+      ctx.beginPath();
+      ctx.arc(playerScreen.x, playerScreen.y, playerRadius, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // 向き表示（小さな三角）
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.beginPath();
+      if (player.direction === Direction.UP) {
+        ctx.moveTo(playerScreen.x, playerScreen.y - playerRadius);
+        ctx.lineTo(playerScreen.x - playerRadius / 2, playerScreen.y);
+        ctx.lineTo(playerScreen.x + playerRadius / 2, playerScreen.y);
+      } else if (player.direction === Direction.DOWN) {
+        ctx.moveTo(playerScreen.x, playerScreen.y + playerRadius);
+        ctx.lineTo(playerScreen.x - playerRadius / 2, playerScreen.y);
+        ctx.lineTo(playerScreen.x + playerRadius / 2, playerScreen.y);
+      } else if (player.direction === Direction.LEFT) {
+        ctx.moveTo(playerScreen.x - playerRadius, playerScreen.y);
+        ctx.lineTo(playerScreen.x, playerScreen.y - playerRadius / 2);
+        ctx.lineTo(playerScreen.x, playerScreen.y + playerRadius / 2);
+      } else if (player.direction === Direction.RIGHT) {
+        ctx.moveTo(playerScreen.x + playerRadius, playerScreen.y);
+        ctx.lineTo(playerScreen.x, playerScreen.y - playerRadius / 2);
+        ctx.lineTo(playerScreen.x, playerScreen.y + playerRadius / 2);
+      }
+      ctx.closePath();
+      ctx.fill();
+    }
 
     // 自動マップ描画（全体表示モードでは非表示）
     if (mapState.isMapVisible && !useFullMap) {
@@ -337,10 +493,17 @@ const GameScreen: React.FC<{
 
       // 座標オーバーレイ
       if (debugState.showCoordinates) {
-        drawCoordinateOverlay(ctx, player.x, player.y, playerScreenX, playerScreenY);
+        drawCoordinateOverlay(ctx, player.x, player.y, playerScreen.x, playerScreen.y);
       }
     }
-  }, [map, player, mapState, goalPos, debugState]);
+  }, [map, player, enemies, items, mapState, goalPos, debugState, renderTime, attackEffect]);
+
+  const setAttackHold = useCallback((isHolding: boolean) => {
+    attackHoldRef.current = isHolding;
+    if (isHolding) {
+      movementStateRef.current = INITIAL_MOVEMENT_STATE;
+    }
+  }, []);
 
   // 連続移動のアニメーションループ
   useEffect(() => {
@@ -354,7 +517,7 @@ const GameScreen: React.FC<{
 
       movementStateRef.current = newState;
 
-      if (shouldMove && newState.activeDirection) {
+      if (shouldMove && newState.activeDirection && !attackHoldRef.current) {
         onMove(newState.activeDirection);
       }
 
@@ -374,6 +537,14 @@ const GameScreen: React.FC<{
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
+
+      // 攻撃（Spaceキー）
+      if (key === ' ' || key === 'space') {
+        e.preventDefault();
+        setAttackHold(true);
+        onAttack();
+        return;
+      }
 
       // マップ切替（Mキー）
       if (key === 'm') {
@@ -407,6 +578,10 @@ const GameScreen: React.FC<{
       const direction = getDirectionFromKey(e.key);
       if (direction) {
         e.preventDefault();
+        if (attackHoldRef.current) {
+          onTurn(direction);
+          return;
+        }
         const currentTime = Date.now();
 
         // 最初の1マス目は即座に移動
@@ -423,6 +598,11 @@ const GameScreen: React.FC<{
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
+      const key = e.key.toLowerCase();
+      if (key === ' ' || key === 'space') {
+        setAttackHold(false);
+        return;
+      }
       // 移動キーの場合、連続移動状態を停止
       const direction = getDirectionFromKey(e.key);
       if (direction) {
@@ -444,12 +624,16 @@ const GameScreen: React.FC<{
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);
     };
-  }, [onMove, onMapToggle, debugState.enabled, onDebugToggle]);
+  }, [onMove, onTurn, onAttack, onMapToggle, debugState.enabled, onDebugToggle, setAttackHold]);
 
   // D-pad押下開始時のハンドラー
   const handleDPadPointerDown = useCallback(
     (direction: DirectionValue) => {
       const currentTime = Date.now();
+      if (attackHoldRef.current) {
+        onTurn(direction);
+        return;
+      }
       // 最初の1マス目は即座に移動
       onMove(direction);
       // 連続移動状態を開始
@@ -459,7 +643,7 @@ const GameScreen: React.FC<{
         currentTime
       );
     },
-    [onMove]
+    [onMove, onTurn]
   );
 
   // D-pad離し時のハンドラー
@@ -467,8 +651,19 @@ const GameScreen: React.FC<{
     movementStateRef.current = stopMovement(movementStateRef.current, direction);
   }, []);
 
+  const hpRatio = player.maxHp === 0 ? 0 : player.hp / player.maxHp;
+  const hpColor = hpRatio > 0.66 ? '#22c55e' : hpRatio > 0.33 ? '#facc15' : '#ef4444';
+  const isAttackReady = renderTime >= player.attackCooldownUntil;
+
   return (
     <GameRegion role="region" aria-label="ゲーム画面">
+      <DamageOverlay $visible={renderTime - lastDamageAt < 150} />
+      <HPBarContainer>
+        <HPBarFill $ratio={hpRatio} $color={hpColor} />
+        <HPBarText>
+          HP {player.hp}/{player.maxHp}
+        </HPBarText>
+      </HPBarContainer>
       <MapToggleButton onClick={onMapToggle} aria-label="マップ表示切替">
         🗺️
       </MapToggleButton>
@@ -506,6 +701,20 @@ const GameScreen: React.FC<{
           >
             ◀
           </DPadButton>
+          <AttackButton
+            onPointerDown={e => {
+              e.preventDefault();
+              setAttackHold(true);
+              if (isAttackReady) onAttack();
+            }}
+            onPointerUp={() => setAttackHold(false)}
+            onPointerLeave={() => setAttackHold(false)}
+            onPointerCancel={() => setAttackHold(false)}
+            $ready={isAttackReady}
+            aria-label="攻撃"
+          >
+            ATK
+          </AttackButton>
           <DPadButton
             $direction="right"
             onPointerDown={e => {
@@ -544,7 +753,9 @@ const GameScreen: React.FC<{
 const IpnePage: React.FC = () => {
   const [screen, setScreen] = useState<ScreenStateValue>(ScreenState.TITLE);
   const [map, setMap] = useState<GameMap>([]);
-  const [player, setPlayer] = useState<Player>({ x: 0, y: 0 });
+  const [player, setPlayer] = useState<Player>(() => createPlayer(0, 0));
+  const [enemies, setEnemies] = useState<Enemy[]>([]);
+  const [items, setItems] = useState<Item[]>([]);
   const [goalPos, setGoalPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [mapState, setMapState] = useState<AutoMapState>({
     exploration: [],
@@ -552,28 +763,74 @@ const IpnePage: React.FC = () => {
     isFullScreen: false,
   });
   const [debugState, setDebugState] = useState<DebugState>(() => initDebugState());
+  const [isGameOver, setIsGameOver] = useState(false);
+  const [combatState, setCombatState] = useState<CombatState>({ lastAttackAt: 0, lastDamageAt: 0 });
+  const [attackEffect, setAttackEffect] = useState<{ position: Position; until: number } | undefined>(
+    undefined
+  );
 
-  // ゲーム初期化
-  const initGame = useCallback(() => {
-    const newMap = createMap();
+  const mapRef = useRef<GameMap>(map);
+  const playerRef = useRef<Player>(player);
+  const enemiesRef = useRef<Enemy[]>(enemies);
+  const itemsRef = useRef<Item[]>(items);
+  const roomsRef = useRef<Room[]>([]);
+
+  useEffect(() => {
+    mapRef.current = map;
+  }, [map]);
+
+  useEffect(() => {
+    playerRef.current = player;
+  }, [player]);
+
+  useEffect(() => {
+    enemiesRef.current = enemies;
+  }, [enemies]);
+
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
+
+  const setupGameState = useCallback((newMap: GameMap, rooms: Room[]) => {
     const startPos = findStartPosition(newMap);
     const goal = findGoalPosition(newMap);
 
-    if (startPos && goal) {
-      setMap(newMap);
-      setPlayer(createPlayer(startPos.x, startPos.y));
-      setGoalPos(goal);
+    if (!startPos || !goal) return;
 
-      // 探索状態を初期化
-      const exploration = initExploration(newMap[0].length, newMap.length);
-      const updatedExploration = updateExploration(exploration, startPos, newMap);
-      setMapState({
-        exploration: updatedExploration,
-        isMapVisible: true,
-        isFullScreen: false,
-      });
-    }
+    setMap(newMap);
+    mapRef.current = newMap;
+    setGoalPos(goal);
+    const createdPlayer = createPlayer(startPos.x, startPos.y);
+    setPlayer(createdPlayer);
+    playerRef.current = createdPlayer;
+    setIsGameOver(false);
+    setCombatState({ lastAttackAt: 0, lastDamageAt: 0 });
+    setAttackEffect(undefined);
+
+    roomsRef.current = rooms;
+
+    const spawnedEnemies = spawnEnemies(rooms, startPos, goal);
+    const spawnedItems = spawnItems(rooms, spawnedEnemies, [startPos, goal]);
+    setEnemies(spawnedEnemies);
+    setItems(spawnedItems);
+    enemiesRef.current = spawnedEnemies;
+    itemsRef.current = spawnedItems;
+
+    // 探索状態を初期化
+    const exploration = initExploration(newMap[0].length, newMap.length);
+    const updatedExploration = updateExploration(exploration, startPos, newMap);
+    setMapState({
+      exploration: updatedExploration,
+      isMapVisible: true,
+      isFullScreen: false,
+    });
   }, []);
+
+  // ゲーム初期化
+  const initGame = useCallback(() => {
+    const result = createMapWithRooms();
+    setupGameState(result.map, result.rooms);
+  }, [setupGameState]);
 
   // 画面遷移ハンドラー
   const handleStartGame = useCallback(() => {
@@ -590,13 +847,63 @@ const IpnePage: React.FC = () => {
     setScreen(ScreenState.GAME);
   }, [initGame]);
 
+  const handleGameOverRetry = useCallback(() => {
+    if (mapRef.current.length === 0) return;
+    setupGameState(mapRef.current, roomsRef.current);
+    setScreen(ScreenState.GAME);
+  }, [setupGameState]);
+
   const handleBackToTitle = useCallback(() => {
     setScreen(ScreenState.TITLE);
+    setIsGameOver(false);
   }, []);
 
   // プレイヤー移動ハンドラー
   const handleMove = useCallback(
     (direction: (typeof Direction)[keyof typeof Direction]) => {
+      if (isGameOver) return;
+
+      const currentTime = Date.now();
+      const nextPosition = (() => {
+        switch (direction) {
+          case Direction.UP:
+            return { x: player.x, y: player.y - 1 };
+          case Direction.DOWN:
+            return { x: player.x, y: player.y + 1 };
+          case Direction.LEFT:
+            return { x: player.x - 1, y: player.y };
+          case Direction.RIGHT:
+            return { x: player.x + 1, y: player.y };
+          default:
+            return { x: player.x, y: player.y };
+        }
+      })();
+
+      const enemyAtTarget = getEnemyAtPosition(enemiesRef.current, nextPosition.x, nextPosition.y);
+
+      if (enemyAtTarget) {
+        const updatedPlayer = damagePlayer(
+          { ...player, direction },
+          enemyAtTarget.damage,
+          currentTime,
+          COMBAT_CONFIG.invincibleDuration
+        );
+        const knockedPlayer =
+          updatedPlayer !== player
+            ? applyPlayerKnockback(
+                updatedPlayer,
+                enemyAtTarget,
+                mapRef.current,
+                enemiesRef.current
+              )
+            : updatedPlayer;
+        if (updatedPlayer !== player) {
+          setCombatState(prev => ({ ...prev, lastDamageAt: currentTime }));
+        }
+        setPlayer(knockedPlayer);
+        return;
+      }
+
       const newPlayer = movePlayer(player, direction, map);
       setPlayer(newPlayer);
 
@@ -611,8 +918,34 @@ const IpnePage: React.FC = () => {
         setScreen(ScreenState.CLEAR);
       }
     },
-    [player, map]
+    [player, map, isGameOver]
   );
+
+  const handleTurn = useCallback(
+    (direction: (typeof Direction)[keyof typeof Direction]) => {
+      if (isGameOver) return;
+      setPlayer(prev => updatePlayerDirection(prev, direction));
+    },
+    [isGameOver]
+  );
+
+  const handleAttack = useCallback(() => {
+    if (isGameOver) return;
+    const currentTime = Date.now();
+    const result = playerAttack(playerRef.current, enemiesRef.current, mapRef.current, currentTime);
+
+    if (result.didAttack) {
+      setCombatState(prev => ({ ...prev, lastAttackAt: currentTime }));
+      if (result.attackPosition) {
+        setAttackEffect({ position: result.attackPosition, until: currentTime + 150 });
+      } else {
+        setAttackEffect(undefined);
+      }
+    }
+
+    setPlayer(result.player);
+    setEnemies(result.enemies.filter(enemy => enemy.hp > 0));
+  }, [isGameOver]);
 
   // マップ表示切替ハンドラー（小窓 → 全画面 → 非表示 → 小窓）
   const handleMapToggle = useCallback(() => {
@@ -639,6 +972,112 @@ const IpnePage: React.FC = () => {
     []
   );
 
+  const applyPlayerKnockback = useCallback(
+    (currentPlayer: Player, sourceEnemy: Enemy, currentMap: GameMap, currentEnemies: Enemy[]) => {
+      const dx = currentPlayer.x - sourceEnemy.x;
+      const dy = currentPlayer.y - sourceEnemy.y;
+      const stepX = dx === 0 ? 0 : dx > 0 ? 1 : -1;
+      const stepY = dy === 0 ? 0 : dy > 0 ? 1 : -1;
+      const knockbackTarget = { x: currentPlayer.x + stepX, y: currentPlayer.y + stepY };
+
+      if (!canMove(currentMap, knockbackTarget.x, knockbackTarget.y)) {
+        return currentPlayer;
+      }
+      if (getEnemyAtPosition(currentEnemies, knockbackTarget.x, knockbackTarget.y)) {
+        return currentPlayer;
+      }
+
+      return { ...currentPlayer, x: knockbackTarget.x, y: knockbackTarget.y };
+    },
+    []
+  );
+
+  // 敵AI・接触・アイテム取得の更新ループ
+  useEffect(() => {
+    if (screen !== ScreenState.GAME) return;
+
+    const interval = setInterval(() => {
+      const currentTime = Date.now();
+      let nextPlayer = playerRef.current;
+
+      if (nextPlayer.isInvincible && currentTime >= nextPlayer.invincibleUntil) {
+        nextPlayer = { ...nextPlayer, isInvincible: false };
+      }
+
+      const updateResult = updateEnemiesWithContact(
+        enemiesRef.current,
+        nextPlayer,
+        mapRef.current,
+        currentTime
+      );
+
+      const updatedEnemies = updateResult.enemies.filter(enemy => enemy.hp > 0);
+
+      // 接触ダメージの処理
+      if (updateResult.contactDamage > 0) {
+        const damagedPlayer = damagePlayer(
+          nextPlayer,
+          updateResult.contactDamage,
+          currentTime,
+          COMBAT_CONFIG.invincibleDuration
+        );
+        const knockedPlayer =
+          updateResult.contactEnemy && damagedPlayer !== nextPlayer
+            ? applyPlayerKnockback(
+                damagedPlayer,
+                updateResult.contactEnemy,
+                mapRef.current,
+                updatedEnemies
+              )
+            : damagedPlayer;
+        if (damagedPlayer !== nextPlayer) {
+          setCombatState(prev => ({ ...prev, lastDamageAt: currentTime }));
+        }
+        nextPlayer = knockedPlayer;
+      }
+
+      // 敵の射程攻撃ダメージの処理
+      if (updateResult.attackDamage > 0) {
+        const damagedPlayer = damagePlayer(
+          nextPlayer,
+          updateResult.attackDamage,
+          currentTime,
+          COMBAT_CONFIG.invincibleDuration
+        );
+        if (damagedPlayer !== nextPlayer) {
+          setCombatState(prev => ({ ...prev, lastDamageAt: currentTime }));
+        }
+        nextPlayer = damagedPlayer;
+      }
+
+      let remainingItems = itemsRef.current;
+      const pickedIds: string[] = [];
+
+      for (const item of remainingItems) {
+        if (canPickupItem(nextPlayer, item)) {
+          const pickupResult = pickupItem(nextPlayer, item);
+          nextPlayer = pickupResult.player;
+          pickedIds.push(pickupResult.itemId);
+        }
+      }
+
+      if (pickedIds.length > 0) {
+        remainingItems = remainingItems.filter(item => !pickedIds.includes(item.id));
+      }
+
+      setPlayer(nextPlayer);
+      setEnemies(updatedEnemies);
+      setItems(remainingItems);
+
+      if (nextPlayer.hp <= 0) {
+        setIsGameOver(true);
+        setScreen(ScreenState.GAME_OVER);
+      }
+    }, 200);
+
+    return () => clearInterval(interval);
+  }, [screen]);
+
   // 画面に応じたコンテンツをレンダリング
   return (
     <PageContainer>
@@ -648,16 +1087,25 @@ const IpnePage: React.FC = () => {
         <GameScreen
           map={map}
           player={player}
+          enemies={enemies}
+          items={items}
           mapState={mapState}
           goalPos={goalPos}
           debugState={debugState}
           onMove={handleMove}
+          onTurn={handleTurn}
+          onAttack={handleAttack}
           onMapToggle={handleMapToggle}
           onDebugToggle={handleDebugToggle}
+          attackEffect={attackEffect}
+          lastDamageAt={combatState.lastDamageAt}
         />
       )}
       {screen === ScreenState.CLEAR && (
         <ClearScreen onRetry={handleRetry} onBackToTitle={handleBackToTitle} />
+      )}
+      {screen === ScreenState.GAME_OVER && (
+        <GameOverScreen onRetry={handleGameOverRetry} onBackToTitle={handleBackToTitle} />
       )}
     </PageContainer>
   );

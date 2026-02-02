@@ -14,8 +14,8 @@ import {
 describe('movement', () => {
   describe('DEFAULT_MOVEMENT_CONFIG', () => {
     it('デフォルト設定が正しく定義されている', () => {
-      expect(DEFAULT_MOVEMENT_CONFIG.moveInterval).toBe(100);
-      expect(DEFAULT_MOVEMENT_CONFIG.initialDelay).toBe(150);
+      expect(DEFAULT_MOVEMENT_CONFIG.moveInterval).toBe(140);
+      expect(DEFAULT_MOVEMENT_CONFIG.initialDelay).toBe(180);
     });
   });
 

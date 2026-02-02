@@ -221,6 +221,78 @@ export const DPadButton = styled.button<{ $direction: 'up' | 'down' | 'left' | '
   }
 `;
 
+export const AttackButton = styled.button<{ $ready: boolean }>`
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  background: ${props => (props.$ready ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.08)')};
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  color: white;
+  font-size: 0.9rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: ${props => (props.$ready ? 'pointer' : 'not-allowed')};
+  user-select: none;
+  touch-action: none;
+  transition: all 0.1s;
+  grid-column: 2;
+  grid-row: 2;
+  opacity: ${props => (props.$ready ? 1 : 0.5)};
+
+  &:active {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(0.95);
+  }
+`;
+
+export const HPBarContainer = styled.div`
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  width: 200px;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 0.25rem;
+  overflow: hidden;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+export const HPBarFill = styled.div<{ $ratio: number; $color: string }>`
+  width: ${props => `${Math.max(0, Math.min(1, props.$ratio)) * 100}%`};
+  height: 100%;
+  background: ${props => props.$color};
+  transition: width 0.2s ease;
+`;
+
+export const HPBarText = styled.span`
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f8fafc;
+  font-size: 0.8rem;
+  font-weight: bold;
+  white-space: nowrap;
+  pointer-events: none;
+`;
+
+export const DamageOverlay = styled.div<{ $visible: boolean }>`
+  position: absolute;
+  inset: 0;
+  background: rgba(239, 68, 68, 0.35);
+  opacity: ${props => (props.$visible ? 1 : 0)};
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+  z-index: 15;
+`;
+
 // クリア画面
 export const ClearContainer = styled.div`
   display: flex;
@@ -241,6 +313,39 @@ export const ClearMessage = styled.p`
   color: #e5e7eb;
   font-size: 1.125rem;
   margin-bottom: 2rem;
+`;
+
+// ゲームオーバー画面
+export const GameOverContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+`;
+
+export const GameOverTitle = styled.h2`
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #ef4444;
+  margin-bottom: 1.5rem;
+  text-shadow: 0 0 30px rgba(239, 68, 68, 0.5);
+`;
+
+export const GameOverButton = styled.button`
+  padding: 0.9rem 2rem;
+  font-size: 1rem;
+  font-weight: bold;
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 0.75rem;
+
+  &:hover {
+    transform: scale(1.03);
+  }
 `;
 
 export const RetryButton = styled.button`
@@ -280,7 +385,7 @@ export const BackToTitleButton = styled.button`
 export const MapToggleButton = styled.button`
   position: absolute;
   top: 1rem;
-  left: 1rem;
+  right: 1rem;
   background: rgba(255, 255, 255, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 0.5rem;

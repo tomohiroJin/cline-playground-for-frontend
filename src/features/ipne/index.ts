@@ -3,7 +3,7 @@
  */
 
 // 型定義
-export { TileType, Direction, ScreenState, ExplorationState } from './types';
+export { TileType, Direction, ScreenState, ExplorationState, EnemyType, EnemyState, ItemType } from './types';
 export type {
   TileTypeValue,
   GameMap,
@@ -18,16 +18,31 @@ export type {
   Corridor,
   ExplorationStateValue,
   AutoMapState,
+  Enemy,
+  EnemyTypeValue,
+  EnemyStateValue,
+  Item,
+  ItemTypeValue,
+  CombatState,
 } from './types';
 
 // マップ
-export { createMap, getMapWidth, getMapHeight } from './map';
+export { createMap, createMapWithRooms, getMapWidth, getMapHeight } from './map';
 
 // プレイヤー
-export { createPlayer, movePlayer } from './player';
+export {
+  createPlayer,
+  movePlayer,
+  updatePlayerDirection,
+  damagePlayer,
+  healPlayer,
+  isPlayerInvincible,
+  canPlayerAttack,
+  setAttackCooldown,
+} from './player';
 
 // 衝突判定
-export { isWall, canMove } from './collision';
+export { isWall, canMove, checkEnemyCollision, getEnemyAtPosition, getEnemiesInRange } from './collision';
 
 // ゴール判定
 export { isGoal, findGoalPosition, findStartPosition } from './goal';
@@ -70,3 +85,58 @@ export {
   INITIAL_MOVEMENT_STATE,
 } from './movement';
 export type { MovementConfig, MovementState } from './movement';
+
+// 敵
+export {
+  ENEMY_CONFIGS,
+  generateEnemyId,
+  resetEnemyIdCounter,
+  createEnemy,
+  createPatrolEnemy,
+  createChargeEnemy,
+  createFleeEnemy,
+  createBoss,
+  isEnemyAlive,
+  damageEnemy,
+  applyKnockbackToEnemy,
+} from './enemy';
+
+export { SPAWN_CONFIG as ENEMY_SPAWN_CONFIG, spawnEnemies, getSpawnPositionsForRoom, distributeEnemyTypes } from './enemySpawner';
+
+export {
+  AI_CONFIG,
+  detectPlayer,
+  shouldChase,
+  shouldStopChase,
+  moveEnemyTowards,
+  generatePatrolPath,
+  getNextPatrolPoint,
+  updatePatrolEnemy,
+  updateChargeEnemy,
+  updateFleeEnemy,
+  updateEnemiesWithContact,
+  updateEnemyAI,
+  updateEnemies,
+  canEnemyAttack,
+  setEnemyAttackCooldown,
+  getDirectPathToPlayer,
+  calculateFleeDirection,
+} from './enemyAI';
+export type { EnemyUpdateResult } from './enemyAI';
+
+// 戦闘
+export { COMBAT_CONFIG, playerAttack, getAttackTarget, processEnemyContact, isKnockbackComplete } from './combat';
+
+// アイテム
+export {
+  ITEM_CONFIGS,
+  SPAWN_CONFIG as ITEM_SPAWN_CONFIG,
+  generateItemId,
+  resetItemIdCounter,
+  createItem,
+  createHealthSmall,
+  createHealthLarge,
+  spawnItems,
+  canPickupItem,
+  pickupItem,
+} from './item';
