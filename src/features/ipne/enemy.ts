@@ -90,6 +90,10 @@ export const createChargeEnemy = (x: number, y: number): Enemy => {
   return createEnemy(EnemyType.CHARGE, x, y);
 };
 
+export const createRangedEnemy = (x: number, y: number): Enemy => {
+  return createEnemy(EnemyType.RANGED, x, y);
+};
+
 export const createSpecimenEnemy = (x: number, y: number): Enemy => {
   return createEnemy(EnemyType.SPECIMEN, x, y);
 };

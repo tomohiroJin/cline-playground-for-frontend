@@ -47,6 +47,18 @@ export const createHealthLarge = (x: number, y: number): Item => {
   return createItem(ItemType.HEALTH_LARGE, x, y);
 };
 
+export const createHealthFull = (x: number, y: number): Item => {
+  return createItem(ItemType.HEALTH_FULL, x, y);
+};
+
+export const createLevelUpItem = (x: number, y: number): Item => {
+  return createItem(ItemType.LEVEL_UP, x, y);
+};
+
+export const createMapRevealItem = (x: number, y: number): Item => {
+  return createItem(ItemType.MAP_REVEAL, x, y);
+};
+
 const shuffle = <T>(items: T[]): T[] => {
   const copied = [...items];
   for (let i = copied.length - 1; i > 0; i--) {
@@ -109,9 +121,59 @@ export const canPickupItem = (player: Position, item: Item): boolean => {
   return player.x === item.x && player.y === item.y;
 };
 
-export const pickupItem = (player: Player, item: Item) => {
-  const updatedPlayer = healPlayer(player, item.healAmount);
-  return { player: updatedPlayer, itemId: item.id };
+/** アイテム取得効果の種類 */
+export type ItemEffectType = 'heal' | 'level_up' | 'map_reveal';
+
+/** アイテム取得結果 */
+export interface ItemPickupResult {
+  player: Player;
+  itemId: string;
+  effectType: ItemEffectType;
+  /** LEVEL_UP時はレベルアップ選択画面を表示する必要がある */
+  triggerLevelUp: boolean;
+  /** MAP_REVEAL時はマップ全体を表示する必要がある */
+  triggerMapReveal: boolean;
+}
+
+export const pickupItem = (player: Player, item: Item): ItemPickupResult => {
+  let updatedPlayer = player;
+  let effectType: ItemEffectType = 'heal';
+  let triggerLevelUp = false;
+  let triggerMapReveal = false;
+
+  switch (item.type) {
+    case ItemType.HEALTH_SMALL:
+    case ItemType.HEALTH_LARGE:
+      updatedPlayer = healPlayer(player, item.healAmount);
+      effectType = 'heal';
+      break;
+
+    case ItemType.HEALTH_FULL:
+      // 全回復（maxHpまで回復）
+      updatedPlayer = { ...player, hp: player.maxHp };
+      effectType = 'heal';
+      break;
+
+    case ItemType.LEVEL_UP:
+      // レベルアップアイテム：レベルアップ選択画面をトリガー
+      effectType = 'level_up';
+      triggerLevelUp = true;
+      break;
+
+    case ItemType.MAP_REVEAL:
+      // マップ公開アイテム：マップ全体を公開
+      effectType = 'map_reveal';
+      triggerMapReveal = true;
+      break;
+  }
+
+  return {
+    player: updatedPlayer,
+    itemId: item.id,
+    effectType,
+    triggerLevelUp,
+    triggerMapReveal,
+  };
 };
 
 export { ITEM_CONFIGS, SPAWN_CONFIG };

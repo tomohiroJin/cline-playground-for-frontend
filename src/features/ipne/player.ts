@@ -10,8 +10,10 @@ import {
   PlayerClass,
   PlayerClassValue,
   PlayerStats,
+  StatTypeValue,
 } from './types';
 import { canMove } from './collision';
+import { shouldLevelUp, applyLevelUpChoice } from './progression';
 
 /** 職業別初期能力値 */
 const INITIAL_STATS: Record<PlayerClassValue, PlayerStats> = {
@@ -139,4 +141,79 @@ export const canPlayerAttack = (player: Player, currentTime: number): boolean =>
 /** 攻撃クールダウン設定 */
 export const setAttackCooldown = (player: Player, currentTime: number, cooldown: number): Player => {
   return { ...player, attackCooldownUntil: currentTime + cooldown };
+};
+
+// ===== MVP3 追加関数 =====
+
+/** 撃破数増加結果 */
+export interface KillCountResult {
+  player: Player;
+  shouldLevelUp: boolean;
+}
+
+/**
+ * 撃破数をインクリメント
+ */
+export const incrementKillCount = (player: Player): KillCountResult => {
+  const newKillCount = player.killCount + 1;
+  const newPlayer = { ...player, killCount: newKillCount };
+  const canLevelUp = shouldLevelUp(player.level, newKillCount);
+  return {
+    player: newPlayer,
+    shouldLevelUp: canLevelUp,
+  };
+};
+
+/**
+ * レベルアップ処理
+ */
+export const processLevelUp = (player: Player, statChoice: StatTypeValue): Player => {
+  const newStats = applyLevelUpChoice(player.stats, statChoice);
+  return {
+    ...player,
+    level: player.level + 1,
+    stats: newStats,
+  };
+};
+
+/**
+ * 実効移動速度を取得（速度低下状態を考慮）
+ */
+export const getEffectiveMoveSpeed = (player: Player, currentTime: number): number => {
+  const baseSpeed = player.stats.moveSpeed;
+  if (isSlowed(player, currentTime)) {
+    return baseSpeed * 0.5; // 50%低下
+  }
+  return baseSpeed;
+};
+
+/**
+ * 実効攻撃クールダウンを取得（attackSpeedを考慮）
+ */
+export const getEffectiveAttackCooldown = (player: Player, baseCooldown: number): number => {
+  return baseCooldown * player.stats.attackSpeed;
+};
+
+/**
+ * 実効回復量を取得（healBonusを考慮）
+ */
+export const getEffectiveHeal = (player: Player, baseHeal: number): number => {
+  return baseHeal + player.stats.healBonus;
+};
+
+/**
+ * 速度低下効果を適用
+ */
+export const applySlowEffect = (player: Player, currentTime: number, duration: number): Player => {
+  return {
+    ...player,
+    slowedUntil: currentTime + duration,
+  };
+};
+
+/**
+ * 速度低下状態かどうかを判定
+ */
+export const isSlowed = (player: Player, currentTime: number): boolean => {
+  return currentTime < player.slowedUntil;
 };

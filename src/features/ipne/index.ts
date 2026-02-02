@@ -3,7 +3,22 @@
  */
 
 // 型定義
-export { TileType, Direction, ScreenState, ExplorationState, EnemyType, EnemyState, ItemType } from './types';
+export {
+  TileType,
+  Direction,
+  ScreenState,
+  ExplorationState,
+  EnemyType,
+  EnemyState,
+  ItemType,
+  // MVP3追加
+  PlayerClass,
+  StatType,
+  TrapType,
+  TrapState,
+  WallType,
+  WallState,
+} from './types';
 export type {
   TileTypeValue,
   GameMap,
@@ -24,6 +39,16 @@ export type {
   Item,
   ItemTypeValue,
   CombatState,
+  // MVP3追加
+  PlayerClassValue,
+  PlayerStats,
+  StatTypeValue,
+  Trap,
+  TrapTypeValue,
+  TrapStateValue,
+  Wall,
+  WallTypeValue,
+  WallStateValue,
 } from './types';
 
 // マップ
@@ -39,7 +64,16 @@ export {
   isPlayerInvincible,
   canPlayerAttack,
   setAttackCooldown,
+  // MVP3追加
+  incrementKillCount,
+  processLevelUp,
+  getEffectiveMoveSpeed,
+  getEffectiveAttackCooldown,
+  getEffectiveHeal,
+  applySlowEffect,
+  isSlowed,
 } from './player';
+export type { KillCountResult } from './player';
 
 // 衝突判定
 export { isWall, canMove, checkEnemyCollision, getEnemyAtPosition, getEnemiesInRange } from './collision';
@@ -136,7 +170,80 @@ export {
   createItem,
   createHealthSmall,
   createHealthLarge,
+  createHealthFull,
+  createLevelUpItem,
+  createMapRevealItem,
   spawnItems,
   canPickupItem,
   pickupItem,
 } from './item';
+export type { ItemEffectType, ItemPickupResult } from './item';
+
+// ===== MVP3 追加モジュール =====
+
+// 職業
+export {
+  CLASS_CONFIGS,
+  getClassConfig,
+  canSeeTrap,
+  canSeeSpecialWall,
+  getTrapAlpha,
+  getWallAlpha,
+} from './class';
+
+// 成長
+export {
+  MAX_LEVEL,
+  KILL_COUNT_TABLE,
+  STAT_LIMITS,
+  LEVEL_UP_CHOICES,
+  getKillCountForLevel,
+  getLevelFromKillCount,
+  shouldLevelUp,
+  applyLevelUpChoice,
+  canChooseStat,
+  getNextKillsRequired,
+} from './progression';
+
+// 罠
+export {
+  TRAP_CONFIGS,
+  generateTrapId,
+  resetTrapIdCounter,
+  createTrap,
+  createDamageTrap,
+  createSlowTrap,
+  createAlertTrap,
+  triggerTrap,
+  canTriggerTrap,
+  getTrapAt,
+  revealTrap,
+} from './trap';
+export type { TrapTriggerResult } from './trap';
+
+// 壁
+export {
+  WALL_CONFIGS,
+  createWall,
+  createBreakableWall,
+  createPassableWall,
+  createInvisibleWall,
+  damageWall,
+  isWallPassable,
+  isWallBlocking,
+  revealWall,
+  getWallAt,
+} from './wall';
+
+// ギミック配置
+export {
+  DEFAULT_GIMMICK_CONFIG,
+  placeTrap,
+  placeWalls,
+  placeGimmicks,
+} from './gimmickPlacement';
+export type { GimmickPlacementConfig, GimmickPlacementResult } from './gimmickPlacement';
+
+// 敵AI（RANGED追加）
+export { createRangedEnemy } from './enemy';
+export { updateRangedEnemy } from './enemyAI';

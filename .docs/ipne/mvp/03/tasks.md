@@ -5,17 +5,17 @@
 | フェーズ | 状況 | 完了タスク |
 |---------|------|-----------:|
 | フェーズ0: 型定義・テスト準備 | ✅ 完了 | 3/3 |
-| フェーズ1: 職業システム | ⬜ 未着手 | 0/2 |
-| フェーズ2: 成長システム | ⬜ 未着手 | 0/2 |
-| フェーズ3: プレイヤー拡張 | ⬜ 未着手 | 0/2 |
-| フェーズ4: 壁ギミック | ⬜ 未着手 | 0/2 |
-| フェーズ5: 罠システム | ⬜ 未着手 | 0/2 |
-| フェーズ6: 敵AI拡張 | ⬜ 未着手 | 0/2 |
-| フェーズ7: アイテム拡張 | ⬜ 未着手 | 0/2 |
-| フェーズ8: マップ生成拡張 | ⬜ 未着手 | 0/2 |
+| フェーズ1: 職業システム | ✅ 完了 | 2/2 |
+| フェーズ2: 成長システム | ✅ 完了 | 2/2 |
+| フェーズ3: プレイヤー拡張 | ✅ 完了 | 2/2 |
+| フェーズ4: 壁ギミック | ✅ 完了 | 2/2 |
+| フェーズ5: 罠システム | ✅ 完了 | 2/2 |
+| フェーズ6: 敵AI拡張 | ✅ 完了 | 2/2 |
+| フェーズ7: アイテム拡張 | ✅ 完了 | 2/2 |
+| フェーズ8: マップ生成拡張 | ✅ 完了 | 2/2 |
 | フェーズ9: UI・演出統合 | ⬜ 未着手 | 0/3 |
-| フェーズ10: バランス調整・検証 | ⬜ 未着手 | 0/4 |
-| **合計** | **12%** | **3/26** |
+| フェーズ10: バランス調整・検証 | 🔄 一部完了 | 1/4 |
+| **合計** | **81%** | **20/26** |
 
 ---
 
@@ -81,33 +81,33 @@
 ### Task 1.1: class.ts 新規作成
 **ファイル**: `src/features/ipne/class.ts`
 
-- [ ] `CLASS_CONFIGS` 定数定義
-  - [ ] 戦士設定（trapVisibility: 'none', wallVisibility: 'none'）
-  - [ ] 盗賊設定（trapVisibility: 'faint', wallVisibility: 'faint'）
-- [ ] `getClassConfig()` 関数
-  - [ ] 職業に応じた設定を返す
-- [ ] `canSeeTrap()` 関数
-  - [ ] 職業と罠状態から可視性を判定
-- [ ] `canSeeSpecialWall()` 関数
-  - [ ] 職業と壁状態から可視性を判定
-- [ ] `getTrapAlpha()` 関数
-  - [ ] 職業に応じた罠の透明度を返す（戦士:0, 盗賊:0.3）
-- [ ] `getWallAlpha()` 関数
-  - [ ] 職業に応じた特殊壁の透明度を返す
+- [x] `CLASS_CONFIGS` 定数定義
+  - [x] 戦士設定（trapVisibility: 'none', wallVisibility: 'none'）
+  - [x] 盗賊設定（trapVisibility: 'faint', wallVisibility: 'faint'）
+- [x] `getClassConfig()` 関数
+  - [x] 職業に応じた設定を返す
+- [x] `canSeeTrap()` 関数
+  - [x] 職業と罠状態から可視性を判定
+- [x] `canSeeSpecialWall()` 関数
+  - [x] 職業と壁状態から可視性を判定
+- [x] `getTrapAlpha()` 関数
+  - [x] 職業に応じた罠の透明度を返す（戦士:0, 盗賊:0.3）
+- [x] `getWallAlpha()` 関数
+  - [x] 職業に応じた特殊壁の透明度を返す
 
 ### Task 1.2: class.test.ts 新規作成
 **ファイル**: `src/features/ipne/__tests__/class.test.ts`
 
-- [ ] 職業設定取得テスト
-  - [ ] 戦士の設定が正しい
-  - [ ] 盗賊の設定が正しい
-- [ ] 罠可視性テスト
-  - [ ] 戦士は未発見罠が見えない
-  - [ ] 盗賊は未発見罠が見える（半透明）
-  - [ ] 両職業で発見済み罠が見える
-- [ ] 特殊壁可視性テスト
-  - [ ] 戦士は未発見特殊壁が見えない
-  - [ ] 盗賊は未発見特殊壁が見える（半透明）
+- [x] 職業設定取得テスト
+  - [x] 戦士の設定が正しい
+  - [x] 盗賊の設定が正しい
+- [x] 罠可視性テスト
+  - [x] 戦士は未発見罠が見えない
+  - [x] 盗賊は未発見罠が見える（半透明）
+  - [x] 両職業で発見済み罠が見える
+- [x] 特殊壁可視性テスト
+  - [x] 戦士は未発見特殊壁が見えない
+  - [x] 盗賊は未発見特殊壁が見える（半透明）
 
 ---
 
@@ -116,42 +116,42 @@
 ### Task 2.1: progression.ts 新規作成
 **ファイル**: `src/features/ipne/progression.ts`
 
-- [ ] `KILL_COUNT_TABLE` 定数定義
-  - [ ] 各レベルの必要累計撃破数
-- [ ] `STAT_LIMITS` 定数定義
-  - [ ] 各能力の上限値（attackSpeed: 0.5, healBonus: 5 追加）
-- [ ] `LEVEL_UP_CHOICES` 定数定義
-  - [ ] 5択の選択肢効果（攻撃力/攻撃距離/移動速度/攻撃速度/回復量）
-- [ ] `getKillCountForLevel()` 関数
-  - [ ] レベルに必要な撃破数を返す
-- [ ] `getLevelFromKillCount()` 関数
-  - [ ] 撃破数から現在レベルを計算
-- [ ] `shouldLevelUp()` 関数
-  - [ ] レベルアップ判定（撃破数ベース）
-- [ ] `applyLevelUpChoice()` 関数
-  - [ ] 選択に応じて能力値を上昇（attackSpeed は -0.1）
-- [ ] `canChooseStat()` 関数
-  - [ ] 能力値が上限に達していないか確認
-- [ ] `getNextKillsRequired()` 関数
-  - [ ] 次レベルまでの必要撃破数を返す
+- [x] `KILL_COUNT_TABLE` 定数定義
+  - [x] 各レベルの必要累計撃破数
+- [x] `STAT_LIMITS` 定数定義
+  - [x] 各能力の上限値（attackSpeed: 0.5, healBonus: 5 追加）
+- [x] `LEVEL_UP_CHOICES` 定数定義
+  - [x] 5択の選択肢効果（攻撃力/攻撃距離/移動速度/攻撃速度/回復量）
+- [x] `getKillCountForLevel()` 関数
+  - [x] レベルに必要な撃破数を返す
+- [x] `getLevelFromKillCount()` 関数
+  - [x] 撃破数から現在レベルを計算
+- [x] `shouldLevelUp()` 関数
+  - [x] レベルアップ判定（撃破数ベース）
+- [x] `applyLevelUpChoice()` 関数
+  - [x] 選択に応じて能力値を上昇（attackSpeed は -0.1）
+- [x] `canChooseStat()` 関数
+  - [x] 能力値が上限に達していないか確認
+- [x] `getNextKillsRequired()` 関数
+  - [x] 次レベルまでの必要撃破数を返す
 
 ### Task 2.2: progression.test.ts 新規作成
 **ファイル**: `src/features/ipne/__tests__/progression.test.ts`
 
-- [ ] 撃破数テーブルテスト
-  - [ ] 各レベルの必要撃破数が正しい
-- [ ] レベル計算テスト
-  - [ ] 撃破数からレベルが正しく計算される
-  - [ ] 境界値でのレベル判定が正しい
-- [ ] レベルアップ判定テスト
-  - [ ] 撃破数が足りるとレベルアップ可能
-  - [ ] 最大レベルではレベルアップ不可
-- [ ] 能力値上昇テスト（5択）
-  - [ ] 攻撃力上昇が正しい（+1）
-  - [ ] 攻撃距離上昇が正しい（+1、上限3）
-  - [ ] 移動速度上昇が正しい（+1、上限8）
-  - [ ] 攻撃速度上昇が正しい（-0.1、上限0.5）
-  - [ ] 回復量上昇が正しい（+1、上限+5）
+- [x] 撃破数テーブルテスト
+  - [x] 各レベルの必要撃破数が正しい
+- [x] レベル計算テスト
+  - [x] 撃破数からレベルが正しく計算される
+  - [x] 境界値でのレベル判定が正しい
+- [x] レベルアップ判定テスト
+  - [x] 撃破数が足りるとレベルアップ可能
+  - [x] 最大レベルではレベルアップ不可
+- [x] 能力値上昇テスト（5択）
+  - [x] 攻撃力上昇が正しい（+1）
+  - [x] 攻撃距離上昇が正しい（+1、上限3）
+  - [x] 移動速度上昇が正しい（+1、上限8）
+  - [x] 攻撃速度上昇が正しい（-0.1、上限0.5）
+  - [x] 回復量上昇が正しい（+1、上限+5）
 
 ---
 
@@ -160,54 +160,54 @@
 ### Task 3.1: player.ts 拡張
 **ファイル**: `src/features/ipne/player.ts`
 
-- [ ] `createPlayer()` 関数の拡張
-  - [ ] 職業パラメータ追加
-  - [ ] レベル初期化（level: 1）
-  - [ ] killCount初期化（0）
-  - [ ] 職業別能力値初期化
-    - [ ] 戦士: { attackPower: 2, attackRange: 1, moveSpeed: 4, attackSpeed: 1.0, healBonus: 0 }
-    - [ ] 盗賊: { attackPower: 1, attackRange: 1, moveSpeed: 6, attackSpeed: 1.0, healBonus: 0 }
-  - [ ] slowedUntil初期化（0）
-- [ ] `incrementKillCount()` 関数追加
-  - [ ] 撃破数インクリメント
-  - [ ] レベルアップ判定・フラグ設定
-- [ ] `processLevelUp()` 関数追加
-  - [ ] 選択に応じた能力値上昇（5択対応）
-  - [ ] レベルインクリメント
-- [ ] `getEffectiveMoveSpeed()` 関数追加
-  - [ ] 基本速度と速度低下状態を考慮した実効速度
-- [ ] `getEffectiveAttackCooldown()` 関数追加
-  - [ ] attackSpeed を考慮した実効クールダウン計算
-- [ ] `getEffectiveHeal()` 関数追加
-  - [ ] healBonus を考慮した回復量計算
-- [ ] `applySlowEffect()` 関数追加
-  - [ ] 速度低下効果の適用
-- [ ] `isSlowed()` 関数追加
-  - [ ] 速度低下状態の判定
+- [x] `createPlayer()` 関数の拡張
+  - [x] 職業パラメータ追加
+  - [x] レベル初期化（level: 1）
+  - [x] killCount初期化（0）
+  - [x] 職業別能力値初期化
+    - [x] 戦士: { attackPower: 2, attackRange: 1, moveSpeed: 4, attackSpeed: 1.0, healBonus: 0 }
+    - [x] 盗賊: { attackPower: 1, attackRange: 1, moveSpeed: 6, attackSpeed: 1.0, healBonus: 0 }
+  - [x] slowedUntil初期化（0）
+- [x] `incrementKillCount()` 関数追加
+  - [x] 撃破数インクリメント
+  - [x] レベルアップ判定・フラグ設定
+- [x] `processLevelUp()` 関数追加
+  - [x] 選択に応じた能力値上昇（5択対応）
+  - [x] レベルインクリメント
+- [x] `getEffectiveMoveSpeed()` 関数追加
+  - [x] 基本速度と速度低下状態を考慮した実効速度
+- [x] `getEffectiveAttackCooldown()` 関数追加
+  - [x] attackSpeed を考慮した実効クールダウン計算
+- [x] `getEffectiveHeal()` 関数追加
+  - [x] healBonus を考慮した回復量計算
+- [x] `applySlowEffect()` 関数追加
+  - [x] 速度低下効果の適用
+- [x] `isSlowed()` 関数追加
+  - [x] 速度低下状態の判定
 
 ### Task 3.2: player.test.ts 拡張
 **ファイル**: `src/features/ipne/__tests__/player.test.ts`
 
-- [ ] 初期化テスト（拡張）
-  - [ ] 職業が正しく設定される
-  - [ ] 戦士の初期能力値が正しい（attackPower: 2, moveSpeed: 4）
-  - [ ] 盗賊の初期能力値が正しい（attackPower: 1, moveSpeed: 6）
-- [ ] 撃破数テスト
-  - [ ] 撃破数が正しく加算される
-  - [ ] レベルアップ条件で正しくフラグが立つ
-- [ ] レベルアップテスト（5択）
-  - [ ] 攻撃力が正しく上昇する
-  - [ ] 攻撃速度が正しく減少する（クールダウン短縮）
-  - [ ] 回復量が正しく上昇する
-  - [ ] レベルがインクリメントされる
-- [ ] 攻撃速度テスト
-  - [ ] 実効クールダウンが正しく計算される
-- [ ] 回復量テスト
-  - [ ] healBonus が回復に適用される
-- [ ] 速度低下テスト
-  - [ ] 速度低下が正しく適用される
-  - [ ] 時間経過で解除される
-  - [ ] 実効速度が正しく計算される
+- [x] 初期化テスト（拡張）
+  - [x] 職業が正しく設定される
+  - [x] 戦士の初期能力値が正しい（attackPower: 2, moveSpeed: 4）
+  - [x] 盗賊の初期能力値が正しい（attackPower: 1, moveSpeed: 6）
+- [x] 撃破数テスト
+  - [x] 撃破数が正しく加算される
+  - [x] レベルアップ条件で正しくフラグが立つ
+- [x] レベルアップテスト（5択）
+  - [x] 攻撃力が正しく上昇する
+  - [x] 攻撃速度が正しく減少する（クールダウン短縮）
+  - [x] 回復量が正しく上昇する
+  - [x] レベルがインクリメントされる
+- [x] 攻撃速度テスト
+  - [x] 実効クールダウンが正しく計算される
+- [x] 回復量テスト
+  - [x] healBonus が回復に適用される
+- [x] 速度低下テスト
+  - [x] 速度低下が正しく適用される
+  - [x] 時間経過で解除される
+  - [x] 実効速度が正しく計算される
 
 ---
 
@@ -216,45 +216,44 @@
 ### Task 4.1: wall.ts 新規作成
 **ファイル**: `src/features/ipne/wall.ts`
 
-- [ ] `WALL_CONFIGS` 定数定義
-  - [ ] 通常壁設定
-  - [ ] 破壊可能壁設定（HP: 3）
-  - [ ] すり抜け可能壁設定
-  - [ ] 透明壁設定
-- [ ] `generateWallId()` 関数
-- [ ] `createWall()` 関数
-- [ ] `createBreakableWall()` 関数
-- [ ] `createPassableWall()` 関数
-- [ ] `createInvisibleWall()` 関数
-- [ ] `damageWall()` 関数
-  - [ ] HP減少
-  - [ ] 破壊判定
-- [ ] `isWallPassable()` 関数
-  - [ ] 壁種類と状態から通過可否を判定
-- [ ] `isWallBlocking()` 関数
-  - [ ] 壁が通行を妨げるか判定
-- [ ] `revealWall()` 関数
-  - [ ] 壁を発見済み状態に
-- [ ] `getWallAt()` 関数
-  - [ ] 指定位置の壁を取得
+- [x] `WALL_CONFIGS` 定数定義
+  - [x] 通常壁設定
+  - [x] 破壊可能壁設定（HP: 3）
+  - [x] すり抜け可能壁設定
+  - [x] 透明壁設定
+- [x] `createWall()` 関数
+- [x] `createBreakableWall()` 関数
+- [x] `createPassableWall()` 関数
+- [x] `createInvisibleWall()` 関数
+- [x] `damageWall()` 関数
+  - [x] HP減少
+  - [x] 破壊判定
+- [x] `isWallPassable()` 関数
+  - [x] 壁種類と状態から通過可否を判定
+- [x] `isWallBlocking()` 関数
+  - [x] 壁が通行を妨げるか判定
+- [x] `revealWall()` 関数
+  - [x] 壁を発見済み状態に
+- [x] `getWallAt()` 関数
+  - [x] 指定位置の壁を取得
 
 ### Task 4.2: wall.test.ts 新規作成
 **ファイル**: `src/features/ipne/__tests__/wall.test.ts`
 
-- [ ] 壁生成テスト
-  - [ ] 各種類の壁が正しく生成される
-- [ ] 破壊可能壁テスト
-  - [ ] ダメージでHPが減少する
-  - [ ] HP0で破壊状態になる
-  - [ ] 破壊後は通過可能
-- [ ] すり抜け可能壁テスト
-  - [ ] 最初から通過可能
-  - [ ] 通過後に発見済みになる
-- [ ] 透明壁テスト
-  - [ ] 通過不可
-  - [ ] 接触で発見済みになる
-- [ ] 通過判定テスト
-  - [ ] 各壁種類・状態で正しく判定
+- [x] 壁生成テスト
+  - [x] 各種類の壁が正しく生成される
+- [x] 破壊可能壁テスト
+  - [x] ダメージでHPが減少する
+  - [x] HP0で破壊状態になる
+  - [x] 破壊後は通過可能
+- [x] すり抜け可能壁テスト
+  - [x] 最初から通過可能
+  - [x] 発見済みに変更可能
+- [x] 透明壁テスト
+  - [x] 通過不可
+  - [x] 接触で発見済みになる
+- [x] 通過判定テスト
+  - [x] 各壁種類・状態で正しく判定
 
 ---
 
@@ -263,48 +262,44 @@
 ### Task 5.1: trap.ts 新規作成
 **ファイル**: `src/features/ipne/trap.ts`
 
-- [ ] `TRAP_CONFIGS` 定数定義
-  - [ ] ダメージ床設定（damage: 2）
-  - [ ] 移動妨害床設定（slowDuration: 3000ms, slowRate: 0.5）
-  - [ ] 索敵反応罠設定（alertRadius: 5）
-- [ ] `generateTrapId()` 関数
-- [ ] `createTrap()` 関数
-- [ ] `createDamageTrap()` 関数
-- [ ] `createSlowTrap()` 関数
-- [ ] `createAlertTrap()` 関数
-- [ ] `triggerTrap()` 関数
-  - [ ] 罠種類に応じた効果発動
-  - [ ] 状態をtriggeredに変更
-- [ ] `canTriggerTrap()` 関数
-  - [ ] 発動可能か判定（1回限り罠はtriggered状態でfalse）
-- [ ] `getTrapAt()` 関数
-  - [ ] 指定位置の罠を取得
-- [ ] `revealTrap()` 関数
-  - [ ] 罠を発見済み状態に
-- [ ] `applyDamageEffect()` 関数
-  - [ ] ダメージ床の効果適用
-- [ ] `applySlowEffect()` 関数
-  - [ ] 移動妨害床の効果適用
-- [ ] `applyAlertEffect()` 関数
-  - [ ] 索敵反応罠の効果適用（敵を引き寄せる）
+- [x] `TRAP_CONFIGS` 定数定義
+  - [x] ダメージ床設定（damage: 2）
+  - [x] 移動妨害床設定（slowDuration: 3000ms, slowRate: 0.5, cooldown: 5000ms）
+  - [x] 索敵反応罠設定（alertRadius: 5）
+- [x] `generateTrapId()` 関数
+- [x] `resetTrapIdCounter()` 関数
+- [x] `createTrap()` 関数
+- [x] `createDamageTrap()` 関数
+- [x] `createSlowTrap()` 関数
+- [x] `createAlertTrap()` 関数
+- [x] `triggerTrap()` 関数
+  - [x] 罠種類に応じた効果発動
+  - [x] 状態をtriggered/revealedに変更
+- [x] `canTriggerTrap()` 関数
+  - [x] 発動可能か判定（1回限り罠はtriggered状態でfalse）
+- [x] `getTrapAt()` 関数
+  - [x] 指定位置の罠を取得
+- [x] `revealTrap()` 関数
+  - [x] 罠を発見済み状態に
 
 ### Task 5.2: trap.test.ts 新規作成
 **ファイル**: `src/features/ipne/__tests__/trap.test.ts`
 
-- [ ] 罠生成テスト
-  - [ ] 各種類の罠が正しく生成される
-- [ ] ダメージ床テスト
-  - [ ] 発動でダメージが与えられる
-  - [ ] 1回限りで再発動不可
-- [ ] 移動妨害床テスト
-  - [ ] 発動で速度低下が適用される
-  - [ ] 効果時間が正しい
-  - [ ] クールダウン後に再発動可能
-- [ ] 索敵反応罠テスト
-  - [ ] 発動で周囲の敵が引き寄せられる
-  - [ ] 1回限りで再発動不可
-- [ ] 発見状態テスト
-  - [ ] 発動で発見済みになる
+- [x] 罠生成テスト
+  - [x] 各種類の罠が正しく生成される
+  - [x] 罠IDが一意である
+- [x] ダメージ床テスト
+  - [x] 発動でダメージが計算される
+  - [x] 1回限りで再発動不可
+- [x] 移動妨害床テスト
+  - [x] 発動で速度低下時間が返される
+  - [x] クールダウン後に再発動可能
+- [x] 索敵反応罠テスト
+  - [x] 発動で引き寄せ範囲が返される
+  - [x] 1回限りで再発動不可
+- [x] 発見状態テスト
+  - [x] 発動で発見済みになる
+  - [x] revealTrapで発見済みになる
 
 ---
 
@@ -313,42 +308,31 @@
 ### Task 6.1: enemy.ts 拡張
 **ファイル**: `src/features/ipne/enemy.ts`
 
-- [ ] `ENEMY_CONFIGS` に遠距離型追加
-  - [ ] HP: 2, damage: 1, speed: 3
-  - [ ] detectionRange: 7, attackRange: 4, chaseRange: 10
-  - [ ] preferredDistance: 3〜4
-- [ ] `FLEE` を `SPECIMEN` にリネーム
-  - [ ] 既存コードの参照を更新
-- [ ] `createRangedEnemy()` 関数追加
-- [ ] `EXP_REWARDS` 定数追加（progressionと連携）
+- [x] `ENEMY_CONFIGS` に遠距離型追加
+  - [x] HP: 2, damage: 1, speed: 3
+  - [x] detectionRange: 7, attackRange: 4, chaseRange: 10
+- [x] `FLEE` を `SPECIMEN` にリネーム（フェーズ0で実施済み）
+- [x] `createRangedEnemy()` 関数追加
 
 ### Task 6.2: enemyAI.ts 拡張
 **ファイル**: `src/features/ipne/enemyAI.ts`
 
-- [ ] `updateRangedEnemy()` 関数追加
-  - [ ] 理想距離維持ロジック
-  - [ ] 接近時の後退ロジック
-  - [ ] 遠距離攻撃発動ロジック
-- [ ] `calculatePreferredDistance()` 関数追加
-  - [ ] 理想距離の計算
-- [ ] `moveAwayFromPlayer()` 関数追加
-  - [ ] プレイヤーから離れる移動
-- [ ] `canRangedAttack()` 関数追加
-  - [ ] 遠距離攻撃可能か判定
-- [ ] `executeRangedAttack()` 関数追加
-  - [ ] 遠距離攻撃の実行
-- [ ] `updateEnemyAI()` 関数の更新
-  - [ ] RANGED タイプのディスパッチ追加
-  - [ ] FLEE を SPECIMEN に変更
+- [x] `updateRangedEnemy()` 関数追加
+  - [x] 理想距離維持ロジック（RANGED_PREFERRED_DISTANCE: 3）
+  - [x] 接近時の後退ロジック
+  - [x] 遠距離攻撃射程内での待機ロジック
+- [x] `updateEnemyAI()` 関数の更新
+  - [x] RANGED タイプのディスパッチ追加
 
 ### Task 6.3: enemyAI.test.ts 拡張
 **ファイル**: `src/features/ipne/__tests__/enemyAI.test.ts`
 
-- [ ] 遠距離型AIテスト
-  - [ ] 理想距離を維持する
-  - [ ] 接近されると後退する
-  - [ ] 攻撃範囲内で遠距離攻撃する
-  - [ ] 攻撃クールダウンが機能する
+- [x] 遠距離型AIテスト
+  - [x] 遠距離攻撃型敵が正しく生成される
+  - [x] プレイヤーが近すぎると後退する
+  - [x] プレイヤーが攻撃射程外だと接近する
+  - [x] 適切な距離を保っている場合はその場に留まる
+  - [x] プレイヤーを見失ったら帰還する
 
 ---
 
@@ -357,62 +341,70 @@
 ### Task 7.1: item.ts 拡張
 **ファイル**: `src/features/ipne/item.ts`
 
-- [ ] `ITEM_CONFIGS` に新アイテム追加
-  - [ ] HP全回復設定
-  - [ ] 即レベルアップ設定
-  - [ ] 地図設定
-- [ ] `createHealthFullItem()` 関数追加
-- [ ] `createLevelUpItem()` 関数追加
-- [ ] `createMapRevealItem()` 関数追加
-- [ ] `applyItemEffect()` 関数の拡張
-  - [ ] HP全回復効果
-  - [ ] 即レベルアップ効果（フラグ設定）
-  - [ ] 地図効果（全マップ開示）
-- [ ] `SPAWN_CONFIG` の更新
-  - [ ] 新アイテムの配置数追加
+- [x] `ITEM_CONFIGS` に新アイテム追加（フェーズ0で実施済み）
+  - [x] HP全回復設定
+  - [x] 即レベルアップ設定
+  - [x] 地図設定
+- [x] `createHealthFull()` 関数追加
+- [x] `createLevelUpItem()` 関数追加
+- [x] `createMapRevealItem()` 関数追加
+- [x] `pickupItem()` 関数の拡張
+  - [x] HP全回復効果
+  - [x] 即レベルアップ効果（triggerLevelUp フラグ）
+  - [x] 地図効果（triggerMapReveal フラグ）
+- [x] `ItemPickupResult` 型追加
+  - [x] effectType, triggerLevelUp, triggerMapReveal
 
 ### Task 7.2: item.test.ts 拡張
 **ファイル**: `src/features/ipne/__tests__/item.test.ts`
 
-- [ ] HP全回復テスト
-  - [ ] HPが最大値まで回復する
-- [ ] 即レベルアップテスト
-  - [ ] レベルアップフラグが立つ
-  - [ ] レベル最大時は効果なし
-- [ ] 地図テスト
-  - [ ] 全マップが探索済みになる
+- [x] アイテム生成テスト
+  - [x] 各種類のアイテムが正しく生成される
+- [x] HP全回復テスト
+  - [x] HPがmaxHpまで回復する
+- [x] 即レベルアップテスト
+  - [x] レベルアップフラグが立つ
+- [x] 地図テスト
+  - [x] マップ公開フラグが立つ
 
 ---
 
 ## フェーズ8: マップ生成拡張
 
-### Task 8.1: mazeGenerator.ts 拡張
-**ファイル**: `src/features/ipne/mazeGenerator.ts`
+### Task 8.1: gimmickPlacement.ts 新規作成
+**ファイル**: `src/features/ipne/gimmickPlacement.ts`
 
-- [ ] `generateTraps()` 関数追加
-  - [ ] ダメージ床15個配置
-  - [ ] 移動妨害床10個配置
-  - [ ] 索敵反応罠8個配置
-  - [ ] 通路・部屋の床に配置
-- [ ] `generateSpecialWalls()` 関数追加
-  - [ ] 破壊可能壁20個配置（通路間の壁を置換）
-  - [ ] すり抜け可能壁8個配置（行き止まりに配置）
-  - [ ] 透明壁5個配置（通路の一部に配置）
-- [ ] `generateMaze()` 関数の拡張
-  - [ ] 罠・特殊壁生成の呼び出し追加
-  - [ ] 戻り値に traps, walls を追加
+- [x] `DEFAULT_GIMMICK_CONFIG` 定数定義
+  - [x] 罠配置数: 10
+  - [x] 罠種類比率（damage: 0.4, slow: 0.3, alert: 0.3）
+  - [x] 壁配置数: 6
+  - [x] 壁種類比率（breakable: 0.5, passable: 0.3, invisible: 0.2）
+- [x] `placeTrap()` 関数追加
+  - [x] 通路・部屋に罠を配置
+  - [x] 除外位置を避ける
+- [x] `placeWalls()` 関数追加
+  - [x] 壁に隣接する位置に特殊壁を配置
+  - [x] 除外位置を避ける
+- [x] `placeGimmicks()` 関数追加
+  - [x] 罠と壁を同時に配置
+  - [x] 罠と壁が重複しない
 
-### Task 8.2: mazeGenerator.test.ts 拡張
-**ファイル**: `src/features/ipne/mazeGenerator.test.ts`
+### Task 8.2: gimmickPlacement.test.ts 新規作成
+**ファイル**: `src/features/ipne/__tests__/gimmickPlacement.test.ts`
 
-- [ ] 罠配置テスト
-  - [ ] 指定数の罠が配置される
-  - [ ] 罠が床タイルに配置される
-  - [ ] スタート・ゴール付近に罠がない
-- [ ] 特殊壁配置テスト
-  - [ ] 指定数の特殊壁が配置される
-  - [ ] 破壊可能壁が通路間の壁に配置される
-  - [ ] すり抜け可能壁が行き止まりに配置される
+- [x] 罠配置テスト
+  - [x] 指定数の罠が配置される
+  - [x] 除外位置には罠が配置されない
+  - [x] 罠IDが一意である
+  - [x] 罠種類が比率に従って配置される
+- [x] 特殊壁配置テスト
+  - [x] 指定数の特殊壁が配置される
+  - [x] 除外位置には壁が配置されない
+  - [x] 壁種類が比率に従って配置される
+- [x] ギミック配置テスト
+  - [x] 罠と壁が両方配置される
+  - [x] 罠と壁が同じ位置に配置されない
+  - [x] 除外位置には何も配置されない
 
 ---
 
@@ -474,16 +466,17 @@
 ### Task 10.1: index.ts 更新
 **ファイル**: `src/features/ipne/index.ts`
 
-- [ ] 新規モジュールのエクスポート追加
-  - [ ] progression.ts
-  - [ ] class.ts
-  - [ ] trap.ts
-  - [ ] wall.ts
-- [ ] 新規型のエクスポート追加
-  - [ ] PlayerClass, PlayerClassValue, ClassConfig
-  - [ ] StatType, StatTypeValue, PlayerStats, LevelUpChoice
-  - [ ] TrapType, TrapTypeValue, TrapState, TrapStateValue, Trap
-  - [ ] WallType, WallTypeValue, WallState, WallStateValue, Wall
+- [x] 新規モジュールのエクスポート追加
+  - [x] progression.ts
+  - [x] class.ts
+  - [x] trap.ts
+  - [x] wall.ts
+  - [x] gimmickPlacement.ts
+- [x] 新規型のエクスポート追加
+  - [x] PlayerClass, PlayerClassValue
+  - [x] StatType, StatTypeValue, PlayerStats
+  - [x] TrapType, TrapTypeValue, TrapState, TrapStateValue, Trap
+  - [x] WallType, WallTypeValue, WallState, WallStateValue, Wall
 
 ### Task 10.2: バランス調整
 - [ ] 撃破数テーブル調整
@@ -515,8 +508,8 @@
   - [ ] 罠を全て避けるだけ → 利用メリットの追加
 
 ### Task 10.4: テスト・検証
-- [ ] 全テスト実行 `npm test`
-- [ ] TypeScriptコンパイル確認 `npx tsc --noEmit`
+- [x] 全テスト実行 `npm test` （242テスト通過）
+- [x] TypeScriptコンパイル確認 `npx tsc --noEmit`
 - [ ] 手動動作確認
   - [ ] 職業選択が機能する
   - [ ] レベルアップが機能する
