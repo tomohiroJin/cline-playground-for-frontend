@@ -139,6 +139,35 @@ describe('gimmickPlacement', () => {
         expect(wall.type).toBe(WallType.BREAKABLE);
       }
     });
+
+    test('連続壁セグメントがある場合に複数タイルにBREAKABLE壁が配置されること', () => {
+      // 連続壁セグメントを含むマップを作成
+      const grid = Array.from({ length: 10 }, () =>
+        Array(10).fill(TileType.WALL)
+      );
+
+      // 横方向に連続したショートカット壁を作成（y=4行目に3タイル連続の壁、上下は床）
+      for (let x = 2; x <= 7; x++) {
+        grid[3][x] = TileType.FLOOR; // 上の床
+        grid[5][x] = TileType.FLOOR; // 下の床
+      }
+      // 壁はy=4（デフォルトでWALL）
+
+      const config = {
+        ...DEFAULT_GIMMICK_CONFIG,
+        wallCount: 5,
+        wallRatio: { breakable: 1.0, passable: 0, invisible: 0 },
+      };
+      const walls = placeWalls(grid, [], config);
+
+      // BREAKABLE壁が複数連続して配置されていることを確認
+      const breakableWalls = walls.filter(w => w.type === WallType.BREAKABLE);
+      expect(breakableWalls.length).toBeGreaterThanOrEqual(2);
+
+      // 配置された壁が正しい位置（y=4行目）にあることを確認
+      const wallsAtY4 = breakableWalls.filter(w => w.y === 4);
+      expect(wallsAtY4.length).toBeGreaterThanOrEqual(2);
+    });
   });
 
   describe('placeGimmicks', () => {

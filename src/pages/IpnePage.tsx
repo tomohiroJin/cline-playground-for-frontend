@@ -622,26 +622,56 @@ const GameScreen: React.FC<{
       ctx.fillStyle = wallColor;
 
       if (wall.type === WallType.BREAKABLE) {
-        // 破壊可能壁: ひび割れ模様
-        ctx.fillRect(wallScreen.x - tileSize / 2.5, wallScreen.y - tileSize / 2.5, tileSize / 1.25, tileSize / 1.25);
-        ctx.strokeStyle = '#451a03';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(wallScreen.x - tileSize / 4, wallScreen.y - tileSize / 4);
-        ctx.lineTo(wallScreen.x, wallScreen.y);
-        ctx.lineTo(wallScreen.x + tileSize / 4, wallScreen.y - tileSize / 6);
-        ctx.stroke();
+        // 破壊可能壁: 状態によって表示を変える
+        if (wall.state === WallState.BROKEN) {
+          // 破壊済み: 緑の開口部（通過可能を示す）
+          ctx.strokeStyle = '#22c55e';
+          ctx.lineWidth = 3;
+          ctx.setLineDash([4, 4]);
+          ctx.strokeRect(wallScreen.x - tileSize / 2.5, wallScreen.y - tileSize / 2.5, tileSize / 1.25, tileSize / 1.25);
+          ctx.setLineDash([]);
+          // 開口部の内側に通路を示す明るい緑
+          ctx.fillStyle = 'rgba(34, 197, 94, 0.3)';
+          ctx.fillRect(wallScreen.x - tileSize / 3, wallScreen.y - tileSize / 3, tileSize / 1.5, tileSize / 1.5);
+        } else if (wall.state === WallState.DAMAGED) {
+          // 損傷: オレンジ色、大きなひび割れ
+          ctx.fillStyle = '#f97316';
+          ctx.fillRect(wallScreen.x - tileSize / 2.5, wallScreen.y - tileSize / 2.5, tileSize / 1.25, tileSize / 1.25);
+          ctx.strokeStyle = '#7c2d12';
+          ctx.lineWidth = 2;
+          // 大きなX字ひび割れ
+          ctx.beginPath();
+          ctx.moveTo(wallScreen.x - tileSize / 3, wallScreen.y - tileSize / 3);
+          ctx.lineTo(wallScreen.x + tileSize / 3, wallScreen.y + tileSize / 3);
+          ctx.moveTo(wallScreen.x + tileSize / 3, wallScreen.y - tileSize / 3);
+          ctx.lineTo(wallScreen.x - tileSize / 3, wallScreen.y + tileSize / 3);
+          ctx.stroke();
+        } else {
+          // 完全（INTACT）: 茶色のひび割れ模様
+          ctx.fillRect(wallScreen.x - tileSize / 2.5, wallScreen.y - tileSize / 2.5, tileSize / 1.25, tileSize / 1.25);
+          ctx.strokeStyle = '#451a03';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(wallScreen.x - tileSize / 4, wallScreen.y - tileSize / 4);
+          ctx.lineTo(wallScreen.x, wallScreen.y);
+          ctx.lineTo(wallScreen.x + tileSize / 4, wallScreen.y - tileSize / 6);
+          ctx.stroke();
+        }
       } else if (wall.type === WallType.PASSABLE) {
-        // すり抜け可能壁: 点線枠
+        // すり抜け可能壁: 半透明塗りつぶし + 点線枠（視認性向上）
+        ctx.fillStyle = 'rgba(22, 101, 52, 0.4)';
+        ctx.fillRect(wallScreen.x - tileSize / 2.5, wallScreen.y - tileSize / 2.5, tileSize / 1.25, tileSize / 1.25);
         ctx.strokeStyle = wallColor;
         ctx.lineWidth = 2;
         ctx.setLineDash([3, 3]);
         ctx.strokeRect(wallScreen.x - tileSize / 2.5, wallScreen.y - tileSize / 2.5, tileSize / 1.25, tileSize / 1.25);
         ctx.setLineDash([]);
       } else if (wall.type === WallType.INVISIBLE) {
-        // 透明壁: 薄い輪郭
+        // 透明壁: 半透明塗りつぶし + 太い輪郭（視認性向上）
+        ctx.fillStyle = 'rgba(76, 29, 149, 0.3)';
+        ctx.fillRect(wallScreen.x - tileSize / 2.5, wallScreen.y - tileSize / 2.5, tileSize / 1.25, tileSize / 1.25);
         ctx.strokeStyle = wallColor;
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 2;
         ctx.strokeRect(wallScreen.x - tileSize / 2.5, wallScreen.y - tileSize / 2.5, tileSize / 1.25, tileSize / 1.25);
       }
 
