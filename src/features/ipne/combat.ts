@@ -101,15 +101,15 @@ export const getAttackableWall = (player: Player, walls: Wall[], map: GameMap): 
     const targetX = player.x + dx * i;
     const targetY = player.y + dy * i;
 
-    // 通常の壁に当たったら探索を終了
-    if (isWall(map, targetX, targetY)) {
-      break;
-    }
-
-    // 破壊可能壁があり、まだ壊れていなければ返す
+    // まず破壊可能壁をチェック（壁タイル上にあるため先にチェック）
     const wall = getWallAt(walls, targetX, targetY);
     if (wall && wall.type === WallType.BREAKABLE && wall.state !== WallState.BROKEN) {
       return wall;
+    }
+
+    // 壁タイルに当たったら探索を終了（破壊可能壁でない場合）
+    if (isWall(map, targetX, targetY)) {
+      break;
     }
   }
 

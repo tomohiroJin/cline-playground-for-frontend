@@ -221,5 +221,31 @@ describe('combat', () => {
       const target = getAttackableWall(player, [wall], map);
       expect(target).toBeUndefined();
     });
+
+    test('壁タイル上の破壊可能壁も攻撃できること', () => {
+      const map = createTestMap();
+      // マップの(3, 2)を壁タイルにする（実際のゲームと同じシナリオ）
+      map[2][3] = 1; // TileType.WALL
+      const player = { ...createTestPlayer(2, 2), direction: Direction.RIGHT };
+      const wall = createTestWall(WallType.BREAKABLE, 3, 2, WallState.INTACT, 3);
+
+      const target = getAttackableWall(player, [wall], map);
+      expect(target).toBeDefined();
+      expect(target?.x).toBe(3);
+      expect(target?.y).toBe(2);
+    });
+
+    test('壁タイル上の破壊可能壁にダメージを与えられること', () => {
+      const map = createTestMap();
+      // マップの(3, 2)を壁タイルにする
+      map[2][3] = 1; // TileType.WALL
+      const player = { ...createTestPlayer(2, 2), direction: Direction.RIGHT };
+      const wall = createTestWall(WallType.BREAKABLE, 3, 2, WallState.INTACT, 3);
+
+      const result = playerAttack(player, [], map, 1000, [wall]);
+      expect(result.hitWall).toBe(true);
+      expect(result.walls).toBeDefined();
+      expect(result.walls![0].hp).toBe(3 - player.stats.attackPower);
+    });
   });
 });

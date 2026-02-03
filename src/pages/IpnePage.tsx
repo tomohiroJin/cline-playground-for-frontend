@@ -83,6 +83,7 @@ import {
   damageWall,
   isWallPassable,
   getWallAt,
+  revealWall,
   incrementKillCount,
   processLevelUp,
   getEffectiveMoveSpeed,
@@ -1241,6 +1242,16 @@ const IpnePage: React.FC = () => {
         }
         setPlayer(knockedPlayer);
         return;
+      }
+
+      // 移動先に特殊壁があれば発見済みにする
+      const wallAtTarget = getWallAt(wallsRef.current, nextPosition.x, nextPosition.y);
+      if (wallAtTarget && wallAtTarget.state === WallState.INTACT) {
+        const updatedWalls = wallsRef.current.map(w =>
+          w.x === wallAtTarget.x && w.y === wallAtTarget.y ? revealWall(w) : w
+        );
+        setWalls(updatedWalls);
+        wallsRef.current = updatedWalls;
       }
 
       const newPlayer = movePlayer(player, direction, map, wallsRef.current);
