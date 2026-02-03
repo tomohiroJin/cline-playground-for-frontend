@@ -1164,8 +1164,8 @@ const IpnePage: React.FC = () => {
     enemiesRef.current = spawnedEnemies;
     itemsRef.current = spawnedItems;
 
-    // MVP3: 罠と壁を配置
-    const gimmickResult = placeGimmicks(rooms, newMap, [startPos, goal]);
+    // MVP3: 罠と壁を配置（戦略的配置を使用）
+    const gimmickResult = placeGimmicks(rooms, newMap, [startPos, goal], undefined, startPos, goal);
     setTraps(gimmickResult.traps);
     setWalls(gimmickResult.walls);
     trapsRef.current = gimmickResult.traps;
