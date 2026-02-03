@@ -5,7 +5,7 @@ import { DirectionValue, Enemy, EnemyState, EnemyType, EnemyTypeValue, Position 
 
 const ENEMY_CONFIGS = {
   [EnemyType.PATROL]: {
-    hp: 3,
+    hp: 4,
     damage: 1,
     speed: 2,
     detectionRange: 5,
@@ -13,7 +13,7 @@ const ENEMY_CONFIGS = {
     attackRange: 3,
   },
   [EnemyType.CHARGE]: {
-    hp: 2,
+    hp: 3,
     damage: 2,
     speed: 5,
     detectionRange: 6,
@@ -21,9 +21,9 @@ const ENEMY_CONFIGS = {
     attackRange: 1,
   },
   [EnemyType.RANGED]: {
-    hp: 2,
+    hp: 3,
     damage: 1,
-    speed: 3,
+    speed: 1.5,
     detectionRange: 7,
     chaseRange: 10,
     attackRange: 4,
@@ -31,7 +31,7 @@ const ENEMY_CONFIGS = {
   [EnemyType.SPECIMEN]: {
     hp: 1,
     damage: 0,
-    speed: 6,
+    speed: 4,
     detectionRange: 4,
     chaseRange: undefined,
     attackRange: 0,
@@ -39,7 +39,7 @@ const ENEMY_CONFIGS = {
   [EnemyType.BOSS]: {
     hp: 12,
     damage: 4,
-    speed: 5,
+    speed: 1.5,
     detectionRange: 8,
     chaseRange: 15,
     attackRange: 3,

@@ -25,10 +25,10 @@ describe('player', () => {
       expect(player.y).toBe(3);
     });
 
-    test('HPと向きの初期化が正しいこと', () => {
-      const player = createPlayer(1, 1);
-      expect(player.hp).toBe(16);
-      expect(player.maxHp).toBe(16);
+    test('HPと向きの初期化が正しいこと（戦士）', () => {
+      const player = createPlayer(1, 1); // デフォルトは戦士
+      expect(player.hp).toBe(20); // 戦士のHP
+      expect(player.maxHp).toBe(20);
       expect(player.direction).toBe(Direction.DOWN);
       expect(player.isInvincible).toBe(false);
       expect(player.invincibleUntil).toBe(0);
@@ -93,9 +93,9 @@ describe('player', () => {
 
   describe('damagePlayer', () => {
     test('ダメージでHPが減少すること', () => {
-      const player = createPlayer(1, 1);
+      const player = createPlayer(1, 1); // 戦士 HP: 20
       const updated = damagePlayer(player, 3, 1000, 1000);
-      expect(updated.hp).toBe(13);
+      expect(updated.hp).toBe(17); // 20 - 3 = 17
     });
 
     test('HPが0未満にならないこと', () => {
@@ -113,9 +113,9 @@ describe('player', () => {
     });
 
     test('最大HPを超えないこと', () => {
-      const player = { ...createPlayer(1, 1), hp: 15 };
+      const player = { ...createPlayer(1, 1), hp: 18 }; // maxHp: 20
       const updated = healPlayer(player, 5);
-      expect(updated.hp).toBe(16);
+      expect(updated.hp).toBe(20); // 最大HP
     });
   });
 
@@ -155,16 +155,20 @@ describe('player', () => {
     test('戦士の初期能力値が正しいこと', () => {
       const player = createPlayer(1, 1, PlayerClass.WARRIOR);
       expect(player.playerClass).toBe(PlayerClass.WARRIOR);
+      expect(player.hp).toBe(20); // 戦士のHP
+      expect(player.maxHp).toBe(20);
       expect(player.stats.attackPower).toBe(2);
       expect(player.stats.attackRange).toBe(1);
       expect(player.stats.moveSpeed).toBe(4);
-      expect(player.stats.attackSpeed).toBe(1.0);
-      expect(player.stats.healBonus).toBe(0);
+      expect(player.stats.attackSpeed).toBe(0.7); // 攻撃が速い
+      expect(player.stats.healBonus).toBe(1); // 回復ボーナス
     });
 
     test('盗賊の初期能力値が正しいこと', () => {
       const player = createPlayer(1, 1, PlayerClass.THIEF);
       expect(player.playerClass).toBe(PlayerClass.THIEF);
+      expect(player.hp).toBe(12); // 盗賊のHP（低め）
+      expect(player.maxHp).toBe(12);
       expect(player.stats.attackPower).toBe(1);
       expect(player.stats.attackRange).toBe(1);
       expect(player.stats.moveSpeed).toBe(6);
@@ -203,30 +207,37 @@ describe('player', () => {
 
   describe('processLevelUp', () => {
     test('攻撃力が正しく上昇すること', () => {
-      const player = createPlayer(1, 1);
+      const player = createPlayer(1, 1); // 戦士 attackPower: 2
       const updated = processLevelUp(player, StatType.ATTACK_POWER);
       expect(updated.stats.attackPower).toBe(3);
       expect(updated.level).toBe(2);
     });
 
     test('攻撃速度が正しく減少すること（クールダウン短縮）', () => {
-      const player = createPlayer(1, 1);
+      const player = createPlayer(1, 1); // 戦士 attackSpeed: 0.7
       const updated = processLevelUp(player, StatType.ATTACK_SPEED);
-      expect(updated.stats.attackSpeed).toBeCloseTo(0.9);
+      expect(updated.stats.attackSpeed).toBeCloseTo(0.6); // 0.7 - 0.1 = 0.6
       expect(updated.level).toBe(2);
     });
 
     test('回復量が正しく上昇すること', () => {
-      const player = createPlayer(1, 1);
+      const player = createPlayer(1, 1); // 戦士 healBonus: 1
       const updated = processLevelUp(player, StatType.HEAL_BONUS);
-      expect(updated.stats.healBonus).toBe(1);
+      expect(updated.stats.healBonus).toBe(2); // 1 + 1 = 2
       expect(updated.level).toBe(2);
     });
   });
 
   describe('getEffectiveAttackCooldown', () => {
-    test('実効クールダウンが正しく計算されること', () => {
-      const player = createPlayer(1, 1);
+    test('実効クールダウンが正しく計算されること（戦士）', () => {
+      const player = createPlayer(1, 1); // 戦士 attackSpeed: 0.7
+      const baseCooldown = 500;
+      // attackSpeed 0.7 なら 350ms
+      expect(getEffectiveAttackCooldown(player, baseCooldown)).toBe(350);
+    });
+
+    test('実効クールダウンが正しく計算されること（盗賊）', () => {
+      const player = createPlayer(1, 1, PlayerClass.THIEF); // 盗賊 attackSpeed: 1.0
       const baseCooldown = 500;
       // attackSpeed 1.0 なら 500ms
       expect(getEffectiveAttackCooldown(player, baseCooldown)).toBe(500);
@@ -241,14 +252,19 @@ describe('player', () => {
   });
 
   describe('getEffectiveHeal', () => {
-    test('healBonusが回復に適用されること', () => {
-      const player = { ...createPlayer(1, 1), stats: { ...createPlayer(1, 1).stats, healBonus: 2 } };
-      expect(getEffectiveHeal(player, 3)).toBe(5); // 3 + 2
+    test('healBonusが回復に適用されること（戦士）', () => {
+      const player = createPlayer(1, 1); // 戦士 healBonus: 1
+      expect(getEffectiveHeal(player, 3)).toBe(4); // 3 + 1
     });
 
-    test('healBonusが0なら基本回復量のみ', () => {
-      const player = createPlayer(1, 1);
+    test('healBonusが0なら基本回復量のみ（盗賊）', () => {
+      const player = createPlayer(1, 1, PlayerClass.THIEF); // 盗賊 healBonus: 0
       expect(getEffectiveHeal(player, 3)).toBe(3);
+    });
+
+    test('カスタムhealBonusが適用されること', () => {
+      const player = { ...createPlayer(1, 1), stats: { ...createPlayer(1, 1).stats, healBonus: 2 } };
+      expect(getEffectiveHeal(player, 3)).toBe(5); // 3 + 2
     });
   });
 

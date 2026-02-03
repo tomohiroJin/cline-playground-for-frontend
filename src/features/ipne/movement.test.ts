@@ -9,7 +9,10 @@ import {
   startMovement,
   stopMovement,
   updateMovement,
+  getEffectiveMoveInterval,
 } from './movement';
+import { createPlayer } from './player';
+import { PlayerClass } from './types';
 
 describe('movement', () => {
   describe('DEFAULT_MOVEMENT_CONFIG', () => {
@@ -199,6 +202,49 @@ describe('movement', () => {
 
       expect(result.shouldMove).toBe(true);
       expect(result.newState.lastMoveTime).toBe(1310);
+    });
+  });
+
+  describe('getEffectiveMoveInterval', () => {
+    const baseInterval = 140;
+    const currentTime = 1000;
+
+    it('基準速度4の場合、間隔は変わらない', () => {
+      // 戦士の初期移動速度は4
+      const player = createPlayer(0, 0, PlayerClass.WARRIOR);
+      const effectiveInterval = getEffectiveMoveInterval(player, baseInterval, currentTime);
+      expect(effectiveInterval).toBe(140);
+    });
+
+    it('速度6の場合、間隔が短くなる', () => {
+      // 盗賊の初期移動速度は6
+      const player = createPlayer(0, 0, PlayerClass.THIEF);
+      const effectiveInterval = getEffectiveMoveInterval(player, baseInterval, currentTime);
+      // 140 * (4 / 6) ≈ 93.33
+      expect(effectiveInterval).toBeCloseTo(140 * (4 / 6), 0);
+    });
+
+    it('速度8の場合、間隔がさらに短くなる', () => {
+      const player = {
+        ...createPlayer(0, 0, PlayerClass.WARRIOR),
+        stats: {
+          ...createPlayer(0, 0, PlayerClass.WARRIOR).stats,
+          moveSpeed: 8,
+        },
+      };
+      const effectiveInterval = getEffectiveMoveInterval(player, baseInterval, currentTime);
+      // 140 * (4 / 8) = 70
+      expect(effectiveInterval).toBe(70);
+    });
+
+    it('速度低下中は間隔が長くなる', () => {
+      const player = {
+        ...createPlayer(0, 0, PlayerClass.WARRIOR),
+        slowedUntil: 2000, // 現在時刻(1000)より後なので速度低下中
+      };
+      const effectiveInterval = getEffectiveMoveInterval(player, baseInterval, currentTime);
+      // 速度低下で移動速度が50%に → 4 * 0.5 = 2 → 140 * (4 / 2) = 280
+      expect(effectiveInterval).toBe(280);
     });
   });
 });

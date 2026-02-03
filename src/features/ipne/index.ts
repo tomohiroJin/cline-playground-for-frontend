@@ -115,6 +115,7 @@ export {
   startMovement,
   stopMovement,
   updateMovement,
+  getEffectiveMoveInterval,
   DEFAULT_MOVEMENT_CONFIG,
   INITIAL_MOVEMENT_STATE,
 } from './movement';

@@ -16,18 +16,20 @@ interface TrapConfig {
 /** 罠種類別設定 */
 export const TRAP_CONFIGS: Record<TrapTypeValue, TrapConfig> = {
   [TrapType.DAMAGE]: {
-    damage: 2,
-    reusable: false,
+    damage: 3,
+    cooldown: 5000,
+    reusable: true,
   },
   [TrapType.SLOW]: {
-    slowDuration: 3000,
+    slowDuration: 6000,
     slowRate: 0.5,
     cooldown: 5000,
     reusable: true,
   },
   [TrapType.ALERT]: {
     alertRadius: 5,
-    reusable: false,
+    cooldown: 8000,
+    reusable: true,
   },
 };
 

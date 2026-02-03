@@ -132,25 +132,40 @@ export function drawAutoMap(
       const py = mapY + y * tileSize;
       const centerX = px + tileSize / 2;
       const centerY = py + tileSize / 2;
+      const tileType = map[y][x];
+
+      // 探索済み・可視のタイルのみマップ構造を表示
+      if (state === ExplorationState.EXPLORED || state === ExplorationState.VISIBLE) {
+        // 床タイルを描画（壁以外）
+        if (tileType !== TileType.WALL) {
+          const alpha = state === ExplorationState.EXPLORED ? 0.5 : 0.25;
+          ctx.fillStyle = `rgba(80, 120, 200, ${alpha})`;
+          ctx.fillRect(px, py, tileSize, tileSize);
+        }
+      }
 
       if (state === ExplorationState.EXPLORED) {
-        // 通過済み: 十字線（濃い青）
-        ctx.strokeStyle = 'rgba(100, 150, 255, 0.6)';
-        ctx.lineWidth = 1;
-        const crossSize = tileSize * 0.3;
+        // 通過済み: 十字線（濃い青）- 床の上に描画
+        if (tileType !== TileType.WALL) {
+          ctx.strokeStyle = 'rgba(150, 200, 255, 0.7)';
+          ctx.lineWidth = 1;
+          const crossSize = tileSize * 0.3;
 
-        ctx.beginPath();
-        ctx.moveTo(centerX - crossSize, centerY);
-        ctx.lineTo(centerX + crossSize, centerY);
-        ctx.moveTo(centerX, centerY - crossSize);
-        ctx.lineTo(centerX, centerY + crossSize);
-        ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(centerX - crossSize, centerY);
+          ctx.lineTo(centerX + crossSize, centerY);
+          ctx.moveTo(centerX, centerY - crossSize);
+          ctx.lineTo(centerX, centerY + crossSize);
+          ctx.stroke();
+        }
       } else if (state === ExplorationState.VISIBLE) {
-        // 可視: 小さな点（淡い青）
-        ctx.fillStyle = 'rgba(100, 150, 255, 0.3)';
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, tileSize * 0.15, 0, Math.PI * 2);
-        ctx.fill();
+        // 可視: 小さな点（淡い青）- 床の上に描画
+        if (tileType !== TileType.WALL) {
+          ctx.fillStyle = 'rgba(150, 200, 255, 0.4)';
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, tileSize * 0.15, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
     }
   }

@@ -9,7 +9,7 @@ import {
   resetItemIdCounter,
 } from '../item';
 import { ItemType } from '../types';
-import { createTestPlayer } from './testUtils';
+import { createTestPlayer, createTestPlayerWithStats } from './testUtils';
 
 describe('item', () => {
   beforeEach(() => {
@@ -60,30 +60,57 @@ describe('item', () => {
   });
 
   describe('回復アイテム効果', () => {
-    test('小回復アイテムで回復すること', () => {
-      const player = { ...createTestPlayer(2, 2), hp: 12 };
+    test('小回復アイテムで回復すること（戦士）', () => {
+      // 戦士はhealBonus: 1を持つため、回復量3+1=4
+      const player = { ...createTestPlayer(2, 2), hp: 12, maxHp: 20 };
       const item = createHealthSmall(2, 2);
       const result = pickupItem(player, item);
-      expect(result.player.hp).toBe(15);
+      expect(result.player.hp).toBe(16); // 12 + 4 = 16
       expect(result.effectType).toBe('heal');
       expect(result.triggerLevelUp).toBe(false);
       expect(result.triggerMapReveal).toBe(false);
     });
 
     test('大回復アイテムで最大HPを超えないこと', () => {
-      const player = { ...createTestPlayer(2, 2), hp: 15 };
-      const item = createHealthLarge(2, 2);
+      // 戦士はhealBonus: 1、maxHp: 20
+      const player = { ...createTestPlayer(2, 2), hp: 18, maxHp: 20 };
+      const item = createHealthLarge(2, 2); // 回復量7+1=8
       const result = pickupItem(player, item);
-      expect(result.player.hp).toBe(16);
+      expect(result.player.hp).toBe(20); // 最大HP
       expect(result.effectType).toBe('heal');
     });
 
     test('全回復アイテムでmaxHpまで回復すること', () => {
-      const player = { ...createTestPlayer(2, 2), hp: 1, maxHp: 16 };
+      const player = { ...createTestPlayer(2, 2), hp: 1, maxHp: 20 };
       const item = createHealthFull(2, 2);
       const result = pickupItem(player, item);
-      expect(result.player.hp).toBe(16);
+      expect(result.player.hp).toBe(20);
       expect(result.effectType).toBe('heal');
+    });
+
+    describe('回復量ボーナス', () => {
+      test('healBonusが加算されること', () => {
+        // healBonus = 2のプレイヤーを作成
+        const player = { ...createTestPlayerWithStats({ healBonus: 2 }, 2, 2), hp: 10, maxHp: 20 };
+        const item = createHealthSmall(2, 2); // 回復量3
+        const result = pickupItem(player, item);
+        // 3 + 2 = 5回復 → hp: 10 + 5 = 15
+        expect(result.player.hp).toBe(15);
+      });
+
+      test('healBonusが0の場合は通常の回復量になること', () => {
+        const player = { ...createTestPlayerWithStats({ healBonus: 0 }, 2, 2), hp: 10, maxHp: 20 };
+        const item = createHealthSmall(2, 2); // 回復量3
+        const result = pickupItem(player, item);
+        expect(result.player.hp).toBe(13);
+      });
+
+      test('healBonus付きでも最大HPを超えないこと', () => {
+        const player = { ...createTestPlayerWithStats({ healBonus: 5 }, 2, 2), hp: 18, maxHp: 20 };
+        const item = createHealthSmall(2, 2); // 回復量3 + 5 = 8
+        const result = pickupItem(player, item);
+        expect(result.player.hp).toBe(20);
+      });
     });
   });
 

@@ -11,6 +11,7 @@ import {
   PlayerClassValue,
   PlayerStats,
   StatTypeValue,
+  Wall,
 } from './types';
 import { canMove } from './collision';
 import { shouldLevelUp, applyLevelUpChoice } from './progression';
@@ -21,8 +22,8 @@ const INITIAL_STATS: Record<PlayerClassValue, PlayerStats> = {
     attackPower: 2,
     attackRange: 1,
     moveSpeed: 4,
-    attackSpeed: 1.0,
-    healBonus: 0,
+    attackSpeed: 0.7, // 攻撃が速い
+    healBonus: 1, // 回復量ボーナス
   },
   [PlayerClass.THIEF]: {
     attackPower: 1,
@@ -33,6 +34,12 @@ const INITIAL_STATS: Record<PlayerClassValue, PlayerStats> = {
   },
 };
 
+/** 職業別初期HP */
+const INITIAL_HP: Record<PlayerClassValue, number> = {
+  [PlayerClass.WARRIOR]: 20, // 耐久力が高い
+  [PlayerClass.THIEF]: 12, // 罠感知の代わりにHPが低い
+};
+
 /**
  * プレイヤーを作成
  */
@@ -41,11 +48,12 @@ export const createPlayer = (
   y: number,
   playerClass: PlayerClassValue = PlayerClass.WARRIOR
 ): Player => {
+  const initialHp = INITIAL_HP[playerClass];
   return {
     x,
     y,
-    hp: 16,
-    maxHp: 16,
+    hp: initialHp,
+    maxHp: initialHp,
     direction: Direction.DOWN,
     isInvincible: false,
     invincibleUntil: 0,
@@ -62,11 +70,13 @@ export const createPlayer = (
 /**
  * プレイヤーを指定方向に移動
  * 移動先が壁の場合は移動しない
+ * 特殊壁（破壊済み、すり抜け可能）は通過可能
  */
 export const movePlayer = (
   player: Player,
   direction: DirectionValue,
-  map: GameMap
+  map: GameMap,
+  walls?: Wall[]
 ): Player => {
   let newX = player.x;
   let newY = player.y;
@@ -86,8 +96,8 @@ export const movePlayer = (
       break;
   }
 
-  // 移動可能な場合のみ新しい位置を返す
-  if (canMove(map, newX, newY)) {
+  // 移動可能な場合のみ新しい位置を返す（特殊壁も考慮）
+  if (canMove(map, newX, newY, walls)) {
     return { ...player, x: newX, y: newY, direction };
   }
 

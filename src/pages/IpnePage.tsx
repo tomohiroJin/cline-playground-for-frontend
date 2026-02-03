@@ -40,6 +40,7 @@ import {
   startMovement,
   stopMovement,
   updateMovement,
+  getEffectiveMoveInterval,
   INITIAL_MOVEMENT_STATE,
   DEFAULT_MOVEMENT_CONFIG,
   EnemyState,
@@ -229,11 +230,11 @@ const ClassSelectScreen: React.FC<{
             <ClassIcon $classType="warrior">⚔️</ClassIcon>
             <ClassName>{CLASS_CONFIGS[PlayerClass.WARRIOR].name}</ClassName>
             <ClassDescription>
-              攻撃力が高く、ぶつかって進むスタイル。罠・特殊壁は触れて判明。
+              耐久力と攻撃力が高く、正面突破スタイル。罠・特殊壁は触れて判明。
             </ClassDescription>
             <ClassStats>
-              <span>攻撃力: 2 / 移動速度: 4</span>
-              <span>罠視認: ×</span>
+              <span>HP: 20 / 攻撃力: 2</span>
+              <span>攻撃速度: 速 / 回復+1</span>
             </ClassStats>
           </ClassCard>
           <ClassCard
@@ -244,11 +245,11 @@ const ClassSelectScreen: React.FC<{
             <ClassIcon $classType="thief">🗡️</ClassIcon>
             <ClassName>{CLASS_CONFIGS[PlayerClass.THIEF].name}</ClassName>
             <ClassDescription>
-              移動速度が高く、避けて進むスタイル。罠・特殊壁がうっすら見える。
+              移動速度が高く、罠を避けて進むスタイル。罠・特殊壁がうっすら見える。
             </ClassDescription>
             <ClassStats>
-              <span>攻撃力: 1 / 移動速度: 6</span>
-              <span>罠視認: ○</span>
+              <span>HP: 12 / 攻撃力: 1</span>
+              <span>移動速度: 速 / 罠視認: ○</span>
             </ClassStats>
           </ClassCard>
         </ClassCardsContainer>
@@ -763,10 +764,22 @@ const GameScreen: React.FC<{
   useEffect(() => {
     const tick = () => {
       const currentTime = Date.now();
+
+      // プレイヤーの移動速度を考慮した移動間隔を計算
+      const effectiveMoveInterval = getEffectiveMoveInterval(
+        player,
+        DEFAULT_MOVEMENT_CONFIG.moveInterval,
+        currentTime
+      );
+      const effectiveConfig = {
+        ...DEFAULT_MOVEMENT_CONFIG,
+        moveInterval: effectiveMoveInterval,
+      };
+
       const { shouldMove, newState } = updateMovement(
         movementStateRef.current,
         currentTime,
-        DEFAULT_MOVEMENT_CONFIG
+        effectiveConfig
       );
 
       movementStateRef.current = newState;
@@ -785,7 +798,7 @@ const GameScreen: React.FC<{
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [onMove]);
+  }, [onMove, player]);
 
   // キーボード入力
   useEffect(() => {
@@ -1230,7 +1243,7 @@ const IpnePage: React.FC = () => {
         return;
       }
 
-      const newPlayer = movePlayer(player, direction, map);
+      const newPlayer = movePlayer(player, direction, map, wallsRef.current);
       setPlayer(newPlayer);
 
       // 探索状態を更新
@@ -1259,7 +1272,8 @@ const IpnePage: React.FC = () => {
     if (isGameOver || isLevelUpPending) return;
     const currentTime = Date.now();
     const beforeEnemies = enemiesRef.current;
-    const result = playerAttack(playerRef.current, beforeEnemies, mapRef.current, currentTime);
+    const currentWalls = wallsRef.current;
+    const result = playerAttack(playerRef.current, beforeEnemies, mapRef.current, currentTime, currentWalls);
 
     if (result.didAttack) {
       setCombatState(prev => ({ ...prev, lastAttackAt: currentTime }));
@@ -1268,6 +1282,12 @@ const IpnePage: React.FC = () => {
       } else {
         setAttackEffect(undefined);
       }
+    }
+
+    // 壁への攻撃結果を反映
+    if (result.walls) {
+      setWalls(result.walls);
+      wallsRef.current = result.walls;
     }
 
     // MVP3: 撃破した敵の数をカウントしてキルカウントを更新
@@ -1325,7 +1345,7 @@ const IpnePage: React.FC = () => {
       const stepY = dy === 0 ? 0 : dy > 0 ? 1 : -1;
       const knockbackTarget = { x: currentPlayer.x + stepX, y: currentPlayer.y + stepY };
 
-      if (!canMove(currentMap, knockbackTarget.x, knockbackTarget.y)) {
+      if (!canMove(currentMap, knockbackTarget.x, knockbackTarget.y, wallsRef.current)) {
         return currentPlayer;
       }
       if (getEnemyAtPosition(currentEnemies, knockbackTarget.x, knockbackTarget.y)) {

@@ -60,12 +60,18 @@ describe('trap', () => {
       expect(result.damage).toBe(TRAP_CONFIGS[TrapType.DAMAGE].damage);
     });
 
-    test('1回限りで再発動不可であること', () => {
+    test('クールダウン後に再発動可能であること', () => {
       const trap = createDamageTrap(1, 1);
       const player = createTestPlayer(1, 1);
       const result = triggerTrap(trap, player, [], 0);
-      expect(result.trap.state).toBe(TrapState.TRIGGERED);
-      expect(canTriggerTrap(result.trap, 0)).toBe(false);
+      expect(result.trap.state).toBe(TrapState.REVEALED);
+
+      // クールダウン中は不可
+      expect(canTriggerTrap(result.trap, 1000)).toBe(false);
+
+      // クールダウン後は可能
+      const cooldownEnd = TRAP_CONFIGS[TrapType.DAMAGE].cooldown ?? 0;
+      expect(canTriggerTrap(result.trap, cooldownEnd + 1)).toBe(true);
     });
   });
 
@@ -99,12 +105,18 @@ describe('trap', () => {
       expect(result.alertRadius).toBe(TRAP_CONFIGS[TrapType.ALERT].alertRadius);
     });
 
-    test('1回限りで再発動不可であること', () => {
+    test('クールダウン後に再発動可能であること', () => {
       const trap = createAlertTrap(1, 1);
       const player = createTestPlayer(1, 1);
       const result = triggerTrap(trap, player, [], 0);
-      expect(result.trap.state).toBe(TrapState.TRIGGERED);
-      expect(canTriggerTrap(result.trap, 0)).toBe(false);
+      expect(result.trap.state).toBe(TrapState.REVEALED);
+
+      // クールダウン中は不可
+      expect(canTriggerTrap(result.trap, 1000)).toBe(false);
+
+      // クールダウン後は可能
+      const cooldownEnd = TRAP_CONFIGS[TrapType.ALERT].cooldown ?? 0;
+      expect(canTriggerTrap(result.trap, cooldownEnd + 1)).toBe(true);
     });
   });
 
@@ -134,9 +146,10 @@ describe('trap', () => {
       expect(canTriggerTrap(trap, 0)).toBe(true);
     });
 
-    test('発動済みダメージ罠は発動不可であること', () => {
-      const trap: Trap = { ...createDamageTrap(1, 1), state: TrapState.TRIGGERED };
-      expect(canTriggerTrap(trap, 0)).toBe(false);
+    test('クールダウン中の罠は発動不可であること', () => {
+      const trap: Trap = { ...createDamageTrap(1, 1), state: TrapState.REVEALED, cooldownUntil: 5000 };
+      expect(canTriggerTrap(trap, 1000)).toBe(false);
+      expect(canTriggerTrap(trap, 5001)).toBe(true);
     });
   });
 
@@ -161,16 +174,21 @@ describe('trap', () => {
 
   describe('TRAP_CONFIGS', () => {
     test('ダメージ罠のダメージ量が正しいこと', () => {
-      expect(TRAP_CONFIGS[TrapType.DAMAGE].damage).toBe(2);
+      expect(TRAP_CONFIGS[TrapType.DAMAGE].damage).toBe(3);
+      expect(TRAP_CONFIGS[TrapType.DAMAGE].reusable).toBe(true);
+      expect(TRAP_CONFIGS[TrapType.DAMAGE].cooldown).toBe(5000);
     });
 
     test('移動妨害罠の設定が正しいこと', () => {
-      expect(TRAP_CONFIGS[TrapType.SLOW].slowDuration).toBe(3000);
+      expect(TRAP_CONFIGS[TrapType.SLOW].slowDuration).toBe(6000);
       expect(TRAP_CONFIGS[TrapType.SLOW].slowRate).toBe(0.5);
+      expect(TRAP_CONFIGS[TrapType.SLOW].reusable).toBe(true);
     });
 
     test('索敵反応罠の範囲が正しいこと', () => {
       expect(TRAP_CONFIGS[TrapType.ALERT].alertRadius).toBe(5);
+      expect(TRAP_CONFIGS[TrapType.ALERT].reusable).toBe(true);
+      expect(TRAP_CONFIGS[TrapType.ALERT].cooldown).toBe(8000);
     });
   });
 });

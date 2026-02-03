@@ -2,7 +2,7 @@
  * アイテム管理モジュール
  */
 import { Enemy, Item, ItemType, ItemTypeValue, Player, Position, Room } from './types';
-import { healPlayer } from './player';
+import { healPlayer, getEffectiveHeal } from './player';
 
 const ITEM_CONFIGS = {
   [ItemType.HEALTH_SMALL]: { healAmount: 3 },
@@ -14,7 +14,10 @@ const ITEM_CONFIGS = {
 
 const SPAWN_CONFIG = {
   [ItemType.HEALTH_SMALL]: 8,
-  [ItemType.HEALTH_LARGE]: 3,
+  [ItemType.HEALTH_LARGE]: 4,
+  [ItemType.HEALTH_FULL]: 1,
+  [ItemType.LEVEL_UP]: 2,
+  [ItemType.MAP_REVEAL]: 1,
 } as const;
 
 let itemIdCounter = 0;
@@ -85,6 +88,17 @@ const isPositionOccupied = (position: Position, enemies: Enemy[], items: Item[])
   );
 };
 
+/** 全アイテムタイプの最大スポーン数を計算 */
+const getTotalMaxItems = (): number => {
+  return (
+    SPAWN_CONFIG[ItemType.HEALTH_SMALL] +
+    SPAWN_CONFIG[ItemType.HEALTH_LARGE] +
+    SPAWN_CONFIG[ItemType.HEALTH_FULL] +
+    SPAWN_CONFIG[ItemType.LEVEL_UP] +
+    SPAWN_CONFIG[ItemType.MAP_REVEAL]
+  );
+};
+
 export const spawnItems = (
   rooms: Room[],
   enemies: Enemy[],
@@ -92,10 +106,11 @@ export const spawnItems = (
 ): Item[] => {
   const tiles = shuffle(collectTiles(rooms));
   const items: Item[] = [];
+  const maxItems = getTotalMaxItems();
 
   const createItemsOfType = (type: ItemTypeValue, count: number) => {
     for (const tile of tiles) {
-      if (items.length >= SPAWN_CONFIG[ItemType.HEALTH_SMALL] + SPAWN_CONFIG[ItemType.HEALTH_LARGE]) {
+      if (items.length >= maxItems) {
         return;
       }
       if (items.filter(item => item.type === type).length >= count) {
@@ -111,6 +126,10 @@ export const spawnItems = (
     }
   };
 
+  // レアアイテムから優先的にスポーン
+  createItemsOfType(ItemType.MAP_REVEAL, SPAWN_CONFIG[ItemType.MAP_REVEAL]);
+  createItemsOfType(ItemType.HEALTH_FULL, SPAWN_CONFIG[ItemType.HEALTH_FULL]);
+  createItemsOfType(ItemType.LEVEL_UP, SPAWN_CONFIG[ItemType.LEVEL_UP]);
   createItemsOfType(ItemType.HEALTH_LARGE, SPAWN_CONFIG[ItemType.HEALTH_LARGE]);
   createItemsOfType(ItemType.HEALTH_SMALL, SPAWN_CONFIG[ItemType.HEALTH_SMALL]);
 
@@ -144,7 +163,9 @@ export const pickupItem = (player: Player, item: Item): ItemPickupResult => {
   switch (item.type) {
     case ItemType.HEALTH_SMALL:
     case ItemType.HEALTH_LARGE:
-      updatedPlayer = healPlayer(player, item.healAmount);
+      // healBonusを考慮した実効回復量を計算
+      const effectiveHealAmount = getEffectiveHeal(player, item.healAmount);
+      updatedPlayer = healPlayer(player, effectiveHealAmount);
       effectType = 'heal';
       break;
 

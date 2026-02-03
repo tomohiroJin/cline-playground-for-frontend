@@ -16,24 +16,24 @@ describe('enemy', () => {
   });
   test('種類別の敵が正しく生成されること', () => {
     const patrol = createPatrolEnemy(1, 1);
-    expect(patrol.hp).toBe(3);
+    expect(patrol.hp).toBe(4);
     expect(patrol.damage).toBe(1);
     expect(patrol.speed).toBe(2);
 
     const charge = createChargeEnemy(2, 2);
-    expect(charge.hp).toBe(2);
+    expect(charge.hp).toBe(3);
     expect(charge.damage).toBe(2);
     expect(charge.speed).toBe(5);
 
     const specimen = createSpecimenEnemy(3, 3);
     expect(specimen.hp).toBe(1);
     expect(specimen.damage).toBe(0);
-    expect(specimen.speed).toBe(6);
+    expect(specimen.speed).toBe(4);
 
     const boss = createBoss(4, 4);
     expect(boss.hp).toBe(12);
     expect(boss.damage).toBe(4);
-    expect(boss.speed).toBe(5);
+    expect(boss.speed).toBe(1.5);
   });
 
   test('敵IDが一意であること', () => {
@@ -45,7 +45,7 @@ describe('enemy', () => {
   test('ダメージでHPが減少すること', () => {
     const enemy = createPatrolEnemy(1, 1);
     const damaged = damageEnemy(enemy, 2);
-    expect(damaged.hp).toBe(1);
+    expect(damaged.hp).toBe(2); // HP 4 - 2 = 2
   });
 
   test('HP0で死亡判定になること', () => {

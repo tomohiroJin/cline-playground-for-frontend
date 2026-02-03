@@ -1,10 +1,12 @@
 /**
  * 戦闘処理
  */
-import { Direction, Enemy, GameMap, Player, Position } from './types';
+import { Direction, Enemy, GameMap, Player, Position, Wall, WallType, WallState } from './types';
 import { applyKnockbackToEnemy, damageEnemy, isEnemyAlive } from './enemy';
-import { canPlayerAttack, damagePlayer, setAttackCooldown } from './player';
+import { canPlayerAttack, damagePlayer, setAttackCooldown, getEffectiveAttackCooldown } from './player';
 import { canMove, getEnemyAtPosition } from './collision';
+import { isWall } from './collision';
+import { damageWall as applyDamageToWall, getWallAt } from './wall';
 
 const COMBAT_CONFIG = {
   playerAttackDamage: 1,
@@ -17,28 +19,101 @@ const COMBAT_CONFIG = {
 export interface PlayerAttackResult {
   player: Player;
   enemies: Enemy[];
+  walls?: Wall[];
   attackPosition?: Position;
   didAttack: boolean;
+  hitWall?: boolean;
 }
 
-const getAttackPosition = (player: Player): Position => {
-  switch (player.direction) {
-    case Direction.UP:
-      return { x: player.x, y: player.y - 1 };
-    case Direction.DOWN:
-      return { x: player.x, y: player.y + 1 };
-    case Direction.LEFT:
-      return { x: player.x - 1, y: player.y };
-    case Direction.RIGHT:
-      return { x: player.x + 1, y: player.y };
-    default:
-      return { x: player.x, y: player.y };
+/**
+ * 攻撃エフェクトを表示する位置を取得（実際にヒットした位置、または最大射程位置）
+ */
+const getAttackPosition = (player: Player, map: GameMap, enemies: Enemy[], walls: Wall[] = []): Position => {
+  const range = player.stats.attackRange;
+  const dx = player.direction === Direction.RIGHT ? 1 : player.direction === Direction.LEFT ? -1 : 0;
+  const dy = player.direction === Direction.DOWN ? 1 : player.direction === Direction.UP ? -1 : 0;
+
+  // 攻撃距離内で敵がいる位置、または壁の手前、または最大射程の位置を返す
+  for (let i = 1; i <= range; i++) {
+    const targetX = player.x + dx * i;
+    const targetY = player.y + dy * i;
+
+    // 敵がいたらその位置を返す
+    const enemy = enemies.find(e => e.x === targetX && e.y === targetY && isEnemyAlive(e));
+    if (enemy) {
+      return { x: targetX, y: targetY };
+    }
+
+    // 破壊可能壁があったらその位置を返す
+    const wall = getWallAt(walls, targetX, targetY);
+    if (wall && wall.type === WallType.BREAKABLE && wall.state !== WallState.BROKEN) {
+      return { x: targetX, y: targetY };
+    }
+
+    // 通常の壁に当たったら手前の位置を返す
+    if (isWall(map, targetX, targetY)) {
+      return { x: player.x + dx * (i - 1), y: player.y + dy * (i - 1) };
+    }
   }
+
+  // 何も当たらなかった場合は最大射程の位置を返す
+  return { x: player.x + dx * range, y: player.y + dy * range };
 };
 
-export const getAttackTarget = (player: Player, enemies: Enemy[]): Enemy | undefined => {
-  const attackPos = getAttackPosition(player);
-  return getEnemyAtPosition(enemies, attackPos.x, attackPos.y);
+/**
+ * 攻撃対象の敵を取得（attackRangeマス先まで攻撃可能）
+ */
+export const getAttackTarget = (player: Player, enemies: Enemy[], map: GameMap): Enemy | undefined => {
+  const range = player.stats.attackRange;
+  const dx = player.direction === Direction.RIGHT ? 1 : player.direction === Direction.LEFT ? -1 : 0;
+  const dy = player.direction === Direction.DOWN ? 1 : player.direction === Direction.UP ? -1 : 0;
+
+  // 攻撃距離内の敵を探す（壁があったらそこで止まる）
+  for (let i = 1; i <= range; i++) {
+    const targetX = player.x + dx * i;
+    const targetY = player.y + dy * i;
+
+    // 壁に当たったら探索を終了
+    if (isWall(map, targetX, targetY)) {
+      break;
+    }
+
+    // 生きている敵がいたら返す
+    const enemy = enemies.find(e => e.x === targetX && e.y === targetY && isEnemyAlive(e));
+    if (enemy) {
+      return enemy;
+    }
+  }
+
+  return undefined;
+};
+
+/**
+ * 攻撃対象の破壊可能壁を取得（敵がいない場合のみ）
+ */
+export const getAttackableWall = (player: Player, walls: Wall[], map: GameMap): Wall | undefined => {
+  const range = player.stats.attackRange;
+  const dx = player.direction === Direction.RIGHT ? 1 : player.direction === Direction.LEFT ? -1 : 0;
+  const dy = player.direction === Direction.DOWN ? 1 : player.direction === Direction.UP ? -1 : 0;
+
+  // 攻撃距離内の破壊可能壁を探す
+  for (let i = 1; i <= range; i++) {
+    const targetX = player.x + dx * i;
+    const targetY = player.y + dy * i;
+
+    // 通常の壁に当たったら探索を終了
+    if (isWall(map, targetX, targetY)) {
+      break;
+    }
+
+    // 破壊可能壁があり、まだ壊れていなければ返す
+    const wall = getWallAt(walls, targetX, targetY);
+    if (wall && wall.type === WallType.BREAKABLE && wall.state !== WallState.BROKEN) {
+      return wall;
+    }
+  }
+
+  return undefined;
 };
 
 const applyKnockback = (
@@ -75,36 +150,63 @@ export const playerAttack = (
   player: Player,
   enemies: Enemy[],
   map: GameMap,
-  currentTime: number
+  currentTime: number,
+  walls: Wall[] = []
 ): PlayerAttackResult => {
   if (!canPlayerAttack(player, currentTime)) {
-    return { player, enemies, didAttack: false };
+    return { player, enemies, walls, didAttack: false };
   }
 
-  const target = getAttackTarget(player, enemies);
-  if (!target) {
+  // 攻撃速度を考慮したクールダウンを計算
+  const effectiveCooldown = getEffectiveAttackCooldown(player, COMBAT_CONFIG.attackCooldown);
+
+  // 1. まず敵を探す
+  const target = getAttackTarget(player, enemies, map);
+  if (target) {
+    const updatedEnemies = enemies.map(enemy => {
+      if (enemy.id !== target.id) return enemy;
+      // プレイヤーの攻撃力ステータスを使用
+      const damaged = damageEnemy(enemy, player.stats.attackPower);
+      if (!isEnemyAlive(damaged)) {
+        return damaged;
+      }
+      return applyKnockback(damaged, player.direction, map, currentTime);
+    });
+
     return {
-      player: setAttackCooldown(player, currentTime, COMBAT_CONFIG.attackCooldown),
-      enemies,
+      player: setAttackCooldown(player, currentTime, effectiveCooldown),
+      enemies: updatedEnemies,
+      walls,
       didAttack: true,
-      attackPosition: getAttackPosition(player),
+      attackPosition: getAttackPosition(player, map, enemies, walls),
     };
   }
 
-  const updatedEnemies = enemies.map(enemy => {
-    if (enemy.id !== target.id) return enemy;
-    const damaged = damageEnemy(enemy, COMBAT_CONFIG.playerAttackDamage);
-    if (!isEnemyAlive(damaged)) {
-      return damaged;
-    }
-    return applyKnockback(damaged, player.direction, map, currentTime);
-  });
+  // 2. 敵がいなければ破壊可能壁をチェック
+  const wallTarget = getAttackableWall(player, walls, map);
+  if (wallTarget) {
+    const updatedWalls = walls.map(wall => {
+      if (wall.x !== wallTarget.x || wall.y !== wallTarget.y) return wall;
+      return applyDamageToWall(wall, player.stats.attackPower);
+    });
 
+    return {
+      player: setAttackCooldown(player, currentTime, effectiveCooldown),
+      enemies,
+      walls: updatedWalls,
+      didAttack: true,
+      hitWall: true,
+      attackPosition: getAttackPosition(player, map, enemies, walls),
+    };
+  }
+
+  // 3. どちらもなければ空振り
   return {
-    player: setAttackCooldown(player, currentTime, COMBAT_CONFIG.attackCooldown),
-    enemies: updatedEnemies,
+    player: setAttackCooldown(player, currentTime, effectiveCooldown),
+    enemies,
+    walls,
     didAttack: true,
-    attackPosition: getAttackPosition(player),
+    attackPosition: getAttackPosition(player, map, enemies, walls),
   };
 };
 
