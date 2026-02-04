@@ -13,8 +13,12 @@ const AirHockeyPage = lazy(() => import('./pages/AirHockeyPage'));
 const RacingGamePage = lazy(() => import('./pages/RacingGamePage'));
 const FallingShooterPage = lazy(() => import('./pages/FallingShooterPage'));
 const MazeHorrorPage = lazy(() => import('./pages/MazeHorrorPage'));
+const NonBrakeDescentPage = lazy(() => import('./pages/NonBrakeDescentPage'));
 const DeepSeaShooterPage = lazy(
   () => import(/* webpackChunkName: "DeepSeaShooterPage" */ './pages/DeepSeaShooterPage')
+);
+const IpnePage = lazy(
+  () => import(/* webpackChunkName: "IpnePage" */ './pages/IpnePage')
 );
 
 // アプリケーションのルートコンテナ
@@ -141,7 +145,9 @@ const App: React.FC = () => {
                 <Route path="/racing" element={<RacingGamePage />} />
                 <Route path="/falling-shooter" element={<FallingShooterPage />} />
                 <Route path="/maze-horror" element={<MazeHorrorPage />} />
+                <Route path="/non-brake-descent" element={<NonBrakeDescentPage />} />
                 <Route path="/deep-sea-shooter" element={<DeepSeaShooterPage />} />
+                <Route path="/ipne" element={<IpnePage />} />
               </Routes>
             </main>
           </Suspense>

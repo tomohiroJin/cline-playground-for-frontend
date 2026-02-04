@@ -6,6 +6,8 @@ import racingCardBg from '../assets/images/racing_card_bg.webp';
 import fallingShooterCardBg from '../assets/images/falling_shooter_card_bg.webp';
 import mazeHorrorCardBg from '../assets/images/maze_horror_card_bg.webp';
 import deepSeaShooterCardBg from '../assets/images/deep_sea_shooter_card_bg.webp';
+import nonBrakeDescentCardBg from '../assets/images/non_brake_descent_card_bg.webp';
+import ipneCardBg from '../assets/images/ipne_card_bg.webp';
 import {
   PageContainer,
   HeroSection,
@@ -200,6 +202,65 @@ const GameListPage: React.FC = () => {
               深海を舞台にした縦スクロールシューティング。
               チャージショットとアイテムを駆使して、迫りくる深海の脅威を撃退せよ。
               美しい深海のビジュアルと爽快な破壊エフェクト。
+            </GameDescription>
+            <PlayButton aria-hidden="true" tabIndex={-1}>
+              Play Now <span>→</span>
+            </PlayButton>
+          </CardContent>
+        </GameCardContainer>
+
+        <GameCardContainer
+          onClick={() => navigate('/non-brake-descent')}
+          role="button"
+          aria-label="Non-Brake Descent ゲームをプレイする"
+          tabIndex={0}
+          onKeyDown={e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              navigate('/non-brake-descent');
+            }
+          }}
+        >
+          <CardImageArea
+            $bgImage={nonBrakeDescentCardBg}
+            role="img"
+            aria-label="Non-Brake Descentのゲーム画面プレビュー"
+          />
+          <CardContent>
+            <CardTitle>Non-Brake Descent</CardTitle>
+            <GameDescription>
+              ハイスピード下り坂をノンブレーキで駆け抜けるスリリングアクション。
+              ジャンプと加速を駆使して障害物を回避し、限界スコアに挑め。
+            </GameDescription>
+            <PlayButton aria-hidden="true" tabIndex={-1}>
+              Play Now <span>→</span>
+            </PlayButton>
+          </CardContent>
+        </GameCardContainer>
+
+        <GameCardContainer
+          onClick={() => navigate('/ipne')}
+          role="button"
+          aria-label="IPNE ゲームをプレイする"
+          tabIndex={0}
+          onKeyDown={e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              navigate('/ipne');
+            }
+          }}
+        >
+          <CardImageArea
+            $bgImage={ipneCardBg}
+            role="img"
+            aria-label="IPNEのゲーム画面プレビュー"
+          />
+          <CardContent>
+            <CardTitle>IPNE</CardTitle>
+            <GameDescription>
+              シンプルな迷路脱出ゲーム。
+              ゴールを目指して迷宮を探索し、脱出を目指せ。
+              キーボードまたはタッチ操作に対応。
             </GameDescription>
             <PlayButton aria-hidden="true" tabIndex={-1}>
               Play Now <span>→</span>
