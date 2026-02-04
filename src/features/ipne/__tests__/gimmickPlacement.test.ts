@@ -106,7 +106,7 @@ describe('gimmickPlacement', () => {
       const config = {
         ...DEFAULT_GIMMICK_CONFIG,
         trapCount: 100,
-        trapRatio: { damage: 1.0, slow: 0, alert: 0 },
+        trapRatio: { damage: 1.0, slow: 0, teleport: 0 },
       };
       const traps = placeTrap(rooms, grid, [], config);
 

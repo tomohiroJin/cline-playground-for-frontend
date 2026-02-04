@@ -1,14 +1,13 @@
 /**
  * 罠システムモジュール
  */
-import { Trap, TrapType, TrapTypeValue, TrapState, TrapStateValue, Player, Enemy } from './types';
+import { Trap, TrapType, TrapTypeValue, TrapState, TrapStateValue, Player, GameMap, TileType } from './types';
 
 /** 罠の設定 */
 interface TrapConfig {
   damage?: number;
   slowDuration?: number;
   slowRate?: number;
-  alertRadius?: number;
   cooldown?: number;
   reusable: boolean;
 }
@@ -26,8 +25,7 @@ export const TRAP_CONFIGS: Record<TrapTypeValue, TrapConfig> = {
     cooldown: 5000,
     reusable: true,
   },
-  [TrapType.ALERT]: {
-    alertRadius: 5,
+  [TrapType.TELEPORT]: {
     cooldown: 8000,
     reusable: true,
   },
@@ -85,20 +83,50 @@ export const createSlowTrap = (x: number, y: number): Trap => {
 };
 
 /**
- * 索敵反応罠を作成
+ * テレポート罠を作成
  */
-export const createAlertTrap = (x: number, y: number): Trap => {
-  return createTrap(TrapType.ALERT, x, y);
+export const createTeleportTrap = (x: number, y: number): Trap => {
+  return createTrap(TrapType.TELEPORT, x, y);
 };
+
+/** テレポート先座標 */
+export interface TeleportDestination {
+  x: number;
+  y: number;
+}
 
 /** 罠発動結果 */
 export interface TrapTriggerResult {
   trap: Trap;
   damage: number;
   slowDuration: number;
-  alertRadius: number;
-  alertedEnemies: Enemy[];
+  teleportDestination?: TeleportDestination;
 }
+
+/**
+ * 迷路内のランダムな通行可能タイルを取得
+ */
+export const getRandomPassableTile = (map: GameMap): TeleportDestination | undefined => {
+  const passableTiles: TeleportDestination[] = [];
+
+  for (let y = 0; y < map.length; y++) {
+    for (let x = 0; x < map[y].length; x++) {
+      const tile = map[y][x];
+      // 床、スタート、ゴールは通行可能
+      if (tile === TileType.FLOOR || tile === TileType.START || tile === TileType.GOAL) {
+        passableTiles.push({ x, y });
+      }
+    }
+  }
+
+  if (passableTiles.length === 0) {
+    return undefined;
+  }
+
+  // ランダムに選択（敵がいる場所へのワープも許可）
+  const index = Math.floor(Math.random() * passableTiles.length);
+  return passableTiles[index];
+};
 
 /**
  * 罠を発動
@@ -106,8 +134,8 @@ export interface TrapTriggerResult {
 export const triggerTrap = (
   trap: Trap,
   player: Player,
-  enemies: Enemy[],
-  currentTime: number
+  currentTime: number,
+  map?: GameMap
 ): TrapTriggerResult => {
   const config = TRAP_CONFIGS[trap.type];
   let newState: TrapStateValue;
@@ -130,8 +158,7 @@ export const triggerTrap = (
   // 効果を計算
   let damage = 0;
   let slowDuration = 0;
-  let alertRadius = 0;
-  let alertedEnemies: Enemy[] = [];
+  let teleportDestination: TeleportDestination | undefined;
 
   switch (trap.type) {
     case TrapType.DAMAGE:
@@ -140,15 +167,11 @@ export const triggerTrap = (
     case TrapType.SLOW:
       slowDuration = config.slowDuration ?? 0;
       break;
-    case TrapType.ALERT:
-      alertRadius = config.alertRadius ?? 0;
-      // 範囲内の敵を引き寄せ対象にする
-      alertedEnemies = enemies.filter(enemy => {
-        const dx = enemy.x - trap.x;
-        const dy = enemy.y - trap.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        return distance <= alertRadius;
-      });
+    case TrapType.TELEPORT:
+      // 迷路内のランダムな通行可能タイルにワープ
+      if (map) {
+        teleportDestination = getRandomPassableTile(map);
+      }
       break;
   }
 
@@ -156,8 +179,7 @@ export const triggerTrap = (
     trap: updatedTrap,
     damage,
     slowDuration,
-    alertRadius,
-    alertedEnemies,
+    teleportDestination,
   };
 };
 

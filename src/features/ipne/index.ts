@@ -214,13 +214,14 @@ export {
   createTrap,
   createDamageTrap,
   createSlowTrap,
-  createAlertTrap,
+  createTeleportTrap,
   triggerTrap,
   canTriggerTrap,
   getTrapAt,
   revealTrap,
+  getRandomPassableTile,
 } from './trap';
-export type { TrapTriggerResult } from './trap';
+export type { TrapTriggerResult, TeleportDestination } from './trap';
 
 // 壁
 export {

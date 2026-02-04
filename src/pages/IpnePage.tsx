@@ -598,12 +598,12 @@ const GameScreen: React.FC<{
         ctx.quadraticCurveTo(trapScreen.x - size / 6, trapScreen.y - size / 4, trapScreen.x, trapScreen.y);
         ctx.quadraticCurveTo(trapScreen.x + size / 6, trapScreen.y + size / 4, trapScreen.x + size / 3, trapScreen.y);
         ctx.stroke();
-      } else if (trap.type === TrapType.ALERT) {
-        // 索敵反応罠: !マーク
+      } else if (trap.type === TrapType.TELEPORT) {
+        // テレポート罠: 渦巻き（@マーク）
         ctx.font = `bold ${size}px sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('!', trapScreen.x, trapScreen.y);
+        ctx.fillText('@', trapScreen.x, trapScreen.y);
       }
 
       ctx.globalAlpha = 1;
@@ -1479,10 +1479,14 @@ const IpnePage: React.FC = () => {
       let currentTraps = trapsRef.current;
       const trapAtPlayer = getTrapAt(currentTraps, nextPlayer.x, nextPlayer.y);
       if (trapAtPlayer && canTriggerTrap(trapAtPlayer, currentTime)) {
-        const trapResult = triggerTrap(trapAtPlayer, nextPlayer, updatedEnemies, currentTime);
+        const trapResult = triggerTrap(trapAtPlayer, nextPlayer, currentTime, mapRef.current);
         nextPlayer = damagePlayer(nextPlayer, trapResult.damage, currentTime, COMBAT_CONFIG.invincibleDuration);
         if (trapResult.slowDuration > 0) {
           nextPlayer = applySlowEffect(nextPlayer, currentTime, trapResult.slowDuration);
+        }
+        // テレポート効果の適用
+        if (trapResult.teleportDestination) {
+          nextPlayer = { ...nextPlayer, x: trapResult.teleportDestination.x, y: trapResult.teleportDestination.y };
         }
         currentTraps = currentTraps.map(t => t.id === trapResult.trap.id ? trapResult.trap : t);
         if (trapResult.damage > 0) {

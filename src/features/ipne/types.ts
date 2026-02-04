@@ -99,7 +99,7 @@ export interface LevelUpChoice {
 export const TrapType = {
   DAMAGE: 'damage',
   SLOW: 'slow',
-  ALERT: 'alert',
+  TELEPORT: 'teleport',
 } as const;
 
 export type TrapTypeValue = (typeof TrapType)[keyof typeof TrapType];

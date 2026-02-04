@@ -34,7 +34,7 @@
   - [x] `PlayerStats` インターフェース（attackSpeed, healBonus 追加）
   - [x] `LevelUpChoice` インターフェース
 - [x] 罠関連型定義
-  - [x] `TrapType` 定数 (`'damage' | 'slow' | 'alert'`)
+  - [x] `TrapType` 定数 (`'damage' | 'slow' | 'teleport'`)
   - [x] `TrapTypeValue` 型
   - [x] `TrapState` 定数 (`'hidden' | 'revealed' | 'triggered'`)
   - [x] `TrapStateValue` 型
@@ -265,13 +265,13 @@
 - [x] `TRAP_CONFIGS` 定数定義
   - [x] ダメージ床設定（damage: 2）
   - [x] 移動妨害床設定（slowDuration: 3000ms, slowRate: 0.5, cooldown: 5000ms）
-  - [x] 索敵反応罠設定（alertRadius: 5）
+  - [x] テレポート罠設定（cooldown: 8000ms）
 - [x] `generateTrapId()` 関数
 - [x] `resetTrapIdCounter()` 関数
 - [x] `createTrap()` 関数
 - [x] `createDamageTrap()` 関数
 - [x] `createSlowTrap()` 関数
-- [x] `createAlertTrap()` 関数
+- [x] `createTeleportTrap()` 関数
 - [x] `triggerTrap()` 関数
   - [x] 罠種類に応じた効果発動
   - [x] 状態をtriggered/revealedに変更
@@ -294,9 +294,9 @@
 - [x] 移動妨害床テスト
   - [x] 発動で速度低下時間が返される
   - [x] クールダウン後に再発動可能
-- [x] 索敵反応罠テスト
-  - [x] 発動で引き寄せ範囲が返される
-  - [x] 1回限りで再発動不可
+- [x] テレポート罠テスト
+  - [x] 発動でテレポート先が返される
+  - [x] クールダウン後に再発動可能
 - [x] 発見状態テスト
   - [x] 発動で発見済みになる
   - [x] revealTrapで発見済みになる
@@ -376,7 +376,7 @@
 
 - [x] `DEFAULT_GIMMICK_CONFIG` 定数定義
   - [x] 罠配置数: 10
-  - [x] 罠種類比率（damage: 0.4, slow: 0.3, alert: 0.3）
+  - [x] 罠種類比率（damage: 0.4, slow: 0.3, teleport: 0.3）
   - [x] 壁配置数: 6
   - [x] 壁種類比率（breakable: 0.5, passable: 0.3, invisible: 0.2）
 - [x] `placeTrap()` 関数追加
@@ -492,7 +492,7 @@
 - [x] 罠パラメータ調整
   - [x] ダメージ罠: damage 2→3, reusable: true, cooldown: 5000ms
   - [x] 移動妨害罠: slowDuration 3000→6000ms
-  - [x] 索敵反応罠: reusable: true, cooldown: 8000ms
+  - [x] テレポート罠: reusable: true, cooldown: 8000ms
 - [x] アイテム配置数調整
   - [x] 大回復: 3→4
   - [x] 全回復: 0→1（追加）

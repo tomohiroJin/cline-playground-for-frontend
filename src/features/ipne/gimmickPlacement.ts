@@ -27,7 +27,7 @@ export interface GimmickPlacementConfig {
   trapRatio: {
     damage: number;
     slow: number;
-    alert: number;
+    teleport: number;
   };
   /** 配置する特殊壁の数 */
   wallCount: number;
@@ -55,7 +55,7 @@ export const DEFAULT_GIMMICK_CONFIG: GimmickPlacementConfig = {
   trapRatio: {
     damage: 0.4,
     slow: 0.3,
-    alert: 0.3,
+    teleport: 0.3,
   },
   wallCount: 6,
   wallRatio: {
@@ -406,7 +406,7 @@ const selectTrapType = (ratio: GimmickPlacementConfig['trapRatio']): TrapTypeVal
   } else if (rand < ratio.damage + ratio.slow) {
     return TrapType.SLOW;
   } else {
-    return TrapType.ALERT;
+    return TrapType.TELEPORT;
   }
 };
 
