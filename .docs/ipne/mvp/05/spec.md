@@ -26,12 +26,14 @@ src/features/ipne/audio/
 export const SoundEffectType = {
   PLAYER_DAMAGE: 'player_damage',  // プレイヤーダメージ
   ENEMY_KILL: 'enemy_kill',        // 敵撃破
+  BOSS_KILL: 'boss_kill',          // ボス撃破
   GAME_CLEAR: 'game_clear',        // ゲームクリア
   GAME_OVER: 'game_over',          // ゲームオーバー
   LEVEL_UP: 'level_up',            // レベルアップ
   ATTACK_HIT: 'attack_hit',        // 攻撃命中
   ITEM_PICKUP: 'item_pickup',      // アイテム取得
   HEAL: 'heal',                    // 回復
+  TRAP_TRIGGERED: 'trap_triggered', // 罠発動
 } as const;
 ```
 
@@ -57,16 +59,18 @@ export interface AudioSettings {
 
 ## 効果音仕様
 
-| 効果音 | 波形 | 周波数 | 長さ | 特徴 |
-|--------|------|--------|------|------|
-| プレイヤーダメージ | sawtooth | 200→80Hz | 0.2s | 下降スウィープ |
-| 敵撃破 | square | 400→800Hz | 0.15s | 上昇スウィープ |
-| ゲームクリア | sine | メロディ | 2s | C→D→E→F→G→G→A→B→C6 |
-| ゲームオーバー | sawtooth | メロディ | 3s | 下降メロディ |
-| レベルアップ | sine | メロディ | 1s | C→E→G→C6→C6→D6 |
-| 攻撃命中 | square | 600Hz | 0.08s | 短いパルス |
-| アイテム取得 | sine | 800→1200Hz | 0.1s | 軽い上昇 |
-| 回復 | sine | 600→900Hz | 0.15s | 柔らかい上昇 |
+| 効果音 | 波形 | 周波数 | 長さ | 特徴 | 音量(gain) |
+|--------|------|--------|------|------|------------|
+| プレイヤーダメージ | sawtooth | 200→80Hz | 0.2s | 下降スウィープ | 0.5 |
+| 敵撃破 | square | 400→800Hz | 0.15s | 上昇スウィープ | 0.45 |
+| ボス撃破 | square | メロディ | 0.5s | 勝利ファンファーレ風 C→E→G→C6 | 0.5 |
+| ゲームクリア | sine | メロディ | 2s | C→D→E→F→G→G→A→B→C6 | 0.5 |
+| ゲームオーバー | sawtooth | メロディ | 3s | 下降メロディ | 0.45 |
+| レベルアップ | sine | メロディ | 1s | C→E→G→C6→C6→D6 | 0.5 |
+| 攻撃命中 | square | 600Hz | 0.08s | 短いパルス | 0.4 |
+| アイテム取得 | sine | 800→1200Hz | 0.1s | 軽い上昇 | 0.35 |
+| 回復 | sine | 600→900Hz | 0.15s | 柔らかい上昇 | 0.35 |
+| 罠発動 | sawtooth | 150→300Hz | 0.15s | 警告感のある音 | 0.45 |
 
 ## BGM仕様
 
@@ -80,17 +84,19 @@ export interface AudioSettings {
 ## iOS/モバイル対応
 
 ### 自動再生制限対策
-- タイトル画面で「タップしてゲーム開始」メッセージを表示
-- 初回タップ時に `enableAudio()` を呼び出してAudioContextを有効化
-- `audioContext.resume()` でsuspended状態から復帰
+- 音声未有効時: 「タップしてゲームを開始」メッセージのみ表示
+- 音声有効後: 「ゲームを開始」ボタンを表示
+- これにより iOS で両方が同時表示される問題を解消
 
 ### AudioContext初期化フロー
 ```
-1. ユーザーがタイトル画面をタップ
-2. enableAudio() 実行
-3. AudioContext.resume() 成功
-4. isAudioReady = true
-5. タイトルBGM再生開始
+1. タイトル画面表示（「タップしてゲームを開始」メッセージ表示）
+2. ユーザーがタイトル画面をタップ
+3. enableAudio() 実行
+4. AudioContext.resume() 成功
+5. isAudioReady = true
+6. 「ゲームを開始」ボタンが表示される
+7. タイトルBGM再生開始
 ```
 
 ## 音量設定システム

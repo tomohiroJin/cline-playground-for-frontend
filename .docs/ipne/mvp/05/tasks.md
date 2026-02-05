@@ -2,7 +2,7 @@
 
 ## 完了状況
 
-全タスク完了 ✅
+全タスク完了 ✅（フィードバック対応含む）
 
 ---
 
@@ -65,6 +65,31 @@
 - [x] `audioSettings.test.ts`: 音声設定テスト作成
 - [x] `npm test`パス確認
 - [x] ドキュメント作成
+
+## フェーズ9: フィードバック対応 ✅
+
+### iOS対応UIの修正
+- [x] 「タップしてゲームを開始」と「ゲームを開始」ボタンが同時表示される問題を修正
+- [x] 音声未有効時はタップメッセージのみ、有効後はボタンのみ表示
+
+### 音量の増加
+- [x] 全効果音のgain値を約1.5〜2倍に増加（0.2〜0.3 → 0.35〜0.5）
+
+### 罠発動音の追加
+- [x] `types.ts`に`TRAP_TRIGGERED`を追加
+- [x] `soundEffect.ts`に罠発動音の設定追加（sawtooth, 150→300Hz, 0.15s）
+- [x] `index.ts`に`playTrapTriggeredSound`をエクスポート
+- [x] `IpnePage.tsx`で罠発動時に音を再生
+
+### ボス撃破音の追加
+- [x] `types.ts`に`BOSS_KILL`を追加
+- [x] `soundEffect.ts`にボス撃破音のメロディ追加（C5→E5→G5→C6）
+- [x] `index.ts`に`playBossKillSound`をエクスポート
+- [x] `IpnePage.tsx`でボス撃破時に通常敵と異なる音を再生
+
+### テスト更新
+- [x] `IpnePage.test.tsx`を新UIに対応して更新
+- [x] 音声モジュールのモックを追加
 
 ---
 

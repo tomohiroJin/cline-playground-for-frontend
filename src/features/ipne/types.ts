@@ -438,12 +438,14 @@ export interface FeedbackEffect {
 export const SoundEffectType = {
   PLAYER_DAMAGE: 'player_damage',
   ENEMY_KILL: 'enemy_kill',
+  BOSS_KILL: 'boss_kill',
   GAME_CLEAR: 'game_clear',
   GAME_OVER: 'game_over',
   LEVEL_UP: 'level_up',
   ATTACK_HIT: 'attack_hit',
   ITEM_PICKUP: 'item_pickup',
   HEAL: 'heal',
+  TRAP_TRIGGERED: 'trap_triggered',
 } as const;
 
 export type SoundEffectTypeValue = (typeof SoundEffectType)[keyof typeof SoundEffectType];

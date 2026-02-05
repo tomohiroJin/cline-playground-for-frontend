@@ -225,12 +225,14 @@ import {
   stopBgm,
   playPlayerDamageSound,
   playEnemyKillSound,
+  playBossKillSound,
   playGameClearSound,
   playGameOverSound,
   playLevelUpSound,
   playAttackHitSound,
   playItemPickupSound,
   playHealSound,
+  playTrapTriggeredSound,
 } from '../features/ipne/audio';
 
 // 描画設定
@@ -374,19 +376,20 @@ const TitleScreen: React.FC<{
       />
     )}
     <TitleContainer>
-      <StartButton
-        onClick={onStart}
-        aria-label="ゲームを開始"
-        style={{ marginTop: '60vh' }}
-      >
-        ゲームを開始
-      </StartButton>
+      {isAudioReady ? (
+        <StartButton
+          onClick={onStart}
+          aria-label="ゲームを開始"
+          style={{ marginTop: '60vh' }}
+        >
+          ゲームを開始
+        </StartButton>
+      ) : (
+        <TapToStartMessage>
+          タップしてゲームを開始
+        </TapToStartMessage>
+      )}
     </TitleContainer>
-    {!isAudioReady && (
-      <TapToStartMessage>
-        タップしてゲームを開始
-      </TapToStartMessage>
-    )}
   </Overlay>
 );
 
@@ -1761,14 +1764,20 @@ const IpnePage: React.FC = () => {
 
     // MVP3: 撃破した敵の数をカウントしてキルカウントを更新
     const survivingEnemies = result.enemies.filter(enemy => enemy.hp > 0);
-    const killedCount = beforeEnemies.length - survivingEnemies.length;
+    const survivingIds = new Set(survivingEnemies.map(e => e.id));
+    const killedEnemies = beforeEnemies.filter(e => !survivingIds.has(e.id));
 
     let updatedPlayer = result.player;
-    if (killedCount > 0) {
-      // MVP5: 敵撃破音
-      playEnemyKillSound();
+    if (killedEnemies.length > 0) {
+      // MVP5: 敵撃破音（ボスなら特別な音）
+      const killedBoss = killedEnemies.some(e => e.type === EnemyType.BOSS);
+      if (killedBoss) {
+        playBossKillSound();
+      } else {
+        playEnemyKillSound();
+      }
       // 撃破数だけインクリメント
-      for (let i = 0; i < killedCount; i++) {
+      for (let i = 0; i < killedEnemies.length; i++) {
         const killResult = incrementKillCount(updatedPlayer);
         updatedPlayer = killResult.player;
         if (killResult.shouldLevelUp && !isLevelUpPending) {
@@ -1932,6 +1941,8 @@ const IpnePage: React.FC = () => {
           nextPlayer = { ...nextPlayer, x: trapResult.teleportDestination.x, y: trapResult.teleportDestination.y };
         }
         currentTraps = currentTraps.map(t => t.id === trapResult.trap.id ? trapResult.trap : t);
+        // MVP5: 罠発動音
+        playTrapTriggeredSound();
         if (trapResult.damage > 0) {
           setCombatState(prev => ({ ...prev, lastDamageAt: currentTime }));
           // MVP5: ダメージ音

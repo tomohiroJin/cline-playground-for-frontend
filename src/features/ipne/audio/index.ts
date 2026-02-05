@@ -20,12 +20,14 @@ export {
   resetSoundSettings,
   playPlayerDamageSound,
   playEnemyKillSound,
+  playBossKillSound,
   playGameClearSound,
   playGameOverSound,
   playLevelUpSound,
   playAttackHitSound,
   playItemPickupSound,
   playHealSound,
+  playTrapTriggeredSound,
 } from './soundEffect';
 
 // BGM
