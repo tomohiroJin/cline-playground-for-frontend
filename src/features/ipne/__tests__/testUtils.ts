@@ -163,3 +163,74 @@ export const createTestPlayerWithStats = (
     },
   };
 };
+
+// ===== MVP4 テストヘルパー =====
+
+/**
+ * 指定時間だけ待機するPromise
+ */
+export const delay = (ms: number): Promise<void> => {
+  return new Promise(resolve => setTimeout(resolve, ms));
+};
+
+/**
+ * モックタイムスタンプを作成
+ */
+export const createMockTimestamp = (offsetMs = 0): number => {
+  return Date.now() + offsetMs;
+};
+
+/**
+ * localStorage のモックを作成
+ */
+export const createMockLocalStorage = (): {
+  getItem: jest.Mock;
+  setItem: jest.Mock;
+  removeItem: jest.Mock;
+  clear: jest.Mock;
+} => {
+  const store: Record<string, string> = {};
+  return {
+    getItem: jest.fn((key: string) => store[key] || null),
+    setItem: jest.fn((key: string, value: string) => {
+      store[key] = value;
+    }),
+    removeItem: jest.fn((key: string) => {
+      delete store[key];
+    }),
+    clear: jest.fn(() => {
+      Object.keys(store).forEach(key => delete store[key]);
+    }),
+  };
+};
+
+/**
+ * Canvas 2D コンテキストのモックを作成
+ */
+export const createMockCanvasContext = (): Partial<CanvasRenderingContext2D> => {
+  return {
+    fillRect: jest.fn(),
+    strokeRect: jest.fn(),
+    fillText: jest.fn(),
+    strokeText: jest.fn(),
+    clearRect: jest.fn(),
+    beginPath: jest.fn(),
+    closePath: jest.fn(),
+    moveTo: jest.fn(),
+    lineTo: jest.fn(),
+    arc: jest.fn(),
+    fill: jest.fn(),
+    stroke: jest.fn(),
+    save: jest.fn(),
+    restore: jest.fn(),
+    translate: jest.fn(),
+    rotate: jest.fn(),
+    scale: jest.fn(),
+    globalAlpha: 1,
+    fillStyle: '#000000',
+    strokeStyle: '#000000',
+    font: '16px sans-serif',
+    textAlign: 'left' as CanvasTextAlign,
+    textBaseline: 'top' as CanvasTextBaseline,
+  };
+};

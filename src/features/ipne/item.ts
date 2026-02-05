@@ -10,6 +10,7 @@ const ITEM_CONFIGS = {
   [ItemType.HEALTH_FULL]: { healAmount: 999 },
   [ItemType.LEVEL_UP]: { healAmount: 0 },
   [ItemType.MAP_REVEAL]: { healAmount: 0 },
+  [ItemType.KEY]: { healAmount: 0 },
 } as const;
 
 const SPAWN_CONFIG = {
@@ -18,6 +19,7 @@ const SPAWN_CONFIG = {
   [ItemType.HEALTH_FULL]: 1,
   [ItemType.LEVEL_UP]: 2,
   [ItemType.MAP_REVEAL]: 1,
+  [ItemType.KEY]: 1,
 } as const;
 
 let itemIdCounter = 0;
@@ -62,6 +64,10 @@ export const createMapRevealItem = (x: number, y: number): Item => {
   return createItem(ItemType.MAP_REVEAL, x, y);
 };
 
+export const createKeyItem = (x: number, y: number): Item => {
+  return createItem(ItemType.KEY, x, y);
+};
+
 const shuffle = <T>(items: T[]): T[] => {
   const copied = [...items];
   for (let i = copied.length - 1; i > 0; i--) {
@@ -95,20 +101,27 @@ const getTotalMaxItems = (): number => {
     SPAWN_CONFIG[ItemType.HEALTH_LARGE] +
     SPAWN_CONFIG[ItemType.HEALTH_FULL] +
     SPAWN_CONFIG[ItemType.LEVEL_UP] +
-    SPAWN_CONFIG[ItemType.MAP_REVEAL]
+    SPAWN_CONFIG[ItemType.MAP_REVEAL] +
+    SPAWN_CONFIG[ItemType.KEY]
   );
+};
+
+/** 2点間のマンハッタン距離を計算 */
+const getDistance = (a: Position, b: Position): number => {
+  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 };
 
 export const spawnItems = (
   rooms: Room[],
   enemies: Enemy[],
-  excluded: Position[]
+  excluded: Position[],
+  goalPos?: Position
 ): Item[] => {
   const tiles = shuffle(collectTiles(rooms));
   const items: Item[] = [];
   const maxItems = getTotalMaxItems();
 
-  const createItemsOfType = (type: ItemTypeValue, count: number) => {
+  const createItemsOfType = (type: ItemTypeValue, count: number, minDistanceFromGoal?: number) => {
     for (const tile of tiles) {
       if (items.length >= maxItems) {
         return;
@@ -119,12 +132,21 @@ export const spawnItems = (
       if (excluded.some(pos => pos.x === tile.x && pos.y === tile.y)) continue;
       if (isPositionOccupied(tile, enemies, items)) continue;
 
+      // 鍵アイテムはゴールから一定距離離れた場所にのみ配置
+      if (minDistanceFromGoal && goalPos) {
+        const distance = getDistance(tile, goalPos);
+        if (distance < minDistanceFromGoal) continue;
+      }
+
       items.push(createItem(type, tile.x, tile.y));
       if (items.filter(item => item.type === type).length >= count) {
         return;
       }
     }
   };
+
+  // 鍵はゴールから離れた位置に配置（盗賊向け：探索で発見）
+  createItemsOfType(ItemType.KEY, SPAWN_CONFIG[ItemType.KEY], 15);
 
   // レアアイテムから優先的にスポーン
   createItemsOfType(ItemType.MAP_REVEAL, SPAWN_CONFIG[ItemType.MAP_REVEAL]);
@@ -141,7 +163,7 @@ export const canPickupItem = (player: Position, item: Item): boolean => {
 };
 
 /** アイテム取得効果の種類 */
-export type ItemEffectType = 'heal' | 'level_up' | 'map_reveal';
+export type ItemEffectType = 'heal' | 'level_up' | 'map_reveal' | 'key';
 
 /** アイテム取得結果 */
 export interface ItemPickupResult {
@@ -152,6 +174,8 @@ export interface ItemPickupResult {
   triggerLevelUp: boolean;
   /** MAP_REVEAL時はマップ全体を表示する必要がある */
   triggerMapReveal: boolean;
+  /** KEY取得時に鍵を取得したことを示す */
+  triggerKeyPickup: boolean;
 }
 
 export const pickupItem = (player: Player, item: Item): ItemPickupResult => {
@@ -159,6 +183,7 @@ export const pickupItem = (player: Player, item: Item): ItemPickupResult => {
   let effectType: ItemEffectType = 'heal';
   let triggerLevelUp = false;
   let triggerMapReveal = false;
+  let triggerKeyPickup = false;
 
   switch (item.type) {
     case ItemType.HEALTH_SMALL:
@@ -186,6 +211,13 @@ export const pickupItem = (player: Player, item: Item): ItemPickupResult => {
       effectType = 'map_reveal';
       triggerMapReveal = true;
       break;
+
+    case ItemType.KEY:
+      // 鍵アイテム：プレイヤーが鍵を取得
+      updatedPlayer = { ...player, hasKey: true };
+      effectType = 'key';
+      triggerKeyPickup = true;
+      break;
   }
 
   return {
@@ -194,6 +226,7 @@ export const pickupItem = (player: Player, item: Item): ItemPickupResult => {
     effectType,
     triggerLevelUp,
     triggerMapReveal,
+    triggerKeyPickup,
   };
 };
 

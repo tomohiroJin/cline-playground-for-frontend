@@ -10,6 +10,7 @@ import {
   findStartPosition,
   findGoalPosition,
   isGoal,
+  canGoal,
   Direction,
   ScreenState,
   TileType,
@@ -45,6 +46,7 @@ import {
   DEFAULT_MOVEMENT_CONFIG,
   EnemyState,
   EnemyType,
+  ItemType,
   spawnEnemies,
   spawnItems,
   updateEnemiesWithContact,
@@ -56,6 +58,8 @@ import {
   COMBAT_CONFIG,
   updatePlayerDirection,
   canMove,
+  processEnemyDeath,
+  createKeyItem,
   // MVP3追加
   PlayerClass,
   PlayerClassValue,
@@ -142,9 +146,105 @@ import {
   ExperienceBar,
   ExperienceBarFill,
   LevelBadge,
+  // MVP4追加
+  HelpButton,
+  HelpOverlay,
+  HelpContainer,
+  HelpTitle,
+  HelpSection,
+  HelpSectionTitle,
+  HelpKeyList,
+  HelpKeyItem,
+  HelpKey,
+  HelpKeyDescription,
+  HelpCloseButton,
+  HelpHint,
+  TimerDisplay,
+  ResultContainer,
+  ResultRating,
+  ResultTime,
+  ResultEpilogueTitle,
+  ResultEpilogueText,
+  ResultImage,
+  ResultVideo,
+  NewBestBadge,
+  VideoPlayButton,
+  // MVP5追加
+  AudioSettingsButton,
+  AudioSettingsPanel,
+  AudioSettingsTitle,
+  VolumeSliderContainer,
+  VolumeLabel,
+  VolumeName,
+  VolumeValue,
+  VolumeSlider,
+  MuteButton,
+  TapToStartMessage,
+  // MVP6追加
+  KeyIndicator,
+  KeyIcon,
+  KeyRequiredMessage,
+  ClassImage,
 } from './IpnePage.styles';
 import titleBg from '../assets/images/ipne_title_bg.webp';
+import titleBgMobile from '../assets/images/ipne_title_bg_mobile.webp';
 import prologueBg from '../assets/images/ipne_prologue_bg.webp';
+import prologueBgMobile from '../assets/images/ipne_prologue_bg_mobile.webp';
+import warriorClassImg from '../assets/images/ipne_class_warrior.webp';
+import thiefClassImg from '../assets/images/ipne_class_thief.webp';
+
+// MVP4モジュール
+import {
+  createTimer,
+  startTimer,
+  stopTimer,
+  getElapsedTime,
+  formatTimeShort,
+  GameTimer,
+} from '../features/ipne/timer';
+import {
+  createRecord,
+  saveRecord,
+  loadBestRecords,
+  BestRecords,
+} from '../features/ipne/record';
+import {
+  calculateRating,
+  getEpilogueText,
+  getGameOverText,
+  getRatingColor,
+  getEndingImage,
+  getGameOverImage,
+  getEndingVideo,
+} from '../features/ipne/ending';
+import { RatingValue, AudioSettings } from '../features/ipne/types';
+
+// MVP5 音声モジュール
+import {
+  enableAudio,
+  isAudioInitialized,
+  initializeAudioSettings,
+  getAudioSettings,
+  setMasterVolume,
+  setSeVolume,
+  setBgmVolume,
+  toggleMute,
+  playTitleBgm,
+  playGameBgm,
+  playClearJingle,
+  playGameOverJingle,
+  stopBgm,
+  playPlayerDamageSound,
+  playEnemyKillSound,
+  playBossKillSound,
+  playGameClearSound,
+  playGameOverSound,
+  playLevelUpSound,
+  playAttackHitSound,
+  playItemPickupSound,
+  playHealSound,
+  playTrapTriggeredSound,
+} from '../features/ipne/audio';
 
 // 描画設定
 const CONFIG = {
@@ -166,6 +266,7 @@ const CONFIG = {
     health_full: '#fbbf24',
     level_up: '#f0abfc',
     map_reveal: '#a16207',
+    key: '#fcd34d',
   },
   // MVP3追加
   trapColors: {
@@ -188,18 +289,118 @@ const PROLOGUE_TEXTS = [
 ];
 
 /**
+ * 音声設定コンポーネント（MVP5）
+ */
+const AudioSettingsComponent: React.FC<{
+  settings: AudioSettings;
+  onMasterVolumeChange: (value: number) => void;
+  onSeVolumeChange: (value: number) => void;
+  onBgmVolumeChange: (value: number) => void;
+  onToggleMute: () => void;
+  onClose: () => void;
+}> = ({ settings, onMasterVolumeChange, onSeVolumeChange, onBgmVolumeChange, onToggleMute, onClose }) => (
+  <AudioSettingsPanel onClick={e => e.stopPropagation()}>
+    <AudioSettingsTitle>音声設定</AudioSettingsTitle>
+
+    <VolumeSliderContainer>
+      <VolumeLabel>
+        <VolumeName>マスター音量</VolumeName>
+        <VolumeValue>{Math.round(settings.masterVolume * 100)}%</VolumeValue>
+      </VolumeLabel>
+      <VolumeSlider
+        min={0}
+        max={100}
+        value={settings.masterVolume * 100}
+        onChange={e => onMasterVolumeChange(Number(e.target.value) / 100)}
+      />
+    </VolumeSliderContainer>
+
+    <VolumeSliderContainer>
+      <VolumeLabel>
+        <VolumeName>効果音</VolumeName>
+        <VolumeValue>{Math.round(settings.seVolume * 100)}%</VolumeValue>
+      </VolumeLabel>
+      <VolumeSlider
+        min={0}
+        max={100}
+        value={settings.seVolume * 100}
+        onChange={e => onSeVolumeChange(Number(e.target.value) / 100)}
+      />
+    </VolumeSliderContainer>
+
+    <VolumeSliderContainer>
+      <VolumeLabel>
+        <VolumeName>BGM</VolumeName>
+        <VolumeValue>{Math.round(settings.bgmVolume * 100)}%</VolumeValue>
+      </VolumeLabel>
+      <VolumeSlider
+        min={0}
+        max={100}
+        value={settings.bgmVolume * 100}
+        onChange={e => onBgmVolumeChange(Number(e.target.value) / 100)}
+      />
+    </VolumeSliderContainer>
+
+    <MuteButton $muted={settings.isMuted} onClick={onToggleMute}>
+      {settings.isMuted ? '🔇 ミュート中' : '🔊 サウンドON'}
+    </MuteButton>
+  </AudioSettingsPanel>
+);
+
+/**
  * タイトル画面コンポーネント
  */
-const TitleScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => (
-  <Overlay $bgImage={titleBg}>
+const TitleScreen: React.FC<{
+  onStart: () => void;
+  audioSettings: AudioSettings;
+  showAudioSettings: boolean;
+  isAudioReady: boolean;
+  onAudioSettingsToggle: () => void;
+  onMasterVolumeChange: (value: number) => void;
+  onSeVolumeChange: (value: number) => void;
+  onBgmVolumeChange: (value: number) => void;
+  onToggleMute: () => void;
+  onTapToStart: () => void;
+}> = ({
+  onStart,
+  audioSettings,
+  showAudioSettings,
+  isAudioReady,
+  onAudioSettingsToggle,
+  onMasterVolumeChange,
+  onSeVolumeChange,
+  onBgmVolumeChange,
+  onToggleMute,
+  onTapToStart,
+}) => (
+  <Overlay $bgImage={titleBg} $bgImageMobile={titleBgMobile} onClick={!isAudioReady ? onTapToStart : undefined}>
+    <AudioSettingsButton onClick={onAudioSettingsToggle} aria-label="音声設定">
+      {audioSettings.isMuted ? '🔇' : '🔊'}
+    </AudioSettingsButton>
+    {showAudioSettings && (
+      <AudioSettingsComponent
+        settings={audioSettings}
+        onMasterVolumeChange={onMasterVolumeChange}
+        onSeVolumeChange={onSeVolumeChange}
+        onBgmVolumeChange={onBgmVolumeChange}
+        onToggleMute={onToggleMute}
+        onClose={onAudioSettingsToggle}
+      />
+    )}
     <TitleContainer>
-      <StartButton
-        onClick={onStart}
-        aria-label="ゲームを開始"
-        style={{ marginTop: '60vh' }}
-      >
-        ゲームを開始
-      </StartButton>
+      {isAudioReady ? (
+        <StartButton
+          onClick={onStart}
+          aria-label="ゲームを開始"
+          style={{ marginTop: '60vh' }}
+        >
+          ゲームを開始
+        </StartButton>
+      ) : (
+        <TapToStartMessage>
+          タップしてゲームを開始
+        </TapToStartMessage>
+      )}
     </TitleContainer>
   </Overlay>
 );
@@ -228,7 +429,7 @@ const ClassSelectScreen: React.FC<{
             $selected={selectedClass === PlayerClass.WARRIOR}
             onClick={() => setSelectedClass(PlayerClass.WARRIOR)}
           >
-            <ClassIcon $classType="warrior">⚔️</ClassIcon>
+            <ClassImage src={warriorClassImg} alt="戦士" />
             <ClassName>{CLASS_CONFIGS[PlayerClass.WARRIOR].name}</ClassName>
             <ClassDescription>
               耐久力と攻撃力が高く、正面突破スタイル。罠・特殊壁は触れて判明。
@@ -243,7 +444,7 @@ const ClassSelectScreen: React.FC<{
             $selected={selectedClass === PlayerClass.THIEF}
             onClick={() => setSelectedClass(PlayerClass.THIEF)}
           >
-            <ClassIcon $classType="thief">🗡️</ClassIcon>
+            <ClassImage src={thiefClassImg} alt="盗賊" />
             <ClassName>{CLASS_CONFIGS[PlayerClass.THIEF].name}</ClassName>
             <ClassDescription>
               移動速度が高く、罠を避けて進むスタイル。罠・特殊壁がうっすら見える。
@@ -311,11 +512,17 @@ const PrologueScreen: React.FC<{ onSkip: () => void }> = ({ onSkip }) => {
         setTextIndex(prev => prev + 1);
       }, 2000);
       return () => clearTimeout(timer);
+    } else {
+      // 最後のテキスト表示後、3秒待って自動遷移
+      const autoSkipTimer = setTimeout(() => {
+        onSkip();
+      }, 3000);
+      return () => clearTimeout(autoSkipTimer);
     }
-  }, [textIndex]);
+  }, [textIndex, onSkip]);
 
   return (
-    <Overlay $bgImage={prologueBg}>
+    <Overlay $bgImage={prologueBg} $bgImageMobile={prologueBgMobile}>
       <div
         style={{
           width: '100%',
@@ -343,38 +550,140 @@ const PrologueScreen: React.FC<{ onSkip: () => void }> = ({ onSkip }) => {
 };
 
 /**
- * クリア画面コンポーネント
+ * ヘルプオーバーレイコンポーネント（MVP4）
+ */
+const HelpOverlayComponent: React.FC<{ onClose: () => void }> = ({ onClose }) => (
+  <HelpOverlay onClick={onClose}>
+    <HelpContainer onClick={e => e.stopPropagation()}>
+      <HelpTitle>操作方法</HelpTitle>
+
+      <HelpSection>
+        <HelpSectionTitle>移動</HelpSectionTitle>
+        <HelpKeyList>
+          <HelpKeyItem>
+            <HelpKey>W A S D</HelpKey>
+            <HelpKeyDescription>上/左/下/右に移動</HelpKeyDescription>
+          </HelpKeyItem>
+          <HelpKeyItem>
+            <HelpKey>↑ ← ↓ →</HelpKey>
+            <HelpKeyDescription>矢印キーでも移動可能</HelpKeyDescription>
+          </HelpKeyItem>
+        </HelpKeyList>
+      </HelpSection>
+
+      <HelpSection>
+        <HelpSectionTitle>アクション</HelpSectionTitle>
+        <HelpKeyList>
+          <HelpKeyItem>
+            <HelpKey>Space</HelpKey>
+            <HelpKeyDescription>攻撃（押しながら移動キーで向き変更）</HelpKeyDescription>
+          </HelpKeyItem>
+          <HelpKeyItem>
+            <HelpKey>M</HelpKey>
+            <HelpKeyDescription>マップ表示切替（小窓→全画面→非表示）</HelpKeyDescription>
+          </HelpKeyItem>
+          <HelpKeyItem>
+            <HelpKey>H</HelpKey>
+            <HelpKeyDescription>このヘルプを表示/非表示</HelpKeyDescription>
+          </HelpKeyItem>
+        </HelpKeyList>
+      </HelpSection>
+
+      <HelpSection>
+        <HelpSectionTitle>ゲームの目的</HelpSectionTitle>
+        <HelpKeyList>
+          <HelpKeyItem>
+            <HelpKeyDescription>
+              迷宮を探索してゴール（緑色のタイル）を目指しましょう。
+              敵を倒してレベルアップし、アイテムを取得して有利に進めましょう。
+              クリアタイムで評価が決まります！
+            </HelpKeyDescription>
+          </HelpKeyItem>
+        </HelpKeyList>
+      </HelpSection>
+
+      <HelpCloseButton onClick={onClose}>閉じる</HelpCloseButton>
+      <HelpHint>画面外をクリックしても閉じられます</HelpHint>
+    </HelpContainer>
+  </HelpOverlay>
+);
+
+/**
+ * クリア画面コンポーネント（MVP4拡張）
  * テスト用にエクスポート
  */
 export const ClearScreen: React.FC<{
   onRetry: () => void;
   onBackToTitle: () => void;
-}> = ({ onRetry, onBackToTitle }) => (
-  <Overlay>
-    <ClearContainer>
-      <ClearTitle>🎉 クリア！</ClearTitle>
-      <ClearMessage>おめでとうございます！迷宮から脱出しました。</ClearMessage>
-      <RetryButton onClick={onRetry}>もう一度プレイ</RetryButton>
-      <BackToTitleButton onClick={onBackToTitle}>タイトルに戻る</BackToTitleButton>
-    </ClearContainer>
-  </Overlay>
-);
+  clearTime: number;
+  rating: RatingValue;
+  isNewBest: boolean;
+}> = ({ onRetry, onBackToTitle, clearTime, rating, isNewBest }) => {
+  const epilogue = getEpilogueText(rating);
+  const ratingColor = getRatingColor(rating);
+  const endingImage = getEndingImage(rating);
+  const endingVideo = getEndingVideo(rating);
+  const [showVideo, setShowVideo] = useState(false);
+
+  return (
+    <Overlay>
+      <ResultContainer>
+        {isNewBest && <NewBestBadge>🏆 NEW BEST!</NewBestBadge>}
+        <ResultRating $color={ratingColor}>{rating.toUpperCase()}</ResultRating>
+        <ResultTime>{formatTimeShort(clearTime)}</ResultTime>
+        <ResultEpilogueTitle>{epilogue.title}</ResultEpilogueTitle>
+        <ResultEpilogueText>{epilogue.text}</ResultEpilogueText>
+        {endingVideo ? (
+          showVideo ? (
+            <ResultVideo
+              src={endingVideo}
+              autoPlay
+              muted
+              playsInline
+              onEnded={() => setShowVideo(false)}
+              aria-label={`${rating}ランククリア動画`}
+            />
+          ) : (
+            <>
+              <ResultImage src={endingImage} alt={`${rating}ランククリア`} />
+              <VideoPlayButton onClick={() => setShowVideo(true)}>
+                特別動画を見る
+              </VideoPlayButton>
+            </>
+          )
+        ) : (
+          <ResultImage src={endingImage} alt={`${rating}ランククリア`} />
+        )}
+        <RetryButton onClick={onRetry}>もう一度プレイ</RetryButton>
+        <BackToTitleButton onClick={onBackToTitle}>タイトルに戻る</BackToTitleButton>
+      </ResultContainer>
+    </Overlay>
+  );
+};
 
 /**
- * ゲームオーバー画面コンポーネント
+ * ゲームオーバー画面コンポーネント（MVP4拡張）
  */
 const GameOverScreen: React.FC<{
   onRetry: () => void;
   onBackToTitle: () => void;
-}> = ({ onRetry, onBackToTitle }) => (
-  <Overlay>
-    <GameOverContainer>
-      <GameOverTitle>GAME OVER</GameOverTitle>
-      <GameOverButton onClick={onRetry}>リトライ</GameOverButton>
-      <GameOverButton onClick={onBackToTitle}>タイトルへ</GameOverButton>
-    </GameOverContainer>
-  </Overlay>
-);
+}> = ({ onRetry, onBackToTitle }) => {
+  const gameOverText = getGameOverText();
+  const gameOverImage = getGameOverImage();
+
+  return (
+    <Overlay>
+      <ResultContainer>
+        <GameOverTitle>GAME OVER</GameOverTitle>
+        <ResultEpilogueTitle>{gameOverText.title}</ResultEpilogueTitle>
+        <ResultEpilogueText>{gameOverText.text}</ResultEpilogueText>
+        <ResultImage src={gameOverImage} alt="ゲームオーバー" />
+        <GameOverButton onClick={onRetry}>リトライ</GameOverButton>
+        <GameOverButton onClick={onBackToTitle}>タイトルへ</GameOverButton>
+      </ResultContainer>
+    </Overlay>
+  );
+};
 
 /**
  * ゲーム画面コンポーネント
@@ -396,6 +705,12 @@ const GameScreen: React.FC<{
   onDebugToggle: (option: keyof Omit<DebugState, 'enabled'>) => void;
   attackEffect?: { position: Position; until: number };
   lastDamageAt: number;
+  // MVP4追加
+  timer: GameTimer;
+  showHelp: boolean;
+  onHelpToggle: () => void;
+  // MVP6追加
+  showKeyRequiredMessage: boolean;
 }> = ({
   map,
   player,
@@ -413,6 +728,12 @@ const GameScreen: React.FC<{
   onDebugToggle,
   attackEffect,
   lastDamageAt,
+  // MVP4追加
+  timer,
+  showHelp,
+  onHelpToggle,
+  // MVP6追加
+  showKeyRequiredMessage,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const movementStateRef = useRef<MovementState>(INITIAL_MOVEMENT_STATE);
@@ -851,6 +1172,13 @@ const GameScreen: React.FC<{
         return;
       }
 
+      // ヘルプ切替（Hキー）
+      if (key === 'h') {
+        e.preventDefault();
+        onHelpToggle();
+        return;
+      }
+
       // デバッグモード時のキー（Shift + キーで操作、移動キーと競合しない）
       if (debugState.enabled && e.shiftKey) {
         if (key === 'd') {
@@ -922,7 +1250,7 @@ const GameScreen: React.FC<{
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);
     };
-  }, [onMove, onTurn, onAttack, onMapToggle, debugState.enabled, onDebugToggle, setAttackHold]);
+  }, [onMove, onTurn, onAttack, onMapToggle, onHelpToggle, debugState.enabled, onDebugToggle, setAttackHold]);
 
   // D-pad押下開始時のハンドラー
   const handleDPadPointerDown = useCallback(
@@ -953,9 +1281,13 @@ const GameScreen: React.FC<{
   const hpColor = hpRatio > 0.66 ? '#22c55e' : hpRatio > 0.33 ? '#facc15' : '#ef4444';
   const isAttackReady = renderTime >= player.attackCooldownUntil;
 
+  // タイマー表示用の現在時刻
+  const currentElapsed = getElapsedTime(timer, renderTime);
+
   return (
     <GameRegion role="region" aria-label="ゲーム画面">
       <DamageOverlay $visible={renderTime - lastDamageAt < 150} />
+      <TimerDisplay>{formatTimeShort(currentElapsed)}</TimerDisplay>
       <HPBarContainer>
         <HPBarFill $ratio={hpRatio} $color={hpColor} />
         <HPBarText>
@@ -995,9 +1327,17 @@ const GameScreen: React.FC<{
           <StatValue>{player.killCount}</StatValue>
         </StatRow>
       </StatsDisplay>
+      <KeyIndicator $hasKey={player.hasKey} aria-label={player.hasKey ? '鍵を所持' : '鍵未所持'}>
+        <KeyIcon $hasKey={player.hasKey}>🔑</KeyIcon>
+      </KeyIndicator>
       <MapToggleButton onClick={onMapToggle} aria-label="マップ表示切替">
         🗺️
       </MapToggleButton>
+      <HelpButton onClick={onHelpToggle} aria-label="ヘルプ表示">
+        H
+      </HelpButton>
+      {showHelp && <HelpOverlayComponent onClose={onHelpToggle} />}
+      {showKeyRequiredMessage && <KeyRequiredMessage>🔑 鍵が必要です</KeyRequiredMessage>}
       <Canvas
         ref={canvasRef}
         role="img"
@@ -1105,6 +1445,21 @@ const IpnePage: React.FC = () => {
   const [walls, setWalls] = useState<Wall[]>([]);
   const [isLevelUpPending, setIsLevelUpPending] = useState(false);
 
+  // MVP4追加
+  const [timer, setTimer] = useState<GameTimer>(() => createTimer());
+  const [showHelp, setShowHelp] = useState(false);
+  const [clearTime, setClearTime] = useState(0);
+  const [clearRating, setClearRating] = useState<RatingValue>('d');
+  const [isNewBest, setIsNewBest] = useState(false);
+
+  // MVP6追加
+  const [showKeyRequiredMessage, setShowKeyRequiredMessage] = useState(false);
+
+  // MVP5追加: 音声関連
+  const [audioSettings, setAudioSettings] = useState<AudioSettings>(() => initializeAudioSettings());
+  const [showAudioSettings, setShowAudioSettings] = useState(false);
+  const [isAudioReady, setIsAudioReady] = useState(false);
+
   const mapRef = useRef<GameMap>(map);
   const playerRef = useRef<Player>(player);
   const enemiesRef = useRef<Enemy[]>(enemies);
@@ -1155,10 +1510,17 @@ const IpnePage: React.FC = () => {
     setCombatState({ lastAttackAt: 0, lastDamageAt: 0 });
     setAttackEffect(undefined);
 
+    // MVP4: タイマーをリセットして開始
+    const newTimer = startTimer(createTimer());
+    setTimer(newTimer);
+    setShowHelp(false);
+    setClearTime(0);
+    setIsNewBest(false);
+
     roomsRef.current = rooms;
 
     const spawnedEnemies = spawnEnemies(rooms, startPos, goal);
-    const spawnedItems = spawnItems(rooms, spawnedEnemies, [startPos, goal]);
+    const spawnedItems = spawnItems(rooms, spawnedEnemies, [startPos, goal], goal);
     setEnemies(spawnedEnemies);
     setItems(spawnedItems);
     enemiesRef.current = spawnedEnemies;
@@ -1228,6 +1590,79 @@ const IpnePage: React.FC = () => {
     setIsLevelUpPending(false);
   }, [player]);
 
+  // MVP4: ヘルプ表示トグル
+  const handleHelpToggle = useCallback(() => {
+    setShowHelp(prev => !prev);
+  }, []);
+
+  // MVP5: 音声初期化（ユーザー操作後に呼び出す）
+  const handleEnableAudio = useCallback(async () => {
+    const success = await enableAudio();
+    if (success) {
+      setIsAudioReady(true);
+      // タイトル画面でBGMを再生
+      if (screen === ScreenState.TITLE) {
+        playTitleBgm();
+      }
+    }
+  }, [screen]);
+
+  // MVP5: 音声設定トグル
+  const handleAudioSettingsToggle = useCallback(() => {
+    setShowAudioSettings(prev => !prev);
+  }, []);
+
+  // MVP5: マスター音量変更
+  const handleMasterVolumeChange = useCallback((value: number) => {
+    setMasterVolume(value);
+    setAudioSettings(getAudioSettings());
+  }, []);
+
+  // MVP5: SE音量変更
+  const handleSeVolumeChange = useCallback((value: number) => {
+    setSeVolume(value);
+    setAudioSettings(getAudioSettings());
+  }, []);
+
+  // MVP5: BGM音量変更
+  const handleBgmVolumeChange = useCallback((value: number) => {
+    setBgmVolume(value);
+    setAudioSettings(getAudioSettings());
+  }, []);
+
+  // MVP5: ミュートトグル
+  const handleToggleMute = useCallback(() => {
+    toggleMute();
+    setAudioSettings(getAudioSettings());
+  }, []);
+
+  // MVP5: 画面遷移時のBGM切り替え
+  useEffect(() => {
+    if (!isAudioReady) return;
+
+    switch (screen) {
+      case ScreenState.TITLE:
+        playTitleBgm();
+        break;
+      case ScreenState.GAME:
+        playGameBgm();
+        break;
+      case ScreenState.CLEAR:
+        stopBgm();
+        playClearJingle();
+        playGameClearSound();
+        break;
+      case ScreenState.GAME_OVER:
+        stopBgm();
+        playGameOverJingle();
+        playGameOverSound();
+        break;
+      default:
+        // CLASS_SELECT, PROLOGUEではタイトルBGMを継続
+        break;
+    }
+  }, [screen, isAudioReady]);
+
   // プレイヤー移動ハンドラー
   const handleMove = useCallback(
     (direction: (typeof Direction)[keyof typeof Direction]) => {
@@ -1269,6 +1704,8 @@ const IpnePage: React.FC = () => {
             : updatedPlayer;
         if (updatedPlayer !== player) {
           setCombatState(prev => ({ ...prev, lastDamageAt: currentTime }));
+          // MVP5: ダメージ音
+          playPlayerDamageSound();
         }
         setPlayer(knockedPlayer);
         return;
@@ -1295,10 +1732,32 @@ const IpnePage: React.FC = () => {
 
       // ゴール判定
       if (isGoal(map, newPlayer.x, newPlayer.y)) {
-        setScreen(ScreenState.CLEAR);
+        // 鍵を持っている場合のみクリア
+        if (canGoal(newPlayer)) {
+          // MVP4: タイマー停止と記録保存
+          const now = Date.now();
+          const stoppedTimer = stopTimer(timer, now);
+          const elapsed = getElapsedTime(stoppedTimer, now);
+          const rating = calculateRating(elapsed);
+
+          setClearTime(elapsed);
+          setClearRating(rating);
+          setTimer(stoppedTimer);
+
+          // 記録を保存
+          const record = createRecord(elapsed, rating, selectedClass);
+          const { isNewBest: newBest } = saveRecord(record);
+          setIsNewBest(newBest);
+
+          setScreen(ScreenState.CLEAR);
+        } else {
+          // 鍵がない場合はメッセージを表示
+          setShowKeyRequiredMessage(true);
+          setTimeout(() => setShowKeyRequiredMessage(false), 2000);
+        }
       }
     },
-    [player, map, isGameOver]
+    [player, map, isGameOver, timer, selectedClass]
   );
 
   const handleTurn = useCallback(
@@ -1320,6 +1779,8 @@ const IpnePage: React.FC = () => {
       setCombatState(prev => ({ ...prev, lastAttackAt: currentTime }));
       if (result.attackPosition) {
         setAttackEffect({ position: result.attackPosition, until: currentTime + 150 });
+        // MVP5: 攻撃命中音
+        playAttackHitSound();
       } else {
         setAttackEffect(undefined);
       }
@@ -1333,16 +1794,37 @@ const IpnePage: React.FC = () => {
 
     // MVP3: 撃破した敵の数をカウントしてキルカウントを更新
     const survivingEnemies = result.enemies.filter(enemy => enemy.hp > 0);
-    const killedCount = beforeEnemies.length - survivingEnemies.length;
+    const survivingIds = new Set(survivingEnemies.map(e => e.id));
+    const killedEnemies = beforeEnemies.filter(e => !survivingIds.has(e.id));
 
     let updatedPlayer = result.player;
-    if (killedCount > 0) {
+    let updatedItems = itemsRef.current;
+
+    if (killedEnemies.length > 0) {
+      // MVP5: 敵撃破音（ボスなら特別な音）
+      const killedBoss = killedEnemies.some(e => e.type === EnemyType.BOSS);
+      if (killedBoss) {
+        playBossKillSound();
+      } else {
+        playEnemyKillSound();
+      }
+
+      // MVP6: ボス撃破時は鍵をドロップ
+      for (const enemy of killedEnemies) {
+        const deathResult = processEnemyDeath(enemy);
+        if (deathResult.droppedItem) {
+          updatedItems = [...updatedItems, deathResult.droppedItem];
+        }
+      }
+
       // 撃破数だけインクリメント
-      for (let i = 0; i < killedCount; i++) {
+      for (let i = 0; i < killedEnemies.length; i++) {
         const killResult = incrementKillCount(updatedPlayer);
         updatedPlayer = killResult.player;
         if (killResult.shouldLevelUp && !isLevelUpPending) {
           setIsLevelUpPending(true);
+          // MVP5: レベルアップ音
+          playLevelUpSound();
         }
       }
     }
@@ -1351,6 +1833,8 @@ const IpnePage: React.FC = () => {
     playerRef.current = updatedPlayer;
     setEnemies(survivingEnemies);
     enemiesRef.current = survivingEnemies;
+    setItems(updatedItems);
+    itemsRef.current = updatedItems;
   }, [isGameOver, isLevelUpPending]);
 
   // マップ表示切替ハンドラー（小窓 → 全画面 → 非表示 → 小窓）
@@ -1438,6 +1922,8 @@ const IpnePage: React.FC = () => {
             : damagedPlayer;
         if (damagedPlayer !== nextPlayer) {
           setCombatState(prev => ({ ...prev, lastDamageAt: currentTime }));
+          // MVP5: ダメージ音
+          playPlayerDamageSound();
         }
         nextPlayer = knockedPlayer;
       }
@@ -1452,6 +1938,8 @@ const IpnePage: React.FC = () => {
         );
         if (damagedPlayer !== nextPlayer) {
           setCombatState(prev => ({ ...prev, lastDamageAt: currentTime }));
+          // MVP5: ダメージ音
+          playPlayerDamageSound();
         }
         nextPlayer = damagedPlayer;
       }
@@ -1463,11 +1951,18 @@ const IpnePage: React.FC = () => {
 
       for (const item of remainingItems) {
         if (canPickupItem(nextPlayer, item)) {
+          const prevHp = nextPlayer.hp;
           const pickupResult = pickupItem(nextPlayer, item);
           nextPlayer = pickupResult.player;
           pickedIds.push(pickupResult.itemId);
           if (pickupResult.triggerLevelUp) triggerLevelUp = true;
           if (pickupResult.triggerMapReveal) triggerMapReveal = true;
+          // MVP5: アイテム取得音（回復アイテムは回復音）
+          if (nextPlayer.hp > prevHp) {
+            playHealSound();
+          } else {
+            playItemPickupSound();
+          }
         }
       }
 
@@ -1489,8 +1984,12 @@ const IpnePage: React.FC = () => {
           nextPlayer = { ...nextPlayer, x: trapResult.teleportDestination.x, y: trapResult.teleportDestination.y };
         }
         currentTraps = currentTraps.map(t => t.id === trapResult.trap.id ? trapResult.trap : t);
+        // MVP5: 罠発動音
+        playTrapTriggeredSound();
         if (trapResult.damage > 0) {
           setCombatState(prev => ({ ...prev, lastDamageAt: currentTime }));
+          // MVP5: ダメージ音
+          playPlayerDamageSound();
         }
         setTraps(currentTraps);
         trapsRef.current = currentTraps;
@@ -1499,6 +1998,8 @@ const IpnePage: React.FC = () => {
       // MVP3: アイテムによる即レベルアップまたは通常レベルアップ
       if (triggerLevelUp && !isLevelUpPending) {
         setIsLevelUpPending(true);
+        // MVP5: レベルアップ音
+        playLevelUpSound();
       }
 
       // MVP3: マップ公開
@@ -1525,7 +2026,20 @@ const IpnePage: React.FC = () => {
   // 画面に応じたコンテンツをレンダリング
   return (
     <PageContainer>
-      {screen === ScreenState.TITLE && <TitleScreen onStart={handleStartGame} />}
+      {screen === ScreenState.TITLE && (
+        <TitleScreen
+          onStart={handleStartGame}
+          audioSettings={audioSettings}
+          showAudioSettings={showAudioSettings}
+          isAudioReady={isAudioReady}
+          onAudioSettingsToggle={handleAudioSettingsToggle}
+          onMasterVolumeChange={handleMasterVolumeChange}
+          onSeVolumeChange={handleSeVolumeChange}
+          onBgmVolumeChange={handleBgmVolumeChange}
+          onToggleMute={handleToggleMute}
+          onTapToStart={handleEnableAudio}
+        />
+      )}
       {screen === ScreenState.CLASS_SELECT && <ClassSelectScreen onSelect={handleClassSelect} />}
       {screen === ScreenState.PROLOGUE && <PrologueScreen onSkip={handleSkipPrologue} />}
       {screen === ScreenState.GAME && (
@@ -1547,6 +2061,10 @@ const IpnePage: React.FC = () => {
             onDebugToggle={handleDebugToggle}
             attackEffect={attackEffect}
             lastDamageAt={combatState.lastDamageAt}
+            timer={timer}
+            showHelp={showHelp}
+            onHelpToggle={handleHelpToggle}
+            showKeyRequiredMessage={showKeyRequiredMessage}
           />
           {isLevelUpPending && (
             <LevelUpOverlayComponent player={player} onChoose={handleLevelUpChoice} />
@@ -1554,7 +2072,13 @@ const IpnePage: React.FC = () => {
         </>
       )}
       {screen === ScreenState.CLEAR && (
-        <ClearScreen onRetry={handleRetry} onBackToTitle={handleBackToTitle} />
+        <ClearScreen
+          onRetry={handleRetry}
+          onBackToTitle={handleBackToTitle}
+          clearTime={clearTime}
+          rating={clearRating}
+          isNewBest={isNewBest}
+        />
       )}
       {screen === ScreenState.GAME_OVER && (
         <GameOverScreen onRetry={handleGameOverRetry} onBackToTitle={handleBackToTitle} />

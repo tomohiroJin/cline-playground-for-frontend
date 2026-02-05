@@ -171,6 +171,8 @@ export interface Player {
   killCount: number;
   stats: PlayerStats;
   slowedUntil: number;
+  // MVP6追加
+  hasKey: boolean;
 }
 
 // ===== 迷路生成関連の型定義 =====
@@ -286,6 +288,7 @@ export const ItemType = {
   HEALTH_FULL: 'health_full',
   LEVEL_UP: 'level_up',
   MAP_REVEAL: 'map_reveal',
+  KEY: 'key',
 } as const;
 
 export type ItemTypeValue = (typeof ItemType)[keyof typeof ItemType];
@@ -322,3 +325,168 @@ export interface GameState {
   walls: Wall[];
   isLevelUpPending: boolean;
 }
+
+// ===== MVP4 エンディング関連の型定義 =====
+
+/** 評価ランク */
+export const Rating = {
+  S: 's',
+  A: 'a',
+  B: 'b',
+  C: 'c',
+  D: 'd',
+} as const;
+
+export type RatingValue = (typeof Rating)[keyof typeof Rating];
+
+/** エピローグテキスト */
+export interface EpilogueText {
+  title: string;
+  text: string;
+}
+
+// ===== MVP4 タイマー関連の型定義 =====
+
+/** タイマー状態 */
+export const TimerState = {
+  IDLE: 'idle',
+  RUNNING: 'running',
+  PAUSED: 'paused',
+  STOPPED: 'stopped',
+} as const;
+
+export type TimerStateValue = (typeof TimerState)[keyof typeof TimerState];
+
+/** ゲームタイマー */
+export interface GameTimer {
+  state: TimerStateValue;
+  startTime: number;
+  pausedTime: number;
+  totalPausedDuration: number;
+}
+
+// ===== MVP4 記録関連の型定義 =====
+
+/** ゲーム記録 */
+export interface GameRecord {
+  time: number;
+  rating: RatingValue;
+  playerClass: PlayerClassValue;
+  date: string;
+}
+
+/** ベスト記録（職業別） */
+export interface BestRecords {
+  [PlayerClass.WARRIOR]?: GameRecord;
+  [PlayerClass.THIEF]?: GameRecord;
+}
+
+// ===== MVP4 チュートリアル関連の型定義 =====
+
+/** チュートリアルステップの種類 */
+export const TutorialStepType = {
+  MOVEMENT: 'movement',
+  ATTACK: 'attack',
+  MAP: 'map',
+  ITEM: 'item',
+  TRAP: 'trap',
+  GOAL: 'goal',
+} as const;
+
+export type TutorialStepTypeValue = (typeof TutorialStepType)[keyof typeof TutorialStepType];
+
+/** チュートリアルステップ */
+export interface TutorialStep {
+  id: TutorialStepTypeValue;
+  title: string;
+  text: string;
+  condition?: string;
+}
+
+/** チュートリアル状態 */
+export interface TutorialState {
+  isCompleted: boolean;
+  currentStep: number;
+  isVisible: boolean;
+}
+
+// ===== MVP4 フィードバック関連の型定義 =====
+
+/** フィードバックの種類 */
+export const FeedbackType = {
+  DAMAGE: 'damage',
+  HEAL: 'heal',
+  LEVEL_UP: 'level_up',
+  TRAP: 'trap',
+  ITEM_PICKUP: 'item_pickup',
+} as const;
+
+export type FeedbackTypeValue = (typeof FeedbackType)[keyof typeof FeedbackType];
+
+/** フィードバックエフェクト */
+export interface FeedbackEffect {
+  id: string;
+  type: FeedbackTypeValue;
+  x: number;
+  y: number;
+  text?: string;
+  color: string;
+  startTime: number;
+  duration: number;
+}
+
+// ===== MVP5 音声関連の型定義 =====
+
+/** 効果音の種類 */
+export const SoundEffectType = {
+  PLAYER_DAMAGE: 'player_damage',
+  ENEMY_KILL: 'enemy_kill',
+  BOSS_KILL: 'boss_kill',
+  GAME_CLEAR: 'game_clear',
+  GAME_OVER: 'game_over',
+  LEVEL_UP: 'level_up',
+  ATTACK_HIT: 'attack_hit',
+  ITEM_PICKUP: 'item_pickup',
+  HEAL: 'heal',
+  TRAP_TRIGGERED: 'trap_triggered',
+} as const;
+
+export type SoundEffectTypeValue = (typeof SoundEffectType)[keyof typeof SoundEffectType];
+
+/** BGMの種類 */
+export const BgmType = {
+  TITLE: 'title',
+  GAME: 'game',
+  CLEAR: 'clear',
+  GAME_OVER: 'game_over',
+} as const;
+
+export type BgmTypeValue = (typeof BgmType)[keyof typeof BgmType];
+
+/** 音声設定 */
+export interface AudioSettings {
+  masterVolume: number;
+  seVolume: number;
+  bgmVolume: number;
+  isMuted: boolean;
+}
+
+/** 音声設定のデフォルト値 */
+export const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
+  masterVolume: 0.7,
+  seVolume: 0.8,
+  bgmVolume: 0.5,
+  isMuted: false,
+};
+
+/** 効果音設定 */
+export interface SoundConfig {
+  frequency: number;
+  type: OscillatorType;
+  duration: number;
+  gain: number;
+  sweep?: number;
+}
+
+/** メロディノート（周波数, 長さ） */
+export type MelodyNote = readonly [number, number];

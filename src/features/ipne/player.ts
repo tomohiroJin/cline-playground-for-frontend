@@ -64,6 +64,8 @@ export const createPlayer = (
     killCount: 0,
     stats: { ...INITIAL_STATS[playerClass] },
     slowedUntil: 0,
+    // MVP6追加
+    hasKey: false,
   };
 };
 
