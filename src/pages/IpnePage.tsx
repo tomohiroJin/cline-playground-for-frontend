@@ -164,6 +164,7 @@ import {
   ResultImage,
   ResultVideo,
   NewBestBadge,
+  VideoPlayButton,
 } from './IpnePage.styles';
 import titleBg from '../assets/images/ipne_title_bg.webp';
 import prologueBg from '../assets/images/ipne_prologue_bg.webp';
@@ -359,8 +360,14 @@ const PrologueScreen: React.FC<{ onSkip: () => void }> = ({ onSkip }) => {
         setTextIndex(prev => prev + 1);
       }, 2000);
       return () => clearTimeout(timer);
+    } else {
+      // 最後のテキスト表示後、3秒待って自動遷移
+      const autoSkipTimer = setTimeout(() => {
+        onSkip();
+      }, 3000);
+      return () => clearTimeout(autoSkipTimer);
     }
-  }, [textIndex]);
+  }, [textIndex, onSkip]);
 
   return (
     <Overlay $bgImage={prologueBg}>
@@ -424,10 +431,6 @@ const HelpOverlayComponent: React.FC<{ onClose: () => void }> = ({ onClose }) =>
             <HelpKeyDescription>マップ表示切替（小窓→全画面→非表示）</HelpKeyDescription>
           </HelpKeyItem>
           <HelpKeyItem>
-            <HelpKey>Tab</HelpKey>
-            <HelpKeyDescription>全体マップ表示</HelpKeyDescription>
-          </HelpKeyItem>
-          <HelpKeyItem>
             <HelpKey>H</HelpKey>
             <HelpKeyDescription>このヘルプを表示/非表示</HelpKeyDescription>
           </HelpKeyItem>
@@ -468,6 +471,7 @@ export const ClearScreen: React.FC<{
   const ratingColor = getRatingColor(rating);
   const endingImage = getEndingImage(rating);
   const endingVideo = getEndingVideo(rating);
+  const [showVideo, setShowVideo] = useState(false);
 
   return (
     <Overlay>
@@ -478,13 +482,23 @@ export const ClearScreen: React.FC<{
         <ResultEpilogueTitle>{epilogue.title}</ResultEpilogueTitle>
         <ResultEpilogueText>{epilogue.text}</ResultEpilogueText>
         {endingVideo ? (
-          <ResultVideo
-            src={endingVideo}
-            autoPlay
-            muted
-            playsInline
-            aria-label={`${rating}ランククリア動画`}
-          />
+          showVideo ? (
+            <ResultVideo
+              src={endingVideo}
+              autoPlay
+              muted
+              playsInline
+              onEnded={() => setShowVideo(false)}
+              aria-label={`${rating}ランククリア動画`}
+            />
+          ) : (
+            <>
+              <ResultImage src={endingImage} alt={`${rating}ランククリア`} />
+              <VideoPlayButton onClick={() => setShowVideo(true)}>
+                特別動画を見る
+              </VideoPlayButton>
+            </>
+          )
         ) : (
           <ResultImage src={endingImage} alt={`${rating}ランククリア`} />
         )}

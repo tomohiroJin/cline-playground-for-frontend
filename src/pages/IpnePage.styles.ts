@@ -45,6 +45,13 @@ export const Overlay = styled.div<{ $bgImage?: string }>`
   background-size: cover;
   background-position: center;
   animation: ${fadeIn} 0.5s ease-out;
+
+  @media (max-width: 480px) {
+    background: ${props =>
+      props.$bgImage
+        ? `linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url(${props.$bgImage})`
+        : 'rgba(0, 0, 0, 0.85)'};
+  }
 `;
 
 // タイトル関連
@@ -56,7 +63,7 @@ export const TitleContainer = styled.div`
 `;
 
 export const TitleMain = styled.h1`
-  font-size: 3rem;
+  font-size: 2rem;
   font-weight: bold;
   margin-bottom: 0.5rem;
   letter-spacing: 0.1em;
@@ -65,6 +72,10 @@ export const TitleMain = styled.h1`
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   text-shadow: 0 0 40px rgba(102, 126, 234, 0.5);
+
+  @media (min-width: 480px) {
+    font-size: 3rem;
+  }
 
   @media (min-width: 768px) {
     font-size: 4rem;
@@ -109,6 +120,12 @@ export const StoryText = styled.p<{ $active: boolean }>`
   text-shadow: ${props => (props.$active ? '0 0 30px rgba(255,255,255,0.5)' : 'none')};
   text-align: center;
   width: 100%;
+  padding: 0 1rem;
+
+  @media (max-width: 480px) {
+    font-size: ${props => (props.$active ? '1.125rem' : '0.875rem')};
+    padding: 0 0.5rem;
+  }
 `;
 
 export const SkipButton = styled.button`
@@ -261,6 +278,11 @@ export const HPBarContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
+
+  @media (max-width: 480px) {
+    width: 120px;
+    height: 20px;
+  }
 `;
 
 export const HPBarFill = styled.div<{ $ratio: number; $color: string }>`
@@ -281,6 +303,10 @@ export const HPBarText = styled.span`
   font-weight: bold;
   white-space: nowrap;
   pointer-events: none;
+
+  @media (max-width: 480px) {
+    font-size: 0.65rem;
+  }
 `;
 
 export const DamageOverlay = styled.div<{ $visible: boolean }>`
@@ -404,6 +430,12 @@ export const MapToggleButton = styled.button`
   &:active {
     transform: scale(0.95);
   }
+
+  @media (max-width: 480px) {
+    top: 0.5rem;
+    padding: 0.375rem;
+    font-size: 1.25rem;
+  }
 `;
 
 // ===== MVP3: 職業選択画面 =====
@@ -414,6 +446,11 @@ export const ClassSelectContainer = styled.div`
   align-items: center;
   gap: 2rem;
   padding: 2rem;
+  padding-top: 5rem;
+
+  @media (min-width: 480px) {
+    padding-top: 2rem;
+  }
 `;
 
 export const ClassSelectTitle = styled.h2`
@@ -594,6 +631,12 @@ export const StatsDisplay = styled.div`
   padding: 0.5rem 0.75rem;
   border-radius: 0.375rem;
   z-index: 20;
+
+  @media (max-width: 480px) {
+    top: 2.75rem;
+    padding: 0.375rem 0.5rem;
+    gap: 0.125rem;
+  }
 `;
 
 export const StatRow = styled.div`
@@ -602,6 +645,11 @@ export const StatRow = styled.div`
   gap: 1rem;
   font-size: 0.7rem;
   color: #d1d5db;
+
+  @media (max-width: 480px) {
+    font-size: 0.6rem;
+    gap: 0.5rem;
+  }
 `;
 
 export const StatLabel = styled.span`
@@ -624,6 +672,12 @@ export const ExperienceBar = styled.div`
   border-radius: 0.25rem;
   overflow: hidden;
   z-index: 20;
+
+  @media (max-width: 480px) {
+    top: 2.25rem;
+    width: 120px;
+    height: 6px;
+  }
 `;
 
 export const ExperienceBarFill = styled.div<{ $ratio: number }>`
@@ -644,6 +698,12 @@ export const LevelBadge = styled.div`
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
   z-index: 20;
+
+  @media (max-width: 480px) {
+    left: 130px;
+    font-size: 0.65rem;
+    padding: 0.2rem 0.4rem;
+  }
 `;
 
 // ===== MVP4: ヘルプUI =====
@@ -651,7 +711,7 @@ export const LevelBadge = styled.div`
 export const HelpButton = styled.button`
   position: absolute;
   top: 1rem;
-  right: 4rem;
+  right: 5rem;
   background: rgba(255, 255, 255, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 0.5rem;
@@ -665,6 +725,13 @@ export const HelpButton = styled.button`
 
   &:hover {
     background: rgba(255, 255, 255, 0.25);
+  }
+
+  @media (max-width: 480px) {
+    top: 0.5rem;
+    right: 3.5rem;
+    padding: 0.375rem 0.5rem;
+    font-size: 0.75rem;
   }
 `;
 
@@ -783,6 +850,12 @@ export const TimerDisplay = styled.div`
   font-size: 1.25rem;
   font-weight: bold;
   color: white;
+
+  @media (max-width: 480px) {
+    top: 0.5rem;
+    font-size: 1rem;
+    padding: 0.375rem 0.75rem;
+  }
 `;
 
 // ===== MVP4: リザルト画面 =====
@@ -795,6 +868,13 @@ export const ResultContainer = styled.div`
   gap: 1rem;
   max-width: 500px;
   padding: 2rem;
+
+  @media (max-width: 480px) {
+    max-width: 100%;
+    padding: 1rem;
+    padding-top: 1rem;
+    gap: 0.5rem;
+  }
 `;
 
 export const ResultRating = styled.div<{ $color: string }>`
@@ -803,6 +883,10 @@ export const ResultRating = styled.div<{ $color: string }>`
   color: ${props => props.$color};
   text-shadow: 0 0 40px ${props => props.$color}80;
   line-height: 1;
+
+  @media (max-width: 480px) {
+    font-size: 3rem;
+  }
 `;
 
 export const ResultTime = styled.div`
@@ -810,6 +894,10 @@ export const ResultTime = styled.div`
   font-size: 2rem;
   color: white;
   margin-bottom: 0.5rem;
+
+  @media (max-width: 480px) {
+    font-size: 1.5rem;
+  }
 `;
 
 export const ResultEpilogueTitle = styled.h3`
@@ -817,6 +905,10 @@ export const ResultEpilogueTitle = styled.h3`
   font-weight: bold;
   color: #fbbf24;
   margin-bottom: 0.5rem;
+
+  @media (max-width: 480px) {
+    font-size: 1.125rem;
+  }
 `;
 
 export const ResultEpilogueText = styled.p`
@@ -824,6 +916,11 @@ export const ResultEpilogueText = styled.p`
   font-size: 1rem;
   line-height: 1.6;
   margin-bottom: 1rem;
+
+  @media (max-width: 480px) {
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
 `;
 
 export const ResultImage = styled.img`
@@ -833,6 +930,11 @@ export const ResultImage = styled.img`
   border-radius: 0.5rem;
   margin-bottom: 1rem;
   box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+
+  @media (max-width: 480px) {
+    max-width: 200px;
+    margin-bottom: 0.5rem;
+  }
 `;
 
 export const ResultVideo = styled.video`
@@ -842,6 +944,11 @@ export const ResultVideo = styled.video`
   border-radius: 0.5rem;
   margin-bottom: 1rem;
   box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+
+  @media (max-width: 480px) {
+    max-width: 200px;
+    margin-bottom: 0.5rem;
+  }
 `;
 
 export const NewBestBadge = styled.div`
@@ -852,6 +959,35 @@ export const NewBestBadge = styled.div`
   padding: 0.25rem 0.75rem;
   border-radius: 1rem;
   animation: ${pulse} 1.5s ease-in-out infinite;
+
+  @media (max-width: 480px) {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+  }
+`;
+
+// Sランク動画再生ボタン
+export const VideoPlayButton = styled.button`
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  color: white;
+  background: linear-gradient(to right, #fbbf24, #f59e0b);
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 1rem;
+  box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4);
+
+  &:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(251, 191, 36, 0.6);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
 `;
 
 // ===== MVP4: チュートリアル表示 =====
