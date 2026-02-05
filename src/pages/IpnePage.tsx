@@ -167,7 +167,9 @@ import {
   VideoPlayButton,
 } from './IpnePage.styles';
 import titleBg from '../assets/images/ipne_title_bg.webp';
+import titleBgMobile from '../assets/images/ipne_title_bg_mobile.webp';
 import prologueBg from '../assets/images/ipne_prologue_bg.webp';
+import prologueBgMobile from '../assets/images/ipne_prologue_bg_mobile.webp';
 
 // MVP4モジュール
 import {
@@ -240,7 +242,7 @@ const PROLOGUE_TEXTS = [
  * タイトル画面コンポーネント
  */
 const TitleScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => (
-  <Overlay $bgImage={titleBg}>
+  <Overlay $bgImage={titleBg} $bgImageMobile={titleBgMobile}>
     <TitleContainer>
       <StartButton
         onClick={onStart}
@@ -370,7 +372,7 @@ const PrologueScreen: React.FC<{ onSkip: () => void }> = ({ onSkip }) => {
   }, [textIndex, onSkip]);
 
   return (
-    <Overlay $bgImage={prologueBg}>
+    <Overlay $bgImage={prologueBg} $bgImageMobile={prologueBgMobile}>
       <div
         style={{
           width: '100%',

@@ -30,7 +30,7 @@ export const PageContainer = styled.div`
 `;
 
 // オーバーレイ（タイトル/プロローグ/クリア画面用）
-export const Overlay = styled.div<{ $bgImage?: string }>`
+export const Overlay = styled.div<{ $bgImage?: string; $bgImageMobile?: string }>`
   position: absolute;
   inset: 0;
   display: flex;
@@ -48,9 +48,13 @@ export const Overlay = styled.div<{ $bgImage?: string }>`
 
   @media (max-width: 480px) {
     background: ${props =>
-      props.$bgImage
-        ? `linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url(${props.$bgImage})`
-        : 'rgba(0, 0, 0, 0.85)'};
+      props.$bgImageMobile
+        ? `linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url(${props.$bgImageMobile})`
+        : props.$bgImage
+          ? `linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url(${props.$bgImage})`
+          : 'rgba(0, 0, 0, 0.85)'};
+    background-size: cover;
+    background-position: center;
   }
 `;
 
