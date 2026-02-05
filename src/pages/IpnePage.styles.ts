@@ -645,3 +645,280 @@ export const LevelBadge = styled.div`
   border-radius: 0.25rem;
   z-index: 20;
 `;
+
+// ===== MVP4: ヘルプUI =====
+
+export const HelpButton = styled.button`
+  position: absolute;
+  top: 1rem;
+  right: 4rem;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: bold;
+  color: white;
+  transition: all 0.2s;
+  z-index: 20;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.25);
+  }
+`;
+
+export const HelpOverlay = styled.div`
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 200;
+  animation: ${fadeIn} 0.2s ease-out;
+  padding: 2rem;
+  overflow-y: auto;
+`;
+
+export const HelpContainer = styled.div`
+  max-width: 600px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+`;
+
+export const HelpTitle = styled.h2`
+  font-size: 1.75rem;
+  font-weight: bold;
+  color: #fbbf24;
+  text-align: center;
+  margin-bottom: 0.5rem;
+`;
+
+export const HelpSection = styled.div`
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  padding: 1rem;
+`;
+
+export const HelpSectionTitle = styled.h3`
+  font-size: 1rem;
+  font-weight: bold;
+  color: #60a5fa;
+  margin-bottom: 0.75rem;
+`;
+
+export const HelpKeyList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+`;
+
+export const HelpKeyItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+`;
+
+export const HelpKey = styled.kbd`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5rem;
+  padding: 0.25rem 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 0.25rem;
+  font-family: monospace;
+  font-size: 0.875rem;
+  color: white;
+`;
+
+export const HelpKeyDescription = styled.span`
+  color: #d1d5db;
+  font-size: 0.875rem;
+`;
+
+export const HelpCloseButton = styled.button`
+  padding: 0.75rem 2rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 0.5rem;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  align-self: center;
+  margin-top: 1rem;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+`;
+
+export const HelpHint = styled.p`
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.75rem;
+  margin-top: 0.5rem;
+`;
+
+// ===== MVP4: タイマー表示 =====
+
+export const TimerDisplay = styled.div`
+  position: absolute;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  z-index: 20;
+  font-family: monospace;
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: white;
+`;
+
+// ===== MVP4: リザルト画面 =====
+
+export const ResultContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+  max-width: 500px;
+  padding: 2rem;
+`;
+
+export const ResultRating = styled.div<{ $color: string }>`
+  font-size: 5rem;
+  font-weight: bold;
+  color: ${props => props.$color};
+  text-shadow: 0 0 40px ${props => props.$color}80;
+  line-height: 1;
+`;
+
+export const ResultTime = styled.div`
+  font-family: monospace;
+  font-size: 2rem;
+  color: white;
+  margin-bottom: 0.5rem;
+`;
+
+export const ResultEpilogueTitle = styled.h3`
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #fbbf24;
+  margin-bottom: 0.5rem;
+`;
+
+export const ResultEpilogueText = styled.p`
+  color: #d1d5db;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+`;
+
+export const ResultImage = styled.img`
+  max-width: 300px;
+  width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+`;
+
+export const ResultVideo = styled.video`
+  max-width: 300px;
+  width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+`;
+
+export const NewBestBadge = styled.div`
+  background: linear-gradient(to right, #fbbf24, #f59e0b);
+  color: #1a1a2e;
+  font-size: 0.875rem;
+  font-weight: bold;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  animation: ${pulse} 1.5s ease-in-out infinite;
+`;
+
+// ===== MVP4: チュートリアル表示 =====
+
+export const TutorialOverlay = styled.div`
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid rgba(102, 126, 234, 0.5);
+  border-radius: 0.75rem;
+  padding: 1rem 1.5rem;
+  max-width: 400px;
+  z-index: 30;
+  animation: ${fadeIn} 0.3s ease-out;
+`;
+
+export const TutorialTitle = styled.h4`
+  font-size: 1rem;
+  font-weight: bold;
+  color: #667eea;
+  margin-bottom: 0.5rem;
+`;
+
+export const TutorialText = styled.p`
+  color: #e5e7eb;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin-bottom: 0.75rem;
+`;
+
+export const TutorialActions = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+export const TutorialProgress = styled.span`
+  color: #6b7280;
+  font-size: 0.75rem;
+`;
+
+export const TutorialButton = styled.button`
+  padding: 0.5rem 1rem;
+  background: rgba(102, 126, 234, 0.3);
+  border: 1px solid rgba(102, 126, 234, 0.5);
+  border-radius: 0.375rem;
+  color: white;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(102, 126, 234, 0.5);
+  }
+`;
+
+export const TutorialSkipButton = styled.button`
+  padding: 0.25rem 0.5rem;
+  background: transparent;
+  border: none;
+  color: #6b7280;
+  font-size: 0.75rem;
+  cursor: pointer;
+
+  &:hover {
+    color: #9ca3af;
+  }
+`;

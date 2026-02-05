@@ -232,22 +232,29 @@ describe('IpnePage', () => {
 });
 
 describe('ClearScreen', () => {
+  const defaultProps = {
+    onRetry: jest.fn(),
+    onBackToTitle: jest.fn(),
+    clearTime: 180000, // 3分
+    rating: 'b' as const,
+    isNewBest: false,
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   test('クリア画面が正しく表示されること', () => {
-    const mockRetry = jest.fn();
-    const mockBackToTitle = jest.fn();
+    render(<ClearScreen {...defaultProps} />);
 
-    render(<ClearScreen onRetry={mockRetry} onBackToTitle={mockBackToTitle} />);
-
-    // クリアメッセージが表示される
-    expect(screen.getByText(/クリア/)).toBeInTheDocument();
-    expect(screen.getByText(/おめでとうございます/)).toBeInTheDocument();
+    // 評価が表示される
+    expect(screen.getByText('B')).toBeInTheDocument();
   });
 
   test('リトライボタンが表示され、クリックでコールバックが呼ばれること', () => {
     const mockRetry = jest.fn();
-    const mockBackToTitle = jest.fn();
 
-    render(<ClearScreen onRetry={mockRetry} onBackToTitle={mockBackToTitle} />);
+    render(<ClearScreen {...defaultProps} onRetry={mockRetry} />);
 
     const retryButton = screen.getByRole('button', { name: /もう一度プレイ/i });
     expect(retryButton).toBeInTheDocument();
@@ -257,15 +264,34 @@ describe('ClearScreen', () => {
   });
 
   test('タイトルに戻るボタンが表示され、クリックでコールバックが呼ばれること', () => {
-    const mockRetry = jest.fn();
     const mockBackToTitle = jest.fn();
 
-    render(<ClearScreen onRetry={mockRetry} onBackToTitle={mockBackToTitle} />);
+    render(<ClearScreen {...defaultProps} onBackToTitle={mockBackToTitle} />);
 
     const backButton = screen.getByRole('button', { name: /タイトルに戻る/i });
     expect(backButton).toBeInTheDocument();
 
     fireEvent.click(backButton);
     expect(mockBackToTitle).toHaveBeenCalledTimes(1);
+  });
+
+  test('新記録の場合にNEW BESTバッジが表示されること', () => {
+    render(<ClearScreen {...defaultProps} isNewBest={true} />);
+
+    expect(screen.getByText(/NEW BEST/i)).toBeInTheDocument();
+  });
+
+  test('各評価ランクが正しく表示されること', () => {
+    const { rerender } = render(<ClearScreen {...defaultProps} rating="s" />);
+    expect(screen.getByText('S')).toBeInTheDocument();
+
+    rerender(<ClearScreen {...defaultProps} rating="a" />);
+    expect(screen.getByText('A')).toBeInTheDocument();
+
+    rerender(<ClearScreen {...defaultProps} rating="c" />);
+    expect(screen.getByText('C')).toBeInTheDocument();
+
+    rerender(<ClearScreen {...defaultProps} rating="d" />);
+    expect(screen.getByText('D')).toBeInTheDocument();
   });
 });

@@ -18,6 +18,11 @@ export {
   TrapState,
   WallType,
   WallState,
+  // MVP4追加
+  Rating,
+  TimerState,
+  FeedbackType,
+  TutorialStepType,
 } from './types';
 export type {
   TileTypeValue,
@@ -49,6 +54,18 @@ export type {
   Wall,
   WallTypeValue,
   WallStateValue,
+  // MVP4追加
+  RatingValue,
+  EpilogueText,
+  TimerStateValue,
+  GameTimer,
+  GameRecord,
+  BestRecords,
+  TutorialStepTypeValue,
+  TutorialStep,
+  TutorialState,
+  FeedbackTypeValue,
+  FeedbackEffect,
 } from './types';
 
 // マップ
@@ -249,3 +266,107 @@ export type { GimmickPlacementConfig, GimmickPlacementResult } from './gimmickPl
 // 敵AI（RANGED追加）
 export { createRangedEnemy } from './enemy';
 export { updateRangedEnemy } from './enemyAI';
+
+// ===== MVP4 追加モジュール =====
+
+// エンディング
+export {
+  RATING_THRESHOLDS,
+  RATING_COLORS,
+  calculateRating,
+  getEpilogueText,
+  getGameOverText,
+  getRatingColor,
+  getEndingImage,
+  getGameOverImage,
+  getEndingVideo,
+} from './ending';
+
+// タイマー
+export {
+  createTimer,
+  startTimer,
+  pauseTimer,
+  resumeTimer,
+  stopTimer,
+  getElapsedTime,
+  formatTime,
+  formatTimeShort,
+  isTimerRunning,
+  isTimerPaused,
+} from './timer';
+
+// 記録
+export {
+  STORAGE_KEYS,
+  createRecord,
+  loadBestRecords,
+  saveBestRecords,
+  isBestRecord,
+  updateBestRecord,
+  saveRecord,
+  clearRecords,
+  getBestRecordForClass,
+  getAllBestRecords,
+} from './record';
+
+// チュートリアル
+export {
+  TUTORIAL_STEPS,
+  initTutorial,
+  isTutorialCompleted,
+  saveTutorialCompleted,
+  advanceTutorialStep,
+  skipTutorial,
+  toggleTutorialVisibility,
+  getCurrentTutorialStep,
+  getTutorialText,
+  shouldAdvanceTutorial,
+  getTutorialStepIndex,
+  getTutorialProgress,
+} from './tutorial';
+
+// フィードバック
+export {
+  FEEDBACK_CONFIGS,
+  resetFeedbackIdCounter,
+  createFeedback,
+  createDamageFeedback,
+  createHealFeedback,
+  createLevelUpFeedback,
+  createTrapFeedback,
+  createItemPickupFeedback,
+  isFeedbackActive,
+  getFeedbackProgress,
+  updateFeedbacks,
+  drawDamageFlash,
+  drawTrapEffect,
+  drawPopup,
+  needsFlash,
+} from './feedback';
+
+// 敵ドロップ（MVP4追加）
+export {
+  SPECIMEN_DROP_RATE,
+  DROP_ITEM_WEIGHTS,
+  shouldDropItem,
+  selectDropItemType,
+  createDropItem,
+  processEnemyDeath,
+} from './enemy';
+export type { EnemyDeathResult } from './enemy';
+
+// 迷路生成安定化（MVP4追加）
+export {
+  SAFE_ZONE_RADIUS,
+  MAX_GENERATION_RETRIES,
+  DANGEROUS_ENEMIES,
+  DANGEROUS_TRAPS,
+  isInSafeZone,
+  validateEnemyPlacement,
+  validateTrapPlacement,
+  validateGeneration,
+  getPositionsOutsideSafeZone,
+  generateSafeMaze,
+} from './mazeGenerator';
+export type { ValidationResult, MazeResult } from './mazeGenerator';

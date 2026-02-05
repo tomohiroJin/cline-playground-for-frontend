@@ -142,9 +142,57 @@ import {
   ExperienceBar,
   ExperienceBarFill,
   LevelBadge,
+  // MVP4追加
+  HelpButton,
+  HelpOverlay,
+  HelpContainer,
+  HelpTitle,
+  HelpSection,
+  HelpSectionTitle,
+  HelpKeyList,
+  HelpKeyItem,
+  HelpKey,
+  HelpKeyDescription,
+  HelpCloseButton,
+  HelpHint,
+  TimerDisplay,
+  ResultContainer,
+  ResultRating,
+  ResultTime,
+  ResultEpilogueTitle,
+  ResultEpilogueText,
+  ResultImage,
+  ResultVideo,
+  NewBestBadge,
 } from './IpnePage.styles';
 import titleBg from '../assets/images/ipne_title_bg.webp';
 import prologueBg from '../assets/images/ipne_prologue_bg.webp';
+
+// MVP4モジュール
+import {
+  createTimer,
+  startTimer,
+  stopTimer,
+  getElapsedTime,
+  formatTimeShort,
+  GameTimer,
+} from '../features/ipne/timer';
+import {
+  createRecord,
+  saveRecord,
+  loadBestRecords,
+  BestRecords,
+} from '../features/ipne/record';
+import {
+  calculateRating,
+  getEpilogueText,
+  getGameOverText,
+  getRatingColor,
+  getEndingImage,
+  getGameOverImage,
+  getEndingVideo,
+} from '../features/ipne/ending';
+import { RatingValue } from '../features/ipne/types';
 
 // 描画設定
 const CONFIG = {
@@ -343,38 +391,133 @@ const PrologueScreen: React.FC<{ onSkip: () => void }> = ({ onSkip }) => {
 };
 
 /**
- * クリア画面コンポーネント
+ * ヘルプオーバーレイコンポーネント（MVP4）
+ */
+const HelpOverlayComponent: React.FC<{ onClose: () => void }> = ({ onClose }) => (
+  <HelpOverlay onClick={onClose}>
+    <HelpContainer onClick={e => e.stopPropagation()}>
+      <HelpTitle>操作方法</HelpTitle>
+
+      <HelpSection>
+        <HelpSectionTitle>移動</HelpSectionTitle>
+        <HelpKeyList>
+          <HelpKeyItem>
+            <HelpKey>W A S D</HelpKey>
+            <HelpKeyDescription>上/左/下/右に移動</HelpKeyDescription>
+          </HelpKeyItem>
+          <HelpKeyItem>
+            <HelpKey>↑ ← ↓ →</HelpKey>
+            <HelpKeyDescription>矢印キーでも移動可能</HelpKeyDescription>
+          </HelpKeyItem>
+        </HelpKeyList>
+      </HelpSection>
+
+      <HelpSection>
+        <HelpSectionTitle>アクション</HelpSectionTitle>
+        <HelpKeyList>
+          <HelpKeyItem>
+            <HelpKey>Space</HelpKey>
+            <HelpKeyDescription>攻撃（押しながら移動キーで向き変更）</HelpKeyDescription>
+          </HelpKeyItem>
+          <HelpKeyItem>
+            <HelpKey>M</HelpKey>
+            <HelpKeyDescription>マップ表示切替（小窓→全画面→非表示）</HelpKeyDescription>
+          </HelpKeyItem>
+          <HelpKeyItem>
+            <HelpKey>Tab</HelpKey>
+            <HelpKeyDescription>全体マップ表示</HelpKeyDescription>
+          </HelpKeyItem>
+          <HelpKeyItem>
+            <HelpKey>H</HelpKey>
+            <HelpKeyDescription>このヘルプを表示/非表示</HelpKeyDescription>
+          </HelpKeyItem>
+        </HelpKeyList>
+      </HelpSection>
+
+      <HelpSection>
+        <HelpSectionTitle>ゲームの目的</HelpSectionTitle>
+        <HelpKeyList>
+          <HelpKeyItem>
+            <HelpKeyDescription>
+              迷宮を探索してゴール（緑色のタイル）を目指しましょう。
+              敵を倒してレベルアップし、アイテムを取得して有利に進めましょう。
+              クリアタイムで評価が決まります！
+            </HelpKeyDescription>
+          </HelpKeyItem>
+        </HelpKeyList>
+      </HelpSection>
+
+      <HelpCloseButton onClick={onClose}>閉じる</HelpCloseButton>
+      <HelpHint>画面外をクリックしても閉じられます</HelpHint>
+    </HelpContainer>
+  </HelpOverlay>
+);
+
+/**
+ * クリア画面コンポーネント（MVP4拡張）
  * テスト用にエクスポート
  */
 export const ClearScreen: React.FC<{
   onRetry: () => void;
   onBackToTitle: () => void;
-}> = ({ onRetry, onBackToTitle }) => (
-  <Overlay>
-    <ClearContainer>
-      <ClearTitle>🎉 クリア！</ClearTitle>
-      <ClearMessage>おめでとうございます！迷宮から脱出しました。</ClearMessage>
-      <RetryButton onClick={onRetry}>もう一度プレイ</RetryButton>
-      <BackToTitleButton onClick={onBackToTitle}>タイトルに戻る</BackToTitleButton>
-    </ClearContainer>
-  </Overlay>
-);
+  clearTime: number;
+  rating: RatingValue;
+  isNewBest: boolean;
+}> = ({ onRetry, onBackToTitle, clearTime, rating, isNewBest }) => {
+  const epilogue = getEpilogueText(rating);
+  const ratingColor = getRatingColor(rating);
+  const endingImage = getEndingImage(rating);
+  const endingVideo = getEndingVideo(rating);
+
+  return (
+    <Overlay>
+      <ResultContainer>
+        {isNewBest && <NewBestBadge>🏆 NEW BEST!</NewBestBadge>}
+        <ResultRating $color={ratingColor}>{rating.toUpperCase()}</ResultRating>
+        <ResultTime>{formatTimeShort(clearTime)}</ResultTime>
+        <ResultEpilogueTitle>{epilogue.title}</ResultEpilogueTitle>
+        <ResultEpilogueText>{epilogue.text}</ResultEpilogueText>
+        {endingVideo ? (
+          <ResultVideo
+            src={endingVideo}
+            autoPlay
+            muted
+            playsInline
+            aria-label={`${rating}ランククリア動画`}
+          />
+        ) : (
+          <ResultImage src={endingImage} alt={`${rating}ランククリア`} />
+        )}
+        <RetryButton onClick={onRetry}>もう一度プレイ</RetryButton>
+        <BackToTitleButton onClick={onBackToTitle}>タイトルに戻る</BackToTitleButton>
+      </ResultContainer>
+    </Overlay>
+  );
+};
 
 /**
- * ゲームオーバー画面コンポーネント
+ * ゲームオーバー画面コンポーネント（MVP4拡張）
  */
 const GameOverScreen: React.FC<{
   onRetry: () => void;
   onBackToTitle: () => void;
-}> = ({ onRetry, onBackToTitle }) => (
-  <Overlay>
-    <GameOverContainer>
-      <GameOverTitle>GAME OVER</GameOverTitle>
-      <GameOverButton onClick={onRetry}>リトライ</GameOverButton>
-      <GameOverButton onClick={onBackToTitle}>タイトルへ</GameOverButton>
-    </GameOverContainer>
-  </Overlay>
-);
+}> = ({ onRetry, onBackToTitle }) => {
+  const gameOverText = getGameOverText();
+  const gameOverImage = getGameOverImage();
+
+  return (
+    <Overlay>
+      <ResultContainer>
+        <GameOverTitle>GAME OVER</GameOverTitle>
+        <ResultEpilogueTitle>{gameOverText.title}</ResultEpilogueTitle>
+        <ResultEpilogueText>{gameOverText.text}</ResultEpilogueText>
+        <ResultImage src={gameOverImage} alt="ゲームオーバー" />
+        <GameOverButton onClick={onRetry}>リトライ</GameOverButton>
+        <GameOverButton onClick={onBackToTitle}>タイトルへ</GameOverButton>
+      </ResultContainer>
+    </Overlay>
+  );
+};
 
 /**
  * ゲーム画面コンポーネント
@@ -396,6 +539,10 @@ const GameScreen: React.FC<{
   onDebugToggle: (option: keyof Omit<DebugState, 'enabled'>) => void;
   attackEffect?: { position: Position; until: number };
   lastDamageAt: number;
+  // MVP4追加
+  timer: GameTimer;
+  showHelp: boolean;
+  onHelpToggle: () => void;
 }> = ({
   map,
   player,
@@ -413,6 +560,10 @@ const GameScreen: React.FC<{
   onDebugToggle,
   attackEffect,
   lastDamageAt,
+  // MVP4追加
+  timer,
+  showHelp,
+  onHelpToggle,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const movementStateRef = useRef<MovementState>(INITIAL_MOVEMENT_STATE);
@@ -851,6 +1002,13 @@ const GameScreen: React.FC<{
         return;
       }
 
+      // ヘルプ切替（Hキー）
+      if (key === 'h') {
+        e.preventDefault();
+        onHelpToggle();
+        return;
+      }
+
       // デバッグモード時のキー（Shift + キーで操作、移動キーと競合しない）
       if (debugState.enabled && e.shiftKey) {
         if (key === 'd') {
@@ -922,7 +1080,7 @@ const GameScreen: React.FC<{
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);
     };
-  }, [onMove, onTurn, onAttack, onMapToggle, debugState.enabled, onDebugToggle, setAttackHold]);
+  }, [onMove, onTurn, onAttack, onMapToggle, onHelpToggle, debugState.enabled, onDebugToggle, setAttackHold]);
 
   // D-pad押下開始時のハンドラー
   const handleDPadPointerDown = useCallback(
@@ -953,9 +1111,13 @@ const GameScreen: React.FC<{
   const hpColor = hpRatio > 0.66 ? '#22c55e' : hpRatio > 0.33 ? '#facc15' : '#ef4444';
   const isAttackReady = renderTime >= player.attackCooldownUntil;
 
+  // タイマー表示用の現在時刻
+  const currentElapsed = getElapsedTime(timer, renderTime);
+
   return (
     <GameRegion role="region" aria-label="ゲーム画面">
       <DamageOverlay $visible={renderTime - lastDamageAt < 150} />
+      <TimerDisplay>{formatTimeShort(currentElapsed)}</TimerDisplay>
       <HPBarContainer>
         <HPBarFill $ratio={hpRatio} $color={hpColor} />
         <HPBarText>
@@ -998,6 +1160,10 @@ const GameScreen: React.FC<{
       <MapToggleButton onClick={onMapToggle} aria-label="マップ表示切替">
         🗺️
       </MapToggleButton>
+      <HelpButton onClick={onHelpToggle} aria-label="ヘルプ表示">
+        H
+      </HelpButton>
+      {showHelp && <HelpOverlayComponent onClose={onHelpToggle} />}
       <Canvas
         ref={canvasRef}
         role="img"
@@ -1105,6 +1271,13 @@ const IpnePage: React.FC = () => {
   const [walls, setWalls] = useState<Wall[]>([]);
   const [isLevelUpPending, setIsLevelUpPending] = useState(false);
 
+  // MVP4追加
+  const [timer, setTimer] = useState<GameTimer>(() => createTimer());
+  const [showHelp, setShowHelp] = useState(false);
+  const [clearTime, setClearTime] = useState(0);
+  const [clearRating, setClearRating] = useState<RatingValue>('d');
+  const [isNewBest, setIsNewBest] = useState(false);
+
   const mapRef = useRef<GameMap>(map);
   const playerRef = useRef<Player>(player);
   const enemiesRef = useRef<Enemy[]>(enemies);
@@ -1154,6 +1327,13 @@ const IpnePage: React.FC = () => {
     setIsLevelUpPending(false);
     setCombatState({ lastAttackAt: 0, lastDamageAt: 0 });
     setAttackEffect(undefined);
+
+    // MVP4: タイマーをリセットして開始
+    const newTimer = startTimer(createTimer());
+    setTimer(newTimer);
+    setShowHelp(false);
+    setClearTime(0);
+    setIsNewBest(false);
 
     roomsRef.current = rooms;
 
@@ -1228,6 +1408,11 @@ const IpnePage: React.FC = () => {
     setIsLevelUpPending(false);
   }, [player]);
 
+  // MVP4: ヘルプ表示トグル
+  const handleHelpToggle = useCallback(() => {
+    setShowHelp(prev => !prev);
+  }, []);
+
   // プレイヤー移動ハンドラー
   const handleMove = useCallback(
     (direction: (typeof Direction)[keyof typeof Direction]) => {
@@ -1295,10 +1480,25 @@ const IpnePage: React.FC = () => {
 
       // ゴール判定
       if (isGoal(map, newPlayer.x, newPlayer.y)) {
+        // MVP4: タイマー停止と記録保存
+        const now = Date.now();
+        const stoppedTimer = stopTimer(timer, now);
+        const elapsed = getElapsedTime(stoppedTimer, now);
+        const rating = calculateRating(elapsed);
+
+        setClearTime(elapsed);
+        setClearRating(rating);
+        setTimer(stoppedTimer);
+
+        // 記録を保存
+        const record = createRecord(elapsed, rating, selectedClass);
+        const { isNewBest: newBest } = saveRecord(record);
+        setIsNewBest(newBest);
+
         setScreen(ScreenState.CLEAR);
       }
     },
-    [player, map, isGameOver]
+    [player, map, isGameOver, timer, selectedClass]
   );
 
   const handleTurn = useCallback(
@@ -1547,6 +1747,9 @@ const IpnePage: React.FC = () => {
             onDebugToggle={handleDebugToggle}
             attackEffect={attackEffect}
             lastDamageAt={combatState.lastDamageAt}
+            timer={timer}
+            showHelp={showHelp}
+            onHelpToggle={handleHelpToggle}
           />
           {isLevelUpPending && (
             <LevelUpOverlayComponent player={player} onChoose={handleLevelUpChoice} />
@@ -1554,7 +1757,13 @@ const IpnePage: React.FC = () => {
         </>
       )}
       {screen === ScreenState.CLEAR && (
-        <ClearScreen onRetry={handleRetry} onBackToTitle={handleBackToTitle} />
+        <ClearScreen
+          onRetry={handleRetry}
+          onBackToTitle={handleBackToTitle}
+          clearTime={clearTime}
+          rating={clearRating}
+          isNewBest={isNewBest}
+        />
       )}
       {screen === ScreenState.GAME_OVER && (
         <GameOverScreen onRetry={handleGameOverRetry} onBackToTitle={handleBackToTitle} />
