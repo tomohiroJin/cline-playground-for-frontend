@@ -1062,3 +1062,147 @@ export const TutorialSkipButton = styled.button`
     color: #9ca3af;
   }
 `;
+
+// ===== MVP5 音声設定UI =====
+
+// 音声設定ボタン（タイトル画面用）
+export const AudioSettingsButton = styled.button`
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  color: white;
+  font-size: 1.25rem;
+  cursor: pointer;
+  z-index: 60;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.7);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+`;
+
+// 音声設定パネル
+export const AudioSettingsPanel = styled.div`
+  position: fixed;
+  top: 4rem;
+  right: 1rem;
+  width: 250px;
+  background: rgba(15, 15, 35, 0.95);
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  z-index: 60;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+`;
+
+// 音声設定タイトル
+export const AudioSettingsTitle = styled.h3`
+  font-size: 1rem;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
+// 音量スライダーコンテナ
+export const VolumeSliderContainer = styled.div`
+  margin-bottom: 1rem;
+`;
+
+// 音量ラベル
+export const VolumeLabel = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+`;
+
+// 音量名
+export const VolumeName = styled.span`
+  color: #e5e7eb;
+  font-size: 0.875rem;
+`;
+
+// 音量値
+export const VolumeValue = styled.span`
+  color: #9ca3af;
+  font-size: 0.75rem;
+`;
+
+// スライダー
+export const VolumeSlider = styled.input.attrs({ type: 'range' })`
+  width: 100%;
+  height: 6px;
+  -webkit-appearance: none;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  outline: none;
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #667eea;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  &::-webkit-slider-thumb:hover {
+    background: #764ba2;
+  }
+
+  &::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border: none;
+    border-radius: 50%;
+    background: #667eea;
+    cursor: pointer;
+  }
+`;
+
+// ミュートボタン
+export const MuteButton = styled.button<{ $muted: boolean }>`
+  width: 100%;
+  padding: 0.75rem;
+  background: ${props => props.$muted ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)'};
+  border: 1px solid ${props => props.$muted ? 'rgba(239, 68, 68, 0.4)' : 'rgba(34, 197, 94, 0.4)'};
+  border-radius: 0.5rem;
+  color: ${props => props.$muted ? '#ef4444' : '#22c55e'};
+  font-size: 0.875rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: ${props => props.$muted ? 'rgba(239, 68, 68, 0.3)' : 'rgba(34, 197, 94, 0.3)'};
+  }
+`;
+
+// タップして開始メッセージ（iOS対応）
+export const TapToStartMessage = styled.div`
+  position: absolute;
+  bottom: 8rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1rem 2rem;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(102, 126, 234, 0.5);
+  border-radius: 0.5rem;
+  color: #e5e7eb;
+  font-size: 1rem;
+  text-align: center;
+  animation: ${pulse} 2s ease-in-out infinite;
+  z-index: 55;
+`;

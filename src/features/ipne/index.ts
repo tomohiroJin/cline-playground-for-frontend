@@ -370,3 +370,72 @@ export {
   generateSafeMaze,
 } from './mazeGenerator';
 export type { ValidationResult, MazeResult } from './mazeGenerator';
+
+// ===== MVP5 音声モジュール =====
+
+// 型定義（追加エクスポート）
+export {
+  SoundEffectType,
+  BgmType,
+  DEFAULT_AUDIO_SETTINGS,
+} from './types';
+export type {
+  SoundEffectTypeValue,
+  BgmTypeValue,
+  AudioSettings,
+  SoundConfig,
+  MelodyNote,
+} from './types';
+
+// AudioContext管理
+export {
+  getAudioContext,
+  enableAudio,
+  isAudioInitialized,
+  resetAudioContext,
+} from './audio';
+
+// 効果音
+export {
+  playSoundEffect,
+  updateSoundSettings,
+  getSoundSettings,
+  resetSoundSettings,
+  playPlayerDamageSound,
+  playEnemyKillSound,
+  playGameClearSound,
+  playGameOverSound,
+  playLevelUpSound,
+  playAttackHitSound,
+  playItemPickupSound,
+  playHealSound,
+} from './audio';
+
+// BGM
+export {
+  playBgm,
+  stopBgm,
+  pauseBgm,
+  resumeBgm,
+  getCurrentBgmType,
+  isBgmPlaying,
+  updateBgmSettings,
+  resetBgmState,
+  playTitleBgm,
+  playGameBgm,
+  playClearJingle,
+  playGameOverJingle,
+} from './audio';
+
+// 音声設定
+export {
+  initializeAudioSettings,
+  setMasterVolume,
+  setSeVolume,
+  setBgmVolume,
+  setMuted,
+  toggleMute,
+  getAudioSettings,
+  resetAudioSettings,
+  clearAudioSettings,
+} from './audio';

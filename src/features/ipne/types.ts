@@ -431,3 +431,57 @@ export interface FeedbackEffect {
   startTime: number;
   duration: number;
 }
+
+// ===== MVP5 音声関連の型定義 =====
+
+/** 効果音の種類 */
+export const SoundEffectType = {
+  PLAYER_DAMAGE: 'player_damage',
+  ENEMY_KILL: 'enemy_kill',
+  GAME_CLEAR: 'game_clear',
+  GAME_OVER: 'game_over',
+  LEVEL_UP: 'level_up',
+  ATTACK_HIT: 'attack_hit',
+  ITEM_PICKUP: 'item_pickup',
+  HEAL: 'heal',
+} as const;
+
+export type SoundEffectTypeValue = (typeof SoundEffectType)[keyof typeof SoundEffectType];
+
+/** BGMの種類 */
+export const BgmType = {
+  TITLE: 'title',
+  GAME: 'game',
+  CLEAR: 'clear',
+  GAME_OVER: 'game_over',
+} as const;
+
+export type BgmTypeValue = (typeof BgmType)[keyof typeof BgmType];
+
+/** 音声設定 */
+export interface AudioSettings {
+  masterVolume: number;
+  seVolume: number;
+  bgmVolume: number;
+  isMuted: boolean;
+}
+
+/** 音声設定のデフォルト値 */
+export const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
+  masterVolume: 0.7,
+  seVolume: 0.8,
+  bgmVolume: 0.5,
+  isMuted: false,
+};
+
+/** 効果音設定 */
+export interface SoundConfig {
+  frequency: number;
+  type: OscillatorType;
+  duration: number;
+  gain: number;
+  sweep?: number;
+}
+
+/** メロディノート（周波数, 長さ） */
+export type MelodyNote = readonly [number, number];

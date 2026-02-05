@@ -165,6 +165,17 @@ import {
   ResultVideo,
   NewBestBadge,
   VideoPlayButton,
+  // MVP5追加
+  AudioSettingsButton,
+  AudioSettingsPanel,
+  AudioSettingsTitle,
+  VolumeSliderContainer,
+  VolumeLabel,
+  VolumeName,
+  VolumeValue,
+  VolumeSlider,
+  MuteButton,
+  TapToStartMessage,
 } from './IpnePage.styles';
 import titleBg from '../assets/images/ipne_title_bg.webp';
 import titleBgMobile from '../assets/images/ipne_title_bg_mobile.webp';
@@ -195,7 +206,32 @@ import {
   getGameOverImage,
   getEndingVideo,
 } from '../features/ipne/ending';
-import { RatingValue } from '../features/ipne/types';
+import { RatingValue, AudioSettings } from '../features/ipne/types';
+
+// MVP5 音声モジュール
+import {
+  enableAudio,
+  isAudioInitialized,
+  initializeAudioSettings,
+  getAudioSettings,
+  setMasterVolume,
+  setSeVolume,
+  setBgmVolume,
+  toggleMute,
+  playTitleBgm,
+  playGameBgm,
+  playClearJingle,
+  playGameOverJingle,
+  stopBgm,
+  playPlayerDamageSound,
+  playEnemyKillSound,
+  playGameClearSound,
+  playGameOverSound,
+  playLevelUpSound,
+  playAttackHitSound,
+  playItemPickupSound,
+  playHealSound,
+} from '../features/ipne/audio';
 
 // 描画設定
 const CONFIG = {
@@ -239,10 +275,104 @@ const PROLOGUE_TEXTS = [
 ];
 
 /**
+ * 音声設定コンポーネント（MVP5）
+ */
+const AudioSettingsComponent: React.FC<{
+  settings: AudioSettings;
+  onMasterVolumeChange: (value: number) => void;
+  onSeVolumeChange: (value: number) => void;
+  onBgmVolumeChange: (value: number) => void;
+  onToggleMute: () => void;
+  onClose: () => void;
+}> = ({ settings, onMasterVolumeChange, onSeVolumeChange, onBgmVolumeChange, onToggleMute, onClose }) => (
+  <AudioSettingsPanel onClick={e => e.stopPropagation()}>
+    <AudioSettingsTitle>音声設定</AudioSettingsTitle>
+
+    <VolumeSliderContainer>
+      <VolumeLabel>
+        <VolumeName>マスター音量</VolumeName>
+        <VolumeValue>{Math.round(settings.masterVolume * 100)}%</VolumeValue>
+      </VolumeLabel>
+      <VolumeSlider
+        min={0}
+        max={100}
+        value={settings.masterVolume * 100}
+        onChange={e => onMasterVolumeChange(Number(e.target.value) / 100)}
+      />
+    </VolumeSliderContainer>
+
+    <VolumeSliderContainer>
+      <VolumeLabel>
+        <VolumeName>効果音</VolumeName>
+        <VolumeValue>{Math.round(settings.seVolume * 100)}%</VolumeValue>
+      </VolumeLabel>
+      <VolumeSlider
+        min={0}
+        max={100}
+        value={settings.seVolume * 100}
+        onChange={e => onSeVolumeChange(Number(e.target.value) / 100)}
+      />
+    </VolumeSliderContainer>
+
+    <VolumeSliderContainer>
+      <VolumeLabel>
+        <VolumeName>BGM</VolumeName>
+        <VolumeValue>{Math.round(settings.bgmVolume * 100)}%</VolumeValue>
+      </VolumeLabel>
+      <VolumeSlider
+        min={0}
+        max={100}
+        value={settings.bgmVolume * 100}
+        onChange={e => onBgmVolumeChange(Number(e.target.value) / 100)}
+      />
+    </VolumeSliderContainer>
+
+    <MuteButton $muted={settings.isMuted} onClick={onToggleMute}>
+      {settings.isMuted ? '🔇 ミュート中' : '🔊 サウンドON'}
+    </MuteButton>
+  </AudioSettingsPanel>
+);
+
+/**
  * タイトル画面コンポーネント
  */
-const TitleScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => (
-  <Overlay $bgImage={titleBg} $bgImageMobile={titleBgMobile}>
+const TitleScreen: React.FC<{
+  onStart: () => void;
+  audioSettings: AudioSettings;
+  showAudioSettings: boolean;
+  isAudioReady: boolean;
+  onAudioSettingsToggle: () => void;
+  onMasterVolumeChange: (value: number) => void;
+  onSeVolumeChange: (value: number) => void;
+  onBgmVolumeChange: (value: number) => void;
+  onToggleMute: () => void;
+  onTapToStart: () => void;
+}> = ({
+  onStart,
+  audioSettings,
+  showAudioSettings,
+  isAudioReady,
+  onAudioSettingsToggle,
+  onMasterVolumeChange,
+  onSeVolumeChange,
+  onBgmVolumeChange,
+  onToggleMute,
+  onTapToStart,
+}) => (
+  <Overlay $bgImage={titleBg} $bgImageMobile={titleBgMobile} onClick={!isAudioReady ? onTapToStart : undefined}>
+    <AudioSettingsButton onClick={onAudioSettingsToggle} aria-label="音声設定">
+      {audioSettings.isMuted ? '🔇' : '🔊'}
+    </AudioSettingsButton>
+    {showAudioSettings && (
+      <AudioSettingsComponent
+        settings={audioSettings}
+        onMasterVolumeChange={onMasterVolumeChange}
+        onSeVolumeChange={onSeVolumeChange}
+        onBgmVolumeChange={onBgmVolumeChange}
+        onToggleMute={onToggleMute}
+        onClose={onAudioSettingsToggle}
+      />
+    )}
     <TitleContainer>
       <StartButton
         onClick={onStart}
@@ -252,6 +382,11 @@ const TitleScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => (
         ゲームを開始
       </StartButton>
     </TitleContainer>
+    {!isAudioReady && (
+      <TapToStartMessage>
+        タップしてゲームを開始
+      </TapToStartMessage>
+    )}
   </Overlay>
 );
 
@@ -1294,6 +1429,11 @@ const IpnePage: React.FC = () => {
   const [clearRating, setClearRating] = useState<RatingValue>('d');
   const [isNewBest, setIsNewBest] = useState(false);
 
+  // MVP5追加: 音声関連
+  const [audioSettings, setAudioSettings] = useState<AudioSettings>(() => initializeAudioSettings());
+  const [showAudioSettings, setShowAudioSettings] = useState(false);
+  const [isAudioReady, setIsAudioReady] = useState(false);
+
   const mapRef = useRef<GameMap>(map);
   const playerRef = useRef<Player>(player);
   const enemiesRef = useRef<Enemy[]>(enemies);
@@ -1429,6 +1569,74 @@ const IpnePage: React.FC = () => {
     setShowHelp(prev => !prev);
   }, []);
 
+  // MVP5: 音声初期化（ユーザー操作後に呼び出す）
+  const handleEnableAudio = useCallback(async () => {
+    const success = await enableAudio();
+    if (success) {
+      setIsAudioReady(true);
+      // タイトル画面でBGMを再生
+      if (screen === ScreenState.TITLE) {
+        playTitleBgm();
+      }
+    }
+  }, [screen]);
+
+  // MVP5: 音声設定トグル
+  const handleAudioSettingsToggle = useCallback(() => {
+    setShowAudioSettings(prev => !prev);
+  }, []);
+
+  // MVP5: マスター音量変更
+  const handleMasterVolumeChange = useCallback((value: number) => {
+    setMasterVolume(value);
+    setAudioSettings(getAudioSettings());
+  }, []);
+
+  // MVP5: SE音量変更
+  const handleSeVolumeChange = useCallback((value: number) => {
+    setSeVolume(value);
+    setAudioSettings(getAudioSettings());
+  }, []);
+
+  // MVP5: BGM音量変更
+  const handleBgmVolumeChange = useCallback((value: number) => {
+    setBgmVolume(value);
+    setAudioSettings(getAudioSettings());
+  }, []);
+
+  // MVP5: ミュートトグル
+  const handleToggleMute = useCallback(() => {
+    toggleMute();
+    setAudioSettings(getAudioSettings());
+  }, []);
+
+  // MVP5: 画面遷移時のBGM切り替え
+  useEffect(() => {
+    if (!isAudioReady) return;
+
+    switch (screen) {
+      case ScreenState.TITLE:
+        playTitleBgm();
+        break;
+      case ScreenState.GAME:
+        playGameBgm();
+        break;
+      case ScreenState.CLEAR:
+        stopBgm();
+        playClearJingle();
+        playGameClearSound();
+        break;
+      case ScreenState.GAME_OVER:
+        stopBgm();
+        playGameOverJingle();
+        playGameOverSound();
+        break;
+      default:
+        // CLASS_SELECT, PROLOGUEではタイトルBGMを継続
+        break;
+    }
+  }, [screen, isAudioReady]);
+
   // プレイヤー移動ハンドラー
   const handleMove = useCallback(
     (direction: (typeof Direction)[keyof typeof Direction]) => {
@@ -1470,6 +1678,8 @@ const IpnePage: React.FC = () => {
             : updatedPlayer;
         if (updatedPlayer !== player) {
           setCombatState(prev => ({ ...prev, lastDamageAt: currentTime }));
+          // MVP5: ダメージ音
+          playPlayerDamageSound();
         }
         setPlayer(knockedPlayer);
         return;
@@ -1536,6 +1746,8 @@ const IpnePage: React.FC = () => {
       setCombatState(prev => ({ ...prev, lastAttackAt: currentTime }));
       if (result.attackPosition) {
         setAttackEffect({ position: result.attackPosition, until: currentTime + 150 });
+        // MVP5: 攻撃命中音
+        playAttackHitSound();
       } else {
         setAttackEffect(undefined);
       }
@@ -1553,12 +1765,16 @@ const IpnePage: React.FC = () => {
 
     let updatedPlayer = result.player;
     if (killedCount > 0) {
+      // MVP5: 敵撃破音
+      playEnemyKillSound();
       // 撃破数だけインクリメント
       for (let i = 0; i < killedCount; i++) {
         const killResult = incrementKillCount(updatedPlayer);
         updatedPlayer = killResult.player;
         if (killResult.shouldLevelUp && !isLevelUpPending) {
           setIsLevelUpPending(true);
+          // MVP5: レベルアップ音
+          playLevelUpSound();
         }
       }
     }
@@ -1654,6 +1870,8 @@ const IpnePage: React.FC = () => {
             : damagedPlayer;
         if (damagedPlayer !== nextPlayer) {
           setCombatState(prev => ({ ...prev, lastDamageAt: currentTime }));
+          // MVP5: ダメージ音
+          playPlayerDamageSound();
         }
         nextPlayer = knockedPlayer;
       }
@@ -1668,6 +1886,8 @@ const IpnePage: React.FC = () => {
         );
         if (damagedPlayer !== nextPlayer) {
           setCombatState(prev => ({ ...prev, lastDamageAt: currentTime }));
+          // MVP5: ダメージ音
+          playPlayerDamageSound();
         }
         nextPlayer = damagedPlayer;
       }
@@ -1679,11 +1899,18 @@ const IpnePage: React.FC = () => {
 
       for (const item of remainingItems) {
         if (canPickupItem(nextPlayer, item)) {
+          const prevHp = nextPlayer.hp;
           const pickupResult = pickupItem(nextPlayer, item);
           nextPlayer = pickupResult.player;
           pickedIds.push(pickupResult.itemId);
           if (pickupResult.triggerLevelUp) triggerLevelUp = true;
           if (pickupResult.triggerMapReveal) triggerMapReveal = true;
+          // MVP5: アイテム取得音（回復アイテムは回復音）
+          if (nextPlayer.hp > prevHp) {
+            playHealSound();
+          } else {
+            playItemPickupSound();
+          }
         }
       }
 
@@ -1707,6 +1934,8 @@ const IpnePage: React.FC = () => {
         currentTraps = currentTraps.map(t => t.id === trapResult.trap.id ? trapResult.trap : t);
         if (trapResult.damage > 0) {
           setCombatState(prev => ({ ...prev, lastDamageAt: currentTime }));
+          // MVP5: ダメージ音
+          playPlayerDamageSound();
         }
         setTraps(currentTraps);
         trapsRef.current = currentTraps;
@@ -1715,6 +1944,8 @@ const IpnePage: React.FC = () => {
       // MVP3: アイテムによる即レベルアップまたは通常レベルアップ
       if (triggerLevelUp && !isLevelUpPending) {
         setIsLevelUpPending(true);
+        // MVP5: レベルアップ音
+        playLevelUpSound();
       }
 
       // MVP3: マップ公開
@@ -1741,7 +1972,20 @@ const IpnePage: React.FC = () => {
   // 画面に応じたコンテンツをレンダリング
   return (
     <PageContainer>
-      {screen === ScreenState.TITLE && <TitleScreen onStart={handleStartGame} />}
+      {screen === ScreenState.TITLE && (
+        <TitleScreen
+          onStart={handleStartGame}
+          audioSettings={audioSettings}
+          showAudioSettings={showAudioSettings}
+          isAudioReady={isAudioReady}
+          onAudioSettingsToggle={handleAudioSettingsToggle}
+          onMasterVolumeChange={handleMasterVolumeChange}
+          onSeVolumeChange={handleSeVolumeChange}
+          onBgmVolumeChange={handleBgmVolumeChange}
+          onToggleMute={handleToggleMute}
+          onTapToStart={handleEnableAudio}
+        />
+      )}
       {screen === ScreenState.CLASS_SELECT && <ClassSelectScreen onSelect={handleClassSelect} />}
       {screen === ScreenState.PROLOGUE && <PrologueScreen onSkip={handleSkipPrologue} />}
       {screen === ScreenState.GAME && (
