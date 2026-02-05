@@ -10,6 +10,7 @@ import {
   findStartPosition,
   findGoalPosition,
   isGoal,
+  canGoal,
   Direction,
   ScreenState,
   TileType,
@@ -45,6 +46,7 @@ import {
   DEFAULT_MOVEMENT_CONFIG,
   EnemyState,
   EnemyType,
+  ItemType,
   spawnEnemies,
   spawnItems,
   updateEnemiesWithContact,
@@ -56,6 +58,8 @@ import {
   COMBAT_CONFIG,
   updatePlayerDirection,
   canMove,
+  processEnemyDeath,
+  createKeyItem,
   // MVP3追加
   PlayerClass,
   PlayerClassValue,
@@ -176,11 +180,18 @@ import {
   VolumeSlider,
   MuteButton,
   TapToStartMessage,
+  // MVP6追加
+  KeyIndicator,
+  KeyIcon,
+  KeyRequiredMessage,
+  ClassImage,
 } from './IpnePage.styles';
 import titleBg from '../assets/images/ipne_title_bg.webp';
 import titleBgMobile from '../assets/images/ipne_title_bg_mobile.webp';
 import prologueBg from '../assets/images/ipne_prologue_bg.webp';
 import prologueBgMobile from '../assets/images/ipne_prologue_bg_mobile.webp';
+import warriorClassImg from '../assets/images/ipne_class_warrior.webp';
+import thiefClassImg from '../assets/images/ipne_class_thief.webp';
 
 // MVP4モジュール
 import {
@@ -255,6 +266,7 @@ const CONFIG = {
     health_full: '#fbbf24',
     level_up: '#f0abfc',
     map_reveal: '#a16207',
+    key: '#fcd34d',
   },
   // MVP3追加
   trapColors: {
@@ -417,7 +429,7 @@ const ClassSelectScreen: React.FC<{
             $selected={selectedClass === PlayerClass.WARRIOR}
             onClick={() => setSelectedClass(PlayerClass.WARRIOR)}
           >
-            <ClassIcon $classType="warrior">⚔️</ClassIcon>
+            <ClassImage src={warriorClassImg} alt="戦士" />
             <ClassName>{CLASS_CONFIGS[PlayerClass.WARRIOR].name}</ClassName>
             <ClassDescription>
               耐久力と攻撃力が高く、正面突破スタイル。罠・特殊壁は触れて判明。
@@ -432,7 +444,7 @@ const ClassSelectScreen: React.FC<{
             $selected={selectedClass === PlayerClass.THIEF}
             onClick={() => setSelectedClass(PlayerClass.THIEF)}
           >
-            <ClassIcon $classType="thief">🗡️</ClassIcon>
+            <ClassImage src={thiefClassImg} alt="盗賊" />
             <ClassName>{CLASS_CONFIGS[PlayerClass.THIEF].name}</ClassName>
             <ClassDescription>
               移動速度が高く、罠を避けて進むスタイル。罠・特殊壁がうっすら見える。
@@ -697,6 +709,8 @@ const GameScreen: React.FC<{
   timer: GameTimer;
   showHelp: boolean;
   onHelpToggle: () => void;
+  // MVP6追加
+  showKeyRequiredMessage: boolean;
 }> = ({
   map,
   player,
@@ -718,6 +732,8 @@ const GameScreen: React.FC<{
   timer,
   showHelp,
   onHelpToggle,
+  // MVP6追加
+  showKeyRequiredMessage,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const movementStateRef = useRef<MovementState>(INITIAL_MOVEMENT_STATE);
@@ -1311,6 +1327,9 @@ const GameScreen: React.FC<{
           <StatValue>{player.killCount}</StatValue>
         </StatRow>
       </StatsDisplay>
+      <KeyIndicator $hasKey={player.hasKey} aria-label={player.hasKey ? '鍵を所持' : '鍵未所持'}>
+        <KeyIcon $hasKey={player.hasKey}>🔑</KeyIcon>
+      </KeyIndicator>
       <MapToggleButton onClick={onMapToggle} aria-label="マップ表示切替">
         🗺️
       </MapToggleButton>
@@ -1318,6 +1337,7 @@ const GameScreen: React.FC<{
         H
       </HelpButton>
       {showHelp && <HelpOverlayComponent onClose={onHelpToggle} />}
+      {showKeyRequiredMessage && <KeyRequiredMessage>🔑 鍵が必要です</KeyRequiredMessage>}
       <Canvas
         ref={canvasRef}
         role="img"
@@ -1432,6 +1452,9 @@ const IpnePage: React.FC = () => {
   const [clearRating, setClearRating] = useState<RatingValue>('d');
   const [isNewBest, setIsNewBest] = useState(false);
 
+  // MVP6追加
+  const [showKeyRequiredMessage, setShowKeyRequiredMessage] = useState(false);
+
   // MVP5追加: 音声関連
   const [audioSettings, setAudioSettings] = useState<AudioSettings>(() => initializeAudioSettings());
   const [showAudioSettings, setShowAudioSettings] = useState(false);
@@ -1497,7 +1520,7 @@ const IpnePage: React.FC = () => {
     roomsRef.current = rooms;
 
     const spawnedEnemies = spawnEnemies(rooms, startPos, goal);
-    const spawnedItems = spawnItems(rooms, spawnedEnemies, [startPos, goal]);
+    const spawnedItems = spawnItems(rooms, spawnedEnemies, [startPos, goal], goal);
     setEnemies(spawnedEnemies);
     setItems(spawnedItems);
     enemiesRef.current = spawnedEnemies;
@@ -1709,22 +1732,29 @@ const IpnePage: React.FC = () => {
 
       // ゴール判定
       if (isGoal(map, newPlayer.x, newPlayer.y)) {
-        // MVP4: タイマー停止と記録保存
-        const now = Date.now();
-        const stoppedTimer = stopTimer(timer, now);
-        const elapsed = getElapsedTime(stoppedTimer, now);
-        const rating = calculateRating(elapsed);
+        // 鍵を持っている場合のみクリア
+        if (canGoal(newPlayer)) {
+          // MVP4: タイマー停止と記録保存
+          const now = Date.now();
+          const stoppedTimer = stopTimer(timer, now);
+          const elapsed = getElapsedTime(stoppedTimer, now);
+          const rating = calculateRating(elapsed);
 
-        setClearTime(elapsed);
-        setClearRating(rating);
-        setTimer(stoppedTimer);
+          setClearTime(elapsed);
+          setClearRating(rating);
+          setTimer(stoppedTimer);
 
-        // 記録を保存
-        const record = createRecord(elapsed, rating, selectedClass);
-        const { isNewBest: newBest } = saveRecord(record);
-        setIsNewBest(newBest);
+          // 記録を保存
+          const record = createRecord(elapsed, rating, selectedClass);
+          const { isNewBest: newBest } = saveRecord(record);
+          setIsNewBest(newBest);
 
-        setScreen(ScreenState.CLEAR);
+          setScreen(ScreenState.CLEAR);
+        } else {
+          // 鍵がない場合はメッセージを表示
+          setShowKeyRequiredMessage(true);
+          setTimeout(() => setShowKeyRequiredMessage(false), 2000);
+        }
       }
     },
     [player, map, isGameOver, timer, selectedClass]
@@ -1768,6 +1798,8 @@ const IpnePage: React.FC = () => {
     const killedEnemies = beforeEnemies.filter(e => !survivingIds.has(e.id));
 
     let updatedPlayer = result.player;
+    let updatedItems = itemsRef.current;
+
     if (killedEnemies.length > 0) {
       // MVP5: 敵撃破音（ボスなら特別な音）
       const killedBoss = killedEnemies.some(e => e.type === EnemyType.BOSS);
@@ -1776,6 +1808,15 @@ const IpnePage: React.FC = () => {
       } else {
         playEnemyKillSound();
       }
+
+      // MVP6: ボス撃破時は鍵をドロップ
+      for (const enemy of killedEnemies) {
+        const deathResult = processEnemyDeath(enemy);
+        if (deathResult.droppedItem) {
+          updatedItems = [...updatedItems, deathResult.droppedItem];
+        }
+      }
+
       // 撃破数だけインクリメント
       for (let i = 0; i < killedEnemies.length; i++) {
         const killResult = incrementKillCount(updatedPlayer);
@@ -1792,6 +1833,8 @@ const IpnePage: React.FC = () => {
     playerRef.current = updatedPlayer;
     setEnemies(survivingEnemies);
     enemiesRef.current = survivingEnemies;
+    setItems(updatedItems);
+    itemsRef.current = updatedItems;
   }, [isGameOver, isLevelUpPending]);
 
   // マップ表示切替ハンドラー（小窓 → 全画面 → 非表示 → 小窓）
@@ -2021,6 +2064,7 @@ const IpnePage: React.FC = () => {
             timer={timer}
             showHelp={showHelp}
             onHelpToggle={handleHelpToggle}
+            showKeyRequiredMessage={showKeyRequiredMessage}
           />
           {isLevelUpPending && (
             <LevelUpOverlayComponent player={player} onChoose={handleLevelUpChoice} />

@@ -96,7 +96,7 @@ export type { KillCountResult } from './player';
 export { isWall, canMove, checkEnemyCollision, getEnemyAtPosition, getEnemiesInRange } from './collision';
 
 // ゴール判定
-export { isGoal, findGoalPosition, findStartPosition } from './goal';
+export { isGoal, findGoalPosition, findStartPosition, canGoal } from './goal';
 
 // 経路探索
 export { findPath } from './pathfinder';
@@ -191,6 +191,7 @@ export {
   createHealthFull,
   createLevelUpItem,
   createMapRevealItem,
+  createKeyItem,
   spawnItems,
   canPickupItem,
   pickupItem,

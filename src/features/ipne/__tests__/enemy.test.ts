@@ -38,7 +38,7 @@ describe('enemy', () => {
     expect(specimen.speed).toBe(4);
 
     const boss = createBoss(4, 4);
-    expect(boss.hp).toBe(12);
+    expect(boss.hp).toBe(35);
     expect(boss.damage).toBe(4);
     expect(boss.speed).toBe(1.5);
   });
@@ -192,6 +192,18 @@ describe('enemy', () => {
 
         expect(result.isDead).toBe(true);
         expect(result.droppedItem).toBeNull();
+      });
+
+      test('死亡したBOSSは必ず鍵をドロップすること', () => {
+        resetItemIdCounter();
+        const boss = damageEnemy(createBoss(5, 6), 999);
+        const result = processEnemyDeath(boss, 0.9, 0.9);
+
+        expect(result.isDead).toBe(true);
+        expect(result.droppedItem).not.toBeNull();
+        expect(result.droppedItem?.type).toBe(ItemType.KEY);
+        expect(result.droppedItem?.x).toBe(5);
+        expect(result.droppedItem?.y).toBe(6);
       });
     });
   });

@@ -1206,3 +1206,75 @@ export const TapToStartMessage = styled.div`
   animation: ${pulse} 2s ease-in-out infinite;
   z-index: 55;
 `;
+
+// ===== MVP6: 鍵システムUI =====
+
+// 鍵インジケータ
+export const KeyIndicator = styled.div<{ $hasKey: boolean }>`
+  position: absolute;
+  top: 1rem;
+  right: 8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid ${props => props.$hasKey ? '#fcd34d' : 'rgba(255, 255, 255, 0.2)'};
+  border-radius: 0.5rem;
+  padding: 0.375rem 0.5rem;
+  z-index: 20;
+  opacity: ${props => props.$hasKey ? 1 : 0.5};
+  transition: all 0.3s ease;
+
+  @media (max-width: 480px) {
+    top: 0.5rem;
+    right: 6rem;
+    padding: 0.25rem 0.375rem;
+  }
+`;
+
+// 鍵アイコン
+export const KeyIcon = styled.span<{ $hasKey: boolean }>`
+  font-size: 1.25rem;
+  filter: ${props => props.$hasKey ? 'none' : 'grayscale(100%)'};
+
+  @media (max-width: 480px) {
+    font-size: 1rem;
+  }
+`;
+
+// 鍵が必要ですメッセージ
+export const KeyRequiredMessage = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.85);
+  border: 2px solid #fcd34d;
+  border-radius: 0.75rem;
+  padding: 1rem 1.5rem;
+  color: #fcd34d;
+  font-size: 1.25rem;
+  font-weight: bold;
+  text-align: center;
+  z-index: 100;
+  animation: ${fadeIn} 0.2s ease-out;
+
+  @media (max-width: 480px) {
+    font-size: 1rem;
+    padding: 0.75rem 1rem;
+  }
+`;
+
+// 職業選択画面の画像
+export const ClassImage = styled.img`
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  margin-bottom: 0.5rem;
+  border-radius: 0.5rem;
+
+  @media (max-width: 480px) {
+    width: 60px;
+    height: 60px;
+  }
+`;

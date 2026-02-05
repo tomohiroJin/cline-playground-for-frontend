@@ -171,6 +171,8 @@ export interface Player {
   killCount: number;
   stats: PlayerStats;
   slowedUntil: number;
+  // MVP6追加
+  hasKey: boolean;
 }
 
 // ===== 迷路生成関連の型定義 =====
@@ -286,6 +288,7 @@ export const ItemType = {
   HEALTH_FULL: 'health_full',
   LEVEL_UP: 'level_up',
   MAP_REVEAL: 'map_reveal',
+  KEY: 'key',
 } as const;
 
 export type ItemTypeValue = (typeof ItemType)[keyof typeof ItemType];

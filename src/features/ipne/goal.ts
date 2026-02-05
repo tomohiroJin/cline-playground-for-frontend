@@ -2,7 +2,7 @@
  * ゴール判定モジュール
  */
 
-import { GameMap, Position, TileType } from './types';
+import { GameMap, Player, Position, TileType } from './types';
 
 /**
  * 指定位置がゴールかどうかを判定
@@ -41,4 +41,12 @@ export const findStartPosition = (map: GameMap): Position | undefined => {
     }
   }
   return undefined;
+};
+
+/**
+ * プレイヤーがゴールできるかどうかを判定
+ * 鍵を持っている場合のみゴール可能
+ */
+export const canGoal = (player: Player): boolean => {
+  return player.hasKey;
 };

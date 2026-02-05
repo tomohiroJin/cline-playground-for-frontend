@@ -2,7 +2,7 @@
  * 敵管理モジュール
  */
 import { DirectionValue, Enemy, EnemyState, EnemyType, EnemyTypeValue, Item, Position } from './types';
-import { createHealthSmall, createHealthLarge, createLevelUpItem } from './item';
+import { createHealthSmall, createHealthLarge, createLevelUpItem, createKeyItem } from './item';
 
 const ENEMY_CONFIGS = {
   [EnemyType.PATROL]: {
@@ -38,7 +38,7 @@ const ENEMY_CONFIGS = {
     attackRange: 0,
   },
   [EnemyType.BOSS]: {
-    hp: 12,
+    hp: 35,
     damage: 4,
     speed: 1.5,
     detectionRange: 8,
@@ -217,7 +217,10 @@ export function processEnemyDeath(
 
   let droppedItem: Item | null = null;
 
-  if (shouldDropItem(enemy, dropRandom)) {
+  // ボスは必ず鍵をドロップする
+  if (enemy.type === EnemyType.BOSS) {
+    droppedItem = createKeyItem(enemy.x, enemy.y);
+  } else if (shouldDropItem(enemy, dropRandom)) {
     droppedItem = createDropItem(enemy, itemRandom);
   }
 
