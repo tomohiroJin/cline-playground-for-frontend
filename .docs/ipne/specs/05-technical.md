@@ -50,7 +50,13 @@ src/
 │       ├── tutorial.ts        # チュートリアル
 │       ├── feedback.ts        # フィードバック
 │       ├── ending.ts          # エンディング分岐
-│       └── debug.ts           # デバッグモード
+│       ├── debug.ts           # デバッグモード
+│       └── audio/             # 音声システム
+│           ├── index.ts           # エクスポート
+│           ├── audioContext.ts    # AudioContext管理
+│           ├── soundEffect.ts     # 効果音生成・再生
+│           ├── bgm.ts             # BGM生成・再生
+│           └── audioSettings.ts   # 設定管理
 ```
 
 ---
@@ -220,6 +226,7 @@ type EnemyState = 'idle' | 'patrol' | 'chase' | 'attack' | 'flee' | 'return' | '
 | `ipne_best_thief` | 盗賊ベスト記録 |
 | `ipne_best_overall` | 総合ベスト記録 |
 | `ipne_tutorial_completed` | チュートリアル完了フラグ |
+| `ipne_audio_settings` | 音声設定（JSON） |
 
 ### 記録データ構造
 
@@ -283,6 +290,83 @@ type GameStateValue = (typeof GameState)[keyof typeof GameState];
 
 ---
 
+## 音声システム
+
+### 技術基盤
+
+Web Audio APIを使用した8bit風レトロサウンド生成。
+
+| 項目 | 内容 |
+|------|------|
+| API | Web Audio API |
+| Safari対応 | webkitAudioContext |
+| 波形タイプ | sine, square, sawtooth, triangle |
+| 音量制御 | GainNode |
+
+### iOS/モバイル対応
+
+ブラウザの自動再生ポリシーに対応。
+
+| 項目 | 内容 |
+|------|------|
+| 初期状態 | AudioContext suspended |
+| 有効化 | ユーザー操作時に `audioContext.resume()` |
+| UI | 音声未有効時は「タップしてゲームを開始」表示、有効後に「ゲームを開始」ボタン表示 |
+
+### 効果音一覧
+
+| 効果音 | 波形 | 周波数 | 長さ | 音量(gain) |
+|--------|------|--------|------|------------|
+| プレイヤーダメージ | sawtooth | 200→80Hz | 0.2s | 0.5 |
+| 敵撃破 | square | 400→800Hz | 0.15s | 0.45 |
+| ボス撃破 | square | メロディ C→E→G→C6 | 0.5s | 0.5 |
+| ゲームクリア | square | メロディ | 2s | 0.5 |
+| ゲームオーバー | sawtooth | メロディ | 3s | 0.45 |
+| レベルアップ | sine | メロディ | 1s | 0.5 |
+| 攻撃命中 | square | 600Hz | 0.08s | 0.4 |
+| アイテム取得 | sine | 800→1200Hz | 0.1s | 0.35 |
+| 回復 | sine | 600→900Hz | 0.15s | 0.35 |
+| 罠発動 | sawtooth | 150→300Hz | 0.15s | 0.45 |
+
+### BGM一覧
+
+| BGM | 波形 | テンポ | ループ | 用途 |
+|-----|------|--------|--------|------|
+| タイトル | sine | 遅め | ○ | タイトル画面 |
+| ゲーム | triangle | 速め | ○ | ゲームプレイ中 |
+| クリア | square | 速め | × | クリア画面 |
+| ゲームオーバー | sawtooth | 遅め | × | ゲームオーバー画面 |
+
+### 音量設定
+
+```typescript
+interface AudioSettings {
+  masterVolume: number;  // 0.0〜1.0
+  seVolume: number;      // 0.0〜1.0
+  bgmVolume: number;     // 0.0〜1.0
+  isMuted: boolean;
+}
+```
+
+実効音量 = masterVolume × (seVolume or bgmVolume) × (isMuted ? 0 : 1)
+
+### 効果音トリガーポイント
+
+| イベント | 効果音 |
+|---------|--------|
+| 敵接触・被弾 | プレイヤーダメージ |
+| 通常敵撃破 | 敵撃破 |
+| ボス撃破 | ボス撃破 |
+| 攻撃命中 | 攻撃命中 |
+| アイテム取得 | アイテム取得 |
+| 回復アイテム | 回復 |
+| レベルアップ | レベルアップ |
+| 罠発動 | 罠発動 |
+| ゲームクリア | ゲームクリア |
+| ゲームオーバー | ゲームオーバー |
+
+---
+
 ## テスト方針
 
 ### 単体テスト対象
@@ -294,6 +378,9 @@ type GameStateValue = (typeof GameState)[keyof typeof GameState];
 - 成長システム
 - タイマー
 - 記録管理
+- 音声設定
+- 効果音（モック使用）
+- BGM（モック使用）
 
 ### UI統合テスト対象
 
