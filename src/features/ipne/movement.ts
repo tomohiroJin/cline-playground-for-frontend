@@ -3,7 +3,8 @@
  * キー押し続けで自動的に移動を繰り返す
  */
 
-import { DirectionValue } from './types';
+import { DirectionValue, Player } from './types';
+import { getEffectiveMoveSpeed } from './player';
 
 /** 移動設定 */
 export interface MovementConfig {
@@ -167,4 +168,26 @@ export function updateMovement(
   }
 
   return { shouldMove: false, newState: state };
+}
+
+/** 基準移動速度（戦士の初期値） */
+const BASE_SPEED = 4;
+
+/**
+ * プレイヤーの移動速度を考慮した実効移動間隔を計算
+ * 移動速度が高いほど間隔が短くなる
+ *
+ * @param player - プレイヤー
+ * @param baseInterval - 基準の移動間隔（ミリ秒）
+ * @param currentTime - 現在時刻
+ * @returns 実効移動間隔（ミリ秒）
+ */
+export function getEffectiveMoveInterval(
+  player: Player,
+  baseInterval: number,
+  currentTime: number
+): number {
+  const speed = getEffectiveMoveSpeed(player, currentTime);
+  // 速度が高いほど間隔が短くなる
+  return baseInterval * (BASE_SPEED / speed);
 }

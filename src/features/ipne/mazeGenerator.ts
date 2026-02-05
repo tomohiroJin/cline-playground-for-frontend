@@ -1,7 +1,19 @@
 /**
  * 迷路自動生成（BSPアルゴリズム）
  */
-import { GameMap, MazeConfig, Rectangle, Room, Corridor, TileType } from './types';
+import {
+  GameMap,
+  MazeConfig,
+  Rectangle,
+  Room,
+  Corridor,
+  TileType,
+  EnemyType,
+  EnemyTypeValue,
+  TrapType,
+  TrapTypeValue,
+  Position,
+} from './types';
 
 /** BSP木のノード */
 interface BSPNode {
@@ -332,4 +344,157 @@ function addLoops(grid: GameMap, rooms: Room[], loopCount: number, corridorWidth
       drawCorridors(grid, [corridor], corridorWidth);
     }
   }
+}
+
+// ===== MVP4 生成安定化機能 =====
+
+/** セーフゾーン半径（スタート地点からの距離） */
+export const SAFE_ZONE_RADIUS = 3;
+
+/** 最大生成リトライ回数 */
+export const MAX_GENERATION_RETRIES = 5;
+
+/** 危険な敵タイプ（初手で遭遇させない） */
+export const DANGEROUS_ENEMIES: EnemyTypeValue[] = [
+  EnemyType.CHARGE,
+  EnemyType.RANGED,
+  EnemyType.BOSS,
+];
+
+/** 危険な罠タイプ（初手で遭遇させない） */
+export const DANGEROUS_TRAPS: TrapTypeValue[] = [
+  TrapType.DAMAGE,
+  TrapType.TELEPORT,
+];
+
+/**
+ * 指定座標がセーフゾーン内かを判定する
+ * @param x 対象X座標
+ * @param y 対象Y座標
+ * @param startX スタート地点X
+ * @param startY スタート地点Y
+ * @param radius セーフゾーン半径
+ * @returns セーフゾーン内の場合true
+ */
+export function isInSafeZone(
+  x: number,
+  y: number,
+  startX: number,
+  startY: number,
+  radius: number = SAFE_ZONE_RADIUS
+): boolean {
+  const dx = Math.abs(x - startX);
+  const dy = Math.abs(y - startY);
+  return dx <= radius && dy <= radius;
+}
+
+/**
+ * 敵配置を検証する
+ * @param enemies 敵配置リスト
+ * @param startX スタート地点X
+ * @param startY スタート地点Y
+ * @returns 検証結果（問題のある敵配置のリスト）
+ */
+export function validateEnemyPlacement(
+  enemies: { type: EnemyTypeValue; x: number; y: number }[],
+  startX: number,
+  startY: number
+): { type: EnemyTypeValue; x: number; y: number }[] {
+  return enemies.filter(enemy => {
+    // 危険な敵がセーフゾーン内にいる場合は問題
+    if (DANGEROUS_ENEMIES.includes(enemy.type)) {
+      return isInSafeZone(enemy.x, enemy.y, startX, startY);
+    }
+    return false;
+  });
+}
+
+/**
+ * 罠配置を検証する
+ * @param traps 罠配置リスト
+ * @param startX スタート地点X
+ * @param startY スタート地点Y
+ * @returns 検証結果（問題のある罠配置のリスト）
+ */
+export function validateTrapPlacement(
+  traps: { type: TrapTypeValue; x: number; y: number }[],
+  startX: number,
+  startY: number
+): { type: TrapTypeValue; x: number; y: number }[] {
+  return traps.filter(trap => {
+    // 危険な罠がセーフゾーン内にある場合は問題
+    if (DANGEROUS_TRAPS.includes(trap.type)) {
+      return isInSafeZone(trap.x, trap.y, startX, startY);
+    }
+    return false;
+  });
+}
+
+/** 検証結果 */
+export interface ValidationResult {
+  isValid: boolean;
+  invalidEnemies: { type: EnemyTypeValue; x: number; y: number }[];
+  invalidTraps: { type: TrapTypeValue; x: number; y: number }[];
+}
+
+/**
+ * 生成物を包括的に検証する
+ * @param enemies 敵配置リスト
+ * @param traps 罠配置リスト
+ * @param startX スタート地点X
+ * @param startY スタート地点Y
+ * @returns 検証結果
+ */
+export function validateGeneration(
+  enemies: { type: EnemyTypeValue; x: number; y: number }[],
+  traps: { type: TrapTypeValue; x: number; y: number }[],
+  startX: number,
+  startY: number
+): ValidationResult {
+  const invalidEnemies = validateEnemyPlacement(enemies, startX, startY);
+  const invalidTraps = validateTrapPlacement(traps, startX, startY);
+
+  return {
+    isValid: invalidEnemies.length === 0 && invalidTraps.length === 0,
+    invalidEnemies,
+    invalidTraps,
+  };
+}
+
+/**
+ * セーフゾーン外の位置を取得する
+ * @param positions 候補位置リスト
+ * @param startX スタート地点X
+ * @param startY スタート地点Y
+ * @returns セーフゾーン外の位置リスト
+ */
+export function getPositionsOutsideSafeZone(
+  positions: Position[],
+  startX: number,
+  startY: number
+): Position[] {
+  return positions.filter(pos => !isInSafeZone(pos.x, pos.y, startX, startY));
+}
+
+/**
+ * 安全な迷路生成を試行する
+ * @param config 迷路設定
+ * @param maxRetries 最大リトライ回数
+ * @returns 生成結果（失敗時はnull）
+ */
+export function generateSafeMaze(
+  config: MazeConfig,
+  maxRetries: number = MAX_GENERATION_RETRIES
+): MazeResult | null {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const result = generateMaze(config);
+
+    // 最低限の部屋が生成されていれば成功
+    if (result.rooms.length >= 2) {
+      return result;
+    }
+  }
+
+  // 全リトライ失敗時
+  return null;
 }

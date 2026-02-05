@@ -40,6 +40,7 @@ import {
   startMovement,
   stopMovement,
   updateMovement,
+  getEffectiveMoveInterval,
   INITIAL_MOVEMENT_STATE,
   DEFAULT_MOVEMENT_CONFIG,
   EnemyState,
@@ -55,6 +56,41 @@ import {
   COMBAT_CONFIG,
   updatePlayerDirection,
   canMove,
+  // MVP3追加
+  PlayerClass,
+  PlayerClassValue,
+  Trap,
+  Wall,
+  TrapType,
+  TrapState,
+  WallType,
+  WallState,
+  CLASS_CONFIGS,
+  LEVEL_UP_CHOICES,
+  KILL_COUNT_TABLE,
+  canSeeTrap,
+  canSeeSpecialWall,
+  getTrapAlpha,
+  getWallAlpha,
+  shouldLevelUp,
+  applyLevelUpChoice,
+  canChooseStat,
+  getNextKillsRequired,
+  placeGimmicks,
+  triggerTrap,
+  canTriggerTrap,
+  getTrapAt,
+  damageWall,
+  isWallPassable,
+  getWallAt,
+  revealWall,
+  incrementKillCount,
+  processLevelUp,
+  getEffectiveMoveSpeed,
+  applySlowEffect,
+  isSlowed,
+  StatType,
+  StatTypeValue,
 } from '../features/ipne';
 import {
   PageContainer,
@@ -82,9 +118,84 @@ import {
   GameOverTitle,
   GameOverButton,
   DamageOverlay,
+  // MVP3追加
+  ClassSelectContainer,
+  ClassSelectTitle,
+  ClassCardsContainer,
+  ClassCard,
+  ClassIcon,
+  ClassName,
+  ClassDescription,
+  ClassStats,
+  ClassSelectButton,
+  LevelUpOverlay,
+  LevelUpTitle,
+  LevelUpSubtitle,
+  LevelUpChoicesContainer,
+  LevelUpChoice,
+  LevelUpChoiceLabel,
+  LevelUpChoiceValue,
+  StatsDisplay,
+  StatRow,
+  StatLabel,
+  StatValue,
+  ExperienceBar,
+  ExperienceBarFill,
+  LevelBadge,
+  // MVP4追加
+  HelpButton,
+  HelpOverlay,
+  HelpContainer,
+  HelpTitle,
+  HelpSection,
+  HelpSectionTitle,
+  HelpKeyList,
+  HelpKeyItem,
+  HelpKey,
+  HelpKeyDescription,
+  HelpCloseButton,
+  HelpHint,
+  TimerDisplay,
+  ResultContainer,
+  ResultRating,
+  ResultTime,
+  ResultEpilogueTitle,
+  ResultEpilogueText,
+  ResultImage,
+  ResultVideo,
+  NewBestBadge,
+  VideoPlayButton,
 } from './IpnePage.styles';
 import titleBg from '../assets/images/ipne_title_bg.webp';
+import titleBgMobile from '../assets/images/ipne_title_bg_mobile.webp';
 import prologueBg from '../assets/images/ipne_prologue_bg.webp';
+import prologueBgMobile from '../assets/images/ipne_prologue_bg_mobile.webp';
+
+// MVP4モジュール
+import {
+  createTimer,
+  startTimer,
+  stopTimer,
+  getElapsedTime,
+  formatTimeShort,
+  GameTimer,
+} from '../features/ipne/timer';
+import {
+  createRecord,
+  saveRecord,
+  loadBestRecords,
+  BestRecords,
+} from '../features/ipne/record';
+import {
+  calculateRating,
+  getEpilogueText,
+  getGameOverText,
+  getRatingColor,
+  getEndingImage,
+  getGameOverImage,
+  getEndingVideo,
+} from '../features/ipne/ending';
+import { RatingValue } from '../features/ipne/types';
 
 // 描画設定
 const CONFIG = {
@@ -96,12 +207,27 @@ const CONFIG = {
   enemyColors: {
     patrol: '#6b21a8',
     charge: '#991b1b',
-    flee: '#1e3a5f',
+    ranged: '#c2410c',
+    specimen: '#1e3a5f',
     boss: '#7c2d12',
   },
   itemColors: {
     health_small: '#22c55e',
     health_large: '#ef4444',
+    health_full: '#fbbf24',
+    level_up: '#f0abfc',
+    map_reveal: '#a16207',
+  },
+  // MVP3追加
+  trapColors: {
+    damage: '#dc2626',
+    slow: '#3b82f6',
+    alert: '#f59e0b',
+  },
+  wallColors: {
+    breakable: '#78350f',
+    passable: '#166534',
+    invisible: '#4c1d95',
   },
 };
 
@@ -116,7 +242,7 @@ const PROLOGUE_TEXTS = [
  * タイトル画面コンポーネント
  */
 const TitleScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => (
-  <Overlay $bgImage={titleBg}>
+  <Overlay $bgImage={titleBg} $bgImageMobile={titleBgMobile}>
     <TitleContainer>
       <StartButton
         onClick={onStart}
@@ -130,6 +256,101 @@ const TitleScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => (
 );
 
 /**
+ * 職業選択画面コンポーネント（MVP3）
+ */
+const ClassSelectScreen: React.FC<{
+  onSelect: (playerClass: PlayerClassValue) => void;
+}> = ({ onSelect }) => {
+  const [selectedClass, setSelectedClass] = useState<PlayerClassValue | null>(null);
+
+  const handleConfirm = () => {
+    if (selectedClass) {
+      onSelect(selectedClass);
+    }
+  };
+
+  return (
+    <Overlay>
+      <ClassSelectContainer>
+        <ClassSelectTitle>職業を選択</ClassSelectTitle>
+        <ClassCardsContainer>
+          <ClassCard
+            $classType="warrior"
+            $selected={selectedClass === PlayerClass.WARRIOR}
+            onClick={() => setSelectedClass(PlayerClass.WARRIOR)}
+          >
+            <ClassIcon $classType="warrior">⚔️</ClassIcon>
+            <ClassName>{CLASS_CONFIGS[PlayerClass.WARRIOR].name}</ClassName>
+            <ClassDescription>
+              耐久力と攻撃力が高く、正面突破スタイル。罠・特殊壁は触れて判明。
+            </ClassDescription>
+            <ClassStats>
+              <span>HP: 20 / 攻撃力: 2</span>
+              <span>攻撃速度: 速 / 回復+1</span>
+            </ClassStats>
+          </ClassCard>
+          <ClassCard
+            $classType="thief"
+            $selected={selectedClass === PlayerClass.THIEF}
+            onClick={() => setSelectedClass(PlayerClass.THIEF)}
+          >
+            <ClassIcon $classType="thief">🗡️</ClassIcon>
+            <ClassName>{CLASS_CONFIGS[PlayerClass.THIEF].name}</ClassName>
+            <ClassDescription>
+              移動速度が高く、罠を避けて進むスタイル。罠・特殊壁がうっすら見える。
+            </ClassDescription>
+            <ClassStats>
+              <span>HP: 12 / 攻撃力: 1</span>
+              <span>移動速度: 速 / 罠視認: ○</span>
+            </ClassStats>
+          </ClassCard>
+        </ClassCardsContainer>
+        <ClassSelectButton $disabled={!selectedClass} onClick={handleConfirm}>
+          この職業で開始
+        </ClassSelectButton>
+      </ClassSelectContainer>
+    </Overlay>
+  );
+};
+
+/**
+ * レベルアップオーバーレイコンポーネント（MVP3）
+ */
+const LevelUpOverlayComponent: React.FC<{
+  player: Player;
+  onChoose: (stat: StatTypeValue) => void;
+}> = ({ player, onChoose }) => {
+  const choices = LEVEL_UP_CHOICES.map(choice => ({
+    ...choice,
+    canChoose: canChooseStat(player.stats, choice.stat),
+    currentValue: player.stats[choice.stat as keyof typeof player.stats],
+  }));
+
+  return (
+    <LevelUpOverlay>
+      <LevelUpTitle>🎉 レベルアップ！</LevelUpTitle>
+      <LevelUpSubtitle>強化する能力を選んでください</LevelUpSubtitle>
+      <LevelUpChoicesContainer>
+        {choices.map(choice => (
+          <LevelUpChoice
+            key={choice.stat}
+            $disabled={!choice.canChoose}
+            onClick={() => choice.canChoose && onChoose(choice.stat)}
+          >
+            <LevelUpChoiceLabel>{choice.description}</LevelUpChoiceLabel>
+            <LevelUpChoiceValue $disabled={!choice.canChoose}>
+              {choice.canChoose
+                ? `${choice.currentValue} → ${choice.currentValue + choice.increase}`
+                : '上限'}
+            </LevelUpChoiceValue>
+          </LevelUpChoice>
+        ))}
+      </LevelUpChoicesContainer>
+    </LevelUpOverlay>
+  );
+};
+
+/**
  * プロローグ画面コンポーネント
  */
 const PrologueScreen: React.FC<{ onSkip: () => void }> = ({ onSkip }) => {
@@ -141,11 +362,17 @@ const PrologueScreen: React.FC<{ onSkip: () => void }> = ({ onSkip }) => {
         setTextIndex(prev => prev + 1);
       }, 2000);
       return () => clearTimeout(timer);
+    } else {
+      // 最後のテキスト表示後、3秒待って自動遷移
+      const autoSkipTimer = setTimeout(() => {
+        onSkip();
+      }, 3000);
+      return () => clearTimeout(autoSkipTimer);
     }
-  }, [textIndex]);
+  }, [textIndex, onSkip]);
 
   return (
-    <Overlay $bgImage={prologueBg}>
+    <Overlay $bgImage={prologueBg} $bgImageMobile={prologueBgMobile}>
       <div
         style={{
           width: '100%',
@@ -173,38 +400,140 @@ const PrologueScreen: React.FC<{ onSkip: () => void }> = ({ onSkip }) => {
 };
 
 /**
- * クリア画面コンポーネント
+ * ヘルプオーバーレイコンポーネント（MVP4）
+ */
+const HelpOverlayComponent: React.FC<{ onClose: () => void }> = ({ onClose }) => (
+  <HelpOverlay onClick={onClose}>
+    <HelpContainer onClick={e => e.stopPropagation()}>
+      <HelpTitle>操作方法</HelpTitle>
+
+      <HelpSection>
+        <HelpSectionTitle>移動</HelpSectionTitle>
+        <HelpKeyList>
+          <HelpKeyItem>
+            <HelpKey>W A S D</HelpKey>
+            <HelpKeyDescription>上/左/下/右に移動</HelpKeyDescription>
+          </HelpKeyItem>
+          <HelpKeyItem>
+            <HelpKey>↑ ← ↓ →</HelpKey>
+            <HelpKeyDescription>矢印キーでも移動可能</HelpKeyDescription>
+          </HelpKeyItem>
+        </HelpKeyList>
+      </HelpSection>
+
+      <HelpSection>
+        <HelpSectionTitle>アクション</HelpSectionTitle>
+        <HelpKeyList>
+          <HelpKeyItem>
+            <HelpKey>Space</HelpKey>
+            <HelpKeyDescription>攻撃（押しながら移動キーで向き変更）</HelpKeyDescription>
+          </HelpKeyItem>
+          <HelpKeyItem>
+            <HelpKey>M</HelpKey>
+            <HelpKeyDescription>マップ表示切替（小窓→全画面→非表示）</HelpKeyDescription>
+          </HelpKeyItem>
+          <HelpKeyItem>
+            <HelpKey>H</HelpKey>
+            <HelpKeyDescription>このヘルプを表示/非表示</HelpKeyDescription>
+          </HelpKeyItem>
+        </HelpKeyList>
+      </HelpSection>
+
+      <HelpSection>
+        <HelpSectionTitle>ゲームの目的</HelpSectionTitle>
+        <HelpKeyList>
+          <HelpKeyItem>
+            <HelpKeyDescription>
+              迷宮を探索してゴール（緑色のタイル）を目指しましょう。
+              敵を倒してレベルアップし、アイテムを取得して有利に進めましょう。
+              クリアタイムで評価が決まります！
+            </HelpKeyDescription>
+          </HelpKeyItem>
+        </HelpKeyList>
+      </HelpSection>
+
+      <HelpCloseButton onClick={onClose}>閉じる</HelpCloseButton>
+      <HelpHint>画面外をクリックしても閉じられます</HelpHint>
+    </HelpContainer>
+  </HelpOverlay>
+);
+
+/**
+ * クリア画面コンポーネント（MVP4拡張）
  * テスト用にエクスポート
  */
 export const ClearScreen: React.FC<{
   onRetry: () => void;
   onBackToTitle: () => void;
-}> = ({ onRetry, onBackToTitle }) => (
-  <Overlay>
-    <ClearContainer>
-      <ClearTitle>🎉 クリア！</ClearTitle>
-      <ClearMessage>おめでとうございます！迷宮から脱出しました。</ClearMessage>
-      <RetryButton onClick={onRetry}>もう一度プレイ</RetryButton>
-      <BackToTitleButton onClick={onBackToTitle}>タイトルに戻る</BackToTitleButton>
-    </ClearContainer>
-  </Overlay>
-);
+  clearTime: number;
+  rating: RatingValue;
+  isNewBest: boolean;
+}> = ({ onRetry, onBackToTitle, clearTime, rating, isNewBest }) => {
+  const epilogue = getEpilogueText(rating);
+  const ratingColor = getRatingColor(rating);
+  const endingImage = getEndingImage(rating);
+  const endingVideo = getEndingVideo(rating);
+  const [showVideo, setShowVideo] = useState(false);
+
+  return (
+    <Overlay>
+      <ResultContainer>
+        {isNewBest && <NewBestBadge>🏆 NEW BEST!</NewBestBadge>}
+        <ResultRating $color={ratingColor}>{rating.toUpperCase()}</ResultRating>
+        <ResultTime>{formatTimeShort(clearTime)}</ResultTime>
+        <ResultEpilogueTitle>{epilogue.title}</ResultEpilogueTitle>
+        <ResultEpilogueText>{epilogue.text}</ResultEpilogueText>
+        {endingVideo ? (
+          showVideo ? (
+            <ResultVideo
+              src={endingVideo}
+              autoPlay
+              muted
+              playsInline
+              onEnded={() => setShowVideo(false)}
+              aria-label={`${rating}ランククリア動画`}
+            />
+          ) : (
+            <>
+              <ResultImage src={endingImage} alt={`${rating}ランククリア`} />
+              <VideoPlayButton onClick={() => setShowVideo(true)}>
+                特別動画を見る
+              </VideoPlayButton>
+            </>
+          )
+        ) : (
+          <ResultImage src={endingImage} alt={`${rating}ランククリア`} />
+        )}
+        <RetryButton onClick={onRetry}>もう一度プレイ</RetryButton>
+        <BackToTitleButton onClick={onBackToTitle}>タイトルに戻る</BackToTitleButton>
+      </ResultContainer>
+    </Overlay>
+  );
+};
 
 /**
- * ゲームオーバー画面コンポーネント
+ * ゲームオーバー画面コンポーネント（MVP4拡張）
  */
 const GameOverScreen: React.FC<{
   onRetry: () => void;
   onBackToTitle: () => void;
-}> = ({ onRetry, onBackToTitle }) => (
-  <Overlay>
-    <GameOverContainer>
-      <GameOverTitle>GAME OVER</GameOverTitle>
-      <GameOverButton onClick={onRetry}>リトライ</GameOverButton>
-      <GameOverButton onClick={onBackToTitle}>タイトルへ</GameOverButton>
-    </GameOverContainer>
-  </Overlay>
-);
+}> = ({ onRetry, onBackToTitle }) => {
+  const gameOverText = getGameOverText();
+  const gameOverImage = getGameOverImage();
+
+  return (
+    <Overlay>
+      <ResultContainer>
+        <GameOverTitle>GAME OVER</GameOverTitle>
+        <ResultEpilogueTitle>{gameOverText.title}</ResultEpilogueTitle>
+        <ResultEpilogueText>{gameOverText.text}</ResultEpilogueText>
+        <ResultImage src={gameOverImage} alt="ゲームオーバー" />
+        <GameOverButton onClick={onRetry}>リトライ</GameOverButton>
+        <GameOverButton onClick={onBackToTitle}>タイトルへ</GameOverButton>
+      </ResultContainer>
+    </Overlay>
+  );
+};
 
 /**
  * ゲーム画面コンポーネント
@@ -214,6 +543,8 @@ const GameScreen: React.FC<{
   player: Player;
   enemies: Enemy[];
   items: Item[];
+  traps: Trap[];
+  walls: Wall[];
   mapState: AutoMapState;
   goalPos: { x: number; y: number };
   debugState: DebugState;
@@ -224,11 +555,17 @@ const GameScreen: React.FC<{
   onDebugToggle: (option: keyof Omit<DebugState, 'enabled'>) => void;
   attackEffect?: { position: Position; until: number };
   lastDamageAt: number;
+  // MVP4追加
+  timer: GameTimer;
+  showHelp: boolean;
+  onHelpToggle: () => void;
 }> = ({
   map,
   player,
   enemies,
   items,
+  traps,
+  walls,
   mapState,
   goalPos,
   debugState,
@@ -239,6 +576,10 @@ const GameScreen: React.FC<{
   onDebugToggle,
   attackEffect,
   lastDamageAt,
+  // MVP4追加
+  timer,
+  showHelp,
+  onHelpToggle,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const movementStateRef = useRef<MovementState>(INITIAL_MOVEMENT_STATE);
@@ -392,6 +733,118 @@ const GameScreen: React.FC<{
       ctx.stroke();
     }
 
+    // MVP3: 罠描画
+    for (const trap of traps) {
+      // 職業に応じた可視性判定
+      if (!canSeeTrap(player.playerClass, trap.state)) continue;
+
+      const trapScreen = toScreenPosition(trap);
+      const size = useFullMap ? Math.max(tileSize / 2, 3) : tileSize * 0.6;
+      const alpha = getTrapAlpha(player.playerClass, trap.state);
+      const trapColor = CONFIG.trapColors[trap.type as keyof typeof CONFIG.trapColors] || '#dc2626';
+
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = trapColor;
+
+      if (trap.type === TrapType.DAMAGE) {
+        // ダメージ罠: X印
+        ctx.strokeStyle = trapColor;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(trapScreen.x - size / 3, trapScreen.y - size / 3);
+        ctx.lineTo(trapScreen.x + size / 3, trapScreen.y + size / 3);
+        ctx.moveTo(trapScreen.x + size / 3, trapScreen.y - size / 3);
+        ctx.lineTo(trapScreen.x - size / 3, trapScreen.y + size / 3);
+        ctx.stroke();
+      } else if (trap.type === TrapType.SLOW) {
+        // 移動妨害罠: 波線
+        ctx.strokeStyle = trapColor;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(trapScreen.x - size / 3, trapScreen.y);
+        ctx.quadraticCurveTo(trapScreen.x - size / 6, trapScreen.y - size / 4, trapScreen.x, trapScreen.y);
+        ctx.quadraticCurveTo(trapScreen.x + size / 6, trapScreen.y + size / 4, trapScreen.x + size / 3, trapScreen.y);
+        ctx.stroke();
+      } else if (trap.type === TrapType.TELEPORT) {
+        // テレポート罠: 渦巻き（@マーク）
+        ctx.font = `bold ${size}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('@', trapScreen.x, trapScreen.y);
+      }
+
+      ctx.globalAlpha = 1;
+    }
+
+    // MVP3: 特殊壁描画
+    for (const wall of walls) {
+      // 職業に応じた可視性判定
+      if (!canSeeSpecialWall(player.playerClass, wall.type, wall.state)) continue;
+
+      const wallScreen = toScreenPosition(wall);
+      const alpha = getWallAlpha(player.playerClass, wall.type, wall.state);
+      const wallColor = CONFIG.wallColors[wall.type as keyof typeof CONFIG.wallColors] || '#78350f';
+
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = wallColor;
+
+      if (wall.type === WallType.BREAKABLE) {
+        // 破壊可能壁: 状態によって表示を変える
+        if (wall.state === WallState.BROKEN) {
+          // 破壊済み: 緑の開口部（通過可能を示す）
+          ctx.strokeStyle = '#22c55e';
+          ctx.lineWidth = 3;
+          ctx.setLineDash([4, 4]);
+          ctx.strokeRect(wallScreen.x - tileSize / 2.5, wallScreen.y - tileSize / 2.5, tileSize / 1.25, tileSize / 1.25);
+          ctx.setLineDash([]);
+          // 開口部の内側に通路を示す明るい緑
+          ctx.fillStyle = 'rgba(34, 197, 94, 0.3)';
+          ctx.fillRect(wallScreen.x - tileSize / 3, wallScreen.y - tileSize / 3, tileSize / 1.5, tileSize / 1.5);
+        } else if (wall.state === WallState.DAMAGED) {
+          // 損傷: オレンジ色、大きなひび割れ
+          ctx.fillStyle = '#f97316';
+          ctx.fillRect(wallScreen.x - tileSize / 2.5, wallScreen.y - tileSize / 2.5, tileSize / 1.25, tileSize / 1.25);
+          ctx.strokeStyle = '#7c2d12';
+          ctx.lineWidth = 2;
+          // 大きなX字ひび割れ
+          ctx.beginPath();
+          ctx.moveTo(wallScreen.x - tileSize / 3, wallScreen.y - tileSize / 3);
+          ctx.lineTo(wallScreen.x + tileSize / 3, wallScreen.y + tileSize / 3);
+          ctx.moveTo(wallScreen.x + tileSize / 3, wallScreen.y - tileSize / 3);
+          ctx.lineTo(wallScreen.x - tileSize / 3, wallScreen.y + tileSize / 3);
+          ctx.stroke();
+        } else {
+          // 完全（INTACT）: 茶色のひび割れ模様
+          ctx.fillRect(wallScreen.x - tileSize / 2.5, wallScreen.y - tileSize / 2.5, tileSize / 1.25, tileSize / 1.25);
+          ctx.strokeStyle = '#451a03';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(wallScreen.x - tileSize / 4, wallScreen.y - tileSize / 4);
+          ctx.lineTo(wallScreen.x, wallScreen.y);
+          ctx.lineTo(wallScreen.x + tileSize / 4, wallScreen.y - tileSize / 6);
+          ctx.stroke();
+        }
+      } else if (wall.type === WallType.PASSABLE) {
+        // すり抜け可能壁: 半透明塗りつぶし + 点線枠（視認性向上）
+        ctx.fillStyle = 'rgba(22, 101, 52, 0.4)';
+        ctx.fillRect(wallScreen.x - tileSize / 2.5, wallScreen.y - tileSize / 2.5, tileSize / 1.25, tileSize / 1.25);
+        ctx.strokeStyle = wallColor;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([3, 3]);
+        ctx.strokeRect(wallScreen.x - tileSize / 2.5, wallScreen.y - tileSize / 2.5, tileSize / 1.25, tileSize / 1.25);
+        ctx.setLineDash([]);
+      } else if (wall.type === WallType.INVISIBLE) {
+        // 透明壁: 半透明塗りつぶし + 太い輪郭（視認性向上）
+        ctx.fillStyle = 'rgba(76, 29, 149, 0.3)';
+        ctx.fillRect(wallScreen.x - tileSize / 2.5, wallScreen.y - tileSize / 2.5, tileSize / 1.25, tileSize / 1.25);
+        ctx.strokeStyle = wallColor;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(wallScreen.x - tileSize / 2.5, wallScreen.y - tileSize / 2.5, tileSize / 1.25, tileSize / 1.25);
+      }
+
+      ctx.globalAlpha = 1;
+    }
+
     // アイテム描画
     for (const item of items) {
       const screenPos = toScreenPosition(item);
@@ -496,7 +949,7 @@ const GameScreen: React.FC<{
         drawCoordinateOverlay(ctx, player.x, player.y, playerScreen.x, playerScreen.y);
       }
     }
-  }, [map, player, enemies, items, mapState, goalPos, debugState, renderTime, attackEffect]);
+  }, [map, player, enemies, items, traps, walls, mapState, goalPos, debugState, renderTime, attackEffect]);
 
   const setAttackHold = useCallback((isHolding: boolean) => {
     attackHoldRef.current = isHolding;
@@ -509,10 +962,22 @@ const GameScreen: React.FC<{
   useEffect(() => {
     const tick = () => {
       const currentTime = Date.now();
+
+      // プレイヤーの移動速度を考慮した移動間隔を計算
+      const effectiveMoveInterval = getEffectiveMoveInterval(
+        player,
+        DEFAULT_MOVEMENT_CONFIG.moveInterval,
+        currentTime
+      );
+      const effectiveConfig = {
+        ...DEFAULT_MOVEMENT_CONFIG,
+        moveInterval: effectiveMoveInterval,
+      };
+
       const { shouldMove, newState } = updateMovement(
         movementStateRef.current,
         currentTime,
-        DEFAULT_MOVEMENT_CONFIG
+        effectiveConfig
       );
 
       movementStateRef.current = newState;
@@ -531,7 +996,7 @@ const GameScreen: React.FC<{
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [onMove]);
+  }, [onMove, player]);
 
   // キーボード入力
   useEffect(() => {
@@ -550,6 +1015,13 @@ const GameScreen: React.FC<{
       if (key === 'm') {
         e.preventDefault();
         onMapToggle();
+        return;
+      }
+
+      // ヘルプ切替（Hキー）
+      if (key === 'h') {
+        e.preventDefault();
+        onHelpToggle();
         return;
       }
 
@@ -624,7 +1096,7 @@ const GameScreen: React.FC<{
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);
     };
-  }, [onMove, onTurn, onAttack, onMapToggle, debugState.enabled, onDebugToggle, setAttackHold]);
+  }, [onMove, onTurn, onAttack, onMapToggle, onHelpToggle, debugState.enabled, onDebugToggle, setAttackHold]);
 
   // D-pad押下開始時のハンドラー
   const handleDPadPointerDown = useCallback(
@@ -655,18 +1127,59 @@ const GameScreen: React.FC<{
   const hpColor = hpRatio > 0.66 ? '#22c55e' : hpRatio > 0.33 ? '#facc15' : '#ef4444';
   const isAttackReady = renderTime >= player.attackCooldownUntil;
 
+  // タイマー表示用の現在時刻
+  const currentElapsed = getElapsedTime(timer, renderTime);
+
   return (
     <GameRegion role="region" aria-label="ゲーム画面">
       <DamageOverlay $visible={renderTime - lastDamageAt < 150} />
+      <TimerDisplay>{formatTimeShort(currentElapsed)}</TimerDisplay>
       <HPBarContainer>
         <HPBarFill $ratio={hpRatio} $color={hpColor} />
         <HPBarText>
           HP {player.hp}/{player.maxHp}
         </HPBarText>
       </HPBarContainer>
+      <LevelBadge>Lv.{player.level}</LevelBadge>
+      <ExperienceBar>
+        <ExperienceBarFill
+          $ratio={
+            player.level >= 10
+              ? 1
+              : (player.killCount - (KILL_COUNT_TABLE[player.level] || 0)) /
+                Math.max(1, getNextKillsRequired(player.level, player.killCount) + (player.killCount - (KILL_COUNT_TABLE[player.level] || 0)))
+          }
+        />
+      </ExperienceBar>
+      <StatsDisplay>
+        <StatRow>
+          <StatLabel>攻撃力</StatLabel>
+          <StatValue>{player.stats.attackPower}</StatValue>
+        </StatRow>
+        <StatRow>
+          <StatLabel>攻撃距離</StatLabel>
+          <StatValue>{player.stats.attackRange}</StatValue>
+        </StatRow>
+        <StatRow>
+          <StatLabel>移動速度</StatLabel>
+          <StatValue>{player.stats.moveSpeed}</StatValue>
+        </StatRow>
+        <StatRow>
+          <StatLabel>攻撃速度</StatLabel>
+          <StatValue>{player.stats.attackSpeed.toFixed(1)}</StatValue>
+        </StatRow>
+        <StatRow>
+          <StatLabel>撃破数</StatLabel>
+          <StatValue>{player.killCount}</StatValue>
+        </StatRow>
+      </StatsDisplay>
       <MapToggleButton onClick={onMapToggle} aria-label="マップ表示切替">
         🗺️
       </MapToggleButton>
+      <HelpButton onClick={onHelpToggle} aria-label="ヘルプ表示">
+        H
+      </HelpButton>
+      {showHelp && <HelpOverlayComponent onClose={onHelpToggle} />}
       <Canvas
         ref={canvasRef}
         role="img"
@@ -768,12 +1281,26 @@ const IpnePage: React.FC = () => {
   const [attackEffect, setAttackEffect] = useState<{ position: Position; until: number } | undefined>(
     undefined
   );
+  // MVP3追加
+  const [selectedClass, setSelectedClass] = useState<PlayerClassValue>(PlayerClass.WARRIOR);
+  const [traps, setTraps] = useState<Trap[]>([]);
+  const [walls, setWalls] = useState<Wall[]>([]);
+  const [isLevelUpPending, setIsLevelUpPending] = useState(false);
+
+  // MVP4追加
+  const [timer, setTimer] = useState<GameTimer>(() => createTimer());
+  const [showHelp, setShowHelp] = useState(false);
+  const [clearTime, setClearTime] = useState(0);
+  const [clearRating, setClearRating] = useState<RatingValue>('d');
+  const [isNewBest, setIsNewBest] = useState(false);
 
   const mapRef = useRef<GameMap>(map);
   const playerRef = useRef<Player>(player);
   const enemiesRef = useRef<Enemy[]>(enemies);
   const itemsRef = useRef<Item[]>(items);
   const roomsRef = useRef<Room[]>([]);
+  const trapsRef = useRef<Trap[]>(traps);
+  const wallsRef = useRef<Wall[]>(walls);
 
   useEffect(() => {
     mapRef.current = map;
@@ -791,7 +1318,15 @@ const IpnePage: React.FC = () => {
     itemsRef.current = items;
   }, [items]);
 
-  const setupGameState = useCallback((newMap: GameMap, rooms: Room[]) => {
+  useEffect(() => {
+    trapsRef.current = traps;
+  }, [traps]);
+
+  useEffect(() => {
+    wallsRef.current = walls;
+  }, [walls]);
+
+  const setupGameState = useCallback((newMap: GameMap, rooms: Room[], playerClass: PlayerClassValue) => {
     const startPos = findStartPosition(newMap);
     const goal = findGoalPosition(newMap);
 
@@ -800,12 +1335,21 @@ const IpnePage: React.FC = () => {
     setMap(newMap);
     mapRef.current = newMap;
     setGoalPos(goal);
-    const createdPlayer = createPlayer(startPos.x, startPos.y);
+    // MVP3: 職業を使ってプレイヤー作成
+    const createdPlayer = createPlayer(startPos.x, startPos.y, playerClass);
     setPlayer(createdPlayer);
     playerRef.current = createdPlayer;
     setIsGameOver(false);
+    setIsLevelUpPending(false);
     setCombatState({ lastAttackAt: 0, lastDamageAt: 0 });
     setAttackEffect(undefined);
+
+    // MVP4: タイマーをリセットして開始
+    const newTimer = startTimer(createTimer());
+    setTimer(newTimer);
+    setShowHelp(false);
+    setClearTime(0);
+    setIsNewBest(false);
 
     roomsRef.current = rooms;
 
@@ -815,6 +1359,13 @@ const IpnePage: React.FC = () => {
     setItems(spawnedItems);
     enemiesRef.current = spawnedEnemies;
     itemsRef.current = spawnedItems;
+
+    // MVP3: 罠と壁を配置（戦略的配置を使用）
+    const gimmickResult = placeGimmicks(rooms, newMap, [startPos, goal], undefined, startPos, goal);
+    setTraps(gimmickResult.traps);
+    setWalls(gimmickResult.walls);
+    trapsRef.current = gimmickResult.traps;
+    wallsRef.current = gimmickResult.walls;
 
     // 探索状態を初期化
     const exploration = initExploration(newMap[0].length, newMap.length);
@@ -827,35 +1378,55 @@ const IpnePage: React.FC = () => {
   }, []);
 
   // ゲーム初期化
-  const initGame = useCallback(() => {
+  const initGame = useCallback((playerClass: PlayerClassValue) => {
     const result = createMapWithRooms();
-    setupGameState(result.map, result.rooms);
+    setupGameState(result.map, result.rooms, playerClass);
   }, [setupGameState]);
 
   // 画面遷移ハンドラー
+  // MVP3: タイトル→職業選択へ
   const handleStartGame = useCallback(() => {
+    setScreen(ScreenState.CLASS_SELECT);
+  }, []);
+
+  // MVP3: 職業選択→プロローグへ
+  const handleClassSelect = useCallback((playerClass: PlayerClassValue) => {
+    setSelectedClass(playerClass);
     setScreen(ScreenState.PROLOGUE);
   }, []);
 
   const handleSkipPrologue = useCallback(() => {
-    initGame();
+    initGame(selectedClass);
     setScreen(ScreenState.GAME);
-  }, [initGame]);
+  }, [initGame, selectedClass]);
 
   const handleRetry = useCallback(() => {
-    initGame();
+    initGame(selectedClass);
     setScreen(ScreenState.GAME);
-  }, [initGame]);
+  }, [initGame, selectedClass]);
 
   const handleGameOverRetry = useCallback(() => {
     if (mapRef.current.length === 0) return;
-    setupGameState(mapRef.current, roomsRef.current);
+    setupGameState(mapRef.current, roomsRef.current, selectedClass);
     setScreen(ScreenState.GAME);
-  }, [setupGameState]);
+  }, [setupGameState, selectedClass]);
 
   const handleBackToTitle = useCallback(() => {
     setScreen(ScreenState.TITLE);
     setIsGameOver(false);
+  }, []);
+
+  // MVP3: レベルアップ選択
+  const handleLevelUpChoice = useCallback((stat: StatTypeValue) => {
+    const leveledPlayer = processLevelUp(player, stat);
+    setPlayer(leveledPlayer);
+    playerRef.current = leveledPlayer;
+    setIsLevelUpPending(false);
+  }, [player]);
+
+  // MVP4: ヘルプ表示トグル
+  const handleHelpToggle = useCallback(() => {
+    setShowHelp(prev => !prev);
   }, []);
 
   // プレイヤー移動ハンドラー
@@ -904,7 +1475,17 @@ const IpnePage: React.FC = () => {
         return;
       }
 
-      const newPlayer = movePlayer(player, direction, map);
+      // 移動先に特殊壁があれば発見済みにする
+      const wallAtTarget = getWallAt(wallsRef.current, nextPosition.x, nextPosition.y);
+      if (wallAtTarget && wallAtTarget.state === WallState.INTACT) {
+        const updatedWalls = wallsRef.current.map(w =>
+          w.x === wallAtTarget.x && w.y === wallAtTarget.y ? revealWall(w) : w
+        );
+        setWalls(updatedWalls);
+        wallsRef.current = updatedWalls;
+      }
+
+      const newPlayer = movePlayer(player, direction, map, wallsRef.current);
       setPlayer(newPlayer);
 
       // 探索状態を更新
@@ -915,10 +1496,25 @@ const IpnePage: React.FC = () => {
 
       // ゴール判定
       if (isGoal(map, newPlayer.x, newPlayer.y)) {
+        // MVP4: タイマー停止と記録保存
+        const now = Date.now();
+        const stoppedTimer = stopTimer(timer, now);
+        const elapsed = getElapsedTime(stoppedTimer, now);
+        const rating = calculateRating(elapsed);
+
+        setClearTime(elapsed);
+        setClearRating(rating);
+        setTimer(stoppedTimer);
+
+        // 記録を保存
+        const record = createRecord(elapsed, rating, selectedClass);
+        const { isNewBest: newBest } = saveRecord(record);
+        setIsNewBest(newBest);
+
         setScreen(ScreenState.CLEAR);
       }
     },
-    [player, map, isGameOver]
+    [player, map, isGameOver, timer, selectedClass]
   );
 
   const handleTurn = useCallback(
@@ -930,9 +1526,11 @@ const IpnePage: React.FC = () => {
   );
 
   const handleAttack = useCallback(() => {
-    if (isGameOver) return;
+    if (isGameOver || isLevelUpPending) return;
     const currentTime = Date.now();
-    const result = playerAttack(playerRef.current, enemiesRef.current, mapRef.current, currentTime);
+    const beforeEnemies = enemiesRef.current;
+    const currentWalls = wallsRef.current;
+    const result = playerAttack(playerRef.current, beforeEnemies, mapRef.current, currentTime, currentWalls);
 
     if (result.didAttack) {
       setCombatState(prev => ({ ...prev, lastAttackAt: currentTime }));
@@ -943,9 +1541,33 @@ const IpnePage: React.FC = () => {
       }
     }
 
-    setPlayer(result.player);
-    setEnemies(result.enemies.filter(enemy => enemy.hp > 0));
-  }, [isGameOver]);
+    // 壁への攻撃結果を反映
+    if (result.walls) {
+      setWalls(result.walls);
+      wallsRef.current = result.walls;
+    }
+
+    // MVP3: 撃破した敵の数をカウントしてキルカウントを更新
+    const survivingEnemies = result.enemies.filter(enemy => enemy.hp > 0);
+    const killedCount = beforeEnemies.length - survivingEnemies.length;
+
+    let updatedPlayer = result.player;
+    if (killedCount > 0) {
+      // 撃破数だけインクリメント
+      for (let i = 0; i < killedCount; i++) {
+        const killResult = incrementKillCount(updatedPlayer);
+        updatedPlayer = killResult.player;
+        if (killResult.shouldLevelUp && !isLevelUpPending) {
+          setIsLevelUpPending(true);
+        }
+      }
+    }
+
+    setPlayer(updatedPlayer);
+    playerRef.current = updatedPlayer;
+    setEnemies(survivingEnemies);
+    enemiesRef.current = survivingEnemies;
+  }, [isGameOver, isLevelUpPending]);
 
   // マップ表示切替ハンドラー（小窓 → 全画面 → 非表示 → 小窓）
   const handleMapToggle = useCallback(() => {
@@ -980,7 +1602,7 @@ const IpnePage: React.FC = () => {
       const stepY = dy === 0 ? 0 : dy > 0 ? 1 : -1;
       const knockbackTarget = { x: currentPlayer.x + stepX, y: currentPlayer.y + stepY };
 
-      if (!canMove(currentMap, knockbackTarget.x, knockbackTarget.y)) {
+      if (!canMove(currentMap, knockbackTarget.x, knockbackTarget.y, wallsRef.current)) {
         return currentPlayer;
       }
       if (getEnemyAtPosition(currentEnemies, knockbackTarget.x, knockbackTarget.y)) {
@@ -1052,17 +1674,55 @@ const IpnePage: React.FC = () => {
 
       let remainingItems = itemsRef.current;
       const pickedIds: string[] = [];
+      let triggerLevelUp = false;
+      let triggerMapReveal = false;
 
       for (const item of remainingItems) {
         if (canPickupItem(nextPlayer, item)) {
           const pickupResult = pickupItem(nextPlayer, item);
           nextPlayer = pickupResult.player;
           pickedIds.push(pickupResult.itemId);
+          if (pickupResult.triggerLevelUp) triggerLevelUp = true;
+          if (pickupResult.triggerMapReveal) triggerMapReveal = true;
         }
       }
 
       if (pickedIds.length > 0) {
         remainingItems = remainingItems.filter(item => !pickedIds.includes(item.id));
+      }
+
+      // MVP3: 罠発動チェック
+      let currentTraps = trapsRef.current;
+      const trapAtPlayer = getTrapAt(currentTraps, nextPlayer.x, nextPlayer.y);
+      if (trapAtPlayer && canTriggerTrap(trapAtPlayer, currentTime)) {
+        const trapResult = triggerTrap(trapAtPlayer, nextPlayer, currentTime, mapRef.current);
+        nextPlayer = damagePlayer(nextPlayer, trapResult.damage, currentTime, COMBAT_CONFIG.invincibleDuration);
+        if (trapResult.slowDuration > 0) {
+          nextPlayer = applySlowEffect(nextPlayer, currentTime, trapResult.slowDuration);
+        }
+        // テレポート効果の適用
+        if (trapResult.teleportDestination) {
+          nextPlayer = { ...nextPlayer, x: trapResult.teleportDestination.x, y: trapResult.teleportDestination.y };
+        }
+        currentTraps = currentTraps.map(t => t.id === trapResult.trap.id ? trapResult.trap : t);
+        if (trapResult.damage > 0) {
+          setCombatState(prev => ({ ...prev, lastDamageAt: currentTime }));
+        }
+        setTraps(currentTraps);
+        trapsRef.current = currentTraps;
+      }
+
+      // MVP3: アイテムによる即レベルアップまたは通常レベルアップ
+      if (triggerLevelUp && !isLevelUpPending) {
+        setIsLevelUpPending(true);
+      }
+
+      // MVP3: マップ公開
+      if (triggerMapReveal) {
+        const fullExploration = mapRef.current.map(row =>
+          row.map(() => 1 as const)
+        );
+        setMapState(prev => ({ ...prev, exploration: fullExploration }));
       }
 
       setPlayer(nextPlayer);
@@ -1082,27 +1742,44 @@ const IpnePage: React.FC = () => {
   return (
     <PageContainer>
       {screen === ScreenState.TITLE && <TitleScreen onStart={handleStartGame} />}
+      {screen === ScreenState.CLASS_SELECT && <ClassSelectScreen onSelect={handleClassSelect} />}
       {screen === ScreenState.PROLOGUE && <PrologueScreen onSkip={handleSkipPrologue} />}
       {screen === ScreenState.GAME && (
-        <GameScreen
-          map={map}
-          player={player}
-          enemies={enemies}
-          items={items}
-          mapState={mapState}
-          goalPos={goalPos}
-          debugState={debugState}
-          onMove={handleMove}
-          onTurn={handleTurn}
-          onAttack={handleAttack}
-          onMapToggle={handleMapToggle}
-          onDebugToggle={handleDebugToggle}
-          attackEffect={attackEffect}
-          lastDamageAt={combatState.lastDamageAt}
-        />
+        <>
+          <GameScreen
+            map={map}
+            player={player}
+            enemies={enemies}
+            items={items}
+            traps={traps}
+            walls={walls}
+            mapState={mapState}
+            goalPos={goalPos}
+            debugState={debugState}
+            onMove={handleMove}
+            onTurn={handleTurn}
+            onAttack={handleAttack}
+            onMapToggle={handleMapToggle}
+            onDebugToggle={handleDebugToggle}
+            attackEffect={attackEffect}
+            lastDamageAt={combatState.lastDamageAt}
+            timer={timer}
+            showHelp={showHelp}
+            onHelpToggle={handleHelpToggle}
+          />
+          {isLevelUpPending && (
+            <LevelUpOverlayComponent player={player} onChoose={handleLevelUpChoice} />
+          )}
+        </>
       )}
       {screen === ScreenState.CLEAR && (
-        <ClearScreen onRetry={handleRetry} onBackToTitle={handleBackToTitle} />
+        <ClearScreen
+          onRetry={handleRetry}
+          onBackToTitle={handleBackToTitle}
+          clearTime={clearTime}
+          rating={clearRating}
+          isNewBest={isNewBest}
+        />
       )}
       {screen === ScreenState.GAME_OVER && (
         <GameOverScreen onRetry={handleGameOverRetry} onBackToTitle={handleBackToTitle} />

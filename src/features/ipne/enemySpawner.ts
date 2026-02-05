@@ -2,13 +2,14 @@
  * 敵配置ロジック
  */
 import { Enemy, EnemyType, EnemyTypeValue, Position, Room } from './types';
-import { createBoss, createChargeEnemy, createFleeEnemy, createPatrolEnemy } from './enemy';
+import { createBoss, createChargeEnemy, createSpecimenEnemy, createPatrolEnemy, createRangedEnemy } from './enemy';
 
 const SPAWN_CONFIG = {
   total: 25,
-  patrol: 13,
-  charge: 8,
-  flee: 4,
+  patrol: 10,
+  charge: 6,
+  ranged: 5,
+  specimen: 4,
 } as const;
 
 const MAX_PER_ROOM = 3;
@@ -57,7 +58,8 @@ export const distributeEnemyTypes = (): EnemyTypeValue[] => {
   const types: EnemyTypeValue[] = [];
   for (let i = 0; i < SPAWN_CONFIG.patrol; i++) types.push(EnemyType.PATROL);
   for (let i = 0; i < SPAWN_CONFIG.charge; i++) types.push(EnemyType.CHARGE);
-  for (let i = 0; i < SPAWN_CONFIG.flee; i++) types.push(EnemyType.FLEE);
+  for (let i = 0; i < SPAWN_CONFIG.ranged; i++) types.push(EnemyType.RANGED);
+  for (let i = 0; i < SPAWN_CONFIG.specimen; i++) types.push(EnemyType.SPECIMEN);
   return shuffle(types);
 };
 
@@ -91,12 +93,22 @@ export const spawnEnemies = (
     for (const position of positions) {
       const type = enemyTypes.shift();
       if (!type) break;
-      const enemy =
-        type === EnemyType.PATROL
-          ? createPatrolEnemy(position.x, position.y)
-          : type === EnemyType.CHARGE
-            ? createChargeEnemy(position.x, position.y)
-            : createFleeEnemy(position.x, position.y);
+      let enemy: Enemy;
+      switch (type) {
+        case EnemyType.PATROL:
+          enemy = createPatrolEnemy(position.x, position.y);
+          break;
+        case EnemyType.CHARGE:
+          enemy = createChargeEnemy(position.x, position.y);
+          break;
+        case EnemyType.RANGED:
+          enemy = createRangedEnemy(position.x, position.y);
+          break;
+        case EnemyType.SPECIMEN:
+        default:
+          enemy = createSpecimenEnemy(position.x, position.y);
+          break;
+      }
       enemies.push(enemy);
       usedPositions.push(position);
     }
