@@ -8,6 +8,7 @@ import mazeHorrorCardBg from '../assets/images/maze_horror_card_bg.webp';
 import deepSeaShooterCardBg from '../assets/images/deep_sea_shooter_card_bg.webp';
 import nonBrakeDescentCardBg from '../assets/images/non_brake_descent_card_bg.webp';
 import ipneCardBg from '../assets/images/ipne_card_bg.webp';
+import agileQuizSugorokuCardBg from '../assets/images/agile_quiz_sugoroku_card_bg.webp';
 import {
   PageContainer,
   HeroSection,
@@ -261,6 +262,36 @@ const GameListPage: React.FC = () => {
               シンプルな迷路脱出ゲーム。
               ゴールを目指して迷宮を探索し、脱出を目指せ。
               キーボードまたはタッチ操作に対応。
+            </GameDescription>
+            <PlayButton aria-hidden="true" tabIndex={-1}>
+              Play Now <span>→</span>
+            </PlayButton>
+          </CardContent>
+        </GameCardContainer>
+
+        <GameCardContainer
+          onClick={() => navigate('/agile-quiz-sugoroku')}
+          role="button"
+          aria-label="Agile Quiz Sugoroku ゲームをプレイする"
+          tabIndex={0}
+          onKeyDown={e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              navigate('/agile-quiz-sugoroku');
+            }
+          }}
+        >
+          <CardImageArea
+            $bgImage={agileQuizSugorokuCardBg}
+            role="img"
+            aria-label="Agile Quiz Sugorokuのゲーム画面プレビュー"
+          />
+          <CardContent>
+            <CardTitle>Agile Quiz Sugoroku</CardTitle>
+            <GameDescription>
+              アジャイル・スクラム学習クイズゲーム。
+              3スプリントを走破し、エンジニアタイプを診断。
+              技術的負債が溜まると緊急対応イベントが発生！
             </GameDescription>
             <PlayButton aria-hidden="true" tabIndex={-1}>
               Play Now <span>→</span>
