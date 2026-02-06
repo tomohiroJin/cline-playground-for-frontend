@@ -11,6 +11,9 @@
 - Falldown Shooter（落下型シューティング）
 - Labyrinth of Shadows（迷宮ホラー）
 - Deep Sea Interceptor（縦スクロールシューティング）
+- Non-Brake Descent（ハイスピード下り坂アクション）
+- IPNE（シンプルな迷路脱出ゲーム）
+- Agile Quiz Sugoroku（アジャイル・スクラム学習クイズ）
 
 ## 主な機能
 
@@ -24,11 +27,13 @@
 ## 技術スタック
 
 - **言語**: TypeScript
-- **フレームワーク**: React
-- **スタイリング**: styled-components
-- **状態管理**: Jotai
-- **ルーティング**: React Router
-- **テスト**: Jest
+- **フレームワーク**: React 19.0.0
+- **ルーティング**: React Router 7.3.0
+- **スタイリング**: styled-components 6.1.16
+- **状態管理**: Jotai 2.12.2
+- **オーディオ**: Tone.js 15.1.22
+- **ビルドツール**: Webpack 5.98.0
+- **テスト**: Jest 30.2.0
 
 ## セットアップ
 
@@ -36,7 +41,7 @@
 # 依存パッケージをインストール
 npm install
 
-# 開発サーバーを起動
+# 開発サーバーを起動（http://localhost:3000）
 npm start
 
 # 本番ビルド
@@ -65,9 +70,12 @@ src/
   │   ├── atoms/
   │   ├── molecules/
   │   └── organisms/
+  ├── features/                  # ゲームごとのロジック実装
+  ├── hooks/                     # カスタムフック
   ├── pages/                     # 各ゲームページ
-  ├── styles/                    # GlobalStyle など共通スタイル
   ├── store/                     # Jotai アトム
+  ├── styles/                    # GlobalStyle など共通スタイル
+  ├── types/                     # TypeScript 型定義
   ├── utils/                     # ストレージ・共有などのユーティリティ
   ├── App.tsx                    # ルート
   └── index.tsx                  # エントリーポイント
@@ -77,8 +85,8 @@ src/
 
 ### スタイル注入（styled-components）に関する注意
 
-本番ビルドでは `styled-components` が CSSOM（`insertRule`）でスタイルを注入します。  
-このとき `createGlobalStyle` 内に `@import` があると注入に失敗し、`npm run preview` など本番相当でスタイルが空になることがあります。  
+本番ビルドでは `styled-components` が CSSOM（`insertRule`）でスタイルを注入します。
+このとき `createGlobalStyle` 内に `@import` があると注入に失敗し、`npm run preview` など本番相当でスタイルが空になることがあります。
 そのため、フォント読み込みは `public/index.html` の `<link rel="stylesheet">` で行い、`createGlobalStyle` には `@import` を書かない方針とします。
 
 ## ライセンス

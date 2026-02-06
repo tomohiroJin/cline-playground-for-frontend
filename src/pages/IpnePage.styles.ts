@@ -1278,3 +1278,91 @@ export const ClassImage = styled.img`
     height: 60px;
   }
 `;
+
+// ===== レベルアップポイント制UI =====
+
+// 未割り振りポイントバッジ
+export const PendingPointsBadge = styled.button<{ $hasPoints: boolean }>`
+  position: absolute;
+  top: 8.5rem;
+  left: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: ${props => props.$hasPoints
+    ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.3), rgba(245, 158, 11, 0.3))'
+    : 'rgba(0, 0, 0, 0.5)'};
+  border: 2px solid ${props => props.$hasPoints ? '#fbbf24' : 'rgba(255, 255, 255, 0.2)'};
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  cursor: ${props => props.$hasPoints ? 'pointer' : 'default'};
+  z-index: 20;
+  transition: all 0.3s ease;
+  animation: ${props => props.$hasPoints ? css`${pulse} 2s ease-in-out infinite` : 'none'};
+
+  &:hover {
+    ${props => props.$hasPoints && `
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.4), rgba(245, 158, 11, 0.4));
+      transform: scale(1.05);
+    `}
+  }
+
+  &:active {
+    ${props => props.$hasPoints && `
+      transform: scale(0.98);
+    `}
+  }
+
+  @media (max-width: 480px) {
+    top: 7.5rem;
+    padding: 0.375rem 0.5rem;
+    gap: 0.375rem;
+  }
+`;
+
+// 未割り振りポイント数表示
+export const PendingPointsCount = styled.span<{ $hasPoints: boolean }>`
+  font-size: 0.875rem;
+  font-weight: bold;
+  color: ${props => props.$hasPoints ? '#fbbf24' : '#6b7280'};
+
+  @media (max-width: 480px) {
+    font-size: 0.75rem;
+  }
+`;
+
+// 強化ボタンテキスト
+export const EnhanceButtonText = styled.span<{ $hasPoints: boolean }>`
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: ${props => props.$hasPoints ? '#fbbf24' : '#6b7280'};
+
+  @media (max-width: 480px) {
+    font-size: 0.65rem;
+  }
+`;
+
+// レベルアップオーバーレイの閉じるボタン
+export const LevelUpCloseButton = styled.button`
+  margin-top: 1rem;
+  padding: 0.75rem 2rem;
+  background: rgba(107, 114, 128, 0.3);
+  border: 1px solid rgba(107, 114, 128, 0.5);
+  border-radius: 0.5rem;
+  color: #9ca3af;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(107, 114, 128, 0.4);
+    color: white;
+  }
+`;
+
+// 残りポイント表示
+export const RemainingPointsText = styled.p`
+  color: #fbbf24;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+`;
