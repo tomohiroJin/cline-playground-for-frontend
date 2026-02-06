@@ -44,9 +44,12 @@ export function useCountdown(
             clearInterval(intervalRef.current);
             intervalRef.current = null;
           }
-          if (callbackRef.current) {
-            callbackRef.current();
-          }
+          // コールバックはsetTimeの外で呼び出す（ステート更新中のステート更新を避ける）
+          setTimeout(() => {
+            if (callbackRef.current) {
+              callbackRef.current();
+            }
+          }, 0);
           return 0;
         }
         const next = prev - 1;
