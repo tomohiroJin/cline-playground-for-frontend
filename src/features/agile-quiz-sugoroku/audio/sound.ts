@@ -131,7 +131,7 @@ export function playSfxIncorrect(): void {
  */
 export function playSfxTick(): void {
   if (tickSynth) {
-    tickSynth.triggerAttackRelease('A5', '32n');
+    tickSynth.triggerAttackRelease('A5', '32n', Tone.now());
   }
 }
 

@@ -25,17 +25,28 @@ export function useCountdown(
   const [time, setTime] = useState(limit);
   const intervalRef = useRef<number | null>(null);
   const callbackRef = useRef(onExpire);
+  const prevTimeRef = useRef(limit);
 
   // コールバックを常に最新に保つ
   useEffect(() => {
     callbackRef.current = onExpire;
   }, [onExpire]);
 
+  // 残り5秒以下でティック音を再生（setTime外で副作用を実行）
+  useEffect(() => {
+    // タイマーが減少した時のみ（リセット時は鳴らさない）
+    if (time < prevTimeRef.current && time <= 5 && time > 0) {
+      playSfxTick();
+    }
+    prevTimeRef.current = time;
+  }, [time]);
+
   const start = useCallback(() => {
     if (intervalRef.current !== null) {
       clearInterval(intervalRef.current);
     }
     setTime(limit);
+    prevTimeRef.current = limit;
 
     intervalRef.current = window.setInterval(() => {
       setTime((prev) => {
@@ -52,12 +63,7 @@ export function useCountdown(
           }, 0);
           return 0;
         }
-        const next = prev - 1;
-        // 残り5秒以下でティック音
-        if (next <= 5 && next > 0) {
-          playSfxTick();
-        }
-        return next;
+        return prev - 1;
       });
     }, 1000);
   }, [limit]);
