@@ -72,6 +72,7 @@ import {
   CLASS_CONFIGS,
   LEVEL_UP_CHOICES,
   KILL_COUNT_TABLE,
+  MAX_LEVEL,
   canSeeTrap,
   canSeeSpecialWall,
   getTrapAlpha,
@@ -1499,6 +1500,7 @@ const IpnePage: React.FC = () => {
   const roomsRef = useRef<Room[]>([]);
   const trapsRef = useRef<Trap[]>(traps);
   const wallsRef = useRef<Wall[]>(walls);
+  const pendingLevelPointsRef = useRef<number>(pendingLevelPoints);
 
   useEffect(() => {
     mapRef.current = map;
@@ -1523,6 +1525,10 @@ const IpnePage: React.FC = () => {
   useEffect(() => {
     wallsRef.current = walls;
   }, [walls]);
+
+  useEffect(() => {
+    pendingLevelPointsRef.current = pendingLevelPoints;
+  }, [pendingLevelPoints]);
 
   const setupGameState = useCallback((newMap: GameMap, rooms: Room[], playerClass: PlayerClassValue) => {
     const startPos = findStartPosition(newMap);
@@ -1872,12 +1878,22 @@ const IpnePage: React.FC = () => {
       }
 
       // 撃破数だけインクリメント
+      // 実効レベル = 現在レベル + 未使用ポイント（ポイント割り振るまでレベルアップしない）
+      let addedPointsInLoop = 0;
       for (let i = 0; i < killedEnemies.length; i++) {
         const killResult = incrementKillCount(updatedPlayer);
         updatedPlayer = killResult.player;
-        if (killResult.shouldLevelUp) {
-          // ポイント制: ポイントを加算（即座に表示しない）
+
+        // 実効レベル = 現在レベル + 既存の未使用ポイント + このループ内で追加したポイント
+        const effectiveLevel = updatedPlayer.level + pendingLevelPointsRef.current + addedPointsInLoop;
+
+        // レベル上限（10）に達している場合はレベルアップしない
+        if (effectiveLevel >= MAX_LEVEL) continue;
+
+        // 実効レベルでレベルアップ判定
+        if (shouldLevelUp(effectiveLevel, updatedPlayer.killCount)) {
           setPendingLevelPoints(prev => prev + 1);
+          addedPointsInLoop++;
           // MVP5: レベルアップ音
           playLevelUpSound();
         }
@@ -2051,7 +2067,9 @@ const IpnePage: React.FC = () => {
       }
 
       // MVP3: アイテムによる即レベルアップ（ポイント制対応）
-      if (triggerLevelUp) {
+      // レベル上限チェック: 実効レベル = 現在レベル + 未使用ポイント
+      const effectiveLevel = nextPlayer.level + pendingLevelPointsRef.current;
+      if (triggerLevelUp && effectiveLevel < MAX_LEVEL) {
         setPendingLevelPoints(prev => prev + 1);
         // MVP5: レベルアップ音
         playLevelUpSound();
