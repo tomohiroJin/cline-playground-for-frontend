@@ -72,6 +72,7 @@ import {
   CLASS_CONFIGS,
   LEVEL_UP_CHOICES,
   KILL_COUNT_TABLE,
+  MAX_LEVEL,
   canSeeTrap,
   canSeeSpecialWall,
   getTrapAlpha,
@@ -185,6 +186,12 @@ import {
   KeyIcon,
   KeyRequiredMessage,
   ClassImage,
+  // レベルアップポイント制UI
+  PendingPointsBadge,
+  PendingPointsCount,
+  EnhanceButtonText,
+  LevelUpCloseButton,
+  RemainingPointsText,
 } from './IpnePage.styles';
 import titleBg from '../assets/images/ipne_title_bg.webp';
 import titleBgMobile from '../assets/images/ipne_title_bg_mobile.webp';
@@ -464,12 +471,14 @@ const ClassSelectScreen: React.FC<{
 };
 
 /**
- * レベルアップオーバーレイコンポーネント（MVP3）
+ * レベルアップオーバーレイコンポーネント（MVP3、ポイント制対応）
  */
 const LevelUpOverlayComponent: React.FC<{
   player: Player;
+  pendingPoints: number;
   onChoose: (stat: StatTypeValue) => void;
-}> = ({ player, onChoose }) => {
+  onClose: () => void;
+}> = ({ player, pendingPoints, onChoose, onClose }) => {
   const choices = LEVEL_UP_CHOICES.map(choice => ({
     ...choice,
     canChoose: canChooseStat(player.stats, choice.stat),
@@ -480,6 +489,9 @@ const LevelUpOverlayComponent: React.FC<{
     <LevelUpOverlay>
       <LevelUpTitle>🎉 レベルアップ！</LevelUpTitle>
       <LevelUpSubtitle>強化する能力を選んでください</LevelUpSubtitle>
+      {pendingPoints > 1 && (
+        <RemainingPointsText>残りポイント: {pendingPoints}</RemainingPointsText>
+      )}
       <LevelUpChoicesContainer>
         {choices.map(choice => (
           <LevelUpChoice
@@ -496,6 +508,7 @@ const LevelUpOverlayComponent: React.FC<{
           </LevelUpChoice>
         ))}
       </LevelUpChoicesContainer>
+      <LevelUpCloseButton onClick={onClose}>後で選ぶ</LevelUpCloseButton>
     </LevelUpOverlay>
   );
 };
@@ -711,6 +724,9 @@ const GameScreen: React.FC<{
   onHelpToggle: () => void;
   // MVP6追加
   showKeyRequiredMessage: boolean;
+  // レベルアップポイント制
+  pendingLevelPoints: number;
+  onOpenLevelUpModal: () => void;
 }> = ({
   map,
   player,
@@ -734,6 +750,9 @@ const GameScreen: React.FC<{
   onHelpToggle,
   // MVP6追加
   showKeyRequiredMessage,
+  // レベルアップポイント制
+  pendingLevelPoints,
+  onOpenLevelUpModal,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const movementStateRef = useRef<MovementState>(INITIAL_MOVEMENT_STATE);
@@ -1327,6 +1346,18 @@ const GameScreen: React.FC<{
           <StatValue>{player.killCount}</StatValue>
         </StatRow>
       </StatsDisplay>
+      <PendingPointsBadge
+        $hasPoints={pendingLevelPoints > 0}
+        onClick={onOpenLevelUpModal}
+        aria-label={pendingLevelPoints > 0 ? `未割り振りポイント: ${pendingLevelPoints}` : '未割り振りポイントなし'}
+      >
+        <PendingPointsCount $hasPoints={pendingLevelPoints > 0}>
+          ★ {pendingLevelPoints}
+        </PendingPointsCount>
+        <EnhanceButtonText $hasPoints={pendingLevelPoints > 0}>
+          強化
+        </EnhanceButtonText>
+      </PendingPointsBadge>
       <KeyIndicator $hasKey={player.hasKey} aria-label={player.hasKey ? '鍵を所持' : '鍵未所持'}>
         <KeyIcon $hasKey={player.hasKey}>🔑</KeyIcon>
       </KeyIndicator>
@@ -1443,7 +1474,9 @@ const IpnePage: React.FC = () => {
   const [selectedClass, setSelectedClass] = useState<PlayerClassValue>(PlayerClass.WARRIOR);
   const [traps, setTraps] = useState<Trap[]>([]);
   const [walls, setWalls] = useState<Wall[]>([]);
-  const [isLevelUpPending, setIsLevelUpPending] = useState(false);
+  // レベルアップポイント制
+  const [pendingLevelPoints, setPendingLevelPoints] = useState(0);
+  const [showLevelUpModal, setShowLevelUpModal] = useState(false);
 
   // MVP4追加
   const [timer, setTimer] = useState<GameTimer>(() => createTimer());
@@ -1467,6 +1500,7 @@ const IpnePage: React.FC = () => {
   const roomsRef = useRef<Room[]>([]);
   const trapsRef = useRef<Trap[]>(traps);
   const wallsRef = useRef<Wall[]>(walls);
+  const pendingLevelPointsRef = useRef<number>(pendingLevelPoints);
 
   useEffect(() => {
     mapRef.current = map;
@@ -1492,6 +1526,10 @@ const IpnePage: React.FC = () => {
     wallsRef.current = walls;
   }, [walls]);
 
+  useEffect(() => {
+    pendingLevelPointsRef.current = pendingLevelPoints;
+  }, [pendingLevelPoints]);
+
   const setupGameState = useCallback((newMap: GameMap, rooms: Room[], playerClass: PlayerClassValue) => {
     const startPos = findStartPosition(newMap);
     const goal = findGoalPosition(newMap);
@@ -1506,7 +1544,9 @@ const IpnePage: React.FC = () => {
     setPlayer(createdPlayer);
     playerRef.current = createdPlayer;
     setIsGameOver(false);
-    setIsLevelUpPending(false);
+    // レベルアップポイント制のリセット
+    setPendingLevelPoints(0);
+    setShowLevelUpModal(false);
     setCombatState({ lastAttackAt: 0, lastDamageAt: 0 });
     setAttackEffect(undefined);
 
@@ -1582,13 +1622,32 @@ const IpnePage: React.FC = () => {
     setIsGameOver(false);
   }, []);
 
-  // MVP3: レベルアップ選択
+  // MVP3: レベルアップ選択（ポイント制対応）
   const handleLevelUpChoice = useCallback((stat: StatTypeValue) => {
     const leveledPlayer = processLevelUp(player, stat);
     setPlayer(leveledPlayer);
     playerRef.current = leveledPlayer;
-    setIsLevelUpPending(false);
+    setPendingLevelPoints(prev => {
+      const newPoints = prev - 1;
+      // ポイントが0になったら自動で閉じる
+      if (newPoints <= 0) {
+        setShowLevelUpModal(false);
+      }
+      return newPoints;
+    });
   }, [player]);
+
+  // レベルアップ画面を開く
+  const handleOpenLevelUpModal = useCallback(() => {
+    if (pendingLevelPoints > 0) {
+      setShowLevelUpModal(true);
+    }
+  }, [pendingLevelPoints]);
+
+  // レベルアップ画面を閉じる
+  const handleCloseLevelUpModal = useCallback(() => {
+    setShowLevelUpModal(false);
+  }, []);
 
   // MVP4: ヘルプ表示トグル
   const handleHelpToggle = useCallback(() => {
@@ -1769,7 +1828,8 @@ const IpnePage: React.FC = () => {
   );
 
   const handleAttack = useCallback(() => {
-    if (isGameOver || isLevelUpPending) return;
+    // レベルアップモーダル表示中は攻撃不可（ポイントがあっても閉じていれば攻撃可能）
+    if (isGameOver || showLevelUpModal) return;
     const currentTime = Date.now();
     const beforeEnemies = enemiesRef.current;
     const currentWalls = wallsRef.current;
@@ -1818,11 +1878,22 @@ const IpnePage: React.FC = () => {
       }
 
       // 撃破数だけインクリメント
+      // 実効レベル = 現在レベル + 未使用ポイント（ポイント割り振るまでレベルアップしない）
+      let addedPointsInLoop = 0;
       for (let i = 0; i < killedEnemies.length; i++) {
         const killResult = incrementKillCount(updatedPlayer);
         updatedPlayer = killResult.player;
-        if (killResult.shouldLevelUp && !isLevelUpPending) {
-          setIsLevelUpPending(true);
+
+        // 実効レベル = 現在レベル + 既存の未使用ポイント + このループ内で追加したポイント
+        const effectiveLevel = updatedPlayer.level + pendingLevelPointsRef.current + addedPointsInLoop;
+
+        // レベル上限（10）に達している場合はレベルアップしない
+        if (effectiveLevel >= MAX_LEVEL) continue;
+
+        // 実効レベルでレベルアップ判定
+        if (shouldLevelUp(effectiveLevel, updatedPlayer.killCount)) {
+          setPendingLevelPoints(prev => prev + 1);
+          addedPointsInLoop++;
           // MVP5: レベルアップ音
           playLevelUpSound();
         }
@@ -1835,7 +1906,7 @@ const IpnePage: React.FC = () => {
     enemiesRef.current = survivingEnemies;
     setItems(updatedItems);
     itemsRef.current = updatedItems;
-  }, [isGameOver, isLevelUpPending]);
+  }, [isGameOver, showLevelUpModal]);
 
   // マップ表示切替ハンドラー（小窓 → 全画面 → 非表示 → 小窓）
   const handleMapToggle = useCallback(() => {
@@ -1995,9 +2066,11 @@ const IpnePage: React.FC = () => {
         trapsRef.current = currentTraps;
       }
 
-      // MVP3: アイテムによる即レベルアップまたは通常レベルアップ
-      if (triggerLevelUp && !isLevelUpPending) {
-        setIsLevelUpPending(true);
+      // MVP3: アイテムによる即レベルアップ（ポイント制対応）
+      // レベル上限チェック: 実効レベル = 現在レベル + 未使用ポイント
+      const effectiveLevel = nextPlayer.level + pendingLevelPointsRef.current;
+      if (triggerLevelUp && effectiveLevel < MAX_LEVEL) {
+        setPendingLevelPoints(prev => prev + 1);
         // MVP5: レベルアップ音
         playLevelUpSound();
       }
@@ -2065,9 +2138,16 @@ const IpnePage: React.FC = () => {
             showHelp={showHelp}
             onHelpToggle={handleHelpToggle}
             showKeyRequiredMessage={showKeyRequiredMessage}
+            pendingLevelPoints={pendingLevelPoints}
+            onOpenLevelUpModal={handleOpenLevelUpModal}
           />
-          {isLevelUpPending && (
-            <LevelUpOverlayComponent player={player} onChoose={handleLevelUpChoice} />
+          {showLevelUpModal && pendingLevelPoints > 0 && (
+            <LevelUpOverlayComponent
+              player={player}
+              pendingPoints={pendingLevelPoints}
+              onChoose={handleLevelUpChoice}
+              onClose={handleCloseLevelUpModal}
+            />
           )}
         </>
       )}
