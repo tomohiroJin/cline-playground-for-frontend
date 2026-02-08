@@ -46,11 +46,11 @@
 
 ## Phase 5: ゲームプレイ画面
 
-- [ ] `components/GameHud.tsx` 作成 - スコア/ステージ/サイクル/コンボ/シールド表示
-- [ ] `components/LaneGrid.tsx` 作成 - 3レーン×8セグメントのグリッド表示（倍率/予告/障害/安全表示）
-- [ ] `components/GameScreen.tsx` 作成 - ゲーム画面統合（HUD + レーン + キャラ + エモーション）
-- [ ] `components/PerkSelectScreen.tsx` 作成 - ステージ間パーク選択（3〜4択）
-- [ ] `components/ResultScreen.tsx` 作成 - リザルト（ランク/統計/PT獲得）
+- [x] `components/GameHud.tsx` 作成 - スコア/ステージ/サイクル/コンボ/シールド表示
+- [x] `components/LaneGrid.tsx` 作成 - 3レーン×8セグメントのグリッド表示（倍率/予告/障害/安全表示）
+- [x] `components/GameScreen.tsx` 作成 - ゲーム画面統合（HUD + レーン + キャラ + エモーション）
+- [x] `components/PerkSelectScreen.tsx` 作成 - ステージ間パーク選択（3〜4択）
+- [x] `components/ResultScreen.tsx` 作成 - リザルト（ランク/統計/PT獲得）
 
 ## Phase 6: 統合・仕上げ
 
@@ -74,4 +74,4 @@
 
 ## 完了状況
 
-**全タスク**: 32/43
+**全タスク**: 37/43
