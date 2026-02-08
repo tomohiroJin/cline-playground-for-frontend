@@ -23,10 +23,10 @@
 
 ## Phase 3: メニュー画面群
 
-- [ ] `components/TitleScreen.tsx` 作成 - タイトル画面（GAME START/PLAY STYLE/UNLOCK/HELP メニュー）
-- [ ] `components/StyleListScreen.tsx` 作成 - プレイスタイル選択/装備画面
-- [ ] `components/UnlockShopScreen.tsx` 作成 - PTでアンロック購入するショップ画面
-- [ ] `components/HelpScreen.tsx` 作成 - カテゴリ別ヘルプ表示画面
+- [x] `components/TitleScreen.tsx` 作成 - タイトル画面（GAME START/PLAY STYLE/UNLOCK/HELP メニュー）
+- [x] `components/StyleListScreen.tsx` 作成 - プレイスタイル選択/装備画面
+- [x] `components/UnlockShopScreen.tsx` 作成 - PTでアンロック購入するショップ画面
+- [x] `components/HelpScreen.tsx` 作成 - カテゴリ別ヘルプ表示画面
 
 ## Phase 4: ゲームエンジン
 
@@ -74,4 +74,4 @@
 
 ## 完了状況
 
-**全タスク**: 15/43
+**全タスク**: 19/43
