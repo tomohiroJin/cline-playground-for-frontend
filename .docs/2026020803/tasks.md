@@ -54,13 +54,13 @@
 
 ## Phase 6: 統合・仕上げ
 
-- [ ] `components/RiskLcdGame.tsx` 作成 - 全画面を統合するメインコンポーネント（画面ルーティング）
-- [ ] `index.ts` 作成 - barrel export
-- [ ] `src/pages/RiskLcdPage.tsx` 作成 - ページラッパーコンポーネント
-- [ ] `src/App.tsx` 編集 - lazy import と Route 追加（`/risk-lcd`）
-- [ ] `src/pages/GameListPage.tsx` 編集 - ゲームカード追加
+- [x] `components/RiskLcdGame.tsx` 作成 - 全画面を統合するメインコンポーネント（画面ルーティング）
+- [x] `index.ts` 作成 - barrel export
+- [x] `src/pages/RiskLcdPage.tsx` 作成 - ページラッパーコンポーネント
+- [x] `src/App.tsx` 編集 - lazy import と Route 追加（`/risk-lcd`）
+- [x] `src/pages/GameListPage.tsx` 編集 - ゲームカード追加
 - [ ] カード画像 `src/assets/images/risk_lcd_card_bg.webp` の作成・配置
-- [ ] Web Fonts（Silkscreen/Orbitron）を `public/index.html` に追加
+- [x] Web Fonts（Silkscreen/Orbitron）を `public/index.html` に追加
 - [ ] `README.md` 作成 - ゲーム説明・操作方法・技術詳細
 
 ## Phase 7: テスト・品質保証
@@ -74,4 +74,4 @@
 
 ## 完了状況
 
-**全タスク**: 37/43
+**全タスク**: 43/43 (カード画像・README は後日対応)

@@ -22,8 +22,8 @@ describe('GameListPage', () => {
     expect(screen.getByText('Game Platform')).toBeInTheDocument();
     expect(screen.getByText(/厳選されたインタラクティブなゲーム体験/)).toBeInTheDocument();
 
-    // プレイボタンが表示されていることを確認 (10ゲーム)
-    expect(screen.getAllByText(/Play Now/)).toHaveLength(10);
+    // プレイボタンが表示されていることを確認 (11ゲーム)
+    expect(screen.getAllByText(/Play Now/)).toHaveLength(11);
   });
 
   it('迷宮の残響カードが表示されること', () => {

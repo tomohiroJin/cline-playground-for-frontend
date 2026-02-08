@@ -329,6 +329,35 @@ const GameListPage: React.FC = () => {
             </PlayButton>
           </CardContent>
         </GameCardContainer>
+        <GameCardContainer
+          onClick={() => navigate('/risk-lcd')}
+          role="button"
+          aria-label="RISK LCD ゲームをプレイする"
+          tabIndex={0}
+          onKeyDown={e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              navigate('/risk-lcd');
+            }
+          }}
+        >
+          <CardImageArea
+            style={{ background: 'linear-gradient(135deg, #94a770 0%, #6b7a4f 100%)' }}
+            role="img"
+            aria-label="RISK LCDのゲーム画面プレビュー"
+          />
+          <CardContent>
+            <CardTitle>RISK LCD</CardTitle>
+            <GameDescription>
+              液晶ゲーム機風の3レーン回避アクション×ローグライト。
+              予告を読み、パークを重ねてビルドを構築。
+              リスクとリターンのバランスで高スコアを狙え。
+            </GameDescription>
+            <PlayButton aria-hidden="true" tabIndex={-1}>
+              Play Now <span>→</span>
+            </PlayButton>
+          </CardContent>
+        </GameCardContainer>
       </BentoGrid>
     </PageContainer>
   );
