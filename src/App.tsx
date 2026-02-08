@@ -23,6 +23,9 @@ const IpnePage = lazy(
 const AgileQuizSugorokuPage = lazy(
   () => import(/* webpackChunkName: "AgileQuizSugorokuPage" */ './pages/AgileQuizSugorokuPage')
 );
+const LabyrinthEchoPage = lazy(
+  () => import(/* webpackChunkName: "LabyrinthEchoPage" */ './pages/LabyrinthEchoPage')
+);
 
 // アプリケーションのルートコンテナ
 const AppContainer = styled.div`
@@ -152,6 +155,7 @@ const App: React.FC = () => {
                 <Route path="/deep-sea-shooter" element={<DeepSeaShooterPage />} />
                 <Route path="/ipne" element={<IpnePage />} />
                 <Route path="/agile-quiz-sugoroku" element={<AgileQuizSugorokuPage />} />
+                <Route path="/labyrinth-echo" element={<LabyrinthEchoPage />} />
               </Routes>
             </main>
           </Suspense>
