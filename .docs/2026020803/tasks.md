@@ -13,13 +13,13 @@
 
 ## Phase 2: UI コンポーネント（静的表示）
 
-- [ ] `components/styles.ts` 作成 - LCD筐体/画面/ボタン/レーン等のstyled-components
-- [ ] `components/DeviceFrame.tsx` 作成 - ゲーム機筐体（ベゼル/ブランドロゴ/画面枠）
-- [ ] `components/ControlButtons.tsx` 作成 - LEFT/ACTION/RIGHT 3ボタンUI
-- [ ] `components/LcdScreen.tsx` 作成 - LCD画面コンテナ（スキャンライン/反射効果）
-- [ ] `components/ListPanel.tsx` 作成 - 共通リストパネル（スタイル/ショップ/ヘルプで共有）
-- [ ] `components/CharacterArt.tsx` 作成 - ASCIIアート表示コンポーネント
-- [ ] `components/EmotionPanel.tsx` 作成 - エモーションパネル表示コンポーネント
+- [x] `components/styles.ts` 作成 - LCD筐体/画面/ボタン/レーン等のstyled-components
+- [x] `components/DeviceFrame.tsx` 作成 - ゲーム機筐体（ベゼル/ブランドロゴ/画面枠）
+- [x] `components/ControlButtons.tsx` 作成 - LEFT/ACTION/RIGHT 3ボタンUI
+- [x] `components/LcdScreen.tsx` 作成 - LCD画面コンテナ（スキャンライン/反射効果）
+- [x] `components/ListPanel.tsx` 作成 - 共通リストパネル（スタイル/ショップ/ヘルプで共有）
+- [x] `components/CharacterArt.tsx` 作成 - ASCIIアート表示コンポーネント
+- [x] `components/EmotionPanel.tsx` 作成 - エモーションパネル表示コンポーネント
 
 ## Phase 3: メニュー画面群
 
@@ -74,4 +74,4 @@
 
 ## 完了状況
 
-**全タスク**: 8/43
+**全タスク**: 15/43
