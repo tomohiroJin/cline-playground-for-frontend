@@ -14,7 +14,6 @@ import {
   findTrickWalls,
   findSecretPassageWalls,
   findCorridorBlockWalls,
-  DEFAULT_PATTERN_LIMITS,
 } from '../gimmickPlacement';
 import { TileType, Room, TrapType, WallType, Position } from '../types';
 import { resetTrapIdCounter } from '../trap';
@@ -463,7 +462,7 @@ describe('gimmickPlacement', () => {
 
   describe('placeStrategicWalls', () => {
     test('戦略的配置が実行されること', () => {
-      const { grid, rooms } = createTestMazeResult();
+      const { grid } = createTestMazeResult();
       const start = { x: 2, y: 2 };
       const goal = { x: 7, y: 7 };
 
@@ -480,7 +479,7 @@ describe('gimmickPlacement', () => {
     });
 
     test('INVISIBLE壁が配置された後もゲームクリア可能であること', () => {
-      const { grid, rooms } = createTestMazeResult();
+      const { grid } = createTestMazeResult();
       const start = { x: 2, y: 2 };
       const goal = { x: 7, y: 7 };
 
@@ -494,7 +493,7 @@ describe('gimmickPlacement', () => {
         },
       };
 
-      const walls = placeStrategicWalls(grid, [start, goal], start, goal, config);
+      placeStrategicWalls(grid, [start, goal], start, goal, config);
 
       // INVISIBLE壁はブロッキングを避けるため、元のマップで到達可能性は変わらない
       // （INVISIBLEは床に配置されるが、hasAlternativeRouteでチェックされている）
@@ -502,7 +501,7 @@ describe('gimmickPlacement', () => {
     });
 
     test('パターン制限に従って配置されること', () => {
-      const { grid, rooms } = createTestMazeResult();
+      const { grid } = createTestMazeResult();
       const start = { x: 2, y: 2 };
       const goal = { x: 7, y: 7 };
 
@@ -698,7 +697,7 @@ describe('gimmickPlacement', () => {
 
     test('1マス壁でも正常に動作すること（後方互換性）', () => {
       // 従来の1マス壁のテストマップを使用
-      const { grid, rooms } = createTestMazeResult();
+      const { grid } = createTestMazeResult();
       const start = { x: 2, y: 2 };
       const goal = { x: 7, y: 7 };
 

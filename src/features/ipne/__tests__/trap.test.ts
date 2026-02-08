@@ -3,7 +3,6 @@
  */
 import {
   TRAP_CONFIGS,
-  createTrap,
   createDamageTrap,
   createSlowTrap,
   createTeleportTrap,
@@ -15,7 +14,7 @@ import {
   getRandomPassableTile,
 } from '../trap';
 import { TrapType, TrapState, Trap, TileType, GameMap } from '../types';
-import { createTestPlayer, createTestEnemy } from './testUtils';
+import { createTestPlayer } from './testUtils';
 
 describe('trap', () => {
   beforeEach(() => {

@@ -204,7 +204,6 @@ import { RatingValue, AudioSettings } from '../features/ipne/types';
 // MVP5 音声モジュール
 import {
   enableAudio,
-  isAudioInitialized,
   initializeAudioSettings,
   getAudioSettings,
   setMasterVolume,
@@ -281,8 +280,7 @@ const AudioSettingsComponent: React.FC<{
   onSeVolumeChange: (value: number) => void;
   onBgmVolumeChange: (value: number) => void;
   onToggleMute: () => void;
-  onClose: () => void;
-}> = ({ settings, onMasterVolumeChange, onSeVolumeChange, onBgmVolumeChange, onToggleMute, onClose }) => (
+}> = ({ settings, onMasterVolumeChange, onSeVolumeChange, onBgmVolumeChange, onToggleMute }) => (
   <AudioSettingsPanel onClick={e => e.stopPropagation()}>
     <AudioSettingsTitle>音声設定</AudioSettingsTitle>
 
@@ -368,7 +366,6 @@ const TitleScreen: React.FC<{
         onSeVolumeChange={onSeVolumeChange}
         onBgmVolumeChange={onBgmVolumeChange}
         onToggleMute={onToggleMute}
-        onClose={onAudioSettingsToggle}
       />
     )}
     <TitleContainer>
@@ -735,7 +732,7 @@ const GameScreen: React.FC<{
   const movementStateRef = useRef<MovementState>(INITIAL_MOVEMENT_STATE);
   const animationFrameRef = useRef<number | null>(null);
   const attackHoldRef = useRef(false);
-  const [renderTime, setRenderTime] = useState(Date.now());
+  const [renderTime, setRenderTime] = useState(0);
 
   // 点滅表現用の再描画トリガー
   useEffect(() => {
@@ -1517,7 +1514,7 @@ const IpnePage: React.FC = () => {
       isMapVisible: true,
       isFullScreen: false,
     });
-  }, []);
+  }, [setEnemies, setItems, setMap, setPendingLevelPoints, setPlayer, setTraps, setWalls]);
 
   // ゲーム初期化
   const initGame = useCallback((playerClass: PlayerClassValue) => {
@@ -1551,7 +1548,7 @@ const IpnePage: React.FC = () => {
     if (mapRef.current.length === 0) return;
     setupGameState(mapRef.current, roomsRef.current, selectedClass);
     setScreen(ScreenState.GAME);
-  }, [setupGameState, selectedClass]);
+  }, [setupGameState, selectedClass, mapRef]);
 
   const handleBackToTitle = useCallback(() => {
     setScreen(ScreenState.TITLE);
@@ -1570,7 +1567,7 @@ const IpnePage: React.FC = () => {
       }
       return newPoints;
     });
-  }, [player]);
+  }, [player, setPendingLevelPoints, setPlayer]);
 
   // レベルアップ画面を開く
   const handleOpenLevelUpModal = useCallback(() => {
@@ -1745,7 +1742,7 @@ const IpnePage: React.FC = () => {
         }
       }
     },
-    [player, map, isGameOver, timer, selectedClass]
+    [player, map, isGameOver, timer, selectedClass, enemiesRef, mapRef, setPlayer, setWalls, wallsRef]
   );
 
   const handleTurn = useCallback(
@@ -1753,7 +1750,7 @@ const IpnePage: React.FC = () => {
       if (isGameOver) return;
       setPlayer(prev => updatePlayerDirection(prev, direction));
     },
-    [isGameOver]
+    [isGameOver, setPlayer]
   );
 
   const handleAttack = useCallback(() => {
@@ -1831,7 +1828,21 @@ const IpnePage: React.FC = () => {
     setPlayer(updatedPlayer);
     setEnemies(survivingEnemies);
     setItems(updatedItems);
-  }, [isGameOver, showLevelUpModal]);
+  }, [
+    isGameOver,
+    showLevelUpModal,
+    enemiesRef,
+    itemsRef,
+    mapRef,
+    pendingLevelPointsRef,
+    playerRef,
+    setEnemies,
+    setItems,
+    setPendingLevelPoints,
+    setPlayer,
+    setWalls,
+    wallsRef,
+  ]);
 
   // マップ表示切替ハンドラー（小窓 → 全画面 → 非表示 → 小窓）
   const handleMapToggle = useCallback(() => {
@@ -1897,7 +1908,7 @@ const IpnePage: React.FC = () => {
         }
       }
     }
-  }, []);
+  }, [mapRef]);
 
   // 敵AI・接触・アイテム取得の更新ループ
   useEffect(() => {
@@ -1926,7 +1937,22 @@ const IpnePage: React.FC = () => {
     }, 200);
 
     return () => clearInterval(interval);
-  }, [screen, dispatchTickEffects]);
+  }, [
+    screen,
+    dispatchTickEffects,
+    enemiesRef,
+    itemsRef,
+    mapRef,
+    pendingLevelPointsRef,
+    playerRef,
+    setEnemies,
+    setItems,
+    setPendingLevelPoints,
+    setPlayer,
+    setTraps,
+    trapsRef,
+    wallsRef,
+  ]);
 
   // 画面に応じたコンテンツをレンダリング
   return (

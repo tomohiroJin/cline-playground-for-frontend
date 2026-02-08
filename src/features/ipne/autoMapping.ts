@@ -97,7 +97,9 @@ export function drawAutoMap(
   const mapHeight = map.length;
 
   // 描画領域の設定
-  let mapX: number, mapY: number, mapSize: number, tileSize: number;
+  let mapX: number;
+  let mapY: number;
+  let mapSize: number;
 
   if (isFullScreen) {
     // 全画面モード（画面中央、80%サイズ）
@@ -113,7 +115,7 @@ export function drawAutoMap(
     mapY = 10;
   }
 
-  tileSize = mapSize / Math.max(mapWidth, mapHeight);
+  const tileSize = mapSize / Math.max(mapWidth, mapHeight);
 
   // 半透明背景
   ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';

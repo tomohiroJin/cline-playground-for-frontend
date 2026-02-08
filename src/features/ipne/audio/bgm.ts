@@ -133,7 +133,7 @@ interface BgmState {
 }
 
 /** 現在の状態 */
-let bgmState: BgmState = {
+const bgmState: BgmState = {
   currentType: null,
   intervalId: undefined,
   isPlaying: false,
