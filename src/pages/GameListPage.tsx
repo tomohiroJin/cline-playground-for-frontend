@@ -10,6 +10,7 @@ import nonBrakeDescentCardBg from '../assets/images/non_brake_descent_card_bg.we
 import ipneCardBg from '../assets/images/ipne_card_bg.webp';
 import agileQuizSugorokuCardBg from '../assets/images/agile_quiz_sugoroku_card_bg.webp';
 import labyrinthEchoCardBg from '../assets/images/labyrinth_echo_card_bg.webp';
+import riskLcdCardBg from '../assets/images/risk_lcd_card_bg.webp';
 import {
   PageContainer,
   HeroSection,
@@ -342,7 +343,7 @@ const GameListPage: React.FC = () => {
           }}
         >
           <CardImageArea
-            style={{ background: 'linear-gradient(135deg, #94a770 0%, #6b7a4f 100%)' }}
+            $bgImage={riskLcdCardBg}
             role="img"
             aria-label="RISK LCDのゲーム画面プレビュー"
           />

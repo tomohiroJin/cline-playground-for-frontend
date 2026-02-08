@@ -59,9 +59,9 @@
 - [x] `src/pages/RiskLcdPage.tsx` 作成 - ページラッパーコンポーネント
 - [x] `src/App.tsx` 編集 - lazy import と Route 追加（`/risk-lcd`）
 - [x] `src/pages/GameListPage.tsx` 編集 - ゲームカード追加
-- [ ] カード画像 `src/assets/images/risk_lcd_card_bg.webp` の作成・配置
+- [x] カード画像 `src/assets/images/risk_lcd_card_bg.webp` の作成・配置
 - [x] Web Fonts（Silkscreen/Orbitron）を `public/index.html` に追加
-- [ ] `README.md` 作成 - ゲーム説明・操作方法・技術詳細
+- [x] `README.md` 作成 - ゲーム説明・操作方法・技術詳細
 
 ## Phase 7: テスト・品質保証
 
