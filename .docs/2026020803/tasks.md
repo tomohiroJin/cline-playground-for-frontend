@@ -65,11 +65,11 @@
 
 ## Phase 7: テスト・品質保証
 
-- [ ] `utils/game-logic.test.ts` - computeRank/comboMult/calcEffBf/mergeStyles のユニットテスト
-- [ ] `utils/random.test.ts` - Rand ユーティリティのユニットテスト
-- [ ] `hooks/useStore.test.ts` - localStorage 永続化のテスト
-- [ ] コンポーネントの基本レンダリングテスト（RiskLcdGame/TitleScreen/ResultScreen）
-- [ ] `npm run build` でビルドエラーがないことを確認
+- [x] `utils/game-logic.test.ts` - computeRank/comboMult/calcEffBf/mergeStyles のユニットテスト
+- [x] `utils/random.test.ts` - Rand ユーティリティのユニットテスト
+- [x] `hooks/useStore.test.ts` - localStorage 永続化のテスト
+- [x] コンポーネントの基本レンダリングテスト（RiskLcdGame/TitleScreen/ResultScreen）
+- [x] `npm run build` でビルドエラーがないことを確認
 - [ ] ブラウザでの動作確認（全画面遷移/ゲームプレイ/セーブ）
 
 ## 完了状況
