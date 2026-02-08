@@ -17,7 +17,7 @@ import {
   setTutorialStorageProvider,
   resetTutorialStorageProvider,
 } from '../tutorial';
-import { TutorialStepType } from '../types';
+import { TutorialStepType, TutorialStepTypeValue } from '../types';
 import { STORAGE_KEYS } from '../record';
 import { StorageProvider } from '../infrastructure/storage/StorageProvider';
 
@@ -194,7 +194,7 @@ describe('tutorial', () => {
     });
 
     test('存在しないIDの場合は-1を返すこと', () => {
-      expect(getTutorialStepIndex('invalid' as any)).toBe(-1);
+      expect(getTutorialStepIndex('invalid' as unknown as TutorialStepTypeValue)).toBe(-1);
     });
   });
 

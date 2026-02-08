@@ -3,7 +3,6 @@
  */
 import {
   KILL_COUNT_TABLE,
-  STAT_LIMITS,
   LEVEL_UP_CHOICES,
   getKillCountForLevel,
   getLevelFromKillCount,
