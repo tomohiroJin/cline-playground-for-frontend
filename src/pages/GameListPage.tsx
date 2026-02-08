@@ -9,6 +9,7 @@ import deepSeaShooterCardBg from '../assets/images/deep_sea_shooter_card_bg.webp
 import nonBrakeDescentCardBg from '../assets/images/non_brake_descent_card_bg.webp';
 import ipneCardBg from '../assets/images/ipne_card_bg.webp';
 import agileQuizSugorokuCardBg from '../assets/images/agile_quiz_sugoroku_card_bg.webp';
+import labyrinthEchoCardBg from '../assets/images/labyrinth_echo_card_bg.webp';
 import {
   PageContainer,
   HeroSection,
@@ -292,6 +293,36 @@ const GameListPage: React.FC = () => {
               アジャイル・スクラム学習クイズゲーム。
               3スプリントを走破し、エンジニアタイプを診断。
               技術的負債が溜まると緊急対応イベントが発生！
+            </GameDescription>
+            <PlayButton aria-hidden="true" tabIndex={-1}>
+              Play Now <span>→</span>
+            </PlayButton>
+          </CardContent>
+        </GameCardContainer>
+
+        <GameCardContainer
+          onClick={() => navigate('/labyrinth-echo')}
+          role="button"
+          aria-label="迷宮の残響 ゲームをプレイする"
+          tabIndex={0}
+          onKeyDown={e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              navigate('/labyrinth-echo');
+            }
+          }}
+        >
+          <CardImageArea
+            $bgImage={labyrinthEchoCardBg}
+            role="img"
+            aria-label="迷宮の残響のゲーム画面プレビュー"
+          />
+          <CardContent>
+            <CardTitle>迷宮の残響</CardTitle>
+            <GameDescription>
+              テキスト探索×判断×ローグライトRPG。
+              不確かな情報の中で選択を重ね、迷宮からの生還を目指せ。
+              周回で知見を継承し、深淵の攻略に挑む。
             </GameDescription>
             <PlayButton aria-hidden="true" tabIndex={-1}>
               Play Now <span>→</span>

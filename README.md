@@ -5,15 +5,18 @@
 
 ## 収録ゲーム
 
-- Picture Puzzle（絵合わせパズル）
-- Air Hockey（エアホッケー）
-- Racing Game（トップダウンレース）
-- Falldown Shooter（落下型シューティング）
-- Labyrinth of Shadows（迷宮ホラー）
-- Deep Sea Interceptor（縦スクロールシューティング）
-- Non-Brake Descent（ハイスピード下り坂アクション）
-- IPNE（シンプルな迷路脱出ゲーム）
-- Agile Quiz Sugoroku（アジャイル・スクラム学習クイズ）
+| ゲーム | ジャンル | 詳細 |
+|--------|----------|------|
+| Picture Puzzle | パズル | [README](src/features/picture-puzzle/README.md) |
+| Air Hockey | スポーツ | [README](src/features/air-hockey/README.md) |
+| Racing Game | レース | [README](src/features/racing-game/README.md) |
+| Falldown Shooter | シューティング | [README](src/features/falldown-shooter/README.md) |
+| Labyrinth of Shadows | ホラー迷路 | [README](src/features/labyrinth-of-shadows/README.md) |
+| Deep Sea Interceptor | シューティング | [README](src/features/deep-sea-interceptor/README.md) |
+| Non-Brake Descent | ランニングアクション | [README](src/features/non-brake-descent/README.md) |
+| IPNE | ローグライクRPG | [README](src/features/ipne/README.md) |
+| Agile Quiz Sugoroku | クイズ / 教育 | [README](src/features/agile-quiz-sugoroku/README.md) |
+| 迷宮の残響 | テキスト探索ローグライト | [README](src/features/labyrinth-echo/README.md) |
 
 ## 主な機能
 
