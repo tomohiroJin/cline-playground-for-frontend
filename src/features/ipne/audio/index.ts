@@ -57,4 +57,6 @@ export {
   getAudioSettings,
   resetAudioSettings,
   clearAudioSettings,
+  setAudioStorageProvider,
+  resetAudioStorageProvider,
 } from './audioSettings';

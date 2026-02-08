@@ -6,6 +6,7 @@
 
 import { TutorialState, TutorialStep, TutorialStepType, TutorialStepTypeValue } from './types';
 import { STORAGE_KEYS } from './record';
+import { StorageProvider, createBrowserStorageProvider } from './infrastructure/storage/StorageProvider';
 
 /** チュートリアルステップの定義 */
 export const TUTORIAL_STEPS: TutorialStep[] = [
@@ -47,6 +48,23 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   },
 ];
 
+let tutorial_storage_provider: StorageProvider = createBrowserStorageProvider();
+
+/**
+ * チュートリアルモジュールのストレージ依存を差し替える
+ * @param provider ストレージプロバイダ
+ */
+export function setTutorialStorageProvider(provider: StorageProvider): void {
+  tutorial_storage_provider = provider;
+}
+
+/**
+ * チュートリアルモジュールのストレージ依存をデフォルトに戻す
+ */
+export function resetTutorialStorageProvider(): void {
+  tutorial_storage_provider = createBrowserStorageProvider();
+}
+
 /**
  * チュートリアル状態を初期化する
  * @returns 初期状態のチュートリアル
@@ -65,7 +83,7 @@ export function initTutorial(): TutorialState {
  */
 export function isTutorialCompleted(): boolean {
   try {
-    return localStorage.getItem(STORAGE_KEYS.TUTORIAL_COMPLETED) === 'true';
+    return tutorial_storage_provider.getItem(STORAGE_KEYS.TUTORIAL_COMPLETED) === 'true';
   } catch {
     return false;
   }
@@ -76,7 +94,7 @@ export function isTutorialCompleted(): boolean {
  */
 export function saveTutorialCompleted(): void {
   try {
-    localStorage.setItem(STORAGE_KEYS.TUTORIAL_COMPLETED, 'true');
+    tutorial_storage_provider.setItem(STORAGE_KEYS.TUTORIAL_COMPLETED, 'true');
   } catch {
     console.warn('チュートリアル完了状態の保存に失敗しました');
   }

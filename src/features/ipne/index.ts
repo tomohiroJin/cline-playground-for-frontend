@@ -122,6 +122,8 @@ export {
   drawDebugPanel,
   drawCoordinateOverlay,
   DEFAULT_DEBUG_STATE,
+  setDebugBrowserEnvProvider,
+  resetDebugBrowserEnvProvider,
 } from './debug';
 export type { DebugState } from './debug';
 
@@ -175,6 +177,31 @@ export {
   calculateFleeDirection,
 } from './enemyAI';
 export type { EnemyUpdateResult } from './enemyAI';
+export { EnemyAiPolicyRegistry, buildDefaultEnemyAiPolicyRegistry } from './domain';
+export type { EnemyAiPolicy, EnemyAiUpdateContext } from './domain';
+
+// アプリケーション層
+export {
+  tickGameState,
+  TickDisplayEffect,
+  TickSoundEffect,
+  TickSaveEffect,
+  resolveKnockback,
+  resolvePlayerDamage,
+  resolveItemPickupEffects,
+} from './application';
+export type {
+  TickGameStateInput,
+  TickGameStateResult,
+  TickSoundEffectValue,
+  TickDisplayEffectValue,
+  TickSaveEffectValue,
+  GameTickEffect,
+  ItemPickupEffectEvent,
+} from './application';
+
+// プレゼンテーション層
+export { useSyncedState } from './presentation';
 
 // 戦闘
 export { COMBAT_CONFIG, playerAttack, getAttackTarget, processEnemyContact, isKnockbackComplete } from './combat';
@@ -309,6 +336,10 @@ export {
   clearRecords,
   getBestRecordForClass,
   getAllBestRecords,
+  setRecordStorageProvider,
+  resetRecordStorageProvider,
+  setRecordClockProvider,
+  resetRecordClockProvider,
 } from './record';
 
 // チュートリアル
@@ -325,6 +356,8 @@ export {
   shouldAdvanceTutorial,
   getTutorialStepIndex,
   getTutorialProgress,
+  setTutorialStorageProvider,
+  resetTutorialStorageProvider,
 } from './tutorial';
 
 // フィードバック
@@ -439,4 +472,19 @@ export {
   getAudioSettings,
   resetAudioSettings,
   clearAudioSettings,
+  setAudioStorageProvider,
+  resetAudioStorageProvider,
 } from './audio';
+
+// インフラ抽象
+export {
+  BROWSER_ENV_PROVIDER,
+  SYSTEM_CLOCK_PROVIDER,
+  MATH_RANDOM_PROVIDER,
+  NOOP_STORAGE_PROVIDER,
+  createBrowserStorageProvider,
+} from './infrastructure';
+export type { BrowserEnvProvider, ClockProvider, RandomProvider, StorageProvider } from './infrastructure';
+
+// 契約
+export { assertCondition, assertNumberInRange, assertIntegerInRange, assertUniquePositions } from './shared';

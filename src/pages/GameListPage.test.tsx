@@ -21,7 +21,7 @@ describe('GameListPage', () => {
     expect(screen.getByText('Game Platform')).toBeInTheDocument();
     expect(screen.getByText(/厳選されたインタラクティブなゲーム体験/)).toBeInTheDocument();
 
-    // プレイボタンが表示されていることを確認 (8ゲーム)
-    expect(screen.getAllByText(/Play Now/)).toHaveLength(8);
+    // プレイボタンが表示されていることを確認 (9ゲーム)
+    expect(screen.getAllByText(/Play Now/)).toHaveLength(9);
   });
 });
