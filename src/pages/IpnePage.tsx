@@ -46,27 +46,19 @@ import {
   DEFAULT_MOVEMENT_CONFIG,
   EnemyState,
   EnemyType,
-  ItemType,
   spawnEnemies,
   spawnItems,
-  updateEnemiesWithContact,
   playerAttack,
-  damagePlayer,
-  canPickupItem,
-  pickupItem,
   getEnemyAtPosition,
   COMBAT_CONFIG,
   updatePlayerDirection,
-  canMove,
   processEnemyDeath,
-  createKeyItem,
   // MVP3追加
   PlayerClass,
   PlayerClassValue,
   Trap,
   Wall,
   TrapType,
-  TrapState,
   WallType,
   WallState,
   CLASS_CONFIGS,
@@ -78,23 +70,13 @@ import {
   getTrapAlpha,
   getWallAlpha,
   shouldLevelUp,
-  applyLevelUpChoice,
   canChooseStat,
   getNextKillsRequired,
   placeGimmicks,
-  triggerTrap,
-  canTriggerTrap,
-  getTrapAt,
-  damageWall,
-  isWallPassable,
   getWallAt,
   revealWall,
   incrementKillCount,
   processLevelUp,
-  getEffectiveMoveSpeed,
-  applySlowEffect,
-  isSlowed,
-  StatType,
   StatTypeValue,
 } from '../features/ipne';
 import {
@@ -109,9 +91,6 @@ import {
   DPadContainer,
   DPadButton,
   ControlsContainer,
-  ClearContainer,
-  ClearTitle,
-  ClearMessage,
   RetryButton,
   BackToTitleButton,
   MapToggleButton,
@@ -119,7 +98,6 @@ import {
   HPBarFill,
   HPBarText,
   AttackButton,
-  GameOverContainer,
   GameOverTitle,
   GameOverButton,
   DamageOverlay,
@@ -128,7 +106,6 @@ import {
   ClassSelectTitle,
   ClassCardsContainer,
   ClassCard,
-  ClassIcon,
   ClassName,
   ClassDescription,
   ClassStats,
@@ -212,8 +189,6 @@ import {
 import {
   createRecord,
   saveRecord,
-  loadBestRecords,
-  BestRecords,
 } from '../features/ipne/record';
 import {
   calculateRating,
@@ -252,6 +227,8 @@ import {
   playHealSound,
   playTrapTriggeredSound,
 } from '../features/ipne/audio';
+import { useSyncedState } from '../features/ipne/presentation';
+import { resolvePlayerDamage, tickGameState, TickDisplayEffect, TickSoundEffect, GameTickEffect } from '../features/ipne/application';
 
 // 描画設定
 const CONFIG = {
@@ -1454,10 +1431,10 @@ const GameScreen: React.FC<{
  */
 const IpnePage: React.FC = () => {
   const [screen, setScreen] = useState<ScreenStateValue>(ScreenState.TITLE);
-  const [map, setMap] = useState<GameMap>([]);
-  const [player, setPlayer] = useState<Player>(() => createPlayer(0, 0));
-  const [enemies, setEnemies] = useState<Enemy[]>([]);
-  const [items, setItems] = useState<Item[]>([]);
+  const [map, setMap, mapRef] = useSyncedState<GameMap>([]);
+  const [player, setPlayer, playerRef] = useSyncedState<Player>(createPlayer(0, 0));
+  const [enemies, setEnemies, enemiesRef] = useSyncedState<Enemy[]>([]);
+  const [items, setItems, itemsRef] = useSyncedState<Item[]>([]);
   const [goalPos, setGoalPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [mapState, setMapState] = useState<AutoMapState>({
     exploration: [],
@@ -1472,10 +1449,10 @@ const IpnePage: React.FC = () => {
   );
   // MVP3追加
   const [selectedClass, setSelectedClass] = useState<PlayerClassValue>(PlayerClass.WARRIOR);
-  const [traps, setTraps] = useState<Trap[]>([]);
-  const [walls, setWalls] = useState<Wall[]>([]);
+  const [traps, setTraps, trapsRef] = useSyncedState<Trap[]>([]);
+  const [walls, setWalls, wallsRef] = useSyncedState<Wall[]>([]);
   // レベルアップポイント制
-  const [pendingLevelPoints, setPendingLevelPoints] = useState(0);
+  const [pendingLevelPoints, setPendingLevelPoints, pendingLevelPointsRef] = useSyncedState(0);
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
 
   // MVP4追加
@@ -1493,42 +1470,7 @@ const IpnePage: React.FC = () => {
   const [showAudioSettings, setShowAudioSettings] = useState(false);
   const [isAudioReady, setIsAudioReady] = useState(false);
 
-  const mapRef = useRef<GameMap>(map);
-  const playerRef = useRef<Player>(player);
-  const enemiesRef = useRef<Enemy[]>(enemies);
-  const itemsRef = useRef<Item[]>(items);
   const roomsRef = useRef<Room[]>([]);
-  const trapsRef = useRef<Trap[]>(traps);
-  const wallsRef = useRef<Wall[]>(walls);
-  const pendingLevelPointsRef = useRef<number>(pendingLevelPoints);
-
-  useEffect(() => {
-    mapRef.current = map;
-  }, [map]);
-
-  useEffect(() => {
-    playerRef.current = player;
-  }, [player]);
-
-  useEffect(() => {
-    enemiesRef.current = enemies;
-  }, [enemies]);
-
-  useEffect(() => {
-    itemsRef.current = items;
-  }, [items]);
-
-  useEffect(() => {
-    trapsRef.current = traps;
-  }, [traps]);
-
-  useEffect(() => {
-    wallsRef.current = walls;
-  }, [walls]);
-
-  useEffect(() => {
-    pendingLevelPointsRef.current = pendingLevelPoints;
-  }, [pendingLevelPoints]);
 
   const setupGameState = useCallback((newMap: GameMap, rooms: Room[], playerClass: PlayerClassValue) => {
     const startPos = findStartPosition(newMap);
@@ -1537,12 +1479,10 @@ const IpnePage: React.FC = () => {
     if (!startPos || !goal) return;
 
     setMap(newMap);
-    mapRef.current = newMap;
     setGoalPos(goal);
     // MVP3: 職業を使ってプレイヤー作成
     const createdPlayer = createPlayer(startPos.x, startPos.y, playerClass);
     setPlayer(createdPlayer);
-    playerRef.current = createdPlayer;
     setIsGameOver(false);
     // レベルアップポイント制のリセット
     setPendingLevelPoints(0);
@@ -1563,15 +1503,11 @@ const IpnePage: React.FC = () => {
     const spawnedItems = spawnItems(rooms, spawnedEnemies, [startPos, goal], goal);
     setEnemies(spawnedEnemies);
     setItems(spawnedItems);
-    enemiesRef.current = spawnedEnemies;
-    itemsRef.current = spawnedItems;
 
     // MVP3: 罠と壁を配置（戦略的配置を使用）
     const gimmickResult = placeGimmicks(rooms, newMap, [startPos, goal], undefined, startPos, goal);
     setTraps(gimmickResult.traps);
     setWalls(gimmickResult.walls);
-    trapsRef.current = gimmickResult.traps;
-    wallsRef.current = gimmickResult.walls;
 
     // 探索状態を初期化
     const exploration = initExploration(newMap[0].length, newMap.length);
@@ -1626,7 +1562,6 @@ const IpnePage: React.FC = () => {
   const handleLevelUpChoice = useCallback((stat: StatTypeValue) => {
     const leveledPlayer = processLevelUp(player, stat);
     setPlayer(leveledPlayer);
-    playerRef.current = leveledPlayer;
     setPendingLevelPoints(prev => {
       const newPoints = prev - 1;
       // ポイントが0になったら自動で閉じる
@@ -1746,27 +1681,22 @@ const IpnePage: React.FC = () => {
       const enemyAtTarget = getEnemyAtPosition(enemiesRef.current, nextPosition.x, nextPosition.y);
 
       if (enemyAtTarget) {
-        const updatedPlayer = damagePlayer(
-          { ...player, direction },
-          enemyAtTarget.damage,
+        const damageResult = resolvePlayerDamage({
+          player: { ...player, direction },
+          damage: enemyAtTarget.damage,
           currentTime,
-          COMBAT_CONFIG.invincibleDuration
-        );
-        const knockedPlayer =
-          updatedPlayer !== player
-            ? applyPlayerKnockback(
-                updatedPlayer,
-                enemyAtTarget,
-                mapRef.current,
-                enemiesRef.current
-              )
-            : updatedPlayer;
-        if (updatedPlayer !== player) {
+          invincibleDuration: COMBAT_CONFIG.invincibleDuration,
+          sourceEnemy: enemyAtTarget,
+          map: mapRef.current,
+          enemies: enemiesRef.current,
+          walls: wallsRef.current,
+        });
+        if (damageResult.tookDamage) {
           setCombatState(prev => ({ ...prev, lastDamageAt: currentTime }));
           // MVP5: ダメージ音
           playPlayerDamageSound();
         }
-        setPlayer(knockedPlayer);
+        setPlayer(damageResult.player);
         return;
       }
 
@@ -1777,7 +1707,6 @@ const IpnePage: React.FC = () => {
           w.x === wallAtTarget.x && w.y === wallAtTarget.y ? revealWall(w) : w
         );
         setWalls(updatedWalls);
-        wallsRef.current = updatedWalls;
       }
 
       const newPlayer = movePlayer(player, direction, map, wallsRef.current);
@@ -1849,7 +1778,6 @@ const IpnePage: React.FC = () => {
     // 壁への攻撃結果を反映
     if (result.walls) {
       setWalls(result.walls);
-      wallsRef.current = result.walls;
     }
 
     // MVP3: 撃破した敵の数をカウントしてキルカウントを更新
@@ -1901,11 +1829,8 @@ const IpnePage: React.FC = () => {
     }
 
     setPlayer(updatedPlayer);
-    playerRef.current = updatedPlayer;
     setEnemies(survivingEnemies);
-    enemiesRef.current = survivingEnemies;
     setItems(updatedItems);
-    itemsRef.current = updatedItems;
   }, [isGameOver, showLevelUpModal]);
 
   // マップ表示切替ハンドラー（小窓 → 全画面 → 非表示 → 小窓）
@@ -1933,25 +1858,46 @@ const IpnePage: React.FC = () => {
     []
   );
 
-  const applyPlayerKnockback = useCallback(
-    (currentPlayer: Player, sourceEnemy: Enemy, currentMap: GameMap, currentEnemies: Enemy[]) => {
-      const dx = currentPlayer.x - sourceEnemy.x;
-      const dy = currentPlayer.y - sourceEnemy.y;
-      const stepX = dx === 0 ? 0 : dx > 0 ? 1 : -1;
-      const stepY = dy === 0 ? 0 : dy > 0 ? 1 : -1;
-      const knockbackTarget = { x: currentPlayer.x + stepX, y: currentPlayer.y + stepY };
-
-      if (!canMove(currentMap, knockbackTarget.x, knockbackTarget.y, wallsRef.current)) {
-        return currentPlayer;
+  const dispatchTickEffects = useCallback((effects: GameTickEffect[]) => {
+    for (const effect of effects) {
+      if (effect.kind === 'sound') {
+        switch (effect.type) {
+          case TickSoundEffect.PLAYER_DAMAGE:
+            setCombatState(prev => ({ ...prev, lastDamageAt: Date.now() }));
+            playPlayerDamageSound();
+            break;
+          case TickSoundEffect.ITEM_PICKUP:
+            playItemPickupSound();
+            break;
+          case TickSoundEffect.HEAL:
+            playHealSound();
+            break;
+          case TickSoundEffect.TRAP_TRIGGERED:
+            playTrapTriggeredSound();
+            break;
+          case TickSoundEffect.LEVEL_UP:
+            playLevelUpSound();
+            break;
+          default:
+            break;
+        }
+      } else if (effect.kind === 'display') {
+        switch (effect.type) {
+          case TickDisplayEffect.MAP_REVEALED: {
+            const fullExploration = mapRef.current.map(row => row.map(() => 1 as const));
+            setMapState(prev => ({ ...prev, exploration: fullExploration }));
+            break;
+          }
+          case TickDisplayEffect.GAME_OVER:
+            setIsGameOver(true);
+            setScreen(ScreenState.GAME_OVER);
+            break;
+          default:
+            break;
+        }
       }
-      if (getEnemyAtPosition(currentEnemies, knockbackTarget.x, knockbackTarget.y)) {
-        return currentPlayer;
-      }
-
-      return { ...currentPlayer, x: knockbackTarget.x, y: knockbackTarget.y };
-    },
-    []
-  );
+    }
+  }, []);
 
   // 敵AI・接触・アイテム取得の更新ループ
   useEffect(() => {
@@ -1959,142 +1905,28 @@ const IpnePage: React.FC = () => {
 
     const interval = setInterval(() => {
       const currentTime = Date.now();
-      let nextPlayer = playerRef.current;
+      const tickResult = tickGameState({
+        map: mapRef.current,
+        player: playerRef.current,
+        enemies: enemiesRef.current,
+        items: itemsRef.current,
+        traps: trapsRef.current,
+        walls: wallsRef.current,
+        pendingLevelPoints: pendingLevelPointsRef.current,
+        currentTime,
+        maxLevel: MAX_LEVEL,
+      });
 
-      if (nextPlayer.isInvincible && currentTime >= nextPlayer.invincibleUntil) {
-        nextPlayer = { ...nextPlayer, isInvincible: false };
-      }
-
-      const updateResult = updateEnemiesWithContact(
-        enemiesRef.current,
-        nextPlayer,
-        mapRef.current,
-        currentTime
-      );
-
-      const updatedEnemies = updateResult.enemies.filter(enemy => enemy.hp > 0);
-
-      // 接触ダメージの処理
-      if (updateResult.contactDamage > 0) {
-        const damagedPlayer = damagePlayer(
-          nextPlayer,
-          updateResult.contactDamage,
-          currentTime,
-          COMBAT_CONFIG.invincibleDuration
-        );
-        const knockedPlayer =
-          updateResult.contactEnemy && damagedPlayer !== nextPlayer
-            ? applyPlayerKnockback(
-                damagedPlayer,
-                updateResult.contactEnemy,
-                mapRef.current,
-                updatedEnemies
-              )
-            : damagedPlayer;
-        if (damagedPlayer !== nextPlayer) {
-          setCombatState(prev => ({ ...prev, lastDamageAt: currentTime }));
-          // MVP5: ダメージ音
-          playPlayerDamageSound();
-        }
-        nextPlayer = knockedPlayer;
-      }
-
-      // 敵の射程攻撃ダメージの処理
-      if (updateResult.attackDamage > 0) {
-        const damagedPlayer = damagePlayer(
-          nextPlayer,
-          updateResult.attackDamage,
-          currentTime,
-          COMBAT_CONFIG.invincibleDuration
-        );
-        if (damagedPlayer !== nextPlayer) {
-          setCombatState(prev => ({ ...prev, lastDamageAt: currentTime }));
-          // MVP5: ダメージ音
-          playPlayerDamageSound();
-        }
-        nextPlayer = damagedPlayer;
-      }
-
-      let remainingItems = itemsRef.current;
-      const pickedIds: string[] = [];
-      let triggerLevelUp = false;
-      let triggerMapReveal = false;
-
-      for (const item of remainingItems) {
-        if (canPickupItem(nextPlayer, item)) {
-          const prevHp = nextPlayer.hp;
-          const pickupResult = pickupItem(nextPlayer, item);
-          nextPlayer = pickupResult.player;
-          pickedIds.push(pickupResult.itemId);
-          if (pickupResult.triggerLevelUp) triggerLevelUp = true;
-          if (pickupResult.triggerMapReveal) triggerMapReveal = true;
-          // MVP5: アイテム取得音（回復アイテムは回復音）
-          if (nextPlayer.hp > prevHp) {
-            playHealSound();
-          } else {
-            playItemPickupSound();
-          }
-        }
-      }
-
-      if (pickedIds.length > 0) {
-        remainingItems = remainingItems.filter(item => !pickedIds.includes(item.id));
-      }
-
-      // MVP3: 罠発動チェック
-      let currentTraps = trapsRef.current;
-      const trapAtPlayer = getTrapAt(currentTraps, nextPlayer.x, nextPlayer.y);
-      if (trapAtPlayer && canTriggerTrap(trapAtPlayer, currentTime)) {
-        const trapResult = triggerTrap(trapAtPlayer, nextPlayer, currentTime, mapRef.current);
-        nextPlayer = damagePlayer(nextPlayer, trapResult.damage, currentTime, COMBAT_CONFIG.invincibleDuration);
-        if (trapResult.slowDuration > 0) {
-          nextPlayer = applySlowEffect(nextPlayer, currentTime, trapResult.slowDuration);
-        }
-        // テレポート効果の適用
-        if (trapResult.teleportDestination) {
-          nextPlayer = { ...nextPlayer, x: trapResult.teleportDestination.x, y: trapResult.teleportDestination.y };
-        }
-        currentTraps = currentTraps.map(t => t.id === trapResult.trap.id ? trapResult.trap : t);
-        // MVP5: 罠発動音
-        playTrapTriggeredSound();
-        if (trapResult.damage > 0) {
-          setCombatState(prev => ({ ...prev, lastDamageAt: currentTime }));
-          // MVP5: ダメージ音
-          playPlayerDamageSound();
-        }
-        setTraps(currentTraps);
-        trapsRef.current = currentTraps;
-      }
-
-      // MVP3: アイテムによる即レベルアップ（ポイント制対応）
-      // レベル上限チェック: 実効レベル = 現在レベル + 未使用ポイント
-      const effectiveLevel = nextPlayer.level + pendingLevelPointsRef.current;
-      if (triggerLevelUp && effectiveLevel < MAX_LEVEL) {
-        setPendingLevelPoints(prev => prev + 1);
-        // MVP5: レベルアップ音
-        playLevelUpSound();
-      }
-
-      // MVP3: マップ公開
-      if (triggerMapReveal) {
-        const fullExploration = mapRef.current.map(row =>
-          row.map(() => 1 as const)
-        );
-        setMapState(prev => ({ ...prev, exploration: fullExploration }));
-      }
-
-      setPlayer(nextPlayer);
-      setEnemies(updatedEnemies);
-      setItems(remainingItems);
-
-      if (nextPlayer.hp <= 0) {
-        setIsGameOver(true);
-        setScreen(ScreenState.GAME_OVER);
-      }
+      dispatchTickEffects(tickResult.effects);
+      setPlayer(tickResult.player);
+      setEnemies(tickResult.enemies);
+      setItems(tickResult.items);
+      setTraps(tickResult.traps);
+      setPendingLevelPoints(tickResult.pendingLevelPoints);
     }, 200);
 
     return () => clearInterval(interval);
-  }, [screen]);
+  }, [screen, dispatchTickEffects]);
 
   // 画面に応じたコンテンツをレンダリング
   return (

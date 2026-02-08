@@ -12,13 +12,17 @@ import {
   clearRecords,
   getBestRecordForClass,
   getAllBestRecords,
+  setRecordStorageProvider,
+  resetRecordStorageProvider,
 } from '../record';
 import { PlayerClass, Rating } from '../types';
+import { StorageProvider } from '../infrastructure/storage/StorageProvider';
 
 describe('record', () => {
   // テスト前にローカルストレージをクリア
   beforeEach(() => {
     localStorage.clear();
+    resetRecordStorageProvider();
   });
 
   describe('STORAGE_KEYS', () => {
@@ -223,6 +227,34 @@ describe('record', () => {
     test('記録がない場合は空配列を返すこと', () => {
       const allRecords = getAllBestRecords();
       expect(allRecords).toEqual([]);
+    });
+  });
+
+  describe('storage provider injection', () => {
+    test('注入したStorageProviderから記録を読み込むこと', () => {
+      const memoryStore = new Map<string, string>();
+      const provider: StorageProvider = {
+        getItem: (key: string) => memoryStore.get(key) ?? null,
+        setItem: (key: string, value: string) => {
+          memoryStore.set(key, value);
+        },
+        removeItem: (key: string) => {
+          memoryStore.delete(key);
+        },
+      };
+      const testRecord = {
+        [PlayerClass.WARRIOR]: {
+          time: 100000,
+          rating: Rating.S,
+          playerClass: PlayerClass.WARRIOR,
+          date: '2024-01-01T00:00:00.000Z',
+        },
+      };
+      provider.setItem(STORAGE_KEYS.BEST_RECORDS, JSON.stringify(testRecord));
+      setRecordStorageProvider(provider);
+
+      const records = loadBestRecords();
+      expect(records[PlayerClass.WARRIOR]?.time).toBe(100000);
     });
   });
 });

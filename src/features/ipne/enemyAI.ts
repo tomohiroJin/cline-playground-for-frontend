@@ -3,6 +3,7 @@
  */
 import { Enemy, EnemyState, EnemyType, GameMap, Position } from './types';
 import { canMove } from './collision';
+import { buildDefaultEnemyAiPolicyRegistry } from './domain/policies/enemyAi/policies';
 
 const AI_CONFIG = {
   updateInterval: 200,
@@ -417,6 +418,13 @@ export const updateRangedEnemy = (
   return { ...enemy, state: EnemyState.IDLE };
 };
 
+const enemyAiPolicyRegistry = buildDefaultEnemyAiPolicyRegistry({
+  updatePatrolEnemy,
+  updateChargeEnemy,
+  updateRangedEnemy,
+  updateFleeEnemy,
+});
+
 const resolveKnockbackState = (enemy: Enemy, currentTime: number): Enemy => {
   if (enemy.state !== EnemyState.KNOCKBACK) return enemy;
   if (enemy.knockbackUntil === undefined) return { ...enemy, state: EnemyState.IDLE };
@@ -431,20 +439,12 @@ export const updateEnemyAI = (
   currentTime: number
 ): Enemy => {
   const resolved = resolveKnockbackState(enemy, currentTime);
-
-  switch (resolved.type) {
-    case EnemyType.PATROL:
-      return updatePatrolEnemy(resolved, player, map, currentTime);
-    case EnemyType.CHARGE:
-    case EnemyType.BOSS:
-      return updateChargeEnemy(resolved, player, map, currentTime);
-    case EnemyType.RANGED:
-      return updateRangedEnemy(resolved, player, map, currentTime);
-    case EnemyType.SPECIMEN:
-      return updateFleeEnemy(resolved, player, map, currentTime);
-    default:
-      return resolved;
-  }
+  return enemyAiPolicyRegistry.update({
+    enemy: resolved,
+    player,
+    map,
+    currentTime,
+  });
 };
 
 export interface EnemyUpdateResult {

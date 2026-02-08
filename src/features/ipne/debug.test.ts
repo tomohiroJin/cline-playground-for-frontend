@@ -1,9 +1,21 @@
 /**
  * デバッグモード機能のテスト
  */
-import { DebugState, DEFAULT_DEBUG_STATE, toggleDebugOption } from './debug';
+import {
+  DebugState,
+  DEFAULT_DEBUG_STATE,
+  toggleDebugOption,
+  isDebugMode,
+  setDebugBrowserEnvProvider,
+  resetDebugBrowserEnvProvider,
+} from './debug';
+import { BrowserEnvProvider } from './infrastructure/browser/BrowserEnvProvider';
 
 describe('debug', () => {
+  beforeEach(() => {
+    resetDebugBrowserEnvProvider();
+  });
+
   describe('DEFAULT_DEBUG_STATE', () => {
     it('デフォルト状態が正しく定義されている', () => {
       expect(DEFAULT_DEBUG_STATE).toEqual({
@@ -71,6 +83,17 @@ describe('debug', () => {
       expect(state.showCoordinates).toBe(true);
       expect(state.showPath).toBe(true);
       expect(state.showPanel).toBe(true); // 元の値を維持
+    });
+  });
+
+  describe('browser env provider injection', () => {
+    it('注入したBrowserEnvProvider経由でデバッグ判定する', () => {
+      const provider: BrowserEnvProvider = {
+        getQueryParam: (name: string) => (name === 'debug' ? '1' : null),
+      };
+      setDebugBrowserEnvProvider(provider);
+
+      expect(isDebugMode()).toBe(true);
     });
   });
 });

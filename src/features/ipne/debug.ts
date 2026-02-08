@@ -2,6 +2,7 @@
  * デバッグモード機能
  * 開発時のマップ確認やデバッグ情報表示に使用
  */
+import { BROWSER_ENV_PROVIDER, BrowserEnvProvider } from './infrastructure/browser/BrowserEnvProvider';
 
 /** デバッグ状態 */
 export interface DebugState {
@@ -28,6 +29,23 @@ export const DEFAULT_DEBUG_STATE: DebugState = {
   showPath: false,
 };
 
+let debug_browser_env_provider: BrowserEnvProvider = BROWSER_ENV_PROVIDER;
+
+/**
+ * デバッグモジュールのブラウザ依存を差し替える
+ * @param provider ブラウザ環境プロバイダ
+ */
+export function setDebugBrowserEnvProvider(provider: BrowserEnvProvider): void {
+  debug_browser_env_provider = provider;
+}
+
+/**
+ * デバッグモジュールのブラウザ依存をデフォルトに戻す
+ */
+export function resetDebugBrowserEnvProvider(): void {
+  debug_browser_env_provider = BROWSER_ENV_PROVIDER;
+}
+
 /**
  * URLパラメータでデバッグモードが有効かどうかを判定
  * /ipne?debug=1 でアクセスすると有効になる
@@ -35,10 +53,7 @@ export const DEFAULT_DEBUG_STATE: DebugState = {
  * @returns デバッグモードが有効かどうか
  */
 export function isDebugMode(): boolean {
-  if (typeof window === 'undefined') return false;
-
-  const params = new URLSearchParams(window.location.search);
-  return params.get('debug') === '1';
+  return debug_browser_env_provider.getQueryParam('debug') === '1';
 }
 
 /**

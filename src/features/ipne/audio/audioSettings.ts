@@ -7,12 +7,29 @@
 import { AudioSettings, DEFAULT_AUDIO_SETTINGS } from '../types';
 import { updateSoundSettings } from './soundEffect';
 import { updateBgmSettings } from './bgm';
+import { StorageProvider, createBrowserStorageProvider } from '../infrastructure/storage/StorageProvider';
 
 /** localStorage保存用キー */
 const STORAGE_KEY = 'ipne_audio_settings';
 
 /** 現在の音声設定 */
 let currentSettings: AudioSettings = { ...DEFAULT_AUDIO_SETTINGS };
+let audio_storage_provider: StorageProvider = createBrowserStorageProvider();
+
+/**
+ * 音声設定モジュールのストレージ依存を差し替える
+ * @param provider ストレージプロバイダ
+ */
+export function setAudioStorageProvider(provider: StorageProvider): void {
+  audio_storage_provider = provider;
+}
+
+/**
+ * 音声設定モジュールのストレージ依存をデフォルトに戻す
+ */
+export function resetAudioStorageProvider(): void {
+  audio_storage_provider = createBrowserStorageProvider();
+}
 
 /**
  * localStorageから設定を読み込む
@@ -20,7 +37,7 @@ let currentSettings: AudioSettings = { ...DEFAULT_AUDIO_SETTINGS };
  */
 function loadFromStorage(): AudioSettings | undefined {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = audio_storage_provider.getItem(STORAGE_KEY);
     if (!stored) return undefined;
 
     const parsed = JSON.parse(stored);
@@ -51,7 +68,7 @@ function loadFromStorage(): AudioSettings | undefined {
  */
 function saveToStorage(settings: AudioSettings): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    audio_storage_provider.setItem(STORAGE_KEY, JSON.stringify(settings));
   } catch {
     // localStorage保存エラーは無視
   }
@@ -158,7 +175,7 @@ export function resetAudioSettings(): void {
 export function clearAudioSettings(): void {
   currentSettings = { ...DEFAULT_AUDIO_SETTINGS };
   try {
-    localStorage.removeItem(STORAGE_KEY);
+    audio_storage_provider.removeItem(STORAGE_KEY);
   } catch {
     // エラーは無視
   }

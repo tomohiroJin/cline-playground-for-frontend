@@ -12,11 +12,14 @@ import {
   getAudioSettings,
   resetAudioSettings,
   clearAudioSettings,
+  setAudioStorageProvider,
+  resetAudioStorageProvider,
 } from '../audioSettings';
 import { resetAudioContext } from '../audioContext';
 import { resetSoundSettings } from '../soundEffect';
 import { resetBgmState } from '../bgm';
 import { DEFAULT_AUDIO_SETTINGS } from '../../types';
+import { StorageProvider } from '../../infrastructure/storage/StorageProvider';
 
 describe('audioSettings', () => {
   beforeEach(() => {
@@ -24,6 +27,7 @@ describe('audioSettings', () => {
     resetSoundSettings();
     resetBgmState();
     clearAudioSettings();
+    resetAudioStorageProvider();
   });
 
   describe('initializeAudioSettings', () => {
@@ -111,6 +115,28 @@ describe('audioSettings', () => {
       const settings = getAudioSettings();
       expect(settings.masterVolume).toBe(DEFAULT_AUDIO_SETTINGS.masterVolume);
       expect(settings.isMuted).toBe(false);
+    });
+  });
+
+  describe('storage provider injection', () => {
+    it('注入したStorageProviderに設定を保存する', () => {
+      const memoryStore = new Map<string, string>();
+      const provider: StorageProvider = {
+        getItem: (key: string) => memoryStore.get(key) ?? null,
+        setItem: (key: string, value: string) => {
+          memoryStore.set(key, value);
+        },
+        removeItem: (key: string) => {
+          memoryStore.delete(key);
+        },
+      };
+      setAudioStorageProvider(provider);
+      initializeAudioSettings();
+
+      setMasterVolume(0.5);
+
+      expect(Array.from(memoryStore.keys())).toContain('ipne_audio_settings');
+      expect(localStorage.getItem('ipne_audio_settings')).toBeNull();
     });
   });
 });

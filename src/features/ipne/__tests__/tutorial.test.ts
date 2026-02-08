@@ -14,14 +14,18 @@ import {
   shouldAdvanceTutorial,
   getTutorialStepIndex,
   getTutorialProgress,
+  setTutorialStorageProvider,
+  resetTutorialStorageProvider,
 } from '../tutorial';
 import { TutorialStepType } from '../types';
 import { STORAGE_KEYS } from '../record';
+import { StorageProvider } from '../infrastructure/storage/StorageProvider';
 
 describe('tutorial', () => {
   // テスト前にローカルストレージをクリア
   beforeEach(() => {
     localStorage.clear();
+    resetTutorialStorageProvider();
   });
 
   describe('TUTORIAL_STEPS', () => {
@@ -212,6 +216,27 @@ describe('tutorial', () => {
     test('完了後は1を返すこと', () => {
       const state = skipTutorial(initTutorial());
       expect(getTutorialProgress(state)).toBe(1);
+    });
+  });
+
+  describe('storage provider injection', () => {
+    test('注入したStorageProviderに完了状態を保存すること', () => {
+      const memoryStore = new Map<string, string>();
+      const provider: StorageProvider = {
+        getItem: (key: string) => memoryStore.get(key) ?? null,
+        setItem: (key: string, value: string) => {
+          memoryStore.set(key, value);
+        },
+        removeItem: (key: string) => {
+          memoryStore.delete(key);
+        },
+      };
+      setTutorialStorageProvider(provider);
+
+      saveTutorialCompleted();
+
+      expect(memoryStore.get(STORAGE_KEYS.TUTORIAL_COMPLETED)).toBe('true');
+      expect(localStorage.getItem(STORAGE_KEYS.TUTORIAL_COMPLETED)).toBeNull();
     });
   });
 });

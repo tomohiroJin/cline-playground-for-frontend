@@ -4,7 +4,7 @@
  * ゲームプレイ時間の計測と管理を担当
  */
 
-import { GameTimer, TimerState, TimerStateValue } from './types';
+import { GameTimer, TimerState } from './types';
 
 // 型の再エクスポート
 export type { GameTimer } from './types';

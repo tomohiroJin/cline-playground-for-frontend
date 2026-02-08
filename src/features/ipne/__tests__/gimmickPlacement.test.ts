@@ -150,6 +150,24 @@ describe('gimmickPlacement', () => {
       }
     });
 
+    test('BREAKABLE壁はcreateWall契約に従いhpを持つこと', () => {
+      const { grid } = createTestMazeResult();
+      const config = {
+        ...DEFAULT_GIMMICK_CONFIG,
+        wallCount: 5,
+        wallRatio: { breakable: 1.0, passable: 0, invisible: 0 },
+      };
+
+      const walls = placeWalls(grid, [], config);
+      const breakableWalls = walls.filter(w => w.type === WallType.BREAKABLE);
+
+      expect(breakableWalls.length).toBeGreaterThan(0);
+      for (const wall of breakableWalls) {
+        expect(wall.state).toBe('intact');
+        expect(wall.hp).toBe(3);
+      }
+    });
+
     test('連続壁セグメントがある場合に複数タイルにBREAKABLE壁が配置されること', () => {
       // 連続壁セグメントを含むマップを作成
       const grid = Array.from({ length: 10 }, () =>
@@ -228,6 +246,30 @@ describe('gimmickPlacement', () => {
 
       // ゲームクリアが可能であること
       expect(isConnected(grid, start, goal)).toBe(true);
+    });
+
+    test('設定値の比率合計が1でない場合はエラーになること', () => {
+      const { grid, rooms } = createTestMazeResult();
+      const invalidConfig = {
+        ...DEFAULT_GIMMICK_CONFIG,
+        trapRatio: {
+          damage: 0.8,
+          slow: 0.3,
+          teleport: 0,
+        },
+      };
+
+      expect(() => placeGimmicks(rooms, grid, [], invalidConfig)).toThrow();
+    });
+
+    test('設定値の個数が不正な場合はエラーになること', () => {
+      const { grid, rooms } = createTestMazeResult();
+      const invalidConfig = {
+        ...DEFAULT_GIMMICK_CONFIG,
+        wallCount: -1,
+      };
+
+      expect(() => placeGimmicks(rooms, grid, [], invalidConfig)).toThrow();
     });
   });
 

@@ -5,6 +5,12 @@
  */
 
 import { GameRecord, BestRecords, PlayerClass, PlayerClassValue, RatingValue } from './types';
+import {
+  StorageProvider,
+  createBrowserStorageProvider,
+  NOOP_STORAGE_PROVIDER,
+} from './infrastructure/storage/StorageProvider';
+import { ClockProvider, SYSTEM_CLOCK_PROVIDER } from './infrastructure/clock/ClockProvider';
 
 // 型の再エクスポート
 export type { BestRecords, GameRecord } from './types';
@@ -14,6 +20,43 @@ export const STORAGE_KEYS = {
   BEST_RECORDS: 'ipne_best_records',
   TUTORIAL_COMPLETED: 'ipne_tutorial_completed',
 } as const;
+
+let record_storage_provider: StorageProvider = createBrowserStorageProvider();
+let record_clock_provider: ClockProvider = SYSTEM_CLOCK_PROVIDER;
+
+/**
+ * 記録モジュールのストレージ依存を差し替える
+ * @param provider ストレージプロバイダ
+ */
+export function setRecordStorageProvider(provider: StorageProvider): void {
+  record_storage_provider = provider;
+}
+
+/**
+ * 記録モジュールのストレージ依存をデフォルトに戻す
+ */
+export function resetRecordStorageProvider(): void {
+  record_storage_provider = createBrowserStorageProvider();
+}
+
+/**
+ * 記録モジュールの時刻依存を差し替える
+ * @param provider クロックプロバイダ
+ */
+export function setRecordClockProvider(provider: ClockProvider): void {
+  record_clock_provider = provider;
+}
+
+/**
+ * 記録モジュールの時刻依存をデフォルトに戻す
+ */
+export function resetRecordClockProvider(): void {
+  record_clock_provider = SYSTEM_CLOCK_PROVIDER;
+}
+
+function getRecordStorageProvider(): StorageProvider {
+  return record_storage_provider ?? NOOP_STORAGE_PROVIDER;
+}
 
 /**
  * 新しいゲーム記録を作成する
@@ -27,11 +70,12 @@ export function createRecord(
   rating: RatingValue,
   playerClass: PlayerClassValue
 ): GameRecord {
+  const now = record_clock_provider.now();
   return {
     time,
     rating,
     playerClass,
-    date: new Date().toISOString(),
+    date: new Date(now).toISOString(),
   };
 }
 
@@ -40,8 +84,9 @@ export function createRecord(
  * @returns ベスト記録（存在しない場合は空オブジェクト）
  */
 export function loadBestRecords(): BestRecords {
+  const storage = getRecordStorageProvider();
   try {
-    const stored = localStorage.getItem(STORAGE_KEYS.BEST_RECORDS);
+    const stored = storage.getItem(STORAGE_KEYS.BEST_RECORDS);
     if (stored) {
       return JSON.parse(stored) as BestRecords;
     }
@@ -56,8 +101,9 @@ export function loadBestRecords(): BestRecords {
  * @param records ベスト記録
  */
 export function saveBestRecords(records: BestRecords): void {
+  const storage = getRecordStorageProvider();
   try {
-    localStorage.setItem(STORAGE_KEYS.BEST_RECORDS, JSON.stringify(records));
+    storage.setItem(STORAGE_KEYS.BEST_RECORDS, JSON.stringify(records));
   } catch {
     console.warn('ベスト記録の保存に失敗しました');
   }
@@ -116,9 +162,10 @@ export function saveRecord(record: GameRecord): { records: BestRecords; isNewBes
  * 全ての記録をクリアする
  */
 export function clearRecords(): void {
+  const storage = getRecordStorageProvider();
   try {
-    localStorage.removeItem(STORAGE_KEYS.BEST_RECORDS);
-    localStorage.removeItem(STORAGE_KEYS.TUTORIAL_COMPLETED);
+    storage.removeItem(STORAGE_KEYS.BEST_RECORDS);
+    storage.removeItem(STORAGE_KEYS.TUTORIAL_COMPLETED);
   } catch {
     console.warn('記録のクリアに失敗しました');
   }
