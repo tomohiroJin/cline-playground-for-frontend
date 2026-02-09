@@ -70,8 +70,25 @@
 - [x] `hooks/useStore.test.ts` - localStorage 永続化のテスト
 - [x] コンポーネントの基本レンダリングテスト（RiskLcdGame/TitleScreen/ResultScreen）
 - [x] `npm run build` でビルドエラーがないことを確認
-- [ ] ブラウザでの動作確認（全画面遷移/ゲームプレイ/セーブ）
+- [x] ブラウザでの動作確認（全画面遷移/ゲームプレイ/セーブ）
+
+## Phase 8: バグ修正・UI改善
+
+- [x] `hooks/useInput.ts` - screenRef の blanket click ハンドラと短タップ act 発行を削除
+- [x] `hooks/useGameEngine.ts` - `selectAndAct` 関数を追加（選択+実行を一括で行う）
+- [x] `components/TitleScreen.tsx` - `onMenuClick` prop + onClick 追加
+- [x] `components/StyleListScreen.tsx` - `onItemClick` prop + onClick 追加
+- [x] `components/UnlockShopScreen.tsx` - `onItemClick` prop + onClick 追加
+- [x] `components/PerkSelectScreen.tsx` - `onPerkClick` prop + onClick 追加
+- [x] `components/GameScreen.tsx` - `onPerkClick` prop を PerkSelectScreen に伝達
+- [x] `components/RiskLcdGame.tsx` - `selectAndAct` を各画面コンポーネントに接続
+- [x] `components/DeviceFrame.tsx` - `controls` prop 追加（ControlButtons を筐体下部に配置）
+- [x] `components/HelpScreen.tsx` - `selectedIndex` による項目選択ハイライト対応
+- [x] `components/ListPanel.tsx` - 選択アイテムへのスクロール追従機能を追加
+- [x] `components/styles.ts` - `font-family: FONT.lcd` の欠落を補完、レイアウト修正
+- [x] `src/pages/RiskLcdPage.tsx` - `position: fixed` + `inset: 0` で全画面表示を修正
+- [x] `src/setupTests.ts` - `scrollIntoView` モック追加（ListPanel テスト対応）
 
 ## 完了状況
 
-**全タスク**: 43/43 (カード画像・README は後日対応)
+**全タスク**: 57/57
