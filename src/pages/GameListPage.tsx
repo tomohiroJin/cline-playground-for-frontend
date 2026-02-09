@@ -10,6 +10,7 @@ import nonBrakeDescentCardBg from '../assets/images/non_brake_descent_card_bg.we
 import ipneCardBg from '../assets/images/ipne_card_bg.webp';
 import agileQuizSugorokuCardBg from '../assets/images/agile_quiz_sugoroku_card_bg.webp';
 import labyrinthEchoCardBg from '../assets/images/labyrinth_echo_card_bg.webp';
+import riskLcdCardBg from '../assets/images/risk_lcd_card_bg.webp';
 import {
   PageContainer,
   HeroSection,
@@ -323,6 +324,35 @@ const GameListPage: React.FC = () => {
               テキスト探索×判断×ローグライトRPG。
               不確かな情報の中で選択を重ね、迷宮からの生還を目指せ。
               周回で知見を継承し、深淵の攻略に挑む。
+            </GameDescription>
+            <PlayButton aria-hidden="true" tabIndex={-1}>
+              Play Now <span>→</span>
+            </PlayButton>
+          </CardContent>
+        </GameCardContainer>
+        <GameCardContainer
+          onClick={() => navigate('/risk-lcd')}
+          role="button"
+          aria-label="RISK LCD ゲームをプレイする"
+          tabIndex={0}
+          onKeyDown={e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              navigate('/risk-lcd');
+            }
+          }}
+        >
+          <CardImageArea
+            $bgImage={riskLcdCardBg}
+            role="img"
+            aria-label="RISK LCDのゲーム画面プレビュー"
+          />
+          <CardContent>
+            <CardTitle>RISK LCD</CardTitle>
+            <GameDescription>
+              液晶ゲーム機風の3レーン回避アクション×ローグライト。
+              予告を読み、パークを重ねてビルドを構築。
+              リスクとリターンのバランスで高スコアを狙え。
             </GameDescription>
             <PlayButton aria-hidden="true" tabIndex={-1}>
               Play Now <span>→</span>
