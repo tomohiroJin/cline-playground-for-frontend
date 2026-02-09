@@ -254,6 +254,7 @@ export const ListPanelWrap = styled(Layer)`
   padding: 8px;
   gap: 0;
   position: relative;
+  height: 100%;
 `;
 
 export const LpHeader = styled.div`
@@ -270,6 +271,7 @@ export const LpHeader = styled.div`
 `;
 
 export const LpSub = styled.div`
+  font-family: ${FONT.lcd};
   font-size: 8px;
   color: ${LCD.on};
   text-align: center;
@@ -283,6 +285,8 @@ export const LpScrollWrap = styled.div`
   position: relative;
   overflow: hidden;
   width: 100%;
+  display: flex;
+  flex-direction: column;
 `;
 
 export const LpList = styled.div`
@@ -290,7 +294,8 @@ export const LpList = styled.div`
   flex-direction: column;
   gap: 2px;
   width: 100%;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 2px 0;
   scrollbar-width: none;
@@ -366,6 +371,7 @@ export const LiName = styled.div`
 `;
 
 export const LiDesc = styled.div`
+  font-family: ${FONT.lcd};
   font-size: 6.5px;
   color: ${LCD.warn};
   line-height: 1.3;
@@ -373,18 +379,21 @@ export const LiDesc = styled.div`
 `;
 
 export const LiDesc2 = styled.div`
+  font-family: ${FONT.lcd};
   font-size: 6.5px;
   color: ${LCD.dim};
   line-height: 1.3;
 `;
 
 export const LiCost = styled.div`
+  font-family: ${FONT.lcd};
   font-size: 7px;
   color: ${LCD.on};
   margin-top: 1px;
 `;
 
 export const LiTag = styled.span<{ $warn?: boolean }>`
+  font-family: ${FONT.lcd};
   font-size: 5.5px;
   color: ${({ $warn }) => ($warn ? LCD.warn : LCD.on)};
   border: 1px solid ${({ $warn }) => ($warn ? LCD.warn : LCD.on)};
@@ -951,6 +960,7 @@ export const TitleText = styled.div`
 `;
 
 export const TitleSub = styled.div`
+  font-family: ${FONT.lcd};
   font-size: 7px;
   letter-spacing: 4px;
   color: ${LCD.warn};
@@ -958,6 +968,7 @@ export const TitleSub = styled.div`
 `;
 
 export const TitlePt = styled.div`
+  font-family: ${FONT.lcd};
   position: absolute;
   top: 8px;
   right: 11px;
@@ -966,6 +977,7 @@ export const TitlePt = styled.div`
 `;
 
 export const TitleBest = styled.div`
+  font-family: ${FONT.lcd};
   position: absolute;
   top: 8px;
   left: 11px;
@@ -997,17 +1009,20 @@ export const TitleMenuItem = styled.div<{ $selected: boolean }>`
 `;
 
 export const MenuArrow = styled.span<{ $visible: boolean }>`
+  font-family: ${FONT.lcd};
   font-size: 10px;
   opacity: ${({ $visible }) => ($visible ? 1 : 0)};
   color: ${LCD.on};
 `;
 
 export const MenuLabel = styled.span`
+  font-family: ${FONT.lcd};
   font-size: 10px;
   color: ${LCD.on};
 `;
 
 export const TitleHow = styled.div`
+  font-family: ${FONT.lcd};
   position: absolute;
   bottom: 6px;
   left: 50%;
@@ -1044,6 +1059,7 @@ export const ResultRank = styled.div`
 `;
 
 export const ResultComment = styled.div`
+  font-family: ${FONT.lcd};
   font-size: 8px;
   color: ${LCD.warn};
   text-align: center;
@@ -1063,6 +1079,7 @@ export const ResultStats = styled.div`
 `;
 
 export const ResultRow = styled.div`
+  font-family: ${FONT.lcd};
   display: flex;
   justify-content: space-between;
   font-size: 9px;

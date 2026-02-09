@@ -24,6 +24,9 @@ if (typeof window !== 'undefined') {
   }
 }
 
+// scrollIntoView のモック（jsdom では未実装のため）
+Element.prototype.scrollIntoView = jest.fn();
+
 // HTMLCanvasElement.prototype.getContext のモック
 Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
   value: jest.fn(() => ({

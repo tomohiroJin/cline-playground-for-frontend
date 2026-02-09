@@ -18,6 +18,8 @@ interface Props {
   subtitle?: string;
   /** フッターテキスト */
   footer: string;
+  /** 現在選択中のインデックス（スクロール追従用） */
+  selectedIndex?: number;
   /** リスト内容 */
   children: React.ReactNode;
 }
@@ -28,6 +30,7 @@ const ListPanel: React.FC<Props> = ({
   title,
   subtitle,
   footer,
+  selectedIndex,
   children,
 }) => {
   const listRef = useRef<HTMLDivElement>(null);
@@ -48,6 +51,20 @@ const ListPanel: React.FC<Props> = ({
     const timer = setTimeout(updateArrows, 50);
     return () => clearTimeout(timer);
   }, [active, updateArrows, children]);
+
+  // 選択アイテムが変わったらスクロール追従
+  useEffect(() => {
+    if (!active || selectedIndex == null) return;
+    const el = listRef.current;
+    if (!el) return;
+    const items = el.children;
+    const target = items[selectedIndex] as HTMLElement | undefined;
+    if (target) {
+      target.scrollIntoView({ block: 'nearest' });
+      // scrollIntoView 後に矢印状態を更新
+      requestAnimationFrame(updateArrows);
+    }
+  }, [active, selectedIndex, updateArrows]);
 
   return (
     <ListPanelWrap $active={active}>
