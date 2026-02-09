@@ -13,6 +13,8 @@ interface Props {
   equippedStyles: string[];
   /** 最大装備スロット数 */
   maxSlots: number;
+  /** リスト項目クリック時のコールバック */
+  onItemClick?: (index: number) => void;
 }
 
 // プレイスタイル選択/装備画面
@@ -22,6 +24,7 @@ const StyleListScreen: React.FC<Props> = ({
   ownedStyles,
   equippedStyles,
   maxSlots,
+  onItemClick,
 }) => {
   const footerText =
     maxSlots > 1
@@ -33,6 +36,7 @@ const StyleListScreen: React.FC<Props> = ({
       active={active}
       title="PLAY STYLE"
       footer={footerText}
+      selectedIndex={selectedIndex}
     >
       {STY_KEYS.map((id, i) => {
         const s = STY[id];
@@ -40,7 +44,7 @@ const StyleListScreen: React.FC<Props> = ({
         const equipped = equippedStyles.includes(id);
 
         return (
-          <ListItem key={id} $selected={i === selectedIndex} $locked={!owned}>
+          <ListItem key={id} $selected={i === selectedIndex} $locked={!owned} onClick={() => onItemClick?.(i)}>
             <LiName>
               <span>{s.nm}</span>
               {equipped && <LiTag>EQUIP</LiTag>}

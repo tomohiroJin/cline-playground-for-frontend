@@ -14,13 +14,13 @@ import ResultScreen from './ResultScreen';
 const RiskLcdGame: React.FC = () => {
   const store = useStore();
   const audio = useAudio();
-  const { state: rs, dispatch, getLaneInfo } = useGameEngine(store, audio);
+  const { state: rs, dispatch, selectAndAct, getLaneInfo } = useGameEngine(store, audio);
   const screenRef = useRef<HTMLDivElement>(null);
 
   useInput(dispatch, screenRef);
 
   return (
-    <DeviceFrame>
+    <DeviceFrame controls={<ControlButtons onInput={dispatch} />}>
       <LcdScreen>
         <div ref={screenRef} style={{ width: '100%', height: '100%', position: 'relative' }}>
           {/* タイトル画面 */}
@@ -29,6 +29,7 @@ const RiskLcdGame: React.FC = () => {
             menuIndex={rs.menuIndex}
             pts={store.data.pts}
             best={store.data.best}
+            onMenuClick={selectAndAct}
           />
 
           {/* スタイル選択画面 */}
@@ -38,6 +39,7 @@ const RiskLcdGame: React.FC = () => {
             ownedStyles={store.data.sty}
             equippedStyles={store.data.eq}
             maxSlots={store.maxSlots()}
+            onItemClick={selectAndAct}
           />
 
           {/* ショップ画面 */}
@@ -47,16 +49,18 @@ const RiskLcdGame: React.FC = () => {
             pts={store.data.pts}
             ownedStyles={store.data.sty}
             ownedUnlocks={store.data.ui}
+            onItemClick={selectAndAct}
           />
 
           {/* ヘルプ画面 */}
-          <HelpScreen active={rs.screen === 'HP'} />
+          <HelpScreen active={rs.screen === 'HP'} selectedIndex={rs.listIndex} />
 
           {/* ゲーム画面 */}
           <GameScreen
             active={rs.screen === 'G'}
             rs={rs}
             getLaneInfo={getLaneInfo}
+            onPerkClick={selectAndAct}
           />
 
           {/* リザルト画面 */}
@@ -67,7 +71,6 @@ const RiskLcdGame: React.FC = () => {
           />
         </div>
       </LcdScreen>
-      <ControlButtons onInput={dispatch} />
     </DeviceFrame>
   );
 };

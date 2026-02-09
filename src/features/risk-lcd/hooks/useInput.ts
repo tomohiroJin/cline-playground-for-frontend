@@ -63,9 +63,8 @@ export function useInput(
         onActionRef.current(dy < 0 ? 'up' : 'down');
       } else if (Math.abs(dx) > 25) {
         onActionRef.current(dx < 0 ? 'left' : 'right');
-      } else {
-        onActionRef.current('act');
       }
+      // 短タップは処理しない — 各コンポーネントの onClick に委譲
     };
 
     el.addEventListener('touchstart', handleTouchStart, { passive: true });

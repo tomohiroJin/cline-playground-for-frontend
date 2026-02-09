@@ -16,10 +16,12 @@ interface Props {
     shelter: boolean;
     forecast: string;
   };
+  /** パーク項目クリック時のコールバック */
+  onPerkClick?: (index: number) => void;
 }
 
 // ゲーム画面統合（HUD + レーン + キャラ + エモーション）
-const GameScreen: React.FC<Props> = ({ active, rs, getLaneInfo }) => {
+const GameScreen: React.FC<Props> = ({ active, rs, getLaneInfo, onPerkClick }) => {
   const { game } = rs;
   if (!game) return <Layer $active={active} />;
 
@@ -46,6 +48,7 @@ const GameScreen: React.FC<Props> = ({ active, rs, getLaneInfo }) => {
           choices={game.perkChoices}
           selectedIndex={rs.perkIndex}
           perks={game.perks}
+          onPerkClick={onPerkClick}
         />
       )}
     </Layer>

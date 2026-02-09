@@ -13,6 +13,8 @@ interface Props {
   ownedStyles: string[];
   /** 所持済みアンロックID一覧 */
   ownedUnlocks: string[];
+  /** リスト項目クリック時のコールバック */
+  onItemClick?: (index: number) => void;
 }
 
 // PTでアンロック購入するショップ画面
@@ -22,12 +24,14 @@ const UnlockShopScreen: React.FC<Props> = ({
   pts,
   ownedStyles,
   ownedUnlocks,
+  onItemClick,
 }) => (
   <ListPanel
     active={active}
     title="UNLOCK"
     subtitle={`PT:${pts}`}
     footer="◀ BACK ──── BUY ●"
+    selectedIndex={selectedIndex}
   >
     {SHP.map((item, i) => {
       const owned =
@@ -36,7 +40,7 @@ const UnlockShopScreen: React.FC<Props> = ({
           : ownedUnlocks.includes(item.id);
 
       return (
-        <ListItem key={item.id} $selected={i === selectedIndex} $owned={owned}>
+        <ListItem key={item.id} $selected={i === selectedIndex} $owned={owned} onClick={() => onItemClick?.(i)}>
           <LiName>{item.nm}</LiName>
           <LiDesc>{item.ds}</LiDesc>
           <LiCost>{owned ? 'OWNED' : `${item.co}PT`}</LiCost>

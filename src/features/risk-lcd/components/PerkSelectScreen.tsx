@@ -17,6 +17,8 @@ interface Props {
   choices: PerkDef[];
   selectedIndex: number;
   perks: PerkDef[];
+  /** パーク項目クリック時のコールバック */
+  onPerkClick?: (index: number) => void;
 }
 
 // ステージ間パーク選択画面
@@ -24,13 +26,14 @@ const PerkSelectScreen: React.FC<Props> = ({
   choices,
   selectedIndex,
   perks,
+  onPerkClick,
 }) => (
   <PerkOverlay>
     <PerkTitle>PERK SELECT</PerkTitle>
     <PerkSub>▲▼ SELECT ─ ● EQUIP</PerkSub>
     <PerkChoices>
       {choices.map((p, i) => (
-        <PerkCard key={p.id + i} $selected={i === selectedIndex}>
+        <PerkCard key={p.id + i} $selected={i === selectedIndex} onClick={() => onPerkClick?.(i)}>
           <PerkName>
             {p.ic} {p.nm}
           </PerkName>

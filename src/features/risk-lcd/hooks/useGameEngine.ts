@@ -21,6 +21,7 @@ import {
   PERKS,
   STACKABLE_PERKS,
   MENUS,
+  HELP_SECTIONS,
 } from '../constants';
 import {
   Rand,
@@ -944,17 +945,28 @@ export function useGameEngine(store: StoreApi, audio: AudioApi) {
           break;
         }
 
-        case 'HP':
+        case 'HP': {
           // ヘルプ画面
-          if (action === 'act' || action === 'left' || action === 'back') {
+          const helpTotal = HELP_SECTIONS.reduce(
+            (n, s) => n + 1 + s.items.length,
+            0,
+          );
+          if (action === 'up') {
+            patch({ listIndex: Math.max(0, r.listIndex - 1) });
+            audio.mv();
+          } else if (action === 'down') {
+            patch({ listIndex: Math.min(helpTotal - 1, r.listIndex + 1) });
+            audio.mv();
+          } else if (action === 'act' || action === 'left' || action === 'back') {
             audio.sel();
             goTitle();
           }
           break;
+        }
 
         case 'R':
           // リザルト画面
-          if (action === 'act' || action === 'back') {
+          if (action === 'act' || action === 'left' || action === 'back') {
             goTitle();
           }
           break;
@@ -994,9 +1006,28 @@ export function useGameEngine(store: StoreApi, audio: AudioApi) {
     [],
   );
 
+  // 項目を直接クリック/タップした際に「選択 + 実行」を一括で行う
+  const selectAndAct = useCallback((index: number) => {
+    const r = rsRef.current;
+    const g = gRef.current;
+    let key: 'menuIndex' | 'listIndex' | 'perkIndex';
+    if (r.screen === 'G' && g?.phase === 'perks') {
+      key = 'perkIndex';
+    } else if (r.screen === 'T') {
+      key = 'menuIndex';
+    } else {
+      key = 'listIndex';
+    }
+    // ref を即座に更新（dispatch が読む rsRef.current に反映）
+    rsRef.current = { ...rsRef.current, [key]: index };
+    patch({ [key]: index });
+    dispatch('act');
+  }, [patch, dispatch]);
+
   return {
     state: rs,
     dispatch,
+    selectAndAct,
     getLaneInfo,
   };
 }

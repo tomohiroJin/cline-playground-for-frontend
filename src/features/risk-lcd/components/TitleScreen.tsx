@@ -21,10 +21,12 @@ interface Props {
   pts: number;
   /** ベストスコア（0 なら非表示） */
   best: number;
+  /** メニュー項目クリック時のコールバック */
+  onMenuClick?: (index: number) => void;
 }
 
 // タイトル画面（GAME START / PLAY STYLE / UNLOCK / HELP メニュー）
-const TitleScreen: React.FC<Props> = ({ active, menuIndex, pts, best }) => (
+const TitleScreen: React.FC<Props> = ({ active, menuIndex, pts, best, onMenuClick }) => (
   <TitleLayer $active={active}>
     <TitlePt>PT:{pts}</TitlePt>
     {best > 0 && <TitleBest>BEST:{best}</TitleBest>}
@@ -36,7 +38,7 @@ const TitleScreen: React.FC<Props> = ({ active, menuIndex, pts, best }) => (
     <TitleSub>── CHOOSE YOUR FATE ──</TitleSub>
     <TitleMenu>
       {MENUS.map((label, i) => (
-        <TitleMenuItem key={label} $selected={i === menuIndex}>
+        <TitleMenuItem key={label} $selected={i === menuIndex} onClick={() => onMenuClick?.(i)}>
           <MenuArrow $visible={i === menuIndex}>▶</MenuArrow>
           <MenuLabel>{label}</MenuLabel>
         </TitleMenuItem>
