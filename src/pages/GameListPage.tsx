@@ -359,6 +359,34 @@ const GameListPage: React.FC = () => {
             </PlayButton>
           </CardContent>
         </GameCardContainer>
+        <GameCardContainer
+          onClick={() => navigate('/sprint-note')}
+          role="button"
+          aria-label="Sprint Note ゲームをプレイする"
+          tabIndex={0}
+          onKeyDown={e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              navigate('/sprint-note');
+            }
+          }}
+        >
+          <CardImageArea
+            style={{ background: 'linear-gradient(135deg, #0f1117 0%, #1a1d2e 50%, #2a2d45 100%)' }}
+            role="img"
+            aria-label="Sprint Noteのゲーム画面プレビュー"
+          />
+          <CardContent>
+            <CardTitle>Sprint Note</CardTitle>
+            <GameDescription>
+              テキストベースのアジャイル開発シミュレーション。
+              計画・開発・リリース・レビュー・振り返りのスプリントループを回し、プロジェクトを成功に導け。
+            </GameDescription>
+            <PlayButton aria-hidden="true" tabIndex={-1}>
+              Play Now <span>→</span>
+            </PlayButton>
+          </CardContent>
+        </GameCardContainer>
       </BentoGrid>
     </PageContainer>
   );

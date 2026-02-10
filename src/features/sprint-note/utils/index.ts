@@ -1,0 +1,16 @@
+export {
+  clamp,
+  applyTaskEffects,
+  applyReleaseEffects,
+  applyProgressBonus,
+  evaluateGoalScore,
+  determineRank,
+  getImprovementCandidates,
+  getQualityWarning,
+  getFullReleaseRisk,
+  getUserReview,
+  getStakeholderReview,
+  getDevelopmentFlavorText,
+  getRetrospectiveNarrative,
+  getResultTexts,
+} from './game-logic';
