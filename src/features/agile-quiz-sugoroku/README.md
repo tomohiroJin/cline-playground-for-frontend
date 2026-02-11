@@ -19,7 +19,17 @@ src/features/agile-quiz-sugoroku/
   index.ts                  # barrel export
   types.ts                  # 型定義
   constants.ts              # ゲーム設定定数
-  quiz-data.ts              # クイズデータ（カテゴリ別・難易度別）
+  quiz-data.ts              # 互換エクスポート（questions/を再公開）
+  questions/
+    index.ts                # カテゴリ別問題データの集約
+    planning.json           # planningカテゴリ問題データ
+    impl1.json              # impl1カテゴリ問題データ
+    test1.json              # test1カテゴリ問題データ
+    refinement.json         # refinementカテゴリ問題データ
+    impl2.json              # impl2カテゴリ問題データ
+    test2.json              # test2カテゴリ問題データ
+    review.json             # reviewカテゴリ問題データ
+    emergency.json          # emergencyカテゴリ問題データ
   hooks/
     useGame.ts              # ゲーム状態管理フック
     useCountdown.ts         # カウントダウンタイマー
