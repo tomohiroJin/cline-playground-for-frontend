@@ -57,7 +57,7 @@ const TAU = Math.PI * 2;
    ================================================================ */
 const W=440,H=340,cv=canvas;const $=cv.getContext('2d')!;
 cv.width=W;cv.height=H;
-function resize(){const parent=cv.parentElement;if(!parent)return;const s=Math.min(parent.clientWidth/W,(window.innerHeight*0.62)/H,2.5);cv.style.width=(W*s)+'px';cv.style.height=(H*s)+'px';}
+function resize(){const s=Math.min(window.innerWidth*0.94/W,(window.innerHeight*0.62)/H,2.5);cv.style.width=(W*s)+'px';cv.style.height=(H*s)+'px';}
 resize();
 /* LCD Color Palette */
 const BG='#b0bc98',GH='rgba(80,92,64,0.14)',ON='#1a2810',RK='rgba(80,92,64,0.32)';
