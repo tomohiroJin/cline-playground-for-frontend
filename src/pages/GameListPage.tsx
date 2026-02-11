@@ -11,6 +11,7 @@ import ipneCardBg from '../assets/images/ipne_card_bg.webp';
 import agileQuizSugorokuCardBg from '../assets/images/agile_quiz_sugoroku_card_bg.webp';
 import labyrinthEchoCardBg from '../assets/images/labyrinth_echo_card_bg.webp';
 import riskLcdCardBg from '../assets/images/risk_lcd_card_bg.webp';
+import keysAndArmsCardBg from '../assets/images/keys_and_arms_card_bg.webp';
 import {
   PageContainer,
   HeroSection,
@@ -372,7 +373,7 @@ const GameListPage: React.FC = () => {
           }}
         >
           <CardImageArea
-            $customBg="radial-gradient(circle at 50% 30%, #bec8a6 0%, #8f9a74 40%, #5b6448 100%)"
+            $bgImage={keysAndArmsCardBg}
             role="img"
             aria-label="KEYS & ARMSのゲーム画面プレビュー"
           />

@@ -36,7 +36,7 @@
 - [x] `src/App.tsx` に lazy import と `/keys-and-arms` route を追加
 - [x] `src/pages/GameListPage.tsx` にカード追加
 - [x] `src/pages/GameListPage.test.tsx` の件数・ラベル期待値を更新
-- [x] 必要に応じて `src/assets/images/keys_and_arms_card_bg.webp` を追加（今回は `CardImageArea` の `$customBg` を採用）
+- [x] `src/assets/images/keys_and_arms_card_bg.webp` を追加し、メニューカードに適用
 - [x] ルート `README.md` の収録ゲーム一覧を更新
 
 ## Phase 5: テスト・検証
@@ -45,8 +45,8 @@
 - [x] `KeysAndArmsPage` のレンダリングテスト作成
 - [x] `npm test` 実行
 - [x] `npm run build` 実行
-- [ ] キーボード操作の手動確認
-- [ ] タッチ操作の手動確認
+- [x] キーボード操作の手動確認
+- [x] タッチ操作の手動確認
 
 ## Phase 6: 仕上げ
 
@@ -70,4 +70,4 @@
 - [x] 簡易再実装コード（`src/features/keys-and-arms/`）を撤去し README のみに整理
 - [x] 関連テストを忠実移植方式へ更新
 - [x] `npm test` と `npm run build` を再実行
-- [ ] キーボード/タッチの手動確認を実施
+- [x] キーボード/タッチの手動確認を実施
