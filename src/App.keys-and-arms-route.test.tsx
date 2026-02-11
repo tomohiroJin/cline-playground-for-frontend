@@ -3,9 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import App from './App';
 
-jest.mock('./pages/KeysAndArmsPage', () => () => (
-  <iframe title="KEYS & ARMS" src="/games/keys-and-arms/index.html" />
-));
+jest.mock('./pages/KeysAndArmsPage', () => () => <div aria-label="KEYS & ARMS">mocked game</div>);
 
 describe('App routes', () => {
   it('/keys-and-arms でページを表示する', async () => {
@@ -15,6 +13,6 @@ describe('App routes', () => {
       </MemoryRouter>
     );
 
-    expect(await screen.findByTitle('KEYS & ARMS')).toBeInTheDocument();
+    expect(await screen.findByLabelText('KEYS & ARMS')).toBeInTheDocument();
   });
 });

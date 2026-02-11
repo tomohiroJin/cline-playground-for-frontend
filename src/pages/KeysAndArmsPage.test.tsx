@@ -3,10 +3,9 @@ import { render, screen } from '@testing-library/react';
 import KeysAndArmsPage from './KeysAndArmsPage';
 
 describe('KeysAndArmsPage', () => {
-  it('KEYS & ARMS の iframe を表示する', () => {
+  it('KEYS & ARMS のゲームキャンバスを表示する', () => {
     render(<KeysAndArmsPage />);
-    const frame = screen.getByTitle('KEYS & ARMS');
-    expect(frame).toBeInTheDocument();
-    expect(frame).toHaveAttribute('src', '/games/keys-and-arms/index.html');
+    expect(screen.getByLabelText('KEYS & ARMS')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'アクション' })).toBeInTheDocument();
   });
 });

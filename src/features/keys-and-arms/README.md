@@ -2,23 +2,38 @@
 
 ## 概要
 
-元ファイル `keys-and-arms.html` をそのまま実行する忠実移植版です。
-ゲームロジックの再実装は行わず、原本HTMLを `public/` 配下へ配置し iframe で表示します。
+既存ブラウザ実装の挙動を `src/features/keys-and-arms/` へ段階移植中です。
 
-## 配置構成
+## 現在の実装状態
+
+- `KeysAndArmsPage` から旧埋め込みフレーム実装を撤廃
+- React + TypeScript のゲームコンポーネントを導入
+- 入力/保存/音/更新/描画の基礎モジュールを作成
+
+## 既知の未完了項目
+
+- Stage 1/2/3 の詳細ロジック（敵・当たり判定・演出）
+- 元HTMLと同等のスプライト群
+- BGM/SFX のタイミング完全一致
+- 同等性レポート `parity-report.md` の PASS 化
+
+## 主要ファイル
 
 ```text
-public/games/keys-and-arms/index.html   # 元HTML本体（原本移植）
-src/pages/KeysAndArmsPage.tsx            # iframeラッパーページ
-src/features/keys-and-arms/README.md     # このドキュメント
+src/features/keys-and-arms/
+  KeysAndArmsGame.tsx
+  constants.ts
+  types.ts
+  input.ts
+  storage.ts
+  audio.ts
+  engine/
+    update.ts
+    transitions.ts
+    scoring.ts
+    collision.ts
+  render/
+    renderer.ts
+    sprites.ts
+    effects.ts
 ```
-
-## 実装方針
-
-- プラットフォーム統合（ゲーム一覧・ルーティング）は React 側で担当
-- ゲーム本体の見た目・操作・進行は原本HTMLの挙動を維持
-
-## 起動URL
-
-- `/keys-and-arms`
-- ページ内部で `/games/keys-and-arms/index.html` を読み込みます
