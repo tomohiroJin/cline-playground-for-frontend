@@ -8,18 +8,18 @@
 
 ## Phase 1: 基盤作成
 
-- [ ] `src/features/keys-and-arms/` を作成
-- [ ] `types.ts`（ゲーム状態・入力状態・ステージ状態）を作成
-- [ ] `constants.ts`（画面サイズ、tick、定数）を作成
-- [ ] `index.ts` を作成
+- [x] `src/features/keys-and-arms/` を作成
+- [x] `types.ts`（ゲーム状態・入力状態・ステージ状態）を作成
+- [x] `constants.ts`（画面サイズ、tick、定数）を作成
+- [x] `index.ts` を作成
 
 ## Phase 2: コアロジック移植
 
-- [ ] `engine/state-machine.ts` を作成（状態遷移）
-- [ ] `engine/difficulty.ts` を作成（難易度パラメータ）
-- [ ] `engine/scoring.ts` を作成（スコア算出）
-- [ ] `engine/collision.ts` を作成（当たり判定/被弾）
-- [ ] `storage.ts` を作成（ハイスコア保存/読込）
+- [x] `engine/state-machine.ts` を作成（状態遷移）
+- [x] `engine/difficulty.ts` を作成（難易度パラメータ）
+- [x] `engine/scoring.ts` を作成（スコア算出）
+- [x] `engine/collision.ts` を作成（当たり判定/被弾）
+- [x] `storage.ts` を作成（ハイスコア保存/読込）
 
 ## Phase 3: 描画・入力・音声
 
