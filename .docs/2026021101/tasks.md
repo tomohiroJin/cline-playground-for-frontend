@@ -23,33 +23,33 @@
 
 ## Phase 3: 描画・入力・音声
 
-- [ ] `render/sprites.ts` を作成（ピクセルデータ）
-- [ ] `render/effects.ts` を作成（パーティクル/ポップアップ）
-- [ ] `render/renderer.ts` を作成（描画統合）
-- [ ] `input.ts` を作成（keyboard/touch）
-- [ ] `audio.ts` を作成（SFX/BGM）
-- [ ] `KeysAndArmsGame.tsx` を作成（canvas loop + lifecycle）
+- [x] `render/sprites.ts` を作成（ピクセルデータ）
+- [x] `render/effects.ts` を作成（パーティクル/ポップアップ）
+- [x] `render/renderer.ts` を作成（描画統合）
+- [x] `input.ts` を作成（keyboard/touch）
+- [x] `audio.ts` を作成（SFX/BGM）
+- [x] `KeysAndArmsGame.tsx` を作成（canvas loop + lifecycle）
 
 ## Phase 4: プラットフォーム統合
 
-- [ ] `src/pages/KeysAndArmsPage.tsx` を作成
-- [ ] `src/App.tsx` に lazy import と `/keys-and-arms` route を追加
-- [ ] `src/pages/GameListPage.tsx` にカード追加
-- [ ] `src/pages/GameListPage.test.tsx` の件数・ラベル期待値を更新
-- [ ] 必要に応じて `src/assets/images/keys_and_arms_card_bg.webp` を追加
-- [ ] ルート `README.md` の収録ゲーム一覧を更新
+- [x] `src/pages/KeysAndArmsPage.tsx` を作成
+- [x] `src/App.tsx` に lazy import と `/keys-and-arms` route を追加
+- [x] `src/pages/GameListPage.tsx` にカード追加
+- [x] `src/pages/GameListPage.test.tsx` の件数・ラベル期待値を更新
+- [x] 必要に応じて `src/assets/images/keys_and_arms_card_bg.webp` を追加（今回は `CardImageArea` の `$customBg` を採用）
+- [x] ルート `README.md` の収録ゲーム一覧を更新
 
 ## Phase 5: テスト・検証
 
-- [ ] `difficulty/scoring/state-machine` のユニットテスト作成
-- [ ] `KeysAndArmsPage` のレンダリングテスト作成
-- [ ] `npm test` 実行
-- [ ] `npm run build` 実行
+- [x] `difficulty/scoring/state-machine` のユニットテスト作成
+- [x] `KeysAndArmsPage` のレンダリングテスト作成
+- [x] `npm test` 実行
+- [x] `npm run build` 実行
 - [ ] キーボード操作の手動確認
 - [ ] タッチ操作の手動確認
 
 ## Phase 6: 仕上げ
 
-- [ ] `src/features/keys-and-arms/README.md` を作成
-- [ ] 既存ゲームへの回帰影響を最終チェック
+- [x] `src/features/keys-and-arms/README.md` を作成
+- [x] 既存ゲームへの回帰影響を最終チェック
 - [ ] ドキュメント（plan/spec/tasks）との差分を確認し完了報告

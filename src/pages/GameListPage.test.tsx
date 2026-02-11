@@ -22,8 +22,8 @@ describe('GameListPage', () => {
     expect(screen.getByText('Game Platform')).toBeInTheDocument();
     expect(screen.getByText(/厳選されたインタラクティブなゲーム体験/)).toBeInTheDocument();
 
-    // プレイボタンが表示されていることを確認 (11ゲーム)
-    expect(screen.getAllByText(/Play Now/)).toHaveLength(11);
+    // プレイボタンが表示されていることを確認 (12ゲーム)
+    expect(screen.getAllByText(/Play Now/)).toHaveLength(12);
   });
 
   it('迷宮の残響カードが表示されること', () => {
@@ -35,5 +35,16 @@ describe('GameListPage', () => {
 
     expect(screen.getByText('迷宮の残響')).toBeInTheDocument();
     expect(screen.getByLabelText('迷宮の残響 ゲームをプレイする')).toBeInTheDocument();
+  });
+
+  it('KEYS & ARMSカードが表示されること', () => {
+    render(
+      <MemoryRouter>
+        <GameListPage />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('KEYS & ARMS')).toBeInTheDocument();
+    expect(screen.getByLabelText('KEYS & ARMS ゲームをプレイする')).toBeInTheDocument();
   });
 });
