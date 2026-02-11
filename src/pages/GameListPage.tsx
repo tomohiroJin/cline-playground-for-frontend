@@ -359,6 +359,35 @@ const GameListPage: React.FC = () => {
             </PlayButton>
           </CardContent>
         </GameCardContainer>
+        <GameCardContainer
+          onClick={() => navigate('/keys-and-arms')}
+          role="button"
+          aria-label="KEYS & ARMS ゲームをプレイする"
+          tabIndex={0}
+          onKeyDown={e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              navigate('/keys-and-arms');
+            }
+          }}
+        >
+          <CardImageArea
+            $customBg="radial-gradient(circle at 50% 30%, #bec8a6 0%, #8f9a74 40%, #5b6448 100%)"
+            role="img"
+            aria-label="KEYS & ARMSのゲーム画面プレビュー"
+          />
+          <CardContent>
+            <CardTitle>KEYS & ARMS</CardTitle>
+            <GameDescription>
+              レトロLCD風の3ステージアクション。
+              洞窟、草原、城塞を巡りながらスコアを積み上げる。
+              キーボードとタッチの両操作に対応。
+            </GameDescription>
+            <PlayButton aria-hidden="true" tabIndex={-1}>
+              Play Now <span>→</span>
+            </PlayButton>
+          </CardContent>
+        </GameCardContainer>
       </BentoGrid>
     </PageContainer>
   );

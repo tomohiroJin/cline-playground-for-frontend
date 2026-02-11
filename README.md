@@ -18,6 +18,7 @@
 | Agile Quiz Sugoroku | クイズ / 教育 | [README](src/features/agile-quiz-sugoroku/README.md) |
 | 迷宮の残響 | テキスト探索ローグライト | [README](src/features/labyrinth-echo/README.md) |
 | RISK LCD | レーン回避×ローグライトビルド | [README](src/features/risk-lcd/README.md) |
+| KEYS & ARMS | レトロLCDアクション | [README](src/features/keys-and-arms/README.md) |
 
 ## 主な機能
 
