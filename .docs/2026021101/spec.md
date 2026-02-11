@@ -120,3 +120,17 @@ src/pages/KeysAndArmsPage.tsx
 - ハイスコア更新後もシーンが継続すること
 - RST/ESC でタイトルへ戻った場合でも最高値が保存されること
 - 仮想ボタン長押し後に `touchcancel` しても入力が残らないこと
+
+## 8. 忠実移植再定義仕様（2026-02-11 追記）
+
+### 8.1 実装方式
+- 元ファイル `keys-and-arms.html` を `public/games/keys-and-arms/index.html` として配置する。
+- React 側は `iframe` コンテナのみ担当し、ゲームロジック自体は原本HTMLを実行する。
+
+### 8.2 受け入れ基準
+- 元HTML相当のUI/操作/ゲーム進行が確認できること。
+- プラットフォーム導線（GameList・Route）経由で起動できること。
+- ビルド・テストが成功すること。
+
+### 8.3 非対象
+- 元HTMLゲームロジックのTypeScript再実装は本フェーズでは行わない。

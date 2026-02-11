@@ -62,3 +62,12 @@
 - [x] ステージ進行を「固定時間被弾/固定時間クリア」から「ハザード接触/目標達成」へ変更
 - [x] 追加回帰テストを作成（状態継続、保存、進行）
 - [x] `npm test` と `npm run build` を再実行
+
+## Phase 8: 忠実移植やり直し（2026-02-11 追記）
+
+- [ ] `public/games/keys-and-arms/index.html` に元HTMLを配置
+- [ ] `KeysAndArmsPage` を iframe 埋め込み方式へ変更
+- [ ] 簡易再実装コード（`src/features/keys-and-arms/`）を撤去し README のみに整理
+- [ ] 関連テストを忠実移植方式へ更新
+- [ ] `npm test` と `npm run build` を再実行
+- [ ] キーボード/タッチの手動確認を実施
