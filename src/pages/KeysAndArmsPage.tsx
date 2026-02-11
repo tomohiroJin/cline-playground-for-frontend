@@ -1,15 +1,26 @@
 import React from 'react';
 import styled from 'styled-components';
-import { KeysAndArmsGame } from '../features/keys-and-arms';
 
 const PageWrap = styled.div`
-  min-height: 100vh;
-  background: radial-gradient(circle at 50% 10%, #2a2a2a 0%, #141414 55%, #0f0f0f 100%);
+  min-height: calc(100vh - 80px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px;
+  background: #101010;
+`;
+
+const GameFrame = styled.iframe`
+  width: min(100%, 980px);
+  height: min(calc(100vh - 120px), 920px);
+  border: 0;
+  border-radius: 12px;
+  background: #101010;
 `;
 
 const KeysAndArmsPage: React.FC = () => (
   <PageWrap>
-    <KeysAndArmsGame />
+    <GameFrame title="KEYS & ARMS" src="/games/keys-and-arms/index.html" />
   </PageWrap>
 );
 

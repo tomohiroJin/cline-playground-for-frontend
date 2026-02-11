@@ -4,9 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import App from './App';
 
 jest.mock('./pages/KeysAndArmsPage', () => () => (
-  <div role="region" aria-label="KEYS & ARMS ゲーム画面">
-    KEYS & ARMS MOCK
-  </div>
+  <iframe title="KEYS & ARMS" src="/games/keys-and-arms/index.html" />
 ));
 
 describe('App routes', () => {
@@ -17,6 +15,6 @@ describe('App routes', () => {
       </MemoryRouter>
     );
 
-    expect(await screen.findByRole('region', { name: 'KEYS & ARMS ゲーム画面' })).toBeInTheDocument();
+    expect(await screen.findByTitle('KEYS & ARMS')).toBeInTheDocument();
   });
 });

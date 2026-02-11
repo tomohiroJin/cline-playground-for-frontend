@@ -2,38 +2,23 @@
 
 ## 概要
 
-Game & Watch風のLCD表現で進行するステージ制アクション。
-`cave -> grass -> boss` の3ステージをループしながらスコアを積み上げる。
+元ファイル `keys-and-arms.html` をそのまま実行する忠実移植版です。
+ゲームロジックの再実装は行わず、原本HTMLを `public/` 配下へ配置し iframe で表示します。
 
-## 操作方法
-
-- `ArrowUp / ArrowDown / ArrowLeft / ArrowRight` または `WASD`: 移動
-- `Z / Space / Enter`: アクション
-- `Escape`: タイトルへ戻る
-- 画面内の D-pad / ACT / RST ボタンでも同様に操作可能
-
-## ファイル構成
+## 配置構成
 
 ```text
-src/features/keys-and-arms/
-  KeysAndArmsGame.tsx       # ゲーム本体（canvas / loop / 統合）
-  constants.ts              # 画面サイズ・tick・スコア定数
-  types.ts                  # 型定義
-  input.ts                  # keyboard / virtual button 入力
-  audio.ts                  # Web Audio API ラッパー
-  storage.ts                # ハイスコア永続化
-  engine/
-    state-machine.ts        # 状態遷移
-    difficulty.ts           # 難易度計算
-    scoring.ts              # スコア計算
-    collision.ts            # 当たり判定補助
-  render/
-    sprites.ts              # スプライト定義
-    effects.ts              # ポップアップ更新
-    renderer.ts             # 描画統合
+public/games/keys-and-arms/index.html   # 元HTML本体（原本移植）
+src/pages/KeysAndArmsPage.tsx            # iframeラッパーページ
+src/features/keys-and-arms/README.md     # このドキュメント
 ```
 
-## 永続化
+## 実装方針
 
-- 主キー: `game_score_keys_and_arms`
-- 互換読込: `kaG`
+- プラットフォーム統合（ゲーム一覧・ルーティング）は React 側で担当
+- ゲーム本体の見た目・操作・進行は原本HTMLの挙動を維持
+
+## 起動URL
+
+- `/keys-and-arms`
+- ページ内部で `/games/keys-and-arms/index.html` を読み込みます
