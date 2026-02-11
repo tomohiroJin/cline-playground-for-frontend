@@ -52,4 +52,4 @@
 
 - [x] `src/features/keys-and-arms/README.md` を作成
 - [x] 既存ゲームへの回帰影響を最終チェック
-- [ ] ドキュメント（plan/spec/tasks）との差分を確認し完了報告
+- [x] ドキュメント（plan/spec/tasks）との差分を確認し完了報告
