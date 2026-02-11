@@ -11,6 +11,7 @@ import ipneCardBg from '../assets/images/ipne_card_bg.webp';
 import agileQuizSugorokuCardBg from '../assets/images/agile_quiz_sugoroku_card_bg.webp';
 import labyrinthEchoCardBg from '../assets/images/labyrinth_echo_card_bg.webp';
 import riskLcdCardBg from '../assets/images/risk_lcd_card_bg.webp';
+import keysAndArmsCardBg from '../assets/images/keys_and_arms_card_bg.webp';
 import {
   PageContainer,
   HeroSection,
@@ -353,6 +354,35 @@ const GameListPage: React.FC = () => {
               液晶ゲーム機風の3レーン回避アクション×ローグライト。
               予告を読み、パークを重ねてビルドを構築。
               リスクとリターンのバランスで高スコアを狙え。
+            </GameDescription>
+            <PlayButton aria-hidden="true" tabIndex={-1}>
+              Play Now <span>→</span>
+            </PlayButton>
+          </CardContent>
+        </GameCardContainer>
+        <GameCardContainer
+          onClick={() => navigate('/keys-and-arms')}
+          role="button"
+          aria-label="KEYS & ARMS ゲームをプレイする"
+          tabIndex={0}
+          onKeyDown={e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              navigate('/keys-and-arms');
+            }
+          }}
+        >
+          <CardImageArea
+            $bgImage={keysAndArmsCardBg}
+            role="img"
+            aria-label="KEYS & ARMSのゲーム画面プレビュー"
+          />
+          <CardContent>
+            <CardTitle>KEYS & ARMS</CardTitle>
+            <GameDescription>
+              レトロLCD風の3ステージアクション。
+              洞窟、草原、城塞を巡りながらスコアを積み上げる。
+              キーボードとタッチの両操作に対応。
             </GameDescription>
             <PlayButton aria-hidden="true" tabIndex={-1}>
               Play Now <span>→</span>
