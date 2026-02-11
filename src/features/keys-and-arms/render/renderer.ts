@@ -86,10 +86,69 @@ function drawPlayField(ctx: CanvasRenderingContext2D, scene: SceneState, actPres
   }
 }
 
+function drawLaneGame(
+  ctx: CanvasRenderingContext2D,
+  options: {
+    playerLane: number;
+    hazardRows: Array<{ lane: number; row: number }>;
+    progress: number;
+    target: number;
+    actPressed: boolean;
+  }
+): void {
+  const laneTop = 106;
+  const laneHeight = 174;
+  const laneWidth = 112;
+  const gap = 10;
+  const laneX = [54, 54 + laneWidth + gap, 54 + (laneWidth + gap) * 2];
+  const rows = 6;
+  const rowHeight = 24;
+
+  ctx.strokeStyle = LCD_GHOST;
+  ctx.lineWidth = 2;
+  laneX.forEach((x, lane) => {
+    ctx.strokeRect(x, laneTop, laneWidth, laneHeight);
+    if (lane === options.playerLane) {
+      ctx.fillStyle = 'rgba(26, 40, 16, 0.08)';
+      ctx.fillRect(x + 2, laneTop + 2, laneWidth - 4, laneHeight - 4);
+    }
+  });
+
+  for (let row = 1; row < rows; row += 1) {
+    const y = laneTop + row * rowHeight;
+    ctx.beginPath();
+    ctx.moveTo(laneX[0], y);
+    ctx.lineTo(laneX[2] + laneWidth, y);
+    ctx.stroke();
+  }
+
+  options.hazardRows.forEach(hazard => {
+    const x = laneX[hazard.lane];
+    const y = laneTop + hazard.row * rowHeight;
+    drawSprite(ctx, ENEMY, x + laneWidth / 2 - 12, y + 4, 6);
+  });
+
+  const playerX = laneX[options.playerLane] + laneWidth / 2 - 12;
+  const playerY = laneTop + (rows - 1) * rowHeight - 2;
+  drawSprite(ctx, options.actPressed ? HERO_ACT : HERO_IDLE, playerX, playerY, 6);
+
+  ctx.fillStyle = LCD_ON;
+  ctx.font = "9px 'Press Start 2P', monospace";
+  ctx.textAlign = 'center';
+  ctx.fillText(`OBJECTIVE ${options.progress}/${options.target}`, CANVAS_WIDTH / 2, 92);
+}
+
 export function renderFrame(
   ctx: CanvasRenderingContext2D,
   state: CoreGameState,
-  options: { actPressed: boolean; popups: Popup[] }
+  options: {
+    actPressed: boolean;
+    popups: Popup[];
+    playerLane: number;
+    hazardRows: Array<{ lane: number; row: number }>;
+    progress: number;
+    target: number;
+  }
 ): void {
   ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
   ctx.fillStyle = LCD_BG;
@@ -138,5 +197,6 @@ export function renderFrame(
 
   drawSceneLabel(ctx, state.scene);
   drawPlayField(ctx, state.scene, options.actPressed);
+  drawLaneGame(ctx, options);
   drawPopups(ctx, options.popups);
 }
