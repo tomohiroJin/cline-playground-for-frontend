@@ -2,9 +2,9 @@
 
 ## Phase 0: 事前準備
 
-- [ ] `.tmp/keys-and-arms.html` からアセット・ロジック要素を棚卸し
-- [ ] 状態遷移図（title/cave/grass/boss/over/ending）を作成
-- [ ] sprite定義と描画関数の分割単位を確定
+- [x] `.tmp/keys-and-arms.html` からアセット・ロジック要素を棚卸し
+- [x] 状態遷移図（title/cave/grass/boss/over/ending）を作成
+- [x] sprite定義と描画関数の分割単位を確定
 
 ## Phase 1: 基盤作成
 
