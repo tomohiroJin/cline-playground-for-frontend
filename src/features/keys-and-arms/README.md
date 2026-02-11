@@ -2,23 +2,26 @@
 
 ## 概要
 
-元ファイル `keys-and-arms.html` をそのまま実行する忠実移植版です。
-ゲームロジックの再実装は行わず、原本HTMLを `public/` 配下へ配置し iframe で表示します。
+Game & Watch 風のアクションゲームを React コンポーネントとして完全移植した版です。
+元の HTML ファイル（2,522行）のゲームロジックを `engine.ts` のクロージャに格納し、
+React は薄いラッパーとしてのみ機能します。
 
 ## 配置構成
 
 ```text
-public/games/keys-and-arms/index.html   # 元HTML本体（原本移植）
-src/pages/KeysAndArmsPage.tsx            # iframeラッパーページ
-src/features/keys-and-arms/README.md     # このドキュメント
+src/features/keys-and-arms/engine.ts           # ゲームエンジン本体（createEngine クロージャ）
+src/features/keys-and-arms/KeysAndArmsGame.tsx  # React ラッパー（Canvas + 仮想パッド）
+src/features/keys-and-arms/styles.ts            # styled-components スタイル
+src/pages/KeysAndArmsPage.tsx                   # ページコンポーネント
 ```
 
 ## 実装方針
 
-- プラットフォーム統合（ゲーム一覧・ルーティング）は React 側で担当
-- ゲーム本体の見た目・操作・進行は原本HTMLの挙動を維持
+- ゲームロジック（2,458行）は元コードをそのまま維持
+- 改変は DOM 参照の差し替え（10箇所未満）のみ
+- localStorage キー `kaG` でハイスコア保存（元実装と同一）
+- フォント `Press Start 2P` は public/index.html でプリロード
 
 ## 起動URL
 
 - `/keys-and-arms`
-- ページ内部で `/games/keys-and-arms/index.html` を読み込みます

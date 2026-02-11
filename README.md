@@ -18,7 +18,7 @@
 | Agile Quiz Sugoroku | クイズ / 教育 | [README](src/features/agile-quiz-sugoroku/README.md) |
 | 迷宮の残響 | テキスト探索ローグライト | [README](src/features/labyrinth-echo/README.md) |
 | RISK LCD | レーン回避×ローグライトビルド | [README](src/features/risk-lcd/README.md) |
-| KEYS & ARMS | レトロLCDアクション（元HTML忠実移植） | [README](src/features/keys-and-arms/README.md) |
+| KEYS & ARMS | レトロLCDアクション（React コンポーネント移植済） | [README](src/features/keys-and-arms/README.md) |
 
 ## 主な機能
 
@@ -69,8 +69,6 @@ npm run test:coverage
 ## プロジェクト構成
 
 ```text
-public/
-  └── games/                     # 忠実移植ゲームの静的HTML配置
 src/
   ├── assets/                    # 画像・音声などのアセット
   ├── components/                # UIコンポーネント

@@ -1,66 +1,22 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>KEYS & ARMS</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:#181818;display:flex;justify-content:center;align-items:center;
-  min-height:100vh;overflow:hidden;flex-direction:column;font-family:'Press Start 2P',monospace}
-#shell{background:linear-gradient(165deg,#a89068,#887050,#685838);
-  border-radius:24px;padding:12px 16px 10px;
-  box-shadow:0 12px 48px rgba(0,0,0,0.7),inset 0 2px 0 rgba(255,255,255,0.08)}
-#lbl{text-align:center;font-size:7px;color:#d0c0a0;margin-bottom:6px;letter-spacing:5px;
-  text-shadow:0 1px 0 rgba(0,0,0,0.6)}
-#bz{background:#1a1a14;border-radius:6px;padding:4px;
-  box-shadow:inset 0 4px 20px rgba(0,0,0,0.85)}
-canvas{display:block;border-radius:3px}
-#btns{display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding:0 4px}
-.dp{display:flex;flex-direction:column;align-items:center;gap:1px}
-.dh{display:flex;gap:1px}
-.b{width:42px;height:42px;border-radius:50%;border:none;cursor:pointer;
-  font-size:9px;display:flex;align-items:center;justify-content:center;
-  -webkit-tap-highlight-color:transparent;user-select:none;touch-action:manipulation;
-  font-family:'Press Start 2P',monospace}
-.bd{background:linear-gradient(155deg,#333,#1a1a1a);color:#777;
-  box-shadow:0 3px 5px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.06)}
-.bd:active{transform:translateY(2px)}
-.ba{background:linear-gradient(155deg,#cc2828,#881414);color:#faa;
-  width:52px;height:52px;font-size:7px;
-  box-shadow:0 3px 8px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,180,180,0.12)}
-.ba:active{transform:translateY(2px)}
-#inf{text-align:center;font-size:6px;color:#555;margin-top:2px}
-</style>
-</head>
-<body>
-<div id="shell">
-  <div style="display:flex;justify-content:space-between;align-items:center;padding:0 2px">
-    <div id="lbl" style="margin-bottom:0">◆ KEYS &amp; ARMS ◆</div>
-    <button class="b bd" data-key="Escape"
-      style="width:36px;height:20px;border-radius:10px;font-size:5px">RST</button>
-  </div>
-  <div id="bz"><canvas id="cv"></canvas></div>
-  <div id="btns">
-    <div class="dp">
-      <button class="b bd" data-key="ArrowUp">▲</button>
-      <div class="dh">
-        <button class="b bd" data-key="ArrowLeft">◀</button>
-        <div style="width:42px"></div>
-        <button class="b bd" data-key="ArrowRight">▶</button>
-      </div>
-      <button class="b bd" data-key="ArrowDown">▼</button>
-    </div>
-    <div style="display:flex;flex-direction:column;align-items:center">
-      <button class="b ba" data-key="z">ACT</button>
-    </div>
-  </div>
-</div>
-<div id="inf">D-PAD + ACT</div>
+// @ts-nocheck
+/* eslint-disable */
+/**
+ * KEYS & ARMS ゲームエンジン
+ * 元 HTML ファイルのゲームコード（2,458行）をクロージャに格納。
+ * ゲームロジックの改変は DOM 参照の差し替えのみ。
+ */
 
-<script>
-'use strict';
+export interface Engine {
+  start(): void;
+  stop(): void;
+  resize(): void;
+  handleKeyDown(key: string): void;
+  handleKeyUp(key: string): void;
+}
+
+export function createEngine(canvas: HTMLCanvasElement): Engine {
+
+
 /* ================================================================
    KEYS & ARMS — Game & Watch tribute game
    Architecture: DRY / SOLID / DbC / Functional-declarative style
@@ -99,11 +55,10 @@ const TAU = Math.PI * 2;
 /* ================================================================
    CANVAS & LAYOUT — Single source of truth for display constants
    ================================================================ */
-const W=440,H=340,cv=document.getElementById('cv'),$=cv.getContext('2d');
+const W=440,H=340,cv=canvas;const $=cv.getContext('2d')!;
 cv.width=W;cv.height=H;
-function resize(){const s=Math.min(innerWidth*.94/W,innerHeight*.62/H,2.5);
-  cv.style.width=(W*s)+'px';cv.style.height=(H*s)+'px';}
-resize();addEventListener('resize',resize);
+function resize(){const s=Math.min(window.innerWidth*0.94/W,(window.innerHeight*0.62)/H,2.5);cv.style.width=(W*s)+'px';cv.style.height=(H*s)+'px';}
+resize();
 /* LCD Color Palette */
 const BG='#b0bc98',GH='rgba(80,92,64,0.14)',ON='#1a2810',RK='rgba(80,92,64,0.32)';
 
@@ -184,20 +139,16 @@ const Popups = {
    INPUT MODULE — Keyboard & touch state management
    ================================================================ */
 const kd={},jp={};
-addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(!kd[k])jp[k]=true;kd[k]=true;e.preventDefault();});
-addEventListener('keyup',e=>kd[e.key.toLowerCase()]=false);
-document.querySelectorAll('[data-key]').forEach(b=>{const k=b.dataset.key.toLowerCase();
-  const dn=()=>{if(!kd[k])jp[k]=true;kd[k]=true;};const up=()=>kd[k]=false;
-  b.addEventListener('touchstart',e=>{e.preventDefault();dn();});
-  b.addEventListener('touchend',e=>{e.preventDefault();up();});
-  b.addEventListener('mousedown',dn);b.addEventListener('mouseup',up);});
+// キーボードイベントは React 側で管理
+
+// タッチボタンは React 側で管理
 function J(k){return jp[k.toLowerCase()];}function clearJ(){for(const k in jp)delete jp[k];}
 function jAct(){return J('z')||J(' ');}
 
 /* ================================================================
    AUDIO MODULE — AudioContext, tone generator, noise, SFX
    ================================================================ */
-let ac;function ea(){if(!ac)ac=new(AudioContext||webkitAudioContext)();}
+let ac;function ea(){if(!ac)ac=new((window as any).AudioContext||(window as any).webkitAudioContext)();}
 function tn(f,d,tp='square',v=.04){if(!ac)return;const o=ac.createOscillator(),g=ac.createGain();
   o.type=tp;o.frequency.value=f;g.gain.setValueAtTime(v,ac.currentTime);
   g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+d);
@@ -2515,8 +2466,37 @@ function frame(now){
   accumulator+=dt;
   while(accumulator>=TICK_MS){gameTick();accumulator-=TICK_MS;}
   render();
-  requestAnimationFrame(frame);}
-requestAnimationFrame(frame);
-</script>
-</body>
-</html>
+  if(running)animFrameId=requestAnimationFrame(frame);}
+
+// === エンジン制御 ===
+let animFrameId: number = 0;
+let running = false;
+
+function start(): void {
+  if (running) return;
+  running = true;
+  lastTime = 0;
+  accumulator = 0;
+  animFrameId = requestAnimationFrame(frame);
+}
+
+function stop(): void {
+  running = false;
+  if (animFrameId) {
+    cancelAnimationFrame(animFrameId);
+    animFrameId = 0;
+  }
+}
+
+function handleKeyDown(key: string): void {
+  const k = key.toLowerCase();
+  if (!kd[k]) jp[k] = true;
+  kd[k] = true;
+}
+
+function handleKeyUp(key: string): void {
+  kd[key.toLowerCase()] = false;
+}
+
+return { start, stop, resize, handleKeyDown, handleKeyUp };
+}
