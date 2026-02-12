@@ -56,7 +56,7 @@ const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
    * ピースの位置を更新する
    */
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     setPosition(calculatePosition(piece, pieceWidth, pieceHeight));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [piece.currentPosition.row, piece.currentPosition.col, pieceWidth, pieceHeight]);

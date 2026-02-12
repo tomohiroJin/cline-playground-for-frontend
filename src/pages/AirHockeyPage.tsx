@@ -461,13 +461,13 @@ const AirHockeyPage: React.FC = () => {
         if (col) {
           const speed = magnitude(mallet.vx, mallet.vy);
           const power = Math.min(CONSTANTS.PHYSICS.MAX_POWER, 5 + speed * 1.2);
-          // eslint-disable-next-line no-param-reassign
+           
           obj = Physics.resolveCollision(obj, col, power, mallet.vx, mallet.vy, 0.4);
 
           if (isPuck && isPlayer && game.effects.player.invisible > 0) {
-            // eslint-disable-next-line no-param-reassign
+             
             (obj as Puck).visible = false;
-            // eslint-disable-next-line no-param-reassign
+             
             (obj as Puck).invisibleCount = 25;
             game.effects.player.invisible--;
           }
@@ -478,7 +478,7 @@ const AirHockeyPage: React.FC = () => {
       for (const ob of field.obstacles) {
         const col = Physics.detectCollision(obj.x, obj.y, radius, ob.x, ob.y, ob.r);
         if (col) {
-          // eslint-disable-next-line no-param-reassign
+           
           obj = Physics.reflectOffSurface(obj, col);
           sound.wall();
         }

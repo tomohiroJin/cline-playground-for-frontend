@@ -36,7 +36,7 @@ const PuzzlePage: React.FC = () => {
   // ゲームの状態が変わったときにクリア履歴を更新
   useEffect(() => {
     const history = getClearHistory();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     setClearHistory(history);
   }, [gameStarted]); // gameStartedが変わったとき（ゲーム終了時など）に履歴を更新
   return (

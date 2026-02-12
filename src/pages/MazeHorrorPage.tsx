@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/refs */
+ 
 // 注: このファイルではパフォーマンス最適化のため、ref経由でゲーム状態を管理しています
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { clamp, distance } from '../utils/math-utils';

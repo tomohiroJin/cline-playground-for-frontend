@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/refs */
+ 
 import { saveScore, getHighScore } from '../utils/score-storage';
 import { ShareButton } from '../components/molecules/ShareButton';
 
@@ -286,7 +286,7 @@ const Audio = (() => {
   const getContext = (): AudioContext | null => {
     if (!ctx) {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         const AudioContextClass =
           window.AudioContext ||
           (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
