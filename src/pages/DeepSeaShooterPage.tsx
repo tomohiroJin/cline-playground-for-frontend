@@ -444,7 +444,7 @@ const createAudioSystem = () => {
   const init = () => {
     if (ctx) return ctx;
     if (typeof window === 'undefined') return null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const Ctor =
       window.AudioContext ||
       (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -1188,7 +1188,7 @@ export default function DeepSeaShooterPage() {
           {'♥'.repeat(Math.max(0, uiState.lives))}
         </div>
         <div style={{ position: 'absolute', top: 36, right: 8, color: '#fa6', fontSize: 9 }}>
-          {/* eslint-disable-next-line */}
+          { }
           POW: {uiState.power} {uiState.spreadTime > Date.now() ? '| 3WAY' : ''}
         </div>
 
@@ -1196,9 +1196,9 @@ export default function DeepSeaShooterPage() {
         <PlayerSprite
           x={gd.player.x}
           y={gd.player.y}
-          // eslint-disable-next-line
+           
           opacity={gd.invincible && Math.floor(Date.now() / 100) % 2 === 0 ? 0.5 : 1}
-          // eslint-disable-next-line
+           
           shield={Date.now() < uiState.shieldEndTime}
         />
         {gd.bullets.map(b => (

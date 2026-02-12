@@ -1,5 +1,5 @@
-// @ts-nocheck
 /* eslint-disable */
+// @ts-nocheck -- 元 HTML ファイルからの移植コードのため型チェックを無効化
 /**
  * KEYS & ARMS ゲームエンジン
  * 元 HTML ファイルのゲームコード（2,458行）をクロージャに格納。

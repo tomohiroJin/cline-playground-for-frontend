@@ -1129,7 +1129,7 @@ const useIdle = (
 
   useEffect(() => {
     if (!active) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setIdle(0);
       setDemo(false);
       return;
@@ -1225,7 +1225,7 @@ export default function RacingGamePage() {
     fastest: number;
   } | null>(null);
   // bests は将来のベストタイム記録機能用に保持（現在は未使用）
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   const [bests, setBests] = useState<Record<string, number>>({});
   const [paused, setPaused] = useState(false);
   const [vol, setVol] = useState(Config.audio.defaultVolume);
@@ -1243,7 +1243,7 @@ export default function RacingGamePage() {
       for (let c = 0; c < Courses.length; c++) {
         for (const l of Options.laps) {
           const key = `c${c}-l${l}`;
-          // eslint-disable-next-line no-await-in-loop
+           
           const time = await getHighScore('racing', key, 'asc');
           if (time > 0) newBests[key] = time;
         }

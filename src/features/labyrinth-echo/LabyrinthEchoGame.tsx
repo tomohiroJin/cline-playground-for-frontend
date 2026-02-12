@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, @typescript-eslint/ban-ts-comment */
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 import { useState, useCallback, useEffect, useRef, useMemo, Component } from "react";
 import { Storage, SAVE_KEY } from './storage';
@@ -3464,7 +3464,7 @@ const useTextReveal = (text, audioOn) => {
 
   useEffect(() => {
     if (!text) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     setPos(0); setReady(false); tickRef.current = 0;
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
@@ -3517,7 +3517,7 @@ const usePersistence = () => {
       if (u.cat === "trophy" && u.req && meta.endings?.includes(u.req))     { next.push(u.id); changed = true; }
       if (u.cat === "achieve" && u.achReq && u.achReq(meta))                { next.push(u.id); changed = true; }
     }
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     if (changed) setMeta(prev => ({ ...prev, unlocked: next }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [meta.runs, meta.escapes, meta.totalEvents, meta.totalDeaths, meta.endings, meta.clearedDiffs, loaded]);

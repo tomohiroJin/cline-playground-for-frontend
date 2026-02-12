@@ -34,10 +34,11 @@ HTMLCanvasElement.prototype.getContext = jest.fn().mockReturnValue({
   lineDashOffset: 0,
   setValueAtTime: jest.fn(),
   exponentialRampToValueAtTime: jest.fn(),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 }) as any;
 
 // requestAnimationFrame をモック
-jest.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+jest.spyOn(window, 'requestAnimationFrame').mockImplementation(() => {
   return 1;
 });
 
