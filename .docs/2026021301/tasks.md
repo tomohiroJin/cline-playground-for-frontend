@@ -16,82 +16,82 @@
 
 ### 1. Racing Game
 
-- [ ] テスト確認（事前）: 既存テスト通過確認
-- [ ] `src/features/racing-game/` ディレクトリ作成
-- [ ] 型定義の抽出（`types.ts`）→ テスト確認
-- [ ] 定数の抽出（`constants.ts`）→ テスト確認
-- [ ] 純粋関数/ユーティリティの抽出（`utils.ts`）→ テスト追加・確認
-- [ ] Audio の分離（`audio.ts`）→ テスト確認
-- [ ] エンティティの抽出（`entities.ts`）→ テスト追加・確認
-- [ ] トラック関連の抽出（`track.ts`）→ テスト追加・確認
-- [ ] レンダラーの抽出（`renderer.ts`）→ テスト確認
-- [ ] ゲームロジックの抽出（`game-logic.ts`）→ テスト追加・確認
-- [ ] カスタムフックの抽出（`hooks.ts`）→ テスト確認
-- [ ] UIコンポーネントの抽出（`components/VolumeControl.tsx`）→ テスト確認
-- [ ] メインコンポーネントの整理（`RacingGame.tsx`）→ テスト確認
-- [ ] `RacingGamePage.tsx` を薄いラッパーに変更 → テスト確認
-- [ ] `index.ts` 作成（re-export）
-- [ ] テスト確認（事後）: 全テスト通過・ビルド確認
+- [x] テスト確認（事前）: 既存テスト通過確認
+- [x] `src/features/racing-game/` ディレクトリ作成
+- [x] 型定義の抽出（`types.ts`）→ テスト確認
+- [x] 定数の抽出（`constants.ts`）→ テスト確認
+- [x] 純粋関数/ユーティリティの抽出（`utils.ts`）→ テスト追加・確認
+- [x] Audio の分離（`audio.ts`）→ テスト確認
+- [x] エンティティの抽出（`entities.ts`）→ テスト追加・確認
+- [x] トラック関連の抽出（`track.ts`）→ テスト追加・確認
+- [x] レンダラーの抽出（`renderer.ts`）→ テスト確認
+- [x] ゲームロジックの抽出（`game-logic.ts`）→ テスト追加・確認
+- [x] カスタムフックの抽出（`hooks.ts`）→ テスト確認
+- [x] UIコンポーネントの抽出（`components/VolumeControl.tsx`）→ テスト確認
+- [x] メインコンポーネントの整理（`RacingGame.tsx`）→ テスト確認
+- [x] `RacingGamePage.tsx` を薄いラッパーに変更 → テスト確認
+- [x] `index.ts` 作成（re-export）
+- [x] テスト確認（事後）: 全テスト通過・ビルド確認
 
 ### 2. Labyrinth of Shadows
 
-- [ ] テスト確認（事前）: 既存テスト通過確認
-- [ ] `src/features/labyrinth-of-shadows/` ディレクトリ作成
-- [ ] 型定義の抽出（`types.ts`）→ テスト確認
-- [ ] 定数の抽出（`constants.ts`）→ テスト確認
-- [ ] 純粋関数/ユーティリティの抽出（`utils.ts`）→ テスト追加・確認
-- [ ] Audio の分離（`audio.ts`）→ テスト確認
-- [ ] 迷路サービスの抽出（`maze-service.ts`）→ テスト追加・確認
-- [ ] エンティティファクトリの抽出（`entity-factory.ts`）→ テスト追加・確認
-- [ ] ゲームロジックの抽出（`game-logic.ts`）→ テスト追加・確認
-- [ ] レンダラーの抽出（`renderer.ts`）→ テスト確認
-- [ ] カスタムフックの抽出（`hooks.ts`）→ テスト確認
-- [ ] UIコンポーネントの抽出（`components/Minimap.tsx`, `HUD.tsx`, `TitleScreen.tsx`, `ResultScreen.tsx`）→ テスト確認
-- [ ] メインコンポーネントの整理 → テスト確認
-- [ ] `MazeHorrorPage.tsx` を薄いラッパーに変更 → テスト確認
-- [ ] `index.ts` 作成（re-export）
-- [ ] テスト確認（事後）: 全テスト通過・ビルド確認
+- [x] テスト確認（事前）: 既存テスト通過確認
+- [x] `src/features/labyrinth-of-shadows/` ディレクトリ作成
+- [x] 型定義の抽出（`types.ts`）→ テスト確認
+- [x] 定数の抽出（`constants.ts`）→ テスト確認
+- [x] 純粋関数/ユーティリティの抽出（`utils.ts`）→ テスト追加・確認
+- [x] Audio の分離（`audio.ts`）→ テスト確認
+- [x] 迷路サービスの抽出（`maze-service.ts`）→ テスト追加・確認
+- [x] エンティティファクトリの抽出（`entity-factory.ts`）→ テスト追加・確認
+- [x] ゲームロジックの抽出（`game-logic.ts`）→ テスト追加・確認
+- [x] レンダラーの抽出（`renderer.ts`）→ テスト確認
+- [x] カスタムフックの抽出（`hooks.ts`）→ テスト確認
+- [x] UIコンポーネントの抽出（`components/Minimap.tsx`, `HUD.tsx`, `TitleScreen.tsx`, `ResultScreen.tsx`）→ テスト確認
+- [x] メインコンポーネントの整理 → テスト確認
+- [x] `MazeHorrorPage.tsx` を薄いラッパーに変更 → テスト確認
+- [x] `index.ts` 作成（re-export）
+- [x] テスト確認（事後）: 全テスト通過・ビルド確認
 
 ### 3. Falldown Shooter
 
-- [ ] テスト確認（事前）: 既存テスト通過確認
-- [ ] `src/features/falldown-shooter/` ディレクトリ作成
-- [ ] 型定義の抽出（`types.ts`）→ テスト確認
-- [ ] 定数の抽出（`constants.ts`）→ テスト確認
-- [ ] 純粋関数/ユーティリティの抽出（`utils.ts`）→ テスト追加・確認
-- [ ] Audio の分離（`audio.ts`）→ テスト確認
-- [ ] グリッド管理の抽出（`grid.ts`）→ テスト追加・確認
-- [ ] ブロックロジックの抽出（`block.ts`）→ テスト追加・確認
-- [ ] 弾丸ロジックの抽出（`bullet.ts`）→ テスト追加・確認
-- [ ] 衝突判定の抽出（`collision.ts`）→ テスト追加・確認
-- [ ] ゲームロジックの抽出（`game-logic.ts`）→ テスト追加・確認
-- [ ] ステージ定義の抽出（`stage.ts`）→ テスト確認
-- [ ] カスタムフックの抽出（`hooks.ts`）→ テスト確認
-- [ ] UIコンポーネントの抽出（`components/CellView.tsx`, `BulletView.tsx`, `PlayerShip.tsx`, `SkillGauge.tsx`）→ テスト確認
-- [ ] メインコンポーネントの整理 → テスト確認
-- [ ] `FallingShooterPage.tsx` を薄いラッパーに変更 → テスト確認
-- [ ] `index.ts` 作成（re-export）
-- [ ] テスト確認（事後）: 全テスト通過・ビルド確認
+- [x] テスト確認（事前）: 既存テスト通過確認
+- [x] `src/features/falldown-shooter/` ディレクトリ作成
+- [x] 型定義の抽出（`types.ts`）→ テスト確認
+- [x] 定数の抽出（`constants.ts`）→ テスト確認
+- [x] 純粋関数/ユーティリティの抽出（`utils.ts`）→ テスト追加・確認
+- [x] Audio の分離（`audio.ts`）→ テスト確認
+- [x] グリッド管理の抽出（`grid.ts`）→ テスト追加・確認
+- [x] ブロックロジックの抽出（`block.ts`）→ テスト追加・確認
+- [x] 弾丸ロジックの抽出（`bullet.ts`）→ テスト追加・確認
+- [x] 衝突判定の抽出（`collision.ts`）→ テスト追加・確認
+- [x] ゲームロジックの抽出（`game-logic.ts`）→ テスト追加・確認
+- [x] ステージ定義の抽出（`stage.ts`）→ テスト確認
+- [x] カスタムフックの抽出（`hooks.ts`）→ テスト確認
+- [x] UIコンポーネントの抽出（`components/CellView.tsx`, `BulletView.tsx`, `PlayerShip.tsx`, `SkillGauge.tsx`）→ テスト確認
+- [x] メインコンポーネントの整理 → テスト確認
+- [x] `FallingShooterPage.tsx` を薄いラッパーに変更 → テスト確認
+- [x] `index.ts` 作成（re-export）
+- [x] テスト確認（事後）: 全テスト通過・ビルド確認
 
 ### 4. Deep Sea Interceptor
 
-- [ ] テスト確認（事前）: 既存テスト通過確認
-- [ ] `src/features/deep-sea-interceptor/` ディレクトリ作成
-- [ ] 型定義の抽出（`types.ts`）→ テスト確認
-- [ ] 定数の抽出（`constants.ts`）→ テスト確認
-- [ ] エンティティの抽出（`entities.ts`）→ テスト追加・確認
-- [ ] 移動ロジックの抽出（`movement.ts`）→ テスト追加・確認
-- [ ] 衝突判定の抽出（`collision.ts`）→ テスト追加・確認
-- [ ] 敵AIの抽出（`enemy-ai.ts`）→ テスト追加・確認
-- [ ] Audio の分離（`audio.ts`）→ テスト確認
-- [ ] ゲームロジックの抽出（`game-logic.ts`）→ テスト追加・確認
-- [ ] カスタムフックの抽出（`hooks.ts`）→ テスト確認
-- [ ] スタイルの抽出（`styles.ts`）→ テスト確認
-- [ ] UIコンポーネントの抽出（`components/PlayerSprite.tsx`, `EnemySprite.tsx`, `BulletSprite.tsx`, `HUD.tsx`）→ テスト確認
-- [ ] メインコンポーネントの整理 → テスト確認
-- [ ] `DeepSeaShooterPage.tsx` を薄いラッパーに変更 → テスト確認
-- [ ] `index.ts` 作成（re-export）
-- [ ] テスト確認（事後）: 全テスト通過・ビルド確認
+- [x] テスト確認（事前）: 既存テスト通過確認
+- [x] `src/features/deep-sea-interceptor/` ディレクトリ作成
+- [x] 型定義の抽出（`types.ts`）→ テスト確認
+- [x] 定数の抽出（`constants.ts`）→ テスト確認
+- [x] エンティティの抽出（`entities.ts`）→ テスト追加・確認
+- [x] 移動ロジックの抽出（`movement.ts`）→ テスト追加・確認
+- [x] 衝突判定の抽出（`collision.ts`）→ テスト追加・確認
+- [x] 敵AIの抽出（`enemy-ai.ts`）→ テスト追加・確認
+- [x] Audio の分離（`audio.ts`）→ テスト確認
+- [x] ゲームロジックの抽出（`game-logic.ts`）→ テスト追加・確認
+- [x] カスタムフックの抽出（`hooks.ts`）→ テスト確認
+- [x] スタイルの抽出（`styles.ts`）→ テスト確認
+- [x] UIコンポーネントの抽出（`components/PlayerSprite.tsx`, `EnemySprite.tsx`, `BulletSprite.tsx`, `HUD.tsx`）→ テスト確認
+- [x] メインコンポーネントの整理 → テスト確認
+- [x] `DeepSeaShooterPage.tsx` を薄いラッパーに変更 → テスト確認
+- [x] `index.ts` 作成（re-export）
+- [x] テスト確認（事後）: 全テスト通過・ビルド確認
 
 ---
 

@@ -1,0 +1,306 @@
+// Racing Game レンダラー
+
+import type { Point, Checkpoint, StartLine, Player, Particle, Spark, Confetti, Decoration } from './types';
+import { Config, Colors } from './constants';
+
+export const Render = {
+  circle: (c: CanvasRenderingContext2D, x: number, y: number, r: number, col: string) => {
+    c.fillStyle = col;
+    c.beginPath();
+    c.arc(x, y, r, 0, Math.PI * 2);
+    c.fill();
+  },
+  ellipse: (
+    c: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    rx: number,
+    ry: number,
+    col: string
+  ) => {
+    c.fillStyle = col;
+    c.beginPath();
+    c.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+    c.fill();
+  },
+  rect: (c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, col: string) => {
+    c.fillStyle = col;
+    c.fillRect(x, y, w, h);
+  },
+  tri: (c: CanvasRenderingContext2D, pts: number[], col: string) => {
+    c.fillStyle = col;
+    c.beginPath();
+    c.moveTo(pts[0], pts[1]);
+    c.lineTo(pts[2], pts[3]);
+    c.lineTo(pts[4], pts[5]);
+    c.fill();
+  },
+
+  background: (c: CanvasRenderingContext2D, course: { bg: string; ground: string }) => {
+    const { width, height } = Config.canvas;
+    c.fillStyle = course.bg;
+    c.fillRect(0, 0, width, height);
+    c.fillStyle = course.ground;
+    for (let i = 0; i < 150; i++) {
+      c.beginPath();
+      c.arc((i * 137) % width, (i * 97) % height, 2, 0, Math.PI * 2);
+      c.fill();
+    }
+  },
+
+  track: (c: CanvasRenderingContext2D, pts: Point[]) => {
+    if (pts.length < 2) return;
+    const { trackWidth } = Config.game;
+    const path = () => {
+      c.beginPath();
+      c.moveTo(pts[0].x, pts[0].y);
+      pts.forEach(p => c.lineTo(p.x, p.y));
+      c.closePath();
+    };
+    c.lineCap = c.lineJoin = 'round';
+    [
+      [trackWidth * 2 + 16, '#c00', []],
+      [trackWidth * 2 + 16, '#fff', [20, 20]],
+      [trackWidth * 2, '#3a3a3a', []],
+      [trackWidth * 2 - 15, '#505050', []],
+      [3, '#fff', [30, 20]],
+    ].forEach(([w, col, dash]) => {
+      c.lineWidth = w as number;
+      c.strokeStyle = col as string;
+      c.setLineDash(dash as number[]);
+      path();
+      c.stroke();
+    });
+    c.setLineDash([]);
+  },
+
+  startLine: (c: CanvasRenderingContext2D, sl: StartLine) => {
+    const { width, squares } = Config.startLine;
+    c.save();
+    c.translate(sl.cx, sl.cy);
+    c.rotate(Math.atan2(sl.py, sl.px));
+    const sq = sl.len / squares;
+    for (let i = 0; i < squares; i++) {
+      for (let j = 0; j < 2; j++) {
+        c.fillStyle = (i + j) % 2 ? '#000' : '#fff';
+        c.fillRect(-sl.len / 2 + i * sq, -width / 2 + j * 6, sq, 6);
+      }
+    }
+    c.restore();
+  },
+
+  checkpoints: (c: CanvasRenderingContext2D, coords: Checkpoint[]) => {
+    const radius = Config.game.checkpointRadius;
+
+    coords.forEach((cp, i) => {
+      if (i === 0) return;
+
+      c.globalAlpha = 0.3;
+      c.strokeStyle = '#ffff00';
+      c.lineWidth = 2;
+      c.setLineDash([8, 8]);
+      c.beginPath();
+      c.arc(cp.x, cp.y, radius, 0, Math.PI * 2);
+      c.stroke();
+      c.setLineDash([]);
+
+      c.globalAlpha = 0.7;
+      c.font = '20px Arial';
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.fillText('🚩', cp.x, cp.y);
+
+      c.globalAlpha = 1;
+      c.textBaseline = 'alphabetic';
+    });
+  },
+
+  kart: (c: CanvasRenderingContext2D, p: Player) => {
+    c.save();
+    c.translate(p.x, p.y);
+    c.rotate(p.angle + Math.PI / 2);
+    c.fillStyle = 'rgba(0,0,0,0.3)';
+    c.beginPath();
+    c.ellipse(3, 3, 12, 8, 0, 0, Math.PI * 2);
+    c.fill();
+    c.fillStyle = p.color;
+    c.beginPath();
+    c.roundRect(-10, -15, 20, 30, 4);
+    c.fill();
+    c.strokeStyle = '#fff';
+    c.lineWidth = 2;
+    c.stroke();
+    c.fillStyle = '#FFE4C4';
+    c.beginPath();
+    c.arc(0, -3, 6, 0, Math.PI * 2);
+    c.fill();
+    c.fillStyle = p.color;
+    c.beginPath();
+    c.arc(0, -6, 5, Math.PI, 0);
+    c.fill();
+    c.fillStyle = '#111';
+    [
+      [-11, -10],
+      [11, -10],
+      [-11, 10],
+      [11, 10],
+    ].forEach(([x, y]) => c.fillRect(x - 3, y - 5, 6, 10));
+    c.restore();
+    c.fillStyle = '#fff';
+    c.strokeStyle = p.color;
+    c.lineWidth = 3;
+    c.font = 'bold 14px Arial';
+    c.textAlign = 'center';
+    c.strokeText(p.name, p.x, p.y - 28);
+    c.fillText(p.name, p.x, p.y - 28);
+  },
+
+  particles: (c: CanvasRenderingContext2D, parts: Particle[], sparks: Spark[]) => {
+    parts.forEach(p => {
+      c.globalAlpha = p.life;
+      c.fillStyle = p.color;
+      c.beginPath();
+      c.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      c.fill();
+    });
+    sparks.forEach(p => {
+      c.globalAlpha = p.life;
+      c.strokeStyle = p.color;
+      c.lineWidth = 2;
+      c.beginPath();
+      c.moveTo(p.x, p.y);
+      c.lineTo(p.x + p.vx * 3, p.y + p.vy * 3);
+      c.stroke();
+    });
+    c.globalAlpha = 1;
+  },
+
+  confetti: (c: CanvasRenderingContext2D, items: Confetti[]) =>
+    items.forEach(i => {
+      c.save();
+      c.translate(i.x, i.y);
+      c.rotate((i.rot * Math.PI) / 180);
+      c.fillStyle = i.color;
+      c.fillRect(-i.size / 2, -i.size / 4, i.size, i.size / 2);
+      c.restore();
+    }),
+
+  fireworks: (c: CanvasRenderingContext2D, time: number) => {
+    [
+      [200, 200, 0],
+      [700, 150, 500],
+      [450, 250, 1000],
+    ].forEach(([x, y, d]) => {
+      const t = (time + d) % 2000;
+      if (t < 800) {
+        const p = t / 800,
+          r = p * 60;
+        for (let i = 0; i < 10; i++) {
+          const a = (i / 10) * Math.PI * 2;
+          c.fillStyle = Colors.firework[i % 5];
+          c.globalAlpha = 1 - p;
+          c.beginPath();
+          c.arc(x + Math.cos(a) * r, y + Math.sin(a) * r, 4 * (1 - p) + 2, 0, Math.PI * 2);
+          c.fill();
+        }
+        c.globalAlpha = 1;
+      }
+    });
+  },
+};
+
+// デコレーション描画関数
+const DecoRenderers: Record<
+  string,
+  ((c: CanvasRenderingContext2D, x: number, y: number) => void)[]
+> = {
+  forest: [
+    (c, x, y) => {
+      Render.circle(c, x, y, 15, '#0a5f0a');
+      Render.rect(c, x - 3, y + 8, 6, 10, '#4a2800');
+    },
+    (c, x, y) => {
+      Render.tri(c, [x, y - 20, x - 12, y + 10, x + 12, y + 10], '#2d5a1d');
+      Render.rect(c, x - 2, y + 10, 4, 8, '#4a2800');
+    },
+    (c, x, y) => Render.ellipse(c, x, y, 8, 5, '#654321'),
+  ],
+  city: [
+    (c, x, y) => {
+      Render.rect(c, x - 12, y - 25, 24, 35, '#555');
+      for (let i = 0; i < 6; i++)
+        Render.rect(c, x - 8 + (i % 2) * 12, y - 20 + Math.floor(i / 2) * 10, 5, 6, '#ff0');
+    },
+    (c, x, y) => {
+      Render.rect(c, x - 8, y - 35, 16, 45, '#444');
+      for (let i = 0; i < 4; i++) Render.rect(c, x - 5, y - 30 + i * 10, 10, 5, '#0ff');
+    },
+    (c, x, y) => {
+      Render.rect(c, x - 2, y - 25, 4, 30, '#333');
+      Render.circle(c, x, y - 27, 5, '#ff0');
+    },
+  ],
+  mountain: [
+    (c, x, y) => Render.ellipse(c, x, y, 14, 9, '#666'),
+    (c, x, y) => {
+      Render.ellipse(c, x, y, 10, 6, '#f40');
+      Render.ellipse(c, x, y, 5, 3, '#f80');
+    },
+    (c, x, y) => {
+      Render.tri(c, [x, y - 18, x - 15, y + 8, x + 15, y + 8], '#5a4a3a');
+      Render.tri(c, [x, y - 18, x - 5, y - 10, x + 5, y - 10], '#fff');
+    },
+  ],
+  beach: [
+    (c, x, y) => {
+      Render.ellipse(c, x, y, 18, 10, '#2196F3');
+      Render.ellipse(c, x, y - 3, 8, 4, '#fff');
+    },
+    (c, x, y) => {
+      Render.rect(c, x - 2, y - 20, 4, 25, '#8B4513');
+      Render.circle(c, x + 8, y - 18, 10, '#228B22');
+    },
+    (c, x, y) => Render.ellipse(c, x, y, 10, 6, '#f4a460'),
+  ],
+  night: [
+    (c, x, y) => {
+      Render.circle(c, x, y, 2, '#ffeb3b');
+      Render.circle(c, x, y, 6, 'rgba(255,235,59,0.15)');
+    },
+    (c, x, y) => {
+      Render.rect(c, x - 10, y - 20, 20, 30, '#333');
+      Render.rect(c, x - 7, y - 15, 6, 8, '#0ff');
+      Render.rect(c, x + 1, y - 15, 6, 8, '#0ff');
+      Render.rect(c, x - 7, y - 2, 14, 6, '#f0f');
+    },
+    (c, x, y) => {
+      Render.rect(c, x - 1, y - 18, 2, 20, '#444');
+      Render.circle(c, x, y - 20, 4, '#f0f');
+    },
+  ],
+  snow: [
+    (c, x, y) => {
+      Render.circle(c, x, y + 5, 10, '#fff');
+      Render.circle(c, x, y - 5, 7, '#fff');
+      Render.circle(c, x, y - 13, 5, '#fff');
+      Render.circle(c, x - 2, y - 14, 1.5, '#333');
+      Render.circle(c, x + 2, y - 14, 1.5, '#333');
+      Render.tri(c, [x, y - 12, x + 4, y - 11, x, y - 10], '#f60');
+    },
+    (c, x, y) => {
+      Render.tri(c, [x, y - 22, x - 12, y + 10, x + 12, y + 10], '#1a5c1a');
+      Render.ellipse(c, x - 5, y - 8, 4, 2, '#fff');
+      Render.ellipse(c, x + 6, y, 5, 2, '#fff');
+    },
+    (c, x, y) => Render.ellipse(c, x, y, 15, 8, '#a0c4e8'),
+  ],
+};
+
+export const renderDecos = (
+  c: CanvasRenderingContext2D,
+  decos: Decoration[],
+  type: string
+) => {
+  const fns = DecoRenderers[type];
+  if (fns) decos.forEach(d => fns[d.variant % 3]?.(c, d.x, d.y));
+};
