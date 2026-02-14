@@ -12,11 +12,11 @@
 
 > 前提: なし | ストリーム: A, B 共通
 
-- [ ] **T-00.1** `[A/B]` `sprites/` ディレクトリ作成、barrel export（`index.ts`）
-- [ ] **T-00.2** `[A/B]` `spriteData.ts` 実装 — `createSprite(pixels, palette)` で ImageData 生成
-- [ ] **T-00.3** `[A/B]` `spriteRenderer.ts` 実装 — `SpriteRenderer` クラス（`drawSprite`, `drawAnimatedSprite`, `drawSpriteWithAlpha`, キャッシュ管理）
-- [ ] **T-00.4** `[A/B]` `spriteSheet.ts` 実装 — `SpriteSheetDefinition` 型、フレーム計算ヘルパー
-- [ ] **T-00.5** `[A/B]` ユニットテスト: `createSprite` のピクセルデータ→ImageData 変換テスト
+- [x] **T-00.1** `[A/B]` `sprites/` ディレクトリ作成、barrel export（`index.ts`）
+- [x] **T-00.2** `[A/B]` `spriteData.ts` 実装 — `createSprite(pixels, palette)` で ImageData 生成
+- [x] **T-00.3** `[A/B]` `spriteRenderer.ts` 実装 — `SpriteRenderer` クラス（`drawSprite`, `drawAnimatedSprite`, `drawSpriteWithAlpha`, キャッシュ管理）
+- [x] **T-00.4** `[A/B]` `spriteSheet.ts` 実装 — `SpriteSheetDefinition` 型、フレーム計算ヘルパー
+- [x] **T-00.5** `[A/B]` ユニットテスト: `createSprite` のピクセルデータ→ImageData 変換テスト
 
 ---
 
