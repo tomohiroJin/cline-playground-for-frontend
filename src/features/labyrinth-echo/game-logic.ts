@@ -26,6 +26,7 @@ export const CFG = Object.freeze({
   BASE_MN: 35,
   BASE_INF: 5,
   BOSS_EVENT_ID: "e030",
+  MAX_BOSS_RETRIES: 3,
 });
 
 export const DIFFICULTY = Object.freeze([
