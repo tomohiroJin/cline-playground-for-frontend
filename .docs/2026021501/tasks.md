@@ -40,15 +40,15 @@
 
 > 前提: フェーズ 1 完了 | ストリーム: A
 
-- [ ] **T-02.1** `[A]` Game.tsx に `SpriteRenderer` インスタンス生成（`useMemo`）
-- [ ] **T-02.2** `[A]` マップタイル描画を `fillRect` → `drawSprite` に置換
-- [ ] **T-02.3** `[A]` 敵描画を `arc` → `drawAnimatedSprite` に置換
-- [ ] **T-02.4** `[A]` プレイヤー描画を `arc + 三角` → `drawAnimatedSprite` に置換（方向・移動状態でフレーム選択）
-- [ ] **T-02.5** `[A]` アイテム描画を `fillRect` → `drawSprite` に置換
-- [ ] **T-02.6** `[A]` 罠描画を幾何学図形 → `drawAnimatedSprite` に置換
-- [ ] **T-02.7** `[A]` 特殊壁描画を幾何学図形 → `drawSprite` に置換
-- [ ] **T-02.8** `[A]` 攻撃エフェクトを白枠 → 斬撃アニメーションに置換
-- [ ] **T-02.9** `[A]` `config.ts` にスプライト参照定数を追加（色定数は維持）
+- [x] **T-02.1** `[A]` Game.tsx に `SpriteRenderer` インスタンス生成（`useMemo`）
+- [x] **T-02.2** `[A]` マップタイル描画を `fillRect` → `drawSprite` に置換
+- [x] **T-02.3** `[A]` 敵描画を `arc` → `drawAnimatedSprite` に置換
+- [x] **T-02.4** `[A]` プレイヤー描画を `arc + 三角` → `drawAnimatedSprite` に置換（方向・移動状態でフレーム選択）
+- [x] **T-02.5** `[A]` アイテム描画を `fillRect` → `drawSprite` に置換
+- [x] **T-02.6** `[A]` 罠描画を幾何学図形 → `drawAnimatedSprite` に置換
+- [x] **T-02.7** `[A]` 特殊壁描画を幾何学図形 → `drawSprite` に置換
+- [x] **T-02.8** `[A]` 攻撃エフェクトを白枠 → 斬撃アニメーションに置換
+- [x] **T-02.9** `[A]` `config.ts` にスプライト参照定数を追加（色定数は維持）
 - [ ] **T-02.10** `[A]` 目視テスト: 全タイル・キャラクター・アイテムが正しく描画されることを確認
 
 ---
@@ -77,10 +77,10 @@
 
 > 前提: フェーズ 3 完了 | ストリーム: B
 
-- [ ] **T-04.1** `[B]` `movement.ts` に `SPEED_EFFECT_THRESHOLD = 5.2` 定数追加
-- [ ] **T-04.2** `[B]` `effects/speedEffect.ts` — 残像管理（過去 3 フレーム位置保持）
-- [ ] **T-04.3** `[B]` `effects/speedEffect.ts` — スピードライン描画（4 本、移動逆方向）
-- [ ] **T-04.4** `[B]` Game.tsx にスピードエフェクト描画統合
+- [x] **T-04.1** `[B]` `movement.ts` に `SPEED_EFFECT_THRESHOLD = 5.2` 定数追加
+- [x] **T-04.2** `[B]` `effects/speedEffect.ts` — 残像管理（過去 3 フレーム位置保持）
+- [x] **T-04.3** `[B]` `effects/speedEffect.ts` — スピードライン描画（4 本、移動逆方向）
+- [x] **T-04.4** `[B]` Game.tsx にスピードエフェクト描画統合
 - [ ] **T-04.5** `[B]` 目視テスト: 盗賊 Lv3 以上で残像・スピードラインが表示されることを確認
 
 ---

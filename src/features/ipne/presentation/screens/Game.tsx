@@ -2,7 +2,7 @@
  * ゲーム画面コンポーネント群
  * GameScreen, ClassSelectScreen, LevelUpOverlayComponent, HelpOverlayComponent
  */
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   Overlay,
   GameRegion,
@@ -113,11 +113,28 @@ import {
   canChooseStat,
   getNextKillsRequired,
   StatTypeValue,
+  getEffectiveMoveSpeed,
+  SPEED_EFFECT_THRESHOLD,
 } from '../../index';
 import { GameTimer } from '../../timer';
 import { getElapsedTime, formatTimeShort } from '../../timer';
-import { CONFIG } from '../config';
-import { EffectManager, EffectType, EffectTypeValue } from '../effects';
+import { CONFIG, SPRITE_SIZES } from '../config';
+import { EffectManager, EffectType, EffectTypeValue, SpeedEffectManager, isSpeedEffectActive } from '../effects';
+import {
+  SpriteRenderer,
+  SpriteDefinition,
+  SpriteSheetDefinition,
+  FLOOR_SPRITE,
+  WALL_SPRITE,
+  GOAL_SPRITE_SHEET,
+  START_SPRITE,
+  getPlayerSpriteSheet,
+  getEnemySpriteSheet,
+  getItemSprite,
+  getTrapSpriteSheet,
+  getWallSprite,
+  ATTACK_SLASH_SPRITE_SHEET,
+} from '../sprites';
 import warriorClassImg from '../../../../assets/images/ipne_class_warrior.webp';
 import thiefClassImg from '../../../../assets/images/ipne_class_thief.webp';
 
@@ -359,6 +376,12 @@ export const GameScreen: React.FC<{
   const lastAttackEffectKeyRef = useRef<string | null>(null);
   const lastDamageAtRef = useRef(0);
 
+  // スピードエフェクト
+  const speedEffectManagerRef = useRef(new SpeedEffectManager());
+
+  // スプライトレンダラー（T-02.1）
+  const spriteRenderer = useMemo(() => new SpriteRenderer(), []);
+
   // 点滅表現用の再描画トリガー
   useEffect(() => {
     const interval = setInterval(() => {
@@ -380,8 +403,6 @@ export const GameScreen: React.FC<{
 
     const mapWidth = map[0].length;
     const mapHeight = map.length;
-    const { wallColor, floorColor, goalColor, startColor, playerColor, enemyColors, itemColors } =
-      CONFIG;
     const now = renderTime;
 
     // デバッグモードで全体表示の場合とビューポート表示の場合で分岐
@@ -436,9 +457,10 @@ export const GameScreen: React.FC<{
       path = findPath(map, startPos, goalPos);
     }
 
-    // マップ描画
+    // マップ描画（T-02.2: スプライト描画）
     const drawWidth = useFullMap ? mapWidth : viewport.width;
     const drawHeight = useFullMap ? mapHeight : viewport.height;
+    const spriteScale = tileSize / SPRITE_SIZES.base;
 
     for (let vy = 0; vy < drawHeight; vy++) {
       for (let vx = 0; vx < drawWidth; vx++) {
@@ -451,19 +473,23 @@ export const GameScreen: React.FC<{
         }
 
         const tile = map[worldY][worldX];
-        let color = floorColor;
+        const tileDrawX = offsetX + vx * tileSize;
+        const tileDrawY = offsetY + vy * tileSize;
 
-        if (tile === TileType.WALL) color = wallColor;
-        else if (tile === TileType.GOAL) color = goalColor;
-        else if (tile === TileType.START) color = startColor;
-
-        ctx.fillStyle = color;
-        ctx.fillRect(offsetX + vx * tileSize, offsetY + vy * tileSize, tileSize, tileSize);
+        if (tile === TileType.WALL) {
+          spriteRenderer.drawSprite(ctx, WALL_SPRITE, tileDrawX, tileDrawY, spriteScale);
+        } else if (tile === TileType.GOAL) {
+          spriteRenderer.drawAnimatedSprite(ctx, GOAL_SPRITE_SHEET, now, tileDrawX, tileDrawY, spriteScale);
+        } else if (tile === TileType.START) {
+          spriteRenderer.drawSprite(ctx, START_SPRITE, tileDrawX, tileDrawY, spriteScale);
+        } else {
+          spriteRenderer.drawSprite(ctx, FLOOR_SPRITE, tileDrawX, tileDrawY, spriteScale);
+        }
 
         // グリッド線（全体表示時は省略）
         if (!useFullMap) {
           ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-          ctx.strokeRect(offsetX + vx * tileSize, offsetY + vy * tileSize, tileSize, tileSize);
+          ctx.strokeRect(tileDrawX, tileDrawY, tileSize, tileSize);
         }
       }
     }
@@ -505,127 +531,64 @@ export const GameScreen: React.FC<{
       ctx.stroke();
     }
 
-    // MVP3: 罠描画
+    // MVP3: 罠描画（T-02.6: スプライト描画）
     for (const trap of traps) {
       // 職業に応じた可視性判定
       if (!canSeeTrap(player.playerClass, trap.state)) continue;
 
       const trapScreen = toScreenPosition(trap);
-      const size = useFullMap ? Math.max(tileSize / 2, 3) : tileSize * 0.6;
       const alpha = getTrapAlpha(player.playerClass, trap.state);
-      const trapColor = CONFIG.trapColors[trap.type as keyof typeof CONFIG.trapColors] || '#dc2626';
+      const trapSheet = getTrapSpriteSheet(trap.type);
+      const trapDrawSize = SPRITE_SIZES.base * spriteScale;
+      const trapDrawX = trapScreen.x - trapDrawSize / 2;
+      const trapDrawY = trapScreen.y - trapDrawSize / 2;
 
       ctx.globalAlpha = alpha;
-      ctx.fillStyle = trapColor;
-
-      if (trap.type === TrapType.DAMAGE) {
-        // ダメージ罠: X印
-        ctx.strokeStyle = trapColor;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(trapScreen.x - size / 3, trapScreen.y - size / 3);
-        ctx.lineTo(trapScreen.x + size / 3, trapScreen.y + size / 3);
-        ctx.moveTo(trapScreen.x + size / 3, trapScreen.y - size / 3);
-        ctx.lineTo(trapScreen.x - size / 3, trapScreen.y + size / 3);
-        ctx.stroke();
-      } else if (trap.type === TrapType.SLOW) {
-        // 移動妨害罠: 波線
-        ctx.strokeStyle = trapColor;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(trapScreen.x - size / 3, trapScreen.y);
-        ctx.quadraticCurveTo(trapScreen.x - size / 6, trapScreen.y - size / 4, trapScreen.x, trapScreen.y);
-        ctx.quadraticCurveTo(trapScreen.x + size / 6, trapScreen.y + size / 4, trapScreen.x + size / 3, trapScreen.y);
-        ctx.stroke();
-      } else if (trap.type === TrapType.TELEPORT) {
-        // テレポート罠: 渦巻き（@マーク）
-        ctx.font = `bold ${size}px sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('@', trapScreen.x, trapScreen.y);
-      }
-
+      spriteRenderer.drawAnimatedSprite(ctx, trapSheet, now, trapDrawX, trapDrawY, spriteScale);
       ctx.globalAlpha = 1;
     }
 
-    // MVP3: 特殊壁描画
+    // MVP3: 特殊壁描画（T-02.7: スプライト描画）
     for (const wall of walls) {
       // 職業に応じた可視性判定
       if (!canSeeSpecialWall(player.playerClass, wall.type, wall.state)) continue;
 
       const wallScreen = toScreenPosition(wall);
       const alpha = getWallAlpha(player.playerClass, wall.type, wall.state);
-      const wallColor = CONFIG.wallColors[wall.type as keyof typeof CONFIG.wallColors] || '#78350f';
+      const wallSprite = getWallSprite(wall.type, wall.state);
+      const wallDrawSize = SPRITE_SIZES.base * spriteScale;
+      const wallDrawX = wallScreen.x - wallDrawSize / 2;
+      const wallDrawY = wallScreen.y - wallDrawSize / 2;
 
       ctx.globalAlpha = alpha;
-      ctx.fillStyle = wallColor;
-
-      if (wall.type === WallType.BREAKABLE) {
-        // 破壊可能壁: 状態によって表示を変える
-        if (wall.state === WallState.BROKEN) {
-          // 破壊済み: 緑の開口部（通過可能を示す）
-          ctx.strokeStyle = '#22c55e';
-          ctx.lineWidth = 3;
-          ctx.setLineDash([4, 4]);
-          ctx.strokeRect(wallScreen.x - tileSize / 2.5, wallScreen.y - tileSize / 2.5, tileSize / 1.25, tileSize / 1.25);
-          ctx.setLineDash([]);
-          // 開口部の内側に通路を示す明るい緑
-          ctx.fillStyle = 'rgba(34, 197, 94, 0.3)';
-          ctx.fillRect(wallScreen.x - tileSize / 3, wallScreen.y - tileSize / 3, tileSize / 1.5, tileSize / 1.5);
-        } else if (wall.state === WallState.DAMAGED) {
-          // 損傷: オレンジ色、大きなひび割れ
-          ctx.fillStyle = '#f97316';
-          ctx.fillRect(wallScreen.x - tileSize / 2.5, wallScreen.y - tileSize / 2.5, tileSize / 1.25, tileSize / 1.25);
-          ctx.strokeStyle = '#7c2d12';
-          ctx.lineWidth = 2;
-          // 大きなX字ひび割れ
-          ctx.beginPath();
-          ctx.moveTo(wallScreen.x - tileSize / 3, wallScreen.y - tileSize / 3);
-          ctx.lineTo(wallScreen.x + tileSize / 3, wallScreen.y + tileSize / 3);
-          ctx.moveTo(wallScreen.x + tileSize / 3, wallScreen.y - tileSize / 3);
-          ctx.lineTo(wallScreen.x - tileSize / 3, wallScreen.y + tileSize / 3);
-          ctx.stroke();
-        } else {
-          // 完全（INTACT）: 茶色のひび割れ模様
-          ctx.fillRect(wallScreen.x - tileSize / 2.5, wallScreen.y - tileSize / 2.5, tileSize / 1.25, tileSize / 1.25);
-          ctx.strokeStyle = '#451a03';
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(wallScreen.x - tileSize / 4, wallScreen.y - tileSize / 4);
-          ctx.lineTo(wallScreen.x, wallScreen.y);
-          ctx.lineTo(wallScreen.x + tileSize / 4, wallScreen.y - tileSize / 6);
-          ctx.stroke();
-        }
-      } else if (wall.type === WallType.PASSABLE) {
-        // すり抜け可能壁: 半透明塗りつぶし + 点線枠（視認性向上）
-        ctx.fillStyle = 'rgba(22, 101, 52, 0.4)';
-        ctx.fillRect(wallScreen.x - tileSize / 2.5, wallScreen.y - tileSize / 2.5, tileSize / 1.25, tileSize / 1.25);
-        ctx.strokeStyle = wallColor;
-        ctx.lineWidth = 2;
-        ctx.setLineDash([3, 3]);
-        ctx.strokeRect(wallScreen.x - tileSize / 2.5, wallScreen.y - tileSize / 2.5, tileSize / 1.25, tileSize / 1.25);
-        ctx.setLineDash([]);
-      } else if (wall.type === WallType.INVISIBLE) {
-        // 透明壁: 半透明塗りつぶし + 太い輪郭（視認性向上）
-        ctx.fillStyle = 'rgba(76, 29, 149, 0.3)';
-        ctx.fillRect(wallScreen.x - tileSize / 2.5, wallScreen.y - tileSize / 2.5, tileSize / 1.25, tileSize / 1.25);
-        ctx.strokeStyle = wallColor;
-        ctx.lineWidth = 2;
-        ctx.strokeRect(wallScreen.x - tileSize / 2.5, wallScreen.y - tileSize / 2.5, tileSize / 1.25, tileSize / 1.25);
-      }
-
+      spriteRenderer.drawSprite(ctx, wallSprite, wallDrawX, wallDrawY, spriteScale);
       ctx.globalAlpha = 1;
     }
 
-    // アイテム描画
+    // アイテム描画（T-02.5: スプライト描画）
     for (const item of items) {
       const screenPos = toScreenPosition(item);
-      const size = useFullMap ? Math.max(tileSize / 3, 2) : tileSize / 3;
-      ctx.fillStyle = itemColors[item.type];
-      ctx.fillRect(screenPos.x - size / 2, screenPos.y - size / 2, size, size);
+      const itemSpriteOrSheet = getItemSprite(item.type);
+      const isSheet = 'sprites' in itemSpriteOrSheet;
+      const spriteWidth = isSheet
+        ? (itemSpriteOrSheet as SpriteSheetDefinition).sprites[0].width
+        : (itemSpriteOrSheet as SpriteDefinition).width;
+      const itemDrawSize = spriteWidth * spriteScale;
+      const itemDrawX = screenPos.x - itemDrawSize / 2;
+      const itemDrawY = screenPos.y - itemDrawSize / 2;
+
+      if (isSheet) {
+        spriteRenderer.drawAnimatedSprite(
+          ctx, itemSpriteOrSheet as SpriteSheetDefinition, now, itemDrawX, itemDrawY, spriteScale
+        );
+      } else {
+        spriteRenderer.drawSprite(
+          ctx, itemSpriteOrSheet as SpriteDefinition, itemDrawX, itemDrawY, spriteScale
+        );
+      }
     }
 
-    // 敵描画
+    // 敵描画（T-02.3: スプライト描画）
     for (const enemy of enemies) {
       if (
         enemy.x < viewport.x - 1 ||
@@ -640,22 +603,35 @@ export const GameScreen: React.FC<{
       if (blinkOff) continue;
 
       const enemyScreen = toScreenPosition(enemy);
-      const baseRadius = useFullMap ? Math.max(tileSize / 2 - 1, 2) : tileSize / 2 - 3;
-      const radius = enemy.type === EnemyType.BOSS ? baseRadius * 1.4 : baseRadius;
-      ctx.fillStyle = enemyColors[enemy.type];
-      ctx.beginPath();
-      ctx.arc(enemyScreen.x, enemyScreen.y, radius, 0, Math.PI * 2);
-      ctx.fill();
+      const enemySheet = getEnemySpriteSheet(enemy.type);
+      const enemySpriteSize = enemy.type === EnemyType.BOSS ? SPRITE_SIZES.boss : SPRITE_SIZES.base;
+      const enemyDrawSize = enemySpriteSize * spriteScale;
+      const enemyDrawX = enemyScreen.x - enemyDrawSize / 2;
+      const enemyDrawY = enemyScreen.y - enemyDrawSize / 2;
+
+      spriteRenderer.drawAnimatedSprite(ctx, enemySheet, now, enemyDrawX, enemyDrawY, spriteScale);
     }
 
-    // 攻撃エフェクト描画
+    // 攻撃エフェクト描画（T-02.8: 斬撃アニメーション）
     if (attackEffect && now < attackEffect.until) {
       const effectPos = attackEffect.position;
       const screen = toScreenPosition(effectPos);
-      const size = useFullMap ? tileSize : tileSize * 0.9;
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(screen.x - size / 2, screen.y - size / 2, size, size);
+      const slashDrawSize = SPRITE_SIZES.base * spriteScale;
+      const slashDrawX = screen.x - slashDrawSize / 2;
+      const slashDrawY = screen.y - slashDrawSize / 2;
+
+      spriteRenderer.drawAnimatedSprite(ctx, ATTACK_SLASH_SPRITE_SHEET, now, slashDrawX, slashDrawY, spriteScale);
+    }
+
+    // スピードエフェクトの更新・描画
+    const sem = speedEffectManagerRef.current;
+    const effectiveSpeed = getEffectiveMoveSpeed(player, now);
+    const speedActive = isSpeedEffectActive(effectiveSpeed);
+    const playerScreenForSpeed = toScreenPosition(player);
+    sem.recordPosition(playerScreenForSpeed.x, playerScreenForSpeed.y, player.direction, speedActive);
+    if (speedActive) {
+      sem.drawAfterImages(ctx, CONFIG.playerColor, useFullMap ? Math.max(tileSize / 2 - 1, 2) : tileSize / 2 - 4);
+      sem.drawSpeedLines(ctx, playerScreenForSpeed.x, playerScreenForSpeed.y, player.direction, effectiveSpeed);
     }
 
     // パーティクルエフェクトシステム
@@ -691,46 +667,27 @@ export const GameScreen: React.FC<{
     em.update(0.1, now);
     em.draw(ctx, canvas.width, canvas.height);
 
-    // プレイヤー描画
+    // プレイヤー描画（T-02.4: スプライト描画）
     const playerScreen = toScreenPosition(player);
-    const playerRadius = useFullMap ? Math.max(tileSize / 2 - 1, 2) : tileSize / 2 - 4;
     const isBlinkOff = player.isInvincible && Math.floor(now / 100) % 2 === 1;
 
     if (!isBlinkOff) {
-      ctx.fillStyle = playerColor;
-      ctx.beginPath();
-      ctx.arc(playerScreen.x, playerScreen.y, playerRadius, 0, Math.PI * 2);
-      ctx.fill();
+      const playerSheet = getPlayerSpriteSheet(
+        player.playerClass as 'warrior' | 'thief',
+        player.direction as 'down' | 'up' | 'left' | 'right'
+      );
+      const playerDrawSize = SPRITE_SIZES.base * spriteScale;
+      const playerDrawX = playerScreen.x - playerDrawSize / 2;
+      const playerDrawY = playerScreen.y - playerDrawSize / 2;
 
-      // プレイヤーの縁取り（視認性向上）
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-      ctx.lineWidth = useFullMap ? 1 : 2;
-      ctx.beginPath();
-      ctx.arc(playerScreen.x, playerScreen.y, playerRadius, 0, Math.PI * 2);
-      ctx.stroke();
-
-      // 向き表示（小さな三角）
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-      ctx.beginPath();
-      if (player.direction === Direction.UP) {
-        ctx.moveTo(playerScreen.x, playerScreen.y - playerRadius);
-        ctx.lineTo(playerScreen.x - playerRadius / 2, playerScreen.y);
-        ctx.lineTo(playerScreen.x + playerRadius / 2, playerScreen.y);
-      } else if (player.direction === Direction.DOWN) {
-        ctx.moveTo(playerScreen.x, playerScreen.y + playerRadius);
-        ctx.lineTo(playerScreen.x - playerRadius / 2, playerScreen.y);
-        ctx.lineTo(playerScreen.x + playerRadius / 2, playerScreen.y);
-      } else if (player.direction === Direction.LEFT) {
-        ctx.moveTo(playerScreen.x - playerRadius, playerScreen.y);
-        ctx.lineTo(playerScreen.x, playerScreen.y - playerRadius / 2);
-        ctx.lineTo(playerScreen.x, playerScreen.y + playerRadius / 2);
-      } else if (player.direction === Direction.RIGHT) {
-        ctx.moveTo(playerScreen.x + playerRadius, playerScreen.y);
-        ctx.lineTo(playerScreen.x, playerScreen.y - playerRadius / 2);
-        ctx.lineTo(playerScreen.x, playerScreen.y + playerRadius / 2);
+      // 移動中は歩行アニメーション、停止中は待機フレーム
+      const isMoving = movementStateRef.current.activeDirection !== null;
+      if (isMoving) {
+        const walkFrameIndex = Math.floor(now / playerSheet.frameDuration) % 2;
+        spriteRenderer.drawSprite(ctx, playerSheet.sprites[1 + walkFrameIndex], playerDrawX, playerDrawY, spriteScale);
+      } else {
+        spriteRenderer.drawSprite(ctx, playerSheet.sprites[0], playerDrawX, playerDrawY, spriteScale);
       }
-      ctx.closePath();
-      ctx.fill();
     }
 
     // 自動マップ描画（全体表示モードでは非表示）
@@ -754,7 +711,7 @@ export const GameScreen: React.FC<{
         drawCoordinateOverlay(ctx, player.x, player.y, playerScreen.x, playerScreen.y);
       }
     }
-  }, [map, player, enemies, items, traps, walls, mapState, goalPos, debugState, renderTime, attackEffect, lastDamageAt, effectQueueRef]);
+  }, [map, player, enemies, items, traps, walls, mapState, goalPos, debugState, renderTime, attackEffect, lastDamageAt, effectQueueRef, spriteRenderer]);
 
   const setAttackHold = useCallback((isHolding: boolean) => {
     attackHoldRef.current = isHolding;

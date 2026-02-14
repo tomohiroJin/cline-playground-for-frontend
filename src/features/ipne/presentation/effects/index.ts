@@ -18,3 +18,7 @@ export {
 
 // エフェクトマネージャー
 export { EffectManager, resetEffectIdCounter } from './effectManager';
+
+// スピードエフェクト
+export { SpeedEffectManager, isSpeedEffectActive } from './speedEffect';
+export type { AfterImage } from './speedEffect';

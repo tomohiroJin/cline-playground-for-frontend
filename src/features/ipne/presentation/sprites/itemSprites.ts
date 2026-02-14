@@ -339,14 +339,19 @@ export function getItemSprite(
 ): SpriteDefinition | SpriteSheetDefinition {
   switch (itemType) {
     case 'healthSmall':
+    case 'health_small':
       return HEALTH_SMALL_SPRITE;
     case 'healthLarge':
+    case 'health_large':
       return HEALTH_LARGE_SPRITE;
     case 'healthFull':
+    case 'health_full':
       return HEALTH_FULL_SPRITE_SHEET;
     case 'levelUp':
+    case 'level_up':
       return LEVEL_UP_SPRITE_SHEET;
     case 'mapReveal':
+    case 'map_reveal':
       return MAP_REVEAL_SPRITE;
     case 'key':
       return KEY_SPRITE_SHEET;

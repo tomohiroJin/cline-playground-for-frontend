@@ -14,6 +14,9 @@ export interface MovementConfig {
   initialDelay: number;
 }
 
+/** スピードエフェクト発動しきい値（この値以上でエフェクト表示） */
+export const SPEED_EFFECT_THRESHOLD = 5.2;
+
 /** デフォルトの移動設定 */
 export const DEFAULT_MOVEMENT_CONFIG: MovementConfig = {
   moveInterval: 140, // 140ms間隔（秒速7マス程度）
