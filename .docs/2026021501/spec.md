@@ -258,13 +258,24 @@ interface Particle {
 /** スピードエフェクト発動しきい値 */
 const SPEED_EFFECT_THRESHOLD = 5.2;
 
-// 判定
+/** 同一方向への連続移動フレーム数しきい値（約0.5秒） */
+const SUSTAINED_MOVE_FRAMES = 8;
+
+// 判定: 速度しきい値 AND 同一方向に一定フレーム以上移動し続けていること
 const effectiveSpeed = getEffectiveMoveSpeed(player, currentTime);
-const showSpeedEffect = effectiveSpeed >= SPEED_EFFECT_THRESHOLD;
+const isMovingNow = movementStateRef.current.activeDirection !== null;
+const isSustainedMove = straightMoveFrames >= SUSTAINED_MOVE_FRAMES;
+const showSpeedEffect = isMovingNow && isSustainedMove && effectiveSpeed >= SPEED_EFFECT_THRESHOLD;
 ```
 
+**発動ロジック**:
+- 同一方向に連続して移動しているフレーム数をカウント（`straightMoveFrames`）
+- 方向が変わるか移動を停止するとカウントリセット
+- カウントが `SUSTAINED_MOVE_FRAMES`（8フレーム ≒ 約0.5秒）に達し、かつ速度しきい値を超えている場合に発動
+- `isSpeedEffectActive()` は純粋な速度判定として残し、呼び出し側（`Game.tsx`）で移動継続条件を AND する
+
 **該当ケース**:
-- 盗賊: 初期 moveSpeed = 5.0 → Lv3（moveSpeed +0.3 を 1 回選択）で 5.3
+- 盗賊: 初期 moveSpeed = 6.0 → 真っ直ぐ約0.5秒歩き続けると発動
 - 戦士: moveSpeed 特化ビルド（3 回選択で 4.0 + 0.3×3 = 4.9、到達困難）
 
 ### 4.2 残像エフェクト
@@ -275,7 +286,7 @@ interface AfterImage {
   y: number;
   direction: DirectionValue;
   alpha: number;       // 0.5 → 0.3 → 0.1
-  spriteIndex: number; // 描画時のスプライト
+  spriteIndex: number; // 記録時のスプライトフレームインデックス
 }
 
 // 過去3フレームの位置を保持
@@ -283,14 +294,32 @@ const afterImages: AfterImage[] = []; // 最大3つ
 ```
 
 - プレイヤーが移動するたびに現在位置を `afterImages` に追加（最大 3 つ、FIFO）
-- 各残像を `drawSpriteWithAlpha` で半透明描画
+- 各残像を `SpriteRenderer.drawSpriteWithAlpha` でスプライト描画（方向・歩行フレーム対応）
+- 記録時のスプライトフレームを保持し、残像ごとに正しいポーズで描画
+- 移動停止後、既存の残像は自然にフェードアウトして消滅
 
-### 4.3 スピードライン
+### 4.3 ダッシュダスト（土煙パーティクル）
 
-- 移動方向と **逆方向** に細い白線（lineWidth: 1px）を 4 本描画
-- 各線の開始位置: プレイヤー中心からランダムオフセット（±8px）
-- 線の長さ: `(effectiveSpeed - SPEED_EFFECT_THRESHOLD) * 3 + 5`（5～15px 程度）
-- 透明度: 0.4（控えめ）
+スピードラインを廃止し、ドット絵の世界観に馴染む土煙パーティクルに変更。
+
+```typescript
+interface DashDust {
+  x: number;
+  y: number;
+  vx: number;       // 移動方向の逆方向に漂う速度
+  vy: number;       // 上方向にわずかに浮く速度（-0.3程度）
+  size: number;     // 2 or 3（ドット絵風正方形）
+  alpha: number;    // 初期 0.5 → 0.0 まで減衰
+  life: number;     // 残り寿命（0.0～1.0）
+}
+```
+
+- **形状**: 2～3px の正方形パーティクル（ドット絵風）
+- **色**: `#8b7355`（砂色）、透明度 0.3～0.5 でフェードアウト
+- **出現位置**: プレイヤーの足元（スプライト下端）から、移動方向の逆側にオフセット
+- **挙動**: 出現後、移動方向の逆方向にゆっくり漂いながら上方向にわずかに浮き、0.3 秒で消滅
+- **数量**: 位置が変わった時のみ 1～2 個生成、最大 6 個まで保持（毎フレーム再生成しない）
+- **停止時**: 移動停止後、既存パーティクルは自然にフェードアウトして消滅
 
 ---
 

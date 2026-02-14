@@ -243,6 +243,22 @@ IPNE（ローグライク迷路アクションゲーム）は MVP6 まで機能�
 
 **修正**: `case 'revealed':` を `case 'intact':` とフォールスルーさせ、発見済み状態は無傷と同じスプライトを返すように変更。
 
+### BF-02: スピードエフェクトの常時表示・描画不具合（2026-02-15）
+
+**問題**:
+1. 立ち止まっていてもスピードエフェクトが表示される（盗賊は初期 moveSpeed=6 で閾値超過）
+2. スピードラインが移動方向の後方以外にも散る（ランダムオフセット ±8px が垂直方向に散布）
+3. スピードラインが毎フレームチラつく（`speedLineOffsets` を毎フレーム再生成）
+4. 残像が円描画（`ctx.arc`）でスプライトではない
+
+**原因**: `isSpeedEffectActive()` がステータス値（`player.stats.moveSpeed`）のみで判定しており、実際の移動状態・移動継続時間を考慮していない。スピードラインのオフセットが毎フレーム再生成される設計。残像描画が仕様（`drawSpriteWithAlpha`）と乖離した円描画。
+
+**修正**:
+1. `Game.tsx`: 発動条件に「同一方向への連続移動フレーム数（約0.5秒）」を追加。移動開始直後ではなく、真っ直ぐしばらく歩いた場合のみ発動
+2. `speedEffect.ts`: `drawAfterImages` を `SpriteRenderer.drawSpriteWithAlpha` によるスプライト描画に変更
+3. `speedEffect.ts`: `drawSpeedLines` を廃止し `drawDashDust`（土煙パーティクル）に置換
+4. `speedEffect.ts`: `AfterImage` に `spriteIndex` フィールド追加、`recordPosition` にスプライトインデックス引数追加
+
 ---
 
 ## リスク・注意事項

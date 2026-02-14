@@ -119,7 +119,7 @@ import {
 import { GameTimer } from '../../timer';
 import { getElapsedTime, formatTimeShort } from '../../timer';
 import { CONFIG, SPRITE_SIZES } from '../config';
-import { EffectManager, EffectType, EffectTypeValue, SpeedEffectManager, isSpeedEffectActive, DeathEffect, DeathPhase } from '../effects';
+import { EffectManager, EffectType, EffectTypeValue, SpeedEffectManager, isSpeedEffectActive, SUSTAINED_MOVE_FRAMES, DeathEffect, DeathPhase } from '../effects';
 import {
   SpriteRenderer,
   SpriteDefinition,
@@ -382,6 +382,8 @@ export const GameScreen: React.FC<{
 
   // スピードエフェクト
   const speedEffectManagerRef = useRef(new SpeedEffectManager());
+  const straightMoveFramesRef = useRef(0);
+  const lastMoveDirectionRef = useRef<DirectionValue | null>(null);
 
   // 死亡エフェクト
   const deathEffectRef = useRef(new DeathEffect());
@@ -642,12 +644,57 @@ export const GameScreen: React.FC<{
     // スピードエフェクトの更新・描画
     const sem = speedEffectManagerRef.current;
     const effectiveSpeed = getEffectiveMoveSpeed(player, now);
-    const speedActive = isSpeedEffectActive(effectiveSpeed);
+    const isMovingNow = movementStateRef.current.activeDirection !== null;
+    const currentDirection = movementStateRef.current.activeDirection;
+
+    // 同一方向への連続移動フレーム数をカウント
+    if (isMovingNow && currentDirection === lastMoveDirectionRef.current) {
+      straightMoveFramesRef.current += 1;
+    } else {
+      straightMoveFramesRef.current = isMovingNow ? 1 : 0;
+    }
+    lastMoveDirectionRef.current = currentDirection;
+
+    // 発動判定: 速度しきい値 AND 同一方向に一定フレーム以上移動し続けていること
+    const isSustainedMove = straightMoveFramesRef.current >= SUSTAINED_MOVE_FRAMES;
+    const showSpeedEffect = isMovingNow && isSustainedMove && isSpeedEffectActive(effectiveSpeed);
+
     const playerScreenForSpeed = toScreenPosition(player);
-    sem.recordPosition(playerScreenForSpeed.x, playerScreenForSpeed.y, player.direction, speedActive);
-    if (speedActive) {
-      sem.drawAfterImages(ctx, CONFIG.playerColor, useFullMap ? Math.max(tileSize / 2 - 1, 2) : tileSize / 2 - 4);
-      sem.drawSpeedLines(ctx, playerScreenForSpeed.x, playerScreenForSpeed.y, player.direction, effectiveSpeed);
+
+    // 歩行フレームインデックスを計算（残像記録用）
+    const playerSheetForSpeed = getPlayerSpriteSheet(
+      player.playerClass as 'warrior' | 'thief',
+      player.direction as 'down' | 'up' | 'left' | 'right'
+    );
+    const walkFrameIdx = isMovingNow
+      ? 1 + (Math.floor(now / playerSheetForSpeed.frameDuration) % 2)
+      : 0;
+
+    sem.recordPosition(
+      playerScreenForSpeed.x,
+      playerScreenForSpeed.y,
+      player.direction,
+      showSpeedEffect,
+      walkFrameIdx
+    );
+
+    // 残像・ダッシュダスト描画（アクティブ時 or フェードアウト中の残存エフェクト）
+    if (showSpeedEffect || sem.hasVisibleEffects()) {
+      const playerDrawSizeForSpeed = SPRITE_SIZES.base * spriteScale;
+      sem.drawAfterImages(
+        ctx,
+        spriteRenderer,
+        (direction, spriteIdx) => {
+          const sheet = getPlayerSpriteSheet(
+            player.playerClass as 'warrior' | 'thief',
+            direction as 'down' | 'up' | 'left' | 'right'
+          );
+          return sheet.sprites[spriteIdx];
+        },
+        spriteScale,
+        playerDrawSizeForSpeed
+      );
+      sem.drawDashDust(ctx);
     }
 
     // パーティクルエフェクトシステム

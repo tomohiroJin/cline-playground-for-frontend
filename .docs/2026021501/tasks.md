@@ -122,6 +122,12 @@
 ## バグ修正
 
 - [x] **BF-01** `[A]` `wallSprites.ts` — `getWallSprite` の `breakable` switch 文に `case 'revealed':` を追加（`intact` と同じスプライトを返す）
+- [x] **BF-02** `[B]` `speedEffect.ts` / `Game.tsx` — スピードエフェクトの常時表示・描画不具合修正
+  - [x] BF-02.1: `Game.tsx` で発動条件に同一方向への連続移動フレーム数（約0.5秒）を追加
+  - [x] BF-02.2: `drawAfterImages` をスプライト描画に変更（`drawSpriteWithAlpha` 使用）
+  - [x] BF-02.3: `drawSpeedLines` を `drawDashDust`（土煙パーティクル）に置換
+  - [x] BF-02.4: `AfterImage` に `spriteIndex` 追加、`recordPosition` の引数拡張
+  - [ ] BF-02.5: 目視テスト（立ち止まり・方向転換時エフェクト非表示、真っ直ぐ移動継続時のみ残像+ダッシュダスト表示）
 
 ---
 
