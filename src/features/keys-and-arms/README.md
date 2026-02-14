@@ -9,16 +9,35 @@ React は薄いラッパーとしてのみ機能します。
 ## 配置構成
 
 ```text
-src/features/keys-and-arms/engine.ts           # ゲームエンジン本体（createEngine クロージャ）
-src/features/keys-and-arms/KeysAndArmsGame.tsx  # React ラッパー（Canvas + 仮想パッド）
-src/features/keys-and-arms/styles.ts            # styled-components スタイル
-src/pages/KeysAndArmsPage.tsx                   # ページコンポーネント
+src/features/keys-and-arms/
+  engine.ts             # ゲームエンジン（オーケストレータ）
+  KeysAndArmsGame.tsx   # React ラッパー（Canvas + 仮想パッド）
+  styles.ts             # styled-components スタイル
+  constants.ts          # ゲーム定数
+  difficulty.ts         # 難易度設定
+  core/
+    math.ts             # 数学計算
+    audio.ts            # 効果音
+    rendering.ts        # Canvas 描画共通処理
+    particles.ts        # パーティクルエフェクト
+    hud.ts              # HUD 描画
+  stages/
+    cave/index.ts       # 洞窟ステージ
+    prairie/index.ts    # 草原ステージ
+    boss/index.ts       # ボスステージ
+  screens/
+    title.ts            # タイトル画面
+    game-over.ts        # ゲームオーバー画面
+    ending.ts           # エンディング画面
+    true-end.ts         # トゥルーエンド画面
+  __tests__/
+    difficulty.test.ts  # 難易度テスト
+src/pages/KeysAndArmsPage.tsx  # ページコンポーネント
 ```
 
 ## 実装方針
 
-- ゲームロジック（2,458行）は元コードをそのまま維持
-- 改変は DOM 参照の差し替え（10箇所未満）のみ
+- EngineContext パターンを導入し、ゲームロジックを core/ stages/ screens/ に分割
 - localStorage キー `kaG` でハイスコア保存（元実装と同一）
 - フォント `Press Start 2P` は public/index.html でプリロード
 

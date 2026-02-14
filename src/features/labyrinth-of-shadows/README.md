@@ -18,11 +18,30 @@
 ### ファイル構成
 
 ```
-src/pages/MazeHorrorPage.tsx        # ページコンポーネント（全ロジック含む、約1600行）
-src/pages/MazeHorrorPage.styles.ts  # スタイル定義
+src/features/labyrinth-of-shadows/
+  types.ts              # 型定義
+  constants.ts          # ゲーム設定定数
+  entity-factory.ts     # エンティティ生成
+  maze-service.ts       # 迷路生成サービス
+  utils.ts              # ユーティリティ関数
+  game-logic.ts         # ゲームロジック（純粋関数）
+  renderer.ts           # Canvas レイキャスティング描画
+  audio.ts              # 効果音生成
+  LabyrinthOfShadowsGame.tsx  # メインゲームコンポーネント
+  index.ts              # barrel export
+  components/
+    Controls.tsx        # 操作UI
+    HUD.tsx             # ヘッドアップディスプレイ
+    Minimap.tsx         # ミニマップ
+    ResultScreen.tsx    # リザルト画面
+    TitleScreen.tsx     # タイトル画面
+  __tests__/            # ユニットテスト
+    entity-factory.test.ts
+    game-logic.test.ts
+    maze-service.test.ts
+    utils.test.ts
+src/pages/MazeHorrorPage.tsx  # ページコンポーネント（薄いラッパー）
 ```
-
-> ゲームロジックがページコンポーネントに集約されている。将来的に feature ディレクトリへの分離を検討。
 
 ### 状態管理
 

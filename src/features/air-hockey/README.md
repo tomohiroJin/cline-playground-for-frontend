@@ -19,17 +19,31 @@ src/features/air-hockey/
   core/
     physics.ts          # 物理演算（衝突判定、速度計算）
     ai.ts               # CPU AI ロジック
-    entities.ts          # エンティティ定義（パック、マレット）
-    items.ts             # アイテムシステム
-    sound.ts             # 効果音生成
-    config.ts            # ゲーム設定
-    types.ts             # 型定義
-src/pages/AirHockeyPage.tsx   # ページコンポーネント（Canvas 描画含む）
+    entities.ts         # エンティティ定義（パック、マレット）
+    items.ts            # アイテムシステム
+    sound.ts            # 効果音生成
+    config.ts           # ゲーム設定
+    constants.ts        # 定数
+    types.ts            # 型定義
+  hooks/
+    useGameLoop.ts      # ゲームループ
+    useInput.ts         # 入力ハンドリング
+  components/
+    Field.tsx           # フィールド描画
+    ResultScreen.tsx    # リザルト画面
+    Scoreboard.tsx      # スコアボード
+    TitleScreen.tsx     # タイトル画面
+  AirHockeyGame.tsx     # メインゲームコンポーネント
+  renderer.ts           # Canvas 描画
+  styles.ts             # スタイル定義
+  index.ts              # barrel export
+src/pages/AirHockeyPage.tsx  # ページコンポーネント
 ```
 
 ### 状態管理
 
 - React Hooks（`useState`, `useRef`, `useEffect`）
+- カスタムフック（`useGameLoop`, `useInput`）でゲームループと入力を分離
 - `useRef` でゲームループの状態をフレーム間で保持
 
 ### 使用技術

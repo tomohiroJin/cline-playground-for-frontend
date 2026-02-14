@@ -20,39 +20,78 @@
 
 ```
 src/features/ipne/
-  index.ts                  # barrel export（100行以上）
+  index.ts                  # barrel export
   types.ts                  # 型定義
   application/              # アプリケーション層
+    engine/
+      tickGameState.ts      # ゲームティック処理
+    usecases/
+      resolveItemPickupEffects.ts  # アイテム取得効果
+      resolveKnockback.ts   # ノックバック処理
+      resolvePlayerDamage.ts # ダメージ処理
   domain/                   # ドメイン層
+    policies/
+      enemyAi/              # 敵AIポリシー
+    services/
+      gimmickPlacement/     # ギミック配置サービス
   infrastructure/           # インフラ層
+    browser/                # ブラウザ環境
+    clock/                  # 時計プロバイダー
+    random/                 # 乱数プロバイダー
+    storage/                # ストレージプロバイダー
   presentation/             # プレゼンテーション層
+    config.ts               # 表示設定
+    index.ts                # barrel export
+    hooks/
+      useGameLoop.ts        # ゲームループ
+      useGameState.ts       # ゲーム状態管理
+    screens/
+      Title.tsx             # タイトル画面
+      Prologue.tsx          # プロローグ画面
+      Game.tsx              # ゲーム画面
+      Clear.tsx             # クリア画面
+    state/
+      useSyncedState.ts     # 同期状態管理
+  shared/
+    contracts/              # DbC アサーション
   audio/
     bgm.ts                  # BGM管理
     soundEffect.ts          # 効果音
     audioContext.ts          # AudioContext 管理
+    audioSettings.ts        # オーディオ設定
   mazeGenerator.ts          # 迷路生成
   player.ts                 # プレイヤーロジック
   enemy.ts                  # 敵ロジック
+  enemyAI.ts                # 敵AIロジック
+  enemySpawner.ts           # 敵スポーン
   item.ts                   # アイテム
   combat.ts                 # 戦闘システム
   movement.ts               # 移動ロジック
   pathfinder.ts             # 経路探索
   autoMapping.ts            # オートマップ
   class.ts                  # クラスシステム
+  collision.ts              # 衝突判定
   progression.ts            # 進行管理
   trap.ts                   # 罠ギミック
   wall.ts                   # 壁ギミック
+  gimmickPlacement.ts       # ギミック配置
+  goal.ts                   # ゴール判定
   tutorial.ts               # チュートリアル
   record.ts                 # 記録管理
   timer.ts                  # タイマー
+  ending.ts                 # エンディング処理
+  feedback.ts               # フィードバック
+  viewport.ts               # ビューポート
+  map.ts                    # マップ管理
   debug.ts                  # デバッグ
-src/pages/IpnePage.tsx              # ページコンポーネント（約2000行）
-src/pages/IpnePage.styles.ts       # スタイル定義
+  __tests__/                # ユニットテスト
+src/pages/IpnePage.tsx      # ページコンポーネント（薄いラッパー）
 ```
 
 ### 状態管理
 
 - React Hooks（`useState`, `useRef`, `useCallback`, `useEffect`）
+- カスタムフック（`useGameLoop`, `useGameState`, `useSyncedState`）でプレゼンテーション層を分離
 
 ### 使用技術
 

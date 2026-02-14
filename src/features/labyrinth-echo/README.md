@@ -17,10 +17,34 @@
 
 ```
 src/features/labyrinth-echo/
-  LabyrinthEchoGame.tsx     # メインゲームコンポーネント（約4360行）
-  storage.ts                # localStorage ラッパー
-  types.ts                  # 型定義
-  index.ts                  # barrel export
+  types.ts              # 型定義
+  definitions.ts        # ゲーム定義データ
+  contracts.tsx         # DbC アサーション・ErrorBoundary
+  storage.ts            # localStorage ラッパー
+  audio.ts              # AudioEngine（効果音）
+  styles.ts             # スタイル定義
+  game-logic.ts         # ゲームロジック（純粋関数）
+  hooks.ts              # カスタムフック（useMeta, useShake）
+  LabyrinthEchoGame.tsx # メインゲームコンポーネント
+  index.ts              # barrel export
+  events/
+    event-data.ts       # イベントデータ定義
+    event-utils.ts      # イベントユーティリティ
+  components/
+    Badge.tsx           # バッジ表示
+    CollectionScreens.tsx  # コレクション画面
+    DiffSelectScreen.tsx   # 難易度選択画面
+    EndScreens.tsx      # エンディング画面
+    EventResultScreen.tsx  # イベント結果画面
+    FloorIntroScreen.tsx   # 階層導入画面
+    GameComponents.tsx  # ゲームUI部品
+    Page.tsx            # ページレイアウト
+    Section.tsx         # セクションレイアウト
+    SettingsScreens.tsx # 設定画面
+    TitleScreen.tsx     # タイトル画面
+  __tests__/            # ユニットテスト
+    game-logic.test.ts
+    storage.test.ts
 src/pages/LabyrinthEchoPage.tsx  # ページコンポーネント（薄いラッパー）
 ```
 

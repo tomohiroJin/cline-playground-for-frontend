@@ -19,6 +19,7 @@ src/features/agile-quiz-sugoroku/
   index.ts                  # barrel export
   types.ts                  # 型定義
   constants.ts              # ゲーム設定定数
+  game-logic.ts             # ゲームロジック（純粋関数）
   quiz-data.ts              # 互換エクスポート（questions/を再公開）
   questions/
     index.ts                # カテゴリ別問題データの集約
@@ -34,21 +35,39 @@ src/features/agile-quiz-sugoroku/
     useGame.ts              # ゲーム状態管理フック
     useCountdown.ts         # カウントダウンタイマー
     useFade.ts              # フェードアニメーション
+    useKeys.ts              # キーボード入力
+    index.ts                # barrel export
   components/
     TitleScreen.tsx          # タイトル画面
     SprintStartScreen.tsx    # スプリント開始画面
     QuizScreen.tsx           # クイズ画面
     RetrospectiveScreen.tsx  # 振り返り画面
     ResultScreen.tsx         # 結果画面
+    BarChart.tsx             # 棒グラフ
+    RadarChart.tsx           # レーダーチャート
+    ParticleEffect.tsx       # パーティクルエフェクト
+    index.ts                 # barrel export
+    styles/
+      animations.ts          # アニメーション
+      common.ts              # 共通スタイル
+      layout.ts              # レイアウト
+      quiz.ts                # クイズスタイル
+      result.ts              # 結果スタイル
+      index.ts               # barrel export
   audio/
     sound.ts                 # 効果音・BGM
-src/pages/AgileQuizSugorokuPage.tsx  # ページコンポーネント（約160行）
+  __tests__/                 # ユニットテスト
+    components.test.tsx
+    constants.test.ts
+    game-logic.test.ts
+    questions.test.ts
+src/pages/AgileQuizSugorokuPage.tsx  # ページコンポーネント（薄いラッパー）
 ```
 
 ### 状態管理
 
 - React Hooks（`useState`, `useCallback`, `useMemo`, `useRef`）
-- カスタムフック（`useGame`, `useCountdown`, `useFade`）で関心を分離
+- カスタムフック（`useGame`, `useCountdown`, `useFade`, `useKeys`）で関心を分離
 
 ### 使用技術
 

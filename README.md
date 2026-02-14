@@ -75,13 +75,13 @@ src/
   │   ├── atoms/
   │   ├── molecules/
   │   └── organisms/
-  ├── features/                  # ゲームごとのロジック実装
+  ├── features/                  # ゲームごとのモジュール分割済み実装
   ├── hooks/                     # カスタムフック
   ├── pages/                     # 各ゲームページ
   ├── store/                     # Jotai アトム
   ├── styles/                    # GlobalStyle など共通スタイル
   ├── types/                     # TypeScript 型定義
-  ├── utils/                     # ストレージ・共有などのユーティリティ
+  ├── utils/                     # ストレージ・共有・math-utils などのユーティリティ
   ├── App.tsx                    # ルート
   └── index.tsx                  # エントリーポイント
 ```
