@@ -99,43 +99,43 @@
 
 ### 5. Labyrinth Echo
 
-- [ ] テスト確認（事前）: 既存テスト通過確認
-- [ ] 型定義/契約の抽出（`contracts.ts`）→ テスト確認
-- [ ] Audio の分離（`audio.ts`）→ テスト確認
-- [ ] イベントデータの分離（`events/event-data.ts`）→ テスト確認
-- [ ] イベントユーティリティの分離（`events/event-utils.ts`）→ テスト追加・確認
-- [ ] ゲーム定義の分離（`definitions.ts`）→ テスト確認
-- [ ] スタイルの分離（`styles.ts`）→ テスト確認
-- [ ] UIコンポーネントの抽出（`components/Page.tsx`, `Section.tsx`, `Badge.tsx` 等）→ テスト確認
-- [ ] カスタムフックの抽出（`hooks.ts`）→ テスト確認
-- [ ] メインコンポーネントの整理（`LabyrinthEchoGame.tsx` を約300行に）→ テスト確認
-- [ ] `index.ts` 作成/更新（re-export）
-- [ ] テスト確認（事後）: 全テスト通過・ビルド確認
+- [x] テスト確認（事前）: 既存テスト通過確認
+- [x] 型定義/契約の抽出（`contracts.ts`）→ テスト確認
+- [x] Audio の分離（`audio.ts`）→ テスト確認
+- [x] イベントデータの分離（`events/event-data.ts`）→ テスト確認
+- [x] イベントユーティリティの分離（`events/event-utils.ts`）→ テスト追加・確認
+- [x] ゲーム定義の分離（`definitions.ts`）→ テスト確認
+- [x] スタイルの分離（`styles.ts`）→ テスト確認
+- [x] UIコンポーネントの抽出（`components/Page.tsx`, `Section.tsx`, `Badge.tsx` 等）→ テスト確認
+- [x] カスタムフックの抽出（`hooks.ts`）→ テスト確認
+- [x] メインコンポーネントの整理（`LabyrinthEchoGame.tsx` を約300行に）→ テスト確認
+- [x] `index.ts` 作成/更新（re-export）
+- [x] テスト確認（事後）: 全テスト通過・ビルド確認
 
 ### 6. Keys & Arms
 
-- [ ] テスト確認（事前）: 既存テスト通過確認
-- [ ] 型定義の抽出（`types.ts`）→ テスト確認
-- [ ] 定数の抽出（`constants.ts`）→ テスト確認
-- [ ] コア機能の分割
-  - [ ] 数学ユーティリティ（`core/math.ts`）→ テスト追加・確認
-  - [ ] 描画ユーティリティ（`core/rendering.ts`）→ テスト確認
-  - [ ] パーティクルシステム（`core/particles.ts`）→ テスト追加・確認
-  - [ ] Audio（`core/audio.ts`）→ テスト確認
-  - [ ] HUD描画（`core/hud.ts`）→ テスト確認
-- [ ] ステージの分割
-  - [ ] 洞窟ステージ（`stages/cave/index.ts`）→ テスト追加・確認
-  - [ ] 草原ステージ（`stages/prairie/index.ts`）→ テスト追加・確認
-  - [ ] ボスステージ（`stages/boss/index.ts`）→ テスト追加・確認
-- [ ] 画面の分割
-  - [ ] タイトル画面（`screens/title.ts`）→ テスト確認
-  - [ ] ゲームオーバー画面（`screens/game-over.ts`）→ テスト確認
-  - [ ] エンディング画面（`screens/ending.ts`）→ テスト確認
-  - [ ] トゥルーエンド画面（`screens/true-end.ts`）→ テスト確認
-- [ ] EngineContext パターンの導入 → テスト確認
-- [ ] `engine.ts` をオーケストレーターに整理 → テスト確認
+- [x] テスト確認（事前）: 既存テスト通過確認
+- [ ] 型定義の抽出（`types.ts`）→ @ts-nocheck のため不要（スキップ）
+- [x] 定数の抽出（`constants.ts`）→ テスト確認
+- [x] コア機能の分割
+  - [x] 数学ユーティリティ（`core/math.ts`）→ テスト追加・確認
+  - [x] 描画ユーティリティ（`core/rendering.ts`）→ テスト確認
+  - [x] パーティクルシステム（`core/particles.ts`）→ テスト追加・確認
+  - [x] Audio（`core/audio.ts`）→ テスト確認
+  - [x] HUD描画（`core/hud.ts`）→ テスト確認
+- [x] ステージの分割
+  - [x] 洞窟ステージ（`stages/cave/index.ts`）→ テスト追加・確認
+  - [x] 草原ステージ（`stages/prairie/index.ts`）→ テスト追加・確認
+  - [x] ボスステージ（`stages/boss/index.ts`）→ テスト追加・確認
+- [x] 画面の分割
+  - [x] タイトル画面（`screens/title.ts`）→ テスト確認
+  - [x] ゲームオーバー画面（`screens/game-over.ts`）→ テスト確認
+  - [x] エンディング画面（`screens/ending.ts`）→ テスト確認
+  - [x] トゥルーエンド画面（`screens/true-end.ts`）→ テスト確認
+- [x] EngineContext パターンの導入 → テスト確認
+- [x] `engine.ts` をオーケストレーターに整理 → テスト確認
 - [ ] `index.ts` 作成/更新（re-export）
-- [ ] テスト確認（事後）: 全テスト通過・ビルド確認
+- [x] テスト確認（事後）: 全テスト通過・ビルド確認（100 suites, 1202 tests passed）
 
 ---
 
