@@ -1,9 +1,9 @@
 import type { MergedStyle, RankResult } from '../types';
 import { ROWS, RANK_TABLE, LANE_LABELS, STY } from '../constants/game-config';
+import { clamp } from '../../../utils/math-utils';
 
-// 値を範囲内にクランプ
-export const clamp = (v: number, lo: number, hi: number): number =>
-  Math.max(lo, Math.min(hi, v));
+// 共通数学関数を re-export
+export { clamp };
 
 // ランク計算
 export function computeRank(sc: number, cl: boolean, st: number): RankResult {

@@ -84,6 +84,13 @@ src/features/risk-lcd/
     useGameEngine.ts              # メインゲームループ（状態管理/衝突判定/パーク適用）
     useStore.test.ts              # useStore のユニットテスト
     index.ts                      # barrel export
+    phases/
+      types.ts                    # フェーズ共通型
+      usePerkPhase.ts             # パーク選択フェーズ
+      useResultPhase.ts           # リザルトフェーズ
+      useRunningPhase.ts          # ゲーム実行フェーズ
+      useShopPhase.ts             # ショップフェーズ
+      index.ts                    # barrel export
   components/
     styles.ts                     # styled-components（LCD カラー/フォント/アニメーション）
     DeviceFrame.tsx               # ゲーム機筐体（ベゼル/ブランドロゴ）

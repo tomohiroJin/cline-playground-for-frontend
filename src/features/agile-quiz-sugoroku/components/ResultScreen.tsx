@@ -4,6 +4,7 @@
 import React, { useState, useMemo } from 'react';
 import { useKeys } from '../hooks';
 import { EngineerType, DerivedStats, GameStats, SprintSummary, RadarDataPoint } from '../types';
+import { clamp } from '../../../utils/math-utils';
 import {
   COLORS,
   ENGINEER_TYPES,
@@ -50,11 +51,6 @@ interface ResultScreenProps {
   log: SprintSummary[];
   /** リプレイ時のコールバック */
   onReplay: () => void;
-}
-
-/** 値をクランプ */
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
 }
 
 /** エンジニアタイプを判定 */

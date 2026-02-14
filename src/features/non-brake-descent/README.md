@@ -17,16 +17,26 @@ DDD風のドメイン分離による整理されたコード構成が特徴。
 
 ```
 src/features/non-brake-descent/
-  NonBrakeDescentGame.tsx   # メインゲームコンポーネント（約740行）
+  NonBrakeDescentGame.tsx   # メインゲームコンポーネント
+  types.ts                  # 型定義
+  config.ts                 # 設定
+  constants.ts              # 定数
+  hooks.ts                  # カスタムフック
   domains/
-    collision.ts            # 衝突判定
-    combo.ts                # コンボシステム
-    danger.ts               # 危険度判定
-    geometry.ts             # 座標計算
-    scoring.ts              # スコア計算
-    speed.ts                # 速度管理
+    collision-domain.ts     # 衝突判定
+    combo-domain.ts         # コンボシステム
+    danger-domain.ts        # 危険度判定
+    geometry-domain.ts      # 座標計算
+    scoring-domain.ts       # スコア計算
+    speed-domain.ts         # 速度管理
     math-utils.ts           # 数学ユーティリティ
-  renderers.tsx             # 描画コンポーネント
+    non-brake-descent-domains.test.ts  # ドメインテスト
+  renderers/
+    index.tsx               # エクスポート集約
+    effects/index.tsx       # エフェクト描画
+    entities/index.tsx      # エンティティ描画
+    environment/index.tsx   # 環境描画
+    ui/index.tsx            # UI 描画
   entities.ts               # エンティティ定義
   generators.ts             # オブジェクト生成
   physics.ts                # 物理演算

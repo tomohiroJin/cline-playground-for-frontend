@@ -26,6 +26,7 @@ export const CFG = Object.freeze({
   BASE_MN: 35,
   BASE_INF: 5,
   BOSS_EVENT_ID: "e030",
+  MAX_BOSS_RETRIES: 3,
 });
 
 export const DIFFICULTY = Object.freeze([
@@ -100,13 +101,11 @@ export const UNLOCKS = Object.freeze([
 
 // ── 純粋ゲームロジック ────────────────────────────────
 
-export const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-export const rand  = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
-export const shuffle = (arr) => {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
-  return a;
-};
+// 共通数学関数を利用（re-export で後方互換を維持）
+import { clamp as _clamp, shuffle as _shuffle, randomInt } from '../../utils/math-utils';
+export const clamp = _clamp;
+export const rand  = randomInt;
+export const shuffle = _shuffle;
 
 /** FX key classification for merge strategy */
 export const FX_MULT = new Set(["infoMult", "healMult", "mnReduce", "hpReduce"]);

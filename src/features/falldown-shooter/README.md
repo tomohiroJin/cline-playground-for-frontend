@@ -17,15 +17,44 @@
 ### ファイル構成
 
 ```
-src/pages/FallingShooterPage.tsx        # ページコンポーネント（全ロジック含む、約1600行）
-src/pages/FallingShooterPage.styles.ts  # スタイル定義
+src/features/falldown-shooter/
+  types.ts              # 型定義
+  constants.ts          # ゲーム設定定数
+  block.ts              # ブロック生成・管理
+  bullet.ts             # 弾管理
+  grid.ts               # グリッド管理
+  stage.ts              # ステージ進行
+  utils.ts              # ユーティリティ関数
+  collision.ts          # 衝突判定
+  game-logic.ts         # ゲームロジック（純粋関数）
+  audio.ts              # 効果音生成
+  hooks.ts              # カスタムフック
+  FalldownShooterGame.tsx  # メインゲームコンポーネント
+  index.ts              # barrel export
+  components/
+    BulletView.tsx      # 弾描画
+    CellView.tsx        # セル描画
+    Effects.tsx         # エフェクト
+    Overlays.tsx        # オーバーレイ
+    PlayerShip.tsx      # プレイヤー描画
+    PowerUpIndicator.tsx # パワーアップ表示
+    SkillGauge.tsx      # スキルゲージ
+    StatusBar.tsx       # ステータスバー
+  __tests__/            # ユニットテスト
+    block.test.ts
+    bullet.test.ts
+    collision.test.ts
+    game-logic.test.ts
+    grid.test.ts
+    stage.test.ts
+    utils.test.ts
+src/pages/FallingShooterPage.tsx  # ページコンポーネント（薄いラッパー）
 ```
-
-> ゲームロジックがページコンポーネントに集約されている。将来的に feature ディレクトリへの分離を検討。
 
 ### 状態管理
 
 - React Hooks（`useState`, `useRef`, `useCallback`）
+- カスタムフックによるゲーム状態管理
 - パフォーマンス最適化のため `useRef` でゲーム状態管理
 
 ### 使用技術
