@@ -24,15 +24,15 @@
 
 > 前提: フェーズ 0 完了 | ストリーム: A
 
-- [ ] **T-01.1** `[A]` `tileSprites.ts` — 床・壁・ゴール・スタートのスプライト定義
-- [ ] **T-01.2** `[A]` `playerSprites.ts` — 戦士スプライト（4 方向 × 3 フレーム = 12 スプライト）
-- [ ] **T-01.3** `[A]` `playerSprites.ts` — 盗賊スプライト（4 方向 × 3 フレーム = 12 スプライト）
-- [ ] **T-01.4** `[A]` `enemySprites.ts` — patrol, charge, ranged, specimen スプライト（各 2 フレーム）
-- [ ] **T-01.5** `[A]` `enemySprites.ts` — boss スプライト（24×24, 4 フレーム）
-- [ ] **T-01.6** `[A]` `itemSprites.ts` — 全 6 種アイテムスプライト
-- [ ] **T-01.7** `[A]` `trapSprites.ts` — damage, slow, teleport 罠スプライト（各 2 フレーム）
-- [ ] **T-01.8** `[A]` `wallSprites.ts` — breakable（3 状態）, passable, invisible 壁スプライト
-- [ ] **T-01.9** `[A]` `effectSprites.ts` — 攻撃斬撃スプライト（3 フレーム）
+- [x] **T-01.1** `[A]` `tileSprites.ts` — 床・壁・ゴール・スタートのスプライト定義
+- [x] **T-01.2** `[A]` `playerSprites.ts` — 戦士スプライト（4 方向 × 3 フレーム = 12 スプライト）
+- [x] **T-01.3** `[A]` `playerSprites.ts` — 盗賊スプライト（4 方向 × 3 フレーム = 12 スプライト）
+- [x] **T-01.4** `[A]` `enemySprites.ts` — patrol, charge, ranged, specimen スプライト（各 2 フレーム）
+- [x] **T-01.5** `[A]` `enemySprites.ts` — boss スプライト（24×24, 4 フレーム）
+- [x] **T-01.6** `[A]` `itemSprites.ts` — 全 6 種アイテムスプライト
+- [x] **T-01.7** `[A]` `trapSprites.ts` — damage, slow, teleport 罠スプライト（各 2 フレーム）
+- [x] **T-01.8** `[A]` `wallSprites.ts` — breakable（3 状態）, passable, invisible 壁スプライト
+- [x] **T-01.9** `[A]` `effectSprites.ts` — 攻撃斬撃スプライト（3 フレーム）
 
 ---
 
@@ -57,19 +57,19 @@
 
 > 前提: フェーズ 0 完了 | ストリーム: B
 
-- [ ] **T-03.1** `[B]` `effects/` ディレクトリ作成、barrel export（`index.ts`）
-- [ ] **T-03.2** `[B]` `effectTypes.ts` — `EffectType`, `GameEffect`, `Particle` 型定義
-- [ ] **T-03.3** `[B]` `particleSystem.ts` — パーティクル生成・更新・描画ロジック
-- [ ] **T-03.4** `[B]` `effectManager.ts` — `EffectManager` クラス（`addEffect`, `update`, `draw`, `clear`）
-- [ ] **T-03.5** `[B]` 攻撃ヒットエフェクト実装（白い火花 × 8 個 + 斬撃アニメ）
-- [ ] **T-03.6** `[B]` ダメージエフェクト実装（赤い粒子 × 6 個）
-- [ ] **T-03.7** `[B]` 罠発動エフェクト実装（damage/slow/teleport 各種）
-- [ ] **T-03.8** `[B]` アイテム取得エフェクト実装（キラキラ × 6 個）
-- [ ] **T-03.9** `[B]` レベルアップエフェクト実装（黄色リング + キラキラ × 12 個）
-- [ ] **T-03.10** `[B]` ボス撃破エフェクト実装（大規模爆発 × 24 個 + 画面フラッシュ）
-- [ ] **T-03.11** `[B]` Game.tsx にエフェクト描画統合（描画ループに `effectManager.draw()` 追加）
-- [ ] **T-03.12** `[B]` `feedback.ts` に FeedbackType.BOSS_KILL, SPEED_BOOST 追加
-- [ ] **T-03.13** `[B]` ユニットテスト: EffectManager のライフサイクルテスト
+- [x] **T-03.1** `[B]` `effects/` ディレクトリ作成、barrel export（`index.ts`）
+- [x] **T-03.2** `[B]` `effectTypes.ts` — `EffectType`, `GameEffect`, `Particle` 型定義
+- [x] **T-03.3** `[B]` `particleSystem.ts` — パーティクル生成・更新・描画ロジック
+- [x] **T-03.4** `[B]` `effectManager.ts` — `EffectManager` クラス（`addEffect`, `update`, `draw`, `clear`）
+- [x] **T-03.5** `[B]` 攻撃ヒットエフェクト実装（白い火花 × 8 個 + 斬撃アニメ）
+- [x] **T-03.6** `[B]` ダメージエフェクト実装（赤い粒子 × 6 個）
+- [x] **T-03.7** `[B]` 罠発動エフェクト実装（damage/slow/teleport 各種）
+- [x] **T-03.8** `[B]` アイテム取得エフェクト実装（キラキラ × 6 個）
+- [x] **T-03.9** `[B]` レベルアップエフェクト実装（黄色リング + キラキラ × 12 個）
+- [x] **T-03.10** `[B]` ボス撃破エフェクト実装（大規模爆発 × 24 個 + 画面フラッシュ）
+- [x] **T-03.11** `[B]` Game.tsx にエフェクト描画統合（描画ループに `effectManager.draw()` 追加）
+- [x] **T-03.12** `[B]` `feedback.ts` に FeedbackType.BOSS_KILL, SPEED_BOOST 追加
+- [x] **T-03.13** `[B]` ユニットテスト: EffectManager のライフサイクルテスト
 
 ---
 
