@@ -22,3 +22,7 @@ export { EffectManager, resetEffectIdCounter } from './effectManager';
 // スピードエフェクト
 export { SpeedEffectManager, isSpeedEffectActive } from './speedEffect';
 export type { AfterImage } from './speedEffect';
+
+// 死亡エフェクト
+export { DeathEffect, DeathPhase, DEATH_ANIMATION_DURATION } from './deathEffect';
+export type { DeathPhaseValue } from './deathEffect';

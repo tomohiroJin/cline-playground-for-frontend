@@ -358,7 +358,7 @@ const IpnePage: React.FC = () => {
       )}
       {state.screen === ScreenState.CLASS_SELECT && <ClassSelectScreen onSelect={state.handleClassSelect} />}
       {state.screen === ScreenState.PROLOGUE && <PrologueScreen onSkip={state.handleSkipPrologue} />}
-      {state.screen === ScreenState.GAME && (
+      {(state.screen === ScreenState.GAME || state.screen === ScreenState.DYING) && (
         <>
           <GameScreen
             map={state.map}
@@ -384,6 +384,7 @@ const IpnePage: React.FC = () => {
             pendingLevelPoints={state.pendingLevelPoints}
             onOpenLevelUpModal={handleOpenLevelUpModal}
             effectQueueRef={effectQueueRef}
+            isDying={state.screen === ScreenState.DYING}
           />
           {state.showLevelUpModal && state.pendingLevelPoints > 0 && (
             <LevelUpOverlayComponent

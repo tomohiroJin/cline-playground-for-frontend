@@ -166,8 +166,12 @@ export function useGameLoop(
             break;
           }
           case TickDisplayEffect.GAME_OVER:
-            setIsGameOver(true);
-            setScreen(ScreenState.GAME_OVER);
+            // 死亡アニメーション状態に遷移（1.5秒後にゲームオーバー画面へ）
+            setScreen(ScreenState.DYING);
+            setTimeout(() => {
+              setIsGameOver(true);
+              setScreen(ScreenState.GAME_OVER);
+            }, 1500);
             break;
           default:
             break;

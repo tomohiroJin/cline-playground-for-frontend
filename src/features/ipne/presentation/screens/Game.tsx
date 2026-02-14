@@ -119,7 +119,7 @@ import {
 import { GameTimer } from '../../timer';
 import { getElapsedTime, formatTimeShort } from '../../timer';
 import { CONFIG, SPRITE_SIZES } from '../config';
-import { EffectManager, EffectType, EffectTypeValue, SpeedEffectManager, isSpeedEffectActive } from '../effects';
+import { EffectManager, EffectType, EffectTypeValue, SpeedEffectManager, isSpeedEffectActive, DeathEffect, DeathPhase } from '../effects';
 import {
   SpriteRenderer,
   SpriteDefinition,
@@ -336,6 +336,8 @@ export const GameScreen: React.FC<{
   onOpenLevelUpModal: () => void;
   // エフェクトシステム
   effectQueueRef?: React.MutableRefObject<EffectEvent[]>;
+  // 死亡アニメーション中フラグ
+  isDying?: boolean;
 }> = ({
   map,
   player,
@@ -364,6 +366,8 @@ export const GameScreen: React.FC<{
   onOpenLevelUpModal,
   // エフェクトシステム
   effectQueueRef,
+  // 死亡アニメーション中フラグ
+  isDying = false,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const movementStateRef = useRef<MovementState>(INITIAL_MOVEMENT_STATE);
@@ -379,8 +383,20 @@ export const GameScreen: React.FC<{
   // スピードエフェクト
   const speedEffectManagerRef = useRef(new SpeedEffectManager());
 
+  // 死亡エフェクト
+  const deathEffectRef = useRef(new DeathEffect());
+
   // スプライトレンダラー（T-02.1）
   const spriteRenderer = useMemo(() => new SpriteRenderer(), []);
+
+  // 死亡アニメーション開始
+  useEffect(() => {
+    if (isDying) {
+      deathEffectRef.current.start(Date.now());
+    } else {
+      deathEffectRef.current.reset();
+    }
+  }, [isDying]);
 
   // 点滅表現用の再描画トリガー
   useEffect(() => {
@@ -669,24 +685,52 @@ export const GameScreen: React.FC<{
 
     // プレイヤー描画（T-02.4: スプライト描画）
     const playerScreen = toScreenPosition(player);
-    const isBlinkOff = player.isInvincible && Math.floor(now / 100) % 2 === 1;
+    const deathEff = deathEffectRef.current;
+    const playerDrawSize = SPRITE_SIZES.base * spriteScale;
 
-    if (!isBlinkOff) {
-      const playerSheet = getPlayerSpriteSheet(
-        player.playerClass as 'warrior' | 'thief',
-        player.direction as 'down' | 'up' | 'left' | 'right'
-      );
-      const playerDrawSize = SPRITE_SIZES.base * spriteScale;
-      const playerDrawX = playerScreen.x - playerDrawSize / 2;
-      const playerDrawY = playerScreen.y - playerDrawSize / 2;
+    if (isDying && deathEff.isActive()) {
+      // 死亡アニメーション中
+      const playerColors = player.playerClass === 'warrior'
+        ? ['#667eea', '#5a67d8', '#4c51bf', '#ffffff']
+        : ['#a78bfa', '#8b5cf6', '#7c3aed', '#ffffff'];
 
-      // 移動中は歩行アニメーション、停止中は待機フレーム
-      const isMoving = movementStateRef.current.activeDirection !== null;
-      if (isMoving) {
-        const walkFrameIndex = Math.floor(now / playerSheet.frameDuration) % 2;
-        spriteRenderer.drawSprite(ctx, playerSheet.sprites[1 + walkFrameIndex], playerDrawX, playerDrawY, spriteScale);
-      } else {
+      deathEff.update(now, playerScreen.x, playerScreen.y, playerColors);
+
+      // フェーズに応じてプレイヤースプライトを表示/非表示
+      if (deathEff.isPlayerVisible(now)) {
+        const playerSheet = getPlayerSpriteSheet(
+          player.playerClass as 'warrior' | 'thief',
+          player.direction as 'down' | 'up' | 'left' | 'right'
+        );
+        const playerDrawX = playerScreen.x - playerDrawSize / 2;
+        const playerDrawY = playerScreen.y - playerDrawSize / 2;
+
+        // 待機フレームで描画
         spriteRenderer.drawSprite(ctx, playerSheet.sprites[0], playerDrawX, playerDrawY, spriteScale);
+      }
+
+      // 死亡エフェクト描画（赤変色オーバーレイ + パーティクル分解）
+      deathEff.draw(ctx, now, playerScreen.x, playerScreen.y, playerDrawSize);
+    } else {
+      // 通常時の描画
+      const isBlinkOff = player.isInvincible && Math.floor(now / 100) % 2 === 1;
+
+      if (!isBlinkOff) {
+        const playerSheet = getPlayerSpriteSheet(
+          player.playerClass as 'warrior' | 'thief',
+          player.direction as 'down' | 'up' | 'left' | 'right'
+        );
+        const playerDrawX = playerScreen.x - playerDrawSize / 2;
+        const playerDrawY = playerScreen.y - playerDrawSize / 2;
+
+        // 移動中は歩行アニメーション、停止中は待機フレーム
+        const isMoving = movementStateRef.current.activeDirection !== null;
+        if (isMoving) {
+          const walkFrameIndex = Math.floor(now / playerSheet.frameDuration) % 2;
+          spriteRenderer.drawSprite(ctx, playerSheet.sprites[1 + walkFrameIndex], playerDrawX, playerDrawY, spriteScale);
+        } else {
+          spriteRenderer.drawSprite(ctx, playerSheet.sprites[0], playerDrawX, playerDrawY, spriteScale);
+        }
       }
     }
 
@@ -711,7 +755,7 @@ export const GameScreen: React.FC<{
         drawCoordinateOverlay(ctx, player.x, player.y, playerScreen.x, playerScreen.y);
       }
     }
-  }, [map, player, enemies, items, traps, walls, mapState, goalPos, debugState, renderTime, attackEffect, lastDamageAt, effectQueueRef, spriteRenderer]);
+  }, [map, player, enemies, items, traps, walls, mapState, goalPos, debugState, renderTime, attackEffect, lastDamageAt, effectQueueRef, spriteRenderer, isDying]);
 
   const setAttackHold = useCallback((isHolding: boolean) => {
     attackHoldRef.current = isHolding;
@@ -744,7 +788,7 @@ export const GameScreen: React.FC<{
 
       movementStateRef.current = newState;
 
-      if (shouldMove && newState.activeDirection && !attackHoldRef.current) {
+      if (shouldMove && newState.activeDirection && !attackHoldRef.current && !isDying) {
         onMove(newState.activeDirection);
       }
 
@@ -758,11 +802,14 @@ export const GameScreen: React.FC<{
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [onMove, player]);
+  }, [onMove, player, isDying]);
 
   // キーボード入力
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // DYING 状態中は入力無効化
+      if (isDying) return;
+
       const key = e.key.toLowerCase();
 
       // 攻撃（Spaceキー）
@@ -858,11 +905,13 @@ export const GameScreen: React.FC<{
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);
     };
-  }, [onMove, onTurn, onAttack, onMapToggle, onHelpToggle, debugState.enabled, onDebugToggle, setAttackHold]);
+  }, [onMove, onTurn, onAttack, onMapToggle, onHelpToggle, debugState.enabled, onDebugToggle, setAttackHold, isDying]);
 
   // D-pad押下開始時のハンドラー
   const handleDPadPointerDown = useCallback(
     (direction: DirectionValue) => {
+      // DYING 状態中は入力無効化
+      if (isDying) return;
       const currentTime = Date.now();
       if (attackHoldRef.current) {
         onTurn(direction);
@@ -877,7 +926,7 @@ export const GameScreen: React.FC<{
         currentTime
       );
     },
-    [onMove, onTurn]
+    [onMove, onTurn, isDying]
   );
 
   // D-pad離し時のハンドラー

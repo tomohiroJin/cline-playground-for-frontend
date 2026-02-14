@@ -37,6 +37,7 @@ export const ScreenState = {
   CLASS_SELECT: 'class_select',
   PROLOGUE: 'prologue',
   GAME: 'game',
+  DYING: 'dying',
   CLEAR: 'clear',
   GAME_OVER: 'game_over',
 } as const;
