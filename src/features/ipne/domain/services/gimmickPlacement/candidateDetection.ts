@@ -1,15 +1,10 @@
 import { calculateDistances } from '../../../pathfinder';
 import { GameMap, Position, Room, TileType } from '../../../types';
 import { PenetrationCandidate, WallSegment } from './types';
+import { shuffle } from '../../../../../utils/math-utils';
 
-export const shuffleArray = <T>(array: T[]): T[] => {
-  const result = [...array];
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
-  }
-  return result;
-};
+// 後方互換のため shuffleArray を shuffle のエイリアスとして export
+export const shuffleArray = shuffle;
 
 export const collectRoomTiles = (rooms: Room[]): Position[] => {
   const tiles: Position[] = [];

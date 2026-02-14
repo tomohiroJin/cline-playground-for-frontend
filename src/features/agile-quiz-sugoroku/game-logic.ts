@@ -14,15 +14,8 @@ import {
 import { CONFIG, EVENTS, EMERGENCY_EVENT, DEBT_EVENTS, getDebtPoints } from './constants';
 import { QUESTIONS } from './quiz-data';
 
-/** 配列をシャッフル */
-export function shuffle<T>(array: T[]): T[] {
-  const result = [...array];
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
-  }
-  return result;
-}
+// 共通数学関数を re-export
+export { shuffle, clamp } from '../../utils/math-utils';
 
 /** 平均値を計算 */
 export function average(values: number[]): number {
@@ -34,11 +27,6 @@ export function average(values: number[]): number {
 export function percentage(numerator: number, denominator: number): number {
   if (denominator === 0) return 0;
   return Math.round((numerator / denominator) * 100);
-}
-
-/** 値を範囲内にクランプ */
-export function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
 }
 
 /** 問題を選択 */
