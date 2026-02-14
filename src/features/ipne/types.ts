@@ -419,6 +419,8 @@ export const FeedbackType = {
   LEVEL_UP: 'level_up',
   TRAP: 'trap',
   ITEM_PICKUP: 'item_pickup',
+  BOSS_KILL: 'boss_kill',
+  SPEED_BOOST: 'speed_boost',
 } as const;
 
 export type FeedbackTypeValue = (typeof FeedbackType)[keyof typeof FeedbackType];

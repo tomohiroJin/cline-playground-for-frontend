@@ -117,8 +117,16 @@ import {
 import { GameTimer } from '../../timer';
 import { getElapsedTime, formatTimeShort } from '../../timer';
 import { CONFIG } from '../config';
+import { EffectManager, EffectType, EffectTypeValue } from '../effects';
 import warriorClassImg from '../../../../assets/images/ipne_class_warrior.webp';
 import thiefClassImg from '../../../../assets/images/ipne_class_thief.webp';
+
+/** 外部からキューイングされるエフェクトイベント */
+export interface EffectEvent {
+  type: EffectTypeValue;
+  x: number;
+  y: number;
+}
 
 /**
  * 職業選択画面コンポーネント（MVP3）
@@ -309,6 +317,8 @@ export const GameScreen: React.FC<{
   // レベルアップポイント制
   pendingLevelPoints: number;
   onOpenLevelUpModal: () => void;
+  // エフェクトシステム
+  effectQueueRef?: React.MutableRefObject<EffectEvent[]>;
 }> = ({
   map,
   player,
@@ -335,12 +345,19 @@ export const GameScreen: React.FC<{
   // レベルアップポイント制
   pendingLevelPoints,
   onOpenLevelUpModal,
+  // エフェクトシステム
+  effectQueueRef,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const movementStateRef = useRef<MovementState>(INITIAL_MOVEMENT_STATE);
   const animationFrameRef = useRef<number | null>(null);
   const attackHoldRef = useRef(false);
   const [renderTime, setRenderTime] = useState(0);
+
+  // エフェクトシステム
+  const effectManagerRef = useRef(new EffectManager());
+  const lastAttackEffectKeyRef = useRef<string | null>(null);
+  const lastDamageAtRef = useRef(0);
 
   // 点滅表現用の再描画トリガー
   useEffect(() => {
@@ -641,6 +658,39 @@ export const GameScreen: React.FC<{
       ctx.strokeRect(screen.x - size / 2, screen.y - size / 2, size, size);
     }
 
+    // パーティクルエフェクトシステム
+    const em = effectManagerRef.current;
+
+    // 攻撃ヒットエフェクトのトリガー
+    if (attackEffect && now < attackEffect.until) {
+      const key = `${attackEffect.position.x}-${attackEffect.position.y}-${attackEffect.until}`;
+      if (lastAttackEffectKeyRef.current !== key) {
+        lastAttackEffectKeyRef.current = key;
+        const screenPos = toScreenPosition(attackEffect.position);
+        em.addEffect(EffectType.ATTACK_HIT, screenPos.x, screenPos.y, now);
+      }
+    }
+
+    // ダメージエフェクトのトリガー
+    if (lastDamageAt > lastDamageAtRef.current) {
+      lastDamageAtRef.current = lastDamageAt;
+      const screenPos = toScreenPosition(player);
+      em.addEffect(EffectType.DAMAGE, screenPos.x, screenPos.y, now);
+    }
+
+    // 外部エフェクトキューの処理
+    if (effectQueueRef && effectQueueRef.current.length > 0) {
+      for (const evt of effectQueueRef.current) {
+        const screenPos = toScreenPosition({ x: evt.x, y: evt.y });
+        em.addEffect(evt.type, screenPos.x, screenPos.y, now);
+      }
+      effectQueueRef.current = [];
+    }
+
+    // エフェクト更新・描画（100ms 間隔）
+    em.update(0.1, now);
+    em.draw(ctx, canvas.width, canvas.height);
+
     // プレイヤー描画
     const playerScreen = toScreenPosition(player);
     const playerRadius = useFullMap ? Math.max(tileSize / 2 - 1, 2) : tileSize / 2 - 4;
@@ -704,7 +754,7 @@ export const GameScreen: React.FC<{
         drawCoordinateOverlay(ctx, player.x, player.y, playerScreen.x, playerScreen.y);
       }
     }
-  }, [map, player, enemies, items, traps, walls, mapState, goalPos, debugState, renderTime, attackEffect]);
+  }, [map, player, enemies, items, traps, walls, mapState, goalPos, debugState, renderTime, attackEffect, lastDamageAt, effectQueueRef]);
 
   const setAttackHold = useCallback((isHolding: boolean) => {
     attackHoldRef.current = isHolding;

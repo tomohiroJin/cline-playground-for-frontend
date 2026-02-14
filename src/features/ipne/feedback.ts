@@ -42,6 +42,16 @@ export const FEEDBACK_CONFIGS: Record<
     color: '#3b82f6',
     duration: 600,
   },
+  [FeedbackType.BOSS_KILL]: {
+    color: '#f97316',
+    duration: 1200,
+    flashDuration: 200,
+    flashColor: 'rgba(255, 255, 255, 0.4)',
+  },
+  [FeedbackType.SPEED_BOOST]: {
+    color: '#60a5fa',
+    duration: 500,
+  },
 };
 
 let feedbackIdCounter = 0;

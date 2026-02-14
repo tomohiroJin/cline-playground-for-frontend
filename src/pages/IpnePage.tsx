@@ -2,7 +2,7 @@
  * IPNE ゲームページ
  * シンプルな迷路ゲーム - タイトル→プロローグ→ゲーム→クリア の画面遷移
  */
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef } from 'react';
 import {
   movePlayer,
   isGoal,
@@ -55,7 +55,8 @@ import {
 // 画面コンポーネント
 import { TitleScreen } from '../features/ipne/presentation/screens/Title';
 import { PrologueScreen } from '../features/ipne/presentation/screens/Prologue';
-import { GameScreen, ClassSelectScreen, LevelUpOverlayComponent } from '../features/ipne/presentation/screens/Game';
+import { GameScreen, ClassSelectScreen, LevelUpOverlayComponent, EffectEvent } from '../features/ipne/presentation/screens/Game';
+import { EffectType } from '../features/ipne/presentation/effects';
 import { ClearScreen as ClearScreenComponent, GameOverScreen } from '../features/ipne/presentation/screens/Clear';
 
 // カスタムフック
@@ -70,6 +71,7 @@ export { ClearScreen } from '../features/ipne/presentation/screens/Clear';
  */
 const IpnePage: React.FC = () => {
   const state = useGameState();
+  const effectQueueRef = useRef<EffectEvent[]>([]);
 
   // ゲームループ
   useGameLoop(state.screen, {
@@ -90,7 +92,7 @@ const IpnePage: React.FC = () => {
     setMapState: state.setMapState,
     setIsGameOver: state.setIsGameOver,
     setScreen: state.setScreen,
-  });
+  }, effectQueueRef);
 
   // MVP3: レベルアップ選択（ポイント制対応）
   const handleLevelUpChoice = useCallback((stat: StatTypeValue) => {
@@ -297,6 +299,11 @@ const IpnePage: React.FC = () => {
       const killedBoss = killedEnemies.some(e => e.type === EnemyType.BOSS);
       if (killedBoss) {
         playBossKillSound();
+        // ボス撃破エフェクト
+        const boss = killedEnemies.find(e => e.type === EnemyType.BOSS);
+        if (boss) {
+          effectQueueRef.current.push({ type: EffectType.BOSS_KILL, x: boss.x, y: boss.y });
+        }
       } else {
         playEnemyKillSound();
       }
@@ -321,6 +328,8 @@ const IpnePage: React.FC = () => {
           state.setPendingLevelPoints(prev => prev + 1);
           addedPointsInLoop++;
           playLevelUpSound();
+          // レベルアップエフェクト
+          effectQueueRef.current.push({ type: EffectType.LEVEL_UP, x: updatedPlayer.x, y: updatedPlayer.y });
         }
       }
     }
@@ -374,6 +383,7 @@ const IpnePage: React.FC = () => {
             showKeyRequiredMessage={state.showKeyRequiredMessage}
             pendingLevelPoints={state.pendingLevelPoints}
             onOpenLevelUpModal={handleOpenLevelUpModal}
+            effectQueueRef={effectQueueRef}
           />
           {state.showLevelUpModal && state.pendingLevelPoints > 0 && (
             <LevelUpOverlayComponent
