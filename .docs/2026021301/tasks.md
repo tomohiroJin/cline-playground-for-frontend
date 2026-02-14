@@ -143,85 +143,85 @@
 
 ### 7. Air Hockey
 
-- [ ] テスト確認（事前）: 既存テスト通過確認
-- [ ] `src/features/air-hockey/` ディレクトリ整備
-- [ ] カスタムフックの抽出（`hooks/useGameLoop.ts`, `hooks/useInput.ts`）→ テスト確認
-- [ ] UIコンポーネントの抽出（`components/Field.tsx`, `Scoreboard.tsx`, `TitleScreen.tsx`, `ResultScreen.tsx`）→ テスト確認
-- [ ] メインコンポーネントの整理 → テスト確認
-- [ ] `AirHockeyPage.tsx` を薄いラッパーに変更 → テスト確認
-- [ ] `index.ts` 作成（re-export）
-- [ ] テスト確認（事後）: 全テスト通過・ビルド確認
+- [x] テスト確認（事前）: 既存テスト通過確認
+- [x] `src/features/air-hockey/` ディレクトリ整備
+- [x] カスタムフックの抽出（`hooks/useGameLoop.ts`, `hooks/useInput.ts`）→ テスト確認
+- [x] UIコンポーネントの抽出（`components/Field.tsx`, `Scoreboard.tsx`, `TitleScreen.tsx`, `ResultScreen.tsx`）→ テスト確認
+- [x] メインコンポーネントの整理 → テスト確認
+- [x] `AirHockeyPage.tsx` を薄いラッパーに変更 → テスト確認
+- [x] `index.ts` 作成（re-export）
+- [x] テスト確認（事後）: 全テスト通過・ビルド確認
 
 ### 8. IPNE
 
-- [ ] テスト確認（事前）: 既存542テスト通過確認
-- [ ] `presentation/` ディレクトリ作成
-- [ ] 画面設定の分離（`presentation/config.ts`）→ テスト確認
-- [ ] 画面コンポーネントの分離
-  - [ ] タイトル画面（`presentation/screens/Title.tsx`）→ テスト確認
-  - [ ] プロローグ画面（`presentation/screens/Prologue.tsx`）→ テスト確認
-  - [ ] ゲーム画面（`presentation/screens/Game.tsx`）→ テスト確認
-  - [ ] クリア画面（`presentation/screens/Clear.tsx`）→ テスト確認
-- [ ] カスタムフックの分離
-  - [ ] ゲーム状態管理（`presentation/hooks/useGameState.ts`）→ テスト確認
-  - [ ] ゲームループ（`presentation/hooks/useGameLoop.ts`）→ テスト確認
-- [ ] `IpnePage.tsx` の整理 → テスト確認
-- [ ] `index.ts` 更新（re-export で既存テストのインポートパス互換性を維持）
-- [ ] テスト確認（事後）: 全542テスト通過・ビルド確認
+- [x] テスト確認（事前）: 既存542テスト通過確認
+- [x] `presentation/` ディレクトリ作成
+- [x] 画面設定の分離（`presentation/config.ts`）→ テスト確認
+- [x] 画面コンポーネントの分離
+  - [x] タイトル画面（`presentation/screens/Title.tsx`）→ テスト確認
+  - [x] プロローグ画面（`presentation/screens/Prologue.tsx`）→ テスト確認
+  - [x] ゲーム画面（`presentation/screens/Game.tsx`）→ テスト確認
+  - [x] クリア画面（`presentation/screens/Clear.tsx`）→ テスト確認
+- [x] カスタムフックの分離
+  - [x] ゲーム状態管理（`presentation/hooks/useGameState.ts`）→ テスト確認
+  - [x] ゲームループ（`presentation/hooks/useGameLoop.ts`）→ テスト確認
+- [x] `IpnePage.tsx` の整理 → テスト確認
+- [x] `index.ts` 更新（re-export で既存テストのインポートパス互換性を維持）
+- [x] テスト確認（事後）: 全542テスト通過・ビルド確認
 
 ### 9. Risk LCD
 
-- [ ] テスト確認（事前）: 既存53テスト通過確認
-- [ ] `phases/` ディレクトリ作成
-- [ ] フェーズ別フックの分割
-  - [ ] ランニングフェーズ（`phases/useRunningPhase.ts`）→ テスト確認
-  - [ ] パークフェーズ（`phases/usePerkPhase.ts`）→ テスト確認
-  - [ ] ショップフェーズ（`phases/useShopPhase.ts`）→ テスト確認
-  - [ ] リザルトフェーズ（`phases/useResultPhase.ts`）→ テスト確認
-- [ ] `useGameEngine.ts` をオーケストレーターに整理 → テスト確認
-- [ ] テスト確認（事後）: 全53テスト通過・ビルド確認
+- [x] テスト確認（事前）: 既存53テスト通過確認
+- [x] `phases/` ディレクトリ作成
+- [x] フェーズ別フックの分割
+  - [x] ランニングフェーズ（`phases/useRunningPhase.ts`）→ テスト確認
+  - [x] パークフェーズ（`phases/usePerkPhase.ts`）→ テスト確認
+  - [x] ショップフェーズ（`phases/useShopPhase.ts`）→ テスト確認
+  - [x] リザルトフェーズ（`phases/useResultPhase.ts`）→ テスト確認
+- [x] `useGameEngine.ts` をオーケストレーターに整理 → テスト確認
+- [x] テスト確認（事後）: 全53テスト通過・ビルド確認
 
 ### 10. Non-Brake Descent
 
-- [ ] テスト確認（事前）: 既存11テスト通過確認
-- [ ] `renderers/` サブディレクトリ作成
-- [ ] レンダラーの分割
-  - [ ] 環境描画（`renderers/environment/index.tsx`）→ テスト確認
-  - [ ] エンティティ描画（`renderers/entities/index.tsx`）→ テスト確認
-  - [ ] エフェクト描画（`renderers/effects/index.tsx`）→ テスト確認
-  - [ ] UI描画（`renderers/ui/index.tsx`）→ テスト確認
-- [ ] `renderers/index.tsx` 作成（re-export）
-- [ ] 既存の `renderers.tsx` を削除 → テスト確認
-- [ ] テスト確認（事後）: 全11テスト通過・ビルド確認
+- [x] テスト確認（事前）: 既存11テスト通過確認
+- [x] `renderers/` サブディレクトリ作成
+- [x] レンダラーの分割
+  - [x] 環境描画（`renderers/environment/index.tsx`）→ テスト確認
+  - [x] エンティティ描画（`renderers/entities/index.tsx`）→ テスト確認
+  - [x] エフェクト描画（`renderers/effects/index.tsx`）→ テスト確認
+  - [x] UI描画（`renderers/ui/index.tsx`）→ テスト確認
+- [x] `renderers/index.tsx` 作成（re-export）
+- [x] 既存の `renderers.tsx` を削除 → テスト確認
+- [x] テスト確認（事後）: 全11テスト通過・ビルド確認
 
 ### 11. Agile Quiz Sugoroku
 
-- [ ] テスト確認（事前）: 既存テスト通過確認
-- [ ] `styles/` サブディレクトリ作成
-- [ ] スタイルの分割
-  - [ ] アニメーション（`styles/animations.ts`）→ テスト確認
-  - [ ] レイアウト（`styles/layout.ts`）→ テスト確認
-  - [ ] クイズ関連（`styles/quiz.ts`）→ テスト確認
-  - [ ] リザルト画面（`styles/result.ts`）→ テスト確認
-  - [ ] 共通スタイル（`styles/common.ts`）→ テスト確認
-- [ ] `styles/index.ts` 作成（re-export）
-- [ ] 既存の `styles.ts` を削除 → テスト確認
-- [ ] コンポーネントテストの追加
-- [ ] テスト確認（事後）: 全テスト通過・ビルド確認
+- [x] テスト確認（事前）: 既存テスト通過確認
+- [x] `styles/` サブディレクトリ作成
+- [x] スタイルの分割
+  - [x] アニメーション（`styles/animations.ts`）→ テスト確認
+  - [x] レイアウト（`styles/layout.ts`）→ テスト確認
+  - [x] クイズ関連（`styles/quiz.ts`）→ テスト確認
+  - [x] リザルト画面（`styles/result.ts`）→ テスト確認
+  - [x] 共通スタイル（`styles/common.ts`）→ テスト確認
+- [x] `styles/index.ts` 作成（re-export）
+- [x] 既存の `styles.ts` を削除 → テスト確認
+- [x] コンポーネントテストの追加
+- [x] テスト確認（事後）: 全テスト通過・ビルド確認
 
 ---
 
 ## フェーズ4: 統合・仕上げ
 
-- [ ] ローカル math 関数の共通化
-  - [ ] 各ゲームの `utils.ts` / `math.ts` から重複関数を `src/utils/math-utils.ts` に移動
-  - [ ] 各ゲームのインポートを更新
-  - [ ] テスト確認
-- [ ] 全テスト一括実行（`npm test -- --run`）→ 全テスト通過確認
-- [ ] ビルド確認（`npm run build` 成功）
-- [ ] リンター確認（`npm run lint`）
-- [ ] 最終レビュー
-  - [ ] 各ゲームの主要ファイルが300行以下であることを確認
-  - [ ] 不要な import / export がないことを確認
-  - [ ] 全ページが正常に動作することを確認（ブラウザ確認）
+- [x] ローカル math 関数の共通化
+  - [x] 各ゲームの `utils.ts` / `math.ts` から重複関数を `src/utils/math-utils.ts` に移動
+  - [x] 各ゲームのインポートを更新
+  - [x] テスト確認
+- [x] 全テスト一括実行（`npm test -- --run`）→ 全テスト通過確認
+- [x] ビルド確認（`npm run build` 成功）
+- [x] リンター確認（`npm run lint`）
+- [x] 最終レビュー
+  - [x] 各ゲームの主要ファイルが300行以下であることを確認
+  - [x] 不要な import / export がないことを確認
+  - [x] 全ページが正常に動作することを確認（ブラウザ確認）
 - [ ] コミット・PR作成
