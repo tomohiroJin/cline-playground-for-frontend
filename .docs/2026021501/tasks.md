@@ -119,6 +119,12 @@
 
 ---
 
+## バグ修正
+
+- [x] **BF-01** `[A]` `wallSprites.ts` — `getWallSprite` の `breakable` switch 文に `case 'revealed':` を追加（`intact` と同じスプライトを返す）
+
+---
+
 ## 最終検証
 
 - [ ] **T-99.1** `npm run build` 成功確認

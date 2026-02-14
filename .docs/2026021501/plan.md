@@ -233,6 +233,18 @@ IPNE（ローグライク迷路アクションゲーム）は MVP6 まで機能�
 
 ---
 
+## バグ修正
+
+### BF-01: getWallSprite の revealed 状態未処理（2026-02-15）
+
+**問題**: 破壊可能壁が `revealed`（発見済み）状態になると `getWallSprite` がエラーをスローしてゲームがクラッシュする。
+
+**原因**: `wallSprites.ts` の `getWallSprite()` 関数は `breakable` 壁の場合に `intact`, `damaged`, `broken` の 3 状態しか処理しておらず、`WallState.REVEALED` が `default` ケースに落ちて throw される。
+
+**修正**: `case 'revealed':` を `case 'intact':` とフォールスルーさせ、発見済み状態は無傷と同じスプライトを返すように変更。
+
+---
+
 ## リスク・注意事項
 
 1. **パフォーマンス**: スプライトキャッシュが肥大化しないよう `WeakMap` またはサイズ上限を設ける

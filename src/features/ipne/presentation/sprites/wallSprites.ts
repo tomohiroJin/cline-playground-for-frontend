@@ -357,6 +357,7 @@ export function getWallSprite(wallType: string, state?: string): SpriteDefinitio
       const breakableState = state ?? 'intact';
       switch (breakableState) {
         case 'intact':
+        case 'revealed': // 発見済みは無傷と同じ外見
           return BREAKABLE_INTACT_SPRITE;
         case 'damaged':
           return BREAKABLE_DAMAGED_SPRITE;

@@ -87,6 +87,7 @@ interface SpriteSheetDefinition {
 
 **特殊壁**:
 - breakable/intact: 茶色レンガ + ひび割れ線
+- breakable/revealed: intact と同じ外見（発見済みだが未破壊）
 - breakable/damaged: オレンジレンガ + 大きなひび割れ
 - breakable/broken: 緑の開口部
 - passable: 半透明壁（点線パターン）
