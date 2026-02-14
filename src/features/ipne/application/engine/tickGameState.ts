@@ -3,7 +3,7 @@ import { COMBAT_CONFIG } from '../../combat';
 import { applySlowEffect } from '../../player';
 import { canTriggerTrap, getTrapAt, triggerTrap } from '../../trap';
 import { EnemyUpdateResult } from '../../enemyAI';
-import { GameMap, Item, Player, Trap, Wall, Enemy } from '../../types';
+import { GameMap, Item, Player, Trap, Wall, Enemy, TrapType } from '../../types';
 import { resolveItemPickupEffects } from '../usecases/resolveItemPickupEffects';
 import { resolvePlayerDamage } from '../usecases/resolvePlayerDamage';
 
@@ -13,6 +13,11 @@ export const TickSoundEffect = {
   HEAL: 'heal',
   TRAP_TRIGGERED: 'trap_triggered',
   LEVEL_UP: 'level_up',
+  // 新規
+  DODGE: 'dodge',
+  KEY_PICKUP: 'key_pickup',
+  TELEPORT: 'teleport',
+  DYING: 'dying',
 } as const;
 
 export type TickSoundEffectValue = (typeof TickSoundEffect)[keyof typeof TickSoundEffect];
@@ -123,6 +128,9 @@ export function tickGameState(
     nextPlayer = damageResult.player;
     if (damageResult.tookDamage) {
       effects.push({ kind: 'sound', type: TickSoundEffect.PLAYER_DAMAGE });
+    } else {
+      // 無敵時間中にダメージを回避
+      effects.push({ kind: 'sound', type: TickSoundEffect.DODGE });
     }
   }
 
@@ -136,6 +144,9 @@ export function tickGameState(
     nextPlayer = damageResult.player;
     if (damageResult.tookDamage) {
       effects.push({ kind: 'sound', type: TickSoundEffect.PLAYER_DAMAGE });
+    } else {
+      // 無敵時間中にダメージを回避
+      effects.push({ kind: 'sound', type: TickSoundEffect.DODGE });
     }
   }
 
@@ -145,7 +156,10 @@ export function tickGameState(
   });
   nextPlayer = pickupResult.player;
   for (const event of pickupResult.events) {
-    if (event.healed) {
+    if (event.effectType === 'key') {
+      // 鍵取得は専用メロディで再生
+      effects.push({ kind: 'sound', type: TickSoundEffect.KEY_PICKUP });
+    } else if (event.healed) {
       effects.push({ kind: 'sound', type: TickSoundEffect.HEAL });
     } else {
       effects.push({ kind: 'sound', type: TickSoundEffect.ITEM_PICKUP });
@@ -174,7 +188,12 @@ export function tickGameState(
       };
     }
     nextTraps = nextTraps.map(t => (t.id === trapResult.trap.id ? trapResult.trap : t));
-    effects.push({ kind: 'sound', type: TickSoundEffect.TRAP_TRIGGERED });
+    // テレポート罠は専用の効果音、それ以外は共通の罠発動音
+    if (trapAtPlayer.type === TrapType.TELEPORT) {
+      effects.push({ kind: 'sound', type: TickSoundEffect.TELEPORT });
+    } else {
+      effects.push({ kind: 'sound', type: TickSoundEffect.TRAP_TRIGGERED });
+    }
     if (trapDamageResult.tookDamage) {
       effects.push({ kind: 'sound', type: TickSoundEffect.PLAYER_DAMAGE });
     }
@@ -193,6 +212,7 @@ export function tickGameState(
 
   const isGameOver = nextPlayer.hp <= 0;
   if (isGameOver) {
+    effects.push({ kind: 'sound', type: TickSoundEffect.DYING });
     effects.push({ kind: 'display', type: TickDisplayEffect.GAME_OVER });
   }
 

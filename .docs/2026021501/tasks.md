@@ -104,17 +104,17 @@
 
 > 前提: なし（独立） | ストリーム: C
 
-- [ ] **T-06.1** `[C]` `types.ts` に `SoundEffectType` 12 種追加
-- [ ] **T-06.2** `[C]` `soundEffect.ts` — MOVE_STEP, WALL_BUMP 効果音設定追加
-- [ ] **T-06.3** `[C]` `soundEffect.ts` — ATTACK_SWING, ATTACK_MISS 効果音設定追加
-- [ ] **T-06.4** `[C]` `soundEffect.ts` — ENEMY_DAMAGE, DODGE 効果音設定追加
-- [ ] **T-06.5** `[C]` `soundEffect.ts` — KEY_PICKUP メロディ追加（3 音上昇）
-- [ ] **T-06.6** `[C]` `soundEffect.ts` — DOOR_OPEN, SPEED_BOOST 効果音設定追加
-- [ ] **T-06.7** `[C]` `soundEffect.ts` — WALL_BREAK, TELEPORT 効果音設定追加
-- [ ] **T-06.8** `[C]` `soundEffect.ts` — DYING メロディ追加（下降メロディ）
-- [ ] **T-06.9** `[C]` `soundEffect.ts` — 便利関数 12 種追加（`playMoveStepSound` 等）
-- [ ] **T-06.10** `[C]` Game.tsx — 移動成功/失敗時の効果音トリガー追加
-- [ ] **T-06.11** `[C]` `useGameLoop.ts` — 新効果音のディスパッチ追加
+- [x] **T-06.1** `[C]` `types.ts` に `SoundEffectType` 12 種追加
+- [x] **T-06.2** `[C]` `soundEffect.ts` — MOVE_STEP, WALL_BUMP 効果音設定追加
+- [x] **T-06.3** `[C]` `soundEffect.ts` — ATTACK_SWING, ATTACK_MISS 効果音設定追加
+- [x] **T-06.4** `[C]` `soundEffect.ts` — ENEMY_DAMAGE, DODGE 効果音設定追加
+- [x] **T-06.5** `[C]` `soundEffect.ts` — KEY_PICKUP メロディ追加（3 音上昇）
+- [x] **T-06.6** `[C]` `soundEffect.ts` — DOOR_OPEN, SPEED_BOOST 効果音設定追加
+- [x] **T-06.7** `[C]` `soundEffect.ts` — WALL_BREAK, TELEPORT 効果音設定追加
+- [x] **T-06.8** `[C]` `soundEffect.ts` — DYING メロディ追加（下降メロディ）
+- [x] **T-06.9** `[C]` `soundEffect.ts` — 便利関数 12 種追加（`playMoveStepSound` 等）
+- [x] **T-06.10** `[C]` Game.tsx — 移動成功/失敗時の効果音トリガー追加
+- [x] **T-06.11** `[C]` `useGameLoop.ts` — 新効果音のディスパッチ追加
 - [ ] **T-06.12** `[C]` 目視テスト: 全 12 種の効果音が適切なタイミングで鳴ることを確認
 
 ---

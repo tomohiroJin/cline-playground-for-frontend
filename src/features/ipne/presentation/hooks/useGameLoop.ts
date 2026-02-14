@@ -23,6 +23,10 @@ import {
   playHealSound,
   playTrapTriggeredSound,
   playLevelUpSound,
+  playDodgeSound,
+  playKeyPickupSound,
+  playTeleportSound,
+  playDyingSound,
 } from '../../audio';
 
 /**
@@ -103,6 +107,18 @@ export function useGameLoop(
             break;
           case TickSoundEffect.LEVEL_UP:
             playLevelUpSound();
+            break;
+          case TickSoundEffect.DODGE:
+            playDodgeSound();
+            break;
+          case TickSoundEffect.KEY_PICKUP:
+            playKeyPickupSound();
+            break;
+          case TickSoundEffect.TELEPORT:
+            playTeleportSound();
+            break;
+          case TickSoundEffect.DYING:
+            playDyingSound();
             break;
           default:
             break;
