@@ -11,6 +11,7 @@ import {
   getColorByThreshold,
   getInverseColorByThreshold,
 } from '../constants';
+import { AQS_IMAGES } from '../images';
 import { ParticleEffect } from './ParticleEffect';
 import {
   PageWrapper,
@@ -67,6 +68,17 @@ export const SprintStartScreen: React.FC<SprintStartScreenProps> = ({
       <ParticleEffect />
       <Scanlines />
       <Panel $visible={visible}>
+        <div style={{
+          width: '100%',
+          height: 120,
+          backgroundImage: `url(${AQS_IMAGES.sprintStart})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          opacity: 0.3,
+          borderRadius: 8,
+          marginBottom: 16,
+        }} />
+
         {/* スプリント番号表示 */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <div

@@ -140,6 +140,7 @@ export function getChallengeText(debt: number, spd: number, rate: number): strin
 /** エンジニアタイプ */
 export const ENGINEER_TYPES: EngineerType[] = [
   {
+    id: 'stable',
     n: '安定運用型エンジニア',
     em: '🛡️',
     co: COLORS.green,
@@ -147,6 +148,7 @@ export const ENGINEER_TYPES: EngineerType[] = [
     c: s => s.stab >= 65 && s.debt <= 20 && s.tp >= 60,
   },
   {
+    id: 'firefighter',
     n: '火消し職人エンジニア',
     em: '🔥',
     co: COLORS.orange,
@@ -154,6 +156,7 @@ export const ENGINEER_TYPES: EngineerType[] = [
     c: s => s.emSuc >= 2,
   },
   {
+    id: 'growth',
     n: '成長曲線型エンジニア',
     em: '📈',
     co: COLORS.yellow,
@@ -161,6 +164,7 @@ export const ENGINEER_TYPES: EngineerType[] = [
     c: s => s.sc.length >= 2 && s.sc[0] < 50 && s.sc[s.sc.length - 1] >= 65,
   },
   {
+    id: 'speed',
     n: '高速レスポンスエンジニア',
     em: '⚡',
     co: COLORS.purple,
@@ -168,6 +172,7 @@ export const ENGINEER_TYPES: EngineerType[] = [
     c: s => s.spd <= 5.5 && s.tp >= 50,
   },
   {
+    id: 'debt',
     n: '技術的負債と共に生きる人',
     em: '💀',
     co: COLORS.red,
@@ -175,6 +180,7 @@ export const ENGINEER_TYPES: EngineerType[] = [
     c: s => s.debt >= 35,
   },
   {
+    id: 'default',
     n: '無難に回すエンジニア',
     em: '⚙️',
     co: COLORS.muted,
