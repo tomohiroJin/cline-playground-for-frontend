@@ -5,12 +5,19 @@
 import { CFG, DIFFICULTY, UNLOCKS } from '../game-logic';
 import { ENDINGS, getActiveTitle } from '../definitions';
 import { Page } from './Page';
+import { LE_IMAGES } from '../images';
 
 export const TitleScreen = ({ meta, Particles, startRun, enableAudio, setPhase, eventCount }) => {
   const activeTitle = meta.runs > 0 ? getActiveTitle(meta) : null;
   return (
     <Page particles={Particles}>
-      <div className="card tc" style={{ marginTop: "6vh", animation: "fadeUp .8s ease" }}>
+      <div style={{
+        position: "absolute", inset: 0,
+        backgroundImage: `url(${LE_IMAGES.title})`,
+        backgroundSize: "cover", backgroundPosition: "center",
+        opacity: 0.3, filter: "blur(4px) brightness(0.6)", zIndex: 0
+      }} />
+      <div className="card tc" style={{ marginTop: "6vh", animation: "fadeUp .8s ease", position: "relative", zIndex: 1, background: "rgba(15, 23, 42, 0.85)", backdropFilter: "blur(8px)" }}>
         <div style={{ fontSize: 10, letterSpacing: 8, color: "#818cf8", marginBottom: 20, fontFamily: "var(--sans)", opacity: .8 }}>TEXT EXPLORATION × JUDGMENT × ROGUELITE</div>
         <h1 style={{ fontSize: 38, fontWeight: 700, color: "var(--bright)", letterSpacing: 8, marginBottom: 10, animation: "glow 4s ease-in-out infinite", lineHeight: 1.5 }}>迷宮の残響</h1>
         {activeTitle && <div style={{ fontSize: 11, color: activeTitle.color, fontFamily: "var(--sans)", marginBottom: 4, letterSpacing: 2 }}>{activeTitle.icon} {activeTitle.name}</div>}

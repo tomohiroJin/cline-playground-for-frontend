@@ -9,6 +9,7 @@ import {
   StatBar, StatusTag, StepDots, DiffBadge,
   TypewriterText, Change, FlagIndicator, DrainDisplay, LogEntry,
 } from './GameComponents';
+import { LE_IMAGES } from '../images';
 
 export const EventResultScreen = ({
   Particles, vignette, overlay, shake, player, floor, floorMeta, floorColor,
@@ -57,13 +58,27 @@ export const EventResultScreen = ({
         </div>}
       </div>
       {/* メインイベントカード */}
-      <div className={`card ${lowMental ? "distort" : ""}`} style={{ animation: "fadeUp .4s" }}>
-        {phase === "event" && event && <>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-            {evType && <span className="tag" style={{ color: evType.colors[0], background: evType.colors[1], border: `1px solid ${evType.colors[2]}`, letterSpacing: 3, fontSize: 10, fontWeight: 600 }}>{evType.label}</span>}
-            {isChainEvent && <span className="tag" style={{ color: "#60a5fa", background: "rgba(96,165,250,.08)", border: "1px solid rgba(96,165,250,.2)", fontSize: 10 }}>連鎖</span>}
-            <span style={{ fontSize: 10, color: "#404060", fontFamily: "var(--sans)" }}>#{(floor - 1) * CFG.EVENTS_PER_FLOOR + step + 1}/{CFG.MAX_FLOOR * CFG.EVENTS_PER_FLOOR}</span>
+      <div className={`card ${lowMental ? "distort" : ""}`} style={{ animation: "fadeUp .4s", overflow: "hidden" }}>
+        {event && evType && (
+          <div style={{
+            height: 120, margin: "-16px -20px 16px", position: "relative",
+            background: "#0f172a", borderBottom: `1px solid ${evType.colors[2] ?? "#333"}`
+          }}>
+             <div style={{
+              position: "absolute", inset: 0,
+              backgroundImage: `url(${LE_IMAGES.events[evType.id] || LE_IMAGES.events.exploration})`,
+              backgroundSize: "cover", backgroundPosition: "center",
+              opacity: 0.6, maskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
+              WebkitMaskImage: "linear-gradient(to bottom, black 40%, transparent 100%)"
+            }} />
+            <div style={{ position: "absolute", bottom: 10, left: 20, display: "flex", alignItems: "center", gap: 8 }}>
+              <span className="tag" style={{ color: evType.colors[0], background: "rgba(15,23,42,0.8)", border: `1px solid ${evType.colors[2]}`, letterSpacing: 3, fontSize: 10, fontWeight: 700, backdropFilter: "blur(4px)" }}>{evType.label}</span>
+              {isChainEvent && <span className="tag" style={{ color: "#60a5fa", background: "rgba(15,23,42,0.8)", border: "1px solid rgba(96,165,250,.2)", fontSize: 10, backdropFilter: "blur(4px)" }}>連鎖</span>}
+              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.7)", fontFamily: "var(--sans)", textShadow: "0 1px 2px black" }}>#{(floor - 1) * CFG.EVENTS_PER_FLOOR + step + 1}/{CFG.MAX_FLOOR * CFG.EVENTS_PER_FLOOR}</span>
+            </div>
           </div>
+        )}
+        {phase === "event" && event && <>
           <TypewriterText text={event.sit} revealed={revealed} done={done} ready={ready} skip={skip} />
           {done && ready && <div style={{ animation: "fadeUp .4s" }}>
             <div className="sec-hd" style={{ color: "#505078" }}>── 行動を選択 ──</div>
