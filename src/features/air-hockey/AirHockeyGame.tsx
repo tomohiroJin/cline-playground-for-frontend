@@ -60,7 +60,7 @@ const AirHockeyGame: React.FC = () => {
 
   const startGame = useCallback(() => {
     const consts = getConstants(canvasSize);
-    gameRef.current = EntityFactory.createGameState(consts);
+    gameRef.current = EntityFactory.createGameState(consts, field);
     scoreRef.current = { p: 0, c: 0 };
     setScores({ p: 0, c: 0 });
     setWinner(null);
@@ -68,7 +68,7 @@ const AirHockeyGame: React.FC = () => {
     setScreen('game');
     lastInputRef.current = Date.now();
     getSound().start();
-  }, [getSound, canvasSize]);
+  }, [getSound, canvasSize, field]);
 
   const handleInput = useInput(gameRef, canvasRef, lastInputRef, screen, showHelp, setShowHelp, canvasSize);
 

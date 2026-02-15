@@ -1,5 +1,5 @@
 import { getConstants, GameConstants } from './constants';
-import { GameState, Mallet, Puck, Item, ItemType } from './types';
+import { GameState, Mallet, Puck, Item, ItemType, FieldConfig, ObstacleState } from './types';
 
 const randomRange = (min: number, max: number) => Math.random() * (max - min) + min;
 
@@ -30,7 +30,17 @@ export const EntityFactory = {
       r: IR,
     };
   },
-  createGameState: (consts: GameConstants = getConstants()): GameState => {
+  // 障害物の破壊状態を初期化
+  createObstacleStates: (field?: FieldConfig): ObstacleState[] => {
+    if (!field?.destructible) return [];
+    return field.obstacles.map(() => ({
+      hp: 3,
+      maxHp: 3,
+      destroyed: false,
+      destroyedAt: 0,
+    }));
+  },
+  createGameState: (consts: GameConstants = getConstants(), field?: FieldConfig): GameState => {
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
     return {
       player: EntityFactory.createMallet(W / 2, H - 70),
@@ -48,6 +58,7 @@ export const EntityFactory = {
       cpuTargetTime: 0,
       fever: { active: false, lastGoalTime: Date.now(), extraPucks: 0 },
       particles: [],
+      obstacleStates: EntityFactory.createObstacleStates(field),
     };
   },
 };

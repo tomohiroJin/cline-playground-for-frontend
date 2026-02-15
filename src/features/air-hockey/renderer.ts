@@ -9,6 +9,7 @@ import {
   Item,
   GoalEffect,
   Obstacle,
+  ObstacleState,
   Particle,
 } from './core/types';
 
@@ -29,7 +30,7 @@ export const Renderer = {
     ctx.fillRect(0, 0, W, H);
   },
   // 6-5. フィールドラインネオン強化
-  drawField(ctx: CanvasRenderingContext2D, field: FieldConfig, consts: GameConstants = getConstants()) {
+  drawField(ctx: CanvasRenderingContext2D, field: FieldConfig, consts: GameConstants = getConstants(), obstacleStates: ObstacleState[] = []) {
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
     const scale = W / 300;
     ctx.strokeStyle = field.color;
@@ -61,14 +62,45 @@ export const Renderer = {
     ctx.fillStyle = '#33ffff';
     ctx.fillRect(W / 2 - gs / 2, H - 8, gs, 8);
     ctx.shadowBlur = 0;
-    field.obstacles.forEach((ob: Obstacle) => {
+    field.obstacles.forEach((ob: Obstacle, i: number) => {
+      const obState = obstacleStates[i];
+
+      // 破壊済みの障害物はスキップ
+      if (obState?.destroyed) return;
+
+      const hpRatio = obState ? obState.hp / obState.maxHp : 1;
+      // HP に応じてサイズ変化（0.5〜1.0）
+      const sizeScale = 0.5 + 0.5 * hpRatio;
+      const drawR = ob.r * scale * sizeScale;
+
+      // HP に応じた色変化: 満HP=フィールドカラー → 中HP=黄色 → 低HP=赤
+      let fillColor: string;
+      let strokeColor: string;
+      if (!obState || hpRatio === 1) {
+        fillColor = field.color + '44';
+        strokeColor = field.color;
+      } else if (hpRatio > 0.5) {
+        fillColor = '#ffaa0044';
+        strokeColor = '#ffaa00';
+      } else {
+        fillColor = '#ff333344';
+        strokeColor = '#ff3333';
+      }
+
+      // ダメージ時のネオン効果を強化
+      if (obState && hpRatio < 1) {
+        ctx.shadowColor = strokeColor;
+        ctx.shadowBlur = 10 + (1 - hpRatio) * 15;
+      }
+
       ctx.beginPath();
-      ctx.arc(ob.x * scale, ob.y * scale, ob.r * scale, 0, Math.PI * 2);
-      ctx.fillStyle = field.color + '44';
+      ctx.arc(ob.x * scale, ob.y * scale, drawR, 0, Math.PI * 2);
+      ctx.fillStyle = fillColor;
       ctx.fill();
-      ctx.strokeStyle = field.color;
+      ctx.strokeStyle = strokeColor;
       ctx.lineWidth = 2;
       ctx.stroke();
+      ctx.shadowBlur = 0;
     });
   },
   drawEffectZones(ctx: CanvasRenderingContext2D, effects: GameEffects, now: number, consts: GameConstants = getConstants()) {

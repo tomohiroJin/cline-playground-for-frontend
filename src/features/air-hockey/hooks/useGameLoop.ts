@@ -61,6 +61,9 @@ export function useGameLoop(
       r: ob.r * scale,
     }));
 
+    // 障害物復活までの時間（ミリ秒）
+    const OBSTACLE_RESPAWN_TIME = 5000;
+
     const processCollisions = <T extends Puck | Item>(
       obj: T,
       radius: number,
@@ -89,11 +92,43 @@ export function useGameLoop(
         }
       }
 
-      for (const ob of scaledObstacles) {
-        const col = Physics.detectCollision(obj.x, obj.y, radius, ob.x, ob.y, ob.r);
+      for (let oi = 0; oi < scaledObstacles.length; oi++) {
+        const ob = scaledObstacles[oi];
+        const obState = game.obstacleStates[oi];
+
+        // 破壊済みの障害物はスキップ
+        if (obState?.destroyed) continue;
+
+        // HP に応じて障害物の衝突半径を縮小
+        const hpRatio = obState ? obState.hp / obState.maxHp : 1;
+        const effectiveR = ob.r * (0.5 + 0.5 * hpRatio);
+
+        const col = Physics.detectCollision(obj.x, obj.y, radius, ob.x, ob.y, effectiveR);
         if (col) {
           obj = Physics.reflectOffSurface(obj, col);
           sound.wall();
+
+          // パックが破壊可能障害物に衝突した場合、HP を減少
+          if (isPuck && obState) {
+            obState.hp--;
+            if (obState.hp <= 0) {
+              obState.destroyed = true;
+              obState.destroyedAt = Date.now();
+              // 破壊パーティクル生成
+              for (let pi = 0; pi < 12; pi++) {
+                game.particles.push({
+                  x: ob.x + randomRange(-5, 5),
+                  y: ob.y + randomRange(-5, 5),
+                  vx: randomRange(-3, 3),
+                  vy: randomRange(-3, 3),
+                  life: 30,
+                  maxLife: 30,
+                  color: field.color,
+                  size: randomRange(2, 5),
+                });
+              }
+            }
+          }
         }
       }
 
@@ -121,10 +156,19 @@ export function useGameLoop(
         if (p.life <= 0) game.particles.splice(i, 1);
       }
 
+      // 破壊された障害物の復活チェック
+      for (const obState of game.obstacleStates) {
+        if (obState.destroyed && now - obState.destroyedAt >= OBSTACLE_RESPAWN_TIME) {
+          obState.destroyed = false;
+          obState.hp = obState.maxHp;
+          obState.destroyedAt = 0;
+        }
+      }
+
       // ゴールエフェクト表示中
       if (game.goalEffect && now - game.goalEffect.time < consts.TIMING.GOAL_EFFECT) {
         Renderer.clear(ctx, consts, now);
-        Renderer.drawField(ctx, field, consts);
+        Renderer.drawField(ctx, field, consts, game.obstacleStates);
         Renderer.drawParticles(ctx, game.particles);
         Renderer.drawGoalEffect(ctx, game.goalEffect, now, consts);
         animationRef = requestAnimationFrame(gameLoop);
@@ -261,15 +305,15 @@ export function useGameLoop(
             W / 2,
             H / 2,
             randomRange(-0.5, 0.5),
-            // 失点した側がサーブ（パックが得点者の方向に飛ぶ）
-            scored === 'cpu' ? 1.5 : -1.5
+            // 失点した側へパックが流れる（CPU失点→上方向、プレイヤー失点→下方向）
+            scored === 'cpu' ? -1.5 : 1.5
           )
         );
       }
 
       // 描画
       Renderer.clear(ctx, consts, now);
-      Renderer.drawField(ctx, field, consts);
+      Renderer.drawField(ctx, field, consts, game.obstacleStates);
       Renderer.drawEffectZones(ctx, game.effects, now, consts);
       game.items.forEach((item: Item) => Renderer.drawItem(ctx, item, now, consts));
       game.pucks.forEach((puck: Puck) => Renderer.drawPuck(ctx, puck, consts));

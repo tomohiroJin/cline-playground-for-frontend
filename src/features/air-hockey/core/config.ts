@@ -32,6 +32,7 @@ export const FIELDS: readonly FieldConfig[] = [
     name: 'Fortress',
     goalSize: 70,
     color: '#ff4488',
+    destructible: true,
     obstacles: [
       { x: 110, y: 60, r: 14 },
       { x: 190, y: 60, r: 14 },

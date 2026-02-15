@@ -73,11 +73,20 @@ export type GameState = {
   cpuTargetTime: number;
   fever: FeverState;
   particles: Particle[];
+  obstacleStates: ObstacleState[]; // 障害物の破壊状態
 };
 
 export type Difficulty = 'easy' | 'normal' | 'hard';
 
 export type Obstacle = Vector & { r: number };
+
+// 障害物の破壊状態を管理
+export type ObstacleState = {
+  hp: number;
+  maxHp: number;
+  destroyed: boolean;
+  destroyedAt: number; // 破壊された時刻（復活タイマー用）
+};
 
 export type FieldConfig = {
   readonly id: string;
@@ -85,6 +94,7 @@ export type FieldConfig = {
   readonly goalSize: number;
   readonly color: string;
   readonly obstacles: readonly Obstacle[];
+  readonly destructible?: boolean; // 障害物が破壊可能かどうか
 };
 
 export type SoundSystem = {
