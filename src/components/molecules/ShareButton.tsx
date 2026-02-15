@@ -66,7 +66,7 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
       shareUrl.searchParams.set('hashtags', hashtags.join(','));
     }
 
-    window.open(shareUrl.toString(), '_blank', 'width=550,height=420');
+    window.open(shareUrl.toString(), '_blank', 'noopener,noreferrer,width=550,height=420');
   };
 
   return (
