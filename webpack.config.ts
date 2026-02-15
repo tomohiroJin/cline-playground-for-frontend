@@ -15,7 +15,7 @@ interface Configuration extends WebpackConfiguration {
 
 const config: Configuration = {
   mode: 'development',
-  devtool: process.env.NODE_ENV === 'production' ? false : 'eval-source-map',
+  devtool: process.env.NODE_ENV === 'production' ? false : 'source-map',
   entry: './src/index.tsx',
   output: {
     path: path.resolve(__dirname, 'dist'),

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "start": "webpack serve",
-    "build": "webpack --mode production",
+    "build": "NODE_ENV=production webpack --mode production",
     "preview": "serve dist -s",
     "test": "jest",
     "test:watch": "jest --watch",
