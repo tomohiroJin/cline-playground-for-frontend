@@ -85,5 +85,17 @@ describe('Air Hockey - エンティティ生成', () => {
       expect(state.goalEffect).toBeNull();
       expect(state.flash).toBeNull();
     });
+
+    it('フィーバー状態が初期化されている', () => {
+      const state = EntityFactory.createGameState();
+      expect(state.fever.active).toBe(false);
+      expect(state.fever.extraPucks).toBe(0);
+      expect(state.fever.lastGoalTime).toBeGreaterThan(0);
+    });
+
+    it('パーティクル配列が空で初期化されている', () => {
+      const state = EntityFactory.createGameState();
+      expect(state.particles).toEqual([]);
+    });
   });
 });
