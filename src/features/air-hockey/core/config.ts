@@ -43,8 +43,8 @@ export const FIELDS: readonly FieldConfig[] = [
     ],
   },
   {
-    id: 'fortress-plus',
-    name: 'Fortress+',
+    id: 'bastion',
+    name: 'Bastion',
     goalSize: 80,
     color: '#ff8800',
     destructible: true,
