@@ -393,9 +393,9 @@ export const NonBrakeDescentGame: React.FC<NonBrakeDescentGameProps> = ({ onScor
         }
         return updated;
       });
-      const currentRamp = ramps[player.ramp];
-      if (currentRamp) {
-        setDangerLevel(DangerDomain.calcLevel(currentRamp.obs, player.x, currentRamp.dir, speed, W));
+      const currentRampInLoop = ramps[player.ramp];
+      if (currentRampInLoop) {
+        setDangerLevel(DangerDomain.calcLevel(currentRampInLoop.obs, player.x, currentRampInLoop.dir, speed, W));
       }
       setPlayer(prev => {
         const ramp = ramps[prev.ramp];
@@ -499,28 +499,11 @@ export const NonBrakeDescentGame: React.FC<NonBrakeDescentGameProps> = ({ onScor
       setCamY(current => MathUtils.lerp(current, player.ramp * RAMP_H - H / 3, 0.1));
     }, 1000 / 60);
     return () => window.clearInterval(loop);
-  }, [
-    state,
-    speed,
-    effect,
-    ramps,
-    player,
-    camY,
-    W,
-    H,
-    MIN_SPD,
-    RAMP_H,
-    lastRamp,
-    godMode,
-    combo,
-    comboTimer,
-    handleDeath,
-    handleClear,
-    addParticles,
-    addScorePopup,
-  ]);
+  }, [state, W, H, MIN_SPD, RAMP_H, addParticles, addScorePopup,
+      speed, player, ramps, camY, effect, combo, comboTimer,
+      lastRamp, godMode, handleDeath, handleClear]);
 
-  useEffect(() => () => Audio.stopBGM(), []);
+  useEffect(() => () => Audio.cleanup(), []);
 
   const currentRamp = ramps[player.ramp];
   const shakeOff = shake
@@ -587,18 +570,24 @@ export const NonBrakeDescentGame: React.FC<NonBrakeDescentGameProps> = ({ onScor
               </defs>
               <BuildingRenderer buildings={buildings} camY={camY} />
               <CloudRenderer clouds={clouds} />
-              {ramps.map((ramp, index) => (
-                <RampRenderer
-                  key={index}
-                  ramp={ramp}
-                  index={index}
-                  camY={camY}
-                  frame={frameRef.current}
-                  width={W}
-                  height={RAMP_H}
-                  transitionEffect={index === player.ramp ? transitionEffect : 0}
-                />
-              ))}
+              {ramps.reduce<React.ReactElement[]>((acc, ramp, index) => {
+                const ry = index * RAMP_H - camY;
+                if (GeometryDomain.isInViewport(ry, RAMP_H, H)) {
+                  acc.push(
+                    <RampRenderer
+                      key={index}
+                      ramp={ramp}
+                      index={index}
+                      camY={camY}
+                      frame={frameRef.current}
+                      width={W}
+                      height={RAMP_H}
+                      transitionEffect={index === player.ramp ? transitionEffect : 0}
+                    />
+                  );
+                }
+                return acc;
+              }, [])}
               <PlayerRenderer
                 player={player}
                 ramp={currentRamp}

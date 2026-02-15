@@ -3,7 +3,7 @@ import { Config } from '../../config';
 import { NearMissEffect, Particle, ScorePopup } from '../../types';
 
 // パーティクルの描画コンポーネント
-export const ParticlesRenderer: React.FC<{ particles: Particle[] }> = ({ particles }) => (
+export const ParticlesRenderer: React.FC<{ particles: Particle[] }> = React.memo(({ particles }) => (
   <>
     {particles.map((particle, index) => (
       <circle
@@ -16,10 +16,10 @@ export const ParticlesRenderer: React.FC<{ particles: Particle[] }> = ({ particl
       />
     ))}
   </>
-);
+)) as React.FC<{ particles: Particle[] }>;
 
 // スコアポップアップの描画コンポーネント
-export const ScorePopupsRenderer: React.FC<{ popups: ScorePopup[] }> = ({ popups }) => (
+export const ScorePopupsRenderer: React.FC<{ popups: ScorePopup[] }> = React.memo(({ popups }) => (
   <>
     {popups.map((popup, index) => (
       <text
@@ -36,10 +36,10 @@ export const ScorePopupsRenderer: React.FC<{ popups: ScorePopup[] }> = ({ popups
       </text>
     ))}
   </>
-);
+)) as React.FC<{ popups: ScorePopup[] }>;
 
 // ニアミスエフェクトの描画コンポーネント
-export const NearMissRenderer: React.FC<{ effects: NearMissEffect[] }> = ({ effects }) => (
+export const NearMissRenderer: React.FC<{ effects: NearMissEffect[] }> = React.memo(({ effects }) => (
   <>
     {effects.map((effect, index) => (
       <g key={index} opacity={effect.life / 30}>
@@ -50,10 +50,10 @@ export const NearMissRenderer: React.FC<{ effects: NearMissEffect[] }> = ({ effe
       </g>
     ))}
   </>
-);
+)) as React.FC<{ effects: NearMissEffect[] }>;
 
 // 危険度ビネットエフェクトの描画コンポーネント
-export const DangerVignette: React.FC<{ level: number }> = ({ level }) =>
+export const DangerVignette: React.FC<{ level: number }> = React.memo(({ level }) =>
   level < 0.3 ? (
     <></>
   ) : (
@@ -68,4 +68,5 @@ export const DangerVignette: React.FC<{ level: number }> = ({ level }) =>
         zIndex: 20,
       }}
     />
-  );
+  )
+) as React.FC<{ level: number }>;

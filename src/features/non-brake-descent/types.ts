@@ -77,6 +77,7 @@ export type Building = {
   height: number;
   windows: number;
   color: string;
+  windowLit: boolean[][];
 };
 
 export type DeathType = 'fall' | 'rock' | 'enemy';

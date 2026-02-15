@@ -67,11 +67,19 @@ export const EntityFactory = {
     speed: MathUtils.randomRange(0.3, 0.8),
     opacity: MathUtils.randomRange(0.1, 0.3),
   }),
-  createBuilding: (x: number): Building => ({
-    x,
-    width: MathUtils.randomRange(30, 90),
-    height: MathUtils.randomRange(100, 300),
-    windows: Math.floor(MathUtils.randomRange(3, 8)),
-    color: `hsl(${MathUtils.randomRange(200, 240)}, 30%, ${MathUtils.randomRange(15, 25)}%)`,
-  }),
+  createBuilding: (x: number): Building => {
+    const width = MathUtils.randomRange(30, 90);
+    const windows = Math.floor(MathUtils.randomRange(3, 8));
+    const cols = Math.floor(width / 12);
+    return {
+      x,
+      width,
+      height: MathUtils.randomRange(100, 300),
+      windows,
+      color: `hsl(${MathUtils.randomRange(200, 240)}, 30%, ${MathUtils.randomRange(15, 25)}%)`,
+      windowLit: Array.from({ length: windows }, () =>
+        Array.from({ length: cols }, () => MathUtils.randomBool(0.7))
+      ),
+    };
+  },
 } as const;

@@ -137,7 +137,7 @@ export const RampRenderer: React.FC<{
   width: number;
   height: number;
   transitionEffect: number;
-}> = ({ ramp, index, camY, frame, width, height, transitionEffect }) => {
+}> = React.memo(({ ramp, index, camY, frame, width, height, transitionEffect }) => {
   const ry = index * Config.ramp.height - camY;
   if (!GeometryDomain.isInViewport(ry, Config.ramp.height, Config.screen.height)) return <></>;
   const geo = GeometryDomain.getRampGeometry(ramp, width, height);
@@ -195,7 +195,15 @@ export const RampRenderer: React.FC<{
       ) : undefined}
     </g>
   );
-};
+}) as React.FC<{
+  ramp: Ramp;
+  index: number;
+  camY: number;
+  frame: number;
+  width: number;
+  height: number;
+  transitionEffect: number;
+}>;
 
 // プレイヤーの描画コンポーネント
 export const PlayerRenderer: React.FC<{
