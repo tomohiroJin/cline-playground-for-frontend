@@ -39,3 +39,9 @@ yarn-error.log*
 
 # Temporary files
 lint_output.txt
+
+## serena
+.serena
+
+## claude
+.claude
