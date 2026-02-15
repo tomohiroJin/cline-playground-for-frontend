@@ -66,7 +66,7 @@ export const EventResultScreen = ({
           }}>
              <div style={{
               position: "absolute", inset: 0,
-              backgroundImage: `url(${LE_IMAGES.events[evType.id] || LE_IMAGES.events.exploration})`,
+              backgroundImage: `url(${LE_IMAGES.events[event.tp] || LE_IMAGES.events.exploration})`,
               backgroundSize: "cover", backgroundPosition: "center",
               opacity: 0.6, maskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
               WebkitMaskImage: "linear-gradient(to bottom, black 40%, transparent 100%)"

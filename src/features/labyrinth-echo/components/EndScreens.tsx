@@ -18,7 +18,6 @@ export const GameOverScreen = ({ Particles, player, meta, diff, floor, floorMeta
       <div className="card tc" style={{ marginTop: "8vh", animation: "fadeUp .8s" }}>
         <div style={{ fontSize: 10, color: "#f87171", letterSpacing: 6, marginBottom: 14, fontFamily: "var(--sans)", fontWeight: 600 }}>EXPLORATION FAILED</div>
         <h2 style={{ fontSize: 30, color: "var(--bright)", letterSpacing: 5, marginBottom: 10, lineHeight: 1.5 }}>探索失敗</h2>
-        <h2 style={{ fontSize: 30, color: "var(--bright)", letterSpacing: 5, marginBottom: 10, lineHeight: 1.5 }}>探索失敗</h2>
         <div style={{
           width: "100%", height: 180, margin: "16px 0 24px", borderRadius: 12, overflow: "hidden", position: "relative",
           border: "1px solid #f8717140", boxShadow: "0 0 30px #f8717115"
@@ -76,7 +75,6 @@ export const VictoryScreen = ({ Particles, ending, isNewEnding, isNewDiffClear, 
         <div style={{ fontSize: 10, color: end.color, letterSpacing: 6, marginBottom: 8, fontFamily: "var(--sans)", fontWeight: 600 }}>{end.sub}</div>
         <div style={{ fontSize: 48, marginBottom: 12, animation: "endingGlow 3s ease-in-out infinite", lineHeight: 1 }}>{end.icon}</div>
         {isNewEnding && <div style={{ display: "inline-block", padding: "2px 12px", borderRadius: 12, fontSize: 10, fontFamily: "var(--sans)", fontWeight: 700, background: `${end.color}20`, border: `1px solid ${end.color}40`, color: end.color, marginBottom: 8, letterSpacing: 2, animation: "pulse 2s infinite" }}>★ NEW ENDING ★</div>}
-        {isNewDiffClear && <div style={{ display: "inline-block", padding: "2px 12px", borderRadius: 12, fontSize: 10, fontFamily: "var(--sans)", fontWeight: 700, background: `${diff?.color ?? "#818cf8"}20`, border: `1px solid ${diff?.color ?? "#818cf8"}40`, color: diff?.color ?? "#818cf8", marginBottom: 8, marginLeft: isNewEnding ? 6 : 0, letterSpacing: 2, animation: "pulse 2s infinite 0.3s" }}>🏆 {diff?.name}初クリア</div>}
         {isNewDiffClear && <div style={{ display: "inline-block", padding: "2px 12px", borderRadius: 12, fontSize: 10, fontFamily: "var(--sans)", fontWeight: 700, background: `${diff?.color ?? "#818cf8"}20`, border: `1px solid ${diff?.color ?? "#818cf8"}40`, color: diff?.color ?? "#818cf8", marginBottom: 8, marginLeft: isNewEnding ? 6 : 0, letterSpacing: 2, animation: "pulse 2s infinite 0.3s" }}>🏆 {diff?.name}初クリア</div>}
         <h2 style={{ fontSize: 28, color: end.color, letterSpacing: 5, marginBottom: 20, lineHeight: 1.5, textShadow: `0 0 30px ${end.color}40` }}>{end.name}</h2>
         
