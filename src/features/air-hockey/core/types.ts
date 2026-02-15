@@ -15,6 +15,7 @@ export type Mallet = Entity;
 export type Puck = Entity & {
   visible: boolean;
   invisibleCount: number;
+  trail?: Vector[];
 };
 
 export type ItemType = 'split' | 'speed' | 'invisible';
@@ -42,14 +43,33 @@ export type GoalEffect = {
   time: number;
 };
 
+export type FeverState = {
+  active: boolean;
+  lastGoalTime: number;
+  extraPucks: number;
+};
+
+export type Particle = {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  life: number;
+  maxLife: number;
+  color: string;
+  size: number;
+};
+
 export type Difficulty = 'easy' | 'normal' | 'hard';
 
 export type Obstacle = Vector & { r: number };
 
+// 障害物の破壊状態を管理
 export type ObstacleState = {
   hp: number;
   maxHp: number;
-  destroyedAt: number | null;
+  destroyed: boolean;
+  destroyedAt: number; // 破壊された時刻（復活タイマー用）
 };
 
 export type FieldConfig = {
@@ -58,7 +78,7 @@ export type FieldConfig = {
   readonly goalSize: number;
   readonly color: string;
   readonly obstacles: readonly Obstacle[];
-  readonly destructible?: boolean;
+  readonly destructible?: boolean; // 障害物が破壊可能かどうか
   readonly obstacleHp?: number;
   readonly obstacleRespawnMs?: number;
 };
@@ -75,7 +95,9 @@ export type GameState = {
   cpuTarget: Vector | null;
   cpuTargetTime: number;
   cpuStuckTimer: number;
-  obstacleStates: ObstacleState[];
+  fever: FeverState;
+  particles: Particle[];
+  obstacleStates: ObstacleState[]; // 障害物の破壊状態
 };
 
 export type SoundSystem = {
@@ -85,4 +107,12 @@ export type SoundSystem = {
   goal: () => void;
   lose: () => void;
   start: () => void;
+};
+
+export type CanvasSize = 'standard' | 'large';
+
+export type SizeConfig = {
+  readonly width: number;
+  readonly height: number;
+  readonly scale: number;
 };

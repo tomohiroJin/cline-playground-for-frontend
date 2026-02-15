@@ -1,4 +1,4 @@
-import { CONSTANTS } from './core/constants';
+import { getConstants, GameConstants } from './core/constants';
 import { ITEMS } from './core/config';
 import {
   FieldConfig,
@@ -10,27 +10,33 @@ import {
   GoalEffect,
   Obstacle,
   ObstacleState,
+  Particle,
 } from './core/types';
-
-const { WIDTH: W, HEIGHT: H } = CONSTANTS.CANVAS;
-const { MALLET: MR, PUCK: BR, ITEM: IR } = CONSTANTS.SIZES;
 
 // Renderer モジュール - 描画責務のみ
 export const Renderer = {
-  clear(ctx: CanvasRenderingContext2D) {
-    ctx.fillStyle = '#0d1117';
+  // 6-4. 背景グラデーションアニメーション
+  clear(ctx: CanvasRenderingContext2D, consts: GameConstants = getConstants(), now = 0) {
+    const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
+    if (now > 0) {
+      const shift = Math.sin(now * 0.0005) * 10;
+      const grad = ctx.createLinearGradient(0, 0, 0, H);
+      grad.addColorStop(0, `rgb(${13 + shift}, ${17 + shift}, ${23 + shift})`);
+      grad.addColorStop(1, `rgb(${13 - shift}, ${17 - shift}, ${23 - shift})`);
+      ctx.fillStyle = grad;
+    } else {
+      ctx.fillStyle = '#0d1117';
+    }
     ctx.fillRect(0, 0, W, H);
   },
-  drawField(
-    ctx: CanvasRenderingContext2D,
-    field: FieldConfig,
-    obstacleStates: ObstacleState[] = [],
-    now = 0
-  ) {
+  // 6-5. フィールドラインネオン強化
+  drawField(ctx: CanvasRenderingContext2D, field: FieldConfig, consts: GameConstants = getConstants(), obstacleStates: ObstacleState[] = [], now = 0) {
+    const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
+    const scale = W / 300;
     ctx.strokeStyle = field.color;
     ctx.lineWidth = 5;
     ctx.shadowColor = field.color;
-    ctx.shadowBlur = 10;
+    ctx.shadowBlur = 20;
     ctx.strokeRect(5, 5, W - 10, H - 10);
     ctx.shadowBlur = 0;
     ctx.strokeStyle = field.color + '55';
@@ -40,10 +46,14 @@ export const Renderer = {
     ctx.lineTo(W - 10, H / 2);
     ctx.stroke();
     ctx.setLineDash([]);
+    // 中央円にもネオン効果
+    ctx.shadowColor = field.color;
+    ctx.shadowBlur = 15;
     ctx.beginPath();
-    ctx.arc(W / 2, H / 2, 40, 0, Math.PI * 2);
+    ctx.arc(W / 2, H / 2, 40 * scale, 0, Math.PI * 2);
     ctx.stroke();
-    const gs = field.goalSize;
+    ctx.shadowBlur = 0;
+    const gs = field.goalSize * scale;
     ctx.shadowBlur = 15;
     ctx.shadowColor = '#ff0000';
     ctx.fillStyle = '#ff3333';
@@ -55,16 +65,15 @@ export const Renderer = {
     field.obstacles.forEach((ob: Obstacle, i: number) => {
       const obState = obstacleStates[i];
 
-      // 破壊済みの障害物
-      if (obState && obState.destroyedAt !== null) {
-        const respawnMs = field.obstacleRespawnMs ?? CONSTANTS.TIMING.OBSTACLE_RESPAWN;
+      // 破壊済みの障害物: 復活間近で点滅表示
+      if (obState?.destroyed) {
+        const respawnMs = field.obstacleRespawnMs ?? consts.TIMING.OBSTACLE_RESPAWN;
         const elapsed = now - obState.destroyedAt;
-        // 復活間近（残り1秒以内）で点滅表示
         if (elapsed > respawnMs - 1000) {
           const blink = Math.sin(now * 0.015) > 0;
           if (blink) {
             ctx.beginPath();
-            ctx.arc(ob.x, ob.y, ob.r * 0.5, 0, Math.PI * 2);
+            ctx.arc(ob.x * scale, ob.y * scale, ob.r * scale * 0.5, 0, Math.PI * 2);
             ctx.fillStyle = field.color + '22';
             ctx.fill();
           }
@@ -72,27 +81,43 @@ export const Renderer = {
         return;
       }
 
-      // HP に応じたダメージ表現
-      let alpha = '44';
-      let scale = 1;
-      if (obState && obState.maxHp > 0) {
-        const hpRatio = obState.hp / obState.maxHp;
-        // HPが減るほど透明度UP・サイズ縮小
-        const alphaVal = Math.round(0x44 + (0xaa - 0x44) * hpRatio);
-        alpha = alphaVal.toString(16).padStart(2, '0');
-        scale = 0.7 + 0.3 * hpRatio;
+      const hpRatio = obState ? obState.hp / obState.maxHp : 1;
+      // HP に応じてサイズ変化（0.5〜1.0）
+      const sizeScale = 0.5 + 0.5 * hpRatio;
+      const drawR = ob.r * scale * sizeScale;
+
+      // HP に応じた色変化: 満HP=フィールドカラー → 中HP=黄色 → 低HP=赤
+      let fillColor: string;
+      let strokeColor: string;
+      if (!obState || hpRatio === 1) {
+        fillColor = field.color + '44';
+        strokeColor = field.color;
+      } else if (hpRatio > 0.5) {
+        fillColor = '#ffaa0044';
+        strokeColor = '#ffaa00';
+      } else {
+        fillColor = '#ff333344';
+        strokeColor = '#ff3333';
+      }
+
+      // ダメージ時のネオン効果を強化
+      if (obState && hpRatio < 1) {
+        ctx.shadowColor = strokeColor;
+        ctx.shadowBlur = 10 + (1 - hpRatio) * 15;
       }
 
       ctx.beginPath();
-      ctx.arc(ob.x, ob.y, ob.r * scale, 0, Math.PI * 2);
-      ctx.fillStyle = field.color + alpha;
+      ctx.arc(ob.x * scale, ob.y * scale, drawR, 0, Math.PI * 2);
+      ctx.fillStyle = fillColor;
       ctx.fill();
-      ctx.strokeStyle = field.color;
+      ctx.strokeStyle = strokeColor;
       ctx.lineWidth = 2;
       ctx.stroke();
+      ctx.shadowBlur = 0;
     });
   },
-  drawEffectZones(ctx: CanvasRenderingContext2D, effects: GameEffects, now: number) {
+  drawEffectZones(ctx: CanvasRenderingContext2D, effects: GameEffects, now: number, consts: GameConstants = getConstants()) {
+    const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
     const isActive = (eff: EffectState) => eff?.speed && now - eff.speed.start < eff.speed.duration;
     if (isActive(effects.player)) {
       ctx.fillStyle = '#00ffff20';
@@ -122,20 +147,42 @@ export const Renderer = {
       ctx.stroke();
     }
   },
-  drawMallet(ctx: CanvasRenderingContext2D, mallet: Mallet, color: string, hasGlow: boolean) {
+  // 6-2. マレットグロー強化
+  drawMallet(ctx: CanvasRenderingContext2D, mallet: Mallet, color: string, hasGlow: boolean, consts: GameConstants = getConstants()) {
+    const { MALLET: MR } = consts.SIZES;
+    // 常時弱いグロー
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 8;
     if (hasGlow) {
       ctx.shadowColor = '#ff00ff';
-      ctx.shadowBlur = 15;
+      ctx.shadowBlur = 25;
     }
     this.drawCircle(ctx, mallet.x, mallet.y, MR, color, '#fff', 3);
     ctx.shadowBlur = 0;
     this.drawCircle(ctx, mallet.x, mallet.y, 8, '#fff');
   },
-  drawPuck(ctx: CanvasRenderingContext2D, puck: Puck) {
+  // 6-1. パックトレイル
+  drawPuckTrail(ctx: CanvasRenderingContext2D, puck: Puck, consts: GameConstants = getConstants()) {
+    const { PUCK: BR } = consts.SIZES;
+    if (!puck.trail || puck.trail.length === 0 || !puck.visible) return;
+    for (let i = 0; i < puck.trail.length; i++) {
+      const t = puck.trail[i];
+      const alpha = ((i + 1) / puck.trail.length) * 0.3;
+      const size = BR * ((i + 1) / puck.trail.length) * 0.8;
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, size, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+      ctx.fill();
+    }
+  },
+  drawPuck(ctx: CanvasRenderingContext2D, puck: Puck, consts: GameConstants = getConstants()) {
+    const { PUCK: BR } = consts.SIZES;
     if (!puck.visible) return;
+    this.drawPuckTrail(ctx, puck, consts);
     this.drawCircle(ctx, puck.x, puck.y, BR, '#fff', '#888', 2);
   },
-  drawItem(ctx: CanvasRenderingContext2D, item: Item, now: number) {
+  drawItem(ctx: CanvasRenderingContext2D, item: Item, now: number, consts: GameConstants = getConstants()) {
+    const { ITEM: IR } = consts.SIZES;
     const pulse = 1 + Math.sin(now * 0.008) * 0.2;
     this.drawCircle(ctx, item.x, item.y, IR * pulse, item.color);
     ctx.fillStyle = '#fff';
@@ -144,7 +191,8 @@ export const Renderer = {
     ctx.textBaseline = 'middle';
     ctx.fillText(item.icon, item.x, item.y);
   },
-  drawHUD(ctx: CanvasRenderingContext2D, effects: GameEffects, now: number) {
+  drawHUD(ctx: CanvasRenderingContext2D, effects: GameEffects, now: number, consts: GameConstants = getConstants()) {
+    const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
     ctx.textAlign = 'center';
     ctx.font = 'bold 12px Arial';
     const playerEff = effects.player;
@@ -163,10 +211,12 @@ export const Renderer = {
   drawFlash(
     ctx: CanvasRenderingContext2D,
     flash: { type: string; time: number } | null,
-    now: number
+    now: number,
+    consts: GameConstants = getConstants()
   ) {
-    if (!flash || now - flash.time >= CONSTANTS.TIMING.FLASH) return;
-    const alpha = 1 - (now - flash.time) / CONSTANTS.TIMING.FLASH;
+    const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
+    if (!flash || now - flash.time >= consts.TIMING.FLASH) return;
+    const alpha = 1 - (now - flash.time) / consts.TIMING.FLASH;
     ctx.fillStyle = `rgba(255,255,255,${alpha * 0.3})`;
     ctx.fillRect(0, 0, W, H);
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -179,10 +229,11 @@ export const Renderer = {
       ctx.fillText(`${item.icon} ${item.name}!`, W / 2, H / 2);
     }
   },
-  drawGoalEffect(ctx: CanvasRenderingContext2D, effect: GoalEffect | null, now: number) {
+  drawGoalEffect(ctx: CanvasRenderingContext2D, effect: GoalEffect | null, now: number, consts: GameConstants = getConstants()) {
+    const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
     if (!effect) return;
     const elapsed = now - effect.time;
-    if (elapsed >= CONSTANTS.TIMING.GOAL_EFFECT) return;
+    if (elapsed >= consts.TIMING.GOAL_EFFECT) return;
     const isPlayerGoal = effect.scorer === 'cpu';
     const alpha = Math.max(0, 0.5 - elapsed / 1000);
     ctx.fillStyle = isPlayerGoal ? `rgba(0,255,255,${alpha})` : `rgba(255,0,0,${alpha})`;
@@ -198,7 +249,8 @@ export const Renderer = {
     ctx.fillText(isPlayerGoal ? '🎉 +1 Pt!' : '😢 -1 Pt', W / 2, textY + 40);
     ctx.shadowBlur = 0;
   },
-  drawHelp(ctx: CanvasRenderingContext2D) {
+  drawHelp(ctx: CanvasRenderingContext2D, consts: GameConstants = getConstants()) {
+    const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
     ctx.fillStyle = 'rgba(0,0,0,0.9)';
     ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = '#fff';
@@ -213,5 +265,33 @@ export const Renderer = {
     ctx.fillText('Shoot items into opponent goal!', W / 2, 140);
     ctx.fillStyle = '#888';
     ctx.fillText('Tap to Start', W / 2, H - 20);
+  },
+  drawFeverEffect(ctx: CanvasRenderingContext2D, active: boolean, now: number, consts: GameConstants = getConstants()) {
+    if (!active) return;
+    const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
+    const hue = (now * 0.1) % 360;
+    ctx.fillStyle = `hsla(${hue}, 100%, 50%, 0.05)`;
+    ctx.fillRect(0, 0, W, H);
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 24px Arial';
+    const textHue = (now * 0.2) % 360;
+    ctx.fillStyle = `hsl(${textHue}, 100%, 60%)`;
+    ctx.shadowColor = `hsl(${textHue}, 100%, 50%)`;
+    ctx.shadowBlur = 15;
+    const bounce = Math.sin(now * 0.005) * 5;
+    ctx.fillText('FEVER TIME!', W / 2, 30 + bounce);
+    ctx.shadowBlur = 0;
+    ctx.restore();
+  },
+  // 6-3. ゴールパーティクル描画
+  drawParticles(ctx: CanvasRenderingContext2D, particles: Particle[]) {
+    for (const p of particles) {
+      const alpha = p.life / p.maxLife;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * alpha, 0, Math.PI * 2);
+      ctx.fillStyle = p.color.replace(')', `, ${alpha})`).replace('rgb(', 'rgba(');
+      ctx.fill();
+    }
   },
 };

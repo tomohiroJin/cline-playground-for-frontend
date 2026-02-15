@@ -9,6 +9,7 @@ import { CFG, STATUS_META, DIFFICULTY } from '../game-logic';
 import { Section } from './Section';
 import { Badge } from './Badge';
 import { FLOOR_META } from '../definitions';
+import { LE_IMAGES } from '../images';
 
 /** ステータスのキー・バリューペア（グリッド用） */
 export const StatEntry = ({ label, color, value }) => (
@@ -122,6 +123,13 @@ export const DiffCard = ({ d, hp, mn, inf, onSelect, cleared }) => (
   onMouseEnter={e => { e.currentTarget.style.border = `1px solid ${d.color}88`; e.currentTarget.style.boxShadow = `0 0 20px ${d.color}22`; }}
   onMouseLeave={e => { e.currentTarget.style.border = `1px solid ${d.color}33`; e.currentTarget.style.boxShadow = "none"; }}
   >
+    <div style={{
+      position: "absolute", inset: 0,
+      backgroundImage: `url(${LE_IMAGES.difficulty[d.id] || LE_IMAGES.difficulty.normal})`,
+      backgroundSize: "cover", backgroundPosition: "center",
+      opacity: 0.12, mixBlendMode: "luminosity", pointerEvents: "none"
+    }} />
+    <div style={{ position: "relative", zIndex: 1 }}>
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <span style={{ fontSize: 22 }}>{d.icon}</span>
@@ -143,6 +151,7 @@ export const DiffCard = ({ d, hp, mn, inf, onSelect, cleared }) => (
       <span style={{ color: "#fbbf24" }}>情報 {inf}</span>
       {d.drainMod !== 0 ? <span style={{ color: "#a78bfa" }}>侵蝕 {d.drainMod}/手</span> : <span style={{ color: "#4ade80" }}>侵蝕 なし</span>}
       {d.dmgMult !== 1 && <span style={{ color: d.dmgMult > 1 ? "#f59e0b" : "#4ade80" }}>被ダメ ×{d.dmgMult}</span>}
+    </div>
     </div>
   </button>
 );

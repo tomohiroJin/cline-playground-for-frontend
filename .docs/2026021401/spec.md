@@ -37,13 +37,13 @@
 
 ### 共通ベーススタイル（全26枚共通）
 
-**ノーマン・ロックウェル要素:**
+**物語的写実主義の要素:**
 - 温かみのある写実的な人物描写
 - 物語性のある構図（一枚絵でストーリーが伝わる）
 - 光と影の繊細なコントラスト
 - 人間の表情と感情の豊かな描写
 
-**ジェフ・イーズリー要素:**
+**ダンジョンファンタジーの要素:**
 - ファンタジー世界の重厚な雰囲気
 - ダンジョン・迷宮の石造りの質感
 - 甲冑・革鎧・武器のリアルなディテール
@@ -60,9 +60,9 @@
 
 ```
 [COMMON BASE]
-Oil painting illustration blending Norman Rockwell's warm narrative realism
-(as seen in Tom Sawyer / Huckleberry Finn illustrations) with Jeff Easley's
-classic Dungeons & Dragons fantasy art. Rich oil paint textures, dramatic
+Oil painting illustration blending warm narrative realism
+(reminiscent of classic adventure novel illustrations) with
+classic dungeon-crawl fantasy art. Rich oil paint textures, dramatic
 chiaroscuro lighting, detailed stonework and fantasy equipment. Painterly
 brushstrokes visible. A young adventurer (late teens, short brown hair)
 wearing worn leather armor, a dark blue hooded cloak, and sturdy boots,
@@ -406,7 +406,7 @@ src/assets/images/
 
 全シナリオ画像は統一スタイルで制作:
 
-- **画風**: ノーマン・ロックウェル（トムソーヤ/ハックルベリーフィン）× ジェフ・イーズリー（D&D）
+- **画風**: 温かみのある物語的写実主義 × 重厚なダンジョンファンタジーアート
 - **タッチ**: 油絵調の筆致 + 重厚なダンジョンファンタジー
 - **主人公**: 10代後半の若い冒険者、革鎧・フード付きクローク・ブーツ着用
 - **照明**: ドラマチックなキアロスクーロ（松明・魔法光源の明暗対比）

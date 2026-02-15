@@ -76,3 +76,36 @@ src/pages/AgileQuizSugorokuPage.tsx  # ページコンポーネント（薄い�
 - **コンボシステム**: 連続正解でボーナス
 - **技術的負債イベント**: 不正解蓄積でペナルティ発生
 - **スプリント管理**: ベロシティ計算、振り返り、エンジニアタイプ診断
+
+### 画像アセット
+
+#### スタイルガイド
+
+全画像は統一スタイルで制作:
+
+- **画風**: フラットデザイン × かわいい（カワイイ）イラスト
+- **タッチ**: クリーンなベクター調、丸みを帯びた柔らかいライン
+- **キャラクター**: デフォルメされたかわいい動物キャラクター（猫エンジニア、犬PM、うさぎテスター）
+- **色調**: ダークブルー背景（#060a12〜#0c1220）に映える鮮やかなアクセントカラー
+- **テーマ**: アジャイル開発・ソフトウェアエンジニアリング
+- **禁則**: テキスト、ウォーターマーク、署名は含めない
+
+#### 画像一覧（22枚）
+
+| カテゴリ | 枚数 | ファイル名パターン | 用途画面 |
+|---|---|---|---|
+| タイトル背景 | 1 | `aqs_title.webp` | TitleScreen |
+| スプリント開始 | 1 | `aqs_sprint_start.webp` | SprintStartScreen |
+| イベントアイコン | 8 | `aqs_event_{id}.webp` | QuizScreen EventCard |
+| 振り返り | 1 | `aqs_retro.webp` | RetrospectiveScreen |
+| エンジニアタイプ | 6 | `aqs_type_{id}.webp` | ResultScreen TypeCard |
+| グレード演出 | 1 | `aqs_grade_celebration.webp` | ResultScreen GradeCircle |
+| ビルド成功 | 1 | `aqs_build_success.webp` | ResultScreen |
+| フィードバック | 3 | `aqs_correct/incorrect/timeup.webp` | QuizScreen ResultBanner |
+
+#### 画像仕様
+
+- **フォーマット**: WebP（品質82%）
+- **サイズ上限**: 300KB/枚
+- **配置**: `src/assets/images/`（Webpack バンドル）
+- **管理**: `src/features/agile-quiz-sugoroku/images.ts` で一元管理
