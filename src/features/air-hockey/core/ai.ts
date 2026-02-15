@@ -5,7 +5,7 @@ import { clamp, randomRange, distance } from '../../../utils/math-utils';
 /**
  * CpuAI.update の戻り値型
  */
-export type CpuUpdateResult = Pick<GameState, 'cpu' | 'cpuTarget' | 'cpuTargetTime'>;
+export type CpuUpdateResult = Pick<GameState, 'cpu' | 'cpuTarget' | 'cpuTargetTime' | 'cpuStuckTimer'>;
 
 /**
  * 壁バウンス予測: 予測X座標が壁を超える場合に反射をシミュレート
@@ -127,13 +127,36 @@ export const CpuAI = {
       newVy = 0;
     }
 
-    const newX = clamp(game.cpu.x + newVx, 50, W - 50);
-    const newY = clamp(game.cpu.y + newVy, 40, H / 2 - 40);
+    let newX = clamp(game.cpu.x + newVx, 50, W - 50);
+    let newY = clamp(game.cpu.y + newVy, 40, H / 2 - 40);
+
+    // スタック検出: 実際の移動量が極小なら停滞とみなす
+    const actualDx = newX - game.cpu.x;
+    const actualDy = newY - game.cpu.y;
+    const barelyMoved = Math.abs(actualDx) < 0.5 && Math.abs(actualDy) < 0.5;
+
+    let cpuStuckTimer = game.cpuStuckTimer;
+    if (barelyMoved) {
+      // スタック開始/継続
+      if (cpuStuckTimer === 0) {
+        cpuStuckTimer = now;
+      } else if (now - cpuStuckTimer > 2000) {
+        // 2秒以上スタック → 中央にリセット
+        newX = W / 2;
+        newY = 80;
+        cpuTarget = { x: W / 2, y: 80 };
+        cpuTargetTime = now;
+        cpuStuckTimer = 0;
+      }
+    } else {
+      cpuStuckTimer = 0;
+    }
 
     return {
       cpu: { ...game.cpu, x: newX, y: newY, vx: newVx, vy: newVy },
       cpuTarget,
       cpuTargetTime,
+      cpuStuckTimer,
     };
   },
 };

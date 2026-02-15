@@ -2,9 +2,10 @@
  * Air Hockey - エンティティ生成のテスト
  */
 import { EntityFactory } from './entities';
-import { CONSTANTS } from './constants';
+import { getConstants } from './constants';
 
-const { WIDTH: W, HEIGHT: H } = CONSTANTS.CANVAS;
+const consts = getConstants();
+const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
 
 describe('Air Hockey - エンティティ生成', () => {
   // ── EntityFactory.createMallet ───────────────────────
@@ -86,6 +87,11 @@ describe('Air Hockey - エンティティ生成', () => {
       expect(state.flash).toBeNull();
     });
 
+    it('cpuStuckTimerが0で初期化される', () => {
+      const state = EntityFactory.createGameState();
+      expect(state.cpuStuckTimer).toBe(0);
+    });
+
     it('フィーバー状態が初期化されている', () => {
       const state = EntityFactory.createGameState();
       expect(state.fever.active).toBe(false);
@@ -96,6 +102,42 @@ describe('Air Hockey - エンティティ生成', () => {
     it('パーティクル配列が空で初期化されている', () => {
       const state = EntityFactory.createGameState();
       expect(state.particles).toEqual([]);
+    });
+
+    it('field未指定時はobstacleStatesが空配列', () => {
+      const state = EntityFactory.createGameState();
+      expect(state.obstacleStates).toEqual([]);
+    });
+
+    it('破壊可能フィールド指定時はobstacleStatesが生成される', () => {
+      const field = {
+        id: 'test',
+        name: 'Test',
+        goalSize: 80,
+        color: '#fff',
+        destructible: true,
+        obstacleHp: 3,
+        obstacles: [
+          { x: 100, y: 200, r: 15 },
+          { x: 200, y: 300, r: 20 },
+        ],
+      };
+      const state = EntityFactory.createGameState(consts, field);
+      expect(state.obstacleStates).toHaveLength(2);
+      expect(state.obstacleStates[0]).toEqual({ hp: 3, maxHp: 3, destroyed: false, destroyedAt: 0 });
+      expect(state.obstacleStates[1]).toEqual({ hp: 3, maxHp: 3, destroyed: false, destroyedAt: 0 });
+    });
+
+    it('非破壊フィールド指定時はobstacleStatesが空配列', () => {
+      const field = {
+        id: 'test',
+        name: 'Test',
+        goalSize: 80,
+        color: '#fff',
+        obstacles: [{ x: 100, y: 200, r: 15 }],
+      };
+      const state = EntityFactory.createGameState(consts, field);
+      expect(state.obstacleStates).toEqual([]);
     });
   });
 });

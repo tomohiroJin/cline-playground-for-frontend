@@ -33,11 +33,34 @@ export const FIELDS: readonly FieldConfig[] = [
     goalSize: 70,
     color: '#ff4488',
     destructible: true,
+    obstacleHp: 3,
+    obstacleRespawnMs: 5000,
     obstacles: [
       { x: 110, y: 60, r: 14 },
       { x: 190, y: 60, r: 14 },
       { x: 110, y: 540, r: 14 },
       { x: 190, y: 540, r: 14 },
+    ],
+  },
+  {
+    id: 'bastion',
+    name: 'Bastion',
+    goalSize: 80,
+    color: '#ff8800',
+    destructible: true,
+    obstacleHp: 3,
+    obstacleRespawnMs: 5000,
+    obstacles: [
+      // 上段の壁
+      { x: 100, y: 160, r: 15 },
+      { x: 200, y: 160, r: 15 },
+      // 中央ブロック
+      { x: 80, y: 300, r: 20 },
+      { x: 150, y: 280, r: 16 },
+      { x: 220, y: 300, r: 20 },
+      // 下段の壁
+      { x: 100, y: 440, r: 15 },
+      { x: 200, y: 440, r: 15 },
     ],
   },
 ] as const;

@@ -51,11 +51,12 @@ export const OptionTitle = styled.p`
 
 export const ButtonGroup = styled.div`
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
 `;
 
 export const ModeButton = styled.button<{ $selected?: boolean }>`
-  flex: 1;
+  flex: 1 1 calc(33.33% - 10px);
   padding: 10px;
   border-radius: 8px;
   border: 1px solid ${props => (props.$selected ? 'var(--accent-color)' : 'transparent')};

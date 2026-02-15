@@ -33,9 +33,10 @@ export const EntityFactory = {
   // 障害物の破壊状態を初期化
   createObstacleStates: (field?: FieldConfig): ObstacleState[] => {
     if (!field?.destructible) return [];
+    const hp = field.obstacleHp ?? 3;
     return field.obstacles.map(() => ({
-      hp: 3,
-      maxHp: 3,
+      hp,
+      maxHp: hp,
       destroyed: false,
       destroyedAt: 0,
     }));
@@ -56,6 +57,7 @@ export const EntityFactory = {
       goalEffect: null,
       cpuTarget: null,
       cpuTargetTime: 0,
+      cpuStuckTimer: 0,
       fever: { active: false, lastGoalTime: Date.now(), extraPucks: 0 },
       particles: [],
       obstacleStates: EntityFactory.createObstacleStates(field),

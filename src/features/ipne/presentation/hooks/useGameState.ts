@@ -317,6 +317,10 @@ export function useGameState(): GameState {
       default:
         break;
     }
+    // アンマウント時にBGMを停止
+    return () => {
+      stopBgm();
+    };
   }, [screen, isAudioReady]);
 
   return {

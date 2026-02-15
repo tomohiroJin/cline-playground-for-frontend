@@ -1,10 +1,9 @@
 import React from 'react';
 import { Config } from '../../config';
-import { MathUtils } from '../../domains/math-utils';
 import { Cloud, Building } from '../../types';
 
 // 雲の描画コンポーネント
-export const CloudRenderer: React.FC<{ clouds: Cloud[] }> = ({ clouds }) => (
+export const CloudRenderer: React.FC<{ clouds: Cloud[] }> = React.memo(({ clouds }) => (
   <g>
     {clouds.map((cloud, index) => (
       <g key={index} opacity={cloud.opacity}>
@@ -26,10 +25,10 @@ export const CloudRenderer: React.FC<{ clouds: Cloud[] }> = ({ clouds }) => (
       </g>
     ))}
   </g>
-);
+)) as React.FC<{ clouds: Cloud[] }>;
 
 // ビルの描画コンポーネント
-export const BuildingRenderer: React.FC<{ buildings: Building[]; camY: number }> = ({ buildings, camY }) => (
+export const BuildingRenderer: React.FC<{ buildings: Building[]; camY: number }> = React.memo(({ buildings, camY }) => (
   <g>
     {buildings.map((building, index) => {
       const by = Config.screen.height - building.height + (camY * 0.1) % 50;
@@ -44,7 +43,7 @@ export const BuildingRenderer: React.FC<{ buildings: Building[]; camY: number }>
                 y={by + 10 + wi * 25}
                 width={6}
                 height={12}
-                fill={MathUtils.randomBool(0.7) ? '#ffee88' : '#334'}
+                fill={building.windowLit[wi]?.[wj] ? '#ffee88' : '#334'}
                 opacity={0.8}
               />
             ))
@@ -53,4 +52,4 @@ export const BuildingRenderer: React.FC<{ buildings: Building[]; camY: number }>
       );
     })}
   </g>
-);
+)) as React.FC<{ buildings: Building[]; camY: number }>;

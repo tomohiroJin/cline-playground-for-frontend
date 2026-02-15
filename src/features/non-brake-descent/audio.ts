@@ -218,5 +218,12 @@ export const Audio = (() => {
         bgmIv = undefined;
       }
     },
+    cleanup: (): void => {
+      Audio.stopBGM();
+      if (ctx) {
+        ctx.close();
+        ctx = undefined;
+      }
+    },
   });
 })();

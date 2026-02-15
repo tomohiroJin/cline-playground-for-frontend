@@ -60,22 +60,6 @@ export type Particle = {
   size: number;
 };
 
-export type GameState = {
-  player: Mallet;
-  cpu: Mallet;
-  pucks: Puck[];
-  items: Item[];
-  effects: GameEffects;
-  flash: { type: ItemType; time: number } | null;
-  goalEffect: GoalEffect | null;
-  lastItemSpawn: number;
-  cpuTarget: Vector | null;
-  cpuTargetTime: number;
-  fever: FeverState;
-  particles: Particle[];
-  obstacleStates: ObstacleState[]; // 障害物の破壊状態
-};
-
 export type Difficulty = 'easy' | 'normal' | 'hard';
 
 export type Obstacle = Vector & { r: number };
@@ -95,6 +79,25 @@ export type FieldConfig = {
   readonly color: string;
   readonly obstacles: readonly Obstacle[];
   readonly destructible?: boolean; // 障害物が破壊可能かどうか
+  readonly obstacleHp?: number;
+  readonly obstacleRespawnMs?: number;
+};
+
+export type GameState = {
+  player: Mallet;
+  cpu: Mallet;
+  pucks: Puck[];
+  items: Item[];
+  effects: GameEffects;
+  flash: { type: ItemType; time: number } | null;
+  goalEffect: GoalEffect | null;
+  lastItemSpawn: number;
+  cpuTarget: Vector | null;
+  cpuTargetTime: number;
+  cpuStuckTimer: number;
+  fever: FeverState;
+  particles: Particle[];
+  obstacleStates: ObstacleState[]; // 障害物の破壊状態
 };
 
 export type SoundSystem = {

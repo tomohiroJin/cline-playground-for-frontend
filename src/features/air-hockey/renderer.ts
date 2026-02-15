@@ -30,7 +30,7 @@ export const Renderer = {
     ctx.fillRect(0, 0, W, H);
   },
   // 6-5. フィールドラインネオン強化
-  drawField(ctx: CanvasRenderingContext2D, field: FieldConfig, consts: GameConstants = getConstants(), obstacleStates: ObstacleState[] = []) {
+  drawField(ctx: CanvasRenderingContext2D, field: FieldConfig, consts: GameConstants = getConstants(), obstacleStates: ObstacleState[] = [], now = 0) {
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
     const scale = W / 300;
     ctx.strokeStyle = field.color;
@@ -65,8 +65,21 @@ export const Renderer = {
     field.obstacles.forEach((ob: Obstacle, i: number) => {
       const obState = obstacleStates[i];
 
-      // 破壊済みの障害物はスキップ
-      if (obState?.destroyed) return;
+      // 破壊済みの障害物: 復活間近で点滅表示
+      if (obState?.destroyed) {
+        const respawnMs = field.obstacleRespawnMs ?? consts.TIMING.OBSTACLE_RESPAWN;
+        const elapsed = now - obState.destroyedAt;
+        if (elapsed > respawnMs - 1000) {
+          const blink = Math.sin(now * 0.015) > 0;
+          if (blink) {
+            ctx.beginPath();
+            ctx.arc(ob.x * scale, ob.y * scale, ob.r * scale * 0.5, 0, Math.PI * 2);
+            ctx.fillStyle = field.color + '22';
+            ctx.fill();
+          }
+        }
+        return;
+      }
 
       const hpRatio = obState ? obState.hp / obState.maxHp : 1;
       // HP に応じてサイズ変化（0.5〜1.0）

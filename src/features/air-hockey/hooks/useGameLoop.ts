@@ -61,9 +61,6 @@ export function useGameLoop(
       r: ob.r * scale,
     }));
 
-    // 障害物復活までの時間（ミリ秒）
-    const OBSTACLE_RESPAWN_TIME = 5000;
-
     const processCollisions = <T extends Puck | Item>(
       obj: T,
       radius: number,
@@ -157,8 +154,9 @@ export function useGameLoop(
       }
 
       // 破壊された障害物の復活チェック
+      const respawnMs = field.obstacleRespawnMs ?? consts.TIMING.OBSTACLE_RESPAWN;
       for (const obState of game.obstacleStates) {
-        if (obState.destroyed && now - obState.destroyedAt >= OBSTACLE_RESPAWN_TIME) {
+        if (obState.destroyed && now - obState.destroyedAt >= respawnMs) {
           obState.destroyed = false;
           obState.hp = obState.maxHp;
           obState.destroyedAt = 0;
@@ -168,7 +166,7 @@ export function useGameLoop(
       // ゴールエフェクト表示中
       if (game.goalEffect && now - game.goalEffect.time < consts.TIMING.GOAL_EFFECT) {
         Renderer.clear(ctx, consts, now);
-        Renderer.drawField(ctx, field, consts, game.obstacleStates);
+        Renderer.drawField(ctx, field, consts, game.obstacleStates, now);
         Renderer.drawParticles(ctx, game.particles);
         Renderer.drawGoalEffect(ctx, game.goalEffect, now, consts);
         animationRef = requestAnimationFrame(gameLoop);
@@ -187,6 +185,7 @@ export function useGameLoop(
         game.cpu = cpuUpdate.cpu;
         game.cpuTarget = cpuUpdate.cpuTarget;
         game.cpuTargetTime = cpuUpdate.cpuTargetTime;
+        game.cpuStuckTimer = cpuUpdate.cpuStuckTimer;
       }
 
       // フィーバー判定
@@ -299,6 +298,7 @@ export function useGameLoop(
       }
 
       // パックがなくなったら新規生成
+      // 得点した側がサーブ（パックが相手方向に飛ぶ）
       if (game.pucks.length === 0) {
         game.pucks.push(
           EntityFactory.createPuck(
@@ -313,7 +313,7 @@ export function useGameLoop(
 
       // 描画
       Renderer.clear(ctx, consts, now);
-      Renderer.drawField(ctx, field, consts, game.obstacleStates);
+      Renderer.drawField(ctx, field, consts, game.obstacleStates, now);
       Renderer.drawEffectZones(ctx, game.effects, now, consts);
       game.items.forEach((item: Item) => Renderer.drawItem(ctx, item, now, consts));
       game.pucks.forEach((puck: Puck) => Renderer.drawPuck(ctx, puck, consts));
