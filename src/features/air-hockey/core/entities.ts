@@ -1,5 +1,5 @@
 import { CONSTANTS } from './constants';
-import { GameState, Mallet, Puck, Item, ItemType } from './types';
+import { GameState, Mallet, Puck, Item, ItemType, FieldConfig } from './types';
 
 const { WIDTH: W, HEIGHT: H } = CONSTANTS.CANVAS;
 const { ITEM: IR } = CONSTANTS.SIZES;
@@ -28,7 +28,7 @@ export const EntityFactory = {
     vy: fromTop ? 2 : -2,
     r: IR,
   }),
-  createGameState: (): GameState => ({
+  createGameState: (field?: FieldConfig): GameState => ({
     player: EntityFactory.createMallet(W / 2, H - 70),
     cpu: EntityFactory.createMallet(W / 2, 70),
     pucks: [EntityFactory.createPuck(W / 2, H / 2, randomRange(-0.5, 0.5), 1.5)],
@@ -42,5 +42,13 @@ export const EntityFactory = {
     goalEffect: null,
     cpuTarget: null,
     cpuTargetTime: 0,
+    cpuStuckTimer: 0,
+    obstacleStates: field?.destructible
+      ? field.obstacles.map(() => ({
+          hp: field.obstacleHp ?? 3,
+          maxHp: field.obstacleHp ?? 3,
+          destroyedAt: null,
+        }))
+      : [],
   }),
 };

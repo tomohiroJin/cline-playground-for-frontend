@@ -85,5 +85,46 @@ describe('Air Hockey - エンティティ生成', () => {
       expect(state.goalEffect).toBeNull();
       expect(state.flash).toBeNull();
     });
+
+    it('cpuStuckTimerが0で初期化される', () => {
+      const state = EntityFactory.createGameState();
+      expect(state.cpuStuckTimer).toBe(0);
+    });
+
+    it('field未指定時はobstacleStatesが空配列', () => {
+      const state = EntityFactory.createGameState();
+      expect(state.obstacleStates).toEqual([]);
+    });
+
+    it('破壊可能フィールド指定時はobstacleStatesが生成される', () => {
+      const field = {
+        id: 'test',
+        name: 'Test',
+        goalSize: 80,
+        color: '#fff',
+        destructible: true,
+        obstacleHp: 3,
+        obstacles: [
+          { x: 100, y: 200, r: 15 },
+          { x: 200, y: 300, r: 20 },
+        ],
+      };
+      const state = EntityFactory.createGameState(field);
+      expect(state.obstacleStates).toHaveLength(2);
+      expect(state.obstacleStates[0]).toEqual({ hp: 3, maxHp: 3, destroyedAt: null });
+      expect(state.obstacleStates[1]).toEqual({ hp: 3, maxHp: 3, destroyedAt: null });
+    });
+
+    it('非破壊フィールド指定時はobstacleStatesが空配列', () => {
+      const field = {
+        id: 'test',
+        name: 'Test',
+        goalSize: 80,
+        color: '#fff',
+        obstacles: [{ x: 100, y: 200, r: 15 }],
+      };
+      const state = EntityFactory.createGameState(field);
+      expect(state.obstacleStates).toEqual([]);
+    });
   });
 });

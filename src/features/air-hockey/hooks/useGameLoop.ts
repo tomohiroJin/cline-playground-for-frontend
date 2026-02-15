@@ -14,6 +14,7 @@ import {
   SoundSystem,
   Item,
   Puck,
+  ObstacleState,
 } from '../core/types';
 
 const { WIDTH: W, HEIGHT: H } = CONSTANTS.CANVAS;
@@ -76,11 +77,25 @@ export function useGameLoop(
         }
       }
 
-      for (const ob of field.obstacles) {
+      for (let oi = 0; oi < field.obstacles.length; oi++) {
+        const ob = field.obstacles[oi];
+        const obState: ObstacleState | undefined = game.obstacleStates[oi];
+
+        // 破壊済みの障害物はスキップ
+        if (obState && obState.destroyedAt !== null) continue;
+
         const col = Physics.detectCollision(obj.x, obj.y, radius, ob.x, ob.y, ob.r);
         if (col) {
           obj = Physics.reflectOffSurface(obj, col);
           sound.wall();
+
+          // 破壊可能障害物のHP減少処理
+          if (isPuck && obState) {
+            obState.hp--;
+            if (obState.hp <= 0) {
+              obState.destroyedAt = Date.now();
+            }
+          }
         }
       }
 
@@ -101,7 +116,7 @@ export function useGameLoop(
       // ゴールエフェクト表示中
       if (game.goalEffect && now - game.goalEffect.time < CONSTANTS.TIMING.GOAL_EFFECT) {
         Renderer.clear(ctx);
-        Renderer.drawField(ctx, field);
+        Renderer.drawField(ctx, field, game.obstacleStates, now);
         Renderer.drawGoalEffect(ctx, game.goalEffect, now);
         animationRef = requestAnimationFrame(gameLoop);
         return;
@@ -113,12 +128,22 @@ export function useGameLoop(
         setShowHelp(true);
       }
 
+      // 破壊済み障害物の復活チェック
+      const respawnMs = field.obstacleRespawnMs ?? CONSTANTS.TIMING.OBSTACLE_RESPAWN;
+      for (const obState of game.obstacleStates) {
+        if (obState.destroyedAt !== null && now - obState.destroyedAt >= respawnMs) {
+          obState.hp = obState.maxHp;
+          obState.destroyedAt = null;
+        }
+      }
+
       // CPU AI 更新
       const cpuUpdate = CpuAI.update(game, diff, now);
       if (cpuUpdate) {
         game.cpu = cpuUpdate.cpu;
         game.cpuTarget = cpuUpdate.cpuTarget;
         game.cpuTargetTime = cpuUpdate.cpuTargetTime;
+        game.cpuStuckTimer = cpuUpdate.cpuStuckTimer;
       }
 
       // アイテム生成
@@ -200,6 +225,7 @@ export function useGameLoop(
       }
 
       // パックがなくなったら新規生成
+      // 得点した側がサーブ（パックが相手方向に飛ぶ）
       if (game.pucks.length === 0) {
         game.pucks.push(
           EntityFactory.createPuck(
@@ -213,7 +239,7 @@ export function useGameLoop(
 
       // 描画
       Renderer.clear(ctx);
-      Renderer.drawField(ctx, field);
+      Renderer.drawField(ctx, field, game.obstacleStates, now);
       Renderer.drawEffectZones(ctx, game.effects, now);
       game.items.forEach((item: Item) => Renderer.drawItem(ctx, item, now));
       game.pucks.forEach((puck: Puck) => Renderer.drawPuck(ctx, puck));

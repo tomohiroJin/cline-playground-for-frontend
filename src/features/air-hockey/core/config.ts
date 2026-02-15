@@ -16,6 +16,27 @@ export const FIELDS: readonly FieldConfig[] = [
       { x: 225, y: 400, r: 18 },
     ],
   },
+  {
+    id: 'fortress',
+    name: 'Fortress',
+    goalSize: 80,
+    color: '#ff8800',
+    destructible: true,
+    obstacleHp: 3,
+    obstacleRespawnMs: 5000,
+    obstacles: [
+      // 上段の壁
+      { x: 100, y: 160, r: 15 },
+      { x: 200, y: 160, r: 15 },
+      // 中央ブロック
+      { x: 80, y: 300, r: 20 },
+      { x: 150, y: 280, r: 16 },
+      { x: 220, y: 300, r: 20 },
+      // 下段の壁
+      { x: 100, y: 440, r: 15 },
+      { x: 200, y: 440, r: 15 },
+    ],
+  },
 ] as const;
 
 export const ITEMS = [

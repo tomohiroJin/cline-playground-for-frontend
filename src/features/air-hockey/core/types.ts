@@ -42,6 +42,27 @@ export type GoalEffect = {
   time: number;
 };
 
+export type Difficulty = 'easy' | 'normal' | 'hard';
+
+export type Obstacle = Vector & { r: number };
+
+export type ObstacleState = {
+  hp: number;
+  maxHp: number;
+  destroyedAt: number | null;
+};
+
+export type FieldConfig = {
+  readonly id: string;
+  readonly name: string;
+  readonly goalSize: number;
+  readonly color: string;
+  readonly obstacles: readonly Obstacle[];
+  readonly destructible?: boolean;
+  readonly obstacleHp?: number;
+  readonly obstacleRespawnMs?: number;
+};
+
 export type GameState = {
   player: Mallet;
   cpu: Mallet;
@@ -53,18 +74,8 @@ export type GameState = {
   lastItemSpawn: number;
   cpuTarget: Vector | null;
   cpuTargetTime: number;
-};
-
-export type Difficulty = 'easy' | 'normal' | 'hard';
-
-export type Obstacle = Vector & { r: number };
-
-export type FieldConfig = {
-  readonly id: string;
-  readonly name: string;
-  readonly goalSize: number;
-  readonly color: string;
-  readonly obstacles: readonly Obstacle[];
+  cpuStuckTimer: number;
+  obstacleStates: ObstacleState[];
 };
 
 export type SoundSystem = {

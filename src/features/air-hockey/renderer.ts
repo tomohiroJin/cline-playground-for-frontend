@@ -9,6 +9,7 @@ import {
   Item,
   GoalEffect,
   Obstacle,
+  ObstacleState,
 } from './core/types';
 
 const { WIDTH: W, HEIGHT: H } = CONSTANTS.CANVAS;
@@ -20,7 +21,12 @@ export const Renderer = {
     ctx.fillStyle = '#0d1117';
     ctx.fillRect(0, 0, W, H);
   },
-  drawField(ctx: CanvasRenderingContext2D, field: FieldConfig) {
+  drawField(
+    ctx: CanvasRenderingContext2D,
+    field: FieldConfig,
+    obstacleStates: ObstacleState[] = [],
+    now = 0
+  ) {
     ctx.strokeStyle = field.color;
     ctx.lineWidth = 5;
     ctx.shadowColor = field.color;
@@ -46,10 +52,40 @@ export const Renderer = {
     ctx.fillStyle = '#33ffff';
     ctx.fillRect(W / 2 - gs / 2, H - 8, gs, 8);
     ctx.shadowBlur = 0;
-    field.obstacles.forEach((ob: Obstacle) => {
+    field.obstacles.forEach((ob: Obstacle, i: number) => {
+      const obState = obstacleStates[i];
+
+      // 破壊済みの障害物
+      if (obState && obState.destroyedAt !== null) {
+        const respawnMs = field.obstacleRespawnMs ?? CONSTANTS.TIMING.OBSTACLE_RESPAWN;
+        const elapsed = now - obState.destroyedAt;
+        // 復活間近（残り1秒以内）で点滅表示
+        if (elapsed > respawnMs - 1000) {
+          const blink = Math.sin(now * 0.015) > 0;
+          if (blink) {
+            ctx.beginPath();
+            ctx.arc(ob.x, ob.y, ob.r * 0.5, 0, Math.PI * 2);
+            ctx.fillStyle = field.color + '22';
+            ctx.fill();
+          }
+        }
+        return;
+      }
+
+      // HP に応じたダメージ表現
+      let alpha = '44';
+      let scale = 1;
+      if (obState && obState.maxHp > 0) {
+        const hpRatio = obState.hp / obState.maxHp;
+        // HPが減るほど透明度UP・サイズ縮小
+        const alphaVal = Math.round(0x44 + (0xaa - 0x44) * hpRatio);
+        alpha = alphaVal.toString(16).padStart(2, '0');
+        scale = 0.7 + 0.3 * hpRatio;
+      }
+
       ctx.beginPath();
-      ctx.arc(ob.x, ob.y, ob.r, 0, Math.PI * 2);
-      ctx.fillStyle = field.color + '44';
+      ctx.arc(ob.x, ob.y, ob.r * scale, 0, Math.PI * 2);
+      ctx.fillStyle = field.color + alpha;
       ctx.fill();
       ctx.strokeStyle = field.color;
       ctx.lineWidth = 2;
