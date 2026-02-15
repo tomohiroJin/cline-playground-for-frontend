@@ -71,11 +71,17 @@ Labyrinth Echo で確立された画像管理パターン（`images.ts` 一元�
 | `src/features/agile-quiz-sugoroku/components/ResultScreen.tsx` | タイプ画像 + グレード + ビルド成功統合 |
 | `src/features/agile-quiz-sugoroku/README.md` | スタイルガイドセクション追加 |
 
+### バグ修正（Phase 4 検証で発覚）
+
+| ファイル | 変更内容 |
+|---|---|
+| `webpack.config.ts` | `publicPath: 'auto'` → `publicPath: '/'`（画像モジュール増加による HMR フルリロードループ修正） |
+| `src/styles/GlobalStyle.ts` | `transition: background 0.5s ease` 削除（リロード時のフラッシュ増幅を解消） |
+
 ### 変更なし
 
 | ファイル | 理由 |
 |---|---|
-| `webpack.config.ts` | WebP 対応済み（Labyrinth Echo で設定済み） |
 | `components/styles/*.ts` | 必要に応じて Phase 3 で追加検討 |
 
 ## 技術方針

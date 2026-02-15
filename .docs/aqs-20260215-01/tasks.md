@@ -102,3 +102,12 @@
 - [x] ブラウザ確認: ResultScreen グレード演出画像表示
 - [x] ブラウザ確認: ResultScreen ビルド成功画像表示
 - [x] フォールバック確認: 画像削除時に絵文字が表示されること
+
+## Phase 5: バグ修正（HMR フルリロードループ）
+
+画像モジュール 22 枚追加によりモジュールグラフが拡大し、`publicPath: 'auto'` と `runtimeChunk: 'single'` の組み合わせで HMR が失敗→フルリロードをループする問題が発生。
+
+- [x] `webpack.config.ts` — `publicPath: 'auto'` → `publicPath: '/'` に変更
+- [x] `src/styles/GlobalStyle.ts` — `transition: background 0.5s ease` を削除（リロード時のフラッシュ増幅を解消）
+- [x] `npm run build` ビルド成功を確認
+- [x] `npm test` 全 103 スイート / 1272 テスト通過を確認

@@ -37,7 +37,7 @@ export const GlobalStyle = createGlobalStyle`
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    transition: background 0.5s ease;
+
   }
 
   @keyframes gradientBG {
