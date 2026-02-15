@@ -108,6 +108,8 @@
 
 **フォールバック方針**: overrides 追加後に `npm run test` で Jest が正常に動作しない場合、overrides を撤回し、既知の警告として記録のみに切り替える。
 
+> **実施結果**: overrides を適用したところ、`test-exclude`（Jest カバレッジ）が `glob@11` の API 変更（`hasMagic()` 等）に対応しておらずテストが失敗。フォールバック方針に従い overrides を撤回した。4 件の deprecation 警告は既知の問題として記録し、上流の修正を待つ。
+
 ---
 
 ## 2. CSP・セキュリティ meta タグ（フェーズ 2）
@@ -123,7 +125,7 @@
 **変更後**:
 ```html
 <meta http-equiv="Content-Security-Policy"
-  content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; media-src 'self'">
+  content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; media-src 'self'; worker-src 'self' blob:">
 ```
 
 **ディレクティブ別の設計根拠**:
@@ -137,6 +139,7 @@
 | `img-src` | `'self' data:` | ローカル画像と data URI（webpack の asset/resource）を許可 |
 | `connect-src` | `'self'` | API 通信は同一オリジンのみ。外部 API 呼び出しなし |
 | `media-src` | `'self'` | ローカル動画ファイル（`public/videos/`）を許可 |
+| `worker-src` | `'self' blob:` | Tone.js が `URL.createObjectURL()` で blob ベースの Web Worker を生成するため `blob:` を許可。Worker のみに限定されるためセキュリティリスクは限定的 |
 
 ### 2.2 その他のセキュリティ meta タグ
 
@@ -192,7 +195,7 @@ const config: Configuration = {
 ```typescript
 const config: Configuration = {
   mode: 'development',
-  devtool: process.env.NODE_ENV === 'production' ? false : 'eval-source-map',
+  devtool: process.env.NODE_ENV === 'production' ? false : 'source-map',
   entry: './src/index.tsx',
   ...
 };
@@ -200,7 +203,7 @@ const config: Configuration = {
 
 **根拠**:
 - 本番ビルド（`webpack --mode production`）時にソースマップを生成しない（`false`）
-- 開発時は `eval-source-map` でデバッグ体験を維持
+- 開発時は `source-map` でデバッグ体験を維持（`eval-source-map` は CSP の `script-src 'self'` と衝突するため不採用）
 - `process.env.NODE_ENV` は webpack の `--mode` フラグにより自動設定される
 - ソースマップが公開されると、アプリケーションの内部ロジック・変数名・コメントがすべて閲覧可能になるリスクがある
 
@@ -216,14 +219,14 @@ const config: Configuration = {
 ```json
 {
   "devDependencies": {
-    "eslint": "^10.0.0",
-    "eslint-plugin-security": "^3.0.0",
+    "eslint": "^9.39.2",
+    "eslint-plugin-security": "^3.0.1",
     ...
   }
 }
 ```
 
-> **注意**: ESLint v10 が利用可能な場合にアップグレード。利用不可の場合は現行 v9 のまま `eslint-plugin-security` のみ追加する。
+> **注意**: ESLint v10 へのアップグレードを検討したが、`typescript-eslint` が v10 未対応のため現行 v9 を維持。`eslint-plugin-security` のみ追加した。
 
 ### 4.2 ESLint 設定の更新
 
@@ -327,3 +330,5 @@ export default defineConfig([
 | `Permissions-Policy` | 本アプリケーションは位置情報・カメラ・マイク等のブラウザ API を使用しないため、制限の必要性が低い |
 | TypeScript の `strict` モード強化 | セキュリティとは直接的に関係しない。別タスクとして管理 |
 | `whatwg-encoding` の overrides による置換 | 代替パッケージ `@exodus/bytes` は API 互換ではなく、`jsdom` の内部依存を壊すリスクが高い。上流の修正待ち |
+| `glob`/`inflight` の overrides による強制上書き | `test-exclude`（Jest カバレッジ）が `glob@11` と互換性がなくテストが失敗するため撤回。既知の警告として記録 |
+| ESLint v10 へのアップグレード | `typescript-eslint` が v10 未対応。上流の対応待ち |
