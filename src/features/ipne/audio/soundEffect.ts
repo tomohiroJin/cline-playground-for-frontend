@@ -84,6 +84,100 @@ const SOUND_CONFIGS: Record<SoundEffectTypeValue, SoundConfig> = {
     gain: 0.45,
     sweep: 300,
   },
+  // === 新規 12 種 ===
+  // 移動音: 軽い足音（ピッ）
+  [SoundEffectType.MOVE_STEP]: {
+    frequency: 1200,
+    type: 'sine',
+    duration: 0.04,
+    gain: 0.15,
+  },
+  // 壁衝突: 低い衝突音
+  [SoundEffectType.WALL_BUMP]: {
+    frequency: 80,
+    type: 'sawtooth',
+    duration: 0.1,
+    gain: 0.3,
+    sweep: 40,
+  },
+  // 攻撃振り: 振り下ろし音
+  [SoundEffectType.ATTACK_SWING]: {
+    frequency: 800,
+    type: 'square',
+    duration: 0.06,
+    gain: 0.3,
+    sweep: 400,
+  },
+  // 空振り: 空気を切る音
+  [SoundEffectType.ATTACK_MISS]: {
+    frequency: 300,
+    type: 'sawtooth',
+    duration: 0.08,
+    gain: 0.2,
+    sweep: 100,
+  },
+  // 敵ダメージ: 敵被弾音
+  [SoundEffectType.ENEMY_DAMAGE]: {
+    frequency: 500,
+    type: 'square',
+    duration: 0.1,
+    gain: 0.35,
+    sweep: 200,
+  },
+  // 回避: 上昇スウィープ
+  [SoundEffectType.DODGE]: {
+    frequency: 900,
+    type: 'sine',
+    duration: 0.08,
+    gain: 0.25,
+    sweep: 1400,
+  },
+  // 鍵取得: メロディで再生するためプレースホルダー
+  [SoundEffectType.KEY_PICKUP]: {
+    frequency: 659,
+    type: 'sine',
+    duration: 0.1,
+    gain: 0.35,
+  },
+  // 扉開放: 上昇トーン
+  [SoundEffectType.DOOR_OPEN]: {
+    frequency: 300,
+    type: 'sine',
+    duration: 0.2,
+    gain: 0.35,
+    sweep: 600,
+  },
+  // 速度上昇: 長い上昇スウィープ
+  [SoundEffectType.SPEED_BOOST]: {
+    frequency: 400,
+    type: 'sine',
+    duration: 0.3,
+    gain: 0.3,
+    sweep: 1200,
+  },
+  // 壁破壊: 崩壊音
+  [SoundEffectType.WALL_BREAK]: {
+    frequency: 100,
+    type: 'sawtooth',
+    duration: 0.15,
+    gain: 0.4,
+    sweep: 50,
+  },
+  // テレポート: ワープ音（往復スウィープ）
+  [SoundEffectType.TELEPORT]: {
+    frequency: 600,
+    type: 'sine',
+    duration: 0.25,
+    gain: 0.3,
+    sweep: 1800,
+  },
+  // 死亡: メロディで再生するためプレースホルダー
+  [SoundEffectType.DYING]: {
+    frequency: 440,
+    type: 'sawtooth',
+    duration: 0.15,
+    gain: 0.45,
+  },
 };
 
 /** ゲームクリア時のメロディ */
@@ -134,6 +228,25 @@ const BOSS_KILL_MELODY: readonly [number, number][] = [
   [0, 0.05],    // 休符
   [784, 0.1],   // G5
   [1047, 0.3],  // C6
+];
+
+/** 鍵取得時のメロディ（3音上昇） */
+const KEY_PICKUP_MELODY: readonly [number, number][] = [
+  [659, 0.1],  // E5
+  [784, 0.1],  // G5
+  [1047, 0.2], // C6
+];
+
+/** 死亡時のメロディ（下降、不穏） */
+const DYING_MELODY: readonly [number, number][] = [
+  [440, 0.15],  // A4
+  [370, 0.15],  // F#4
+  [330, 0.15],  // E4
+  [262, 0.2],   // C4
+  [0, 0.1],     // 休符
+  [220, 0.15],  // A3
+  [196, 0.3],   // G3
+  [165, 0.4],   // E3
 ];
 
 /** 現在の音声設定 */
@@ -267,6 +380,16 @@ export function playSoundEffect(type: SoundEffectTypeValue): void {
     return;
   }
 
+  if (type === SoundEffectType.KEY_PICKUP) {
+    playMelody(KEY_PICKUP_MELODY, volume, 'sine');
+    return;
+  }
+
+  if (type === SoundEffectType.DYING) {
+    playMelody(DYING_MELODY, volume, 'sawtooth');
+    return;
+  }
+
   // 単音効果音
   const config = SOUND_CONFIGS[type];
   playTone(config, ctx.currentTime, volume);
@@ -306,3 +429,16 @@ export const playAttackHitSound = () => playSoundEffect(SoundEffectType.ATTACK_H
 export const playItemPickupSound = () => playSoundEffect(SoundEffectType.ITEM_PICKUP);
 export const playHealSound = () => playSoundEffect(SoundEffectType.HEAL);
 export const playTrapTriggeredSound = () => playSoundEffect(SoundEffectType.TRAP_TRIGGERED);
+// 新規 12 種
+export const playMoveStepSound = () => playSoundEffect(SoundEffectType.MOVE_STEP);
+export const playWallBumpSound = () => playSoundEffect(SoundEffectType.WALL_BUMP);
+export const playAttackSwingSound = () => playSoundEffect(SoundEffectType.ATTACK_SWING);
+export const playAttackMissSound = () => playSoundEffect(SoundEffectType.ATTACK_MISS);
+export const playEnemyDamageSound = () => playSoundEffect(SoundEffectType.ENEMY_DAMAGE);
+export const playDodgeSound = () => playSoundEffect(SoundEffectType.DODGE);
+export const playKeyPickupSound = () => playSoundEffect(SoundEffectType.KEY_PICKUP);
+export const playDoorOpenSound = () => playSoundEffect(SoundEffectType.DOOR_OPEN);
+export const playSpeedBoostSound = () => playSoundEffect(SoundEffectType.SPEED_BOOST);
+export const playWallBreakSound = () => playSoundEffect(SoundEffectType.WALL_BREAK);
+export const playTeleportSound = () => playSoundEffect(SoundEffectType.TELEPORT);
+export const playDyingSound = () => playSoundEffect(SoundEffectType.DYING);

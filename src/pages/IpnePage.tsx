@@ -2,7 +2,7 @@
  * IPNE ゲームページ
  * シンプルな迷路ゲーム - タイトル→プロローグ→ゲーム→クリア の画面遷移
  */
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef } from 'react';
 import {
   movePlayer,
   isGoal,
@@ -43,13 +43,20 @@ import {
   playEnemyKillSound,
   playBossKillSound,
   playLevelUpSound,
-  playAttackHitSound,
+  playMoveStepSound,
+  playWallBumpSound,
+  playAttackSwingSound,
+  playAttackMissSound,
+  playEnemyDamageSound,
+  playDoorOpenSound,
+  playWallBreakSound,
 } from '../features/ipne/audio';
 
 // 画面コンポーネント
 import { TitleScreen } from '../features/ipne/presentation/screens/Title';
 import { PrologueScreen } from '../features/ipne/presentation/screens/Prologue';
-import { GameScreen, ClassSelectScreen, LevelUpOverlayComponent } from '../features/ipne/presentation/screens/Game';
+import { GameScreen, ClassSelectScreen, LevelUpOverlayComponent, EffectEvent } from '../features/ipne/presentation/screens/Game';
+import { EffectType } from '../features/ipne/presentation/effects';
 import { ClearScreen as ClearScreenComponent, GameOverScreen } from '../features/ipne/presentation/screens/Clear';
 
 // カスタムフック
@@ -64,6 +71,7 @@ export { ClearScreen } from '../features/ipne/presentation/screens/Clear';
  */
 const IpnePage: React.FC = () => {
   const state = useGameState();
+  const effectQueueRef = useRef<EffectEvent[]>([]);
 
   // ゲームループ
   useGameLoop(state.screen, {
@@ -84,7 +92,7 @@ const IpnePage: React.FC = () => {
     setMapState: state.setMapState,
     setIsGameOver: state.setIsGameOver,
     setScreen: state.setScreen,
-  });
+  }, effectQueueRef);
 
   // MVP3: レベルアップ選択（ポイント制対応）
   const handleLevelUpChoice = useCallback((stat: StatTypeValue) => {
@@ -186,6 +194,13 @@ const IpnePage: React.FC = () => {
       const newPlayer = movePlayer(state.player, direction, state.map, state.wallsRef.current);
       state.setPlayer(newPlayer);
 
+      // 移動成功/失敗の効果音
+      if (newPlayer.x !== state.player.x || newPlayer.y !== state.player.y) {
+        playMoveStepSound();
+      } else {
+        playWallBumpSound();
+      }
+
       // 探索状態を更新
       state.setMapState(prev => ({
         ...prev,
@@ -195,6 +210,7 @@ const IpnePage: React.FC = () => {
       // ゴール判定
       if (isGoal(state.map, newPlayer.x, newPlayer.y)) {
         if (canGoal(newPlayer)) {
+          playDoorOpenSound();
           const now = Date.now();
           const stoppedTimer = stopTimer(state.timer, now);
           const elapsed = getElapsedTime(stoppedTimer, now);
@@ -234,16 +250,41 @@ const IpnePage: React.FC = () => {
     const result = playerAttack(state.playerRef.current, beforeEnemies, state.mapRef.current, currentTime, currentWalls);
 
     if (result.didAttack) {
+      // 攻撃振り音（攻撃するたびに鳴る）
+      playAttackSwingSound();
       state.setCombatState(prev => ({ ...prev, lastAttackAt: currentTime }));
+
+      // 敵にダメージを与えたかチェック
+      const enemyDamaged = result.enemies.some(e => {
+        const before = beforeEnemies.find(b => b.id === e.id);
+        return before && e.hp < before.hp;
+      });
+
+      if (enemyDamaged) {
+        // 敵被弾音
+        playEnemyDamageSound();
+      }
+
       if (result.attackPosition) {
         state.setAttackEffect({ position: result.attackPosition, until: currentTime + 150 });
-        playAttackHitSound();
+        if (!enemyDamaged && !result.hitWall) {
+          // 空振り音（敵にも壁にもヒットしなかった）
+          playAttackMissSound();
+        }
       } else {
         state.setAttackEffect(undefined);
       }
     }
 
     if (result.walls) {
+      // 壁破壊チェック: 壁が BROKEN 状態に変わったか
+      const wallBroken = result.walls.some(w => {
+        const before = currentWalls.find(bw => bw.x === w.x && bw.y === w.y);
+        return before && before.state !== WallState.BROKEN && w.state === WallState.BROKEN;
+      });
+      if (wallBroken) {
+        playWallBreakSound();
+      }
       state.setWalls(result.walls);
     }
 
@@ -258,6 +299,11 @@ const IpnePage: React.FC = () => {
       const killedBoss = killedEnemies.some(e => e.type === EnemyType.BOSS);
       if (killedBoss) {
         playBossKillSound();
+        // ボス撃破エフェクト
+        const boss = killedEnemies.find(e => e.type === EnemyType.BOSS);
+        if (boss) {
+          effectQueueRef.current.push({ type: EffectType.BOSS_KILL, x: boss.x, y: boss.y });
+        }
       } else {
         playEnemyKillSound();
       }
@@ -282,6 +328,8 @@ const IpnePage: React.FC = () => {
           state.setPendingLevelPoints(prev => prev + 1);
           addedPointsInLoop++;
           playLevelUpSound();
+          // レベルアップエフェクト
+          effectQueueRef.current.push({ type: EffectType.LEVEL_UP, x: updatedPlayer.x, y: updatedPlayer.y });
         }
       }
     }
@@ -310,7 +358,7 @@ const IpnePage: React.FC = () => {
       )}
       {state.screen === ScreenState.CLASS_SELECT && <ClassSelectScreen onSelect={state.handleClassSelect} />}
       {state.screen === ScreenState.PROLOGUE && <PrologueScreen onSkip={state.handleSkipPrologue} />}
-      {state.screen === ScreenState.GAME && (
+      {(state.screen === ScreenState.GAME || state.screen === ScreenState.DYING) && (
         <>
           <GameScreen
             map={state.map}
@@ -335,6 +383,8 @@ const IpnePage: React.FC = () => {
             showKeyRequiredMessage={state.showKeyRequiredMessage}
             pendingLevelPoints={state.pendingLevelPoints}
             onOpenLevelUpModal={handleOpenLevelUpModal}
+            effectQueueRef={effectQueueRef}
+            isDying={state.screen === ScreenState.DYING}
           />
           {state.showLevelUpModal && state.pendingLevelPoints > 0 && (
             <LevelUpOverlayComponent

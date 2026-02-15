@@ -23,7 +23,13 @@ import {
   playHealSound,
   playTrapTriggeredSound,
   playLevelUpSound,
+  playDodgeSound,
+  playKeyPickupSound,
+  playTeleportSound,
+  playDyingSound,
 } from '../../audio';
+import { EffectType } from '../effects';
+import type { EffectEvent } from '../screens/Game';
 
 /**
  * ゲームループで使用するRef群の型定義
@@ -61,6 +67,7 @@ export function useGameLoop(
   screen: ScreenStateValue,
   refs: GameStateRefs,
   setters: GameStateSetters,
+  effectQueueRef?: React.MutableRefObject<EffectEvent[]>,
 ) {
   const {
     mapRef,
@@ -94,15 +101,59 @@ export function useGameLoop(
             break;
           case TickSoundEffect.ITEM_PICKUP:
             playItemPickupSound();
+            // アイテム取得エフェクト
+            if (effectQueueRef) {
+              effectQueueRef.current.push({
+                type: EffectType.ITEM_PICKUP,
+                x: playerRef.current.x,
+                y: playerRef.current.y,
+              });
+            }
             break;
           case TickSoundEffect.HEAL:
             playHealSound();
             break;
           case TickSoundEffect.TRAP_TRIGGERED:
             playTrapTriggeredSound();
+            // 罠発動エフェクト（ダメージ罠・減速罠）
+            if (effectQueueRef) {
+              effectQueueRef.current.push({
+                type: EffectType.TRAP_DAMAGE,
+                x: playerRef.current.x,
+                y: playerRef.current.y,
+              });
+            }
             break;
           case TickSoundEffect.LEVEL_UP:
             playLevelUpSound();
+            // レベルアップエフェクト
+            if (effectQueueRef) {
+              effectQueueRef.current.push({
+                type: EffectType.LEVEL_UP,
+                x: playerRef.current.x,
+                y: playerRef.current.y,
+              });
+            }
+            break;
+          case TickSoundEffect.DODGE:
+            playDodgeSound();
+            break;
+          case TickSoundEffect.KEY_PICKUP:
+            playKeyPickupSound();
+            break;
+          case TickSoundEffect.TELEPORT:
+            playTeleportSound();
+            // テレポート罠エフェクト
+            if (effectQueueRef) {
+              effectQueueRef.current.push({
+                type: EffectType.TRAP_TELEPORT,
+                x: playerRef.current.x,
+                y: playerRef.current.y,
+              });
+            }
+            break;
+          case TickSoundEffect.DYING:
+            playDyingSound();
             break;
           default:
             break;
@@ -115,15 +166,19 @@ export function useGameLoop(
             break;
           }
           case TickDisplayEffect.GAME_OVER:
-            setIsGameOver(true);
-            setScreen(ScreenState.GAME_OVER);
+            // 死亡アニメーション状態に遷移（1.5秒後にゲームオーバー画面へ）
+            setScreen(ScreenState.DYING);
+            setTimeout(() => {
+              setIsGameOver(true);
+              setScreen(ScreenState.GAME_OVER);
+            }, 1500);
             break;
           default:
             break;
         }
       }
     }
-  }, [mapRef, setCombatState, setIsGameOver, setMapState, setScreen]);
+  }, [mapRef, playerRef, setCombatState, setIsGameOver, setMapState, setScreen, effectQueueRef]);
 
   useEffect(() => {
     if (screen !== ScreenState.GAME) return;

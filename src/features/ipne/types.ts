@@ -37,6 +37,7 @@ export const ScreenState = {
   CLASS_SELECT: 'class_select',
   PROLOGUE: 'prologue',
   GAME: 'game',
+  DYING: 'dying',
   CLEAR: 'clear',
   GAME_OVER: 'game_over',
 } as const;
@@ -419,6 +420,8 @@ export const FeedbackType = {
   LEVEL_UP: 'level_up',
   TRAP: 'trap',
   ITEM_PICKUP: 'item_pickup',
+  BOSS_KILL: 'boss_kill',
+  SPEED_BOOST: 'speed_boost',
 } as const;
 
 export type FeedbackTypeValue = (typeof FeedbackType)[keyof typeof FeedbackType];
@@ -439,6 +442,7 @@ export interface FeedbackEffect {
 
 /** 効果音の種類 */
 export const SoundEffectType = {
+  // 既存 10 種
   PLAYER_DAMAGE: 'player_damage',
   ENEMY_KILL: 'enemy_kill',
   BOSS_KILL: 'boss_kill',
@@ -449,6 +453,19 @@ export const SoundEffectType = {
   ITEM_PICKUP: 'item_pickup',
   HEAL: 'heal',
   TRAP_TRIGGERED: 'trap_triggered',
+  // 新規 12 種
+  MOVE_STEP: 'move_step',
+  WALL_BUMP: 'wall_bump',
+  ATTACK_SWING: 'attack_swing',
+  ATTACK_MISS: 'attack_miss',
+  ENEMY_DAMAGE: 'enemy_damage',
+  DODGE: 'dodge',
+  KEY_PICKUP: 'key_pickup',
+  DOOR_OPEN: 'door_open',
+  SPEED_BOOST: 'speed_boost',
+  WALL_BREAK: 'wall_break',
+  TELEPORT: 'teleport',
+  DYING: 'dying',
 } as const;
 
 export type SoundEffectTypeValue = (typeof SoundEffectType)[keyof typeof SoundEffectType];

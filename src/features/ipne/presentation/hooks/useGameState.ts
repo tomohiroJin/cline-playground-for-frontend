@@ -306,8 +306,11 @@ export function useGameState(): GameState {
         playClearJingle();
         playGameClearSound();
         break;
-      case ScreenState.GAME_OVER:
+      case ScreenState.DYING:
+        // 死亡アニメーション中はBGMを停止（死亡効果音はuseGameLoopで再生済み）
         stopBgm();
+        break;
+      case ScreenState.GAME_OVER:
         playGameOverJingle();
         playGameOverSound();
         break;

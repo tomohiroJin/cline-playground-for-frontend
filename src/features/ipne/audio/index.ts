@@ -28,6 +28,18 @@ export {
   playItemPickupSound,
   playHealSound,
   playTrapTriggeredSound,
+  playMoveStepSound,
+  playWallBumpSound,
+  playAttackSwingSound,
+  playAttackMissSound,
+  playEnemyDamageSound,
+  playDodgeSound,
+  playKeyPickupSound,
+  playDoorOpenSound,
+  playSpeedBoostSound,
+  playWallBreakSound,
+  playTeleportSound,
+  playDyingSound,
 } from './soundEffect';
 
 // BGM

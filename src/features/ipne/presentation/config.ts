@@ -37,6 +37,16 @@ export const CONFIG = {
   },
 };
 
+// スプライトサイズ参照定数
+export const SPRITE_SIZES = {
+  /** 基本スプライトサイズ（タイル、キャラクター、敵） */
+  base: 16,
+  /** アイテムスプライトサイズ */
+  item: 8,
+  /** ボススプライトサイズ */
+  boss: 24,
+} as const;
+
 // プロローグテキスト
 export const PROLOGUE_TEXTS = [
   '古代遺跡の調査中、突如として通路が崩落した。',
