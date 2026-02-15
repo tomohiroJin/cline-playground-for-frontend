@@ -137,7 +137,6 @@ export {
   getEffectiveMoveInterval,
   DEFAULT_MOVEMENT_CONFIG,
   INITIAL_MOVEMENT_STATE,
-  SPEED_EFFECT_THRESHOLD,
 } from './movement';
 export type { MovementConfig, MovementState } from './movement';
 
