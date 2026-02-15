@@ -1,7 +1,7 @@
 /**
  * Agile Quiz Sugoroku ゲームページ
  */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   useGame,
   useCountdown,
@@ -27,6 +27,13 @@ import { SprintSummary } from '../features/agile-quiz-sugoroku/types';
 const AgileQuizSugorokuPage: React.FC = () => {
   const game = useGame();
   const fade = useFade();
+
+  // アンマウント時にBGMを停止
+  useEffect(() => {
+    return () => {
+      stopBgm();
+    };
+  }, []);
   const countdown = useCountdown(CONFIG.timeLimit, () => game.answer(-1));
   const [retrospective, setRetrospective] = useState<SprintSummary | null>(null);
 
