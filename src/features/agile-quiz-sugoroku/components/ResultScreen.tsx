@@ -13,6 +13,7 @@ import {
   getColorByThreshold,
   getInverseColorByThreshold,
 } from '../constants';
+import { AQS_IMAGES } from '../images';
 import { ParticleEffect } from './ParticleEffect';
 import { RadarChart } from './RadarChart';
 import { BarChart } from './BarChart';
@@ -68,6 +69,7 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
   onReplay,
 }) => {
   const [copied, setCopied] = useState(false);
+  const [typeImgError, setTypeImgError] = useState(false);
 
   // エンジニアタイプを判定
   const engineerType = useMemo(() => {
@@ -138,15 +140,60 @@ Combo: ${stats.maxCombo} | 安定度: ${Math.round(derived.stab)}%`;
       <Panel $fadeIn={false} style={{ maxWidth: 580 }}>
         {/* グレード表示 */}
         <div style={{ textAlign: 'center', marginBottom: 8 }}>
-          <GradeCircle $color={grade.c}>{grade.g}</GradeCircle>
+          <div style={{ position: 'relative', display: 'inline-block' }}>
+            <img
+              src={AQS_IMAGES.gradeCelebration}
+              alt=""
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              style={{
+                position: 'absolute',
+                inset: -20,
+                width: 'calc(100% + 40px)',
+                height: 'calc(100% + 40px)',
+                objectFit: 'contain',
+                opacity: 0.3,
+                pointerEvents: 'none',
+              }}
+            />
+            <GradeCircle $color={grade.c}>{grade.g}</GradeCircle>
+          </div>
           <GradeLabel $color={grade.c}>{grade.label}</GradeLabel>
+          <img
+            src={AQS_IMAGES.buildSuccess}
+            alt=""
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            style={{
+              width: '100%',
+              height: 60,
+              objectFit: 'cover',
+              opacity: 0.2,
+              borderRadius: 4,
+              marginBottom: 4,
+            }}
+          />
           <BuildSuccess>BUILD SUCCESS</BuildSuccess>
           <ReleaseVersion>Release v1.0.0</ReleaseVersion>
         </div>
 
         {/* エンジニアタイプ */}
         <TypeCard $color={engineerType.co}>
-          <TypeEmoji>{engineerType.em}</TypeEmoji>
+          {!typeImgError && AQS_IMAGES.types[engineerType.id as keyof typeof AQS_IMAGES.types] ? (
+            <img
+              src={AQS_IMAGES.types[engineerType.id as keyof typeof AQS_IMAGES.types]!}
+              alt={engineerType.n}
+              onError={() => setTypeImgError(true)}
+              style={{
+                width: 80,
+                height: 80,
+                borderRadius: '50%',
+                objectFit: 'cover',
+                border: `3px solid ${engineerType.co}`,
+                marginBottom: 12,
+              }}
+            />
+          ) : (
+            <TypeEmoji>{engineerType.em}</TypeEmoji>
+          )}
           <TypeLabel>YOUR ENGINEER TYPE</TypeLabel>
           <TypeName $color={engineerType.co}>{engineerType.n}</TypeName>
           <TypeDescription>{engineerType.d}</TypeDescription>

@@ -13,6 +13,7 @@ import {
   getStrengthText,
   getChallengeText,
 } from '../constants';
+import { AQS_IMAGES } from '../images';
 import { ParticleEffect } from './ParticleEffect';
 import { BarChart } from './BarChart';
 import {
@@ -104,7 +105,21 @@ export const RetrospectiveScreen: React.FC<RetrospectiveScreenProps> = ({
     <PageWrapper>
       <ParticleEffect />
       <Scanlines />
-      <Panel $visible={visible}>
+      
+      {/* Background Image Layer */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        backgroundImage: `url(${AQS_IMAGES.retro})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        opacity: 0.12,
+        filter: 'blur(2px)',
+        pointerEvents: 'none',
+        zIndex: 0,
+      }} />
+
+      <Panel $visible={visible} style={{ position: 'relative', zIndex: 1 }}>
         {/* ヘッダー */}
         <div style={{ textAlign: 'center', marginBottom: 22 }}>
           <div

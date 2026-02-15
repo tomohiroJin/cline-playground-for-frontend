@@ -76,6 +76,7 @@ export interface DerivedStats {
 
 /** エンジニアタイプ */
 export interface EngineerType {
+  id: string;
   n: string;
   em: string;
   co: string;

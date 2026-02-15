@@ -4,6 +4,7 @@
 import React from 'react';
 import { useKeys } from '../hooks';
 import { CONFIG } from '../constants';
+import { AQS_IMAGES } from '../images';
 import { ParticleEffect } from './ParticleEffect';
 import {
   PageWrapper,
@@ -49,7 +50,21 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({ onStart }) => {
     <PageWrapper>
       <ParticleEffect />
       <Scanlines />
-      <Panel $fadeIn={false}>
+      
+      {/* Background Image Layer */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        backgroundImage: `url(${AQS_IMAGES.title})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        opacity: 0.15,
+        filter: 'blur(2px)',
+        pointerEvents: 'none',
+        zIndex: 0,
+      }} />
+
+      <Panel $fadeIn={false} style={{ position: 'relative', zIndex: 1 }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <TitleGlow>AGILE QUIZ SUGOROKU</TitleGlow>
           <h1

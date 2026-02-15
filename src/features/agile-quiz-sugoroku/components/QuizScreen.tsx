@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import { useKeys } from '../hooks';
 import { GameEvent, Question, GameStats } from '../types';
 import { CONFIG, COLORS, OPTION_LABELS, EXPLANATIONS } from '../constants';
+import { AQS_IMAGES } from '../images';
 import {
   PageWrapper,
   Panel,
@@ -89,6 +90,7 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
   quizIndex,
 }) => {
   const [hoveredOption, setHoveredOption] = useState<number | null>(null);
+  const [imgError, setImgError] = useState(false);
   const event = events[eventIndex];
   const isEmergency = event.id === 'emergency';
   const answered = selectedAnswer !== null;
@@ -171,7 +173,22 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
 
         {/* イベント情報 */}
         <EventCard $isEmergency={isEmergency} $color={event.color}>
-          <EventIcon>{event.ic}</EventIcon>
+          {!imgError && AQS_IMAGES.events[event.id as keyof typeof AQS_IMAGES.events] ? (
+            <img
+              src={AQS_IMAGES.events[event.id as keyof typeof AQS_IMAGES.events]!}
+              alt={event.nm}
+              onError={() => setImgError(true)}
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: '50%',
+                objectFit: 'cover',
+                border: `2px solid ${event.color}`,
+              }}
+            />
+          ) : (
+            <EventIcon>{event.ic}</EventIcon>
+          )}
           <EventInfo>
             <EventName $isEmergency={isEmergency} $color={event.color}>
               {event.nm}
@@ -243,6 +260,23 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
         {answered && (
           <div>
             <ResultBanner $ok={selectedAnswer === quiz.a}>
+              <img
+                src={selectedAnswer === -1 
+                  ? AQS_IMAGES.feedback.timeup 
+                  : selectedAnswer === quiz.a 
+                    ? AQS_IMAGES.feedback.correct 
+                    : AQS_IMAGES.feedback.incorrect}
+                alt=""
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  marginBottom: 8,
+                  border: '2px solid white',
+                }}
+              />
               <BannerMessage>
                 {selectedAnswer === -1
                   ? '⏱️ TIME UP'
