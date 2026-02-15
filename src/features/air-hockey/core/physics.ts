@@ -1,8 +1,6 @@
-import { CONSTANTS } from './constants';
+import { getConstants, GameConstants } from './constants';
 import { Entity } from './types';
 import { distance, magnitude } from '../../../utils/math-utils';
-
-const { WIDTH: W, HEIGHT: H } = CONSTANTS.CANVAS;
 
 export const Physics = {
   detectCollision(ax: number, ay: number, ar: number, bx: number, by: number, br: number) {
@@ -49,8 +47,10 @@ export const Physics = {
     obj: T,
     radius: number,
     goalChecker: (x: number) => boolean,
-    onBounce: () => void
+    onBounce: () => void,
+    consts: GameConstants = getConstants()
   ): T {
+    const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
     let { x, y, vx, vy } = obj;
     let bounced = false;
 
@@ -78,15 +78,15 @@ export const Physics = {
     if (bounced && onBounce) onBounce();
     return { ...obj, x, y, vx, vy };
   },
-  applyFriction<T extends Entity>(obj: T): T {
+  applyFriction<T extends Entity>(obj: T, consts: GameConstants = getConstants()): T {
     let { vx, vy } = obj;
-    vx *= CONSTANTS.PHYSICS.FRICTION;
-    vy *= CONSTANTS.PHYSICS.FRICTION;
+    vx *= consts.PHYSICS.FRICTION;
+    vy *= consts.PHYSICS.FRICTION;
 
     const speed = magnitude(vx, vy);
-    if (speed > 0 && speed < CONSTANTS.PHYSICS.MIN_SPEED) {
-      vx = (vx / speed) * CONSTANTS.PHYSICS.MIN_SPEED;
-      vy = (vy / speed) * CONSTANTS.PHYSICS.MIN_SPEED;
+    if (speed > 0 && speed < consts.PHYSICS.MIN_SPEED) {
+      vx = (vx / speed) * consts.PHYSICS.MIN_SPEED;
+      vy = (vy / speed) * consts.PHYSICS.MIN_SPEED;
     }
     return { ...obj, vx, vy };
   },

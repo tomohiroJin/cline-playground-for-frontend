@@ -1,8 +1,5 @@
-import { CONSTANTS } from './constants';
+import { getConstants, GameConstants } from './constants';
 import { GameState, Mallet, Puck, Item, ItemType } from './types';
-
-const { WIDTH: W, HEIGHT: H } = CONSTANTS.CANVAS;
-const { ITEM: IR } = CONSTANTS.SIZES;
 
 const randomRange = (min: number, max: number) => Math.random() * (max - min) + min;
 
@@ -18,29 +15,39 @@ export const EntityFactory = {
   }),
   createItem: (
     template: { id: string; name: string; color: string; icon: string },
-    fromTop: boolean
-  ): Item => ({
-    ...template,
-    id: template.id as ItemType,
-    x: randomRange(50, W - 50),
-    y: fromTop ? 80 : H - 80,
-    vx: randomRange(-1, 1),
-    vy: fromTop ? 2 : -2,
-    r: IR,
-  }),
-  createGameState: (): GameState => ({
-    player: EntityFactory.createMallet(W / 2, H - 70),
-    cpu: EntityFactory.createMallet(W / 2, 70),
-    pucks: [EntityFactory.createPuck(W / 2, H / 2, randomRange(-0.5, 0.5), 1.5)],
-    items: [],
-    effects: {
-      player: { speed: null, invisible: 0 },
-      cpu: { speed: null, invisible: 0 },
-    },
-    lastItemSpawn: Date.now(),
-    flash: null,
-    goalEffect: null,
-    cpuTarget: null,
-    cpuTargetTime: 0,
-  }),
+    fromTop: boolean,
+    consts: GameConstants = getConstants()
+  ): Item => {
+    const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
+    const { ITEM: IR } = consts.SIZES;
+    return {
+      ...template,
+      id: template.id as ItemType,
+      x: randomRange(50, W - 50),
+      y: fromTop ? 80 : H - 80,
+      vx: randomRange(-1, 1),
+      vy: fromTop ? 2 : -2,
+      r: IR,
+    };
+  },
+  createGameState: (consts: GameConstants = getConstants()): GameState => {
+    const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
+    return {
+      player: EntityFactory.createMallet(W / 2, H - 70),
+      cpu: EntityFactory.createMallet(W / 2, 70),
+      pucks: [EntityFactory.createPuck(W / 2, H / 2, randomRange(-0.5, 0.5), Math.random() > 0.5 ? 1.5 : -1.5)],
+      items: [],
+      effects: {
+        player: { speed: null, invisible: 0 },
+        cpu: { speed: null, invisible: 0 },
+      },
+      lastItemSpawn: Date.now(),
+      flash: null,
+      goalEffect: null,
+      cpuTarget: null,
+      cpuTargetTime: 0,
+      fever: { active: false, lastGoalTime: Date.now(), extraPucks: 0 },
+      particles: [],
+    };
+  },
 };

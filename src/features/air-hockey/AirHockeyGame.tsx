@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { saveScore, getHighScore } from '../../utils/score-storage';
 import { EntityFactory } from './core/entities';
+import { getConstants } from './core/constants';
 import { createSoundSystem } from './core/sound';
 import { FIELDS } from './core/config';
-import { GameState, FieldConfig, Difficulty, SoundSystem } from './core/types';
+import { GameState, FieldConfig, Difficulty, SoundSystem, CanvasSize } from './core/types';
 import { useInput } from './hooks/useInput';
 import { useGameLoop } from './hooks/useGameLoop';
 import { TitleScreen } from './components/TitleScreen';
@@ -21,6 +22,7 @@ const AirHockeyGame: React.FC = () => {
   const [winner, setWinner] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   const [highScore, setHighScore] = useState(0);
+  const [canvasSize, setCanvasSize] = useState<CanvasSize>('standard');
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<GameState | null>(null);
@@ -57,7 +59,8 @@ const AirHockeyGame: React.FC = () => {
   }, []);
 
   const startGame = useCallback(() => {
-    gameRef.current = EntityFactory.createGameState();
+    const consts = getConstants(canvasSize);
+    gameRef.current = EntityFactory.createGameState(consts);
     scoreRef.current = { p: 0, c: 0 };
     setScores({ p: 0, c: 0 });
     setWinner(null);
@@ -65,14 +68,14 @@ const AirHockeyGame: React.FC = () => {
     setScreen('game');
     lastInputRef.current = Date.now();
     getSound().start();
-  }, [getSound]);
+  }, [getSound, canvasSize]);
 
-  const handleInput = useInput(gameRef, canvasRef, lastInputRef, screen, showHelp, setShowHelp);
+  const handleInput = useInput(gameRef, canvasRef, lastInputRef, screen, showHelp, setShowHelp, canvasSize);
 
   useGameLoop(
     screen, diff, field, winScore, showHelp, getSound,
     gameRef, canvasRef, lastInputRef, scoreRef,
-    setScores, setWinner, setScreen, setShowHelp
+    setScores, setWinner, setScreen, setShowHelp, canvasSize
   );
 
   return (
@@ -87,13 +90,15 @@ const AirHockeyGame: React.FC = () => {
           setWinScore={setWinScore}
           highScore={highScore}
           onStart={startGame}
+          canvasSize={canvasSize}
+          setCanvasSize={setCanvasSize}
         />
       )}
 
       {screen === 'game' && (
         <>
           <Scoreboard scores={scores} onMenuClick={() => setScreen('menu')} />
-          <Field canvasRef={canvasRef} onInput={handleInput} />
+          <Field canvasRef={canvasRef} onInput={handleInput} canvasSize={canvasSize} />
         </>
       )}
 

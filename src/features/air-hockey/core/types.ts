@@ -15,6 +15,7 @@ export type Mallet = Entity;
 export type Puck = Entity & {
   visible: boolean;
   invisibleCount: number;
+  trail?: Vector[];
 };
 
 export type ItemType = 'split' | 'speed' | 'invisible';
@@ -42,6 +43,23 @@ export type GoalEffect = {
   time: number;
 };
 
+export type FeverState = {
+  active: boolean;
+  lastGoalTime: number;
+  extraPucks: number;
+};
+
+export type Particle = {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  life: number;
+  maxLife: number;
+  color: string;
+  size: number;
+};
+
 export type GameState = {
   player: Mallet;
   cpu: Mallet;
@@ -53,6 +71,8 @@ export type GameState = {
   lastItemSpawn: number;
   cpuTarget: Vector | null;
   cpuTargetTime: number;
+  fever: FeverState;
+  particles: Particle[];
 };
 
 export type Difficulty = 'easy' | 'normal' | 'hard';
@@ -74,4 +94,12 @@ export type SoundSystem = {
   goal: () => void;
   lose: () => void;
   start: () => void;
+};
+
+export type CanvasSize = 'standard' | 'large';
+
+export type SizeConfig = {
+  readonly width: number;
+  readonly height: number;
+  readonly scale: number;
 };
