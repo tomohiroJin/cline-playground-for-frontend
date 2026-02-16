@@ -32,6 +32,9 @@ const RiskLcdPage = lazy(
 const KeysAndArmsPage = lazy(
   () => import(/* webpackChunkName: "KeysAndArmsPage" */ './pages/KeysAndArmsPage')
 );
+const PrimalPathPage = lazy(
+  () => import(/* webpackChunkName: "PrimalPathPage" */ './pages/PrimalPathPage')
+);
 
 // アプリケーションのルートコンテナ
 const AppContainer = styled.div`
@@ -164,6 +167,7 @@ const App: React.FC = () => {
                 <Route path="/labyrinth-echo" element={<LabyrinthEchoPage />} />
                 <Route path="/risk-lcd" element={<RiskLcdPage />} />
                 <Route path="/keys-and-arms" element={<KeysAndArmsPage />} />
+                <Route path="/primal-path" element={<PrimalPathPage />} />
               </Routes>
             </main>
           </Suspense>

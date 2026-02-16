@@ -389,6 +389,34 @@ const GameListPage: React.FC = () => {
             </PlayButton>
           </CardContent>
         </GameCardContainer>
+        <GameCardContainer
+          onClick={() => navigate('/primal-path')}
+          role="button"
+          aria-label="原始進化録 - PRIMAL PATH ゲームをプレイする"
+          tabIndex={0}
+          onKeyDown={e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              navigate('/primal-path');
+            }
+          }}
+        >
+          <CardImageArea
+            $customBg="linear-gradient(135deg, #0a0a12 0%, #1c1c2c 40%, #f0c04030 100%)"
+            role="img"
+            aria-label="原始進化録 - PRIMAL PATHのゲーム画面プレビュー"
+          />
+          <CardContent>
+            <CardTitle>原始進化録 - PRIMAL PATH</CardTitle>
+            <GameDescription>
+              文明を選び、進化を重ねて最終ボスに挑む自動戦闘ローグライト。
+              技術・生活・儀式の三大文明を育て、覚醒して神話を刻め。
+            </GameDescription>
+            <PlayButton aria-hidden="true" tabIndex={-1}>
+              Play Now <span>→</span>
+            </PlayButton>
+          </CardContent>
+        </GameCardContainer>
       </BentoGrid>
     </PageContainer>
   );
