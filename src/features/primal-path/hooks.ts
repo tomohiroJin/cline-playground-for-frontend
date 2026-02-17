@@ -26,7 +26,7 @@ type GameAction =
   | { type: 'SELECT_EVO'; evo: Evolution }
   | { type: 'PROCEED_AFTER_AWK' }
   | { type: 'PROCEED_TO_BATTLE' }
-  | { type: 'BATTLE_TICK'; rng?: () => number }
+  | { type: 'BATTLE_TICK'; nextRun: RunState }
   | { type: 'CHANGE_SPEED'; speed: number }
   | { type: 'SURRENDER' }
   | { type: 'AFTER_BATTLE' }
@@ -187,27 +187,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case 'BATTLE_TICK': {
-      if (!state.run || !state.run.en) return state;
-      const { nextRun, events } = tick(state.run, state.finalMode, action.rng);
-      let phase = state.phase;
-      let finalMode = state.finalMode;
-
-      for (const ev of events) {
-        if (ev.type === 'player_dead') {
-          return { ...state, run: nextRun, phase: 'over', gameResult: false, finalMode: false };
-        }
-        if (ev.type === 'enemy_killed') {
-          return { ...state, run: nextRun };
-        }
-        if (ev.type === 'final_boss_killed') {
-          return { ...state, run: nextRun };
-        }
-      }
-      return { ...state, run: nextRun };
+      return { ...state, run: action.nextRun };
     }
 
     case 'AFTER_BATTLE': {
-      if (!state.run) return state;
+      if (!state.run || state.phase !== 'battle') return state;
       const { nextRun, biomeCleared } = afterBattle(state.run);
       if (biomeCleared) {
         const dead = deadAllies(nextRun.al);
@@ -235,17 +219,24 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case 'FINAL_BOSS_KILLED': {
-      if (!state.run) return state;
+      if (!state.run || state.phase !== 'battle') return state;
       const { nextRun, gameWon } = handleFinalBossKill(state.run);
       if (gameWon) {
-        return { ...state, run: nextRun, phase: 'over', gameResult: true, finalMode: false };
+        const boneReward = calcBoneReward(nextRun, true);
+        const save = {
+          ...state.save,
+          bones: state.save.bones + boneReward,
+          clears: state.save.clears + 1,
+          best: { ...state.save.best, [nextRun.di]: 1 },
+        };
+        return { ...state, save, run: nextRun, phase: 'over', gameResult: true, finalMode: false };
       }
       // Phase 2
       return { ...state, run: nextRun, phase: 'battle' };
     }
 
     case 'GAME_OVER': {
-      if (!state.run) return state;
+      if (!state.run || state.phase !== 'battle') return state;
       const boneReward = calcBoneReward(state.run, action.won);
       const save = { ...state.save, bones: state.save.bones + boneReward };
       if (action.won) {
@@ -258,7 +249,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'SURRENDER': {
       if (!state.run) return state;
       const next = { ...state.run, bE: Math.floor(state.run.bE / 2) };
-      return { ...state, run: next, phase: 'over', gameResult: false, finalMode: false };
+      const boneReward = calcBoneReward(next, false);
+      const save = { ...state.save, bones: state.save.bones + boneReward };
+      return { ...state, save, run: next, phase: 'over', gameResult: false, finalMode: false };
     }
 
     case 'CHANGE_SPEED':
@@ -322,6 +315,7 @@ export function useBattle(
   onEvents?: (events: TickEvent[]) => void,
 ) {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const delayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stateRef = useRef(state);
   stateRef.current = state;
 
@@ -329,6 +323,10 @@ export function useBattle(
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
+    }
+    if (delayRef.current) {
+      clearTimeout(delayRef.current);
+      delayRef.current = null;
     }
   }, []);
 
@@ -343,13 +341,13 @@ export function useBattle(
         return;
       }
       const { nextRun, events } = tick(s.run, s.finalMode);
-      // Process events before dispatch
+
+      // Process events — single pass, no duplicate SFX
       let dead = false;
       let enemyKilled = false;
       let finalBossKilled = false;
 
       for (const ev of events) {
-        if (ev.type === 'sfx') onEvents?.([ev]);
         if (ev.type === 'player_dead') dead = true;
         if (ev.type === 'enemy_killed') enemyKilled = true;
         if (ev.type === 'final_boss_killed') finalBossKilled = true;
@@ -358,21 +356,30 @@ export function useBattle(
 
       if (dead) {
         clearTimer();
-        dispatch({ type: 'GAME_OVER', won: false });
+        dispatch({ type: 'BATTLE_TICK', nextRun }); // Show HP=0
+        delayRef.current = setTimeout(() => {
+          dispatch({ type: 'GAME_OVER', won: false });
+        }, 600);
         return;
       }
       if (finalBossKilled) {
         clearTimer();
-        dispatch({ type: 'FINAL_BOSS_KILLED' });
+        dispatch({ type: 'BATTLE_TICK', nextRun }); // Show boss HP=0
+        delayRef.current = setTimeout(() => {
+          dispatch({ type: 'FINAL_BOSS_KILLED' });
+        }, 800);
         return;
       }
       if (enemyKilled) {
         clearTimer();
-        dispatch({ type: 'AFTER_BATTLE' });
+        dispatch({ type: 'BATTLE_TICK', nextRun }); // Show enemy HP=0
+        delayRef.current = setTimeout(() => {
+          dispatch({ type: 'AFTER_BATTLE' });
+        }, 800);
         return;
       }
-      // Just update run state
-      dispatch({ type: 'BATTLE_TICK' });
+      // Normal tick — sync state
+      dispatch({ type: 'BATTLE_TICK', nextRun });
     }, state.battleSpd);
 
     return clearTimer;
