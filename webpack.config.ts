@@ -76,6 +76,7 @@ const config: Configuration = {
     port: 3000,
     open: true,
     hot: true,
+    liveReload: false,
     historyApiFallback: true,
   },
 };
