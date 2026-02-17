@@ -19,6 +19,7 @@
 | 迷宮の残響 | テキスト探索ローグライト | [README](src/features/labyrinth-echo/README.md) |
 | RISK LCD | レーン回避×ローグライトビルド | [README](src/features/risk-lcd/README.md) |
 | KEYS & ARMS | レトロLCDアクション（React コンポーネント移植済） | [README](src/features/keys-and-arms/README.md) |
+| 原始進化録 - PRIMAL PATH | 自動戦闘ローグライト | [README](src/features/primal-path/README.md) |
 
 ## 主な機能
 

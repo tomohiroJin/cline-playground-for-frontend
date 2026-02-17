@@ -73,10 +73,10 @@
 
 ## Phase 7: README 作成・更新
 
-- [ ] **T-040**: `src/features/primal-path/README.md` — 新規作成
+- [x] **T-040**: `src/features/primal-path/README.md` — 新規作成
   - 概要、操作方法、ファイル構成、状態管理、使用技術、ゲームシステム
   - Labyrinth Echo パターン準拠
-- [ ] **T-041**: `README.md`（ルート） — ゲーム一覧テーブルに PrimalPath 行を追加
+- [x] **T-041**: `README.md`（ルート） — ゲーム一覧テーブルに PrimalPath 行を追加
 
 ## Phase 8: リファクタリング（最小限：関数分割のみ）
 
