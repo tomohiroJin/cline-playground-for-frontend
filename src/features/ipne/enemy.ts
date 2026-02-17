@@ -56,7 +56,7 @@ const ENEMY_CONFIGS = {
   },
   [EnemyType.MEGA_BOSS]: {
     hp: 80,
-    damage: 6,
+    damage: 4,
     speed: 1.8,
     detectionRange: 12,
     chaseRange: 20,

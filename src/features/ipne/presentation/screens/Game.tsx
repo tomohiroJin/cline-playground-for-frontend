@@ -127,6 +127,8 @@ import {
   SpriteSheetDefinition,
   FLOOR_SPRITE,
   WALL_SPRITE,
+  getStageFloorSprite,
+  getStageWallSprite,
   GOAL_SPRITE_SHEET,
   START_SPRITE,
   getPlayerSpriteSheet,
@@ -482,6 +484,10 @@ export const GameScreen: React.FC<{
     const drawHeight = useFullMap ? mapHeight : viewport.height;
     const spriteScale = tileSize / SPRITE_SIZES.base;
 
+    // ステージ別パレットのタイルスプライトを使用
+    const stageFloor = currentStage ? getStageFloorSprite(currentStage) : FLOOR_SPRITE;
+    const stageWall = currentStage ? getStageWallSprite(currentStage) : WALL_SPRITE;
+
     for (let vy = 0; vy < drawHeight; vy++) {
       for (let vx = 0; vx < drawWidth; vx++) {
         const worldX = useFullMap ? vx : viewport.x + vx;
@@ -497,13 +503,13 @@ export const GameScreen: React.FC<{
         const tileDrawY = offsetY + vy * tileSize;
 
         if (tile === TileType.WALL) {
-          spriteRenderer.drawSprite(ctx, WALL_SPRITE, tileDrawX, tileDrawY, spriteScale);
+          spriteRenderer.drawSprite(ctx, stageWall, tileDrawX, tileDrawY, spriteScale);
         } else if (tile === TileType.GOAL) {
           spriteRenderer.drawAnimatedSprite(ctx, GOAL_SPRITE_SHEET, now, tileDrawX, tileDrawY, spriteScale);
         } else if (tile === TileType.START) {
           spriteRenderer.drawSprite(ctx, START_SPRITE, tileDrawX, tileDrawY, spriteScale);
         } else {
-          spriteRenderer.drawSprite(ctx, FLOOR_SPRITE, tileDrawX, tileDrawY, spriteScale);
+          spriteRenderer.drawSprite(ctx, stageFloor, tileDrawX, tileDrawY, spriteScale);
         }
 
         // グリッド線（全体表示時は省略）

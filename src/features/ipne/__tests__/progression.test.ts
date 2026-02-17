@@ -16,60 +16,71 @@ import { PlayerStats, StatType } from '../types';
 describe('progression', () => {
   describe('KILL_COUNT_TABLE', () => {
     test('各レベルの必要累計撃破数が正しいこと', () => {
-      expect(KILL_COUNT_TABLE[2]).toBe(1);   // Lv1→2: 累計1
-      expect(KILL_COUNT_TABLE[3]).toBe(3);   // Lv2→3: 累計3
-      expect(KILL_COUNT_TABLE[4]).toBe(5);   // Lv3→4: 累計5
-      expect(KILL_COUNT_TABLE[5]).toBe(7);   // Lv4→5: 累計7
-      expect(KILL_COUNT_TABLE[6]).toBe(10);  // Lv5→6: 累計10
-      expect(KILL_COUNT_TABLE[7]).toBe(13);  // Lv6→7: 累計13
-      expect(KILL_COUNT_TABLE[8]).toBe(17);  // Lv7→8: 累計17
-      expect(KILL_COUNT_TABLE[9]).toBe(21);  // Lv8→9: 累計21
-      expect(KILL_COUNT_TABLE[10]).toBe(25); // Lv9→10: 累計25
+      // ステージ1（maxLevel=3）
+      expect(KILL_COUNT_TABLE[1]).toBe(0);     // 初期状態
+      expect(KILL_COUNT_TABLE[2]).toBe(3);     // 3体撃破でLv2
+      expect(KILL_COUNT_TABLE[3]).toBe(7);     // 7体撃破でLv3
+      // ステージ2（maxLevel=6）
+      expect(KILL_COUNT_TABLE[4]).toBe(12);    // 累計12体でLv4
+      expect(KILL_COUNT_TABLE[5]).toBe(18);    // 累計18体でLv5
+      expect(KILL_COUNT_TABLE[6]).toBe(25);    // 累計25体でLv6
+      // ステージ3（maxLevel=9）
+      expect(KILL_COUNT_TABLE[7]).toBe(33);    // 累計33体でLv7
+      expect(KILL_COUNT_TABLE[8]).toBe(42);    // 累計42体でLv8
+      expect(KILL_COUNT_TABLE[9]).toBe(52);    // 累計52体でLv9
+      // ステージ4（maxLevel=12）
+      expect(KILL_COUNT_TABLE[10]).toBe(63);   // 累計63体でLv10
+      expect(KILL_COUNT_TABLE[11]).toBe(75);   // 累計75体でLv11
+      expect(KILL_COUNT_TABLE[12]).toBe(88);   // 累計88体でLv12
+      // ステージ5（maxLevel=15）
+      expect(KILL_COUNT_TABLE[13]).toBe(102);  // 累計102体でLv13
+      expect(KILL_COUNT_TABLE[14]).toBe(118);  // 累計118体でLv14
+      expect(KILL_COUNT_TABLE[15]).toBe(135);  // 累計135体でLv15
     });
   });
 
   describe('getKillCountForLevel', () => {
     test('レベルに必要な累計撃破数を返すこと', () => {
       expect(getKillCountForLevel(1)).toBe(0);
-      expect(getKillCountForLevel(2)).toBe(1);
-      expect(getKillCountForLevel(10)).toBe(25);
+      expect(getKillCountForLevel(2)).toBe(3);
+      expect(getKillCountForLevel(10)).toBe(63);
     });
   });
 
   describe('getLevelFromKillCount', () => {
     test('撃破数からレベルが正しく計算されること', () => {
       expect(getLevelFromKillCount(0)).toBe(1);
-      expect(getLevelFromKillCount(1)).toBe(2);
-      expect(getLevelFromKillCount(2)).toBe(2);
-      expect(getLevelFromKillCount(3)).toBe(3);
-      expect(getLevelFromKillCount(25)).toBe(10);
+      expect(getLevelFromKillCount(3)).toBe(2);
+      expect(getLevelFromKillCount(6)).toBe(2);
+      expect(getLevelFromKillCount(7)).toBe(3);
+      expect(getLevelFromKillCount(63)).toBe(10);
     });
 
     test('境界値でのレベル判定が正しいこと', () => {
-      expect(getLevelFromKillCount(4)).toBe(3);  // 累計5未満
-      expect(getLevelFromKillCount(5)).toBe(4);  // 累計5でLv4
-      expect(getLevelFromKillCount(24)).toBe(9); // 累計25未満
-      expect(getLevelFromKillCount(25)).toBe(10);// 累計25でLv10
+      expect(getLevelFromKillCount(11)).toBe(3);  // 累計12未満
+      expect(getLevelFromKillCount(12)).toBe(4);  // 累計12でLv4
+      expect(getLevelFromKillCount(62)).toBe(9);  // 累計63未満
+      expect(getLevelFromKillCount(63)).toBe(10); // 累計63でLv10
     });
 
     test('最大レベルを超えないこと', () => {
-      expect(getLevelFromKillCount(100)).toBe(15);
+      expect(getLevelFromKillCount(200)).toBe(15);
     });
   });
 
   describe('shouldLevelUp', () => {
     test('撃破数が足りるとレベルアップ可能であること', () => {
-      expect(shouldLevelUp(1, 1)).toBe(true);  // Lv1, 1体撃破 → Lv2へ
-      expect(shouldLevelUp(2, 3)).toBe(true);  // Lv2, 3体撃破 → Lv3へ
+      expect(shouldLevelUp(1, 3)).toBe(true);  // Lv1, 3体撃破 → Lv2へ
+      expect(shouldLevelUp(2, 7)).toBe(true);  // Lv2, 7体撃破 → Lv3へ
     });
 
     test('撃破数が足りないとレベルアップ不可であること', () => {
       expect(shouldLevelUp(1, 0)).toBe(false); // Lv1, 0体撃破
-      expect(shouldLevelUp(2, 2)).toBe(false); // Lv2, 2体撃破（3必要）
+      expect(shouldLevelUp(1, 2)).toBe(false); // Lv1, 2体撃破（3必要）
     });
 
     test('最大レベルではレベルアップ不可であること', () => {
-      expect(shouldLevelUp(15, 100)).toBe(false);
+      expect(shouldLevelUp(15, 200)).toBe(false);
     });
   });
 
@@ -182,13 +193,13 @@ describe('progression', () => {
 
   describe('getNextKillsRequired', () => {
     test('次レベルまでの必要撃破数を返すこと', () => {
-      expect(getNextKillsRequired(1, 0)).toBe(1);  // Lv1, 0体 → あと1体
-      expect(getNextKillsRequired(2, 1)).toBe(2);  // Lv2, 1体 → あと2体（3-1）
-      expect(getNextKillsRequired(2, 2)).toBe(1);  // Lv2, 2体 → あと1体
+      expect(getNextKillsRequired(1, 0)).toBe(3);  // Lv1, 0体 → あと3体
+      expect(getNextKillsRequired(1, 2)).toBe(1);  // Lv1, 2体 → あと1体
+      expect(getNextKillsRequired(2, 5)).toBe(2);  // Lv2, 5体 → あと2体（7-5）
     });
 
     test('最大レベルでは0を返すこと', () => {
-      expect(getNextKillsRequired(15, 60)).toBe(0);
+      expect(getNextKillsRequired(15, 135)).toBe(0);
     });
   });
 

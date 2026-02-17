@@ -1391,8 +1391,9 @@ export const RemainingPointsText = styled.p`
 // ステージ番号表示
 export const StageIndicator = styled.div`
   position: absolute;
-  top: 1rem;
-  right: 1rem;
+  top: 3rem;
+  left: 50%;
+  transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.6);
   border: 1px solid rgba(251, 191, 36, 0.4);
   border-radius: 0.5rem;
@@ -1402,4 +1403,10 @@ export const StageIndicator = styled.div`
   font-size: 0.85rem;
   font-weight: bold;
   color: #fbbf24;
+
+  @media (max-width: 480px) {
+    top: 2.5rem;
+    font-size: 0.75rem;
+    padding: 0.2rem 0.6rem;
+  }
 `;

@@ -66,6 +66,7 @@ export const createPlayer = (
     slowedUntil: 0,
     // MVP6追加
     hasKey: false,
+    lastRegenAt: 0,
   };
 };
 

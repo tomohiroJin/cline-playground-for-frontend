@@ -34,7 +34,7 @@ const STAGE_1: StageConfig = {
     wallCount: 6,
     wallRatio: { breakable: 0.5, passable: 0.3, invisible: 0.2 },
   },
-  maxLevel: 11,
+  maxLevel: 3,
   bossType: 'boss',
 };
 
@@ -69,7 +69,7 @@ const STAGE_2: StageConfig = {
     wallCount: 8,
     wallRatio: { breakable: 0.5, passable: 0.3, invisible: 0.2 },
   },
-  maxLevel: 12,
+  maxLevel: 6,
   bossType: 'boss',
 };
 
@@ -104,7 +104,7 @@ const STAGE_3: StageConfig = {
     wallCount: 10,
     wallRatio: { breakable: 0.5, passable: 0.3, invisible: 0.2 },
   },
-  maxLevel: 13,
+  maxLevel: 9,
   bossType: 'boss',
 };
 
@@ -139,7 +139,7 @@ const STAGE_4: StageConfig = {
     wallCount: 16,
     wallRatio: { breakable: 0.6, passable: 0.3, invisible: 0.1 },
   },
-  maxLevel: 14,
+  maxLevel: 12,
   bossType: 'boss',
 };
 
@@ -165,7 +165,7 @@ const STAGE_5: StageConfig = {
   },
   scaling: {
     hp: 2.5,
-    damage: 2.0,
+    damage: 1.8,
     speed: 1.25,
   },
   gimmicks: {

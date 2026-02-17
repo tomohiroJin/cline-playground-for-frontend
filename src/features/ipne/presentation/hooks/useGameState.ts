@@ -216,6 +216,7 @@ export function useGameState(): GameState {
         invincibleUntil: 0,
         attackCooldownUntil: 0,
         slowedUntil: 0,
+        lastRegenAt: 0,
       };
       setPlayer(carriedPlayer);
     } else {

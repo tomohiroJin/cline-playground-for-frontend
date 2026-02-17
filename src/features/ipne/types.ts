@@ -178,6 +178,8 @@ export interface Player {
   slowedUntil: number;
   // MVP6追加
   hasKey: boolean;
+  /** 最後にリジェネが発動した時刻（ms） */
+  lastRegenAt: number;
 }
 
 // ===== 迷路生成関連の型定義 =====

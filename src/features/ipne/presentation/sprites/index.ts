@@ -16,7 +16,7 @@ export type { SpriteSheetDefinition } from './spriteSheet';
 export { SpriteRenderer } from './spriteRenderer';
 
 // タイルスプライト
-export { FLOOR_SPRITE, WALL_SPRITE, GOAL_SPRITE_SHEET, START_SPRITE } from './tileSprites';
+export { FLOOR_SPRITE, WALL_SPRITE, GOAL_SPRITE_SHEET, START_SPRITE, getStageFloorSprite, getStageWallSprite } from './tileSprites';
 
 // プレイヤースプライト
 export { WARRIOR_SPRITES, THIEF_SPRITES, getPlayerSpriteSheet } from './playerSprites';
