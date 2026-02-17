@@ -192,16 +192,16 @@ describe('player', () => {
     });
 
     test('レベルアップ条件で正しくフラグが立つこと', () => {
-      const player = { ...createPlayer(1, 1), killCount: 2 };
+      const player = createPlayer(1, 1);
       const result = incrementKillCount(player);
-      expect(result.shouldLevelUp).toBe(true); // 3体でLv2へ
+      expect(result.shouldLevelUp).toBe(true); // 1体でLv2へ
     });
 
     test('レベルアップ条件を満たさない場合フラグが立たないこと', () => {
-      const player = { ...createPlayer(1, 1), level: 2, killCount: 4 };
+      const player = { ...createPlayer(1, 1), level: 3, killCount: 2 };
       const result = incrementKillCount(player);
-      expect(result.player.killCount).toBe(5);
-      expect(result.shouldLevelUp).toBe(false); // 5体ではLv3に届かない（7必要）
+      expect(result.player.killCount).toBe(3);
+      expect(result.shouldLevelUp).toBe(false); // 3体ではLv4に届かない（4必要）
     });
   });
 

@@ -26,7 +26,7 @@ describe('stageConfig', () => {
       }
     });
 
-    test('ステージ1: 迷路80x80、敵25体、bossType=boss、maxLevel=3', () => {
+    test('ステージ1: 迷路80x80、敵25体、bossType=boss、maxLevel=10', () => {
       const config = STAGE_CONFIGS[1];
       expect(config.maze.width).toBe(80);
       expect(config.maze.height).toBe(80);
@@ -39,10 +39,10 @@ describe('stageConfig', () => {
         config.enemies.miniBoss;
       expect(totalEnemies).toBe(25);
       expect(config.bossType).toBe('boss');
-      expect(config.maxLevel).toBe(3);
+      expect(config.maxLevel).toBe(10);
     });
 
-    test('ステージ2: 迷路85x85、敵31体、bossType=boss、maxLevel=6', () => {
+    test('ステージ2: 迷路85x85、敵31体、bossType=boss、maxLevel=13', () => {
       const config = STAGE_CONFIGS[2];
       expect(config.maze.width).toBe(85);
       expect(config.maze.height).toBe(85);
@@ -55,10 +55,10 @@ describe('stageConfig', () => {
         config.enemies.miniBoss;
       expect(totalEnemies).toBe(31);
       expect(config.bossType).toBe('boss');
-      expect(config.maxLevel).toBe(6);
+      expect(config.maxLevel).toBe(13);
     });
 
-    test('ステージ3: 迷路90x90、敵40体、bossType=boss、maxLevel=9', () => {
+    test('ステージ3: 迷路90x90、敵40体、bossType=boss、maxLevel=16', () => {
       const config = STAGE_CONFIGS[3];
       expect(config.maze.width).toBe(90);
       expect(config.maze.height).toBe(90);
@@ -71,10 +71,10 @@ describe('stageConfig', () => {
         config.enemies.miniBoss;
       expect(totalEnemies).toBe(40);
       expect(config.bossType).toBe('boss');
-      expect(config.maxLevel).toBe(9);
+      expect(config.maxLevel).toBe(16);
     });
 
-    test('ステージ4: 迷路95x95、敵47体、bossType=boss、maxLevel=12', () => {
+    test('ステージ4: 迷路95x95、敵47体、bossType=boss、maxLevel=19', () => {
       const config = STAGE_CONFIGS[4];
       expect(config.maze.width).toBe(95);
       expect(config.maze.height).toBe(95);
@@ -87,10 +87,10 @@ describe('stageConfig', () => {
         config.enemies.miniBoss;
       expect(totalEnemies).toBe(47);
       expect(config.bossType).toBe('boss');
-      expect(config.maxLevel).toBe(12);
+      expect(config.maxLevel).toBe(19);
     });
 
-    test('ステージ5: 迷路100x100、敵55体、bossType=mega_boss、maxLevel=15', () => {
+    test('ステージ5: 迷路100x100、敵55体、bossType=mega_boss、maxLevel=22', () => {
       const config = STAGE_CONFIGS[5];
       expect(config.maze.width).toBe(100);
       expect(config.maze.height).toBe(100);
@@ -103,7 +103,7 @@ describe('stageConfig', () => {
         config.enemies.miniBoss;
       expect(totalEnemies).toBe(55);
       expect(config.bossType).toBe('mega_boss');
-      expect(config.maxLevel).toBe(15);
+      expect(config.maxLevel).toBe(22);
     });
   });
 
