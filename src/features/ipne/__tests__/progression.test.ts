@@ -53,7 +53,7 @@ describe('progression', () => {
     });
 
     test('最大レベルを超えないこと', () => {
-      expect(getLevelFromKillCount(100)).toBe(10);
+      expect(getLevelFromKillCount(100)).toBe(15);
     });
   });
 
@@ -69,7 +69,7 @@ describe('progression', () => {
     });
 
     test('最大レベルではレベルアップ不可であること', () => {
-      expect(shouldLevelUp(10, 100)).toBe(false);
+      expect(shouldLevelUp(15, 100)).toBe(false);
     });
   });
 
@@ -188,7 +188,7 @@ describe('progression', () => {
     });
 
     test('最大レベルでは0を返すこと', () => {
-      expect(getNextKillsRequired(10, 25)).toBe(0);
+      expect(getNextKillsRequired(15, 60)).toBe(0);
     });
   });
 

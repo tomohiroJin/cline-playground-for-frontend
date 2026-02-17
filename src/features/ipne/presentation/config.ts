@@ -43,8 +43,12 @@ export const SPRITE_SIZES = {
   base: 16,
   /** アイテムスプライトサイズ */
   item: 8,
+  /** ミニボススプライトサイズ */
+  miniBoss: 20,
   /** ボススプライトサイズ */
   boss: 24,
+  /** メガボススプライトサイズ */
+  megaBoss: 28,
 } as const;
 
 // プロローグテキスト

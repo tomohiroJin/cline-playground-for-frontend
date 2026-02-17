@@ -16,12 +16,12 @@ import endingImageD from '../../assets/images/ipne_ending_d.webp';
 import gameOverImage from '../../assets/images/ipne_game_over.webp';
 import endingVideoS from '../../assets/videos/ipne_ending_s.mp4';
 
-// 評価閾値（ミリ秒）
+// 評価閾値（ミリ秒）— 5ステージ合計基準
 export const RATING_THRESHOLDS = {
-  S: 120000,  // 2分
-  A: 180000,  // 3分
-  B: 300000,  // 5分
-  C: 480000,  // 8分
+  S: 600000,   // 10分
+  A: 900000,   // 15分
+  B: 1500000,  // 25分
+  C: 2400000,  // 40分
 } as const;
 
 // 評価色
@@ -33,27 +33,27 @@ export const RATING_COLORS = {
   d: '#6b7280', // 灰色
 } as const;
 
-// エピローグテキスト定義
+// エピローグテキスト定義 — 5ステージ用
 const EPILOGUE_TEXTS: Record<RatingValue, EpilogueText> = {
   s: {
-    title: '伝説の英雄',
-    text: '驚異的な速さで迷宮を踏破した。その名は永遠に語り継がれるだろう。',
+    title: '伝説の調査記録',
+    text: '全5層を驚異的な速さで踏破した。この調査記録は、後の探索者たちの指針となるだろう。',
   },
   a: {
-    title: '熟練の冒険者',
-    text: '見事な実力を発揮し、迷宮を制覇した。さらなる高みを目指せるはずだ。',
+    title: '優秀な調査報告',
+    text: '確かな実力で全層を制覇した。解析班からも高い評価が寄せられている。',
   },
   b: {
-    title: '確かな実力',
-    text: '着実に迷宮を攻略した。経験を積めば、より速くクリアできるだろう。',
+    title: '堅実な踏破記録',
+    text: '着実に5つの層を攻略した。得られたデータは今後の調査に大きく貢献する。',
   },
   c: {
-    title: '生還者',
-    text: '困難な迷宮から無事に脱出した。この経験は次の冒険に活きるはずだ。',
+    title: '生還報告',
+    text: '幾度も危機を乗り越え、全層を踏破した。何より、生きて帰れたことが最大の成果だ。',
   },
   d: {
-    title: '生存の証',
-    text: '長い戦いの末、ようやく迷宮から抜け出した。生きて帰れたことが何よりの成果だ。',
+    title: '辛勝の脱出記録',
+    text: '長い戦いの末、ようやく迷宮の封鎖が解除された。記録に残る限りの困難を極めた調査だった。',
   },
 };
 

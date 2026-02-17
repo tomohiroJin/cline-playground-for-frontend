@@ -30,6 +30,7 @@ import {
 import { PageContainer } from './IpnePage.styles';
 import {
   stopTimer,
+  pauseTimer,
   getElapsedTime,
 } from '../features/ipne/timer';
 import {
@@ -58,6 +59,12 @@ import { PrologueScreen } from '../features/ipne/presentation/screens/Prologue';
 import { GameScreen, ClassSelectScreen, LevelUpOverlayComponent, EffectEvent } from '../features/ipne/presentation/screens/Game';
 import { EffectType } from '../features/ipne/presentation/effects';
 import { ClearScreen as ClearScreenComponent, GameOverScreen } from '../features/ipne/presentation/screens/Clear';
+import { StageClearScreen } from '../features/ipne/presentation/screens/StageClear';
+import { StageStoryScreen } from '../features/ipne/presentation/screens/StageStory';
+import { StageRewardScreen } from '../features/ipne/presentation/screens/StageReward';
+import { FinalClearScreen } from '../features/ipne/presentation/screens/FinalClear';
+import { getStageStory } from '../features/ipne/story';
+import { isFinalStage } from '../features/ipne/stageConfig';
 
 // カスタムフック
 import { useGameState } from '../features/ipne/presentation/hooks/useGameState';
@@ -92,7 +99,7 @@ const IpnePage: React.FC = () => {
     setMapState: state.setMapState,
     setIsGameOver: state.setIsGameOver,
     setScreen: state.setScreen,
-  }, effectQueueRef);
+  }, effectQueueRef, state.currentStageConfig.maxLevel);
 
   // MVP3: レベルアップ選択（ポイント制対応）
   const handleLevelUpChoice = useCallback((stat: StatTypeValue) => {
@@ -211,20 +218,30 @@ const IpnePage: React.FC = () => {
       if (isGoal(state.map, newPlayer.x, newPlayer.y)) {
         if (canGoal(newPlayer)) {
           playDoorOpenSound();
-          const now = Date.now();
-          const stoppedTimer = stopTimer(state.timer, now);
-          const elapsed = getElapsedTime(stoppedTimer, now);
-          const rating = calculateRating(elapsed);
 
-          state.setClearTime(elapsed);
-          state.setClearRating(rating);
-          state.setTimer(stoppedTimer);
+          if (isFinalStage(state.currentStage)) {
+            // 最終ステージクリア → タイマー停止・評価計算・記録保存
+            const now = Date.now();
+            const stoppedTimer = stopTimer(state.timer, now);
+            const elapsed = getElapsedTime(stoppedTimer, now);
+            const rating = calculateRating(elapsed);
 
-          const record = createRecord(elapsed, rating, state.selectedClass);
-          const { isNewBest: newBest } = saveRecord(record);
-          state.setIsNewBest(newBest);
+            state.setClearTime(elapsed);
+            state.setClearRating(rating);
+            state.setTimer(stoppedTimer);
 
-          state.setScreen(ScreenState.CLEAR);
+            const record = createRecord(elapsed, rating, state.selectedClass);
+            record.stagesCleared = state.currentStage;
+            const { isNewBest: newBest } = saveRecord(record);
+            state.setIsNewBest(newBest);
+
+            state.setScreen(ScreenState.FINAL_CLEAR);
+          } else {
+            // 中間ステージクリア → タイマー一時停止・ステージクリア画面へ
+            const now = Date.now();
+            state.setTimer(prev => pauseTimer(prev, now));
+            state.setScreen(ScreenState.STAGE_CLEAR);
+          }
         } else {
           state.setShowKeyRequiredMessage(true);
           setTimeout(() => state.setShowKeyRequiredMessage(false), 2000);
@@ -296,11 +313,15 @@ const IpnePage: React.FC = () => {
     let updatedItems = state.itemsRef.current;
 
     if (killedEnemies.length > 0) {
-      const killedBoss = killedEnemies.some(e => e.type === EnemyType.BOSS);
+      const killedBoss = killedEnemies.some(e =>
+        e.type === EnemyType.BOSS || e.type === EnemyType.MINI_BOSS || e.type === EnemyType.MEGA_BOSS
+      );
       if (killedBoss) {
         playBossKillSound();
         // ボス撃破エフェクト
-        const boss = killedEnemies.find(e => e.type === EnemyType.BOSS);
+        const boss = killedEnemies.find(e =>
+          e.type === EnemyType.BOSS || e.type === EnemyType.MINI_BOSS || e.type === EnemyType.MEGA_BOSS
+        );
         if (boss) {
           effectQueueRef.current.push({ type: EffectType.BOSS_KILL, x: boss.x, y: boss.y });
         }
@@ -322,7 +343,7 @@ const IpnePage: React.FC = () => {
 
         const effectiveLevel = updatedPlayer.level + state.pendingLevelPointsRef.current + addedPointsInLoop;
 
-        if (effectiveLevel >= MAX_LEVEL) continue;
+        if (effectiveLevel >= state.currentStageConfig.maxLevel) continue;
 
         if (shouldLevelUp(effectiveLevel, updatedPlayer.killCount)) {
           state.setPendingLevelPoints(prev => prev + 1);
@@ -385,6 +406,8 @@ const IpnePage: React.FC = () => {
             onOpenLevelUpModal={handleOpenLevelUpModal}
             effectQueueRef={effectQueueRef}
             isDying={state.screen === ScreenState.DYING}
+            currentStage={state.currentStage}
+            maxLevel={state.currentStageConfig.maxLevel}
           />
           {state.showLevelUpModal && state.pendingLevelPoints > 0 && (
             <LevelUpOverlayComponent
@@ -396,8 +419,29 @@ const IpnePage: React.FC = () => {
           )}
         </>
       )}
-      {state.screen === ScreenState.CLEAR && (
-        <ClearScreenComponent
+      {state.screen === ScreenState.STAGE_CLEAR && (
+        <StageClearScreen
+          stage={state.currentStage}
+          playerLevel={state.player.level}
+          playerHp={state.player.hp}
+          playerMaxHp={state.player.maxHp}
+          onNext={state.handleStageClearNext}
+        />
+      )}
+      {state.screen === ScreenState.STAGE_STORY && (
+        <StageStoryScreen
+          story={getStageStory(state.currentStage)}
+          onNext={state.handleStageStoryNext}
+        />
+      )}
+      {state.screen === ScreenState.STAGE_REWARD && (
+        <StageRewardScreen
+          onSelect={state.handleRewardSelect}
+          canChoose={state.canChooseStageReward}
+        />
+      )}
+      {state.screen === ScreenState.FINAL_CLEAR && (
+        <FinalClearScreen
           onRetry={state.handleRetry}
           onBackToTitle={state.handleBackToTitle}
           clearTime={state.clearTime}

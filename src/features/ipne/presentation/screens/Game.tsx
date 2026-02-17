@@ -64,6 +64,8 @@ import {
   EnhanceButtonText,
   LevelUpCloseButton,
   RemainingPointsText,
+  // 5ステージ制
+  StageIndicator,
 } from '../../../../pages/IpnePage.styles';
 import {
   Direction,
@@ -113,6 +115,7 @@ import {
   canChooseStat,
   getNextKillsRequired,
   StatTypeValue,
+  StageNumber,
 } from '../../index';
 import { GameTimer } from '../../timer';
 import { getElapsedTime, formatTimeShort } from '../../timer';
@@ -336,6 +339,9 @@ export const GameScreen: React.FC<{
   effectQueueRef?: React.MutableRefObject<EffectEvent[]>;
   // 死亡アニメーション中フラグ
   isDying?: boolean;
+  // 5ステージ制
+  currentStage?: StageNumber;
+  maxLevel?: number;
 }> = ({
   map,
   player,
@@ -366,6 +372,9 @@ export const GameScreen: React.FC<{
   effectQueueRef,
   // 死亡アニメーション中フラグ
   isDying = false,
+  // 5ステージ制
+  currentStage,
+  maxLevel = 10,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const movementStateRef = useRef<MovementState>(INITIAL_MOVEMENT_STATE);
@@ -615,7 +624,11 @@ export const GameScreen: React.FC<{
 
       const enemyScreen = toScreenPosition(enemy);
       const enemySheet = getEnemySpriteSheet(enemy.type);
-      const enemySpriteSize = enemy.type === EnemyType.BOSS ? SPRITE_SIZES.boss : SPRITE_SIZES.base;
+      const enemySpriteSize =
+        enemy.type === EnemyType.MEGA_BOSS ? SPRITE_SIZES.megaBoss :
+        enemy.type === EnemyType.BOSS ? SPRITE_SIZES.boss :
+        enemy.type === EnemyType.MINI_BOSS ? SPRITE_SIZES.miniBoss :
+        SPRITE_SIZES.base;
       const enemyDrawSize = enemySpriteSize * spriteScale;
       const enemyDrawX = enemyScreen.x - enemyDrawSize / 2;
       const enemyDrawY = enemyScreen.y - enemyDrawSize / 2;
@@ -929,6 +942,7 @@ export const GameScreen: React.FC<{
     <GameRegion role="region" aria-label="ゲーム画面">
       <DamageOverlay $visible={renderTime - lastDamageAt < 150} />
       <TimerDisplay>{formatTimeShort(currentElapsed)}</TimerDisplay>
+      {currentStage && <StageIndicator>STAGE {currentStage}</StageIndicator>}
       <HPBarContainer>
         <HPBarFill $ratio={hpRatio} $color={hpColor} />
         <HPBarText>
@@ -939,7 +953,7 @@ export const GameScreen: React.FC<{
       <ExperienceBar>
         <ExperienceBarFill
           $ratio={
-            player.level >= 10
+            player.level >= maxLevel
               ? 1
               : (player.killCount - (KILL_COUNT_TABLE[player.level] || 0)) /
                 Math.max(1, getNextKillsRequired(player.level, player.killCount) + (player.killCount - (KILL_COUNT_TABLE[player.level] || 0)))

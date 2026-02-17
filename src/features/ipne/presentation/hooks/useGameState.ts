@@ -23,6 +23,7 @@ import {
   DebugState,
   initDebugState,
   spawnEnemies,
+  spawnEnemiesForStage,
   spawnItems,
   PlayerClass,
   PlayerClassValue,
@@ -30,8 +31,10 @@ import {
   Wall,
   placeGimmicks,
 } from '../../index';
-import { createTimer, startTimer, GameTimer } from '../../timer';
-import { RatingValue, AudioSettings } from '../../types';
+import { createTimer, startTimer, pauseTimer, resumeTimer, GameTimer } from '../../timer';
+import { RatingValue, AudioSettings, StageNumber, StageRewardType, StageRewardHistory, StageConfig } from '../../types';
+import { getStageConfig, getNextStage, isFinalStage } from '../../stageConfig';
+import { applyStageReward, canChooseReward } from '../../progression';
 import {
   enableAudio,
   initializeAudioSettings,
@@ -111,6 +114,10 @@ export interface GameState {
   // MVP6
   showKeyRequiredMessage: boolean;
   setShowKeyRequiredMessage: React.Dispatch<React.SetStateAction<boolean>>;
+  // 5ステージ制追加
+  currentStage: StageNumber;
+  stageRewards: StageRewardHistory[];
+  currentStageConfig: StageConfig;
   // ハンドラー
   handleStartGame: () => void;
   handleClassSelect: (playerClass: PlayerClassValue) => void;
@@ -125,6 +132,11 @@ export interface GameState {
   handleSeVolumeChange: (value: number) => void;
   handleBgmVolumeChange: (value: number) => void;
   handleToggleMute: () => void;
+  // 5ステージ制ハンドラー
+  handleStageClearNext: () => void;
+  handleStageStoryNext: () => void;
+  handleRewardSelect: (rewardType: StageRewardType) => void;
+  canChooseStageReward: (rewardType: StageRewardType) => boolean;
 }
 
 /**
@@ -169,10 +181,22 @@ export function useGameState(): GameState {
   const [showAudioSettings, setShowAudioSettings] = useState(false);
   const [isAudioReady, setIsAudioReady] = useState(false);
 
-  const roomsRef = useRef<Room[]>([]);
+  // 5ステージ制追加
+  const [currentStage, setCurrentStage] = useState<StageNumber>(1);
+  const [stageRewards, setStageRewards] = useState<StageRewardHistory[]>([]);
 
-  // ゲーム状態セットアップ
-  const setupGameState = useCallback((newMap: GameMap, rooms: Room[], playerClass: PlayerClassValue) => {
+  const roomsRef = useRef<Room[]>([]);
+  const currentStageConfig = getStageConfig(currentStage);
+
+  // ゲーム状態セットアップ（5ステージ対応）
+  const setupGameState = useCallback((
+    newMap: GameMap,
+    rooms: Room[],
+    playerClass: PlayerClassValue,
+    stageConfig?: StageConfig,
+    existingPlayer?: Player,
+    existingTimer?: GameTimer
+  ) => {
     const startPos = findStartPosition(newMap);
     const goal = findGoalPosition(newMap);
 
@@ -180,28 +204,56 @@ export function useGameState(): GameState {
 
     setMap(newMap);
     setGoalPos(goal);
-    const createdPlayer = createPlayer(startPos.x, startPos.y, playerClass);
-    setPlayer(createdPlayer);
+
+    // 既存プレイヤーがいる場合はステージ間引き継ぎ
+    if (existingPlayer) {
+      const carriedPlayer: Player = {
+        ...existingPlayer,
+        x: startPos.x,
+        y: startPos.y,
+        hasKey: false,
+        isInvincible: false,
+        invincibleUntil: 0,
+        attackCooldownUntil: 0,
+        slowedUntil: 0,
+      };
+      setPlayer(carriedPlayer);
+    } else {
+      const createdPlayer = createPlayer(startPos.x, startPos.y, playerClass);
+      setPlayer(createdPlayer);
+    }
+
     setIsGameOver(false);
     setPendingLevelPoints(0);
     setShowLevelUpModal(false);
     setCombatState({ lastAttackAt: 0, lastDamageAt: 0 });
     setAttackEffect(undefined);
 
-    const newTimer = startTimer(createTimer());
-    setTimer(newTimer);
+    // タイマー：新規ゲームは新しいタイマー、ステージ間遷移は既存タイマーを再開
+    if (existingTimer) {
+      const now = Date.now();
+      setTimer(resumeTimer(existingTimer, now));
+    } else {
+      const newTimer = startTimer(createTimer());
+      setTimer(newTimer);
+    }
     setShowHelp(false);
     setClearTime(0);
     setIsNewBest(false);
 
     roomsRef.current = rooms;
 
-    const spawnedEnemies = spawnEnemies(rooms, startPos, goal);
+    // ステージ設定に基づいて敵をスポーン
+    const spawnedEnemies = stageConfig
+      ? spawnEnemiesForStage(rooms, startPos, goal, stageConfig)
+      : spawnEnemies(rooms, startPos, goal);
     const spawnedItems = spawnItems(rooms, spawnedEnemies, [startPos, goal], goal);
     setEnemies(spawnedEnemies);
     setItems(spawnedItems);
 
-    const gimmickResult = placeGimmicks(rooms, newMap, [startPos, goal], undefined, startPos, goal);
+    // ステージ設定に基づいてギミックを配置
+    const gimmickConfig = stageConfig?.gimmicks;
+    const gimmickResult = placeGimmicks(rooms, newMap, [startPos, goal], gimmickConfig, startPos, goal);
     setTraps(gimmickResult.traps);
     setWalls(gimmickResult.walls);
 
@@ -214,10 +266,23 @@ export function useGameState(): GameState {
     });
   }, [setEnemies, setItems, setMap, setPendingLevelPoints, setPlayer, setTraps, setWalls]);
 
-  const initGame = useCallback((playerClass: PlayerClassValue) => {
-    const result = createMapWithRooms();
-    setupGameState(result.map, result.rooms, playerClass);
+  // ステージに応じたマップ生成とゲーム初期化
+  const initStage = useCallback((
+    stage: StageNumber,
+    playerClass: PlayerClassValue,
+    existingPlayer?: Player,
+    existingTimer?: GameTimer
+  ) => {
+    const stageConfig = getStageConfig(stage);
+    const result = createMapWithRooms(stageConfig.maze);
+    setupGameState(result.map, result.rooms, playerClass, stageConfig, existingPlayer, existingTimer);
   }, [setupGameState]);
+
+  const initGame = useCallback((playerClass: PlayerClassValue) => {
+    setCurrentStage(1);
+    setStageRewards([]);
+    initStage(1, playerClass);
+  }, [initStage]);
 
   // 画面遷移ハンドラー
   const handleStartGame = useCallback(() => {
@@ -235,20 +300,64 @@ export function useGameState(): GameState {
   }, [initGame, selectedClass]);
 
   const handleRetry = useCallback(() => {
+    // 完全リスタート（ステージ1から）
     initGame(selectedClass);
     setScreen(ScreenState.GAME);
   }, [initGame, selectedClass]);
 
   const handleGameOverRetry = useCallback(() => {
-    if (mapRef.current.length === 0) return;
-    setupGameState(mapRef.current, roomsRef.current, selectedClass);
+    // ゲームオーバー時は完全リスタート（ステージ1から）
+    initGame(selectedClass);
     setScreen(ScreenState.GAME);
-  }, [setupGameState, selectedClass, mapRef]);
+  }, [initGame, selectedClass]);
 
   const handleBackToTitle = useCallback(() => {
     setScreen(ScreenState.TITLE);
     setIsGameOver(false);
+    setCurrentStage(1);
+    setStageRewards([]);
   }, []);
+
+  // ステージクリア → 次へボタン → STAGE_STORY へ
+  const handleStageClearNext = useCallback(() => {
+    setScreen(ScreenState.STAGE_STORY);
+  }, []);
+
+  // ストーリー → 次へボタン
+  const handleStageStoryNext = useCallback(() => {
+    if (isFinalStage(currentStage)) {
+      // 最終ステージ → FINAL_CLEAR
+      setScreen(ScreenState.FINAL_CLEAR);
+    } else {
+      // ステージ1〜4 → STAGE_REWARD
+      setScreen(ScreenState.STAGE_REWARD);
+    }
+  }, [currentStage]);
+
+  // ステージ報酬選択
+  const handleRewardSelect = useCallback((rewardType: StageRewardType) => {
+    // 報酬をプレイヤーに適用
+    const currentPlayer = playerRef.current;
+    const updatedPlayer = applyStageReward(currentPlayer, rewardType);
+    setPlayer(updatedPlayer);
+
+    // 報酬履歴に追加
+    setStageRewards(prev => [...prev, { stage: currentStage, reward: rewardType }]);
+
+    // 次のステージへ遷移
+    const nextStage = getNextStage(currentStage);
+    if (nextStage) {
+      setCurrentStage(nextStage);
+      // タイマーは一時停止中のまま次ステージに引き継ぐ
+      initStage(nextStage, selectedClass, updatedPlayer, timer);
+      setScreen(ScreenState.GAME);
+    }
+  }, [currentStage, playerRef, setPlayer, initStage, selectedClass, timer]);
+
+  // ステージ報酬が選択可能か判定
+  const canChooseStageReward = useCallback((rewardType: StageRewardType): boolean => {
+    return canChooseReward(playerRef.current, rewardType);
+  }, [playerRef]);
 
   // MVP4: ヘルプ表示トグル
   const handleHelpToggle = useCallback(() => {
@@ -301,10 +410,19 @@ export function useGameState(): GameState {
       case ScreenState.GAME:
         playGameBgm();
         break;
-      case ScreenState.CLEAR:
+      case ScreenState.STAGE_CLEAR:
+        stopBgm();
+        playClearJingle();
+        break;
+      case ScreenState.FINAL_CLEAR:
         stopBgm();
         playClearJingle();
         playGameClearSound();
+        break;
+      case ScreenState.STAGE_STORY:
+      case ScreenState.STAGE_REWARD:
+        // ストーリー・報酬画面は静寂
+        stopBgm();
         break;
       case ScreenState.DYING:
         // 死亡アニメーション中はBGMを停止（死亡効果音はuseGameLoopで再生済み）
@@ -375,6 +493,10 @@ export function useGameState(): GameState {
     isAudioReady,
     showKeyRequiredMessage,
     setShowKeyRequiredMessage,
+    // 5ステージ制追加
+    currentStage,
+    stageRewards,
+    currentStageConfig,
     handleStartGame,
     handleClassSelect,
     handleSkipPrologue,
@@ -388,5 +510,10 @@ export function useGameState(): GameState {
     handleSeVolumeChange,
     handleBgmVolumeChange,
     handleToggleMute,
+    // 5ステージ制ハンドラー
+    handleStageClearNext,
+    handleStageStoryNext,
+    handleRewardSelect,
+    canChooseStageReward,
   };
 }

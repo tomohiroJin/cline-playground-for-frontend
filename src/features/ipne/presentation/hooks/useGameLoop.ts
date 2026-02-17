@@ -68,6 +68,7 @@ export function useGameLoop(
   refs: GameStateRefs,
   setters: GameStateSetters,
   effectQueueRef?: React.MutableRefObject<EffectEvent[]>,
+  stageMaxLevel?: number,
 ) {
   const {
     mapRef,
@@ -194,7 +195,7 @@ export function useGameLoop(
         walls: wallsRef.current,
         pendingLevelPoints: pendingLevelPointsRef.current,
         currentTime,
-        maxLevel: MAX_LEVEL,
+        maxLevel: stageMaxLevel ?? MAX_LEVEL,
       });
 
       dispatchTickEffects(tickResult.effects);
@@ -221,5 +222,6 @@ export function useGameLoop(
     setTraps,
     trapsRef,
     wallsRef,
+    stageMaxLevel,
   ]);
 }

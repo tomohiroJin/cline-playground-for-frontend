@@ -1,10 +1,10 @@
 /**
  * 成長システムモジュール
  */
-import { LevelUpChoice, PlayerStats, StatType, StatTypeValue } from './types';
+import { LevelUpChoice, Player, PlayerStats, StageRewardType, StatType, StatTypeValue } from './types';
 
 /** 最大レベル */
-export const MAX_LEVEL = 10;
+export const MAX_LEVEL = 15;
 
 /** 各レベルに必要な累計撃破数 */
 export const KILL_COUNT_TABLE: Record<number, number> = {
@@ -18,6 +18,12 @@ export const KILL_COUNT_TABLE: Record<number, number> = {
   8: 17,
   9: 21,
   10: 25,
+  // 5ステージ拡張
+  11: 30,
+  12: 36,
+  13: 43,
+  14: 51,
+  15: 60,
 };
 
 /** 能力値の上限 */
@@ -164,4 +170,97 @@ export const getNextKillsRequired = (currentLevel: number, killCount: number): n
   if (currentLevel >= MAX_LEVEL) return 0;
   const nextLevelKills = KILL_COUNT_TABLE[currentLevel + 1];
   return Math.max(0, nextLevelKills - killCount);
+};
+
+// ===== ステージ報酬 =====
+
+/**
+ * ステージ報酬をプレイヤーに適用する
+ * @param player プレイヤー
+ * @param rewardType 報酬の種類
+ * @returns 報酬適用後のプレイヤー
+ */
+export const applyStageReward = (player: Player, rewardType: StageRewardType): Player => {
+  const newPlayer = { ...player, stats: { ...player.stats } };
+
+  switch (rewardType) {
+    case 'max_hp':
+      newPlayer.maxHp += 5;
+      newPlayer.hp += 5;
+      break;
+    case 'attack_power':
+      newPlayer.stats.attackPower += 1;
+      break;
+    case 'attack_range':
+      newPlayer.stats.attackRange = Math.min(
+        newPlayer.stats.attackRange + 1,
+        STAT_LIMITS[StatType.ATTACK_RANGE] ?? Infinity
+      );
+      break;
+    case 'move_speed':
+      newPlayer.stats.moveSpeed = Math.min(
+        newPlayer.stats.moveSpeed + 1,
+        STAT_LIMITS[StatType.MOVE_SPEED] ?? Infinity
+      );
+      break;
+    case 'attack_speed':
+      newPlayer.stats.attackSpeed = Math.max(
+        newPlayer.stats.attackSpeed - 0.1,
+        STAT_LIMITS[StatType.ATTACK_SPEED] ?? 0
+      );
+      break;
+    case 'heal_bonus':
+      newPlayer.stats.healBonus = Math.min(
+        newPlayer.stats.healBonus + 1,
+        STAT_LIMITS[StatType.HEAL_BONUS] ?? Infinity
+      );
+      break;
+  }
+
+  return newPlayer;
+};
+
+/**
+ * ステージ報酬が選択可能かどうかを判定する
+ * @param player プレイヤー
+ * @param rewardType 報酬の種類
+ * @returns 選択可能な場合 true
+ */
+export const canChooseReward = (player: Player, rewardType: StageRewardType): boolean => {
+  switch (rewardType) {
+    case 'max_hp':
+      // maxHpには上限なし
+      return true;
+    case 'attack_power':
+      // attackPowerには上限なし
+      return true;
+    case 'attack_range':
+      return canChooseStat(player.stats, StatType.ATTACK_RANGE);
+    case 'move_speed':
+      return canChooseStat(player.stats, StatType.MOVE_SPEED);
+    case 'attack_speed':
+      return canChooseStat(player.stats, StatType.ATTACK_SPEED);
+    case 'heal_bonus':
+      return canChooseStat(player.stats, StatType.HEAL_BONUS);
+    default:
+      return true;
+  }
+};
+
+/**
+ * ステージ別レベル上限でのレベルアップ可否を判定
+ * @param currentLevel 現在のレベル
+ * @param killCount 累計撃破数
+ * @param stageMaxLevel ステージのレベル上限
+ * @returns レベルアップ可能な場合 true
+ */
+export const shouldLevelUpInStage = (
+  currentLevel: number,
+  killCount: number,
+  stageMaxLevel: number
+): boolean => {
+  if (currentLevel >= stageMaxLevel) return false;
+  if (currentLevel >= MAX_LEVEL) return false;
+  const nextLevel = currentLevel + 1;
+  return killCount >= KILL_COUNT_TABLE[nextLevel];
 };

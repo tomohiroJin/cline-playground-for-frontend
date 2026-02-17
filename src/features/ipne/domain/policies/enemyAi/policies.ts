@@ -18,7 +18,11 @@ export function buildDefaultEnemyAiPolicyRegistry(deps: EnemyAiPolicyDeps): Enem
   });
 
   registry.register({
-    supports: type => type === EnemyType.CHARGE || type === EnemyType.BOSS,
+    supports: type =>
+      type === EnemyType.CHARGE ||
+      type === EnemyType.BOSS ||
+      type === EnemyType.MINI_BOSS ||
+      type === EnemyType.MEGA_BOSS,
     update: ({ enemy, player, map, currentTime }) =>
       deps.updateChargeEnemy(enemy, player, map, currentTime),
   });

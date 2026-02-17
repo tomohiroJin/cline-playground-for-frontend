@@ -45,6 +45,23 @@ const ENEMY_CONFIGS = {
     chaseRange: 15,
     attackRange: 3,
   },
+  // 5ステージ制で追加
+  [EnemyType.MINI_BOSS]: {
+    hp: 15,
+    damage: 3,
+    speed: 2,
+    detectionRange: 7,
+    chaseRange: 12,
+    attackRange: 2,
+  },
+  [EnemyType.MEGA_BOSS]: {
+    hp: 80,
+    damage: 6,
+    speed: 1.8,
+    detectionRange: 12,
+    chaseRange: 20,
+    attackRange: 4,
+  },
 } as const;
 
 let enemyIdCounter = 0;
@@ -101,6 +118,16 @@ export const createSpecimenEnemy = (x: number, y: number): Enemy => {
 
 export const createBoss = (x: number, y: number): Enemy => {
   return createEnemy(EnemyType.BOSS, x, y);
+};
+
+/** ミニボスを生成する */
+export const createMiniBoss = (x: number, y: number): Enemy => {
+  return createEnemy(EnemyType.MINI_BOSS, x, y);
+};
+
+/** メガボスを生成する */
+export const createMegaBoss = (x: number, y: number): Enemy => {
+  return createEnemy(EnemyType.MEGA_BOSS, x, y);
 };
 
 export const isEnemyAlive = (enemy: Enemy): boolean => {
@@ -217,9 +244,12 @@ export function processEnemyDeath(
 
   let droppedItem: Item | null = null;
 
-  // ボスは必ず鍵をドロップする
-  if (enemy.type === EnemyType.BOSS) {
+  // ボスとメガボスは必ず鍵をドロップする
+  if (enemy.type === EnemyType.BOSS || enemy.type === EnemyType.MEGA_BOSS) {
     droppedItem = createKeyItem(enemy.x, enemy.y);
+  } else if (enemy.type === EnemyType.MINI_BOSS) {
+    // ミニボスは大回復アイテムを確定ドロップ
+    droppedItem = createHealthLarge(enemy.x, enemy.y);
   } else if (shouldDropItem(enemy, dropRandom)) {
     droppedItem = createDropItem(enemy, itemRandom);
   }
