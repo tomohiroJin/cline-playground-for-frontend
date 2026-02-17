@@ -308,19 +308,9 @@ export function calcPlayerAtk(r: RunState, rng = Math.random): PlayerAttackResul
   return { dmg: Math.floor(pa * biomeBonus(r.cBT, civLvs(r))), crit };
 }
 
-/* ===== Battle Tick ===== */
+/* ===== Battle Tick — Sub-functions ===== */
 
-export function tick(r: RunState, finalMode: boolean, rng = Math.random): TickResult {
-  const next = deepCloneRun(r);
-  if (!next.en) return { nextRun: next, events: [] };
-
-  const e = next.en!;
-  const events: TickEvent[] = [];
-  next.turn++;
-  next.wTurn++;
-  const pHP = next.hp;
-
-  // Environment phase
+function tickEnvPhase(next: RunState): void {
   const envCfg = ENV_DMG[next.cBT as string];
   if (envCfg) {
     const envD = calcEnvDmg(next.cBT, next.dd.env, next.tb, next.fe);
@@ -329,8 +319,9 @@ export function tick(r: RunState, finalMode: boolean, rng = Math.random): TickRe
       next.log.push({ x: envCfg.icon + ' -' + envD, c: envCfg.c });
     }
   }
+}
 
-  // Player attack phase
+function tickPlayerPhase(next: RunState, e: Enemy, events: TickEvent[], rng: () => number): void {
   const pa = calcPlayerAtk(next, rng);
   const dm = Math.max(1, pa.dmg - e.def);
   if (dm > next.maxHit) next.maxHit = dm;
@@ -347,15 +338,15 @@ export function tick(r: RunState, finalMode: boolean, rng = Math.random): TickRe
   });
   events.push({ type: 'sfx', sfx: pa.crit ? 'crit' : 'hit' });
 
-  // Burn
   if (next.burn) {
     const bd = Math.floor(pa.dmg * 0.2);
     e.hp -= bd;
     next.dmgDealt += bd;
     next.log.push({ x: '  🔥 火傷 ' + bd, c: 'tc' });
   }
+}
 
-  // Ally phase
+function tickAllyPhase(next: RunState, e: Enemy): void {
   next.al.forEach(a => {
     if (!a.a) return;
     if (a.h) {
@@ -369,13 +360,83 @@ export function tick(r: RunState, finalMode: boolean, rng = Math.random): TickRe
       next.log.push({ x: '  ' + a.n + ' → ' + ad, c: '' });
     }
   });
+}
 
-  // Regen
+function tickRegenPhase(next: RunState): void {
   if (next.tb.rg > 0) {
     const rg = Math.max(1, Math.floor(next.mhp * next.tb.rg));
     next.hp = Math.min(next.hp + rg, next.mhp);
     next.log.push({ x: '  🌿 再生 +' + rg, c: 'lc' });
   }
+}
+
+function tickEnemyPhase(next: RunState, e: Enemy, events: TickEvent[], rng: () => number): void {
+  let ed = Math.max(1, e.atk - next.def);
+  const tk = next.al.find(a => a.a && a.tk);
+  if (tk) {
+    const td = Math.max(1, Math.floor(ed * 0.6));
+    tk.hp -= td;
+    ed = Math.floor(ed * 0.4);
+    if (tk.hp <= 0) {
+      tk.a = 0;
+      next.log.push({ x: '☠ ' + tk.n + ' 倒れた', c: 'xc' });
+    }
+  }
+  next.hp -= ed;
+  next.dmgTaken += ed;
+  next.log.push({ x: '🩸 ' + e.n + ' → ' + ed, c: 'xc' });
+
+  if (rng() < 0.25) {
+    const la = aliveAllies(next.al).filter(a => !a.tk);
+    if (la.length) {
+      const t2 = la[rng() * la.length | 0];
+      const ad2 = Math.max(1, Math.floor(e.atk * 0.4));
+      t2.hp -= ad2;
+      next.log.push({ x: '  💥 ' + t2.n + ' -' + ad2, c: 'xc' });
+      if (t2.hp <= 0) {
+        t2.a = 0;
+        next.log.push({ x: '☠ ' + t2.n + ' 倒れた', c: 'xc' });
+      }
+    }
+  }
+}
+
+/** @returns true if player died */
+function tickDeathCheck(next: RunState, events: TickEvent[]): boolean {
+  if (next.hp <= 0) {
+    if (next.tb.rv && !next.rvU) {
+      next.rvU = 1;
+      next.hp = Math.floor(next.mhp * Math.max(0.3, 0.3 + (next.tb.rP || 0)));
+      next.log.push({ x: '✨ 復活の儀！', c: 'gc' });
+      events.push({ type: 'sfx', sfx: 'heal' });
+      return false;
+    } else {
+      next.hp = 0;
+      next.log.push({ x: '部族は滅びた…', c: 'xc' });
+      events.push({ type: 'sfx', sfx: 'death' });
+      events.push({ type: 'player_dead' });
+      return true;
+    }
+  }
+  return false;
+}
+
+/* ===== Battle Tick ===== */
+
+export function tick(r: RunState, finalMode: boolean, rng = Math.random): TickResult {
+  const next = deepCloneRun(r);
+  if (!next.en) return { nextRun: next, events: [] };
+
+  const e = next.en!;
+  const events: TickEvent[] = [];
+  next.turn++;
+  next.wTurn++;
+  const pHP = next.hp;
+
+  tickEnvPhase(next);
+  tickPlayerPhase(next, e, events, rng);
+  tickAllyPhase(next, e);
+  tickRegenPhase(next);
 
   // Enemy killed
   if (e.hp <= 0) {
@@ -393,51 +454,10 @@ export function tick(r: RunState, finalMode: boolean, rng = Math.random): TickRe
     return { nextRun: next, events };
   }
 
-  // Enemy attack phase
-  let ed = Math.max(1, e.atk - next.def);
-  const tk = next.al.find(a => a.a && a.tk);
-  if (tk) {
-    const td = Math.max(1, Math.floor(ed * 0.6));
-    tk.hp -= td;
-    ed = Math.floor(ed * 0.4);
-    if (tk.hp <= 0) {
-      tk.a = 0;
-      next.log.push({ x: '☠ ' + tk.n + ' 倒れた', c: 'xc' });
-    }
-  }
-  next.hp -= ed;
-  next.dmgTaken += ed;
-  next.log.push({ x: '🩸 ' + e.n + ' → ' + ed, c: 'xc' });
+  tickEnemyPhase(next, e, events, rng);
 
-  // Random ally hit
-  if (rng() < 0.25) {
-    const la = aliveAllies(next.al).filter(a => !a.tk);
-    if (la.length) {
-      const t2 = la[rng() * la.length | 0];
-      const ad2 = Math.max(1, Math.floor(e.atk * 0.4));
-      t2.hp -= ad2;
-      next.log.push({ x: '  💥 ' + t2.n + ' -' + ad2, c: 'xc' });
-      if (t2.hp <= 0) {
-        t2.a = 0;
-        next.log.push({ x: '☠ ' + t2.n + ' 倒れた', c: 'xc' });
-      }
-    }
-  }
-
-  // Player death check
-  if (next.hp <= 0) {
-    if (next.tb.rv && !next.rvU) {
-      next.rvU = 1;
-      next.hp = Math.floor(next.mhp * Math.max(0.3, 0.3 + (next.tb.rP || 0)));
-      next.log.push({ x: '✨ 復活の儀！', c: 'gc' });
-      events.push({ type: 'sfx', sfx: 'heal' });
-    } else {
-      next.hp = 0;
-      next.log.push({ x: '部族は滅びた…', c: 'xc' });
-      events.push({ type: 'sfx', sfx: 'death' });
-      events.push({ type: 'player_dead' });
-      return { nextRun: next, events };
-    }
+  if (tickDeathCheck(next, events)) {
+    return { nextRun: next, events };
   }
 
   // Trim log

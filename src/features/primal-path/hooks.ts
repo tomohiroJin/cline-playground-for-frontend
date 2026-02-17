@@ -62,6 +62,21 @@ function initialState(): GameState {
   };
 }
 
+/* ===== Biome Transition Helper ===== */
+
+function transitionAfterBiome(state: GameState, run: RunState): GameState {
+  if (run.bc >= 3) {
+    return { ...state, run, phase: 'prefinal' };
+  }
+  const pick = pickBiomeAuto(run);
+  if (pick.needSelection) {
+    return { ...state, run, phase: 'biome' };
+  }
+  const autoRun = applyAutoLastBiome(run);
+  const evoPicks = rollE(autoRun);
+  return { ...state, run: autoRun, phase: 'evo', evoPicks };
+}
+
 /* ===== Reducer ===== */
 
 function gameReducer(state: GameState, action: GameAction): GameState {
@@ -195,41 +210,19 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (!state.run) return state;
       const { nextRun, biomeCleared } = afterBattle(state.run);
       if (biomeCleared) {
-        // Check dead allies for revive
         const dead = deadAllies(nextRun.al);
         if (dead.length > 0) {
           return { ...state, run: nextRun, phase: 'ally_revive', reviveTargets: dead };
         }
-        // Check if all biomes done
-        if (nextRun.bc >= 3) {
-          return { ...state, run: nextRun, phase: 'prefinal' };
-        }
-        // Pick next biome
-        const pick = pickBiomeAuto(nextRun);
-        if (pick.needSelection) {
-          return { ...state, run: nextRun, phase: 'biome' };
-        }
-        const autoRun = applyAutoLastBiome(nextRun);
-        const evoPicks = rollE(autoRun);
-        return { ...state, run: autoRun, phase: 'evo', evoPicks };
+        return transitionAfterBiome(state, nextRun);
       }
-      // Next wave → show evo
       const evoPicks = rollE(nextRun);
       return { ...state, run: nextRun, phase: 'evo', evoPicks };
     }
 
     case 'BIOME_CLEARED': {
       if (!state.run) return state;
-      if (state.run.bc >= 3) {
-        return { ...state, phase: 'prefinal' };
-      }
-      const pick = pickBiomeAuto(state.run);
-      if (pick.needSelection) {
-        return { ...state, phase: 'biome' };
-      }
-      const autoRun = applyAutoLastBiome(state.run);
-      const evoPicks = rollE(autoRun);
-      return { ...state, run: autoRun, phase: 'evo', evoPicks };
+      return transitionAfterBiome(state, state.run);
     }
 
     case 'GO_FINAL_BOSS': {
@@ -285,27 +278,16 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         return { ...a };
       });
       const nextRun = { ...state.run, al: nextAl, bE: state.run.bE - cost };
-      // Check remaining dead
       const stillDead = deadAllies(nextRun.al);
       if (stillDead.length === 0) {
-        if (nextRun.bc >= 3) return { ...state, run: nextRun, phase: 'prefinal' };
-        const pick = pickBiomeAuto(nextRun);
-        if (pick.needSelection) return { ...state, run: nextRun, phase: 'biome' };
-        const autoRun = applyAutoLastBiome(nextRun);
-        const evoPicks = rollE(autoRun);
-        return { ...state, run: autoRun, phase: 'evo', evoPicks };
+        return transitionAfterBiome(state, nextRun);
       }
       return { ...state, run: nextRun, reviveTargets: stillDead };
     }
 
     case 'SKIP_REVIVE': {
       if (!state.run) return state;
-      if (state.run.bc >= 3) return { ...state, phase: 'prefinal' };
-      const pick = pickBiomeAuto(state.run);
-      if (pick.needSelection) return { ...state, phase: 'biome' };
-      const autoRun = applyAutoLastBiome(state.run);
-      const evoPicks = rollE(autoRun);
-      return { ...state, run: autoRun, phase: 'evo', evoPicks };
+      return transitionAfterBiome(state, state.run);
     }
 
     case 'SHOW_EVO': {

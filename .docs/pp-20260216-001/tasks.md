@@ -80,12 +80,12 @@
 
 ## Phase 8: リファクタリング（最小限：関数分割のみ）
 
-- [ ] **T-042**: `game-logic.ts` — `tick()` を6サブ関数に分割
+- [x] **T-042**: `game-logic.ts` — `tick()` を6サブ関数に分割
   - tickEnvPhase, tickPlayerPhase, tickAllyPhase, tickRegenPhase, tickEnemyPhase, tickDeathCheck
-- [ ] **T-043**: `hooks.ts` — reducer 重複パターンを `transitionAfterBiome()` に抽出
+- [x] **T-043**: `hooks.ts` — reducer 重複パターンを `transitionAfterBiome()` に抽出
   - 対象: AFTER_BATTLE, BIOME_CLEARED, SKIP_REVIVE, REVIVE_ALLY
-- [ ] **T-044**: 既存テスト全通過確認（52テスト）
-- [ ] **T-045**: `npm run build` — ビルド成功確認
+- [x] **T-044**: 既存テスト全通過確認（1321テスト全通過）
+- [x] **T-045**: `npm run build` — ビルド成功確認
 
 ## Phase 9: ドキュメント最終更新
 
