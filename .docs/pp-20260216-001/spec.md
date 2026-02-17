@@ -37,7 +37,7 @@
 | タイトル | 原始進化録 - PRIMAL PATH |
 | 説明文 | 文明を選び、進化を重ねて最終ボスに挑む自動戦闘ローグライト。技術・生活・儀式の三大文明を育て、覚醒して神話を刻め。 |
 | ルート | `/primal-path` |
-| 背景 | `$customBg` グラデーションプレースホルダー |
+| 背景 | `$customBg` グラデーションプレースホルダー（画像差し替え予定、詳細は `image-spec.md`） |
 | aria-label | `原始進化録 - PRIMAL PATH ゲームをプレイする` |
 
 ### 1.3 ルーティング仕様
@@ -145,3 +145,53 @@ src/features/primal-path/
 | DIP | フックは純粋関数に依存。コンポーネントは props のみに依存 |
 | 関数型 | game-logic.ts の全関数はイミュータブル |
 | 宣言的 | JSX によるフェーズベースの条件レンダリング |
+
+## 4. 追加整備仕様
+
+### 4.1 メニュー画像
+
+カード背景をグラデーションプレースホルダーから正式画像に差し替える。
+詳細は [`image-spec.md`](./image-spec.md) を参照。
+
+| 項目 | 値 |
+|------|-----|
+| ファイル名 | `primal_path_card_bg.webp` |
+| サイズ | 1024×1024px |
+| 形式 | WebP（品質 82%） |
+| 配置先 | `src/assets/images/` |
+| 変更対象 | `src/pages/GameListPage.tsx`（`$customBg` → `$bgImage`） |
+
+### 4.2 README
+
+| 対象 | 操作 | 内容 |
+|------|------|------|
+| `src/features/primal-path/README.md` | 新規作成 | ゲーム概要、操作方法、ファイル構成、状態管理、使用技術、ゲームシステム |
+| `README.md`（ルート） | 更新 | ゲーム一覧テーブルに PrimalPath 行を追加 |
+
+Feature README は Labyrinth Echo パターン（`src/features/labyrinth-echo/README.md`）に準拠:
+- 概要（2-3行）
+- 操作方法
+- 技術詳細（ファイル構成、状態管理、使用技術）
+- ゲームシステム（難易度、バイオーム、文明ツリー、覚醒、仲間）
+
+### 4.3 リファクタリング（最小限：関数分割のみ）
+
+ファイル構成は変更せず、長い関数を同一ファイル内でサブ関数に分割する。
+
+#### game-logic.ts — `tick()` 関数の分割
+
+現在の `tick()` は138行で7つのフェーズを1関数で処理。各フェーズをサブ関数に抽出:
+
+| サブ関数 | 責務 |
+|---------|------|
+| `tickEnvPhase()` | 環境ダメージ計算・適用 |
+| `tickPlayerPhase()` | プレイヤー攻撃・会心・燃焼 |
+| `tickAllyPhase()` | 味方攻撃/回復 |
+| `tickRegenPhase()` | 自然再生 |
+| `tickEnemyPhase()` | 敵攻撃・盾役・味方被弾 |
+| `tickDeathCheck()` | プレイヤー死亡判定・復活 |
+
+#### hooks.ts — reducer 重複パターン抽出
+
+「バイオーム遷移後の共通分岐」が4箇所で重複。ヘルパー関数 `transitionAfterBiome()` に抽出:
+- 対象: `AFTER_BATTLE`, `BIOME_CLEARED`, `SKIP_REVIVE`, `REVIVE_ALLY`

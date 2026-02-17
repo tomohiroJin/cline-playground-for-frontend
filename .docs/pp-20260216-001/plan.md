@@ -129,3 +129,89 @@ src/features/primal-path/
 2. **ビルド確認**: `npm run build` — エラーなし
 3. **手動確認**: タイトル → ゲーム開始 → 自動戦闘 → ゲームオーバー
 4. **リグレッション**: 既存ゲームページへの影響なし
+
+---
+
+## 追加整備計画（Phase 6-8）
+
+React コンポーネント化完了後の追加整備。
+
+### Phase 6: メニュー画像
+
+**目的**: GameListPage のカード背景を正式画像に差し替える。
+
+**方針**: AI 生成プロンプト仕様書を作成し、外部ツールで画像を生成する。
+
+| 成果物 | 内容 |
+|--------|------|
+| `.docs/pp-20260216-001/image-spec.md` | 画像仕様書（スタイルガイド、AI 生成プロンプト、実装手順） |
+| `src/assets/images/primal_path_card_bg.webp` | 生成画像（1024×1024px, WebP） |
+| `src/pages/GameListPage.tsx` | `$customBg` → `$bgImage` 差し替え |
+
+**スタイル方針**:
+- ピクセルアート風 × 原始時代ダークファンタジー
+- ゲーム内カラーパレット（技術=#f08050, 生活=#50e090, 儀式=#d060ff）と統一
+- 焚き火を囲む部族戦士 + 三大文明の象徴モチーフ
+
+### Phase 7: README 作成・更新
+
+**目的**: Feature README を新規作成し、ルート README にも掲載する。
+
+| 対象 | 操作 |
+|------|------|
+| `src/features/primal-path/README.md` | 新規作成（Labyrinth Echo パターン準拠） |
+| `README.md` | ゲーム一覧テーブルに行追加 |
+
+**Feature README 構成**:
+1. 概要（ゲームコンセプト 2-3行）
+2. 操作方法（マウスクリックで選択）
+3. 技術詳細
+   - ファイル構成（ツリー図）
+   - 状態管理（useReducer + 純粋関数）
+   - 使用技術（Web Audio API, Canvas, styled-components, DbC）
+4. ゲームシステム（難易度、バイオーム、文明ツリー、覚醒、仲間）
+
+### Phase 8: リファクタリング（最小限：関数分割のみ）
+
+**目的**: 長い関数の可読性向上。ファイル構成は変更しない。
+
+#### 8-1: `game-logic.ts` — `tick()` を6サブ関数に分割
+
+`tick()` は138行で7フェーズを処理。各フェーズを名前付きサブ関数に抽出し、`tick()` 本体はオーケストレータに:
+
+```typescript
+export function tick(r, finalMode, rng): TickResult {
+  // ... setup ...
+  tickEnvPhase(next, events);
+  tickPlayerPhase(next, events, rng, finalMode);  // early return on kill
+  tickAllyPhase(next, events);
+  tickRegenPhase(next, events);
+  tickEnemyPhase(next, events, rng);
+  tickDeathCheck(next, events);                    // early return on death
+  // ... cleanup ...
+}
+```
+
+#### 8-2: `hooks.ts` — reducer 重複パターン抽出
+
+「バイオーム遷移後の共通分岐」が4箇所で重複 → `transitionAfterBiome()` ヘルパーに統合:
+
+```typescript
+function transitionAfterBiome(state: GameState, run: RunState): Partial<GameState> {
+  if (run.bc >= 3) return { run, phase: 'prefinal' };
+  const pick = pickBiomeAuto(run);
+  if (pick.needSelection) return { run, phase: 'biome' };
+  const autoRun = applyAutoLastBiome(run);
+  return { run: autoRun, phase: 'evo', evoPicks: rollE(autoRun) };
+}
+```
+
+対象: `AFTER_BATTLE`, `BIOME_CLEARED`, `SKIP_REVIVE`, `REVIVE_ALLY`
+
+### 追加整備の検証
+
+1. `npm test` — 既存52テスト全通過（リファクタリング後）
+2. `npm run build` — ビルド成功
+3. `src/features/primal-path/README.md` 存在
+4. `README.md` に PrimalPath 行あり
+5. カード画像の表示確認（画像生成後）

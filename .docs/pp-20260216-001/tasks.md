@@ -54,9 +54,42 @@
 - [x] **T-029**: `src/pages/GameListPage.test.tsx` — PrimalPath カードテスト追加
 - [x] **T-030**: ドキュメント更新（spec.md, plan.md, tasks.md）
 
-## 検証
+## 検証（React化）
 
 - [x] **T-031**: `npm run build` — ビルド成功確認
 - [x] **T-032**: 手動動作確認（タイトル → ゲーム開始 → 自動戦闘 → ゲームオーバー）
 - [x] **T-033**: モバイル表示確認（≤500px で全画面）
 - [x] **T-034**: 既存ゲームへのリグレッションなし確認
+
+---
+
+## Phase 6: メニュー画像
+
+- [ ] **T-035**: `image-spec.md` — AI 生成プロンプト仕様書作成
+- [ ] **T-036**: `primal_path_card_bg.webp` — 画像生成（外部ツール使用）
+- [ ] **T-037**: `src/assets/images/` — 生成画像の配置（1024×1024px, WebP, ≤300KB）
+- [ ] **T-038**: `src/pages/GameListPage.tsx` — `$customBg` → `$bgImage` に差し替え
+- [ ] **T-039**: カード表示確認（ホバー効果との調和、クリッピング確認）
+
+## Phase 7: README 作成・更新
+
+- [ ] **T-040**: `src/features/primal-path/README.md` — 新規作成
+  - 概要、操作方法、ファイル構成、状態管理、使用技術、ゲームシステム
+  - Labyrinth Echo パターン準拠
+- [ ] **T-041**: `README.md`（ルート） — ゲーム一覧テーブルに PrimalPath 行を追加
+
+## Phase 8: リファクタリング（最小限：関数分割のみ）
+
+- [ ] **T-042**: `game-logic.ts` — `tick()` を6サブ関数に分割
+  - tickEnvPhase, tickPlayerPhase, tickAllyPhase, tickRegenPhase, tickEnemyPhase, tickDeathCheck
+- [ ] **T-043**: `hooks.ts` — reducer 重複パターンを `transitionAfterBiome()` に抽出
+  - 対象: AFTER_BATTLE, BIOME_CLEARED, SKIP_REVIVE, REVIVE_ALLY
+- [ ] **T-044**: 既存テスト全通過確認（52テスト）
+- [ ] **T-045**: `npm run build` — ビルド成功確認
+
+## Phase 9: ドキュメント最終更新
+
+- [x] **T-046**: `spec.md` — 追加整備仕様セクション追記
+- [x] **T-047**: `plan.md` — Phase 6-8 追加整備計画追記
+- [x] **T-048**: `tasks.md` — 新タスクチェックリスト追加
+- [x] **T-049**: `image-spec.md` — 新規作成
