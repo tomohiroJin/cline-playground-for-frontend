@@ -65,10 +65,10 @@
 
 ## Phase 6: メニュー画像
 
-- [ ] **T-035**: `image-spec.md` — AI 生成プロンプト仕様書作成
-- [ ] **T-036**: `primal_path_card_bg.webp` — 画像生成（外部ツール使用）
-- [ ] **T-037**: `src/assets/images/` — 生成画像の配置（1024×1024px, WebP, ≤300KB）
-- [ ] **T-038**: `src/pages/GameListPage.tsx` — `$customBg` → `$bgImage` に差し替え
+- [x] **T-035**: `image-spec.md` — AI 生成プロンプト仕様書作成
+- [x] **T-036**: `primal_path_card_bg.webp` — 画像生成（外部ツール使用）
+- [x] **T-037**: `src/assets/images/` — 生成画像の配置（1024×1024px, WebP, ≤300KB）
+- [x] **T-038**: `src/pages/GameListPage.tsx` — `$customBg` → `$bgImage` に差し替え
 - [ ] **T-039**: カード表示確認（ホバー効果との調和、クリッピング確認）
 
 ## Phase 7: README 作成・更新

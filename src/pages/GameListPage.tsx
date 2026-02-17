@@ -12,6 +12,7 @@ import agileQuizSugorokuCardBg from '../assets/images/agile_quiz_sugoroku_card_b
 import labyrinthEchoCardBg from '../assets/images/labyrinth_echo_card_bg.webp';
 import riskLcdCardBg from '../assets/images/risk_lcd_card_bg.webp';
 import keysAndArmsCardBg from '../assets/images/keys_and_arms_card_bg.webp';
+import primalPathCardBg from '../assets/images/primal_path_card_bg.webp';
 import {
   PageContainer,
   HeroSection,
@@ -402,7 +403,7 @@ const GameListPage: React.FC = () => {
           }}
         >
           <CardImageArea
-            $customBg="linear-gradient(135deg, #0a0a12 0%, #1c1c2c 40%, #f0c04030 100%)"
+            $bgImage={primalPathCardBg}
             role="img"
             aria-label="原始進化録 - PRIMAL PATHのゲーム画面プレビュー"
           />
