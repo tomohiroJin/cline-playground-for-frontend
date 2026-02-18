@@ -41,9 +41,9 @@ export type GameTickEffect =
   | { kind: 'save'; type: TickSaveEffectValue };
 
 // リジェネ定数
-const BASE_REGEN_INTERVAL = 8000;     // 基本回復間隔（8秒）
-const REGEN_REDUCTION_PER_BONUS = 800; // healBonus 1ポイントあたり 0.8秒短縮
-const MIN_REGEN_INTERVAL = 3000;       // 最短回復間隔（3秒）
+const BASE_REGEN_INTERVAL = 12000;     // 基本回復間隔（12秒）
+const REGEN_REDUCTION_PER_BONUS = 1000; // healBonus 1ポイントあたり 1秒短縮
+const MIN_REGEN_INTERVAL = 5000;       // 最短回復間隔（5秒）
 const REGEN_AMOUNT = 1;                // 回復量（固定1HP）
 
 export interface TickGameStateInput {
