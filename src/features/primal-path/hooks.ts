@@ -1,0 +1,478 @@
+/**
+ * 原始進化録 - PRIMAL PATH - カスタムフック
+ */
+import { useReducer, useEffect, useRef, useCallback, useState } from 'react';
+import type {
+  GameState, GamePhase, RunState, Evolution, SaveData,
+  Ally, BiomeId, CivTypeExt, SfxType, TickEvent,
+} from './types';
+import {
+  startRunState, startBattle, tick, afterBattle, applyEvo,
+  applyAwkFx, checkAwakeningRules, rollE, calcBoneReward,
+  startFinalBoss, handleFinalBossKill, pickBiomeAuto,
+  applyBiomeSelection, applyFirstBiome, applyAutoLastBiome,
+  deadAllies, allyReviveCost, getTB,
+} from './game-logic';
+import { AWK_SA, AWK_FA, BOSS, DIFFS, BIO, FRESH_SAVE, TREE as TREE_DATA } from './constants';
+import { AudioEngine } from './audio';
+import { Storage } from './storage';
+
+/* ===== Action Types ===== */
+
+type GameAction =
+  | { type: 'LOAD_SAVE'; save: SaveData }
+  | { type: 'START_RUN'; di: number }
+  | { type: 'PICK_BIOME'; biome: BiomeId }
+  | { type: 'SELECT_EVO'; evo: Evolution }
+  | { type: 'PROCEED_AFTER_AWK' }
+  | { type: 'PROCEED_TO_BATTLE' }
+  | { type: 'BATTLE_TICK'; nextRun: RunState }
+  | { type: 'CHANGE_SPEED'; speed: number }
+  | { type: 'SURRENDER' }
+  | { type: 'AFTER_BATTLE' }
+  | { type: 'BIOME_CLEARED' }
+  | { type: 'GO_FINAL_BOSS' }
+  | { type: 'FINAL_BOSS_KILLED' }
+  | { type: 'GAME_OVER'; won: boolean }
+  | { type: 'RETURN_TO_TITLE' }
+  | { type: 'GO_DIFF' }
+  | { type: 'GO_HOW' }
+  | { type: 'GO_TREE' }
+  | { type: 'BUY_TREE_NODE'; nodeId: string }
+  | { type: 'REVIVE_ALLY'; allyIndex: number; pct: number }
+  | { type: 'SKIP_REVIVE' }
+  | { type: 'SHOW_EVO' }
+  | { type: 'RESET_SAVE' }
+  | { type: 'SET_PHASE'; phase: GamePhase }
+  | { type: 'PREPARE_BIOME_SELECT' };
+
+/* ===== Initial State ===== */
+
+function initialState(): GameState {
+  return {
+    phase: 'title',
+    save: { ...FRESH_SAVE, tree: {}, best: {} },
+    run: null,
+    finalMode: false,
+    battleSpd: 750,
+    evoPicks: [],
+    pendingAwk: null,
+    reviveTargets: [],
+    gameResult: null,
+  };
+}
+
+/* ===== Biome Transition Helper ===== */
+
+function transitionAfterBiome(state: GameState, run: RunState): GameState {
+  if (run.bc >= 3) {
+    return { ...state, run, phase: 'prefinal' };
+  }
+  const pick = pickBiomeAuto(run);
+  if (pick.needSelection) {
+    return { ...state, run, phase: 'biome' };
+  }
+  const autoRun = applyAutoLastBiome(run);
+  const evoPicks = rollE(autoRun);
+  return { ...state, run: autoRun, phase: 'evo', evoPicks };
+}
+
+/* ===== Reducer ===== */
+
+function gameReducer(state: GameState, action: GameAction): GameState {
+  switch (action.type) {
+    case 'LOAD_SAVE':
+      return { ...state, save: { ...action.save } };
+
+    case 'START_RUN': {
+      const save = { ...state.save, runs: state.save.runs + 1 };
+      const run = startRunState(action.di, save);
+      // Auto pick first biome
+      const pick = pickBiomeAuto(run);
+      let next = run;
+      if (!pick.needSelection) {
+        next = applyFirstBiome(run);
+      }
+      const evoPicks = rollE(next);
+      return {
+        ...state, save, run: next, phase: 'evo', finalMode: false,
+        battleSpd: 750, evoPicks, pendingAwk: null, gameResult: null,
+      };
+    }
+
+    case 'GO_DIFF':
+      return { ...state, phase: 'diff' };
+
+    case 'GO_HOW':
+      return { ...state, phase: 'how' };
+
+    case 'GO_TREE':
+      return { ...state, phase: 'tree' };
+
+    case 'BUY_TREE_NODE': {
+      const { nodeId } = action;
+      const nd = TREE_DATA.find(x => x.id === nodeId);
+      const cost = nd ? nd.c : 0;
+      const save = {
+        ...state.save,
+        bones: state.save.bones - cost,
+        tree: { ...state.save.tree, [nodeId]: 1 },
+      };
+      return { ...state, save };
+    }
+
+    case 'RETURN_TO_TITLE':
+      return { ...state, phase: 'title', run: null, finalMode: false, gameResult: null };
+
+    case 'PREPARE_BIOME_SELECT': {
+      if (!state.run) return state;
+      return { ...state, phase: 'biome' };
+    }
+
+    case 'PICK_BIOME': {
+      if (!state.run) return state;
+      const next = applyBiomeSelection(state.run, action.biome);
+      const evoPicks = rollE(next);
+      return { ...state, run: next, phase: 'evo', evoPicks };
+    }
+
+    case 'SELECT_EVO': {
+      if (!state.run) return state;
+      const { nextRun, allyJoined, allyRevived } = applyEvo(state.run, action.evo);
+      // Check awakening
+      const awkRule = checkAwakeningRules(nextRun);
+      if (awkRule) {
+        return {
+          ...state, run: nextRun,
+          phase: 'awakening', pendingAwk: awkRule,
+        };
+      }
+      // Start battle
+      const battleRun = startBattle(nextRun, state.finalMode);
+      const isBoss = battleRun.cW > battleRun.wpb;
+      return { ...state, run: battleRun, phase: 'battle' };
+    }
+
+    case 'PROCEED_AFTER_AWK': {
+      if (!state.run) return state;
+      // Check for more awakenings
+      const awkRule = checkAwakeningRules(state.run);
+      if (awkRule) {
+        return { ...state, pendingAwk: awkRule };
+      }
+      // Start battle
+      const battleRun = startBattle(state.run, state.finalMode);
+      return { ...state, run: battleRun, phase: 'battle', pendingAwk: null };
+    }
+
+    case 'PROCEED_TO_BATTLE': {
+      if (!state.run || !state.pendingAwk) return state;
+      const awk = state.pendingAwk;
+      const info = awk.tier === 1
+        ? AWK_SA[awk.t as CivTypeExt]
+        : AWK_FA[awk.t as CivTypeExt];
+      const fe = awk.tier === 2 ? awk.t : undefined;
+      const nextRun = applyAwkFx(
+        state.run, info.fx, awk.id, info.nm, info.cl,
+        fe !== undefined ? fe : null,
+      );
+      // Check for more awakenings
+      const nextAwk = checkAwakeningRules(nextRun);
+      if (nextAwk) {
+        return { ...state, run: nextRun, pendingAwk: nextAwk };
+      }
+      // Start battle
+      const battleRun = startBattle(nextRun, state.finalMode);
+      return { ...state, run: battleRun, phase: 'battle', pendingAwk: null };
+    }
+
+    case 'BATTLE_TICK': {
+      return { ...state, run: action.nextRun };
+    }
+
+    case 'AFTER_BATTLE': {
+      if (!state.run || state.phase !== 'battle') return state;
+      const { nextRun, biomeCleared } = afterBattle(state.run);
+      if (biomeCleared) {
+        const dead = deadAllies(nextRun.al);
+        if (dead.length > 0) {
+          return { ...state, run: nextRun, phase: 'ally_revive', reviveTargets: dead };
+        }
+        return transitionAfterBiome(state, nextRun);
+      }
+      const evoPicks = rollE(nextRun);
+      return { ...state, run: nextRun, phase: 'evo', evoPicks };
+    }
+
+    case 'BIOME_CLEARED': {
+      if (!state.run) return state;
+      return transitionAfterBiome(state, state.run);
+    }
+
+    case 'GO_FINAL_BOSS': {
+      if (!state.run) return state;
+      if (state.run.di >= 3 && !state.run.fe) {
+        return { ...state, phase: 'over', gameResult: false };
+      }
+      const { nextRun } = startFinalBoss(state.run);
+      return { ...state, run: nextRun, phase: 'battle', finalMode: true };
+    }
+
+    case 'FINAL_BOSS_KILLED': {
+      if (!state.run || state.phase !== 'battle') return state;
+      const { nextRun, gameWon } = handleFinalBossKill(state.run);
+      if (gameWon) {
+        const boneReward = calcBoneReward(nextRun, true);
+        const save = {
+          ...state.save,
+          bones: state.save.bones + boneReward,
+          clears: state.save.clears + 1,
+          best: { ...state.save.best, [nextRun.di]: 1 },
+        };
+        return { ...state, save, run: nextRun, phase: 'over', gameResult: true, finalMode: false };
+      }
+      // Phase 2
+      return { ...state, run: nextRun, phase: 'battle' };
+    }
+
+    case 'GAME_OVER': {
+      if (!state.run || state.phase !== 'battle') return state;
+      const boneReward = calcBoneReward(state.run, action.won);
+      const save = { ...state.save, bones: state.save.bones + boneReward };
+      if (action.won) {
+        save.clears = save.clears + 1;
+        save.best = { ...save.best, [state.run.di]: 1 };
+      }
+      return { ...state, save, phase: 'over', gameResult: action.won, finalMode: false };
+    }
+
+    case 'SURRENDER': {
+      if (!state.run) return state;
+      const next = { ...state.run, bE: Math.floor(state.run.bE / 2) };
+      const boneReward = calcBoneReward(next, false);
+      const save = { ...state.save, bones: state.save.bones + boneReward };
+      return { ...state, save, run: next, phase: 'over', gameResult: false, finalMode: false };
+    }
+
+    case 'CHANGE_SPEED':
+      return { ...state, battleSpd: action.speed };
+
+    case 'REVIVE_ALLY': {
+      if (!state.run) return state;
+      const dead = deadAllies(state.run.al);
+      const target = dead[action.allyIndex];
+      if (!target) return state;
+      const cost = action.pct === 100
+        ? Math.floor(allyReviveCost(state.run) * 1.8)
+        : allyReviveCost(state.run);
+      if (state.run.bE < cost) return state;
+      const nextAl = state.run.al.map(a => {
+        if (a === target) return { ...a, a: 1, hp: Math.floor(a.mhp * (action.pct / 100)) };
+        return { ...a };
+      });
+      const nextRun = { ...state.run, al: nextAl, bE: state.run.bE - cost };
+      const stillDead = deadAllies(nextRun.al);
+      if (stillDead.length === 0) {
+        return transitionAfterBiome(state, nextRun);
+      }
+      return { ...state, run: nextRun, reviveTargets: stillDead };
+    }
+
+    case 'SKIP_REVIVE': {
+      if (!state.run) return state;
+      return transitionAfterBiome(state, state.run);
+    }
+
+    case 'SHOW_EVO': {
+      if (!state.run) return state;
+      const evoPicks = rollE(state.run);
+      return { ...state, phase: 'evo', evoPicks };
+    }
+
+    case 'RESET_SAVE':
+      return { ...state, save: { bones: 0, tree: {}, clears: 0, runs: 0, best: {} } };
+
+    case 'SET_PHASE':
+      return { ...state, phase: action.phase };
+
+    default:
+      return state;
+  }
+}
+
+/* ===== useGameState ===== */
+
+export function useGameState() {
+  const [state, dispatch] = useReducer(gameReducer, undefined, initialState);
+  return { state, dispatch };
+}
+
+/* ===== useBattle ===== */
+
+export function useBattle(
+  state: GameState,
+  dispatch: React.Dispatch<GameAction>,
+  onEvents?: (events: TickEvent[]) => void,
+) {
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const delayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
+  const clearTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    if (delayRef.current) {
+      clearTimeout(delayRef.current);
+      delayRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    clearTimer();
+    if (state.phase !== 'battle' || state.battleSpd === 0 || !state.run?.en) return;
+
+    timerRef.current = setInterval(() => {
+      const s = stateRef.current;
+      if (s.phase !== 'battle' || !s.run?.en) {
+        clearTimer();
+        return;
+      }
+      const { nextRun, events } = tick(s.run, s.finalMode);
+
+      // Process events — single pass, no duplicate SFX
+      let dead = false;
+      let enemyKilled = false;
+      let finalBossKilled = false;
+
+      for (const ev of events) {
+        if (ev.type === 'player_dead') dead = true;
+        if (ev.type === 'enemy_killed') enemyKilled = true;
+        if (ev.type === 'final_boss_killed') finalBossKilled = true;
+      }
+      onEvents?.(events);
+
+      if (dead) {
+        clearTimer();
+        dispatch({ type: 'BATTLE_TICK', nextRun }); // Show HP=0
+        delayRef.current = setTimeout(() => {
+          dispatch({ type: 'GAME_OVER', won: false });
+        }, 600);
+        return;
+      }
+      if (finalBossKilled) {
+        clearTimer();
+        dispatch({ type: 'BATTLE_TICK', nextRun }); // Show boss HP=0
+        delayRef.current = setTimeout(() => {
+          dispatch({ type: 'FINAL_BOSS_KILLED' });
+        }, 800);
+        return;
+      }
+      if (enemyKilled) {
+        clearTimer();
+        dispatch({ type: 'BATTLE_TICK', nextRun }); // Show enemy HP=0
+        delayRef.current = setTimeout(() => {
+          dispatch({ type: 'AFTER_BATTLE' });
+        }, 800);
+        return;
+      }
+      // Normal tick — sync state
+      dispatch({ type: 'BATTLE_TICK', nextRun });
+    }, state.battleSpd);
+
+    return clearTimer;
+  }, [state.phase, state.battleSpd, state.finalMode, clearTimer, dispatch, onEvents]);
+
+  return { clearTimer };
+}
+
+/* ===== useAudio ===== */
+
+export function useAudio() {
+  const initialized = useRef(false);
+
+  const init = useCallback(() => {
+    if (!initialized.current) {
+      AudioEngine.init();
+      initialized.current = true;
+    }
+  }, []);
+
+  const playSfx = useCallback((type: SfxType) => {
+    AudioEngine.play(type);
+  }, []);
+
+  return { init, playSfx };
+}
+
+/* ===== useOverlay ===== */
+
+export interface OverlayState {
+  visible: boolean;
+  icon: string;
+  text: string;
+}
+
+export function useOverlay() {
+  const [overlay, setOverlay] = useState<OverlayState>({ visible: false, icon: '', text: '' });
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resolveRef = useRef<(() => void) | null>(null);
+
+  const showOverlay = useCallback((icon: string, text: string, ms = 1200): Promise<void> => {
+    return new Promise(resolve => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      if (resolveRef.current) resolveRef.current();
+      resolveRef.current = resolve;
+      setOverlay({ visible: true, icon, text });
+      timerRef.current = setTimeout(() => {
+        setOverlay({ visible: false, icon: '', text: '' });
+        resolveRef.current = null;
+        resolve();
+      }, ms);
+    });
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      if (resolveRef.current) resolveRef.current();
+    };
+  }, []);
+
+  return { overlay, showOverlay };
+}
+
+/* ===== usePersistence ===== */
+
+export function usePersistence(
+  state: GameState,
+  dispatch: React.Dispatch<GameAction>,
+) {
+  const [loaded, setLoaded] = useState(false);
+  const prevSaveRef = useRef<string>('');
+
+  // Load on mount
+  useEffect(() => {
+    const data = Storage.load();
+    if (data) {
+      dispatch({ type: 'LOAD_SAVE', save: data });
+    }
+    setLoaded(true);
+  }, [dispatch]);
+
+  // Save on changes
+  useEffect(() => {
+    if (!loaded) return;
+    const json = JSON.stringify(state.save);
+    if (json !== prevSaveRef.current) {
+      prevSaveRef.current = json;
+      Storage.save(state.save);
+    }
+  }, [state.save, loaded]);
+
+  return { loaded };
+}
+
+export type { GameAction };

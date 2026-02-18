@@ -1,0 +1,109 @@
+import React from 'react';
+import type { RunState, Evolution, SfxType } from '../types';
+import type { GameAction } from '../hooks';
+import { BIO, TC, TN, CIV_TYPES } from '../constants';
+import { effATK, simEvo, civLvs, civLv, awkInfo } from '../game-logic';
+import { ProgressBar, StatPreview, CivBadge, AwakeningBadges, CivLevelsDisplay, StatLine, AffinityBadge, AllyList } from './shared';
+import { Screen, SubTitle, Divider, EvoCard, GamePanel, StatText, Gc } from '../styles';
+
+interface Props {
+  run: RunState;
+  evoPicks: Evolution[];
+  dispatch: React.Dispatch<GameAction>;
+  playSfx: (t: SfxType) => void;
+}
+
+export const EvolutionScreen: React.FC<Props> = ({ run, evoPicks, dispatch, playSfx }) => {
+  const m = BIO[run.cBT as keyof typeof BIO];
+  const lvs = civLvs(run);
+  const nxtA = awkInfo(run);
+  const curA = effATK(run);
+
+  const handlePick = (ev: Evolution) => {
+    playSfx('evo');
+    dispatch({ type: 'SELECT_EVO', evo: ev });
+  };
+
+  return (
+    <Screen>
+      <div style={{ fontSize: 16, marginTop: 2 }}>⚡</div>
+      <SubTitle style={{ fontSize: 13 }}>進化を選べ</SubTitle>
+      {m && <ProgressBar current={run.cW} max={run.wpb + 1} label={`${m.ic} ${m.nm}`} />}
+      <StatText style={{ marginBottom: 2 }}>
+        <CivLevelsDisplay run={run} /> <AwakeningBadges awoken={run.awoken} />
+        <AffinityBadge biome={run.cBT} levels={lvs} />
+      </StatText>
+
+      {nxtA.length > 0 && (
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 3 }}>
+          {nxtA.map((a, i) => (
+            <span key={i} style={{
+              fontSize: 7, color: a.cl, background: a.cl + '10',
+              border: `1px solid ${a.cl}30`, padding: '1px 4px', borderRadius: 6,
+            }}>
+              {a.nm} {a.need}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {evoPicks.map((ev, i) => {
+        const sim = simEvo(run, ev);
+        const lvUp = { ...lvs, [ev.t]: lvs[ev.t] + 1 };
+        return (
+          <EvoCard key={i} $rare={!!ev.r} onClick={() => handlePick(ev)}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <span style={{ fontSize: 11, color: '#f0c040' }}>{ev.r ? '★ ' : ''}{ev.n}</span>{' '}
+                <span style={{ fontSize: 9, color: '#908870' }}>{ev.d}</span>
+                <span style={{
+                  fontSize: 7, padding: '0 4px', borderRadius: 6, marginLeft: 3,
+                  background: TC[ev.t] + '20', color: TC[ev.t], border: `1px solid ${TC[ev.t]}40`,
+                }}>
+                  {TN[ev.t]} Lv{lvUp[ev.t]}
+                </span>
+              </div>
+              <CivBadge type={ev.t} />
+            </div>
+            <div style={{ marginTop: 3 }}>
+              <StatPreview label="ATK" current={curA} next={sim.atk} max={Math.max(curA, sim.atk, 50)} color="#f08050" />
+              <StatPreview label="HP" current={run.hp} next={sim.hp} max={Math.max(sim.mhp, run.mhp)} color="#55ee55" />
+              <StatPreview label="DEF" current={run.def} next={sim.def} max={Math.max(run.def, sim.def, 20)} color="#50c8e8" />
+              {sim.cr !== run.cr && (
+                <StatPreview label="会心" current={Math.round(run.cr * 100)} next={Math.round(sim.cr * 100)} max={Math.max(Math.round(sim.cr * 100), 30)} color="#f0c040" />
+              )}
+              {ev.e.aHL && <div style={{ fontSize: 7, color: '#50e090', marginTop: 1 }}>💚 仲間HP+{ev.e.aHL}</div>}
+              {ev.e.bb && <div style={{ fontSize: 7, color: '#e0c060', marginTop: 1 }}>🦴 骨+{ev.e.bb}</div>}
+              {ev.e.revA && <div style={{ fontSize: 7, color: '#d060ff', marginTop: 1 }}>✨ 仲間蘇生 HP{ev.e.revA}%</div>}
+            </div>
+          </EvoCard>
+        );
+      })}
+
+      {(() => {
+        const hints: React.ReactNode[] = [];
+        if (run.al.length < run.mxA) {
+          const nxtLvs = [2, 4, 6];
+          CIV_TYPES.forEach(t => {
+            const lv = civLv(run, t);
+            nxtLvs.forEach(nl => {
+              if (lv < nl && lv + 1 === nl) {
+                hints.push(
+                  <span key={`${t}-${nl}`} style={{ fontSize: 7, color: TC[t] }}>{TN[t]}Lv{nl}で仲間加入 </span>
+                );
+              }
+            });
+          });
+        }
+        return null; // hints rendered inside panel below
+      })()}
+
+      <GamePanel style={{ marginTop: 3, padding: '4px 8px' }}>
+        <StatText>
+          <StatLine run={run} /> 会心 <Gc>{(run.cr * 100).toFixed(0)}%</Gc> 🦴 <Gc>{run.bE}</Gc>
+        </StatText>
+        <AllyList allies={run.al} mode="evo" />
+      </GamePanel>
+    </Screen>
+  );
+};

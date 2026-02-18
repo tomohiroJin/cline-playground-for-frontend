@@ -1,0 +1,338 @@
+/**
+ * 原始進化録 - PRIMAL PATH - ゲームデータ定数
+ */
+import type {
+  Difficulty, Evolution, AllyTemplate, EnemyTemplate, TreeNode,
+  BiomeInfo, SfxDef, CivType, CivTypeExt, BiomeId, AwakeningInfo,
+  TreeBonus, SpeedOption, EnvDmgConfig, SaveData,
+} from './types';
+
+/** 文明タイプ一覧 */
+export const CIV_TYPES: readonly CivType[] = Object.freeze(['tech', 'life', 'rit']);
+
+/** 文明キーマッピング */
+export const CIV_KEYS: Readonly<Record<CivType, 'cT' | 'cL' | 'cR'>> = Object.freeze({
+  tech: 'cT', life: 'cL', rit: 'cR',
+});
+
+/** 文明カラー */
+export const TC: Readonly<Record<CivTypeExt, string>> = Object.freeze({
+  tech: '#f08050', life: '#50e090', rit: '#d060ff', bal: '#e0c060',
+});
+
+/** 文明名 */
+export const TN: Readonly<Record<CivTypeExt, string>> = Object.freeze({
+  tech: '技術', life: '生活', rit: '儀式', bal: '調和',
+});
+
+/** カテゴリカラー */
+export const CAT_CL: Readonly<Record<string, string>> = Object.freeze({
+  atk: '#f08050', hp: '#50e090', def: '#50c8e8', crit: '#f0c040',
+  bone: '#c0a040', ally: '#d060ff', env: '#80b0c0', spc: '#f0c040',
+});
+
+/** バイオーム情報 */
+export const BIO: Readonly<Record<BiomeId, BiomeInfo>> = Object.freeze({
+  grassland: Object.freeze({ ic: '🌿', nm: '草原', ds: 'バランス型' }),
+  glacier: Object.freeze({ ic: '❄️', nm: '氷河', ds: '技術有利' }),
+  volcano: Object.freeze({ ic: '🌋', nm: '火山', ds: '儀式有利' }),
+});
+
+/** 速度オプション */
+export const SPEED_OPTS: readonly SpeedOption[] = Object.freeze([
+  Object.freeze(['×1', 750] as const),
+  Object.freeze(['×2', 400] as const),
+  Object.freeze(['×4', 200] as const),
+  Object.freeze(['×8', 100] as const),
+]);
+
+/** 難易度一覧 */
+export const DIFFS: readonly Difficulty[] = Object.freeze([
+  Object.freeze({ n: '原始', d: '通常難易度', env: 1, bm: 1, ul: 0, ic: '🌿', hm: 1, am: 1 }),
+  Object.freeze({ n: '氷河期', d: '環境ダメ強化 骨+25%', env: 1.6, bm: 1.25, ul: 1, ic: '❄️', hm: 1.7, am: 1.5 }),
+  Object.freeze({ n: '大災厄', d: '敵大幅強化 骨+50%', env: 2.2, bm: 1.5, ul: 3, ic: '🔥', hm: 2.8, am: 2.4 }),
+  Object.freeze({ n: '神話世界', d: '極限 ボス2連戦 骨+80%', env: 3, bm: 1.8, ul: 6, ic: '⚡', hm: 4.0, am: 3.2 }),
+]);
+
+/** 進化一覧 */
+export const EVOS: readonly Evolution[] = Object.freeze([
+  // tech tier 0
+  Object.freeze({ n: '火おこし', d: 'ATK+3', t: 'tech' as const, r: 0, e: Object.freeze({ atk: 3 }) }),
+  Object.freeze({ n: '投石術', d: 'ATK+2 会心+3%', t: 'tech' as const, r: 0, e: Object.freeze({ atk: 2, cr: 0.03 }) }),
+  Object.freeze({ n: '黒曜石の刃', d: 'ATK+5', t: 'tech' as const, r: 0, e: Object.freeze({ atk: 5 }) }),
+  Object.freeze({ n: '火矢', d: 'ATK+4 火傷', t: 'tech' as const, r: 0, e: Object.freeze({ atk: 4, burn: 1 }) }),
+  Object.freeze({ n: '罠の技術', d: 'ATK+3 DEF+1', t: 'tech' as const, r: 0, e: Object.freeze({ atk: 3, def: 1 }) }),
+  Object.freeze({ n: '爆炎石', d: 'ATK+8', t: 'tech' as const, r: 1, e: Object.freeze({ atk: 8 }) }),
+  Object.freeze({ n: '溶岩の槍', d: 'ATK+6 DEF+2', t: 'tech' as const, r: 1, e: Object.freeze({ atk: 6, def: 2 }) }),
+  Object.freeze({ n: '雷の石斧', d: 'ATK+10 会心+5%', t: 'tech' as const, r: 1, e: Object.freeze({ atk: 10, cr: 0.05 }) }),
+  // life tier 0
+  Object.freeze({ n: '薬草知識', d: 'HP+12', t: 'life' as const, r: 0, e: Object.freeze({ heal: 12 }) }),
+  Object.freeze({ n: '革鎧', d: 'DEF+2', t: 'life' as const, r: 0, e: Object.freeze({ def: 2 }) }),
+  Object.freeze({ n: '食糧備蓄', d: '最大HP+15', t: 'life' as const, r: 0, e: Object.freeze({ mhp: 15 }) }),
+  Object.freeze({ n: '狩猟の知恵', d: 'ATK+2 DEF+1', t: 'life' as const, r: 0, e: Object.freeze({ atk: 2, def: 1 }) }),
+  Object.freeze({ n: '仲間の絆', d: '仲間HP+10', t: 'life' as const, r: 0, e: Object.freeze({ aHL: 10 }) }),
+  Object.freeze({ n: '聖なる泉', d: '全回復 HP+10', t: 'life' as const, r: 1, e: Object.freeze({ full: 1, mhp: 10 }) }),
+  Object.freeze({ n: '大盾術', d: 'DEF+5', t: 'life' as const, r: 1, e: Object.freeze({ def: 5 }) }),
+  Object.freeze({ n: '生命の樹', d: '最大HP+30 回復15', t: 'life' as const, r: 1, e: Object.freeze({ mhp: 30, heal: 15 }) }),
+  // rit tier 0
+  Object.freeze({ n: '血の誓い', d: 'HP-8 ATK+6', t: 'rit' as const, r: 0, e: Object.freeze({ sd: 8, atk: 6 }) }),
+  Object.freeze({ n: '骨の呪術', d: 'HP-5 ATK+4', t: 'rit' as const, r: 0, e: Object.freeze({ sd: 5, atk: 4 }) }),
+  Object.freeze({ n: '死霊の祝福', d: 'HP-10 ATK+8 DEF+1', t: 'rit' as const, r: 0, e: Object.freeze({ sd: 10, atk: 8, def: 1 }) }),
+  Object.freeze({ n: '狂気の舞', d: 'HP-15 ATK+12', t: 'rit' as const, r: 0, e: Object.freeze({ sd: 15, atk: 12 }) }),
+  Object.freeze({ n: '骨の收穫', d: 'HP-6 ATK+3 骨+2', t: 'rit' as const, r: 0, e: Object.freeze({ sd: 6, atk: 3, bb: 2 }) }),
+  Object.freeze({ n: '魂喰らい', d: 'HP-20 ATK+16 骨+3', t: 'rit' as const, r: 1, e: Object.freeze({ sd: 20, atk: 16, bb: 3 }) }),
+  Object.freeze({ n: '血の契約', d: 'HP半減 ATK×2', t: 'rit' as const, r: 1, e: Object.freeze({ half: 1, aM: 2 }) }),
+  Object.freeze({ n: '禁忌の儀', d: 'HP-25 ATK+20 DEF+3', t: 'rit' as const, r: 1, e: Object.freeze({ sd: 25, atk: 20, def: 3 }) }),
+  // special
+  Object.freeze({ n: '魂呼びの儀', d: '仲間蘇生HP50%', t: 'life' as const, r: 1, e: Object.freeze({ revA: 50 }) }),
+  Object.freeze({ n: '再誕の祈り', d: '仲間蘇生HP100% HP-10', t: 'rit' as const, r: 1, e: Object.freeze({ revA: 100, sd: 10 }) }),
+]);
+
+/** 味方テンプレート */
+export const ALT: Readonly<Record<CivType, readonly AllyTemplate[]>> = Object.freeze({
+  tech: Object.freeze([
+    Object.freeze({ n: '火の狩人', hp: 28, atk: 5, t: 'tech' as const }),
+    Object.freeze({ n: '投石兵', hp: 22, atk: 6, t: 'tech' as const }),
+  ]),
+  life: Object.freeze([
+    Object.freeze({ n: '回復役', hp: 32, atk: 2, t: 'life' as const, h: 1 }),
+    Object.freeze({ n: '盾役', hp: 45, atk: 1, t: 'life' as const, tk: 1 }),
+  ]),
+  rit: Object.freeze([
+    Object.freeze({ n: '狂戦士', hp: 18, atk: 9, t: 'rit' as const }),
+    Object.freeze({ n: '生贄巫師', hp: 22, atk: 7, t: 'rit' as const }),
+  ]),
+});
+
+/** 通常敵テンプレート */
+export const ENM: Readonly<Record<BiomeId, readonly EnemyTemplate[]>> = Object.freeze({
+  grassland: Object.freeze([
+    Object.freeze({ n: '野ウサギ', hp: 14, atk: 3, def: 0, bone: 1 }),
+    Object.freeze({ n: 'イノシシ', hp: 28, atk: 5, def: 1, bone: 1 }),
+    Object.freeze({ n: 'オオカミ', hp: 35, atk: 7, def: 1, bone: 2 }),
+    Object.freeze({ n: '巨大ヘビ', hp: 40, atk: 6, def: 2, bone: 2 }),
+  ]),
+  glacier: Object.freeze([
+    Object.freeze({ n: '氷ネズミ', hp: 22, atk: 5, def: 1, bone: 1 }),
+    Object.freeze({ n: '雪狼', hp: 38, atk: 8, def: 2, bone: 2 }),
+    Object.freeze({ n: '氷の巨鳥', hp: 48, atk: 10, def: 2, bone: 2 }),
+    Object.freeze({ n: 'フロストベア', hp: 58, atk: 12, def: 3, bone: 3 }),
+  ]),
+  volcano: Object.freeze([
+    Object.freeze({ n: '溶岩トカゲ', hp: 26, atk: 6, def: 2, bone: 1 }),
+    Object.freeze({ n: '火炎蛇', hp: 42, atk: 9, def: 1, bone: 2 }),
+    Object.freeze({ n: '噴火カメ', hp: 55, atk: 8, def: 5, bone: 2 }),
+    Object.freeze({ n: '灼熱ワイバーン', hp: 52, atk: 13, def: 2, bone: 3 }),
+  ]),
+});
+
+/** ボステンプレート */
+export const BOSS: Readonly<Record<string, EnemyTemplate>> = Object.freeze({
+  grassland: Object.freeze({ n: 'サーベルタイガー', hp: 120, atk: 14, def: 3, bone: 5 }),
+  glacier: Object.freeze({ n: 'マンモス', hp: 160, atk: 16, def: 6, bone: 6 }),
+  volcano: Object.freeze({ n: '火竜', hp: 140, atk: 20, def: 3, bone: 6 }),
+  ft: Object.freeze({ n: '氷の神獣', hp: 320, atk: 30, def: 7, bone: 10 }),
+  fl: Object.freeze({ n: '大地の守護者', hp: 400, atk: 24, def: 10, bone: 10 }),
+  fr: Object.freeze({ n: '血の魔神', hp: 280, atk: 40, def: 4, bone: 12 }),
+});
+
+/** 文明ツリー */
+export const TREE: readonly TreeNode[] = Object.freeze([
+  // Tier 1
+  Object.freeze({ id: 'atk1', n: '原初の力', d: 'ATK+1', c: 15, e: Object.freeze({ bA: 1 }), t: 1, cat: 'atk' }),
+  Object.freeze({ id: 'hp1', n: '厚い毛皮', d: 'HP+10', c: 15, e: Object.freeze({ bH: 10 }), t: 1, cat: 'hp' }),
+  Object.freeze({ id: 'def1', n: '硬い骨格', d: 'DEF+1', c: 20, e: Object.freeze({ bD: 1 }), t: 1, cat: 'def' }),
+  Object.freeze({ id: 'rare1', n: '進化の記憶', d: 'レア+5%', c: 25, e: Object.freeze({ rr: 0.05 }), t: 1, cat: 'spc' }),
+  Object.freeze({ id: 'bone1', n: '骨の嗅覚', d: '骨+10%', c: 30, e: Object.freeze({ bM: 0.1 }), t: 1, cat: 'bone' }),
+  Object.freeze({ id: 'spd1', n: '俊足', d: '会心+3%', c: 20, e: Object.freeze({ cr: 0.03 }), t: 1, cat: 'crit' }),
+  // Tier 2
+  Object.freeze({ id: 'atk2', n: '石器の極意', d: 'ATK+2', c: 55, e: Object.freeze({ bA: 2 }), r: 'atk1', t: 2, cat: 'atk' }),
+  Object.freeze({ id: 'hp2', n: '不屈の血', d: 'HP+20', c: 55, e: Object.freeze({ bH: 20 }), r: 'hp1', t: 2, cat: 'hp' }),
+  Object.freeze({ id: 'def2', n: '岩の心臓', d: 'DEF+1', c: 60, e: Object.freeze({ bD: 1 }), r: 'def1', t: 2, cat: 'def' }),
+  Object.freeze({ id: 'ice1', n: '氷耐性', d: '氷河-25%', c: 50, e: Object.freeze({ iR: 0.25 }), t: 2, cat: 'env' }),
+  Object.freeze({ id: 'fire1', n: '火耐性', d: '火山-25%', c: 50, e: Object.freeze({ fR: 0.25 }), t: 2, cat: 'env' }),
+  Object.freeze({ id: 'crit1', n: '急所の知識', d: '会心+5%', c: 65, e: Object.freeze({ cr: 0.05 }), r: 'spd1', t: 2, cat: 'crit' }),
+  Object.freeze({ id: 'ally1', n: '族長の声', d: '仲間HP+15%', c: 70, e: Object.freeze({ aH: 0.15 }), t: 2, cat: 'ally' }),
+  Object.freeze({ id: 'bone2', n: '骨の収集家', d: '骨+10%', c: 80, e: Object.freeze({ bM: 0.1 }), r: 'bone1', t: 2, cat: 'bone' }),
+  Object.freeze({ id: 'env1', n: '環境適応', d: '環境ダメ-15%', c: 60, e: Object.freeze({ iR: 0.15, fR: 0.15 }), t: 2, cat: 'env' }),
+  // Tier 3
+  Object.freeze({ id: 'atk3', n: '猛獣の魂', d: 'ATK+3', c: 140, e: Object.freeze({ bA: 3 }), r: 'atk2', t: 3, cat: 'atk' }),
+  Object.freeze({ id: 'hp3', n: '大地の加護', d: 'HP+30', c: 140, e: Object.freeze({ bH: 30 }), r: 'hp2', t: 3, cat: 'hp' }),
+  Object.freeze({ id: 'crit2', n: '必殺の一撃', d: '会心+5%', c: 160, e: Object.freeze({ cr: 0.05 }), r: 'crit1', t: 3, cat: 'crit' }),
+  Object.freeze({ id: 'start1', n: '文明の芽', d: '開始文明Lv1', c: 150, e: Object.freeze({ sC: 1 }), t: 3, cat: 'spc' }),
+  Object.freeze({ id: 'ally2', n: '部族の絆', d: '仲間ATK+20%', c: 170, e: Object.freeze({ aA: 0.2 }), r: 'ally1', t: 3, cat: 'ally' }),
+  Object.freeze({ id: 'ice2', n: '氷の支配', d: '氷河-50%', c: 180, e: Object.freeze({ iR: 0.5 }), r: 'ice1', t: 3, cat: 'env' }),
+  Object.freeze({ id: 'fire2', n: '炎の支配', d: '火山-50%', c: 180, e: Object.freeze({ fR: 0.5 }), r: 'fire1', t: 3, cat: 'env' }),
+  Object.freeze({ id: 'heal1', n: '再生の血', d: '毎ターンHP2%', c: 160, e: Object.freeze({ rg: 0.02 }), t: 3, cat: 'hp' }),
+  Object.freeze({ id: 'rare2', n: '進化の英知', d: 'レア+8%', c: 190, e: Object.freeze({ rr: 0.08 }), r: 'rare1', t: 3, cat: 'spc' }),
+  Object.freeze({ id: 'dmg1', n: '闘志', d: '全ダメ+8%', c: 180, e: Object.freeze({ dM: 0.08 }), t: 3, cat: 'atk' }),
+  // Tier 4
+  Object.freeze({ id: 'atk4', n: '破壊神の拳', d: 'ATK+5', c: 350, e: Object.freeze({ bA: 5 }), r: 'atk3', t: 4, cat: 'atk' }),
+  Object.freeze({ id: 'hp4', n: '不死の体', d: 'HP+50', c: 350, e: Object.freeze({ bH: 50 }), r: 'hp3', t: 4, cat: 'hp' }),
+  Object.freeze({ id: 'start2', n: '古代の知恵', d: '開始文明Lv2', c: 450, e: Object.freeze({ sC: 1 }), r: 'start1', t: 4, cat: 'spc' }),
+  Object.freeze({ id: 'bone3', n: '骨の王', d: '骨+15%', c: 400, e: Object.freeze({ bM: 0.15 }), r: 'bone2', t: 4, cat: 'bone' }),
+  Object.freeze({ id: 'rev1', n: '復活の儀', d: '死亡時復活', c: 500, e: Object.freeze({ rv: 1 }), t: 4, cat: 'spc' }),
+  Object.freeze({ id: 'ally3', n: '大族長', d: '仲間枠+1', c: 450, e: Object.freeze({ aS: 1 }), r: 'ally2', t: 4, cat: 'ally' }),
+  Object.freeze({ id: 'luck1', n: '運命の導き', d: '進化4択', c: 400, e: Object.freeze({ eN: 1 }), t: 4, cat: 'spc' }),
+  Object.freeze({ id: 'crit3', n: '達人の目', d: '会心+8%', c: 380, e: Object.freeze({ cr: 0.08 }), r: 'crit2', t: 4, cat: 'crit' }),
+  Object.freeze({ id: 'def3', n: '鉄壁', d: 'DEF+3', c: 400, e: Object.freeze({ bD: 3 }), r: 'def2', t: 4, cat: 'def' }),
+  Object.freeze({ id: 'heal2', n: '生命力強化', d: '毎ターンHP3%', c: 420, e: Object.freeze({ rg: 0.03 }), r: 'heal1', t: 4, cat: 'hp' }),
+  // Tier 5
+  Object.freeze({ id: 'final1', n: '進化の頂点', d: '大覚醒Lv4に緩和', c: 800, e: Object.freeze({ fQ: -1 }), t: 5, cat: 'spc' }),
+  Object.freeze({ id: 'atk5', n: '始祖の力', d: '全ダメ+15%', c: 900, e: Object.freeze({ dM: 0.15 }), r: 'dmg1', t: 5, cat: 'atk' }),
+  Object.freeze({ id: 'hp5', n: '永遠の命', d: 'HP+80', c: 900, e: Object.freeze({ bH: 80 }), r: 'hp4', t: 5, cat: 'hp' }),
+  Object.freeze({ id: 'bone4', n: '黄金の骨', d: '骨+25%', c: 1000, e: Object.freeze({ bM: 0.25 }), r: 'bone3', t: 5, cat: 'bone' }),
+  Object.freeze({ id: 'ally4', n: '伝説の族長', d: '仲間ATK+30%', c: 1200, e: Object.freeze({ aA: 0.3 }), r: 'ally3', t: 5, cat: 'ally' }),
+  Object.freeze({ id: 'awk1', n: '覚醒の素質', d: '小覚醒Lv3に緩和', c: 700, e: Object.freeze({ aQ: -1 }), t: 5, cat: 'spc' }),
+  // Tier 6
+  Object.freeze({ id: 'atk6', n: '天破の拳', d: 'ATK+8', c: 1500, e: Object.freeze({ bA: 8 }), r: 'atk4', t: 6, cat: 'atk' }),
+  Object.freeze({ id: 'hp6', n: '世界樹の命', d: 'HP+120', c: 1500, e: Object.freeze({ bH: 120 }), r: 'hp5', t: 6, cat: 'hp' }),
+  Object.freeze({ id: 'crit4', n: '神眼', d: '会心+12%', c: 1400, e: Object.freeze({ cr: 0.12 }), r: 'crit3', t: 6, cat: 'crit' }),
+  Object.freeze({ id: 'rev2', n: '輪廻転生', d: '復活HP50%', c: 1800, e: Object.freeze({ rP: 0.2 }), r: 'rev1', t: 6, cat: 'spc' }),
+  Object.freeze({ id: 'bone5', n: '骨神の加護', d: '骨+35%', c: 1600, e: Object.freeze({ bM: 0.35 }), r: 'bone4', t: 6, cat: 'bone' }),
+  Object.freeze({ id: 'dmg2', n: '破壊衝動', d: '全ダメ+20%', c: 1700, e: Object.freeze({ dM: 0.2 }), r: 'atk5', t: 6, cat: 'atk' }),
+  Object.freeze({ id: 'start3', n: '太古の記憶', d: '開始文明Lv3', c: 2000, e: Object.freeze({ sC: 1 }), r: 'start2', t: 6, cat: 'spc' }),
+  // Tier 7
+  Object.freeze({ id: 'atk7', n: '原始神の怒り', d: 'ATK+12', c: 3000, e: Object.freeze({ bA: 12 }), r: 'atk6', t: 7, cat: 'atk' }),
+  Object.freeze({ id: 'hp7', n: '不滅の魂', d: 'HP+200', c: 3000, e: Object.freeze({ bH: 200 }), r: 'hp6', t: 7, cat: 'hp' }),
+  Object.freeze({ id: 'ally5', n: '神族の長', d: '仲間枠+1 仲間ATK+40%', c: 3500, e: Object.freeze({ aS: 1, aA: 0.4 }), r: 'ally4', t: 7, cat: 'ally' }),
+  Object.freeze({ id: 'luck2', n: '天命', d: '進化5択', c: 2800, e: Object.freeze({ eN: 1 }), r: 'luck1', t: 7, cat: 'spc' }),
+  Object.freeze({ id: 'def4', n: '絶対防御', d: 'DEF+6', c: 2500, e: Object.freeze({ bD: 6 }), r: 'def3', t: 7, cat: 'def' }),
+  Object.freeze({ id: 'heal3', n: '永劫回帰', d: '毎ターンHP5%', c: 3200, e: Object.freeze({ rg: 0.05 }), r: 'heal2', t: 7, cat: 'hp' }),
+  // Tier 8
+  Object.freeze({ id: 'atk8', n: '万物破壊', d: 'ATK+20 全ダメ+25%', c: 5000, e: Object.freeze({ bA: 20, dM: 0.25 }), r: 'atk7', t: 8, cat: 'atk' }),
+  Object.freeze({ id: 'hp8', n: '始原の器', d: 'HP+350', c: 5000, e: Object.freeze({ bH: 350 }), r: 'hp7', t: 8, cat: 'hp' }),
+  Object.freeze({ id: 'bone6', n: '骨の創世神', d: '骨+50%', c: 6000, e: Object.freeze({ bM: 0.5 }), r: 'bone5', t: 8, cat: 'bone' }),
+  Object.freeze({ id: 'final2', n: '究極覚醒', d: '大覚醒Lv3に緩和', c: 8000, e: Object.freeze({ fQ: -1 }), t: 8, cat: 'spc' }),
+]);
+
+/** ティアアンロック条件 (クリア回数) */
+export const TIER_UNLOCK: Readonly<Record<number, number>> = Object.freeze({
+  1: 0, 2: 0, 3: 0, 4: 1, 5: 1, 6: 3, 7: 6, 8: 10,
+});
+
+/** ティア名 */
+export const TIER_NAMES: Readonly<Record<number, string>> = Object.freeze({
+  1: 'Tier1 基礎', 2: 'Tier2 応用', 3: 'Tier3 上級', 4: 'Tier4 極意',
+  5: 'Tier5 伝説', 6: 'Tier6 神話', 7: 'Tier7 超越', 8: 'Tier8 究極',
+});
+
+/** 小覚醒データ */
+export const AWK_SA: Readonly<Record<CivTypeExt, AwakeningInfo>> = Object.freeze({
+  tech: Object.freeze({ nm: '炎の目覚め', ds: 'ATK+5 火傷付与', cl: '#f08050', fx: Object.freeze({ atk: 5, burn: 1 }) }),
+  life: Object.freeze({ nm: '森の息吹', ds: 'HP+20 DEF+2', cl: '#50e090', fx: Object.freeze({ mhp: 20, def: 2 }) }),
+  rit: Object.freeze({ nm: '血の胎動', ds: 'ATK+8 HP-10', cl: '#d060ff', fx: Object.freeze({ atk: 8, sd: 10 }) }),
+  bal: Object.freeze({ nm: '調和の芽生え', ds: 'ATK+3 HP+15 DEF+1', cl: '#e0c060', fx: Object.freeze({ atk: 3, mhp: 15, def: 1 }) }),
+});
+
+/** 大覚醒データ */
+export const AWK_FA: Readonly<Record<CivTypeExt, AwakeningInfo>> = Object.freeze({
+  tech: Object.freeze({ nm: '炎王の始祖', ds: '全攻撃に炎。氷河無効。', bn: 'ATK+15 火傷 氷河無効', cl: '#f08050', fx: Object.freeze({ atk: 15, burn: 1 }) }),
+  life: Object.freeze({ nm: '大部族の長', ds: '圧倒的耐久と仲間強化。', bn: 'HP+50 DEF+5 仲間ATK×2', cl: '#50e090', fx: Object.freeze({ mhp: 50, def: 5, allyAtkMul: 2 }) }),
+  rit: Object.freeze({ nm: '血の神託者', ds: '瀕死で覚醒し敵を圧倒。', bn: '低HP ATK×3 骨+10 DEF+2', cl: '#d060ff', fx: Object.freeze({ def: 2, bb: 10 }) }),
+  bal: Object.freeze({ nm: '万象の統率者', ds: '全能力上昇。仲間全回復。', bn: 'ATK+8 HP+40 DEF+4 仲間全回復', cl: '#e0c060', fx: Object.freeze({ atk: 8, mhp: 40, def: 4, allyFullHeal: 1 }) }),
+});
+
+/** バイオーム相性 */
+export const BIOME_AFFINITY: Readonly<Record<BiomeId, { check: (l: { tech: number; life: number; rit: number }) => boolean; m: number }>> = Object.freeze({
+  glacier: Object.freeze({ check: (l: { tech: number; life: number; rit: number }) => l.tech > l.life && l.tech > l.rit, m: 1.3 }),
+  volcano: Object.freeze({ check: (l: { tech: number; life: number; rit: number }) => l.rit > l.life && l.rit > l.tech, m: 1.3 }),
+  grassland: Object.freeze({ check: (l: { tech: number; life: number; rit: number }) => l.life > l.tech && l.life > l.rit, m: 1.2 }),
+});
+
+/** 環境ダメージ設定 */
+export const ENV_DMG: Readonly<Record<string, EnvDmgConfig>> = Object.freeze({
+  glacier: Object.freeze({ base: 3, resist: 'iR' as const, immune: 'tech' as const, icon: '❄️ 寒さ', c: 'cc' }),
+  volcano: Object.freeze({ base: 2, resist: 'fR' as const, immune: null, icon: '🌋 灼熱', c: 'tc' }),
+});
+
+/** SFX 定義 */
+export const SFX_DEFS: Readonly<Record<string, SfxDef>> = Object.freeze({
+  hit: Object.freeze({ f: Object.freeze([180, 80]), fd: 0.1, g: 0.12, gd: 0.12, w: 'square' as const }),
+  crit: Object.freeze({ f: Object.freeze([400, 100]), fd: 0.15, g: 0.12, gd: 0.18, w: 'sawtooth' as const }),
+  kill: Object.freeze({ f: Object.freeze([300, 600, 200]), fd: 0.25, g: 0.12, gd: 0.3, w: 'square' as const }),
+  heal: Object.freeze({ f: Object.freeze([400, 800]), fd: 0.15, g: 0.12, gd: 0.2, w: 'sine' as const }),
+  evo: Object.freeze({ f: Object.freeze([300, 900]), fd: 0.2, g: 0.12, gd: 0.3, w: 'sine' as const }),
+  death: Object.freeze({ f: Object.freeze([200, 40]), fd: 0.4, g: 0.12, gd: 0.5, w: 'sawtooth' as const }),
+  click: Object.freeze({ f: Object.freeze([600]), fd: 0.05, g: 0.06, gd: 0.05, w: 'sine' as const }),
+  boss: Object.freeze({ f: Object.freeze([80, 200, 60]), fd: 0.35, g: 0.12, gd: 0.4, w: 'sawtooth' as const }),
+  win: Object.freeze({ f: Object.freeze([400, 600, 500, 800]), fd: 0.3, g: 0.12, gd: 0.4, w: 'sine' as const }),
+});
+
+/** ツリーボーナスサマリー定義 */
+export const TB_SUMMARY: readonly { k: keyof TreeBonus; f: (v: number) => string }[] = Object.freeze([
+  Object.freeze({ k: 'bA' as const, f: (v: number) => 'ATK+' + v }),
+  Object.freeze({ k: 'bH' as const, f: (v: number) => 'HP+' + v }),
+  Object.freeze({ k: 'bD' as const, f: (v: number) => 'DEF+' + v }),
+  Object.freeze({ k: 'cr' as const, f: (v: number) => '会心+' + (v * 100).toFixed(0) + '%' }),
+  Object.freeze({ k: 'bM' as const, f: (v: number) => '骨+' + (v * 100).toFixed(0) + '%' }),
+  Object.freeze({ k: 'dM' as const, f: (v: number) => 'ダメ+' + (v * 100).toFixed(0) + '%' }),
+  Object.freeze({ k: 'rg' as const, f: (v: number) => '再生+' + (v * 100).toFixed(0) + '%' }),
+  Object.freeze({ k: 'rv' as const, f: (v: number) => '復活' }),
+  Object.freeze({ k: 'iR' as const, f: (v: number) => '氷耐' + (v * 100).toFixed(0) + '%' }),
+  Object.freeze({ k: 'fR' as const, f: (v: number) => '火耐' + (v * 100).toFixed(0) + '%' }),
+  Object.freeze({ k: 'aS' as const, f: (v: number) => '仲間枠+' + v }),
+  Object.freeze({ k: 'aH' as const, f: (v: number) => '仲間HP+' + (v * 100).toFixed(0) + '%' }),
+  Object.freeze({ k: 'aA' as const, f: (v: number) => '仲間ATK+' + (v * 100).toFixed(0) + '%' }),
+  Object.freeze({ k: 'eN' as const, f: (v: number) => '進化択+' + v }),
+  Object.freeze({ k: 'sC' as const, f: (v: number) => '初期Lv+' + v }),
+]);
+
+/** ログカラーマッピング */
+export const LOG_COLORS: Readonly<Record<string, string>> = Object.freeze({
+  gc: '#f0c040', xc: '#f05050', tc: '#f08050',
+  lc: '#50e090', rc: '#d060ff', cc: '#50c8e8',
+});
+
+/** 敵カラーマッピング */
+export const ENEMY_COLORS: Readonly<Record<string, string>> = Object.freeze({
+  '野ウサギ': '#c0a060', 'イノシシ': '#806040', 'オオカミ': '#707880',
+  '巨大ヘビ': '#4a804a', '氷ネズミ': '#80c0d0', '雪狼': '#b0c0d0',
+  '氷の巨鳥': '#90c0e0', 'フロストベア': '#c0d8e8', '溶岩トカゲ': '#e06040',
+  '火炎蛇': '#e08040', '噴火カメ': '#b06040', '灼熱ワイバーン': '#e04040',
+  'サーベルタイガー': '#e0b040', 'マンモス': '#a08060', '火竜': '#e02020',
+  '氷の神獣': '#50b0e0', '大地の守護者': '#40a040', '血の魔神': '#c02060',
+});
+
+/** 敵詳細パーツ (大型) */
+export const ENEMY_DETAILS: readonly { match: string; parts: readonly (readonly [number, number, number, number, string | null])[] }[] = Object.freeze([
+  Object.freeze({ match: 'マンモス', parts: Object.freeze([Object.freeze([6, 12, 3, 10, '#c0b090'] as const), Object.freeze([4, 20, 3, 3, '#c0b090'] as const)]) }),
+  Object.freeze({ match: '竜', parts: Object.freeze([Object.freeze([0, 4, 5, 8, null] as const), Object.freeze([19, 4, 5, 8, null] as const)]) }),
+  Object.freeze({ match: '魔神', parts: Object.freeze([Object.freeze([0, 4, 5, 8, null] as const), Object.freeze([19, 4, 5, 8, null] as const)]) }),
+  Object.freeze({ match: '神獣', parts: Object.freeze([Object.freeze([8, 0, 2, 3, '#fff'] as const), Object.freeze([14, 0, 2, 3, '#fff'] as const)]) }),
+  Object.freeze({ match: '守護者', parts: Object.freeze([Object.freeze([2, 0, 4, 4, '#60c060'] as const), Object.freeze([18, 0, 4, 4, '#60c060'] as const)]) }),
+  Object.freeze({ match: 'タイガー', parts: Object.freeze([Object.freeze([6, 10, 2, 4, '#fff'] as const), Object.freeze([16, 10, 2, 4, '#fff'] as const)]) }),
+]);
+
+/** 敵詳細パーツ (小型) */
+export const ENEMY_SMALL_DETAILS: readonly { match: string; parts: readonly (readonly [number, number, number, number, string | null])[] }[] = Object.freeze([
+  Object.freeze({ match: '鳥', parts: Object.freeze([Object.freeze([2, 0, 3, 6, null] as const), Object.freeze([11, 0, 3, 6, null] as const)]) }),
+  Object.freeze({ match: 'ヘビ', parts: Object.freeze([Object.freeze([3, 8, 10, 2, null] as const), Object.freeze([12, 6, 3, 3, null] as const)]) }),
+  Object.freeze({ match: '蛇', parts: Object.freeze([Object.freeze([3, 8, 10, 2, null] as const), Object.freeze([12, 6, 3, 3, null] as const)]) }),
+  Object.freeze({ match: 'ベア', parts: Object.freeze([Object.freeze([4, 0, 2, 2, null] as const), Object.freeze([10, 0, 2, 2, null] as const)]) }),
+]);
+
+/** ツリーボーナスデフォルト値 */
+export const TB_DEFAULTS: Readonly<TreeBonus> = Object.freeze({
+  bA: 0, bH: 0, bD: 0, rr: 0, bM: 0, iR: 0, fR: 0,
+  aH: 0, aA: 0, cr: 0, sC: 0, rg: 0, rv: 0, aS: 0,
+  eN: 0, fQ: 0, dM: 0, aQ: 0, rP: 0,
+});
+
+/** 初期セーブデータ */
+export const FRESH_SAVE: Readonly<SaveData> = Object.freeze({
+  bones: 0,
+  tree: Object.freeze({}),
+  clears: 0,
+  runs: 0,
+  best: Object.freeze({}),
+});
+
+/** localStorage キー */
+export const SAVE_KEY = 'primal-path-v7';
+
+/** Waves per biome */
+export const WAVES_PER_BIOME = 4;
+
+/** バイオーム数 */
+export const BIOME_COUNT = 3;

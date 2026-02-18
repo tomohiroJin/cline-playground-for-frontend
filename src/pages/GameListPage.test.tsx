@@ -23,8 +23,8 @@ describe('GameListPage', () => {
     expect(screen.getByText('Game Platform')).toBeInTheDocument();
     expect(screen.getByText(/厳選されたインタラクティブなゲーム体験/)).toBeInTheDocument();
 
-    // プレイボタンが表示されていることを確認 (12ゲーム)
-    expect(screen.getAllByText(/Play Now/)).toHaveLength(12);
+    // プレイボタンが表示されていることを確認 (13ゲーム)
+    expect(screen.getAllByText(/Play Now/)).toHaveLength(13);
   });
 
   it('迷宮の残響カードが表示されること', () => {
@@ -47,5 +47,16 @@ describe('GameListPage', () => {
 
     expect(screen.getByText('KEYS & ARMS')).toBeInTheDocument();
     expect(screen.getByLabelText('KEYS & ARMS ゲームをプレイする')).toBeInTheDocument();
+  });
+
+  it('原始進化録 - PRIMAL PATHカードが表示されること', () => {
+    render(
+      <MemoryRouter>
+        <GameListPage />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('原始進化録 - PRIMAL PATH')).toBeInTheDocument();
+    expect(screen.getByLabelText('原始進化録 - PRIMAL PATH ゲームをプレイする')).toBeInTheDocument();
   });
 });

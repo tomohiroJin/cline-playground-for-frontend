@@ -12,6 +12,7 @@ import agileQuizSugorokuCardBg from '../assets/images/agile_quiz_sugoroku_card_b
 import labyrinthEchoCardBg from '../assets/images/labyrinth_echo_card_bg.webp';
 import riskLcdCardBg from '../assets/images/risk_lcd_card_bg.webp';
 import keysAndArmsCardBg from '../assets/images/keys_and_arms_card_bg.webp';
+import primalPathCardBg from '../assets/images/primal_path_card_bg.webp';
 import {
   PageContainer,
   HeroSection,
@@ -383,6 +384,34 @@ const GameListPage: React.FC = () => {
               レトロLCD風の3ステージアクション。
               洞窟、草原、城塞を巡りながらスコアを積み上げる。
               キーボードとタッチの両操作に対応。
+            </GameDescription>
+            <PlayButton aria-hidden="true" tabIndex={-1}>
+              Play Now <span>→</span>
+            </PlayButton>
+          </CardContent>
+        </GameCardContainer>
+        <GameCardContainer
+          onClick={() => navigate('/primal-path')}
+          role="button"
+          aria-label="原始進化録 - PRIMAL PATH ゲームをプレイする"
+          tabIndex={0}
+          onKeyDown={e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              navigate('/primal-path');
+            }
+          }}
+        >
+          <CardImageArea
+            $bgImage={primalPathCardBg}
+            role="img"
+            aria-label="原始進化録 - PRIMAL PATHのゲーム画面プレビュー"
+          />
+          <CardContent>
+            <CardTitle>原始進化録 - PRIMAL PATH</CardTitle>
+            <GameDescription>
+              文明を選び、進化を重ねて最終ボスに挑む自動戦闘ローグライト。
+              技術・生活・儀式の三大文明を育て、覚醒して神話を刻め。
             </GameDescription>
             <PlayButton aria-hidden="true" tabIndex={-1}>
               Play Now <span>→</span>
