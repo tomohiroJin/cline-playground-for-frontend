@@ -72,11 +72,12 @@ export function mergeStyles(ids: string[]): MergedStyle {
 }
 
 // 重み付き選択（excludeリストのインデックスは除外）
-export function wPick(w: number[], ex: number[]): number {
+export function wPick(w: number[], ex: number[], rng?: () => number): number {
   const wt = w.map((v, i) => (ex.includes(i) ? 0 : v));
   const s = wt.reduce((a, b) => a + b, 0);
   if (s <= 0) return -1;
-  const r = Math.random() * s;
+  const rand = rng ?? Math.random;
+  const r = rand() * s;
   let a = 0;
   for (let i = 0; i < wt.length; i++) {
     a += wt[i];
