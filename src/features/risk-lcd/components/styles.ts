@@ -43,6 +43,11 @@ export const shake = keyframes`
   75% { transform: translateX(4px); }
 `;
 
+export const ghostBlink = keyframes`
+  0%, 62% { opacity: 0.35; }
+  63%, 100% { opacity: 0; }
+`;
+
 // ── 筐体 ──
 export const Device = styled.div`
   position: absolute;
@@ -628,7 +633,7 @@ export const SegsCol = styled.div`
 `;
 
 export const Segment = styled.div<{
-  $state?: 'ghost' | 'warn' | 'danger' | 'impact' | 'safe' | 'near' | 'fake' | 'shield' | 'shieldWarn';
+  $state?: 'ghost' | 'warn' | 'danger' | 'impact' | 'safe' | 'near' | 'fake' | 'shield' | 'shieldWarn' | 'ghostPlayer';
 }>`
   flex: 1;
   display: flex;
@@ -681,6 +686,13 @@ export const Segment = styled.div<{
         return css`
           color: rgba(24, 28, 18, 0.12);
           font-size: 18px;
+          @media (max-height: 640px) { font-size: 14px; }
+        `;
+      case 'ghostPlayer':
+        return css`
+          color: ${LCD.dim};
+          font-size: 18px;
+          animation: ${ghostBlink} 0.8s steps(1) infinite;
           @media (max-height: 640px) { font-size: 14px; }
         `;
       default:
@@ -1107,4 +1119,147 @@ export const ResultHint = styled.div`
   color: ${LCD.dim};
   letter-spacing: 2px;
   margin-top: 2px;
+`;
+
+// ── デイリー画面 ──
+export const DailyLayer = styled(Layer)`
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 16px;
+`;
+
+export const DailyTitle = styled.div`
+  font-family: ${FONT.ui};
+  font-weight: 900;
+  font-size: 16px;
+  color: ${LCD.on};
+  letter-spacing: 3px;
+`;
+
+export const DailyDate = styled.div`
+  font-family: ${FONT.lcd};
+  font-size: 11px;
+  color: ${LCD.on};
+  letter-spacing: 2px;
+`;
+
+export const DailyModifier = styled.div`
+  font-family: ${FONT.lcd};
+  font-size: 8px;
+  color: ${LCD.warn};
+  text-align: center;
+  line-height: 1.5;
+  margin: 4px 0;
+`;
+
+export const DailyStatus = styled.div`
+  font-family: ${FONT.lcd};
+  font-size: 9px;
+  color: ${LCD.dim};
+  letter-spacing: 1px;
+`;
+
+export const DailyAction = styled.div<{ $selected?: boolean }>`
+  font-family: ${FONT.lcd};
+  font-size: 10px;
+  color: ${LCD.on};
+  padding: 8px 16px;
+  border: 2px solid ${LCD.ghost};
+  cursor: pointer;
+  text-align: center;
+
+  ${({ $selected }) =>
+    $selected &&
+    css`
+      border-color: ${LCD.on};
+      background: rgba(24, 28, 18, 0.03);
+    `}
+`;
+
+// ── チュートリアル画面 ──
+export const TutorialLayer = styled(Layer)`
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 16px;
+`;
+
+export const TutorialStep = styled.div`
+  font-family: ${FONT.lcd};
+  font-size: 8px;
+  color: ${LCD.dim};
+  letter-spacing: 2px;
+`;
+
+export const TutorialTitle = styled.div`
+  font-family: ${FONT.ui};
+  font-weight: 900;
+  font-size: 14px;
+  color: ${LCD.on};
+  letter-spacing: 2px;
+`;
+
+export const TutorialBody = styled.div`
+  font-family: ${FONT.lcd};
+  font-size: 9px;
+  color: ${LCD.warn};
+  text-align: center;
+  line-height: 1.6;
+  max-width: 220px;
+`;
+
+export const TutorialAction = styled.div<{ $selected?: boolean }>`
+  font-family: ${FONT.lcd};
+  font-size: 10px;
+  color: ${LCD.on};
+  padding: 8px 16px;
+  border: 2px solid ${LCD.ghost};
+  cursor: pointer;
+  text-align: center;
+  margin-top: 8px;
+
+  ${({ $selected }) =>
+    $selected &&
+    css`
+      border-color: ${LCD.on};
+      background: rgba(24, 28, 18, 0.03);
+    `}
+`;
+
+// ── シェアボタン ──
+export const ShareRow = styled.div`
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 4px;
+`;
+
+export const ShareButton = styled.div`
+  font-family: ${FONT.lcd};
+  font-size: 8px;
+  color: ${LCD.on};
+  padding: 4px 12px;
+  border: 2px solid ${LCD.on};
+  cursor: pointer;
+  letter-spacing: 1px;
+
+  &:active {
+    background: rgba(24, 28, 18, 0.08);
+  }
+`;
+
+// ── ゴースト表示 ──
+export const GhostSegment = styled.div`
+  position: absolute;
+  font-family: ${FONT.ui};
+  font-weight: 900;
+  font-size: 18px;
+  color: ${LCD.dim};
+  animation: ${ghostBlink} 0.8s steps(1) infinite;
+  pointer-events: none;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;

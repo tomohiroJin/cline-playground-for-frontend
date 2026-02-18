@@ -4,6 +4,8 @@ import DeviceFrame from './DeviceFrame';
 import LcdScreen from './LcdScreen';
 import ControlButtons from './ControlButtons';
 import TitleScreen from './TitleScreen';
+import DailyScreen from './DailyScreen';
+import TutorialScreen from './TutorialScreen';
 import StyleListScreen from './StyleListScreen';
 import UnlockShopScreen from './UnlockShopScreen';
 import HelpScreen from './HelpScreen';
@@ -30,6 +32,22 @@ const RiskLcdGame: React.FC = () => {
             pts={store.data.pts}
             best={store.data.best}
             onMenuClick={selectAndAct}
+          />
+
+          {/* デイリー画面 */}
+          <DailyScreen
+            active={rs.screen === 'D'}
+            dailyData={store.getDailyData()}
+            onStart={() => dispatch('act')}
+            onBack={() => dispatch('back')}
+          />
+
+          {/* チュートリアル画面 */}
+          <TutorialScreen
+            active={rs.screen === 'TU'}
+            step={rs.tutorialStep ?? 0}
+            onNext={() => dispatch('act')}
+            onBack={() => dispatch('back')}
           />
 
           {/* スタイル選択画面 */}
@@ -68,6 +86,7 @@ const RiskLcdGame: React.FC = () => {
             active={rs.screen === 'R'}
             game={rs.game}
             hasGold={store.hasUnlock('gold')}
+            equippedStyles={store.data.eq}
           />
         </div>
       </LcdScreen>
