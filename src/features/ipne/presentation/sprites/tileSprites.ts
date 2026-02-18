@@ -7,6 +7,7 @@
 
 import { SpriteDefinition } from './spriteData';
 import { SpriteSheetDefinition } from './spriteSheet';
+import { StageNumber } from '../../types';
 
 // ---------------------------------------------------------------------------
 // 床タイル（石畳パターン）
@@ -133,6 +134,59 @@ export const WALL_SPRITE: SpriteDefinition = {
   pixels: WALL_PIXELS,
   palette: WALL_PALETTE,
 };
+
+// ---------------------------------------------------------------------------
+// ステージ別パレット
+// ---------------------------------------------------------------------------
+
+/** ステージ1: 土の迷宮（茶色系） */
+const STAGE1_FLOOR_PALETTE = ['', '#2a1f14', '#3d2e1f', '#4e3d2a'];
+const STAGE1_WALL_PALETTE = ['', '#3d2e1f', '#5c4a32', '#7a6445', '#96804e'];
+
+/** ステージ2: 石の迷宮（灰色系 = デフォルト） */
+const STAGE2_FLOOR_PALETTE = FLOOR_PALETTE;
+const STAGE2_WALL_PALETTE = WALL_PALETTE;
+
+/** ステージ3: 水晶の迷宮（青緑系） */
+const STAGE3_FLOOR_PALETTE = ['', '#0a2a2a', '#0f3d3d', '#164d4d'];
+const STAGE3_WALL_PALETTE = ['', '#0f3d3d', '#1a5c5c', '#257a7a', '#30998f'];
+
+/** ステージ4: 闇の迷宮（紫系） */
+const STAGE4_FLOOR_PALETTE = ['', '#1a0f2e', '#261547', '#331a5c'];
+const STAGE4_WALL_PALETTE = ['', '#261547', '#3d2470', '#5c3a99', '#7a50c2'];
+
+/** ステージ5: 深淵（深紅/黒系） */
+const STAGE5_FLOOR_PALETTE = ['', '#1a0a0a', '#2e0f0f', '#3d1414'];
+const STAGE5_WALL_PALETTE = ['', '#2e0f0f', '#4d1a1a', '#6b2424', '#8a2e2e'];
+
+/** ステージ別パレットマップ */
+const STAGE_PALETTES: Record<StageNumber, { floor: string[]; wall: string[] }> = {
+  1: { floor: STAGE1_FLOOR_PALETTE, wall: STAGE1_WALL_PALETTE },
+  2: { floor: STAGE2_FLOOR_PALETTE, wall: STAGE2_WALL_PALETTE },
+  3: { floor: STAGE3_FLOOR_PALETTE, wall: STAGE3_WALL_PALETTE },
+  4: { floor: STAGE4_FLOOR_PALETTE, wall: STAGE4_WALL_PALETTE },
+  5: { floor: STAGE5_FLOOR_PALETTE, wall: STAGE5_WALL_PALETTE },
+};
+
+/**
+ * ステージに応じた床スプライトを取得する
+ */
+export function getStageFloorSprite(stage: StageNumber): SpriteDefinition {
+  return {
+    ...FLOOR_SPRITE,
+    palette: STAGE_PALETTES[stage].floor,
+  };
+}
+
+/**
+ * ステージに応じた壁スプライトを取得する
+ */
+export function getStageWallSprite(stage: StageNumber): SpriteDefinition {
+  return {
+    ...WALL_SPRITE,
+    palette: STAGE_PALETTES[stage].wall,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // ゴールタイル（下り階段 + 緑の光アニメーション）

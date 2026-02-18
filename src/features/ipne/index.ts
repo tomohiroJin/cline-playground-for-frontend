@@ -66,6 +66,13 @@ export type {
   TutorialState,
   FeedbackTypeValue,
   FeedbackEffect,
+  // 5ステージ制追加
+  StageNumber,
+  StageConfig,
+  StageRewardType,
+  StageRewardHistory,
+  StageCarryOver,
+  StoryScene,
 } from './types';
 
 // マップ
@@ -150,12 +157,14 @@ export {
   createChargeEnemy,
   createSpecimenEnemy,
   createBoss,
+  createMiniBoss,
+  createMegaBoss,
   isEnemyAlive,
   damageEnemy,
   applyKnockbackToEnemy,
 } from './enemy';
 
-export { SPAWN_CONFIG as ENEMY_SPAWN_CONFIG, spawnEnemies, getSpawnPositionsForRoom, distributeEnemyTypes } from './enemySpawner';
+export { SPAWN_CONFIG as ENEMY_SPAWN_CONFIG, spawnEnemies, spawnEnemiesForStage, applyScaling, getSpawnPositionsForRoom, distributeEnemyTypes } from './enemySpawner';
 
 export {
   AI_CONFIG,
@@ -249,6 +258,9 @@ export {
   applyLevelUpChoice,
   canChooseStat,
   getNextKillsRequired,
+  applyStageReward,
+  canChooseReward,
+  shouldLevelUpInStage,
 } from './progression';
 
 // 罠
@@ -289,7 +301,8 @@ export {
   placeWalls,
   placeGimmicks,
 } from './gimmickPlacement';
-export type { GimmickPlacementConfig, GimmickPlacementResult } from './gimmickPlacement';
+export type { GimmickPlacementResult } from './gimmickPlacement';
+export type { GimmickPlacementConfig, StrategicPatternLimits } from './types';
 
 // 敵AI（RANGED追加）
 export { createRangedEnemy } from './enemy';
@@ -488,3 +501,24 @@ export type { BrowserEnvProvider, ClockProvider, RandomProvider, StorageProvider
 
 // 契約
 export { assertCondition, assertNumberInRange, assertIntegerInRange, assertUniquePositions } from './shared';
+
+// ===== 5ステージ制追加モジュール =====
+
+// ステージ設定
+export {
+  STAGE_CONFIGS,
+  TOTAL_STAGES,
+  getStageConfig,
+  getNextStage,
+  isFinalStage,
+} from './stageConfig';
+
+// ストーリー
+export {
+  PROLOGUE_STORY,
+  STAGE_REWARD_CHOICES,
+  getStageStory,
+  getPrologueStory,
+  getEndingEpilogue,
+  getAllStoryScenes,
+} from './story';

@@ -7,7 +7,7 @@ import {
   StoryText,
   SkipButton,
 } from '../../../../pages/IpnePage.styles';
-import { PROLOGUE_TEXTS } from '../config';
+import { getPrologueStory } from '../../story';
 import prologueBg from '../../../../assets/images/ipne_prologue_bg.webp';
 import prologueBgMobile from '../../../../assets/images/ipne_prologue_bg_mobile.webp';
 
@@ -16,9 +16,10 @@ import prologueBgMobile from '../../../../assets/images/ipne_prologue_bg_mobile.
  */
 export const PrologueScreen: React.FC<{ onSkip: () => void }> = ({ onSkip }) => {
   const [textIndex, setTextIndex] = useState(0);
+  const prologueLines = getPrologueStory().lines;
 
   useEffect(() => {
-    if (textIndex < PROLOGUE_TEXTS.length - 1) {
+    if (textIndex < prologueLines.length - 1) {
       const timer = setTimeout(() => {
         setTextIndex(prev => prev + 1);
       }, 2000);
@@ -30,7 +31,7 @@ export const PrologueScreen: React.FC<{ onSkip: () => void }> = ({ onSkip }) => 
       }, 3000);
       return () => clearTimeout(autoSkipTimer);
     }
-  }, [textIndex, onSkip]);
+  }, [textIndex, prologueLines.length, onSkip]);
 
   return (
     <Overlay $bgImage={prologueBg} $bgImageMobile={prologueBgMobile}>
@@ -45,7 +46,7 @@ export const PrologueScreen: React.FC<{ onSkip: () => void }> = ({ onSkip }) => 
           alignItems: 'center',
         }}
       >
-        {PROLOGUE_TEXTS.slice(0, textIndex + 1).map((text, i) => (
+        {prologueLines.slice(0, textIndex + 1).map((text, i) => (
           <StoryText key={i} $active={i === textIndex}>
             {text}
           </StoryText>

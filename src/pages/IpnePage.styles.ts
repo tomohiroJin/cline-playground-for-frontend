@@ -1387,3 +1387,26 @@ export const RemainingPointsText = styled.p`
   font-size: 0.875rem;
   margin-top: 0.5rem;
 `;
+
+// ステージ番号表示
+export const StageIndicator = styled.div`
+  position: absolute;
+  top: 3rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  border-radius: 0.5rem;
+  padding: 0.3rem 0.8rem;
+  z-index: 20;
+  font-family: monospace;
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: #fbbf24;
+
+  @media (max-width: 480px) {
+    top: 2.5rem;
+    font-size: 0.75rem;
+    padding: 0.2rem 0.6rem;
+  }
+`;

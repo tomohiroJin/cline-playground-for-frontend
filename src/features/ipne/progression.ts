@@ -1,23 +1,40 @@
 /**
  * 成長システムモジュール
  */
-import { LevelUpChoice, PlayerStats, StatType, StatTypeValue } from './types';
+import { LevelUpChoice, Player, PlayerStats, StageRewardType, StatType, StatTypeValue } from './types';
 
 /** 最大レベル */
-export const MAX_LEVEL = 10;
+export const MAX_LEVEL = 22;
 
 /** 各レベルに必要な累計撃破数 */
 export const KILL_COUNT_TABLE: Record<number, number> = {
-  1: 0,   // Lv1は初期状態
-  2: 1,   // Lv2に必要な累計撃破数
-  3: 3,
-  4: 5,
-  5: 7,
-  6: 10,
-  7: 13,
-  8: 17,
-  9: 21,
-  10: 25,
+  // ステージ1（敵25体、maxLevel=10）
+  1: 0,     // 初期状態
+  2: 1,     // 1体撃破でLv2
+  3: 2,     // 2体撃破でLv3
+  4: 4,     // 4体撃破でLv4
+  5: 6,     // 6体撃破でLv5
+  6: 8,     // 8体撃破でLv6
+  7: 10,    // 10体撃破でLv7
+  8: 13,    // 13体撃破でLv8
+  9: 16,    // 16体撃破でLv9
+  10: 20,   // 20体撃破でLv10（ステージ1の上限）
+  // ステージ2（累計、敵31体追加、maxLevel=13）
+  11: 25,   // 累計25体でLv11
+  12: 31,   // 累計31体でLv12
+  13: 38,   // 累計38体でLv13（ステージ2の上限）
+  // ステージ3（累計、敵40体追加、maxLevel=16）
+  14: 46,   // 累計46体でLv14
+  15: 55,   // 累計55体でLv15
+  16: 65,   // 累計65体でLv16（ステージ3の上限）
+  // ステージ4（累計、敵47体追加、maxLevel=19）
+  17: 76,   // 累計76体でLv17
+  18: 88,   // 累計88体でLv18
+  19: 101,  // 累計101体でLv19（ステージ4の上限）
+  // ステージ5（累計、敵55体追加、maxLevel=22）
+  20: 116,  // 累計116体でLv20
+  21: 132,  // 累計132体でLv21
+  22: 150,  // 累計150体でLv22（最終上限）
 };
 
 /** 能力値の上限 */
@@ -164,4 +181,97 @@ export const getNextKillsRequired = (currentLevel: number, killCount: number): n
   if (currentLevel >= MAX_LEVEL) return 0;
   const nextLevelKills = KILL_COUNT_TABLE[currentLevel + 1];
   return Math.max(0, nextLevelKills - killCount);
+};
+
+// ===== ステージ報酬 =====
+
+/**
+ * ステージ報酬をプレイヤーに適用する
+ * @param player プレイヤー
+ * @param rewardType 報酬の種類
+ * @returns 報酬適用後のプレイヤー
+ */
+export const applyStageReward = (player: Player, rewardType: StageRewardType): Player => {
+  const newPlayer = { ...player, stats: { ...player.stats } };
+
+  switch (rewardType) {
+    case 'max_hp':
+      newPlayer.maxHp += 5;
+      newPlayer.hp += 5;
+      break;
+    case 'attack_power':
+      newPlayer.stats.attackPower += 1;
+      break;
+    case 'attack_range':
+      newPlayer.stats.attackRange = Math.min(
+        newPlayer.stats.attackRange + 1,
+        STAT_LIMITS[StatType.ATTACK_RANGE] ?? Infinity
+      );
+      break;
+    case 'move_speed':
+      newPlayer.stats.moveSpeed = Math.min(
+        newPlayer.stats.moveSpeed + 1,
+        STAT_LIMITS[StatType.MOVE_SPEED] ?? Infinity
+      );
+      break;
+    case 'attack_speed':
+      newPlayer.stats.attackSpeed = Math.max(
+        newPlayer.stats.attackSpeed - 0.1,
+        STAT_LIMITS[StatType.ATTACK_SPEED] ?? 0
+      );
+      break;
+    case 'heal_bonus':
+      newPlayer.stats.healBonus = Math.min(
+        newPlayer.stats.healBonus + 1,
+        STAT_LIMITS[StatType.HEAL_BONUS] ?? Infinity
+      );
+      break;
+  }
+
+  return newPlayer;
+};
+
+/**
+ * ステージ報酬が選択可能かどうかを判定する
+ * @param player プレイヤー
+ * @param rewardType 報酬の種類
+ * @returns 選択可能な場合 true
+ */
+export const canChooseReward = (player: Player, rewardType: StageRewardType): boolean => {
+  switch (rewardType) {
+    case 'max_hp':
+      // maxHpには上限なし
+      return true;
+    case 'attack_power':
+      // attackPowerには上限なし
+      return true;
+    case 'attack_range':
+      return canChooseStat(player.stats, StatType.ATTACK_RANGE);
+    case 'move_speed':
+      return canChooseStat(player.stats, StatType.MOVE_SPEED);
+    case 'attack_speed':
+      return canChooseStat(player.stats, StatType.ATTACK_SPEED);
+    case 'heal_bonus':
+      return canChooseStat(player.stats, StatType.HEAL_BONUS);
+    default:
+      return true;
+  }
+};
+
+/**
+ * ステージ別レベル上限でのレベルアップ可否を判定
+ * @param currentLevel 現在のレベル
+ * @param killCount 累計撃破数
+ * @param stageMaxLevel ステージのレベル上限
+ * @returns レベルアップ可能な場合 true
+ */
+export const shouldLevelUpInStage = (
+  currentLevel: number,
+  killCount: number,
+  stageMaxLevel: number
+): boolean => {
+  if (currentLevel >= stageMaxLevel) return false;
+  if (currentLevel >= MAX_LEVEL) return false;
+  const nextLevel = currentLevel + 1;
+  return killCount >= KILL_COUNT_TABLE[nextLevel];
 };

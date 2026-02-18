@@ -40,6 +40,12 @@ export type GameTickEffect =
   | { kind: 'display'; type: TickDisplayEffectValue }
   | { kind: 'save'; type: TickSaveEffectValue };
 
+// リジェネ定数
+const BASE_REGEN_INTERVAL = 12000;     // 基本回復間隔（12秒）
+const REGEN_REDUCTION_PER_BONUS = 1000; // healBonus 1ポイントあたり 1秒短縮
+const MIN_REGEN_INTERVAL = 5000;       // 最短回復間隔（5秒）
+const REGEN_AMOUNT = 1;                // 回復量（固定1HP）
+
 export interface TickGameStateInput {
   map: GameMap;
   player: Player;
@@ -164,6 +170,23 @@ export function tickGameState(
     } else {
       effects.push({ kind: 'sound', type: TickSoundEffect.ITEM_PICKUP });
     }
+  }
+
+  // リジェネ処理（時間ベースHP回復）
+  const regenInterval = Math.max(
+    MIN_REGEN_INTERVAL,
+    BASE_REGEN_INTERVAL - nextPlayer.stats.healBonus * REGEN_REDUCTION_PER_BONUS
+  );
+  if (
+    currentTime - nextPlayer.lastRegenAt >= regenInterval &&
+    nextPlayer.hp < nextPlayer.maxHp &&
+    nextPlayer.hp > 0
+  ) {
+    nextPlayer = {
+      ...nextPlayer,
+      hp: Math.min(nextPlayer.hp + REGEN_AMOUNT, nextPlayer.maxHp),
+      lastRegenAt: currentTime,
+    };
   }
 
   let nextTraps = traps;

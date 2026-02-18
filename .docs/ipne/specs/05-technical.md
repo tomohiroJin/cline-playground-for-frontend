@@ -50,7 +50,23 @@ src/
 │       ├── tutorial.ts        # チュートリアル
 │       ├── feedback.ts        # フィードバック
 │       ├── ending.ts          # エンディング分岐
+│       ├── stageConfig.ts     # 5ステージ設定データ
+│       ├── story.ts           # ストーリー・ステージ報酬データ
+│       ├── gimmickPlacement.ts # ギミック配置ロジック
 │       ├── debug.ts           # デバッグモード
+│       ├── presentation/      # プレゼンテーション層
+│       │   ├── hooks/
+│       │   │   ├── useGameState.ts  # ステージ管理付き状態管理
+│       │   │   └── useGameLoop.ts   # ゲームループ
+│       │   ├── screens/
+│       │   │   ├── Game.tsx          # メインゲーム画面
+│       │   │   ├── Prologue.tsx      # プロローグ画面
+│       │   │   ├── StageClear.tsx    # ステージクリア画面
+│       │   │   ├── StageStory.tsx    # ステージ間ストーリー画面
+│       │   │   ├── StageReward.tsx   # ステージ報酬選択画面
+│       │   │   └── FinalClear.tsx    # 最終クリア画面
+│       │   └── sprites/
+│       │       └── enemySprites.ts  # 敵スプライト定義
 │       └── audio/             # 音声システム
 │           ├── index.ts           # エクスポート
 │           ├── audioContext.ts    # AudioContext管理
@@ -67,15 +83,15 @@ src/
 
 BSPアルゴリズムを使用して、部屋と通路で構成された迷路を生成する。
 
-### 生成パラメータ
+### 生成パラメータ（ステージ別）
 
-| パラメータ | 値 |
-|-----------|-----|
-| グリッドサイズ | 80x80タイル |
-| 部屋数 | 8〜32程度（maxDepth=5） |
-| 部屋サイズ | 6x6〜10x10程度 |
-| 通路幅 | 3〜4タイル |
-| ループ | 2箇所 |
+| パラメータ | ステージ1 | ステージ2 | ステージ3 | ステージ4 | ステージ5 |
+|-----------|----------|----------|----------|----------|----------|
+| グリッドサイズ | 80×80 | 85×85 | 90×90 | 95×95 | 100×100 |
+| maxDepth | 6 | 6 | 7 | 7 | 7 |
+| 部屋サイズ | 6〜10 | 6〜10 | 6〜10 | 6〜10 | 6〜10 |
+| 通路幅 | 3 | 3 | 3 | 3 | 3 |
+| ループ | 2 | 2 | 3 | 3 | 4 |
 
 ### 生成要件
 
@@ -216,6 +232,29 @@ type EnemyState = 'idle' | 'patrol' | 'chase' | 'attack' | 'flee' | 'return' | '
 
 ---
 
+## ステージ間データ引き継ぎ
+
+### 次ステージ進行時
+
+| データ | 引き継ぎ |
+|--------|---------|
+| レベル | ○ |
+| 能力値（attackPower等） | ○ |
+| 撃破数 | ○ |
+| HP | リセット（全回復） |
+| 迷路 | リセット（新規生成） |
+| 敵 | リセット（新規スポーン） |
+| アイテム | リセット（新規配置） |
+| 罠・壁ギミック | リセット |
+| マッピング | リセット |
+| タイマー | 継続（ストーリー/報酬選択中は一時停止） |
+
+### ゲームオーバー時
+
+全データをリセットし、ステージ1から完全リスタート。
+
+---
+
 ## データ永続化
 
 ### localStorage キー
@@ -232,11 +271,12 @@ type EnemyState = 'idle' | 'patrol' | 'chase' | 'attack' | 'flee' | 'return' | '
 
 ```typescript
 interface GameRecord {
-  time: number;            // クリアタイム（ミリ秒）
+  time: number;            // クリアタイム（ミリ秒）— 全5ステージ合計
   level: number;           // 到達レベル
   killCount: number;       // 撃破数
   playerClass: PlayerClassValue;  // 職業
   rating: RatingValue;     // 評価（S/A/B/C/D）
+  stagesCleared: number;   // クリアしたステージ数
   timestamp: number;       // 記録日時
 }
 ```
@@ -271,21 +311,33 @@ const TileType = {
 type TileTypeValue = (typeof TileType)[keyof typeof TileType];
 ```
 
-### GameState
+### ScreenState（画面遷移）
 
 ```typescript
-const GameState = {
+const ScreenState = {
   TITLE: 'title',
-  CLASS_SELECT: 'classSelect',
+  CLASS_SELECT: 'class_select',
   PROLOGUE: 'prologue',
-  TUTORIAL: 'tutorial',
   GAME: 'game',
-  LEVEL_UP: 'levelUp',
-  CLEAR: 'clear',
-  GAME_OVER: 'gameOver',
+  DYING: 'dying',
+  GAME_OVER: 'game_over',
+  // 5ステージ制で追加
+  STAGE_CLEAR: 'stage_clear',
+  STAGE_STORY: 'stage_story',
+  STAGE_REWARD: 'stage_reward',
+  FINAL_CLEAR: 'final_clear',
 } as const;
 
-type GameStateValue = (typeof GameState)[keyof typeof GameState];
+type ScreenStateValue = (typeof ScreenState)[keyof typeof ScreenState];
+```
+
+### ステージクリア時の画面遷移フロー
+
+```
+GAME → STAGE_CLEAR → STAGE_STORY → STAGE_REWARD → GAME（次ステージ）
+                                                     ↑ ステージ1〜4
+
+GAME → FINAL_CLEAR（ステージ5クリア時）
 ```
 
 ---

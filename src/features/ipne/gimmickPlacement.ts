@@ -4,7 +4,7 @@
  */
 import { createTrap } from './trap';
 import { createWall } from './wall';
-import { Position, Room, Trap, TrapTypeValue, Wall, WallType, GameMap } from './types';
+import { GimmickPlacementConfig, Position, Room, StrategicPatternLimits, Trap, TrapTypeValue, Wall, WallType, GameMap } from './types';
 import {
   detectTrapCandidateTiles,
   detectWallPlacementCandidates,
@@ -25,31 +25,6 @@ import {
   selectTrapType,
   validateGimmickPlacementConfig,
 } from './domain/services/gimmickPlacement/placementDecision';
-
-/** 戦略的配置パターンの制限数 */
-export interface StrategicPatternLimits {
-  shortcutBlock: number;
-  trickWall: number;
-  secretPassage: number;
-  corridorBlock: number;
-}
-
-/** ギミック配置設定 */
-export interface GimmickPlacementConfig {
-  trapCount: number;
-  trapRatio: {
-    damage: number;
-    slow: number;
-    teleport: number;
-  };
-  wallCount: number;
-  wallRatio: {
-    breakable: number;
-    passable: number;
-    invisible: number;
-  };
-  patternLimits?: StrategicPatternLimits;
-}
 
 /** デフォルト戦略的配置パターン制限 */
 export const DEFAULT_PATTERN_LIMITS: StrategicPatternLimits = {
