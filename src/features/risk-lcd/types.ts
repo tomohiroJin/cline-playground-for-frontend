@@ -1,5 +1,5 @@
-// ゲーム画面の種別
-export type ScreenId = 'T' | 'Y' | 'G' | 'H' | 'HP' | 'R';
+// ゲーム画面の種別（D=Daily, TU=Tutorial）
+export type ScreenId = 'T' | 'D' | 'TU' | 'Y' | 'G' | 'H' | 'HP' | 'R';
 
 // パーク画面内の仮想画面
 export type GamePhase = 'idle' | 'announce' | 'warn' | 'judge' | 'perks' | 'done';
@@ -124,6 +124,18 @@ export interface RankResult {
   readonly c: string;
 }
 
+// デイリーチャレンジのプレイ記録
+export interface DailyData {
+  /** 日次ID（YYYY-MM-DD） */
+  date: string;
+  /** プレイ済みか */
+  played: boolean;
+  /** デイリーのベストスコア */
+  bestScore: number;
+  /** 初回プレイ報酬を受領済みか */
+  firstPlayRewarded: boolean;
+}
+
 // セーブデータ
 export interface SaveData {
   pts: number;
@@ -133,6 +145,10 @@ export interface SaveData {
   sty: string[];
   ui: string[];
   eq: string[];
+  /** デイリーチャレンジデータ（最新1日分のみ） */
+  daily?: DailyData;
+  /** チュートリアル完了フラグ */
+  tutorialDone?: boolean;
 }
 
 // ゲーム状態
@@ -173,4 +189,10 @@ export interface GameState {
   artFrame: number;
   shelterSaves: number;
   curObs?: number[];
+  /** デイリーモードか */
+  dailyMode: boolean;
+  /** 練習モードか */
+  practiceMode: boolean;
+  /** ゴースト記録用ログ（各サイクルの resolve 時のレーン位置） */
+  ghostLog: number[];
 }

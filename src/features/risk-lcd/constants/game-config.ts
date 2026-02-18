@@ -397,4 +397,4 @@ export const RANK_TABLE: readonly RankEntry[] = [
 ];
 
 // メニュー項目
-export const MENUS: readonly string[] = ['GAME START', 'PLAY STYLE', 'UNLOCK', 'HELP'];
+export const MENUS: readonly string[] = ['GAME START', 'DAILY', 'PRACTICE', 'PLAY STYLE', 'UNLOCK', 'HELP'];
