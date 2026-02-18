@@ -13,6 +13,10 @@ interface Configuration extends WebpackConfiguration {
   devServer?: WebpackDevServerConfiguration;
 }
 
+const isDev = process.argv.includes('--mode')
+  ? process.argv[process.argv.indexOf('--mode') + 1] !== 'production'
+  : true;
+
 const config: Configuration = {
   mode: 'development',
   devtool: process.env.NODE_ENV === 'production' ? false : 'source-map',
@@ -64,7 +68,7 @@ const config: Configuration = {
     splitChunks: {
       chunks: 'all',
     },
-    runtimeChunk: 'single',
+    runtimeChunk: isDev ? false : 'single',
   },
   performance: {
     maxAssetSize: 400000,
@@ -79,6 +83,9 @@ const config: Configuration = {
     hot: true,
     liveReload: false,
     historyApiFallback: true,
+    client: {
+      overlay: { errors: true, warnings: false },
+    },
   },
 };
 
