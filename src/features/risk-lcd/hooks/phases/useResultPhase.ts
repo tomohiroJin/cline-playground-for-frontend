@@ -24,6 +24,38 @@ export function useResultPhase(
       clearTimers();
       g.phase = 'done';
 
+      // 練習モード: PT なし、ベスト更新なし
+      if (g.practiceMode) {
+        const rk = computeRank(g.score, cleared, g.stage);
+        Object.assign(g, { _cleared: cleared, _rank: rk, _earnedPt: 0 });
+        syncGame();
+        addTimer(() => patch({ screen: 'R' }), 350);
+        return;
+      }
+
+      // デイリーモード: デイリー報酬を計算
+      if (g.dailyMode) {
+        const dailyReward = store.recordDailyPlay(g.score);
+        let ep = Math.floor(g.score * 0.1);
+        if (!cleared && g.st.db > 0) ep = Math.floor(ep * (1 + g.st.db));
+        ep = Math.max(ep, 1);
+        if (store.hasUnlock('gold')) ep *= 2;
+        // デイリー報酬を加算（recordDailyPlay で既にPT加算済み）
+        store.addPts(ep);
+        store.updateBest(g.score, g.stage + 1);
+        const rk = computeRank(g.score, cleared, g.stage);
+        Object.assign(g, {
+          _cleared: cleared,
+          _rank: rk,
+          _earnedPt: ep + dailyReward,
+          _dailyReward: dailyReward,
+        });
+        syncGame();
+        addTimer(() => patch({ screen: 'R' }), 350);
+        return;
+      }
+
+      // 通常モード
       let ep = Math.floor(g.score * 0.1);
       if (!cleared && g.st.db > 0) ep = Math.floor(ep * (1 + g.st.db));
       ep = Math.max(ep, 1);
@@ -33,7 +65,6 @@ export function useResultPhase(
       store.updateBest(g.score, g.stage + 1);
       const rk = computeRank(g.score, cleared, g.stage);
 
-      // リザルトデータをゲーム状態に追加で保持
       Object.assign(g, { _cleared: cleared, _rank: rk, _earnedPt: ep });
       syncGame();
       addTimer(() => patch({ screen: 'R' }), 350);

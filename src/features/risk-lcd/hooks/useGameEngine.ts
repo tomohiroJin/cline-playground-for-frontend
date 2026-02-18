@@ -11,7 +11,8 @@ import {
   ROWS,
   MENUS,
 } from '../constants';
-import { calcEffBf, visLabel } from '../utils';
+import { Rand, calcEffBf, visLabel } from '../utils';
+import { SeededRand, dateToSeed, getDailyId } from '../utils/seeded-random';
 import type { useStore } from './useStore';
 import type { useAudio } from './useAudio';
 import {
@@ -20,7 +21,7 @@ import {
   useShopPhase,
   useResultPhase,
 } from './phases';
-import type { PhaseContext } from './phases';
+import type { PhaseContext, RngApi } from './phases';
 
 // ── セグメント表示状態 ──
 export type SegState =
@@ -32,7 +33,8 @@ export type SegState =
   | 'near'
   | 'fake'
   | 'shield'
-  | 'shieldWarn';
+  | 'shieldWarn'
+  | 'ghostPlayer';
 
 // ── アナウンス表示データ ──
 export interface AnnounceInfo {
@@ -59,6 +61,10 @@ export interface RenderState {
   popText: { lane: number; text: string; id: number } | null;
   laneArt: ArtKey[];
   emoKey: EmoKey;
+  /** チュートリアルの現在ステップ */
+  tutorialStep?: number;
+  /** ゴーストのレーン位置（ゴースト再生中のみ） */
+  ghostLane?: number;
 }
 
 type StoreApi = ReturnType<typeof useStore>;
@@ -85,6 +91,8 @@ export function initRender(): RenderState {
     popText: null,
     laneArt: ['ghost', 'idle', 'ghost'],
     emoKey: 'idle',
+    tutorialStep: 0,
+    ghostLane: undefined,
   };
 }
 
@@ -100,6 +108,16 @@ export function useGameEngine(store: StoreApi, audio: AudioApi) {
   // タイマー管理
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const popIdRef = useRef(0);
+
+  // RNG 管理（通常: Rand ラッパー / デイリー: SeededRand）
+  const defaultRng: RngApi = {
+    int: (n: number) => Rand.int(n),
+    pick: <T,>(a: readonly T[]) => Rand.pick(a),
+    chance: (p: number) => Rand.chance(p),
+    shuffle: <T,>(a: readonly T[]) => Rand.shuffle(a),
+    random: () => Math.random(),
+  };
+  const rngRef = useRef<RngApi>(defaultRng);
 
   // タイマー追加
   const addTimer = useCallback((fn: () => void, ms: number) => {
@@ -223,6 +241,7 @@ export function useGameEngine(store: StoreApi, audio: AudioApi) {
   const ctx: PhaseContext = {
     gRef,
     rsRef,
+    rng: rngRef,
     addTimer,
     clearTimers,
     patch,
@@ -299,17 +318,33 @@ export function useGameEngine(store: StoreApi, audio: AudioApi) {
             audio.mv();
           } else if (action === 'act') {
             audio.sel();
+            // MENUS: GAME START(0) / DAILY(1) / PRACTICE(2) / PLAY STYLE(3) / UNLOCK(4) / HELP(5)
             switch (r.menuIndex) {
-              case 0:
-                startGame();
+              case 0: {
+                // チュートリアル判定
+                const sd = store.data;
+                if (!sd.tutorialDone && sd.plays === 0) {
+                  patch({ screen: 'TU', tutorialStep: 0 });
+                } else {
+                  rngRef.current = defaultRng;
+                  startGame('normal');
+                }
                 break;
+              }
               case 1:
-                patch({ screen: 'Y', listIndex: 0 });
+                patch({ screen: 'D' });
                 break;
               case 2:
-                patch({ screen: 'H', listIndex: 0 });
+                rngRef.current = defaultRng;
+                startGame('practice');
                 break;
               case 3:
+                patch({ screen: 'Y', listIndex: 0 });
+                break;
+              case 4:
+                patch({ screen: 'H', listIndex: 0 });
+                break;
+              case 5:
                 patch({ screen: 'HP', listIndex: 0 });
                 break;
             }
@@ -327,6 +362,41 @@ export function useGameEngine(store: StoreApi, audio: AudioApi) {
         case 'HP':
           dispatchHelp(action);
           break;
+
+        case 'D':
+          if (action === 'act') {
+            // デイリーモード開始
+            audio.sel();
+            const dailyRng = new SeededRand(dateToSeed(getDailyId()));
+            rngRef.current = dailyRng;
+            startGame('daily');
+          } else if (action === 'back' || action === 'left') {
+            goTitle();
+          }
+          break;
+
+        case 'TU': {
+          const curStep = r.tutorialStep ?? 0;
+          if (action === 'act') {
+            if (curStep >= 3) {
+              // チュートリアル完了→ゲーム開始
+              store.markTutorialDone();
+              rngRef.current = defaultRng;
+              startGame('normal');
+            } else {
+              patch({ tutorialStep: curStep + 1 });
+              audio.mv();
+            }
+          } else if (action === 'back' || action === 'left') {
+            if (curStep > 0) {
+              patch({ tutorialStep: curStep - 1 });
+              audio.mv();
+            } else {
+              goTitle();
+            }
+          }
+          break;
+        }
 
         case 'R':
           if (action === 'act' || action === 'left' || action === 'back') {

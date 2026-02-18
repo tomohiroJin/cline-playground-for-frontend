@@ -13,7 +13,6 @@ import {
   MODS,
 } from '../../constants';
 import {
-  Rand,
   mergeStyles,
   wPick,
   calcEffBf,
@@ -31,6 +30,9 @@ import type { PhaseContext } from './types';
 type StoreApi = ReturnType<typeof useStore>;
 type AudioApi = ReturnType<typeof useAudio>;
 
+// ゲームモード
+export type GameMode = 'normal' | 'daily' | 'practice';
+
 // ランニングフェーズ：ゲームサイクル・被弾判定・アナウンス・移動・開始
 export function useRunningPhase(
   ctx: PhaseContext,
@@ -41,6 +43,7 @@ export function useRunningPhase(
 ) {
   const {
     gRef,
+    rng: rngRef,
     addTimer,
     patch,
     syncGame,
@@ -59,14 +62,15 @@ export function useRunningPhase(
   const pickObs = useCallback(
     (cfg: RuntimeStageConfig): number[] => {
       const g = gRef.current!;
+      const rng = rngRef.current;
       const w = [0.28, 0.36, 0.36];
-      const first = wPick(w, []);
+      const first = wPick(w, [], rng.random.bind(rng));
       const obs = [first];
       if (
         cfg.si >= 2 &&
-        Rand.chance(0.2 + g.stage * 0.06 + (cfg._dblChance || 0))
+        rng.chance(0.2 + g.stage * 0.06 + (cfg._dblChance || 0))
       ) {
-        const second = wPick(w, obs);
+        const second = wPick(w, obs, rng.random.bind(rng));
         if (second >= 0) obs.push(second);
       }
       return obs;
@@ -124,6 +128,9 @@ export function useRunningPhase(
     (obs: number[], cfg: RuntimeStageConfig, pause: number) => {
       const g = gRef.current;
       if (!g?.alive) return;
+
+      // ゴースト記録
+      g.ghostLog.push(g.lane);
 
       const sheltered = isShelter(g.lane);
       const hit = obs.includes(g.lane) && !sheltered;
@@ -242,6 +249,7 @@ export function useRunningPhase(
     const g = gRef.current;
     if (!g?.alive) return;
     const cfg = g.curStgCfg!;
+    const rng = rngRef.current;
     g.cycle++;
     g.total++;
 
@@ -260,8 +268,8 @@ export function useRunningPhase(
     const step = totalDur / (ROWS + 1.8);
 
     let fakeIdx = -1;
-    if (cfg.fk && obs.length > 0 && Rand.chance(0.2))
-      fakeIdx = Rand.pick(obs);
+    if (cfg.fk && obs.length > 0 && rng.chance(0.2))
+      fakeIdx = rng.pick(obs);
     const fog = cfg._fogShift || 0;
 
     // ビートアニメーション開始
@@ -405,6 +413,7 @@ export function useRunningPhase(
   const announce = useCallback(() => {
     const g = gRef.current;
     if (!g) return;
+    const rng = rngRef.current;
     g.phase = 'announce';
     g.cycle = 0;
     if (g.stage === 0) g.shields = g.st.sh;
@@ -412,13 +421,13 @@ export function useRunningPhase(
     g.comboCount = 0;
     setArtTemp('idle', 0);
 
-    g.curBf0 = Rand.shuffle(g.st.bfSet);
+    g.curBf0 = rng.shuffle(g.st.bfSet);
     const cfg: RuntimeStageConfig = {
       ...STG[Math.min(g.stage, STG.length - 1)],
     };
     g.stageMod = null;
-    if (g.stage >= 1 && Rand.chance(0.6)) {
-      g.stageMod = Rand.pick(MODS);
+    if (g.stage >= 1 && rng.chance(0.6)) {
+      g.stageMod = rng.pick(MODS);
       g.stageMod.fn(cfg);
     }
     g.curStgCfg = cfg;
@@ -454,14 +463,23 @@ export function useRunningPhase(
   }, []);
 
   // ゲーム開始
-  const startGame = useCallback(() => {
+  const startGame = useCallback((mode: GameMode = 'normal') => {
     ctx.clearTimers();
+    const rng = rngRef.current;
     const d = store.data;
     const eq = d.eq.filter((id: string) => d.sty.includes(id));
     if (!eq.length) eq.push('standard');
-    const g = createGameState(eq, store);
+    const g = createGameState(eq, store, mode);
+    // autoBlock の避難所設定（RNG 使用）
+    if (g.st.autoBlock) {
+      const av = ([0, 2] as number[]).filter(
+        (l) => !g.st.sf.includes(l),
+      );
+      if (av.length > 0) g.st.sf.push(rng.pick(av));
+    }
+    if (store.hasUnlock('start_shield')) g.st.sh++;
     gRef.current = g;
-    g.curBf0 = Rand.shuffle(g.st.bfSet);
+    g.curBf0 = rng.shuffle(g.st.bfSet);
     syncGame();
     patch({ screen: 'G', flash: false, shaking: false, popText: null });
     announce();
@@ -501,10 +519,15 @@ export function useRunningPhase(
   return { nextCycle, resolve, cont, announce, startGame, movePlayer, pickObs };
 }
 
-// ゲーム状態ファクトリ（純粋関数に近い）
-function createGameState(eq: string[], store: ReturnType<typeof useStore>): GameState {
+// ゲーム状態ファクトリ
+function createGameState(
+  eq: string[],
+  store: ReturnType<typeof useStore>,
+  mode: GameMode = 'normal',
+): GameState {
   const base = mergeStyles(eq);
-  const mx = store.hasUnlock('stage6') ? 5 : 4;
+  let mx = store.hasUnlock('stage6') ? 5 : 4;
+  if (mode === 'practice') mx = 0; // 練習モード: ステージ1のみ
   const initShields = base.sh + (store.hasUnlock('start_shield') ? 1 : 0);
   const state: GameState = {
     st: {
@@ -554,13 +577,9 @@ function createGameState(eq: string[], store: ReturnType<typeof useStore>): Game
     walkFrame: 0,
     artFrame: 0,
     shelterSaves: 0,
+    dailyMode: mode === 'daily',
+    practiceMode: mode === 'practice',
+    ghostLog: [],
   };
-  if (base.autoBlock) {
-    const av = ([0, 2] as number[]).filter(
-      (l) => !state.st.sf.includes(l),
-    );
-    if (av.length > 0) state.st.sf.push(Rand.pick(av));
-  }
-  if (store.hasUnlock('start_shield')) state.st.sh++;
   return state;
 }
