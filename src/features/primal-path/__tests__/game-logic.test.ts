@@ -354,3 +354,52 @@ describe('tbSummary', () => {
     expect(parts).toContain('HP+20');
   });
 });
+
+/* ===== startBattle biome scaling ===== */
+
+describe('startBattle biome scaling', () => {
+  it('1番目のバイオーム(cB=0)は敵が弱めにスケーリングされる', () => {
+    const run = makeRun({ cB: 0, cBT: 'grassland', cW: 0, wpb: 4, bc: 0 });
+    const result = startBattle(run, false);
+    // biomeScale = 0.75 + 0*0.25 = 0.75, scale = 0.75 + 0*0.25 = 0.75
+    expect(result.en).not.toBeNull();
+    const enB0 = result.en!;
+
+    const run2 = makeRun({ cB: 1, cBT: 'grassland', cW: 0, wpb: 4, bc: 0 });
+    const result2 = startBattle(run2, false);
+    // biomeScale = 0.75 + 1*0.25 = 1.0, scale = 1.0
+    const enB1 = result2.en!;
+
+    expect(enB0.hp).toBeLessThan(enB1.hp);
+    expect(enB0.atk).toBeLessThanOrEqual(enB1.atk);
+  });
+
+  it('3番目のバイオーム(cB=2)は敵が強めにスケーリングされる', () => {
+    const run = makeRun({ cB: 2, cBT: 'grassland', cW: 0, wpb: 4, bc: 0 });
+    const result = startBattle(run, false);
+    // biomeScale = 0.75 + 2*0.25 = 1.25, scale = 1.25
+    const enB2 = result.en!;
+
+    const run1 = makeRun({ cB: 1, cBT: 'grassland', cW: 0, wpb: 4, bc: 0 });
+    const result1 = startBattle(run1, false);
+    // biomeScale = 1.0, scale = 1.0
+    const enB1 = result1.en!;
+
+    expect(enB2.hp).toBeGreaterThan(enB1.hp);
+    expect(enB2.atk).toBeGreaterThanOrEqual(enB1.atk);
+  });
+
+  it('bcによる進行スケーリングとバイオームスケーリングが組み合わさる', () => {
+    const run = makeRun({ cB: 0, cBT: 'grassland', cW: 0, wpb: 4, bc: 2 });
+    const result = startBattle(run, false);
+    // biomeScale = 0.75, scale = 0.75 + 2*0.25 = 1.25
+    const en = result.en!;
+
+    const runNoBC = makeRun({ cB: 0, cBT: 'grassland', cW: 0, wpb: 4, bc: 0 });
+    const resultNoBC = startBattle(runNoBC, false);
+    // scale = 0.75
+    const enNoBC = resultNoBC.en!;
+
+    expect(en.hp).toBeGreaterThan(enNoBC.hp);
+  });
+});

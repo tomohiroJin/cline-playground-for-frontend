@@ -507,7 +507,8 @@ export function startBattle(r: RunState, finalMode: boolean): RunState {
     ? BOSS[biome]
     : ENM[biome][Math.min(next.cW - 1, ENM[biome].length - 1)];
 
-  next.en = scaleEnemy(src, next.dd.hm, next.dd.am, 1 + next.bc * 0.25);
+  const biomeScale = 0.75 + next.cB * 0.25;
+  next.en = scaleEnemy(src, next.dd.hm, next.dd.am, biomeScale + next.bc * 0.25);
   next.log = [];
   next.wDmg = 0;
   next.wTurn = 0;
