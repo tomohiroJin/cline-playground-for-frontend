@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
-import type { SaveData } from '../types';
+import type { SaveData, DailyData } from '../types';
 import { SAVE_KEY, LEGACY_KEYS } from '../constants';
+import { getDailyId } from '../utils/seeded-random';
 
 // デフォルトセーブデータ
 const DEFAULT: SaveData = {
@@ -32,6 +33,10 @@ export function useStore() {
         if (typeof parsed.eq === 'string') parsed.eq = [parsed.eq];
         if (!Array.isArray(parsed.eq) || !parsed.eq.length)
           parsed.eq = ['standard'];
+        // 既存ユーザーのチュートリアルスキップ
+        if (parsed.plays > 0 && !parsed.tutorialDone) {
+          parsed.tutorialDone = true;
+        }
         return parsed;
       }
     } catch (e) {
@@ -150,6 +155,60 @@ export function useStore() {
     [persist],
   );
 
+  // 今日のデイリーデータを取得（日付が異なれば null）
+  const getDailyData = useCallback((): DailyData | null => {
+    const d = dataRef.current;
+    const today = getDailyId();
+    if (d.daily && d.daily.date === today) return d.daily;
+    return null;
+  }, []);
+
+  // 今日のデイリーをプレイ済みか
+  const isDailyPlayed = useCallback((): boolean => {
+    const dd = getDailyData();
+    return dd?.played ?? false;
+  }, [getDailyData]);
+
+  // デイリースコアを記録し、獲得PTを返す
+  const recordDailyPlay = useCallback(
+    (score: number): number => {
+      const d = dataRef.current;
+      const today = getDailyId();
+      const prev: DailyData = d.daily && d.daily.date === today
+        ? { ...d.daily }
+        : { date: today, played: false, bestScore: 0, firstPlayRewarded: false };
+
+      let reward = 0;
+
+      // 初回プレイ報酬
+      if (!prev.firstPlayRewarded) {
+        reward += 50;
+        prev.firstPlayRewarded = true;
+      }
+
+      // 自己ベスト更新報酬
+      if (score > prev.bestScore) {
+        const diff = score - prev.bestScore;
+        reward += Math.floor(diff * 0.1);
+        prev.bestScore = score;
+      }
+
+      prev.played = true;
+
+      const next = { ...d, daily: prev, pts: d.pts + reward };
+      persist(next);
+      return reward;
+    },
+    [persist],
+  );
+
+  // チュートリアル完了をマーク
+  const markTutorialDone = useCallback(() => {
+    const d = dataRef.current;
+    if (d.tutorialDone) return;
+    persist({ ...d, tutorialDone: true });
+  }, [persist]);
+
   return {
     data,
     addPts,
@@ -162,5 +221,9 @@ export function useStore() {
     isEq,
     toggleEq,
     updateBest,
+    getDailyData,
+    isDailyPlayed,
+    recordDailyPlay,
+    markTutorialDone,
   };
 }
