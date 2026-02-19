@@ -193,6 +193,9 @@ export interface SavedAchievementData {
   lastUpdated: number;
 }
 
+/** オーディオイベント（副作用分離用） */
+export type AudioEvent = { readonly name: string };
+
 /** 移動可能エンティティ */
 export type MovableEntity = Position & { speed: number };
 

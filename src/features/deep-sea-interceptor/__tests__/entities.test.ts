@@ -1,4 +1,4 @@
-import { EntityFactory, randomChoice } from '../entities';
+import { EntityFactory, randomChoice, isBoss, isMidboss } from '../entities';
 
 describe('EntityFactory', () => {
   describe('bullet', () => {
@@ -115,5 +115,50 @@ describe('randomChoice', () => {
     const arr = ['a', 'b', 'c'];
     const result = randomChoice(arr);
     expect(arr).toContain(result);
+  });
+});
+
+describe('isBoss', () => {
+  test('boss タイプを正しく判定すること', () => {
+    const boss = EntityFactory.enemy('boss', 200, -60);
+    expect(isBoss(boss)).toBe(true);
+  });
+
+  test('boss1〜boss5 タイプを正しく判定すること', () => {
+    for (const type of ['boss1', 'boss2', 'boss3', 'boss4', 'boss5']) {
+      const enemy = EntityFactory.enemy(type, 200, -60);
+      expect(isBoss(enemy)).toBe(true);
+    }
+  });
+
+  test('通常の敵はボスではないこと', () => {
+    for (const type of ['basic', 'fast', 'shooter', 'tank']) {
+      const enemy = EntityFactory.enemy(type, 100, 50);
+      expect(isBoss(enemy)).toBe(false);
+    }
+  });
+
+  test('ミッドボスはボスではないこと', () => {
+    const midboss = EntityFactory.enemy('midboss1', 200, -60);
+    expect(isBoss(midboss)).toBe(false);
+  });
+});
+
+describe('isMidboss', () => {
+  test('midboss1〜midboss5 を正しく判定すること', () => {
+    for (const type of ['midboss1', 'midboss2', 'midboss3', 'midboss4', 'midboss5']) {
+      const enemy = EntityFactory.enemy(type, 200, -60);
+      expect(isMidboss(enemy)).toBe(true);
+    }
+  });
+
+  test('通常の敵はミッドボスではないこと', () => {
+    const enemy = EntityFactory.enemy('basic', 100, 50);
+    expect(isMidboss(enemy)).toBe(false);
+  });
+
+  test('ボスはミッドボスではないこと', () => {
+    const boss = EntityFactory.enemy('boss1', 200, -60);
+    expect(isMidboss(boss)).toBe(false);
   });
 });
