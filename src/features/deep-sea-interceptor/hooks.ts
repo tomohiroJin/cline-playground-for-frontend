@@ -50,10 +50,10 @@ function createBulletsForWeapon(
       break;
     }
     case 'sonarWave': {
-      // ソナーウェーブ: 扇状3発、射程制限あり
+      // ソナーウェーブ: 扇状3発、貫通・高火力・射程制限あり
       const spreadAngle = power >= 5 ? 0.35 : power >= 3 ? 0.26 : 0.17;
-      const lifespan = power >= 5 ? 30 : power >= 3 ? 25 : 20;
-      const dmg = power >= 5 ? 2 : 1;
+      const lifespan = power >= 5 ? 50 : power >= 3 ? 42 : 35;
+      const dmg = power >= 5 ? 3 : power >= 3 ? 2.5 : 2;
       for (const a of [-spreadAngle, 0, spreadAngle]) {
         bullets.push(
           EntityFactory.bullet(x, y - 12, {
@@ -61,6 +61,7 @@ function createBulletsForWeapon(
             weaponType: 'sonarWave',
             speed: 8,
             damage: dmg,
+            piercing: true,
             lifespan,
           })
         );
@@ -157,7 +158,7 @@ export function useDeepSeaGame() {
             );
             break;
           case 'sonarWave':
-            // 全方位8発パルス
+            // 全方位8発パルス（貫通・高威力）
             for (let i = 0; i < 8; i++) {
               const angle = (Math.PI * 2 * i) / 8;
               gd.bullets.push(
@@ -165,9 +166,10 @@ export function useDeepSeaGame() {
                   charged: true,
                   weaponType: 'sonarWave',
                   angle,
-                  speed: 6,
-                  damage: 3,
-                  lifespan: 25,
+                  speed: 7,
+                  damage: 5,
+                  piercing: true,
+                  lifespan: 40,
                 })
               );
             }
