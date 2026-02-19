@@ -1,7 +1,6 @@
 import { useCallback, type MutableRefObject } from 'react';
 import type { PerkDef } from '../../types';
 import { PERKS, STACKABLE_PERKS } from '../../constants';
-import { Rand } from '../../utils';
 import type { useStore } from '../useStore';
 import type { useAudio } from '../useAudio';
 import type { PhaseContext } from './types';
@@ -16,18 +15,19 @@ export function usePerkPhase(
   audio: AudioApi,
   announceRef: MutableRefObject<() => void>,
 ) {
-  const { gRef, rsRef, syncGame, patch } = ctx;
+  const { gRef, rsRef, rng: rngRef, syncGame, patch } = ctx;
 
   // パーク選択画面表示
   const showPerks = useCallback(() => {
     const g = gRef.current;
     if (!g) return;
+    const rng = rngRef.current;
     g.phase = 'perks';
 
     const pool = PERKS.filter(
       (p) => !g.perks.find((x) => x.id === p.id) || STACKABLE_PERKS.has(p.id),
     );
-    const shuffled = Rand.shuffle(pool);
+    const shuffled = rng.shuffle(pool);
     const numP = store.hasUnlock('perk4') ? 4 : 3;
     const risks = shuffled.filter((p: PerkDef) => p.tp === 'risk');
     const buffs = shuffled.filter((p: PerkDef) => p.tp === 'buff');
@@ -38,7 +38,7 @@ export function usePerkPhase(
     } else {
       picks = shuffled.slice(0, numP);
     }
-    picks = Rand.shuffle(picks);
+    picks = rng.shuffle(picks);
     g.perkChoices = picks;
     syncGame();
     patch({ perkIndex: 0 });

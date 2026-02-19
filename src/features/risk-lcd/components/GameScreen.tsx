@@ -38,6 +38,7 @@ const GameScreen: React.FC<Props> = ({ active, rs, getLaneInfo, onPerkClick }) =
         flash={rs.flash}
         popText={rs.popText}
         getLaneInfo={getLaneInfo}
+        ghostLane={rs.ghostLane}
       />
       <EmotionPanel emoKey={rs.emoKey} frame={game.artFrame} />
       {rs.announce && (

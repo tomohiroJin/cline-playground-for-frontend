@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { computeRank } from '../../utils';
+import { computeRank, GhostRecorder } from '../../utils';
 import type { useStore } from '../useStore';
 import type { useAudio } from '../useAudio';
 import type { PhaseContext } from './types';
@@ -24,6 +24,44 @@ export function useResultPhase(
       clearTimers();
       g.phase = 'done';
 
+      // ゴーストデータ圧縮
+      const rec = new GhostRecorder();
+      g.ghostLog.forEach(lane => rec.record(lane as 0 | 1 | 2));
+      const ghostData = rec.compress();
+
+      // 練習モード: PT なし、ベスト更新なし
+      if (g.practiceMode) {
+        const rk = computeRank(g.score, cleared, g.stage);
+        Object.assign(g, { _cleared: cleared, _rank: rk, _earnedPt: 0, _ghostData: ghostData });
+        syncGame();
+        addTimer(() => patch({ screen: 'R' }), 350);
+        return;
+      }
+
+      // デイリーモード: デイリー報酬を計算
+      if (g.dailyMode) {
+        const dailyReward = store.recordDailyPlay(g.score);
+        let ep = Math.floor(g.score * 0.1);
+        if (!cleared && g.st.db > 0) ep = Math.floor(ep * (1 + g.st.db));
+        ep = Math.max(ep, 1);
+        if (store.hasUnlock('gold')) ep *= 2;
+        // デイリー報酬を加算（recordDailyPlay で既にPT加算済み）
+        store.addPts(ep);
+        store.updateBest(g.score, g.stage + 1);
+        const rk = computeRank(g.score, cleared, g.stage);
+        Object.assign(g, {
+          _cleared: cleared,
+          _rank: rk,
+          _earnedPt: ep + dailyReward,
+          _dailyReward: dailyReward,
+          _ghostData: ghostData,
+        });
+        syncGame();
+        addTimer(() => patch({ screen: 'R' }), 350);
+        return;
+      }
+
+      // 通常モード
       let ep = Math.floor(g.score * 0.1);
       if (!cleared && g.st.db > 0) ep = Math.floor(ep * (1 + g.st.db));
       ep = Math.max(ep, 1);
@@ -33,8 +71,7 @@ export function useResultPhase(
       store.updateBest(g.score, g.stage + 1);
       const rk = computeRank(g.score, cleared, g.stage);
 
-      // リザルトデータをゲーム状態に追加で保持
-      Object.assign(g, { _cleared: cleared, _rank: rk, _earnedPt: ep });
+      Object.assign(g, { _cleared: cleared, _rank: rk, _earnedPt: ep, _ghostData: ghostData });
       syncGame();
       addTimer(() => patch({ screen: 'R' }), 350);
     },
