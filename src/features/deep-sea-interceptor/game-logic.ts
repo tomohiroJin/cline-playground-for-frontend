@@ -10,6 +10,9 @@ import { Collision } from './collision';
 import { EnemyAI } from './enemy-ai';
 import type { GameState, UiState, Difficulty, Enemy, Bullet, EnemyBullet, Item, Position, AudioEvent } from './types';
 
+/** 敵エンティティの移動関数型 */
+type EnemyMoveFn = (e: Enemy) => Enemy;
+
 /** clamp のカリー化ラッパー */
 const clamp = (min: number, max: number) => (value: number) => baseClamp(value, min, max);
 
@@ -224,11 +227,15 @@ export function updatePlayerPosition(
 export function getMovementStrategy(
   enemyType: string,
   movementPattern: number
-): typeof MovementStrategies[keyof typeof MovementStrategies] {
+): EnemyMoveFn {
   if (enemyType === 'boss' || enemyType.startsWith('boss') || enemyType.startsWith('midboss')) {
     return MovementStrategies.boss;
   }
-  const strategies = [MovementStrategies.straight, MovementStrategies.sine, MovementStrategies.drift] as const;
+  const strategies: readonly EnemyMoveFn[] = [
+    MovementStrategies.straight,
+    MovementStrategies.sine,
+    MovementStrategies.drift,
+  ];
   return strategies[movementPattern] ?? MovementStrategies.straight;
 }
 
