@@ -14,6 +14,10 @@ export const EffectType = {
   ITEM_PICKUP: 'item_pickup',
   LEVEL_UP: 'level_up',
   BOSS_KILL: 'boss_kill',
+  ENEMY_ATTACK: 'enemy_attack',
+  SCREEN_SHAKE: 'screen_shake',
+  LOW_HP_WARNING: 'low_hp_warning',
+  STAGE_CLEAR: 'stage_clear',
 } as const;
 
 export type EffectTypeValue = (typeof EffectType)[keyof typeof EffectType];
@@ -62,6 +66,12 @@ export interface GameEffect {
   ringMaxRadius?: number;
   /** 画面フラッシュ用（ボス撃破） */
   flashAlpha?: number;
+  /** 画面シェイク強度 (px) */
+  shakeIntensity?: number;
+  /** 画面シェイク減衰率（秒あたり） */
+  shakeDecay?: number;
+  /** 低HP警告パルスの位相 (0.0〜2π) */
+  pulsePhase?: number;
 }
 
 /** エフェクト設定 */
