@@ -9,6 +9,9 @@ import { EffectType, EffectTypeValue, GameEffect } from './effectTypes';
 import {
   createRadialParticles,
   createRisingParticles,
+  createSpiralParticles,
+  createPulseParticles,
+  createTrailParticles,
   updateParticles,
   drawParticles,
 } from './particleSystem';
@@ -41,7 +44,7 @@ export class EffectManager {
    * @param y - ワールド座標 Y（スクリーン座標）
    * @param now - 現在時刻（ミリ秒）
    */
-  addEffect(type: EffectTypeValue, x: number, y: number, now: number = Date.now()): void {
+  addEffect(type: EffectTypeValue, x: number, y: number, now: number = Date.now(), options?: { variant?: 'melee' | 'ranged' | 'boss'; damage?: number; stageNumber?: number }): void {
     effectIdCounter += 1;
     const id = `effect-${effectIdCounter}`;
 
@@ -190,6 +193,103 @@ export class EffectManager {
           flashAlpha: 1.0,
         });
         break;
+
+      case EffectType.ENEMY_ATTACK: {
+        const variant = options?.variant ?? 'melee';
+        if (variant === 'boss') {
+          this.effects.push({
+            id,
+            type,
+            x,
+            y,
+            startTime: now,
+            duration: 500,
+            particles: createPulseParticles(
+              16, x, y,
+              ['#dc2626', '#ef4444', '#f87171', '#ffffff'],
+              100,
+              2.0
+            ),
+          });
+        } else if (variant === 'ranged') {
+          this.effects.push({
+            id,
+            type,
+            x,
+            y,
+            startTime: now,
+            duration: 400,
+            particles: createTrailParticles(
+              8, x, y,
+              0, -1,
+              ['#f97316', '#fdba74', '#fff7ed'],
+              120,
+              2.5
+            ),
+          });
+        } else {
+          // melee
+          this.effects.push({
+            id,
+            type,
+            x,
+            y,
+            startTime: now,
+            duration: 300,
+            particles: createRadialParticles(
+              8, x, y,
+              ['#ef4444', '#dc2626', '#ff6b6b'],
+              50, 120,
+              2, 4,
+              3.0
+            ),
+          });
+        }
+        break;
+      }
+
+      case EffectType.SCREEN_SHAKE: {
+        const intensity = Math.min(4, options?.damage ? options.damage * 0.5 : 2);
+        this.effects.push({
+          id,
+          type,
+          x: 0,
+          y: 0,
+          startTime: now,
+          duration: 200,
+          particles: [],
+          shakeIntensity: intensity,
+          shakeDecay: intensity / 0.2,
+        });
+        break;
+      }
+
+      case EffectType.STAGE_CLEAR: {
+        const stageColors = [
+          ['#60a5fa', '#93c5fd', '#ffffff'],
+          ['#34d399', '#6ee7b7', '#ffffff'],
+          ['#fbbf24', '#fcd34d', '#ffffff'],
+          ['#f472b6', '#f9a8d4', '#ffffff'],
+          ['#a78bfa', '#c4b5fd', '#fbbf24', '#ffffff'],
+        ];
+        const stageIdx = Math.min((options?.stageNumber ?? 1) - 1, stageColors.length - 1);
+        this.effects.push({
+          id,
+          type,
+          x,
+          y,
+          startTime: now,
+          duration: 1500,
+          particles: createSpiralParticles(
+            32, x, y,
+            stageColors[stageIdx],
+            100,
+            0.7
+          ),
+          flashAlpha: 1.0,
+        });
+        break;
+      }
     }
 
     // パーティクル上限を超えた場合、古いエフェクトから削除
@@ -217,8 +317,15 @@ export class EffectManager {
       const gravity = effect.type === EffectType.DAMAGE ||
         effect.type === EffectType.TRAP_DAMAGE
         ? 120
+        : effect.type === EffectType.STAGE_CLEAR
+        ? 60
         : 0;
       effect.particles = updateParticles(effect.particles, deltaTime, gravity);
+
+      // 画面シェイク減衰更新
+      if (effect.shakeIntensity !== undefined && effect.shakeDecay !== undefined) {
+        effect.shakeIntensity = Math.max(0, effect.shakeIntensity - effect.shakeDecay * deltaTime);
+      }
 
       // リングエフェクト更新
       if (effect.ringMaxRadius !== undefined) {
@@ -278,6 +385,23 @@ export class EffectManager {
         ctx.restore();
       }
     }
+  }
+
+  /**
+   * 現在の画面シェイクオフセットを取得する
+   * シェイク中は {x, y} を返し、シェイク終了後は null を返す
+   */
+  getShakeOffset(): { x: number; y: number } | null {
+    for (const effect of this.effects) {
+      if (effect.type === EffectType.SCREEN_SHAKE && effect.shakeIntensity && effect.shakeIntensity > 0.1) {
+        const intensity = effect.shakeIntensity;
+        return {
+          x: (Math.random() - 0.5) * 2 * intensity,
+          y: (Math.random() - 0.5) * 2 * intensity,
+        };
+      }
+    }
+    return null;
   }
 
   /**

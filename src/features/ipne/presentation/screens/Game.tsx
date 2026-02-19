@@ -507,6 +507,13 @@ export const GameScreen: React.FC<{
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    // 画面シェイクオフセット適用（Phase 4）
+    const shakeOffset = effectManagerRef.current.getShakeOffset();
+    if (shakeOffset) {
+      ctx.save();
+      ctx.translate(shakeOffset.x, shakeOffset.y);
+    }
+
     // スタート位置を探す（パス描画用）
     let startPos: Position | null = null;
     for (let y = 0; y < mapHeight && !startPos; y++) {
@@ -724,6 +731,8 @@ export const GameScreen: React.FC<{
       playerDamageUntilRef.current = now + 200; // 被弾フレーム200ms表示
       const screenPos = toScreenPosition(player);
       em.addEffect(EffectType.DAMAGE, screenPos.x, screenPos.y, now);
+      // 画面シェイク（Phase 4）
+      em.addEffect(EffectType.SCREEN_SHAKE, 0, 0, now, { damage: 4 });
     }
 
     // 外部エフェクトキューの処理
@@ -804,6 +813,27 @@ export const GameScreen: React.FC<{
           spriteRenderer.drawSprite(ctx, idleSheet.sprites[idleFrameIndex], playerDrawX, playerDrawY, spriteScale);
         }
       }
+    }
+
+    // 低HP警告描画（Phase 4: HP 25%以下でビネットパルス）
+    if (player.hp > 0 && player.hp / player.maxHp <= 0.25) {
+      const pulseT = (now % 1500) / 1500;
+      const pulseAlpha = 0.15 + 0.1 * Math.sin(pulseT * Math.PI * 2);
+      const gradient = ctx.createRadialGradient(
+        canvas.width / 2, canvas.height / 2, canvas.width * 0.3,
+        canvas.width / 2, canvas.height / 2, canvas.width * 0.7
+      );
+      gradient.addColorStop(0, 'rgba(220, 38, 38, 0)');
+      gradient.addColorStop(1, `rgba(220, 38, 38, ${pulseAlpha})`);
+      ctx.save();
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
+    }
+
+    // 画面シェイクオフセット復元（HUDはシェイクの影響を受けない）
+    if (shakeOffset) {
+      ctx.restore();
     }
 
     // 自動マップ描画（全体表示モードでは非表示）
