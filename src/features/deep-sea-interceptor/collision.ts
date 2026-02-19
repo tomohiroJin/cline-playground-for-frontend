@@ -27,4 +27,13 @@ export const Collision = {
   /** プレイヤーと敵の衝突判定 */
   playerEnemy: (p: Position, e: Enemy) =>
     Collision.circle(p, e, Config.player.size * Config.player.hitboxRatio, e.size / 2),
+
+  /** プレイヤーと敵弾のグレイズ判定（衝突半径の外側、グレイズ半径の内側） */
+  graze: (p: Position, b: EnemyBullet) => {
+    const playerRadius = Config.player.size * Config.player.hitboxRatio;
+    const d = distance(p, b);
+    const hitRadius = playerRadius + 4;
+    const grazeRadius = playerRadius + 16;
+    return d >= hitRadius && d < grazeRadius;
+  },
 };

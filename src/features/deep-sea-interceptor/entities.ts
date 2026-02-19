@@ -4,7 +4,7 @@
 
 import { randomRange, randomInt as baseRandomInt } from '../../utils/math-utils';
 import { Config, EnemyConfig, ItemConfig } from './constants';
-import type { Bullet, Enemy, EnemyBullet, Item, Particle, Bubble, Position, ItemType } from './types';
+import type { Bullet, Enemy, EnemyBullet, Item, Particle, Bubble, Position, ItemType, WeaponType, EnemyType } from './types';
 
 // ユニークID生成
 const uniqueId = (() => {
@@ -22,10 +22,42 @@ export function randomChoice<T>(arr: T[]): T {
   return arr[baseRandomInt(0, arr.length - 1)];
 }
 
+/** ボス判定（boss, boss1〜boss5） */
+export const isBoss = (e: { enemyType: EnemyType }): boolean =>
+  e.enemyType === 'boss' || (e.enemyType.startsWith('boss') && !e.enemyType.startsWith('midboss'));
+
+/** ミッドボス判定（midboss1〜midboss5） */
+export const isMidboss = (e: { enemyType: EnemyType }): boolean =>
+  e.enemyType.startsWith('midboss');
+
 /** エンティティファクトリ */
 export const EntityFactory = {
   /** プレイヤー弾の生成 */
-  bullet: (x: number, y: number, { charged = false, angle = -Math.PI / 2 } = {}): Bullet => {
+  bullet: (
+    x: number,
+    y: number,
+    {
+      charged = false,
+      angle = -Math.PI / 2,
+      weaponType = 'torpedo' as WeaponType,
+      damage: dmgOverride,
+      speed: spdOverride,
+      size: sizeOverride,
+      piercing = false,
+      homing = false,
+      lifespan,
+    }: {
+      charged?: boolean;
+      angle?: number;
+      weaponType?: WeaponType;
+      damage?: number;
+      speed?: number;
+      size?: number;
+      piercing?: boolean;
+      homing?: boolean;
+      lifespan?: number;
+    } = {}
+  ): Bullet => {
     const cfg = Config.bullet;
     return {
       id: uniqueId(),
@@ -33,26 +65,31 @@ export const EntityFactory = {
       y,
       createdAt: Date.now(),
       type: 'bullet',
+      weaponType,
       charged,
       angle,
-      speed: charged ? cfg.chargedSpeed : cfg.speed,
-      damage: charged ? cfg.chargedDamage : 1,
-      size: charged ? cfg.chargedSize : cfg.size,
+      speed: spdOverride ?? (charged ? cfg.chargedSpeed : cfg.speed),
+      damage: dmgOverride ?? (charged ? cfg.chargedDamage : 1),
+      size: sizeOverride ?? (charged ? cfg.chargedSize : cfg.size),
+      piercing: piercing || (charged && weaponType === 'torpedo'),
+      homing,
+      lifespan,
     };
   },
 
   /** 敵キャラクターの生成 */
   enemy: (type: string, x: number, y: number, stage = 1): Enemy => {
-    const cfg = EnemyConfig[type as keyof typeof EnemyConfig];
+    const cfg = EnemyConfig[type];
     if (!cfg) throw new Error(`Invalid enemy type: ${type}`);
-    const hp = type === 'boss' ? cfg.hp + stage * 15 : cfg.hp;
+    const boss = type === 'boss' || (type.startsWith('boss') && !type.startsWith('midboss'));
+    const hp = boss ? cfg.hp + stage * 15 : cfg.hp;
     return {
       id: uniqueId(),
       x,
       y,
       createdAt: Date.now(),
       type: 'enemy',
-      enemyType: type as keyof typeof EnemyConfig,
+      enemyType: type as import('./types').EnemyType,
       hp,
       maxHp: hp,
       speed: cfg.speed,
@@ -63,6 +100,7 @@ export const EntityFactory = {
       lastShotAt: 0,
       movementPattern: baseRandomInt(0, 2),
       angle: 0,
+      bossPhase: boss ? 1 : 0,
     };
   },
 

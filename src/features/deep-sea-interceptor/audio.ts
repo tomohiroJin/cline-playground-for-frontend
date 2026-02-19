@@ -12,6 +12,12 @@ const soundDefs: Record<string, SoundDef> = {
   hit: { f: 100, w: 'square', g: 0.1, d: 0.08 },
   item: { f: 440, w: 'sine', g: 0.1, d: 0.15 },
   bomb: { f: 60, w: 'sawtooth', g: 0.15, d: 0.4, ef: 20 },
+  graze: { f: 600, w: 'sine', g: 0.05, d: 0.05 },
+  bossPhaseChange: { f: 200, w: 'triangle', g: 0.1, d: 0.3, ef: 400 },
+  warning: { f: 150, w: 'square', g: 0.08, d: 0.5, ef: 80 },
+  bossAppear: { f: 80, w: 'sawtooth', g: 0.12, d: 0.4, ef: 40 },
+  stageClear: { f: 440, w: 'sine', g: 0.1, d: 0.5, ef: 880 },
+  achievement: { f: 660, w: 'sine', g: 0.08, d: 0.3, ef: 880 },
 };
 
 /** Web Audio API ベースのサウンドシステムを生成 */

@@ -2,7 +2,7 @@
 // Deep Sea Interceptor - 定数定義
 // ============================================================================
 
-import type { EnemyType, ItemType } from './types';
+import type { EnemyType, ItemType, Difficulty } from './types';
 
 /** ゲーム全体の設定 */
 export const Config = Object.freeze({
@@ -25,28 +25,46 @@ export const Config = Object.freeze({
 /** ステージ設定 */
 export const StageConfig: Record<
   number,
-  { name: string; bg: string; types: string[]; rate: number; bossScore: number }
+  { name: string; bg: string; types: string[]; rate: number; bossScore: number; gimmick: string }
 > = Object.freeze({
-  1: { name: '浅層海域', bg: '#0a1a2a', types: ['basic', 'fast'], rate: 800, bossScore: 3000 },
+  1: { name: '浅層海域', bg: '#0a1a2a', types: ['basic', 'fast'], rate: 800, bossScore: 3000, gimmick: 'current' },
   2: {
     name: '深海防衛ライン',
     bg: '#050f1a',
     types: ['basic', 'shooter', 'fast', 'tank'],
     rate: 650,
     bossScore: 7000,
+    gimmick: 'minefield',
   },
   3: {
-    name: '最深部',
+    name: '熱水噴出域',
+    bg: '#1a0a05',
+    types: ['shooter', 'fast', 'tank'],
+    rate: 550,
+    bossScore: 12000,
+    gimmick: 'thermalVent',
+  },
+  4: {
+    name: '生物発光帯',
+    bg: '#050a1a',
+    types: ['fast', 'shooter', 'tank'],
+    rate: 450,
+    bossScore: 18000,
+    gimmick: 'bioluminescence',
+  },
+  5: {
+    name: '最深部・海溝',
     bg: '#020810',
     types: ['shooter', 'fast', 'tank'],
-    rate: 500,
-    bossScore: 12000,
+    rate: 350,
+    bossScore: 25000,
+    gimmick: 'pressure',
   },
 });
 
 /** 敵タイプ別設定 */
 export const EnemyConfig: Record<
-  EnemyType,
+  string,
   {
     hp: number;
     speed: number;
@@ -61,6 +79,19 @@ export const EnemyConfig: Record<
   shooter: { hp: 2, speed: 1.2, points: 200, sizeRatio: 1.1, canShoot: true, fireRate: 2000 },
   tank: { hp: 5, speed: 0.8, points: 300, sizeRatio: 1.4, canShoot: false, fireRate: 0 },
   boss: { hp: 40, speed: 0.5, points: 2000, sizeRatio: 3.5, canShoot: true, fireRate: 800 },
+  boss1: { hp: 40, speed: 0.5, points: 2000, sizeRatio: 3.5, canShoot: true, fireRate: 800 },
+  boss2: { hp: 40, speed: 0.4, points: 3000, sizeRatio: 3.8, canShoot: true, fireRate: 1000 },
+  boss3: { hp: 40, speed: 0.6, points: 4000, sizeRatio: 4.0, canShoot: true, fireRate: 700 },
+  boss4: { hp: 40, speed: 0.3, points: 5000, sizeRatio: 4.5, canShoot: true, fireRate: 600 },
+  boss5: { hp: 40, speed: 0.4, points: 6000, sizeRatio: 5.0, canShoot: true, fireRate: 500 },
+  // 機雷（Stage 2 ギミック）
+  mine: { hp: 2, speed: 0, points: 50, sizeRatio: 0.8, canShoot: false, fireRate: 0 },
+  // ミッドボス（各ステージ）
+  midboss1: { hp: 16, speed: 0.8, points: 1000, sizeRatio: 2.0, canShoot: true, fireRate: 1200 },
+  midboss2: { hp: 16, speed: 0.6, points: 1500, sizeRatio: 2.2, canShoot: true, fireRate: 1400 },
+  midboss3: { hp: 16, speed: 0.7, points: 2000, sizeRatio: 2.4, canShoot: true, fireRate: 1000 },
+  midboss4: { hp: 16, speed: 0.5, points: 2500, sizeRatio: 2.6, canShoot: true, fireRate: 900 },
+  midboss5: { hp: 16, speed: 0.6, points: 3000, sizeRatio: 2.8, canShoot: true, fireRate: 800 },
 });
 
 /** アイテムタイプ別設定 */
@@ -74,6 +105,40 @@ export const ItemConfig: Record<ItemType, { color: string; label: string; descri
     life: { color: '#ff4444', label: '♥', description: 'ライフ+1' },
   });
 
+/** 難易度設定 */
+export const DifficultyConfig: Record<
+  Difficulty,
+  {
+    label: string;
+    spawnRateMultiplier: number;
+    bulletSpeedMultiplier: number;
+    initialLives: number;
+    scoreMultiplier: number;
+  }
+> = Object.freeze({
+  cadet: {
+    label: 'CADET（初心者）',
+    spawnRateMultiplier: 0.7,
+    bulletSpeedMultiplier: 0.8,
+    initialLives: 5,
+    scoreMultiplier: 0.5,
+  },
+  standard: {
+    label: 'STANDARD（通常）',
+    spawnRateMultiplier: 1.0,
+    bulletSpeedMultiplier: 1.0,
+    initialLives: 3,
+    scoreMultiplier: 1.0,
+  },
+  abyss: {
+    label: 'ABYSS（上級）',
+    spawnRateMultiplier: 1.3,
+    bulletSpeedMultiplier: 1.2,
+    initialLives: 2,
+    scoreMultiplier: 2.0,
+  },
+});
+
 /** カラーパレット */
 export const ColorPalette: {
   enemy: Record<string, string>;
@@ -86,6 +151,17 @@ export const ColorPalette: {
     shooter: '#8a3a5a',
     tank: '#8a6a3a',
     boss: '#4a4a8a',
+    boss1: '#3a6a3a',
+    boss2: '#6a3a6a',
+    boss3: '#8a3a1a',
+    boss4: '#3a5a8a',
+    boss5: '#5a2a5a',
+    mine: '#8a8a3a',
+    midboss1: '#6a8a3a',
+    midboss2: '#3a6a8a',
+    midboss3: '#8a5a1a',
+    midboss4: '#5a3a8a',
+    midboss5: '#8a3a3a',
   },
   ui: { primary: '#6ac', danger: '#f66', success: '#6f8', warning: '#fa0' },
   particle: {

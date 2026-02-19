@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { Config } from './constants';
-import type { MovableEntity, AngleEntity, VelocityEntity } from './types';
+import type { MovableEntity, AngleEntity, VelocityEntity, Enemy } from './types';
 
 /** 各エンティティの移動戦略 */
 export const MovementStrategies = {
@@ -59,4 +59,35 @@ export const MovementStrategies = {
     y: e.y - e.speed,
     opacity: e.opacity - 0.003,
   }),
+
+  /** ホーミング弾移動（最近接の敵に向かって旋回） */
+  homing: <T extends AngleEntity>(e: T, enemies: Enemy[]): T => {
+    const target = enemies.reduce(
+      (closest, enemy) => {
+        if (enemy.hp <= 0) return closest;
+        const d = Math.hypot(enemy.x - e.x, enemy.y - e.y);
+        return !closest || d < closest.dist ? { enemy, dist: d } : closest;
+      },
+      null as { enemy: Enemy; dist: number } | null
+    );
+
+    let angle = e.angle;
+    if (target) {
+      const desiredAngle = Math.atan2(target.enemy.y - e.y, target.enemy.x - e.x);
+      // 角度差を -π 〜 π の範囲に正規化
+      let angleDiff = desiredAngle - angle;
+      while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+      while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+      const maxTurn = 0.08;
+      const turn = Math.max(-maxTurn, Math.min(maxTurn, angleDiff));
+      angle = angle + turn;
+    }
+
+    return {
+      ...e,
+      angle,
+      x: e.x + Math.cos(angle) * e.speed,
+      y: e.y + Math.sin(angle) * e.speed,
+    };
+  },
 };

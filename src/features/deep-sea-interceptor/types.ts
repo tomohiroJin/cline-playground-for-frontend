@@ -3,10 +3,19 @@
 // ============================================================================
 
 /** 敵タイプ */
-export type EnemyType = 'basic' | 'fast' | 'shooter' | 'tank' | 'boss';
+export type EnemyType =
+  | 'basic' | 'fast' | 'shooter' | 'tank' | 'mine'
+  | 'boss' | 'boss1' | 'boss2' | 'boss3' | 'boss4' | 'boss5'
+  | 'midboss1' | 'midboss2' | 'midboss3' | 'midboss4' | 'midboss5';
 
 /** アイテムタイプ */
 export type ItemType = 'power' | 'speed' | 'shield' | 'spread' | 'bomb' | 'life';
+
+/** 武器タイプ */
+export type WeaponType = 'torpedo' | 'sonarWave' | 'bioMissile';
+
+/** 難易度 */
+export type Difficulty = 'cadet' | 'standard' | 'abyss';
 
 /** 座標 */
 export interface Position {
@@ -23,11 +32,16 @@ export interface BaseEntity extends Position {
 /** プレイヤーの弾 */
 export interface Bullet extends BaseEntity {
   type: 'bullet';
+  weaponType: WeaponType;
   charged: boolean;
   angle: number;
   speed: number;
   damage: number;
   size: number;
+  piercing: boolean;
+  homing: boolean;
+  homingTarget?: number;
+  lifespan?: number;
 }
 
 /** 敵キャラクター */
@@ -44,6 +58,7 @@ export interface Enemy extends BaseEntity {
   lastShotAt: number;
   movementPattern: number;
   angle: number;
+  bossPhase: number;
 }
 
 /** 敵の弾 */
@@ -99,6 +114,29 @@ export interface GameState {
   invincibleEndTime: number;
   input: { dx: number; dy: number };
   keys: Record<string, boolean>;
+  combo: number;
+  comboTimer: number;
+  maxCombo: number;
+  grazeCount: number;
+  grazedBulletIds: Set<number>;
+  gameStartTime: number;
+  // 演出用フィールド
+  bossWarning: boolean;
+  bossWarningStartTime: number;
+  screenShake: number;
+  screenFlash: number;
+  stageClearTime: number;
+  grazeFlashTime: number;
+  // ミッドボス用
+  midBossSpawned: boolean;
+  // 環境ギミック用
+  currentDirection: number;
+  currentChangeTime: number;
+  thermalVents: ThermalVent[];
+  thermalVentTimer: number;
+  luminescence: boolean;
+  luminescenceEndTime: number;
+  pressureBounds: { left: number; right: number };
 }
 
 /** UI表示用状態（React state で管理） */
@@ -111,7 +149,52 @@ export interface UiState {
   spreadTime: number;
   shieldEndTime: number;
   speedLevel: number;
+  combo: number;
+  multiplier: number;
+  grazeCount: number;
+  maxCombo: number;
+  difficulty: Difficulty;
+  weaponType: WeaponType;
 }
+
+/** プレイ統計（リザルト画面用） */
+export interface PlayStats {
+  score: number;
+  maxCombo: number;
+  grazeCount: number;
+  livesLost: number;
+  playTime: number;
+  difficulty: Difficulty;
+  weaponType: WeaponType;
+  stagesCleared: number;
+  rank: string;
+}
+
+/** 熱水柱（Stage 3 ギミック） */
+export interface ThermalVent {
+  x: number;
+  width: number;
+  active: boolean;
+  startTime: number;
+  warningTime: number;
+}
+
+/** 実績定義 */
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  condition: (stats: PlayStats) => boolean;
+}
+
+/** 保存済み実績データ */
+export interface SavedAchievementData {
+  unlockedIds: string[];
+  lastUpdated: number;
+}
+
+/** オーディオイベント（副作用分離用） */
+export type AudioEvent = { readonly name: string };
 
 /** 移動可能エンティティ */
 export type MovableEntity = Position & { speed: number };
