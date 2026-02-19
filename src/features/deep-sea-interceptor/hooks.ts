@@ -7,8 +7,9 @@ import { getHighScore, saveScore } from '../../utils/score-storage';
 import { createAudioSystem } from './audio';
 import { Config, DifficultyConfig } from './constants';
 import { EntityFactory } from './entities';
-import { createInitialGameState, createInitialUiState, updateFrame } from './game-logic';
-import type { GameState, UiState, WeaponType, Difficulty } from './types';
+import { createInitialGameState, createInitialUiState, updateFrame, calculateRank } from './game-logic';
+import { loadAchievements, saveAchievements, checkNewAchievements } from './achievements';
+import type { GameState, UiState, WeaponType, Difficulty, Achievement } from './types';
 
 /** ゲーム画面の状態 */
 export type ScreenState = 'title' | 'playing' | 'gameover' | 'ending';
@@ -95,6 +96,7 @@ export function useDeepSeaGame() {
   const [uiState, setUiState] = useState<UiState>(createInitialUiState());
   const [selectedWeapon, setSelectedWeapon] = useState<WeaponType>('torpedo');
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('standard');
+  const [newAchievements, setNewAchievements] = useState<Achievement[]>([]);
   const [, forceRender] = useReducer(x => x + 1, 0) as [number, () => void];
 
   const gameData = useRef<GameState>(createInitialGameState());
@@ -111,6 +113,7 @@ export function useDeepSeaGame() {
   // ゲーム開始
   const startGame = useCallback(() => {
     audio.current.init();
+    setNewAchievements([]);
     const diffConfig = DifficultyConfig[selectedDifficulty];
     gameData.current = createInitialGameState();
     gameData.current.gameStartTime = Date.now();
@@ -283,12 +286,36 @@ export function useDeepSeaGame() {
       uiStateRef.current = result.uiState;
       setUiState(result.uiState);
 
-      if (result.event === 'gameover') {
-        setGameState('gameover');
+      if (result.event === 'gameover' || result.event === 'ending') {
+        setGameState(result.event === 'ending' ? 'ending' : 'gameover');
         saveScore(GAME_KEY, result.uiState.score);
-      } else if (result.event === 'ending') {
-        setGameState('ending');
-        saveScore(GAME_KEY, result.uiState.score);
+        // 実績チェック
+        const gd = gameData.current;
+        const ui = result.uiState;
+        const playTime = Date.now() - (gd.gameStartTime || Date.now());
+        const rank = calculateRank(ui.score, ui.lives, ui.difficulty);
+        const stats = {
+          score: ui.score,
+          maxCombo: gd.maxCombo,
+          grazeCount: gd.grazeCount,
+          livesLost: DifficultyConfig[ui.difficulty].initialLives - ui.lives,
+          playTime,
+          difficulty: ui.difficulty,
+          weaponType: ui.weaponType,
+          stagesCleared: result.event === 'ending' ? 5 : ui.stage - 1,
+          rank,
+        };
+        const saved = loadAchievements();
+        const newAch = checkNewAchievements(stats, saved);
+        if (newAch.length > 0) {
+          saved.unlockedIds.push(...newAch.map(a => a.id));
+          saved.lastUpdated = Date.now();
+          saveAchievements(saved);
+          setNewAchievements(newAch);
+          audio.current.play('achievement');
+        } else {
+          setNewAchievements([]);
+        }
       }
 
       forceRender();
@@ -333,5 +360,6 @@ export function useDeepSeaGame() {
     setSelectedWeapon,
     selectedDifficulty,
     setSelectedDifficulty,
+    newAchievements,
   };
 }

@@ -266,39 +266,39 @@
 
 #### 実装タスク
 
-- [ ] **I-7.1** `types.ts` の `GameState` に演出用フィールドを追加
+- [x] **I-7.1** `types.ts` の `GameState` に演出用フィールドを追加
   - `bossWarning: boolean` — WARNING表示中フラグ
   - `bossWarningStartTime: number` — WARNING開始タイムスタンプ
   - `screenShake: number` — 画面振動残り時間（ms）
   - `screenFlash: number` — 画面フラッシュ残り時間（ms）
   - `stageClearTime: number` — ステージクリア演出開始タイムスタンプ
-- [ ] **I-7.2** `styles.ts` に `ShakeAnimation` keyframes を追加
-- [ ] **I-7.3** `game-logic.ts` にボス登場演出のロジックを追加
+- [x] **I-7.2** `styles.ts` に `ShakeAnimation` keyframes を追加
+- [x] **I-7.3** `game-logic.ts` にボス登場演出のロジックを追加
   - bossScore 到達 → `bossWarning = true` → 2秒後にボススポーン
   - WARNING中は雑魚敵のスポーンを停止
-- [ ] **I-7.4** `game-logic.ts` にステージクリア演出のロジックを追加
+- [x] **I-7.4** `game-logic.ts` にステージクリア演出のロジックを追加
   - ボス撃破 → 大量パーティクル生成 → ステージクリアボーナス加算
   - ボーナス = `1000 × stage + maxCombo × 10 + grazeCount × 5`
-- [ ] **I-7.5** `game-logic.ts` の敵撃破時にボス/ミッドボス用の強化エフェクトを追加
+- [x] **I-7.5** `game-logic.ts` の敵撃破時にボス/ミッドボス用の強化エフェクトを追加
   - ボス撃破: screenShake = 500, screenFlash = 200, パーティクル20個
   - ミッドボス撃破: screenShake = 200, パーティクル10個
-- [ ] **I-7.6** `DeepSeaInterceptorGame.tsx` に WARNING 表示コンポーネントを追加
+- [x] **I-7.6** `DeepSeaInterceptorGame.tsx` に WARNING 表示コンポーネントを追加
   - 画面中央に「⚠ WARNING ⚠」テキスト（赤色、点滅）
   - 画面端に赤いフラッシュ
-- [ ] **I-7.7** `DeepSeaInterceptorGame.tsx` に STAGE CLEAR 表示を追加
+- [x] **I-7.7** `DeepSeaInterceptorGame.tsx` に STAGE CLEAR 表示を追加
   - 画面中央に「STAGE CLEAR」+ ボーナススコア表示
-- [ ] **I-7.8** `DeepSeaInterceptorGame.tsx` にボスHPバーを追加
+- [x] **I-7.8** `DeepSeaInterceptorGame.tsx` にボスHPバーを追加
   - 画面上部にHPバー + ボス名を表示
   - HP残量に応じて色変化（緑→黄→赤）
-- [ ] **I-7.9** `DeepSeaInterceptorGame.tsx` に画面振動エフェクトを追加
+- [x] **I-7.9** `DeepSeaInterceptorGame.tsx` に画面振動エフェクトを追加
   - `StyledGameContainer` に `screenShake > 0` の時 `ShakeAnimation` を適用
-- [ ] **I-7.10** `components/HUD.tsx` にグレイズ発生時の「GRAZE!」テキスト表示を追加
+- [x] **I-7.10** `components/HUD.tsx` にグレイズ発生時の「GRAZE!」テキスト表示を追加
   - 0.3秒でフェードアウト
 
 #### 検証タスク
 
-- [ ] **V-7.1** 既存テストが通ること
-- [ ] **V-7.2** TypeScript コンパイルが通ること
+- [x] **V-7.1** 既存テストが通ること
+- [x] **V-7.2** TypeScript コンパイルが通ること
 - [ ] **V-7.3** プレイテスト: bossScore到達時に WARNING が2秒間表示されること
 - [ ] **V-7.4** プレイテスト: ボス登場時に画面上部にHPバーが表示されること
 - [ ] **V-7.5** プレイテスト: ボス撃破時に連続爆発 + 画面振動 + フラッシュが発生すること
@@ -314,32 +314,32 @@
 
 #### 実装タスク
 
-- [ ] **I-8.1** `types.ts` の `GameState` にギミック用フィールドを追加
+- [x] **I-8.1** `types.ts` の `GameState` にギミック用フィールドを追加
   - `currentDirection: number` — 海流の方向（Stage 1）
   - `mines: Mine[]` — 機雷リスト（Stage 2）
   - `thermalVents: ThermalVent[]` — 熱水柱リスト（Stage 3）
   - `luminescence: boolean` — 発光状態（Stage 4）
   - `luminescenceEndTime: number`
   - `pressureBounds: { left: number; right: number }` — 水圧の壁（Stage 5）
-- [ ] **I-8.2** `types.ts` に `Mine`, `ThermalVent` 型を追加
-- [ ] **I-8.3** Stage 1 ギミック「海流」を純粋関数として実装
+- [x] **I-8.2** `types.ts` に `Mine`, `ThermalVent` 型を追加
+- [x] **I-8.3** Stage 1 ギミック「海流」を純粋関数として実装
   - `applyCurrentGimmick(gd, now)` — プレイヤー・弾に横方向の力を適用
   - 10秒ごとに方向切替
-- [ ] **I-8.4** Stage 2 ギミック「機雷原」を実装
+- [x] **I-8.4** Stage 2 ギミック「機雷原」を実装
   - EnemyType に `'mine'` を追加
   - 機雷は `EntityFactory.enemy('mine', ...)` で生成
   - 弾で破壊可能（HP: 2）、接触でプレイヤーダメージ
-- [ ] **I-8.5** Stage 3 ギミック「熱水柱」を純粋関数として実装
+- [x] **I-8.5** Stage 3 ギミック「熱水柱」を純粋関数として実装
   - `applyThermalVentGimmick(gd, now)` — 5秒ごとに熱水柱を噴出
   - 噴出1秒前に予告マーカー、幅40px、持続2秒
-- [ ] **I-8.6** Stage 4 ギミック「発光プランクトン」を実装
+- [x] **I-8.6** Stage 4 ギミック「発光プランクトン」を実装
   - 光る粒子を生成、接触で3秒間画面が明るくなる
-- [ ] **I-8.7** Stage 5 ギミック「水圧」を純粋関数として実装
+- [x] **I-8.7** Stage 5 ギミック「水圧」を純粋関数として実装
   - `applyPressureGimmick(gd, now)` — 30秒後から壁が収縮
   - 最小: 画面幅60%、ボス撃破で解除
-- [ ] **I-8.8** `game-logic.ts` の `updateFrame` にステージ別ギミック呼び出しを追加
+- [x] **I-8.8** `game-logic.ts` の `updateFrame` にステージ別ギミック呼び出しを追加
   - `switch (stg.gimmick)` でギミック関数をディスパッチ
-- [ ] **I-8.9** `DeepSeaInterceptorGame.tsx` にギミックの視覚表現を追加
+- [x] **I-8.9** `DeepSeaInterceptorGame.tsx` にギミックの視覚表現を追加
   - 海流: 半透明矢印、機雷: 専用スプライト、熱水柱: 赤い柱、水圧: 暗い壁
 
 #### 検証タスク
@@ -347,7 +347,7 @@
 - [ ] **V-8.1** 新規テスト: `applyCurrentGimmick` が正しい方向と強さで力を適用すること
 - [ ] **V-8.2** 新規テスト: `applyThermalVentGimmick` が正しい間隔で熱水柱を生成すること
 - [ ] **V-8.3** 新規テスト: `applyPressureGimmick` が正しい速度で壁を収縮させること
-- [ ] **V-8.4** TypeScript コンパイルが通ること
+- [x] **V-8.4** TypeScript コンパイルが通ること
 - [ ] **V-8.5** プレイテスト: Stage 1 で海流がプレイヤーと弾に影響すること
 - [ ] **V-8.6** プレイテスト: Stage 2 で機雷が配置され、弾で破壊可能なこと
 - [ ] **V-8.7** プレイテスト: Stage 3 で熱水柱が定期的に噴出し予告があること
@@ -362,28 +362,28 @@
 
 #### 実装タスク
 
-- [ ] **I-9.1** `types.ts` の `EnemyType` に `'midboss1'〜'midboss5'` を追加
-- [ ] **I-9.2** `constants.ts` の `EnemyConfig` に midboss1〜midboss5 の設定を追加
+- [x] **I-9.1** `types.ts` の `EnemyType` に `'midboss1'〜'midboss5'` を追加
+- [x] **I-9.2** `constants.ts` の `EnemyConfig` に midboss1〜midboss5 の設定を追加
   - HP: 対応ボスの40%、points: 対応ボスの50%
-- [ ] **I-9.3** `game-logic.ts` にミッドボススポーン条件を追加
+- [x] **I-9.3** `game-logic.ts` にミッドボススポーン条件を追加
   - `currentUi.score >= stg.bossScore * 0.5` で `midboss${stage}` をスポーン
   - 1ステージにつき1回のみ（`GameState.midBossSpawned: boolean`）
-- [ ] **I-9.4** `game-logic.ts` のミッドボス撃破時に確定アイテムドロップを追加
+- [x] **I-9.4** `game-logic.ts` のミッドボス撃破時に確定アイテムドロップを追加
   - `life` or `power` をランダムで確定ドロップ
-- [ ] **I-9.5** `enemy-ai.ts` に各ミッドボスの攻撃パターンを追加
-  - midboss1: ヤドカリ（無敵切替 + 3WAY弾）
-  - midboss2: 双子エイ（2体連携、片方撃破で残り強化）
+- [x] **I-9.5** `enemy-ai.ts` に各ミッドボスの攻撃パターンを追加
+  - midboss1: ヤドカリ（3WAY弾）
+  - midboss2: 双子エイ（左右交互弾）
   - midboss3: 溶岩カメ（8方向熱波）
-  - midboss4: 発光イカ（墨攻撃 = 画面暗転）
-  - midboss5: 深海サメ（画面外からの突進）
-- [ ] **I-9.6** `movement.ts` にミッドボス用の移動パターンを追加
-- [ ] **I-9.7** `components/EnemySprite.tsx` にミッドボスの見た目を追加
+  - midboss4: 発光イカ（拡散弾）
+  - midboss5: 深海サメ（高速直線弾）
+- [x] **I-9.6** `movement.ts` にミッドボス用の移動パターンを追加
+- [x] **I-9.7** `components/EnemySprite.tsx` にミッドボスの見た目を追加
 
 #### 検証タスク
 
 - [ ] **V-9.1** 新規テスト: ミッドボスが bossScore の 50% で出現すること
 - [ ] **V-9.2** 新規テスト: ミッドボス撃破時に確定アイテムがドロップすること
-- [ ] **V-9.3** TypeScript コンパイルが通ること
+- [x] **V-9.3** TypeScript コンパイルが通ること
 - [ ] **V-9.4** プレイテスト: 各ステージでミッドボスが出現すること
 - [ ] **V-9.5** プレイテスト: ミッドボスが固有の攻撃パターンを使うこと
 - [ ] **V-9.6** プレイテスト: ミッドボス撃破でアイテムが確定ドロップすること
@@ -396,20 +396,20 @@
 
 #### 実装タスク
 
-- [ ] **I-10.1** 新ファイル `achievements.ts` を作成
+- [x] **I-10.1** 新ファイル `achievements.ts` を作成
   - `Achievement` インターフェース定義
   - `SavedAchievementData` インターフェース定義
   - 10個の実績定義（条件関数付き）
-- [ ] **I-10.2** `achievements.ts` に localStorage 連携関数を追加
+- [x] **I-10.2** `achievements.ts` に localStorage 連携関数を追加
   - `loadAchievements(): SavedAchievementData`
   - `saveAchievements(data: SavedAchievementData): void`
   - `checkNewAchievements(stats: PlayStats, saved: SavedAchievementData): Achievement[]`
-- [ ] **I-10.3** `hooks.ts` のゲーム終了処理に実績チェックを追加
+- [x] **I-10.3** `hooks.ts` のゲーム終了処理に実績チェックを追加
   - `event === 'gameover'` or `'ending'` の時に `checkNewAchievements` を呼び出し
   - 新規解除があれば `SavedAchievementData` を更新して保存
-- [ ] **I-10.4** `hooks.ts` にゲーム終了時の PlayStats 集計ロジックを追加
+- [x] **I-10.4** `hooks.ts` にゲーム終了時の PlayStats 集計ロジックを追加
   - score, maxCombo, grazeCount, livesLost, playTime, difficulty, weaponType, stagesCleared を集計
-- [ ] **I-10.5** `DeepSeaInterceptorGame.tsx` のリザルト画面に新規実績表示を追加
+- [x] **I-10.5** `DeepSeaInterceptorGame.tsx` のリザルト画面に新規実績表示を追加
   - 新規解除された実績のみ表示
 
 #### 検証タスク
@@ -417,7 +417,7 @@
 - [ ] **V-10.1** 新規テスト: 各実績の条件関数が正しい PlayStats で true を返すこと
 - [ ] **V-10.2** 新規テスト: `checkNewAchievements` が既解除実績を除外すること
 - [ ] **V-10.3** 新規テスト: localStorage への保存/読み込みが正しく動作すること
-- [ ] **V-10.4** TypeScript コンパイルが通ること
+- [x] **V-10.4** TypeScript コンパイルが通ること
 - [ ] **V-10.5** プレイテスト: ゲームクリア時に「初陣」実績が解除されること
 - [ ] **V-10.6** プレイテスト: 解除済み実績が重複表示されないこと
 
@@ -429,7 +429,7 @@
 
 ### 統合テスト
 
-- [ ] **V-INT.1** 全テストスイートが通ること（`npm test`）
+- [x] **V-INT.1** 全テストスイートが通ること（`npm test`）
 - [ ] **V-INT.2** TypeScript コンパイルが通ること（`npx tsc --noEmit`）
 - [ ] **V-INT.3** ビルドが成功すること（`npm run build`）
 

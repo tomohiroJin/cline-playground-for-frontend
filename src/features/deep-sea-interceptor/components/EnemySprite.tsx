@@ -16,6 +16,15 @@ const BossNames: Record<string, string> = {
   boss5: 'アビサル・コア',
 };
 
+/** ミッドボスの名称マップ */
+const MidbossNames: Record<string, string> = {
+  midboss1: 'ヤドカリ・センチネル',
+  midboss2: '双子エイ',
+  midboss3: '溶岩カメ',
+  midboss4: '発光イカ',
+  midboss5: '深海サメ',
+};
+
 /** ボスタイプ別のSVG描画 */
 function BossSvg({ enemy, color }: { enemy: Enemy; color: string }) {
   const s = enemy.size;
@@ -125,10 +134,94 @@ function BossSvg({ enemy, color }: { enemy: Enemy; color: string }) {
   );
 }
 
+/** ミッドボスの SVG 描画 */
+function MidbossSvg({ enemy, color }: { enemy: Enemy; color: string }) {
+  const s = enemy.size;
+  const t = enemy.enemyType;
+
+  if (t === 'midboss2') {
+    // 双子エイ
+    return (
+      <svg width={s} height={s} viewBox="0 0 40 40">
+        <ellipse cx="12" cy="20" rx="10" ry="8" fill={color} opacity="0.85" />
+        <ellipse cx="28" cy="20" rx="10" ry="8" fill={color} opacity="0.85" />
+        <circle cx="10" cy="18" r="2" fill="#6cf" opacity="0.9" />
+        <circle cx="26" cy="18" r="2" fill="#6cf" opacity="0.9" />
+      </svg>
+    );
+  }
+  if (t === 'midboss3') {
+    // 溶岩カメ
+    return (
+      <svg width={s} height={s} viewBox="0 0 40 40">
+        <ellipse cx="20" cy="22" rx="16" ry="12" fill={color} opacity="0.9" />
+        <ellipse cx="20" cy="22" rx="10" ry="7" fill="#a64" opacity="0.6" />
+        <circle cx="14" cy="18" r="2.5" fill="#f84" opacity="0.8" />
+        <circle cx="26" cy="18" r="2.5" fill="#f84" opacity="0.8" />
+      </svg>
+    );
+  }
+  if (t === 'midboss4') {
+    // 発光イカ
+    return (
+      <svg width={s} height={s} viewBox="0 0 40 40">
+        <ellipse cx="20" cy="16" rx="12" ry="10" fill={color} opacity="0.75" />
+        <circle cx="16" cy="14" r="2.5" fill="#adf" opacity="0.9" />
+        <circle cx="24" cy="14" r="2.5" fill="#adf" opacity="0.9" />
+        {[12, 16, 20, 24, 28].map(x => (
+          <line key={x} x1={x} y1="26" x2={x + (Math.random() - 0.5) * 4} y2="38" stroke={color} strokeWidth="1.5" opacity="0.5" />
+        ))}
+      </svg>
+    );
+  }
+  if (t === 'midboss5') {
+    // 深海サメ
+    return (
+      <svg width={s} height={s} viewBox="0 0 40 40">
+        <ellipse cx="20" cy="20" rx="18" ry="10" fill={color} opacity="0.9" />
+        <polygon points="20,4 16,14 24,14" fill={color} opacity="0.7" />
+        <circle cx="12" cy="18" r="2.5" fill="#f44" opacity="0.8" />
+        <circle cx="28" cy="18" r="2.5" fill="#f44" opacity="0.8" />
+      </svg>
+    );
+  }
+  // midboss1: ヤドカリ（デフォルト）
+  return (
+    <svg width={s} height={s} viewBox="0 0 40 40">
+      <ellipse cx="20" cy="22" rx="14" ry="12" fill={color} opacity="0.9" />
+      <ellipse cx="20" cy="12" rx="10" ry="8" fill="#a86" opacity="0.6" />
+      <circle cx="15" cy="18" r="2.5" fill="#f66" opacity="0.8" />
+      <circle cx="25" cy="18" r="2.5" fill="#f66" opacity="0.8" />
+    </svg>
+  );
+}
+
+/** 機雷の SVG 描画 */
+function MineSvg({ size, color }: { size: number; color: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40">
+      <circle cx="20" cy="20" r="14" fill={color} opacity="0.8" />
+      <circle cx="20" cy="20" r="6" fill="#f44" opacity="0.6" />
+      {[0, 60, 120, 180, 240, 300].map(deg => (
+        <circle
+          key={deg}
+          cx={20 + Math.cos((deg * Math.PI) / 180) * 14}
+          cy={20 + Math.sin((deg * Math.PI) / 180) * 14}
+          r="3"
+          fill="#ff8"
+          opacity="0.7"
+        />
+      ))}
+    </svg>
+  );
+}
+
 /** 敵キャラクターのスプライト */
 const EnemySprite = memo(function EnemySprite({ enemy }: { enemy: Enemy }) {
   const color = ColorPalette.enemy[enemy.enemyType] || ColorPalette.enemy.basic;
   const isBoss = enemy.enemyType === 'boss' || enemy.enemyType.startsWith('boss');
+  const isMidboss = enemy.enemyType.startsWith('midboss');
+  const isMine = enemy.enemyType === 'mine';
 
   return (
     <div
@@ -140,6 +233,10 @@ const EnemySprite = memo(function EnemySprite({ enemy }: { enemy: Enemy }) {
     >
       {isBoss ? (
         <BossSvg enemy={enemy} color={color} />
+      ) : isMidboss ? (
+        <MidbossSvg enemy={enemy} color={color} />
+      ) : isMine ? (
+        <MineSvg size={enemy.size} color={color} />
       ) : (
         <svg width={enemy.size} height={enemy.size} viewBox="0 0 40 40">
           <ellipse cx="20" cy="20" rx="16" ry="14" fill={color} opacity="0.9" />
@@ -151,5 +248,5 @@ const EnemySprite = memo(function EnemySprite({ enemy }: { enemy: Enemy }) {
   );
 });
 
-export { BossNames };
+export { BossNames, MidbossNames };
 export default EnemySprite;

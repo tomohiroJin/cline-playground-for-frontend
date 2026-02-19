@@ -84,6 +84,14 @@ export const EnemyConfig: Record<
   boss3: { hp: 40, speed: 0.6, points: 4000, sizeRatio: 4.0, canShoot: true, fireRate: 700 },
   boss4: { hp: 40, speed: 0.3, points: 5000, sizeRatio: 4.5, canShoot: true, fireRate: 600 },
   boss5: { hp: 40, speed: 0.4, points: 6000, sizeRatio: 5.0, canShoot: true, fireRate: 500 },
+  // 機雷（Stage 2 ギミック）
+  mine: { hp: 2, speed: 0, points: 50, sizeRatio: 0.8, canShoot: false, fireRate: 0 },
+  // ミッドボス（各ステージ）
+  midboss1: { hp: 16, speed: 0.8, points: 1000, sizeRatio: 2.0, canShoot: true, fireRate: 1200 },
+  midboss2: { hp: 16, speed: 0.6, points: 1500, sizeRatio: 2.2, canShoot: true, fireRate: 1400 },
+  midboss3: { hp: 16, speed: 0.7, points: 2000, sizeRatio: 2.4, canShoot: true, fireRate: 1000 },
+  midboss4: { hp: 16, speed: 0.5, points: 2500, sizeRatio: 2.6, canShoot: true, fireRate: 900 },
+  midboss5: { hp: 16, speed: 0.6, points: 3000, sizeRatio: 2.8, canShoot: true, fireRate: 800 },
 });
 
 /** アイテムタイプ別設定 */
@@ -148,6 +156,12 @@ export const ColorPalette: {
     boss3: '#8a3a1a',
     boss4: '#3a5a8a',
     boss5: '#5a2a5a',
+    mine: '#8a8a3a',
+    midboss1: '#6a8a3a',
+    midboss2: '#3a6a8a',
+    midboss3: '#8a5a1a',
+    midboss4: '#5a3a8a',
+    midboss5: '#8a3a3a',
   },
   ui: { primary: '#6ac', danger: '#f66', success: '#6f8', warning: '#fa0' },
   particle: {

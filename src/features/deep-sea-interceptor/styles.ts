@@ -2,9 +2,17 @@
 // Deep Sea Interceptor - スタイル定義
 // ============================================================================
 
-import styled from 'styled-components';
+import styled, { keyframes, css } from 'styled-components';
 
-export const StyledGameContainer = styled.div`
+/** 画面振動アニメーション */
+const shakeAnimation = keyframes`
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-3px, 2px); }
+  50% { transform: translate(3px, -2px); }
+  75% { transform: translate(-2px, -3px); }
+`;
+
+export const StyledGameContainer = styled.div<{ $shake?: boolean }>`
   width: 400px;
   height: 560px;
   background: #000;
@@ -14,6 +22,7 @@ export const StyledGameContainer = styled.div`
   box-shadow: 0 0 20px rgba(0, 100, 200, 0.3);
   user-select: none;
   touch-action: none;
+  ${props => props.$shake && css`animation: ${shakeAnimation} 0.1s linear infinite;`}
 `;
 
 export const FullScreenOverlay = styled.div<{ $bg: string }>`

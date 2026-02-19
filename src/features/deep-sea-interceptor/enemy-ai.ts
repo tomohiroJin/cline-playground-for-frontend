@@ -160,13 +160,65 @@ export const BossPatterns: Record<string, Record<number, (boss: Enemy, target: P
   },
 };
 
+/** ミッドボス別攻撃パターン */
+export const MidbossPatterns: Record<string, (boss: Enemy, target: Position) => EnemyBullet[]> = {
+  // midboss1: ヤドカリ — 3WAY弾
+  midboss1: (boss, target) => {
+    const dir = normalize({ x: target.x - boss.x, y: target.y - boss.y });
+    return [-0.3, 0, 0.3].map(a => {
+      const rotated = rotateVector(dir, a);
+      return EntityFactory.enemyBullet(boss.x, boss.y, { x: rotated.x * 3, y: rotated.y * 3 });
+    });
+  },
+  // midboss2: 双子エイ — 左右交互弾
+  midboss2: (boss, _target) => [
+    EntityFactory.enemyBullet(boss.x - 20, boss.y, { x: -1.5, y: 3 }),
+    EntityFactory.enemyBullet(boss.x + 20, boss.y, { x: 1.5, y: 3 }),
+  ],
+  // midboss3: 溶岩カメ — 8方向熱波
+  midboss3: (boss, _target) => {
+    const bullets: EnemyBullet[] = [];
+    for (let i = 0; i < 8; i++) {
+      const angle = (Math.PI * 2 * i) / 8;
+      bullets.push(
+        EntityFactory.enemyBullet(boss.x, boss.y, {
+          x: Math.cos(angle) * 2.5,
+          y: Math.sin(angle) * 2.5,
+        })
+      );
+    }
+    return bullets;
+  },
+  // midboss4: 発光イカ — 拡散弾
+  midboss4: (boss, target) => {
+    const dir = normalize({ x: target.x - boss.x, y: target.y - boss.y });
+    return [-0.4, -0.2, 0, 0.2, 0.4].map(a => {
+      const rotated = rotateVector(dir, a);
+      return EntityFactory.enemyBullet(boss.x, boss.y, { x: rotated.x * 2.5, y: rotated.y * 2.5 });
+    });
+  },
+  // midboss5: 深海サメ — 高速直線弾
+  midboss5: (boss, target) => {
+    const dir = normalize({ x: target.x - boss.x, y: target.y - boss.y });
+    return [
+      EntityFactory.enemyBullet(boss.x, boss.y, { x: dir.x * 5, y: dir.y * 5 }),
+    ];
+  },
+};
+
 /** 敵AIモジュール */
 export const EnemyAI = {
   /** 敵が射撃可能か判定 */
   shouldShoot: (e: Enemy, now: number) => e.canShoot && e.y > 0 && now - e.lastShotAt > e.fireRate,
 
-  /** 敵弾を生成（ボスはタイプ×フェーズ別パターン） */
+  /** 敵弾を生成（ボスはタイプ×フェーズ別パターン、ミッドボスは専用パターン） */
   createBullets: (e: Enemy, target: Position) => {
+    // ミッドボスパターンへディスパッチ
+    const midbossPattern = MidbossPatterns[e.enemyType];
+    if (midbossPattern) {
+      return midbossPattern(e, target);
+    }
+
     // ボスタイプ別パターンへディスパッチ
     const bossType = e.enemyType === 'boss' ? 'boss1' : e.enemyType;
     const pattern = BossPatterns[bossType];
