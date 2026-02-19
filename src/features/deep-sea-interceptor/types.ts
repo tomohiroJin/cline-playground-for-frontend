@@ -3,7 +3,9 @@
 // ============================================================================
 
 /** 敵タイプ */
-export type EnemyType = 'basic' | 'fast' | 'shooter' | 'tank' | 'boss';
+export type EnemyType =
+  | 'basic' | 'fast' | 'shooter' | 'tank'
+  | 'boss' | 'boss1' | 'boss2' | 'boss3' | 'boss4' | 'boss5';
 
 /** アイテムタイプ */
 export type ItemType = 'power' | 'speed' | 'shield' | 'spread' | 'bomb' | 'life';
@@ -44,6 +46,7 @@ export interface Enemy extends BaseEntity {
   lastShotAt: number;
   movementPattern: number;
   angle: number;
+  bossPhase: number;
 }
 
 /** 敵の弾 */
@@ -99,6 +102,11 @@ export interface GameState {
   invincibleEndTime: number;
   input: { dx: number; dy: number };
   keys: Record<string, boolean>;
+  combo: number;
+  comboTimer: number;
+  maxCombo: number;
+  grazeCount: number;
+  grazedBulletIds: Set<number>;
 }
 
 /** UI表示用状態（React state で管理） */
@@ -111,6 +119,10 @@ export interface UiState {
   spreadTime: number;
   shieldEndTime: number;
   speedLevel: number;
+  combo: number;
+  multiplier: number;
+  grazeCount: number;
+  maxCombo: number;
 }
 
 /** 移動可能エンティティ */

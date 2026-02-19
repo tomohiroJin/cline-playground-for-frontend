@@ -43,16 +43,17 @@ export const EntityFactory = {
 
   /** 敵キャラクターの生成 */
   enemy: (type: string, x: number, y: number, stage = 1): Enemy => {
-    const cfg = EnemyConfig[type as keyof typeof EnemyConfig];
+    const cfg = EnemyConfig[type];
     if (!cfg) throw new Error(`Invalid enemy type: ${type}`);
-    const hp = type === 'boss' ? cfg.hp + stage * 15 : cfg.hp;
+    const isBoss = type === 'boss' || type.startsWith('boss');
+    const hp = isBoss ? cfg.hp + stage * 15 : cfg.hp;
     return {
       id: uniqueId(),
       x,
       y,
       createdAt: Date.now(),
       type: 'enemy',
-      enemyType: type as keyof typeof EnemyConfig,
+      enemyType: type as import('./types').EnemyType,
       hp,
       maxHp: hp,
       speed: cfg.speed,
@@ -63,6 +64,7 @@ export const EntityFactory = {
       lastShotAt: 0,
       movementPattern: baseRandomInt(0, 2),
       angle: 0,
+      bossPhase: (type === 'boss' || type.startsWith('boss')) ? 1 : 0,
     };
   },
 

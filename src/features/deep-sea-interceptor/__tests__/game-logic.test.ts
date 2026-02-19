@@ -79,7 +79,8 @@ describe('updateFrame', () => {
 
     const result = updateFrame(gd, ui, Date.now(), mockAudioPlay);
 
-    expect(result.uiState.score).toBe(100);
+    // コンボ倍率適用: combo=1, multiplier=1.1, floor(100*1.1)=110
+    expect(result.uiState.score).toBe(110);
     expect(mockAudioPlay).toHaveBeenCalledWith('destroy');
   });
 
@@ -140,7 +141,7 @@ describe('updateFrame', () => {
     gd.bossDefeated = true;
     gd.bossDefeatedTime = Date.now() - 3000;
     const ui = createInitialUiState();
-    ui.stage = 3;
+    ui.stage = 5;
 
     const result = updateFrame(gd, ui, Date.now(), mockAudioPlay);
 

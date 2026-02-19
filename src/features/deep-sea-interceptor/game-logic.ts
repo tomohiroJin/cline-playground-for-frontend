@@ -32,6 +32,11 @@ export const createInitialGameState = (): GameState => ({
   invincibleEndTime: 0,
   input: { dx: 0, dy: 0 },
   keys: {},
+  combo: 0,
+  comboTimer: 0,
+  maxCombo: 0,
+  grazeCount: 0,
+  grazedBulletIds: new Set(),
 });
 
 /** 初期UI状態を生成 */
@@ -44,6 +49,10 @@ export const createInitialUiState = (highScore = 0): UiState => ({
   spreadTime: 0,
   shieldEndTime: 0,
   speedLevel: 0,
+  combo: 0,
+  multiplier: 1.0,
+  grazeCount: 0,
+  maxCombo: 0,
 });
 
 /** ゲームループ内の1フレーム更新を処理 */
@@ -100,9 +109,10 @@ export function updateFrame(
     }
     if (
       currentUi.score >= stg.bossScore &&
-      !gd.enemies.some(e => e.enemyType === 'boss')
+      !gd.enemies.some(e => e.enemyType === 'boss' || e.enemyType.startsWith('boss'))
     ) {
-      gd.enemies.push(EntityFactory.enemy('boss', 200, -60, currentUi.stage));
+      const bossType = `boss${currentUi.stage}`;
+      gd.enemies.push(EntityFactory.enemy(bossType, 200, -60, currentUi.stage));
     }
   }
 
@@ -116,14 +126,21 @@ export function updateFrame(
 
   gd.enemies = gd.enemies
     .map(e => {
-      const moveFn =
-        e.enemyType === 'boss'
-          ? MovementStrategies.boss
-          : (['straight', 'sine', 'drift'] as const)[e.movementPattern] === 'straight'
-            ? MovementStrategies.straight
-            : (['straight', 'sine', 'drift'] as const)[e.movementPattern] === 'sine'
-              ? MovementStrategies.sine
-              : MovementStrategies.drift;
+      // ボスのフェーズ遷移チェック
+      if (e.enemyType.startsWith('boss') && e.bossPhase === 1 && e.hp <= e.maxHp * 0.5) {
+        e.bossPhase = 2;
+        audioPlay('bossPhaseChange');
+        gd.enemyBullets = [];
+      }
+
+      const isBoss = e.enemyType === 'boss' || e.enemyType.startsWith('boss');
+      const moveFn = isBoss
+        ? MovementStrategies.boss
+        : (['straight', 'sine', 'drift'] as const)[e.movementPattern] === 'straight'
+          ? MovementStrategies.straight
+          : (['straight', 'sine', 'drift'] as const)[e.movementPattern] === 'sine'
+            ? MovementStrategies.sine
+            : MovementStrategies.drift;
       const next = moveFn(e);
       if (e.canShoot && now - e.lastShotAt > e.fireRate && e.y > 0) {
         next.lastShotAt = now;
@@ -142,8 +159,20 @@ export function updateFrame(
         e.hp -= b.damage;
         if (e.hp <= 0) {
           audioPlay('destroy');
-          currentUi = { ...currentUi, score: currentUi.score + e.points };
-          if (e.enemyType === 'boss') {
+          // コンボ加算
+          gd.combo++;
+          gd.comboTimer = now;
+          gd.maxCombo = Math.max(gd.maxCombo, gd.combo);
+          // 倍率適用スコア計算
+          const multiplier = Math.min(5.0, 1.0 + gd.combo * 0.1);
+          currentUi = {
+            ...currentUi,
+            score: currentUi.score + Math.floor(e.points * multiplier),
+            combo: gd.combo,
+            multiplier,
+            maxCombo: gd.maxCombo,
+          };
+          if (e.enemyType === 'boss' || e.enemyType.startsWith('boss')) {
             gd.bossDefeated = true;
             gd.bossDefeatedTime = now;
             gd.items.push(EntityFactory.item(e.x, e.y, 'bomb'));
@@ -181,6 +210,24 @@ export function updateFrame(
     return true;
   });
 
+  // グレイズ判定（被弾判定前に実施）
+  if (!gd.invincible && now > (currentUi.shieldEndTime || 0)) {
+    gd.enemyBullets.forEach(b => {
+      if (!gd.grazedBulletIds.has(b.id) && Collision.graze(gd.player, b)) {
+        gd.grazedBulletIds.add(b.id);
+        gd.grazeCount++;
+        gd.comboTimer = now;
+        const multiplier = Math.min(5.0, 1.0 + gd.combo * 0.1);
+        currentUi = {
+          ...currentUi,
+          score: currentUi.score + Math.floor(50 * multiplier),
+          grazeCount: gd.grazeCount,
+        };
+        audioPlay('graze');
+      }
+    });
+  }
+
   // 衝突判定: プレイヤー → 敵/敵弾
   if (!gd.invincible && now > (currentUi.shieldEndTime || 0)) {
     let hit = false;
@@ -189,6 +236,9 @@ export function updateFrame(
 
     if (hit) {
       audioPlay('destroy');
+      // 被弾時コンボリセット
+      gd.combo = 0;
+      currentUi = { ...currentUi, combo: 0, multiplier: 1.0 };
       currentUi.lives--;
       if (currentUi.lives <= 0) {
         event = 'gameover';
@@ -203,9 +253,21 @@ export function updateFrame(
   }
   if (gd.invincible && now > gd.invincibleEndTime) gd.invincible = false;
 
+  // コンボタイマー切れ判定
+  if (gd.combo > 0 && now - gd.comboTimer > 3000) {
+    gd.combo = 0;
+    currentUi = { ...currentUi, combo: 0, multiplier: 1.0 };
+  }
+
+  // 画面外に出た敵弾のグレイズIDをクリーンアップ
+  const activeEnemyBulletIds = new Set(gd.enemyBullets.map(b => b.id));
+  gd.grazedBulletIds.forEach(id => {
+    if (!activeEnemyBulletIds.has(id)) gd.grazedBulletIds.delete(id);
+  });
+
   // ステージクリア判定
   if (gd.bossDefeated && now - gd.bossDefeatedTime > 2000) {
-    if (currentUi.stage < 3) {
+    if (currentUi.stage < 5) {
       currentUi.stage++;
       gd.bossDefeated = false;
       gd.enemies = [];

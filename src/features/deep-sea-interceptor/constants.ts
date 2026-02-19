@@ -25,28 +25,46 @@ export const Config = Object.freeze({
 /** ステージ設定 */
 export const StageConfig: Record<
   number,
-  { name: string; bg: string; types: string[]; rate: number; bossScore: number }
+  { name: string; bg: string; types: string[]; rate: number; bossScore: number; gimmick: string }
 > = Object.freeze({
-  1: { name: '浅層海域', bg: '#0a1a2a', types: ['basic', 'fast'], rate: 800, bossScore: 3000 },
+  1: { name: '浅層海域', bg: '#0a1a2a', types: ['basic', 'fast'], rate: 800, bossScore: 3000, gimmick: 'current' },
   2: {
     name: '深海防衛ライン',
     bg: '#050f1a',
     types: ['basic', 'shooter', 'fast', 'tank'],
     rate: 650,
     bossScore: 7000,
+    gimmick: 'minefield',
   },
   3: {
-    name: '最深部',
+    name: '熱水噴出域',
+    bg: '#1a0a05',
+    types: ['shooter', 'fast', 'tank'],
+    rate: 550,
+    bossScore: 12000,
+    gimmick: 'thermalVent',
+  },
+  4: {
+    name: '生物発光帯',
+    bg: '#050a1a',
+    types: ['fast', 'shooter', 'tank'],
+    rate: 450,
+    bossScore: 18000,
+    gimmick: 'bioluminescence',
+  },
+  5: {
+    name: '最深部・海溝',
     bg: '#020810',
     types: ['shooter', 'fast', 'tank'],
-    rate: 500,
-    bossScore: 12000,
+    rate: 350,
+    bossScore: 25000,
+    gimmick: 'pressure',
   },
 });
 
 /** 敵タイプ別設定 */
 export const EnemyConfig: Record<
-  EnemyType,
+  string,
   {
     hp: number;
     speed: number;
@@ -61,6 +79,11 @@ export const EnemyConfig: Record<
   shooter: { hp: 2, speed: 1.2, points: 200, sizeRatio: 1.1, canShoot: true, fireRate: 2000 },
   tank: { hp: 5, speed: 0.8, points: 300, sizeRatio: 1.4, canShoot: false, fireRate: 0 },
   boss: { hp: 40, speed: 0.5, points: 2000, sizeRatio: 3.5, canShoot: true, fireRate: 800 },
+  boss1: { hp: 40, speed: 0.5, points: 2000, sizeRatio: 3.5, canShoot: true, fireRate: 800 },
+  boss2: { hp: 40, speed: 0.4, points: 3000, sizeRatio: 3.8, canShoot: true, fireRate: 1000 },
+  boss3: { hp: 40, speed: 0.6, points: 4000, sizeRatio: 4.0, canShoot: true, fireRate: 700 },
+  boss4: { hp: 40, speed: 0.3, points: 5000, sizeRatio: 4.5, canShoot: true, fireRate: 600 },
+  boss5: { hp: 40, speed: 0.4, points: 6000, sizeRatio: 5.0, canShoot: true, fireRate: 500 },
 });
 
 /** アイテムタイプ別設定 */
@@ -86,6 +109,11 @@ export const ColorPalette: {
     shooter: '#8a3a5a',
     tank: '#8a6a3a',
     boss: '#4a4a8a',
+    boss1: '#3a6a3a',
+    boss2: '#6a3a6a',
+    boss3: '#8a3a1a',
+    boss4: '#3a5a8a',
+    boss5: '#5a2a5a',
   },
   ui: { primary: '#6ac', danger: '#f66', success: '#6f8', warning: '#fa0' },
   particle: {

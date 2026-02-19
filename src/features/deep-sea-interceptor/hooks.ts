@@ -45,6 +45,10 @@ export function useDeepSeaGame() {
       shieldEndTime: 0,
       speedLevel: 0,
       spreadTime: 0,
+      combo: 0,
+      multiplier: 1.0,
+      grazeCount: 0,
+      maxCombo: 0,
     }));
     getHighScore(GAME_KEY).then(highScore => {
       setUiState(p => ({ ...p, highScore }));
