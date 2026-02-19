@@ -17,7 +17,7 @@ import {
   Button,
 } from './styles';
 import PlayerSprite from './components/PlayerSprite';
-import EnemySprite, { BossNames } from './components/EnemySprite';
+import EnemySprite from './components/EnemySprite';
 import BulletSprite from './components/BulletSprite';
 import HUD from './components/HUD';
 import TouchControls from './components/TouchControls';
