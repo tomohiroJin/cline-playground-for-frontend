@@ -153,42 +153,42 @@
 
 #### 実装タスク
 
-- [ ] **I-4.1** `types.ts` に `WeaponType` 型を追加（`'torpedo' | 'sonarWave' | 'bioMissile'`）
-- [ ] **I-4.2** `types.ts` の `Bullet` に新フィールドを追加
+- [x] **I-4.1** `types.ts` に `WeaponType` 型を追加（`'torpedo' | 'sonarWave' | 'bioMissile'`）
+- [x] **I-4.2** `types.ts` の `Bullet` に新フィールドを追加
   - `weaponType: WeaponType`
   - `piercing: boolean`
   - `homing: boolean`
   - `homingTarget?: number`
   - `lifespan?: number`（ソナーウェーブの射程制限用）
-- [ ] **I-4.3** `entities.ts` の `EntityFactory.bullet` を `weaponType` 対応に拡張
+- [x] **I-4.3** `entities.ts` の `EntityFactory.bullet` を `weaponType` 対応に拡張
   - torpedo: 既存挙動 + 貫通チャージ
   - sonarWave: 扇状3発 + 寿命制限
   - bioMissile: ホーミング + 低火力
-- [ ] **I-4.4** `movement.ts` に `MovementStrategies.homing` を追加
+- [x] **I-4.4** `movement.ts` に `MovementStrategies.homing` を追加
   - 最近接の敵に向かって旋回（最大旋回角 0.08 rad/frame）
-- [ ] **I-4.5** `game-logic.ts` のプレイヤー弾移動処理にホーミング弾対応を追加
+- [x] **I-4.5** `game-logic.ts` のプレイヤー弾移動処理にホーミング弾対応を追加
   - `b.homing === true` の場合は `MovementStrategies.homing(b, gd.enemies)` を使用
-- [ ] **I-4.6** `game-logic.ts` の弾→敵の衝突判定で `piercing` 対応を追加
+- [x] **I-4.6** `game-logic.ts` の弾→敵の衝突判定で `piercing` 対応を追加
   - `piercing === true` の弾は敵にヒットしても消えない
-- [ ] **I-4.7** `game-logic.ts` のプレイヤー弾フィルタに `lifespan` 対応を追加
+- [x] **I-4.7** `game-logic.ts` のプレイヤー弾フィルタに `lifespan` 対応を追加
   - `lifespan` が設定されている弾は寿命切れで消滅
-- [ ] **I-4.8** `hooks.ts` に武器選択状態の管理を追加
+- [x] **I-4.8** `hooks.ts` に武器選択状態の管理を追加
   - `weaponType: WeaponType` state を追加
   - `startGame` で武器タイプを受け取る
   - 射撃ロジックを武器種別で分岐
-- [ ] **I-4.9** `DeepSeaInterceptorGame.tsx` のタイトル画面に武器選択UIを追加
+- [x] **I-4.9** `DeepSeaInterceptorGame.tsx` のタイトル画面に武器選択UIを追加
   - 3種の武器を表示、選択状態をハイライト
 - [ ] **I-4.10** `components/BulletSprite.tsx` を武器タイプ別の見た目に対応
 
 #### 検証タスク
 
-- [ ] **V-4.1** 既存の entities テストが通ること
-- [ ] **V-4.2** 既存の movement テストが通ること
+- [x] **V-4.1** 既存の entities テストが通ること
+- [x] **V-4.2** 既存の movement テストが通ること
 - [ ] **V-4.3** 新規テスト: 各武器タイプの弾が正しいパラメータで生成されること
 - [ ] **V-4.4** 新規テスト: ホーミング弾が最近接の敵に向かって旋回すること
 - [ ] **V-4.5** 新規テスト: 貫通弾が敵にヒットしても消えないこと
 - [ ] **V-4.6** 新規テスト: ソナーウェーブの弾が寿命で消滅すること
-- [ ] **V-4.7** TypeScript コンパイルが通ること
+- [x] **V-4.7** TypeScript コンパイルが通ること
 - [ ] **V-4.8** プレイテスト: タイトル画面で3種の武器を選択できること
 - [ ] **V-4.9** プレイテスト: 各武器で異なる射撃パターンが発動すること
 - [ ] **V-4.10** プレイテスト: ホーミング弾が敵を追尾すること
@@ -202,27 +202,27 @@
 
 #### 実装タスク
 
-- [ ] **I-5.1** `types.ts` に `Difficulty` 型を追加（`'cadet' | 'standard' | 'abyss'`）
-- [ ] **I-5.2** `types.ts` の `UiState` に `difficulty: Difficulty` を追加
-- [ ] **I-5.3** `constants.ts` に `DifficultyConfig` 定数を追加
+- [x] **I-5.1** `types.ts` に `Difficulty` 型を追加（`'cadet' | 'standard' | 'abyss'`）
+- [x] **I-5.2** `types.ts` の `UiState` に `difficulty: Difficulty` を追加
+- [x] **I-5.3** `constants.ts` に `DifficultyConfig` 定数を追加
   - cadet: spawnRate ×0.7, bulletSpeed ×0.8, lives 5, score ×0.5
   - standard: すべて ×1.0, lives 3
   - abyss: spawnRate ×1.3, bulletSpeed ×1.2, lives 2, score ×2.0
-- [ ] **I-5.4** `game-logic.ts` の `updateFrame` にて難易度倍率を適用
+- [x] **I-5.4** `game-logic.ts` の `updateFrame` にて難易度倍率を適用
   - スポーン間隔: `stg.rate / diffConfig.spawnRateMultiplier`
   - スコア計算: `e.points * multiplier * diffConfig.scoreMultiplier`
 - [ ] **I-5.5** `enemy-ai.ts` の弾速計算に `bulletSpeedMultiplier` を適用
   - `updateFrame` から難易度設定を渡す方法を検討（引数追加 or UiState 経由）
-- [ ] **I-5.6** `hooks.ts` に難易度選択状態の管理を追加
+- [x] **I-5.6** `hooks.ts` に難易度選択状態の管理を追加
   - `startGame` で難易度と初期ライフを設定
-- [ ] **I-5.7** `DeepSeaInterceptorGame.tsx` のタイトル画面に難易度選択UIを追加
+- [x] **I-5.7** `DeepSeaInterceptorGame.tsx` のタイトル画面に難易度選択UIを追加
 
 #### 検証タスク
 
-- [ ] **V-5.1** 既存の game-logic テストが通ること
+- [x] **V-5.1** 既存の game-logic テストが通ること
 - [ ] **V-5.2** 新規テスト: 各難易度のスポーン倍率が正しく適用されること
 - [ ] **V-5.3** 新規テスト: 各難易度のスコア倍率が正しく計算されること
-- [ ] **V-5.4** TypeScript コンパイルが通ること
+- [x] **V-5.4** TypeScript コンパイルが通ること
 - [ ] **V-5.5** プレイテスト: CADET で敵のスポーンが遅くライフが5であること
 - [ ] **V-5.6** プレイテスト: ABYSS で敵が多くライフが2であること
 
@@ -234,23 +234,23 @@
 
 #### 実装タスク
 
-- [ ] **I-6.1** `types.ts` に `PlayStats` インターフェースを追加
-- [ ] **I-6.2** `game-logic.ts` に `calculateRank` 純粋関数を追加
+- [x] **I-6.1** `types.ts` に `PlayStats` インターフェースを追加
+- [x] **I-6.2** `game-logic.ts` に `calculateRank` 純粋関数を追加
   - S: 40,000+ & ノーコンティニュー、A: 25,000+、B: 15,000+、C: 5,000+、D: それ以下
   - 難易度補正: CADET ×2、ABYSS ×0.5
-- [ ] **I-6.3** `types.ts` の `GameState` に `gameStartTime: number` を追加（プレイ時間計測用）
-- [ ] **I-6.4** `game-logic.ts` の `createInitialGameState` に `gameStartTime` の初期値追加
-- [ ] **I-6.5** `hooks.ts` の `startGame` で `gameStartTime = Date.now()` を設定
-- [ ] **I-6.6** `DeepSeaInterceptorGame.tsx` のゲームオーバー画面を詳細リザルトに置き換え
+- [x] **I-6.3** `types.ts` の `GameState` に `gameStartTime: number` を追加（プレイ時間計測用）
+- [x] **I-6.4** `game-logic.ts` の `createInitialGameState` に `gameStartTime` の初期値追加
+- [x] **I-6.5** `hooks.ts` の `startGame` で `gameStartTime = Date.now()` を設定
+- [x] **I-6.6** `DeepSeaInterceptorGame.tsx` のゲームオーバー画面を詳細リザルトに置き換え
   - スコア、最大コンボ、グレイズ数、プレイ時間、ランク表示
-- [ ] **I-6.7** `DeepSeaInterceptorGame.tsx` のエンディング画面を詳細リザルトに置き換え
-- [ ] **I-6.8** ShareButton のテキストにランクと最大コンボを追加
+- [x] **I-6.7** `DeepSeaInterceptorGame.tsx` のエンディング画面を詳細リザルトに置き換え
+- [x] **I-6.8** ShareButton のテキストにランクと最大コンボを追加
 
 #### 検証タスク
 
 - [ ] **V-6.1** 新規テスト: `calculateRank` が各スコア範囲で正しいランクを返すこと
 - [ ] **V-6.2** 新規テスト: 難易度補正が正しく適用されること
-- [ ] **V-6.3** TypeScript コンパイルが通ること
+- [x] **V-6.3** TypeScript コンパイルが通ること
 - [ ] **V-6.4** プレイテスト: リザルト画面に全項目（スコア、コンボ、グレイズ、時間、ランク）が表示されること
 - [ ] **V-6.5** プレイテスト: ランクが S〜D で正しく判定されること
 

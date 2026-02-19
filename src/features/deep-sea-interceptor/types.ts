@@ -10,6 +10,12 @@ export type EnemyType =
 /** アイテムタイプ */
 export type ItemType = 'power' | 'speed' | 'shield' | 'spread' | 'bomb' | 'life';
 
+/** 武器タイプ */
+export type WeaponType = 'torpedo' | 'sonarWave' | 'bioMissile';
+
+/** 難易度 */
+export type Difficulty = 'cadet' | 'standard' | 'abyss';
+
 /** 座標 */
 export interface Position {
   x: number;
@@ -25,11 +31,16 @@ export interface BaseEntity extends Position {
 /** プレイヤーの弾 */
 export interface Bullet extends BaseEntity {
   type: 'bullet';
+  weaponType: WeaponType;
   charged: boolean;
   angle: number;
   speed: number;
   damage: number;
   size: number;
+  piercing: boolean;
+  homing: boolean;
+  homingTarget?: number;
+  lifespan?: number;
 }
 
 /** 敵キャラクター */
@@ -107,6 +118,7 @@ export interface GameState {
   maxCombo: number;
   grazeCount: number;
   grazedBulletIds: Set<number>;
+  gameStartTime: number;
 }
 
 /** UI表示用状態（React state で管理） */
@@ -123,6 +135,21 @@ export interface UiState {
   multiplier: number;
   grazeCount: number;
   maxCombo: number;
+  difficulty: Difficulty;
+  weaponType: WeaponType;
+}
+
+/** プレイ統計（リザルト画面用） */
+export interface PlayStats {
+  score: number;
+  maxCombo: number;
+  grazeCount: number;
+  livesLost: number;
+  playTime: number;
+  difficulty: Difficulty;
+  weaponType: WeaponType;
+  stagesCleared: number;
+  rank: string;
 }
 
 /** 移動可能エンティティ */

@@ -2,7 +2,7 @@
 // Deep Sea Interceptor - 定数定義
 // ============================================================================
 
-import type { EnemyType, ItemType } from './types';
+import type { EnemyType, ItemType, Difficulty } from './types';
 
 /** ゲーム全体の設定 */
 export const Config = Object.freeze({
@@ -96,6 +96,40 @@ export const ItemConfig: Record<ItemType, { color: string; label: string; descri
     bomb: { color: '#ff44ff', label: '★', description: '全滅' },
     life: { color: '#ff4444', label: '♥', description: 'ライフ+1' },
   });
+
+/** 難易度設定 */
+export const DifficultyConfig: Record<
+  Difficulty,
+  {
+    label: string;
+    spawnRateMultiplier: number;
+    bulletSpeedMultiplier: number;
+    initialLives: number;
+    scoreMultiplier: number;
+  }
+> = Object.freeze({
+  cadet: {
+    label: 'CADET（初心者）',
+    spawnRateMultiplier: 0.7,
+    bulletSpeedMultiplier: 0.8,
+    initialLives: 5,
+    scoreMultiplier: 0.5,
+  },
+  standard: {
+    label: 'STANDARD（通常）',
+    spawnRateMultiplier: 1.0,
+    bulletSpeedMultiplier: 1.0,
+    initialLives: 3,
+    scoreMultiplier: 1.0,
+  },
+  abyss: {
+    label: 'ABYSS（上級）',
+    spawnRateMultiplier: 1.3,
+    bulletSpeedMultiplier: 1.2,
+    initialLives: 2,
+    scoreMultiplier: 2.0,
+  },
+});
 
 /** カラーパレット */
 export const ColorPalette: {

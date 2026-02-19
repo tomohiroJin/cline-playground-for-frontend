@@ -3,12 +3,12 @@
 // ============================================================================
 
 import { clamp as baseClamp, randomRange } from '../../utils/math-utils';
-import { Config, StageConfig, ItemConfig } from './constants';
+import { Config, StageConfig, ItemConfig, DifficultyConfig } from './constants';
 import { EntityFactory, randomChoice } from './entities';
 import { MovementStrategies } from './movement';
 import { Collision } from './collision';
 import { EnemyAI } from './enemy-ai';
-import type { GameState, UiState } from './types';
+import type { GameState, UiState, Difficulty } from './types';
 
 /** clamp のカリー化ラッパー */
 const clamp = (min: number, max: number) => (value: number) => baseClamp(value, min, max);
@@ -37,6 +37,7 @@ export const createInitialGameState = (): GameState => ({
   maxCombo: 0,
   grazeCount: 0,
   grazedBulletIds: new Set(),
+  gameStartTime: 0,
 });
 
 /** 初期UI状態を生成 */
@@ -53,6 +54,8 @@ export const createInitialUiState = (highScore = 0): UiState => ({
   multiplier: 1.0,
   grazeCount: 0,
   maxCombo: 0,
+  difficulty: 'standard' as const,
+  weaponType: 'torpedo' as const,
 });
 
 /** ゲームループ内の1フレーム更新を処理 */
@@ -69,6 +72,7 @@ export function updateFrame(
   audioPlay: (name: string) => void
 ): FrameResult {
   const stg = StageConfig[uiState.stage];
+  const diffConfig = DifficultyConfig[uiState.difficulty];
   let currentUi = { ...uiState };
   let event: FrameResult['event'] = 'none';
 
@@ -96,7 +100,7 @@ export function updateFrame(
   // 敵スポーン
   if (!gd.bossDefeated) {
     gd.spawnTimer += 16;
-    if (gd.spawnTimer > stg.rate && gd.enemies.length < Config.enemy.maxCount(currentUi.stage)) {
+    if (gd.spawnTimer > stg.rate / diffConfig.spawnRateMultiplier && gd.enemies.length < Config.enemy.maxCount(currentUi.stage)) {
       gd.enemies.push(
         EntityFactory.enemy(
           randomChoice(stg.types),
@@ -117,7 +121,15 @@ export function updateFrame(
   }
 
   // エンティティ更新
-  gd.bullets = gd.bullets.map(MovementStrategies.bullet).filter(b => b.y > -20 && b.y < 580);
+  gd.bullets = gd.bullets
+    .map(b => {
+      // 寿命更新
+      if (b.lifespan !== undefined) b = { ...b, lifespan: b.lifespan - 1 };
+      // ホーミング弾は追尾移動
+      if (b.homing) return MovementStrategies.homing(b, gd.enemies);
+      return MovementStrategies.bullet(b);
+    })
+    .filter(b => b.y > -20 && b.y < 580 && (b.lifespan === undefined || b.lifespan > 0));
   gd.enemyBullets = gd.enemyBullets
     .map(MovementStrategies.enemyBullet)
     .filter(b => b.y < 575 && b.x > -15 && b.x < 415);
@@ -167,7 +179,7 @@ export function updateFrame(
           const multiplier = Math.min(5.0, 1.0 + gd.combo * 0.1);
           currentUi = {
             ...currentUi,
-            score: currentUi.score + Math.floor(e.points * multiplier),
+            score: currentUi.score + Math.floor(e.points * multiplier * diffConfig.scoreMultiplier),
             combo: gd.combo,
             multiplier,
             maxCombo: gd.maxCombo,
@@ -183,7 +195,7 @@ export function updateFrame(
         }
       }
     });
-    return !hit || b.charged;
+    return !hit || b.piercing;
   });
   gd.enemies = gd.enemies.filter(e => e.hp > 0);
 
@@ -282,4 +294,16 @@ export function updateFrame(
   }
 
   return { uiState: currentUi, event };
+}
+
+/** ランク判定（純粋関数） */
+export function calculateRank(score: number, lives: number, difficulty: Difficulty): string {
+  const diffMultiplier = difficulty === 'cadet' ? 2.0 : difficulty === 'abyss' ? 0.5 : 1.0;
+  const adjustedScore = score / diffMultiplier;
+
+  if (adjustedScore >= 40000 && lives > 0) return 'S';
+  if (adjustedScore >= 25000) return 'A';
+  if (adjustedScore >= 15000) return 'B';
+  if (adjustedScore >= 5000) return 'C';
+  return 'D';
 }

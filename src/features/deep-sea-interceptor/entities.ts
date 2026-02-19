@@ -4,7 +4,7 @@
 
 import { randomRange, randomInt as baseRandomInt } from '../../utils/math-utils';
 import { Config, EnemyConfig, ItemConfig } from './constants';
-import type { Bullet, Enemy, EnemyBullet, Item, Particle, Bubble, Position, ItemType } from './types';
+import type { Bullet, Enemy, EnemyBullet, Item, Particle, Bubble, Position, ItemType, WeaponType } from './types';
 
 // ユニークID生成
 const uniqueId = (() => {
@@ -25,7 +25,31 @@ export function randomChoice<T>(arr: T[]): T {
 /** エンティティファクトリ */
 export const EntityFactory = {
   /** プレイヤー弾の生成 */
-  bullet: (x: number, y: number, { charged = false, angle = -Math.PI / 2 } = {}): Bullet => {
+  bullet: (
+    x: number,
+    y: number,
+    {
+      charged = false,
+      angle = -Math.PI / 2,
+      weaponType = 'torpedo' as WeaponType,
+      damage: dmgOverride,
+      speed: spdOverride,
+      size: sizeOverride,
+      piercing = false,
+      homing = false,
+      lifespan,
+    }: {
+      charged?: boolean;
+      angle?: number;
+      weaponType?: WeaponType;
+      damage?: number;
+      speed?: number;
+      size?: number;
+      piercing?: boolean;
+      homing?: boolean;
+      lifespan?: number;
+    } = {}
+  ): Bullet => {
     const cfg = Config.bullet;
     return {
       id: uniqueId(),
@@ -33,11 +57,15 @@ export const EntityFactory = {
       y,
       createdAt: Date.now(),
       type: 'bullet',
+      weaponType,
       charged,
       angle,
-      speed: charged ? cfg.chargedSpeed : cfg.speed,
-      damage: charged ? cfg.chargedDamage : 1,
-      size: charged ? cfg.chargedSize : cfg.size,
+      speed: spdOverride ?? (charged ? cfg.chargedSpeed : cfg.speed),
+      damage: dmgOverride ?? (charged ? cfg.chargedDamage : 1),
+      size: sizeOverride ?? (charged ? cfg.chargedSize : cfg.size),
+      piercing: piercing || (charged && weaponType === 'torpedo'),
+      homing,
+      lifespan,
     };
   },
 
