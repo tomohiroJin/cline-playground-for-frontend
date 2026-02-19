@@ -32,10 +32,12 @@ const ResultScreen: React.FC<Props> = ({ active, game, hasGold, equippedStyles }
   const buildShareUrl = useCallback(() => {
     if (!game) return '';
     const build = encodeBuild(equippedStyles ?? ['standard'], game.perks);
+    const ghostData = (game as GameState & { _ghostData?: string })._ghostData;
     return encodeShareUrl({
       score: game.score,
       build,
       daily: game.dailyMode ? getDailyId() : undefined,
+      ghost: game.dailyMode ? ghostData : undefined,
     });
   }, [game, equippedStyles]);
 

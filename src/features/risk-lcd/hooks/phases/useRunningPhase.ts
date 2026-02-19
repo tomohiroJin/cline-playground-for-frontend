@@ -40,6 +40,7 @@ export function useRunningPhase(
   audio: AudioApi,
   endGameRef: MutableRefObject<(cleared: boolean) => void>,
   showPerksRef: MutableRefObject<() => void>,
+  ghostPlayerRef: MutableRefObject<import('../../utils/ghost').GhostPlayer | null>,
 ) {
   const {
     gRef,
@@ -131,6 +132,12 @@ export function useRunningPhase(
 
       // ゴースト記録
       g.ghostLog.push(g.lane);
+
+      // ゴースト再生：デイリーモードのみ位置を更新（patch で React state に反映）
+      if (ghostPlayerRef.current && g.dailyMode) {
+        const ghostLane = ghostPlayerRef.current.getPosition(g.total);
+        ctx.patch({ ghostLane });
+      }
 
       const sheltered = isShelter(g.lane);
       const hit = obs.includes(g.lane) && !sheltered;
@@ -481,7 +488,7 @@ export function useRunningPhase(
     gRef.current = g;
     g.curBf0 = rng.shuffle(g.st.bfSet);
     syncGame();
-    patch({ screen: 'G', flash: false, shaking: false, popText: null });
+    patch({ screen: 'G', flash: false, shaking: false, popText: null, ghostLane: undefined });
     announce();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

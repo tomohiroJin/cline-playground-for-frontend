@@ -34,7 +34,12 @@ interface Props {
   flash: boolean;
   popText: { lane: number; text: string; id: number } | null;
   getLaneInfo: (lane: number) => LaneInfo;
+  /** ゴーストのレーン位置 */
+  ghostLane?: number;
 }
+
+// ゴースト表示行（セグメントの中央付近）
+const GHOST_ROW = Math.floor(ROWS / 2) + 1;
 
 // 3レーン × 8セグメントのグリッド表示
 const LaneGrid: React.FC<Props> = ({
@@ -47,6 +52,7 @@ const LaneGrid: React.FC<Props> = ({
   flash,
   popText,
   getLaneInfo,
+  ghostLane,
 }) => (
   <>
     <GameField $shaking={shaking}>
@@ -71,14 +77,21 @@ const LaneGrid: React.FC<Props> = ({
               <LaneLabel>{info.forecast}</LaneLabel>
             </LaneHeader>
             <SegsCol>
-              {Array.from({ length: ROWS }, (_, r) => (
-                <Segment
-                  key={r}
-                  $state={segments[lane]?.[r] ?? undefined}
-                >
-                  {segTexts[lane]?.[r] ?? '╳'}
-                </Segment>
-              ))}
+              {Array.from({ length: ROWS }, (_, r) => {
+                // ゴーストドット表示: ゴーストレーンの指定行に ◇ を表示
+                const isGhostSeg = ghostLane !== undefined && lane === ghostLane && r === GHOST_ROW;
+                const state = isGhostSeg ? 'ghostPlayer' : (segments[lane]?.[r] ?? undefined);
+                const text = isGhostSeg ? '◇' : (segTexts[lane]?.[r] ?? '╳');
+
+                return (
+                  <Segment
+                    key={r}
+                    $state={state}
+                  >
+                    {text}
+                  </Segment>
+                );
+              })}
             </SegsCol>
             <BeatBarBg>
               <BeatBarFill $visible={beatAnimating} $animate={beatAnimating} />

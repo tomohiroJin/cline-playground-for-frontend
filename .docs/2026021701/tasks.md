@@ -41,7 +41,7 @@
 - [x] **T-1.2.6** `[A]` `hooks/useStore.ts` 更新 — `isDailyPlayed()` メソッド追加
 - [x] **T-1.2.7** `[A]` `hooks/useStore.ts` 更新 — `recordDailyPlay(score)` メソッド追加
   - 初回プレイ報酬(+50PT) + 自己ベスト更新報酬(差分10%)
-- [ ] **T-1.2.8** `[A]` `hooks/useStore.test.ts` 更新 — デイリーメソッドのテスト追加
+- [x] **T-1.2.8** `[A]` `hooks/useStore.test.ts` 更新 — デイリーメソッドのテスト追加
 
 ---
 
@@ -126,9 +126,9 @@
 
 > 前提: Phase 2-1 完了 | ストリーム: B
 
-- [ ] **T-2.3.1** `[B]` `components/RiskLcdGame.tsx` 更新 — マウント時にURLクエリをチェック
+- [x] **T-2.3.1** `[B]` `components/RiskLcdGame.tsx` 更新 — マウント時にURLクエリをチェック
   - `decodeShareUrl(window.location.search)` の呼び出し
-- [ ] **T-2.3.2** `[B]` `hooks/useGameEngine.ts` 更新 — 共有データの初期表示処理
+- [x] **T-2.3.2** `[B]` `hooks/useGameEngine.ts` 更新 — 共有データの初期表示処理
   - 閲覧モードリザルト表示 or デイリー導線表示
 - [ ] **T-2.3.3** `[B]` 結合テスト — 共有URL生成→受信の一連フロー確認（手動）
 
@@ -162,7 +162,7 @@
 - [x] **T-3.2.1** `[B]` `types.ts` 更新 — `GameState` に `ghostLog: number[]` フィールド追加
 - [x] **T-3.2.2** `[B]` `hooks/phases/useRunningPhase.ts` 更新 — `createGameState` に `ghostLog: []` 初期化追加
 - [x] **T-3.2.3** `[B]` `hooks/phases/useRunningPhase.ts` 更新 — `resolve()` 内でレーン位置を `ghostLog` に記録
-- [ ] **T-3.2.4** `[B]` `hooks/phases/useResultPhase.ts` 更新 — リザルト時に `GhostRecorder.compress()` で圧縮
+- [x] **T-3.2.4** `[B]` `hooks/phases/useResultPhase.ts` 更新 — リザルト時に `GhostRecorder.compress()` で圧縮
 - [x] **T-3.2.5** `[B]` `utils/share.ts` 更新 — `ShareParams` に `ghost` フィールド追加、URL生成に反映
 
 ---
@@ -171,13 +171,13 @@
 
 > 前提: Phase 3-1, 3-2 完了 | ストリーム: B
 
-- [ ] **T-3.3.1** `[B]` `hooks/useGameEngine.ts` 更新 — URLからゴーストデータ読み込み、`GhostPlayer` インスタンス管理
-- [ ] **T-3.3.2** `[B]` `hooks/useGameEngine.ts` 更新 — `RenderState` にゴーストレーン位置フィールド追加
-- [ ] **T-3.3.3** `[B]` `components/LaneGrid.tsx` 更新 — ゴーストドット表示（点滅アニメーション）
+- [x] **T-3.3.1** `[B]` `hooks/useGameEngine.ts` 更新 — URLからゴーストデータ読み込み、`GhostPlayer` インスタンス管理
+- [x] **T-3.3.2** `[B]` `hooks/useGameEngine.ts` 更新 — `RenderState` にゴーストレーン位置フィールド追加
+- [x] **T-3.3.3** `[B]` `components/LaneGrid.tsx` 更新 — ゴーストドット表示（点滅アニメーション）
   - `SegState` に `'ghostPlayer'` を新規追加（既存の `'ghost'` ArtKey との混同防止）
   - 対象レーンのセグメント行5に `◇` 表示
   - 500ms on / 300ms off の点滅
-- [ ] **T-3.3.4** `[B]` `components/GameScreen.tsx` 更新 — ゴーストレーン位置を `LaneGrid` に受け渡し
+- [x] **T-3.3.4** `[B]` `components/GameScreen.tsx` 更新 — ゴーストレーン位置を `LaneGrid` に受け渡し
 - [x] **T-3.3.5** `[B]` `components/styles.ts` 更新 — ゴースト表示用スタイル追加（点滅アニメーション）
 - [ ] **T-3.3.6** `[B]` 結合テスト — ゴースト記録→圧縮→URL→展開→再生の一連フロー確認（手動）
 
@@ -261,28 +261,26 @@
 | Sprint | Phase | タスク数 | 完了 |
 |--------|-------|---------|------|
 | S1 | Phase 1-1: シード付き乱数基盤 | 5 | 5 |
-| S1 | Phase 1-2: デイリーゲーム状態 | 8 | 7 |
+| S1 | Phase 1-2: デイリーゲーム状態 | 8 | 8 |
 | S1 | Phase 1-3: デイリーモードUI | 6 | 6 |
 | S1 | Phase 1-4: RNG注入+デイリーロジック | 8 | 7 |
 | S2 | Phase 2-1: 共有URLユーティリティ | 7 | 7 |
 | S2 | Phase 2-2: シェアカードUI | 6 | 6 |
-| S2 | Phase 2-3: 共有URL受信処理 | 3 | 0 |
+| S2 | Phase 2-3: 共有URL受信処理 | 3 | 2 |
 | S3 | Phase 3-1: ゴーストデータ収集 | 5 | 5 |
-| S3 | Phase 3-2: ゲームループ統合 | 5 | 4 |
-| S3 | Phase 3-3: ゴースト再生UI | 6 | 1 |
+| S3 | Phase 3-2: ゲームループ統合 | 5 | 5 |
+| S3 | Phase 3-3: ゴースト再生UI | 6 | 5 |
 | S4 | Phase 4-1: チュートリアル | 9 | 9 |
 | S4 | Phase 4-2: 練習モード | 7 | 7 |
 | 横断 | コードメンテナンス | 4 | 4 |
 | 横断 | テスト | 9 | 2 |
-| **合計** | | **88** | **70** |
+| **合計** | | **88** | **78** |
 
 ### 未完了タスクまとめ
 
 | タスク | 理由 |
 |--------|------|
-| T-1.2.8 | useStore.test.ts のデイリーメソッドテスト未追加 |
 | T-1.4.8 | 手動テスト（デイリーフロー確認） |
-| T-2.3.1〜T-2.3.3 | 共有URL受信処理（マウント時URLチェック + 閲覧モード表示）未実装 |
-| T-3.2.4 | useResultPhase でのゴーストデータ圧縮処理未実装 |
-| T-3.3.1〜T-3.3.4, T-3.3.6 | ゴースト再生UIの接続（GhostPlayer管理・LaneGrid表示）未実装 |
+| T-2.3.3 | 結合テスト — 共有URL生成→受信の一連フロー確認（手動） |
+| T-3.3.6 | 結合テスト — ゴースト記録→圧縮→URL→展開→再生の一連フロー確認（手動） |
 | T-T.3〜T-T.9 | 手動テスト未実施 |

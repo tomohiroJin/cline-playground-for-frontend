@@ -11,8 +11,10 @@ import {
   ROWS,
   MENUS,
 } from '../constants';
-import { Rand, calcEffBf, visLabel } from '../utils';
+import { Rand, calcEffBf, visLabel, GhostPlayer, isValidDailyGhost } from '../utils';
 import { SeededRand, dateToSeed, getDailyId } from '../utils/seeded-random';
+import type { ShareParams } from '../utils/share';
+import { decodeShareUrl } from '../utils/share';
 import type { useStore } from './useStore';
 import type { useAudio } from './useAudio';
 import {
@@ -65,6 +67,8 @@ export interface RenderState {
   tutorialStep?: number;
   /** ゴーストのレーン位置（ゴースト再生中のみ） */
   ghostLane?: number;
+  /** 共有データ（閲覧モード用） */
+  shareData?: ShareParams | null;
 }
 
 type StoreApi = ReturnType<typeof useStore>;
@@ -93,6 +97,7 @@ export function initRender(): RenderState {
     emoKey: 'idle',
     tutorialStep: 0,
     ghostLane: undefined,
+    shareData: null,
   };
 }
 
@@ -118,6 +123,9 @@ export function useGameEngine(store: StoreApi, audio: AudioApi) {
     random: () => Math.random(),
   };
   const rngRef = useRef<RngApi>(defaultRng);
+
+  // ゴーストプレイヤー管理
+  const ghostPlayerRef = useRef<GhostPlayer | null>(null);
 
   // タイマー追加
   const addTimer = useCallback((fn: () => void, ms: number) => {
@@ -266,7 +274,7 @@ export function useGameEngine(store: StoreApi, audio: AudioApi) {
   const { endGame, goTitle } = useResultPhase(ctx, store, audio);
   const { showPerks, selectPerk } = usePerkPhase(ctx, store, audio, announceRef);
   const { startGame, movePlayer, announce } = useRunningPhase(
-    ctx, store, audio, endGameRef, showPerksRef,
+    ctx, store, audio, endGameRef, showPerksRef, ghostPlayerRef,
   );
   const { dispatchStyle, dispatchShop, dispatchHelp } = useShopPhase(
     ctx, store, audio, goTitle,
@@ -276,6 +284,17 @@ export function useGameEngine(store: StoreApi, audio: AudioApi) {
   endGameRef.current = endGame;
   showPerksRef.current = showPerks;
   announceRef.current = announce;
+
+  // ── 共有データ読み込み ──
+  const loadShareData = useCallback((params: ShareParams) => {
+    if (isValidDailyGhost(params, getDailyId())) {
+      ghostPlayerRef.current = new GhostPlayer(params.ghost!);
+      patch({ shareData: params, screen: 'D', menuIndex: 1 });
+    } else {
+      ghostPlayerRef.current = null;
+      patch({ shareData: params });
+    }
+  }, [patch]);
 
   // ── 入力ディスパッチ ──
   const dispatch = useCallback(
@@ -327,6 +346,7 @@ export function useGameEngine(store: StoreApi, audio: AudioApi) {
                   patch({ screen: 'TU', tutorialStep: 0 });
                 } else {
                   rngRef.current = defaultRng;
+                  ghostPlayerRef.current = null;
                   startGame('normal');
                 }
                 break;
@@ -400,6 +420,7 @@ export function useGameEngine(store: StoreApi, audio: AudioApi) {
 
         case 'R':
           if (action === 'act' || action === 'left' || action === 'back') {
+            ghostPlayerRef.current = null;
             goTitle();
           }
           break;
@@ -462,5 +483,6 @@ export function useGameEngine(store: StoreApi, audio: AudioApi) {
     dispatch,
     selectAndAct,
     getLaneInfo,
+    loadShareData,
   };
 }

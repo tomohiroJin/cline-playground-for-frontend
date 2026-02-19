@@ -1,5 +1,6 @@
-import { GhostRecorder, GhostPlayer } from './ghost';
+import { GhostRecorder, GhostPlayer, isValidDailyGhost } from './ghost';
 import type { LaneIndex } from '../types';
+import type { ShareParams } from './share';
 
 describe('GhostRecorder / GhostPlayer', () => {
   it('記録→圧縮→展開で元データと一致する', () => {
@@ -70,5 +71,42 @@ describe('GhostRecorder / GhostPlayer', () => {
     rec.record(2 as LaneIndex);
     rec.reset();
     expect(rec.compress()).toBe('');
+  });
+});
+
+describe('isValidDailyGhost', () => {
+  const TODAY = '2026-02-19';
+
+  it('同日デイリー + ゴーストありで true を返す', () => {
+    const params: ShareParams = { score: 100, build: 's:St_p:', daily: TODAY, ghost: 'abc' };
+    expect(isValidDailyGhost(params, TODAY)).toBe(true);
+  });
+
+  it('異なる日のデイリー + ゴーストありで false を返す', () => {
+    const params: ShareParams = { score: 100, build: 's:St_p:', daily: '2026-02-18', ghost: 'abc' };
+    expect(isValidDailyGhost(params, TODAY)).toBe(false);
+  });
+
+  it('daily なし + ゴーストありで false を返す', () => {
+    const params: ShareParams = { score: 100, build: 's:St_p:', ghost: 'abc' };
+    expect(isValidDailyGhost(params, TODAY)).toBe(false);
+  });
+
+  it('ゴーストなし + 同日デイリーで false を返す', () => {
+    const params: ShareParams = { score: 100, build: 's:St_p:', daily: TODAY };
+    expect(isValidDailyGhost(params, TODAY)).toBe(false);
+  });
+
+  it('ゴースト空文字列で false を返す', () => {
+    const params: ShareParams = { score: 100, build: 's:St_p:', daily: TODAY, ghost: '' };
+    expect(isValidDailyGhost(params, TODAY)).toBe(false);
+  });
+
+  it('null を渡すと false を返す', () => {
+    expect(isValidDailyGhost(null, TODAY)).toBe(false);
+  });
+
+  it('undefined を渡すと false を返す', () => {
+    expect(isValidDailyGhost(undefined, TODAY)).toBe(false);
   });
 });

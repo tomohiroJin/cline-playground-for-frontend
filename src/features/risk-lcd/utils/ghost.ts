@@ -1,6 +1,7 @@
-// ゴーストデータの記録・圧縮・展開
+// ゴーストデータの記録・圧縮・展開・検証
 
 import type { LaneIndex } from '../types';
+import type { ShareParams } from './share';
 
 /**
  * ランレングス圧縮
@@ -126,4 +127,22 @@ export class GhostPlayer {
   get length(): number {
     return this.positions.length;
   }
+}
+
+/**
+ * 共有データのゴーストが有効か判定する純粋関数。
+ *
+ * ゴーストは同日のデイリーモードでのみ意味を持つ（同シード=同障害配置）。
+ * 通常モードは Math.random でランダム配置のため、ゴースト比較が無意味。
+ *
+ * @param params - 共有パラメータ（null/undefined 許容）
+ * @param todayId - 今日のデイリーID（YYYY-MM-DD 形式）
+ * @returns ゴーストが有効な同日デイリーデータの場合 true
+ */
+export function isValidDailyGhost(
+  params: ShareParams | null | undefined,
+  todayId: string,
+): boolean {
+  if (!params) return false;
+  return !!params.ghost && !!params.daily && params.daily === todayId;
 }

@@ -14,6 +14,7 @@ import {
 interface Props {
   active: boolean;
   dailyData: DailyData | null;
+  hasGhost?: boolean;
   onStart?: () => void;
   onBack?: () => void;
 }
@@ -31,7 +32,7 @@ function getDailyMod(): ModDef | null {
 }
 
 // デイリー条件表示画面
-const DailyScreen: React.FC<Props> = ({ active, dailyData, onStart, onBack }) => {
+const DailyScreen: React.FC<Props> = ({ active, dailyData, hasGhost, onStart, onBack }) => {
   const dailyId = getDailyId();
   const mod = getDailyMod();
 
@@ -58,6 +59,10 @@ const DailyScreen: React.FC<Props> = ({ active, dailyData, onStart, onBack }) =>
         <DailyStatus>BEST: {dailyData.bestScore}</DailyStatus>
       ) : (
         <DailyStatus>PLAYED: ---</DailyStatus>
+      )}
+
+      {hasGhost && (
+        <DailyStatus>◇ ゴースト: ON</DailyStatus>
       )}
 
       <DailyAction $selected onClick={onStart}>

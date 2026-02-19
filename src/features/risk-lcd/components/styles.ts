@@ -44,8 +44,8 @@ export const shake = keyframes`
 `;
 
 export const ghostBlink = keyframes`
-  0%, 62% { opacity: 0.35; }
-  63%, 100% { opacity: 0; }
+  0%, 70% { opacity: 1; }
+  71%, 100% { opacity: 0.3; }
 `;
 
 // ── 筐体 ──
@@ -690,9 +690,9 @@ export const Segment = styled.div<{
         `;
       case 'ghostPlayer':
         return css`
-          color: ${LCD.dim};
+          color: ${LCD.warn};
           font-size: 18px;
-          animation: ${ghostBlink} 0.8s steps(1) infinite;
+          animation: ${ghostBlink} 1s ease-in-out infinite;
           @media (max-height: 640px) { font-size: 14px; }
         `;
       default:

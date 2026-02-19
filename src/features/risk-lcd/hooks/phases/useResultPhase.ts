@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { computeRank } from '../../utils';
+import { computeRank, GhostRecorder } from '../../utils';
 import type { useStore } from '../useStore';
 import type { useAudio } from '../useAudio';
 import type { PhaseContext } from './types';
@@ -24,10 +24,15 @@ export function useResultPhase(
       clearTimers();
       g.phase = 'done';
 
+      // ゴーストデータ圧縮
+      const rec = new GhostRecorder();
+      g.ghostLog.forEach(lane => rec.record(lane as 0 | 1 | 2));
+      const ghostData = rec.compress();
+
       // 練習モード: PT なし、ベスト更新なし
       if (g.practiceMode) {
         const rk = computeRank(g.score, cleared, g.stage);
-        Object.assign(g, { _cleared: cleared, _rank: rk, _earnedPt: 0 });
+        Object.assign(g, { _cleared: cleared, _rank: rk, _earnedPt: 0, _ghostData: ghostData });
         syncGame();
         addTimer(() => patch({ screen: 'R' }), 350);
         return;
@@ -49,6 +54,7 @@ export function useResultPhase(
           _rank: rk,
           _earnedPt: ep + dailyReward,
           _dailyReward: dailyReward,
+          _ghostData: ghostData,
         });
         syncGame();
         addTimer(() => patch({ screen: 'R' }), 350);
@@ -65,7 +71,7 @@ export function useResultPhase(
       store.updateBest(g.score, g.stage + 1);
       const rk = computeRank(g.score, cleared, g.stage);
 
-      Object.assign(g, { _cleared: cleared, _rank: rk, _earnedPt: ep });
+      Object.assign(g, { _cleared: cleared, _rank: rk, _earnedPt: ep, _ghostData: ghostData });
       syncGame();
       addTimer(() => patch({ screen: 'R' }), 350);
     },
