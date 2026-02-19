@@ -8,6 +8,7 @@
 4. [スプライトアニメーション仕様](#4-スプライトアニメーション仕様)
 5. [エフェクト仕様](#5-エフェクト仕様)
 6. [コンポーネント変更仕様](#6-コンポーネント変更仕様)
+7. [画像アセット仕様](#7-画像アセット仕様)
 
 ---
 
@@ -1036,24 +1037,135 @@ getShakeOffset(now: number): { x: number; y: number } | null;
 
 ---
 
+## 7. 画像アセット仕様
+
+### 7.1 概要
+
+フェーズ 1〜5 で Canvas API プレースホルダーとして実装されたストーリー画像を、画像生成 AI で作成した本番アセットに差し替える。詳細な画像生成プロンプト仕様は `images.md` を参照。
+
+### 7.2 共通仕様
+
+| 項目 | 値 |
+|------|-----|
+| **出力サイズ** | 960×540 px（表示は 480×270 に縮小、Retina 対応） |
+| **出力形式** | WebP（品質 80〜85、ファイルサイズ目安 50〜150 KB） |
+| **アスペクト比** | 16:9 |
+| **配色トーン** | ダークファンタジー基調（深い青〜紫〜黒のグラデーション背景） |
+| **画風** | アニメ調コンセプトアート。主線はやや太め。人物は登場させず構造物・風景を中心に描写 |
+| **テキスト** | 画像内にはテキストを一切含めない |
+| **構図** | 中央下部にストーリーテキストが重なるため、視覚的焦点は上半分〜中央寄りに配置 |
+
+### 7.3 画像一覧
+
+| # | ファイル名 | 画像キー | シーン | 主な配色 |
+|---|-----------|---------|--------|---------|
+| 1 | `ipne_story_prologue_1.webp` | `prologue_scene_1` | 任務ブリーフィング — 作戦室、ホログラフィック投影 | 暗い室内に青白い光源 |
+| 2 | `ipne_story_prologue_2.webp` | `prologue_scene_2` | ダンジョン入口 — 脈動する外壁、薄紫の光 | 夜空と暗い岩盤、薄紫〜青紫 |
+| 3 | `ipne_story_prologue_3.webp` | `prologue_scene_3` | 閉じた入口 — 滑らかに閉じた壁面、発光紋様 | 暗い壁面に淡い紫〜青 |
+| 4 | `ipne_story_stage_1.webp` | `story_stage_1` | 第一層突破 — 停止した核、安定しかけた壁面 | 青〜シアン、核の残光オレンジ |
+| 5 | `ipne_story_stage_2.webp` | `story_stage_2` | 深部への接近 — 複雑化した紋様、分岐路 | 紫〜ダークマゼンタ |
+| 6 | `ipne_story_stage_3.webp` | `story_stage_3` | 異変 — ひび割れた壁面、有機的増殖 | 赤紫〜深紅 |
+| 7 | `ipne_story_stage_4.webp` | `story_stage_4` | 最深部へ — 崩壊しかけた封鎖壁、歪んだ空間 | 深い暗黒に金〜オレンジ |
+| 8 | `ipne_story_stage_5.webp` | `story_stage_5` | 封鎖解除 — 静まった壁面、出口の光 | 落ち着いた青〜白、暖色の光 |
+| 9 | `ipne_story_game_over.webp` | `game_over` | 冒険の終わり — 閉じかけた壁面、薄れる光 | 暗黒、微かな赤い光 |
+
+### 7.4 配置先
+
+```
+src/assets/images/
+├── ipne_story_prologue_1.webp
+├── ipne_story_prologue_2.webp
+├── ipne_story_prologue_3.webp
+├── ipne_story_stage_1.webp
+├── ipne_story_stage_2.webp
+├── ipne_story_stage_3.webp
+├── ipne_story_stage_4.webp
+├── ipne_story_stage_5.webp
+└── ipne_story_game_over.webp
+```
+
+### 7.5 `storyImages.ts` 差し替え仕様
+
+**変更前**: Canvas API でプレースホルダーを動的生成
+
+**変更後**: import した実画像を返却
+
+```typescript
+// 実画像を import
+import imgPrologue1 from '../../assets/images/ipne_story_prologue_1.webp';
+import imgPrologue2 from '../../assets/images/ipne_story_prologue_2.webp';
+import imgPrologue3 from '../../assets/images/ipne_story_prologue_3.webp';
+import imgStage1 from '../../assets/images/ipne_story_stage_1.webp';
+import imgStage2 from '../../assets/images/ipne_story_stage_2.webp';
+import imgStage3 from '../../assets/images/ipne_story_stage_3.webp';
+import imgStage4 from '../../assets/images/ipne_story_stage_4.webp';
+import imgStage5 from '../../assets/images/ipne_story_stage_5.webp';
+import imgGameOver from '../../assets/images/ipne_story_game_over.webp';
+
+const IMAGE_SOURCES: Record<string, string> = {
+  prologue_scene_1: imgPrologue1,
+  prologue_scene_2: imgPrologue2,
+  prologue_scene_3: imgPrologue3,
+  story_stage_1: imgStage1,
+  story_stage_2: imgStage2,
+  story_stage_3: imgStage3,
+  story_stage_4: imgStage4,
+  story_stage_5: imgStage5,
+  game_over: imgGameOver,
+};
+
+export function getStoryImage(key: string): StoryImageEntry | undefined {
+  const def = IMAGE_DEFINITIONS[key];
+  if (!def) return undefined;
+  return {
+    src: IMAGE_SOURCES[key],
+    alt: def.alt,
+    width: def.width,
+    height: def.height,
+  };
+}
+```
+
+**変更不要な箇所**:
+- `Prologue.tsx` — `getStoryImage()` 経由で取得するため変更不要
+- `StageStory.tsx` — 同上
+- `FinalClear.tsx` — `getEndingImage()` を使用（既存の実画像。今回の対象外）
+- `story.ts` — `imageKey` 文字列のみ保持。変更不要
+
+### 7.6 既存画像アセット一覧（参考）
+
+以下は既に実画像として存在するアセット。今回の生成対象外:
+
+| ファイル名 | 用途 |
+|-----------|------|
+| `ipne_title_bg.webp` / `_mobile.webp` | タイトル画面背景 |
+| `ipne_prologue_bg.webp` / `_mobile.webp` | プロローグ画面背景 |
+| `ipne_class_warrior.webp` / `_thief.webp` | 職業選択 |
+| `ipne_ending_s/a/b/c/d.webp` | エンディング画像 |
+| `ipne_game_over.webp` | ゲームオーバー画面（`ending.ts` 経由、今回の `game_over` キーとは別用途） |
+| `ipne_ending_s.mp4` | Sランク特別動画 |
+
+---
+
 ## 付録 A: ファイル変更マトリックス
 
-| ファイル | Ph.1 | Ph.2 | Ph.3 | Ph.4 | Ph.5 |
-|---------|------|------|------|------|------|
-| `types.ts` | **変更** | | | | |
-| `story.ts` | | **変更** | | | |
-| `ending.ts` | | **変更** | | | |
-| `storyImages.ts` | **新規** | 参照 | | | |
-| `Prologue.tsx` | | **変更** | | | テスト |
-| `StageStory.tsx` | | **変更** | | | テスト |
-| `FinalClear.tsx` | | **変更** | | | テスト |
-| `playerSprites.ts` | | | **変更** | | |
-| `enemySprites.ts` | | | **変更** | | |
-| `effectSprites.ts` | | | **変更** | | |
-| `effectTypes.ts` | **変更** | | | | |
-| `effectManager.ts` | | | | **変更** | テスト |
-| `particleSystem.ts` | | | | **変更** | テスト |
-| `Game.tsx` | | | **変更** | **変更** | テスト |
+| ファイル | Ph.1 | Ph.2 | Ph.3 | Ph.4 | Ph.5 | Ph.6 |
+|---------|------|------|------|------|------|------|
+| `types.ts` | **変更** | | | | | |
+| `story.ts` | | **変更** | | | | |
+| `ending.ts` | | **変更** | | | | |
+| `storyImages.ts` | **新規** | 参照 | | | | **変更** |
+| `Prologue.tsx` | | **変更** | | | テスト | |
+| `StageStory.tsx` | | **変更** | | | テスト | |
+| `FinalClear.tsx` | | **変更** | | | テスト | |
+| `playerSprites.ts` | | | **変更** | | | |
+| `enemySprites.ts` | | | **変更** | | | |
+| `effectSprites.ts` | | | **変更** | | | |
+| `effectTypes.ts` | **変更** | | | | | |
+| `effectManager.ts` | | | | **変更** | テスト | |
+| `particleSystem.ts` | | | | **変更** | テスト | |
+| `Game.tsx` | | | **変更** | **変更** | テスト | |
+| `assets/images/ipne_story_*.webp` | | | | | | **新規** |
 
 ## 付録 B: 定数一覧
 
@@ -1080,3 +1192,7 @@ getShakeOffset(now: number): { x: number; y: number } | null;
 | `MAX_PARTICLES` | 200 | パーティクル上限数（既存） |
 | `PLACEHOLDER_BG_COLOR` | `#1a1a2e` | プレースホルダー画像の背景色 |
 | `PLACEHOLDER_TEXT_COLOR` | `#e2e8f0` | プレースホルダー画像のテキスト色 |
+| `STORY_IMAGE_WIDTH` | 960 | ストーリー画像の生成幅 (px) |
+| `STORY_IMAGE_HEIGHT` | 540 | ストーリー画像の生成高さ (px) |
+| `STORY_IMAGE_DISPLAY_WIDTH` | 480 | ストーリー画像の表示幅 (px) |
+| `STORY_IMAGE_DISPLAY_HEIGHT` | 270 | ストーリー画像の表示高さ (px) |
