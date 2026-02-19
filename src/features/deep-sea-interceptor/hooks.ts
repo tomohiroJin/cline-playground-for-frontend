@@ -5,9 +5,9 @@
 import { useState, useEffect, useRef, useCallback, useReducer } from 'react';
 import { getHighScore, saveScore } from '../../utils/score-storage';
 import { createAudioSystem } from './audio';
-import { Config, DifficultyConfig } from './constants';
-import { EntityFactory } from './entities';
+import { DifficultyConfig } from './constants';
 import { createInitialGameState, createInitialUiState, updateFrame, calculateRank } from './game-logic';
+import { createBulletsForWeapon, createChargedShot } from './weapon';
 import { loadAchievements, saveAchievements, checkNewAchievements } from './achievements';
 import type { GameState, UiState, WeaponType, Difficulty, Achievement } from './types';
 
@@ -15,80 +15,6 @@ import type { GameState, UiState, WeaponType, Difficulty, Achievement } from './
 export type ScreenState = 'title' | 'playing' | 'gameover' | 'ending';
 
 const GAME_KEY = 'deep_sea_shooter';
-
-/** 武器タイプ別の射撃ロジック */
-function createBulletsForWeapon(
-  x: number,
-  y: number,
-  weaponType: WeaponType,
-  power: number,
-  hasSpread: boolean
-) {
-  const bullets = [];
-
-  switch (weaponType) {
-    case 'torpedo': {
-      // トーピード: power レベルに応じた弾数
-      const angles = hasSpread
-        ? [-0.25, 0, 0.25]
-        : power >= 5
-          ? [-0.1, 0, 0.1, 0]
-          : power >= 4
-            ? [-0.1, 0, 0.1]
-            : power >= 3
-              ? [-0.1, 0.1]
-              : [0];
-      for (const a of angles) {
-        bullets.push(
-          EntityFactory.bullet(x, y - 12, {
-            angle: -Math.PI / 2 + a,
-            weaponType: 'torpedo',
-            damage: power >= 2 && a === 0 ? 1.5 : 1,
-          })
-        );
-      }
-      break;
-    }
-    case 'sonarWave': {
-      // ソナーウェーブ: 扇状3発、高火力・射程制限あり
-      const spreadAngle = power >= 5 ? 0.35 : power >= 3 ? 0.26 : 0.17;
-      const lifespan = power >= 5 ? 40 : power >= 3 ? 33 : 28;
-      const dmg = power >= 5 ? 2.5 : power >= 3 ? 2 : 1.5;
-      for (const a of [-spreadAngle, 0, spreadAngle]) {
-        bullets.push(
-          EntityFactory.bullet(x, y - 12, {
-            angle: -Math.PI / 2 + a,
-            weaponType: 'sonarWave',
-            speed: 8,
-            damage: dmg,
-            lifespan,
-          })
-        );
-      }
-      break;
-    }
-    case 'bioMissile': {
-      // バイオミサイル: ホーミング弾
-      const count = power >= 5 ? 3 : power >= 3 ? 2 : 1;
-      const dmg = power >= 5 ? 1 : 1;
-      for (let i = 0; i < count; i++) {
-        const offset = (i - (count - 1) / 2) * 0.2;
-        bullets.push(
-          EntityFactory.bullet(x, y - 12, {
-            angle: -Math.PI / 2 + offset,
-            weaponType: 'bioMissile',
-            speed: 7,
-            damage: dmg,
-            homing: true,
-          })
-        );
-      }
-      break;
-    }
-  }
-
-  return bullets;
-}
 
 /** Deep Sea Interceptor のメインゲームフック */
 export function useDeepSeaGame() {
@@ -144,51 +70,7 @@ export function useDeepSeaGame() {
     const gd = gameData.current;
     if (gd.charging) {
       if (gd.chargeLevel >= 0.8) {
-        // 武器タイプ別チャージショット
-        switch (selectedWeapon) {
-          case 'torpedo':
-            gd.bullets.push(
-              EntityFactory.bullet(gd.player.x, gd.player.y - 12, {
-                charged: true,
-                weaponType: 'torpedo',
-                piercing: true,
-                damage: 5,
-              })
-            );
-            break;
-          case 'sonarWave':
-            // 全方位8発パルス
-            for (let i = 0; i < 8; i++) {
-              const angle = (Math.PI * 2 * i) / 8;
-              gd.bullets.push(
-                EntityFactory.bullet(gd.player.x, gd.player.y, {
-                  charged: true,
-                  weaponType: 'sonarWave',
-                  angle,
-                  speed: 7,
-                  damage: 4,
-                  lifespan: 32,
-                })
-              );
-            }
-            break;
-          case 'bioMissile':
-            // 追尾型拡散5発
-            for (let i = 0; i < 5; i++) {
-              const offset = (i - 2) * 0.3;
-              gd.bullets.push(
-                EntityFactory.bullet(gd.player.x, gd.player.y - 12, {
-                  charged: true,
-                  weaponType: 'bioMissile',
-                  angle: -Math.PI / 2 + offset,
-                  speed: 8,
-                  damage: 2,
-                  homing: true,
-                })
-              );
-            }
-            break;
-        }
+        gd.bullets.push(...createChargedShot(gd.player.x, gd.player.y, selectedWeapon));
         audio.current.play('charged');
       }
       gd.charging = false;
