@@ -1,10 +1,25 @@
 // Racing Game エンティティ生成
 
-import type { Player, Particle, Spark, Confetti, Decoration } from './types';
+import type { Player, Particle, Spark, Confetti, Decoration, DriftState, HeatState } from './types';
 import { Config, Colors } from './constants';
 import { Utils } from './utils';
 
 export const Entity = {
+  initDriftState: (): DriftState => ({
+    active: false,
+    duration: 0,
+    slipAngle: 0,
+    boostRemaining: 0,
+    boostPower: 0,
+  }),
+
+  initHeatState: (): HeatState => ({
+    gauge: 0,
+    boostRemaining: 0,
+    boostPower: 0,
+    cooldown: 0,
+  }),
+
   player: (
     x: number,
     y: number,
@@ -27,6 +42,10 @@ export const Entity = {
     wallStuck: 0,
     progress: 0,
     lastSeg: -1,
+    drift: { active: false, duration: 0, slipAngle: 0, boostRemaining: 0, boostPower: 0 },
+    heat: { gauge: 0, boostRemaining: 0, boostPower: 0, cooldown: 0 },
+    activeCards: [],
+    shieldCount: 0,
   }),
 
   particle: (x: number, y: number, i: number): Particle => {
@@ -60,6 +79,17 @@ export const Entity = {
     color: Utils.randChoice(Colors.confetti)!,
     rot: Utils.randRange(0, 360),
     rotSpd: Utils.randRange(-7.5, 7.5),
+  }),
+
+  /** ドリフトスモークパーティクル生成 */
+  driftSmoke: (x: number, y: number, angle: number): Particle => ({
+    x: x - Math.cos(angle) * 12 + Utils.randRange(-5, 5),
+    y: y - Math.sin(angle) * 12 + Utils.randRange(-5, 5),
+    vx: Utils.randRange(-1, 1),
+    vy: Utils.randRange(-1, 1),
+    life: Utils.randRange(0.3, 0.5),
+    size: Utils.randRange(3, 6),
+    color: 'rgba(180,180,180,0.6)',
   }),
 
   decoration: (x: number, y: number): Decoration => ({ x, y, variant: Utils.randInt(3) }),

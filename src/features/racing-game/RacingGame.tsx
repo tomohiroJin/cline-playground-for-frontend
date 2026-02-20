@@ -32,6 +32,8 @@ import { Entity } from './entities';
 import { Track } from './track';
 import { Render, renderDecos } from './renderer';
 import { Logic } from './game-logic';
+import { Heat } from './heat';
+import { CourseEffects } from './course-effects';
 import { useInput, useIdle } from './hooks';
 import { VolumeCtrl } from './components/VolumeControl';
 
@@ -167,19 +169,35 @@ export default function RacingGame() {
         return;
       }
 
-      players = players.map((p, i) => {
+      // 各プレイヤーの操作入力を収集
+      const playerInputs = players.map((p, i) => {
         let rot = 0;
-        if (demo || p.isCpu)
+        let handbrake = false;
+        if (demo || p.isCpu) {
           rot = Logic.cpuTurn(p, pts, demo ? 0.7 : cpuCfg.skill, demo ? 0.03 : cpuCfg.miss);
-        else if (i === 0) {
+          if (!demo && Logic.cpuShouldDrift(p, pts, cpuCfg.skill)) {
+            handbrake = true;
+          }
+        } else if (i === 0) {
           if (keys.current.a || keys.current.A || touch.current.L) rot = -Config.game.turnRate;
           if (keys.current.d || keys.current.D || touch.current.R) rot = Config.game.turnRate;
+          handbrake = mode === '2p' ? !!keys.current['code:ShiftLeft'] : !!keys.current[' '];
         } else {
           if (keys.current.ArrowLeft) rot = -Config.game.turnRate;
           if (keys.current.ArrowRight) rot = Config.game.turnRate;
+          handbrake = !!keys.current['code:ShiftRight'] || !!keys.current.Enter;
         }
-        return { ...p, angle: p.angle + rot };
+        // ドリフト中は旋回速度を増幅
+        const turnRate = p.drift.active && rot !== 0
+          ? Math.sign(rot) * (Config.game.turnRate * 1.8)
+          : rot;
+        return { rot, turnRate, handbrake };
       });
+
+      players = players.map((p, i) => ({
+        ...p,
+        angle: p.angle + playerInputs[i].turnRate,
+      }));
 
       let finished = false;
       if (state === 'race' || demo) {
@@ -189,15 +207,57 @@ export default function RacingGame() {
         }
         if (!demo) SoundEngine.updateEngine((players[0].speed + players[1].speed) / 2);
 
-        players = players.map(p => {
-          // 移動
+        // コース環境効果の取得
+        const courseEffect = CourseEffects.getEffect(cur.deco);
+
+        players = players.map((p, i) => {
+          // コース効果による速度修正
+          const trackInfo = Track.getInfo(p.x, p.y, pts);
+          const friction = CourseEffects.getFriction(
+            courseEffect,
+            trackInfo.seg,
+            pts.length,
+            trackInfo.dist,
+            Config.game.trackWidth
+          );
+          const spdMod = CourseEffects.getSpeedModifier(courseEffect, trackInfo.seg, pts.length);
+          const effectiveBaseSpd = baseSpd * friction + spdMod;
+
+          // 移動（ドリフト情報を渡す）
+          const input = playerInputs[i];
           // eslint-disable-next-line prefer-const
-          let { p: np, info, hit } = Logic.movePlayer(p, baseSpd, pts);
+          let { p: np, info, hit, wallStage } = Logic.movePlayer(p, effectiveBaseSpd, pts, input.handbrake, input.rot);
 
           if (hit) {
-            if (!demo) SoundEngine.wall();
+            if (!demo) SoundEngine.wallStaged(wallStage);
             addParts(np.x, np.y);
+            // 壁接触段階に応じたシェイク強度
+            shake = wallStage === 1 ? 1 : wallStage === 2 ? 2 : 4;
           }
+
+          // ドリフトスモーク生成
+          if (np.drift.active) {
+            for (let s = 0; s < 2; s++) {
+              particles.push(Entity.driftSmoke(np.x, np.y, np.angle));
+            }
+            particles = particles.slice(-Config.game.maxParticles);
+          }
+
+          // HEAT 計算
+          const otherPlayer = players[1 - i];
+          const carDist = Utils.dist(np.x, np.y, otherPlayer.x, otherPlayer.y);
+          const heatGainMul = np.activeCards.reduce(
+            (acc, c) => acc * (c.heatGainMultiplier ?? 1),
+            1
+          );
+          const newHeat = Heat.update(np.heat, info.dist, carDist, 1 / 60, heatGainMul);
+
+          // HEAT ブースト適用
+          const heatBoost = Heat.getBoost(newHeat);
+          if (heatBoost > 0) {
+            np = { ...np, speed: Math.min(1, np.speed + heatBoost * 0.1) };
+          }
+          np = { ...np, heat: newHeat };
 
           // チェックポイント判定
           const newCp = Logic.updateCheckpoints(
@@ -315,6 +375,12 @@ export default function RacingGame() {
       Render.background(ctx, cur);
       renderDecos(ctx, decos, cur.deco);
       Render.track(ctx, pts);
+
+      // コース環境ビジュアルエフェクト
+      const courseVisual = CourseEffects.getEffect(cur.deco).visualEffect;
+      if (courseVisual !== 'none') {
+        Render.courseEffect(ctx, courseVisual, Date.now());
+      }
       Render.startLine(ctx, sl);
       Render.checkpoints(ctx, cpCoords); // チェックポイント表示
       Render.particles(ctx, particles, sparks);
@@ -375,6 +441,12 @@ export default function RacingGame() {
           const y = 50 + i * 30;
           ctx.fillStyle = p.color;
           ctx.fillText(`${p.name}: LAP ${Math.min(p.lap, maxLaps)}/${maxLaps}`, 20, y);
+
+          // HEAT ゲージ描画
+          Render.heatGauge(ctx, p.heat, 250, y + 2);
+
+          // ドリフトインジケータ
+          Render.driftIndicator(ctx, p);
         });
 
         if (lapAnn && Date.now() - lapAnnT < Config.timing.lapAnnounce) {

@@ -9,11 +9,14 @@ export const useInput = () => {
   useEffect(() => {
     const kd = (e: KeyboardEvent) => {
       keys.current[e.key] = true;
+      // コードベースのキー追跡（ハンドブレーキ用にShiftキーを識別）
+      if (e.code) keys.current[`code:${e.code}`] = true;
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key))
         e.preventDefault();
     };
     const ku = (e: KeyboardEvent) => {
       keys.current[e.key] = false;
+      if (e.code) keys.current[`code:${e.code}`] = false;
     };
     const blur = () => {
       keys.current = {};

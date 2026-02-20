@@ -1,8 +1,8 @@
 // Racing Game re-export
 
 export { default as RacingGame } from './RacingGame';
-export type { Point, Checkpoint, StartLine, Particle, Spark, Confetti, Course, Player, Decoration, GameResults } from './types';
-export { Config, Colors, Options, Courses } from './constants';
+export type { Point, Checkpoint, StartLine, Particle, Spark, Confetti, Course, Player, Decoration, GameResults, GamePhase, DriftState, HeatState, CourseEffect, CardCategory, CardRarity, CardEffect, Card, DeckState, GhostFrame, GhostData, HighlightType, HighlightEvent } from './types';
+export { Config, Colors, Options, Courses, DRIFT, HEAT, WALL } from './constants';
 export { Utils } from './utils';
 export { SoundEngine } from './audio';
 export { Entity } from './entities';

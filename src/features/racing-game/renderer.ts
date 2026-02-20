@@ -1,6 +1,6 @@
 // Racing Game レンダラー
 
-import type { Point, Checkpoint, StartLine, Player, Particle, Spark, Confetti, Decoration } from './types';
+import type { Point, Checkpoint, StartLine, Player, Particle, Spark, Confetti, Decoration, HeatState } from './types';
 import { Config, Colors } from './constants';
 
 export const Render = {
@@ -185,6 +185,60 @@ export const Render = {
       c.restore();
     }),
 
+  /** HEAT ゲージバー描画 */
+  heatGauge: (c: CanvasRenderingContext2D, heat: HeatState, x: number, y: number) => {
+    const barW = 80;
+    const barH = 8;
+
+    // 背景
+    c.fillStyle = 'rgba(0,0,0,0.5)';
+    c.fillRect(x, y, barW, barH);
+
+    // ゲージ色（青→黄→赤）
+    let color: string;
+    if (heat.gauge <= 0.3) {
+      color = '#3b82f6'; // 青
+    } else if (heat.gauge <= 0.7) {
+      color = '#eab308'; // 黄
+    } else {
+      color = '#ef4444'; // 赤
+    }
+
+    // MAX到達時の白点滅
+    if (heat.gauge >= 1.0 || heat.boostRemaining > 0) {
+      color = Math.floor(Date.now() / 100) % 2 === 0 ? '#fff' : '#ef4444';
+    }
+
+    // ゲージバー
+    const fillW = barW * heat.gauge;
+    c.fillStyle = color;
+    c.fillRect(x, y, fillW, barH);
+
+    // 枠線
+    c.strokeStyle = '#fff';
+    c.lineWidth = 1;
+    c.strokeRect(x, y, barW, barH);
+
+    // ブースト中のエフェクト
+    if (heat.boostRemaining > 0) {
+      c.fillStyle = '#fff';
+      c.font = 'bold 10px Arial';
+      c.textAlign = 'center';
+      c.fillText('BOOST!', x + barW / 2, y - 4);
+    }
+  },
+
+  /** ドリフトインジケータ描画 */
+  driftIndicator: (c: CanvasRenderingContext2D, p: Player) => {
+    if (!p.drift.active) return;
+    c.save();
+    c.fillStyle = '#ff8c00';
+    c.font = 'bold 12px Arial';
+    c.textAlign = 'center';
+    c.fillText('DRIFT!', p.x, p.y + 25);
+    c.restore();
+  },
+
   fireworks: (c: CanvasRenderingContext2D, time: number) => {
     [
       [200, 200, 0],
@@ -206,6 +260,68 @@ export const Render = {
         c.globalAlpha = 1;
       }
     });
+  },
+
+  /** コース環境ビジュアルエフェクト描画 */
+  courseEffect: (c: CanvasRenderingContext2D, effect: string, time: number) => {
+    const { width, height } = Config.canvas;
+
+    switch (effect) {
+      case 'rain': {
+        // 雨パーティクル
+        c.globalAlpha = 0.4;
+        c.fillStyle = '#c0d8ff';
+        for (let i = 0; i < 40; i++) {
+          const x = ((i * 47 + time * 0.3) % width);
+          const y = ((i * 31 + time * 0.8) % height);
+          c.fillRect(x, y, 1.5, 8);
+        }
+        c.globalAlpha = 1;
+        break;
+      }
+      case 'leaves': {
+        // 落ち葉パーティクル
+        c.globalAlpha = 0.5;
+        for (let i = 0; i < 15; i++) {
+          const x = ((i * 67 + time * 0.1) % width);
+          const y = ((i * 43 + time * 0.15) % height);
+          const color = i % 2 === 0 ? '#8B4513' : '#D2691E';
+          c.fillStyle = color;
+          c.beginPath();
+          c.ellipse(x, y, 4, 2.5, (time * 0.01 + i) % (Math.PI * 2), 0, Math.PI * 2);
+          c.fill();
+        }
+        c.globalAlpha = 1;
+        break;
+      }
+      case 'snow': {
+        // 雪パーティクル（強化版）
+        c.globalAlpha = 0.7;
+        c.fillStyle = '#fff';
+        for (let i = 0; i < 50; i++) {
+          const x = ((i * 53 + time * 0.05 + Math.sin(i + time * 0.002) * 20) % width);
+          const y = ((i * 37 + time * 0.2) % height);
+          const r = 1.5 + (i % 3);
+          c.beginPath();
+          c.arc(x, y, r, 0, Math.PI * 2);
+          c.fill();
+        }
+        c.globalAlpha = 1;
+        break;
+      }
+      case 'vignette': {
+        // ビネットエフェクト（画面端を暗く）
+        const gradient = c.createRadialGradient(
+          width / 2, height / 2, Math.min(width, height) * 0.25,
+          width / 2, height / 2, Math.min(width, height) * 0.6
+        );
+        gradient.addColorStop(0, 'rgba(0,0,0,0)');
+        gradient.addColorStop(1, 'rgba(0,0,0,0.7)');
+        c.fillStyle = gradient;
+        c.fillRect(0, 0, width, height);
+        break;
+      }
+    }
   },
 };
 

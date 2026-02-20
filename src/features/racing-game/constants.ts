@@ -64,6 +64,38 @@ export const Options = Object.freeze({
   laps: [1, 3, 5],
 });
 
+// ドリフト定数
+export const DRIFT = Object.freeze({
+  MIN_SPEED: 0.4,
+  ANGLE_MULTIPLIER: 1.8,
+  SPEED_RETAIN: 0.92,
+  MAX_SLIP_ANGLE: Math.PI / 4, // 45度
+  LATERAL_FORCE: 0.15,
+  BOOST_BASE: 0.05,
+  BOOST_PER_SEC: 0.1,
+  BOOST_MAX: 0.3,
+  BOOST_DURATION: 0.5,
+});
+
+// HEAT（ニアミスボーナス）定数
+export const HEAT = Object.freeze({
+  WALL_THRESHOLD: 25,
+  CAR_THRESHOLD: 40,
+  GAIN_RATE: 0.8,
+  DECAY_RATE: 0.15,
+  BOOST_POWER: 0.25,
+  BOOST_DURATION: 0.8,
+  COOLDOWN: 1.0,
+});
+
+// 壁ヒットペナルティ定数（段階的減速）
+export const WALL = Object.freeze({
+  LIGHT_FACTOR: 0.85,   // wallStuck = 1
+  MEDIUM_FACTOR: 0.70,  // wallStuck = 2〜3
+  HEAVY_FACTOR: 0.50,   // wallStuck >= 4
+  WARP_THRESHOLD: 15,   // 新しいワープしきい値
+});
+
 // コースデータ
 export const Courses: Course[] = [
   {

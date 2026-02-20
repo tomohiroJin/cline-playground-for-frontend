@@ -117,6 +117,28 @@ export const SoundEngine = (() => {
     },
     checkpoint: () => sequence(F.checkpoint, 0.08, 'sine', 0.3),
 
+    // ドリフト音
+    driftStart: () => noise(0.3, 0.25),
+    driftBoost: () => {
+      tone(600, 0.15, 'sawtooth', 0.4);
+      setTimeout(() => tone(800, 0.15, 'sawtooth', 0.3), 80);
+    },
+
+    // HEAT 音
+    heatMax: () => sequence([880, 1100, 1320], 0.08, 'sine', 0.5),
+    heatBoost: () => {
+      tone(400, 0.2, 'sawtooth', 0.4);
+      setTimeout(() => tone(600, 0.2, 'sawtooth', 0.3), 100);
+      setTimeout(() => tone(800, 0.15, 'sawtooth', 0.3), 200);
+    },
+
+    // 段階的壁ヒット音（wallStage: 1=軽 / 2=中 / 3=強）
+    wallStaged: (stage: number) => {
+      const vol = stage === 1 ? 0.15 : stage === 2 ? 0.25 : 0.4;
+      tone(F.wall[0], 0.08, 'square', vol);
+      noise(0.1, vol * 0.5);
+    },
+
     startEngine: () => {
       if (muted || engineOsc) return;
       const c = getCtx();
