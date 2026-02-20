@@ -21,6 +21,9 @@ export const useKeyboard = ({
     if (!enabled) return;
 
     const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
       switch (e.key) {
         case 'ArrowUp':
         case 'W':

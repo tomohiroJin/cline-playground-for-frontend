@@ -1,3 +1,5 @@
+import { PuzzleScore, PuzzleRecord } from '../types/puzzle';
+
 /**
  * クリア履歴の型定義
  */
@@ -93,8 +95,6 @@ export const extractImageName = (imageUrl: string): string => {
 
   return name;
 };
-
-import { PuzzleScore, PuzzleRecord } from '../types/puzzle';
 
 const TOTAL_CLEARS_KEY = 'puzzle_total_clears';
 

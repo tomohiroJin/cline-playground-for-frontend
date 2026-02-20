@@ -93,5 +93,7 @@ export const isThemeUnlocked = (
         );
       });
     }
+    default:
+      return false;
   }
 };

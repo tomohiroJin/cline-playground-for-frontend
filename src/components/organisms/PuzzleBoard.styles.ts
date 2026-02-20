@@ -34,47 +34,6 @@ export const GridCell = styled.div<{ $completed?: boolean }>`
   border: ${props => (props.$completed ? 'none' : '1px dashed rgba(0, 0, 0, 0.1)')};
 `;
 
-export const CompletionOverlay = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(0, 0, 0, 0.7);
-  color: white;
-  font-size: 1.5rem;
-  z-index: 20;
-  cursor: pointer;
-`;
-
-export const CompletionMessage = styled.h2`
-  margin-bottom: 20px;
-`;
-
-export const CompletionTime = styled.p`
-  font-size: 1.2rem;
-  margin-bottom: 20px;
-`;
-
-export const RestartButton = styled.button`
-  background-color: #4caf50;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.3s;
-
-  &:hover {
-    background-color: #45a049;
-  }
-`;
-
 export const StatusBar = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
@@ -91,11 +50,6 @@ export const StatusItem = styled.div`
   color: #333;
   text-align: center;
   white-space: nowrap;
-`;
-
-export const ElapsedTime = styled.div`
-  font-size: 0.9rem;
-  color: #333;
 `;
 
 export const HintToggleButton = styled.button<{ active: string }>`
