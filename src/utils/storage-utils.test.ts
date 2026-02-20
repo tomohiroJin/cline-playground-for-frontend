@@ -35,11 +35,6 @@ describe('storage-utils', () => {
   });
 
   describe('extractImageName', () => {
-    it('データURLから「アップロード画像」を抽出する', () => {
-      const dataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...';
-      expect(extractImageName(dataUrl)).toBe('アップロード画像');
-    });
-
     it('ファイルパスからファイル名を抽出する', () => {
       const filePath = '/images/default/sunset_candy_shop.webp';
       expect(extractImageName(filePath)).toBe('sunset_candy_shop');

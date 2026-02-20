@@ -24,7 +24,6 @@ export const useGameState = () => {
   const { hintModeEnabled, toggleHintMode } = useHintMode();
 
   const [gameStarted, setGameStarted] = useState(false);
-  const [imageSourceMode, setImageSourceMode] = useState<'upload' | 'default'>('upload');
   const [emptyPanelClicks, setEmptyPanelClicks] = useState(0);
 
   /**
@@ -38,14 +37,13 @@ export const useGameState = () => {
   }, [completed]);
 
   /**
-   * 画像のアップロードを処理します。
-   * アップロードされた画像のURLと元のサイズを設定します。
+   * 画像を選択する処理を行います。
    *
-   * @param url - アップロードされた画像のURL
+   * @param url - 選択された画像のURL
    * @param width - 画像の幅
    * @param height - 画像の高さ
    */
-  const handleImageUpload = (url: string, width: number, height: number) => {
+  const handleImageSelect = (url: string, width: number, height: number) => {
     setImageUrl(url);
     setOriginalImageSize({ width, height });
   };
@@ -96,9 +94,7 @@ export const useGameState = () => {
   return {
     toggleHintMode,
     gameStarted,
-    imageSourceMode,
-    setImageSourceMode,
-    handleImageUpload,
+    handleImageSelect,
     handleDifficultyChange,
     handleStartGame,
     handlePieceMove,

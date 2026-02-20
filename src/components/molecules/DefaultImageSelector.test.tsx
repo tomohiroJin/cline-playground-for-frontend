@@ -14,10 +14,10 @@ describe('DefaultImageSelector', () => {
   const defaultImages = [
     '/images/default/camel_in_the_desert.webp',
     '/images/default/chalk_drawing_kids.webp',
-    '/images/default/hokusai_kangchenjunga.webp',
+    '/images/default/snowy_mountain_ukiyoe.webp',
     '/images/default/moonlight_dancer.webp',
     '/images/default/sunset_candy_shop.webp',
-    '/images/default/midnight_times_square.webp',
+    '/images/default/midnight_neon_street.webp',
   ];
 
   beforeEach(() => {

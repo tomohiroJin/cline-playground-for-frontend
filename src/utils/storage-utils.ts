@@ -84,11 +84,6 @@ const generateId = (): string => {
 export const extractImageName = (imageUrl: string): string => {
   if (!imageUrl) return 'Unknown';
 
-  // データURLの場合は「アップロード画像」として扱う
-  if (imageUrl.startsWith('data:')) {
-    return 'アップロード画像';
-  }
-
   // パスから最後の部分（ファイル名）を取得
   const parts = imageUrl.split('/');
   const filename = parts[parts.length - 1];

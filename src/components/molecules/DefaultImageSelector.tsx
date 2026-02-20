@@ -23,8 +23,8 @@ const DEFAULT_IMAGES = [
   },
   {
     id: 3,
-    src: '/images/default/hokusai_kangchenjunga.webp',
-    alt: 'カンチェンジュンガの北斎',
+    src: '/images/default/snowy_mountain_ukiyoe.webp',
+    alt: '雪山の浮世絵風イラスト',
   },
   {
     id: 4,
@@ -38,8 +38,8 @@ const DEFAULT_IMAGES = [
   },
   {
     id: 6,
-    src: '/images/default/midnight_times_square.webp',
-    alt: '真夜中のタイムズスクエア',
+    src: '/images/default/midnight_neon_street.webp',
+    alt: '真夜中のネオン街',
   },
 ];
 

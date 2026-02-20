@@ -1,20 +1,17 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { SetupSectionComponent, GameSectionComponent } from './PuzzleSections';
 import { PuzzlePiece } from '../store/atoms';
 
 describe('SetupSectionComponent', () => {
-  const mockSetImageSourceMode = jest.fn();
-  const mockHandleImageUpload = jest.fn();
+  const mockHandleImageSelect = jest.fn();
   const mockHandleDifficultyChange = jest.fn();
   const mockHandleStartGame = jest.fn();
 
-  it('画像ソースモードの切り替えボタンが正しく動作する', () => {
+  it('デフォルト画像選択が表示される', () => {
     render(
       <SetupSectionComponent
-        imageSourceMode="upload"
-        setImageSourceMode={mockSetImageSourceMode}
-        handleImageUpload={mockHandleImageUpload}
+        handleImageSelect={mockHandleImageSelect}
         handleDifficultyChange={mockHandleDifficultyChange}
         handleStartGame={mockHandleStartGame}
         imageUrl={null}
@@ -23,22 +20,14 @@ describe('SetupSectionComponent', () => {
       />
     );
 
-    const uploadButton = screen.getByText('画像をアップロード');
-    const defaultButton = screen.getByText('デフォルト画像から選択');
-
-    fireEvent.click(defaultButton);
-    expect(mockSetImageSourceMode).toHaveBeenCalledWith('default');
-
-    fireEvent.click(uploadButton);
-    expect(mockSetImageSourceMode).toHaveBeenCalledWith('upload');
+    // デフォルト画像セレクタが表示されていること
+    expect(screen.getByText('パズルを開始')).toBeInTheDocument();
   });
 
   it('画像が選択されていない場合、開始ボタンが無効になる', () => {
     render(
       <SetupSectionComponent
-        imageSourceMode="upload"
-        setImageSourceMode={mockSetImageSourceMode}
-        handleImageUpload={mockHandleImageUpload}
+        handleImageSelect={mockHandleImageSelect}
         handleDifficultyChange={mockHandleDifficultyChange}
         handleStartGame={mockHandleStartGame}
         imageUrl={null}

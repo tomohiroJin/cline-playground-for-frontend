@@ -21,9 +21,7 @@ const PuzzlePage: React.FC = () => {
   const {
     toggleHintMode,
     gameStarted,
-    imageSourceMode,
-    setImageSourceMode,
-    handleImageUpload,
+    handleImageSelect,
     handleDifficultyChange,
     handleStartGame,
     handlePieceMove,
@@ -36,16 +34,14 @@ const PuzzlePage: React.FC = () => {
   // ゲームの状態が変わったときにクリア履歴を更新
   useEffect(() => {
     const history = getClearHistory();
-     
+
     setClearHistory(history);
   }, [gameStarted]); // gameStartedが変わったとき（ゲーム終了時など）に履歴を更新
   return (
     <PuzzlePageContainer>
       {!gameStarted ? (
         <SetupSectionComponent
-          imageSourceMode={imageSourceMode}
-          setImageSourceMode={setImageSourceMode}
-          handleImageUpload={handleImageUpload}
+          handleImageSelect={handleImageSelect}
           handleDifficultyChange={handleDifficultyChange}
           handleStartGame={handleStartGame}
           imageUrl={gameState.imageUrl}
@@ -66,7 +62,7 @@ const PuzzlePage: React.FC = () => {
       <Instructions>
         <InstructionsTitle>遊び方</InstructionsTitle>
         <InstructionsList>
-          <li>画像をアップロードするか、デフォルト画像から選択して、難易度を選択します。</li>
+          <li>デフォルト画像から選択して、難易度を選択します。</li>
           <li>「パズルを開始」ボタンをクリックすると、パズルが始まります。</li>
           <li>空白の隣にあるピースをクリックすると、そのピースが空白の位置に移動します。</li>
           <li>すべてのピースを正しい位置に戻すと、パズルが完成します。</li>

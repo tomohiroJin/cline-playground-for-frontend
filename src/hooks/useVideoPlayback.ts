@@ -65,8 +65,8 @@ export const useVideoPlayback = () => {
     const validFilenames = [
       'camel_in_the_desert',
       'chalk_drawing_kids',
-      'hokusai_kangchenjunga',
-      'midnight_times_square',
+      'snowy_mountain_ukiyoe',
+      'midnight_neon_street',
       'moonlight_dancer',
       'sunset_candy_shop',
     ];

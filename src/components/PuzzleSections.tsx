@@ -2,11 +2,8 @@ import React from 'react';
 import {
   SetupSection,
   GameSection,
-  ToggleButtonsContainer,
-  ToggleButton,
   StartButton,
 } from '../pages/PuzzlePage.styles';
-import ImageUploader from '../components/molecules/ImageUploader';
 import DefaultImageSelector from '../components/molecules/DefaultImageSelector';
 import DifficultySelector from '../components/molecules/DifficultySelector';
 import PuzzleBoard from '../components/organisms/PuzzleBoard';
@@ -16,19 +13,15 @@ import { ShareButton } from './molecules/ShareButton';
 /**
  * SetupSectionコンポーネントのプロパティの型定義
  *
- * @param imageSourceMode - 画像のソースモード（アップロードまたはデフォルト）
- * @param setImageSourceMode - 画像ソースモードを設定する関数
- * @param handleImageUpload - 画像をアップロードする関数
+ * @param handleImageSelect - 画像を選択する関数
  * @param handleDifficultyChange - 難易度を変更する関数
  * @param handleStartGame - ゲームを開始する関数
- * @param imageUrl - アップロードされた画像のURL
+ * @param imageUrl - 選択された画像のURL
  * @param originalImageSize - 元の画像のサイズ
  * @param division - パズルの分割数
  */
 export type SetupSectionProps = {
-  imageSourceMode: 'upload' | 'default';
-  setImageSourceMode: React.Dispatch<React.SetStateAction<'upload' | 'default'>>;
-  handleImageUpload: (url: string, width: number, height: number) => void;
+  handleImageSelect: (url: string, width: number, height: number) => void;
   handleDifficultyChange: (newDivision: number) => void;
   handleStartGame: () => void;
   imageUrl: string | null;
@@ -38,21 +31,9 @@ export type SetupSectionProps = {
 
 /**
  * SetupSectionコンポーネント
- *
- * @param imageSourceMode - 画像のソースモード（アップロードまたはデフォルト）
- * @param setImageSourceMode - 画像ソースモードを設定する関数
- * @param handleImageUpload - 画像をアップロードする関数
- * @param handleDifficultyChange - 難易度を変更する関数
- * @param handleStartGame - ゲームを開始する関数
- * @param imageUrl - アップロードされた画像のURL
- * @param originalImageSize - 元の画像のサイズ
- * @param division - パズルの分割数
- * @returns SetupSectionコンポーネント
  */
 export const SetupSectionComponent: React.FC<SetupSectionProps> = ({
-  imageSourceMode,
-  setImageSourceMode,
-  handleImageUpload,
+  handleImageSelect,
   handleDifficultyChange,
   handleStartGame,
   imageUrl,
@@ -60,25 +41,7 @@ export const SetupSectionComponent: React.FC<SetupSectionProps> = ({
   division,
 }) => (
   <SetupSection>
-    <ToggleButtonsContainer>
-      <ToggleButton
-        $isActive={imageSourceMode === 'upload'}
-        onClick={() => setImageSourceMode('upload')}
-      >
-        画像をアップロード
-      </ToggleButton>
-      <ToggleButton
-        $isActive={imageSourceMode === 'default'}
-        onClick={() => setImageSourceMode('default')}
-      >
-        デフォルト画像から選択
-      </ToggleButton>
-    </ToggleButtonsContainer>
-    {imageSourceMode === 'upload' ? (
-      <ImageUploader onImageUpload={handleImageUpload} maxSizeInMB={10} />
-    ) : (
-      <DefaultImageSelector onImageSelect={handleImageUpload} />
-    )}
+    <DefaultImageSelector onImageSelect={handleImageSelect} />
     <DifficultySelector value={division} onChange={handleDifficultyChange} disabled={!imageUrl} />
     <StartButton onClick={handleStartGame} disabled={!imageUrl || !originalImageSize}>
       パズルを開始
@@ -119,23 +82,6 @@ const completePuzzle = (
 
 /**
  * GameSection コンポーネントのプロパティの型定義
- *
- * @param imageUrl - アップロードされた画像のURL
- * @param originalImageSize - 元の画像のサイズ
- * @param pieces - パズルのピースの配列
- * @param division - パズルの分割数
- * @param elapsedTime - 経過時間
- * @param completed - ゲームの完了状態
- * @param hintModeEnabled - ヒントモードの有効状態
- * @param emptyPosition - 空のピースの位置
- * @param handlePieceMove - ピースを移動する関数
- * @param handleResetGame - ゲームをリセットする関数
- * @param toggleHintMode - ヒントモードを切り替える関数
- * @param handleEmptyPanelClick - 空のパネルをクリックしたときの処理
- * @param handleEndGame - ゲームを終了する関数
- * @param emptyPanelClicks - 空のパネルがクリックされた回数
- * @param setPieces - パズルのピースを設定する関数
- * @param setCompleted - ゲームの完了状態を設定する関数
  */
 export type GameSectionProps = {
   imageUrl: string | null;
@@ -158,24 +104,6 @@ export type GameSectionProps = {
 
 /**
  * GameSection コンポーネント
- *
- * @param imageUrl - アップロードされた画像のURL
- * @param originalImageSize - 元の画像のサイズ
- * @param pieces - パズルのピースの配列
- * @param division - パズルの分割数
- * @param elapsedTime - 経過時間
- * @param completed - ゲームの完了状態
- * @param hintModeEnabled - ヒントモードの有効状態
- * @param emptyPosition - 空のピースの位置
- * @param handlePieceMove - ピースを移動する関数
- * @param handleResetGame - ゲームをリセットする関数
- * @param toggleHintMode - ヒントモードを切り替える関数
- * @param handleEmptyPanelClick - 空のパネルをクリックしたときの処理
- * @param handleEndGame - ゲームを終了する関数
- * @param emptyPanelClicks - 空のパネルがクリックされた回数
- * @param setPieces - パズルのピースを設定する関数
- * @param setCompleted - ゲームの完了状態を設定する関数
- * @returns ゲームセクションコンポーネント
  */
 export const GameSectionComponent: React.FC<GameSectionProps> = ({
   imageUrl,

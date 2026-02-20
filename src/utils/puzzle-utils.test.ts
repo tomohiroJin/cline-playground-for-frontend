@@ -7,7 +7,6 @@ const {
   shufflePuzzlePieces,
   isPuzzleCompleted,
   formatElapsedTime,
-  checkFileSize: checkImageFileSize,
 } = puzzleUtils;
 
 // ヘルパー関数を追加
@@ -235,26 +234,6 @@ describe('puzzle-utils', () => {
       [3600, '60:00'],
     ])('経過時間が %i の場合は %s が表示されること', (seconds, expected) => {
       expect(formatElapsedTime(seconds)).toBe(expected);
-    });
-  });
-
-  describe('checkImageFileSize', () => {
-    it('ファイルサイズが制限内の場合はtrueを返すこと', () => {
-      const file = new File(['dummy content'], 'test.jpg', {
-        type: 'image/jpeg',
-      });
-      Object.defineProperty(file, 'size', { value: 5 * 1024 * 1024 }); // 5MB
-
-      expect(checkImageFileSize(file, 10)).toBe(true);
-    });
-
-    it('ファイルサイズが制限を超える場合はfalseを返すこと', () => {
-      const file = new File(['dummy content'], 'test.jpg', {
-        type: 'image/jpeg',
-      });
-      Object.defineProperty(file, 'size', { value: 15 * 1024 * 1024 }); // 15MB
-
-      expect(checkImageFileSize(file, 10)).toBe(false);
     });
   });
 

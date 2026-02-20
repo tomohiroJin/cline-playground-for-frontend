@@ -6,73 +6,73 @@
 
 ### 1-1. 画像アップロード機能の削除
 
-- [ ] **`ImageUploader` コンポーネント削除**
+- [x] **`ImageUploader` コンポーネント削除**
   - 対象: `src/components/molecules/ImageUploader.tsx`
   - 作業: ファイルを削除
   - 完了条件: ファイルが存在しないこと
   - 依存: なし
 
-- [ ] **`ImageUploader` スタイル削除**
+- [x] **`ImageUploader` スタイル削除**
   - 対象: `src/components/molecules/ImageUploader.styles.ts`
   - 作業: ファイルを削除
   - 完了条件: ファイルが存在しないこと
   - 依存: なし
 
-- [ ] **`ImageUploader` テスト削除**
+- [x] **`ImageUploader` テスト削除**
   - 対象: `src/components/molecules/ImageUploader.test.tsx`（存在する場合）
   - 作業: ファイルを削除
   - 完了条件: ファイルが存在しないこと
   - 依存: なし
 
-- [ ] **トグル UI の削除**
+- [x] **トグル UI の削除**
   - 対象: `src/components/PuzzleSections.tsx`
   - 作業: `ToggleButtonsContainer`、`ToggleButton`、`imageSourceMode` による条件分岐を削除。`DefaultImageSelector` を常時表示に変更
   - 完了条件: トグル UI がレンダリングされず、デフォルト画像選択が直接表示されること
   - 依存: なし
 
-- [ ] **`imageSourceMode` 状態の削除**
+- [x] **`imageSourceMode` 状態の削除**
   - 対象: `src/hooks/useGameState.ts`
   - 作業: `imageSourceMode` / `setImageSourceMode` 状態と、それを返す部分を削除
   - 完了条件: `useGameState` の返り値に `imageSourceMode` が含まれないこと
   - 依存: トグル UI 削除後
 
-- [ ] **`PuzzlePage` からアップロード関連 props 削除**
+- [x] **`PuzzlePage` からアップロード関連 props 削除**
   - 対象: `src/pages/PuzzlePage.tsx`
   - 作業: `SetupSectionComponent` に渡す `imageSourceMode` / `setImageSourceMode` props を削除
   - 完了条件: `PuzzlePage` にアップロード関連のコードが残っていないこと
   - 依存: `imageSourceMode` 状態削除後
 
-- [ ] **`SetupSectionProps` 型定義の更新**
+- [x] **`SetupSectionProps` 型定義の更新**
   - 対象: `src/components/PuzzleSections.tsx`
   - 作業: `SetupSectionProps` から `imageSourceMode` / `setImageSourceMode` を削除
   - 完了条件: 型定義にアップロード関連プロパティがないこと
   - 依存: トグル UI 削除後
 
-- [ ] **`checkFileSize` 関数の削除**
+- [x] **`checkFileSize` 関数の削除**
   - 対象: `src/utils/puzzle-utils.ts`
   - 作業: `checkFileSize` 関数を削除
   - 完了条件: 関数が存在せず、インポート先にもエラーがないこと
   - 依存: なし
 
-- [ ] **`extractImageName` の data URL 分岐削除**
+- [x] **`extractImageName` の data URL 分岐削除**
   - 対象: `src/utils/storage-utils.ts`
   - 作業: `imageUrl.startsWith('data:')` の分岐を削除
   - 完了条件: data URL に対して `'アップロード画像'` を返す分岐がないこと
   - 依存: なし
 
-- [ ] **`PuzzlePage.styles.ts` からトグルスタイル削除**
+- [x] **`PuzzlePage.styles.ts` からトグルスタイル削除**
   - 対象: `src/pages/PuzzlePage.styles.ts`
   - 作業: `ToggleButtonsContainer`、`ToggleButton` のスタイル定義を削除
   - 完了条件: トグル関連のスタイル定義がないこと
   - 依存: トグル UI 削除後
 
-- [ ] **遊び方テキストの更新**
+- [x] **遊び方テキストの更新**
   - 対象: `src/pages/PuzzlePage.tsx`
   - 作業: `<InstructionsList>` の最初の項目から「画像をアップロードするか、」を削除
   - 完了条件: 遊び方の説明にアップロードの記述がないこと
   - 依存: なし
 
-- [ ] **テストの実行と修正**
+- [x] **テストの実行と修正**
   - 対象: 全テストファイル
   - 作業: `npm test` を実行し、アップロード関連の参照でエラーが出るテストを修正
   - 完了条件: `npm test` がすべてパスすること
@@ -82,7 +82,7 @@
 
 ### 1-2. 著作権リスクのあるファイル名・alt テキストのリネーム
 
-- [ ] **画像ファイルのリネーム**
+- [x] **画像ファイルのリネーム**
   - 対象: `public/images/default/`
   - 作業:
     - `hokusai_kangchenjunga.webp` → `snowy_mountain_ukiyoe.webp`
@@ -90,7 +90,7 @@
   - 完了条件: 旧ファイル名が存在せず、新ファイル名でアクセスできること
   - 依存: 1-1 完了
 
-- [ ] **動画ファイルのリネーム**
+- [x] **動画ファイルのリネーム**
   - 対象: `public/videos/default/`
   - 作業:
     - `hokusai_kangchenjunga.mp4` → `snowy_mountain_ukiyoe.mp4`（存在する場合）
@@ -98,7 +98,7 @@
   - 完了条件: 旧ファイル名が存在せず、新ファイル名でアクセスできること
   - 依存: 1-1 完了
 
-- [ ] **`DefaultImageSelector.tsx` の参照更新**
+- [x] **`DefaultImageSelector.tsx` の参照更新**
   - 対象: `src/components/molecules/DefaultImageSelector.tsx`
   - 作業:
     - `hokusai_kangchenjunga.webp` → `snowy_mountain_ukiyoe.webp`
@@ -108,7 +108,7 @@
   - 完了条件: DEFAULT_IMAGES 配列に旧名が含まれないこと
   - 依存: 画像ファイルリネーム後
 
-- [ ] **`useVideoPlayback.ts` の参照更新**
+- [x] **`useVideoPlayback.ts` の参照更新**
   - 対象: `src/hooks/useVideoPlayback.ts`
   - 作業: `validFilenames` 配列内の
     - `'hokusai_kangchenjunga'` → `'snowy_mountain_ukiyoe'`
@@ -116,7 +116,7 @@
   - 完了条件: validFilenames に旧名が含まれないこと
   - 依存: 動画ファイルリネーム後
 
-- [ ] **テスト内の参照更新**
+- [x] **テスト内の参照更新**
   - 対象: `src/components/molecules/DefaultImageSelector.test.tsx`、その他関連テスト
   - 作業: テスト内の旧ファイル名・旧 alt テキストを新しいものに更新
   - 完了条件: `npm test` がすべてパスすること

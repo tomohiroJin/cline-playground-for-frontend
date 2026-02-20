@@ -218,14 +218,3 @@ export const formatElapsedTime = (seconds: number): string => {
   return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
 };
 
-/**
- * ファイルのサイズをチェックする
- *
- * @param file ファイル
- * @param maxSizeInMB 最大サイズ（MB）
- * @returns サイズが制限内ならtrue、そうでなければfalse
- */
-export const checkFileSize = (file: File, maxSizeInMB: number): boolean => {
-  const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
-  return file.size <= maxSizeInBytes;
-};
