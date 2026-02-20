@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 
 export const BoardContainer = styled.div`
   display: flex;
@@ -200,4 +200,43 @@ export const CloseButton = styled.button`
   &:hover {
     background-color: rgba(255, 255, 255, 0.9);
   }
+`;
+
+const confettiFall = keyframes`
+  0% {
+    opacity: 1;
+    transform: translateY(0) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(200px) rotate(720deg);
+  }
+`;
+
+export const ConfettiContainer = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 15;
+`;
+
+export const ConfettiPiece = styled.div<{
+  $left: number;
+  $delay: number;
+  $duration: number;
+  $color: string;
+  $size: number;
+}>`
+  position: absolute;
+  top: -10px;
+  left: ${props => props.$left}%;
+  width: ${props => props.$size}px;
+  height: ${props => props.$size}px;
+  background-color: ${props => props.$color};
+  animation: ${confettiFall} ${props => props.$duration}s ease-out ${props => props.$delay}s forwards;
+  border-radius: ${props => (props.$size > 6 ? '2px' : '50%')};
 `;

@@ -124,3 +124,18 @@ export const correctRateAtom = createAtom<number>(0);
  * ヒント使用フラグを管理するアトム
  */
 export const hintUsedAtom = createAtom<boolean>(false);
+
+/**
+ * 現在の BGM トラック ID を管理するアトム
+ */
+export const bgmTrackIdAtom = createAtom<string>('calm-water');
+
+/**
+ * BGM 音量（0〜100）を管理するアトム
+ */
+export const bgmVolumeAtom = createAtom<number>(70);
+
+/**
+ * BGM 再生中フラグを管理するアトム
+ */
+export const bgmPlayingAtom = createAtom<boolean>(false);

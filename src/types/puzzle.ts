@@ -32,6 +32,23 @@ export const RANK_THRESHOLDS = {
   ONE_STAR: 2000,
 };
 
+/** MIDI ノートシーケンス（number = MIDI ノート番号, null = 休符） */
+export type NoteSequence = (number | null)[];
+
+/** BGM トラック定義 */
+export interface BgmTrack {
+  id: string;
+  name: string;
+  bpm: number;
+  bars: number;
+  melody: NoteSequence;
+  bass: NoteSequence;
+  melodyWaveform: OscillatorType;
+  bassWaveform: OscillatorType;
+  melodyGain: number;
+  bassGain: number;
+}
+
 /** ベストスコア記録（画像×難易度ごと） */
 export interface PuzzleRecord {
   imageId: string;

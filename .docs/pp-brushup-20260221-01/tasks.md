@@ -266,49 +266,49 @@
 
 ### 2-1. BGM システム
 
-- [ ] **BGM アトム追加**
+- [x] **BGM アトム追加**
   - 対象: `src/store/atoms.ts`
   - 作業: `bgmTrackIdAtom`、`bgmVolumeAtom`、`bgmPlayingAtom` を追加
   - 完了条件: アトムが export されていること
   - 依存: Phase 1 完了
 
-- [ ] **BGM トラックデータ作成**
+- [x] **BGM トラックデータ作成**
   - 対象: `src/utils/bgm-data.ts`（新規作成）
   - 作業: 4 トラック（静かな水面、星空のワルツ、朝の散歩道、深い思索）のメロディ/ベース MIDI ノート配列を定義
   - 完了条件: 4 トラックのデータが型安全に定義されていること
   - 依存: なし
 
-- [ ] **`useBgm` フック実装**
+- [x] **`useBgm` フック実装**
   - 対象: `src/hooks/useBgm.ts`（新規作成）
   - 作業: Tone.js を使った BGM 再生管理。動的 import、AudioContext 初期化、再生/停止、トラック切り替え、音量制御、ループ再生
   - 完了条件: 4 トラックがループ再生でき、音量調整・トラック切り替えが動作すること
   - 依存: BGM トラックデータ後
 
-- [ ] **`BgmController` コンポーネント作成**
+- [x] **`BgmController` コンポーネント作成**
   - 対象: `src/components/molecules/BgmController.tsx`（新規作成）
   - 作業: トラック名表示、再生/停止、前/次トラック、音量スライダー
   - 完了条件: UI が仕様通りに表示・操作できること
   - 依存: `useBgm` フック後
 
-- [ ] **`BgmController` スタイル作成**
+- [x] **`BgmController` スタイル作成**
   - 対象: `src/components/molecules/BgmController.styles.ts`（新規作成）
   - 作業: glassmorphism デザインに合わせたスタイル
   - 完了条件: テーマに合ったデザインで表示されること
   - 依存: なし
 
-- [ ] **BGM の PuzzleBoard 統合**
+- [x] **BGM の PuzzleBoard 統合**
   - 対象: `src/components/organisms/PuzzleBoard.tsx`
   - 作業: StatusBar の下に `BgmController` を配置
   - 完了条件: ゲーム画面で BGM コントロールが表示されること
   - 依存: `BgmController` 完成後
 
-- [ ] **ゲーム開始時の AudioContext 初期化**
+- [x] **ゲーム開始時の AudioContext 初期化**
   - 対象: `src/hooks/useGameState.ts`
   - 作業: `handleStartGame` で `Tone.start()` を呼び出し
   - 完了条件: ゲーム開始後に BGM 再生が可能になること
   - 依存: `useBgm` フック後
 
-- [ ] **音量設定の localStorage 保存**
+- [x] **音量設定の localStorage 保存**
   - 対象: `src/hooks/useBgm.ts`
   - 作業: 音量変更時に `puzzle_bgm_volume` キーで保存、初期化時に読み込み
   - 完了条件: ページリロード後も音量設定が維持されること
@@ -318,31 +318,31 @@
 
 ### 2-2. SE＆アニメーション
 
-- [ ] **`useSePlayer` フック実装**
+- [x] **`useSePlayer` フック実装**
   - 対象: `src/hooks/useSePlayer.ts`（新規作成）
   - 作業: Tone.js Synth を使った 3 種 SE（スライド: 600Hz/0.05s、正解位置: 880Hz/0.12s、完成: 523Hz/0.3s）
   - 完了条件: 3 種の SE が個別に再生できること
   - 依存: 2-1 完了（AudioContext 共有）
 
-- [ ] **ピース移動時の SE 再生**
+- [x] **ピース移動時の SE 再生**
   - 対象: `src/components/organisms/PuzzleBoard.tsx`
   - 作業: `handleSlidePiece` 内でスライド SE を再生。正解位置に移動した場合は正解位置 SE も再生
   - 完了条件: スライド時に音が鳴り、正解位置移動時に追加の音が鳴ること
   - 依存: `useSePlayer` 後
 
-- [ ] **完成時の SE 再生**
+- [x] **完成時の SE 再生**
   - 対象: `src/components/organisms/PuzzleBoard.tsx`
   - 作業: `completed` が `true` になったタイミングで完成 SE を再生
   - 完了条件: パズル完成時に SE が鳴ること
   - 依存: `useSePlayer` 後
 
-- [ ] **正解位置の緑ボーダーフラッシュ**
+- [x] **正解位置の緑ボーダーフラッシュ**
   - 対象: `src/components/molecules/PuzzlePiece.tsx`、`PuzzlePiece.styles.ts`
   - 作業: ピースが正解位置に移動した瞬間に 0.5s の緑ボーダーフラッシュアニメーション
   - 完了条件: 正解位置に移動したピースに緑のフラッシュが表示されること
   - 依存: なし
 
-- [ ] **完成時パーティクルアニメーション**
+- [x] **完成時パーティクルアニメーション**
   - 対象: `src/components/organisms/PuzzleBoard.styles.ts`
   - 作業: CSS アニメーションによる紙吹雪/パーティクル効果。ボーダーの段階的溶解（外周→中心）
   - 完了条件: 完成時に視覚的なお祝いアニメーションが表示されること
@@ -352,19 +352,19 @@
 
 ### 2-3. スワイプ操作
 
-- [ ] **`useSwipe` フック実装**
+- [x] **`useSwipe` フック実装**
   - 対象: `src/hooks/useSwipe.ts`（新規作成）
   - 作業: タッチイベント（touchstart/touchmove/touchend）でスワイプ方向を検出。30px 閾値
   - 完了条件: 4 方向のスワイプが検出できること
   - 依存: Phase 1 完了
 
-- [ ] **PuzzleBoard へのスワイプ統合**
+- [x] **PuzzleBoard へのスワイプ統合**
   - 対象: `src/components/organisms/PuzzleBoard.tsx`
   - 作業: `Board` 要素に `useSwipe` を適用。スワイプ方向から移動すべきピースを特定し `onPieceMove` を呼び出し
   - 完了条件: スワイプでピースが正しい方向に移動すること
   - 依存: `useSwipe` フック後
 
-- [ ] **スワイプとクリックの競合防止**
+- [x] **スワイプとクリックの競合防止**
   - 対象: `src/hooks/useSwipe.ts`
   - 作業: 30px 未満の移動はスワイプとして処理しない（クリックイベントに任せる）
   - 完了条件: 短いタップがクリックとして動作し、長いスワイプがスワイプとして動作すること
@@ -374,19 +374,19 @@
 
 ### 2-4. キーボード操作
 
-- [ ] **`useKeyboard` フック実装**
+- [x] **`useKeyboard` フック実装**
   - 対象: `src/hooks/useKeyboard.ts`（新規作成）
   - 作業: `keydown` イベントで Arrow/WASD/H/R/M を検出。ゲーム中のみアクティブ
   - 完了条件: 全キーバインドが正しく動作すること
   - 依存: Phase 1 完了
 
-- [ ] **PuzzleBoard へのキーボード統合**
+- [x] **PuzzleBoard へのキーボード統合**
   - 対象: `src/components/organisms/PuzzleBoard.tsx`
   - 作業: `useKeyboard` を統合し、方向キーでピース移動、H でヒント、R でリセット、M で BGM トグル
   - 完了条件: キーボードでゲーム操作ができること
   - 依存: `useKeyboard` フック後、2-1 BGM 後
 
-- [ ] **Phase 2 統合テスト**
+- [x] **Phase 2 統合テスト**
   - 対象: 全ファイル
   - 作業: BGM・SE・スワイプ・キーボードの統合テスト。モバイル端末（iOS Safari、Android Chrome）での動作確認
   - 完了条件: すべての機能が正常に動作すること

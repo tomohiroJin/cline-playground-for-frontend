@@ -93,6 +93,12 @@ export const useGameState = () => {
     setIsBestScore(false);
     initializePuzzle();
     setGameStarted(true);
+    // Pre-initialize AudioContext on user gesture
+    import('tone')
+      .then(Tone => Tone.start())
+      .catch(() => {
+        // Audio not available, continue without sound
+      });
   };
 
   /**
