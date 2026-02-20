@@ -96,6 +96,127 @@ export function createRisingParticles(
 }
 
 /**
+ * 螺旋状パーティクルを生成する（ステージクリア演出用）
+ *
+ * @param count - パーティクル数
+ * @param x - 発生位置 X
+ * @param y - 発生位置 Y
+ * @param colors - 色配列
+ * @param speed - 初速（px/秒）
+ * @param decay - ライフ減衰率
+ * @returns パーティクル配列
+ */
+export function createSpiralParticles(
+  count: number,
+  x: number,
+  y: number,
+  colors: string[],
+  speed: number,
+  decay: number
+): Particle[] {
+  const particles: Particle[] = [];
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 * i) / count;
+    const radius = randomRange(0, 10);
+    const s = speed + randomRange(-20, 20);
+    particles.push({
+      x: x + Math.cos(angle) * radius,
+      y: y + Math.sin(angle) * radius,
+      vx: Math.cos(angle) * s,
+      vy: Math.sin(angle) * s - randomRange(30, 80),
+      size: randomRange(2, 5),
+      color: colors[Math.floor(Math.random() * colors.length)],
+      alpha: 1.0,
+      life: 1.0,
+      decay,
+    });
+  }
+  return particles;
+}
+
+/**
+ * パルス波パーティクルを生成する（ボス攻撃エフェクト用）
+ *
+ * @param count - パーティクル数
+ * @param x - 発生位置 X
+ * @param y - 発生位置 Y
+ * @param colors - 色配列
+ * @param speed - 均一速度（px/秒）
+ * @param decay - ライフ減衰率
+ * @returns パーティクル配列
+ */
+export function createPulseParticles(
+  count: number,
+  x: number,
+  y: number,
+  colors: string[],
+  speed: number,
+  decay: number
+): Particle[] {
+  const particles: Particle[] = [];
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 * i) / count;
+    particles.push({
+      x,
+      y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      size: randomRange(3, 5),
+      color: colors[Math.floor(Math.random() * colors.length)],
+      alpha: 1.0,
+      life: 1.0,
+      decay,
+    });
+  }
+  return particles;
+}
+
+/**
+ * 軌跡パーティクルを生成する（遠距離攻撃エフェクト用）
+ *
+ * @param count - パーティクル数
+ * @param x - 発生位置 X
+ * @param y - 発生位置 Y
+ * @param dirX - 軌跡方向 X（-1〜1）
+ * @param dirY - 軌跡方向 Y（-1〜1）
+ * @param colors - 色配列
+ * @param speed - 速度（px/秒）
+ * @param decay - ライフ減衰率
+ * @returns パーティクル配列
+ */
+export function createTrailParticles(
+  count: number,
+  x: number,
+  y: number,
+  dirX: number,
+  dirY: number,
+  colors: string[],
+  speed: number,
+  decay: number
+): Particle[] {
+  const particles: Particle[] = [];
+  for (let i = 0; i < count; i++) {
+    const spread = randomRange(-0.3, 0.3);
+    const dx = dirX + spread;
+    const dy = dirY + spread;
+    const len = Math.sqrt(dx * dx + dy * dy) || 1;
+    const s = speed + randomRange(-10, 10);
+    particles.push({
+      x: x + randomRange(-4, 4),
+      y: y + randomRange(-4, 4),
+      vx: (dx / len) * s,
+      vy: (dy / len) * s,
+      size: randomRange(1.5, 3),
+      color: colors[Math.floor(Math.random() * colors.length)],
+      alpha: 1.0,
+      life: 1.0,
+      decay,
+    });
+  }
+  return particles;
+}
+
+/**
  * パーティクルを更新する
  *
  * @param particles - パーティクル配列

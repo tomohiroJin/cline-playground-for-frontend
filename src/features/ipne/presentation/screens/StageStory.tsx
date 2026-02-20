@@ -8,6 +8,7 @@ import {
   SkipButton,
 } from '../../../../pages/IpnePage.styles';
 import { StoryScene } from '../../types';
+import { getStoryImage } from '../../storyImages';
 
 const StoryContainer = styled.div`
   width: 100%;
@@ -17,6 +18,22 @@ const StoryContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
+`;
+
+const StoryImage = styled.img`
+  max-width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  opacity: 0;
+  animation: storyImageFadeIn 0.8s ease-in forwards;
+
+  @keyframes storyImageFadeIn {
+    to {
+      opacity: 1;
+    }
+  }
 `;
 
 const StoryTitle = styled.h2`
@@ -71,6 +88,8 @@ export const StageStoryScreen: React.FC<{
   const [visibleLines, setVisibleLines] = useState(0);
   const [allShown, setAllShown] = useState(false);
 
+  const imageEntry = story.imageKey ? getStoryImage(story.imageKey) : undefined;
+
   useEffect(() => {
     if (visibleLines < story.lines.length) {
       const timer = setTimeout(() => {
@@ -85,6 +104,14 @@ export const StageStoryScreen: React.FC<{
   return (
     <Overlay>
       <StoryContainer>
+        {imageEntry && (
+          <StoryImage
+            src={imageEntry.src}
+            alt={imageEntry.alt}
+            width={imageEntry.width}
+            height={imageEntry.height}
+          />
+        )}
         <StoryTitle>{story.title}</StoryTitle>
         {story.lines.map((line, i) => (
           <StoryLine key={i} $delay={i * 0.5} $active={i < visibleLines}>

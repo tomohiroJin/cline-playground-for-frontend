@@ -137,9 +137,50 @@ import {
   getTrapSpriteSheet,
   getWallSprite,
   ATTACK_SLASH_SPRITE_SHEET,
+  WARRIOR_ATTACK_SPRITE_SHEETS,
+  THIEF_ATTACK_SPRITE_SHEETS,
+  WARRIOR_DAMAGE_SPRITES,
+  THIEF_DAMAGE_SPRITES,
+  WARRIOR_IDLE_SPRITE_SHEETS,
+  THIEF_IDLE_SPRITE_SHEETS,
+  PATROL_ATTACK_FRAME,
+  CHARGE_RUSH_FRAME,
+  RANGED_CAST_FRAME,
+  SPECIMEN_MUTATE_FRAME,
+  BOSS_ATTACK_FRAME,
+  BOSS_DAMAGE_FRAME,
+  MINI_BOSS_ATTACK_FRAME,
+  MINI_BOSS_DAMAGE_FRAME,
+  MEGA_BOSS_ATTACK_FRAME,
+  MEGA_BOSS_DAMAGE_FRAME,
+  ENEMY_MELEE_SLASH_SPRITE_SHEET,
+  ENEMY_RANGED_SHOT_SPRITE_SHEET,
 } from '../sprites';
 import warriorClassImg from '../../../../assets/images/ipne_class_warrior.webp';
 import thiefClassImg from '../../../../assets/images/ipne_class_thief.webp';
+
+/** 敵の状態に応じた特殊フレームを返す（Phase 3） */
+function getEnemyStateFrame(enemyType: string, enemyState: string): SpriteDefinition | null {
+  if (enemyState === EnemyState.ATTACK) {
+    switch (enemyType) {
+      case EnemyType.PATROL: return PATROL_ATTACK_FRAME;
+      case EnemyType.CHARGE: return CHARGE_RUSH_FRAME;
+      case EnemyType.RANGED: return RANGED_CAST_FRAME;
+      case EnemyType.SPECIMEN: return SPECIMEN_MUTATE_FRAME;
+      case EnemyType.BOSS: return BOSS_ATTACK_FRAME;
+      case EnemyType.MINI_BOSS: return MINI_BOSS_ATTACK_FRAME;
+      case EnemyType.MEGA_BOSS: return MEGA_BOSS_ATTACK_FRAME;
+    }
+  }
+  if (enemyState === EnemyState.KNOCKBACK) {
+    switch (enemyType) {
+      case EnemyType.BOSS: return BOSS_DAMAGE_FRAME;
+      case EnemyType.MINI_BOSS: return MINI_BOSS_DAMAGE_FRAME;
+      case EnemyType.MEGA_BOSS: return MEGA_BOSS_DAMAGE_FRAME;
+    }
+  }
+  return null;
+}
 
 /** 外部からキューイングされるエフェクトイベント */
 export interface EffectEvent {
@@ -392,6 +433,10 @@ export const GameScreen: React.FC<{
   // 死亡エフェクト
   const deathEffectRef = useRef(new DeathEffect());
 
+  // アニメーション状態管理（Phase 3）
+  const playerAttackUntilRef = useRef(0);  // 攻撃アニメーション終了時刻
+  const playerDamageUntilRef = useRef(0);  // 被弾フレーム終了時刻
+
   // スプライトレンダラー（T-02.1）
   const spriteRenderer = useMemo(() => new SpriteRenderer(), []);
 
@@ -461,6 +506,13 @@ export const GameScreen: React.FC<{
     // 背景をクリア
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 画面シェイクオフセット適用（Phase 4）
+    const shakeOffset = effectManagerRef.current.getShakeOffset();
+    if (shakeOffset) {
+      ctx.save();
+      ctx.translate(shakeOffset.x, shakeOffset.y);
+    }
 
     // スタート位置を探す（パス描画用）
     let startPos: Position | null = null;
@@ -639,7 +691,13 @@ export const GameScreen: React.FC<{
       const enemyDrawX = enemyScreen.x - enemyDrawSize / 2;
       const enemyDrawY = enemyScreen.y - enemyDrawSize / 2;
 
-      spriteRenderer.drawAnimatedSprite(ctx, enemySheet, now, enemyDrawX, enemyDrawY, spriteScale);
+      // 敵状態別フレーム選択（Phase 3）
+      const enemyStateFrame = getEnemyStateFrame(enemy.type, enemy.state);
+      if (enemyStateFrame) {
+        spriteRenderer.drawSprite(ctx, enemyStateFrame, enemyDrawX, enemyDrawY, spriteScale);
+      } else {
+        spriteRenderer.drawAnimatedSprite(ctx, enemySheet, now, enemyDrawX, enemyDrawY, spriteScale);
+      }
     }
 
     // 攻撃エフェクト描画（T-02.8: 斬撃アニメーション）
@@ -661,6 +719,7 @@ export const GameScreen: React.FC<{
       const key = `${attackEffect.position.x}-${attackEffect.position.y}-${attackEffect.until}`;
       if (lastAttackEffectKeyRef.current !== key) {
         lastAttackEffectKeyRef.current = key;
+        playerAttackUntilRef.current = attackEffect.until;
         const screenPos = toScreenPosition(attackEffect.position);
         em.addEffect(EffectType.ATTACK_HIT, screenPos.x, screenPos.y, now);
       }
@@ -669,8 +728,11 @@ export const GameScreen: React.FC<{
     // ダメージエフェクトのトリガー
     if (lastDamageAt > lastDamageAtRef.current) {
       lastDamageAtRef.current = lastDamageAt;
+      playerDamageUntilRef.current = now + 200; // 被弾フレーム200ms表示
       const screenPos = toScreenPosition(player);
       em.addEffect(EffectType.DAMAGE, screenPos.x, screenPos.y, now);
+      // 画面シェイク（Phase 4）
+      em.addEffect(EffectType.SCREEN_SHAKE, 0, 0, now, { damage: 4 });
     }
 
     // 外部エフェクトキューの処理
@@ -715,26 +777,63 @@ export const GameScreen: React.FC<{
       // 死亡エフェクト描画（赤変色オーバーレイ + パーティクル分解）
       deathEff.draw(ctx, now, playerScreen.x, playerScreen.y, playerDrawSize);
     } else {
-      // 通常時の描画
+      // 通常時の描画（Phase 3: 優先度 攻撃 > 被弾 > 移動 > アイドルブリーズ）
       const isBlinkOff = player.isInvincible && Math.floor(now / 100) % 2 === 1;
 
       if (!isBlinkOff) {
-        const playerSheet = getPlayerSpriteSheet(
-          player.playerClass as 'warrior' | 'thief',
-          player.direction as 'down' | 'up' | 'left' | 'right'
-        );
+        const pClass = player.playerClass as 'warrior' | 'thief';
+        const pDir = player.direction as 'down' | 'up' | 'left' | 'right';
         const playerDrawX = playerScreen.x - playerDrawSize / 2;
         const playerDrawY = playerScreen.y - playerDrawSize / 2;
 
-        // 移動中は歩行アニメーション、停止中は待機フレーム
+        const isAttacking = now < playerAttackUntilRef.current;
+        const isDamaged = now < playerDamageUntilRef.current;
         const isMoving = movementStateRef.current.activeDirection !== null;
-        if (isMoving) {
+
+        if (isAttacking) {
+          // 攻撃アニメーション
+          const attackSheets = pClass === 'warrior' ? WARRIOR_ATTACK_SPRITE_SHEETS : THIEF_ATTACK_SPRITE_SHEETS;
+          const attackSheet = attackSheets[pDir];
+          const attackFrameIndex = Math.floor(now / attackSheet.frameDuration) % attackSheet.sprites.length;
+          spriteRenderer.drawSprite(ctx, attackSheet.sprites[attackFrameIndex], playerDrawX, playerDrawY, spriteScale);
+        } else if (isDamaged) {
+          // 被弾フレーム（200ms表示）
+          const damageSprites = pClass === 'warrior' ? WARRIOR_DAMAGE_SPRITES : THIEF_DAMAGE_SPRITES;
+          spriteRenderer.drawSprite(ctx, damageSprites[pDir], playerDrawX, playerDrawY, spriteScale);
+        } else if (isMoving) {
+          // 歩行アニメーション
+          const playerSheet = getPlayerSpriteSheet(pClass, pDir);
           const walkFrameIndex = Math.floor(now / playerSheet.frameDuration) % 2;
           spriteRenderer.drawSprite(ctx, playerSheet.sprites[1 + walkFrameIndex], playerDrawX, playerDrawY, spriteScale);
         } else {
-          spriteRenderer.drawSprite(ctx, playerSheet.sprites[0], playerDrawX, playerDrawY, spriteScale);
+          // アイドルブリーズアニメーション
+          const idleSheets = pClass === 'warrior' ? WARRIOR_IDLE_SPRITE_SHEETS : THIEF_IDLE_SPRITE_SHEETS;
+          const idleSheet = idleSheets[pDir];
+          const idleFrameIndex = Math.floor(now / idleSheet.frameDuration) % idleSheet.sprites.length;
+          spriteRenderer.drawSprite(ctx, idleSheet.sprites[idleFrameIndex], playerDrawX, playerDrawY, spriteScale);
         }
       }
+    }
+
+    // 低HP警告描画（Phase 4: HP 25%以下でビネットパルス）
+    if (player.hp > 0 && player.hp / player.maxHp <= 0.25) {
+      const pulseT = (now % 1500) / 1500;
+      const pulseAlpha = 0.15 + 0.1 * Math.sin(pulseT * Math.PI * 2);
+      const gradient = ctx.createRadialGradient(
+        canvas.width / 2, canvas.height / 2, canvas.width * 0.3,
+        canvas.width / 2, canvas.height / 2, canvas.width * 0.7
+      );
+      gradient.addColorStop(0, 'rgba(220, 38, 38, 0)');
+      gradient.addColorStop(1, `rgba(220, 38, 38, ${pulseAlpha})`);
+      ctx.save();
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
+    }
+
+    // 画面シェイクオフセット復元（HUDはシェイクの影響を受けない）
+    if (shakeOffset) {
+      ctx.restore();
     }
 
     // 自動マップ描画（全体表示モードでは非表示）

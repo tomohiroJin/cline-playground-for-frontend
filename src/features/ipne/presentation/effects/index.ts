@@ -12,6 +12,9 @@ export type { EffectTypeValue, GameEffect, Particle, EffectConfig } from './effe
 export {
   createRadialParticles,
   createRisingParticles,
+  createSpiralParticles,
+  createPulseParticles,
+  createTrailParticles,
   updateParticles,
   drawParticles,
 } from './particleSystem';

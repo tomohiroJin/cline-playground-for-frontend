@@ -304,6 +304,16 @@ export interface StageCarryOver {
   stageRewards: StageRewardHistory[];
 }
 
+/** マルチシーン用のスライド */
+export interface StorySceneSlide {
+  /** スライド固有のタイトル（省略時はメインタイトルを使用） */
+  title?: string;
+  /** テキスト行 */
+  lines: string[];
+  /** 画像キー（画像レジストリ参照） */
+  imageKey?: string;
+}
+
 /** ストーリーシーン */
 export interface StoryScene {
   id: string;
@@ -311,6 +321,8 @@ export interface StoryScene {
   lines: string[];
   /** 将来の画像挿入用。未設定時は undefined */
   imageKey?: string;
+  /** マルチシーン対応。設定時は slides を優先して表示する */
+  slides?: StorySceneSlide[];
 }
 
 // ===== 自動マッピング関連の型定義 =====
@@ -449,6 +461,8 @@ export type RatingValue = (typeof Rating)[keyof typeof Rating];
 export interface EpilogueText {
   title: string;
   text: string;
+  /** 複数段落の詳細テキスト。設定時は段階的にフェードイン表示する */
+  paragraphs?: string[];
 }
 
 // ===== MVP4 タイマー関連の型定義 =====
@@ -614,3 +628,15 @@ export interface SoundConfig {
 
 /** メロディノート（周波数, 長さ） */
 export type MelodyNote = readonly [number, number];
+
+/** 画像エントリ */
+export interface StoryImageEntry {
+  /** 画像ソース (URL or data URI) */
+  src: string;
+  /** alt テキスト */
+  alt: string;
+  /** 表示幅 (px) */
+  width: number;
+  /** 表示高さ (px) */
+  height: number;
+}

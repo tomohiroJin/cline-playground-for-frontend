@@ -1,4 +1,5 @@
 import { PROLOGUE_STORY, getStageStory, getAllStoryScenes, getEndingEpilogue, STAGE_REWARD_CHOICES } from '../story';
+import { StageNumber } from '../types';
 
 describe('story', () => {
   describe('PROLOGUE_STORY', () => {
@@ -48,6 +49,50 @@ describe('story', () => {
         expect(epilogue).toBeDefined();
         expect(epilogue).toHaveProperty('title');
         expect(epilogue).toHaveProperty('text');
+      }
+    });
+
+    test('全5種類のエピローグにparagraphsが存在すること', () => {
+      const ratings = ['s', 'a', 'b', 'c', 'd'] as const;
+      for (const rating of ratings) {
+        const epilogue = getEndingEpilogue(rating);
+        expect(epilogue.paragraphs).toBeDefined();
+        expect(Array.isArray(epilogue.paragraphs)).toBe(true);
+        expect(epilogue.paragraphs!.length).toBeGreaterThanOrEqual(3);
+      }
+    });
+  });
+
+  describe('PROLOGUE_STORY slides', () => {
+    test('slidesプロパティに3シーン分のデータがあること', () => {
+      expect(PROLOGUE_STORY.slides).toBeDefined();
+      expect(PROLOGUE_STORY.slides).toHaveLength(3);
+    });
+
+    test('各スライドにtitleとlinesが存在すること', () => {
+      for (const slide of PROLOGUE_STORY.slides!) {
+        expect(slide).toHaveProperty('title');
+        expect(slide).toHaveProperty('lines');
+        expect(slide.lines.length).toBeGreaterThan(0);
+      }
+    });
+  });
+
+  describe('getStageStory imageKey', () => {
+    test('各ステージストーリーにimageKeyが設定されていること', () => {
+      const stages: StageNumber[] = [1, 2, 3, 4, 5];
+      for (const stage of stages) {
+        const story = getStageStory(stage);
+        expect(story.imageKey).toBeDefined();
+        expect(typeof story.imageKey).toBe('string');
+      }
+    });
+
+    test('各ステージストーリーが6行以上のテキストを持つこと', () => {
+      const stages: StageNumber[] = [1, 2, 3, 4, 5];
+      for (const stage of stages) {
+        const story = getStageStory(stage);
+        expect(story.lines.length).toBeGreaterThanOrEqual(6);
       }
     });
   });

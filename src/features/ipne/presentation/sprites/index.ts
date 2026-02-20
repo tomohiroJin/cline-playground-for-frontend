@@ -19,7 +19,17 @@ export { SpriteRenderer } from './spriteRenderer';
 export { FLOOR_SPRITE, WALL_SPRITE, GOAL_SPRITE_SHEET, START_SPRITE, getStageFloorSprite, getStageWallSprite } from './tileSprites';
 
 // プレイヤースプライト
-export { WARRIOR_SPRITES, THIEF_SPRITES, getPlayerSpriteSheet } from './playerSprites';
+export {
+  WARRIOR_SPRITES,
+  THIEF_SPRITES,
+  getPlayerSpriteSheet,
+  WARRIOR_ATTACK_SPRITE_SHEETS,
+  THIEF_ATTACK_SPRITE_SHEETS,
+  WARRIOR_DAMAGE_SPRITES,
+  THIEF_DAMAGE_SPRITES,
+  WARRIOR_IDLE_SPRITE_SHEETS,
+  THIEF_IDLE_SPRITE_SHEETS,
+} from './playerSprites';
 export type { Direction } from './playerSprites';
 
 // 敵スプライト
@@ -29,7 +39,19 @@ export {
   RANGED_SPRITE_SHEET,
   SPECIMEN_SPRITE_SHEET,
   BOSS_SPRITE_SHEET,
+  MINI_BOSS_SPRITE_SHEET,
+  MEGA_BOSS_SPRITE_SHEET,
   getEnemySpriteSheet,
+  PATROL_ATTACK_FRAME,
+  CHARGE_RUSH_FRAME,
+  RANGED_CAST_FRAME,
+  SPECIMEN_MUTATE_FRAME,
+  BOSS_ATTACK_FRAME,
+  BOSS_DAMAGE_FRAME,
+  MINI_BOSS_ATTACK_FRAME,
+  MINI_BOSS_DAMAGE_FRAME,
+  MEGA_BOSS_ATTACK_FRAME,
+  MEGA_BOSS_DAMAGE_FRAME,
 } from './enemySprites';
 
 // アイテムスプライト
@@ -62,4 +84,8 @@ export {
 } from './wallSprites';
 
 // エフェクトスプライト
-export { ATTACK_SLASH_SPRITE_SHEET } from './effectSprites';
+export {
+  ATTACK_SLASH_SPRITE_SHEET,
+  ENEMY_MELEE_SLASH_SPRITE_SHEET,
+  ENEMY_RANGED_SHOT_SPRITE_SHEET,
+} from './effectSprites';

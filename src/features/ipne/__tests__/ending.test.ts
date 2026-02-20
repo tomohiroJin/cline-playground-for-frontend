@@ -142,6 +142,16 @@ describe('ending', () => {
         expect(typeof result.text).toBe('string');
       }
     });
+
+    test('各評価でparagraphsが存在すること', () => {
+      const ratings = [Rating.S, Rating.A, Rating.B, Rating.C, Rating.D];
+      for (const rating of ratings) {
+        const result = getEpilogueText(rating);
+        expect(result.paragraphs).toBeDefined();
+        expect(Array.isArray(result.paragraphs)).toBe(true);
+        expect(result.paragraphs!.length).toBeGreaterThanOrEqual(3);
+      }
+    });
   });
 
   describe('getGameOverText', () => {
@@ -155,6 +165,13 @@ describe('ending', () => {
       const result = getGameOverText();
       expect(result.title).toBeTruthy();
       expect(result.text).toBeTruthy();
+    });
+
+    test('paragraphsが存在すること', () => {
+      const result = getGameOverText();
+      expect(result.paragraphs).toBeDefined();
+      expect(Array.isArray(result.paragraphs)).toBe(true);
+      expect(result.paragraphs!.length).toBeGreaterThanOrEqual(3);
     });
   });
 

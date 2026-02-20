@@ -103,6 +103,63 @@ describe('EffectManager', () => {
     });
   });
 
+  describe('新エフェクトタイプ（Phase 4）', () => {
+    it('ENEMY_ATTACK（melee）のパーティクルが生成される', () => {
+      manager.addEffect(EffectType.ENEMY_ATTACK, 100, 200, 1000, { variant: 'melee' });
+      expect(manager.getEffectCount()).toBe(1);
+      expect(manager.getTotalParticleCount()).toBe(8);
+    });
+
+    it('ENEMY_ATTACK（ranged）のパーティクルが生成される', () => {
+      manager.addEffect(EffectType.ENEMY_ATTACK, 100, 200, 1000, { variant: 'ranged' });
+      expect(manager.getEffectCount()).toBe(1);
+      expect(manager.getTotalParticleCount()).toBe(8);
+    });
+
+    it('ENEMY_ATTACK（boss）のパーティクルが生成される', () => {
+      manager.addEffect(EffectType.ENEMY_ATTACK, 100, 200, 1000, { variant: 'boss' });
+      expect(manager.getEffectCount()).toBe(1);
+      expect(manager.getTotalParticleCount()).toBe(16);
+    });
+
+    it('SCREEN_SHAKEが追加される（パーティクルなし）', () => {
+      manager.addEffect(EffectType.SCREEN_SHAKE, 0, 0, 1000, { damage: 4 });
+      expect(manager.getEffectCount()).toBe(1);
+      expect(manager.getTotalParticleCount()).toBe(0);
+    });
+
+    it('STAGE_CLEARの螺旋パーティクルが生成される', () => {
+      manager.addEffect(EffectType.STAGE_CLEAR, 100, 200, 1000, { stageNumber: 1 });
+      expect(manager.getEffectCount()).toBe(1);
+      expect(manager.getTotalParticleCount()).toBe(32);
+    });
+  });
+
+  describe('getShakeOffset', () => {
+    it('シェイク中はオフセットを返す', () => {
+      manager.addEffect(EffectType.SCREEN_SHAKE, 0, 0, 1000, { damage: 4 });
+      const offset = manager.getShakeOffset();
+      expect(offset).not.toBeNull();
+      if (offset) {
+        expect(typeof offset.x).toBe('number');
+        expect(typeof offset.y).toBe('number');
+      }
+    });
+
+    it('シェイクなしではnullを返す', () => {
+      const offset = manager.getShakeOffset();
+      expect(offset).toBeNull();
+    });
+
+    it('シェイク終了後はnullを返す', () => {
+      manager.addEffect(EffectType.SCREEN_SHAKE, 0, 0, 1000, { damage: 2 });
+      // 200ms超で持続時間終了
+      manager.update(0.3, 1300);
+      const offset = manager.getShakeOffset();
+      expect(offset).toBeNull();
+    });
+  });
+
   describe('パーティクル上限', () => {
     it('パーティクル数が上限を超えた場合、古いエフェクトから削除される', () => {
       // 各ボス撃破エフェクトは 24 パーティクル
