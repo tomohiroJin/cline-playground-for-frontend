@@ -1,6 +1,10 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { useAtom } from 'jotai';
 import { usePuzzle } from './usePuzzle';
 import { useHintMode } from './useHintMode';
+import { hintUsedAtom } from '../store/atoms';
+import { calculateScore } from '../utils/score-utils';
+import { PuzzleScore } from '../types/puzzle';
 
 export const useGameState = () => {
   const {
@@ -16,19 +20,41 @@ export const useGameState = () => {
     elapsedTime,
     completed,
     setCompleted,
+    moveCount,
+    shuffleMoves,
+    correctRate,
     initializePuzzle,
     movePiece,
     resetPuzzle,
   } = usePuzzle();
 
   const { hintModeEnabled, toggleHintMode } = useHintMode();
+  const [hintUsed] = useAtom(hintUsedAtom);
 
   const [gameStarted, setGameStarted] = useState(false);
   const [emptyPanelClicks, setEmptyPanelClicks] = useState(0);
+  const [score, setScore] = useState<PuzzleScore | null>(null);
+
+  // completedの変化を追跡するref
+  const prevCompletedRef = useRef(false);
+
+  // パズル完成時にスコアを計算
+  useEffect(() => {
+    if (completed && !prevCompletedRef.current) {
+      const puzzleScore = calculateScore(
+        moveCount,
+        shuffleMoves,
+        elapsedTime,
+        hintUsed,
+        division
+      );
+      setScore(puzzleScore);
+    }
+    prevCompletedRef.current = completed;
+  }, [completed, moveCount, shuffleMoves, elapsedTime, hintUsed, division]);
 
   /**
    * 空のパネルがクリックされた際の処理を行います。
-   * ゲームが完了していない場合、クリック回数を1増やします。
    */
   const handleEmptyPanelClick = useCallback(() => {
     if (!completed) {
@@ -38,10 +64,6 @@ export const useGameState = () => {
 
   /**
    * 画像を選択する処理を行います。
-   *
-   * @param url - 選択された画像のURL
-   * @param width - 画像の幅
-   * @param height - 画像の高さ
    */
   const handleImageSelect = (url: string, width: number, height: number) => {
     setImageUrl(url);
@@ -50,8 +72,6 @@ export const useGameState = () => {
 
   /**
    * パズルの難易度を変更します。
-   *
-   * @param newDivision - 新しい分割数
    */
   const handleDifficultyChange = (newDivision: number) => {
     setDivision(newDivision);
@@ -59,17 +79,15 @@ export const useGameState = () => {
 
   /**
    * ゲームを開始します。
-   * パズルを初期化し、ゲーム開始状態に設定します。
    */
   const handleStartGame = () => {
+    setScore(null);
     initializePuzzle();
     setGameStarted(true);
   };
 
   /**
    * パズルのピースを移動します。
-   *
-   * @param pieceId - 移動するピースのID
    */
   const handlePieceMove = (pieceId: number) => {
     movePiece(pieceId);
@@ -77,15 +95,14 @@ export const useGameState = () => {
 
   /**
    * ゲームをリセットします。
-   * パズルの状態をリセットします。
    */
   const handleResetGame = () => {
+    setScore(null);
     resetPuzzle();
   };
 
   /**
    * ゲームを終了します。
-   * ゲーム開始状態を解除します。
    */
   const handleEndGame = () => {
     setGameStarted(false);
@@ -111,6 +128,10 @@ export const useGameState = () => {
       hintModeEnabled,
       emptyPosition,
       emptyPanelClicks,
+      moveCount,
+      shuffleMoves,
+      correctRate,
+      score,
       setPieces,
       setCompleted,
     },

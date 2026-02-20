@@ -9,7 +9,7 @@ import {
   CompletionTime,
   RestartButton,
   StatusBar,
-  ElapsedTime,
+  StatusItem,
   HintToggleButton,
   HintImage,
   OverlayToggleButton,
@@ -53,11 +53,13 @@ export type PuzzleBoardProps = {
   completed: boolean;
   hintMode: boolean;
   emptyPosition: { row: number; col: number } | null;
+  moveCount: number;
+  correctRate: number;
   onPieceMove: (pieceId: number, row: number, col: number) => void;
   onReset: () => void;
   onToggleHint: () => void;
-  onEmptyPanelClick?: () => void; // 空白パネルがクリックされたときのコールバック
-  onEndGame?: () => void; // ゲームを終了して設定に戻る関数
+  onEmptyPanelClick?: () => void;
+  onEndGame?: () => void;
 };
 
 /**
@@ -73,6 +75,8 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   completed,
   hintMode,
   emptyPosition,
+  moveCount,
+  correctRate,
   onPieceMove,
   onReset,
   onToggleHint,
@@ -200,11 +204,13 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
         {hintMode && !completed && <HintImage $imageUrl={imageUrl} title="ヒント画像" />}
       </Board>
       <StatusBar>
-        <ElapsedTime>経過時間: {formatElapsedTime(elapsedTime)}</ElapsedTime>
-        <HintToggleButton active={hintMode ? 'true' : 'false'} onClick={onToggleHint}>
-          {hintMode ? 'ヒントを隠す' : 'ヒントを表示'}
-        </HintToggleButton>
+        <StatusItem>⏱ {formatElapsedTime(elapsedTime)}</StatusItem>
+        <StatusItem>👣 {moveCount}手</StatusItem>
+        <StatusItem>📊 正解率 {correctRate}%</StatusItem>
       </StatusBar>
+      <HintToggleButton active={hintMode ? 'true' : 'false'} onClick={onToggleHint}>
+        {hintMode ? 'ヒントを隠す' : 'ヒントを表示'}
+      </HintToggleButton>
     </BoardContainer>
   );
 };

@@ -126,13 +126,13 @@
 
 ### 1-3. 手数カウンター＆進捗表示
 
-- [ ] **新規アトム追加**
+- [x] **新規アトム追加**
   - 対象: `src/store/atoms.ts`
   - 作業: `moveCountAtom`、`shuffleMovesAtom`、`correctRateAtom`、`hintUsedAtom` を追加
   - 完了条件: 4 つのアトムが export されていること
   - 依存: 1-2 完了
 
-- [ ] **`usePuzzle.ts` に手数カウント追加**
+- [x] **`usePuzzle.ts` に手数カウント追加**
   - 対象: `src/hooks/usePuzzle.ts`
   - 作業:
     - `initializePuzzle` で `moveCountAtom` を 0 にリセット、`shuffleMovesAtom` に `calculateShuffleMoves(division)` の値を保存
@@ -141,19 +141,19 @@
   - 完了条件: ピース移動ごとに手数がインクリメントされ、正解率が更新されること
   - 依存: アトム追加後
 
-- [ ] **`calculateCorrectRate` 関数の実装**
+- [x] **`calculateCorrectRate` 関数の実装**
   - 対象: `src/utils/puzzle-utils.ts`
   - 作業: 正解率計算関数を追加。空ピースを除く全ピースのうち正解位置にあるものの割合を返す
   - 完了条件: 全ピース正解で 100、全ピース不正解で 0 を返すこと
   - 依存: なし
 
-- [ ] **ヒント使用追跡**
+- [x] **ヒント使用追跡**
   - 対象: `src/hooks/useHintMode.ts`
   - 作業: `toggleHintMode` で `hintModeEnabled` が `true` になるとき、`hintUsedAtom` も `true` に設定
   - 完了条件: 一度でもヒントを表示したら `hintUsedAtom` が `true` になること
   - 依存: アトム追加後
 
-- [ ] **StatusBar の 3 列化**
+- [x] **StatusBar の 3 列化**
   - 対象: `src/components/organisms/PuzzleBoard.tsx`、`PuzzleBoard.styles.ts`
   - 作業:
     - StatusBar を CSS Grid 3 列に変更
@@ -162,19 +162,19 @@
   - 完了条件: StatusBar に 3 つの情報が表示されること
   - 依存: usePuzzle 変更後
 
-- [ ] **PuzzleBoard の props 更新**
+- [x] **PuzzleBoard の props 更新**
   - 対象: `src/components/organisms/PuzzleBoard.tsx`
   - 作業: `PuzzleBoardProps` に `moveCount: number`、`correctRate: number` を追加
   - 完了条件: 型定義が更新されていること
   - 依存: StatusBar 3 列化と同時
 
-- [ ] **props 伝搬の更新**
+- [x] **props 伝搬の更新**
   - 対象: `src/components/PuzzleSections.tsx`
   - 作業: `GameSectionComponent` → `PuzzleBoard` に `moveCount`、`correctRate` を渡す
   - 完了条件: 値が正しく表示されること
   - 依存: PuzzleBoard props 更新後
 
-- [ ] **テストの追加**
+- [x] **テストの追加**
   - 対象: `src/utils/puzzle-utils.test.ts`
   - 作業: `calculateCorrectRate` のユニットテストを追加
   - 完了条件: テストがパスすること
@@ -184,31 +184,31 @@
 
 ### 1-4. スコアリングシステム
 
-- [ ] **型定義の追加**
+- [x] **型定義の追加**
   - 対象: `src/types/puzzle.ts`（新規作成）
   - 作業: `PuzzleScore`、`PuzzleRank`、`DIVISION_MULTIPLIERS`、`RANK_THRESHOLDS` を定義
   - 完了条件: 型が正しく export されていること
   - 依存: 1-3 完了
 
-- [ ] **`calculateScore` 関数の実装**
+- [x] **`calculateScore` 関数の実装**
   - 対象: `src/utils/score-utils.ts`（新規作成）
   - 作業: スコア計算ロジック実装。Base 10,000 - 手数ペナルティ - タイムペナルティ - ヒントペナルティ × 難易度倍率
   - 完了条件: 仕様通りのスコア計算ができること
   - 依存: 型定義追加後
 
-- [ ] **`determineRank` 関数の実装**
+- [x] **`determineRank` 関数の実装**
   - 対象: `src/utils/score-utils.ts`
   - 作業: スコアからランクを判定（★★★ >= 8000、★★☆ >= 5000、★☆☆ >= 2000、クリア < 2000）
   - 完了条件: 各閾値で正しいランクが返ること
   - 依存: 型定義追加後
 
-- [ ] **パズル完成時のスコア計算統合**
-  - 対象: `src/hooks/usePuzzle.ts` または `src/components/organisms/PuzzleBoard.tsx`
-  - 作業: `puzzleCompletedAtom` が `true` になったタイミングで `calculateScore` を実行し、結果を保持
+- [x] **パズル完成時のスコア計算統合**
+  - 対象: `src/hooks/useGameState.ts`
+  - 作業: `completed` が `true` になったタイミングで `calculateScore` を実行し、結果を保持
   - 完了条件: 完成時にスコアが計算されること
   - 依存: `calculateScore` 実装後
 
-- [ ] **テストの追加**
+- [x] **テストの追加**
   - 対象: `src/utils/score-utils.test.ts`（新規作成）
   - 作業: `calculateScore`、`determineRank` のユニットテスト
   - 完了条件: 境界値テスト含めすべてパスすること

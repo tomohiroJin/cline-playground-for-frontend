@@ -76,13 +76,21 @@ export const RestartButton = styled.button`
 `;
 
 export const StatusBar = styled.div`
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
   width: 100%;
   margin-top: 10px;
-  padding: 5px 10px;
+  padding: 8px 10px;
   background-color: #f8f8f8;
   border-radius: 4px;
+  gap: 4px;
+`;
+
+export const StatusItem = styled.div`
+  font-size: 0.9rem;
+  color: #333;
+  text-align: center;
+  white-space: nowrap;
 `;
 
 export const ElapsedTime = styled.div`
@@ -93,12 +101,14 @@ export const ElapsedTime = styled.div`
 export const HintToggleButton = styled.button<{ active: string }>`
   background-color: ${props => (props.active ? '#4caf50' : '#f8f8f8')};
   color: ${props => (props.active ? 'white' : '#333')};
-  padding: 5px 10px;
+  padding: 8px 16px;
   border: 1px solid #ccc;
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.9rem;
   transition: all 0.3s;
+  margin-top: 8px;
+  width: 100%;
 
   &:hover {
     background-color: ${props => (props.active ? '#45a049' : '#e8e8e8')};

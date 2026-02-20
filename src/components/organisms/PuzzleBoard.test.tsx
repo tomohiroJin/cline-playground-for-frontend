@@ -51,6 +51,8 @@ describe('PuzzleBoard', () => {
       completed: false,
       hintMode: false,
       emptyPosition: { row: 0, col: 0 },
+      moveCount: 0,
+      correctRate: 0,
       onPieceMove: jest.fn(),
       onReset: jest.fn(),
       onToggleHint: jest.fn(),
@@ -59,7 +61,9 @@ describe('PuzzleBoard', () => {
     render(<PuzzleBoard {...props} />);
 
     // ステータスバーが表示されていることを確認
-    expect(screen.getByText('経過時間: 02:00')).toBeInTheDocument();
+    expect(screen.getByText('⏱ 02:00')).toBeInTheDocument();
+    expect(screen.getByText('👣 0手')).toBeInTheDocument();
+    expect(screen.getByText('📊 正解率 0%')).toBeInTheDocument();
     expect(screen.getByText('ヒントを表示')).toBeInTheDocument();
   });
 
@@ -75,6 +79,8 @@ describe('PuzzleBoard', () => {
       completed: true,
       hintMode: false,
       emptyPosition: { row: 0, col: 0 },
+      moveCount: 0,
+      correctRate: 0,
       onPieceMove: jest.fn(),
       onReset: jest.fn(),
       onToggleHint: jest.fn(),
@@ -100,6 +106,8 @@ describe('PuzzleBoard', () => {
       completed: true,
       hintMode: false,
       emptyPosition: { row: 0, col: 0 },
+      moveCount: 0,
+      correctRate: 0,
       onPieceMove: jest.fn(),
       onReset: jest.fn(),
       onToggleHint: jest.fn(),
@@ -126,6 +134,8 @@ describe('PuzzleBoard', () => {
       completed: false,
       hintMode: true,
       emptyPosition: { row: 0, col: 0 },
+      moveCount: 0,
+      correctRate: 0,
       onPieceMove: jest.fn(),
       onReset: jest.fn(),
       onToggleHint: jest.fn(),

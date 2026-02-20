@@ -9,6 +9,10 @@ import {
   puzzleStartTimeAtom,
   puzzleElapsedTimeAtom,
   puzzleCompletedAtom,
+  moveCountAtom,
+  shuffleMovesAtom,
+  correctRateAtom,
+  hintUsedAtom,
   PuzzlePiece,
 } from '../store/atoms';
 import {
@@ -16,6 +20,7 @@ import {
   shufflePuzzlePieces,
   isPuzzleCompleted,
   getAdjacentPositions,
+  calculateCorrectRate,
 } from '../utils/puzzle-utils';
 
 /**
@@ -31,6 +36,10 @@ export const usePuzzle = () => {
   const [startTime, setStartTime] = useAtom(puzzleStartTimeAtom);
   const [elapsedTime, setElapsedTime] = useAtom(puzzleElapsedTimeAtom);
   const [completed, setCompleted] = useAtom(puzzleCompletedAtom);
+  const [moveCount, setMoveCount] = useAtom(moveCountAtom);
+  const [shuffleMoves, setShuffleMoves] = useAtom(shuffleMovesAtom);
+  const [correctRate, setCorrectRate] = useAtom(correctRateAtom);
+  const [, setHintUsed] = useAtom(hintUsedAtom);
 
   /**
    * 分割数に基づいてシャッフル回数を計算する
@@ -50,6 +59,8 @@ export const usePuzzle = () => {
   const initializePuzzle = useCallback(() => {
     if (!imageUrl) return;
 
+    const moves = calculateShuffleMoves(division);
+
     // パズルのピースを生成
     const { pieces: newPieces, emptyPosition: newEmptyPosition } = generatePuzzlePieces(division);
 
@@ -58,7 +69,7 @@ export const usePuzzle = () => {
       newPieces,
       newEmptyPosition,
       division,
-      calculateShuffleMoves(division)
+      moves
     );
 
     // 状態を更新
@@ -67,15 +78,26 @@ export const usePuzzle = () => {
     setStartTime(Date.now());
     setElapsedTime(0);
     setCompleted(false);
-  }, [imageUrl, division, setPieces, setEmptyPosition, setStartTime, setElapsedTime, setCompleted]);
+    setMoveCount(0);
+    setShuffleMoves(moves);
+    setCorrectRate(calculateCorrectRate(shuffledPieces));
+    setHintUsed(false);
+  }, [
+    imageUrl,
+    division,
+    setPieces,
+    setEmptyPosition,
+    setStartTime,
+    setElapsedTime,
+    setCompleted,
+    setMoveCount,
+    setShuffleMoves,
+    setCorrectRate,
+    setHintUsed,
+  ]);
 
   /**
    * 指定されたピースが空白ピースと隣接しているかを確認する
-   *
-   * @param piece 移動するピース
-   * @param emptyPosition 空白ピースの位置
-   * @param division パズルの分割数
-   * @returns 隣接していればtrue、そうでなければfalse
    */
   const isPieceAdjacentToEmpty = (
     piece: PuzzlePiece,
@@ -94,11 +116,6 @@ export const usePuzzle = () => {
 
   /**
    * ピースを移動し、更新されたピース配列を返す
-   *
-   * @param currentPieces 現在のピース配列
-   * @param pieceIndex 移動するピースのインデックス
-   * @param emptyPosition 空白ピースの位置
-   * @returns 更新されたピース配列
    */
   const updatePiecesWithMove = (
     currentPieces: PuzzlePiece[],
@@ -154,6 +171,12 @@ export const usePuzzle = () => {
           col: piece.currentPosition.col,
         });
 
+        // 手数をインクリメント
+        setMoveCount(prev => prev + 1);
+
+        // 正解率を更新
+        setCorrectRate(calculateCorrectRate(updatedPieces));
+
         if (isPuzzleCompleted(updatedPieces)) {
           setCompleted(true);
         }
@@ -161,7 +184,16 @@ export const usePuzzle = () => {
         return updatedPieces;
       });
     },
-    [completed, emptyPosition, division, setPieces, setEmptyPosition, setCompleted]
+    [
+      completed,
+      emptyPosition,
+      division,
+      setPieces,
+      setEmptyPosition,
+      setCompleted,
+      setMoveCount,
+      setCorrectRate,
+    ]
   );
 
   /**
@@ -199,6 +231,9 @@ export const usePuzzle = () => {
     elapsedTime,
     completed,
     setCompleted,
+    moveCount,
+    shuffleMoves,
+    correctRate,
     initializePuzzle,
     movePiece,
     resetPuzzle,

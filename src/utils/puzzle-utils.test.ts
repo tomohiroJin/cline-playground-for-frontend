@@ -7,6 +7,7 @@ const {
   shufflePuzzlePieces,
   isPuzzleCompleted,
   formatElapsedTime,
+  calculateCorrectRate,
 } = puzzleUtils;
 
 // ヘルパー関数を追加
@@ -291,6 +292,47 @@ describe('puzzle-utils', () => {
         { row: 0, col: 0 }, // 左
         { row: 0, col: 2 }, // 右
       ]);
+    });
+  });
+
+  describe('calculateCorrectRate', () => {
+    it('全ピースが正解位置にある場合は100を返すこと', () => {
+      const pieces: PuzzlePiece[] = [
+        createPuzzlePiece(0, 0, 0, false),
+        createPuzzlePiece(1, 0, 1, false),
+        createPuzzlePiece(2, 1, 0, false),
+        createPuzzlePiece(3, 1, 1, true),
+      ];
+      expect(calculateCorrectRate(pieces)).toBe(100);
+    });
+
+    it('全ピースが不正解位置にある場合は0を返すこと', () => {
+      const pieces: PuzzlePiece[] = [
+        { ...createPuzzlePiece(0, 0, 0, false), currentPosition: { row: 1, col: 0 } },
+        { ...createPuzzlePiece(1, 0, 1, false), currentPosition: { row: 0, col: 0 } },
+        { ...createPuzzlePiece(2, 1, 0, false), currentPosition: { row: 0, col: 1 } },
+        createPuzzlePiece(3, 1, 1, true),
+      ];
+      expect(calculateCorrectRate(pieces)).toBe(0);
+    });
+
+    it('一部のピースが正解位置にある場合は正しい割合を返すこと', () => {
+      const pieces: PuzzlePiece[] = [
+        createPuzzlePiece(0, 0, 0, false), // 正解
+        { ...createPuzzlePiece(1, 0, 1, false), currentPosition: { row: 1, col: 0 } }, // 不正解
+        createPuzzlePiece(2, 1, 0, true), // 空白（除外）
+      ];
+      // 非空白2ピースのうち1ピースが正解 = 50%
+      expect(calculateCorrectRate(pieces)).toBe(50);
+    });
+
+    it('空の配列の場合は0を返すこと', () => {
+      expect(calculateCorrectRate([])).toBe(0);
+    });
+
+    it('空白ピースのみの場合は0を返すこと', () => {
+      const pieces: PuzzlePiece[] = [createPuzzlePiece(0, 0, 0, true)];
+      expect(calculateCorrectRate(pieces)).toBe(0);
     });
   });
 });

@@ -104,3 +104,23 @@ export const videoPlaybackEnabledAtom = createAtom<boolean>(false);
  * 再生する動画のURLを管理するアトム
  */
 export const videoUrlAtom = createAtom<string | null>(null);
+
+/**
+ * 現在の手数を管理するアトム
+ */
+export const moveCountAtom = createAtom<number>(0);
+
+/**
+ * シャッフル時の手数（= optimalMoves 基準値）を管理するアトム
+ */
+export const shuffleMovesAtom = createAtom<number>(0);
+
+/**
+ * 正解位置にあるピースの割合（0〜100）を管理するアトム
+ */
+export const correctRateAtom = createAtom<number>(0);
+
+/**
+ * ヒント使用フラグを管理するアトム
+ */
+export const hintUsedAtom = createAtom<boolean>(false);

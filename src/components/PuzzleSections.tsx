@@ -92,6 +92,8 @@ export type GameSectionProps = {
   completed: boolean;
   hintModeEnabled: boolean;
   emptyPosition: Position;
+  moveCount: number;
+  correctRate: number;
   handlePieceMove: (pieceId: number, row: number, col: number) => void;
   handleResetGame: () => void;
   toggleHintMode: () => void;
@@ -114,6 +116,8 @@ export const GameSectionComponent: React.FC<GameSectionProps> = ({
   completed,
   hintModeEnabled,
   emptyPosition,
+  moveCount,
+  correctRate,
   handlePieceMove,
   handleResetGame,
   toggleHintMode,
@@ -136,6 +140,8 @@ export const GameSectionComponent: React.FC<GameSectionProps> = ({
           completed={completed}
           hintMode={hintModeEnabled}
           emptyPosition={emptyPosition}
+          moveCount={moveCount}
+          correctRate={correctRate}
           onPieceMove={handlePieceMove}
           onReset={handleResetGame}
           onToggleHint={toggleHintMode}

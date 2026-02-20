@@ -206,6 +206,25 @@ export const isPuzzleCompleted = (pieces: PuzzlePiece[]): boolean => {
 };
 
 /**
+ * 正解率を計算する
+ *
+ * @param pieces ピース配列
+ * @returns 正解率（0〜100）
+ */
+export const calculateCorrectRate = (pieces: PuzzlePiece[]): number => {
+  const nonEmptyPieces = pieces.filter(p => !p.isEmpty);
+  if (nonEmptyPieces.length === 0) return 0;
+
+  const correctCount = nonEmptyPieces.filter(
+    p =>
+      p.correctPosition.row === p.currentPosition.row &&
+      p.correctPosition.col === p.currentPosition.col
+  ).length;
+
+  return Math.round((correctCount / nonEmptyPieces.length) * 100);
+};
+
+/**
  * 経過時間をフォーマットする（mm:ss形式）
  *
  * @param seconds 経過秒数
