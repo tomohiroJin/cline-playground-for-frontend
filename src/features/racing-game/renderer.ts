@@ -1,6 +1,6 @@
 // Racing Game レンダラー
 
-import type { Point, Checkpoint, StartLine, Player, Particle, Spark, Confetti, Decoration, HeatState } from './types';
+import type { Point, Checkpoint, StartLine, Player, Particle, Spark, Confetti, Decoration, HeatState, Card, HighlightEvent, HighlightType } from './types';
 import { Config, Colors } from './constants';
 
 export const Render = {
@@ -260,6 +260,280 @@ export const Render = {
         c.globalAlpha = 1;
       }
     });
+  },
+
+  /** T-104: ドラフトカード選択UI描画 */
+  draftUI: (
+    c: CanvasRenderingContext2D,
+    cards: Card[],
+    selectedIndex: number,
+    timer: number,
+    maxTimer: number,
+    playerName: string,
+    lapNum: number,
+    confirmed: boolean,
+    animProgress: number, // 0〜1 登場アニメーション進行度
+  ) => {
+    const { width, height } = Config.canvas;
+
+    // 半透明オーバーレイ
+    c.fillStyle = 'rgba(0,0,0,0.7)';
+    c.fillRect(0, 0, width, height);
+
+    // タイトル
+    c.fillStyle = '#ffeb3b';
+    c.font = 'bold 28px Arial';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillText(`ラップ ${lapNum} 完了!`, width / 2, 100);
+
+    c.fillStyle = '#fff';
+    c.font = '18px Arial';
+    c.fillText(`${playerName} - カードを1枚選んでください`, width / 2, 140);
+
+    // タイマー
+    const timerRatio = timer / maxTimer;
+    c.fillStyle = timerRatio > 0.3 ? '#4ade80' : '#ef4444';
+    c.font = 'bold 20px Arial';
+    c.fillText(`残り ${Math.ceil(timer)}秒`, width / 2, 175);
+
+    // カード描画
+    const cardW = 180;
+    const cardH = 250;
+    const gap = 30;
+    const totalW = cardW * cards.length + gap * (cards.length - 1);
+    const startX = (width - totalW) / 2;
+    const baseY = 220;
+
+    // イージング関数（easeOutBack）
+    const ease = (t: number) => {
+      const c1 = 1.70158;
+      const c3 = c1 + 1;
+      return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+    };
+
+    cards.forEach((card, i) => {
+      const x = startX + i * (cardW + gap);
+      const isSelected = i === selectedIndex;
+
+      // 登場アニメーション（下からスライドイン）
+      const cardAnim = Math.min(1, animProgress * 3 - i * 0.3);
+      const animOffset = cardAnim > 0 ? (1 - ease(Math.min(1, cardAnim))) * 100 : 100;
+      const y = baseY + animOffset + (isSelected && !confirmed ? -8 : 0);
+      const alpha = cardAnim > 0 ? Math.min(1, cardAnim) : 0;
+
+      if (alpha <= 0) return;
+
+      c.globalAlpha = confirmed && !isSelected ? 0.3 : alpha;
+
+      // カード背景
+      const rarityColors: Record<string, string> = {
+        R: '#4a5568',
+        SR: '#d69e2e',
+        SSR: '#e53e3e',
+      };
+      const bgColor = rarityColors[card.rarity] || '#4a5568';
+
+      // カード影
+      c.fillStyle = 'rgba(0,0,0,0.3)';
+      c.beginPath();
+      c.roundRect(x + 4, y + 4, cardW, cardH, 12);
+      c.fill();
+
+      // カード本体
+      c.fillStyle = bgColor;
+      c.beginPath();
+      c.roundRect(x, y, cardW, cardH, 12);
+      c.fill();
+
+      // 選択中の光彩
+      if (isSelected && !confirmed) {
+        c.strokeStyle = '#ffeb3b';
+        c.lineWidth = 3;
+        c.shadowColor = '#ffeb3b';
+        c.shadowBlur = 15;
+        c.beginPath();
+        c.roundRect(x, y, cardW, cardH, 12);
+        c.stroke();
+        c.shadowBlur = 0;
+      }
+
+      // カード内容
+      c.fillStyle = '#fff';
+
+      // アイコン
+      c.font = '36px Arial';
+      c.textAlign = 'center';
+      c.fillText(card.icon, x + cardW / 2, y + 45);
+
+      // カード名
+      c.font = 'bold 16px Arial';
+      c.fillText(card.name, x + cardW / 2, y + 85);
+
+      // レアリティバッジ
+      c.font = 'bold 14px Arial';
+      c.fillStyle = card.rarity === 'SSR' ? '#ffd700' : card.rarity === 'SR' ? '#c0c0c0' : '#cd7f32';
+      c.fillText(`[${card.rarity}]`, x + cardW / 2, y + 110);
+
+      // 区切り線
+      c.strokeStyle = 'rgba(255,255,255,0.3)';
+      c.lineWidth = 1;
+      c.beginPath();
+      c.moveTo(x + 15, y + 125);
+      c.lineTo(x + cardW - 15, y + 125);
+      c.stroke();
+
+      // 効果説明文（ワードラップ）
+      c.fillStyle = '#e2e8f0';
+      c.font = '13px Arial';
+      const desc = card.description;
+      const maxLineW = cardW - 30;
+      let line = '';
+      let lineY = y + 150;
+      for (const char of desc) {
+        const test = line + char;
+        if (c.measureText(test).width > maxLineW) {
+          c.fillText(line, x + cardW / 2, lineY);
+          line = char;
+          lineY += 18;
+        } else {
+          line = test;
+        }
+      }
+      if (line) c.fillText(line, x + cardW / 2, lineY);
+
+      // カテゴリ
+      const catLabels: Record<string, string> = {
+        speed: '⚡スピード',
+        handling: '🔄ハンドリング',
+        defense: '🛡️防御',
+        special: '✨特殊',
+      };
+      c.fillStyle = 'rgba(255,255,255,0.6)';
+      c.font = '12px Arial';
+      c.fillText(catLabels[card.category] || card.category, x + cardW / 2, y + cardH - 20);
+    });
+
+    c.globalAlpha = 1;
+
+    // 操作説明
+    if (!confirmed) {
+      c.fillStyle = 'rgba(255,255,255,0.5)';
+      c.font = '14px Arial';
+      c.textAlign = 'center';
+      c.fillText('← →キーで選択    Enter/Spaceで決定', width / 2, height - 50);
+    }
+  },
+
+  /** T-109: ゴースト車体描画（半透明） */
+  ghostKart: (c: CanvasRenderingContext2D, x: number, y: number, angle: number, color: string) => {
+    c.save();
+    c.globalAlpha = 0.3;
+    c.translate(x, y);
+    c.rotate(angle + Math.PI / 2);
+
+    // 車体（簡略化版）
+    c.fillStyle = color;
+    c.beginPath();
+    c.roundRect(-10, -15, 20, 30, 4);
+    c.fill();
+    c.strokeStyle = 'rgba(255,255,255,0.5)';
+    c.lineWidth = 1;
+    c.stroke();
+
+    c.restore();
+
+    // GHOST ラベル
+    c.globalAlpha = 0.5;
+    c.fillStyle = '#aaa';
+    c.font = 'bold 10px Arial';
+    c.textAlign = 'center';
+    c.fillText('GHOST', x, y - 22);
+    c.globalAlpha = 1;
+  },
+
+  /** T-111: ハイライト通知バナー描画 */
+  highlightBanner: (
+    c: CanvasRenderingContext2D,
+    event: HighlightEvent & { displayTime: number },
+    colors: Record<HighlightType, string>
+  ) => {
+    const { width } = Config.canvas;
+    const displayDuration = 2000; // 2秒
+    const fadeTime = 300; // 0.3秒
+
+    const elapsed = event.displayTime;
+    let alpha = 1;
+    if (elapsed < fadeTime) {
+      alpha = elapsed / fadeTime; // フェードイン
+    } else if (elapsed > displayDuration - fadeTime) {
+      alpha = (displayDuration - elapsed) / fadeTime; // フェードアウト
+    }
+    if (alpha <= 0) return;
+
+    c.globalAlpha = alpha;
+
+    const bgColor = colors[event.type] || '#333';
+    const isLight = event.type === 'photo_finish' || event.type === 'near_miss';
+
+    // バナー背景
+    const bannerW = 350;
+    const bannerH = 40;
+    const bannerX = (width - bannerW) / 2;
+    const bannerY = 20;
+
+    c.fillStyle = bgColor;
+    c.beginPath();
+    c.roundRect(bannerX, bannerY, bannerW, bannerH, 8);
+    c.fill();
+
+    // テキスト
+    c.fillStyle = isLight ? '#000' : '#fff';
+    c.font = 'bold 16px Arial';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillText(event.message, width / 2, bannerY + bannerH / 2);
+
+    c.globalAlpha = 1;
+    c.textBaseline = 'alphabetic';
+  },
+
+  /** T-111: リザルト画面ハイライトサマリー描画 */
+  highlightSummary: (
+    c: CanvasRenderingContext2D,
+    summary: { type: HighlightType; count: number; totalScore: number }[],
+    labels: Record<HighlightType, string>,
+    y: number
+  ) => {
+    const { width } = Config.canvas;
+    if (summary.length === 0) return;
+
+    c.fillStyle = '#ffeb3b';
+    c.font = 'bold 18px Arial';
+    c.textAlign = 'center';
+    c.fillText('─── ハイライト ───', width / 2, y);
+
+    let lineY = y + 28;
+    let totalScore = 0;
+
+    c.font = '14px Arial';
+    for (const s of summary) {
+      const label = labels[s.type] || s.type;
+      c.fillStyle = '#e2e8f0';
+      c.textAlign = 'left';
+      c.fillText(`${label} × ${s.count}`, width / 2 - 120, lineY);
+      c.textAlign = 'right';
+      c.fillText(`+${s.totalScore}pt`, width / 2 + 120, lineY);
+      totalScore += s.totalScore;
+      lineY += 22;
+    }
+
+    // 合計スコア
+    lineY += 8;
+    c.fillStyle = '#ffeb3b';
+    c.font = 'bold 16px Arial';
+    c.textAlign = 'center';
+    c.fillText(`合計ハイライトスコア: ${totalScore.toLocaleString()}pt`, width / 2, lineY);
   },
 
   /** コース環境ビジュアルエフェクト描画 */

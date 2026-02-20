@@ -11,3 +11,6 @@ export { Render, renderDecos } from './renderer';
 export { Logic } from './game-logic';
 export { useInput, useIdle } from './hooks';
 export { VolumeCtrl } from './components/VolumeControl';
+export { DraftCards } from './draft-cards';
+export { Ghost } from './ghost';
+export { Highlight } from './highlight';
