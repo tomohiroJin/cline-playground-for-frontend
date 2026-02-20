@@ -4,8 +4,10 @@ import {
   GameSection,
   StartButton,
 } from '../pages/PuzzlePage.styles';
-import DefaultImageSelector from '../components/molecules/DefaultImageSelector';
+import ThemeSelector from '../components/molecules/ThemeSelector';
 import DifficultySelector from '../components/molecules/DifficultySelector';
+import { themes } from '../data/themes';
+import { PuzzleRecord } from '../types/puzzle';
 import PuzzleBoard from '../components/organisms/PuzzleBoard';
 import { PuzzlePiece } from '../store/atoms';
 import { ShareButton } from './molecules/ShareButton';
@@ -28,6 +30,8 @@ export type SetupSectionProps = {
   imageUrl: string | null;
   originalImageSize: { width: number; height: number } | null;
   division: number;
+  records: PuzzleRecord[];
+  totalClears: number;
 };
 
 /**
@@ -40,9 +44,16 @@ export const SetupSectionComponent: React.FC<SetupSectionProps> = ({
   imageUrl,
   originalImageSize,
   division,
+  records,
+  totalClears,
 }) => (
   <SetupSection>
-    <DefaultImageSelector onImageSelect={handleImageSelect} />
+    <ThemeSelector
+      themes={themes}
+      records={records}
+      totalClears={totalClears}
+      onImageSelect={handleImageSelect}
+    />
     <DifficultySelector value={division} onChange={handleDifficultyChange} disabled={!imageUrl} />
     <StartButton onClick={handleStartGame} disabled={!imageUrl || !originalImageSize}>
       パズルを開始

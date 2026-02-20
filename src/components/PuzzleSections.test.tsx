@@ -8,7 +8,7 @@ describe('SetupSectionComponent', () => {
   const mockHandleDifficultyChange = jest.fn();
   const mockHandleStartGame = jest.fn();
 
-  it('デフォルト画像選択が表示される', () => {
+  it('テーマ画像選択が表示される', () => {
     render(
       <SetupSectionComponent
         handleImageSelect={mockHandleImageSelect}
@@ -17,11 +17,14 @@ describe('SetupSectionComponent', () => {
         imageUrl={null}
         originalImageSize={null}
         division={3}
+        records={[]}
+        totalClears={0}
       />
     );
 
-    // デフォルト画像セレクタが表示されていること
+    // テーマセレクタが表示されていること
     expect(screen.getByText('パズルを開始')).toBeInTheDocument();
+    expect(screen.getByText('テーマから画像を選択')).toBeInTheDocument();
   });
 
   it('画像が選択されていない場合、開始ボタンが無効になる', () => {
@@ -33,6 +36,8 @@ describe('SetupSectionComponent', () => {
         imageUrl={null}
         originalImageSize={null}
         division={3}
+        records={[]}
+        totalClears={0}
       />
     );
 

@@ -6,7 +6,8 @@ import {
   InstructionsList,
 } from './PuzzlePage.styles';
 import ClearHistoryList from '../components/molecules/ClearHistoryList';
-import { getClearHistory, ClearHistory, migrateClearHistory } from '../utils/storage-utils';
+import { getClearHistory, ClearHistory, migrateClearHistory, getPuzzleRecords, getTotalClears } from '../utils/storage-utils';
+import { PuzzleRecord } from '../types/puzzle';
 import { SetupSectionComponent, GameSectionComponent } from '../components/PuzzleSections';
 import { useGameState } from '../hooks/useGameState';
 
@@ -16,6 +17,8 @@ import { useGameState } from '../hooks/useGameState';
 const PuzzlePage: React.FC = () => {
   // クリア履歴の状態
   const [clearHistory, setClearHistory] = useState<ClearHistory[]>([]);
+  const [puzzleRecords, setPuzzleRecords] = useState<PuzzleRecord[]>([]);
+  const [totalClears, setTotalClears] = useState(0);
 
   // 状態管理をフックに移動
   const {
@@ -39,8 +42,9 @@ const PuzzlePage: React.FC = () => {
   // ゲームの状態が変わったときにクリア履歴を更新
   useEffect(() => {
     const history = getClearHistory();
-
     setClearHistory(history);
+    setPuzzleRecords(getPuzzleRecords());
+    setTotalClears(getTotalClears());
   }, [gameStarted]); // gameStartedが変わったとき（ゲーム終了時など）に履歴を更新
   return (
     <PuzzlePageContainer>
@@ -52,6 +56,8 @@ const PuzzlePage: React.FC = () => {
           imageUrl={gameState.imageUrl}
           originalImageSize={gameState.originalImageSize}
           division={gameState.division}
+          records={puzzleRecords}
+          totalClears={totalClears}
         />
       ) : (
         <GameSectionComponent
@@ -75,8 +81,8 @@ const PuzzlePage: React.FC = () => {
         </InstructionsList>
       </Instructions>
 
-      {/* クリア履歴の表示 */}
-      {!gameStarted && <ClearHistoryList history={clearHistory} />}
+      {/* クリア履歴・ベストスコアの表示 */}
+      {!gameStarted && <ClearHistoryList history={clearHistory} records={puzzleRecords} />}
     </PuzzlePageContainer>
   );
 };

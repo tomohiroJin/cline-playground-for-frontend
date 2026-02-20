@@ -5,7 +5,7 @@ import { useHintMode } from './useHintMode';
 import { hintUsedAtom } from '../store/atoms';
 import { calculateScore } from '../utils/score-utils';
 import { PuzzleScore } from '../types/puzzle';
-import { recordScore as recordPuzzleScore, extractImageName } from '../utils/storage-utils';
+import { recordScore as recordPuzzleScore, extractImageName, incrementTotalClears } from '../utils/storage-utils';
 
 export const useGameState = () => {
   const {
@@ -51,6 +51,8 @@ export const useGameState = () => {
         division
       );
       setScore(puzzleScore);
+
+      incrementTotalClears();
 
       if (imageUrl) {
         const imageId = extractImageName(imageUrl);

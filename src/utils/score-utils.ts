@@ -1,8 +1,11 @@
 import {
   PuzzleScore,
   PuzzleRank,
+  PuzzleRecord,
   DIVISION_MULTIPLIERS,
   RANK_THRESHOLDS,
+  UnlockCondition,
+  ThemeId,
 } from '../types/puzzle';
 
 /**
@@ -58,4 +61,37 @@ export const calculateScore = (
     rank,
     shuffleMoves: optimalMoves,
   };
+};
+
+/**
+ * テーマがアンロック済みかを判定する
+ *
+ * @param condition アンロック条件
+ * @param totalClears 累計クリア回数
+ * @param records パズル記録
+ * @param themes テーマ定義一覧（themesClear 条件で必要）
+ * @returns アンロック済みなら true
+ */
+export const isThemeUnlocked = (
+  condition: UnlockCondition,
+  totalClears: number,
+  records: PuzzleRecord[],
+  themeImageIds?: Map<ThemeId, string[]>
+): boolean => {
+  switch (condition.type) {
+    case 'always':
+      return true;
+    case 'clearCount':
+      return totalClears >= condition.count;
+    case 'themesClear': {
+      if (!themeImageIds) return false;
+      return condition.themeIds.every(themeId => {
+        const imageIds = themeImageIds.get(themeId);
+        if (!imageIds || imageIds.length === 0) return false;
+        return imageIds.some(imgId =>
+          records.some(r => r.imageId === imgId && r.clearCount > 0)
+        );
+      });
+    }
+  }
 };

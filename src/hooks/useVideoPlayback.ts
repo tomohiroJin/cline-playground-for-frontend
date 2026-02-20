@@ -69,6 +69,15 @@ export const useVideoPlayback = () => {
       'midnight_neon_street',
       'moonlight_dancer',
       'sunset_candy_shop',
+      'coral_reef_fish',
+      'cumulonimbus_port_town',
+      'starry_beach',
+      'cherry_blossom_path',
+      'autumn_valley',
+      'snow_lantern_hotspring',
+      '8bit_mystery_game',
+      'japanese_folktale_mystery',
+      'mysteries_of_children_in_american_frontier',
     ];
 
     if (!validFilenames.includes(baseFilename)) return null;

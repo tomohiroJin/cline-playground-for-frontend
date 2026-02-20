@@ -32,6 +32,39 @@ export const RANK_THRESHOLDS = {
   ONE_STAR: 2000,
 };
 
+/** テーマ識別子 */
+export type ThemeId =
+  | 'illustration-gallery'
+  | 'world-scenery'
+  | 'nostalgia'
+  | 'sea-and-sky'
+  | 'four-seasons'
+  | 'mystery';
+
+/** アンロック条件 */
+export type UnlockCondition =
+  | { type: 'always' }
+  | { type: 'clearCount'; count: number }
+  | { type: 'themesClear'; themeIds: ThemeId[] };
+
+/** パズル画像定義 */
+export interface PuzzleImage {
+  id: string;
+  filename: string;
+  alt: string;
+  themeId: ThemeId;
+  hasVideo: boolean;
+}
+
+/** テーマ定義 */
+export interface Theme {
+  id: ThemeId;
+  name: string;
+  description: string;
+  unlockCondition: UnlockCondition;
+  images: PuzzleImage[];
+}
+
 /** MIDI ノートシーケンス（number = MIDI ノート番号, null = 休符） */
 export type NoteSequence = (number | null)[];
 

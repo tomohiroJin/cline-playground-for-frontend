@@ -398,49 +398,49 @@
 
 ### 3-1. テーマコレクション
 
-- [ ] **テーマ・画像型定義**
+- [x] **テーマ・画像型定義**
   - 対象: `src/types/puzzle.ts`
   - 作業: `ThemeId`、`UnlockCondition`、`PuzzleImage`、`Theme` 型を追加
   - 完了条件: 型が export されていること
   - 依存: Phase 1 完了
 
-- [ ] **テーマデータ定義**
+- [x] **テーマデータ定義**
   - 対象: `src/data/themes.ts`（新規作成）
   - 作業: 6 テーマ × 画像の定義データ。既存 6 枚 + 新規 12 枚 = 18 枚の `PuzzleImage` を含む
   - 完了条件: 6 テーマが定義され、各画像に適切なメタデータがあること
   - 依存: 型定義後
 
-- [ ] **`isThemeUnlocked` 関数の実装**
+- [x] **`isThemeUnlocked` 関数の実装**
   - 対象: `src/utils/score-utils.ts`
   - 作業: `UnlockCondition` に基づくアンロック判定ロジック
   - 完了条件: always / clearCount / themesClear の全条件で正しく判定されること
   - 依存: 型定義後
 
-- [ ] **累計クリア回数の管理**
+- [x] **累計クリア回数の管理**
   - 対象: `src/utils/storage-utils.ts`
   - 作業: `puzzle_total_clears` キーで累計クリア回数を管理する関数を追加
   - 完了条件: クリアごとにカウントが増加し、永続化されること
   - 依存: なし
 
-- [ ] **`ThemeSelector` コンポーネント作成**
+- [x] **`ThemeSelector` コンポーネント作成**
   - 対象: `src/components/molecules/ThemeSelector.tsx`（新規作成）
   - 作業: テーマタブ + 画像グリッド。ロック中テーマは鍵アイコン、アンロック条件ツールチップ
   - 完了条件: テーマ切り替えと画像選択ができること
   - 依存: テーマデータ定義後
 
-- [ ] **`ThemeSelector` スタイル作成**
+- [x] **`ThemeSelector` スタイル作成**
   - 対象: `src/components/molecules/ThemeSelector.styles.ts`（新規作成）
   - 作業: テーマタブとグリッドのスタイル
   - 完了条件: デザインがテーマに合っていること
   - 依存: なし
 
-- [ ] **`DefaultImageSelector` → `ThemeSelector` への置き換え**
+- [x] **`DefaultImageSelector` → `ThemeSelector` への置き換え**
   - 対象: `src/components/PuzzleSections.tsx`
   - 作業: `SetupSectionComponent` 内の `DefaultImageSelector` を `ThemeSelector` に置き換え
   - 完了条件: 画像選択が新しいテーマ UI で行えること
   - 依存: `ThemeSelector` 完成後
 
-- [ ] **`useVideoPlayback.ts` に新規画像対応追加**
+- [x] **`useVideoPlayback.ts` に新規画像対応追加**
   - 対象: `src/hooks/useVideoPlayback.ts`
   - 作業: `validFilenames` 配列に新規画像 12 枚分のファイル名を追加
   - 完了条件: 新規画像の完成動画が再生可能であること
@@ -450,13 +450,13 @@
 
 ### 3-2. ベストスコアボード
 
-- [ ] **ベストスコアボード UI 作成**
+- [x] **ベストスコアボード UI 作成**
   - 対象: `src/components/molecules/ClearHistoryList.tsx`（改修）
   - 作業: 既存のフラットリストから、画像×難易度ごとのベストスコア表示に変更。タブ/フィルターで画像・難易度を切り替え
   - 完了条件: 画像×難易度ごとのベストスコア・ランク・クリア回数が表示されること
   - 依存: Phase 1 完了
 
-- [ ] **ベストスコア更新ハイライト**
+- [x] **ベストスコア更新ハイライト**
   - 対象: リザルト画面
   - 作業: `recordScore` の返り値 `isBestScore` に基づき、リザルト画面に「ベストスコア更新！」を表示
   - 完了条件: ベスト更新時にハイライトが表示されること
@@ -466,19 +466,19 @@
 
 ### 3-3. ランクバッジ表示
 
-- [ ] **画像カードにランクバッジ追加**
+- [x] **画像カードにランクバッジ追加**
   - 対象: `src/components/molecules/ThemeSelector.tsx`
   - 作業: `PuzzleRecord` からベストランクを取得し、画像サムネイル上にバッジ（★★★ 等）を表示
   - 完了条件: クリア済み画像にランクバッジが表示され、未クリア画像にはバッジがないこと
   - 依存: 3-1 テーマコレクション完了後
 
-- [ ] **コレクション進捗表示**
+- [x] **コレクション進捗表示**
   - 対象: `src/components/molecules/ThemeSelector.tsx`
   - 作業: テーマごとのクリア率（クリア済み画像数 / 全画像数）をプログレスバーで表示
   - 完了条件: テーマタブにクリア進捗が表示されること
   - 依存: ランクバッジ追加後
 
-- [ ] **Phase 3 統合テスト**
+- [x] **Phase 3 統合テスト**
   - 対象: 全ファイル
   - 作業: テーマアンロック・ベストスコア・ランクバッジの統合テスト。新規画像 12 枚 + 動画 12 本の表示確認
   - 完了条件: すべての機能が正常に動作すること
