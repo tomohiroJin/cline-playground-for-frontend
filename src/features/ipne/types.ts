@@ -628,3 +628,15 @@ export interface SoundConfig {
 
 /** メロディノート（周波数, 長さ） */
 export type MelodyNote = readonly [number, number];
+
+/** 画像エントリ */
+export interface StoryImageEntry {
+  /** 画像ソース (URL or data URI) */
+  src: string;
+  /** alt テキスト */
+  alt: string;
+  /** 表示幅 (px) */
+  width: number;
+  /** 表示高さ (px) */
+  height: number;
+}

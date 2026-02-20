@@ -2,59 +2,21 @@
  * ストーリー画像レジストリ
  *
  * ストーリー画面・エンディング画面で使用する画像を一元管理する。
- * 初期段階ではプレースホルダー画像を返し、本番アセット準備後に差し替える。
+ * 画像はassetsからimportし、Webpackでバンドルされる。
  */
 
-/** 画像エントリ */
-export interface StoryImageEntry {
-  /** 画像ソース (URL or data URI) */
-  src: string;
-  /** alt テキスト */
-  alt: string;
-  /** 表示幅 (px) */
-  width: number;
-  /** 表示高さ (px) */
-  height: number;
-}
+import { StoryImageEntry } from './types';
 
-const PLACEHOLDER_BG_COLOR = '#1a1a2e';
-const PLACEHOLDER_TEXT_COLOR = '#e2e8f0';
-const PLACEHOLDER_BORDER_COLOR = '#4a5568';
-
-/** プレースホルダー画像を Canvas API で生成する */
-function createPlaceholder(
-  alt: string,
-  width: number,
-  height: number
-): string {
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return '';
-
-  // 背景
-  ctx.fillStyle = PLACEHOLDER_BG_COLOR;
-  ctx.fillRect(0, 0, width, height);
-
-  // 枠線
-  ctx.strokeStyle = PLACEHOLDER_BORDER_COLOR;
-  ctx.lineWidth = 1;
-  ctx.strokeRect(0.5, 0.5, width - 1, height - 1);
-
-  // テキスト
-  ctx.fillStyle = PLACEHOLDER_TEXT_COLOR;
-  ctx.font = '16px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-
-  const line1 = '[画像準備中]';
-  const line2 = alt;
-  ctx.fillText(line1, width / 2, height / 2 - 12);
-  ctx.fillText(line2, width / 2, height / 2 + 12);
-
-  return canvas.toDataURL('image/png');
-}
+// 実画像を import
+import imgPrologue1 from '../../assets/images/ipne_story_prologue_1.webp';
+import imgPrologue2 from '../../assets/images/ipne_story_prologue_2.webp';
+import imgPrologue3 from '../../assets/images/ipne_story_prologue_3.webp';
+import imgStage1 from '../../assets/images/ipne_story_stage_1.webp';
+import imgStage2 from '../../assets/images/ipne_story_stage_2.webp';
+import imgStage3 from '../../assets/images/ipne_story_stage_3.webp';
+import imgStage4 from '../../assets/images/ipne_story_stage_4.webp';
+import imgStage5 from '../../assets/images/ipne_story_stage_5.webp';
+import imgGameOver from '../../assets/images/ipne_story_game_over.webp';
 
 /** 画像定義（キー → alt, width, height） */
 const IMAGE_DEFINITIONS: Record<string, { alt: string; width: number; height: number }> = {
@@ -69,8 +31,18 @@ const IMAGE_DEFINITIONS: Record<string, { alt: string; width: number; height: nu
   game_over: { alt: '冒険の終わり', width: 480, height: 270 },
 };
 
-/** プレースホルダーキャッシュ */
-const imageCache = new Map<string, StoryImageEntry>();
+// 画像キー → import マッピング
+const IMAGE_SOURCES: Record<string, string> = {
+  prologue_scene_1: imgPrologue1,
+  prologue_scene_2: imgPrologue2,
+  prologue_scene_3: imgPrologue3,
+  story_stage_1: imgStage1,
+  story_stage_2: imgStage2,
+  story_stage_3: imgStage3,
+  story_stage_4: imgStage4,
+  story_stage_5: imgStage5,
+  game_over: imgGameOver,
+};
 
 /**
  * 画像キーからエントリを取得する
@@ -81,17 +53,12 @@ export function getStoryImage(key: string): StoryImageEntry | undefined {
   const def = IMAGE_DEFINITIONS[key];
   if (!def) return undefined;
 
-  const cached = imageCache.get(key);
-  if (cached) return cached;
-
-  const entry: StoryImageEntry = {
-    src: createPlaceholder(def.alt, def.width, def.height),
+  return {
+    src: IMAGE_SOURCES[key],
     alt: def.alt,
     width: def.width,
     height: def.height,
   };
-  imageCache.set(key, entry);
-  return entry;
 }
 
 /**
