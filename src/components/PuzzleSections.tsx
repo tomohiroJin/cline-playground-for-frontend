@@ -9,6 +9,7 @@ import DifficultySelector from '../components/molecules/DifficultySelector';
 import PuzzleBoard from '../components/organisms/PuzzleBoard';
 import { PuzzlePiece } from '../store/atoms';
 import { ShareButton } from './molecules/ShareButton';
+import { PuzzleScore } from '../types/puzzle';
 
 /**
  * SetupSectionコンポーネントのプロパティの型定義
@@ -94,6 +95,8 @@ export type GameSectionProps = {
   emptyPosition: Position;
   moveCount: number;
   correctRate: number;
+  score: PuzzleScore | null;
+  isBestScore: boolean;
   handlePieceMove: (pieceId: number, row: number, col: number) => void;
   handleResetGame: () => void;
   toggleHintMode: () => void;
@@ -118,6 +121,8 @@ export const GameSectionComponent: React.FC<GameSectionProps> = ({
   emptyPosition,
   moveCount,
   correctRate,
+  score,
+  isBestScore,
   handlePieceMove,
   handleResetGame,
   toggleHintMode,
@@ -142,6 +147,8 @@ export const GameSectionComponent: React.FC<GameSectionProps> = ({
           emptyPosition={emptyPosition}
           moveCount={moveCount}
           correctRate={correctRate}
+          score={score}
+          isBestScore={isBestScore}
           onPieceMove={handlePieceMove}
           onReset={handleResetGame}
           onToggleHint={toggleHintMode}
@@ -161,7 +168,11 @@ export const GameSectionComponent: React.FC<GameSectionProps> = ({
             >
               <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>パズルが完成しました！</div>
               <ShareButton
-                text={`パズル（${division}x${division}）をクリアしました！ タイム: ${elapsedTime}秒`}
+                text={
+                  score
+                    ? `パズル（${division}x${division}）をクリア！ スコア: ${score.totalScore.toLocaleString()} ランク: ${score.rank} タイム: ${score.elapsedTime}秒`
+                    : `パズル（${division}x${division}）をクリアしました！ タイム: ${elapsedTime}秒`
+                }
                 hashtags={['PuzzleGame', 'GamePlatform']}
               />
             </div>

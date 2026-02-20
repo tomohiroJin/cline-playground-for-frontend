@@ -218,43 +218,43 @@
 
 ### 1-5. リザルト画面の強化
 
-- [ ] **`ResultScreen` コンポーネント作成**
+- [x] **`ResultScreen` コンポーネント作成**
   - 対象: `src/components/molecules/ResultScreen.tsx`（新規作成）
   - 作業: 画像名・難易度・タイム・手数・スコア・ランク・ベストスコア更新表示を含むリザルト画面
   - 完了条件: 仕様通りの情報が表示されること
   - 依存: 1-4 完了
 
-- [ ] **`ResultScreen` スタイル作成**
+- [x] **`ResultScreen` スタイル作成**
   - 対象: `src/components/molecules/ResultScreen.styles.ts`（新規作成）
   - 作業: glassmorphism デザインに合わせたスタイル
   - 完了条件: ダークテーマ・ライトテーマの両方で適切に表示されること
   - 依存: なし
 
-- [ ] **`PuzzleRecord` ストレージ関連実装**
+- [x] **`PuzzleRecord` ストレージ関連実装**
   - 対象: `src/utils/storage-utils.ts`
   - 作業: `PuzzleRecord` 型追加、`getPuzzleRecords`、`savePuzzleRecords`、`recordScore` 関数を実装
   - 完了条件: ベストスコアの保存・取得・更新判定が正しく動作すること
   - 依存: 型定義追加後
 
-- [ ] **既存 `CompletionOverlay` の置き換え**
+- [x] **既存 `CompletionOverlay` の置き換え**
   - 対象: `src/components/organisms/PuzzleBoard.tsx`
   - 作業: 完成時のオーバーレイ部分を `ResultScreen` コンポーネントに置き換え
   - 完了条件: 完成時に `ResultScreen` が表示され、旧 `CompletionOverlay` が表示されないこと
   - 依存: `ResultScreen` 完成後
 
-- [ ] **SNS シェアテキストの拡充**
+- [x] **SNS シェアテキストの拡充**
   - 対象: `src/components/PuzzleSections.tsx`
   - 作業: `ShareButton` の `text` props にスコアとランクを追加
   - 完了条件: シェアテキストに「スコア: X,XXX ランク: ★★☆」のような情報が含まれること
   - 依存: スコア計算統合後
 
-- [ ] **データマイグレーション実装**
+- [x] **データマイグレーション実装**
   - 対象: `src/utils/storage-utils.ts`
   - 作業: `migrateClearHistory` 関数を実装し、アプリ起動時に一度だけ実行
   - 完了条件: 既存の `ClearHistory` が `PuzzleRecord` に変換され、二重実行されないこと
   - 依存: `PuzzleRecord` ストレージ実装後
 
-- [ ] **Phase 1 統合テスト**
+- [x] **Phase 1 統合テスト**
   - 対象: 全ファイル
   - 作業: `npm test` 全パス確認、手動で一連のゲームフロー（画像選択→ゲーム開始→クリア→リザルト確認）を検証
   - 完了条件: すべてのテストがパスし、手動検証で問題なし

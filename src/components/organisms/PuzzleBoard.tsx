@@ -4,10 +4,6 @@ import {
   Board,
   BoardGrid,
   GridCell,
-  CompletionOverlay,
-  CompletionMessage,
-  CompletionTime,
-  RestartButton,
   StatusBar,
   StatusItem,
   HintToggleButton,
@@ -24,6 +20,8 @@ import { formatElapsedTime } from '../../utils/puzzle-utils';
 import { useCompletionOverlay } from '../../hooks/useCompletionOverlay';
 import { useVideoPlayback } from '../../hooks/useVideoPlayback';
 import { addClearHistory, extractImageName } from '../../utils/storage-utils';
+import { PuzzleScore } from '../../types/puzzle';
+import ResultScreen from '../molecules/ResultScreen';
 
 /**
  * パズルボードコンポーネントのプロパティの型定義
@@ -55,6 +53,8 @@ export type PuzzleBoardProps = {
   emptyPosition: { row: number; col: number } | null;
   moveCount: number;
   correctRate: number;
+  score: PuzzleScore | null;
+  isBestScore: boolean;
   onPieceMove: (pieceId: number, row: number, col: number) => void;
   onReset: () => void;
   onToggleHint: () => void;
@@ -77,6 +77,8 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   emptyPosition,
   moveCount,
   correctRate,
+  score,
+  isBestScore,
   onPieceMove,
   onReset,
   onToggleHint,
@@ -148,20 +150,15 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
             completed={completed}
           />
         ))}
-        {completed && overlayVisible && (
-          <CompletionOverlay>
-            <CompletionMessage>パズル完成！</CompletionMessage>
-            <CompletionTime>所要時間: {formatElapsedTime(elapsedTime)}</CompletionTime>
-            <RestartButton onClick={onReset}>もう一度挑戦</RestartButton>
-            {onEndGame && (
-              <RestartButton
-                onClick={onEndGame}
-                style={{ marginTop: '10px', backgroundColor: '#2196F3' }}
-              >
-                設定に戻る
-              </RestartButton>
-            )}
-          </CompletionOverlay>
+        {completed && overlayVisible && score && (
+          <ResultScreen
+            imageAlt={extractImageName(imageUrl)}
+            division={division}
+            score={score}
+            isBestScore={isBestScore}
+            onRetry={onReset}
+            onBackToSetup={onEndGame ?? (() => {})}
+          />
         )}
 
         {completed && !overlayVisible && (

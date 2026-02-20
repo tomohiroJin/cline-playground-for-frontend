@@ -53,6 +53,8 @@ describe('PuzzleBoard', () => {
       emptyPosition: { row: 0, col: 0 },
       moveCount: 0,
       correctRate: 0,
+      score: null,
+      isBestScore: false,
       onPieceMove: jest.fn(),
       onReset: jest.fn(),
       onToggleHint: jest.fn(),
@@ -68,7 +70,7 @@ describe('PuzzleBoard', () => {
   });
 
   // 完了状態のテスト
-  it('パズルが完成するとオーバーレイが表示される', () => {
+  it('パズルが完成するとリザルト画面が表示される', () => {
     const props = {
       imageUrl: 'test.jpg',
       originalWidth: 800,
@@ -79,8 +81,18 @@ describe('PuzzleBoard', () => {
       completed: true,
       hintMode: false,
       emptyPosition: { row: 0, col: 0 },
-      moveCount: 0,
-      correctRate: 0,
+      moveCount: 42,
+      correctRate: 100,
+      score: {
+        totalScore: 7250,
+        moveCount: 42,
+        elapsedTime: 120,
+        hintUsed: false,
+        division: 4,
+        rank: '★★☆' as const,
+        shuffleMoves: 32,
+      },
+      isBestScore: true,
       onPieceMove: jest.fn(),
       onReset: jest.fn(),
       onToggleHint: jest.fn(),
@@ -88,10 +100,13 @@ describe('PuzzleBoard', () => {
 
     render(<PuzzleBoard {...props} />);
 
-    // 完成メッセージが表示されていることを確認
+    // リザルト画面が表示されていることを確認
     expect(screen.getByText('パズル完成！')).toBeInTheDocument();
-    expect(screen.getByText('所要時間: 02:00')).toBeInTheDocument();
-    expect(screen.getByText('もう一度挑戦')).toBeInTheDocument();
+    expect(screen.getByText('02:00')).toBeInTheDocument();
+    expect(screen.getByText('もう一度')).toBeInTheDocument();
+    expect(screen.getByText('7,250')).toBeInTheDocument();
+    expect(screen.getByText('★★☆')).toBeInTheDocument();
+    expect(screen.getByText('ベストスコア更新！')).toBeInTheDocument();
   });
 
   // クリア履歴保存のテスト
@@ -108,6 +123,8 @@ describe('PuzzleBoard', () => {
       emptyPosition: { row: 0, col: 0 },
       moveCount: 0,
       correctRate: 0,
+      score: null,
+      isBestScore: false,
       onPieceMove: jest.fn(),
       onReset: jest.fn(),
       onToggleHint: jest.fn(),
@@ -136,6 +153,8 @@ describe('PuzzleBoard', () => {
       emptyPosition: { row: 0, col: 0 },
       moveCount: 0,
       correctRate: 0,
+      score: null,
+      isBestScore: false,
       onPieceMove: jest.fn(),
       onReset: jest.fn(),
       onToggleHint: jest.fn(),

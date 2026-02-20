@@ -31,3 +31,15 @@ export const RANK_THRESHOLDS = {
   TWO_STAR: 5000,
   ONE_STAR: 2000,
 };
+
+/** ベストスコア記録（画像×難易度ごと） */
+export interface PuzzleRecord {
+  imageId: string;
+  division: number;
+  bestScore: number;
+  bestRank: PuzzleRank;
+  bestTime: number;
+  bestMoves: number;
+  clearCount: number;
+  lastClearDate: string;
+}

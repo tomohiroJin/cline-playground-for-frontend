@@ -6,7 +6,7 @@ import {
   InstructionsList,
 } from './PuzzlePage.styles';
 import ClearHistoryList from '../components/molecules/ClearHistoryList';
-import { getClearHistory, ClearHistory } from '../utils/storage-utils';
+import { getClearHistory, ClearHistory, migrateClearHistory } from '../utils/storage-utils';
 import { SetupSectionComponent, GameSectionComponent } from '../components/PuzzleSections';
 import { useGameState } from '../hooks/useGameState';
 
@@ -30,6 +30,11 @@ const PuzzlePage: React.FC = () => {
     handleEmptyPanelClick,
     gameState,
   } = useGameState();
+
+  // 初回マウント時にデータマイグレーション実行
+  useEffect(() => {
+    migrateClearHistory();
+  }, []);
 
   // ゲームの状態が変わったときにクリア履歴を更新
   useEffect(() => {

@@ -5,6 +5,7 @@ import { useHintMode } from './useHintMode';
 import { hintUsedAtom } from '../store/atoms';
 import { calculateScore } from '../utils/score-utils';
 import { PuzzleScore } from '../types/puzzle';
+import { recordScore as recordPuzzleScore, extractImageName } from '../utils/storage-utils';
 
 export const useGameState = () => {
   const {
@@ -34,11 +35,12 @@ export const useGameState = () => {
   const [gameStarted, setGameStarted] = useState(false);
   const [emptyPanelClicks, setEmptyPanelClicks] = useState(0);
   const [score, setScore] = useState<PuzzleScore | null>(null);
+  const [isBestScore, setIsBestScore] = useState(false);
 
   // completedの変化を追跡するref
   const prevCompletedRef = useRef(false);
 
-  // パズル完成時にスコアを計算
+  // パズル完成時にスコアを計算し記録する
   useEffect(() => {
     if (completed && !prevCompletedRef.current) {
       const puzzleScore = calculateScore(
@@ -49,9 +51,15 @@ export const useGameState = () => {
         division
       );
       setScore(puzzleScore);
+
+      if (imageUrl) {
+        const imageId = extractImageName(imageUrl);
+        const { isBestScore: best } = recordPuzzleScore(imageId, division, puzzleScore);
+        setIsBestScore(best);
+      }
     }
     prevCompletedRef.current = completed;
-  }, [completed, moveCount, shuffleMoves, elapsedTime, hintUsed, division]);
+  }, [completed, moveCount, shuffleMoves, elapsedTime, hintUsed, division, imageUrl]);
 
   /**
    * 空のパネルがクリックされた際の処理を行います。
@@ -82,6 +90,7 @@ export const useGameState = () => {
    */
   const handleStartGame = () => {
     setScore(null);
+    setIsBestScore(false);
     initializePuzzle();
     setGameStarted(true);
   };
@@ -98,6 +107,7 @@ export const useGameState = () => {
    */
   const handleResetGame = () => {
     setScore(null);
+    setIsBestScore(false);
     resetPuzzle();
   };
 
@@ -132,6 +142,7 @@ export const useGameState = () => {
       shuffleMoves,
       correctRate,
       score,
+      isBestScore,
       setPieces,
       setCompleted,
     },
