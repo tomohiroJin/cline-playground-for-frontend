@@ -2,11 +2,23 @@ import {
   PuzzleScore,
   PuzzleRank,
   PuzzleRecord,
-  DIVISION_MULTIPLIERS,
   RANK_THRESHOLDS,
   UnlockCondition,
   ThemeId,
 } from '../types/puzzle';
+
+/** 難易度別乗数 */
+const DIVISION_MULTIPLIERS: Record<number, number> = {
+  2: 0.3,
+  3: 0.5,
+  4: 1.0,
+  5: 1.5,
+  6: 2.0,
+  8: 3.5,
+  10: 5.0,
+  16: 10.0,
+  32: 20.0,
+};
 
 /**
  * ランクを判定する
@@ -31,6 +43,14 @@ export const determineRank = (score: number): PuzzleRank => {
  * @param division 分割数
  * @returns PuzzleScore
  */
+/** スコア計算の定数 */
+export const SCORE_CONSTANTS = {
+  BASE_SCORE: 10_000,
+  MOVE_PENALTY_PER: 50,
+  TIME_PENALTY_PER: 10,
+  HINT_PENALTY: 1_000,
+} as const;
+
 export const calculateScore = (
   actualMoves: number,
   optimalMoves: number,
@@ -38,10 +58,7 @@ export const calculateScore = (
   hintUsed: boolean,
   division: number
 ): PuzzleScore => {
-  const BASE_SCORE = 10_000;
-  const MOVE_PENALTY_PER = 50;
-  const TIME_PENALTY_PER = 10;
-  const HINT_PENALTY = 1_000;
+  const { BASE_SCORE, MOVE_PENALTY_PER, TIME_PENALTY_PER, HINT_PENALTY } = SCORE_CONSTANTS;
 
   const movePenalty = Math.max(0, actualMoves - optimalMoves) * MOVE_PENALTY_PER;
   const timePenalty = elapsedSeconds * TIME_PENALTY_PER;
@@ -93,7 +110,9 @@ export const isThemeUnlocked = (
         );
       });
     }
-    default:
-      return false;
+    default: {
+      const _exhaustiveCheck: never = condition;
+      return _exhaustiveCheck;
+    }
   }
 };

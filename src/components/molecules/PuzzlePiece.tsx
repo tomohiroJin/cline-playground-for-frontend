@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { PieceContainer, PieceImage } from './PuzzlePiece.styles';
-import { PuzzlePiece as PuzzlePieceType } from '../../store/atoms';
+import { PuzzlePiece as PuzzlePieceType } from '../../types/puzzle';
 
 // プロパティの型定義
 interface PuzzlePieceProps {

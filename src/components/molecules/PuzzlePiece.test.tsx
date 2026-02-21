@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react';
 import PuzzlePiece from './PuzzlePiece';
-import { PuzzlePiece as PuzzlePieceType } from '../../store/atoms';
+import { PuzzlePiece as PuzzlePieceType } from '../../types/puzzle';
 
 // モックデータ
 const mockPiece: PuzzlePieceType = {

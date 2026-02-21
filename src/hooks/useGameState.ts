@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAtom } from 'jotai';
 import { usePuzzle } from './usePuzzle';
+import { usePuzzleTimer } from './usePuzzleTimer';
 import { useHintMode } from './useHintMode';
 import { hintUsedAtom } from '../store/atoms';
 import { calculateScore } from '../utils/score-utils';
@@ -29,6 +30,7 @@ export const useGameState = () => {
     resetPuzzle,
   } = usePuzzle();
 
+  usePuzzleTimer();
   const { hintModeEnabled, toggleHintMode } = useHintMode();
   const [hintUsed] = useAtom(hintUsedAtom);
 
@@ -120,6 +122,18 @@ export const useGameState = () => {
     setGameStarted(false);
   };
 
+  /**
+   * デバッグ用：パズルを即座に完成させる
+   */
+  const handleCompletePuzzleForDebug = useCallback(() => {
+    const correctPieces = pieces.map(piece => ({
+      ...piece,
+      currentPosition: { ...piece.correctPosition },
+    }));
+    setPieces(correctPieces);
+    setCompleted(true);
+  }, [pieces, setPieces, setCompleted]);
+
   return {
     toggleHintMode,
     gameStarted,
@@ -130,6 +144,7 @@ export const useGameState = () => {
     handleResetGame,
     handleEndGame,
     handleEmptyPanelClick,
+    handleCompletePuzzleForDebug,
     gameState: {
       imageUrl,
       originalImageSize,
@@ -145,8 +160,6 @@ export const useGameState = () => {
       correctRate,
       score,
       isBestScore,
-      setPieces,
-      setCompleted,
     },
   };
 };

@@ -1,4 +1,5 @@
-import { calculateScore, determineRank } from './score-utils';
+import { calculateScore, determineRank, isThemeUnlocked } from './score-utils';
+import { PuzzleRecord } from '../types/puzzle';
 
 describe('score-utils', () => {
   describe('determineRank', () => {
@@ -80,6 +81,73 @@ describe('score-utils', () => {
       const score = calculateScore(32, 32, 30, false, 7);
       // (10000 - 0 - 300 - 0) * 1.0 = 9700
       expect(score.totalScore).toBe(9700);
+    });
+
+    // 境界値テスト
+    it('0手数・0秒で最大スコアを返すこと', () => {
+      const score = calculateScore(0, 0, 0, false, 4);
+      // (10000 - 0 - 0 - 0) * 1.0 = 10000
+      expect(score.totalScore).toBe(10000);
+      expect(score.rank).toBe('★★★');
+    });
+
+    it('0手数・0秒・ヒントありでもスコアが計算されること', () => {
+      const score = calculateScore(0, 0, 0, true, 4);
+      // (10000 - 0 - 0 - 1000) * 1.0 = 9000
+      expect(score.totalScore).toBe(9000);
+      expect(score.rank).toBe('★★★');
+    });
+  });
+
+  describe('isThemeUnlocked', () => {
+    it('always条件はtrueを返すこと', () => {
+      expect(isThemeUnlocked({ type: 'always' }, 0, [])).toBe(true);
+    });
+
+    it('clearCount条件で達成済みはtrueを返すこと', () => {
+      expect(isThemeUnlocked({ type: 'clearCount', count: 5 }, 5, [])).toBe(true);
+      expect(isThemeUnlocked({ type: 'clearCount', count: 5 }, 10, [])).toBe(true);
+    });
+
+    it('clearCount条件で未達はfalseを返すこと', () => {
+      expect(isThemeUnlocked({ type: 'clearCount', count: 5 }, 4, [])).toBe(false);
+    });
+
+    it('themesClear条件でthemeImageIds未指定はfalseを返すこと', () => {
+      expect(
+        isThemeUnlocked(
+          { type: 'themesClear', themeIds: ['illustration-gallery'] },
+          0,
+          []
+        )
+      ).toBe(false);
+    });
+
+    it('themesClear条件で全テーマクリア済みはtrueを返すこと', () => {
+      const records: PuzzleRecord[] = [
+        {
+          imageId: 'img1',
+          division: 4,
+          bestScore: 5000,
+          bestRank: '★★☆',
+          bestTime: 60,
+          bestMoves: 30,
+          clearCount: 1,
+          lastClearDate: '2025-01-01T00:00:00Z',
+        },
+      ];
+      const themeImageIds = new Map([
+        ['illustration-gallery' as const, ['img1']],
+      ]);
+
+      expect(
+        isThemeUnlocked(
+          { type: 'themesClear', themeIds: ['illustration-gallery'] },
+          0,
+          records,
+          themeImageIds
+        )
+      ).toBe(true);
     });
   });
 });

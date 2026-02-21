@@ -75,7 +75,7 @@ export const ProgressBar = styled.div`
 export const ProgressFill = styled.div<{ $percent: number }>`
   height: 100%;
   width: ${props => props.$percent}%;
-  background-color: #4caf50;
+  background-color: var(--success-color);
   transition: width 0.3s ease;
 `;
 
@@ -92,7 +92,7 @@ export const ImageItem = styled.div<{ $isSelected: boolean }>`
   cursor: pointer;
   border-radius: 8px;
   overflow: hidden;
-  border: 3px solid ${props => (props.$isSelected ? '#4caf50' : 'transparent')};
+  border: 3px solid ${props => (props.$isSelected ? 'var(--success-color)' : 'transparent')};
   transition: all 0.2s ease-in-out;
 
   &:hover {
@@ -112,7 +112,7 @@ export const SelectedIndicator = styled.div`
   position: absolute;
   top: 5px;
   right: 5px;
-  background-color: #4caf50;
+  background-color: var(--success-color);
   color: white;
   border-radius: 50%;
   width: 24px;

@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, useMemo } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import {
   BoardContainer,
   Board,
@@ -10,41 +10,22 @@ import {
   HintImage,
   OverlayToggleButton,
   EyeIcon,
-  VideoOverlay,
-  VideoPlayer,
-  CloseButton,
-  ConfettiContainer,
-  ConfettiPiece,
   CompleteImage,
 } from './PuzzleBoard.styles';
-import { PuzzlePiece as PuzzlePieceType } from '../../store/atoms';
+import { PuzzlePiece as PuzzlePieceType, PuzzleScore } from '../../types/puzzle';
 import PuzzlePiece from '../molecules/PuzzlePiece';
 import { formatElapsedTime } from '../../utils/puzzle-utils';
 import { useCompletionOverlay } from '../../hooks/useCompletionOverlay';
 import { useVideoPlayback } from '../../hooks/useVideoPlayback';
 import { addClearHistory, extractImageName } from '../../utils/storage-utils';
-import { PuzzleScore } from '../../types/puzzle';
 import ResultScreen from '../molecules/ResultScreen';
 import { useSwipe } from '../../hooks/useSwipe';
 import { useKeyboard } from '../../hooks/useKeyboard';
+import VideoOverlay from './VideoOverlay';
+import ConfettiOverlay from './ConfettiOverlay';
 
 /**
  * パズルボードコンポーネントのプロパティの型定義
- *
- * @param imageUrl - 画像のURL
- * @param originalWidth - 元の画像の幅
- * @param originalHeight - 元の画像の高さ
- * @param pieces - パズルのピースの配列
- * @param division - パズルの分割数
- * @param elapsedTime - 経過時間
- * @param completed - ゲームの完了状態
- * @param hintMode - ヒントモードの有効状態
- * @param emptyPosition - 空のピースの位置
- * @param onPieceMove - ピースを移動する関数
- * @param onReset - ゲームをリセットする関数
- * @param onToggleHint - ヒントモードを切り替える関数
- * @param onEmptyPanelClick - 空のパネルをクリックしたときの処理
- * @param onEndGame - ゲームを終了して設定に戻る関数
  */
 export type PuzzleBoardProps = {
   imageUrl: string;
@@ -65,6 +46,15 @@ export type PuzzleBoardProps = {
   onToggleHint: () => void;
   onEmptyPanelClick?: () => void;
   onEndGame?: () => void;
+};
+
+type Direction = 'up' | 'down' | 'left' | 'right';
+
+const DIRECTION_DELTAS: Record<Direction, { rowDelta: number; colDelta: number }> = {
+  up: { rowDelta: 1, colDelta: 0 },
+  down: { rowDelta: -1, colDelta: 0 },
+  left: { rowDelta: 0, colDelta: 1 },
+  right: { rowDelta: 0, colDelta: -1 },
 };
 
 /**
@@ -136,26 +126,12 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
 
   // 方向指定でピースを移動する（スワイプ・キーボード用）
   const handleDirectionMove = useCallback(
-    (direction: 'up' | 'down' | 'left' | 'right') => {
+    (direction: Direction) => {
       if (completed || !emptyPosition) return;
 
-      let targetRow = emptyPosition.row;
-      let targetCol = emptyPosition.col;
-
-      switch (direction) {
-        case 'up':
-          targetRow += 1;
-          break;
-        case 'down':
-          targetRow -= 1;
-          break;
-        case 'left':
-          targetCol += 1;
-          break;
-        case 'right':
-          targetCol -= 1;
-          break;
-      }
+      const delta = DIRECTION_DELTAS[direction];
+      const targetRow = emptyPosition.row + delta.rowDelta;
+      const targetCol = emptyPosition.col + delta.colDelta;
 
       const targetPiece = pieces.find(
         p =>
@@ -184,10 +160,6 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
 
   // グリッドセルを生成
   const renderGridCells = createGridCells(division, completed);
-
-  // 紙吹雪パーツをメモ化（完成時に一度だけ生成）
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const confettiPieces = useMemo(() => (completed ? generateConfettiPieces() : []), [completed]);
 
   return (
     <BoardContainer>
@@ -227,20 +199,7 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
           />
         ))}
         {completed && <CompleteImage $imageUrl={imageUrl} />}
-        {completed && (
-          <ConfettiContainer>
-            {confettiPieces.map(c => (
-              <ConfettiPiece
-                key={c.id}
-                $left={c.left}
-                $delay={c.delay}
-                $duration={c.duration}
-                $color={c.color}
-                $size={c.size}
-              />
-            ))}
-          </ConfettiContainer>
-        )}
+        <ConfettiOverlay completed={completed} />
         {completed && overlayVisible && score && (
           <ResultScreen
             imageAlt={extractImageName(imageUrl)}
@@ -273,12 +232,7 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
         )}
 
         {videoPlaybackEnabled && videoUrl && (
-          <VideoOverlay>
-            <VideoPlayer src={videoUrl} autoPlay controls onEnded={disableVideoPlayback} />
-            <CloseButton onClick={disableVideoPlayback} title="動画を閉じる">
-              ✕
-            </CloseButton>
-          </VideoOverlay>
+          <VideoOverlay videoUrl={videoUrl} onClose={disableVideoPlayback} />
         )}
         {completed && (
           <OverlayToggleButton
@@ -305,11 +259,6 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
 
 /**
  * ボードとピースのサイズを計算する関数
- *
- * @param originalWidth - 元の画像の幅
- * @param originalHeight - 元の画像の高さ
- * @param division - 分割数
- * @return ボードとピースのサイズを含むオブジェクト
  */
 const calculateBoardAndPieceSizes = (
   originalWidth: number,
@@ -327,10 +276,6 @@ const calculateBoardAndPieceSizes = (
 
 /**
  * ピースが空のピースに隣接しているかどうかを判定する関数
- *
- * @param currentPosition - 現在のピースの位置
- * @param emptyPosition - 空のピースの位置
- * @return 隣接している場合はtrue、そうでない場合はfalse
  */
 const isAdjacentToEmpty = (
   currentPosition: { row: number; col: number },
@@ -346,10 +291,6 @@ const isAdjacentToEmpty = (
 
 /**
  * グリッドセルを生成する関数
- *
- * @param division - 分割数
- * @param completed - 完了状態
- * @return グリッドセルの配列
  */
 const createGridCells = (division: number, completed: boolean) =>
   Array.from({ length: division * division }, (_, i) => (
@@ -358,34 +299,13 @@ const createGridCells = (division: number, completed: boolean) =>
 
 /**
  * ピースの位置から中心までの距離に基づいてボーダー溶解のディレイを計算する
- *
- * @param row - ピースの行位置
- * @param col - ピースの列位置
- * @param division - 分割数
- * @returns ディレイ（秒）
  */
 const calculateDissolveDelay = (row: number, col: number, division: number): number => {
   const center = (division - 1) / 2;
   const distance = Math.max(Math.abs(row - center), Math.abs(col - center));
   const maxDistance = Math.ceil(center);
   if (maxDistance === 0) return 0;
-  // 外周(distance=maxDistance)が最初(delay=0)、中心(distance=0)が最後
   return ((maxDistance - distance) / maxDistance) * 1.0;
 };
-
-const CONFETTI_COLORS = ['#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#ff6bcb', '#a66cff'];
-
-/**
- * 紙吹雪パーツを生成する
- */
-const generateConfettiPieces = () =>
-  Array.from({ length: 30 }, (_, i) => ({
-    id: i,
-    left: Math.random() * 100,
-    delay: Math.random() * 0.8,
-    duration: 1.5 + Math.random() * 1.5,
-    color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-    size: 4 + Math.random() * 6,
-  }));
 
 export default PuzzleBoard;

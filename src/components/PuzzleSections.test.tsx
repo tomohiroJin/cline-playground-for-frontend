@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { SetupSectionComponent, GameSectionComponent } from './PuzzleSections';
-import { PuzzlePiece } from '../store/atoms';
+import { PuzzlePiece } from '../types/puzzle';
 
 describe('SetupSectionComponent', () => {
   const mockHandleImageSelect = jest.fn();
@@ -52,8 +52,7 @@ describe('GameSectionComponent', () => {
   const mockToggleHintMode = jest.fn();
   const mockHandleEmptyPanelClick = jest.fn();
   const mockHandleEndGame = jest.fn();
-  const mockSetPieces = jest.fn();
-  const mockSetCompleted = jest.fn();
+  const mockCompletePuzzleForDebug = jest.fn();
 
   const mockPieces: PuzzlePiece[] = [
     {
@@ -85,8 +84,7 @@ describe('GameSectionComponent', () => {
         handleEmptyPanelClick={mockHandleEmptyPanelClick}
         handleEndGame={mockHandleEndGame}
         emptyPanelClicks={0}
-        setPieces={mockSetPieces}
-        setCompleted={mockSetCompleted}
+        onCompletePuzzleForDebug={mockCompletePuzzleForDebug}
       />
     );
 
@@ -114,8 +112,7 @@ describe('GameSectionComponent', () => {
         handleEmptyPanelClick={mockHandleEmptyPanelClick}
         handleEndGame={mockHandleEndGame}
         emptyPanelClicks={0}
-        setPieces={mockSetPieces}
-        setCompleted={mockSetCompleted}
+        onCompletePuzzleForDebug={mockCompletePuzzleForDebug}
         debugMode={true}
       />
     );
@@ -144,8 +141,7 @@ describe('GameSectionComponent', () => {
         handleEmptyPanelClick={mockHandleEmptyPanelClick}
         handleEndGame={mockHandleEndGame}
         emptyPanelClicks={0}
-        setPieces={mockSetPieces}
-        setCompleted={mockSetCompleted}
+        onCompletePuzzleForDebug={mockCompletePuzzleForDebug}
       />
     );
 

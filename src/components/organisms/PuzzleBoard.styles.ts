@@ -1,4 +1,5 @@
 import styled, { keyframes } from 'styled-components';
+import IconButton from '../atoms/IconButton';
 
 export const BoardContainer = styled.div`
   display: flex;
@@ -84,27 +85,11 @@ export const HintImage = styled.div<{ $imageUrl: string }>`
   z-index: 0;
 `;
 
-export const OverlayToggleButton = styled.button<{ active: string }>`
+export const OverlayToggleButton = styled(IconButton)<{ active: string }>`
   position: absolute;
   top: 10px;
   right: 10px;
-  background-color: rgba(255, 255, 255, 0.7);
-  color: #333;
-  width: 36px;
-  height: 36px;
-  border: 1px solid #ccc;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 1.2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s;
   z-index: 30;
-
-  &:hover {
-    background-color: rgba(255, 255, 255, 0.9);
-  }
 `;
 
 export const EyeIcon = styled.span`
@@ -116,7 +101,7 @@ export const EyeIcon = styled.span`
   background-size: contain;
 `;
 
-export const VideoOverlay = styled.div`
+export const VideoOverlayContainer = styled.div`
   position: absolute;
   top: 0;
   left: 0;
@@ -135,27 +120,11 @@ export const VideoPlayer = styled.video`
   object-fit: contain;
 `;
 
-export const CloseButton = styled.button`
+export const CloseButton = styled(IconButton)`
   position: absolute;
   top: 10px;
-  left: 10px; /* 右上から左上に変更 */
-  background-color: rgba(255, 255, 255, 0.7);
-  color: #333;
-  width: 36px;
-  height: 36px;
-  border: 1px solid #ccc;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 1.2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s;
+  left: 10px;
   z-index: 40;
-
-  &:hover {
-    background-color: rgba(255, 255, 255, 0.9);
-  }
 `;
 
 const completeImageFadeIn = keyframes`

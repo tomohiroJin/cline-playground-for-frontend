@@ -1,4 +1,4 @@
-import { PuzzlePiece } from '../store/atoms';
+import { PuzzlePiece } from '../types/puzzle';
 import { GridPosition } from '../types/geometry';
 
 type Position = GridPosition;
@@ -190,19 +190,20 @@ export const getAdjacentPositions = (row: number, col: number, division: number)
 };
 
 /**
+ * ピースが正しい位置にあるかを判定する
+ */
+const isPieceInCorrectPosition = (piece: PuzzlePiece): boolean =>
+  piece.correctPosition.row === piece.currentPosition.row &&
+  piece.correctPosition.col === piece.currentPosition.col;
+
+/**
  * パズルが完成したかどうかをチェックする
  *
  * @param pieces パズルのピース配列
  * @returns 完成していればtrue、そうでなければfalse
  */
 export const isPuzzleCompleted = (pieces: PuzzlePiece[]): boolean => {
-  // 空きピース以外のすべてのピースが正しい位置にあるかをチェック
-  return pieces.every(
-    piece =>
-      piece.isEmpty || // 空きピースは位置をチェックしない
-      (piece.correctPosition.row === piece.currentPosition.row &&
-        piece.correctPosition.col === piece.currentPosition.col)
-  );
+  return pieces.every(piece => piece.isEmpty || isPieceInCorrectPosition(piece));
 };
 
 /**
@@ -215,11 +216,7 @@ export const calculateCorrectRate = (pieces: PuzzlePiece[]): number => {
   const nonEmptyPieces = pieces.filter(p => !p.isEmpty);
   if (nonEmptyPieces.length === 0) return 0;
 
-  const correctCount = nonEmptyPieces.filter(
-    p =>
-      p.correctPosition.row === p.currentPosition.row &&
-      p.correctPosition.col === p.currentPosition.col
-  ).length;
+  const correctCount = nonEmptyPieces.filter(isPieceInCorrectPosition).length;
 
   return Math.round((correctCount / nonEmptyPieces.length) * 100);
 };

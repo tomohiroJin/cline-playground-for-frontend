@@ -1,7 +1,13 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ThemeSelector from './ThemeSelector';
 import { Theme, PuzzleRecord } from '../../types/puzzle';
+import { getImageSize } from '../../utils/puzzle-utils';
+
+jest.mock('../../utils/puzzle-utils', () => ({
+  ...jest.requireActual('../../utils/puzzle-utils'),
+  getImageSize: jest.fn(),
+}));
 
 const mockThemes: Theme[] = [
   {
@@ -43,6 +49,10 @@ describe('ThemeSelector', () => {
     totalClears: 0,
     onImageSelect: jest.fn(),
   };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
   it('テーマタブが表示されること', () => {
     render(<ThemeSelector {...defaultProps} />);
@@ -89,5 +99,48 @@ describe('ThemeSelector', () => {
     ];
     render(<ThemeSelector {...defaultProps} records={records} />);
     expect(screen.getByText('★★★')).toBeInTheDocument();
+  });
+
+  describe('handleImageSelect 非同期テスト', () => {
+    it('getImageSize成功でonImageSelectが発火すること', async () => {
+      const onImageSelect = jest.fn();
+      (getImageSize as jest.Mock).mockResolvedValue({ width: 800, height: 600 });
+
+      render(<ThemeSelector {...defaultProps} onImageSelect={onImageSelect} />);
+
+      // 画像をクリック
+      fireEvent.click(screen.getByAltText('雪山の浮世絵風イラスト'));
+
+      await waitFor(() => {
+        expect(onImageSelect).toHaveBeenCalledWith(
+          expect.stringContaining('snowy_mountain_ukiyoe.webp'),
+          800,
+          600
+        );
+      });
+    });
+
+    it('getImageSize失敗でクラッシュしないこと', async () => {
+      const onImageSelect = jest.fn();
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      (getImageSize as jest.Mock).mockRejectedValue(new Error('Load failed'));
+
+      render(<ThemeSelector {...defaultProps} onImageSelect={onImageSelect} />);
+
+      // 画像をクリック
+      fireEvent.click(screen.getByAltText('雪山の浮世絵風イラスト'));
+
+      await waitFor(() => {
+        expect(consoleSpy).toHaveBeenCalledWith(
+          '画像の読み込みに失敗しました:',
+          expect.any(Error)
+        );
+      });
+
+      // onImageSelectは呼ばれないこと
+      expect(onImageSelect).not.toHaveBeenCalled();
+
+      consoleSpy.mockRestore();
+    });
   });
 });

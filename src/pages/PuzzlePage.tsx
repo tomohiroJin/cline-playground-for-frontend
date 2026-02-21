@@ -36,6 +36,7 @@ const PuzzlePage: React.FC = () => {
     handleResetGame,
     handleEndGame,
     handleEmptyPanelClick,
+    handleCompletePuzzleForDebug,
     gameState,
   } = useGameState();
 
@@ -78,6 +79,7 @@ const PuzzlePage: React.FC = () => {
           handleResetGame={handleResetGame}
           handleEndGame={handleEndGame}
           handleEmptyPanelClick={handleEmptyPanelClick}
+          onCompletePuzzleForDebug={handleCompletePuzzleForDebug}
           debugMode={debugMode}
         />
       )}

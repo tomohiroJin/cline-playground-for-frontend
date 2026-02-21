@@ -1,5 +1,5 @@
 import * as puzzleUtils from './puzzle-utils';
-import { PuzzlePiece } from '../store/atoms';
+import { PuzzlePiece } from '../types/puzzle';
 
 const {
   getImageSize,

@@ -62,7 +62,7 @@ export const ResultButtons = styled.div`
 `;
 
 export const ResultButton = styled.button<{ $variant?: 'primary' | 'secondary' }>`
-  background-color: ${props => (props.$variant === 'secondary' ? '#2196F3' : '#4caf50')};
+  background-color: ${props => (props.$variant === 'secondary' ? '#2196F3' : 'var(--success-color)')};
   color: white;
   padding: 8px 16px;
   border: none;
