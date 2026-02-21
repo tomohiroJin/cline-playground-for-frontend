@@ -35,14 +35,14 @@ export const updateDrift = (
   dt: number
 ): DriftState => {
   if (!state.active) {
-    // ドリフト中でない場合はブースト残りの減衰のみ処理
+    // ドリフト中でない場合はブースト残り時間の減衰のみ処理
+    // （getDriftBoost が ratio ベースの線形減衰を適用するため、boostPower は変更しない）
     if (state.boostRemaining > 0) {
       const remaining = Math.max(0, state.boostRemaining - dt);
-      const ratio = remaining / DRIFT.BOOST_DURATION;
       return {
         ...state,
         boostRemaining: remaining,
-        boostPower: state.boostPower > 0 ? state.boostPower * (ratio > 0 ? ratio / (ratio + dt / DRIFT.BOOST_DURATION) : 0) : 0,
+        boostPower: remaining > 0 ? state.boostPower : 0,
       };
     }
     return state;

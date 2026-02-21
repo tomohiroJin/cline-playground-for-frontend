@@ -143,11 +143,13 @@ export const Logic = {
     }
 
     // カード効果による壁ダメージ軽減
+    // wallDamageMultiplier < 1 で減速量を軽減（例: 0.5 = 減速50%軽減）
     const wallDamageMultiplier = p.activeCards.reduce(
       (acc, c) => acc * (c.wallDamageMultiplier ?? 1),
       1
     );
-    const adjustedSpeed = spd * factor * (1 - (1 - wallDamageMultiplier) * (1 - factor));
+    const speedLoss = (1 - factor) * wallDamageMultiplier;
+    const adjustedSpeed = spd * (1 - speedLoss);
 
     // スライド方向に移動（完全停止しない）
     let slideAngle: number;

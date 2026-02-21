@@ -53,7 +53,7 @@ export default function RacingGame() {
 
   // 'menu' | 'countdown' | 'race' | 'draft' | 'result'
   const [state, setState] = useState('menu');
-  const [winner, setWinner] = useState<string | null>(null);
+  const [, setWinner] = useState<string | null>(null);
   const [results, setResults] = useState<{
     winnerName: string;
     winnerColor: string;
@@ -69,10 +69,19 @@ export default function RacingGame() {
   const [vol, setVol] = useState(Config.audio.defaultVolume);
   const [muted, setMuted] = useState(false);
   const [ghostEnabled, setGhostEnabled] = useState(false);
+  const [gameKey, setGameKey] = useState(0);
+
+  // ゲームループ内部で使用する ref（依存配列による再初期化を防止）
+  const gamePhaseRef = useRef<string>('menu');
+  const pausedRef = useRef(false);
+  const winnerRef = useRef<string | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { keys, touch, setTouch } = useInput();
   const [demo, setDemo] = useIdle(state === 'menu', Config.timing.idle);
+
+  // ref とReact state の同期
+  useEffect(() => { pausedRef.current = paused; }, [paused]);
 
   // Sound Cleanup
   useEffect(() => {
@@ -100,6 +109,12 @@ export default function RacingGame() {
     const { width, height } = Config.canvas;
     canvas.width = width;
     canvas.height = height;
+
+    // ゲームフェーズ更新ヘルパー（ref + React state を同時更新）
+    const setPhase = (phase: string) => {
+      gamePhaseRef.current = phase;
+      setState(phase);
+    };
 
     const cIdx = demo ? Utils.randInt(Courses.length) : Utils.clamp(course, 0, Courses.length - 1);
     const cur = Courses[cIdx] || Courses[0];
@@ -228,7 +243,7 @@ export default function RacingGame() {
 
       SoundEngine.stopEngine();
       engineOn = false;
-      setState('draft');
+      setPhase('draft');
     };
 
     /** ドラフト確定処理 */
@@ -280,19 +295,19 @@ export default function RacingGame() {
         // ゴースト記録再開
         ghostRecorder = Ghost.resumeRecording(ghostRecorder);
 
-        setState('race');
+        setPhase('race');
       }, 500);
     };
 
     const update = () => {
-      if (paused || !isRunning) return;
+      if (pausedRef.current || !isRunning) return;
       if (demo && Date.now() - demoStart > Config.timing.demo) {
         setDemo(false);
         return;
       }
 
       // === ドラフト状態の更新 ===
-      if (state === 'draft' && draftState.active) {
+      if (gamePhaseRef.current === 'draft' && draftState.active) {
         const now = Date.now();
         const elapsed = (now - draftState.lastTick) / 1000;
         draftState.timer -= elapsed;
@@ -388,7 +403,7 @@ export default function RacingGame() {
       let draftLap = 0;
       const raceTime = raceStart > 0 ? Date.now() - raceStart : 0;
 
-      if (state === 'race' || demo) {
+      if (gamePhaseRef.current === 'race' || demo) {
         if (!demo && !engineOn) {
           SoundEngine.startEngine();
           engineOn = true;
@@ -505,8 +520,9 @@ export default function RacingGame() {
               np = { ...np, activeCards: [], shieldCount: 0 };
 
               if (np.lap > maxLaps) {
-                if (!demo && !winner) {
+                if (!demo && !winnerRef.current) {
                   const winName = p.name;
+                  winnerRef.current = winName;
                   setWinner(winName);
                   finished = true;
                   SoundEngine.stopEngine();
@@ -540,7 +556,7 @@ export default function RacingGame() {
         }
 
         // 衝突判定
-        if (state === 'race' || demo) {
+        if (gamePhaseRef.current === 'race' || demo) {
           const col = Logic.handleCollision(players[0], players[1]);
           if (col) {
             if (!demo) SoundEngine.collision();
@@ -559,7 +575,7 @@ export default function RacingGame() {
         }
 
         // ゴースト記録（P1のみ、race中）
-        if (!demo && state === 'race' && raceStart > 0) {
+        if (!demo && gamePhaseRef.current === 'race' && raceStart > 0) {
           ghostRecorder = Ghost.recordFrame(ghostRecorder, players[0], raceTime);
         }
       }
@@ -593,7 +609,7 @@ export default function RacingGame() {
       }
 
       if (finished && !demo) {
-        setState('result');
+        setPhase('result');
         const winName = players.find(p => p.lap > maxLaps)?.name || 'Unknown';
         const p1Time = players[0].lapTimes.reduce((a, b) => a + b, 0);
         const p2Time = players[1].lapTimes.reduce((a, b) => a + b, 0);
@@ -679,7 +695,7 @@ export default function RacingGame() {
         .sort((a, b) => a.y - b.y)
         .forEach(p => Render.kart(ctx, p));
 
-      if (state === 'countdown' && !demo) {
+      if (gamePhaseRef.current === 'countdown' && !demo) {
         const el = Date.now() - cdStart;
         const count = Math.ceil((Config.timing.countdown - el) / 1000);
         if (count !== lastCd && count > 0 && count <= 3) {
@@ -699,14 +715,14 @@ export default function RacingGame() {
         } else {
           if (raceStart === 0) {
             raceStart = Date.now();
-            setState('race');
+            setPhase('race');
             SoundEngine.go();
             players.forEach(p => (p.lapStart = Date.now()));
           }
         }
       }
 
-      if ((state === 'race' || demo) && raceStart !== 0 && raceStart - Date.now() < 1000) {
+      if ((gamePhaseRef.current === 'race' || demo) && raceStart !== 0 && Date.now() - raceStart < 1000) {
         ctx.fillStyle = '#ffeb3b';
         ctx.font = 'bold 100px Arial';
         ctx.textAlign = 'center';
@@ -715,7 +731,7 @@ export default function RacingGame() {
       }
 
       // ドラフトUI描画
-      if (state === 'draft' && draftState.active) {
+      if (gamePhaseRef.current === 'draft' && draftState.active) {
         const pi = draftState.currentPlayer;
         const hand = decks[pi].hand;
         const animProgress = Math.min(1, (Date.now() - draftState.animStart) / 800);
@@ -733,13 +749,13 @@ export default function RacingGame() {
         );
       }
 
-      if (state === 'result') {
+      if (gamePhaseRef.current === 'result') {
         Render.confetti(ctx, confetti);
         Render.fireworks(ctx, Date.now());
       }
 
       // HUD
-      if (state === 'race' || state === 'draft' || demo) {
+      if (gamePhaseRef.current === 'race' || gamePhaseRef.current === 'draft' || demo) {
         ctx.fillStyle = '#fff';
         ctx.font = 'bold 20px Arial';
         ctx.textAlign = 'left';
@@ -768,7 +784,7 @@ export default function RacingGame() {
       }
 
       // ハイライト通知バナー
-      if (state === 'race' || state === 'draft') {
+      if (gamePhaseRef.current === 'race' || gamePhaseRef.current === 'draft') {
         for (const notif of hlNotifications) {
           Render.highlightBanner(ctx, notif, Highlight.COLORS);
         }
@@ -799,18 +815,24 @@ export default function RacingGame() {
       SoundEngine.cleanup();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, course, speed, cpu, laps, c1, c2, state, paused, demo, winner, ghostEnabled]);
+  }, [mode, course, speed, cpu, laps, c1, c2, gameKey, demo, ghostEnabled]);
 
   const reset = () => {
+    gamePhaseRef.current = 'menu';
+    winnerRef.current = null;
     setState('menu');
     setWinner(null);
     setResults(null);
     setHighlightSummary([]);
     setPaused(false);
+    setGameKey(prev => prev + 1);
   };
 
   const startGame = () => {
+    gamePhaseRef.current = 'countdown';
+    winnerRef.current = null;
     setState('countdown');
+    setGameKey(prev => prev + 1);
     setDemo(false);
   };
 
@@ -973,13 +995,12 @@ export default function RacingGame() {
 
           {state === 'result' && results && (
             <Overlay>
-              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🏆👑🏆</div>
+              <div style={{ fontSize: '1.5rem' }}>🏆👑🏆</div>
               <ResultTitle>{results.winnerName} Wins!</ResultTitle>
               <div
                 style={{
-                  fontSize: '2.5rem',
+                  fontSize: '1.8rem',
                   fontWeight: 'bold',
-                  marginBottom: '1rem',
                   color: results.winnerColor,
                 }}
               >
@@ -996,8 +1017,8 @@ export default function RacingGame() {
 
               {/* ハイライトサマリー */}
               {highlightSummary.length > 0 && (
-                <ResultCard style={{ marginTop: '0.5rem' }}>
-                  <div style={{ color: '#ffeb3b', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                <ResultCard>
+                  <div style={{ color: '#ffeb3b', fontWeight: 'bold', marginBottom: '0.25rem', fontSize: '0.9rem' }}>
                     ─── ハイライト ───
                   </div>
                   {highlightSummary.map((s, i) => (
@@ -1006,25 +1027,25 @@ export default function RacingGame() {
                       <span>+{s.totalScore}pt</span>
                     </ResultRow>
                   ))}
-                  <div style={{ color: '#ffeb3b', fontWeight: 'bold', marginTop: '0.5rem' }}>
+                  <div style={{ color: '#ffeb3b', fontWeight: 'bold', marginTop: '0.25rem', fontSize: '0.9rem' }}>
                     合計: {highlightSummary.reduce((a, s) => a + s.totalScore, 0).toLocaleString()}pt
                   </div>
                 </ResultCard>
               )}
 
-              <div style={{ color: '#fbbf24', fontSize: '1.2rem', marginTop: '1rem' }}>
+              <div style={{ color: '#fbbf24', fontSize: '1rem' }}>
                 Best:{' '}
                 {bests[`c${course}-l${laps}`]
                   ? Utils.formatTime(bests[`c${course}-l${laps}`])
                   : '--:--.-'}
               </div>
-              <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
                 <ShareButton
                   text={`Racing Gameで${Utils.formatTime(results.times.p1)}のタイムを出しました！`}
                   hashtags={['RacingGame', 'GamePlatform']}
                 />
               </div>
-              <div style={{ marginTop: '2rem' }}>
+              <div style={{ marginTop: '0.5rem', paddingBottom: '1rem' }}>
                 <ActionButton
                   onClick={reset}
                   style={{ background: 'linear-gradient(to right, #a855f7, #ec4899)' }}
