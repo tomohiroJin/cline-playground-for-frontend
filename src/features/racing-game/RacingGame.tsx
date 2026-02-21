@@ -186,7 +186,8 @@ export default function RacingGame() {
       active: false, currentPlayer: 0, selectedIndex: 0, confirmed: false,
       timer: 15, lastTick: 0, animStart: 0, completedLap: 0, pendingResume: false,
     };
-    const draftedLaps = new Set<number>();
+    const draftedLaps = new Set<string>();
+    let draftTriggerKey = '';
 
     // ハイライト状態
     let hlTracker: HighlightTracker = Highlight.createTracker(players.length);
@@ -221,7 +222,7 @@ export default function RacingGame() {
 
     /** ドラフト開始処理 */
     const startDraft = (completedLap: number) => {
-      draftedLaps.add(completedLap);
+      draftedLaps.add(draftTriggerKey);
       decks = decks.map(d => DraftCards.drawCards(d, 3));
       draftSt = initDraftState(completedLap, Date.now());
       SoundEngine.stopEngine();
@@ -256,6 +257,7 @@ export default function RacingGame() {
           if (sc) cpuCardNotification = { cardName: sc.name, cardIcon: sc.icon, startTime: Date.now() };
           cpuDraftTimer2 = window.setTimeout(() => {
             players = applyDraftResults(players, decks);
+            players = players.map(p => ({ ...p, lapStart: Date.now() }));
             draftSt.active = false;
             draftSt.pendingResume = false;
             setPhase('race');
@@ -266,6 +268,7 @@ export default function RacingGame() {
 
       setTimeout(() => {
         players = applyDraftResults(players, decks);
+        players = players.map(p => ({ ...p, lapStart: Date.now() }));
         draftSt.active = false;
         draftSt.pendingResume = false;
         setPhase('race');
@@ -307,6 +310,18 @@ export default function RacingGame() {
           }
         }
         return;
+      }
+
+      // カウントダウン → レース遷移
+      if (gamePhaseRef.current === 'countdown' && !demo) {
+        const el = Date.now() - cdStart;
+        if (el >= Config.timing.countdown && raceStart === 0) {
+          raceStart = Date.now();
+          setPhase('race');
+          SoundEngine.go();
+          players = players.map(p => ({ ...p, lapStart: Date.now() }));
+        }
+        return; // カウントダウン中はレースロジックを実行しない
       }
 
       // プレイヤー入力収集
@@ -438,9 +453,11 @@ export default function RacingGame() {
                 return np;
               }
 
-              if (!demo && (i === 0 || mode === '2p') && np.lap <= maxLaps && maxLaps > 1 && !triggerDraft && cardsEnabledRef.current && mode !== 'solo' && !draftedLaps.has(np.lap - 1)) {
+              const draftKey = `p${i}_lap${np.lap - 1}`;
+              if (!demo && np.lap <= maxLaps && maxLaps > 1 && !triggerDraft && cardsEnabledRef.current && mode !== 'solo' && !draftedLaps.has(draftKey)) {
                 triggerDraft = true;
                 draftLap = np.lap - 1;
+                draftTriggerKey = draftKey;
               }
 
               if (np.lap === maxLaps && !demo && !p.isCpu) SoundEngine.finalLap();
@@ -565,12 +582,7 @@ export default function RacingGame() {
           lastCd = count;
         }
         drawCountdown(ctx, el, width, height);
-        if (el >= Config.timing.countdown && raceStart === 0) {
-          raceStart = Date.now();
-          setPhase('race');
-          SoundEngine.go();
-          players = players.map(p => ({ ...p, lapStart: Date.now() }));
-        }
+        // 状態遷移は update() 側で処理
       }
 
       // GO! 表示
