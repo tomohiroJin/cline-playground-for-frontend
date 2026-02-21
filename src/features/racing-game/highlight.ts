@@ -115,8 +115,8 @@ export const checkNearMiss = (
     };
   }
 
-  // 壁から離れた時に判定
-  if (tracker.nearMissTime >= 0.5) {
+  // 壁から離れた時に判定（閾値を引き上げて頻発を抑制）
+  if (tracker.nearMissTime >= 1.5) {
     const score = Math.floor(tracker.nearMissTime * 200);
     const event: HighlightEvent = {
       type: 'near_miss',

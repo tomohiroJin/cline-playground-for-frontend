@@ -452,23 +452,23 @@ export const Render = {
     c.globalAlpha = 1;
   },
 
-  /** T-111: ハイライト通知バナー描画 */
+  /** T-111: ハイライト通知バナー描画（右上に小さく半透明表示） */
   highlightBanner: (
     c: CanvasRenderingContext2D,
     event: HighlightEvent & { displayTime: number },
     colors: Record<HighlightType, string>,
     index: number
   ) => {
-    const { width, height } = Config.canvas;
-    const displayDuration = 2000; // 2秒
-    const fadeTime = 300; // 0.3秒
+    const { width } = Config.canvas;
+    const displayDuration = 1200; // 1.2秒
+    const fadeTime = 200; // 0.2秒
 
     const elapsed = event.displayTime;
-    let alpha = 1;
+    let alpha = 0.6; // 半透明ベース
     if (elapsed < fadeTime) {
-      alpha = elapsed / fadeTime; // フェードイン
+      alpha = (elapsed / fadeTime) * 0.6; // フェードイン
     } else if (elapsed > displayDuration - fadeTime) {
-      alpha = (displayDuration - elapsed) / fadeTime; // フェードアウト
+      alpha = ((displayDuration - elapsed) / fadeTime) * 0.6; // フェードアウト
     }
     if (alpha <= 0) return;
 
@@ -477,23 +477,23 @@ export const Render = {
     const bgColor = colors[event.type] || '#333';
     const isLight = event.type === 'photo_finish' || event.type === 'near_miss';
 
-    // バナー背景（画面下部に配置、複数通知をスタック）
-    const bannerW = 350;
-    const bannerH = 40;
-    const bannerX = (width - bannerW) / 2;
-    const bannerY = height - 60 - index * 50;
+    // バナー背景（画面右上端に配置、コンパクト表示）
+    const bannerW = 180;
+    const bannerH = 24;
+    const bannerX = width - bannerW - 8;
+    const bannerY = 8 + index * 30;
 
     c.fillStyle = bgColor;
     c.beginPath();
-    c.roundRect(bannerX, bannerY, bannerW, bannerH, 8);
+    c.roundRect(bannerX, bannerY, bannerW, bannerH, 6);
     c.fill();
 
     // テキスト
     c.fillStyle = isLight ? '#000' : '#fff';
-    c.font = 'bold 16px Arial';
+    c.font = 'bold 12px Arial';
     c.textAlign = 'center';
     c.textBaseline = 'middle';
-    c.fillText(event.message, width / 2, bannerY + bannerH / 2);
+    c.fillText(event.message, bannerX + bannerW / 2, bannerY + bannerH / 2);
 
     c.globalAlpha = 1;
     c.textBaseline = 'alphabetic';

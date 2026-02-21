@@ -78,6 +78,7 @@ export default function RacingGame() {
   const gamePhaseRef = useRef<string>('menu');
   const pausedRef = useRef(false);
   const winnerRef = useRef<string | null>(null);
+  const ghostEnabledRef = useRef(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { keys, touch, setTouch, onKeyDown } = useInput();
@@ -86,6 +87,7 @@ export default function RacingGame() {
   // ref とReact state の同期
   useEffect(() => { pausedRef.current = paused; }, [paused]);
   useEffect(() => { cardsEnabledRef.current = cardsEnabled; }, [cardsEnabled]);
+  useEffect(() => { ghostEnabledRef.current = ghostEnabled; }, [ghostEnabled]);
 
   // P/ESC キーハンドリング
   useEffect(() => {
@@ -224,7 +226,8 @@ export default function RacingGame() {
     // === ゴースト状態 ===
     let ghostRecorder: GhostRecorder = Ghost.createRecorder();
     let ghostPlayer: GhostPlayer | null = null;
-    if (ghostEnabled && !demo) {
+    // 常に localStorage からロード（ghostEnabled の React state タイミングに依存しない）
+    if (!demo) {
       const ghostData = Ghost.load(cIdx);
       if (ghostData) {
         ghostPlayer = Ghost.createPlayer(ghostData);
@@ -234,7 +237,7 @@ export default function RacingGame() {
     // === ハイライト状態 ===
     let hlTracker: HighlightTracker = Highlight.createTracker(players.length);
     const hlNotifications: (HighlightEvent & { displayTime: number; startTime: number })[] = [];
-    const MAX_NOTIFICATIONS = 3;
+    const MAX_NOTIFICATIONS = 1;
 
     // デコレーション
     const decos: { x: number; y: number; variant: number }[] = [];
@@ -681,7 +684,7 @@ export default function RacingGame() {
       const now = Date.now();
       for (let n = hlNotifications.length - 1; n >= 0; n--) {
         hlNotifications[n].displayTime = now - hlNotifications[n].startTime;
-        if (hlNotifications[n].displayTime > 2000) {
+        if (hlNotifications[n].displayTime > 1200) {
           hlNotifications.splice(n, 1);
         }
       }
@@ -773,8 +776,8 @@ export default function RacingGame() {
       Render.checkpoints(ctx, cpCoords);
       Render.particles(ctx, particles, sparks);
 
-      // ゴースト描画
-      if (ghostPlayer && ghostEnabled && !demo && gamePhaseRef.current === 'race') {
+      // ゴースト描画（ref 経由で最新の ghostEnabled を参照）
+      if (ghostPlayer && ghostEnabledRef.current && !demo && gamePhaseRef.current === 'race') {
         const raceTime = Date.now() - raceStart;
         const ghostPos = Ghost.getPosition(ghostPlayer, raceTime);
         if (ghostPos) {
@@ -925,7 +928,7 @@ export default function RacingGame() {
       if (cpuDraftTimer2) clearTimeout(cpuDraftTimer2);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, course, speed, cpu, laps, c1, c2, gameKey, demo, ghostEnabled]);
+  }, [mode, course, speed, cpu, laps, c1, c2, gameKey, demo]);
 
   const reset = () => {
     gamePhaseRef.current = 'menu';

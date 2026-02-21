@@ -54,8 +54,8 @@ export const Logic = {
       driftState = Drift.update(driftState, 0, p.speed, dt);
     }
 
-    // 速度計算
-    let spd = Math.min(1, p.speed + speedRecovery);
+    // 速度計算（壁接触中は速度回復を凍結）
+    let spd = p.wallStuck > 0 ? p.speed : Math.min(1, p.speed + speedRecovery);
 
     // ドリフト中の速度維持
     if (driftState.active) {
@@ -156,20 +156,21 @@ export const Logic = {
     if (slideMag > 0.01) {
       slideAngle = Math.atan2(slideY, slideX);
     } else {
-      // スライドベクトルが0に近い場合はプレイヤー位置基準でセグメント方向へ
-      const off = Math.min(stuck, 3) + 1;
+      // スライドベクトルが0に近い場合はプレイヤー位置基準でセグメント方向へ（ルックアヘッド拡大）
+      const off = Math.min(stuck, 5) + 3;
       const ti = (info.seg + off) % pts.length;
       const tp = pts[ti];
       slideAngle = Math.atan2(tp.y - p.y, tp.x - p.x);
     }
 
-    // stuck >= 4 時にトラック内への強制押し出し
+    // stuck >= 3 時にトラック内への強制押し出し（距離を速度に比例）
     let finalX = info.pt.x;
     let finalY = info.pt.y;
-    if (stuck >= 4) {
+    if (stuck >= 3) {
       const pushDir = Math.atan2(info.pt.y - p.y, info.pt.x - p.x);
-      finalX = info.pt.x + Math.cos(pushDir) * 3;
-      finalY = info.pt.y + Math.sin(pushDir) * 3;
+      const pushDist = Math.max(5, vel * 0.7);
+      finalX = info.pt.x + Math.cos(pushDir) * pushDist;
+      finalY = info.pt.y + Math.sin(pushDir) * pushDist;
     }
 
     return {

@@ -93,7 +93,7 @@ export const WALL = Object.freeze({
   LIGHT_FACTOR: 0.85,   // wallStuck = 1
   MEDIUM_FACTOR: 0.70,  // wallStuck = 2〜3
   HEAVY_FACTOR: 0.50,   // wallStuck >= 4
-  WARP_THRESHOLD: 8,    // ワープしきい値（短縮して脱出しやすく）
+  WARP_THRESHOLD: 5,    // ワープしきい値（短縮して脱出しやすく）
 });
 
 // コースデータ
