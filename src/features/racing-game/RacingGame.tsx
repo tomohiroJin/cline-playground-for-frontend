@@ -39,8 +39,6 @@ import {
   moveDraftCursor,
   mapDraftInput,
   clearDraftKeys,
-  switchToPlayer2,
-  switchToCpuSelection,
   applyDraftResults,
 } from './draft-ui-logic';
 import type { DraftState } from './draft-ui-logic';
@@ -179,15 +177,13 @@ export default function RacingGame() {
     const demoStart = demo ? Date.now() : 0;
 
     // ドラフトカード状態
-    let cpuDraftTimer1: number | undefined;
-    let cpuDraftTimer2: number | undefined;
     let decks: DeckState[] = [DraftCards.createDeck(), DraftCards.createDeck()];
     let draftSt: DraftState = {
-      active: false, currentPlayer: 0, selectedIndex: 0, confirmed: false,
+      active: false, currentPlayer: 0, triggerPlayer: 0, selectedIndex: 0, confirmed: false,
       timer: 15, lastTick: 0, animStart: 0, completedLap: 0, pendingResume: false,
     };
     const draftedLaps = new Set<string>();
-    let draftTriggerKey = '';
+    let pendingDraftQueue: { playerIndex: number; lap: number }[] = [];
 
     // ハイライト状態
     let hlTracker: HighlightTracker = Highlight.createTracker(players.length);
@@ -221,19 +217,32 @@ export default function RacingGame() {
     };
 
     /** ドラフト開始処理 */
-    const startDraft = (completedLap: number) => {
-      draftedLaps.add(draftTriggerKey);
-      decks = decks.map(d => DraftCards.drawCards(d, 3));
-      draftSt = initDraftState(completedLap, Date.now());
+    const startDraft = (completedLap: number, playerIndex: number) => {
+      draftedLaps.add(`${playerIndex}-${completedLap}`);
+      decks = decks.map((d, i) => i === playerIndex ? DraftCards.drawCards(d, 3) : d);
+      draftSt = initDraftState(completedLap, Date.now(), playerIndex);
       SoundEngine.stopEngine();
       engineOn = false;
       setPhase('draft');
     };
 
+    /** CPUドラフト処理（UIを表示せずバックグラウンドで実行） */
+    const handleCpuDraft = (completedLap: number) => {
+      draftedLaps.add(`1-${completedLap}`);
+      decks[1] = DraftCards.drawCards(decks[1], 3);
+      decks[1] = DraftCards.cpuSelectCard(decks[1], cpuCfg.skill);
+      const selectedCard = decks[1].history[decks[1].history.length - 1];
+      if (selectedCard) {
+        cpuCardNotification = { cardName: selectedCard.name, cardIcon: selectedCard.icon, startTime: Date.now() };
+      }
+      players = applyDraftResults(players, decks, 1);
+      players = players.map((p, i) => i === 1 ? { ...p, lapStart: Date.now() } : p);
+    };
+
     /** ドラフト確定処理 */
     const confirmDraftSelection = () => {
       if (draftSt.confirmed) return;
-      const pi = draftSt.currentPlayer;
+      const pi = draftSt.triggerPlayer;
       const hand = decks[pi].hand;
       if (hand.length === 0) return;
 
@@ -241,37 +250,18 @@ export default function RacingGame() {
       decks[pi] = DraftCards.selectCard(decks[pi], selectedCard.id);
       draftSt.confirmed = true;
 
-      if (mode === '2p' && pi === 0) {
-        setTimeout(() => { draftSt = switchToPlayer2(draftSt, Date.now()); }, 500);
-        return;
-      }
-
-      if (mode === 'cpu' && pi === 0) {
-        draftSt = switchToCpuSelection(draftSt, Date.now());
-        cpuDraftTimer1 = window.setTimeout(() => {
-          decks[1] = DraftCards.cpuSelectCard(decks[1], cpuCfg.skill);
-          const sc = decks[1].history[decks[1].history.length - 1];
-          const si = decks[1].hand.findIndex(c => c.id === sc?.id);
-          draftSt.selectedIndex = si >= 0 ? si : 0;
-          draftSt.confirmed = true;
-          if (sc) cpuCardNotification = { cardName: sc.name, cardIcon: sc.icon, startTime: Date.now() };
-          cpuDraftTimer2 = window.setTimeout(() => {
-            players = applyDraftResults(players, decks);
-            players = players.map(p => ({ ...p, lapStart: Date.now() }));
-            draftSt.active = false;
-            draftSt.pendingResume = false;
-            setPhase('race');
-          }, 800);
-        }, 1200);
-        return;
-      }
-
       setTimeout(() => {
-        players = applyDraftResults(players, decks);
-        players = players.map(p => ({ ...p, lapStart: Date.now() }));
+        players = applyDraftResults(players, decks, pi);
+        players = players.map((p, i) => i === pi ? { ...p, lapStart: Date.now() } : p);
         draftSt.active = false;
         draftSt.pendingResume = false;
-        setPhase('race');
+
+        if (pendingDraftQueue.length > 0) {
+          const next = pendingDraftQueue.shift()!;
+          startDraft(next.lap, next.playerIndex);
+        } else {
+          setPhase('race');
+        }
       }, 500);
     };
 
@@ -335,8 +325,7 @@ export default function RacingGame() {
       }));
 
       let finished = false;
-      let triggerDraft = false;
-      let draftLap = 0;
+      const draftTriggers: { playerIndex: number; lap: number }[] = [];
       const raceTime = raceStart > 0 ? Date.now() - raceStart : 0;
 
       if (gamePhaseRef.current === 'race' || demo) {
@@ -453,11 +442,8 @@ export default function RacingGame() {
                 return np;
               }
 
-              const draftKey = `p${i}_lap${np.lap - 1}`;
-              if (!demo && np.lap <= maxLaps && maxLaps > 1 && !triggerDraft && cardsEnabledRef.current && mode !== 'solo' && !draftedLaps.has(draftKey)) {
-                triggerDraft = true;
-                draftLap = np.lap - 1;
-                draftTriggerKey = draftKey;
+              if (!demo && np.lap <= maxLaps && maxLaps > 1 && cardsEnabledRef.current && mode !== 'solo' && !draftedLaps.has(`${i}-${np.lap - 1}`)) {
+                draftTriggers.push({ playerIndex: i, lap: np.lap - 1 });
               }
 
               if (np.lap === maxLaps && !demo && !p.isCpu) SoundEngine.finalLap();
@@ -508,9 +494,19 @@ export default function RacingGame() {
       }
 
       // ドラフト遷移
-      if (triggerDraft && !finished) {
-        startDraft(draftLap);
-        return;
+      if (draftTriggers.length > 0 && !finished) {
+        for (const trigger of draftTriggers) {
+          if (players[trigger.playerIndex].isCpu) {
+            handleCpuDraft(trigger.lap);
+          } else {
+            pendingDraftQueue.push(trigger);
+          }
+        }
+        if (pendingDraftQueue.length > 0) {
+          const next = pendingDraftQueue.shift()!;
+          startDraft(next.lap, next.playerIndex);
+          return;
+        }
       }
 
       if (finished && !demo) {
@@ -656,8 +652,6 @@ export default function RacingGame() {
       isRunning = false;
       SoundEngine.stopEngine();
       SoundEngine.cleanup();
-      if (cpuDraftTimer1) clearTimeout(cpuDraftTimer1);
-      if (cpuDraftTimer2) clearTimeout(cpuDraftTimer2);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, course, speed, cpu, laps, c1, c2, gameKey, demo]);

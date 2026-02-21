@@ -7,6 +7,7 @@ import { DraftCards } from './draft-cards';
 export interface DraftState {
   active: boolean;
   currentPlayer: number;
+  triggerPlayer: number;
   selectedIndex: number;
   confirmed: boolean;
   timer: number;
@@ -20,6 +21,7 @@ export interface DraftState {
 export const INITIAL_DRAFT_STATE: DraftState = {
   active: false,
   currentPlayer: 0,
+  triggerPlayer: 0,
   selectedIndex: 0,
   confirmed: false,
   timer: 15,
@@ -30,9 +32,10 @@ export const INITIAL_DRAFT_STATE: DraftState = {
 };
 
 /** ドラフト開始状態を生成 */
-export const initDraftState = (completedLap: number, now: number): DraftState => ({
+export const initDraftState = (completedLap: number, now: number, triggerPlayer: number): DraftState => ({
   active: true,
-  currentPlayer: 0,
+  currentPlayer: triggerPlayer,
+  triggerPlayer,
   selectedIndex: 1,
   confirmed: false,
   timer: 15,
@@ -111,32 +114,14 @@ export const clearDraftKeys = (
   }
 };
 
-/** P2切替状態生成 */
-export const switchToPlayer2 = (state: DraftState, now: number): DraftState => ({
-  ...state,
-  currentPlayer: 1,
-  selectedIndex: 1,
-  confirmed: false,
-  timer: 15,
-  lastTick: now,
-  animStart: now,
-});
-
-/** CPU選択画面遷移状態生成 */
-export const switchToCpuSelection = (state: DraftState, now: number): DraftState => ({
-  ...state,
-  currentPlayer: 1,
-  selectedIndex: -1,
-  confirmed: false,
-  animStart: now,
-});
-
 /** カード効果適用（純粋関数） */
 export const applyDraftResults = (
   players: Player[],
-  decks: DeckState[]
+  decks: DeckState[],
+  triggerPlayer?: number
 ): Player[] =>
   players.map((p, i) => {
+    if (triggerPlayer !== undefined && i !== triggerPlayer) return p;
     const effects = DraftCards.getActiveEffects(decks[i]);
     return {
       ...p,
