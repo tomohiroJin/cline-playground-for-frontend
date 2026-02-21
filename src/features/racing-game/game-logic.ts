@@ -5,6 +5,15 @@ import { Config, DRIFT, WALL } from './constants';
 import { Utils } from './utils';
 import { Track } from './track';
 import { Drift } from './drift';
+import { getCardMultiplier } from './card-effects';
+import {
+  calculateWallPenalty,
+  shouldWarp,
+  calculateWarpDestination,
+  calculateSlideVector,
+  calculateSlideAngle,
+  calculateWallSlidePosition,
+} from './wall-physics';
 
 // dt はフレームレートから推定（60fps想定）
 const FRAME_DT = 1 / 60;
@@ -24,9 +33,8 @@ export const Logic = {
 
   /** CPU がドリフトを使うかどうかの判定 */
   cpuShouldDrift: (p: Player, pts: Point[], skill: number): boolean => {
-    if (skill < 0.4) return false; // 弱いCPUはドリフトしない
+    if (skill < 0.4) return false;
     const info = Track.getInfo(p.x, p.y, pts);
-    // コーナーが近いとき（中心からの距離が大きい）かつ速度が十分
     const isCorner = info.dist / Config.game.trackWidth > 0.35;
     return isCorner && p.speed >= DRIFT.MIN_SPEED && Math.random() < skill * 0.3;
   },
@@ -34,13 +42,11 @@ export const Logic = {
   movePlayer: (p: Player, baseSpd: number, pts: Point[], handbrake?: boolean, steering?: number, accelMul?: number, driftBoostMul?: number) => {
     const baseRecovery = Config.game.speedRecovery;
     const speedRecovery = baseRecovery * (accelMul ?? 1);
-    const warpThreshold = WALL.WARP_THRESHOLD;
     const dt = FRAME_DT;
 
     // ドリフト処理
     let driftState = p.drift;
     if (handbrake && steering !== undefined && steering !== 0) {
-      // ドリフト開始/継続
       if (!driftState.active) {
         driftState = Drift.start(driftState, p.speed);
       }
@@ -48,10 +54,8 @@ export const Logic = {
         driftState = Drift.update(driftState, steering, p.speed, dt);
       }
     } else if (driftState.active) {
-      // ハンドブレーキ離し → ドリフト終了
       driftState = Drift.end(driftState);
     } else {
-      // ドリフト中でない → ブースト減衰のみ
       driftState = Drift.update(driftState, 0, p.speed, dt);
     }
 
@@ -91,17 +95,14 @@ export const Logic = {
     const stuck = p.wallStuck + 1;
 
     // ワープ判定
-    if (stuck >= warpThreshold) {
-      const wi = (info.seg + 3) % pts.length;
-      const wp = pts[wi];
-      const nwi = (wi + 1) % pts.length;
-      const nwp = pts[nwi];
+    if (shouldWarp(stuck)) {
+      const warp = calculateWarpDestination(info.seg, pts);
       return {
         p: {
           ...p,
-          x: wp.x,
-          y: wp.y,
-          angle: Math.atan2(nwp.y - wp.y, nwp.x - wp.x),
+          x: warp.x,
+          y: warp.y,
+          angle: warp.angle,
           speed: 0.3,
           wallStuck: 0,
           drift: driftState,
@@ -113,91 +114,39 @@ export const Logic = {
       };
     }
 
-    // スライドベクトル方式の壁処理
-    const wallNormal = Track.getNormal(info.seg, pts);
-    const vx = Math.cos(p.angle) * vel;
-    const vy = Math.sin(p.angle) * vel;
+    // スライドベクトル計算
+    const { slideX, slideY, slideMag } = calculateSlideVector(p.angle, vel, info.seg, pts);
 
-    // 法線成分を除去してスライドベクトルを計算
-    const dot = vx * wallNormal.nx + vy * wallNormal.ny;
-    const slideX = vx - dot * wallNormal.nx;
-    const slideY = vy - dot * wallNormal.ny;
-    const slideMag = Math.hypot(slideX, slideY);
+    // 段階的減速 + シールド + カード効果
+    const wallDmgMul = getCardMultiplier(p.activeCards, 'wallDamageMultiplier');
+    const penalty = calculateWallPenalty(stuck, p.shieldCount, wallDmgMul);
+    const adjustedSpeed = spd * penalty.factor;
 
-    // 段階的減速
-    let factor: number;
-    let wallStage: number;
-    if (stuck === 1) {
-      factor = WALL.LIGHT_FACTOR;
-      wallStage = 1;
-    } else if (stuck <= 3) {
-      factor = WALL.MEDIUM_FACTOR;
-      wallStage = 2;
-    } else {
-      factor = WALL.HEAVY_FACTOR;
-      wallStage = 3;
-    }
-
-    // シールドによる壁ダメージ軽減
-    let newShieldCount = p.shieldCount;
-    if (p.shieldCount > 0) {
-      factor = 1.0; // シールドで減速なし
-      newShieldCount = p.shieldCount - 1;
-    }
-
-    // カード効果による壁ダメージ軽減
-    // wallDamageMultiplier < 1 で減速量を軽減（例: 0.5 = 減速50%軽減）
-    const wallDamageMultiplier = p.activeCards.reduce(
-      (acc, c) => acc * (c.wallDamageMultiplier ?? 1),
-      1
+    // スライド角度計算
+    const slideAngle = calculateSlideAngle(
+      slideX, slideY, slideMag,
+      p.x, p.y, info.pt.x, info.pt.y,
+      stuck, info.seg, pts
     );
-    const speedLoss = (1 - factor) * wallDamageMultiplier;
-    const adjustedSpeed = spd * (1 - speedLoss);
 
-    // スライド方向に移動（完全停止しない）
-    let slideAngle: number;
-    if (slideMag > 0.01) {
-      slideAngle = Math.atan2(slideY, slideX);
-    } else {
-      // トラック最寄点方向を基本とし、セグメント前方を補助的に使う
-      const toCenterAngle = Math.atan2(info.pt.y - p.y, info.pt.x - p.x);
-      const off = Math.min(stuck, 5) + 3;
-      const ti = (info.seg + off) % pts.length;
-      const tp = pts[ti];
-      const toSegAngle = Math.atan2(tp.y - p.y, tp.x - p.x);
-      // 中心方向70% + セグメント方向30% のブレンド
-      slideAngle = toCenterAngle + Utils.normalizeAngle(toSegAngle - toCenterAngle) * 0.3;
-    }
-
-    // stuck >= 2 で早期発動、セグメント中点方向へ押し出し
-    let finalX = info.pt.x;
-    let finalY = info.pt.y;
-    if (stuck >= 2) {
-      const segIdx = info.seg;
-      const nextIdx = (segIdx + 1) % pts.length;
-      const centerX = (pts[segIdx].x + pts[nextIdx].x) / 2;
-      const centerY = (pts[segIdx].y + pts[nextIdx].y) / 2;
-      const toCenterDir = Math.atan2(centerY - info.pt.y, centerX - info.pt.x);
-      const pushDist = Math.max(3, vel * 0.5);
-      finalX = info.pt.x + Math.cos(toCenterDir) * pushDist;
-      finalY = info.pt.y + Math.sin(toCenterDir) * pushDist;
-    }
+    // 最終位置計算
+    const finalPos = calculateWallSlidePosition(info.pt.x, info.pt.y, info.seg, pts, vel, stuck);
 
     return {
       p: {
         ...p,
-        x: finalX,
-        y: finalY,
+        x: finalPos.x,
+        y: finalPos.y,
         angle: slideAngle,
         speed: Math.max(0.1, adjustedSpeed),
         wallStuck: stuck,
         drift: driftState,
-        shieldCount: newShieldCount,
+        shieldCount: penalty.newShieldCount,
       },
       info,
       vel,
       hit: true,
-      wallStage,
+      wallStage: penalty.wallStage,
     };
   },
 

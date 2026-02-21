@@ -1,6 +1,7 @@
 // ハイライト検出モジュール
 
 import type { DriftState, HeatState, HighlightEvent, HighlightType } from './types';
+import { HIGHLIGHT } from './constants';
 
 // === T-110: ハイライト検出モジュール ===
 
@@ -14,6 +15,42 @@ export interface HighlightTracker {
   lastDriftActive: boolean[]; // 前フレームのドリフト状態
 }
 
+/** check* 関数群の共通戻り型 */
+type CheckResult = { tracker: HighlightTracker; event: HighlightEvent | null };
+
+// === 内部ヘルパー（DRY） ===
+
+/** イベント生成ヘルパー */
+const createEvent = (
+  type: HighlightType,
+  player: number,
+  lap: number,
+  time: number,
+  score: number,
+  message: string
+): HighlightEvent => ({ type, player, lap, time, score, message });
+
+/** イベント付きトラッカー更新ヘルパー */
+const withEvent = (
+  tracker: HighlightTracker,
+  event: HighlightEvent,
+  patch?: Partial<HighlightTracker>
+): CheckResult => ({
+  tracker: { ...tracker, ...patch, events: [...tracker.events, event] },
+  event,
+});
+
+/** イベントなしトラッカー更新ヘルパー */
+const noEvent = (
+  tracker: HighlightTracker,
+  patch?: Partial<HighlightTracker>
+): CheckResult => ({
+  tracker: patch ? { ...tracker, ...patch } : tracker,
+  event: null,
+});
+
+// === エクスポート関数 ===
+
 /** トラッカーインスタンス生成 */
 export const createHighlightTracker = (playerCount: number = 2): HighlightTracker => ({
   events: [],
@@ -24,40 +61,28 @@ export const createHighlightTracker = (playerCount: number = 2): HighlightTracke
   lastDriftActive: new Array(playerCount).fill(false),
 });
 
-/** ドリフト 1.5秒以上でボーナス検出 */
+/** ドリフトボーナス検出 */
 export const checkDriftBonus = (
   tracker: HighlightTracker,
   driftState: DriftState,
   playerIndex: number,
   lap: number,
   time: number
-): { tracker: HighlightTracker; event: HighlightEvent | null } => {
+): CheckResult => {
   const wasActive = tracker.lastDriftActive[playerIndex];
   const newLastDrift = [...tracker.lastDriftActive];
   newLastDrift[playerIndex] = driftState.active;
+  const patch = { lastDriftActive: newLastDrift };
 
-  // ドリフト終了時に判定
-  if (wasActive && !driftState.active && driftState.duration >= 1.5) {
-    const score = Math.floor(driftState.duration * 100);
-    const event: HighlightEvent = {
-      type: 'drift_bonus',
-      player: playerIndex,
-      lap,
-      time,
-      score,
-      message: `ドリフトボーナス! +${score}pt`,
-    };
-    return {
-      tracker: {
-        ...tracker,
-        events: [...tracker.events, event],
-        lastDriftActive: newLastDrift,
-      },
-      event,
-    };
+  if (wasActive && !driftState.active && driftState.duration >= HIGHLIGHT.DRIFT_MIN_DURATION) {
+    const score = Math.floor(driftState.duration * HIGHLIGHT.DRIFT_SCORE_PER_SEC);
+    return withEvent(
+      tracker,
+      createEvent('drift_bonus', playerIndex, lap, time, score, `ドリフトボーナス! +${score}pt`),
+      patch
+    );
   }
-
-  return { tracker: { ...tracker, lastDriftActive: newLastDrift }, event: null };
+  return noEvent(tracker, patch);
 };
 
 /** HEAT ブースト発動時の検出 */
@@ -67,35 +92,23 @@ export const checkHeatBoost = (
   playerIndex: number,
   lap: number,
   time: number
-): { tracker: HighlightTracker; event: HighlightEvent | null } => {
+): CheckResult => {
   const prevGauge = tracker.lastHeatGauge[playerIndex];
   const newLastHeat = [...tracker.lastHeatGauge];
   newLastHeat[playerIndex] = heatState.gauge;
+  const patch = { lastHeatGauge: newLastHeat };
 
-  // ゲージが1.0からリセットされた（ブースト発動）
-  if (prevGauge >= 0.95 && heatState.gauge < 0.1 && heatState.boostRemaining > 0) {
-    const event: HighlightEvent = {
-      type: 'heat_boost',
-      player: playerIndex,
-      lap,
-      time,
-      score: 150,
-      message: 'HEAT BOOST! +150pt',
-    };
-    return {
-      tracker: {
-        ...tracker,
-        events: [...tracker.events, event],
-        lastHeatGauge: newLastHeat,
-      },
-      event,
-    };
+  if (prevGauge >= HIGHLIGHT.HEAT_PREV_THRESHOLD && heatState.gauge < HIGHLIGHT.HEAT_CURR_THRESHOLD && heatState.boostRemaining > 0) {
+    return withEvent(
+      tracker,
+      createEvent('heat_boost', playerIndex, lap, time, HIGHLIGHT.HEAT_SCORE, `HEAT BOOST! +${HIGHLIGHT.HEAT_SCORE}pt`),
+      patch
+    );
   }
-
-  return { tracker: { ...tracker, lastHeatGauge: newLastHeat }, event: null };
+  return noEvent(tracker, patch);
 };
 
-/** ニアミス回避: 壁距離 < 10px で0.5秒以上走行 */
+/** ニアミス回避検出 */
 export const checkNearMiss = (
   tracker: HighlightTracker,
   wallDist: number,
@@ -104,39 +117,23 @@ export const checkNearMiss = (
   playerIndex: number,
   lap: number,
   time: number
-): { tracker: HighlightTracker; event: HighlightEvent | null } => {
-  const nearWall = wallDist > trackWidth - 10;
+): CheckResult => {
+  const nearWall = wallDist > trackWidth - HIGHLIGHT.NEAR_MISS_WALL_MARGIN;
 
   if (nearWall) {
-    const newTime = tracker.nearMissTime + dt;
-    return {
-      tracker: { ...tracker, nearMissTime: newTime },
-      event: null,
-    };
+    return noEvent(tracker, { nearMissTime: tracker.nearMissTime + dt });
   }
 
-  // 壁から離れた時に判定（閾値を引き上げて頻発を抑制）
-  if (tracker.nearMissTime >= 1.5) {
-    const score = Math.floor(tracker.nearMissTime * 200);
-    const event: HighlightEvent = {
-      type: 'near_miss',
-      player: playerIndex,
-      lap,
-      time,
-      score,
-      message: `ニアミス回避! +${score}pt`,
-    };
-    return {
-      tracker: {
-        ...tracker,
-        nearMissTime: 0,
-        events: [...tracker.events, event],
-      },
-      event,
-    };
+  if (tracker.nearMissTime >= HIGHLIGHT.NEAR_MISS_MIN_DURATION) {
+    const score = Math.floor(tracker.nearMissTime * HIGHLIGHT.NEAR_MISS_SCORE_PER_SEC);
+    return withEvent(
+      tracker,
+      createEvent('near_miss', playerIndex, lap, time, score, `ニアミス回避! +${score}pt`),
+      { nearMissTime: 0 }
+    );
   }
 
-  return { tracker: { ...tracker, nearMissTime: 0 }, event: null };
+  return noEvent(tracker, { nearMissTime: 0 });
 };
 
 /** 順位逆転検出 */
@@ -146,37 +143,25 @@ export const checkOvertake = (
   playerIndex: number,
   lap: number,
   time: number
-): { tracker: HighlightTracker; event: HighlightEvent | null } => {
+): CheckResult => {
   const prevPos = tracker.lastPositions;
-  const newTracker = { ...tracker, lastPositions: [...positions] };
+  const patch = { lastPositions: [...positions] };
 
   if (positions.length < 2 || prevPos.length < 2) {
-    return { tracker: newTracker, event: null };
+    return noEvent(tracker, patch);
   }
 
-  // プレイヤーの順位が逆転したか（progress が大きい方が先）
   const wasAhead = prevPos[playerIndex] > prevPos[1 - playerIndex];
   const isAhead = positions[playerIndex] > positions[1 - playerIndex];
 
   if (!wasAhead && isAhead) {
-    const event: HighlightEvent = {
-      type: 'overtake',
-      player: playerIndex,
-      lap,
-      time,
-      score: 300,
-      message: '逆転! +300pt',
-    };
-    return {
-      tracker: {
-        ...newTracker,
-        events: [...newTracker.events, event],
-      },
-      event,
-    };
+    return withEvent(
+      tracker,
+      createEvent('overtake', playerIndex, lap, time, HIGHLIGHT.OVERTAKE_SCORE, `逆転! +${HIGHLIGHT.OVERTAKE_SCORE}pt`),
+      patch
+    );
   }
-
-  return { tracker: newTracker, event: null };
+  return noEvent(tracker, patch);
 };
 
 /** ファステストラップ検出 */
@@ -186,26 +171,15 @@ export const checkFastestLap = (
   playerIndex: number,
   lap: number,
   time: number
-): { tracker: HighlightTracker; event: HighlightEvent | null } => {
+): CheckResult => {
   if (lapTime < tracker.fastestLapTime) {
-    const event: HighlightEvent = {
-      type: 'fastest_lap',
-      player: playerIndex,
-      lap,
-      time,
-      score: 200,
-      message: 'ファステストラップ! +200pt',
-    };
-    return {
-      tracker: {
-        ...tracker,
-        fastestLapTime: lapTime,
-        events: [...tracker.events, event],
-      },
-      event,
-    };
+    return withEvent(
+      tracker,
+      createEvent('fastest_lap', playerIndex, lap, time, HIGHLIGHT.FASTEST_LAP_SCORE, `ファステストラップ! +${HIGHLIGHT.FASTEST_LAP_SCORE}pt`),
+      { fastestLapTime: lapTime }
+    );
   }
-  return { tracker, event: null };
+  return noEvent(tracker);
 };
 
 /** フォトフィニッシュ検出（ゴール時） */
@@ -214,30 +188,18 @@ export const checkPhotoFinish = (
   finishTimes: number[],
   lap: number,
   time: number
-): { tracker: HighlightTracker; event: HighlightEvent | null } => {
-  if (finishTimes.length < 2) return { tracker, event: null };
+): CheckResult => {
+  if (finishTimes.length < 2) return noEvent(tracker);
 
   const diff = Math.abs(finishTimes[0] - finishTimes[1]);
-  if (diff < 500) {
-    // タイム差 0.5秒未満
-    const event: HighlightEvent = {
-      type: 'photo_finish',
-      player: finishTimes[0] < finishTimes[1] ? 0 : 1,
-      lap,
-      time,
-      score: 500,
-      message: 'フォトフィニッシュ! +500pt',
-    };
-    return {
-      tracker: {
-        ...tracker,
-        events: [...tracker.events, event],
-      },
-      event,
-    };
+  if (diff < HIGHLIGHT.PHOTO_FINISH_THRESHOLD) {
+    const winner = finishTimes[0] < finishTimes[1] ? 0 : 1;
+    return withEvent(
+      tracker,
+      createEvent('photo_finish', winner, lap, time, HIGHLIGHT.PHOTO_FINISH_SCORE, `フォトフィニッシュ! +${HIGHLIGHT.PHOTO_FINISH_SCORE}pt`)
+    );
   }
-
-  return { tracker, event: null };
+  return noEvent(tracker);
 };
 
 /** ハイライトサマリー集計 */

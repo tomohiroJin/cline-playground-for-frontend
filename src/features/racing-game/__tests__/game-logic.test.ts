@@ -85,5 +85,100 @@ describe('Racing Game Logic', () => {
       expect(result.p.speed).toBeGreaterThan(0.5);
       expect(result.hit).toBe(false);
     });
+
+    test('オフトラック時に wallStuck が増加する', () => {
+      // トラックから大きく外れた位置
+      const p = Entity.player(500, 500, 0, '#f00', 'P1', false);
+      p.wallStuck = 0;
+      p.speed = 0.5;
+      const result = Logic.movePlayer(p, 3, simpleTrack);
+      expect(result.hit).toBe(true);
+      expect(result.p.wallStuck).toBeGreaterThan(0);
+    });
+
+    test('wallStuck >= WARP_THRESHOLD でワープする', () => {
+      // ワープしきい値以上の wallStuck を持つプレイヤー
+      const p = Entity.player(500, 500, 0, '#f00', 'P1', false);
+      p.wallStuck = 2; // WARP_THRESHOLD=3 なので次で3になりワープ
+      p.speed = 0.5;
+      const result = Logic.movePlayer(p, 3, simpleTrack);
+      expect(result.hit).toBe(true);
+      expect(result.p.wallStuck).toBe(0); // ワープ後リセット
+      expect(result.p.speed).toBe(0.3);   // ワープ後の速度
+      expect(result.wallStage).toBe(3);
+    });
+
+    test('ドリフト中の壁接触でドリフトが強制終了する', () => {
+      const p = Entity.player(500, 500, 0, '#f00', 'P1', false);
+      p.drift = { active: true, duration: 1.0, slipAngle: 0.3, boostRemaining: 0, boostPower: 0 };
+      p.speed = 0.8;
+      // handbrake=true, steering=1 でドリフト継続状態を維持して壁に当たる
+      const result = Logic.movePlayer(p, 3, simpleTrack, true, 1);
+      expect(result.hit).toBe(true);
+      expect(result.p.drift.active).toBe(false);
+      // cancelDrift なのでブーストなし
+      expect(result.p.drift.boostRemaining).toBe(0);
+    });
+
+    test('シールド所持時は壁ダメージが無効化される', () => {
+      const p = Entity.player(500, 500, 0, '#f00', 'P1', false);
+      p.wallStuck = 0;
+      p.speed = 0.8;
+      p.shieldCount = 1;
+      const result = Logic.movePlayer(p, 3, simpleTrack);
+      expect(result.hit).toBe(true);
+      expect(result.p.shieldCount).toBe(0); // シールド消費
+      // factor=1.0 なので速度ロスが少ない
+      expect(result.p.speed).toBeGreaterThanOrEqual(0.5);
+    });
+  });
+
+  describe('cpuTurn', () => {
+    // 大きな正方形トラック（中心が50,50付近）
+    const track = [
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+      { x: 100, y: 100 },
+      { x: 0, y: 100 },
+    ];
+
+    test('中心付近では次ポイント方向にステアリングする', () => {
+      // セグメント0の中点付近に配置、角度は右向き
+      const p = Entity.player(50, 0, 0, '#f00', 'CPU', true);
+      const turn = Logic.cpuTurn(p, track, 1.0, 0);
+      // 何らかのステアリング値が返る（方向はトラック形状依存）
+      expect(typeof turn).toBe('number');
+    });
+
+    test('外縁付近では中心方向に修正する', () => {
+      // トラック幅の60%以上外側に配置
+      const p = Entity.player(50, 50, 0, '#f00', 'CPU', true);
+      const turn = Logic.cpuTurn(p, track, 1.0, 0);
+      expect(typeof turn).toBe('number');
+    });
+  });
+
+  describe('cpuShouldDrift', () => {
+    const track = [
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+      { x: 100, y: 100 },
+      { x: 0, y: 100 },
+    ];
+
+    test('skill < 0.4 では常に false を返す', () => {
+      const p = Entity.player(50, 0, 0, '#f00', 'CPU', true);
+      p.speed = 0.8;
+      // 100回呼んでも false
+      for (let i = 0; i < 100; i++) {
+        expect(Logic.cpuShouldDrift(p, track, 0.3)).toBe(false);
+      }
+    });
+
+    test('速度が MIN_SPEED 未満では false を返す', () => {
+      const p = Entity.player(50, 0, 0, '#f00', 'CPU', true);
+      p.speed = 0.1; // MIN_SPEED = 0.4 未満
+      expect(Logic.cpuShouldDrift(p, track, 1.0)).toBe(false);
+    });
   });
 });

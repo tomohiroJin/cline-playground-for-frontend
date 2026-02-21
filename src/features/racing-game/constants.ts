@@ -96,6 +96,23 @@ export const WALL = Object.freeze({
   WARP_THRESHOLD: 3,    // ワープしきい値（3フレームでワープ、ハマり時間さらに短縮）
 });
 
+// ハイライト検出定数
+export const HIGHLIGHT = Object.freeze({
+  DRIFT_MIN_DURATION: 1.5,
+  DRIFT_SCORE_PER_SEC: 100,
+  HEAT_PREV_THRESHOLD: 0.95,
+  HEAT_CURR_THRESHOLD: 0.1,
+  HEAT_SCORE: 150,
+  NEAR_MISS_WALL_MARGIN: 10,
+  NEAR_MISS_MIN_DURATION: 1.5,
+  NEAR_MISS_SCORE_PER_SEC: 200,
+  OVERTAKE_SCORE: 300,
+  FASTEST_LAP_SCORE: 200,
+  PHOTO_FINISH_THRESHOLD: 500,
+  PHOTO_FINISH_SCORE: 500,
+  NOTIFICATION_DURATION: 1200,
+});
+
 // コースデータ
 export const Courses: Course[] = [
   {

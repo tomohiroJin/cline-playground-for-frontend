@@ -3,6 +3,112 @@
 import type { Point, Checkpoint, StartLine, Player, Particle, Spark, Confetti, Decoration, HeatState, Card, HighlightEvent, HighlightType } from './types';
 import { Config, Colors } from './constants';
 
+/** レアリティ別背景色 */
+const RARITY_COLORS: Record<string, string> = {
+  R: '#4a5568',
+  SR: '#d69e2e',
+  SSR: '#e53e3e',
+};
+
+/** カテゴリ別ラベル */
+const CAT_LABELS: Record<string, string> = {
+  speed: '⚡スピード',
+  handling: '🔄ハンドリング',
+  defense: '🛡️防御',
+  special: '✨特殊',
+};
+
+/** イージング関数（easeOutBack） */
+const easeOutBack = (t: number): number => {
+  const c1 = 1.70158;
+  const c3 = c1 + 1;
+  return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+};
+
+/** 個別カード描画 */
+const renderDraftCard = (
+  c: CanvasRenderingContext2D,
+  card: Card,
+  x: number,
+  y: number,
+  cardW: number,
+  cardH: number,
+  isSelected: boolean,
+  confirmed: boolean,
+  alpha: number
+): void => {
+  c.globalAlpha = confirmed && !isSelected ? 0.3 : alpha;
+
+  // カード影
+  c.fillStyle = 'rgba(0,0,0,0.3)';
+  c.beginPath();
+  c.roundRect(x + 4, y + 4, cardW, cardH, 12);
+  c.fill();
+
+  // カード本体
+  c.fillStyle = RARITY_COLORS[card.rarity] || '#4a5568';
+  c.beginPath();
+  c.roundRect(x, y, cardW, cardH, 12);
+  c.fill();
+
+  // 選択中の光彩
+  if (isSelected && !confirmed) {
+    c.strokeStyle = '#ffeb3b';
+    c.lineWidth = 3;
+    c.shadowColor = '#ffeb3b';
+    c.shadowBlur = 15;
+    c.beginPath();
+    c.roundRect(x, y, cardW, cardH, 12);
+    c.stroke();
+    c.shadowBlur = 0;
+  }
+
+  // カード内容
+  c.fillStyle = '#fff';
+  c.font = '36px Arial';
+  c.textAlign = 'center';
+  c.fillText(card.icon, x + cardW / 2, y + 45);
+
+  c.font = 'bold 16px Arial';
+  c.fillText(card.name, x + cardW / 2, y + 85);
+
+  // レアリティバッジ
+  c.font = 'bold 14px Arial';
+  c.fillStyle = card.rarity === 'SSR' ? '#ffd700' : card.rarity === 'SR' ? '#c0c0c0' : '#cd7f32';
+  c.fillText(`[${card.rarity}]`, x + cardW / 2, y + 110);
+
+  // 区切り線
+  c.strokeStyle = 'rgba(255,255,255,0.3)';
+  c.lineWidth = 1;
+  c.beginPath();
+  c.moveTo(x + 15, y + 125);
+  c.lineTo(x + cardW - 15, y + 125);
+  c.stroke();
+
+  // 効果説明文（ワードラップ）
+  c.fillStyle = '#e2e8f0';
+  c.font = '13px Arial';
+  const maxLineW = cardW - 30;
+  let line = '';
+  let lineY = y + 150;
+  for (const ch of card.description) {
+    const test = line + ch;
+    if (c.measureText(test).width > maxLineW) {
+      c.fillText(line, x + cardW / 2, lineY);
+      line = ch;
+      lineY += 18;
+    } else {
+      line = test;
+    }
+  }
+  if (line) c.fillText(line, x + cardW / 2, lineY);
+
+  // カテゴリ
+  c.fillStyle = 'rgba(255,255,255,0.6)';
+  c.font = '12px Arial';
+  c.fillText(CAT_LABELS[card.category] || card.category, x + cardW / 2, y + cardH - 20);
+};
+
 export const Render = {
   circle: (c: CanvasRenderingContext2D, x: number, y: number, r: number, col: string) => {
     c.fillStyle = col;
@@ -305,113 +411,19 @@ export const Render = {
     const startX = (width - totalW) / 2;
     const baseY = 220;
 
-    // イージング関数（easeOutBack）
-    const ease = (t: number) => {
-      const c1 = 1.70158;
-      const c3 = c1 + 1;
-      return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
-    };
-
     cards.forEach((card, i) => {
       const x = startX + i * (cardW + gap);
       const isSelected = i === selectedIndex;
 
       // 登場アニメーション（下からスライドイン）
       const cardAnim = Math.min(1, animProgress * 3 - i * 0.3);
-      const animOffset = cardAnim > 0 ? (1 - ease(Math.min(1, cardAnim))) * 100 : 100;
+      const animOffset = cardAnim > 0 ? (1 - easeOutBack(Math.min(1, cardAnim))) * 100 : 100;
       const y = baseY + animOffset + (isSelected && !confirmed ? -8 : 0);
       const alpha = cardAnim > 0 ? Math.min(1, cardAnim) : 0;
 
       if (alpha <= 0) return;
 
-      c.globalAlpha = confirmed && !isSelected ? 0.3 : alpha;
-
-      // カード背景
-      const rarityColors: Record<string, string> = {
-        R: '#4a5568',
-        SR: '#d69e2e',
-        SSR: '#e53e3e',
-      };
-      const bgColor = rarityColors[card.rarity] || '#4a5568';
-
-      // カード影
-      c.fillStyle = 'rgba(0,0,0,0.3)';
-      c.beginPath();
-      c.roundRect(x + 4, y + 4, cardW, cardH, 12);
-      c.fill();
-
-      // カード本体
-      c.fillStyle = bgColor;
-      c.beginPath();
-      c.roundRect(x, y, cardW, cardH, 12);
-      c.fill();
-
-      // 選択中の光彩
-      if (isSelected && !confirmed) {
-        c.strokeStyle = '#ffeb3b';
-        c.lineWidth = 3;
-        c.shadowColor = '#ffeb3b';
-        c.shadowBlur = 15;
-        c.beginPath();
-        c.roundRect(x, y, cardW, cardH, 12);
-        c.stroke();
-        c.shadowBlur = 0;
-      }
-
-      // カード内容
-      c.fillStyle = '#fff';
-
-      // アイコン
-      c.font = '36px Arial';
-      c.textAlign = 'center';
-      c.fillText(card.icon, x + cardW / 2, y + 45);
-
-      // カード名
-      c.font = 'bold 16px Arial';
-      c.fillText(card.name, x + cardW / 2, y + 85);
-
-      // レアリティバッジ
-      c.font = 'bold 14px Arial';
-      c.fillStyle = card.rarity === 'SSR' ? '#ffd700' : card.rarity === 'SR' ? '#c0c0c0' : '#cd7f32';
-      c.fillText(`[${card.rarity}]`, x + cardW / 2, y + 110);
-
-      // 区切り線
-      c.strokeStyle = 'rgba(255,255,255,0.3)';
-      c.lineWidth = 1;
-      c.beginPath();
-      c.moveTo(x + 15, y + 125);
-      c.lineTo(x + cardW - 15, y + 125);
-      c.stroke();
-
-      // 効果説明文（ワードラップ）
-      c.fillStyle = '#e2e8f0';
-      c.font = '13px Arial';
-      const desc = card.description;
-      const maxLineW = cardW - 30;
-      let line = '';
-      let lineY = y + 150;
-      for (const char of desc) {
-        const test = line + char;
-        if (c.measureText(test).width > maxLineW) {
-          c.fillText(line, x + cardW / 2, lineY);
-          line = char;
-          lineY += 18;
-        } else {
-          line = test;
-        }
-      }
-      if (line) c.fillText(line, x + cardW / 2, lineY);
-
-      // カテゴリ
-      const catLabels: Record<string, string> = {
-        speed: '⚡スピード',
-        handling: '🔄ハンドリング',
-        defense: '🛡️防御',
-        special: '✨特殊',
-      };
-      c.fillStyle = 'rgba(255,255,255,0.6)';
-      c.font = '12px Arial';
-      c.fillText(catLabels[card.category] || card.category, x + cardW / 2, y + cardH - 20);
+      renderDraftCard(c, card, x, y, cardW, cardH, isSelected, confirmed, alpha);
     });
 
     c.globalAlpha = 1;
