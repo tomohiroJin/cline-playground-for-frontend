@@ -111,26 +111,6 @@ export interface DeckState {
   history: Card[];       // 選択済みカード履歴
 }
 
-// === ゴースト ===
-
-export interface GhostFrame {
-  x: number;      // X座標
-  y: number;      // Y座標
-  angle: number;  // 車体角度（ラジアン）
-  speed: number;  // 速度
-  lap: number;    // 現在のラップ数
-  t: number;      // レース開始からの経過時間（ms）
-}
-
-export interface GhostData {
-  frames: GhostFrame[];
-  totalTime: number;     // 総レース時間（ms）
-  course: number;        // コースインデックス (0-5)
-  laps: number;          // 周回数
-  date: string;          // 記録日時（ISO 8601）
-  playerName: string;    // プレイヤー名
-}
-
 // === ハイライト ===
 
 export type HighlightType =

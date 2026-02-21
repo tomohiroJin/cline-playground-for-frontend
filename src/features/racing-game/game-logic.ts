@@ -31,8 +31,9 @@ export const Logic = {
     return isCorner && p.speed >= DRIFT.MIN_SPEED && Math.random() < skill * 0.3;
   },
 
-  movePlayer: (p: Player, baseSpd: number, pts: Point[], handbrake?: boolean, steering?: number) => {
-    const { speedRecovery } = Config.game;
+  movePlayer: (p: Player, baseSpd: number, pts: Point[], handbrake?: boolean, steering?: number, accelMul?: number, driftBoostMul?: number) => {
+    const baseRecovery = Config.game.speedRecovery;
+    const speedRecovery = baseRecovery * (accelMul ?? 1);
     const warpThreshold = WALL.WARP_THRESHOLD;
     const dt = FRAME_DT;
 
@@ -54,8 +55,10 @@ export const Logic = {
       driftState = Drift.update(driftState, 0, p.speed, dt);
     }
 
-    // 速度計算（壁接触中は速度回復を凍結）
-    let spd = p.wallStuck > 0 ? p.speed : Math.min(1, p.speed + speedRecovery);
+    // 速度計算（壁接触中も30%の回復で脱出可能に）
+    let spd = p.wallStuck > 0
+      ? Math.min(1, p.speed + speedRecovery * 0.3)
+      : Math.min(1, p.speed + speedRecovery);
 
     // ドリフト中の速度維持
     if (driftState.active) {
@@ -63,7 +66,7 @@ export const Logic = {
     }
 
     // ドリフトブースト適用
-    const driftBoost = Drift.getBoost(driftState);
+    const driftBoost = Drift.getBoost(driftState) * (driftBoostMul ?? 1);
 
     const vel = baseSpd * (spd + driftBoost);
     const nx = p.x + Math.cos(p.angle) * vel;
@@ -156,21 +159,28 @@ export const Logic = {
     if (slideMag > 0.01) {
       slideAngle = Math.atan2(slideY, slideX);
     } else {
-      // スライドベクトルが0に近い場合はプレイヤー位置基準でセグメント方向へ（ルックアヘッド拡大）
+      // トラック最寄点方向を基本とし、セグメント前方を補助的に使う
+      const toCenterAngle = Math.atan2(info.pt.y - p.y, info.pt.x - p.x);
       const off = Math.min(stuck, 5) + 3;
       const ti = (info.seg + off) % pts.length;
       const tp = pts[ti];
-      slideAngle = Math.atan2(tp.y - p.y, tp.x - p.x);
+      const toSegAngle = Math.atan2(tp.y - p.y, tp.x - p.x);
+      // 中心方向70% + セグメント方向30% のブレンド
+      slideAngle = toCenterAngle + Utils.normalizeAngle(toSegAngle - toCenterAngle) * 0.3;
     }
 
-    // stuck >= 3 時にトラック内への強制押し出し（距離を速度に比例）
+    // stuck >= 2 で早期発動、セグメント中点方向へ押し出し
     let finalX = info.pt.x;
     let finalY = info.pt.y;
-    if (stuck >= 3) {
-      const pushDir = Math.atan2(info.pt.y - p.y, info.pt.x - p.x);
-      const pushDist = Math.max(5, vel * 0.7);
-      finalX = info.pt.x + Math.cos(pushDir) * pushDist;
-      finalY = info.pt.y + Math.sin(pushDir) * pushDist;
+    if (stuck >= 2) {
+      const segIdx = info.seg;
+      const nextIdx = (segIdx + 1) % pts.length;
+      const centerX = (pts[segIdx].x + pts[nextIdx].x) / 2;
+      const centerY = (pts[segIdx].y + pts[nextIdx].y) / 2;
+      const toCenterDir = Math.atan2(centerY - info.pt.y, centerX - info.pt.x);
+      const pushDist = Math.max(3, vel * 0.5);
+      finalX = info.pt.x + Math.cos(toCenterDir) * pushDist;
+      finalY = info.pt.y + Math.sin(toCenterDir) * pushDist;
     }
 
     return {

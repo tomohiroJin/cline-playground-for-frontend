@@ -425,33 +425,6 @@ export const Render = {
     }
   },
 
-  /** T-109: ゴースト車体描画（半透明） */
-  ghostKart: (c: CanvasRenderingContext2D, x: number, y: number, angle: number, color: string) => {
-    c.save();
-    c.globalAlpha = 0.3;
-    c.translate(x, y);
-    c.rotate(angle + Math.PI / 2);
-
-    // 車体（簡略化版）
-    c.fillStyle = color;
-    c.beginPath();
-    c.roundRect(-10, -15, 20, 30, 4);
-    c.fill();
-    c.strokeStyle = 'rgba(255,255,255,0.5)';
-    c.lineWidth = 1;
-    c.stroke();
-
-    c.restore();
-
-    // GHOST ラベル
-    c.globalAlpha = 0.5;
-    c.fillStyle = '#aaa';
-    c.font = 'bold 10px Arial';
-    c.textAlign = 'center';
-    c.fillText('GHOST', x, y - 22);
-    c.globalAlpha = 1;
-  },
-
   /** T-111: ハイライト通知バナー描画（右上に小さく半透明表示） */
   highlightBanner: (
     c: CanvasRenderingContext2D,

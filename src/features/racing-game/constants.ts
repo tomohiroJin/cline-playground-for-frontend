@@ -88,12 +88,12 @@ export const HEAT = Object.freeze({
   COOLDOWN: 1.0,
 });
 
-// 壁ヒットペナルティ定数（段階的減速）
+// 壁ヒットペナルティ定数（段階的減速 — 強化版）
 export const WALL = Object.freeze({
-  LIGHT_FACTOR: 0.85,   // wallStuck = 1
-  MEDIUM_FACTOR: 0.70,  // wallStuck = 2〜3
-  HEAVY_FACTOR: 0.50,   // wallStuck >= 4
-  WARP_THRESHOLD: 5,    // ワープしきい値（短縮して脱出しやすく）
+  LIGHT_FACTOR: 0.60,   // wallStuck = 1（壁接触1回目で40%減速）
+  MEDIUM_FACTOR: 0.40,  // wallStuck = 2〜3（2-3回目で60%減速）
+  HEAVY_FACTOR: 0.20,   // wallStuck >= 4（4回目以降で80%減速）
+  WARP_THRESHOLD: 3,    // ワープしきい値（3フレームでワープ、ハマり時間さらに短縮）
 });
 
 // コースデータ

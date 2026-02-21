@@ -125,7 +125,7 @@ export const ALL_CARDS: readonly Card[] = Object.freeze([
     effect: { specialType: 'recovery_boost' },
     icon: '💫',
   },
-  // 特殊系（3枚）
+  // 特殊系（2枚）
   {
     id: 'SPC_01',
     name: 'HEAT チャージャー',
@@ -134,15 +134,6 @@ export const ALL_CARDS: readonly Card[] = Object.freeze([
     description: 'HEAT 蓄積速度 ×2',
     effect: { heatGainMultiplier: 2.0 },
     icon: '🌡️',
-  },
-  {
-    id: 'SPC_02',
-    name: 'ゴーストビジョン',
-    category: 'special',
-    rarity: 'R',
-    description: 'ゴーストの走行ラインを可視化',
-    effect: { specialType: 'ghost_vision' },
-    icon: '👻',
   },
   {
     id: 'SPC_03',

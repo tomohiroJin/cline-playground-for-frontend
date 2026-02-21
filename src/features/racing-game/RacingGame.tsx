@@ -35,8 +35,6 @@ import { Logic } from './game-logic';
 import { Heat } from './heat';
 import { CourseEffects } from './course-effects';
 import { DraftCards } from './draft-cards';
-import { Ghost } from './ghost';
-import type { GhostRecorder, GhostPlayer } from './ghost';
 import { Highlight } from './highlight';
 import type { HighlightTracker } from './highlight';
 import { useInput, useIdle } from './hooks';
@@ -69,7 +67,6 @@ export default function RacingGame() {
   const [paused, setPaused] = useState(false);
   const [vol, setVol] = useState(Config.audio.defaultVolume);
   const [muted, setMuted] = useState(false);
-  const [ghostEnabled, setGhostEnabled] = useState(false);
   const [cardsEnabled, setCardsEnabled] = useState(true);
   const cardsEnabledRef = useRef(true);
   const [gameKey, setGameKey] = useState(0);
@@ -78,7 +75,6 @@ export default function RacingGame() {
   const gamePhaseRef = useRef<string>('menu');
   const pausedRef = useRef(false);
   const winnerRef = useRef<string | null>(null);
-  const ghostEnabledRef = useRef(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { keys, touch, setTouch, onKeyDown } = useInput();
@@ -87,7 +83,6 @@ export default function RacingGame() {
   // ref とReact state の同期
   useEffect(() => { pausedRef.current = paused; }, [paused]);
   useEffect(() => { cardsEnabledRef.current = cardsEnabled; }, [cardsEnabled]);
-  useEffect(() => { ghostEnabledRef.current = ghostEnabled; }, [ghostEnabled]);
 
   // P/ESC キーハンドリング
   useEffect(() => {
@@ -223,21 +218,13 @@ export default function RacingGame() {
     // ドラフト済みラップ追跡（同一ラップでの二重発動防止）
     const draftedLaps = new Set<number>();
 
-    // === ゴースト状態 ===
-    let ghostRecorder: GhostRecorder = Ghost.createRecorder();
-    let ghostPlayer: GhostPlayer | null = null;
-    // 常に localStorage からロード（ghostEnabled の React state タイミングに依存しない）
-    if (!demo) {
-      const ghostData = Ghost.load(cIdx);
-      if (ghostData) {
-        ghostPlayer = Ghost.createPlayer(ghostData);
-      }
-    }
-
     // === ハイライト状態 ===
     let hlTracker: HighlightTracker = Highlight.createTracker(players.length);
     const hlNotifications: (HighlightEvent & { displayTime: number; startTime: number })[] = [];
     const MAX_NOTIFICATIONS = 1;
+
+    // === CPU カード選択通知 ===
+    let cpuCardNotification: { cardName: string; cardIcon: string; startTime: number } | null = null;
 
     // デコレーション
     const decos: { x: number; y: number; variant: number }[] = [];
@@ -285,9 +272,6 @@ export default function RacingGame() {
         completedLap,
         pendingResume: false,
       };
-
-      // ゴースト記録一時停止
-      ghostRecorder = Ghost.pauseRecording(ghostRecorder);
 
       SoundEngine.stopEngine();
       engineOn = false;
@@ -340,6 +324,15 @@ export default function RacingGame() {
           draftState.selectedIndex = selectedIdx >= 0 ? selectedIdx : 0;
           draftState.confirmed = true;
 
+          // CPU選択カード通知
+          if (selectedCard) {
+            cpuCardNotification = {
+              cardName: selectedCard.name,
+              cardIcon: selectedCard.icon,
+              startTime: Date.now(),
+            };
+          }
+
           // さらに 0.8秒後にレース再開
           cpuDraftTimer2 = window.setTimeout(() => {
             players = players.map((p, idx) => {
@@ -352,7 +345,6 @@ export default function RacingGame() {
             });
             draftState.active = false;
             draftState.pendingResume = false;
-            ghostRecorder = Ghost.resumeRecording(ghostRecorder);
             setPhase('race');
           }, 800);
         }, 1200);
@@ -373,9 +365,6 @@ export default function RacingGame() {
 
         draftState.active = false;
         draftState.pendingResume = false;
-
-        // ゴースト記録再開
-        ghostRecorder = Ghost.resumeRecording(ghostRecorder);
 
         setPhase('race');
       }, 500);
@@ -468,10 +457,14 @@ export default function RacingGame() {
           if (keys.current.ArrowRight) rot = Config.game.turnRate;
           handbrake = !!keys.current['code:ShiftRight'] || !!keys.current.Enter;
         }
+        // カード効果: 旋回速度倍率
+        const turnMul = p.activeCards.reduce(
+          (acc, c) => acc * (c.turnMultiplier ?? 1), 1
+        );
         // ドリフト中は旋回速度を増幅
         const turnRate = p.drift.active && rot !== 0
-          ? Math.sign(rot) * (Config.game.turnRate * 1.8)
-          : rot;
+          ? Math.sign(rot) * (Config.game.turnRate * 1.8 * turnMul)
+          : rot * turnMul;
         return { rot, turnRate, handbrake };
       });
 
@@ -511,12 +504,20 @@ export default function RacingGame() {
             Config.game.trackWidth
           );
           const spdMod = CourseEffects.getSpeedModifier(courseEffect, trackInfo.seg, pts.length);
-          const effectiveBaseSpd = baseSpd * friction + spdMod;
+          // カード効果: 最高速度倍率
+          const speedMul = p.activeCards.reduce(
+            (acc, c) => acc * (c.speedMultiplier ?? 1), 1
+          );
+          const effectiveBaseSpd = (baseSpd * friction + spdMod) * speedMul;
+
+          // カード効果: 加速力倍率・ドリフトブースト倍率
+          const accelMul = p.activeCards.reduce((acc, c) => acc * (c.accelMultiplier ?? 1), 1);
+          const driftBoostMul = p.activeCards.reduce((acc, c) => acc * (c.driftBoostMultiplier ?? 1), 1);
 
           // 移動
           const input = playerInputs[i];
           // eslint-disable-next-line prefer-const
-          let { p: np, info, hit, wallStage } = Logic.movePlayer(p, effectiveBaseSpd, pts, input.handbrake, input.rot);
+          let { p: np, info, hit, wallStage } = Logic.movePlayer(p, effectiveBaseSpd, pts, input.handbrake, input.rot, accelMul, driftBoostMul);
 
           if (hit) {
             if (!demo) SoundEngine.wallStaged(wallStage);
@@ -618,8 +619,8 @@ export default function RacingGame() {
                 return np;
               }
 
-              // ドラフト発動判定（最終ラップでなく、laps > 1、カード有効時のみ、同一ラップ二重発動防止）
-              if (!demo && np.lap <= maxLaps && maxLaps > 1 && !triggerDraft && cardsEnabledRef.current && mode !== 'solo' && !draftedLaps.has(np.lap - 1)) {
+              // ドラフト発動判定（CPUモードではP1のみ、2Pモードではどちらでもドラフト発動）
+              if (!demo && (i === 0 || mode === '2p') && np.lap <= maxLaps && maxLaps > 1 && !triggerDraft && cardsEnabledRef.current && mode !== 'solo' && !draftedLaps.has(np.lap - 1)) {
                 triggerDraft = true;
                 draftLap = np.lap - 1;
               }
@@ -661,10 +662,6 @@ export default function RacingGame() {
           }
         }
 
-        // ゴースト記録（P1のみ、race中）
-        if (!demo && gamePhaseRef.current === 'race' && raceStart > 0) {
-          ghostRecorder = Ghost.recordFrame(ghostRecorder, players[0], raceTime);
-        }
       }
 
       // エフェクト更新
@@ -730,17 +727,6 @@ export default function RacingGame() {
           lapTimes: winner ? [...winner.lapTimes] : [...players[0].lapTimes],
         });
 
-        // ゴースト保存
-        if (players[0].lap > maxLaps) {
-          const ghostData = Ghost.finalizeRecording(ghostRecorder, cIdx, maxLaps, 'P1');
-          if (ghostData) {
-            const existingGhost = Ghost.load(cIdx);
-            if (Ghost.shouldUpdate(ghostData, existingGhost)) {
-              Ghost.save(ghostData);
-            }
-          }
-        }
-
         // スコア保存
         if (players[0].lap === maxLaps + 1) {
           const key = `c${course}-l${laps}`;
@@ -775,15 +761,6 @@ export default function RacingGame() {
       Render.startLine(ctx, sl);
       Render.checkpoints(ctx, cpCoords);
       Render.particles(ctx, particles, sparks);
-
-      // ゴースト描画（ref 経由で最新の ghostEnabled を参照）
-      if (ghostPlayer && ghostEnabledRef.current && !demo && gamePhaseRef.current === 'race') {
-        const raceTime = Date.now() - raceStart;
-        const ghostPos = Ghost.getPosition(ghostPlayer, raceTime);
-        if (ghostPos) {
-          Render.ghostKart(ctx, ghostPos.x, ghostPos.y, ghostPos.angle, col1);
-        }
-      }
 
       players
         .slice()
@@ -901,6 +878,42 @@ export default function RacingGame() {
         });
       }
 
+      // CPU カード選択通知バナー
+      if (cpuCardNotification) {
+        const elapsed = Date.now() - cpuCardNotification.startTime;
+        const displayDuration = 3000;
+        if (elapsed < displayDuration) {
+          const fadeIn = Math.min(1, elapsed / 200);
+          const fadeOut = elapsed > displayDuration - 500 ? (displayDuration - elapsed) / 500 : 1;
+          ctx.globalAlpha = Math.min(fadeIn, fadeOut) * 0.85;
+          const bannerW = 280;
+          const bannerH = 36;
+          const bx = (width - bannerW) / 2;
+          const by = height - 70;
+          ctx.fillStyle = '#1e293b';
+          ctx.beginPath();
+          ctx.roundRect(bx, by, bannerW, bannerH, 8);
+          ctx.fill();
+          ctx.strokeStyle = '#a855f7';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.roundRect(bx, by, bannerW, bannerH, 8);
+          ctx.stroke();
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 14px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(
+            `CPU: ${cpuCardNotification.cardIcon} ${cpuCardNotification.cardName}`,
+            width / 2, by + bannerH / 2
+          );
+          ctx.globalAlpha = 1;
+          ctx.textBaseline = 'alphabetic';
+        } else {
+          cpuCardNotification = null;
+        }
+      }
+
       ctx.restore();
     };
 
@@ -948,23 +961,6 @@ export default function RacingGame() {
     setGameKey(prev => prev + 1);
     setDemo(false);
   };
-
-  // ゴーストデータの有無チェック
-  const hasGhostData = (() => {
-    try {
-      const cIdx = Utils.clamp(course, 0, Courses.length - 1);
-      return Ghost.load(cIdx) !== null;
-    } catch {
-      return false;
-    }
-  })();
-
-  // ゴーストデータあり → ゴースト自動 ON
-  useEffect(() => {
-    if (hasGhostData) {
-      setGhostEnabled(true);
-    }
-  }, [hasGhostData]);
 
   return (
     <PageContainer>
@@ -1112,22 +1108,6 @@ export default function RacingGame() {
                   </Btn>
                 </ControlGroup>
               )}
-
-              {/* ゴーストトグル */}
-              <ControlGroup style={{ padding: '0.25rem 0.5rem' }}>
-                <Label style={{ fontSize: '0.8rem' }}>Ghost</Label>
-                <Btn
-                  $sel={ghostEnabled}
-                  onClick={() => hasGhostData && setGhostEnabled(!ghostEnabled)}
-                  $color={hasGhostData ? '#8b5cf6' : '#4b5563'}
-                  style={{ opacity: hasGhostData ? 1 : 0.4 }}
-                >
-                  {ghostEnabled ? '👻ON' : '👻OFF'}
-                </Btn>
-                <span style={{ color: '#9ca3af', fontSize: '0.65rem', marginLeft: '0.25rem' }}>
-                  {hasGhostData ? '自己ベストと対戦!' : '完走するとゴーストが保存されます'}
-                </span>
-              </ControlGroup>
 
               <ActionButton
                 onClick={startGame}
