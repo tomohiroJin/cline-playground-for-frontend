@@ -156,18 +156,27 @@ export const Logic = {
     if (slideMag > 0.01) {
       slideAngle = Math.atan2(slideY, slideX);
     } else {
-      // スライドベクトルが0に近い場合はセグメント方向へ
-      const off = stuck >= 2 ? 2 : 1;
+      // スライドベクトルが0に近い場合はプレイヤー位置基準でセグメント方向へ
+      const off = Math.min(stuck, 3) + 1;
       const ti = (info.seg + off) % pts.length;
       const tp = pts[ti];
-      slideAngle = Math.atan2(tp.y - info.pt.y, tp.x - info.pt.x);
+      slideAngle = Math.atan2(tp.y - p.y, tp.x - p.x);
+    }
+
+    // stuck >= 4 時にトラック内への強制押し出し
+    let finalX = info.pt.x;
+    let finalY = info.pt.y;
+    if (stuck >= 4) {
+      const pushDir = Math.atan2(info.pt.y - p.y, info.pt.x - p.x);
+      finalX = info.pt.x + Math.cos(pushDir) * 3;
+      finalY = info.pt.y + Math.sin(pushDir) * 3;
     }
 
     return {
       p: {
         ...p,
-        x: info.pt.x,
-        y: info.pt.y,
+        x: finalX,
+        y: finalY,
         angle: slideAngle,
         speed: Math.max(0.1, adjustedSpeed),
         wallStuck: stuck,

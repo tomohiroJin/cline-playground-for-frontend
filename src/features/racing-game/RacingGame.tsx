@@ -218,6 +218,8 @@ export default function RacingGame() {
       completedLap: 0,      // ドラフト発生ラップ番号
       pendingResume: false,  // レース再開待ち
     };
+    // ドラフト済みラップ追跡（同一ラップでの二重発動防止）
+    const draftedLaps = new Set<number>();
 
     // === ゴースト状態 ===
     let ghostRecorder: GhostRecorder = Ghost.createRecorder();
@@ -265,6 +267,7 @@ export default function RacingGame() {
 
     /** ドラフト開始処理 */
     const startDraft = (completedLap: number) => {
+      draftedLaps.add(completedLap);
       // 各プレイヤーのデッキから3枚ドロー
       decks = decks.map(d => DraftCards.drawCards(d, 3));
 
@@ -290,6 +293,7 @@ export default function RacingGame() {
 
     /** ドラフト確定処理 */
     const confirmDraftSelection = () => {
+      if (draftState.confirmed) return;
       const pi = draftState.currentPlayer;
       const hand = decks[pi].hand;
       if (hand.length === 0) return;
@@ -582,7 +586,7 @@ export default function RacingGame() {
                 lapAnn = 'LAP ' + (p.lap + 1);
                 lapAnnT = Date.now();
               }
-              const lapTime = Date.now() - p.lapStart;
+              const lapTime = p.lapStart > 0 ? Date.now() - p.lapStart : 0;
               np.lap++;
               np.checkpointFlags = 0;
               np.lapTimes.push(lapTime);
@@ -611,8 +615,8 @@ export default function RacingGame() {
                 return np;
               }
 
-              // ドラフト発動判定（最終ラップでなく、laps > 1、カード有効時のみ）
-              if (!demo && np.lap <= maxLaps && maxLaps > 1 && !triggerDraft && cardsEnabledRef.current && mode !== 'solo') {
+              // ドラフト発動判定（最終ラップでなく、laps > 1、カード有効時のみ、同一ラップ二重発動防止）
+              if (!demo && np.lap <= maxLaps && maxLaps > 1 && !triggerDraft && cardsEnabledRef.current && mode !== 'solo' && !draftedLaps.has(np.lap - 1)) {
                 triggerDraft = true;
                 draftLap = np.lap - 1;
               }
@@ -714,20 +718,23 @@ export default function RacingGame() {
           ? [...players[0].lapTimes, ...players[1].lapTimes]
           : [...players[0].lapTimes];
 
+        const winner = players.find(p => p.lap > maxLaps);
         setResults({
           winnerName: winName,
           winnerColor: players.find(p => p.name === winName)?.color || '#fff',
           times: { p1: p1Time, p2: p2Time },
           fastest: Utils.min(allLapTimes),
-          lapTimes: [...players[0].lapTimes],
+          lapTimes: winner ? [...winner.lapTimes] : [...players[0].lapTimes],
         });
 
         // ゴースト保存
         if (players[0].lap > maxLaps) {
           const ghostData = Ghost.finalizeRecording(ghostRecorder, cIdx, maxLaps, 'P1');
-          const existingGhost = Ghost.load(cIdx);
-          if (Ghost.shouldUpdate(ghostData, existingGhost)) {
-            Ghost.save(ghostData);
+          if (ghostData) {
+            const existingGhost = Ghost.load(cIdx);
+            if (Ghost.shouldUpdate(ghostData, existingGhost)) {
+              Ghost.save(ghostData);
+            }
           }
         }
 
@@ -767,7 +774,7 @@ export default function RacingGame() {
       Render.particles(ctx, particles, sparks);
 
       // ゴースト描画
-      if (ghostPlayer && ghostEnabled && !demo && raceStart > 0) {
+      if (ghostPlayer && ghostEnabled && !demo && gamePhaseRef.current === 'race') {
         const raceTime = Date.now() - raceStart;
         const ghostPos = Ghost.getPosition(ghostPlayer, raceTime);
         if (ghostPos) {
@@ -802,7 +809,7 @@ export default function RacingGame() {
             raceStart = Date.now();
             setPhase('race');
             SoundEngine.go();
-            players.forEach(p => (p.lapStart = Date.now()));
+            players = players.map(p => ({ ...p, lapStart: Date.now() }));
           }
         }
       }
@@ -886,9 +893,9 @@ export default function RacingGame() {
 
       // ハイライト通知バナー
       if (gamePhaseRef.current === 'race' || gamePhaseRef.current === 'draft') {
-        for (const notif of hlNotifications) {
-          Render.highlightBanner(ctx, notif, Highlight.COLORS);
-        }
+        hlNotifications.forEach((notif, index) => {
+          Render.highlightBanner(ctx, notif, Highlight.COLORS, index);
+        });
       }
 
       ctx.restore();
@@ -949,12 +956,12 @@ export default function RacingGame() {
     }
   })();
 
-  // ソロモード + ゴーストデータあり → ゴースト自動 ON
+  // ゴーストデータあり → ゴースト自動 ON
   useEffect(() => {
-    if (mode === 'solo' && hasGhostData) {
+    if (hasGhostData) {
       setGhostEnabled(true);
     }
-  }, [mode, hasGhostData]);
+  }, [hasGhostData]);
 
   return (
     <PageContainer>

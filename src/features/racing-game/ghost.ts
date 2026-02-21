@@ -62,15 +62,17 @@ export const resumeRecording = (recorder: GhostRecorder): GhostRecorder => ({
   recording: true,
 });
 
-/** 記録完了・GhostData 生成 */
+/** 記録完了・GhostData 生成（空フレームの場合は null を返却） */
 export const finalizeRecording = (
   recorder: GhostRecorder,
   courseIndex: number,
   laps: number,
   playerName: string
-): GhostData => {
+): GhostData | null => {
   const frames = recorder.frames;
-  const totalTime = frames.length > 0 ? frames[frames.length - 1].t : 0;
+  if (frames.length === 0) return null;
+
+  const totalTime = frames[frames.length - 1].t;
 
   return {
     frames,

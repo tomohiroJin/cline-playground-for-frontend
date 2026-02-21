@@ -456,9 +456,10 @@ export const Render = {
   highlightBanner: (
     c: CanvasRenderingContext2D,
     event: HighlightEvent & { displayTime: number },
-    colors: Record<HighlightType, string>
+    colors: Record<HighlightType, string>,
+    index: number
   ) => {
-    const { width } = Config.canvas;
+    const { width, height } = Config.canvas;
     const displayDuration = 2000; // 2秒
     const fadeTime = 300; // 0.3秒
 
@@ -476,11 +477,11 @@ export const Render = {
     const bgColor = colors[event.type] || '#333';
     const isLight = event.type === 'photo_finish' || event.type === 'near_miss';
 
-    // バナー背景
+    // バナー背景（画面下部に配置、複数通知をスタック）
     const bannerW = 350;
     const bannerH = 40;
     const bannerX = (width - bannerW) / 2;
-    const bannerY = 20;
+    const bannerY = height - 60 - index * 50;
 
     c.fillStyle = bgColor;
     c.beginPath();
