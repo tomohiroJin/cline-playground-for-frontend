@@ -11,7 +11,7 @@ export const SelectorContainer = styled.div`
 export const Title = styled.h3`
   margin-bottom: 10px;
   font-size: 1.2rem;
-  color: #333;
+  color: var(--text-primary);
 `;
 
 export const ThemeTabs = styled.div`
@@ -26,31 +26,31 @@ export const ThemeTabs = styled.div`
 
 export const ThemeTab = styled.button<{ $active: boolean; $locked: boolean }>`
   padding: 6px 14px;
-  border: 1px solid ${props => (props.$active ? '#4caf50' : '#ccc')};
+  border: 1px solid ${props => (props.$active ? 'var(--accent-color)' : 'var(--glass-border)')};
   border-radius: 20px;
   background-color: ${props =>
-    props.$locked ? '#e0e0e0' : props.$active ? '#4caf50' : '#fff'};
+    props.$locked ? 'rgba(255, 255, 255, 0.03)' : props.$active ? 'var(--accent-color)' : 'var(--glass-bg)'};
   color: ${props =>
-    props.$locked ? '#999' : props.$active ? '#fff' : '#333'};
+    props.$locked ? 'var(--text-secondary)' : props.$active ? '#fff' : 'var(--text-primary)'};
   cursor: ${props => (props.$locked ? 'default' : 'pointer')};
   font-size: 0.85rem;
   transition: all 0.2s;
-  opacity: ${props => (props.$locked ? 0.7 : 1)};
+  opacity: ${props => (props.$locked ? 0.5 : 1)};
 
   &:hover {
     ${props =>
       !props.$locked &&
       !props.$active &&
       `
-      border-color: #4caf50;
-      background-color: #f0f8f0;
+      border-color: var(--accent-color);
+      background-color: rgba(255, 255, 255, 0.1);
     `}
   }
 `;
 
 export const ThemeDescription = styled.p`
   font-size: 0.85rem;
-  color: #666;
+  color: var(--text-secondary);
   margin-bottom: 8px;
   text-align: center;
 `;
@@ -66,7 +66,7 @@ export const ProgressBar = styled.div`
   width: 100%;
   max-width: 600px;
   height: 4px;
-  background-color: #e0e0e0;
+  background-color: rgba(255, 255, 255, 0.15);
   border-radius: 2px;
   margin-bottom: 12px;
   overflow: hidden;

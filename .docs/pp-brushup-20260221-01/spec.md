@@ -99,10 +99,14 @@ export interface PuzzleRecord {
 }
 ```
 
-### 1.4 BGM 関連
+### 1.4 BGM 関連（除外）
+
+> **除外（2026-02-21）**: Tone.js を使った BGM・SE 機能（Phase 2-1, 2-2）を実装したが、ブラウザの自動再生ポリシーにより音が鳴らない問題を解決できなかった。プリロード、async/await 排除、AudioContext 再開ロジック等、複数回の修正を試みたが改善せず、BGM・SE 関連のコード・型定義・アトムをすべて除外した。スワイプ操作（Phase 2-3）、キーボード操作（Phase 2-4）、アニメーション等の他の Phase 2 機能はそのまま維持。`package.json` の Tone.js 依存は他ゲームが使用しているため維持。
+
+~~以下は除外された仕様です（参考として残す）:~~
 
 ```typescript
-// src/types/puzzle.ts
+// 除外: src/types/puzzle.ts から削除済み
 
 /** MIDI ノートシーケンス（number = MIDI ノート番号, null = 休符） */
 export type NoteSequence = (number | null)[];
@@ -155,16 +159,8 @@ export const correctRateAtom = createAtom<number>(0);
 /** ヒント使用フラグ */
 export const hintUsedAtom = createAtom<boolean>(false);
 
-// === Phase 2: BGM ===
-
-/** 現在の BGM トラック ID */
-export const bgmTrackIdAtom = createAtom<string>('calm-water');
-
-/** BGM 音量（0〜100） */
-export const bgmVolumeAtom = createAtom<number>(70);
-
-/** BGM 再生中フラグ */
-export const bgmPlayingAtom = createAtom<boolean>(false);
+// === Phase 2: BGM === （除外済み）
+// bgmTrackIdAtom, bgmVolumeAtom, bgmPlayingAtom は除外
 ```
 
 ### 2.2 既存アトムの変更
@@ -262,29 +258,9 @@ interface ResultScreenProps {
 }
 ```
 
-### 3.3 BgmController（Phase 2: 新規）
+### 3.3 BgmController（除外）
 
-StatusBar の下に配置。
-
-```
-┌─────────────────────────────────┐
-│  🎵 静かな水面  [◀][▶] [⏯]     │
-│  🔊 ━━━━━━━━━━━━━━━● 70%       │
-└─────────────────────────────────┘
-```
-
-**Props**:
-```typescript
-interface BgmControllerProps {
-  currentTrack: BgmTrack;
-  isPlaying: boolean;
-  volume: number;                // 0〜100
-  onTogglePlay: () => void;
-  onNextTrack: () => void;
-  onPrevTrack: () => void;
-  onVolumeChange: (volume: number) => void;
-}
-```
+> BGM 機能の除外に伴い、BgmController コンポーネントも除外。
 
 ### 3.4 ThemeSelector（Phase 3: 新規）
 
@@ -430,7 +406,9 @@ export const isThemeUnlocked = (
 
 ---
 
-## 5. オーディオシステム（Tone.js）設計
+## 5. オーディオシステム（Tone.js）設計（除外）
+
+> **除外（2026-02-21）**: BGM・SE 機能はブラウザの自動再生ポリシーの問題により除外。以下の仕様は参考として残す。
 
 ### 5.1 BGM エンジン（`src/hooks/useBgm.ts`）
 
@@ -804,7 +782,6 @@ export const useKeyboard = (handlers: {
   onMove: (direction: 'up' | 'down' | 'left' | 'right') => void;
   onToggleHint: () => void;
   onReset: () => void;
-  onToggleBgm: () => void;
   enabled: boolean;
 }) => {
   // window.addEventListener('keydown', handler)
@@ -820,7 +797,6 @@ export const useKeyboard = (handlers: {
 | `ArrowRight` / `D` / `d` | ピースを右に移動 |
 | `H` / `h` | ヒントモードトグル |
 | `R` / `r` | パズルリセット |
-| `M` / `m` | BGM 再生/停止トグル |
 
 ---
 
@@ -925,9 +901,71 @@ transition-delay: ${props => props.$dissolveDelay}s;
 | 2 | (新規画像 8) | ??? | 新規 |
 | 3 | (新規画像 9) | ??? | 新規 |
 
-### 11.4 BGM データフォーマット
+### 11.4 BGM データフォーマット（除外）
 
-- ファイル形式: TypeScript ソースコード（`src/utils/bgm-data.ts`）
-- データ構造: `BgmTrack[]`
-- メロディ/ベースは MIDI ノート番号配列
-- 外部オーディオファイルは不要（Tone.js オシレーターで生成）
+> BGM 機能の除外に伴い不要。
+
+---
+
+## 12. ダークテーマ色整合性（後処理）
+
+### 12.1 問題
+
+アプリは `body.premium-theme`（ダークテーマ）がデフォルトで適用される（`App.tsx` の `useEffect` で設定）。CSS 変数は以下の通り:
+
+```css
+body.premium-theme {
+  --bg-gradient: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.75);
+  --accent-color: #00d2ff;
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+}
+```
+
+しかし、複数のコンポーネントでライトテーマ前提のハードコード色が使われており、ダーク背景上でテキストが読めない、または UI が不整合な状態だった。
+
+### 12.2 修正方針
+
+ハードコード色を CSS 変数に置換。ただし以下は意図的に変更しない:
+
+- **パズル盤面**（`Board`）: 画像ピースが置かれる場所のため `#f0f0f0` 背景が適切
+- **画像上のオーバーレイボタン**（`OverlayToggleButton`, `CloseButton`）: 画像/動画上で視認性を確保するため `rgba(255,255,255,0.7)` が適切
+- **画像上のバッジ**（`RankBadge`, `SelectedIndicator`）: 自前の背景を持つためそのまま
+- **`<option>` 要素**: ブラウザネイティブ要素のため CSS 変数が効かないケースがあり直値を使用
+
+### 12.3 修正一覧
+
+#### ThemeSelector.styles.ts
+
+| コンポーネント | 変更前 | 変更後 |
+|-------------|--------|--------|
+| `Title` | `color: #333` | `color: var(--text-primary)` |
+| `ThemeTab`（非選択） | `background: #fff; color: #333; border: #ccc` | `background: var(--glass-bg); color: var(--text-primary); border: var(--glass-border)` |
+| `ThemeTab`（ロック） | `background: #e0e0e0; color: #999` | `background: rgba(255,255,255,0.03); color: var(--text-secondary)` |
+| `ThemeTab`（ホバー） | `background: #f0f8f0` | `background: rgba(255,255,255,0.1)` |
+| `ThemeDescription` | `color: #666` | `color: var(--text-secondary)` |
+| `ProgressBar` | `background: #e0e0e0` | `background: rgba(255,255,255,0.15)` |
+
+#### DifficultySelector.styles.ts
+
+| コンポーネント | 変更前 | 変更後 |
+|-------------|--------|--------|
+| `Label` | `color: #333` | `color: var(--text-primary)` |
+| `StyledSelect` | `background: white; border: #ccc` | `background: var(--glass-bg); color: var(--text-primary); border: var(--glass-border)` |
+| `SelectArrow` | `border-top: #333` | `border-top: var(--text-secondary)` |
+| `Description` | `color: #666` | `color: var(--text-secondary)` |
+
+#### PuzzleBoard.styles.ts
+
+| コンポーネント | 変更前 | 変更後 |
+|-------------|--------|--------|
+| `StatusBar` | `background: #f8f8f8` | `background: var(--glass-bg); border: var(--glass-border)` |
+| `StatusItem` | `color: #333` | `color: var(--text-primary)` |
+| `HintToggleButton`（非活性） | `background: #f8f8f8; color: #333; border: #ccc` | `background: var(--glass-bg); color: var(--text-primary); border: var(--glass-border)` |
+| `HintToggleButton`（活性） | `background: #4caf50` | `background: var(--accent-color)` |
+
+### 12.4 副次的バグ修正
+
+`HintToggleButton` の `active` prop 判定を `props.active`（truthy チェック）から `props.active === 'true'`（文字列比較）に修正。元のコードでは `active="false"` も JavaScript で truthy なため、ヒント非表示時でも常に緑色で表示される潜在バグがあった。

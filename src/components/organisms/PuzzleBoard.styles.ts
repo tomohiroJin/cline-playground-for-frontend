@@ -7,13 +7,13 @@ export const BoardContainer = styled.div`
   margin-bottom: 20px;
 `;
 
-export const Board = styled.div<{ width: number; height: number }>`
+export const Board = styled.div<{ width: number; height: number; $completed?: boolean }>`
   position: relative;
   width: ${props => props.width}px;
   height: ${props => props.height}px;
-  background-color: #f0f0f0;
-  border: 2px solid #ccc;
-  border-radius: 4px;
+  background-color: ${props => (props.$completed ? 'transparent' : '#f0f0f0')};
+  border: 2px solid ${props => (props.$completed ? 'transparent' : '#ccc')};
+  border-radius: ${props => (props.$completed ? '0' : '4px')};
   overflow: hidden;
   touch-action: none; /* タッチデバイスでのスクロールを防止 */
 `;
@@ -40,23 +40,24 @@ export const StatusBar = styled.div`
   width: 100%;
   margin-top: 10px;
   padding: 8px 10px;
-  background-color: #f8f8f8;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
   border-radius: 4px;
   gap: 4px;
 `;
 
 export const StatusItem = styled.div`
   font-size: 0.9rem;
-  color: #333;
+  color: var(--text-primary);
   text-align: center;
   white-space: nowrap;
 `;
 
 export const HintToggleButton = styled.button<{ active: string }>`
-  background-color: ${props => (props.active ? '#4caf50' : '#f8f8f8')};
-  color: ${props => (props.active ? 'white' : '#333')};
+  background-color: ${props => (props.active === 'true' ? 'var(--accent-color)' : 'var(--glass-bg)')};
+  color: ${props => (props.active === 'true' ? '#fff' : 'var(--text-primary)')};
   padding: 8px 16px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--glass-border);
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.9rem;
@@ -65,7 +66,8 @@ export const HintToggleButton = styled.button<{ active: string }>`
   width: 100%;
 
   &:hover {
-    background-color: ${props => (props.active ? '#45a049' : '#e8e8e8')};
+    background-color: ${props => (props.active === 'true' ? 'var(--accent-color)' : 'rgba(255, 255, 255, 0.1)')};
+    filter: ${props => (props.active === 'true' ? 'brightness(1.1)' : 'none')};
   }
 `;
 
@@ -154,6 +156,28 @@ export const CloseButton = styled.button`
   &:hover {
     background-color: rgba(255, 255, 255, 0.9);
   }
+`;
+
+const completeImageFadeIn = keyframes`
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+`;
+
+export const CompleteImage = styled.div<{ $imageUrl: string }>`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url(${props => props.$imageUrl});
+  background-size: 100% 100%;
+  z-index: 3;
+  animation: ${completeImageFadeIn} 0.5s ease-out 1.5s both;
+  pointer-events: none;
 `;
 
 const confettiFall = keyframes`

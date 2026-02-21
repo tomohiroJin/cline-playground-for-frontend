@@ -6,7 +6,6 @@ interface UseKeyboardHandlers {
   onMove: (direction: Direction) => void;
   onToggleHint: () => void;
   onReset: () => void;
-  onToggleBgm: () => void;
   enabled: boolean;
 }
 
@@ -14,7 +13,6 @@ export const useKeyboard = ({
   onMove,
   onToggleHint,
   onReset,
-  onToggleBgm,
   enabled,
 }: UseKeyboardHandlers) => {
   useEffect(() => {
@@ -57,14 +55,10 @@ export const useKeyboard = ({
         case 'r':
           onReset();
           break;
-        case 'M':
-        case 'm':
-          onToggleBgm();
-          break;
       }
     };
 
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [enabled, onMove, onToggleHint, onReset, onToggleBgm]);
+  }, [enabled, onMove, onToggleHint, onReset]);
 };

@@ -11,7 +11,7 @@ export const SelectorContainer = styled.div`
 export const Label = styled.label`
   font-size: 1rem;
   margin-bottom: 10px;
-  color: #333;
+  color: var(--text-primary);
 `;
 
 export const SelectWrapper = styled.div`
@@ -22,16 +22,22 @@ export const SelectWrapper = styled.div`
 export const StyledSelect = styled.select`
   width: 100%;
   padding: 10px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--glass-border);
   border-radius: 4px;
-  background-color: white;
+  background-color: var(--glass-bg);
+  color: var(--text-primary);
   font-size: 1rem;
   appearance: none;
   cursor: pointer;
 
   &:focus {
     outline: none;
-    border-color: #4caf50;
+    border-color: var(--accent-color);
+  }
+
+  option {
+    background-color: #24243e;
+    color: #fff;
   }
 `;
 
@@ -44,13 +50,13 @@ export const SelectArrow = styled.div`
   height: 0;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #333;
+  border-top: 5px solid var(--text-secondary);
   pointer-events: none;
 `;
 
 export const Description = styled.p`
   font-size: 0.9rem;
-  color: #666;
+  color: var(--text-secondary);
   margin-top: 5px;
   text-align: center;
 `;

@@ -93,6 +93,36 @@ describe('GameSectionComponent', () => {
     expect(screen.getByText('ゲームを終了して設定に戻る')).toBeInTheDocument();
   });
 
+  it('debugMode=trueの場合、デバッグボタンが表示される', () => {
+    render(
+      <GameSectionComponent
+        imageUrl="test-url"
+        originalImageSize={{ width: 100, height: 100 }}
+        pieces={mockPieces}
+        division={3}
+        elapsedTime={0}
+        completed={false}
+        hintModeEnabled={false}
+        emptyPosition={{ row: 0, col: 0 }}
+        moveCount={0}
+        correctRate={0}
+        score={null}
+        isBestScore={false}
+        handlePieceMove={mockHandlePieceMove}
+        handleResetGame={mockHandleResetGame}
+        toggleHintMode={mockToggleHintMode}
+        handleEmptyPanelClick={mockHandleEmptyPanelClick}
+        handleEndGame={mockHandleEndGame}
+        emptyPanelClicks={0}
+        setPieces={mockSetPieces}
+        setCompleted={mockSetCompleted}
+        debugMode={true}
+      />
+    );
+
+    expect(screen.getByText('テスト：パズルを完成させる')).toBeInTheDocument();
+  });
+
   it('パズルが完成した場合、完了メッセージが表示される', () => {
     render(
       <GameSectionComponent

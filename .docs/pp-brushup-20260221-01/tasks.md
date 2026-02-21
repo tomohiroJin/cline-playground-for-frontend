@@ -1,5 +1,61 @@
 # Picture Puzzle ブラッシュアップ - タスクチェックリスト
 
+## 実装サマリー（2026-02-21）
+
+本ブランチで実施した全作業の概要。
+
+### 完了した Phase
+
+| Phase | 内容 | 状態 |
+|-------|------|------|
+| **Phase 1: 基盤整備** | 画像アップロード削除、著作権リネーム、手数カウンター、スコアリング、リザルト画面 | 完了 |
+| **Phase 2: 操作改善** | スワイプ操作、キーボード操作、正解位置フラッシュ、完成時紙吹雪アニメーション | 完了 |
+| **Phase 3: コンテンツ** | テーマコレクション（6テーマ）、ベストスコアボード、ランクバッジ、コレクション進捗 | 完了 |
+| **後処理: BGM/SE 除外** | ブラウザ自動再生ポリシー問題により BGM・SE 機能を除外 | 完了 |
+| **後処理: ダークテーマ色修正** | ハードコード色をCSS変数に置換し、ダークテーマとの整合性を修正 | 完了 |
+
+### 除外した機能
+
+| 機能 | 除外理由 |
+|------|---------|
+| BGM システム（Phase 2-1） | ブラウザの自動再生ポリシーにより音が鳴らない。プリロード、async/await 排除、AudioContext 再開ロジック等を試みたが改善せず |
+| SE 再生（Phase 2-2 の一部） | BGM と同様の理由 |
+| M キー BGM トグル（Phase 2-4 の一部） | BGM 除外に伴い不要 |
+| BGM 作曲（A-3） | BGM 除外に伴い不要 |
+
+### 除外に伴い削除したファイル
+
+| ファイル | 内容 |
+|---------|------|
+| `src/hooks/useBgm.ts` | BGM 再生フック |
+| `src/hooks/useSePlayer.ts` | SE 再生フック |
+| `src/utils/bgm-data.ts` | BGM トラックデータ |
+| `src/utils/bgm-data.test.ts` | BGM データのテスト |
+| `src/components/molecules/BgmController.tsx` | BGM コントローラ UI |
+| `src/components/molecules/BgmController.styles.ts` | BGM コントローラのスタイル |
+| `src/components/molecules/BgmController.test.tsx` | BGM コントローラのテスト |
+
+### 除外に伴い部分修正したファイル
+
+| ファイル | 修正内容 |
+|---------|---------|
+| `src/components/organisms/PuzzleBoard.tsx` | BGM/SE の import・呼び出し・JSX を削除 |
+| `src/hooks/useKeyboard.ts` | `onToggleBgm` と M キー処理を削除 |
+| `src/hooks/useKeyboard.test.ts` | M キーテストを削除 |
+| `src/hooks/useGameState.ts` | `Tone.start()` 呼び出しを削除 |
+| `src/store/atoms.ts` | `bgmTrackIdAtom`, `bgmVolumeAtom`, `bgmPlayingAtom` を削除 |
+| `src/types/puzzle.ts` | `NoteSequence`, `BgmTrack` 型を削除 |
+
+### ダークテーマ色修正
+
+アプリは premium-theme（ダークテーマ）がデフォルトだが、複数コンポーネントでライトテーマ前提のハードコード色（`#333`, `#666`, `#fff` 等）が残っており、ダーク背景上で文字が読めない問題があった。CSS 変数（`var(--text-primary)`, `var(--text-secondary)`, `var(--glass-bg)` 等）に置換して修正。
+
+| ファイル | 修正箇所 |
+|---------|---------|
+| `src/components/molecules/ThemeSelector.styles.ts` | Title, ThemeTab, ThemeDescription, ProgressBar の色 |
+| `src/components/molecules/DifficultySelector.styles.ts` | Label, StyledSelect, SelectArrow, Description の色 |
+| `src/components/organisms/PuzzleBoard.styles.ts` | StatusBar, StatusItem, HintToggleButton の色 |
+
 ---
 
 ## Phase 1: 基盤整備（Foundation）
@@ -264,77 +320,28 @@
 
 ## Phase 2: サウンド＆操作改善（Sound & Controls）
 
-### 2-1. BGM システム
+### 2-1. BGM システム（除外）
 
-- [x] **BGM アトム追加**
-  - 対象: `src/store/atoms.ts`
-  - 作業: `bgmTrackIdAtom`、`bgmVolumeAtom`、`bgmPlayingAtom` を追加
-  - 完了条件: アトムが export されていること
-  - 依存: Phase 1 完了
+> **除外理由**: ブラウザの自動再生ポリシーにより音が鳴らない問題を解決できなかったため、BGM 機能を除外。プリロード、async/await 排除、AudioContext 再開ロジック等を試みたが改善せず。
 
-- [x] **BGM トラックデータ作成**
-  - 対象: `src/utils/bgm-data.ts`（新規作成）
-  - 作業: 4 トラック（静かな水面、星空のワルツ、朝の散歩道、深い思索）のメロディ/ベース MIDI ノート配列を定義
-  - 完了条件: 4 トラックのデータが型安全に定義されていること
-  - 依存: なし
-
-- [x] **`useBgm` フック実装**
-  - 対象: `src/hooks/useBgm.ts`（新規作成）
-  - 作業: Tone.js を使った BGM 再生管理。動的 import、AudioContext 初期化、再生/停止、トラック切り替え、音量制御、ループ再生
-  - 完了条件: 4 トラックがループ再生でき、音量調整・トラック切り替えが動作すること
-  - 依存: BGM トラックデータ後
-
-- [x] **`BgmController` コンポーネント作成**
-  - 対象: `src/components/molecules/BgmController.tsx`（新規作成）
-  - 作業: トラック名表示、再生/停止、前/次トラック、音量スライダー
-  - 完了条件: UI が仕様通りに表示・操作できること
-  - 依存: `useBgm` フック後
-
-- [x] **`BgmController` スタイル作成**
-  - 対象: `src/components/molecules/BgmController.styles.ts`（新規作成）
-  - 作業: glassmorphism デザインに合わせたスタイル
-  - 完了条件: テーマに合ったデザインで表示されること
-  - 依存: なし
-
-- [x] **BGM の PuzzleBoard 統合**
-  - 対象: `src/components/organisms/PuzzleBoard.tsx`
-  - 作業: StatusBar の下に `BgmController` を配置
-  - 完了条件: ゲーム画面で BGM コントロールが表示されること
-  - 依存: `BgmController` 完成後
-
-- [x] **ゲーム開始時の AudioContext 初期化**
-  - 対象: `src/hooks/useGameState.ts`
-  - 作業: `handleStartGame` で `Tone.start()` を呼び出し
-  - 完了条件: ゲーム開始後に BGM 再生が可能になること
-  - 依存: `useBgm` フック後
-
-- [x] **音量設定の localStorage 保存**
-  - 対象: `src/hooks/useBgm.ts`
-  - 作業: 音量変更時に `puzzle_bgm_volume` キーで保存、初期化時に読み込み
-  - 完了条件: ページリロード後も音量設定が維持されること
-  - 依存: `useBgm` フック後
+- [~~除外~~] **BGM アトム追加**
+- [~~除外~~] **BGM トラックデータ作成**
+- [~~除外~~] **`useBgm` フック実装**
+- [~~除外~~] **`BgmController` コンポーネント作成**
+- [~~除外~~] **`BgmController` スタイル作成**
+- [~~除外~~] **BGM の PuzzleBoard 統合**
+- [~~除外~~] **ゲーム開始時の AudioContext 初期化**
+- [~~除外~~] **音量設定の localStorage 保存**
 
 ---
 
 ### 2-2. SE＆アニメーション
 
-- [x] **`useSePlayer` フック実装**
-  - 対象: `src/hooks/useSePlayer.ts`（新規作成）
-  - 作業: Tone.js Synth を使った 3 種 SE（スライド: 600Hz/0.05s、正解位置: 880Hz/0.12s、完成: 523Hz/0.3s）
-  - 完了条件: 3 種の SE が個別に再生できること
-  - 依存: 2-1 完了（AudioContext 共有）
+> **SE 関連は除外**: BGM と同様、ブラウザの自動再生ポリシーにより SE も正常に動作しないため除外。アニメーション関連は維持。
 
-- [x] **ピース移動時の SE 再生**
-  - 対象: `src/components/organisms/PuzzleBoard.tsx`
-  - 作業: `handleSlidePiece` 内でスライド SE を再生。正解位置に移動した場合は正解位置 SE も再生
-  - 完了条件: スライド時に音が鳴り、正解位置移動時に追加の音が鳴ること
-  - 依存: `useSePlayer` 後
-
-- [x] **完成時の SE 再生**
-  - 対象: `src/components/organisms/PuzzleBoard.tsx`
-  - 作業: `completed` が `true` になったタイミングで完成 SE を再生
-  - 完了条件: パズル完成時に SE が鳴ること
-  - 依存: `useSePlayer` 後
+- [~~除外~~] **`useSePlayer` フック実装**
+- [~~除外~~] **ピース移動時の SE 再生**
+- [~~除外~~] **完成時の SE 再生**
 
 - [x] **正解位置の緑ボーダーフラッシュ**
   - 対象: `src/components/molecules/PuzzlePiece.tsx`、`PuzzlePiece.styles.ts`
@@ -376,15 +383,16 @@
 
 - [x] **`useKeyboard` フック実装**
   - 対象: `src/hooks/useKeyboard.ts`（新規作成）
-  - 作業: `keydown` イベントで Arrow/WASD/H/R/M を検出。ゲーム中のみアクティブ
+  - 作業: `keydown` イベントで Arrow/WASD/H/R を検出。ゲーム中のみアクティブ
   - 完了条件: 全キーバインドが正しく動作すること
   - 依存: Phase 1 完了
+  - ※ M キー（BGM トグル）は BGM 機能除外に伴い削除
 
 - [x] **PuzzleBoard へのキーボード統合**
   - 対象: `src/components/organisms/PuzzleBoard.tsx`
-  - 作業: `useKeyboard` を統合し、方向キーでピース移動、H でヒント、R でリセット、M で BGM トグル
+  - 作業: `useKeyboard` を統合し、方向キーでピース移動、H でヒント、R でリセット
   - 完了条件: キーボードでゲーム操作ができること
-  - 依存: `useKeyboard` フック後、2-1 BGM 後
+  - 依存: `useKeyboard` フック後
 
 - [x] **Phase 2 統合テスト**
   - 対象: 全ファイル
@@ -545,28 +553,6 @@
 
 ---
 
-### A-3. BGM 作曲（4 トラック）
+### A-3. BGM 作曲（4 トラック）（除外）
 
-**概要**: Tone.js オシレーターで再生する BGM データを作曲
-
-**トラック一覧**:
-
-| # | ID | 名前 | BPM | 調 | メロディ波形 | ベース波形 | 雰囲気 |
-|---|----|----|-----|-----|-------------|-----------|--------|
-| 1 | `calm-water` | 静かな水面 | 72 | C Major | sine | triangle | 穏やかなアンビエント |
-| 2 | `starry-waltz` | 星空のワルツ | 84 | G Major | triangle | sine | エレガントな 3/4 拍子 |
-| 3 | `morning-walk` | 朝の散歩道 | 96 | F Major | square | sine | 軽快なチップチューン風 |
-| 4 | `deep-thought` | 深い思索 | 60 | A Minor | sine | triangle | ミニマルで集中向け |
-
-**各トラックの仕様**:
-- メロディ: 8 小節 × 4 拍 = 32 ノート
-- ベース: 8 小節 × 4 拍 = 32 ノート
-- データ形式: MIDI ノート番号配列（number | null）
-- ループ可能であること
-- 非侵入的で BGM として心地よいこと
-
-**成果物**: `src/utils/bgm-data.ts` に記述する `BgmTrack[]` データ
-
-**依存**: なし（コード実装と独立）
-
-**完了条件**: 4 トラックのメロディ/ベースデータが定義され、Tone.js で再生して自然なループが確認できること
+> **除外理由**: BGM 機能の除外に伴い、BGM 作曲タスクも除外。

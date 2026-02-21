@@ -6,7 +6,6 @@ describe('useKeyboard', () => {
     onMove: jest.fn(),
     onToggleHint: jest.fn(),
     onReset: jest.fn(),
-    onToggleBgm: jest.fn(),
     enabled: true,
   };
 
@@ -58,13 +57,6 @@ describe('useKeyboard', () => {
 
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'r' }));
     expect(mockHandlers.onReset).toHaveBeenCalledTimes(1);
-  });
-
-  it('Mキーで BGM トグルを検出すること', () => {
-    renderHook(() => useKeyboard(mockHandlers));
-
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'm' }));
-    expect(mockHandlers.onToggleBgm).toHaveBeenCalledTimes(1);
   });
 
   it('enabled=false の場合はキーイベントを無視すること', () => {

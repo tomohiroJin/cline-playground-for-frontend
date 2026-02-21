@@ -10,11 +10,16 @@ import { getClearHistory, ClearHistory, migrateClearHistory, getPuzzleRecords, g
 import { PuzzleRecord } from '../types/puzzle';
 import { SetupSectionComponent, GameSectionComponent } from '../components/PuzzleSections';
 import { useGameState } from '../hooks/useGameState';
+import TitleScreen from '../components/TitleScreen';
 
 /**
  * パズルゲームページコンポーネント
  */
 const PuzzlePage: React.FC = () => {
+  // タイトル画面の状態
+  const [showTitle, setShowTitle] = useState(true);
+  const [debugMode, setDebugMode] = useState(false);
+
   // クリア履歴の状態
   const [clearHistory, setClearHistory] = useState<ClearHistory[]>([]);
   const [puzzleRecords, setPuzzleRecords] = useState<PuzzleRecord[]>([]);
@@ -48,7 +53,12 @@ const PuzzlePage: React.FC = () => {
   }, [gameStarted]); // gameStartedが変わったとき（ゲーム終了時など）に履歴を更新
   return (
     <PuzzlePageContainer>
-      {!gameStarted ? (
+      {showTitle ? (
+        <TitleScreen
+          onStart={() => setShowTitle(false)}
+          onDebugActivate={() => setDebugMode(true)}
+        />
+      ) : !gameStarted ? (
         <SetupSectionComponent
           handleImageSelect={handleImageSelect}
           handleDifficultyChange={handleDifficultyChange}
@@ -68,21 +78,26 @@ const PuzzlePage: React.FC = () => {
           handleResetGame={handleResetGame}
           handleEndGame={handleEndGame}
           handleEmptyPanelClick={handleEmptyPanelClick}
+          debugMode={debugMode}
         />
       )}
-      <Instructions>
-        <InstructionsTitle>遊び方</InstructionsTitle>
-        <InstructionsList>
-          <li>デフォルト画像から選択して、難易度を選択します。</li>
-          <li>「パズルを開始」ボタンをクリックすると、パズルが始まります。</li>
-          <li>空白の隣にあるピースをクリックすると、そのピースが空白の位置に移動します。</li>
-          <li>すべてのピースを正しい位置に戻すと、パズルが完成します。</li>
-          <li>「ヒントを表示」ボタンをクリックすると、元の画像が薄く表示されます。</li>
-        </InstructionsList>
-      </Instructions>
+      {!showTitle && (
+        <>
+          <Instructions>
+            <InstructionsTitle>遊び方</InstructionsTitle>
+            <InstructionsList>
+              <li>デフォルト画像から選択して、難易度を選択します。</li>
+              <li>「パズルを開始」ボタンをクリックすると、パズルが始まります。</li>
+              <li>空白の隣にあるピースをクリックすると、そのピースが空白の位置に移動します。</li>
+              <li>すべてのピースを正しい位置に戻すと、パズルが完成します。</li>
+              <li>「ヒントを表示」ボタンをクリックすると、元の画像が薄く表示されます。</li>
+            </InstructionsList>
+          </Instructions>
 
-      {/* クリア履歴・ベストスコアの表示 */}
-      {!gameStarted && <ClearHistoryList history={clearHistory} records={puzzleRecords} />}
+          {/* クリア履歴・ベストスコアの表示 */}
+          {!gameStarted && <ClearHistoryList history={clearHistory} records={puzzleRecords} />}
+        </>
+      )}
     </PuzzlePageContainer>
   );
 };

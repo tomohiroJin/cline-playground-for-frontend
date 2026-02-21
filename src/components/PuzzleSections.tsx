@@ -116,6 +116,7 @@ export type GameSectionProps = {
   emptyPanelClicks: number;
   setPieces: React.Dispatch<React.SetStateAction<PuzzlePiece[]>>;
   setCompleted: React.Dispatch<React.SetStateAction<boolean>>;
+  debugMode?: boolean;
 };
 
 /**
@@ -142,6 +143,7 @@ export const GameSectionComponent: React.FC<GameSectionProps> = ({
   emptyPanelClicks,
   setPieces,
   setCompleted,
+  debugMode,
 }) => (
   <GameSection>
     {imageUrl && originalImageSize && (
@@ -191,7 +193,7 @@ export const GameSectionComponent: React.FC<GameSectionProps> = ({
           <StartButton onClick={handleEndGame} style={{ marginTop: completed ? '10px' : '0' }}>
             {completed ? '設定に戻る' : 'ゲームを終了して設定に戻る'}
           </StartButton>
-          {!completed && emptyPanelClicks >= 10 && (
+          {!completed && (debugMode || emptyPanelClicks >= 10) && (
             <StartButton
               onClick={() => completePuzzle(pieces, setPieces, setCompleted)}
               style={{ marginTop: '10px', backgroundColor: '#ff9800' }}

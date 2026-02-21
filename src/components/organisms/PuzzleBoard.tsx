@@ -15,6 +15,7 @@ import {
   CloseButton,
   ConfettiContainer,
   ConfettiPiece,
+  CompleteImage,
 } from './PuzzleBoard.styles';
 import { PuzzlePiece as PuzzlePieceType } from '../../store/atoms';
 import PuzzlePiece from '../molecules/PuzzlePiece';
@@ -24,11 +25,8 @@ import { useVideoPlayback } from '../../hooks/useVideoPlayback';
 import { addClearHistory, extractImageName } from '../../utils/storage-utils';
 import { PuzzleScore } from '../../types/puzzle';
 import ResultScreen from '../molecules/ResultScreen';
-import { useBgm } from '../../hooks/useBgm';
-import { useSePlayer } from '../../hooks/useSePlayer';
 import { useSwipe } from '../../hooks/useSwipe';
 import { useKeyboard } from '../../hooks/useKeyboard';
-import BgmController from '../molecules/BgmController';
 
 /**
  * パズルボードコンポーネントのプロパティの型定義
@@ -95,24 +93,15 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   // 完成オーバーレイの表示/非表示を管理
   const { overlayVisible, toggleOverlay } = useCompletionOverlay();
 
-  // BGM
-  const { togglePlay, nextTrack, prevTrack, changeVolume, currentTrack, playing, volume } = useBgm();
-
-  // SE
-  const { playSlideSe, playCorrectSe, playCompleteSe } = useSePlayer();
-
-  // パズル完成時にクリア履歴を保存 & 完成SEを再生
+  // パズル完成時にクリア履歴を保存
   const prevCompletedRef = useRef(false);
   useEffect(() => {
     if (completed) {
       const imageName = extractImageName(imageUrl);
       addClearHistory(imageName, elapsedTime);
     }
-    if (completed && !prevCompletedRef.current) {
-      playCompleteSe();
-    }
     prevCompletedRef.current = completed;
-  }, [completed, imageUrl, elapsedTime, playCompleteSe]);
+  }, [completed, imageUrl, elapsedTime]);
 
   // 動画再生の状態と操作を管理
   const { videoPlaybackEnabled, videoUrl, disableVideoPlayback, getVideoUrlFromImage, setVideo } =
@@ -142,16 +131,7 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
 
     if (!isAdjacentToEmpty(piece.currentPosition, emptyPosition)) return;
 
-    const willBeCorrect =
-      piece.correctPosition.row === emptyPosition.row &&
-      piece.correctPosition.col === emptyPosition.col;
-
     onPieceMove(pieceId, emptyPosition.row, emptyPosition.col);
-
-    playSlideSe();
-    if (willBeCorrect) {
-      playCorrectSe();
-    }
   };
 
   // 方向指定でピースを移動する（スワイプ・キーボード用）
@@ -185,19 +165,10 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
       );
 
       if (targetPiece) {
-        const willBeCorrect =
-          targetPiece.correctPosition.row === emptyPosition.row &&
-          targetPiece.correctPosition.col === emptyPosition.col;
-
         onPieceMove(targetPiece.id, emptyPosition.row, emptyPosition.col);
-
-        playSlideSe();
-        if (willBeCorrect) {
-          playCorrectSe();
-        }
       }
     },
-    [completed, emptyPosition, pieces, onPieceMove, playSlideSe, playCorrectSe]
+    [completed, emptyPosition, pieces, onPieceMove]
   );
 
   // スワイプ
@@ -208,7 +179,6 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
     onMove: handleDirectionMove,
     onToggleHint: onToggleHint,
     onReset: onReset,
-    onToggleBgm: togglePlay,
     enabled: !completed,
   });
 
@@ -224,6 +194,7 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
       <Board
         width={boardWidth}
         height={boardHeight}
+        $completed={completed}
         ref={boardRef}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
@@ -255,6 +226,7 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
             }
           />
         ))}
+        {completed && <CompleteImage $imageUrl={imageUrl} />}
         {completed && (
           <ConfettiContainer>
             {confettiPieces.map(c => (
@@ -327,15 +299,6 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
       <HintToggleButton active={hintMode ? 'true' : 'false'} onClick={onToggleHint}>
         {hintMode ? 'ヒントを隠す' : 'ヒントを表示'}
       </HintToggleButton>
-      <BgmController
-        currentTrack={currentTrack}
-        isPlaying={playing}
-        volume={volume}
-        onTogglePlay={togglePlay}
-        onNextTrack={nextTrack}
-        onPrevTrack={prevTrack}
-        onVolumeChange={changeVolume}
-      />
     </BoardContainer>
   );
 };
