@@ -29,6 +29,17 @@ export const Track = {
     return { ...best, onTrack: best.dist < trackWidth };
   },
 
+  /** 壁法線ベクトル計算（セグメントに垂直な方向） */
+  getNormal: (seg: number, points: Point[]): { nx: number; ny: number } => {
+    const p1 = points[seg];
+    const p2 = points[(seg + 1) % points.length];
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const len = Math.hypot(dx, dy) || 1;
+    // 法線はセグメント方向に垂直（内側を向く）
+    return { nx: -dy / len, ny: dx / len };
+  },
+
   startLine: (pts: Point[]): StartLine => {
     if (pts.length < 2) return { cx: 0, cy: 0, px: 0, py: 1, dx: 1, dy: 0, len: 100 };
     const p0 = pts[0],

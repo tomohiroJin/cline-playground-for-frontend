@@ -45,13 +45,17 @@ describe('Racing Game Track', () => {
 
   describe('crossedStart', () => {
     test('スタートラインを横切らない場合はfalseを返す', () => {
-      const player = { x: 50, y: 50, angle: 0, color: '', name: '', isCpu: false, lap: 1, checkpointFlags: 0, lapTimes: [], lapStart: 0, speed: 1, wallStuck: 0, progress: 0, lastSeg: 1 };
+      const drift = { active: false, duration: 0, slipAngle: 0, boostRemaining: 0, boostPower: 0 };
+      const heat = { gauge: 0, boostRemaining: 0, boostPower: 0, cooldown: 0 };
+      const player = { x: 50, y: 50, angle: 0, color: '', name: '', isCpu: false, lap: 1, checkpointFlags: 0, lapTimes: [], lapStart: 0, speed: 1, wallStuck: 0, progress: 0, lastSeg: 1, drift, heat, activeCards: [], shieldCount: 0 };
       const sl = Track.startLine(squareTrack);
       expect(Track.crossedStart(player, sl, 1, 2, 4)).toBe(false);
     });
 
     test('セグメント数が2未満の場合はfalseを返す', () => {
-      const player = { x: 0, y: 0, angle: 0, color: '', name: '', isCpu: false, lap: 1, checkpointFlags: 0, lapTimes: [], lapStart: 0, speed: 1, wallStuck: 0, progress: 0, lastSeg: 0 };
+      const drift = { active: false, duration: 0, slipAngle: 0, boostRemaining: 0, boostPower: 0 };
+      const heat = { gauge: 0, boostRemaining: 0, boostPower: 0, cooldown: 0 };
+      const player = { x: 0, y: 0, angle: 0, color: '', name: '', isCpu: false, lap: 1, checkpointFlags: 0, lapTimes: [], lapStart: 0, speed: 1, wallStuck: 0, progress: 0, lastSeg: 0, drift, heat, activeCards: [], shieldCount: 0 };
       const sl = Track.startLine(squareTrack);
       expect(Track.crossedStart(player, sl, 0, 0, 1)).toBe(false);
     });

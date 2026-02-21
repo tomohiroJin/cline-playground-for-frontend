@@ -1,7 +1,113 @@
 // Racing Game レンダラー
 
-import type { Point, Checkpoint, StartLine, Player, Particle, Spark, Confetti, Decoration } from './types';
+import type { Point, Checkpoint, StartLine, Player, Particle, Spark, Confetti, Decoration, HeatState, Card, HighlightEvent, HighlightType } from './types';
 import { Config, Colors } from './constants';
+
+/** レアリティ別背景色 */
+const RARITY_COLORS: Record<string, string> = {
+  R: '#4a5568',
+  SR: '#d69e2e',
+  SSR: '#e53e3e',
+};
+
+/** カテゴリ別ラベル */
+const CAT_LABELS: Record<string, string> = {
+  speed: '⚡スピード',
+  handling: '🔄ハンドリング',
+  defense: '🛡️防御',
+  special: '✨特殊',
+};
+
+/** イージング関数（easeOutBack） */
+const easeOutBack = (t: number): number => {
+  const c1 = 1.70158;
+  const c3 = c1 + 1;
+  return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+};
+
+/** 個別カード描画 */
+const renderDraftCard = (
+  c: CanvasRenderingContext2D,
+  card: Card,
+  x: number,
+  y: number,
+  cardW: number,
+  cardH: number,
+  isSelected: boolean,
+  confirmed: boolean,
+  alpha: number
+): void => {
+  c.globalAlpha = confirmed && !isSelected ? 0.3 : alpha;
+
+  // カード影
+  c.fillStyle = 'rgba(0,0,0,0.3)';
+  c.beginPath();
+  c.roundRect(x + 4, y + 4, cardW, cardH, 12);
+  c.fill();
+
+  // カード本体
+  c.fillStyle = RARITY_COLORS[card.rarity] || '#4a5568';
+  c.beginPath();
+  c.roundRect(x, y, cardW, cardH, 12);
+  c.fill();
+
+  // 選択中の光彩
+  if (isSelected && !confirmed) {
+    c.strokeStyle = '#ffeb3b';
+    c.lineWidth = 3;
+    c.shadowColor = '#ffeb3b';
+    c.shadowBlur = 15;
+    c.beginPath();
+    c.roundRect(x, y, cardW, cardH, 12);
+    c.stroke();
+    c.shadowBlur = 0;
+  }
+
+  // カード内容
+  c.fillStyle = '#fff';
+  c.font = '36px Arial';
+  c.textAlign = 'center';
+  c.fillText(card.icon, x + cardW / 2, y + 45);
+
+  c.font = 'bold 16px Arial';
+  c.fillText(card.name, x + cardW / 2, y + 85);
+
+  // レアリティバッジ
+  c.font = 'bold 14px Arial';
+  c.fillStyle = card.rarity === 'SSR' ? '#ffd700' : card.rarity === 'SR' ? '#c0c0c0' : '#cd7f32';
+  c.fillText(`[${card.rarity}]`, x + cardW / 2, y + 110);
+
+  // 区切り線
+  c.strokeStyle = 'rgba(255,255,255,0.3)';
+  c.lineWidth = 1;
+  c.beginPath();
+  c.moveTo(x + 15, y + 125);
+  c.lineTo(x + cardW - 15, y + 125);
+  c.stroke();
+
+  // 効果説明文（ワードラップ）
+  c.fillStyle = '#e2e8f0';
+  c.font = '13px Arial';
+  const maxLineW = cardW - 30;
+  let line = '';
+  let lineY = y + 150;
+  for (const ch of card.description) {
+    const test = line + ch;
+    if (c.measureText(test).width > maxLineW) {
+      c.fillText(line, x + cardW / 2, lineY);
+      line = ch;
+      lineY += 18;
+    } else {
+      line = test;
+    }
+  }
+  if (line) c.fillText(line, x + cardW / 2, lineY);
+
+  // カテゴリ
+  c.fillStyle = 'rgba(255,255,255,0.6)';
+  c.font = '12px Arial';
+  c.fillText(CAT_LABELS[card.category] || card.category, x + cardW / 2, y + cardH - 20);
+};
 
 export const Render = {
   circle: (c: CanvasRenderingContext2D, x: number, y: number, r: number, col: string) => {
@@ -185,6 +291,60 @@ export const Render = {
       c.restore();
     }),
 
+  /** HEAT ゲージバー描画 */
+  heatGauge: (c: CanvasRenderingContext2D, heat: HeatState, x: number, y: number) => {
+    const barW = 80;
+    const barH = 8;
+
+    // 背景
+    c.fillStyle = 'rgba(0,0,0,0.5)';
+    c.fillRect(x, y, barW, barH);
+
+    // ゲージ色（青→黄→赤）
+    let color: string;
+    if (heat.gauge <= 0.3) {
+      color = '#3b82f6'; // 青
+    } else if (heat.gauge <= 0.7) {
+      color = '#eab308'; // 黄
+    } else {
+      color = '#ef4444'; // 赤
+    }
+
+    // MAX到達時の白点滅
+    if (heat.gauge >= 1.0 || heat.boostRemaining > 0) {
+      color = Math.floor(Date.now() / 100) % 2 === 0 ? '#fff' : '#ef4444';
+    }
+
+    // ゲージバー
+    const fillW = barW * heat.gauge;
+    c.fillStyle = color;
+    c.fillRect(x, y, fillW, barH);
+
+    // 枠線
+    c.strokeStyle = '#fff';
+    c.lineWidth = 1;
+    c.strokeRect(x, y, barW, barH);
+
+    // ブースト中のエフェクト
+    if (heat.boostRemaining > 0) {
+      c.fillStyle = '#fff';
+      c.font = 'bold 10px Arial';
+      c.textAlign = 'center';
+      c.fillText('BOOST!', x + barW / 2, y - 4);
+    }
+  },
+
+  /** ドリフトインジケータ描画 */
+  driftIndicator: (c: CanvasRenderingContext2D, p: Player) => {
+    if (!p.drift.active) return;
+    c.save();
+    c.fillStyle = '#ff8c00';
+    c.font = 'bold 12px Arial';
+    c.textAlign = 'center';
+    c.fillText('DRIFT!', p.x, p.y + 25);
+    c.restore();
+  },
+
   fireworks: (c: CanvasRenderingContext2D, time: number) => {
     [
       [200, 200, 0],
@@ -206,6 +366,222 @@ export const Render = {
         c.globalAlpha = 1;
       }
     });
+  },
+
+  /** T-104: ドラフトカード選択UI描画 */
+  draftUI: (
+    c: CanvasRenderingContext2D,
+    cards: Card[],
+    selectedIndex: number,
+    timer: number,
+    maxTimer: number,
+    playerName: string,
+    lapNum: number,
+    confirmed: boolean,
+    animProgress: number, // 0〜1 登場アニメーション進行度
+  ) => {
+    const { width, height } = Config.canvas;
+
+    // 半透明オーバーレイ
+    c.fillStyle = 'rgba(0,0,0,0.7)';
+    c.fillRect(0, 0, width, height);
+
+    // タイトル
+    c.fillStyle = '#ffeb3b';
+    c.font = 'bold 28px Arial';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillText(`ラップ ${lapNum} 完了!`, width / 2, 100);
+
+    c.fillStyle = '#fff';
+    c.font = '18px Arial';
+    c.fillText(`${playerName} - カードを1枚選んでください`, width / 2, 140);
+
+    // タイマー
+    const timerRatio = timer / maxTimer;
+    c.fillStyle = timerRatio > 0.3 ? '#4ade80' : '#ef4444';
+    c.font = 'bold 20px Arial';
+    c.fillText(`残り ${Math.ceil(timer)}秒`, width / 2, 175);
+
+    // カード描画
+    const cardW = 180;
+    const cardH = 250;
+    const gap = 30;
+    const totalW = cardW * cards.length + gap * (cards.length - 1);
+    const startX = (width - totalW) / 2;
+    const baseY = 220;
+
+    cards.forEach((card, i) => {
+      const x = startX + i * (cardW + gap);
+      const isSelected = i === selectedIndex;
+
+      // 登場アニメーション（下からスライドイン）
+      const cardAnim = Math.min(1, animProgress * 3 - i * 0.3);
+      const animOffset = cardAnim > 0 ? (1 - easeOutBack(Math.min(1, cardAnim))) * 100 : 100;
+      const y = baseY + animOffset + (isSelected && !confirmed ? -8 : 0);
+      const alpha = cardAnim > 0 ? Math.min(1, cardAnim) : 0;
+
+      if (alpha <= 0) return;
+
+      renderDraftCard(c, card, x, y, cardW, cardH, isSelected, confirmed, alpha);
+    });
+
+    c.globalAlpha = 1;
+
+    // 操作説明
+    if (!confirmed) {
+      c.fillStyle = 'rgba(255,255,255,0.5)';
+      c.font = '14px Arial';
+      c.textAlign = 'center';
+      c.fillText('← →キーで選択    Enter/Spaceで決定', width / 2, height - 50);
+    }
+  },
+
+  /** T-111: ハイライト通知バナー描画（右上に小さく半透明表示） */
+  highlightBanner: (
+    c: CanvasRenderingContext2D,
+    event: HighlightEvent & { displayTime: number },
+    colors: Record<HighlightType, string>,
+    index: number
+  ) => {
+    const { width } = Config.canvas;
+    const displayDuration = 1200; // 1.2秒
+    const fadeTime = 200; // 0.2秒
+
+    const elapsed = event.displayTime;
+    let alpha = 0.6; // 半透明ベース
+    if (elapsed < fadeTime) {
+      alpha = (elapsed / fadeTime) * 0.6; // フェードイン
+    } else if (elapsed > displayDuration - fadeTime) {
+      alpha = ((displayDuration - elapsed) / fadeTime) * 0.6; // フェードアウト
+    }
+    if (alpha <= 0) return;
+
+    c.globalAlpha = alpha;
+
+    const bgColor = colors[event.type] || '#333';
+    const isLight = event.type === 'photo_finish' || event.type === 'near_miss';
+
+    // バナー背景（画面右上端に配置、コンパクト表示）
+    const bannerW = 180;
+    const bannerH = 24;
+    const bannerX = width - bannerW - 8;
+    const bannerY = 8 + index * 30;
+
+    c.fillStyle = bgColor;
+    c.beginPath();
+    c.roundRect(bannerX, bannerY, bannerW, bannerH, 6);
+    c.fill();
+
+    // テキスト
+    c.fillStyle = isLight ? '#000' : '#fff';
+    c.font = 'bold 12px Arial';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillText(event.message, bannerX + bannerW / 2, bannerY + bannerH / 2);
+
+    c.globalAlpha = 1;
+    c.textBaseline = 'alphabetic';
+  },
+
+  /** T-111: リザルト画面ハイライトサマリー描画 */
+  highlightSummary: (
+    c: CanvasRenderingContext2D,
+    summary: { type: HighlightType; count: number; totalScore: number }[],
+    labels: Record<HighlightType, string>,
+    y: number
+  ) => {
+    const { width } = Config.canvas;
+    if (summary.length === 0) return;
+
+    c.fillStyle = '#ffeb3b';
+    c.font = 'bold 18px Arial';
+    c.textAlign = 'center';
+    c.fillText('─── ハイライト ───', width / 2, y);
+
+    let lineY = y + 28;
+    let totalScore = 0;
+
+    c.font = '14px Arial';
+    for (const s of summary) {
+      const label = labels[s.type] || s.type;
+      c.fillStyle = '#e2e8f0';
+      c.textAlign = 'left';
+      c.fillText(`${label} × ${s.count}`, width / 2 - 120, lineY);
+      c.textAlign = 'right';
+      c.fillText(`+${s.totalScore}pt`, width / 2 + 120, lineY);
+      totalScore += s.totalScore;
+      lineY += 22;
+    }
+
+    // 合計スコア
+    lineY += 8;
+    c.fillStyle = '#ffeb3b';
+    c.font = 'bold 16px Arial';
+    c.textAlign = 'center';
+    c.fillText(`合計ハイライトスコア: ${totalScore.toLocaleString()}pt`, width / 2, lineY);
+  },
+
+  /** コース環境ビジュアルエフェクト描画 */
+  courseEffect: (c: CanvasRenderingContext2D, effect: string, time: number) => {
+    const { width, height } = Config.canvas;
+
+    switch (effect) {
+      case 'rain': {
+        // 雨パーティクル
+        c.globalAlpha = 0.4;
+        c.fillStyle = '#c0d8ff';
+        for (let i = 0; i < 40; i++) {
+          const x = ((i * 47 + time * 0.3) % width);
+          const y = ((i * 31 + time * 0.8) % height);
+          c.fillRect(x, y, 1.5, 8);
+        }
+        c.globalAlpha = 1;
+        break;
+      }
+      case 'leaves': {
+        // 落ち葉パーティクル
+        c.globalAlpha = 0.5;
+        for (let i = 0; i < 15; i++) {
+          const x = ((i * 67 + time * 0.1) % width);
+          const y = ((i * 43 + time * 0.15) % height);
+          const color = i % 2 === 0 ? '#8B4513' : '#D2691E';
+          c.fillStyle = color;
+          c.beginPath();
+          c.ellipse(x, y, 4, 2.5, (time * 0.01 + i) % (Math.PI * 2), 0, Math.PI * 2);
+          c.fill();
+        }
+        c.globalAlpha = 1;
+        break;
+      }
+      case 'snow': {
+        // 雪パーティクル（強化版）
+        c.globalAlpha = 0.7;
+        c.fillStyle = '#fff';
+        for (let i = 0; i < 50; i++) {
+          const x = ((i * 53 + time * 0.05 + Math.sin(i + time * 0.002) * 20) % width);
+          const y = ((i * 37 + time * 0.2) % height);
+          const r = 1.5 + (i % 3);
+          c.beginPath();
+          c.arc(x, y, r, 0, Math.PI * 2);
+          c.fill();
+        }
+        c.globalAlpha = 1;
+        break;
+      }
+      case 'vignette': {
+        // ビネットエフェクト（画面端を暗く）
+        const gradient = c.createRadialGradient(
+          width / 2, height / 2, Math.min(width, height) * 0.25,
+          width / 2, height / 2, Math.min(width, height) * 0.6
+        );
+        gradient.addColorStop(0, 'rgba(0,0,0,0)');
+        gradient.addColorStop(1, 'rgba(0,0,0,0.7)');
+        c.fillStyle = gradient;
+        c.fillRect(0, 0, width, height);
+        break;
+      }
+    }
   },
 };
 

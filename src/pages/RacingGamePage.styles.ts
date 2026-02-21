@@ -122,15 +122,12 @@ export const Overlay = styled.div`
   backdrop-filter: blur(5px);
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
-  gap: 0.75rem; /* Reduced gap */
+  gap: 0.5rem;
   z-index: 10;
   padding: 1rem 0;
-
-  @media (max-height: 800px) {
-    justify-content: flex-start;
-  }
+  overflow-y: auto;
 
   @keyframes fadeIn {
     from {
@@ -144,25 +141,25 @@ export const Overlay = styled.div`
 
 export const ResultCard = styled.div`
   background: rgba(255, 255, 255, 0.1);
-  padding: 2rem;
+  padding: 1rem 1.5rem;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   text-align: center;
-  min-width: 300px;
+  min-width: 280px;
 `;
 
 export const ResultTitle = styled.h3`
-  font-size: 2rem;
-  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
   color: #fff;
 `;
 
 export const ResultRow = styled.div`
   display: flex;
   justify-content: space-between;
-  margin-bottom: 0.5rem;
-  font-size: 1.1rem;
-  padding: 0.5rem;
+  margin-bottom: 0.25rem;
+  font-size: 1rem;
+  padding: 0.35rem 0.5rem;
   border-radius: 4px;
   background: rgba(0, 0, 0, 0.2);
 `;

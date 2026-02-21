@@ -64,6 +64,55 @@ export const Options = Object.freeze({
   laps: [1, 3, 5],
 });
 
+// ドリフト定数
+export const DRIFT = Object.freeze({
+  MIN_SPEED: 0.3,             // 発動しやすく（0.4→0.3）
+  ANGLE_MULTIPLIER: 1.8,
+  SPEED_RETAIN: 0.97,         // 速度低下を大幅緩和（0.92→0.97）
+  MAX_SLIP_ANGLE: Math.PI / 4, // 45度
+  LATERAL_FORCE: 0.3,         // 横滑り量を増加（0.15→0.3）
+  BOOST_BASE: 0.08,           // ブースト基礎値を増加（0.05→0.08）
+  BOOST_PER_SEC: 0.15,        // 秒あたりブースト増加（0.1→0.15）
+  BOOST_MAX: 0.5,             // ブースト最大値を増加（0.3→0.5）
+  BOOST_DURATION: 1.0,        // ブースト持続を倍に（0.5→1.0）
+});
+
+// HEAT（ニアミスボーナス）定数
+export const HEAT = Object.freeze({
+  WALL_THRESHOLD: 25,
+  CAR_THRESHOLD: 40,
+  GAIN_RATE: 0.8,
+  DECAY_RATE: 0.15,
+  BOOST_POWER: 0.25,
+  BOOST_DURATION: 0.8,
+  COOLDOWN: 1.0,
+});
+
+// 壁ヒットペナルティ定数（段階的減速 — 強化版）
+export const WALL = Object.freeze({
+  LIGHT_FACTOR: 0.60,   // wallStuck = 1（壁接触1回目で40%減速）
+  MEDIUM_FACTOR: 0.40,  // wallStuck = 2〜3（2-3回目で60%減速）
+  HEAVY_FACTOR: 0.20,   // wallStuck >= 4（4回目以降で80%減速）
+  WARP_THRESHOLD: 3,    // ワープしきい値（3フレームでワープ、ハマり時間さらに短縮）
+});
+
+// ハイライト検出定数
+export const HIGHLIGHT = Object.freeze({
+  DRIFT_MIN_DURATION: 1.5,
+  DRIFT_SCORE_PER_SEC: 100,
+  HEAT_PREV_THRESHOLD: 0.95,
+  HEAT_CURR_THRESHOLD: 0.1,
+  HEAT_SCORE: 150,
+  NEAR_MISS_WALL_MARGIN: 10,
+  NEAR_MISS_MIN_DURATION: 1.5,
+  NEAR_MISS_SCORE_PER_SEC: 200,
+  OVERTAKE_SCORE: 300,
+  FASTEST_LAP_SCORE: 200,
+  PHOTO_FINISH_THRESHOLD: 500,
+  PHOTO_FINISH_SCORE: 500,
+  NOTIFICATION_DURATION: 1200,
+});
+
 // コースデータ
 export const Courses: Course[] = [
   {
