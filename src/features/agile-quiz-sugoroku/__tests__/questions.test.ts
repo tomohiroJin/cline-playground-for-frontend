@@ -2,6 +2,7 @@
  * Agile Quiz Sugoroku - 問題データの構造検証テスト
  */
 import { QUESTIONS } from '../quiz-data';
+import { VALID_TAG_IDS } from '../questions/tag-master';
 
 describe('Agile Quiz Sugoroku - 問題データの構造検証', () => {
   const expectedCategories = [
@@ -53,6 +54,45 @@ describe('Agile Quiz Sugoroku - 問題データの構造検証', () => {
     expectedCategories.forEach((category) => {
       QUESTIONS[category].forEach((question) => {
         expect(question.a).toBeLessThan(question.o.length);
+      });
+    });
+  });
+
+  describe('タグ検証', () => {
+    it('全問題にtagsフィールドが存在する', () => {
+      expectedCategories.forEach((category) => {
+        QUESTIONS[category].forEach((question, index) => {
+          expect(question.tags).toBeDefined();
+          expect(Array.isArray(question.tags)).toBe(true);
+          expect(question.tags!.length).toBeGreaterThanOrEqual(1);
+        });
+      });
+    });
+
+    it('全タグがマスタ定義に存在する', () => {
+      expectedCategories.forEach((category) => {
+        QUESTIONS[category].forEach((question, index) => {
+          question.tags?.forEach((tag) => {
+            expect(VALID_TAG_IDS).toContain(tag);
+          });
+        });
+      });
+    });
+
+    it('タグマスタに重複IDがない', () => {
+      const unique = new Set(VALID_TAG_IDS);
+      expect(unique.size).toBe(VALID_TAG_IDS.length);
+    });
+
+    it('全タグが最低1問で使用されている', () => {
+      const usedTags = new Set<string>();
+      expectedCategories.forEach((category) => {
+        QUESTIONS[category].forEach((question) => {
+          question.tags?.forEach((tag) => usedTags.add(tag));
+        });
+      });
+      VALID_TAG_IDS.forEach((tagId) => {
+        expect(usedTags.has(tagId)).toBe(true);
       });
     });
   });

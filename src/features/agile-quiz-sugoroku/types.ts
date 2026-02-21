@@ -19,6 +19,7 @@ export interface Question {
   q: string;
   o: string[];
   a: number;
+  tags?: string[];
 }
 
 /** カテゴリ別の問題データ */
