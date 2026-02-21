@@ -7,7 +7,6 @@ describe('useGameState', () => {
     const { result } = renderHook(() => useGameState(), { wrapper: Provider });
 
     expect(result.current.gameStarted).toBe(false);
-    expect(result.current.imageSourceMode).toBe('upload');
     expect(result.current.gameState.hintModeEnabled).toBe(false);
     expect(result.current.gameState.division).toBe(4); // Default division
   });
@@ -19,7 +18,7 @@ describe('useGameState', () => {
     const height = 600;
 
     act(() => {
-      result.current.handleImageUpload(dummyUrl, width, height);
+      result.current.handleImageSelect(dummyUrl, width, height);
     });
 
     expect(result.current.gameState.imageUrl).toBe(dummyUrl);
@@ -41,7 +40,7 @@ describe('useGameState', () => {
 
     // 画像を設定しておく
     act(() => {
-      result.current.handleImageUpload('blob:dummy', 800, 600);
+      result.current.handleImageSelect('blob:dummy', 800, 600);
     });
 
     act(() => {
@@ -58,7 +57,7 @@ describe('useGameState', () => {
 
     // 画像セット & 開始
     act(() => {
-      result.current.handleImageUpload('blob:dummy', 800, 600);
+      result.current.handleImageSelect('blob:dummy', 800, 600);
       result.current.handleStartGame();
     });
 

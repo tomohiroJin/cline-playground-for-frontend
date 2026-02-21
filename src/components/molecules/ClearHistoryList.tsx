@@ -1,121 +1,106 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ClearHistory } from '../../utils/storage-utils';
+import { PuzzleRecord } from '../../types/puzzle';
 import { formatElapsedTime } from '../../utils/puzzle-utils';
-import styled from 'styled-components';
+import {
+  HistoryContainer,
+  TabRow,
+  Tab,
+  ScrollableList,
+  RecordItem,
+  RecordLeft,
+  RecordImageName,
+  RecordDivision,
+  RecordCenter,
+  RecordRank,
+  RecordScore,
+  RecordRight,
+  RecordTime,
+  RecordClears,
+  HistoryList,
+  HistoryItem,
+  ImageName,
+  ClearInfo,
+  ClearTime,
+  ClearDate,
+  EmptyMessage,
+} from './ClearHistoryList.styles';
 
 /**
  * クリア履歴リストのプロパティの型定義
  */
 type ClearHistoryListProps = {
   history: ClearHistory[];
+  records?: PuzzleRecord[];
 };
 
 /**
  * クリア履歴リストコンポーネント
- *
- * @param history クリア履歴の配列
  */
-const ClearHistoryList: React.FC<ClearHistoryListProps> = ({ history }) => {
-  if (history.length === 0) {
+const ClearHistoryList: React.FC<ClearHistoryListProps> = ({ history, records = [] }) => {
+  const [tab, setTab] = useState<'best' | 'history'>(records.length > 0 ? 'best' : 'history');
+
+  if (history.length === 0 && records.length === 0) {
     return <EmptyMessage>クリア履歴はありません</EmptyMessage>;
   }
 
   return (
     <HistoryContainer>
-      <HistoryTitle>クリア履歴</HistoryTitle>
-      <HistoryList>
-        {history.map(entry => (
-          <HistoryItem key={entry.id}>
-            <ImageName>{entry.imageName}</ImageName>
-            <ClearInfo>
-              <ClearTime>クリアタイム: {formatElapsedTime(entry.clearTime)}</ClearTime>
-              <ClearDate>
-                {new Date(entry.clearDate).toLocaleDateString('ja-JP', {
-                  year: 'numeric',
-                  month: '2-digit',
-                  day: '2-digit',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </ClearDate>
-            </ClearInfo>
-          </HistoryItem>
-        ))}
-      </HistoryList>
+      <TabRow>
+        {records.length > 0 && (
+          <Tab $active={tab === 'best'} onClick={() => setTab('best')}>
+            ベストスコア
+          </Tab>
+        )}
+        <Tab $active={tab === 'history'} onClick={() => setTab('history')}>
+          クリア履歴
+        </Tab>
+      </TabRow>
+
+      {tab === 'best' && records.length > 0 && (
+        <ScrollableList>
+          {records.map(record => (
+            <RecordItem key={`${record.imageId}-${record.division}`}>
+              <RecordLeft>
+                <RecordImageName>{record.imageId}</RecordImageName>
+                <RecordDivision>{record.division}x{record.division}</RecordDivision>
+              </RecordLeft>
+              <RecordCenter>
+                <RecordRank>{record.bestRank}</RecordRank>
+                <RecordScore>{record.bestScore.toLocaleString()}pts</RecordScore>
+              </RecordCenter>
+              <RecordRight>
+                <RecordTime>{formatElapsedTime(record.bestTime)}</RecordTime>
+                <RecordClears>{record.clearCount}回クリア</RecordClears>
+              </RecordRight>
+            </RecordItem>
+          ))}
+        </ScrollableList>
+      )}
+
+      {tab === 'history' && (
+        <HistoryList>
+          {history.map(entry => (
+            <HistoryItem key={entry.id}>
+              <ImageName>{entry.imageName}</ImageName>
+              <ClearInfo>
+                <ClearTime>クリアタイム: {formatElapsedTime(entry.clearTime)}</ClearTime>
+                <ClearDate>
+                  {new Date(entry.clearDate).toLocaleDateString('ja-JP', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </ClearDate>
+              </ClearInfo>
+            </HistoryItem>
+          ))}
+        </HistoryList>
+      )}
     </HistoryContainer>
   );
 };
-
-// スタイル定義
-const HistoryContainer = styled.div`
-  margin-top: 20px;
-  width: 100%;
-  max-width: 600px;
-  background-color: #f5f5f5;
-  border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-`;
-
-const HistoryTitle = styled.h3`
-  font-size: 18px;
-  margin-bottom: 12px;
-  color: #333;
-  border-bottom: 2px solid #ddd;
-  padding-bottom: 8px;
-`;
-
-const HistoryList = styled.ul`
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  max-height: 300px;
-  overflow-y: auto;
-`;
-
-const HistoryItem = styled.li`
-  padding: 12px;
-  border-bottom: 1px solid #ddd;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  &:last-child {
-    border-bottom: none;
-  }
-
-  &:hover {
-    background-color: #eaeaea;
-  }
-`;
-
-const ImageName = styled.div`
-  font-weight: bold;
-  color: #2196f3;
-`;
-
-const ClearInfo = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-`;
-
-const ClearTime = styled.div`
-  font-weight: bold;
-  color: #4caf50;
-`;
-
-const ClearDate = styled.div`
-  font-size: 12px;
-  color: #757575;
-  margin-top: 4px;
-`;
-
-const EmptyMessage = styled.div`
-  text-align: center;
-  padding: 20px;
-  color: #757575;
-  font-style: italic;
-`;
 
 export default ClearHistoryList;

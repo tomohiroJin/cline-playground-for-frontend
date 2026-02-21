@@ -1,5 +1,5 @@
 import * as puzzleUtils from './puzzle-utils';
-import { PuzzlePiece } from '../store/atoms';
+import { PuzzlePiece } from '../types/puzzle';
 
 const {
   getImageSize,
@@ -7,7 +7,7 @@ const {
   shufflePuzzlePieces,
   isPuzzleCompleted,
   formatElapsedTime,
-  checkFileSize: checkImageFileSize,
+  calculateCorrectRate,
 } = puzzleUtils;
 
 // ヘルパー関数を追加
@@ -238,26 +238,6 @@ describe('puzzle-utils', () => {
     });
   });
 
-  describe('checkImageFileSize', () => {
-    it('ファイルサイズが制限内の場合はtrueを返すこと', () => {
-      const file = new File(['dummy content'], 'test.jpg', {
-        type: 'image/jpeg',
-      });
-      Object.defineProperty(file, 'size', { value: 5 * 1024 * 1024 }); // 5MB
-
-      expect(checkImageFileSize(file, 10)).toBe(true);
-    });
-
-    it('ファイルサイズが制限を超える場合はfalseを返すこと', () => {
-      const file = new File(['dummy content'], 'test.jpg', {
-        type: 'image/jpeg',
-      });
-      Object.defineProperty(file, 'size', { value: 15 * 1024 * 1024 }); // 15MB
-
-      expect(checkImageFileSize(file, 10)).toBe(false);
-    });
-  });
-
   describe('getAdjacentPositions', () => {
     it('指定された位置の隣接位置を正しく取得できること（中央の場合）', () => {
       const row = 1;
@@ -312,6 +292,47 @@ describe('puzzle-utils', () => {
         { row: 0, col: 0 }, // 左
         { row: 0, col: 2 }, // 右
       ]);
+    });
+  });
+
+  describe('calculateCorrectRate', () => {
+    it('全ピースが正解位置にある場合は100を返すこと', () => {
+      const pieces: PuzzlePiece[] = [
+        createPuzzlePiece(0, 0, 0, false),
+        createPuzzlePiece(1, 0, 1, false),
+        createPuzzlePiece(2, 1, 0, false),
+        createPuzzlePiece(3, 1, 1, true),
+      ];
+      expect(calculateCorrectRate(pieces)).toBe(100);
+    });
+
+    it('全ピースが不正解位置にある場合は0を返すこと', () => {
+      const pieces: PuzzlePiece[] = [
+        { ...createPuzzlePiece(0, 0, 0, false), currentPosition: { row: 1, col: 0 } },
+        { ...createPuzzlePiece(1, 0, 1, false), currentPosition: { row: 0, col: 0 } },
+        { ...createPuzzlePiece(2, 1, 0, false), currentPosition: { row: 0, col: 1 } },
+        createPuzzlePiece(3, 1, 1, true),
+      ];
+      expect(calculateCorrectRate(pieces)).toBe(0);
+    });
+
+    it('一部のピースが正解位置にある場合は正しい割合を返すこと', () => {
+      const pieces: PuzzlePiece[] = [
+        createPuzzlePiece(0, 0, 0, false), // 正解
+        { ...createPuzzlePiece(1, 0, 1, false), currentPosition: { row: 1, col: 0 } }, // 不正解
+        createPuzzlePiece(2, 1, 0, true), // 空白（除外）
+      ];
+      // 非空白2ピースのうち1ピースが正解 = 50%
+      expect(calculateCorrectRate(pieces)).toBe(50);
+    });
+
+    it('空の配列の場合は0を返すこと', () => {
+      expect(calculateCorrectRate([])).toBe(0);
+    });
+
+    it('空白ピースのみの場合は0を返すこと', () => {
+      const pieces: PuzzlePiece[] = [createPuzzlePiece(0, 0, 0, true)];
+      expect(calculateCorrectRate(pieces)).toBe(0);
     });
   });
 });

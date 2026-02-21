@@ -1,7 +1,8 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import ClearHistoryList from './ClearHistoryList';
 import { ClearHistory } from '../../utils/storage-utils';
+import { PuzzleRecord } from '../../types/puzzle';
 
 // formatElapsedTimeをモック
 jest.mock('../../utils/puzzle-utils', () => ({
@@ -70,5 +71,84 @@ describe('ClearHistoryList', () => {
 
     // モックを元に戻す
     Date.prototype.toLocaleDateString = originalToLocaleDateString;
+  });
+
+  describe('ベストスコアタブ', () => {
+    const mockRecords: PuzzleRecord[] = [
+      {
+        imageId: 'snowy_mountain_ukiyoe',
+        division: 4,
+        bestScore: 8500,
+        bestRank: '★★★',
+        bestTime: 60,
+        bestMoves: 30,
+        clearCount: 3,
+        lastClearDate: '2025-04-09T12:00:00.000Z',
+      },
+      {
+        imageId: 'coral_reef_fish',
+        division: 6,
+        bestScore: 5200,
+        bestRank: '★★☆',
+        bestTime: 120,
+        bestMoves: 50,
+        clearCount: 1,
+        lastClearDate: '2025-04-08T12:00:00.000Z',
+      },
+    ];
+
+    const mockHistory: ClearHistory[] = [
+      {
+        id: '1',
+        imageName: 'test_image',
+        clearTime: 120,
+        clearDate: '2025-04-09T12:00:00.000Z',
+      },
+    ];
+
+    it('recordsありでベストスコアタブがデフォルト表示されること', () => {
+      render(<ClearHistoryList history={mockHistory} records={mockRecords} />);
+
+      // ベストスコアタブがデフォルトで選択されている
+      expect(screen.getByText('ベストスコア')).toBeInTheDocument();
+      // レコード情報が表示されている
+      expect(screen.getByText('snowy_mountain_ukiyoe')).toBeInTheDocument();
+      expect(screen.getByText('4x4')).toBeInTheDocument();
+      expect(screen.getByText('★★★')).toBeInTheDocument();
+      expect(screen.getByText('8,500pts')).toBeInTheDocument();
+      expect(screen.getByText('3回クリア')).toBeInTheDocument();
+    });
+
+    it('タブ切替でクリア履歴に切り替わること', () => {
+      render(<ClearHistoryList history={mockHistory} records={mockRecords} />);
+
+      // クリア履歴タブをクリック
+      fireEvent.click(screen.getByText('クリア履歴'));
+
+      // クリア履歴の内容が表示される
+      expect(screen.getByText('test_image')).toBeInTheDocument();
+      expect(screen.getByText('クリアタイム: 2:0')).toBeInTheDocument();
+    });
+
+    it('ベストスコアタブに戻れること', () => {
+      render(<ClearHistoryList history={mockHistory} records={mockRecords} />);
+
+      // クリア履歴タブをクリック
+      fireEvent.click(screen.getByText('クリア履歴'));
+      // ベストスコアタブをクリック
+      fireEvent.click(screen.getByText('ベストスコア'));
+
+      // レコード情報が再び表示される
+      expect(screen.getByText('snowy_mountain_ukiyoe')).toBeInTheDocument();
+    });
+
+    it('複数のレコードが表示されること', () => {
+      render(<ClearHistoryList history={mockHistory} records={mockRecords} />);
+
+      expect(screen.getByText('snowy_mountain_ukiyoe')).toBeInTheDocument();
+      expect(screen.getByText('coral_reef_fish')).toBeInTheDocument();
+      expect(screen.getByText('6x6')).toBeInTheDocument();
+      expect(screen.getByText('★★☆')).toBeInTheDocument();
+    });
   });
 });

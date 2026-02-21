@@ -1,47 +1,31 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import {
   BoardContainer,
   Board,
   BoardGrid,
   GridCell,
-  CompletionOverlay,
-  CompletionMessage,
-  CompletionTime,
-  RestartButton,
   StatusBar,
-  ElapsedTime,
+  StatusItem,
   HintToggleButton,
   HintImage,
   OverlayToggleButton,
   EyeIcon,
-  VideoOverlay,
-  VideoPlayer,
-  CloseButton,
+  CompleteImage,
 } from './PuzzleBoard.styles';
-import { PuzzlePiece as PuzzlePieceType } from '../../store/atoms';
+import { PuzzlePiece as PuzzlePieceType, PuzzleScore } from '../../types/puzzle';
 import PuzzlePiece from '../molecules/PuzzlePiece';
 import { formatElapsedTime } from '../../utils/puzzle-utils';
 import { useCompletionOverlay } from '../../hooks/useCompletionOverlay';
 import { useVideoPlayback } from '../../hooks/useVideoPlayback';
 import { addClearHistory, extractImageName } from '../../utils/storage-utils';
+import ResultScreen from '../molecules/ResultScreen';
+import { useSwipe } from '../../hooks/useSwipe';
+import { useKeyboard } from '../../hooks/useKeyboard';
+import VideoOverlay from './VideoOverlay';
+import ConfettiOverlay from './ConfettiOverlay';
 
 /**
  * パズルボードコンポーネントのプロパティの型定義
- *
- * @param imageUrl - 画像のURL
- * @param originalWidth - 元の画像の幅
- * @param originalHeight - 元の画像の高さ
- * @param pieces - パズルのピースの配列
- * @param division - パズルの分割数
- * @param elapsedTime - 経過時間
- * @param completed - ゲームの完了状態
- * @param hintMode - ヒントモードの有効状態
- * @param emptyPosition - 空のピースの位置
- * @param onPieceMove - ピースを移動する関数
- * @param onReset - ゲームをリセットする関数
- * @param onToggleHint - ヒントモードを切り替える関数
- * @param onEmptyPanelClick - 空のパネルをクリックしたときの処理
- * @param onEndGame - ゲームを終了して設定に戻る関数
  */
 export type PuzzleBoardProps = {
   imageUrl: string;
@@ -53,11 +37,24 @@ export type PuzzleBoardProps = {
   completed: boolean;
   hintMode: boolean;
   emptyPosition: { row: number; col: number } | null;
+  moveCount: number;
+  correctRate: number;
+  score: PuzzleScore | null;
+  isBestScore: boolean;
   onPieceMove: (pieceId: number, row: number, col: number) => void;
   onReset: () => void;
   onToggleHint: () => void;
-  onEmptyPanelClick?: () => void; // 空白パネルがクリックされたときのコールバック
-  onEndGame?: () => void; // ゲームを終了して設定に戻る関数
+  onEmptyPanelClick?: () => void;
+  onEndGame?: () => void;
+};
+
+type Direction = 'up' | 'down' | 'left' | 'right';
+
+const DIRECTION_DELTAS: Record<Direction, { rowDelta: number; colDelta: number }> = {
+  up: { rowDelta: 1, colDelta: 0 },
+  down: { rowDelta: -1, colDelta: 0 },
+  left: { rowDelta: 0, colDelta: 1 },
+  right: { rowDelta: 0, colDelta: -1 },
 };
 
 /**
@@ -73,6 +70,10 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   completed,
   hintMode,
   emptyPosition,
+  moveCount,
+  correctRate,
+  score,
+  isBestScore,
   onPieceMove,
   onReset,
   onToggleHint,
@@ -83,11 +84,13 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   const { overlayVisible, toggleOverlay } = useCompletionOverlay();
 
   // パズル完成時にクリア履歴を保存
+  const prevCompletedRef = useRef(false);
   useEffect(() => {
     if (completed) {
       const imageName = extractImageName(imageUrl);
       addClearHistory(imageName, elapsedTime);
     }
+    prevCompletedRef.current = completed;
   }, [completed, imageUrl, elapsedTime]);
 
   // 動画再生の状態と操作を管理
@@ -121,12 +124,54 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
     onPieceMove(pieceId, emptyPosition.row, emptyPosition.col);
   };
 
+  // 方向指定でピースを移動する（スワイプ・キーボード用）
+  const handleDirectionMove = useCallback(
+    (direction: Direction) => {
+      if (completed || !emptyPosition) return;
+
+      const delta = DIRECTION_DELTAS[direction];
+      const targetRow = emptyPosition.row + delta.rowDelta;
+      const targetCol = emptyPosition.col + delta.colDelta;
+
+      const targetPiece = pieces.find(
+        p =>
+          !p.isEmpty &&
+          p.currentPosition.row === targetRow &&
+          p.currentPosition.col === targetCol
+      );
+
+      if (targetPiece) {
+        onPieceMove(targetPiece.id, emptyPosition.row, emptyPosition.col);
+      }
+    },
+    [completed, emptyPosition, pieces, onPieceMove]
+  );
+
+  // スワイプ
+  const { onTouchStart, onTouchMove, onTouchEnd } = useSwipe(handleDirectionMove);
+
+  // キーボード
+  useKeyboard({
+    onMove: handleDirectionMove,
+    onToggleHint: onToggleHint,
+    onReset: onReset,
+    enabled: !completed,
+  });
+
   // グリッドセルを生成
   const renderGridCells = createGridCells(division, completed);
 
   return (
     <BoardContainer>
-      <Board width={boardWidth} height={boardHeight} ref={boardRef}>
+      <Board
+        width={boardWidth}
+        height={boardHeight}
+        $completed={completed}
+        ref={boardRef}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
         <BoardGrid title="ボードグリッド" division={division} $completed={completed}>
           {renderGridCells}
         </BoardGrid>
@@ -142,22 +187,28 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
             division={division}
             onClick={handleSlidePiece}
             completed={completed}
+            dissolveDelay={
+              completed
+                ? calculateDissolveDelay(
+                    piece.correctPosition.row,
+                    piece.correctPosition.col,
+                    division
+                  )
+                : 0
+            }
           />
         ))}
-        {completed && overlayVisible && (
-          <CompletionOverlay>
-            <CompletionMessage>パズル完成！</CompletionMessage>
-            <CompletionTime>所要時間: {formatElapsedTime(elapsedTime)}</CompletionTime>
-            <RestartButton onClick={onReset}>もう一度挑戦</RestartButton>
-            {onEndGame && (
-              <RestartButton
-                onClick={onEndGame}
-                style={{ marginTop: '10px', backgroundColor: '#2196F3' }}
-              >
-                設定に戻る
-              </RestartButton>
-            )}
-          </CompletionOverlay>
+        {completed && <CompleteImage $imageUrl={imageUrl} />}
+        <ConfettiOverlay completed={completed} />
+        {completed && overlayVisible && score && (
+          <ResultScreen
+            imageAlt={extractImageName(imageUrl)}
+            division={division}
+            score={score}
+            isBestScore={isBestScore}
+            onRetry={onReset}
+            onBackToSetup={onEndGame ?? (() => {})}
+          />
         )}
 
         {completed && !overlayVisible && (
@@ -181,12 +232,7 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
         )}
 
         {videoPlaybackEnabled && videoUrl && (
-          <VideoOverlay>
-            <VideoPlayer src={videoUrl} autoPlay controls onEnded={disableVideoPlayback} />
-            <CloseButton onClick={disableVideoPlayback} title="動画を閉じる">
-              ✕
-            </CloseButton>
-          </VideoOverlay>
+          <VideoOverlay videoUrl={videoUrl} onClose={disableVideoPlayback} />
         )}
         {completed && (
           <OverlayToggleButton
@@ -200,22 +246,19 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
         {hintMode && !completed && <HintImage $imageUrl={imageUrl} title="ヒント画像" />}
       </Board>
       <StatusBar>
-        <ElapsedTime>経過時間: {formatElapsedTime(elapsedTime)}</ElapsedTime>
-        <HintToggleButton active={hintMode ? 'true' : 'false'} onClick={onToggleHint}>
-          {hintMode ? 'ヒントを隠す' : 'ヒントを表示'}
-        </HintToggleButton>
+        <StatusItem>⏱ {formatElapsedTime(elapsedTime)}</StatusItem>
+        <StatusItem>👣 {moveCount}手</StatusItem>
+        <StatusItem>📊 正解率 {correctRate}%</StatusItem>
       </StatusBar>
+      <HintToggleButton active={hintMode ? 'true' : 'false'} onClick={onToggleHint}>
+        {hintMode ? 'ヒントを隠す' : 'ヒントを表示'}
+      </HintToggleButton>
     </BoardContainer>
   );
 };
 
 /**
  * ボードとピースのサイズを計算する関数
- *
- * @param originalWidth - 元の画像の幅
- * @param originalHeight - 元の画像の高さ
- * @param division - 分割数
- * @return ボードとピースのサイズを含むオブジェクト
  */
 const calculateBoardAndPieceSizes = (
   originalWidth: number,
@@ -233,10 +276,6 @@ const calculateBoardAndPieceSizes = (
 
 /**
  * ピースが空のピースに隣接しているかどうかを判定する関数
- *
- * @param currentPosition - 現在のピースの位置
- * @param emptyPosition - 空のピースの位置
- * @return 隣接している場合はtrue、そうでない場合はfalse
  */
 const isAdjacentToEmpty = (
   currentPosition: { row: number; col: number },
@@ -252,14 +291,21 @@ const isAdjacentToEmpty = (
 
 /**
  * グリッドセルを生成する関数
- *
- * @param division - 分割数
- * @param completed - 完了状態
- * @return グリッドセルの配列
  */
 const createGridCells = (division: number, completed: boolean) =>
   Array.from({ length: division * division }, (_, i) => (
     <GridCell title="ボードセル" key={i} $completed={completed} />
   ));
+
+/**
+ * ピースの位置から中心までの距離に基づいてボーダー溶解のディレイを計算する
+ */
+const calculateDissolveDelay = (row: number, col: number, division: number): number => {
+  const center = (division - 1) / 2;
+  const distance = Math.max(Math.abs(row - center), Math.abs(col - center));
+  const maxDistance = Math.ceil(center);
+  if (maxDistance === 0) return 0;
+  return ((maxDistance - distance) / maxDistance) * 1.0;
+};
 
 export default PuzzleBoard;

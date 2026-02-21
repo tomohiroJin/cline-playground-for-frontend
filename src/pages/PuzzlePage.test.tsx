@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import PuzzlePage from './PuzzlePage';
 import { useGameState } from '../hooks/useGameState';
 import { getClearHistory } from '../utils/storage-utils';
@@ -7,6 +7,16 @@ import { getClearHistory } from '../utils/storage-utils';
 // モックの設定
 jest.mock('../hooks/useGameState');
 jest.mock('../utils/storage-utils');
+jest.mock('../components/TitleScreen', () => {
+  return {
+    __esModule: true,
+    default: ({ onStart }: { onStart: () => void }) => (
+      <div data-testid="title-screen">
+        <button onClick={onStart}>はじめる</button>
+      </div>
+    ),
+  };
+});
 jest.mock('../components/PuzzleSections', () => ({
   SetupSectionComponent: () => <div data-testid="setup-section">Setup Section</div>,
   GameSectionComponent: () => <div data-testid="game-section">Game Section</div>,
@@ -40,9 +50,7 @@ describe('PuzzlePage', () => {
     (useGameState as jest.Mock).mockReturnValue({
       toggleHintMode: jest.fn(),
       gameStarted: false,
-      imageSourceMode: 'upload',
-      setImageSourceMode: jest.fn(),
-      handleImageUpload: jest.fn(),
+      handleImageSelect: jest.fn(),
       handleDifficultyChange: jest.fn(),
       handleStartGame: jest.fn(),
       handlePieceMove: jest.fn(),
@@ -73,18 +81,33 @@ describe('PuzzlePage', () => {
     jest.clearAllMocks();
   });
 
+  // 初回レンダリングでタイトル画面が表示されるテスト
+  it('初回レンダリングでタイトル画面が表示される', () => {
+    render(<PuzzlePage />);
+
+    expect(screen.getByTestId('title-screen')).toBeInTheDocument();
+    expect(screen.queryByText('遊び方')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('setup-section')).not.toBeInTheDocument();
+  });
+
   // 基本的なレンダリングテスト
   it('基本的なコンポーネントがレンダリングされる', () => {
     render(<PuzzlePage />);
 
+    // タイトル画面を通過
+    fireEvent.click(screen.getByText('はじめる'));
+
     // 遊び方の説明が表示されていることを確認
     expect(screen.getByText('遊び方')).toBeInTheDocument();
-    expect(screen.getByText(/画像をアップロードするか/)).toBeInTheDocument();
+    expect(screen.getByText(/デフォルト画像から選択して/)).toBeInTheDocument();
   });
 
   // クリア履歴表示のテスト（履歴なし）
   it('クリア履歴がない場合は「クリア履歴はありません」と表示される', async () => {
     render(<PuzzlePage />);
+
+    // タイトル画面を通過
+    fireEvent.click(screen.getByText('はじめる'));
 
     // クリア履歴リストが表示されていることを確認
     const historyList = screen.getByTestId('clear-history-list');
@@ -117,6 +140,9 @@ describe('PuzzlePage', () => {
 
     render(<PuzzlePage />);
 
+    // タイトル画面を通過
+    fireEvent.click(screen.getByText('はじめる'));
+
     // クリア履歴リストが表示されていることを確認
     const historyList = screen.getByTestId('clear-history-list');
     expect(historyList).toBeInTheDocument();
@@ -134,9 +160,7 @@ describe('PuzzlePage', () => {
     (useGameState as jest.Mock).mockReturnValue({
       toggleHintMode: jest.fn(),
       gameStarted: true, // ゲーム開始状態
-      imageSourceMode: 'upload',
-      setImageSourceMode: jest.fn(),
-      handleImageUpload: jest.fn(),
+      handleImageSelect: jest.fn(),
       handleDifficultyChange: jest.fn(),
       handleStartGame: jest.fn(),
       handlePieceMove: jest.fn(),
@@ -160,6 +184,9 @@ describe('PuzzlePage', () => {
 
     render(<PuzzlePage />);
 
+    // タイトル画面を通過
+    fireEvent.click(screen.getByText('はじめる'));
+
     // クリア履歴リストが表示されていないことを確認
     expect(screen.queryByTestId('clear-history-list')).not.toBeInTheDocument();
   });
@@ -169,6 +196,9 @@ describe('PuzzlePage', () => {
     // 初期レンダリング（ゲーム開始前）
     const { rerender } = render(<PuzzlePage />);
 
+    // タイトル画面を通過
+    fireEvent.click(screen.getByText('はじめる'));
+
     // getClearHistoryが呼ばれたことを確認
     expect(getClearHistory).toHaveBeenCalledTimes(1);
 
@@ -176,9 +206,7 @@ describe('PuzzlePage', () => {
     (useGameState as jest.Mock).mockReturnValue({
       toggleHintMode: jest.fn(),
       gameStarted: true,
-      imageSourceMode: 'upload',
-      setImageSourceMode: jest.fn(),
-      handleImageUpload: jest.fn(),
+      handleImageSelect: jest.fn(),
       handleDifficultyChange: jest.fn(),
       handleStartGame: jest.fn(),
       handlePieceMove: jest.fn(),
@@ -207,9 +235,7 @@ describe('PuzzlePage', () => {
     (useGameState as jest.Mock).mockReturnValue({
       toggleHintMode: jest.fn(),
       gameStarted: false,
-      imageSourceMode: 'upload',
-      setImageSourceMode: jest.fn(),
-      handleImageUpload: jest.fn(),
+      handleImageSelect: jest.fn(),
       handleDifficultyChange: jest.fn(),
       handleStartGame: jest.fn(),
       handlePieceMove: jest.fn(),

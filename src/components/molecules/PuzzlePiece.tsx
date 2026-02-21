@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { PieceContainer, PieceImage } from './PuzzlePiece.styles';
-import { PuzzlePiece as PuzzlePieceType } from '../../store/atoms';
+import { PuzzlePiece as PuzzlePieceType } from '../../types/puzzle';
 
 // プロパティの型定義
 interface PuzzlePieceProps {
@@ -13,6 +13,7 @@ interface PuzzlePieceProps {
   division: number;
   onClick: (pieceId: number, row: number, col: number) => void;
   completed?: boolean; // パズルが完成したかどうか
+  dissolveDelay?: number; // ボーダー溶解のディレイ（秒）
 }
 
 /**
@@ -28,6 +29,7 @@ const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
   division,
   onClick,
   completed = false,
+  dissolveDelay = 0,
 }) => {
   /**
    * ピースの位置を計算する関数
@@ -48,6 +50,24 @@ const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
   const [position, setPosition] = useState(calculatePosition(piece, pieceWidth, pieceHeight));
 
   /**
+   * 正解位置に移動した瞬間を検出する
+   */
+  const isCorrect =
+    piece.correctPosition.row === piece.currentPosition.row &&
+    piece.correctPosition.col === piece.currentPosition.col;
+  const prevCorrectRef = useRef(isCorrect);
+  const [justBecameCorrect, setJustBecameCorrect] = useState(false);
+
+  useEffect(() => {
+    if (isCorrect && !prevCorrectRef.current) {
+      setJustBecameCorrect(true);
+      const timer = setTimeout(() => setJustBecameCorrect(false), 500);
+      return () => clearTimeout(timer);
+    }
+    prevCorrectRef.current = isCorrect;
+  }, [isCorrect]);
+
+  /**
    * ピースがクリックされたときの処理
    */
   const handleClick = () => onClick(piece.id, piece.currentPosition.row, piece.currentPosition.col);
@@ -56,7 +76,7 @@ const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
    * ピースの位置を更新する
    */
   useEffect(() => {
-     
+
     setPosition(calculatePosition(piece, pieceWidth, pieceHeight));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [piece.currentPosition.row, piece.currentPosition.col, pieceWidth, pieceHeight]);
@@ -68,6 +88,8 @@ const PuzzlePiece: React.FC<PuzzlePieceProps> = ({
       $width={pieceWidth}
       $height={pieceHeight}
       $completed={completed}
+      $justBecameCorrect={justBecameCorrect}
+      $dissolveDelay={dissolveDelay}
       style={{
         transform: `translate(${position.x}px, ${position.y}px)`,
       }}

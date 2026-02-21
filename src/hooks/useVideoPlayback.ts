@@ -1,6 +1,12 @@
 import { useAtom } from 'jotai';
 import { useCallback } from 'react';
 import { videoPlaybackEnabledAtom, videoUrlAtom } from '../store/atoms';
+import { themes } from '../data/themes';
+
+/** 動画対応画像のファイル名（拡張子なし）セット — themes.ts から導出 */
+const VIDEO_CAPABLE_IDS: ReadonlySet<string> = new Set(
+  themes.flatMap(t => t.images).filter(i => i.hasVideo).map(i => i.filename.split('.')[0])
+);
 
 /**
  * 動画再生の状態と操作を管理するカスタムフック
@@ -62,16 +68,7 @@ export const useVideoPlayback = () => {
     const baseFilename = imageFilename.split('.')[0];
 
     // 有効なファイル名かチェック（デフォルト画像のファイル名のみ許可）
-    const validFilenames = [
-      'camel_in_the_desert',
-      'chalk_drawing_kids',
-      'hokusai_kangchenjunga',
-      'midnight_times_square',
-      'moonlight_dancer',
-      'sunset_candy_shop',
-    ];
-
-    if (!validFilenames.includes(baseFilename)) return null;
+    if (!VIDEO_CAPABLE_IDS.has(baseFilename)) return null;
 
     // 対応する動画のURLを生成
     return `/videos/default/${baseFilename}.mp4`;

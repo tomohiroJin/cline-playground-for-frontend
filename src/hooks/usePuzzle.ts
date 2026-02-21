@@ -1,5 +1,5 @@
 import { useAtom } from 'jotai';
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import {
   imageUrlAtom,
   originalImageSizeAtom,
@@ -9,13 +9,18 @@ import {
   puzzleStartTimeAtom,
   puzzleElapsedTimeAtom,
   puzzleCompletedAtom,
-  PuzzlePiece,
+  moveCountAtom,
+  shuffleMovesAtom,
+  correctRateAtom,
+  hintUsedAtom,
 } from '../store/atoms';
+import { PuzzlePiece } from '../types/puzzle';
 import {
   generatePuzzlePieces,
   shufflePuzzlePieces,
   isPuzzleCompleted,
   getAdjacentPositions,
+  calculateCorrectRate,
 } from '../utils/puzzle-utils';
 
 /**
@@ -31,6 +36,10 @@ export const usePuzzle = () => {
   const [startTime, setStartTime] = useAtom(puzzleStartTimeAtom);
   const [elapsedTime, setElapsedTime] = useAtom(puzzleElapsedTimeAtom);
   const [completed, setCompleted] = useAtom(puzzleCompletedAtom);
+  const [moveCount, setMoveCount] = useAtom(moveCountAtom);
+  const [shuffleMoves, setShuffleMoves] = useAtom(shuffleMovesAtom);
+  const [correctRate, setCorrectRate] = useAtom(correctRateAtom);
+  const [, setHintUsed] = useAtom(hintUsedAtom);
 
   /**
    * 分割数に基づいてシャッフル回数を計算する
@@ -50,6 +59,8 @@ export const usePuzzle = () => {
   const initializePuzzle = useCallback(() => {
     if (!imageUrl) return;
 
+    const moves = calculateShuffleMoves(division);
+
     // パズルのピースを生成
     const { pieces: newPieces, emptyPosition: newEmptyPosition } = generatePuzzlePieces(division);
 
@@ -58,7 +69,7 @@ export const usePuzzle = () => {
       newPieces,
       newEmptyPosition,
       division,
-      calculateShuffleMoves(division)
+      moves
     );
 
     // 状態を更新
@@ -67,15 +78,26 @@ export const usePuzzle = () => {
     setStartTime(Date.now());
     setElapsedTime(0);
     setCompleted(false);
-  }, [imageUrl, division, setPieces, setEmptyPosition, setStartTime, setElapsedTime, setCompleted]);
+    setMoveCount(0);
+    setShuffleMoves(moves);
+    setCorrectRate(calculateCorrectRate(shuffledPieces));
+    setHintUsed(false);
+  }, [
+    imageUrl,
+    division,
+    setPieces,
+    setEmptyPosition,
+    setStartTime,
+    setElapsedTime,
+    setCompleted,
+    setMoveCount,
+    setShuffleMoves,
+    setCorrectRate,
+    setHintUsed,
+  ]);
 
   /**
    * 指定されたピースが空白ピースと隣接しているかを確認する
-   *
-   * @param piece 移動するピース
-   * @param emptyPosition 空白ピースの位置
-   * @param division パズルの分割数
-   * @returns 隣接していればtrue、そうでなければfalse
    */
   const isPieceAdjacentToEmpty = (
     piece: PuzzlePiece,
@@ -94,11 +116,6 @@ export const usePuzzle = () => {
 
   /**
    * ピースを移動し、更新されたピース配列を返す
-   *
-   * @param currentPieces 現在のピース配列
-   * @param pieceIndex 移動するピースのインデックス
-   * @param emptyPosition 空白ピースの位置
-   * @returns 更新されたピース配列
    */
   const updatePiecesWithMove = (
     currentPieces: PuzzlePiece[],
@@ -138,46 +155,40 @@ export const usePuzzle = () => {
     (pieceId: number) => {
       if (completed || !emptyPosition) return;
 
-      setPieces(currentPieces => {
-        const pieceIndex = currentPieces.findIndex(p => p.id === pieceId);
-        if (pieceIndex === -1) return currentPieces;
+      const pieceIndex = pieces.findIndex(p => p.id === pieceId);
+      if (pieceIndex === -1) return;
 
-        const piece = currentPieces[pieceIndex];
-        if (piece.isEmpty) return currentPieces;
+      const piece = pieces[pieceIndex];
+      if (piece.isEmpty) return;
 
-        if (!isPieceAdjacentToEmpty(piece, emptyPosition, division)) return currentPieces;
+      if (!isPieceAdjacentToEmpty(piece, emptyPosition, division)) return;
 
-        const updatedPieces = updatePiecesWithMove(currentPieces, pieceIndex, emptyPosition);
+      const updatedPieces = updatePiecesWithMove(pieces, pieceIndex, emptyPosition);
 
-        setEmptyPosition({
-          row: piece.currentPosition.row,
-          col: piece.currentPosition.col,
-        });
-
-        if (isPuzzleCompleted(updatedPieces)) {
-          setCompleted(true);
-        }
-
-        return updatedPieces;
+      setPieces(updatedPieces);
+      setEmptyPosition({
+        row: piece.currentPosition.row,
+        col: piece.currentPosition.col,
       });
+      setMoveCount(prev => prev + 1);
+      setCorrectRate(calculateCorrectRate(updatedPieces));
+
+      if (isPuzzleCompleted(updatedPieces)) {
+        setCompleted(true);
+      }
     },
-    [completed, emptyPosition, division, setPieces, setEmptyPosition, setCompleted]
+    [
+      completed,
+      emptyPosition,
+      pieces,
+      division,
+      setPieces,
+      setEmptyPosition,
+      setCompleted,
+      setMoveCount,
+      setCorrectRate,
+    ]
   );
-
-  /**
-   * パズルの状態を監視し、時間を更新する
-   */
-  useEffect(() => {
-    if (!startTime || completed) return;
-
-    const intervalId = setInterval(() => {
-      const now = Date.now();
-      const elapsed = Math.floor((now - startTime) / 1000);
-      setElapsedTime(elapsed);
-    }, 1000);
-
-    return () => clearInterval(intervalId);
-  }, [startTime, completed, setElapsedTime]);
 
   /**
    * パズルをリセットする
@@ -199,6 +210,9 @@ export const usePuzzle = () => {
     elapsedTime,
     completed,
     setCompleted,
+    moveCount,
+    shuffleMoves,
+    correctRate,
     initializePuzzle,
     movePiece,
     resetPuzzle,

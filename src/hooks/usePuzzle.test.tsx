@@ -10,6 +10,7 @@ jest.mock('../utils/puzzle-utils', () => ({
   shufflePuzzlePieces: jest.fn(),
   isPuzzleCompleted: jest.fn(),
   getAdjacentPositions: jest.fn(),
+  calculateCorrectRate: jest.fn().mockReturnValue(0),
 }));
 
 // テスト用のデータ

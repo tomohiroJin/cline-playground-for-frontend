@@ -1,37 +1,5 @@
 import styled from 'styled-components';
 
-export const ToggleButtonsContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  margin-bottom: 20px;
-  width: 100%;
-`;
-
-export const ToggleButton = styled.button<{ $isActive: boolean }>`
-  background-color: ${props => (props.$isActive ? 'var(--accent-color)' : 'rgba(255,255,255,0.1)')};
-  color: ${props => (props.$isActive ? 'white' : 'var(--text-secondary)')};
-  padding: 8px 16px;
-  border: 1px solid var(--glass-border);
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.3s;
-  backdrop-filter: blur(5px);
-
-  &:first-child {
-    border-top-left-radius: 4px;
-    border-bottom-left-radius: 4px;
-  }
-
-  &:last-child {
-    border-top-right-radius: 4px;
-    border-bottom-right-radius: 4px;
-  }
-
-  &:hover {
-    background-color: ${props => (props.$isActive ? '#3a7bd5' : 'rgba(255,255,255,0.2)')};
-  }
-`;
-
 export const PuzzlePageContainer = styled.div`
   display: flex;
   flex-direction: column;
