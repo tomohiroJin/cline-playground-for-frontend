@@ -33,10 +33,10 @@ export const Logic = {
 
   /** CPU がドリフトを使うかどうかの判定 */
   cpuShouldDrift: (p: Player, pts: Point[], skill: number): boolean => {
-    if (skill < 0.4) return false;
+    if (skill < 0.2) return false;           // よわいでも少し使える（0.4→0.2）
     const info = Track.getInfo(p.x, p.y, pts);
-    const isCorner = info.dist / Config.game.trackWidth > 0.35;
-    return isCorner && p.speed >= DRIFT.MIN_SPEED && Math.random() < skill * 0.3;
+    const isCorner = info.dist / Config.game.trackWidth > 0.25; // 内側でも発動（0.35→0.25）
+    return isCorner && p.speed >= DRIFT.MIN_SPEED && Math.random() < skill * 0.5; // 確率増加（0.3→0.5）
   },
 
   movePlayer: (p: Player, baseSpd: number, pts: Point[], handbrake?: boolean, steering?: number, accelMul?: number, driftBoostMul?: number) => {
@@ -73,8 +73,16 @@ export const Logic = {
     const driftBoost = Drift.getBoost(driftState) * (driftBoostMul ?? 1);
 
     const vel = baseSpd * (spd + driftBoost);
-    const nx = p.x + Math.cos(p.angle) * vel;
-    const ny = p.y + Math.sin(p.angle) * vel;
+    let nx: number, ny: number;
+    if (driftState.active && driftState.slipAngle !== 0) {
+      // ドリフト中: 進行方向 + 横滑り方向のブレンド移動
+      const moveAngle = p.angle + driftState.slipAngle * DRIFT.LATERAL_FORCE;
+      nx = p.x + Math.cos(moveAngle) * vel;
+      ny = p.y + Math.sin(moveAngle) * vel;
+    } else {
+      nx = p.x + Math.cos(p.angle) * vel;
+      ny = p.y + Math.sin(p.angle) * vel;
+    }
     const info = Track.getInfo(nx, ny, pts);
 
     if (info.onTrack) {

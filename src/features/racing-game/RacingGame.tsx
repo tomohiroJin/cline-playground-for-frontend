@@ -749,7 +749,7 @@ export default function RacingGame() {
         <div style={{ marginTop: '1rem', textAlign: 'center' }}>
           <VolumeCtrl vol={vol} setVol={setVol} muted={muted} setMuted={setMuted} />
           <p style={{ color: '#9ca3af', fontSize: '0.75rem', marginTop: '0.5rem' }}>
-            P1:A/D P2:←/→ P:ポーズ ESC:終了
+            P1:A/D{mode !== 'solo' ? ' P2:←/→' : ''} ドリフト:{mode === '2p' ? 'Shift' : 'Space'}+左右 P:ポーズ ESC:終了
           </p>
         </div>
       </GameContainer>

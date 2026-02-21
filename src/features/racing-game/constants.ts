@@ -66,15 +66,15 @@ export const Options = Object.freeze({
 
 // ドリフト定数
 export const DRIFT = Object.freeze({
-  MIN_SPEED: 0.4,
+  MIN_SPEED: 0.3,             // 発動しやすく（0.4→0.3）
   ANGLE_MULTIPLIER: 1.8,
-  SPEED_RETAIN: 0.92,
+  SPEED_RETAIN: 0.97,         // 速度低下を大幅緩和（0.92→0.97）
   MAX_SLIP_ANGLE: Math.PI / 4, // 45度
-  LATERAL_FORCE: 0.15,
-  BOOST_BASE: 0.05,
-  BOOST_PER_SEC: 0.1,
-  BOOST_MAX: 0.3,
-  BOOST_DURATION: 0.5,
+  LATERAL_FORCE: 0.3,         // 横滑り量を増加（0.15→0.3）
+  BOOST_BASE: 0.08,           // ブースト基礎値を増加（0.05→0.08）
+  BOOST_PER_SEC: 0.15,        // 秒あたりブースト増加（0.1→0.15）
+  BOOST_MAX: 0.5,             // ブースト最大値を増加（0.3→0.5）
+  BOOST_DURATION: 1.0,        // ブースト持続を倍に（0.5→1.0）
 });
 
 // HEAT（ニアミスボーナス）定数

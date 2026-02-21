@@ -3,6 +3,8 @@
 import type { Player, Point, Particle, Spark, Confetti } from './types';
 import { Config } from './constants';
 import { Logic } from './game-logic';
+import { Track } from './track';
+import { Utils } from './utils';
 import { getCardMultiplier } from './card-effects';
 
 /** プレイヤー入力の型 */
@@ -30,6 +32,13 @@ export const collectPlayerInputs = (
       rot = Logic.cpuTurn(p, pts as Point[], demo ? 0.7 : cpuSkill, demo ? 0.03 : cpuMiss);
       if (!demo && Logic.cpuShouldDrift(p, pts as Point[], cpuSkill)) {
         handbrake = true;
+        // ドリフト発動にはステアリングが必要 → 最低限のステアリングを保証
+        if (rot === 0) {
+          const info = Track.getInfo(p.x, p.y, pts as Point[]);
+          const toCenter = Math.atan2(info.pt.y - p.y, info.pt.x - p.x);
+          const diff = Utils.normalizeAngle(toCenter - p.angle);
+          rot = diff >= 0 ? Config.game.turnRate : -Config.game.turnRate;
+        }
       }
     } else if (i === 0) {
       if (keys.a || keys.A || touch.L) rot = -Config.game.turnRate;

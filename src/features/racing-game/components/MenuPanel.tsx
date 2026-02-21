@@ -176,5 +176,21 @@ export const MenuPanel: React.FC<MenuPanelProps> = ({
     >
       🏁 スタート!
     </ActionButton>
+
+    <details style={{ marginTop: '0.75rem', textAlign: 'left', maxWidth: '400px', width: '100%' }}>
+      <summary style={{ color: '#fbbf24', fontSize: '0.85rem', cursor: 'pointer', textAlign: 'center' }}>
+        🎮 遊び方
+      </summary>
+      <div style={{
+        color: '#d1d5db', fontSize: '0.7rem', lineHeight: '1.6',
+        marginTop: '0.5rem', padding: '0.5rem 0.75rem',
+        background: 'rgba(0,0,0,0.3)', borderRadius: '0.5rem',
+      }}>
+        <p>🏎️ <strong>ドリフト:</strong> Space/Shift+左右キーで横滑り走行。長く維持するほどブースト大!</p>
+        <p>🌡️ <strong>HEAT:</strong> 壁ギリギリ走行や接近で蓄積→速度ブースト発動</p>
+        <p>🃏 <strong>カード:</strong> ラップ完了時にカードを1枚選択。速度UP・防御・特殊効果</p>
+        <p>⭐ <strong>ハイライト:</strong> ドリフト・逆転・ニアミス等でスコアポイント獲得</p>
+      </div>
+    </details>
   </Overlay>
 );
