@@ -139,14 +139,14 @@ export const getGhostPosition = (
 
 // === T-108: ゴースト保存・読込（localStorage） ===
 
-/** localStorage キー生成 */
-const ghostKey = (courseIndex: number, mode: string): string =>
-  `ghost_${courseIndex}_${mode}`;
+/** localStorage キー生成（全モード共有） */
+const ghostKey = (courseIndex: number): string =>
+  `ghost_${courseIndex}`;
 
 /** localStorage への保存 */
-export const saveGhost = (data: GhostData, mode: string): boolean => {
+export const saveGhost = (data: GhostData): boolean => {
   try {
-    const key = ghostKey(data.course, mode);
+    const key = ghostKey(data.course);
     localStorage.setItem(key, JSON.stringify(data));
     return true;
   } catch {
@@ -155,13 +155,20 @@ export const saveGhost = (data: GhostData, mode: string): boolean => {
   }
 };
 
-/** localStorage からの読込 */
-export const loadGhost = (courseIndex: number, mode: string): GhostData | null => {
+/** localStorage からの読込（旧キーのフォールバック付き） */
+export const loadGhost = (courseIndex: number): GhostData | null => {
   try {
-    const key = ghostKey(courseIndex, mode);
+    // 新キーで検索
+    const key = ghostKey(courseIndex);
     const raw = localStorage.getItem(key);
-    if (!raw) return null;
-    return JSON.parse(raw) as GhostData;
+    if (raw) return JSON.parse(raw) as GhostData;
+
+    // 旧キーのフォールバック（_cpu, _2p）
+    for (const oldMode of ['cpu', '2p']) {
+      const oldRaw = localStorage.getItem(`ghost_${courseIndex}_${oldMode}`);
+      if (oldRaw) return JSON.parse(oldRaw) as GhostData;
+    }
+    return null;
   } catch {
     return null;
   }

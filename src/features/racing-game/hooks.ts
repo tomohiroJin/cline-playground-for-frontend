@@ -5,6 +5,8 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 export const useInput = () => {
   const keys = useRef<Record<string, boolean>>({});
   const touch = useRef({ L: false, R: false });
+  // キーダウン時に呼ばれるコールバック ref（ポーズ・ESC 等に使用）
+  const onKeyDown = useRef<((key: string) => void) | null>(null);
 
   useEffect(() => {
     const kd = (e: KeyboardEvent) => {
@@ -13,6 +15,8 @@ export const useInput = () => {
       if (e.code) keys.current[`code:${e.code}`] = true;
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key))
         e.preventDefault();
+      // コールバック呼び出し
+      onKeyDown.current?.(e.key);
     };
     const ku = (e: KeyboardEvent) => {
       keys.current[e.key] = false;
@@ -35,7 +39,7 @@ export const useInput = () => {
     if (touch.current) touch.current[side] = active;
   }, []);
 
-  return { keys, touch, setTouch };
+  return { keys, touch, setTouch, onKeyDown };
 };
 
 export const useIdle = (
