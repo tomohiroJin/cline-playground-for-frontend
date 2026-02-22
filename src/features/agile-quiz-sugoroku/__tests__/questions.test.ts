@@ -84,6 +84,16 @@ describe('Agile Quiz Sugoroku - 問題データの構造検証', () => {
       expect(unique.size).toBe(VALID_TAG_IDS.length);
     });
 
+    it('全問題にexplanation（解説）が存在する', () => {
+      expectedCategories.forEach((category) => {
+        QUESTIONS[category].forEach((question, index) => {
+          expect(question.explanation).toBeDefined();
+          expect(typeof question.explanation).toBe('string');
+          expect(question.explanation!.length).toBeGreaterThan(0);
+        });
+      });
+    });
+
     it('全タグが最低1問で使用されている', () => {
       const usedTags = new Set<string>();
       expectedCategories.forEach((category) => {

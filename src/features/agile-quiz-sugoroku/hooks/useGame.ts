@@ -10,6 +10,8 @@ import {
   SprintSummary,
   GameStats,
   DerivedStats,
+  TagStats,
+  AnswerResultWithDetail,
 } from '../types';
 import {
   EVENTS,
@@ -73,6 +75,10 @@ export interface UseGameReturn {
   finish: () => SprintSummary;
   /** 派生統計 */
   derived: DerivedStats;
+  /** ジャンル別統計 */
+  tagStats: TagStats;
+  /** 不正解問題リスト */
+  incorrectQuestions: AnswerResultWithDetail[];
 }
 
 /**
@@ -98,6 +104,8 @@ export function useGame(audio?: AudioActions): UseGameReturn {
   const [sprintAnswers, setSprintAnswers] = useState<AnswerResult[]>([]);
   const [log, setLog] = useState<SprintSummary[]>([]);
   const [stats, setStats] = useState<GameStats>({ ...INITIAL_GAME_STATS });
+  const [tagStats, setTagStats] = useState<TagStats>({});
+  const [incorrectQuestions, setIncorrectQuestions] = useState<AnswerResultWithDetail[]>([]);
 
   const answered = useRef(false);
   const startTime = useRef(0);
@@ -139,6 +147,8 @@ export function useGame(audio?: AudioActions): UseGameReturn {
     setLog([]);
     setStats({ ...INITIAL_GAME_STATS });
     setUsedQuestions({});
+    setTagStats({});
+    setIncorrectQuestions([]);
   }, []);
 
   /** スプリントを開始 */
@@ -178,6 +188,40 @@ export function useGame(audio?: AudioActions): UseGameReturn {
       // 2. 状態更新
       setSprintAnswers((prev) => [...prev, result]);
       setStats((prev) => nextGameStats(prev, result, debtDelta));
+
+      // 2b. タグ別統計更新
+      if (quiz.tags) {
+        setTagStats((prev) => {
+          const next = { ...prev };
+          for (const tag of quiz.tags!) {
+            if (!next[tag]) {
+              next[tag] = { correct: 0, total: 0 };
+            }
+            next[tag] = {
+              correct: next[tag].correct + (result.correct ? 1 : 0),
+              total: next[tag].total + 1,
+            };
+          }
+          return next;
+        });
+      }
+
+      // 2c. 不正解問題を蓄積
+      if (!result.correct) {
+        setIncorrectQuestions((prev) => [
+          ...prev,
+          {
+            questionText: quiz.question,
+            options: quiz.options,
+            selectedAnswer: optionIndex,
+            correctAnswer: quiz.answer,
+            correct: false,
+            tags: quiz.tags ?? [],
+            explanation: quiz.explanation,
+            eventId: result.eventId,
+          },
+        ]);
+      }
 
       // 3. 音声副作用
       if (result.correct) {
@@ -240,5 +284,7 @@ export function useGame(audio?: AudioActions): UseGameReturn {
     advance,
     finish,
     derived,
+    tagStats,
+    incorrectQuestions,
   };
 }

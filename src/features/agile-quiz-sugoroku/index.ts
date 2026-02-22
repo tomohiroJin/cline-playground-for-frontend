@@ -21,6 +21,15 @@ export * from './answer-processor';
 export { classifyEngineerType } from './engineer-classifier';
 export { getComboColor } from './combo-color';
 
+// ジャンル別統計
+export * from './tag-stats';
+
+// ゲーム結果保存
+export * from './result-storage';
+
+// 勉強会モード
+export * from './study-question-pool';
+
 // 音声
 export * from './audio/sound';
 export * from './audio/audio-actions';

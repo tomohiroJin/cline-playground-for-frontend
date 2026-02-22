@@ -3,7 +3,7 @@
  */
 
 /** ゲームのフェーズ */
-export type GamePhase = 'title' | 'sprint-start' | 'game' | 'retro' | 'result';
+export type GamePhase = 'title' | 'sprint-start' | 'game' | 'retro' | 'result' | 'guide' | 'study-select' | 'study';
 
 /** イベントID */
 export type EventId = 'planning' | 'impl1' | 'test1' | 'refinement' | 'impl2' | 'test2' | 'review' | 'emergency';
@@ -23,6 +23,7 @@ export interface Question {
   options: string[];
   answer: number;
   tags?: string[];
+  explanation?: string;
 }
 
 /** カテゴリ別の問題データ */
@@ -118,3 +119,52 @@ export type ExplanationMap = {
     [questionIndex: number]: string;
   };
 };
+
+/** ジャンル別統計 */
+export interface TagStats {
+  [tagId: string]: {
+    correct: number;
+    total: number;
+  };
+}
+
+/** 回答結果の詳細（タグ・問題情報付き） */
+export interface AnswerResultWithDetail {
+  questionText: string;
+  options: string[];
+  selectedAnswer: number;
+  correctAnswer: number;
+  correct: boolean;
+  tags: string[];
+  explanation?: string;
+  eventId: string;
+}
+
+/** localStorage 保存用のゲーム結果 */
+export interface SavedGameResult {
+  totalCorrect: number;
+  totalQuestions: number;
+  correctRate: number;
+  averageSpeed: number;
+  stability: number;
+  debt: number;
+  maxCombo: number;
+  tagStats: TagStats;
+  incorrectQuestions: SavedIncorrectQuestion[];
+  sprintLog: SprintSummary[];
+  grade: string;
+  gradeLabel: string;
+  engineerTypeId: string;
+  engineerTypeName: string;
+  timestamp: number;
+}
+
+/** 不正解問題の保存用 */
+export interface SavedIncorrectQuestion {
+  questionText: string;
+  options: string[];
+  selectedAnswer: number;
+  correctAnswer: number;
+  tags: string[];
+  explanation?: string;
+}

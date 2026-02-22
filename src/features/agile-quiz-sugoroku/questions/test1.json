@@ -8,7 +8,8 @@
       "自動化不可"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "BBT：仕様ベースで内部を見ない。"
   },
   {
     "question": "境界値分析で重点的にテストする値は？",
@@ -19,7 +20,8 @@
       "最頻値"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "バグは境界付近に集中しやすいため、有効範囲の端を重点的に検証する。"
   },
   {
     "question": "単体テストが検証する粒度は？",
@@ -30,7 +32,8 @@
       "ネットワーク通信"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "単体テストは関数やメソッドなど最小単位のロジックを検証する。"
   },
   {
     "question": "テストカバレッジ100%が保証するものは？",
@@ -41,7 +44,8 @@
       "テストが完璧"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "カバレッジ100%はコードが実行されたことを示すだけで、バグゼロや要件充足を保証しない。"
   },
   {
     "question": "結合テストの主な目的は？",
@@ -52,7 +56,8 @@
       "セキュリティ検証"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "結合テストは複数モジュールを組み合わせた際のインターフェースやデータ連携を検証する。"
   },
   {
     "question": "TDDの基本サイクルは？",
@@ -63,7 +68,8 @@
       "Design → Build → Deploy"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "TDD：テスト先行で設計を駆動する。"
   },
   {
     "question": "ホワイトボックステストの特徴は？",
@@ -74,7 +80,8 @@
       "本番環境のみ"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "WBTはコードの分岐やパスを把握し、内部ロジックの正しさを検証する。"
   },
   {
     "question": "同値分割法の考え方は？",
@@ -85,7 +92,8 @@
       "出力のみ確認"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "同じ結果が期待される入力をグループ化し、代表値でテストすることで効率を上げる。"
   },
   {
     "question": "スモークテストの目的は？",
@@ -96,7 +104,8 @@
       "全機能網羅確認"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "スモークテストはビルド後に基本機能が動くか素早く確認する簡易テストである。"
   },
   {
     "question": "モックオブジェクトの主な用途は？",
@@ -107,7 +116,8 @@
       "UI描画"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "モックで外部依存を切り離す。"
   },
   {
     "question": "テストフィクスチャとは？",
@@ -118,7 +128,8 @@
       "テンプレート"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "フィクスチャはテスト実行前に整える前提条件やデータのセットアップを指す。"
   },
   {
     "question": "ミューテーションテストの目的は？",
@@ -129,7 +140,8 @@
       "UIテスト"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "コードに意図的な変異を加え、テストがそれを検出できるかでテスト品質を評価する。"
   },
   {
     "question": "テストダブルに含まれないものは？",
@@ -140,7 +152,8 @@
       "スパイ"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "テストダブルはスタブ・モック・スパイ等の代替物の総称で、コンパイラは含まれない。"
   },
   {
     "question": "探索的テストの特徴は？",
@@ -151,7 +164,8 @@
       "回帰テスト"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "探索的テストはテスト設計と実行を同時に行い、対象を学習しながら欠陥を発見する。"
   },
   {
     "question": "ペアワイズテストの目的は？",
@@ -162,7 +176,8 @@
       "2回テスト"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "全組み合わせではなく2因子間の組み合わせを網羅し、テスト数を大幅に削減する。"
   },
   {
     "question": "モックを使う主な目的は？",
@@ -173,7 +188,8 @@
       "本番データを直接使う"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "モックにより外部サービスやDBへの依存を排除し、対象コードの挙動だけを検証できる。"
   },
   {
     "question": "テストケースを最小単位で独立させる利点は？",
@@ -184,7 +200,8 @@
       "レビューが不要になる"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "テストが独立していれば、失敗時にどの機能に問題があるか即座に特定できる。"
   },
   {
     "question": "単体テストで外部API呼び出しを避ける理由は？",
@@ -195,7 +212,8 @@
       "仕様確認を省くため"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "外部APIはネットワーク状態に左右されるため、テストの安定性と速度を損なう。"
   },
   {
     "question": "テスト名に期待される情報は？",
@@ -206,7 +224,8 @@
       "実行時間のみ"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "テスト名に条件・操作・期待結果を含めることで、失敗時に内容を即座に把握できる。"
   },
   {
     "question": "Given-When-Then形式の利点は？",
@@ -217,7 +236,8 @@
       "失敗時ログが不要になる"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "前提条件・操作・期待結果を明確に分離し、テストの意図を読み手に伝えやすくする。"
   },
   {
     "question": "アサーションが多すぎる1テストの問題は？",
@@ -228,7 +248,8 @@
       "保守が不要になる"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "アサーションが多いと最初の失敗で停止し、他の検証結果が得られず原因特定が困難になる。"
   },
   {
     "question": "テストピラミッドで推奨される比率は？",
@@ -239,7 +260,8 @@
       "手動テストのみ"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "単体テストを土台に厚く保ち、上位のE2Eは薄くすることで速度とコストを最適化する。"
   },
   {
     "question": "フレーキーテストへの第一対応として適切なのは？",
@@ -250,7 +272,8 @@
       "テストを全削除する"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "不安定テストはリトライで隠すのではなく、根本原因を特定して再現性を改善すべきである。"
   },
   {
     "question": "境界値テストで狙う不具合は？",
@@ -261,7 +284,8 @@
       "命名規則違反のみ"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "off-by-oneエラーなど、条件の端で起こりやすい判定ミスを狙って検出する。"
   },
   {
     "question": "回帰テストスイートを維持するポイントは？",
@@ -272,7 +296,8 @@
       "結果を記録しない"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "重複や価値の低いケースを定期的に整理し、スイートの実行速度と保守性を維持する。"
   },
   {
     "question": "テストデータを固定化する利点は？",
@@ -283,7 +308,8 @@
       "テスト実装が不要になる"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "テストデータを固定することで結果が安定し、変更前後の比較が容易になる。"
   },
   {
     "question": "AAAパターンのAは何を示す？",
@@ -294,7 +320,8 @@
       "Async/Await/Abort"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "Arrange（準備）・Act（実行）・Assert（検証）の3段構成でテストを整理する。"
   },
   {
     "question": "契約テストの目的は？",
@@ -305,7 +332,8 @@
       "ビルド速度計測のみ"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "契約テストはプロバイダとコンシューマ間のAPI仕様の整合性を自動的に検証する。"
   },
   {
     "question": "スナップショットテストで注意すべき点は？",
@@ -316,7 +344,8 @@
       "ユニットテストを削除すること"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "スナップショット更新時は差分の意味を確認し、意図しない変更を見逃さないことが重要。"
   },
   {
     "question": "テストで乱数を扱うときの基本は？",
@@ -327,7 +356,8 @@
       "ログを消す"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "シードを固定して再現性を確保し、失敗時に同じ条件で再実行できるようにする。"
   },
   {
     "question": "例外系テストの価値は？",
@@ -338,7 +368,8 @@
       "速度だけを改善する"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "異常系の振る舞いを検証することで、障害時にも安全に動作することを保証できる。"
   },
   {
     "question": "テストコードのリファクタリングが必要な理由は？",
@@ -349,7 +380,8 @@
       "レビューを省略するため"
     ],
     "answer": 0,
-    "tags": ["testing", "refactoring"]
+    "tags": ["testing", "refactoring"],
+    "explanation": "テストコードも本番コード同様に可読性と保守性を維持しないと、変更コストが増大する。"
   },
   {
     "question": "E2Eテストを実行する適切なタイミングは？",
@@ -360,7 +392,8 @@
       "開発終了後のみ"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "E2Eテストは実行コストが高いため、主要フロー変更時やリリース前に絞って実施する。"
   },
   {
     "question": "テスト失敗時にまず確認すべきことは？",
@@ -371,7 +404,8 @@
       "コミットメッセージ長"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "失敗が仕様変更による期待値の更新漏れか、実際の不具合かをまず切り分ける。"
   },
   {
     "question": "ミューテーションテストの目的は？",
@@ -382,7 +416,8 @@
       "Lintを置き換える"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "変異させたコードをテストが検出できるかで、テストスイートの検出力を定量的に評価する。"
   },
   {
     "question": "テストケースレビューの効果は？",
@@ -393,7 +428,8 @@
       "運用監視が不要になる"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "テストケースを複数人でレビューすることで、個人では気づかない観点漏れを早期に発見できる。"
   },
   {
     "question": "失敗メッセージを具体化する利点は？",
@@ -404,6 +440,7 @@
       "設計が自動生成される"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "具体的な失敗メッセージにより期待値と実測値の差が明確になり、調査時間を短縮できる。"
   }
 ]

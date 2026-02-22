@@ -8,7 +8,8 @@
       "簡潔性の原則"
     ],
     "answer": 0,
-    "tags": ["design-principles"]
+    "tags": ["design-principles"],
+    "explanation": "SRP：1つのクラスに変更理由は1つだけ。"
   },
   {
     "question": "DRY原則の意味は？",
@@ -19,7 +20,8 @@
       "テストを書け"
     ],
     "answer": 0,
-    "tags": ["design-principles"]
+    "tags": ["design-principles"],
+    "explanation": "Don't Repeat Yourself：重複を排除。"
   },
   {
     "question": "O(n log n)の代表的ソートは？",
@@ -30,7 +32,8 @@
       "挿入ソート"
     ],
     "answer": 0,
-    "tags": ["data-structures"]
+    "tags": ["data-structures"],
+    "explanation": "マージソートは分割統治法により安定してO(n log n)を達成する代表的なソートアルゴリズム。"
   },
   {
     "question": "スタック(Stack)のアクセス方式は？",
@@ -41,7 +44,8 @@
       "優先度順"
     ],
     "answer": 0,
-    "tags": ["data-structures"]
+    "tags": ["data-structures"],
+    "explanation": "スタックはLast In, First Out方式で、最後に入れた要素を最初に取り出す。"
   },
   {
     "question": "KISS原則の意味は？",
@@ -52,7 +56,8 @@
       "ペアプロせよ"
     ],
     "answer": 0,
-    "tags": ["design-principles"]
+    "tags": ["design-principles"],
+    "explanation": "Keep It Simple, Stupid：不要な複雑さを避けシンプルな設計を保つ。"
   },
   {
     "question": "ハッシュテーブルの平均探索計算量は？",
@@ -63,7 +68,8 @@
       "O(n²)"
     ],
     "answer": 0,
-    "tags": ["data-structures"]
+    "tags": ["data-structures"],
+    "explanation": "ハッシュテーブルは衝突がなければO(1)。"
   },
   {
     "question": "二分探索の前提条件は？",
@@ -74,7 +80,8 @@
       "固定長"
     ],
     "answer": 0,
-    "tags": ["data-structures"]
+    "tags": ["data-structures"],
+    "explanation": "二分探索は中央値との比較で範囲を半減するため、データがソート済みであることが前提。"
   },
   {
     "question": "関数型プログラミングで重視される概念は？",
@@ -85,7 +92,8 @@
       "ポインタ操作"
     ],
     "answer": 0,
-    "tags": ["programming"]
+    "tags": ["programming"],
+    "explanation": "純粋関数は同じ入力に同じ出力を返す。"
   },
   {
     "question": "Singletonパターンの特徴は？",
@@ -96,7 +104,8 @@
       "処理を並列化"
     ],
     "answer": 0,
-    "tags": ["design-patterns"]
+    "tags": ["design-patterns"],
+    "explanation": "GoFの生成パターンの一つで、クラスのインスタンスがただ1つであることを保証する。"
   },
   {
     "question": "SOLIDのOが表す原則は？",
@@ -107,7 +116,8 @@
       "順序の原則"
     ],
     "answer": 0,
-    "tags": ["design-principles"]
+    "tags": ["design-principles"],
+    "explanation": "OCP：拡張に開き、修正に閉じる。"
   },
   {
     "question": "再帰関数に必要不可欠な要素は？",
@@ -118,7 +128,8 @@
       "例外処理"
     ],
     "answer": 0,
-    "tags": ["programming"]
+    "tags": ["programming"],
+    "explanation": "基底条件がないと再帰が無限ループになりスタックオーバーフローを引き起こす。"
   },
   {
     "question": "連結リストの先頭挿入の計算量は？",
@@ -129,7 +140,8 @@
       "O(n²)"
     ],
     "answer": 0,
-    "tags": ["data-structures"]
+    "tags": ["data-structures"],
+    "explanation": "連結リストの先頭挿入はポインタの付け替えのみで完了するためO(1)。"
   },
   {
     "question": "キュー(Queue)のアクセス方式は？",
@@ -140,7 +152,8 @@
       "優先度順"
     ],
     "answer": 0,
-    "tags": ["data-structures"]
+    "tags": ["data-structures"],
+    "explanation": "キューはFirst In, First Out方式で、最初に入れた要素を最初に取り出す。"
   },
   {
     "question": "ポリモーフィズムの主な利点は？",
@@ -151,7 +164,8 @@
       "DB最適化"
     ],
     "answer": 0,
-    "tags": ["programming"]
+    "tags": ["programming"],
+    "explanation": "ポリモーフィズムにより同一インターフェースで異なる実装を呼び分けられ、拡張性が向上する。"
   },
   {
     "question": "バブルソートの最悪計算量は？",
@@ -162,7 +176,8 @@
       "O(1)"
     ],
     "answer": 0,
-    "tags": ["data-structures"]
+    "tags": ["data-structures"],
+    "explanation": "バブルソートは隣接要素を繰り返し比較交換するため、最悪・平均ともにO(n²)。"
   },
   {
     "question": "Observerパターンの用途は？",
@@ -173,7 +188,8 @@
       "DB接続"
     ],
     "answer": 0,
-    "tags": ["design-patterns"]
+    "tags": ["design-patterns"],
+    "explanation": "GoFの振る舞いパターンの一つで、あるオブジェクトの状態変化を依存する複数のオブジェクトに自動通知する。"
   },
   {
     "question": "ガベージコレクションの役割は？",
@@ -184,7 +200,8 @@
       "ログ出力"
     ],
     "answer": 0,
-    "tags": ["programming"]
+    "tags": ["programming"],
+    "explanation": "GCは参照されなくなったオブジェクトのメモリを自動で回収し、メモリリークを防ぐ。"
   },
   {
     "question": "木構造のBFSが使うデータ構造は？",
@@ -195,7 +212,8 @@
       "配列"
     ],
     "answer": 0,
-    "tags": ["data-structures"]
+    "tags": ["data-structures"],
+    "explanation": "BFS(幅優先探索)はキューを用いて各階層のノードを順に処理する。"
   },
   {
     "question": "クロージャとは？",
@@ -206,7 +224,8 @@
       "エラーハンドリング"
     ],
     "answer": 0,
-    "tags": ["programming"]
+    "tags": ["programming"],
+    "explanation": "クロージャは定義時のスコープにある外部変数を捕捉し、関数の実行後も参照し続ける関数。"
   },
   {
     "question": "抽象クラスとIFの違いは？",
@@ -217,7 +236,8 @@
       "抽象は多重継承可"
     ],
     "answer": 0,
-    "tags": ["programming"]
+    "tags": ["programming"],
+    "explanation": "抽象クラスはメソッドの実装やフィールドを持てるが、インターフェースは基本的にメソッドの契約のみを定義する。"
   },
   {
     "question": "Big-O記法で定数項や低次項を省略する理由は？",
@@ -228,7 +248,8 @@
       "メモリ使用量を表すため"
     ],
     "answer": 0,
-    "tags": ["data-structures"]
+    "tags": ["data-structures"],
+    "explanation": "Big-O記法は入力サイズnが十分大きいときの増加率(漸近的挙動)を示すため、低次項や定数は無視する。"
   },
   {
     "question": "インターフェース分離の原則(ISP)が避けたい状態は？",
@@ -239,7 +260,8 @@
       "自動テストの追加"
     ],
     "answer": 0,
-    "tags": ["design-principles"]
+    "tags": ["design-principles"],
+    "explanation": "ISPはクライアントが利用しないメソッドに依存させないよう、インターフェースを細かく分離する原則。"
   },
   {
     "question": "リファクタリングの目的として最も適切なのは？",
@@ -250,7 +272,8 @@
       "リリース頻度を下げる"
     ],
     "answer": 0,
-    "tags": ["refactoring"]
+    "tags": ["refactoring"],
+    "explanation": "リファクタリングは外部から見た振る舞いを変えずに、コードの内部構造を改善する作業。"
   },
   {
     "question": "依存性注入(DI)の利点は？",
@@ -261,7 +284,8 @@
       "メモリ使用をゼロにする"
     ],
     "answer": 0,
-    "tags": ["design-principles", "programming"]
+    "tags": ["design-principles", "programming"],
+    "explanation": "DIは依存先を外部から注入することで結合度を下げ、モックへの差し替えなどテスト容易性を高める。"
   },
   {
     "question": "イミュータブルな設計の利点として適切なのは？",
@@ -272,7 +296,8 @@
       "UIが自動生成される"
     ],
     "answer": 0,
-    "tags": ["programming"]
+    "tags": ["programming"],
+    "explanation": "イミュータブルなオブジェクトは一度生成すると変更されないため、予期しない状態変更によるバグを防ぎやすい。"
   },
   {
     "question": "循環参照が増えると起きやすい問題は？",
@@ -283,7 +308,8 @@
       "依存管理が不要になる"
     ],
     "answer": 0,
-    "tags": ["design-principles", "code-quality"]
+    "tags": ["design-principles", "code-quality"],
+    "explanation": "循環参照があるとモジュール間の依存が双方向になり、変更の影響範囲が把握しにくくなる。"
   },
   {
     "question": "境界値分析が有効な入力は？",
@@ -294,7 +320,8 @@
       "乱数のみの値"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "境界値分析は有効範囲の境界(上限・下限付近)にバグが集中しやすいことを利用したテスト技法。"
   },
   {
     "question": "早すぎる最適化を避ける理由は？",
@@ -305,7 +332,8 @@
       "DBが不要になるため"
     ],
     "answer": 0,
-    "tags": ["code-quality"]
+    "tags": ["code-quality"],
+    "explanation": "D.クヌースの格言：プロファイルなき最適化は可読性を犠牲にし、保守コストを増大させる。"
   },
   {
     "question": "関心の分離(SoC)の狙いは？",
@@ -316,7 +344,8 @@
       "例外を無視する"
     ],
     "answer": 0,
-    "tags": ["design-principles"]
+    "tags": ["design-principles"],
+    "explanation": "SoCは異なる関心事を独立したモジュールに分離し、変更の影響範囲を局所化する設計原則。"
   },
   {
     "question": "レイヤードアーキテクチャの利点は？",
@@ -327,7 +356,8 @@
       "インフラが不要になる"
     ],
     "answer": 0,
-    "tags": ["design-principles"]
+    "tags": ["design-principles"],
+    "explanation": "層ごとに責務を分離することで各層の変更が他層に波及しにくくなり、保守性が向上する。"
   },
   {
     "question": "コード重複を許容する判断があり得る場面は？",
@@ -338,7 +368,8 @@
       "レビューをしない場合"
     ],
     "answer": 0,
-    "tags": ["code-quality", "design-principles"]
+    "tags": ["code-quality", "design-principles"],
+    "explanation": "Rule of Three等の考え方では、早すぎる抽象化よりも重複を2回程度は許容し、パターンが明確になってから共通化する。"
   },
   {
     "question": "N+1問題が起きやすい層は？",
@@ -349,7 +380,8 @@
       "型エイリアス定義"
     ],
     "answer": 0,
-    "tags": ["programming"]
+    "tags": ["programming"],
+    "explanation": "N+1問題はORMなどで一覧取得後に関連データを1件ずつ問い合わせることで大量のクエリが発行される問題。"
   },
   {
     "question": "アルゴリズム選択で最初に確認すべきことは？",
@@ -360,7 +392,8 @@
       "コメント量"
     ],
     "answer": 0,
-    "tags": ["data-structures"]
+    "tags": ["data-structures"],
+    "explanation": "入力規模(n)と制約条件により必要な計算量の上限が決まり、適切なアルゴリズムを選択できる。"
   },
   {
     "question": "可読性の高い関数設計として適切なのは？",
@@ -371,7 +404,8 @@
       "引数を隠す"
     ],
     "answer": 0,
-    "tags": ["code-quality"]
+    "tags": ["code-quality"],
+    "explanation": "CleanCode：関数は小さく単一の責務を持ち、名前から意図が読み取れることが可読性の鍵。"
   },
   {
     "question": "マジックナンバーを避ける主な理由は？",
@@ -382,7 +416,8 @@
       "テスト不能になるため"
     ],
     "answer": 0,
-    "tags": ["code-quality"]
+    "tags": ["code-quality"],
+    "explanation": "マジックナンバーは意味が不明なリテラル値であり、名前付き定数に置き換えることで意図が明確になり変更にも強くなる。"
   },
   {
     "question": "フェイルファスト設計の考え方は？",
@@ -393,7 +428,8 @@
       "検証を後回しにする"
     ],
     "answer": 0,
-    "tags": ["code-quality"]
+    "tags": ["code-quality"],
+    "explanation": "フェイルファストは異常を検出したら即座に報告・停止し、問題の拡大と原因特定の困難化を防ぐ設計方針。"
   },
   {
     "question": "純粋関数の条件として正しいものは？",
@@ -404,7 +440,8 @@
       "非同期でのみ動く"
     ],
     "answer": 0,
-    "tags": ["programming"]
+    "tags": ["programming"],
+    "explanation": "純粋関数は参照透過性を持ち、同じ引数に対して常に同じ結果を返し外部状態を変更しない。"
   },
   {
     "question": "APIの後方互換性を守る典型手段は？",
@@ -415,7 +452,8 @@
       "ドキュメントを省略する"
     ],
     "answer": 0,
-    "tags": ["release", "design-principles"]
+    "tags": ["release", "design-principles"],
+    "explanation": "セマンティックバージョニング等を活用し、破壊的変更はメジャーバージョンで行うことで後方互換性を維持する。"
   },
   {
     "question": "メモ化(memoization)が有効なケースは？",
@@ -426,7 +464,8 @@
       "I/O待ち専用処理"
     ],
     "answer": 0,
-    "tags": ["programming"]
+    "tags": ["programming"],
+    "explanation": "メモ化は純粋関数の結果をキャッシュし、同一引数の再計算を省くことで計算量を削減する手法。"
   },
   {
     "question": "デッドコードを放置するリスクは？",
@@ -437,7 +476,8 @@
       "容量が必ず減る"
     ],
     "answer": 0,
-    "tags": ["code-quality"]
+    "tags": ["code-quality"],
+    "explanation": "デッドコードは読み手の認知負荷を増やし、誤って変更・依存してしまうリスクを生む。"
   },
   {
     "question": "設計原則YAGNIの意味は？",
@@ -448,7 +488,8 @@
       "テストを後回しにする"
     ],
     "answer": 0,
-    "tags": ["design-principles"]
+    "tags": ["design-principles"],
+    "explanation": "You Aren't Gonna Need It：実際に必要になるまで機能を実装しないことで無駄な複雑さを防ぐ。"
   },
   {
     "question": "技術選定でPoCを行う主目的は？",
@@ -459,6 +500,7 @@
       "見積もりを不要にする"
     ],
     "answer": 0,
-    "tags": ["design-principles"]
+    "tags": ["design-principles"],
+    "explanation": "PoC(Proof of Concept)は小規模な検証で技術的な不確実性やリスクを早期に明らかにする手法。"
   }
 ]

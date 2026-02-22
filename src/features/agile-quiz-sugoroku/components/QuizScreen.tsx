@@ -4,7 +4,8 @@
 import React, { useState } from 'react';
 import { useKeys } from '../hooks';
 import { GameEvent, Question, GameStats } from '../types';
-import { CONFIG, COLORS, OPTION_LABELS, EXPLANATIONS } from '../constants';
+import { CONFIG, COLORS, OPTION_LABELS, PHASE_GENRE_MAP } from '../constants';
+import { TAG_MAP } from '../questions/tag-master';
 import { AQS_IMAGES } from '../images';
 import {
   PageWrapper,
@@ -96,9 +97,11 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
   const answered = selectedAnswer !== null;
   const comboShow = stats.combo >= 2 && !answered;
 
-  // 解説を取得
-  const explanationMap = EXPLANATIONS[event.id];
-  const explanation = answered && explanationMap ? explanationMap[quizIndex] : undefined;
+  // 解説を取得（quiz.explanation 直接参照）
+  const explanation = answered ? quiz.explanation : undefined;
+
+  // 現在の工程に関連するジャンルタグ
+  const phaseGenres = PHASE_GENRE_MAP[event.id] ?? [];
 
   // タイマーの色
   const timerColor =
@@ -202,6 +205,31 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
             </EventCounterValue>
           </EventCounter>
         </EventCard>
+
+        {/* ジャンルタグ */}
+        {phaseGenres.length > 0 && (
+          <div style={{ display: 'flex', gap: 4, marginBottom: 8, flexWrap: 'wrap' }}>
+            {phaseGenres.map((tagId) => {
+              const tag = TAG_MAP.get(tagId);
+              return (
+                <span
+                  key={tagId}
+                  style={{
+                    fontSize: 9,
+                    padding: '2px 6px',
+                    borderRadius: 3,
+                    background: `${tag?.color ?? COLORS.accent}10`,
+                    border: `1px solid ${tag?.color ?? COLORS.accent}22`,
+                    color: tag?.color ?? COLORS.accent,
+                    fontWeight: 500,
+                  }}
+                >
+                  {tag?.name ?? tagId}
+                </span>
+              );
+            })}
+          </div>
+        )}
 
         {/* タイマー（回答前のみ） */}
         {!answered && (

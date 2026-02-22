@@ -8,7 +8,8 @@
       "セキュリティ検証"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "回帰テストで既存機能の破壊を検出。"
   },
   {
     "question": "リリース前に最も重視される品質観点は？",
@@ -19,7 +20,8 @@
       "ドキュメント完全"
     ],
     "answer": 0,
-    "tags": ["testing", "release"]
+    "tags": ["testing", "release"],
+    "explanation": "リリース判定ではクリティカルな不具合の有無が最優先される。"
   },
   {
     "question": "E2Eテストが検証する範囲は？",
@@ -30,7 +32,8 @@
       "DBのみ"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "E2Eテストはユーザー操作を模倣し、システム全体の動作を検証する。"
   },
   {
     "question": "リリース判定で確認すべき事項は？",
@@ -41,7 +44,8 @@
       "会議回数"
     ],
     "answer": 0,
-    "tags": ["release", "testing"]
+    "tags": ["release", "testing"],
+    "explanation": "リリース判定では既知不具合の影響度と対応方針を確認し、出荷可否を判断する。"
   },
   {
     "question": "カナリアリリースとは？",
@@ -52,7 +56,8 @@
       "テスト環境のみ"
     ],
     "answer": 0,
-    "tags": ["release"]
+    "tags": ["release"],
+    "explanation": "カナリアリリースでリスクを限定。"
   },
   {
     "question": "受け入れテストの主な実施者は？",
@@ -63,7 +68,8 @@
       "AIツール"
     ],
     "answer": 0,
-    "tags": ["testing", "scrum"]
+    "tags": ["testing", "scrum"],
+    "explanation": "受け入れテストはPOやステークホルダーがビジネス要件を満たすか確認するために行う。"
   },
   {
     "question": "テストピラミッドで最も数が多いべきテストは？",
@@ -74,7 +80,8 @@
       "手動テスト"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "ピラミッド底辺＝単体テストが最多。"
   },
   {
     "question": "フレイキーテストとは？",
@@ -85,7 +92,8 @@
       "手動テスト"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "フレイキーテストは同じ条件でも成功・失敗が変わり、CI信頼性を低下させる。"
   },
   {
     "question": "ブルーグリーンデプロイメントの特徴は？",
@@ -96,7 +104,8 @@
       "1環境で段階更新"
     ],
     "answer": 0,
-    "tags": ["release"]
+    "tags": ["release"],
+    "explanation": "本番と待機の2環境を用意し、切替によりダウンタイムゼロのリリースを実現する。"
   },
   {
     "question": "非機能テストに含まれるものは？",
@@ -107,7 +116,8 @@
       "受け入れテスト"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "非機能テストは性能・負荷・セキュリティなど機能以外の品質特性を検証する。"
   },
   {
     "question": "A/Bテストの目的は？",
@@ -118,7 +128,8 @@
       "2回テスト"
     ],
     "answer": 0,
-    "tags": ["release", "testing"]
+    "tags": ["release", "testing"],
+    "explanation": "A/Bテストは2つのバリエーションをユーザーに提示し、効果の差を統計的に比較する。"
   },
   {
     "question": "テスト自動化で最も重要な考慮点は？",
@@ -129,7 +140,8 @@
       "ツール価格"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "自動テストは作成後の維持・修正コストが大きく、メンテナンス性が最重要となる。"
   },
   {
     "question": "ダークローンチとは？",
@@ -140,7 +152,8 @@
       "テスト環境リリース"
     ],
     "answer": 0,
-    "tags": ["release"]
+    "tags": ["release"],
+    "explanation": "ダークローンチはユーザーに公開せず本番環境で新機能を動作させ、安全性を確認する手法。"
   },
   {
     "question": "SLIとは？",
@@ -151,7 +164,8 @@
       "開発速度指標"
     ],
     "answer": 0,
-    "tags": ["sre"]
+    "tags": ["sre"],
+    "explanation": "SLI（Service Level Indicator）はレイテンシや可用性などサービス品質を定量的に測る指標。"
   },
   {
     "question": "ロールバック戦略が重要な理由は？",
@@ -162,7 +176,8 @@
       "コスト削減"
     ],
     "answer": 0,
-    "tags": ["release"]
+    "tags": ["release"],
+    "explanation": "リリース失敗時に迅速に前バージョンへ戻せることで、障害影響を最小化できる。"
   },
   {
     "question": "E2Eテストの主な検証対象は？",
@@ -173,7 +188,8 @@
       "命名規則のみ"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "E2Eテストはユーザー視点でシステム全体の連携が正しく動作するかを検証する。"
   },
   {
     "question": "カナリアリリースの利点は？",
@@ -184,7 +200,8 @@
       "ロールバックできなくなる"
     ],
     "answer": 0,
-    "tags": ["release"]
+    "tags": ["release"],
+    "explanation": "一部ユーザーに限定して公開することで、問題発生時の影響範囲を最小限に抑えられる。"
   },
   {
     "question": "負荷テストの主目的は？",
@@ -195,7 +212,8 @@
       "会議頻度を測る"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "負荷テストにより想定トラフィック下でのシステム性能限界やボトルネックを把握できる。"
   },
   {
     "question": "スモークテストを実施する理由は？",
@@ -206,7 +224,8 @@
       "監視を停止する"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "スモークテストは主要機能の致命的不具合を素早く検出し、詳細テストの前に判断できる。"
   },
   {
     "question": "ステージング環境を本番に近づける価値は？",
@@ -217,7 +236,8 @@
       "テスト設計が不要になる"
     ],
     "answer": 0,
-    "tags": ["release", "testing"]
+    "tags": ["release", "testing"],
+    "explanation": "ステージングを本番に近づけることで環境差異に起因する不具合を事前に発見できる。"
   },
   {
     "question": "非同期処理のテストで重要な観点は？",
@@ -228,7 +248,8 @@
       "コミット頻度のみ"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "非同期処理は完了タイミングが不定のため、完了条件やタイミング依存を適切に検証する必要がある。"
   },
   {
     "question": "性能劣化の検知に有効なのは？",
@@ -239,7 +260,8 @@
       "測定結果を破棄"
     ],
     "answer": 0,
-    "tags": ["sre", "testing"]
+    "tags": ["sre", "testing"],
+    "explanation": "継続的にベンチマークを比較することで、性能劣化の傾向を早期に検知できる。"
   },
   {
     "question": "カバレッジ100%でも品質保証できない理由は？",
@@ -250,7 +272,8 @@
       "自動化が禁止されるため"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "カバレッジは行の通過を示すだけで、テスト観点の網羅性や期待値の正しさは保証しない。"
   },
   {
     "question": "契約変更時に優先して更新すべきテストは？",
@@ -261,7 +284,8 @@
       "監視アラートのみ"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "契約変更時はAPI間の互換性を検証する契約・統合テストを優先的に更新すべき。"
   },
   {
     "question": "シャドーテストの目的は？",
@@ -272,7 +296,8 @@
       "結果を保存しない"
     ],
     "answer": 0,
-    "tags": ["testing", "release"]
+    "tags": ["testing", "release"],
+    "explanation": "シャドーテストは本番トラフィックを複製して新旧実装の挙動を比較し、安全性を確認する。"
   },
   {
     "question": "テストデータ管理で避けるべきことは？",
@@ -283,7 +308,8 @@
       "最小データを使うこと"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "テストデータに個人情報をマスキングせず使用するとプライバシー侵害や法令違反のリスクがある。"
   },
   {
     "question": "監視アラートのテストを行う理由は？",
@@ -294,7 +320,8 @@
       "監視を停止するため"
     ],
     "answer": 0,
-    "tags": ["sre", "testing"]
+    "tags": ["sre", "testing"],
+    "explanation": "監視アラートの検知・通知導線が正しく機能することを事前に確認し、障害時の対応遅延を防ぐ。"
   },
   {
     "question": "負荷試験での成功基準として適切なのは？",
@@ -305,7 +332,8 @@
       "応答時間未計測"
     ],
     "answer": 0,
-    "tags": ["sre", "testing"]
+    "tags": ["sre", "testing"],
+    "explanation": "SLOで定めた閾値（レイテンシ・エラー率等）を基準にすることで客観的な合否判定ができる。"
   },
   {
     "question": "テスト環境のデータ初期化が必要な理由は？",
@@ -316,7 +344,8 @@
       "ログを消すため"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "テストケース間でデータを初期化し独立性を保つことで、実行順序に依存しない安定した結果を得られる。"
   },
   {
     "question": "ユーザビリティテストで確認したいことは？",
@@ -327,7 +356,8 @@
       "サーバー台数"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "ユーザビリティテストは実際のユーザーが迷わず目的を達成できるかを検証する。"
   },
   {
     "question": "障害注入テストの価値は？",
@@ -338,7 +368,8 @@
       "設計を固定化する"
     ],
     "answer": 0,
-    "tags": ["sre", "testing"]
+    "tags": ["sre", "testing"],
+    "explanation": "意図的に障害を注入することで、システムの回復性や耐障害性を事前に検証できる。"
   },
   {
     "question": "リリースゲートにテスト結果を使う利点は？",
@@ -349,7 +380,8 @@
       "仕様調整が不要になる"
     ],
     "answer": 0,
-    "tags": ["release", "testing"]
+    "tags": ["release", "testing"],
+    "explanation": "テスト結果を基準にすることで属人的判断を排し、客観的な品質判定でリリース可否を決められる。"
   },
   {
     "question": "契約テスト失敗時にまず行うことは？",
@@ -360,7 +392,8 @@
       "テストを削除する"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "契約テスト失敗時は変更差分を確認し、互換性への影響範囲を特定することが先決。"
   },
   {
     "question": "本番監視とテストの関係として適切なのは？",
@@ -371,7 +404,8 @@
       "どちらも不要"
     ],
     "answer": 0,
-    "tags": ["sre", "testing"]
+    "tags": ["sre", "testing"],
+    "explanation": "テストはリリース前の品質確認、監視はリリース後の品質検証であり、両者は補完関係にある。"
   },
   {
     "question": "性能テストでP95を使う理由は？",
@@ -382,7 +416,8 @@
       "外れ値を無視するため"
     ],
     "answer": 0,
-    "tags": ["sre", "testing"]
+    "tags": ["sre", "testing"],
+    "explanation": "P95は上位5%の遅いリクエストの体験を可視化し、平均値では見えない問題を把握できる。"
   },
   {
     "question": "リハーサルリリースの価値は？",
@@ -393,7 +428,8 @@
       "障害報告を省ける"
     ],
     "answer": 0,
-    "tags": ["release"]
+    "tags": ["release"],
+    "explanation": "リハーサルにより手順・権限・所要時間を事前検証し、本番リリースのリスクを低減できる。"
   },
   {
     "question": "品質ゲートを厳しくし過ぎるリスクは？",
@@ -404,6 +440,7 @@
       "障害が必ず増える"
     ],
     "answer": 0,
-    "tags": ["release", "testing"]
+    "tags": ["release", "testing"],
+    "explanation": "品質ゲートを厳しくし過ぎるとリードタイムが悪化し、デリバリー速度とのバランスが課題となる。"
   }
 ]

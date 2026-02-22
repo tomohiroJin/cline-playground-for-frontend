@@ -1,10 +1,11 @@
 /**
  * タイトル画面コンポーネント
  */
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useKeys } from '../hooks';
-import { CONFIG } from '../constants';
+import { CONFIG, COLORS, FONTS } from '../constants';
 import { AQS_IMAGES } from '../images';
+import { loadGameResult } from '../result-storage';
 import { ParticleEffect } from './ParticleEffect';
 import {
   PageWrapper,
@@ -24,6 +25,10 @@ import {
 interface TitleScreenProps {
   /** ゲーム開始時のコールバック */
   onStart: () => void;
+  /** 勉強会モード開始時のコールバック */
+  onStudy?: () => void;
+  /** ガイド画面表示時のコールバック */
+  onGuide?: () => void;
 }
 
 /** 機能紹介リスト */
@@ -39,7 +44,10 @@ const FEATURES = [
 /**
  * タイトル画面
  */
-export const TitleScreen: React.FC<TitleScreenProps> = ({ onStart }) => {
+export const TitleScreen: React.FC<TitleScreenProps> = ({ onStart, onStudy, onGuide }) => {
+  // 前回結果
+  const lastResult = useMemo(() => loadGameResult(), []);
+
   useKeys((e) => {
     if (e.key === 'Enter' || e.key === ' ') {
       onStart();
@@ -50,7 +58,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({ onStart }) => {
     <PageWrapper>
       <ParticleEffect />
       <Scanlines />
-      
+
       {/* Background Image Layer */}
       <div style={{
         position: 'absolute',
@@ -91,6 +99,33 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({ onStart }) => {
           <Divider />
         </div>
 
+        {/* 前回結果サマリー */}
+        {lastResult && (
+          <div
+            style={{
+              background: `${COLORS.accent}0a`,
+              border: `1px solid ${COLORS.accent}18`,
+              borderRadius: 8,
+              padding: '8px 12px',
+              marginBottom: 14,
+              fontSize: 11,
+              color: COLORS.muted,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            <span style={{ fontFamily: FONTS.mono, fontWeight: 700, color: COLORS.accent }}>
+              前回:
+            </span>
+            <span style={{ fontFamily: FONTS.mono, fontWeight: 700, color: COLORS.text }}>
+              {lastResult.grade} rank
+            </span>
+            <span>正答率 {lastResult.correctRate}%</span>
+            <span style={{ color: COLORS.text }}>{lastResult.engineerTypeName}</span>
+          </div>
+        )}
+
         <SectionBox>
           {FEATURES.map((feature, i) => (
             <FeatureItem key={i}>
@@ -103,7 +138,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({ onStart }) => {
           ))}
         </SectionBox>
 
-        <div style={{ textAlign: 'center', marginTop: 4 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, marginTop: 4 }}>
           <Button
             $color="#34d399"
             onClick={onStart}
@@ -112,6 +147,18 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({ onStart }) => {
             ▶ Sprint Start
             <HotkeyHint>[Enter]</HotkeyHint>
           </Button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {onStudy && (
+              <Button $color={COLORS.accent} onClick={onStudy} style={{ padding: '10px 20px', fontSize: 12 }}>
+                📚 勉強会モード
+              </Button>
+            )}
+            {onGuide && (
+              <Button $color={COLORS.muted} onClick={onGuide} style={{ padding: '10px 20px', fontSize: 12 }}>
+                📖 遊び方 & チーム紹介
+              </Button>
+            )}
+          </div>
         </div>
       </Panel>
     </PageWrapper>

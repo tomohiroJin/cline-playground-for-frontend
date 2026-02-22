@@ -8,7 +8,8 @@
       "ステークホルダー"
     ],
     "answer": 0,
-    "tags": ["scrum"]
+    "tags": ["scrum"],
+    "explanation": "POはプロダクト価値最大化の責任者。"
   },
   {
     "question": "スプリントプランニングの主な目的は？",
@@ -19,7 +20,8 @@
       "技術的負債の整理"
     ],
     "answer": 0,
-    "tags": ["scrum"]
+    "tags": ["scrum"],
+    "explanation": "プランニングでスプリントゴールを決める。"
   },
   {
     "question": "プランニングポーカーのフィボナッチ数列の正しい並びは？",
@@ -30,7 +32,8 @@
       "1,2,3,4,5,6"
     ],
     "answer": 0,
-    "tags": ["estimation"]
+    "tags": ["estimation"],
+    "explanation": "フィボナッチ数列で相対見積もりを行う。"
   },
   {
     "question": "ウォーターフォール開発の最も適切な特徴は？",
@@ -41,7 +44,8 @@
       "テストを最初に行う"
     ],
     "answer": 0,
-    "tags": ["agile"]
+    "tags": ["agile"],
+    "explanation": "ウォーターフォールは要件定義・設計・実装・テストを順序通りに進める逐次型の開発手法。"
   },
   {
     "question": "スクラムのスプリント期間の推奨最大長は？",
@@ -52,7 +56,8 @@
       "1週間"
     ],
     "answer": 0,
-    "tags": ["scrum"]
+    "tags": ["scrum"],
+    "explanation": "Scrum Guide 2020ではスプリントは最大1ヶ月と定められている。"
   },
   {
     "question": "ベロシティとは何を示す指標か？",
@@ -63,7 +68,8 @@
       "会議の回数"
     ],
     "answer": 0,
-    "tags": ["estimation"]
+    "tags": ["estimation"],
+    "explanation": "ベロシティはチームの実績ベースの指標。"
   },
   {
     "question": "ストーリーポイントが表すものは？",
@@ -74,7 +80,8 @@
       "コードの行数"
     ],
     "answer": 0,
-    "tags": ["estimation"]
+    "tags": ["estimation"],
+    "explanation": "ストーリーポイントは作業量・複雑さ・不確実性を含む相対的な見積もり単位。"
   },
   {
     "question": "プロダクトバックログの並び順の最も一般的な基準は？",
@@ -85,7 +92,8 @@
       "作成日順"
     ],
     "answer": 0,
-    "tags": ["backlog"]
+    "tags": ["backlog"],
+    "explanation": "Scrum Guideではプロダクトバックログはビジネス価値や優先度に基づいて並べ替える。"
   },
   {
     "question": "スクラムマスターの主な役割は？",
@@ -96,7 +104,8 @@
       "要件を決定"
     ],
     "answer": 0,
-    "tags": ["scrum"]
+    "tags": ["scrum"],
+    "explanation": "SMはサーバントリーダーとしてチームを支援。"
   },
   {
     "question": "MoSCoW法のMは何を表す？",
@@ -107,7 +116,8 @@
       "Minimal"
     ],
     "answer": 0,
-    "tags": ["backlog"]
+    "tags": ["backlog"],
+    "explanation": "MoSCoW法はMust have/Should have/Could have/Won't haveの頭文字で優先度を分類する手法。"
   },
   {
     "question": "アジャイル宣言で「プロセスやツールよりも」重視されるのは？",
@@ -118,7 +128,8 @@
       "計画への追従"
     ],
     "answer": 0,
-    "tags": ["agile"]
+    "tags": ["agile"],
+    "explanation": "アジャイル宣言は4つの価値と12の原則。"
   },
   {
     "question": "デイリースクラムの推奨時間は？",
@@ -129,7 +140,8 @@
       "時間制限なし"
     ],
     "answer": 0,
-    "tags": ["scrum"]
+    "tags": ["scrum"],
+    "explanation": "Scrum Guide 2020ではデイリースクラムのタイムボックスは15分と定められている。"
   },
   {
     "question": "スクラムの3本柱に含まれないものは？",
@@ -140,7 +152,8 @@
       "適応"
     ],
     "answer": 0,
-    "tags": ["scrum"]
+    "tags": ["scrum"],
+    "explanation": "3本柱：透明性・検査・適応。予測は含まない。"
   },
   {
     "question": "ユーザーストーリーの一般的な記述形式は？",
@@ -151,7 +164,8 @@
       "〈画面〉→〈操作〉→〈結果〉"
     ],
     "answer": 0,
-    "tags": ["backlog"]
+    "tags": ["backlog"],
+    "explanation": "「〈役割〉として〈機能〉がしたい、それは〈価値〉のため」がユーザーストーリーの標準形式。"
   },
   {
     "question": "スプリントバックログの所有者は？",
@@ -162,7 +176,8 @@
       "マネージャー"
     ],
     "answer": 0,
-    "tags": ["scrum"]
+    "tags": ["scrum"],
+    "explanation": "スプリントバックログは開発者が所有し、自ら管理・更新する。"
   },
   {
     "question": "WIP制限の目的は？",
@@ -173,7 +188,8 @@
       "コード行数を制限"
     ],
     "answer": 0,
-    "tags": ["agile"]
+    "tags": ["agile"],
+    "explanation": "WIP制限はマルチタスクを減らしフロー効率を高めるカンバンの基本原則。"
   },
   {
     "question": "カンバンボードの基本カラム構成は？",
@@ -184,7 +200,8 @@
       "バグ・改善・機能"
     ],
     "answer": 0,
-    "tags": ["agile"]
+    "tags": ["agile"],
+    "explanation": "カンバンボードはTo Do・In Progress・Doneの3列で作業の流れを可視化する。"
   },
   {
     "question": "スプリントゴールの役割は？",
@@ -195,7 +212,8 @@
       "予算管理"
     ],
     "answer": 0,
-    "tags": ["scrum"]
+    "tags": ["scrum"],
+    "explanation": "スプリントゴールはスプリントの唯一の目的を示し、チームの方向性を統一する。"
   },
   {
     "question": "リファインメントに費やす推奨時間は？",
@@ -206,7 +224,8 @@
       "制限なし"
     ],
     "answer": 0,
-    "tags": ["scrum", "backlog"]
+    "tags": ["scrum", "backlog"],
+    "explanation": "Scrum Guideではリファインメントはスプリント全体の10%以下が目安とされる。"
   },
   {
     "question": "Tシャツサイジングとは何のための手法か？",
@@ -217,7 +236,8 @@
       "リリース判定"
     ],
     "answer": 0,
-    "tags": ["estimation"]
+    "tags": ["estimation"],
+    "explanation": "S/M/L/XLなどの相対サイズで素早く概算見積もりを行う手法。"
   },
   {
     "question": "INVESTのVが意味するものは？",
@@ -228,7 +248,8 @@
       "可変長（Variable）"
     ],
     "answer": 0,
-    "tags": ["backlog"]
+    "tags": ["backlog"],
+    "explanation": "INVESTはIndependent・Negotiable・Valuable・Estimable・Small・Testableの頭文字。Vは価値があることを意味する。"
   },
   {
     "question": "リリース計画で最初に確認すべき観点は？",
@@ -239,7 +260,8 @@
       "利用するIDE"
     ],
     "answer": 0,
-    "tags": ["release", "backlog"]
+    "tags": ["release", "backlog"],
+    "explanation": "リリース計画ではまず提供価値とスケジュールの整合性を確認し、実現可能な計画を立てる。"
   },
   {
     "question": "スクラムイベントのタイムボックスを守る主な理由は？",
@@ -250,7 +272,8 @@
       "発言機会をなくすため"
     ],
     "answer": 0,
-    "tags": ["scrum"]
+    "tags": ["scrum"],
+    "explanation": "タイムボックスは時間を制約することで集中力を高め、効率的な議論を促す仕組み。"
   },
   {
     "question": "プロダクトゴールの役割として最も適切なのは？",
@@ -261,7 +284,8 @@
       "障害対応の手順書"
     ],
     "answer": 0,
-    "tags": ["scrum", "backlog"]
+    "tags": ["scrum", "backlog"],
+    "explanation": "Scrum Guide 2020でプロダクトゴールはプロダクトの将来の状態を示す中長期的な目標として定義されている。"
   },
   {
     "question": "ストーリーマッピングの主な利点は？",
@@ -272,7 +296,8 @@
       "会議を完全になくせる"
     ],
     "answer": 0,
-    "tags": ["backlog"]
+    "tags": ["backlog"],
+    "explanation": "ストーリーマッピングはユーザー体験の流れに沿ってバックログを整理し、優先順位の議論を促進する。"
   },
   {
     "question": "プランニングで見積もり差が大きい場合の適切な対応は？",
@@ -283,7 +308,8 @@
       "最大値を採用する"
     ],
     "answer": 0,
-    "tags": ["estimation", "team"]
+    "tags": ["estimation", "team"],
+    "explanation": "見積もりのばらつきは認識のずれを示すため、前提や理解を共有してから再見積もりする。"
   },
   {
     "question": "Definition of Ready(DoR)の主目的は？",
@@ -294,7 +320,8 @@
       "レビューを省略する"
     ],
     "answer": 0,
-    "tags": ["backlog"]
+    "tags": ["backlog"],
+    "explanation": "DoRはバックログ項目がスプリントに取り込める準備状態にあるかを判断する基準。"
   },
   {
     "question": "スプリント計画で容量(capacity)を見積もる理由は？",
@@ -305,7 +332,8 @@
       "評価点を上げるため"
     ],
     "answer": 0,
-    "tags": ["estimation", "scrum"]
+    "tags": ["estimation", "scrum"],
+    "explanation": "チームの稼働可能時間を考慮し、持続可能なペースで実現可能な計画を立てるため。"
   },
   {
     "question": "バックログ項目を小さく分割する効果として適切なのは？",
@@ -316,7 +344,8 @@
       "価値検証を遅らせる"
     ],
     "answer": 0,
-    "tags": ["backlog"]
+    "tags": ["backlog"],
+    "explanation": "小さな項目はフィードバックループを短縮し、進捗の可視化と早期の学びを可能にする。"
   },
   {
     "question": "スパイク(Spike)を実施する主な場面は？",
@@ -327,7 +356,8 @@
       "緊急障害時のみ"
     ],
     "answer": 0,
-    "tags": ["backlog", "estimation"]
+    "tags": ["backlog", "estimation"],
+    "explanation": "スパイクは技術的な不確実性を低減するためのタイムボックス付き調査活動。"
   },
   {
     "question": "優先順位付けでコスト遅延(CoD)を考慮する目的は？",
@@ -338,7 +368,8 @@
       "設計パターンを選ぶため"
     ],
     "answer": 0,
-    "tags": ["backlog"]
+    "tags": ["backlog"],
+    "explanation": "CoDは遅延による経済的損失を定量化し、最も価値を損なわない実施順序を導く指標。"
   },
   {
     "question": "スプリントゴールが曖昧な場合に起こりやすい問題は？",
@@ -349,7 +380,8 @@
       "会議が不要になる"
     ],
     "answer": 0,
-    "tags": ["scrum"]
+    "tags": ["scrum"],
+    "explanation": "ゴールが不明確だとチームの判断基準が統一されず、作業の優先順位や方向性がぶれる。"
   },
   {
     "question": "見積もりにリスクを反映する際の基本姿勢は？",
@@ -360,7 +392,8 @@
       "根拠を共有しない"
     ],
     "answer": 0,
-    "tags": ["estimation"]
+    "tags": ["estimation"],
+    "explanation": "リスクは隠さず透明にし、チームで対策を議論することで見積もりの精度を高める。"
   },
   {
     "question": "POがバックログを常に更新すべき理由は？",
@@ -371,7 +404,8 @@
       "レビューを短縮するため"
     ],
     "answer": 0,
-    "tags": ["backlog"]
+    "tags": ["backlog"],
+    "explanation": "市場やステークホルダーからのフィードバックを継続的に反映し、プロダクト価値を最大化するため。"
   },
   {
     "question": "依存関係の強い項目を計画時に扱う適切な方法は？",
@@ -382,7 +416,8 @@
       "本番直前まで隠す"
     ],
     "answer": 0,
-    "tags": ["backlog"]
+    "tags": ["backlog"],
+    "explanation": "依存関係は早期に明示して共有し、順序調整や分割で影響を最小化する。"
   },
   {
     "question": "スプリント中に新規要求が来た時の基本対応は？",
@@ -393,7 +428,8 @@
       "開発者単独で決定する"
     ],
     "answer": 0,
-    "tags": ["scrum", "backlog"]
+    "tags": ["scrum", "backlog"],
+    "explanation": "スプリントゴールを守りつつ、スコープ変更はPOと開発者が協議して判断する。"
   },
   {
     "question": "ベロシティを使う際の注意点として正しいのは？",
@@ -404,7 +440,8 @@
       "他チームと単純比較する"
     ],
     "answer": 0,
-    "tags": ["estimation"]
+    "tags": ["estimation"],
+    "explanation": "ベロシティは計画の参考値であり、チーム間比較や個人評価に使うべきではない。"
   },
   {
     "question": "ユーザーストーリーの受け入れ条件が不足していると？",
@@ -415,7 +452,8 @@
       "仕様変更がなくなる"
     ],
     "answer": 0,
-    "tags": ["backlog"]
+    "tags": ["backlog"],
+    "explanation": "受け入れ条件が不明確だと完了の判断基準が曖昧になり、手戻りが発生しやすい。"
   },
   {
     "question": "プロダクトバックログの「透明性」を高める方法は？",
@@ -426,7 +464,8 @@
       "項目名を省略する"
     ],
     "answer": 0,
-    "tags": ["backlog", "scrum"]
+    "tags": ["backlog", "scrum"],
+    "explanation": "バックログの優先理由や進捗状態をチーム全体に共有し、透明性の柱を実践する。"
   },
   {
     "question": "アジャイル計画でローリングウェーブを使う狙いは？",
@@ -437,7 +476,8 @@
       "常に日次で全面更新する"
     ],
     "answer": 0,
-    "tags": ["agile"]
+    "tags": ["agile"],
+    "explanation": "ローリングウェーブ計画は直近を詳細に、将来を概要レベルに保ち、段階的に詳細化する手法。"
   },
   {
     "question": "スプリントプランニングで技術的負債項目を扱うべき理由は？",
@@ -448,7 +488,8 @@
       "障害を隠すため"
     ],
     "answer": 0,
-    "tags": ["refactoring", "scrum"]
+    "tags": ["refactoring", "scrum"],
+    "explanation": "技術的負債を計画的に解消することで、長期的な開発速度の低下と品質劣化を防ぐ。"
   },
   {
     "question": "プランニングの成果として最低限必要なものは？",
@@ -459,6 +500,7 @@
       "全リスクの完全解消"
     ],
     "answer": 0,
-    "tags": ["scrum"]
+    "tags": ["scrum"],
+    "explanation": "Scrum Guideではスプリントプランニングの成果はスプリントゴール・スプリントバックログ・実行計画と定められている。"
   }
 ]

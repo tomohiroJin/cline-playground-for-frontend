@@ -1,7 +1,7 @@
 /**
  * Agile Quiz Sugoroku - 定数・設定
  */
-import { GameEvent, EngineerType, Grade, ExplanationMap, GameStats } from './types';
+import { GameEvent, EngineerType, Grade, GameStats } from './types';
 
 /** ゲーム設定 */
 export const CONFIG = {
@@ -260,55 +260,17 @@ export const CATEGORY_NAMES: { [key: string]: string } = {
   emergency: '緊急',
 };
 
-/** 解説データ */
-export const EXPLANATIONS: ExplanationMap = {
-  planning: {
-    0: 'POはプロダクト価値最大化の責任者。',
-    1: 'プランニングでスプリントゴールを決める。',
-    2: 'フィボナッチ数列で相対見積もりを行う。',
-    5: 'ベロシティはチームの実績ベースの指標。',
-    8: 'SMはサーバントリーダーとしてチームを支援。',
-    10: 'アジャイル宣言は4つの価値と12の原則。',
-    12: '3本柱：透明性・検査・適応。予測は含まない。',
-  },
-  impl1: {
-    0: 'SRP：1つのクラスに変更理由は1つだけ。',
-    1: "Don't Repeat Yourself：重複を排除。",
-    5: 'ハッシュテーブルは衝突がなければO(1)。',
-    7: '純粋関数は同じ入力に同じ出力を返す。',
-    9: 'OCP：拡張に開き、修正に閉じる。',
-  },
-  test1: {
-    0: 'BBT：仕様ベースで内部を見ない。',
-    5: 'TDD：テスト先行で設計を駆動する。',
-    9: 'モックで外部依存を切り離す。',
-  },
-  refinement: {
-    0: '負債は短期的妥協の長期的コスト。',
-    1: 'リファクタ＝外部振る舞い不変で内部改善。',
-    6: '来た時より美しく。継続的改善の精神。',
-  },
-  impl2: {
-    3: 'DI：外から依存を注入し結合度を下げる。',
-    5: 'デグレ＝リグレッション。回帰テストで防ぐ。',
-    7: 'DIP：上位は下位に依存せず抽象に依存。',
-  },
-  test2: {
-    0: '回帰テストで既存機能の破壊を検出。',
-    4: 'カナリアリリースでリスクを限定。',
-    6: 'ピラミッド底辺＝単体テストが最多。',
-  },
-  review: {
-    0: 'レビュー＝成果物のインスペクション。',
-    3: 'DoDは「完成」の共通認識を定義。',
-    7: 'MVP＝最小機能で仮説検証。',
-  },
-  emergency: {
-    0: 'まず影響範囲を把握し優先度を判断。',
-    3: 'ポストモーテム＝blame-freeな振り返り。',
-    5: 'MTTR：Mean Time To Recovery。',
-  },
-};
-
 /** 選択肢ラベル */
 export const OPTION_LABELS = ['A', 'B', 'C', 'D'] as const;
+
+/** スプリント工程とジャンルのマッピング */
+export const PHASE_GENRE_MAP: { [phase: string]: string[] } = {
+  planning: ['scrum', 'agile', 'estimation', 'backlog'],
+  impl1: ['design-principles', 'design-patterns', 'data-structures', 'programming'],
+  impl2: ['design-principles', 'design-patterns', 'data-structures', 'programming'],
+  test1: ['testing', 'code-quality', 'ci-cd'],
+  test2: ['testing', 'code-quality', 'ci-cd'],
+  refinement: ['refactoring', 'code-quality', 'backlog'],
+  review: ['release', 'team', 'scrum'],
+  emergency: ['incident', 'sre'],
+};

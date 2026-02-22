@@ -8,7 +8,8 @@
       "変数名統一"
     ],
     "answer": 0,
-    "tags": ["refactoring"]
+    "tags": ["refactoring"],
+    "explanation": "既存コードの修正では、変更がどこに波及するかを把握することが最優先。影響範囲を見誤るとデグレを招く。"
   },
   {
     "question": "副作用(Side Effect)とは？",
@@ -19,7 +20,8 @@
       "メモリリーク"
     ],
     "answer": 0,
-    "tags": ["programming"]
+    "tags": ["programming"],
+    "explanation": "副作用とは関数が自身のスコープ外の状態（グローバル変数やI/O等）を変更すること。予測しにくいバグの原因になる。"
   },
   {
     "question": "密結合のデメリットは？",
@@ -30,7 +32,8 @@
       "コード行数増加"
     ],
     "answer": 0,
-    "tags": ["design-principles"]
+    "tags": ["design-principles"],
+    "explanation": "密結合ではモジュール間の依存が強く、一箇所の変更が連鎖的に他へ波及するため保守性が低下する。"
   },
   {
     "question": "DI(依存性注入)の目的は？",
@@ -41,7 +44,8 @@
       "セキュリティ強化"
     ],
     "answer": 0,
-    "tags": ["design-principles", "programming"]
+    "tags": ["design-principles", "programming"],
+    "explanation": "DI：外から依存を注入し結合度を下げる。"
   },
   {
     "question": "変更耐性の高いコードの特徴は？",
@@ -52,7 +56,8 @@
       "最新言語で記述"
     ],
     "answer": 0,
-    "tags": ["design-principles"]
+    "tags": ["design-principles"],
+    "explanation": "責務が適切に分離されていれば、変更の影響が局所化され、修正しやすく壊れにくいコードになる。"
   },
   {
     "question": "デグレード(デグレ)とは？",
@@ -63,7 +68,8 @@
       "コード圧縮"
     ],
     "answer": 0,
-    "tags": ["testing"]
+    "tags": ["testing"],
+    "explanation": "デグレ＝リグレッション。回帰テストで防ぐ。"
   },
   {
     "question": "フィーチャーフラグの目的は？",
@@ -74,7 +80,8 @@
       "ログ出力"
     ],
     "answer": 0,
-    "tags": ["release"]
+    "tags": ["release"],
+    "explanation": "フィーチャーフラグにより、コードをデプロイしても機能公開は別途制御できる。リスクを抑えた段階的リリースが可能になる。"
   },
   {
     "question": "SOLIDのDが表す原則は？",
@@ -85,7 +92,8 @@
       "データ駆動原則"
     ],
     "answer": 0,
-    "tags": ["design-principles"]
+    "tags": ["design-principles"],
+    "explanation": "DIP：上位は下位に依存せず抽象に依存。"
   },
   {
     "question": "ISPの意味は？",
@@ -96,7 +104,8 @@
       "DB分離"
     ],
     "answer": 0,
-    "tags": ["design-principles"]
+    "tags": ["design-principles"],
+    "explanation": "ISP（インターフェース分離の原則）は、クライアントが使わないメソッドへの依存を強制しないよう、インターフェースを適切に分割する原則。"
   },
   {
     "question": "後方互換性を維持する理由は？",
@@ -107,7 +116,8 @@
       "テスト省略"
     ],
     "answer": 0,
-    "tags": ["release", "design-principles"]
+    "tags": ["release", "design-principles"],
+    "explanation": "後方互換性を維持すれば、既存の利用者やシステムが変更の影響を受けずに動作し続けられる。"
   },
   {
     "question": "ストラングラーフィグパターンとは？",
@@ -118,7 +128,8 @@
       "データ移行"
     ],
     "answer": 0,
-    "tags": ["design-patterns"]
+    "tags": ["design-patterns"],
+    "explanation": "ストラングラーフィグパターンは、旧システムを一括ではなく段階的に新システムへ置き換えることでリスクを最小化する手法。"
   },
   {
     "question": "セマンティックバージョニングでメジャー版を上げる条件は？",
@@ -129,7 +140,8 @@
       "ドキュメント更新"
     ],
     "answer": 0,
-    "tags": ["release"]
+    "tags": ["release"],
+    "explanation": "セマンティックバージョニングではMAJOR.MINOR.PATCHの形式で、後方互換性を破る変更時にメジャー版を上げる。"
   },
   {
     "question": "アダプターパターンの目的は？",
@@ -140,7 +152,8 @@
       "ログ出力"
     ],
     "answer": 0,
-    "tags": ["design-patterns"]
+    "tags": ["design-patterns"],
+    "explanation": "アダプターパターンは、互換性のないインターフェース同士を変換層で接続し、既存コードを変更せずに統合する設計パターン。"
   },
   {
     "question": "CIで最も重要な原則は？",
@@ -151,7 +164,8 @@
       "大きな変更をまとめる"
     ],
     "answer": 0,
-    "tags": ["ci-cd"]
+    "tags": ["ci-cd"],
+    "explanation": "CIの本質は頻繁にメインブランチへ統合し、問題を早期に検出すること。統合頻度が高いほど競合や不具合を小さく保てる。"
   },
   {
     "question": "リスコフの置換原則(LSP)とは？",
@@ -162,7 +176,8 @@
       "ログ置換"
     ],
     "answer": 0,
-    "tags": ["design-principles"]
+    "tags": ["design-principles"],
+    "explanation": "LSPでは、サブクラスは親クラスと置き換えてもプログラムの正しさが保たれるべきとされる。継承の正しい使い方を規定する原則。"
   },
   {
     "question": "CIで毎回のビルドを速く保つ代表的な工夫は？",
@@ -173,7 +188,8 @@
       "通知を無効化する"
     ],
     "answer": 0,
-    "tags": ["ci-cd"]
+    "tags": ["ci-cd"],
+    "explanation": "テストの並列実行や依存キャッシュの活用により、CIビルドのフィードバックを高速に保ち開発効率を維持できる。"
   },
   {
     "question": "コードレビューで最も避けるべきレビューコメントは？",
@@ -184,7 +200,8 @@
       "可読性向上の提案"
     ],
     "answer": 0,
-    "tags": ["team", "code-quality"]
+    "tags": ["team", "code-quality"],
+    "explanation": "レビューはコードに対して行うもの。人格否定はチームの心理的安全性を損ない、建設的な議論を妨げる。"
   },
   {
     "question": "ブランチ戦略で短命ブランチを推奨する理由は？",
@@ -195,7 +212,8 @@
       "リリースを減らすため"
     ],
     "answer": 0,
-    "tags": ["ci-cd"]
+    "tags": ["ci-cd"],
+    "explanation": "ブランチが長命になるほどメインとの乖離が大きくなり、マージ時の競合や統合コストが増大する。"
   },
   {
     "question": "フィーチャーフラグ活用の利点は？",
@@ -206,7 +224,8 @@
       "設計が不要になる"
     ],
     "answer": 0,
-    "tags": ["release"]
+    "tags": ["release"],
+    "explanation": "フィーチャーフラグによりデプロイ済みのコードでも機能公開を別途制御でき、リリースタイミングを柔軟に管理できる。"
   },
   {
     "question": "ペアプログラミングの効果として適切なのは？",
@@ -217,7 +236,8 @@
       "設計議論が不要になる"
     ],
     "answer": 0,
-    "tags": ["team"]
+    "tags": ["team"],
+    "explanation": "ペアプロはリアルタイムで知識を共有しつつ、もう一人の目で欠陥を早期発見できる。速度2倍は保証されない。"
   },
   {
     "question": "コードレビューの観点に含めるべきものは？",
@@ -228,7 +248,8 @@
       "行数のみ"
     ],
     "answer": 0,
-    "tags": ["team", "code-quality"]
+    "tags": ["team", "code-quality"],
+    "explanation": "レビューでは可読性・設計整合性・テスト妥当性など多角的な観点でコード品質を確認することが重要。"
   },
   {
     "question": "CI失敗時の基本対応として正しいのは？",
@@ -239,7 +260,8 @@
       "テストを削除する"
     ],
     "answer": 0,
-    "tags": ["ci-cd"]
+    "tags": ["ci-cd"],
+    "explanation": "CI失敗は全員の開発を阻害するため、原因を速やかに特定し修復することが最優先。放置するとCIの信頼性が失われる。"
   },
   {
     "question": "小さなPRを推奨する主な理由は？",
@@ -250,7 +272,8 @@
       "設計が不要になる"
     ],
     "answer": 0,
-    "tags": ["team", "code-quality"]
+    "tags": ["team", "code-quality"],
+    "explanation": "PRが小さいほどレビュー負荷が下がり、変更の意図が伝わりやすく、品質を保ちやすい。"
   },
   {
     "question": "リリースノートを整備する価値は？",
@@ -261,7 +284,8 @@
       "レビューを自動化できる"
     ],
     "answer": 0,
-    "tags": ["release"]
+    "tags": ["release"],
+    "explanation": "リリースノートにより、利用者や関係者が変更内容・影響範囲・注意点を把握しやすくなる。"
   },
   {
     "question": "トランクベース開発の前提として重要なのは？",
@@ -272,7 +296,8 @@
       "月次統合のみ"
     ],
     "answer": 0,
-    "tags": ["ci-cd"]
+    "tags": ["ci-cd"],
+    "explanation": "トランクベース開発では全員が頻繁にメインへ統合するため、自動テストの信頼性が高くないと品質を維持できない。"
   },
   {
     "question": "技術的負債返済を実装計画に含める理由は？",
@@ -283,7 +308,8 @@
       "会議を減らすため"
     ],
     "answer": 0,
-    "tags": ["refactoring"]
+    "tags": ["refactoring"],
+    "explanation": "技術的負債を放置すると変更コストが増大し続ける。計画的に返済することで将来の変更容易性を維持できる。"
   },
   {
     "question": "リファクタリング時の安全策として有効なのは？",
@@ -294,7 +320,8 @@
       "差分を巨大化する"
     ],
     "answer": 0,
-    "tags": ["refactoring", "testing"]
+    "tags": ["refactoring", "testing"],
+    "explanation": "リファクタリング前にテストを整備しておけば、振る舞いが変わっていないことを自動で検証でき安全に変更できる。"
   },
   {
     "question": "ドメイン知識をコードへ反映する方法として適切なのは？",
@@ -305,7 +332,8 @@
       "コメントだけで管理する"
     ],
     "answer": 0,
-    "tags": ["code-quality"]
+    "tags": ["code-quality"],
+    "explanation": "ドメインの用語をモデルや命名に統一することで、ビジネスとコードの対応が明確になり認識のずれを防げる。"
   },
   {
     "question": "レビュー待ちを減らす工夫として有効なのは？",
@@ -316,7 +344,8 @@
       "通知を切る"
     ],
     "answer": 0,
-    "tags": ["team"]
+    "tags": ["team"],
+    "explanation": "PRテンプレートで変更の目的や確認ポイントを共有すれば、レビュアーが素早く文脈を把握でき待ち時間が短縮される。"
   },
   {
     "question": "パフォーマンス改善の進め方として適切なのは？",
@@ -327,7 +356,8 @@
       "監視を止める"
     ],
     "answer": 0,
-    "tags": ["code-quality"]
+    "tags": ["code-quality"],
+    "explanation": "パフォーマンス改善は推測ではなく計測に基づき、最も効果の大きいボトルネックから対処するのが鉄則。"
   },
   {
     "question": "セマンティックバージョニングのPATCH更新は？",
@@ -338,7 +368,8 @@
       "仕様廃止のみ"
     ],
     "answer": 0,
-    "tags": ["release"]
+    "tags": ["release"],
+    "explanation": "PATCH更新は後方互換性を保ったバグ修正に限定される。新機能はMINOR、破壊的変更はMAJORで上げる。"
   },
   {
     "question": "デプロイ自動化の価値として適切なのは？",
@@ -349,7 +380,8 @@
       "テストが不要になる"
     ],
     "answer": 0,
-    "tags": ["ci-cd"]
+    "tags": ["ci-cd"],
+    "explanation": "デプロイを自動化することで手作業による人的ミスを削減し、誰が実行しても同じ結果が得られる再現性を確保できる。"
   },
   {
     "question": "障害を防ぐためのプリマージチェックとして有効なのは？",
@@ -360,7 +392,8 @@
       "CI通知停止"
     ],
     "answer": 0,
-    "tags": ["ci-cd", "testing"]
+    "tags": ["ci-cd", "testing"],
+    "explanation": "マージ前にLint・テスト・型チェックを自動実行することで、人的見落としを防ぎ障害混入リスクを低減できる。"
   },
   {
     "question": "コード所有権を共有する利点は？",
@@ -371,7 +404,8 @@
       "設計を固定する"
     ],
     "answer": 0,
-    "tags": ["team"]
+    "tags": ["team"],
+    "explanation": "コード所有権を共有すれば特定の人に依存せず、誰でも修正・改善でき保守性が向上する。"
   },
   {
     "question": "開発中ログ設計で意識すべき点は？",
@@ -382,7 +416,8 @@
       "ログレベルを固定しない"
     ],
     "answer": 0,
-    "tags": ["sre"]
+    "tags": ["sre"],
+    "explanation": "障害調査時に必要な文脈（リクエストID・タイムスタンプ等）を構造化して残すことで、迅速な原因特定が可能になる。"
   },
   {
     "question": "リリース判定でGo/No-Goを行う主目的は？",
@@ -393,7 +428,8 @@
       "仕様を凍結解除する"
     ],
     "answer": 0,
-    "tags": ["release"]
+    "tags": ["release"],
+    "explanation": "Go/No-Go判定は、リリースに伴うリスクと準備状況を関係者間で確認し、安全にリリースできるかを判断する場。"
   },
   {
     "question": "継続的改善のサイクルとして適切なのは？",
@@ -404,6 +440,7 @@
       "失敗を記録しない"
     ],
     "answer": 0,
-    "tags": ["team", "agile"]
+    "tags": ["team", "agile"],
+    "explanation": "継続的改善は計測・学習・改善のサイクルを短い間隔で反復することで、チームやプロダクトを着実に成長させる。"
   }
 ]

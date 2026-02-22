@@ -8,7 +8,8 @@
       "報告書作成"
     ],
     "answer": 0,
-    "tags": ["incident"]
+    "tags": ["incident"],
+    "explanation": "まず影響範囲を把握し優先度を判断。"
   },
   {
     "question": "ロールバックとは？",
@@ -19,7 +20,8 @@
       "ログ削除"
     ],
     "answer": 0,
-    "tags": ["incident"]
+    "tags": ["incident"],
+    "explanation": "問題発生時に直前の安定版へ戻すことで迅速にサービスを復旧できる。"
   },
   {
     "question": "エスカレーションの意味は？",
@@ -30,7 +32,8 @@
       "顧客に謝罪"
     ],
     "answer": 0,
-    "tags": ["incident"]
+    "tags": ["incident"],
+    "explanation": "自分の権限や能力で対処できない問題を上位者に引き上げて判断を仰ぐこと。"
   },
   {
     "question": "ポストモーテムの目的は？",
@@ -41,7 +44,8 @@
       "説明資料作成"
     ],
     "answer": 0,
-    "tags": ["incident"]
+    "tags": ["incident"],
+    "explanation": "ポストモーテム＝blame-freeな振り返り。"
   },
   {
     "question": "SLAとは？",
@@ -52,7 +56,8 @@
       "Standard Log Analysis"
     ],
     "answer": 0,
-    "tags": ["sre"]
+    "tags": ["sre"],
+    "explanation": "サービス提供者と利用者間でサービス品質を保証する合意文書。"
   },
   {
     "question": "MTTRが示すものは？",
@@ -63,7 +68,8 @@
       "最小稼働率"
     ],
     "answer": 0,
-    "tags": ["sre"]
+    "tags": ["sre"],
+    "explanation": "MTTR：Mean Time To Recovery。"
   },
   {
     "question": "障害時コミュニケーションで最も重要なのは？",
@@ -74,7 +80,8 @@
       "修正の完了"
     ],
     "answer": 0,
-    "tags": ["incident"]
+    "tags": ["incident"],
+    "explanation": "障害時は原因特定より先に関係者へ状況を共有し、対応の足並みを揃えることが最優先。"
   },
   {
     "question": "MTBFが示すものは？",
@@ -85,7 +92,8 @@
       "最小応答時間"
     ],
     "answer": 0,
-    "tags": ["sre"]
+    "tags": ["sre"],
+    "explanation": "MTBF：Mean Time Between Failures。システムの信頼性を示す指標。"
   },
   {
     "question": "RCAで用いられる手法は？",
@@ -96,7 +104,8 @@
       "回帰分析"
     ],
     "answer": 0,
-    "tags": ["incident"]
+    "tags": ["incident"],
+    "explanation": "RCA（根本原因分析）では「なぜ？」を繰り返して真因に到達するなぜなぜ分析が代表的手法。"
   },
   {
     "question": "カオスエンジニアリングの目的は？",
@@ -107,7 +116,8 @@
       "障害隠蔽"
     ],
     "answer": 0,
-    "tags": ["sre"]
+    "tags": ["sre"],
+    "explanation": "本番相当の環境で意図的に障害を注入し、システムの弱点を事前に発見する手法。"
   },
   {
     "question": "オンコール体制の目的は？",
@@ -118,7 +128,8 @@
       "ドキュメント作成"
     ],
     "answer": 0,
-    "tags": ["sre", "incident"]
+    "tags": ["sre", "incident"],
+    "explanation": "営業時間外も含め障害発生時に即座に対応できる担当者を確保する体制。"
   },
   {
     "question": "障害レベル分類(Severity)の目的は？",
@@ -129,7 +140,8 @@
       "コスト計算"
     ],
     "answer": 0,
-    "tags": ["incident"]
+    "tags": ["incident"],
+    "explanation": "障害の影響度を分類することで、対応の優先順位やエスカレーション先を明確にできる。"
   },
   {
     "question": "ウォールームとは？",
@@ -140,7 +152,8 @@
       "会議室の別名"
     ],
     "answer": 0,
-    "tags": ["incident"]
+    "tags": ["incident"],
+    "explanation": "重大障害時に関係者が一堂に集まり、迅速な意思決定と情報共有を行う場。"
   },
   {
     "question": "SLOとは？",
@@ -151,7 +164,8 @@
       "テスト目標"
     ],
     "answer": 0,
-    "tags": ["sre"]
+    "tags": ["sre"],
+    "explanation": "SLO（Service Level Objective）はSLAの範囲内で設定する内部目標値。"
   },
   {
     "question": "エラーバジェットの考え方は？",
@@ -162,7 +176,8 @@
       "テスト予算"
     ],
     "answer": 0,
-    "tags": ["sre"]
+    "tags": ["sre"],
+    "explanation": "SLOから逆算した許容障害量を予算化し、リリース速度と信頼性のバランスを取る考え方。"
   },
   {
     "question": "インシデント対応でタイムラインを残す目的は？",
@@ -173,7 +188,8 @@
       "監視を止める"
     ],
     "answer": 0,
-    "tags": ["incident"]
+    "tags": ["incident"],
+    "explanation": "時系列で事実を記録することで、ポストモーテムでの正確な振り返りと改善策立案に活かせる。"
   },
   {
     "question": "重大障害時にステータスページ更新が重要な理由は？",
@@ -184,7 +200,8 @@
       "SLOを自動達成できる"
     ],
     "answer": 0,
-    "tags": ["incident"]
+    "tags": ["incident"],
+    "explanation": "状況を透明に公開することで利用者の不安を軽減し、問い合わせ対応の負荷も減らせる。"
   },
   {
     "question": "インシデント指揮官(IC)を置く目的は？",
@@ -195,7 +212,8 @@
       "記録を減らすため"
     ],
     "answer": 0,
-    "tags": ["incident"]
+    "tags": ["incident"],
+    "explanation": "指揮系統を一本化し、混乱時でも迅速かつ一貫した意思決定を可能にする。"
   },
   {
     "question": "一次対応でログ保全が重要な理由は？",
@@ -206,7 +224,8 @@
       "監視を止めるため"
     ],
     "answer": 0,
-    "tags": ["incident"]
+    "tags": ["incident"],
+    "explanation": "ログはローテーションや上書きで消失するため、早期に保全して根本原因分析の証跡を確保する。"
   },
   {
     "question": "障害時の優先順位として適切なのは？",
@@ -217,7 +236,8 @@
       "機能追加を最優先"
     ],
     "answer": 0,
-    "tags": ["incident"]
+    "tags": ["incident"],
+    "explanation": "まず顧客への影響を最小化し、サービスを復旧させることが最優先。原因究明はその後。"
   },
   {
     "question": "暫定対応(workaround)の目的は？",
@@ -228,7 +248,8 @@
       "監視を止める"
     ],
     "answer": 0,
-    "tags": ["incident"]
+    "tags": ["incident"],
+    "explanation": "根本原因の修正には時間がかかるため、暫定対応でサービス影響を最小限に抑える。"
   },
   {
     "question": "重大障害時の定期報告で必要な情報は？",
@@ -239,7 +260,8 @@
       "会議出席率"
     ],
     "answer": 0,
-    "tags": ["incident"]
+    "tags": ["incident"],
+    "explanation": "影響範囲・現在の対応状況・次回更新予定の3点を定期的に共有し、関係者の安心感を確保する。"
   },
   {
     "question": "ポストモーテムを非懲罰的に行う理由は？",
@@ -250,7 +272,8 @@
       "障害を正当化するため"
     ],
     "answer": 0,
-    "tags": ["incident", "team"]
+    "tags": ["incident", "team"],
+    "explanation": "懲罰的だと情報隠蔽が起き学習が阻害される。非懲罰的な姿勢が組織的学習を促進する。"
   },
   {
     "question": "アラート疲れ(Alert fatigue)への対策として有効なのは？",
@@ -261,7 +284,8 @@
       "監視を停止する"
     ],
     "answer": 0,
-    "tags": ["sre"]
+    "tags": ["sre"],
+    "explanation": "不要なアラートを減らし閾値を適切に調整することで、本当に重要な通知を見逃さなくなる。"
   },
   {
     "question": "復旧確認で見るべき観点は？",
@@ -272,7 +296,8 @@
       "ログ件数のみ"
     ],
     "answer": 0,
-    "tags": ["sre", "incident"]
+    "tags": ["sre", "incident"],
+    "explanation": "システム指標だけでなくユーザー影響指標も確認し、利用者視点で復旧を判断する。"
   },
   {
     "question": "インシデント後にRunbook更新を行う理由は？",
@@ -283,7 +308,8 @@
       "監視を減らすため"
     ],
     "answer": 0,
-    "tags": ["sre", "incident"]
+    "tags": ["sre", "incident"],
+    "explanation": "実際の対応で得た知見をRunbookに反映し、次回の対応をより迅速・的確にする。"
   },
   {
     "question": "SREでいうトイル(Toil)削減の狙いは？",
@@ -294,7 +320,8 @@
       "障害対応を放棄する"
     ],
     "answer": 0,
-    "tags": ["sre"]
+    "tags": ["sre"],
+    "explanation": "手作業の繰り返しを自動化し、エンジニアがより価値の高い信頼性向上活動に時間を使えるようにする。"
   },
   {
     "question": "障害中に変更凍結(Change freeze)を検討する理由は？",
@@ -305,7 +332,8 @@
       "改善を止めるため"
     ],
     "answer": 0,
-    "tags": ["incident"]
+    "tags": ["incident"],
+    "explanation": "障害中に新たな変更を加えると状況が悪化する恐れがあるため、変更を凍結して復旧に集中する。"
   },
   {
     "question": "コミュニケーションチャネルを一本化する利点は？",
@@ -316,7 +344,8 @@
       "復旧時間が必ず半減する"
     ],
     "answer": 0,
-    "tags": ["incident", "team"]
+    "tags": ["incident", "team"],
+    "explanation": "チャネルを一本化することで情報が散逸せず、全員が同じ情報を元に判断できる。"
   },
   {
     "question": "エスカレーション基準を事前定義する意味は？",
@@ -327,7 +356,8 @@
       "責任者を増やせる"
     ],
     "answer": 0,
-    "tags": ["incident"]
+    "tags": ["incident"],
+    "explanation": "判断に迷う時間を省き、基準に従って即座に適切なレベルへエスカレーションできる。"
   },
   {
     "question": "インシデント演習(GameDay)の目的は？",
@@ -338,7 +368,8 @@
       "レビューを省く"
     ],
     "answer": 0,
-    "tags": ["sre", "incident"]
+    "tags": ["sre", "incident"],
+    "explanation": "実際の障害を模擬し、対応手順や連携の問題点を本番前に洗い出す訓練。"
   },
   {
     "question": "外部向け障害報告で避けるべき表現は？",
@@ -349,7 +380,8 @@
       "回避策の案内"
     ],
     "answer": 0,
-    "tags": ["incident"]
+    "tags": ["incident"],
+    "explanation": "不確実な復旧時刻を断言すると、守れなかった場合に信頼を大きく損なう。"
   },
   {
     "question": "MTTAが示す指標は？",
@@ -360,7 +392,8 @@
       "最大応答時間"
     ],
     "answer": 0,
-    "tags": ["sre"]
+    "tags": ["sre"],
+    "explanation": "MTTA：Mean Time To Acknowledge。検知から対応開始までの速さを測る指標。"
   },
   {
     "question": "恒久対応の優先度決定で重要なのは？",
@@ -371,7 +404,8 @@
       "会議回数"
     ],
     "answer": 0,
-    "tags": ["incident"]
+    "tags": ["incident"],
+    "explanation": "リスク＝発生確率×影響度で優先度を判断し、限られたリソースを効果的に配分する。"
   },
   {
     "question": "障害後の顧客フォローで有効なのは？",
@@ -382,7 +416,8 @@
       "担当者名のみ公開する"
     ],
     "answer": 0,
-    "tags": ["incident", "team"]
+    "tags": ["incident", "team"],
+    "explanation": "事実に基づいた説明と具体的な再発防止策を共有することで顧客の信頼回復につながる。"
   },
   {
     "question": "可観測性(Observability)を高める要素は？",
@@ -393,7 +428,8 @@
       "手動確認のみ"
     ],
     "answer": 0,
-    "tags": ["sre"]
+    "tags": ["sre"],
+    "explanation": "ログ・メトリクス・トレースの3本柱でシステム内部状態を外部から把握可能にする。"
   },
   {
     "question": "重大障害の振り返りで最も避けるべきことは？",
@@ -404,6 +440,7 @@
       "再発防止の追跡"
     ],
     "answer": 0,
-    "tags": ["incident", "team"]
+    "tags": ["incident", "team"],
+    "explanation": "個人を非難すると情報共有が萎縮し、組織としての学習機会が失われる。"
   }
 ]

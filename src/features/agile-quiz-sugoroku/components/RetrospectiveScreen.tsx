@@ -205,6 +205,17 @@ export const RetrospectiveScreen: React.FC<RetrospectiveScreenProps> = ({
           </SectionBox>
         )}
 
+        {/* 総合スコア */}
+        <div style={{
+          textAlign: 'center',
+          marginBottom: 14,
+          fontSize: 12,
+          color: COLORS.muted,
+          fontFamily: "'JetBrains Mono', monospace",
+        }}>
+          正解: {summary.correctCount}/{summary.totalCount}
+        </div>
+
         {/* 次へボタン */}
         <div style={{ textAlign: 'center' }}>
           <Button

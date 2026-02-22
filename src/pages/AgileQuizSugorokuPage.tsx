@@ -6,15 +6,23 @@ import {
   useGame,
   useCountdown,
   useFade,
+  useStudy,
   TitleScreen,
   SprintStartScreen,
   QuizScreen,
   RetrospectiveScreen,
   ResultScreen,
+  StudySelectScreen,
+  StudyScreen,
+  StudyResultScreen,
+  GuideScreen,
   CONFIG,
 } from '../features/agile-quiz-sugoroku';
 import { createDefaultAudioActions } from '../features/agile-quiz-sugoroku/audio/audio-actions';
-import { SprintSummary } from '../features/agile-quiz-sugoroku/types';
+import { SprintSummary, GamePhase } from '../features/agile-quiz-sugoroku/types';
+import { saveGameResult } from '../features/agile-quiz-sugoroku/result-storage';
+import { getGrade } from '../features/agile-quiz-sugoroku/constants';
+import { classifyEngineerType } from '../features/agile-quiz-sugoroku/engineer-classifier';
 
 const audio = createDefaultAudioActions();
 
@@ -24,6 +32,7 @@ const audio = createDefaultAudioActions();
 const AgileQuizSugorokuPage: React.FC = () => {
   const game = useGame(audio);
   const fade = useFade();
+  const study = useStudy();
 
   // アンマウント時にBGMを停止
   useEffect(() => {
@@ -36,6 +45,10 @@ const AgileQuizSugorokuPage: React.FC = () => {
     onTick: audio.onTick,
   });
   const [retrospective, setRetrospective] = useState<SprintSummary | null>(null);
+
+  // 勉強会モード用の選択済みタグを保持
+  const [studySelectedTags, setStudySelectedTags] = useState<string[]>([]);
+  const [studyLimit, setStudyLimit] = useState(10);
 
   /** ゲーム開始 */
   const handleStart = () => {
@@ -85,6 +98,40 @@ const AgileQuizSugorokuPage: React.FC = () => {
     const nextSprint = game.sprint + 1;
     if (nextSprint >= CONFIG.sprintCount) {
       audio.onResult();
+      // ゲーム結果を保存
+      const grade = getGrade(game.derived.correctRate, game.derived.stability, game.derived.averageSpeed);
+      const engineerType = classifyEngineerType({
+        stab: game.derived.stability,
+        debt: game.stats.debt,
+        emSuc: game.stats.emergencySuccess,
+        sc: game.derived.sprintCorrectRates,
+        tp: game.derived.correctRate,
+        spd: game.derived.averageSpeed,
+      });
+      saveGameResult({
+        totalCorrect: game.stats.totalCorrect,
+        totalQuestions: game.stats.totalQuestions,
+        correctRate: game.derived.correctRate,
+        averageSpeed: game.derived.averageSpeed,
+        stability: game.derived.stability,
+        debt: game.stats.debt,
+        maxCombo: game.stats.maxCombo,
+        tagStats: game.tagStats,
+        incorrectQuestions: game.incorrectQuestions.map((q) => ({
+          questionText: q.questionText,
+          options: q.options,
+          selectedAnswer: q.selectedAnswer,
+          correctAnswer: q.correctAnswer,
+          tags: q.tags,
+          explanation: q.explanation,
+        })),
+        sprintLog: game.log,
+        grade: grade.grade,
+        gradeLabel: grade.label,
+        engineerTypeId: engineerType.id,
+        engineerTypeName: engineerType.name,
+        timestamp: Date.now(),
+      });
       game.setPhase('result');
       fade.trigger();
     } else {
@@ -101,6 +148,50 @@ const AgileQuizSugorokuPage: React.FC = () => {
     fade.trigger();
   };
 
+  /** 勉強会モード画面へ */
+  const handleStudyMode = () => {
+    game.setPhase('study-select');
+  };
+
+  /** ガイド画面へ */
+  const handleGuide = () => {
+    game.setPhase('guide');
+  };
+
+  /** BGM不要の画面からタイトルに戻る */
+  const handleBackToTitle = () => {
+    game.setPhase('title');
+    fade.trigger();
+  };
+
+  /** 勉強会モード開始 */
+  const handleStudyStart = (selectedTags: string[], limit: number) => {
+    setStudySelectedTags(selectedTags);
+    setStudyLimit(limit);
+    study.init(selectedTags, limit);
+    game.setPhase('study');
+  };
+
+  /** 勉強会モード回答 */
+  const handleStudyAnswer = (optionIndex: number) => {
+    study.answer(optionIndex);
+  };
+
+  /** 勉強会モード次へ */
+  const handleStudyNext = () => {
+    study.next();
+  };
+
+  /** 勉強会モード終了 */
+  const handleStudyFinish = () => {
+    study.finish();
+  };
+
+  /** 勉強会モードもう一度 */
+  const handleStudyRetry = () => {
+    study.init(studySelectedTags, studyLimit);
+  };
+
   // 結果画面用のデータ
   const resultData = useMemo(() => {
     if (game.phase !== 'result') return null;
@@ -108,12 +199,20 @@ const AgileQuizSugorokuPage: React.FC = () => {
       derived: game.derived,
       stats: game.stats,
       log: game.log,
+      tagStats: game.tagStats,
+      incorrectQuestions: game.incorrectQuestions,
     };
-  }, [game.phase, game.derived, game.stats, game.log]);
+  }, [game.phase, game.derived, game.stats, game.log, game.tagStats, game.incorrectQuestions]);
 
   return (
     <div>
-      {game.phase === 'title' && <TitleScreen onStart={handleStart} />}
+      {game.phase === 'title' && (
+        <TitleScreen
+          onStart={handleStart}
+          onStudy={handleStudyMode}
+          onGuide={handleGuide}
+        />
+      )}
 
       {game.phase === 'sprint-start' && (
         <SprintStartScreen
@@ -159,6 +258,43 @@ const AgileQuizSugorokuPage: React.FC = () => {
           stats={resultData.stats}
           log={resultData.log}
           onReplay={handleReplay}
+          tagStats={resultData.tagStats}
+          incorrectQuestions={resultData.incorrectQuestions}
+        />
+      )}
+
+      {game.phase === 'guide' && (
+        <GuideScreen onBack={handleBackToTitle} />
+      )}
+
+      {game.phase === 'study-select' && (
+        <StudySelectScreen
+          onStart={handleStudyStart}
+          onBack={handleBackToTitle}
+        />
+      )}
+
+      {game.phase === 'study' && !study.finished && study.currentQuestion && (
+        <StudyScreen
+          question={study.currentQuestion}
+          currentIndex={study.currentIndex}
+          totalCount={study.questions.length}
+          selectedAnswer={study.selectedAnswer}
+          answered={study.answered}
+          onAnswer={handleStudyAnswer}
+          onNext={handleStudyNext}
+          onFinish={handleStudyFinish}
+        />
+      )}
+
+      {game.phase === 'study' && study.finished && (
+        <StudyResultScreen
+          tagStats={study.tagStats}
+          incorrectQuestions={study.incorrectQuestions}
+          totalCorrect={study.totalCorrect}
+          totalAnswered={study.totalAnswered}
+          onRetry={handleStudyRetry}
+          onBack={handleBackToTitle}
         />
       )}
     </div>
