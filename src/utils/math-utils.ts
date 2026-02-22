@@ -114,3 +114,15 @@ export const manhattanDistance = (x1: number, y1: number, x2: number, y2: number
  * @returns ランダムなブール値
  */
 export const randomBool = (probability: number = 0.5): boolean => Math.random() < probability;
+
+/** 平均値を計算（空配列は0） */
+export function average(values: number[]): number {
+  if (values.length === 0) return 0;
+  return values.reduce((sum, v) => sum + v, 0) / values.length;
+}
+
+/** パーセンテージを計算（分母0は0） */
+export function percentage(numerator: number, denominator: number): number {
+  if (denominator === 0) return 0;
+  return Math.round((numerator / denominator) * 100);
+}

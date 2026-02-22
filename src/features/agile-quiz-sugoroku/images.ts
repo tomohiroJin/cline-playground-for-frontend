@@ -20,6 +20,11 @@ import aqs_build_success from '../../assets/images/aqs_build_success.webp';
 import aqs_correct from '../../assets/images/aqs_correct.webp';
 import aqs_incorrect from '../../assets/images/aqs_incorrect.webp';
 import aqs_timeup from '../../assets/images/aqs_timeup.webp';
+import aqs_char_neko from '../../assets/images/aqs_char_neko.webp';
+import aqs_char_inu from '../../assets/images/aqs_char_inu.webp';
+import aqs_char_usagi from '../../assets/images/aqs_char_usagi.webp';
+import aqs_char_team from '../../assets/images/aqs_char_team.webp';
+import aqs_char_group from '../../assets/images/aqs_char_group.webp';
 
 export const AQS_IMAGES = {
   title: aqs_title,
@@ -50,5 +55,12 @@ export const AQS_IMAGES = {
     correct: aqs_correct,
     incorrect: aqs_incorrect,
     timeup: aqs_timeup,
+  },
+  characters: {
+    neko: aqs_char_neko,
+    inu: aqs_char_inu,
+    usagi: aqs_char_usagi,
+    team: aqs_char_team,
+    group: aqs_char_group,
   },
 } as const;

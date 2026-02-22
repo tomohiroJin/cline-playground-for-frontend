@@ -1,7 +1,7 @@
 /**
  * ゲーム状態管理フック
  */
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import {
   GamePhase,
   GameEvent,
@@ -10,14 +10,14 @@ import {
   SprintSummary,
   GameStats,
   DerivedStats,
+  TagStats,
+  AnswerResultWithDetail,
 } from '../types';
 import {
   EVENTS,
-  DEBT_EVENTS,
-  getDebtPoints,
   INITIAL_GAME_STATS,
 } from '../constants';
-import { playSfxCorrect, playSfxIncorrect } from '../audio/sound';
+import { AudioActions, createDefaultAudioActions } from '../audio/audio-actions';
 import {
   shuffle,
   average,
@@ -27,6 +27,8 @@ import {
   makeEvents,
   createSprintSummary,
 } from '../game-logic';
+import { QUESTIONS } from '../quiz-data';
+import { computeAnswerResult, computeDebtDelta, nextGameStats } from '../answer-processor';
 
 export interface UseGameReturn {
   /** 現在のフェーズ */
@@ -73,12 +75,21 @@ export interface UseGameReturn {
   finish: () => SprintSummary;
   /** 派生統計 */
   derived: DerivedStats;
+  /** ジャンル別統計 */
+  tagStats: TagStats;
+  /** 不正解問題リスト */
+  incorrectQuestions: AnswerResultWithDetail[];
 }
 
 /**
  * ゲーム状態管理
+ * @param audio 音声アクション（省略時はデフォルト音声）
  */
-export function useGame(): UseGameReturn {
+export function useGame(audio?: AudioActions): UseGameReturn {
+  const sfxRef = useRef<AudioActions>(audio ?? createDefaultAudioActions());
+  useEffect(() => {
+    if (audio) sfxRef.current = audio;
+  }, [audio]);
   const [phase, setPhase] = useState<GamePhase>('title');
   const [sprint, setSprint] = useState(0);
   const [eventIndex, setEventIndex] = useState(0);
@@ -93,6 +104,8 @@ export function useGame(): UseGameReturn {
   const [sprintAnswers, setSprintAnswers] = useState<AnswerResult[]>([]);
   const [log, setLog] = useState<SprintSummary[]>([]);
   const [stats, setStats] = useState<GameStats>({ ...INITIAL_GAME_STATS });
+  const [tagStats, setTagStats] = useState<TagStats>({});
+  const [incorrectQuestions, setIncorrectQuestions] = useState<AnswerResultWithDetail[]>([]);
 
   const answered = useRef(false);
   const startTime = useRef(0);
@@ -105,7 +118,8 @@ export function useGame(): UseGameReturn {
       used: { [key: string]: Set<number> }
     ): { [key: string]: Set<number> } => {
       const eventId = eventList[index].id;
-      const { question, index: qIdx } = pickQuestion(eventId, used[eventId]);
+      const questions = QUESTIONS[eventId] ?? QUESTIONS.planning;
+      const { question, index: qIdx } = pickQuestion(questions, used[eventId]);
 
       // 使用済みに追加
       const newUsed = { ...used };
@@ -133,6 +147,8 @@ export function useGame(): UseGameReturn {
     setLog([]);
     setStats({ ...INITIAL_GAME_STATS });
     setUsedQuestions({});
+    setTagStats({});
+    setIncorrectQuestions([]);
   }, []);
 
   /** スプリントを開始 */
@@ -158,41 +174,60 @@ export function useGame(): UseGameReturn {
       answered.current = true;
 
       const speed = Math.round((Date.now() - startTime.current) / 100) / 10;
-      const isCorrect = optionIndex === quiz.a;
       setSelectedAnswer(optionIndex);
 
-      const result: AnswerResult = {
-        c: isCorrect,
-        s: speed,
-        e: events[eventIndex].id,
-      };
-      setSprintAnswers((prev) => [...prev, result]);
-
-      // 負債計算
-      const debtDelta =
-        !isCorrect && DEBT_EVENTS[result.e]
-          ? getDebtPoints(result.e)
-          : 0;
-
-      setStats((prev) => {
-        const newCombo = isCorrect ? prev.combo + 1 : 0;
-        return {
-          tc: prev.tc + (isCorrect ? 1 : 0),
-          tq: prev.tq + 1,
-          sp: [...prev.sp, speed],
-          debt: prev.debt + debtDelta,
-          emC: prev.emC + (result.e === 'emergency' ? 1 : 0),
-          emS: prev.emS + (result.e === 'emergency' && isCorrect ? 1 : 0),
-          combo: newCombo,
-          maxCombo: Math.max(prev.maxCombo, newCombo),
-        };
+      // 1. 純粋関数で結果を計算
+      const result = computeAnswerResult({
+        optionIndex,
+        correctAnswer: quiz.answer,
+        speed,
+        eventId: events[eventIndex].id,
       });
+      const debtDelta = computeDebtDelta(result.correct, result.eventId);
 
-      // 効果音
-      if (isCorrect) {
-        playSfxCorrect();
+      // 2. 状態更新
+      setSprintAnswers((prev) => [...prev, result]);
+      setStats((prev) => nextGameStats(prev, result, debtDelta));
+
+      // 2b. タグ別統計更新
+      if (quiz.tags) {
+        setTagStats((prev) => {
+          const next = { ...prev };
+          for (const tag of quiz.tags!) {
+            if (!next[tag]) {
+              next[tag] = { correct: 0, total: 0 };
+            }
+            next[tag] = {
+              correct: next[tag].correct + (result.correct ? 1 : 0),
+              total: next[tag].total + 1,
+            };
+          }
+          return next;
+        });
+      }
+
+      // 2c. 不正解問題を蓄積
+      if (!result.correct) {
+        setIncorrectQuestions((prev) => [
+          ...prev,
+          {
+            questionText: quiz.question,
+            options: quiz.options,
+            selectedAnswer: optionIndex,
+            correctAnswer: quiz.answer,
+            correct: false,
+            tags: quiz.tags ?? [],
+            explanation: quiz.explanation,
+            eventId: result.eventId,
+          },
+        ]);
+      }
+
+      // 3. 音声副作用
+      if (result.correct) {
+        sfxRef.current.onCorrectAnswer();
       } else {
-        playSfxIncorrect();
+        sfxRef.current.onIncorrectAnswer();
       }
 
       return result;
@@ -221,10 +256,10 @@ export function useGame(): UseGameReturn {
   /** 派生統計 */
   const derived = useMemo((): DerivedStats => {
     return {
-      tp: percentage(stats.tc, stats.tq),
-      spd: average(stats.sp),
-      stab: clamp(100 - stats.debt * 1.5, 0, 100),
-      sc: log.map((x) => x.pct),
+      correctRate: percentage(stats.totalCorrect, stats.totalQuestions),
+      averageSpeed: average(stats.speeds),
+      stability: clamp(100 - stats.debt * 1.5, 0, 100),
+      sprintCorrectRates: log.map((x) => x.correctRate),
     };
   }, [stats, log]);
 
@@ -249,5 +284,7 @@ export function useGame(): UseGameReturn {
     advance,
     finish,
     derived,
+    tagStats,
+    incorrectQuestions,
   };
 }

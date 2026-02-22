@@ -11,30 +11,17 @@ import {
   SprintSummary,
   CategoryStats,
 } from './types';
-import { CONFIG, EVENTS, EMERGENCY_EVENT, DEBT_EVENTS, getDebtPoints } from './constants';
-import { QUESTIONS } from './quiz-data';
+import { CONFIG, EVENTS, EMERGENCY_EVENT } from './constants';
 
 // 共通数学関数を re-export
-export { shuffle, clamp } from '../../utils/math-utils';
+export { shuffle, clamp, average, percentage } from '../../utils/math-utils';
+import { average, percentage } from '../../utils/math-utils';
 
-/** 平均値を計算 */
-export function average(values: number[]): number {
-  if (values.length === 0) return 0;
-  return values.reduce((sum, v) => sum + v, 0) / values.length;
-}
-
-/** パーセンテージを計算 */
-export function percentage(numerator: number, denominator: number): number {
-  if (denominator === 0) return 0;
-  return Math.round((numerator / denominator) * 100);
-}
-
-/** 問題を選択 */
+/** 問題を選択（純粋関数 - 問題配列を引数で受け取る） */
 export function pickQuestion(
-  eventId: string,
+  questions: Question[],
   usedIndices?: Set<number>
 ): { question: Question; index: number } {
-  const questions = QUESTIONS[eventId] ?? QUESTIONS.planning;
   const used = usedIndices ?? new Set<number>();
 
   // 未使用の問題インデックスを取得
@@ -80,36 +67,31 @@ export function makeEvents(sprintNumber: number, debt: number): GameEvent[] {
   return events;
 }
 
-/** スプリント集計を生成 */
+/** スプリント集計を生成（宣言的スタイル） */
 export function createSprintSummary(
   answers: AnswerResult[],
   sprintNumber: number,
   debt: number
 ): SprintSummary {
-  let correctCount = 0;
-  answers.forEach((a) => {
-    if (a.c) correctCount++;
-  });
+  const correctCount = answers.filter((a) => a.correct).length;
 
-  // カテゴリ別統計
-  const cats: CategoryStats = {};
-  answers.forEach((a) => {
-    if (!cats[a.e]) {
-      cats[a.e] = { c: 0, t: 0 };
-    }
-    cats[a.e].t++;
-    if (a.c) cats[a.e].c++;
-  });
+  const categoryStats = answers.reduce<CategoryStats>((acc, a) => ({
+    ...acc,
+    [a.eventId]: {
+      correct: (acc[a.eventId]?.correct ?? 0) + (a.correct ? 1 : 0),
+      total: (acc[a.eventId]?.total ?? 0) + 1,
+    },
+  }), {});
 
   return {
-    sp: sprintNumber + 1,
-    pct: percentage(correctCount, answers.length),
-    cor: correctCount,
-    tot: answers.length,
-    spd: average(answers.map((a) => a.s)),
+    sprintNumber: sprintNumber + 1,
+    correctRate: percentage(correctCount, answers.length),
+    correctCount,
+    totalCount: answers.length,
+    averageSpeed: average(answers.map((a) => a.speed)),
     debt,
-    em: answers.some((a) => a.e === 'emergency'),
-    emOk: answers.filter((a) => a.e === 'emergency' && a.c).length,
-    cats,
+    hadEmergency: answers.some((a) => a.eventId === 'emergency'),
+    emergencySuccessCount: answers.filter((a) => a.eventId === 'emergency' && a.correct).length,
+    categoryStats,
   };
 }

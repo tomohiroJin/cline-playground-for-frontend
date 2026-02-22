@@ -26,16 +26,16 @@ export const BarChart: React.FC<BarChartProps> = ({ logs }) => {
   return (
     <BarChartContainer>
       {logs.map((s, i) => {
-        const color = getColorByThreshold(s.pct, 70, 50);
+        const color = getColorByThreshold(s.correctRate, 70, 50);
         return (
           <BarChartItem key={i}>
-            <BarChartLabel>SP{s.sp}</BarChartLabel>
+            <BarChartLabel>SP{s.sprintNumber}</BarChartLabel>
             <BarChartTrack>
-              <BarChartBar $height={s.pct} $color={color} />
+              <BarChartBar $height={s.correctRate} $color={color} />
             </BarChartTrack>
-            <BarChartValue $color={color}>{s.pct}%</BarChartValue>
+            <BarChartValue $color={color}>{s.correctRate}%</BarChartValue>
             <BarChartSub>
-              {s.spd.toFixed(1)}s{s.em ? ' 🚨' : ''}
+              {s.averageSpeed.toFixed(1)}s{s.hadEmergency ? ' 🚨' : ''}
             </BarChartSub>
           </BarChartItem>
         );

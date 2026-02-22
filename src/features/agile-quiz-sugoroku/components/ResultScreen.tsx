@@ -3,23 +3,27 @@
  */
 import React, { useState, useMemo } from 'react';
 import { useKeys } from '../hooks';
-import { EngineerType, DerivedStats, GameStats, SprintSummary, RadarDataPoint } from '../types';
+import { DerivedStats, GameStats, SprintSummary, RadarDataPoint, TagStats, AnswerResultWithDetail } from '../types';
 import { clamp } from '../../../utils/math-utils';
 import {
   COLORS,
-  ENGINEER_TYPES,
+  FONTS,
   getGrade,
   getSummaryText,
   getColorByThreshold,
   getInverseColorByThreshold,
 } from '../constants';
+import { computeTagStatEntries, getWeakGenres } from '../tag-stats';
+import { TAG_MAP } from '../questions/tag-master';
+import { classifyEngineerType } from '../engineer-classifier';
+import { getComboColor } from '../combo-color';
 import { AQS_IMAGES } from '../images';
 import { ParticleEffect } from './ParticleEffect';
 import { RadarChart } from './RadarChart';
 import { BarChart } from './BarChart';
 import {
   PageWrapper,
-  Panel,
+  ScrollablePanel,
   SectionBox,
   SectionTitle,
   Button,
@@ -41,8 +45,6 @@ import {
   ButtonGroup,
   SummaryText,
 } from './styles';
-import { ClassifyStats } from '../types';
-
 interface ResultScreenProps {
   /** 派生統計 */
   derived: DerivedStats;
@@ -52,11 +54,10 @@ interface ResultScreenProps {
   log: SprintSummary[];
   /** リプレイ時のコールバック */
   onReplay: () => void;
-}
-
-/** エンジニアタイプを判定 */
-function classifyEngineerType(data: ClassifyStats): EngineerType {
-  return ENGINEER_TYPES.find((t) => t.c(data)) ?? ENGINEER_TYPES[ENGINEER_TYPES.length - 1];
+  /** ジャンル別統計 */
+  tagStats?: TagStats;
+  /** 不正解問題リスト */
+  incorrectQuestions?: AnswerResultWithDetail[];
 }
 
 /**
@@ -67,6 +68,8 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
   stats,
   log,
   onReplay,
+  tagStats,
+  incorrectQuestions,
 }) => {
   const [copied, setCopied] = useState(false);
   const [typeImgError, setTypeImgError] = useState(false);
@@ -74,26 +77,26 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
   // エンジニアタイプを判定
   const engineerType = useMemo(() => {
     return classifyEngineerType({
-      stab: derived.stab,
+      stab: derived.stability,
       debt: stats.debt,
-      emSuc: stats.emS,
-      sc: derived.sc,
-      tp: derived.tp,
-      spd: derived.spd,
+      emSuc: stats.emergencySuccess,
+      sc: derived.sprintCorrectRates,
+      tp: derived.correctRate,
+      spd: derived.averageSpeed,
     });
   }, [derived, stats]);
 
   // グレードを計算
   const grade = useMemo(() => {
-    return getGrade(derived.tp, derived.stab, derived.spd);
+    return getGrade(derived.correctRate, derived.stability, derived.averageSpeed);
   }, [derived]);
 
   // レーダーチャートデータ
   const radarData: RadarDataPoint[] = useMemo(() => {
     return [
-      { label: '正答率', value: clamp(derived.tp / 100, 0, 1) },
-      { label: '速度', value: clamp(1 - derived.spd / 15, 0, 1) },
-      { label: '安定度', value: clamp(derived.stab / 100, 0, 1) },
+      { label: '正答率', value: clamp(derived.correctRate / 100, 0, 1) },
+      { label: '速度', value: clamp(1 - derived.averageSpeed / 15, 0, 1) },
+      { label: '安定度', value: clamp(derived.stability / 100, 0, 1) },
       { label: 'コンボ', value: clamp(stats.maxCombo / 7, 0, 1) },
       { label: '負債管理', value: clamp(1 - stats.debt / 50, 0, 1) },
     ];
@@ -101,9 +104,9 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
 
   // シェアテキスト
   const shareText = `【アジャイル・クイズすごろく】
-${engineerType.em} ${engineerType.n}
-正答率: ${derived.tp}% | 負債: ${stats.debt}pt
-Combo: ${stats.maxCombo} | 安定度: ${Math.round(derived.stab)}%`;
+${engineerType.emoji} ${engineerType.name}
+正答率: ${derived.correctRate}% | 負債: ${stats.debt}pt
+Combo: ${stats.maxCombo} | 安定度: ${Math.round(derived.stability)}%`;
 
   // コピー処理
   const handleCopyShare = () => {
@@ -137,7 +140,7 @@ Combo: ${stats.maxCombo} | 安定度: ${Math.round(derived.stab)}%`;
     <PageWrapper>
       <ParticleEffect count={30} />
       <Scanlines />
-      <Panel $fadeIn={false} style={{ maxWidth: 580 }}>
+      <ScrollablePanel $fadeIn={false} style={{ maxWidth: 580 }}>
         {/* グレード表示 */}
         <div style={{ textAlign: 'center', marginBottom: 8 }}>
           <div style={{ position: 'relative', display: 'inline-block' }}>
@@ -155,9 +158,9 @@ Combo: ${stats.maxCombo} | 安定度: ${Math.round(derived.stab)}%`;
                 pointerEvents: 'none',
               }}
             />
-            <GradeCircle $color={grade.c}>{grade.g}</GradeCircle>
+            <GradeCircle $color={grade.color}>{grade.grade}</GradeCircle>
           </div>
-          <GradeLabel $color={grade.c}>{grade.label}</GradeLabel>
+          <GradeLabel $color={grade.color}>{grade.label}</GradeLabel>
           <img
             src={AQS_IMAGES.buildSuccess}
             alt=""
@@ -176,27 +179,27 @@ Combo: ${stats.maxCombo} | 安定度: ${Math.round(derived.stab)}%`;
         </div>
 
         {/* エンジニアタイプ */}
-        <TypeCard $color={engineerType.co}>
+        <TypeCard $color={engineerType.color}>
           {!typeImgError && AQS_IMAGES.types[engineerType.id as keyof typeof AQS_IMAGES.types] ? (
             <img
               src={AQS_IMAGES.types[engineerType.id as keyof typeof AQS_IMAGES.types]!}
-              alt={engineerType.n}
+              alt={engineerType.name}
               onError={() => setTypeImgError(true)}
               style={{
                 width: 80,
                 height: 80,
                 borderRadius: '50%',
                 objectFit: 'cover',
-                border: `3px solid ${engineerType.co}`,
+                border: `3px solid ${engineerType.color}`,
                 marginBottom: 12,
               }}
             />
           ) : (
-            <TypeEmoji>{engineerType.em}</TypeEmoji>
+            <TypeEmoji>{engineerType.emoji}</TypeEmoji>
           )}
           <TypeLabel>YOUR ENGINEER TYPE</TypeLabel>
-          <TypeName $color={engineerType.co}>{engineerType.n}</TypeName>
-          <TypeDescription>{engineerType.d}</TypeDescription>
+          <TypeName $color={engineerType.color}>{engineerType.name}</TypeName>
+          <TypeDescription>{engineerType.description}</TypeDescription>
         </TypeCard>
 
         {/* スキルレーダー */}
@@ -207,22 +210,22 @@ Combo: ${stats.maxCombo} | 安定度: ${Math.round(derived.stab)}%`;
 
         {/* 統計グリッド */}
         <StatsGrid style={{ marginBottom: 18 }}>
-          <StatBox $color={getColorByThreshold(derived.tp, 70, 50)}>
+          <StatBox $color={getColorByThreshold(derived.correctRate, 70, 50)}>
             <StatLabel>正答率</StatLabel>
-            <StatValue $color={getColorByThreshold(derived.tp, 70, 50)}>
-              {derived.tp}%
+            <StatValue $color={getColorByThreshold(derived.correctRate, 70, 50)}>
+              {derived.correctRate}%
             </StatValue>
           </StatBox>
-          <StatBox $color={getInverseColorByThreshold(derived.spd, 5, 10)}>
+          <StatBox $color={getInverseColorByThreshold(derived.averageSpeed, 5, 10)}>
             <StatLabel>速度</StatLabel>
-            <StatValue $color={getInverseColorByThreshold(derived.spd, 5, 10)}>
-              {derived.spd.toFixed(1)}s
+            <StatValue $color={getInverseColorByThreshold(derived.averageSpeed, 5, 10)}>
+              {derived.averageSpeed.toFixed(1)}s
             </StatValue>
           </StatBox>
-          <StatBox $color={getColorByThreshold(derived.stab, 70, 40)}>
+          <StatBox $color={getColorByThreshold(derived.stability, 70, 40)}>
             <StatLabel>安定度</StatLabel>
-            <StatValue $color={getColorByThreshold(derived.stab, 70, 40)}>
-              {Math.round(derived.stab)}%
+            <StatValue $color={getColorByThreshold(derived.stability, 70, 40)}>
+              {Math.round(derived.stability)}%
             </StatValue>
           </StatBox>
           <StatBox $color={getInverseColorByThreshold(stats.debt, 10, 25)}>
@@ -231,31 +234,15 @@ Combo: ${stats.maxCombo} | 安定度: ${Math.round(derived.stab)}%`;
               {stats.debt}pt
             </StatValue>
           </StatBox>
-          <StatBox
-            $color={
-              stats.maxCombo >= 5
-                ? COLORS.orange
-                : stats.maxCombo >= 3
-                ? COLORS.yellow
-                : COLORS.muted
-            }
-          >
+          <StatBox $color={getComboColor(stats.maxCombo)}>
             <StatLabel>Combo</StatLabel>
-            <StatValue
-              $color={
-                stats.maxCombo >= 5
-                  ? COLORS.orange
-                  : stats.maxCombo >= 3
-                  ? COLORS.yellow
-                  : COLORS.muted
-              }
-            >
+            <StatValue $color={getComboColor(stats.maxCombo)}>
               {stats.maxCombo}
             </StatValue>
           </StatBox>
           <StatBox $color={COLORS.accent}>
             <StatLabel>回答数</StatLabel>
-            <StatValue $color={COLORS.accent}>{stats.tq}</StatValue>
+            <StatValue $color={COLORS.accent}>{stats.totalQuestions}</StatValue>
           </StatBox>
         </StatsGrid>
 
@@ -265,11 +252,128 @@ Combo: ${stats.maxCombo} | 安定度: ${Math.round(derived.stab)}%`;
           <BarChart logs={log} />
         </SectionBox>
 
+        {/* 総合スコア */}
+        <SectionBox>
+          <SectionTitle>TOTAL SCORE</SectionTitle>
+          <div style={{ textAlign: 'center', fontSize: 14, color: COLORS.text, fontFamily: FONTS.mono }}>
+            {stats.totalCorrect} / {stats.totalQuestions} 問正解
+          </div>
+        </SectionBox>
+
+        {/* ジャンル別正答率 */}
+        {tagStats && Object.keys(tagStats).length > 0 && (() => {
+          const entries = computeTagStatEntries(tagStats);
+          const weak = getWeakGenres(tagStats);
+          return (
+            <SectionBox>
+              <SectionTitle>GENRE ANALYSIS</SectionTitle>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {entries.map((entry) => (
+                  <div
+                    key={entry.tagId}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      padding: '5px 8px',
+                      background: `${entry.color}08`,
+                      borderRadius: 6,
+                      border: `1px solid ${entry.color}18`,
+                    }}
+                  >
+                    <span style={{ fontSize: 11, color: COLORS.muted, flex: 1 }}>{entry.tagName}</span>
+                    <span style={{ fontSize: 10, color: COLORS.muted, fontFamily: FONTS.mono }}>
+                      {entry.correct}/{entry.total}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: entry.color,
+                        fontFamily: FONTS.mono,
+                        minWidth: 40,
+                        textAlign: 'right',
+                      }}
+                    >
+                      {entry.rate}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+              {weak.length > 0 && (
+                <div style={{ marginTop: 10, fontSize: 12, color: COLORS.yellow, lineHeight: 1.8 }}>
+                  {weak.map((g) => (
+                    <div key={g.tagId}>
+                      💡 {g.tagName}が苦手そうです。もう一度挑戦してみましょう！
+                    </div>
+                  ))}
+                </div>
+              )}
+            </SectionBox>
+          );
+        })()}
+
+        {/* 不正解問題レビュー */}
+        {incorrectQuestions && incorrectQuestions.length > 0 && (
+          <SectionBox>
+            <SectionTitle>INCORRECT REVIEW ({incorrectQuestions.length})</SectionTitle>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {incorrectQuestions.map((q, i) => (
+                <div
+                  key={i}
+                  style={{
+                    padding: '8px 10px',
+                    background: `${COLORS.red}08`,
+                    borderRadius: 6,
+                    border: `1px solid ${COLORS.red}15`,
+                  }}
+                >
+                  <div style={{ fontSize: 11.5, color: COLORS.text, marginBottom: 4, lineHeight: 1.5 }}>
+                    {q.questionText}
+                  </div>
+                  <div style={{ fontSize: 10.5, color: COLORS.red, marginBottom: 2 }}>
+                    ✗ {q.options[q.selectedAnswer] ?? 'TIME UP'}
+                  </div>
+                  <div style={{ fontSize: 10.5, color: COLORS.green, marginBottom: 3 }}>
+                    ✓ {q.options[q.correctAnswer]}
+                  </div>
+                  {q.explanation && (
+                    <div style={{ fontSize: 10.5, color: COLORS.muted, lineHeight: 1.5 }}>
+                      💡 {q.explanation}
+                    </div>
+                  )}
+                  {q.tags.length > 0 && (
+                    <div style={{ display: 'flex', gap: 3, marginTop: 3 }}>
+                      {q.tags.map((tagId) => {
+                        const tag = TAG_MAP.get(tagId);
+                        return (
+                          <span
+                            key={tagId}
+                            style={{
+                              fontSize: 9,
+                              padding: '1px 5px',
+                              borderRadius: 3,
+                              background: `${tag?.color ?? COLORS.accent}12`,
+                              color: tag?.color ?? COLORS.accent,
+                            }}
+                          >
+                            {tag?.name ?? tagId}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </SectionBox>
+        )}
+
         {/* サマリー */}
         <SectionBox style={{ marginBottom: 16 }}>
           <SectionTitle>SUMMARY</SectionTitle>
           <SummaryText>
-            {getSummaryText(derived.tp, derived.spd, stats.debt, stats.emS)}
+            {getSummaryText(derived.correctRate, derived.averageSpeed, stats.debt, stats.emergencySuccess)}
           </SummaryText>
         </SectionBox>
 
@@ -283,7 +387,7 @@ Combo: ${stats.maxCombo} | 安定度: ${Math.round(derived.stab)}%`;
             {copied ? '✓ Copied!' : '📋 Share'}
           </Button>
         </ButtonGroup>
-      </Panel>
+      </ScrollablePanel>
     </PageWrapper>
   );
 };

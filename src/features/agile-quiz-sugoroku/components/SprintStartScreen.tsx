@@ -11,6 +11,7 @@ import {
   getColorByThreshold,
   getInverseColorByThreshold,
 } from '../constants';
+import { getComboColor } from '../combo-color';
 import { AQS_IMAGES } from '../images';
 import { ParticleEffect } from './ParticleEffect';
 import {
@@ -104,11 +105,11 @@ export const SprintStartScreen: React.FC<SprintStartScreenProps> = ({
           <SectionBox>
             <SectionTitle>STATUS</SectionTitle>
             <StatsGrid>
-              <StatBox $color={getColorByThreshold(derived.tp, 70, 50)}>
+              <StatBox $color={getColorByThreshold(derived.correctRate, 70, 50)}>
                 <StatIcon>🎯</StatIcon>
                 <StatLabel>正答率</StatLabel>
-                <StatValue $color={getColorByThreshold(derived.tp, 70, 50)}>
-                  {derived.tp}%
+                <StatValue $color={getColorByThreshold(derived.correctRate, 70, 50)}>
+                  {derived.correctRate}%
                 </StatValue>
               </StatBox>
               <StatBox $color={getInverseColorByThreshold(stats.debt, 10, 25)}>
@@ -118,26 +119,10 @@ export const SprintStartScreen: React.FC<SprintStartScreenProps> = ({
                   {stats.debt}pt
                 </StatValue>
               </StatBox>
-              <StatBox
-                $color={
-                  stats.maxCombo >= 5
-                    ? COLORS.orange
-                    : stats.maxCombo >= 3
-                    ? COLORS.yellow
-                    : COLORS.muted
-                }
-              >
+              <StatBox $color={getComboColor(stats.maxCombo)}>
                 <StatIcon>🔥</StatIcon>
                 <StatLabel>Max Combo</StatLabel>
-                <StatValue
-                  $color={
-                    stats.maxCombo >= 5
-                      ? COLORS.orange
-                      : stats.maxCombo >= 3
-                      ? COLORS.yellow
-                      : COLORS.muted
-                  }
-                >
+                <StatValue $color={getComboColor(stats.maxCombo)}>
                   {stats.maxCombo}
                 </StatValue>
               </StatBox>
@@ -155,9 +140,9 @@ export const SprintStartScreen: React.FC<SprintStartScreenProps> = ({
           <SectionTitle>SPRINT EVENTS</SectionTitle>
           {EVENTS.map((ev, i) => (
             <EventListItem key={i}>
-              <EventListIcon>{ev.ic}</EventListIcon>
-              <EventListName>{ev.nm}</EventListName>
-              <EventListDescription>{ev.ds}</EventListDescription>
+              <EventListIcon>{ev.icon}</EventListIcon>
+              <EventListName>{ev.name}</EventListName>
+              <EventListDescription>{ev.description}</EventListDescription>
             </EventListItem>
           ))}
         </SectionBox>

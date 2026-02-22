@@ -3,22 +3,27 @@
  */
 
 /** ゲームのフェーズ */
-export type GamePhase = 'title' | 'sprint-start' | 'game' | 'retro' | 'result';
+export type GamePhase = 'title' | 'sprint-start' | 'game' | 'retro' | 'result' | 'guide' | 'study-select' | 'study';
+
+/** イベントID */
+export type EventId = 'planning' | 'impl1' | 'test1' | 'refinement' | 'impl2' | 'test2' | 'review' | 'emergency';
 
 /** イベント情報 */
 export interface GameEvent {
   id: string;
-  nm: string;
-  ic: string;
-  ds: string;
+  name: string;
+  icon: string;
+  description: string;
   color: string;
 }
 
 /** クイズ問題 */
 export interface Question {
-  q: string;
-  o: string[];
-  a: number;
+  question: string;
+  options: string[];
+  answer: number;
+  tags?: string[];
+  explanation?: string;
 }
 
 /** カテゴリ別の問題データ */
@@ -28,60 +33,60 @@ export type QuestionsByCategory = {
 
 /** 回答結果 */
 export interface AnswerResult {
-  c: boolean; // correct
-  s: number;  // speed (秒)
-  e: string;  // event id
+  correct: boolean;
+  speed: number;
+  eventId: string;
 }
 
 /** スプリント集計 */
 export interface SprintSummary {
-  sp: number;
-  pct: number;
-  cor: number;
-  tot: number;
-  spd: number;
+  sprintNumber: number;
+  correctRate: number;
+  correctCount: number;
+  totalCount: number;
+  averageSpeed: number;
   debt: number;
-  em: boolean;
-  emOk: number;
-  cats: CategoryStats;
+  hadEmergency: boolean;
+  emergencySuccessCount: number;
+  categoryStats: CategoryStats;
 }
 
 /** カテゴリ別統計 */
 export interface CategoryStats {
   [key: string]: {
-    c: number;
-    t: number;
+    correct: number;
+    total: number;
   };
 }
 
 /** ゲーム状態 */
 export interface GameStats {
-  tc: number;      // total correct
-  tq: number;      // total questions
-  sp: number[];    // speeds
-  debt: number;    // 技術的負債
-  emC: number;     // emergency count
-  emS: number;     // emergency success
-  combo: number;   // current combo
+  totalCorrect: number;
+  totalQuestions: number;
+  speeds: number[];
+  debt: number;
+  emergencyCount: number;
+  emergencySuccess: number;
+  combo: number;
   maxCombo: number;
 }
 
 /** 派生データ */
 export interface DerivedStats {
-  tp: number;     // 正答率
-  spd: number;    // 平均速度
-  stab: number;   // 安定度
-  sc: number[];   // スプリントごとの正答率
+  correctRate: number;
+  averageSpeed: number;
+  stability: number;
+  sprintCorrectRates: number[];
 }
 
 /** エンジニアタイプ */
 export interface EngineerType {
   id: string;
-  n: string;
-  em: string;
-  co: string;
-  d: string;
-  c: (stats: ClassifyStats) => boolean;
+  name: string;
+  emoji: string;
+  color: string;
+  description: string;
+  condition: (stats: ClassifyStats) => boolean;
 }
 
 /** タイプ分類用統計 */
@@ -97,8 +102,8 @@ export interface ClassifyStats {
 /** グレード情報 */
 export interface Grade {
   min: number;
-  g: string;
-  c: string;
+  grade: string;
+  color: string;
   label: string;
 }
 
@@ -114,3 +119,52 @@ export type ExplanationMap = {
     [questionIndex: number]: string;
   };
 };
+
+/** ジャンル別統計 */
+export interface TagStats {
+  [tagId: string]: {
+    correct: number;
+    total: number;
+  };
+}
+
+/** 回答結果の詳細（タグ・問題情報付き） */
+export interface AnswerResultWithDetail {
+  questionText: string;
+  options: string[];
+  selectedAnswer: number;
+  correctAnswer: number;
+  correct: boolean;
+  tags: string[];
+  explanation?: string;
+  eventId: string;
+}
+
+/** localStorage 保存用のゲーム結果 */
+export interface SavedGameResult {
+  totalCorrect: number;
+  totalQuestions: number;
+  correctRate: number;
+  averageSpeed: number;
+  stability: number;
+  debt: number;
+  maxCombo: number;
+  tagStats: TagStats;
+  incorrectQuestions: SavedIncorrectQuestion[];
+  sprintLog: SprintSummary[];
+  grade: string;
+  gradeLabel: string;
+  engineerTypeId: string;
+  engineerTypeName: string;
+  timestamp: number;
+}
+
+/** 不正解問題の保存用 */
+export interface SavedIncorrectQuestion {
+  questionText: string;
+  options: string[];
+  selectedAnswer: number;
+  correctAnswer: number;
+  tags: string[];
+  explanation?: string;
+}

@@ -11,7 +11,8 @@ import {
   createSprintSummary,
 } from '../game-logic';
 import { EVENTS } from '../constants';
-import { AnswerResult } from '../types';
+import { AnswerResult, Question } from '../types';
+import { QUESTIONS } from '../quiz-data';
 
 describe('Agile Quiz Sugoroku - ゲームロジック', () => {
   // ── average ──────────────────────────────────────────
@@ -104,6 +105,8 @@ describe('Agile Quiz Sugoroku - ゲームロジック', () => {
   // ── pickQuestion ─────────────────────────────────────
 
   describe('pickQuestion - 問題の選択', () => {
+    const planningQuestions = QUESTIONS.planning;
+
     beforeEach(() => {
       jest.spyOn(Math, 'random').mockReturnValue(0);
     });
@@ -112,32 +115,26 @@ describe('Agile Quiz Sugoroku - ゲームロジック', () => {
       jest.restoreAllMocks();
     });
 
-    it('指定カテゴリから問題を選択する', () => {
-      const { question, index } = pickQuestion('planning');
+    it('問題配列から問題を選択する', () => {
+      const { question, index } = pickQuestion(planningQuestions);
       expect(question).toBeDefined();
-      expect(question.q).toBeDefined();
-      expect(question.o).toHaveLength(4);
-      expect(typeof question.a).toBe('number');
+      expect(question.question).toBeDefined();
+      expect(question.options).toHaveLength(4);
+      expect(typeof question.answer).toBe('number');
       expect(index).toBe(0);
-    });
-
-    it('存在しないカテゴリはplanningから選択する', () => {
-      const fromUnknown = pickQuestion('nonexistent');
-      const fromPlanning = pickQuestion('planning');
-      expect(fromUnknown.question.q).toBe(fromPlanning.question.q);
     });
 
     it('使用済みインデックスを避けて未使用の問題を選ぶ', () => {
       // インデックス0を使用済みにする
       const used = new Set([0]);
-      const { index } = pickQuestion('planning', used);
+      const { index } = pickQuestion(planningQuestions, used);
       expect(index).not.toBe(0);
     });
 
     it('全問題が使用済みの場合でもランダムに選択する', () => {
       // 十分な数のインデックスを使用済みにする
       const used = new Set(Array.from({ length: 100 }, (_, i) => i));
-      const { question } = pickQuestion('planning', used);
+      const { question } = pickQuestion(planningQuestions, used);
       expect(question).toBeDefined();
     });
   });
@@ -198,71 +195,71 @@ describe('Agile Quiz Sugoroku - ゲームロジック', () => {
   describe('createSprintSummary - スプリント集計', () => {
     it('全問正解時の正答率は100%になる', () => {
       const answers: AnswerResult[] = [
-        { c: true, s: 3.0, e: 'planning' },
-        { c: true, s: 4.0, e: 'impl1' },
-        { c: true, s: 5.0, e: 'test1' },
+        { correct: true, speed: 3.0, eventId: 'planning' },
+        { correct: true, speed: 4.0, eventId: 'impl1' },
+        { correct: true, speed: 5.0, eventId: 'test1' },
       ];
       const summary = createSprintSummary(answers, 0, 0);
-      expect(summary.pct).toBe(100);
-      expect(summary.cor).toBe(3);
-      expect(summary.tot).toBe(3);
+      expect(summary.correctRate).toBe(100);
+      expect(summary.correctCount).toBe(3);
+      expect(summary.totalCount).toBe(3);
     });
 
     it('全問不正解時の正答率は0%になる', () => {
       const answers: AnswerResult[] = [
-        { c: false, s: 3.0, e: 'planning' },
-        { c: false, s: 4.0, e: 'impl1' },
+        { correct: false, speed: 3.0, eventId: 'planning' },
+        { correct: false, speed: 4.0, eventId: 'impl1' },
       ];
       const summary = createSprintSummary(answers, 0, 0);
-      expect(summary.pct).toBe(0);
-      expect(summary.cor).toBe(0);
+      expect(summary.correctRate).toBe(0);
+      expect(summary.correctCount).toBe(0);
     });
 
     it('カテゴリ別の正答数と出題数が正しく集計される', () => {
       const answers: AnswerResult[] = [
-        { c: true, s: 3.0, e: 'planning' },
-        { c: false, s: 4.0, e: 'planning' },
-        { c: true, s: 5.0, e: 'impl1' },
+        { correct: true, speed: 3.0, eventId: 'planning' },
+        { correct: false, speed: 4.0, eventId: 'planning' },
+        { correct: true, speed: 5.0, eventId: 'impl1' },
       ];
       const summary = createSprintSummary(answers, 0, 0);
-      expect(summary.cats['planning']).toEqual({ c: 1, t: 2 });
-      expect(summary.cats['impl1']).toEqual({ c: 1, t: 1 });
+      expect(summary.categoryStats['planning']).toEqual({ correct: 1, total: 2 });
+      expect(summary.categoryStats['impl1']).toEqual({ correct: 1, total: 1 });
     });
 
     it('平均回答速度が正しく計算される', () => {
       const answers: AnswerResult[] = [
-        { c: true, s: 2.0, e: 'planning' },
-        { c: true, s: 4.0, e: 'impl1' },
+        { correct: true, speed: 2.0, eventId: 'planning' },
+        { correct: true, speed: 4.0, eventId: 'impl1' },
       ];
       const summary = createSprintSummary(answers, 0, 0);
-      expect(summary.spd).toBe(3.0);
+      expect(summary.averageSpeed).toBe(3.0);
     });
 
     it('スプリント番号は1始まりで記録される', () => {
-      const answers: AnswerResult[] = [{ c: true, s: 3.0, e: 'planning' }];
+      const answers: AnswerResult[] = [{ correct: true, speed: 3.0, eventId: 'planning' }];
       const summary = createSprintSummary(answers, 0, 0);
-      expect(summary.sp).toBe(1);
+      expect(summary.sprintNumber).toBe(1);
     });
 
     it('緊急対応の有無と成功数が正しく記録される', () => {
       const answers: AnswerResult[] = [
-        { c: true, s: 3.0, e: 'emergency' },
-        { c: false, s: 4.0, e: 'emergency' },
-        { c: true, s: 5.0, e: 'planning' },
+        { correct: true, speed: 3.0, eventId: 'emergency' },
+        { correct: false, speed: 4.0, eventId: 'emergency' },
+        { correct: true, speed: 5.0, eventId: 'planning' },
       ];
       const summary = createSprintSummary(answers, 0, 10);
-      expect(summary.em).toBe(true);
-      expect(summary.emOk).toBe(1);
+      expect(summary.hadEmergency).toBe(true);
+      expect(summary.emergencySuccessCount).toBe(1);
       expect(summary.debt).toBe(10);
     });
 
-    it('緊急対応がない場合はem=false, emOk=0', () => {
+    it('緊急対応がない場合はhadEmergency=false, emergencySuccessCount=0', () => {
       const answers: AnswerResult[] = [
-        { c: true, s: 3.0, e: 'planning' },
+        { correct: true, speed: 3.0, eventId: 'planning' },
       ];
       const summary = createSprintSummary(answers, 0, 0);
-      expect(summary.em).toBe(false);
-      expect(summary.emOk).toBe(0);
+      expect(summary.hadEmergency).toBe(false);
+      expect(summary.emergencySuccessCount).toBe(0);
     });
   });
 });

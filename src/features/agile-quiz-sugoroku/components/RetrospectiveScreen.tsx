@@ -66,7 +66,7 @@ const CategoryBar: React.FC<CategoryBarProps> = ({ cats }) => {
     <CategoryBarContainer>
       {keys.map((k) => {
         const c = cats[k];
-        const rate = c.t ? Math.round((c.c / c.t) * 100) : 0;
+        const rate = c.total ? Math.round((c.correct / c.total) * 100) : 0;
         const color = getColorByThreshold(rate, 70, 50);
         return (
           <CategoryBadge key={k} $color={color}>
@@ -91,8 +91,8 @@ export const RetrospectiveScreen: React.FC<RetrospectiveScreenProps> = ({
   onNext,
 }) => {
   const isLast = sprint + 1 >= CONFIG.sprintCount;
-  const emMessage = summary.em
-    ? `🚨 緊急対応 — ${summary.emOk > 0 ? '対応成功！' : '対応失敗…'}`
+  const emMessage = summary.hadEmergency
+    ? `🚨 緊急対応 — ${summary.emergencySuccessCount > 0 ? '対応成功！' : '対応失敗…'}`
     : null;
 
   useKeys((e) => {
@@ -141,23 +141,23 @@ export const RetrospectiveScreen: React.FC<RetrospectiveScreenProps> = ({
               marginTop: 6,
             }}
           >
-            Sprint {summary.sp} 振り返り
+            Sprint {summary.sprintNumber} 振り返り
           </div>
         </div>
 
         {/* 統計 */}
         <SectionBox>
           <StatsGrid style={{ marginBottom: 16 }}>
-            <StatBox $color={getColorByThreshold(summary.pct, 70, 50)}>
+            <StatBox $color={getColorByThreshold(summary.correctRate, 70, 50)}>
               <StatLabel>正答率</StatLabel>
-              <StatValue $color={getColorByThreshold(summary.pct, 70, 50)}>
-                {summary.pct}%
+              <StatValue $color={getColorByThreshold(summary.correctRate, 70, 50)}>
+                {summary.correctRate}%
               </StatValue>
             </StatBox>
-            <StatBox $color={getInverseColorByThreshold(summary.spd, 5, 10)}>
+            <StatBox $color={getInverseColorByThreshold(summary.averageSpeed, 5, 10)}>
               <StatLabel>平均速度</StatLabel>
-              <StatValue $color={getInverseColorByThreshold(summary.spd, 5, 10)}>
-                {summary.spd.toFixed(1)}s
+              <StatValue $color={getInverseColorByThreshold(summary.averageSpeed, 5, 10)}>
+                {summary.averageSpeed.toFixed(1)}s
               </StatValue>
             </StatBox>
             <StatBox $color={getInverseColorByThreshold(summary.debt, 10, 25)}>
@@ -185,14 +185,14 @@ export const RetrospectiveScreen: React.FC<RetrospectiveScreenProps> = ({
             >
               CATEGORY
             </div>
-            <CategoryBar cats={summary.cats} />
+            <CategoryBar cats={summary.categoryStats} />
           </div>
 
           {/* 強み・課題 */}
           <SectionDivider>
-            <StrengthText>✓ 強み: {getStrengthText(summary.pct)}</StrengthText>
+            <StrengthText>✓ 強み: {getStrengthText(summary.correctRate)}</StrengthText>
             <ChallengeText>
-              △ 課題: {getChallengeText(stats.debt, summary.spd, summary.pct)}
+              △ 課題: {getChallengeText(stats.debt, summary.averageSpeed, summary.correctRate)}
             </ChallengeText>
           </SectionDivider>
         </SectionBox>
@@ -204,6 +204,17 @@ export const RetrospectiveScreen: React.FC<RetrospectiveScreenProps> = ({
             <BarChart logs={log} />
           </SectionBox>
         )}
+
+        {/* 総合スコア */}
+        <div style={{
+          textAlign: 'center',
+          marginBottom: 14,
+          fontSize: 12,
+          color: COLORS.muted,
+          fontFamily: "'JetBrains Mono', monospace",
+        }}>
+          正解: {summary.correctCount}/{summary.totalCount}
+        </div>
 
         {/* 次へボタン */}
         <div style={{ textAlign: 'center' }}>

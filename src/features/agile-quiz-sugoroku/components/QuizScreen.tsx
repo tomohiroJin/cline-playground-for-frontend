@@ -4,7 +4,8 @@
 import React, { useState } from 'react';
 import { useKeys } from '../hooks';
 import { GameEvent, Question, GameStats } from '../types';
-import { CONFIG, COLORS, OPTION_LABELS, EXPLANATIONS } from '../constants';
+import { CONFIG, COLORS, OPTION_LABELS, PHASE_GENRE_MAP } from '../constants';
+import { TAG_MAP } from '../questions/tag-master';
 import { AQS_IMAGES } from '../images';
 import {
   PageWrapper,
@@ -96,9 +97,11 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
   const answered = selectedAnswer !== null;
   const comboShow = stats.combo >= 2 && !answered;
 
-  // 解説を取得
-  const explanationMap = EXPLANATIONS[event.id];
-  const explanation = answered && explanationMap ? explanationMap[quizIndex] : undefined;
+  // 解説を取得（quiz.explanation 直接参照）
+  const explanation = answered ? quiz.explanation : undefined;
+
+  // 現在の工程に関連するジャンルタグ
+  const phaseGenres = PHASE_GENRE_MAP[event.id] ?? [];
 
   // タイマーの色
   const timerColor =
@@ -176,7 +179,7 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
           {!imgError && AQS_IMAGES.events[event.id as keyof typeof AQS_IMAGES.events] ? (
             <img
               src={AQS_IMAGES.events[event.id as keyof typeof AQS_IMAGES.events]!}
-              alt={event.nm}
+              alt={event.name}
               onError={() => setImgError(true)}
               style={{
                 width: 44,
@@ -187,13 +190,13 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
               }}
             />
           ) : (
-            <EventIcon>{event.ic}</EventIcon>
+            <EventIcon>{event.icon}</EventIcon>
           )}
           <EventInfo>
             <EventName $isEmergency={isEmergency} $color={event.color}>
-              {event.nm}
+              {event.name}
             </EventName>
-            <EventDescription>{event.ds}</EventDescription>
+            <EventDescription>{event.description}</EventDescription>
           </EventInfo>
           <EventCounter>
             <EventCounterLabel>EVENT</EventCounterLabel>
@@ -202,6 +205,31 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
             </EventCounterValue>
           </EventCounter>
         </EventCard>
+
+        {/* ジャンルタグ */}
+        {phaseGenres.length > 0 && (
+          <div style={{ display: 'flex', gap: 4, marginBottom: 8, flexWrap: 'wrap' }}>
+            {phaseGenres.map((tagId) => {
+              const tag = TAG_MAP.get(tagId);
+              return (
+                <span
+                  key={tagId}
+                  style={{
+                    fontSize: 9,
+                    padding: '2px 6px',
+                    borderRadius: 3,
+                    background: `${tag?.color ?? COLORS.accent}10`,
+                    border: `1px solid ${tag?.color ?? COLORS.accent}22`,
+                    color: tag?.color ?? COLORS.accent,
+                    fontWeight: 500,
+                  }}
+                >
+                  {tag?.name ?? tagId}
+                </span>
+              );
+            })}
+          </div>
+        )}
 
         {/* タイマー（回答前のみ） */}
         {!answered && (
@@ -220,12 +248,12 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
         )}
 
         {/* 問題文 */}
-        <QuizQuestion>{quiz.q}</QuizQuestion>
+        <QuizQuestion>{quiz.question}</QuizQuestion>
 
         {/* 選択肢 */}
         <OptionsContainer>
           {options.map((optionIndex, i) => {
-            const isCorrect = optionIndex === quiz.a;
+            const isCorrect = optionIndex === quiz.answer;
             const isSelected = selectedAnswer === optionIndex;
             const hovered = hoveredOption === i;
 
@@ -248,7 +276,7 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
                 >
                   {OPTION_LABELS[i]}
                 </OptionLabel>
-                <OptionText>{quiz.o[optionIndex]}</OptionText>
+                <OptionText>{quiz.options[optionIndex]}</OptionText>
                 {answered && isCorrect && <OptionIcon>✓</OptionIcon>}
                 {answered && isSelected && !isCorrect && <OptionIcon>✗</OptionIcon>}
               </OptionButton>
@@ -259,11 +287,11 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
         {/* 結果表示 */}
         {answered && (
           <div>
-            <ResultBanner $ok={selectedAnswer === quiz.a}>
+            <ResultBanner $ok={selectedAnswer === quiz.answer}>
               <img
                 src={selectedAnswer === -1 
                   ? AQS_IMAGES.feedback.timeup 
-                  : selectedAnswer === quiz.a 
+                  : selectedAnswer === quiz.answer 
                     ? AQS_IMAGES.feedback.correct 
                     : AQS_IMAGES.feedback.incorrect}
                 alt=""
@@ -280,20 +308,20 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
               <BannerMessage>
                 {selectedAnswer === -1
                   ? '⏱️ TIME UP'
-                  : selectedAnswer === quiz.a
+                  : selectedAnswer === quiz.answer
                   ? '✓ CORRECT'
                   : '✗ INCORRECT'}
               </BannerMessage>
               {stats.combo > 1 && (
                 <BannerSub>
-                  {selectedAnswer === quiz.a
+                  {selectedAnswer === quiz.answer
                     ? `🔥 ${stats.combo} COMBO!`
                     : 'Combo Reset…'}
                 </BannerSub>
               )}
               {explanation && (
                 <BannerExplain
-                  $color={selectedAnswer === quiz.a ? COLORS.green : COLORS.red}
+                  $color={selectedAnswer === quiz.answer ? COLORS.green : COLORS.red}
                 >
                   💡 {explanation}
                 </BannerExplain>

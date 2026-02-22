@@ -1,4 +1,5 @@
 import { Question, QuestionsByCategory } from '../types';
+import { VALID_TAG_IDS } from './tag-master';
 import planningQuestions from './planning.json';
 import impl1Questions from './impl1.json';
 import test1Questions from './test1.json';
@@ -17,14 +18,26 @@ function assertQuestionArray(data: unknown, category: string): Question[] {
     if (
       typeof item !== 'object' ||
       item === null ||
-      typeof (item as { q?: unknown }).q !== 'string' ||
-      !Array.isArray((item as { o?: unknown }).o) ||
-      !(item as { o: unknown[] }).o.every((option) => typeof option === 'string') ||
-      typeof (item as { a?: unknown }).a !== 'number'
+      typeof (item as { question?: unknown }).question !== 'string' ||
+      !Array.isArray((item as { options?: unknown }).options) ||
+      !(item as { options: unknown[] }).options.every((option) => typeof option === 'string') ||
+      typeof (item as { answer?: unknown }).answer !== 'number'
     ) {
       throw new Error(
         `[agile-quiz-sugoroku] Invalid question schema: ${category}[${index}]`
       );
+    }
+
+    const tags = (item as { tags?: unknown }).tags;
+    if (tags !== undefined) {
+      if (
+        !Array.isArray(tags) ||
+        !tags.every((t) => typeof t === 'string' && VALID_TAG_IDS.includes(t))
+      ) {
+        throw new Error(
+          `[agile-quiz-sugoroku] Invalid tags: ${category}[${index}]`
+        );
+      }
     }
   });
 
