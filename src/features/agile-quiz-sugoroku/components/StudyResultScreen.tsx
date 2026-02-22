@@ -9,7 +9,7 @@ import { TAG_MAP } from '../questions/tag-master';
 import { computeTagStatEntries, getWeakGenres, getTagColor } from '../tag-stats';
 import {
   PageWrapper,
-  Panel,
+  ScrollablePanel,
   SectionBox,
   SectionTitle,
   Button,
@@ -49,7 +49,7 @@ export const StudyResultScreen: React.FC<StudyResultScreenProps> = ({
   return (
     <PageWrapper>
       <Scanlines />
-      <Panel $fadeIn={false} style={{ maxWidth: 580 }}>
+      <ScrollablePanel $fadeIn={false} style={{ maxWidth: 580 }}>
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
           <div
             style={{
@@ -209,7 +209,7 @@ export const StudyResultScreen: React.FC<StudyResultScreenProps> = ({
             <HotkeyHint>[Enter]</HotkeyHint>
           </Button>
         </div>
-      </Panel>
+      </ScrollablePanel>
     </PageWrapper>
   );
 };

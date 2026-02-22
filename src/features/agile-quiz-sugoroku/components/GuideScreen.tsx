@@ -6,9 +6,10 @@ import { useKeys } from '../hooks';
 import { COLORS, FONTS, CONFIG, ENGINEER_TYPES, GRADES, PHASE_GENRE_MAP } from '../constants';
 import { TAG_MAP } from '../questions/tag-master';
 import { AQS_IMAGES } from '../images';
+import { CHARACTER_PROFILES } from '../character-profiles';
 import {
   PageWrapper,
-  Panel,
+  ScrollablePanel,
   SectionBox,
   SectionTitle,
   Button,
@@ -40,7 +41,7 @@ export const GuideScreen: React.FC<GuideScreenProps> = ({ onBack }) => {
   return (
     <PageWrapper>
       <Scanlines />
-      <Panel $fadeIn={false} style={{ maxWidth: 600, maxHeight: '90vh', overflow: 'auto' }}>
+      <ScrollablePanel $fadeIn={false} style={{ maxWidth: 600 }}>
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
           <div
             style={{
@@ -66,6 +67,105 @@ export const GuideScreen: React.FC<GuideScreenProps> = ({ onBack }) => {
             アジャイル・クイズすごろくは、スクラム・設計原則・テスト・CI/CD・障害対応など
             ソフトウェア開発の知識を楽しく学べるクイズゲームです。
             全306問・16ジャンルの4択クイズに挑戦しましょう。
+          </div>
+        </SectionBox>
+
+        {/* チームメンバー */}
+        <SectionBox>
+          <SectionTitle>TEAM</SectionTitle>
+          {AQS_IMAGES.characters.team ? (
+            <img
+              src={AQS_IMAGES.characters.team}
+              alt="チームバナー"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              style={{
+                width: '100%',
+                borderRadius: 8,
+                marginBottom: 12,
+                objectFit: 'cover',
+              }}
+            />
+          ) : null}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {CHARACTER_PROFILES.map((char) => {
+              const imgSrc = AQS_IMAGES.characters[char.id as keyof typeof AQS_IMAGES.characters];
+              return (
+                <div
+                  key={char.id}
+                  style={{
+                    display: 'flex',
+                    gap: 12,
+                    padding: '12px',
+                    background: `${char.color}08`,
+                    borderRadius: 10,
+                    border: `1px solid ${char.color}22`,
+                    alignItems: 'flex-start',
+                  }}
+                >
+                  {imgSrc ? (
+                    <img
+                      src={imgSrc}
+                      alt={char.name}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                        const parent = (e.target as HTMLImageElement).parentElement;
+                        if (parent) {
+                          const emoji = document.createElement('div');
+                          emoji.textContent = char.emoji;
+                          emoji.style.fontSize = '32px';
+                          emoji.style.minWidth = '48px';
+                          emoji.style.textAlign = 'center';
+                          parent.prepend(emoji);
+                        }
+                      }}
+                      style={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        border: `2px solid ${char.color}`,
+                        flexShrink: 0,
+                      }}
+                    />
+                  ) : (
+                    <div style={{ fontSize: 32, minWidth: 48, textAlign: 'center', flexShrink: 0 }}>
+                      {char.emoji}
+                    </div>
+                  )}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: char.color, marginBottom: 2 }}>
+                      {char.emoji} {char.name}
+                    </div>
+                    <div style={{ fontSize: 10, color: COLORS.muted, marginBottom: 6, fontFamily: FONTS.mono }}>
+                      {char.role}
+                    </div>
+                    <div style={{ fontSize: 11, color: COLORS.text, lineHeight: 1.6, marginBottom: 6 }}>
+                      {char.personality}
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginBottom: 6 }}>
+                      {char.skills.map((skill) => (
+                        <span
+                          key={skill}
+                          style={{
+                            fontSize: 9,
+                            padding: '1px 6px',
+                            borderRadius: 3,
+                            background: `${char.color}15`,
+                            color: char.color,
+                            border: `1px solid ${char.color}22`,
+                          }}
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                    <div style={{ fontSize: 11, color: char.color, fontStyle: 'italic', lineHeight: 1.5 }}>
+                      {char.catchphrase}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </SectionBox>
 
@@ -252,7 +352,7 @@ export const GuideScreen: React.FC<GuideScreenProps> = ({ onBack }) => {
             <HotkeyHint>[Esc]</HotkeyHint>
           </Button>
         </div>
-      </Panel>
+      </ScrollablePanel>
     </PageWrapper>
   );
 };

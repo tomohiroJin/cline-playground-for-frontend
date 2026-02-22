@@ -23,7 +23,7 @@ import { RadarChart } from './RadarChart';
 import { BarChart } from './BarChart';
 import {
   PageWrapper,
-  Panel,
+  ScrollablePanel,
   SectionBox,
   SectionTitle,
   Button,
@@ -140,7 +140,7 @@ Combo: ${stats.maxCombo} | 安定度: ${Math.round(derived.stability)}%`;
     <PageWrapper>
       <ParticleEffect count={30} />
       <Scanlines />
-      <Panel $fadeIn={false} style={{ maxWidth: 580 }}>
+      <ScrollablePanel $fadeIn={false} style={{ maxWidth: 580 }}>
         {/* グレード表示 */}
         <div style={{ textAlign: 'center', marginBottom: 8 }}>
           <div style={{ position: 'relative', display: 'inline-block' }}>
@@ -387,7 +387,7 @@ Combo: ${stats.maxCombo} | 安定度: ${Math.round(derived.stability)}%`;
             {copied ? '✓ Copied!' : '📋 Share'}
           </Button>
         </ButtonGroup>
-      </Panel>
+      </ScrollablePanel>
     </PageWrapper>
   );
 };

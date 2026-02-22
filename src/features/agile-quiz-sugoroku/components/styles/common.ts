@@ -3,7 +3,7 @@
  *
  * 複数の画面で共有されるベースコンポーネント
  */
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 import { COLORS, FONTS } from '../../constants';
 import { floatY } from './animations';
 
@@ -273,4 +273,31 @@ export const Divider = styled.div`
 export const SectionDivider = styled.div`
   border-top: 1px solid ${COLORS.border}33;
   padding-top: 14px;
+`;
+
+/** カスタムスクロールバー ミックスイン */
+export const aqsScrollbar = css`
+  scrollbar-width: thin;
+  scrollbar-color: ${COLORS.border2} transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: ${COLORS.border2};
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: ${COLORS.accent}66;
+  }
+`;
+
+/** スクロール可能パネル */
+export const ScrollablePanel = styled(Panel)`
+  overflow-y: auto;
+  max-height: 90vh;
+  ${aqsScrollbar}
 `;
