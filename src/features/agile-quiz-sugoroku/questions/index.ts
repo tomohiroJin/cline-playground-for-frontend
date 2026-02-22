@@ -18,10 +18,10 @@ function assertQuestionArray(data: unknown, category: string): Question[] {
     if (
       typeof item !== 'object' ||
       item === null ||
-      typeof (item as { q?: unknown }).q !== 'string' ||
-      !Array.isArray((item as { o?: unknown }).o) ||
-      !(item as { o: unknown[] }).o.every((option) => typeof option === 'string') ||
-      typeof (item as { a?: unknown }).a !== 'number'
+      typeof (item as { question?: unknown }).question !== 'string' ||
+      !Array.isArray((item as { options?: unknown }).options) ||
+      !(item as { options: unknown[] }).options.every((option) => typeof option === 'string') ||
+      typeof (item as { answer?: unknown }).answer !== 'number'
     ) {
       throw new Error(
         `[agile-quiz-sugoroku] Invalid question schema: ${category}[${index}]`

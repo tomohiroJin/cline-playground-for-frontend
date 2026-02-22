@@ -176,7 +176,7 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
           {!imgError && AQS_IMAGES.events[event.id as keyof typeof AQS_IMAGES.events] ? (
             <img
               src={AQS_IMAGES.events[event.id as keyof typeof AQS_IMAGES.events]!}
-              alt={event.nm}
+              alt={event.name}
               onError={() => setImgError(true)}
               style={{
                 width: 44,
@@ -187,13 +187,13 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
               }}
             />
           ) : (
-            <EventIcon>{event.ic}</EventIcon>
+            <EventIcon>{event.icon}</EventIcon>
           )}
           <EventInfo>
             <EventName $isEmergency={isEmergency} $color={event.color}>
-              {event.nm}
+              {event.name}
             </EventName>
-            <EventDescription>{event.ds}</EventDescription>
+            <EventDescription>{event.description}</EventDescription>
           </EventInfo>
           <EventCounter>
             <EventCounterLabel>EVENT</EventCounterLabel>
@@ -220,12 +220,12 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
         )}
 
         {/* 問題文 */}
-        <QuizQuestion>{quiz.q}</QuizQuestion>
+        <QuizQuestion>{quiz.question}</QuizQuestion>
 
         {/* 選択肢 */}
         <OptionsContainer>
           {options.map((optionIndex, i) => {
-            const isCorrect = optionIndex === quiz.a;
+            const isCorrect = optionIndex === quiz.answer;
             const isSelected = selectedAnswer === optionIndex;
             const hovered = hoveredOption === i;
 
@@ -248,7 +248,7 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
                 >
                   {OPTION_LABELS[i]}
                 </OptionLabel>
-                <OptionText>{quiz.o[optionIndex]}</OptionText>
+                <OptionText>{quiz.options[optionIndex]}</OptionText>
                 {answered && isCorrect && <OptionIcon>✓</OptionIcon>}
                 {answered && isSelected && !isCorrect && <OptionIcon>✗</OptionIcon>}
               </OptionButton>
@@ -259,11 +259,11 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
         {/* 結果表示 */}
         {answered && (
           <div>
-            <ResultBanner $ok={selectedAnswer === quiz.a}>
+            <ResultBanner $ok={selectedAnswer === quiz.answer}>
               <img
                 src={selectedAnswer === -1 
                   ? AQS_IMAGES.feedback.timeup 
-                  : selectedAnswer === quiz.a 
+                  : selectedAnswer === quiz.answer 
                     ? AQS_IMAGES.feedback.correct 
                     : AQS_IMAGES.feedback.incorrect}
                 alt=""
@@ -280,20 +280,20 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
               <BannerMessage>
                 {selectedAnswer === -1
                   ? '⏱️ TIME UP'
-                  : selectedAnswer === quiz.a
+                  : selectedAnswer === quiz.answer
                   ? '✓ CORRECT'
                   : '✗ INCORRECT'}
               </BannerMessage>
               {stats.combo > 1 && (
                 <BannerSub>
-                  {selectedAnswer === quiz.a
+                  {selectedAnswer === quiz.answer
                     ? `🔥 ${stats.combo} COMBO!`
                     : 'Combo Reset…'}
                 </BannerSub>
               )}
               {explanation && (
                 <BannerExplain
-                  $color={selectedAnswer === quiz.a ? COLORS.green : COLORS.red}
+                  $color={selectedAnswer === quiz.answer ? COLORS.green : COLORS.red}
                 >
                   💡 {explanation}
                 </BannerExplain>

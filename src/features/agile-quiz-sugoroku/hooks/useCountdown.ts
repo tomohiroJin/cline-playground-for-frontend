@@ -2,7 +2,13 @@
  * カウントダウンタイマーフック
  */
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { playSfxTick } from '../audio/sound';
+
+interface UseCountdownOptions {
+  /** 時間切れ時のコールバック */
+  onExpire?: () => void;
+  /** 残り5秒以下でのティック音コールバック */
+  onTick?: () => void;
+}
 
 interface UseCountdownReturn {
   /** 現在の残り時間（秒） */
@@ -16,12 +22,17 @@ interface UseCountdownReturn {
 /**
  * カウントダウンタイマー
  * @param limit 制限時間（秒）
- * @param onExpire 時間切れ時のコールバック
+ * @param onExpireOrOptions 時間切れコールバック、またはオプションオブジェクト
  */
 export function useCountdown(
   limit: number,
-  onExpire?: () => void
+  onExpireOrOptions?: (() => void) | UseCountdownOptions
 ): UseCountdownReturn {
+  const options: UseCountdownOptions =
+    typeof onExpireOrOptions === 'function'
+      ? { onExpire: onExpireOrOptions }
+      : onExpireOrOptions ?? {};
+  const { onExpire, onTick } = options;
   const [time, setTime] = useState(limit);
   const intervalRef = useRef<number | null>(null);
   const callbackRef = useRef(onExpire);
@@ -32,11 +43,17 @@ export function useCountdown(
     callbackRef.current = onExpire;
   }, [onExpire]);
 
+  // onTickを常に最新に保つ
+  const tickRef = useRef(onTick);
+  useEffect(() => {
+    tickRef.current = onTick;
+  }, [onTick]);
+
   // 残り5秒以下でティック音を再生（setTime外で副作用を実行）
   useEffect(() => {
     // タイマーが減少した時のみ（リセット時は鳴らさない）
     if (time < prevTimeRef.current && time <= 5 && time > 0) {
-      playSfxTick();
+      tickRef.current?.();
     }
     prevTimeRef.current = time;
   }, [time]);

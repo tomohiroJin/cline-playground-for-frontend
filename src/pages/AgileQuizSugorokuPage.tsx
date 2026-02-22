@@ -12,35 +12,35 @@ import {
   RetrospectiveScreen,
   ResultScreen,
   CONFIG,
-  initAudio,
-  playBgm,
-  stopBgm,
-  playSfxStart,
-  playSfxResult,
-  playSfxCombo,
 } from '../features/agile-quiz-sugoroku';
+import { createDefaultAudioActions } from '../features/agile-quiz-sugoroku/audio/audio-actions';
 import { SprintSummary } from '../features/agile-quiz-sugoroku/types';
+
+const audio = createDefaultAudioActions();
 
 /**
  * Agile Quiz Sugoroku ゲームコンポーネント
  */
 const AgileQuizSugorokuPage: React.FC = () => {
-  const game = useGame();
+  const game = useGame(audio);
   const fade = useFade();
 
   // アンマウント時にBGMを停止
   useEffect(() => {
     return () => {
-      stopBgm();
+      audio.onBgmStop();
     };
   }, []);
-  const countdown = useCountdown(CONFIG.timeLimit, () => game.answer(-1));
+  const countdown = useCountdown(CONFIG.timeLimit, {
+    onExpire: () => game.answer(-1),
+    onTick: audio.onTick,
+  });
   const [retrospective, setRetrospective] = useState<SprintSummary | null>(null);
 
   /** ゲーム開始 */
   const handleStart = () => {
-    initAudio();
-    playSfxStart();
+    audio.onInit();
+    audio.onStart();
     game.init();
     game.setPhase('sprint-start');
     fade.trigger();
@@ -51,7 +51,7 @@ const AgileQuizSugorokuPage: React.FC = () => {
     game.begin(game.sprint, game.stats, game.usedQuestions);
     game.setPhase('game');
     countdown.start();
-    playBgm();
+    audio.onBgmStart();
     fade.trigger();
   };
 
@@ -61,8 +61,8 @@ const AgileQuizSugorokuPage: React.FC = () => {
     if (result) {
       countdown.stop();
       // コンボ効果音
-      if (result.c && game.stats.combo >= 3) {
-        setTimeout(playSfxCombo, 200);
+      if (result.correct && game.stats.combo >= 3) {
+        setTimeout(() => audio.onCombo(), 200);
       }
     }
   };
@@ -73,7 +73,7 @@ const AgileQuizSugorokuPage: React.FC = () => {
       countdown.start();
       fade.trigger();
     } else {
-      stopBgm();
+      audio.onBgmStop();
       setRetrospective(game.finish());
       game.setPhase('retro');
       fade.trigger();
@@ -84,7 +84,7 @@ const AgileQuizSugorokuPage: React.FC = () => {
   const handleAfterRetro = () => {
     const nextSprint = game.sprint + 1;
     if (nextSprint >= CONFIG.sprintCount) {
-      playSfxResult();
+      audio.onResult();
       game.setPhase('result');
       fade.trigger();
     } else {
@@ -96,7 +96,7 @@ const AgileQuizSugorokuPage: React.FC = () => {
 
   /** リプレイ */
   const handleReplay = () => {
-    stopBgm();
+    audio.onBgmStop();
     game.setPhase('title');
     fade.trigger();
   };

@@ -24,22 +24,22 @@ describe('Agile Quiz Sugoroku - 問題データの構造検証', () => {
   });
 
   it.each(expectedCategories)(
-    '%s: 全問題にq(問題文), o(4択), a(0-3)が含まれる',
+    '%s: 全問題にquestion(問題文), options(4択), answer(0-3)が含まれる',
     (category) => {
       QUESTIONS[category].forEach((question, index) => {
-        expect(question.q).toBeDefined();
-        expect(typeof question.q).toBe('string');
-        expect(question.q.length).toBeGreaterThan(0);
+        expect(question.question).toBeDefined();
+        expect(typeof question.question).toBe('string');
+        expect(question.question.length).toBeGreaterThan(0);
 
-        expect(question.o).toBeDefined();
-        expect(question.o).toHaveLength(4);
-        question.o.forEach((option) => {
+        expect(question.options).toBeDefined();
+        expect(question.options).toHaveLength(4);
+        question.options.forEach((option) => {
           expect(typeof option).toBe('string');
         });
 
-        expect(question.a).toBeDefined();
-        expect(question.a).toBeGreaterThanOrEqual(0);
-        expect(question.a).toBeLessThanOrEqual(3);
+        expect(question.answer).toBeDefined();
+        expect(question.answer).toBeGreaterThanOrEqual(0);
+        expect(question.answer).toBeLessThanOrEqual(3);
       });
     }
   );
@@ -53,7 +53,7 @@ describe('Agile Quiz Sugoroku - 問題データの構造検証', () => {
   it('選択肢の正解インデックスが選択肢配列の範囲内にある', () => {
     expectedCategories.forEach((category) => {
       QUESTIONS[category].forEach((question) => {
-        expect(question.a).toBeLessThan(question.o.length);
+        expect(question.answer).toBeLessThan(question.options.length);
       });
     });
   });

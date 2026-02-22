@@ -3,16 +3,17 @@
  */
 import React, { useState, useMemo } from 'react';
 import { useKeys } from '../hooks';
-import { EngineerType, DerivedStats, GameStats, SprintSummary, RadarDataPoint } from '../types';
+import { DerivedStats, GameStats, SprintSummary, RadarDataPoint } from '../types';
 import { clamp } from '../../../utils/math-utils';
 import {
   COLORS,
-  ENGINEER_TYPES,
   getGrade,
   getSummaryText,
   getColorByThreshold,
   getInverseColorByThreshold,
 } from '../constants';
+import { classifyEngineerType } from '../engineer-classifier';
+import { getComboColor } from '../combo-color';
 import { AQS_IMAGES } from '../images';
 import { ParticleEffect } from './ParticleEffect';
 import { RadarChart } from './RadarChart';
@@ -41,8 +42,6 @@ import {
   ButtonGroup,
   SummaryText,
 } from './styles';
-import { ClassifyStats } from '../types';
-
 interface ResultScreenProps {
   /** 派生統計 */
   derived: DerivedStats;
@@ -52,11 +51,6 @@ interface ResultScreenProps {
   log: SprintSummary[];
   /** リプレイ時のコールバック */
   onReplay: () => void;
-}
-
-/** エンジニアタイプを判定 */
-function classifyEngineerType(data: ClassifyStats): EngineerType {
-  return ENGINEER_TYPES.find((t) => t.c(data)) ?? ENGINEER_TYPES[ENGINEER_TYPES.length - 1];
 }
 
 /**
@@ -74,26 +68,26 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
   // エンジニアタイプを判定
   const engineerType = useMemo(() => {
     return classifyEngineerType({
-      stab: derived.stab,
+      stab: derived.stability,
       debt: stats.debt,
-      emSuc: stats.emS,
-      sc: derived.sc,
-      tp: derived.tp,
-      spd: derived.spd,
+      emSuc: stats.emergencySuccess,
+      sc: derived.sprintCorrectRates,
+      tp: derived.correctRate,
+      spd: derived.averageSpeed,
     });
   }, [derived, stats]);
 
   // グレードを計算
   const grade = useMemo(() => {
-    return getGrade(derived.tp, derived.stab, derived.spd);
+    return getGrade(derived.correctRate, derived.stability, derived.averageSpeed);
   }, [derived]);
 
   // レーダーチャートデータ
   const radarData: RadarDataPoint[] = useMemo(() => {
     return [
-      { label: '正答率', value: clamp(derived.tp / 100, 0, 1) },
-      { label: '速度', value: clamp(1 - derived.spd / 15, 0, 1) },
-      { label: '安定度', value: clamp(derived.stab / 100, 0, 1) },
+      { label: '正答率', value: clamp(derived.correctRate / 100, 0, 1) },
+      { label: '速度', value: clamp(1 - derived.averageSpeed / 15, 0, 1) },
+      { label: '安定度', value: clamp(derived.stability / 100, 0, 1) },
       { label: 'コンボ', value: clamp(stats.maxCombo / 7, 0, 1) },
       { label: '負債管理', value: clamp(1 - stats.debt / 50, 0, 1) },
     ];
@@ -101,9 +95,9 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
 
   // シェアテキスト
   const shareText = `【アジャイル・クイズすごろく】
-${engineerType.em} ${engineerType.n}
-正答率: ${derived.tp}% | 負債: ${stats.debt}pt
-Combo: ${stats.maxCombo} | 安定度: ${Math.round(derived.stab)}%`;
+${engineerType.emoji} ${engineerType.name}
+正答率: ${derived.correctRate}% | 負債: ${stats.debt}pt
+Combo: ${stats.maxCombo} | 安定度: ${Math.round(derived.stability)}%`;
 
   // コピー処理
   const handleCopyShare = () => {
@@ -155,9 +149,9 @@ Combo: ${stats.maxCombo} | 安定度: ${Math.round(derived.stab)}%`;
                 pointerEvents: 'none',
               }}
             />
-            <GradeCircle $color={grade.c}>{grade.g}</GradeCircle>
+            <GradeCircle $color={grade.color}>{grade.grade}</GradeCircle>
           </div>
-          <GradeLabel $color={grade.c}>{grade.label}</GradeLabel>
+          <GradeLabel $color={grade.color}>{grade.label}</GradeLabel>
           <img
             src={AQS_IMAGES.buildSuccess}
             alt=""
@@ -176,27 +170,27 @@ Combo: ${stats.maxCombo} | 安定度: ${Math.round(derived.stab)}%`;
         </div>
 
         {/* エンジニアタイプ */}
-        <TypeCard $color={engineerType.co}>
+        <TypeCard $color={engineerType.color}>
           {!typeImgError && AQS_IMAGES.types[engineerType.id as keyof typeof AQS_IMAGES.types] ? (
             <img
               src={AQS_IMAGES.types[engineerType.id as keyof typeof AQS_IMAGES.types]!}
-              alt={engineerType.n}
+              alt={engineerType.name}
               onError={() => setTypeImgError(true)}
               style={{
                 width: 80,
                 height: 80,
                 borderRadius: '50%',
                 objectFit: 'cover',
-                border: `3px solid ${engineerType.co}`,
+                border: `3px solid ${engineerType.color}`,
                 marginBottom: 12,
               }}
             />
           ) : (
-            <TypeEmoji>{engineerType.em}</TypeEmoji>
+            <TypeEmoji>{engineerType.emoji}</TypeEmoji>
           )}
           <TypeLabel>YOUR ENGINEER TYPE</TypeLabel>
-          <TypeName $color={engineerType.co}>{engineerType.n}</TypeName>
-          <TypeDescription>{engineerType.d}</TypeDescription>
+          <TypeName $color={engineerType.color}>{engineerType.name}</TypeName>
+          <TypeDescription>{engineerType.description}</TypeDescription>
         </TypeCard>
 
         {/* スキルレーダー */}
@@ -207,22 +201,22 @@ Combo: ${stats.maxCombo} | 安定度: ${Math.round(derived.stab)}%`;
 
         {/* 統計グリッド */}
         <StatsGrid style={{ marginBottom: 18 }}>
-          <StatBox $color={getColorByThreshold(derived.tp, 70, 50)}>
+          <StatBox $color={getColorByThreshold(derived.correctRate, 70, 50)}>
             <StatLabel>正答率</StatLabel>
-            <StatValue $color={getColorByThreshold(derived.tp, 70, 50)}>
-              {derived.tp}%
+            <StatValue $color={getColorByThreshold(derived.correctRate, 70, 50)}>
+              {derived.correctRate}%
             </StatValue>
           </StatBox>
-          <StatBox $color={getInverseColorByThreshold(derived.spd, 5, 10)}>
+          <StatBox $color={getInverseColorByThreshold(derived.averageSpeed, 5, 10)}>
             <StatLabel>速度</StatLabel>
-            <StatValue $color={getInverseColorByThreshold(derived.spd, 5, 10)}>
-              {derived.spd.toFixed(1)}s
+            <StatValue $color={getInverseColorByThreshold(derived.averageSpeed, 5, 10)}>
+              {derived.averageSpeed.toFixed(1)}s
             </StatValue>
           </StatBox>
-          <StatBox $color={getColorByThreshold(derived.stab, 70, 40)}>
+          <StatBox $color={getColorByThreshold(derived.stability, 70, 40)}>
             <StatLabel>安定度</StatLabel>
-            <StatValue $color={getColorByThreshold(derived.stab, 70, 40)}>
-              {Math.round(derived.stab)}%
+            <StatValue $color={getColorByThreshold(derived.stability, 70, 40)}>
+              {Math.round(derived.stability)}%
             </StatValue>
           </StatBox>
           <StatBox $color={getInverseColorByThreshold(stats.debt, 10, 25)}>
@@ -231,31 +225,15 @@ Combo: ${stats.maxCombo} | 安定度: ${Math.round(derived.stab)}%`;
               {stats.debt}pt
             </StatValue>
           </StatBox>
-          <StatBox
-            $color={
-              stats.maxCombo >= 5
-                ? COLORS.orange
-                : stats.maxCombo >= 3
-                ? COLORS.yellow
-                : COLORS.muted
-            }
-          >
+          <StatBox $color={getComboColor(stats.maxCombo)}>
             <StatLabel>Combo</StatLabel>
-            <StatValue
-              $color={
-                stats.maxCombo >= 5
-                  ? COLORS.orange
-                  : stats.maxCombo >= 3
-                  ? COLORS.yellow
-                  : COLORS.muted
-              }
-            >
+            <StatValue $color={getComboColor(stats.maxCombo)}>
               {stats.maxCombo}
             </StatValue>
           </StatBox>
           <StatBox $color={COLORS.accent}>
             <StatLabel>回答数</StatLabel>
-            <StatValue $color={COLORS.accent}>{stats.tq}</StatValue>
+            <StatValue $color={COLORS.accent}>{stats.totalQuestions}</StatValue>
           </StatBox>
         </StatsGrid>
 
@@ -269,7 +247,7 @@ Combo: ${stats.maxCombo} | 安定度: ${Math.round(derived.stab)}%`;
         <SectionBox style={{ marginBottom: 16 }}>
           <SectionTitle>SUMMARY</SectionTitle>
           <SummaryText>
-            {getSummaryText(derived.tp, derived.spd, stats.debt, stats.emS)}
+            {getSummaryText(derived.correctRate, derived.averageSpeed, stats.debt, stats.emergencySuccess)}
           </SummaryText>
         </SectionBox>
 

@@ -98,25 +98,25 @@ describe('Agile Quiz Sugoroku - 定数とユーティリティ', () => {
     it('高スコアでSグレードを返す', () => {
       // score = 100*0.5 + 100*0.3 + max(0,min(100,100-0*8))*0.2 = 50+30+20 = 100
       const grade = getGrade(100, 100, 0);
-      expect(grade.g).toBe('S');
+      expect(grade.grade).toBe('S');
     });
 
     it('正答率50%、安定度30%、速度20%の重みで計算される', () => {
       // tp=60 → 30, stab=50 → 15, spd=5 → (100-40)*0.2 = 12 → total=57 → C
       const grade = getGrade(60, 50, 5);
-      expect(grade.g).toBe('C');
+      expect(grade.grade).toBe('C');
     });
 
     it('低スコアでDグレードを返す', () => {
       // tp=10 → 5, stab=10 → 3, spd=15 → max(0,-20)*0.2 = 0 → total=8 → D
       const grade = getGrade(10, 10, 15);
-      expect(grade.g).toBe('D');
+      expect(grade.grade).toBe('D');
     });
 
     it('各グレードにはラベルが設定されている', () => {
       const grade = getGrade(100, 100, 0);
       expect(grade.label).toBe('Legendary');
-      expect(grade.c).toBeDefined();
+      expect(grade.color).toBeDefined();
     });
   });
 
@@ -127,48 +127,48 @@ describe('Agile Quiz Sugoroku - 定数とユーティリティ', () => {
       const stats: ClassifyStats = {
         stab: 70, debt: 15, emSuc: 0, sc: [60, 70], tp: 65, spd: 7,
       };
-      const type = ENGINEER_TYPES.find((t) => t.c(stats));
-      expect(type?.n).toBe('安定運用型エンジニア');
+      const type = ENGINEER_TYPES.find((t) => t.condition(stats));
+      expect(type?.name).toBe('安定運用型エンジニア');
     });
 
     it('火消し職人: 緊急対応成功2回以上', () => {
       const stats: ClassifyStats = {
         stab: 30, debt: 40, emSuc: 2, sc: [40, 50], tp: 45, spd: 8,
       };
-      const type = ENGINEER_TYPES.find((t) => t.c(stats));
-      expect(type?.n).toBe('火消し職人エンジニア');
+      const type = ENGINEER_TYPES.find((t) => t.condition(stats));
+      expect(type?.name).toBe('火消し職人エンジニア');
     });
 
     it('成長曲線型: 初回50%未満かつ最終65%以上', () => {
       const stats: ClassifyStats = {
         stab: 50, debt: 25, emSuc: 0, sc: [40, 55, 70], tp: 55, spd: 8,
       };
-      const type = ENGINEER_TYPES.find((t) => t.c(stats));
-      expect(type?.n).toBe('成長曲線型エンジニア');
+      const type = ENGINEER_TYPES.find((t) => t.condition(stats));
+      expect(type?.name).toBe('成長曲線型エンジニア');
     });
 
     it('高速レスポンス型: 速度5.5以下かつ正答率50%以上', () => {
       const stats: ClassifyStats = {
         stab: 50, debt: 25, emSuc: 0, sc: [60, 60], tp: 60, spd: 4.0,
       };
-      const type = ENGINEER_TYPES.find((t) => t.c(stats));
-      expect(type?.n).toBe('高速レスポンスエンジニア');
+      const type = ENGINEER_TYPES.find((t) => t.condition(stats));
+      expect(type?.name).toBe('高速レスポンスエンジニア');
     });
 
     it('技術的負債と共に生きる人: 負債35以上', () => {
       const stats: ClassifyStats = {
         stab: 10, debt: 40, emSuc: 0, sc: [30, 30], tp: 30, spd: 10,
       };
-      const type = ENGINEER_TYPES.find((t) => t.c(stats));
-      expect(type?.n).toBe('技術的負債と共に生きる人');
+      const type = ENGINEER_TYPES.find((t) => t.condition(stats));
+      expect(type?.name).toBe('技術的負債と共に生きる人');
     });
 
     it('どの条件にも当てはまらない場合は無難に回すエンジニア', () => {
       const stats: ClassifyStats = {
         stab: 50, debt: 25, emSuc: 0, sc: [55, 55], tp: 55, spd: 7,
       };
-      const type = ENGINEER_TYPES.find((t) => t.c(stats));
-      expect(type?.n).toBe('無難に回すエンジニア');
+      const type = ENGINEER_TYPES.find((t) => t.condition(stats));
+      expect(type?.name).toBe('無難に回すエンジニア');
     });
   });
 
@@ -265,9 +265,9 @@ describe('Agile Quiz Sugoroku - 定数とユーティリティ', () => {
     it('各イベントに必須プロパティが存在する', () => {
       EVENTS.forEach((event) => {
         expect(event.id).toBeDefined();
-        expect(event.nm).toBeDefined();
-        expect(event.ic).toBeDefined();
-        expect(event.ds).toBeDefined();
+        expect(event.name).toBeDefined();
+        expect(event.icon).toBeDefined();
+        expect(event.description).toBeDefined();
         expect(event.color).toBeDefined();
       });
     });
@@ -277,10 +277,10 @@ describe('Agile Quiz Sugoroku - 定数とユーティリティ', () => {
     });
 
     it('INITIAL_GAME_STATSの初期値がゼロ', () => {
-      expect(INITIAL_GAME_STATS.tc).toBe(0);
-      expect(INITIAL_GAME_STATS.tq).toBe(0);
+      expect(INITIAL_GAME_STATS.totalCorrect).toBe(0);
+      expect(INITIAL_GAME_STATS.totalQuestions).toBe(0);
       expect(INITIAL_GAME_STATS.debt).toBe(0);
-      expect(INITIAL_GAME_STATS.sp).toEqual([]);
+      expect(INITIAL_GAME_STATS.speeds).toEqual([]);
     });
 
     it('GRADESは降順にソートされている', () => {

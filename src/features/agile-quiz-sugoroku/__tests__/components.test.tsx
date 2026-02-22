@@ -42,53 +42,53 @@ afterAll(() => {
 
 /** テスト用ゲーム統計 */
 const mockStats: GameStats = {
-  tc: 5,
-  tq: 7,
-  sp: [3, 4, 5, 6, 3, 4, 5],
+  totalCorrect: 5,
+  totalQuestions: 7,
+  speeds: [3, 4, 5, 6, 3, 4, 5],
   debt: 10,
-  emC: 1,
-  emS: 1,
+  emergencyCount: 1,
+  emergencySuccess: 1,
   combo: 2,
   maxCombo: 3,
 };
 
 /** テスト用派生統計 */
 const mockDerived: DerivedStats = {
-  tp: 71,
-  spd: 4.3,
-  stab: 65,
-  sc: [70, 72],
+  correctRate: 71,
+  averageSpeed: 4.3,
+  stability: 65,
+  sprintCorrectRates: [70, 72],
 };
 
 /** テスト用スプリントサマリー */
 const mockSummary: SprintSummary = {
-  sp: 1,
-  pct: 71,
-  cor: 5,
-  tot: 7,
-  spd: 4.3,
+  sprintNumber: 1,
+  correctRate: 71,
+  correctCount: 5,
+  totalCount: 7,
+  averageSpeed: 4.3,
   debt: 10,
-  em: false,
-  emOk: 0,
-  cats: {
-    planning: { c: 1, t: 1 },
-    impl1: { c: 1, t: 1 },
-    test1: { c: 0, t: 1 },
+  hadEmergency: false,
+  emergencySuccessCount: 0,
+  categoryStats: {
+    planning: { correct: 1, total: 1 },
+    impl1: { correct: 1, total: 1 },
+    test1: { correct: 0, total: 1 },
   },
 };
 
 /** テスト用イベント */
 const mockEvents: GameEvent[] = [
-  { id: 'planning', nm: 'プランニング', ic: '📋', ds: '計画・合意', color: '#4d9fff' },
-  { id: 'impl1', nm: '実装（1回目）', ic: '⌨️', ds: '作り始め', color: '#a78bfa' },
-  { id: 'test1', nm: 'テスト（1回目）', ic: '🧪', ds: '確認', color: '#22d3ee' },
+  { id: 'planning', name: 'プランニング', icon: '📋', description: '計画・合意', color: '#4d9fff' },
+  { id: 'impl1', name: '実装（1回目）', icon: '⌨️', description: '作り始め', color: '#a78bfa' },
+  { id: 'test1', name: 'テスト（1回目）', icon: '🧪', description: '確認', color: '#22d3ee' },
 ];
 
 /** テスト用クイズ */
 const mockQuiz: Question = {
-  q: 'スクラムマスターの主な役割は？',
-  o: ['プロジェクト管理', 'サーバント・リーダー', 'コード作成', '予算管理'],
-  a: 1,
+  question: 'スクラムマスターの主な役割は？',
+  options: ['プロジェクト管理', 'サーバント・リーダー', 'コード作成', '予算管理'],
+  answer: 1,
 };
 
 /* ================================
@@ -173,7 +173,7 @@ describe('BarChart', () => {
   it('複数スプリントを表示できる', () => {
     const logs: SprintSummary[] = [
       mockSummary,
-      { ...mockSummary, sp: 2, pct: 80 },
+      { ...mockSummary, sprintNumber: 2, correctRate: 80 },
     ];
     render(<BarChart logs={logs} />);
 
@@ -419,7 +419,7 @@ describe('RetrospectiveScreen', () => {
     render(
       <RetrospectiveScreen
         {...defaultProps}
-        summary={{ ...mockSummary, em: true, emOk: 1 }}
+        summary={{ ...mockSummary, hadEmergency: true, emergencySuccessCount: 1 }}
       />,
     );
     expect(screen.getByText(/対応成功/)).toBeInTheDocument();
@@ -429,7 +429,7 @@ describe('RetrospectiveScreen', () => {
     render(
       <RetrospectiveScreen
         {...defaultProps}
-        summary={{ ...mockSummary, em: true, emOk: 0 }}
+        summary={{ ...mockSummary, hadEmergency: true, emergencySuccessCount: 0 }}
       />,
     );
     expect(screen.getByText(/対応失敗/)).toBeInTheDocument();
