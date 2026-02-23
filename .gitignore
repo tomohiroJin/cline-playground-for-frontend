@@ -45,3 +45,9 @@ lint_output.txt
 
 ## claude
 .claude
+
+## AI tools (ユーザー固有の設定)
+.codex/
+.gemini/
+.mcp.json
+/AGENTS.md
