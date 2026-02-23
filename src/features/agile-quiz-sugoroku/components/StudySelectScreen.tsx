@@ -45,7 +45,7 @@ const PHASE_GROUPS = [
 const LIMIT_OPTIONS = [
   { value: 10, label: '10問' },
   { value: 20, label: '20問' },
-  { value: 0, label: '全問' },
+  { value: 50, label: '50問' },
 ];
 
 export const StudySelectScreen: React.FC<StudySelectScreenProps> = ({ onStart, onBack }) => {

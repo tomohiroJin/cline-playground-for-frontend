@@ -71,4 +71,24 @@ export const CHARACTER_PROFILES: CharacterProfile[] = [
     trivia:
       'テスト自動化率100%が夢。人参ジュースを飲みながらテストケースを書く。',
   },
+  {
+    id: 'taka',
+    name: 'タカ',
+    animal: 'オオタカ',
+    role: 'ビジネスオーナー / ステークホルダー',
+    color: COLORS.yellow,
+    emoji: '🦅',
+    personality:
+      '高い視座からプロダクト全体を見渡す。ROIや市場価値に敏感。厳しいが的確なフィードバックを返す。',
+    skills: [
+      '事業戦略',
+      'ROI分析',
+      'プロダクトビジョン',
+      '市場分析',
+      'ステークホルダーマネジメント',
+    ],
+    catchphrase: '「このプロダクト、市場で翔べるか？鋭く見極めるぞ！」',
+    trivia:
+      '朝5時起きで市場レポートを読むのが日課。会議では常に最前列。',
+  },
 ];
