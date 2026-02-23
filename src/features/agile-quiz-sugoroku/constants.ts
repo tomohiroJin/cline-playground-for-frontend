@@ -25,9 +25,6 @@ export const CONFIG = {
   },
 } as const;
 
-/** スプリント数の選択肢（フィボナッチ数列） */
-export const SPRINT_OPTIONS = [1, 2, 3, 5, 8] as const;
-
 /** カラーパレット */
 export const COLORS = {
   bg: '#060a12',
@@ -227,15 +224,16 @@ export function getGrade(tp: number, stab: number, spd: number): Grade {
   return GRADES.find(g => score >= g.min) ?? GRADES[GRADES.length - 1];
 }
 
-/** サマリーテキストを生成（タカ / ビジネスオーナー視点） */
-export function getSummaryText(tp: number, spd: number, debt: number, emergencySuccess: number, sc: number = CONFIG.sprintCount): string {
+/** サマリーテキストを生成 */
+export function getSummaryText(tp: number, spd: number, debt: number, emergencySuccess: number): string {
+  const sc = CONFIG.sprintCount;
   if (tp >= 70) {
-    return `素晴らしい。${sc}スプリントを安定して完走し、プロダクトの価値を最大化した。${spd <= 6 ? '意思決定のスピードも申し分ない。' : ''}我々のビジネスに大きく貢献してくれた。`;
+    return `高い正答率で${sc}スプリントを安定完走。${spd <= 6 ? '回答速度も優秀。' : ''}信頼性の高いエンジニアリングを実現。`;
   }
   if (tp >= 50) {
-    return `基礎力はある。${debt > 20 ? '技術的負債の管理を改善すれば、プロダクトの品質がさらに上がるだろう。' : '精度を高めて、より大きな価値を生み出してほしい。'}期待しているぞ。`;
+    return `基礎力のあるスプリント進行。${debt > 20 ? '技術的負債の管理が次の成長ポイント。' : 'さらなる精度向上でワンランク上へ。'}`;
   }
-  return `${sc}スプリントを走り抜いたことは評価する。${emergencySuccess > 0 ? '緊急時の対応力は光るものがあった。' : '知識の幅を広げれば、次はもっと大きな成果を出せるはずだ。'}`;
+  return `${sc}スプリントを走破。${emergencySuccess > 0 ? '緊急対応での活躍が光りました。' : '知識の幅を広げれば次回はさらに好結果に。'}`;
 }
 
 /** 初期ゲーム状態 */

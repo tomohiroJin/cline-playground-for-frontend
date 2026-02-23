@@ -1,9 +1,9 @@
 /**
  * タイトル画面コンポーネント
  */
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useKeys } from '../hooks';
-import { CONFIG, COLORS, FONTS, SPRINT_OPTIONS } from '../constants';
+import { CONFIG, COLORS, FONTS } from '../constants';
 import { AQS_IMAGES } from '../images';
 import { loadGameResult } from '../result-storage';
 import { ParticleEffect } from './ParticleEffect';
@@ -24,16 +24,16 @@ import {
 
 interface TitleScreenProps {
   /** ゲーム開始時のコールバック */
-  onStart: (sprintCount: number) => void;
+  onStart: () => void;
   /** 勉強会モード開始時のコールバック */
   onStudy?: () => void;
   /** ガイド画面表示時のコールバック */
   onGuide?: () => void;
 }
 
-/** 機能紹介リスト（スプリント数は動的） */
-const makeFeatures = (sprintCount: number) => [
-  ['📋', `${sprintCount}スプリント`, 'を走破せよ'],
+/** 機能紹介リスト */
+const FEATURES = [
+  ['📋', `${CONFIG.sprintCount}スプリント`, 'を走破せよ'],
   ['⏱️', `制限時間${CONFIG.timeLimit}秒`, 'の4択クイズ'],
   ['🚨', '技術的負債', 'が溜まると緊急対応発生'],
   ['🏷️', 'エンジニアタイプ', 'を診断'],
@@ -45,17 +45,12 @@ const makeFeatures = (sprintCount: number) => [
  * タイトル画面
  */
 export const TitleScreen: React.FC<TitleScreenProps> = ({ onStart, onStudy, onGuide }) => {
-  const [sprintCount, setSprintCount] = useState<number>(CONFIG.sprintCount);
-
   // 前回結果
   const lastResult = useMemo(() => loadGameResult(), []);
 
-  // 機能紹介リスト（スプリント数に連動）
-  const features = useMemo(() => makeFeatures(sprintCount), [sprintCount]);
-
   useKeys((e) => {
     if (e.key === 'Enter' || e.key === ' ') {
-      onStart(sprintCount);
+      onStart();
     }
   });
 
@@ -132,7 +127,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({ onStart, onStudy, onGu
         )}
 
         <SectionBox>
-          {features.map((feature, i) => (
+          {FEATURES.map((feature, i) => (
             <FeatureItem key={i}>
               <FeatureIcon>{feature[0]}</FeatureIcon>
               <span>
@@ -143,48 +138,10 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({ onStart, onStudy, onGu
           ))}
         </SectionBox>
 
-        {/* スプリント数選択 */}
-        <SectionBox>
-          <div style={{
-            fontSize: 10,
-            color: COLORS.muted,
-            letterSpacing: 2,
-            fontFamily: FONTS.mono,
-            fontWeight: 700,
-            marginBottom: 8,
-            textAlign: 'center',
-          }}>
-            SPRINT COUNT
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 8 }}>
-            {SPRINT_OPTIONS.map((n) => (
-              <button
-                key={n}
-                onClick={() => setSprintCount(n)}
-                style={{
-                  background: sprintCount === n ? `${COLORS.accent}22` : `${COLORS.bg}dd`,
-                  border: `1px solid ${sprintCount === n ? COLORS.accent : COLORS.border}`,
-                  color: sprintCount === n ? COLORS.accent : COLORS.muted,
-                  padding: '8px 16px',
-                  borderRadius: 6,
-                  fontSize: 14,
-                  cursor: 'pointer',
-                  fontWeight: sprintCount === n ? 700 : 400,
-                  fontFamily: FONTS.mono,
-                  transition: 'all 0.2s',
-                  minWidth: 44,
-                }}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
-        </SectionBox>
-
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, marginTop: 4 }}>
           <Button
             $color="#34d399"
-            onClick={() => onStart(sprintCount)}
+            onClick={onStart}
             style={{ padding: '14px 52px', fontSize: 14 }}
           >
             ▶ Sprint Start

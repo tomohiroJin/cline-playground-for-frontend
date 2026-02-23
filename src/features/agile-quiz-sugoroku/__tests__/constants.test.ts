@@ -177,12 +177,12 @@ describe('Agile Quiz Sugoroku - 定数とユーティリティ', () => {
   describe('getSummaryText - サマリーテキスト生成', () => {
     it('正答率70%以上で高評価テキストを返す', () => {
       const text = getSummaryText(75, 5, 10, 0);
-      expect(text).toContain('素晴らしい');
+      expect(text).toContain('高い正答率');
     });
 
     it('正答率70%以上かつ速度6以下で速度の言及がある', () => {
       const text = getSummaryText(75, 5, 10, 0);
-      expect(text).toContain('意思決定のスピード');
+      expect(text).toContain('回答速度も優秀');
     });
 
     it('正答率70%以上かつ速度7で速度の言及がない', () => {
@@ -200,14 +200,14 @@ describe('Agile Quiz Sugoroku - 定数とユーティリティ', () => {
       expect(text).toContain('技術的負債');
     });
 
-    it('正答率50%未満で走り抜いたテキストを返す', () => {
+    it('正答率50%未満で走破テキストを返す', () => {
       const text = getSummaryText(40, 8, 5, 0);
-      expect(text).toContain('走り抜いた');
+      expect(text).toContain('走破');
     });
 
     it('正答率50%未満かつ緊急対応成功ありでその言及がある', () => {
       const text = getSummaryText(40, 8, 5, 1);
-      expect(text).toContain('緊急時の対応力');
+      expect(text).toContain('緊急対応');
     });
   });
 

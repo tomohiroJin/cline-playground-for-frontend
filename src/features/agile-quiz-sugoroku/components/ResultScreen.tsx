@@ -58,8 +58,6 @@ interface ResultScreenProps {
   tagStats?: TagStats;
   /** 不正解問題リスト */
   incorrectQuestions?: AnswerResultWithDetail[];
-  /** スプリント数 */
-  sprintCount?: number;
 }
 
 /**
@@ -72,11 +70,9 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
   onReplay,
   tagStats,
   incorrectQuestions,
-  sprintCount,
 }) => {
   const [copied, setCopied] = useState(false);
   const [typeImgError, setTypeImgError] = useState(false);
-  const [takaImgError, setTakaImgError] = useState(false);
 
   // エンジニアタイプを判定
   const engineerType = useMemo(() => {
@@ -373,69 +369,12 @@ Combo: ${stats.maxCombo} | 安定度: ${Math.round(derived.stability)}%`;
           </SectionBox>
         )}
 
-        {/* サマリー（タカ / ビジネスオーナーからの総評） */}
+        {/* サマリー */}
         <SectionBox style={{ marginBottom: 16 }}>
           <SectionTitle>SUMMARY</SectionTitle>
-          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-            {/* タカのアバター */}
-            <div style={{ flexShrink: 0, textAlign: 'center' }}>
-              {!takaImgError && AQS_IMAGES.characters.taka ? (
-                <img
-                  src={AQS_IMAGES.characters.taka}
-                  alt="タカ"
-                  onError={() => setTakaImgError(true)}
-                  style={{
-                    width: 52,
-                    height: 52,
-                    borderRadius: '50%',
-                    objectFit: 'cover',
-                    border: `2px solid ${COLORS.yellow}`,
-                  }}
-                />
-              ) : (
-                <div style={{
-                  width: 52,
-                  height: 52,
-                  borderRadius: '50%',
-                  background: `${COLORS.yellow}15`,
-                  border: `2px solid ${COLORS.yellow}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 28,
-                }}>
-                  🦅
-                </div>
-              )}
-              <div style={{
-                fontSize: 10,
-                color: COLORS.yellow,
-                fontWeight: 700,
-                marginTop: 4,
-              }}>
-                タカ
-              </div>
-              <div style={{
-                fontSize: 8,
-                color: COLORS.muted,
-              }}>
-                ビジネスオーナー
-              </div>
-            </div>
-            {/* 吹き出し */}
-            <div style={{
-              flex: 1,
-              position: 'relative',
-              background: `${COLORS.yellow}08`,
-              border: `1px solid ${COLORS.yellow}22`,
-              borderRadius: '4px 12px 12px 12px',
-              padding: '12px 14px',
-            }}>
-              <SummaryText>
-                {getSummaryText(derived.correctRate, derived.averageSpeed, stats.debt, stats.emergencySuccess, sprintCount)}
-              </SummaryText>
-            </div>
-          </div>
+          <SummaryText>
+            {getSummaryText(derived.correctRate, derived.averageSpeed, stats.debt, stats.emergencySuccess)}
+          </SummaryText>
         </SectionBox>
 
         {/* ボタン */}
