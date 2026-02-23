@@ -1,9 +1,12 @@
 import React, { useEffect, Suspense, lazy } from 'react';
-import { Routes, Route, Link } from 'react-router-dom';
+import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import LoadingSpinner from './components/atoms/LoadingSpinner';
 import ErrorBoundary from './components/ErrorBoundary';
-import { SettingsPanel } from './components/organisms/SettingsPanel'; // Import SettingsPanel
+import { SettingsPanel } from './components/organisms/SettingsPanel';
+import { GamePageWrapper } from './components/organisms/GamePageWrapper';
+import { useDocumentTitle } from './hooks/useDocumentTitle';
+import { useFullScreenRoute } from './hooks/useFullScreenRoute';
 
 import GameListPage from './pages/GameListPage';
 import { GlobalStyle } from './styles/GlobalStyle';
@@ -111,13 +114,53 @@ const Footer = styled.footer`
   color: var(--text-secondary);
   font-size: 0.8rem;
   background: rgba(0, 0, 0, 0.2);
+
+  a {
+    color: inherit;
+    text-decoration: none;
+    transition: opacity 0.2s;
+
+    &:hover {
+      opacity: 0.7;
+    }
+  }
+`;
+
+// フルスクリーンゲーム用フローティングホームボタン
+const FloatingHomeButton = styled.button`
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 200;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
 `;
 
 /**
  * アプリケーションのルートコンポーネント
  */
 const App: React.FC = () => {
-  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false); // Settings state
+  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
+  const isFullScreen = useFullScreenRoute();
+  const navigate = useNavigate();
+
+  // 動的タイトル設定
+  useDocumentTitle();
 
   // プレミアムテーマを適用
   useEffect(() => {
@@ -131,16 +174,28 @@ const App: React.FC = () => {
     <>
       <GlobalStyle />
       <AppContainer>
-        <Header>
-          <nav aria-label="Global Navigation">
-            <Title>
-              <Link to="/">Game Platform</Link>
-            </Title>
-            <SettingsButton onClick={() => setIsSettingsOpen(true)} aria-label="設定を開く">
-              ⚙
-            </SettingsButton>
-          </nav>
-        </Header>
+        {!isFullScreen && (
+          <Header>
+            <nav aria-label="Global Navigation">
+              <Title>
+                <Link to="/">Game Platform</Link>
+              </Title>
+              <SettingsButton onClick={() => setIsSettingsOpen(true)} aria-label="設定を開く">
+                ⚙
+              </SettingsButton>
+            </nav>
+          </Header>
+        )}
+
+        {isFullScreen && (
+          <FloatingHomeButton
+            onClick={() => navigate('/')}
+            aria-label="ホームに戻る"
+            type="button"
+          >
+            ⌂
+          </FloatingHomeButton>
+        )}
 
         {isSettingsOpen && <SettingsPanel onClose={() => setIsSettingsOpen(false)} />}
 
@@ -155,27 +210,29 @@ const App: React.FC = () => {
             <main id="main-content" role="main">
               <Routes>
                 <Route path="/" element={<GameListPage />} />
-                <Route path="/puzzle" element={<PuzzlePage />} />
-                <Route path="/air-hockey" element={<AirHockeyPage />} />
-                <Route path="/racing" element={<RacingGamePage />} />
-                <Route path="/falling-shooter" element={<FallingShooterPage />} />
-                <Route path="/maze-horror" element={<MazeHorrorPage />} />
-                <Route path="/non-brake-descent" element={<NonBrakeDescentPage />} />
-                <Route path="/deep-sea-shooter" element={<DeepSeaShooterPage />} />
-                <Route path="/ipne" element={<IpnePage />} />
-                <Route path="/agile-quiz-sugoroku" element={<AgileQuizSugorokuPage />} />
-                <Route path="/labyrinth-echo" element={<LabyrinthEchoPage />} />
-                <Route path="/risk-lcd" element={<RiskLcdPage />} />
-                <Route path="/keys-and-arms" element={<KeysAndArmsPage />} />
-                <Route path="/primal-path" element={<PrimalPathPage />} />
+                <Route path="/puzzle" element={<GamePageWrapper><PuzzlePage /></GamePageWrapper>} />
+                <Route path="/air-hockey" element={<GamePageWrapper><AirHockeyPage /></GamePageWrapper>} />
+                <Route path="/racing" element={<GamePageWrapper><RacingGamePage /></GamePageWrapper>} />
+                <Route path="/falling-shooter" element={<GamePageWrapper><FallingShooterPage /></GamePageWrapper>} />
+                <Route path="/maze-horror" element={<GamePageWrapper><MazeHorrorPage /></GamePageWrapper>} />
+                <Route path="/non-brake-descent" element={<GamePageWrapper><NonBrakeDescentPage /></GamePageWrapper>} />
+                <Route path="/deep-sea-shooter" element={<GamePageWrapper><DeepSeaShooterPage /></GamePageWrapper>} />
+                <Route path="/ipne" element={<GamePageWrapper><IpnePage /></GamePageWrapper>} />
+                <Route path="/agile-quiz-sugoroku" element={<GamePageWrapper><AgileQuizSugorokuPage /></GamePageWrapper>} />
+                <Route path="/labyrinth-echo" element={<GamePageWrapper><LabyrinthEchoPage /></GamePageWrapper>} />
+                <Route path="/risk-lcd" element={<GamePageWrapper><RiskLcdPage /></GamePageWrapper>} />
+                <Route path="/keys-and-arms" element={<GamePageWrapper><KeysAndArmsPage /></GamePageWrapper>} />
+                <Route path="/primal-path" element={<GamePageWrapper><PrimalPathPage /></GamePageWrapper>} />
               </Routes>
             </main>
           </Suspense>
         </ErrorBoundary>
 
-        <Footer>
-          <p>© 2025 Game Platform</p>
-        </Footer>
+        {!isFullScreen && (
+          <Footer>
+            <p>&copy; 2025 <a href="https://niku9.click/">niku9.click</a></p>
+          </Footer>
+        )}
       </AppContainer>
     </>
   );
