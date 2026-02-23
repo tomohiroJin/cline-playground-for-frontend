@@ -11,42 +11,42 @@ const renderWithRouter = (initialEntries: string[]) =>
   });
 
 describe('useFullScreenRoute', () => {
-  describe('フルスクリーンルート', () => {
-    it('/ipne はフルスクリーンと判定する', () => {
+  describe('トップページ', () => {
+    it('/ はヘッダー表示（false）と判定する', () => {
+      const { result } = renderWithRouter(['/']);
+      expect(result.current).toBe(false);
+    });
+  });
+
+  describe('ゲームルート', () => {
+    it('/puzzle はヘッダー非表示（true）と判定する', () => {
+      const { result } = renderWithRouter(['/puzzle']);
+      expect(result.current).toBe(true);
+    });
+
+    it('/air-hockey はヘッダー非表示（true）と判定する', () => {
+      const { result } = renderWithRouter(['/air-hockey']);
+      expect(result.current).toBe(true);
+    });
+
+    it('/ipne はヘッダー非表示（true）と判定する', () => {
       const { result } = renderWithRouter(['/ipne']);
       expect(result.current).toBe(true);
     });
 
-    it('/risk-lcd はフルスクリーンと判定する', () => {
+    it('/risk-lcd はヘッダー非表示（true）と判定する', () => {
       const { result } = renderWithRouter(['/risk-lcd']);
       expect(result.current).toBe(true);
     });
 
-    it('/maze-horror はフルスクリーンと判定する', () => {
+    it('/maze-horror はヘッダー非表示（true）と判定する', () => {
       const { result } = renderWithRouter(['/maze-horror']);
       expect(result.current).toBe(true);
     });
 
-    it('/primal-path はフルスクリーンと判定する', () => {
+    it('/primal-path はヘッダー非表示（true）と判定する', () => {
       const { result } = renderWithRouter(['/primal-path']);
       expect(result.current).toBe(true);
-    });
-  });
-
-  describe('通常ルート', () => {
-    it('/ は通常ルートと判定する', () => {
-      const { result } = renderWithRouter(['/']);
-      expect(result.current).toBe(false);
-    });
-
-    it('/puzzle は通常ルートと判定する', () => {
-      const { result } = renderWithRouter(['/puzzle']);
-      expect(result.current).toBe(false);
-    });
-
-    it('/air-hockey は通常ルートと判定する', () => {
-      const { result } = renderWithRouter(['/air-hockey']);
-      expect(result.current).toBe(false);
     });
   });
 });
