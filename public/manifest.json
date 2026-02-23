@@ -1,0 +1,10 @@
+{
+  "name": "Game Platform",
+  "short_name": "Games",
+  "description": "13種類の無料ブラウザゲームが楽しめるゲームプラットフォーム",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#1a1a2e",
+  "icons": []
+}
