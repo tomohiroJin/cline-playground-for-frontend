@@ -46,12 +46,16 @@ const AgileQuizSugorokuPage: React.FC = () => {
   });
   const [retrospective, setRetrospective] = useState<SprintSummary | null>(null);
 
+  // スプリント数（タイトル画面で選択、デフォルトはCONFIG.sprintCount）
+  const [sprintCount, setSprintCount] = useState<number>(CONFIG.sprintCount);
+
   // 勉強会モード用の選択済みタグを保持
   const [studySelectedTags, setStudySelectedTags] = useState<string[]>([]);
   const [studyLimit, setStudyLimit] = useState(10);
 
   /** ゲーム開始 */
-  const handleStart = () => {
+  const handleStart = (selectedSprintCount: number) => {
+    setSprintCount(selectedSprintCount);
     audio.onInit();
     audio.onStart();
     game.init();
@@ -96,7 +100,7 @@ const AgileQuizSugorokuPage: React.FC = () => {
   /** 振り返り後 */
   const handleAfterRetro = () => {
     const nextSprint = game.sprint + 1;
-    if (nextSprint >= CONFIG.sprintCount) {
+    if (nextSprint >= sprintCount) {
       audio.onResult();
       // ゲーム結果を保存
       const grade = getGrade(game.derived.correctRate, game.derived.stability, game.derived.averageSpeed);
@@ -260,6 +264,7 @@ const AgileQuizSugorokuPage: React.FC = () => {
           onReplay={handleReplay}
           tagStats={resultData.tagStats}
           incorrectQuestions={resultData.incorrectQuestions}
+          sprintCount={sprintCount}
         />
       )}
 

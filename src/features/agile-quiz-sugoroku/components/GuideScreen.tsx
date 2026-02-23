@@ -66,7 +66,7 @@ export const GuideScreen: React.FC<GuideScreenProps> = ({ onBack }) => {
           <div style={{ fontSize: 12.5, color: COLORS.text, lineHeight: 1.8 }}>
             アジャイル・クイズすごろくは、スクラム・設計原則・テスト・CI/CD・障害対応など
             ソフトウェア開発の知識を楽しく学べるクイズゲームです。
-            全306問・16ジャンルの4択クイズに挑戦しましょう。
+            全366問・16ジャンルの4択クイズに挑戦しましょう。
           </div>
         </SectionBox>
 
@@ -173,8 +173,8 @@ export const GuideScreen: React.FC<GuideScreenProps> = ({ onBack }) => {
         <SectionBox>
           <SectionTitle>HOW TO PLAY</SectionTitle>
           <div style={{ fontSize: 12, color: COLORS.text, lineHeight: 2 }}>
-            <div>1. タイトル画面で「Sprint Start」を押してゲーム開始</div>
-            <div>2. {CONFIG.sprintCount}つのスプリントをそれぞれ7イベントずつ進行</div>
+            <div>1. タイトル画面でスプリント数を選び「Sprint Start」を押してゲーム開始</div>
+            <div>2. 選んだ数のスプリント（デフォルト{CONFIG.sprintCount}）をそれぞれ7イベントずつ進行</div>
             <div>3. 各イベントで4択クイズに{CONFIG.timeLimit}秒以内に回答</div>
             <div>4. スプリント終了ごとに振り返り画面で成績確認</div>
             <div>5. 全スプリント完了後、総合結果とエンジニアタイプを発表</div>
@@ -338,7 +338,7 @@ export const GuideScreen: React.FC<GuideScreenProps> = ({ onBack }) => {
           <div style={{ fontSize: 12, color: COLORS.text, lineHeight: 2 }}>
             <div>タイトル画面の「勉強会モード」から利用可能です。</div>
             <div>・スプリント工程別 or 個別ジャンルを選択</div>
-            <div>・問題数を10問/20問/全問から選択</div>
+            <div>・問題数を10問/20問/50問から選択</div>
             <div>・制限時間なしでじっくり学習</div>
             <div>・回答後すぐに解説を確認</div>
             <div>・苦手ジャンルは前回結果から自動提案</div>
