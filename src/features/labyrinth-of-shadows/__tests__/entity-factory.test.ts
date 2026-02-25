@@ -86,5 +86,50 @@ describe('labyrinth-of-shadows/entity-factory', () => {
       const state = GameStateFactory.create('HARD');
       expect(state.enemies.length).toBeLessThanOrEqual(3);
     });
+
+    test('新アイテム（回復薬）が生成される', () => {
+      const state = GameStateFactory.create('EASY');
+      const healItems = state.items.filter(i => i.type === 'heal');
+      expect(healItems.length).toBe(2);
+    });
+
+    test('新アイテム（加速）が生成される', () => {
+      const state = GameStateFactory.create('NORMAL');
+      const speedItems = state.items.filter(i => i.type === 'speed');
+      expect(speedItems.length).toBe(1);
+    });
+
+    test('敵タイプが正しく割り当てられる（EASYは徘徊型のみ）', () => {
+      const state = GameStateFactory.create('EASY');
+      const wanderers = state.enemies.filter(e => e.type === 'wanderer');
+      expect(wanderers.length).toBe(1);
+    });
+
+    test('敵タイプが正しく割り当てられる（NORMALは徘徊+追跡）', () => {
+      const state = GameStateFactory.create('NORMAL');
+      const wanderers = state.enemies.filter(e => e.type === 'wanderer');
+      const chasers = state.enemies.filter(e => e.type === 'chaser');
+      expect(wanderers.length).toBe(1);
+      expect(chasers.length).toBe(1);
+    });
+
+    test('敵タイプが正しく割り当てられる（HARDはテレポート型含む）', () => {
+      const state = GameStateFactory.create('HARD');
+      const teleporters = state.enemies.filter(e => e.type === 'teleporter');
+      expect(teleporters.length).toBeLessThanOrEqual(1);
+    });
+
+    test('speedBoostが0で初期化される', () => {
+      const state = GameStateFactory.create('EASY');
+      expect(state.speedBoost).toBe(0);
+    });
+
+    test('敵にBFS関連フィールドが初期化されている', () => {
+      const enemy = EntityFactory.createEnemy(3, 4, 0, 'chaser');
+      expect(enemy.type).toBe('chaser');
+      expect(enemy.path).toEqual([]);
+      expect(enemy.pathTime).toBe(0);
+      expect(enemy.teleportCooldown).toBe(0);
+    });
   });
 });

@@ -1,5 +1,5 @@
 import { CONFIG } from './constants';
-import type { Difficulty, EntityType, Player, Enemy, Item, Entity, GameState } from './types';
+import type { Difficulty, EntityType, EnemyType, Player, Enemy, Item, Entity, GameState } from './types';
 import { manhattan } from './utils';
 import { MazeService } from './maze-service';
 
@@ -11,7 +11,7 @@ export const EntityFactory = {
     angle: 0,
     stamina: 100,
   }),
-  createEnemy: (x: number, y: number, idx: number): Enemy => ({
+  createEnemy: (x: number, y: number, idx: number, type: EnemyType = 'chaser'): Enemy => ({
     x: x + 0.5,
     y: y + 0.5,
     dir: Math.random() * Math.PI * 2,
@@ -19,6 +19,10 @@ export const EntityFactory = {
     actTime: 4000 + idx * 2500,
     lastSeenX: -1,
     lastSeenY: -1,
+    type,
+    path: [],
+    pathTime: 0,
+    teleportCooldown: 0,
   }),
   createItem: (x: number, y: number, type: EntityType): Item => ({ x, y, type, got: false }),
   createExit: (x: number, y: number): Entity => ({ x: x + 0.5, y: y + 0.5 }),
@@ -28,7 +32,9 @@ export const EntityFactory = {
 export const GameStateFactory = {
   create(difficulty: Difficulty): GameState {
     const cfg = CONFIG.difficulties[difficulty];
-    const maze = MazeService.create(cfg.size);
+    const maze = difficulty === 'HARD' && Math.random() < 0.5
+      ? MazeService.createPrim(cfg.size)
+      : MazeService.create(cfg.size);
     const cells = MazeService.getEmptyCells(maze);
 
     const playerCell = cells.shift()!;
@@ -37,14 +43,24 @@ export const GameStateFactory = {
       c => manhattan(c.x, c.y, playerCell.x, playerCell.y) >= CONFIG.enemy.minSpawnDist
     );
 
-    const items = [
+    const items: Item[] = [
       ...cells.splice(0, cfg.keys).map(c => EntityFactory.createItem(c.x, c.y, 'key')),
       ...cells.splice(0, cfg.traps).map(c => EntityFactory.createItem(c.x, c.y, 'trap')),
+      ...cells.splice(0, cfg.heals).map(c => EntityFactory.createItem(c.x, c.y, 'heal')),
+      ...cells.splice(0, cfg.speeds).map(c => EntityFactory.createItem(c.x, c.y, 'speed')),
+      ...cells.splice(0, cfg.maps).map(c => EntityFactory.createItem(c.x, c.y, 'map')),
     ];
 
-    const enemies: Enemy[] = Array.from({ length: cfg.enemyCount }, (_, i) => {
+    // 敵タイプ別に生成
+    const enemyTypes: EnemyType[] = [
+      ...Array(cfg.wanderers).fill('wanderer' as EnemyType),
+      ...Array(cfg.chasers).fill('chaser' as EnemyType),
+      ...Array(cfg.teleporters).fill('teleporter' as EnemyType),
+    ];
+
+    const enemies: Enemy[] = enemyTypes.map((type, i) => {
       const c = farCells.shift() || cells.shift();
-      return c ? EntityFactory.createEnemy(c.x, c.y, i) : null;
+      return c ? EntityFactory.createEnemy(c.x, c.y, i, type) : null;
     }).filter((e): e is Enemy => e !== null);
 
     return {
@@ -63,6 +79,7 @@ export const GameStateFactory = {
       energy: 100,
       invince: 0,
       sprinting: false,
+      speedBoost: 0,
       eSpeed: cfg.enemySpeed,
       gTime: 0,
       lastT: performance.now(),
