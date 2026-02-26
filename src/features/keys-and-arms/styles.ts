@@ -98,6 +98,19 @@ export const ActButton = styled(BaseButton)`
   }
 `;
 
+export const PauseButton = styled(BaseButton)`
+  width: 44px;
+  height: 20px;
+  border-radius: 10px;
+  font-size: 4px;
+  background: linear-gradient(155deg, #333, #1a1a1a);
+  color: #777;
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  &:active {
+    transform: translateY(2px);
+  }
+`;
+
 export const RstButton = styled(BaseButton)`
   width: 36px;
   height: 20px;

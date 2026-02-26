@@ -14,6 +14,7 @@ import { W, H, BG, GH, ON, K_R, BAT_FU, BAT_FD, MIM_O, SPIDER, KEY_D } from '../
 export function createTitleScreen(ctx) {
   const { G, draw, audio, particles, hud } = ctx;
   const { $, circle, onFill, txt, txtC, px, iSlime, iBoss, iGem } = draw;
+  const { transTo } = hud;
 
   // --- 入力ヘルパー ---
   function J(k) { return G.jp[k.toLowerCase()]; }
@@ -60,6 +61,10 @@ export function createTitleScreen(ctx) {
     }
     // スタートプロンプト（拡大付き）
     if (Math.floor(G.blink / 18) % 2 === 0) { const ps = 8 + Math.sin(G.blink * .08) * .3; txtC('PRESS Z TO START', W / 2, 210, ps); }
+    // ヘルププロンプト
+    $.globalAlpha = .5;
+    txtC('\u2191: HELP', W / 2, 224, 6);
+    $.globalAlpha = 1;
     // 情報（ステージ進行）
     $.globalAlpha = .7; txtC('CAVE \u2192 PRAIRIE \u2192 CASTLE', W / 2, 236, 6);
     txtC('CLEAR 3 LOOPS!', W / 2, 250, 6); $.globalAlpha = 1;
@@ -76,7 +81,7 @@ export function createTitleScreen(ctx) {
   /** ゲーム開始 */
   function startGame() {
     const cheat = G.cheatBuf.endsWith('jin'); G.cheatBuf = '';
-    G.loop = 1; G.score = 0; G.dispScore = 0; G.hp = cheat ? 20 : 3; G.maxHp = cheat ? 20 : 3; G.noDmg = true; G.hurtFlash = 0; G.bgmBeat = 0; G.cavInit();
+    G.loop = 1; G.score = 0; G.dispScore = 0; G.hp = cheat ? 20 : 3; G.maxHp = cheat ? 20 : 3; G.noDmg = true; G.hurtFlash = 0; G.bgmBeat = 0; transTo('CAVE', G.cavInit, 'FIND 3 KEYS');
   }
 
   return { draw: drawTitle, startGame };

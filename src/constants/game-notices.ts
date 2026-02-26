@@ -80,8 +80,8 @@ export const GAME_NOTICES: Readonly<Record<string, GameNoticeInfo>> = {
   },
   '/keys-and-arms': {
     name: 'KEYS & ARMS',
-    hasAudio: false,
-    hasFlashing: false,
+    hasAudio: true,
+    hasFlashing: true,
     recommendedDevice: 'both',
   },
   '/primal-path': {
