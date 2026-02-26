@@ -9,7 +9,7 @@ interface BulletViewProps {
   size: number;
 }
 
-export const BulletView: React.FC<BulletViewProps> = ({ bullet, size }) => {
+export const BulletView: React.FC<BulletViewProps> = React.memo(({ bullet, size }) => {
   const isDownshot = bullet.dy > 0;
   return (
     <BulletWrapper
@@ -21,4 +21,5 @@ export const BulletView: React.FC<BulletViewProps> = ({ bullet, size }) => {
       $downshot={isDownshot}
     />
   );
-};
+});
+BulletView.displayName = 'BulletView';

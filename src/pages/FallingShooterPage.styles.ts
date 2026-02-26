@@ -48,6 +48,7 @@ export const GameArea = styled.div<{ $width: number; $height: number }>`
   overflow: hidden;
   width: ${props => props.$width}px;
   height: ${props => props.$height}px;
+  max-width: calc(100vw - 2rem);
 `;
 
 export const CellWrapper = styled.div<{
@@ -115,6 +116,16 @@ export const OverlayContainer = styled.div`
   background-color: rgba(0, 0, 0, 0.8);
 `;
 
+export const RankingContainer = styled.div`
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.85);
+`;
+
 export const OverlayContent = styled.div`
   padding: 1rem;
   border-radius: 0.5rem;
@@ -175,6 +186,7 @@ export const ControlBtn = styled.button<{ $variant?: 'fire' | 'default' }>`
   user-select: none;
   touch-action: manipulation;
   transition: transform 0.1s;
+  min-height: 48px;
 
   &:active {
     transform: scale(0.95);

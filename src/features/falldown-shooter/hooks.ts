@@ -29,6 +29,7 @@ export const useKeyboard = (enabled: boolean, handlers: KeyboardHandlers): void 
       '1': handlers.skill1,
       '2': handlers.skill2,
       '3': handlers.skill3,
+      ...(handlers.pause ? { Escape: handlers.pause, p: handlers.pause, P: handlers.pause } : {}),
     };
 
     const handle = (e: KeyboardEvent) => {

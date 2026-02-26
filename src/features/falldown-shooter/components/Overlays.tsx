@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect, ReactNode } from 'react';
 import { ShareButton } from '../../../components/molecules/ShareButton';
-import type { ParticleData } from '../types';
-import { CONFIG, DEMO_SLIDES } from '../constants';
+import type { ParticleData, Difficulty } from '../types';
+import { CONFIG, EFFECT, DEMO_SLIDES } from '../constants';
 import { uid, pick } from '../utils';
+import { DifficultySelector } from './DifficultySelector';
 import {
   OverlayContainer,
   OverlayContent,
@@ -23,11 +24,58 @@ const OverlayComponent: React.FC<{ children: ReactNode }> = ({ children }) => (
   </OverlayContainer>
 );
 
-export const StartScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => (
+/** スコア表示 + シェア + ボタン群の共通部分 */
+const ScoreOverlay: React.FC<{
+  title: string;
+  titleColor: string;
+  score: number;
+  shareText: string;
+  primaryLabel: string;
+  onPrimary: () => void;
+  onTitle: () => void;
+  onRanking?: () => void;
+  children?: ReactNode;
+}> = ({ title, titleColor, score, shareText, primaryLabel, onPrimary, onTitle, onRanking, children }) => (
+  <OverlayComponent>
+    {children}
+    <OverlayTitle $color={titleColor}>{title}</OverlayTitle>
+    <OverlayText $color="white">Score: {score}</OverlayText>
+    <div style={{ marginBottom: '1rem' }}>
+      <ShareButton
+        text={shareText}
+        hashtags={['FallingShooter', 'GamePlatform']}
+      />
+    </div>
+    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+      <Button onClick={onPrimary}>{primaryLabel}</Button>
+      <Button onClick={onTitle} $variant="secondary">
+        Title
+      </Button>
+      {onRanking && (
+        <Button onClick={onRanking} $variant="secondary">
+          🏆
+        </Button>
+      )}
+    </div>
+  </OverlayComponent>
+);
+
+export const StartScreen: React.FC<{
+  onStart: () => void;
+  difficulty: Difficulty;
+  onDifficultyChange: (d: Difficulty) => void;
+  onRanking: () => void;
+}> = ({ onStart, difficulty, onDifficultyChange, onRanking }) => (
   <OverlayComponent>
     <OverlayTitle $color="#22d3ee">落ち物シューティング</OverlayTitle>
     <OverlayText>← → Space</OverlayText>
-    <Button onClick={onStart}>Start</Button>
+    <DifficultySelector selected={difficulty} onSelect={onDifficultyChange} />
+    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+      <Button onClick={onStart}>Start</Button>
+      <Button onClick={onRanking} $variant="secondary">
+        🏆
+      </Button>
+    </div>
   </OverlayComponent>
 );
 
@@ -45,37 +93,32 @@ export const GameOverScreen: React.FC<{
   score: number;
   onRetry: () => void;
   onTitle: () => void;
-}> = ({ score, onRetry, onTitle }) => (
-  <OverlayComponent>
-    <OverlayTitle $color="#ef4444">Game Over</OverlayTitle>
-    <OverlayText $color="white">Score: {score}</OverlayText>
-    <div style={{ marginBottom: '1rem' }}>
-      <ShareButton
-        text={`Falling Shooterで${score}点を獲得しました！`}
-        hashtags={['FallingShooter', 'GamePlatform']}
-      />
-    </div>
-    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-      <Button onClick={onRetry}>Retry</Button>
-      <Button onClick={onTitle} $variant="secondary">
-        Title
-      </Button>
-    </div>
-  </OverlayComponent>
+  onRanking?: () => void;
+}> = ({ score, onRetry, onTitle, onRanking }) => (
+  <ScoreOverlay
+    title="Game Over"
+    titleColor="#ef4444"
+    score={score}
+    shareText={`Falling Shooterで${score}点を獲得しました！`}
+    primaryLabel="Retry"
+    onPrimary={onRetry}
+    onTitle={onTitle}
+    onRanking={onRanking}
+  />
 );
 
 export const Fireworks: React.FC = () => {
+  const fw = EFFECT.fireworks;
   const [particles, setParticles] = useState<ParticleData[]>(() => {
-    const colors = ['#FF6B6B', '#4ECDC4', '#FFEAA7', '#FFD700'];
-    return Array(5)
+    return Array(fw.count)
       .fill(0)
       .flatMap(() => {
         const cx = 30 + Math.random() * 40;
         const cy = 25 + Math.random() * 20;
-        return Array(12)
+        return Array(fw.particlesPerBurst)
           .fill(0)
           .map((_, i) => {
-            const angle = (Math.PI * 2 * i) / 12;
+            const angle = (Math.PI * 2 * i) / fw.particlesPerBurst;
             const speed = 1.5 + Math.random();
             return {
               id: uid(),
@@ -83,7 +126,7 @@ export const Fireworks: React.FC = () => {
               y: cy,
               vx: Math.cos(angle) * speed,
               vy: Math.sin(angle) * speed,
-              color: pick(colors),
+              color: pick([...fw.colors]),
               life: 1,
             };
           });
@@ -96,17 +139,17 @@ export const Fireworks: React.FC = () => {
         p
           .map(pt => ({
             ...pt,
-            x: pt.x + pt.vx * 0.4,
-            y: pt.y + pt.vy * 0.4,
-            vy: pt.vy + 0.06,
-            life: pt.life - 0.02,
+            x: pt.x + pt.vx * fw.velocityScale,
+            y: pt.y + pt.vy * fw.velocityScale,
+            vy: pt.vy + fw.gravity,
+            life: pt.life - fw.lifeLoss,
           }))
           .filter(pt => pt.life > 0)
       );
-    }, 50);
+    }, fw.updateInterval);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [fw]);
 
   return (
     <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
@@ -134,24 +177,20 @@ export const EndingScreen: React.FC<{
   score: number;
   onRetry: () => void;
   onTitle: () => void;
-}> = ({ score, onRetry, onTitle }) => (
-  <OverlayComponent>
+  onRanking?: () => void;
+}> = ({ score, onRetry, onTitle, onRanking }) => (
+  <ScoreOverlay
+    title="🎊 Clear! 🎊"
+    titleColor="#facc15"
+    score={score}
+    shareText={`Falling Shooterをクリア！スコア: ${score}点`}
+    primaryLabel="Again"
+    onPrimary={onRetry}
+    onTitle={onTitle}
+    onRanking={onRanking}
+  >
     <Fireworks />
-    <OverlayTitle $color="#facc15">🎊 Clear! 🎊</OverlayTitle>
-    <OverlayText $color="#67e8f9">Score: {score}</OverlayText>
-    <div style={{ marginBottom: '1rem' }}>
-      <ShareButton
-        text={`Falling Shooterをクリア！スコア: ${score}点`}
-        hashtags={['FallingShooter', 'GamePlatform']}
-      />
-    </div>
-    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-      <Button onClick={onRetry}>Again</Button>
-      <Button onClick={onTitle} $variant="secondary">
-        Title
-      </Button>
-    </div>
-  </OverlayComponent>
+  </ScoreOverlay>
 );
 
 export const DemoScreen: React.FC<{ onDismiss: () => void }> = ({ onDismiss }) => {

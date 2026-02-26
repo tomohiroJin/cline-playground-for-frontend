@@ -174,8 +174,8 @@ export const GameLogic = {
     return blocksNearTop.length < 3;
   },
 
-  getSpawnInterval: (time: number, stage: number): number =>
-    calcTiming(CONFIG.timing.spawn, time, stage),
-  getFallSpeed: (time: number, stage: number, slow: boolean): number =>
-    calcTiming(CONFIG.timing.fall, time, stage) * (slow ? 2 : 1),
+  getSpawnInterval: (time: number, stage: number, spawnMultiplier = 1.0): number =>
+    calcTiming(CONFIG.timing.spawn, time, stage) * spawnMultiplier,
+  getFallSpeed: (time: number, stage: number, slow: boolean, fallMultiplier = 1.0): number =>
+    calcTiming(CONFIG.timing.fall, time, stage) * (slow ? 2 : 1) * fallMultiplier,
 };

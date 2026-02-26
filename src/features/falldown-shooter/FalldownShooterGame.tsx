@@ -1,381 +1,148 @@
 // 落ち物シューティング メインゲームコンポーネント
 
-// 注: このファイルではパフォーマンス最適化のため、ref経由でゲーム状態を管理しています
-// ゲームループでの高頻度更新に対応するための意図的な設計パターンです
-
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { clamp } from '../../utils/math-utils';
-import { saveScore, getHighScore } from '../../utils/score-storage';
-
-import type {
-  GameState,
-  GameStatus,
-  PowerType,
-  SkillType,
-  BulletData,
-  ExplosionData,
-  Powers,
-} from './types';
+import React, { useState, useCallback } from 'react';
+import type { Difficulty, GameStatus } from './types';
 import { CONFIG } from './constants';
-import { uid } from './utils';
-import { Audio } from './audio';
-import { Grid } from './grid';
-import { Block } from './block';
-import { Bullet } from './bullet';
-import { GameLogic } from './game-logic';
-import { Stage } from './stage';
-import { useInterval, useKeyboard, useIdleTimer } from './hooks';
+import { DIFFICULTIES } from './difficulty';
+import { useKeyboard, useIdleTimer } from './hooks';
 
-import { CellComponent } from './components/CellView';
-import { BulletView } from './components/BulletView';
-import { PlayerShip } from './components/PlayerShip';
+import { useGameState } from './hooks/use-game-state';
+import { useGameFlow } from './hooks/use-game-flow';
+import { useGameControls } from './hooks/use-game-controls';
+import { useSkillSystem } from './hooks/use-skill-system';
+import { usePowerUp } from './hooks/use-power-up';
+import { useGameLoop } from './hooks/use-game-loop';
+import { useResponsiveSize } from './hooks/use-responsive-size';
+
 import { SkillGauge } from './components/SkillGauge';
 import { PowerUpIndicator } from './components/PowerUpIndicator';
 import { StatusBar } from './components/StatusBar';
-import { LaserEffectComponent, ExplosionEffectComponent, BlastEffectComponent } from './components/Effects';
-import {
-  StartScreen,
-  ClearScreen,
-  GameOverScreen,
-  EndingScreen,
-  DemoScreen,
-} from './components/Overlays';
+import { DemoScreen } from './components/Overlays';
+import { GameOverlays } from './components/GameOverlays';
+import { GameBoard } from './components/GameBoard';
+import { RankingOverlay } from './components/RankingOverlay';
 
 import {
   PageContainer,
   Header,
   Title,
   IconButton,
-  GameArea,
   ControlsContainer,
   ControlBtn,
-  DangerLine,
 } from '../../pages/FallingShooterPage.styles';
 
 export const FalldownShooterGame: React.FC = () => {
-  const { width: W, height: H, cellSize: SZ } = CONFIG.grid;
+  const SZ = useResponsiveSize();
 
-  // State
-  const stateRef = useRef<GameState>(Stage.create(1, 0, W, H));
-  const spawnTimeRef = useRef<number>(0);
-  const prevScoreRef = useRef<number>(0);
-
-  const [, forceUpdate] = useState<number>(0);
-  const [playerX, setPlayerX] = useState<number>(Math.floor(W / 2));
-  const [status, setStatus] = useState<GameStatus>('idle');
-  const [canFire, setCanFire] = useState<boolean>(true);
-  const [powers, setPowers] = useState<Powers>({
-    triple: false,
-    pierce: false,
-    slow: false,
-    downshot: false,
-  });
-  const [explosions, setExplosions] = useState<ExplosionData[]>([]);
-  const [laserX, setLaserX] = useState<number | null>(null);
-  const [showBlast, setShowBlast] = useState<boolean>(false);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const [showDemo, setShowDemo] = useState<boolean>(false);
+  const [showRanking, setShowRanking] = useState<boolean>(false);
+  const [difficulty, setDifficulty] = useState<Difficulty>('normal');
+  const [status, setStatus] = useState<GameStatus>('idle');
 
-  const [skillCharge, setSkillCharge] = useState<number>(0);
-  const [highScore, setHighScore] = useState<number>(0);
-
-  // パフォーマンス最適化のため、ref経由で状態を管理（ゲームループでの高頻度更新に対応）
-  const state = stateRef.current;
   const isPlaying = status === 'playing';
+  const isPaused = status === 'paused';
   const isIdle = status === 'idle';
 
-  // Helpers
-  const updateState = useCallback((changes: Partial<GameState>) => {
-    Object.assign(stateRef.current, changes);
-    forceUpdate(n => n + 1);
-  }, []);
+  // カスタムフック
+  const gameState = useGameState();
+  const { state } = gameState;
 
-  const playSound = useCallback(
-    (sound: () => void) => {
-      if (soundEnabled) sound();
-    },
-    [soundEnabled]
-  );
+  const powerUp = usePowerUp({ gameState, soundEnabled });
+  const { powers, explosions, handlePowerUp } = powerUp;
 
-  const loadHighScore = useCallback(() => {
-    getHighScore('falling-shooter').then(setHighScore);
-  }, []);
+  const controls = useGameControls({ gameState, powers, soundEnabled });
+  const { playerX, moveLeft, moveRight, fire } = controls;
 
-  useEffect(() => {
-    loadHighScore();
-  }, [loadHighScore]);
-
-  // スキルチャージエフェクト
-  useEffect(() => {
-    if (!isPlaying) return;
-    const scoreDiff = state.score - prevScoreRef.current;
-    if (scoreDiff > 0) {
-      const chargeGain = (scoreDiff / CONFIG.skill.chargeRate) * 100;
-      setSkillCharge(c => {
-        const newCharge = Math.min(CONFIG.skill.maxCharge, c + chargeGain);
-        if (c < 100 && newCharge >= 100) playSound(Audio.charge);
-        return newCharge;
-      });
-    }
-    prevScoreRef.current = state.score;
-  }, [state.score, isPlaying, playSound]);
-
-  // パワーアップハンドラー
-  const handlePowerExpire = useCallback((type: PowerType) => {
-    setPowers(p => ({ ...p, [type]: false }));
-  }, []);
-
-  const handlePowerUp = useCallback(
-    (type: PowerType, x: number, y: number) => {
-      if (type === 'bomb') {
-        playSound(Audio.bomb);
-        setExplosions(e => [...e, { id: uid(), x, y }]);
-        setTimeout(() => {
-          const st = stateRef.current;
-          const result = GameLogic.applyExplosion(x, y, st.blocks, st.grid, W, H);
-          updateState({
-            blocks: result.blocks,
-            grid: result.grid,
-            score: st.score + result.score,
-          });
-        }, 0);
-      } else {
-        playSound(Audio.power);
-        setPowers(p => ({ ...p, [type]: true }));
-        setTimeout(() => handlePowerExpire(type), CONFIG.powerUp.duration[type]);
-      }
-    },
-    [playSound, updateState, handlePowerExpire, W, H]
-  );
-
-  // スキルハンドラー
-  const activateSkill = useCallback(
-    (skillType: SkillType) => {
-      if (skillCharge < CONFIG.skill.maxCharge) return;
-
-      playSound(Audio.skill);
-      setSkillCharge(0);
-
-      const st = stateRef.current;
-
-      switch (skillType) {
-        case 'laser': {
-          setLaserX(playerX);
-          setTimeout(() => setLaserX(null), 300);
-          const result = GameLogic.applyLaserColumn(playerX, st.blocks, st.grid);
-          updateState({ blocks: result.blocks, grid: result.grid, score: st.score + result.score });
-          break;
-        }
-        case 'blast': {
-          setShowBlast(true);
-          setTimeout(() => setShowBlast(false), 400);
-          const result = GameLogic.applyBlastAll(st.blocks);
-          updateState({ blocks: result.blocks, score: st.score + result.score });
-          break;
-        }
-        case 'clear': {
-          const result = GameLogic.applyClearBottom(st.grid);
-          if (result.cleared) {
-            const newPlayerY = GameLogic.calculatePlayerY(result.grid);
-            updateState({ grid: result.grid, score: st.score + result.score, playerY: newPlayerY });
-          }
-          break;
-        }
-      }
-    },
-    [skillCharge, playerX, playSound, updateState]
-  );
-
-  // ゲームフローハンドラー
-  const startStage = useCallback(
-    (num: number, score: number = 0) => {
-      stateRef.current = Stage.create(num, score, W, H);
-      prevScoreRef.current = score;
-      setPlayerX(Math.floor(W / 2));
-      setCanFire(true);
-      setPowers({ triple: false, pierce: false, slow: false, downshot: false });
-      setExplosions([]);
-      setLaserX(null);
-      setShowBlast(false);
-      spawnTimeRef.current = 0;
-      setStatus('playing');
-      setShowDemo(false);
-      forceUpdate(n => n + 1);
-    },
-    [W, H]
-  );
-
-  const goToTitle = useCallback(() => {
-    stateRef.current = Stage.create(1, 0, W, H);
-    prevScoreRef.current = 0;
-    setPlayerX(Math.floor(W / 2));
-    setPowers({ triple: false, pierce: false, slow: false, downshot: false });
-    setExplosions([]);
-    setSkillCharge(0);
-    setStatus('idle');
-    forceUpdate(n => n + 1);
-  }, [W, H]);
-
-  const resetGame = useCallback(() => {
-    setSkillCharge(0);
-    startStage(1, 0);
-  }, [startStage]);
-
-  const nextStage = useCallback(() => {
-    playSound(Audio.win);
-    startStage(state.stage + 1, state.score);
-  }, [startStage, state.stage, state.score, playSound]);
-
-  // 操作
-  const moveLeft = useCallback(() => setPlayerX(x => clamp(x - 1, 0, W - 1)), [W]);
-  const moveRight = useCallback(() => setPlayerX(x => clamp(x + 1, 0, W - 1)), [W]);
-
-  const fire = useCallback(() => {
-    if (!canFire) return;
-    playSound(Audio.shoot);
-    const y = stateRef.current.playerY - 1;
-
-    let newBullets: BulletData[];
-    if (powers.triple && powers.downshot) {
-      newBullets = Bullet.createSpreadWithDownshot(playerX, y, powers.pierce);
-    } else if (powers.triple) {
-      newBullets = Bullet.createSpread(playerX, y, powers.pierce);
-    } else if (powers.downshot) {
-      newBullets = Bullet.createWithDownshot(playerX, y, powers.pierce);
-    } else {
-      newBullets = [Bullet.create(playerX, y, 0, -1, powers.pierce)];
-    }
-
-    updateState({ bullets: [...stateRef.current.bullets, ...newBullets] });
-    setCanFire(false);
-    setTimeout(() => setCanFire(true), CONFIG.timing.bullet.cooldown);
-  }, [canFire, playerX, powers, playSound, updateState]);
-
-  // Hooks
-  useIdleTimer(CONFIG.demo.idleTimeout, () => setShowDemo(true), isIdle && !showDemo);
-
-  useKeyboard(isPlaying, {
-    left: moveLeft,
-    right: moveRight,
-    fire,
-    skill1: () => activateSkill('laser'),
-    skill2: () => activateSkill('blast'),
-    skill3: () => activateSkill('clear'),
+  const skill = useSkillSystem({
+    gameState,
+    playerX,
+    isPlaying,
+    soundEnabled,
+    skillChargeMultiplier: DIFFICULTIES[difficulty].skillChargeMultiplier,
   });
 
-  // ゲームループ
-  useInterval(() => updateState({ time: state.time + 1 }), 1000, isPlaying);
+  const flow = useGameFlow({
+    difficulty,
+    gameState,
+    status,
+    setStatus,
+    setPlayerX: controls.setPlayerX,
+    setPowers: powerUp.setPowers,
+    setExplosions: powerUp.setExplosions,
+    setLaserX: skill.setLaserX,
+    setShowBlast: skill.setShowBlast,
+    setSkillCharge: skill.setSkillCharge,
+    setShowDemo,
+    setCanFire: controls.setCanFire,
+    soundEnabled,
+    spawnTimeRef: { current: 0 } as React.MutableRefObject<number>,
+    prevScoreRef: { current: 0 } as React.MutableRefObject<number>,
+  });
 
-  useInterval(
-    () => {
-      const now = Date.now();
-      const spawnInterval = GameLogic.getSpawnInterval(state.time, state.stage);
+  const { resetGame, goToTitle, nextStage } = flow;
 
-      if (now - spawnTimeRef.current > spawnInterval) {
-        if (GameLogic.canSpawnBlock(state.blocks)) {
-          updateState({ blocks: [...state.blocks, Block.create(W, state.blocks)] });
-          spawnTimeRef.current = now;
-        }
-      }
-    },
-    100,
-    isPlaying
-  );
+  // ポーズトグル
+  const togglePause = useCallback(() => {
+    if (status === 'playing') {
+      setStatus('paused');
+    } else if (status === 'paused') {
+      setStatus('playing');
+    }
+  }, [status, setStatus]);
 
-  useInterval(
-    () => {
-      if (!state.bullets.length) return;
+  // ゲームループ（ポーズ中は停止）
+  useGameLoop({
+    gameState,
+    isPlaying: isPlaying && !isPaused,
+    powers,
+    soundEnabled,
+    handlePowerUp,
+    setStatus,
+    loadHighScore: flow.loadHighScore,
+    difficulty,
+  });
 
-      const result = GameLogic.processBullets(
-        state.bullets,
-        state.blocks,
-        state.grid,
-        W,
-        H,
-        handlePowerUp
-      );
+  // キーボード操作（プレイ中またはポーズ中）
+  useKeyboard(isPlaying || isPaused, {
+    left: isPlaying ? moveLeft : () => {},
+    right: isPlaying ? moveRight : () => {},
+    fire: isPlaying ? fire : () => {},
+    skill1: isPlaying ? () => skill.activateSkill('laser') : () => {},
+    skill2: isPlaying ? () => skill.activateSkill('blast') : () => {},
+    skill3: isPlaying ? () => skill.activateSkill('clear') : () => {},
+    pause: togglePause,
+  });
 
-      if (result.hitCount > 0) playSound(Audio.hit);
+  // アイドルタイマー
+  useIdleTimer(CONFIG.demo.idleTimeout, () => setShowDemo(true), isIdle && !showDemo);
 
-      updateState({
-        bullets: result.bullets,
-        blocks: result.blocks,
-        grid: result.grid,
-        score: state.score + result.score,
-      });
-
-      result.pendingBombs.forEach(({ x, y }) => handlePowerUp('bomb', x, y));
-    },
-    CONFIG.timing.bullet.speed,
-    isPlaying
-  );
-
-  useInterval(
-    () => {
-      if (!state.blocks.length) return;
-
-      const { falling, landing } = GameLogic.processBlockFalling(state.blocks, state.grid, H);
-
-      if (!landing.length) {
-        updateState({ blocks: falling });
-        return;
-      }
-
-      playSound(Audio.land);
-
-      const gridWithLanded = Block.placeOnGrid(landing, state.grid);
-      const { grid: clearedGrid, cleared } = Grid.clearFullLines(gridWithLanded);
-
-      if (cleared > 0) playSound(Audio.line);
-
-      const newLines = state.lines + cleared;
-      const newPlayerY = GameLogic.calculatePlayerY(clearedGrid);
-      const lineScore = cleared * CONFIG.score.line * state.stage;
-
-      updateState({
-        blocks: falling,
-        grid: clearedGrid,
-        playerY: newPlayerY,
-        score: state.score + lineScore,
-        lines: newLines,
-      });
-
-      if (newLines >= state.linesNeeded) {
-        setStatus(Stage.isFinal(state.stage) ? 'ending' : 'clear');
-        return;
-      }
-
-      if (GameLogic.isGameOver(clearedGrid)) {
-        playSound(Audio.over);
-        saveScore('falling-shooter', state.score)
-          .then(() => loadHighScore())
-          .catch(err => console.error(err));
-        setStatus('over');
-      }
-    },
-    GameLogic.getFallSpeed(state.time, state.stage, powers.slow),
-    isPlaying
-  );
-
-  // Render
   return (
     <PageContainer>
       {showDemo && <DemoScreen onDismiss={() => setShowDemo(false)} />}
+      {showRanking && <RankingOverlay onClose={() => setShowRanking(false)} />}
 
       <Header>
         <Title>落ち物シューティング</Title>
         <div
           style={{ fontSize: '0.9rem', color: '#fbbf24', marginLeft: 'auto', marginRight: '1rem' }}
         >
-          High Score: {highScore}
+          High Score: {flow.highScore}
         </div>
-        <IconButton onClick={() => setSoundEnabled(s => !s)}>
+        {isPlaying && (
+          <IconButton onClick={togglePause} aria-label="ゲームを一時停止">
+            ⏸
+          </IconButton>
+        )}
+        <IconButton onClick={() => setSoundEnabled(s => !s)} aria-label="サウンドの切り替え">
           {soundEnabled ? '🔊' : '🔇'}
         </IconButton>
-        <IconButton onClick={() => setShowDemo(true)}>❓</IconButton>
+        <IconButton onClick={() => setShowDemo(true)} aria-label="ヘルプを表示">
+          ❓
+        </IconButton>
       </Header>
 
-      <SkillGauge charge={skillCharge} onUseSkill={activateSkill} />
+      <SkillGauge charge={skill.skillCharge} onUseSkill={skill.activateSkill} />
       <PowerUpIndicator powers={powers} />
       <StatusBar
         stage={state.stage}
@@ -385,65 +152,35 @@ export const FalldownShooterGame: React.FC = () => {
       />
 
       <div style={{ position: 'relative' }}>
-        {status === 'idle' && <StartScreen onStart={resetGame} />}
-        {status === 'clear' && <ClearScreen stage={state.stage} onNext={nextStage} />}
-        {status === 'over' && (
-          <GameOverScreen score={state.score} onRetry={resetGame} onTitle={goToTitle} />
-        )}
-        {status === 'ending' && (
-          <EndingScreen score={state.score} onRetry={resetGame} onTitle={goToTitle} />
-        )}
+        <GameOverlays
+          status={status}
+          stage={state.stage}
+          score={state.score}
+          difficulty={difficulty}
+          onDifficultyChange={setDifficulty}
+          onStart={resetGame}
+          onResume={togglePause}
+          onTitle={goToTitle}
+          onNext={nextStage}
+          onRanking={() => setShowRanking(true)}
+        />
 
-        <GameArea
-          $width={W * SZ}
-          $height={H * SZ}
-          role="region"
-          aria-label="シューティングパズルゲーム画面"
-          tabIndex={0}
-        >
-          {state.grid.map((row, y) =>
-            row.map(
-              (color, x) =>
-                color && <CellComponent key={`g${x}${y}`} x={x} y={y} color={color} size={SZ} />
-            )
-          )}
-
-          {state.blocks.map(block =>
-            Block.getCells(block).map(
-              (cell, i) =>
-                cell.y >= 0 && (
-                  <CellComponent
-                    key={`b${block.id}${i}`}
-                    x={cell.x}
-                    y={cell.y}
-                    color={block.color}
-                    size={SZ}
-                    power={i === 0 ? block.power : null}
-                  />
-                )
-            )
-          )}
-
-          {state.bullets.map(b => (
-            <BulletView key={b.id} bullet={b} size={SZ} />
-          ))}
-          {explosions.map(e => (
-            <ExplosionEffectComponent key={e.id} x={e.x} y={e.y} size={SZ} />
-          ))}
-          {laserX !== null && <LaserEffectComponent x={laserX} size={SZ} height={H} />}
-          <BlastEffectComponent visible={showBlast} />
-          <PlayerShip x={playerX} y={state.playerY} size={SZ} />
-
-          <DangerLine $top={SZ * CONFIG.dangerLine} />
-        </GameArea>
+        <GameBoard
+          state={state}
+          playerX={playerX}
+          cellSize={SZ}
+          explosions={explosions}
+          laserX={skill.laserX}
+          showBlast={skill.showBlast}
+        />
       </div>
 
       <ControlsContainer>
-        <ControlBtn onClick={moveLeft}>←</ControlBtn>
-        <ControlBtn onClick={fire} $variant="fire">
+        <ControlBtn onClick={moveLeft} aria-label="左に移動">←</ControlBtn>
+        <ControlBtn onClick={fire} $variant="fire" aria-label="射撃">
           🎯
         </ControlBtn>
-        <ControlBtn onClick={moveRight}>→</ControlBtn>
+        <ControlBtn onClick={moveRight} aria-label="右に移動">→</ControlBtn>
       </ControlsContainer>
     </PageContainer>
   );
