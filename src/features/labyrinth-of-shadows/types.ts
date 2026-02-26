@@ -4,6 +4,7 @@ import { CONFIG, CONTENT } from './constants';
 export type Difficulty = keyof typeof CONFIG.difficulties;
 export type EntityType = keyof typeof CONTENT.items;
 export type SoundName = keyof typeof CONTENT.sounds;
+export type EnemyType = 'wanderer' | 'chaser' | 'teleporter';
 
 export interface Entity {
   x: number;
@@ -21,6 +22,10 @@ export interface Enemy extends Entity {
   actTime: number;
   lastSeenX: number;
   lastSeenY: number;
+  type: EnemyType;
+  path: { x: number; y: number }[];
+  pathTime: number;
+  teleportCooldown: number;
 }
 
 export interface Item extends Entity {
@@ -57,6 +62,7 @@ export interface GameState {
   energy: number;
   invince: number;
   sprinting: boolean;
+  speedBoost: number;
   eSpeed: number;
   gTime: number;
   lastT: number;
