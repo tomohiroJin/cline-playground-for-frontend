@@ -12,6 +12,7 @@ import {
   DPadSpacer,
   DirButton,
   ActButton,
+  PauseButton,
   RstButton,
   InfoText,
   PageWrap,
@@ -53,7 +54,7 @@ const KeysAndArmsGame: React.FC = () => {
       engineRef.current?.handleKeyDown(e.key);
       // ゲーム操作キーのデフォルト動作を抑制
       if (
-        ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'z', 'Z', 'Escape', 'Enter'].includes(
+        ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'z', 'Z', 'Escape', 'Enter', 'p', 'P'].includes(
           e.key
         )
       ) {
@@ -102,7 +103,10 @@ const KeysAndArmsGame: React.FC = () => {
       <Shell>
         <ShellHeader>
           <Label>&#9670; KEYS &amp; ARMS &#9670;</Label>
-          <RstButton {...btnProps('Escape')}>RST</RstButton>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            <PauseButton {...btnProps('p')}>PAUSE</PauseButton>
+            <RstButton {...btnProps('Escape')}>RST</RstButton>
+          </div>
         </ShellHeader>
         <Bezel>
           <Canvas ref={canvasRef} />

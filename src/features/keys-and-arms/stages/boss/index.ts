@@ -119,7 +119,7 @@ export function createBossStage(ctx) {
       if (B.wonT === 150) {
         if (Difficulty.isTrueEnding(G.loop)) { G.state = 'trueEnd'; G.teT = 0; G.tick = 0; }
         else if (G.loop === 1) { G.state = 'ending1'; G.e1T = 0; G.tick = 0; }
-        else { G.loop++; G.noDmg = true; if (G.hp < G.maxHp) G.hp++; transTo('LOOP ' + G.loop, G.cavInit); }
+        else { G.loop++; G.noDmg = true; if (G.hp < G.maxHp) G.hp++; transTo('LOOP ' + G.loop, G.cavInit, 'HARDER!'); }
       }
       return;
     }
@@ -707,6 +707,14 @@ export function createBossStage(ctx) {
       // 台座番号
       $.globalAlpha = .15; txt(String(i + 1), pp.x - 3, pp.y + 16, 5); $.globalAlpha = 1;
 
+      // 設置済み宝石の光柱
+      if (B.peds[i] === 1 || B.peds[i] === 2) {
+        const beamAlpha = .04 + Math.sin(G.tick * .08 + i * 1.2) * .02;
+        $.fillStyle = `rgba(160,200,120,${beamAlpha})`;
+        const bx = pp.x - 2, bw = 4;
+        $.fillRect(bx, 0, bw, pp.y);
+      }
+
       // 宝石
       if (B.peds[i] >= 1) {
         let gy = pp.y - 12;
@@ -904,6 +912,13 @@ export function createBossStage(ctx) {
     if (B.rageWave > 0 || B.quake > 0) {
       const ra = Math.max(B.rageWave, B.quake) / 6;
       onFill(ra * .06); $.fillRect(0, 0, W, H); $.globalAlpha = 1;
+    }
+    // レイジウェーブ発動時の画面フラッシュ
+    if (B.rageWave > 0 && B.rageWave < 8) {
+      const rfa = (8 - B.rageWave) / 8;
+      $.fillStyle = `rgba(40,10,0,${rfa * .15})`;
+      $.fillRect(0, 0, W, H);
+      $.globalAlpha = 1;
     }
 
     // パーティクル

@@ -438,7 +438,7 @@ export function createPrairieStage(ctx) {
     if (GS.comboT > 0) GS.comboT--; // 表示タイマーのみ、コンボは時間でリセットしない
     // シールドオーブ浮遊アニメーション
     GS.shieldOrbs = GS.shieldOrbs.filter(o => { o.t++; o.y -= 1.5; o.alpha = Math.max(0, 1 - o.t / 20); return o.t < 20; });
-    if (GS.won) { GS.wonT++; if (GS.wonT === 120) transTo('STAGE 3', G.bosInit); return; }
+    if (GS.won) { GS.wonT++; if (GS.wonT === 120) transTo('CASTLE', G.bosInit, 'SET 6 GEMS'); return; }
     GS.ens.forEach(e => { if (e.dashFlash > 0) e.dashFlash--; if (e.spawnT > 0) e.spawnT--; });
 
     // 攻撃 (↑→↓ = レーン 0,1,2)

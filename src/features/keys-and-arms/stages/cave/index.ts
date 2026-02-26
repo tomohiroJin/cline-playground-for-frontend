@@ -257,7 +257,7 @@ export function createCaveStage(ctx) {
   // === 洞窟更新 ===
   function cavUpdate(nb) {
     const C = G.cav; if (C.hurtCD > 0) C.hurtCD--; if (C.actAnim > 0) C.actAnim--; if (C.batHitAnim > 0) C.batHitAnim--;
-    if (C.mimicShake > 0) C.mimicShake--; if (C.walkAnim > 0) C.walkAnim--; if (C.won) { C.wonT++; if (C.wonT === 120) transTo('STAGE 2', G.grsInit); return; }
+    if (C.mimicShake > 0) C.mimicShake--; if (C.walkAnim > 0) C.walkAnim--; if (C.won) { C.wonT++; if (C.wonT === 120) transTo('PRAIRIE', G.grsInit, 'DEFEAT ENEMIES'); return; }
     if (C.trailAlpha > 0) C.trailAlpha -= .03; if (C.roomNameT > 0) C.roomNameT--;
     C.idleT++;
     // 鍵所持中のきらめき
@@ -426,8 +426,23 @@ export function createCaveStage(ctx) {
     // DOOR（pos 10、グローエフェクト付き）
     { const cx = POS[10].x, by = L3T + 4;
       // 設置済み鍵数に応じたドアの光
-      if (C.keysPlaced > 0) { const glw = C.keysPlaced / 3; onFill(.04 * glw + Math.sin(G.tick * .06) * .02 * glw);
-        circle(cx, by + 14, 20 + C.keysPlaced * 4); $.globalAlpha = 1; }
+      if (C.keysPlaced > 0) {
+        const glw = C.keysPlaced / 3;
+        // 外側グロー（大きく薄い）
+        onFill(.02 * glw + Math.sin(G.tick * .04) * .01 * glw);
+        circle(cx, by + 14, 32 + C.keysPlaced * 6);
+        // 内側グロー（既存強化）
+        onFill(.06 * glw + Math.sin(G.tick * .06) * .025 * glw);
+        circle(cx, by + 14, 20 + C.keysPlaced * 4);
+        $.globalAlpha = 1;
+        // 全鍵設置時のゴールドフラッシュ
+        if (C.keysPlaced === 3) {
+          const gfa = Math.sin(G.tick * .12) * .5 + .5;
+          $.fillStyle = `rgba(200,180,80,${gfa * .08})`;
+          circle(cx, by + 14, 26 + gfa * 8);
+          $.globalAlpha = 1;
+        }
+      }
       px(DOOR_D, cx - 10, by, s, true);
       for (let i = 0; i < 3; i++) { const fl = i < C.keysPlaced; $.fillStyle = fl ? ON : GH; $.fillRect(cx - 6 + i * 5, by + 14, 4, 4); if (fl) { $.fillStyle = BG; $.fillRect(cx - 5 + i * 5, by + 15, 2, 2); } }
       // クモ（振動する糸付き）
