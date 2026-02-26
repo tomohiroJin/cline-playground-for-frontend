@@ -14,6 +14,7 @@ import { createCaveStage } from './stages/cave/index';
 import { createPrairieStage } from './stages/prairie/index';
 import { createBossStage } from './stages/boss/index';
 import { createTitleScreen } from './screens/title';
+import { createHelpScreen } from './screens/help';
 import { createGameOverScreen } from './screens/game-over';
 import { createEndingScreen } from './screens/ending';
 import { createTrueEndScreen } from './screens/true-end';
@@ -73,6 +74,8 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
     resetConfirm: 0,
     earnedShields: 0,
     bgmBeat: 0,
+    paused: false,
+    helpPage: 0,
 
     // 入力（jp はフレーム中の「押された」フラグ）
     jp,
@@ -82,6 +85,7 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
     trT: 0,
     trTxt: '',
     trFn: null,
+    trSub: '',
 
     // タイトル画面
     blink: 0,
@@ -123,6 +127,7 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
 
   // 画面
   const titleScreen = createTitleScreen(ctx);
+  const helpScreen = createHelpScreen(ctx);
   const gameOverScreen = createGameOverScreen(ctx);
   const endingScreen = createEndingScreen(ctx);
   const trueEndScreen = createTrueEndScreen(ctx);
@@ -159,6 +164,23 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
       clearJ(); return;
     }
 
+    // ポーズトグル（ゲームプレイ中のみ）
+    if (J('p') && G.state !== 'title' && G.state !== 'over'
+        && G.state !== 'trueEnd' && G.state !== 'ending1' && G.state !== 'help') {
+      G.paused = !G.paused;
+      clearJ(); return;
+    }
+
+    // ポーズ中はティックスキップ（ただしESCは受け付ける）
+    if (G.paused) {
+      // ESC でリセット確認（ポーズ中も有効）
+      if (J('escape')) {
+        G.paused = false;
+        G.resetConfirm = 90;
+      }
+      clearJ(); return;
+    }
+
     // ESC でリセット確認（ゲームプレイ中のみ）
     if (J('escape') && G.state !== 'title' && G.state !== 'over' && G.state !== 'trueEnd' && G.state !== 'ending1') {
       G.resetConfirm = 90; clearJ(); return;
@@ -182,8 +204,10 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
           for (const k of 'abcdefghijklmnopqrstuvwxyz'.split('')) {
             if (J(k)) { G.cheatBuf += k; if (G.cheatBuf.length > 10) G.cheatBuf = G.cheatBuf.slice(-10); }
           }
+          if (J('arrowup')) { G.state = 'help'; G.helpPage = 0; clearJ(); break; }
           if (jAct() || J('enter')) { audio.ea(); audio.S.start(); titleScreen.startGame(); }
           break;
+        case 'help': helpScreen.update(); break;
         case 'over': case 'trueEnd': case 'ending1': break;
       }
     }
@@ -228,6 +252,7 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
     } else {
       switch (G.state) {
         case 'title': titleScreen.draw(); break;
+        case 'help': helpScreen.draw(); break;
         case 'cave': cave.draw(); hud.drawHUD(); break;
         case 'grass': prairie.draw(); hud.drawHUD(); break;
         case 'boss': boss.draw(); hud.drawHUD(); break;
@@ -242,6 +267,16 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
     $.fillRect(0, 0, W, 3); $.fillRect(0, H - 3, W, 3);
     $.fillRect(0, 0, 3, H); $.fillRect(W - 3, 0, 3, H);
     $.globalAlpha = 1;
+
+    // ポーズオーバーレイ
+    if (G.paused) {
+      $.fillStyle = 'rgba(26,40,16,.65)'; $.fillRect(0, 0, W, H);
+      $.fillStyle = BG;
+      txtC('PAUSED', W / 2, H / 2 - 20, 16);
+      if (Math.floor(G.tick / 18) % 2) {
+        txtC('P: RESUME    ESC: TITLE', W / 2, H / 2 + 14, 6);
+      }
+    }
 
     // リセット確認オーバーレイ
     if (G.resetConfirm > 0) {

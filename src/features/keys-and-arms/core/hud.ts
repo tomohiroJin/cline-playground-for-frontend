@@ -87,8 +87,8 @@ export function createHUD(draw, G, audio) {
   }
 
   /** トランジション開始 */
-  function transTo(t, fn) {
-    G.trT = 42; G.trTxt = t; G.trFn = fn; G.bgmBeat = 0;
+  function transTo(t, fn, sub) {
+    G.trT = 56; G.trTxt = t; G.trFn = fn; G.trSub = sub || ''; G.bgmBeat = 0;
     if (tn) tn(200, .15, 'triangle', .03);
   }
 
@@ -96,17 +96,22 @@ export function createHUD(draw, G, audio) {
   function drawTrans() {
     if (G.trT <= 0) return false;
     G.trT--;
-    if (G.trT === 21 && G.trFn) G.trFn();
-    const p = G.trT > 21 ? (42 - G.trT) / 21 : G.trT / 21;
+    if (G.trT === 28 && G.trFn) G.trFn();
+    const p = G.trT > 28 ? (56 - G.trT) / 28 : G.trT / 28;
     const wh = Math.floor(H * p);
     $.fillStyle = `rgba(176,188,152,.95)`;
     $.fillRect(0, H / 2 - wh / 2, W, wh);
     if (p > .4) {
       $.globalAlpha = (p - .4) / .6;
-      txtC(G.trTxt, W / 2, H / 2 - 6, 12);
+      txtC(G.trTxt, W / 2, H / 2 - 10, 12);
+      // サブテキスト
+      if (G.trSub) {
+        $.globalAlpha *= .6;
+        txtC(G.trSub, W / 2, H / 2 + 8, 6);
+      }
       const lw = 80 * Math.min(1, (p - .4) * 3);
       $.fillStyle = ON; $.globalAlpha *= .2;
-      $.fillRect(W / 2 - lw / 2, H / 2 + 10, lw, 1);
+      $.fillRect(W / 2 - lw / 2, H / 2 + 18, lw, 1);
     }
     $.globalAlpha = 1;
     return true;
