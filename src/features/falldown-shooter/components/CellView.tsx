@@ -13,11 +13,12 @@ interface CellProps {
   power?: PowerType | null;
 }
 
-export const CellComponent: React.FC<CellProps> = ({ x, y, color, size, power }) => {
+export const CellComponent: React.FC<CellProps> = React.memo(({ x, y, color, size, power }) => {
   const p = power ? POWER_TYPES[power] : null;
   return (
     <CellWrapper $x={x} $y={y} $size={size} $color={p?.color || color} $hasPower={!!p}>
       {p?.icon}
     </CellWrapper>
   );
-};
+});
+CellComponent.displayName = 'CellComponent';

@@ -18,6 +18,7 @@ export type {
   PowerType,
   SkillType,
   GameStatus,
+  Difficulty,
   OscillatorType,
   TimingConfig,
   Config,
@@ -34,4 +35,5 @@ export type {
   BulletProcessResult,
   DemoSlide,
   KeyboardHandlers,
+  DifficultyConfig,
 } from './types';

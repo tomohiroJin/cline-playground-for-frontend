@@ -5,7 +5,7 @@ import type { Powers, PowerType } from '../types';
 import { POWER_TYPES } from '../constants';
 import { PowerIndicator, PowerBadge } from '../../../pages/FallingShooterPage.styles';
 
-export const PowerUpIndicator: React.FC<{ powers: Powers }> = ({ powers }) => {
+export const PowerUpIndicator: React.FC<{ powers: Powers }> = React.memo(({ powers }) => {
   const active = (Object.entries(powers) as [PowerType, boolean][]).filter(
     ([k, v]) => v && k !== 'bomb'
   );
@@ -19,4 +19,5 @@ export const PowerUpIndicator: React.FC<{ powers: Powers }> = ({ powers }) => {
       ))}
     </PowerIndicator>
   );
-};
+});
+PowerUpIndicator.displayName = 'PowerUpIndicator';

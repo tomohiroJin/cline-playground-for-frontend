@@ -116,6 +116,34 @@ describe('GameLogic', () => {
       const slow = GameLogic.getFallSpeed(0, 0, true);
       expect(slow).toBe(normal * 2);
     });
+
+    test('spawnMultiplierでスポーン間隔が変化すること', () => {
+      const base = GameLogic.getSpawnInterval(0, 0);
+      expect(GameLogic.getSpawnInterval(0, 0, 1.5)).toBe(base * 1.5);
+      expect(GameLogic.getSpawnInterval(0, 0, 0.7)).toBeCloseTo(base * 0.7);
+    });
+
+    test('fallMultiplierで落下速度が変化すること', () => {
+      const base = GameLogic.getFallSpeed(0, 0, false);
+      expect(GameLogic.getFallSpeed(0, 0, false, 1.3)).toBeCloseTo(base * 1.3);
+      expect(GameLogic.getFallSpeed(0, 0, false, 0.8)).toBeCloseTo(base * 0.8);
+    });
+
+    test('slowモードとfallMultiplierが同時に適用されること', () => {
+      const base = GameLogic.getFallSpeed(0, 0, false);
+      const multiplier = 1.3;
+      expect(GameLogic.getFallSpeed(0, 0, true, multiplier)).toBeCloseTo(base * 2 * multiplier);
+    });
+
+    test('倍率省略時はデフォルト値1.0が適用されること', () => {
+      const withDefault = GameLogic.getSpawnInterval(5, 1);
+      const withExplicit = GameLogic.getSpawnInterval(5, 1, 1.0);
+      expect(withDefault).toBe(withExplicit);
+
+      const fallDefault = GameLogic.getFallSpeed(5, 1, false);
+      const fallExplicit = GameLogic.getFallSpeed(5, 1, false, 1.0);
+      expect(fallDefault).toBe(fallExplicit);
+    });
   });
 
   describe('applyLaserColumn', () => {

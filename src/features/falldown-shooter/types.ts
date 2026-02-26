@@ -2,7 +2,8 @@
 
 export type PowerType = 'triple' | 'pierce' | 'bomb' | 'slow' | 'downshot';
 export type SkillType = 'laser' | 'blast' | 'clear';
-export type GameStatus = 'idle' | 'playing' | 'clear' | 'over' | 'ending';
+export type GameStatus = 'idle' | 'playing' | 'paused' | 'clear' | 'over' | 'ending';
+export type Difficulty = 'easy' | 'normal' | 'hard';
 export type OscillatorType = 'sine' | 'square' | 'sawtooth' | 'triangle';
 
 export interface TimingConfig {
@@ -133,4 +134,15 @@ export interface KeyboardHandlers {
   skill1: () => void;
   skill2: () => void;
   skill3: () => void;
+  pause?: () => void;
+}
+
+export interface DifficultyConfig {
+  label: string;
+  color: string;
+  spawnMultiplier: number;
+  fallMultiplier: number;
+  scoreMultiplier: number;
+  powerUpChance: number;
+  skillChargeMultiplier: number;
 }

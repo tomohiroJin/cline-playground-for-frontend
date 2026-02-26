@@ -13,23 +13,46 @@ export type ScoreRecord = {
  * @param score スコア
  * @param difficulty 難易度（任意）
  */
+/** スコアの最大保存件数 */
+const MAX_SCORES = 100;
+
 export const saveScore = async (
   gameId: string,
   score: number,
   difficulty?: string
 ): Promise<void> => {
-  try {
-    const key = getStorageKey(gameId, difficulty);
-    const scores = getScoresInternal(key);
-    const newScore: ScoreRecord = {
-      score,
-      timestamp: Date.now(),
-      difficulty,
-    };
+  const key = getStorageKey(gameId, difficulty);
+  const scores = getScoresInternal(key);
+  const newScore: ScoreRecord = {
+    score,
+    timestamp: Date.now(),
+    difficulty,
+  };
 
-    scores.push(newScore);
+  scores.push(newScore);
+
+  // 最大件数を超えた場合、古いスコアを削除
+  if (scores.length > MAX_SCORES) {
+    scores.sort((a, b) => b.timestamp - a.timestamp);
+    scores.length = MAX_SCORES;
+  }
+
+  try {
     localStorage.setItem(key, JSON.stringify(scores));
   } catch (error) {
+    // QuotaExceededError: 古いスコアを半分削除して再試行
+    if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+      console.warn('localStorage 容量超過。古いスコアを削除して再試行します。');
+      scores.sort((a, b) => b.timestamp - a.timestamp);
+      scores.length = Math.ceil(scores.length / 2);
+      try {
+        localStorage.setItem(key, JSON.stringify(scores));
+        return;
+      } catch (retryError) {
+        console.error('再試行後もスコア保存に失敗しました:', retryError);
+        throw retryError;
+      }
+    }
     console.error('Failed to save score:', error);
     throw error;
   }

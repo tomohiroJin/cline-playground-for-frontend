@@ -1,6 +1,7 @@
 // エフェクトコンポーネント群
 
 import React, { useState, useEffect } from 'react';
+import { EFFECT } from '../constants';
 import { Laser, Explosion, Blast } from '../../../pages/FallingShooterPage.styles';
 
 export const LaserEffectComponent: React.FC<{ x: number; size: number; height: number }> = ({
@@ -10,7 +11,7 @@ export const LaserEffectComponent: React.FC<{ x: number; size: number; height: n
 }) => {
   const [visible, setVisible] = useState(true);
   useEffect(() => {
-    setTimeout(() => setVisible(false), 300);
+    setTimeout(() => setVisible(false), EFFECT.laser.duration);
   }, []);
   return visible ? <Laser $x={x} $size={size} $height={height} /> : null;
 };
@@ -22,7 +23,7 @@ export const ExplosionEffectComponent: React.FC<{ x: number; y: number; size: nu
 }) => {
   const [visible, setVisible] = useState(true);
   useEffect(() => {
-    setTimeout(() => setVisible(false), 250);
+    setTimeout(() => setVisible(false), EFFECT.explosion.duration);
   }, []);
   return visible ? <Explosion $x={x} $y={y} $size={size} /> : null;
 };

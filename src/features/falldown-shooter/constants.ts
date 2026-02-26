@@ -69,6 +69,22 @@ export const SKILLS: Record<SkillType, SkillInfo> = {
   clear: { icon: '✨', name: 'ライン消去', desc: '最下段を消去', color: '#00CED1', key: '3' },
 };
 
+// エフェクト・タイミング定数
+export const EFFECT = {
+  laser: { duration: 300 },
+  explosion: { duration: 250 },
+  blast: { duration: 400 },
+  fireworks: {
+    count: 5,
+    particlesPerBurst: 12,
+    colors: ['#FF6B6B', '#4ECDC4', '#FFEAA7', '#FFD700'],
+    updateInterval: 50,
+    gravity: 0.06,
+    velocityScale: 0.4,
+    lifeLoss: 0.02,
+  },
+} as const;
+
 export const DEMO_SLIDES: DemoSlide[] = [
   {
     title: '🎮 遊び方',

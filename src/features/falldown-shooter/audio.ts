@@ -4,6 +4,7 @@ import type { OscillatorType } from './types';
 
 export const Audio = (() => {
   let ctx: AudioContext | null = null;
+  let warned = false;
 
   const getContext = (): AudioContext | null => {
     if (!ctx) {
@@ -11,8 +12,22 @@ export const Audio = (() => {
         const AudioContextClass =
           window.AudioContext ||
           (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-        if (AudioContextClass) ctx = new AudioContextClass();
-      } catch {}
+        if (AudioContextClass) {
+          ctx = new AudioContextClass();
+        } else if (!warned) {
+          warned = true;
+          console.warn('Web Audio API に対応していない環境です。音声は再生されません。');
+        }
+      } catch {
+        if (!warned) {
+          warned = true;
+          console.warn('AudioContext の初期化に失敗しました。音声は再生されません。');
+        }
+      }
+    }
+    // suspended 状態の場合は resume を試行
+    if (ctx && ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
     }
     return ctx;
   };

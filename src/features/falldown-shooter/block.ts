@@ -38,10 +38,10 @@ export const Block = {
       power: i === 0 ? block.power : null,
     })),
 
-  create: (gridWidth: number, existingBlocks: BlockData[] = []): BlockData => {
+  create: (gridWidth: number, existingBlocks: BlockData[] = [], powerUpChance: number = CONFIG.powerUp.chance): BlockData => {
     const shape = pick(BLOCK_SHAPES);
     const power =
-      Math.random() < CONFIG.powerUp.chance ? pick(Object.keys(POWER_TYPES) as PowerType[]) : null;
+      Math.random() < powerUpChance ? pick(Object.keys(POWER_TYPES) as PowerType[]) : null;
     const shapeWidth = shape[0].length;
     const shapeHeight = shape.length;
 
