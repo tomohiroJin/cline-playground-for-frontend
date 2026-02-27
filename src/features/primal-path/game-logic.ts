@@ -9,11 +9,12 @@ import type {
   ApplyEvoResult, AwakeningRule, AwakeningNext, AwokenRecord,
   SaveData, Difficulty, BiomeId, BiomeIdExt, CivType, CivTypeExt,
   AllyTemplate, LogEntry, DmgPopup, ASkillId, ASkillDef, SkillSt, ABuff,
+  SynergyTag, ActiveSynergy, SynergyEffect,
 } from './types';
 import {
   CIV_TYPES, CIV_KEYS, TREE, TB_DEFAULTS, EVOS, ALT, ENM, BOSS,
   DIFFS, BIOME_AFFINITY, ENV_DMG, AWK_SA, AWK_FA, TN, TC,
-  WAVES_PER_BIOME, A_SKILLS,
+  WAVES_PER_BIOME, A_SKILLS, SYNERGY_BONUSES,
 } from './constants';
 
 /* ===== Utility ===== */
@@ -54,6 +55,7 @@ function deepCloneRun(r: RunState): RunState {
     dd: { ...r.dd },
     tb: { ...r.tb },
     sk: { avl: [...r.sk.avl], cds: { ...r.sk.cds }, bfs: r.sk.bfs.map(b => ({ ...b, fx: { ...b.fx } })) },
+    evs: [...r.evs],
   };
 }
 
@@ -216,6 +218,7 @@ export function rollE(r: RunState, rng = Math.random): Evolution[] {
 
 export function applyEvo(r: RunState, ev: Evolution, rng = Math.random): ApplyEvoResult {
   const next = deepCloneRun(r);
+  next.evs.push(ev);
   writeSnapToRun(next, applyStatFx(getSnap(next), ev.e));
 
   if (ev.e.aHL) {
@@ -343,14 +346,23 @@ function tickEnvPhase(next: RunState): void {
   }
 }
 
-function tickPlayerPhase(next: RunState, e: Enemy, events: TickEvent[], rng: () => number): void {
+function tickPlayerPhase(next: RunState, e: Enemy, events: TickEvent[], rng: () => number, sb: SynergyBonusResult): void {
   // buffAtk バフ適用
   const atkBuff = next.sk.bfs.find(b => b.fx.t === 'buffAtk');
   const prevAM = next.aM;
   if (atkBuff && atkBuff.fx.t === 'buffAtk') next.aM *= atkBuff.fx.aM;
 
+  // シナジーATK/CRボーナスを一時適用
+  const prevAtk = next.atk;
+  const prevCr = next.cr;
+  next.atk += sb.atkBonus;
+  next.cr = Math.min(next.cr + sb.crBonus / 100, 1);
+
   const pa = calcPlayerAtk(next, rng);
-  // バフ適用後にaM復元
+
+  // 一時ボーナスを復元
+  next.atk = prevAtk;
+  next.cr = prevCr;
   next.aM = prevAM;
 
   const dm = Math.max(1, pa.dmg - e.def);
@@ -370,14 +382,14 @@ function tickPlayerPhase(next: RunState, e: Enemy, events: TickEvent[], rng: () 
   events.push({ type: 'popup', v: dm, crit: pa.crit, heal: false, tgt: 'en' });
 
   if (next.burn) {
-    const bd = Math.floor(pa.dmg * 0.2);
+    const bd = Math.floor(pa.dmg * 0.2 * sb.burnMul);
     e.hp -= bd;
     next.dmgDealt += bd;
     next.log.push({ x: '  🔥 火傷 ' + bd, c: 'tc' });
   }
 }
 
-function tickAllyPhase(next: RunState, e: Enemy, events: TickEvent[]): void {
+function tickAllyPhase(next: RunState, e: Enemy, events: TickEvent[], sb: SynergyBonusResult): void {
   next.al.forEach(a => {
     if (!a.a) return;
     if (a.h) {
@@ -386,7 +398,7 @@ function tickAllyPhase(next: RunState, e: Enemy, events: TickEvent[]): void {
       next.log.push({ x: '  💚 ' + a.n + ' +' + h, c: 'lc' });
       events.push({ type: 'popup', v: h, crit: false, heal: true, tgt: 'pl' });
     } else {
-      const ad = Math.max(1, a.atk - e.def);
+      const ad = Math.max(1, (a.atk + sb.allyAtkBonus) - e.def);
       e.hp -= ad;
       next.dmgDealt += ad;
       next.log.push({ x: '  ' + a.n + ' → ' + ad, c: '' });
@@ -394,17 +406,17 @@ function tickAllyPhase(next: RunState, e: Enemy, events: TickEvent[]): void {
   });
 }
 
-function tickRegenPhase(next: RunState, events: TickEvent[]): void {
+function tickRegenPhase(next: RunState, events: TickEvent[], sb: SynergyBonusResult): void {
   if (next.tb.rg > 0) {
-    const rg = Math.max(1, Math.floor(next.mhp * next.tb.rg));
+    const rg = Math.max(1, Math.floor(next.mhp * next.tb.rg * (1 + sb.healBonusRatio)));
     next.hp = Math.min(next.hp + rg, next.mhp);
     next.log.push({ x: '  🌿 再生 +' + rg, c: 'lc' });
     events.push({ type: 'popup', v: rg, crit: false, heal: true, tgt: 'pl' });
   }
 }
 
-function tickEnemyPhase(next: RunState, e: Enemy, events: TickEvent[], rng: () => number): void {
-  let ed = Math.max(1, e.atk - next.def);
+function tickEnemyPhase(next: RunState, e: Enemy, events: TickEvent[], rng: () => number, sb: SynergyBonusResult): void {
+  let ed = Math.max(1, e.atk - (next.def + sb.defBonus));
   // shield バフ適用
   const shieldBuff = next.sk.bfs.find(b => b.fx.t === 'shield');
   if (shieldBuff && shieldBuff.fx.t === 'shield') ed = Math.max(1, Math.floor(ed * (1 - shieldBuff.fx.dR)));
@@ -470,10 +482,14 @@ export function tick(r: RunState, finalMode: boolean, rng = Math.random): TickRe
   next.wTurn++;
   const pHP = next.hp;
 
+  // シナジーボーナス計算
+  const synergies = calcSynergies(next.evs);
+  const sb = applySynergyBonuses(synergies);
+
   tickEnvPhase(next);
-  tickPlayerPhase(next, e, events, rng);
-  tickAllyPhase(next, e, events);
-  tickRegenPhase(next, events);
+  tickPlayerPhase(next, e, events, rng, sb);
+  tickAllyPhase(next, e, events, sb);
+  tickRegenPhase(next, events, sb);
 
   // Enemy killed
   if (e.hp <= 0) {
@@ -491,7 +507,7 @@ export function tick(r: RunState, finalMode: boolean, rng = Math.random): TickRe
     return { nextRun: next, events };
   }
 
-  tickEnemyPhase(next, e, events, rng);
+  tickEnemyPhase(next, e, events, rng, sb);
 
   if (tickDeathCheck(next, events)) {
     return { nextRun: next, events };
@@ -532,6 +548,7 @@ export function startRunState(di: number, save: SaveData): RunState {
     awoken: [],
     en: null,
     sk: { avl: [], cds: {}, bfs: [] },
+    evs: [],
     _wDmgBase: 0, _fbk: '', _fPhase: 0,
   };
 }
@@ -780,4 +797,95 @@ export function decSkillCds(sk: SkillSt): SkillSt {
     if (v > 0) cds[k] = v;
   }
   return { ...sk, cds, avl: [...sk.avl], bfs: sk.bfs.map(b => ({ ...b, fx: { ...b.fx } })) };
+}
+
+/* ===== Synergy System ===== */
+
+/**
+ * 取得済み進化からシナジー状況を計算する
+ * @param evolutions - 取得済み進化の配列
+ * @returns 発動中のシナジー配列
+ */
+export function calcSynergies(evolutions: Evolution[]): ActiveSynergy[] {
+  // タグを集計
+  const tagCounts = new Map<SynergyTag, number>();
+  for (const evo of evolutions) {
+    if (!evo.tags) continue;
+    for (const tag of evo.tags) {
+      tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+    }
+  }
+
+  // 各タグについてシナジー発動判定
+  const result: ActiveSynergy[] = [];
+  for (const bonus of SYNERGY_BONUSES) {
+    const count = tagCounts.get(bonus.tag) ?? 0;
+    if (count < 2) continue;
+    const tier: 1 | 2 = count >= 3 ? 2 : 1;
+    const bonusDef = tier === 2 ? bonus.tier2 : bonus.tier1;
+    result.push({
+      tag: bonus.tag,
+      count,
+      tier,
+      bonusName: bonusDef.name,
+    });
+  }
+  return result;
+}
+
+/** シナジーボーナス適用結果 */
+export interface SynergyBonusResult {
+  atkBonus: number;
+  defBonus: number;
+  hpBonus: number;
+  crBonus: number;
+  burnMul: number;
+  healBonusRatio: number;
+  allyAtkBonus: number;
+  allyHpBonus: number;
+}
+
+/**
+ * シナジーボーナスを集計する
+ * @param synergies - 発動中シナジー配列
+ * @returns ボーナス集計結果
+ */
+export function applySynergyBonuses(synergies: ActiveSynergy[]): SynergyBonusResult {
+  let atkBonus = 0, defBonus = 0, hpBonus = 0, crBonus = 0, burnMul = 1;
+  let healBonusRatio = 0, allyAtkBonus = 0, allyHpBonus = 0;
+
+  /** 単一効果を適用するヘルパー */
+  const applyEffect = (effect: SynergyEffect): void => {
+    switch (effect.type) {
+      case 'stat_bonus':
+        if (effect.stat === 'atk') atkBonus += effect.value;
+        if (effect.stat === 'def') defBonus += effect.value;
+        if (effect.stat === 'hp') hpBonus += effect.value;
+        if (effect.stat === 'cr') crBonus += effect.value;
+        break;
+      case 'damage_multiplier':
+        if (effect.target === 'burn') burnMul *= effect.multiplier;
+        break;
+      case 'heal_bonus':
+        healBonusRatio += effect.ratio;
+        break;
+      case 'ally_bonus':
+        if (effect.stat === 'atk') allyAtkBonus += effect.value;
+        if (effect.stat === 'hp') allyHpBonus += effect.value;
+        break;
+      case 'compound':
+        for (const sub of effect.effects) applyEffect(sub);
+        break;
+      // special: ゲーム側で個別処理
+    }
+  };
+
+  for (const syn of synergies) {
+    const bonusDef = SYNERGY_BONUSES.find(b => b.tag === syn.tag);
+    if (!bonusDef) continue;
+    const effect = syn.tier === 2 ? bonusDef.tier2.effect : bonusDef.tier1.effect;
+    applyEffect(effect);
+  }
+
+  return { atkBonus, defBonus, hpBonus, crBonus, burnMul, healBonusRatio, allyAtkBonus, allyHpBonus };
 }

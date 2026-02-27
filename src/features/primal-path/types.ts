@@ -29,7 +29,7 @@ export type BiomeId = 'grassland' | 'glacier' | 'volcano';
 export type BiomeIdExt = BiomeId | 'final';
 
 /** SFX タイプ */
-export type SfxType = 'hit' | 'crit' | 'kill' | 'heal' | 'evo' | 'death' | 'click' | 'boss' | 'win' | 'skFire' | 'skHeal' | 'skRage' | 'skShield';
+export type SfxType = 'hit' | 'crit' | 'kill' | 'heal' | 'evo' | 'death' | 'click' | 'boss' | 'win' | 'skFire' | 'skHeal' | 'skRage' | 'skShield' | 'synergy';
 
 /** SFX 定義 */
 export interface SfxDef {
@@ -69,6 +69,9 @@ export interface EvoEffect {
   readonly revA?: number;
 }
 
+/** シナジータグ */
+export type SynergyTag = 'fire' | 'ice' | 'regen' | 'shield' | 'hunt' | 'spirit' | 'tribe' | 'wild';
+
 /** 進化定義 */
 export interface Evolution {
   readonly n: string;
@@ -76,6 +79,40 @@ export interface Evolution {
   readonly t: CivType;
   readonly r: number;
   readonly e: EvoEffect;
+  readonly tags?: readonly SynergyTag[];
+}
+
+/** シナジー効果 */
+export type SynergyEffect =
+  | { type: 'stat_bonus'; stat: 'atk' | 'hp' | 'def' | 'cr'; value: number }
+  | { type: 'damage_multiplier'; target: 'burn' | 'all'; multiplier: number }
+  | { type: 'heal_bonus'; ratio: number }
+  | { type: 'ally_bonus'; stat: 'atk' | 'hp'; value: number }
+  | { type: 'special'; id: 'awakening_boost' | 'awakening_power' | 'env_immune' }
+  | { type: 'compound'; effects: readonly SynergyEffect[] };
+
+/** シナジーボーナス定義 */
+export interface SynergyBonusDef {
+  readonly tag: SynergyTag;
+  readonly tier1: {
+    readonly name: string;
+    readonly description: string;
+    readonly effect: SynergyEffect;
+  };
+  readonly tier2: {
+    readonly name: string;
+    readonly description: string;
+    readonly effect: SynergyEffect;
+  };
+}
+
+/** 発動中のシナジー情報 */
+export interface ActiveSynergy {
+  tag: SynergyTag;
+  count: number;
+  /** 1=Tier1(タグ2個), 2=Tier2(タグ3個以上) */
+  tier: 1 | 2;
+  bonusName: string;
 }
 
 /** 味方テンプレート */
@@ -272,6 +309,7 @@ export interface RunState {
   awoken: AwokenRecord[];
   en: Enemy | null;
   sk: SkillSt;
+  evs: Evolution[];
   _wDmgBase: number;
   _fbk: string;
   _fPhase: number;

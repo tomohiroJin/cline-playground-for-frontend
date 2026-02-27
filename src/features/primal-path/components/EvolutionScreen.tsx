@@ -1,10 +1,10 @@
 import React from 'react';
 import type { RunState, Evolution, SfxType } from '../types';
 import type { GameAction } from '../hooks';
-import { BIO, TC, TN, CIV_TYPES } from '../constants';
-import { effATK, simEvo, civLvs, civLv, awkInfo } from '../game-logic';
-import { ProgressBar, StatPreview, CivBadge, AwakeningBadges, CivLevelsDisplay, StatLine, AffinityBadge, AllyList } from './shared';
-import { Screen, SubTitle, Divider, EvoCard, GamePanel, StatText, Gc } from '../styles';
+import { BIO, TC, TN, CIV_TYPES, SYNERGY_TAG_INFO } from '../constants';
+import { effATK, simEvo, civLvs, civLv, awkInfo, calcSynergies } from '../game-logic';
+import { ProgressBar, StatPreview, CivBadge, AwakeningBadges, CivLevelsDisplay, StatLine, AffinityBadge, AllyList, SynergyBadges } from './shared';
+import { Screen, SubTitle, EvoCard, GamePanel, StatText, Gc } from '../styles';
 
 interface Props {
   run: RunState;
@@ -18,6 +18,7 @@ export const EvolutionScreen: React.FC<Props> = ({ run, evoPicks, dispatch, play
   const lvs = civLvs(run);
   const nxtA = awkInfo(run);
   const curA = effATK(run);
+  const activeSynergies = calcSynergies(run.evs);
 
   const handlePick = (ev: Evolution) => {
     playSfx('evo');
@@ -47,6 +48,9 @@ export const EvolutionScreen: React.FC<Props> = ({ run, evoPicks, dispatch, play
         </div>
       )}
 
+      {/* シナジー状況 */}
+      <SynergyBadges synergies={activeSynergies} showCount />
+
       {evoPicks.map((ev, i) => {
         const sim = simEvo(run, ev);
         const lvUp = { ...lvs, [ev.t]: lvs[ev.t] + 1 };
@@ -75,6 +79,26 @@ export const EvolutionScreen: React.FC<Props> = ({ run, evoPicks, dispatch, play
               {ev.e.aHL && <div style={{ fontSize: 7, color: '#50e090', marginTop: 1 }}>💚 仲間HP+{ev.e.aHL}</div>}
               {ev.e.bb && <div style={{ fontSize: 7, color: '#e0c060', marginTop: 1 }}>🦴 骨+{ev.e.bb}</div>}
               {ev.e.revA && <div style={{ fontSize: 7, color: '#d060ff', marginTop: 1 }}>✨ 仲間蘇生 HP{ev.e.revA}%</div>}
+              {ev.tags && ev.tags.length > 0 && (
+                <div style={{ display: 'flex', gap: 3, marginTop: 2 }}>
+                  {ev.tags.map(tag => {
+                    const info = SYNERGY_TAG_INFO[tag];
+                    // 取得後のタグ数を計算
+                    const curCount = run.evs.filter(e2 => e2.tags?.includes(tag)).length;
+                    const nextCount = curCount + 1;
+                    const isNew = nextCount === 2;
+                    return (
+                      <span key={tag} style={{
+                        fontSize: 7, color: info.cl, padding: '0 3px', borderRadius: 4,
+                        background: isNew ? info.cl + '30' : info.cl + '10',
+                        border: `1px solid ${info.cl}${isNew ? '60' : '25'}`,
+                      }}>
+                        {info.ic}{info.nm} {curCount}→{nextCount}
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </EvoCard>
         );

@@ -2,8 +2,8 @@
  * 原始進化録 - PRIMAL PATH - 共有UIコンポーネント
  */
 import React from 'react';
-import type { Ally, RunState, CivTypeExt, BiomeIdExt, CivLevels, AwokenRecord } from '../types';
-import { TC, TN, BIO } from '../constants';
+import type { Ally, RunState, CivTypeExt, BiomeIdExt, CivLevels, AwokenRecord, ActiveSynergy } from '../types';
+import { TC, TN, BIO, SYNERGY_TAG_INFO } from '../constants';
 import { effATK, civLvs, biomeBonus } from '../game-logic';
 import { AllyBadge, AllyRow, Tc, Lc, Rc, Gc } from '../styles';
 
@@ -121,6 +121,29 @@ export const AffinityBadge: React.FC<{ biome: BiomeIdExt; levels: CivLevels }> =
   return afn > 1
     ? <span style={{ fontSize: 7, padding: '1px 5px', borderRadius: 6, display: 'inline-block', marginLeft: 3, color: '#50e090', background: '#50e09015', border: '1px solid #50e09030' }}>相性◎ ×{afn}</span>
     : <span style={{ fontSize: 7, padding: '1px 5px', borderRadius: 6, display: 'inline-block', marginLeft: 3, color: '#605848', background: '#60584810', border: '1px solid #60584820' }}>相性─</span>;
+};
+
+/* ===== AllyList ===== */
+
+/* ===== SynergyBadges ===== */
+
+export const SynergyBadges: React.FC<{ synergies: ActiveSynergy[]; showCount?: boolean }> = ({ synergies, showCount }) => {
+  if (!synergies.length) return null;
+  return (
+    <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 3 }}>
+      {synergies.map(s => {
+        const info = SYNERGY_TAG_INFO[s.tag];
+        return (
+          <span key={s.tag} style={{
+            fontSize: 7, color: info.cl, background: info.cl + '15',
+            border: `1px solid ${info.cl}40`, padding: '0 4px', borderRadius: 4,
+          }}>
+            {info.ic}{showCount ? `×${s.count} ` : ''}{s.bonusName}
+          </span>
+        );
+      })}
+    </div>
+  );
 };
 
 /* ===== AllyList ===== */
