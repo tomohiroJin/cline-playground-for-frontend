@@ -181,6 +181,28 @@
 
 ---
 
+### 1-7. Phase 1 フィードバック対応 Round 2
+
+Round 1 対応後の再テストで未修正・不十分と判明した3項目。
+詳細は `feedback-phase1-r2.md` を参照。
+
+- [ ] **FB-R2-1: 血の契約（HP半減）がまだ動作していない** 🔴
+  - 対象: `hooks.ts`, `game-logic.ts`
+  - 作業: `SELECT_EVO` → `startBattle()` の実行パスを詳細調査。`startBattle()` で mhp/hp が上書きされている可能性をランタイムデバッグで検証。バグ特定後に修正+回帰テスト追加
+  - 前回対応: テスト8件追加で「バグなし」と判断したが、実ゲームプレイではHP変化なし
+
+- [ ] **FB-R2-2: 速度切り替えを進化選択画面にも表示** 🔴
+  - 対象: `components/EvolutionScreen.tsx`, `PrimalPathGame.tsx`
+  - 作業: EvolutionScreen に SpeedBar UI を追加。PrimalPathGame から battleSpd props を渡す。SpeedBar の共有コンポーネント化を検討
+  - 前回対応: START_RUN での battleSpd リセットを除去したが、EvolutionScreen に UI 未追加
+
+- [ ] **FB-R2-3: スキルボタンを固定位置に配置** 🔴
+  - 対象: `styles.ts`, `components/BattleScreen.tsx`
+  - 作業: SkillBar を画面下部に固定配置（sticky/fixed）。Screen レイアウトを上部スクロール+下部固定に分離。タッチターゲット44px以上を確保
+  - 前回対応: ボタン拡大+パルスアニメーション追加したが、ドキュメントフロー内のため位置がずれる
+
+---
+
 ## Phase 2: 進化シナジーシステム（Evolution Synergy） ✅
 
 ### 2-1. シナジータグシステム ✅
