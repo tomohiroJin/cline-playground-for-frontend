@@ -107,6 +107,31 @@ export function drawTitle(c: HTMLCanvasElement): void {
   x.fillStyle = 'rgb(10,8,18)'; x.beginPath(); x.arc(203, 20, 7, 0, Math.PI * 2); x.fill();
 }
 
+/** 敵スプライト下部にHPバーを描画 */
+export function drawEnemyHpBar(ctx: CanvasRenderingContext2D, hp: number, mhp: number, x: number, y: number, w: number): void {
+  const barH = 3;
+  const ratio = Math.max(0, Math.min(1, hp / mhp));
+  // 背景
+  ctx.fillStyle = '#1a1a22';
+  ctx.fillRect(x, y, w, barH);
+  // HPバー
+  const cl = ratio > 0.5 ? '#50e090' : ratio > 0.2 ? '#f0c040' : '#f05050';
+  ctx.fillStyle = cl;
+  ctx.fillRect(x, y, Math.floor(w * ratio), barH);
+  // 枠
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x, y, w, barH);
+}
+
+/** 状態アイコン（火傷）を描画 */
+export function drawStatusIcons(ctx: CanvasRenderingContext2D, x: number, y: number, burn: boolean): void {
+  if (burn) {
+    ctx.font = '10px serif';
+    ctx.fillText('🔥', x, y);
+  }
+}
+
 /** 火傷パーティクルを敵スプライト周囲に描画 */
 export function drawBurnFx(ctx: CanvasRenderingContext2D, w: number, h: number, frame: number): void {
   const count = 6;

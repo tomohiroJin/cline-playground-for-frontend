@@ -3,7 +3,7 @@ import type { RunState, BiomeId, SfxType, DmgPopup, TickEvent } from '../types';
 import type { GameAction } from '../hooks';
 import { BIO, TC, SPEED_OPTS, LOG_COLORS } from '../constants';
 import { effATK, civLvs, biomeBonus, mkPopup, updatePopups } from '../game-logic';
-import { drawEnemy, drawPlayer, drawAlly, drawDmgPopup, drawBurnFx } from '../sprites';
+import { drawEnemy, drawPlayer, drawAlly, drawDmgPopup, drawBurnFx, drawEnemyHpBar, drawStatusIcons } from '../sprites';
 import { ProgressBar, HpBar, CivLevelsDisplay, AffinityBadge, AllyList } from './shared';
 import { Screen, GamePanel, StatText, SpeedBar, SpeedBtn, SurrenderBtn, LogContainer, LogLine, Tc, Lc, Rc, Gc, Bc, PausedOverlay, flashHit } from '../styles';
 
@@ -43,17 +43,26 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
     ? '⚡ 最終決戦' + (run._fPhase === 2 ? ' Phase2' : '')
     : m ? `${m.ic} ${m.nm}${boss ? ' BOSS' : ` Wave ${run.cW}/${run.wpb}`}` : '⚡';
 
-  // Draw sprites（火傷パーティクルは毎tick更新）
+  // Draw sprites（火傷パーティクル・HPバー・ステータスアイコンは毎tick更新）
   useEffect(() => {
     if (esprRef.current && e) {
       drawEnemy(esprRef.current, e.n, boss, 2);
-      if (run.burn) {
-        burnFrameRef.current++;
-        const ctx = esprRef.current.getContext('2d');
-        if (ctx) drawBurnFx(ctx, esprRef.current.width, esprRef.current.height, burnFrameRef.current);
+      const ctx = esprRef.current.getContext('2d');
+      if (ctx) {
+        const cw = esprRef.current.width;
+        const ch = esprRef.current.height;
+        // HPバー（スプライト下部）
+        drawEnemyHpBar(ctx, e.hp, e.mhp, 1, ch - 5, cw - 2);
+        // 状態アイコン
+        drawStatusIcons(ctx, 2, 12, !!run.burn);
+        // 火傷パーティクル
+        if (run.burn) {
+          burnFrameRef.current++;
+          drawBurnFx(ctx, cw, ch, burnFrameRef.current);
+        }
       }
     }
-  }, [e?.n, boss, run.burn, run.turn]);
+  }, [e?.n, e?.hp, e?.mhp, boss, run.burn, run.turn]);
 
   useEffect(() => {
     if (psprRef.current) drawPlayer(psprRef.current, 2, run.fe);
