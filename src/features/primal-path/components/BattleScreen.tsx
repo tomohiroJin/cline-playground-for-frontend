@@ -5,7 +5,7 @@ import { BIO, TC, SPEED_OPTS, LOG_COLORS } from '../constants';
 import { effATK, civLvs, biomeBonus } from '../game-logic';
 import { drawEnemy, drawPlayer, drawAlly } from '../sprites';
 import { ProgressBar, HpBar, CivLevelsDisplay, AffinityBadge, AllyList } from './shared';
-import { Screen, GamePanel, StatText, SpeedBar, SpeedBtn, SurrenderBtn, LogContainer, LogLine, Tc, Lc, Rc, Gc, Bc } from '../styles';
+import { Screen, GamePanel, StatText, SpeedBar, SpeedBtn, SurrenderBtn, LogContainer, LogLine, Tc, Lc, Rc, Gc, Bc, PausedOverlay } from '../styles';
 
 interface Props {
   run: RunState;
@@ -131,6 +131,9 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
           <LogLine key={i} $color={LOG_COLORS[l.c]}>{l.x}</LogLine>
         ))}
       </LogContainer>
+
+      {/* 一時停止オーバーレイ */}
+      {battleSpd === 0 && <PausedOverlay>PAUSED</PausedOverlay>}
     </Screen>
   );
 };

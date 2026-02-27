@@ -50,6 +50,11 @@ export const pulse = keyframes`
   50% { box-shadow: 0 0 8px #f0c04030; }
 `;
 
+export const pausePulse = keyframes`
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+`;
+
 export const ovFadeIn = keyframes`
   from { opacity: 0; }
   to { opacity: 1; }
@@ -306,6 +311,8 @@ export const SpeedBtn = styled.button<{ $active?: boolean }>`
   ${p => p.$active && css`
     border-color: #f0c040;
     color: #f0c040;
+    box-shadow: 0 0 6px #f0c04040;
+    text-shadow: 0 0 4px #f0c04060;
   `}
   &:hover {
     border-color: #f0c040;
@@ -383,3 +390,17 @@ export const Xc = styled.span`color: #f05050;`;
 export const Cc = styled.span`color: #50c8e8;`;
 export const Wc = styled.span`color: #e0d8c8;`;
 export const Bc = styled.span`color: #e0c060;`;
+
+export const PausedOverlay = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  color: #f0c040;
+  text-shadow: 0 0 16px #f0c04060, 0 0 32px #f0c04030;
+  letter-spacing: 8px;
+  animation: ${pausePulse} 1.5s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 10;
+`;
