@@ -3,9 +3,9 @@ import type { RunState, BiomeId, SfxType, DmgPopup, TickEvent } from '../types';
 import type { GameAction } from '../hooks';
 import { BIO, TC, SPEED_OPTS, LOG_COLORS } from '../constants';
 import { effATK, civLvs, biomeBonus, mkPopup, updatePopups } from '../game-logic';
-import { drawEnemy, drawPlayer, drawAlly, drawDmgPopup } from '../sprites';
+import { drawEnemy, drawPlayer, drawAlly, drawDmgPopup, drawBurnFx } from '../sprites';
 import { ProgressBar, HpBar, CivLevelsDisplay, AffinityBadge, AllyList } from './shared';
-import { Screen, GamePanel, StatText, SpeedBar, SpeedBtn, SurrenderBtn, LogContainer, LogLine, Tc, Lc, Rc, Gc, Bc, PausedOverlay } from '../styles';
+import { Screen, GamePanel, StatText, SpeedBar, SpeedBtn, SurrenderBtn, LogContainer, LogLine, Tc, Lc, Rc, Gc, Bc, PausedOverlay, flashHit } from '../styles';
 
 const MAX_POPUP_DISPLAY = 5;
 
@@ -29,6 +29,10 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
   const [enPopups, setEnPopups] = useState<DmgPopup[]>([]);
   const [plPopups, setPlPopups] = useState<DmgPopup[]>([]);
 
+  // ヒットフラッシュ管理
+  const [isHit, setIsHit] = useState(false);
+  const burnFrameRef = useRef(0);
+
   const e = run.en;
   const m = BIO[run.cBT as BiomeId];
   const boss = run.cW > run.wpb || finalMode;
@@ -39,29 +43,43 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
     ? '⚡ 最終決戦' + (run._fPhase === 2 ? ' Phase2' : '')
     : m ? `${m.ic} ${m.nm}${boss ? ' BOSS' : ` Wave ${run.cW}/${run.wpb}`}` : '⚡';
 
-  // Draw sprites
+  // Draw sprites（火傷パーティクルは毎tick更新）
   useEffect(() => {
-    if (esprRef.current && e) drawEnemy(esprRef.current, e.n, boss, 2);
-  }, [e?.n, boss]);
+    if (esprRef.current && e) {
+      drawEnemy(esprRef.current, e.n, boss, 2);
+      if (run.burn) {
+        burnFrameRef.current++;
+        const ctx = esprRef.current.getContext('2d');
+        if (ctx) drawBurnFx(ctx, esprRef.current.width, esprRef.current.height, burnFrameRef.current);
+      }
+    }
+  }, [e?.n, boss, run.burn, run.turn]);
 
   useEffect(() => {
     if (psprRef.current) drawPlayer(psprRef.current, 2, run.fe);
   }, [run.fe]);
 
-  // tickEvents からポップアップ追加 & 既存ポップアップ更新
+  // tickEvents からポップアップ追加 & ヒットフラッシュ & 既存ポップアップ更新
   useEffect(() => {
     if (tickEvents && tickEvents.length > 0) {
       const newEn: DmgPopup[] = [];
       const newPl: DmgPopup[] = [];
+      let hasShake = false;
       for (const ev of tickEvents) {
         if (ev.type === 'popup') {
           const p = mkPopup(ev.v, ev.crit, ev.heal);
           if (ev.tgt === 'en') newEn.push(p);
           else newPl.push(p);
         }
+        if (ev.type === 'shake_enemy') hasShake = true;
       }
       setEnPopups(prev => [...updatePopups(prev), ...newEn].slice(-MAX_POPUP_DISPLAY));
       setPlPopups(prev => [...updatePopups(prev), ...newPl].slice(-MAX_POPUP_DISPLAY));
+      // ヒットフラッシュ
+      if (hasShake) {
+        setIsHit(true);
+        setTimeout(() => setIsHit(false), 150);
+      }
     } else {
       setEnPopups(prev => updatePopups(prev));
       setPlPopups(prev => updatePopups(prev));
@@ -145,6 +163,7 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
             width: boss ? 52 : 34, height: boss ? 52 : 34,
             border: '1px solid #222', borderRadius: 3, background: '#08080c', flexShrink: 0,
             imageRendering: 'pixelated',
+            animation: isHit ? `${flashHit} 0.15s` : undefined,
           }} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 12, color: boss ? '#ff6040' : '#f05050', marginBottom: 2 }}>

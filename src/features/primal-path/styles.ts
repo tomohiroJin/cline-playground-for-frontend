@@ -404,3 +404,21 @@ export const PausedOverlay = styled.div`
   pointer-events: none;
   z-index: 10;
 `;
+
+export const awkFlash = keyframes`
+  0% { opacity: 0; }
+  15% { opacity: 0.9; }
+  100% { opacity: 0; }
+`;
+
+export const AwkFlashOverlay = styled.div<{ $cl?: string }>`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: ${p => p.$cl || '#f0c040'};
+  pointer-events: none;
+  z-index: 15;
+  animation: ${awkFlash} 0.6s ease-out forwards;
+`;

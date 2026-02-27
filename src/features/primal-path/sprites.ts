@@ -107,6 +107,24 @@ export function drawTitle(c: HTMLCanvasElement): void {
   x.fillStyle = 'rgb(10,8,18)'; x.beginPath(); x.arc(203, 20, 7, 0, Math.PI * 2); x.fill();
 }
 
+/** 火傷パーティクルを敵スプライト周囲に描画 */
+export function drawBurnFx(ctx: CanvasRenderingContext2D, w: number, h: number, frame: number): void {
+  const count = 6;
+  for (let i = 0; i < count; i++) {
+    const angle = (frame * 0.15 + i * (Math.PI * 2 / count));
+    const radius = w * 0.35 + Math.sin(frame * 0.3 + i) * 4;
+    const px = w / 2 + Math.cos(angle) * radius;
+    const py = h / 2 + Math.sin(angle) * radius * 0.6 - frame % 10;
+    const size = 2 + Math.sin(frame * 0.5 + i * 2) * 1;
+    ctx.globalAlpha = 0.5 + Math.sin(frame * 0.4 + i) * 0.3;
+    ctx.fillStyle = i % 2 === 0 ? '#ff6020' : '#ffaa30';
+    ctx.beginPath();
+    ctx.arc(px, py, size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
 /** ダメージポップアップをCanvas上に描画 */
 export function drawDmgPopup(ctx: CanvasRenderingContext2D, popup: DmgPopup, w: number, h: number): void {
   const px = popup.x * w;
