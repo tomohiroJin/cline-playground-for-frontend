@@ -24,7 +24,8 @@ function makeRun(overrides: Partial<RunState> = {}): RunState {
     mxA: 3, evoN: 3, fReq: 5, saReq: 4,
     rvU: 0, bc: 0, log: [], turn: 0, kills: 0,
     dmgDealt: 0, dmgTaken: 0, maxHit: 0, wDmg: 0, wTurn: 0,
-    awoken: [], en: null, _wDmgBase: 0, _fbk: '', _fPhase: 0,
+    awoken: [], en: null, sk: { avl: [], cds: {}, bfs: [] },
+    _wDmgBase: 0, _fbk: '', _fPhase: 0,
     ...overrides,
   };
 }

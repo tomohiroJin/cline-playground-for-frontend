@@ -8,12 +8,12 @@ import type {
   TreeBonus, CivLevels, PlayerAttackResult, TickResult, TickEvent,
   ApplyEvoResult, AwakeningRule, AwakeningNext, AwokenRecord,
   SaveData, Difficulty, BiomeId, BiomeIdExt, CivType, CivTypeExt,
-  AllyTemplate, LogEntry, DmgPopup,
+  AllyTemplate, LogEntry, DmgPopup, ASkillId, ASkillDef, SkillSt, ABuff,
 } from './types';
 import {
   CIV_TYPES, CIV_KEYS, TREE, TB_DEFAULTS, EVOS, ALT, ENM, BOSS,
   DIFFS, BIOME_AFFINITY, ENV_DMG, AWK_SA, AWK_FA, TN, TC,
-  WAVES_PER_BIOME,
+  WAVES_PER_BIOME, A_SKILLS,
 } from './constants';
 
 /* ===== Utility ===== */
@@ -53,6 +53,7 @@ function deepCloneRun(r: RunState): RunState {
     bms: [...r.bms],
     dd: { ...r.dd },
     tb: { ...r.tb },
+    sk: { avl: [...r.sk.avl], cds: { ...r.sk.cds }, bfs: r.sk.bfs.map(b => ({ ...b, fx: { ...b.fx } })) },
   };
 }
 
@@ -343,7 +344,15 @@ function tickEnvPhase(next: RunState): void {
 }
 
 function tickPlayerPhase(next: RunState, e: Enemy, events: TickEvent[], rng: () => number): void {
+  // buffAtk バフ適用
+  const atkBuff = next.sk.bfs.find(b => b.fx.t === 'buffAtk');
+  const prevAM = next.aM;
+  if (atkBuff && atkBuff.fx.t === 'buffAtk') next.aM *= atkBuff.fx.aM;
+
   const pa = calcPlayerAtk(next, rng);
+  // バフ適用後にaM復元
+  next.aM = prevAM;
+
   const dm = Math.max(1, pa.dmg - e.def);
   if (dm > next.maxHit) next.maxHit = dm;
 
@@ -396,6 +405,9 @@ function tickRegenPhase(next: RunState, events: TickEvent[]): void {
 
 function tickEnemyPhase(next: RunState, e: Enemy, events: TickEvent[], rng: () => number): void {
   let ed = Math.max(1, e.atk - next.def);
+  // shield バフ適用
+  const shieldBuff = next.sk.bfs.find(b => b.fx.t === 'shield');
+  if (shieldBuff && shieldBuff.fx.t === 'shield') ed = Math.max(1, Math.floor(ed * (1 - shieldBuff.fx.dR)));
   const tk = next.al.find(a => a.a && a.tk);
   if (tk) {
     const td = Math.max(1, Math.floor(ed * 0.6));
@@ -493,6 +505,9 @@ export function tick(r: RunState, finalMode: boolean, rng = Math.random): TickRe
   if (next.hp < pHP) events.push({ type: 'flash_player_dmg' });
   if (next.hp > pHP) events.push({ type: 'flash_player_heal' });
 
+  // バフターンデクリメント
+  next.sk = tickBuffs(next.sk);
+
   return { nextRun: next, events };
 }
 
@@ -516,6 +531,7 @@ export function startRunState(di: number, save: SaveData): RunState {
     dmgDealt: 0, dmgTaken: 0, maxHit: 0, wDmg: 0, wTurn: 0,
     awoken: [],
     en: null,
+    sk: { avl: [], cds: {}, bfs: [] },
     _wDmgBase: 0, _fbk: '', _fPhase: 0,
   };
 }
@@ -547,6 +563,9 @@ export function startBattle(r: RunState, finalMode: boolean): RunState {
 export function afterBattle(r: RunState): { nextRun: RunState; biomeCleared: boolean } {
   const next = deepCloneRun(r);
   const boss = next.cW > next.wpb;
+
+  // スキルクールダウンデクリメント
+  next.sk = decSkillCds(next.sk);
 
   if (boss) {
     next.bc++;
@@ -672,4 +691,93 @@ export function applyAutoLastBiome(r: RunState): RunState {
   next.cBT = rem[0] || next.bms[2];
   next.cB++;
   return next;
+}
+
+/* ===== Active Skills ===== */
+
+/** 文明レベルからスキル解放判定 */
+export function calcAvlSkills(r: RunState): ASkillId[] {
+  const lvs = civLvs(r);
+  const mn = Math.min(lvs.tech, lvs.life, lvs.rit);
+  return A_SKILLS
+    .filter(s => {
+      if (s.ct === 'bal') return mn >= s.rL;
+      return lvs[s.ct] >= s.rL;
+    })
+    .map(s => s.id);
+}
+
+/** スキル発動（純粋関数） */
+export function applySkill(r: RunState, sid: ASkillId): { nextRun: RunState; events: TickEvent[] } {
+  const def = A_SKILLS.find(s => s.id === sid);
+  if (!def) return { nextRun: r, events: [] };
+
+  // クールダウン中は不発
+  if (r.sk.cds[sid] && r.sk.cds[sid]! > 0) return { nextRun: r, events: [] };
+
+  const next = deepCloneRun(r);
+  const events: TickEvent[] = [];
+  const fx = def.fx;
+
+  if (fx.t === 'dmgAll') {
+    // 敵に固定ダメージ
+    if (next.en) {
+      const dmg = Math.floor(fx.bd * fx.mul);
+      next.en.hp -= dmg;
+      next.dmgDealt += dmg;
+      next.log.push({ x: `✦ ${def.ic} ${def.nm} → ${dmg}`, c: 'gc' });
+      events.push({ type: 'popup', v: dmg, crit: false, heal: false, tgt: 'en' });
+      events.push({ type: 'sfx', sfx: 'skFire' });
+      events.push({ type: 'skill_fx', sid, v: dmg });
+    }
+  } else if (fx.t === 'healAll') {
+    // プレイヤー回復
+    const heal = fx.bh;
+    next.hp = Math.min(next.hp + heal, next.mhp);
+    // 仲間も回復
+    next.al.forEach(a => {
+      if (a.a) a.hp = Math.min(a.hp + Math.floor(a.mhp * fx.aR), a.mhp);
+    });
+    next.log.push({ x: `✦ ${def.ic} ${def.nm} +${heal}`, c: 'lc' });
+    events.push({ type: 'popup', v: heal, crit: false, heal: true, tgt: 'pl' });
+    events.push({ type: 'sfx', sfx: 'skHeal' });
+    events.push({ type: 'skill_fx', sid, v: heal });
+  } else if (fx.t === 'buffAtk') {
+    // ATK倍率バフ + HP消費
+    next.hp = Math.max(1, next.hp - fx.hC);
+    next.sk.bfs.push({ sid, rT: fx.dur, fx: { ...fx } });
+    next.log.push({ x: `✦ ${def.ic} ${def.nm} ATK×${fx.aM} ${fx.dur}T`, c: 'rc' });
+    events.push({ type: 'sfx', sfx: 'skRage' });
+    events.push({ type: 'skill_fx', sid, v: fx.aM });
+  } else if (fx.t === 'shield') {
+    // 被ダメ軽減バフ
+    next.sk.bfs.push({ sid, rT: fx.dur, fx: { ...fx } });
+    next.log.push({ x: `✦ ${def.ic} ${def.nm} -${Math.floor(fx.dR * 100)}% ${fx.dur}T`, c: 'cc' });
+    events.push({ type: 'sfx', sfx: 'skShield' });
+    events.push({ type: 'skill_fx', sid, v: fx.dR });
+  }
+
+  // クールダウン設定
+  next.sk.cds[sid] = def.cd;
+
+  return { nextRun: next, events };
+}
+
+/** バフターンデクリメント・消滅 */
+export function tickBuffs(sk: SkillSt): SkillSt {
+  const bfs = sk.bfs
+    .map(b => ({ ...b, rT: b.rT - 1, fx: { ...b.fx } }))
+    .filter(b => b.rT > 0);
+  return { ...sk, bfs };
+}
+
+/** バトル終了時クールダウンデクリメント */
+export function decSkillCds(sk: SkillSt): SkillSt {
+  const cds: Partial<Record<ASkillId, number>> = {};
+  for (const key in sk.cds) {
+    const k = key as ASkillId;
+    const v = (sk.cds[k] || 0) - 1;
+    if (v > 0) cds[k] = v;
+  }
+  return { ...sk, cds, avl: [...sk.avl], bfs: sk.bfs.map(b => ({ ...b, fx: { ...b.fx } })) };
 }

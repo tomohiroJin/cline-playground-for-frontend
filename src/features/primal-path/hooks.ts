@@ -4,14 +4,14 @@
 import { useReducer, useEffect, useRef, useCallback, useState } from 'react';
 import type {
   GameState, GamePhase, RunState, Evolution, SaveData,
-  Ally, BiomeId, CivTypeExt, SfxType, TickEvent,
+  Ally, BiomeId, CivTypeExt, SfxType, TickEvent, ASkillId,
 } from './types';
 import {
   startRunState, startBattle, tick, afterBattle, applyEvo,
   applyAwkFx, checkAwakeningRules, rollE, calcBoneReward,
   startFinalBoss, handleFinalBossKill, pickBiomeAuto,
   applyBiomeSelection, applyFirstBiome, applyAutoLastBiome,
-  deadAllies, allyReviveCost, getTB,
+  deadAllies, allyReviveCost, getTB, applySkill,
 } from './game-logic';
 import { AWK_SA, AWK_FA, BOSS, DIFFS, BIO, FRESH_SAVE, TREE as TREE_DATA } from './constants';
 import { AudioEngine } from './audio';
@@ -44,7 +44,8 @@ type GameAction =
   | { type: 'SHOW_EVO' }
   | { type: 'RESET_SAVE' }
   | { type: 'SET_PHASE'; phase: GamePhase }
-  | { type: 'PREPARE_BIOME_SELECT' };
+  | { type: 'PREPARE_BIOME_SELECT' }
+  | { type: 'USE_SKILL'; sid: ASkillId };
 
 /* ===== Initial State ===== */
 
@@ -294,6 +295,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'SET_PHASE':
       return { ...state, phase: action.phase };
+
+    case 'USE_SKILL': {
+      if (!state.run || state.phase !== 'battle') return state;
+      const { nextRun } = applySkill(state.run, action.sid);
+      return { ...state, run: nextRun };
+    }
 
     default:
       return state;

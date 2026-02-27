@@ -422,3 +422,36 @@ export const AwkFlashOverlay = styled.div<{ $cl?: string }>`
   z-index: 15;
   animation: ${awkFlash} 0.6s ease-out forwards;
 `;
+
+export const SkillBar = styled.div`
+  display: flex;
+  gap: 3px;
+  margin: 2px 0;
+  justify-content: center;
+`;
+
+export const SkillBtn = styled.button<{ $off?: boolean }>`
+  background: linear-gradient(180deg, #1a1a28, #12121c);
+  border: 1px solid #333;
+  color: #c0b898;
+  font-size: 10px;
+  padding: 3px 8px;
+  cursor: pointer;
+  border-radius: 3px;
+  font-family: inherit;
+  transition: all 0.12s;
+  min-width: 70px;
+
+  &:hover {
+    border-color: #f0c040;
+    color: #f0c040;
+    box-shadow: 0 0 6px #f0c04030;
+  }
+  &:active { transform: scale(0.95); }
+
+  ${p => p.$off && css`
+    opacity: 0.35;
+    pointer-events: none;
+    filter: grayscale(0.8);
+  `}
+`;

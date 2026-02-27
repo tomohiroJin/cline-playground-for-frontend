@@ -1,11 +1,11 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import type { RunState, BiomeId, SfxType, DmgPopup, TickEvent } from '../types';
+import type { RunState, BiomeId, SfxType, DmgPopup, TickEvent, ASkillId } from '../types';
 import type { GameAction } from '../hooks';
-import { BIO, TC, SPEED_OPTS, LOG_COLORS } from '../constants';
-import { effATK, civLvs, biomeBonus, mkPopup, updatePopups } from '../game-logic';
+import { BIO, TC, SPEED_OPTS, LOG_COLORS, A_SKILLS } from '../constants';
+import { effATK, civLvs, biomeBonus, mkPopup, updatePopups, calcAvlSkills, applySkill } from '../game-logic';
 import { drawEnemy, drawPlayer, drawAlly, drawDmgPopup, drawBurnFx, drawEnemyHpBar, drawStatusIcons } from '../sprites';
 import { ProgressBar, HpBar, CivLevelsDisplay, AffinityBadge, AllyList } from './shared';
-import { Screen, GamePanel, StatText, SpeedBar, SpeedBtn, SurrenderBtn, LogContainer, LogLine, Tc, Lc, Rc, Gc, Bc, PausedOverlay, flashHit } from '../styles';
+import { Screen, GamePanel, StatText, SpeedBar, SpeedBtn, SurrenderBtn, LogContainer, LogLine, Tc, Lc, Rc, Gc, Bc, PausedOverlay, flashHit, SkillBar, SkillBtn } from '../styles';
 
 const MAX_POPUP_DISPLAY = 5;
 
@@ -139,6 +139,27 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
     <span key={a.id} style={{ color: a.cl, fontSize: 8 }}>{a.nm} </span>
   ));
 
+  // スキル関連
+  const avlSkills = calcAvlSkills(run);
+  const skillDefs = A_SKILLS.filter(s => avlSkills.includes(s.id));
+
+  const handleSkill = (sid: ASkillId) => {
+    const { nextRun, events } = applySkill(run, sid);
+    // SFXとポップアップイベント処理
+    for (const ev of events) {
+      if (ev.type === 'sfx') playSfx(ev.sfx);
+      if (ev.type === 'popup') {
+        const p = mkPopup(ev.v, ev.crit, ev.heal);
+        if (ev.tgt === 'en') setEnPopups(prev => [...prev, p].slice(-MAX_POPUP_DISPLAY));
+        else setPlPopups(prev => [...prev, p].slice(-MAX_POPUP_DISPLAY));
+      }
+    }
+    dispatch({ type: 'BATTLE_TICK', nextRun });
+  };
+
+  // バフアイコン表示用
+  const activeBuffs = run.sk.bfs;
+
   return (
     <Screen>
       <ProgressBar current={Math.min(run.cW, run.wpb + 1)} max={run.wpb + 1} label={lbl} />
@@ -164,6 +185,22 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
           降伏
         </SurrenderBtn>
       </SpeedBar>
+
+      {/* スキルボタン */}
+      {skillDefs.length > 0 && (
+        <SkillBar>
+          {skillDefs.map(s => {
+            const cd = run.sk.cds[s.id] || 0;
+            const isOff = cd > 0;
+            return (
+              <SkillBtn key={s.id} $off={isOff} onClick={() => handleSkill(s.id)}
+                title={s.ds}>
+                {s.ic} {s.nm}{isOff ? ` (${cd})` : ''}
+              </SkillBtn>
+            );
+          })}
+        </SkillBar>
+      )}
 
       {/* Enemy panel */}
       <GamePanel style={{ position: 'relative' }}>
@@ -216,6 +253,19 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
           </div>
         </div>
         <AllyList allies={run.al} mode="battle" />
+        {/* バフアイコン */}
+        {activeBuffs.length > 0 && (
+          <div style={{ display: 'flex', gap: 4, marginTop: 2, justifyContent: 'center' }}>
+            {activeBuffs.map((b, i) => {
+              const def = A_SKILLS.find(s => s.id === b.sid);
+              return (
+                <span key={i} style={{ fontSize: 8, color: '#f0c040', background: '#f0c04015', border: '1px solid #f0c04025', padding: '1px 4px', borderRadius: 4 }}>
+                  {def?.ic} {b.rT}T
+                </span>
+              );
+            })}
+          </div>
+        )}
         {/* プレイヤー側ポップアップ Canvas */}
         <canvas ref={plPopupRef} width={200} height={60} style={{
           position: 'absolute', top: 0, right: 0, pointerEvents: 'none',
