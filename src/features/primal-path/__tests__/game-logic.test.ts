@@ -567,3 +567,73 @@ describe('血の契約: applyEvo 結合テスト', () => {
     expect(result.aM).toBe(2);
   });
 });
+
+/* ===== FB-R2-1: 血の契約 → startBattle 結合テスト ===== */
+
+describe('血の契約: applyEvo → startBattle 結合テスト', () => {
+  const bloodPact = EVOS.find(e => e.n === '血の契約') as Evolution;
+
+  it('applyEvo → startBattle でHP半減が維持される', () => {
+    // Arrange
+    const run = makeRun({ hp: 80, mhp: 80, atk: 10, aM: 1 });
+
+    // Act: 進化適用 → 戦闘開始
+    const { nextRun } = applyEvo(run, bloodPact);
+    const battleRun = startBattle(nextRun, false);
+
+    // Assert: startBattle 後もHP半減が維持される
+    expect(battleRun.mhp).toBe(40);
+    expect(battleRun.hp).toBe(40);
+    expect(battleRun.aM).toBe(2);
+    // 敵が生成されている
+    expect(battleRun.en).not.toBeNull();
+  });
+
+  it('ダメージ状態から applyEvo → startBattle でHP半減が維持される', () => {
+    // Arrange: HP30/80
+    const run = makeRun({ hp: 30, mhp: 80, atk: 10, aM: 1 });
+
+    // Act
+    const { nextRun } = applyEvo(run, bloodPact);
+    const battleRun = startBattle(nextRun, false);
+
+    // Assert: mhp=40, hp=min(30,40)=30
+    expect(battleRun.mhp).toBe(40);
+    expect(battleRun.hp).toBe(30);
+  });
+
+  it('連続2回の進化適用 → startBattle でステートが正しい', () => {
+    // Arrange: 最初に通常進化を適用してから血の契約を適用
+    const normalEvo: Evolution = { n: 'テスト', d: 'ATK+5', t: 'tech', r: 0, e: { atk: 5 } };
+    const run = makeRun({ hp: 80, mhp: 80, atk: 8, aM: 1 });
+
+    // Act: 通常進化 → 血の契約 → 戦闘開始
+    const { nextRun: r1 } = applyEvo(run, normalEvo);
+    const { nextRun: r2 } = applyEvo(r1, bloodPact);
+    const battleRun = startBattle(r2, false);
+
+    // Assert
+    expect(battleRun.mhp).toBe(40);   // 80 → 半減 → 40
+    expect(battleRun.hp).toBe(40);
+    expect(battleRun.atk).toBe(13);    // 8 + 5 = 13
+    expect(battleRun.aM).toBe(2);
+  });
+
+  it('afterBattle → 次の進化で血の契約を適用してもHP半減が正しい', () => {
+    // Arrange: 戦闘後の状態を模擬（ダメージを受けた状態）
+    const run = makeRun({
+      hp: 60, mhp: 80, atk: 10, aM: 1,
+      cW: 2, en: { n: 'test', hp: 0, mhp: 20, atk: 5, def: 0, bone: 1 },
+    });
+
+    // Act: 戦闘終了 → 血の契約選択 → 次の戦闘開始
+    const { nextRun: afterRun } = afterBattle(run);
+    const { nextRun: evoRun } = applyEvo(afterRun, bloodPact);
+    const battleRun = startBattle(evoRun, false);
+
+    // Assert
+    expect(battleRun.mhp).toBe(40);
+    expect(battleRun.hp).toBe(40);   // min(60, 40) = 40
+    expect(battleRun.aM).toBe(2);
+  });
+});

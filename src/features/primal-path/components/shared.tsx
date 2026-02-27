@@ -3,9 +3,10 @@
  */
 import React from 'react';
 import type { Ally, RunState, CivTypeExt, BiomeIdExt, CivLevels, AwokenRecord, ActiveSynergy } from '../types';
-import { TC, TN, BIO, SYNERGY_TAG_INFO } from '../constants';
+import type { GameAction } from '../hooks';
+import { TC, TN, BIO, SYNERGY_TAG_INFO, SPEED_OPTS } from '../constants';
 import { effATK, civLvs, biomeBonus } from '../game-logic';
-import { AllyBadge, AllyRow, Tc, Lc, Rc, Gc } from '../styles';
+import { AllyBadge, AllyRow, SpeedBtn, Tc, Lc, Rc } from '../styles';
 
 /* ===== ProgressBar ===== */
 
@@ -123,8 +124,6 @@ export const AffinityBadge: React.FC<{ biome: BiomeIdExt; levels: CivLevels }> =
     : <span style={{ fontSize: 7, padding: '1px 5px', borderRadius: 6, display: 'inline-block', marginLeft: 3, color: '#605848', background: '#60584810', border: '1px solid #60584820' }}>相性─</span>;
 };
 
-/* ===== AllyList ===== */
-
 /* ===== SynergyBadges ===== */
 
 export const SynergyBadges: React.FC<{ synergies: ActiveSynergy[]; showCount?: boolean }> = ({ synergies, showCount }) => {
@@ -145,6 +144,28 @@ export const SynergyBadges: React.FC<{ synergies: ActiveSynergy[]; showCount?: b
     </div>
   );
 };
+
+/* ===== SpeedControl（速度切替の共有コンポーネント） ===== */
+
+/** 速度切替ボタン群。SpeedBar 内で使用する */
+export const SpeedControl: React.FC<{
+  battleSpd: number;
+  dispatch: React.Dispatch<GameAction>;
+}> = ({ battleSpd, dispatch }) => (
+  <>
+    <span style={{ fontSize: 8, color: '#403828' }}>速度</span>
+    {SPEED_OPTS.map(([label, spd]) => (
+      <SpeedBtn key={spd} $active={battleSpd === spd}
+        onClick={() => dispatch({ type: 'CHANGE_SPEED', speed: spd })}>
+        {label}
+      </SpeedBtn>
+    ))}
+    <SpeedBtn $active={battleSpd === 0}
+      onClick={() => dispatch({ type: 'CHANGE_SPEED', speed: 0 })}>
+      ⏸
+    </SpeedBtn>
+  </>
+);
 
 /* ===== AllyList ===== */
 

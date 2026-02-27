@@ -93,7 +93,7 @@ function GameInner() {
         )}
 
         {phase === 'evo' && run && (
-          <EvolutionScreen run={run} evoPicks={evoPicks} dispatch={dispatch} playSfx={playSfx} />
+          <EvolutionScreen run={run} evoPicks={evoPicks} dispatch={dispatch} playSfx={playSfx} battleSpd={battleSpd} />
         )}
 
         {phase === 'battle' && run && (

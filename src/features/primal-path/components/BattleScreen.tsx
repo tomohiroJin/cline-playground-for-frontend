@@ -1,11 +1,11 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import type { RunState, BiomeId, SfxType, TickEvent, ASkillId } from '../types';
 import type { GameAction } from '../hooks';
-import { BIO, TC, SPEED_OPTS, LOG_COLORS, A_SKILLS } from '../constants';
+import { BIO, TC, LOG_COLORS, A_SKILLS } from '../constants';
 import { effATK, civLvs, mkPopup, calcAvlSkills, applySkill, calcSynergies, applySynergyBonuses } from '../game-logic';
 import { drawEnemy, drawPlayer, drawBurnFx } from '../sprites';
-import { ProgressBar, HpBar, CivLevelsDisplay, AffinityBadge, AllyList, SynergyBadges } from './shared';
-import { Screen, GamePanel, StatText, SpeedBar, SpeedBtn, SurrenderBtn, LogContainer, LogLine, Tc, Lc, Rc, Gc, Bc, PausedOverlay, EnemySprite, SkillBar, SkillBtn, PopupText, PopupContainer } from '../styles';
+import { ProgressBar, HpBar, CivLevelsDisplay, AffinityBadge, AllyList, SynergyBadges, SpeedControl } from './shared';
+import { Screen, GamePanel, StatText, SpeedBar, SurrenderBtn, LogContainer, LogLine, Tc, Bc, PausedOverlay, EnemySprite, SkillBar, SkillBtn, PopupText, PopupContainer, BattleScrollArea, BattleFixedBottom } from '../styles';
 
 const MAX_POPUP_DISPLAY = 6;
 const POPUP_DURATION_MS = 900;
@@ -142,131 +142,126 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
   const activeBuffs = run.sk.bfs;
 
   return (
-    <Screen>
-      <ProgressBar current={Math.min(run.cW, run.wpb + 1)} max={run.wpb + 1} label={lbl} />
+    <Screen $noScroll>
+      {/* 上部：スクロール可能な領域 */}
+      <BattleScrollArea>
+        <ProgressBar current={Math.min(run.cW, run.wpb + 1)} max={run.wpb + 1} label={lbl} />
 
-      <SpeedBar>
-        <span style={{ fontSize: 8, color: '#403828' }}>速度</span>
-        {SPEED_OPTS.map(([label, spd]) => (
-          <SpeedBtn key={spd} $active={battleSpd === spd}
-            onClick={() => dispatch({ type: 'CHANGE_SPEED', speed: spd })}>
-            {label}
-          </SpeedBtn>
-        ))}
-        <SpeedBtn $active={battleSpd === 0}
-          onClick={() => dispatch({ type: 'CHANGE_SPEED', speed: 0 })}>
-          ⏸
-        </SpeedBtn>
-        <span style={{ fontSize: 8, color: '#403828', marginLeft: 4 }}>T{run.turn} DPS:{wDps}</span>
-        <SurrenderBtn onClick={() => {
-          if (window.confirm('降伏しますか？骨は半分になります。')) {
-            dispatch({ type: 'SURRENDER' });
-          }
-        }}>
-          降伏
-        </SurrenderBtn>
-      </SpeedBar>
+        <SpeedBar>
+          <SpeedControl battleSpd={battleSpd} dispatch={dispatch} />
+          <span style={{ fontSize: 8, color: '#403828', marginLeft: 4 }}>T{run.turn} DPS:{wDps}</span>
+          <SurrenderBtn onClick={() => {
+            if (window.confirm('降伏しますか？骨は半分になります。')) {
+              dispatch({ type: 'SURRENDER' });
+            }
+          }}>
+            降伏
+          </SurrenderBtn>
+        </SpeedBar>
 
-      {/* Enemy panel */}
-      <GamePanel style={{ position: 'relative' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <EnemySprite ref={esprRef} $hit={isHit} $burn={!!run.burn} style={{
-            width: boss ? 52 : 34, height: boss ? 52 : 34,
-          }} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 12, color: boss ? '#ff6040' : '#f05050', marginBottom: 2 }}>
-              {boss ? '👑 ' : ''}{e.n}{e.hp <= 0 ? ' 💀' : ''}
-              {run.burn ? <span style={{ marginLeft: 4, fontSize: 10, animation: 'none' }}>🔥</span> : null}
+        {/* Enemy panel */}
+        <GamePanel style={{ position: 'relative' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <EnemySprite ref={esprRef} $hit={isHit} $burn={!!run.burn} style={{
+              width: boss ? 52 : 34, height: boss ? 52 : 34,
+            }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, color: boss ? '#ff6040' : '#f05050', marginBottom: 2 }}>
+                {boss ? '👑 ' : ''}{e.n}{e.hp <= 0 ? ' 💀' : ''}
+                {run.burn ? <span style={{ marginLeft: 4, fontSize: 10, animation: 'none' }}>🔥</span> : null}
+              </div>
+              <HpBar value={e.hp} max={e.mhp} variant="eh" showPct />
+              <StatText>ATK {e.atk} DEF {e.def} <span style={{ color: '#c0a040' }}>🦴{e.bone}</span></StatText>
             </div>
-            <HpBar value={e.hp} max={e.mhp} variant="eh" showPct />
-            <StatText>ATK {e.atk} DEF {e.def} <span style={{ color: '#c0a040' }}>🦴{e.bone}</span></StatText>
           </div>
-        </div>
-        {/* 敵側ダメージポップアップ（DOM） */}
-        <PopupContainer>
-          {enPopups.map(p => (
-            <PopupText key={p.id} style={{ left: `${p.x}%`, color: p.cl, fontSize: p.fs }}>
-              {p.v}
-            </PopupText>
+          {/* 敵側ダメージポップアップ（DOM） */}
+          <PopupContainer>
+            {enPopups.map(p => (
+              <PopupText key={p.id} style={{ left: `${p.x}%`, color: p.cl, fontSize: p.fs }}>
+                {p.v}
+              </PopupText>
+            ))}
+          </PopupContainer>
+        </GamePanel>
+
+        <div style={{ fontSize: 10, color: '#302818', margin: '3px 0', letterSpacing: 4, textAlign: 'center' }}>── ⚔ ──</div>
+
+        {/* Player panel */}
+        <GamePanel style={{ position: 'relative' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <canvas ref={psprRef} style={{
+              width: 40, height: 55,
+              border: '1px solid #222', borderRadius: 3, background: '#08080c', flexShrink: 0,
+              imageRendering: 'pixelated',
+            }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 11, color: '#50e090', marginBottom: 2 }}>
+                部族長 {feLabel}
+                <AffinityBadge biome={run.cBT} levels={lvs} />
+                {ritActive && (
+                  <span style={{ fontSize: 7, color: '#ff4060', background: '#ff406015', border: '1px solid #ff406030', padding: '1px 5px', borderRadius: 6 }}>
+                    ⚡ATK×3
+                  </span>
+                )}
+              </div>
+              <HpBar value={run.hp} max={run.mhp} variant="hp" low={run.hp < run.mhp * 0.25} showPct />
+              <StatText>
+                ATK <Tc>{effATK(run)}</Tc>{synergyBonus.atkBonus > 0 && <span style={{ color: '#f0c040', fontSize: 7 }}>+{synergyBonus.atkBonus}</span>}{' '}
+                DEF <span style={{ color: '#50c8e8' }}>{run.def}</span>{synergyBonus.defBonus > 0 && <span style={{ color: '#50c8e8', fontSize: 7 }}>+{synergyBonus.defBonus}</span>}{' '}
+                🦴<Bc>{run.bE}</Bc> <CivLevelsDisplay run={run} />
+              </StatText>
+            </div>
+          </div>
+          <AllyList allies={run.al} mode="battle" />
+          {/* バフアイコン */}
+          {activeBuffs.length > 0 && (
+            <div style={{ display: 'flex', gap: 4, marginTop: 2, justifyContent: 'center' }}>
+              {activeBuffs.map((b, i) => {
+                const def = A_SKILLS.find(s => s.id === b.sid);
+                return (
+                  <span key={i} style={{ fontSize: 8, color: '#f0c040', background: '#f0c04015', border: '1px solid #f0c04025', padding: '1px 4px', borderRadius: 4 }}>
+                    {def?.ic} {b.rT}T
+                  </span>
+                );
+              })}
+            </div>
+          )}
+          {/* シナジーアイコン */}
+          <SynergyBadges synergies={activeSynergies} />
+          {/* プレイヤー側ダメージポップアップ（DOM） */}
+          <PopupContainer>
+            {plPopups.map(p => (
+              <PopupText key={p.id} style={{ left: `${p.x}%`, color: p.cl, fontSize: p.fs }}>
+                {p.heal ? '+' : ''}{p.v}
+              </PopupText>
+            ))}
+          </PopupContainer>
+        </GamePanel>
+
+        {/* Battle log */}
+        <LogContainer ref={logRef}>
+          {run.log.slice(-28).map((l, i) => (
+            <LogLine key={i} $color={LOG_COLORS[l.c]}>{l.x}</LogLine>
           ))}
-        </PopupContainer>
-      </GamePanel>
+        </LogContainer>
+      </BattleScrollArea>
 
-      <div style={{ fontSize: 10, color: '#302818', margin: '3px 0', letterSpacing: 4, textAlign: 'center' }}>── ⚔ ──</div>
-
-      {/* Player panel */}
-      <GamePanel style={{ position: 'relative' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <canvas ref={psprRef} style={{
-            width: 40, height: 55,
-            border: '1px solid #222', borderRadius: 3, background: '#08080c', flexShrink: 0,
-            imageRendering: 'pixelated',
-          }} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 11, color: '#50e090', marginBottom: 2 }}>
-              部族長 {feLabel}
-              <AffinityBadge biome={run.cBT} levels={lvs} />
-              {ritActive && (
-                <span style={{ fontSize: 7, color: '#ff4060', background: '#ff406015', border: '1px solid #ff406030', padding: '1px 5px', borderRadius: 6 }}>
-                  ⚡ATK×3
-                </span>
-              )}
-            </div>
-            <HpBar value={run.hp} max={run.mhp} variant="hp" low={run.hp < run.mhp * 0.25} />
-            <StatText>
-              ATK <Tc>{effATK(run)}</Tc>{synergyBonus.atkBonus > 0 && <span style={{ color: '#f0c040', fontSize: 7 }}>+{synergyBonus.atkBonus}</span>}{' '}
-              DEF <span style={{ color: '#50c8e8' }}>{run.def}</span>{synergyBonus.defBonus > 0 && <span style={{ color: '#50c8e8', fontSize: 7 }}>+{synergyBonus.defBonus}</span>}{' '}
-              🦴<Bc>{run.bE}</Bc> <CivLevelsDisplay run={run} />
-            </StatText>
-          </div>
-        </div>
-        <AllyList allies={run.al} mode="battle" />
-        {/* バフアイコン */}
-        {activeBuffs.length > 0 && (
-          <div style={{ display: 'flex', gap: 4, marginTop: 2, justifyContent: 'center' }}>
-            {activeBuffs.map((b, i) => {
-              const def = A_SKILLS.find(s => s.id === b.sid);
+      {/* 下部：固定配置のスキルバー（戦闘中に位置が変わらない） */}
+      {skillDefs.length > 0 && (
+        <BattleFixedBottom>
+          <SkillBar>
+            {skillDefs.map(s => {
+              const cd = run.sk.cds[s.id] || 0;
+              const isOff = cd > 0;
               return (
-                <span key={i} style={{ fontSize: 8, color: '#f0c040', background: '#f0c04015', border: '1px solid #f0c04025', padding: '1px 4px', borderRadius: 4 }}>
-                  {def?.ic} {b.rT}T
-                </span>
+                <SkillBtn key={s.id} $off={isOff} onClick={() => handleSkill(s.id)}
+                  title={s.ds}>
+                  {s.ic} {s.nm}{isOff ? ` (${cd})` : ''}
+                </SkillBtn>
               );
             })}
-          </div>
-        )}
-        {/* シナジーアイコン */}
-        <SynergyBadges synergies={activeSynergies} />
-        {/* プレイヤー側ダメージポップアップ（DOM） */}
-        <PopupContainer>
-          {plPopups.map(p => (
-            <PopupText key={p.id} style={{ left: `${p.x}%`, color: p.cl, fontSize: p.fs }}>
-              {p.heal ? '+' : ''}{p.v}
-            </PopupText>
-          ))}
-        </PopupContainer>
-      </GamePanel>
-
-      {/* Battle log */}
-      <LogContainer ref={logRef}>
-        {run.log.slice(-28).map((l, i) => (
-          <LogLine key={i} $color={LOG_COLORS[l.c]}>{l.x}</LogLine>
-        ))}
-      </LogContainer>
-
-      {/* スキルボタン（画面下部に配置） */}
-      {skillDefs.length > 0 && (
-        <SkillBar>
-          {skillDefs.map(s => {
-            const cd = run.sk.cds[s.id] || 0;
-            const isOff = cd > 0;
-            return (
-              <SkillBtn key={s.id} $off={isOff} onClick={() => handleSkill(s.id)}
-                title={s.ds}>
-                {s.ic} {s.nm}{isOff ? ` (${cd})` : ''}
-              </SkillBtn>
-            );
-          })}
-        </SkillBar>
+          </SkillBar>
+        </BattleFixedBottom>
       )}
 
       {/* 一時停止オーバーレイ */}

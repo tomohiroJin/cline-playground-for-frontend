@@ -139,6 +139,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'SELECT_EVO': {
       if (!state.run) return state;
+      const prevMhp = state.run.mhp;
       const { nextRun, allyJoined, allyRevived } = applyEvo(state.run, action.evo);
       // Check awakening
       const awkRule = checkAwakeningRules(nextRun);
@@ -150,7 +151,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
       // Start battle
       const battleRun = startBattle(nextRun, state.finalMode);
-      const isBoss = battleRun.cW > battleRun.wpb;
+      // 進化効果をバトルログに表示（HP半減等の重要効果を明示）
+      if (action.evo.e.half) {
+        battleRun.log.push({ x: `💀 ${action.evo.n}発動！ HP ${prevMhp} → ${battleRun.mhp}`, c: 'rc' });
+      }
+      if (action.evo.e.aM && action.evo.e.aM > 1) {
+        battleRun.log.push({ x: `⚡ ATK倍率 ×${battleRun.aM}`, c: 'gc' });
+      }
       return { ...state, run: battleRun, phase: 'battle' };
     }
 
@@ -184,6 +191,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
       // Start battle
       const battleRun = startBattle(nextRun, state.finalMode);
+      // 血の契約等のHP半減効果がある場合、バトルログに表示
+      if (battleRun.aM > 1) {
+        battleRun.log.push({ x: `⚡ ATK倍率 ×${battleRun.aM}`, c: 'gc' });
+      }
       return { ...state, run: battleRun, phase: 'battle', pendingAwk: null };
     }
 

@@ -181,25 +181,25 @@
 
 ---
 
-### 1-7. Phase 1 フィードバック対応 Round 2
+### 1-7. Phase 1 フィードバック対応 Round 2 ✅
 
 Round 1 対応後の再テストで未修正・不十分と判明した3項目。
 詳細は `feedback-phase1-r2.md` を参照。
 
-- [ ] **FB-R2-1: 血の契約（HP半減）がまだ動作していない** 🔴
-  - 対象: `hooks.ts`, `game-logic.ts`
-  - 作業: `SELECT_EVO` → `startBattle()` の実行パスを詳細調査。`startBattle()` で mhp/hp が上書きされている可能性をランタイムデバッグで検証。バグ特定後に修正+回帰テスト追加
-  - 前回対応: テスト8件追加で「バグなし」と判断したが、実ゲームプレイではHP変化なし
+- [x] **FB-R2-1: 血の契約（HP半減）がまだ動作していない** 🔴
+  - 対象: `hooks.ts`, `components/BattleScreen.tsx`
+  - 作業: ロジックは正常動作（`applyStatFx` → `startBattle` でHP半減が維持される）。問題は視覚フィードバックの欠如：`startBattle()` で `log = []` クリアされるため効果が見えず、HPバーも比率表示で100%のまま。修正：①`SELECT_EVO`/`PROCEED_TO_BATTLE` でバトルログに効果メッセージ追加、②プレイヤーHPバーに `showPct` 追加。結合テスト4件追加
+  - 完了: ロジックバグなし。視覚フィードバック改善で体感上の問題を解消
 
-- [ ] **FB-R2-2: 速度切り替えを進化選択画面にも表示** 🔴
-  - 対象: `components/EvolutionScreen.tsx`, `PrimalPathGame.tsx`
-  - 作業: EvolutionScreen に SpeedBar UI を追加。PrimalPathGame から battleSpd props を渡す。SpeedBar の共有コンポーネント化を検討
-  - 前回対応: START_RUN での battleSpd リセットを除去したが、EvolutionScreen に UI 未追加
+- [x] **FB-R2-2: 速度切り替えを進化選択画面にも表示** 🔴
+  - 対象: `components/shared.tsx`, `components/EvolutionScreen.tsx`, `components/BattleScreen.tsx`, `PrimalPathGame.tsx`
+  - 作業: `SpeedControl` 共有コンポーネントを `shared.tsx` に新規作成（Fragment ベースで速度ボタン群をレンダリング）。EvolutionScreen に `battleSpd` prop 追加 + SpeedBar 配置。BattleScreen のインライン速度ボタンも `SpeedControl` に統一
+  - 完了: 進化選択画面とバトル画面の両方で速度切り替えが利用可能に
 
-- [ ] **FB-R2-3: スキルボタンを固定位置に配置** 🔴
+- [x] **FB-R2-3: スキルボタンを固定位置に配置** 🔴
   - 対象: `styles.ts`, `components/BattleScreen.tsx`
-  - 作業: SkillBar を画面下部に固定配置（sticky/fixed）。Screen レイアウトを上部スクロール+下部固定に分離。タッチターゲット44px以上を確保
-  - 前回対応: ボタン拡大+パルスアニメーション追加したが、ドキュメントフロー内のため位置がずれる
+  - 作業: BattleScreen を `Screen($noScroll)` → `BattleScrollArea`（上部スクロール領域）+ `BattleFixedBottom`（下部固定SkillBar）に分離。`BattleScrollArea`（flex:1, overflow-y:auto）と `BattleFixedBottom`（flex-shrink:0）で Flexbox レイアウト実現。`SkillBtn` を min-height:44px、font-size:14px、padding:10px に拡大してタッチターゲット確保
+  - 完了: スキルバーが画面下部に固定配置され、戦闘中にスクロールしても位置が変わらない
 
 ---
 

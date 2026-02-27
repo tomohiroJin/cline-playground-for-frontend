@@ -97,7 +97,7 @@ export const GameShell = styled.div`
 
 /* ===== Screen (generic phase container) ===== */
 
-export const Screen = styled.div<{ $center?: boolean }>`
+export const Screen = styled.div<{ $center?: boolean; $noScroll?: boolean }>`
   position: absolute;
   top: 0;
   left: 0;
@@ -108,7 +108,7 @@ export const Screen = styled.div<{ $center?: boolean }>`
   align-items: center;
   color: #e0d8c8;
   padding: 10px 14px;
-  overflow-y: auto;
+  overflow-y: ${p => p.$noScroll ? 'hidden' : 'auto'};
   z-index: 1;
   ${p => p.$center && 'justify-content: center;'}
 
@@ -472,10 +472,31 @@ export const skillPulse = keyframes`
   50% { box-shadow: 0 0 10px #f0c04050, 0 0 4px #f0c04030; }
 `;
 
+/* バトル画面の固定下部領域（スキルバー配置用） */
+export const BattleFixedBottom = styled.div`
+  flex-shrink: 0;
+  width: 100%;
+  padding: 6px 0 4px;
+  background: linear-gradient(180deg, transparent, #12121e 8px);
+`;
+
+/* バトル画面のスクロール領域 */
+export const BattleScrollArea = styled.div`
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+`;
+
 export const SkillBar = styled.div`
   display: flex;
   gap: 6px;
-  margin: 6px 0 4px;
   justify-content: center;
   flex-wrap: wrap;
 `;
@@ -484,13 +505,14 @@ export const SkillBtn = styled.button<{ $off?: boolean }>`
   background: linear-gradient(180deg, #1a1a28, #12121c);
   border: 1px solid #444;
   color: #e0d8c8;
-  font-size: 13px;
-  padding: 6px 14px;
+  font-size: 14px;
+  padding: 10px 16px;
   cursor: pointer;
   border-radius: 4px;
   font-family: inherit;
   transition: all 0.12s;
-  min-width: 90px;
+  min-width: 96px;
+  min-height: 44px;
   animation: ${skillPulse} 2s ease-in-out infinite;
 
   &:hover {

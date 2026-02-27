@@ -3,17 +3,18 @@ import type { RunState, Evolution, SfxType } from '../types';
 import type { GameAction } from '../hooks';
 import { BIO, TC, TN, CIV_TYPES, SYNERGY_TAG_INFO } from '../constants';
 import { effATK, simEvo, civLvs, civLv, awkInfo, calcSynergies } from '../game-logic';
-import { ProgressBar, StatPreview, CivBadge, AwakeningBadges, CivLevelsDisplay, StatLine, AffinityBadge, AllyList, SynergyBadges } from './shared';
-import { Screen, SubTitle, EvoCard, GamePanel, StatText, Gc } from '../styles';
+import { ProgressBar, StatPreview, CivBadge, AwakeningBadges, CivLevelsDisplay, StatLine, AffinityBadge, AllyList, SynergyBadges, SpeedControl } from './shared';
+import { Screen, SubTitle, EvoCard, GamePanel, StatText, SpeedBar, Gc } from '../styles';
 
 interface Props {
   run: RunState;
   evoPicks: Evolution[];
   dispatch: React.Dispatch<GameAction>;
   playSfx: (t: SfxType) => void;
+  battleSpd: number;
 }
 
-export const EvolutionScreen: React.FC<Props> = ({ run, evoPicks, dispatch, playSfx }) => {
+export const EvolutionScreen: React.FC<Props> = ({ run, evoPicks, dispatch, playSfx, battleSpd }) => {
   const m = BIO[run.cBT as keyof typeof BIO];
   const lvs = civLvs(run);
   const nxtA = awkInfo(run);
@@ -128,6 +129,11 @@ export const EvolutionScreen: React.FC<Props> = ({ run, evoPicks, dispatch, play
         </StatText>
         <AllyList allies={run.al} mode="evo" />
       </GamePanel>
+
+      {/* 速度切替（進化選択中も速度変更可能） */}
+      <SpeedBar>
+        <SpeedControl battleSpd={battleSpd} dispatch={dispatch} />
+      </SpeedBar>
     </Screen>
   );
 };
