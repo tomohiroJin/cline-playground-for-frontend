@@ -7,7 +7,7 @@ import {
   applyEvo, calcPlayerAtk, tick, startRunState, calcBoneReward,
   allyReviveCost, aliveAllies, deadAllies, bestDiffLabel,
   startBattle, afterBattle, resolveFinalBossKey, tbSummary,
-  pickBiomeAuto,
+  pickBiomeAuto, mkPopup, updatePopups,
 } from '../game-logic';
 import type { RunState, StatSnapshot, SaveData, TreeBonus } from '../types';
 import { TB_DEFAULTS, DIFFS, EVOS } from '../constants';
@@ -401,5 +401,59 @@ describe('startBattle biome scaling', () => {
     const enNoBC = resultNoBC.en!;
 
     expect(en.hp).toBeGreaterThan(enNoBC.hp);
+  });
+});
+
+/* ===== mkPopup ===== */
+
+describe('mkPopup', () => {
+  it('通常ダメージは黄色で標準サイズ', () => {
+    const p = mkPopup(10, false, false);
+    expect(p.v).toBe(10);
+    expect(p.cl).toBe('#f0c040');
+    expect(p.fs).toBe(11);
+    expect(p.a).toBe(1);
+  });
+
+  it('会心ダメージは赤色で大サイズ', () => {
+    const p = mkPopup(25, true, false);
+    expect(p.cl).toBe('#ff4040');
+    expect(p.fs).toBe(16);
+  });
+
+  it('回復は緑色', () => {
+    const p = mkPopup(15, false, true);
+    expect(p.cl).toBe('#50e090');
+    expect(p.fs).toBe(12);
+  });
+});
+
+/* ===== updatePopups ===== */
+
+describe('updatePopups', () => {
+  it('Y座標を上昇させ寿命をデクリメントする', () => {
+    const popups = [mkPopup(10, false, false)];
+    const updated = updatePopups(popups);
+    expect(updated[0].y).toBeLessThan(popups[0].y);
+    expect(updated[0].lt).toBe(popups[0].lt - 1);
+  });
+
+  it('寿命が0のポップアップを除去する', () => {
+    const p = { ...mkPopup(10, false, false), lt: 1 };
+    const updated = updatePopups([p]);
+    expect(updated.length).toBe(0);
+  });
+
+  it('最大5個に制限する', () => {
+    const popups = Array.from({ length: 8 }, () => mkPopup(1, false, false));
+    const updated = updatePopups(popups);
+    expect(updated.length).toBeLessThanOrEqual(5);
+  });
+
+  it('alphaが減衰する', () => {
+    const popups = [mkPopup(10, false, false)];
+    const updated = updatePopups(popups);
+    expect(updated[0].a).toBeLessThan(1);
+    expect(updated[0].a).toBeGreaterThan(0);
   });
 });

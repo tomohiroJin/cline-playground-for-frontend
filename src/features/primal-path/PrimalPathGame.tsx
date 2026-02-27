@@ -4,7 +4,7 @@
  * メインオーケストレータ: Labyrinth Echo パターン準拠。
  * iframe を廃止し、React コンポーネントで直接描画。
  */
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useGameState, useBattle, useAudio, useOverlay, usePersistence } from './hooks';
 import type { GameAction } from './hooks';
 import type { TickEvent, SfxType } from './types';
@@ -32,10 +32,13 @@ function GameInner() {
   const { overlay, showOverlay } = useOverlay();
   const { loaded } = usePersistence(state, dispatch);
 
+  const [tickEvents, setTickEvents] = useState<TickEvent[]>([]);
+
   const handleEvents = useCallback((events: TickEvent[]) => {
     for (const ev of events) {
       if (ev.type === 'sfx') playSfx(ev.sfx);
     }
+    setTickEvents(events);
   }, [playSfx]);
 
   useBattle(state, dispatch, handleEvents);
@@ -100,6 +103,7 @@ function GameInner() {
             battleSpd={battleSpd}
             dispatch={dispatch}
             playSfx={playSfx}
+            tickEvents={tickEvents}
           />
         )}
 

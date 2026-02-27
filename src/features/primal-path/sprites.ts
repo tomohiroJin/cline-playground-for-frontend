@@ -4,7 +4,7 @@
  * 純粋関数: canvas → void (no state deps)
  */
 import { ENEMY_COLORS, ENEMY_DETAILS, ENEMY_SMALL_DETAILS } from './constants';
-import type { CivTypeExt } from './types';
+import type { CivTypeExt, DmgPopup } from './types';
 
 function pxRect(ctx: CanvasRenderingContext2D, s: number, x: number, y: number, w: number, h: number, cl: string) {
   ctx.fillStyle = cl;
@@ -105,4 +105,19 @@ export function drawTitle(c: HTMLCanvasElement): void {
   d(117, 82, 4, 5, '#b0b0b0'); d(126, 102, 4, 4, '#f08020'); d(127, 100, 2, 3, '#f0c040');
   x.fillStyle = '#e0d8c0'; x.beginPath(); x.arc(200, 22, 8, 0, Math.PI * 2); x.fill();
   x.fillStyle = 'rgb(10,8,18)'; x.beginPath(); x.arc(203, 20, 7, 0, Math.PI * 2); x.fill();
+}
+
+/** ダメージポップアップをCanvas上に描画 */
+export function drawDmgPopup(ctx: CanvasRenderingContext2D, popup: DmgPopup, w: number, h: number): void {
+  const px = popup.x * w;
+  const py = popup.y + h * 0.5;
+  ctx.globalAlpha = popup.a;
+  ctx.font = `bold ${popup.fs}px 'Courier New', monospace`;
+  ctx.textAlign = 'center';
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 3;
+  ctx.strokeText(String(popup.v), px, py);
+  ctx.fillStyle = popup.cl;
+  ctx.fillText(String(popup.v), px, py);
+  ctx.globalAlpha = 1;
 }

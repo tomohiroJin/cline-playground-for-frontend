@@ -322,7 +322,8 @@ export type TickEvent =
   | { type: 'sfx'; sfx: SfxType }
   | { type: 'shake_enemy' }
   | { type: 'flash_player_dmg' }
-  | { type: 'flash_player_heal' };
+  | { type: 'flash_player_heal' }
+  | { type: 'popup'; v: number; crit: boolean; heal: boolean; tgt: 'en' | 'pl' };
 
 /** プレイヤー攻撃結果 */
 export interface PlayerAttackResult {
@@ -350,6 +351,17 @@ export interface AwakeningNext {
   nm: string;
   need: string;
   cl: string;
+}
+
+/** ダメージポップアップ */
+export interface DmgPopup {
+  v: number;
+  x: number;
+  y: number;
+  cl: string;
+  fs: number;
+  a: number;
+  lt: number;
 }
 
 /** 環境ダメージ設定 */

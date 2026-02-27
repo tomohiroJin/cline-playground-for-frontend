@@ -1,11 +1,13 @@
-import React, { useRef, useEffect } from 'react';
-import type { RunState, BiomeId, SfxType } from '../types';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
+import type { RunState, BiomeId, SfxType, DmgPopup, TickEvent } from '../types';
 import type { GameAction } from '../hooks';
 import { BIO, TC, SPEED_OPTS, LOG_COLORS } from '../constants';
-import { effATK, civLvs, biomeBonus } from '../game-logic';
-import { drawEnemy, drawPlayer, drawAlly } from '../sprites';
+import { effATK, civLvs, biomeBonus, mkPopup, updatePopups } from '../game-logic';
+import { drawEnemy, drawPlayer, drawAlly, drawDmgPopup } from '../sprites';
 import { ProgressBar, HpBar, CivLevelsDisplay, AffinityBadge, AllyList } from './shared';
 import { Screen, GamePanel, StatText, SpeedBar, SpeedBtn, SurrenderBtn, LogContainer, LogLine, Tc, Lc, Rc, Gc, Bc, PausedOverlay } from '../styles';
+
+const MAX_POPUP_DISPLAY = 5;
 
 interface Props {
   run: RunState;
@@ -13,12 +15,19 @@ interface Props {
   battleSpd: number;
   dispatch: React.Dispatch<GameAction>;
   playSfx: (t: SfxType) => void;
+  tickEvents?: TickEvent[];
 }
 
-export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispatch, playSfx }) => {
+export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispatch, playSfx, tickEvents }) => {
   const esprRef = useRef<HTMLCanvasElement>(null);
   const psprRef = useRef<HTMLCanvasElement>(null);
+  const enPopupRef = useRef<HTMLCanvasElement>(null);
+  const plPopupRef = useRef<HTMLCanvasElement>(null);
   const logRef = useRef<HTMLDivElement>(null);
+
+  // ポップアップ管理
+  const [enPopups, setEnPopups] = useState<DmgPopup[]>([]);
+  const [plPopups, setPlPopups] = useState<DmgPopup[]>([]);
 
   const e = run.en;
   const m = BIO[run.cBT as BiomeId];
@@ -38,6 +47,58 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
   useEffect(() => {
     if (psprRef.current) drawPlayer(psprRef.current, 2, run.fe);
   }, [run.fe]);
+
+  // tickEvents からポップアップ追加 & 既存ポップアップ更新
+  useEffect(() => {
+    if (tickEvents && tickEvents.length > 0) {
+      const newEn: DmgPopup[] = [];
+      const newPl: DmgPopup[] = [];
+      for (const ev of tickEvents) {
+        if (ev.type === 'popup') {
+          const p = mkPopup(ev.v, ev.crit, ev.heal);
+          if (ev.tgt === 'en') newEn.push(p);
+          else newPl.push(p);
+        }
+      }
+      setEnPopups(prev => [...updatePopups(prev), ...newEn].slice(-MAX_POPUP_DISPLAY));
+      setPlPopups(prev => [...updatePopups(prev), ...newPl].slice(-MAX_POPUP_DISPLAY));
+    } else {
+      setEnPopups(prev => updatePopups(prev));
+      setPlPopups(prev => updatePopups(prev));
+    }
+  }, [run.turn, tickEvents]);
+
+  // ポップアップ Canvas 描画（敵側）
+  useEffect(() => {
+    const cvs = enPopupRef.current;
+    if (!cvs || enPopups.length === 0) {
+      if (cvs) {
+        const ctx = cvs.getContext('2d');
+        if (ctx) ctx.clearRect(0, 0, cvs.width, cvs.height);
+      }
+      return;
+    }
+    const ctx = cvs.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, cvs.width, cvs.height);
+    enPopups.forEach(p => drawDmgPopup(ctx, p, cvs.width, cvs.height));
+  }, [enPopups]);
+
+  // ポップアップ Canvas 描画（プレイヤー側）
+  useEffect(() => {
+    const cvs = plPopupRef.current;
+    if (!cvs || plPopups.length === 0) {
+      if (cvs) {
+        const ctx = cvs.getContext('2d');
+        if (ctx) ctx.clearRect(0, 0, cvs.width, cvs.height);
+      }
+      return;
+    }
+    const ctx = cvs.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, cvs.width, cvs.height);
+    plPopups.forEach(p => drawDmgPopup(ctx, p, cvs.width, cvs.height));
+  }, [plPopups]);
 
   // Auto-scroll log
   useEffect(() => {
@@ -78,7 +139,7 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
       </SpeedBar>
 
       {/* Enemy panel */}
-      <GamePanel>
+      <GamePanel style={{ position: 'relative' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <canvas ref={esprRef} style={{
             width: boss ? 52 : 34, height: boss ? 52 : 34,
@@ -93,12 +154,16 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
             <StatText>ATK {e.atk} DEF {e.def} <span style={{ color: '#c0a040' }}>🦴{e.bone}</span></StatText>
           </div>
         </div>
+        {/* 敵側ポップアップ Canvas */}
+        <canvas ref={enPopupRef} width={200} height={60} style={{
+          position: 'absolute', top: 0, right: 0, pointerEvents: 'none',
+        }} />
       </GamePanel>
 
       <div style={{ fontSize: 10, color: '#302818', margin: '3px 0', letterSpacing: 4, textAlign: 'center' }}>── ⚔ ──</div>
 
       {/* Player panel */}
-      <GamePanel>
+      <GamePanel style={{ position: 'relative' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <canvas ref={psprRef} style={{
             width: 40, height: 55,
@@ -123,6 +188,10 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
           </div>
         </div>
         <AllyList allies={run.al} mode="battle" />
+        {/* プレイヤー側ポップアップ Canvas */}
+        <canvas ref={plPopupRef} width={200} height={60} style={{
+          position: 'absolute', top: 0, right: 0, pointerEvents: 'none',
+        }} />
       </GamePanel>
 
       {/* Battle log */}

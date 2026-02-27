@@ -8,7 +8,7 @@ import type {
   TreeBonus, CivLevels, PlayerAttackResult, TickResult, TickEvent,
   ApplyEvoResult, AwakeningRule, AwakeningNext, AwokenRecord,
   SaveData, Difficulty, BiomeId, BiomeIdExt, CivType, CivTypeExt,
-  AllyTemplate, LogEntry,
+  AllyTemplate, LogEntry, DmgPopup,
 } from './types';
 import {
   CIV_TYPES, CIV_KEYS, TREE, TB_DEFAULTS, EVOS, ALT, ENM, BOSS,
@@ -20,6 +20,27 @@ import {
 
 export function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
+}
+
+/* ===== Damage Popup ===== */
+
+const POPUP_LIFETIME = 8;
+const MAX_POPUPS = 5;
+const POPUP_DY = 3;
+
+/** ポップアップ生成（純粋関数） */
+export function mkPopup(v: number, crit: boolean, heal: boolean): DmgPopup {
+  const cl = heal ? '#50e090' : crit ? '#ff4040' : '#f0c040';
+  const fs = heal ? 12 : crit ? 16 : 11;
+  return { v, x: 0.5, y: 0.5, cl, fs, a: 1, lt: POPUP_LIFETIME };
+}
+
+/** ポップアップ毎tick更新（純粋関数） */
+export function updatePopups(popups: DmgPopup[]): DmgPopup[] {
+  return popups
+    .map(p => ({ ...p, y: p.y - POPUP_DY, lt: p.lt - 1, a: Math.max(0, (p.lt - 1) / POPUP_LIFETIME) }))
+    .filter(p => p.lt > 0)
+    .slice(-MAX_POPUPS);
 }
 
 function deepCloneRun(r: RunState): RunState {
@@ -337,6 +358,7 @@ function tickPlayerPhase(next: RunState, e: Enemy, events: TickEvent[], rng: () 
     c: pa.crit ? 'gc' : dm === 1 ? 'xc' : '',
   });
   events.push({ type: 'sfx', sfx: pa.crit ? 'crit' : 'hit' });
+  events.push({ type: 'popup', v: dm, crit: pa.crit, heal: false, tgt: 'en' });
 
   if (next.burn) {
     const bd = Math.floor(pa.dmg * 0.2);
@@ -346,13 +368,14 @@ function tickPlayerPhase(next: RunState, e: Enemy, events: TickEvent[], rng: () 
   }
 }
 
-function tickAllyPhase(next: RunState, e: Enemy): void {
+function tickAllyPhase(next: RunState, e: Enemy, events: TickEvent[]): void {
   next.al.forEach(a => {
     if (!a.a) return;
     if (a.h) {
       const h = Math.floor(a.atk * 2.5);
       next.hp = Math.min(next.hp + h, next.mhp);
       next.log.push({ x: '  💚 ' + a.n + ' +' + h, c: 'lc' });
+      events.push({ type: 'popup', v: h, crit: false, heal: true, tgt: 'pl' });
     } else {
       const ad = Math.max(1, a.atk - e.def);
       e.hp -= ad;
@@ -362,11 +385,12 @@ function tickAllyPhase(next: RunState, e: Enemy): void {
   });
 }
 
-function tickRegenPhase(next: RunState): void {
+function tickRegenPhase(next: RunState, events: TickEvent[]): void {
   if (next.tb.rg > 0) {
     const rg = Math.max(1, Math.floor(next.mhp * next.tb.rg));
     next.hp = Math.min(next.hp + rg, next.mhp);
     next.log.push({ x: '  🌿 再生 +' + rg, c: 'lc' });
+    events.push({ type: 'popup', v: rg, crit: false, heal: true, tgt: 'pl' });
   }
 }
 
@@ -385,6 +409,7 @@ function tickEnemyPhase(next: RunState, e: Enemy, events: TickEvent[], rng: () =
   next.hp -= ed;
   next.dmgTaken += ed;
   next.log.push({ x: '🩸 ' + e.n + ' → ' + ed, c: 'xc' });
+  events.push({ type: 'popup', v: ed, crit: false, heal: false, tgt: 'pl' });
 
   if (rng() < 0.25) {
     const la = aliveAllies(next.al).filter(a => !a.tk);
@@ -435,8 +460,8 @@ export function tick(r: RunState, finalMode: boolean, rng = Math.random): TickRe
 
   tickEnvPhase(next);
   tickPlayerPhase(next, e, events, rng);
-  tickAllyPhase(next, e);
-  tickRegenPhase(next);
+  tickAllyPhase(next, e, events);
+  tickRegenPhase(next, events);
 
   // Enemy killed
   if (e.hp <= 0) {
