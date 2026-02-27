@@ -1,13 +1,24 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
-import type { RunState, BiomeId, SfxType, DmgPopup, TickEvent, ASkillId } from '../types';
+import React, { useRef, useEffect, useState } from 'react';
+import type { RunState, BiomeId, SfxType, TickEvent, ASkillId } from '../types';
 import type { GameAction } from '../hooks';
 import { BIO, TC, SPEED_OPTS, LOG_COLORS, A_SKILLS } from '../constants';
-import { effATK, civLvs, biomeBonus, mkPopup, updatePopups, calcAvlSkills, applySkill } from '../game-logic';
-import { drawEnemy, drawPlayer, drawAlly, drawDmgPopup, drawBurnFx, drawEnemyHpBar, drawStatusIcons } from '../sprites';
+import { effATK, civLvs, mkPopup, calcAvlSkills, applySkill } from '../game-logic';
+import { drawEnemy, drawPlayer, drawBurnFx } from '../sprites';
 import { ProgressBar, HpBar, CivLevelsDisplay, AffinityBadge, AllyList } from './shared';
-import { Screen, GamePanel, StatText, SpeedBar, SpeedBtn, SurrenderBtn, LogContainer, LogLine, Tc, Lc, Rc, Gc, Bc, PausedOverlay, flashHit, SkillBar, SkillBtn } from '../styles';
+import { Screen, GamePanel, StatText, SpeedBar, SpeedBtn, SurrenderBtn, LogContainer, LogLine, Tc, Lc, Rc, Gc, Bc, PausedOverlay, EnemySprite, SkillBar, SkillBtn, PopupText, PopupContainer } from '../styles';
 
-const MAX_POPUP_DISPLAY = 5;
+const MAX_POPUP_DISPLAY = 6;
+const POPUP_DURATION_MS = 900;
+
+/** DOM ポップアップ用エントリ */
+interface PopupEntry {
+  id: number;
+  v: number;
+  x: number;
+  cl: string;
+  fs: number;
+  heal: boolean;
+}
 
 interface Props {
   run: RunState;
@@ -21,13 +32,12 @@ interface Props {
 export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispatch, playSfx, tickEvents }) => {
   const esprRef = useRef<HTMLCanvasElement>(null);
   const psprRef = useRef<HTMLCanvasElement>(null);
-  const enPopupRef = useRef<HTMLCanvasElement>(null);
-  const plPopupRef = useRef<HTMLCanvasElement>(null);
   const logRef = useRef<HTMLDivElement>(null);
+  const popupIdRef = useRef(0);
 
-  // ポップアップ管理
-  const [enPopups, setEnPopups] = useState<DmgPopup[]>([]);
-  const [plPopups, setPlPopups] = useState<DmgPopup[]>([]);
+  // DOM ポップアップ管理
+  const [enPopups, setEnPopups] = useState<PopupEntry[]>([]);
+  const [plPopups, setPlPopups] = useState<PopupEntry[]>([]);
 
   // ヒットフラッシュ管理
   const [isHit, setIsHit] = useState(false);
@@ -43,22 +53,15 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
     ? '⚡ 最終決戦' + (run._fPhase === 2 ? ' Phase2' : '')
     : m ? `${m.ic} ${m.nm}${boss ? ' BOSS' : ` Wave ${run.cW}/${run.wpb}`}` : '⚡';
 
-  // Draw sprites（火傷パーティクル・HPバー・ステータスアイコンは毎tick更新）
+  // 敵スプライト描画（火傷パーティクルのみ追加）
   useEffect(() => {
     if (esprRef.current && e) {
       drawEnemy(esprRef.current, e.n, boss, 2);
-      const ctx = esprRef.current.getContext('2d');
-      if (ctx) {
-        const cw = esprRef.current.width;
-        const ch = esprRef.current.height;
-        // HPバー（スプライト下部）
-        drawEnemyHpBar(ctx, e.hp, e.mhp, 1, ch - 5, cw - 2);
-        // 状態アイコン
-        drawStatusIcons(ctx, 2, 12, !!run.burn);
-        // 火傷パーティクル
-        if (run.burn) {
+      if (run.burn) {
+        const ctx = esprRef.current.getContext('2d');
+        if (ctx) {
           burnFrameRef.current++;
-          drawBurnFx(ctx, cw, ch, burnFrameRef.current);
+          drawBurnFx(ctx, esprRef.current.width, esprRef.current.height, burnFrameRef.current);
         }
       }
     }
@@ -68,64 +71,43 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
     if (psprRef.current) drawPlayer(psprRef.current, 2, run.fe);
   }, [run.fe]);
 
-  // tickEvents からポップアップ追加 & ヒットフラッシュ & 既存ポップアップ更新
+  /** ポップアップ追加ヘルパー */
+  const addPopup = (v: number, crit: boolean, heal: boolean, tgt: 'en' | 'pl') => {
+    const base = mkPopup(v, crit, heal);
+    const id = ++popupIdRef.current;
+    // プレイヤー被ダメは赤に上書き
+    const cl = tgt === 'pl' && !heal ? '#ff5050' : base.cl;
+    const entry: PopupEntry = {
+      id,
+      v: base.v,
+      x: 30 + Math.random() * 40, // 30%〜70% にランダム分散
+      cl,
+      fs: base.fs,
+      heal,
+    };
+    if (tgt === 'en') setEnPopups(prev => [...prev, entry].slice(-MAX_POPUP_DISPLAY));
+    else setPlPopups(prev => [...prev, entry].slice(-MAX_POPUP_DISPLAY));
+    // アニメーション後に自動除去
+    setTimeout(() => {
+      if (tgt === 'en') setEnPopups(prev => prev.filter(p => p.id !== id));
+      else setPlPopups(prev => prev.filter(p => p.id !== id));
+    }, POPUP_DURATION_MS);
+  };
+
+  // tickEvents からポップアップ追加 & ヒットフラッシュ
   useEffect(() => {
-    if (tickEvents && tickEvents.length > 0) {
-      const newEn: DmgPopup[] = [];
-      const newPl: DmgPopup[] = [];
-      let hasShake = false;
-      for (const ev of tickEvents) {
-        if (ev.type === 'popup') {
-          const p = mkPopup(ev.v, ev.crit, ev.heal);
-          if (ev.tgt === 'en') newEn.push(p);
-          else newPl.push(p);
-        }
-        if (ev.type === 'shake_enemy') hasShake = true;
-      }
-      setEnPopups(prev => [...updatePopups(prev), ...newEn].slice(-MAX_POPUP_DISPLAY));
-      setPlPopups(prev => [...updatePopups(prev), ...newPl].slice(-MAX_POPUP_DISPLAY));
-      // ヒットフラッシュ
-      if (hasShake) {
-        setIsHit(true);
-        setTimeout(() => setIsHit(false), 150);
-      }
-    } else {
-      setEnPopups(prev => updatePopups(prev));
-      setPlPopups(prev => updatePopups(prev));
+    if (!tickEvents || tickEvents.length === 0) return;
+    let hasShake = false;
+    for (const ev of tickEvents) {
+      if (ev.type === 'popup') addPopup(ev.v, ev.crit, ev.heal, ev.tgt);
+      if (ev.type === 'shake_enemy') hasShake = true;
     }
+    if (hasShake) {
+      setIsHit(true);
+      setTimeout(() => setIsHit(false), 400);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [run.turn, tickEvents]);
-
-  // ポップアップ Canvas 描画（敵側）
-  useEffect(() => {
-    const cvs = enPopupRef.current;
-    if (!cvs || enPopups.length === 0) {
-      if (cvs) {
-        const ctx = cvs.getContext('2d');
-        if (ctx) ctx.clearRect(0, 0, cvs.width, cvs.height);
-      }
-      return;
-    }
-    const ctx = cvs.getContext('2d');
-    if (!ctx) return;
-    ctx.clearRect(0, 0, cvs.width, cvs.height);
-    enPopups.forEach(p => drawDmgPopup(ctx, p, cvs.width, cvs.height));
-  }, [enPopups]);
-
-  // ポップアップ Canvas 描画（プレイヤー側）
-  useEffect(() => {
-    const cvs = plPopupRef.current;
-    if (!cvs || plPopups.length === 0) {
-      if (cvs) {
-        const ctx = cvs.getContext('2d');
-        if (ctx) ctx.clearRect(0, 0, cvs.width, cvs.height);
-      }
-      return;
-    }
-    const ctx = cvs.getContext('2d');
-    if (!ctx) return;
-    ctx.clearRect(0, 0, cvs.width, cvs.height);
-    plPopups.forEach(p => drawDmgPopup(ctx, p, cvs.width, cvs.height));
-  }, [plPopups]);
 
   // Auto-scroll log
   useEffect(() => {
@@ -145,14 +127,9 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
 
   const handleSkill = (sid: ASkillId) => {
     const { nextRun, events } = applySkill(run, sid);
-    // SFXとポップアップイベント処理
     for (const ev of events) {
       if (ev.type === 'sfx') playSfx(ev.sfx);
-      if (ev.type === 'popup') {
-        const p = mkPopup(ev.v, ev.crit, ev.heal);
-        if (ev.tgt === 'en') setEnPopups(prev => [...prev, p].slice(-MAX_POPUP_DISPLAY));
-        else setPlPopups(prev => [...prev, p].slice(-MAX_POPUP_DISPLAY));
-      }
+      if (ev.type === 'popup') addPopup(ev.v, ev.crit, ev.heal, ev.tgt);
     }
     dispatch({ type: 'BATTLE_TICK', nextRun });
   };
@@ -186,43 +163,29 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
         </SurrenderBtn>
       </SpeedBar>
 
-      {/* スキルボタン */}
-      {skillDefs.length > 0 && (
-        <SkillBar>
-          {skillDefs.map(s => {
-            const cd = run.sk.cds[s.id] || 0;
-            const isOff = cd > 0;
-            return (
-              <SkillBtn key={s.id} $off={isOff} onClick={() => handleSkill(s.id)}
-                title={s.ds}>
-                {s.ic} {s.nm}{isOff ? ` (${cd})` : ''}
-              </SkillBtn>
-            );
-          })}
-        </SkillBar>
-      )}
-
       {/* Enemy panel */}
       <GamePanel style={{ position: 'relative' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <canvas ref={esprRef} style={{
+          <EnemySprite ref={esprRef} $hit={isHit} $burn={!!run.burn} style={{
             width: boss ? 52 : 34, height: boss ? 52 : 34,
-            border: '1px solid #222', borderRadius: 3, background: '#08080c', flexShrink: 0,
-            imageRendering: 'pixelated',
-            animation: isHit ? `${flashHit} 0.15s` : undefined,
           }} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 12, color: boss ? '#ff6040' : '#f05050', marginBottom: 2 }}>
               {boss ? '👑 ' : ''}{e.n}{e.hp <= 0 ? ' 💀' : ''}
+              {run.burn ? <span style={{ marginLeft: 4, fontSize: 10, animation: 'none' }}>🔥</span> : null}
             </div>
             <HpBar value={e.hp} max={e.mhp} variant="eh" showPct />
             <StatText>ATK {e.atk} DEF {e.def} <span style={{ color: '#c0a040' }}>🦴{e.bone}</span></StatText>
           </div>
         </div>
-        {/* 敵側ポップアップ Canvas */}
-        <canvas ref={enPopupRef} width={200} height={60} style={{
-          position: 'absolute', top: 0, right: 0, pointerEvents: 'none',
-        }} />
+        {/* 敵側ダメージポップアップ（DOM） */}
+        <PopupContainer>
+          {enPopups.map(p => (
+            <PopupText key={p.id} style={{ left: `${p.x}%`, color: p.cl, fontSize: p.fs }}>
+              {p.v}
+            </PopupText>
+          ))}
+        </PopupContainer>
       </GamePanel>
 
       <div style={{ fontSize: 10, color: '#302818', margin: '3px 0', letterSpacing: 4, textAlign: 'center' }}>── ⚔ ──</div>
@@ -266,10 +229,14 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
             })}
           </div>
         )}
-        {/* プレイヤー側ポップアップ Canvas */}
-        <canvas ref={plPopupRef} width={200} height={60} style={{
-          position: 'absolute', top: 0, right: 0, pointerEvents: 'none',
-        }} />
+        {/* プレイヤー側ダメージポップアップ（DOM） */}
+        <PopupContainer>
+          {plPopups.map(p => (
+            <PopupText key={p.id} style={{ left: `${p.x}%`, color: p.cl, fontSize: p.fs }}>
+              {p.heal ? '+' : ''}{p.v}
+            </PopupText>
+          ))}
+        </PopupContainer>
       </GamePanel>
 
       {/* Battle log */}
@@ -278,6 +245,22 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
           <LogLine key={i} $color={LOG_COLORS[l.c]}>{l.x}</LogLine>
         ))}
       </LogContainer>
+
+      {/* スキルボタン（画面下部に配置） */}
+      {skillDefs.length > 0 && (
+        <SkillBar>
+          {skillDefs.map(s => {
+            const cd = run.sk.cds[s.id] || 0;
+            const isOff = cd > 0;
+            return (
+              <SkillBtn key={s.id} $off={isOff} onClick={() => handleSkill(s.id)}
+                title={s.ds}>
+                {s.ic} {s.nm}{isOff ? ` (${cd})` : ''}
+              </SkillBtn>
+            );
+          })}
+        </SkillBar>
+      )}
 
       {/* 一時停止オーバーレイ */}
       {battleSpd === 0 && <PausedOverlay>PAUSED</PausedOverlay>}

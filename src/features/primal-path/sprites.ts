@@ -134,17 +134,24 @@ export function drawStatusIcons(ctx: CanvasRenderingContext2D, x: number, y: num
 
 /** 火傷パーティクルを敵スプライト周囲に描画 */
 export function drawBurnFx(ctx: CanvasRenderingContext2D, w: number, h: number, frame: number): void {
-  const count = 6;
+  const count = 12;
+  const colors = ['#ff2000', '#ff5500', '#ff9900', '#ffcc00'];
   for (let i = 0; i < count; i++) {
-    const angle = (frame * 0.15 + i * (Math.PI * 2 / count));
-    const radius = w * 0.35 + Math.sin(frame * 0.3 + i) * 4;
+    const angle = (frame * 0.1 + i * (Math.PI * 2 / count));
+    const radius = w * 0.32 + Math.sin(frame * 0.2 + i * 0.7) * 6;
     const px = w / 2 + Math.cos(angle) * radius;
-    const py = h / 2 + Math.sin(angle) * radius * 0.6 - frame % 10;
-    const size = 2 + Math.sin(frame * 0.5 + i * 2) * 1;
-    ctx.globalAlpha = 0.5 + Math.sin(frame * 0.4 + i) * 0.3;
-    ctx.fillStyle = i % 2 === 0 ? '#ff6020' : '#ffaa30';
+    const py = h / 2 + Math.sin(angle) * radius * 0.5 - (frame * 0.6) % 10;
+    const size = 3 + Math.sin(frame * 0.35 + i * 1.3) * 2;
+    ctx.globalAlpha = 0.7 + Math.sin(frame * 0.25 + i) * 0.3;
+    ctx.fillStyle = colors[i % colors.length];
     ctx.beginPath();
     ctx.arc(px, py, size, 0, Math.PI * 2);
+    ctx.fill();
+    // 白い芯で発光感
+    ctx.globalAlpha = 0.35;
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(px, py, size * 0.35, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.globalAlpha = 1;

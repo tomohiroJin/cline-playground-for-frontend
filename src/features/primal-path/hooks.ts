@@ -97,7 +97,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const evoPicks = rollE(next);
       return {
         ...state, save, run: next, phase: 'evo', finalMode: false,
-        battleSpd: 750, evoPicks, pendingAwk: null, gameResult: null,
+        evoPicks, pendingAwk: null, gameResult: null,
       };
     }
 

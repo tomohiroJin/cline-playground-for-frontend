@@ -37,7 +37,8 @@ export const fadeOut = keyframes`
 
 export const flashHit = keyframes`
   0%, 100% { filter: none; }
-  50% { filter: brightness(2.5) saturate(0); }
+  25% { filter: brightness(4) saturate(0.2) drop-shadow(0 0 8px #ff4040); }
+  60% { filter: brightness(1.8) sepia(0.6) hue-rotate(-30deg) drop-shadow(0 0 4px #ff6040); }
 `;
 
 export const ritPulse = keyframes`
@@ -423,29 +424,79 @@ export const AwkFlashOverlay = styled.div<{ $cl?: string }>`
   animation: ${awkFlash} 0.6s ease-out forwards;
 `;
 
+export const EnemySprite = styled.canvas<{ $hit?: boolean; $burn?: boolean }>`
+  border: 1px solid ${p => p.$burn ? '#ff4020' : '#222'};
+  border-radius: 3px;
+  background: #08080c;
+  flex-shrink: 0;
+  image-rendering: pixelated;
+  transition: border-color 0.3s;
+  ${p => p.$burn && css`box-shadow: 0 0 10px #ff402050, inset 0 0 6px #ff402030;`}
+  ${p => p.$hit && css`animation: ${flashHit} 0.4s ease-out, ${shake} 0.3s ease-out;`}
+`;
+
+export const popupFloat = keyframes`
+  0% { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
+  15% { transform: translateX(-50%) translateY(-6px) scale(1.2); opacity: 1; }
+  100% { transform: translateX(-50%) translateY(-44px) scale(0.85); opacity: 0; }
+`;
+
+export const PopupText = styled.span`
+  position: absolute;
+  top: 35%;
+  transform: translateX(-50%);
+  font-weight: bold;
+  font-family: 'Courier New', monospace;
+  pointer-events: none;
+  text-shadow:
+    0 0 8px currentColor,
+    0 0 3px currentColor,
+    0 1px 2px #000,
+    0 -1px 2px #000,
+    1px 0 2px #000,
+    -1px 0 2px #000;
+  animation: ${popupFloat} 0.9s ease-out forwards;
+  z-index: 5;
+`;
+
+export const PopupContainer = styled.div`
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 5;
+`;
+
+export const skillPulse = keyframes`
+  0%, 100% { box-shadow: 0 0 0 transparent; }
+  50% { box-shadow: 0 0 10px #f0c04050, 0 0 4px #f0c04030; }
+`;
+
 export const SkillBar = styled.div`
   display: flex;
-  gap: 3px;
-  margin: 2px 0;
+  gap: 6px;
+  margin: 6px 0 4px;
   justify-content: center;
+  flex-wrap: wrap;
 `;
 
 export const SkillBtn = styled.button<{ $off?: boolean }>`
   background: linear-gradient(180deg, #1a1a28, #12121c);
-  border: 1px solid #333;
-  color: #c0b898;
-  font-size: 10px;
-  padding: 3px 8px;
+  border: 1px solid #444;
+  color: #e0d8c8;
+  font-size: 13px;
+  padding: 6px 14px;
   cursor: pointer;
-  border-radius: 3px;
+  border-radius: 4px;
   font-family: inherit;
   transition: all 0.12s;
-  min-width: 70px;
+  min-width: 90px;
+  animation: ${skillPulse} 2s ease-in-out infinite;
 
   &:hover {
     border-color: #f0c040;
     color: #f0c040;
-    box-shadow: 0 0 6px #f0c04030;
+    box-shadow: 0 0 10px #f0c04040;
   }
   &:active { transform: scale(0.95); }
 
@@ -453,5 +504,6 @@ export const SkillBtn = styled.button<{ $off?: boolean }>`
     opacity: 0.35;
     pointer-events: none;
     filter: grayscale(0.8);
+    animation: none;
   `}
 `;

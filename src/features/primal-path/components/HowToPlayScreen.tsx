@@ -31,8 +31,19 @@ export const HowToPlayScreen: React.FC<Props> = ({ dispatch, playSfx }) => (
       <p>全文明Lv3以上で<span style={{ color: '#e0c060' }}>調和・小覚醒</span></p>
       <p>全文明Lv4以上で<span style={{ color: '#e0c060' }}>調和・大覚醒</span></p>
       <br />
+      <p style={{ color: '#f0c040', fontSize: 11, marginBottom: 2 }}>✦ アクティブスキル</p>
+      <p>文明Lv3以上でスキルが解放されます。</p>
+      <p><span style={{ color: '#f08050' }}>🔥炎の爆発</span>（技術Lv3）敵に固定ダメージ</p>
+      <p><span style={{ color: '#50e090' }}>🌿自然の癒し</span>（生活Lv3）HP回復+仲間回復</p>
+      <p><span style={{ color: '#d060ff' }}>💀血の狂乱</span>（儀式Lv3）ATK×2（HP消費）</p>
+      <p><span style={{ color: '#e0c060' }}>🛡️盾の壁</span>（調和Lv4）被ダメ半減</p>
+      <p>バトル中に画面下部のボタンで発動。クールダウンあり。</p>
+      <br />
+      <p style={{ color: '#f0c040', fontSize: 11, marginBottom: 2 }}>⏩ 戦闘速度</p>
+      <p>速度ボタン（×1/×2/×4/×8）で自動戦闘のスピードを変更。</p>
+      <p>⏸ボタンで一時停止。速度設定はセッション中のラン間で保持されます。</p>
+      <br />
       <p style={{ color: '#f0c040', fontSize: 11, marginBottom: 2 }}>⚔ 戦闘のコツ</p>
-      <p>速度×1〜×8で自動進行。⏸で一時停止。</p>
       <p>降伏すると骨が半減。復活ツリーで死亡時に復活可能。</p>
       <p>仲間は文明Lv2/4/6で加入。盾役はダメージを吸収。</p>
       <p>倒れた仲間はバイオーム踏破時に骨を使って復活可能。</p>

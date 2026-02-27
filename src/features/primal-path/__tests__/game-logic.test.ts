@@ -9,7 +9,7 @@ import {
   startBattle, afterBattle, resolveFinalBossKey, tbSummary,
   pickBiomeAuto, mkPopup, updatePopups,
 } from '../game-logic';
-import type { RunState, StatSnapshot, SaveData, TreeBonus } from '../types';
+import type { RunState, StatSnapshot, SaveData, TreeBonus, Evolution } from '../types';
 import { TB_DEFAULTS, DIFFS, EVOS } from '../constants';
 
 /* ===== Helpers ===== */
@@ -408,24 +408,24 @@ describe('startBattle biome scaling', () => {
 /* ===== mkPopup ===== */
 
 describe('mkPopup', () => {
-  it('通常ダメージは黄色で標準サイズ', () => {
+  it('通常ダメージは白色で標準サイズ', () => {
     const p = mkPopup(10, false, false);
     expect(p.v).toBe(10);
-    expect(p.cl).toBe('#f0c040');
-    expect(p.fs).toBe(11);
+    expect(p.cl).toBe('#ffffff');
+    expect(p.fs).toBe(15);
     expect(p.a).toBe(1);
   });
 
   it('会心ダメージは赤色で大サイズ', () => {
     const p = mkPopup(25, true, false);
-    expect(p.cl).toBe('#ff4040');
-    expect(p.fs).toBe(16);
+    expect(p.cl).toBe('#ff3030');
+    expect(p.fs).toBe(24);
   });
 
   it('回復は緑色', () => {
     const p = mkPopup(15, false, true);
-    expect(p.cl).toBe('#50e090');
-    expect(p.fs).toBe(12);
+    expect(p.cl).toBe('#50ff90');
+    expect(p.fs).toBe(16);
   });
 });
 
@@ -456,5 +456,113 @@ describe('updatePopups', () => {
     const updated = updatePopups(popups);
     expect(updated[0].a).toBeLessThan(1);
     expect(updated[0].a).toBeGreaterThan(0);
+  });
+});
+
+/* ===== FB-4: 血の契約（HP半減）結合テスト ===== */
+
+describe('血の契約: applyEvo 結合テスト', () => {
+  /** 血の契約の進化定義を取得 */
+  const bloodPact = EVOS.find(e => e.n === '血の契約') as Evolution;
+
+  it('血の契約がEVOS定数に正しく定義されている', () => {
+    // Arrange & Assert
+    expect(bloodPact).toBeDefined();
+    expect(bloodPact.e.half).toBe(1);
+    expect(bloodPact.e.aM).toBe(2);
+    expect(bloodPact.t).toBe('rit');
+    expect(bloodPact.r).toBe(1);
+  });
+
+  it('applyEvo で血の契約を適用するとHP半減・ATK倍率2倍になる', () => {
+    // Arrange
+    const run = makeRun({ hp: 80, mhp: 80, atk: 10, aM: 1 });
+
+    // Act
+    const { nextRun } = applyEvo(run, bloodPact);
+
+    // Assert: HP半減
+    expect(nextRun.mhp).toBe(40);
+    expect(nextRun.hp).toBe(40);
+    // Assert: ATK倍率2倍
+    expect(nextRun.aM).toBe(2);
+    // Assert: 文明レベル（rit）が増加
+    expect(nextRun.cR).toBe(1);
+  });
+
+  it('血の契約を適用しても元のステートは変更されない', () => {
+    // Arrange
+    const run = makeRun({ hp: 80, mhp: 80, atk: 10, aM: 1 });
+
+    // Act
+    applyEvo(run, bloodPact);
+
+    // Assert: イミュータブル
+    expect(run.hp).toBe(80);
+    expect(run.mhp).toBe(80);
+    expect(run.aM).toBe(1);
+  });
+
+  it('ダメージを受けた状態で血の契約を適用するとhp <= mhp/2 になる', () => {
+    // Arrange: HP30/80 の状態
+    const run = makeRun({ hp: 30, mhp: 80, aM: 1 });
+
+    // Act
+    const { nextRun } = applyEvo(run, bloodPact);
+
+    // Assert: mhp=40, hp=min(30,40)=30
+    expect(nextRun.mhp).toBe(40);
+    expect(nextRun.hp).toBe(30);
+  });
+
+  it('aM が既に2の状態で血の契約を適用すると aM=4 になる', () => {
+    // Arrange: aM=2 の状態（既にバフあり）
+    const run = makeRun({ aM: 2, hp: 80, mhp: 80 });
+
+    // Act
+    const { nextRun } = applyEvo(run, bloodPact);
+
+    // Assert: 2 * 2 = 4
+    expect(nextRun.aM).toBe(4);
+  });
+
+  it('simEvo で血の契約のプレビューが正しい', () => {
+    // Arrange
+    const run = makeRun({ hp: 80, mhp: 80, atk: 10, aM: 1, dm: 1 });
+
+    // Act
+    const preview = simEvo(run, bloodPact);
+
+    // Assert: mhp半減、ATK倍率反映
+    expect(preview.mhp).toBe(40);
+    expect(preview.hp).toBe(40);
+    // effATK = floor(10 * 2 * 1) = 20
+    expect(preview.atk).toBe(20);
+  });
+
+  it('simEvo でダメージ状態から血の契約プレビューが正しい', () => {
+    // Arrange: HP が既に低い状態
+    const run = makeRun({ hp: 30, mhp: 80, atk: 10, aM: 1, dm: 1 });
+
+    // Act
+    const preview = simEvo(run, bloodPact);
+
+    // Assert: hp = min(30, 40) = 30
+    expect(preview.mhp).toBe(40);
+    expect(preview.hp).toBe(30);
+    expect(preview.atk).toBe(20);
+  });
+
+  it('applyStatFx で half と aM を同時適用する順序が正しい', () => {
+    // Arrange: half が先に処理され、aM が後に処理されることを確認
+    const base: StatSnapshot = { atk: 10, mhp: 100, hp: 100, def: 2, cr: 0.05, aM: 1, burn: 0, bb: 0 };
+
+    // Act
+    const result = applyStatFx(base, { half: 1, aM: 2 });
+
+    // Assert: mhp=50, hp=50, aM=2
+    expect(result.mhp).toBe(50);
+    expect(result.hp).toBe(50);
+    expect(result.aM).toBe(2);
   });
 });

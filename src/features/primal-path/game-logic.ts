@@ -30,9 +30,9 @@ const POPUP_DY = 3;
 
 /** ポップアップ生成（純粋関数） */
 export function mkPopup(v: number, crit: boolean, heal: boolean): DmgPopup {
-  const cl = heal ? '#50e090' : crit ? '#ff4040' : '#f0c040';
-  const fs = heal ? 12 : crit ? 16 : 11;
-  return { v, x: 0.5, y: 0.5, cl, fs, a: 1, lt: POPUP_LIFETIME };
+  const cl = heal ? '#50ff90' : crit ? '#ff3030' : '#ffffff';
+  const fs = heal ? 16 : crit ? 24 : 15;
+  return { v, x: 0.5, y: 0, cl, fs, a: 1, lt: POPUP_LIFETIME };
 }
 
 /** ポップアップ毎tick更新（純粋関数） */
