@@ -9,148 +9,175 @@
 
 ## Phase 1: 戦闘体験の向上（Battle Experience）
 
-### 1-1. ダメージ数値ポップアップ
+### 1-1. ダメージ数値ポップアップ ✅
 
-- [ ] **DamagePopup 型定義の追加**
+- [x] **DamagePopup 型定義の追加**
   - 対象: `types.ts`
-  - 作業: `DamagePopup` インターフェース（value, x, y, color, fontSize, alpha, lifetime）を定義
-  - 完了条件: 型が export されていること
+  - 作業: `DmgPopup` インターフェース（v, x, y, cl, fs, a, lt）を定義
+  - 完了: `3302a06`
 
-- [ ] **ダメージポップアップ描画関数の実装**
+- [x] **ダメージポップアップ描画関数の実装**
   - 対象: `sprites.ts`
-  - 作業: `drawDamagePopup(ctx, popup)` 関数を追加。Canvas 上にダメージ数値を描画
-  - 完了条件: 指定位置に数値が描画されること
+  - 作業: `drawDmgPopup(ctx, popup, w, h)` 関数を追加
+  - 完了: `3302a06`
 
-- [ ] **ポップアップ管理ロジックの実装**
+- [x] **ポップアップ管理ロジックの実装**
   - 対象: `game-logic.ts`
-  - 作業: `updatePopups(popups)` 関数を追加。毎 tick でポップアップの位置・透明度を更新。寿命切れを削除
-  - 完了条件: ポップアップが上昇・フェードアウトすること
+  - 作業: `mkPopup(v, crit, heal)` / `updatePopups(popups)` を追加
+  - 完了: `3302a06`
 
-- [ ] **tick() からのポップアップ生成**
+- [x] **tick() からのポップアップ生成**
   - 対象: `game-logic.ts`
-  - 作業: `tick()` の攻撃・回復イベント発生時にポップアップを `TickResult.popups` に追加
-  - 完了条件: 攻撃時にダメージ値、回復時に回復値のポップアップが生成されること
+  - 作業: TickEvent に `popup` イベント追加。攻撃・回復・再生・被ダメ時に発火
+  - 完了: `3302a06`
 
-- [ ] **BattleScreen へのポップアップ表示統合**
-  - 対象: `components/BattleScreen.tsx`
-  - 作業: Canvas 描画ループにポップアップ描画を追加。会心=赤色大文字、回復=緑色+プレフィックス
-  - 完了条件: バトル中にダメージ/回復数値が視覚的にポップアップすること
+- [x] **BattleScreen へのポップアップ表示統合**
+  - 対象: `components/BattleScreen.tsx`, `PrimalPathGame.tsx`
+  - 作業: 敵/プレイヤー側のポップアップCanvasを追加。tickEventsで伝搬
+  - 完了: `3302a06`
 
-- [ ] **ポップアップのユニットテスト**
+- [x] **ポップアップのユニットテスト**
   - 対象: `__tests__/game-logic.test.ts`
-  - 作業: `updatePopups` のテスト（寿命管理、上限5個制限）
-  - 完了条件: テストがパスすること
+  - 作業: mkPopup（通常/会心/回復）、updatePopups（Y上昇、寿命除外、最大5個、alpha減衰）
+  - 完了: `3302a06`（4テスト追加）
 
 ---
 
-### 1-2. バトルエフェクト強化
+### 1-2. バトルエフェクト強化 ✅
 
-- [ ] **攻撃ヒットフラッシュの実装**
-  - 対象: `styles.ts`
-  - 作業: `flashHit` キーフレームを追加（0.15秒の白フラッシュ）
-  - 完了条件: ヒット時にフラッシュエフェクトが表示されること
+- [x] **攻撃ヒットフラッシュの実装**
+  - 対象: `styles.ts`, `components/BattleScreen.tsx`
+  - 作業: `flashHit` キーフレーム活用。`isHit` state で `shake_enemy` イベント時に0.15秒フラッシュ適用
+  - 完了: `d83d6bb`
 
-- [ ] **火傷パーティクルの実装**
-  - 対象: `sprites.ts`
-  - 作業: `drawBurnParticle(ctx, x, y)` 関数を追加。オレンジの小さな粒を描画
-  - 完了条件: 火傷状態の敵にパーティクルが表示されること
-
-- [ ] **覚醒全画面エフェクトの実装**
-  - 対象: `styles.ts`, `components/AwakeningScreen.tsx`
-  - 作業: 覚醒演出時のフルスクリーンフラッシュ + 文明色のグロー効果
-  - 完了条件: 覚醒時に印象的なビジュアル演出が表示されること
-
----
-
-### 1-3. アクティブスキルシステム
-
-- [ ] **スキル型定義の追加**
-  - 対象: `types.ts`
-  - 作業: `ActiveSkillId`, `ActiveSkillDef`, `SkillEffect`, `SkillState`, `ActiveBuff` 型を定義
-  - 完了条件: 型が export されていること
-
-- [ ] **スキル定数の定義**
-  - 対象: `constants.ts`
-  - 作業: `ACTIVE_SKILLS` 定数配列（4スキル）を定義
-  - 完了条件: 4スキルが Object.freeze で定義されていること
-
-- [ ] **RunState へのスキル状態追加**
-  - 対象: `types.ts`
-  - 作業: `RunState` に `skillState: SkillState` を追加
-  - 完了条件: RunState が SkillState を含むこと
-
-- [ ] **applyActiveSkill 関数の実装**
-  - 対象: `game-logic.ts`
-  - 作業: スキル効果適用ロジック（ダメージ/回復/バフ/シールド）を実装
-  - 完了条件: 各スキルタイプの効果が正しく適用されること
-
-- [ ] **スキル解放判定の実装**
-  - 対象: `game-logic.ts`
-  - 作業: 文明レベルに応じたスキル解放ロジック
-  - 完了条件: 文明レベル3以上で対応スキルが使用可能になること
-
-- [ ] **バフターン管理の実装**
-  - 対象: `game-logic.ts`
-  - 作業: `tick()` 内でバフの残りターンをデクリメント、0になったら削除
-  - 完了条件: バフが指定ターン後に消滅すること
-
-- [ ] **クールダウン管理の実装**
-  - 対象: `game-logic.ts`
-  - 作業: バトル終了時にクールダウンをデクリメント
-  - 完了条件: クールダウン中はスキルが使用不可、終了後に使用可能になること
-
-- [ ] **gameReducer にスキル発動アクション追加**
-  - 対象: `hooks.ts`
-  - 作業: `USE_SKILL` アクションを追加し、`applyActiveSkill` を呼び出す
-  - 完了条件: reducer 経由でスキルが発動できること
-
-- [ ] **スキルボタンUIの実装**
-  - 対象: `components/BattleScreen.tsx`, `styles.ts`
-  - 作業: バトル画面下部にスキルボタンを配置。クールダウン中はグレーアウト
-  - 完了条件: スキルボタンが表示され、タップで発動できること
-
-- [ ] **スキルSFXの追加**
-  - 対象: `constants.ts`, `audio.ts`
-  - 作業: 4スキル分のSFX定義を追加
-  - 完了条件: スキル発動時に効果音が鳴ること
-
-- [ ] **スキルのユニットテスト**
-  - 対象: `__tests__/active-skills.test.ts`（新規）
-  - 作業: 各スキル効果、クールダウン、バフ管理のテスト
-  - 完了条件: 全テストがパスすること
-
----
-
-### 1-4. 戦闘速度UI改善
-
-- [ ] **速度切替ボタンのビジュアル化**
-  - 対象: `components/BattleScreen.tsx`, `styles.ts`
-  - 作業: テキストボタンをアイコン付きボタン（×1/×2/×4/×8）に変更
-  - 完了条件: 速度が視覚的にわかりやすく表示されること
-
-- [ ] **一時停止機能の追加**
-  - 対象: `hooks.ts`
-  - 作業: `useBattle` に一時停止/再開のトグル機能を追加
-  - 完了条件: ⏸ ボタンで戦闘を一時停止・再開できること
-
----
-
-### 1-5. 敵HP/状態表示の改善
-
-- [ ] **敵HPバー描画関数の実装**
-  - 対象: `sprites.ts`
-  - 作業: `drawEnemyHpBar(ctx, hp, maxHp, x, y)` 関数を追加
-  - 完了条件: 敵スプライト下部にHPバーが表示されること
-
-- [ ] **状態異常アイコン表示**
+- [x] **火傷パーティクルの実装**
   - 対象: `sprites.ts`, `components/BattleScreen.tsx`
-  - 作業: 火傷等の状態異常をアイコン（🔥）で敵スプライト横に表示
-  - 完了条件: 状態異常の敵にアイコンが表示されること
+  - 作業: `drawBurnFx(ctx, w, h, frame)` 関数を追加。敵Canvas上にオレンジ粒パーティクル描画
+  - 完了: `d83d6bb`
 
-- [ ] **Phase 1 統合テスト**
+- [x] **覚醒全画面エフェクトの実装**
+  - 対象: `styles.ts`, `components/AwakeningScreen.tsx`
+  - 作業: `awkFlash` キーフレーム + `AwkFlashOverlay` コンポーネント追加。覚醒ボタン押下時にフラッシュ
+  - 完了: `d83d6bb`
+
+---
+
+### 1-3. アクティブスキルシステム ✅
+
+- [x] **スキル型定義の追加**
+  - 対象: `types.ts`
+  - 作業: `ASkillId`, `SkillFx`, `ASkillDef`, `ABuff`, `SkillSt` 型を定義。`SfxType` にスキルSFX追加
+  - 完了: `228b78f`
+
+- [x] **スキル定数の定義**
+  - 対象: `constants.ts`
+  - 作業: `A_SKILLS` 定数配列（fB/nH/bR/sW の4スキル）を Object.freeze で定義
+  - 完了: `228b78f`
+
+- [x] **RunState へのスキル状態追加**
+  - 対象: `types.ts`, `game-logic.ts`
+  - 作業: `RunState` に `sk: SkillSt` 追加。`startRunState` / `deepCloneRun` を対応
+  - 完了: `228b78f`
+
+- [x] **applySkill 関数の実装**
+  - 対象: `game-logic.ts`
+  - 作業: `applySkill(r, sid)` でスキル効果適用（ダメージ/回復/バフ/シールド）。純粋関数で `{ nextRun, events }` を返す
+  - 完了: `228b78f`
+
+- [x] **スキル解放判定の実装**
+  - 対象: `game-logic.ts`
+  - 作業: `calcAvlSkills(r)` で文明レベルに応じたスキル解放判定
+  - 完了: `228b78f`
+
+- [x] **バフターン管理の実装**
+  - 対象: `game-logic.ts`
+  - 作業: `tickBuffs(sk)` で毎ターンバフのrTをデクリメント、0以下を削除。`tick()` 末尾で呼び出し
+  - 完了: `228b78f`
+
+- [x] **クールダウン管理の実装**
+  - 対象: `game-logic.ts`
+  - 作業: `decSkillCds(sk)` でバトル終了時CDデクリメント。`afterBattle()` で呼び出し
+  - 完了: `228b78f`
+
+- [x] **gameReducer にスキル発動アクション追加**
+  - 対象: `hooks.ts`
+  - 作業: `USE_SKILL` アクション追加。BattleScreen側で `applySkill` 直接呼び出し→`BATTLE_TICK` でディスパッチ
+  - 完了: `228b78f`
+
+- [x] **スキルボタンUIの実装**
+  - 対象: `components/BattleScreen.tsx`, `styles.ts`
+  - 作業: `SkillBar` / `SkillBtn` コンポーネント追加。CD中グレーアウト。バフアイコン表示
+  - 完了: `228b78f`
+
+- [x] **スキルSFXの追加**
+  - 対象: `constants.ts`
+  - 作業: `SFX_DEFS` に skFire/skHeal/skRage/skShield の4種追加
+  - 完了: `228b78f`
+
+- [x] **スキルのユニットテスト**
+  - 対象: `__tests__/active-skills.test.ts`（新規）
+  - 作業: calcAvlSkills(5), applySkill(5), tickBuffs(2), decSkillCds(2) の計14テスト
+  - 完了: `228b78f`
+
+---
+
+### 1-4. 戦闘速度UI改善 ✅
+
+- [x] **速度切替ボタンのビジュアル強化**
+  - 対象: `styles.ts`
+  - 作業: `SpeedBtn` の `$active` スタイルにグロー効果（box-shadow, text-shadow）追加
+  - 完了: `ef67e72`
+
+- [x] **一時停止オーバーレイの追加**
+  - 対象: `styles.ts`, `components/BattleScreen.tsx`
+  - 作業: `pausePulse` キーフレーム + `PausedOverlay` コンポーネント。⏸時に画面中央「PAUSED」表示
+  - 完了: `ef67e72`
+
+---
+
+### 1-5. 敵HP/状態表示の改善 ✅
+
+- [x] **敵HPバー描画関数の実装**
+  - 対象: `sprites.ts`, `components/BattleScreen.tsx`
+  - 作業: `drawEnemyHpBar(ctx, hp, mhp, x, y, w)` 関数追加。敵Canvas描画useEffectに統合
+  - 完了: `fe7f2f3`
+
+- [x] **状態異常アイコン表示**
+  - 対象: `sprites.ts`, `components/BattleScreen.tsx`
+  - 作業: `drawStatusIcons(ctx, x, y, burn)` で🔥アイコン描画。useEffect依存に `run.burn` 追加
+  - 完了: `fe7f2f3`
+
+- [x] **Phase 1 統合テスト**
   - 対象: 全ファイル
-  - 作業: `npm test` 全パス確認 + 手動でバトルフローを検証
-  - 完了条件: 既存49テスト + 新規テスト全パス、バトル体験が向上していること
+  - 作業: `npm test` 全1992テストパス + `npm run build` 成功
+  - 完了: 既存テスト + 新規22テスト（game-logic 8 + active-skills 14）全パス
+
+---
+
+### 1-6. Phase 1 フィードバック対応
+
+プレイテスト後のフィードバック7項目のうち、🔴（すぐに対応）の4項目を Phase 1 の追加タスクとして実施する。
+詳細は `feedback-phase1.md` を参照。
+
+- [ ] **FB-4: 血の契約（HP半減）の結合テスト追加・検証**
+  - 対象: `__tests__/game-logic.test.ts`, `game-logic.ts`, `constants.ts`
+  - 作業: `applyEvo` → `applyStatFx` の結合テスト追加、`half` + `aM` 複合効果テスト、`simEvo` のHP半減反映確認
+  - 完了条件: 血の契約の効果が正しく動作し、テストで保証されていること
+
+- [ ] **FB-1: 速度切り替えを常時利用可能に**
+  - 対象: `hooks.ts`
+  - 作業: `CHANGE_SPEED` アクションを `phase === 'battle'` 制約から解放。速度設定を永続化
+  - 完了条件: バトルフェーズ以外でも速度切り替えが機能すること
+
+- [ ] **FB-2: スキルボタンの拡大・利用可能アピール**
+  - 対象: `styles.ts`, `components/BattleScreen.tsx`
+  - 作業: `SkillBtn` サイズ拡大、スキルバーを画面下部に移動、利用可能時パルスアニメーション追加
+  - 完了条件: スキルボタンが目立つ位置・サイズで表示され、利用可能時に視覚的フィードバックがあること
+
+- [ ] **FB-6: 遊び方にスキル・スピード切り替え説明を追加**
+  - 対象: `components/HowToPlayScreen.tsx`
+  - 作業: 「アクティブスキル」セクションと「戦闘速度」セクションを追加
+  - 完了条件: 初見プレイヤーがスキルと速度切り替えの存在を理解できること
 
 ---
 
