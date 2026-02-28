@@ -4,7 +4,7 @@
 import { useReducer, useEffect, useRef, useCallback, useState } from 'react';
 import type {
   GameState, GamePhase, RunState, Evolution, SaveData,
-  Ally, BiomeId, CivTypeExt, SfxType, TickEvent, ASkillId,
+  Ally, BiomeId, BgmType, CivTypeExt, SfxType, TickEvent, ASkillId,
   EventChoice, RandomEventDef,
   RunStats, AchievementState, AggregateStats,
 } from './types';
@@ -18,7 +18,7 @@ import {
   calcRunStats, checkAchievement, applyChallenge, calcSynergies,
 } from './game-logic';
 import { AWK_SA, AWK_FA, BOSS, DIFFS, BIO, FRESH_SAVE, TREE as TREE_DATA, ACHIEVEMENTS, CHALLENGES } from './constants';
-import { AudioEngine } from './audio';
+import { AudioEngine, BgmEngine } from './audio';
 import { Storage, MetaStorage } from './storage';
 
 /* ===== Action Types ===== */
@@ -596,7 +596,23 @@ export function useAudio() {
     AudioEngine.play(type);
   }, []);
 
-  return { init, playSfx };
+  const playBgm = useCallback((type: BgmType) => {
+    BgmEngine.play(type);
+  }, []);
+
+  const stopBgm = useCallback(() => {
+    BgmEngine.stop();
+  }, []);
+
+  const setBgmVolume = useCallback((v: number) => {
+    BgmEngine.setVolume(v);
+  }, []);
+
+  const setSfxVolume = useCallback((v: number) => {
+    AudioEngine.setSfxVolume(v);
+  }, []);
+
+  return { init, playSfx, playBgm, stopBgm, setBgmVolume, setSfxVolume };
 }
 
 /* ===== useOverlay ===== */

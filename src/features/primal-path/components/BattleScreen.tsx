@@ -5,10 +5,33 @@ import { BIO, TC, LOG_COLORS, A_SKILLS } from '../constants';
 import { effATK, civLvs, mkPopup, calcAvlSkills, applySkill, calcSynergies, applySynergyBonuses } from '../game-logic';
 import { drawEnemy, drawPlayer, drawBurnFx } from '../sprites';
 import { ProgressBar, HpBar, CivLevelsDisplay, AffinityBadge, AllyList, SynergyBadges, SpeedControl } from './shared';
-import { Screen, GamePanel, StatText, SpeedBar, SurrenderBtn, LogContainer, LogLine, Tc, Bc, PausedOverlay, EnemySprite, SkillBar, SkillBtn, PopupText, PopupContainer, BattleScrollArea, BattleFixedBottom } from '../styles';
+import { Screen, GamePanel, StatText, SpeedBar, SurrenderBtn, LogContainer, LogLine, Tc, Bc, PausedOverlay, EnemySprite, SkillBar, SkillBtn, PopupText, PopupContainer, BattleScrollArea, BattleFixedBottom, BiomeBg, WeatherParticles, TimerDisplay } from '../styles';
 
 const MAX_POPUP_DISPLAY = 6;
 const POPUP_DURATION_MS = 900;
+const PARTICLE_COUNT = 18;
+
+/** パーティクルのランダム配置を生成 */
+function renderParticles(biome: string): React.ReactNode[] {
+  if (biome !== 'glacier' && biome !== 'volcano' && biome !== 'grassland') return [];
+  return Array.from({ length: PARTICLE_COUNT }, (_, i) => {
+    const left = Math.random() * 100;
+    const delay = Math.random() * 6;
+    const duration = 4 + Math.random() * 4;
+    return (
+      <span
+        key={i}
+        style={{
+          left: `${left}%`,
+          top: biome === 'volcano' ? 'auto' : `${Math.random() * 20}%`,
+          bottom: biome === 'volcano' ? '0' : 'auto',
+          animationDelay: `${delay}s`,
+          animationDuration: `${duration}s`,
+        }}
+      />
+    );
+  });
+}
 
 /** DOM ポップアップ用エントリ */
 interface PopupEntry {
@@ -68,8 +91,8 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
   }, [e?.n, e?.hp, e?.mhp, boss, run.burn, run.turn]);
 
   useEffect(() => {
-    if (psprRef.current) drawPlayer(psprRef.current, 2, run.fe);
-  }, [run.fe]);
+    if (psprRef.current) drawPlayer(psprRef.current, 2, run.fe, run.awoken);
+  }, [run.fe, run.awoken]);
 
   /** ポップアップ追加ヘルパー */
   const addPopup = (v: number, crit: boolean, heal: boolean, tgt: 'en' | 'pl') => {
@@ -141,11 +164,50 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
   // バフアイコン表示用
   const activeBuffs = run.sk.bfs;
 
+  // チャレンジタイマー
+  const [elapsed, setElapsed] = useState(0);
+  const timerStartRef = useRef(Date.now());
+
+  useEffect(() => {
+    if (!run.timeLimit) return;
+    timerStartRef.current = Date.now();
+    const tid = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - timerStartRef.current) / 1000));
+    }, 1000);
+    return () => clearInterval(tid);
+  }, [run.timeLimit]);
+
+  const remaining = run.timeLimit ? Math.max(0, run.timeLimit - elapsed) : undefined;
+
+  /** 秒を mm:ss 形式にフォーマット */
+  const formatTime = (s: number): string => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${sec.toString().padStart(2, '0')}`;
+  };
+
+  // バイオーム背景用
+  const biomeForBg = finalMode ? 'final' : (run.cBT as string);
+  const particles = useMemo(() => renderParticles(biomeForBg), [biomeForBg]);
+
   return (
     <Screen $noScroll>
+      {/* バイオーム別背景 */}
+      <BiomeBg $biome={biomeForBg} />
+      <WeatherParticles $biome={biomeForBg}>
+        {particles}
+      </WeatherParticles>
+
       {/* 上部：スクロール可能な領域 */}
       <BattleScrollArea>
         <ProgressBar current={Math.min(run.cW, run.wpb + 1)} max={run.wpb + 1} label={lbl} />
+
+        {/* チャレンジタイマー */}
+        {remaining !== undefined && (
+          <TimerDisplay $urgent={remaining <= 60}>
+            ⏱️ {formatTime(remaining)}
+          </TimerDisplay>
+        )}
 
         <SpeedBar>
           <SpeedControl battleSpd={battleSpd} dispatch={dispatch} />

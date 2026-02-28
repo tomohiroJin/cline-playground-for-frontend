@@ -529,3 +529,110 @@ export const SkillBtn = styled.button<{ $off?: boolean }>`
     animation: none;
   `}
 `;
+
+/* ===== 背景演出 ===== */
+
+/** バイオーム別背景グラデーション */
+const BIOME_BG: Record<string, string> = {
+  grassland: 'linear-gradient(180deg, #0a1a0a 0%, #0e1e10 30%, #12221a 70%, #162818 100%)',
+  glacier: 'linear-gradient(180deg, #0a0e1a 0%, #0e1428 30%, #101830 70%, #0c1020 100%)',
+  volcano: 'linear-gradient(180deg, #1a0a0a 0%, #1e0e08 30%, #221210 70%, #281610 100%)',
+  final: 'linear-gradient(180deg, #12081a 0%, #1a0c22 30%, #100818 70%, #0a0410 100%)',
+};
+
+export const BiomeBg = styled.div<{ $biome: string }>`
+  position: absolute;
+  inset: 0;
+  background: ${p => BIOME_BG[p.$biome] || '#12121e'};
+  z-index: 0;
+  pointer-events: none;
+`;
+
+/** 降雪キーフレーム */
+export const snowfall = keyframes`
+  0% { transform: translateY(-10px) translateX(0); opacity: 0; }
+  10% { opacity: 0.8; }
+  90% { opacity: 0.6; }
+  100% { transform: translateY(720px) translateX(20px); opacity: 0; }
+`;
+
+/** 火の粉キーフレーム */
+export const ember = keyframes`
+  0% { transform: translateY(720px) translateX(0); opacity: 0; }
+  10% { opacity: 0.9; }
+  80% { opacity: 0.5; }
+  100% { transform: translateY(-20px) translateX(-15px); opacity: 0; }
+`;
+
+/** 草原の胞子キーフレーム */
+export const spore = keyframes`
+  0% { transform: translateY(0) translateX(0); opacity: 0; }
+  20% { opacity: 0.4; }
+  80% { opacity: 0.3; }
+  100% { transform: translateY(-60px) translateX(30px); opacity: 0; }
+`;
+
+/** 天候パーティクル */
+export const WeatherParticles = styled.div<{ $biome: string }>`
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+
+  &::before, &::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+  }
+
+  /* 氷河: 雪パーティクル */
+  ${p => p.$biome === 'glacier' && css`
+    & > span {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: rgba(200, 220, 255, 0.7);
+      border-radius: 50%;
+      animation: ${snowfall} linear infinite;
+      box-shadow: 0 0 3px rgba(200, 220, 255, 0.4);
+    }
+  `}
+
+  /* 火山: 火の粉パーティクル */
+  ${p => p.$biome === 'volcano' && css`
+    & > span {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: rgba(255, 140, 40, 0.8);
+      border-radius: 50%;
+      animation: ${ember} linear infinite;
+      box-shadow: 0 0 4px rgba(255, 100, 20, 0.5);
+    }
+  `}
+
+  /* 草原: 胞子パーティクル */
+  ${p => p.$biome === 'grassland' && css`
+    & > span {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      background: rgba(120, 200, 100, 0.5);
+      border-radius: 50%;
+      animation: ${spore} linear infinite;
+      box-shadow: 0 0 2px rgba(120, 200, 100, 0.3);
+    }
+  `}
+`;
+
+/** チャレンジタイマー */
+export const TimerDisplay = styled.div<{ $urgent?: boolean }>`
+  font-size: 12px;
+  color: ${p => p.$urgent ? '#f05050' : '#f0c040'};
+  text-shadow: 0 0 6px ${p => p.$urgent ? '#f0505060' : '#f0c04040'};
+  font-weight: bold;
+  text-align: center;
+  padding: 2px 8px;
+  ${p => p.$urgent && css`animation: ${barPulse} 0.8s ease-in-out infinite;`}
+`;

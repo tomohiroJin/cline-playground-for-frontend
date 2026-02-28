@@ -3,7 +3,7 @@
  */
 import type {
   Difficulty, Evolution, AllyTemplate, EnemyTemplate, TreeNode,
-  BiomeInfo, SfxDef, CivType, CivTypeExt, BiomeId, AwakeningInfo,
+  BiomeInfo, SfxDef, CivType, CivTypeExt, BiomeId, BgmType, BgmPattern, AwakeningInfo,
   TreeBonus, SpeedOption, EnvDmgConfig, SaveData, ASkillDef, SynergyBonusDef,
   RandomEventDef, AchievementDef, ChallengeDef,
 } from './types';
@@ -279,6 +279,7 @@ export const SFX_DEFS: Readonly<Record<string, SfxDef>> = Object.freeze({
   skShield: Object.freeze({ f: Object.freeze([500, 700, 400]), fd: 0.2, g: 0.08, gd: 0.25, w: 'sine' as const }),
   synergy: Object.freeze({ f: Object.freeze([440, 554, 659]), fd: 0.2, g: 0.1, gd: 0.25, w: 'sine' as const }),
   event: Object.freeze({ f: Object.freeze([330, 440]), fd: 0.15, g: 0.08, gd: 0.2, w: 'triangle' as const }),
+  achv: Object.freeze({ f: Object.freeze([523, 659, 784, 1047]), fd: 0.1, g: 0.06, gd: 0.02, w: 'sine' as const }),
 });
 
 /** ツリーボーナスサマリー定義 */
@@ -527,14 +528,36 @@ export const AGGREGATE_KEY = 'primal-path-aggregate';
 /** ラン統計保持上限 */
 export const MAX_RUN_STATS = 50;
 
-/** 実績SFX */
-export const ACHIEVEMENT_SFX: SfxDef = Object.freeze({
-  f: Object.freeze([523, 659, 784, 1047]),
-  fd: 0.1,
-  g: 0.06,
-  gd: 0.02,
-  w: 'sine' as OscillatorType,
+/** BGM パターン定義（バイオーム別ペンタトニックスケール） */
+export const BGM_PATTERNS: Readonly<Record<BgmType, BgmPattern>> = Object.freeze({
+  title: Object.freeze({
+    notes: Object.freeze([262, 294, 330, 392, 440, 392, 330, 294]),
+    tempo: 400,
+    wave: 'triangle' as const,
+    gain: 0.04,
+  }),
+  grassland: Object.freeze({
+    notes: Object.freeze([330, 392, 440, 523, 440, 392, 330, 294]),
+    tempo: 350,
+    wave: 'sine' as const,
+    gain: 0.04,
+  }),
+  glacier: Object.freeze({
+    notes: Object.freeze([262, 330, 392, 330, 262, 220, 262, 330]),
+    tempo: 500,
+    wave: 'triangle' as const,
+    gain: 0.03,
+  }),
+  volcano: Object.freeze({
+    notes: Object.freeze([196, 262, 294, 392, 294, 262, 196, 165]),
+    tempo: 300,
+    wave: 'sawtooth' as const,
+    gain: 0.03,
+  }),
 });
+
+/** 音量設定 localStorage キー */
+export const VOLUME_KEY = 'primal-path-volume';
 
 /** 実績定義（15個） */
 export const ACHIEVEMENTS: readonly AchievementDef[] = Object.freeze([

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import type { RunState, SaveData, SfxType } from '../types';
 import type { GameAction } from '../hooks';
 import { calcBoneReward, aliveAllies, effATK, civLvs } from '../game-logic';
@@ -16,6 +16,15 @@ interface Props {
 }
 
 export const GameOverScreen: React.FC<Props> = ({ run, won, save, dispatch, playSfx, newAchievements = [] }) => {
+  // 実績解除時にSFXを再生
+  const achvPlayed = useRef(false);
+  useEffect(() => {
+    if (newAchievements.length > 0 && !achvPlayed.current) {
+      achvPlayed.current = true;
+      playSfx('achv');
+    }
+  }, [newAchievements, playSfx]);
+
   const boneReward = calcBoneReward(run, won);
   const avgDps = run.turn > 0 ? Math.floor(run.dmgDealt / run.turn) : 0;
   const awkS = run.awoken.map(a => (

@@ -7,7 +7,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useGameState, useBattle, useAudio, useOverlay, usePersistence } from './hooks';
 import type { GameAction } from './hooks';
-import type { TickEvent, SfxType } from './types';
+import type { TickEvent, SfxType, BiomeId, BgmType } from './types';
 import { ErrorBoundary } from './contracts';
 import { DIFFS, BIO } from './constants';
 import { pickBiomeAuto, formatEventResult, computeEventResult } from './game-logic';
@@ -33,7 +33,7 @@ import { ChallengeScreen } from './components/ChallengeScreen';
 
 function GameInner() {
   const { state, dispatch } = useGameState();
-  const { init: initAudio, playSfx } = useAudio();
+  const { init: initAudio, playSfx, playBgm, stopBgm, setBgmVolume, setSfxVolume } = useAudio();
   const { overlay, showOverlay } = useOverlay();
   const { loaded } = usePersistence(state, dispatch);
 
@@ -63,6 +63,24 @@ function GameInner() {
       dispatch({ type: 'LOAD_META' });
     }
   }, [loaded, dispatch]);
+
+  // フェーズに応じたBGM切替
+  useEffect(() => {
+    if (state.phase === 'title') {
+      playBgm('title');
+    } else if (state.phase === 'battle' && state.run) {
+      const biome = state.run.cBT as BiomeId;
+      const bgmMap: Record<string, BgmType> = {
+        grassland: 'grassland',
+        glacier: 'glacier',
+        volcano: 'volcano',
+      };
+      const bgmType = bgmMap[biome];
+      if (bgmType) playBgm(bgmType);
+    } else if (state.phase === 'over') {
+      stopBgm();
+    }
+  }, [state.phase, state.run?.cBT, playBgm, stopBgm]);
 
   // ゲームオーバー時にラン統計を記録
   useEffect(() => {

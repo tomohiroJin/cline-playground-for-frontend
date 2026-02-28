@@ -3,20 +3,74 @@
  *
  * 純粋関数: canvas → void (no state deps)
  */
-import { ENEMY_COLORS, ENEMY_DETAILS, ENEMY_SMALL_DETAILS } from './constants';
-import type { CivTypeExt, DmgPopup } from './types';
+import { ENEMY_COLORS, ENEMY_DETAILS, ENEMY_SMALL_DETAILS, TC } from './constants';
+import type { CivTypeExt, DmgPopup, AwokenRecord } from './types';
+
+/** 覚醒ビジュアル: シンボル情報 */
+export interface AwakeningSymbol {
+  color: string;
+  /** 覚醒IDからシンボル形状を推定 */
+  shape: 'flame' | 'leaf' | 'skull' | 'star';
+}
+
+/** 覚醒ビジュアル情報 */
+export interface AwakeningVisual {
+  symbols: AwakeningSymbol[];
+  hasAura: boolean;
+  auraColor?: string;
+}
+
+/** 覚醒IDからシンボル形状を決定 */
+function symbolShape(id: string): AwakeningSymbol['shape'] {
+  if (id.includes('tech')) return 'flame';
+  if (id.includes('life')) return 'leaf';
+  if (id.includes('rit')) return 'skull';
+  return 'star';
+}
+
+/** 覚醒段階に応じた視覚情報を返す */
+export function getAwakeningVisual(fe: CivTypeExt | null, awoken: AwokenRecord[]): AwakeningVisual {
+  if (awoken.length === 0) {
+    return { symbols: [], hasAura: false };
+  }
+
+  const symbols: AwakeningSymbol[] = awoken.map(a => ({
+    color: a.cl,
+    shape: symbolShape(a.id),
+  }));
+
+  // 大覚醒（feが設定されている）の場合はオーラあり
+  const hasAura = fe !== null;
+  const auraColor = hasAura ? TC[fe] : undefined;
+
+  return { symbols, hasAura, auraColor };
+}
 
 function pxRect(ctx: CanvasRenderingContext2D, s: number, x: number, y: number, w: number, h: number, cl: string) {
   ctx.fillStyle = cl;
   ctx.fillRect(x * s, y * s, w * s, h * s);
 }
 
-export function drawPlayer(c: HTMLCanvasElement, s = 2, fe?: CivTypeExt | null): void {
+export function drawPlayer(c: HTMLCanvasElement, s = 2, fe?: CivTypeExt | null, awoken?: AwokenRecord[]): void {
   const x = c.getContext('2d')!;
   c.width = 16 * s;
   c.height = 22 * s;
   x.clearRect(0, 0, c.width, c.height);
   const d = (a: number, b: number, w: number, h: number, cl: string) => pxRect(x, s, a, b, w, h, cl);
+
+  // 大覚醒時のオーラ（背景レイヤー）
+  const visual = awoken ? getAwakeningVisual(fe ?? null, awoken) : undefined;
+  if (visual?.hasAura && visual.auraColor) {
+    x.globalAlpha = 0.15;
+    x.fillStyle = visual.auraColor;
+    x.fillRect(0, 0, c.width, c.height);
+    // 外枠のグロー
+    x.globalAlpha = 0.4;
+    x.strokeStyle = visual.auraColor;
+    x.lineWidth = 2;
+    x.strokeRect(1, 1, c.width - 2, c.height - 2);
+    x.globalAlpha = 1;
+  }
 
   const skinMap: Record<string, string> = { rit: '#a06080', tech: '#d0a050', bal: '#c0a870' };
   const hairMap: Record<string, string> = { rit: '#601040', tech: '#c04020', bal: '#806020' };
@@ -36,6 +90,37 @@ export function drawPlayer(c: HTMLCanvasElement, s = 2, fe?: CivTypeExt | null):
     bal: [[0, 4, 3, 2, '#e0c060'], [13, 4, 3, 2, '#e0c060'], [5, 0, 6, 1, '#f0c040'], [4, 6, 8, 1, '#c0a040']],
   };
   (fe && accents[fe] || []).forEach(a => d(a[0], a[1], a[2], a[3], a[4]));
+
+  // 小覚醒時のシンボル（頭上に描画）
+  if (visual && visual.symbols.length > 0 && !visual.hasAura) {
+    const symbolSize = 3;
+    const startX = Math.floor((16 - visual.symbols.length * (symbolSize + 1)) / 2);
+    visual.symbols.forEach((sym, i) => {
+      const sx = startX + i * (symbolSize + 1);
+      // ピクセルアート風の小さなシンボルを頭上に描画
+      x.fillStyle = sym.color;
+      x.globalAlpha = 0.8;
+      if (sym.shape === 'flame') {
+        // 炎: ▲ 形
+        pxRect(x, s, sx + 1, 0, 1, 1, sym.color);
+        pxRect(x, s, sx, 1, 3, 1, sym.color);
+      } else if (sym.shape === 'leaf') {
+        // 葉: ◆ 形
+        pxRect(x, s, sx + 1, 0, 1, 1, sym.color);
+        pxRect(x, s, sx, 1, 3, 1, sym.color);
+        pxRect(x, s, sx + 1, 2, 1, 1, sym.color);
+      } else if (sym.shape === 'skull') {
+        // 骸骨: □ 形
+        pxRect(x, s, sx, 0, 3, 2, sym.color);
+      } else {
+        // 星: + 形
+        pxRect(x, s, sx + 1, 0, 1, 1, sym.color);
+        pxRect(x, s, sx, 1, 3, 1, sym.color);
+        pxRect(x, s, sx + 1, 2, 1, 1, sym.color);
+      }
+      x.globalAlpha = 1;
+    });
+  }
 }
 
 export function drawAlly(c: HTMLCanvasElement, t: string, s = 2): void {

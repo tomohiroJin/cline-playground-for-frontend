@@ -17,15 +17,25 @@ interface Props {
 
 /* ===== スタイル ===== */
 
+/** バイオーム別イベントグローカラー */
+const EVENT_GLOW_COLORS: Record<string, string> = {
+  grassland: '#50e090',
+  glacier: '#50c8e8',
+  volcano: '#f08050',
+};
+
 const eventGlow = keyframes`
   0%, 100% { box-shadow: 0 0 8px #f0c04010; }
   50% { box-shadow: 0 0 20px #f0c04030, 0 0 30px #f0c04015; }
 `;
 
-const EventPanel = styled(GamePanel)`
+const EventPanel = styled(GamePanel)<{ $glowColor?: string }>`
   animation: ${eventGlow} 3s infinite;
-  border-color: #f0c04040;
+  border-color: ${p => p.$glowColor ? `${p.$glowColor}40` : '#f0c04040'};
   max-width: 380px;
+  ${p => p.$glowColor && css`
+    box-shadow: 0 0 12px ${p.$glowColor}15;
+  `}
 `;
 
 const EventTitle = styled.div`
@@ -114,6 +124,8 @@ const CostTag = styled.span`
 /* ===== コンポーネント ===== */
 
 export const EventScreen: React.FC<Props> = ({ event, run, onChoose, playSfx }) => {
+  // バイオーム別のグローカラー
+  const glowColor = EVENT_GLOW_COLORS[run.cBT as string];
   const handleChoose = (choice: EventChoice) => {
     playSfx('click');
     onChoose(choice);
@@ -138,7 +150,7 @@ export const EventScreen: React.FC<Props> = ({ event, run, onChoose, playSfx }) 
   return (
     <Screen $center>
       <SubTitle>🗺️ ランダムイベント</SubTitle>
-      <EventPanel>
+      <EventPanel $glowColor={glowColor}>
         <EventTitle>{event.name}</EventTitle>
         <EventDesc>{event.description}</EventDesc>
         <SituationText>{event.situationText}</SituationText>

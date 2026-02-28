@@ -32,8 +32,19 @@ export type BiomeId = 'grassland' | 'glacier' | 'volcano';
 /** 最終戦含むバイオーム */
 export type BiomeIdExt = BiomeId | 'final';
 
+/** BGM タイプ */
+export type BgmType = 'title' | 'grassland' | 'glacier' | 'volcano';
+
+/** BGM パターン定義 */
+export interface BgmPattern {
+  readonly notes: readonly number[];
+  readonly tempo: number;
+  readonly wave: OscillatorType;
+  readonly gain: number;
+}
+
 /** SFX タイプ */
-export type SfxType = 'hit' | 'crit' | 'kill' | 'heal' | 'evo' | 'death' | 'click' | 'boss' | 'win' | 'skFire' | 'skHeal' | 'skRage' | 'skShield' | 'synergy' | 'event';
+export type SfxType = 'hit' | 'crit' | 'kill' | 'heal' | 'evo' | 'death' | 'click' | 'boss' | 'win' | 'skFire' | 'skHeal' | 'skRage' | 'skShield' | 'synergy' | 'event' | 'achv';
 
 /** SFX 定義 */
 export interface SfxDef {
