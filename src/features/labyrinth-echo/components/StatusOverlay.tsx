@@ -16,11 +16,11 @@ const STATUS_KEY_MAP: Record<string, string> = {
 };
 
 const OPACITY_MAP: Record<string, number> = {
-  injured: 0.3,
-  confused: 0.25,
-  bleeding: 0.35,
-  fear: 0.3,
-  curse: 0.2,
+  injured: 0.45,
+  confused: 0.4,
+  bleeding: 0.5,
+  fear: 0.45,
+  curse: 0.35,
 };
 
 const ANIMATION_MAP: Record<string, string> = {

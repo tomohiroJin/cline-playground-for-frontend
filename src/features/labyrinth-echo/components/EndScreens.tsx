@@ -10,7 +10,6 @@ import { Section } from './Section';
 import { DiffLabel, RecordPanel, EndingGrid } from './GameComponents';
 import { LE_IMAGES } from '../images';
 import { useKeyboardControl } from '../hooks';
-import { shareCard, ShareData } from '../share';
 
 /** ゲームオーバー画面の Props */
 interface GameOverScreenProps {
@@ -34,24 +33,10 @@ export const GameOverScreen = ({ Particles, player, meta, diff, floor, floorMeta
   const flavors = DEATH_FLAVORS[deathCause];
   const flavor = flavors[meta.runs % flavors.length];
 
-  const handleShare = () => {
-    const data: ShareData = {
-      status: "gameover",
-      title: `死因: ${deathCause}`,
-      diffName: diff?.name ?? "NORMAL",
-      floor: floor,
-      floorName: floorMeta?.name ?? "迷宮",
-      events: log?.length ?? 0,
-      kp: meta.kp,
-    };
-    shareCard(data);
-  };
-
   const menuActions = [
     startRun,
     ...(meta.kp > 0 ? [() => setPhase("unlocks")] : []),
     () => setPhase("title"),
-    handleShare
   ];
   const { selectedIndex, setSelectedIndex } = useKeyboardControl({
     optionsCount: menuActions.length,
@@ -106,7 +91,6 @@ export const GameOverScreen = ({ Particles, player, meta, diff, floor, floorMeta
         <button className={`btn btn-p tc ${selectedIndex === 0 ? 'selected' : ''}`} style={{ fontSize: 15 }} onMouseEnter={() => setSelectedIndex(0)} onClick={startRun}>再び挑む</button>
         {meta.kp > 0 && <button className={`btn tc ${selectedIndex === 1 ? 'selected' : ''}`} onMouseEnter={() => setSelectedIndex(1)} onClick={() => setPhase("unlocks")}>知見の継承 ◈ {meta.kp}pt</button>}
         <button className={`btn tc ${selectedIndex === (meta.kp > 0 ? 2 : 1) ? 'selected' : ''}`} onMouseEnter={() => setSelectedIndex(meta.kp > 0 ? 2 : 1)} onClick={() => setPhase("title")}>タイトル</button>
-        <button className={`btn tc ${selectedIndex === (meta.kp > 0 ? 3 : 2) ? 'selected' : ''}`} style={{ fontSize: 13, color: "var(--dim)" }} onMouseEnter={() => setSelectedIndex(meta.kp > 0 ? 3 : 2)} onClick={handleShare}>記録を共有する</button>
       </div>
     </Page>
   );
@@ -138,25 +122,10 @@ export const VictoryScreen = ({ Particles, ending, isNewEnding, isNewDiffClear, 
   const endingKey = end.id as EndingImageKey;
   const bgImg = LE_IMAGES.endings[endingKey] || LE_IMAGES.endings.standard;
 
-  const handleShare = () => {
-    const data: ShareData = {
-      status: "clear",
-      title: `エンディング: ${end.name}`,
-      diffName: diff?.name ?? "NORMAL",
-      floor: floor,
-      floorName: "迷宮踏破",
-      events: log?.length ?? 0,
-      kp: totalKp,
-      bgImgUrl: bgImg
-    };
-    shareCard(data);
-  };
-
   const menuActions = [
     startRun,
     () => setPhase("unlocks"),
     () => setPhase("title"),
-    handleShare
   ];
   const { selectedIndex, setSelectedIndex } = useKeyboardControl({
     optionsCount: menuActions.length,
@@ -244,7 +213,6 @@ export const VictoryScreen = ({ Particles, ending, isNewEnding, isNewDiffClear, 
         <button className={`btn btn-p tc ${selectedIndex === 0 ? 'selected' : ''}`} style={{ fontSize: 15 }} onMouseEnter={() => setSelectedIndex(0)} onClick={startRun}>新たな探索へ</button>
         <button className={`btn tc ${selectedIndex === 1 ? 'selected' : ''}`} onMouseEnter={() => setSelectedIndex(1)} onClick={() => setPhase("unlocks")}>知見の継承 ◈ {meta.kp}pt</button>
         <button className={`btn tc ${selectedIndex === 2 ? 'selected' : ''}`} onMouseEnter={() => setSelectedIndex(2)} onClick={() => setPhase("title")}>タイトル</button>
-        <button className={`btn tc ${selectedIndex === 3 ? 'selected' : ''}`} style={{ fontSize: 13, color: "var(--dim)" }} onMouseEnter={() => setSelectedIndex(3)} onClick={handleShare}>記録を共有する</button>
       </div>
     </Page>
   );

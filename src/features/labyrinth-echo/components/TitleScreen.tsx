@@ -70,7 +70,7 @@ export const TitleScreen = ({ meta, Particles, startRun, enableAudio, setPhase, 
         position: "absolute", inset: -30,
         backgroundImage: `url(${LE_TITLE_LAYERS.far || LE_IMAGES.title})`,
         backgroundSize: "cover", backgroundPosition: "center",
-        opacity: 0.2, filter: `blur(8px) ${runFilter}`, zIndex: -2,
+        opacity: 0.5, filter: `blur(8px) ${runFilter}`, zIndex: -2,
         transform: `translate(${farX}px, ${farY}px)`,
         willChange: "transform"
       }} />
@@ -78,7 +78,7 @@ export const TitleScreen = ({ meta, Particles, startRun, enableAudio, setPhase, 
         position: "absolute", inset: -30,
         backgroundImage: `url(${LE_TITLE_LAYERS.mid || LE_IMAGES.title})`,
         backgroundSize: "cover", backgroundPosition: "center",
-        opacity: 0.3, filter: `blur(4px) ${runFilter}`, zIndex: -1,
+        opacity: 0.55, filter: `blur(4px) ${runFilter}`, zIndex: -1,
         transform: `translate(${midX}px, ${midY}px)`,
         willChange: "transform"
       }} />
@@ -86,7 +86,7 @@ export const TitleScreen = ({ meta, Particles, startRun, enableAudio, setPhase, 
         position: "absolute", inset: -30,
         backgroundImage: `url(${LE_IMAGES.title})`,
         backgroundSize: "cover", backgroundPosition: "center",
-        opacity: 0.4, filter: `blur(2px) ${runFilter}`, zIndex: 0,
+        opacity: 0.6, filter: `blur(2px) ${runFilter}`, zIndex: 0,
         transform: `translate(${nearX}px, ${nearY}px)`,
         willChange: "transform"
       }} />

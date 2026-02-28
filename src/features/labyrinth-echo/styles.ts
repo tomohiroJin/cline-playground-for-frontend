@@ -7,6 +7,7 @@
 
 export const CSS = `
 *{box-sizing:border-box;margin:0;padding:0}
+body{background:#080818;min-height:100vh}
 :root{--bg:#0a0a18;--card:rgba(14,14,28,0.92);--border:rgba(80,80,130,0.2);--text:#d0d0e0;--dim:#7878a0;--bright:#f0f0ff;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI','Hiragino Sans',sans-serif;--serif:Georgia,'Hiragino Mincho ProN','Yu Mincho',serif}
 @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
@@ -23,6 +24,7 @@ export const CSS = `
 @keyframes statusPulse{0%,100%{opacity:.7}50%{opacity:1}}
 @keyframes slideIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
 @keyframes floorReveal{0%{opacity:0;transform:scale(0.9)}50%{opacity:1}100%{opacity:1;transform:scale(1)}}
+@keyframes panImage{0%{transform:scale(1.08) translateX(-2%)}100%{transform:scale(1.08) translateX(2%)}}
 @keyframes endingGlow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.3)}}
 @keyframes popIn{0%{transform:scale(0.8);opacity:0}50%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
 @keyframes dangerPulse{0%,100%{opacity:.9}50%{opacity:.55}}

@@ -69,12 +69,12 @@ export const ParallaxBg: React.FC<ParallaxBgProps> = ({ floor, scrollProgress })
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: -4, pointerEvents: 'none', overflow: 'hidden' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
       {bgImages.far && (
         <div style={{
             ...baseStyle,
-            zIndex: -3,
-            opacity: getOpacity(0.4),
+            zIndex: 1,
+            opacity: getOpacity(0.7),
             filter: 'blur(2px)',
             backgroundImage: `url(${bgImages.far})`,
             transform: `translateY(${farOffset}px)`
@@ -83,8 +83,8 @@ export const ParallaxBg: React.FC<ParallaxBgProps> = ({ floor, scrollProgress })
       {bgImages.mid && (
         <div style={{
             ...baseStyle,
-            zIndex: -2,
-            opacity: getOpacity(0.3),
+            zIndex: 2,
+            opacity: getOpacity(0.55),
             filter: 'blur(1px)',
             backgroundImage: `url(${bgImages.mid})`,
             transform: `translateY(${midOffset}px)`
@@ -93,8 +93,8 @@ export const ParallaxBg: React.FC<ParallaxBgProps> = ({ floor, scrollProgress })
       {bgImages.near && (
         <div style={{
             ...baseStyle,
-            zIndex: -1,
-            opacity: getOpacity(0.2),
+            zIndex: 3,
+            opacity: getOpacity(0.4),
             backgroundImage: `url(${bgImages.near})`,
             transform: `translateY(${nearOffset}px)`
         }} />

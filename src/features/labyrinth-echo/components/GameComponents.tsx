@@ -256,7 +256,7 @@ export const DiffCard = ({ d, hp, mn, inf, onSelect, cleared }: DiffCardProps) =
       position: "absolute", inset: 0,
       backgroundImage: `url(${LE_IMAGES.difficulty[d.id as keyof typeof LE_IMAGES.difficulty] || LE_IMAGES.difficulty.normal})`,
       backgroundSize: "cover", backgroundPosition: "center",
-      opacity: 0.12, mixBlendMode: "luminosity", pointerEvents: "none"
+      opacity: 0.25, mixBlendMode: "luminosity", pointerEvents: "none"
     }} />
     <div style={{ position: "relative", zIndex: 1 }}>
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
@@ -353,22 +353,59 @@ export const EndingGrid = ({ endings, collected }: EndingGridProps) => (
   </div>
 );
 
-/** 初回プレイ用ガイダンスオーバーレイ */
+/** ガイダンスメッセージ一覧（ローテーションで表示） */
+const GUIDANCE_MESSAGES = [
+  { icon: "💡", title: "迷宮探索の心得", body: "選択肢はキーボード(1-9, ↑↓, Enter)でも決定できます。" },
+  { icon: "❤️", title: "体力について", body: "体力(HP)が0になると探索失敗です。回復手段は限られています。" },
+  { icon: "◈", title: "精神について", body: "精神力が低下すると判断力が鈍り、不利な展開になりやすくなります。" },
+  { icon: "📖", title: "情報を集めよう", body: "情報値が高いほど有利な選択肢が見えるようになります。" },
+  { icon: "⚔️", title: "慎重に進もう", body: "無理せず安全な選択肢を選ぶのも立派な戦略です。" },
+  { icon: "🔄", title: "死は終わりではない", body: "失敗しても得た知見は次の探索に引き継がれます。" },
+];
+
+/** ガイダンスの表示間隔（ミリ秒） */
+const GUIDANCE_INTERVAL = 5000;
+
+/** 初回プレイ用ガイダンスオーバーレイ（ローテーション表示） */
 export const GuidanceOverlay = ({ show }: GuidanceOverlayProps) => {
+  const [index, setIndex] = useState(0);
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    if (!show) return;
+    const timer = setInterval(() => {
+      // フェードアウト → メッセージ切替 → フェードイン
+      setVisible(false);
+      setTimeout(() => {
+        setIndex(prev => (prev + 1) % GUIDANCE_MESSAGES.length);
+        setVisible(true);
+      }, 400);
+    }, GUIDANCE_INTERVAL);
+    return () => clearInterval(timer);
+  }, [show]);
+
   if (!show) return null;
+  const msg = GUIDANCE_MESSAGES[index];
   return (
     <div style={{
-      position: "fixed", bottom: 20, left: "50%", transform: "translateX(-50%)",
+      position: "fixed", bottom: 20, left: 0, right: 0, margin: "0 auto",
       background: "rgba(15,23,42,0.95)", border: "1px solid rgba(99,102,241,0.4)",
       padding: "16px 20px", borderRadius: 12, zIndex: 100,
       boxShadow: "0 4px 30px rgba(0,0,0,0.6)", color: "var(--text)", fontFamily: "var(--sans)",
       animation: "fadeUp 0.6s ease-out", maxWidth: 400, width: "90%",
-      textAlign: "center", backdropFilter: "blur(4px)"
+      textAlign: "center", backdropFilter: "blur(4px)",
+      opacity: visible ? 1 : 0, transition: "opacity 0.4s ease",
     }}>
-      <div style={{ color: "#a5b4fc", fontSize: 12, fontWeight: 700, marginBottom: 8, letterSpacing: 2 }}>💡 迷宮探索の心得</div>
-      <div style={{ fontSize: 12, lineHeight: 1.8, color: "var(--dim)" }}>
-        選択肢は<strong>キーボード(1-9, ↑↓, Enter)</strong>でも決定できます。<br/>
-        <span style={{color:"#f87171"}}>体力(HP)</span>と<span style={{color:"#a78bfa"}}>精神(◈)</span>に気を配り、時には<span style={{color:"#fbbf24"}}>情報</span>を集めながら深く潜りましょう。
+      <div style={{ color: "#a5b4fc", fontSize: 12, fontWeight: 700, marginBottom: 8, letterSpacing: 2 }}>{msg.icon} {msg.title}</div>
+      <div style={{ fontSize: 12, lineHeight: 1.8, color: "var(--dim)" }}>{msg.body}</div>
+      <div style={{ display: "flex", justifyContent: "center", gap: 4, marginTop: 8 }}>
+        {GUIDANCE_MESSAGES.map((_, i) => (
+          <div key={i} style={{
+            width: 6, height: 6, borderRadius: "50%",
+            background: i === index ? "#a5b4fc" : "rgba(120,120,160,0.3)",
+            transition: "background 0.3s",
+          }} />
+        ))}
       </div>
     </div>
   );
