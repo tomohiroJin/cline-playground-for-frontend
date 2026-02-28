@@ -2,6 +2,7 @@ import React from 'react';
 import type { RunState, SaveData, SfxType } from '../types';
 import type { GameAction } from '../hooks';
 import { calcBoneReward, aliveAllies, effATK, civLvs } from '../game-logic';
+import { ACHIEVEMENTS } from '../constants';
 import { CivLevelsDisplay } from './shared';
 import { Screen, SubTitle, Divider, GameButton, GamePanel, RunStatRow, Gc, Tc, Xc } from '../styles';
 
@@ -11,9 +12,10 @@ interface Props {
   save: SaveData;
   dispatch: React.Dispatch<GameAction>;
   playSfx: (t: SfxType) => void;
+  newAchievements?: string[];
 }
 
-export const GameOverScreen: React.FC<Props> = ({ run, won, save, dispatch, playSfx }) => {
+export const GameOverScreen: React.FC<Props> = ({ run, won, save, dispatch, playSfx, newAchievements = [] }) => {
   const boneReward = calcBoneReward(run, won);
   const avgDps = run.turn > 0 ? Math.floor(run.dmgDealt / run.turn) : 0;
   const awkS = run.awoken.map(a => (
@@ -52,6 +54,22 @@ export const GameOverScreen: React.FC<Props> = ({ run, won, save, dispatch, play
         {allyS && <RunStatRow><span>仲間</span><span>👥 {allyS}</span></RunStatRow>}
         <RunStatRow><span>踏破</span><span>{run.bc}/3</span></RunStatRow>
       </GamePanel>
+
+      {newAchievements.length > 0 && (
+        <GamePanel style={{ padding: '8px 10px' }}>
+          <div style={{ fontSize: 10, color: '#f0c040', marginBottom: 4, textAlign: 'center' }}>── 実績解除！ ──</div>
+          {newAchievements.map(id => {
+            const ach = ACHIEVEMENTS.find(a => a.id === id);
+            if (!ach) return null;
+            return (
+              <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0', fontSize: 10, color: '#f0c040' }}>
+                <span style={{ fontSize: 16 }}>{ach.icon}</span>
+                <span>{ach.name}</span>
+              </div>
+            );
+          })}
+        </GamePanel>
+      )}
 
       <GameButton style={{ marginTop: 8, minWidth: 190, fontSize: 12 }}
         onClick={() => { playSfx('click'); dispatch({ type: 'RETURN_TO_TITLE' }); }}>

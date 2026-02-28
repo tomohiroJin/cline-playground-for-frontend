@@ -37,6 +37,15 @@ export const TitleScreen: React.FC<Props> = ({ save, dispatch, playSfx }) => {
         <GameButton style={{ minWidth: 210 }} onClick={() => { playSfx('click'); dispatch({ type: 'GO_HOW' }); }}>
           📜 あそびかた
         </GameButton>
+        <GameButton style={{ minWidth: 210 }} onClick={() => { playSfx('click'); dispatch({ type: 'SET_PHASE', phase: 'stats' }); }}>
+          📊 ラン統計
+        </GameButton>
+        <GameButton style={{ minWidth: 210 }} onClick={() => { playSfx('click'); dispatch({ type: 'SET_PHASE', phase: 'achievements' }); }}>
+          🏆 実績
+        </GameButton>
+        <GameButton style={{ minWidth: 210 }} onClick={() => { playSfx('click'); dispatch({ type: 'SET_PHASE', phase: 'challenge' }); }}>
+          ⚔️ チャレンジ
+        </GameButton>
       </div>
       <div style={{ marginTop: 'auto', display: 'flex', gap: 12, fontSize: 9, color: '#2a2a3a', paddingBottom: 4 }}>
         <span>クリア{save.clears}回</span>

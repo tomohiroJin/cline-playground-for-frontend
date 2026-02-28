@@ -4,13 +4,14 @@
  * メインオーケストレータ: Labyrinth Echo パターン準拠。
  * iframe を廃止し、React コンポーネントで直接描画。
  */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useGameState, useBattle, useAudio, useOverlay, usePersistence } from './hooks';
 import type { GameAction } from './hooks';
 import type { TickEvent, SfxType } from './types';
 import { ErrorBoundary } from './contracts';
 import { DIFFS, BIO } from './constants';
 import { pickBiomeAuto, formatEventResult, computeEventResult } from './game-logic';
+import { MetaStorage } from './storage';
 
 import { GameContainer, GameShell } from './styles';
 import { Overlay } from './components/Overlay';
@@ -26,6 +27,9 @@ import { PreFinalScreen } from './components/PreFinalScreen';
 import { GameOverScreen } from './components/GameOverScreen';
 import { AllyReviveScreen } from './components/AllyReviveScreen';
 import { EventScreen } from './components/EventScreen';
+import { StatsScreen } from './components/StatsScreen';
+import { AchievementScreen } from './components/AchievementScreen';
+import { ChallengeScreen } from './components/ChallengeScreen';
 
 function GameInner() {
   const { state, dispatch } = useGameState();
@@ -34,6 +38,8 @@ function GameInner() {
   const { loaded } = usePersistence(state, dispatch);
 
   const [tickEvents, setTickEvents] = useState<TickEvent[]>([]);
+  /** ラン終了記録の二重発火防止用 */
+  const recordedRef = useRef(false);
 
   const handleEvents = useCallback((events: TickEvent[]) => {
     for (const ev of events) {
@@ -51,11 +57,52 @@ function GameInner() {
     return () => document.removeEventListener('click', handler);
   }, [initAudio]);
 
+  // メタ進行データの読込（初期化時）
+  useEffect(() => {
+    if (loaded) {
+      dispatch({ type: 'LOAD_META' });
+    }
+  }, [loaded, dispatch]);
+
+  // ゲームオーバー時にラン統計を記録
+  useEffect(() => {
+    if (state.phase === 'over' && state.gameResult !== null && !recordedRef.current) {
+      recordedRef.current = true;
+      dispatch({ type: 'RECORD_RUN_END', won: state.gameResult });
+    }
+    if (state.phase !== 'over') {
+      recordedRef.current = false;
+    }
+  }, [state.phase, state.gameResult, dispatch]);
+
+  // メタ進行データの永続化
+  const prevMetaRef = useRef('');
+  useEffect(() => {
+    if (!loaded) return;
+    const key = JSON.stringify({
+      rs: state.runStats.length,
+      ag: state.aggregate.totalRuns,
+      ac: state.achievementStates.filter(a => a.unlocked).length,
+    });
+    if (key !== prevMetaRef.current) {
+      prevMetaRef.current = key;
+      MetaStorage.saveRunStats(state.runStats);
+      MetaStorage.saveAggregate(state.aggregate);
+      MetaStorage.saveAchievements(state.achievementStates);
+    }
+  }, [state.runStats, state.aggregate, state.achievementStates, loaded]);
+
   const handleStartRun = useCallback(async (di: number) => {
     initAudio();
     const d = DIFFS[di];
     await showOverlay(d.ic, d.n + 'モード開始！', 1100);
     dispatch({ type: 'START_RUN', di });
+  }, [dispatch, showOverlay, initAudio]);
+
+  const handleStartChallenge = useCallback(async (challengeId: string, di: number) => {
+    initAudio();
+    await showOverlay('⚔️', 'チャレンジ開始！', 1100);
+    dispatch({ type: 'START_CHALLENGE', challengeId, di });
   }, [dispatch, showOverlay, initAudio]);
 
   if (!loaded) return null;
@@ -145,7 +192,40 @@ function GameInner() {
         )}
 
         {phase === 'over' && run && gameResult !== null && (
-          <GameOverScreen run={run} won={gameResult} save={save} dispatch={dispatch} playSfx={playSfx} />
+          <GameOverScreen
+            run={run}
+            won={gameResult}
+            save={save}
+            dispatch={dispatch}
+            playSfx={playSfx}
+            newAchievements={state.newAchievements}
+          />
+        )}
+
+        {phase === 'stats' && (
+          <StatsScreen
+            runStats={state.runStats}
+            aggregate={state.aggregate}
+            dispatch={dispatch}
+            playSfx={playSfx}
+          />
+        )}
+
+        {phase === 'achievements' && (
+          <AchievementScreen
+            achievementStates={state.achievementStates}
+            dispatch={dispatch}
+            playSfx={playSfx}
+          />
+        )}
+
+        {phase === 'challenge' && (
+          <ChallengeScreen
+            aggregate={state.aggregate}
+            dispatch={dispatch}
+            playSfx={playSfx}
+            onStartChallenge={handleStartChallenge}
+          />
         )}
       </GameShell>
     </GameContainer>

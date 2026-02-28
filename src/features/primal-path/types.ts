@@ -15,7 +15,10 @@ export type GamePhase =
   | 'prefinal'
   | 'ally_revive'
   | 'over'
-  | 'event';
+  | 'event'
+  | 'stats'
+  | 'achievements'
+  | 'challenge';
 
 /** 文明タイプ */
 export type CivType = 'tech' | 'life' | 'rit';
@@ -313,6 +316,20 @@ export interface RunState {
   evs: Evolution[];
   btlCount: number;
   eventCount: number;
+  /** チャレンジ用: 進化回数上限（undefinedなら無制限） */
+  maxEvo?: number;
+  /** チャレンジ用: 制限時間（秒、undefinedなら無制限） */
+  timeLimit?: number;
+  /** チャレンジ用: チャレンジID */
+  challengeId?: string;
+  /** チャレンジ用: 敵ATK倍率（undefinedなら1.0） */
+  enemyAtkMul?: number;
+  /** チャレンジ用: 回復禁止フラグ */
+  noHealing?: boolean;
+  /** スキル使用回数（統計用） */
+  skillUseCount: number;
+  /** 合計回復量（統計用） */
+  totalHealing: number;
   _wDmgBase: number;
   _fbk: string;
   _fPhase: number;
@@ -339,6 +356,14 @@ export interface GameState {
   reviveTargets: Ally[];
   gameResult: boolean | null;
   currentEvent: RandomEventDef | undefined;
+  /** メタ: ラン統計履歴 */
+  runStats: RunStats[];
+  /** メタ: 累計統計 */
+  aggregate: AggregateStats;
+  /** メタ: 実績状態 */
+  achievementStates: AchievementState[];
+  /** メタ: 新規解除実績ID（ゲームオーバー画面表示用） */
+  newAchievements: string[];
 }
 
 /** 速度オプション */
@@ -500,4 +525,95 @@ export interface EnvDmgConfig {
   readonly immune: CivType | null;
   readonly icon: string;
   readonly c: string;
+}
+
+/* ===== メタ進行・実績 (Phase 4) ===== */
+
+/** ラン統計 */
+export interface RunStats {
+  id: string;
+  date: string;
+  result: 'victory' | 'defeat';
+  difficulty: number;
+  biomeCount: number;
+  totalKills: number;
+  maxDamage: number;
+  totalDamageDealt: number;
+  totalDamageTaken: number;
+  totalHealing: number;
+  evolutionCount: number;
+  synergyCount: number;
+  eventCount: number;
+  skillUsageCount: number;
+  boneEarned: number;
+  playtimeSeconds: number;
+  awakening: string | undefined;
+  challengeId: string | undefined;
+}
+
+/** 累計統計（実績判定に使用） */
+export interface AggregateStats {
+  totalRuns: number;
+  totalClears: number;
+  totalKills: number;
+  totalBoneEarned: number;
+  totalEvents: number;
+  clearedDifficulties: number[];
+  achievedAwakenings: string[];
+  achievedSynergiesTier1: SynergyTag[];
+  achievedSynergiesTier2: SynergyTag[];
+  clearedChallenges: string[];
+  treeCompletionRate: number;
+  lastBossDamageTaken: number;
+}
+
+/** 実績条件 */
+export type AchievementCondition =
+  | { type: 'first_clear' }
+  | { type: 'clear_count'; count: number }
+  | { type: 'clear_difficulty'; difficulty: number }
+  | { type: 'all_difficulties_cleared' }
+  | { type: 'all_awakenings' }
+  | { type: 'max_damage'; threshold: number }
+  | { type: 'total_kills'; count: number }
+  | { type: 'synergy_tier2'; tag: SynergyTag }
+  | { type: 'all_synergies_tier1' }
+  | { type: 'event_count'; count: number }
+  | { type: 'challenge_clear'; challengeId: string }
+  | { type: 'no_damage_boss' }
+  | { type: 'speed_clear'; maxSeconds: number }
+  | { type: 'bone_hoarder'; amount: number }
+  | { type: 'full_tree' };
+
+/** 実績定義 */
+export interface AchievementDef {
+  readonly id: string;
+  readonly name: string;
+  readonly description: string;
+  readonly icon: string;
+  readonly condition: AchievementCondition;
+}
+
+/** 実績状態 */
+export interface AchievementState {
+  id: string;
+  unlocked: boolean;
+  unlockedDate: string | undefined;
+}
+
+/** チャレンジ修飾子 */
+export type ChallengeModifier =
+  | { type: 'hp_multiplier'; value: number }
+  | { type: 'max_evolutions'; count: number }
+  | { type: 'speed_limit'; maxSeconds: number }
+  | { type: 'no_healing' }
+  | { type: 'enemy_multiplier'; stat: 'atk' | 'hp'; value: number };
+
+/** チャレンジ定義 */
+export interface ChallengeDef {
+  readonly id: string;
+  readonly name: string;
+  readonly description: string;
+  readonly icon: string;
+  readonly modifiers: readonly ChallengeModifier[];
 }

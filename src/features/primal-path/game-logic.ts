@@ -11,12 +11,14 @@ import type {
   AllyTemplate, LogEntry, DmgPopup, ASkillId, ASkillDef, SkillSt, ABuff,
   SynergyTag, ActiveSynergy, SynergyEffect,
   EventChoice, EventCost, EventEffect, RandomEventDef,
+  RunStats, AggregateStats, AchievementDef, ChallengeDef,
 } from './types';
 import {
   CIV_TYPES, CIV_KEYS, TREE, TB_DEFAULTS, EVOS, ALT, ENM, BOSS,
   DIFFS, BIOME_AFFINITY, ENV_DMG, AWK_SA, AWK_FA, TN, TC,
   WAVES_PER_BIOME, A_SKILLS, SYNERGY_BONUSES,
   RANDOM_EVENTS, EVENT_CHANCE, EVENT_MIN_BATTLES,
+  ACHIEVEMENTS,
 } from './constants';
 
 /* ===== Utility ===== */
@@ -409,9 +411,12 @@ function tickAllyPhase(next: RunState, e: Enemy, events: TickEvent[], sb: Synerg
 }
 
 function tickRegenPhase(next: RunState, events: TickEvent[], sb: SynergyBonusResult): void {
+  if (next.noHealing) return;
   if (next.tb.rg > 0) {
     const rg = Math.max(1, Math.floor(next.mhp * next.tb.rg * (1 + sb.healBonusRatio)));
+    const actualHeal = Math.min(rg, next.mhp - next.hp);
     next.hp = Math.min(next.hp + rg, next.mhp);
+    next.totalHealing += actualHeal;
     next.log.push({ x: '  🌿 再生 +' + rg, c: 'lc' });
     events.push({ type: 'popup', v: rg, crit: false, heal: true, tgt: 'pl' });
   }
@@ -552,6 +557,7 @@ export function startRunState(di: number, save: SaveData): RunState {
     sk: { avl: [], cds: {}, bfs: [] },
     evs: [],
     btlCount: 0, eventCount: 0,
+    skillUseCount: 0, totalHealing: 0,
     _wDmgBase: 0, _fbk: '', _fPhase: 0,
   };
 }
@@ -570,6 +576,10 @@ export function startBattle(r: RunState, finalMode: boolean): RunState {
 
   const biomeScale = 0.75 + next.cB * 0.25;
   next.en = scaleEnemy(src, next.dd.hm, next.dd.am, biomeScale + next.bc * 0.25);
+  /* チャレンジ: 敵ATK倍率の適用 */
+  if (next.enemyAtkMul && next.enemyAtkMul !== 1 && next.en) {
+    next.en.atk = Math.floor(next.en.atk * next.enemyAtkMul);
+  }
   next.log = [];
   next.wDmg = 0;
   next.wTurn = 0;
@@ -754,6 +764,11 @@ export function applySkill(r: RunState, sid: ASkillId): { nextRun: RunState; eve
       events.push({ type: 'skill_fx', sid, v: dmg });
     }
   } else if (fx.t === 'healAll') {
+    // チャレンジ: 回復禁止
+    if (next.noHealing) {
+      next.log.push({ x: `✦ ${def.ic} 回復禁止中…`, c: 'xc' });
+      return { nextRun: next, events: [] };
+    }
     // プレイヤー回復
     const heal = fx.bh;
     next.hp = Math.min(next.hp + heal, next.mhp);
@@ -782,6 +797,8 @@ export function applySkill(r: RunState, sid: ASkillId): { nextRun: RunState; eve
 
   // クールダウン設定
   next.sk.cds[sid] = def.cd;
+  // スキル使用回数記録
+  next.skillUseCount++;
 
   return { nextRun: next, events };
 }
@@ -1101,4 +1118,124 @@ export function computeEventResult(
     : undefined;
 
   return { nextRun, evoName };
+}
+
+/* ===== メタ進行・実績 (Phase 4) ===== */
+
+/**
+ * ラン終了時の統計を計算する
+ * @param run - 終了時のランステート
+ * @param result - 勝敗結果
+ * @param boneEarned - 獲得骨数
+ * @returns ラン統計
+ */
+export function calcRunStats(
+  run: RunState,
+  result: 'victory' | 'defeat',
+  boneEarned: number,
+): RunStats {
+  const synergies = calcSynergies(run.evs);
+  return {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    date: new Date().toISOString(),
+    result,
+    difficulty: run.di,
+    biomeCount: run.bc,
+    totalKills: run.kills,
+    maxDamage: run.maxHit,
+    totalDamageDealt: run.dmgDealt,
+    totalDamageTaken: run.dmgTaken,
+    totalHealing: run.totalHealing,
+    evolutionCount: run.evs.length,
+    synergyCount: synergies.length,
+    eventCount: run.eventCount,
+    skillUsageCount: run.skillUseCount,
+    boneEarned,
+    playtimeSeconds: 0, // UI側でプレイ時間を注入
+    awakening: run.awoken.length > 0 ? run.awoken[run.awoken.length - 1].nm : undefined,
+    challengeId: run.challengeId,
+  };
+}
+
+/**
+ * 実績の解除条件をチェックする
+ * @param achievement - 実績定義
+ * @param stats - 累計統計データ
+ * @param currentRun - 現在のラン統計
+ * @returns 解除されたか
+ */
+export function checkAchievement(
+  achievement: AchievementDef,
+  stats: AggregateStats,
+  currentRun: RunStats,
+): boolean {
+  const c = achievement.condition;
+  switch (c.type) {
+    case 'first_clear':
+      return currentRun.result === 'victory';
+    case 'clear_count':
+      return stats.totalClears >= c.count;
+    case 'clear_difficulty':
+      return stats.clearedDifficulties.includes(c.difficulty);
+    case 'all_difficulties_cleared':
+      return stats.clearedDifficulties.length >= 4;
+    case 'all_awakenings':
+      return stats.achievedAwakenings.length >= 4;
+    case 'max_damage':
+      return currentRun.maxDamage >= c.threshold;
+    case 'total_kills':
+      return stats.totalKills >= c.count;
+    case 'synergy_tier2':
+      return stats.achievedSynergiesTier2.includes(c.tag);
+    case 'all_synergies_tier1':
+      return stats.achievedSynergiesTier1.length >= SYNERGY_BONUSES.length;
+    case 'event_count':
+      return stats.totalEvents >= c.count;
+    case 'challenge_clear':
+      return stats.clearedChallenges.includes(c.challengeId);
+    case 'no_damage_boss':
+      return currentRun.result === 'victory' && stats.lastBossDamageTaken === 0;
+    case 'speed_clear':
+      return currentRun.result === 'victory' && currentRun.playtimeSeconds <= c.maxSeconds;
+    case 'bone_hoarder':
+      return stats.totalBoneEarned >= c.amount;
+    case 'full_tree':
+      return stats.treeCompletionRate >= 1.0;
+  }
+}
+
+/**
+ * チャレンジ修飾子をランステートに適用する
+ * @param run - ランステート
+ * @param challenge - チャレンジ定義
+ * @returns 修飾子適用済みのランステート
+ */
+export function applyChallenge(run: RunState, challenge: ChallengeDef): RunState {
+  const next = deepCloneRun(run);
+  next.challengeId = challenge.id;
+
+  for (const mod of challenge.modifiers) {
+    switch (mod.type) {
+      case 'hp_multiplier':
+        next.mhp = Math.floor(next.mhp * mod.value);
+        next.hp = Math.min(next.hp, next.mhp);
+        break;
+      case 'max_evolutions':
+        next.maxEvo = mod.count;
+        break;
+      case 'speed_limit':
+        next.timeLimit = mod.maxSeconds;
+        break;
+      case 'enemy_multiplier':
+        if (mod.stat === 'atk') {
+          next.enemyAtkMul = (next.enemyAtkMul ?? 1) * mod.value;
+        }
+        break;
+      case 'no_healing':
+        next.noHealing = true;
+        break;
+    }
+  }
+
+  return next;
 }

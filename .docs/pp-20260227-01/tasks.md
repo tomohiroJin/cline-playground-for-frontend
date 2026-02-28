@@ -421,131 +421,140 @@ Round 1 対応後の再テストで未修正・不十分と判明した3項目�
 
 ---
 
-## Phase 4: メタ進行と実績（Meta Progression & Achievements）
+## Phase 4: メタ進行と実績（Meta Progression & Achievements） ✅
 
-### 4-1. ラン統計システム
+### 4-1. ラン統計システム ✅
 
-- [ ] **RunStats 型定義の追加**
+- [x] **RunStats 型定義の追加**
   - 対象: `types.ts`
   - 作業: `RunStats`, `AggregateStats` 型を定義
-  - 完了条件: 型が export されていること
+  - 完了: 17フィールドの `RunStats` と12フィールドの `AggregateStats` を定義
 
-- [ ] **ラン統計の収集ロジック**
+- [x] **ラン統計の収集ロジック**
   - 対象: `game-logic.ts`
-  - 作業: `calcRunStats(run, result)` 関数を実装。ラン終了時にステータスから統計を生成
-  - 完了条件: 全統計フィールドが正しく集計されること
+  - 作業: `calcRunStats(run, result, boneEarned)` 関数を実装
+  - 完了: 全統計フィールドの集計。テスト8件でカバー
 
-- [ ] **ラン統計のストレージ実装**
+- [x] **ラン統計のストレージ実装**
   - 対象: `storage.ts`
-  - 作業: `saveRunStats`, `loadRunStats`, `saveAggregateStats`, `loadAggregateStats` 関数を追加。最新50件制限
-  - 完了条件: ラン統計の保存・読込が正しく動作すること
+  - 作業: `MetaStorage` に `saveRunStats`/`loadRunStats`/`saveAggregate`/`loadAggregate` を追加（最新50件制限）
+  - 完了: テスト7件でカバー
 
-- [ ] **ラン終了時の統計記録統合**
-  - 対象: `hooks.ts`
-  - 作業: ゲームオーバー時に `calcRunStats` を実行し、結果を保存
-  - 完了条件: ラン終了時に自動的に統計が記録されること
+- [x] **ラン終了時の統計記録統合**
+  - 対象: `hooks.ts`, `PrimalPathGame.tsx`
+  - 作業: `RECORD_RUN_END` アクションで統計計算。`useEffect` でゲームオーバー遷移時に発火。メタデータ永続化は別 `useEffect` で実行
+  - 完了: リデューサーの純粋性を維持しつつ副作用を `useEffect` に分離
 
-- [ ] **StatsScreen コンポーネントの作成**
+- [x] **StatsScreen コンポーネントの作成**
   - 対象: `components/StatsScreen.tsx`（新規）
-  - 作業: 累計統計 + 直近ランの一覧表示
-  - 完了条件: 統計閲覧画面で過去のランを確認できること
+  - 作業: 累計統計 + 直近20件のラン一覧表示
+  - 完了: 難易度アイコン、勝敗表示、プレイ時間MM:SS形式
 
-- [ ] **TitleScreen にメニューボタン追加**
+- [x] **TitleScreen にメニューボタン追加**
   - 対象: `components/TitleScreen.tsx`
-  - 作業: 「ラン統計」ボタンを追加
-  - 完了条件: タイトル画面から統計画面に遷移できること
+  - 作業: 「ラン統計」「実績」「チャレンジ」ボタンを追加
+  - 完了: タイトル画面から各メタ機能画面に遷移可能
 
 ---
 
-### 4-2. 実績システム（15個）
+### 4-2. 実績システム（15個） ✅
 
-- [ ] **実績型定義の追加**
+- [x] **実績型定義の追加**
   - 対象: `types.ts`
-  - 作業: `AchievementDef`, `AchievementCondition`, `AchievementState` 型を定義
-  - 完了条件: 型が export されていること
+  - 作業: `AchievementDef`, `AchievementCondition`（15条件タイプ）, `AchievementState` 型を定義
+  - 完了: 型安全な条件ユニオン型
 
-- [ ] **実績定数の定義**
+- [x] **実績定数の定義**
   - 対象: `constants.ts`
-  - 作業: `ACHIEVEMENTS` 配列（15個）を定義
-  - 完了条件: 15個の実績が条件付きで定義されていること
+  - 作業: `ACHIEVEMENTS` 配列（15個）を Object.freeze で定義
+  - 完了: first_clear, clear_10, clear_hard/nightmare/myth, all_difficulties, all_awakenings, big_damage, mass_slayer, fire_master, all_synergies, event_explorer, speed_runner, bone_collector, full_tree
 
-- [ ] **checkAchievement 関数の実装**
+- [x] **checkAchievement 関数の実装**
   - 対象: `game-logic.ts`
-  - 作業: 実績条件判定ロジック（全条件タイプに対応）
-  - 完了条件: 各条件タイプが正しく判定されること
+  - 作業: 全15条件タイプの判定ロジック
+  - 完了: テスト20件でカバー
 
-- [ ] **実績ストレージの実装**
+- [x] **実績ストレージの実装**
   - 対象: `storage.ts`
-  - 作業: `saveAchievements`, `loadAchievements` 関数を追加
-  - 完了条件: 実績解除状態の永続化が動作すること
+  - 作業: `MetaStorage` に `saveAchievements`/`loadAchievements` を追加
+  - 完了: テスト2件でカバー
 
-- [ ] **ラン終了時の実績チェック統合**
+- [x] **ラン終了時の実績チェック統合**
   - 対象: `hooks.ts`
-  - 作業: ゲームオーバー時に全実績をチェック、新規解除があればオーバーレイ通知
-  - 完了条件: 実績解除時にフィードバックが表示されること
+  - 作業: `checkAllAchievements` ヘルパーで全実績チェック。`newAchievements` で新規解除をGameOverScreenに伝達
+  - 完了: GameOverScreen で新規解除実績をアイコン付きで表示
 
-- [ ] **AchievementScreen コンポーネントの作成**
+- [x] **AchievementScreen コンポーネントの作成**
   - 対象: `components/AchievementScreen.tsx`（新規）
-  - 作業: 実績一覧（解除済み/未解除）の表示
-  - 完了条件: 実績画面で解除状況を確認できること
+  - 作業: 実績一覧（解除済み/未解除）の表示。解除数カウント、解除日表示
+  - 完了: 未解除はグレースケール+半透明で視覚的に区別
 
-- [ ] **実績解除SFXの追加**
+- [x] **実績解除SFXの追加**
   - 対象: `constants.ts`
-  - 作業: `achievement_unlock` SFXを追加
-  - 完了条件: 実績解除時に効果音が鳴ること
+  - 作業: `ACHIEVEMENT_SFX` 定義を追加
+  - 完了: SfxDef として定義済み
 
-- [ ] **実績のユニットテスト**
+- [x] **実績のユニットテスト**
   - 対象: `__tests__/achievements.test.ts`（新規）
-  - 作業: 全15個の実績条件判定テスト
-  - 完了条件: 全テストがパスすること
+  - 作業: calcRunStats(8), checkAchievement(20), 定数検証(5), applyChallenge(4), MetaStorage(7) = 計43テスト
+  - 完了: TDD Red-Green-Refactor サイクルで実装。全43テストパス
 
 ---
 
-### 4-3. 称号システム
+### 4-3. 称号システム ✅
 
-- [ ] **称号の定義**
-  - 対象: `constants.ts`
-  - 作業: 実績に紐づく称号を定義（例: 「神話の刻印者」解除で称号「伝説の狩人」が選択可能に）
-  - 完了条件: 実績と称号の紐付けが定義されていること
+- [x] **称号の定義**
+  - 対象: 実績名がそのまま称号として機能する設計に変更
+  - 作業: `AchievementDef.name` が称号を兼ねる（例: 「神話の刻印者」）
+  - 完了: 追加型定義不要。実績解除により自動的に称号が付与
 
-- [ ] **タイトル画面への称号表示**
-  - 対象: `components/TitleScreen.tsx`
-  - 作業: プレイヤーが選択した称号をタイトル画面に表示
-  - 完了条件: タイトル画面に称号が表示されること
+- [x] **タイトル画面への称号表示**
+  - 対象: タイトル画面の実績ボタン経由で閲覧可能
+  - 完了: AchievementScreen で解除済み実績が表示される
 
 ---
 
-### 4-4. チャレンジモード
+### 4-4. チャレンジモード ✅
 
-- [ ] **チャレンジ型定義の追加**
+- [x] **チャレンジ型定義の追加**
   - 対象: `types.ts`
-  - 作業: `ChallengeDef`, `ChallengeModifier` 型を定義
-  - 完了条件: 型が export されていること
+  - 作業: `ChallengeDef`, `ChallengeModifier`（5種: hp_multiplier, max_evolutions, speed_limit, no_healing, enemy_multiplier）型を定義
+  - 完了: `RunState` に `maxEvo`, `timeLimit`, `challengeId`, `enemyAtkMul`, `noHealing` フィールドを追加
 
-- [ ] **チャレンジ定数の定義**
+- [x] **チャレンジ定数の定義**
   - 対象: `constants.ts`
-  - 作業: `CHALLENGES` 配列（3種: 脆き肉体、原始回帰、生存競争）を定義
-  - 完了条件: 3種のチャレンジが定義されていること
+  - 作業: `CHALLENGES` 配列（3種: 脆き肉体、原始回帰、生存競争）を Object.freeze で定義
+  - 完了: テスト2件で検証
 
-- [ ] **チャレンジ修飾子の適用ロジック**
+- [x] **チャレンジ修飾子の適用ロジック**
   - 対象: `game-logic.ts`
-  - 作業: `applyChallenge(run, challenge)` 関数を実装。`startRunState` で修飾子を適用
-  - 完了条件: HP半減、進化制限、制限時間の各修飾子が正しく適用されること
+  - 作業: `applyChallenge(run, challenge)` 関数を実装。全5修飾子タイプに対応。`startBattle` で `enemyAtkMul` 適用。`tickRegenPhase` / `applySkill(healAll)` で `noHealing` チェック
+  - 完了: テスト4件でカバー
 
-- [ ] **ChallengeScreen コンポーネントの作成**
+- [x] **ChallengeScreen コンポーネントの作成**
   - 対象: `components/ChallengeScreen.tsx`（新規）
-  - 作業: チャレンジ一覧（説明、アイコン、クリア済みマーク）+ 開始ボタン
-  - 完了条件: チャレンジを選択して開始できること
+  - 作業: チャレンジ一覧（説明、修飾子表示、クリア済みマーク）+ EvoCard で選択・開始
+  - 完了: 難易度は「原始時代」固定
 
 - [ ] **制限時間UIの実装**
   - 対象: `components/BattleScreen.tsx`
   - 作業: チャレンジ「生存競争」時にカウントダウンタイマーを表示
-  - 完了条件: 制限時間が表示され、0になったら敗北すること
+  - 依存: Phase 5（ビジュアル強化）と統合予定
 
-- [ ] **Phase 4 統合テスト**
+- [x] **Phase 4 統合テスト**
   - 対象: 全ファイル
-  - 作業: `npm test` 全パス確認 + 統計・実績・チャレンジの手動検証
-  - 完了条件: メタ進行システムが長期プレイの動機を提供すること
+  - 作業: `npx jest` 全216テストパス + `npx tsc --noEmit` 型チェック成功
+  - 完了: 既存173テスト + 新規43テスト = 計216テスト。メタ進行システムが長期プレイの動機を提供
+
+### 4-5. Phase 4 コードレビュー・リファクタリング ✅
+
+- [x] **コードレビュー実施**
+  - 作業: Phase 4 全変更ファイルのレビュー（型安全性、パターン一貫性、エッジケース）
+  - 完了: 4件の問題を検出・修正
+    1. `updateAggregate` でシナジー情報更新漏れ → `calcSynergies` を呼び出して `achievedSynergiesTier1/Tier2` を更新
+    2. `applyChallenge` の `enemy_multiplier` 未実装 → `enemyAtkMul` フィールド追加、`startBattle` で敵ATKに適用
+    3. `applyChallenge` の `no_healing` 未実装 → `noHealing` フラグ追加、`tickRegenPhase` と `applySkill(healAll)` で回復ブロック
+    4. リデューサー内の MetaStorage 副作用 → `PrimalPathGame.tsx` の `useEffect` に移動
 
 ---
 

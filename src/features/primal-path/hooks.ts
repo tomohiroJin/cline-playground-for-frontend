@@ -6,6 +6,7 @@ import type {
   GameState, GamePhase, RunState, Evolution, SaveData,
   Ally, BiomeId, CivTypeExt, SfxType, TickEvent, ASkillId,
   EventChoice, RandomEventDef,
+  RunStats, AchievementState, AggregateStats,
 } from './types';
 import {
   startRunState, startBattle, tick, afterBattle, applyEvo,
@@ -14,10 +15,11 @@ import {
   applyBiomeSelection, applyFirstBiome, applyAutoLastBiome,
   deadAllies, allyReviveCost, getTB, applySkill,
   rollEvent, applyEventChoice,
+  calcRunStats, checkAchievement, applyChallenge, calcSynergies,
 } from './game-logic';
-import { AWK_SA, AWK_FA, BOSS, DIFFS, BIO, FRESH_SAVE, TREE as TREE_DATA } from './constants';
+import { AWK_SA, AWK_FA, BOSS, DIFFS, BIO, FRESH_SAVE, TREE as TREE_DATA, ACHIEVEMENTS, CHALLENGES } from './constants';
 import { AudioEngine } from './audio';
-import { Storage } from './storage';
+import { Storage, MetaStorage } from './storage';
 
 /* ===== Action Types ===== */
 
@@ -50,7 +52,10 @@ type GameAction =
   | { type: 'USE_SKILL'; sid: ASkillId }
   | { type: 'TRIGGER_EVENT'; event: RandomEventDef }
   | { type: 'CHOOSE_EVENT'; choice: EventChoice }
-  | { type: 'APPLY_EVENT_RESULT'; nextRun: RunState };
+  | { type: 'APPLY_EVENT_RESULT'; nextRun: RunState }
+  | { type: 'LOAD_META' }
+  | { type: 'RECORD_RUN_END'; won: boolean }
+  | { type: 'START_CHALLENGE'; challengeId: string; di: number };
 
 /* ===== Initial State ===== */
 
@@ -66,6 +71,10 @@ function initialState(): GameState {
     reviveTargets: [],
     gameResult: null,
     currentEvent: undefined,
+    runStats: [],
+    aggregate: MetaStorage.loadAggregate(),
+    achievementStates: [],
+    newAchievements: [],
   };
 }
 
@@ -82,6 +91,80 @@ function transitionAfterBiome(state: GameState, run: RunState): GameState {
   const autoRun = applyAutoLastBiome(run);
   const evoPicks = rollE(autoRun);
   return { ...state, run: autoRun, phase: 'evo', evoPicks };
+}
+
+/* ===== Meta Progression Helper ===== */
+
+/** ランの結果から累計統計を更新 */
+function updateAggregate(prev: AggregateStats, rs: RunStats, run: RunState): AggregateStats {
+  const next: AggregateStats = {
+    ...prev,
+    totalRuns: prev.totalRuns + 1,
+    totalKills: prev.totalKills + rs.totalKills,
+    totalBoneEarned: prev.totalBoneEarned + rs.boneEarned,
+    totalEvents: prev.totalEvents + rs.eventCount,
+    clearedDifficulties: [...prev.clearedDifficulties],
+    achievedAwakenings: [...prev.achievedAwakenings],
+    achievedSynergiesTier1: [...prev.achievedSynergiesTier1],
+    achievedSynergiesTier2: [...prev.achievedSynergiesTier2],
+    clearedChallenges: [...prev.clearedChallenges],
+    treeCompletionRate: prev.treeCompletionRate,
+    lastBossDamageTaken: run.dmgTaken,
+  };
+
+  if (rs.result === 'victory') {
+    next.totalClears = prev.totalClears + 1;
+    if (!next.clearedDifficulties.includes(rs.difficulty)) {
+      next.clearedDifficulties.push(rs.difficulty);
+    }
+    if (rs.challengeId && !next.clearedChallenges.includes(rs.challengeId)) {
+      next.clearedChallenges.push(rs.challengeId);
+    }
+  } else {
+    next.totalClears = prev.totalClears;
+  }
+
+  /* 覚醒記録の更新 */
+  for (const aw of run.awoken) {
+    if (!next.achievedAwakenings.includes(aw.id)) {
+      next.achievedAwakenings.push(aw.id);
+    }
+  }
+
+  /* シナジー記録の更新 */
+  const synergies = calcSynergies(run.evs);
+  for (const syn of synergies) {
+    if (syn.tier >= 1 && !next.achievedSynergiesTier1.includes(syn.tag)) {
+      next.achievedSynergiesTier1.push(syn.tag);
+    }
+    if (syn.tier >= 2 && !next.achievedSynergiesTier2.includes(syn.tag)) {
+      next.achievedSynergiesTier2.push(syn.tag);
+    }
+  }
+
+  return next;
+}
+
+/** 実績チェックを実行し、新規解除を返す */
+function checkAllAchievements(
+  currentStates: AchievementState[],
+  stats: RunStats,
+  aggregate: AggregateStats,
+): { nextStates: AchievementState[]; newIds: string[] } {
+  const newIds: string[] = [];
+  const nextStates = ACHIEVEMENTS.map(ach => {
+    const existing = currentStates.find(s => s.id === ach.id);
+    if (existing?.unlocked) return existing;
+
+    const unlocked = checkAchievement(ach, aggregate, stats);
+    if (unlocked) {
+      newIds.push(ach.id);
+      return { id: ach.id, unlocked: true, unlockedDate: new Date().toISOString() };
+    }
+    return existing ?? { id: ach.id, unlocked: false, unlockedDate: undefined };
+  });
+
+  return { nextStates, newIds };
 }
 
 /* ===== Reducer ===== */
@@ -349,6 +432,59 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       // 事前計算済みの結果で進化選択へ遷移
       const evoPicks2 = rollE(action.nextRun);
       return { ...state, run: action.nextRun, phase: 'evo', evoPicks: evoPicks2, currentEvent: undefined };
+    }
+
+    case 'LOAD_META': {
+      const runStats = MetaStorage.loadRunStats();
+      const aggregate = MetaStorage.loadAggregate();
+      const achievementStates = MetaStorage.loadAchievements();
+      return { ...state, runStats, aggregate, achievementStates };
+    }
+
+    case 'RECORD_RUN_END': {
+      if (!state.run) return state;
+      const result = action.won ? 'victory' as const : 'defeat' as const;
+      const boneEarned = calcBoneReward(state.run, action.won);
+      const rs = calcRunStats(state.run, result, boneEarned);
+
+      /* 累計統計の更新 */
+      const treeRate = TREE_DATA.length > 0
+        ? Object.keys(state.save.tree).length / TREE_DATA.length
+        : 0;
+      const newAgg = { ...updateAggregate(state.aggregate, rs, state.run), treeCompletionRate: treeRate };
+
+      /* 実績チェック */
+      const { nextStates, newIds } = checkAllAchievements(state.achievementStates, rs, newAgg);
+
+      const newRunStats = [...state.runStats, rs];
+
+      return {
+        ...state,
+        runStats: newRunStats,
+        aggregate: newAgg,
+        achievementStates: nextStates,
+        newAchievements: newIds,
+      };
+    }
+
+    case 'START_CHALLENGE': {
+      const ch = CHALLENGES.find(c => c.id === action.challengeId);
+      if (!ch) return state;
+      const save = { ...state.save, runs: state.save.runs + 1 };
+      let run = startRunState(action.di, save);
+      run = applyChallenge(run, ch);
+      run = { ...run, challengeId: ch.id };
+      // 最初のバイオーム自動選択
+      const pick = pickBiomeAuto(run);
+      let next = run;
+      if (!pick.needSelection) {
+        next = applyFirstBiome(run);
+      }
+      const evoPicks = rollE(next);
+      return {
+        ...state, save, run: next, phase: 'evo', finalMode: false,
+        evoPicks, pendingAwk: null, gameResult: null, newAchievements: [],
+      };
     }
 
     default:
