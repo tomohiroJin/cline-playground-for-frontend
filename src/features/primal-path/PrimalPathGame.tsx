@@ -25,6 +25,7 @@ import { AwakeningScreen } from './components/AwakeningScreen';
 import { PreFinalScreen } from './components/PreFinalScreen';
 import { GameOverScreen } from './components/GameOverScreen';
 import { AllyReviveScreen } from './components/AllyReviveScreen';
+import { EventScreen } from './components/EventScreen';
 
 function GameInner() {
   const { state, dispatch } = useGameState();
@@ -59,7 +60,7 @@ function GameInner() {
 
   if (!loaded) return null;
 
-  const { phase, run, save, finalMode, battleSpd, evoPicks, pendingAwk, gameResult } = state;
+  const { phase, run, save, finalMode, battleSpd, evoPicks, pendingAwk, gameResult, currentEvent } = state;
 
   return (
     <GameContainer>
@@ -94,6 +95,18 @@ function GameInner() {
 
         {phase === 'evo' && run && (
           <EvolutionScreen run={run} evoPicks={evoPicks} dispatch={dispatch} playSfx={playSfx} battleSpd={battleSpd} />
+        )}
+
+        {phase === 'event' && run && currentEvent && (
+          <EventScreen
+            event={currentEvent}
+            run={run}
+            onChoose={(choice) => {
+              playSfx('event');
+              dispatch({ type: 'CHOOSE_EVENT', choice });
+            }}
+            playSfx={playSfx}
+          />
         )}
 
         {phase === 'battle' && run && (

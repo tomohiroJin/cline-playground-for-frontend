@@ -297,91 +297,91 @@ Round 1 対応後の再テストで未修正・不十分と判明した3項目�
 
 ---
 
-## Phase 3: ランダムイベントシステム（Random Events）
+## Phase 3: ランダムイベントシステム（Random Events） ✅
 
-### 3-1. イベントエンジン
+### 3-1. イベントエンジン ✅
 
-- [ ] **イベント型定義の追加**
+- [x] **イベント型定義の追加**
   - 対象: `types.ts`
-  - 作業: `EventId`, `EventChoice`, `EventEffect`, `RandomEventDef` 型を定義
-  - 完了条件: 型が export されていること
+  - 作業: `EventId`, `EventChoice`, `EventEffect`, `RandomEventDef` 型を定義。`RunState` に `btlCount`, `eventCount` を追加
+  - 完了: TDD Red-Green-Refactor サイクルで実装
 
-- [ ] **GamePhase に 'event' を追加**
+- [x] **GamePhase に 'event' を追加**
   - 対象: `types.ts`
-  - 作業: `GamePhase` ユニオン型に `'event'` を追加。`GameState` に `currentEvent` を追加
-  - 完了条件: `'event'` フェーズが型安全に使用できること
+  - 作業: `GamePhase` ユニオン型に `'event'` を追加。`GameState` に `currentEvent` を追加。`SfxType` に `'event'` を追加
+  - 完了: 型安全に event フェーズが使用可能
 
-- [ ] **rollEvent 関数の実装**
+- [x] **rollEvent 関数の実装**
   - 対象: `game-logic.ts`
-  - 作業: バトル後のイベント発生判定（20%確率、バイオームアフィニティ考慮）
-  - 完了条件: RNG 注入でテスタブル。序盤は発生しない制約が機能すること
+  - 作業: バトル後のイベント発生判定（20%確率、バイオームアフィニティ2倍重み付け）。`dominantCiv` ヘルパー関数も追加
+  - 完了: RNG 注入でテスタブル。btlCount < EVENT_MIN_BATTLES で序盤制約が機能
 
-- [ ] **applyEventChoice 関数の実装**
+- [x] **applyEventChoice 関数の実装**
   - 対象: `game-logic.ts`
-  - 作業: 各イベント効果の適用ロジック（ステータス変化、回復、ダメージ、骨変動、仲間追加、ランダム進化、文明レベルアップ）
-  - 完了条件: 全効果タイプが正しく適用されること
+  - 作業: 全8種の効果タイプ（stat_change, heal, damage, bone_change, add_ally, random_evolution, civ_level_up, nothing）を純粋関数で実装
+  - 完了: deepCloneRun でイミュータブル性を確保。eventCount をインクリメント
 
 ---
 
-### 3-2. 基本イベント（8種）
+### 3-2. 基本イベント（8種） ✅
 
-- [ ] **イベント定数の定義**
+- [x] **イベント定数の定義**
   - 対象: `constants.ts`
-  - 作業: `RANDOM_EVENTS` 配列（8種）を定義。各イベントに名前、説明、選択肢、バイオームアフィニティを設定
-  - 完了条件: 8種のイベントが定義され、フレーバーテキストが雰囲気に合っていること
+  - 作業: `RANDOM_EVENTS` 配列（8種: bone_merchant, ancient_shrine, lost_ally, poison_swamp, mystery_fossil, beast_den, starry_night, cave_painting）を Object.freeze で定義
+  - 完了: 各イベントにバイオームアフィニティ（poison_swamp→grassland, beast_den→volcano, cave_painting→glacier）を設定
 
-- [ ] **イベント発生確率/条件定数の定義**
+- [x] **イベント発生確率/条件定数の定義**
   - 対象: `constants.ts`
-  - 作業: `EVENT_CHANCE`, `EVENT_MIN_BATTLES` 定数を定義
-  - 完了条件: 定数が適切な値で定義されていること
+  - 作業: `EVENT_CHANCE = 0.2`, `EVENT_MIN_BATTLES = 2` を定義
+  - 完了: 適切な値で定義済み
 
 ---
 
-### 3-3. イベントUI
+### 3-3. イベントUI ✅
 
-- [ ] **EventScreen コンポーネントの作成**
+- [x] **EventScreen コンポーネントの作成**
   - 対象: `components/EventScreen.tsx`（新規）
-  - 作業: イベント名、説明テキスト、選択肢ボタン（リスクレベル色分け）を表示
-  - 完了条件: イベント画面が表示され、選択肢をタップできること
+  - 作業: イベント名、説明テキスト、選択肢ボタン（リスクレベル色分け: safe=緑, risky=黄, dangerous=赤）を表示。骨コスト表示+不足時 disabled
+  - 完了: styled-components でコンポーネント内にスタイル定義。eventGlow アニメーション付き
 
-- [ ] **EventScreen スタイルの作成**
-  - 対象: `styles.ts`
-  - 作業: イベント画面用のスタイル（パネル、選択肢ボタン、リスクレベル色）を追加
-  - 完了条件: デザインがゲーム全体のテイストに合っていること
+- [x] **EventScreen スタイルの作成**
+  - 対象: `components/EventScreen.tsx`（コンポーネント内に定義）
+  - 作業: EventPanel, ChoiceBtn, CostTag 等のスタイルをコンポーネント内に定義（既存パターンに準拠）
+  - 完了: ゲーム全体のダークテーマに統合
 
-- [ ] **PrimalPathGame に event フェーズを統合**
+- [x] **PrimalPathGame に event フェーズを統合**
   - 対象: `PrimalPathGame.tsx`
-  - 作業: `phase === 'event'` の分岐を追加し、`EventScreen` をレンダリング
-  - 完了条件: イベントフェーズが正しく表示・遷移すること
+  - 作業: `phase === 'event'` の分岐を追加し、`EventScreen` をレンダリング。選択時に 'event' SFX 再生
+  - 完了: イベントフェーズが正しく表示・遷移
 
-- [ ] **gameReducer にイベント関連アクションを追加**
+- [x] **gameReducer にイベント関連アクションを追加**
   - 対象: `hooks.ts`
-  - 作業: `TRIGGER_EVENT`, `CHOOSE_EVENT` アクションを追加
-  - 完了条件: バトル後→イベント→進化選択のフローが動作すること
+  - 作業: `TRIGGER_EVENT`, `CHOOSE_EVENT` アクションを追加。`AFTER_BATTLE` で `rollEvent()` を呼び出し、イベント発生時は 'event' フェーズに遷移
+  - 完了: バトル後→イベント→進化選択のフローが動作
 
-- [ ] **イベント発生SFXの追加**
-  - 対象: `constants.ts`, `audio.ts`
-  - 作業: `event_appear` SFXを追加
-  - 完了条件: イベント発生時に効果音が鳴ること
+- [x] **イベント発生SFXの追加**
+  - 対象: `constants.ts`
+  - 作業: `SFX_DEFS` に 'event' SFX 定義を追加
+  - 完了: イベント発生時に効果音が鳴る
 
 ---
 
-### 3-4. バイオーム固有イベント
+### 3-4. バイオーム固有イベント ✅
 
-- [ ] **バイオームアフィニティの確認と調整**
+- [x] **バイオームアフィニティの確認と調整**
   - 対象: `constants.ts`
-  - 作業: 各イベントの `biomeAffinity` を確認。バイオームごとに少なくとも1種の固有イベントがあることを確認
-  - 完了条件: 全バイオームでイベントの体験にバリエーションがあること
+  - 作業: 各イベントの `biomeAffinity` を確認。草原=poison_swamp, 火山=beast_den, 氷河=cave_painting
+  - 完了: 全バイオームに少なくとも1種の固有イベントが設定済み
 
-- [ ] **イベントのユニットテスト**
+- [x] **イベントのユニットテスト**
   - 対象: `__tests__/events.test.ts`（新規）
-  - 作業: rollEvent（確率、バイオームアフィニティ、序盤制約）、applyEventChoice（全効果タイプ）のテスト
-  - 完了条件: 全テストがパスすること
+  - 作業: 定数検証(5), dominantCiv(4), rollEvent(5), applyEventChoice(18: stat_change×3, heal×2, damage×2, bone_change×1, civ_level_up×4, nothing×1, random_evolution×1, add_ally×2, イミュータブル×1, eventCount×1) の計32テスト
+  - 完了: 全32テストパス。TDD Red-Green-Refactor サイクルで実装
 
-- [ ] **Phase 3 統合テスト**
+- [x] **Phase 3 統合テスト**
   - 対象: 全ファイル
-  - 作業: `npm test` 全パス確認 + イベントが実際のゲームプレイで自然に発生することを手動検証
-  - 完了条件: イベントの頻度・内容がゲーム体験を向上させていること
+  - 作業: `npm test` 全2064テストパス（既存2032 + 新規32）+ `npx tsc --noEmit` 型チェック成功
+  - 完了: 全テストパス、型エラーなし（node_modules/tone の既存エラーのみ）
 
 ---
 

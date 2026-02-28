@@ -5,6 +5,7 @@ import type {
   Difficulty, Evolution, AllyTemplate, EnemyTemplate, TreeNode,
   BiomeInfo, SfxDef, CivType, CivTypeExt, BiomeId, AwakeningInfo,
   TreeBonus, SpeedOption, EnvDmgConfig, SaveData, ASkillDef, SynergyBonusDef,
+  RandomEventDef,
 } from './types';
 
 /** 文明タイプ一覧 */
@@ -277,6 +278,7 @@ export const SFX_DEFS: Readonly<Record<string, SfxDef>> = Object.freeze({
   skRage: Object.freeze({ f: Object.freeze([100, 300, 80]), fd: 0.25, g: 0.12, gd: 0.3, w: 'square' as const }),
   skShield: Object.freeze({ f: Object.freeze([500, 700, 400]), fd: 0.2, g: 0.08, gd: 0.25, w: 'sine' as const }),
   synergy: Object.freeze({ f: Object.freeze([440, 554, 659]), fd: 0.2, g: 0.1, gd: 0.25, w: 'sine' as const }),
+  event: Object.freeze({ f: Object.freeze([330, 440]), fd: 0.15, g: 0.08, gd: 0.2, w: 'triangle' as const }),
 });
 
 /** ツリーボーナスサマリー定義 */
@@ -412,3 +414,93 @@ export const SYNERGY_TAG_INFO: Readonly<Record<string, { ic: string; nm: string;
   tribe: Object.freeze({ ic: '🏕️', nm: '部族', cl: '#e0c060' }),
   wild: Object.freeze({ ic: '🐾', nm: '野生', cl: '#c0a040' }),
 });
+
+/* ===== ランダムイベント ===== */
+
+/** イベント発生確率（20%） */
+export const EVENT_CHANCE = 0.2;
+
+/** イベント発生不可の最低バトル数（序盤を除外） */
+export const EVENT_MIN_BATTLES = 2;
+
+/** ランダムイベント定義（8種） */
+export const RANDOM_EVENTS: readonly RandomEventDef[] = Object.freeze([
+  Object.freeze({
+    id: 'bone_merchant' as const,
+    name: '骨の商人',
+    description: '奇妙な商人が骨と引き換えに力を分けてくれるという。',
+    choices: Object.freeze([
+      Object.freeze({ label: '骨30で取引する', description: '骨を消費してATK+8を得る', effect: Object.freeze({ type: 'stat_change' as const, stat: 'atk' as const, value: 8 }), riskLevel: 'safe' as const, cost: Object.freeze({ type: 'bone' as const, amount: 30 }) }),
+      Object.freeze({ label: '骨50で大取引する', description: '骨を多く消費して大きな力を得る', effect: Object.freeze({ type: 'stat_change' as const, stat: 'atk' as const, value: 18 }), riskLevel: 'risky' as const, cost: Object.freeze({ type: 'bone' as const, amount: 50 }) }),
+      Object.freeze({ label: '立ち去る', description: '何も起こらない', effect: Object.freeze({ type: 'nothing' as const }), riskLevel: 'safe' as const }),
+    ]),
+  }),
+  Object.freeze({
+    id: 'ancient_shrine' as const,
+    name: '古代の祠',
+    description: '苔むした祠から微かな光が漏れている。祈りを捧げるか？',
+    choices: Object.freeze([
+      Object.freeze({ label: '祈りを捧げる', description: '最もレベルの高い文明が1上がる', effect: Object.freeze({ type: 'civ_level_up' as const, civType: 'dominant' as const }), riskLevel: 'safe' as const }),
+      Object.freeze({ label: '祠を調べる', description: 'ランダムな進化を得るかもしれない', effect: Object.freeze({ type: 'random_evolution' as const }), riskLevel: 'risky' as const }),
+      Object.freeze({ label: '通り過ぎる', description: '何も起こらない', effect: Object.freeze({ type: 'nothing' as const }), riskLevel: 'safe' as const }),
+    ]),
+  }),
+  Object.freeze({
+    id: 'lost_ally' as const,
+    name: '迷い仲間',
+    description: '傷ついた仲間が助けを求めている。',
+    choices: Object.freeze([
+      Object.freeze({ label: '助ける', description: '仲間が加入する（空きがある場合）', effect: Object.freeze({ type: 'add_ally' as const, allyTemplate: 'random' }), riskLevel: 'safe' as const }),
+      Object.freeze({ label: '立ち去る', description: '何も起こらない', effect: Object.freeze({ type: 'nothing' as const }), riskLevel: 'safe' as const }),
+    ]),
+  }),
+  Object.freeze({
+    id: 'poison_swamp' as const,
+    name: '毒沼',
+    description: '足元に毒々しい沼が広がっている。突っ切るか迂回するか…',
+    choices: Object.freeze([
+      Object.freeze({ label: '突っ切る', description: 'ダメージを受けるが、先に進める', effect: Object.freeze({ type: 'damage' as const, amount: 25 }), riskLevel: 'dangerous' as const }),
+      Object.freeze({ label: '迂回して薬草を探す', description: 'HPを回復できるかもしれない', effect: Object.freeze({ type: 'heal' as const, amount: 15 }), riskLevel: 'safe' as const }),
+    ]),
+    biomeAffinity: Object.freeze(['grassland' as const]),
+  }),
+  Object.freeze({
+    id: 'mystery_fossil' as const,
+    name: '謎の化石',
+    description: '地面に埋まった巨大な化石を発見した。',
+    choices: Object.freeze([
+      Object.freeze({ label: '掘り出す', description: 'DEFが上がるかもしれない', effect: Object.freeze({ type: 'stat_change' as const, stat: 'def' as const, value: 5 }), riskLevel: 'safe' as const }),
+      Object.freeze({ label: '骨として持ち帰る', description: '骨を入手する', effect: Object.freeze({ type: 'bone_change' as const, amount: 20 }), riskLevel: 'safe' as const }),
+    ]),
+  }),
+  Object.freeze({
+    id: 'beast_den' as const,
+    name: '獣の巣穴',
+    description: '巨大な獣の巣穴を見つけた。中に何かありそうだが…',
+    choices: Object.freeze([
+      Object.freeze({ label: '探索する', description: 'リスクを取って大きな報酬を得る', effect: Object.freeze({ type: 'stat_change' as const, stat: 'atk' as const, value: 12 }), riskLevel: 'dangerous' as const }),
+      Object.freeze({ label: '見なかったことにする', description: '何も起こらない', effect: Object.freeze({ type: 'nothing' as const }), riskLevel: 'safe' as const }),
+    ]),
+    biomeAffinity: Object.freeze(['volcano' as const]),
+  }),
+  Object.freeze({
+    id: 'starry_night' as const,
+    name: '星降る夜',
+    description: '空一面の星明かりの下、不思議な力が身体を包む。',
+    choices: Object.freeze([
+      Object.freeze({ label: '瞑想する', description: 'HPを大幅回復する', effect: Object.freeze({ type: 'heal' as const, amount: 40 }), riskLevel: 'safe' as const }),
+      Object.freeze({ label: '星に願いをかける', description: 'ランダムな効果が起きる', effect: Object.freeze({ type: 'random_evolution' as const }), riskLevel: 'risky' as const }),
+    ]),
+  }),
+  Object.freeze({
+    id: 'cave_painting' as const,
+    name: '古代の壁画',
+    description: '洞窟の壁に文明の記録が描かれている。',
+    choices: Object.freeze([
+      Object.freeze({ label: '技術の壁画を読む', description: '技術レベル+1', effect: Object.freeze({ type: 'civ_level_up' as const, civType: 'tech' as const }), riskLevel: 'safe' as const }),
+      Object.freeze({ label: '生活の壁画を読む', description: '生活レベル+1', effect: Object.freeze({ type: 'civ_level_up' as const, civType: 'life' as const }), riskLevel: 'safe' as const }),
+      Object.freeze({ label: '儀式の壁画を読む', description: '儀式レベル+1', effect: Object.freeze({ type: 'civ_level_up' as const, civType: 'rit' as const }), riskLevel: 'safe' as const }),
+    ]),
+    biomeAffinity: Object.freeze(['glacier' as const]),
+  }),
+]);

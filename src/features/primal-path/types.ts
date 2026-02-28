@@ -14,7 +14,8 @@ export type GamePhase =
   | 'awakening'
   | 'prefinal'
   | 'ally_revive'
-  | 'over';
+  | 'over'
+  | 'event';
 
 /** 文明タイプ */
 export type CivType = 'tech' | 'life' | 'rit';
@@ -29,7 +30,7 @@ export type BiomeId = 'grassland' | 'glacier' | 'volcano';
 export type BiomeIdExt = BiomeId | 'final';
 
 /** SFX タイプ */
-export type SfxType = 'hit' | 'crit' | 'kill' | 'heal' | 'evo' | 'death' | 'click' | 'boss' | 'win' | 'skFire' | 'skHeal' | 'skRage' | 'skShield' | 'synergy';
+export type SfxType = 'hit' | 'crit' | 'kill' | 'heal' | 'evo' | 'death' | 'click' | 'boss' | 'win' | 'skFire' | 'skHeal' | 'skRage' | 'skShield' | 'synergy' | 'event';
 
 /** SFX 定義 */
 export interface SfxDef {
@@ -310,6 +311,8 @@ export interface RunState {
   en: Enemy | null;
   sk: SkillSt;
   evs: Evolution[];
+  btlCount: number;
+  eventCount: number;
   _wDmgBase: number;
   _fbk: string;
   _fPhase: number;
@@ -335,6 +338,7 @@ export interface GameState {
   pendingAwk: { id: string; t: CivTypeExt; tier: number } | null;
   reviveTargets: Ally[];
   gameResult: boolean | null;
+  currentEvent: RandomEventDef | undefined;
 }
 
 /** 速度オプション */
@@ -438,6 +442,49 @@ export interface DmgPopup {
   fs: number;
   a: number;
   lt: number;
+}
+
+/* ===== ランダムイベント ===== */
+
+/** イベントID */
+export type EventId =
+  | 'bone_merchant'
+  | 'ancient_shrine'
+  | 'lost_ally'
+  | 'poison_swamp'
+  | 'mystery_fossil'
+  | 'beast_den'
+  | 'starry_night'
+  | 'cave_painting';
+
+/** イベント効果 */
+export type EventEffect =
+  | { type: 'stat_change'; stat: 'hp' | 'atk' | 'def'; value: number }
+  | { type: 'heal'; amount: number }
+  | { type: 'damage'; amount: number }
+  | { type: 'bone_change'; amount: number }
+  | { type: 'add_ally'; allyTemplate: string }
+  | { type: 'random_evolution' }
+  | { type: 'civ_level_up'; civType: CivType | 'dominant' }
+  | { type: 'nothing' };
+
+/** イベント選択肢 */
+export interface EventChoice {
+  readonly label: string;
+  readonly description: string;
+  readonly effect: EventEffect;
+  readonly riskLevel: 'safe' | 'risky' | 'dangerous';
+  readonly cost?: { type: 'bone'; amount: number };
+}
+
+/** ランダムイベント定義 */
+export interface RandomEventDef {
+  readonly id: EventId;
+  readonly name: string;
+  readonly description: string;
+  readonly choices: readonly EventChoice[];
+  readonly biomeAffinity?: readonly BiomeId[];
+  readonly minBiomeCount?: number;
 }
 
 /** 環境ダメージ設定 */

@@ -10,11 +10,13 @@ import type {
   SaveData, Difficulty, BiomeId, BiomeIdExt, CivType, CivTypeExt,
   AllyTemplate, LogEntry, DmgPopup, ASkillId, ASkillDef, SkillSt, ABuff,
   SynergyTag, ActiveSynergy, SynergyEffect,
+  EventChoice, RandomEventDef,
 } from './types';
 import {
   CIV_TYPES, CIV_KEYS, TREE, TB_DEFAULTS, EVOS, ALT, ENM, BOSS,
   DIFFS, BIOME_AFFINITY, ENV_DMG, AWK_SA, AWK_FA, TN, TC,
   WAVES_PER_BIOME, A_SKILLS, SYNERGY_BONUSES,
+  RANDOM_EVENTS, EVENT_CHANCE, EVENT_MIN_BATTLES,
 } from './constants';
 
 /* ===== Utility ===== */
@@ -549,6 +551,7 @@ export function startRunState(di: number, save: SaveData): RunState {
     en: null,
     sk: { avl: [], cds: {}, bfs: [] },
     evs: [],
+    btlCount: 0, eventCount: 0,
     _wDmgBase: 0, _fbk: '', _fPhase: 0,
   };
 }
@@ -580,6 +583,9 @@ export function startBattle(r: RunState, finalMode: boolean): RunState {
 export function afterBattle(r: RunState): { nextRun: RunState; biomeCleared: boolean } {
   const next = deepCloneRun(r);
   const boss = next.cW > next.wpb;
+
+  // バトルカウントインクリメント
+  next.btlCount++;
 
   // スキルクールダウンデクリメント
   next.sk = decSkillCds(next.sk);
@@ -888,4 +894,131 @@ export function applySynergyBonuses(synergies: ActiveSynergy[]): SynergyBonusRes
   }
 
   return { atkBonus, defBonus, hpBonus, crBonus, burnMul, healBonusRatio, allyAtkBonus, allyHpBonus };
+}
+
+/* ===== ランダムイベント ===== */
+
+/**
+ * 最もレベルの高い文明タイプを返す（タイブレークはtech優先）
+ */
+export function dominantCiv(r: RunState): CivType {
+  if (r.cT >= r.cL && r.cT >= r.cR) return 'tech';
+  if (r.cL >= r.cR) return 'life';
+  return 'rit';
+}
+
+/**
+ * バトル後にイベントを発生させるか判定する
+ *
+ * @param r - 現在のランステート
+ * @param rng - 乱数関数（0〜1）
+ * @returns 発生するイベント（undefinedなら発生なし）
+ */
+export function rollEvent(
+  r: RunState,
+  rng: () => number = Math.random,
+): RandomEventDef | undefined {
+  // 序盤はイベント発生しない
+  if (r.btlCount < EVENT_MIN_BATTLES) return undefined;
+
+  // 確率チェック
+  if (rng() >= EVENT_CHANCE) return undefined;
+
+  // バイオームアフィニティを考慮して候補をフィルタ
+  const currentBiome = r.cBT;
+  const candidates = RANDOM_EVENTS.filter(e => {
+    if (e.minBiomeCount && r.bc < e.minBiomeCount) return false;
+    return true;
+  });
+
+  // バイオームアフィニティがあるイベントを優先（2倍の重み）
+  const weighted: RandomEventDef[] = [];
+  for (const evt of candidates) {
+    weighted.push(evt);
+    if (evt.biomeAffinity?.includes(currentBiome as BiomeId)) {
+      weighted.push(evt); // 重複追加で確率2倍
+    }
+  }
+
+  if (weighted.length === 0) return undefined;
+  const idx = Math.floor(rng() * weighted.length);
+  return weighted[idx];
+}
+
+/**
+ * イベント選択肢の効果を適用する
+ *
+ * @param r - 現在のランステート
+ * @param choice - 選択した選択肢
+ * @param rng - 乱数関数
+ * @returns 更新後のランステート
+ */
+export function applyEventChoice(
+  r: RunState,
+  choice: EventChoice,
+  rng: () => number = Math.random,
+): RunState {
+  const next = deepCloneRun(r);
+  const eff = choice.effect;
+
+  switch (eff.type) {
+    case 'stat_change':
+      if (eff.stat === 'hp') next.mhp += eff.value;
+      if (eff.stat === 'atk') next.atk += eff.value;
+      if (eff.stat === 'def') next.def += eff.value;
+      break;
+    case 'heal':
+      next.hp = Math.min(next.mhp, next.hp + eff.amount);
+      break;
+    case 'damage':
+      next.hp = Math.max(1, next.hp - eff.amount);
+      break;
+    case 'bone_change':
+      next.bE += eff.amount;
+      break;
+    case 'add_ally': {
+      // 仲間枠に空きがある場合のみ追加
+      const aliveCount = next.al.length;
+      if (aliveCount < next.mxA) {
+        // 最高文明タイプの味方テンプレートからランダム選択
+        const civType = dominantCiv(next);
+        const templates = ALT[civType];
+        const tmpl = templates[Math.floor(rng() * templates.length)];
+        next.al.push({
+          n: tmpl.n, hp: tmpl.hp, mhp: tmpl.hp, atk: tmpl.atk,
+          t: tmpl.t, a: 1, h: tmpl.h, tk: tmpl.tk,
+        });
+      }
+      break;
+    }
+    case 'random_evolution': {
+      // ランダム進化1つを即時適用
+      const pool = EVOS.filter(e => !e.e.revA);
+      if (pool.length > 0) {
+        const evo = pool[Math.floor(rng() * pool.length)];
+        next.evs.push(evo);
+        // ステータスに効果を適用
+        const snap = applyStatFx(getSnap(next), evo.e);
+        writeSnapToRun(next, snap);
+        // 文明レベルアップ
+        const key = CIV_KEYS[evo.t];
+        next[key] += 1;
+      }
+      break;
+    }
+    case 'civ_level_up': {
+      const targetCiv = eff.civType === 'dominant'
+        ? dominantCiv(next)
+        : eff.civType;
+      if (targetCiv === 'tech') next.cT += 1;
+      else if (targetCiv === 'life') next.cL += 1;
+      else if (targetCiv === 'rit') next.cR += 1;
+      break;
+    }
+    case 'nothing':
+      break;
+  }
+
+  next.eventCount += 1;
+  return next;
 }

@@ -5,6 +5,7 @@ import { useReducer, useEffect, useRef, useCallback, useState } from 'react';
 import type {
   GameState, GamePhase, RunState, Evolution, SaveData,
   Ally, BiomeId, CivTypeExt, SfxType, TickEvent, ASkillId,
+  EventChoice, RandomEventDef,
 } from './types';
 import {
   startRunState, startBattle, tick, afterBattle, applyEvo,
@@ -12,6 +13,7 @@ import {
   startFinalBoss, handleFinalBossKill, pickBiomeAuto,
   applyBiomeSelection, applyFirstBiome, applyAutoLastBiome,
   deadAllies, allyReviveCost, getTB, applySkill,
+  rollEvent, applyEventChoice,
 } from './game-logic';
 import { AWK_SA, AWK_FA, BOSS, DIFFS, BIO, FRESH_SAVE, TREE as TREE_DATA } from './constants';
 import { AudioEngine } from './audio';
@@ -45,7 +47,9 @@ type GameAction =
   | { type: 'RESET_SAVE' }
   | { type: 'SET_PHASE'; phase: GamePhase }
   | { type: 'PREPARE_BIOME_SELECT' }
-  | { type: 'USE_SKILL'; sid: ASkillId };
+  | { type: 'USE_SKILL'; sid: ASkillId }
+  | { type: 'TRIGGER_EVENT'; event: RandomEventDef }
+  | { type: 'CHOOSE_EVENT'; choice: EventChoice };
 
 /* ===== Initial State ===== */
 
@@ -60,6 +64,7 @@ function initialState(): GameState {
     pendingAwk: null,
     reviveTargets: [],
     gameResult: null,
+    currentEvent: undefined,
   };
 }
 
@@ -212,6 +217,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         }
         return transitionAfterBiome(state, nextRun);
       }
+      // ランダムイベント発生判定（非ボス戦後のみ）
+      const evt = rollEvent(nextRun);
+      if (evt) {
+        return { ...state, run: nextRun, phase: 'event', currentEvent: evt };
+      }
       const evoPicks = rollE(nextRun);
       return { ...state, run: nextRun, phase: 'evo', evoPicks };
     }
@@ -311,6 +321,24 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (!state.run || state.phase !== 'battle') return state;
       const { nextRun } = applySkill(state.run, action.sid);
       return { ...state, run: nextRun };
+    }
+
+    case 'TRIGGER_EVENT': {
+      if (!state.run) return state;
+      return { ...state, phase: 'event', currentEvent: action.event };
+    }
+
+    case 'CHOOSE_EVENT': {
+      if (!state.run || state.phase !== 'event') return state;
+      // イベント効果の適用（骨コストの消費）
+      let nextRun = state.run;
+      if (action.choice.cost?.type === 'bone') {
+        nextRun = { ...nextRun, bE: nextRun.bE - action.choice.cost.amount };
+      }
+      nextRun = applyEventChoice(nextRun, action.choice);
+      // 進化選択へ遷移
+      const evoPicks = rollE(nextRun);
+      return { ...state, run: nextRun, phase: 'evo', evoPicks, currentEvent: undefined };
     }
 
     default:
