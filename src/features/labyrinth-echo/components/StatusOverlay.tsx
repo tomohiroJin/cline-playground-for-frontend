@@ -2,9 +2,18 @@ import React from 'react';
 import { LE_OVERLAY_IMAGES } from '../images';
 
 export interface StatusOverlayProps {
-  /** 現在のプレイヤーの状態異常リスト */
+  /** 現在のプレイヤーの状態異常リスト（日本語名） */
   statuses: string[];
 }
+
+/** ゲーム内のステータス名（日本語）→ オーバーレイキー（英語）のマッピング */
+const STATUS_KEY_MAP: Record<string, string> = {
+  '負傷': 'injured',
+  '混乱': 'confused',
+  '出血': 'bleeding',
+  '恐怖': 'fear',
+  '呪い': 'curse',
+};
 
 const OPACITY_MAP: Record<string, number> = {
   injured: 0.3,
@@ -23,7 +32,10 @@ const ANIMATION_MAP: Record<string, string> = {
 };
 
 export const StatusOverlay: React.FC<StatusOverlayProps> = ({ statuses }) => {
-  const activeStatuses = statuses.filter(s => OPACITY_MAP[s] !== undefined);
+  // 日本語ステータス名を英語キーに変換してからフィルタリング
+  const activeStatuses = statuses
+    .map(s => STATUS_KEY_MAP[s] ?? s)
+    .filter(s => OPACITY_MAP[s] !== undefined);
   if (activeStatuses.length === 0) return null;
 
   const count = activeStatuses.length;

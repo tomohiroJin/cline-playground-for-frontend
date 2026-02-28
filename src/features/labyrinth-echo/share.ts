@@ -28,7 +28,6 @@ export const generateShareCard = async (data: ShareData): Promise<string> => {
   if (data.bgImgUrl) {
     try {
       const img = new Image();
-      img.crossOrigin = "anonymous";
       img.src = data.bgImgUrl;
       await new Promise((resolve) => { img.onload = resolve; img.onerror = resolve; });
       ctx.drawImage(img, 0, 0, cn.width, cn.height);
@@ -93,11 +92,14 @@ export const shareCard = async (data: ShareData) => {
         files: [file]
       });
     } else {
-      // ダウンロードフォールバック
+      // ダウンロードフォールバック（DOM に追加しないと一部ブラウザで動作しない）
       const a = document.createElement("a");
       a.href = dataUrl;
       a.download = "labyrinth-echo-result.png";
+      a.style.display = "none";
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
     }
   } catch (error) {
     console.error("シェアに失敗しました", error);

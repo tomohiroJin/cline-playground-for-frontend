@@ -13,7 +13,7 @@ import {
   StatBar, StatusTag, StepDots, DiffBadge,
   TypewriterText, Change, FlagIndicator, DrainDisplay, LogEntry,
 } from './GameComponents';
-import { LE_IMAGES, LE_SCENE_IMAGES } from '../images';
+import { LE_IMAGES, getSceneImage } from '../images';
 import { useKeyboardControl } from '../hooks';
 
 /** 条件文字列を人間可読なヒントテキストに変換 */
@@ -183,12 +183,9 @@ export const EventResultScreen = ({
   const evType = event ? EVENT_TYPE[event.tp] : null;
   const isChainEvent = event?.chainOnly;
 
-  const getEventImage = (eventId: string, eventType: string): string => {
-    if (LE_SCENE_IMAGES[eventId]) return LE_SCENE_IMAGES[eventId];
-    return LE_IMAGES.events[eventType as keyof typeof LE_IMAGES.events] || LE_IMAGES.events.exploration;
-  };
-
-  const bgImageUrl = event ? getEventImage(event.id, event.tp) : '';
+  const bgImageUrl = event
+    ? (getSceneImage(event, floor, player.st) ?? LE_IMAGES.events[event.tp as keyof typeof LE_IMAGES.events] ?? LE_IMAGES.events.exploration)
+    : '';
 
   const eventOptionsCount = phase === "event" && done && ready && event ? event.ch.length : 0;
   const { selectedIndex: eventSelIdx, setSelectedIndex: setEventSelIdx } = useKeyboardControl({

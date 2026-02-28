@@ -158,6 +158,46 @@ export const LE_OVERLAY_IMAGES: Record<string, string> = {
   'curse': overlayCurse,
 };
 
+/** イベントの特性に基づくシーン画像を取得 */
+export const getSceneImage = (
+  event: { id: string; tp: string; chainOnly?: boolean; metaCond?: unknown },
+  floor: number,
+  playerStatuses?: string[]
+): string | undefined => {
+  // 1. イベントID完全一致
+  if (LE_SCENE_IMAGES[event.id]) return LE_SCENE_IMAGES[event.id];
+
+  // 2. チェーンイベント → chain_climax 画像
+  if (event.chainOnly) {
+    const num = parseInt(event.id.replace(/\D/g, ''), 10) || 0;
+    const idx = (num % 3) + 1;
+    return LE_SCENE_IMAGES[`chain_climax${idx}`];
+  }
+
+  // 3. クロスランイベント（metaCond 付き）→ crossrun 画像
+  if (event.metaCond) {
+    const num = parseInt(event.id.replace(/\D/g, ''), 10) || 0;
+    const idx = (num % 3) + 1;
+    return LE_SCENE_IMAGES[`crossrun${idx}`];
+  }
+
+  // 4. プレイヤーのステータス異常に応じたシーン画像
+  if (playerStatuses) {
+    if (playerStatuses.includes('出血')) return LE_SCENE_IMAGES['status_bleed'];
+    if (playerStatuses.includes('恐怖')) return LE_SCENE_IMAGES['status_fear'];
+    if (playerStatuses.includes('呪い')) return LE_SCENE_IMAGES['status_curse'];
+  }
+
+  // 5. encounter タイプ → フロアキーイベント画像
+  if (event.tp === 'encounter') {
+    const floorKey = `floor${floor}_key`;
+    if (LE_SCENE_IMAGES[floorKey]) return LE_SCENE_IMAGES[floorKey];
+  }
+
+  // フォールバック: undefined → 呼び出し側がイベント種別の汎用画像を使用
+  return undefined;
+};
+
 /** タイトルパララックスレイヤー */
 export const LE_TITLE_LAYERS: {
   far: string;
