@@ -16,8 +16,8 @@ import {
 import { LE_IMAGES, getSceneImage } from '../images';
 import { useKeyboardControl } from '../hooks';
 
-/** 条件文字列を人間可読なヒントテキストに変換 */
-const conditionToHint = (cond: string): string => {
+/** 条件文字列を具体的なヒントテキストに変換（高情報値で開放） */
+const conditionToDetailedHint = (cond: string): string => {
   if (cond.startsWith("hp>"))     return "体力に余裕があるなら…";
   if (cond.startsWith("hp<"))     return "体力が低い時に…";
   if (cond.startsWith("mn>"))     return "精神力が高ければ…";
@@ -26,6 +26,15 @@ const conditionToHint = (cond: string): string => {
   if (cond.startsWith("inf<"))    return "情報が少ない時に…";
   if (cond.startsWith("status:")) return `「${cond.slice(7)}」の影響で…`;
   return "";
+};
+
+/** 条件文字列を曖昧なヒントテキストに変換（中間の情報値で表示） */
+const conditionToVagueHint = (cond: string): string => {
+  if (cond.startsWith("hp"))     return "身体の状態が関係するかもしれない…";
+  if (cond.startsWith("mn"))     return "心の状態が影響するようだ…";
+  if (cond.startsWith("inf"))    return "知識の量が鍵を握る…";
+  if (cond.startsWith("status")) return "何かの状態が作用している…";
+  return "何かの条件がありそうだ…";
 };
 
 /** アウトカムのカテゴリを判定 */
@@ -264,12 +273,23 @@ export const EventResultScreen = ({
             <div className="sec-hd" style={{ color: "#505078" }}>── 行動を選択 ──</div>
             {event.ch.map((c, i) => {
               const conds = c.o?.filter(o => o.c !== "default").map(o => o.c) ?? [];
-              const showHintText = player.inf >= 20 && conds.length > 0;
-              const showCatIcons = player.inf >= 30;
-              const hintIcon = player.inf >= 15 && conds.length > 0
+              // ヒント表示の5段階:
+              // inf < 20: 何も表示しない
+              // 20-34: "?" アイコンのみ（条件の存在を示唆）
+              // 35-49: 曖昧なテキスト（「身体の状態が関係するかもしれない…」等）
+              // 50+: 具体的テキスト（「体力に余裕があるなら…」等）+ カテゴリアイコン
+              const hasConditions = conds.length > 0;
+              const showVagueIcon = player.inf >= 20 && hasConditions;
+              const showSpecificIcon = player.inf >= 35 && hasConditions;
+              const showCatIcons = player.inf >= 50;
+              const hintIcon = showSpecificIcon
                 ? conds[0].startsWith("hp") ? "❤" : conds[0].startsWith("mn") ? "◈" : conds[0].startsWith("inf") ? "📖" : conds[0].startsWith("status") ? "●" : null
-                : null;
-              const hintText = showHintText ? conditionToHint(conds[0]) : "";
+                : showVagueIcon ? "?" : null;
+              const hintText = player.inf >= 50 && hasConditions
+                ? conditionToDetailedHint(conds[0])
+                : player.inf >= 35 && hasConditions
+                  ? conditionToVagueHint(conds[0])
+                  : "";
               const cats = showCatIcons ? classifyOutcomeCategory(c.o) : [];
               return <button key={i} className={`btn ${eventSelIdx === i ? 'selected' : ''}`} onMouseEnter={() => setEventSelIdx(i)} onClick={() => handleChoice(i)} style={{ display: "flex", alignItems: "flex-start", animation: `slideIn .3s ease ${i * 0.08}s both` }}>
                 <span className="cn">{i + 1}</span>

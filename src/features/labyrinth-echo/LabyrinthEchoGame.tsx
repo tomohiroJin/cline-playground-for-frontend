@@ -322,7 +322,8 @@ function GameInner() {
   if (phase === "settings")       return <SettingsScreen Particles={Particles} eventCount={EVENTS.length} audioSettings={audioSettings} onChangeAudioSettings={handleAudioSettingsChange} setPhase={setPhase} />;
   if (phase === "reset_confirm1") return <ResetConfirm1Screen Particles={Particles} meta={meta} setPhase={setPhase} />;
   if (phase === "reset_confirm2") return <ResetConfirm2Screen Particles={Particles} setPhase={setPhase} resetMeta={resetMeta} />;
-  const showGuidance = meta.runs === 0 && floor === 1 && step === 0 && ["floor_intro", "event"].includes(phase);
+  // runs は selectDiff 内で先にインクリメントされるため <= 1 で初回プレイを判定
+  const showGuidance = meta.runs <= 1 && floor === 1 && step === 0 && ["floor_intro", "event"].includes(phase);
 
   if (phase === "floor_intro") {
     return (

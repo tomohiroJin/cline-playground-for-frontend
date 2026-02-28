@@ -124,12 +124,13 @@ export const AudioEngine = (() => {
   const seq = (freqs: number[], gap: number, dur: number, type: OscillatorType, vol: number): void =>
     freqs.forEach((f, i) => setTimeout(() => tone(f, dur, type, vol), i * gap));
 
+  // ベース周波数を1オクターブ上げ、音量を引き上げてスピーカーで聞こえるようにする
   const FLOOR_BGM_PARAMS: Record<number, FloorBgmParams> = {
-    1: { baseFreq: 65, baseType: "sine", padFreq: 196, padType: "sine", lpfFreq: 800, lfoFreq: 0.1, lfoDepth: 2, baseVol: 0.08, padVol: 0.05 },
-    2: { baseFreq: 58, baseType: "sine", padFreq: 175, padType: "triangle", lpfFreq: 600, lfoFreq: 0.15, lfoDepth: 3, baseVol: 0.10, padVol: 0.06 },
-    3: { baseFreq: 49, baseType: "triangle", padFreq: 147, padType: "triangle", lpfFreq: 400, lfoFreq: 0.2, lfoDepth: 5, baseVol: 0.12, padVol: 0.08 },
-    4: { baseFreq: 44, baseType: "sawtooth", padFreq: 131, padType: "sawtooth", lpfFreq: 300, lfoFreq: 0.08, lfoDepth: 2, baseVol: 0.06, padVol: 0.04 },
-    5: { baseFreq: 41, baseType: "sawtooth", padFreq: 123, padType: "square", lpfFreq: 200, lfoFreq: 0.3, lfoDepth: 8, baseVol: 0.15, padVol: 0.10 },
+    1: { baseFreq: 130, baseType: "sine", padFreq: 392, padType: "sine", lpfFreq: 1200, lfoFreq: 0.1, lfoDepth: 4, baseVol: 0.15, padVol: 0.10 },
+    2: { baseFreq: 116, baseType: "sine", padFreq: 350, padType: "triangle", lpfFreq: 1000, lfoFreq: 0.15, lfoDepth: 5, baseVol: 0.18, padVol: 0.12 },
+    3: { baseFreq: 98, baseType: "triangle", padFreq: 294, padType: "triangle", lpfFreq: 800, lfoFreq: 0.2, lfoDepth: 8, baseVol: 0.20, padVol: 0.14 },
+    4: { baseFreq: 88, baseType: "sawtooth", padFreq: 262, padType: "sawtooth", lpfFreq: 600, lfoFreq: 0.08, lfoDepth: 4, baseVol: 0.12, padVol: 0.08 },
+    5: { baseFreq: 82, baseType: "sawtooth", padFreq: 246, padType: "square", lpfFreq: 500, lfoFreq: 0.3, lfoDepth: 12, baseVol: 0.22, padVol: 0.16 },
   };
 
   let bgmState: BgmState | null = null;

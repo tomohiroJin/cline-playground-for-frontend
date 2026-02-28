@@ -28,6 +28,7 @@ export const generateShareCard = async (data: ShareData): Promise<string> => {
   if (data.bgImgUrl) {
     try {
       const img = new Image();
+      img.crossOrigin = "anonymous";
       img.src = data.bgImgUrl;
       await new Promise((resolve) => { img.onload = resolve; img.onerror = resolve; });
       ctx.drawImage(img, 0, 0, cn.width, cn.height);
