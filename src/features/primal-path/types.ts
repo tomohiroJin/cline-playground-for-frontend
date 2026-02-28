@@ -468,13 +468,18 @@ export type EventEffect =
   | { type: 'civ_level_up'; civType: CivType | 'dominant' }
   | { type: 'nothing' };
 
+/** イベント選択肢コスト */
+export type EventCost =
+  | { readonly type: 'bone'; readonly amount: number }
+  | { readonly type: 'hp_damage'; readonly amount: number };
+
 /** イベント選択肢 */
 export interface EventChoice {
   readonly label: string;
   readonly description: string;
   readonly effect: EventEffect;
   readonly riskLevel: 'safe' | 'risky' | 'dangerous';
-  readonly cost?: { type: 'bone'; amount: number };
+  readonly cost?: EventCost;
 }
 
 /** ランダムイベント定義 */
@@ -482,6 +487,7 @@ export interface RandomEventDef {
   readonly id: EventId;
   readonly name: string;
   readonly description: string;
+  readonly situationText: string;
   readonly choices: readonly EventChoice[];
   readonly biomeAffinity?: readonly BiomeId[];
   readonly minBiomeCount?: number;

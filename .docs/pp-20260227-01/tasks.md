@@ -390,17 +390,20 @@ Round 1 対応後の再テストで未修正・不十分と判明した3項目�
 プレイテスト後のフィードバック4項目。うち🔴（すぐに対応）の3項目を Phase 3 の追加タスクとして実施する。
 詳細は `feedback-phase3.md` を参照。
 
-- [ ] **FB-P3-4: イベントの状況説明・タイトル追加** 🔴
+- [x] **FB-P3-4: イベントの状況説明・タイトル追加** 🔴
   - 対象: `types.ts`, `constants.ts`, `components/EventScreen.tsx`
-  - 作業: `RandomEventDef` に `situationText` を追加。各イベントに状況テキスト設定。EventScreen で選択肢上部に表示
+  - 作業: `RandomEventDef` に `situationText` を追加。各イベントに状況テキスト設定。EventScreen で選択肢上部に `SituationText` コンポーネントで表示
+  - 完了: 全8イベントに状況テキスト設定済み。テスト1件追加
 
-- [ ] **FB-P3-2: イベント選択肢のバランス調整** 🔴
-  - 対象: `constants.ts`, `__tests__/events.test.ts`
-  - 作業: 迷い仲間（助ける側にHP消費リスク追加、立ち去る側に小報酬）、毒沼（突っ切る側に報酬追加）、獣の巣穴（探索にダメージリスク追加、回避側に小報酬）、星降る夜（回復量調整 or ランダム進化のリスク軽減）
+- [x] **FB-P3-2: イベント選択肢のバランス調整** 🔴
+  - 対象: `types.ts`, `constants.ts`, `hooks.ts`, `components/EventScreen.tsx`, `__tests__/events.test.ts`
+  - 作業: `EventCost` 型に `hp_damage` を追加。迷い仲間（助ける→risky+hp_damage 15、立ち去る→骨+10）、毒沼（突っ切る→ATK+5+hp_damage 20）、獣の巣穴（探索→ATK+12+hp_damage 20、回避→DEF+2）、星降る夜（回復量40→25）。hooks.ts CHOOSE_EVENT で hp_damage コスト処理追加。EventScreen でコスト表示をタイプ別に対応
+  - 完了: バランス調整テスト8件追加。骨残高の防御的ガード（Math.max(0)）追加
 
-- [ ] **FB-P3-1: イベント結果のフィードバック表示** 🔴
-  - 対象: `hooks.ts`, `components/EventScreen.tsx` or `PrimalPathGame.tsx`
-  - 作業: 選択後に結果オーバーレイ表示（効果タイプ別メッセージ生成）。CHOOSE_EVENT で結果表示→進化選択への遷移フロー
+- [x] **FB-P3-1: イベント結果のフィードバック表示** 🔴
+  - 対象: `game-logic.ts`, `PrimalPathGame.tsx`
+  - 作業: `formatEventResult(effect, cost?)` 関数を追加（全8効果タイプ+コスト情報対応）。PrimalPathGame の onChoose で `showOverlay` による結果表示後に CHOOSE_EVENT dispatch
+  - 完了: formatEventResult テスト12件追加。負値対応のリファクタリング実施
 
 - [ ] **FB-P3-3: イベント画面の演出強化** 🟡
   - 対象: `components/EventScreen.tsx`, `sprites.ts`

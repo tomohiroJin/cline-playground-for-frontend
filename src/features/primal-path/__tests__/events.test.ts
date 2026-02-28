@@ -2,9 +2,9 @@
  * 原始進化録 - PRIMAL PATH - ランダムイベントテスト
  */
 import {
-  rollEvent, applyEventChoice, dominantCiv,
+  rollEvent, applyEventChoice, dominantCiv, formatEventResult,
 } from '../game-logic';
-import type { RunState, EventChoice, RandomEventDef } from '../types';
+import type { RunState, EventChoice, EventId, RandomEventDef } from '../types';
 import { TB_DEFAULTS, DIFFS, RANDOM_EVENTS, EVENT_CHANCE, EVENT_MIN_BATTLES } from '../constants';
 
 /* ===== Helpers ===== */
@@ -52,6 +52,13 @@ describe('イベント定数', () => {
   it('全イベントIDがユニークである', () => {
     const ids = RANDOM_EVENTS.map(e => e.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('全イベントにsituationTextが定義されている', () => {
+    for (const evt of RANDOM_EVENTS) {
+      expect(typeof evt.situationText).toBe('string');
+      expect(evt.situationText.length).toBeGreaterThan(0);
+    }
   });
 });
 
@@ -389,5 +396,166 @@ describe('applyEventChoice', () => {
       const result = applyEventChoice(run, choice);
       expect(result.eventCount).toBe(3);
     });
+  });
+});
+
+/* ===== バランス調整検証（FB-P3-2） ===== */
+
+describe('イベントバランス調整', () => {
+  /** ヘルパー: イベントIDで定数を検索 */
+  const findEvent = (id: EventId) =>
+    RANDOM_EVENTS.find(e => e.id === id)!;
+
+  describe('迷い仲間（lost_ally）', () => {
+    it('助ける側にHP消費リスク（damage効果）がある', () => {
+      const evt = findEvent('lost_ally');
+      const helpChoice = evt.choices.find(c => c.label.includes('助ける'))!;
+      // 助ける側は複合効果 or ダメージリスクを含む
+      expect(helpChoice.riskLevel).not.toBe('safe');
+    });
+
+    it('立ち去る側に小さな報酬がある', () => {
+      const evt = findEvent('lost_ally');
+      const leaveChoice = evt.choices.find(c => c.label.includes('立ち去る'))!;
+      expect(leaveChoice.effect.type).not.toBe('nothing');
+    });
+  });
+
+  describe('毒沼（poison_swamp）', () => {
+    it('突っ切る側に報酬（stat_change）がある', () => {
+      const evt = findEvent('poison_swamp');
+      const rushChoice = evt.choices.find(c => c.label.includes('突っ切る'))!;
+      // 効果がステータス変更であること（ダメージだけでなく報酬付き）
+      expect(rushChoice.effect.type).toBe('stat_change');
+    });
+  });
+
+  describe('獣の巣穴（beast_den）', () => {
+    it('探索にhp_damageコストがある（ダメージリスク）', () => {
+      const evt = findEvent('beast_den');
+      const exploreChoice = evt.choices.find(c => c.label.includes('探索'))!;
+      expect(exploreChoice.cost).toBeDefined();
+      expect(exploreChoice.cost!.type).toBe('hp_damage');
+    });
+
+    it('見なかったことにする側に小報酬がある', () => {
+      const evt = findEvent('beast_den');
+      const ignoreChoice = evt.choices.find(c => c.label.includes('見なかった'))!;
+      expect(ignoreChoice.effect.type).not.toBe('nothing');
+    });
+  });
+
+  describe('星降る夜（starry_night）', () => {
+    it('瞑想の回復量が40未満に調整されている', () => {
+      const evt = findEvent('starry_night');
+      const meditateChoice = evt.choices.find(c => c.label.includes('瞑想'))!;
+      if (meditateChoice.effect.type === 'heal') {
+        expect(meditateChoice.effect.amount).toBeLessThan(40);
+      }
+    });
+  });
+
+  describe('hp_damage コスト', () => {
+    it('毒沼の突っ切るにhp_damageコストがある', () => {
+      const evt = findEvent('poison_swamp');
+      const rushChoice = evt.choices.find(c => c.label.includes('突っ切る'))!;
+      expect(rushChoice.cost).toBeDefined();
+      expect(rushChoice.cost!.type).toBe('hp_damage');
+      expect(rushChoice.cost!.amount).toBeGreaterThan(0);
+    });
+
+    it('獣の巣穴の探索にhp_damageコストがある', () => {
+      const evt = findEvent('beast_den');
+      const exploreChoice = evt.choices.find(c => c.label.includes('探索'))!;
+      expect(exploreChoice.cost).toBeDefined();
+      expect(exploreChoice.cost!.type).toBe('hp_damage');
+      expect(exploreChoice.cost!.amount).toBeGreaterThan(0);
+    });
+  });
+});
+
+/* ===== formatEventResult（FB-P3-1） ===== */
+
+describe('formatEventResult', () => {
+  it('stat_change ATK をフォーマットする', () => {
+    const result = formatEventResult({ type: 'stat_change', stat: 'atk', value: 8 });
+    expect(result.icon).toBe('💪');
+    expect(result.text).toContain('ATK');
+    expect(result.text).toContain('+8');
+  });
+
+  it('stat_change DEF をフォーマットする', () => {
+    const result = formatEventResult({ type: 'stat_change', stat: 'def', value: 5 });
+    expect(result.icon).toBe('🛡️');
+    expect(result.text).toContain('DEF');
+    expect(result.text).toContain('+5');
+  });
+
+  it('stat_change HP をフォーマットする', () => {
+    const result = formatEventResult({ type: 'stat_change', stat: 'hp', value: 10 });
+    expect(result.icon).toBe('❤️');
+    expect(result.text).toContain('最大HP');
+    expect(result.text).toContain('+10');
+  });
+
+  it('heal をフォーマットする', () => {
+    const result = formatEventResult({ type: 'heal', amount: 25 });
+    expect(result.icon).toBe('💚');
+    expect(result.text).toContain('HP');
+    expect(result.text).toContain('25');
+  });
+
+  it('damage をフォーマットする', () => {
+    const result = formatEventResult({ type: 'damage', amount: 20 });
+    expect(result.icon).toBe('💔');
+    expect(result.text).toContain('20');
+  });
+
+  it('bone_change をフォーマットする', () => {
+    const result = formatEventResult({ type: 'bone_change', amount: 20 });
+    expect(result.icon).toBe('🦴');
+    expect(result.text).toContain('+20');
+  });
+
+  it('civ_level_up をフォーマットする', () => {
+    const result = formatEventResult({ type: 'civ_level_up', civType: 'tech' });
+    expect(result.icon).toBe('📈');
+    expect(result.text).toContain('文明レベル');
+  });
+
+  it('random_evolution をフォーマットする', () => {
+    const result = formatEventResult({ type: 'random_evolution' });
+    expect(result.icon).toBe('🧬');
+    expect(result.text).toContain('進化');
+  });
+
+  it('nothing をフォーマットする', () => {
+    const result = formatEventResult({ type: 'nothing' });
+    expect(result.icon).toBe('…');
+    expect(result.text).toContain('何も起こらなかった');
+  });
+
+  it('add_ally をフォーマットする', () => {
+    const result = formatEventResult({ type: 'add_ally', allyTemplate: 'random' });
+    expect(result.icon).toBe('🤝');
+    expect(result.text).toContain('仲間');
+  });
+
+  it('hp_damageコスト付きの場合、コスト情報が含まれる', () => {
+    const result = formatEventResult(
+      { type: 'stat_change', stat: 'atk', value: 5 },
+      { type: 'hp_damage', amount: 20 },
+    );
+    expect(result.text).toContain('ATK');
+    expect(result.text).toContain('HP');
+  });
+
+  it('boneコスト付きの場合、コスト情報が含まれる', () => {
+    const result = formatEventResult(
+      { type: 'stat_change', stat: 'atk', value: 8 },
+      { type: 'bone', amount: 30 },
+    );
+    expect(result.text).toContain('ATK');
+    expect(result.text).toContain('骨');
   });
 });

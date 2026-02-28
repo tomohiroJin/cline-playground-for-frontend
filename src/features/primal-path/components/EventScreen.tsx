@@ -44,6 +44,15 @@ const EventDesc = styled.div`
   margin-bottom: 10px;
 `;
 
+const SituationText = styled.div`
+  font-size: 13px;
+  color: #e0d8c8;
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 8px;
+  text-shadow: 0 0 6px #f0c04030;
+`;
+
 /** リスクレベル別カラー */
 const RISK_COLORS: Record<string, string> = {
   safe: '#50e090',
@@ -114,7 +123,16 @@ export const EventScreen: React.FC<Props> = ({ event, run, onChoose, playSfx }) 
   const canAfford = (choice: EventChoice): boolean => {
     if (!choice.cost) return true;
     if (choice.cost.type === 'bone') return run.bE >= choice.cost.amount;
+    // hp_damage は常に選択可能（HP1以下にはならない）
     return true;
+  };
+
+  /** コスト表示テキスト */
+  const costLabel = (choice: EventChoice): string => {
+    if (!choice.cost) return '';
+    if (choice.cost.type === 'bone') return `🦴${choice.cost.amount}`;
+    if (choice.cost.type === 'hp_damage') return `❤️-${choice.cost.amount}`;
+    return '';
   };
 
   return (
@@ -123,21 +141,23 @@ export const EventScreen: React.FC<Props> = ({ event, run, onChoose, playSfx }) 
       <EventPanel>
         <EventTitle>{event.name}</EventTitle>
         <EventDesc>{event.description}</EventDesc>
+        <SituationText>{event.situationText}</SituationText>
 
         {event.choices.map((choice, i) => {
           const affordable = canAfford(choice);
           return (
             <ChoiceBtn
-              key={i}
+              key={choice.label}
               $risk={choice.riskLevel}
               $disabled={!affordable}
+              disabled={!affordable}
               onClick={() => handleChoose(choice)}
             >
               <ChoiceLabel>
                 {RISK_ICONS[choice.riskLevel]} {choice.label}
                 {choice.cost && (
                   <CostTag>
-                    (🦴{choice.cost.amount}{!affordable && ' 不足'})
+                    ({costLabel(choice)}{!affordable && ' 不足'})
                   </CostTag>
                 )}
               </ChoiceLabel>

@@ -10,7 +10,7 @@ import type {
   SaveData, Difficulty, BiomeId, BiomeIdExt, CivType, CivTypeExt,
   AllyTemplate, LogEntry, DmgPopup, ASkillId, ASkillDef, SkillSt, ABuff,
   SynergyTag, ActiveSynergy, SynergyEffect,
-  EventChoice, RandomEventDef,
+  EventChoice, EventCost, EventEffect, RandomEventDef,
 } from './types';
 import {
   CIV_TYPES, CIV_KEYS, TREE, TB_DEFAULTS, EVOS, ALT, ENM, BOSS,
@@ -1021,4 +1021,55 @@ export function applyEventChoice(
 
   next.eventCount += 1;
   return next;
+}
+
+/** イベント効果の結果メッセージを生成 */
+export function formatEventResult(
+  effect: EventEffect,
+  cost?: EventCost,
+): { icon: string; text: string } {
+  let base: { icon: string; text: string };
+  switch (effect.type) {
+    case 'stat_change': {
+      const statName = effect.stat === 'hp' ? '最大HP' : effect.stat === 'atk' ? 'ATK' : 'DEF';
+      const icon = effect.stat === 'hp' ? '❤️' : effect.stat === 'atk' ? '💪' : '🛡️';
+      const sign = effect.value >= 0 ? '+' : '';
+      base = { icon, text: `${statName} ${sign}${effect.value}!` };
+      break;
+    }
+    case 'heal':
+      base = { icon: '💚', text: `HP ${effect.amount} 回復!` };
+      break;
+    case 'damage':
+      base = { icon: '💔', text: `${effect.amount} ダメージを受けた!` };
+      break;
+    case 'bone_change': {
+      const bSign = effect.amount >= 0 ? '+' : '';
+      base = { icon: '🦴', text: `骨 ${bSign}${effect.amount}!` };
+      break;
+    }
+    case 'add_ally':
+      base = { icon: '🤝', text: '仲間が加わった!' };
+      break;
+    case 'random_evolution':
+      base = { icon: '🧬', text: 'ランダムな進化を獲得!' };
+      break;
+    case 'civ_level_up':
+      base = { icon: '📈', text: '文明レベルが上がった!' };
+      break;
+    case 'nothing':
+      base = { icon: '…', text: '何も起こらなかった' };
+      break;
+  }
+
+  // コスト情報を付記
+  if (cost) {
+    if (cost.type === 'hp_damage') {
+      base.text += ` (HP -${cost.amount})`;
+    } else if (cost.type === 'bone') {
+      base.text += ` (骨 -${cost.amount})`;
+    }
+  }
+
+  return base;
 }

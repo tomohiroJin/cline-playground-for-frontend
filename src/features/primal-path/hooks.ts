@@ -330,10 +330,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'CHOOSE_EVENT': {
       if (!state.run || state.phase !== 'event') return state;
-      // イベント効果の適用（骨コストの消費）
+      // イベント効果の適用（コストの消費。防御的に下限チェック）
       let nextRun = state.run;
       if (action.choice.cost?.type === 'bone') {
-        nextRun = { ...nextRun, bE: nextRun.bE - action.choice.cost.amount };
+        nextRun = { ...nextRun, bE: Math.max(0, nextRun.bE - action.choice.cost.amount) };
+      } else if (action.choice.cost?.type === 'hp_damage') {
+        nextRun = { ...nextRun, hp: Math.max(1, nextRun.hp - action.choice.cost.amount) };
       }
       nextRun = applyEventChoice(nextRun, action.choice);
       // 進化選択へ遷移

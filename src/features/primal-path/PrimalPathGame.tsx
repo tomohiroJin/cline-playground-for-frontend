@@ -10,7 +10,7 @@ import type { GameAction } from './hooks';
 import type { TickEvent, SfxType } from './types';
 import { ErrorBoundary } from './contracts';
 import { DIFFS, BIO } from './constants';
-import { pickBiomeAuto } from './game-logic';
+import { pickBiomeAuto, formatEventResult } from './game-logic';
 
 import { GameContainer, GameShell } from './styles';
 import { Overlay } from './components/Overlay';
@@ -101,8 +101,10 @@ function GameInner() {
           <EventScreen
             event={currentEvent}
             run={run}
-            onChoose={(choice) => {
+            onChoose={async (choice) => {
               playSfx('event');
+              const { icon, text } = formatEventResult(choice.effect, choice.cost);
+              await showOverlay(icon, text, 1200);
               dispatch({ type: 'CHOOSE_EVENT', choice });
             }}
             playSfx={playSfx}
