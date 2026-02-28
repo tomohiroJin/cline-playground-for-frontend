@@ -10,7 +10,7 @@ import type { GameAction } from './hooks';
 import type { TickEvent, SfxType } from './types';
 import { ErrorBoundary } from './contracts';
 import { DIFFS, BIO } from './constants';
-import { pickBiomeAuto, formatEventResult } from './game-logic';
+import { pickBiomeAuto, formatEventResult, computeEventResult } from './game-logic';
 
 import { GameContainer, GameShell } from './styles';
 import { Overlay } from './components/Overlay';
@@ -103,9 +103,11 @@ function GameInner() {
             run={run}
             onChoose={async (choice) => {
               playSfx('event');
-              const { icon, text } = formatEventResult(choice.effect, choice.cost);
+              // 事前計算で結果を確定し、正確なフィードバックを表示
+              const { nextRun, evoName } = computeEventResult(run, choice);
+              const { icon, text } = formatEventResult(choice.effect, choice.cost, evoName);
               await showOverlay(icon, text, 1200);
-              dispatch({ type: 'CHOOSE_EVENT', choice });
+              dispatch({ type: 'APPLY_EVENT_RESULT', nextRun });
             }}
             playSfx={playSfx}
           />

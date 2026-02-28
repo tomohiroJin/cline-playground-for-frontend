@@ -3,9 +3,10 @@
  */
 import {
   rollEvent, applyEventChoice, dominantCiv, formatEventResult,
+  computeEventResult,
 } from '../game-logic';
 import type { RunState, EventChoice, EventId, RandomEventDef } from '../types';
-import { TB_DEFAULTS, DIFFS, RANDOM_EVENTS, EVENT_CHANCE, EVENT_MIN_BATTLES } from '../constants';
+import { TB_DEFAULTS, DIFFS, RANDOM_EVENTS, EVOS, EVENT_CHANCE, EVENT_MIN_BATTLES } from '../constants';
 
 /* ===== Helpers ===== */
 
@@ -557,5 +558,117 @@ describe('formatEventResult', () => {
     );
     expect(result.text).toContain('ATK');
     expect(result.text).toContain('骨');
+  });
+
+  it('random_evolution で進化名が渡された場合、具体的な名前が表示される', () => {
+    const result = formatEventResult(
+      { type: 'random_evolution' },
+      undefined,
+      '火の爪',
+    );
+    expect(result.icon).toBe('🧬');
+    expect(result.text).toContain('火の爪');
+  });
+
+  it('random_evolution で進化名が無い場合、汎用テキストが表示される', () => {
+    const result = formatEventResult(
+      { type: 'random_evolution' },
+    );
+    expect(result.text).toContain('ランダムな進化');
+  });
+});
+
+/* ===== computeEventResult（FB-P3-R2-1） ===== */
+
+describe('computeEventResult', () => {
+  it('基本効果とコストを適用したrunを返す', () => {
+    // Arrange
+    const run = makeRun({ atk: 10 });
+    const choice: EventChoice = {
+      label: 'テスト', description: 'テスト',
+      effect: { type: 'stat_change', stat: 'atk', value: 8 },
+      riskLevel: 'safe',
+    };
+
+    // Act
+    const { nextRun } = computeEventResult(run, choice);
+
+    // Assert
+    expect(nextRun.atk).toBe(18);
+  });
+
+  it('boneコストを適用する', () => {
+    const run = makeRun({ bE: 50, atk: 10 });
+    const choice: EventChoice = {
+      label: 'テスト', description: 'テスト',
+      effect: { type: 'stat_change', stat: 'atk', value: 8 },
+      riskLevel: 'safe',
+      cost: { type: 'bone', amount: 30 },
+    };
+
+    const { nextRun } = computeEventResult(run, choice);
+
+    expect(nextRun.bE).toBe(20);
+    expect(nextRun.atk).toBe(18);
+  });
+
+  it('hp_damageコストを適用する', () => {
+    const run = makeRun({ hp: 50, atk: 10 });
+    const choice: EventChoice = {
+      label: 'テスト', description: 'テスト',
+      effect: { type: 'stat_change', stat: 'atk', value: 5 },
+      riskLevel: 'dangerous',
+      cost: { type: 'hp_damage', amount: 20 },
+    };
+
+    const { nextRun } = computeEventResult(run, choice);
+
+    expect(nextRun.hp).toBe(30);
+    expect(nextRun.atk).toBe(15);
+  });
+
+  it('random_evolution の場合、獲得した進化名を返す', () => {
+    const run = makeRun({ evs: [], cT: 2, cL: 1, cR: 0 });
+    const choice: EventChoice = {
+      label: 'テスト', description: 'テスト',
+      effect: { type: 'random_evolution' },
+      riskLevel: 'risky',
+    };
+
+    const { nextRun, evoName } = computeEventResult(run, choice, () => 0);
+
+    expect(nextRun.evs.length).toBe(1);
+    expect(evoName).toBeDefined();
+    expect(typeof evoName).toBe('string');
+    expect(evoName!.length).toBeGreaterThan(0);
+  });
+
+  it('random_evolution 以外の場合、evoName は undefined', () => {
+    const run = makeRun({ atk: 10 });
+    const choice: EventChoice = {
+      label: 'テスト', description: 'テスト',
+      effect: { type: 'stat_change', stat: 'atk', value: 8 },
+      riskLevel: 'safe',
+    };
+
+    const { evoName } = computeEventResult(run, choice);
+
+    expect(evoName).toBeUndefined();
+  });
+
+  it('元のRunStateを変更しない（イミュータブル）', () => {
+    const run = makeRun({ hp: 50, atk: 10 });
+    const originalHp = run.hp;
+    const choice: EventChoice = {
+      label: 'テスト', description: 'テスト',
+      effect: { type: 'stat_change', stat: 'atk', value: 8 },
+      riskLevel: 'safe',
+      cost: { type: 'hp_damage', amount: 20 },
+    };
+
+    computeEventResult(run, choice);
+
+    expect(run.hp).toBe(originalHp);
+    expect(run.atk).toBe(10);
   });
 });

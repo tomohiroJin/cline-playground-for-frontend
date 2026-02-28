@@ -49,7 +49,8 @@ type GameAction =
   | { type: 'PREPARE_BIOME_SELECT' }
   | { type: 'USE_SKILL'; sid: ASkillId }
   | { type: 'TRIGGER_EVENT'; event: RandomEventDef }
-  | { type: 'CHOOSE_EVENT'; choice: EventChoice };
+  | { type: 'CHOOSE_EVENT'; choice: EventChoice }
+  | { type: 'APPLY_EVENT_RESULT'; nextRun: RunState };
 
 /* ===== Initial State ===== */
 
@@ -341,6 +342,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       // 進化選択へ遷移
       const evoPicks = rollE(nextRun);
       return { ...state, run: nextRun, phase: 'evo', evoPicks, currentEvent: undefined };
+    }
+
+    case 'APPLY_EVENT_RESULT': {
+      if (!state.run || state.phase !== 'event') return state;
+      // 事前計算済みの結果で進化選択へ遷移
+      const evoPicks2 = rollE(action.nextRun);
+      return { ...state, run: action.nextRun, phase: 'evo', evoPicks: evoPicks2, currentEvent: undefined };
     }
 
     default:

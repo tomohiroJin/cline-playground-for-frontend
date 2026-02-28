@@ -1027,6 +1027,7 @@ export function applyEventChoice(
 export function formatEventResult(
   effect: EventEffect,
   cost?: EventCost,
+  evoName?: string,
 ): { icon: string; text: string } {
   let base: { icon: string; text: string };
   switch (effect.type) {
@@ -1052,7 +1053,7 @@ export function formatEventResult(
       base = { icon: '🤝', text: '仲間が加わった!' };
       break;
     case 'random_evolution':
-      base = { icon: '🧬', text: 'ランダムな進化を獲得!' };
+      base = { icon: '🧬', text: evoName ? `${evoName} を獲得!` : 'ランダムな進化を獲得!' };
       break;
     case 'civ_level_up':
       base = { icon: '📈', text: '文明レベルが上がった!' };
@@ -1072,4 +1073,32 @@ export function formatEventResult(
   }
 
   return base;
+}
+
+/** イベント選択の結果を事前計算（コスト適用 + 効果適用 + メタデータ取得） */
+export function computeEventResult(
+  run: RunState,
+  choice: EventChoice,
+  rng: () => number = Math.random,
+): { nextRun: RunState; evoName?: string } {
+  // コスト適用
+  let costApplied = deepCloneRun(run);
+  if (choice.cost?.type === 'bone') {
+    costApplied.bE = Math.max(0, costApplied.bE - choice.cost.amount);
+  } else if (choice.cost?.type === 'hp_damage') {
+    costApplied.hp = Math.max(1, costApplied.hp - choice.cost.amount);
+  }
+
+  // 効果適用前の進化数を記録
+  const evsBefore = costApplied.evs.length;
+
+  // 効果適用
+  const nextRun = applyEventChoice(costApplied, choice, rng);
+
+  // ランダム進化の場合、新たに追加された進化名を取得
+  const evoName = nextRun.evs.length > evsBefore
+    ? nextRun.evs[nextRun.evs.length - 1]?.n
+    : undefined;
+
+  return { nextRun, evoName };
 }
