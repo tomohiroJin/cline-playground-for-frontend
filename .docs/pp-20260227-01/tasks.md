@@ -410,6 +410,15 @@ Round 1 対応後の再テストで未修正・不十分と判明した3項目�
   - 作業: キャラスプライト表示、効果エフェクト（回復=緑、ダメージ=赤、パワーアップ=金）追加
   - 依存: Phase 5（ビジュアル・サウンド強化）と統合
 
+### 3-6. Phase 3 フィードバック対応 Round 2
+
+詳細は `feedback-phase3-r2.md` を参照。
+
+- [x] **FB-P3-R2-1: ランダム進化の結果に具体的な進化名を表示** 🔴
+  - 対象: `game-logic.ts`, `hooks.ts`, `PrimalPathGame.tsx`, `__tests__/events.test.ts`
+  - 作業: `computeEventResult` 関数追加（コスト+効果事前計算、進化名取得）。`formatEventResult` に `evoName` 引数追加。`APPLY_EVENT_RESULT` アクション追加で事前計算結果をreducerに渡す
+  - 完了: テスト8件追加（2085→2093件）。「🧬 火の爪 を獲得!」のように具体的な進化名が表示される
+
 ---
 
 ## Phase 4: メタ進行と実績（Meta Progression & Achievements）
