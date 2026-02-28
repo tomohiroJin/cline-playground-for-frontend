@@ -1,16 +1,25 @@
-// @ts-nocheck
 /**
  * 迷宮の残響 - コレクション系画面（アンロック・称号・実績）
  */
+import { ReactNode } from 'react';
 import { DIFFICULTY, UNLOCKS } from '../game-logic';
+import type { MetaState } from '../game-logic';
 import { UNLOCK_CATS, TITLES, ENDINGS, getUnlockedTitles, getActiveTitle } from '../definitions';
 import { Page } from './Page';
 import { Section } from './Section';
 import { Badge } from './Badge';
 import { StatEntry, BackBtn, UnlockRow, EndingGrid } from './GameComponents';
 
+interface UnlocksScreenProps {
+  Particles: ReactNode;
+  meta: MetaState;
+  lastBought: string | null;
+  doUnlock: (uid: string) => void;
+  setPhase: (phase: string) => void;
+}
+
 /** アンロック画面 */
-export const UnlocksScreen = ({ Particles, meta, lastBought, doUnlock, setPhase }) => (
+export const UnlocksScreen = ({ Particles, meta, lastBought, doUnlock, setPhase }: UnlocksScreenProps) => (
   <Page particles={Particles}>
     <div className="card" style={{ marginTop: 32, animation: "fadeUp .5s ease" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
@@ -30,7 +39,7 @@ export const UnlocksScreen = ({ Particles, meta, lastBought, doUnlock, setPhase 
               const trophyLocked = u.cat === "trophy" && u.req && !meta.clearedDiffs.includes(u.req) && !meta.endings?.includes(u.req);
               const achieveLocked = u.cat === "achieve" && u.achReq && !u.achReq(meta);
               const gateLocked = u.gate && !meta.clearedDiffs?.includes(u.gate);
-              const locked = trophyLocked || achieveLocked || gateLocked;
+              const locked = !!(trophyLocked || achieveLocked || gateLocked);
               const lockDesc = gateLocked ? `${DIFFICULTY.find(d=>d.id===u.gate)?.name ?? u.gate}をクリアして解放`
                 : achieveLocked ? u.achDesc
                 : trophyLocked ? `${DIFFICULTY.find(d=>d.id===u.req)?.name ?? u.req}難度をクリアして解放`
@@ -59,8 +68,15 @@ export const UnlocksScreen = ({ Particles, meta, lastBought, doUnlock, setPhase 
   </Page>
 );
 
+interface TitlesScreenProps {
+  Particles: ReactNode;
+  meta: MetaState;
+  updateMeta: (updater: (prev: MetaState) => Partial<MetaState>) => void;
+  setPhase: (phase: string) => void;
+}
+
 /** 称号選択画面 */
-export const TitlesScreen = ({ Particles, meta, updateMeta, setPhase }) => {
+export const TitlesScreen = ({ Particles, meta, updateMeta, setPhase }: TitlesScreenProps) => {
   const unlocked = getUnlockedTitles(meta);
   const active = getActiveTitle(meta);
   return (
@@ -100,8 +116,14 @@ export const TitlesScreen = ({ Particles, meta, updateMeta, setPhase }) => {
   );
 };
 
+interface RecordsScreenProps {
+  Particles: ReactNode;
+  meta: MetaState;
+  setPhase: (phase: string) => void;
+}
+
 /** 実績・記録画面 */
-export const RecordsScreen = ({ Particles, meta, setPhase }) => {
+export const RecordsScreen = ({ Particles, meta, setPhase }: RecordsScreenProps) => {
   const unlockedTitles = getUnlockedTitles(meta);
   const survivalRate = meta.runs > 0 ? Math.round(meta.escapes / meta.runs * 100) : 0;
   return (

@@ -1,25 +1,211 @@
-// @ts-nocheck
 /**
  * 迷宮の残響 - イベント・結果画面
  */
+import { useState } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { CFG } from '../game-logic';
+import type { Player, DifficultyDef } from '../game-logic';
 import { EVENT_TYPE, FLOOR_META } from '../definitions';
+import type { FloorMetaDef, LogEntry as LogEntryDef } from '../definitions';
+import type { GameEvent } from '../events/event-utils';
 import { Page } from './Page';
 import {
   StatBar, StatusTag, StepDots, DiffBadge,
   TypewriterText, Change, FlagIndicator, DrainDisplay, LogEntry,
 } from './GameComponents';
-import { LE_IMAGES } from '../images';
+import { LE_IMAGES, LE_SCENE_IMAGES } from '../images';
+import { useKeyboardControl } from '../hooks';
+
+/** 条件文字列を人間可読なヒントテキストに変換 */
+const conditionToHint = (cond: string): string => {
+  if (cond.startsWith("hp>"))     return "体力に余裕があるなら…";
+  if (cond.startsWith("hp<"))     return "体力が低い時に…";
+  if (cond.startsWith("mn>"))     return "精神力が高ければ…";
+  if (cond.startsWith("mn<"))     return "精神が弱っている時に…";
+  if (cond.startsWith("inf>"))    return "情報が十分あれば…";
+  if (cond.startsWith("inf<"))    return "情報が少ない時に…";
+  if (cond.startsWith("status:")) return `「${cond.slice(7)}」の影響で…`;
+  return "";
+};
+
+/** アウトカムのカテゴリを判定 */
+const classifyOutcomeCategory = (outcomes: { hp?: number; mn?: number; inf?: number; fl?: string }[]): string[] => {
+  const cats: string[] = [];
+  if (outcomes.some(o => (o.hp ?? 0) > 0 || (o.mn ?? 0) > 0)) cats.push("recovery");
+  if (outcomes.some(o => (o.hp ?? 0) < 0 || (o.mn ?? 0) < 0)) cats.push("damage");
+  if (outcomes.some(o => (o.inf ?? 0) > 0)) cats.push("info");
+  if (outcomes.some(o => o.fl)) cats.push("flag");
+  return cats;
+};
+
+/** カテゴリのアイコンマッピング */
+const CATEGORY_ICONS: Record<string, string> = {
+  recovery: "💚",
+  damage: "💔",
+  info: "📖",
+  flag: "⚑",
+};
+
+/** イベント結果の変化量 */
+interface ResChange {
+  hp: number;
+  mn: number;
+  inf: number;
+  fl?: string;
+}
+
+/** ドレイン情報 */
+interface DrainInfo {
+  hp: number;
+  mn: number;
+}
+
+/** ログフィルタータイプ */
+type LogFilter = "all" | "damage" | "recovery" | "flag";
+
+/** フィルター定義 */
+const LOG_FILTERS: { key: LogFilter; label: string }[] = [
+  { key: "all", label: "全て" },
+  { key: "damage", label: "被害" },
+  { key: "recovery", label: "回復" },
+  { key: "flag", label: "状態変化" },
+];
+
+/** ログパネル（フィルター・フロアセパレーター・コピー機能付き） */
+const LogPanel = ({ log }: { log: LogEntryDef[] }) => {
+  const [filter, setFilter] = useState<LogFilter>("all");
+  const [copied, setCopied] = useState(false);
+
+  const reversed = log.slice().reverse();
+  const filtered = filter === "all" ? reversed : reversed.filter(l => {
+    if (filter === "damage") return l.hp < 0 || l.mn < 0;
+    if (filter === "recovery") return l.hp > 0 || l.mn > 0;
+    if (filter === "flag") return !!l.flag;
+    return true;
+  });
+
+  const handleCopy = () => {
+    const text = log.map(l => {
+      const parts = [`第${l.fl}層-${l.step}: ${l.ch}`];
+      if (l.hp !== 0) parts.push(`HP${l.hp > 0 ? "+" : ""}${l.hp}`);
+      if (l.mn !== 0) parts.push(`精神${l.mn > 0 ? "+" : ""}${l.mn}`);
+      if (l.inf !== 0) parts.push(`情報${l.inf > 0 ? "+" : ""}${l.inf}`);
+      if (l.flag) parts.push(`[${l.flag}]`);
+      return parts.join(" ");
+    }).join("\n");
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
+
+  let lastFloor = -1;
+
+  return (
+    <div style={{ marginTop: 8, background: "rgba(0,0,0,.25)", borderRadius: 8, padding: 12 }}>
+      {/* フィルターバー */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        <div style={{ display: "flex", gap: 4 }}>
+          {LOG_FILTERS.map(f => (
+            <button key={f.key} onClick={() => setFilter(f.key)} style={{
+              fontSize: 9, padding: "2px 8px", borderRadius: 10, border: "1px solid",
+              borderColor: filter === f.key ? "rgba(99,102,241,.4)" : "rgba(50,50,80,.2)",
+              background: filter === f.key ? "rgba(99,102,241,.12)" : "transparent",
+              color: filter === f.key ? "#a5b4fc" : "#505070",
+              cursor: "pointer", fontFamily: "var(--sans)", transition: "all .2s",
+            }}>{f.label}</button>
+          ))}
+        </div>
+        <button onClick={handleCopy} style={{
+          fontSize: 9, padding: "2px 8px", borderRadius: 10, border: "1px solid rgba(50,50,80,.2)",
+          background: copied ? "rgba(74,222,128,.12)" : "transparent",
+          color: copied ? "#4ade80" : "#505070",
+          cursor: "pointer", fontFamily: "var(--sans)", transition: "all .2s",
+        }}>{copied ? "✓" : "📋"}</button>
+      </div>
+      {/* ログ本体 */}
+      <div style={{ maxHeight: 180, overflowY: "auto" }}>
+        {filtered.length === 0
+          ? <div style={{ fontSize: 11, color: "#404060", fontFamily: "var(--sans)" }}>ログなし</div>
+          : filtered.map((l, i) => {
+            const showSep = l.fl !== lastFloor;
+            lastFloor = l.fl;
+            return (
+              <div key={i}>
+                {showSep && <div style={{ fontSize: 9, color: FLOOR_META[l.fl]?.color ?? "#818cf8", fontFamily: "var(--sans)", marginTop: i > 0 ? 6 : 0, marginBottom: 4, borderBottom: `1px solid ${FLOOR_META[l.fl]?.color ?? "#818cf8"}22`, paddingBottom: 2, letterSpacing: 1 }}>── 第{l.fl}層 ──</div>}
+                <LogEntry index={i} entry={l} />
+              </div>
+            );
+          })
+        }
+      </div>
+    </div>
+  );
+};
+
+/** EventResultScreen の Props */
+interface EventResultScreenProps {
+  Particles: ReactNode;
+  vignette: CSSProperties;
+  overlay: string | null;
+  shake: boolean;
+  player: Player;
+  floor: number;
+  floorMeta: FloorMetaDef;
+  floorColor: string;
+  diff: DifficultyDef | null;
+  step: number;
+  progressPct: number;
+  audioOn: boolean;
+  toggleAudio: () => void;
+  showLog: boolean;
+  setShowLog: (v: boolean) => void;
+  log: LogEntryDef[];
+  event: GameEvent | null;
+  phase: string;
+  revealed: string;
+  done: boolean;
+  ready: boolean;
+  skip: () => void;
+  handleChoice: (idx: number) => void;
+  resTxt: string;
+  resChg: ResChange | null;
+  drainInfo: DrainInfo | null;
+  proceed: () => void;
+  lowMental: boolean;
+}
 
 export const EventResultScreen = ({
   Particles, vignette, overlay, shake, player, floor, floorMeta, floorColor,
   diff, step, progressPct, audioOn, toggleAudio, showLog, setShowLog, log,
   event, phase, revealed, done, ready, skip, handleChoice, resTxt, resChg, drainInfo, proceed, lowMental,
-}) => {
+}: EventResultScreenProps) => {
   const evType = event ? EVENT_TYPE[event.tp] : null;
   const isChainEvent = event?.chainOnly;
+
+  const getEventImage = (eventId: string, eventType: string): string => {
+    if (LE_SCENE_IMAGES[eventId]) return LE_SCENE_IMAGES[eventId];
+    return LE_IMAGES.events[eventType as keyof typeof LE_IMAGES.events] || LE_IMAGES.events.exploration;
+  };
+
+  const bgImageUrl = event ? getEventImage(event.id, event.tp) : '';
+
+  const eventOptionsCount = phase === "event" && done && ready && event ? event.ch.length : 0;
+  const { selectedIndex: eventSelIdx, setSelectedIndex: setEventSelIdx } = useKeyboardControl({
+    optionsCount: eventOptionsCount,
+    onSelect: (idx) => handleChoice(idx),
+    isActive: phase === "event" && done && ready
+  });
+
+  const showProceed = phase === "result" && done && ready && player.hp > 0 && player.mn > 0 && resChg?.fl !== "escape";
+  const { selectedIndex: resSelIdx } = useKeyboardControl({
+    optionsCount: showProceed ? 1 : 0,
+    onSelect: () => proceed(),
+    isActive: showProceed
+  });
+
   return (
-    <Page particles={Particles}>
+    <Page particles={Particles} floor={floor}>
       <div className="vignette" style={vignette} />
       {overlay === "dmg" && <div className="dmg-overlay" />}
       {overlay === "heal" && <div className="heal-overlay" />}
@@ -51,22 +237,19 @@ export const EventResultScreen = ({
             <button onClick={() => setShowLog(!showLog)} style={{ fontSize: 10, color: "var(--dim)", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--sans)" }}>{showLog ? "閉じる ▲" : "ログ ▼"}</button>
           </div>
         </div>
-        {showLog && <div style={{ marginTop: 8, maxHeight: 180, overflowY: "auto", background: "rgba(0,0,0,.25)", borderRadius: 8, padding: 12 }}>
-          {log.length === 0
-            ? <div style={{ fontSize: 11, color: "#404060", fontFamily: "var(--sans)" }}>ログなし</div>
-            : log.slice().reverse().map((l, i) => <LogEntry key={i} entry={l} />)}
-        </div>}
+        {showLog && <LogPanel log={log} />}
       </div>
       {/* メインイベントカード */}
       <div className={`card ${lowMental ? "distort" : ""}`} style={{ animation: "fadeUp .4s", overflow: "hidden" }}>
         {event && evType && (
           <div style={{
-            height: 120, margin: "-16px -20px 16px", position: "relative",
-            background: "#0f172a", borderBottom: `1px solid ${evType.colors[2] ?? "#333"}`
+            height: 200, margin: "-16px -20px 16px", position: "relative",
+            background: "#0f172a", borderBottom: `1px solid ${evType.colors[2] ?? "#333"}`,
+            animation: "fadeIn 0.8s ease"
           }}>
              <div style={{
               position: "absolute", inset: 0,
-              backgroundImage: `url(${LE_IMAGES.events[event.tp] || LE_IMAGES.events.exploration})`,
+              backgroundImage: `url(${bgImageUrl})`,
               backgroundSize: "cover", backgroundPosition: "center",
               opacity: 0.6, maskImage: "linear-gradient(to bottom, black 0%, transparent 100%)",
               WebkitMaskImage: "linear-gradient(to bottom, black 40%, transparent 100%)"
@@ -84,13 +267,24 @@ export const EventResultScreen = ({
             <div className="sec-hd" style={{ color: "#505078" }}>── 行動を選択 ──</div>
             {event.ch.map((c, i) => {
               const conds = c.o?.filter(o => o.c !== "default").map(o => o.c) ?? [];
-              const hint = player.inf >= 15 && conds.length > 0
+              const showHintText = player.inf >= 20 && conds.length > 0;
+              const showCatIcons = player.inf >= 30;
+              const hintIcon = player.inf >= 15 && conds.length > 0
                 ? conds[0].startsWith("hp") ? "❤" : conds[0].startsWith("mn") ? "◈" : conds[0].startsWith("inf") ? "📖" : conds[0].startsWith("status") ? "●" : null
                 : null;
-              return <button key={i} className="btn" onClick={() => handleChoice(i)} style={{ display: "flex", alignItems: "flex-start", animation: `slideIn .3s ease ${i * 0.08}s both` }}>
+              const hintText = showHintText ? conditionToHint(conds[0]) : "";
+              const cats = showCatIcons ? classifyOutcomeCategory(c.o) : [];
+              return <button key={i} className={`btn ${eventSelIdx === i ? 'selected' : ''}`} onMouseEnter={() => setEventSelIdx(i)} onClick={() => handleChoice(i)} style={{ display: "flex", alignItems: "flex-start", animation: `slideIn .3s ease ${i * 0.08}s both` }}>
                 <span className="cn">{i + 1}</span>
-                <span style={{ flex: 1 }}>{c.t}</span>
-                {hint && <span style={{ fontSize: 9, opacity: .4, marginLeft: 6, alignSelf: "center" }} title="条件あり">{hint}</span>}
+                <span style={{ flex: 1 }}>
+                  {c.t}
+                  {hintText && <span className="key-hint" style={{ display: "block", fontSize: 10, color: "#a5b4fc", opacity: 0.6, marginTop: 2, animation: "fadeIn 0.3s ease 0.2s both" }}>{hintText}</span>}
+                </span>
+                <span style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: 6, alignSelf: "center" }}>
+                  {cats.map(cat => <span key={cat} style={{ fontSize: 9, opacity: .35 }} title={cat}>{CATEGORY_ICONS[cat]}</span>)}
+                  {hintIcon && <span style={{ fontSize: 9, opacity: .4 }} title="条件あり">{hintIcon}</span>}
+                  <span className="key-hint" style={{ fontSize: "0.7em", opacity: 0.5, fontFamily: "var(--sans)", color: "var(--dim)" }}>[{i + 1}]</span>
+                </span>
               </button>;
             })}
           </div>}
@@ -110,12 +304,12 @@ export const EventResultScreen = ({
                   {resChg.hp !== 0  && <Change value={resChg.hp} label="HP" />}
                   {resChg.mn !== 0  && <Change value={resChg.mn} label="精神" />}
                   {resChg.inf !== 0 && <Change value={resChg.inf} label="情報" />}
-                  <FlagIndicator flag={resChg.fl} />
+                  <FlagIndicator flag={resChg.fl ?? null} />
                 </div>
               );
             })()}
             <DrainDisplay drain={drainInfo} />
-            {player.hp > 0 && player.mn > 0 && resChg.fl !== "escape" && (() => {
+            {showProceed && (() => {
               const remaining = CFG.EVENTS_PER_FLOOR - step;
               const nextFloorFlag = step >= CFG.EVENTS_PER_FLOOR && floor < CFG.MAX_FLOOR;
               return (
@@ -125,7 +319,7 @@ export const EventResultScreen = ({
                 </div>
               );
             })()}
-            {player.hp > 0 && player.mn > 0 && resChg.fl !== "escape" && <button className="btn btn-p tc" onClick={proceed}>先に進む</button>}
+            {showProceed && <button className={`btn btn-p tc ${resSelIdx === 0 ? 'selected' : ''}`} onClick={proceed}>先に進む</button>}
           </div>}
         </>}
       </div>

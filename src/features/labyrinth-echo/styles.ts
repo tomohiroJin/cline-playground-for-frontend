@@ -30,10 +30,10 @@ export const CSS = `
 @keyframes bought{0%{background:rgba(74,222,128,.25);transform:scale(1.02)}100%{background:rgba(74,222,128,.06);transform:scale(1)}}
 @keyframes countUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .btn{display:block;width:100%;padding:14px 18px;margin-bottom:10px;background:rgba(22,22,44,.7);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--sans);cursor:pointer;text-align:left;line-height:1.65;transition:all .2s;position:relative;overflow:hidden}
-.btn:hover{background:rgba(40,40,70,.85);border-color:rgba(99,102,241,.35);transform:translateY(-2px);box-shadow:0 6px 24px rgba(99,102,241,.1)}
+.btn:hover, .btn.selected{background:rgba(40,40,70,.85);border-color:rgba(99,102,241,.35);transform:translateY(-2px);box-shadow:0 6px 24px rgba(99,102,241,.1)}
 .btn:active{transform:translateY(0)}
 .btn-p{background:linear-gradient(135deg,rgba(99,102,241,.14),rgba(139,92,246,.1));border-color:rgba(99,102,241,.35);color:#c4b5fd}
-.btn-p:hover{background:linear-gradient(135deg,rgba(99,102,241,.25),rgba(139,92,246,.18));border-color:rgba(99,102,241,.5);box-shadow:0 6px 28px rgba(99,102,241,.18)}
+.btn-p:hover, .btn-p.selected{background:linear-gradient(135deg,rgba(99,102,241,.25),rgba(139,92,246,.18));border-color:rgba(99,102,241,.5);box-shadow:0 6px 28px rgba(99,102,241,.18)}
 .bar-t{width:100%;height:6px;background:rgba(25,25,50,.9);border-radius:4px;overflow:hidden}
 .bar-f{height:100%;border-radius:4px;transition:width .6s cubic-bezier(.4,0,.2,1)}
 .tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:3px 10px;border-radius:5px;font-family:var(--sans);font-weight:500}
@@ -61,6 +61,7 @@ export const CSS = `
 .tc{text-align:center}
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;font-size:12px;font-family:var(--sans)}
 .flex-wrap-c{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+@media(hover:none){.key-hint{display:none!important}}
 `;
 
 export const PAGE_STYLE = Object.freeze({
