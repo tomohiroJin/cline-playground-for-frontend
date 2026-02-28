@@ -3,15 +3,34 @@ import { LE_BG_IMAGES } from '../images';
 
 export interface ParallaxBgProps {
   floor: number;
-  scrollProgress: number;
 }
 
-const PARALLAX_FAR_FACTOR = 0.1;
-const PARALLAX_MID_FACTOR = 0.3;
-const PARALLAX_NEAR_FACTOR = 0.5;
-const MAX_OFFSET = 50;
+/** 各レイヤーの自動ドリフトアニメーション（スクロール不要でパララックス効果を実現） */
+const PARALLAX_CSS = `
+@keyframes parallaxDriftFar {
+  0%   { transform: translate(0px, 0px) scale(1.05); }
+  25%  { transform: translate(4px, -6px) scale(1.05); }
+  50%  { transform: translate(-3px, -10px) scale(1.05); }
+  75%  { transform: translate(-6px, 2px) scale(1.05); }
+  100% { transform: translate(0px, 0px) scale(1.05); }
+}
+@keyframes parallaxDriftMid {
+  0%   { transform: translate(0px, 0px) scale(1.08); }
+  25%  { transform: translate(-8px, 5px) scale(1.08); }
+  50%  { transform: translate(6px, 10px) scale(1.08); }
+  75%  { transform: translate(10px, -4px) scale(1.08); }
+  100% { transform: translate(0px, 0px) scale(1.08); }
+}
+@keyframes parallaxDriftNear {
+  0%   { transform: translate(0px, 0px) scale(1.12); }
+  25%  { transform: translate(12px, -8px) scale(1.12); }
+  50%  { transform: translate(-10px, 12px) scale(1.12); }
+  75%  { transform: translate(-14px, -5px) scale(1.12); }
+  100% { transform: translate(0px, 0px) scale(1.12); }
+}
+`;
 
-export const ParallaxBg: React.FC<ParallaxBgProps> = ({ floor, scrollProgress }) => {
+export const ParallaxBg: React.FC<ParallaxBgProps> = ({ floor }) => {
   const [currentFloor, setCurrentFloor] = useState(floor);
   const [phase, setPhase] = useState<'idle' | 'fadeOut' | 'dark' | 'fadeIn'>('idle');
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -42,19 +61,15 @@ export const ParallaxBg: React.FC<ParallaxBgProps> = ({ floor, scrollProgress })
   const activeFloor = currentFloor;
   const bgImages = (LE_BG_IMAGES as Record<number, { far: string; mid: string; near: string }>)[activeFloor] || { far: '', mid: '', near: '' };
 
-  const farOffset = scrollProgress * PARALLAX_FAR_FACTOR * MAX_OFFSET;
-  const midOffset = scrollProgress * PARALLAX_MID_FACTOR * MAX_OFFSET;
-  const nearOffset = scrollProgress * PARALLAX_NEAR_FACTOR * MAX_OFFSET;
-
   const getOpacity = (baseOpacity: number) => {
     if (phase === 'fadeOut' || phase === 'dark') return 0;
     return baseOpacity;
   };
-  
+
   const getTransition = () => {
     if (phase === 'fadeOut') return 'opacity 0.5s ease-out';
     if (phase === 'fadeIn') return 'opacity 0.8s ease-in';
-    return 'opacity 0ms'; // for dark state or instant changes
+    return 'opacity 0ms';
   };
 
   const baseStyle: React.CSSProperties = {
@@ -70,6 +85,7 @@ export const ParallaxBg: React.FC<ParallaxBgProps> = ({ floor, scrollProgress })
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+      <style>{PARALLAX_CSS}</style>
       {bgImages.far && (
         <div style={{
             ...baseStyle,
@@ -77,7 +93,7 @@ export const ParallaxBg: React.FC<ParallaxBgProps> = ({ floor, scrollProgress })
             opacity: getOpacity(0.7),
             filter: 'blur(2px)',
             backgroundImage: `url(${bgImages.far})`,
-            transform: `translateY(${farOffset}px)`
+            animation: 'parallaxDriftFar 28s ease-in-out infinite',
         }} />
       )}
       {bgImages.mid && (
@@ -87,7 +103,7 @@ export const ParallaxBg: React.FC<ParallaxBgProps> = ({ floor, scrollProgress })
             opacity: getOpacity(0.55),
             filter: 'blur(1px)',
             backgroundImage: `url(${bgImages.mid})`,
-            transform: `translateY(${midOffset}px)`
+            animation: 'parallaxDriftMid 20s ease-in-out infinite',
         }} />
       )}
       {bgImages.near && (
@@ -96,7 +112,7 @@ export const ParallaxBg: React.FC<ParallaxBgProps> = ({ floor, scrollProgress })
             zIndex: 3,
             opacity: getOpacity(0.4),
             backgroundImage: `url(${bgImages.near})`,
-            transform: `translateY(${nearOffset}px)`
+            animation: 'parallaxDriftNear 14s ease-in-out infinite',
         }} />
       )}
     </div>

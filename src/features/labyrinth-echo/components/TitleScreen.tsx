@@ -1,7 +1,7 @@
 /**
  * 迷宮の残響 - タイトル画面
  */
-import { useState, useEffect, ReactNode } from 'react';
+import { ReactNode } from 'react';
 import { CFG, DIFFICULTY, UNLOCKS } from '../game-logic';
 import type { MetaState } from '../game-logic';
 import { ENDINGS, getActiveTitle } from '../definitions';
@@ -20,18 +20,6 @@ interface TitleScreenProps {
 
 export const TitleScreen = ({ meta, Particles, startRun, enableAudio, setPhase, eventCount }: TitleScreenProps) => {
   const activeTitle = meta.runs > 0 ? getActiveTitle(meta) : null;
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-
-  useEffect(() => {
-    if ('ontouchstart' in window) return;
-    const handleMouseMove = (e: MouseEvent) => {
-      const cx = window.innerWidth / 2;
-      const cy = window.innerHeight / 2;
-      setMousePos({ x: (e.clientX - cx) / cx, y: (e.clientY - cy) / cy });
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
 
   const menuActions = [
     startRun,
@@ -44,13 +32,6 @@ export const TitleScreen = ({ meta, Particles, startRun, enableAudio, setPhase, 
     onSelect: (idx) => menuActions[idx](),
     isActive: true
   });
-
-  const farX = mousePos.x * 5;
-  const farY = mousePos.y * 3;
-  const midX = mousePos.x * 10;
-  const midY = mousePos.y * 6;
-  const nearX = mousePos.x * 15;
-  const nearY = mousePos.y * 9;
 
   const runHue = (meta.runs * 15) % 360;
   const runBright = Math.max(0.3, 0.6 - (meta.runs * 0.01));
@@ -65,29 +46,53 @@ export const TitleScreen = ({ meta, Particles, startRun, enableAudio, setPhase, 
           99% { transform: translate(-2px, -1px); filter: saturate(3); }
           100% { transform: translate(0); filter: none; }
         }
+        @keyframes titleDriftFar {
+          0%   { transform: translate(0px, 0px) scale(1.05); }
+          25%  { transform: translate(6px, -4px) scale(1.05); }
+          50%  { transform: translate(-4px, -8px) scale(1.05); }
+          75%  { transform: translate(-8px, 2px) scale(1.05); }
+          100% { transform: translate(0px, 0px) scale(1.05); }
+        }
+        @keyframes titleDriftMid {
+          0%   { transform: translate(0px, 0px) scale(1.08); }
+          25%  { transform: translate(-10px, 6px) scale(1.08); }
+          50%  { transform: translate(8px, 10px) scale(1.08); }
+          75%  { transform: translate(12px, -4px) scale(1.08); }
+          100% { transform: translate(0px, 0px) scale(1.08); }
+        }
+        @keyframes titleDriftNear {
+          0%   { transform: translate(0px, 0px) scale(1.12); }
+          25%  { transform: translate(14px, -8px) scale(1.12); }
+          50%  { transform: translate(-12px, 14px) scale(1.12); }
+          75%  { transform: translate(-16px, -6px) scale(1.12); }
+          100% { transform: translate(0px, 0px) scale(1.12); }
+        }
       `}</style>
+      {/* 遠景レイヤー: ゆっくりドリフト（30秒周期） */}
       <div style={{
         position: "absolute", inset: -30,
         backgroundImage: `url(${LE_TITLE_LAYERS.far || LE_IMAGES.title})`,
         backgroundSize: "cover", backgroundPosition: "center",
         opacity: 0.5, filter: `blur(8px) ${runFilter}`, zIndex: -2,
-        transform: `translate(${farX}px, ${farY}px)`,
+        animation: "titleDriftFar 30s ease-in-out infinite",
         willChange: "transform"
       }} />
+      {/* 中景レイヤー: やや速いドリフト（22秒周期） */}
       <div style={{
         position: "absolute", inset: -30,
         backgroundImage: `url(${LE_TITLE_LAYERS.mid || LE_IMAGES.title})`,
         backgroundSize: "cover", backgroundPosition: "center",
         opacity: 0.55, filter: `blur(4px) ${runFilter}`, zIndex: -1,
-        transform: `translate(${midX}px, ${midY}px)`,
+        animation: "titleDriftMid 22s ease-in-out infinite",
         willChange: "transform"
       }} />
+      {/* 近景レイヤー: 最も速いドリフト（16秒周期） */}
       <div style={{
         position: "absolute", inset: -30,
         backgroundImage: `url(${LE_IMAGES.title})`,
         backgroundSize: "cover", backgroundPosition: "center",
         opacity: 0.6, filter: `blur(2px) ${runFilter}`, zIndex: 0,
-        transform: `translate(${nearX}px, ${nearY}px)`,
+        animation: "titleDriftNear 16s ease-in-out infinite",
         willChange: "transform"
       }} />
       <div className="card tc" style={{ marginTop: "6vh", animation: "fadeUp .8s ease", position: "relative", zIndex: 1, background: "rgba(15, 23, 42, 0.85)", backdropFilter: "blur(8px)" }}>

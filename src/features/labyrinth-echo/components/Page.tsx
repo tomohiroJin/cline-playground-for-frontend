@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { CSS, PAGE_STYLE } from '../styles';
 import { ParallaxBg } from './ParallaxBg';
 
@@ -18,23 +18,6 @@ const DARK_OVERLAY: React.CSSProperties = {
 };
 
 export const Page: React.FC<PageProps> = ({ children, particles, floor }) => {
-  const [scrollProgress, setScrollProgress] = useState(0);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-      if (maxScroll <= 0) {
-        setScrollProgress(0);
-      } else {
-        const progress = Math.min(Math.max(window.scrollY / maxScroll, 0), 1);
-        setScrollProgress(progress);
-      }
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
   // パララックス使用時は背景を透明にし、body の暗色背景 + パララックスが見えるようにする
   const hasParallax = floor !== undefined;
   const pageStyle = hasParallax
@@ -44,7 +27,7 @@ export const Page: React.FC<PageProps> = ({ children, particles, floor }) => {
   return (
     <div style={pageStyle}>
       <style>{CSS}</style>
-      {hasParallax && <ParallaxBg floor={floor} scrollProgress={scrollProgress} />}
+      {hasParallax && <ParallaxBg floor={floor} />}
       {hasParallax && <div style={DARK_OVERLAY} />}
       <div style={{ position: "relative", zIndex: 2 }}>
         {particles}
