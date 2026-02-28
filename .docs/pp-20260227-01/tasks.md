@@ -385,6 +385,30 @@ Round 1 対応後の再テストで未修正・不十分と判明した3項目�
 
 ---
 
+### 3-5. Phase 3 フィードバック対応
+
+プレイテスト後のフィードバック4項目。うち🔴（すぐに対応）の3項目を Phase 3 の追加タスクとして実施する。
+詳細は `feedback-phase3.md` を参照。
+
+- [ ] **FB-P3-4: イベントの状況説明・タイトル追加** 🔴
+  - 対象: `types.ts`, `constants.ts`, `components/EventScreen.tsx`
+  - 作業: `RandomEventDef` に `situationText` を追加。各イベントに状況テキスト設定。EventScreen で選択肢上部に表示
+
+- [ ] **FB-P3-2: イベント選択肢のバランス調整** 🔴
+  - 対象: `constants.ts`, `__tests__/events.test.ts`
+  - 作業: 迷い仲間（助ける側にHP消費リスク追加、立ち去る側に小報酬）、毒沼（突っ切る側に報酬追加）、獣の巣穴（探索にダメージリスク追加、回避側に小報酬）、星降る夜（回復量調整 or ランダム進化のリスク軽減）
+
+- [ ] **FB-P3-1: イベント結果のフィードバック表示** 🔴
+  - 対象: `hooks.ts`, `components/EventScreen.tsx` or `PrimalPathGame.tsx`
+  - 作業: 選択後に結果オーバーレイ表示（効果タイプ別メッセージ生成）。CHOOSE_EVENT で結果表示→進化選択への遷移フロー
+
+- [ ] **FB-P3-3: イベント画面の演出強化** 🟡
+  - 対象: `components/EventScreen.tsx`, `sprites.ts`
+  - 作業: キャラスプライト表示、効果エフェクト（回復=緑、ダメージ=赤、パワーアップ=金）追加
+  - 依存: Phase 5（ビジュアル・サウンド強化）と統合
+
+---
+
 ## Phase 4: メタ進行と実績（Meta Progression & Achievements）
 
 ### 4-1. ラン統計システム
