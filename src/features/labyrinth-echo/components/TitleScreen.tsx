@@ -45,11 +45,13 @@ export const TitleScreen = ({ meta, Particles, startRun, enableAudio, setPhase, 
     isActive: true
   });
 
-  // マウス位置に応じたパララックスオフセット（遠景は少なく、中景は大きく）
+  // マウス位置に応じたパララックスオフセット（層ごとに移動量を変えて奥行き感を演出）
   const farX = mousePos.x * 5;
   const farY = mousePos.y * 3;
-  const midX = mousePos.x * 15;
-  const midY = mousePos.y * 10;
+  const midX = mousePos.x * 12;
+  const midY = mousePos.y * 8;
+  const nearX = mousePos.x * 20;
+  const nearY = mousePos.y * 14;
 
   const runHue = (meta.runs * 15) % 360;
   const runBright = Math.max(0.3, 0.6 - (meta.runs * 0.01));
@@ -65,23 +67,33 @@ export const TitleScreen = ({ meta, Particles, startRun, enableAudio, setPhase, 
           100% { transform: translate(0); filter: none; }
         }
       `}</style>
-      {/* 遠景レイヤー: 不透明ベース（マウスで少し動く） */}
+      {/* 遠景: 不透明ベース画像。しっかり見える土台 */}
       <div style={{
-        position: "absolute", inset: -30,
+        position: "fixed", inset: -30, pointerEvents: "none",
         backgroundImage: `url(${LE_TITLE_LAYERS.far || LE_IMAGES.title})`,
         backgroundSize: "cover", backgroundPosition: "center",
-        opacity: 0.6, filter: `blur(3px) ${runFilter}`, zIndex: -2,
+        opacity: 0.7, filter: `blur(2px) ${runFilter}`, zIndex: -3,
         transform: `translate(${farX}px, ${farY}px)`,
         transition: "transform 0.3s ease-out",
         willChange: "transform"
       }} />
-      {/* 中景レイヤー: 76%透過（マウスで大きく動き、遠景が透けて見える） */}
+      {/* 中景: 76%透過画像。構造物が浮かび、透過部分から遠景が透ける */}
       <div style={{
-        position: "absolute", inset: -30,
+        position: "fixed", inset: -30, pointerEvents: "none",
         backgroundImage: `url(${LE_TITLE_LAYERS.mid || LE_IMAGES.title})`,
         backgroundSize: "cover", backgroundPosition: "center",
-        opacity: 0.8, filter: `${runFilter}`, zIndex: -1,
+        opacity: 0.85, filter: `${runFilter}`, zIndex: -2,
         transform: `translate(${midX}px, ${midY}px)`,
+        transition: "transform 0.3s ease-out",
+        willChange: "transform"
+      }} />
+      {/* 近景: 不透明タイトル画像。薄く重ねて色味と質感を加える */}
+      <div style={{
+        position: "fixed", inset: -30, pointerEvents: "none",
+        backgroundImage: `url(${LE_IMAGES.title})`,
+        backgroundSize: "cover", backgroundPosition: "center",
+        opacity: 0.18, filter: `blur(1px) ${runFilter}`, zIndex: -1,
+        transform: `translate(${nearX}px, ${nearY}px)`,
         transition: "transform 0.3s ease-out",
         willChange: "transform"
       }} />
