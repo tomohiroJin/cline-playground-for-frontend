@@ -30,12 +30,12 @@ function makeRun(overrides: Partial<RunState> = {}): RunState {
 /* ===== 定数検証 ===== */
 
 describe('イベント定数', () => {
-  it('EVENT_CHANCEが0.2である', () => {
-    expect(EVENT_CHANCE).toBe(0.2);
+  it('EVENT_CHANCEが0.3である', () => {
+    expect(EVENT_CHANCE).toBe(0.3);
   });
 
-  it('EVENT_MIN_BATTLESが2である', () => {
-    expect(EVENT_MIN_BATTLES).toBe(2);
+  it('EVENT_MIN_BATTLESが1である', () => {
+    expect(EVENT_MIN_BATTLES).toBe(1);
   });
 
   it('RANDOM_EVENTSが8種定義されている', () => {
@@ -83,8 +83,8 @@ describe('dominantCiv', () => {
 
 describe('rollEvent', () => {
   it('序盤（btlCount < EVENT_MIN_BATTLES）はイベント発生しない', () => {
-    // Arrange: btlCount = 1 < EVENT_MIN_BATTLES(2)
-    const run = makeRun({ btlCount: 1 });
+    // Arrange: btlCount = 0 < EVENT_MIN_BATTLES(1)
+    const run = makeRun({ btlCount: 0 });
 
     // Act: 確率100%でも発生しない
     const result = rollEvent(run, () => 0);
@@ -97,7 +97,7 @@ describe('rollEvent', () => {
     // Arrange
     const run = makeRun({ btlCount: 3 });
 
-    // Act: rng = 0.1 < EVENT_CHANCE(0.2) → 発生
+    // Act: rng = 0.1 < EVENT_CHANCE(0.3) → 発生
     const result = rollEvent(run, () => 0.1);
 
     // Assert
@@ -109,7 +109,7 @@ describe('rollEvent', () => {
     // Arrange
     const run = makeRun({ btlCount: 5 });
 
-    // Act: rng = 0.5 > EVENT_CHANCE(0.2) → 発生しない
+    // Act: rng = 0.5 > EVENT_CHANCE(0.3) → 発生しない
     const result = rollEvent(run, () => 0.5);
 
     // Assert

@@ -417,11 +417,11 @@ export const SYNERGY_TAG_INFO: Readonly<Record<string, { ic: string; nm: string;
 
 /* ===== ランダムイベント ===== */
 
-/** イベント発生確率（20%） */
-export const EVENT_CHANCE = 0.2;
+/** イベント発生確率（30%） */
+export const EVENT_CHANCE = 0.3;
 
 /** イベント発生不可の最低バトル数（序盤を除外） */
-export const EVENT_MIN_BATTLES = 2;
+export const EVENT_MIN_BATTLES = 1;
 
 /** ランダムイベント定義（8種） */
 export const RANDOM_EVENTS: readonly RandomEventDef[] = Object.freeze([
