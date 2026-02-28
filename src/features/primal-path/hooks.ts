@@ -474,6 +474,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       let run = startRunState(action.di, save);
       run = applyChallenge(run, ch);
       run = { ...run, challengeId: ch.id };
+      // タイマー付きチャレンジの場合、開始時刻を記録
+      if (run.timeLimit) {
+        run = { ...run, timerStart: Date.now() };
+      }
       // 最初のバイオーム自動選択
       const pick = pickBiomeAuto(run);
       let next = run;

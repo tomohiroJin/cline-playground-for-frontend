@@ -580,12 +580,6 @@ export const WeatherParticles = styled.div<{ $biome: string }>`
   pointer-events: none;
   z-index: 0;
 
-  &::before, &::after {
-    content: '';
-    position: absolute;
-    pointer-events: none;
-  }
-
   /* 氷河: 雪パーティクル */
   ${p => p.$biome === 'glacier' && css`
     & > span {

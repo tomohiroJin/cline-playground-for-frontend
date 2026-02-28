@@ -279,7 +279,7 @@ export const SFX_DEFS: Readonly<Record<string, SfxDef>> = Object.freeze({
   skShield: Object.freeze({ f: Object.freeze([500, 700, 400]), fd: 0.2, g: 0.08, gd: 0.25, w: 'sine' as const }),
   synergy: Object.freeze({ f: Object.freeze([440, 554, 659]), fd: 0.2, g: 0.1, gd: 0.25, w: 'sine' as const }),
   event: Object.freeze({ f: Object.freeze([330, 440]), fd: 0.15, g: 0.08, gd: 0.2, w: 'triangle' as const }),
-  achv: Object.freeze({ f: Object.freeze([523, 659, 784, 1047]), fd: 0.1, g: 0.06, gd: 0.02, w: 'sine' as const }),
+  achv: Object.freeze({ f: Object.freeze([523, 659, 784, 1047]), fd: 0.1, g: 0.06, gd: 0.35, w: 'sine' as const }),
 });
 
 /** ツリーボーナスサマリー定義 */

@@ -331,6 +331,8 @@ export interface RunState {
   maxEvo?: number;
   /** チャレンジ用: 制限時間（秒、undefinedなら無制限） */
   timeLimit?: number;
+  /** チャレンジ用: タイマー開始時刻（Date.now()、undefinedなら未使用） */
+  timerStart?: number;
   /** チャレンジ用: チャレンジID */
   challengeId?: string;
   /** チャレンジ用: 敵ATK倍率（undefinedなら1.0） */

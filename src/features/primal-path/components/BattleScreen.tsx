@@ -164,20 +164,27 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
   // バフアイコン表示用
   const activeBuffs = run.sk.bfs;
 
-  // チャレンジタイマー
-  const [elapsed, setElapsed] = useState(0);
-  const timerStartRef = useRef(Date.now());
+  // チャレンジタイマー（RunState の timerStart から経過時間を計算）
+  const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
-    if (!run.timeLimit) return;
-    timerStartRef.current = Date.now();
+    if (!run.timerStart || !run.timeLimit) return;
     const tid = setInterval(() => {
-      setElapsed(Math.floor((Date.now() - timerStartRef.current) / 1000));
+      setNow(Date.now());
     }, 1000);
     return () => clearInterval(tid);
-  }, [run.timeLimit]);
+  }, [run.timerStart, run.timeLimit]);
 
-  const remaining = run.timeLimit ? Math.max(0, run.timeLimit - elapsed) : undefined;
+  const remaining = (run.timerStart && run.timeLimit)
+    ? Math.max(0, run.timeLimit - Math.floor((now - run.timerStart) / 1000))
+    : undefined;
+
+  // タイムアップ時にゲームオーバーを発火
+  useEffect(() => {
+    if (remaining === 0) {
+      dispatch({ type: 'GAME_OVER', won: false });
+    }
+  }, [remaining, dispatch]);
 
   /** 秒を mm:ss 形式にフォーマット */
   const formatTime = (s: number): string => {
