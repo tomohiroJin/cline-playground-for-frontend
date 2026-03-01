@@ -73,64 +73,67 @@
 
 ### 実装タスク
 
-- [ ] `src/components/templates/` ディレクトリを作成する
-- [ ] `src/components/templates/StaticPageLayout.tsx` を作成する
-  - [ ] Container (max-width: 800px)
-  - [ ] PageTitle (グラデーションテキスト)
-  - [ ] ContentArea (Glassmorphism)
-  - [ ] h3, p, ul, ol, a の共通スタイル
-- [ ] `src/pages/AboutPage.tsx` を作成する
-  - [ ] Game Platform とは
-  - [ ] 特徴（4項目）
-  - [ ] 免責事項（3項目）
-  - [ ] 運営者情報
-- [ ] `src/pages/PrivacyPolicyPage.tsx` を作成する
-  - [ ] 前文
-  - [ ] 第1条: 取得する情報（アクセス解析、Cookie、localStorage）
-  - [ ] 第2条: 利用目的
-  - [ ] 第3条: 情報の第三者提供
-  - [ ] 第4条: Cookie の設定
-  - [ ] 第5条: 免責事項
-  - [ ] 第6条: 改定
-  - [ ] 第7条: お問い合わせ（contact@niku9.click）
-  - [ ] 制定日: 2026年3月
-- [ ] `src/pages/TermsPage.tsx` を作成する
-  - [ ] 前文
-  - [ ] 第1条: 適用
-  - [ ] 第2条: 著作権・知的財産権（OSS 但し書き付き）
-  - [ ] 第3条: 禁止事項（6項目）
-  - [ ] 第4条: サービスの変更・中断・終了
-  - [ ] 第5条: 免責事項（localStorage データ損失含む）
-  - [ ] 第6条: 利用規約の変更
-  - [ ] 第7条: 準拠法・裁判管轄
-  - [ ] 制定日: 2026年3月
-- [ ] `src/pages/ContactPage.tsx` を作成する
-  - [ ] メール案内文
-  - [ ] メールアドレスの JavaScript 動的組み立て（スパム防止）
-  - [ ] mailto リンク
-  - [ ] 注記 3 項目
-- [ ] `src/hooks/useDocumentTitle.ts` に4ページのタイトルマッピングを追加する
-- [ ] `src/App.tsx` に4ルートを追加する（lazy import、GamePageWrapper で囲まない）
+- [x] `src/components/templates/` ディレクトリを作成する
+- [x] `src/components/templates/StaticPageLayout.tsx` を作成する
+  - [x] Container (max-width: 800px)
+  - [x] PageTitle (グラデーションテキスト)
+  - [x] ContentArea (Glassmorphism)
+  - [x] h3, p, ul, ol, a の共通スタイル
+- [x] `src/pages/AboutPage.tsx` を作成する
+  - [x] Game Platform とは
+  - [x] 特徴（4項目）
+  - [x] 免責事項（3項目）
+  - [x] 運営者情報
+- [x] `src/pages/PrivacyPolicyPage.tsx` を作成する
+  - [x] 前文
+  - [x] 第1条: 取得する情報（アクセス解析、Cookie、localStorage）
+  - [x] 第2条: 利用目的
+  - [x] 第3条: 情報の第三者提供
+  - [x] 第4条: Cookie の設定
+  - [x] 第5条: 免責事項
+  - [x] 第6条: 改定
+  - [x] 第7条: お問い合わせ（contact@niku9.click）
+  - [x] 制定日: 2026年3月
+- [x] `src/pages/TermsPage.tsx` を作成する
+  - [x] 前文
+  - [x] 第1条: 適用
+  - [x] 第2条: 著作権・知的財産権（OSS 但し書き付き）
+  - [x] 第3条: 禁止事項（6項目）
+  - [x] 第4条: サービスの変更・中断・終了
+  - [x] 第5条: 免責事項（localStorage データ損失含む）
+  - [x] 第6条: 利用規約の変更
+  - [x] 第7条: 準拠法・裁判管轄
+  - [x] 制定日: 2026年3月
+- [x] `src/pages/ContactPage.tsx` を作成する
+  - [x] メール案内文
+  - [x] メールアドレスの JavaScript 動的組み立て（スパム防止）
+  - [x] mailto リンク
+  - [x] 注記 3 項目
+- [x] `src/hooks/useDocumentTitle.ts` に4ページのタイトルマッピングを追加する
+- [x] `src/App.tsx` に4ルートを追加する（lazy import、GamePageWrapper で囲まない）
+- [x] `src/App.tsx` のフッターに簡易ナビゲーション（FooterNav / FooterLink）を追加する
+  - [x] ホーム、サイトについて、プライバシーポリシー、利用規約、お問い合わせの5リンク
+  - [x] flex レイアウトでレスポンシブ対応（flex-wrap）
 
 ### 検証タスク
 
-- [ ] `/about` が正常に表示される
-- [ ] `/privacy-policy` が正常に表示される
-- [ ] `/terms` が正常に表示される
-- [ ] `/contact` が正常に表示される
-- [ ] 各ページでドキュメントタイトルが正しく設定される
-- [ ] 各ページでヘッダー・フッターが表示される
-- [ ] お問い合わせページの mailto リンクが機能する
-- [ ] モバイル表示で各ページが崩れない
-- [ ] `npm run build` が通る
+- [x] `/about` が正常に表示される
+- [x] `/privacy-policy` が正常に表示される
+- [x] `/terms` が正常に表示される
+- [x] `/contact` が正常に表示される
+- [x] 各ページでドキュメントタイトルが正しく設定される
+- [x] 各ページでヘッダー・フッターが表示される
+- [x] お問い合わせページの mailto リンクが機能する
+- [x] モバイル表示で各ページが崩れない
+- [x] `npm run build` が通る
 
 ### テストタスク
 
-- [ ] `src/hooks/useDocumentTitle.test.tsx` に4ページのテストケースを追加する
-  - [ ] `/about` → `サイトについて | Game Platform`
-  - [ ] `/privacy-policy` → `プライバシーポリシー | Game Platform`
-  - [ ] `/terms` → `利用規約 | Game Platform`
-  - [ ] `/contact` → `お問い合わせ | Game Platform`
+- [x] `src/hooks/useDocumentTitle.test.tsx` に4ページのテストケースを追加する
+  - [x] `/about` → `サイトについて | Game Platform`
+  - [x] `/privacy-policy` → `プライバシーポリシー | Game Platform`
+  - [x] `/terms` → `利用規約 | Game Platform`
+  - [x] `/contact` → `お問い合わせ | Game Platform`
 
 ---
 

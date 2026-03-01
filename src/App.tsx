@@ -37,6 +37,10 @@ const KeysAndArmsPage = lazy(
 const PrimalPathPage = lazy(
   () => import(/* webpackChunkName: "PrimalPathPage" */ './pages/PrimalPathPage')
 );
+const AboutPage = lazy(() => import('./pages/AboutPage'));
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
+const TermsPage = lazy(() => import('./pages/TermsPage'));
+const ContactPage = lazy(() => import('./pages/ContactPage'));
 
 // アプリケーションのルートコンテナ
 const AppContainer = styled.div`
@@ -89,15 +93,25 @@ const Footer = styled.footer`
   color: var(--text-secondary);
   font-size: 0.8rem;
   background: rgba(0, 0, 0, 0.2);
+`;
 
-  a {
-    color: inherit;
-    text-decoration: none;
-    transition: opacity 0.2s;
+// フッター内ナビゲーション
+const FooterNav = styled.nav`
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-bottom: 16px;
+`;
 
-    &:hover {
-      opacity: 0.7;
-    }
+// フッターリンク（React Router Link をスタイリング）
+const FooterLink = styled(Link)`
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.2s;
+
+  &:hover {
+    color: var(--accent-color);
   }
 `;
 
@@ -192,6 +206,10 @@ const App: React.FC = () => {
                 <Route path="/risk-lcd" element={<GamePageWrapper><RiskLcdPage /></GamePageWrapper>} />
                 <Route path="/keys-and-arms" element={<GamePageWrapper><KeysAndArmsPage /></GamePageWrapper>} />
                 <Route path="/primal-path" element={<GamePageWrapper><PrimalPathPage /></GamePageWrapper>} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                <Route path="/terms" element={<TermsPage />} />
+                <Route path="/contact" element={<ContactPage />} />
               </Routes>
             </main>
           </Suspense>
@@ -199,6 +217,13 @@ const App: React.FC = () => {
 
         {!isFullScreen && (
           <Footer>
+            <FooterNav aria-label="Footer Navigation">
+              <FooterLink to="/">ホーム</FooterLink>
+              <FooterLink to="/about">サイトについて</FooterLink>
+              <FooterLink to="/privacy-policy">プライバシーポリシー</FooterLink>
+              <FooterLink to="/terms">利用規約</FooterLink>
+              <FooterLink to="/contact">お問い合わせ</FooterLink>
+            </FooterNav>
             <p>&copy; 2026 niku9.click All Rights Reserved.</p>
           </Footer>
         )}

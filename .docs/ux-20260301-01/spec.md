@@ -623,3 +623,37 @@ const ContactPage = lazy(() => import('./pages/ContactPage'));
 ```
 
 静的ページは GamePageWrapper で囲まない（注意書きモーダルや音声停止はゲーム専用機能のため）。
+
+---
+
+## 19. フッターへの簡易ナビゲーション追加
+
+### 対象ファイル
+
+`src/App.tsx` の Footer 部分
+
+### 背景
+
+フェーズ 3 で新規ページを追加したが、ページへの導線が存在しなかった。フェーズ 4 で本格的な 3 段構成フッターにリデザインする予定だが、それまでの間も新規ページにアクセスできるよう、簡易ナビゲーションをフッターに追加する。
+
+### 変更内容
+
+コピーライト行の上に `FooterNav` を追加し、5 つの `FooterLink`（React Router `Link`）を配置する。
+
+```
+┌────────────────────────────────────────────────┐
+│  ホーム | サイトについて | プライバシーポリシー │  ← 簡易ナビゲーション
+│      | 利用規約 | お問い合わせ                  │
+├────────────────────────────────────────────────┤
+│  © 2026 niku9.click All Rights Reserved.       │  ← コピーライト
+└────────────────────────────────────────────────┘
+```
+
+### 新規 styled-components
+
+- `FooterNav`: `display: flex`, `justify-content: center`, `flex-wrap: wrap`, `gap: 8px 20px`, `margin-bottom: 16px`
+- `FooterLink`: `styled(Link)`, `color: var(--text-secondary)`, ホバー時に `var(--accent-color)` に変化
+
+### 備考
+
+フェーズ 4 で 3 段構成フッター（サイト内リンク + 姉妹サイト + コピーライト）に拡張する際、この `FooterNav` / `FooterLink` をベースに発展させる。
