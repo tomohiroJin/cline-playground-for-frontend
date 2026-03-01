@@ -3,7 +3,6 @@ import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import LoadingSpinner from './components/atoms/LoadingSpinner';
 import ErrorBoundary from './components/ErrorBoundary';
-import { SettingsPanel } from './components/organisms/SettingsPanel';
 import { GamePageWrapper } from './components/organisms/GamePageWrapper';
 import { useDocumentTitle } from './hooks/useDocumentTitle';
 import { useFullScreenRoute } from './hooks/useFullScreenRoute';
@@ -82,30 +81,6 @@ const Title = styled.h1`
   }
 `;
 
-const SettingsButton = styled.button`
-  position: absolute;
-  right: 20px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 1.2rem;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-50%) rotate(45deg);
-  }
-`;
-
 // フッターコンポーネント
 const Footer = styled.footer`
   margin-top: auto;
@@ -155,7 +130,6 @@ const FloatingHomeButton = styled.button`
  * アプリケーションのルートコンポーネント
  */
 const App: React.FC = () => {
-  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
   const isFullScreen = useFullScreenRoute();
   const navigate = useNavigate();
 
@@ -180,9 +154,6 @@ const App: React.FC = () => {
               <Title>
                 <Link to="/">Game Platform</Link>
               </Title>
-              <SettingsButton onClick={() => setIsSettingsOpen(true)} aria-label="設定を開く">
-                ⚙
-              </SettingsButton>
             </nav>
           </Header>
         )}
@@ -196,8 +167,6 @@ const App: React.FC = () => {
             ⌂
           </FloatingHomeButton>
         )}
-
-        {isSettingsOpen && <SettingsPanel onClose={() => setIsSettingsOpen(false)} />}
 
         <ErrorBoundary>
           <Suspense
@@ -230,7 +199,7 @@ const App: React.FC = () => {
 
         {!isFullScreen && (
           <Footer>
-            <p>&copy; 2025 <a href="https://niku9.click/">niku9.click</a></p>
+            <p>&copy; 2026 niku9.click All Rights Reserved.</p>
           </Footer>
         )}
       </AppContainer>

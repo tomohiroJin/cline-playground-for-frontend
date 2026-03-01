@@ -6,33 +6,33 @@
 
 ### 実装タスク
 
-- [ ] `src/hooks/useFullScreenRoute.ts` を `LAYOUT_ROUTES` ホワイトリスト方式に変更する
-- [ ] `src/components/organisms/SettingsPanel.tsx` を削除する
-- [ ] `src/utils/settings-storage.ts` を削除する
-  - [ ] 削除前に SettingsPanel 以外からの参照がないことを grep で確認する
-- [ ] `src/App.tsx` から SettingsPanel 関連コードを削除する
-  - [ ] `import { SettingsPanel }` の削除
-  - [ ] `SettingsButton` styled-component 定義の削除
-  - [ ] `isSettingsOpen` の useState 削除
-  - [ ] `<SettingsButton>` JSX の削除
-  - [ ] `{isSettingsOpen && <SettingsPanel ... />}` JSX の削除
-- [ ] `src/App.tsx` の Footer 内コピーライトを `© 2026 niku9.click All Rights Reserved.` に更新する
+- [x] `src/hooks/useFullScreenRoute.ts` を `LAYOUT_ROUTES` ホワイトリスト方式に変更する
+- [x] `src/components/organisms/SettingsPanel.tsx` を削除する
+- [x] `src/utils/settings-storage.ts` を削除する
+  - [x] 削除前に SettingsPanel 以外からの参照がないことを grep で確認する
+- [x] `src/App.tsx` から SettingsPanel 関連コードを削除する
+  - [x] `import { SettingsPanel }` の削除
+  - [x] `SettingsButton` styled-component 定義の削除
+  - [x] `isSettingsOpen` の useState 削除
+  - [x] `<SettingsButton>` JSX の削除
+  - [x] `{isSettingsOpen && <SettingsPanel ... />}` JSX の削除
+- [x] `src/App.tsx` の Footer 内コピーライトを `© 2026 niku9.click All Rights Reserved.` に更新する
 
 ### 検証タスク
 
-- [ ] `/` でヘッダー・フッターが表示される
-- [ ] ゲームルート（`/puzzle` 等）でフルスクリーン表示（ヘッダー/フッター非表示）
-- [ ] 設定ボタン（⚙）がヘッダーから消えている
-- [ ] コピーライト表記が更新されている
-- [ ] `npm run build` が通る
+- [x] `/` でヘッダー・フッターが表示される
+- [x] ゲームルート（`/puzzle` 等）でフルスクリーン表示（ヘッダー/フッター非表示）
+- [x] 設定ボタン（⚙）がヘッダーから消えている
+- [x] コピーライト表記が更新されている
+- [x] `npm run build` が通る
 
 ### テストタスク
 
-- [ ] `src/hooks/useFullScreenRoute.test.tsx` に静的ページルートのテストケースを追加する
-  - [ ] `/about` で false（ヘッダー表示）を返す
-  - [ ] `/privacy-policy` で false を返す
-  - [ ] `/terms` で false を返す
-  - [ ] `/contact` で false を返す
+- [x] `src/hooks/useFullScreenRoute.test.tsx` に静的ページルートのテストケースを追加する
+  - [x] `/about` で false（ヘッダー表示）を返す
+  - [x] `/privacy-policy` で false を返す
+  - [x] `/terms` で false を返す
+  - [x] `/contact` で false を返す
 
 ---
 

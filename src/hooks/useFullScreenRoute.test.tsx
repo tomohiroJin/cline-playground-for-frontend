@@ -49,4 +49,26 @@ describe('useFullScreenRoute', () => {
       expect(result.current).toBe(true);
     });
   });
+
+  describe('静的ページルート', () => {
+    it('/about はヘッダー表示（false）と判定する', () => {
+      const { result } = renderWithRouter(['/about']);
+      expect(result.current).toBe(false);
+    });
+
+    it('/privacy-policy はヘッダー表示（false）と判定する', () => {
+      const { result } = renderWithRouter(['/privacy-policy']);
+      expect(result.current).toBe(false);
+    });
+
+    it('/terms はヘッダー表示（false）と判定する', () => {
+      const { result } = renderWithRouter(['/terms']);
+      expect(result.current).toBe(false);
+    });
+
+    it('/contact はヘッダー表示（false）と判定する', () => {
+      const { result } = renderWithRouter(['/contact']);
+      expect(result.current).toBe(false);
+    });
+  });
 });
