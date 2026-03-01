@@ -164,29 +164,30 @@
 
 ### 実装タスク
 
-- [ ] `src/pages/GameListPage.styles.ts` にパーティクルアニメーションを追加する
-  - [ ] `floatParticle` keyframes を定義する
-  - [ ] HeroSection の `::before`, `::after` 疑似要素で光の粒を表現する
-- [ ] `src/pages/GameListPage.styles.ts` にタイトルグロウエフェクトを追加する
-  - [ ] `titleGlow` keyframes を定義する
-  - [ ] HeroTitle に animation を適用する
-- [ ] `src/pages/GameListPage.styles.ts` のゲームカードにホバー時ボーダーグラデーションを追加する
-  - [ ] `border-image: linear-gradient(135deg, #00d2ff, #a855f7)` を適用する
-- [ ] `src/hooks/useScrollReveal.ts` を新規作成する
-  - [ ] IntersectionObserver ベースの実装
-  - [ ] 初期状態: `opacity: 0`, `translateY(30px)`
-  - [ ] 表示時: `opacity: 1`, `translateY(0)` にトランジション
-  - [ ] 各要素に `transitionDelay`（index × 0.08s）
-  - [ ] 一度表示した要素は unobserve
-- [ ] `src/pages/GameListPage.tsx` で `useScrollReveal` を BentoGrid に適用する
+- [x] `src/pages/GameListPage.styles.ts` にパーティクルアニメーションを追加する
+  - [x] `floatParticle` keyframes を定義する
+  - [x] HeroSection の `::before`, `::after` 疑似要素で光の粒を表現する
+- [x] `src/pages/GameListPage.styles.ts` にタイトルグロウエフェクトを追加する
+  - [x] `titleGlow` keyframes を定義する
+  - [x] HeroTitle に animation を適用する
+- [x] `src/pages/GameListPage.styles.ts` のゲームカードにホバー時ボーダーグラデーションを追加する
+  - [x] `border-color` + `box-shadow` で角丸を維持しつつシアン/パープルのエフェクトを適用する
+- [x] `src/hooks/useScrollReveal.ts` を新規作成する
+  - [x] IntersectionObserver ベースの実装
+  - [x] 初期状態: `opacity: 0`, `translateY(30px)`
+  - [x] 表示時: `opacity: 1`, `translateY(0)` にトランジション
+  - [x] 各要素に `transitionDelay`（index × 0.08s）
+  - [x] 一度表示した要素は unobserve
+  - [x] `prefers-reduced-motion` が有効な場合はスキップ
+- [x] `src/pages/GameListPage.tsx` で `useScrollReveal` を BentoGrid に適用する
 
 ### 検証タスク
 
-- [ ] ヒーローセクションにパーティクル（光の粒）が浮遊している
-- [ ] タイトルにグロウ（明滅）エフェクトが表示される
-- [ ] ゲームカードのホバー時にシアン → パープルのグラデーションボーダーが表示される
-- [ ] ゲームカードがスクロール時にフェードイン・スライドアップする
-- [ ] `prefers-reduced-motion` を有効にした環境でも致命的な問題がないこと
+- [x] ヒーローセクションにパーティクル（光の粒）が浮遊している
+- [x] タイトルにグロウ（明滅）エフェクトが表示される
+- [x] ゲームカードのホバー時にシアン → パープルのグラデーションボーダーが表示される
+- [x] ゲームカードがスクロール時にフェードイン・スライドアップする
+- [x] `prefers-reduced-motion` を有効にした環境でも致命的な問題がないこと
 
 ---
 
