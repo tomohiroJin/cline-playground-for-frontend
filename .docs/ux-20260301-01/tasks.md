@@ -40,32 +40,32 @@
 
 ### 実装タスク
 
-- [ ] `src/utils/audio-cleanup.ts` を新規作成する
-  - [ ] `installAudioContextTracker()` を実装する
-    - [ ] `window.AudioContext` を Proxy で上書き
-    - [ ] 生成されたインスタンスを `Set<AudioContext>` で追跡
-    - [ ] 多重呼び出し防止のガード
-  - [ ] `stopAllAudio()` を実装する
-    - [ ] 追跡中の全 AudioContext を suspend → close
-    - [ ] Set をクリア
-    - [ ] Tone.js Transport の停止（dynamic import で安全に）
-    - [ ] エラーを適切に catch
-- [ ] `src/index.tsx` で `installAudioContextTracker()` を呼び出す
-- [ ] `src/components/organisms/GamePageWrapper.tsx` に音声停止の useEffect を追加する
+- [x] `src/utils/audio-cleanup.ts` を新規作成する
+  - [x] `installAudioContextTracker()` を実装する
+    - [x] `window.AudioContext` を Proxy で上書き
+    - [x] 生成されたインスタンスを `Set<AudioContext>` で追跡
+    - [x] 多重呼び出し防止のガード
+  - [x] `stopAllAudio()` を実装する
+    - [x] 追跡中の全 AudioContext を suspend → close
+    - [x] Set をクリア
+    - [x] Tone.js Transport の停止（dynamic import で安全に）
+    - [x] エラーを適切に catch
+- [x] `src/index.tsx` で `installAudioContextTracker()` を呼び出す
+- [x] `src/components/organisms/GamePageWrapper.tsx` に音声停止の useEffect を追加する
 
 ### 検証タスク
 
-- [ ] 音声付きゲーム（例: `/maze-horror`, `/ipne`）をプレイし、ホームに戻ったときに音が停止する
-- [ ] 音声停止後、再度同じゲームに入ったときに音声が正常に再生される
-- [ ] 音声のないゲーム（例: `/puzzle`）でエラーが発生しない
-- [ ] `npm run build` が通る
+- [x] 音声付きゲーム（例: `/maze-horror`, `/ipne`）をプレイし、ホームに戻ったときに音が停止する
+- [x] 音声停止後、再度同じゲームに入ったときに音声が正常に再生される
+- [x] 音声のないゲーム（例: `/puzzle`）でエラーが発生しない
+- [x] `npm run build` が通る
 
 ### テストタスク
 
-- [ ] `src/utils/audio-cleanup.test.ts` を新規作成する
-  - [ ] `installAudioContextTracker` が AudioContext を正しくプロキシするテスト
-  - [ ] `stopAllAudio` が追跡中の AudioContext を suspend/close するテスト
-  - [ ] 多重呼び出しが安全に動作するテスト
+- [x] `src/utils/audio-cleanup.test.ts` を新規作成する
+  - [x] `installAudioContextTracker` が AudioContext を正しくプロキシするテスト
+  - [x] `stopAllAudio` が追跡中の AudioContext を suspend/close するテスト
+  - [x] 多重呼び出しが安全に動作するテスト
 
 ---
 
