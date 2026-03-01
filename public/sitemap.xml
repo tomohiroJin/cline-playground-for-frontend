@@ -70,4 +70,24 @@
     <lastmod>2025-01-01</lastmod>
     <priority>0.8</priority>
   </url>
+  <url>
+    <loc>https://niku9.click/about</loc>
+    <lastmod>2026-03-01</lastmod>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://niku9.click/privacy-policy</loc>
+    <lastmod>2026-03-01</lastmod>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://niku9.click/terms</loc>
+    <lastmod>2026-03-01</lastmod>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://niku9.click/contact</loc>
+    <lastmod>2026-03-01</lastmod>
+    <priority>0.3</priority>
+  </url>
 </urlset>

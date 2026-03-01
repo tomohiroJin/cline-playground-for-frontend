@@ -31,6 +31,26 @@ describe('useDocumentTitle', () => {
       renderWithRouter(['/labyrinth-echo']);
       expect(document.title).toBe('迷宮の残響 | Game Platform');
     });
+
+    it('Aboutページで正しいタイトルを設定する', () => {
+      renderWithRouter(['/about']);
+      expect(document.title).toBe('サイトについて | Game Platform');
+    });
+
+    it('プライバシーポリシーページで正しいタイトルを設定する', () => {
+      renderWithRouter(['/privacy-policy']);
+      expect(document.title).toBe('プライバシーポリシー | Game Platform');
+    });
+
+    it('利用規約ページで正しいタイトルを設定する', () => {
+      renderWithRouter(['/terms']);
+      expect(document.title).toBe('利用規約 | Game Platform');
+    });
+
+    it('お問い合わせページで正しいタイトルを設定する', () => {
+      renderWithRouter(['/contact']);
+      expect(document.title).toBe('お問い合わせ | Game Platform');
+    });
   });
 
   describe('異常系', () => {

@@ -2,6 +2,10 @@ import { createRoot } from 'react-dom/client';
 import { StrictMode } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
+import { installAudioContextTracker } from './utils/audio-cleanup';
+
+// AudioContext の追跡を開始
+installAudioContextTracker();
 
 // ルートコンテナを取得
 const container = document.getElementById('root');

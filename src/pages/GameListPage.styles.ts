@@ -1,6 +1,34 @@
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import { GlassCard } from '../components/atoms/GlassCard';
 import puzzleCardBg from '../assets/images/puzzle_card_bg.webp';
+
+// パーティクル浮遊アニメーション
+const floatParticle = keyframes`
+  0% {
+    transform: translateY(100vh) scale(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-10vh) scale(1);
+    opacity: 0;
+  }
+`;
+
+// タイトルグロウアニメーション
+const titleGlow = keyframes`
+  0%, 100% {
+    text-shadow: 0 0 30px rgba(0, 210, 255, 0.3);
+  }
+  50% {
+    text-shadow: 0 0 50px rgba(0, 210, 255, 0.5), 0 0 80px rgba(0, 210, 255, 0.2);
+  }
+`;
 
 export const PageContainer = styled.div`
   display: flex;
@@ -16,6 +44,38 @@ export const HeroSection = styled.header`
   text-align: center;
   margin-bottom: 60px;
   animation: fadeIn 1s ease-out;
+  position: relative;
+  overflow: visible;
+
+  /* パーティクル背景（浮遊する光の粒） */
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    animation: ${floatParticle} 8s infinite ease-in-out;
+  }
+
+  &::before {
+    width: 4px;
+    height: 4px;
+    background: rgba(0, 210, 255, 0.6);
+    left: 10%;
+    top: 20%;
+    animation-delay: 0s;
+    animation-duration: 7s;
+  }
+
+  &::after {
+    width: 3px;
+    height: 3px;
+    background: rgba(165, 243, 252, 0.5);
+    right: 15%;
+    top: 40%;
+    animation-delay: 3s;
+    animation-duration: 9s;
+  }
 
   @keyframes fadeIn {
     from {
@@ -36,7 +96,7 @@ export const HeroTitle = styled.h2`
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  text-shadow: 0 0 30px rgba(0, 210, 255, 0.3);
+  animation: ${titleGlow} 4s ease-in-out infinite;
 `;
 
 export const HeroSubtitle = styled.p`
@@ -59,6 +119,12 @@ export const GameCardContainer = styled(GlassCard)`
   min-height: 300px;
   cursor: pointer;
   padding: 0;
+
+  /* ホバー時のボーダーグラデーション */
+  &:hover {
+    border-image: linear-gradient(135deg, #00d2ff, #a855f7) 1;
+    border-image-slice: 1;
+  }
 `;
 
 export const CardImageArea = styled.div<{ $bgImage?: string; $customBg?: string }>`
@@ -74,6 +140,7 @@ export const CardImageArea = styled.div<{ $bgImage?: string; $customBg?: string 
   position: relative;
   overflow: hidden;
 
+  /* 光の反射エフェクト */
   &::after {
     content: '';
     position: absolute;

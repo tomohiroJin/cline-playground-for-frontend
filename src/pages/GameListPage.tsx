@@ -13,6 +13,7 @@ import labyrinthEchoCardBg from '../assets/images/labyrinth_echo_card_bg.webp';
 import riskLcdCardBg from '../assets/images/risk_lcd_card_bg.webp';
 import keysAndArmsCardBg from '../assets/images/keys_and_arms_card_bg.webp';
 import primalPathCardBg from '../assets/images/primal_path_card_bg.webp';
+import { useScrollReveal } from '../hooks/useScrollReveal';
 import {
   PageContainer,
   HeroSection,
@@ -29,6 +30,7 @@ import {
 
 const GameListPage: React.FC = () => {
   const navigate = useNavigate();
+  const gridRef = useScrollReveal<HTMLElement>();
 
   return (
     <PageContainer>
@@ -37,7 +39,7 @@ const GameListPage: React.FC = () => {
         <HeroSubtitle>厳選されたインタラクティブなゲーム体験を、ここから始めよう。</HeroSubtitle>
       </HeroSection>
 
-      <BentoGrid aria-label="提供中のゲーム一覧">
+      <BentoGrid ref={gridRef} aria-label="提供中のゲーム一覧">
         <GameCardContainer
           onClick={() => navigate('/puzzle')}
           role="button"

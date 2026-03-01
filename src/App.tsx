@@ -3,7 +3,6 @@ import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import LoadingSpinner from './components/atoms/LoadingSpinner';
 import ErrorBoundary from './components/ErrorBoundary';
-import { SettingsPanel } from './components/organisms/SettingsPanel';
 import { GamePageWrapper } from './components/organisms/GamePageWrapper';
 import { useDocumentTitle } from './hooks/useDocumentTitle';
 import { useFullScreenRoute } from './hooks/useFullScreenRoute';
@@ -38,6 +37,10 @@ const KeysAndArmsPage = lazy(
 const PrimalPathPage = lazy(
   () => import(/* webpackChunkName: "PrimalPathPage" */ './pages/PrimalPathPage')
 );
+const AboutPage = lazy(() => import('./pages/AboutPage'));
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
+const TermsPage = lazy(() => import('./pages/TermsPage'));
+const ContactPage = lazy(() => import('./pages/ContactPage'));
 
 // アプリケーションのルートコンテナ
 const AppContainer = styled.div`
@@ -82,48 +85,75 @@ const Title = styled.h1`
   }
 `;
 
-const SettingsButton = styled.button`
-  position: absolute;
-  right: 20px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 1.2rem;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-50%) rotate(45deg);
-  }
-`;
-
-// フッターコンポーネント
+// フッターコンポーネント (Glassmorphism)
 const Footer = styled.footer`
   margin-top: auto;
   text-align: center;
-  padding: 30px 0;
+  padding: 24px 20px;
   color: var(--text-secondary);
   font-size: 0.8rem;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid var(--glass-border);
+`;
+
+// フッター内のナビゲーションリンク行
+const FooterNav = styled.nav`
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-bottom: 12px;
+`;
+
+// フッターリンクの共通スタイル（下線スライドインエフェクト付き）
+const FooterLink = styled(Link)`
+  color: var(--text-secondary);
+  text-decoration: none;
+  position: relative;
+  transition: color 0.2s;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background: var(--accent-color, #00d2ff);
+    transition: width 0.3s;
+  }
+
+  &:hover {
+    color: var(--text-primary);
+
+    &::after {
+      width: 100%;
+    }
+  }
+`;
+
+// 姉妹サイト行
+const SisterSiteRow = styled.p`
+  margin: 0 0 12px;
+  font-size: 0.8rem;
 
   a {
-    color: inherit;
+    color: var(--accent-color, #00d2ff);
     text-decoration: none;
     transition: opacity 0.2s;
 
     &:hover {
-      opacity: 0.7;
+      opacity: 0.8;
     }
   }
+`;
+
+// コピーライト行
+const CopyrightRow = styled.p`
+  margin: 0;
+  font-size: 0.75rem;
+  opacity: 0.7;
 `;
 
 // フルスクリーンゲーム用フローティングホームボタン
@@ -155,7 +185,6 @@ const FloatingHomeButton = styled.button`
  * アプリケーションのルートコンポーネント
  */
 const App: React.FC = () => {
-  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
   const isFullScreen = useFullScreenRoute();
   const navigate = useNavigate();
 
@@ -180,9 +209,6 @@ const App: React.FC = () => {
               <Title>
                 <Link to="/">Game Platform</Link>
               </Title>
-              <SettingsButton onClick={() => setIsSettingsOpen(true)} aria-label="設定を開く">
-                ⚙
-              </SettingsButton>
             </nav>
           </Header>
         )}
@@ -196,8 +222,6 @@ const App: React.FC = () => {
             ⌂
           </FloatingHomeButton>
         )}
-
-        {isSettingsOpen && <SettingsPanel onClose={() => setIsSettingsOpen(false)} />}
 
         <ErrorBoundary>
           <Suspense
@@ -223,6 +247,10 @@ const App: React.FC = () => {
                 <Route path="/risk-lcd" element={<GamePageWrapper><RiskLcdPage /></GamePageWrapper>} />
                 <Route path="/keys-and-arms" element={<GamePageWrapper><KeysAndArmsPage /></GamePageWrapper>} />
                 <Route path="/primal-path" element={<GamePageWrapper><PrimalPathPage /></GamePageWrapper>} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                <Route path="/terms" element={<TermsPage />} />
+                <Route path="/contact" element={<ContactPage />} />
               </Routes>
             </main>
           </Suspense>
@@ -230,7 +258,20 @@ const App: React.FC = () => {
 
         {!isFullScreen && (
           <Footer>
-            <p>&copy; 2025 <a href="https://niku9.click/">niku9.click</a></p>
+            <FooterNav aria-label="フッターナビゲーション">
+              <FooterLink to="/">ホーム</FooterLink>
+              <FooterLink to="/about">サイトについて</FooterLink>
+              <FooterLink to="/privacy-policy">プライバシーポリシー</FooterLink>
+              <FooterLink to="/terms">利用規約</FooterLink>
+              <FooterLink to="/contact">お問い合わせ</FooterLink>
+            </FooterNav>
+            <SisterSiteRow>
+              姉妹サイト:{' '}
+              <a href="https://gallery.niku9.click/" target="_blank" rel="noopener noreferrer">
+                Gallery NIKU9 桜花-Click
+              </a>
+            </SisterSiteRow>
+            <CopyrightRow>&copy; 2026 niku9.click All Rights Reserved.</CopyrightRow>
           </Footer>
         )}
       </AppContainer>
