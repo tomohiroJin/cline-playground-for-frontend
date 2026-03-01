@@ -85,17 +85,19 @@ const Title = styled.h1`
   }
 `;
 
-// フッターコンポーネント
+// フッターコンポーネント（Glassmorphism）
 const Footer = styled.footer`
   margin-top: auto;
   text-align: center;
-  padding: 30px 0;
+  padding: 30px 20px;
   color: var(--text-secondary);
   font-size: 0.8rem;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid var(--glass-border);
 `;
 
-// フッター内ナビゲーション
+// フッター内ナビゲーション（上段: サイト内リンク）
 const FooterNav = styled.nav`
   display: flex;
   justify-content: center;
@@ -104,15 +106,55 @@ const FooterNav = styled.nav`
   margin-bottom: 16px;
 `;
 
-// フッターリンク（React Router Link をスタイリング）
+// フッターリンク（下線スライドインエフェクト付き）
 const FooterLink = styled(Link)`
   color: var(--text-secondary);
   text-decoration: none;
+  position: relative;
   transition: color 0.2s;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background: var(--accent-color);
+    transition: width 0.3s ease;
+  }
 
   &:hover {
     color: var(--accent-color);
   }
+
+  &:hover::after {
+    width: 100%;
+  }
+`;
+
+// 姉妹サイト行（中段）
+const SisterSiteRow = styled.div`
+  margin-bottom: 16px;
+  font-size: 0.8rem;
+`;
+
+// 姉妹サイトの外部リンク
+const SisterSiteLink = styled.a`
+  color: var(--accent-color);
+  text-decoration: none;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+  }
+`;
+
+// コピーライト行（下段）
+const CopyrightRow = styled.p`
+  font-size: 0.75rem;
+  opacity: 0.7;
 `;
 
 // フルスクリーンゲーム用フローティングホームボタン
@@ -224,7 +266,17 @@ const App: React.FC = () => {
               <FooterLink to="/terms">利用規約</FooterLink>
               <FooterLink to="/contact">お問い合わせ</FooterLink>
             </FooterNav>
-            <p>&copy; 2026 niku9.click All Rights Reserved.</p>
+            <SisterSiteRow>
+              姉妹サイト:{' '}
+              <SisterSiteLink
+                href="https://gallery.niku9.click"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Gallery NIKU9 桜花-Click
+              </SisterSiteLink>
+            </SisterSiteRow>
+            <CopyrightRow>&copy; 2026 niku9.click All Rights Reserved.</CopyrightRow>
           </Footer>
         )}
       </AppContainer>

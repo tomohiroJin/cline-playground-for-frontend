@@ -141,22 +141,22 @@
 
 ### 実装タスク
 
-- [ ] `src/App.tsx` の Footer を3段構成に拡張する
-  - [ ] `FooterNav` styled-component を作成する（flex, center, wrap）
-  - [ ] `FooterLink` styled-component を作成する（styled(Link)、下線スライドイン）
-  - [ ] `SisterSiteRow` styled-component を作成する
-  - [ ] `CopyrightRow` styled-component を作成する
-  - [ ] 上段: サイト内リンク 5 本（ホーム、サイトについて、プライバシーポリシー、利用規約、お問い合わせ）
-  - [ ] 中段: 姉妹サイトリンク（Gallery NIKU9 桜花-Click、`target="_blank" rel="noopener noreferrer"`）
-  - [ ] 下段: コピーライト
-- [ ] フッターに Glassmorphism スタイルを適用する（`var(--glass-bg)`, `backdrop-filter`, `border-top`）
+- [x] `src/App.tsx` の Footer を3段構成に拡張する
+  - [x] `FooterNav` styled-component を作成する（flex, center, wrap）
+  - [x] `FooterLink` styled-component を作成する（styled(Link)、下線スライドイン）
+  - [x] `SisterSiteRow` styled-component を作成する
+  - [x] `CopyrightRow` styled-component を作成する
+  - [x] 上段: サイト内リンク 5 本（ホーム、サイトについて、プライバシーポリシー、利用規約、お問い合わせ）
+  - [x] 中段: 姉妹サイトリンク（Gallery NIKU9 桜花-Click、`target="_blank" rel="noopener noreferrer"`）
+  - [x] 下段: コピーライト
+- [x] フッターに Glassmorphism スタイルを適用する（`var(--glass-bg)`, `backdrop-filter`, `border-top`）
 
 ### 検証タスク
 
-- [ ] フッターの全リンクが正しい遷移先に機能する
-- [ ] 姉妹サイトリンクが新しいタブで開く
-- [ ] フッターリンクのホバーエフェクト（下線スライドイン）が動作する
-- [ ] モバイル表示でフッターが崩れない（flex-wrap による折り返し）
+- [x] フッターの全リンクが正しい遷移先に機能する
+- [x] 姉妹サイトリンクが新しいタブで開く
+- [x] フッターリンクのホバーエフェクト（下線スライドイン）が動作する
+- [x] モバイル表示でフッターが崩れない（flex-wrap による折り返し）
 
 ---
 
