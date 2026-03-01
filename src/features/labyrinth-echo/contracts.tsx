@@ -1,29 +1,36 @@
-// @ts-nocheck
 /**
  * 迷宮の残響 - 契約・エラーハンドリング
  *
  * LabyrinthEchoGame.tsx §1 から抽出。
  * safeSync / safeAsync / ErrorBoundary を提供する。
  */
-import { Component } from "react";
+import { Component, type ErrorInfo, type ReactNode } from "react";
 
 /** 同期コールバックの安全実行 */
-export const safeSync = (fn, ctx) => {
+export const safeSync = <T,>(fn: () => T, ctx: string): T | null => {
   try { return fn(); }
-  catch (e) { console.error(`[${ctx}]`, e.message); return null; }
+  catch (e) { console.error(`[${ctx}]`, (e as Error).message); return null; }
 };
 
 /** 非同期コールバックの安全実行 */
-export const safeAsync = async (fn, ctx) => {
+export const safeAsync = async <T,>(fn: () => Promise<T>, ctx: string): Promise<T | null> => {
   try { return await fn(); }
-  catch (e) { console.error(`[${ctx}]`, e.message); return null; }
+  catch (e) { console.error(`[${ctx}]`, (e as Error).message); return null; }
 };
 
+interface ErrorBoundaryProps {
+  children: ReactNode;
+}
+
+interface ErrorBoundaryState {
+  error: Error | null;
+}
+
 /** React エラーバウンダリ */
-export class ErrorBoundary extends Component {
-  constructor(props) { super(props); this.state = { error: null }; }
-  static getDerivedStateFromError(error) { return { error }; }
-  componentDidCatch(error, info) { console.error("[ErrorBoundary]", error, info.componentStack); }
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState { return { error }; }
+  componentDidCatch(error: Error, info: ErrorInfo) { console.error("[ErrorBoundary]", error, info.componentStack); }
   render() {
     if (this.state.error) return (
       <div style={{ minHeight: "100vh", background: "#0a0a18", color: "#f87171", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32, fontFamily: "sans-serif" }}>

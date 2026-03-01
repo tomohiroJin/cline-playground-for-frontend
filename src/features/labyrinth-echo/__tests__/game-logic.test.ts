@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * 迷宮の残響 - ゲームロジックのテスト
  */
@@ -8,20 +7,27 @@ import {
   applyModifiers, applyToPlayer, computeDrain,
   classifyImpact, computeProgress, clamp,
 } from '../game-logic';
+import type { Player, FxState, Outcome } from '../game-logic';
 
 /** テスト用デフォルトFX */
-const defaultFx = () => ({ ...FX_DEFAULTS });
+const defaultFx = (): FxState => ({ ...FX_DEFAULTS });
 
 /** テスト用プレイヤー生成ヘルパー */
-const makePlayer = (overrides = {}) => ({
+const makePlayer = (overrides: Partial<Player> = {}): Player => ({
   hp: 55, maxHp: 55, mn: 35, maxMn: 35, inf: 5, st: [],
   ...overrides,
 });
 
+/** テスト用アウトカム生成ヘルパー */
+const makeOutcome = (overrides: Partial<Outcome> = {}): Outcome => ({
+  c: 'default', r: 'テスト結果', hp: 0, mn: 0, inf: 0,
+  ...overrides,
+});
+
 /** テスト用難易度（normal） */
-const normalDiff = DIFFICULTY.find(d => d.id === 'normal');
-const easyDiff = DIFFICULTY.find(d => d.id === 'easy');
-const hardDiff = DIFFICULTY.find(d => d.id === 'hard');
+const normalDiff = DIFFICULTY.find(d => d.id === 'normal')!;
+const easyDiff = DIFFICULTY.find(d => d.id === 'easy')!;
+const hardDiff = DIFFICULTY.find(d => d.id === 'hard')!;
 
 describe('迷宮の残響 - ゲームロジック', () => {
   // ── computeFx ────────────────────────────────────────
@@ -168,38 +174,38 @@ describe('迷宮の残響 - ゲームロジック', () => {
   describe('applyModifiers - 修正値の適用', () => {
     it('healMultによる回復倍率が適用される', () => {
       const fx = { ...defaultFx(), healMult: 1.5 };
-      const result = applyModifiers({ hp: 10, mn: 0, inf: 0 }, fx, normalDiff, []);
+      const result = applyModifiers(makeOutcome({ hp: 10, mn: 0, inf: 0 }), fx, normalDiff, []);
       expect(result.hp).toBe(Math.round(10 * 1.5));
     });
 
     it('hpReduceによるダメージ軽減が適用される', () => {
       const fx = { ...defaultFx(), hpReduce: 0.9 };
-      const result = applyModifiers({ hp: -10, mn: 0, inf: 0 }, fx, normalDiff, []);
+      const result = applyModifiers(makeOutcome({ hp: -10, mn: 0, inf: 0 }), fx, normalDiff, []);
       expect(result.hp).toBe(Math.round(-10 * 0.9));
     });
 
     it('難易度倍率のダメージ適用（hard）', () => {
       const fx = defaultFx();
-      const result = applyModifiers({ hp: -10, mn: -5, inf: 0 }, fx, hardDiff, []);
+      const result = applyModifiers(makeOutcome({ hp: -10, mn: -5, inf: 0 }), fx, hardDiff, []);
       expect(result.hp).toBe(Math.round(Math.round(-10 * 1) * hardDiff.dmgMult));
       expect(result.mn).toBe(Math.round(Math.round(-5 * hardDiff.dmgMult) * 1));
     });
 
     it('infoMultによる情報取得量の倍率が適用される', () => {
       const fx = { ...defaultFx(), infoMult: 1.2 };
-      const result = applyModifiers({ hp: 0, mn: 0, inf: 10 }, fx, normalDiff, []);
+      const result = applyModifiers(makeOutcome({ hp: 0, mn: 0, inf: 10 }), fx, normalDiff, []);
       expect(result.inf).toBe(Math.round(10 * 1.2));
     });
 
     it('呪い状態時の情報取得量が半減する', () => {
       const fx = defaultFx();
-      const result = applyModifiers({ hp: 0, mn: 0, inf: 10 }, fx, normalDiff, ['呪い']);
+      const result = applyModifiers(makeOutcome({ hp: 0, mn: 0, inf: 10 }), fx, normalDiff, ['呪い']);
       expect(result.inf).toBe(Math.round(10 * 0.5));
     });
 
     it('mnReduceによる精神ダメージ軽減が適用される', () => {
       const fx = { ...defaultFx(), mnReduce: 0.8 };
-      const result = applyModifiers({ hp: 0, mn: -10, inf: 0 }, fx, normalDiff, []);
+      const result = applyModifiers(makeOutcome({ hp: 0, mn: -10, inf: 0 }), fx, normalDiff, []);
       expect(result.mn).toBe(Math.round(-10 * 0.8));
     });
   });
@@ -270,7 +276,7 @@ describe('迷宮の残響 - ゲームロジック', () => {
       const { drain } = computeDrain(player, fx, normalDiff);
       // normalDiff.drainMod = -1
       expect(drain).not.toBeNull();
-      expect(drain.mn).toBe(-1);
+      expect(drain!.mn).toBe(-1);
     });
 
     it('出血ダメージが適用される', () => {
@@ -278,21 +284,21 @@ describe('迷宮の残響 - ゲームロジック', () => {
       const player = makePlayer({ st: ['出血'] });
       const { drain } = computeDrain(player, fx, normalDiff);
       expect(drain).not.toBeNull();
-      expect(drain.hp).toBe(-5); // 出血tick: hp=-5
+      expect(drain!.hp).toBe(-5); // 出血tick: hp=-5
     });
 
     it('bleedReduceで出血ダメージが半減する', () => {
       const fx = { ...defaultFx(), drainImmune: true, bleedReduce: true };
       const player = makePlayer({ st: ['出血'] });
       const { drain } = computeDrain(player, fx, normalDiff);
-      expect(drain.hp).toBe(Math.round(-5 * 0.5));
+      expect(drain!.hp).toBe(Math.round(-5 * 0.5));
     });
 
     it('恐怖による精神ダメージが適用される', () => {
       const fx = { ...defaultFx(), drainImmune: true };
       const player = makePlayer({ st: ['恐怖'] });
       const { drain } = computeDrain(player, fx, normalDiff);
-      expect(drain.mn).toBe(-4); // 恐怖tick: mn=-4
+      expect(drain!.mn).toBe(-4); // 恐怖tick: mn=-4
     });
 
     it('ドレイン後のプレイヤーHP/MNがクランプされる', () => {
@@ -359,37 +365,40 @@ describe('迷宮の残響 - ゲームロジック', () => {
   describe('resolveOutcome - 結果解決', () => {
     it('条件一致するアウトカムを返す', () => {
       const choice = {
+        t: 'テスト選択肢',
         o: [
-          { c: 'hp>50', text: 'HP高い' },
-          { c: 'default', text: 'デフォルト' },
+          { c: 'hp>50', r: 'HP高い' },
+          { c: 'default', r: 'デフォルト' },
         ],
       };
       const player = makePlayer({ hp: 55 });
       const result = resolveOutcome(choice, player, defaultFx());
-      expect(result.text).toBe('HP高い');
+      expect(result.r).toBe('HP高い');
     });
 
     it('条件不一致の場合はdefaultを返す', () => {
       const choice = {
+        t: 'テスト選択肢',
         o: [
-          { c: 'hp>80', text: 'HP超高い' },
-          { c: 'default', text: 'デフォルト' },
+          { c: 'hp>80', r: 'HP超高い' },
+          { c: 'default', r: 'デフォルト' },
         ],
       };
       const player = makePlayer({ hp: 30 });
       const result = resolveOutcome(choice, player, defaultFx());
-      expect(result.text).toBe('デフォルト');
+      expect(result.r).toBe('デフォルト');
     });
 
     it('defaultがない場合は最初のアウトカムを返す', () => {
       const choice = {
+        t: 'テスト選択肢',
         o: [
-          { c: 'hp>100', text: '条件不一致' },
+          { c: 'hp>100', r: '条件不一致' },
         ],
       };
       const player = makePlayer({ hp: 30 });
       const result = resolveOutcome(choice, player, defaultFx());
-      expect(result.text).toBe('条件不一致');
+      expect(result.r).toBe('条件不一致');
     });
   });
 });

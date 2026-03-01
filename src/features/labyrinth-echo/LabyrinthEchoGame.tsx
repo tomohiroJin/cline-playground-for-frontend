@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/ban-ts-comment */
-// @ts-nocheck
 /**
  * 迷宮の残響 — メインゲームコンポーネント
  *
@@ -9,13 +7,18 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { CFG, DIFFICULTY, UNLOCKS, computeFx, createPlayer, computeProgress } from './game-logic';
 import { rand } from './game-logic';
+import type { Player, DifficultyDef } from './game-logic';
 import { ErrorBoundary } from './contracts';
-import { AudioEngine } from './audio';
+import { AudioEngine, loadAudioSettings, saveAudioSettings } from './audio';
+import type { AudioSettings } from './audio';
 import { EV } from './events/event-data';
 import { computeVignette, processChoice, validateEvents, pickEvent, findChainEvent } from './events/event-utils';
+import type { GameEvent } from './events/event-utils';
 import { FLOOR_META, EVENT_TYPE, ENDINGS, determineEnding } from './definitions';
+import type { EndingDef, LogEntry } from './definitions';
 import { Page } from './components/Page';
-import { useTextReveal, usePersistence, useVisualFx } from './hooks';
+import { useTextReveal, usePersistence, useVisualFx, useImagePreload } from './hooks';
+import { LE_BG_IMAGES } from './images';
 
 // スクリーンコンポーネント
 import { TitleScreen } from './components/TitleScreen';
@@ -25,6 +28,8 @@ import { SettingsScreen, ResetConfirm1Screen, ResetConfirm2Screen } from './comp
 import { FloorIntroScreen } from './components/FloorIntroScreen';
 import { EventResultScreen } from './components/EventResultScreen';
 import { GameOverScreen, VictoryScreen } from './components/EndScreens';
+import { StatusOverlay } from './components/StatusOverlay';
+import { GuidanceOverlay, ToastContainer } from './components/GameComponents';
 
 // イベントデータのバリデーション
 const EVENTS = validateEvents(EV, EVENT_TYPE);
@@ -34,26 +39,27 @@ function GameInner() {
 
   // ラン状態
   const [phase,   setPhase]   = useState("title");
-  const [player,  setPlayer]  = useState(null);
-  const [event,   setEvent]   = useState(null);
+  const [player,  setPlayer]  = useState<Player | null>(null);
+  const [event,   setEvent]   = useState<GameEvent | null>(null);
   const [resTxt,  setResTxt]  = useState("");
-  const [resChg,  setResChg]  = useState(null);
-  const [drainInfo, setDrainInfo] = useState(null);
+  const [resChg,  setResChg]  = useState<{ hp: number; mn: number; inf: number; fl?: string } | null>(null);
+  const [drainInfo, setDrainInfo] = useState<{ hp: number; mn: number } | null>(null);
   const [floor,   setFloor]   = useState(1);
   const [step,    setStep]    = useState(0);
-  const [usedIds, setUsedIds] = useState([]);
-  const [log,     setLog]     = useState([]);
-  const [diff,    setDiff]    = useState(null);
-  const [ending,  setEnding]  = useState(null);
+  const [usedIds, setUsedIds] = useState<string[]>([]);
+  const [log,     setLog]     = useState<LogEntry[]>([]);
+  const [diff,    setDiff]    = useState<DifficultyDef | null>(null);
+  const [ending,  setEnding]  = useState<EndingDef | null>(null);
   const [isNewEnding, setIsNewEnding] = useState(false);
   const [isNewDiffClear, setIsNewDiffClear] = useState(false);
-  const [chainNext, setChainNext] = useState(null);
+  const [chainNext, setChainNext] = useState<string | null>(null);
   const [usedSecondLife, setUsedSecondLife] = useState(false);
 
   // UI状態
   const [showLog, setShowLog] = useState(false);
-  const [audioOn, setAudioOn] = useState(false);
-  const [lastBought, setLastBought] = useState(null);
+  const [audioSettings, setAudioSettings] = useState<AudioSettings>(loadAudioSettings);
+  const audioOn = audioSettings.sfxEnabled;
+  const [lastBought, setLastBought] = useState<string | null>(null);
   const { shake, overlay, flash, doShake } = useVisualFx();
 
   // 派生値
@@ -62,19 +68,67 @@ function GameInner() {
   const floorMeta   = FLOOR_META[floor] ?? FLOOR_META[1];
   const floorColor  = floorMeta.color;
   const vignette    = useMemo(() => computeVignette(player), [player]);
-  const lowMental   = player && player.mn < player.maxMn * 0.3;
+  const lowMental   = player !== null && player.mn < player.maxMn * 0.3;
+
+  // 次フロアの背景画像をプリロード
+  const nextFloorImages = useMemo(() => {
+    const next = floor + 1;
+    const bg = LE_BG_IMAGES[next];
+    if (!bg) return [];
+    return [bg.far, bg.mid, bg.near].filter(Boolean);
+  }, [floor]);
+  useImagePreload(nextFloorImages);
 
   // フェーズ変更時にスクロールトップ（モバイルUX）
   useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [phase]);
 
   // テキスト表示
-  const activeText = phase === "event" ? event?.sit : phase === "result" ? resTxt : null;
+  const activeText: string | null = phase === "event" ? (event?.sit ?? null) : phase === "result" ? resTxt : null;
   const { revealed, done, ready, skip } = useTextReveal(activeText, audioOn);
 
-  // オーディオ
-  const enableAudio = useCallback(() => { AudioEngine.init(); AudioEngine.resume(); setAudioOn(true); }, []);
-  const toggleAudio = useCallback(() => { if (audioOn) { setAudioOn(false); } else { AudioEngine.init(); AudioEngine.resume(); setAudioOn(true); } }, [audioOn]);
-  const sfx = useCallback((fn) => { if (audioOn) fn(); }, [audioOn]);
+  // オーディオ設定変更ハンドラ
+  const handleAudioSettingsChange = useCallback((next: AudioSettings) => {
+    setAudioSettings(next);
+    saveAudioSettings(next);
+    if (next.bgmEnabled || next.sfxEnabled) { AudioEngine.init(); AudioEngine.resume(); }
+    AudioEngine.bgm.setBgmVolume(next.bgmEnabled ? next.bgmVolume : 0);
+  }, []);
+  const enableAudio = useCallback(() => {
+    const next = { ...audioSettings, sfxEnabled: true, bgmEnabled: true };
+    handleAudioSettingsChange(next);
+  }, [audioSettings, handleAudioSettingsChange]);
+  const toggleAudio = useCallback(() => {
+    const allOn = audioSettings.sfxEnabled && audioSettings.bgmEnabled;
+    const next = { ...audioSettings, sfxEnabled: !allOn, bgmEnabled: !allOn };
+    handleAudioSettingsChange(next);
+  }, [audioSettings, handleAudioSettingsChange]);
+  const sfx = useCallback((fn: () => void) => { if (audioSettings.sfxEnabled) fn(); }, [audioSettings.sfxEnabled]);
+
+  // BGM & Crisis Hook
+  useEffect(() => {
+    if (!audioSettings.bgmEnabled) {
+      AudioEngine.bgm.stopBgm();
+      return;
+    }
+    AudioEngine.bgm.setBgmVolume(audioSettings.bgmVolume);
+    if (phase === "title" || phase === "gameover" || phase === "victory" || phase === "titles" || phase === "unlocks" || phase === "settings" || phase === "records") {
+      AudioEngine.bgm.stopBgm();
+    } else if (phase === "floor_intro") {
+      AudioEngine.bgm.startFloorBgm(floor);
+      AudioEngine.bgm.setEventMood("exploration");
+    } else if (phase === "event" && event) {
+      AudioEngine.bgm.setEventMood(event.tp);
+    } else if (phase === "result") {
+      AudioEngine.bgm.setEventMood("exploration");
+    }
+  }, [phase, floor, audioSettings.bgmEnabled, audioSettings.bgmVolume, event]);
+
+  useEffect(() => {
+    if (!audioSettings.bgmEnabled || !player || phase === "title" || phase === "gameover" || phase === "victory") return;
+    const hpPct = player.hp / player.maxHp;
+    const mnPct = player.mn / player.maxMn;
+    AudioEngine.bgm.updateCrisis(hpPct, mnPct);
+  }, [player?.hp, player?.mn, player?.maxHp, player?.maxMn, audioSettings.bgmEnabled, phase]);
 
   // パーティクル
   const Particles = useMemo(() => (
@@ -89,7 +143,7 @@ function GameInner() {
 
   const startRun = useCallback(() => { enableAudio(); setPhase("diff_select"); }, [enableAudio]);
 
-  const selectDiff = useCallback((d) => {
+  const selectDiff = useCallback((d: DifficultyDef) => {
     setDiff(d); enableAudio();
     setPlayer(createPlayer(d, fx));
     setFloor(1); setStep(0); setUsedIds([]); setLog([]); setDrainInfo(null); setChainNext(null); setEnding(null); setIsNewEnding(false); setIsNewDiffClear(false); setUsedSecondLife(false);
@@ -110,7 +164,7 @@ function GameInner() {
   }, [floor, usedIds, sfx, chainNext, meta, fx]);
 
   /** プレイヤーの選択処理 — processChoice で純粋計算、その後副作用を適用 */
-  const handleChoice = useCallback((idx) => {
+  const handleChoice = useCallback((idx: number) => {
     if (!event || !player) return;
     sfx(AudioEngine.sfx.choice);
     const { choice, outcome, mods, chainId, playerFlag, drained: rawDrained, drain, impact } = processChoice(event, idx, player, fx, diff);
@@ -138,7 +192,7 @@ function GameInner() {
     if (drain) setTimeout(() => sfx(AudioEngine.sfx.drain), 400);
 
     // 状態更新
-    setLog(l => [...l, { fl: floor, step: step + 1, ch: choice.t, hp: mods.hp, mn: mods.mn, inf: mods.inf }]);
+    setLog(l => [...l, { fl: floor, step: step + 1, ch: choice.t, hp: mods.hp, mn: mods.mn, inf: mods.inf, flag: playerFlag ?? undefined }]);
     setResTxt(didSecondLife ? outcome.r + "\n\n──「二度目の命」が発動した。致命の闇から引き戻される。" : outcome.r);
     setResChg({ hp: mods.hp, mn: mods.mn, inf: mods.inf, fl: outcome.fl });
     setPlayer(drained); setDrainInfo(drain); setPhase("result");
@@ -149,15 +203,16 @@ function GameInner() {
       const end = determineEnding(drained, log, diff);
       setEnding(end);
       setIsNewEnding(!meta.endings?.includes(end.id));
-      setIsNewDiffClear(!meta.clearedDiffs?.includes(diff.id));
+      setIsNewDiffClear(!meta.clearedDiffs?.includes(diff?.id ?? ""));
       setTimeout(() => sfx(AudioEngine.sfx.victory), 500);
       setTimeout(() => {
+        const diffId = diff?.id ?? "";
         updateMeta(m => ({
           escapes: m.escapes + 1,
           kp: m.kp + (diff?.kpWin ?? 4) + end.bonusKp,
           bestFl: Math.max(m.bestFl, floor),
           endings: m.endings.includes(end.id) ? m.endings : [...m.endings, end.id],
-          clearedDiffs: m.clearedDiffs.includes(diff.id) ? m.clearedDiffs : [...m.clearedDiffs, diff.id],
+          clearedDiffs: m.clearedDiffs.includes(diffId) ? m.clearedDiffs : [...m.clearedDiffs, diffId],
           lastRun: { cause: "escape", floor, ending: end.id, hp: drained.hp, mn: drained.mn, inf: drained.inf },
         }));
         setPhase("victory");
@@ -239,7 +294,7 @@ function GameInner() {
     }
   }, [event, step, usedIds, floor, resChg, sfx, chainNext, meta, fx, player, diff, updateMeta]);
 
-  const doUnlock = useCallback((uid) => {
+  const doUnlock = useCallback((uid: string) => {
     const def = UNLOCKS.find(u => u.id === uid);
     if (!def || meta.unlocked.includes(uid) || meta.kp < def.cost) return;
     sfx(AudioEngine.sfx.heal);
@@ -264,21 +319,38 @@ function GameInner() {
   if (phase === "unlocks")        return <UnlocksScreen Particles={Particles} meta={meta} lastBought={lastBought} doUnlock={doUnlock} setPhase={setPhase} />;
   if (phase === "titles")         return <TitlesScreen Particles={Particles} meta={meta} updateMeta={updateMeta} setPhase={setPhase} />;
   if (phase === "records")        return <RecordsScreen Particles={Particles} meta={meta} setPhase={setPhase} />;
-  if (phase === "settings")       return <SettingsScreen Particles={Particles} eventCount={EVENTS.length} audioOn={audioOn} toggleAudio={toggleAudio} setPhase={setPhase} />;
+  if (phase === "settings")       return <SettingsScreen Particles={Particles} eventCount={EVENTS.length} audioSettings={audioSettings} onChangeAudioSettings={handleAudioSettingsChange} setPhase={setPhase} />;
   if (phase === "reset_confirm1") return <ResetConfirm1Screen Particles={Particles} meta={meta} setPhase={setPhase} />;
   if (phase === "reset_confirm2") return <ResetConfirm2Screen Particles={Particles} setPhase={setPhase} resetMeta={resetMeta} />;
-  if (phase === "floor_intro")    return <FloorIntroScreen Particles={Particles} floor={floor} floorMeta={floorMeta} floorColor={floorColor} diff={diff} meta={meta} progressPct={progressPct} player={player} chainNext={chainNext} enterFloor={enterFloor} />;
+  // runs は selectDiff 内で先にインクリメントされるため <= 1 で初回プレイを判定
+  // 1周目は全フロア・全ステップでガイダンスを表示
+  const showGuidance = meta.runs <= 1 && ["floor_intro", "event", "result"].includes(phase);
+
+  if (phase === "floor_intro") {
+    return (
+      <>
+        <FloorIntroScreen Particles={Particles} floor={floor} floorMeta={floorMeta} floorColor={floorColor} diff={diff} meta={meta} progressPct={progressPct} player={player} chainNext={chainNext} enterFloor={enterFloor} />
+        <GuidanceOverlay show={showGuidance} />
+      </>
+    );
+  }
 
   if ((phase === "event" || phase === "result") && player) {
-    return <EventResultScreen Particles={Particles} vignette={vignette} overlay={overlay} shake={shake} player={player}
-      floor={floor} floorMeta={floorMeta} floorColor={floorColor} diff={diff} step={step} progressPct={progressPct}
-      audioOn={audioOn} toggleAudio={toggleAudio} showLog={showLog} setShowLog={setShowLog} log={log}
-      event={event} phase={phase} revealed={revealed} done={done} ready={ready} skip={skip}
-      handleChoice={handleChoice} resTxt={resTxt} resChg={resChg} drainInfo={drainInfo} proceed={proceed} lowMental={lowMental} />;
+    return (
+      <>
+        <EventResultScreen Particles={Particles} vignette={vignette} overlay={overlay} shake={shake} player={player}
+          floor={floor} floorMeta={floorMeta} floorColor={floorColor} diff={diff} step={step} progressPct={progressPct}
+          audioOn={audioOn} toggleAudio={toggleAudio} showLog={showLog} setShowLog={setShowLog} log={log}
+          event={event} phase={phase} revealed={revealed} done={done} ready={ready} skip={skip}
+          handleChoice={handleChoice} resTxt={resTxt} resChg={resChg} drainInfo={drainInfo} proceed={proceed} lowMental={lowMental} />
+        <StatusOverlay statuses={player.st} />
+        <GuidanceOverlay show={showGuidance} />
+      </>
+    );
   }
 
   if (phase === "gameover") return <GameOverScreen Particles={Particles} player={player} meta={meta} diff={diff} floor={floor} floorMeta={floorMeta} floorColor={floorColor} progressPct={progressPct} log={log} usedSecondLife={usedSecondLife} startRun={startRun} setPhase={setPhase} />;
-  if (phase === "victory")  return <VictoryScreen Particles={Particles} ending={ending} isNewEnding={isNewEnding} isNewDiffClear={isNewDiffClear} diff={diff} player={player} usedSecondLife={usedSecondLife} log={log} meta={meta} startRun={startRun} setPhase={setPhase} />;
+  if (phase === "victory")  return <VictoryScreen Particles={Particles} ending={ending} isNewEnding={isNewEnding} isNewDiffClear={isNewDiffClear} diff={diff} player={player} usedSecondLife={usedSecondLife} log={log} meta={meta} floor={floor} startRun={startRun} setPhase={setPhase} />;
 
   return null;
 }

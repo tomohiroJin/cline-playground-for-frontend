@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * 迷宮の残響 - イベント処理ユーティリティ
  *
@@ -10,9 +9,28 @@ import {
   applyModifiers, applyToPlayer, computeDrain,
   classifyImpact,
 } from '../game-logic';
+import type { Player, FxState, DifficultyDef, Choice, Outcome, MetaState } from '../game-logic';
+import type { CSSProperties } from 'react';
+
+/** イベント定義 */
+export interface GameEvent {
+  id: string;
+  fl: number[];
+  tp: string;
+  sit: string;
+  ch: Choice[];
+  chainOnly?: boolean;
+  metaCond?: (meta: MetaState) => boolean;
+}
+
+/** イベント種別定義 */
+export interface EventTypeDef {
+  label: string;
+  colors: readonly string[];
+}
 
 /** ビネット視覚効果をプレイヤーのHPから計算 */
-export const computeVignette = (player) => {
+export const computeVignette = (player: Player | null): CSSProperties => {
   if (!player) return {};
   const hr = player.hp / player.maxHp, mr = player.mn / player.maxMn;
   const spread = hr < 0.5 ? Math.round((1 - hr) * 200) : 0;
@@ -26,7 +44,7 @@ export const computeVignette = (player) => {
  * チェインフラグをパース。
  * @returns チェインイベントID or null
  */
-export const parseChainFlag = (flag) => {
+export const parseChainFlag = (flag: string | undefined | null): string | null => {
   if (!flag) return null;
   if (flag.startsWith("chain:")) return flag.slice(6);
   return null;
@@ -37,14 +55,14 @@ export const parseChainFlag = (flag) => {
  * @pre event と player が non-null、0 <= choiceIdx < event.ch.length
  * @post UI コールバックに必要な全派生データを返す
  */
-export const processChoice = (event, choiceIdx, player, fx, diff) => {
+export const processChoice = (event: GameEvent, choiceIdx: number, player: Player, fx: FxState, diff: DifficultyDef | null) => {
   invariant(event && player, "processChoice", "event and player required");
   invariant(choiceIdx >= 0 && choiceIdx < event.ch.length, "processChoice", `invalid index ${choiceIdx}`);
   const choice  = event.ch[choiceIdx];
   const outcome = resolveOutcome(choice, player, fx);
   const mods    = applyModifiers(outcome, fx, diff, player.st);
-  const chainId = parseChainFlag(outcome.fl);
-  let playerFlag = chainId ? null : outcome.fl;
+  const chainId = parseChainFlag(outcome.fl ?? null);
+  let playerFlag: string | null = chainId ? null : (outcome.fl ?? null);
   if (fx.curseImmune && playerFlag === "add:呪い") playerFlag = null;
   const updated  = applyToPlayer(player, mods, playerFlag);
   const { player: drained, drain } = computeDrain(updated, fx, diff);
@@ -53,7 +71,7 @@ export const processChoice = (event, choiceIdx, player, fx, diff) => {
 };
 
 /** ロード時にイベントデータをバリデーション（フェイルファスト DbC） */
-export const validateEvents = (events, EVENT_TYPE) => {
+export const validateEvents = (events: GameEvent[], EVENT_TYPE: Record<string, EventTypeDef>): GameEvent[] => {
   for (const e of events) {
     invariant(e.id, "validateEvents", "Event missing id");
     invariant(Array.isArray(e.fl) && e.fl.length > 0, "validateEvents", `${e.id}: floors must be non-empty array`);
@@ -73,24 +91,26 @@ export const validateEvents = (events, EVENT_TYPE) => {
  * クロスランイベントは metaCond のチェックが必要。
  * chainBoost: チェイン結果を持つイベントの重みを倍にする。
  */
-export const pickEvent = (events, floor, usedIds, meta, fx) => {
+export const pickEvent = (events: GameEvent[], floor: number, usedIds: string[], meta: MetaState, fx: FxState): GameEvent | null => {
   const pool = events.filter(e =>
     e.fl.includes(floor) && !usedIds.includes(e.id) && !e.chainOnly
     && (!e.metaCond || e.metaCond(meta))
   );
   if (pool.length === 0) return null;
-  // chainBoost: チェイン開始イベントの重みを倍にする
-  if (fx?.chainBoost) {
-    const boosted = [];
-    for (const e of pool) {
-      boosted.push(e);
+  // 重み付けプールを構築
+  const weighted: GameEvent[] = [];
+  for (const e of pool) {
+    weighted.push(e);
+    // chainBoost: チェイン開始イベントの重みを倍にする
+    if (fx?.chainBoost) {
       const hasChain = e.ch?.some(c => c.o?.some(o => o.fl?.startsWith("chain:")));
-      if (hasChain) boosted.push(e);
+      if (hasChain) weighted.push(e);
     }
-    return shuffle(boosted)[0];
+    // 安息イベントの出現確率を上げる
+    if (e.tp === "rest") weighted.push(e);
   }
-  return shuffle(pool)[0];
+  return shuffle(weighted)[0];
 };
 
 /** IDでチェインイベントを検索 */
-export const findChainEvent = (events, id) => events.find(e => e.id === id) ?? null;
+export const findChainEvent = (events: GameEvent[], id: string): GameEvent | null => events.find(e => e.id === id) ?? null;

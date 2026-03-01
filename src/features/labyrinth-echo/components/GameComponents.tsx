@@ -1,28 +1,157 @@
-// @ts-nocheck
 /**
  * 迷宮の残響 - ゲーム固有UIコンポーネント群
  *
  * LabyrinthEchoGame.tsx §8 から抽出。
  * ステータスバー、タグ、カード等のゲーム固有UIプリミティブを提供する。
  */
-import { CFG, STATUS_META, DIFFICULTY } from '../game-logic';
+import type { ReactNode } from 'react';
+import { useState, useEffect } from 'react';
+import { CFG, STATUS_META, DIFFICULTY, UNLOCKS } from '../game-logic';
+import type { Player, DifficultyDef, UnlockDef } from '../game-logic';
 import { Section } from './Section';
 import { Badge } from './Badge';
 import { FLOOR_META } from '../definitions';
+import type { EndingDef, LogEntry as LogEntryDef } from '../definitions';
 import { LE_IMAGES } from '../images';
 
+// ── Props型定義 ──────────────────────────────────────────
+
+interface StatEntryProps {
+  label: string;
+  color: string;
+  value: string | number;
+}
+
+interface BackBtnProps {
+  onClick: () => void;
+  label?: string;
+  primary?: boolean;
+}
+
+interface UnlockRowProps {
+  icon: string;
+  name: string;
+  desc: string | undefined;
+  own: boolean;
+  locked: boolean;
+  right: ReactNode;
+  justBought?: boolean;
+}
+
+interface StatBarProps {
+  label: string;
+  value: number;
+  max: number;
+  color: string;
+  icon: string;
+}
+
+interface StatusTagProps {
+  name: string;
+}
+
+interface ChangeProps {
+  value: number;
+  label: string;
+}
+
+interface TypewriterTextProps {
+  text: string;
+  revealed: string;
+  done: boolean;
+  ready: boolean;
+  skip: () => void;
+  serif?: boolean;
+  minHeight?: number;
+  mb?: number;
+}
+
+interface FloorProgressProps {
+  pct: number;
+  color: string;
+}
+
+interface StatSummaryProps {
+  player: Player;
+}
+
+interface RecordPanelEntry {
+  label: string;
+  color: string;
+  value: string | number;
+}
+
+interface RecordPanelProps {
+  entries: RecordPanelEntry[];
+  borderColor?: string;
+  labelColor?: string;
+  labelText: string;
+}
+
+interface DiffCardProps {
+  d: DifficultyDef;
+  hp: number;
+  mn: number;
+  inf: number;
+  onSelect: (d: DifficultyDef) => void;
+  cleared: boolean;
+}
+
+interface DiffBadgeProps {
+  diff: DifficultyDef | null;
+}
+
+interface DiffLabelProps {
+  diff: DifficultyDef | null;
+}
+
+interface FlagIndicatorProps {
+  flag: string | null;
+}
+
+interface DrainDisplayProps {
+  drain: { hp: number; mn: number } | null;
+}
+
+interface LogEntryProps {
+  entry: LogEntryDef;
+  index?: number;
+}
+
+interface StepDotsProps {
+  current: number;
+  total: number;
+}
+
+interface EndingGridProps {
+  endings: readonly EndingDef[];
+  collected: string[] | undefined;
+}
+
+interface GuidanceOverlayProps {
+  show: boolean;
+}
+
+interface ToastItem {
+  id: string;
+  def: UnlockDef;
+  time: number;
+}
+
+// ── コンポーネント ──────────────────────────────────────────
+
 /** ステータスのキー・バリューペア（グリッド用） */
-export const StatEntry = ({ label, color, value }) => (
+export const StatEntry = ({ label, color, value }: StatEntryProps) => (
   <div><span style={{ color: "var(--dim)" }}>{label}: </span><span style={{ color }}>{value}</span></div>
 );
 
 /** 「戻る」ボタン — 全サブ画面に表示 */
-export const BackBtn = ({ onClick, label = "戻る", primary = false }) => (
+export const BackBtn = ({ onClick, label = "戻る", primary = false }: BackBtnProps) => (
   <button className={`btn ${primary ? "btn-p" : ""} tc`} style={{ marginTop: 16 }} onClick={onClick}>{label}</button>
 );
 
 /** アンロック/トロフィー/実績アイテム行 */
-export const UnlockRow = ({ icon, name, desc, own, locked, right, justBought }) => (
+export const UnlockRow = ({ icon, name, desc, own, locked, right, justBought }: UnlockRowProps) => (
   <div className={`uc ${own ? "own" : ""}`} style={{ opacity: locked && !own ? 0.45 : 1, animation: justBought ? "bought .5s ease" : "none" }}>
     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
       <span style={{ fontSize: 20, opacity: own ? 1 : .5, filter: own ? "none" : "grayscale(1)" }}>{icon}</span>
@@ -36,7 +165,7 @@ export const UnlockRow = ({ icon, name, desc, own, locked, right, justBought }) 
 );
 
 /** ステータスバー */
-export const StatBar = ({ label, value, max, color, icon }) => {
+export const StatBar = ({ label, value, max, color, icon }: StatBarProps) => {
   const critical = value < max * 0.25;
   const pct = Math.max(0, (value / max) * 100);
   return (
@@ -51,7 +180,7 @@ export const StatBar = ({ label, value, max, color, icon }) => {
 };
 
 /** 状態異常タグ */
-export const StatusTag = ({ name }) => {
+export const StatusTag = ({ name }: StatusTagProps) => {
   const meta = STATUS_META[name] || { colors: ["#f87171", "rgba(248,113,113,0.08)", "rgba(248,113,113,0.18)"], tick: null };
   const hasTick = !!meta.tick;
   return (
@@ -62,21 +191,21 @@ export const StatusTag = ({ name }) => {
 };
 
 /** ステータス変化表示 */
-export const Change = ({ value, label }) => {
+export const Change = ({ value, label }: ChangeProps) => {
   if (!value) return null;
   const pos = value > 0;
   return <span style={{ color: pos ? "#4ade80" : "#f87171", fontSize: 12, fontFamily: "var(--sans)", fontWeight: 600, animation: "countUp .3s ease" }}>{label} {pos ? "▲" : "▼"}{pos ? "+" : ""}{value}</span>;
 };
 
 /** タイプライターテキスト表示 */
-export const TypewriterText = ({ text, revealed, done, ready, skip, serif = true, minHeight = 80, mb = 28 }) => (
+export const TypewriterText = ({ text, revealed, done, ready, skip, serif = true, minHeight = 80, mb = 28 }: TypewriterTextProps) => (
   <div onClick={!done ? skip : undefined} style={{ fontSize: 14.5, lineHeight: 2.1, color: "var(--text)", marginBottom: mb, letterSpacing: .5, cursor: !done ? "pointer" : "default", minHeight, fontFamily: serif ? "var(--serif)" : "var(--sans)", whiteSpace: "pre-wrap" }}>
     {revealed}{!done && <span style={{ animation: "pulse 1s infinite", color: "#818cf8" }}>▌</span>}
   </div>
 );
 
 /** フロア進捗バー */
-export const FloorProgress = ({ pct, color }) => (
+export const FloorProgress = ({ pct, color }: FloorProgressProps) => (
   <div className="progress-wrap">
     <div className="progress-fill" style={{ width: `${pct}%`, background: `linear-gradient(90deg, #6366f1, ${color})` }}>
       <div className="progress-glow" style={{ background: color }} />
@@ -91,7 +220,7 @@ export const FloorProgress = ({ pct, color }) => (
 );
 
 /** ステータスサマリー */
-export const StatSummary = ({ player }) => (
+export const StatSummary = ({ player }: StatSummaryProps) => (
   <div style={{ fontSize: 11, color: "#606090", fontFamily: "var(--sans)", lineHeight: 1.8 }}>
     <span style={{ color: "#f87171" }}>HP {player.hp}/{player.maxHp}</span>{"\u3000"}
     <span style={{ color: "#818cf8" }}>精神 {player.mn}/{player.maxMn}</span>{"\u3000"}
@@ -105,16 +234,16 @@ export const StatSummary = ({ player }) => (
 );
 
 /** 記録パネル */
-export const RecordPanel = ({ entries, borderColor = "rgba(50,50,80,.12)", labelColor = "var(--dim)", labelText }) => (
+export const RecordPanel = ({ entries, borderColor = "rgba(50,50,80,.12)", labelColor = "var(--dim)", labelText }: RecordPanelProps) => (
   <Section label={labelText} color={labelColor} style={{ background: "rgba(8,8,20,.5)", border: `1px solid ${borderColor}`, marginBottom: 24 }}>
     <div style={{ fontSize: 12, lineHeight: 2, fontFamily: "var(--sans)" }}>
-      {entries.map((e, i) => <span key={i}>{e.label}: <span style={{ color: e.color }}>{e.value}</span>{i < entries.length - 1 && <br />}</span>)}
+      {entries.map((e: RecordPanelEntry, i: number) => <span key={i}>{e.label}: <span style={{ color: e.color }}>{e.value}</span>{i < entries.length - 1 && <br />}</span>)}
     </div>
   </Section>
 );
 
 /** 難易度選択カード */
-export const DiffCard = ({ d, hp, mn, inf, onSelect, cleared }) => (
+export const DiffCard = ({ d, hp, mn, inf, onSelect, cleared }: DiffCardProps) => (
   <button onClick={() => onSelect(d)} style={{
     display: "block", width: "100%", textAlign: "left", padding: "16px 18px", marginBottom: 10, borderRadius: 12,
     background: `linear-gradient(135deg, rgba(${d.id === "abyss" ? "180,40,40" : "99,102,241"},.08), rgba(20,20,40,.6))`,
@@ -125,9 +254,9 @@ export const DiffCard = ({ d, hp, mn, inf, onSelect, cleared }) => (
   >
     <div style={{
       position: "absolute", inset: 0,
-      backgroundImage: `url(${LE_IMAGES.difficulty[d.id] || LE_IMAGES.difficulty.normal})`,
+      backgroundImage: `url(${LE_IMAGES.difficulty[d.id as keyof typeof LE_IMAGES.difficulty] || LE_IMAGES.difficulty.normal})`,
       backgroundSize: "cover", backgroundPosition: "center",
-      opacity: 0.12, mixBlendMode: "luminosity", pointerEvents: "none"
+      opacity: 0.25, mixBlendMode: "luminosity", pointerEvents: "none"
     }} />
     <div style={{ position: "relative", zIndex: 1 }}>
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
@@ -157,19 +286,19 @@ export const DiffCard = ({ d, hp, mn, inf, onSelect, cleared }) => (
 );
 
 /** 難易度バッジ（小） */
-export const DiffBadge = ({ diff }) => diff
+export const DiffBadge = ({ diff }: DiffBadgeProps) => diff
   ? <span style={{ fontSize: 9, color: diff.color, fontFamily: "var(--sans)", opacity: .7 }}>{diff.icon}{diff.name}</span>
   : null;
 
 /** 難易度ラベル */
-export const DiffLabel = ({ diff }) => diff
+export const DiffLabel = ({ diff }: DiffLabelProps) => diff
   ? <div style={{ fontSize: 11, color: diff.color, fontFamily: "var(--sans)", marginBottom: 8 }}>{diff.icon} {diff.name}モード</div>
   : null;
 
 /** フラグインジケーター */
-export const FlagIndicator = ({ flag }) => {
+export const FlagIndicator = ({ flag }: FlagIndicatorProps) => {
   if (!flag) return null;
-  const styles = { fontSize: 12, fontFamily: "var(--sans)", fontWeight: 600 };
+  const styles = { fontSize: 12, fontFamily: "var(--sans)", fontWeight: 600 } as const;
   if (flag.startsWith("add:"))    return <span style={{ ...styles, color: "#f87171" }}>⚠ {flag.slice(4)}</span>;
   if (flag.startsWith("remove:")) return <span style={{ ...styles, color: "#4ade80" }}>✦ {flag.slice(7)} 回復</span>;
   if (flag === "shortcut")        return <span style={{ ...styles, color: "#c084fc" }}>⟫ 近道発見</span>;
@@ -178,7 +307,7 @@ export const FlagIndicator = ({ flag }) => {
 };
 
 /** ドレイン表示 */
-export const DrainDisplay = ({ drain }) => {
+export const DrainDisplay = ({ drain }: DrainDisplayProps) => {
   if (!drain) return null;
   return (
     <div style={{ fontSize: 11, color: "#706080", fontFamily: "var(--sans)", marginBottom: 12, padding: "8px 12px", background: "rgba(80,30,30,.08)", borderRadius: 8, border: "1px solid rgba(80,30,30,.12)" }}>
@@ -190,20 +319,24 @@ export const DrainDisplay = ({ drain }) => {
 };
 
 /** ログエントリー */
-export const LogEntry = ({ entry }) => (
-  <div className="log-e">
-    <span style={{ color: FLOOR_META[entry.fl]?.color ?? "#818cf8", fontWeight: 600 }}>第{entry.fl}層-{entry.step}</span>
-    <span style={{ margin: "0 6px", color: "#404060" }}>|</span>{entry.ch}
-    <div style={{ marginTop: 2 }}>
-      {entry.hp !== 0 && <span style={{ color: entry.hp > 0 ? "#4ade80" : "#f87171", marginRight: 8, fontSize: 10 }}>HP{entry.hp > 0 ? "+" : ""}{entry.hp}</span>}
-      {entry.mn !== 0 && <span style={{ color: entry.mn > 0 ? "#a5b4fc" : "#f87171", marginRight: 8, fontSize: 10 }}>精神{entry.mn > 0 ? "+" : ""}{entry.mn}</span>}
-      {entry.inf !== 0 && <span style={{ color: entry.inf > 0 ? "#fbbf24" : "#f87171", fontSize: 10 }}>情報{entry.inf > 0 ? "+" : ""}{entry.inf}</span>}
+export const LogEntry = ({ entry, index = 0 }: LogEntryProps) => {
+  const opacity = Math.max(0.4, 1 - index * 0.15);
+  return (
+    <div className="log-e" style={{ opacity }}>
+      <span style={{ color: FLOOR_META[entry.fl]?.color ?? "#818cf8", fontWeight: index === 0 ? 700 : 400 }}>第{entry.fl}層-{entry.step}</span>
+      <span style={{ margin: "0 6px", color: "#404060" }}>|</span>{entry.ch}
+      <div style={{ marginTop: 2 }}>
+        {entry.hp !== 0 && <span style={{ color: entry.hp > 0 ? "#4ade80" : "#ef4444", marginRight: 8, fontSize: 10 }}>HP{entry.hp > 0 ? "+" : ""}{entry.hp}</span>}
+        {entry.mn !== 0 && <span style={{ color: entry.mn > 0 ? "#60a5fa" : "#a855f7", marginRight: 8, fontSize: 10 }}>精神{entry.mn > 0 ? "+" : ""}{entry.mn}</span>}
+        {entry.inf !== 0 && <span style={{ color: entry.inf > 0 ? "#fbbf24" : "#94a3b8", fontSize: 10 }}>情報{entry.inf > 0 ? "+" : ""}{entry.inf}</span>}
+      </div>
     </div>
-  </div>
-);
+  );
+};
+
 
 /** ステップドット */
-export const StepDots = ({ current, total }) => (
+export const StepDots = ({ current, total }: StepDotsProps) => (
   <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
     {Array.from({ length: total }, (_, i) => (
       <div key={i} className={`dot ${i < current ? "done" : i === current ? "now" : ""}`} />
@@ -212,10 +345,114 @@ export const StepDots = ({ current, total }) => (
 );
 
 /** エンディングコレクショングリッド（DRY: 勝利画面＋記録画面で共用） */
-export const EndingGrid = ({ endings, collected }) => (
+export const EndingGrid = ({ endings, collected }: EndingGridProps) => (
   <div className="flex-wrap-c">
     {endings.map(e => (
-      <Badge key={e.id} got={collected?.includes(e.id)} color={e.color} label={`${e.icon} ${e.name}`} />
+      <Badge key={e.id} got={collected?.includes(e.id) ?? false} color={e.color} label={`${e.icon} ${e.name}`} />
     ))}
   </div>
 );
+
+/** ガイダンスメッセージ一覧（ローテーションで表示） */
+const GUIDANCE_MESSAGES = [
+  { icon: "💡", title: "迷宮探索の心得", body: "選択肢はキーボード(1-9, ↑↓, Enter)でも決定できます。" },
+  { icon: "❤️", title: "体力について", body: "体力(HP)が0になると探索失敗です。回復手段は限られています。" },
+  { icon: "◈", title: "精神について", body: "精神力が低下すると判断力が鈍り、不利な展開になりやすくなります。" },
+  { icon: "📖", title: "情報を集めよう", body: "情報値が高いほど有利な選択肢が見えるようになります。" },
+  { icon: "⚔️", title: "慎重に進もう", body: "無理せず安全な選択肢を選ぶのも立派な戦略です。" },
+  { icon: "🔄", title: "死は終わりではない", body: "失敗しても得た知見は次の探索に引き継がれます。" },
+];
+
+/** ガイダンスの表示間隔（ミリ秒） */
+const GUIDANCE_INTERVAL = 5000;
+
+/** 初回プレイ用ガイダンスオーバーレイ（ローテーション表示） */
+export const GuidanceOverlay = ({ show }: GuidanceOverlayProps) => {
+  const [index, setIndex] = useState(0);
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    if (!show) return;
+    const timer = setInterval(() => {
+      // フェードアウト → メッセージ切替 → フェードイン
+      setVisible(false);
+      setTimeout(() => {
+        setIndex(prev => (prev + 1) % GUIDANCE_MESSAGES.length);
+        setVisible(true);
+      }, 400);
+    }, GUIDANCE_INTERVAL);
+    return () => clearInterval(timer);
+  }, [show]);
+
+  if (!show) return null;
+  const msg = GUIDANCE_MESSAGES[index];
+  return (
+    <div style={{
+      position: "fixed", bottom: 20, left: 0, right: 0, margin: "0 auto",
+      background: "rgba(15,23,42,0.95)", border: "1px solid rgba(99,102,241,0.4)",
+      padding: "16px 20px", borderRadius: 12, zIndex: 100,
+      boxShadow: "0 4px 30px rgba(0,0,0,0.6)", color: "var(--text)", fontFamily: "var(--sans)",
+      animation: "fadeUp 0.6s ease-out", maxWidth: 400, width: "90%",
+      textAlign: "center", backdropFilter: "blur(4px)",
+      opacity: visible ? 1 : 0, transition: "opacity 0.4s ease",
+    }}>
+      <div style={{ color: "#a5b4fc", fontSize: 12, fontWeight: 700, marginBottom: 8, letterSpacing: 2 }}>{msg.icon} {msg.title}</div>
+      <div style={{ fontSize: 12, lineHeight: 1.8, color: "var(--dim)" }}>{msg.body}</div>
+      <div style={{ display: "flex", justifyContent: "center", gap: 4, marginTop: 8 }}>
+        {GUIDANCE_MESSAGES.map((_, i) => (
+          <div key={i} style={{
+            width: 6, height: 6, borderRadius: "50%",
+            background: i === index ? "#a5b4fc" : "rgba(120,120,160,0.3)",
+            transition: "background 0.3s",
+          }} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+/** トースト通知コンポーネント */
+export const ToastContainer = () => {
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+
+  useEffect(() => {
+    const handleUnlock = (e: Event) => {
+      const unlockId = (e as CustomEvent<string>).detail;
+      const found = UNLOCKS.find(u => u.id === unlockId) as UnlockDef | undefined;
+      if (found) {
+        const def = found;
+        const t: ToastItem = { id: unlockId, def, time: Date.now() };
+        setToasts(prev => [...prev, t]);
+        setTimeout(() => {
+          setToasts(prev => prev.filter(x => x.time !== t.time));
+        }, 5000);
+      }
+    };
+    window.addEventListener('labyrinth-echo-unlock', handleUnlock);
+    return () => window.removeEventListener('labyrinth-echo-unlock', handleUnlock);
+  }, []);
+
+  if (toasts.length === 0) return null;
+
+  return (
+    <div style={{ position: "fixed", top: 20, right: 20, zIndex: 9999, display: "flex", flexDirection: "column", gap: 10, pointerEvents: "none" }}>
+      {toasts.map((t) => (
+        <div key={t.time} style={{
+          background: "rgba(15, 23, 42, 0.95)", border: `1px solid ${t.def.cat === 'trophy' ? '#fbbf24' : '#60a5fa'}`,
+          padding: "16px 20px", borderRadius: 8, boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
+          animation: "slideIn 0.4s ease-out, fadeOut 0.4s ease-in 4.6s forwards",
+          color: "var(--text)", width: 280, backdropFilter: "blur(8px)"
+        }}>
+          <div style={{ fontSize: 11, color: t.def.cat === 'trophy' ? '#fcd34d' : '#93c5fd', fontFamily: "var(--sans)", fontWeight: 700, marginBottom: 4, letterSpacing: 1 }}>
+            {t.def.cat === 'trophy' ? "🏆 トロフィー獲得" : "🎖️ 実績解除"}
+          </div>
+          <div style={{ fontSize: 14, fontWeight: "bold", fontFamily: "var(--sans)" }}>{t.def.name}</div>
+          <div style={{ fontSize: 11, color: "var(--dim)", marginTop: 4, fontFamily: "var(--sans)" }}>{t.def.desc}</div>
+        </div>
+      ))}
+      <style>{`
+        @keyframes fadeOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(20px); } }
+      `}</style>
+    </div>
+  );
+};

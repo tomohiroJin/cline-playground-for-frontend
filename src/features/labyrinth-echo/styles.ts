@@ -7,6 +7,7 @@
 
 export const CSS = `
 *{box-sizing:border-box;margin:0;padding:0}
+body{background:#080818;min-height:100vh}
 :root{--bg:#0a0a18;--card:rgba(14,14,28,0.92);--border:rgba(80,80,130,0.2);--text:#d0d0e0;--dim:#7878a0;--bright:#f0f0ff;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI','Hiragino Sans',sans-serif;--serif:Georgia,'Hiragino Mincho ProN','Yu Mincho',serif}
 @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
@@ -23,6 +24,7 @@ export const CSS = `
 @keyframes statusPulse{0%,100%{opacity:.7}50%{opacity:1}}
 @keyframes slideIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
 @keyframes floorReveal{0%{opacity:0;transform:scale(0.9)}50%{opacity:1}100%{opacity:1;transform:scale(1)}}
+@keyframes panImage{0%{transform:scale(1.08) translateX(-2%)}100%{transform:scale(1.08) translateX(2%)}}
 @keyframes endingGlow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.3)}}
 @keyframes popIn{0%{transform:scale(0.8);opacity:0}50%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
 @keyframes dangerPulse{0%,100%{opacity:.9}50%{opacity:.55}}
@@ -30,10 +32,10 @@ export const CSS = `
 @keyframes bought{0%{background:rgba(74,222,128,.25);transform:scale(1.02)}100%{background:rgba(74,222,128,.06);transform:scale(1)}}
 @keyframes countUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .btn{display:block;width:100%;padding:14px 18px;margin-bottom:10px;background:rgba(22,22,44,.7);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--sans);cursor:pointer;text-align:left;line-height:1.65;transition:all .2s;position:relative;overflow:hidden}
-.btn:hover{background:rgba(40,40,70,.85);border-color:rgba(99,102,241,.35);transform:translateY(-2px);box-shadow:0 6px 24px rgba(99,102,241,.1)}
+.btn:hover, .btn.selected{background:rgba(40,40,70,.85);border-color:rgba(99,102,241,.35);transform:translateY(-2px);box-shadow:0 6px 24px rgba(99,102,241,.1)}
 .btn:active{transform:translateY(0)}
 .btn-p{background:linear-gradient(135deg,rgba(99,102,241,.14),rgba(139,92,246,.1));border-color:rgba(99,102,241,.35);color:#c4b5fd}
-.btn-p:hover{background:linear-gradient(135deg,rgba(99,102,241,.25),rgba(139,92,246,.18));border-color:rgba(99,102,241,.5);box-shadow:0 6px 28px rgba(99,102,241,.18)}
+.btn-p:hover, .btn-p.selected{background:linear-gradient(135deg,rgba(99,102,241,.25),rgba(139,92,246,.18));border-color:rgba(99,102,241,.5);box-shadow:0 6px 28px rgba(99,102,241,.18)}
 .bar-t{width:100%;height:6px;background:rgba(25,25,50,.9);border-radius:4px;overflow:hidden}
 .bar-f{height:100%;border-radius:4px;transition:width .6s cubic-bezier(.4,0,.2,1)}
 .tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:3px 10px;border-radius:5px;font-family:var(--sans);font-weight:500}
@@ -61,6 +63,7 @@ export const CSS = `
 .tc{text-align:center}
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;font-size:12px;font-family:var(--sans)}
 .flex-wrap-c{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+@media(hover:none){.key-hint{display:none!important}}
 `;
 
 export const PAGE_STYLE = Object.freeze({

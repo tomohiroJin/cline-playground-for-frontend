@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * 迷宮の残響 - ゲームロジック（純粋関数）
  *
@@ -6,16 +5,120 @@
  * テスト容易性と再利用性のために分離。
  */
 
+// ── 型定義 ──────────────────────────────────────────
+
+/** プレイヤー状態 */
+export interface Player {
+  hp: number;
+  maxHp: number;
+  mn: number;
+  maxMn: number;
+  inf: number;
+  st: string[];
+}
+
+/** 難易度定義 */
+export interface DifficultyDef {
+  id: string;
+  name: string;
+  sub: string;
+  color: string;
+  icon: string;
+  desc: string;
+  hpMod: number;
+  mnMod: number;
+  drainMod: number;
+  dmgMult: number;
+  kpDeath: number;
+  kpWin: number;
+}
+
+/** アンロック効果 */
+export interface UnlockFx {
+  [key: string]: number | boolean;
+}
+
+/** アンロック定義 */
+export interface UnlockDef {
+  id: string;
+  name: string;
+  desc: string;
+  cost: number;
+  icon: string;
+  cat: string;
+  fx: UnlockFx;
+  gate?: string;
+  req?: string;
+  achReq?: (meta: MetaState) => boolean;
+  achDesc?: string;
+}
+
+/** FX集約オブジェクト */
+export interface FxState {
+  hpBonus: number;
+  mentalBonus: number;
+  infoBonus: number;
+  infoMult: number;
+  healMult: number;
+  dangerSense: boolean;
+  mnReduce: number;
+  bleedReduce: boolean;
+  drainImmune: boolean;
+  hpReduce: number;
+  curseImmune: boolean;
+  secondLife: boolean;
+  chainBoost: boolean;
+  negotiator: boolean;
+  mentalSense: boolean;
+}
+
+/** アウトカム（イベント結果） */
+export interface Outcome {
+  c: string;
+  r: string;
+  hp?: number;
+  mn?: number;
+  inf?: number;
+  fl?: string;
+}
+
+/** 選択肢 */
+export interface Choice {
+  t: string;
+  o: Outcome[];
+}
+
+/** メタ状態 */
+export interface MetaState {
+  runs: number;
+  escapes: number;
+  kp: number;
+  unlocked: string[];
+  bestFl: number;
+  totalEvents: number;
+  endings: string[];
+  clearedDiffs: string[];
+  totalDeaths: number;
+  lastRun: { cause: string; floor: number; ending: string | null; hp: number; mn: number; inf: number } | null;
+  title: string | null;
+}
+
+/** ステータスメタ情報 */
+interface StatusMetaDef {
+  colors: readonly string[];
+  tick: { hp: number; mn: number } | null;
+}
+
 // ── 契約（DbC） ──────────────────────────────────────
 
 /** Design-by-Contract assertion — throws on violation */
-export const invariant = (cond, ctx, detail = "") => {
+export function invariant(cond: unknown, ctx: string, detail = ""): asserts cond {
   if (!cond) {
     const msg = `[迷宮の残響] Invariant violation in ${ctx}${detail ? `: ${detail}` : ""}`;
     console.error(msg);
     throw new Error(msg);
   }
-};
+}
 
 // ── ゲーム設定 ────────────────────────────────────────
 
@@ -29,10 +132,10 @@ export const CFG = Object.freeze({
   MAX_BOSS_RETRIES: 3,
 });
 
-export const DIFFICULTY = Object.freeze([
+export const DIFFICULTY: readonly DifficultyDef[] = Object.freeze([
   { id: "easy",   name: "探索者", sub: "初心者向け", color: "#4ade80", icon: "🌿",
     desc: "体力・精神にゆとりがあり、迷宮の侵蝕も穏やか。物語を楽しみたい方に。",
-    hpMod: 12, mnMod: 8, drainMod: 0, dmgMult: 0.8, kpDeath: 1, kpWin: 2 },
+    hpMod: 12, mnMod: 8, drainMod: 0, dmgMult: 0.7, kpDeath: 1, kpWin: 2 },
   { id: "normal", name: "挑戦者", sub: "標準難度",   color: "#818cf8", icon: "⚔",
     desc: "均衡の取れた難易度。判断力と運の両方が試される。",
     hpMod: 0,  mnMod: 0,  drainMod: -1, dmgMult: 1, kpDeath: 1, kpWin: 3 },
@@ -44,7 +147,7 @@ export const DIFFICULTY = Object.freeze([
     hpMod: -25, mnMod: -20, drainMod: -5, dmgMult: 1.8, kpDeath: 3, kpWin: 8 },
 ]);
 
-export const STATUS_META = Object.freeze({
+export const STATUS_META: Readonly<Record<string, StatusMetaDef>> = Object.freeze({
   "負傷": { colors: ["#f87171", "rgba(248,113,113,0.08)", "rgba(248,113,113,0.18)"], tick: null },
   "混乱": { colors: ["#c084fc", "rgba(192,132,252,0.08)", "rgba(192,132,252,0.18)"], tick: null },
   "出血": { colors: ["#fb7185", "rgba(251,113,133,0.08)", "rgba(251,113,133,0.18)"], tick: { hp: -5, mn: 0 } },
@@ -92,11 +195,11 @@ export const UNLOCKS = Object.freeze([
   { id: "u34", name: "修羅の証",     desc: "全ステータス +3、全ダメージ -3%", cost: 0, icon: "💀", cat: "trophy", req: "abyss", fx: { hpBonus: 3, mentalBonus: 3, infoBonus: 3, hpReduce: 0.97, mnReduce: 0.97 } },
   { id: "u35", name: "完全制覇の印", desc: "全ステータス +5、回復 +8%、情報 +8%", cost: 0, icon: "👑", cat: "trophy", req: "abyss_perfect", fx: { hpBonus: 5, mentalBonus: 5, infoBonus: 5, healMult: 1.08, infoMult: 1.08 } },
   // ── 実績解放（ACHIEVEMENT: 条件厳格化、微効果） ──
-  { id: "u36", name: "百戦錬磨",     desc: "全初期ステータス +2",    cost: 0, icon: "🏅", cat: "achieve", achReq: (m) => m.runs >= 20,   achDesc: "20回探索する", fx: { hpBonus: 2, mentalBonus: 2, infoBonus: 2 } },
-  { id: "u37", name: "生還の達人",   desc: "回復効果 +8%、精神ダメージ -3%", cost: 0, icon: "🏆", cat: "achieve", achReq: (m) => m.escapes >= 8, achDesc: "8回生還する", fx: { healMult: 1.08, mnReduce: 0.97 } },
-  { id: "u38", name: "博覧強記",     desc: "初期情報値 +3、情報取得量 +8%", cost: 0, icon: "📚", cat: "achieve", achReq: (m) => m.totalEvents >= 80, achDesc: "累計80イベントをクリアする", fx: { infoBonus: 3, infoMult: 1.08 } },
-  { id: "u39", name: "死線を越えて", desc: "全ダメージ -3%",          cost: 0, icon: "☠",  cat: "achieve", achReq: (m) => (m.totalDeaths ?? 0) >= 15, achDesc: "15回死亡する", fx: { hpReduce: 0.97, mnReduce: 0.97 } },
-  { id: "u40", name: "エンディングコレクター", desc: "全初期ステータス +3", cost: 0, icon: "🎭", cat: "achieve", achReq: (m) => (m.endings?.length ?? 0) >= 8, achDesc: "8種類のEDを見る", fx: { hpBonus: 3, mentalBonus: 3, infoBonus: 3 } },
+  { id: "u36", name: "百戦錬磨",     desc: "全初期ステータス +2",    cost: 0, icon: "🏅", cat: "achieve", achReq: (m: MetaState) => m.runs >= 20,   achDesc: "20回探索する", fx: { hpBonus: 2, mentalBonus: 2, infoBonus: 2 } },
+  { id: "u37", name: "生還の達人",   desc: "回復効果 +8%、精神ダメージ -3%", cost: 0, icon: "🏆", cat: "achieve", achReq: (m: MetaState) => m.escapes >= 8, achDesc: "8回生還する", fx: { healMult: 1.08, mnReduce: 0.97 } },
+  { id: "u38", name: "博覧強記",     desc: "初期情報値 +3、情報取得量 +8%", cost: 0, icon: "📚", cat: "achieve", achReq: (m: MetaState) => m.totalEvents >= 80, achDesc: "累計80イベントをクリアする", fx: { infoBonus: 3, infoMult: 1.08 } },
+  { id: "u39", name: "死線を越えて", desc: "全ダメージ -3%",          cost: 0, icon: "☠",  cat: "achieve", achReq: (m: MetaState) => (m.totalDeaths ?? 0) >= 15, achDesc: "15回死亡する", fx: { hpReduce: 0.97, mnReduce: 0.97 } },
+  { id: "u40", name: "エンディングコレクター", desc: "全初期ステータス +3", cost: 0, icon: "🎭", cat: "achieve", achReq: (m: MetaState) => (m.endings?.length ?? 0) >= 8, achDesc: "8種類のEDを見る", fx: { hpBonus: 3, mentalBonus: 3, infoBonus: 3 } },
 ]);
 
 // ── 純粋ゲームロジック ────────────────────────────────
@@ -110,25 +213,25 @@ export const shuffle = _shuffle;
 /** FX key classification for merge strategy */
 export const FX_MULT = new Set(["infoMult", "healMult", "mnReduce", "hpReduce"]);
 export const FX_BOOL = new Set(["dangerSense", "bleedReduce", "drainImmune", "curseImmune", "secondLife", "chainBoost", "negotiator", "mentalSense"]);
-export const FX_DEFAULTS = Object.freeze({ hpBonus: 0, mentalBonus: 0, infoBonus: 0, infoMult: 1, healMult: 1, dangerSense: false, mnReduce: 1, bleedReduce: false, drainImmune: false, hpReduce: 1, curseImmune: false, secondLife: false, chainBoost: false, negotiator: false, mentalSense: false });
+export const FX_DEFAULTS: Readonly<FxState> = Object.freeze({ hpBonus: 0, mentalBonus: 0, infoBonus: 0, infoMult: 1, healMult: 1, dangerSense: false, mnReduce: 1, bleedReduce: false, drainImmune: false, hpReduce: 1, curseImmune: false, secondLife: false, chainBoost: false, negotiator: false, mentalSense: false });
 
 /**
  * Merge all unlock effects into a single FX object.
  * @pre  each id in unlockIds exists in UNLOCKS
  * @post returned object has every key in FX_DEFAULTS
  */
-export const computeFx = (unlockIds) => {
-  const fx = { ...FX_DEFAULTS };
+export const computeFx = (unlockIds: string[]): FxState => {
+  const fx: Record<string, number | boolean> = { ...FX_DEFAULTS };
   for (const uid of unlockIds) {
     const def = UNLOCKS.find(u => u.id === uid);
     if (!def?.fx) continue;
     for (const [k, v] of Object.entries(def.fx)) {
-      if (FX_MULT.has(k))      fx[k] *= v;
+      if (FX_MULT.has(k))      (fx[k] as number) *= v as number;
       else if (FX_BOOL.has(k)) fx[k] = v;
-      else                      fx[k] += v;
+      else                      (fx[k] as number) += v as number;
     }
   }
-  return fx;
+  return fx as unknown as FxState;
 };
 
 /**
@@ -136,7 +239,7 @@ export const computeFx = (unlockIds) => {
  * @pre  diff != null && fx != null
  * @post hp > 0 && mn > 0
  */
-export const createPlayer = (diff, fx) => {
+export const createPlayer = (diff: DifficultyDef, fx: FxState): Player => {
   invariant(diff != null, "createPlayer", "diff is required");
   invariant(fx != null, "createPlayer", "fx is required");
   const hp = CFG.BASE_HP + fx.hpBonus + diff.hpMod;
@@ -148,7 +251,7 @@ export const createPlayer = (diff, fx) => {
  * Evaluate a condition string against player state.
  * @param cond — "default" | "status:X" | "hp>N" | "mn>N" | "inf>N"
  */
-export const evalCond = (cond, player, fx) => {
+export const evalCond = (cond: string, player: Player, fx: FxState): boolean => {
   if (cond === "default") return true;
   if (cond.startsWith("status:")) return player.st.includes(cond.slice(7));
   if (cond.startsWith("hp>")) {
@@ -174,7 +277,7 @@ export const evalCond = (cond, player, fx) => {
  * Resolve which outcome applies for a choice.
  * @pre choice.o is a non-empty array
  */
-export const resolveOutcome = (choice, player, fx) => {
+export const resolveOutcome = (choice: Choice, player: Player, fx: FxState): Outcome => {
   invariant(choice?.o?.length > 0, "resolveOutcome", "choice must have outcomes");
   for (const o of choice.o) {
     if (o.c !== "default" && evalCond(o.c, player, fx)) return o;
@@ -186,11 +289,11 @@ export const resolveOutcome = (choice, player, fx) => {
  * Apply fx/diff modifiers to raw outcome values. Pure.
  * @returns { hp, mn, inf }
  */
-export const applyModifiers = (outcome, fx, diff, playerStatuses) => {
+export const applyModifiers = (outcome: Outcome, fx: FxState, diff: DifficultyDef | null, playerStatuses: string[]): { hp: number; mn: number; inf: number } => {
   let hp = outcome.hp ?? 0, mn = outcome.mn ?? 0, inf = outcome.inf ?? 0;
   if (hp > 0) hp = Math.round(hp * fx.healMult);
   if (hp < 0) hp = Math.round(hp * fx.hpReduce);
-  if (diff?.dmgMult !== 1) {
+  if (diff && diff.dmgMult !== 1) {
     if (hp < 0) hp = Math.round(hp * diff.dmgMult);
     if (mn < 0) mn = Math.round(mn * diff.dmgMult);
   }
@@ -203,7 +306,7 @@ export const applyModifiers = (outcome, fx, diff, playerStatuses) => {
 /**
  * Apply stat changes + status flag to player. Pure.
  */
-export const applyToPlayer = (player, { hp, mn, inf }, flag) => {
+export const applyToPlayer = (player: Player, { hp, mn, inf }: { hp: number; mn: number; inf: number }, flag: string | null): Player => {
   let sts = [...player.st];
   if (flag?.startsWith("add:"))    { const s = flag.slice(4); if (!sts.includes(s)) sts.push(s); }
   if (flag?.startsWith("remove:")) { sts = sts.filter(s => s !== flag.slice(7)); }
@@ -220,7 +323,7 @@ export const applyToPlayer = (player, { hp, mn, inf }, flag) => {
  * Compute per-turn drain (labyrinth + status ticks). Pure.
  * @returns { player, drain: {hp,mn}|null }
  */
-export const computeDrain = (player, fx, diff) => {
+export const computeDrain = (player: Player, fx: FxState, diff: DifficultyDef | null): { player: Player; drain: { hp: number; mn: number } | null } => {
   const base = diff ? diff.drainMod : -1;
   let hpD = 0, mnD = fx.drainImmune ? 0 : base;
   for (const s of player.st) {
@@ -239,7 +342,7 @@ export const computeDrain = (player, fx, diff) => {
 };
 
 /** Classify impact for audio/visual feedback */
-export const classifyImpact = (hp, mn) => {
+export const classifyImpact = (hp: number, mn: number): string | null => {
   if (hp < -15) return "bigDmg";
   if (hp < 0 || mn < -10) return "dmg";
   if (hp > 0) return "heal";
@@ -247,5 +350,5 @@ export const classifyImpact = (hp, mn) => {
 };
 
 /** Overall progress 0-100 */
-export const computeProgress = (floor, step) =>
+export const computeProgress = (floor: number, step: number): number =>
   Math.min(100, ((floor - 1) * CFG.EVENTS_PER_FLOOR + step) / (CFG.MAX_FLOOR * CFG.EVENTS_PER_FLOOR) * 100);

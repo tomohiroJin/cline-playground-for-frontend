@@ -1,9 +1,38 @@
-// @ts-nocheck
-/**
- * 迷宮の残響 - ページレイアウトコンポーネント
- */
+import React from 'react';
 import { CSS, PAGE_STYLE } from '../styles';
+import { ParallaxBg } from './ParallaxBg';
 
-export const Page = ({ children, particles }) => (
-  <div style={PAGE_STYLE}><style>{CSS}</style>{particles}{children}</div>
-);
+interface PageProps {
+  children: React.ReactNode;
+  particles?: React.ReactNode;
+  floor?: number;
+}
+
+/** パララックス背景とコンテンツの間に挟む半透明オーバーレイ */
+const DARK_OVERLAY: React.CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  zIndex: 1,
+  pointerEvents: "none",
+  background: "linear-gradient(180deg, rgba(8,8,24,0.65) 0%, rgba(12,12,32,0.6) 40%, rgba(8,8,18,0.65) 100%)",
+};
+
+export const Page: React.FC<PageProps> = ({ children, particles, floor }) => {
+  // パララックス使用時は背景を透明にし、body の暗色背景 + パララックスが見えるようにする
+  const hasParallax = floor !== undefined;
+  const pageStyle = hasParallax
+    ? { ...PAGE_STYLE, background: "transparent" }
+    : PAGE_STYLE;
+
+  return (
+    <div style={pageStyle}>
+      <style>{CSS}</style>
+      {hasParallax && <ParallaxBg floor={floor} />}
+      {hasParallax && <div style={DARK_OVERLAY} />}
+      <div style={{ position: "relative", zIndex: 2 }}>
+        {particles}
+        {children}
+      </div>
+    </div>
+  );
+};
