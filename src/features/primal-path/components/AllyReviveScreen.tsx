@@ -3,7 +3,7 @@ import type { RunState, Ally, SfxType } from '../types';
 import type { GameAction } from '../hooks';
 import { allyReviveCost, deadAllies } from '../game-logic';
 import { TC } from '../constants';
-import { Screen, SubTitle, Divider, GameButton, GamePanel, Gc } from '../styles';
+import { Screen, SubTitle, Divider, GameButton, GamePanel, Gc, BiomeBg } from '../styles';
 
 interface Props {
   run: RunState;
@@ -27,6 +27,7 @@ export const AllyReviveScreen: React.FC<Props> = ({ run, dispatch, playSfx, show
 
   return (
     <Screen $center>
+      <BiomeBg $biome={run.cBT as string} />
       <div style={{ fontSize: 30, filter: 'drop-shadow(0 0 12px #d060ff40)' }}>✨</div>
       <SubTitle style={{ letterSpacing: 2 }}>仲間復活の儀</SubTitle>
       <Divider />

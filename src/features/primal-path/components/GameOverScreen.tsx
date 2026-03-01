@@ -4,7 +4,7 @@ import type { GameAction } from '../hooks';
 import { calcBoneReward, aliveAllies, effATK, civLvs } from '../game-logic';
 import { ACHIEVEMENTS } from '../constants';
 import { CivLevelsDisplay } from './shared';
-import { Screen, SubTitle, Divider, GameButton, GamePanel, RunStatRow, Gc, Tc, Xc } from '../styles';
+import { Screen, SubTitle, Divider, GameButton, GamePanel, RunStatRow, Gc, Tc, Xc, BiomeBg } from '../styles';
 
 interface Props {
   run: RunState;
@@ -16,6 +16,15 @@ interface Props {
 }
 
 export const GameOverScreen: React.FC<Props> = ({ run, won, save, dispatch, playSfx, newAchievements = [] }) => {
+  // 勝利時にSFXを再生
+  const winPlayed = useRef(false);
+  useEffect(() => {
+    if (won && !winPlayed.current) {
+      winPlayed.current = true;
+      playSfx('win');
+    }
+  }, [won, playSfx]);
+
   // 実績解除時にSFXを再生
   const achvPlayed = useRef(false);
   useEffect(() => {
@@ -36,6 +45,7 @@ export const GameOverScreen: React.FC<Props> = ({ run, won, save, dispatch, play
 
   return (
     <Screen $center>
+      <BiomeBg $biome={run.cBT as string} />
       <SubTitle style={{ fontSize: 18, color: won ? '#f0c040' : '#f05050' }}>
         {won ? '🏆 神話を刻んだ！' : '💀 部族は滅びた…'}
       </SubTitle>

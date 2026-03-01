@@ -35,7 +35,7 @@ export const TitleScreen: React.FC<Props> = ({ save, dispatch, playSfx }) => {
 
   return (
     <Screen $center>
-      <canvas ref={canvasRef} width={240} height={130} style={{ width: 360, height: 195, marginBottom: 4, imageRendering: 'pixelated' }} />
+      <canvas ref={canvasRef} aria-hidden="true" width={240} height={130} style={{ width: 360, height: 195, marginBottom: 4, imageRendering: 'pixelated' }} />
       <Title>原始進化録</Title>
       <div style={{ fontSize: 13, color: '#b89830', letterSpacing: 7, marginBottom: 2 }}>PRIMAL PATH</div>
       <Divider />

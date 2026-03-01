@@ -44,7 +44,7 @@ export interface BgmPattern {
 }
 
 /** SFX タイプ */
-export type SfxType = 'hit' | 'crit' | 'kill' | 'heal' | 'evo' | 'death' | 'click' | 'boss' | 'win' | 'skFire' | 'skHeal' | 'skRage' | 'skShield' | 'synergy' | 'event' | 'achv';
+export type SfxType = 'hit' | 'crit' | 'kill' | 'heal' | 'evo' | 'death' | 'click' | 'boss' | 'win' | 'skFire' | 'skHeal' | 'skRage' | 'skShield' | 'synergy' | 'event' | 'achv' | 'plDmg' | 'allyJoin' | 'civUp' | 'envDmg';
 
 /** SFX 定義 */
 export interface SfxDef {

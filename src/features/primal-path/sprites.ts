@@ -51,6 +51,7 @@ function pxRect(ctx: CanvasRenderingContext2D, s: number, x: number, y: number, 
   ctx.fillRect(x * s, y * s, w * s, h * s);
 }
 
+/** プレイヤーキャラクターをピクセルアートで描画する（覚醒オーラ・シンボル対応） */
 export function drawPlayer(c: HTMLCanvasElement, s = 2, fe?: CivTypeExt | null, awoken?: AwokenRecord[]): void {
   const x = c.getContext('2d')!;
   c.width = 16 * s;
@@ -123,6 +124,7 @@ export function drawPlayer(c: HTMLCanvasElement, s = 2, fe?: CivTypeExt | null, 
   }
 }
 
+/** 味方キャラクターをピクセルアートで描画する */
 export function drawAlly(c: HTMLCanvasElement, t: string, s = 2): void {
   const x = c.getContext('2d')!;
   c.width = 12 * s;
@@ -136,6 +138,7 @@ export function drawAlly(c: HTMLCanvasElement, t: string, s = 2): void {
   d(2, 5, 8, 6, cl); d(0, 5, 3, 4, cl); d(9, 5, 3, 4, cl); d(2, 11, 3, 4, cl); d(7, 11, 3, 4, cl);
 }
 
+/** 敵キャラクターをピクセルアートで描画する（通常/ボスサイズ対応） */
 export function drawEnemy(c: HTMLCanvasElement, nm: string, big: boolean, s = 2): void {
   const sz = big ? 24 : 16;
   c.width = sz * s;
@@ -160,6 +163,7 @@ export function drawEnemy(c: HTMLCanvasElement, nm: string, big: boolean, s = 2)
   }
 }
 
+/** タイトル画面のロゴをグラデーション背景付きで描画する */
 export function drawTitle(c: HTMLCanvasElement): void {
   const x = c.getContext('2d')!;
   c.width = 240;

@@ -1,8 +1,8 @@
 /**
- * 原始進化録 - PRIMAL PATH - BGM システムテスト
+ * 原始進化録 - PRIMAL PATH - BGM・SFX システムテスト
  */
-import { BGM_PATTERNS } from '../constants';
-import type { BgmType } from '../types';
+import { BGM_PATTERNS, SFX_DEFS } from '../constants';
+import type { BgmType, SfxType } from '../types';
 
 describe('BGM システム', () => {
   describe('BGM_PATTERNS 定数', () => {
@@ -93,7 +93,12 @@ describe('BGM システム', () => {
       (globalThis as unknown as { AudioContext: unknown }).AudioContext = jest.fn(() => mockAudioContext);
     });
 
-    afterEach(() => {
+    afterEach(async () => {
+      // BgmEngine の setInterval を確実に停止（Jest がハングしないようにする）
+      try {
+        const { BgmEngine } = await import('../audio');
+        BgmEngine.stop();
+      } catch { /* ignore */ }
       jest.restoreAllMocks();
       delete (globalThis as unknown as { AudioContext?: unknown }).AudioContext;
     });
@@ -146,6 +151,144 @@ describe('BGM システム', () => {
 
       // 新しい BGM が再生中
       expect(BgmEngine.isPlaying()).toBe(true);
+    });
+
+    it('同じBGMタイプで play() を再度呼ぶとスキップされる', async () => {
+      const { BgmEngine } = await import('../audio');
+      BgmEngine.init();
+      BgmEngine.play('grassland');
+      const callCount = mockAudioContext.createOscillator.mock.calls.length;
+      // 同じタイプで再度再生
+      BgmEngine.play('grassland');
+      // 新しい Oscillator が作成されていないこと
+      expect(mockAudioContext.createOscillator.mock.calls.length).toBe(callCount);
+    });
+
+    it('getCurrentType() で再生中のBGMタイプを取得できる', async () => {
+      const { BgmEngine } = await import('../audio');
+      BgmEngine.init();
+
+      expect(BgmEngine.getCurrentType()).toBeNull();
+      BgmEngine.play('volcano');
+      expect(BgmEngine.getCurrentType()).toBe('volcano');
+      BgmEngine.stop();
+      expect(BgmEngine.getCurrentType()).toBeNull();
+    });
+  });
+
+  describe('SFX_DEFS 定数', () => {
+    const EXPECTED_SFX: SfxType[] = [
+      'hit', 'crit', 'kill', 'heal', 'evo', 'death', 'click', 'boss',
+      'win', 'skFire', 'skHeal', 'skRage', 'skShield', 'synergy', 'event', 'achv',
+      'plDmg', 'allyJoin', 'civUp', 'envDmg',
+    ];
+
+    it('20種類のSFXが定義されている（目標15種以上）', () => {
+      expect(Object.keys(SFX_DEFS).length).toBeGreaterThanOrEqual(15);
+      expect(Object.keys(SFX_DEFS)).toHaveLength(20);
+    });
+
+    it.each(EXPECTED_SFX)('"%s" SFX が定義されている', (type) => {
+      expect(SFX_DEFS[type]).toBeDefined();
+    });
+
+    it.each(EXPECTED_SFX)('"%s" SFX に必要なプロパティがある', (type) => {
+      const def = SFX_DEFS[type];
+      // 周波数配列
+      expect(Array.isArray(def.f)).toBe(true);
+      expect(def.f.length).toBeGreaterThan(0);
+      expect(def.f.every(freq => freq > 0)).toBe(true);
+      // 周波数段階時間
+      expect(def.fd).toBeGreaterThan(0);
+      // ゲイン
+      expect(def.g).toBeGreaterThan(0);
+      expect(def.g).toBeLessThanOrEqual(1);
+      // ゲイン減衰時間
+      expect(def.gd).toBeGreaterThan(0);
+      // 波形タイプ
+      expect(['sine', 'square', 'triangle', 'sawtooth']).toContain(def.w);
+    });
+
+    it('ゲイン減衰時間は周波数段階時間より長い', () => {
+      for (const [key, def] of Object.entries(SFX_DEFS)) {
+        expect(def.gd).toBeGreaterThanOrEqual(def.fd);
+      }
+    });
+  });
+
+  describe('AudioEngine', () => {
+    let mockAudioContext2: {
+      createOscillator: jest.Mock;
+      createGain: jest.Mock;
+      destination: object;
+      currentTime: number;
+    };
+    let mockOsc2: {
+      connect: jest.Mock;
+      start: jest.Mock;
+      stop: jest.Mock;
+      frequency: { setValueAtTime: jest.Mock; exponentialRampToValueAtTime: jest.Mock };
+      type: string;
+    };
+    let mockGain2: {
+      connect: jest.Mock;
+      gain: { setValueAtTime: jest.Mock; exponentialRampToValueAtTime: jest.Mock };
+    };
+
+    beforeEach(() => {
+      jest.resetModules();
+      mockOsc2 = {
+        connect: jest.fn(),
+        start: jest.fn(),
+        stop: jest.fn(),
+        frequency: { setValueAtTime: jest.fn(), exponentialRampToValueAtTime: jest.fn() },
+        type: 'sine',
+      };
+      mockGain2 = {
+        connect: jest.fn(),
+        gain: { setValueAtTime: jest.fn(), exponentialRampToValueAtTime: jest.fn() },
+      };
+      mockAudioContext2 = {
+        createOscillator: jest.fn(() => mockOsc2),
+        createGain: jest.fn(() => mockGain2),
+        destination: {},
+        currentTime: 0,
+      };
+      (globalThis as unknown as { AudioContext: unknown }).AudioContext = jest.fn(() => mockAudioContext2);
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+      delete (globalThis as unknown as { AudioContext?: unknown }).AudioContext;
+    });
+
+    it('AudioEngine.play() で SFX が再生される', async () => {
+      const { AudioEngine } = await import('../audio');
+      AudioEngine.init();
+      AudioEngine.play('hit');
+
+      expect(mockAudioContext2.createOscillator).toHaveBeenCalled();
+      expect(mockAudioContext2.createGain).toHaveBeenCalled();
+      expect(mockOsc2.start).toHaveBeenCalled();
+      expect(mockOsc2.stop).toHaveBeenCalled();
+    });
+
+    it('AudioEngine.setSfxVolume() で音量を設定・取得できる', async () => {
+      const { AudioEngine } = await import('../audio');
+      AudioEngine.init();
+      AudioEngine.setSfxVolume(0.75);
+      expect(AudioEngine.getSfxVolume()).toBe(0.75);
+    });
+
+    it('AudioEngine.setSfxVolume() は 0〜1 にクランプされる', async () => {
+      const { AudioEngine } = await import('../audio');
+      AudioEngine.init();
+
+      AudioEngine.setSfxVolume(-1);
+      expect(AudioEngine.getSfxVolume()).toBe(0);
+
+      AudioEngine.setSfxVolume(2);
+      expect(AudioEngine.getSfxVolume()).toBe(1);
     });
   });
 });

@@ -43,6 +43,22 @@ export const HowToPlayScreen: React.FC<Props> = ({ dispatch, playSfx }) => (
       <p>速度ボタン（×1/×2/×4/×8）で自動戦闘のスピードを変更。</p>
       <p>⏸ボタンで一時停止。速度設定はセッション中のラン間で保持されます。</p>
       <br />
+      <p style={{ color: '#f0c040', fontSize: 11, marginBottom: 2 }}>🧬 シナジーシステム</p>
+      <p>進化カードには<span style={{ color: '#f0c040' }}>シナジータグ</span>（🔥火、🧊氷、♻️再生、🛡️盾、🏹狩り、👻霊、🏕️部族、🐾野生）があります。</p>
+      <p>同じタグの進化を<span style={{ color: '#50e090' }}>2つ</span>集めるとTier1ボーナスが発動！</p>
+      <p><span style={{ color: '#f0c040' }}>3つ</span>以上でさらに強力なTier2ボーナスに進化。</p>
+      <p>進化選択画面でタグの取得状況を確認できます。</p>
+      <br />
+      <p style={{ color: '#f0c040', fontSize: 11, marginBottom: 2 }}>🗺️ ランダムイベント</p>
+      <p>バトル後に一定確率でランダムイベントが発生します。</p>
+      <p>骨の商人、古代の祠、毒沼など全8種。選択肢によって異なる効果が得られます。</p>
+      <p>バイオームごとに出現しやすいイベントがあります。</p>
+      <br />
+      <p style={{ color: '#f0c040', fontSize: 11, marginBottom: 2 }}>🏆 実績・チャレンジ</p>
+      <p>タイトル画面から<span style={{ color: '#f0c040' }}>実績</span>（15個）と<span style={{ color: '#f0c040' }}>チャレンジ</span>（3種）を確認できます。</p>
+      <p>実績: 初クリア、全難易度制覇、シナジーマスターなどの達成目標。</p>
+      <p>チャレンジ: HP半減、進化制限、タイムアタックなどの特殊ルール。</p>
+      <br />
       <p style={{ color: '#f0c040', fontSize: 11, marginBottom: 2 }}>⚔ 戦闘のコツ</p>
       <p>降伏すると骨が半減。復活ツリーで死亡時に復活可能。</p>
       <p>仲間は文明Lv2/4/6で加入。盾役はダメージを吸収。</p>

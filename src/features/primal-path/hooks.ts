@@ -55,7 +55,8 @@ type GameAction =
   | { type: 'APPLY_EVENT_RESULT'; nextRun: RunState }
   | { type: 'LOAD_META' }
   | { type: 'RECORD_RUN_END'; won: boolean }
-  | { type: 'START_CHALLENGE'; challengeId: string; di: number };
+  | { type: 'START_CHALLENGE'; challengeId: string; di: number }
+  | { type: 'SKIP_EVO' };
 
 /* ===== Initial State ===== */
 
@@ -202,10 +203,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'BUY_TREE_NODE': {
       const { nodeId } = action;
       const nd = TREE_DATA.find(x => x.id === nodeId);
-      const cost = nd ? nd.c : 0;
+      if (!nd) return state;
+      if (state.save.tree[nodeId]) return state;
+      if (state.save.bones < nd.c) return state;
       const save = {
         ...state.save,
-        bones: state.save.bones - cost,
+        bones: state.save.bones - nd.c,
         tree: { ...state.save.tree, [nodeId]: 1 },
       };
       return { ...state, save };
@@ -228,6 +231,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'SELECT_EVO': {
       if (!state.run) return state;
+      // maxEvo ガード: 進化上限に達している場合はバトルへ直行
+      if (state.run.maxEvo !== undefined && state.run.evs.length >= state.run.maxEvo) {
+        const battleRun = startBattle(state.run, state.finalMode);
+        battleRun.log.push({ x: `⚠️ 進化上限（${state.run.maxEvo}回）に達しました`, c: 'rc' });
+        return { ...state, run: battleRun, phase: 'battle' };
+      }
       const prevMhp = state.run.mhp;
       const { nextRun, allyJoined, allyRevived } = applyEvo(state.run, action.evo);
       // Check awakening
@@ -396,7 +405,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case 'RESET_SAVE':
-      return { ...state, save: { bones: 0, tree: {}, clears: 0, runs: 0, best: {} } };
+      return { ...state, save: { ...FRESH_SAVE } };
 
     case 'SET_PHASE':
       return { ...state, phase: action.phase };
@@ -457,14 +466,22 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const { nextStates, newIds } = checkAllAchievements(state.achievementStates, rs, newAgg);
 
       const newRunStats = [...state.runStats, rs];
+      const save = { ...state.save, bones: state.save.bones + boneEarned };
 
       return {
         ...state,
+        save,
         runStats: newRunStats,
         aggregate: newAgg,
         achievementStates: nextStates,
         newAchievements: newIds,
       };
+    }
+
+    case 'SKIP_EVO': {
+      if (!state.run) return state;
+      const battleRun = startBattle(state.run, state.finalMode);
+      return { ...state, run: battleRun, phase: 'battle' };
     }
 
     case 'START_CHALLENGE': {
@@ -491,8 +508,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       };
     }
 
-    default:
+    default: {
+      const _exhaustive: never = action;
       return state;
+    }
   }
 }
 
@@ -579,7 +598,8 @@ export function useBattle(
     }, state.battleSpd);
 
     return clearTimer;
-  }, [state.phase, state.battleSpd, state.finalMode, clearTimer, dispatch, onEvents]);
+    // state.run?._fPhase: 最終ボス Phase 2 遷移時にタイマーを再起動するために必要
+  }, [state.phase, state.battleSpd, state.finalMode, state.run?._fPhase, clearTimer, dispatch, onEvents]);
 
   return { clearTimer };
 }
@@ -687,4 +707,5 @@ export function usePersistence(
   return { loaded };
 }
 
+export { gameReducer, initialState };
 export type { GameAction };

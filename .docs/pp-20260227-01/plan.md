@@ -316,3 +316,40 @@ Phase 7（ドキュメント）── 各Phase 完了時 + 全体完了後:
 | リグレッション | 0（既存テスト全パス維持） |
 | ドキュメント整合性 | 全ドキュメントが実装と一致（差分0） |
 | JSDoc カバレッジ（新規関数） | 100%（全新規 export 関数に JSDoc） |
+
+---
+
+## 9. 実装ノート（計画からの変更点）
+
+実装中に計画から変更・追加・除外した事項を記録する。
+
+### 9.1 変更した設計判断
+
+| 項目 | 計画時 | 実装結果 | 理由 |
+|------|--------|----------|------|
+| 型名の省略 | `ActiveSkillId`, `SkillEffect`, `SkillState`, `ActiveBuff`, `DamagePopup` | `ASkillId`, `SkillFx`, `SkillSt`, `ABuff`, `DmgPopup` | 既存コードの省略記法（`CivType` → `CivType` は例外だが、`n`, `d`, `t` 等）との一貫性を保つため |
+| 関数名 | `applyActiveSkill()`, `calcSynergyBonuses()` | `applySkill()`, `applySynergyBonuses()` | 簡潔さを優先 |
+| イベント発生確率 | `EVENT_CHANCE = 0.2`（20%） | `EVENT_CHANCE = 0.3`（30%） | プレイテストでイベント遭遇頻度が低すぎたため調整 |
+| イベント最小バトル数 | `EVENT_MIN_BATTLES = 2` | `EVENT_MIN_BATTLES = 1` | より早期にイベントを体験できるよう調整 |
+| テスト数目標 | 80テスト以上 | 329テスト（12スイート） | TDD アプローチにより大幅超過達成 |
+
+### 9.2 追加した機能
+
+| 追加機能 | 説明 |
+|---------|------|
+| `situationText` フィールド | `RandomEventDef` に状況説明テキストを追加。プレイヤーがイベントの文脈を理解しやすくした |
+| `hp_damage` コスト型 | `EventCost` に HP ダメージコストを追加。骨以外のコストでリスク・リターンを表現 |
+| `dominantCiv()` | 最もレベルの高い文明タイプを返すユーティリティ関数 |
+| `getEffectHintColor()` / `getEffectHintIcon()` | イベント効果のヒント色・アイコンを返す UI ヘルパー関数 |
+| `formatEventResult()` / `computeEventResult()` | イベント結果の事前計算・メッセージ生成（FB-P3 フィードバック対応） |
+| `getAwakeningVisual()` | 覚醒段階のビジュアル情報を返す関数（Phase 5） |
+| 音量 localStorage 永続化 | SFX/BGM の音量設定をセッション間で保持 |
+| バイオーム固有イベント重み付け | バイオームアフィニティ一致時に出現確率2倍（重複追加方式） |
+
+### 9.3 除外した機能
+
+| 除外機能 | 計画での記載 | 除外理由 |
+|---------|-------------|---------|
+| 称号システム（4-3） | 実績解除に応じたタイトル画面での称号表示 | Phase 4 のスコープを限定するため。実績システムで十分なプレイヤー報酬を実現 |
+| 天候エフェクト（5-4） | 雪・火の粉等の CSS パーティクル | Phase 5 のスコープを限定。バイオーム背景で十分な雰囲気を表現 |
+| `drawBiomeBg()` / `drawTimerBar()` | spec.md で言及 | CSS/styled-components で実装したため Canvas 描画関数としては不要 |

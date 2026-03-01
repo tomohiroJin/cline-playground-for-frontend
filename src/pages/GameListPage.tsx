@@ -410,8 +410,8 @@ const GameListPage: React.FC = () => {
           <CardContent>
             <CardTitle>原始進化録 - PRIMAL PATH</CardTitle>
             <GameDescription>
-              文明を選び、進化を重ねて最終ボスに挑む自動戦闘ローグライト。
-              技術・生活・儀式の三大文明を育て、覚醒して神話を刻め。
+              三大文明を育て進化を重ねる自動戦闘ローグライト。
+              シナジービルド・ランダムイベント・実績＆チャレンジで毎回異なる冒険が待つ。
             </GameDescription>
             <PlayButton aria-hidden="true" tabIndex={-1}>
               Play Now <span>→</span>

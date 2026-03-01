@@ -9,44 +9,48 @@
 
 ### FB#9: maxEvo ガード
 
-- [ ] `hooks.ts`: `GameAction` に `SKIP_EVO` アクションを追加
-- [ ] `hooks.ts`: `SELECT_EVO` 先頭に `maxEvo` ガードを追加（上限到達時はバトルへ直行）
-- [ ] `hooks.ts`: `SKIP_EVO` case を追加（`startBattle` → `phase: 'battle'`）
-- [ ] `components/EvolutionScreen.tsx`: maxEvo 到達時の UI 分岐（メッセージ + スキップボタン）
-- [ ] `__tests__/game-logic.test.ts`: maxEvo ガードのテスト追加
+- [x] `hooks.ts`: `GameAction` に `SKIP_EVO` アクションを追加
+- [x] `hooks.ts`: `SELECT_EVO` 先頭に `maxEvo` ガードを追加（上限到達時はバトルへ直行）
+- [x] `hooks.ts`: `SKIP_EVO` case を追加（`startBattle` → `phase: 'battle'`）
+- [x] `components/EvolutionScreen.tsx`: maxEvo 到達時の UI 分岐（メッセージ + スキップボタン）
+- [x] `__tests__/reducer.test.ts`: maxEvo ガード・SKIP_EVO のテスト追加（5テスト）
 
 ### FB#1: チャレンジ難易度選択
 
-- [ ] `components/ChallengeScreen.tsx`: Props に `save: SaveData` を追加
-- [ ] `components/ChallengeScreen.tsx`: 内部 state `selectedChallenge` を追加（2段階フロー）
-- [ ] `components/ChallengeScreen.tsx`: 難易度選択 UI を実装（DIFFS 一覧、解放判定）
-- [ ] `PrimalPathGame.tsx`: ChallengeScreen に `save={state.save}` prop を渡す
+- [x] `components/ChallengeScreen.tsx`: Props に `save: SaveData` を追加
+- [x] `components/ChallengeScreen.tsx`: 内部 state `selectedChallenge` を追加（2段階フロー）
+- [x] `components/ChallengeScreen.tsx`: 難易度選択 UI を実装（DIFFS 一覧、解放判定）
+- [x] `PrimalPathGame.tsx`: ChallengeScreen に `save={state.save}` prop を渡す
 
 ### FB#2: 最終ボス戦カウントダウン
 
-- [ ] `components/PreFinalScreen.tsx`: カウントダウン state + useEffect を追加（3秒）
-- [ ] `components/PreFinalScreen.tsx`: カウントダウン表示 + 手動ボタン併設
+- [x] `components/PreFinalScreen.tsx`: カウントダウン state + useEffect を追加（3秒）
+- [x] `components/PreFinalScreen.tsx`: カウントダウン表示 + 手動ボタン併設
+- [x] `components/PreFinalScreen.tsx`: 二重dispatch防止（firedRef）+ カウントダウン0未満防止
+- [x] `hooks.ts`: useBattle 依存配列に `_fPhase` 追加（Phase 2 自動開始バグ修正）
 
 ### FB#5: 骨コスト調整
 
-- [ ] `constants.ts`: `bone_merchant` イベント: 骨30→10 / ATK+8→ATK+4
-- [ ] `constants.ts`: `bone_merchant` イベント: 骨50→25 / ATK+18→ATK+10
-- [ ] `constants.ts`: ラベル・description テキスト更新
+- [x] `constants.ts`: `bone_merchant` イベント: 骨30→10 / ATK+8→ATK+4
+- [x] `constants.ts`: `bone_merchant` イベント: 骨50→25 / ATK+18→ATK+10
+- [x] `constants.ts`: ラベル・description テキスト更新
+- [x] `__tests__/reducer.test.ts`: コスト・報酬・ラベルのテスト追加（5テスト）
 
 ### FB#6: ログ表示拡大
 
-- [ ] `styles.ts`: LogContainer `max-height: 100px` → `160px`
-- [ ] `components/BattleScreen.tsx`: `run.log.slice(-28)` → `run.log.slice(-40)`
+- [x] `styles.ts`: LogContainer `max-height: 100px` → `160px`
+- [x] `components/BattleScreen.tsx`: `run.log.slice(-28)` → `run.log.slice(-40)`
 
 ### FB#7: ゆっくり速度
 
-- [ ] `constants.ts`: SPEED_OPTS 先頭に `['×0.5', 1500]` を追加
+- [x] `constants.ts`: SPEED_OPTS 先頭に `['×0.5', 1500]` を追加
+- [x] `__tests__/reducer.test.ts`: 速度オプションのテスト追加（2テスト）
 
 ### P1 検証
 
-- [ ] `npm test` 全テストパス
-- [ ] `npx tsc --noEmit` 型エラーなし
-- [ ] `npm run build` ビルド成功
+- [x] `npm test` 全テストパス（167スイート / 2279テスト）
+- [x] `npx tsc --noEmit` 型エラーなし（tone ライブラリの既存エラーのみ）
+- [x] `npm run build` ビルド成功
 - [ ] ブラウザ確認: チャレンジ難易度選択動作
 - [ ] ブラウザ確認: maxEvo 制限動作（原始回帰チャレンジ）
 - [ ] ブラウザ確認: ログ表示拡大

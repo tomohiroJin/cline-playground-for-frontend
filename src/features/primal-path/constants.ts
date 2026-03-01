@@ -41,6 +41,7 @@ export const BIO: Readonly<Record<BiomeId, BiomeInfo>> = Object.freeze({
 
 /** 速度オプション */
 export const SPEED_OPTS: readonly SpeedOption[] = Object.freeze([
+  Object.freeze(['×0.5', 1500] as const),
   Object.freeze(['×1', 750] as const),
   Object.freeze(['×2', 400] as const),
   Object.freeze(['×4', 200] as const),
@@ -280,6 +281,10 @@ export const SFX_DEFS: Readonly<Record<string, SfxDef>> = Object.freeze({
   synergy: Object.freeze({ f: Object.freeze([440, 554, 659]), fd: 0.2, g: 0.1, gd: 0.25, w: 'sine' as const }),
   event: Object.freeze({ f: Object.freeze([330, 440]), fd: 0.15, g: 0.08, gd: 0.2, w: 'triangle' as const }),
   achv: Object.freeze({ f: Object.freeze([523, 659, 784, 1047]), fd: 0.1, g: 0.06, gd: 0.35, w: 'sine' as const }),
+  plDmg: Object.freeze({ f: Object.freeze([120, 60]), fd: 0.1, g: 0.1, gd: 0.15, w: 'sawtooth' as const }),
+  allyJoin: Object.freeze({ f: Object.freeze([440, 660, 880]), fd: 0.15, g: 0.08, gd: 0.25, w: 'sine' as const }),
+  civUp: Object.freeze({ f: Object.freeze([523, 659, 784]), fd: 0.12, g: 0.08, gd: 0.2, w: 'triangle' as const }),
+  envDmg: Object.freeze({ f: Object.freeze([150, 80, 50]), fd: 0.15, g: 0.08, gd: 0.2, w: 'square' as const }),
 });
 
 /** ツリーボーナスサマリー定義 */
@@ -432,8 +437,8 @@ export const RANDOM_EVENTS: readonly RandomEventDef[] = Object.freeze([
     description: '奇妙な商人が骨と引き換えに力を分けてくれるという。',
     situationText: '取引に応じるか？',
     choices: Object.freeze([
-      Object.freeze({ label: '骨30で取引する', description: '骨を消費してATK+8を得る', effect: Object.freeze({ type: 'stat_change' as const, stat: 'atk' as const, value: 8 }), riskLevel: 'safe' as const, cost: Object.freeze({ type: 'bone' as const, amount: 30 }) }),
-      Object.freeze({ label: '骨50で大取引する', description: '骨を多く消費して大きな力を得る', effect: Object.freeze({ type: 'stat_change' as const, stat: 'atk' as const, value: 18 }), riskLevel: 'risky' as const, cost: Object.freeze({ type: 'bone' as const, amount: 50 }) }),
+      Object.freeze({ label: '骨10で取引する', description: '骨を消費してATK+4を得る', effect: Object.freeze({ type: 'stat_change' as const, stat: 'atk' as const, value: 4 }), riskLevel: 'safe' as const, cost: Object.freeze({ type: 'bone' as const, amount: 10 }) }),
+      Object.freeze({ label: '骨25で大取引する', description: '骨を多く消費して大きな力を得る', effect: Object.freeze({ type: 'stat_change' as const, stat: 'atk' as const, value: 10 }), riskLevel: 'risky' as const, cost: Object.freeze({ type: 'bone' as const, amount: 25 }) }),
       Object.freeze({ label: '立ち去る', description: '何も起こらない', effect: Object.freeze({ type: 'nothing' as const }), riskLevel: 'safe' as const }),
     ]),
   }),

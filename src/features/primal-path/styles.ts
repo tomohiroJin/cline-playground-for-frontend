@@ -66,6 +66,18 @@ export const ovFadeOut = keyframes`
   to { opacity: 0; }
 `;
 
+/** タイトル文字の呼吸グロー */
+export const titleGlow = keyframes`
+  0%, 100% { text-shadow: 0 0 12px #f0c04060, 2px 2px #503800; }
+  50% { text-shadow: 0 0 24px #f0c04090, 0 0 40px #f0c04040, 2px 2px #503800; }
+`;
+
+/** フェードイン＋上昇 */
+export const fadeInUp = keyframes`
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
 /* ===== Game Container ===== */
 
 export const GameContainer = styled.div`
@@ -156,12 +168,14 @@ export const Title = styled.h1`
   text-shadow: 0 0 12px #f0c04060, 2px 2px #503800;
   letter-spacing: 3px;
   margin: 4px 0;
+  animation: ${titleGlow} 3s ease-in-out infinite;
 `;
 
 export const SubTitle = styled.h2`
   font-size: 14px;
   color: #f0c040;
   margin: 6px 0;
+  animation: ${fadeInUp} 0.4s ease-out;
 `;
 
 export const Divider = styled.div`
@@ -206,6 +220,7 @@ export const GamePanel = styled.div`
   margin: 4px 0;
   width: 100%;
   border-radius: 3px;
+  animation: ${fadeInUp} 0.3s ease-out;
 `;
 
 export const StatText = styled.div`
@@ -226,6 +241,7 @@ export const EvoCard = styled.button<{ $rare?: boolean }>`
   margin: 2px 0;
   color: inherit;
   font-family: inherit;
+  animation: ${fadeInUp} 0.3s ease-out;
 
   &:hover {
     border-color: #f0c040;
@@ -271,7 +287,7 @@ export const TreeNodeBox = styled.div<{ $bought?: boolean; $locked?: boolean; $c
 export const LogContainer = styled.div`
   font-size: 9px;
   color: #808068;
-  max-height: 100px;
+  max-height: 160px;
   overflow-y: auto;
   width: 100%;
   padding: 4px 6px;
@@ -534,17 +550,17 @@ export const SkillBtn = styled.button<{ $off?: boolean }>`
 
 /** バイオーム別背景グラデーション */
 const BIOME_BG: Record<string, string> = {
-  grassland: 'linear-gradient(180deg, #0a1a0a 0%, #0e1e10 30%, #12221a 70%, #162818 100%)',
-  glacier: 'linear-gradient(180deg, #0a0e1a 0%, #0e1428 30%, #101830 70%, #0c1020 100%)',
-  volcano: 'linear-gradient(180deg, #1a0a0a 0%, #1e0e08 30%, #221210 70%, #281610 100%)',
-  final: 'linear-gradient(180deg, #12081a 0%, #1a0c22 30%, #100818 70%, #0a0410 100%)',
+  grassland: 'linear-gradient(180deg, #0c200c 0%, #132a18 30%, #1a3822 60%, #0e2212 100%)',
+  glacier: 'linear-gradient(180deg, #0c1228 0%, #122040 30%, #18284a 60%, #0e1830 100%)',
+  volcano: 'linear-gradient(180deg, #200c08 0%, #2e1410 30%, #381c14 60%, #22100a 100%)',
+  final: 'linear-gradient(180deg, #180c24 0%, #221238 30%, #1c0e2e 60%, #100820 100%)',
 };
 
 export const BiomeBg = styled.div<{ $biome: string }>`
   position: absolute;
   inset: 0;
   background: ${p => BIOME_BG[p.$biome] || '#12121e'};
-  z-index: 0;
+  z-index: -1;
   pointer-events: none;
 `;
 
@@ -578,18 +594,18 @@ export const WeatherParticles = styled.div<{ $biome: string }>`
   inset: 0;
   overflow: hidden;
   pointer-events: none;
-  z-index: 0;
+  z-index: -1;
 
   /* 氷河: 雪パーティクル */
   ${p => p.$biome === 'glacier' && css`
     & > span {
       position: absolute;
-      width: 2px;
-      height: 2px;
-      background: rgba(200, 220, 255, 0.7);
+      width: 3px;
+      height: 3px;
+      background: rgba(200, 220, 255, 0.85);
       border-radius: 50%;
       animation: ${snowfall} linear infinite;
-      box-shadow: 0 0 3px rgba(200, 220, 255, 0.4);
+      box-shadow: 0 0 5px rgba(200, 220, 255, 0.5);
     }
   `}
 
@@ -597,12 +613,12 @@ export const WeatherParticles = styled.div<{ $biome: string }>`
   ${p => p.$biome === 'volcano' && css`
     & > span {
       position: absolute;
-      width: 2px;
-      height: 2px;
-      background: rgba(255, 140, 40, 0.8);
+      width: 3px;
+      height: 3px;
+      background: rgba(255, 140, 40, 0.9);
       border-radius: 50%;
       animation: ${ember} linear infinite;
-      box-shadow: 0 0 4px rgba(255, 100, 20, 0.5);
+      box-shadow: 0 0 6px rgba(255, 100, 20, 0.6);
     }
   `}
 
@@ -610,12 +626,12 @@ export const WeatherParticles = styled.div<{ $biome: string }>`
   ${p => p.$biome === 'grassland' && css`
     & > span {
       position: absolute;
-      width: 1px;
-      height: 1px;
-      background: rgba(120, 200, 100, 0.5);
+      width: 2px;
+      height: 2px;
+      background: rgba(120, 200, 100, 0.7);
       border-radius: 50%;
       animation: ${spore} linear infinite;
-      box-shadow: 0 0 2px rgba(120, 200, 100, 0.3);
+      box-shadow: 0 0 4px rgba(120, 200, 100, 0.4);
     }
   `}
 `;

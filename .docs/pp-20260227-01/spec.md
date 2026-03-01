@@ -1,5 +1,30 @@
 # 原始進化録 (PRIMAL PATH) ブラッシュアップ — 技術仕様
 
+> **注**: 本仕様は実装計画段階のものです。実装時に以下の変更が行われました。
+>
+> **型名の省略**: 実装では既存コードの省略記法に合わせて型名を短縮しています。
+> | spec 名 | 実装名 | ファイル |
+> |---------|--------|---------|
+> | `ActiveSkillId` | `ASkillId` | types.ts |
+> | `SkillEffect` | `SkillFx` | types.ts |
+> | `SkillState` | `SkillSt` | types.ts |
+> | `ActiveBuff` | `ABuff` | types.ts |
+> | `DamagePopup` | `DmgPopup` | types.ts |
+> | `applyActiveSkill()` | `applySkill()` | game-logic.ts |
+> | `calcSynergyBonuses()` | `applySynergyBonuses()` | game-logic.ts |
+>
+> **追加された型・フィールド**（spec に未記載だったもの）:
+> - `EventCost` に `hp_damage` 型を追加（types.ts）
+> - `RandomEventDef` に `situationText` フィールドを追加（types.ts）
+> - `AwakeningVisual`, `AwakeningSymbol` インターフェース（sprites.ts）
+>
+> **定数値の変更**:
+> - `EVENT_CHANCE`: 0.2 → 0.3（プレイテストで調整）
+> - `EVENT_MIN_BATTLES`: 2 → 1（早期イベント体験のため）
+>
+> **追加された関数**（spec に未記載だったもの）:
+> - `dominantCiv()`, `getEffectHintColor()`, `getEffectHintIcon()`, `formatEventResult()`, `computeEventResult()`, `getAwakeningVisual()`
+
 ## 1. 型定義
 
 ### 1.1 アクティブスキル

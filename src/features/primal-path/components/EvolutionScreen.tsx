@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import type { RunState, Evolution, SfxType } from '../types';
 import type { GameAction } from '../hooks';
 import { BIO, TC, TN, CIV_TYPES, SYNERGY_TAG_INFO } from '../constants';
 import { effATK, simEvo, civLvs, civLv, awkInfo, calcSynergies } from '../game-logic';
-import { ProgressBar, StatPreview, CivBadge, AwakeningBadges, CivLevelsDisplay, StatLine, AffinityBadge, AllyList, SynergyBadges, SpeedControl } from './shared';
-import { Screen, SubTitle, EvoCard, GamePanel, StatText, SpeedBar, Gc } from '../styles';
+import { ProgressBar, StatPreview, CivBadge, AwakeningBadges, CivLevelsDisplay, StatLine, AffinityBadge, AllyList, SynergyBadges, SpeedControl, renderParticles } from './shared';
+import { Screen, SubTitle, EvoCard, GamePanel, GameButton, StatText, SpeedBar, Gc, BiomeBg, WeatherParticles } from '../styles';
 
 interface Props {
   run: RunState;
@@ -20,16 +20,28 @@ export const EvolutionScreen: React.FC<Props> = ({ run, evoPicks, dispatch, play
   const nxtA = awkInfo(run);
   const curA = effATK(run);
   const activeSynergies = calcSynergies(run.evs);
+  const biomeForBg = run.cBT as string;
+  const particles = useMemo(() => renderParticles(biomeForBg), [biomeForBg]);
+
+  // maxEvo 到達判定
+  const isMaxEvoReached = run.maxEvo !== undefined && run.evs.length >= run.maxEvo;
 
   const handlePick = (ev: Evolution) => {
+    const before = calcSynergies(run.evs);
+    const after = calcSynergies([...run.evs, ev]);
+    if (after.length > before.length) playSfx('synergy');
     playSfx('evo');
     dispatch({ type: 'SELECT_EVO', evo: ev });
   };
 
   return (
     <Screen>
+      <BiomeBg $biome={biomeForBg} />
+      <WeatherParticles $biome={biomeForBg}>
+        {particles}
+      </WeatherParticles>
       <div style={{ fontSize: 16, marginTop: 2 }}>⚡</div>
-      <SubTitle style={{ fontSize: 13 }}>進化を選べ</SubTitle>
+      <SubTitle style={{ fontSize: 13 }}>{isMaxEvoReached ? '進化上限' : '進化を選べ'}</SubTitle>
       {m && <ProgressBar current={run.cW} max={run.wpb + 1} label={`${m.ic} ${m.nm}`} />}
       <StatText style={{ marginBottom: 2 }}>
         <CivLevelsDisplay run={run} /> <AwakeningBadges awoken={run.awoken} />
@@ -52,7 +64,22 @@ export const EvolutionScreen: React.FC<Props> = ({ run, evoPicks, dispatch, play
       {/* シナジー状況 */}
       <SynergyBadges synergies={activeSynergies} showCount />
 
-      {evoPicks.map((ev, i) => {
+      {/* maxEvo 到達時: 進化選択肢の代わりにスキップUIを表示 */}
+      {isMaxEvoReached && (
+        <GamePanel style={{ textAlign: 'center', padding: 12, marginTop: 6 }}>
+          <div style={{ fontSize: 11, color: '#f08050', marginBottom: 6 }}>
+            進化上限に達しました（{run.evs.length}/{run.maxEvo}）
+          </div>
+          <GameButton
+            style={{ minWidth: 160 }}
+            onClick={() => { playSfx('click'); dispatch({ type: 'SKIP_EVO' }); }}
+          >
+            ⚔️ バトルへ
+          </GameButton>
+        </GamePanel>
+      )}
+
+      {!isMaxEvoReached && evoPicks.map((ev, i) => {
         const sim = simEvo(run, ev);
         const lvUp = { ...lvs, [ev.t]: lvs[ev.t] + 1 };
         return (

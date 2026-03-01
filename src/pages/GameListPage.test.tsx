@@ -59,4 +59,14 @@ describe('GameListPage', () => {
     expect(screen.getByText('原始進化録 - PRIMAL PATH')).toBeInTheDocument();
     expect(screen.getByLabelText('原始進化録 - PRIMAL PATH ゲームをプレイする')).toBeInTheDocument();
   });
+
+  it('原始進化録の説明文にシナジー・イベント・実績の要素が含まれること', () => {
+    render(
+      <MemoryRouter>
+        <GameListPage />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText(/シナジー.*イベント.*実績/)).toBeInTheDocument();
+  });
 });

@@ -1,10 +1,13 @@
 /**
  * 原始進化録 - PRIMAL PATH - ランダムイベント画面
  */
-import React from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import styled, { css, keyframes } from 'styled-components';
 import type { RandomEventDef, EventChoice, SfxType, RunState } from '../types';
-import { Screen, SubTitle, GamePanel } from '../styles';
+import { Screen, SubTitle, GamePanel, BiomeBg, WeatherParticles } from '../styles';
+import { drawPlayer } from '../sprites';
+import { getEffectHintColor, getEffectHintIcon } from '../game-logic';
+import { renderParticles } from './shared';
 
 /* ===== Props ===== */
 
@@ -121,9 +124,25 @@ const CostTag = styled.span`
   margin-left: 6px;
 `;
 
+const EffectHintBadge = styled.span<{ $color: string }>`
+  font-size: 9px;
+  color: ${p => p.$color};
+  margin-left: 6px;
+  opacity: 0.85;
+`;
+
 /* ===== コンポーネント ===== */
 
 export const EventScreen: React.FC<Props> = ({ event, run, onChoose, playSfx }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const biomeForBg = run.cBT as string;
+  const particles = useMemo(() => renderParticles(biomeForBg), [biomeForBg]);
+
+  // プレイヤースプライト描画
+  useEffect(() => {
+    if (canvasRef.current) drawPlayer(canvasRef.current, 2, run.fe, run.awoken);
+  }, [run.fe, run.awoken]);
+
   // バイオーム別のグローカラー
   const glowColor = EVENT_GLOW_COLORS[run.cBT as string];
   const handleChoose = (choice: EventChoice) => {
@@ -149,8 +168,19 @@ export const EventScreen: React.FC<Props> = ({ event, run, onChoose, playSfx }) 
 
   return (
     <Screen $center>
+      <BiomeBg $biome={biomeForBg} />
+      <WeatherParticles $biome={biomeForBg}>
+        {particles}
+      </WeatherParticles>
       <SubTitle>🗺️ ランダムイベント</SubTitle>
       <EventPanel $glowColor={glowColor}>
+        {/* プレイヤースプライト */}
+        <div style={{ textAlign: 'center', marginBottom: 6 }}>
+          <canvas ref={canvasRef} aria-hidden="true" style={{
+            width: 32, height: 44,
+            imageRendering: 'pixelated',
+          }} />
+        </div>
         <EventTitle>{event.name}</EventTitle>
         <EventDesc>{event.description}</EventDesc>
         <SituationText>{event.situationText}</SituationText>
@@ -164,9 +194,13 @@ export const EventScreen: React.FC<Props> = ({ event, run, onChoose, playSfx }) 
               $disabled={!affordable}
               disabled={!affordable}
               onClick={() => handleChoose(choice)}
+              style={{ borderLeftWidth: 3, borderLeftColor: `${getEffectHintColor(choice.effect)}60` }}
             >
               <ChoiceLabel>
                 {RISK_ICONS[choice.riskLevel]} {choice.label}
+                <EffectHintBadge $color={getEffectHintColor(choice.effect)}>
+                  {getEffectHintIcon(choice.effect)}
+                </EffectHintBadge>
                 {choice.cost && (
                   <CostTag>
                     ({costLabel(choice)}{!affordable && ' 不足'})

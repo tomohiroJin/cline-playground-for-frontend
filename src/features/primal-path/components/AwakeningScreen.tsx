@@ -3,7 +3,7 @@ import type { RunState, CivTypeExt, SfxType } from '../types';
 import type { GameAction } from '../hooks';
 import { AWK_SA, AWK_FA } from '../constants';
 import { StatLine } from './shared';
-import { Screen, SubTitle, Divider, GameButton, GamePanel, StatText, AwkFlashOverlay } from '../styles';
+import { Screen, SubTitle, Divider, GameButton, GamePanel, StatText, AwkFlashOverlay, BiomeBg } from '../styles';
 
 interface Props {
   run: RunState;
@@ -31,6 +31,7 @@ export const AwakeningScreen: React.FC<Props> = ({ run, awkId, awkType, awkTier,
 
   return (
     <Screen $center>
+      <BiomeBg $biome={run.cBT as string} />
       {showFlash && <AwkFlashOverlay $cl={info.cl + '80'} />}
       <div style={{ fontSize: 36, filter: `drop-shadow(0 0 16px ${info.cl}60)` }}>{icon}</div>
       <SubTitle style={{ textShadow: '0 0 16px #f0c04060', letterSpacing: 2 }}>

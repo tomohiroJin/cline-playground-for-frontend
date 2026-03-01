@@ -3,30 +3,11 @@
  */
 import {
   rollEvent, applyEventChoice, dominantCiv, formatEventResult,
-  computeEventResult,
+  computeEventResult, getEffectHintColor, getEffectHintIcon,
 } from '../game-logic';
-import type { RunState, EventChoice, EventId, RandomEventDef } from '../types';
-import { TB_DEFAULTS, DIFFS, RANDOM_EVENTS, EVOS, EVENT_CHANCE, EVENT_MIN_BATTLES } from '../constants';
-
-/* ===== Helpers ===== */
-
-function makeRun(overrides: Partial<RunState> = {}): RunState {
-  return {
-    hp: 80, mhp: 80, atk: 8, def: 2, cr: 0.05, burn: 0, aM: 1, dm: 1,
-    cT: 0, cL: 0, cR: 0,
-    al: [], bms: ['grassland', 'glacier', 'volcano'],
-    cB: 1, cBT: 'grassland', cW: 1, wpb: 4, bE: 0, bb: 0,
-    di: 0, dd: DIFFS[0], fe: null, tb: { ...TB_DEFAULTS },
-    mxA: 3, evoN: 3, fReq: 5, saReq: 4,
-    rvU: 0, bc: 0, log: [], turn: 0, kills: 0,
-    dmgDealt: 0, dmgTaken: 0, maxHit: 0, wDmg: 0, wTurn: 0,
-    awoken: [], en: null, sk: { avl: [], cds: {}, bfs: [] },
-    evs: [],
-    btlCount: 0, eventCount: 0, skillUseCount: 0, totalHealing: 0,
-    _wDmgBase: 0, _fbk: '', _fPhase: 0,
-    ...overrides,
-  };
-}
+import type { RunState, EventChoice, EventId, RandomEventDef, EventEffect } from '../types';
+import { RANDOM_EVENTS, EVOS, EVENT_CHANCE, EVENT_MIN_BATTLES } from '../constants';
+import { makeRun } from './test-helpers';
 
 /* ===== 定数検証 ===== */
 
@@ -670,5 +651,61 @@ describe('computeEventResult', () => {
 
     expect(run.hp).toBe(originalHp);
     expect(run.atk).toBe(10);
+  });
+});
+
+/* ===== getEffectHintColor（FB-P3-3） ===== */
+
+describe('getEffectHintColor', () => {
+  it('heal は緑を返す', () => {
+    expect(getEffectHintColor({ type: 'heal', amount: 10 })).toBe('#50e090');
+  });
+
+  it('damage は赤を返す', () => {
+    expect(getEffectHintColor({ type: 'damage', amount: 5 })).toBe('#f05050');
+  });
+
+  it('stat_change は金を返す', () => {
+    expect(getEffectHintColor({ type: 'stat_change', stat: 'atk', value: 3 })).toBe('#f0c040');
+  });
+
+  it('add_ally は青を返す', () => {
+    expect(getEffectHintColor({ type: 'add_ally', allyTemplate: 'random' })).toBe('#50a0e0');
+  });
+
+  it('random_evolution は紫を返す', () => {
+    expect(getEffectHintColor({ type: 'random_evolution' })).toBe('#c060f0');
+  });
+
+  it('civ_level_up は金を返す', () => {
+    expect(getEffectHintColor({ type: 'civ_level_up', civType: 'tech' })).toBe('#f0c040');
+  });
+
+  it('bone_change は骨色を返す', () => {
+    expect(getEffectHintColor({ type: 'bone_change', amount: 20 })).toBe('#c0a040');
+  });
+
+  it('nothing はグレーを返す', () => {
+    expect(getEffectHintColor({ type: 'nothing' })).toBe('#606060');
+  });
+});
+
+/* ===== getEffectHintIcon（FB-P3-3） ===== */
+
+describe('getEffectHintIcon', () => {
+  it('全エフェクトタイプに対応するアイコンを返す', () => {
+    const cases: { effect: EventEffect; icon: string }[] = [
+      { effect: { type: 'heal', amount: 10 }, icon: '💚' },
+      { effect: { type: 'damage', amount: 5 }, icon: '💔' },
+      { effect: { type: 'stat_change', stat: 'atk', value: 3 }, icon: '📈' },
+      { effect: { type: 'add_ally', allyTemplate: 'random' }, icon: '🤝' },
+      { effect: { type: 'random_evolution' }, icon: '🧬' },
+      { effect: { type: 'civ_level_up', civType: 'tech' }, icon: '🏛️' },
+      { effect: { type: 'bone_change', amount: 20 }, icon: '🦴' },
+      { effect: { type: 'nothing' }, icon: '…' },
+    ];
+    for (const { effect, icon } of cases) {
+      expect(getEffectHintIcon(effect)).toBe(icon);
+    }
   });
 });

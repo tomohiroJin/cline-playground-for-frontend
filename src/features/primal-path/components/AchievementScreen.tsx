@@ -14,6 +14,11 @@ interface Props {
 }
 
 export const AchievementScreen: React.FC<Props> = ({ achievementStates, dispatch, playSfx }) => {
+  const stateMap = React.useMemo(() => {
+    const m = new Map<string, AchievementState>();
+    for (const s of achievementStates) m.set(s.id, s);
+    return m;
+  }, [achievementStates]);
   const unlockedCount = achievementStates.filter(a => a.unlocked).length;
   const totalCount = ACHIEVEMENTS.length;
 
@@ -27,7 +32,7 @@ export const AchievementScreen: React.FC<Props> = ({ achievementStates, dispatch
 
       <GamePanel style={{ padding: '8px 10px', maxHeight: 480, overflowY: 'auto' }}>
         {ACHIEVEMENTS.map(ach => {
-          const st = achievementStates.find(s => s.id === ach.id);
+          const st = stateMap.get(ach.id);
           const isUnlocked = st?.unlocked ?? false;
 
           return (

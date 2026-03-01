@@ -4,7 +4,9 @@
 import type { SaveData, RunStats, AchievementState, AggregateStats } from './types';
 import { SAVE_KEY, FRESH_SAVE, STATS_KEY, ACHIEVEMENTS_KEY, AGGREGATE_KEY, MAX_RUN_STATS } from './constants';
 
+/** セーブデータの読み書き（localStorage ラッパー） */
 export const Storage = Object.freeze({
+  /** セーブデータを localStorage に保存する */
   save: (data: SaveData): void => {
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(data));
@@ -12,6 +14,7 @@ export const Storage = Object.freeze({
       console.error('[Storage.save]', e instanceof Error ? e.message : String(e));
     }
   },
+  /** localStorage からセーブデータを読み込む（未保存時は null） */
   load: (): SaveData | null => {
     try {
       const r = localStorage.getItem(SAVE_KEY);
@@ -21,6 +24,7 @@ export const Storage = Object.freeze({
       return null;
     }
   },
+  /** 初期状態のセーブデータを生成する（ディープコピー） */
   fresh: (): SaveData => JSON.parse(JSON.stringify(FRESH_SAVE)),
 });
 

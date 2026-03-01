@@ -64,6 +64,20 @@ function GameInner() {
     }
   }, [loaded, dispatch]);
 
+  // 仲間加入検知: 生存数が増えたら SE を再生
+  const prevAliveRef = useRef(0);
+  useEffect(() => {
+    if (!state.run) {
+      prevAliveRef.current = 0;
+      return;
+    }
+    const alive = state.run.al.filter(a => a.a).length;
+    if (alive > prevAliveRef.current && prevAliveRef.current > 0) {
+      playSfx('allyJoin');
+    }
+    prevAliveRef.current = alive;
+  }, [state.run?.al, playSfx]);
+
   // フェーズに応じたBGM切替
   useEffect(() => {
     if (state.phase === 'title') {
@@ -240,6 +254,7 @@ function GameInner() {
         {phase === 'challenge' && (
           <ChallengeScreen
             aggregate={state.aggregate}
+            save={save}
             dispatch={dispatch}
             playSfx={playSfx}
             onStartChallenge={handleStartChallenge}

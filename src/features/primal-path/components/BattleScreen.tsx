@@ -4,35 +4,11 @@ import type { GameAction } from '../hooks';
 import { BIO, TC, LOG_COLORS, A_SKILLS } from '../constants';
 import { effATK, civLvs, mkPopup, calcAvlSkills, applySkill, calcSynergies, applySynergyBonuses } from '../game-logic';
 import { drawEnemy, drawPlayer, drawBurnFx } from '../sprites';
-import { ProgressBar, HpBar, CivLevelsDisplay, AffinityBadge, AllyList, SynergyBadges, SpeedControl } from './shared';
+import { ProgressBar, HpBar, CivLevelsDisplay, AffinityBadge, AllyList, SynergyBadges, SpeedControl, renderParticles } from './shared';
 import { Screen, GamePanel, StatText, SpeedBar, SurrenderBtn, LogContainer, LogLine, Tc, Bc, PausedOverlay, EnemySprite, SkillBar, SkillBtn, PopupText, PopupContainer, BattleScrollArea, BattleFixedBottom, BiomeBg, WeatherParticles, TimerDisplay } from '../styles';
 
 const MAX_POPUP_DISPLAY = 6;
 const POPUP_DURATION_MS = 900;
-const PARTICLE_COUNT = 18;
-
-/** パーティクルのランダム配置を生成 */
-function renderParticles(biome: string): React.ReactNode[] {
-  if (biome !== 'glacier' && biome !== 'volcano' && biome !== 'grassland') return [];
-  return Array.from({ length: PARTICLE_COUNT }, (_, i) => {
-    const left = Math.random() * 100;
-    const delay = Math.random() * 6;
-    const duration = 4 + Math.random() * 4;
-    return (
-      <span
-        key={i}
-        style={{
-          left: `${left}%`,
-          top: biome === 'volcano' ? 'auto' : `${Math.random() * 20}%`,
-          bottom: biome === 'volcano' ? '0' : 'auto',
-          animationDelay: `${delay}s`,
-          animationDuration: `${duration}s`,
-        }}
-      />
-    );
-  });
-}
-
 /** DOM ポップアップ用エントリ */
 interface PopupEntry {
   id: number;
@@ -57,6 +33,7 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
   const psprRef = useRef<HTMLCanvasElement>(null);
   const logRef = useRef<HTMLDivElement>(null);
   const popupIdRef = useRef(0);
+  const timersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
 
   // DOM ポップアップ管理
   const [enPopups, setEnPopups] = useState<PopupEntry[]>([]);
@@ -65,6 +42,14 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
   // ヒットフラッシュ管理
   const [isHit, setIsHit] = useState(false);
   const burnFrameRef = useRef(0);
+
+  // アンマウント時に全 setTimeout をクリーンアップ
+  useEffect(() => {
+    return () => {
+      timersRef.current.forEach(clearTimeout);
+      timersRef.current.clear();
+    };
+  }, []);
 
   const e = run.en;
   const m = BIO[run.cBT as BiomeId];
@@ -110,11 +95,13 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
     };
     if (tgt === 'en') setEnPopups(prev => [...prev, entry].slice(-MAX_POPUP_DISPLAY));
     else setPlPopups(prev => [...prev, entry].slice(-MAX_POPUP_DISPLAY));
-    // アニメーション後に自動除去
-    setTimeout(() => {
+    // アニメーション後に自動除去（アンマウント時のクリーンアップ対応）
+    const tid = setTimeout(() => {
+      timersRef.current.delete(tid);
       if (tgt === 'en') setEnPopups(prev => prev.filter(p => p.id !== id));
       else setPlPopups(prev => prev.filter(p => p.id !== id));
     }, POPUP_DURATION_MS);
+    timersRef.current.add(tid);
   };
 
   // tickEvents からポップアップ追加 & ヒットフラッシュ
@@ -127,7 +114,11 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
     }
     if (hasShake) {
       setIsHit(true);
-      setTimeout(() => setIsHit(false), 400);
+      const hitTid = setTimeout(() => {
+        timersRef.current.delete(hitTid);
+        setIsHit(false);
+      }, 400);
+      timersRef.current.add(hitTid);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [run.turn, tickEvents]);
@@ -231,7 +222,7 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
         {/* Enemy panel */}
         <GamePanel style={{ position: 'relative' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <EnemySprite ref={esprRef} $hit={isHit} $burn={!!run.burn} style={{
+            <EnemySprite ref={esprRef} aria-hidden="true" $hit={isHit} $burn={!!run.burn} style={{
               width: boss ? 52 : 34, height: boss ? 52 : 34,
             }} />
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -258,7 +249,7 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
         {/* Player panel */}
         <GamePanel style={{ position: 'relative' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <canvas ref={psprRef} style={{
+            <canvas ref={psprRef} aria-hidden="true" style={{
               width: 40, height: 55,
               border: '1px solid #222', borderRadius: 3, background: '#08080c', flexShrink: 0,
               imageRendering: 'pixelated',
@@ -309,7 +300,7 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
 
         {/* Battle log */}
         <LogContainer ref={logRef}>
-          {run.log.slice(-28).map((l, i) => (
+          {run.log.slice(-40).map((l, i) => (
             <LogLine key={i} $color={LOG_COLORS[l.c]}>{l.x}</LogLine>
           ))}
         </LogContainer>

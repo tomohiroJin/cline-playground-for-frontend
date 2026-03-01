@@ -11,30 +11,7 @@ import {
 } from '../game-logic';
 import type { RunState, StatSnapshot, SaveData, TreeBonus, Evolution } from '../types';
 import { TB_DEFAULTS, DIFFS, EVOS } from '../constants';
-
-/* ===== Helpers ===== */
-
-function makeRun(overrides: Partial<RunState> = {}): RunState {
-  return {
-    hp: 80, mhp: 80, atk: 8, def: 2, cr: 0.05, burn: 0, aM: 1, dm: 1,
-    cT: 0, cL: 0, cR: 0,
-    al: [], bms: ['grassland', 'glacier', 'volcano'],
-    cB: 1, cBT: 'grassland', cW: 1, wpb: 4, bE: 0, bb: 0,
-    di: 0, dd: DIFFS[0], fe: null, tb: { ...TB_DEFAULTS },
-    mxA: 3, evoN: 3, fReq: 5, saReq: 4,
-    rvU: 0, bc: 0, log: [], turn: 0, kills: 0,
-    dmgDealt: 0, dmgTaken: 0, maxHit: 0, wDmg: 0, wTurn: 0,
-    awoken: [], en: null, sk: { avl: [], cds: {}, bfs: [] },
-    evs: [],
-    btlCount: 0, eventCount: 0, skillUseCount: 0, totalHealing: 0,
-    _wDmgBase: 0, _fbk: '', _fPhase: 0,
-    ...overrides,
-  };
-}
-
-function makeSave(overrides: Partial<SaveData> = {}): SaveData {
-  return { bones: 0, tree: {}, clears: 0, runs: 0, best: {}, ...overrides };
-}
+import { makeRun, makeSave } from './test-helpers';
 
 /* ===== clamp ===== */
 
@@ -636,5 +613,56 @@ describe('血の契約: applyEvo → startBattle 結合テスト', () => {
     expect(battleRun.mhp).toBe(40);
     expect(battleRun.hp).toBe(40);   // min(60, 40) = 40
     expect(battleRun.aM).toBe(2);
+  });
+});
+
+/* ===== SE イベント発火テスト ===== */
+
+describe('SE イベント発火', () => {
+  it('tick で敵から攻撃を受けると plDmg SE が発火する', () => {
+    // Arrange: 敵が硬く倒されない状態にして敵の攻撃フェーズに到達させる
+    const run = makeRun({
+      hp: 80, mhp: 80, atk: 5, def: 0, cr: 0,
+      en: { n: 'テスト敵', hp: 500, mhp: 500, atk: 10, def: 0, bone: 1 },
+    });
+
+    // Act
+    const { events } = tick(run, false, () => 0.5);
+
+    // Assert: plDmg SE が含まれている
+    const plDmgEvents = events.filter(e => e.type === 'sfx' && e.sfx === 'plDmg');
+    expect(plDmgEvents.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('環境ダメージのあるバイオームで envDmg SE が発火する', () => {
+    // Arrange: 氷河バイオーム（環境ダメージあり）
+    const run = makeRun({
+      hp: 80, mhp: 80, atk: 100, def: 0, cr: 0,
+      cBT: 'glacier',
+      en: { n: 'テスト敵', hp: 200, mhp: 200, atk: 5, def: 0, bone: 1 },
+    });
+
+    // Act
+    const { events } = tick(run, false, () => 0.5);
+
+    // Assert: envDmg SE が含まれている
+    const envDmgEvents = events.filter(e => e.type === 'sfx' && e.sfx === 'envDmg');
+    expect(envDmgEvents.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('草原バイオームでも環境ダメージはないため envDmg SE は発火しない', () => {
+    // Arrange: 草原バイオーム（環境ダメージなし）
+    const run = makeRun({
+      hp: 80, mhp: 80, atk: 100, def: 0, cr: 0,
+      cBT: 'grassland',
+      en: { n: 'テスト敵', hp: 200, mhp: 200, atk: 5, def: 0, bone: 1 },
+    });
+
+    // Act
+    const { events } = tick(run, false, () => 0.5);
+
+    // Assert: envDmg SE が含まれていない
+    const envDmgEvents = events.filter(e => e.type === 'sfx' && e.sfx === 'envDmg');
+    expect(envDmgEvents).toHaveLength(0);
   });
 });

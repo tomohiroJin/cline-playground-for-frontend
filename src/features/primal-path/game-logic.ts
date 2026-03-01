@@ -5,7 +5,7 @@
  */
 import type {
   StatSnapshot, EvoEffect, RunState, Enemy, Ally, Evolution,
-  TreeBonus, CivLevels, PlayerAttackResult, TickResult, TickEvent,
+  TreeBonus, TreeEffect, CivLevels, PlayerAttackResult, TickResult, TickEvent,
   ApplyEvoResult, AwakeningRule, AwakeningNext, AwokenRecord,
   SaveData, Difficulty, BiomeId, BiomeIdExt, CivType, CivTypeExt,
   AllyTemplate, LogEntry, DmgPopup, ASkillId, ASkillDef, SkillSt, ABuff,
@@ -20,6 +20,21 @@ import {
   RANDOM_EVENTS, EVENT_CHANCE, EVENT_MIN_BATTLES,
   ACHIEVEMENTS,
 } from './constants';
+
+/* ===== Battle Constants ===== */
+
+/** ログ配列の最大保持数 */
+const LOG_MAX = 60;
+/** ログ配列のトリム後保持数 */
+const LOG_TRIM = 35;
+/** 儀式の低HP倍率閾値 (HP/MHP比) */
+const RIT_LOW_HP_RATIO = 0.3;
+/** クリティカル倍率 */
+const CRIT_MULTIPLIER = 1.6;
+/** 勝利時ボーン倍率 */
+const WIN_BONE_MULTIPLIER = 1.5;
+/** 儀式ボーン倍率 */
+const RIT_BONE_MULTIPLIER = 1.5;
 
 /* ===== Utility ===== */
 
@@ -69,7 +84,7 @@ const SNAP_KEYS: (keyof StatSnapshot)[] = ['atk', 'mhp', 'hp', 'def', 'cr', 'aM'
 
 export function getSnap(r: RunState): StatSnapshot {
   const s = {} as StatSnapshot;
-  SNAP_KEYS.forEach(k => { (s as unknown as Record<string, number>)[k] = (r as unknown as Record<string, number>)[k]; });
+  SNAP_KEYS.forEach(k => { s[k] = r[k]; });
   return s;
 }
 
@@ -90,7 +105,7 @@ export function applyStatFx(st: StatSnapshot, fx: EvoEffect): StatSnapshot {
 }
 
 function writeSnapToRun(r: RunState, s: StatSnapshot): void {
-  SNAP_KEYS.forEach(k => { (r as unknown as Record<string, number>)[k] = (s as unknown as Record<string, number>)[k]; });
+  SNAP_KEYS.forEach(k => { (r[k] as number) = s[k]; });
 }
 
 /* ===== Civilization ===== */
@@ -150,8 +165,9 @@ export function getTB(tree: Record<string, number>): TreeBonus {
     if (!tree[id]) continue;
     const nd = TREE.find(x => x.id === id);
     if (nd) {
-      for (const k in nd.e) {
-        (b as unknown as Record<string, number>)[k] = ((b as unknown as Record<string, number>)[k] || 0) + (nd.e as unknown as Record<string, number>)[k];
+      for (const k of Object.keys(nd.e) as (keyof TreeEffect)[]) {
+        const v = nd.e[k];
+        if (v !== undefined) b[k] += v;
       }
     }
   }
@@ -242,7 +258,7 @@ export function applyEvo(r: RunState, ev: Evolution, rng = Math.random): ApplyEv
 
   // Increment civ level
   const key = CIV_KEYS[ev.t];
-  (next as unknown as Record<string, number>)[key]++;
+  next[key]++;
 
   // Check ally recruitment (at civ levels 2, 4, 6)
   const cc = civLv(next, ev.t);
@@ -330,22 +346,23 @@ export function awkInfo(r: RunState): AwakeningNext[] {
 /* ===== Player Attack ===== */
 
 export function calcPlayerAtk(r: RunState, rng = Math.random): PlayerAttackResult {
-  let pa = Math.floor(r.atk * r.aM * r.dm);
-  if (r.fe === 'rit' && r.hp < r.mhp * 0.3) pa *= 3;
+  let pa = effATK(r);
+  if (r.fe === 'rit' && r.hp < r.mhp * RIT_LOW_HP_RATIO) pa *= 3;
   const crit = rng() < r.cr;
-  if (crit) pa = Math.floor(pa * 1.6);
+  if (crit) pa = Math.floor(pa * CRIT_MULTIPLIER);
   return { dmg: Math.floor(pa * biomeBonus(r.cBT, civLvs(r))), crit };
 }
 
 /* ===== Battle Tick — Sub-functions ===== */
 
-function tickEnvPhase(next: RunState): void {
+function tickEnvPhase(next: RunState, events: TickEvent[]): void {
   const envCfg = ENV_DMG[next.cBT as string];
   if (envCfg) {
     const envD = calcEnvDmg(next.cBT, next.dd.env, next.tb, next.fe);
     if (envD > 0) {
       next.hp -= envD;
       next.log.push({ x: envCfg.icon + ' -' + envD, c: envCfg.c });
+      events.push({ type: 'sfx', sfx: 'envDmg' });
     }
   }
 }
@@ -372,7 +389,7 @@ function tickPlayerPhase(next: RunState, e: Enemy, events: TickEvent[], rng: () 
   const dm = Math.max(1, pa.dmg - e.def);
   if (dm > next.maxHit) next.maxHit = dm;
 
-  if (next.fe === 'rit' && next.hp < next.mhp * 0.3 && next.wTurn === 1) {
+  if (next.fe === 'rit' && next.hp < next.mhp * RIT_LOW_HP_RATIO && next.wTurn === 1) {
     next.log.push({ x: '  ⚡ 血の力が覚醒！ATK×3', c: 'rc' });
   }
 
@@ -440,6 +457,7 @@ function tickEnemyPhase(next: RunState, e: Enemy, events: TickEvent[], rng: () =
   next.hp -= ed;
   next.dmgTaken += ed;
   next.log.push({ x: '🩸 ' + e.n + ' → ' + ed, c: 'xc' });
+  events.push({ type: 'sfx', sfx: 'plDmg' });
   events.push({ type: 'popup', v: ed, crit: false, heal: false, tgt: 'pl' });
 
   if (rng() < 0.25) {
@@ -493,7 +511,7 @@ export function tick(r: RunState, finalMode: boolean, rng = Math.random): TickRe
   const synergies = calcSynergies(next.evs);
   const sb = applySynergyBonuses(synergies);
 
-  tickEnvPhase(next);
+  tickEnvPhase(next, events);
   tickPlayerPhase(next, e, events, rng, sb);
   tickAllyPhase(next, e, events, sb);
   tickRegenPhase(next, events, sb);
@@ -521,7 +539,7 @@ export function tick(r: RunState, finalMode: boolean, rng = Math.random): TickRe
   }
 
   // Trim log
-  if (next.log.length > 60) next.log = next.log.slice(-35);
+  if (next.log.length > LOG_MAX) next.log = next.log.slice(-LOG_TRIM);
 
   // Visual effects
   events.push({ type: 'shake_enemy' });
@@ -539,7 +557,12 @@ export function tick(r: RunState, finalMode: boolean, rng = Math.random): TickRe
 export function startRunState(di: number, save: SaveData): RunState {
   const d = DIFFS[di];
   const tb = getTB(save.tree);
-  const bms = (['grassland', 'glacier', 'volcano'] as BiomeId[]).sort(() => Math.random() - 0.5);
+  /* Fisher-Yates シャッフル */
+  const bms: BiomeId[] = ['grassland', 'glacier', 'volcano'];
+  for (let i = bms.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [bms[i], bms[j]] = [bms[j], bms[i]];
+  }
 
   return {
     hp: 80 + tb.bH, mhp: 80 + tb.bH, atk: 8 + tb.bA, def: 2 + tb.bD,
@@ -651,8 +674,8 @@ export function handleFinalBossKill(r: RunState): { nextRun: RunState; gameWon: 
 export function calcBoneReward(r: RunState, won: boolean): number {
   let tb = r.bE + r.bb;
   tb = Math.floor(tb * r.dd.bm * (1 + r.tb.bM));
-  if (r.fe === 'rit') tb = Math.floor(tb * 1.5);
-  if (won) tb = Math.floor(tb * 1.5);
+  if (r.fe === 'rit') tb = Math.floor(tb * RIT_BONE_MULTIPLIER);
+  if (won) tb = Math.floor(tb * WIN_BONE_MULTIPLIER);
   return Math.max(tb, 1);
 }
 
@@ -1038,6 +1061,34 @@ export function applyEventChoice(
 
   next.eventCount += 1;
   return next;
+}
+
+/** エフェクトタイプに対応するヒントカラーを返す */
+export function getEffectHintColor(effect: EventEffect): string {
+  switch (effect.type) {
+    case 'heal': return '#50e090';
+    case 'damage': return '#f05050';
+    case 'stat_change': return '#f0c040';
+    case 'add_ally': return '#50a0e0';
+    case 'random_evolution': return '#c060f0';
+    case 'civ_level_up': return '#f0c040';
+    case 'bone_change': return '#c0a040';
+    case 'nothing': return '#606060';
+  }
+}
+
+/** エフェクトタイプに対応するヒントアイコンを返す */
+export function getEffectHintIcon(effect: EventEffect): string {
+  switch (effect.type) {
+    case 'heal': return '💚';
+    case 'damage': return '💔';
+    case 'stat_change': return '📈';
+    case 'add_ally': return '🤝';
+    case 'random_evolution': return '🧬';
+    case 'civ_level_up': return '🏛️';
+    case 'bone_change': return '🦴';
+    case 'nothing': return '…';
+  }
 }
 
 /** イベント効果の結果メッセージを生成 */
