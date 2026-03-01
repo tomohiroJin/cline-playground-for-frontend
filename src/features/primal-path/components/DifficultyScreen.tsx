@@ -4,6 +4,14 @@ import type { GameAction } from '../hooks';
 import { DIFFS } from '../constants';
 import { Screen, SubTitle, Divider, GameButton, Xc } from '../styles';
 
+/** ステージ別テーマ説明 */
+const STAGE_THEMES: readonly string[] = [
+  '穏やかな原野を巡る入門の旅',
+  '極寒が襲う。環境ダメージに注意',
+  '天変地異の中を生き延びろ',
+  '伝説の獣が待つ究極の試練',
+];
+
 interface Props {
   save: SaveData;
   dispatch: React.Dispatch<GameAction>;
@@ -14,7 +22,7 @@ interface Props {
 export const DifficultyScreen: React.FC<Props> = ({ save, dispatch, playSfx, onStart }) => (
   <Screen>
     <div style={{ fontSize: 22, marginTop: 8 }}>⚔️</div>
-    <SubTitle>難易度選択</SubTitle>
+    <SubTitle>ステージ選択</SubTitle>
     <Divider />
     {DIFFS.map((d, i) => {
       const locked = save.clears < d.ul;
@@ -31,8 +39,11 @@ export const DifficultyScreen: React.FC<Props> = ({ save, dispatch, playSfx, onS
             </span>
             {i > 0 && <span style={{ fontSize: 9, color: '#605848' }}>骨×{d.bm}</span>}
           </div>
-          <div style={{ color: '#605848', fontSize: 10, marginTop: 3 }}>
-            {d.d}{locked && <Xc> (クリア{d.ul}回で解放)</Xc>}
+          <div style={{ color: '#908070', fontSize: 9, marginTop: 2 }}>
+            {STAGE_THEMES[i]}
+          </div>
+          <div style={{ color: '#605848', fontSize: 10, marginTop: 2 }}>
+            {d.d}{d.bb > 1 && ` ボス${d.bb}連戦`}{locked && <Xc> (クリア{d.ul}回で解放)</Xc>}
           </div>
         </GameButton>
       );

@@ -10,7 +10,7 @@ import {
   pickBiomeAuto, mkPopup, updatePopups,
 } from '../game-logic';
 import type { RunState, StatSnapshot, SaveData, TreeBonus, Evolution } from '../types';
-import { TB_DEFAULTS, DIFFS, EVOS } from '../constants';
+import { TB_DEFAULTS, DIFFS, EVOS, BOSS_CHAIN_SCALE, BOSS } from '../constants';
 import { makeRun, makeSave } from './test-helpers';
 
 /* ===== clamp ===== */
@@ -664,5 +664,206 @@ describe('SE イベント発火', () => {
     // Assert: envDmg SE が含まれていない
     const envDmgEvents = events.filter(e => e.type === 'sfx' && e.sfx === 'envDmg');
     expect(envDmgEvents).toHaveLength(0);
+  });
+});
+
+/* ===== ボス連戦テスト (Phase 2 FB#13) ===== */
+
+describe('ボス連戦（afterBattle）', () => {
+  describe('DIFFS のボス連戦数（bb）設定', () => {
+    it('原始はbb=1（連戦なし）', () => {
+      expect(DIFFS[0].bb).toBe(1);
+    });
+
+    it('氷河期はbb=2', () => {
+      expect(DIFFS[1].bb).toBe(2);
+    });
+
+    it('大災厄はbb=3', () => {
+      expect(DIFFS[2].bb).toBe(3);
+    });
+
+    it('神話世界はbb=5', () => {
+      expect(DIFFS[3].bb).toBe(5);
+    });
+  });
+
+  describe('BOSS_CHAIN_SCALE 定数', () => {
+    it('5段階のスケール倍率が定義されている', () => {
+      expect(BOSS_CHAIN_SCALE).toEqual([1.0, 1.15, 1.3, 1.45, 1.6]);
+    });
+  });
+
+  describe('原始（bb=1）：ボス撃破で即バイオームクリア', () => {
+    it('ボス撃破時にbiomeCleared=trueを返す', () => {
+      // Arrange: 原始ステージ、ボス戦（cW > wpb）
+      const run = makeRun({
+        di: 0, dd: DIFFS[0], bossWave: 0,
+        cW: 5, wpb: 4, bc: 0,
+        hp: 80, mhp: 80,
+        en: { n: 'サーベルタイガー', hp: 0, mhp: 120, atk: 14, def: 3, bone: 5 },
+      });
+
+      // Act
+      const result = afterBattle(run);
+
+      // Assert
+      expect(result.biomeCleared).toBe(true);
+      expect(result.bossChainContinue).toBeUndefined();
+      expect(result.nextRun.bossWave).toBe(0);
+      expect(result.nextRun.bc).toBe(1);
+    });
+  });
+
+  describe('氷河期（bb=2）：ボス2連戦', () => {
+    it('1体目ボス撃破で連戦継続（bossChainContinue=true）', () => {
+      // Arrange: 氷河期、ボス1体目
+      const run = makeRun({
+        di: 1, dd: DIFFS[1], bossWave: 0,
+        cW: 5, wpb: 4, bc: 0,
+        hp: 60, mhp: 100,
+        en: { n: 'マンモス', hp: 0, mhp: 160, atk: 16, def: 6, bone: 6 },
+      });
+
+      // Act
+      const result = afterBattle(run);
+
+      // Assert: 連戦継続
+      expect(result.biomeCleared).toBe(false);
+      expect(result.bossChainContinue).toBe(true);
+      expect(result.nextRun.bossWave).toBe(1);
+    });
+
+    it('連戦継続時にHPが最大HPの20%回復する', () => {
+      // Arrange
+      const run = makeRun({
+        di: 1, dd: DIFFS[1], bossWave: 0,
+        cW: 5, wpb: 4, bc: 0,
+        hp: 60, mhp: 100,
+        en: { n: 'マンモス', hp: 0, mhp: 160, atk: 16, def: 6, bone: 6 },
+      });
+
+      // Act
+      const result = afterBattle(run);
+
+      // Assert: 60 + 20（100の20%）= 80
+      expect(result.nextRun.hp).toBe(80);
+    });
+
+    it('HP回復が最大HPを超えない', () => {
+      // Arrange: HPがほぼ満タン
+      const run = makeRun({
+        di: 1, dd: DIFFS[1], bossWave: 0,
+        cW: 5, wpb: 4, bc: 0,
+        hp: 95, mhp: 100,
+        en: { n: 'マンモス', hp: 0, mhp: 160, atk: 16, def: 6, bone: 6 },
+      });
+
+      // Act
+      const result = afterBattle(run);
+
+      // Assert: 95 + 20 = 115 → clamp → 100
+      expect(result.nextRun.hp).toBe(100);
+    });
+
+    it('連戦継続時に次のボスが生成される（BOSS_CHAIN_SCALEで強化）', () => {
+      // Arrange
+      const run = makeRun({
+        di: 1, dd: DIFFS[1], bossWave: 0,
+        cW: 5, wpb: 4, bc: 0, cBT: 'glacier',
+        hp: 60, mhp: 100,
+        en: { n: 'マンモス', hp: 0, mhp: 160, atk: 16, def: 6, bone: 6 },
+      });
+
+      // Act
+      const result = afterBattle(run);
+
+      // Assert: 次のボスが生成されている
+      expect(result.nextRun.en).not.toBeNull();
+      expect(result.nextRun.en!.n).toBe(BOSS['glacier'].n);
+      // スケール倍率 = BOSS_CHAIN_SCALE[1] = 1.15
+      // 基本HP = BOSS.glacier.hp * dd.hm * biomeScale * 1.15
+    });
+
+    it('2体目ボス撃破でバイオームクリア', () => {
+      // Arrange: 氷河期、ボス2体目（bossWave=1）
+      const run = makeRun({
+        di: 1, dd: DIFFS[1], bossWave: 1,
+        cW: 5, wpb: 4, bc: 0,
+        hp: 40, mhp: 100,
+        en: { n: 'マンモス', hp: 0, mhp: 160, atk: 16, def: 6, bone: 6 },
+      });
+
+      // Act
+      const result = afterBattle(run);
+
+      // Assert: バイオームクリア
+      expect(result.biomeCleared).toBe(true);
+      expect(result.bossChainContinue).toBeUndefined();
+      expect(result.nextRun.bossWave).toBe(0);
+      expect(result.nextRun.bc).toBe(1);
+      expect(result.nextRun.cW).toBe(0);
+    });
+  });
+
+  describe('大災厄（bb=3）：ボス3連戦', () => {
+    it('1体目→2体目→3体目で順にbossWaveが増加しクリア', () => {
+      // Arrange: 大災厄、ボス1体目
+      let run = makeRun({
+        di: 2, dd: DIFFS[2], bossWave: 0,
+        cW: 5, wpb: 4, bc: 0, cBT: 'volcano',
+        hp: 80, mhp: 120,
+        en: { n: '火竜', hp: 0, mhp: 140, atk: 20, def: 3, bone: 6 },
+      });
+
+      // Act & Assert: 1体目撃破 → 連戦継続
+      const r1 = afterBattle(run);
+      expect(r1.bossChainContinue).toBe(true);
+      expect(r1.nextRun.bossWave).toBe(1);
+
+      // 2体目撃破
+      const run2 = { ...r1.nextRun, en: { n: '火竜', hp: 0, mhp: 200, atk: 25, def: 3, bone: 6 } };
+      const r2 = afterBattle(run2);
+      expect(r2.bossChainContinue).toBe(true);
+      expect(r2.nextRun.bossWave).toBe(2);
+
+      // 3体目撃破 → バイオームクリア
+      const run3 = { ...r2.nextRun, en: { n: '火竜', hp: 0, mhp: 250, atk: 30, def: 3, bone: 6 } };
+      const r3 = afterBattle(run3);
+      expect(r3.biomeCleared).toBe(true);
+      expect(r3.bossChainContinue).toBeUndefined();
+      expect(r3.nextRun.bossWave).toBe(0);
+    });
+  });
+
+  describe('非ボス戦は連戦に影響しない', () => {
+    it('通常敵撃破時はbossChainContinueが返されない', () => {
+      // Arrange: 通常敵（cW <= wpb）
+      const run = makeRun({
+        di: 1, dd: DIFFS[1], bossWave: 0,
+        cW: 3, wpb: 4, bc: 0,
+        en: { n: '雪狼', hp: 0, mhp: 38, atk: 8, def: 2, bone: 2 },
+      });
+
+      // Act
+      const result = afterBattle(run);
+
+      // Assert
+      expect(result.biomeCleared).toBe(false);
+      expect(result.bossChainContinue).toBeUndefined();
+      expect(result.nextRun.bossWave).toBe(0);
+    });
+  });
+
+  describe('startRunState のbossWave初期値', () => {
+    it('bossWaveが0で初期化される', () => {
+      const run = startRunState(0, makeSave());
+      expect(run.bossWave).toBe(0);
+    });
+
+    it('bossWaveが0で初期化される（高難易度）', () => {
+      const run = startRunState(3, makeSave({ clears: 6 }));
+      expect(run.bossWave).toBe(0);
+    });
   });
 });

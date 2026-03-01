@@ -235,3 +235,102 @@ describe('FB#7: ゆっくり速度オプション', () => {
     expect(SPEED_OPTS[2][1]).toBe(400);
   });
 });
+
+/* ===== FB#13: ボス連戦 reducer テスト ===== */
+
+describe('FB#13: ボス連戦 AFTER_BATTLE reducer', () => {
+  it('ボス連戦継続時にphaseがbattleのまま維持される', () => {
+    // Arrange: 氷河期（bb=2）のボス1体目撃破状態
+    const run = makeRun({
+      di: 1, dd: DIFFS[1], bossWave: 0,
+      cW: 5, wpb: 4, bc: 0, cBT: 'glacier',
+      hp: 60, mhp: 100,
+      en: { n: 'マンモス', hp: 0, mhp: 160, atk: 16, def: 6, bone: 6 },
+    });
+    const state = makeGameState({
+      phase: 'battle',
+      run,
+      finalMode: false,
+    });
+
+    // Act
+    const next = gameReducer(state, { type: 'AFTER_BATTLE' });
+
+    // Assert: フェーズがbattleのまま
+    expect(next.phase).toBe('battle');
+    // 次のボスが生成されている
+    expect(next.run!.en).not.toBeNull();
+    expect(next.run!.bossWave).toBe(1);
+  });
+
+  it('ボス連戦継続時にログに連戦メッセージが追加される', () => {
+    // Arrange: 氷河期（bb=2）のボス1体目撃破状態
+    const run = makeRun({
+      di: 1, dd: DIFFS[1], bossWave: 0,
+      cW: 5, wpb: 4, bc: 0, cBT: 'glacier',
+      hp: 60, mhp: 100,
+      en: { n: 'マンモス', hp: 0, mhp: 160, atk: 16, def: 6, bone: 6 },
+    });
+    const state = makeGameState({
+      phase: 'battle',
+      run,
+      finalMode: false,
+    });
+
+    // Act
+    const next = gameReducer(state, { type: 'AFTER_BATTLE' });
+
+    // Assert: ログに連戦メッセージが含まれる
+    const chainLog = next.run!.log.find(l => l.x.includes('ボス連戦'));
+    expect(chainLog).toBeDefined();
+    expect(chainLog!.x).toContain('2/2');
+  });
+
+  it('最後のボス撃破時に通常のバイオームクリアフローに遷移する', () => {
+    // Arrange: 氷河期（bb=2）のボス2体目（最後）
+    const run = makeRun({
+      di: 1, dd: DIFFS[1], bossWave: 1,
+      cW: 5, wpb: 4, bc: 0, cBT: 'glacier',
+      hp: 40, mhp: 100,
+      en: { n: 'マンモス', hp: 0, mhp: 180, atk: 18, def: 6, bone: 6 },
+    });
+    const state = makeGameState({
+      phase: 'battle',
+      run,
+      finalMode: false,
+    });
+
+    // Act
+    const next = gameReducer(state, { type: 'AFTER_BATTLE' });
+
+    // Assert: バイオームクリア → 次のフェーズに遷移（evo or biome or prefinal）
+    expect(next.phase).not.toBe('battle');
+    expect(next.run!.bossWave).toBe(0);
+    expect(next.run!.bc).toBe(1);
+  });
+
+  it('大災厄（bb=3）で2体目のボス連戦継続時にカウンターが正しい', () => {
+    // Arrange: 大災厄（bb=3）のボス2体目（bossWave=1）
+    const run = makeRun({
+      di: 2, dd: DIFFS[2], bossWave: 1,
+      cW: 5, wpb: 4, bc: 0, cBT: 'volcano',
+      hp: 60, mhp: 120,
+      en: { n: '火竜', hp: 0, mhp: 200, atk: 25, def: 3, bone: 6 },
+    });
+    const state = makeGameState({
+      phase: 'battle',
+      run,
+      finalMode: false,
+    });
+
+    // Act
+    const next = gameReducer(state, { type: 'AFTER_BATTLE' });
+
+    // Assert: まだ連戦継続
+    expect(next.phase).toBe('battle');
+    expect(next.run!.bossWave).toBe(2);
+    const chainLog = next.run!.log.find(l => l.x.includes('ボス連戦'));
+    expect(chainLog).toBeDefined();
+    expect(chainLog!.x).toContain('3/3');
+  });
+});

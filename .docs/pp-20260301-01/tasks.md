@@ -63,39 +63,40 @@
 
 ### FB#12: ステージ選択UIリフレーミング
 
-- [ ] `components/DifficultyScreen.tsx`: タイトル「難易度選択」→「ステージ選択」に変更
-- [ ] `components/DifficultyScreen.tsx`: 各ステージにテーマ説明テキストを追加表示
+- [x] `components/DifficultyScreen.tsx`: タイトル「難易度選択」→「ステージ選択」に変更
+- [x] `components/DifficultyScreen.tsx`: 各ステージにテーマ説明テキストを追加表示
 
 ### FB#13: ボス連戦
 
 #### 型・定数
 
-- [ ] `types.ts`: `Difficulty` 型に `bb: number` を追加
-- [ ] `types.ts`: `RunState` に `bossWave: number` を追加
-- [ ] `constants.ts`: DIFFS の各難易度に `bb` 値を追加（1/2/3/5）
-- [ ] `constants.ts`: `BOSS_CHAIN_SCALE` 定数を追加（`[1.0, 1.15, 1.3, 1.45, 1.6]`）
+- [x] `types.ts`: `Difficulty` 型に `bb: number` を追加
+- [x] `types.ts`: `RunState` に `bossWave: number` を追加
+- [x] `constants.ts`: DIFFS の各難易度に `bb` 値を追加（1/2/3/5）
+- [x] `constants.ts`: `BOSS_CHAIN_SCALE` 定数を追加（`[1.0, 1.15, 1.3, 1.45, 1.6]`）
 
 #### ロジック
 
-- [ ] `game-logic.ts`: `startRunState` に `bossWave: 0` 初期値を追加
-- [ ] `game-logic.ts`: `afterBattle` の戻り値型に `bossChainContinue?: boolean` を追加
-- [ ] `game-logic.ts`: `afterBattle` でボス撃破時の連戦ロジックを実装（bossWave++, HP20%回復, 次ボス生成）
-- [ ] `hooks.ts`: `AFTER_BATTLE` で `bossChainContinue` 分岐を追加
+- [x] `game-logic.ts`: `startRunState` に `bossWave: 0` 初期値を追加
+- [x] `game-logic.ts`: `afterBattle` の戻り値型に `bossChainContinue?: boolean` を追加
+- [x] `game-logic.ts`: `afterBattle` でボス撃破時の連戦ロジックを実装（bossWave++, HP20%回復, 次ボス生成）
+- [x] `hooks.ts`: `AFTER_BATTLE` で `bossChainContinue` 分岐を追加
 
 #### UI
 
-- [ ] `components/BattleScreen.tsx`: ボス連戦カウンター表示（"BOSS 2/3"）
+- [x] `components/BattleScreen.tsx`: ボス連戦カウンター表示（"BOSS 2/3"）
 
 #### テスト
 
-- [ ] `__tests__/test-helpers.ts`: `makeRun` に `bossWave: 0` を追加
-- [ ] `__tests__/game-logic.test.ts`: ボス連戦ロジックのテスト追加
+- [x] `__tests__/test-helpers.ts`: `makeRun` に `bossWave: 0` を追加
+- [x] `__tests__/game-logic.test.ts`: ボス連戦ロジックのテスト追加（14テスト）
+- [x] `__tests__/reducer.test.ts`: AFTER_BATTLE ボス連戦 reducer テスト追加（4テスト）
 
 ### P2 検証
 
-- [ ] `npm test` 全テストパス
-- [ ] `npx tsc --noEmit` 型エラーなし
-- [ ] `npm run build` ビルド成功
+- [x] `npm test` 全テストパス（167スイート / 2300テスト）
+- [x] `npx tsc --noEmit` 型エラーなし（tone ライブラリの既存エラーのみ）
+- [x] `npm run build` ビルド成功
 - [ ] ブラウザ確認: ステージ選択UI表示
 - [ ] ブラウザ確認: 氷河期ボス2連戦
 - [ ] ブラウザ確認: 大災厄ボス3連戦

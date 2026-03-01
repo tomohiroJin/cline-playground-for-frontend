@@ -302,7 +302,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'AFTER_BATTLE': {
       if (!state.run || state.phase !== 'battle') return state;
-      const { nextRun, biomeCleared } = afterBattle(state.run);
+      const { nextRun, biomeCleared, bossChainContinue } = afterBattle(state.run);
+      // ボス連戦継続: battle フェーズを維持
+      if (bossChainContinue) {
+        nextRun.log.push({ x: `🔥 ボス連戦 ${nextRun.bossWave + 1}/${nextRun.dd.bb}！`, c: 'gc' });
+        return { ...state, run: nextRun, phase: 'battle' };
+      }
       if (biomeCleared) {
         const dead = deadAllies(nextRun.al);
         if (dead.length > 0) {

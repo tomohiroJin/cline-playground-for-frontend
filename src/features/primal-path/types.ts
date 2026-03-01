@@ -65,6 +65,8 @@ export interface Difficulty {
   readonly ic: string;
   readonly hm: number;
   readonly am: number;
+  /** ボス連戦数（1=通常、2以上で連戦） */
+  readonly bb: number;
 }
 
 /** 進化エフェクト */
@@ -339,6 +341,8 @@ export interface RunState {
   enemyAtkMul?: number;
   /** チャレンジ用: 回復禁止フラグ */
   noHealing?: boolean;
+  /** ボス連戦カウンター（0始まり） */
+  bossWave: number;
   /** スキル使用回数（統計用） */
   skillUseCount: number;
   /** 合計回復量（統計用） */

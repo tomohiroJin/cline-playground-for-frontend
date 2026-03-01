@@ -18,7 +18,7 @@ import {
   DIFFS, BIOME_AFFINITY, ENV_DMG, AWK_SA, AWK_FA, TN, TC,
   WAVES_PER_BIOME, A_SKILLS, SYNERGY_BONUSES,
   RANDOM_EVENTS, EVENT_CHANCE, EVENT_MIN_BATTLES,
-  ACHIEVEMENTS,
+  ACHIEVEMENTS, BOSS_CHAIN_SCALE,
 } from './constants';
 
 /* ===== Battle Constants ===== */
@@ -579,6 +579,7 @@ export function startRunState(di: number, save: SaveData): RunState {
     en: null,
     sk: { avl: [], cds: {}, bfs: [] },
     evs: [],
+    bossWave: 0,
     btlCount: 0, eventCount: 0,
     skillUseCount: 0, totalHealing: 0,
     _wDmgBase: 0, _fbk: '', _fPhase: 0,
@@ -613,7 +614,7 @@ export function startBattle(r: RunState, finalMode: boolean): RunState {
 
 /* ===== After Battle (enemy killed, non-final) ===== */
 
-export function afterBattle(r: RunState): { nextRun: RunState; biomeCleared: boolean } {
+export function afterBattle(r: RunState): { nextRun: RunState; biomeCleared: boolean; bossChainContinue?: boolean } {
   const next = deepCloneRun(r);
   const boss = next.cW > next.wpb;
 
@@ -624,6 +625,30 @@ export function afterBattle(r: RunState): { nextRun: RunState; biomeCleared: boo
   next.sk = decSkillCds(next.sk);
 
   if (boss) {
+    next.bossWave++;
+    // ボス連戦: まだ連戦数未満なら継続
+    if (next.bossWave < next.dd.bb) {
+      // HP を最大HPの20%回復
+      const rec = Math.floor(next.mhp * 0.2);
+      next.hp = Math.min(next.hp + rec, next.mhp);
+      // 次のボスを生成（BOSS_CHAIN_SCALEでスケーリング）
+      const biome = next.cBT as BiomeId;
+      const bossTemplate = BOSS[biome];
+      const chainScale = BOSS_CHAIN_SCALE[Math.min(next.bossWave, BOSS_CHAIN_SCALE.length - 1)];
+      const biomeScale = 0.75 + next.cB * 0.25;
+      next.en = scaleEnemy(bossTemplate, next.dd.hm, next.dd.am, (biomeScale + next.bc * 0.25) * chainScale);
+      // チャレンジ: 敵ATK倍率の適用
+      if (next.enemyAtkMul && next.enemyAtkMul !== 1 && next.en) {
+        next.en.atk = Math.floor(next.en.atk * next.enemyAtkMul);
+      }
+      next.log = [];
+      next.wDmg = 0;
+      next.wTurn = 0;
+      next._wDmgBase = next.dmgDealt;
+      return { nextRun: next, biomeCleared: false, bossChainContinue: true };
+    }
+    // バイオームクリア
+    next.bossWave = 0;
     next.bc++;
     const rec = Math.floor(next.mhp * 0.2);
     next.hp = Math.min(next.hp + rec, next.mhp);
