@@ -53,11 +53,18 @@ export const DIFFS: readonly Difficulty[] = Object.freeze([
   Object.freeze({ n: '原始', d: '通常難易度', env: 1, bm: 1, ul: 0, ic: '🌿', hm: 1, am: 1, bb: 1 }),
   Object.freeze({ n: '氷河期', d: '環境ダメ強化 骨+25%', env: 1.6, bm: 1.25, ul: 1, ic: '❄️', hm: 1.7, am: 1.5, bb: 2 }),
   Object.freeze({ n: '大災厄', d: '敵大幅強化 骨+50%', env: 2.2, bm: 1.5, ul: 3, ic: '🔥', hm: 2.8, am: 2.4, bb: 3 }),
-  Object.freeze({ n: '神話世界', d: '極限 ボス5連戦 骨+80%', env: 3, bm: 1.8, ul: 6, ic: '⚡', hm: 4.0, am: 3.2, bb: 5 }),
+  Object.freeze({ n: '神話世界', d: '極限 骨+80%', env: 3, bm: 1.8, ul: 6, ic: '⚡', hm: 4.0, am: 3.2, bb: 5 }),
 ]);
 
 /** ボス連戦スケール倍率 */
 export const BOSS_CHAIN_SCALE: readonly number[] = Object.freeze([1.0, 1.15, 1.3, 1.45, 1.6]);
+
+/** 最終ボス出現順テーブル（初回ボスキーに基づく連戦順） */
+export const FINAL_BOSS_ORDER: Readonly<Record<string, readonly string[]>> = Object.freeze({
+  ft: Object.freeze(['ft', 'fl', 'fr', 'fa', 'fx']),
+  fl: Object.freeze(['fl', 'fr', 'ft', 'fa', 'fx']),
+  fr: Object.freeze(['fr', 'ft', 'fl', 'fa', 'fx']),
+});
 
 /** 進化一覧 */
 export const EVOS: readonly Evolution[] = Object.freeze([
@@ -146,6 +153,8 @@ export const BOSS: Readonly<Record<string, EnemyTemplate>> = Object.freeze({
   ft: Object.freeze({ n: '氷の神獣', hp: 320, atk: 30, def: 7, bone: 10 }),
   fl: Object.freeze({ n: '大地の守護者', hp: 400, atk: 24, def: 10, bone: 10 }),
   fr: Object.freeze({ n: '血の魔神', hp: 280, atk: 40, def: 4, bone: 12 }),
+  fa: Object.freeze({ n: '天空の裁定者', hp: 350, atk: 35, def: 8, bone: 11 }),
+  fx: Object.freeze({ n: '混沌の始祖龍', hp: 450, atk: 28, def: 12, bone: 12 }),
 });
 
 /** 文明ツリー */
@@ -323,6 +332,7 @@ export const ENEMY_COLORS: Readonly<Record<string, string>> = Object.freeze({
   '火炎蛇': '#e08040', '噴火カメ': '#b06040', '灼熱ワイバーン': '#e04040',
   'サーベルタイガー': '#e0b040', 'マンモス': '#a08060', '火竜': '#e02020',
   '氷の神獣': '#50b0e0', '大地の守護者': '#40a040', '血の魔神': '#c02060',
+  '天空の裁定者': '#e0d050', '混沌の始祖龍': '#8040c0',
 });
 
 /** 敵詳細パーツ (大型) */
@@ -333,6 +343,8 @@ export const ENEMY_DETAILS: readonly { match: string; parts: readonly (readonly 
   Object.freeze({ match: '神獣', parts: Object.freeze([Object.freeze([8, 0, 2, 3, '#fff'] as const), Object.freeze([14, 0, 2, 3, '#fff'] as const)]) }),
   Object.freeze({ match: '守護者', parts: Object.freeze([Object.freeze([2, 0, 4, 4, '#60c060'] as const), Object.freeze([18, 0, 4, 4, '#60c060'] as const)]) }),
   Object.freeze({ match: 'タイガー', parts: Object.freeze([Object.freeze([6, 10, 2, 4, '#fff'] as const), Object.freeze([16, 10, 2, 4, '#fff'] as const)]) }),
+  Object.freeze({ match: '裁定者', parts: Object.freeze([Object.freeze([0, 4, 5, 8, null] as const), Object.freeze([19, 4, 5, 8, null] as const)]) }),
+  Object.freeze({ match: '始祖龍', parts: Object.freeze([Object.freeze([0, 4, 5, 8, null] as const), Object.freeze([19, 4, 5, 8, null] as const)]) }),
 ]);
 
 /** 敵詳細パーツ (小型) */
@@ -357,7 +369,20 @@ export const FRESH_SAVE: Readonly<SaveData> = Object.freeze({
   clears: 0,
   runs: 0,
   best: Object.freeze({}),
+  loopCount: 0,
 });
+
+/** 周回倍率係数 */
+export const LOOP_SCALE_FACTOR = 0.5;
+
+/** エンドレスモード: 線形スケール係数（wave あたり） */
+export const ENDLESS_LINEAR_SCALE = 0.18;
+
+/** エンドレスモード: 指数スケール底 */
+export const ENDLESS_EXP_BASE = 1.15;
+
+/** エンドレスモード: プレイヤーaM超過分の敵スケーリング反映率 */
+export const ENDLESS_AM_REFLECT_RATIO = 0.5;
 
 /** localStorage キー */
 export const SAVE_KEY = 'primal-path-v7';
@@ -704,6 +729,15 @@ export const CHALLENGES: readonly ChallengeDef[] = Object.freeze([
     icon: '⏱️',
     modifiers: Object.freeze([
       Object.freeze({ type: 'speed_limit' as const, maxSeconds: 600 }),
+    ]),
+  }),
+  Object.freeze({
+    id: 'endless',
+    name: '無限の試練',
+    description: '終わりなき戦い。どこまで生き延びられるか挑め。',
+    icon: '♾️',
+    modifiers: Object.freeze([
+      Object.freeze({ type: 'endless' as const }),
     ]),
   }),
 ]);

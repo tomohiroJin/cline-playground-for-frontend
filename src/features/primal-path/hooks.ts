@@ -12,7 +12,8 @@ import {
   startRunState, startBattle, tick, afterBattle, applyEvo,
   applyAwkFx, checkAwakeningRules, rollE, calcBoneReward,
   startFinalBoss, handleFinalBossKill, pickBiomeAuto,
-  applyBiomeSelection, applyFirstBiome, applyAutoLastBiome,
+  applyBiomeSelection, applyFirstBiome, applyAutoLastBiome, applyEndlessLoop,
+  calcEndlessScale,
   deadAllies, allyReviveCost, getTB, applySkill,
   rollEvent, applyEventChoice,
   calcRunStats, checkAchievement, applyChallenge, calcSynergies,
@@ -25,7 +26,7 @@ import { Storage, MetaStorage } from './storage';
 
 type GameAction =
   | { type: 'LOAD_SAVE'; save: SaveData }
-  | { type: 'START_RUN'; di: number }
+  | { type: 'START_RUN'; di: number; loopOverride: number }
   | { type: 'PICK_BIOME'; biome: BiomeId }
   | { type: 'SELECT_EVO'; evo: Evolution }
   | { type: 'PROCEED_AFTER_AWK' }
@@ -56,7 +57,9 @@ type GameAction =
   | { type: 'LOAD_META' }
   | { type: 'RECORD_RUN_END'; won: boolean }
   | { type: 'START_CHALLENGE'; challengeId: string; di: number }
-  | { type: 'SKIP_EVO' };
+  | { type: 'SKIP_EVO' }
+  | { type: 'ENDLESS_CONTINUE' }
+  | { type: 'ENDLESS_RETIRE' };
 
 /* ===== Initial State ===== */
 
@@ -83,6 +86,10 @@ function initialState(): GameState {
 
 function transitionAfterBiome(state: GameState, run: RunState): GameState {
   if (run.bc >= 3) {
+    // エンドレスモード: チェックポイント画面で続行/終了を選択させる
+    if (run.isEndless) {
+      return { ...state, run, phase: 'endless_checkpoint' };
+    }
     return { ...state, run, phase: 'prefinal' };
   }
   const pick = pickBiomeAuto(run);
@@ -176,7 +183,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...state, save: { ...action.save } };
 
     case 'START_RUN': {
-      const save = { ...state.save, runs: state.save.runs + 1 };
+      const save = { ...state.save, runs: state.save.runs + 1, loopCount: action.loopOverride };
       const run = startRunState(action.di, save);
       // Auto pick first biome
       const pick = pickBiomeAuto(run);
@@ -302,12 +309,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'AFTER_BATTLE': {
       if (!state.run || state.phase !== 'battle') return state;
-      const { nextRun, biomeCleared, bossChainContinue } = afterBattle(state.run);
-      // ボス連戦継続: battle フェーズを維持
-      if (bossChainContinue) {
-        nextRun.log.push({ x: `🔥 ボス連戦 ${nextRun.bossWave + 1}/${nextRun.dd.bb}！`, c: 'gc' });
-        return { ...state, run: nextRun, phase: 'battle' };
-      }
+      const { nextRun, biomeCleared } = afterBattle(state.run);
       if (biomeCleared) {
         const dead = deadAllies(nextRun.al);
         if (dead.length > 0) {
@@ -349,9 +351,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           clears: state.save.clears + 1,
           best: { ...state.save.best, [nextRun.di]: 1 },
         };
+        // 神話世界（di===3）クリアで周回カウントをインクリメント
+        if (nextRun.di === 3) {
+          save.loopCount = (state.save.loopCount ?? 0) + 1;
+        }
         return { ...state, save, run: nextRun, phase: 'over', gameResult: true, finalMode: false };
       }
-      // Phase 2
+      // 連戦継続
+      nextRun.log.push({ x: `⚡ 最終ボス連戦 ${nextRun._fPhase}/${nextRun.dd.bb}！`, c: 'gc' });
       return { ...state, run: nextRun, phase: 'battle' };
     }
 
@@ -487,6 +494,23 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       if (!state.run) return state;
       const battleRun = startBattle(state.run, state.finalMode);
       return { ...state, run: battleRun, phase: 'battle' };
+    }
+
+    case 'ENDLESS_CONTINUE': {
+      if (!state.run) return state;
+      // リループ処理: endlessWave +1、バイオームリセット
+      const loopedRun = applyEndlessLoop(state.run);
+      const nextRun = applyFirstBiome(loopedRun);
+      const evoPicks = rollE(nextRun);
+      return { ...state, run: nextRun, phase: 'evo', evoPicks };
+    }
+
+    case 'ENDLESS_RETIRE': {
+      if (!state.run) return state;
+      // ペナルティなしで終了（SURRENDER と異なり骨削減なし）
+      const boneReward = calcBoneReward(state.run, false);
+      const save = { ...state.save, bones: state.save.bones + boneReward };
+      return { ...state, save, phase: 'over', gameResult: false, finalMode: false };
     }
 
     case 'START_CHALLENGE': {

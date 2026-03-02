@@ -11,7 +11,7 @@ describe('Storage', () => {
   });
 
   it('save/loadのラウンドトリップが正しく動作する', () => {
-    const data: SaveData = { bones: 100, tree: { atk1: 1 }, clears: 2, runs: 5, best: { 0: 1 } };
+    const data: SaveData = { bones: 100, tree: { atk1: 1 }, clears: 2, runs: 5, best: { 0: 1 }, loopCount: 0 };
     Storage.save(data);
     const loaded = Storage.load();
     expect(loaded).toEqual(data);
@@ -22,7 +22,7 @@ describe('Storage', () => {
   });
 
   it('正しいキーで保存する', () => {
-    const data: SaveData = { bones: 0, tree: {}, clears: 0, runs: 0, best: {} };
+    const data: SaveData = { bones: 0, tree: {}, clears: 0, runs: 0, best: {}, loopCount: 0 };
     Storage.save(data);
     expect(localStorage.getItem(SAVE_KEY)).not.toBeNull();
   });

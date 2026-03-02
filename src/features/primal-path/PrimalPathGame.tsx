@@ -24,6 +24,7 @@ import { EvolutionScreen } from './components/EvolutionScreen';
 import { BattleScreen } from './components/BattleScreen';
 import { AwakeningScreen } from './components/AwakeningScreen';
 import { PreFinalScreen } from './components/PreFinalScreen';
+import { EndlessCheckpointScreen } from './components/EndlessCheckpointScreen';
 import { GameOverScreen } from './components/GameOverScreen';
 import { AllyReviveScreen } from './components/AllyReviveScreen';
 import { EventScreen } from './components/EventScreen';
@@ -124,11 +125,11 @@ function GameInner() {
     }
   }, [state.runStats, state.aggregate, state.achievementStates, loaded]);
 
-  const handleStartRun = useCallback(async (di: number) => {
+  const handleStartRun = useCallback(async (di: number, loopOverride: number) => {
     initAudio();
     const d = DIFFS[di];
     await showOverlay(d.ic, d.n + 'モード開始！', 1100);
-    dispatch({ type: 'START_RUN', di });
+    dispatch({ type: 'START_RUN', di, loopOverride });
   }, [dispatch, showOverlay, initAudio]);
 
   const handleStartChallenge = useCallback(async (challengeId: string, di: number) => {
@@ -213,6 +214,10 @@ function GameInner() {
             playSfx={playSfx}
             showOverlay={showOverlay}
           />
+        )}
+
+        {phase === 'endless_checkpoint' && run && (
+          <EndlessCheckpointScreen run={run} dispatch={dispatch} playSfx={playSfx} />
         )}
 
         {phase === 'prefinal' && run && (

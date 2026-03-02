@@ -2,9 +2,10 @@
  * 原始進化録 - PRIMAL PATH - gameReducer テスト
  */
 import { gameReducer } from '../hooks';
-import { FRESH_SAVE, TREE as TREE_DATA, EVOS, SPEED_OPTS, RANDOM_EVENTS, BOSS, DIFFS } from '../constants';
-import { scaleEnemy } from '../game-logic';
-import { makeRun, makeGameState } from './test-helpers';
+import { FRESH_SAVE, TREE as TREE_DATA, EVOS, SPEED_OPTS, RANDOM_EVENTS, BOSS, DIFFS, CHALLENGES, LOOP_SCALE_FACTOR } from '../constants';
+import { calcBoneReward } from '../game-logic';
+import { scaleEnemy, startRunState } from '../game-logic';
+import { makeRun, makeGameState, makeSave } from './test-helpers';
 
 /* ===== テスト ===== */
 
@@ -133,39 +134,53 @@ describe('gameReducer', () => {
     });
   });
 
-  describe('FINAL_BOSS_KILLED Phase 2 遷移', () => {
-    it('神話世界（di>=3）のPhase 1撃破でPhase 2に遷移し、新しい敵が設定される', () => {
-      const dd = DIFFS[3]; // 神話世界
+  describe('FINAL_BOSS_KILLED 最終ボス連戦', () => {
+    it('連戦継続時にphaseがbattleのまま維持される（氷河期 bb=2）', () => {
+      // Arrange: 氷河期のPhase 1撃破
+      const dd = DIFFS[1];
       const boss = scaleEnemy(BOSS['ft'], dd.hm, dd.am, 1);
       const run = makeRun({
-        di: 3, dd,
-        _fPhase: 1,
-        _fbk: 'ft',
-        cBT: 'final',
-        cW: 5, wpb: 4,
-        en: { ...boss, hp: 0 }, // ボスHP=0（撃破済み）
+        di: 1, dd,
+        _fPhase: 1, _fbk: 'ft',
+        cBT: 'final', cW: 5, wpb: 4,
+        en: { ...boss, hp: 0 },
       });
       const state = makeGameState({ run, phase: 'battle' as const, finalMode: true });
       const next = gameReducer(state, { type: 'FINAL_BOSS_KILLED' });
 
-      // Phase 2 に遷移
+      // Assert
       expect(next.phase).toBe('battle');
       expect(next.run!._fPhase).toBe(2);
-      // 新しい敵が生成されている
       expect(next.run!.en).not.toBeNull();
       expect(next.run!.en!.hp).toBeGreaterThan(0);
-      expect(next.run!.en!.n).not.toBe('氷の神獣'); // ft 以外のボス
     });
 
-    it('Phase 2撃破で勝利となる', () => {
-      const dd = DIFFS[3];
-      const boss = scaleEnemy(BOSS['fl'], dd.hm, dd.am, 0.85);
+    it('連戦継続時にログに連戦メッセージが追加される', () => {
+      // Arrange
+      const dd = DIFFS[1];
+      const boss = scaleEnemy(BOSS['ft'], dd.hm, dd.am, 1);
       const run = makeRun({
-        di: 3, dd,
-        _fPhase: 2,
-        _fbk: 'ft',
-        cBT: 'final',
-        cW: 5, wpb: 4,
+        di: 1, dd,
+        _fPhase: 1, _fbk: 'ft',
+        cBT: 'final', cW: 5, wpb: 4,
+        en: { ...boss, hp: 0 },
+      });
+      const state = makeGameState({ run, phase: 'battle' as const, finalMode: true });
+      const next = gameReducer(state, { type: 'FINAL_BOSS_KILLED' });
+
+      // Assert: ログに連戦メッセージが含まれる
+      const chainLog = next.run!.log.find(l => l.x.includes('最終ボス連戦'));
+      expect(chainLog).toBeDefined();
+      expect(chainLog!.x).toContain('2/2');
+    });
+
+    it('最終撃破で勝利となる（氷河期 bb=2, Phase 2）', () => {
+      const dd = DIFFS[1];
+      const boss = scaleEnemy(BOSS['fl'], dd.hm, dd.am, 1);
+      const run = makeRun({
+        di: 1, dd,
+        _fPhase: 2, _fbk: 'ft',
+        cBT: 'final', cW: 5, wpb: 4,
         en: { ...boss, hp: 0 },
       });
       const state = makeGameState({ run, phase: 'battle' as const, finalMode: true });
@@ -173,6 +188,42 @@ describe('gameReducer', () => {
 
       expect(next.phase).toBe('over');
       expect(next.gameResult).toBe(true);
+    });
+
+    it('原始（bb=1）のPhase 1撃破で即勝利', () => {
+      const dd = DIFFS[0];
+      const boss = scaleEnemy(BOSS['ft'], dd.hm, dd.am, 1);
+      const run = makeRun({
+        di: 0, dd,
+        _fPhase: 1, _fbk: 'ft',
+        cBT: 'final', cW: 5, wpb: 4,
+        en: { ...boss, hp: 0 },
+      });
+      const state = makeGameState({ run, phase: 'battle' as const, finalMode: true });
+      const next = gameReducer(state, { type: 'FINAL_BOSS_KILLED' });
+
+      expect(next.phase).toBe('over');
+      expect(next.gameResult).toBe(true);
+    });
+  });
+
+  describe('AFTER_BATTLE ボス撃破で連戦なし', () => {
+    it('ボス撃破時にbattle以外のフェーズに遷移する（連戦なし）', () => {
+      // Arrange: 氷河期のバイオームボス撃破
+      const run = makeRun({
+        di: 1, dd: DIFFS[1],
+        cW: 5, wpb: 4, bc: 0, cBT: 'glacier',
+        hp: 60, mhp: 100,
+        en: { n: 'マンモス', hp: 0, mhp: 160, atk: 16, def: 6, bone: 6 },
+      });
+      const state = makeGameState({ phase: 'battle' as const, run, finalMode: false });
+
+      // Act
+      const next = gameReducer(state, { type: 'AFTER_BATTLE' });
+
+      // Assert: battleではないフェーズに遷移（ally_revive, evo, biome, prefinal のいずれか）
+      expect(next.phase).not.toBe('battle');
+      expect(next.run!.bc).toBe(1);
     });
   });
 
@@ -236,101 +287,200 @@ describe('FB#7: ゆっくり速度オプション', () => {
   });
 });
 
-/* ===== FB#13: ボス連戦 reducer テスト ===== */
+/* ===== FB#11: 周回システム (reducer) ===== */
 
-describe('FB#13: ボス連戦 AFTER_BATTLE reducer', () => {
-  it('ボス連戦継続時にphaseがbattleのまま維持される', () => {
-    // Arrange: 氷河期（bb=2）のボス1体目撃破状態
-    const run = makeRun({
-      di: 1, dd: DIFFS[1], bossWave: 0,
-      cW: 5, wpb: 4, bc: 0, cBT: 'glacier',
-      hp: 60, mhp: 100,
-      en: { n: 'マンモス', hp: 0, mhp: 160, atk: 16, def: 6, bone: 6 },
-    });
-    const state = makeGameState({
-      phase: 'battle',
-      run,
-      finalMode: false,
-    });
-
-    // Act
-    const next = gameReducer(state, { type: 'AFTER_BATTLE' });
-
-    // Assert: フェーズがbattleのまま
-    expect(next.phase).toBe('battle');
-    // 次のボスが生成されている
-    expect(next.run!.en).not.toBeNull();
-    expect(next.run!.bossWave).toBe(1);
+describe('FB#11: 周回システム', () => {
+  it('FRESH_SAVE に loopCount: 0 が含まれる', () => {
+    expect(FRESH_SAVE.loopCount).toBe(0);
   });
 
-  it('ボス連戦継続時にログに連戦メッセージが追加される', () => {
-    // Arrange: 氷河期（bb=2）のボス1体目撃破状態
+  it('FINAL_BOSS_KILLED（di===3）で勝利時に save.loopCount がインクリメントされる', () => {
+    // Arrange: 神話世界（di=3）の最終ボス戦、bb=1 で即勝利する設定
+    const dd = { ...DIFFS[3], bb: 1 };
     const run = makeRun({
-      di: 1, dd: DIFFS[1], bossWave: 0,
-      cW: 5, wpb: 4, bc: 0, cBT: 'glacier',
-      hp: 60, mhp: 100,
-      en: { n: 'マンモス', hp: 0, mhp: 160, atk: 16, def: 6, bone: 6 },
+      di: 3, dd, _fPhase: 1, _fbk: 'ft',
+      hp: 200, mhp: 200, cBT: 'final', cW: 5, wpb: 4,
+      en: { n: '氷の神獣', hp: 0, mhp: 320, atk: 30, def: 7, bone: 10 },
+      bE: 50, loopCount: 0,
     });
+    const save = makeSave({ loopCount: 0 });
     const state = makeGameState({
-      phase: 'battle',
-      run,
-      finalMode: false,
+      run, save, phase: 'battle', finalMode: true,
     });
 
     // Act
-    const next = gameReducer(state, { type: 'AFTER_BATTLE' });
+    const next = gameReducer(state, { type: 'FINAL_BOSS_KILLED' });
 
-    // Assert: ログに連戦メッセージが含まれる
-    const chainLog = next.run!.log.find(l => l.x.includes('ボス連戦'));
-    expect(chainLog).toBeDefined();
-    expect(chainLog!.x).toContain('2/2');
+    // Assert: ゲームクリア時に loopCount が +1
+    expect(next.save.loopCount).toBe(1);
   });
 
-  it('最後のボス撃破時に通常のバイオームクリアフローに遷移する', () => {
-    // Arrange: 氷河期（bb=2）のボス2体目（最後）
+  it('FINAL_BOSS_KILLED（di!==3）では save.loopCount が変化しない', () => {
+    // Arrange: 原始（di=0）の最終ボス戦
+    const dd = { ...DIFFS[0], bb: 1 };
     const run = makeRun({
-      di: 1, dd: DIFFS[1], bossWave: 1,
-      cW: 5, wpb: 4, bc: 0, cBT: 'glacier',
-      hp: 40, mhp: 100,
-      en: { n: 'マンモス', hp: 0, mhp: 180, atk: 18, def: 6, bone: 6 },
+      di: 0, dd, _fPhase: 1, _fbk: 'ft',
+      hp: 200, mhp: 200, cBT: 'final', cW: 5, wpb: 4,
+      en: { n: '氷の神獣', hp: 0, mhp: 320, atk: 30, def: 7, bone: 10 },
+      bE: 50, loopCount: 0,
     });
+    const save = makeSave({ loopCount: 2 });
     const state = makeGameState({
-      phase: 'battle',
-      run,
-      finalMode: false,
+      run, save, phase: 'battle', finalMode: true,
     });
 
     // Act
-    const next = gameReducer(state, { type: 'AFTER_BATTLE' });
+    const next = gameReducer(state, { type: 'FINAL_BOSS_KILLED' });
 
-    // Assert: バイオームクリア → 次のフェーズに遷移（evo or biome or prefinal）
-    expect(next.phase).not.toBe('battle');
-    expect(next.run!.bossWave).toBe(0);
-    expect(next.run!.bc).toBe(1);
-  });
-
-  it('大災厄（bb=3）で2体目のボス連戦継続時にカウンターが正しい', () => {
-    // Arrange: 大災厄（bb=3）のボス2体目（bossWave=1）
-    const run = makeRun({
-      di: 2, dd: DIFFS[2], bossWave: 1,
-      cW: 5, wpb: 4, bc: 0, cBT: 'volcano',
-      hp: 60, mhp: 120,
-      en: { n: '火竜', hp: 0, mhp: 200, atk: 25, def: 3, bone: 6 },
-    });
-    const state = makeGameState({
-      phase: 'battle',
-      run,
-      finalMode: false,
-    });
-
-    // Act
-    const next = gameReducer(state, { type: 'AFTER_BATTLE' });
-
-    // Assert: まだ連戦継続
-    expect(next.phase).toBe('battle');
-    expect(next.run!.bossWave).toBe(2);
-    const chainLog = next.run!.log.find(l => l.x.includes('ボス連戦'));
-    expect(chainLog).toBeDefined();
-    expect(chainLog!.x).toContain('3/3');
+    // Assert: di===0 なので loopCount は変わらない
+    expect(next.save.loopCount).toBe(2);
   });
 });
+
+/* ===== FB#4: エンドレスチャレンジ (reducer) ===== */
+
+describe('FB#4: エンドレスチャレンジ (reducer)', () => {
+  it('START_CHALLENGE で endless チャレンジを開始できる', () => {
+    const save = makeSave({ bones: 100, runs: 0 });
+    const state = makeGameState({ save });
+
+    const next = gameReducer(state, { type: 'START_CHALLENGE', challengeId: 'endless', di: 0 });
+
+    expect(next.run).not.toBeNull();
+    expect(next.run!.isEndless).toBe(true);
+    expect(next.run!.endlessWave).toBe(0);
+    expect(next.run!.challengeId).toBe('endless');
+  });
+
+  it('エンドレスモードで bc>=3 時に endless_checkpoint に遷移する', () => {
+    // Arrange: bc=3 到達、エンドレスモード
+    const bossRun = makeRun({
+      bc: 3, isEndless: true, endlessWave: 0,
+      bms: ['grassland', 'glacier', 'volcano'],
+      cBT: 'volcano', cB: 3,
+      cW: 5, wpb: 4,
+      en: { n: 'テストボス', hp: 0, mhp: 100, atk: 10, def: 0, bone: 5 },
+      btlCount: 5,
+    });
+    const bossState = makeGameState({
+      run: bossRun, phase: 'battle', finalMode: false,
+    });
+
+    // Act
+    const next = gameReducer(bossState, { type: 'AFTER_BATTLE' });
+
+    // Assert: prefinal ではなく endless_checkpoint に遷移
+    expect(next.phase).toBe('endless_checkpoint');
+  });
+
+  it('ENDLESS_CONTINUE でリループして evo に遷移する', () => {
+    const run = makeRun({
+      bc: 3, isEndless: true, endlessWave: 1,
+      bms: ['grassland', 'glacier', 'volcano'],
+      cBT: 'volcano', cB: 3,
+    });
+    const state = makeGameState({
+      run, phase: 'endless_checkpoint', finalMode: false,
+    });
+
+    const next = gameReducer(state, { type: 'ENDLESS_CONTINUE' });
+
+    // Assert: evo に遷移、endlessWave +1、bc リセット
+    expect(next.phase).toBe('evo');
+    expect(next.run!.endlessWave).toBe(2);
+    expect(next.run!.bc).toBe(0);
+  });
+
+  it('ENDLESS_RETIRE で over に遷移し骨削減なし', () => {
+    const run = makeRun({
+      bc: 3, isEndless: true, endlessWave: 3,
+      bms: ['grassland', 'glacier', 'volcano'],
+      cBT: 'volcano', bE: 50, bb: 10,
+    });
+    const state = makeGameState({
+      run, phase: 'endless_checkpoint', finalMode: false,
+      save: makeSave({ bones: 100 }),
+    });
+
+    const next = gameReducer(state, { type: 'ENDLESS_RETIRE' });
+
+    // Assert: over に遷移
+    expect(next.phase).toBe('over');
+    expect(next.gameResult).toBe(false);
+    // 骨がペナルティなしで加算される
+    const expectedBone = calcBoneReward(run, false);
+    expect(next.save.bones).toBe(100 + expectedBone);
+  });
+
+  it('ENDLESS_RETIRE は SURRENDER より多くの骨を獲得する', () => {
+    const run = makeRun({
+      bc: 3, isEndless: true, endlessWave: 3,
+      bms: ['grassland', 'glacier', 'volcano'],
+      cBT: 'volcano', bE: 50, bb: 10,
+    });
+    const save = makeSave({ bones: 0 });
+
+    // ENDLESS_RETIRE
+    const retireState = makeGameState({ run, phase: 'endless_checkpoint', save });
+    const retireNext = gameReducer(retireState, { type: 'ENDLESS_RETIRE' });
+
+    // SURRENDER（骨を50%削減）
+    const surrenderState = makeGameState({ run, phase: 'battle', save });
+    const surrenderNext = gameReducer(surrenderState, { type: 'SURRENDER' });
+
+    // Assert: RETIRE のほうが骨が多い
+    expect(retireNext.save.bones).toBeGreaterThan(surrenderNext.save.bones);
+  });
+});
+
+/* ===== FB#12: START_RUN loopOverride ===== */
+
+describe('FB#12: START_RUN loopOverride（周回数選択）', () => {
+  it('loopOverride: 0 → スケーリングなし（loopCount=0 として開始）', () => {
+    const save = makeSave({ loopCount: 3, runs: 0 });
+    const state = makeGameState({ save });
+
+    const next = gameReducer(state, { type: 'START_RUN', di: 0, loopOverride: 0 });
+
+    expect(next.run).not.toBeNull();
+    // loopOverride=0 なので RunState の loopCount は 0
+    expect(next.run!.loopCount).toBe(0);
+    // 敵のスケーリングは loopCount=0 相当（dd.hm === DIFFS[0].hm）
+    expect(next.run!.dd.hm).toBe(DIFFS[0].hm);
+    expect(next.run!.dd.am).toBe(DIFFS[0].am);
+  });
+
+  it('loopOverride < save.loopCount → 中間値でスケーリング', () => {
+    const save = makeSave({ loopCount: 4, runs: 0 });
+    const state = makeGameState({ save });
+
+    const next = gameReducer(state, { type: 'START_RUN', di: 0, loopOverride: 2 });
+
+    expect(next.run).not.toBeNull();
+    expect(next.run!.loopCount).toBe(2);
+    // loopOverride=2 → スケール倍率 = 1 + 2 * 0.5 = 2.0
+    const expectedHm = DIFFS[0].hm * (1 + 2 * LOOP_SCALE_FACTOR);
+    expect(next.run!.dd.hm).toBeCloseTo(expectedHm);
+  });
+
+  it('loopOverride === save.loopCount → 最大スケーリング（既存動作相当）', () => {
+    const save = makeSave({ loopCount: 3, runs: 0 });
+    const state = makeGameState({ save });
+
+    const next = gameReducer(state, { type: 'START_RUN', di: 0, loopOverride: 3 });
+
+    expect(next.run).not.toBeNull();
+    expect(next.run!.loopCount).toBe(3);
+    const expectedHm = DIFFS[0].hm * (1 + 3 * LOOP_SCALE_FACTOR);
+    expect(next.run!.dd.hm).toBeCloseTo(expectedHm);
+  });
+});
+
+/* ===== FB#11: LOOP_SCALE_FACTOR 定数 ===== */
+
+describe('FB#11: LOOP_SCALE_FACTOR 定数', () => {
+  it('LOOP_SCALE_FACTOR が 0.5 である', () => {
+    expect(LOOP_SCALE_FACTOR).toBe(0.5);
+  });
+});
+

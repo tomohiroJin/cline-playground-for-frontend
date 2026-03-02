@@ -1,10 +1,10 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { RunState, SaveData, SfxType } from '../types';
 import type { GameAction } from '../hooks';
 import { calcBoneReward, aliveAllies, effATK, civLvs } from '../game-logic';
-import { ACHIEVEMENTS } from '../constants';
+import { ACHIEVEMENTS, LOG_COLORS } from '../constants';
 import { CivLevelsDisplay } from './shared';
-import { Screen, SubTitle, Divider, GameButton, GamePanel, RunStatRow, Gc, Tc, Xc, BiomeBg } from '../styles';
+import { Screen, SubTitle, Divider, GameButton, GamePanel, RunStatRow, Gc, Tc, Xc, BiomeBg, LogReviewContainer, LogLine } from '../styles';
 
 interface Props {
   run: RunState;
@@ -16,6 +16,9 @@ interface Props {
 }
 
 export const GameOverScreen: React.FC<Props> = ({ run, won, save, dispatch, playSfx, newAchievements = [] }) => {
+  // ログパネル展開状態
+  const [isLogOpen, setIsLogOpen] = useState(false);
+
   // 勝利時にSFXを再生
   const winPlayed = useRef(false);
   useEffect(() => {
@@ -44,15 +47,23 @@ export const GameOverScreen: React.FC<Props> = ({ run, won, save, dispatch, play
   const d = run.dd;
 
   return (
-    <Screen $center>
+    <Screen>
       <BiomeBg $biome={run.cBT as string} />
       <SubTitle style={{ fontSize: 18, color: won ? '#f0c040' : '#f05050' }}>
-        {won ? '🏆 神話を刻んだ！' : '💀 部族は滅びた…'}
+        {won
+          ? '🏆 神話を刻んだ！'
+          : run.isEndless && run.hp > 0
+            ? '♾️ 探索を終えた'
+            : '💀 部族は滅びた…'}
       </SubTitle>
       <Divider />
       <GamePanel style={{ textAlign: 'center', padding: 14 }}>
         <div style={{ fontSize: 14, color: won ? '#f0c040' : '#f05050', marginBottom: 10 }}>
-          {won ? '最終ボス撃破！' : '次こそは…'}
+          {won
+            ? '最終ボス撃破！'
+            : run.isEndless && run.hp > 0
+              ? `ウェーブ ${run.endlessWave} まで到達！`
+              : '次こそは…'}
         </div>
         <div style={{ fontSize: 14, marginBottom: 8 }}>🦴 <Gc style={{ fontSize: 16 }}>+{boneReward}</Gc></div>
         <div style={{ fontSize: 11, color: '#908870' }}>所持骨：<Gc>{save.bones}</Gc></div>
@@ -74,6 +85,15 @@ export const GameOverScreen: React.FC<Props> = ({ run, won, save, dispatch, play
         <RunStatRow><span>踏破</span><span>{run.bc}/3</span></RunStatRow>
       </GamePanel>
 
+      {/* エンドレスモード結果表示 */}
+      {run.isEndless && (
+        <GamePanel style={{ padding: '8px 10px' }}>
+          <div style={{ fontSize: 10, color: '#f0c040', marginBottom: 4, textAlign: 'center' }}>── エンドレス結果 ──</div>
+          <RunStatRow><span>到達ウェーブ</span><span><Gc>{run.endlessWave}</Gc></span></RunStatRow>
+          <RunStatRow><span>総撃破数</span><span><Gc>{run.kills}</Gc></span></RunStatRow>
+        </GamePanel>
+      )}
+
       {newAchievements.length > 0 && (
         <GamePanel style={{ padding: '8px 10px' }}>
           <div style={{ fontSize: 10, color: '#f0c040', marginBottom: 4, textAlign: 'center' }}>── 実績解除！ ──</div>
@@ -89,6 +109,23 @@ export const GameOverScreen: React.FC<Props> = ({ run, won, save, dispatch, play
           })}
         </GamePanel>
       )}
+
+      {/* 戦闘ログ見返し */}
+      <GamePanel style={{ padding: '8px 10px' }}>
+        <GameButton
+          style={{ width: '100%', fontSize: 10, padding: '4px 8px' }}
+          onClick={() => { playSfx('click'); setIsLogOpen(prev => !prev); }}
+        >
+          {isLogOpen ? '▲ 戦闘ログを閉じる' : '▼ 戦闘ログを見る'}
+        </GameButton>
+        {isLogOpen && (
+          <LogReviewContainer>
+            {run.log.map((l, i) => (
+              <LogLine key={i} $color={LOG_COLORS[l.c]}>{l.x}</LogLine>
+            ))}
+          </LogReviewContainer>
+        )}
+      </GamePanel>
 
       <GameButton style={{ marginTop: 8, minWidth: 190, fontSize: 12 }}
         onClick={() => { playSfx('click'); dispatch({ type: 'RETURN_TO_TITLE' }); }}>

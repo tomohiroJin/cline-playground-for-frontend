@@ -57,13 +57,13 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
   const lvs = civLvs(run);
   const wDps = run.wTurn > 0 ? Math.floor((run.dmgDealt - (run._wDmgBase || 0)) / run.wTurn) : 0;
 
-  // ボス連戦カウンター表示
-  const bossChainLabel = (!finalMode && boss && run.dd.bb > 1)
-    ? ` BOSS ${run.bossWave + 1}/${run.dd.bb}`
-    : boss ? ' BOSS' : '';
+  // ラベル表示
+  const finalPhaseLabel = (finalMode && run.dd.bb > 1)
+    ? ` ${run._fPhase}/${run.dd.bb}`
+    : '';
   const lbl = finalMode
-    ? '⚡ 最終決戦' + (run._fPhase === 2 ? ' Phase2' : '')
-    : m ? `${m.ic} ${m.nm}${bossChainLabel || ` Wave ${run.cW}/${run.wpb}`}` : '⚡';
+    ? `⚡ 最終決戦${finalPhaseLabel}`
+    : m ? `${m.ic} ${m.nm}${boss ? ' BOSS' : ` Wave ${run.cW}/${run.wpb}`}` : '⚡';
 
   // 敵スプライト描画（火傷パーティクルのみ追加）
   useEffect(() => {

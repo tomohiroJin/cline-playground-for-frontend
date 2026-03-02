@@ -13,6 +13,7 @@ export type GamePhase =
   | 'battle'
   | 'awakening'
   | 'prefinal'
+  | 'endless_checkpoint'
   | 'ally_revive'
   | 'over'
   | 'event'
@@ -341,12 +342,16 @@ export interface RunState {
   enemyAtkMul?: number;
   /** チャレンジ用: 回復禁止フラグ */
   noHealing?: boolean;
-  /** ボス連戦カウンター（0始まり） */
-  bossWave: number;
   /** スキル使用回数（統計用） */
   skillUseCount: number;
   /** 合計回復量（統計用） */
   totalHealing: number;
+  /** 周回数（表示用、save.loopCount のコピー） */
+  loopCount: number;
+  /** エンドレスモードフラグ */
+  isEndless: boolean;
+  /** エンドレスウェーブ数（3バイオーム踏破ごとに+1） */
+  endlessWave: number;
   _wDmgBase: number;
   _fbk: string;
   _fPhase: number;
@@ -359,6 +364,8 @@ export interface SaveData {
   clears: number;
   runs: number;
   best: Record<number, number>;
+  /** 周回数（神話世界クリアごとに+1） */
+  loopCount: number;
 }
 
 /** ゲーム全体ステート */
@@ -566,6 +573,8 @@ export interface RunStats {
   playtimeSeconds: number;
   awakening: string | undefined;
   challengeId: string | undefined;
+  /** エンドレスモード到達ウェーブ（非エンドレスなら undefined） */
+  endlessWave: number | undefined;
 }
 
 /** 累計統計（実績判定に使用） */
@@ -624,7 +633,8 @@ export type ChallengeModifier =
   | { type: 'max_evolutions'; count: number }
   | { type: 'speed_limit'; maxSeconds: number }
   | { type: 'no_healing' }
-  | { type: 'enemy_multiplier'; stat: 'atk' | 'hp'; value: number };
+  | { type: 'enemy_multiplier'; stat: 'atk' | 'hp'; value: number }
+  | { type: 'endless' };
 
 /** チャレンジ定義 */
 export interface ChallengeDef {

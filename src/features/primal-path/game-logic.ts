@@ -18,7 +18,8 @@ import {
   DIFFS, BIOME_AFFINITY, ENV_DMG, AWK_SA, AWK_FA, TN, TC,
   WAVES_PER_BIOME, A_SKILLS, SYNERGY_BONUSES,
   RANDOM_EVENTS, EVENT_CHANCE, EVENT_MIN_BATTLES,
-  ACHIEVEMENTS, BOSS_CHAIN_SCALE,
+  ACHIEVEMENTS, BOSS_CHAIN_SCALE, FINAL_BOSS_ORDER,
+  LOOP_SCALE_FACTOR, ENDLESS_LINEAR_SCALE, ENDLESS_EXP_BASE, ENDLESS_AM_REFLECT_RATIO,
 } from './constants';
 
 /* ===== Battle Constants ===== */
@@ -564,13 +565,21 @@ export function startRunState(di: number, save: SaveData): RunState {
     [bms[i], bms[j]] = [bms[j], bms[i]];
   }
 
+  // 周回倍率: 2周目以降は敵が強くなる
+  const loopScale = 1 + (save.loopCount ?? 0) * LOOP_SCALE_FACTOR;
+  const dd: Difficulty = {
+    ...d,
+    hm: d.hm * loopScale,
+    am: d.am * loopScale,
+  };
+
   return {
     hp: 80 + tb.bH, mhp: 80 + tb.bH, atk: 8 + tb.bA, def: 2 + tb.bD,
     cr: Math.min(0.05 + tb.cr, 1), burn: 0, aM: 1, dm: 1 + tb.dM,
     cT: tb.sC, cL: tb.sC, cR: tb.sC,
     al: [], bms,
     cB: 0, cBT: bms[0], cW: 0, wpb: WAVES_PER_BIOME, bE: 0, bb: 0,
-    di, dd: d, fe: null, tb,
+    di, dd, fe: null, tb,
     mxA: 3 + tb.aS, evoN: 3 + tb.eN,
     fReq: 5 + tb.fQ, saReq: 4 + tb.aQ,
     rvU: 0, bc: 0, log: [], turn: 0, kills: 0,
@@ -579,9 +588,11 @@ export function startRunState(di: number, save: SaveData): RunState {
     en: null,
     sk: { avl: [], cds: {}, bfs: [] },
     evs: [],
-    bossWave: 0,
     btlCount: 0, eventCount: 0,
     skillUseCount: 0, totalHealing: 0,
+    loopCount: save.loopCount ?? 0,
+    isEndless: false,
+    endlessWave: 0,
     _wDmgBase: 0, _fbk: '', _fPhase: 0,
   };
 }
@@ -599,7 +610,9 @@ export function startBattle(r: RunState, finalMode: boolean): RunState {
     : ENM[biome][Math.min(next.cW - 1, ENM[biome].length - 1)];
 
   const biomeScale = 0.75 + next.cB * 0.25;
-  next.en = scaleEnemy(src, next.dd.hm, next.dd.am, biomeScale + next.bc * 0.25);
+  // エンドレスモード: ループごとに敵が指数的に強くなる（aM反映）
+  const endlessScale = next.isEndless ? calcEndlessScaleWithAM(next.endlessWave, next.aM) : 1;
+  next.en = scaleEnemy(src, next.dd.hm, next.dd.am, (biomeScale + next.bc * 0.25) * endlessScale);
   /* チャレンジ: 敵ATK倍率の適用 */
   if (next.enemyAtkMul && next.enemyAtkMul !== 1 && next.en) {
     next.en.atk = Math.floor(next.en.atk * next.enemyAtkMul);
@@ -614,7 +627,7 @@ export function startBattle(r: RunState, finalMode: boolean): RunState {
 
 /* ===== After Battle (enemy killed, non-final) ===== */
 
-export function afterBattle(r: RunState): { nextRun: RunState; biomeCleared: boolean; bossChainContinue?: boolean } {
+export function afterBattle(r: RunState): { nextRun: RunState; biomeCleared: boolean } {
   const next = deepCloneRun(r);
   const boss = next.cW > next.wpb;
 
@@ -625,30 +638,7 @@ export function afterBattle(r: RunState): { nextRun: RunState; biomeCleared: boo
   next.sk = decSkillCds(next.sk);
 
   if (boss) {
-    next.bossWave++;
-    // ボス連戦: まだ連戦数未満なら継続
-    if (next.bossWave < next.dd.bb) {
-      // HP を最大HPの20%回復
-      const rec = Math.floor(next.mhp * 0.2);
-      next.hp = Math.min(next.hp + rec, next.mhp);
-      // 次のボスを生成（BOSS_CHAIN_SCALEでスケーリング）
-      const biome = next.cBT as BiomeId;
-      const bossTemplate = BOSS[biome];
-      const chainScale = BOSS_CHAIN_SCALE[Math.min(next.bossWave, BOSS_CHAIN_SCALE.length - 1)];
-      const biomeScale = 0.75 + next.cB * 0.25;
-      next.en = scaleEnemy(bossTemplate, next.dd.hm, next.dd.am, (biomeScale + next.bc * 0.25) * chainScale);
-      // チャレンジ: 敵ATK倍率の適用
-      if (next.enemyAtkMul && next.enemyAtkMul !== 1 && next.en) {
-        next.en.atk = Math.floor(next.en.atk * next.enemyAtkMul);
-      }
-      next.log = [];
-      next.wDmg = 0;
-      next.wTurn = 0;
-      next._wDmgBase = next.dmgDealt;
-      return { nextRun: next, biomeCleared: false, bossChainContinue: true };
-    }
-    // バイオームクリア
-    next.bossWave = 0;
+    // ボス撃破 → 即バイオームクリア
     next.bc++;
     const rec = Math.floor(next.mhp * 0.2);
     next.hp = Math.min(next.hp + rec, next.mhp);
@@ -682,10 +672,20 @@ export function startFinalBoss(r: RunState): { nextRun: RunState; bossKey: strin
 
 export function handleFinalBossKill(r: RunState): { nextRun: RunState; gameWon: boolean } {
   const next = deepCloneRun(r);
-  if (next._fPhase === 1 && next.di >= 3) {
-    next._fPhase = 2;
-    const bk2 = ['ft', 'fl', 'fr'].find(k => k !== next._fbk) || 'ft';
-    next.en = scaleEnemy(BOSS[bk2], next.dd.hm, next.dd.am, 0.85);
+  if (next._fPhase < next.dd.bb) {
+    next._fPhase++;
+    // HP を最大HPの20%回復
+    const rec = Math.floor(next.mhp * 0.2);
+    next.hp = Math.min(next.hp + rec, next.mhp);
+    // FINAL_BOSS_ORDER から次のボスを選出
+    const order = FINAL_BOSS_ORDER[next._fbk];
+    const nextBossKey = order
+      ? order[Math.min(next._fPhase - 1, order.length - 1)]
+      : next._fbk;
+    // BOSS_CHAIN_SCALE でスケーリング
+    const chainScale = BOSS_CHAIN_SCALE[Math.min(next._fPhase - 1, BOSS_CHAIN_SCALE.length - 1)];
+    next.en = scaleEnemy(BOSS[nextBossKey], next.dd.hm, next.dd.am, chainScale);
+    // 戦闘状態リセット
     next.log = [];
     next.wTurn = 0;
     next._wDmgBase = next.dmgDealt;
@@ -749,6 +749,39 @@ export function pickBiomeAuto(r: RunState): { biome: BiomeId; needSelection: boo
     return { biome: rem[0] || r.bms[2], needSelection: false, options: [] };
   }
   return { biome: rem[0], needSelection: true, options: rem };
+}
+
+/** エンドレスモードの敵スケーリング（線形 + 指数の複合） */
+export function calcEndlessScale(wave: number): number {
+  if (wave <= 0) return 1;
+  return (1 + ENDLESS_LINEAR_SCALE * wave) * Math.pow(ENDLESS_EXP_BASE, wave);
+}
+
+/** エンドレスモードの敵スケーリング（aM反映版） */
+export function calcEndlessScaleWithAM(wave: number, playerAM: number): number {
+  const base = calcEndlessScale(wave);
+  if (wave <= 0) return base;
+  const amExcess = Math.max(0, playerAM - 1);
+  const amReflect = 1 + amExcess * ENDLESS_AM_REFLECT_RATIO;
+  return base * amReflect;
+}
+
+/** エンドレスモードのリループ処理（3バイオーム踏破後に再開） */
+export function applyEndlessLoop(r: RunState): RunState {
+  const next = deepCloneRun(r);
+  next.endlessWave = (next.endlessWave ?? 0) + 1;
+  next.bc = 0;
+  next.cW = 0;
+  next.cB = 0;
+  // バイオームをリシャッフル
+  const bms: BiomeId[] = ['grassland', 'glacier', 'volcano'];
+  for (let i = bms.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [bms[i], bms[j]] = [bms[j], bms[i]];
+  }
+  next.bms = bms;
+  next.cBT = bms[0];
+  return next;
 }
 
 export function applyBiomeSelection(r: RunState, biome: BiomeId): RunState {
@@ -1230,6 +1263,7 @@ export function calcRunStats(
     playtimeSeconds: 0, // UI側でプレイ時間を注入
     awakening: run.awoken.length > 0 ? run.awoken[run.awoken.length - 1].nm : undefined,
     challengeId: run.challengeId,
+    endlessWave: run.isEndless ? run.endlessWave : undefined,
   };
 }
 
@@ -1309,6 +1343,10 @@ export function applyChallenge(run: RunState, challenge: ChallengeDef): RunState
         break;
       case 'no_healing':
         next.noHealing = true;
+        break;
+      case 'endless':
+        next.isEndless = true;
+        next.endlessWave = 0;
         break;
     }
   }

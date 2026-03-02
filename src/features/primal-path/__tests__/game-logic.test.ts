@@ -7,10 +7,11 @@ import {
   applyEvo, calcPlayerAtk, tick, startRunState, calcBoneReward,
   allyReviveCost, aliveAllies, deadAllies, bestDiffLabel,
   startBattle, afterBattle, resolveFinalBossKey, tbSummary,
-  pickBiomeAuto, mkPopup, updatePopups,
+  pickBiomeAuto, mkPopup, updatePopups, handleFinalBossKill,
+  applyChallenge, applyEndlessLoop, calcEndlessScale, calcEndlessScaleWithAM,
 } from '../game-logic';
 import type { RunState, StatSnapshot, SaveData, TreeBonus, Evolution } from '../types';
-import { TB_DEFAULTS, DIFFS, EVOS, BOSS_CHAIN_SCALE, BOSS } from '../constants';
+import { TB_DEFAULTS, DIFFS, EVOS, BOSS_CHAIN_SCALE, BOSS, FINAL_BOSS_ORDER, LOOP_SCALE_FACTOR, CHALLENGES, ENDLESS_AM_REFLECT_RATIO } from '../constants';
 import { makeRun, makeSave } from './test-helpers';
 
 /* ===== clamp ===== */
@@ -667,25 +668,67 @@ describe('SE イベント発火', () => {
   });
 });
 
-/* ===== ボス連戦テスト (Phase 2 FB#13) ===== */
+/* ===== afterBattle（ボス撃破で即バイオームクリア）===== */
 
-describe('ボス連戦（afterBattle）', () => {
-  describe('DIFFS のボス連戦数（bb）設定', () => {
-    it('原始はbb=1（連戦なし）', () => {
-      expect(DIFFS[0].bb).toBe(1);
+describe('afterBattle（通常ボス連戦撤去後）', () => {
+  it('ボス撃破で即biomeCleared=trueを返す', () => {
+    // Arrange: ボス戦（cW > wpb）
+    const run = makeRun({
+      di: 0, dd: DIFFS[0],
+      cW: 5, wpb: 4, bc: 0,
+      hp: 80, mhp: 80,
+      en: { n: 'サーベルタイガー', hp: 0, mhp: 120, atk: 14, def: 3, bone: 5 },
     });
 
-    it('氷河期はbb=2', () => {
-      expect(DIFFS[1].bb).toBe(2);
+    // Act
+    const result = afterBattle(run);
+
+    // Assert
+    expect(result.biomeCleared).toBe(true);
+    expect(result.nextRun.bc).toBe(1);
+  });
+
+  it('通常敵撃破時はbiomeCleared=false', () => {
+    // Arrange: 通常敵（cW <= wpb）
+    const run = makeRun({
+      di: 1, dd: DIFFS[1],
+      cW: 3, wpb: 4, bc: 0,
+      en: { n: '雪狼', hp: 0, mhp: 38, atk: 8, def: 2, bone: 2 },
     });
 
-    it('大災厄はbb=3', () => {
-      expect(DIFFS[2].bb).toBe(3);
+    // Act
+    const result = afterBattle(run);
+
+    // Assert
+    expect(result.biomeCleared).toBe(false);
+  });
+
+  it('高難易度でもボス撃破で即バイオームクリア（bossChainContinueなし）', () => {
+    // Arrange: 神話世界（bb=5）でもバイオームボスは1体
+    const run = makeRun({
+      di: 3, dd: DIFFS[3],
+      cW: 5, wpb: 4, bc: 0,
+      hp: 80, mhp: 80,
+      en: { n: 'サーベルタイガー', hp: 0, mhp: 120, atk: 14, def: 3, bone: 5 },
     });
 
-    it('神話世界はbb=5', () => {
-      expect(DIFFS[3].bb).toBe(5);
-    });
+    // Act
+    const result = afterBattle(run);
+
+    // Assert: 即クリア、bossChainContinue プロパティは存在しない
+    expect(result.biomeCleared).toBe(true);
+    expect('bossChainContinue' in result).toBe(false);
+  });
+});
+
+/* ===== 最終ボス連戦テスト（handleFinalBossKill）===== */
+
+describe('handleFinalBossKill（最終ボス連戦）', () => {
+  describe('DIFFS のbb設定', () => {
+    it('原始はbb=1', () => { expect(DIFFS[0].bb).toBe(1); });
+    it('氷河期はbb=2', () => { expect(DIFFS[1].bb).toBe(2); });
+    it('大災厄はbb=3', () => { expect(DIFFS[2].bb).toBe(3); });
+    it('神話世界はbb=5', () => { expect(DIFFS[3].bb).toBe(5); });
   });
 
   describe('BOSS_CHAIN_SCALE 定数', () => {
@@ -694,176 +737,431 @@ describe('ボス連戦（afterBattle）', () => {
     });
   });
 
-  describe('原始（bb=1）：ボス撃破で即バイオームクリア', () => {
-    it('ボス撃破時にbiomeCleared=trueを返す', () => {
-      // Arrange: 原始ステージ、ボス戦（cW > wpb）
-      const run = makeRun({
-        di: 0, dd: DIFFS[0], bossWave: 0,
-        cW: 5, wpb: 4, bc: 0,
-        hp: 80, mhp: 80,
-        en: { n: 'サーベルタイガー', hp: 0, mhp: 120, atk: 14, def: 3, bone: 5 },
-      });
+  describe('新ボス(fa, fx)の存在確認', () => {
+    it('天空の裁定者(fa)がBOSS定数に存在する', () => {
+      expect(BOSS['fa']).toBeDefined();
+      expect(BOSS['fa'].n).toBe('天空の裁定者');
+      expect(BOSS['fa'].hp).toBe(350);
+    });
 
-      // Act
-      const result = afterBattle(run);
-
-      // Assert
-      expect(result.biomeCleared).toBe(true);
-      expect(result.bossChainContinue).toBeUndefined();
-      expect(result.nextRun.bossWave).toBe(0);
-      expect(result.nextRun.bc).toBe(1);
+    it('混沌の始祖龍(fx)がBOSS定数に存在する', () => {
+      expect(BOSS['fx']).toBeDefined();
+      expect(BOSS['fx'].n).toBe('混沌の始祖龍');
+      expect(BOSS['fx'].hp).toBe(450);
     });
   });
 
-  describe('氷河期（bb=2）：ボス2連戦', () => {
-    it('1体目ボス撃破で連戦継続（bossChainContinue=true）', () => {
-      // Arrange: 氷河期、ボス1体目
-      const run = makeRun({
-        di: 1, dd: DIFFS[1], bossWave: 0,
-        cW: 5, wpb: 4, bc: 0,
-        hp: 60, mhp: 100,
-        en: { n: 'マンモス', hp: 0, mhp: 160, atk: 16, def: 6, bone: 6 },
-      });
-
-      // Act
-      const result = afterBattle(run);
-
-      // Assert: 連戦継続
-      expect(result.biomeCleared).toBe(false);
-      expect(result.bossChainContinue).toBe(true);
-      expect(result.nextRun.bossWave).toBe(1);
+  describe('FINAL_BOSS_ORDER の整合性', () => {
+    it('ft/fl/fr それぞれの出現順テーブルが5体分定義されている', () => {
+      expect(FINAL_BOSS_ORDER['ft']).toHaveLength(5);
+      expect(FINAL_BOSS_ORDER['fl']).toHaveLength(5);
+      expect(FINAL_BOSS_ORDER['fr']).toHaveLength(5);
     });
 
-    it('連戦継続時にHPが最大HPの20%回復する', () => {
+    it('各テーブルの先頭は初回ボスキーと一致する', () => {
+      expect(FINAL_BOSS_ORDER['ft'][0]).toBe('ft');
+      expect(FINAL_BOSS_ORDER['fl'][0]).toBe('fl');
+      expect(FINAL_BOSS_ORDER['fr'][0]).toBe('fr');
+    });
+
+    it('各テーブルは全て異なるボスキーで構成されている', () => {
+      for (const key of ['ft', 'fl', 'fr']) {
+        const order = FINAL_BOSS_ORDER[key];
+        expect(new Set(order).size).toBe(order.length);
+      }
+    });
+  });
+
+  describe('bb=1（原始）で即勝利', () => {
+    it('_fPhase=1でbb=1の場合、gameWon=trueを返す', () => {
       // Arrange
       const run = makeRun({
-        di: 1, dd: DIFFS[1], bossWave: 0,
-        cW: 5, wpb: 4, bc: 0,
-        hp: 60, mhp: 100,
-        en: { n: 'マンモス', hp: 0, mhp: 160, atk: 16, def: 6, bone: 6 },
+        di: 0, dd: DIFFS[0], _fPhase: 1, _fbk: 'ft',
+        cBT: 'final', cW: 5, wpb: 4,
+        en: { n: '氷の神獣', hp: 0, mhp: 320, atk: 30, def: 7, bone: 10 },
       });
 
       // Act
-      const result = afterBattle(run);
+      const result = handleFinalBossKill(run);
+
+      // Assert
+      expect(result.gameWon).toBe(true);
+    });
+  });
+
+  describe('bb=2（氷河期）で2連戦', () => {
+    it('1体目撃破で連戦継続（gameWon=false）', () => {
+      // Arrange
+      const run = makeRun({
+        di: 1, dd: DIFFS[1], _fPhase: 1, _fbk: 'ft',
+        hp: 60, mhp: 100, cBT: 'final', cW: 5, wpb: 4,
+        en: { n: '氷の神獣', hp: 0, mhp: 320, atk: 30, def: 7, bone: 10 },
+      });
+
+      // Act
+      const result = handleFinalBossKill(run);
+
+      // Assert
+      expect(result.gameWon).toBe(false);
+      expect(result.nextRun._fPhase).toBe(2);
+      expect(result.nextRun.en).not.toBeNull();
+    });
+
+    it('連戦で異なるボスが出現する', () => {
+      // Arrange
+      const run = makeRun({
+        di: 1, dd: DIFFS[1], _fPhase: 1, _fbk: 'ft',
+        hp: 60, mhp: 100, cBT: 'final', cW: 5, wpb: 4,
+        en: { n: '氷の神獣', hp: 0, mhp: 320, atk: 30, def: 7, bone: 10 },
+      });
+
+      // Act
+      const result = handleFinalBossKill(run);
+
+      // Assert: ft の次は fl（FINAL_BOSS_ORDER['ft'][1]）
+      expect(result.nextRun.en!.n).toBe(BOSS[FINAL_BOSS_ORDER['ft'][1]].n);
+    });
+
+    it('連戦継続時にHP20%回復する', () => {
+      // Arrange
+      const run = makeRun({
+        di: 1, dd: DIFFS[1], _fPhase: 1, _fbk: 'ft',
+        hp: 60, mhp: 100, cBT: 'final', cW: 5, wpb: 4,
+        en: { n: '氷の神獣', hp: 0, mhp: 320, atk: 30, def: 7, bone: 10 },
+      });
+
+      // Act
+      const result = handleFinalBossKill(run);
 
       // Assert: 60 + 20（100の20%）= 80
       expect(result.nextRun.hp).toBe(80);
     });
 
     it('HP回復が最大HPを超えない', () => {
-      // Arrange: HPがほぼ満タン
+      // Arrange
       const run = makeRun({
-        di: 1, dd: DIFFS[1], bossWave: 0,
-        cW: 5, wpb: 4, bc: 0,
-        hp: 95, mhp: 100,
-        en: { n: 'マンモス', hp: 0, mhp: 160, atk: 16, def: 6, bone: 6 },
+        di: 1, dd: DIFFS[1], _fPhase: 1, _fbk: 'ft',
+        hp: 95, mhp: 100, cBT: 'final', cW: 5, wpb: 4,
+        en: { n: '氷の神獣', hp: 0, mhp: 320, atk: 30, def: 7, bone: 10 },
       });
 
       // Act
-      const result = afterBattle(run);
+      const result = handleFinalBossKill(run);
 
       // Assert: 95 + 20 = 115 → clamp → 100
       expect(result.nextRun.hp).toBe(100);
     });
 
-    it('連戦継続時に次のボスが生成される（BOSS_CHAIN_SCALEで強化）', () => {
+    it('2体目撃破で勝利', () => {
       // Arrange
       const run = makeRun({
-        di: 1, dd: DIFFS[1], bossWave: 0,
-        cW: 5, wpb: 4, bc: 0, cBT: 'glacier',
-        hp: 60, mhp: 100,
-        en: { n: 'マンモス', hp: 0, mhp: 160, atk: 16, def: 6, bone: 6 },
+        di: 1, dd: DIFFS[1], _fPhase: 2, _fbk: 'ft',
+        hp: 40, mhp: 100, cBT: 'final', cW: 5, wpb: 4,
+        en: { n: '大地の守護者', hp: 0, mhp: 400, atk: 24, def: 10, bone: 10 },
       });
 
       // Act
-      const result = afterBattle(run);
-
-      // Assert: 次のボスが生成されている
-      expect(result.nextRun.en).not.toBeNull();
-      expect(result.nextRun.en!.n).toBe(BOSS['glacier'].n);
-      // スケール倍率 = BOSS_CHAIN_SCALE[1] = 1.15
-      // 基本HP = BOSS.glacier.hp * dd.hm * biomeScale * 1.15
-    });
-
-    it('2体目ボス撃破でバイオームクリア', () => {
-      // Arrange: 氷河期、ボス2体目（bossWave=1）
-      const run = makeRun({
-        di: 1, dd: DIFFS[1], bossWave: 1,
-        cW: 5, wpb: 4, bc: 0,
-        hp: 40, mhp: 100,
-        en: { n: 'マンモス', hp: 0, mhp: 160, atk: 16, def: 6, bone: 6 },
-      });
-
-      // Act
-      const result = afterBattle(run);
-
-      // Assert: バイオームクリア
-      expect(result.biomeCleared).toBe(true);
-      expect(result.bossChainContinue).toBeUndefined();
-      expect(result.nextRun.bossWave).toBe(0);
-      expect(result.nextRun.bc).toBe(1);
-      expect(result.nextRun.cW).toBe(0);
-    });
-  });
-
-  describe('大災厄（bb=3）：ボス3連戦', () => {
-    it('1体目→2体目→3体目で順にbossWaveが増加しクリア', () => {
-      // Arrange: 大災厄、ボス1体目
-      let run = makeRun({
-        di: 2, dd: DIFFS[2], bossWave: 0,
-        cW: 5, wpb: 4, bc: 0, cBT: 'volcano',
-        hp: 80, mhp: 120,
-        en: { n: '火竜', hp: 0, mhp: 140, atk: 20, def: 3, bone: 6 },
-      });
-
-      // Act & Assert: 1体目撃破 → 連戦継続
-      const r1 = afterBattle(run);
-      expect(r1.bossChainContinue).toBe(true);
-      expect(r1.nextRun.bossWave).toBe(1);
-
-      // 2体目撃破
-      const run2 = { ...r1.nextRun, en: { n: '火竜', hp: 0, mhp: 200, atk: 25, def: 3, bone: 6 } };
-      const r2 = afterBattle(run2);
-      expect(r2.bossChainContinue).toBe(true);
-      expect(r2.nextRun.bossWave).toBe(2);
-
-      // 3体目撃破 → バイオームクリア
-      const run3 = { ...r2.nextRun, en: { n: '火竜', hp: 0, mhp: 250, atk: 30, def: 3, bone: 6 } };
-      const r3 = afterBattle(run3);
-      expect(r3.biomeCleared).toBe(true);
-      expect(r3.bossChainContinue).toBeUndefined();
-      expect(r3.nextRun.bossWave).toBe(0);
-    });
-  });
-
-  describe('非ボス戦は連戦に影響しない', () => {
-    it('通常敵撃破時はbossChainContinueが返されない', () => {
-      // Arrange: 通常敵（cW <= wpb）
-      const run = makeRun({
-        di: 1, dd: DIFFS[1], bossWave: 0,
-        cW: 3, wpb: 4, bc: 0,
-        en: { n: '雪狼', hp: 0, mhp: 38, atk: 8, def: 2, bone: 2 },
-      });
-
-      // Act
-      const result = afterBattle(run);
+      const result = handleFinalBossKill(run);
 
       // Assert
-      expect(result.biomeCleared).toBe(false);
-      expect(result.bossChainContinue).toBeUndefined();
-      expect(result.nextRun.bossWave).toBe(0);
+      expect(result.gameWon).toBe(true);
     });
   });
 
-  describe('startRunState のbossWave初期値', () => {
-    it('bossWaveが0で初期化される', () => {
-      const run = startRunState(0, makeSave());
-      expect(run.bossWave).toBe(0);
+  describe('bb=5（神話世界）で5連戦', () => {
+    it('5連戦で全て異なるボスが出現し、5体目撃破で勝利', () => {
+      // Arrange
+      const dd = DIFFS[3];
+      let run = makeRun({
+        di: 3, dd, _fPhase: 1, _fbk: 'ft',
+        hp: 200, mhp: 200, cBT: 'final', cW: 5, wpb: 4,
+        en: { n: '氷の神獣', hp: 0, mhp: 320, atk: 30, def: 7, bone: 10 },
+      });
+
+      const bossNames: string[] = [run.en!.n];
+
+      // 1体目→2体目
+      const r1 = handleFinalBossKill(run);
+      expect(r1.gameWon).toBe(false);
+      expect(r1.nextRun._fPhase).toBe(2);
+      bossNames.push(r1.nextRun.en!.n);
+
+      // 2体目→3体目
+      run = { ...r1.nextRun, en: { ...r1.nextRun.en!, hp: 0 } };
+      const r2 = handleFinalBossKill(run);
+      expect(r2.gameWon).toBe(false);
+      expect(r2.nextRun._fPhase).toBe(3);
+      bossNames.push(r2.nextRun.en!.n);
+
+      // 3体目→4体目
+      run = { ...r2.nextRun, en: { ...r2.nextRun.en!, hp: 0 } };
+      const r3 = handleFinalBossKill(run);
+      expect(r3.gameWon).toBe(false);
+      expect(r3.nextRun._fPhase).toBe(4);
+      bossNames.push(r3.nextRun.en!.n);
+
+      // 4体目→5体目
+      run = { ...r3.nextRun, en: { ...r3.nextRun.en!, hp: 0 } };
+      const r4 = handleFinalBossKill(run);
+      expect(r4.gameWon).toBe(false);
+      expect(r4.nextRun._fPhase).toBe(5);
+      bossNames.push(r4.nextRun.en!.n);
+
+      // 5体目撃破→勝利
+      run = { ...r4.nextRun, en: { ...r4.nextRun.en!, hp: 0 } };
+      const r5 = handleFinalBossKill(run);
+      expect(r5.gameWon).toBe(true);
+
+      // 全て異なるボス名であることを確認（最初の1体 + 連戦4体 = 5体）
+      expect(new Set(bossNames).size).toBe(5);
     });
 
-    it('bossWaveが0で初期化される（高難易度）', () => {
-      const run = startRunState(3, makeSave({ clears: 6 }));
-      expect(run.bossWave).toBe(0);
+    it('BOSS_CHAIN_SCALE がフェーズに応じて適用される', () => {
+      // Arrange: Phase 1→2 遷移時
+      const dd = DIFFS[3];
+      const run = makeRun({
+        di: 3, dd, _fPhase: 1, _fbk: 'ft',
+        hp: 200, mhp: 200, cBT: 'final', cW: 5, wpb: 4,
+        en: { n: '氷の神獣', hp: 0, mhp: 320, atk: 30, def: 7, bone: 10 },
+      });
+
+      // Act
+      const result = handleFinalBossKill(run);
+      const nextBossKey = FINAL_BOSS_ORDER['ft'][1]; // 'fl'
+      const expectedHp = Math.floor(BOSS[nextBossKey].hp * dd.hm * BOSS_CHAIN_SCALE[1]);
+
+      // Assert: スケーリングが正しい
+      expect(result.nextRun.en!.hp).toBe(expectedHp);
     });
+  });
+});
+
+/* ===== FB#11: 周回システム ===== */
+
+describe('FB#11: 周回システム', () => {
+  describe('startRunState の周回倍率', () => {
+    it('1周目（loopCount=0）は倍率なし', () => {
+      const save = makeSave({ loopCount: 0 });
+      const run = startRunState(0, save);
+      // loopScale = 1 + 0 * 0.5 = 1.0 → dd.hm * 1.0 = 1.0
+      expect(run.loopCount).toBe(0);
+      // DIFFS[0].hm = 1, am = 1 → スケーリング無し
+    });
+
+    it('2周目（loopCount=1）は敵HP/ATK倍率×1.5', () => {
+      const save = makeSave({ loopCount: 1 });
+      const run = startRunState(0, save);
+      expect(run.loopCount).toBe(1);
+      // dd.hm, dd.am に loopScale=1.5 が乗算されている
+      const expectedHm = DIFFS[0].hm * (1 + 1 * LOOP_SCALE_FACTOR);
+      const expectedAm = DIFFS[0].am * (1 + 1 * LOOP_SCALE_FACTOR);
+      expect(run.dd.hm).toBeCloseTo(expectedHm);
+      expect(run.dd.am).toBeCloseTo(expectedAm);
+    });
+
+    it('3周目（loopCount=2）は敵HP/ATK倍率×2.0', () => {
+      const save = makeSave({ loopCount: 2 });
+      const run = startRunState(0, save);
+      expect(run.loopCount).toBe(2);
+      const expectedHm = DIFFS[0].hm * (1 + 2 * LOOP_SCALE_FACTOR);
+      expect(run.dd.hm).toBeCloseTo(expectedHm);
+    });
+
+    it('高難易度でも周回倍率が適用される', () => {
+      const save = makeSave({ loopCount: 1 });
+      const run = startRunState(3, save);
+      const loopScale = 1 + 1 * LOOP_SCALE_FACTOR;
+      expect(run.dd.hm).toBeCloseTo(DIFFS[3].hm * loopScale);
+      expect(run.dd.am).toBeCloseTo(DIFFS[3].am * loopScale);
+    });
+  });
+});
+
+/* ===== FB#4: エンドレスチャレンジ ===== */
+
+describe('FB#4: エンドレスチャレンジ', () => {
+  it('CHALLENGES に「無限の試練」が存在する', () => {
+    const endless = CHALLENGES.find(c => c.id === 'endless');
+    expect(endless).toBeDefined();
+    expect(endless!.name).toBe('無限の試練');
+    expect(endless!.modifiers).toEqual([{ type: 'endless' }]);
+  });
+
+  it('applyChallenge で endless 修飾子が適用される', () => {
+    const run = makeRun();
+    const ch = CHALLENGES.find(c => c.id === 'endless')!;
+    const next = applyChallenge(run, ch);
+    expect(next.isEndless).toBe(true);
+    expect(next.endlessWave).toBe(0);
+    expect(next.challengeId).toBe('endless');
+  });
+
+  it('startRunState に isEndless/endlessWave の初期値がある', () => {
+    const save = makeSave();
+    const run = startRunState(0, save);
+    expect(run.isEndless).toBe(false);
+    expect(run.endlessWave).toBe(0);
+  });
+
+  it('applyEndlessLoop で bc/cW がリセットされ endlessWave がインクリメントされる', () => {
+    const run = makeRun({
+      bc: 3, cW: 5, isEndless: true, endlessWave: 0,
+      bms: ['grassland', 'glacier', 'volcano'],
+    });
+    const next = applyEndlessLoop(run);
+    expect(next.endlessWave).toBe(1);
+    expect(next.bc).toBe(0);
+    expect(next.cW).toBe(0);
+    expect(next.cB).toBe(0);
+    // バイオームがリシャッフルされている
+    expect(next.bms).toHaveLength(3);
+    expect(next.cBT).toBe(next.bms[0]);
+  });
+
+  it('applyEndlessLoop が元の RunState を変更しない', () => {
+    const run = makeRun({
+      bc: 3, cW: 5, isEndless: true, endlessWave: 2,
+    });
+    const originalBc = run.bc;
+    applyEndlessLoop(run);
+    expect(run.bc).toBe(originalBc);
+    expect(run.endlessWave).toBe(2);
+  });
+
+  it('startBattle でエンドレススケールが適用される', () => {
+    const run = makeRun({
+      isEndless: true, endlessWave: 5,
+      cBT: 'grassland', cW: 0, cB: 1,
+    });
+    const battle = startBattle(run, false);
+    // endlessScale = 1 + 5 * 0.1 = 1.5 → 敵のHPがスケーリングされている
+    expect(battle.en).not.toBeNull();
+    // 直接の値は検証が難しいので、エンドレスでない場合と比較
+    const normalRun = makeRun({
+      isEndless: false, endlessWave: 0,
+      cBT: 'grassland', cW: 0, cB: 1,
+    });
+    const normalBattle = startBattle(normalRun, false);
+    expect(battle.en!.hp).toBeGreaterThan(normalBattle.en!.hp);
+  });
+});
+
+/* ===== calcEndlessScale ===== */
+
+describe('calcEndlessScale', () => {
+  it('wave 0 → 1 を返す', () => {
+    expect(calcEndlessScale(0)).toBe(1);
+  });
+
+  it('負の wave → 1 を返す', () => {
+    expect(calcEndlessScale(-1)).toBe(1);
+    expect(calcEndlessScale(-5)).toBe(1);
+  });
+
+  it('wave が進むと指数的に増加する', () => {
+    const s3 = calcEndlessScale(3);
+    const s5 = calcEndlessScale(5);
+    const s10 = calcEndlessScale(10);
+
+    // 各値が 1 より大きい
+    expect(s3).toBeGreaterThan(1);
+    expect(s5).toBeGreaterThan(s3);
+    expect(s10).toBeGreaterThan(s5);
+
+    // 指数的成長: wave 10 は wave 5 の2倍以上
+    expect(s10 / s5).toBeGreaterThan(2);
+  });
+
+  it('wave 0 での値は旧スケールと同じ（1.0）', () => {
+    expect(calcEndlessScale(0)).toBe(1);
+  });
+});
+
+/* ===== calcEndlessScaleWithAM ===== */
+
+describe('calcEndlessScaleWithAM', () => {
+  it('wave 0 では aM に関わらず 1 を返す', () => {
+    expect(calcEndlessScaleWithAM(0, 1)).toBe(1);
+    expect(calcEndlessScaleWithAM(0, 2)).toBe(1);
+    expect(calcEndlessScaleWithAM(0, 4)).toBe(1);
+  });
+
+  it('aM=1 の場合は calcEndlessScale と同じ値を返す', () => {
+    for (const w of [1, 3, 5, 10]) {
+      expect(calcEndlessScaleWithAM(w, 1)).toBeCloseTo(calcEndlessScale(w));
+    }
+  });
+
+  it('aM=2 の場合、敵スケーリングが ×1.5 される', () => {
+    const wave = 3;
+    const base = calcEndlessScale(wave);
+    const withAM2 = calcEndlessScaleWithAM(wave, 2);
+    // amExcess=1, amReflect=1+1*0.5=1.5
+    expect(withAM2).toBeCloseTo(base * 1.5);
+  });
+
+  it('aM=4 の場合、敵スケーリングが ×2.5 される', () => {
+    const wave = 5;
+    const base = calcEndlessScale(wave);
+    const withAM4 = calcEndlessScaleWithAM(wave, 4);
+    // amExcess=3, amReflect=1+3*0.5=2.5
+    expect(withAM4).toBeCloseTo(base * 2.5);
+  });
+
+  it('負の wave では aM に関わらず 1 を返す', () => {
+    expect(calcEndlessScaleWithAM(-1, 2)).toBe(1);
+  });
+
+  it('ENDLESS_AM_REFLECT_RATIO で反映率が制御される', () => {
+    const wave = 5;
+    const base = calcEndlessScale(wave);
+    const playerAM = 3;
+    const expected = base * (1 + (playerAM - 1) * ENDLESS_AM_REFLECT_RATIO);
+    expect(calcEndlessScaleWithAM(wave, playerAM)).toBeCloseTo(expected);
+  });
+});
+
+/* ===== aM 反映統合テスト ===== */
+
+describe('エンドレスモード aM 反映統合テスト', () => {
+  it('aM=2 のエンドレスモードでは aM=1 より敵が強い', () => {
+    // Arrange: aM=1 のエンドレスラン
+    const runAM1 = makeRun({
+      isEndless: true, endlessWave: 3, aM: 1,
+      cBT: 'grassland', cW: 0, cB: 1,
+    });
+    // Arrange: aM=2 のエンドレスラン（血の契約使用）
+    const runAM2 = makeRun({
+      isEndless: true, endlessWave: 3, aM: 2,
+      cBT: 'grassland', cW: 0, cB: 1,
+    });
+
+    // Act
+    const battleAM1 = startBattle(runAM1, false);
+    const battleAM2 = startBattle(runAM2, false);
+
+    // Assert: aM=2 の方が敵HP/ATKが高い
+    expect(battleAM2.en!.hp).toBeGreaterThan(battleAM1.en!.hp);
+    expect(battleAM2.en!.atk).toBeGreaterThan(battleAM1.en!.atk);
+  });
+
+  it('非エンドレスモードでは aM が敵スケーリングに影響しない', () => {
+    // Arrange: 非エンドレスモードの aM=1 と aM=2
+    const runAM1 = makeRun({
+      isEndless: false, aM: 1,
+      cBT: 'grassland', cW: 0, cB: 1,
+    });
+    const runAM2 = makeRun({
+      isEndless: false, aM: 2,
+      cBT: 'grassland', cW: 0, cB: 1,
+    });
+
+    // Act
+    const battleAM1 = startBattle(runAM1, false);
+    const battleAM2 = startBattle(runAM2, false);
+
+    // Assert: 非エンドレスでは敵ステータスが同じ
+    expect(battleAM2.en!.hp).toBe(battleAM1.en!.hp);
+    expect(battleAM2.en!.atk).toBe(battleAM1.en!.atk);
   });
 });

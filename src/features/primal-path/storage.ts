@@ -18,7 +18,13 @@ export const Storage = Object.freeze({
   load: (): SaveData | null => {
     try {
       const r = localStorage.getItem(SAVE_KEY);
-      return r ? (JSON.parse(r) as SaveData) : null;
+      if (!r) return null;
+      const data = JSON.parse(r) as SaveData;
+      // マイグレーション: loopCount 欠損時にデフォルト0を付与
+      if (data.loopCount === undefined) {
+        data.loopCount = 0;
+      }
+      return data;
     } catch (e: unknown) {
       console.error('[Storage.load]', e instanceof Error ? e.message : String(e));
       return null;

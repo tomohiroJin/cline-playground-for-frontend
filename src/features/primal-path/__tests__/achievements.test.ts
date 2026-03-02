@@ -123,6 +123,7 @@ describe('checkAchievement', () => {
         totalHealing: 0, evolutionCount: 5, synergyCount: 0,
         eventCount: 0, skillUsageCount: 0, boneEarned: 50,
         playtimeSeconds: 120, awakening: undefined, challengeId: undefined,
+        endlessWave: undefined,
       };
       expect(checkAchievement(findAch('first_clear'), stats, runStats)).toBe(true);
     });
@@ -136,6 +137,7 @@ describe('checkAchievement', () => {
         totalHealing: 0, evolutionCount: 2, synergyCount: 0,
         eventCount: 0, skillUsageCount: 0, boneEarned: 10,
         playtimeSeconds: 60, awakening: undefined, challengeId: undefined,
+        endlessWave: undefined,
       };
       expect(checkAchievement(findAch('first_clear'), stats, runStats)).toBe(false);
     });
@@ -286,8 +288,8 @@ describe('実績定数', () => {
 /* ===== チャレンジ ===== */
 
 describe('チャレンジ定数', () => {
-  it('3種のチャレンジが定義されている', () => {
-    expect(CHALLENGES).toHaveLength(3);
+  it('4種のチャレンジが定義されている', () => {
+    expect(CHALLENGES).toHaveLength(4);
   });
 
   it('全チャレンジIDがユニークである', () => {
@@ -344,6 +346,7 @@ describe('MetaStorage', () => {
         totalHealing: 100, evolutionCount: 8, synergyCount: 2,
         eventCount: 3, skillUsageCount: 5, boneEarned: 100,
         playtimeSeconds: 180, awakening: 'tech', challengeId: undefined,
+        endlessWave: undefined,
       }];
       MetaStorage.saveRunStats(stats);
       const loaded = MetaStorage.loadRunStats();
@@ -362,6 +365,7 @@ describe('MetaStorage', () => {
         totalHealing: 100, evolutionCount: 8, synergyCount: 2,
         eventCount: 3, skillUsageCount: 5, boneEarned: 100,
         playtimeSeconds: 180, awakening: undefined, challengeId: undefined,
+        endlessWave: undefined,
       }));
       MetaStorage.saveRunStats(stats);
       const loaded = MetaStorage.loadRunStats();

@@ -646,3 +646,16 @@ export const TimerDisplay = styled.div<{ $urgent?: boolean }>`
   padding: 2px 8px;
   ${p => p.$urgent && css`animation: ${barPulse} 0.8s ease-in-out infinite;`}
 `;
+
+/** ゲームオーバー画面用ログ見返しコンテナ */
+export const LogReviewContainer = styled.div`
+  font-size: 9px;
+  color: #808068;
+  max-height: 200px;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 6px;
+  margin-top: 4px;
+`;

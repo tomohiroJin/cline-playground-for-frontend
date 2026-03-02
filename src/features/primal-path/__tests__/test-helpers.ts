@@ -18,8 +18,8 @@ export function makeRun(overrides: Partial<RunState> = {}): RunState {
     dmgDealt: 0, dmgTaken: 0, maxHit: 0, wDmg: 0, wTurn: 0,
     awoken: [], en: null, sk: { avl: [], cds: {}, bfs: [] },
     evs: [],
-    bossWave: 0,
     btlCount: 0, eventCount: 0, skillUseCount: 0, totalHealing: 0,
+    loopCount: 0, isEndless: false, endlessWave: 0,
     _wDmgBase: 0, _fbk: '', _fPhase: 0,
     ...overrides,
   };
