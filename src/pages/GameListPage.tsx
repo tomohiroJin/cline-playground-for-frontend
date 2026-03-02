@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useScrollReveal } from '../hooks/useScrollReveal';
 import puzzleCardBg from '../assets/images/puzzle_card_bg.webp';
 import airHockeyCardBg from '../assets/images/air_hockey_card_bg.webp';
 import racingCardBg from '../assets/images/racing_card_bg.webp';
@@ -29,6 +30,7 @@ import {
 
 const GameListPage: React.FC = () => {
   const navigate = useNavigate();
+  const gridRef = useScrollReveal<HTMLElement>();
 
   return (
     <PageContainer>
@@ -37,7 +39,7 @@ const GameListPage: React.FC = () => {
         <HeroSubtitle>厳選されたインタラクティブなゲーム体験を、ここから始めよう。</HeroSubtitle>
       </HeroSection>
 
-      <BentoGrid aria-label="提供中のゲーム一覧">
+      <BentoGrid ref={gridRef} aria-label="提供中のゲーム一覧">
         <GameCardContainer
           onClick={() => navigate('/puzzle')}
           role="button"

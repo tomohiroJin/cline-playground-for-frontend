@@ -1,0 +1,273 @@
+# Game Platform UI/UX 改善 チェックリスト
+
+---
+
+## フェーズ 1: 基盤変更
+
+### 実装タスク
+
+- [x] `src/hooks/useFullScreenRoute.ts` を `LAYOUT_ROUTES` ホワイトリスト方式に変更する
+- [x] `src/components/organisms/SettingsPanel.tsx` を削除する
+- [x] `src/utils/settings-storage.ts` を削除する
+  - [x] 削除前に SettingsPanel 以外からの参照がないことを grep で確認する
+- [x] `src/App.tsx` から SettingsPanel 関連コードを削除する
+  - [x] `import { SettingsPanel }` の削除
+  - [x] `SettingsButton` styled-component 定義の削除
+  - [x] `isSettingsOpen` の useState 削除
+  - [x] `<SettingsButton>` JSX の削除
+  - [x] `{isSettingsOpen && <SettingsPanel ... />}` JSX の削除
+- [x] `src/App.tsx` の Footer 内コピーライトを `© 2026 niku9.click All Rights Reserved.` に更新する
+
+### 検証タスク
+
+- [x] `/` でヘッダー・フッターが表示される
+- [x] ゲームルート（`/puzzle` 等）でフルスクリーン表示（ヘッダー/フッター非表示）
+- [x] 設定ボタン（⚙）がヘッダーから消えている
+- [x] コピーライト表記が更新されている
+- [x] `npm run build` が通る
+
+### テストタスク
+
+- [x] `src/hooks/useFullScreenRoute.test.tsx` に静的ページルートのテストケースを追加する
+  - [x] `/about` で false（ヘッダー表示）を返す
+  - [x] `/privacy-policy` で false を返す
+  - [x] `/terms` で false を返す
+  - [x] `/contact` で false を返す
+
+---
+
+## フェーズ 2: ゲームからの音声停止機能
+
+### 実装タスク
+
+- [x] `src/utils/audio-cleanup.ts` を新規作成する
+  - [x] `installAudioContextTracker()` を実装する
+    - [x] `window.AudioContext` を Proxy で上書き
+    - [x] 生成されたインスタンスを `Set<AudioContext>` で追跡
+    - [x] 多重呼び出し防止のガード
+  - [x] `stopAllAudio()` を実装する
+    - [x] 追跡中の全 AudioContext を suspend → close
+    - [x] Set をクリア
+    - [x] Tone.js Transport の停止（dynamic import で安全に）
+    - [x] エラーを適切に catch
+- [x] `src/index.tsx` で `installAudioContextTracker()` を呼び出す
+- [x] `src/components/organisms/GamePageWrapper.tsx` に音声停止の useEffect を追加する
+
+### 検証タスク
+
+- [x] 音声付きゲーム（例: `/maze-horror`, `/ipne`）をプレイし、ホームに戻ったときに音が停止する
+- [x] 音声停止後、再度同じゲームに入ったときに音声が正常に再生される
+- [x] 音声のないゲーム（例: `/puzzle`）でエラーが発生しない
+- [x] `npm run build` が通る
+
+### テストタスク
+
+- [x] `src/utils/audio-cleanup.test.ts` を新規作成する
+  - [x] `installAudioContextTracker` が AudioContext を正しくプロキシするテスト
+  - [x] `stopAllAudio` が追跡中の AudioContext を suspend/close するテスト
+  - [x] 多重呼び出しが安全に動作するテスト
+
+---
+
+## フェーズ 3: 新規ページ作成
+
+### 実装タスク
+
+- [x] `src/components/templates/` ディレクトリを作成する
+- [x] `src/components/templates/StaticPageLayout.tsx` を作成する
+  - [x] Container (max-width: 800px)
+  - [x] PageTitle (グラデーションテキスト)
+  - [x] ContentArea (Glassmorphism)
+  - [x] h3, p, ul, ol, a の共通スタイル
+- [x] `src/pages/AboutPage.tsx` を作成する
+  - [x] Game Platform とは
+  - [x] 特徴（4項目）
+  - [x] 免責事項（3項目）
+  - [x] 運営者情報
+- [x] `src/pages/PrivacyPolicyPage.tsx` を作成する
+  - [x] 前文
+  - [x] 第1条: 取得する情報（アクセス解析、Cookie、localStorage）
+  - [x] 第2条: 利用目的
+  - [x] 第3条: 情報の第三者提供
+  - [x] 第4条: Cookie の設定
+  - [x] 第5条: 免責事項
+  - [x] 第6条: 改定
+  - [x] 第7条: お問い合わせ（contact@niku9.click）
+  - [x] 制定日: 2026年3月
+- [x] `src/pages/TermsPage.tsx` を作成する
+  - [x] 前文
+  - [x] 第1条: 適用
+  - [x] 第2条: 著作権・知的財産権（OSS 但し書き付き）
+  - [x] 第3条: 禁止事項（6項目）
+  - [x] 第4条: サービスの変更・中断・終了
+  - [x] 第5条: 免責事項（localStorage データ損失含む）
+  - [x] 第6条: 利用規約の変更
+  - [x] 第7条: 準拠法・裁判管轄
+  - [x] 制定日: 2026年3月
+- [x] `src/pages/ContactPage.tsx` を作成する
+  - [x] メール案内文
+  - [x] メールアドレスの JavaScript 動的組み立て（スパム防止）
+  - [x] mailto リンク
+  - [x] 注記 3 項目
+- [x] `src/hooks/useDocumentTitle.ts` に4ページのタイトルマッピングを追加する
+- [x] `src/App.tsx` に4ルートを追加する（lazy import、GamePageWrapper で囲まない）
+- [x] `src/App.tsx` のフッターに簡易ナビゲーション（FooterNav / FooterLink）を追加する
+  - [x] ホーム、サイトについて、プライバシーポリシー、利用規約、お問い合わせの5リンク
+  - [x] flex レイアウトでレスポンシブ対応（flex-wrap）
+
+### 検証タスク
+
+- [x] `/about` が正常に表示される
+- [x] `/privacy-policy` が正常に表示される
+- [x] `/terms` が正常に表示される
+- [x] `/contact` が正常に表示される
+- [x] 各ページでドキュメントタイトルが正しく設定される
+- [x] 各ページでヘッダー・フッターが表示される
+- [x] お問い合わせページの mailto リンクが機能する
+- [x] モバイル表示で各ページが崩れない
+- [x] `npm run build` が通る
+
+### テストタスク
+
+- [x] `src/hooks/useDocumentTitle.test.tsx` に4ページのテストケースを追加する
+  - [x] `/about` → `サイトについて | Game Platform`
+  - [x] `/privacy-policy` → `プライバシーポリシー | Game Platform`
+  - [x] `/terms` → `利用規約 | Game Platform`
+  - [x] `/contact` → `お問い合わせ | Game Platform`
+
+---
+
+## フェーズ 4: ナビゲーション改善
+
+### 実装タスク
+
+- [x] `src/App.tsx` の Footer を3段構成に拡張する
+  - [x] `FooterNav` styled-component を作成する（flex, center, wrap）
+  - [x] `FooterLink` styled-component を作成する（styled(Link)、下線スライドイン）
+  - [x] `SisterSiteRow` styled-component を作成する
+  - [x] `CopyrightRow` styled-component を作成する
+  - [x] 上段: サイト内リンク 5 本（ホーム、サイトについて、プライバシーポリシー、利用規約、お問い合わせ）
+  - [x] 中段: 姉妹サイトリンク（Gallery NIKU9 桜花-Click、`target="_blank" rel="noopener noreferrer"`）
+  - [x] 下段: コピーライト
+- [x] フッターに Glassmorphism スタイルを適用する（`var(--glass-bg)`, `backdrop-filter`, `border-top`）
+
+### 検証タスク
+
+- [x] フッターの全リンクが正しい遷移先に機能する
+- [x] 姉妹サイトリンクが新しいタブで開く
+- [x] フッターリンクのホバーエフェクト（下線スライドイン）が動作する
+- [x] モバイル表示でフッターが崩れない（flex-wrap による折り返し）
+
+---
+
+## フェーズ 5: 見た目の改善
+
+### 実装タスク
+
+- [x] `src/pages/GameListPage.styles.ts` にパーティクルアニメーションを追加する
+  - [x] `floatParticle` keyframes を定義する
+  - [x] HeroSection の `::before`, `::after` 疑似要素で光の粒を表現する
+- [x] `src/pages/GameListPage.styles.ts` にタイトルグロウエフェクトを追加する
+  - [x] `titleGlow` keyframes を定義する
+  - [x] HeroTitle に animation を適用する
+- [x] `src/pages/GameListPage.styles.ts` のゲームカードにホバー時ボーダーグラデーションを追加する
+  - [x] `border-color` + `box-shadow` で角丸を維持しつつシアン/パープルのエフェクトを適用する
+- [x] `src/hooks/useScrollReveal.ts` を新規作成する
+  - [x] IntersectionObserver ベースの実装
+  - [x] 初期状態: `opacity: 0`, `translateY(30px)`
+  - [x] 表示時: `opacity: 1`, `translateY(0)` にトランジション
+  - [x] 各要素に `transitionDelay`（index × 0.08s）
+  - [x] 一度表示した要素は unobserve
+  - [x] `prefers-reduced-motion` が有効な場合はスキップ
+- [x] `src/pages/GameListPage.tsx` で `useScrollReveal` を BentoGrid に適用する
+
+### 検証タスク
+
+- [x] ヒーローセクションにパーティクル（光の粒）が浮遊している
+- [x] タイトルにグロウ（明滅）エフェクトが表示される
+- [x] ゲームカードのホバー時にシアン → パープルのグラデーションボーダーが表示される
+- [x] ゲームカードがスクロール時にフェードイン・スライドアップする
+- [x] `prefers-reduced-motion` を有効にした環境でも致命的な問題がないこと
+
+---
+
+## フェーズ 6: アイコン設定
+
+### 事前準備タスク（ユーザー対応）
+
+- [x] アイコンデザイン案を確認・決定する
+- [x] AI でアイコン画像を生成する
+- [x] 以下のファイルを `public/` に配置する
+  - [x] `favicon.ico` (16×16, 32×32 マルチサイズ)
+  - [x] `icon-192.png` (192×192)
+  - [x] `icon-512.png` (512×512)
+  - [x] `apple-touch-icon.png` (180×180)
+
+### 実装タスク
+
+- [x] `public/index.html` に favicon リンクタグを追加する
+  - [x] `<link rel="icon" href="/favicon.ico" sizes="16x16 32x32">` (※sizes追記修正済み)
+  - [x] `<link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192">`
+  - [x] `<link rel="apple-touch-icon" href="/apple-touch-icon.png">`
+- [x] `public/manifest.json` の icons 配列を設定する
+  - [x] 192×192 エントリ
+  - [x] 512×512 エントリ
+
+### 検証タスク
+
+- [x] TDDにより、index.html と manifest.json の記述検証テストを追加し通過することを確認
+- [x] ブラウザタブにファビコンが表示される (自動テストとローカルパスにより代替確認)
+- [x] PWA としてインストールした際にアイコンが表示される（Chrome: アドレスバー → インストール、今回は設定の正当性を自動テストで検証済み）
+
+---
+
+## フェーズ 7: ゲームとプラットフォームの境界整理
+
+### 実装タスク
+
+- [x] `src/components/organisms/GamePageWrapper.tsx` にゲーム固有の ErrorBoundary ラップを追加する
+  - [x] `isAccepted` 時の return を `<ErrorBoundary>{children}</ErrorBoundary>` に変更する
+  - [x] 既存の `src/components/ErrorBoundary.tsx` を使用する
+- [x] `public/sitemap.xml` に新規4ページの URL を追加する
+  - [x] `/about` (priority: 0.5)
+  - [x] `/privacy-policy` (priority: 0.3)
+  - [x] `/terms` (priority: 0.3)
+  - [x] `/contact` (priority: 0.3)
+
+### 検証タスク
+
+- [x] ゲーム内でエラーが発生した場合、ErrorBoundary のフォールバック UI が表示される
+- [x] エラー画面から「再試行」「ホームに戻る」が機能する
+- [x] エラーがプラットフォーム全体（ヘッダー/フッター）に波及しない
+
+---
+
+## 最終検証
+
+### ビルド
+
+- [x] `npm run build` がエラーなしで完了する
+- [x] ビルド成果物のサイズが異常に増加していないこと
+
+### テスト
+
+- [x] 新規追加したテストがすべて通る
+- [x] 既存テストが壊れていない
+
+### クロスブラウザ / レスポンシブ
+
+- [x] Chrome で全ページが正常に動作する
+- [x] Firefox で全ページが正常に動作する
+- [x] モバイル表示（幅 375px 程度）で各ページが崩れない
+- [x] タブレット表示（幅 768px 程度）で各ページが崩れない
+
+### 回帰テスト
+
+- [x] 既存の13ゲームがすべて正常に起動する
+- [x] ゲームから `/` に戻るフローが正常に動作する
+- [x] FloatingHomeButton（⌂）がゲーム画面で正常に動作する
+
+### SEO / メタデータ
+
+- [x] 各ページの `document.title` が正しいこと
+- [x] `sitemap.xml` に新ページが含まれていること
