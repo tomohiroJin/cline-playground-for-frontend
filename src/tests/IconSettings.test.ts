@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import { describe, it, expect, beforeAll } from 'vitest';
 
 describe('Icon Settings', () => {
   const publicDir = path.resolve(__dirname, '../../public');

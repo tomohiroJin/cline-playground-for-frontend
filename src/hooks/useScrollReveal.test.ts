@@ -3,10 +3,7 @@
  *
  * IntersectionObserver を使ったスクロールアニメーションフックの
  * 振る舞いを検証する。
- *
- * @vitest-environment jsdom
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from 'react';
 import { render, cleanup } from '@testing-library/react';
 import { useScrollReveal } from './useScrollReveal';
@@ -15,9 +12,9 @@ import { useScrollReveal } from './useScrollReveal';
 type IntersectionCallback = (entries: Partial<IntersectionObserverEntry>[]) => void;
 
 interface MockObserver {
-  observe: ReturnType<typeof vi.fn>;
-  unobserve: ReturnType<typeof vi.fn>;
-  disconnect: ReturnType<typeof vi.fn>;
+  observe: jest.Mock;
+  unobserve: jest.Mock;
+  disconnect: jest.Mock;
 }
 
 let mockObserverCallback: IntersectionCallback;
@@ -25,9 +22,9 @@ let mockObserverInstance: MockObserver;
 
 beforeEach(() => {
   mockObserverInstance = {
-    observe: vi.fn(),
-    unobserve: vi.fn(),
-    disconnect: vi.fn(),
+    observe: jest.fn(),
+    unobserve: jest.fn(),
+    disconnect: jest.fn(),
   };
 
   // クラスベースのモック（new で呼び出し可能）
@@ -47,11 +44,11 @@ beforeEach(() => {
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
     configurable: true,
-    value: vi.fn().mockImplementation((query: string) => ({
+    value: jest.fn().mockImplementation((query: string) => ({
       matches: false,
       media: query,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
     })),
   });
 });
@@ -201,11 +198,11 @@ describe('useScrollReveal', () => {
       Object.defineProperty(window, 'matchMedia', {
         writable: true,
         configurable: true,
-        value: vi.fn().mockImplementation((query: string) => ({
+        value: jest.fn().mockImplementation((query: string) => ({
           matches: query === '(prefers-reduced-motion: reduce)',
           media: query,
-          addEventListener: vi.fn(),
-          removeEventListener: vi.fn(),
+          addEventListener: jest.fn(),
+          removeEventListener: jest.fn(),
         })),
       });
 

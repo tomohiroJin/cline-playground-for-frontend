@@ -225,20 +225,20 @@
 
 ### 実装タスク
 
-- [ ] `src/components/organisms/GamePageWrapper.tsx` にゲーム固有の ErrorBoundary ラップを追加する
-  - [ ] `isAccepted` 時の return を `<ErrorBoundary>{children}</ErrorBoundary>` に変更する
-  - [ ] 既存の `src/components/ErrorBoundary.tsx` を使用する
-- [ ] `public/sitemap.xml` に新規4ページの URL を追加する
-  - [ ] `/about` (priority: 0.5)
-  - [ ] `/privacy-policy` (priority: 0.3)
-  - [ ] `/terms` (priority: 0.3)
-  - [ ] `/contact` (priority: 0.3)
+- [x] `src/components/organisms/GamePageWrapper.tsx` にゲーム固有の ErrorBoundary ラップを追加する
+  - [x] `isAccepted` 時の return を `<ErrorBoundary>{children}</ErrorBoundary>` に変更する
+  - [x] 既存の `src/components/ErrorBoundary.tsx` を使用する
+- [x] `public/sitemap.xml` に新規4ページの URL を追加する
+  - [x] `/about` (priority: 0.5)
+  - [x] `/privacy-policy` (priority: 0.3)
+  - [x] `/terms` (priority: 0.3)
+  - [x] `/contact` (priority: 0.3)
 
 ### 検証タスク
 
-- [ ] ゲーム内でエラーが発生した場合、ErrorBoundary のフォールバック UI が表示される
-- [ ] エラー画面から「再試行」「ホームに戻る」が機能する
-- [ ] エラーがプラットフォーム全体（ヘッダー/フッター）に波及しない
+- [x] ゲーム内でエラーが発生した場合、ErrorBoundary のフォールバック UI が表示される
+- [x] エラー画面から「再試行」「ホームに戻る」が機能する
+- [x] エラーがプラットフォーム全体（ヘッダー/フッター）に波及しない
 
 ---
 
@@ -246,12 +246,12 @@
 
 ### ビルド
 
-- [ ] `npm run build` がエラーなしで完了する
-- [ ] ビルド成果物のサイズが異常に増加していないこと
+- [x] `npm run build` がエラーなしで完了する
+- [x] ビルド成果物のサイズが異常に増加していないこと
 
 ### テスト
 
-- [ ] 新規追加したテストがすべて通る
+- [x] 新規追加したテストがすべて通る
 - [ ] 既存テストが壊れていない
 
 ### クロスブラウザ / レスポンシブ
@@ -269,5 +269,5 @@
 
 ### SEO / メタデータ
 
-- [ ] 各ページの `document.title` が正しいこと
-- [ ] `sitemap.xml` に新ページが含まれていること
+- [x] 各ページの `document.title` が正しいこと
+- [x] `sitemap.xml` に新ページが含まれていること

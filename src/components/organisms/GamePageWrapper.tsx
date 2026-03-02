@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { GAME_NOTICES } from '../../constants/game-notices';
 import { GameNotice } from '../molecules/GameNotice';
+import { ErrorBoundary } from '../ErrorBoundary';
 import { stopAllAudio } from '../../utils/audio-cleanup';
 
 /** localStorage のキー接頭辞 */
@@ -45,9 +46,9 @@ export const GamePageWrapper: React.FC<GamePageWrapperProps> = ({ children }) =>
     setIsAccepted(true);
   }, [storageKey]);
 
-  // 注意事項がないルートか、既に受諾済みの場合はそのまま表示
+  // 注意事項がないルートか、既に受諾済みの場合はErrorBoundaryでラップして表示
   if (isAccepted) {
-    return <>{children}</>;
+    return <ErrorBoundary>{children}</ErrorBoundary>;
   }
 
   return <GameNotice notice={notice} onAccept={handleAccept} />;

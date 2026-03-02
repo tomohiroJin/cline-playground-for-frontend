@@ -5,7 +5,7 @@
     "start": "webpack serve",
     "build": "NODE_ENV=production webpack --mode production",
     "preview": "serve dist -s",
-    "test": "vitest",
+    "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "lint": "eslint src"
