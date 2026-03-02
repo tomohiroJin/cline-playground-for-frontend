@@ -647,6 +647,26 @@ export const TimerDisplay = styled.div<{ $urgent?: boolean }>`
   ${p => p.$urgent && css`animation: ${barPulse} 0.8s ease-in-out infinite;`}
 `;
 
+/** タブ切替ボタン（あそびかた画面用） */
+export const TabBtn = styled.button<{ $active?: boolean }>`
+  background: #0c0c14;
+  border: 1px solid #262636;
+  color: #605848;
+  font-size: 10px;
+  padding: 4px 10px;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.15s;
+  font-family: inherit;
+
+  ${p => p.$active && css`
+    border-color: #f0c040;
+    color: #f0c040;
+    box-shadow: 0 0 6px #f0c04040;
+    text-shadow: 0 0 4px #f0c04060;
+  `}
+`;
+
 /** ゲームオーバー画面用ログ見返しコンテナ */
 export const LogReviewContainer = styled.div`
   font-size: 9px;

@@ -172,21 +172,24 @@
 
 ### FB#10: あそびかた進化図鑑
 
-- [ ] `styles.ts`: `TabBtn` スタイルを追加（選択中/非選択の差異）
-- [ ] `components/HowToPlayScreen.tsx`: タブ切替式に拡張（activeTab state）
-- [ ] `components/HowToPlayScreen.tsx`: 進化図鑑タブ実装（EVOS 一覧 + カテゴリフィルタ）
-- [ ] `components/HowToPlayScreen.tsx`: シナジータブ実装（SYNERGY_BONUSES 一覧）
+- [x] `styles.ts`: `TabBtn` スタイルを追加（選択中/非選択の差異）
+- [x] `components/HowToPlayScreen.tsx`: タブ切替式に拡張（activeTab state）
+- [x] `components/HowToPlayScreen.tsx`: 進化図鑑タブ実装（EVOS 一覧 + カテゴリフィルタ）
+- [x] `components/HowToPlayScreen.tsx`: シナジータブ実装（SYNERGY_BONUSES 一覧）
+- [x] `__tests__/HowToPlayScreen.test.tsx`: タブ切替・進化図鑑・シナジータブのテスト追加（13テスト新規）
 
 ### FB#3: ツリー効果の透明性改善
 
-- [ ] `components/BattleScreen.tsx`: ツリーボーナスサマリーを小さく表示（TB_SUMMARY 使用）
-- [ ] `components/TreeScreen.tsx`: 取得済みノードの累積効果サマリーを改善
+- [x] `components/BattleScreen.tsx`: ツリーボーナスサマリーを小さく表示（TB_SUMMARY + useMemo）
+- [x] `components/TreeScreen.tsx`: 取得済みノードの累積効果サマリーを改善（色分け表示、TB_KEY_COLOR マッピング）
+- [x] `__tests__/BattleScreen.test.tsx`: ツリーボーナスサマリー表示テスト追加（2テスト新規）
+- [x] `__tests__/TreeScreen.test.tsx`: ツリー画面サマリーテスト新規作成（2テスト新規）
 
 ### P4 検証
 
-- [ ] `npm test` 全テストパス
-- [ ] `npx tsc --noEmit` 型エラーなし
-- [ ] `npm run build` ビルド成功
+- [x] `npm test` 全テストパス（168スイート / 2357テスト）
+- [x] `npx tsc --noEmit` 型エラーなし（tone ライブラリの既存エラーのみ）
+- [x] `npm run build` ビルド成功
 - [ ] ブラウザ確認: あそびかたタブ切替動作
 - [ ] ブラウザ確認: 進化図鑑フィルタ動作
 - [ ] ブラウザ確認: シナジー一覧表示
@@ -197,8 +200,8 @@
 
 ## 最終レビューチェック
 
-- [ ] 全13件の FB がカバーされている
-- [ ] 新規 `any` 型の使用がない
+- [x] 全13件の FB がカバーされている
+- [x] 新規 `any` 型の使用がない
 - [ ] Conventional Commits 準拠でコミットされている
-- [ ] セーブデータの後方互換性が保たれている（マイグレーション対応）
-- [ ] 既存テストが全てパスする
+- [x] セーブデータの後方互換性が保たれている（マイグレーション対応）
+- [x] 既存テストが全てパスする

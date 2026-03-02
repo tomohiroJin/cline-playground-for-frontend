@@ -1,9 +1,19 @@
 import React from 'react';
-import type { SaveData, SfxType } from '../types';
+import type { SaveData, SfxType, TreeBonus } from '../types';
 import type { GameAction } from '../hooks';
-import { TREE, TIER_UNLOCK, TIER_NAMES, CAT_CL } from '../constants';
-import { getTB, tbSummary } from '../game-logic';
+import { TREE, TIER_UNLOCK, TIER_NAMES, CAT_CL, TB_SUMMARY } from '../constants';
+import { getTB } from '../game-logic';
 import { Screen, SubTitle, Divider, GameButton, TreeNodeBox, TierHeader, Gc } from '../styles';
+
+/** ツリーボーナスキーからカテゴリカラーへのマッピング */
+const TB_KEY_COLOR: Readonly<Record<keyof TreeBonus, string>> = {
+  bA: CAT_CL.atk, bH: CAT_CL.hp, bD: CAT_CL.def,
+  cr: CAT_CL.crit, bM: CAT_CL.bone, dM: CAT_CL.atk,
+  rg: CAT_CL.hp, rv: CAT_CL.spc, iR: CAT_CL.env,
+  fR: CAT_CL.env, aS: CAT_CL.ally, aH: CAT_CL.ally,
+  aA: CAT_CL.ally, eN: CAT_CL.spc, sC: CAT_CL.spc,
+  rr: CAT_CL.hp, fQ: CAT_CL.spc, aQ: CAT_CL.ally, rP: CAT_CL.spc,
+};
 
 interface Props {
   save: SaveData;
@@ -18,7 +28,7 @@ export const TreeScreen: React.FC<Props> = ({ save, dispatch, playSfx, showOverl
   TREE.forEach(nd => {
     if (save.clears >= (TIER_UNLOCK[nd.t] || 0)) { totalN++; if (save.tree[nd.id]) boughtN++; }
   });
-  const summary = tbSummary(tb);
+  const hasBonus = TB_SUMMARY.some(s => tb[s.k] !== 0);
 
   const handleBuy = async (nodeId: string, nodeName: string) => {
     playSfx('evo');
@@ -37,9 +47,14 @@ export const TreeScreen: React.FC<Props> = ({ save, dispatch, playSfx, showOverl
       <div style={{ fontSize: 9, color: '#605848', marginBottom: 2 }}>
         取得 {boughtN}/{totalN} ・クリア{save.clears}回
       </div>
-      {boughtN > 0 && summary.length > 0 && (
-        <div style={{ fontSize: 8, color: '#605848', marginBottom: 4, textAlign: 'center' }}>
-          効果: {summary.join(' / ')}
+      {boughtN > 0 && hasBonus && (
+        <div style={{ fontSize: 10, color: '#aaa', marginBottom: 4, textAlign: 'center' }}>
+          🌳 {TB_SUMMARY.filter(s => tb[s.k] !== 0).map((s, i) => {
+            const cl = TB_KEY_COLOR[s.k] || '#aaa';
+            return (
+              <span key={i} style={{ color: cl, marginRight: 4 }}>{s.f(tb[s.k])}</span>
+            );
+          })}
         </div>
       )}
 

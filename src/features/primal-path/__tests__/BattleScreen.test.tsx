@@ -5,9 +5,15 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { BattleScreen } from '../components/BattleScreen';
-import type { RunState, Enemy, SfxType } from '../types';
+import type { RunState, Enemy, SfxType, TreeBonus } from '../types';
 import { makeRun } from './test-helpers';
+import { TB_DEFAULTS } from '../constants';
 import type { GameAction } from '../hooks';
+
+/** テスト用: TB_DEFAULTS のミュータブルコピーを返す */
+function run_tb_defaults(): TreeBonus {
+  return { ...TB_DEFAULTS };
+}
 
 /* ===== テスト用データ ===== */
 
@@ -153,6 +159,39 @@ describe('BattleScreen', () => {
 
       // Assert
       expect(screen.getByText('PAUSED')).toBeInTheDocument();
+    });
+  });
+
+  describe('ツリーボーナスサマリー（P4: FB#3）', () => {
+    it('ツリーボーナスがある場合にサマリーが表示される', () => {
+      // Arrange: ツリーボーナスで ATK+5, HP+10 を付与
+      const run = makeRun({
+        en: makeEnemy(),
+        tb: { ...run_tb_defaults(), bA: 5, bH: 10 },
+      });
+
+      // Act
+      render(
+        <BattleScreen run={run} finalMode={false} battleSpd={750} dispatch={mockDispatch} playSfx={mockPlaySfx} />,
+      );
+
+      // Assert: 🌳 プレフィックスと各ボーナスが表示される
+      expect(screen.getByText(/🌳/)).toBeInTheDocument();
+      expect(screen.getByText(/ATK\+5/)).toBeInTheDocument();
+      expect(screen.getByText(/HP\+10/)).toBeInTheDocument();
+    });
+
+    it('ツリーボーナスが全て0の場合はサマリーが表示されない', () => {
+      // Arrange: デフォルト（全て0）
+      const run = makeRun({ en: makeEnemy() });
+
+      // Act
+      const { container } = render(
+        <BattleScreen run={run} finalMode={false} battleSpd={750} dispatch={mockDispatch} playSfx={mockPlaySfx} />,
+      );
+
+      // Assert: 🌳 が表示されない
+      expect(container.textContent).not.toContain('🌳');
     });
   });
 

@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import type { RunState, BiomeId, SfxType, TickEvent, ASkillId } from '../types';
 import type { GameAction } from '../hooks';
-import { BIO, TC, LOG_COLORS, A_SKILLS } from '../constants';
+import { BIO, TC, LOG_COLORS, A_SKILLS, TB_SUMMARY } from '../constants';
 import { effATK, civLvs, mkPopup, calcAvlSkills, applySkill, calcSynergies, applySynergyBonuses } from '../game-logic';
 import { drawEnemy, drawPlayer, drawBurnFx } from '../sprites';
 import { ProgressBar, HpBar, CivLevelsDisplay, AffinityBadge, AllyList, SynergyBadges, SpeedControl, renderParticles } from './shared';
@@ -143,6 +143,9 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
   const activeSynergies = useMemo(() => calcSynergies(run.evs), [run.evs]);
   const synergyBonus = useMemo(() => applySynergyBonuses(activeSynergies), [activeSynergies]);
 
+  // ツリーボーナスサマリー
+  const tbParts = useMemo(() => TB_SUMMARY.filter(s => run.tb[s.k] !== 0).map(s => s.f(run.tb[s.k])), [run.tb]);
+
   // スキル関連
   const avlSkills = calcAvlSkills(run);
   const skillDefs = A_SKILLS.filter(s => avlSkills.includes(s.id));
@@ -274,6 +277,12 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
                 DEF <span style={{ color: '#50c8e8' }}>{run.def}</span>{synergyBonus.defBonus > 0 && <span style={{ color: '#50c8e8', fontSize: 7 }}>+{synergyBonus.defBonus}</span>}{' '}
                 🦴<Bc>{run.bE}</Bc> <CivLevelsDisplay run={run} />
               </StatText>
+              {/* ツリーボーナスサマリー（P4: FB#3） */}
+              {tbParts.length > 0 && (
+                <div style={{ fontSize: 10, color: '#aaa', marginTop: 1 }}>
+                  🌳 {tbParts.join(' ')}
+                </div>
+              )}
             </div>
           </div>
           <AllyList allies={run.al} mode="battle" />
