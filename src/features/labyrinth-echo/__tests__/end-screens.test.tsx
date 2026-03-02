@@ -11,12 +11,6 @@ import type { MetaState, Player, DifficultyDef } from '../game-logic';
 import { DIFFICULTY } from '../game-logic';
 import type { LogEntry } from '../definitions';
 
-/* share モジュールのモック（canvas 操作回避） */
-jest.mock('../share', () => ({
-  shareCard: jest.fn(),
-  ShareData: {},
-}));
-
 const normalDiff: DifficultyDef = DIFFICULTY.find(d => d.id === 'normal')!;
 
 const baseMeta: MetaState = {

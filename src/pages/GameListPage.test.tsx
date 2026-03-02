@@ -3,6 +3,33 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import GameListPage from './GameListPage';
 
+// useScrollReveal で使用する API のモック
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  configurable: true,
+  value: jest.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+    onchange: null,
+    dispatchEvent: jest.fn(),
+  })),
+});
+
+class MockIntersectionObserver {
+  observe = jest.fn();
+  unobserve = jest.fn();
+  disconnect = jest.fn();
+}
+Object.defineProperty(window, 'IntersectionObserver', {
+  writable: true,
+  configurable: true,
+  value: MockIntersectionObserver,
+});
+
 // 画像インポートのモック
 jest.mock('../assets/images/puzzle_card_bg.webp', () => 'puzzle_card_bg.webp');
 jest.mock('../assets/images/air_hockey_card_bg.webp', () => 'air_hockey_card_bg.webp');

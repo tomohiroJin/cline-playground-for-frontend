@@ -95,19 +95,19 @@ describe('EventResultScreen', () => {
   });
 
   describe('ヒント表示', () => {
-    it('INF >= 20 の場合にヒントテキストが表示される', () => {
-      render(<EventResultScreen {...makeProps({ player: { ...testPlayer, inf: 25 } })} />);
+    it('INF >= 50 の場合に詳細ヒントテキストが表示される', () => {
+      render(<EventResultScreen {...makeProps({ player: { ...testPlayer, inf: 50 } })} />);
       expect(screen.getByText(/体力に余裕があるなら/)).toBeInTheDocument();
     });
 
-    it('INF < 20 の場合にヒントテキストが表示されない', () => {
-      render(<EventResultScreen {...makeProps({ player: { ...testPlayer, inf: 10 } })} />);
+    it('INF < 50 の場合に詳細ヒントテキストが表示されない', () => {
+      render(<EventResultScreen {...makeProps({ player: { ...testPlayer, inf: 25 } })} />);
       expect(screen.queryByText(/体力に余裕があるなら/)).not.toBeInTheDocument();
     });
 
-    it('INF >= 15 の場合に条件アイコンが表示される', () => {
-      render(<EventResultScreen {...makeProps({ player: { ...testPlayer, inf: 15 } })} />);
-      // hp条件 → ❤ アイコン
+    it('INF >= 20 の場合に条件アイコンが表示される', () => {
+      render(<EventResultScreen {...makeProps({ player: { ...testPlayer, inf: 20 } })} />);
+      // inf 20-34 → "?" アイコン（条件の存在を示唆）
       expect(screen.getAllByTitle('条件あり').length).toBeGreaterThan(0);
     });
   });

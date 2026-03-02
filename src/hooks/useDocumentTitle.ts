@@ -17,6 +17,10 @@ const TITLE_MAP: Record<string, string> = {
   '/risk-lcd': 'RISK LCD | Game Platform',
   '/keys-and-arms': 'KEYS & ARMS | Game Platform',
   '/primal-path': '原始進化録 - PRIMAL PATH | Game Platform',
+  '/about': 'サイトについて | Game Platform',
+  '/privacy-policy': 'プライバシーポリシー | Game Platform',
+  '/terms': '利用規約 | Game Platform',
+  '/contact': 'お問い合わせ | Game Platform',
 };
 
 const DEFAULT_TITLE = 'Game Platform';

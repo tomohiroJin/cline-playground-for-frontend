@@ -16,6 +16,8 @@ export const HeroSection = styled.header`
   text-align: center;
   margin-bottom: 60px;
   animation: fadeIn 1s ease-out;
+  position: relative;
+  overflow: visible;
 
   @keyframes fadeIn {
     from {
@@ -27,6 +29,58 @@ export const HeroSection = styled.header`
       transform: translateY(0);
     }
   }
+
+  /* パーティクルアニメーション: 浮遊する光の粒 */
+  @keyframes floatParticle {
+    0% {
+      opacity: 0;
+      transform: translateY(60px) translateX(0);
+    }
+    20% {
+      opacity: 1;
+    }
+    80% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-60px) translateX(20px);
+    }
+  }
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  &::before {
+    width: 4px;
+    height: 4px;
+    background: rgba(0, 210, 255, 0.6);
+    top: 20%;
+    left: 15%;
+    animation: floatParticle 7s infinite ease-in-out;
+  }
+
+  &::after {
+    width: 3px;
+    height: 3px;
+    background: rgba(165, 243, 252, 0.5);
+    top: 40%;
+    right: 20%;
+    animation: floatParticle 9s infinite ease-in-out 3s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &::before,
+    &::after {
+      animation: none;
+      opacity: 0.3;
+    }
+  }
 `;
 
 export const HeroTitle = styled.h2`
@@ -36,7 +90,22 @@ export const HeroTitle = styled.h2`
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  text-shadow: 0 0 30px rgba(0, 210, 255, 0.3);
+  animation: titleGlow 4s ease-in-out infinite;
+
+  /* タイトルグロウエフェクト: text-shadow の明滅 */
+  @keyframes titleGlow {
+    0%, 100% {
+      text-shadow: 0 0 30px rgba(0, 210, 255, 0.3);
+    }
+    50% {
+      text-shadow: 0 0 50px rgba(0, 210, 255, 0.5), 0 0 80px rgba(0, 210, 255, 0.2);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    text-shadow: 0 0 30px rgba(0, 210, 255, 0.3);
+  }
 `;
 
 export const HeroSubtitle = styled.p`
@@ -59,6 +128,15 @@ export const GameCardContainer = styled(GlassCard)`
   min-height: 300px;
   cursor: pointer;
   padding: 0;
+
+  /* ホバー時にシアンのボーダー + パープルのアウターグロウ */
+  &:hover {
+    border-color: rgba(0, 210, 255, 0.5);
+    box-shadow:
+      0 20px 40px rgba(0, 0, 0, 0.4),
+      0 0 15px rgba(168, 85, 247, 0.3),
+      inset 0 0 15px rgba(0, 210, 255, 0.05);
+  }
 `;
 
 export const CardImageArea = styled.div<{ $bgImage?: string; $customBg?: string }>`
