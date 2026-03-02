@@ -3,20 +3,75 @@
  *
  * 純粋関数: canvas → void (no state deps)
  */
-import { ENEMY_COLORS, ENEMY_DETAILS, ENEMY_SMALL_DETAILS } from './constants';
-import type { CivTypeExt } from './types';
+import { ENEMY_COLORS, ENEMY_DETAILS, ENEMY_SMALL_DETAILS, TC } from './constants';
+import type { CivTypeExt, DmgPopup, AwokenRecord } from './types';
+
+/** 覚醒ビジュアル: シンボル情報 */
+export interface AwakeningSymbol {
+  color: string;
+  /** 覚醒IDからシンボル形状を推定 */
+  shape: 'flame' | 'leaf' | 'skull' | 'star';
+}
+
+/** 覚醒ビジュアル情報 */
+export interface AwakeningVisual {
+  symbols: AwakeningSymbol[];
+  hasAura: boolean;
+  auraColor?: string;
+}
+
+/** 覚醒IDからシンボル形状を決定 */
+function symbolShape(id: string): AwakeningSymbol['shape'] {
+  if (id.includes('tech')) return 'flame';
+  if (id.includes('life')) return 'leaf';
+  if (id.includes('rit')) return 'skull';
+  return 'star';
+}
+
+/** 覚醒段階に応じた視覚情報を返す */
+export function getAwakeningVisual(fe: CivTypeExt | null, awoken: AwokenRecord[]): AwakeningVisual {
+  if (awoken.length === 0) {
+    return { symbols: [], hasAura: false };
+  }
+
+  const symbols: AwakeningSymbol[] = awoken.map(a => ({
+    color: a.cl,
+    shape: symbolShape(a.id),
+  }));
+
+  // 大覚醒（feが設定されている）の場合はオーラあり
+  const hasAura = fe !== null;
+  const auraColor = hasAura ? TC[fe] : undefined;
+
+  return { symbols, hasAura, auraColor };
+}
 
 function pxRect(ctx: CanvasRenderingContext2D, s: number, x: number, y: number, w: number, h: number, cl: string) {
   ctx.fillStyle = cl;
   ctx.fillRect(x * s, y * s, w * s, h * s);
 }
 
-export function drawPlayer(c: HTMLCanvasElement, s = 2, fe?: CivTypeExt | null): void {
+/** プレイヤーキャラクターをピクセルアートで描画する（覚醒オーラ・シンボル対応） */
+export function drawPlayer(c: HTMLCanvasElement, s = 2, fe?: CivTypeExt | null, awoken?: AwokenRecord[]): void {
   const x = c.getContext('2d')!;
   c.width = 16 * s;
   c.height = 22 * s;
   x.clearRect(0, 0, c.width, c.height);
   const d = (a: number, b: number, w: number, h: number, cl: string) => pxRect(x, s, a, b, w, h, cl);
+
+  // 大覚醒時のオーラ（背景レイヤー）
+  const visual = awoken ? getAwakeningVisual(fe ?? null, awoken) : undefined;
+  if (visual?.hasAura && visual.auraColor) {
+    x.globalAlpha = 0.15;
+    x.fillStyle = visual.auraColor;
+    x.fillRect(0, 0, c.width, c.height);
+    // 外枠のグロー
+    x.globalAlpha = 0.4;
+    x.strokeStyle = visual.auraColor;
+    x.lineWidth = 2;
+    x.strokeRect(1, 1, c.width - 2, c.height - 2);
+    x.globalAlpha = 1;
+  }
 
   const skinMap: Record<string, string> = { rit: '#a06080', tech: '#d0a050', bal: '#c0a870' };
   const hairMap: Record<string, string> = { rit: '#601040', tech: '#c04020', bal: '#806020' };
@@ -36,8 +91,40 @@ export function drawPlayer(c: HTMLCanvasElement, s = 2, fe?: CivTypeExt | null):
     bal: [[0, 4, 3, 2, '#e0c060'], [13, 4, 3, 2, '#e0c060'], [5, 0, 6, 1, '#f0c040'], [4, 6, 8, 1, '#c0a040']],
   };
   (fe && accents[fe] || []).forEach(a => d(a[0], a[1], a[2], a[3], a[4]));
+
+  // 小覚醒時のシンボル（頭上に描画）
+  if (visual && visual.symbols.length > 0 && !visual.hasAura) {
+    const symbolSize = 3;
+    const startX = Math.floor((16 - visual.symbols.length * (symbolSize + 1)) / 2);
+    visual.symbols.forEach((sym, i) => {
+      const sx = startX + i * (symbolSize + 1);
+      // ピクセルアート風の小さなシンボルを頭上に描画
+      x.fillStyle = sym.color;
+      x.globalAlpha = 0.8;
+      if (sym.shape === 'flame') {
+        // 炎: ▲ 形
+        pxRect(x, s, sx + 1, 0, 1, 1, sym.color);
+        pxRect(x, s, sx, 1, 3, 1, sym.color);
+      } else if (sym.shape === 'leaf') {
+        // 葉: ◆ 形
+        pxRect(x, s, sx + 1, 0, 1, 1, sym.color);
+        pxRect(x, s, sx, 1, 3, 1, sym.color);
+        pxRect(x, s, sx + 1, 2, 1, 1, sym.color);
+      } else if (sym.shape === 'skull') {
+        // 骸骨: □ 形
+        pxRect(x, s, sx, 0, 3, 2, sym.color);
+      } else {
+        // 星: + 形
+        pxRect(x, s, sx + 1, 0, 1, 1, sym.color);
+        pxRect(x, s, sx, 1, 3, 1, sym.color);
+        pxRect(x, s, sx + 1, 2, 1, 1, sym.color);
+      }
+      x.globalAlpha = 1;
+    });
+  }
 }
 
+/** 味方キャラクターをピクセルアートで描画する */
 export function drawAlly(c: HTMLCanvasElement, t: string, s = 2): void {
   const x = c.getContext('2d')!;
   c.width = 12 * s;
@@ -51,6 +138,7 @@ export function drawAlly(c: HTMLCanvasElement, t: string, s = 2): void {
   d(2, 5, 8, 6, cl); d(0, 5, 3, 4, cl); d(9, 5, 3, 4, cl); d(2, 11, 3, 4, cl); d(7, 11, 3, 4, cl);
 }
 
+/** 敵キャラクターをピクセルアートで描画する（通常/ボスサイズ対応） */
 export function drawEnemy(c: HTMLCanvasElement, nm: string, big: boolean, s = 2): void {
   const sz = big ? 24 : 16;
   c.width = sz * s;
@@ -75,6 +163,7 @@ export function drawEnemy(c: HTMLCanvasElement, nm: string, big: boolean, s = 2)
   }
 }
 
+/** タイトル画面のロゴをグラデーション背景付きで描画する */
 export function drawTitle(c: HTMLCanvasElement): void {
   const x = c.getContext('2d')!;
   c.width = 240;
@@ -105,4 +194,69 @@ export function drawTitle(c: HTMLCanvasElement): void {
   d(117, 82, 4, 5, '#b0b0b0'); d(126, 102, 4, 4, '#f08020'); d(127, 100, 2, 3, '#f0c040');
   x.fillStyle = '#e0d8c0'; x.beginPath(); x.arc(200, 22, 8, 0, Math.PI * 2); x.fill();
   x.fillStyle = 'rgb(10,8,18)'; x.beginPath(); x.arc(203, 20, 7, 0, Math.PI * 2); x.fill();
+}
+
+/** 敵スプライト下部にHPバーを描画 */
+export function drawEnemyHpBar(ctx: CanvasRenderingContext2D, hp: number, mhp: number, x: number, y: number, w: number): void {
+  const barH = 3;
+  const ratio = Math.max(0, Math.min(1, hp / mhp));
+  // 背景
+  ctx.fillStyle = '#1a1a22';
+  ctx.fillRect(x, y, w, barH);
+  // HPバー
+  const cl = ratio > 0.5 ? '#50e090' : ratio > 0.2 ? '#f0c040' : '#f05050';
+  ctx.fillStyle = cl;
+  ctx.fillRect(x, y, Math.floor(w * ratio), barH);
+  // 枠
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x, y, w, barH);
+}
+
+/** 状態アイコン（火傷）を描画 */
+export function drawStatusIcons(ctx: CanvasRenderingContext2D, x: number, y: number, burn: boolean): void {
+  if (burn) {
+    ctx.font = '10px serif';
+    ctx.fillText('🔥', x, y);
+  }
+}
+
+/** 火傷パーティクルを敵スプライト周囲に描画 */
+export function drawBurnFx(ctx: CanvasRenderingContext2D, w: number, h: number, frame: number): void {
+  const count = 12;
+  const colors = ['#ff2000', '#ff5500', '#ff9900', '#ffcc00'];
+  for (let i = 0; i < count; i++) {
+    const angle = (frame * 0.1 + i * (Math.PI * 2 / count));
+    const radius = w * 0.32 + Math.sin(frame * 0.2 + i * 0.7) * 6;
+    const px = w / 2 + Math.cos(angle) * radius;
+    const py = h / 2 + Math.sin(angle) * radius * 0.5 - (frame * 0.6) % 10;
+    const size = 3 + Math.sin(frame * 0.35 + i * 1.3) * 2;
+    ctx.globalAlpha = 0.7 + Math.sin(frame * 0.25 + i) * 0.3;
+    ctx.fillStyle = colors[i % colors.length];
+    ctx.beginPath();
+    ctx.arc(px, py, size, 0, Math.PI * 2);
+    ctx.fill();
+    // 白い芯で発光感
+    ctx.globalAlpha = 0.35;
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(px, py, size * 0.35, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+/** ダメージポップアップをCanvas上に描画 */
+export function drawDmgPopup(ctx: CanvasRenderingContext2D, popup: DmgPopup, w: number, h: number): void {
+  const px = popup.x * w;
+  const py = popup.y + h * 0.5;
+  ctx.globalAlpha = popup.a;
+  ctx.font = `bold ${popup.fs}px 'Courier New', monospace`;
+  ctx.textAlign = 'center';
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 3;
+  ctx.strokeText(String(popup.v), px, py);
+  ctx.fillStyle = popup.cl;
+  ctx.fillText(String(popup.v), px, py);
+  ctx.globalAlpha = 1;
 }

@@ -2,10 +2,11 @@
  * 原始進化録 - PRIMAL PATH - 共有UIコンポーネント
  */
 import React from 'react';
-import type { Ally, RunState, CivTypeExt, BiomeIdExt, CivLevels, AwokenRecord } from '../types';
-import { TC, TN, BIO } from '../constants';
+import type { Ally, RunState, CivTypeExt, BiomeIdExt, CivLevels, AwokenRecord, ActiveSynergy } from '../types';
+import type { GameAction } from '../hooks';
+import { TC, TN, BIO, SYNERGY_TAG_INFO, SPEED_OPTS } from '../constants';
 import { effATK, civLvs, biomeBonus } from '../game-logic';
-import { AllyBadge, AllyRow, Tc, Lc, Rc, Gc } from '../styles';
+import { AllyBadge, AllyRow, SpeedBtn, Tc, Lc, Rc } from '../styles';
 
 /* ===== ProgressBar ===== */
 
@@ -123,6 +124,75 @@ export const AffinityBadge: React.FC<{ biome: BiomeIdExt; levels: CivLevels }> =
     : <span style={{ fontSize: 7, padding: '1px 5px', borderRadius: 6, display: 'inline-block', marginLeft: 3, color: '#605848', background: '#60584810', border: '1px solid #60584820' }}>相性─</span>;
 };
 
+/* ===== SynergyBadges ===== */
+
+export const SynergyBadges: React.FC<{ synergies: ActiveSynergy[]; showCount?: boolean }> = ({ synergies, showCount }) => {
+  if (!synergies.length) return null;
+  return (
+    <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 3 }}>
+      {synergies.map(s => {
+        const info = SYNERGY_TAG_INFO[s.tag];
+        return (
+          <span key={s.tag} style={{
+            fontSize: 7, color: info.cl, background: info.cl + '15',
+            border: `1px solid ${info.cl}40`, padding: '0 4px', borderRadius: 4,
+          }}>
+            {info.ic}{showCount ? `×${s.count} ` : ''}{s.bonusName}
+          </span>
+        );
+      })}
+    </div>
+  );
+};
+
+/* ===== SpeedControl（速度切替の共有コンポーネント） ===== */
+
+/** 速度切替ボタン群。SpeedBar 内で使用する */
+export const SpeedControl: React.FC<{
+  battleSpd: number;
+  dispatch: React.Dispatch<GameAction>;
+}> = ({ battleSpd, dispatch }) => (
+  <>
+    <span style={{ fontSize: 8, color: '#403828' }}>速度</span>
+    {SPEED_OPTS.map(([label, spd]) => (
+      <SpeedBtn key={spd} $active={battleSpd === spd}
+        onClick={() => dispatch({ type: 'CHANGE_SPEED', speed: spd })}>
+        {label}
+      </SpeedBtn>
+    ))}
+    <SpeedBtn $active={battleSpd === 0}
+      onClick={() => dispatch({ type: 'CHANGE_SPEED', speed: 0 })}>
+      ⏸
+    </SpeedBtn>
+  </>
+);
+
+/* ===== renderParticles ===== */
+
+const DEFAULT_PARTICLE_COUNT = 24;
+
+/** パーティクルのランダム配置を生成 */
+export function renderParticles(biome: string, count = DEFAULT_PARTICLE_COUNT): React.ReactNode[] {
+  if (biome !== 'glacier' && biome !== 'volcano' && biome !== 'grassland') return [];
+  return Array.from({ length: count }, (_, i) => {
+    const left = Math.random() * 100;
+    const delay = Math.random() * 6;
+    const duration = 4 + Math.random() * 4;
+    return (
+      <span
+        key={i}
+        style={{
+          left: `${left}%`,
+          top: biome === 'volcano' ? 'auto' : `${Math.random() * 20}%`,
+          bottom: biome === 'volcano' ? '0' : 'auto',
+          animationDelay: `${delay}s`,
+          animationDuration: `${duration}s`,
+        }}
+      />
+    );
+  });
+}
+
 /* ===== AllyList ===== */
 
 export const AllyList: React.FC<{ allies: Ally[]; mode: 'evo' | 'battle' }> = ({ allies, mode }) => {
@@ -136,6 +206,7 @@ export const AllyList: React.FC<{ allies: Ally[]; mode: 'evo' | 'battle' }> = ({
           return (
             <AllyBadge key={i} $dead={!a.a}>
               <canvas
+                aria-hidden="true"
                 ref={c => {
                   if (c) {
                     const { drawAlly } = require('../sprites');

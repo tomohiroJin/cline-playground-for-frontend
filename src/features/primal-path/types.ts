@@ -13,8 +13,13 @@ export type GamePhase =
   | 'battle'
   | 'awakening'
   | 'prefinal'
+  | 'endless_checkpoint'
   | 'ally_revive'
-  | 'over';
+  | 'over'
+  | 'event'
+  | 'stats'
+  | 'achievements'
+  | 'challenge';
 
 /** 文明タイプ */
 export type CivType = 'tech' | 'life' | 'rit';
@@ -28,8 +33,19 @@ export type BiomeId = 'grassland' | 'glacier' | 'volcano';
 /** 最終戦含むバイオーム */
 export type BiomeIdExt = BiomeId | 'final';
 
+/** BGM タイプ */
+export type BgmType = 'title' | 'grassland' | 'glacier' | 'volcano';
+
+/** BGM パターン定義 */
+export interface BgmPattern {
+  readonly notes: readonly number[];
+  readonly tempo: number;
+  readonly wave: OscillatorType;
+  readonly gain: number;
+}
+
 /** SFX タイプ */
-export type SfxType = 'hit' | 'crit' | 'kill' | 'heal' | 'evo' | 'death' | 'click' | 'boss' | 'win';
+export type SfxType = 'hit' | 'crit' | 'kill' | 'heal' | 'evo' | 'death' | 'click' | 'boss' | 'win' | 'skFire' | 'skHeal' | 'skRage' | 'skShield' | 'synergy' | 'event' | 'achv' | 'plDmg' | 'allyJoin' | 'civUp' | 'envDmg';
 
 /** SFX 定義 */
 export interface SfxDef {
@@ -50,6 +66,8 @@ export interface Difficulty {
   readonly ic: string;
   readonly hm: number;
   readonly am: number;
+  /** ボス連戦数（1=通常、2以上で連戦） */
+  readonly bb: number;
 }
 
 /** 進化エフェクト */
@@ -69,6 +87,9 @@ export interface EvoEffect {
   readonly revA?: number;
 }
 
+/** シナジータグ */
+export type SynergyTag = 'fire' | 'ice' | 'regen' | 'shield' | 'hunt' | 'spirit' | 'tribe' | 'wild';
+
 /** 進化定義 */
 export interface Evolution {
   readonly n: string;
@@ -76,6 +97,40 @@ export interface Evolution {
   readonly t: CivType;
   readonly r: number;
   readonly e: EvoEffect;
+  readonly tags?: readonly SynergyTag[];
+}
+
+/** シナジー効果 */
+export type SynergyEffect =
+  | { type: 'stat_bonus'; stat: 'atk' | 'hp' | 'def' | 'cr'; value: number }
+  | { type: 'damage_multiplier'; target: 'burn' | 'all'; multiplier: number }
+  | { type: 'heal_bonus'; ratio: number }
+  | { type: 'ally_bonus'; stat: 'atk' | 'hp'; value: number }
+  | { type: 'special'; id: 'awakening_boost' | 'awakening_power' | 'env_immune' }
+  | { type: 'compound'; effects: readonly SynergyEffect[] };
+
+/** シナジーボーナス定義 */
+export interface SynergyBonusDef {
+  readonly tag: SynergyTag;
+  readonly tier1: {
+    readonly name: string;
+    readonly description: string;
+    readonly effect: SynergyEffect;
+  };
+  readonly tier2: {
+    readonly name: string;
+    readonly description: string;
+    readonly effect: SynergyEffect;
+  };
+}
+
+/** 発動中のシナジー情報 */
+export interface ActiveSynergy {
+  tag: SynergyTag;
+  count: number;
+  /** 1=Tier1(タグ2個), 2=Tier2(タグ3個以上) */
+  tier: 1 | 2;
+  bonusName: string;
 }
 
 /** 味方テンプレート */
@@ -271,6 +326,32 @@ export interface RunState {
   wTurn: number;
   awoken: AwokenRecord[];
   en: Enemy | null;
+  sk: SkillSt;
+  evs: Evolution[];
+  btlCount: number;
+  eventCount: number;
+  /** チャレンジ用: 進化回数上限（undefinedなら無制限） */
+  maxEvo?: number;
+  /** チャレンジ用: 制限時間（秒、undefinedなら無制限） */
+  timeLimit?: number;
+  /** チャレンジ用: タイマー開始時刻（Date.now()、undefinedなら未使用） */
+  timerStart?: number;
+  /** チャレンジ用: チャレンジID */
+  challengeId?: string;
+  /** チャレンジ用: 敵ATK倍率（undefinedなら1.0） */
+  enemyAtkMul?: number;
+  /** チャレンジ用: 回復禁止フラグ */
+  noHealing?: boolean;
+  /** スキル使用回数（統計用） */
+  skillUseCount: number;
+  /** 合計回復量（統計用） */
+  totalHealing: number;
+  /** 周回数（表示用、save.loopCount のコピー） */
+  loopCount: number;
+  /** エンドレスモードフラグ */
+  isEndless: boolean;
+  /** エンドレスウェーブ数（3バイオーム踏破ごとに+1） */
+  endlessWave: number;
   _wDmgBase: number;
   _fbk: string;
   _fPhase: number;
@@ -283,6 +364,8 @@ export interface SaveData {
   clears: number;
   runs: number;
   best: Record<number, number>;
+  /** 周回数（神話世界クリアごとに+1） */
+  loopCount: number;
 }
 
 /** ゲーム全体ステート */
@@ -296,6 +379,15 @@ export interface GameState {
   pendingAwk: { id: string; t: CivTypeExt; tier: number } | null;
   reviveTargets: Ally[];
   gameResult: boolean | null;
+  currentEvent: RandomEventDef | undefined;
+  /** メタ: ラン統計履歴 */
+  runStats: RunStats[];
+  /** メタ: 累計統計 */
+  aggregate: AggregateStats;
+  /** メタ: 実績状態 */
+  achievementStates: AchievementState[];
+  /** メタ: 新規解除実績ID（ゲームオーバー画面表示用） */
+  newAchievements: string[];
 }
 
 /** 速度オプション */
@@ -322,7 +414,9 @@ export type TickEvent =
   | { type: 'sfx'; sfx: SfxType }
   | { type: 'shake_enemy' }
   | { type: 'flash_player_dmg' }
-  | { type: 'flash_player_heal' };
+  | { type: 'flash_player_heal' }
+  | { type: 'popup'; v: number; crit: boolean; heal: boolean; tgt: 'en' | 'pl' }
+  | { type: 'skill_fx'; sid: ASkillId; v: number };
 
 /** プレイヤー攻撃結果 */
 export interface PlayerAttackResult {
@@ -352,6 +446,102 @@ export interface AwakeningNext {
   cl: string;
 }
 
+/** アクティブスキルID */
+export type ASkillId = 'fB' | 'nH' | 'bR' | 'sW';
+
+/** スキルエフェクト */
+export type SkillFx =
+  | { t: 'dmgAll'; bd: number; mul: number }
+  | { t: 'healAll'; bh: number; aR: number }
+  | { t: 'buffAtk'; aM: number; hC: number; dur: number }
+  | { t: 'shield'; dR: number; dur: number };
+
+/** アクティブスキル定義 */
+export interface ASkillDef {
+  readonly id: ASkillId;
+  readonly nm: string;
+  readonly ds: string;
+  readonly ct: CivType | 'bal';
+  readonly rL: number;
+  readonly cd: number;
+  readonly fx: SkillFx;
+  readonly ic: string;
+}
+
+/** アクティブバフ */
+export interface ABuff {
+  sid: ASkillId;
+  rT: number;
+  fx: SkillFx;
+}
+
+/** スキルステート */
+export interface SkillSt {
+  avl: ASkillId[];
+  cds: Partial<Record<ASkillId, number>>;
+  bfs: ABuff[];
+}
+
+/** ダメージポップアップ */
+export interface DmgPopup {
+  v: number;
+  x: number;
+  y: number;
+  cl: string;
+  fs: number;
+  a: number;
+  lt: number;
+}
+
+/* ===== ランダムイベント ===== */
+
+/** イベントID */
+export type EventId =
+  | 'bone_merchant'
+  | 'ancient_shrine'
+  | 'lost_ally'
+  | 'poison_swamp'
+  | 'mystery_fossil'
+  | 'beast_den'
+  | 'starry_night'
+  | 'cave_painting';
+
+/** イベント効果 */
+export type EventEffect =
+  | { type: 'stat_change'; stat: 'hp' | 'atk' | 'def'; value: number }
+  | { type: 'heal'; amount: number }
+  | { type: 'damage'; amount: number }
+  | { type: 'bone_change'; amount: number }
+  | { type: 'add_ally'; allyTemplate: string }
+  | { type: 'random_evolution' }
+  | { type: 'civ_level_up'; civType: CivType | 'dominant' }
+  | { type: 'nothing' };
+
+/** イベント選択肢コスト */
+export type EventCost =
+  | { readonly type: 'bone'; readonly amount: number }
+  | { readonly type: 'hp_damage'; readonly amount: number };
+
+/** イベント選択肢 */
+export interface EventChoice {
+  readonly label: string;
+  readonly description: string;
+  readonly effect: EventEffect;
+  readonly riskLevel: 'safe' | 'risky' | 'dangerous';
+  readonly cost?: EventCost;
+}
+
+/** ランダムイベント定義 */
+export interface RandomEventDef {
+  readonly id: EventId;
+  readonly name: string;
+  readonly description: string;
+  readonly situationText: string;
+  readonly choices: readonly EventChoice[];
+  readonly biomeAffinity?: readonly BiomeId[];
+  readonly minBiomeCount?: number;
+}
+
 /** 環境ダメージ設定 */
 export interface EnvDmgConfig {
   readonly base: number;
@@ -359,4 +549,98 @@ export interface EnvDmgConfig {
   readonly immune: CivType | null;
   readonly icon: string;
   readonly c: string;
+}
+
+/* ===== メタ進行・実績 (Phase 4) ===== */
+
+/** ラン統計 */
+export interface RunStats {
+  id: string;
+  date: string;
+  result: 'victory' | 'defeat';
+  difficulty: number;
+  biomeCount: number;
+  totalKills: number;
+  maxDamage: number;
+  totalDamageDealt: number;
+  totalDamageTaken: number;
+  totalHealing: number;
+  evolutionCount: number;
+  synergyCount: number;
+  eventCount: number;
+  skillUsageCount: number;
+  boneEarned: number;
+  playtimeSeconds: number;
+  awakening: string | undefined;
+  challengeId: string | undefined;
+  /** エンドレスモード到達ウェーブ（非エンドレスなら undefined） */
+  endlessWave: number | undefined;
+}
+
+/** 累計統計（実績判定に使用） */
+export interface AggregateStats {
+  totalRuns: number;
+  totalClears: number;
+  totalKills: number;
+  totalBoneEarned: number;
+  totalEvents: number;
+  clearedDifficulties: number[];
+  achievedAwakenings: string[];
+  achievedSynergiesTier1: SynergyTag[];
+  achievedSynergiesTier2: SynergyTag[];
+  clearedChallenges: string[];
+  treeCompletionRate: number;
+  lastBossDamageTaken: number;
+}
+
+/** 実績条件 */
+export type AchievementCondition =
+  | { type: 'first_clear' }
+  | { type: 'clear_count'; count: number }
+  | { type: 'clear_difficulty'; difficulty: number }
+  | { type: 'all_difficulties_cleared' }
+  | { type: 'all_awakenings' }
+  | { type: 'max_damage'; threshold: number }
+  | { type: 'total_kills'; count: number }
+  | { type: 'synergy_tier2'; tag: SynergyTag }
+  | { type: 'all_synergies_tier1' }
+  | { type: 'event_count'; count: number }
+  | { type: 'challenge_clear'; challengeId: string }
+  | { type: 'no_damage_boss' }
+  | { type: 'speed_clear'; maxSeconds: number }
+  | { type: 'bone_hoarder'; amount: number }
+  | { type: 'full_tree' };
+
+/** 実績定義 */
+export interface AchievementDef {
+  readonly id: string;
+  readonly name: string;
+  readonly description: string;
+  readonly icon: string;
+  readonly condition: AchievementCondition;
+}
+
+/** 実績状態 */
+export interface AchievementState {
+  id: string;
+  unlocked: boolean;
+  unlockedDate: string | undefined;
+}
+
+/** チャレンジ修飾子 */
+export type ChallengeModifier =
+  | { type: 'hp_multiplier'; value: number }
+  | { type: 'max_evolutions'; count: number }
+  | { type: 'speed_limit'; maxSeconds: number }
+  | { type: 'no_healing' }
+  | { type: 'enemy_multiplier'; stat: 'atk' | 'hp'; value: number }
+  | { type: 'endless' };
+
+/** チャレンジ定義 */
+export interface ChallengeDef {
+  readonly id: string;
+  readonly name: string;
+  readonly description: string;
+  readonly icon: string;
+  readonly modifiers: readonly ChallengeModifier[];
 }

@@ -4,24 +4,29 @@
 import { useReducer, useEffect, useRef, useCallback, useState } from 'react';
 import type {
   GameState, GamePhase, RunState, Evolution, SaveData,
-  Ally, BiomeId, CivTypeExt, SfxType, TickEvent,
+  Ally, BiomeId, BgmType, CivTypeExt, SfxType, TickEvent, ASkillId,
+  EventChoice, RandomEventDef,
+  RunStats, AchievementState, AggregateStats,
 } from './types';
 import {
   startRunState, startBattle, tick, afterBattle, applyEvo,
   applyAwkFx, checkAwakeningRules, rollE, calcBoneReward,
   startFinalBoss, handleFinalBossKill, pickBiomeAuto,
-  applyBiomeSelection, applyFirstBiome, applyAutoLastBiome,
-  deadAllies, allyReviveCost, getTB,
+  applyBiomeSelection, applyFirstBiome, applyAutoLastBiome, applyEndlessLoop,
+  calcEndlessScale,
+  deadAllies, allyReviveCost, getTB, applySkill,
+  rollEvent, applyEventChoice,
+  calcRunStats, checkAchievement, applyChallenge, calcSynergies,
 } from './game-logic';
-import { AWK_SA, AWK_FA, BOSS, DIFFS, BIO, FRESH_SAVE, TREE as TREE_DATA } from './constants';
-import { AudioEngine } from './audio';
-import { Storage } from './storage';
+import { AWK_SA, AWK_FA, BOSS, DIFFS, BIO, FRESH_SAVE, TREE as TREE_DATA, ACHIEVEMENTS, CHALLENGES } from './constants';
+import { AudioEngine, BgmEngine } from './audio';
+import { Storage, MetaStorage } from './storage';
 
 /* ===== Action Types ===== */
 
 type GameAction =
   | { type: 'LOAD_SAVE'; save: SaveData }
-  | { type: 'START_RUN'; di: number }
+  | { type: 'START_RUN'; di: number; loopOverride: number }
   | { type: 'PICK_BIOME'; biome: BiomeId }
   | { type: 'SELECT_EVO'; evo: Evolution }
   | { type: 'PROCEED_AFTER_AWK' }
@@ -44,7 +49,17 @@ type GameAction =
   | { type: 'SHOW_EVO' }
   | { type: 'RESET_SAVE' }
   | { type: 'SET_PHASE'; phase: GamePhase }
-  | { type: 'PREPARE_BIOME_SELECT' };
+  | { type: 'PREPARE_BIOME_SELECT' }
+  | { type: 'USE_SKILL'; sid: ASkillId }
+  | { type: 'TRIGGER_EVENT'; event: RandomEventDef }
+  | { type: 'CHOOSE_EVENT'; choice: EventChoice }
+  | { type: 'APPLY_EVENT_RESULT'; nextRun: RunState }
+  | { type: 'LOAD_META' }
+  | { type: 'RECORD_RUN_END'; won: boolean }
+  | { type: 'START_CHALLENGE'; challengeId: string; di: number }
+  | { type: 'SKIP_EVO' }
+  | { type: 'ENDLESS_CONTINUE' }
+  | { type: 'ENDLESS_RETIRE' };
 
 /* ===== Initial State ===== */
 
@@ -59,6 +74,11 @@ function initialState(): GameState {
     pendingAwk: null,
     reviveTargets: [],
     gameResult: null,
+    currentEvent: undefined,
+    runStats: [],
+    aggregate: MetaStorage.loadAggregate(),
+    achievementStates: [],
+    newAchievements: [],
   };
 }
 
@@ -66,6 +86,10 @@ function initialState(): GameState {
 
 function transitionAfterBiome(state: GameState, run: RunState): GameState {
   if (run.bc >= 3) {
+    // エンドレスモード: チェックポイント画面で続行/終了を選択させる
+    if (run.isEndless) {
+      return { ...state, run, phase: 'endless_checkpoint' };
+    }
     return { ...state, run, phase: 'prefinal' };
   }
   const pick = pickBiomeAuto(run);
@@ -77,6 +101,80 @@ function transitionAfterBiome(state: GameState, run: RunState): GameState {
   return { ...state, run: autoRun, phase: 'evo', evoPicks };
 }
 
+/* ===== Meta Progression Helper ===== */
+
+/** ランの結果から累計統計を更新 */
+function updateAggregate(prev: AggregateStats, rs: RunStats, run: RunState): AggregateStats {
+  const next: AggregateStats = {
+    ...prev,
+    totalRuns: prev.totalRuns + 1,
+    totalKills: prev.totalKills + rs.totalKills,
+    totalBoneEarned: prev.totalBoneEarned + rs.boneEarned,
+    totalEvents: prev.totalEvents + rs.eventCount,
+    clearedDifficulties: [...prev.clearedDifficulties],
+    achievedAwakenings: [...prev.achievedAwakenings],
+    achievedSynergiesTier1: [...prev.achievedSynergiesTier1],
+    achievedSynergiesTier2: [...prev.achievedSynergiesTier2],
+    clearedChallenges: [...prev.clearedChallenges],
+    treeCompletionRate: prev.treeCompletionRate,
+    lastBossDamageTaken: run.dmgTaken,
+  };
+
+  if (rs.result === 'victory') {
+    next.totalClears = prev.totalClears + 1;
+    if (!next.clearedDifficulties.includes(rs.difficulty)) {
+      next.clearedDifficulties.push(rs.difficulty);
+    }
+    if (rs.challengeId && !next.clearedChallenges.includes(rs.challengeId)) {
+      next.clearedChallenges.push(rs.challengeId);
+    }
+  } else {
+    next.totalClears = prev.totalClears;
+  }
+
+  /* 覚醒記録の更新 */
+  for (const aw of run.awoken) {
+    if (!next.achievedAwakenings.includes(aw.id)) {
+      next.achievedAwakenings.push(aw.id);
+    }
+  }
+
+  /* シナジー記録の更新 */
+  const synergies = calcSynergies(run.evs);
+  for (const syn of synergies) {
+    if (syn.tier >= 1 && !next.achievedSynergiesTier1.includes(syn.tag)) {
+      next.achievedSynergiesTier1.push(syn.tag);
+    }
+    if (syn.tier >= 2 && !next.achievedSynergiesTier2.includes(syn.tag)) {
+      next.achievedSynergiesTier2.push(syn.tag);
+    }
+  }
+
+  return next;
+}
+
+/** 実績チェックを実行し、新規解除を返す */
+function checkAllAchievements(
+  currentStates: AchievementState[],
+  stats: RunStats,
+  aggregate: AggregateStats,
+): { nextStates: AchievementState[]; newIds: string[] } {
+  const newIds: string[] = [];
+  const nextStates = ACHIEVEMENTS.map(ach => {
+    const existing = currentStates.find(s => s.id === ach.id);
+    if (existing?.unlocked) return existing;
+
+    const unlocked = checkAchievement(ach, aggregate, stats);
+    if (unlocked) {
+      newIds.push(ach.id);
+      return { id: ach.id, unlocked: true, unlockedDate: new Date().toISOString() };
+    }
+    return existing ?? { id: ach.id, unlocked: false, unlockedDate: undefined };
+  });
+
+  return { nextStates, newIds };
+}
+
 /* ===== Reducer ===== */
 
 function gameReducer(state: GameState, action: GameAction): GameState {
@@ -85,7 +183,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...state, save: { ...action.save } };
 
     case 'START_RUN': {
-      const save = { ...state.save, runs: state.save.runs + 1 };
+      const save = { ...state.save, runs: state.save.runs + 1, loopCount: action.loopOverride };
       const run = startRunState(action.di, save);
       // Auto pick first biome
       const pick = pickBiomeAuto(run);
@@ -96,7 +194,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       const evoPicks = rollE(next);
       return {
         ...state, save, run: next, phase: 'evo', finalMode: false,
-        battleSpd: 750, evoPicks, pendingAwk: null, gameResult: null,
+        evoPicks, pendingAwk: null, gameResult: null,
       };
     }
 
@@ -112,10 +210,12 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'BUY_TREE_NODE': {
       const { nodeId } = action;
       const nd = TREE_DATA.find(x => x.id === nodeId);
-      const cost = nd ? nd.c : 0;
+      if (!nd) return state;
+      if (state.save.tree[nodeId]) return state;
+      if (state.save.bones < nd.c) return state;
       const save = {
         ...state.save,
-        bones: state.save.bones - cost,
+        bones: state.save.bones - nd.c,
         tree: { ...state.save.tree, [nodeId]: 1 },
       };
       return { ...state, save };
@@ -138,6 +238,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'SELECT_EVO': {
       if (!state.run) return state;
+      // maxEvo ガード: 進化上限に達している場合はバトルへ直行
+      if (state.run.maxEvo !== undefined && state.run.evs.length >= state.run.maxEvo) {
+        const battleRun = startBattle(state.run, state.finalMode);
+        battleRun.log.push({ x: `⚠️ 進化上限（${state.run.maxEvo}回）に達しました`, c: 'rc' });
+        return { ...state, run: battleRun, phase: 'battle' };
+      }
+      const prevMhp = state.run.mhp;
       const { nextRun, allyJoined, allyRevived } = applyEvo(state.run, action.evo);
       // Check awakening
       const awkRule = checkAwakeningRules(nextRun);
@@ -149,7 +256,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
       // Start battle
       const battleRun = startBattle(nextRun, state.finalMode);
-      const isBoss = battleRun.cW > battleRun.wpb;
+      // 進化効果をバトルログに表示（HP半減等の重要効果を明示）
+      if (action.evo.e.half) {
+        battleRun.log.push({ x: `💀 ${action.evo.n}発動！ HP ${prevMhp} → ${battleRun.mhp}`, c: 'rc' });
+      }
+      if (action.evo.e.aM && action.evo.e.aM > 1) {
+        battleRun.log.push({ x: `⚡ ATK倍率 ×${battleRun.aM}`, c: 'gc' });
+      }
       return { ...state, run: battleRun, phase: 'battle' };
     }
 
@@ -183,6 +296,10 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
       // Start battle
       const battleRun = startBattle(nextRun, state.finalMode);
+      // 血の契約等のHP半減効果がある場合、バトルログに表示
+      if (battleRun.aM > 1) {
+        battleRun.log.push({ x: `⚡ ATK倍率 ×${battleRun.aM}`, c: 'gc' });
+      }
       return { ...state, run: battleRun, phase: 'battle', pendingAwk: null };
     }
 
@@ -199,6 +316,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           return { ...state, run: nextRun, phase: 'ally_revive', reviveTargets: dead };
         }
         return transitionAfterBiome(state, nextRun);
+      }
+      // ランダムイベント発生判定（非ボス戦後のみ）
+      const evt = rollEvent(nextRun);
+      if (evt) {
+        return { ...state, run: nextRun, phase: 'event', currentEvent: evt };
       }
       const evoPicks = rollE(nextRun);
       return { ...state, run: nextRun, phase: 'evo', evoPicks };
@@ -229,9 +351,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           clears: state.save.clears + 1,
           best: { ...state.save.best, [nextRun.di]: 1 },
         };
+        // 神話世界（di===3）クリアで周回カウントをインクリメント
+        if (nextRun.di === 3) {
+          save.loopCount = (state.save.loopCount ?? 0) + 1;
+        }
         return { ...state, save, run: nextRun, phase: 'over', gameResult: true, finalMode: false };
       }
-      // Phase 2
+      // 連戦継続
+      nextRun.log.push({ x: `⚡ 最終ボス連戦 ${nextRun._fPhase}/${nextRun.dd.bb}！`, c: 'gc' });
       return { ...state, run: nextRun, phase: 'battle' };
     }
 
@@ -290,13 +417,130 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case 'RESET_SAVE':
-      return { ...state, save: { bones: 0, tree: {}, clears: 0, runs: 0, best: {} } };
+      return { ...state, save: { ...FRESH_SAVE } };
 
     case 'SET_PHASE':
       return { ...state, phase: action.phase };
 
-    default:
+    case 'USE_SKILL': {
+      if (!state.run || state.phase !== 'battle') return state;
+      const { nextRun } = applySkill(state.run, action.sid);
+      return { ...state, run: nextRun };
+    }
+
+    case 'TRIGGER_EVENT': {
+      if (!state.run) return state;
+      return { ...state, phase: 'event', currentEvent: action.event };
+    }
+
+    case 'CHOOSE_EVENT': {
+      if (!state.run || state.phase !== 'event') return state;
+      // イベント効果の適用（コストの消費。防御的に下限チェック）
+      let nextRun = state.run;
+      if (action.choice.cost?.type === 'bone') {
+        nextRun = { ...nextRun, bE: Math.max(0, nextRun.bE - action.choice.cost.amount) };
+      } else if (action.choice.cost?.type === 'hp_damage') {
+        nextRun = { ...nextRun, hp: Math.max(1, nextRun.hp - action.choice.cost.amount) };
+      }
+      nextRun = applyEventChoice(nextRun, action.choice);
+      // 進化選択へ遷移
+      const evoPicks = rollE(nextRun);
+      return { ...state, run: nextRun, phase: 'evo', evoPicks, currentEvent: undefined };
+    }
+
+    case 'APPLY_EVENT_RESULT': {
+      if (!state.run || state.phase !== 'event') return state;
+      // 事前計算済みの結果で進化選択へ遷移
+      const evoPicks2 = rollE(action.nextRun);
+      return { ...state, run: action.nextRun, phase: 'evo', evoPicks: evoPicks2, currentEvent: undefined };
+    }
+
+    case 'LOAD_META': {
+      const runStats = MetaStorage.loadRunStats();
+      const aggregate = MetaStorage.loadAggregate();
+      const achievementStates = MetaStorage.loadAchievements();
+      return { ...state, runStats, aggregate, achievementStates };
+    }
+
+    case 'RECORD_RUN_END': {
+      if (!state.run) return state;
+      const result = action.won ? 'victory' as const : 'defeat' as const;
+      const boneEarned = calcBoneReward(state.run, action.won);
+      const rs = calcRunStats(state.run, result, boneEarned);
+
+      /* 累計統計の更新 */
+      const treeRate = TREE_DATA.length > 0
+        ? Object.keys(state.save.tree).length / TREE_DATA.length
+        : 0;
+      const newAgg = { ...updateAggregate(state.aggregate, rs, state.run), treeCompletionRate: treeRate };
+
+      /* 実績チェック */
+      const { nextStates, newIds } = checkAllAchievements(state.achievementStates, rs, newAgg);
+
+      const newRunStats = [...state.runStats, rs];
+      const save = { ...state.save, bones: state.save.bones + boneEarned };
+
+      return {
+        ...state,
+        save,
+        runStats: newRunStats,
+        aggregate: newAgg,
+        achievementStates: nextStates,
+        newAchievements: newIds,
+      };
+    }
+
+    case 'SKIP_EVO': {
+      if (!state.run) return state;
+      const battleRun = startBattle(state.run, state.finalMode);
+      return { ...state, run: battleRun, phase: 'battle' };
+    }
+
+    case 'ENDLESS_CONTINUE': {
+      if (!state.run) return state;
+      // リループ処理: endlessWave +1、バイオームリセット
+      const loopedRun = applyEndlessLoop(state.run);
+      const nextRun = applyFirstBiome(loopedRun);
+      const evoPicks = rollE(nextRun);
+      return { ...state, run: nextRun, phase: 'evo', evoPicks };
+    }
+
+    case 'ENDLESS_RETIRE': {
+      if (!state.run) return state;
+      // ペナルティなしで終了（SURRENDER と異なり骨削減なし）
+      const boneReward = calcBoneReward(state.run, false);
+      const save = { ...state.save, bones: state.save.bones + boneReward };
+      return { ...state, save, phase: 'over', gameResult: false, finalMode: false };
+    }
+
+    case 'START_CHALLENGE': {
+      const ch = CHALLENGES.find(c => c.id === action.challengeId);
+      if (!ch) return state;
+      const save = { ...state.save, runs: state.save.runs + 1 };
+      let run = startRunState(action.di, save);
+      run = applyChallenge(run, ch);
+      run = { ...run, challengeId: ch.id };
+      // タイマー付きチャレンジの場合、開始時刻を記録
+      if (run.timeLimit) {
+        run = { ...run, timerStart: Date.now() };
+      }
+      // 最初のバイオーム自動選択
+      const pick = pickBiomeAuto(run);
+      let next = run;
+      if (!pick.needSelection) {
+        next = applyFirstBiome(run);
+      }
+      const evoPicks = rollE(next);
+      return {
+        ...state, save, run: next, phase: 'evo', finalMode: false,
+        evoPicks, pendingAwk: null, gameResult: null, newAchievements: [],
+      };
+    }
+
+    default: {
+      const _exhaustive: never = action;
       return state;
+    }
   }
 }
 
@@ -383,7 +627,8 @@ export function useBattle(
     }, state.battleSpd);
 
     return clearTimer;
-  }, [state.phase, state.battleSpd, state.finalMode, clearTimer, dispatch, onEvents]);
+    // state.run?._fPhase: 最終ボス Phase 2 遷移時にタイマーを再起動するために必要
+  }, [state.phase, state.battleSpd, state.finalMode, state.run?._fPhase, clearTimer, dispatch, onEvents]);
 
   return { clearTimer };
 }
@@ -404,7 +649,23 @@ export function useAudio() {
     AudioEngine.play(type);
   }, []);
 
-  return { init, playSfx };
+  const playBgm = useCallback((type: BgmType) => {
+    BgmEngine.play(type);
+  }, []);
+
+  const stopBgm = useCallback(() => {
+    BgmEngine.stop();
+  }, []);
+
+  const setBgmVolume = useCallback((v: number) => {
+    BgmEngine.setVolume(v);
+  }, []);
+
+  const setSfxVolume = useCallback((v: number) => {
+    AudioEngine.setSfxVolume(v);
+  }, []);
+
+  return { init, playSfx, playBgm, stopBgm, setBgmVolume, setSfxVolume };
 }
 
 /* ===== useOverlay ===== */
@@ -475,4 +736,5 @@ export function usePersistence(
   return { loaded };
 }
 
+export { gameReducer, initialState };
 export type { GameAction };
