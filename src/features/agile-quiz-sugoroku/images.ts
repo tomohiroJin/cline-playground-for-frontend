@@ -24,6 +24,7 @@ import aqs_char_neko from '../../assets/images/aqs_char_neko.webp';
 import aqs_char_inu from '../../assets/images/aqs_char_inu.webp';
 import aqs_char_usagi from '../../assets/images/aqs_char_usagi.webp';
 import aqs_char_taka from '../../assets/images/aqs_char_taka.webp';
+import aqs_char_penguin from '../../assets/images/aqs_char_penguin.webp';
 import aqs_char_team from '../../assets/images/aqs_char_team.webp';
 import aqs_char_group from '../../assets/images/aqs_char_group.webp';
 
@@ -62,6 +63,7 @@ export const AQS_IMAGES = {
     inu: aqs_char_inu,
     usagi: aqs_char_usagi,
     taka: aqs_char_taka,
+    penguin: aqs_char_penguin,
     team: aqs_char_team,
     group: aqs_char_group,
   },

@@ -28,16 +28,16 @@
 ### 4. ペンギン（スクラムマスター）キャラクター追加
 
 #### コード変更
-- [ ] `character-profiles.ts` にペンギンのプロフィール追加
-- [ ] `character-profiles.ts` のイヌの role を「プロダクトオーナー」に変更
-- [ ] `character-profiles.ts` のイヌの skills を PO 専任に更新
-- [ ] `character-profiles.ts` の配列順を最終確定: タカ→イヌ→ペンギン→ネコ→ウサギ
-- [ ] `constants.ts` にペンギン用カラー `COLORS.blue`（`#4FC3F7`）追加（ウサギの cyan と被り回避）
-- [ ] `images.ts` に `aqs_char_penguin` の import 追加
-- [ ] `images.ts` の `AQS_IMAGES.characters` に `penguin` 追加
+- [x] `character-profiles.ts` にペンギンのプロフィール追加
+- [x] `character-profiles.ts` のイヌの role を「プロダクトオーナー」に変更
+- [x] `character-profiles.ts` のイヌの skills を PO 専任に更新
+- [x] `character-profiles.ts` の配列順を最終確定: タカ→イヌ→ペンギン→ネコ→ウサギ
+- [x] `constants.ts` にペンギン用カラー `COLORS.blue`（`#4FC3F7`）追加（ウサギの cyan と被り回避）
+- [x] `images.ts` に `aqs_char_penguin` の import 追加
+- [x] `images.ts` の `AQS_IMAGES.characters` に `penguin` 追加
 
 #### テスト
-- [ ] `npm test` で全テストがパス
+- [x] `npm test` で全テストがパス（181スイート / 2541テスト）
 - [ ] ブラウザで GuideScreen にペンギンが表示される（emoji フォールバック確認）
 
 ### 5. 全キャラクター画像の統一リニューアル
