@@ -80,9 +80,9 @@ export const GuideScreen: React.FC<GuideScreenProps> = ({ onBack }) => {
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
               style={{
                 width: '100%',
+                height: 'auto',
                 borderRadius: 8,
                 marginBottom: 12,
-                objectFit: 'cover',
               }}
             />
           ) : null}
@@ -119,8 +119,8 @@ export const GuideScreen: React.FC<GuideScreenProps> = ({ onBack }) => {
                         }
                       }}
                       style={{
-                        width: 48,
-                        height: 48,
+                        width: 52,
+                        height: 52,
                         borderRadius: '50%',
                         objectFit: 'cover',
                         border: `2px solid ${char.color}`,
@@ -305,8 +305,8 @@ export const GuideScreen: React.FC<GuideScreenProps> = ({ onBack }) => {
                         }
                       }}
                       style={{
-                        width: 48,
-                        height: 48,
+                        width: 52,
+                        height: 52,
                         borderRadius: '50%',
                         objectFit: 'cover',
                         border: `2px solid ${type.color}`,

@@ -18,18 +18,24 @@ export interface CharacterProfile {
 
 export const CHARACTER_PROFILES: CharacterProfile[] = [
   {
-    id: 'neko',
-    name: 'ネコ',
-    animal: 'オレンジ三毛猫',
-    role: 'フルスタックエンジニア',
-    color: COLORS.accent,
-    emoji: '🐱',
+    id: 'taka',
+    name: 'タカ',
+    animal: 'オオタカ',
+    role: 'ビジネスオーナー / ステークホルダー',
+    color: COLORS.yellow,
+    emoji: '🦅',
     personality:
-      '好奇心旺盛で新技術に飛びつく。夜型で深夜にコードが冴える。気まぐれだがハマると集中力がすごい。',
-    skills: ['TypeScript', 'React', 'Node.js', '設計原則', 'リファクタリング'],
-    catchphrase: '「にゃるほど、こう書けばキレイに動くにゃ！」',
+      '高い視座からプロダクト全体を見渡す。ROIや市場価値に敏感。厳しいが的確なフィードバックを返す。',
+    skills: [
+      '事業戦略',
+      'ROI分析',
+      'プロダクトビジョン',
+      '市場分析',
+      'ステークホルダーマネジメント',
+    ],
+    catchphrase: '「このプロダクト、市場で翔べるか？鋭く見極めるぞ！」',
     trivia:
-      'キーボードの上で寝るのが好き。お気に入りのエディタは VS Code（猫テーマ）。',
+      '朝5時起きで市場レポートを読むのが日課。会議では常に最前列。',
   },
   {
     id: 'inu',
@@ -52,6 +58,20 @@ export const CHARACTER_PROFILES: CharacterProfile[] = [
       '毎朝のデイリースクラムには必ず5分前に着席。手帳型のバックログを常に携帯。',
   },
   {
+    id: 'neko',
+    name: 'ネコ',
+    animal: 'オレンジ三毛猫',
+    role: 'フルスタックエンジニア',
+    color: COLORS.accent,
+    emoji: '🐱',
+    personality:
+      '好奇心旺盛で新技術に飛びつく。夜型で深夜にコードが冴える。気まぐれだがハマると集中力がすごい。',
+    skills: ['TypeScript', 'React', 'Node.js', '設計原則', 'リファクタリング'],
+    catchphrase: '「にゃるほど、こう書けばキレイに動くにゃ！」',
+    trivia:
+      'キーボードの上で寝るのが好き。お気に入りのエディタは VS Code（猫テーマ）。',
+  },
+  {
     id: 'usagi',
     name: 'ウサギ',
     animal: '白うさぎ',
@@ -70,25 +90,5 @@ export const CHARACTER_PROFILES: CharacterProfile[] = [
     catchphrase: '「このエッジケース、見逃してないぴょん？」',
     trivia:
       'テスト自動化率100%が夢。人参ジュースを飲みながらテストケースを書く。',
-  },
-  {
-    id: 'taka',
-    name: 'タカ',
-    animal: 'オオタカ',
-    role: 'ビジネスオーナー / ステークホルダー',
-    color: COLORS.yellow,
-    emoji: '🦅',
-    personality:
-      '高い視座からプロダクト全体を見渡す。ROIや市場価値に敏感。厳しいが的確なフィードバックを返す。',
-    skills: [
-      '事業戦略',
-      'ROI分析',
-      'プロダクトビジョン',
-      '市場分析',
-      'ステークホルダーマネジメント',
-    ],
-    catchphrase: '「このプロダクト、市場で翔べるか？鋭く見極めるぞ！」',
-    trivia:
-      '朝5時起きで市場レポートを読むのが日課。会議では常に最前列。',
   },
 ];
