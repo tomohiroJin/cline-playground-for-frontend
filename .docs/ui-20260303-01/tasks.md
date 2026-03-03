@@ -13,39 +13,41 @@
 
 ### 1-1: `audio.ts` に `cleanup()` メソッド追加
 
-- [ ] `AudioEngine` に `cleanup()` メソッドを追加
-  - [ ] `BgmEngine.stop()` を呼び出し
-  - [ ] `ac.close()` で AudioContext を解放
-  - [ ] `ac = null` でリセット
-  - [ ] `try-catch` で既にクローズ済みのケースをハンドリング
-- [ ] エクスポートの確認（`AudioEngine.cleanup` が外部から呼べること）
+- [x] `AudioEngine` に `cleanup()` メソッドを追加
+  - [x] `BgmEngine.stop()` を呼び出し
+  - [x] `ac.close()` で AudioContext を解放
+  - [x] `ac = null` でリセット
+  - [x] `try-catch` で既にクローズ済みのケースをハンドリング
+- [x] エクスポートの確認（`AudioEngine.cleanup` が外部から呼べること）
 
 ### 1-2: `PrimalPathGame.tsx` にクリーンアップ追加
 
-- [ ] `GameInner` コンポーネントにアンマウント時の `useEffect` を追加
-  - [ ] クリーンアップ関数で `AudioEngine.cleanup()` を呼び出し
-  - [ ] 依存配列は空 `[]`（マウント/アンマウント時のみ）
+- [x] `GameInner` コンポーネントにアンマウント時の `useEffect` を追加
+  - [x] クリーンアップ関数で `AudioEngine.cleanup()` を呼び出し
+  - [x] 依存配列は `[cleanupAudio]`（useCallback メモ化済みのため実質マウント/アンマウント時のみ）
 
 ### 1-3: `hooks.ts` の `useAudio` フック拡張
 
-- [ ] `cleanup` 関数を `useCallback` でラップして追加
-- [ ] `return` オブジェクトに `cleanup` を含める
+- [x] `cleanup` 関数を `useCallback` でラップして追加
+- [x] `return` オブジェクトに `cleanup` を含める
 
 ### 1-4: テストの追加
 
-- [ ] `audio-cleanup.test.ts` を作成
-  - [ ] `cleanup()` 呼び出し後に `setInterval` がクリアされることを確認
-  - [ ] `cleanup()` 後に `AudioContext.close()` が呼ばれることを確認
-  - [ ] `cleanup()` を複数回呼んでもエラーにならないことを確認
-  - [ ] `cleanup()` 後に `init()` で新しい AudioContext が生成されることを確認
+- [x] `audio-cleanup.test.ts` を作成
+  - [x] `cleanup()` 呼び出し後に BGM が停止することを確認
+  - [x] `cleanup()` 呼び出し後に `setInterval` がクリアされることを確認
+  - [x] `cleanup()` 後に `AudioContext.close()` が呼ばれることを確認
+  - [x] `cleanup()` を複数回呼んでもエラーにならないことを確認
+  - [x] `cleanup()` 後に `init()` で新しい AudioContext が生成されることを確認
+  - [x] `cleanup()` 後に再度 BGM を正常に再生できることを確認
 
 ### 1-5: 動作確認
 
-- [ ] ビルドエラーがないこと（`npm run build`）
-- [ ] 既存テストが通ること（`npm test`）
-- [ ] ブラウザ確認: 原始進化録プレイ中にホームに戻り、音が停止すること
-- [ ] ブラウザ確認: 音停止後、再度原始進化録に入り BGM が正常に再生されること
-- [ ] ブラウザ確認: 他のゲーム（迷宮の残響等）の音声が引き続き正常に動作すること
+- [x] ビルドエラーがないこと（`npm run build`）
+- [x] 既存テストが通ること（`npm test`）— 15スイート / 442テスト 全合格
+- [x] ブラウザ確認: 原始進化録プレイ中にホームに戻り、音が停止すること
+- [x] ブラウザ確認: 音停止後、再度原始進化録に入り BGM が正常に再生されること
+- [x] ブラウザ確認: 他のゲーム（迷宮の残響等）の音声が引き続き正常に動作すること
 
 ---
 

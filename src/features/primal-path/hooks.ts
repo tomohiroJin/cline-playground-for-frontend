@@ -665,7 +665,11 @@ export function useAudio() {
     AudioEngine.setSfxVolume(v);
   }, []);
 
-  return { init, playSfx, playBgm, stopBgm, setBgmVolume, setSfxVolume };
+  const cleanup = useCallback(() => {
+    AudioEngine.cleanup();
+  }, []);
+
+  return { init, playSfx, playBgm, stopBgm, setBgmVolume, setSfxVolume, cleanup };
 }
 
 /* ===== useOverlay ===== */
