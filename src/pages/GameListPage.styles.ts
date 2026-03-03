@@ -3,6 +3,15 @@ import { GlassCard } from '../components/atoms/GlassCard';
 import puzzleCardBg from '../assets/images/puzzle_card_bg.webp';
 
 export const PageContainer = styled.div`
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+`;
+
+/** コンテンツをパララックス背景の上に配置するラッパー */
+export const ContentWrapper = styled.div`
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;

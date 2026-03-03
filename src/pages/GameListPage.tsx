@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useScrollReveal } from '../hooks/useScrollReveal';
+import { HomeParallaxBg } from '../components/organisms/HomeParallaxBg';
 import puzzleCardBg from '../assets/images/puzzle_card_bg.webp';
 import airHockeyCardBg from '../assets/images/air_hockey_card_bg.webp';
 import racingCardBg from '../assets/images/racing_card_bg.webp';
@@ -16,6 +17,7 @@ import keysAndArmsCardBg from '../assets/images/keys_and_arms_card_bg.webp';
 import primalPathCardBg from '../assets/images/primal_path_card_bg.webp';
 import {
   PageContainer,
+  ContentWrapper,
   HeroSection,
   HeroTitle,
   HeroSubtitle,
@@ -34,12 +36,14 @@ const GameListPage: React.FC = () => {
 
   return (
     <PageContainer>
-      <HeroSection>
-        <HeroTitle>Game Platform</HeroTitle>
-        <HeroSubtitle>厳選されたインタラクティブなゲーム体験を、ここから始めよう。</HeroSubtitle>
-      </HeroSection>
+      <HomeParallaxBg />
+      <ContentWrapper>
+        <HeroSection>
+          <HeroTitle>Game Platform</HeroTitle>
+          <HeroSubtitle>厳選されたインタラクティブなゲーム体験を、ここから始めよう。</HeroSubtitle>
+        </HeroSection>
 
-      <BentoGrid ref={gridRef} aria-label="提供中のゲーム一覧">
+        <BentoGrid ref={gridRef} aria-label="提供中のゲーム一覧">
         <GameCardContainer
           onClick={() => navigate('/puzzle')}
           role="button"
@@ -420,7 +424,8 @@ const GameListPage: React.FC = () => {
             </PlayButton>
           </CardContent>
         </GameCardContainer>
-      </BentoGrid>
+        </BentoGrid>
+      </ContentWrapper>
     </PageContainer>
   );
 };

@@ -71,47 +71,47 @@
 
 ### 2-2: `useMouseParallax` フック作成
 
-- [ ] `src/hooks/useMouseParallax.ts` を作成
-  - [ ] ビューポート中心基準の座標正規化（-1.0 〜 +1.0）
-  - [ ] `mousemove` イベントリスナーの登録・解除
-  - [ ] タッチデバイス判定（`ontouchstart` チェック）
-  - [ ] タッチデバイスでは `{ x: 0, y: 0 }` を返す
+- [x] `src/hooks/useMouseParallax.ts` を作成
+  - [x] ビューポート中心基準の座標正規化（-1.0 〜 +1.0）
+  - [x] `mousemove` イベントリスナーの登録・解除
+  - [x] タッチデバイス判定（`ontouchstart` チェック）
+  - [x] タッチデバイスでは `{ x: 0, y: 0 }` を返す
 
 ### 2-3: `HomeParallaxBg` コンポーネント作成
 
-- [ ] `src/components/organisms/HomeParallaxBg.tsx` を作成
-  - [ ] 3層レイヤー構成（Far / Mid / Near）
-  - [ ] 各レイヤーの `transform` にマウス追従オフセットを反映
-  - [ ] 自動ドリフト CSS アニメーション（Far: 30s, Mid: 22s, Near: 16s）
-  - [ ] ダークオーバーレイ（コンテンツの可読性確保）
-  - [ ] `position: fixed; inset: 0;` で全画面固定
-  - [ ] `aria-hidden="true"` でスクリーンリーダーから除外
-  - [ ] `prefers-reduced-motion` 対応
-  - [ ] `will-change: transform` の設定
+- [x] `src/components/organisms/HomeParallaxBg.tsx` を作成
+  - [x] 3層レイヤー構成（Far / Mid / Near）
+  - [x] 各レイヤーの `transform` にマウス追従オフセットを反映
+  - [x] 自動ドリフト CSS アニメーション（Far: 30s, Mid: 22s, Near: 16s）
+  - [x] ダークオーバーレイ（コンテンツの可読性確保）
+  - [x] `position: fixed; inset: 0;` で全画面固定
+  - [x] `aria-hidden="true"` でスクリーンリーダーから除外
+  - [x] `prefers-reduced-motion` 対応
+  - [x] `will-change: transform` の設定
 
 ### 2-4: `GameListPage` への統合
 
-- [ ] `GameListPage.tsx` に `HomeParallaxBg` を追加
-- [ ] 既存コンテンツを `ContentWrapper`（`position: relative; z-index: 2`）でラップ
-- [ ] `PageContainer` の背景をパララックスに委譲（`background: transparent`）
+- [x] `GameListPage.tsx` に `HomeParallaxBg` を追加
+- [x] 既存コンテンツを `ContentWrapper`（`position: relative; z-index: 2`）でラップ
+- [x] `PageContainer` の背景をパララックスに委譲（`background: transparent`）
 
 ### 2-5: テストの追加
 
-- [ ] `HomeParallaxBg.test.tsx` を作成
-  - [ ] コンポーネントが正常にレンダリングされること
-  - [ ] 3つのレイヤーが存在すること
-  - [ ] `aria-hidden="true"` が設定されていること
-- [ ] `useMouseParallax.test.ts` を作成
-  - [ ] 初期値が `{ x: 0, y: 0 }` であること
-  - [ ] マウスイベントで値が更新されること
+- [x] `HomeParallaxBg.test.tsx` を作成
+  - [x] コンポーネントが正常にレンダリングされること
+  - [x] 3つのレイヤーが存在すること
+  - [x] `aria-hidden="true"` が設定されていること
+- [x] `useMouseParallax.test.ts` を作成
+  - [x] 初期値が `{ x: 0, y: 0 }` であること
+  - [x] マウスイベントで値が更新されること
 
 ### 2-6: 動作確認
 
-- [ ] ビルドエラーがないこと
-- [ ] デスクトップ: マウス移動で3層が異なる速度で追従すること
-- [ ] モバイル: 自動ドリフトアニメーションが動作すること
-- [ ] `prefers-reduced-motion` 有効時にアニメーションが停止すること
-- [ ] パフォーマンス: フレームレートが 60fps を維持すること
+- [x] ビルドエラーがないこと
+- [x] デスクトップ: マウス移動で3層が異なる速度で追従すること
+- [x] モバイル: 自動ドリフトアニメーションが動作すること
+- [-] `prefers-reduced-motion` 有効時にアニメーションが停止すること
+- [-] パフォーマンス: フレームレートが 60fps を維持すること
 
 ---
 
