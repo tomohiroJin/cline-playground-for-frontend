@@ -22,6 +22,10 @@ export const GlobalStyle = createGlobalStyle`
     --glass-bg: rgba(255, 255, 255, 0.05);
     --glass-border: rgba(255, 255, 255, 0.1);
     --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+
+    /* パララックス背景が全面を覆うためグラデーションアニメーション不要 */
+    animation: none;
+    background-size: 100% 100%;
   }
 
   * {
@@ -60,5 +64,32 @@ export const GlobalStyle = createGlobalStyle`
 
   button {
     font-family: inherit;
+  }
+
+  /* ページ遷移トランジション: フェードイン */
+  @keyframes pageFadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* Suspense fallback 用フェードイン */
+  .page-loading {
+    animation: pageFadeIn 0.3s ease-out;
+  }
+
+  /* メインコンテンツ用フェードイン */
+  main[role="main"] > * {
+    animation: pageFadeIn 0.3s ease-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .page-loading,
+    main[role="main"] > * {
+      animation: none;
+    }
   }
 `;

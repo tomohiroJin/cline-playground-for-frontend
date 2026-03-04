@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { RiskLcdGame } from '../features/risk-lcd';
+import { useGameFont } from '../hooks/useGameFont';
 
 // 全画面背景を暗くして筐体を映える表示にする
 const FullScreenWrap = styled.div`
@@ -15,10 +16,14 @@ const FullScreenWrap = styled.div`
 `;
 
 // RISK LCD ページラッパーコンポーネント
-const RiskLcdPage: React.FC = () => (
-  <FullScreenWrap>
-    <RiskLcdGame />
-  </FullScreenWrap>
-);
+const RiskLcdPage: React.FC = () => {
+  useGameFont('risk-lcd');
+
+  return (
+    <FullScreenWrap>
+      <RiskLcdGame />
+    </FullScreenWrap>
+  );
+};
 
 export default RiskLcdPage;

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 
 /** 各子要素間のアニメーション遅延（秒） */
-const DELAY_PER_ITEM = 0.08;
+const DELAY_PER_ITEM = 0.1;
 
 /** スクロール検出のしきい値 */
 const OBSERVER_THRESHOLD = 0.1;
@@ -39,7 +39,7 @@ export const useScrollReveal = <T extends HTMLElement>(): React.RefObject<T | nu
       child.style.opacity = '0';
       child.style.transform = 'translateY(30px)';
       child.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-      child.style.transitionDelay = `${index * DELAY_PER_ITEM}s`;
+      child.style.transitionDelay = `${parseFloat((index * DELAY_PER_ITEM).toFixed(2))}s`;
     });
 
     // IntersectionObserver で監視（画面外に出たら再び非表示に戻す）

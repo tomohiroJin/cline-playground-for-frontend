@@ -155,7 +155,7 @@ const HeaderLink = styled(Link)`
   }
 `;
 
-// フッターコンポーネント（Glassmorphism）
+// フッターコンポーネント（Glassmorphism + パーティクルライン装飾）
 const Footer = styled.footer`
   margin-top: auto;
   text-align: center;
@@ -164,7 +164,39 @@ const Footer = styled.footer`
   font-size: 0.8rem;
   background: var(--glass-bg);
   backdrop-filter: blur(10px);
-  border-top: 1px solid var(--glass-border);
+  position: relative;
+
+  /* パーティクルライン装飾: 光の粒が左→右に流れるアニメーション */
+  &::before {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--accent-color) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: particleLine 3s linear infinite;
+  }
+
+  @keyframes particleLine {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &::before {
+      animation: none;
+      background: var(--glass-border);
+      background-size: 100% 100%;
+    }
+  }
 `;
 
 // フッター内ナビゲーション（上段: サイト内リンク）
@@ -306,7 +338,7 @@ const App: React.FC = () => {
         <ErrorBoundary>
           <Suspense
             fallback={
-              <div style={{ display: 'flex', justifyContent: 'center', padding: '50px' }}>
+              <div className="page-loading" style={{ display: 'flex', justifyContent: 'center', padding: '50px' }}>
                 <LoadingSpinner size="large" message="Loading game..." />
               </div>
             }
