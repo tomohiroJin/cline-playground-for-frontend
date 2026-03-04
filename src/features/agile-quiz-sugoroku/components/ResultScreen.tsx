@@ -171,8 +171,8 @@ Combo: ${stats.maxCombo} | 安定度: ${Math.round(derived.stability)}%`;
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
             style={{
               width: '100%',
-              height: 60,
-              objectFit: 'cover',
+              height: 80,
+              objectFit: 'contain',
               opacity: 0.2,
               borderRadius: 4,
               marginBottom: 4,
@@ -190,8 +190,8 @@ Combo: ${stats.maxCombo} | 安定度: ${Math.round(derived.stability)}%`;
               alt={engineerType.name}
               onError={() => setTypeImgError(true)}
               style={{
-                width: 80,
-                height: 80,
+                width: 88,
+                height: 88,
                 borderRadius: '50%',
                 objectFit: 'cover',
                 border: `3px solid ${engineerType.color}`,
@@ -385,8 +385,8 @@ Combo: ${stats.maxCombo} | 安定度: ${Math.round(derived.stability)}%`;
                   alt="タカ"
                   onError={() => setTakaImgError(true)}
                   style={{
-                    width: 52,
-                    height: 52,
+                    width: 56,
+                    height: 56,
                     borderRadius: '50%',
                     objectFit: 'cover',
                     border: `2px solid ${COLORS.yellow}`,

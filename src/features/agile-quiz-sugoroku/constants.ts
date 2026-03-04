@@ -49,6 +49,7 @@ export const COLORS = {
   purple: '#a78bfa',
   orange: '#fb923c',
   cyan: '#22d3ee',
+  blue: '#4FC3F7',
   pink: '#f472b6',
   glass: 'rgba(16,22,36,0.82)',
   glassBorder: 'rgba(80,120,200,0.1)',

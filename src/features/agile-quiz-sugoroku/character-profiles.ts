@@ -18,6 +18,66 @@ export interface CharacterProfile {
 
 export const CHARACTER_PROFILES: CharacterProfile[] = [
   {
+    id: 'taka',
+    name: 'タカ',
+    animal: 'オオタカ',
+    role: 'ビジネスオーナー / ステークホルダー',
+    color: COLORS.yellow,
+    emoji: '🦅',
+    personality:
+      '高い視座からプロダクト全体を見渡す。ROIや市場価値に敏感。厳しいが的確なフィードバックを返す。',
+    skills: [
+      '事業戦略',
+      'ROI分析',
+      'プロダクトビジョン',
+      '市場分析',
+      'ステークホルダーマネジメント',
+    ],
+    catchphrase: '「このプロダクト、市場で翔べるか？鋭く見極めるぞ！」',
+    trivia:
+      '朝5時起きで市場レポートを読むのが日課。会議では常に最前列。',
+  },
+  {
+    id: 'inu',
+    name: 'イヌ',
+    animal: 'ビーグル犬',
+    role: 'プロダクトオーナー',
+    color: COLORS.green,
+    emoji: '🐶',
+    personality:
+      '忠実で責任感が強い。チームの雰囲気を常に気にかける。おやつ（進捗）が大好き。',
+    skills: [
+      'バックログ管理',
+      '優先順位付け',
+      'ステークホルダー調整',
+      '見積もり',
+      '受け入れ基準定義',
+    ],
+    catchphrase: '「よし、今日のデイリーは15分で終わらせるワン！」',
+    trivia:
+      '毎朝のデイリースクラムには必ず5分前に着席。手帳型のバックログを常に携帯。',
+  },
+  {
+    id: 'penguin',
+    name: 'ペンギン',
+    animal: 'アデリーペンギン',
+    role: 'スクラムマスター',
+    color: COLORS.blue,
+    emoji: '🐧',
+    personality:
+      '仲間思いで場を和ませる。困っているメンバーを真っ先に助ける。寒さ（プレッシャー）に強く、どんな逆境でもチームを守り抜く。',
+    skills: [
+      'ファシリテーション',
+      '障害除去',
+      'チームコーチング',
+      'プロセス改善',
+      'コンフリクト解決',
+    ],
+    catchphrase: '「みんなで一緒に進めば、どんな嵐も乗り越えられるペン！」',
+    trivia:
+      'レトロスペクティブではいつも最高のアイスブレイクを用意する。付箋の色分けにこだわりあり。',
+  },
+  {
     id: 'neko',
     name: 'ネコ',
     animal: 'オレンジ三毛猫',
@@ -30,26 +90,6 @@ export const CHARACTER_PROFILES: CharacterProfile[] = [
     catchphrase: '「にゃるほど、こう書けばキレイに動くにゃ！」',
     trivia:
       'キーボードの上で寝るのが好き。お気に入りのエディタは VS Code（猫テーマ）。',
-  },
-  {
-    id: 'inu',
-    name: 'イヌ',
-    animal: 'ビーグル犬',
-    role: 'PO / スクラムマスター',
-    color: COLORS.green,
-    emoji: '🐶',
-    personality:
-      '忠実で責任感が強い。チームの雰囲気を常に気にかける。おやつ（進捗）が大好き。',
-    skills: [
-      'スクラム運営',
-      'バックログ管理',
-      'ファシリテーション',
-      '見積もり',
-      'ステークホルダー調整',
-    ],
-    catchphrase: '「よし、今日のデイリーは15分で終わらせるワン！」',
-    trivia:
-      '毎朝のデイリースクラムには必ず5分前に着席。手帳型のバックログを常に携帯。',
   },
   {
     id: 'usagi',
@@ -70,25 +110,5 @@ export const CHARACTER_PROFILES: CharacterProfile[] = [
     catchphrase: '「このエッジケース、見逃してないぴょん？」',
     trivia:
       'テスト自動化率100%が夢。人参ジュースを飲みながらテストケースを書く。',
-  },
-  {
-    id: 'taka',
-    name: 'タカ',
-    animal: 'オオタカ',
-    role: 'ビジネスオーナー / ステークホルダー',
-    color: COLORS.yellow,
-    emoji: '🦅',
-    personality:
-      '高い視座からプロダクト全体を見渡す。ROIや市場価値に敏感。厳しいが的確なフィードバックを返す。',
-    skills: [
-      '事業戦略',
-      'ROI分析',
-      'プロダクトビジョン',
-      '市場分析',
-      'ステークホルダーマネジメント',
-    ],
-    catchphrase: '「このプロダクト、市場で翔べるか？鋭く見極めるぞ！」',
-    trivia:
-      '朝5時起きで市場レポートを読むのが日課。会議では常に最前列。',
   },
 ];
