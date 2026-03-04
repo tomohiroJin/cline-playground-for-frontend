@@ -181,56 +181,76 @@
 
 ### 4-1: 構造化データ（JSON-LD VideoGame）
 
-- [ ] ゲームデータの定数ファイルを作成（`src/constants/game-seo-data.ts`）
-  - [ ] 全13ゲームの名前、説明文、URL を定義
-- [ ] `useStructuredData` フックを作成
-  - [ ] `<head>` に `<script type="application/ld+json">` を動的挿入
-  - [ ] アンマウント時にクリーンアップ
-- [ ] 各ゲームページで `useStructuredData` を呼び出し
+- [x] ゲームデータの定数ファイルを作成（`src/constants/game-seo-data.ts`）
+  - [x] 全13ゲームの名前、説明文、URL を定義
+- [x] `useStructuredData` フックを作成
+  - [x] `<head>` に `<script type="application/ld+json">` を動的挿入
+  - [x] アンマウント時にクリーンアップ
+  - [x] `skip` オプションで非ゲームページでの挿入をスキップ
+- [x] `useGameStructuredData` ヘルパーフック作成（GamePageWrapper から呼び出し）
+- [x] 各ゲームページで `useStructuredData` を呼び出し（`GamePageWrapper` 経由）
 
 ### 4-2: `sitemap.xml` の拡充
 
-- [ ] 全 URL に `lastmod` を追加
-- [ ] 全 URL に `changefreq` を追加
-- [ ] 全 URL に `priority` を追加
-- [ ] 新規ページ（About, Privacy Policy, Terms, Contact）の URL を確認
+- [x] 全 URL に `lastmod` を追加（2026-03-03）
+- [x] 全 URL に `changefreq` を追加（weekly / monthly / yearly）
+- [x] 全 URL に `priority` を追加（1.0 / 0.8 / 0.5 / 0.3）
+- [x] 新規ページ（About, Privacy Policy, Terms, Contact）の URL を確認
+- [x] XML 構文検証通過（18 URL）
 
 ### 4-3: `theme-color` メタタグ追加
 
-- [ ] `public/index.html` に `<meta name="theme-color" content="#0f0c29">` を追加
+- [x] `public/index.html` に `<meta name="theme-color" content="#0f0c29">` を追加
 
 ### 4-4: パンくずリスト構造化データ
 
-- [ ] `useStructuredData` フックにパンくずリスト対応を追加
-- [ ] ホーム → ゲームページの2階層パンくず
+- [x] `useStructuredData` フックにパンくずリスト対応を追加（BreadcrumbList スキーマ）
+- [x] ホーム → ゲームページの2階層パンくず（`useGameStructuredData` 経由）
 
 ### 4-5: 動的 meta description
 
-- [ ] `useMetaDescription` フックを作成（`src/hooks/useMetaDescription.ts`）
-  - [ ] ルートパスに応じた description マッピング
-  - [ ] `<meta name="description">` の `content` を動的更新
-  - [ ] クリーンアップで元の description に戻す
-- [ ] `App.tsx` から `useMetaDescription` を呼び出し
+- [x] `useMetaDescription` フックを作成（`src/hooks/useMetaDescription.ts`）
+  - [x] ルートパスに応じた description マッピング（`META_DESCRIPTIONS` 定数）
+  - [x] `<meta name="description">` の `content` を動的更新
+  - [x] クリーンアップで元の description に戻す
+- [x] `App.tsx` から `useMetaDescription` を呼び出し
 
 ### 4-6: Performance Hints
 
-- [ ] `public/index.html` にフォントの `preload` ヒントを追加
-- [ ] パララックス背景画像の `preload` をフェーズ2完了後に追加
+- [x] `public/index.html` にフォントの `preload` ヒントを追加
+- [-] パララックス背景画像の `preload` — Webpack バンドル（ハッシュ付きファイル名）のため静的 preload 不可、Webpack の import で自動対応
+
+### 4-6b: OGP 個別対応
+
+- [x] `useOgpUpdate` フック作成（`src/hooks/useOgpUpdate.ts`）
+  - [x] ゲームページで `og:title` / `og:description` / `og:url` を動的更新
+  - [x] アンマウント時に元の OGP 値に戻す
+- [x] `App.tsx` から `useOgpUpdate` を呼び出し
 
 ### 4-7: テストの追加
 
-- [ ] `useStructuredData.test.ts` を作成
-  - [ ] `<head>` に JSON-LD スクリプトが挿入されること
-  - [ ] アンマウント時にスクリプトが削除されること
-- [ ] `useMetaDescription.test.ts` を作成
-  - [ ] ルートに応じた description が設定されること
+- [x] `useStructuredData.test.ts` を作成（5テスト）
+  - [x] `<head>` に JSON-LD スクリプトが挿入されること
+  - [x] アンマウント時にスクリプトが削除されること
+  - [x] パンくずリストの JSON-LD が正しく挿入されること
+  - [x] XSS 対策（textContent 経由の挿入検証）
+- [x] `useMetaDescription.test.ts` を作成（7テスト）
+  - [x] ルートに応じた description が設定されること
+  - [x] アンマウント時に元の description に戻ること
+  - [x] 未定義パスでデフォルト維持
+- [x] `useOgpUpdate.test.ts` を作成（5テスト）
+  - [x] ゲームページで OGP が更新されること
+  - [x] ホームページで元の OGP が維持されること
+  - [x] アンマウント時に元の値に戻ること
+- [x] `sitemap.test.ts` 更新（changefreq 検証テスト追加）
 
 ### 4-8: 動作確認
 
-- [ ] ビルドエラーがないこと
-- [ ] Google Rich Results Test で構造化データが有効であること
-- [ ] Lighthouse SEO スコアが 90+ であること
-- [ ] `sitemap.xml` が有効な XML であること
+- [x] ビルドエラーがないこと（webpack compiled with 1 warning）
+- [x] 全テスト通過（188スイート / 2571テスト）
+- [-] Google Rich Results Test で構造化データが有効であること（デプロイ後に確認）
+- [-] Lighthouse SEO スコアが 90+ であること（デプロイ後に確認）
+- [x] `sitemap.xml` が有効な XML であること（Python xml.etree で検証済み）
 
 ---
 

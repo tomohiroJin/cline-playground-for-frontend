@@ -4,6 +4,7 @@ import { GAME_NOTICES } from '../../constants/game-notices';
 import { GameNotice } from '../molecules/GameNotice';
 import { ErrorBoundary } from '../ErrorBoundary';
 import { stopAllAudio } from '../../utils/audio-cleanup';
+import { useGameStructuredData } from '../../hooks/useGameStructuredData';
 
 /** localStorage のキー接頭辞 */
 const NOTICE_ACCEPTED_PREFIX = 'game-notice-accepted:';
@@ -18,6 +19,9 @@ interface GamePageWrapperProps {
 export const GamePageWrapper: React.FC<GamePageWrapperProps> = ({ children }) => {
   const { pathname } = useLocation();
   const notice = GAME_NOTICES[pathname];
+
+  // ゲーム構造化データ（JSON-LD）を動的に挿入
+  useGameStructuredData();
   const storageKey = `${NOTICE_ACCEPTED_PREFIX}${pathname}`;
 
   const [isAccepted, setIsAccepted] = useState(() => {

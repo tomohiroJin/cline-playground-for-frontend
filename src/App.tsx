@@ -5,6 +5,8 @@ import LoadingSpinner from './components/atoms/LoadingSpinner';
 import ErrorBoundary from './components/ErrorBoundary';
 import { GamePageWrapper } from './components/organisms/GamePageWrapper';
 import { useDocumentTitle } from './hooks/useDocumentTitle';
+import { useMetaDescription } from './hooks/useMetaDescription';
+import { useOgpUpdate } from './hooks/useOgpUpdate';
 import { useFullScreenRoute } from './hooks/useFullScreenRoute';
 import { useShrinkHeader } from './hooks/useShrinkHeader';
 
@@ -258,8 +260,10 @@ const App: React.FC = () => {
   const navigate = useNavigate();
   const { isScrolled } = useShrinkHeader();
 
-  // 動的タイトル設定
+  // 動的タイトル・メタ・OGP 設定
   useDocumentTitle();
+  useMetaDescription();
+  useOgpUpdate();
 
   // プレミアムテーマを適用
   useEffect(() => {
