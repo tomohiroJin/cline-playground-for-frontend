@@ -9,12 +9,13 @@ import aqs_event_test2 from '../../assets/images/aqs_event_test2.webp';
 import aqs_event_review from '../../assets/images/aqs_event_review.webp';
 import aqs_event_emergency from '../../assets/images/aqs_event_emergency.webp';
 import aqs_retro from '../../assets/images/aqs_retro.webp';
-import aqs_type_stable from '../../assets/images/aqs_type_stable.webp';
-import aqs_type_firefighter from '../../assets/images/aqs_type_firefighter.webp';
-import aqs_type_growth from '../../assets/images/aqs_type_growth.webp';
-import aqs_type_speed from '../../assets/images/aqs_type_speed.webp';
-import aqs_type_debt from '../../assets/images/aqs_type_debt.webp';
-import aqs_type_default from '../../assets/images/aqs_type_default.webp';
+// チームタイプ画像（Phase 3c で差し替え予定、現在は既存画像を流用）
+import aqs_type_synergy from '../../assets/images/aqs_type_stable.webp';
+import aqs_type_resilient from '../../assets/images/aqs_type_firefighter.webp';
+import aqs_type_evolving from '../../assets/images/aqs_type_growth.webp';
+import aqs_type_agile from '../../assets/images/aqs_type_speed.webp';
+import aqs_type_struggling from '../../assets/images/aqs_type_debt.webp';
+import aqs_type_forming from '../../assets/images/aqs_type_default.webp';
 import aqs_grade_celebration from '../../assets/images/aqs_grade_celebration.webp';
 import aqs_build_success from '../../assets/images/aqs_build_success.webp';
 import aqs_correct from '../../assets/images/aqs_correct.webp';
@@ -46,12 +47,12 @@ export const AQS_IMAGES = {
     emergency: aqs_event_emergency,
   },
   types: {
-    stable: aqs_type_stable,
-    firefighter: aqs_type_firefighter,
-    growth: aqs_type_growth,
-    speed: aqs_type_speed,
-    debt: aqs_type_debt,
-    default: aqs_type_default,
+    synergy: aqs_type_synergy,
+    resilient: aqs_type_resilient,
+    evolving: aqs_type_evolving,
+    agile: aqs_type_agile,
+    struggling: aqs_type_struggling,
+    forming: aqs_type_forming,
   },
   feedback: {
     correct: aqs_correct,

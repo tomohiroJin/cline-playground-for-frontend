@@ -19,6 +19,7 @@ export type { TagDefinition } from './questions/tag-master';
 export * from './game-logic';
 export * from './answer-processor';
 export { classifyEngineerType } from './engineer-classifier';
+export { classifyTeamType, TEAM_TYPES } from './team-classifier';
 export { getComboColor } from './combo-color';
 
 // ジャンル別統計
@@ -26,6 +27,9 @@ export * from './tag-stats';
 
 // ゲーム結果保存
 export * from './result-storage';
+
+// セーブ/ロード
+export * from './save-manager';
 
 // 勉強会モード
 export * from './study-question-pool';

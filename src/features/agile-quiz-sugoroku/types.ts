@@ -3,7 +3,7 @@
  */
 
 /** ゲームのフェーズ */
-export type GamePhase = 'title' | 'sprint-start' | 'game' | 'retro' | 'result' | 'guide' | 'study-select' | 'study';
+export type GamePhase = 'title' | 'story' | 'sprint-start' | 'game' | 'retro' | 'result' | 'guide' | 'study-select' | 'study';
 
 /** イベントID */
 export type EventId = 'planning' | 'impl1' | 'test1' | 'refinement' | 'impl2' | 'test2' | 'review' | 'emergency';
@@ -79,13 +79,25 @@ export interface DerivedStats {
   sprintCorrectRates: number[];
 }
 
-/** エンジニアタイプ */
+/** エンジニアタイプ（後方互換性のため残存） */
 export interface EngineerType {
   id: string;
   name: string;
   emoji: string;
   color: string;
   description: string;
+  condition: (stats: ClassifyStats) => boolean;
+}
+
+/** チームタイプ */
+export interface TeamType {
+  id: string;
+  name: string;
+  emoji: string;
+  color: string;
+  description: string;
+  feedback: string;
+  nextStep: string;
   condition: (stats: ClassifyStats) => boolean;
 }
 
@@ -154,9 +166,26 @@ export interface SavedGameResult {
   sprintLog: SprintSummary[];
   grade: string;
   gradeLabel: string;
-  engineerTypeId: string;
-  engineerTypeName: string;
+  teamTypeId: string;
+  teamTypeName: string;
+  /** @deprecated 後方互換性のため。読み込み時に teamTypeId にマッピング */
+  engineerTypeId?: string;
+  /** @deprecated 後方互換性のため。読み込み時に teamTypeName にマッピング */
+  engineerTypeName?: string;
   timestamp: number;
+}
+
+/** ゲーム途中セーブ状態 */
+export interface SaveState {
+  version: number;
+  timestamp: number;
+  sprintCount: number;
+  currentSprint: number;
+  stats: GameStats;
+  log: SprintSummary[];
+  usedQuestions: Record<string, number[]>;
+  tagStats: TagStats;
+  incorrectQuestions: AnswerResultWithDetail[];
 }
 
 /** 不正解問題の保存用 */

@@ -12,6 +12,7 @@ import {
   DerivedStats,
   TagStats,
   AnswerResultWithDetail,
+  SaveState,
 } from '../types';
 import {
   EVENTS,
@@ -79,6 +80,10 @@ export interface UseGameReturn {
   tagStats: TagStats;
   /** 不正解問題リスト */
   incorrectQuestions: AnswerResultWithDetail[];
+  /** セーブデータから復元 */
+  restoreFromSave: (saveState: SaveState) => void;
+  /** 現在の状態からセーブデータを構築 */
+  buildSaveState: (sprintCount: number) => SaveState;
 }
 
 /**
@@ -253,6 +258,45 @@ export function useGame(audio?: AudioActions): UseGameReturn {
     return summary;
   }, [sprintAnswers, sprint, stats.debt]);
 
+  /** セーブデータから復元 */
+  const restoreFromSave = useCallback((saveState: SaveState) => {
+    // 配列→Set 変換
+    const restoredUsed: { [key: string]: Set<number> } = {};
+    for (const [key, indices] of Object.entries(saveState.usedQuestions)) {
+      restoredUsed[key] = new Set(indices);
+    }
+
+    setSprint(saveState.currentSprint);
+    setStats(saveState.stats);
+    setLog(saveState.log);
+    setUsedQuestions(restoredUsed);
+    setTagStats(saveState.tagStats);
+    setIncorrectQuestions(saveState.incorrectQuestions);
+    setSprintAnswers([]);
+    setEventIndex(0);
+  }, []);
+
+  /** 現在の状態からセーブデータを構築 */
+  const buildSaveState = useCallback((sprintCount: number): SaveState => {
+    // Set→配列 変換
+    const serializedUsed: Record<string, number[]> = {};
+    for (const [key, indices] of Object.entries(usedQuestions)) {
+      serializedUsed[key] = [...indices];
+    }
+
+    return {
+      version: 1,
+      timestamp: Date.now(),
+      sprintCount,
+      currentSprint: sprint + 1,
+      stats,
+      log,
+      usedQuestions: serializedUsed,
+      tagStats,
+      incorrectQuestions,
+    };
+  }, [sprint, stats, log, usedQuestions, tagStats, incorrectQuestions]);
+
   /** 派生統計 */
   const derived = useMemo((): DerivedStats => {
     return {
@@ -286,5 +330,7 @@ export function useGame(audio?: AudioActions): UseGameReturn {
     derived,
     tagStats,
     incorrectQuestions,
+    restoreFromSave,
+    buildSaveState,
   };
 }

@@ -19,10 +19,11 @@ import {
   CONFIG,
 } from '../features/agile-quiz-sugoroku';
 import { createDefaultAudioActions } from '../features/agile-quiz-sugoroku/audio/audio-actions';
-import { SprintSummary, GamePhase } from '../features/agile-quiz-sugoroku/types';
+import { SprintSummary, GamePhase, SaveState } from '../features/agile-quiz-sugoroku/types';
 import { saveGameResult } from '../features/agile-quiz-sugoroku/result-storage';
+import { saveGameState } from '../features/agile-quiz-sugoroku/save-manager';
 import { getGrade } from '../features/agile-quiz-sugoroku/constants';
-import { classifyEngineerType } from '../features/agile-quiz-sugoroku/engineer-classifier';
+import { classifyTeamType } from '../features/agile-quiz-sugoroku/team-classifier';
 
 const audio = createDefaultAudioActions();
 
@@ -104,7 +105,7 @@ const AgileQuizSugorokuPage: React.FC = () => {
       audio.onResult();
       // ゲーム結果を保存
       const grade = getGrade(game.derived.correctRate, game.derived.stability, game.derived.averageSpeed);
-      const engineerType = classifyEngineerType({
+      const teamType = classifyTeamType({
         stab: game.derived.stability,
         debt: game.stats.debt,
         emSuc: game.stats.emergencySuccess,
@@ -132,8 +133,8 @@ const AgileQuizSugorokuPage: React.FC = () => {
         sprintLog: game.log,
         grade: grade.grade,
         gradeLabel: grade.label,
-        engineerTypeId: engineerType.id,
-        engineerTypeName: engineerType.name,
+        teamTypeId: teamType.id,
+        teamTypeName: teamType.name,
         timestamp: Date.now(),
       });
       game.setPhase('result');
@@ -143,6 +144,26 @@ const AgileQuizSugorokuPage: React.FC = () => {
       game.setPhase('sprint-start');
       fade.trigger();
     }
+  };
+
+  /** セーブデータから再開 */
+  const handleResume = (saveState: SaveState) => {
+    setSprintCount(saveState.sprintCount);
+    game.restoreFromSave(saveState);
+    game.setPhase('sprint-start');
+    fade.trigger();
+  };
+
+  /** 振り返り画面で保存して中断 */
+  const handleSave = () => {
+    const saveState = game.buildSaveState(sprintCount);
+    saveGameState(saveState);
+    // タイトル画面に戻る（少し遅延して遷移）
+    setTimeout(() => {
+      audio.onBgmStop();
+      game.setPhase('title');
+      fade.trigger();
+    }, 500);
   };
 
   /** リプレイ */
@@ -213,6 +234,7 @@ const AgileQuizSugorokuPage: React.FC = () => {
       {game.phase === 'title' && (
         <TitleScreen
           onStart={handleStart}
+          onResume={handleResume}
           onStudy={handleStudyMode}
           onGuide={handleGuide}
         />
@@ -253,6 +275,8 @@ const AgileQuizSugorokuPage: React.FC = () => {
           sprint={game.sprint}
           visible={fade.visible}
           onNext={handleAfterRetro}
+          onSave={handleSave}
+          sprintCount={sprintCount}
         />
       )}
 

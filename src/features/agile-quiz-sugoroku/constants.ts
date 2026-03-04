@@ -199,13 +199,13 @@ export const ENGINEER_TYPES: EngineerType[] = [
   },
 ];
 
-/** グレード設定 */
+/** グレード設定（チーム成熟度ベース） */
 export const GRADES: Grade[] = [
-  { min: 90, grade: 'S', color: COLORS.orange, label: 'Legendary' },
-  { min: 75, grade: 'A', color: COLORS.green, label: 'Excellent' },
-  { min: 60, grade: 'B', color: COLORS.accent, label: 'Good' },
-  { min: 45, grade: 'C', color: COLORS.yellow, label: 'Average' },
-  { min: 0, grade: 'D', color: COLORS.red, label: 'Needs Work' },
+  { min: 90, grade: 'S', color: COLORS.orange, label: 'Dream Team' },
+  { min: 75, grade: 'A', color: COLORS.green, label: 'High-Performing' },
+  { min: 60, grade: 'B', color: COLORS.accent, label: 'Collaborative' },
+  { min: 45, grade: 'C', color: COLORS.yellow, label: 'Developing' },
+  { min: 0, grade: 'D', color: COLORS.red, label: 'Kick-off' },
 ];
 
 /** グレード計算の重み */
@@ -228,15 +228,15 @@ export function getGrade(tp: number, stab: number, spd: number): Grade {
   return GRADES.find(g => score >= g.min) ?? GRADES[GRADES.length - 1];
 }
 
-/** サマリーテキストを生成（タカ / ビジネスオーナー視点） */
+/** サマリーテキストを生成（タカ / ビジネスオーナー視点・チーム観点） */
 export function getSummaryText(tp: number, spd: number, debt: number, emergencySuccess: number, sc: number = CONFIG.sprintCount): string {
   if (tp >= 70) {
-    return `素晴らしい。${sc}スプリントを安定して完走し、プロダクトの価値を最大化した。${spd <= 6 ? '意思決定のスピードも申し分ない。' : ''}我々のビジネスに大きく貢献してくれた。`;
+    return `素晴らしい。${sc}スプリントを安定して完走し、チームとしてプロダクトの価値を最大化した。${spd <= 6 ? '意思決定のスピードも申し分ない。' : ''}このチームにプロダクトを任せて正解だった。`;
   }
   if (tp >= 50) {
-    return `基礎力はある。${debt > 20 ? '技術的負債の管理を改善すれば、プロダクトの品質がさらに上がるだろう。' : '精度を高めて、より大きな価値を生み出してほしい。'}期待しているぞ。`;
+    return `チームの基礎力はある。${debt > 20 ? '技術的負債の管理をチームで改善すれば、プロダクトの品質がさらに上がるだろう。' : 'チーム全体の精度を高めて、より大きな価値を生み出してほしい。'}期待しているぞ。`;
   }
-  return `${sc}スプリントを走り抜いたことは評価する。${emergencySuccess > 0 ? '緊急時の対応力は光るものがあった。' : '知識の幅を広げれば、次はもっと大きな成果を出せるはずだ。'}`;
+  return `${sc}スプリントをチームで走り抜いたことは評価する。${emergencySuccess > 0 ? 'チームとしての緊急対応力は光るものがあった。' : 'チーム全体で知識の幅を広げれば、次はもっと大きな成果を出せるはずだ。'}`;
 }
 
 /** 初期ゲーム状態 */

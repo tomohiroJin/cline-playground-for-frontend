@@ -1,7 +1,7 @@
 /**
  * 振り返り画面コンポーネント
  */
-import React from 'react';
+import React, { useState } from 'react';
 import { useKeys } from '../hooks';
 import { SprintSummary, GameStats, CategoryStats } from '../types';
 import {
@@ -51,6 +51,10 @@ interface RetrospectiveScreenProps {
   visible: boolean;
   /** 次へ進む時のコールバック */
   onNext: () => void;
+  /** 保存して中断する時のコールバック */
+  onSave?: () => void;
+  /** スプリント数 */
+  sprintCount?: number;
 }
 
 interface CategoryBarProps {
@@ -82,6 +86,9 @@ const CategoryBar: React.FC<CategoryBarProps> = ({ cats }) => {
 /**
  * 振り返り画面
  */
+/** トースト表示の自動消滅時間（ms） */
+const TOAST_DURATION = 2000;
+
 export const RetrospectiveScreen: React.FC<RetrospectiveScreenProps> = ({
   summary,
   log,
@@ -89,8 +96,19 @@ export const RetrospectiveScreen: React.FC<RetrospectiveScreenProps> = ({
   sprint,
   visible,
   onNext,
+  onSave,
+  sprintCount,
 }) => {
-  const isLast = sprint + 1 >= CONFIG.sprintCount;
+  const [showToast, setShowToast] = useState(false);
+  const isLast = sprint + 1 >= (sprintCount ?? CONFIG.sprintCount);
+
+  /** 保存して中断 */
+  const handleSave = () => {
+    if (!onSave) return;
+    onSave();
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), TOAST_DURATION);
+  };
   const emMessage = summary.hadEmergency
     ? `🚨 緊急対応 — ${summary.emergencySuccessCount > 0 ? '対応成功！' : '対応失敗…'}`
     : null;
@@ -216,8 +234,8 @@ export const RetrospectiveScreen: React.FC<RetrospectiveScreenProps> = ({
           正解: {summary.correctCount}/{summary.totalCount}
         </div>
 
-        {/* 次へボタン */}
-        <div style={{ textAlign: 'center' }}>
+        {/* ボタンエリア */}
+        <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
           <Button
             $color={isLast ? COLORS.green : COLORS.accent}
             onClick={onNext}
@@ -226,7 +244,36 @@ export const RetrospectiveScreen: React.FC<RetrospectiveScreenProps> = ({
             {isLast ? '▶ Release v1.0.0' : `▶ Sprint ${sprint + 2}`}
             <HotkeyHint>[Enter]</HotkeyHint>
           </Button>
+          {onSave && (
+            <Button
+              $color={COLORS.muted}
+              onClick={handleSave}
+              style={{ padding: '8px 24px', fontSize: 11 }}
+            >
+              💾 保存して中断
+            </Button>
+          )}
         </div>
+
+        {/* 保存完了トースト */}
+        {showToast && (
+          <div style={{
+            position: 'fixed',
+            bottom: 24,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: COLORS.green,
+            color: '#fff',
+            padding: '10px 24px',
+            borderRadius: 8,
+            fontSize: 13,
+            fontWeight: 700,
+            zIndex: 1000,
+            boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+          }}>
+            ✓ 保存しました
+          </div>
+        )}
       </Panel>
     </PageWrapper>
   );

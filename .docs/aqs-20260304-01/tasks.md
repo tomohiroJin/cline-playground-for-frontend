@@ -12,75 +12,75 @@
 ### 2. GOAL結果のTEAM化
 
 #### 2.1 型定義の変更
-- [ ] `types.ts` に `TeamType` インターフェース追加
-- [ ] `types.ts` の `SavedGameResult` を `teamTypeId` / `teamTypeName` に変更
-- [ ] `types.ts` の `GamePhase` に `'story'` を追加
+- [x] `types.ts` に `TeamType` インターフェース追加
+- [x] `types.ts` の `SavedGameResult` を `teamTypeId` / `teamTypeName` に変更
+- [x] `types.ts` の `GamePhase` に `'story'` を追加
 
 #### 2.2 チームタイプ分類ロジック
-- [ ] `team-classifier.ts` を新規作成（6種類のチームタイプ定義＋分類ロジック）
-- [ ] `constants.ts` の `ENGINEER_TYPES` → `TEAM_TYPES` に変更
-- [ ] `constants.ts` のグレードラベル変更（Legendary → Dream Team 等）
-- [ ] `constants.ts` の `getSummaryText` をチーム視点のフィードバックに変更
-- [ ] `engineer-classifier.ts` の参照を `team-classifier.ts` に変更
-- [ ] 旧 `engineer-classifier.ts` の削除 or エイリアス化
+- [x] `team-classifier.ts` を新規作成（6種類のチームタイプ定義＋分類ロジック）
+- [x] `constants.ts` の `ENGINEER_TYPES` → `TEAM_TYPES` に変更
+- [x] `constants.ts` のグレードラベル変更（Legendary → Dream Team 等）
+- [x] `constants.ts` の `getSummaryText` をチーム視点のフィードバックに変更
+- [x] `engineer-classifier.ts` の参照を `team-classifier.ts` に変更
+- [x] 旧 `engineer-classifier.ts` の削除 or エイリアス化
 
 #### 2.3 ResultScreen のTEAM化
-- [ ] `ResultScreen.tsx` のヘッダーテキスト変更（「エンジニアタイプ」→「チームの成熟度」）
-- [ ] `ResultScreen.tsx` のチームタイプ表示（名前、絵文字、説明文、フィードバック）
-- [ ] `ResultScreen.tsx` のレーダーチャート軸ラベル変更
-- [ ] `ResultScreen.tsx` のタカのフィードバックテキスト更新
+- [x] `ResultScreen.tsx` のヘッダーテキスト変更（「エンジニアタイプ」→「チームの成熟度」）
+- [x] `ResultScreen.tsx` のチームタイプ表示（名前、絵文字、説明文、フィードバック）
+- [x] `ResultScreen.tsx` のレーダーチャート軸ラベル変更
+- [x] `ResultScreen.tsx` のタカのフィードバックテキスト更新
 
 #### 2.4 画像参照の変更
-- [ ] `images.ts` のチームタイプ画像キー変更（`type_stable` → `type_synergy` 等）
+- [x] `images.ts` のチームタイプ画像キー変更（`type_stable` → `type_synergy` 等）
 - [ ] チームタイプ画像ファイルの追加/差し替え（ユーザー作業: 生成→配置）
 
 #### 2.5 結果保存の更新
-- [ ] `result-storage.ts` を `TeamType` 対応に更新
-- [ ] 旧データ（`engineerTypeId`）の後方互換性処理追加
+- [x] `result-storage.ts` を `TeamType` 対応に更新
+- [x] 旧データ（`engineerTypeId`）の後方互換性処理追加
 
 #### 2.6 テスト
-- [ ] `team-classifier.ts` のユニットテスト作成（6タイプ全てのケース）
-- [ ] 既存の `engineer-classifier` テストをTEAM版に移行
-- [ ] `ResultScreen.tsx` のコンポーネントテスト更新
-- [ ] `result-storage.ts` のテスト更新（後方互換性含む）
-- [ ] `npm test` で全テストがパス
+- [x] `team-classifier.ts` のユニットテスト作成（6タイプ全てのケース）
+- [x] 既存の `engineer-classifier` テストをTEAM版に移行
+- [x] `ResultScreen.tsx` のコンポーネントテスト更新
+- [x] `result-storage.ts` のテスト更新（後方互換性含む）
+- [x] `npm test` で全テストがパス
 
 ### 3. スプリント切れ目のSAVE/LOAD機能
 
 #### 3.1 セーブマネージャー作成
-- [ ] `types.ts` に `SaveState` インターフェース追加
-- [ ] `save-manager.ts` を新規作成
-  - [ ] `saveGameState()` 関数
-  - [ ] `loadGameState()` 関数
-  - [ ] `deleteSaveState()` 関数
-  - [ ] `hasSaveState()` 関数
-  - [ ] スキーマバージョン管理
-  - [ ] エラーハンドリング（破損データ、localStorage不可）
+- [x] `types.ts` に `SaveState` インターフェース追加
+- [x] `save-manager.ts` を新規作成
+  - [x] `saveGameState()` 関数
+  - [x] `loadGameState()` 関数
+  - [x] `deleteSaveState()` 関数
+  - [x] `hasSaveState()` 関数
+  - [x] スキーマバージョン管理
+  - [x] エラーハンドリング（破損データ、localStorage不可）
 
 #### 3.2 RetrospectiveScreen に保存ボタン追加
-- [ ] 「保存して中断」ボタンの追加
-- [ ] ボタン押下時のセーブ処理実装
-- [ ] 保存完了トースト表示（2秒で自動消滅）
-- [ ] セーブ後のタイトル画面遷移
+- [x] 「保存して中断」ボタンの追加
+- [x] ボタン押下時のセーブ処理実装
+- [x] 保存完了トースト表示（2秒で自動消滅）
+- [x] セーブ後のタイトル画面遷移
 
 #### 3.3 TitleScreen に「続きから」ボタン追加
-- [ ] セーブデータ有無のチェックロジック
-- [ ] 「続きから」ボタンの表示（保存日時・進捗表示付き）
-- [ ] ロード処理の実装（次のスプリントから再開）
-- [ ] 新規ゲーム開始時のセーブデータ上書き確認ダイアログ
+- [x] セーブデータ有無のチェックロジック
+- [x] 「続きから」ボタンの表示（保存日時・進捗表示付き）
+- [x] ロード処理の実装（次のスプリントから再開）
+- [x] 新規ゲーム開始時のセーブデータ上書き確認ダイアログ
 
 #### 3.4 useGame フックの拡張
-- [ ] セーブ状態からの復元ロジック追加
-- [ ] `usedQuestions` の `Set` ⇔ 配列変換処理
+- [x] セーブ状態からの復元ロジック追加
+- [x] `usedQuestions` の `Set` ⇔ 配列変換処理
 
 #### 3.5 テスト
-- [ ] `save-manager.ts` のユニットテスト作成
-  - [ ] 正常系: 保存・読み込み・削除
-  - [ ] 異常系: 破損データ、localStorage不可
-  - [ ] バージョンマイグレーション
-- [ ] `TitleScreen.tsx` のコンポーネントテスト更新（「続きから」ボタン）
-- [ ] `RetrospectiveScreen.tsx` のコンポーネントテスト更新（保存ボタン）
-- [ ] `npm test` で全テストがパス
+- [x] `save-manager.ts` のユニットテスト作成
+  - [x] 正常系: 保存・読み込み・削除
+  - [x] 異常系: 破損データ、localStorage不可
+  - [x] バージョンマイグレーション
+- [x] `TitleScreen.tsx` のコンポーネントテスト更新（「続きから」ボタン）
+- [x] `RetrospectiveScreen.tsx` のコンポーネントテスト更新（保存ボタン）
+- [x] `npm test` で全テストがパス
 
 ---
 
