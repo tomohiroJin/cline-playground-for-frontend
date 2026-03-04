@@ -16,14 +16,16 @@ import {
   StudyScreen,
   StudyResultScreen,
   GuideScreen,
+  StoryScreen,
   CONFIG,
 } from '../features/agile-quiz-sugoroku';
 import { createDefaultAudioActions } from '../features/agile-quiz-sugoroku/audio/audio-actions';
-import { SprintSummary, GamePhase, SaveState } from '../features/agile-quiz-sugoroku/types';
+import { SprintSummary, SaveState, StoryEntry } from '../features/agile-quiz-sugoroku/types';
 import { saveGameResult } from '../features/agile-quiz-sugoroku/result-storage';
 import { saveGameState } from '../features/agile-quiz-sugoroku/save-manager';
 import { getGrade } from '../features/agile-quiz-sugoroku/constants';
 import { classifyTeamType } from '../features/agile-quiz-sugoroku/team-classifier';
+import { getStoriesForSprintCount } from '../features/agile-quiz-sugoroku/story-data';
 
 const audio = createDefaultAudioActions();
 
@@ -50,16 +52,40 @@ const AgileQuizSugorokuPage: React.FC = () => {
   // スプリント数（タイトル画面で選択、デフォルトはCONFIG.sprintCount）
   const [sprintCount, setSprintCount] = useState<number>(CONFIG.sprintCount);
 
+  // ストーリー関連の状態
+  const [stories, setStories] = useState<StoryEntry[]>([]);
+  const [currentStory, setCurrentStory] = useState<StoryEntry | null>(null);
+
   // 勉強会モード用の選択済みタグを保持
   const [studySelectedTags, setStudySelectedTags] = useState<string[]>([]);
   const [studyLimit, setStudyLimit] = useState(10);
 
+  /** スプリント番号に対応するストーリーがあればストーリーフェーズへ遷移 */
+  const transitionToStoryOrSprint = (sprintIndex: number, storyList: StoryEntry[]) => {
+    const story = storyList[sprintIndex];
+    if (story) {
+      setCurrentStory(story);
+      game.setPhase('story');
+    } else {
+      game.setPhase('sprint-start');
+    }
+    fade.trigger();
+  };
+
   /** ゲーム開始 */
   const handleStart = (selectedSprintCount: number) => {
     setSprintCount(selectedSprintCount);
+    const storyList = getStoriesForSprintCount(selectedSprintCount);
+    setStories(storyList);
     audio.onInit();
     audio.onStart();
     game.init();
+    transitionToStoryOrSprint(0, storyList);
+  };
+
+  /** ストーリー完了/スキップ → スプリント開始画面へ */
+  const handleStoryComplete = () => {
+    setCurrentStory(null);
     game.setPhase('sprint-start');
     fade.trigger();
   };
@@ -141,15 +167,17 @@ const AgileQuizSugorokuPage: React.FC = () => {
       fade.trigger();
     } else {
       game.setSprint(nextSprint);
-      game.setPhase('sprint-start');
-      fade.trigger();
+      transitionToStoryOrSprint(nextSprint, stories);
     }
   };
 
   /** セーブデータから再開 */
   const handleResume = (saveState: SaveState) => {
     setSprintCount(saveState.sprintCount);
+    const storyList = getStoriesForSprintCount(saveState.sprintCount);
+    setStories(storyList);
     game.restoreFromSave(saveState);
+    // セーブデータ復元時はストーリーをスキップしてスプリント開始画面へ
     game.setPhase('sprint-start');
     fade.trigger();
   };
@@ -237,6 +265,15 @@ const AgileQuizSugorokuPage: React.FC = () => {
           onResume={handleResume}
           onStudy={handleStudyMode}
           onGuide={handleGuide}
+        />
+      )}
+
+      {game.phase === 'story' && currentStory && (
+        <StoryScreen
+          sprintNumber={game.sprint + 1}
+          storyData={currentStory}
+          onComplete={handleStoryComplete}
+          onSkip={handleStoryComplete}
         />
       )}
 

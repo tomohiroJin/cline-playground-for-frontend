@@ -188,6 +188,28 @@ export interface SaveState {
   incorrectQuestions: AnswerResultWithDetail[];
 }
 
+/** ストーリーデータ */
+export interface StoryEntry {
+  /** 対応するスプリント番号（1始まり） */
+  sprintNumber: number;
+  /** ストーリータイトル */
+  title: string;
+  /** 語り手キャラクターID */
+  narratorId: string;
+  /** テキスト行 */
+  lines: StoryLine[];
+  /** 対応する画像キー */
+  imageKey: string;
+}
+
+/** ストーリーの1行 */
+export interface StoryLine {
+  /** 発言者キャラクターID（ナレーションの場合はundefined） */
+  speakerId?: string;
+  /** テキスト内容 */
+  text: string;
+}
+
 /** 不正解問題の保存用 */
 export interface SavedIncorrectQuestion {
   questionText: string;

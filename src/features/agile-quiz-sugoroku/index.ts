@@ -31,6 +31,9 @@ export * from './result-storage';
 // セーブ/ロード
 export * from './save-manager';
 
+// ストーリーデータ
+export { STORY_ENTRIES, getStoriesForSprintCount } from './story-data';
+
 // 勉強会モード
 export * from './study-question-pool';
 
