@@ -1,6 +1,5 @@
 import styled from 'styled-components';
 import { GlassCard } from '../components/atoms/GlassCard';
-import puzzleCardBg from '../assets/images/puzzle_card_bg.webp';
 
 export const PageContainer = styled.div`
   position: relative;
@@ -122,6 +121,16 @@ export const HeroSubtitle = styled.p`
   color: var(--text-secondary);
   max-width: 600px;
   margin: 0 auto;
+  min-height: 3.6em;
+`;
+
+/** ゲーム総数カウンター */
+export const GameCounter = styled.div`
+  margin-top: 16px;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--accent-color);
+  letter-spacing: 0.05em;
 `;
 
 export const BentoGrid = styled.section`
@@ -148,12 +157,10 @@ export const GameCardContainer = styled(GlassCard)`
   }
 `;
 
-export const CardImageArea = styled.div<{ $bgImage?: string; $customBg?: string }>`
+export const CardImageArea = styled.div`
   height: 220px;
-  background: ${props =>
-    props.$bgImage ? `url(${props.$bgImage})` : props.$customBg || `url(${puzzleCardBg})`};
-  background-size: cover;
-  background-position: center;
+  aspect-ratio: 16 / 9;
+  background-color: #1a1a2e;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -179,6 +186,17 @@ export const CardImageArea = styled.div<{ $bgImage?: string; $customBg?: string 
     opacity: 1;
     transform: translate(-50%, -50%) scale(1.5);
   }
+`;
+
+/** LCP 対応: background-image → <img> に変更し fetchpriority="high" を付与可能にする */
+export const CardImage = styled.img`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
 `;
 
 export const CardContent = styled.div`
