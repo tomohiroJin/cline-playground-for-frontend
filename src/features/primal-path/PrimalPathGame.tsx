@@ -34,7 +34,7 @@ import { ChallengeScreen } from './components/ChallengeScreen';
 
 function GameInner() {
   const { state, dispatch } = useGameState();
-  const { init: initAudio, playSfx, playBgm, stopBgm, setBgmVolume, setSfxVolume } = useAudio();
+  const { init: initAudio, playSfx, playBgm, stopBgm, setBgmVolume, setSfxVolume, cleanup: cleanupAudio } = useAudio();
   const { overlay, showOverlay } = useOverlay();
   const { loaded } = usePersistence(state, dispatch);
 
@@ -57,6 +57,13 @@ function GameInner() {
     document.addEventListener('click', handler, { once: true });
     return () => document.removeEventListener('click', handler);
   }, [initAudio]);
+
+  // アンマウント時に音声リソースを解放（ページ遷移時の BGM 停止バグ修正）
+  useEffect(() => {
+    return () => {
+      cleanupAudio();
+    };
+  }, [cleanupAudio]);
 
   // メタ進行データの読込（初期化時）
   useEffect(() => {

@@ -5,7 +5,10 @@ import LoadingSpinner from './components/atoms/LoadingSpinner';
 import ErrorBoundary from './components/ErrorBoundary';
 import { GamePageWrapper } from './components/organisms/GamePageWrapper';
 import { useDocumentTitle } from './hooks/useDocumentTitle';
+import { useMetaDescription } from './hooks/useMetaDescription';
+import { useOgpUpdate } from './hooks/useOgpUpdate';
 import { useFullScreenRoute } from './hooks/useFullScreenRoute';
+import { useShrinkHeader } from './hooks/useShrinkHeader';
 
 import GameListPage from './pages/GameListPage';
 import { GlobalStyle } from './styles/GlobalStyle';
@@ -50,30 +53,49 @@ const AppContainer = styled.div`
   margin: 0 auto;
 `;
 
-// ヘッダーコンポーネント (Glassmorphism)
-const Header = styled.header`
-  text-align: center;
-  padding: 20px 0;
+// ヘッダーコンポーネント (Glassmorphism + スクロール縮小対応)
+const Header = styled.header<{ $isScrolled: boolean }>`
+  padding: ${({ $isScrolled }) => ($isScrolled ? '8px 24px' : '16px 24px')};
   position: sticky;
   top: 0;
   z-index: 100;
-  background: var(--glass-bg);
+  background: ${({ $isScrolled }) =>
+    $isScrolled ? 'rgba(255, 255, 255, 0.08)' : 'var(--glass-bg)'};
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
   margin-bottom: 0;
+  transition: padding 0.3s ease, background 0.3s ease;
 `;
 
-// タイトルコンポーネント
-const Title = styled.h1`
-  font-size: 1.5rem;
+// ヘッダー内ナビゲーションレイアウト
+const HeaderNav = styled.nav`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+`;
+
+// ヘッダー左側: ロゴ + サイト名
+const HeaderLeft = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
+// ロゴ（h1 タグ、GP モノグラム）
+const Logo = styled.h1<{ $isScrolled: boolean }>`
+  font-size: ${({ $isScrolled }) => ($isScrolled ? '1.2rem' : '1.4rem')};
   margin: 0;
   font-weight: 800;
-  letter-spacing: -0.05em;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 0.05em;
+  transition: font-size 0.3s ease;
 
   a {
     text-decoration: none;
-    background: linear-gradient(to right, #fff, #bbb);
+    background: linear-gradient(135deg, #00d2ff, #a855f7);
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -85,7 +107,55 @@ const Title = styled.h1`
   }
 `;
 
-// フッターコンポーネント（Glassmorphism）
+// サイト名
+const SiteName = styled.span`
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+
+  @media (max-width: 767px) {
+    display: none;
+  }
+`;
+
+// ヘッダー右側: ナビリンク
+const HeaderRight = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 16px;
+`;
+
+// ヘッダーナビリンク
+const HeaderLink = styled(Link)`
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  position: relative;
+  transition: color 0.2s;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background: var(--accent-color);
+    transition: width 0.3s ease;
+  }
+
+  &:hover {
+    color: var(--accent-color);
+  }
+
+  &:hover::after {
+    width: 100%;
+  }
+`;
+
+// フッターコンポーネント（Glassmorphism + パーティクルライン装飾）
 const Footer = styled.footer`
   margin-top: auto;
   text-align: center;
@@ -94,7 +164,39 @@ const Footer = styled.footer`
   font-size: 0.8rem;
   background: var(--glass-bg);
   backdrop-filter: blur(10px);
-  border-top: 1px solid var(--glass-border);
+  position: relative;
+
+  /* パーティクルライン装飾: 光の粒が左→右に流れるアニメーション */
+  &::before {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--accent-color) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: particleLine 3s linear infinite;
+  }
+
+  @keyframes particleLine {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &::before {
+      animation: none;
+      background: var(--glass-border);
+      background-size: 100% 100%;
+    }
+  }
 `;
 
 // フッター内ナビゲーション（上段: サイト内リンク）
@@ -188,9 +290,12 @@ const FloatingHomeButton = styled.button`
 const App: React.FC = () => {
   const isFullScreen = useFullScreenRoute();
   const navigate = useNavigate();
+  const { isScrolled } = useShrinkHeader();
 
-  // 動的タイトル設定
+  // 動的タイトル・メタ・OGP 設定
   useDocumentTitle();
+  useMetaDescription();
+  useOgpUpdate();
 
   // プレミアムテーマを適用
   useEffect(() => {
@@ -205,12 +310,18 @@ const App: React.FC = () => {
       <GlobalStyle />
       <AppContainer>
         {!isFullScreen && (
-          <Header>
-            <nav aria-label="Global Navigation">
-              <Title>
-                <Link to="/">Game Platform</Link>
-              </Title>
-            </nav>
+          <Header $isScrolled={isScrolled}>
+            <HeaderNav aria-label="Global Navigation">
+              <HeaderLeft>
+                <Logo $isScrolled={isScrolled}>
+                  <Link to="/">GP</Link>
+                </Logo>
+                <SiteName>niku9</SiteName>
+              </HeaderLeft>
+              <HeaderRight>
+                <HeaderLink to="/about">About</HeaderLink>
+              </HeaderRight>
+            </HeaderNav>
           </Header>
         )}
 
@@ -227,7 +338,7 @@ const App: React.FC = () => {
         <ErrorBoundary>
           <Suspense
             fallback={
-              <div style={{ display: 'flex', justifyContent: 'center', padding: '50px' }}>
+              <div className="page-loading" style={{ display: 'flex', justifyContent: 'center', padding: '50px' }}>
                 <LoadingSpinner size="large" message="Loading game..." />
               </div>
             }

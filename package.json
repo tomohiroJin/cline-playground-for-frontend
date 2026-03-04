@@ -4,7 +4,7 @@
   "scripts": {
     "start": "webpack serve",
     "build": "NODE_ENV=production webpack --mode production",
-    "preview": "serve dist -s",
+    "preview": "serve dist -s -l 3001",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",

@@ -91,7 +91,7 @@ describe('useScrollReveal', () => {
       expect(child2.style.opacity).toBe('0');
     });
 
-    it('各子要素に transitionDelay が index × 0.08s で設定される', () => {
+    it('各子要素に transitionDelay が index × 0.1s で設定される', () => {
       // Arrange & Act
       const { getByTestId } = render(
         React.createElement(TestComponent, { childCount: 5 })
@@ -99,10 +99,10 @@ describe('useScrollReveal', () => {
 
       // Assert
       expect(getByTestId('child-0').style.transitionDelay).toBe('0s');
-      expect(getByTestId('child-1').style.transitionDelay).toBe('0.08s');
-      expect(getByTestId('child-2').style.transitionDelay).toBe('0.16s');
-      expect(getByTestId('child-3').style.transitionDelay).toBe('0.24s');
-      expect(getByTestId('child-4').style.transitionDelay).toBe('0.32s');
+      expect(getByTestId('child-1').style.transitionDelay).toBe('0.1s');
+      expect(getByTestId('child-2').style.transitionDelay).toBe('0.2s');
+      expect(getByTestId('child-3').style.transitionDelay).toBe('0.3s');
+      expect(getByTestId('child-4').style.transitionDelay).toBe('0.4s');
     });
 
     it('子要素が IntersectionObserver で監視される', () => {

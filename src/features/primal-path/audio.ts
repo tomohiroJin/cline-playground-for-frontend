@@ -87,6 +87,14 @@ export const AudioEngine = Object.freeze({
   },
   /** 現在の SFX 音量を返す */
   getSfxVolume: (): number => sfxVolume,
+  /** 全音声リソースを解放する（ページ遷移時のクリーンアップ用） */
+  cleanup: (): void => {
+    BgmEngine.stop();
+    if (ac) {
+      try { ac.close(); } catch { /* 既にクローズ済み */ }
+      ac = null;
+    }
+  },
 });
 
 /* ===== BGM エンジン ===== */

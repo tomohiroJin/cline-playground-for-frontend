@@ -30,13 +30,22 @@ Object.defineProperty(window, 'IntersectionObserver', {
   value: MockIntersectionObserver,
 });
 
-// 画像インポートのモック
+// ファーストビュー画像のモック（static import）
 jest.mock('../assets/images/puzzle_card_bg.webp', () => 'puzzle_card_bg.webp');
 jest.mock('../assets/images/air_hockey_card_bg.webp', () => 'air_hockey_card_bg.webp');
+jest.mock('../assets/images/racing_card_bg.webp', () => 'racing_card_bg.webp');
+
+// 遅延読み込み画像のモック（dynamic import）
+jest.mock('../assets/images/falling_shooter_card_bg.webp', () => 'falling_shooter_card_bg.webp');
+jest.mock('../assets/images/maze_horror_card_bg.webp', () => 'maze_horror_card_bg.webp');
+jest.mock('../assets/images/deep_sea_shooter_card_bg.webp', () => 'deep_sea_shooter_card_bg.webp');
 jest.mock('../assets/images/non_brake_descent_card_bg.webp', () => 'non_brake_descent_card_bg.webp');
 jest.mock('../assets/images/ipne_card_bg.webp', () => 'ipne_card_bg.webp');
+jest.mock('../assets/images/agile_quiz_sugoroku_card_bg.webp', () => 'agile_quiz_sugoroku_card_bg.webp');
 jest.mock('../assets/images/labyrinth_echo_card_bg.webp', () => 'labyrinth_echo_card_bg.webp');
+jest.mock('../assets/images/risk_lcd_card_bg.webp', () => 'risk_lcd_card_bg.webp');
 jest.mock('../assets/images/keys_and_arms_card_bg.webp', () => 'keys_and_arms_card_bg.webp');
+jest.mock('../assets/images/primal_path_card_bg.webp', () => 'primal_path_card_bg.webp');
 
 describe('GameListPage', () => {
   it('ゲームリストページが正しくレンダリングされること', () => {
@@ -46,9 +55,10 @@ describe('GameListPage', () => {
       </MemoryRouter>
     );
 
-    // タイトルと説明文が表示されていることを確認
+    // タイトルとタイプライターが表示されていることを確認
     expect(screen.getByText('Game Platform')).toBeInTheDocument();
-    expect(screen.getByText(/厳選されたインタラクティブなゲーム体験/)).toBeInTheDocument();
+    // TypeWriter コンポーネント経由で表示されるため data-testid で確認
+    expect(screen.getByTestId('typewriter')).toBeInTheDocument();
 
     // プレイボタンが表示されていることを確認 (13ゲーム)
     expect(screen.getAllByText(/Play Now/)).toHaveLength(13);
