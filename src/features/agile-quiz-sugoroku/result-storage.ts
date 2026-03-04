@@ -27,7 +27,7 @@ const ENGINEER_TO_TEAM_NAME: Record<string, string> = {
 
 /** 後方互換性: 旧データをチームタイプに変換 */
 function migrateResult(data: Record<string, unknown>): SavedGameResult {
-  const result = data as SavedGameResult;
+  const result = data as unknown as SavedGameResult;
 
   // 旧フォーマット（engineerTypeId のみ存在）からの移行
   if (!result.teamTypeId && result.engineerTypeId) {
