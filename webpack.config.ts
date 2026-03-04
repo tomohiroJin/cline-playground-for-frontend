@@ -18,8 +18,8 @@ const isDev = process.argv.includes('--mode')
   : true;
 
 const config: Configuration = {
-  mode: 'development',
-  devtool: process.env.NODE_ENV === 'production' ? false : 'source-map',
+  mode: isDev ? 'development' : 'production',
+  devtool: isDev ? 'source-map' : false,
   entry: './src/index.tsx',
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -67,6 +67,18 @@ const config: Configuration = {
   optimization: {
     splitChunks: {
       chunks: 'all',
+      cacheGroups: {
+        react: {
+          test: /[\\/]node_modules[\\/](react|react-dom|react-router-dom)[\\/]/,
+          name: 'vendor-react',
+          priority: 20,
+        },
+        vendors: {
+          test: /[\\/]node_modules[\\/]/,
+          name: 'vendors',
+          priority: 10,
+        },
+      },
     },
     runtimeChunk: isDev ? false : 'single',
   },
