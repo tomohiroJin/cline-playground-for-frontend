@@ -38,32 +38,32 @@
 
 #### テスト
 - [x] `npm test` で全テストがパス（181スイート / 2541テスト）
-- [ ] ブラウザで GuideScreen にペンギンが表示される（emoji フォールバック確認）
+- [x] ブラウザで GuideScreen にペンギンが表示される（emoji フォールバック確認）
 
 ### 5. 全キャラクター画像の統一リニューアル
 
 #### 画像生成（ユーザー作業）
-- [ ] 統一スタイルガイドラインの確認（spec.md セクション4 参照）
-- [ ] `aqs_char_taka.webp` - タカ個別画像を生成
-- [ ] `aqs_char_penguin.webp` - ペンギン個別画像を生成（新規）
-- [ ] `aqs_char_inu.webp` - イヌ個別画像を生成
-- [ ] `aqs_char_neko.webp` - ネコ個別画像を生成
-- [ ] `aqs_char_usagi.webp` - ウサギ個別画像を生成
-- [ ] `aqs_char_team.webp` - チームバナー（5キャラ横並び）を生成
-- [ ] `aqs_char_group.webp` - グループ集合画像を生成
-- [ ] `aqs_title.webp` - タイトル背景画像を生成
+- [x] 統一スタイルガイドラインの確認（spec.md セクション4 参照）
+- [x] `aqs_char_taka.webp` - タカ個別画像を生成
+- [x] `aqs_char_penguin.webp` - ペンギン個別画像を生成（新規）
+- [x] `aqs_char_inu.webp` - イヌ個別画像を生成
+- [x] `aqs_char_neko.webp` - ネコ個別画像を生成
+- [x] `aqs_char_usagi.webp` - ウサギ個別画像を生成
+- [x] `aqs_char_team.webp` - チームバナー（5キャラ横並び）を生成
+- [x] `aqs_char_group.webp` - グループ集合画像を生成
+- [x] `aqs_title.webp` - タイトル背景画像を生成
 
 #### 画像配置
-- [ ] 生成した画像を `src/assets/images/` に配置
-- [ ] ブラウザで各画面の画像表示を目視確認
-  - [ ] GuideScreen: チームバナーがつぶれずに表示される
-  - [ ] GuideScreen: 5キャラ全員が統一デザインで表示される
-  - [ ] ResultScreen: タカアバターが新デザインで表示される
-  - [ ] TitleScreen: 背景画像が5キャラ統一デザインで表示される
+- [x] 生成した画像を `src/assets/images/` に配置
+- [x] ブラウザで各画面の画像表示を目視確認
+  - [x] GuideScreen: チームバナーがつぶれずに表示される
+  - [x] GuideScreen: 5キャラ全員が統一デザインで表示される
+  - [x] ResultScreen: タカアバターが新デザインで表示される
+  - [x] TitleScreen: 背景画像が5キャラ統一デザインで表示される
 
 ### 6. 最終検証
-- [ ] `npm test` で全テストがパス
-- [ ] 全画面の目視確認完了
+- [x] `npm test` で全テストがパス
+- [x] 全画面の目視確認完了
 
 ---
 
