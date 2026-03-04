@@ -25,16 +25,15 @@ const ENGINEER_TO_TEAM_NAME: Record<string, string> = {
   '無難に回すエンジニア': '結成したてのチーム',
 };
 
-/** 後方互換性: 旧データをチームタイプに変換 */
-function migrateResult(data: Record<string, unknown>): SavedGameResult {
-  const result = data as unknown as SavedGameResult;
-
-  // 旧フォーマット（engineerTypeId のみ存在）からの移行
+/** 後方互換性: 旧フォーマットの teamTypeId/Name を補完 */
+function migrateResult(result: SavedGameResult): SavedGameResult {
   if (!result.teamTypeId && result.engineerTypeId) {
-    result.teamTypeId = ENGINEER_TO_TEAM_ID[result.engineerTypeId] ?? 'forming';
-    result.teamTypeName = ENGINEER_TO_TEAM_NAME[result.engineerTypeName ?? ''] ?? '結成したてのチーム';
+    return {
+      ...result,
+      teamTypeId: ENGINEER_TO_TEAM_ID[result.engineerTypeId] ?? 'forming',
+      teamTypeName: ENGINEER_TO_TEAM_NAME[result.engineerTypeName ?? ''] ?? '結成したてのチーム',
+    };
   }
-
   return result;
 }
 
@@ -52,7 +51,8 @@ export function loadGameResult(): SavedGameResult | undefined {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
     if (!data) return undefined;
-    const parsed = JSON.parse(data) as Record<string, unknown>;
+    // 自アプリが保存した JSON を読み戻すため SavedGameResult として解釈
+    const parsed: SavedGameResult = JSON.parse(data);
     return migrateResult(parsed);
   } catch {
     return undefined;
