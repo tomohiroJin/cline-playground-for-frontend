@@ -434,6 +434,25 @@ describe('RetrospectiveScreen', () => {
     );
     expect(screen.getByText(/対応失敗/)).toBeInTheDocument();
   });
+
+  it('onSaveが渡されると保存ボタンが表示される', () => {
+    const onSave = jest.fn();
+    render(<RetrospectiveScreen {...defaultProps} onSave={onSave} />);
+    expect(screen.getByText(/保存して中断/)).toBeInTheDocument();
+  });
+
+  it('onSaveが未定義の場合は保存ボタンが非表示', () => {
+    render(<RetrospectiveScreen {...defaultProps} />);
+    expect(screen.queryByText(/保存して中断/)).not.toBeInTheDocument();
+  });
+
+  it('保存ボタンクリックでonSaveが呼ばれトーストが表示される', () => {
+    const onSave = jest.fn();
+    render(<RetrospectiveScreen {...defaultProps} onSave={onSave} />);
+    fireEvent.click(screen.getByText(/保存して中断/));
+    expect(onSave).toHaveBeenCalledTimes(1);
+    expect(screen.getByText(/保存しました/)).toBeInTheDocument();
+  });
 });
 
 /* ================================
@@ -454,9 +473,9 @@ describe('ResultScreen', () => {
     expect(screen.getByText('Release v1.0.0')).toBeInTheDocument();
   });
 
-  it('エンジニアタイプが表示される', () => {
+  it('チームタイプが表示される', () => {
     render(<ResultScreen {...defaultProps} />);
-    expect(screen.getByText('YOUR ENGINEER TYPE')).toBeInTheDocument();
+    expect(screen.getByText('TEAM MATURITY')).toBeInTheDocument();
   });
 
   it('統計が表示される', () => {

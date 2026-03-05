@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { useKeys } from '../hooks';
 import { GameEvent, Question, GameStats } from '../types';
-import { CONFIG, COLORS, OPTION_LABELS, PHASE_GENRE_MAP } from '../constants';
+import { CONFIG, COLORS, OPTION_LABELS, PHASE_GENRE_MAP, EVENT_BACKGROUND_MAP } from '../constants';
 import { TAG_MAP } from '../questions/tag-master';
 import { AQS_IMAGES } from '../images';
 import {
@@ -92,7 +92,12 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
 }) => {
   const [hoveredOption, setHoveredOption] = useState<number | null>(null);
   const [imgError, setImgError] = useState(false);
+  const [bgError, setBgError] = useState(false);
   const event = events[eventIndex];
+
+  // 背景画像の取得
+  const bgKey = EVENT_BACKGROUND_MAP[event.id] as keyof typeof AQS_IMAGES.backgrounds | undefined;
+  const bgImage = bgKey ? AQS_IMAGES.backgrounds[bgKey] : undefined;
   const isEmergency = event.id === 'emergency';
   const answered = selectedAnswer !== null;
   const comboShow = stats.combo >= 2 && !answered;
@@ -134,6 +139,25 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
 
   return (
     <PageWrapper>
+      {/* 背景画像 */}
+      {bgImage && !bgError && (
+        <img
+          src={bgImage}
+          alt=""
+          onError={() => setBgError(true)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            opacity: 0.15,
+            transition: 'opacity 0.5s ease-in-out',
+            zIndex: 0,
+            pointerEvents: 'none',
+          }}
+        />
+      )}
       <Scanlines />
       <Panel $visible={visible}>
         {/* ヘッダー情報 */}

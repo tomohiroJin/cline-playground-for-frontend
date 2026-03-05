@@ -33,9 +33,9 @@ describe('result-storage', () => {
     ],
     sprintLog: [],
     grade: 'A',
-    gradeLabel: 'Excellent',
-    engineerTypeId: 'stable',
-    engineerTypeName: '安定運用型エンジニア',
+    gradeLabel: 'High-Performing',
+    teamTypeId: 'synergy',
+    teamTypeName: 'シナジーチーム',
     timestamp: Date.now(),
   };
 
@@ -54,28 +54,98 @@ describe('result-storage', () => {
     it('保存されたゲーム結果を読み込む', () => {
       saveGameResult(mockResult);
       const result = loadGameResult();
-      expect(result).not.toBeNull();
+      expect(result).toBeDefined();
       expect(result!.totalCorrect).toBe(15);
       expect(result!.correctRate).toBe(71);
-      expect(result!.engineerTypeName).toBe('安定運用型エンジニア');
+      expect(result!.teamTypeName).toBe('シナジーチーム');
     });
 
-    it('保存データがない場合はnullを返す', () => {
-      expect(loadGameResult()).toBeNull();
+    it('保存データがない場合はundefinedを返す', () => {
+      expect(loadGameResult()).toBeUndefined();
     });
 
-    it('不正なデータの場合はnullを返す', () => {
+    it('不正なデータの場合はundefinedを返す', () => {
       localStorage.setItem('aqs_last_result', 'invalid json');
-      expect(loadGameResult()).toBeNull();
+      expect(loadGameResult()).toBeUndefined();
     });
   });
 
   describe('clearGameResult', () => {
     it('ゲーム結果を削除する', () => {
       saveGameResult(mockResult);
-      expect(loadGameResult()).not.toBeNull();
+      expect(loadGameResult()).toBeDefined();
       clearGameResult();
-      expect(loadGameResult()).toBeNull();
+      expect(loadGameResult()).toBeUndefined();
+    });
+  });
+
+  // ── 後方互換性テスト ──────────────────────────────
+
+  describe('後方互換性: 旧エンジニアタイプデータの移行', () => {
+    it('engineerTypeIdをteamTypeIdに変換する', () => {
+      const oldData = {
+        ...mockResult,
+        engineerTypeId: 'stable',
+        engineerTypeName: '安定運用型エンジニア',
+        teamTypeId: undefined,
+        teamTypeName: undefined,
+      };
+      // teamTypeId を削除して旧フォーマットにする
+      const { teamTypeId: _tid, teamTypeName: _tn, ...rest } = oldData;
+      localStorage.setItem('aqs_last_result', JSON.stringify(rest));
+
+      const result = loadGameResult();
+      expect(result).toBeDefined();
+      expect(result!.teamTypeId).toBe('synergy');
+      expect(result!.teamTypeName).toBe('シナジーチーム');
+    });
+
+    it('全エンジニアタイプの移行マッピング', () => {
+      const mappings = [
+        { oldId: 'stable', oldName: '安定運用型エンジニア', newId: 'synergy', newName: 'シナジーチーム' },
+        { oldId: 'firefighter', oldName: '火消し職人エンジニア', newId: 'resilient', newName: 'レジリエントチーム' },
+        { oldId: 'growth', oldName: '成長曲線型エンジニア', newId: 'evolving', newName: '成長するチーム' },
+        { oldId: 'speed', oldName: '高速レスポンスエンジニア', newId: 'agile', newName: 'アジャイルチーム' },
+        { oldId: 'debt', oldName: '技術的負債と共に生きる人', newId: 'struggling', newName: 'もがくチーム' },
+        { oldId: 'default', oldName: '無難に回すエンジニア', newId: 'forming', newName: '結成したてのチーム' },
+      ];
+
+      mappings.forEach(({ oldId, oldName, newId, newName }) => {
+        const oldData = {
+          totalCorrect: 10, totalQuestions: 20, correctRate: 50,
+          averageSpeed: 7, stability: 50, debt: 20, maxCombo: 3,
+          tagStats: {}, incorrectQuestions: [], sprintLog: [],
+          grade: 'C', gradeLabel: 'Developing',
+          engineerTypeId: oldId, engineerTypeName: oldName,
+          timestamp: Date.now(),
+        };
+        localStorage.setItem('aqs_last_result', JSON.stringify(oldData));
+        const result = loadGameResult();
+        expect(result!.teamTypeId).toBe(newId);
+        expect(result!.teamTypeName).toBe(newName);
+      });
+    });
+
+    it('不明な旧タイプIDはformingにフォールバック', () => {
+      const oldData = {
+        totalCorrect: 10, totalQuestions: 20, correctRate: 50,
+        averageSpeed: 7, stability: 50, debt: 20, maxCombo: 3,
+        tagStats: {}, incorrectQuestions: [], sprintLog: [],
+        grade: 'C', gradeLabel: 'Average',
+        engineerTypeId: 'unknown_type', engineerTypeName: '不明なタイプ',
+        timestamp: Date.now(),
+      };
+      localStorage.setItem('aqs_last_result', JSON.stringify(oldData));
+      const result = loadGameResult();
+      expect(result!.teamTypeId).toBe('forming');
+      expect(result!.teamTypeName).toBe('結成したてのチーム');
+    });
+
+    it('新フォーマットのデータはそのまま読み込む', () => {
+      saveGameResult(mockResult);
+      const result = loadGameResult();
+      expect(result!.teamTypeId).toBe('synergy');
+      expect(result!.teamTypeName).toBe('シナジーチーム');
     });
   });
 });

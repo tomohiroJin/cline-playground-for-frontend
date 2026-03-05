@@ -15,7 +15,7 @@ import {
 } from '../constants';
 import { computeTagStatEntries, getWeakGenres } from '../tag-stats';
 import { TAG_MAP } from '../questions/tag-master';
-import { classifyEngineerType } from '../engineer-classifier';
+import { classifyTeamType } from '../team-classifier';
 import { getComboColor } from '../combo-color';
 import { AQS_IMAGES } from '../images';
 import { ParticleEffect } from './ParticleEffect';
@@ -78,9 +78,9 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
   const [typeImgError, setTypeImgError] = useState(false);
   const [takaImgError, setTakaImgError] = useState(false);
 
-  // エンジニアタイプを判定
-  const engineerType = useMemo(() => {
-    return classifyEngineerType({
+  // チームタイプを判定
+  const teamType = useMemo(() => {
+    return classifyTeamType({
       stab: derived.stability,
       debt: stats.debt,
       emSuc: stats.emergencySuccess,
@@ -95,20 +95,20 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
     return getGrade(derived.correctRate, derived.stability, derived.averageSpeed);
   }, [derived]);
 
-  // レーダーチャートデータ
+  // レーダーチャートデータ（チーム指標）
   const radarData: RadarDataPoint[] = useMemo(() => {
     return [
-      { label: '正答率', value: clamp(derived.correctRate / 100, 0, 1) },
-      { label: '速度', value: clamp(1 - derived.averageSpeed / 15, 0, 1) },
-      { label: '安定度', value: clamp(derived.stability / 100, 0, 1) },
-      { label: 'コンボ', value: clamp(stats.maxCombo / 7, 0, 1) },
-      { label: '負債管理', value: clamp(1 - stats.debt / 50, 0, 1) },
+      { label: 'チーム知識力', value: clamp(derived.correctRate / 100, 0, 1) },
+      { label: '意思決定速度', value: clamp(1 - derived.averageSpeed / 15, 0, 1) },
+      { label: 'プロセス安定性', value: clamp(derived.stability / 100, 0, 1) },
+      { label: 'チーム連携力', value: clamp(stats.maxCombo / 7, 0, 1) },
+      { label: '技術健全性', value: clamp(1 - stats.debt / 50, 0, 1) },
     ];
   }, [derived, stats]);
 
   // シェアテキスト
   const shareText = `【アジャイル・クイズすごろく】
-${engineerType.emoji} ${engineerType.name}
+${teamType.emoji} ${teamType.name}
 正答率: ${derived.correctRate}% | 負債: ${stats.debt}pt
 Combo: ${stats.maxCombo} | 安定度: ${Math.round(derived.stability)}%`;
 
@@ -182,28 +182,49 @@ Combo: ${stats.maxCombo} | 安定度: ${Math.round(derived.stability)}%`;
           <ReleaseVersion>Release v1.0.0</ReleaseVersion>
         </div>
 
-        {/* エンジニアタイプ */}
-        <TypeCard $color={engineerType.color}>
-          {!typeImgError && AQS_IMAGES.types[engineerType.id as keyof typeof AQS_IMAGES.types] ? (
+        {/* チームの成熟度 */}
+        <TypeCard $color={teamType.color}>
+          {!typeImgError && AQS_IMAGES.types[teamType.id as keyof typeof AQS_IMAGES.types] ? (
             <img
-              src={AQS_IMAGES.types[engineerType.id as keyof typeof AQS_IMAGES.types]!}
-              alt={engineerType.name}
+              src={AQS_IMAGES.types[teamType.id as keyof typeof AQS_IMAGES.types]!}
+              alt={teamType.name}
               onError={() => setTypeImgError(true)}
               style={{
                 width: 88,
                 height: 88,
                 borderRadius: '50%',
                 objectFit: 'cover',
-                border: `3px solid ${engineerType.color}`,
+                border: `3px solid ${teamType.color}`,
                 marginBottom: 12,
               }}
             />
           ) : (
-            <TypeEmoji>{engineerType.emoji}</TypeEmoji>
+            <TypeEmoji>{teamType.emoji}</TypeEmoji>
           )}
-          <TypeLabel>YOUR ENGINEER TYPE</TypeLabel>
-          <TypeName $color={engineerType.color}>{engineerType.name}</TypeName>
-          <TypeDescription>{engineerType.description}</TypeDescription>
+          <TypeLabel>TEAM MATURITY</TypeLabel>
+          <TypeName $color={teamType.color}>{teamType.name}</TypeName>
+          <TypeDescription>{teamType.description}</TypeDescription>
+          {/* チーム向けフィードバック */}
+          <div style={{
+            marginTop: 10,
+            padding: '8px 10px',
+            background: `${teamType.color}08`,
+            borderRadius: 6,
+            border: `1px solid ${teamType.color}15`,
+            fontSize: 11.5,
+            color: COLORS.text,
+            lineHeight: 1.6,
+          }}>
+            {teamType.feedback}
+          </div>
+          <div style={{
+            marginTop: 6,
+            fontSize: 11,
+            color: COLORS.muted,
+            lineHeight: 1.5,
+          }}>
+            📌 {teamType.nextStep}
+          </div>
         </TypeCard>
 
         {/* スキルレーダー */}

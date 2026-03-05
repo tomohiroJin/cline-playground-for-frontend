@@ -9,12 +9,13 @@ import aqs_event_test2 from '../../assets/images/aqs_event_test2.webp';
 import aqs_event_review from '../../assets/images/aqs_event_review.webp';
 import aqs_event_emergency from '../../assets/images/aqs_event_emergency.webp';
 import aqs_retro from '../../assets/images/aqs_retro.webp';
-import aqs_type_stable from '../../assets/images/aqs_type_stable.webp';
-import aqs_type_firefighter from '../../assets/images/aqs_type_firefighter.webp';
-import aqs_type_growth from '../../assets/images/aqs_type_growth.webp';
-import aqs_type_speed from '../../assets/images/aqs_type_speed.webp';
-import aqs_type_debt from '../../assets/images/aqs_type_debt.webp';
-import aqs_type_default from '../../assets/images/aqs_type_default.webp';
+// チームタイプ画像（Phase 3c で新画像に差し替え済み）
+import aqs_type_synergy from '../../assets/images/aqs_type_synergy.webp';
+import aqs_type_resilient from '../../assets/images/aqs_type_resilient.webp';
+import aqs_type_evolving from '../../assets/images/aqs_type_evolving.webp';
+import aqs_type_agile from '../../assets/images/aqs_type_agile.webp';
+import aqs_type_struggling from '../../assets/images/aqs_type_struggling.webp';
+import aqs_type_forming from '../../assets/images/aqs_type_forming.webp';
 import aqs_grade_celebration from '../../assets/images/aqs_grade_celebration.webp';
 import aqs_build_success from '../../assets/images/aqs_build_success.webp';
 import aqs_correct from '../../assets/images/aqs_correct.webp';
@@ -27,6 +28,24 @@ import aqs_char_taka from '../../assets/images/aqs_char_taka.webp';
 import aqs_char_penguin from '../../assets/images/aqs_char_penguin.webp';
 import aqs_char_team from '../../assets/images/aqs_char_team.webp';
 import aqs_char_group from '../../assets/images/aqs_char_group.webp';
+// ストーリー画像（Phase 3c で追加）
+import aqs_story_01 from '../../assets/images/aqs_story_01.webp';
+import aqs_story_02 from '../../assets/images/aqs_story_02.webp';
+import aqs_story_03 from '../../assets/images/aqs_story_03.webp';
+import aqs_story_04 from '../../assets/images/aqs_story_04.webp';
+import aqs_story_05 from '../../assets/images/aqs_story_05.webp';
+import aqs_story_06 from '../../assets/images/aqs_story_06.webp';
+import aqs_story_07 from '../../assets/images/aqs_story_07.webp';
+import aqs_story_08 from '../../assets/images/aqs_story_08.webp';
+// エンディング画像（Phase 3c で追加）
+import aqs_ending_common from '../../assets/images/aqs_ending_common.webp';
+import aqs_ending_epilogue from '../../assets/images/aqs_ending_epilogue.webp';
+// 背景画像（Phase 3c で追加）
+import aqs_bg_office from '../../assets/images/aqs_bg_office.webp';
+import aqs_bg_planning from '../../assets/images/aqs_bg_planning.webp';
+import aqs_bg_dev from '../../assets/images/aqs_bg_dev.webp';
+import aqs_bg_emergency from '../../assets/images/aqs_bg_emergency.webp';
+import aqs_bg_retro from '../../assets/images/aqs_bg_retro.webp';
 
 export const AQS_IMAGES = {
   title: aqs_title,
@@ -36,7 +55,7 @@ export const AQS_IMAGES = {
   buildSuccess: aqs_build_success,
   events: {
     planning: aqs_event_planning,
-    daily: null, // No image for daily
+    daily: null, // デイリーイベントは画像なし
     impl1: aqs_event_impl1,
     test1: aqs_event_test1,
     refinement: aqs_event_refinement,
@@ -46,12 +65,12 @@ export const AQS_IMAGES = {
     emergency: aqs_event_emergency,
   },
   types: {
-    stable: aqs_type_stable,
-    firefighter: aqs_type_firefighter,
-    growth: aqs_type_growth,
-    speed: aqs_type_speed,
-    debt: aqs_type_debt,
-    default: aqs_type_default,
+    synergy: aqs_type_synergy,
+    resilient: aqs_type_resilient,
+    evolving: aqs_type_evolving,
+    agile: aqs_type_agile,
+    struggling: aqs_type_struggling,
+    forming: aqs_type_forming,
   },
   feedback: {
     correct: aqs_correct,
@@ -66,5 +85,26 @@ export const AQS_IMAGES = {
     penguin: aqs_char_penguin,
     team: aqs_char_team,
     group: aqs_char_group,
+  },
+  stories: {
+    story_01: aqs_story_01,
+    story_02: aqs_story_02,
+    story_03: aqs_story_03,
+    story_04: aqs_story_04,
+    story_05: aqs_story_05,
+    story_06: aqs_story_06,
+    story_07: aqs_story_07,
+    story_08: aqs_story_08,
+  },
+  endings: {
+    common: aqs_ending_common,
+    epilogue: aqs_ending_epilogue,
+  },
+  backgrounds: {
+    office: aqs_bg_office,
+    planning: aqs_bg_planning,
+    dev: aqs_bg_dev,
+    emergency: aqs_bg_emergency,
+    retro: aqs_bg_retro,
   },
 } as const;
