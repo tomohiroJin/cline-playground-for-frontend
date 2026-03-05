@@ -35,7 +35,7 @@ describe('useFaqSchema', () => {
 
     expect(parsed['@context']).toBe('https://schema.org');
     expect(parsed['@type']).toBe('FAQPage');
-    expect(parsed['@id']).toBe('https://niku9.click/about#faq');
+    expect(parsed['@id']).toBe('https://play.niku9.click/about#faq');
     expect(parsed.mainEntity).toHaveLength(2);
   });
 

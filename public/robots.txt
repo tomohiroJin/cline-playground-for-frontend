@@ -1,7 +1,7 @@
 # 検索エンジンクローラー: 全ページ許可
 User-agent: *
 Allow: /
-Sitemap: https://niku9.click/sitemap.xml
+Sitemap: https://play.niku9.click/sitemap.xml
 
 # AI リアルタイム検索用クローラー: 許可（AI 検索結果に表示されるため）
 User-agent: ChatGPT-User

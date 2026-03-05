@@ -39,7 +39,7 @@ describe('useItemListSchema', () => {
 
     expect(parsed['@context']).toBe('https://schema.org');
     expect(parsed['@type']).toBe('ItemList');
-    expect(parsed['@id']).toBe('https://niku9.click/#gamelist');
+    expect(parsed['@id']).toBe('https://play.niku9.click/#gamelist');
     expect(parsed.name).toBe('Game Platform ゲーム一覧');
   });
 

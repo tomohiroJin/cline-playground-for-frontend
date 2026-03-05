@@ -9,7 +9,7 @@ export interface GameSeoData {
 }
 
 /** サイトのベースURL */
-export const SITE_BASE_URL = 'https://niku9.click';
+export const SITE_BASE_URL = 'https://play.niku9.click';
 
 /** サイト名 */
 export const SITE_NAME = 'Game Platform';

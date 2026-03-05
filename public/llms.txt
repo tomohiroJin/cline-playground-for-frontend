@@ -5,26 +5,26 @@
 
 ## ゲーム一覧
 
-- [Picture Puzzle](https://niku9.click/puzzle): 美しい画像を使ったクラシックなスライドパズル。難易度調整機能付き。
-- [Air Hockey](https://niku9.click/air-hockey): リアルな物理演算で楽しむエアホッケー。
-- [Racing Game](https://niku9.click/racing): スピード感あふれるレースゲーム。
-- [Falldown Shooter](https://niku9.click/falling-shooter): 落下しながら敵を撃破するシューティングゲーム。
-- [Labyrinth of Shadows](https://niku9.click/maze-horror): 暗闇の迷宮を探索するホラーアドベンチャー。
-- [Non-Brake Descent](https://niku9.click/non-brake-descent): ブレーキなしで坂道を駆け下りるアクションゲーム。
-- [Deep Sea Interceptor](https://niku9.click/deep-sea-shooter): 深海を舞台にしたシューティングゲーム。
-- [IPNE](https://niku9.click/ipne): ターン制ローグライクRPG。
-- [Agile Quiz Sugoroku](https://niku9.click/agile-quiz-sugoroku): アジャイル開発の知識を試すクイズすごろく。
-- [迷宮の残響](https://niku9.click/labyrinth-echo): テキスト探索×判断×ローグライトRPG。
-- [RISK LCD](https://niku9.click/risk-lcd): リスク管理をテーマにしたLCD風ストラテジーゲーム。
-- [KEYS & ARMS](https://niku9.click/keys-and-arms): 鍵と武器を駆使するアクションRPG。
-- [原始進化録 - PRIMAL PATH](https://niku9.click/primal-path): 三大文明を育て進化を重ねる自動戦闘ローグライト。
+- [Picture Puzzle](https://play.niku9.click/puzzle): 美しい画像を使ったクラシックなスライドパズル。難易度調整機能付き。
+- [Air Hockey](https://play.niku9.click/air-hockey): リアルな物理演算で楽しむエアホッケー。
+- [Racing Game](https://play.niku9.click/racing): スピード感あふれるレースゲーム。
+- [Falldown Shooter](https://play.niku9.click/falling-shooter): 落下しながら敵を撃破するシューティングゲーム。
+- [Labyrinth of Shadows](https://play.niku9.click/maze-horror): 暗闇の迷宮を探索するホラーアドベンチャー。
+- [Non-Brake Descent](https://play.niku9.click/non-brake-descent): ブレーキなしで坂道を駆け下りるアクションゲーム。
+- [Deep Sea Interceptor](https://play.niku9.click/deep-sea-shooter): 深海を舞台にしたシューティングゲーム。
+- [IPNE](https://play.niku9.click/ipne): ターン制ローグライクRPG。
+- [Agile Quiz Sugoroku](https://play.niku9.click/agile-quiz-sugoroku): アジャイル開発の知識を試すクイズすごろく。
+- [迷宮の残響](https://play.niku9.click/labyrinth-echo): テキスト探索×判断×ローグライトRPG。
+- [RISK LCD](https://play.niku9.click/risk-lcd): リスク管理をテーマにしたLCD風ストラテジーゲーム。
+- [KEYS & ARMS](https://play.niku9.click/keys-and-arms): 鍵と武器を駆使するアクションRPG。
+- [原始進化録 - PRIMAL PATH](https://play.niku9.click/primal-path): 三大文明を育て進化を重ねる自動戦闘ローグライト。
 
 ## サイト情報
 
-- [サイトについて](https://niku9.click/about): Game Platform の概要、特徴、よくある質問。
-- [プライバシーポリシー](https://niku9.click/privacy-policy): 個人情報の取り扱いについて。
-- [利用規約](https://niku9.click/terms): サービスの利用条件。
-- [お問い合わせ](https://niku9.click/contact): 連絡先情報。
+- [サイトについて](https://play.niku9.click/about): Game Platform の概要、特徴、よくある質問。
+- [プライバシーポリシー](https://play.niku9.click/privacy-policy): 個人情報の取り扱いについて。
+- [利用規約](https://play.niku9.click/terms): サービスの利用条件。
+- [お問い合わせ](https://play.niku9.click/contact): 連絡先情報。
 
 ## 技術仕様
 
