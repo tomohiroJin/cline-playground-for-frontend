@@ -91,7 +91,11 @@
 - [x] 相互参照の正確性を確認（`publisher`, `isPartOf` 等）
 - [x] 既存の `useStructuredData` に `@id` を追加（VideoGame + BreadcrumbList）
 
-### 1-7: フェーズ 1 動作確認
+### 1-7: sitemap.xml の lastmod 更新
+
+- [x] `public/sitemap.xml` のホームページ・情報ページの lastmod を `2026-03-05` に更新
+
+### 1-8: フェーズ 1 動作確認
 
 - [x] `npm run build` が成功すること
 - [x] `npm test` が全テスト通過すること（195 スイート / 2634 テスト）
