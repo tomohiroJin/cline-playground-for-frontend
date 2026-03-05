@@ -15,7 +15,7 @@ describe('TermsPage', () => {
   describe('基本コンテンツ', () => {
     it('ページタイトルが表示されること', () => {
       renderPage();
-      expect(screen.getByText('利用規約')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 2, name: '利用規約' })).toBeInTheDocument();
     });
 
     it('冒頭の要約文が表示されること', () => {
@@ -52,6 +52,19 @@ describe('TermsPage', () => {
       renderPage();
       const link = screen.getByRole('link', { name: /contact@niku9\.click/ });
       expect(link).toBeInTheDocument();
+    });
+  });
+
+  describe('ビジュアルブラッシュアップ', () => {
+    it('パンくずリストが表示されること', () => {
+      renderPage();
+      const nav = screen.getByRole('navigation', { name: 'パンくずリスト' });
+      expect(nav).toBeInTheDocument();
+    });
+
+    it('ページアイコンが表示されること', () => {
+      renderPage();
+      expect(screen.getByText('📋')).toBeInTheDocument();
     });
   });
 

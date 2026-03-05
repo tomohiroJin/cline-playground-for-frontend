@@ -31,7 +31,7 @@ describe('AboutPage', () => {
   describe('基本コンテンツ', () => {
     it('ページタイトルが表示されること', () => {
       renderAboutPage();
-      expect(screen.getByText('サイトについて')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 2, name: 'サイトについて' })).toBeInTheDocument();
     });
 
     it('Game Platform の概要説明が表示されること', () => {
@@ -49,6 +49,30 @@ describe('AboutPage', () => {
     });
   });
 
+  describe('フィーチャーカード', () => {
+    it('3 つのフィーチャーカードが表示されること', () => {
+      const { container } = renderAboutPage();
+      const cards = container.querySelectorAll('[data-testid="section-card"]');
+      expect(cards).toHaveLength(3);
+    });
+
+    it('各カードのタイトルが表示されること', () => {
+      renderAboutPage();
+      expect(screen.getByText('13種類のゲーム')).toBeInTheDocument();
+      expect(screen.getByText('完全無料')).toBeInTheDocument();
+      expect(screen.getByText('登録不要')).toBeInTheDocument();
+    });
+  });
+
+  describe('ゲームジャンル', () => {
+    it('ジャンルタグが表示されること', () => {
+      renderAboutPage();
+      expect(screen.getByText('パズル')).toBeInTheDocument();
+      expect(screen.getByText('RPG')).toBeInTheDocument();
+      expect(screen.getByText('ホラー')).toBeInTheDocument();
+    });
+  });
+
   describe('FAQ セクション', () => {
     it('「よくある質問」見出しが表示されること', () => {
       renderAboutPage();
@@ -62,22 +86,17 @@ describe('AboutPage', () => {
       }
     });
 
-    it('全 6 つの FAQ 回答が表示されること', () => {
+    it('FAQ が details/summary でアコーディオン表示されること', () => {
+      const { container } = renderAboutPage();
+      const details = container.querySelectorAll('details');
+      expect(details.length).toBe(ABOUT_FAQ_ITEMS.length);
+    });
+
+    it('FAQ の全回答テキストが DOM に含まれること', () => {
       renderAboutPage();
       for (const faq of ABOUT_FAQ_ITEMS) {
         expect(screen.getByText(faq.answer)).toBeInTheDocument();
       }
-    });
-
-    it('FAQ が dl/dt/dd でセマンティックにマークアップされていること', () => {
-      const { container } = renderAboutPage();
-      const dlElement = container.querySelector('dl');
-      expect(dlElement).toBeInTheDocument();
-
-      const dtElements = container.querySelectorAll('dt');
-      const ddElements = container.querySelectorAll('dd');
-      expect(dtElements).toHaveLength(6);
-      expect(ddElements).toHaveLength(6);
     });
 
     it('useFaqSchema により FAQPage スキーマが挿入されること', () => {
@@ -88,6 +107,20 @@ describe('AboutPage', () => {
         return parsed['@type'] === 'FAQPage';
       });
       expect(faqScript).toBeTruthy();
+    });
+  });
+
+  describe('免責事項', () => {
+    it('免責事項セクションが表示されること', () => {
+      renderAboutPage();
+      expect(screen.getByText('免責事項')).toBeInTheDocument();
+    });
+
+    it('免責事項の内容が表示されること', () => {
+      renderAboutPage();
+      expect(
+        screen.getByText(/趣味・学習目的で運営/)
+      ).toBeInTheDocument();
     });
   });
 
@@ -116,17 +149,24 @@ describe('AboutPage', () => {
     });
   });
 
-  describe('コンテンツ構造（結論ファースト）', () => {
-    it('具体的な数値（13 種類）が含まれること', () => {
+  describe('パンくずリスト', () => {
+    it('パンくずリストが表示されること', () => {
       renderAboutPage();
-      expect(
-        screen.getByText(/13 種類の無料ブラウザゲームが楽しめるプラットフォーム/)
-      ).toBeInTheDocument();
+      const nav = screen.getByRole('navigation', { name: 'パンくずリスト' });
+      expect(nav).toBeInTheDocument();
     });
 
-    it('免責事項セクションが表示されること', () => {
+    it('ホームリンクが含まれること', () => {
       renderAboutPage();
-      expect(screen.getByText('免責事項')).toBeInTheDocument();
+      const homeLink = screen.getByRole('link', { name: 'ホーム' });
+      expect(homeLink).toHaveAttribute('href', '/');
+    });
+  });
+
+  describe('アイコン', () => {
+    it('ページアイコンが表示されること', () => {
+      renderAboutPage();
+      expect(screen.getByText('ℹ️')).toBeInTheDocument();
     });
   });
 });

@@ -1,16 +1,26 @@
 import React from 'react';
 import { StaticPageLayout } from '../components/templates/StaticPageLayout';
+import { HighlightBox } from '../components/atoms/HighlightBox';
+
+/** パンくずリスト定義 */
+const BREADCRUMB_ITEMS = [
+  { label: 'ホーム', path: '/' },
+  { label: 'プライバシーポリシー' },
+] as const;
 
 /**
  * プライバシーポリシーページ
  *
  * 個人情報の取り扱い方針を全7条で掲載する。
  * AIO 対策として各条文に要約を配置し、重要情報を強調する。
+ * フェーズ 3 で条文装飾、ハイライトボックス、パンくずリストを追加。
  */
 const PrivacyPolicyPage: React.FC = () => {
   return (
     <StaticPageLayout
       title="プライバシーポリシー"
+      icon="🔒"
+      breadcrumbItems={BREADCRUMB_ITEMS}
       publishDate="2026-03"
       lastUpdated="2026-03-05"
     >
@@ -40,9 +50,11 @@ const PrivacyPolicyPage: React.FC = () => {
             <strong>ゲーム利用状況</strong>
             <br />
             ゲームの進行状況やスコアなどのデータをブラウザのlocalStorageに保存します。
-            これらのデータはユーザーのブラウザ内にのみ保存され、サーバーには送信されません。
           </li>
         </ol>
+        <HighlightBox>
+          ゲームデータはユーザーのブラウザ内にのみ保存され、サーバーには送信されません。
+        </HighlightBox>
       </section>
 
       <section>

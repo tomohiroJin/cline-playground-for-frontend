@@ -15,7 +15,7 @@ describe('ContactPage', () => {
   describe('基本コンテンツ', () => {
     it('ページタイトルが表示されること', () => {
       renderPage();
-      expect(screen.getByText('お問い合わせ')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 2, name: 'お問い合わせ' })).toBeInTheDocument();
     });
 
     it('連絡先情報が結論ファーストで配置されていること', () => {
@@ -27,16 +27,16 @@ describe('ContactPage', () => {
   });
 
   describe('コンテンツ構造改善', () => {
-    it('メールリンクが表示されること', () => {
+    it('メールアドレスが表示されること', () => {
       renderPage();
-      const link = screen.getByRole('link', { name: /contact@niku9\.click/ });
-      expect(link).toBeInTheDocument();
+      expect(screen.getByText('contact@niku9.click')).toBeInTheDocument();
     });
 
-    it('メールリンクの href が正しいこと', () => {
+    it('メール送信ボタンが表示されること', () => {
       renderPage();
-      const link = screen.getByRole('link', { name: /contact@niku9\.click/ });
-      expect(link.getAttribute('href')).toMatch(/^mailto:/);
+      const button = screen.getByRole('link', { name: 'メールを送信' });
+      expect(button).toBeInTheDocument();
+      expect(button.getAttribute('href')).toMatch(/^mailto:/);
     });
 
     it('注記セクションが表示されること', () => {
@@ -48,6 +48,24 @@ describe('ContactPage', () => {
       renderPage();
       expect(screen.getByText(/スパム防止のため/)).toBeInTheDocument();
       expect(screen.getByText(/返信までにお時間/)).toBeInTheDocument();
+    });
+  });
+
+  describe('ビジュアルブラッシュアップ', () => {
+    it('パンくずリストが表示されること', () => {
+      renderPage();
+      const nav = screen.getByRole('navigation', { name: 'パンくずリスト' });
+      expect(nav).toBeInTheDocument();
+    });
+
+    it('ページアイコンが表示されること', () => {
+      renderPage();
+      expect(screen.getByText('✉️')).toBeInTheDocument();
+    });
+
+    it('コンタクトカード内のメールアイコンが表示されること', () => {
+      renderPage();
+      expect(screen.getByText('📧')).toBeInTheDocument();
     });
   });
 

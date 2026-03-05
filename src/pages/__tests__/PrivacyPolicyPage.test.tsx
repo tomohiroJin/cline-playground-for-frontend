@@ -15,7 +15,7 @@ describe('PrivacyPolicyPage', () => {
   describe('基本コンテンツ', () => {
     it('ページタイトルが表示されること', () => {
       renderPage();
-      expect(screen.getByText('プライバシーポリシー')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 2, name: 'プライバシーポリシー' })).toBeInTheDocument();
     });
 
     it('冒頭の要約文が結論ファーストで表示されること', () => {
@@ -48,6 +48,26 @@ describe('PrivacyPolicyPage', () => {
       const link = screen.getByRole('link', { name: /contact@niku9\.click/ });
       expect(link).toBeInTheDocument();
       expect(link).toHaveAttribute('href', 'mailto:contact@niku9.click');
+    });
+  });
+
+  describe('ビジュアルブラッシュアップ', () => {
+    it('パンくずリストが表示されること', () => {
+      renderPage();
+      const nav = screen.getByRole('navigation', { name: 'パンくずリスト' });
+      expect(nav).toBeInTheDocument();
+    });
+
+    it('ページアイコンが表示されること', () => {
+      renderPage();
+      expect(screen.getByText('🔒')).toBeInTheDocument();
+    });
+
+    it('ハイライトボックスの内容が表示されること', () => {
+      renderPage();
+      expect(
+        screen.getByText(/ゲームデータはユーザーのブラウザ内にのみ保存され/)
+      ).toBeInTheDocument();
     });
   });
 

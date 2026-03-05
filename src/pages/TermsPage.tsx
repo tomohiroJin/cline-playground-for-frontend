@@ -1,15 +1,42 @@
 import React from 'react';
+import styled from 'styled-components';
 import { StaticPageLayout } from '../components/templates/StaticPageLayout';
+import { WarningBox } from '../components/atoms/HighlightBox';
+
+/** 禁止事項リスト（アイコンマーカー付き） */
+const ProhibitedList = styled.ol`
+  color: var(--text-secondary);
+  line-height: 1.8;
+  margin: 12px 0;
+  padding-left: 24px;
+
+  li::marker {
+    color: var(--accent-color);
+  }
+`;
+
+/** パンくずリスト定義 */
+const BREADCRUMB_ITEMS = [
+  { label: 'ホーム', path: '/' },
+  { label: '利用規約' },
+] as const;
 
 /**
  * 利用規約ページ
  *
  * サービスの利用規約を全7条で掲載する。
  * AIO 対策として各条文に要約を配置し、禁止事項・免責事項を強調する。
+ * フェーズ 3 で条文装飾、WarningBox、パンくずリストを追加。
  */
 const TermsPage: React.FC = () => {
   return (
-    <StaticPageLayout title="利用規約" publishDate="2026-03" lastUpdated="2026-03-05">
+    <StaticPageLayout
+      title="利用規約"
+      icon="📋"
+      breadcrumbItems={BREADCRUMB_ITEMS}
+      publishDate="2026-03"
+      lastUpdated="2026-03-05"
+    >
       <p>
         この利用規約（以下「本規約」）は、Game Platform（以下「本サイト」）の
         利用条件を定めるものです。本サイトをご利用いただく場合、
@@ -36,7 +63,7 @@ const TermsPage: React.FC = () => {
       <section>
         <h3>第3条 禁止事項</h3>
         <p>ユーザーは、本サイトの利用にあたり、以下の行為を行ってはならないものとします。</p>
-        <ol>
+        <ProhibitedList>
           <li>不正アクセスまたはその試み</li>
           <li>
             リバースエンジニアリング、逆コンパイル、逆アセンブル等の行為
@@ -46,7 +73,7 @@ const TermsPage: React.FC = () => {
           <li>他のユーザーまたは第三者の権利を侵害する行為</li>
           <li>本サイトのコンテンツを無断で商業目的に利用する行為</li>
           <li>その他、運営者が不適切と判断する行為</li>
-        </ol>
+        </ProhibitedList>
       </section>
 
       <section>
@@ -60,22 +87,24 @@ const TermsPage: React.FC = () => {
 
       <section>
         <h3>第5条 免責事項</h3>
-        <ul>
-          <li>
-            本サイトは趣味・学習目的で運営しており、コンテンツの正確性、完全性、
-            有用性、動作の保証はいたしかねます。
-          </li>
-          <li>
-            ゲームの進行データはブラウザのlocalStorageに保存されます。
-            ブラウザの設定変更やキャッシュクリア等により、
-            ゲームデータが消失する可能性があります。データの損失について、
-            運営者は一切の責任を負いません。
-          </li>
-          <li>
-            本サイトの利用により生じたいかなる損害についても、
-            運営者は一切の責任を負いません。
-          </li>
-        </ul>
+        <WarningBox>
+          <ul>
+            <li>
+              本サイトは趣味・学習目的で運営しており、コンテンツの正確性、完全性、
+              有用性、動作の保証はいたしかねます。
+            </li>
+            <li>
+              ゲームの進行データはブラウザのlocalStorageに保存されます。
+              ブラウザの設定変更やキャッシュクリア等により、
+              ゲームデータが消失する可能性があります。データの損失について、
+              運営者は一切の責任を負いません。
+            </li>
+            <li>
+              本サイトの利用により生じたいかなる損害についても、
+              運営者は一切の責任を負いません。
+            </li>
+          </ul>
+        </WarningBox>
       </section>
 
       <section>
