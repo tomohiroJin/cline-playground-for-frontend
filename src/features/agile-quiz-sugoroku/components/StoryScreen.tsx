@@ -32,6 +32,8 @@ export interface StoryScreenProps {
   onComplete: () => void;
   /** スキップ時のコールバック */
   onSkip: () => void;
+  /** ヘッダーラベルの上書き（エンディング等で使用） */
+  headerLabel?: string;
 }
 
 /** キャラクターIDから名前を取得 */
@@ -54,6 +56,7 @@ export const StoryScreen: React.FC<StoryScreenProps> = ({
   storyData,
   onComplete,
   onSkip,
+  headerLabel,
 }) => {
   // 現在表示中の行インデックス（0始まり）
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
@@ -94,7 +97,7 @@ export const StoryScreen: React.FC<StoryScreenProps> = ({
     <StoryWrapper>
       <StoryContent role="region" aria-label="ストーリー" onClick={handleAdvance}>
         <StoryHeader>
-          <StorySprintLabel>Sprint {sprintNumber}</StorySprintLabel>
+          <StorySprintLabel>{headerLabel ?? `Sprint ${sprintNumber}`}</StorySprintLabel>
           <SkipButton
             onClick={(e) => {
               e.stopPropagation();

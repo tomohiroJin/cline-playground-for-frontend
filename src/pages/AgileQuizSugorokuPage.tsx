@@ -20,12 +20,13 @@ import {
   CONFIG,
 } from '../features/agile-quiz-sugoroku';
 import { createDefaultAudioActions } from '../features/agile-quiz-sugoroku/audio/audio-actions';
-import { SprintSummary, SaveState, StoryEntry } from '../features/agile-quiz-sugoroku/types';
+import { SprintSummary, SaveState, StoryEntry, EndingEntry } from '../features/agile-quiz-sugoroku/types';
 import { saveGameResult } from '../features/agile-quiz-sugoroku/result-storage';
 import { saveGameState } from '../features/agile-quiz-sugoroku/save-manager';
 import { getGrade } from '../features/agile-quiz-sugoroku/constants';
 import { classifyTeamType } from '../features/agile-quiz-sugoroku/team-classifier';
 import { getStoriesForSprintCount } from '../features/agile-quiz-sugoroku/story-data';
+import { getEndingStories } from '../features/agile-quiz-sugoroku/ending-data';
 
 const audio = createDefaultAudioActions();
 
@@ -55,6 +56,10 @@ const AgileQuizSugorokuPage: React.FC = () => {
   // ストーリー関連の状態
   const [stories, setStories] = useState<StoryEntry[]>([]);
   const [currentStory, setCurrentStory] = useState<StoryEntry | null>(null);
+
+  // エンディング関連の状態
+  const [endingStories, setEndingStories] = useState<EndingEntry[]>([]);
+  const [currentEndingIndex, setCurrentEndingIndex] = useState(0);
 
   // 勉強会モード用の選択済みタグを保持
   const [studySelectedTags, setStudySelectedTags] = useState<string[]>([]);
@@ -124,51 +129,87 @@ const AgileQuizSugorokuPage: React.FC = () => {
     }
   };
 
+  // エンディング完了後に結果保存で再利用するため、判定済みチームタイプを保持
+  const [classifiedTeamType, setClassifiedTeamType] = useState<ReturnType<typeof classifyTeamType> | null>(null);
+
+  /** 現在のゲーム状態からチームタイプを判定 */
+  const buildClassifyStats = () => ({
+    stab: game.derived.stability,
+    debt: game.stats.debt,
+    emSuc: game.stats.emergencySuccess,
+    sc: game.derived.sprintCorrectRates,
+    tp: game.derived.correctRate,
+    spd: game.derived.averageSpeed,
+  });
+
+  /** ゲーム結果を保存して結果画面へ遷移 */
+  const transitionToResult = () => {
+    audio.onResult();
+    const grade = getGrade(game.derived.correctRate, game.derived.stability, game.derived.averageSpeed);
+    // エンディングで判定済みのチームタイプを再利用
+    const teamType = classifiedTeamType ?? classifyTeamType(buildClassifyStats());
+    saveGameResult({
+      totalCorrect: game.stats.totalCorrect,
+      totalQuestions: game.stats.totalQuestions,
+      correctRate: game.derived.correctRate,
+      averageSpeed: game.derived.averageSpeed,
+      stability: game.derived.stability,
+      debt: game.stats.debt,
+      maxCombo: game.stats.maxCombo,
+      tagStats: game.tagStats,
+      incorrectQuestions: game.incorrectQuestions.map((q) => ({
+        questionText: q.questionText,
+        options: q.options,
+        selectedAnswer: q.selectedAnswer,
+        correctAnswer: q.correctAnswer,
+        tags: q.tags,
+        explanation: q.explanation,
+      })),
+      sprintLog: game.log,
+      grade: grade.grade,
+      gradeLabel: grade.label,
+      teamTypeId: teamType.id,
+      teamTypeName: teamType.name,
+      timestamp: Date.now(),
+    });
+    game.setPhase('result');
+    fade.trigger();
+  };
+
   /** 振り返り後 */
   const handleAfterRetro = () => {
     const nextSprint = game.sprint + 1;
     if (nextSprint >= sprintCount) {
-      audio.onResult();
-      // ゲーム結果を保存
-      const grade = getGrade(game.derived.correctRate, game.derived.stability, game.derived.averageSpeed);
-      const teamType = classifyTeamType({
-        stab: game.derived.stability,
-        debt: game.stats.debt,
-        emSuc: game.stats.emergencySuccess,
-        sc: game.derived.sprintCorrectRates,
-        tp: game.derived.correctRate,
-        spd: game.derived.averageSpeed,
-      });
-      saveGameResult({
-        totalCorrect: game.stats.totalCorrect,
-        totalQuestions: game.stats.totalQuestions,
-        correctRate: game.derived.correctRate,
-        averageSpeed: game.derived.averageSpeed,
-        stability: game.derived.stability,
-        debt: game.stats.debt,
-        maxCombo: game.stats.maxCombo,
-        tagStats: game.tagStats,
-        incorrectQuestions: game.incorrectQuestions.map((q) => ({
-          questionText: q.questionText,
-          options: q.options,
-          selectedAnswer: q.selectedAnswer,
-          correctAnswer: q.correctAnswer,
-          tags: q.tags,
-          explanation: q.explanation,
-        })),
-        sprintLog: game.log,
-        grade: grade.grade,
-        gradeLabel: grade.label,
-        teamTypeId: teamType.id,
-        teamTypeName: teamType.name,
-        timestamp: Date.now(),
-      });
-      game.setPhase('result');
+      // チームタイプを判定してエンディングストーリーを設定
+      const teamType = classifyTeamType(buildClassifyStats());
+      setClassifiedTeamType(teamType);
+      const endings = getEndingStories(teamType.id);
+      setEndingStories(endings);
+      setCurrentEndingIndex(0);
+      game.setPhase('ending');
       fade.trigger();
     } else {
       game.setSprint(nextSprint);
       transitionToStoryOrSprint(nextSprint, stories);
     }
+  };
+
+  /** エンディングストーリー完了 → 次のエンディングまたは結果画面へ */
+  const handleEndingComplete = () => {
+    const nextIndex = currentEndingIndex + 1;
+    if (nextIndex < endingStories.length) {
+      // 次のエンディングストーリー（共通→エピローグ）
+      setCurrentEndingIndex(nextIndex);
+      fade.trigger();
+    } else {
+      // 全エンディング完了 → 結果画面へ
+      transitionToResult();
+    }
+  };
+
+  /** エンディングスキップ → 結果画面へ */
+  const handleEndingSkip = () => {
+    transitionToResult();
   };
 
   /** セーブデータから再開 */
@@ -245,6 +286,20 @@ const AgileQuizSugorokuPage: React.FC = () => {
     study.init(studySelectedTags, studyLimit);
   };
 
+  /** EndingEntry を StoryScreen 用の StoryEntry に変換 */
+  const currentEndingAsStory = useMemo((): StoryEntry | undefined => {
+    if (game.phase !== 'ending' || endingStories.length === 0) return undefined;
+    const entry = endingStories[currentEndingIndex];
+    if (!entry) return undefined;
+    return {
+      sprintNumber: 0,
+      title: entry.title,
+      narratorId: 'taka',
+      lines: entry.lines,
+      imageKey: entry.imageKey,
+    };
+  }, [game.phase, endingStories, currentEndingIndex]);
+
   // 結果画面用のデータ
   const resultData = useMemo(() => {
     if (game.phase !== 'result') return null;
@@ -314,6 +369,16 @@ const AgileQuizSugorokuPage: React.FC = () => {
           onNext={handleAfterRetro}
           onSave={handleSave}
           sprintCount={sprintCount}
+        />
+      )}
+
+      {game.phase === 'ending' && currentEndingAsStory && (
+        <StoryScreen
+          sprintNumber={sprintCount}
+          storyData={currentEndingAsStory}
+          onComplete={handleEndingComplete}
+          onSkip={handleEndingSkip}
+          headerLabel="Ending"
         />
       )}
 

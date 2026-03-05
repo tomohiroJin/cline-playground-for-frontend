@@ -258,6 +258,104 @@ interface StoryLine {
 
 GamePhase 型に `'story'` を追加。
 
+### 3.7 エンディングストーリー（ゲームクリア時）
+
+#### 3.7.1 概要
+
+全スプリント完了後、結果画面の前にエンディングストーリーを表示する。
+共通パート（プロジェクト完了の瞬間）＋チームタイプ別エピローグ（判定結果に応じた「その後」の物語）の2部構成。
+
+#### 3.7.2 フェーズ遷移の変更
+
+```
+変更前:
+  retro (最終スプリント) → result
+
+変更後:
+  retro (最終スプリント) → ending → result
+  (※ ending はスキップ可能)
+```
+
+GamePhase 型に `'ending'` を追加。
+
+#### 3.7.3 エンディングストーリー構成
+
+**共通パート: 「プロジェクト完了」**
+
+全チームタイプ共通で表示。最終スプリント完了後のプロジェクト引き渡しの場面。
+
+| 要素 | 内容 |
+|------|------|
+| タイトル | 「プロジェクト完了 — 旅の終わり、新たな始まり」 |
+| シーン | 最終スプリントレビュー後。チーム全員がオフィスに集まっている |
+| 内容 | タカがプロダクトの完成を宣言。各メンバーがこのプロジェクトを振り返る。ペンギンが「チームの成長」について語る |
+| 演出 | 既存 StoryScreen と同様のノベルゲーム風表示 |
+
+**チームタイプ別エピローグ（6種類）**
+
+共通パートの後に、判定されたチームタイプに応じたエピローグを表示。
+
+| チームタイプ | エピローグタイトル | シーン概要 |
+|-------------|-----------------|-----------|
+| synergy（シナジー） | 「次なる挑戦へ」 | チームの成功が組織に広がる。他チームからメンタリングの依頼が来る。5人は新しいプロダクトへの挑戦を決意し、さらなる高みを目指す |
+| resilient（レジリエント） | 「嵐の後の虹」 | 数々の障害を乗り越えたチームの絆は固い。タカが「どんな困難が来ても、このチームなら大丈夫だ」と語る。5人は次の難題に笑顔で向かう |
+| evolving（成長する） | 「成長の軌跡」 | 最初は手探りだった5人が、振り返ると驚くほど成長していた。ペンギンが「一番大切なのは成長し続けること」と語る。チームは改善のサイクルを回し続ける |
+| agile（アジャイル） | 「風のように」 | 素早い判断と実行力でプロダクトを届けた。イヌが「次はもっと早く、もっと正確に」と目を輝かせる。チームのスピードはさらに加速していく |
+| struggling（もがく） | 「泥の中から咲く花」 | 技術的負債に苦しみ、何度も壁にぶつかった。でも諦めなかった。ネコが「この経験が次に活きる」と静かに語る。チームは着実に前に進んでいく |
+| forming（結成したて） | 「はじまりの一歩」 | まだチームとしては未完成。でも全員が「もう一度やりたい」と口を揃える。ウサギが「次はもっとうまくやれる」と笑う。物語はここから始まる |
+
+#### 3.7.4 データ構造
+
+```typescript
+// ending-data.ts
+
+interface EndingEntry {
+  phase: 'common' | 'epilogue';  // 共通パートかエピローグか
+  teamTypeId?: string;            // エピローグの場合のチームタイプID
+  title: string;                  // エンディングタイトル
+  lines: StoryLine[];             // テキスト行（既存のStoryLine型を再利用）
+  imageKey: string;               // 対応する画像キー
+}
+
+/** 共通エンディング + 指定チームタイプのエピローグを取得 */
+export function getEndingStories(teamTypeId: string): EndingEntry[];
+```
+
+#### 3.7.5 StoryScreen の再利用
+
+エンディングストーリーは既存の `StoryScreen.tsx` コンポーネントを再利用する。
+`StoryEntry` と `EndingEntry` は `StoryLine[]` を共有しているため、表示ロジックは共通化可能。
+
+- 共通パートを表示 → 完了後にエピローグを表示 → 完了後に結果画面へ遷移
+- スキップ操作（スキップボタン、Escキー）は既存と同様
+- スキップ時は共通パート・エピローグの両方をスキップして結果画面へ遷移
+
+#### 3.7.6 AgileQuizSugorokuPage での遷移ロジック
+
+```typescript
+// handleAfterRetro 内の最終スプリント完了時
+if (nextSprint >= sprintCount) {
+  // チームタイプを判定
+  const teamType = classifyTeamType(stats);
+  // エンディングストーリーを設定
+  const endings = getEndingStories(teamType.id);
+  setEndingStories(endings);
+  setCurrentEndingIndex(0);
+  game.setPhase('ending');
+  // ※ 結果の保存はエンディング完了後に行う
+}
+```
+
+#### 3.7.7 エンディング専用イラスト
+
+| ファイル名 | シーン |
+|-----------|--------|
+| `aqs_ending_common.webp` | チーム全員がプロダクト完成を祝うシーン。紙吹雪とハイタッチ |
+| `aqs_ending_epilogue.webp` | 夕日を背景に5人が未来を見つめるシルエット。希望に満ちた雰囲気 |
+
+※ チームタイプ別のイラストは用意せず、共通パートとエピローグで各1枚を使用（イラスト制作コストの抑制）。
+テキスト内容でチームタイプごとの差別化を行う。
+
 ---
 
 ## 4. 背景画像の作成と切り替え
@@ -453,8 +551,8 @@ Phase 2b でキャラクター画像を統一デザインに刷新済み。
 ### 7.1 型定義の追加（types.ts）
 
 ```typescript
-// ゲームフェーズに story を追加
-export type GamePhase = 'title' | 'story' | 'sprint-start' | 'game' | 'retro' | 'result' | 'guide' | 'study-select' | 'study';
+// ゲームフェーズに story, ending を追加
+export type GamePhase = 'title' | 'story' | 'sprint-start' | 'game' | 'retro' | 'ending' | 'result' | 'guide' | 'study-select' | 'study';
 
 // チームタイプ
 export interface TeamType {
@@ -494,6 +592,15 @@ export interface StoryLine {
   text: string;
 }
 
+// エンディングストーリーデータ
+export interface EndingEntry {
+  phase: 'common' | 'epilogue';
+  teamTypeId?: string;
+  title: string;
+  lines: StoryLine[];
+  imageKey: string;
+}
+
 // 保存結果（TEAM化対応）
 export interface SavedGameResult {
   // ...既存フィールド
@@ -516,6 +623,7 @@ export interface SavedGameResult {
 | save-manager.ts | ユニットテスト | 最高 |
 | character-genre-map.ts | ユニットテスト | 高 |
 | story-data.ts | ユニットテスト（データ整合性） | 高 |
+| ending-data.ts | ユニットテスト（全チームタイプのエンディング存在確認） | 高 |
 | StoryScreen.tsx | コンポーネントテスト | 中 |
 | ResultScreen.tsx（TEAM化） | コンポーネントテスト | 高 |
 | StudySelectScreen.tsx（キャラ選択） | コンポーネントテスト | 中 |

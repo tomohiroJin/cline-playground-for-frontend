@@ -3,7 +3,7 @@
  */
 
 /** ゲームのフェーズ */
-export type GamePhase = 'title' | 'story' | 'sprint-start' | 'game' | 'retro' | 'result' | 'guide' | 'study-select' | 'study';
+export type GamePhase = 'title' | 'story' | 'sprint-start' | 'game' | 'retro' | 'ending' | 'result' | 'guide' | 'study-select' | 'study';
 
 /** イベントID */
 export type EventId = 'planning' | 'impl1' | 'test1' | 'refinement' | 'impl2' | 'test2' | 'review' | 'emergency';
@@ -208,6 +208,20 @@ export interface StoryLine {
   speakerId?: string;
   /** テキスト内容 */
   text: string;
+}
+
+/** エンディングストーリーデータ */
+export interface EndingEntry {
+  /** 共通パートかエピローグか */
+  phase: 'common' | 'epilogue';
+  /** エピローグの場合のチームタイプID */
+  teamTypeId?: string;
+  /** エンディングタイトル */
+  title: string;
+  /** テキスト行（既存の StoryLine 型を再利用） */
+  lines: StoryLine[];
+  /** 対応する画像キー */
+  imageKey: string;
 }
 
 /** 不正解問題の保存用 */

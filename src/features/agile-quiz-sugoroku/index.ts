@@ -34,6 +34,9 @@ export * from './save-manager';
 // ストーリーデータ
 export { STORY_ENTRIES, getStoriesForSprintCount } from './story-data';
 
+// エンディングストーリーデータ
+export { ENDING_COMMON, ENDING_EPILOGUES, getEndingStories } from './ending-data';
+
 // 勉強会モード
 export * from './study-question-pool';
 
