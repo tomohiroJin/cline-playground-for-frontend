@@ -4,8 +4,6 @@
 import React, { useState, useMemo } from 'react';
 import { TAG_MASTER } from '../questions/tag-master';
 import { PHASE_GENRE_MAP, COLORS, FONTS } from '../constants';
-import { TagStats } from '../types';
-import { getTagColor } from '../tag-stats';
 import { countStudyQuestions } from '../study-question-pool';
 import { loadGameResult } from '../result-storage';
 import {
@@ -14,7 +12,6 @@ import {
   SectionBox,
   SectionTitle,
   Button,
-  HotkeyHint,
   Scanlines,
   Divider,
 } from './styles';

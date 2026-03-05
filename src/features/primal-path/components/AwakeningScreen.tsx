@@ -15,7 +15,7 @@ interface Props {
   showOverlay: (icon: string, text: string, ms?: number) => Promise<void>;
 }
 
-export const AwakeningScreen: React.FC<Props> = ({ run, awkId, awkType, awkTier, dispatch, playSfx, showOverlay }) => {
+export const AwakeningScreen: React.FC<Props> = ({ run, awkId: _awkId, awkType, awkTier, dispatch, playSfx, showOverlay }) => {
   const info = awkTier === 1 ? AWK_SA[awkType] : AWK_FA[awkType];
   const isFinal = awkTier === 2;
   const icon = isFinal ? '⚡' : '🔥';

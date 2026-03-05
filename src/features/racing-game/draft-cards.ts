@@ -1,7 +1,6 @@
 // ドラフトカードシステム
 
 import type { Card, CardEffect, CardRarity, DeckState } from './types';
-import { Utils } from './utils';
 
 // === T-101: カードデータ定義（15枚） ===
 
@@ -168,7 +167,7 @@ export const createDeck = (): DeckState => ({
 
 /** 確率ベースの3枚ドロー */
 export const drawCards = (deck: DeckState, count: number = 3): DeckState => {
-  let pool = deck.pool.length >= count ? [...deck.pool] : shuffle([...ALL_CARDS]);
+  const pool = deck.pool.length >= count ? [...deck.pool] : shuffle([...ALL_CARDS]);
 
   // レアリティ確率に基づいてドロー
   const hand: Card[] = [];

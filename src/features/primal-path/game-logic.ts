@@ -6,19 +6,19 @@
 import type {
   StatSnapshot, EvoEffect, RunState, Enemy, Ally, Evolution,
   TreeBonus, TreeEffect, CivLevels, PlayerAttackResult, TickResult, TickEvent,
-  ApplyEvoResult, AwakeningRule, AwakeningNext, AwokenRecord,
+  ApplyEvoResult, AwakeningRule, AwakeningNext,
   SaveData, Difficulty, BiomeId, BiomeIdExt, CivType, CivTypeExt,
-  AllyTemplate, LogEntry, DmgPopup, ASkillId, ASkillDef, SkillSt, ABuff,
+  AllyTemplate, DmgPopup, ASkillId, SkillSt,
   SynergyTag, ActiveSynergy, SynergyEffect,
   EventChoice, EventCost, EventEffect, RandomEventDef,
   RunStats, AggregateStats, AchievementDef, ChallengeDef,
 } from './types';
 import {
   CIV_TYPES, CIV_KEYS, TREE, TB_DEFAULTS, EVOS, ALT, ENM, BOSS,
-  DIFFS, BIOME_AFFINITY, ENV_DMG, AWK_SA, AWK_FA, TN, TC,
+  DIFFS, BIOME_AFFINITY, ENV_DMG, TN, TC,
   WAVES_PER_BIOME, A_SKILLS, SYNERGY_BONUSES,
   RANDOM_EVENTS, EVENT_CHANCE, EVENT_MIN_BATTLES,
-  ACHIEVEMENTS, BOSS_CHAIN_SCALE, FINAL_BOSS_ORDER,
+  BOSS_CHAIN_SCALE, FINAL_BOSS_ORDER,
   LOOP_SCALE_FACTOR, ENDLESS_LINEAR_SCALE, ENDLESS_EXP_BASE, ENDLESS_AM_REFLECT_RATIO,
 } from './constants';
 
@@ -599,7 +599,7 @@ export function startRunState(di: number, save: SaveData): RunState {
 
 /* ===== Start Battle ===== */
 
-export function startBattle(r: RunState, finalMode: boolean): RunState {
+export function startBattle(r: RunState, _finalMode: boolean): RunState {
   const next = deepCloneRun(r);
   next.cW++;
   const boss = next.cW > next.wpb;
@@ -1208,7 +1208,7 @@ export function computeEventResult(
   rng: () => number = Math.random,
 ): { nextRun: RunState; evoName?: string } {
   // コスト適用
-  let costApplied = deepCloneRun(run);
+  const costApplied = deepCloneRun(run);
   if (choice.cost?.type === 'bone') {
     costApplied.bE = Math.max(0, costApplied.bE - choice.cost.amount);
   } else if (choice.cost?.type === 'hp_damage') {

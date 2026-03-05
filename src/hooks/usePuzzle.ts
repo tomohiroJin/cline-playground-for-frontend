@@ -33,7 +33,7 @@ export const usePuzzle = () => {
   const [division, setDivision] = useAtom(puzzleDivisionAtom);
   const [pieces, setPieces] = useAtom(puzzlePiecesAtom);
   const [emptyPosition, setEmptyPosition] = useAtom(emptyPiecePositionAtom);
-  const [startTime, setStartTime] = useAtom(puzzleStartTimeAtom);
+  const [_startTime, setStartTime] = useAtom(puzzleStartTimeAtom);
   const [elapsedTime, setElapsedTime] = useAtom(puzzleElapsedTimeAtom);
   const [completed, setCompleted] = useAtom(puzzleCompletedAtom);
   const [moveCount, setMoveCount] = useAtom(moveCountAtom);

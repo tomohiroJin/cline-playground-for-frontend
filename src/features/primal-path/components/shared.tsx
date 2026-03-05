@@ -4,8 +4,9 @@
 import React from 'react';
 import type { Ally, RunState, CivTypeExt, BiomeIdExt, CivLevels, AwokenRecord, ActiveSynergy } from '../types';
 import type { GameAction } from '../hooks';
-import { TC, TN, BIO, SYNERGY_TAG_INFO, SPEED_OPTS } from '../constants';
-import { effATK, civLvs, biomeBonus } from '../game-logic';
+import { TC, TN, SYNERGY_TAG_INFO, SPEED_OPTS } from '../constants';
+import { effATK, biomeBonus } from '../game-logic';
+import { drawAlly } from '../sprites';
 import { AllyBadge, AllyRow, SpeedBtn, Tc, Lc, Rc } from '../styles';
 
 /* ===== ProgressBar ===== */
@@ -209,7 +210,6 @@ export const AllyList: React.FC<{ allies: Ally[]; mode: 'evo' | 'battle' }> = ({
                 aria-hidden="true"
                 ref={c => {
                   if (c) {
-                    const { drawAlly } = require('../sprites');
                     drawAlly(c, a.t, 2);
                   }
                 }}

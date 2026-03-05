@@ -5,7 +5,7 @@
  * SOLID / DRY / DbC / Functional-Declarative
  */
 import { useState, useCallback, useEffect, useMemo } from "react";
-import { CFG, DIFFICULTY, UNLOCKS, computeFx, createPlayer, computeProgress } from './game-logic';
+import { CFG, UNLOCKS, computeFx, createPlayer, computeProgress } from './game-logic';
 import { rand } from './game-logic';
 import type { Player, DifficultyDef } from './game-logic';
 import { ErrorBoundary } from './contracts';
@@ -14,7 +14,7 @@ import type { AudioSettings } from './audio';
 import { EV } from './events/event-data';
 import { computeVignette, processChoice, validateEvents, pickEvent, findChainEvent } from './events/event-utils';
 import type { GameEvent } from './events/event-utils';
-import { FLOOR_META, EVENT_TYPE, ENDINGS, determineEnding } from './definitions';
+import { FLOOR_META, EVENT_TYPE, determineEnding } from './definitions';
 import type { EndingDef, LogEntry } from './definitions';
 import { Page } from './components/Page';
 import { useTextReveal, usePersistence, useVisualFx, useImagePreload } from './hooks';
@@ -29,7 +29,7 @@ import { FloorIntroScreen } from './components/FloorIntroScreen';
 import { EventResultScreen } from './components/EventResultScreen';
 import { GameOverScreen, VictoryScreen } from './components/EndScreens';
 import { StatusOverlay } from './components/StatusOverlay';
-import { GuidanceOverlay, ToastContainer } from './components/GameComponents';
+import { GuidanceOverlay } from './components/GameComponents';
 
 // イベントデータのバリデーション
 const EVENTS = validateEvents(EV, EVENT_TYPE);
@@ -128,6 +128,7 @@ function GameInner() {
     const hpPct = player.hp / player.maxHp;
     const mnPct = player.mn / player.maxMn;
     AudioEngine.bgm.updateCrisis(hpPct, mnPct);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [player?.hp, player?.mn, player?.maxHp, player?.maxMn, audioSettings.bgmEnabled, phase]);
 
   // パーティクル

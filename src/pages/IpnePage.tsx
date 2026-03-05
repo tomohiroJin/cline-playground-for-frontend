@@ -19,7 +19,6 @@ import {
   updatePlayerDirection,
   processEnemyDeath,
   WallState,
-  MAX_LEVEL,
   shouldLevelUp,
   getWallAt,
   revealWall,
@@ -58,7 +57,7 @@ import { TitleScreen } from '../features/ipne/presentation/screens/Title';
 import { PrologueScreen } from '../features/ipne/presentation/screens/Prologue';
 import { GameScreen, ClassSelectScreen, LevelUpOverlayComponent, EffectEvent } from '../features/ipne/presentation/screens/Game';
 import { EffectType } from '../features/ipne/presentation/effects';
-import { ClearScreen as ClearScreenComponent, GameOverScreen } from '../features/ipne/presentation/screens/Clear';
+import { GameOverScreen } from '../features/ipne/presentation/screens/Clear';
 import { StageClearScreen } from '../features/ipne/presentation/screens/StageClear';
 import { StageStoryScreen } from '../features/ipne/presentation/screens/StageStory';
 import { StageRewardScreen } from '../features/ipne/presentation/screens/StageReward';
@@ -112,6 +111,7 @@ const IpnePage: React.FC = () => {
       }
       return newPoints;
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.player, state.setPendingLevelPoints, state.setPlayer, state.setShowLevelUpModal]);
 
   // レベルアップ画面を開く
@@ -119,11 +119,13 @@ const IpnePage: React.FC = () => {
     if (state.pendingLevelPoints > 0) {
       state.setShowLevelUpModal(true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.pendingLevelPoints, state.setShowLevelUpModal]);
 
   // レベルアップ画面を閉じる
   const handleCloseLevelUpModal = useCallback(() => {
     state.setShowLevelUpModal(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.setShowLevelUpModal]);
 
   // マップ表示切替ハンドラー（小窓 → 全画面 → 非表示 → 小窓）
@@ -137,6 +139,7 @@ const IpnePage: React.FC = () => {
         return { ...prev, isMapVisible: false, isFullScreen: false };
       }
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.setMapState]);
 
   // デバッグオプション切替ハンドラー
@@ -144,6 +147,7 @@ const IpnePage: React.FC = () => {
     (option: keyof Omit<DebugState, 'enabled'>) => {
       state.setDebugState(prev => toggleDebugOption(prev, option));
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [state.setDebugState]
   );
 
@@ -256,6 +260,7 @@ const IpnePage: React.FC = () => {
       if (state.isGameOver) return;
       state.setPlayer(prev => updatePlayerDirection(prev, direction));
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [state.isGameOver, state.setPlayer]
   );
 

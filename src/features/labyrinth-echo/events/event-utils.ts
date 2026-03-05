@@ -5,11 +5,11 @@
  * イベント選択・選択肢処理・バリデーション等の純粋関数群。
  */
 import {
-  invariant, shuffle, evalCond, resolveOutcome,
+  invariant, shuffle, resolveOutcome,
   applyModifiers, applyToPlayer, computeDrain,
   classifyImpact,
 } from '../game-logic';
-import type { Player, FxState, DifficultyDef, Choice, Outcome, MetaState } from '../game-logic';
+import type { Player, FxState, DifficultyDef, MetaState, Choice } from '../game-logic';
 import type { CSSProperties } from 'react';
 
 /** イベント定義 */

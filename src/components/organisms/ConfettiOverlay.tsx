@@ -18,7 +18,7 @@ type ConfettiOverlayProps = {
 };
 
 const ConfettiOverlay: React.FC<ConfettiOverlayProps> = ({ completed }) => {
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   const confettiPieces = useMemo(() => (completed ? generateConfettiPieces() : []), [completed]);
 
   if (!completed) return null;

@@ -1,10 +1,10 @@
-// @ts-nocheck
 /**
  * 迷宮の残響 - イベントデータ
  *
  * LabyrinthEchoGame.tsx §6b から抽出。
  * 163件のイベント定義（データのみ）。
  */
+import type { MetaState } from '../game-logic';
 const EV = [
   // ═══ FLOOR 1 (6 events) ═══
   {id:"e001",fl:[1],tp:"trap",
@@ -1949,7 +1949,7 @@ const EV = [
     ]},
 
   // ═══ CROSS-RUN EVENTS: 前回の探索が影響するイベント ═══
-  {id:"e157",fl:[1,2],tp:"encounter",metaCond:(m)=>m.lastRun?.cause==="体力消耗",
+  {id:"e157",fl:[1,2],tp:"encounter",metaCond:(m: MetaState)=>m.lastRun?.cause==="体力消耗",
     sit:"壁に見覚えのある血痕。前回の探索で倒れた場所の近くだ。身体が覚えている──あの痛みを。だが、今回は同じ轍を踏まない。",
     ch:[
       {t:"前回の教訓を活かして慎重に進む",o:[
@@ -1963,7 +1963,7 @@ const EV = [
         {c:"default",r:"あの場所に戻った。自分の持ち物の残骸が残っている。中に有用な情報のメモがあった。過去の自分からの贈り物だ。",hp:0,mn:-5,inf:15}
       ]}
     ]},
-  {id:"e158",fl:[1,2],tp:"encounter",metaCond:(m)=>m.lastRun?.cause==="精神崩壊",
+  {id:"e158",fl:[1,2],tp:"encounter",metaCond:(m: MetaState)=>m.lastRun?.cause==="精神崩壊",
     sit:"壁の落書きに見覚えがある。前回、精神が崩壊する直前に自分が書いた文字だ。震える字で「ここから先は…」──続きは読めない。",
     ch:[
       {t:"精神を鍛え直して進む",o:[
@@ -1975,7 +1975,7 @@ const EV = [
         {c:"default",r:"推測を試みたが確信が持てない。それでも前回の記憶の断片が、わずかな手がかりとなった。",hp:0,mn:-5,inf:8}
       ]}
     ]},
-  {id:"e159",fl:[2,3,4],tp:"exploration",metaCond:(m)=>(m.totalDeaths??0)>=3,
+  {id:"e159",fl:[2,3,4],tp:"exploration",metaCond:(m: MetaState)=>(m.totalDeaths??0)>=3,
     sit:"通路の壁に無数の傷跡。よく見ると、全て自分がつけたものだ。何度もここを通った証──死んでは戻り、死んでは戻り。だが今回は違う手応えがある。",
     ch:[
       {t:"傷跡のパターンから情報を読み取る",o:[
@@ -1989,7 +1989,7 @@ const EV = [
         {c:"hp>35",r:"過去に縛られない。体力を活かして未踏の通路を発見。傷跡のない壁──ここは初めて来る場所だ。",hp:-8,mn:3,inf:14}
       ]}
     ]},
-  {id:"e160",fl:[3,4,5],tp:"encounter",metaCond:(m)=>m.escapes>=1,
+  {id:"e160",fl:[3,4,5],tp:"encounter",metaCond:(m: MetaState)=>m.escapes>=1,
     sit:"一度生還した者だけが感じる気配。迷宮が「また来たのか」と語りかけている。生還者には、初回にはない特別な選択肢が見える。",
     ch:[
       {t:"迷宮と対話する",o:[
@@ -2005,7 +2005,7 @@ const EV = [
         {c:"default",r:"挑戦を受けたが、実力不足で途中棄権。それでも挑んだことで迷宮からの僅かな敬意を感じた。",hp:-10,mn:-5,inf:8}
       ]}
     ]},
-  {id:"e161",fl:[1,2,3],tp:"exploration",metaCond:(m)=>m.runs>=5,
+  {id:"e161",fl:[1,2,3],tp:"exploration",metaCond:(m: MetaState)=>m.runs>=5,
     sit:"五度以上の探索で蓄積された記憶の残滓。壁のシミが地図に見える。天井の亀裂がルートに見える。経験が世界を変えて見せている。",
     ch:[
       {t:"記憶の地図に従う",o:[
@@ -2016,7 +2016,7 @@ const EV = [
         {c:"default",r:"新しい道を探したが見つからない。だが壁の材質の変化に気づいた。次は見つけられるだろう。",hp:0,mn:-5,inf:8}
       ]}
     ]},
-  {id:"e162",fl:[2,3,4],tp:"encounter",metaCond:(m)=>(m.endings?.length??0)>=2,
+  {id:"e162",fl:[2,3,4],tp:"encounter",metaCond:(m: MetaState)=>(m.endings?.length??0)>=2,
     sit:"複数のエンディングを経験した者にだけ見える部屋。壁に自分の過去の生還記録が刻まれている。迷宮がコレクターとして認めている。",
     ch:[
       {t:"記録を統合して新しい知見を得る",o:[
@@ -2027,7 +2027,7 @@ const EV = [
         {c:"default",r:"壁の記録の余白に、未到達の結末を示唆する文字列を発見。全てのエンディングを見届けたくなった。",hp:0,mn:5,inf:15}
       ]}
     ]},
-  {id:"e163",fl:[3,4,5],tp:"trap",metaCond:(m)=>m.bestFl>=4,
+  {id:"e163",fl:[3,4,5],tp:"trap",metaCond:(m: MetaState)=>m.bestFl>=4,
     sit:"以前第四層以降に到達した記憶が蘇る。この罠は見覚えがある──前回は引っかかったが、今回は構造を覚えている。",
     ch:[
       {t:"記憶通りに回避する",o:[
@@ -2485,7 +2485,7 @@ const EV = [
     ]},
 
   // ═══ FLOOR 4-5 CROSSRUN EXPANSION ═══
-  {id:"e191",fl:[4,5],tp:"encounter",metaCond:(m)=>m.lastRun?.cause==="escape",
+  {id:"e191",fl:[4,5],tp:"encounter",metaCond:(m: MetaState)=>m.lastRun?.cause==="escape",
     sit:"前回の脱出ルートの痕跡が残っている。自分が通った道の空気が微かに違う──生還者だけが感じる残り香。このルートは知っている。",
     ch:[
       {t:"前回のルートを辿る",o:[
@@ -2497,7 +2497,7 @@ const EV = [
         {c:"default",r:"新しいルートは予想以上に過酷だった。だが前回の経験が精神的な支えになった。",hp:-12,mn:-5,inf:8}
       ]}
     ]},
-  {id:"e192",fl:[4,5],tp:"exploration",metaCond:(m)=>(m.clearedDiffs?.length??0)>=2,
+  {id:"e192",fl:[4,5],tp:"exploration",metaCond:(m: MetaState)=>(m.clearedDiffs?.length??0)>=2,
     sit:"複数の難易度をクリアした者にだけ開く隠し部屋。壁に各難易度の攻略情報が網羅されている。迷宮が「熟練者」として認定した証。",
     ch:[
       {t:"攻略情報を全て吸収する",o:[
@@ -2508,7 +2508,7 @@ const EV = [
         {c:"default",r:"隠し部屋の安全な環境で休息。情報は二の次──まず生き残ることが大事だ。",hp:12,mn:8,inf:5}
       ]}
     ]},
-  {id:"e193",fl:[4,5],tp:"encounter",metaCond:(m)=>(m.totalDeaths??0)>=5,
+  {id:"e193",fl:[4,5],tp:"encounter",metaCond:(m: MetaState)=>(m.totalDeaths??0)>=5,
     sit:"何度も死んだ記憶が、この場所に残留思念として染みついている。自分の死体の幻影が語りかける。「もう何度目だ？」",
     ch:[
       {t:"幻影から教訓を聞く",o:[

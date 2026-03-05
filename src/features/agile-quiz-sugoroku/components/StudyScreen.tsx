@@ -10,7 +10,6 @@ import { TAG_MAP } from '../questions/tag-master';
 import {
   PageWrapper,
   Panel,
-  SectionBox,
   Button,
   HotkeyHint,
   Scanlines,

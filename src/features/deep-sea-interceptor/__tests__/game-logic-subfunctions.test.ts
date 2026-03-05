@@ -8,9 +8,9 @@ import {
   processGraze,
   checkStageProgression,
 } from '../game-logic';
-import { EntityFactory, isBoss } from '../entities';
+import { EntityFactory } from '../entities';
 import { MovementStrategies } from '../movement';
-import { buildGameState, buildUiState } from '../test-helpers';
+import { buildUiState } from '../test-helpers';
 import { DifficultyConfig } from '../constants';
 
 describe('resolvePlayerInput', () => {

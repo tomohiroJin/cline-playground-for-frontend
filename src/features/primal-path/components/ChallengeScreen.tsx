@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import type { AggregateStats, SaveData, SfxType, ChallengeDef } from '../types';
 import type { GameAction } from '../hooks';
 import { CHALLENGES, DIFFS } from '../constants';
-import { Screen, SubTitle, Divider, GameButton, GamePanel, EvoCard, Gc, Xc } from '../styles';
+import { Screen, SubTitle, Divider, GameButton, GamePanel, EvoCard, Xc } from '../styles';
 
 interface Props {
   aggregate: AggregateStats;

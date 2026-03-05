@@ -5,7 +5,7 @@ import React from 'react';
 import type { RunStats, AggregateStats, SfxType } from '../types';
 import type { GameAction } from '../hooks';
 import { DIFFS } from '../constants';
-import { Screen, SubTitle, Divider, GameButton, GamePanel, RunStatRow, Gc, Xc } from '../styles';
+import { Screen, SubTitle, Divider, GameButton, GamePanel, RunStatRow, Gc } from '../styles';
 
 interface Props {
   runStats: RunStats[];
@@ -48,7 +48,7 @@ export const StatsScreen: React.FC<Props> = ({ runStats, aggregate, dispatch, pl
             まだプレイ記録がありません
           </div>
         )}
-        {[...runStats].reverse().slice(0, 20).map((s, i) => {
+        {[...runStats].reverse().slice(0, 20).map((s) => {
           const diff = DIFFS[s.difficulty];
           const icon = s.result === 'victory' ? '✅' : '❌';
           const awk = s.awakening ? ` / ${s.awakening}` : '';

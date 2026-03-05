@@ -4,7 +4,7 @@
 import { useReducer, useEffect, useRef, useCallback, useState } from 'react';
 import type {
   GameState, GamePhase, RunState, Evolution, SaveData,
-  Ally, BiomeId, BgmType, CivTypeExt, SfxType, TickEvent, ASkillId,
+  BiomeId, BgmType, CivTypeExt, SfxType, TickEvent, ASkillId,
   EventChoice, RandomEventDef,
   RunStats, AchievementState, AggregateStats,
 } from './types';
@@ -13,12 +13,11 @@ import {
   applyAwkFx, checkAwakeningRules, rollE, calcBoneReward,
   startFinalBoss, handleFinalBossKill, pickBiomeAuto,
   applyBiomeSelection, applyFirstBiome, applyAutoLastBiome, applyEndlessLoop,
-  calcEndlessScale,
-  deadAllies, allyReviveCost, getTB, applySkill,
+  deadAllies, allyReviveCost, applySkill,
   rollEvent, applyEventChoice,
   calcRunStats, checkAchievement, applyChallenge, calcSynergies,
 } from './game-logic';
-import { AWK_SA, AWK_FA, BOSS, DIFFS, BIO, FRESH_SAVE, TREE as TREE_DATA, ACHIEVEMENTS, CHALLENGES } from './constants';
+import { AWK_SA, AWK_FA, FRESH_SAVE, TREE as TREE_DATA, ACHIEVEMENTS, CHALLENGES } from './constants';
 import { AudioEngine, BgmEngine } from './audio';
 import { Storage, MetaStorage } from './storage';
 
@@ -245,7 +244,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         return { ...state, run: battleRun, phase: 'battle' };
       }
       const prevMhp = state.run.mhp;
-      const { nextRun, allyJoined, allyRevived } = applyEvo(state.run, action.evo);
+      const { nextRun } = applyEvo(state.run, action.evo);
       // Check awakening
       const awkRule = checkAwakeningRules(nextRun);
       if (awkRule) {
@@ -538,7 +537,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     default: {
-      const _exhaustive: never = action;
+      action satisfies never;
       return state;
     }
   }
@@ -628,6 +627,7 @@ export function useBattle(
 
     return clearTimer;
     // state.run?._fPhase: 最終ボス Phase 2 遷移時にタイマーを再起動するために必要
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.phase, state.battleSpd, state.finalMode, state.run?._fPhase, clearTimer, dispatch, onEvents]);
 
   return { clearTimer };

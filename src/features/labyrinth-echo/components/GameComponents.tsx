@@ -6,7 +6,7 @@
  */
 import type { ReactNode } from 'react';
 import { useState, useEffect } from 'react';
-import { CFG, STATUS_META, DIFFICULTY, UNLOCKS } from '../game-logic';
+import { CFG, STATUS_META, UNLOCKS } from '../game-logic';
 import type { Player, DifficultyDef, UnlockDef } from '../game-logic';
 import { Section } from './Section';
 import { Badge } from './Badge';
@@ -198,7 +198,7 @@ export const Change = ({ value, label }: ChangeProps) => {
 };
 
 /** タイプライターテキスト表示 */
-export const TypewriterText = ({ text, revealed, done, ready, skip, serif = true, minHeight = 80, mb = 28 }: TypewriterTextProps) => (
+export const TypewriterText = ({ text: _text, revealed, done, ready: _ready, skip, serif = true, minHeight = 80, mb = 28 }: TypewriterTextProps) => (
   <div onClick={!done ? skip : undefined} style={{ fontSize: 14.5, lineHeight: 2.1, color: "var(--text)", marginBottom: mb, letterSpacing: .5, cursor: !done ? "pointer" : "default", minHeight, fontFamily: serif ? "var(--serif)" : "var(--sans)", whiteSpace: "pre-wrap" }}>
     {revealed}{!done && <span style={{ animation: "pulse 1s infinite", color: "#818cf8" }}>▌</span>}
   </div>

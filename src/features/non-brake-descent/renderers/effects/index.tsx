@@ -17,6 +17,7 @@ export const ParticlesRenderer: React.FC<{ particles: Particle[] }> = React.memo
     ))}
   </>
 )) as React.FC<{ particles: Particle[] }>;
+ParticlesRenderer.displayName = 'ParticlesRenderer';
 
 // スコアポップアップの描画コンポーネント
 export const ScorePopupsRenderer: React.FC<{ popups: ScorePopup[] }> = React.memo(({ popups }) => (
@@ -37,6 +38,7 @@ export const ScorePopupsRenderer: React.FC<{ popups: ScorePopup[] }> = React.mem
     ))}
   </>
 )) as React.FC<{ popups: ScorePopup[] }>;
+ScorePopupsRenderer.displayName = 'ScorePopupsRenderer';
 
 // ニアミスエフェクトの描画コンポーネント
 export const NearMissRenderer: React.FC<{ effects: NearMissEffect[] }> = React.memo(({ effects }) => (
@@ -51,6 +53,7 @@ export const NearMissRenderer: React.FC<{ effects: NearMissEffect[] }> = React.m
     ))}
   </>
 )) as React.FC<{ effects: NearMissEffect[] }>;
+NearMissRenderer.displayName = 'NearMissRenderer';
 
 // 危険度ビネットエフェクトの描画コンポーネント
 export const DangerVignette: React.FC<{ level: number }> = React.memo(({ level }) =>
@@ -70,3 +73,4 @@ export const DangerVignette: React.FC<{ level: number }> = React.memo(({ level }
     />
   )
 ) as React.FC<{ level: number }>;
+DangerVignette.displayName = 'DangerVignette';

@@ -1,6 +1,6 @@
 // ドラフト状態管理・遷移ロジック（純粋関数中心）
 
-import type { Player, DeckState, CardEffect } from './types';
+import type { Player, DeckState } from './types';
 import { DraftCards } from './draft-cards';
 
 /** ドラフト状態の型定義 */

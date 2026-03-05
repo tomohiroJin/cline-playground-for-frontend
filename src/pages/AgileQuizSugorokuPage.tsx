@@ -19,7 +19,7 @@ import {
   CONFIG,
 } from '../features/agile-quiz-sugoroku';
 import { createDefaultAudioActions } from '../features/agile-quiz-sugoroku/audio/audio-actions';
-import { SprintSummary, GamePhase } from '../features/agile-quiz-sugoroku/types';
+import { SprintSummary } from '../features/agile-quiz-sugoroku/types';
 import { saveGameResult } from '../features/agile-quiz-sugoroku/result-storage';
 import { getGrade } from '../features/agile-quiz-sugoroku/constants';
 import { classifyEngineerType } from '../features/agile-quiz-sugoroku/engineer-classifier';

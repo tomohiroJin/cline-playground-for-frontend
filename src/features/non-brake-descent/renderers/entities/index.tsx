@@ -204,6 +204,7 @@ export const RampRenderer: React.FC<{
   height: number;
   transitionEffect: number;
 }>;
+RampRenderer.displayName = 'RampRenderer';
 
 // プレイヤーの描画コンポーネント
 export const PlayerRenderer: React.FC<{

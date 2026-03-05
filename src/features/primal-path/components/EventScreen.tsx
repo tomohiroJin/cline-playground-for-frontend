@@ -185,7 +185,7 @@ export const EventScreen: React.FC<Props> = ({ event, run, onChoose, playSfx }) 
         <EventDesc>{event.description}</EventDesc>
         <SituationText>{event.situationText}</SituationText>
 
-        {event.choices.map((choice, i) => {
+        {event.choices.map((choice) => {
           const affordable = canAfford(choice);
           return (
             <ChoiceBtn

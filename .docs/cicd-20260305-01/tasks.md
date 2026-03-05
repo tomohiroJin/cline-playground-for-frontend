@@ -13,34 +13,34 @@
 
 ### 1-1: `typecheck` スクリプト追加
 
-- [ ] `package.json` に `"typecheck": "tsc --noEmit"` を追加
-- [ ] `npm run typecheck` が正常に実行されることを確認
-- [ ] 型エラーが存在する場合に終了コード 1 で終了することを確認
+- [x] `package.json` に `"typecheck": "tsc --noEmit"` を追加
+- [x] `npm run typecheck` が正常に実行されることを確認
+- [x] 型エラーが存在する場合に終了コード 1 で終了することを確認
 
 ### 1-2: `lint:ci` スクリプト追加
 
-- [ ] `package.json` に `"lint:ci": "eslint src --max-warnings 0"` を追加
-- [ ] `npm run lint:ci` が正常に実行されることを確認
-- [ ] warning が存在する場合に終了コード 1 で終了することを確認
+- [x] `package.json` に `"lint:ci": "eslint src --max-warnings 0"` を追加
+- [x] `npm run lint:ci` が正常に実行されることを確認
+- [x] warning が存在する場合に終了コード 1 で終了することを確認
 
 ### 1-3: `ci` スクリプト追加
 
-- [ ] `package.json` に `"ci": "npm run lint:ci && npm run typecheck && npm test && npm run build"` を追加
-- [ ] `npm run ci` が全ステップを順次実行することを確認
-- [ ] いずれかのステップが失敗した場合に後続がスキップされることを確認
+- [x] `package.json` に `"ci": "npm run lint:ci && npm run typecheck && npm test && npm run build"` を追加
+- [x] `npm run ci` が全ステップを順次実行することを確認
+- [x] いずれかのステップが失敗した場合に後続がスキップされることを確認
 
 ### 1-4: `.nvmrc` ファイル作成
 
-- [ ] プロジェクトルートに `.nvmrc` を作成（内容: `20`）
-- [ ] `nvm use` で正しいバージョンに切り替わることを確認（nvm 利用環境のみ）
+- [x] プロジェクトルートに `.nvmrc` を作成（内容: `20`）
+- [-] `nvm use` で正しいバージョンに切り替わることを確認（nvm 利用環境のみ）
 
 ### 1-5: 動作確認
 
-- [ ] `npm run typecheck` が成功すること
-- [ ] `npm run lint:ci` が成功すること
-- [ ] `npm test` が成功すること
-- [ ] `npm run build` が成功すること
-- [ ] `npm run ci` が全ステップ成功すること
+- [x] `npm run typecheck` が成功すること
+- [x] `npm run lint:ci` が成功すること
+- [x] `npm test` が成功すること
+- [x] `npm run build` が成功すること
+- [x] `npm run ci` が全ステップ成功すること
 
 ---
 
