@@ -48,43 +48,43 @@
 
 ### 2-1: ワークフローファイル作成
 
-- [ ] `.github/workflows/` ディレクトリを作成
-- [ ] `ci.yml` を作成
+- [x] `.github/workflows/` ディレクトリを作成
+- [x] `ci.yml` を作成
 
 ### 2-2: Lint ジョブ
 
-- [ ] `lint` ジョブを定義
-- [ ] `actions/checkout@v4` でソースをチェックアウト
-- [ ] `actions/setup-node@v4` で Node.js セットアップ（`.nvmrc` 参照）
-- [ ] `npm ci` で依存関係インストール
-- [ ] `npm run lint:ci` でリント実行
+- [x] `lint` ジョブを定義
+- [x] `actions/checkout@v4` でソースをチェックアウト
+- [x] `actions/setup-node@v4` で Node.js セットアップ（`.nvmrc` 参照）
+- [x] `npm ci` で依存関係インストール
+- [x] `npm run lint:ci` でリント実行
 
 ### 2-3: TypeCheck ジョブ
 
-- [ ] `typecheck` ジョブを定義
-- [ ] lint ジョブと並列実行される設定
-- [ ] `npm run typecheck` で型チェック実行
+- [x] `typecheck` ジョブを定義
+- [x] lint ジョブと並列実行される設定
+- [x] `npm run typecheck` で型チェック実行
 
 ### 2-4: Test ジョブ
 
-- [ ] `test` ジョブを定義
-- [ ] `npm run test:coverage` でカバレッジ付きテスト実行
-- [ ] `actions/upload-artifact@v4` でカバレッジレポートを保存
-- [ ] テスト失敗時もカバレッジレポートがアップロードされること（`if: always()`）
+- [x] `test` ジョブを定義
+- [x] `npm run test:coverage` でカバレッジ付きテスト実行
+- [x] `actions/upload-artifact@v4` でカバレッジレポートを保存
+- [x] テスト失敗時もカバレッジレポートがアップロードされること（`if: always()`）
 
 ### 2-5: Build ジョブ
 
-- [ ] `build` ジョブを定義
-- [ ] `needs: [lint, typecheck, test]` で依存関係を設定
-- [ ] `npm run build` で本番ビルド実行
-- [ ] `actions/upload-artifact@v4` で `dist/` をアーティファクトとして保存
+- [x] `build` ジョブを定義
+- [x] `needs: [lint, typecheck, test]` で依存関係を設定
+- [x] `npm run build` で本番ビルド実行
+- [x] `actions/upload-artifact@v4` で `dist/` をアーティファクトとして保存
 
 ### 2-6: ワークフロー共通設定
 
-- [ ] `on.pull_request.branches: [main]` トリガー設定
-- [ ] `on.push.branches: [main]` トリガー設定
-- [ ] `concurrency` で同一ブランチの重複実行をキャンセル設定
-- [ ] npm キャッシュ設定（`cache: 'npm'`）
+- [x] `on.pull_request.branches: [main]` トリガー設定
+- [x] `on.push.branches: [main]` トリガー設定
+- [x] `concurrency` で同一ブランチの重複実行をキャンセル設定
+- [x] npm キャッシュ設定（`cache: 'npm'`）
 
 ### 2-7: 動作確認
 
@@ -108,35 +108,35 @@
 
 ### 3-1: プリデプロイ検証スクリプト作成
 
-- [ ] `scripts/` ディレクトリを作成
-- [ ] `scripts/pre-deploy.sh` を作成
-- [ ] 実行権限を付与（`chmod +x`）
+- [x] `scripts/` ディレクトリを作成
+- [x] `scripts/pre-deploy.sh` を作成
+- [x] 実行権限を付与（`chmod +x`）
 
 ### 3-2: 検証ステップの実装
 
-- [ ] ステップ 1: `npm ci` による依存関係のクリーンインストール
-- [ ] ステップ 2: `npm run lint:ci` によるリント検証
-- [ ] ステップ 3: `npm run typecheck` による型チェック
-- [ ] ステップ 4: `npm test` によるテスト実行
-- [ ] ステップ 5: `npm run build` による本番ビルド
-- [ ] ステップ 6: ビルド成果物の検証
-  - [ ] `dist/index.html` の存在確認
-  - [ ] `*.bundle.js` の存在確認（1個以上）
-  - [ ] ソースマップ（`.map`）ファイルの検出・警告
-  - [ ] `dist/` ディレクトリのサイズ確認（50MB 以下）
+- [x] ステップ 1: `npm ci` による依存関係のクリーンインストール
+- [x] ステップ 2: `npm run lint:ci` によるリント検証
+- [x] ステップ 3: `npm run typecheck` による型チェック
+- [x] ステップ 4: `npm test` によるテスト実行
+- [x] ステップ 5: `npm run build` による本番ビルド
+- [x] ステップ 6: ビルド成果物の検証
+  - [x] `dist/index.html` の存在確認
+  - [x] `*.bundle.js` の存在確認（1個以上）
+  - [x] ソースマップ（`.map`）ファイルの検出・警告
+  - [x] `dist/` ディレクトリのサイズ確認（50MB 以下）
 
 ### 3-3: ログ出力
 
-- [ ] 色付きログ出力（INFO: 緑, WARN: 黄, ERROR: 赤）
-- [ ] 各ステップの開始・完了メッセージ
-- [ ] 失敗時のエラーメッセージとゼロ以外の終了コード
+- [x] 色付きログ出力（INFO: 緑, WARN: 黄, ERROR: 赤）
+- [x] 各ステップの開始・完了メッセージ
+- [x] 失敗時のエラーメッセージとゼロ以外の終了コード
 
 ### 3-4: 動作確認
 
-- [ ] `./scripts/pre-deploy.sh` がローカルで正常に実行されること
-- [ ] 全ステップが順次実行され、成功メッセージが表示されること
-- [ ] 意図的にテストを失敗させた場合、後続ステップが実行されないこと
-- [ ] `dist/` の検証が正しく行われること
+- [x] `./scripts/pre-deploy.sh` がローカルで正常に実行されること
+- [x] 全ステップが順次実行され、成功メッセージが表示されること
+- [x] 意図的にテストを失敗させた場合、後続ステップが実行されないこと（`set -euo pipefail` で保証）
+- [x] `dist/` の検証が正しく行われること（テストで検証済み）
 
 ---
 
