@@ -277,3 +277,15 @@ export const PHASE_GENRE_MAP: { [phase: string]: string[] } = {
   review: ['release', 'team', 'scrum'],
   emergency: ['incident', 'sre'],
 };
+
+/** イベントIDと背景画像IDのマッピング */
+export const EVENT_BACKGROUND_MAP: Record<string, string> = {
+  planning: 'planning',
+  impl1: 'dev',
+  test1: 'dev',
+  refinement: 'planning',
+  impl2: 'dev',
+  test2: 'dev',
+  review: 'planning',
+  emergency: 'emergency',
+};

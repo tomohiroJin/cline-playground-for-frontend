@@ -6,6 +6,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { StoryEntry } from '../types';
 import { CHARACTER_PROFILES } from '../character-profiles';
+import { AQS_IMAGES } from '../images';
 import {
   StoryWrapper,
   StoryContent,
@@ -36,6 +37,20 @@ export interface StoryScreenProps {
   headerLabel?: string;
 }
 
+/** imageKeyから対応する画像URLを取得 */
+function getStoryImage(imageKey: string): string | undefined {
+  // ストーリー画像（story_01〜story_08）
+  if (imageKey in AQS_IMAGES.stories) {
+    return AQS_IMAGES.stories[imageKey as keyof typeof AQS_IMAGES.stories];
+  }
+  // エンディング画像（ending_common, ending_epilogue）
+  const endingKey = imageKey.replace('ending_', '');
+  if (endingKey in AQS_IMAGES.endings) {
+    return AQS_IMAGES.endings[endingKey as keyof typeof AQS_IMAGES.endings];
+  }
+  return undefined;
+}
+
 /** キャラクターIDから名前を取得 */
 function getCharacterName(characterId: string): string {
   const profile = CHARACTER_PROFILES.find((c) => c.id === characterId);
@@ -60,10 +75,15 @@ export const StoryScreen: React.FC<StoryScreenProps> = ({
 }) => {
   // 現在表示中の行インデックス（0始まり）
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
+  const [bgError, setBgError] = useState(false);
 
-  // ストーリーデータが変わったらインデックスをリセット
+  // 背景画像の取得
+  const bgImage = getStoryImage(storyData.imageKey);
+
+  // ストーリーデータが変わったらインデックスとエラーをリセット
   useEffect(() => {
     setCurrentLineIndex(0);
+    setBgError(false);
   }, [storyData]);
 
   /** 次の行へ進む or 完了 */
@@ -95,6 +115,25 @@ export const StoryScreen: React.FC<StoryScreenProps> = ({
 
   return (
     <StoryWrapper>
+      {/* 背景イラスト（半透明オーバーレイ） */}
+      {bgImage && !bgError && (
+        <img
+          src={bgImage}
+          alt=""
+          onError={() => setBgError(true)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            opacity: 0.12,
+            transition: 'opacity 0.5s ease-in-out',
+            zIndex: 0,
+            pointerEvents: 'none',
+          }}
+        />
+      )}
       <StoryContent role="region" aria-label="ストーリー" onClick={handleAdvance}>
         <StoryHeader>
           <StorySprintLabel>{headerLabel ?? `Sprint ${sprintNumber}`}</StorySprintLabel>

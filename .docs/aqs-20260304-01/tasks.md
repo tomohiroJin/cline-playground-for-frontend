@@ -171,62 +171,64 @@
 
 ### 6. キャラクター以外の各種画像一新
 
-#### 6.1 イベント画像（8枚）— ユーザー作業: 生成→配置
-- [ ] `aqs_event_planning.webp` — チーム計画中のイラスト
-- [ ] `aqs_event_impl1.webp` — ネコがコーディング中
-- [ ] `aqs_event_test1.webp` — ウサギがバグ探索中
-- [ ] `aqs_event_refinement.webp` — チーム議論中
-- [ ] `aqs_event_impl2.webp` — ペアプロ中
-- [ ] `aqs_event_test2.webp` — CI/CD実行中
-- [ ] `aqs_event_review.webp` — デモ実施中
-- [ ] `aqs_event_emergency.webp` — 緊急対応中
+#### 6.1 イベント画像（8枚）— PNG→WebP変換＋リサイズ (800x447) 完了
+- [x] `aqs_event_planning.webp` — チーム計画中のイラスト（※元ファイル名 test1.png を修正）
+- [x] `aqs_event_impl1.webp` — ネコがコーディング中
+- [x] `aqs_event_test1.webp` — ウサギがバグ探索中（※元ファイル名 impl2.webp.png を修正）
+- [x] `aqs_event_refinement.webp` — チーム議論中
+- [x] `aqs_event_impl2.webp` — ペアプロ中
+- [x] `aqs_event_test2.webp` — CI/CD実行中
+- [x] `aqs_event_review.webp` — デモ実施中
+- [x] `aqs_event_emergency.webp` — 緊急対応中
 
-#### 6.2 UI画像（6枚）— ユーザー作業: 生成→配置
-- [ ] `aqs_correct.webp` — ペンギンOKサイン
-- [ ] `aqs_incorrect.webp` — ペンギン励ましの表情
-- [ ] `aqs_timeup.webp` — ウサギが焦っている
-- [ ] `aqs_build_success.webp` — チームハイタッチ
-- [ ] `aqs_grade_celebration.webp` — トロフィーを掲げるチーム
-- [ ] `aqs_retro.webp` — カフェでリラックスチーム
+#### 6.2 UI画像（6枚）— PNG→WebP変換＋リサイズ (512x512) 完了
+- [x] `aqs_correct.webp` — ペンギンOKサイン
+- [x] `aqs_incorrect.webp` — ペンギン励ましの表情
+- [x] `aqs_timeup.webp` — ウサギが焦っている
+- [x] `aqs_build_success.webp` — チームハイタッチ
+- [x] `aqs_grade_celebration.webp` — トロフィーを掲げるチーム
+- [x] `aqs_retro.webp` — カフェでリラックスチーム
 
-#### 6.3 チームタイプ画像（6枚）— ユーザー作業: 生成→配置
-- [ ] `aqs_type_synergy.webp` — 手を合わせて光る5キャラ
-- [ ] `aqs_type_resilient.webp` — 嵐の中で笑顔の5キャラ
-- [ ] `aqs_type_evolving.webp` — 階段を上る5キャラ
-- [ ] `aqs_type_agile.webp` — 風を切って走る5キャラ
-- [ ] `aqs_type_struggling.webp` — 重い荷物を背負い前進する5キャラ
-- [ ] `aqs_type_forming.webp` — 新芽の前に並ぶ5キャラ
+#### 6.3 チームタイプ画像（6枚）— PNG→WebP変換＋リサイズ (512x512) 完了
+- [x] `aqs_type_synergy.webp` — 手を合わせて光る5キャラ
+- [x] `aqs_type_resilient.webp` — 嵐の中で笑顔の5キャラ
+- [x] `aqs_type_evolving.webp` — 階段を上る5キャラ
+- [x] `aqs_type_agile.webp` — 風を切って走る5キャラ
+- [x] `aqs_type_struggling.webp` — 重い荷物を背負い前進する5キャラ
+- [x] `aqs_type_forming.webp` — 新芽の前に並ぶ5キャラ
 
 #### 6.4 画像コード対応
-- [ ] `images.ts` のチームタイプ画像キーを新ファイル名に変更
-- [ ] 旧エンジニアタイプ画像の参照を削除
+- [x] `images.ts` のチームタイプ画像キーを新ファイル名に変更
+- [x] 旧エンジニアタイプ画像の参照を削除
+- [x] 旧画像ファイル（stable, firefighter, growth, speed, debt, default）を削除
 
-### 7. エンディングイラスト（2枚）— ユーザー作業: 生成→配置
-- [ ] `aqs_ending_common.webp` — チーム全員がプロダクト完成を祝うシーン
-- [ ] `aqs_ending_epilogue.webp` — 夕日を背景に未来を見つめる5人のシルエット
-- [ ] `images.ts` にエンディング画像の import 追加
+### 7. エンディングイラスト（2枚）— PNG→WebP変換＋リサイズ (1280x714) 完了
+- [x] `aqs_ending_common.webp` — チーム全員がプロダクト完成を祝うシーン
+- [x] `aqs_ending_epilogue.webp` — 夕日を背景に未来を見つめる5人のシルエット
+- [x] `images.ts` にエンディング画像の import 追加
 
-### 8. ストーリーイラスト（8枚）— ユーザー作業: 生成→配置
-- [ ] `aqs_story_01.webp` — 5キャラの出会い
-- [ ] `aqs_story_02.webp` — 意見対立
-- [ ] `aqs_story_03.webp` — 最初の壁
-- [ ] `aqs_story_04.webp` — 変わり始める空気
-- [ ] `aqs_story_05.webp` — 助け合い
-- [ ] `aqs_story_06.webp` — 自分たちのリズム
-- [ ] `aqs_story_07.webp` — 嵐を超えて
-- [ ] `aqs_story_08.webp` — 真のTeam
-- [ ] `images.ts` にストーリー画像の import 追加
+### 8. ストーリーイラスト（8枚）— PNG→WebP変換＋リサイズ (1280x714) 完了
+- [x] `aqs_story_01.webp` — 5キャラの出会い
+- [x] `aqs_story_02.webp` — 意見対立
+- [x] `aqs_story_03.webp` — 最初の壁
+- [x] `aqs_story_04.webp` — 変わり始める空気
+- [x] `aqs_story_05.webp` — 助け合い
+- [x] `aqs_story_06.webp` — 自分たちのリズム
+- [x] `aqs_story_07.webp` — 嵐を超えて
+- [x] `aqs_story_08.webp` — 真のTeam
+- [x] `images.ts` にストーリー画像の import 追加
 
-### 9. 背景画像（5枚）— ユーザー作業: 生成→配置
-- [ ] `aqs_bg_office.webp` — オフィス/チームルーム
-- [ ] `aqs_bg_planning.webp` — 会議室
-- [ ] `aqs_bg_dev.webp` — 開発スペース
-- [ ] `aqs_bg_emergency.webp` — 緊急対応空間
-- [ ] `aqs_bg_retro.webp` — カフェスペース
-- [ ] `images.ts` に背景画像の import 追加
-- [ ] 背景切り替えロジックの実装（`EVENT_BACKGROUND_MAP`）
-- [ ] `QuizScreen.tsx` に背景画像表示処理を追加
-- [ ] フェードトランジション（0.5秒）の実装
+### 9. 背景画像（5枚）— PNG→WebP変換＋リサイズ (1920x1072) 完了
+- [x] `aqs_bg_office.webp` — オフィス/チームルーム
+- [x] `aqs_bg_planning.webp` — 会議室
+- [x] `aqs_bg_dev.webp` — 開発スペース
+- [x] `aqs_bg_emergency.webp` — 緊急対応空間
+- [x] `aqs_bg_retro.webp` — カフェスペース
+- [x] `images.ts` に背景画像の import 追加
+- [x] 背景切り替えロジックの実装（`EVENT_BACKGROUND_MAP`）
+- [x] `QuizScreen.tsx` に背景画像表示処理を追加
+- [x] `StoryScreen.tsx` に背景イラスト表示処理を追加
+- [x] フェードトランジション（0.5秒）の実装
 
 ### 10. 画像検証
 - [ ] ブラウザで全画面の画像表示を目視確認
