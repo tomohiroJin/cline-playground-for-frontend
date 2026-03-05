@@ -9,7 +9,7 @@ export interface GameSeoData {
 }
 
 /** サイトのベースURL */
-export const SITE_BASE_URL = 'https://niku9.click';
+export const SITE_BASE_URL = 'https://play.niku9.click';
 
 /** サイト名 */
 export const SITE_NAME = 'Game Platform';
@@ -95,6 +95,48 @@ export const GAME_SEO_DATA: Readonly<Record<string, GameSeoData>> = {
     path: '/primal-path',
   },
 };
+
+/** FAQ アイテムの型定義 */
+export interface FaqItem {
+  /** 質問 */
+  readonly question: string;
+  /** 回答 */
+  readonly answer: string;
+}
+
+/** About ページ用 FAQ データ */
+export const ABOUT_FAQ_ITEMS: ReadonlyArray<FaqItem> = [
+  {
+    question: 'Game Platform は無料ですか？',
+    answer:
+      'はい、すべてのゲームは完全無料でプレイできます。課金要素はありません。',
+  },
+  {
+    question: 'ユーザー登録は必要ですか？',
+    answer:
+      'いいえ、ユーザー登録は不要です。サイトにアクセスするだけですぐにゲームをプレイできます。',
+  },
+  {
+    question: 'どのブラウザで遊べますか？',
+    answer:
+      'Google Chrome および Microsoft Edge の最新版を推奨しています。その他のモダンブラウザでも基本的に動作します。',
+  },
+  {
+    question: 'スマートフォンでも遊べますか？',
+    answer:
+      'はい、多くのゲームはスマートフォンでもプレイ可能です。ただし、一部のゲームはPC操作を推奨しています。各ゲームの注意事項をご確認ください。',
+  },
+  {
+    question: 'ゲームのデータはどこに保存されますか？',
+    answer:
+      'ゲームの進行データやスコアはブラウザの localStorage に保存されます。サーバーには送信されません。ブラウザのキャッシュクリアでデータが消える場合がありますのでご注意ください。',
+  },
+  {
+    question: '何種類のゲームがありますか？',
+    answer:
+      '現在 13 種類のゲームを提供しています。パズル、シューティング、RPG、レース、ホラー、ストラテジーなど多彩なジャンルを取り揃えています。',
+  },
+];
 
 /** ページごとのmeta description マッピング（ゲーム以外を含む） */
 export const META_DESCRIPTIONS: Readonly<Record<string, string>> = {

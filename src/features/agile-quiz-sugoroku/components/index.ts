@@ -13,3 +13,4 @@ export { StudySelectScreen } from './StudySelectScreen';
 export { StudyScreen } from './StudyScreen';
 export { StudyResultScreen } from './StudyResultScreen';
 export { GuideScreen } from './GuideScreen';
+export { StoryScreen } from './StoryScreen';

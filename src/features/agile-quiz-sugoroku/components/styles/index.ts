@@ -8,3 +8,4 @@ export * from './common';
 export * from './layout';
 export * from './quiz';
 export * from './result';
+export * from './story';

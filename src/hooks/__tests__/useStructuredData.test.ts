@@ -25,7 +25,7 @@ describe('useStructuredData', () => {
       const gameData = {
         name: 'Test Game',
         description: 'テスト用ゲーム説明文',
-        url: 'https://niku9.click/test',
+        url: 'https://play.niku9.click/test',
       };
 
       renderHook(() => useStructuredData({ type: 'VideoGame', data: gameData }));
@@ -39,7 +39,7 @@ describe('useStructuredData', () => {
       expect(parsed['@type']).toBe('VideoGame');
       expect(parsed.name).toBe('Test Game');
       expect(parsed.description).toBe('テスト用ゲーム説明文');
-      expect(parsed.url).toBe('https://niku9.click/test');
+      expect(parsed.url).toBe('https://play.niku9.click/test');
       expect(parsed.gamePlatform).toBe('Web Browser');
       expect(parsed.applicationCategory).toBe('Game');
       expect(parsed.operatingSystem).toBe('Any');
@@ -49,10 +49,9 @@ describe('useStructuredData', () => {
         priceCurrency: 'JPY',
       });
       expect(parsed.inLanguage).toBe('ja');
+      expect(parsed['@id']).toBe('https://play.niku9.click/test#game');
       expect(parsed.isPartOf).toEqual({
-        '@type': 'WebSite',
-        name: 'Game Platform',
-        url: 'https://niku9.click/',
+        '@id': 'https://play.niku9.click/#website',
       });
     });
 
@@ -60,7 +59,7 @@ describe('useStructuredData', () => {
       const gameData = {
         name: 'Test Game',
         description: 'テスト用',
-        url: 'https://niku9.click/test',
+        url: 'https://play.niku9.click/test',
       };
 
       const { unmount } = renderHook(() =>
@@ -79,8 +78,8 @@ describe('useStructuredData', () => {
     it('パンくずリストの JSON-LD が正しく挿入されること', () => {
       const breadcrumbData = {
         items: [
-          { name: 'ホーム', url: 'https://niku9.click/' },
-          { name: 'Test Game', url: 'https://niku9.click/test' },
+          { name: 'ホーム', url: 'https://play.niku9.click/' },
+          { name: 'Test Game', url: 'https://play.niku9.click/test' },
         ],
       };
 
@@ -94,26 +93,27 @@ describe('useStructuredData', () => {
 
       expect(parsed['@context']).toBe('https://schema.org');
       expect(parsed['@type']).toBe('BreadcrumbList');
+      expect(parsed['@id']).toBe('https://play.niku9.click/test#breadcrumb');
       expect(parsed.itemListElement).toHaveLength(2);
       expect(parsed.itemListElement[0]).toEqual({
         '@type': 'ListItem',
         position: 1,
         name: 'ホーム',
-        item: 'https://niku9.click/',
+        item: 'https://play.niku9.click/',
       });
       expect(parsed.itemListElement[1]).toEqual({
         '@type': 'ListItem',
         position: 2,
         name: 'Test Game',
-        item: 'https://niku9.click/test',
+        item: 'https://play.niku9.click/test',
       });
     });
 
     it('アンマウント時にパンくずリストスクリプトが削除されること', () => {
       const breadcrumbData = {
         items: [
-          { name: 'ホーム', url: 'https://niku9.click/' },
-          { name: 'Test', url: 'https://niku9.click/test' },
+          { name: 'ホーム', url: 'https://play.niku9.click/' },
+          { name: 'Test', url: 'https://play.niku9.click/test' },
         ],
       };
 
@@ -134,7 +134,7 @@ describe('useStructuredData', () => {
       const gameData = {
         name: '<script>alert("xss")</script>',
         description: 'テスト',
-        url: 'https://niku9.click/test',
+        url: 'https://play.niku9.click/test',
       };
 
       renderHook(() => useStructuredData({ type: 'VideoGame', data: gameData }));

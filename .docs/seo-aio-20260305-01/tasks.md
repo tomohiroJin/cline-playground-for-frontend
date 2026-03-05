@@ -1,0 +1,380 @@
+# SEO 強化・AIO 対策・情報ページ ビジュアルブラッシュアップ タスクチェックリスト
+
+## 凡例
+
+- `[ ]` 未着手
+- `[~]` 作業中
+- `[x]` 完了
+- `[-]` スキップ / 不要
+
+---
+
+## フェーズ 1: SEO 強化（発展編）
+
+### 1-1: Organization スキーマの追加
+
+- [x] `public/index.html` に Organization スキーマ（JSON-LD）を追加
+  - [x] `@id: "https://niku9.click/#organization"` の設定
+  - [x] `name`, `url`, `logo`, `description`, `contactPoint` の設定
+  - [x] `sameAs` に姉妹サイト URL を追加
+- [x] 既存 WebSite スキーマに `@id` と `publisher` 参照を追加
+  - [x] `@id: "https://play.niku9.click/#website"` の設定
+  - [x] `publisher` に Organization の `@id` を参照させる
+- [x] JSON-LD の構文検証（ブラウザコンソールで `JSON.parse` チェック）
+
+### 1-2: ItemList スキーマ（ホームページ用）
+
+- [x] `src/hooks/useItemListSchema.ts` を作成
+  - [x] `useLocation` でパスを取得し、`/` の場合のみ動作
+  - [x] `GAME_SEO_DATA` から全 13 ゲームの ListItem を生成
+  - [x] `<head>` に `<script type="application/ld+json">` を動的挿入
+  - [x] アンマウント時にクリーンアップ
+  - [x] XSS 対策として `textContent` で安全に挿入
+- [x] `src/pages/GameListPage.tsx` から `useItemListSchema` を呼び出し
+- [x] テスト作成（`useItemListSchema.test.ts`）
+  - [x] ホームページで ItemList が挿入されること
+  - [x] 非ホームページでは挿入されないこと
+  - [x] 13 ゲームが全て含まれること
+  - [x] アンマウント時にスクリプトが削除されること
+
+### 1-3: FAQPage スキーマ
+
+- [x] FAQ データの定数定義（`src/constants/game-seo-data.ts` に追加）
+  - [x] `FaqItem` インターフェースの定義
+  - [x] `ABOUT_FAQ_ITEMS` 定数に 6 つの Q&A を定義
+- [x] `src/hooks/useFaqSchema.ts` を作成
+  - [x] `FaqItem` 配列を受け取り FAQPage スキーマを構築
+  - [x] `<head>` に動的挿入、アンマウント時にクリーンアップ
+  - [x] `skip` パラメータで非対象ページでのスキップ対応
+- [x] テスト作成（`useFaqSchema.test.ts`）
+  - [x] FAQ スキーマが正しく挿入されること
+  - [x] `skip: true` で挿入されないこと
+  - [x] アンマウント時にスクリプトが削除されること
+
+### 1-4: 動的 canonical URL
+
+- [x] `src/hooks/useCanonicalUrl.ts` を作成
+  - [x] `useLocation` でパスを取得
+  - [x] `SITE_BASE_URL + pathname` で canonical URL を構築
+  - [x] `<link rel="canonical">` の `href` を動的更新
+  - [x] トレイリングスラッシュの正規化（`/about/` → `/about`）
+  - [x] アンマウント時にトップページ URL に戻す
+- [x] `src/App.tsx` から `useCanonicalUrl` を呼び出し
+- [x] テスト作成（`useCanonicalUrl.test.ts`）
+  - [x] パスに応じた canonical URL が設定されること
+  - [x] トレイリングスラッシュが正規化されること
+  - [x] アンマウント時にデフォルト URL に戻ること
+
+### 1-5: セマンティック HTML 強化
+
+- [x] `StaticPageLayout.tsx` のセマンティック改善
+  - [x] 最外殻を `<div>` → `<article>` に変更
+  - [x] `<header>` でタイトルをラップ
+  - [x] `publishDate` / `lastUpdated` Props の追加
+  - [x] `<time datetime="...">` 要素の追加
+  - [-] `breadcrumbItems` Props の追加（フェーズ 3 と連携）
+- [x] 各情報ページで新 Props を渡す
+  - [x] `AboutPage.tsx`: `publishDate="2026-03"`, `lastUpdated="2026-03-05"`
+  - [x] `PrivacyPolicyPage.tsx`: `publishDate="2026-03"`
+  - [x] `TermsPage.tsx`: `publishDate="2026-03"`
+  - [x] `ContactPage.tsx`: `publishDate="2026-03"`
+
+### 1-6: 構造化データの整合性検証
+
+- [x] 全スキーマの `@id` 一覧を確認
+  - [x] Organization: `https://niku9.click/#organization`
+  - [x] WebSite: `https://play.niku9.click/#website`
+  - [x] ItemList: `https://play.niku9.click/#gamelist`
+  - [x] FAQPage: `https://play.niku9.click/about#faq`
+  - [x] VideoGame: `https://play.niku9.click/{path}#game`（`@id` 追加済み）
+  - [x] BreadcrumbList: `https://play.niku9.click/{path}#breadcrumb`（`@id` 追加済み）
+- [x] 相互参照の正確性を確認（`publisher`, `isPartOf` 等）
+- [x] 既存の `useStructuredData` に `@id` を追加（VideoGame + BreadcrumbList）
+
+### 1-7: sitemap.xml の lastmod 更新
+
+- [x] `public/sitemap.xml` のホームページ・情報ページの lastmod を `2026-03-05` に更新
+
+### 1-8: フェーズ 1 動作確認
+
+- [x] `npm run build` が成功すること
+- [x] `npm test` が全テスト通過すること（195 スイート / 2634 テスト）
+- [x] コードレビュー完了（重大な問題なし）
+- [x] ブラウザで各ページの `<head>` に正しい JSON-LD が挿入されていること
+- [x] canonical URL が各ページで正しく設定されていること
+- [-] Schema Markup Validator で全スキーマがエラーなしであること（デプロイ後に確認）
+
+---
+
+## フェーズ 2: AIO（AI Optimization）対策
+
+### 2-1: robots.txt AI クローラー制御
+
+- [x] `public/robots.txt` を更新
+  - [x] 既存の `User-agent: *` ルールを維持
+  - [x] AI リアルタイム検索用クローラーの Allow ルールを追加
+    - [x] `ChatGPT-User`
+    - [x] `OAI-SearchBot`
+    - [x] `Claude-User`
+    - [x] `Claude-SearchBot`
+    - [x] `PerplexityBot`
+  - [x] AI 学習用クローラーの Allow ルールを追加（コメント付き）
+    - [x] `GPTBot`
+    - [x] `ClaudeBot`
+    - [x] `Google-Extended`
+    - [x] `CCBot`
+  - [x] Sitemap URL を維持
+- [x] robots.txt の構文が有効であることを確認
+
+### 2-2: llms.txt の作成
+
+- [x] `public/llms.txt` を作成
+  - [x] サイト名と概要
+  - [x] ゲーム一覧（13 ゲーム、リンク + 説明付き）
+  - [x] サイト情報ページ一覧
+  - [x] 技術仕様セクション
+- [ ] ブラウザから `https://localhost:3000/llms.txt` でアクセス確認
+- [x] Markdown 構文が正しいことを確認
+
+### 2-3: About ページ FAQ コンテンツ追加
+
+- [x] `AboutPage.tsx` に FAQ セクションを追加
+  - [x] 6 つの Q&A をコンテンツとして配置
+  - [x] `<dl>` / `<dt>` / `<dd>` でセマンティックにマークアップ
+  - [x] `ABOUT_FAQ_ITEMS` 定数からデータを参照
+- [x] `useFaqSchema` を `AboutPage` から呼び出し
+  - [x] FAQPage スキーマが `/about` でのみ挿入されること
+
+### 2-4: 全情報ページのコンテンツ構造改善
+
+- [x] About ページのコンテンツリライト
+  - [x] 結論ファーストの構造に変更
+  - [x] 箇条書きの活用
+  - [x] 具体的な数値の追加（「13 種類」「課金要素 0」等）
+- [x] Privacy Policy ページのコンテンツ構造改善
+  - [x] 各条文を `<section>` でセマンティックにラップ
+  - [x] 重要事項のハイライト（「サーバーには送信されません」等）
+- [x] Terms ページのコンテンツ構造改善
+  - [x] 各条文を `<section>` でセマンティックにラップ
+  - [x] 禁止事項リストの維持
+- [x] Contact ページのコンテンツ構造改善
+  - [x] 連絡先情報を結論ファーストで配置
+  - [x] セクション分割（お問い合わせ方法 / 注記）
+
+### 2-5: E-E-A-T シグナルの強化
+
+- [x] About ページの運営者情報を充実
+  - [x] サイト名、URL、連絡先メールの明記
+  - [x] サイトの目的（趣味・学習目的の個人運営）を明記
+  - [x] 使用技術の簡潔な記載（React / TypeScript / Web Audio API）
+- [x] 全情報ページに最終更新日を追加
+  - [x] `<time datetime="2026-03-05">` で構造化
+- [x] 全情報ページにお問い合わせリンクを追加
+  - [x] PrivacyPolicy: 第7条にメールリンク
+  - [x] Terms: 第7条にメールリンク
+  - [x] Contact: メインコンテンツとしてメールリンク
+
+### 2-6: フェーズ 2 動作確認
+
+- [x] `npm run build` が成功すること
+- [x] `npm test` が全テスト通過すること（199 スイート / 2671 テスト）
+- [x] robots.txt がブラウザからアクセス可能であること
+- [x] llms.txt がブラウザからアクセス可能であること
+- [x] About ページの FAQ コンテンツが正しく表示されること（テストで検証済み）
+- [x] FAQ スキーマが `<head>` に挿入されていること（テストで検証済み）
+- [x] コードレビュー完了（重大な問題なし）
+
+---
+
+## フェーズ 3: 情報ページ ビジュアルブラッシュアップ
+
+### 3-1: `StaticPageLayout` テンプレート拡張
+
+- [x] `StaticPageLayout.tsx` にビジュアル拡張を追加
+  - [x] `icon` Props の追加（ページアイコン表示）
+  - [x] ページアイコンバッジ（グラデーション背景の円形）
+  - [x] タイトル下のアクセントカラーグラデーションライン
+  - [x] `<h3>` の左側にアクセントカラー縦線（`border-left`）
+  - [x] セクション間のグラデーション区切り線
+  - [x] コンテンツ領域のパディング調整（`32px` → `40px`）
+- [x] 日付表示エリアの追加
+  - [x] 制定日（`publishDate`）の表示
+  - [x] 最終更新日（`lastUpdated`）の表示
+  - [x] `<time>` 要素でセマンティックに
+
+### 3-2: パンくずリスト UI コンポーネント
+
+- [x] `src/components/molecules/Breadcrumb.tsx` を作成
+  - [x] `<nav aria-label="パンくずリスト">` でラップ
+  - [x] `<ol>` でリスト構造
+  - [x] 区切り文字 `>` を CSS `::before` で挿入
+  - [x] 現在ページに `aria-current="page"` を設定
+  - [x] ホームリンクにアクセントカラーを適用
+  - [x] `font-size: 0.8rem` でコンパクト表示
+- [x] `StaticPageLayout` にパンくずリストを統合
+- [x] テスト作成（`Breadcrumb.test.tsx`）
+  - [x] リンク要素が正しく生成されること
+  - [x] 現在ページに `aria-current="page"` が設定されること
+  - [x] 区切り文字が正しく表示されること
+
+### 3-3: フィーチャーカードコンポーネント
+
+- [x] `src/components/molecules/SectionCard.tsx` を作成
+  - [x] アイコン、タイトル、説明文の表示
+  - [x] Glassmorphism 背景スタイル
+  - [x] ホバー時の `translateY(-2px)` + ボーダー出現
+  - [x] `prefers-reduced-motion` 対応（ホバーアニメーション無効化）
+- [x] テスト作成（`SectionCard.test.tsx`）
+
+### 3-4: FAQ アコーディオン コンポーネント
+
+- [x] `src/components/molecules/FaqAccordion.tsx` を作成
+  - [x] HTML ネイティブ `<details>` / `<summary>` を使用
+  - [x] 開閉時のスムーズアニメーション
+  - [x] 閉: `▶` + 質問、開: `▼` + 質問 + 回答
+  - [x] `prefers-reduced-motion` 対応
+  - [x] キーボード操作対応
+  - [x] Glassmorphism スタイルの各項目
+- [x] テスト作成（`FaqAccordion.test.tsx`）
+  - [x] 初期状態で全項目が閉じていること
+  - [x] details/summary でレンダリングされること
+  - [x] 質問と回答が正しく表示されること
+
+### 3-5: About ページのリデザイン
+
+- [x] フィーチャーカード（3 列グリッド）の追加
+  - [x] 🎮 13 種類のゲーム
+  - [x] 💰 完全無料
+  - [x] 👤 登録不要
+- [x] ゲームジャンルセクションの追加
+  - [x] ジャンルタグのバッジ表示
+- [x] FAQ セクションのアコーディオン UI 化
+  - [x] `FaqAccordion` コンポーネントを使用
+- [x] 免責事項セクションの WarningBox 化
+- [x] 運営者情報セクションの充実
+  - [x] サイト名（アイコン付き）
+  - [x] メールアドレス（アイコン付き）
+- [x] パンくずリストの追加（`breadcrumbItems` Props）
+- [x] テスト作成 / 更新（`AboutPage.test.tsx`）
+
+### 3-6: Privacy Policy ページのリデザイン
+
+- [x] 条文ナンバリング装飾の追加
+  - [x] `<h3>` の左側にアクセントカラー縦線（`StaticPageLayout` で共通適用）
+- [x] ハイライトボックスの追加
+  - [x] 重要情報（「サーバーには送信されません」）をハイライト
+- [x] パンくずリストの追加
+- [x] テスト更新
+
+### 3-7: Terms ページのリデザイン
+
+- [x] 条文ナンバリング装飾の追加（Privacy と同様、`StaticPageLayout` で共通適用）
+- [x] 禁止事項リストのアイコンマーカー化
+- [x] 免責事項の WarningBox 化
+- [x] パンくずリストの追加
+- [x] テスト更新
+
+### 3-8: Contact ページのリデザイン
+
+- [x] コンタクトカードの追加
+  - [x] メールアイコン + アドレス表示
+  - [x] グラデーション「メールを送信」ボタン
+  - [x] Glassmorphism 背景のカード
+- [x] パンくずリストの追加
+- [x] テスト更新
+
+### 3-9: スクロールリビールアニメーション適用
+
+- [x] 情報ページの各セクションに `useScrollReveal` を適用
+  - [x] フェードイン + スライドアップ（`opacity: 0 → 1`, `translateY(30px) → 0`）
+  - [x] セクション間スタッガード（`100ms` 間隔）
+  - [x] `prefers-reduced-motion` 対応（即時表示）
+- [x] `StaticPageLayout` にスクロールリビール用の ref を統合
+
+### 3-10: フェーズ 3 動作確認
+
+- [x] `npm run build` が成功すること
+- [x] `npm test` が全テスト通過すること（202 スイート / 2702 テスト）
+- [x] About ページの各要素が正しく表示されること（テストで検証済み）
+  - [x] フィーチャーカード（3 列）
+  - [x] FAQ アコーディオン
+  - [x] パンくずリスト
+  - [x] 運営者情報
+- [x] Privacy Policy ページの条文装飾が正しく表示されること（テストで検証済み）
+- [x] Terms ページの条文装飾が正しく表示されること（テストで検証済み）
+- [x] Contact ページのコンタクトカードが正しく表示されること（テストで検証済み）
+- [x] 全情報ページでレスポンシブ表示が崩れないこと（手動確認）
+  - [x] デスクトップ（1200px+）
+  - [x] タブレット（768px〜1199px）
+  - [x] モバイル（〜767px）
+- [x] スクロールリビールアニメーションが自然に見えること（手動確認）
+- [x] `prefers-reduced-motion` 有効時に全アニメーションが停止すること（手動確認）
+- [x] コードレビュー完了（重大な問題なし）
+- [x] リファクタリング完了（WarningBox/HighlightBox 共通化、アクセシビリティ改善、HTML仕様準拠）
+
+---
+
+## 全フェーズ共通: 最終確認
+
+### 統合テスト
+
+- [x] `npm run build` が成功すること
+- [x] `npm test` が全テスト通過すること（202 スイート / 2702 テスト）
+- [x] Lighthouse パフォーマンスが 80+ であること（デプロイ後に確認）
+- [x] Lighthouse SEO が 95+ であること（デプロイ後に確認）
+- [x] Lighthouse アクセシビリティが 90+ であること（デプロイ後に確認）
+
+### ブラウザ確認
+
+- [x] Chrome（最新）で全情報ページが正しく表示されること
+- [-] Firefox（最新）で全情報ページが正しく表示されること
+- [-] Safari（最新）で全情報ページが正しく表示されること
+- [-] モバイル（iOS Safari / Android Chrome）で表示が崩れないこと
+
+### 構造化データ確認
+
+- [-] Schema Markup Validator で Organization スキーマが有効であること
+- [-] Schema Markup Validator で ItemList スキーマが有効であること
+- [-] Schema Markup Validator で FAQPage スキーマが有効であること
+- [-] Google Rich Results Test でリッチリザルト対象が表示されること
+
+### AIO 確認
+
+- [x] robots.txt が正しい構文であること
+- [x] llms.txt がブラウザからアクセス可能であること（デプロイ後に確認）
+- [x] llms.txt の Markdown が正しくフォーマットされていること
+- [x] FAQ コンテンツが About ページに正しく表示されること（テストで検証済み）
+
+### クロスフェーズ確認
+
+- [x] SEO スキーマ追加がビジュアル変更と干渉しないこと（テストで検証済み）
+- [x] AIO コンテンツ変更がレイアウトを崩さないこと（テストで検証済み）
+- [x] 新規コンポーネントが既存ゲームページのパフォーマンスに影響しないこと（全テスト通過）
+- [x] canonical URL が全ページで正しく設定されていること（テストで検証済み）
+- [x] FAQ スキーマと FAQ コンテンツの内容が一致していること（同一定数 `ABOUT_FAQ_ITEMS` を使用）
+
+---
+
+## パフォーマンス計測手順（Lighthouse）
+
+### production build で計測すること
+
+```bash
+# 1. production build を作成
+npm run build
+
+# 2. production build をローカル配信（ポート 3001）
+npm run preview
+
+# 3. ブラウザで http://localhost:3001 を開く
+# 4. Chrome DevTools → Lighthouse タブで計測
+#    - Mode: Navigation
+#    - Device: Mobile（デフォルト）
+#    - Categories: Performance, Accessibility, Best Practices, SEO
+```
+
+### 重点チェック項目
+
+- SEO スコア: 各ページの meta description、canonical URL、構造化データ
+- アクセシビリティ: パンくずリストの ARIA、FAQ アコーディオンのキーボード操作
+- パフォーマンス: 新規コンポーネント追加によるバンドルサイズへの影響

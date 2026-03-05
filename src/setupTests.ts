@@ -39,6 +39,35 @@ if (typeof window !== 'undefined') {
   }
 }
 
+// matchMedia のモック（jsdom では未実装のため）
+if (typeof window !== 'undefined' && !window.matchMedia) {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    configurable: true,
+    value: jest.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    })),
+  });
+}
+
+// IntersectionObserver のモック（jsdom では未実装のため）
+if (typeof globalThis.IntersectionObserver === 'undefined') {
+  class MockIntersectionObserver {
+    observe = jest.fn();
+    unobserve = jest.fn();
+    disconnect = jest.fn();
+  }
+  (globalThis as Record<string, unknown>).IntersectionObserver =
+    MockIntersectionObserver;
+}
+
 // scrollIntoView のモック（jsdom では未実装のため）
 Element.prototype.scrollIntoView = jest.fn();
 

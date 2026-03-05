@@ -6,6 +6,8 @@ import { useKeys } from '../hooks';
 import { CONFIG, COLORS, FONTS, SPRINT_OPTIONS } from '../constants';
 import { AQS_IMAGES } from '../images';
 import { loadGameResult } from '../result-storage';
+import { loadGameState, deleteSaveState } from '../save-manager';
+import { SaveState } from '../types';
 import { ParticleEffect } from './ParticleEffect';
 import {
   PageWrapper,
@@ -25,6 +27,8 @@ import {
 interface TitleScreenProps {
   /** ゲーム開始時のコールバック */
   onStart: (sprintCount: number) => void;
+  /** セーブデータからの復元時のコールバック */
+  onResume?: (saveState: SaveState) => void;
   /** 勉強会モード開始時のコールバック */
   onStudy?: () => void;
   /** ガイド画面表示時のコールバック */
@@ -36,7 +40,7 @@ const makeFeatures = (sprintCount: number) => [
   ['📋', `${sprintCount}スプリント`, 'を走破せよ'],
   ['⏱️', `制限時間${CONFIG.timeLimit}秒`, 'の4択クイズ'],
   ['🚨', '技術的負債', 'が溜まると緊急対応発生'],
-  ['🏷️', 'エンジニアタイプ', 'を診断'],
+  ['🏷️', 'チームタイプ', 'を診断'],
   ['🔥', 'コンボボーナス', 'で連続正解を狙え'],
   ['💡', '解説付き', 'で知識を定着'],
 ];
@@ -44,18 +48,52 @@ const makeFeatures = (sprintCount: number) => [
 /**
  * タイトル画面
  */
-export const TitleScreen: React.FC<TitleScreenProps> = ({ onStart, onStudy, onGuide }) => {
+/** セーブ日時をフォーマット */
+function formatSaveDate(timestamp: number): string {
+  const d = new Date(timestamp);
+  return `${d.getMonth() + 1}月${d.getDate()}日 ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+}
+
+export const TitleScreen: React.FC<TitleScreenProps> = ({ onStart, onResume, onStudy, onGuide }) => {
   const [sprintCount, setSprintCount] = useState<number>(CONFIG.sprintCount);
+  const [showOverwriteConfirm, setShowOverwriteConfirm] = useState(false);
 
   // 前回結果
   const lastResult = useMemo(() => loadGameResult(), []);
 
+  // セーブデータ
+  const saveState = useMemo(() => loadGameState(), []);
+
   // 機能紹介リスト（スプリント数に連動）
   const features = useMemo(() => makeFeatures(sprintCount), [sprintCount]);
 
+  /** 「続きから」ボタン */
+  const handleResume = () => {
+    if (saveState && onResume) {
+      onResume(saveState);
+      deleteSaveState();
+    }
+  };
+
+  /** 新しいゲーム開始（セーブデータ上書き確認付き） */
+  const handleNewGame = () => {
+    if (saveState) {
+      setShowOverwriteConfirm(true);
+    } else {
+      onStart(sprintCount);
+    }
+  };
+
+  /** 上書き確認OK */
+  const handleConfirmOverwrite = () => {
+    deleteSaveState();
+    setShowOverwriteConfirm(false);
+    onStart(sprintCount);
+  };
+
   useKeys((e) => {
     if (e.key === 'Enter' || e.key === ' ') {
-      onStart(sprintCount);
+      handleNewGame();
     }
   });
 
@@ -127,7 +165,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({ onStart, onStudy, onGu
               {lastResult.grade} rank
             </span>
             <span>正答率 {lastResult.correctRate}%</span>
-            <span style={{ color: COLORS.text }}>{lastResult.engineerTypeName}</span>
+            <span style={{ color: COLORS.text }}>{lastResult.teamTypeName ?? lastResult.engineerTypeName}</span>
           </div>
         )}
 
@@ -182,9 +220,20 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({ onStart, onStudy, onGu
         </SectionBox>
 
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, marginTop: 4 }}>
+          {/* 「続きから」ボタン */}
+          {saveState && onResume && (
+            <Button
+              $color={COLORS.yellow}
+              onClick={handleResume}
+              style={{ padding: '12px 44px', fontSize: 13 }}
+            >
+              ▶ 続きから（スプリント {saveState.currentSprint + 1}/{saveState.sprintCount} - {formatSaveDate(saveState.timestamp)}）
+            </Button>
+          )}
+
           <Button
             $color="#34d399"
-            onClick={() => onStart(sprintCount)}
+            onClick={handleNewGame}
             style={{ padding: '14px 52px', fontSize: 14 }}
           >
             ▶ Sprint Start
@@ -203,6 +252,40 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({ onStart, onStudy, onGu
             )}
           </div>
         </div>
+
+        {/* セーブデータ上書き確認ダイアログ */}
+        {showOverwriteConfirm && (
+          <div style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}>
+            <div style={{
+              background: COLORS.card,
+              border: `1px solid ${COLORS.border2}`,
+              borderRadius: 12,
+              padding: '24px 32px',
+              maxWidth: 360,
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: 14, color: COLORS.text, marginBottom: 16 }}>
+                セーブデータがあります。新しいゲームを開始すると上書きされます。
+              </div>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+                <Button $color={COLORS.red} onClick={handleConfirmOverwrite} style={{ padding: '10px 20px', fontSize: 12 }}>
+                  上書きして開始
+                </Button>
+                <Button $color={COLORS.muted} onClick={() => setShowOverwriteConfirm(false)} style={{ padding: '10px 20px', fontSize: 12 }}>
+                  キャンセル
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </Panel>
     </PageWrapper>
   );

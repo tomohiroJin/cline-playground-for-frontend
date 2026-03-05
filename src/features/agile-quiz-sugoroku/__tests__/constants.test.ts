@@ -114,7 +114,7 @@ describe('Agile Quiz Sugoroku - 定数とユーティリティ', () => {
 
     it('各グレードにはラベルが設定されている', () => {
       const grade = getGrade(100, 100, 0);
-      expect(grade.label).toBe('Legendary');
+      expect(grade.label).toBe('Dream Team');
       expect(grade.color).toBeDefined();
     });
   });
@@ -206,7 +206,7 @@ describe('Agile Quiz Sugoroku - 定数とユーティリティ', () => {
 
     it('正答率50%未満かつ緊急対応成功ありでその言及がある', () => {
       const text = getSummaryText(40, 8, 5, 1);
-      expect(text).toContain('緊急時の対応力');
+      expect(text).toContain('緊急対応力');
     });
   });
 
