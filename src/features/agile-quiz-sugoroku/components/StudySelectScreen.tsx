@@ -1,20 +1,18 @@
 /**
  * 勉強会モード - ジャンル選択画面
  */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { TAG_MASTER } from '../questions/tag-master';
 import { PHASE_GENRE_MAP, COLORS, FONTS } from '../constants';
-import { TagStats } from '../types';
-import { getTagColor } from '../tag-stats';
 import { countStudyQuestions } from '../study-question-pool';
 import { loadGameResult } from '../result-storage';
+import { CHARACTER_GENRE_MAP, getGenresForCharacters } from '../character-genre-map';
 import {
   PageWrapper,
   Panel,
   SectionBox,
   SectionTitle,
   Button,
-  HotkeyHint,
   Scanlines,
   Divider,
 } from './styles';
@@ -50,6 +48,7 @@ const LIMIT_OPTIONS = [
 
 export const StudySelectScreen: React.FC<StudySelectScreenProps> = ({ onStart, onBack }) => {
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
+  const [selectedCharacters, setSelectedCharacters] = useState<Set<string>>(new Set());
   const [limit, setLimit] = useState(10);
 
   // 前回結果から苦手ジャンルを取得
@@ -78,6 +77,24 @@ export const StudySelectScreen: React.FC<StudySelectScreenProps> = ({ onStart, o
     });
   };
 
+  // キャラクター選択のトグル
+  const toggleCharacter = useCallback((characterId: string) => {
+    setSelectedCharacters((prev) => {
+      const next = new Set(prev);
+      if (next.has(characterId)) {
+        next.delete(characterId);
+      } else {
+        next.add(characterId);
+      }
+
+      // 選択中の全キャラクターの和集合ジャンルを計算してタグを更新
+      const genres = getGenresForCharacters([...next]);
+      setSelectedTags(new Set(genres));
+
+      return next;
+    });
+  }, []);
+
   const selectPhaseGroup = (phases: string[]) => {
     const tags = new Set<string>();
     for (const phase of phases) {
@@ -94,10 +111,14 @@ export const StudySelectScreen: React.FC<StudySelectScreenProps> = ({ onStart, o
       }
       return next;
     });
+    // 工程選択時はキャラクター選択をクリア
+    setSelectedCharacters(new Set());
   };
 
   const selectWeak = () => {
     setSelectedTags(new Set(weakGenreIds));
+    // 苦手克服時はキャラクター選択をクリア
+    setSelectedCharacters(new Set());
   };
 
   const handleStart = () => {
@@ -133,6 +154,42 @@ export const StudySelectScreen: React.FC<StudySelectScreenProps> = ({ onStart, o
           </div>
           <Divider />
         </div>
+
+        {/* キャラクターで絞り込み */}
+        <SectionBox>
+          <SectionTitle>CHARACTER SELECT</SectionTitle>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}>
+            {CHARACTER_GENRE_MAP.map((mapping) => {
+              const isSelected = selectedCharacters.has(mapping.characterId);
+              return (
+                <button
+                  key={mapping.characterId}
+                  onClick={() => toggleCharacter(mapping.characterId)}
+                  style={{
+                    background: isSelected ? `${COLORS.accent}22` : `${COLORS.bg}dd`,
+                    border: `1px solid ${isSelected ? COLORS.accent : COLORS.border}`,
+                    color: isSelected ? COLORS.accent : COLORS.muted,
+                    padding: '8px 12px',
+                    borderRadius: 8,
+                    fontSize: 12,
+                    cursor: 'pointer',
+                    fontWeight: isSelected ? 700 : 400,
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    flexDirection: 'column' as const,
+                    alignItems: 'center',
+                    gap: 2,
+                    minWidth: 64,
+                  }}
+                >
+                  <span style={{ fontSize: 20 }}>{mapping.emoji}</span>
+                  <span>{mapping.characterName}</span>
+                  <span style={{ fontSize: 9, opacity: 0.7 }}>{mapping.role}</span>
+                </button>
+              );
+            })}
+          </div>
+        </SectionBox>
 
         {/* 工程別クイック選択 */}
         <SectionBox>
