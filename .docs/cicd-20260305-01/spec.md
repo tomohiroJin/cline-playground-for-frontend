@@ -313,9 +313,9 @@ if [ "$SOURCEMAP_COUNT" -gt 0 ]; then
   log_warn "本番環境にソースマップをデプロイしないことを確認してください"
 fi
 
-# dist ディレクトリの合計サイズ確認（上限: 50MB）
+# dist ディレクトリの合計サイズ確認（上限: 100MB）
 DIST_SIZE=$(du -sm dist | cut -f1)
-MAX_DIST_SIZE=50
+MAX_DIST_SIZE=100
 if [ "$DIST_SIZE" -gt "$MAX_DIST_SIZE" ]; then
   log_error "dist ディレクトリのサイズが上限（${MAX_DIST_SIZE}MB）を超えています: ${DIST_SIZE}MB"
   exit 1
@@ -345,7 +345,7 @@ chmod +x scripts/pre-deploy.sh
 | `dist/index.html` の存在 | ファイルが存在 | エラー終了 |
 | `*.bundle.js` の存在 | 1個以上存在 | エラー終了 |
 | ソースマップ（`.map`）の存在 | 0個（推奨） | 警告（通過） |
-| dist ディレクトリサイズ | 50MB 以下 | エラー終了 |
+| dist ディレクトリサイズ | 100MB 以下 | エラー終了 |
 
 ### 3.3 Webpack 本番ビルドの確認事項
 

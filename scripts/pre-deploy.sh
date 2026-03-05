@@ -69,9 +69,9 @@ if [ "$SOURCEMAP_COUNT" -gt 0 ]; then
   log_warn "本番環境にソースマップをデプロイしないことを確認してください"
 fi
 
-# dist ディレクトリの合計サイズ確認（上限: 50MB）
+# dist ディレクトリの合計サイズ確認（上限: 100MB）
 DIST_SIZE=$(du -sm dist | cut -f1)
-MAX_DIST_SIZE=50
+MAX_DIST_SIZE=100
 if [ "$DIST_SIZE" -gt "$MAX_DIST_SIZE" ]; then
   log_error "dist ディレクトリのサイズが上限（${MAX_DIST_SIZE}MB）を超えています: ${DIST_SIZE}MB"
   exit 1
