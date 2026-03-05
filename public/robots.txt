@@ -1,4 +1,34 @@
+# 検索エンジンクローラー: 全ページ許可
 User-agent: *
 Allow: /
-
 Sitemap: https://niku9.click/sitemap.xml
+
+# AI リアルタイム検索用クローラー: 許可（AI 検索結果に表示されるため）
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+# AI 学習用クローラー: 許可（コンテンツを広く認知してもらうため）
+# ※ 必要に応じて Disallow に変更可能
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /

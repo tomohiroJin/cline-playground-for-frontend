@@ -54,7 +54,7 @@ describe('sitemap.xml', () => {
     });
   });
 
-  it('lastmod が 2026-03-03 で設定されている', () => {
+  it('lastmod が 2026-03-05 で設定されている', () => {
     const newPages = ['/about', '/privacy-policy', '/terms', '/contact'];
     for (const page of newPages) {
       const escapedPage = page.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -64,7 +64,7 @@ describe('sitemap.xml', () => {
         )
       );
       expect(match).not.toBeNull();
-      expect(match![1]).toBe('2026-03-03');
+      expect(match![1]).toBe('2026-03-05');
     }
   });
 
