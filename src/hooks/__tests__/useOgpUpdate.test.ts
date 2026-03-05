@@ -18,7 +18,7 @@ describe('useOgpUpdate', () => {
   /** 元のOGP値 */
   const originalOgTitle = 'Game Platform';
   const originalOgDescription = '13種類の無料ブラウザゲームが楽しめるゲームプラットフォーム';
-  const originalOgUrl = 'https://niku9.click/';
+  const originalOgUrl = 'https://play.niku9.click/';
 
   /** テスト用OGPメタタグを初期化 */
   const ensureOgMeta = (property: string, content: string): void => {
@@ -57,7 +57,7 @@ describe('useOgpUpdate', () => {
       mockPathname.pathname = '/puzzle';
       renderHook(() => useOgpUpdate());
 
-      expect(getOgMeta('og:url')).toBe('https://niku9.click/puzzle');
+      expect(getOgMeta('og:url')).toBe('https://play.niku9.click/puzzle');
     });
   });
 

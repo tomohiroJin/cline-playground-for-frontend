@@ -2,6 +2,7 @@ import React, { useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useScrollReveal } from '../hooks/useScrollReveal';
 import { useLazyImage } from '../hooks/useLazyImage';
+import { useItemListSchema } from '../hooks/useItemListSchema';
 import { HomeParallaxBg } from '../components/organisms/HomeParallaxBg';
 import { ParticleField } from '../components/atoms/ParticleField';
 import { TypeWriter } from '../components/atoms/TypeWriter';
@@ -224,6 +225,8 @@ const GameCard: React.FC<{ card: GameCardData; index: number }> = ({ card, index
 };
 
 const GameListPage: React.FC = () => {
+  // ホームページ用 ItemList 構造化データを挿入
+  useItemListSchema();
   const gridRef = useScrollReveal<HTMLElement>();
 
   const cards = useMemo(
