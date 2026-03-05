@@ -8,7 +8,7 @@ import { StaticPageLayout } from '../components/templates/StaticPageLayout';
  */
 const PrivacyPolicyPage: React.FC = () => {
   return (
-    <StaticPageLayout title="プライバシーポリシー">
+    <StaticPageLayout title="プライバシーポリシー" publishDate="2026-03">
       <p>
         Game Platform（以下「本サイト」）は、ユーザーのプライバシーを尊重し、
         個人情報の保護に努めます。本プライバシーポリシーでは、本サイトにおける
@@ -77,7 +77,6 @@ const PrivacyPolicyPage: React.FC = () => {
         <a href="mailto:contact@niku9.click">contact@niku9.click</a>
       </p>
 
-      <p>制定日: 2026年3月</p>
     </StaticPageLayout>
   );
 };

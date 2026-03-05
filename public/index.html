@@ -49,15 +49,40 @@
     }
   </style>
 
-  <!-- 構造化データ（JSON-LD） -->
+  <!-- 構造化データ（JSON-LD）: Organization -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": "https://niku9.click/#organization",
+    "name": "niku9.click",
+    "url": "https://niku9.click/",
+    "logo": "https://niku9.click/icon-192.png",
+    "description": "13種類の無料ブラウザゲームを提供するゲームプラットフォーム",
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "email": "contact@niku9.click",
+      "contactType": "customer service"
+    },
+    "sameAs": [
+      "https://gallery.niku9.click"
+    ]
+  }
+  </script>
+
+  <!-- 構造化データ（JSON-LD）: WebSite -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "WebSite",
+    "@id": "https://niku9.click/#website",
     "name": "Game Platform",
     "url": "https://niku9.click/",
     "description": "13種類の無料ブラウザゲームが楽しめるゲームプラットフォーム",
-    "inLanguage": "ja"
+    "inLanguage": "ja",
+    "publisher": {
+      "@id": "https://niku9.click/#organization"
+    }
   }
   </script>
 </head>

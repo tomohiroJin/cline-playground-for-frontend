@@ -13,88 +13,89 @@
 
 ### 1-1: Organization スキーマの追加
 
-- [ ] `public/index.html` に Organization スキーマ（JSON-LD）を追加
-  - [ ] `@id: "https://niku9.click/#organization"` の設定
-  - [ ] `name`, `url`, `logo`, `description`, `contactPoint` の設定
-  - [ ] `sameAs` に姉妹サイト URL を追加
-- [ ] 既存 WebSite スキーマに `@id` と `publisher` 参照を追加
-  - [ ] `@id: "https://niku9.click/#website"` の設定
-  - [ ] `publisher` に Organization の `@id` を参照させる
-- [ ] JSON-LD の構文検証（ブラウザコンソールで `JSON.parse` チェック）
+- [x] `public/index.html` に Organization スキーマ（JSON-LD）を追加
+  - [x] `@id: "https://niku9.click/#organization"` の設定
+  - [x] `name`, `url`, `logo`, `description`, `contactPoint` の設定
+  - [x] `sameAs` に姉妹サイト URL を追加
+- [x] 既存 WebSite スキーマに `@id` と `publisher` 参照を追加
+  - [x] `@id: "https://niku9.click/#website"` の設定
+  - [x] `publisher` に Organization の `@id` を参照させる
+- [x] JSON-LD の構文検証（ブラウザコンソールで `JSON.parse` チェック）
 
 ### 1-2: ItemList スキーマ（ホームページ用）
 
-- [ ] `src/hooks/useItemListSchema.ts` を作成
-  - [ ] `useLocation` でパスを取得し、`/` の場合のみ動作
-  - [ ] `GAME_SEO_DATA` から全 13 ゲームの ListItem を生成
-  - [ ] `<head>` に `<script type="application/ld+json">` を動的挿入
-  - [ ] アンマウント時にクリーンアップ
-  - [ ] XSS 対策として `textContent` で安全に挿入
-- [ ] `src/pages/GameListPage.tsx` から `useItemListSchema` を呼び出し
-- [ ] テスト作成（`useItemListSchema.test.ts`）
-  - [ ] ホームページで ItemList が挿入されること
-  - [ ] 非ホームページでは挿入されないこと
-  - [ ] 13 ゲームが全て含まれること
-  - [ ] アンマウント時にスクリプトが削除されること
+- [x] `src/hooks/useItemListSchema.ts` を作成
+  - [x] `useLocation` でパスを取得し、`/` の場合のみ動作
+  - [x] `GAME_SEO_DATA` から全 13 ゲームの ListItem を生成
+  - [x] `<head>` に `<script type="application/ld+json">` を動的挿入
+  - [x] アンマウント時にクリーンアップ
+  - [x] XSS 対策として `textContent` で安全に挿入
+- [x] `src/pages/GameListPage.tsx` から `useItemListSchema` を呼び出し
+- [x] テスト作成（`useItemListSchema.test.ts`）
+  - [x] ホームページで ItemList が挿入されること
+  - [x] 非ホームページでは挿入されないこと
+  - [x] 13 ゲームが全て含まれること
+  - [x] アンマウント時にスクリプトが削除されること
 
 ### 1-3: FAQPage スキーマ
 
-- [ ] FAQ データの定数定義（`src/constants/game-seo-data.ts` に追加）
-  - [ ] `FaqItem` インターフェースの定義
-  - [ ] `ABOUT_FAQ_ITEMS` 定数に 6 つの Q&A を定義
-- [ ] `src/hooks/useFaqSchema.ts` を作成
-  - [ ] `FaqItem` 配列を受け取り FAQPage スキーマを構築
-  - [ ] `<head>` に動的挿入、アンマウント時にクリーンアップ
-  - [ ] `skip` パラメータで非対象ページでのスキップ対応
-- [ ] テスト作成（`useFaqSchema.test.ts`）
-  - [ ] FAQ スキーマが正しく挿入されること
-  - [ ] `skip: true` で挿入されないこと
-  - [ ] アンマウント時にスクリプトが削除されること
+- [x] FAQ データの定数定義（`src/constants/game-seo-data.ts` に追加）
+  - [x] `FaqItem` インターフェースの定義
+  - [x] `ABOUT_FAQ_ITEMS` 定数に 6 つの Q&A を定義
+- [x] `src/hooks/useFaqSchema.ts` を作成
+  - [x] `FaqItem` 配列を受け取り FAQPage スキーマを構築
+  - [x] `<head>` に動的挿入、アンマウント時にクリーンアップ
+  - [x] `skip` パラメータで非対象ページでのスキップ対応
+- [x] テスト作成（`useFaqSchema.test.ts`）
+  - [x] FAQ スキーマが正しく挿入されること
+  - [x] `skip: true` で挿入されないこと
+  - [x] アンマウント時にスクリプトが削除されること
 
 ### 1-4: 動的 canonical URL
 
-- [ ] `src/hooks/useCanonicalUrl.ts` を作成
-  - [ ] `useLocation` でパスを取得
-  - [ ] `SITE_BASE_URL + pathname` で canonical URL を構築
-  - [ ] `<link rel="canonical">` の `href` を動的更新
-  - [ ] トレイリングスラッシュの正規化（`/about/` → `/about`）
-  - [ ] アンマウント時にトップページ URL に戻す
-- [ ] `src/App.tsx` から `useCanonicalUrl` を呼び出し
-- [ ] テスト作成（`useCanonicalUrl.test.ts`）
-  - [ ] パスに応じた canonical URL が設定されること
-  - [ ] トレイリングスラッシュが正規化されること
-  - [ ] アンマウント時にデフォルト URL に戻ること
+- [x] `src/hooks/useCanonicalUrl.ts` を作成
+  - [x] `useLocation` でパスを取得
+  - [x] `SITE_BASE_URL + pathname` で canonical URL を構築
+  - [x] `<link rel="canonical">` の `href` を動的更新
+  - [x] トレイリングスラッシュの正規化（`/about/` → `/about`）
+  - [x] アンマウント時にトップページ URL に戻す
+- [x] `src/App.tsx` から `useCanonicalUrl` を呼び出し
+- [x] テスト作成（`useCanonicalUrl.test.ts`）
+  - [x] パスに応じた canonical URL が設定されること
+  - [x] トレイリングスラッシュが正規化されること
+  - [x] アンマウント時にデフォルト URL に戻ること
 
 ### 1-5: セマンティック HTML 強化
 
-- [ ] `StaticPageLayout.tsx` のセマンティック改善
-  - [ ] 最外殻を `<div>` → `<article>` に変更
-  - [ ] `<header>` でタイトルをラップ
-  - [ ] `publishDate` / `lastUpdated` Props の追加
-  - [ ] `<time datetime="...">` 要素の追加
-  - [ ] `breadcrumbItems` Props の追加（フェーズ 3 と連携）
-- [ ] 各情報ページで新 Props を渡す
-  - [ ] `AboutPage.tsx`: `publishDate="2026-03"`, `lastUpdated="2026-03-05"`
-  - [ ] `PrivacyPolicyPage.tsx`: `publishDate="2026-03"`
-  - [ ] `TermsPage.tsx`: `publishDate="2026-03"`
-  - [ ] `ContactPage.tsx`
+- [x] `StaticPageLayout.tsx` のセマンティック改善
+  - [x] 最外殻を `<div>` → `<article>` に変更
+  - [x] `<header>` でタイトルをラップ
+  - [x] `publishDate` / `lastUpdated` Props の追加
+  - [x] `<time datetime="...">` 要素の追加
+  - [-] `breadcrumbItems` Props の追加（フェーズ 3 と連携）
+- [x] 各情報ページで新 Props を渡す
+  - [x] `AboutPage.tsx`: `publishDate="2026-03"`, `lastUpdated="2026-03-05"`
+  - [x] `PrivacyPolicyPage.tsx`: `publishDate="2026-03"`
+  - [x] `TermsPage.tsx`: `publishDate="2026-03"`
+  - [x] `ContactPage.tsx`: `publishDate="2026-03"`
 
 ### 1-6: 構造化データの整合性検証
 
-- [ ] 全スキーマの `@id` 一覧を確認
-  - [ ] Organization: `https://niku9.click/#organization`
-  - [ ] WebSite: `https://niku9.click/#website`
-  - [ ] ItemList: `https://niku9.click/#gamelist`
-  - [ ] FAQPage: `https://niku9.click/about#faq`
-  - [ ] VideoGame: `https://niku9.click/{path}#game`（既存）
-  - [ ] BreadcrumbList: `https://niku9.click/{path}#breadcrumb`（既存）
-- [ ] 相互参照の正確性を確認（`publisher`, `isPartOf` 等）
-- [ ] 既存の `useGameStructuredData` に `@id` を追加（未設定の場合）
+- [x] 全スキーマの `@id` 一覧を確認
+  - [x] Organization: `https://niku9.click/#organization`
+  - [x] WebSite: `https://niku9.click/#website`
+  - [x] ItemList: `https://niku9.click/#gamelist`
+  - [x] FAQPage: `https://niku9.click/about#faq`
+  - [x] VideoGame: `https://niku9.click/{path}#game`（`@id` 追加済み）
+  - [x] BreadcrumbList: `https://niku9.click/{path}#breadcrumb`（`@id` 追加済み）
+- [x] 相互参照の正確性を確認（`publisher`, `isPartOf` 等）
+- [x] 既存の `useStructuredData` に `@id` を追加（VideoGame + BreadcrumbList）
 
 ### 1-7: フェーズ 1 動作確認
 
-- [ ] `npm run build` が成功すること
-- [ ] `npm test` が全テスト通過すること
+- [x] `npm run build` が成功すること
+- [x] `npm test` が全テスト通過すること（195 スイート / 2634 テスト）
+- [x] コードレビュー完了（重大な問題なし）
 - [ ] ブラウザで各ページの `<head>` に正しい JSON-LD が挿入されていること
 - [ ] canonical URL が各ページで正しく設定されていること
 - [-] Schema Markup Validator で全スキーマがエラーなしであること（デプロイ後に確認）

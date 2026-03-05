@@ -8,7 +8,7 @@ import { StaticPageLayout } from '../components/templates/StaticPageLayout';
  */
 const TermsPage: React.FC = () => {
   return (
-    <StaticPageLayout title="利用規約">
+    <StaticPageLayout title="利用規約" publishDate="2026-03">
       <p>
         この利用規約（以下「本規約」）は、Game Platform（以下「本サイト」）の
         利用条件を定めるものです。本サイトをご利用いただく場合、
@@ -82,7 +82,6 @@ const TermsPage: React.FC = () => {
         専属的合意管轄とします。
       </p>
 
-      <p>制定日: 2026年3月</p>
     </StaticPageLayout>
   );
 };

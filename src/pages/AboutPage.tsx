@@ -8,7 +8,7 @@ import { StaticPageLayout } from '../components/templates/StaticPageLayout';
  */
 const AboutPage: React.FC = () => {
   return (
-    <StaticPageLayout title="サイトについて">
+    <StaticPageLayout title="サイトについて" publishDate="2026-03" lastUpdated="2026-03-05">
       <h3>Game Platform とは</h3>
       <p>
         Game Platform は、ブラウザだけで遊べる無料のゲームプラットフォームです。

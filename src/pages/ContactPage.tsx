@@ -16,7 +16,7 @@ const ContactPage: React.FC = () => {
   }, []);
 
   return (
-    <StaticPageLayout title="お問い合わせ">
+    <StaticPageLayout title="お問い合わせ" publishDate="2026-03">
       <p>本サイトに関するお問い合わせは、以下のメールアドレスまでご連絡ください。</p>
 
       <p>

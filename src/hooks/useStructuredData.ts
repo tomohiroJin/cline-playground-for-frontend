@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { SITE_NAME, SITE_BASE_URL } from '../constants/game-seo-data';
+import { SITE_BASE_URL } from '../constants/game-seo-data';
 
 /** VideoGame スキーマ用データ */
 interface VideoGameData {
@@ -28,6 +28,7 @@ type StructuredDataOptions =
 const buildVideoGameSchema = (data: VideoGameData): Record<string, unknown> => ({
   '@context': 'https://schema.org',
   '@type': 'VideoGame',
+  '@id': `${data.url}#game`,
   name: data.name,
   description: data.description,
   url: data.url,
@@ -41,23 +42,28 @@ const buildVideoGameSchema = (data: VideoGameData): Record<string, unknown> => (
   },
   inLanguage: 'ja',
   isPartOf: {
-    '@type': 'WebSite',
-    name: SITE_NAME,
-    url: `${SITE_BASE_URL}/`,
+    '@id': `${SITE_BASE_URL}/#website`,
   },
 });
 
 /** BreadcrumbList スキーマの JSON-LD を生成 */
-const buildBreadcrumbSchema = (data: BreadcrumbData): Record<string, unknown> => ({
-  '@context': 'https://schema.org',
-  '@type': 'BreadcrumbList',
-  itemListElement: data.items.map((item, index) => ({
-    '@type': 'ListItem',
-    position: index + 1,
-    name: item.name,
-    item: item.url,
-  })),
-});
+const buildBreadcrumbSchema = (data: BreadcrumbData): Record<string, unknown> => {
+  // 最後のアイテムの URL をベースに @id を構築
+  const lastItem = data.items[data.items.length - 1];
+  const breadcrumbId = lastItem ? `${lastItem.url}#breadcrumb` : '';
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    '@id': breadcrumbId,
+    itemListElement: data.items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: item.url,
+    })),
+  };
+};
 
 /**
  * 構造化データ（JSON-LD）を <head> に動的に挿入するフック

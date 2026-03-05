@@ -49,10 +49,9 @@ describe('useStructuredData', () => {
         priceCurrency: 'JPY',
       });
       expect(parsed.inLanguage).toBe('ja');
+      expect(parsed['@id']).toBe('https://niku9.click/test#game');
       expect(parsed.isPartOf).toEqual({
-        '@type': 'WebSite',
-        name: 'Game Platform',
-        url: 'https://niku9.click/',
+        '@id': 'https://niku9.click/#website',
       });
     });
 
@@ -94,6 +93,7 @@ describe('useStructuredData', () => {
 
       expect(parsed['@context']).toBe('https://schema.org');
       expect(parsed['@type']).toBe('BreadcrumbList');
+      expect(parsed['@id']).toBe('https://niku9.click/test#breadcrumb');
       expect(parsed.itemListElement).toHaveLength(2);
       expect(parsed.itemListElement[0]).toEqual({
         '@type': 'ListItem',
