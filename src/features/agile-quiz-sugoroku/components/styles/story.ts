@@ -25,8 +25,8 @@ export const StoryWrapper = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 16px 12px;
+  justify-content: flex-end;
+  padding: 16px 12px 24px;
   position: relative;
   cursor: pointer;
   user-select: none;
@@ -34,19 +34,27 @@ export const StoryWrapper = styled.div`
 
 /** ストーリーコンテンツ */
 export const StoryContent = styled.div`
-  background: ${COLORS.glass};
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(16, 22, 36, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid ${COLORS.glassBorder};
-  border-radius: 18px;
-  padding: 28px 24px;
-  max-width: 560px;
+  border-radius: 18px 18px 14px 14px;
+  padding: 20px 24px;
+  max-width: 600px;
   width: 100%;
-  min-height: 300px;
+  min-height: 200px;
+  max-height: 35vh;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4),
+  box-shadow: 0 -4px 32px rgba(0, 0, 0, 0.5),
     inset 0 1px 0 ${COLORS.glassBorder};
+
+  @media (max-height: 600px) {
+    max-height: 45vh;
+    min-height: 180px;
+    padding: 16px 20px;
+  }
 `;
 
 /** ストーリーヘッダー */

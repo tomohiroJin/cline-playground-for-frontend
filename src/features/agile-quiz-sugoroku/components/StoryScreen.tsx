@@ -127,7 +127,7 @@ export const StoryScreen: React.FC<StoryScreenProps> = ({
             width: '100%',
             height: '100%',
             objectFit: 'cover',
-            opacity: 0.12,
+            opacity: 0.6,
             transition: 'opacity 0.5s ease-in-out',
             zIndex: 0,
             pointerEvents: 'none',
