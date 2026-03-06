@@ -76,6 +76,7 @@ export function useRunningPhase(
       }
       return obs;
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
 

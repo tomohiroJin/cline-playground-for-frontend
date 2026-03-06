@@ -210,7 +210,7 @@ describe('BGM システム', () => {
     });
 
     it('ゲイン減衰時間は周波数段階時間より長い', () => {
-      for (const [key, def] of Object.entries(SFX_DEFS)) {
+      for (const [_key, def] of Object.entries(SFX_DEFS)) {
         expect(def.gd).toBeGreaterThanOrEqual(def.fd);
       }
     });

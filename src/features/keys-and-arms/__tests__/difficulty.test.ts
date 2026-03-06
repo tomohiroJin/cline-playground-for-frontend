@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Keys & Arms - 難易度設定のテスト
  */

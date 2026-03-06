@@ -88,7 +88,7 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
   visible,
   onAnswer,
   onNext,
-  quizIndex,
+  quizIndex: _quizIndex,
 }) => {
   const [hoveredOption, setHoveredOption] = useState<number | null>(null);
   const [imgError, setImgError] = useState(false);

@@ -2,9 +2,9 @@
  * 原始進化録 - PRIMAL PATH - gameReducer テスト
  */
 import { gameReducer } from '../hooks';
-import { FRESH_SAVE, TREE as TREE_DATA, EVOS, SPEED_OPTS, RANDOM_EVENTS, BOSS, DIFFS, CHALLENGES, LOOP_SCALE_FACTOR } from '../constants';
+import { FRESH_SAVE, TREE as TREE_DATA, EVOS, SPEED_OPTS, RANDOM_EVENTS, BOSS, DIFFS, LOOP_SCALE_FACTOR } from '../constants';
 import { calcBoneReward } from '../game-logic';
-import { scaleEnemy, startRunState } from '../game-logic';
+import { scaleEnemy } from '../game-logic';
 import { makeRun, makeGameState, makeSave } from './test-helpers';
 
 /* ===== テスト ===== */

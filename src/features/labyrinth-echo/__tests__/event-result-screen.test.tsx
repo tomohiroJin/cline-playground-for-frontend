@@ -7,7 +7,7 @@ import { EventResultScreen } from '../components/EventResultScreen';
 import { FLOOR_META } from '../definitions';
 import type { LogEntry } from '../definitions';
 import type { Player, DifficultyDef } from '../game-logic';
-import { DIFFICULTY, CFG } from '../game-logic';
+import { DIFFICULTY } from '../game-logic';
 import type { GameEvent } from '../events/event-utils';
 
 const normalDiff: DifficultyDef = DIFFICULTY.find(d => d.id === 'normal')!;

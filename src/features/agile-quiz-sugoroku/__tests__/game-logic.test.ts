@@ -10,8 +10,7 @@ import {
   makeEvents,
   createSprintSummary,
 } from '../game-logic';
-import { EVENTS } from '../constants';
-import { AnswerResult, Question } from '../types';
+import { AnswerResult } from '../types';
 import { QUESTIONS } from '../quiz-data';
 
 describe('Agile Quiz Sugoroku - ゲームロジック', () => {

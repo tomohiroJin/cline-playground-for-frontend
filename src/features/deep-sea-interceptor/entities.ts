@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { randomRange, randomInt as baseRandomInt } from '../../utils/math-utils';
-import { Config, EnemyConfig, ItemConfig } from './constants';
+import { Config, EnemyConfig } from './constants';
 import type { Bullet, Enemy, EnemyBullet, Item, Particle, Bubble, Position, ItemType, WeaponType, EnemyType } from './types';
 
 // ユニークID生成

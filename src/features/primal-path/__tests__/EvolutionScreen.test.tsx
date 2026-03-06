@@ -5,7 +5,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { EvolutionScreen } from '../components/EvolutionScreen';
-import type { RunState, Evolution, SfxType } from '../types';
+import type { Evolution, SfxType } from '../types';
 import { EVOS } from '../constants';
 import { makeRun } from './test-helpers';
 import type { GameAction } from '../hooks';

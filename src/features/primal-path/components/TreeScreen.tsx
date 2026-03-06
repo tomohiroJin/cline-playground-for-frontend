@@ -3,7 +3,7 @@ import type { SaveData, SfxType, TreeBonus } from '../types';
 import type { GameAction } from '../hooks';
 import { TREE, TIER_UNLOCK, TIER_NAMES, CAT_CL, TB_SUMMARY } from '../constants';
 import { getTB } from '../game-logic';
-import { Screen, SubTitle, Divider, GameButton, TreeNodeBox, TierHeader, Gc } from '../styles';
+import { Screen, SubTitle, Divider, GameButton, TreeNodeBox, TierHeader } from '../styles';
 
 /** ツリーボーナスキーからカテゴリカラーへのマッピング */
 const TB_KEY_COLOR: Readonly<Record<keyof TreeBonus, string>> = {

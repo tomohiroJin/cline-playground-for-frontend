@@ -6,10 +6,9 @@
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useGameState, useBattle, useAudio, useOverlay, usePersistence } from './hooks';
-import type { GameAction } from './hooks';
-import type { TickEvent, SfxType, BiomeId, BgmType } from './types';
+import type { TickEvent, BiomeId, BgmType } from './types';
 import { ErrorBoundary } from './contracts';
-import { DIFFS, BIO } from './constants';
+import { DIFFS } from './constants';
 import { pickBiomeAuto, formatEventResult, computeEventResult } from './game-logic';
 import { MetaStorage } from './storage';
 
@@ -34,7 +33,7 @@ import { ChallengeScreen } from './components/ChallengeScreen';
 
 function GameInner() {
   const { state, dispatch } = useGameState();
-  const { init: initAudio, playSfx, playBgm, stopBgm, setBgmVolume, setSfxVolume, cleanup: cleanupAudio } = useAudio();
+  const { init: initAudio, playSfx, playBgm, stopBgm, cleanup: cleanupAudio } = useAudio();
   const { overlay, showOverlay } = useOverlay();
   const { loaded } = usePersistence(state, dispatch);
 
@@ -84,6 +83,7 @@ function GameInner() {
       playSfx('allyJoin');
     }
     prevAliveRef.current = alive;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.run?.al, playSfx]);
 
   // フェーズに応じたBGM切替
@@ -102,6 +102,7 @@ function GameInner() {
     } else if (state.phase === 'over') {
       stopBgm();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.phase, state.run?.cBT, playBgm, stopBgm]);
 
   // ゲームオーバー時にラン統計を記録

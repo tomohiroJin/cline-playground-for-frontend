@@ -135,6 +135,7 @@ describe('VictoryScreen', () => {
     render(<VictoryScreen {...makeProps()} />);
     // desc には改行が含まれるため部分一致で検索
     const firstLine = standardEnding.desc.split('\n')[0];
+    // eslint-disable-next-line security/detect-non-literal-regexp
     expect(screen.getByText(new RegExp(firstLine.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))).toBeInTheDocument();
   });
 
@@ -157,6 +158,7 @@ describe('VictoryScreen', () => {
   it('獲得知見ポイントが正しく計算される', () => {
     render(<VictoryScreen {...makeProps()} />);
     const expectedKp = (normalDiff.kpWin ?? 4) + standardEnding.bonusKp;
+    // eslint-disable-next-line security/detect-non-literal-regexp
     expect(screen.getByText(new RegExp(`\\+${expectedKp}pt`))).toBeInTheDocument();
   });
 

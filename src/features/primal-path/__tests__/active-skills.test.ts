@@ -4,7 +4,7 @@
 import {
   calcAvlSkills, applySkill, tickBuffs, decSkillCds,
 } from '../game-logic';
-import type { RunState, SkillSt } from '../types';
+import type { SkillSt } from '../types';
 import { makeRun } from './test-helpers';
 
 /* ===== calcAvlSkills ===== */

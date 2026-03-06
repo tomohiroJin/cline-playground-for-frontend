@@ -26,7 +26,7 @@ describe('Agile Quiz Sugoroku - 問題データの構造検証', () => {
   it.each(expectedCategories)(
     '%s: 全問題にquestion(問題文), options(4択), answer(0-3)が含まれる',
     (category) => {
-      QUESTIONS[category].forEach((question, index) => {
+      QUESTIONS[category].forEach((question, _index) => {
         expect(question.question).toBeDefined();
         expect(typeof question.question).toBe('string');
         expect(question.question.length).toBeGreaterThan(0);
@@ -61,7 +61,7 @@ describe('Agile Quiz Sugoroku - 問題データの構造検証', () => {
   describe('タグ検証', () => {
     it('全問題にtagsフィールドが存在する', () => {
       expectedCategories.forEach((category) => {
-        QUESTIONS[category].forEach((question, index) => {
+        QUESTIONS[category].forEach((question, _index) => {
           expect(question.tags).toBeDefined();
           expect(Array.isArray(question.tags)).toBe(true);
           expect(question.tags!.length).toBeGreaterThanOrEqual(1);
@@ -71,7 +71,7 @@ describe('Agile Quiz Sugoroku - 問題データの構造検証', () => {
 
     it('全タグがマスタ定義に存在する', () => {
       expectedCategories.forEach((category) => {
-        QUESTIONS[category].forEach((question, index) => {
+        QUESTIONS[category].forEach((question, _index) => {
           question.tags?.forEach((tag) => {
             expect(VALID_TAG_IDS).toContain(tag);
           });
@@ -86,7 +86,7 @@ describe('Agile Quiz Sugoroku - 問題データの構造検証', () => {
 
     it('全問題にexplanation（解説）が存在する', () => {
       expectedCategories.forEach((category) => {
-        QUESTIONS[category].forEach((question, index) => {
+        QUESTIONS[category].forEach((question, _index) => {
           expect(question.explanation).toBeDefined();
           expect(typeof question.explanation).toBe('string');
           expect(question.explanation!.length).toBeGreaterThan(0);

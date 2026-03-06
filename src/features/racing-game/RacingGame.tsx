@@ -183,7 +183,7 @@ export default function RacingGame() {
       timer: 15, lastTick: 0, animStart: 0, completedLap: 0, pendingResume: false,
     };
     const draftedLaps = new Set<string>();
-    let pendingDraftQueue: { playerIndex: number; lap: number }[] = [];
+    const pendingDraftQueue: { playerIndex: number; lap: number }[] = [];
 
     // ハイライト状態
     let hlTracker: HighlightTracker = Highlight.createTracker(players.length);

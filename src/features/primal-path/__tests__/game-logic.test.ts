@@ -2,15 +2,15 @@
  * 原始進化録 - PRIMAL PATH - ゲームロジックテスト
  */
 import {
-  clamp, applyStatFx, getSnap, effATK, civLvs, civMin, civLv,
+  clamp, applyStatFx, effATK, civLvs, civMin, civLv,
   biomeBonus, calcEnvDmg, getTB, scaleEnemy, simEvo, rollE,
-  applyEvo, calcPlayerAtk, tick, startRunState, calcBoneReward,
-  allyReviveCost, aliveAllies, deadAllies, bestDiffLabel,
-  startBattle, afterBattle, resolveFinalBossKey, tbSummary,
-  pickBiomeAuto, mkPopup, updatePopups, handleFinalBossKill,
+  applyEvo, tick, startRunState, calcBoneReward,
+  bestDiffLabel,
+  startBattle, afterBattle, tbSummary,
+  mkPopup, updatePopups, handleFinalBossKill,
   applyChallenge, applyEndlessLoop, calcEndlessScale, calcEndlessScaleWithAM,
 } from '../game-logic';
-import type { RunState, StatSnapshot, SaveData, TreeBonus, Evolution } from '../types';
+import type { StatSnapshot, Evolution } from '../types';
 import { TB_DEFAULTS, DIFFS, EVOS, BOSS_CHAIN_SCALE, BOSS, FINAL_BOSS_ORDER, LOOP_SCALE_FACTOR, CHALLENGES, ENDLESS_AM_REFLECT_RATIO } from '../constants';
 import { makeRun, makeSave } from './test-helpers';
 
@@ -201,8 +201,7 @@ describe('rollE', () => {
 
   it('各文明から少なくとも1つずつ選ぶ', () => {
     const run = makeRun({ evoN: 3 });
-    let callCount = 0;
-    const evos = rollE(run, () => { callCount++; return 0.01; }); // low rng ensures rare pass
+    const evos = rollE(run, () => 0.01); // low rng ensures rare pass
     const types = new Set(evos.map(e => e.t));
     expect(types.size).toBe(3);
   });

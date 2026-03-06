@@ -96,7 +96,6 @@ describe('スプライトバリエーション', () => {
       // fillRect が呼ばれていること（背景 + HPバー）
       expect(ctx.fillRect).toHaveBeenCalledTimes(2);
       // HPバーの色は緑（ratio > 0.5）
-      const fillCalls = (ctx.fillRect as jest.Mock).mock.calls;
       // 2回目のfillRectの直前にfillStyleが設定されるので、最終的なfillStyleを確認
       expect(ctx.fillStyle).toBe('#50e090');
     });

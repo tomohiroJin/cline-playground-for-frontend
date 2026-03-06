@@ -1,7 +1,6 @@
 import { GameLogic } from '../game-logic';
 import { Grid } from '../grid';
-import { Block } from '../block';
-import type { BlockData, BulletData } from '../types';
+import type { BlockData } from '../types';
 import { CONFIG } from '../constants';
 
 describe('GameLogic', () => {

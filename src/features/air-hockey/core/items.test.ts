@@ -2,7 +2,7 @@
  * Air Hockey - アイテムエフェクトのテスト
  */
 import { ItemEffects, applyItemEffect } from './items';
-import { GameState, GameEffects } from './types';
+import { GameState } from './types';
 import { EntityFactory } from './entities';
 
 /** テスト用のゲーム状態を生成 */

@@ -31,7 +31,7 @@ import {
   Wall,
   placeGimmicks,
 } from '../../index';
-import { createTimer, startTimer, pauseTimer, resumeTimer, GameTimer } from '../../timer';
+import { createTimer, startTimer, resumeTimer, GameTimer } from '../../timer';
 import { RatingValue, AudioSettings, StageNumber, StageRewardType, StageRewardHistory, StageConfig } from '../../types';
 import { getStageConfig, getNextStage, isFinalStage } from '../../stageConfig';
 import { applyStageReward, canChooseReward } from '../../progression';

@@ -1,9 +1,9 @@
 /**
  * 原始進化録 - シナジーシステムのユニットテスト
  */
-import type { Evolution, ActiveSynergy, SynergyTag, RunState } from '../types';
+import type { Evolution, ActiveSynergy, SynergyTag } from '../types';
 import { calcSynergies, applySynergyBonuses, tick, applyEvo } from '../game-logic';
-import { SYNERGY_BONUSES, TB_DEFAULTS, DIFFS, EVOS } from '../constants';
+import { SYNERGY_BONUSES, TB_DEFAULTS, EVOS } from '../constants';
 import { makeRun } from './test-helpers';
 
 /** タグ付き進化を生成する */

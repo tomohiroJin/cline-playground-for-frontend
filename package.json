@@ -8,7 +8,11 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "lint:ci": "eslint src --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "test:scripts": "jest --config scripts/jest.config.js",
+    "ci": "npm run lint:ci && npm run typecheck && npm test && npm run build"
   },
   "devDependencies": {
     "@babel/core": "^7.26.10",

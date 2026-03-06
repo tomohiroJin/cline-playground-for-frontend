@@ -2,10 +2,10 @@
  * 原始進化録 - PRIMAL PATH - バトル画面コンポーネントテスト（Phase 6-2）
  */
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { BattleScreen } from '../components/BattleScreen';
-import type { RunState, Enemy, SfxType, TreeBonus } from '../types';
+import type { Enemy, SfxType, TreeBonus } from '../types';
 import { makeRun } from './test-helpers';
 import { TB_DEFAULTS } from '../constants';
 import type { GameAction } from '../hooks';

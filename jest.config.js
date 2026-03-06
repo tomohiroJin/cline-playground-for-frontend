@@ -13,7 +13,7 @@ module.exports = {
     '^.+\\.(ts|tsx)$': 'ts-jest'
   },
   testMatch: ['**/__tests__/**/*.ts?(x)', '**/?(*.)+(spec|test).ts?(x)'],
-  testPathIgnorePatterns: ['/node_modules/', '/__tests__/test-helpers\\.ts$'],
+  testPathIgnorePatterns: ['/node_modules/', '/__tests__/test-helpers\\.ts$', '<rootDir>/scripts/'],
   collectCoverage: true,
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',

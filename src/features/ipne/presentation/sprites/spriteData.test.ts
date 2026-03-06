@@ -1,4 +1,4 @@
-import { createSprite, hexToRgba, SpriteDefinition } from './spriteData';
+import { createSprite, hexToRgba } from './spriteData';
 
 describe('hexToRgba', () => {
   it('16進数カラーコードを RGBA 値に変換できる', () => {
