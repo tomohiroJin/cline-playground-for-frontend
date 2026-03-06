@@ -5,41 +5,41 @@
 ### 1.0 レスポンシブデザイン対応
 
 #### 定数・型の整理
-- [ ] `core/types.ts` から `CanvasSize` 型を削除
-- [ ] `core/types.ts` から `SizeConfig` 型を削除
-- [ ] `core/constants.ts` の `SIZE_CONFIGS` を削除
-- [ ] `core/constants.ts` の `getConstants(size)` 関数を `CONSTANTS` 定数オブジェクトに置換（解像度 450x900 固定）
-- [ ] `core/constants.ts` の `GameConstants` 型定義はそのまま維持
-- [ ] `core/config.ts` から `SIZE_OPTIONS` を削除
-- [ ] `core/config.ts` の障害物座標を 450x900 スケールに更新（x1.5 換算）
+- [x] `core/types.ts` から `CanvasSize` 型を削除
+- [x] `core/types.ts` から `SizeConfig` 型を削除
+- [x] `core/constants.ts` の `SIZE_CONFIGS` を削除
+- [x] `core/constants.ts` の `getConstants(size)` 関数を `CONSTANTS` 定数オブジェクトに置換（解像度 450x900 固定）
+- [x] `core/constants.ts` の `GameConstants` 型定義はそのまま維持
+- [x] `core/config.ts` から `SIZE_OPTIONS` を削除
+- [x] `core/config.ts` の障害物座標を 450x900 スケールに更新（x1.5 換算）
 
 #### CSS レスポンシブ化
-- [ ] `styles.ts` の `GameCanvas` を `width: 100%` + `max-width: 450px` + `aspect-ratio: 1 / 2` + `max-height: calc(100vh - 100px)` に変更
-- [ ] `styles.ts` の `ScoreBoardContainer` の `max-width` を `450px` に変更し `width: 100%` を追加
-- [ ] `styles.ts` の `MenuCard` の `max-width` を `450px` に統一（任意）
+- [x] `styles.ts` の `GameCanvas` を `width: 100%` + `max-width: 450px` + `aspect-ratio: 1 / 2` + `max-height: calc(100vh - 100px)` に変更
+- [x] `styles.ts` の `ScoreBoardContainer` の `max-width` を `450px` に変更し `width: 100%` を追加
+- [x] `styles.ts` の `MenuCard` の `max-width` を `450px` に統一（任意）
 
 #### コンポーネントから canvasSize を除去
-- [ ] `components/Field.tsx` から `canvasSize` プロップを削除、Canvas の width/height を固定値に
-- [ ] `components/TitleScreen.tsx` から Size 選択セクション（ButtonGroup + SIZE_OPTIONS）を完全削除
-- [ ] `components/TitleScreen.tsx` から `canvasSize` / `setCanvasSize` プロップを削除
-- [ ] `AirHockeyGame.tsx` から `canvasSize` state と関連する useState を削除
-- [ ] `AirHockeyGame.tsx` の `startGame` / `useInput` / `useGameLoop` 呼び出しから `canvasSize` 引数を削除
-- [ ] `AirHockeyGame.tsx` の TitleScreen / Field への `canvasSize` プロップ渡しを削除
+- [x] `components/Field.tsx` から `canvasSize` プロップを削除、Canvas の width/height を固定値に
+- [x] `components/TitleScreen.tsx` から Size 選択セクション（ButtonGroup + SIZE_OPTIONS）を完全削除
+- [x] `components/TitleScreen.tsx` から `canvasSize` / `setCanvasSize` プロップを削除
+- [x] `AirHockeyGame.tsx` から `canvasSize` state と関連する useState を削除
+- [x] `AirHockeyGame.tsx` の `startGame` / `useInput` / `useGameLoop` 呼び出しから `canvasSize` 引数を削除
+- [x] `AirHockeyGame.tsx` の TitleScreen / Field への `canvasSize` プロップ渡しを削除
 
 #### フック・ロジックから canvasSize を除去
-- [ ] `hooks/useInput.ts` から `canvasSize` パラメータを削除、`CONSTANTS` を直接参照
-- [ ] `hooks/useGameLoop.ts` から `canvasSize` パラメータを削除、`CONSTANTS` を直接参照
-- [ ] `core/entities.ts` の `getConstants()` 呼び出しを `CONSTANTS` に置換
-- [ ] `core/physics.ts` の `getConstants()` 呼び出しを `CONSTANTS` に置換
-- [ ] `core/ai.ts` の `getConstants()` 呼び出しを `CONSTANTS` に置換
-- [ ] `renderer.ts` の全 `getConstants()` 呼び出しを `CONSTANTS` に置換
+- [x] `hooks/useInput.ts` から `canvasSize` パラメータを削除、`CONSTANTS` を直接参照
+- [x] `hooks/useGameLoop.ts` から `canvasSize` パラメータを削除、`CONSTANTS` を直接参照
+- [x] `core/entities.ts` の `getConstants()` 呼び出しを `CONSTANTS` に置換
+- [x] `core/physics.ts` の `getConstants()` 呼び出しを `CONSTANTS` に置換
+- [x] `core/ai.ts` の `getConstants()` 呼び出しを `CONSTANTS` に置換
+- [x] `renderer.ts` の全 `getConstants()` 呼び出しを `CONSTANTS` に置換
 
 #### テスト更新
-- [ ] `core/entities.test.ts` の `getConstants()` 参照を `CONSTANTS` に更新
-- [ ] `core/Physics.test.ts` の `CONSTANTS` 参照を更新（解像度 450x900 前提に）
-- [ ] `core/AI.test.ts` の `getConstants()` 呼び出しを `CONSTANTS` に更新
-- [ ] `AirHockeyPage.test.tsx` の Size 選択関連テストがあれば削除
-- [ ] 全既存テストがパスすることを確認
+- [x] `core/entities.test.ts` の `getConstants()` 参照を `CONSTANTS` に更新
+- [x] `core/Physics.test.ts` の `CONSTANTS` 参照を更新（解像度 450x900 前提に）
+- [x] `core/AI.test.ts` の `getConstants()` 呼び出しを `CONSTANTS` に更新
+- [x] `AirHockeyPage.test.tsx` の Size 選択関連テストがあれば削除
+- [x] 全既存テストがパスすることを確認
 
 #### 動作確認
 - [ ] スマートフォン幅（375px）で Canvas が画面幅いっぱいに表示されることを確認
@@ -49,47 +49,45 @@
 - [ ] スコアボードが Canvas と同じ幅に揃っていることを確認
 
 ### 1.1 カウントダウン演出
-- [ ] `core/types.ts` に `GamePhase` 型を追加（`countdown | playing | paused | finished`）
-- [ ] `core/types.ts` の `GameState` に `phase` と `countdownStart` フィールド追加
-- [ ] `renderer.ts` に `drawCountdown()` メソッド実装（数字のスケールアニメーション）
-- [ ] `hooks/useGameLoop.ts` にカウントダウンフェーズの分岐処理追加
-- [ ] `core/sound.ts` にカウントダウン音（ティック音＋GO音）追加
-- [ ] `AirHockeyGame.tsx` の `startGame` でフェーズを `countdown` に設定
-- [ ] テスト: カウントダウン中にパックが移動しないことを確認
+- [x] `core/types.ts` に `GamePhase` 型を追加（`countdown | playing | paused | finished`）
+- [x] `core/types.ts` の `GameState` に `phase` と `countdownStart` フィールド追加 → ref で管理に変更
+- [x] `renderer.ts` に `drawCountdown()` メソッド実装（数字のスケールアニメーション）
+- [x] `hooks/useGameLoop.ts` にカウントダウンフェーズの分岐処理追加
+- [x] `core/sound.ts` にカウントダウン音（ティック音＋GO音）追加
+- [x] `AirHockeyGame.tsx` の `startGame` でフェーズを `countdown` に設定
+- [x] テスト: カウントダウン中にパックが移動しないことを確認
 
 ### 1.2 画面シェイク
-- [ ] `core/types.ts` に `ShakeState` 型追加（`intensity`, `duration`, `startTime`）
-- [ ] `styles.ts` にシェイクアニメーション用の CSS keyframes 追加
-- [ ] `components/Field.tsx` にシェイク状態を受け取り transform を適用する処理追加
-- [ ] `hooks/useGameLoop.ts` のゴール判定時にシェイクトリガー追加
-- [ ] `hooks/useGameLoop.ts` の強打ヒット検出時に弱シェイクトリガー追加
-- [ ] `AirHockeyGame.tsx` にシェイク状態の管理追加
-- [ ] テスト: シェイクが時間経過で減衰することを確認
+- [x] `core/types.ts` に `ShakeState` 型追加（`intensity`, `duration`, `startTime`）
+- [x] `components/Field.tsx` にシェイク状態を受け取り transform を適用する処理追加（CSS transform で実装）
+- [x] `hooks/useGameLoop.ts` のゴール判定時にシェイクトリガー追加
+- [x] `hooks/useGameLoop.ts` の強打ヒット検出時に弱シェイクトリガー追加
+- [x] `AirHockeyGame.tsx` にシェイク状態の管理追加
+- [x] テスト: シェイクが時間経過で減衰することを確認
 
 ### 1.3 パック速度ビジュアル
-- [ ] `core/constants.ts` に速度閾値定数を追加（`SPEED_NORMAL`, `SPEED_FAST`, `SPEED_SUPER`）
-- [ ] `renderer.ts` の `drawPuck()` を速度に応じた色変化に対応
-- [ ] `renderer.ts` の `drawPuckTrail()` を速度に応じたトレイル長・太さ変化に対応
-- [ ] `renderer.ts` に超高速時のスピードライン描画処理追加
-- [ ] `renderer.ts` に高速時のグロー効果追加
-- [ ] テスト: 速度閾値に応じた色が正しく返されることを確認
+- [x] `renderer.ts` に速度閾値定数を追加（`SPEED_NORMAL`, `SPEED_FAST`）
+- [x] `renderer.ts` の `drawPuck()` を速度に応じた色変化に対応
+- [x] `renderer.ts` の `drawPuckTrail()` を速度に応じたトレイル長・太さ変化に対応
+- [x] `renderer.ts` に超高速時のスピードライン描画処理追加（`drawSpeedLines()`）
+- [x] `renderer.ts` に高速時のグロー効果追加
+- [x] テスト: 速度閾値に応じた色が正しく返されることを確認
 
 ### 1.4 BGM 追加
-- [ ] `core/sound.ts` に BGM 生成関数追加（Web Audio API でパターン生成）
-- [ ] `core/sound.ts` に BGM の play / stop / setTempo メソッド追加
-- [ ] `core/types.ts` の `SoundSystem` に bgm 関連メソッド追加
-- [ ] `AirHockeyGame.tsx` に bgmEnabled 状態追加
-- [ ] `components/TitleScreen.tsx` に BGM ON/OFF トグル追加
-- [ ] フィーバー時の BGM テンポ変更処理追加
-- [ ] ゲーム終了時の BGM 停止処理追加
-- [ ] テスト: BGM トグル状態の切り替えを確認
+- [x] `core/sound.ts` に BGM 生成関数追加（Web Audio API でパターン生成）
+- [x] `core/sound.ts` に BGM の play / stop / setTempo メソッド追加
+- [x] `core/types.ts` の `SoundSystem` に bgm 関連メソッド追加
+- [x] `AirHockeyGame.tsx` に bgmEnabled 状態追加
+- [x] `components/TitleScreen.tsx` に BGM ON/OFF トグル追加
+- [x] フィーバー時の BGM テンポ変更処理追加
+- [x] ゲーム終了時の BGM 停止処理追加
+- [x] テスト: BGM トグル状態の切り替えを確認
 
 ### 1.5 サウンド改善
-- [ ] `core/sound.ts` の `hit()` にパック速度パラメータを追加、速度に応じた音程変化
-- [ ] `core/sound.ts` の `wall()` に衝突角度パラメータ追加
-- [ ] `core/sound.ts` にコンボ対応のゴール音追加（音程上昇）
-- [ ] `hooks/useGameLoop.ts` のヒット処理で速度情報をサウンドに渡す
-- [ ] テスト: サウンド関数がパラメータを受け取れることを確認
+- [x] `core/sound.ts` の `hit()` にパック速度パラメータを追加、速度に応じた音程変化
+- [x] `core/sound.ts` の `wall()` に衝突角度パラメータ追加
+- [x] `hooks/useGameLoop.ts` のヒット処理で速度情報をサウンドに渡す
+- [x] テスト: サウンド関数がパラメータを受け取れることを確認
 
 ---
 
@@ -237,7 +235,7 @@
 ## 横断タスク
 
 ### テスト全般
-- [ ] Phase 1 完了後: 既存テスト全パス確認
+- [x] Phase 1 完了後: 既存テスト全パス確認（68テスト全パス）
 - [ ] Phase 2 完了後: 新アイテム・コンボのユニットテスト追加
 - [ ] Phase 3 完了後: 実績・統計のユニットテスト追加
 - [ ] 各 Phase 完了後: 手動での動作確認・プレイテスト

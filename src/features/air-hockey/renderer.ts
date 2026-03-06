@@ -1,4 +1,4 @@
-import { getConstants, GameConstants } from './core/constants';
+import { CONSTANTS, GameConstants } from './core/constants';
 import { ITEMS } from './core/config';
 import {
   FieldConfig,
@@ -12,11 +12,30 @@ import {
   ObstacleState,
   Particle,
 } from './core/types';
+import { magnitude } from '../../utils/math-utils';
+
+// パック速度の閾値定数
+const SPEED_NORMAL = 6;
+const SPEED_FAST = 10;
+
+// 速度に応じたパックの色を取得
+const getPuckColorBySpeed = (speed: number): string => {
+  if (speed > SPEED_FAST) return '#ff4444';
+  if (speed > SPEED_NORMAL) return '#ffdd00';
+  return '#ffffff';
+};
+
+// 速度に応じたトレイル長を取得
+const getTrailLengthBySpeed = (speed: number): number => {
+  if (speed > SPEED_FAST) return 16;
+  if (speed > SPEED_NORMAL) return 12;
+  return 8;
+};
 
 // Renderer モジュール - 描画責務のみ
 export const Renderer = {
-  // 6-4. 背景グラデーションアニメーション
-  clear(ctx: CanvasRenderingContext2D, consts: GameConstants = getConstants(), now = 0) {
+  // 背景グラデーションアニメーション
+  clear(ctx: CanvasRenderingContext2D, consts: GameConstants = CONSTANTS, now = 0) {
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
     if (now > 0) {
       const shift = Math.sin(now * 0.0005) * 10;
@@ -29,10 +48,9 @@ export const Renderer = {
     }
     ctx.fillRect(0, 0, W, H);
   },
-  // 6-5. フィールドラインネオン強化
-  drawField(ctx: CanvasRenderingContext2D, field: FieldConfig, consts: GameConstants = getConstants(), obstacleStates: ObstacleState[] = [], now = 0) {
+  // フィールドラインネオン強化
+  drawField(ctx: CanvasRenderingContext2D, field: FieldConfig, consts: GameConstants = CONSTANTS, obstacleStates: ObstacleState[] = [], now = 0) {
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
-    const scale = W / 300;
     ctx.strokeStyle = field.color;
     ctx.lineWidth = 5;
     ctx.shadowColor = field.color;
@@ -50,10 +68,10 @@ export const Renderer = {
     ctx.shadowColor = field.color;
     ctx.shadowBlur = 15;
     ctx.beginPath();
-    ctx.arc(W / 2, H / 2, 40 * scale, 0, Math.PI * 2);
+    ctx.arc(W / 2, H / 2, 60, 0, Math.PI * 2);
     ctx.stroke();
     ctx.shadowBlur = 0;
-    const gs = field.goalSize * scale;
+    const gs = field.goalSize;
     ctx.shadowBlur = 15;
     ctx.shadowColor = '#ff0000';
     ctx.fillStyle = '#ff3333';
@@ -73,7 +91,7 @@ export const Renderer = {
           const blink = Math.sin(now * 0.015) > 0;
           if (blink) {
             ctx.beginPath();
-            ctx.arc(ob.x * scale, ob.y * scale, ob.r * scale * 0.5, 0, Math.PI * 2);
+            ctx.arc(ob.x, ob.y, ob.r * 0.5, 0, Math.PI * 2);
             ctx.fillStyle = field.color + '22';
             ctx.fill();
           }
@@ -84,9 +102,9 @@ export const Renderer = {
       const hpRatio = obState ? obState.hp / obState.maxHp : 1;
       // HP に応じてサイズ変化（0.5〜1.0）
       const sizeScale = 0.5 + 0.5 * hpRatio;
-      const drawR = ob.r * scale * sizeScale;
+      const drawR = ob.r * sizeScale;
 
-      // HP に応じた色変化: 満HP=フィールドカラー → 中HP=黄色 → 低HP=赤
+      // HP に応じた色変化
       let fillColor: string;
       let strokeColor: string;
       if (!obState || hpRatio === 1) {
@@ -107,7 +125,7 @@ export const Renderer = {
       }
 
       ctx.beginPath();
-      ctx.arc(ob.x * scale, ob.y * scale, drawR, 0, Math.PI * 2);
+      ctx.arc(ob.x, ob.y, drawR, 0, Math.PI * 2);
       ctx.fillStyle = fillColor;
       ctx.fill();
       ctx.strokeStyle = strokeColor;
@@ -116,7 +134,7 @@ export const Renderer = {
       ctx.shadowBlur = 0;
     });
   },
-  drawEffectZones(ctx: CanvasRenderingContext2D, effects: GameEffects, now: number, consts: GameConstants = getConstants()) {
+  drawEffectZones(ctx: CanvasRenderingContext2D, effects: GameEffects, now: number, consts: GameConstants = CONSTANTS) {
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
     const isActive = (eff: EffectState) => eff?.speed && now - eff.speed.start < eff.speed.duration;
     if (isActive(effects.player)) {
@@ -147,8 +165,8 @@ export const Renderer = {
       ctx.stroke();
     }
   },
-  // 6-2. マレットグロー強化
-  drawMallet(ctx: CanvasRenderingContext2D, mallet: Mallet, color: string, hasGlow: boolean, consts: GameConstants = getConstants()) {
+  // マレットグロー強化
+  drawMallet(ctx: CanvasRenderingContext2D, mallet: Mallet, color: string, hasGlow: boolean, consts: GameConstants = CONSTANTS) {
     const { MALLET: MR } = consts.SIZES;
     // 常時弱いグロー
     ctx.shadowColor = color;
@@ -161,27 +179,76 @@ export const Renderer = {
     ctx.shadowBlur = 0;
     this.drawCircle(ctx, mallet.x, mallet.y, 8, '#fff');
   },
-  // 6-1. パックトレイル
-  drawPuckTrail(ctx: CanvasRenderingContext2D, puck: Puck, consts: GameConstants = getConstants()) {
+  // パックトレイル（速度対応）
+  drawPuckTrail(ctx: CanvasRenderingContext2D, puck: Puck, consts: GameConstants = CONSTANTS) {
     const { PUCK: BR } = consts.SIZES;
     if (!puck.trail || puck.trail.length === 0 || !puck.visible) return;
-    for (let i = 0; i < puck.trail.length; i++) {
-      const t = puck.trail[i];
-      const alpha = ((i + 1) / puck.trail.length) * 0.3;
-      const size = BR * ((i + 1) / puck.trail.length) * 0.8;
+
+    const speed = magnitude(puck.vx, puck.vy);
+    const puckColor = getPuckColorBySpeed(speed);
+    const maxTrailLen = getTrailLengthBySpeed(speed);
+    const trailPoints = puck.trail.slice(-maxTrailLen);
+
+    for (let i = 0; i < trailPoints.length; i++) {
+      const t = trailPoints[i];
+      const ratio = (i + 1) / trailPoints.length;
+      const alpha = ratio * (speed > SPEED_NORMAL ? 0.5 : 0.3);
+      const size = BR * ratio * (speed > SPEED_FAST ? 1.0 : 0.8);
       ctx.beginPath();
       ctx.arc(t.x, t.y, size, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+      ctx.fillStyle = puckColor.replace('#', '');
+      // 色をrgba変換
+      const r = parseInt(puckColor.slice(1, 3), 16);
+      const g = parseInt(puckColor.slice(3, 5), 16);
+      const b = parseInt(puckColor.slice(5, 7), 16);
+      ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
       ctx.fill();
     }
   },
-  drawPuck(ctx: CanvasRenderingContext2D, puck: Puck, consts: GameConstants = getConstants()) {
+  // スピードライン描画（超高速時）
+  drawSpeedLines(ctx: CanvasRenderingContext2D, puck: Puck) {
+    const speed = magnitude(puck.vx, puck.vy);
+    if (speed <= SPEED_FAST || !puck.visible) return;
+
+    ctx.save();
+    const angle = Math.atan2(puck.vy, puck.vx);
+    const lineCount = 5;
+    for (let i = 0; i < lineCount; i++) {
+      const offset = (i - lineCount / 2) * 8;
+      const startX = puck.x - Math.cos(angle) * 30 + Math.sin(angle) * offset;
+      const startY = puck.y - Math.sin(angle) * 30 - Math.cos(angle) * offset;
+      const endX = startX - Math.cos(angle) * 20;
+      const endY = startY - Math.sin(angle) * 20;
+
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(endX, endY);
+      ctx.strokeStyle = `rgba(255, 68, 68, ${0.3 + Math.random() * 0.3})`;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+    ctx.restore();
+  },
+  drawPuck(ctx: CanvasRenderingContext2D, puck: Puck, consts: GameConstants = CONSTANTS) {
     const { PUCK: BR } = consts.SIZES;
     if (!puck.visible) return;
+
+    const speed = magnitude(puck.vx, puck.vy);
+    const puckColor = getPuckColorBySpeed(speed);
+
     this.drawPuckTrail(ctx, puck, consts);
-    this.drawCircle(ctx, puck.x, puck.y, BR, '#fff', '#888', 2);
+    this.drawSpeedLines(ctx, puck);
+
+    // 高速時のグロー効果
+    if (speed > SPEED_NORMAL) {
+      ctx.shadowColor = puckColor;
+      ctx.shadowBlur = speed > SPEED_FAST ? 20 : 10;
+    }
+
+    this.drawCircle(ctx, puck.x, puck.y, BR, puckColor, '#888', 2);
+    ctx.shadowBlur = 0;
   },
-  drawItem(ctx: CanvasRenderingContext2D, item: Item, now: number, consts: GameConstants = getConstants()) {
+  drawItem(ctx: CanvasRenderingContext2D, item: Item, now: number, consts: GameConstants = CONSTANTS) {
     const { ITEM: IR } = consts.SIZES;
     const pulse = 1 + Math.sin(now * 0.008) * 0.2;
     this.drawCircle(ctx, item.x, item.y, IR * pulse, item.color);
@@ -191,7 +258,7 @@ export const Renderer = {
     ctx.textBaseline = 'middle';
     ctx.fillText(item.icon, item.x, item.y);
   },
-  drawHUD(ctx: CanvasRenderingContext2D, effects: GameEffects, now: number, consts: GameConstants = getConstants()) {
+  drawHUD(ctx: CanvasRenderingContext2D, effects: GameEffects, now: number, consts: GameConstants = CONSTANTS) {
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
     ctx.textAlign = 'center';
     ctx.font = 'bold 12px Arial';
@@ -212,7 +279,7 @@ export const Renderer = {
     ctx: CanvasRenderingContext2D,
     flash: { type: string; time: number } | null,
     now: number,
-    consts: GameConstants = getConstants()
+    consts: GameConstants = CONSTANTS
   ) {
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
     if (!flash || now - flash.time >= consts.TIMING.FLASH) return;
@@ -229,7 +296,7 @@ export const Renderer = {
       ctx.fillText(`${item.icon} ${item.name}!`, W / 2, H / 2);
     }
   },
-  drawGoalEffect(ctx: CanvasRenderingContext2D, effect: GoalEffect | null, now: number, consts: GameConstants = getConstants()) {
+  drawGoalEffect(ctx: CanvasRenderingContext2D, effect: GoalEffect | null, now: number, consts: GameConstants = CONSTANTS) {
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
     if (!effect) return;
     const elapsed = now - effect.time;
@@ -249,7 +316,7 @@ export const Renderer = {
     ctx.fillText(isPlayerGoal ? '🎉 +1 Pt!' : '😢 -1 Pt', W / 2, textY + 40);
     ctx.shadowBlur = 0;
   },
-  drawHelp(ctx: CanvasRenderingContext2D, consts: GameConstants = getConstants()) {
+  drawHelp(ctx: CanvasRenderingContext2D, consts: GameConstants = CONSTANTS) {
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
     ctx.fillStyle = 'rgba(0,0,0,0.9)';
     ctx.fillRect(0, 0, W, H);
@@ -266,7 +333,7 @@ export const Renderer = {
     ctx.fillStyle = '#888';
     ctx.fillText('Tap to Start', W / 2, H - 20);
   },
-  drawFeverEffect(ctx: CanvasRenderingContext2D, active: boolean, now: number, consts: GameConstants = getConstants()) {
+  drawFeverEffect(ctx: CanvasRenderingContext2D, active: boolean, now: number, consts: GameConstants = CONSTANTS) {
     if (!active) return;
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
     const hue = (now * 0.1) % 360;
@@ -284,7 +351,7 @@ export const Renderer = {
     ctx.shadowBlur = 0;
     ctx.restore();
   },
-  // 6-3. ゴールパーティクル描画
+  // ゴールパーティクル描画
   drawParticles(ctx: CanvasRenderingContext2D, particles: Particle[]) {
     for (const p of particles) {
       const alpha = p.life / p.maxLife;
@@ -293,5 +360,40 @@ export const Renderer = {
       ctx.fillStyle = p.color.replace(')', `, ${alpha})`).replace('rgb(', 'rgba(');
       ctx.fill();
     }
+  },
+  // カウントダウン描画
+  drawCountdown(ctx: CanvasRenderingContext2D, countdownValue: number, elapsed: number, consts: GameConstants = CONSTANTS) {
+    const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
+    const text = countdownValue > 0 ? String(countdownValue) : 'GO!';
+    const phaseProgress = (elapsed % 1000) / 1000;
+
+    // スケールアニメーション: 拡大→縮小
+    const scale = countdownValue > 0
+      ? 1.5 - phaseProgress * 0.5
+      : 1.0 + Math.sin(phaseProgress * Math.PI) * 0.5;
+
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.translate(W / 2, H / 2);
+    ctx.scale(scale, scale);
+
+    if (countdownValue > 0) {
+      // 数字: 白色
+      ctx.font = 'bold 80px Arial';
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = '#00d4ff';
+      ctx.shadowBlur = 30;
+    } else {
+      // GO!: ネオンカラー
+      ctx.font = 'bold 90px Arial';
+      ctx.fillStyle = '#00ff88';
+      ctx.shadowColor = '#00ff88';
+      ctx.shadowBlur = 40;
+    }
+
+    ctx.fillText(text, 0, 0);
+    ctx.shadowBlur = 0;
+    ctx.restore();
   },
 };

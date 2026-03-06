@@ -1,6 +1,6 @@
 import React from 'react';
-import { Difficulty, FieldConfig, CanvasSize } from '../core/types';
-import { FIELDS, DIFFICULTY_OPTIONS, DIFFICULTY_LABELS, WIN_SCORE_OPTIONS, SIZE_OPTIONS } from '../core/config';
+import { Difficulty, FieldConfig } from '../core/types';
+import { FIELDS, DIFFICULTY_OPTIONS, DIFFICULTY_LABELS, WIN_SCORE_OPTIONS } from '../core/config';
 import {
   MenuCard,
   GameTitle,
@@ -20,8 +20,8 @@ type TitleScreenProps = {
   setWinScore: (s: number) => void;
   highScore: number;
   onStart: () => void;
-  canvasSize: CanvasSize;
-  setCanvasSize: (s: CanvasSize) => void;
+  bgmEnabled?: boolean;
+  onToggleBgm?: () => void;
 };
 
 export const TitleScreen: React.FC<TitleScreenProps> = ({
@@ -33,8 +33,8 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
   setWinScore,
   highScore,
   onStart,
-  canvasSize,
-  setCanvasSize,
+  bgmEnabled = false,
+  onToggleBgm,
 }) => (
   <MenuCard>
     <GameTitle>🏒 Air Hockey</GameTitle>
@@ -62,17 +62,6 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
     </OptionContainer>
 
     <OptionContainer>
-      <OptionTitle>Size</OptionTitle>
-      <ButtonGroup>
-        {SIZE_OPTIONS.map(s => (
-          <ModeButton key={s.id} onClick={() => setCanvasSize(s.id)} $selected={canvasSize === s.id}>
-            {s.name}
-          </ModeButton>
-        ))}
-      </ButtonGroup>
-    </OptionContainer>
-
-    <OptionContainer>
       <OptionTitle>Win Score</OptionTitle>
       <ButtonGroup>
         {WIN_SCORE_OPTIONS.map(s => (
@@ -82,6 +71,17 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
         ))}
       </ButtonGroup>
     </OptionContainer>
+
+    {onToggleBgm && (
+      <OptionContainer>
+        <OptionTitle>BGM</OptionTitle>
+        <ButtonGroup>
+          <ModeButton onClick={onToggleBgm} $selected={bgmEnabled}>
+            {bgmEnabled ? 'ON' : 'OFF'}
+          </ModeButton>
+        </ButtonGroup>
+      </OptionContainer>
+    )}
 
     <StartButton onClick={onStart}>START</StartButton>
     <div style={{ marginTop: '1rem', color: 'var(--accent-color)', fontWeight: 'bold' }}>

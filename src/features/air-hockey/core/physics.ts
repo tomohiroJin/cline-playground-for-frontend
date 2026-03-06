@@ -1,4 +1,4 @@
-import { getConstants, GameConstants } from './constants';
+import { CONSTANTS, GameConstants } from './constants';
 import { Entity } from './types';
 import { distance, magnitude } from '../../../utils/math-utils';
 
@@ -48,7 +48,7 @@ export const Physics = {
     radius: number,
     goalChecker: (x: number) => boolean,
     onBounce: () => void,
-    consts: GameConstants = getConstants()
+    consts: GameConstants = CONSTANTS
   ): T {
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
     let { x, y, vx, vy } = obj;
@@ -78,7 +78,7 @@ export const Physics = {
     if (bounced && onBounce) onBounce();
     return { ...obj, x, y, vx, vy };
   },
-  applyFriction<T extends Entity>(obj: T, consts: GameConstants = getConstants()): T {
+  applyFriction<T extends Entity>(obj: T, consts: GameConstants = CONSTANTS): T {
     let { vx, vy } = obj;
     vx *= consts.PHYSICS.FRICTION;
     vy *= consts.PHYSICS.FRICTION;

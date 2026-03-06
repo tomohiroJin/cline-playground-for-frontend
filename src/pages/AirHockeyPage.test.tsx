@@ -14,6 +14,7 @@ window.AudioContext = jest.fn().mockImplementation(() => ({
   createGain: () => ({
     connect: jest.fn(),
     gain: {
+      value: 0,
       setValueAtTime: jest.fn(),
       exponentialRampToValueAtTime: jest.fn(),
     },
@@ -27,5 +28,18 @@ describe('AirHockeyPage', () => {
     render(<AirHockeyPage />);
     expect(screen.getByText('🏒 Air Hockey')).toBeInTheDocument();
     expect(screen.getByText('START')).toBeInTheDocument();
+  });
+
+  it('Size選択セクションが存在しない', () => {
+    render(<AirHockeyPage />);
+    expect(screen.queryByText('Size')).not.toBeInTheDocument();
+    expect(screen.queryByText('Standard')).not.toBeInTheDocument();
+    expect(screen.queryByText('Large')).not.toBeInTheDocument();
+  });
+
+  it('BGMトグルが表示される', () => {
+    render(<AirHockeyPage />);
+    expect(screen.getByText('BGM')).toBeInTheDocument();
+    expect(screen.getByText('OFF')).toBeInTheDocument();
   });
 });

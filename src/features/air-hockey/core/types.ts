@@ -100,19 +100,24 @@ export type GameState = {
   obstacleStates: ObstacleState[]; // 障害物の破壊状態
 };
 
+export type GamePhase = 'countdown' | 'playing' | 'paused' | 'finished';
+
+export type ShakeState = {
+  intensity: number;
+  duration: number;
+  startTime: number;
+};
+
 export type SoundSystem = {
-  hit: () => void;
-  wall: () => void;
+  hit: (speed?: number) => void;
+  wall: (angle?: number) => void;
   item: () => void;
   goal: () => void;
   lose: () => void;
   start: () => void;
-};
-
-export type CanvasSize = 'standard' | 'large';
-
-export type SizeConfig = {
-  readonly width: number;
-  readonly height: number;
-  readonly scale: number;
+  countdown: () => void;
+  go: () => void;
+  bgmStart: () => void;
+  bgmStop: () => void;
+  bgmSetTempo: (tempo: number) => void;
 };

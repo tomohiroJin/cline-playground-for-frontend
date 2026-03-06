@@ -1,4 +1,4 @@
-import { getConstants, GameConstants } from './constants';
+import { CONSTANTS, GameConstants } from './constants';
 import { GameState, Mallet, Puck, Item, ItemType, FieldConfig, ObstacleState } from './types';
 
 const randomRange = (min: number, max: number) => Math.random() * (max - min) + min;
@@ -16,7 +16,7 @@ export const EntityFactory = {
   createItem: (
     template: { id: string; name: string; color: string; icon: string },
     fromTop: boolean,
-    consts: GameConstants = getConstants()
+    consts: GameConstants = CONSTANTS
   ): Item => {
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
     const { ITEM: IR } = consts.SIZES;
@@ -41,7 +41,7 @@ export const EntityFactory = {
       destroyedAt: 0,
     }));
   },
-  createGameState: (consts: GameConstants = getConstants(), field?: FieldConfig): GameState => {
+  createGameState: (consts: GameConstants = CONSTANTS, field?: FieldConfig): GameState => {
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
     return {
       player: EntityFactory.createMallet(W / 2, H - 70),

@@ -3,7 +3,7 @@ import { Physics } from '../core/physics';
 import { CpuAI } from '../core/ai';
 import { EntityFactory } from '../core/entities';
 import { applyItemEffect } from '../core/items';
-import { getConstants } from '../core/constants';
+import { CONSTANTS } from '../core/constants';
 import { ITEMS } from '../core/config';
 import { magnitude, randomRange } from '../../../utils/math-utils';
 import { Renderer } from '../renderer';
@@ -15,11 +15,23 @@ import {
   Item,
   Puck,
   Particle,
-  CanvasSize,
+  GamePhase,
+  ShakeState,
 } from '../core/types';
 
 // ランダム選択ヘルパー
 const randomChoice = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
+
+// カウントダウン定数
+const COUNTDOWN_DURATION = 3000;
+const GO_DISPLAY_DURATION = 500;
+
+// シェイク定数
+const GOAL_SHAKE_INTENSITY = 8;
+const GOAL_SHAKE_DURATION = 300;
+const HIT_SHAKE_INTENSITY = 3;
+const HIT_SHAKE_DURATION = 150;
+const STRONG_HIT_SPEED_THRESHOLD = 8;
 
 /**
  * ゲームループを管理するカスタムフック
@@ -39,27 +51,33 @@ export function useGameLoop(
   setWinner: (w: string | null) => void,
   setScreen: (s: 'menu' | 'game' | 'result') => void,
   setShowHelp: (v: boolean) => void,
-  canvasSize: CanvasSize = 'standard'
+  phaseRef: React.MutableRefObject<GamePhase>,
+  countdownStartRef: React.MutableRefObject<number>,
+  shakeRef: React.MutableRefObject<ShakeState | null>,
+  setShake: (s: ShakeState | null) => void,
+  bgmEnabled: boolean
 ) {
   useEffect(() => {
     if (screen !== 'game') return;
 
-    const consts = getConstants(canvasSize);
+    const consts = CONSTANTS;
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
     const { MALLET: MR, PUCK: BR, ITEM: IR } = consts.SIZES;
-    const scale = W / 300;
 
     const sound = getSound();
-    const goalSize = field.goalSize * scale;
+    const goalSize = field.goalSize;
     const goalChecker = (x: number) =>
       x > W / 2 - goalSize / 2 && x < W / 2 + goalSize / 2;
 
-    // 障害物をスケーリング
-    const scaledObstacles = field.obstacles.map(ob => ({
-      x: ob.x * scale,
-      y: ob.y * scale,
-      r: ob.r * scale,
-    }));
+    // 障害物座標は config.ts で 450x900 解像度基準で定義済み
+    const obstacles = field.obstacles;
+
+    // シェイクをトリガーするヘルパー
+    const triggerShake = (intensity: number, duration: number) => {
+      const newShake: ShakeState = { intensity, duration, startTime: Date.now() };
+      shakeRef.current = newShake;
+      setShake(newShake);
+    };
 
     const processCollisions = <T extends Puck | Item>(
       obj: T,
@@ -85,12 +103,19 @@ export function useGameLoop(
             (obj as Puck).invisibleCount = 25;
             game.effects.player.invisible--;
           }
-          sound.hit();
+
+          // 速度に応じたサウンド
+          sound.hit(speed);
+
+          // 強打時のシェイク
+          if (isPuck && speed > STRONG_HIT_SPEED_THRESHOLD) {
+            triggerShake(HIT_SHAKE_INTENSITY, HIT_SHAKE_DURATION);
+          }
         }
       }
 
-      for (let oi = 0; oi < scaledObstacles.length; oi++) {
-        const ob = scaledObstacles[oi];
+      for (let oi = 0; oi < obstacles.length; oi++) {
+        const ob = obstacles[oi];
         const obState = game.obstacleStates[oi];
 
         // 破壊済みの障害物はスキップ
@@ -133,6 +158,9 @@ export function useGameLoop(
     };
 
     let animationRef: number;
+    // カウントダウンで最後に鳴らした数
+    let lastCountdownSound = -1;
+
     const gameLoop = () => {
       const game = gameRef.current;
       const ctx = canvasRef.current?.getContext('2d');
@@ -142,6 +170,45 @@ export function useGameLoop(
       }
 
       const now = Date.now();
+
+      // カウントダウンフェーズの処理
+      if (phaseRef.current === 'countdown') {
+        const elapsed = now - countdownStartRef.current;
+
+        // フィールド背景を描画
+        Renderer.clear(ctx, consts, now);
+        Renderer.drawField(ctx, field, consts, game.obstacleStates, now);
+        Renderer.drawMallet(ctx, game.cpu, '#e74c3c', false, consts);
+        Renderer.drawMallet(ctx, game.player, '#3498db', false, consts);
+
+        if (elapsed < COUNTDOWN_DURATION) {
+          // 3, 2, 1
+          const countdownValue = 3 - Math.floor(elapsed / 1000);
+          Renderer.drawCountdown(ctx, countdownValue, elapsed, consts);
+
+          // カウントダウン音
+          if (countdownValue !== lastCountdownSound) {
+            lastCountdownSound = countdownValue;
+            sound.countdown();
+          }
+        } else if (elapsed < COUNTDOWN_DURATION + GO_DISPLAY_DURATION) {
+          // GO!
+          Renderer.drawCountdown(ctx, 0, elapsed, consts);
+          if (lastCountdownSound !== 0) {
+            lastCountdownSound = 0;
+            sound.go();
+          }
+        } else {
+          // カウントダウン完了、プレイ開始
+          phaseRef.current = 'playing';
+          if (bgmEnabled) {
+            sound.bgmStart();
+          }
+        }
+
+        animationRef = requestAnimationFrame(gameLoop);
+        return;
+      }
 
       // パーティクル更新
       for (let i = game.particles.length - 1; i >= 0; i--) {
@@ -192,11 +259,15 @@ export function useGameLoop(
       if (!game.fever.active && now - game.fever.lastGoalTime >= consts.TIMING.FEVER_TRIGGER) {
         game.fever.active = true;
         game.fever.extraPucks = 0;
-        // フィーバー開始時にパック追加
         game.pucks.push(
           EntityFactory.createPuck(W / 2, H / 2, randomRange(-1, 1), randomRange(-2, 2) || 1.5)
         );
         game.fever.extraPucks++;
+
+        // フィーバー時のBGMテンポアップ
+        if (bgmEnabled) {
+          sound.bgmSetTempo(1.3);
+        }
       }
 
       // フィーバー中の追加パック生成（10秒ごと）
@@ -267,7 +338,7 @@ export function useGameLoop(
         // トレイル記録
         if (!puck.trail) puck.trail = [];
         puck.trail.push({ x: puck.x, y: puck.y });
-        if (puck.trail.length > 8) puck.trail.shift();
+        if (puck.trail.length > 16) puck.trail.shift();
 
         puck.x += puck.vx * speedMultiplier;
         puck.y += puck.vy * speedMultiplier;
@@ -298,14 +369,12 @@ export function useGameLoop(
       }
 
       // パックがなくなったら新規生成
-      // 得点した側がサーブ（パックが相手方向に飛ぶ）
       if (game.pucks.length === 0) {
         game.pucks.push(
           EntityFactory.createPuck(
             W / 2,
             H / 2,
             randomRange(-0.5, 0.5),
-            // 失点した側へパックが流れる（CPU失点→上方向、プレイヤー失点→下方向）
             scored === 'cpu' ? -1.5 : 1.5
           )
         );
@@ -342,8 +411,16 @@ export function useGameLoop(
           sound.lose();
         }
         game.goalEffect = { scorer: scored, time: now };
+
+        // ゴール時のシェイク
+        triggerShake(GOAL_SHAKE_INTENSITY, GOAL_SHAKE_DURATION);
+
         // フィーバーリセット
         game.fever = { active: false, lastGoalTime: now, extraPucks: 0 };
+        // BGMテンポを戻す
+        if (bgmEnabled) {
+          sound.bgmSetTempo(1.0);
+        }
 
         // ゴールパーティクル生成
         const goalY = scored === 'cpu' ? 5 : H - 5;
@@ -366,6 +443,7 @@ export function useGameLoop(
           setTimeout(() => {
             setWinner('player');
             setScreen('result');
+            sound.bgmStop();
           }, consts.TIMING.GOAL_EFFECT);
           return;
         }
@@ -373,6 +451,7 @@ export function useGameLoop(
           setTimeout(() => {
             setWinner('cpu');
             setScreen('result');
+            sound.bgmStop();
           }, consts.TIMING.GOAL_EFFECT);
           return;
         }
@@ -382,8 +461,11 @@ export function useGameLoop(
     };
 
     animationRef = requestAnimationFrame(gameLoop);
-    return () => cancelAnimationFrame(animationRef);
+    return () => {
+      cancelAnimationFrame(animationRef);
+    };
   }, [screen, diff, field, winScore, showHelp, getSound,
       gameRef, canvasRef, lastInputRef, scoreRef,
-      setScores, setWinner, setScreen, setShowHelp, canvasSize]);
+      setScores, setWinner, setScreen, setShowHelp,
+      phaseRef, countdownStartRef, shakeRef, setShake, bgmEnabled]);
 }

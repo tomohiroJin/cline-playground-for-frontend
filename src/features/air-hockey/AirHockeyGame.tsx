@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { saveScore, getHighScore } from '../../utils/score-storage';
 import { EntityFactory } from './core/entities';
-import { getConstants } from './core/constants';
+import { CONSTANTS } from './core/constants';
 import { createSoundSystem } from './core/sound';
 import { FIELDS } from './core/config';
-import { GameState, FieldConfig, Difficulty, SoundSystem, CanvasSize } from './core/types';
+import { GameState, FieldConfig, Difficulty, SoundSystem, GamePhase, ShakeState } from './core/types';
 import { useInput } from './hooks/useInput';
 import { useGameLoop } from './hooks/useGameLoop';
 import { TitleScreen } from './components/TitleScreen';
@@ -22,13 +22,17 @@ const AirHockeyGame: React.FC = () => {
   const [winner, setWinner] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   const [highScore, setHighScore] = useState(0);
-  const [canvasSize, setCanvasSize] = useState<CanvasSize>('standard');
+  const [bgmEnabled, setBgmEnabled] = useState(false);
+  const [shake, setShake] = useState<ShakeState | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<GameState | null>(null);
   const lastInputRef = useRef(0);
   const scoreRef = useRef({ p: 0, c: 0 });
   const soundRef = useRef<SoundSystem | null>(null);
+  const phaseRef = useRef<GamePhase>('countdown');
+  const countdownStartRef = useRef(0);
+  const shakeRef = useRef<ShakeState | null>(null);
 
   // タッチスクロール防止
   useEffect(() => {
@@ -59,23 +63,26 @@ const AirHockeyGame: React.FC = () => {
   }, []);
 
   const startGame = useCallback(() => {
-    const consts = getConstants(canvasSize);
-    gameRef.current = EntityFactory.createGameState(consts, field);
+    gameRef.current = EntityFactory.createGameState(CONSTANTS, field);
     scoreRef.current = { p: 0, c: 0 };
     setScores({ p: 0, c: 0 });
     setWinner(null);
     setShowHelp(false);
     setScreen('game');
     lastInputRef.current = Date.now();
-    getSound().start();
-  }, [getSound, canvasSize, field]);
 
-  const handleInput = useInput(gameRef, canvasRef, lastInputRef, screen, showHelp, setShowHelp, canvasSize);
+    // カウントダウン開始
+    phaseRef.current = 'countdown';
+    countdownStartRef.current = Date.now();
+  }, [field]);
+
+  const handleInput = useInput(gameRef, canvasRef, lastInputRef, screen, showHelp, setShowHelp);
 
   useGameLoop(
     screen, diff, field, winScore, showHelp, getSound,
     gameRef, canvasRef, lastInputRef, scoreRef,
-    setScores, setWinner, setScreen, setShowHelp, canvasSize
+    setScores, setWinner, setScreen, setShowHelp,
+    phaseRef, countdownStartRef, shakeRef, setShake, bgmEnabled
   );
 
   return (
@@ -90,15 +97,18 @@ const AirHockeyGame: React.FC = () => {
           setWinScore={setWinScore}
           highScore={highScore}
           onStart={startGame}
-          canvasSize={canvasSize}
-          setCanvasSize={setCanvasSize}
+          bgmEnabled={bgmEnabled}
+          onToggleBgm={() => setBgmEnabled(prev => !prev)}
         />
       )}
 
       {screen === 'game' && (
         <>
-          <Scoreboard scores={scores} onMenuClick={() => setScreen('menu')} />
-          <Field canvasRef={canvasRef} onInput={handleInput} canvasSize={canvasSize} />
+          <Scoreboard scores={scores} onMenuClick={() => {
+            getSound().bgmStop();
+            setScreen('menu');
+          }} />
+          <Field canvasRef={canvasRef} onInput={handleInput} shake={shake} />
         </>
       )}
 
