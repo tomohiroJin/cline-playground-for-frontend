@@ -189,19 +189,42 @@ export const PageContainer = styled.div`
   ...
 `;
 
-export const CanvasContainer = styled.div`
-  width: 100%;
-  height: 100%;
+// Canvas をコントロール領域を除いた残りスペースに制約するラッパー
+export const CanvasWrapper = styled.div`
+  flex: 1;
+  min-height: 0;
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
+  width: 100%;
+  position: relative;
 `;
 
 export const Canvas = styled.canvas`
-  /* 固定サイズ指定を削除 — width/height は JS 側で動的に設定 */
+  /* width/height は JS 側で動的に設定 */
+  max-width: 100%;       /* コンテナからはみ出さない安全弁 */
+  max-height: 100%;
+  object-fit: contain;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
 `;
+```
+
+#### レスポンシブ HUD・コントロール
+
+DPad ボタンおよび HUD テキストは `clamp() + vmin` でビューポートに応じてスケーリングする。
+メディアクエリによる固定ブレークポイント指定を `clamp()` に統一し、連続的にサイズが変化する。
+
+```css
+/* DPad ボタンサイズ（例） */
+grid-template-columns: repeat(3, clamp(2.75rem, 8vmin, 4rem));
+
+/* HUD テキストサイズ（例） */
+font-size: clamp(0.6rem, 1.5vmin, 0.85rem);  /* ステージ表示 */
+font-size: clamp(0.75rem, 1.8vmin, 1rem);     /* タイマー */
+
+/* HUD 要素の幅（例） */
+width: clamp(120px, 20vmin, 200px);            /* HPバー */
 ```
 
 ### 0A.6 HUDレイアウト再設計

@@ -158,8 +158,22 @@ export const GameRegion = styled.div`
   gap: 1rem;
 `;
 
+// キャンバスラッパー（コントロール領域を除いた残りスペースに収める）
+export const CanvasWrapper = styled.div`
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  position: relative;
+`;
+
 export const Canvas = styled.canvas`
   display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   border-radius: 0.5rem;
@@ -200,19 +214,19 @@ export const ControlButton = styled.button<{ $position: 'left' | 'right' | 'up' 
 
 export const DPadContainer = styled.div`
   display: grid;
-  grid-template-columns: repeat(3, 4rem);
-  grid-template-rows: repeat(3, 4rem);
+  grid-template-columns: repeat(3, clamp(2.75rem, 8vmin, 4rem));
+  grid-template-rows: repeat(3, clamp(2.75rem, 8vmin, 4rem));
   gap: 0.25rem;
 `;
 
 export const DPadButton = styled.button<{ $direction: 'up' | 'down' | 'left' | 'right' }>`
-  width: 4rem;
-  height: 4rem;
+  width: 100%;
+  height: 100%;
   border-radius: 0.5rem;
   background: rgba(255, 255, 255, 0.15);
   border: 2px solid rgba(255, 255, 255, 0.3);
   color: white;
-  font-size: 1.5rem;
+  font-size: clamp(1rem, 3vmin, 1.5rem);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -240,13 +254,13 @@ export const DPadButton = styled.button<{ $direction: 'up' | 'down' | 'left' | '
 `;
 
 export const AttackButton = styled.button<{ $ready: boolean }>`
-  width: 4rem;
-  height: 4rem;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   background: ${props => (props.$ready ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.08)')};
   border: 2px solid rgba(255, 255, 255, 0.35);
   color: white;
-  font-size: 0.9rem;
+  font-size: clamp(0.65rem, 2vmin, 0.9rem);
   font-weight: bold;
   display: flex;
   align-items: center;
@@ -269,8 +283,8 @@ export const HPBarContainer = styled.div`
   position: absolute;
   top: 3rem;
   left: 1rem;
-  width: 200px;
-  height: 24px;
+  width: clamp(120px, 20vmin, 200px);
+  height: clamp(18px, 3vmin, 24px);
   background: rgba(0, 0, 0, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 0.25rem;
@@ -279,12 +293,6 @@ export const HPBarContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-
-  @media (max-width: 480px) {
-    top: 2.75rem;
-    width: 120px;
-    height: 20px;
-  }
 `;
 
 export const HPBarFill = styled.div<{ $ratio: number; $color: string }>`
@@ -301,14 +309,10 @@ export const HPBarText = styled.span`
   align-items: center;
   justify-content: center;
   color: #f8fafc;
-  font-size: 0.8rem;
+  font-size: clamp(0.6rem, 1.5vmin, 0.8rem);
   font-weight: bold;
   white-space: nowrap;
   pointer-events: none;
-
-  @media (max-width: 480px) {
-    font-size: 0.65rem;
-  }
 `;
 
 export const DamageOverlay = styled.div<{ $visible: boolean }>`
@@ -417,9 +421,9 @@ export const MapToggleButton = styled.button`
   background: rgba(255, 255, 255, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 0.5rem;
-  padding: 0.5rem;
+  padding: clamp(0.3rem, 0.8vmin, 0.5rem);
   cursor: pointer;
-  font-size: 1.5rem;
+  font-size: clamp(1rem, 2.5vmin, 1.5rem);
   color: white;
   transition: all 0.2s;
   z-index: 10;
@@ -431,12 +435,6 @@ export const MapToggleButton = styled.button`
 
   &:active {
     transform: scale(0.95);
-  }
-
-  @media (max-width: 480px) {
-    top: 0.5rem;
-    padding: 0.375rem;
-    font-size: 1.25rem;
   }
 `;
 
@@ -628,30 +626,19 @@ export const StatsDisplay = styled.div`
   right: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: clamp(0.125rem, 0.5vmin, 0.25rem);
   background: rgba(0, 0, 0, 0.6);
-  padding: 0.5rem 0.75rem;
+  padding: clamp(0.375rem, 1vmin, 0.5rem) clamp(0.5rem, 1.5vmin, 0.75rem);
   border-radius: 0.375rem;
   z-index: 20;
-
-  @media (max-width: 480px) {
-    top: 1.75rem;
-    padding: 0.375rem 0.5rem;
-    gap: 0.125rem;
-  }
 `;
 
 export const StatRow = styled.div`
   display: flex;
   justify-content: space-between;
-  gap: 1rem;
-  font-size: 0.7rem;
+  gap: clamp(0.5rem, 1.5vmin, 1rem);
+  font-size: clamp(0.55rem, 1.2vmin, 0.7rem);
   color: #d1d5db;
-
-  @media (max-width: 480px) {
-    font-size: 0.6rem;
-    gap: 0.5rem;
-  }
 `;
 
 export const StatLabel = styled.span`
@@ -667,19 +654,13 @@ export const ExperienceBar = styled.div`
   position: absolute;
   top: 4.75rem;
   left: 1rem;
-  width: 200px;
-  height: 8px;
+  width: clamp(120px, 20vmin, 200px);
+  height: clamp(5px, 1vmin, 8px);
   background: rgba(0, 0, 0, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 0.25rem;
   overflow: hidden;
   z-index: 20;
-
-  @media (max-width: 480px) {
-    top: 4.5rem;
-    width: 120px;
-    height: 6px;
-  }
 `;
 
 export const ExperienceBarFill = styled.div<{ $ratio: number }>`
@@ -695,17 +676,11 @@ export const LevelBadge = styled.div`
   right: 1rem;
   background: linear-gradient(to right, #a855f7, #ec4899);
   color: white;
-  font-size: 0.75rem;
+  font-size: clamp(0.6rem, 1.4vmin, 0.75rem);
   font-weight: bold;
-  padding: 0.25rem 0.5rem;
+  padding: clamp(0.2rem, 0.5vmin, 0.25rem) clamp(0.35rem, 0.8vmin, 0.5rem);
   border-radius: 0.25rem;
   z-index: 20;
-
-  @media (max-width: 480px) {
-    top: 0.5rem;
-    font-size: 0.65rem;
-    padding: 0.2rem 0.4rem;
-  }
 `;
 
 // ===== MVP4: ヘルプUI =====
@@ -717,9 +692,9 @@ export const HelpButton = styled.button`
   background: rgba(255, 255, 255, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 0.5rem;
-  padding: 0.5rem 0.75rem;
+  padding: clamp(0.3rem, 0.8vmin, 0.5rem) clamp(0.4rem, 1vmin, 0.75rem);
   cursor: pointer;
-  font-size: 0.875rem;
+  font-size: clamp(0.65rem, 1.5vmin, 0.875rem);
   font-weight: bold;
   color: white;
   transition: all 0.2s;
@@ -727,13 +702,6 @@ export const HelpButton = styled.button`
 
   &:hover {
     background: rgba(255, 255, 255, 0.25);
-  }
-
-  @media (max-width: 480px) {
-    top: 0.5rem;
-    right: 3.5rem;
-    padding: 0.375rem 0.5rem;
-    font-size: 0.75rem;
   }
 `;
 
@@ -846,18 +814,12 @@ export const TimerDisplay = styled.div`
   background: rgba(0, 0, 0, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 0.5rem;
-  padding: 0.3rem 0.8rem;
+  padding: clamp(0.2rem, 0.5vmin, 0.3rem) clamp(0.5rem, 1.2vmin, 0.8rem);
   z-index: 20;
   font-family: monospace;
-  font-size: 1rem;
+  font-size: clamp(0.75rem, 1.8vmin, 1rem);
   font-weight: bold;
   color: white;
-
-  @media (max-width: 480px) {
-    top: 2rem;
-    font-size: 0.85rem;
-    padding: 0.25rem 0.6rem;
-  }
 `;
 
 // ===== MVP4: リザルト画面 =====
@@ -1218,26 +1180,16 @@ export const KeyIndicator = styled.div<{ $hasKey: boolean }>`
   background: rgba(0, 0, 0, 0.6);
   border: 1px solid ${props => props.$hasKey ? '#fcd34d' : 'rgba(255, 255, 255, 0.2)'};
   border-radius: 0.5rem;
-  padding: 0.375rem 0.5rem;
+  padding: clamp(0.2rem, 0.5vmin, 0.375rem) clamp(0.3rem, 0.8vmin, 0.5rem);
   z-index: 20;
   opacity: ${props => props.$hasKey ? 1 : 0.5};
   transition: all 0.3s ease;
-
-  @media (max-width: 480px) {
-    top: 0.5rem;
-    right: 6rem;
-    padding: 0.25rem 0.375rem;
-  }
 `;
 
 // 鍵アイコン
 export const KeyIcon = styled.span<{ $hasKey: boolean }>`
-  font-size: 1.25rem;
+  font-size: clamp(0.85rem, 2vmin, 1.25rem);
   filter: ${props => props.$hasKey ? 'none' : 'grayscale(100%)'};
-
-  @media (max-width: 480px) {
-    font-size: 1rem;
-  }
 `;
 
 // 鍵が必要ですメッセージ
@@ -1329,36 +1281,22 @@ export const PendingPointsBadge = styled.button<{ $hasPoints: boolean }>`
     `}
   }
 
-  @media (max-width: 480px) {
-    top: 0.5rem;
-    right: 8.5rem;
-    padding: ${props => props.$hasPoints ? '0.5rem 0.75rem' : '0.375rem 0.5rem'};
-    gap: 0.375rem;
-  }
 `;
 
 // 未割り振りポイント数表示
 export const PendingPointsCount = styled.span<{ $hasPoints: boolean }>`
-  font-size: ${props => props.$hasPoints ? '1rem' : '0.875rem'};
+  font-size: ${props => props.$hasPoints ? 'clamp(0.75rem, 1.8vmin, 1rem)' : 'clamp(0.65rem, 1.5vmin, 0.875rem)'};
   font-weight: bold;
   color: ${props => props.$hasPoints ? '#fbbf24' : '#6b7280'};
   text-shadow: ${props => props.$hasPoints ? '0 0 8px rgba(251, 191, 36, 0.5)' : 'none'};
-
-  @media (max-width: 480px) {
-    font-size: ${props => props.$hasPoints ? '0.875rem' : '0.75rem'};
-  }
 `;
 
 // 強化ボタンテキスト
 export const EnhanceButtonText = styled.span<{ $hasPoints: boolean }>`
-  font-size: ${props => props.$hasPoints ? '0.875rem' : '0.75rem'};
+  font-size: ${props => props.$hasPoints ? 'clamp(0.65rem, 1.5vmin, 0.875rem)' : 'clamp(0.55rem, 1.2vmin, 0.75rem)'};
   font-weight: bold;
   color: ${props => props.$hasPoints ? '#fbbf24' : '#6b7280'};
   text-shadow: ${props => props.$hasPoints ? '0 0 8px rgba(251, 191, 36, 0.5)' : 'none'};
-
-  @media (max-width: 480px) {
-    font-size: ${props => props.$hasPoints ? '0.75rem' : '0.65rem'};
-  }
 `;
 
 // レベルアップオーバーレイの閉じるボタン
@@ -1395,16 +1333,10 @@ export const StageIndicator = styled.div`
   background: rgba(0, 0, 0, 0.6);
   border: 1px solid rgba(251, 191, 36, 0.4);
   border-radius: 0.5rem;
-  padding: 0.3rem 0.8rem;
+  padding: clamp(0.2rem, 0.5vmin, 0.3rem) clamp(0.5rem, 1.2vmin, 0.8rem);
   z-index: 20;
   font-family: monospace;
-  font-size: 0.85rem;
+  font-size: clamp(0.65rem, 1.5vmin, 0.85rem);
   font-weight: bold;
   color: #fbbf24;
-
-  @media (max-width: 480px) {
-    top: 0.5rem;
-    font-size: 0.75rem;
-    padding: 0.2rem 0.6rem;
-  }
 `;

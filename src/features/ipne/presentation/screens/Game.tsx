@@ -6,6 +6,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import {
   Overlay,
   GameRegion,
+  CanvasWrapper,
   Canvas,
   DPadContainer,
   DPadButton,
@@ -421,6 +422,7 @@ export const GameScreen: React.FC<{
   maxLevel = 10,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasWrapperRef = useRef<HTMLDivElement>(null);
   const movementStateRef = useRef<MovementState>(INITIAL_MOVEMENT_STATE);
   const animationFrameRef = useRef<number | null>(null);
   const attackHoldRef = useRef(false);
@@ -443,8 +445,7 @@ export const GameScreen: React.FC<{
 
   // リサイズ時のスプライトキャッシュクリア
   useEffect(() => {
-    const canvas = canvasRef.current;
-    const container = canvas?.parentElement;
+    const container = canvasWrapperRef.current;
     if (!container || typeof ResizeObserver === 'undefined') return;
 
     let debounceTimer = 0;
@@ -502,10 +503,10 @@ export const GameScreen: React.FC<{
     let offsetY = 0;
     let viewport: Viewport;
 
-    // コンテナサイズからタイルサイズを動的に計算
-    const container = canvas.parentElement;
-    const availableWidth = container ? container.clientWidth : window.innerWidth;
-    const availableHeight = container ? container.clientHeight : window.innerHeight;
+    // CanvasWrapper サイズからタイルサイズを動的に計算
+    const wrapper = canvasWrapperRef.current;
+    const availableWidth = wrapper ? wrapper.clientWidth : window.innerWidth;
+    const availableHeight = wrapper ? wrapper.clientHeight : window.innerHeight;
     const dynamicTileSize = calculateTileSize(availableWidth, availableHeight);
 
     if (useFullMap) {
@@ -1138,12 +1139,14 @@ export const GameScreen: React.FC<{
       </HelpButton>
       {showHelp && <HelpOverlayComponent onClose={onHelpToggle} />}
       {showKeyRequiredMessage && <KeyRequiredMessage>🔑 鍵が必要です</KeyRequiredMessage>}
-      <Canvas
-        ref={canvasRef}
-        role="img"
-        aria-label="迷路ゲーム画面"
-        tabIndex={0}
-      />
+      <CanvasWrapper ref={canvasWrapperRef}>
+        <Canvas
+          ref={canvasRef}
+          role="img"
+          aria-label="迷路ゲーム画面"
+          tabIndex={0}
+        />
+      </CanvasWrapper>
       <ControlsContainer>
         <DPadContainer>
           <DPadButton

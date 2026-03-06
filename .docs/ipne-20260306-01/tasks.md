@@ -41,11 +41,18 @@
 - [x] `PageContainer` の変更
   - [x] `padding-top: 80px` → `padding-top: 0`（ヘッダー非表示時）
   - [x] Flexbox で中央配置
-- [ ] `CanvasContainer` ラッパーコンポーネント追加（不要と判断: GameRegion が同等の役割を果たしている）
+- [x] `CanvasWrapper` ラッパーコンポーネント追加
+  - [x] `flex: 1; min-height: 0` でコントロール領域を除いた残りスペースに制約
+  - [x] Canvas のはみ出しを防止
 - [x] `Canvas` スタイル変更
   - [x] 固定サイズ指定を削除
   - [x] `image-rendering: pixelated` を維持
-  - [x] `max-width`/`max-height` の固定値制約を削除
+  - [x] `max-width: 100%; max-height: 100%; object-fit: contain` で安全に収まるよう制約
+- [x] DPad / HUD のレスポンシブ化
+  - [x] DPad ボタンサイズを `clamp(2.75rem, 8vmin, 4rem)` でスケーリング
+  - [x] HUD テキスト（HP, タイマー, ステージ, レベル, ステータス等）を `clamp() + vmin` でレスポンシブ化
+  - [x] HUD 要素のパディング・幅も `clamp()` で可変化
+  - [x] メディアクエリベースの固定値指定を `clamp()` に統一
 
 ### 0A-4. Game.tsx Canvas動的サイズ対応 [P0]
 
@@ -63,7 +70,7 @@
 - [x] ステージ表示を上部中央に移動（top: 0.75rem）
 - [x] タイマーをステージ表示の直下に配置（top: 2.5rem）
 - [x] レベル・ステータスは右上を維持（right: 1rem）
-- [ ] HUD要素のサイズを tileSize に応じてスケーリング（今後対応: Canvas 内HUD描画で対応予定）
+- [x] HUD要素のサイズをビューポートに応じてスケーリング（`clamp() + vmin` で実現）
 
 ### 0A-6. テスト・動作確認 [P0]
 
