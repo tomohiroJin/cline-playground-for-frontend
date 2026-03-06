@@ -16,7 +16,7 @@ export const PageContainer = styled.div`
   position: fixed;
   inset: 0;
   z-index: 50;
-  padding-top: 80px;
+  padding-top: 0;
   box-sizing: border-box;
   height: 100dvh;
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
@@ -160,11 +160,8 @@ export const GameRegion = styled.div`
 
 export const Canvas = styled.canvas`
   display: block;
-  max-width: 100%;
-  max-height: 60vh;
-  width: auto;
-  height: auto;
-  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
   border-radius: 0.5rem;
   box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
 `;
@@ -270,7 +267,7 @@ export const AttackButton = styled.button<{ $ready: boolean }>`
 
 export const HPBarContainer = styled.div`
   position: absolute;
-  top: 1rem;
+  top: 3rem;
   left: 1rem;
   width: 200px;
   height: 24px;
@@ -284,6 +281,7 @@ export const HPBarContainer = styled.div`
   justify-content: center;
 
   @media (max-width: 480px) {
+    top: 2.75rem;
     width: 120px;
     height: 20px;
   }
@@ -626,8 +624,8 @@ export const LevelUpChoiceValue = styled.span<{ $disabled?: boolean }>`
 
 export const StatsDisplay = styled.div`
   position: absolute;
-  top: 3rem;
-  left: 1rem;
+  top: 2rem;
+  right: 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -637,7 +635,7 @@ export const StatsDisplay = styled.div`
   z-index: 20;
 
   @media (max-width: 480px) {
-    top: 2.75rem;
+    top: 1.75rem;
     padding: 0.375rem 0.5rem;
     gap: 0.125rem;
   }
@@ -667,7 +665,7 @@ export const StatValue = styled.span`
 
 export const ExperienceBar = styled.div`
   position: absolute;
-  top: 2.5rem;
+  top: 4.75rem;
   left: 1rem;
   width: 200px;
   height: 8px;
@@ -678,7 +676,7 @@ export const ExperienceBar = styled.div`
   z-index: 20;
 
   @media (max-width: 480px) {
-    top: 2.25rem;
+    top: 4.5rem;
     width: 120px;
     height: 6px;
   }
@@ -693,8 +691,8 @@ export const ExperienceBarFill = styled.div<{ $ratio: number }>`
 
 export const LevelBadge = styled.div`
   position: absolute;
-  top: 1rem;
-  left: 210px;
+  top: 0.75rem;
+  right: 1rem;
   background: linear-gradient(to right, #a855f7, #ec4899);
   color: white;
   font-size: 0.75rem;
@@ -704,7 +702,7 @@ export const LevelBadge = styled.div`
   z-index: 20;
 
   @media (max-width: 480px) {
-    left: 130px;
+    top: 0.5rem;
     font-size: 0.65rem;
     padding: 0.2rem 0.4rem;
   }
@@ -842,23 +840,23 @@ export const HelpHint = styled.p`
 
 export const TimerDisplay = styled.div`
   position: absolute;
-  top: 1rem;
+  top: 2.5rem;
   left: 50%;
   transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 0.5rem;
-  padding: 0.5rem 1rem;
+  padding: 0.3rem 0.8rem;
   z-index: 20;
   font-family: monospace;
-  font-size: 1.25rem;
+  font-size: 1rem;
   font-weight: bold;
   color: white;
 
   @media (max-width: 480px) {
-    top: 0.5rem;
-    font-size: 1rem;
-    padding: 0.375rem 0.75rem;
+    top: 2rem;
+    font-size: 0.85rem;
+    padding: 0.25rem 0.6rem;
   }
 `;
 
@@ -1388,10 +1386,10 @@ export const RemainingPointsText = styled.p`
   margin-top: 0.5rem;
 `;
 
-// ステージ番号表示
+// ステージ番号表示（上部中央）
 export const StageIndicator = styled.div`
   position: absolute;
-  top: 3rem;
+  top: 0.75rem;
   left: 50%;
   transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.6);
@@ -1405,7 +1403,7 @@ export const StageIndicator = styled.div`
   color: #fbbf24;
 
   @media (max-width: 480px) {
-    top: 2.5rem;
+    top: 0.5rem;
     font-size: 0.75rem;
     padding: 0.2rem 0.6rem;
   }

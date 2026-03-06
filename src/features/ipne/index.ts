@@ -114,6 +114,7 @@ export { initExploration, updateExploration, isGoalDiscovered, drawAutoMap } fro
 // ビューポート
 export {
   calculateViewport,
+  calculateTileSize,
   worldToScreen,
   isPlayerInViewport,
   getCanvasSize,

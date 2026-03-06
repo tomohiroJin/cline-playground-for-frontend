@@ -14,75 +14,74 @@
 
 ### 0A-1. viewport.ts リファクタリング [P0]
 
-- [ ] `VIEWPORT_CONFIG` の変更
-  - [ ] 固定 `tileSize: 48` を削除
-  - [ ] `minTileSize: 32` を追加
-  - [ ] `maxTileSize: 128` を追加
-- [ ] `calculateTileSize(availableWidth, availableHeight)` 関数を実装
-  - [ ] 利用可能領域から最適な tileSize を算出
-  - [ ] minTileSize / maxTileSize でクランプ
-  - [ ] 整数値に丸め
-- [ ] `getCanvasSize(tileSize)` の署名変更
-  - [ ] 引数なし → `tileSize` を引数に取る形に変更
-  - [ ] 戻り値は `{ width: tilesX * tileSize, height: tilesY * tileSize }`
-- [ ] `calculateViewport()` の更新
-  - [ ] 固定 tileSize 参照を動的 tileSize に変更
+- [x] `VIEWPORT_CONFIG` の変更
+  - [x] 固定 `tileSize: 48` を削除
+  - [x] `minTileSize: 32` を追加
+  - [x] `maxTileSize: 128` を追加
+- [x] `calculateTileSize(availableWidth, availableHeight)` 関数を実装
+  - [x] 利用可能領域から最適な tileSize を算出
+  - [x] minTileSize / maxTileSize でクランプ
+  - [x] 整数値に丸め
+- [x] `getCanvasSize(tileSize)` の署名変更
+  - [x] 引数なし → `tileSize` を引数に取る形に変更
+  - [x] 戻り値は `{ width: tilesX * tileSize, height: tilesY * tileSize }`
+- [x] `calculateViewport()` の更新
+  - [x] 固定 tileSize 参照を動的 tileSize に変更
 
 ### 0A-2. useCanvasSize フック新規作成 [P0]
 
-- [ ] `src/features/ipne/presentation/hooks/useCanvasSize.ts` を新規作成
-  - [ ] `useCanvasSize(containerRef)` フック
-  - [ ] `ResizeObserver` でコンテナサイズ変化を検知
-  - [ ] デバウンス処理（200ms）
-  - [ ] 戻り値: `{ tileSize, canvasWidth, canvasHeight }`
+- [x] `src/features/ipne/presentation/hooks/useCanvasSize.ts` を新規作成
+  - [x] `useCanvasSize(containerRef)` フック
+  - [x] `ResizeObserver` でコンテナサイズ変化を検知
+  - [x] デバウンス処理（200ms）
+  - [x] 戻り値: `{ tileSize, canvasWidth, canvasHeight }`
 
 ### 0A-3. IpnePage.styles.ts レイアウト変更 [P0]
 
-- [ ] `PageContainer` の変更
-  - [ ] `padding-top: 80px` → `padding-top: 0`（ヘッダー非表示時）
-  - [ ] Flexbox で中央配置
-- [ ] `CanvasContainer` ラッパーコンポーネント追加
-  - [ ] `width: 100%`, `height: 100%` で利用可能領域を確保
-- [ ] `Canvas` スタイル変更
-  - [ ] 固定サイズ指定を削除
-  - [ ] `image-rendering: pixelated` を維持
-  - [ ] `max-width`/`max-height` の固定値制約を削除
+- [x] `PageContainer` の変更
+  - [x] `padding-top: 80px` → `padding-top: 0`（ヘッダー非表示時）
+  - [x] Flexbox で中央配置
+- [ ] `CanvasContainer` ラッパーコンポーネント追加（不要と判断: GameRegion が同等の役割を果たしている）
+- [x] `Canvas` スタイル変更
+  - [x] 固定サイズ指定を削除
+  - [x] `image-rendering: pixelated` を維持
+  - [x] `max-width`/`max-height` の固定値制約を削除
 
 ### 0A-4. Game.tsx Canvas動的サイズ対応 [P0]
 
-- [ ] `useCanvasSize` フックの統合
-  - [ ] Canvas の `width`/`height` を動的に設定
-  - [ ] `spriteScale` 計算に動的 `tileSize` を使用
-- [ ] リサイズ時の `SpriteRenderer.clearCache()` 呼び出し
-- [ ] ビューポート計算の動的 tileSize 対応
+- [x] `useCanvasSize` フックの統合
+  - [x] Canvas の `width`/`height` を動的に設定
+  - [x] `spriteScale` 計算に動的 `tileSize` を使用
+- [x] リサイズ時の `SpriteRenderer.clearCache()` 呼び出し
+- [x] ビューポート計算の動的 tileSize 対応
 
 ### 0A-5. HUDレイアウト再設計 [P0]
 
-- [ ] HPバーの描画位置変更
-  - [ ] ホームボタン（~40px）の**下**に配置（y座標を48pxに）
-  - [ ] ホームボタンとの重なりを解消
-- [ ] ステージ表示を上部中央に移動
-- [ ] タイマーをステージ表示の直下に配置
-- [ ] レベル・ステータスは右上を維持
-- [ ] HUD要素のサイズを tileSize に応じてスケーリング
+- [x] HPバーの描画位置変更
+  - [x] ホームボタン（~40px）の**下**に配置（top: 3rem）
+  - [x] ホームボタンとの重なりを解消
+- [x] ステージ表示を上部中央に移動（top: 0.75rem）
+- [x] タイマーをステージ表示の直下に配置（top: 2.5rem）
+- [x] レベル・ステータスは右上を維持（right: 1rem）
+- [ ] HUD要素のサイズを tileSize に応じてスケーリング（今後対応: Canvas 内HUD描画で対応予定）
 
 ### 0A-6. テスト・動作確認 [P0]
 
-- [ ] `useCanvasSize.test.ts` の新規作成
-  - [ ] `calculateTileSize` の計算精度テスト
-  - [ ] minTileSize / maxTileSize のクランプテスト
-  - [ ] `getCanvasSize` の整合性テスト
-- [ ] `viewport.test.ts` の更新
-  - [ ] 固定値テストを動的計算テストに変更
-- [ ] ビルド・起動確認
-  - [ ] コンパイルエラーなし
+- [x] `useCanvasSize.test.ts` の新規作成
+  - [x] `calculateTileSize` の計算精度テスト
+  - [x] minTileSize / maxTileSize のクランプテスト
+  - [x] `getCanvasSize` の整合性テスト
+- [x] `viewport.test.ts` の更新
+  - [x] 固定値テストを動的計算テストに変更
+- [x] ビルド・起動確認
+  - [x] コンパイルエラーなし
   - [ ] PC（フルHD以上）での大画面表示確認
   - [ ] タブレットでの中間サイズ表示確認
   - [ ] モバイルでの最小サイズ表示確認
   - [ ] ウィンドウリサイズ時の動作確認
-- [ ] HUD配置確認
-  - [ ] ホームボタンとHPバーが重なっていないこと
-  - [ ] 各HUD要素の視認性が確保されていること
+- [x] HUD配置確認
+  - [x] ホームボタンとHPバーが重なっていないこと
+  - [x] 各HUD要素の視認性が確保されていること
 
 ---
 

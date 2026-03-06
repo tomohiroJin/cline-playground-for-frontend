@@ -76,6 +76,7 @@ import {
   Item,
   AutoMapState,
   calculateViewport,
+  calculateTileSize,
   getCanvasSize,
   Viewport,
   DebugState,
@@ -440,6 +441,27 @@ export const GameScreen: React.FC<{
   // スプライトレンダラー（T-02.1）
   const spriteRenderer = useMemo(() => new SpriteRenderer(), []);
 
+  // リサイズ時のスプライトキャッシュクリア
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const container = canvas?.parentElement;
+    if (!container || typeof ResizeObserver === 'undefined') return;
+
+    let debounceTimer = 0;
+    const observer = new ResizeObserver(() => {
+      clearTimeout(debounceTimer);
+      debounceTimer = window.setTimeout(() => {
+        spriteRenderer.clearCache();
+      }, 200);
+    });
+
+    observer.observe(container);
+    return () => {
+      observer.disconnect();
+      clearTimeout(debounceTimer);
+    };
+  }, [spriteRenderer]);
+
   // 死亡アニメーション開始
   useEffect(() => {
     if (isDying) {
@@ -480,9 +502,15 @@ export const GameScreen: React.FC<{
     let offsetY = 0;
     let viewport: Viewport;
 
+    // コンテナサイズからタイルサイズを動的に計算
+    const container = canvas.parentElement;
+    const availableWidth = container ? container.clientWidth : window.innerWidth;
+    const availableHeight = container ? container.clientHeight : window.innerHeight;
+    const dynamicTileSize = calculateTileSize(availableWidth, availableHeight);
+
     if (useFullMap) {
       // 全体マップ表示：マップ全体が収まるようにタイルサイズを計算
-      const canvasSize = getCanvasSize();
+      const canvasSize = getCanvasSize(dynamicTileSize);
       canvas.width = canvasSize.width;
       canvas.height = canvasSize.height;
       tileSize = Math.min(
@@ -495,10 +523,10 @@ export const GameScreen: React.FC<{
       // ダミーのビューポート（全体表示用）
       viewport = { x: 0, y: 0, width: mapWidth, height: mapHeight, tileSize };
     } else {
-      // 通常のビューポート表示
-      viewport = calculateViewport(player, mapWidth, mapHeight);
+      // 通常のビューポート表示（動的 tileSize を使用）
+      viewport = calculateViewport(player, mapWidth, mapHeight, dynamicTileSize);
       tileSize = viewport.tileSize;
-      const canvasSize = getCanvasSize();
+      const canvasSize = getCanvasSize(tileSize);
       canvas.width = canvasSize.width;
       canvas.height = canvasSize.height;
     }
