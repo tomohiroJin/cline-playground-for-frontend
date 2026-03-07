@@ -39,7 +39,9 @@ describe('AirHockeyPage', () => {
 
   it('BGMトグルが表示される', () => {
     render(<AirHockeyPage />);
-    expect(screen.getByText('BGM')).toBeInTheDocument();
+    // 音量設定セクションにも "BGM" ラベルがあるため getAllByText を使用
+    const bgmElements = screen.getAllByText('BGM');
+    expect(bgmElements.length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('OFF')).toBeInTheDocument();
   });
 });

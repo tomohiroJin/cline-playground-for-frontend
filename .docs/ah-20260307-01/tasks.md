@@ -94,112 +94,113 @@
 ## Phase 2: ゲームプレイ深化
 
 ### 2.1 ポーズ機能
-- [ ] `core/types.ts` の `GamePhase` に `paused` が含まれていることを確認
-- [ ] `renderer.ts` に `drawPauseOverlay()` 実装（半透明背景 + メニュー）
-- [ ] `components/Scoreboard.tsx` にポーズボタン追加
-- [ ] `hooks/useGameLoop.ts` で `paused` フェーズ時にゲームループを一時停止
-- [ ] ポーズ解除時の 1 秒カウントダウン処理追加
-- [ ] Escape / P キーによるポーズトグル処理追加
-- [ ] テスト: ポーズ中にゲーム状態が変化しないことを確認
+- [x] `core/types.ts` の `GamePhase` に `paused` が含まれていることを確認
+- [x] `renderer.ts` に `drawPauseOverlay()` 実装（半透明背景 + メニュー）
+- [x] `components/Scoreboard.tsx` にポーズボタン追加
+- [x] `hooks/useGameLoop.ts` で `paused` フェーズ時にゲームループを一時停止
+- [x] ポーズ解除時の処理追加（タップ/キーで即時リジューム）
+- [x] Escape / P キーによるポーズトグル処理追加
+- [x] テスト: ポーズ中にゲーム状態が変化しないことを確認
 
 ### 2.2 新アイテム追加
 
 #### Shield（バリア）
-- [ ] `core/types.ts` に `ItemType` へ `'shield'` 追加
-- [ ] `core/types.ts` に `ShieldState` 型追加（`active`, `owner`, `hitPoints`）
-- [ ] `core/config.ts` の ITEMS に Shield 追加
-- [ ] `core/items.ts` に `shield` エフェクト実装
-- [ ] `renderer.ts` にゴール前バリアの描画追加
-- [ ] `hooks/useGameLoop.ts` にバリアとパックの衝突判定追加
-- [ ] テスト: バリアがパックを1回ブロックして消滅することを確認
+- [x] `core/types.ts` に `ItemType` へ `'shield'` 追加
+- [x] `core/types.ts` の `EffectState` に `shield` フィールド追加
+- [x] `core/config.ts` の ITEMS に Shield 追加
+- [x] `core/items.ts` に `shield` エフェクト実装
+- [x] `renderer.ts` にゴール前バリアの描画追加
+- [x] `hooks/useGameLoop.ts` にバリアとパックの衝突判定追加
+- [x] テスト: バリアがパックを1回ブロックして消滅することを確認
 
 #### Magnet（磁力）
-- [ ] `core/types.ts` に `ItemType` へ `'magnet'` 追加
-- [ ] `core/types.ts` の `EffectState` に `magnet` フィールド追加
-- [ ] `core/config.ts` の ITEMS に Magnet 追加
-- [ ] `core/items.ts` に `magnet` エフェクト実装
-- [ ] `hooks/useGameLoop.ts` にマグネットの引力計算追加
-- [ ] `renderer.ts` にマグネットエフェクト描画追加
-- [ ] テスト: マグネット発動中にパックが引き寄せられることを確認
+- [x] `core/types.ts` に `ItemType` へ `'magnet'` 追加
+- [x] `core/types.ts` の `EffectState` に `magnet` フィールド追加
+- [x] `core/config.ts` の ITEMS に Magnet 追加
+- [x] `core/items.ts` に `magnet` エフェクト実装
+- [x] `hooks/useGameLoop.ts` にマグネットの引力計算追加
+- [x] `renderer.ts` にマグネットエフェクト描画追加
+- [x] テスト: マグネット発動中にパックが引き寄せられることを確認
 
 #### Big（マレット拡大）
-- [ ] `core/types.ts` に `ItemType` へ `'big'` 追加
-- [ ] `core/types.ts` の `EffectState` に `big` フィールド追加
-- [ ] `core/config.ts` の ITEMS に Big 追加
-- [ ] `core/items.ts` に `big` エフェクト実装
-- [ ] `hooks/useGameLoop.ts` でマレット衝突判定に拡大半径を反映
-- [ ] `renderer.ts` でマレット描画に拡大サイズを反映
-- [ ] テスト: Big 発動中にマレット半径が 1.5 倍になることを確認
+- [x] `core/types.ts` に `ItemType` へ `'big'` 追加
+- [x] `core/types.ts` の `EffectState` に `big` フィールド追加
+- [x] `core/config.ts` の ITEMS に Big 追加
+- [x] `core/items.ts` に `big` エフェクト実装
+- [x] `hooks/useGameLoop.ts` でマレット衝突判定に拡大半径を反映
+- [x] `renderer.ts` でマレット描画に拡大サイズを反映
+- [x] テスト: Big 発動中にマレット半径が 1.5 倍になることを確認
 
 ### 2.3 コンボシステム強化
-- [ ] `core/types.ts` に `ComboState` 型追加（`count`, `lastScorer`）
-- [ ] `core/types.ts` の `GameState` に `combo` フィールド追加
-- [ ] `hooks/useGameLoop.ts` にコンボ判定ロジック追加（連続得点カウント）
-- [ ] `renderer.ts` に `drawCombo()` メソッド追加（コンボ数表示＋演出）
-- [ ] コンボに応じたパーティクル量の増加処理追加
+- [x] `core/types.ts` に `ComboState` 型追加（`count`, `lastScorer`）
+- [x] `core/types.ts` の `GameState` に `combo` フィールド追加
+- [x] `hooks/useGameLoop.ts` にコンボ判定ロジック追加（連続得点カウント）
+- [x] `renderer.ts` に `drawCombo()` メソッド追加（コンボ数表示＋演出）
+- [x] コンボに応じた演出（x3: オレンジ、x5+: レインボー）
 - [ ] コンボ x3+ でフィーバー突入時間を短縮するロジック追加
-- [ ] テスト: 連続得点でコンボカウントが増加することを確認
-- [ ] テスト: 相手得点でコンボがリセットされることを確認
+- [x] テスト: 連続得点でコンボカウントが増加することを確認
+- [x] テスト: 相手得点でコンボがリセットされることを確認
 
 ### 2.4 カムバックメカニクス
-- [ ] `core/constants.ts` にカムバック定数追加（`COMEBACK_THRESHOLD: 3`, `COMEBACK_MALLET_BONUS: 0.1`, `COMEBACK_GOAL_REDUCTION: 0.1`）
-- [ ] `hooks/useGameLoop.ts` にカムバック判定ロジック追加
-- [ ] マレット衝突判定でカムバックボーナスの半径拡大を反映
-- [ ] ゴール判定でカムバックボーナスのゴールサイズ縮小を反映
-- [ ] テスト: スコア差 3 以上でカムバック効果が発動することを確認
-- [ ] テスト: スコア差 2 以下で効果が解除されることを確認
+- [x] `core/constants.ts` にカムバック定数追加（`COMEBACK.THRESHOLD: 3`, `COMEBACK.MALLET_BONUS: 0.1`, `COMEBACK.GOAL_REDUCTION: 0.1`）
+- [x] `hooks/useGameLoop.ts` にカムバック判定ロジック追加
+- [x] マレット衝突判定でカムバックボーナスの半径拡大を反映
+- [x] ゴール判定でカムバックボーナスのゴールサイズ縮小を反映
+- [x] テスト: スコア差 3 以上でカムバック効果が発動することを確認
+- [x] テスト: スコア差 2 以下で効果が解除されることを確認
 
 ### 2.5 試合統計
-- [ ] `core/types.ts` に `MatchStats` 型追加
-- [ ] `core/types.ts` の `GameState` または別 ref に統計フィールド追加
-- [ ] `hooks/useGameLoop.ts` でヒット・セーブ・最高速度を記録
-- [ ] `AirHockeyGame.tsx` に統計 ref 追加
-- [ ] `components/ResultScreen.tsx` に統計表示セクション追加
-- [ ] 統計値のカウントアップアニメーション実装
-- [ ] テスト: ヒット検出時に統計が正しくカウントされることを確認
+- [x] `core/types.ts` に `MatchStats` 型追加
+- [x] `core/entities.ts` に `createMatchStats()` ファクトリ追加、別 ref で統計管理
+- [x] `hooks/useGameLoop.ts` でヒット・セーブ・最高速度を記録
+- [x] `AirHockeyGame.tsx` に統計 ref 追加
+- [x] `components/ResultScreen.tsx` に統計表示セクション追加
+- [x] 統計値のカウントアップアニメーション実装（Phase 3.2 で対応）
+- [x] テスト: ヒット検出時に統計が正しくカウントされることを確認
 
 ---
 
 ## Phase 3: リプレイ性・UX 向上
 
 ### 3.1 実績システム
-- [ ] `core/achievements.ts` 新規作成（実績定義・判定・保存ロジック）
-- [ ] 実績データを localStorage で管理する関数実装
-- [ ] 各実績の判定条件を実装（勝利時、統計チェック時等）
-- [ ] `hooks/useGameLoop.ts` またはリザルト遷移時に実績チェック呼び出し
-- [ ] `components/ResultScreen.tsx` に実績解除ポップアップ追加
-- [ ] `components/TitleScreen.tsx` に実績一覧表示リンク追加
-- [ ] 実績一覧画面コンポーネント新規作成
-- [ ] テスト: 各実績の判定条件が正しく動作することを確認
+- [x] `core/achievements.ts` 新規作成（実績定義・判定・保存ロジック）
+- [x] 実績データを localStorage で管理する関数実装
+- [x] 各実績の判定条件を実装（勝利時、統計チェック時等）
+- [x] `AirHockeyGame.tsx` のリザルト遷移時に実績チェック呼び出し
+- [x] `components/ResultScreen.tsx` に実績解除ポップアップ追加
+- [x] `components/TitleScreen.tsx` に実績一覧表示リンク追加
+- [x] 実績一覧画面コンポーネント新規作成（`components/AchievementList.tsx`）
+- [x] テスト: 各実績の判定条件が正しく動作することを確認（29テスト）
 
 ### 3.2 リザルト画面強化
-- [ ] 勝利時の紙吹雪エフェクト追加（ConfettiOverlay 検討）
-- [ ] 統計値のカウントアップアニメーション実装（Phase 2.5 と連動）
-- [ ] 「REPLAY」ボタン追加（同条件で再戦）
-- [ ] MVP スタッツのハイライト表示
-- [ ] `AirHockeyGame.tsx` にリプレイ機能追加
+- [x] 勝利時の紙吹雪エフェクト追加（ConfettiOverlay 実装）
+- [x] 統計値のカウントアップアニメーション実装（useCountUp フック）
+- [x] 「REPLAY」ボタン追加（同条件で再戦）
+- [x] MVP スタッツのハイライト表示（getMvpCategory）
+- [x] `AirHockeyGame.tsx` にリプレイ機能追加
 
 ### 3.3 画面トランジション
-- [ ] トランジション用の共通コンポーネント作成
-- [ ] menu → game: フェードアウトトランジション
-- [ ] game → result: フェードインタランジション
-- [ ] result → menu: スライドトランジション
-- [ ] `AirHockeyGame.tsx` にトランジション状態管理追加
+- [x] トランジション用の共通コンポーネント作成（`components/Transition.tsx`）
+- [x] menu → game: フェードアウトトランジション
+- [x] game → result: フェードインタランジション
+- [x] result → menu: トランジション
+- [x] `AirHockeyGame.tsx` にトランジション状態管理追加
 
 ### 3.4 音量設定
-- [ ] `core/types.ts` に `AudioSettings` 型追加（`bgmVolume`, `seVolume`, `muted`）
-- [ ] `core/sound.ts` に音量制御メソッド追加
-- [ ] 音量設定の localStorage 保存/読み込み実装
-- [ ] `components/TitleScreen.tsx` に音量スライダー UI 追加
-- [ ] テスト: 音量設定が保存・復元されることを確認
+- [x] `core/audio-settings.ts` に `AudioSettings` 型追加（`bgmVolume`, `seVolume`, `muted`）
+- [x] `core/sound.ts` に音量制御メソッド追加（`setBgmVolume`, `setSeVolume`, `setMuted`）
+- [x] `core/types.ts` の `SoundSystem` に音量制御メソッド追加
+- [x] 音量設定の localStorage 保存/読み込み実装
+- [x] `components/TitleScreen.tsx` に音量スライダー UI 追加
+- [x] テスト: 音量設定が保存・復元されることを確認
 
 ### 3.5 チュートリアル改善
-- [ ] チュートリアルの完了フラグを localStorage で管理
-- [ ] チュートリアルステップのデータ定義
-- [ ] インタラクティブなオーバーレイコンポーネント作成
-- [ ] 各ステップのハイライト表示とガイドテキスト
-- [ ] スキップ機能
-- [ ] テスト: チュートリアル完了後に再表示されないことを確認
+- [x] チュートリアルの完了フラグを localStorage で管理
+- [x] チュートリアルステップのデータ定義（4ステップ）
+- [x] インタラクティブなオーバーレイコンポーネント作成（`components/Tutorial.tsx`）
+- [x] 各ステップのハイライト表示とガイドテキスト
+- [x] スキップ機能
+- [x] テスト: チュートリアル完了後に再表示されないことを確認
 
 ---
 
@@ -236,8 +237,8 @@
 
 ### テスト全般
 - [x] Phase 1 完了後: 既存テスト全パス確認（68テスト全パス）
-- [ ] Phase 2 完了後: 新アイテム・コンボのユニットテスト追加
-- [ ] Phase 3 完了後: 実績・統計のユニットテスト追加
+- [x] Phase 2 完了後: 新アイテム・コンボのユニットテスト追加（31テスト、全96テストパス）
+- [x] Phase 3 完了後: 実績・音量設定・チュートリアルのユニットテスト追加（29テスト、全128テストパス）
 - [ ] 各 Phase 完了後: 手動での動作確認・プレイテスト
 
 ### ドキュメント

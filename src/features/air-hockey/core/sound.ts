@@ -6,6 +6,9 @@ export const createSoundSystem = (): SoundSystem => {
   let bgmGain: GainNode | null = null;
   let bgmTempo = 1.0;
   let bgmNoteIndex = 0;
+  let bgmVolume = 0.15;
+  let seVolume = 1.0;
+  let isMuted = false;
 
   const getContext = () => {
     const w = window as Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext };
@@ -16,6 +19,7 @@ export const createSoundSystem = (): SoundSystem => {
 
   const playTone = (freq: number, type: OscillatorType, duration: number, volume = 0.3) => {
     try {
+      if (isMuted) return;
       const ctx = getContext();
       if (!ctx) return;
       const osc = ctx.createOscillator();
@@ -24,7 +28,8 @@ export const createSoundSystem = (): SoundSystem => {
       gain.connect(ctx.destination);
       osc.type = type;
       osc.frequency.value = freq;
-      gain.gain.setValueAtTime(volume, ctx.currentTime);
+      const adjustedVolume = volume * seVolume;
+      gain.gain.setValueAtTime(adjustedVolume, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
       osc.start();
       osc.stop(ctx.currentTime + duration);
@@ -71,12 +76,13 @@ export const createSoundSystem = (): SoundSystem => {
 
   const startBgm = () => {
     try {
+      if (isMuted) return;
       const ctx = getContext();
       if (!ctx || bgmInterval) return;
 
       bgmGain = ctx.createGain();
       bgmGain.connect(ctx.destination);
-      bgmGain.gain.value = 0.15;
+      bgmGain.gain.value = bgmVolume;
       bgmNoteIndex = 0;
 
       playBgmNote();
@@ -140,5 +146,17 @@ export const createSoundSystem = (): SoundSystem => {
     bgmStart: startBgm,
     bgmStop: stopBgm,
     bgmSetTempo: setBgmTempo,
+    // 音量制御メソッド（0〜100 のパーセンテージ）
+    setBgmVolume: (volume: number) => {
+      bgmVolume = (volume / 100) * 0.3;
+      if (bgmGain) bgmGain.gain.value = bgmVolume;
+    },
+    setSeVolume: (volume: number) => {
+      seVolume = volume / 100;
+    },
+    setMuted: (muted: boolean) => {
+      isMuted = muted;
+      if (muted && bgmInterval) stopBgm();
+    },
   };
 };
