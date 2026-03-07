@@ -80,7 +80,7 @@ export const DailyQuizScreen: React.FC<DailyQuizScreenProps> = ({ onBack }) => {
       setCurrentIndex(nextIndex);
       setSelectedAnswer(undefined);
     }
-  }, [currentIndex, correctCount, selectedAnswer, currentQuestion, dateKey]);
+  }, [currentIndex, correctCount, dateKey]);
 
   const streak = useMemo(() => {
     if (!finished || !result) return 0;
