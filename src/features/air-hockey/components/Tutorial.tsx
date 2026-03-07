@@ -42,15 +42,15 @@ const STEPS: TutorialStep[] = [
   },
   {
     title: 'フィールドを選ぼう',
-    description: '6種類のフィールドにはそれぞれ特徴があります',
+    description: '6種類のフィールドにはそれぞれ特徴があります。勝利数で新しいフィールドが解放されます！',
     icon: '🗺',
     details: [
-      'Original: シンプルな基本フィールド',
-      'Wide: ゴールが広い（攻守激しい）',
-      'Pillars: 中央に障害物の柱',
-      'Zigzag: ジグザグ配置の障害物',
-      'Fortress: 破壊可能な壁でゴールを防御',
-      'Bastion: 大量の破壊可能ブロック',
+      'Original: シンプルな基本フィールド（初期解放）',
+      'Wide: ゴールが広い（初期解放）',
+      '🔒 Pillars: 中央に障害物の柱（3勝で解放）',
+      '🔒 Zigzag: ジグザグ配置の障害物（5勝で解放）',
+      '🔒 Fortress: 破壊可能な壁でゴールを防御（8勝で解放）',
+      '🔒 Bastion: 大量の破壊可能ブロック（12勝で解放）',
     ],
   },
   {
@@ -58,10 +58,11 @@ const STEPS: TutorialStep[] = [
     description: '便利な機能を使いこなしましょう',
     icon: '🎮',
     details: [
+      'WASD / 矢印キー: キーボードでマレット操作',
       'Escape / P キー: ポーズ（一時停止）',
-      '? ボタン: ヘルプ表示',
       '連続得点でコンボ発動！',
       'フィーバーモード: 一定時間得点なしでパック増加',
+      '連勝/連敗で難易度変更を提案',
     ],
   },
 ];
@@ -143,17 +144,19 @@ export const Tutorial: React.FC<TutorialProps> = ({ onComplete, isHelp = false }
           </div>
         )}
 
-        {/* ステップインジケーター */}
+        {/* ステップインジケーター（クリックで移動可能） */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '1.5rem' }}>
           {STEPS.map((_, i) => (
             <div
               key={i}
+              onClick={() => setStep(i)}
               style={{
-                width: '8px',
-                height: '8px',
+                width: '10px',
+                height: '10px',
                 borderRadius: '50%',
                 background: i === step ? 'var(--accent-color)' : 'rgba(255, 255, 255, 0.2)',
                 transition: 'background 0.2s',
+                cursor: 'pointer',
               }}
             />
           ))}
@@ -173,8 +176,23 @@ export const Tutorial: React.FC<TutorialProps> = ({ onComplete, isHelp = false }
           >
             スキップ
           </button>
+          {step > 0 && (
+            <button
+              onClick={() => setStep(step - 1)}
+              style={{
+                background: 'none',
+                border: '1px solid rgba(0, 210, 255, 0.3)',
+                color: 'var(--accent-color)',
+                padding: '10px 20px',
+                borderRadius: '25px',
+                cursor: 'pointer',
+              }}
+            >
+              戻る
+            </button>
+          )}
           <StartButton onClick={handleNext} style={{ marginTop: 0 }}>
-            {step < STEPS.length - 1 ? '次へ' : 'はじめる'}
+            {step < STEPS.length - 1 ? '次へ' : isHelp ? '閉じる' : 'はじめる'}
           </StartButton>
         </div>
       </div>

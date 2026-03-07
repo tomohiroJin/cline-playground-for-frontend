@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ShareButton } from '../../../components/molecules/ShareButton';
 import { MenuCard, GameTitle, StartButton } from '../styles';
-import { MatchStats } from '../core/types';
+import { MatchStats, Difficulty } from '../core/types';
 import { Achievement } from '../core/achievements';
+import { DIFFICULTY_LABELS } from '../core/config';
 
 type ResultScreenProps = {
   winner: string | null;
@@ -11,6 +12,8 @@ type ResultScreenProps = {
   onReplay?: () => void;
   stats?: MatchStats;
   newAchievements?: Achievement[];
+  suggestedDifficulty?: Difficulty;
+  onAcceptDifficulty?: (d: Difficulty) => void;
 };
 
 // カウントアップアニメーション用フック
@@ -132,6 +135,7 @@ const ConfettiOverlay: React.FC = () => {
 
 export const ResultScreen: React.FC<ResultScreenProps> = ({
   winner, scores, onBackToMenu, onReplay, stats, newAchievements,
+  suggestedDifficulty, onAcceptDifficulty,
 }) => {
   const isWin = winner === 'player';
 
@@ -229,6 +233,38 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
             hashtags={['AirHockey', 'GamePlatform']}
           />
         </div>
+
+        {/* 難易度提案 */}
+        {suggestedDifficulty && onAcceptDifficulty && (
+          <div style={{
+            width: '100%',
+            marginBottom: '1rem',
+            padding: '12px',
+            background: 'rgba(255, 165, 0, 0.15)',
+            borderRadius: '8px',
+            border: '1px solid rgba(255, 165, 0, 0.3)',
+            textAlign: 'center',
+          }}>
+            <p style={{ color: '#ffa500', fontSize: '0.85rem', marginBottom: '8px' }}>
+              {isWin ? '連勝中！難易度を上げてみませんか？' : '難易度を下げてみませんか？'}
+            </p>
+            <button
+              onClick={() => onAcceptDifficulty(suggestedDifficulty)}
+              style={{
+                padding: '6px 16px',
+                borderRadius: '16px',
+                border: '1px solid #ffa500',
+                background: 'rgba(255, 165, 0, 0.2)',
+                color: '#ffa500',
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+                fontWeight: 'bold',
+              }}
+            >
+              {DIFFICULTY_LABELS[suggestedDifficulty]} に変更
+            </button>
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
           {onReplay && (

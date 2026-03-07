@@ -7,7 +7,10 @@ import { FIELDS } from './core/config';
 import { GameState, FieldConfig, Difficulty, SoundSystem, GamePhase, ShakeState, MatchStats } from './core/types';
 import { Achievement, checkAchievements, getUnlockedAchievements, saveUnlockedAchievements } from './core/achievements';
 import { AudioSettings, DEFAULT_AUDIO_SETTINGS, loadAudioSettings, saveAudioSettings } from './core/audio-settings';
+import { getStreakRecord, saveStreakRecord, recordMatchResult, getSuggestedDifficulty } from './core/difficulty-adjust';
+import { getUnlockState, saveUnlockState, checkUnlocks, isFieldUnlocked } from './core/unlock';
 import { useInput } from './hooks/useInput';
+import { useKeyboardInput } from './hooks/useKeyboardInput';
 import { useGameLoop } from './hooks/useGameLoop';
 import { TitleScreen } from './components/TitleScreen';
 import { Scoreboard } from './components/Scoreboard';
@@ -17,10 +20,13 @@ import { AchievementList } from './components/AchievementList';
 import { Transition } from './components/Transition';
 import { Tutorial, isTutorialCompleted } from './components/Tutorial';
 import { SettingsPanel } from './components/SettingsPanel';
+import { DailyChallengeScreen } from './components/DailyChallengeScreen';
+import { generateDailyChallenge, getDailyChallengeResult, saveDailyChallengeResult, DailyChallenge } from './core/daily-challenge';
+import { UnlockState } from './core/unlock';
 import { PageContainer } from './styles';
 
 const AirHockeyGame: React.FC = () => {
-  const [screen, setScreen] = useState<'menu' | 'game' | 'result' | 'achievements'>('menu');
+  const [screen, setScreen] = useState<'menu' | 'game' | 'result' | 'achievements' | 'daily'>('menu');
   const [diff, setDiff] = useState<Difficulty>('normal');
   const [field, setField] = useState<FieldConfig>(FIELDS[0]);
   const [winScore, setWinScore] = useState(3);
@@ -36,6 +42,10 @@ const AirHockeyGame: React.FC = () => {
   const [showTutorial, setShowTutorial] = useState(!isTutorialCompleted());
   const [isHelpMode, setIsHelpMode] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [suggestedDifficulty, setSuggestedDifficulty] = useState<Difficulty | undefined>(undefined);
+  const [unlockState, setUnlockState] = useState<UnlockState>(() => getUnlockState());
+  const [dailyChallenge, setDailyChallenge] = useState<DailyChallenge | undefined>(undefined);
+  const [isDailyMode, setIsDailyMode] = useState(false);
   // トランジション用
   const [transitioning, setTransitioning] = useState(false);
 
@@ -109,8 +119,33 @@ const AirHockeyGame: React.FC = () => {
       } else {
         setNewAchievements([]);
       }
+
+      // 難易度オートアジャスト: 連勝/連敗を記録し提案を生成
+      const isWin = winner === 'player';
+      const prevStreak = getStreakRecord();
+      const newStreak = recordMatchResult(prevStreak, isWin);
+      saveStreakRecord(newStreak);
+      const suggestion = getSuggestedDifficulty(newStreak, diff);
+      setSuggestedDifficulty(suggestion);
+
+      // アンロック更新
+      const prevUnlock = getUnlockState();
+      const newUnlock = checkUnlocks(prevUnlock, { isWin, difficulty: diff, fieldId: field.id });
+      saveUnlockState(newUnlock);
+      setUnlockState(newUnlock);
+
+      // デイリーチャレンジの結果保存
+      if (isDailyMode && dailyChallenge) {
+        saveDailyChallengeResult({
+          date: dailyChallenge.date,
+          isCleared: isWin,
+          playerScore: scoreRef.current.p,
+          cpuScore: scoreRef.current.c,
+        });
+        setIsDailyMode(false);
+      }
     }
-  }, [screen, diff, winScore, winner, field.id]);
+  }, [screen, diff, winScore, winner, field.id, isDailyMode, dailyChallenge]);
 
   // 音量設定をサウンドシステムに適用する共通関数
   const applyAudioSettings = useCallback((sound: SoundSystem, settings: AudioSettings) => {
@@ -136,8 +171,9 @@ const AirHockeyGame: React.FC = () => {
     saveAudioSettings(audioSettings);
   }, [audioSettings, applyAudioSettings]);
 
-  const startGame = useCallback(() => {
-    gameRef.current = EntityFactory.createGameState(CONSTANTS, field);
+  const startGame = useCallback((fieldOverride?: FieldConfig) => {
+    const activeField = fieldOverride ?? field;
+    gameRef.current = EntityFactory.createGameState(CONSTANTS, activeField);
     scoreRef.current = { p: 0, c: 0 };
     setScores({ p: 0, c: 0 });
     setWinner(null);
@@ -184,13 +220,14 @@ const AirHockeyGame: React.FC = () => {
   }, [screen, togglePause]);
 
   const handleInput = useInput(gameRef, canvasRef, lastInputRef, screen, showHelp, setShowHelp);
+  const keysRef = useKeyboardInput(gameRef, lastInputRef, screen, showHelp, setShowHelp);
 
   useGameLoop(
     screen, diff, field, winScore, showHelp, getSound,
     gameRef, canvasRef, lastInputRef, scoreRef,
     setScores, setWinner, setScreen, setShowHelp,
     phaseRef, countdownStartRef, shakeRef, setShake, bgmEnabled,
-    statsRef, matchStartRef
+    statsRef, matchStartRef, keysRef
   );
 
   return (
@@ -233,12 +270,35 @@ const AirHockeyGame: React.FC = () => {
               setShowTutorial(true);
             }}
             onSettingsClick={() => setShowSettings(true)}
+            onDailyChallengeClick={() => {
+              const challenge = generateDailyChallenge(new Date());
+              setDailyChallenge(challenge);
+              setScreen('daily');
+            }}
+            unlockState={unlockState}
           />
         </Transition>
       )}
 
       {screen === 'achievements' && (
         <AchievementList onBack={() => setScreen('menu')} />
+      )}
+
+      {screen === 'daily' && dailyChallenge && (
+        <DailyChallengeScreen
+          challenge={dailyChallenge}
+          result={getDailyChallengeResult(dailyChallenge.date)}
+          onStart={() => {
+            // デイリーチャレンジの設定でゲーム開始
+            const challengeField = FIELDS.find(f => f.id === dailyChallenge.fieldId) ?? FIELDS[0];
+            setDiff(dailyChallenge.difficulty);
+            setField(challengeField);
+            setWinScore(dailyChallenge.winScore);
+            setIsDailyMode(true);
+            startGame(challengeField);
+          }}
+          onBack={() => setScreen('menu')}
+        />
       )}
 
       {screen === 'game' && (
@@ -260,6 +320,13 @@ const AirHockeyGame: React.FC = () => {
             onReplay={startGame}
             stats={matchStats}
             newAchievements={newAchievements}
+            suggestedDifficulty={suggestedDifficulty}
+            onAcceptDifficulty={(d) => {
+              setDiff(d);
+              setSuggestedDifficulty(undefined);
+              // 連勝/連敗をリセット
+              saveStreakRecord({ winStreak: 0, loseStreak: 0 });
+            }}
           />
         </Transition>
       )}

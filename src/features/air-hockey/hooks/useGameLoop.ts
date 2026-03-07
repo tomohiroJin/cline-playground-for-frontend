@@ -19,6 +19,8 @@ import {
   ShakeState,
   MatchStats,
 } from '../core/types';
+import { applyKeyboardMovement } from './useKeyboardInput';
+import { KeyboardState } from '../core/keyboard';
 
 // ランダム選択ヘルパー
 const randomChoice = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
@@ -58,7 +60,8 @@ export function useGameLoop(
   setShake: (s: ShakeState | null) => void,
   bgmEnabled: boolean,
   statsRef: React.MutableRefObject<MatchStats>,
-  matchStartRef: React.MutableRefObject<number>
+  matchStartRef: React.MutableRefObject<number>,
+  keysRef?: React.MutableRefObject<KeyboardState>
 ) {
   useEffect(() => {
     if (screen !== 'game') return;
@@ -313,6 +316,11 @@ export function useGameLoop(
       // ヘルプ表示判定
       if (now - lastInputRef.current > consts.TIMING.HELP_TIMEOUT && !showHelp) {
         setShowHelp(true);
+      }
+
+      // キーボード入力の適用
+      if (keysRef) {
+        applyKeyboardMovement(game, keysRef, lastInputRef);
       }
 
       // CPU AI 更新
@@ -636,5 +644,5 @@ export function useGameLoop(
       gameRef, canvasRef, lastInputRef, scoreRef,
       setScores, setWinner, setScreen, setShowHelp,
       phaseRef, countdownStartRef, shakeRef, setShake, bgmEnabled,
-      statsRef, matchStartRef]);
+      statsRef, matchStartRef, keysRef]);
 }
