@@ -622,7 +622,7 @@ export const LevelUpChoiceValue = styled.span<{ $disabled?: boolean }>`
 
 export const StatsDisplay = styled.div`
   position: absolute;
-  top: 2rem;
+  top: 3.5rem;
   right: 1rem;
   display: flex;
   flex-direction: column;
@@ -673,7 +673,7 @@ export const ExperienceBarFill = styled.div<{ $ratio: number }>`
 export const LevelBadge = styled.div`
   position: absolute;
   top: 0.75rem;
-  right: 1rem;
+  right: 4rem;
   background: linear-gradient(to right, #a855f7, #ec4899);
   color: white;
   font-size: clamp(0.6rem, 1.4vmin, 0.75rem);
