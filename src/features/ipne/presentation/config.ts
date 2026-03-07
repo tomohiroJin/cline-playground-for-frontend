@@ -40,15 +40,15 @@ export const CONFIG = {
 // スプライトサイズ参照定数
 export const SPRITE_SIZES = {
   /** 基本スプライトサイズ（タイル、キャラクター、敵） */
-  base: 16,
+  base: 32,
   /** アイテムスプライトサイズ */
-  item: 8,
+  item: 16,
   /** ミニボススプライトサイズ */
-  miniBoss: 20,
+  miniBoss: 40,
   /** ボススプライトサイズ */
-  boss: 24,
+  boss: 48,
   /** メガボススプライトサイズ */
-  megaBoss: 28,
+  megaBoss: 56,
 } as const;
 
 // プロローグテキスト
