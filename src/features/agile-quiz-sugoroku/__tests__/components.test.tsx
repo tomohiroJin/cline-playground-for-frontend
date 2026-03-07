@@ -300,7 +300,8 @@ describe('QuizScreen', () => {
 
   it('コンボが2以上でCOMBOが表示される', () => {
     render(<QuizScreen {...defaultProps} stats={{ ...mockStats, combo: 3 }} />);
-    expect(screen.getByText(/3 COMBO/)).toBeInTheDocument();
+    expect(screen.getByText(/COMBO/)).toBeInTheDocument();
+    expect(screen.getByText('3')).toBeInTheDocument();
   });
 
   it('技術的負債が表示される', () => {
