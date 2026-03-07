@@ -1,7 +1,6 @@
 import React from 'react';
 import { Difficulty, FieldConfig } from '../core/types';
 import { FIELDS, DIFFICULTY_OPTIONS, DIFFICULTY_LABELS, WIN_SCORE_OPTIONS } from '../core/config';
-import { AudioSettings } from '../core/audio-settings';
 import {
   MenuCard,
   GameTitle,
@@ -22,11 +21,9 @@ type TitleScreenProps = {
   setWinScore: (s: number) => void;
   highScore: number;
   onStart: () => void;
-  bgmEnabled?: boolean;
-  onToggleBgm?: () => void;
-  audioSettings?: AudioSettings;
-  onAudioSettingsChange?: (settings: AudioSettings) => void;
   onShowAchievements?: () => void;
+  onHelpClick?: () => void;
+  onSettingsClick?: () => void;
 };
 
 export const TitleScreen: React.FC<TitleScreenProps> = ({
@@ -38,11 +35,9 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
   setWinScore,
   highScore,
   onStart,
-  bgmEnabled = false,
-  onToggleBgm,
-  audioSettings,
-  onAudioSettingsChange,
   onShowAchievements,
+  onHelpClick,
+  onSettingsClick,
 }) => (
   <MenuCard>
     <GameTitle>🏒 Air Hockey</GameTitle>
@@ -80,56 +75,6 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
       </ButtonGroup>
     </OptionContainer>
 
-    {onToggleBgm && (
-      <OptionContainer>
-        <OptionTitle>BGM</OptionTitle>
-        <ButtonGroup>
-          <ModeButton onClick={onToggleBgm} $selected={bgmEnabled}>
-            {bgmEnabled ? 'ON' : 'OFF'}
-          </ModeButton>
-        </ButtonGroup>
-      </OptionContainer>
-    )}
-
-    {/* 音量設定 */}
-    {audioSettings && onAudioSettingsChange && (
-      <OptionContainer>
-        <OptionTitle>Volume</OptionTitle>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-          <span style={{ color: '#aaa', fontSize: '0.8rem', width: '40px' }}>BGM</span>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            value={audioSettings.bgmVolume}
-            onChange={e => onAudioSettingsChange({ ...audioSettings, bgmVolume: Number(e.target.value) })}
-            style={{ flex: 1 }}
-          />
-          <span style={{ color: '#aaa', fontSize: '0.8rem', width: '30px', textAlign: 'right' }}>{audioSettings.bgmVolume}</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-          <span style={{ color: '#aaa', fontSize: '0.8rem', width: '40px' }}>SE</span>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            value={audioSettings.seVolume}
-            onChange={e => onAudioSettingsChange({ ...audioSettings, seVolume: Number(e.target.value) })}
-            style={{ flex: 1 }}
-          />
-          <span style={{ color: '#aaa', fontSize: '0.8rem', width: '30px', textAlign: 'right' }}>{audioSettings.seVolume}</span>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <ModeButton
-            onClick={() => onAudioSettingsChange({ ...audioSettings, muted: !audioSettings.muted })}
-            $selected={audioSettings.muted}
-          >
-            {audioSettings.muted ? 'MUTED' : 'MUTE'}
-          </ModeButton>
-        </div>
-      </OptionContainer>
-    )}
-
     <StartButton onClick={onStart}>START</StartButton>
 
     <div style={{ display: 'flex', gap: '12px', marginTop: '1rem', alignItems: 'center' }}>
@@ -138,6 +83,12 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
       </div>
       {onShowAchievements && (
         <MenuButton onClick={onShowAchievements}>実績</MenuButton>
+      )}
+      {onHelpClick && (
+        <MenuButton onClick={onHelpClick}>?</MenuButton>
+      )}
+      {onSettingsClick && (
+        <MenuButton onClick={onSettingsClick}>&#9881;</MenuButton>
       )}
     </div>
   </MenuCard>

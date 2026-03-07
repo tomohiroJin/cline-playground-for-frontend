@@ -318,22 +318,75 @@ export const Renderer = {
     ctx.fillText(isPlayerGoal ? '🎉 +1 Pt!' : '😢 -1 Pt', W / 2, textY + 40);
     ctx.shadowBlur = 0;
   },
-  drawHelp(ctx: CanvasRenderingContext2D, consts: GameConstants = CONSTANTS) {
+  drawHelp(ctx: CanvasRenderingContext2D, consts: GameConstants = CONSTANTS, field?: FieldConfig) {
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
-    ctx.fillStyle = 'rgba(0,0,0,0.9)';
+    ctx.fillStyle = 'rgba(0,0,0,0.92)';
     ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = '#fff';
     ctx.textAlign = 'center';
+
+    // タイトル
+    ctx.fillStyle = '#fff';
     ctx.font = 'bold 18px Arial';
-    ctx.fillText('🎮 How to Play', W / 2, 40);
-    ctx.font = '13px Arial';
-    ctx.fillText('Hit the puck with your mallet!', W / 2, 70);
-    ctx.font = 'bold 14px Arial';
-    ctx.fillText('◆Split ⚡Speed 👻Hide', W / 2, 110);
+    ctx.fillText('How to Play', W / 2, 36);
+
     ctx.font = '12px Arial';
-    ctx.fillText('Shoot items into opponent goal!', W / 2, 140);
+    ctx.fillStyle = '#ccc';
+    ctx.fillText('Hit the puck into the opponent\'s goal!', W / 2, 58);
+
+    // アイテム一覧
+    ctx.font = 'bold 14px Arial';
+    ctx.fillStyle = 'var(--accent-color, #00d4ff)';
+    ctx.fillText('-- Items --', W / 2, 86);
+
+    const items = [
+      { icon: '◆', name: 'Split', color: '#FF6B6B', desc: 'Puck splits into 3' },
+      { icon: '⚡', name: 'Speed', color: '#4ECDC4', desc: 'Speed zone on your side' },
+      { icon: '👻', name: 'Hide', color: '#9B59B6', desc: 'Puck turns invisible' },
+      { icon: '🛡', name: 'Shield', color: '#FFD700', desc: 'Blocks one goal' },
+      { icon: '🧲', name: 'Magnet', color: '#FF6B35', desc: 'Attracts puck to mallet' },
+      { icon: '⬆', name: 'Big', color: '#00FF88', desc: 'Mallet size up' },
+    ];
+
+    const startY = 108;
+    const lineH = 28;
+    ctx.textAlign = 'left';
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const y = startY + i * lineH;
+      // アイコン + 名前
+      ctx.font = 'bold 13px Arial';
+      ctx.fillStyle = item.color;
+      ctx.fillText(`${item.icon} ${item.name}`, 30, y);
+      // 説明
+      ctx.font = '11px Arial';
+      ctx.fillStyle = '#aaa';
+      ctx.fillText(item.desc, 150, y);
+    }
+
+    // フィールド情報
+    if (field) {
+      const fieldY = startY + items.length * lineH + 16;
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 14px Arial';
+      ctx.fillStyle = field.color;
+      ctx.fillText(`Field: ${field.name}`, W / 2, fieldY);
+
+      ctx.font = '11px Arial';
+      ctx.fillStyle = '#999';
+      const traits: string[] = [];
+      if (field.obstacles.length > 0) traits.push(`${field.obstacles.length} obstacles`);
+      if (field.destructible) traits.push('destructible');
+      if (field.goalSize >= 150) traits.push('wide goal');
+      if (field.goalSize <= 110) traits.push('narrow goal');
+      if (traits.length === 0) traits.push('standard');
+      ctx.fillText(traits.join(' / '), W / 2, fieldY + 18);
+    }
+
+    // フッタ
+    ctx.textAlign = 'center';
     ctx.fillStyle = '#888';
-    ctx.fillText('Tap to Start', W / 2, H - 20);
+    ctx.font = '12px Arial';
+    ctx.fillText('Tap to Resume', W / 2, H - 20);
   },
   drawFeverEffect(ctx: CanvasRenderingContext2D, active: boolean, now: number, consts: GameConstants = CONSTANTS) {
     if (!active) return;

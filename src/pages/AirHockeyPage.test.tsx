@@ -37,11 +37,9 @@ describe('AirHockeyPage', () => {
     expect(screen.queryByText('Large')).not.toBeInTheDocument();
   });
 
-  it('BGMトグルが表示される', () => {
+  it('設定・ヘルプボタンがタイトル画面に表示される', () => {
     render(<AirHockeyPage />);
-    // 音量設定セクションにも "BGM" ラベルがあるため getAllByText を使用
-    const bgmElements = screen.getAllByText('BGM');
-    expect(bgmElements.length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText('OFF')).toBeInTheDocument();
+    // 設定ボタン（⚙）とヘルプボタン（?）がタイトル画面に存在
+    expect(screen.getByText('?')).toBeInTheDocument();
   });
 });

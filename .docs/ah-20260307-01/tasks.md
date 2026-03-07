@@ -204,6 +204,42 @@
 
 ---
 
+## Phase 3 フィードバック対応
+
+### F1: BGM が鳴らない問題
+- [x] `core/sound.ts` の `getContext()` に `audioCtx.resume()` 追加（autoplay policy 対応）
+- [x] `core/sound.ts` の `setBgmVolume` 音量スケーリングを `* 0.3` → `* 0.8` に変更
+- [x] `core/sound.ts` の BGM ノート持続時間を `0.15` → `0.19` に延長
+
+### F2: ヘルプボタンのタイトル側移動
+- [x] `components/Scoreboard.tsx` から `onHelpClick` prop と `?` ボタンを削除
+- [x] `components/TitleScreen.tsx` に `onHelpClick` prop 追加、Best Margin 行に `?` ボタン配置
+- [x] `AirHockeyGame.tsx` の Scoreboard から `onHelpClick` 渡しを削除、TitleScreen に追加
+
+### F3: タイトル画面の設定分離
+- [x] `components/SettingsPanel.tsx` 新規作成（オーバーレイモーダル形式）
+- [x] `components/TitleScreen.tsx` から BGM/Volume セクション削除、`⚙` 設定ボタン追加
+- [x] `components/TitleScreen.tsx` から `bgmEnabled` / `onToggleBgm` / `audioSettings` / `onAudioSettingsChange` props を削除
+- [x] `AirHockeyGame.tsx` に `showSettings` state 追加、SettingsPanel の条件付きレンダリング
+
+### F4: ゲーム中 drawHelp の情報拡充
+- [x] `renderer.ts` の `drawHelp` に `field` パラメータ追加
+- [x] 全6アイテムのアイコン・名前・説明を表示
+- [x] 現在のフィールド名と特徴を表示
+- [x] フッタを「Tap to Resume」に変更
+- [x] `hooks/useGameLoop.ts` の `drawHelp` 呼び出しに `field` 引数追加
+
+### テスト・検証
+- [x] `npx tsc --noEmit` 型チェックパス
+- [x] `AirHockeyPage.test.tsx` の BGM テストを設定・ヘルプボタン表示テストに更新
+- [x] 全128テストパス
+- [ ] 手動確認: BGM ON でゲーム開始し音楽が流れるか
+- [ ] 手動確認: タイトル画面の `?` でチュートリアル表示
+- [ ] 手動確認: ゲーム中5秒無操作でアイテム・フィールド情報付きヘルプ表示
+- [ ] 手動確認: `⚙` で設定パネル開閉
+
+---
+
 ## Phase 4: 発展的機能
 
 ### 4.1 キーボード操作対応

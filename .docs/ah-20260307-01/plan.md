@@ -93,6 +93,15 @@
 19. **フィールド/アイテムアンロック**
 20. **デイリーチャレンジ**（特殊ルールでの対戦）
 
+### Phase 3 フィードバック対応（Phase 3 実装後の改善）
+
+Phase 3 実装後のユーザーフィードバック4点への対応。
+
+1. **BGM が鳴らない問題の修正**（AudioContext の suspended 状態未対応 + BGM 音量が極小）
+2. **ヘルプボタンをタイトル側に移動**（ゲーム中 Scoreboard → タイトル画面の Best Margin 行）
+3. **タイトル画面の設定を分離**（BGM ON/OFF + Volume + MUTE を SettingsPanel モーダルに移動）
+4. **ゲーム中 drawHelp の情報拡充**（全6アイテムの名前・アイコン・説明 + 現在フィールド情報）
+
 ## 技術方針
 
 - 既存のアーキテクチャ（core/ hooks/ components/ renderer）を維持

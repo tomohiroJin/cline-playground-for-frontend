@@ -332,6 +332,67 @@ export const CONSTANTS: GameConstants = {
 
 ---
 
+## Phase 3 フィードバック対応
+
+Phase 3 実装後のユーザーフィードバックに基づく修正。
+
+### F1: BGM が鳴らない問題
+
+**原因**: ブラウザの autoplay policy により AudioContext が `suspended` 状態のまま、`resume()` が呼ばれていなかった。加えて BGM 音量スケーリングが `* 0.3` と極端に小さかった。
+
+**修正内容**:
+- `core/sound.ts` の `getContext()` に `audioCtx.resume()` を追加
+- BGM 音量スケーリング: `(volume / 100) * 0.3` → `(volume / 100) * 0.8` に変更
+- ノート持続時間を `0.15` → `0.19` に延長（音の途切れ感を軽減）
+
+### F2: ヘルプボタンのタイトル側移動
+
+**変更理由**: ヘルプ（チュートリアル）はゲーム中よりタイトル画面での参照が適切。
+
+**修正内容**:
+- `Scoreboard.tsx`: `onHelpClick` prop と `?` ボタンを削除
+- `TitleScreen.tsx`: `onHelpClick` prop を追加、Best Margin 行に `?` ボタン配置
+- `AirHockeyGame.tsx`: TitleScreen に `onHelpClick` を渡す（ポーズ連動不要、`setShowTutorial(true)` + `setIsHelpMode(true)` のみ）
+
+### F3: タイトル画面の設定分離
+
+**変更理由**: BGM ON/OFF + Volume スライダー + MUTE がタイトル画面を長くしていた。
+
+**修正内容**:
+- 新規 `components/SettingsPanel.tsx`: Tutorial 同様のオーバーレイモーダル形式。BGM ON/OFF、BGM/SE 音量スライダー、MUTE ボタン、Close ボタンを含む
+- `TitleScreen.tsx`: BGM/Volume セクション削除、Best Margin 行に `⚙` 設定ボタン追加。`bgmEnabled` / `onToggleBgm` / `audioSettings` / `onAudioSettingsChange` props を削除
+- `AirHockeyGame.tsx`: `showSettings` state 追加、SettingsPanel の条件付きレンダリング
+
+**タイトル画面に残す項目**: Difficulty, Field, Win Score, START, Best Margin, 実績, ヘルプ(?), 設定(⚙)
+
+### F4: ゲーム中 drawHelp の情報拡充
+
+**変更理由**: 5秒無操作で表示される自動ヘルプの情報が不足していた。
+
+**修正内容**:
+- `renderer.ts`: `drawHelp(ctx, consts)` → `drawHelp(ctx, consts, field?)` にシグネチャ変更
+- 表示内容を拡張:
+  - 全6アイテム（Split, Speed, Hide, Shield, Magnet, Big）のアイコン・名前・色・簡単な説明
+  - 現在のフィールド名と特徴（障害物数、破壊可能、ゴール幅）
+  - フッタを「Tap to Resume」に変更
+- `hooks/useGameLoop.ts` の呼び出しに `field` 引数を追加
+- 閉じる挙動は既存のまま: `useInput.ts` 行28-31 で `showHelp` 時のタップで `setShowHelp(false)`
+
+**影響ファイル**:
+
+| ファイル | 変更内容 |
+|---------|---------|
+| `core/sound.ts` | `getContext()` に resume 追加、BGM 音量・ノート持続時間調整 |
+| `components/Scoreboard.tsx` | `onHelpClick` prop 削除 |
+| `components/TitleScreen.tsx` | BGM/Volume 削除、`onHelpClick` / `onSettingsClick` 追加 |
+| `components/SettingsPanel.tsx` | 新規（設定パネルモーダル） |
+| `AirHockeyGame.tsx` | SettingsPanel 統合、props 整理 |
+| `renderer.ts` | `drawHelp` 拡充（field パラメータ追加） |
+| `hooks/useGameLoop.ts` | `drawHelp` 呼び出しに field 追加 |
+| `AirHockeyPage.test.tsx` | BGM テスト → 設定・ヘルプボタン表示テストに変更 |
+
+---
+
 ## Phase 4: 発展的機能
 
 ### 4.1 キーボード操作対応

@@ -14,6 +14,10 @@ export const createSoundSystem = (): SoundSystem => {
     const w = window as Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext };
     const AudioContextClass = w.AudioContext || w.webkitAudioContext;
     if (!audioCtx && AudioContextClass) audioCtx = new AudioContextClass();
+    // ブラウザの autoplay policy 対応: suspended 状態なら resume
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
     return audioCtx;
   };
 
@@ -60,7 +64,7 @@ export const createSoundSystem = (): SoundSystem => {
     noteGain.connect(bgmGain);
     osc.type = 'triangle';
     osc.frequency.value = BGM_NOTES[bgmNoteIndex % BGM_NOTES.length];
-    const noteDuration = 0.15 / bgmTempo;
+    const noteDuration = 0.19 / bgmTempo;
     noteGain.gain.setValueAtTime(0.3, ctx.currentTime);
     noteGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + noteDuration);
     osc.start();
@@ -148,7 +152,7 @@ export const createSoundSystem = (): SoundSystem => {
     bgmSetTempo: setBgmTempo,
     // 音量制御メソッド（0〜100 のパーセンテージ）
     setBgmVolume: (volume: number) => {
-      bgmVolume = (volume / 100) * 0.3;
+      bgmVolume = (volume / 100) * 0.8;
       if (bgmGain) bgmGain.gain.value = bgmVolume;
     },
     setSeVolume: (volume: number) => {

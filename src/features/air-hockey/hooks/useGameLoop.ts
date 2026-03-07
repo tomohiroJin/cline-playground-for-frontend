@@ -551,7 +551,7 @@ export function useGameLoop(
       }
 
       if (showHelp) {
-        Renderer.drawHelp(ctx, consts);
+        Renderer.drawHelp(ctx, consts, field);
       }
 
       // ゴール判定とスコア更新

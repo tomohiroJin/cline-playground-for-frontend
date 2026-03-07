@@ -16,6 +16,7 @@ import { ResultScreen } from './components/ResultScreen';
 import { AchievementList } from './components/AchievementList';
 import { Transition } from './components/Transition';
 import { Tutorial, isTutorialCompleted } from './components/Tutorial';
+import { SettingsPanel } from './components/SettingsPanel';
 import { PageContainer } from './styles';
 
 const AirHockeyGame: React.FC = () => {
@@ -34,6 +35,7 @@ const AirHockeyGame: React.FC = () => {
   const [audioSettings, setAudioSettings] = useState<AudioSettings>(loadAudioSettings);
   const [showTutorial, setShowTutorial] = useState(!isTutorialCompleted());
   const [isHelpMode, setIsHelpMode] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   // トランジション用
   const [transitioning, setTransitioning] = useState(false);
 
@@ -193,6 +195,16 @@ const AirHockeyGame: React.FC = () => {
 
   return (
     <PageContainer>
+      {showSettings && (
+        <SettingsPanel
+          bgmEnabled={bgmEnabled}
+          onToggleBgm={() => setBgmEnabled(prev => !prev)}
+          audioSettings={audioSettings}
+          onAudioSettingsChange={setAudioSettings}
+          onClose={() => setShowSettings(false)}
+        />
+      )}
+
       {showTutorial && (
         <Tutorial isHelp={isHelpMode} onComplete={() => {
           setShowTutorial(false);
@@ -215,11 +227,12 @@ const AirHockeyGame: React.FC = () => {
             setWinScore={setWinScore}
             highScore={highScore}
             onStart={startGame}
-            bgmEnabled={bgmEnabled}
-            onToggleBgm={() => setBgmEnabled(prev => !prev)}
-            audioSettings={audioSettings}
-            onAudioSettingsChange={setAudioSettings}
             onShowAchievements={() => setScreen('achievements')}
+            onHelpClick={() => {
+              setIsHelpMode(true);
+              setShowTutorial(true);
+            }}
+            onSettingsClick={() => setShowSettings(true)}
           />
         </Transition>
       )}
@@ -233,11 +246,7 @@ const AirHockeyGame: React.FC = () => {
           <Scoreboard scores={scores} onMenuClick={() => {
             getSound().bgmStop();
             setScreen('menu');
-          }} onPauseClick={togglePause} onHelpClick={() => {
-            togglePause();
-            setIsHelpMode(true);
-            setShowTutorial(true);
-          }} />
+          }} onPauseClick={togglePause} />
           <Field canvasRef={canvasRef} onInput={handleInput} shake={shake} />
         </>
       )}
