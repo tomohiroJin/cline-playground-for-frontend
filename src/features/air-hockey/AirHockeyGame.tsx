@@ -33,6 +33,7 @@ const AirHockeyGame: React.FC = () => {
   const [newAchievements, setNewAchievements] = useState<Achievement[]>([]);
   const [audioSettings, setAudioSettings] = useState<AudioSettings>(loadAudioSettings);
   const [showTutorial, setShowTutorial] = useState(!isTutorialCompleted());
+  const [isHelpMode, setIsHelpMode] = useState(false);
   // トランジション用
   const [transitioning, setTransitioning] = useState(false);
 
@@ -109,21 +110,29 @@ const AirHockeyGame: React.FC = () => {
     }
   }, [screen, diff, winScore, winner, field.id]);
 
-  const getSound = useCallback(() => {
-    if (!soundRef.current) soundRef.current = createSoundSystem();
-    return soundRef.current;
+  // 音量設定をサウンドシステムに適用する共通関数
+  const applyAudioSettings = useCallback((sound: SoundSystem, settings: AudioSettings) => {
+    sound.setBgmVolume(settings.bgmVolume);
+    sound.setSeVolume(settings.seVolume);
+    sound.setMuted(settings.muted);
   }, []);
 
-  // 音量設定の反映
+  const getSound = useCallback(() => {
+    if (!soundRef.current) {
+      soundRef.current = createSoundSystem();
+      // 初期化時に保存済みの音量設定を即時反映
+      applyAudioSettings(soundRef.current, audioSettings);
+    }
+    return soundRef.current;
+  }, [applyAudioSettings, audioSettings]);
+
+  // 音量設定変更時の反映
   useEffect(() => {
-    const sound = soundRef.current;
-    if (sound) {
-      sound.setBgmVolume(audioSettings.bgmVolume);
-      sound.setSeVolume(audioSettings.seVolume);
-      sound.setMuted(audioSettings.muted);
+    if (soundRef.current) {
+      applyAudioSettings(soundRef.current, audioSettings);
     }
     saveAudioSettings(audioSettings);
-  }, [audioSettings]);
+  }, [audioSettings, applyAudioSettings]);
 
   const startGame = useCallback(() => {
     gameRef.current = EntityFactory.createGameState(CONSTANTS, field);
@@ -185,7 +194,14 @@ const AirHockeyGame: React.FC = () => {
   return (
     <PageContainer>
       {showTutorial && (
-        <Tutorial onComplete={() => setShowTutorial(false)} />
+        <Tutorial isHelp={isHelpMode} onComplete={() => {
+          setShowTutorial(false);
+          // ゲーム中にヘルプを閉じた場合、ポーズを解除
+          if (isHelpMode && screen === 'game' && phaseRef.current === 'paused') {
+            phaseRef.current = 'playing';
+          }
+          setIsHelpMode(false);
+        }} />
       )}
 
       {screen === 'menu' && (
@@ -217,7 +233,11 @@ const AirHockeyGame: React.FC = () => {
           <Scoreboard scores={scores} onMenuClick={() => {
             getSound().bgmStop();
             setScreen('menu');
-          }} onPauseClick={togglePause} />
+          }} onPauseClick={togglePause} onHelpClick={() => {
+            togglePause();
+            setIsHelpMode(true);
+            setShowTutorial(true);
+          }} />
           <Field canvasRef={canvasRef} onInput={handleInput} shake={shake} />
         </>
       )}

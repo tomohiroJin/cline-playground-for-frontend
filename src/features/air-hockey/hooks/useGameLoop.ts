@@ -68,6 +68,12 @@ export function useGameLoop(
     const { MALLET: MR, PUCK: BR, ITEM: IR } = consts.SIZES;
 
     const sound = getSound();
+
+    // BGM: playing 中かつ bgmEnabled なら開始（二重起動はbgmStart内で防止済み）
+    if (bgmEnabled && phaseRef.current === 'playing') {
+      sound.bgmStart();
+    }
+
     const baseGoalSize = field.goalSize;
     // カムバック補正を反映したゴールサイズ計算
     const getEffectiveGoalSize = (side: 'player' | 'cpu'): number => {
