@@ -131,7 +131,11 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
   const shareText = `【アジャイル・クイズすごろく】
 ${teamType.emoji} ${teamType.name}
 正答率: ${derived.correctRate}% | 負債: ${stats.debt}pt
-Combo: ${stats.maxCombo} | 安定度: ${Math.round(derived.stability)}%`;
+Combo: ${stats.maxCombo} | 安定度: ${Math.round(derived.stability)}%
+#AgileQuizSugoroku`;
+
+  // X(Twitter) シェア用の intent URL
+  const twitterShareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
 
   // コピー処理
   const handleCopyShare = () => {
@@ -558,7 +562,17 @@ Combo: ${stats.maxCombo} | 安定度: ${Math.round(derived.stability)}%`;
             <HotkeyHint>[Enter]</HotkeyHint>
           </Button>
           <Button $color={COLORS.muted} onClick={handleCopyShare}>
-            {copied ? '✓ Copied!' : '📋 Share'}
+            {copied ? '✓ Copied!' : '📋 Copy'}
+          </Button>
+          <Button
+            as="a"
+            href={twitterShareUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            $color="#1d9bf0"
+            style={{ textDecoration: 'none', display: 'inline-block' }}
+          >
+            X Share
           </Button>
         </ButtonGroup>
       </ScrollablePanel>

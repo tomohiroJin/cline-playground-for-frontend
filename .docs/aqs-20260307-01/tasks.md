@@ -90,92 +90,97 @@
 ## フェーズ2: ゲーミフィケーション
 
 ### 2.1 実績システム
-- [ ] `types.ts` に実績関連の型定義追加（Achievement, AchievementProgress）
-- [ ] `achievements.ts` 作成（15個の実績定義 + 判定ロジック）
-- [ ] `achievement-storage.ts` 作成（localStorage 保存・読込）
-- [ ] 実績判定ロジックの単体テスト
-- [ ] `AchievementScreen.tsx` 作成（実績一覧表示、獲得済み/未獲得の区別）
-- [ ] `AchievementToast.tsx` 作成（獲得時のトースト通知）
-- [ ] 実績獲得効果音追加（`sound.ts`）
-- [ ] `TitleScreen.tsx` に実績ボタン追加
-- [ ] `useGame.ts` にゲーム終了時の実績判定統合
-- [ ] `AgileQuizSugorokuPage.tsx` に実績画面フェーズ追加
-- [ ] `GamePhase` 型に `'achievements'` 追加
-- [ ] 実績コンポーネントのテスト
+- [x] `types.ts` に実績関連の型定義追加（Achievement, AchievementProgress, AchievementContext）
+- [x] `achievements.ts` 作成（20個の実績定義 + 判定ロジック）※継続系5個追加
+- [x] `achievement-storage.ts` 作成（localStorage 保存・読込）
+- [x] 実績判定ロジックの単体テスト → `achievements.test.ts`（24テスト）
+- [x] 実績ストレージの単体テスト → `achievement-storage.test.ts`（8テスト）
+- [x] `AchievementScreen.tsx` 作成（実績一覧表示、獲得済み/未獲得の区別、レア度別色分け）
+- [x] `AchievementToast.tsx` 作成（獲得時のトースト通知、スライドインアニメーション）
+- [x] 実績獲得効果音追加（`sound.ts` に `playSfxAchievement()`）
+- [x] `TitleScreen.tsx` に実績ボタン追加
+- [x] `AgileQuizSugorokuPage.tsx` にゲーム終了時の実績判定統合
+- [x] `GamePhase` 型に `'achievements'` 追加
+- [x] 実績コンポーネントのテスト → `phase2-components.test.tsx`
 
 ### 2.2 履歴・成長グラフ
-- [ ] `types.ts` に履歴関連の型定義追加（GameHistory）
-- [ ] `result-storage.ts` 拡張: 最大10件保存対応（`aqs_history` キー）
-- [ ] 既存 `aqs_last_result` との互換性維持（マイグレーション処理）
-- [ ] `LineChart.tsx` 作成（SVG ベース折れ線グラフ）
-- [ ] `HistoryScreen.tsx` 作成（履歴一覧 + 推移グラフ）
-- [ ] `TitleScreen.tsx` の前回結果表示を拡張（「履歴を見る」リンク）
-- [ ] `GamePhase` 型に `'history'` 追加
-- [ ] `AgileQuizSugorokuPage.tsx` に履歴画面フェーズ追加
-- [ ] 履歴保存ロジックの単体テスト
-- [ ] LineChart コンポーネントのテスト
+- [x] `types.ts` に履歴関連の型定義追加（GameHistoryEntry）
+- [x] `history-storage.ts` 新規作成: 最大10件保存対応（`aqs_history` キー）
+- [x] 既存 `aqs_last_result` との互換性維持（`migrateLastResultToHistory()` マイグレーション）
+- [x] `LineChart.tsx` 作成（SVG ベース折れ線グラフ、グラデーション領域付き）
+- [x] `HistoryScreen.tsx` 作成（履歴一覧 + 正答率/速度推移グラフ + 最高グレード表示）
+- [x] `TitleScreen.tsx` に履歴ボタン追加
+- [x] `GamePhase` 型に `'history'` 追加
+- [x] `AgileQuizSugorokuPage.tsx` に履歴画面フェーズ追加 + 結果保存時に履歴蓄積
+- [x] 履歴保存ロジックの単体テスト → `history-storage.test.ts`（9テスト）
+- [x] LineChart コンポーネントのテスト → `phase2-components.test.tsx`
 
 ### 2.3 難易度選択
-- [ ] `types.ts` に難易度型追加（Difficulty: 'easy' | 'normal' | 'hard' | 'extreme'）
-- [ ] `constants.ts` に難易度設定定数追加（DIFFICULTY_CONFIGS）
-- [ ] `DifficultySelector` コンポーネント作成（4択ボタン）
-- [ ] `TitleScreen.tsx` に難易度セレクター組み込み
-- [ ] `useGame.ts` に難易度パラメータ対応（制限時間・負債倍率）
-- [ ] Easy モードのヒント機能（50:50）UI実装
-- [ ] `QuizScreen.tsx` にヒントボタン追加（Easy モード時のみ）
-- [ ] 難易度別グレード計算ボーナス係数の実装
-- [ ] `AgileQuizSugorokuPage.tsx` に難易度 state 追加
-- [ ] 難易度ロジックの単体テスト
+- [x] `types.ts` に難易度型追加（Difficulty, DifficultyConfig）
+- [x] `difficulty.ts` 新規作成: 難易度設定定数（DIFFICULTY_CONFIGS）+ グレード計算
+- [x] `DifficultySelector.tsx` コンポーネント作成（4択ボタン + 説明表示）
+- [x] `TitleScreen.tsx` に難易度セレクター組み込み
+- [x] `AgileQuizSugorokuPage.tsx` に難易度パラメータ対応（制限時間連動）
+- [ ] Easy モードのヒント機能（50:50）UI実装（将来実装）
+- [ ] `QuizScreen.tsx` にヒントボタン追加（Easy モード時のみ）（将来実装）
+- [x] 難易度別グレード計算ボーナス係数の実装 → `calculateGradeWithDifficulty()`
+- [x] `AgileQuizSugorokuPage.tsx` に難易度 state 追加
+- [x] 難易度ロジックの単体テスト → `difficulty.test.ts`（10テスト）
 
 ### 2.4 チャレンジモード（サバイバル）
-- [ ] `types.ts` にチャレンジモード関連型追加
-- [ ] `hooks/useChallenge.ts` 作成（1ミス即終了ロジック）
-- [ ] `ChallengeScreen.tsx` 作成（サバイバルクイズ画面）
-- [ ] `ChallengeResultScreen.tsx` 作成（ゲームオーバー + 記録表示）
-- [ ] ハイスコア保存ロジック（localStorage）
-- [ ] `TitleScreen.tsx` に「Challenge」ボタン追加
-- [ ] `GamePhase` 型に `'challenge'` 追加
-- [ ] `AgileQuizSugorokuPage.tsx` にチャレンジモード遷移追加
-- [ ] チャレンジモードロジックの単体テスト
+- [x] `types.ts` にチャレンジモード関連型追加（ChallengeResult）
+- [x] `hooks/useChallenge.ts` 作成（1ミス即終了ロジック、ランダムカテゴリ出題）
+- [x] チャレンジモードは既存 `QuizScreen` を再利用（専用画面不要）
+- [x] `ChallengeResultScreen.tsx` 作成（ゲームオーバー + 記録表示 + NEW RECORD表示）
+- [x] `challenge-storage.ts` 作成: ハイスコア保存ロジック（localStorage）
+- [x] `TitleScreen.tsx` に「Challenge」ボタン追加
+- [x] `GamePhase` 型に `'challenge'`, `'challenge-result'` 追加
+- [x] `AgileQuizSugorokuPage.tsx` にチャレンジモード遷移追加
+- [x] チャレンジモードストレージの単体テスト → `challenge.test.ts`（5テスト）
 
 ### フェーズ2 検証
-- [ ] 実績が正しく判定・保存されることの確認
-- [ ] 履歴が10件まで正しく保存されることの確認
-- [ ] 各難易度でゲームバランスが適切かの確認
+- [x] 実績が正しく判定・保存されることの確認 → 単体テストで検証済み
+- [x] 履歴が10件まで正しく保存されることの確認 → 単体テストで検証済み
+- [ ] 各難易度でゲームバランスが適切かの確認（通しプレイで要確認）
 - [ ] チャレンジモードの通しプレイテスト
-- [ ] 全テスト通過確認（`npm test`）
+- [x] 全テスト通過確認 → 30スイート、540テスト全パス
+- [x] TypeScript型チェック通過確認 → `tsc --noEmit` エラーなし
 
 ---
 
 ## フェーズ3: コンテンツ・ソーシャル拡充
 
 ### 3.1 キャラクターナラティブ
-- [ ] ナラティブデータ定義（状況別 × キャラ別セリフ、各3-5バリエーション）
-- [ ] `SprintStartScreen.tsx` にキャラ会話表示追加
-- [ ] `RetrospectiveScreen.tsx` にキャラ会話表示追加
-- [ ] 会話表示のフェードイン/アウトアニメーション
-- [ ] ナラティブデータの単体テスト
+- [x] ナラティブデータ定義（状況別 × キャラ別セリフ、各3バリエーション x 3キャラ x 5状況 = 45件）→ `character-narrative.ts`
+- [x] `SprintStartScreen.tsx` にキャラ会話表示追加（キャラアバター + 吹き出し）
+- [x] `RetrospectiveScreen.tsx` にキャラ会話表示追加（キャラアバター + 吹き出し）
+- [ ] 会話表示のフェードイン/アウトアニメーション（将来実装）
+- [x] ナラティブデータの単体テスト → `character-narrative.test.ts`（16テスト）
 
 ### 3.2 デイリークイズ
-- [ ] 日付ベースのシード付きランダム関数実装
-- [ ] デイリークイズ5問選出ロジック
-- [ ] `DailyQuizScreen.tsx` 作成
-- [ ] 日別結果保存ロジック（`aqs_daily` キー）
-- [ ] ストリーク（連続参加日数）計算ロジック
-- [ ] カレンダー表示コンポーネント
-- [ ] `TitleScreen.tsx` にデイリークイズボタン追加
-- [ ] デイリークイズロジックの単体テスト
+- [x] 日付ベースのシード付きランダム関数実装 → `dateSeed()` + `seededRandom()`（xorshift32）
+- [x] デイリークイズ5問選出ロジック → `getDailyQuestions()`（Fisher-Yatesシャッフル）
+- [x] `DailyQuizScreen.tsx` 作成（クイズ画面 + 結果画面、キーボード操作対応）
+- [x] 日別結果保存ロジック（`aqs_daily` キー）→ `saveDailyResult()` / `getDailyResult()`
+- [x] ストリーク（連続参加日数）計算ロジック → `getDailyStreak()`
+- [ ] カレンダー表示コンポーネント（将来実装）
+- [x] `TitleScreen.tsx` にデイリークイズボタン追加（`onDailyQuiz` コールバック）
+- [x] `GamePhase` 型に `'daily-quiz'` 追加
+- [x] `AgileQuizSugorokuPage.tsx` にデイリークイズ画面遷移追加
+- [x] デイリークイズロジックの単体テスト → `daily-quiz.test.ts`（13テスト）
 
 ### 3.3 SNSシェア強化
-- [ ] X(Twitter) シェアボタン追加（intent URL 生成）
-- [ ] シェアテキストにハッシュタグ追加（`#AgileQuizSugoroku`）
-- [ ] `ResultScreen.tsx` にシェアボタン追加
+- [x] X(Twitter) シェアボタン追加（intent URL 生成）→ `ResultScreen.tsx` + `ChallengeResultScreen.tsx`
+- [x] シェアテキストにハッシュタグ追加（`#AgileQuizSugoroku`）
+- [x] `ResultScreen.tsx` にシェアボタン追加（Copy + X Share の2ボタン構成）
+- [x] `ChallengeResultScreen.tsx` にもシェアボタン追加
 
 ### フェーズ3 検証
-- [ ] ナラティブの表示タイミングと内容の確認
-- [ ] デイリークイズが同じ日に同じ問題が出ることの確認
-- [ ] SNSシェアリンクが正しく機能することの確認
-- [ ] 全テスト通過確認（`npm test`）
+- [ ] ナラティブの表示タイミングと内容の確認（通しプレイで要確認）
+- [x] デイリークイズが同じ日に同じ問題が出ることの確認 → 単体テストで検証済み
+- [ ] SNSシェアリンクが正しく機能することの確認（通しプレイで要確認）
+- [x] 全テスト通過確認 → 32スイート、577テスト全パス（agile-quiz-sugoroku）
+- [x] TypeScript型チェック通過確認 → `tsc --noEmit` エラーなし
 
 ---
 

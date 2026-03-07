@@ -1,7 +1,7 @@
 /**
  * 振り返り画面コンポーネント
  */
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useKeys } from '../hooks';
 import { SprintSummary, GameStats, CategoryStats } from '../types';
 import {
@@ -14,6 +14,7 @@ import {
   getChallengeText,
 } from '../constants';
 import { AQS_IMAGES } from '../images';
+import { getNarrativeComment } from '../character-narrative';
 import { ParticleEffect } from './ParticleEffect';
 import { BarChart } from './BarChart';
 import {
@@ -101,6 +102,15 @@ export const RetrospectiveScreen: React.FC<RetrospectiveScreenProps> = ({
 }) => {
   const [showToast, setShowToast] = useState(false);
   const isLast = sprint + 1 >= (sprintCount ?? CONFIG.sprintCount);
+
+  // キャラクターナラティブ
+  const narrative = useMemo(() => getNarrativeComment({
+    sprintNumber: summary.sprintNumber,
+    phase: 'retro',
+    correctRate: summary.correctRate,
+  }), [summary.sprintNumber, summary.correctRate]);
+
+  const narrativeCharImg = AQS_IMAGES.characters[narrative.characterId as keyof typeof AQS_IMAGES.characters];
 
   /** 保存して中断 */
   const handleSave = () => {
@@ -232,6 +242,53 @@ export const RetrospectiveScreen: React.FC<RetrospectiveScreenProps> = ({
           fontFamily: "'JetBrains Mono', monospace",
         }}>
           正解: {summary.correctCount}/{summary.totalCount}
+        </div>
+
+        {/* キャラクターナラティブ */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          padding: '10px 14px',
+          marginBottom: 14,
+          background: `${COLORS.accent}08`,
+          borderRadius: 8,
+          border: `1px solid ${COLORS.accent}18`,
+        }}>
+          {narrativeCharImg ? (
+            <img
+              src={narrativeCharImg}
+              alt=""
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: '50%',
+                objectFit: 'cover',
+                flexShrink: 0,
+              }}
+            />
+          ) : (
+            <div style={{
+              width: 40,
+              height: 40,
+              borderRadius: '50%',
+              background: `${COLORS.accent}15`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 20,
+              flexShrink: 0,
+            }}>
+              ?
+            </div>
+          )}
+          <div style={{
+            fontSize: 12,
+            color: COLORS.text,
+            lineHeight: 1.5,
+          }}>
+            {narrative.text}
+          </div>
         </div>
 
         {/* ボタンエリア */}
