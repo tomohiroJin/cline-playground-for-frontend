@@ -2,7 +2,7 @@
  * Phase 4: 発展的機能のテスト
  */
 import { CONSTANTS } from './constants';
-import { FIELDS, ITEMS } from './config';
+import { FIELDS } from './config';
 
 // localStorage モック
 const localStorageMock = (() => {
@@ -390,7 +390,6 @@ import {
   generateDailyChallenge,
   getDailyChallengeResult,
   saveDailyChallengeResult,
-  DailyChallenge,
   DailyChallengeResult,
 } from './daily-challenge';
 

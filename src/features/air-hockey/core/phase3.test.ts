@@ -1,11 +1,9 @@
 /**
  * Phase 3: リプレイ性・UX 向上のテスト
  */
-import { CONSTANTS } from './constants';
 import { EntityFactory } from './entities';
-import { MatchStats, Difficulty } from './types';
+import { MatchStats } from './types';
 import {
-  Achievement,
   ACHIEVEMENTS,
   checkAchievements,
   getUnlockedAchievements,
