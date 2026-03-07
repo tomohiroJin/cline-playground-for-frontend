@@ -588,6 +588,141 @@ const spriteScale = tileSize / SPRITE_SIZES.base;
 
 ---
 
+## 0C. スプライト品質向上 + アニメーション強化
+
+### 0C.1 概要
+
+Phase 0B で解像度を 16→32 に拡大したが、多くのスプライトが 2x nearest-neighbor 拡大のままで品質が不十分。方向の判別が困難、動きが不自然といった問題がある。本フェーズでは以下を改善する：
+
+1. **HUD 右上の重なり修正** — ヘルプ・マップボタンとステータス・レベル表記の重なり解消
+2. **プレイヤースプライト品質向上** — 方向の明確化、ディテール描き込み、シルエット改善
+3. **アニメーションフレーム数強化** — プレイヤー歩行 3→4フレーム、敵 2→4フレーム
+4. **敵スプライト品質向上** — 各敵タイプの特徴を明確化
+5. **環境・エフェクトスプライト品質向上** — タイル・壁・罠のディテール改善
+
+### 0C.2 HUD 右上の重なり修正
+
+**問題**: 右上に以下の要素が集中し、画面幅が狭いと重なる
+
+| 要素 | 位置 |
+|------|------|
+| MapToggleButton | `right: 1rem, top: 1rem` |
+| HelpButton | `right: 5rem, top: 1rem` |
+| KeyIndicator | `right: 8rem, top: 1rem` |
+| PendingPointsBadge | `right: 11rem, top: 1rem` |
+| LevelBadge | `right: 1rem, top: 0.75rem` |
+| StatsDisplay | `right: 1rem, top: 2rem` |
+
+**解決方針**: LevelBadge・StatsDisplay をボタン行の下に分離配置し、重なりを解消する（2行分離方式）。
+
+#### 変更前のレイアウト（右上領域）
+
+```
+行1 (top ~1rem):  [PendingPts] [Key] [Lv.15] [Help] [Map]  ← 全要素が同じ行に密集
+行2 (top ~3.5rem):                    [ATK3 DEF2 SPD5]      ← ボタンと近すぎて重なる
+```
+
+#### 変更後のレイアウト（右上領域）
+
+```
+行1 (top: 1rem):    [PendingPts] [Key] [Help] [Map]   ← ボタン・バッジ群（変更なし）
+行2 (top: 3.5rem):                     [Lv.15]        ← レベル表示（ボタン行の下に移動）
+行3 (top: 5rem):                 [ATK3 DEF2 SPD5]     ← ステータス表示（レベルの下に移動）
+```
+
+#### 各要素の具体的なCSS変更値
+
+| 要素 | プロパティ | 変更前 | 変更後 | 備考 |
+|------|-----------|--------|--------|------|
+| LevelBadge | `top` | `0.75rem` | `3.5rem` | ボタン行の下に移動 |
+| LevelBadge | `right` | `4rem` | `1rem` | 右端に寄せて統一 |
+| StatsDisplay | `top` | `3.5rem` | `5rem` | LevelBadge の下に移動 |
+| MapToggleButton | — | — | — | 変更なし |
+| HelpButton | — | — | — | 変更なし |
+| KeyIndicator | — | — | — | 変更なし |
+| PendingPointsBadge | — | — | — | 変更なし |
+
+#### レスポンシブ対応
+
+`top` / `right` の値を `clamp()` で可変化し、画面サイズに応じて連続的に調整する。
+
+```css
+/* LevelBadge */
+top: clamp(2.5rem, 5vmin, 3.5rem);
+right: clamp(0.5rem, 1.5vmin, 1rem);
+
+/* StatsDisplay */
+top: clamp(3.5rem, 7vmin, 5rem);
+right: clamp(0.5rem, 1.5vmin, 1rem);
+```
+
+#### IpnePage.styles.ts の変更箇所
+
+**LevelBadge**（673行目付近）:
+```typescript
+export const LevelBadge = styled.div`
+  position: absolute;
+  top: clamp(2.5rem, 5vmin, 3.5rem);    /* 変更: 0.75rem → ボタン行の下 */
+  right: clamp(0.5rem, 1.5vmin, 1rem);  /* 変更: 4rem → 右端寄せ */
+  /* ... 他のプロパティは変更なし */
+`;
+```
+
+**StatsDisplay**（623行目付近）:
+```typescript
+export const StatsDisplay = styled.div`
+  position: absolute;
+  top: clamp(3.5rem, 7vmin, 5rem);      /* 変更: 3.5rem → LevelBadge の下 */
+  right: clamp(0.5rem, 1.5vmin, 1rem);  /* 変更: 1rem → clamp() でレスポンシブ化 */
+  /* ... 他のプロパティは変更なし */
+`;
+```
+
+### 0C.3 プレイヤースプライト品質向上
+
+**方向の明確化ガイドライン（32x32）**:
+
+- **下向き（正面）**: 顔の特徴（目・口元）を明確に描画。兜のバイザー下に目を 2px で表現。胸当てのV字ライン。
+- **上向き（背面）**: マント/クロークの質感、背面の盾/武器を明確に。頭部は兜/フードの後頭部のみ。
+- **左向き**: 横顔のシルエット、武器を手前に、盾を奥に。体の前面と背面の色差をつける。
+- **右向き**: 左向きのミラーではなく、武器持ち手を考慮した独自デザイン。
+
+**品質基準**:
+- 各方向で明らかに異なるシルエットを持つこと
+- パレットの 12 色を有効活用（ハイライト・影・アクセント）
+- 装備品（剣・盾・ダガー）が視認できるサイズで描画
+
+### 0C.4 アニメーションフレーム数強化
+
+**プレイヤー歩行アニメーション**: 3フレーム → 4フレーム
+
+| フレーム | 内容 | 変更 |
+|---------|------|------|
+| 0 | idle（待機） | 維持 |
+| 1 | walk1（左足前） | 品質向上 |
+| 2 | idle2（中間） | **新規追加** |
+| 3 | walk2（右足前） | 品質向上 |
+
+- `frameDuration`: 150ms → 120ms（4フレーム×120ms = 480ms/サイクル）
+
+**敵アニメーション**: 2フレーム → 4フレーム
+
+| 敵タイプ | 現在 | 変更後 | frameDuration |
+|---------|------|--------|--------------|
+| パトロール（スライム） | 2F/400ms | 4F/250ms | ぷるぷる感向上 |
+| チャージ（ビースト） | 2F/300ms | 4F/200ms | 突進の迫力 |
+| レンジ（メイジ） | 2F/500ms | 4F/300ms | 杖の発光変化 |
+| スペシメン | 2F/600ms | 4F/350ms | 不気味な脈動 |
+| ミニボス | 2F/350ms | 4F/200ms | 威圧感 |
+| ボス | 4F/250ms | 維持 | — |
+| メガボス | 2F/300ms | 4F/200ms | 最大の威圧感 |
+
+### 0C.5 敵攻撃エフェクト可視化（Phase 2 連携）
+
+敵攻撃時にパーティクルエフェクトを表示する機能は `effectManager.ts` に `ENEMY_ATTACK` として実装済みだが、`useGameLoop.ts` で敵ダメージ発生時にエフェクトをキューに追加する接続が欠落している。この接続は Phase 2（戦闘演出エスカレーション）のタスクとして対応する。
+
+---
+
 ## 1. パワーオーラシステム
 
 ### 1.1 概要
