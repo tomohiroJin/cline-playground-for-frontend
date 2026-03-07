@@ -8,7 +8,9 @@ import { AQS_IMAGES } from '../images';
 import { loadGameResult } from '../result-storage';
 import { loadGameState, deleteSaveState } from '../save-manager';
 import { SaveState } from '../types';
+import { Difficulty } from '../types';
 import { ParticleEffect } from './ParticleEffect';
+import { DifficultySelector } from './DifficultySelector';
 import {
   PageWrapper,
   Panel,
@@ -26,13 +28,21 @@ import {
 
 interface TitleScreenProps {
   /** ゲーム開始時のコールバック */
-  onStart: (sprintCount: number) => void;
+  onStart: (sprintCount: number, difficulty?: string) => void;
   /** セーブデータからの復元時のコールバック */
   onResume?: (saveState: SaveState) => void;
   /** 勉強会モード開始時のコールバック */
   onStudy?: () => void;
   /** ガイド画面表示時のコールバック */
   onGuide?: () => void;
+  /** 実績画面表示時のコールバック */
+  onAchievements?: () => void;
+  /** 履歴画面表示時のコールバック */
+  onHistory?: () => void;
+  /** チャレンジモード開始時のコールバック */
+  onChallenge?: () => void;
+  /** デイリークイズ開始時のコールバック */
+  onDailyQuiz?: () => void;
 }
 
 /** 機能紹介リスト（スプリント数は動的） */
@@ -54,8 +64,9 @@ function formatSaveDate(timestamp: number): string {
   return `${d.getMonth() + 1}月${d.getDate()}日 ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
 }
 
-export const TitleScreen: React.FC<TitleScreenProps> = ({ onStart, onResume, onStudy, onGuide }) => {
+export const TitleScreen: React.FC<TitleScreenProps> = ({ onStart, onResume, onStudy, onGuide, onAchievements, onHistory, onChallenge, onDailyQuiz }) => {
   const [sprintCount, setSprintCount] = useState<number>(CONFIG.sprintCount);
+  const [difficulty, setDifficulty] = useState<Difficulty>('normal');
   const [showOverwriteConfirm, setShowOverwriteConfirm] = useState(false);
 
   // 前回結果
@@ -80,7 +91,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({ onStart, onResume, onS
     if (saveState) {
       setShowOverwriteConfirm(true);
     } else {
-      onStart(sprintCount);
+      onStart(sprintCount, difficulty);
     }
   };
 
@@ -88,7 +99,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({ onStart, onResume, onS
   const handleConfirmOverwrite = () => {
     deleteSaveState();
     setShowOverwriteConfirm(false);
-    onStart(sprintCount);
+    onStart(sprintCount, difficulty);
   };
 
   useKeys((e) => {
@@ -219,6 +230,9 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({ onStart, onResume, onS
           </div>
         </SectionBox>
 
+        {/* 難易度選択 */}
+        <DifficultySelector value={difficulty} onChange={setDifficulty} />
+
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, marginTop: 4 }}>
           {/* 「続きから」ボタン */}
           {saveState && onResume && (
@@ -239,15 +253,37 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({ onStart, onResume, onS
             ▶ Sprint Start
             <HotkeyHint>[Enter]</HotkeyHint>
           </Button>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+            {onChallenge && (
+              <Button $color={COLORS.red} onClick={onChallenge} style={{ padding: '10px 32px', fontSize: 12 }}>
+                Challenge
+              </Button>
+            )}
+            {onDailyQuiz && (
+              <Button $color={COLORS.green} onClick={onDailyQuiz} style={{ padding: '10px 32px', fontSize: 12 }}>
+                Daily Quiz
+              </Button>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
             {onStudy && (
               <Button $color={COLORS.accent} onClick={onStudy} style={{ padding: '10px 20px', fontSize: 12 }}>
-                📚 勉強会モード
+                勉強会モード
+              </Button>
+            )}
+            {onAchievements && (
+              <Button $color={COLORS.yellow} onClick={onAchievements} style={{ padding: '10px 20px', fontSize: 12 }}>
+                実績
+              </Button>
+            )}
+            {onHistory && (
+              <Button $color={COLORS.cyan} onClick={onHistory} style={{ padding: '10px 20px', fontSize: 12 }}>
+                履歴
               </Button>
             )}
             {onGuide && (
               <Button $color={COLORS.muted} onClick={onGuide} style={{ padding: '10px 20px', fontSize: 12 }}>
-                📖 遊び方 & チーム紹介
+                遊び方
               </Button>
             )}
           </div>

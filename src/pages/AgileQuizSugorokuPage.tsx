@@ -17,16 +17,26 @@ import {
   StudyResultScreen,
   GuideScreen,
   StoryScreen,
+  AchievementScreen,
+  AchievementToast,
+  HistoryScreen,
+  ChallengeResultScreen,
+  DailyQuizScreen,
   CONFIG,
 } from '../features/agile-quiz-sugoroku';
 import { createDefaultAudioActions } from '../features/agile-quiz-sugoroku/audio/audio-actions';
-import { SprintSummary, SaveState, StoryEntry, EndingEntry } from '../features/agile-quiz-sugoroku/types';
+import { SprintSummary, SaveState, StoryEntry, EndingEntry, Difficulty, AchievementDefinition } from '../features/agile-quiz-sugoroku/types';
 import { saveGameResult } from '../features/agile-quiz-sugoroku/result-storage';
 import { saveGameState } from '../features/agile-quiz-sugoroku/save-manager';
-import { getGrade } from '../features/agile-quiz-sugoroku/constants';
 import { classifyTeamType } from '../features/agile-quiz-sugoroku/team-classifier';
 import { getStoriesForSprintCount } from '../features/agile-quiz-sugoroku/story-data';
 import { getEndingStories } from '../features/agile-quiz-sugoroku/ending-data';
+import { getDifficultyConfig, calculateGradeWithDifficulty } from '../features/agile-quiz-sugoroku/difficulty';
+import { checkAchievements } from '../features/agile-quiz-sugoroku/achievements';
+import { getUnlockedIds, saveAchievementUnlock } from '../features/agile-quiz-sugoroku/achievement-storage';
+import { saveHistory, toHistoryEntry, migrateLastResultToHistory, loadHistory } from '../features/agile-quiz-sugoroku/history-storage';
+import { useChallenge } from '../features/agile-quiz-sugoroku/hooks/useChallenge';
+import { saveHighScore } from '../features/agile-quiz-sugoroku/challenge-storage';
 
 const audio = createDefaultAudioActions();
 
@@ -37,6 +47,12 @@ const AgileQuizSugorokuPage: React.FC = () => {
   const game = useGame(audio);
   const fade = useFade();
   const study = useStudy();
+  const challenge = useChallenge();
+
+  // 初回ロード時にマイグレーション実行
+  useEffect(() => {
+    migrateLastResultToHistory();
+  }, []);
 
   // アンマウント時にBGMを停止
   useEffect(() => {
@@ -44,11 +60,28 @@ const AgileQuizSugorokuPage: React.FC = () => {
       audio.onBgmStop();
     };
   }, []);
-  const countdown = useCountdown(CONFIG.timeLimit, {
+
+  // 難易度
+  const [difficulty, setDifficulty] = useState<Difficulty>('normal');
+
+  // 難易度に応じた制限時間
+  const difficultyConfig = useMemo(() => getDifficultyConfig(difficulty), [difficulty]);
+
+  const countdown = useCountdown(difficultyConfig.timeLimit, {
     onExpire: () => game.answer(-1),
     onTick: audio.onTick,
   });
+
+  // チャレンジモード用タイマー
+  const challengeCountdown = useCountdown(CONFIG.timeLimit, {
+    onExpire: () => challenge.answer(-1),
+    onTick: audio.onTick,
+  });
+
   const [retrospective, setRetrospective] = useState<SprintSummary | null>(null);
+
+  // 実績トースト
+  const [newAchievements, setNewAchievements] = useState<AchievementDefinition[]>([]);
 
   // スプリント数（タイトル画面で選択、デフォルトはCONFIG.sprintCount）
   const [sprintCount, setSprintCount] = useState<number>(CONFIG.sprintCount);
@@ -78,8 +111,11 @@ const AgileQuizSugorokuPage: React.FC = () => {
   };
 
   /** ゲーム開始 */
-  const handleStart = (selectedSprintCount: number) => {
+  const handleStart = (selectedSprintCount: number, selectedDifficulty?: string) => {
     setSprintCount(selectedSprintCount);
+    if (selectedDifficulty) {
+      setDifficulty(selectedDifficulty as Difficulty);
+    }
     const storyList = getStoriesForSprintCount(selectedSprintCount);
     setStories(storyList);
     audio.onInit();
@@ -145,10 +181,15 @@ const AgileQuizSugorokuPage: React.FC = () => {
   /** ゲーム結果を保存して結果画面へ遷移 */
   const transitionToResult = () => {
     audio.onResult();
-    const grade = getGrade(game.derived.correctRate, game.derived.stability, game.derived.averageSpeed);
+    const grade = calculateGradeWithDifficulty(
+      game.derived.correctRate,
+      game.derived.stability,
+      game.derived.averageSpeed,
+      difficulty,
+    );
     // エンディングで判定済みのチームタイプを再利用
     const teamType = classifiedTeamType ?? classifyTeamType(buildClassifyStats());
-    saveGameResult({
+    const resultData = {
       totalCorrect: game.stats.totalCorrect,
       totalQuestions: game.stats.totalQuestions,
       correctRate: game.derived.correctRate,
@@ -171,7 +212,29 @@ const AgileQuizSugorokuPage: React.FC = () => {
       teamTypeId: teamType.id,
       teamTypeName: teamType.name,
       timestamp: Date.now(),
+    };
+    saveGameResult(resultData);
+
+    // 履歴に保存
+    saveHistory(toHistoryEntry(resultData));
+
+    // 実績判定
+    const unlockedIds = getUnlockedIds();
+    const history = loadHistory();
+    const newlyUnlocked = checkAchievements({
+      result: resultData,
+      sprintCorrectRates: game.derived.sprintCorrectRates,
+      unlockedIds,
+      history,
+      now: new Date(),
     });
+    // 実績をストレージに保存
+    const now = Date.now();
+    newlyUnlocked.forEach(a => saveAchievementUnlock(a.id, now));
+    if (newlyUnlocked.length > 0) {
+      setNewAchievements(newlyUnlocked);
+    }
+
     game.setPhase('result');
     fade.trigger();
   };
@@ -252,6 +315,57 @@ const AgileQuizSugorokuPage: React.FC = () => {
     game.setPhase('guide');
   };
 
+  /** 実績画面へ */
+  const handleAchievements = () => {
+    game.setPhase('achievements');
+  };
+
+  /** 履歴画面へ */
+  const handleHistory = () => {
+    game.setPhase('history');
+  };
+
+  /** デイリークイズ画面へ */
+  const handleDailyQuiz = () => {
+    game.setPhase('daily-quiz');
+  };
+
+  /** チャレンジモード開始 */
+  const handleChallenge = () => {
+    audio.onInit();
+    challenge.init();
+    game.setPhase('challenge');
+  };
+
+  /** チャレンジモード回答 */
+  const handleChallengeAnswer = (optionIndex: number) => {
+    const result = challenge.answer(optionIndex);
+    if (result) {
+      challengeCountdown.stop();
+      if (result.correct && challenge.combo >= 3) {
+        setTimeout(() => audio.onCombo(), 200);
+      }
+    }
+  };
+
+  /** チャレンジモード次へ */
+  const handleChallengeNext = () => {
+    if (challenge.isGameOver) {
+      saveHighScore(challenge.correctCount);
+      game.setPhase('challenge-result');
+    } else {
+      challenge.next();
+      challengeCountdown.start();
+    }
+  };
+
+  /** チャレンジモードリトライ */
+  const handleChallengeRetry = () => {
+    challenge.init();
+    challengeCountdown.start();
+    game.setPhase('challenge');
+  };
+
   /** BGM不要の画面からタイトルに戻る */
   const handleBackToTitle = () => {
     game.setPhase('title');
@@ -320,6 +434,10 @@ const AgileQuizSugorokuPage: React.FC = () => {
           onResume={handleResume}
           onStudy={handleStudyMode}
           onGuide={handleGuide}
+          onAchievements={handleAchievements}
+          onHistory={handleHistory}
+          onChallenge={handleChallenge}
+          onDailyQuiz={handleDailyQuiz}
         />
       )}
 
@@ -428,6 +546,59 @@ const AgileQuizSugorokuPage: React.FC = () => {
           onBack={handleBackToTitle}
         />
       )}
+
+      {game.phase === 'achievements' && (
+        <AchievementScreen onBack={handleBackToTitle} />
+      )}
+
+      {game.phase === 'history' && (
+        <HistoryScreen onBack={handleBackToTitle} />
+      )}
+
+      {game.phase === 'challenge' && challenge.quiz && (
+        <QuizScreen
+          sprint={0}
+          eventIndex={0}
+          events={[{ id: 'challenge', name: 'チャレンジ', icon: '\u{1F525}', description: 'サバイバル', color: '#f06070' }]}
+          quiz={challenge.quiz}
+          options={challenge.options}
+          selectedAnswer={challenge.selectedAnswer}
+          stats={{
+            totalCorrect: challenge.correctCount,
+            totalQuestions: challenge.correctCount + (challenge.isGameOver ? 1 : 0),
+            speeds: [],
+            debt: 0,
+            emergencyCount: 0,
+            emergencySuccess: 0,
+            combo: challenge.combo,
+            maxCombo: challenge.maxCombo,
+          }}
+          timer={challengeCountdown.time}
+          visible={true}
+          onAnswer={handleChallengeAnswer}
+          onNext={handleChallengeNext}
+          quizIndex={0}
+        />
+      )}
+
+      {game.phase === 'daily-quiz' && (
+        <DailyQuizScreen onBack={handleBackToTitle} />
+      )}
+
+      {game.phase === 'challenge-result' && (
+        <ChallengeResultScreen
+          correctCount={challenge.correctCount}
+          maxCombo={challenge.maxCombo}
+          onRetry={handleChallengeRetry}
+          onBack={handleBackToTitle}
+        />
+      )}
+
+      {/* 実績トースト */}
+      <AchievementToast
+        achievements={newAchievements}
+        onComplete={() => setNewAchievements([])}
+      />
     </div>
   );
 };

@@ -3,7 +3,7 @@
  */
 
 /** ゲームのフェーズ */
-export type GamePhase = 'title' | 'story' | 'sprint-start' | 'game' | 'retro' | 'ending' | 'result' | 'guide' | 'study-select' | 'study';
+export type GamePhase = 'title' | 'story' | 'sprint-start' | 'game' | 'retro' | 'ending' | 'result' | 'guide' | 'study-select' | 'study' | 'achievements' | 'history' | 'challenge' | 'challenge-result' | 'daily-quiz';
 
 /** イベントID */
 export type EventId = 'planning' | 'impl1' | 'test1' | 'refinement' | 'impl2' | 'test2' | 'review' | 'emergency';
@@ -232,4 +232,79 @@ export interface SavedIncorrectQuestion {
   correctAnswer: number;
   tags: string[];
   explanation?: string;
+}
+
+// ── フェーズ2: ゲーミフィケーション型定義 ──
+
+/** 実績のレア度 */
+export type AchievementRarity = 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
+
+/** 実績定義 */
+export interface AchievementDefinition {
+  id: string;
+  name: string;
+  description: string;
+  rarity: AchievementRarity;
+  /** 実績判定関数 */
+  check: (context: AchievementContext) => boolean;
+}
+
+/** 実績判定に使用するコンテキスト */
+export interface AchievementContext {
+  /** 今回のゲーム結果 */
+  result: SavedGameResult;
+  /** スプリントごとの正答率 */
+  sprintCorrectRates: number[];
+  /** 過去の実績達成状況 */
+  unlockedIds: string[];
+  /** 過去の全ゲーム履歴 */
+  history: GameHistoryEntry[];
+  /** 現在時刻（テスト用に注入可能） */
+  now: Date;
+}
+
+/** 実績の達成状況 */
+export interface AchievementProgress {
+  /** 達成済み実績IDと達成日時 */
+  unlocked: Record<string, number>;
+}
+
+/** ゲーム履歴の1エントリ */
+export interface GameHistoryEntry {
+  totalCorrect: number;
+  totalQuestions: number;
+  correctRate: number;
+  averageSpeed: number;
+  stability: number;
+  debt: number;
+  maxCombo: number;
+  grade: string;
+  gradeLabel: string;
+  teamTypeId: string;
+  teamTypeName: string;
+  timestamp: number;
+}
+
+/** 難易度レベル */
+export type Difficulty = 'easy' | 'normal' | 'hard' | 'extreme';
+
+/** 難易度設定 */
+export interface DifficultyConfig {
+  id: Difficulty;
+  name: string;
+  timeLimit: number;
+  debtMultiplier: number;
+  hasHint: boolean;
+  emergencyRateBonus: number;
+  missDebtPenalty: number;
+  gradeBonus: number;
+  description: string;
+}
+
+/** チャレンジモードの結果 */
+export interface ChallengeResult {
+  correctCount: number;
+  maxCombo: number;
+  averageSpeed: number;
+  timestamp: number;
 }

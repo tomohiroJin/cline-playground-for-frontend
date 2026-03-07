@@ -175,7 +175,7 @@ export const GuideScreen: React.FC<GuideScreenProps> = ({ onBack }) => {
           <div style={{ fontSize: 12, color: COLORS.text, lineHeight: 2 }}>
             <div>1. タイトル画面でスプリント数を選び「Sprint Start」を押してゲーム開始</div>
             <div>2. 選んだ数のスプリント（デフォルト{CONFIG.sprintCount}）をそれぞれ7イベントずつ進行</div>
-            <div>3. 各イベントで4択クイズに{CONFIG.timeLimit}秒以内に回答</div>
+            <div>3. 各イベントで4択クイズに制限時間内に回答（難易度で変動）</div>
             <div>4. スプリント終了ごとに振り返り画面で成績確認</div>
             <div>5. 全スプリント完了後、総合結果とエンジニアタイプを発表</div>
           </div>
@@ -185,7 +185,7 @@ export const GuideScreen: React.FC<GuideScreenProps> = ({ onBack }) => {
         <SectionBox>
           <SectionTitle>RULES</SectionTitle>
           <div style={{ fontSize: 12, color: COLORS.text, lineHeight: 2 }}>
-            <div>⏱️ <strong>制限時間</strong>: 各問題{CONFIG.timeLimit}秒。時間切れは不正解扱い</div>
+            <div>⏱️ <strong>制限時間</strong>: 難易度により8〜20秒（Normal: {CONFIG.timeLimit}秒）。時間切れは不正解扱い</div>
             <div>⚠️ <strong>技術的負債</strong>: 実装・テスト・リファインメントで不正解だと負債が蓄積</div>
             <div>🚨 <strong>緊急対応</strong>: 負債が溜まるほど緊急イベント発生率が上昇</div>
             <div>🔥 <strong>コンボ</strong>: 連続正解でコンボボーナス。連鎖を維持しよう</div>
@@ -329,6 +329,68 @@ export const GuideScreen: React.FC<GuideScreenProps> = ({ onBack }) => {
                 </div>
               );
             })}
+          </div>
+        </SectionBox>
+
+        {/* 難易度 */}
+        <SectionBox>
+          <SectionTitle>DIFFICULTY</SectionTitle>
+          <div style={{ fontSize: 12, color: COLORS.text, lineHeight: 2 }}>
+            <div>タイトル画面で4段階の難易度を選択できます。</div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
+            {[
+              { name: 'Easy', color: COLORS.green, desc: '制限時間20秒 / 負債0.5倍 / ヒント機能付き' },
+              { name: 'Normal', color: COLORS.accent, desc: '制限時間15秒 / 標準設定' },
+              { name: 'Hard', color: COLORS.orange, desc: '制限時間10秒 / 負債2倍 / 緊急対応+20% / グレードボーナス1.1倍' },
+              { name: 'Extreme', color: '#f06070', desc: '制限時間8秒 / 負債3倍 / 1ミスで負債+15 / グレードボーナス1.2倍' },
+            ].map(d => (
+              <div key={d.name} style={{
+                padding: '6px 10px', borderRadius: 6,
+                background: `${d.color}08`, border: `1px solid ${d.color}22`,
+                display: 'flex', gap: 8, alignItems: 'center',
+              }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: d.color, fontFamily: FONTS.mono, minWidth: 56 }}>
+                  {d.name}
+                </span>
+                <span style={{ fontSize: 11, color: COLORS.muted }}>{d.desc}</span>
+              </div>
+            ))}
+          </div>
+        </SectionBox>
+
+        {/* チャレンジモード */}
+        <SectionBox>
+          <SectionTitle>CHALLENGE MODE</SectionTitle>
+          <div style={{ fontSize: 12, color: COLORS.text, lineHeight: 2 }}>
+            <div>タイトル画面の「Challenge」ボタンから挑戦できます。</div>
+            <div>・1問でも不正解になると即終了のサバイバルモード</div>
+            <div>・全ジャンルからランダムに出題</div>
+            <div>・正解数がそのままスコアとしてハイスコア保存</div>
+            <div>・制限時間は通常モードと同じ{CONFIG.timeLimit}秒</div>
+          </div>
+        </SectionBox>
+
+        {/* 実績 */}
+        <SectionBox>
+          <SectionTitle>ACHIEVEMENTS</SectionTitle>
+          <div style={{ fontSize: 12, color: COLORS.text, lineHeight: 2 }}>
+            <div>タイトル画面の「実績」ボタンから一覧を確認できます。</div>
+            <div>・全20種類の実績をコンプリートしよう</div>
+            <div>・実績はBronze / Silver / Gold / Platinumの4段階のレア度</div>
+            <div>・ゲームクリア時に条件を満たすと自動で獲得</div>
+            <div>・繰り返しプレイで獲得できる継続系の実績もあり</div>
+          </div>
+        </SectionBox>
+
+        {/* 履歴 */}
+        <SectionBox>
+          <SectionTitle>HISTORY</SectionTitle>
+          <div style={{ fontSize: 12, color: COLORS.text, lineHeight: 2 }}>
+            <div>タイトル画面の「履歴」ボタンからプレイ履歴を確認できます。</div>
+            <div>・過去最大10回分のプレイ結果を保存</div>
+            <div>・正答率や回答速度の推移をグラフで確認</div>
+            <div>・最高グレードや獲得チームタイプの履歴表示</div>
           </div>
         </SectionBox>
 

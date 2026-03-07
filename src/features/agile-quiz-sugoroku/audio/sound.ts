@@ -159,6 +159,16 @@ export function playSfxResult(): void {
   });
 }
 
+/** 実績獲得効果音 */
+export function playSfxAchievement(): void {
+  if (!sfxSynth) return;
+  const time = Tone.now();
+  const notes = ['E5', 'G5', 'B5', 'E6'];
+  notes.forEach((note, i) => {
+    sfxSynth!.triggerAttackRelease(note, '16n', time + i * 0.08);
+  });
+}
+
 /**
  * コンボ効果音を再生
  */
