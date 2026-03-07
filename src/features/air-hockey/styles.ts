@@ -28,7 +28,7 @@ export const MenuCard = styled(GlassCard)`
   flex-direction: column;
   align-items: center;
   padding: 40px;
-  max-width: 500px;
+  max-width: 450px;
   width: 100%;
 `;
 
@@ -96,7 +96,7 @@ export const ScoreBoardContainer = styled.div`
   display: flex;
   justify-content: space-between;
   width: 100%;
-  max-width: 300px;
+  max-width: 450px;
   margin-bottom: 10px;
 `;
 
@@ -107,14 +107,17 @@ export const ScoreText = styled.span<{ $color: string }>`
   text-shadow: 0 0 10px ${props => props.$color};
 `;
 
-// ゲームキャンバス
+// ゲームキャンバス（レスポンシブ: CSS でビューポートにスケーリング）
 export const GameCanvas = styled.canvas`
   border-radius: 12px;
   border: 2px solid var(--glass-border);
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
   background: #0d1117;
-  max-width: 100%;
+  width: 100%;
+  max-width: 450px;
   max-height: calc(100vh - 100px);
+  aspect-ratio: 1 / 2;
+  height: auto;
   touch-action: none;
 `;
 

@@ -1,7 +1,7 @@
 import React, { useCallback, RefObject } from 'react';
 import { clamp } from '../../../utils/math-utils';
-import { getConstants } from '../core/constants';
-import { GameState, CanvasSize } from '../core/types';
+import { CONSTANTS } from '../core/constants';
+import { GameState } from '../core/types';
 
 /**
  * マウス/タッチ入力を処理し、プレイヤーのマレット位置を更新するフック
@@ -12,17 +12,15 @@ export function useInput(
   lastInputRef: React.MutableRefObject<number>,
   screen: string,
   showHelp: boolean,
-  setShowHelp: (v: boolean) => void,
-  canvasSize: CanvasSize = 'standard'
+  setShowHelp: (v: boolean) => void
 ) {
   return useCallback(
     (e: React.MouseEvent | React.TouchEvent) => {
       const game = gameRef.current;
       if (!game || screen !== 'game') return;
 
-      const consts = getConstants(canvasSize);
-      const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
-      const { MALLET: MR } = consts.SIZES;
+      const { WIDTH: W, HEIGHT: H } = CONSTANTS.CANVAS;
+      const { MALLET: MR } = CONSTANTS.SIZES;
 
       const now = Date.now();
       lastInputRef.current = now;
@@ -52,6 +50,6 @@ export function useInput(
       game.player.x = newX;
       game.player.y = newY;
     },
-    [screen, showHelp, gameRef, canvasRef, lastInputRef, setShowHelp, canvasSize]
+    [screen, showHelp, gameRef, canvasRef, lastInputRef, setShowHelp]
   );
 }

@@ -2,10 +2,9 @@
  * Air Hockey - エンティティ生成のテスト
  */
 import { EntityFactory } from './entities';
-import { getConstants } from './constants';
+import { CONSTANTS } from './constants';
 
-const consts = getConstants();
-const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
+const { WIDTH: W, HEIGHT: H } = CONSTANTS.CANVAS;
 
 describe('Air Hockey - エンティティ生成', () => {
   // ── EntityFactory.createMallet ───────────────────────
@@ -122,7 +121,7 @@ describe('Air Hockey - エンティティ生成', () => {
           { x: 200, y: 300, r: 20 },
         ],
       };
-      const state = EntityFactory.createGameState(consts, field);
+      const state = EntityFactory.createGameState(CONSTANTS, field);
       expect(state.obstacleStates).toHaveLength(2);
       expect(state.obstacleStates[0]).toEqual({ hp: 3, maxHp: 3, destroyed: false, destroyedAt: 0 });
       expect(state.obstacleStates[1]).toEqual({ hp: 3, maxHp: 3, destroyed: false, destroyedAt: 0 });
@@ -136,8 +135,16 @@ describe('Air Hockey - エンティティ生成', () => {
         color: '#fff',
         obstacles: [{ x: 100, y: 200, r: 15 }],
       };
-      const state = EntityFactory.createGameState(consts, field);
+      const state = EntityFactory.createGameState(CONSTANTS, field);
       expect(state.obstacleStates).toEqual([]);
+    });
+
+    it('450x900 の固定解像度でマレットが配置される', () => {
+      const state = EntityFactory.createGameState();
+      expect(state.player.x).toBe(225);
+      expect(state.player.y).toBe(830);
+      expect(state.cpu.x).toBe(225);
+      expect(state.cpu.y).toBe(70);
     });
   });
 });

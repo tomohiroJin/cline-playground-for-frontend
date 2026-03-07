@@ -1,5 +1,5 @@
-import { getConstants, GameConstants } from './constants';
-import { GameState, Mallet, Puck, Item, ItemType, FieldConfig, ObstacleState } from './types';
+import { CONSTANTS, GameConstants } from './constants';
+import { GameState, Mallet, Puck, Item, ItemType, FieldConfig, ObstacleState, MatchStats } from './types';
 
 const randomRange = (min: number, max: number) => Math.random() * (max - min) + min;
 
@@ -16,7 +16,7 @@ export const EntityFactory = {
   createItem: (
     template: { id: string; name: string; color: string; icon: string },
     fromTop: boolean,
-    consts: GameConstants = getConstants()
+    consts: GameConstants = CONSTANTS
   ): Item => {
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
     const { ITEM: IR } = consts.SIZES;
@@ -41,7 +41,7 @@ export const EntityFactory = {
       destroyedAt: 0,
     }));
   },
-  createGameState: (consts: GameConstants = getConstants(), field?: FieldConfig): GameState => {
+  createGameState: (consts: GameConstants = CONSTANTS, field?: FieldConfig): GameState => {
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
     return {
       player: EntityFactory.createMallet(W / 2, H - 70),
@@ -49,8 +49,8 @@ export const EntityFactory = {
       pucks: [EntityFactory.createPuck(W / 2, H / 2, randomRange(-0.5, 0.5), Math.random() > 0.5 ? 1.5 : -1.5)],
       items: [],
       effects: {
-        player: { speed: null, invisible: 0 },
-        cpu: { speed: null, invisible: 0 },
+        player: { speed: null, invisible: 0, shield: false, magnet: null, big: null },
+        cpu: { speed: null, invisible: 0, shield: false, magnet: null, big: null },
       },
       lastItemSpawn: Date.now(),
       flash: null,
@@ -61,6 +61,17 @@ export const EntityFactory = {
       fever: { active: false, lastGoalTime: Date.now(), extraPucks: 0 },
       particles: [],
       obstacleStates: EntityFactory.createObstacleStates(field),
+      combo: { count: 0, lastScorer: undefined },
     };
   },
+  createMatchStats: (): MatchStats => ({
+    playerHits: 0,
+    cpuHits: 0,
+    maxPuckSpeed: 0,
+    playerItemsCollected: 0,
+    cpuItemsCollected: 0,
+    playerSaves: 0,
+    cpuSaves: 0,
+    matchDuration: 0,
+  }),
 };

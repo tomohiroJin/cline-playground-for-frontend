@@ -42,6 +42,36 @@ export const ItemEffects = {
     };
     return { effects: newEffects };
   },
+  shield: (game: GameState, target: 'player' | 'cpu'): ItemEffectResult => {
+    const newEffects: GameEffects = {
+      ...game.effects,
+      [target]: {
+        ...game.effects[target],
+        shield: true,
+      },
+    };
+    return { effects: newEffects };
+  },
+  magnet: (game: GameState, target: 'player' | 'cpu'): ItemEffectResult => {
+    const newEffects: GameEffects = {
+      ...game.effects,
+      [target]: {
+        ...game.effects[target],
+        magnet: { start: Date.now(), duration: 5000 },
+      },
+    };
+    return { effects: newEffects };
+  },
+  big: (game: GameState, target: 'player' | 'cpu'): ItemEffectResult => {
+    const newEffects: GameEffects = {
+      ...game.effects,
+      [target]: {
+        ...game.effects[target],
+        big: { start: Date.now(), duration: 8000, scale: 1.5 },
+      },
+    };
+    return { effects: newEffects };
+  },
 };
 
 /**

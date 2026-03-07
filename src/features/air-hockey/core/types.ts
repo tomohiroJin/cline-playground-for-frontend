@@ -18,7 +18,7 @@ export type Puck = Entity & {
   trail?: Vector[];
 };
 
-export type ItemType = 'split' | 'speed' | 'invisible';
+export type ItemType = 'split' | 'speed' | 'invisible' | 'shield' | 'magnet' | 'big';
 
 export type Item = Entity & {
   id: ItemType;
@@ -31,6 +31,9 @@ export type Item = Entity & {
 export type EffectState = {
   speed: { start: number; duration: number } | null;
   invisible: number;
+  shield: boolean;
+  magnet: { start: number; duration: number } | null;
+  big: { start: number; duration: number; scale: number } | null;
 };
 
 export type GameEffects = {
@@ -98,21 +101,46 @@ export type GameState = {
   fever: FeverState;
   particles: Particle[];
   obstacleStates: ObstacleState[]; // 障害物の破壊状態
+  combo: ComboState;
+};
+
+export type ComboState = {
+  count: number;
+  lastScorer: 'player' | 'cpu' | undefined;
+};
+
+export type MatchStats = {
+  playerHits: number;
+  cpuHits: number;
+  maxPuckSpeed: number;
+  playerItemsCollected: number;
+  cpuItemsCollected: number;
+  playerSaves: number;
+  cpuSaves: number;
+  matchDuration: number;
+};
+
+export type GamePhase = 'countdown' | 'playing' | 'paused' | 'finished';
+
+export type ShakeState = {
+  intensity: number;
+  duration: number;
+  startTime: number;
 };
 
 export type SoundSystem = {
-  hit: () => void;
-  wall: () => void;
+  hit: (speed?: number) => void;
+  wall: (angle?: number) => void;
   item: () => void;
   goal: () => void;
   lose: () => void;
   start: () => void;
-};
-
-export type CanvasSize = 'standard' | 'large';
-
-export type SizeConfig = {
-  readonly width: number;
-  readonly height: number;
-  readonly scale: number;
+  countdown: () => void;
+  go: () => void;
+  bgmStart: () => void;
+  bgmStop: () => void;
+  bgmSetTempo: (tempo: number) => void;
+  setBgmVolume: (volume: number) => void;
+  setSeVolume: (volume: number) => void;
+  setMuted: (muted: boolean) => void;
 };
