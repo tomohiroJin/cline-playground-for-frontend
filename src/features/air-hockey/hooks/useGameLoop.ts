@@ -17,6 +17,7 @@ import {
   Particle,
   GamePhase,
   ShakeState,
+  MatchStats,
 } from '../core/types';
 
 // ランダム選択ヘルパー
@@ -55,7 +56,9 @@ export function useGameLoop(
   countdownStartRef: React.MutableRefObject<number>,
   shakeRef: React.MutableRefObject<ShakeState | null>,
   setShake: (s: ShakeState | null) => void,
-  bgmEnabled: boolean
+  bgmEnabled: boolean,
+  statsRef: React.MutableRefObject<MatchStats>,
+  matchStartRef: React.MutableRefObject<number>
 ) {
   useEffect(() => {
     if (screen !== 'game') return;
@@ -65,9 +68,25 @@ export function useGameLoop(
     const { MALLET: MR, PUCK: BR, ITEM: IR } = consts.SIZES;
 
     const sound = getSound();
-    const goalSize = field.goalSize;
+    const baseGoalSize = field.goalSize;
+    // カムバック補正を反映したゴールサイズ計算
+    const getEffectiveGoalSize = (side: 'player' | 'cpu'): number => {
+      const pScore = scoreRef.current.p;
+      const cScore = scoreRef.current.c;
+      const scoreDiffForGoal = side === 'player' ? cScore - pScore : pScore - cScore;
+      if (scoreDiffForGoal >= consts.COMEBACK.THRESHOLD) {
+        return baseGoalSize * (1 - consts.COMEBACK.GOAL_REDUCTION);
+      }
+      return baseGoalSize;
+    };
+    // ゴールチェック（カムバック時はゴールサイズ縮小）
+    const goalCheckerWithSide = (x: number, side: 'player' | 'cpu') => {
+      const gs = getEffectiveGoalSize(side);
+      return x > W / 2 - gs / 2 && x < W / 2 + gs / 2;
+    };
+    // アイテム用はベースサイズでチェック
     const goalChecker = (x: number) =>
-      x > W / 2 - goalSize / 2 && x < W / 2 + goalSize / 2;
+      x > W / 2 - baseGoalSize / 2 && x < W / 2 + baseGoalSize / 2;
 
     // 障害物座標は config.ts で 450x900 解像度基準で定義済み
     const obstacles = field.obstacles;
@@ -83,7 +102,8 @@ export function useGameLoop(
       obj: T,
       radius: number,
       game: GameState,
-      isPuck = false
+      isPuck = false,
+      now = Date.now()
     ): T => {
       const mallets = [
         { mallet: game.player, isPlayer: true },
@@ -91,7 +111,19 @@ export function useGameLoop(
       ];
 
       for (const { mallet, isPlayer } of mallets) {
-        const col = Physics.detectCollision(obj.x, obj.y, radius, mallet.x, mallet.y, MR);
+        // Big エフェクトによるマレット半径拡大
+        const side = isPlayer ? 'player' : 'cpu';
+        const bigEffect = game.effects[side].big;
+        const bigScale = bigEffect && now - bigEffect.start < bigEffect.duration ? bigEffect.scale : 1;
+
+        // カムバックによるマレット半径拡大
+        const pScore = scoreRef.current.p;
+        const cScore = scoreRef.current.c;
+        const scoreDiff = isPlayer ? cScore - pScore : pScore - cScore;
+        const comebackScale = scoreDiff >= consts.COMEBACK.THRESHOLD ? 1 + consts.COMEBACK.MALLET_BONUS : 1;
+
+        const effectiveMR = MR * bigScale * comebackScale;
+        const col = Physics.detectCollision(obj.x, obj.y, radius, mallet.x, mallet.y, effectiveMR);
         if (col) {
           const speed = magnitude(mallet.vx, mallet.vy);
           const power = Math.min(consts.PHYSICS.MAX_POWER, 5 + speed * 1.2);
@@ -106,6 +138,23 @@ export function useGameLoop(
 
           // 速度に応じたサウンド
           sound.hit(speed);
+
+          // 統計: ヒット数カウント
+          if (isPuck) {
+            if (isPlayer) {
+              statsRef.current.playerHits++;
+              // セーブ判定: ゴールライン付近（下端100px以内）
+              if (obj.y > H - 100) {
+                statsRef.current.playerSaves++;
+              }
+            } else {
+              statsRef.current.cpuHits++;
+              // セーブ判定: ゴールライン付近（上端100px以内）
+              if (obj.y < 100) {
+                statsRef.current.cpuSaves++;
+              }
+            }
+          }
 
           // 強打時のシェイク
           if (isPuck && speed > STRONG_HIT_SPEED_THRESHOLD) {
@@ -210,6 +259,20 @@ export function useGameLoop(
         return;
       }
 
+      // ポーズフェーズの処理
+      if (phaseRef.current === 'paused') {
+        Renderer.clear(ctx, consts, now);
+        Renderer.drawField(ctx, field, consts, game.obstacleStates, now);
+        Renderer.drawEffectZones(ctx, game.effects, now, consts);
+        game.items.forEach((item: Item) => Renderer.drawItem(ctx, item, now, consts));
+        game.pucks.forEach((puck: Puck) => Renderer.drawPuck(ctx, puck, consts));
+        Renderer.drawMallet(ctx, game.cpu, '#e74c3c', false, consts);
+        Renderer.drawMallet(ctx, game.player, '#3498db', game.effects.player.invisible > 0, consts);
+        Renderer.drawPauseOverlay(ctx, consts);
+        animationRef = requestAnimationFrame(gameLoop);
+        return;
+      }
+
       // パーティクル更新
       for (let i = game.particles.length - 1; i >= 0; i--) {
         const p = game.particles[i];
@@ -298,7 +361,7 @@ export function useGameLoop(
         item.y += item.vy;
 
         item = Physics.applyWallBounce(item, IR, goalChecker, sound.wall, consts);
-        item = processCollisions(item, IR, game, false);
+        item = processCollisions(item, IR, game, false, now);
         game.items[i] = item;
 
         const scoredTarget =
@@ -315,6 +378,12 @@ export function useGameLoop(
           if (itemEffect.flash) game.flash = itemEffect.flash;
           sound.item();
           game.items.splice(i, 1);
+          // 統計: アイテム取得数
+          if (scoredTarget === 'player') {
+            statsRef.current.playerItemsCollected++;
+          } else {
+            statsRef.current.cpuItemsCollected++;
+          }
         }
       }
 
@@ -343,23 +412,76 @@ export function useGameLoop(
         puck.x += puck.vx * speedMultiplier;
         puck.y += puck.vy * speedMultiplier;
 
+        // マグネットの引力処理
+        const applyMagnet = (mallet: { x: number; y: number }, effect: typeof game.effects.player) => {
+          if (effect.magnet && now - effect.magnet.start < effect.magnet.duration) {
+            const dx = mallet.x - puck.x;
+            const dy = mallet.y - puck.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > 0 && dist < 150) {
+              const force = 0.3 / Math.max(dist / 50, 1);
+              puck.vx += (dx / dist) * force;
+              puck.vy += (dy / dist) * force;
+            }
+          }
+        };
+        applyMagnet(game.player, game.effects.player);
+        applyMagnet(game.cpu, game.effects.cpu);
+
         if (!puck.visible) {
           puck.invisibleCount--;
           if (puck.invisibleCount <= 0) puck.visible = true;
         }
 
         puck = Physics.applyWallBounce(puck, BR, goalChecker, sound.wall, consts);
-        puck = processCollisions(puck, BR, game, true);
+        puck = processCollisions(puck, BR, game, true, now);
         puck = Physics.applyFriction(puck, consts);
         game.pucks[i] = puck;
 
+        // 統計: 最高パック速度を更新
+        const puckSpeed = magnitude(puck.vx, puck.vy);
+        statsRef.current.maxPuckSpeed = Math.max(statsRef.current.maxPuckSpeed, puckSpeed);
+
         if (scored === null) {
-          if (puck.y < 5 && goalChecker(puck.x)) {
-            scored = 'cpu';
-            scoredIndex = i;
-          } else if (puck.y > H - 5 && goalChecker(puck.x)) {
-            scored = 'player';
-            scoredIndex = i;
+          if (puck.y < 5 && goalCheckerWithSide(puck.x, 'cpu')) {
+            // CPU 側シールドチェック
+            if (game.effects.cpu.shield) {
+              game.effects.cpu.shield = false;
+              puck.vy = Math.abs(puck.vy) * 0.8;
+              puck.y = 15;
+              game.pucks[i] = puck;
+              // バリア破壊パーティクル
+              for (let pi = 0; pi < 8; pi++) {
+                game.particles.push({
+                  x: puck.x + randomRange(-10, 10), y: 8,
+                  vx: randomRange(-2, 2), vy: randomRange(1, 3),
+                  life: 20, maxLife: 20, color: 'rgb(255, 215, 0)', size: randomRange(2, 4),
+                });
+              }
+              sound.wall();
+            } else {
+              scored = 'cpu';
+              scoredIndex = i;
+            }
+          } else if (puck.y > H - 5 && goalCheckerWithSide(puck.x, 'player')) {
+            // プレイヤー側シールドチェック
+            if (game.effects.player.shield) {
+              game.effects.player.shield = false;
+              puck.vy = -Math.abs(puck.vy) * 0.8;
+              puck.y = H - 15;
+              game.pucks[i] = puck;
+              for (let pi = 0; pi < 8; pi++) {
+                game.particles.push({
+                  x: puck.x + randomRange(-10, 10), y: H - 8,
+                  vx: randomRange(-2, 2), vy: randomRange(-3, -1),
+                  life: 20, maxLife: 20, color: 'rgb(255, 215, 0)', size: randomRange(2, 4),
+                });
+              }
+              sound.wall();
+            } else {
+              scored = 'player';
+              scoredIndex = i;
+            }
           }
         }
       }
@@ -380,18 +502,47 @@ export function useGameLoop(
         );
       }
 
+      // Big / カムバックによるマレットサイズスケール計算
+      const getMalletScale = (side: 'player' | 'cpu'): number => {
+        let scale = 1;
+        const bigEff = game.effects[side].big;
+        if (bigEff && now - bigEff.start < bigEff.duration) {
+          scale *= bigEff.scale;
+        }
+        const pScore = scoreRef.current.p;
+        const cScore = scoreRef.current.c;
+        const scoreDiff2 = side === 'player' ? cScore - pScore : pScore - cScore;
+        if (scoreDiff2 >= consts.COMEBACK.THRESHOLD) {
+          scale *= 1 + consts.COMEBACK.MALLET_BONUS;
+        }
+        return scale;
+      };
+
       // 描画
       Renderer.clear(ctx, consts, now);
       Renderer.drawField(ctx, field, consts, game.obstacleStates, now);
       Renderer.drawEffectZones(ctx, game.effects, now, consts);
       game.items.forEach((item: Item) => Renderer.drawItem(ctx, item, now, consts));
       game.pucks.forEach((puck: Puck) => Renderer.drawPuck(ctx, puck, consts));
-      Renderer.drawMallet(ctx, game.cpu, '#e74c3c', false, consts);
-      Renderer.drawMallet(ctx, game.player, '#3498db', game.effects.player.invisible > 0, consts);
+      Renderer.drawMallet(ctx, game.cpu, '#e74c3c', false, consts, getMalletScale('cpu'));
+      Renderer.drawMallet(ctx, game.player, '#3498db', game.effects.player.invisible > 0, consts, getMalletScale('player'));
       Renderer.drawParticles(ctx, game.particles);
       Renderer.drawHUD(ctx, game.effects, now, consts);
       Renderer.drawFlash(ctx, game.flash, now, consts);
       Renderer.drawFeverEffect(ctx, game.fever.active, now, consts);
+      Renderer.drawCombo(ctx, game.combo, now, consts);
+
+      // シールドバリア描画
+      if (game.effects.player.shield) Renderer.drawShield(ctx, true, baseGoalSize, consts);
+      if (game.effects.cpu.shield) Renderer.drawShield(ctx, false, baseGoalSize, consts);
+
+      // マグネットエフェクト描画
+      if (game.effects.player.magnet && now - game.effects.player.magnet.start < game.effects.player.magnet.duration) {
+        Renderer.drawMagnetEffect(ctx, game.player, now);
+      }
+      if (game.effects.cpu.magnet && now - game.effects.cpu.magnet.start < game.effects.cpu.magnet.duration) {
+        Renderer.drawMagnetEffect(ctx, game.cpu, now);
+      }
 
       if (showHelp) {
         Renderer.drawHelp(ctx, consts);
@@ -411,6 +562,15 @@ export function useGameLoop(
           sound.lose();
         }
         game.goalEffect = { scorer: scored, time: now };
+
+        // コンボシステム: 同じプレイヤーの連続得点でカウント増加
+        const scorerSide = scored === 'cpu' ? 'player' : 'cpu';
+        if (game.combo.lastScorer === scorerSide) {
+          game.combo.count++;
+        } else {
+          game.combo.count = 1;
+          game.combo.lastScorer = scorerSide;
+        }
 
         // ゴール時のシェイク
         triggerShake(GOAL_SHAKE_INTENSITY, GOAL_SHAKE_DURATION);
@@ -440,6 +600,7 @@ export function useGameLoop(
         }
 
         if (scoreRef.current.p >= winScore) {
+          statsRef.current.matchDuration = now - matchStartRef.current;
           setTimeout(() => {
             setWinner('player');
             setScreen('result');
@@ -448,6 +609,7 @@ export function useGameLoop(
           return;
         }
         if (scoreRef.current.c >= winScore) {
+          statsRef.current.matchDuration = now - matchStartRef.current;
           setTimeout(() => {
             setWinner('cpu');
             setScreen('result');
@@ -467,5 +629,6 @@ export function useGameLoop(
   }, [screen, diff, field, winScore, showHelp, getSound,
       gameRef, canvasRef, lastInputRef, scoreRef,
       setScores, setWinner, setScreen, setShowHelp,
-      phaseRef, countdownStartRef, shakeRef, setShake, bgmEnabled]);
+      phaseRef, countdownStartRef, shakeRef, setShake, bgmEnabled,
+      statsRef, matchStartRef]);
 }

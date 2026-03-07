@@ -70,6 +70,9 @@ export const ITEMS = [
   { id: 'split' as ItemType, name: 'Split', color: '#FF6B6B', icon: '◆' },
   { id: 'speed' as ItemType, name: 'Speed', color: '#4ECDC4', icon: '⚡' },
   { id: 'invisible' as ItemType, name: 'Hide', color: '#9B59B6', icon: '👻' },
+  { id: 'shield' as ItemType, name: 'Shield', color: '#FFD700', icon: '🛡' },
+  { id: 'magnet' as ItemType, name: 'Magnet', color: '#FF6B35', icon: '🧲' },
+  { id: 'big' as ItemType, name: 'Big', color: '#00FF88', icon: '⬆' },
 ] as const;
 
 export const DIFFICULTY_OPTIONS = ['easy', 'normal', 'hard'] as const;

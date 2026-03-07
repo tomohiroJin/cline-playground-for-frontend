@@ -11,6 +11,7 @@ import {
   Obstacle,
   ObstacleState,
   Particle,
+  ComboState,
 } from './core/types';
 import { magnitude } from '../../utils/math-utils';
 
@@ -165,9 +166,10 @@ export const Renderer = {
       ctx.stroke();
     }
   },
-  // マレットグロー強化
-  drawMallet(ctx: CanvasRenderingContext2D, mallet: Mallet, color: string, hasGlow: boolean, consts: GameConstants = CONSTANTS) {
+  // マレットグロー強化（サイズスケール対応）
+  drawMallet(ctx: CanvasRenderingContext2D, mallet: Mallet, color: string, hasGlow: boolean, consts: GameConstants = CONSTANTS, sizeScale = 1) {
     const { MALLET: MR } = consts.SIZES;
+    const drawRadius = MR * sizeScale;
     // 常時弱いグロー
     ctx.shadowColor = color;
     ctx.shadowBlur = 8;
@@ -175,7 +177,7 @@ export const Renderer = {
       ctx.shadowColor = '#ff00ff';
       ctx.shadowBlur = 25;
     }
-    this.drawCircle(ctx, mallet.x, mallet.y, MR, color, '#fff', 3);
+    this.drawCircle(ctx, mallet.x, mallet.y, drawRadius, color, '#fff', 3);
     ctx.shadowBlur = 0;
     this.drawCircle(ctx, mallet.x, mallet.y, 8, '#fff');
   },
@@ -395,5 +397,103 @@ export const Renderer = {
     ctx.fillText(text, 0, 0);
     ctx.shadowBlur = 0;
     ctx.restore();
+  },
+  // ポーズオーバーレイ描画
+  drawPauseOverlay(ctx: CanvasRenderingContext2D, consts: GameConstants = CONSTANTS) {
+    const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
+    // 半透明背景
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // PAUSED テキスト
+    ctx.font = 'bold 48px Arial';
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = '#00d4ff';
+    ctx.shadowBlur = 20;
+    ctx.fillText('PAUSED', W / 2, H / 2 - 60);
+    ctx.shadowBlur = 0;
+
+    // メニューオプション
+    ctx.font = 'bold 20px Arial';
+    ctx.fillStyle = '#00d4ff';
+    ctx.fillText('Tap to Resume', W / 2, H / 2 + 20);
+    ctx.fillStyle = '#888888';
+    ctx.font = '16px Arial';
+    ctx.fillText('Press ESC or P to toggle', W / 2, H / 2 + 60);
+
+    ctx.restore();
+  },
+  // コンボ表示描画
+  drawCombo(ctx: CanvasRenderingContext2D, combo: ComboState, now: number, consts: GameConstants = CONSTANTS) {
+    if (combo.count < 2) return;
+    const { WIDTH: W } = consts.CANVAS;
+
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // コンボ数に応じた色
+    let color = '#ffdd00';
+    if (combo.count >= 5) {
+      // レインボー
+      const hue = (now * 0.3) % 360;
+      color = `hsl(${hue}, 100%, 60%)`;
+    } else if (combo.count >= 3) {
+      color = '#ff6600';
+    }
+
+    const scale = 1 + Math.sin(now * 0.01) * 0.1;
+    ctx.font = `bold ${Math.floor(28 * scale)}px Arial`;
+    ctx.fillStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 15;
+    ctx.fillText(`x${combo.count} COMBO!`, W / 2, 60);
+    ctx.shadowBlur = 0;
+
+    ctx.restore();
+  },
+  // シールドバリア描画
+  drawShield(ctx: CanvasRenderingContext2D, isPlayer: boolean, goalSize: number, consts: GameConstants = CONSTANTS) {
+    const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
+    const y = isPlayer ? H - 8 : 8;
+
+    ctx.save();
+    ctx.strokeStyle = '#FFD700';
+    ctx.lineWidth = 4;
+    ctx.shadowColor = '#FFD700';
+    ctx.shadowBlur = 15;
+    ctx.globalAlpha = 0.7;
+    ctx.beginPath();
+    ctx.moveTo(W / 2 - goalSize / 2, y);
+    ctx.lineTo(W / 2 + goalSize / 2, y);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  },
+  // マグネットエフェクト描画
+  drawMagnetEffect(ctx: CanvasRenderingContext2D, mallet: Mallet, now: number) {
+    ctx.save();
+    const pulse = 1 + Math.sin(now * 0.008) * 0.3;
+    const radius = 60 * pulse;
+    ctx.beginPath();
+    ctx.arc(mallet.x, mallet.y, radius, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255, 107, 53, 0.3)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+  },
+  // 試合統計をリザルト画面用にフォーマット
+  formatStats(stats: { playerHits: number; cpuHits: number; maxPuckSpeed: number; playerSaves: number; cpuSaves: number; matchDuration: number }) {
+    const minutes = Math.floor(stats.matchDuration / 60000);
+    const seconds = Math.floor((stats.matchDuration % 60000) / 1000);
+    return {
+      time: `${minutes}:${String(seconds).padStart(2, '0')}`,
+      maxSpeed: stats.maxPuckSpeed.toFixed(1),
+    };
   },
 };

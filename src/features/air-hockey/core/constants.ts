@@ -5,6 +5,7 @@ export type GameConstants = {
   TIMING: { ITEM_SPAWN: number; GOAL_EFFECT: number; FLASH: number; HELP_TIMEOUT: number; FEVER_TRIGGER: number; FEVER_INTERVAL: number; OBSTACLE_RESPAWN: number };
   CPU: { easy: number; normal: number; hard: number };
   FEVER: { MAX_EXTRA_PUCKS: number };
+  COMEBACK: { THRESHOLD: number; MALLET_BONUS: number; GOAL_REDUCTION: number };
 };
 
 // 内部解像度 450x900 固定（CSS でビューポートに応答的にスケーリング）
@@ -15,4 +16,5 @@ export const CONSTANTS: GameConstants = {
   TIMING: { ITEM_SPAWN: 6000, GOAL_EFFECT: 1500, FLASH: 500, HELP_TIMEOUT: 5000, FEVER_TRIGGER: 15000, FEVER_INTERVAL: 10000, OBSTACLE_RESPAWN: 5000 },
   CPU: { easy: 1.5, normal: 3.5, hard: 6 },
   FEVER: { MAX_EXTRA_PUCKS: 2 },
+  COMEBACK: { THRESHOLD: 3, MALLET_BONUS: 0.1, GOAL_REDUCTION: 0.1 },
 };
