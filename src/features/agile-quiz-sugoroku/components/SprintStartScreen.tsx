@@ -1,7 +1,7 @@
 /**
  * スプリント開始画面コンポーネント
  */
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useKeys } from '../hooks';
 import { GameStats, DerivedStats } from '../types';
 import {
@@ -13,6 +13,7 @@ import {
 } from '../constants';
 import { getComboColor } from '../combo-color';
 import { AQS_IMAGES } from '../images';
+import { getNarrativeComment } from '../character-narrative';
 import { ParticleEffect } from './ParticleEffect';
 import {
   PageWrapper,
@@ -58,6 +59,16 @@ export const SprintStartScreen: React.FC<SprintStartScreenProps> = ({
   visible,
   onBegin,
 }) => {
+  // キャラクターナラティブ
+  const narrative = useMemo(() => getNarrativeComment({
+    sprintNumber: sprint + 1,
+    phase: 'sprintStart',
+    correctRate: derived.correctRate,
+    debt: stats.debt,
+  }), [sprint, derived.correctRate, stats.debt]);
+
+  const narrativeCharImg = AQS_IMAGES.characters[narrative.characterId as keyof typeof AQS_IMAGES.characters];
+
   useKeys((e) => {
     if (e.key === 'Enter' || e.key === ' ') {
       onBegin();
@@ -146,6 +157,53 @@ export const SprintStartScreen: React.FC<SprintStartScreenProps> = ({
             </EventListItem>
           ))}
         </SectionBox>
+
+        {/* キャラクターナラティブ */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          padding: '10px 14px',
+          marginBottom: 16,
+          background: `${COLORS.accent}08`,
+          borderRadius: 8,
+          border: `1px solid ${COLORS.accent}18`,
+        }}>
+          {narrativeCharImg ? (
+            <img
+              src={narrativeCharImg}
+              alt=""
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: '50%',
+                objectFit: 'cover',
+                flexShrink: 0,
+              }}
+            />
+          ) : (
+            <div style={{
+              width: 40,
+              height: 40,
+              borderRadius: '50%',
+              background: `${COLORS.accent}15`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 20,
+              flexShrink: 0,
+            }}>
+              ?
+            </div>
+          )}
+          <div style={{
+            fontSize: 12,
+            color: COLORS.text,
+            lineHeight: 1.5,
+          }}>
+            {narrative.text}
+          </div>
+        </div>
 
         {/* 開始ボタン */}
         <div style={{ textAlign: 'center' }}>
