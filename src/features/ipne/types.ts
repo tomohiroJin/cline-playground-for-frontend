@@ -395,6 +395,10 @@ export interface Enemy {
   lastMoveAt?: number;
   knockbackUntil?: number;
   knockbackDirection?: DirectionValue;
+  /** 撃破アニメーション中フラグ */
+  isDying?: boolean;
+  /** 撃破開始時刻（ms） */
+  deathStartTime?: number;
 }
 
 // ===== アイテム関連の型定義 =====

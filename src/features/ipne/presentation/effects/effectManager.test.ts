@@ -1,5 +1,6 @@
 import { EffectManager, resetEffectIdCounter } from './effectManager';
 import { EffectType } from './effectTypes';
+import { EnemyType } from '../../types';
 
 describe('EffectManager', () => {
   let manager: EffectManager;
@@ -157,6 +158,50 @@ describe('EffectManager', () => {
       manager.update(0.3, 1300);
       const offset = manager.getShakeOffset();
       expect(offset).toBeNull();
+    });
+  });
+
+  describe('ENEMY_DEATH エフェクト（Phase 2-4）', () => {
+    it('敵タイプに応じたパーティクルが生成される', () => {
+      manager.addEffect(EffectType.ENEMY_DEATH, 100, 200, 1000, { enemyType: EnemyType.PATROL });
+      expect(manager.getEffectCount()).toBe(1);
+      expect(manager.getTotalParticleCount()).toBe(6);
+    });
+
+    it('ボス敵は多数のパーティクルが生成される', () => {
+      manager.addEffect(EffectType.ENEMY_DEATH, 100, 200, 1000, { enemyType: EnemyType.BOSS });
+      expect(manager.getTotalParticleCount()).toBe(24);
+    });
+
+    it('コンボ倍率でパーティクル数が増加する', () => {
+      manager.addEffect(EffectType.ENEMY_DEATH, 100, 200, 1000, { enemyType: EnemyType.PATROL, comboMultiplier: 1.5 });
+      // 6 * 1.5 = 9
+      expect(manager.getTotalParticleCount()).toBe(9);
+    });
+
+    it('enemyType未指定ではパーティクルが生成されない', () => {
+      manager.addEffect(EffectType.ENEMY_DEATH, 100, 200, 1000);
+      expect(manager.getEffectCount()).toBe(0);
+    });
+  });
+
+  describe('ATTACK_HIT スケーリング（Phase 2-2）', () => {
+    it('powerLevel 0 はパーティクル4個', () => {
+      manager.addEffect(EffectType.ATTACK_HIT, 100, 200, 1000, { powerLevel: 0 });
+      expect(manager.getTotalParticleCount()).toBe(4);
+    });
+
+    it('powerLevel 4 はパーティクル24個', () => {
+      manager.addEffect(EffectType.ATTACK_HIT, 100, 200, 1000, { powerLevel: 4 });
+      // 24個 + SCREEN_SHAKE(0個) = 24個パーティクル、エフェクト2個
+      expect(manager.getTotalParticleCount()).toBe(24);
+      expect(manager.getEffectCount()).toBe(2); // ATTACK_HIT + SCREEN_SHAKE
+    });
+
+    it('コンボ倍率でパーティクル数が増加する', () => {
+      manager.addEffect(EffectType.ATTACK_HIT, 100, 200, 1000, { powerLevel: 1, comboMultiplier: 1.5 });
+      // 8 * 1.5 = 12
+      expect(manager.getTotalParticleCount()).toBe(12);
     });
   });
 

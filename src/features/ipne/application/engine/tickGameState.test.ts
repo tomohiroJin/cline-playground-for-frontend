@@ -63,7 +63,7 @@ describe('tickGameState', () => {
     expect(result.player.hp).toBe(expiredInvinciblePlayer.hp - 2);
     expect(result.enemies).toHaveLength(1);
     expect(result.effects).toEqual(
-      expect.arrayContaining([{ kind: 'sound', type: TickSoundEffect.PLAYER_DAMAGE }])
+      expect.arrayContaining([expect.objectContaining({ kind: 'sound', type: TickSoundEffect.PLAYER_DAMAGE })])
     );
   });
 

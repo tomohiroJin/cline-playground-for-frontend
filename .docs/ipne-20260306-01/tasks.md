@@ -277,32 +277,32 @@
 
 ### 2-1. フローティングダメージ表示 [P1]
 
-- [ ] `src/features/ipne/presentation/effects/floatingText.ts` を新規作成
-  - [ ] `FloatingText` 型定義
-  - [ ] `FloatingTextType` 定数定義（DAMAGE / CRITICAL / PLAYER_DAMAGE / HEAL / COMBO / INFO）
-  - [ ] `FloatingTextManager` クラス実装
-    - [ ] `addText()` メソッド
-    - [ ] `update()` メソッド（期限切れ除去）
-    - [ ] `draw()` メソッド（Canvas テキスト描画 + アウトライン + フェードアウト）
-  - [ ] テキスト種別ごとの設定（色、フォントサイズ、持続時間）
-  - [ ] フロート動きの計算（イージング付き上昇、フェードアウト）
-- [ ] `Game.tsx` に `FloatingTextManager` を統合
-  - [ ] マネージャーのインスタンス化（`useRef`）
-  - [ ] 描画ループ内で `update()` + `draw()` 呼び出し
-- [ ] トリガーポイントの接続
-  - [ ] `playerAttack` 成功時にダメージ数値を追加
-  - [ ] `processEnemyContact` でプレイヤー被弾ダメージを追加
-  - [ ] HP回復時に回復量を追加
-  - [ ] 鍵取得時に `"KEY GET!"` を追加
-- [ ] ユニットテスト
-  - [ ] `FloatingTextManager` の追加・更新・期限切れテスト
-  - [ ] テキスト位置計算のテスト
+- [x] `src/features/ipne/presentation/effects/floatingText.ts` を新規作成
+  - [x] `FloatingText` 型定義
+  - [x] `FloatingTextType` 定数定義（DAMAGE / CRITICAL / PLAYER_DAMAGE / HEAL / COMBO / INFO）
+  - [x] `FloatingTextManager` クラス実装
+    - [x] `addText()` メソッド
+    - [x] `update()` メソッド（期限切れ除去）
+    - [x] `draw()` メソッド（Canvas テキスト描画 + アウトライン + フェードアウト）
+  - [x] テキスト種別ごとの設定（色、フォントサイズ、持続時間）
+  - [x] フロート動きの計算（イージング付き上昇、フェードアウト）
+- [x] `Game.tsx` に `FloatingTextManager` を統合
+  - [x] マネージャーのインスタンス化（`useRef`）
+  - [x] 描画ループ内で `update()` + `draw()` 呼び出し
+- [x] トリガーポイントの接続
+  - [x] `playerAttack` 成功時にダメージ数値を追加
+  - [x] `processEnemyContact` でプレイヤー被弾ダメージを追加
+  - [x] HP回復時に回復量を追加
+  - [x] 鍵取得時に `"KEY GET!"` を追加
+- [x] ユニットテスト
+  - [x] `FloatingTextManager` の追加・更新・期限切れテスト
+  - [x] テキスト位置計算のテスト
 
 ### 2-1b. 敵攻撃エフェクト可視化 [P1]
 
-- [ ] `useGameLoop.ts` で敵ダメージ発生時に `ENEMY_ATTACK` エフェクトをキューに追加
-  - [ ] 敵タイプに応じたエフェクトバリエーション（melee / ranged / boss）を適用
-  - [ ] エフェクト表示位置をプレイヤー位置に設定
+- [x] `useGameLoop.ts` で敵ダメージ発生時に `ENEMY_ATTACK` エフェクトをキューに追加
+  - [x] 敵タイプに応じたエフェクトバリエーション（melee / ranged / boss）を適用
+  - [x] エフェクト表示位置をプレイヤー位置に設定
 - [ ] 敵攻撃アニメーション（スプライトフレーム切り替え）の表示時間調整
   - [ ] 攻撃状態の視覚的な持続時間を確保（現状一瞬で切り替わる）
 - [ ] ユニットテスト
@@ -310,92 +310,96 @@
 
 ### 2-4. 敵撃破演出強化 [P1]
 
-- [ ] `types.ts` に `Enemy` の拡張フィールド追加
-  - [ ] `isDying?: boolean`
-  - [ ] `deathStartTime?: number`
-- [ ] `effectTypes.ts` に `ENEMY_DEATH` 追加
-- [ ] `effectManager.ts` に `ENEMY_DEATH` エフェクト処理追加
-  - [ ] 敵タイプ別の破片パーティクル設定
-  - [ ] 破片パーティクル生成（`createRadialParticles` 使用）
-- [ ] 敵撃破時のアニメーション処理
-  - [ ] `tickGameState.ts` で敵HP<=0 時に即削除ではなく `isDying=true` に
-  - [ ] 撃破アニメーション完了後に敵リストから除去
-- [ ] `Game.tsx` で撃破アニメーション描画
-  - [ ] フェーズ1: 縮小描画（100ms）
-  - [ ] フェーズ2: 白フラッシュ描画（50ms）
-  - [ ] フェーズ3: スプライト非表示（150ms、パーティクルのみ）
-- [ ] ユニットテスト
-  - [ ] 撃破フラグの遷移テスト
-  - [ ] タイマー期限切れでの敵除去テスト
+- [x] `types.ts` に `Enemy` の拡張フィールド追加
+  - [x] `isDying?: boolean`
+  - [x] `deathStartTime?: number`
+- [x] `effectTypes.ts` に `ENEMY_DEATH` 追加
+- [x] `effectManager.ts` に `ENEMY_DEATH` エフェクト処理追加
+  - [x] 敵タイプ別の破片パーティクル設定
+  - [x] 破片パーティクル生成（`createRadialParticles` 使用）
+- [x] 敵撃破時のアニメーション処理
+  - [x] `IpnePage.tsx` の handleAttack で敵HP<=0 時に `isDying=true` にマーク
+  - [x] `tickGameState.ts` で撃破アニメーション完了後（300ms）に敵リストから除去
+- [x] `Game.tsx` で撃破アニメーション描画
+  - [x] フェーズ1: 縮小描画（100ms）
+  - [x] フェーズ2: 白フラッシュ描画（50ms）
+  - [x] フェーズ3: スプライト非表示（150ms、パーティクルのみ）
+- [x] ユニットテスト
+  - [x] 撃破フラグの遷移テスト（getDeathPhase / getDeathScale / isDeathAnimationComplete）
+  - [x] 敵タイプ別パーティクル設定テスト
 
 ### 2-2. 攻撃ヒットエフェクトスケーリング [P2]
 
-- [ ] `effectManager.ts` の `addEffect` にオプション引数 `powerLevel` を追加
-- [ ] パワーレベル計算関数の実装
-  - [ ] `calculatePowerLevel(player): number`（0-4のスケール）
-- [ ] `ATTACK_HIT` エフェクトのスケーリング実装
-  - [ ] powerLevel 0: パーティクル4個、サイズ小
-  - [ ] powerLevel 1: パーティクル8個、サイズ中
-  - [ ] powerLevel 2: パーティクル12個 + 衝撃波リング
-  - [ ] powerLevel 3: パーティクル16個 + 衝撃波 + 画面フラッシュ
-  - [ ] powerLevel 4: パーティクル24個 + 衝撃波 + フラッシュ + シェイク
-- [ ] 衝撃波リング描画の実装（`drawHitShockwave`）
-- [ ] 画面フラッシュユーティリティの実装
-  - [ ] `addScreenFlash(color, duration)` メソッド
-  - [ ] `drawScreenFlash(ctx, width, height, now)` メソッド
-- [ ] `useGameLoop.ts` でエフェクト追加時に `powerLevel` を渡す
-- [ ] ユニットテスト
-  - [ ] パワーレベル計算のテスト
-  - [ ] 各レベルでのパーティクル数テスト
+- [x] `effectManager.ts` の `addEffect` にオプション引数 `powerLevel` を追加
+- [x] パワーレベル計算関数の実装
+  - [x] `calculatePowerLevel(player): number`（0-4のスケール）
+- [x] `ATTACK_HIT` エフェクトのスケーリング実装
+  - [x] powerLevel 0: パーティクル4個、サイズ小
+  - [x] powerLevel 1: パーティクル8個、サイズ中
+  - [x] powerLevel 2: パーティクル12個 + 衝撃波リング
+  - [x] powerLevel 3: パーティクル16個 + 衝撃波 + 画面フラッシュ
+  - [x] powerLevel 4: パーティクル24個 + 衝撃波 + フラッシュ + シェイク
+- [x] 衝撃波リング描画の実装（EffectManagerのringRadius/ringMaxRadius活用）
+- [x] 画面フラッシュの実装（EffectManagerのflashAlpha活用）
+- [x] `Game.tsx` でエフェクト追加時に `powerLevel` を渡す（`calculatePowerLevel(player)` 使用）
+- [x] ユニットテスト
+  - [x] パワーレベル計算のテスト
+  - [x] 各レベルでのパーティクル数テスト
 
 ### 2-3. コンボシステム [P2]
 
-- [ ] `src/features/ipne/combo.ts` を新規作成
-  - [ ] `ComboState` 型定義
-  - [ ] `createComboState()` 関数
-  - [ ] `registerKill()` 関数（コンボ更新）
-  - [ ] `isComboActive()` 関数（有効性チェック）
-  - [ ] `getComboMultiplier()` 関数（エフェクト倍率）
-  - [ ] 定数定義（`COMBO_WINDOW_MS`, `COMBO_DISPLAY_MIN`）
-- [ ] ゲームループへの統合
-  - [ ] `tickGameState.ts` または `useGameLoop.ts` で敵撃破時に `registerKill` 呼び出し
-  - [ ] `ComboState` をゲーム状態に含める
-- [ ] コンボカウンターUI描画
-  - [ ] `Game.tsx` でコンボカウンター表示（画面上部中央）
-  - [ ] ポップアニメーション（コンボ増加時に拡大→縮小）
-  - [ ] フェードアウト（コンボ時間切れ時）
-- [ ] エフェクトへのコンボ倍率適用
-  - [ ] `effectManager.ts` でパーティクル数にコンボ倍率を掛ける
+- [x] `src/features/ipne/combo.ts` を新規作成
+  - [x] `ComboState` 型定義
+  - [x] `createComboState()` 関数
+  - [x] `registerKill()` 関数（コンボ更新）
+  - [x] `isComboActive()` 関数（有効性チェック）
+  - [x] `getComboMultiplier()` 関数（エフェクト倍率）
+  - [x] 定数定義（`COMBO_WINDOW_MS`, `COMBO_DISPLAY_MIN`）
+- [x] ゲームループへの統合
+  - [x] `IpnePage.tsx` の handleAttack で敵撃破時に `registerKill` 呼び出し
+  - [x] `ComboState` を `useRef` でゲーム状態に含める
+- [x] コンボカウンターUI描画
+  - [x] `Game.tsx` でコンボカウンター表示（画面上部中央）
+  - [x] ポップアニメーション（コンボ増加時に拡大→縮小）
+  - [x] フェードアウト（コンボ時間切れ時）
+- [x] エフェクトへのコンボ倍率適用
+  - [x] `effectManager.ts` でパーティクル数にコンボ倍率を掛ける（comboMultiplierオプション）
 - [ ] コンボSEのピッチ変化
   - [ ] `soundEffect.ts` で敵撃破SEのピッチをコンボ数に応じて変化
-- [ ] ユニットテスト
-  - [ ] コンボ登録・時間切れテスト
-  - [ ] コンボ倍率計算テスト
-  - [ ] 最大コンボ記録テスト
+- [x] ユニットテスト
+  - [x] コンボ登録・時間切れテスト
+  - [x] コンボ倍率計算テスト
+  - [x] 最大コンボ記録テスト
 
 ### 2-5. ボス戦演出強化 [P2]
 
-- [ ] ボス登場 WARNING 演出
-  - [ ] `BossWarningState` 型定義
-  - [ ] ボス接近検知ロジック（距離5タイル以内）
-  - [ ] WARNING テキスト点滅描画（200ms間隔、赤色）
-  - [ ] 画面暗転オーバーレイ（alpha 0→0.5→0）
-  - [ ] 1ボスにつき1回のみ発火する制御
-- [ ] ボスHP残量演出
-  - [ ] `drawBossAura()` 関数実装
-  - [ ] HP50%以下: 赤オーラ（脈動 800ms周期）
-  - [ ] HP25%以下: 激しい赤オーラ（400ms周期）+ 微シェイク
-- [ ] ボス撃破演出の強化
-  - [ ] BOSS: 32個パーティクル + フラッシュ + シェイク
-  - [ ] MINI_BOSS: 24個パーティクル + フラッシュ + シェイク
-  - [ ] MEGA_BOSS: 3段階爆発（48個×3波、400ms間隔）
+- [x] ボス登場 WARNING 演出
+  - [x] `BossWarningState` 型定義
+  - [x] ボス接近検知ロジック（距離5タイル以内）
+  - [x] WARNINGフェーズ管理（darken → text → fadeout → done）
+  - [x] 1ボスにつき1回のみ発火する制御
+- [x] WARNING 演出の描画統合
+  - [x] WARNING テキスト点滅描画（200ms間隔、赤色）
+  - [x] 画面暗転オーバーレイ（alpha 0→0.5→0）
+- [x] ボスHP残量演出
+  - [x] `getBossAuraConfig()` 関数実装
+  - [x] HP50%以下: 赤オーラ（脈動 800ms周期）
+  - [x] HP25%以下: 激しい赤オーラ（400ms周期）+ 微シェイク
+- [x] ボスHP残量演出の描画統合
+  - [x] ボスHP残量オーラを `Game.tsx` の敵描画ループに統合
+- [x] ボス撃破演出の設定
+  - [x] BOSS: 32個パーティクル + フラッシュ(300ms) + シェイク(400ms)
+  - [x] MINI_BOSS: 24個パーティクル + フラッシュ(200ms) + シェイク(300ms)
+  - [x] MEGA_BOSS: 3段階爆発（48個×3波、400ms間隔）
+- [x] ボス撃破演出の描画統合（BOSS_KILL エフェクトキューで処理）
 - [ ] ボス戦BGM切り替え
   - [ ] ボス接近時に `playBossBgm()` 呼び出し
   - [ ] ボス撃破後に `playGameBgm(currentStage)` に復帰
-- [ ] ユニットテスト
-  - [ ] WARNING 発火条件テスト
-  - [ ] 重複 WARNING 防止テスト
-  - [ ] HP残量によるオーラ段階テスト
+- [x] ユニットテスト
+  - [x] WARNING 発火条件テスト
+  - [x] 重複 WARNING 防止テスト
+  - [x] HP残量によるオーラ段階テスト
+  - [x] ボス撃破演出設定テスト
 
 ---
 

@@ -36,7 +36,7 @@ export const TickSaveEffect = {
 export type TickSaveEffectValue = (typeof TickSaveEffect)[keyof typeof TickSaveEffect];
 
 export type GameTickEffect =
-  | { kind: 'sound'; type: TickSoundEffectValue }
+  | { kind: 'sound'; type: TickSoundEffectValue; damage?: number; enemyType?: string }
   | { kind: 'display'; type: TickDisplayEffectValue }
   | { kind: 'save'; type: TickSaveEffectValue };
 
@@ -118,7 +118,14 @@ export function tickGameState(
   }
 
   const updateResult = dependencies.updateEnemiesWithContact(enemies, nextPlayer, map, currentTime);
-  const updatedEnemies = updateResult.enemies.filter(enemy => enemy.hp > 0);
+  // isDying 状態の敵はアニメーション完了まで保持（300ms）
+  const updatedEnemies = updateResult.enemies.filter(enemy => {
+    if (enemy.hp > 0) return true;
+    if (enemy.isDying && enemy.deathStartTime) {
+      return currentTime - enemy.deathStartTime < 300;
+    }
+    return false;
+  });
 
   if (updateResult.contactDamage > 0) {
     const damageResult = dependencies.resolvePlayerDamage({
@@ -133,7 +140,12 @@ export function tickGameState(
     });
     nextPlayer = damageResult.player;
     if (damageResult.tookDamage) {
-      effects.push({ kind: 'sound', type: TickSoundEffect.PLAYER_DAMAGE });
+      effects.push({
+        kind: 'sound',
+        type: TickSoundEffect.PLAYER_DAMAGE,
+        damage: updateResult.contactDamage,
+        enemyType: updateResult.contactEnemy?.type,
+      });
     } else {
       // 無敵時間中にダメージを回避
       effects.push({ kind: 'sound', type: TickSoundEffect.DODGE });
@@ -149,7 +161,12 @@ export function tickGameState(
     });
     nextPlayer = damageResult.player;
     if (damageResult.tookDamage) {
-      effects.push({ kind: 'sound', type: TickSoundEffect.PLAYER_DAMAGE });
+      effects.push({
+        kind: 'sound',
+        type: TickSoundEffect.PLAYER_DAMAGE,
+        damage: updateResult.attackDamage,
+        enemyType: updateResult.contactEnemy?.type,
+      });
     } else {
       // 無敵時間中にダメージを回避
       effects.push({ kind: 'sound', type: TickSoundEffect.DODGE });
