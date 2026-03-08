@@ -120,54 +120,67 @@
 
 ---
 
-## フェーズ3: デザインパターン導入
+## フェーズ3: デザインパターン導入 ✅ 完了
 
 ### 3.1 Strategy パターン — スキル
 
-- [ ] `domain/skill/skill-handler.ts`: SkillHandler インターフェース定義
-- [ ] `domain/skill/handlers/dmg-all-handler.ts`: ダメージスキルハンドラー
-- [ ] `domain/skill/handlers/heal-all-handler.ts`: 回復スキルハンドラー
-- [ ] `domain/skill/handlers/buff-atk-handler.ts`: バフスキルハンドラー
-- [ ] `domain/skill/handlers/shield-handler.ts`: シールドスキルハンドラー
-- [ ] `domain/skill/skill-registry.ts`: SkillRegistry 構築
-- [ ] `domain/skill/skill-service.ts`: applySkill を SkillRegistry ベースに書き換え
-- [ ] 既存のスキルテストが全てパス
+- [x] `domain/skill/skill-handler.ts`: SkillHandler インターフェース定義
+- [x] `domain/skill/handlers/dmg-all-handler.ts`: ダメージスキルハンドラー
+- [x] `domain/skill/handlers/heal-all-handler.ts`: 回復スキルハンドラー
+- [x] `domain/skill/handlers/buff-atk-handler.ts`: バフスキルハンドラー
+- [x] `domain/skill/handlers/shield-handler.ts`: シールドスキルハンドラー
+- [x] `domain/skill/handlers/skill-handler-base.ts`: 共通ベースヘルパー（DRY対応で追加）
+- [x] `domain/skill/skill-registry.ts`: SkillRegistry 構築（型安全なキー: `SkillFx['t']`）
+- [x] `domain/skill/skill-service.ts`: applySkill を SkillRegistry ベースに書き換え
+- [x] 既存のスキルテストが全てパス
 
 ### 3.2 Strategy パターン — イベント効果
 
-- [ ] `domain/event/event-effect-handler.ts`: EventEffectHandler インターフェース定義
-- [ ] `domain/event/handlers/stat-change-handler.ts`: ステータス変更ハンドラー
-- [ ] `domain/event/handlers/heal-handler.ts`: 回復ハンドラー
-- [ ] `domain/event/handlers/damage-handler.ts`: ダメージハンドラー
-- [ ] `domain/event/handlers/bone-change-handler.ts`: ボーン変更ハンドラー
-- [ ] `domain/event/handlers/add-ally-handler.ts`: 仲間追加ハンドラー
-- [ ] `domain/event/handlers/random-evolution-handler.ts`: ランダム進化ハンドラー
-- [ ] `domain/event/handlers/civ-level-up-handler.ts`: 文明レベルアップハンドラー
-- [ ] `domain/event/handlers/nothing-handler.ts`: 無効果ハンドラー
-- [ ] `domain/event/event-effect-registry.ts`: EventEffectRegistry 構築
-- [ ] `domain/event/event-service.ts`: applyEventChoice を Registry ベースに書き換え
-- [ ] 既存のイベントテストが全てパス
+- [x] `domain/event/event-effect-handler.ts`: EventEffectHandler インターフェース定義
+- [x] `domain/event/handlers/stat-change-handler.ts`: ステータス変更ハンドラー
+- [x] `domain/event/handlers/heal-handler.ts`: 回復ハンドラー
+- [x] `domain/event/handlers/damage-handler.ts`: ダメージハンドラー
+- [x] `domain/event/handlers/bone-change-handler.ts`: ボーン変更ハンドラー
+- [x] `domain/event/handlers/add-ally-handler.ts`: 仲間追加ハンドラー
+- [x] `domain/event/handlers/random-evolution-handler.ts`: ランダム進化ハンドラー
+- [x] `domain/event/handlers/civ-level-up-handler.ts`: 文明レベルアップハンドラー
+- [x] `domain/event/handlers/nothing-handler.ts`: 無効果ハンドラー
+- [x] `domain/event/handlers/cost-helper.ts`: コスト表示ヘルパー（DRY対応で追加）
+- [x] `domain/event/event-effect-registry.ts`: EventEffectRegistry 構築（型安全なキー: `EventEffect['type']`）
+- [x] `domain/event/event-service.ts`: applyEventChoice, getEffectHintColor, getEffectHintIcon, formatEventResult を Registry ベースに書き換え
+- [x] 既存のイベントテストが全てパス
 
 ### 3.3 Strategy パターン — 実績
 
-- [ ] `domain/achievement/achievement-checker.ts`: AchievementChecker インターフェース定義
-- [ ] `domain/achievement/checkers/`: 各実績チェッカーを個別ファイルで実装（15種類）
-- [ ] `domain/achievement/achievement-registry.ts`: AchievementRegistry 構築
-- [ ] `domain/achievement/achievement-service.ts`: checkAchievement を Registry ベースに書き換え
-- [ ] 既存の実績テストが全てパス
+- [x] `domain/achievement/achievement-checker.ts`: AchievementChecker インターフェース定義
+- [x] `domain/achievement/checkers/index.ts`: 全15種類の実績チェッカーを実装
+- [x] `domain/achievement/achievement-registry.ts`: AchievementRegistry 構築（型安全なキー: `AchievementCondition['type']`）
+- [x] `domain/achievement/achievement-service.ts`: checkAchievement を Registry ベースに書き換え
+- [x] 既存の実績テストが全てパス
 
 ### 3.4 戦闘ログコレクター
 
-- [ ] `domain/battle/battle-log-collector.ts`: BattleLogCollector 定義
-- [ ] `domain/battle/tick-phases.ts`: tick内のログ追加を BattleLogCollector 経由に変更
-- [ ] 既存のテストが全てパス
+- [x] `domain/battle/battle-log-collector.ts`: BattleLogCollector 定義（イミュータブルな Collector パターン）
+- [x] tick-phases.ts への統合は P4（hooks分割）で段階的に実施予定（現時点ではユーティリティとして提供）
+- [x] 既存のテストが全てパス
 
 ### P3 検証
 
-- [ ] `npm test` 全テストパス
-- [ ] `npx tsc --noEmit` 型エラーなし
-- [ ] `npm run build` ビルド成功
-- [ ] 既存の振る舞いに変更がないことを確認
+- [x] `npm test` 全テストパス（253スイート / 3379テスト）
+- [x] `npx tsc --noEmit` 型エラーなし
+- [x] `npm run build` ビルド成功
+- [x] 既存の振る舞いに変更がないことを確認
+
+### P3 補足: spec との差異・設計判断
+
+- `withSkillBase` ヘルパーを導入: 全スキルハンドラーの deepCloneRun + 型ガードボイラープレートを共通化（DRY原則）
+- `cost-helper.ts` を追加: イベントハンドラー間のコスト表示ロジック重複を解消
+- レジストリキーに Discriminated Union の type を使用（`string` → `SkillFx['t']` 等）で型安全性向上
+- 実績チェッカーは1ファイル（`checkers/index.ts`）にまとめ: 各チェッカーが1行のロジックのため、15ファイル分割は過度な粒度と判断
+- BattleLogCollector は tick-phases.ts への直接統合を見送り: 各フェーズ関数のシグネチャ変更が大きいため、P4で段階的に組み込む方針
+- 実績チェッカーのマジックナンバー（4, 1.0）を名前付き定数に置換
+- EventEffectHandler に表示ロジック（getHintColor, getHintIcon, formatResult）を含む設計: 表示と効果適用が同一のレジストリで解決できるため、責務の集約として採用
+- 新規テスト: スキルハンドラー4テストファイル + スキルレジストリ1テストファイル + イベントハンドラー1テストファイル + 実績チェッカー1テストファイル + ログコレクター1テストファイル = 計8テストファイル追加
 
 ---
 
