@@ -18,6 +18,8 @@ import {
   GamePhase,
   ShakeState,
   MatchStats,
+  HitStopState,
+  SlowMotionState,
 } from '../core/types';
 import { applyKeyboardMovement } from './useKeyboardInput';
 import { KeyboardState } from '../core/keyboard';
@@ -107,6 +109,34 @@ export function useGameLoop(
       setShake(newShake);
     };
 
+    // ヒットストップ状態（US-1.4）
+    const hitStop: HitStopState = {
+      active: false,
+      framesRemaining: 0,
+      impactX: 0,
+      impactY: 0,
+      shockwaveRadius: 0,
+      shockwaveMaxRadius: 80,
+    };
+
+    // スローモーション状態（US-1.5）
+    const slowMo: SlowMotionState = {
+      active: false,
+      startTime: 0,
+      duration: 400,
+    };
+
+    // スローモーション倍率を取得
+    const getTimeScale = (now: number): number => {
+      if (!slowMo.active) return 1;
+      const elapsed = now - slowMo.startTime;
+      if (elapsed >= slowMo.duration) {
+        slowMo.active = false;
+        return 1;
+      }
+      return 0.3;
+    };
+
     const processCollisions = <T extends Puck | Item>(
       obj: T,
       radius: number,
@@ -165,9 +195,19 @@ export function useGameLoop(
             }
           }
 
-          // 強打時のシェイク
+          // 強打時のシェイク + ヒットストップ
           if (isPuck && speed > STRONG_HIT_SPEED_THRESHOLD) {
             triggerShake(HIT_SHAKE_INTENSITY, HIT_SHAKE_DURATION);
+            // ヒットストップ発動（US-1.4）
+            const postSpeed = magnitude(obj.vx, obj.vy);
+            if (postSpeed > STRONG_HIT_SPEED_THRESHOLD && !hitStop.active) {
+              hitStop.active = true;
+              hitStop.framesRemaining = 3;
+              hitStop.impactX = obj.x;
+              hitStop.impactY = obj.y;
+              hitStop.shockwaveRadius = 0;
+              hitStop.shockwaveMaxRadius = 80;
+            }
           }
         }
       }
@@ -278,6 +318,45 @@ export function useGameLoop(
         Renderer.drawMallet(ctx, game.cpu, '#e74c3c', false, consts);
         Renderer.drawMallet(ctx, game.player, '#3498db', game.effects.player.invisible > 0, consts);
         Renderer.drawPauseOverlay(ctx, consts);
+        animationRef = requestAnimationFrame(gameLoop);
+        return;
+      }
+
+      // Big / カムバックによるマレットサイズスケール計算
+      const getMalletScale = (side: 'player' | 'cpu'): number => {
+        let scale = 1;
+        const bigEff = game.effects[side].big;
+        if (bigEff && now - bigEff.start < bigEff.duration) {
+          scale *= bigEff.scale;
+        }
+        const pScore = scoreRef.current.p;
+        const cScore = scoreRef.current.c;
+        const scoreDiff2 = side === 'player' ? cScore - pScore : pScore - cScore;
+        if (scoreDiff2 >= consts.COMEBACK.THRESHOLD) {
+          scale *= 1 + consts.COMEBACK.MALLET_BONUS;
+        }
+        return scale;
+      };
+
+      // ヒットストップ中は物理更新をスキップ、描画のみ実行（US-1.4）
+      if (hitStop.active) {
+        hitStop.framesRemaining--;
+        hitStop.shockwaveRadius += 20;
+        if (hitStop.framesRemaining <= 0) {
+          hitStop.active = false;
+        }
+        // 描画のみ実行
+        Renderer.clear(ctx, consts, now);
+        Renderer.drawField(ctx, field, consts, game.obstacleStates, now);
+        Renderer.drawEffectZones(ctx, game.effects, now, consts);
+        game.items.forEach((item: Item) => Renderer.drawItem(ctx, item, now, consts));
+        game.pucks.forEach((puck: Puck) => Renderer.drawPuck(ctx, puck, consts));
+        const cpuScale = getMalletScale('cpu');
+        const playerScale = getMalletScale('player');
+        Renderer.drawMallet(ctx, game.cpu, '#e74c3c', false, consts, cpuScale);
+        Renderer.drawMallet(ctx, game.player, '#3498db', game.effects.player.invisible > 0, consts, playerScale);
+        Renderer.drawParticles(ctx, game.particles);
+        Renderer.drawShockwave(ctx, hitStop);
         animationRef = requestAnimationFrame(gameLoop);
         return;
       }
@@ -418,6 +497,10 @@ export function useGameLoop(
         if (playerSpeedActive) speedMultiplier = puck.y > H / 2 ? 0.5 : 1.5;
         if (cpuSpeedActive) speedMultiplier = puck.y < H / 2 ? 0.5 : 1.5;
 
+        // スローモーション倍率を適用（US-1.5）
+        const timeScale = getTimeScale(now);
+        speedMultiplier *= timeScale;
+
         // トレイル記録
         if (!puck.trail) puck.trail = [];
         puck.trail.push({ x: puck.x, y: puck.y });
@@ -516,22 +599,6 @@ export function useGameLoop(
         );
       }
 
-      // Big / カムバックによるマレットサイズスケール計算
-      const getMalletScale = (side: 'player' | 'cpu'): number => {
-        let scale = 1;
-        const bigEff = game.effects[side].big;
-        if (bigEff && now - bigEff.start < bigEff.duration) {
-          scale *= bigEff.scale;
-        }
-        const pScore = scoreRef.current.p;
-        const cScore = scoreRef.current.c;
-        const scoreDiff2 = side === 'player' ? cScore - pScore : pScore - cScore;
-        if (scoreDiff2 >= consts.COMEBACK.THRESHOLD) {
-          scale *= 1 + consts.COMEBACK.MALLET_BONUS;
-        }
-        return scale;
-      };
-
       // 描画
       Renderer.clear(ctx, consts, now);
       Renderer.drawField(ctx, field, consts, game.obstacleStates, now);
@@ -558,12 +625,27 @@ export function useGameLoop(
         Renderer.drawMagnetEffect(ctx, game.cpu, now);
       }
 
+      // スローモーション中のビネット効果（US-1.5）
+      if (slowMo.active) {
+        Renderer.drawVignette(ctx, consts, 0.5);
+      }
+
+      // 衝撃波描画（US-1.4）
+      Renderer.drawShockwave(ctx, hitStop);
+
       if (showHelp) {
         Renderer.drawHelp(ctx, consts, field);
       }
 
       // ゴール判定とスコア更新
       if (scored) {
+        // スローモーション発動（US-1.5）
+        if (!slowMo.active) {
+          slowMo.active = true;
+          slowMo.startTime = now;
+          slowMo.duration = 400;
+        }
+
         const key = scored === 'cpu' ? 'p' : 'c';
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore

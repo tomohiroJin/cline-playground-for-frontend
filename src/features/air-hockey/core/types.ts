@@ -128,6 +128,23 @@ export type ShakeState = {
   startTime: number;
 };
 
+// ヒットストップ状態（強打時の物理更新停止 + 衝撃波演出）
+export type HitStopState = {
+  active: boolean;
+  framesRemaining: number;
+  impactX: number;
+  impactY: number;
+  shockwaveRadius: number;
+  shockwaveMaxRadius: number;
+};
+
+// スローモーション状態（ゴール時の演出）
+export type SlowMotionState = {
+  active: boolean;
+  startTime: number;
+  duration: number;
+};
+
 export type SoundSystem = {
   hit: (speed?: number) => void;
   wall: (angle?: number) => void;
