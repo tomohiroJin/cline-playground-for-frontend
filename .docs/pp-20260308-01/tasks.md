@@ -5,42 +5,53 @@
 
 ---
 
-## フェーズ1: ドメインモデルの定義と型の再構築
+## フェーズ1: ドメインモデルの定義と型の再構築 ✅ 完了
 
 ### 1.1 型ディレクトリの構築
 
-- [ ] `types/` ディレクトリを新設
-- [ ] `types/common.ts`: LogEntry, Popup, TreeBonus 等の共通型を定義
-- [ ] `types/player.ts`: PlayerState インターフェースを定義
-- [ ] `types/battle.ts`: BattleState, Enemy 型を定義（en は Enemy | null）
-- [ ] `types/progression.ts`: ProgressState, BiomeId, BiomeIdExt, Difficulty 型を定義（fe は CivTypeExt | null, fReq/cB は number, bms は BiomeId[], cBT は BiomeIdExt）
-- [ ] `types/evolution.ts`: EvolutionState, Evolution, EvoEffect 型を定義
-- [ ] `types/skill.ts`: SkillState, ASkillDef, SkillFx, SkillSt, Ally, ASkillId 型を定義（mxA フィールド含む）
-- [ ] `types/awakening.ts`: AwakeningState, AwokenRecord 型を定義（saReq/rvU は number 型）
-- [ ] `types/stats.ts`: RunStatsState, RunStats, AggregateStats 型を定義
-- [ ] `types/challenge.ts`: ChallengeState, ChallengeModifier, ChallengeDef 型を定義
-- [ ] `types/endless.ts`: EndlessState 型を定義
-- [ ] `types/save.ts`: SaveData, MetaStorage 型を定義
-- [ ] `types/index.ts`: barrel export
+- [x] `types/` ディレクトリを新設
+- [x] `types/common.ts`: LogEntry, DmgPopup, TreeBonus, CivType, Difficulty 等の共通型を定義
+- [x] `types/player.ts`: PlayerState インターフェースを定義
+- [x] `types/battle.ts`: BattleState 型を定義（en は Enemy | null）
+- [x] `types/units.ts`: Ally, AllyTemplate, Enemy, EnemyTemplate 型を定義（spec の battle.ts から分離）
+- [x] `types/progression.ts`: ProgressState 型を定義（fe は CivTypeExt | null, fReq/cB は number, bms は BiomeId[], cBT は BiomeIdExt）
+- [x] `types/evolution.ts`: EvolutionState, Evolution, EvoEffect, SynergyTag 等の型を定義
+- [x] `types/skill.ts`: SkillState, ASkillDef, SkillFx, SkillSt, ASkillId 型を定義（mxA フィールド含む）
+- [x] `types/awakening.ts`: AwakeningState, AwokenRecord 型を定義（saReq/rvU は number 型）
+- [x] `types/stats.ts`: RunStatsState, RunStats, AggregateStats 型を定義
+- [x] `types/challenge.ts`: ChallengeState, ChallengeModifier, ChallengeDef 型を定義
+- [x] `types/endless.ts`: EndlessState 型を定義
+- [x] `types/save.ts`: SaveData 型を定義
+- [x] `types/event.ts`: EventId, EventEffect, EventChoice, RandomEventDef 等の型を定義
+- [x] `types/achievement.ts`: AchievementCondition, AchievementDef, AchievementState 型を定義
+- [x] `types/tick.ts`: TickResult, TickEvent, PlayerAttackResult 型を定義
+- [x] `types/game-state.ts`: RunState（合成型）, GameState 型を定義
+- [x] `types/index.ts`: barrel export
 
 ### 1.2 RunState の再定義
 
-- [ ] `types.ts`: RunState をサブステートの合成型（intersection）として再定義
-- [ ] `types.ts`: 旧 RunState の全フィールドが合成型でカバーされていることを確認
-- [ ] 既存テストが全てパスすることを確認
+- [x] `types/game-state.ts`: RunState をサブステートの合成型（extends）として再定義
+- [x] `types.ts`: 旧 types.ts を barrel re-export に変換し後方互換を維持
+- [x] 既存テストが全てパスすることを確認（229スイート / 3209テスト）
 
 ### 1.3 GamePhase ステートマシン
 
-- [ ] `types/phase.ts`: GamePhase 型を明示的に定義（endless_checkpoint, challenge フェーズ含む）
-- [ ] `types/phase.ts`: PHASE_TRANSITIONS テーブルを定義
-- [ ] `types/phase.ts`: `assertValidTransition` ヘルパー関数を定義
+- [x] `types/phase.ts`: GamePhase 型を明示的に定義（endless_checkpoint, challenge フェーズ含む）
+- [x] `types/phase.ts`: PHASE_TRANSITIONS テーブルを定義
+- [x] `types/phase.ts`: `assertValidTransition` / `isValidTransition` ヘルパー関数を定義
 
 ### P1 検証
 
-- [ ] `npm test` 全テストパス
-- [ ] `npx tsc --noEmit` 型エラーなし
-- [ ] `npm run build` ビルド成功
-- [ ] 既存の振る舞いに変更がないことを確認
+- [x] `npm test` 全テストパス（229スイート / 3209テスト）
+- [x] `npx tsc --noEmit` 型エラーなし
+- [x] `npm run build` ビルド成功
+- [x] 既存の振る舞いに変更がないことを確認
+
+### P1 補足: spec との差異
+
+- `units.ts` を新設: Ally/Enemy 関連型は battle.ts ではなく独立ファイルに分離（循環参照回避のため）
+- BiomeId/BiomeIdExt/Difficulty 等の広範囲参照型は `common.ts` に配置（spec の progression.ts ではなく）
+- MetaStorage 型は既存コードに存在しなかったためスキップ
 
 ---
 
