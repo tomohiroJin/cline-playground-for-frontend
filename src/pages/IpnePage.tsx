@@ -41,7 +41,7 @@ import { calculateRating } from '../features/ipne/ending';
 import { resolvePlayerDamage } from '../features/ipne/application';
 import {
   playPlayerDamageSound,
-  playEnemyKillSound,
+  playEnemyKillSoundWithPitch,
   playBossKillSound,
   playLevelUpSound,
   playMoveStepSound,
@@ -349,7 +349,9 @@ const IpnePage: React.FC = () => {
           effectQueueRef.current.push({ type: EffectType.BOSS_KILL, x: boss.x, y: boss.y });
         }
       } else {
-        playEnemyKillSound();
+        // コンボSEピッチ変化
+        const comboCount = comboStateRef.current.count + newlyKilledEnemies.length;
+        playEnemyKillSoundWithPitch(comboCount);
       }
 
       // コンボ更新 + 敵撃破エフェクト
@@ -385,8 +387,12 @@ const IpnePage: React.FC = () => {
           state.setPendingLevelPoints(prev => prev + 1);
           addedPointsInLoop++;
           playLevelUpSound();
-          // レベルアップエフェクト
+          // レベルアップエフェクト（螺旋パーティクル + 金色フラッシュ）
           effectQueueRef.current.push({ type: EffectType.LEVEL_UP, x: updatedPlayer.x, y: updatedPlayer.y });
+          // レベルアップテキスト表示
+          const nextLevel = effectiveLevel + 1;
+          floatingTextManagerRef.current.addText('LEVEL UP!', updatedPlayer.x, updatedPlayer.y - 1, FloatingTextType.INFO, currentTime);
+          floatingTextManagerRef.current.addText(`Lv.${nextLevel}`, updatedPlayer.x, updatedPlayer.y - 0.5, FloatingTextType.COMBO, currentTime + 200);
         }
       }
     }
@@ -446,6 +452,7 @@ const IpnePage: React.FC = () => {
             isDying={state.screen === ScreenState.DYING}
             currentStage={state.currentStage}
             maxLevel={state.currentStageConfig.maxLevel}
+            stageRewards={state.stageRewards}
           />
           {state.showLevelUpModal && state.pendingLevelPoints > 0 && (
             <LevelUpOverlayComponent

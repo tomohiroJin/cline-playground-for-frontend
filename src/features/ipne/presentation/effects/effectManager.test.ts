@@ -48,7 +48,7 @@ describe('EffectManager', () => {
 
     it('レベルアップエフェクトのパーティクルが生成される', () => {
       manager.addEffect(EffectType.LEVEL_UP, 100, 200, 1000);
-      expect(manager.getTotalParticleCount()).toBe(12);
+      expect(manager.getTotalParticleCount()).toBe(24);
     });
 
     it('罠エフェクトのパーティクルが生成される', () => {

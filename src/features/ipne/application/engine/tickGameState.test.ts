@@ -100,10 +100,10 @@ describe('tickGameState', () => {
     expect(result.pendingLevelPoints).toBe(1);
     expect(result.effects).toEqual(
       expect.arrayContaining([
-        { kind: 'sound', type: TickSoundEffect.ITEM_PICKUP },
-        { kind: 'sound', type: TickSoundEffect.HEAL },
-        { kind: 'sound', type: TickSoundEffect.LEVEL_UP },
-        { kind: 'display', type: TickDisplayEffect.MAP_REVEALED },
+        expect.objectContaining({ kind: 'sound', type: TickSoundEffect.ITEM_PICKUP }),
+        expect.objectContaining({ kind: 'sound', type: TickSoundEffect.HEAL }),
+        expect.objectContaining({ kind: 'sound', type: TickSoundEffect.LEVEL_UP }),
+        expect.objectContaining({ kind: 'display', type: TickDisplayEffect.MAP_REVEALED }),
       ])
     );
   });

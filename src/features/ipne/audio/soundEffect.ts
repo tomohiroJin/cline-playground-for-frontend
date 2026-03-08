@@ -412,6 +412,65 @@ export function getSoundSettings(): AudioSettings {
 }
 
 /**
+ * コンボ数に応じたSEピッチ変化率を返す
+ * @param comboCount コンボ数
+ * @returns ピッチ率（1.0〜1.4）
+ */
+export function getComboSePitchRate(comboCount: number): number {
+  if (comboCount >= 10) return 1.4;
+  if (comboCount >= 7) return 1.3;
+  if (comboCount >= 4) return 1.2;
+  if (comboCount >= 2) return 1.1;
+  return 1.0;
+}
+
+/**
+ * ピッチを変化させて敵撃破SEを再生する
+ * @param comboCount コンボ数
+ */
+export function playEnemyKillSoundWithPitch(comboCount: number): void {
+  const volume = getEffectiveVolume();
+  if (volume <= 0) return;
+
+  const ctx = getAudioContext();
+  if (!ctx || !isAudioInitialized()) return;
+
+  const pitchRate = getComboSePitchRate(comboCount);
+  const config = SOUND_CONFIGS[SoundEffectType.ENEMY_KILL];
+
+  try {
+    const osc = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+
+    osc.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    osc.type = config.type;
+    const baseFreq = config.frequency * pitchRate;
+    osc.frequency.setValueAtTime(baseFreq, ctx.currentTime);
+
+    if (config.sweep !== undefined) {
+      osc.frequency.exponentialRampToValueAtTime(
+        config.sweep * pitchRate,
+        ctx.currentTime + config.duration
+      );
+    }
+
+    const vol = config.gain * volume;
+    gainNode.gain.setValueAtTime(vol, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(
+      0.001,
+      ctx.currentTime + config.duration * 0.9
+    );
+
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + config.duration);
+  } catch {
+    // 音声再生エラーは無視
+  }
+}
+
+/**
  * 音声設定をリセットする（主にテスト用）
  */
 export function resetSoundSettings(): void {

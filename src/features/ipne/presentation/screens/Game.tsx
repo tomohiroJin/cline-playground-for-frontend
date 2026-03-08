@@ -167,6 +167,10 @@ import {
   ENEMY_MELEE_SLASH_SPRITE_SHEET,
   ENEMY_RANGED_SHOT_SPRITE_SHEET,
 } from '../sprites';
+import { drawPlayerAura } from '../effects/aura';
+import { drawWeaponTrail, getWeaponTier, WeaponTier, drawShockwave } from '../effects/weaponEffect';
+import { getActiveRewardEffects, drawShieldGlow, drawAfterImage, drawSpinParticles, drawHealParticles, AfterImageManager } from '../effects/stageVisual';
+import { getStageIntroPhase, getStageIntroAlpha, getStageIntroTextAlpha, getGameOverTransitionAlpha, STAGE_INTRO_DURATION } from '../effects/screenTransition';
 import warriorClassImg from '../../../../assets/images/ipne_class_warrior.webp';
 import thiefClassImg from '../../../../assets/images/ipne_class_thief.webp';
 
@@ -206,6 +210,8 @@ export interface EffectEvent {
   powerLevel?: number;
   /** エフェクトバリエーション（ENEMY_ATTACK用: melee/ranged/boss） */
   variant?: string;
+  /** アイテム種類（ITEM_PICKUP用） */
+  itemType?: string;
 }
 
 /**
@@ -408,6 +414,8 @@ export const GameScreen: React.FC<{
   // 5ステージ制
   currentStage?: StageNumber;
   maxLevel?: number;
+  // ステージ報酬履歴（ステージ進行見た目変化用）
+  stageRewards?: import('../../types').StageRewardHistory[];
 }> = ({
   map,
   player,
@@ -445,6 +453,8 @@ export const GameScreen: React.FC<{
   // 5ステージ制
   currentStage,
   maxLevel = 10,
+  // ステージ報酬履歴
+  stageRewards = [],
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasWrapperRef = useRef<HTMLDivElement>(null);
@@ -463,6 +473,16 @@ export const GameScreen: React.FC<{
 
   // ボスWARNING状態
   const bossWarningRef = useRef<BossWarningState>(createBossWarningState());
+
+  // ステージ開始演出タイムスタンプ
+  const stageStartTimeRef = useRef<number>(Date.now());
+
+  // ゲームオーバー遷移タイムスタンプ
+  const dyingStartTimeRef = useRef<number>(0);
+
+  // ステージ進行見た目変化
+  const afterImageManagerRef = useRef(new AfterImageManager());
+  const rewardEffects = useMemo(() => getActiveRewardEffects(stageRewards), [stageRewards]);
 
   // アニメーション状態管理（Phase 3）
   const playerAttackUntilRef = useRef(0);  // 攻撃アニメーション終了時刻
@@ -495,10 +515,16 @@ export const GameScreen: React.FC<{
   useEffect(() => {
     if (isDying) {
       deathEffectRef.current.start(Date.now());
+      dyingStartTimeRef.current = Date.now();
     } else {
       deathEffectRef.current.reset();
     }
   }, [isDying]);
+
+  // ステージ変更時にステージ開始演出をリセット
+  useEffect(() => {
+    stageStartTimeRef.current = Date.now();
+  }, [currentStage]);
 
   // 点滅表現用の再描画トリガー
   useEffect(() => {
@@ -863,6 +889,7 @@ export const GameScreen: React.FC<{
           comboMultiplier: evt.comboMultiplier,
           powerLevel: evt.powerLevel,
           variant: evt.variant as 'melee' | 'ranged' | 'boss' | undefined,
+          itemType: evt.itemType as import('../../types').ItemTypeValue | undefined,
         });
       }
       effectQueueRef.current = [];
@@ -910,6 +937,24 @@ export const GameScreen: React.FC<{
       // 通常時の描画（Phase 3: 優先度 攻撃 > 被弾 > 移動 > アイドルブリーズ）
       const isBlinkOff = player.isInvincible && Math.floor(now / 100) % 2 === 1;
 
+      // パワーオーラ描画（スプライトの背面）
+      if (!isBlinkOff) {
+        drawPlayerAura(ctx, playerScreen.x, playerScreen.y, viewport.tileSize, player.level, player.playerClass, now);
+
+        // シールド輝き描画（maxHp強化時）
+        if (rewardEffects.hasShieldGlow) {
+          drawShieldGlow(ctx, playerScreen.x, playerScreen.y, viewport.tileSize, now);
+        }
+
+        // 残像描画（移動速度強化時、スプライト背面に描画）
+        if (rewardEffects.hasAfterImage) {
+          for (const img of afterImageManagerRef.current.getAfterImages()) {
+            const imgScreen = toScreenPosition(img);
+            drawAfterImage(ctx, imgScreen.x, imgScreen.y, viewport.tileSize, img.alpha);
+          }
+        }
+      }
+
       if (!isBlinkOff) {
         const pClass = player.playerClass as 'warrior' | 'thief';
         const pDir = player.direction as 'down' | 'up' | 'left' | 'right';
@@ -926,6 +971,17 @@ export const GameScreen: React.FC<{
           const attackSheet = attackSheets[pDir];
           const attackFrameIndex = Math.floor(now / attackSheet.frameDuration) % attackSheet.sprites.length;
           spriteRenderer.drawSprite(ctx, attackSheet.sprites[attackFrameIndex], playerDrawX, playerDrawY, spriteScale);
+
+          // 武器光跡描画（攻撃アニメーション中のみ）
+          const attackDuration = playerAttackUntilRef.current - (playerAttackUntilRef.current - 300);
+          const attackElapsed = now - (playerAttackUntilRef.current - 300);
+          const attackProgress = Math.min(1, Math.max(0, attackElapsed / attackDuration));
+          drawWeaponTrail(ctx, playerScreen.x, playerScreen.y, viewport.tileSize, player.direction, player.stats.attackPower, player.playerClass, attackProgress);
+
+          // 衝撃波描画（RADIANT ティアのみ、攻撃ヒット時）
+          if (getWeaponTier(player.stats.attackPower) === WeaponTier.RADIANT) {
+            drawShockwave(ctx, playerScreen.x, playerScreen.y, viewport.tileSize, attackElapsed);
+          }
         } else if (isDamaged) {
           // 被弾フレーム（200ms表示）
           const damageSprites = pClass === 'warrior' ? WARRIOR_DAMAGE_SPRITES : THIEF_DAMAGE_SPRITES;
@@ -935,12 +991,27 @@ export const GameScreen: React.FC<{
           const playerSheet = getPlayerSpriteSheet(pClass, pDir);
           const walkFrameIndex = Math.floor(now / playerSheet.frameDuration) % 2;
           spriteRenderer.drawSprite(ctx, playerSheet.sprites[1 + walkFrameIndex], playerDrawX, playerDrawY, spriteScale);
+
+          // 残像記録（移動速度強化時）
+          if (rewardEffects.hasAfterImage) {
+            afterImageManagerRef.current.recordPosition(player.x, player.y, player.direction, now);
+          }
         } else {
           // アイドルブリーズアニメーション
           const idleSheets = pClass === 'warrior' ? WARRIOR_IDLE_SPRITE_SHEETS : THIEF_IDLE_SPRITE_SHEETS;
           const idleSheet = idleSheets[pDir];
           const idleFrameIndex = Math.floor(now / idleSheet.frameDuration) % idleSheet.sprites.length;
           spriteRenderer.drawSprite(ctx, idleSheet.sprites[idleFrameIndex], playerDrawX, playerDrawY, spriteScale);
+        }
+
+        // 回転パーティクル描画（攻撃速度強化時、常時微小表示）
+        if (rewardEffects.hasSpinParticles) {
+          drawSpinParticles(ctx, playerScreen.x, playerScreen.y, viewport.tileSize, now);
+        }
+
+        // 回復パーティクル描画（回復量強化時）
+        if (rewardEffects.hasHealParticles) {
+          drawHealParticles(ctx, playerScreen.x, playerScreen.y, viewport.tileSize, now);
         }
       }
     }
@@ -1061,6 +1132,53 @@ export const GameScreen: React.FC<{
     // 画面シェイクオフセット復元（HUDはシェイクの影響を受けない）
     if (shakeOffset) {
       ctx.restore();
+    }
+
+    // ゲームオーバー暗転描画（DYING状態）
+    if (isDying) {
+      const dyingElapsed = now - dyingStartTimeRef.current;
+      const gameOverAlpha = getGameOverTransitionAlpha(dyingElapsed);
+      if (gameOverAlpha > 0) {
+        ctx.save();
+        ctx.globalAlpha = gameOverAlpha;
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
+      }
+    }
+
+    // ステージ開始演出描画
+    const stageIntroElapsed = now - stageStartTimeRef.current;
+    const stageIntroPhase = getStageIntroPhase(stageIntroElapsed);
+    if (stageIntroPhase !== 'done') {
+      // 暗転フェードイン
+      const introAlpha = getStageIntroAlpha(stageIntroElapsed);
+      if (introAlpha > 0) {
+        ctx.save();
+        ctx.globalAlpha = introAlpha;
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
+      }
+
+      // ステージ名テキスト
+      const textAlpha = getStageIntroTextAlpha(stageIntroElapsed);
+      if (textAlpha > 0) {
+        ctx.save();
+        ctx.globalAlpha = textAlpha;
+        ctx.font = 'bold 28px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const stageText = currentStage ? `STAGE ${currentStage}` : 'STAGE 1';
+        // テキストアウトライン
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 4;
+        ctx.strokeText(stageText, canvas.width / 2, canvas.height / 2);
+        // テキスト本文
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(stageText, canvas.width / 2, canvas.height / 2);
+        ctx.restore();
+      }
     }
 
     // 自動マップ描画（全体表示モードでは非表示）

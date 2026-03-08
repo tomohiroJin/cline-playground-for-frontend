@@ -36,6 +36,21 @@ export { ENEMY_DEATH_DURATION, getDeathPhase, getDeathScale, isDeathAnimationCom
 // ヒットエフェクトスケーリング（Phase 2-2）
 export { calculatePowerLevel, getHitEffectConfig, HIT_EFFECT_SCALES } from './hitEffectScaling';
 
+// アイテム取得フィードバック（Phase 3-3）
+export { getItemPickupEffectConfig } from './itemFeedback';
+export type { ItemPickupEffectConfig, HpBarFlashConfig } from './itemFeedback';
+
+// 画面遷移演出（Phase 3-4）
+export {
+  getStageIntroPhase,
+  getStageIntroAlpha,
+  getStageIntroTextAlpha,
+  getGameOverTransitionAlpha,
+  STAGE_INTRO_DURATION,
+  GAME_OVER_TRANSITION_DURATION,
+} from './screenTransition';
+export type { StageIntroPhase } from './screenTransition';
+
 // ボス戦演出（Phase 2-5）
 export {
   createBossWarningState,

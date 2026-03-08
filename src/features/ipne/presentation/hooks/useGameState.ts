@@ -44,12 +44,12 @@ import {
   setBgmVolume,
   toggleMute as toggleMuteAudio,
   playTitleBgm,
-  playGameBgm,
   playClearJingle,
   playGameOverJingle,
   stopBgm,
   playGameClearSound,
   playGameOverSound,
+  playStageGameBgm,
 } from '../../audio';
 import { useSyncedState } from '../state/useSyncedState';
 
@@ -409,7 +409,7 @@ export function useGameState(): GameState {
         playTitleBgm();
         break;
       case ScreenState.GAME:
-        playGameBgm();
+        playStageGameBgm(currentStage);
         break;
       case ScreenState.STAGE_CLEAR:
         stopBgm();
@@ -440,7 +440,7 @@ export function useGameState(): GameState {
     return () => {
       stopBgm();
     };
-  }, [screen, isAudioReady]);
+  }, [screen, isAudioReady, currentStage]);
 
   return {
     screen,

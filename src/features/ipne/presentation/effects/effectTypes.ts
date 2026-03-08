@@ -73,6 +73,8 @@ export interface GameEffect {
   shakeDecay?: number;
   /** 低HP警告パルスの位相 (0.0〜2π) */
   pulsePhase?: number;
+  /** 画面フラッシュの色（レベルアップ演出用） */
+  flashColor?: string;
 }
 
 /** addEffect のオプション引数 */
@@ -89,6 +91,8 @@ export interface EffectOptions {
   enemyType?: import('../../types').EnemyTypeValue;
   /** コンボ倍率（パーティクル数増加用） */
   comboMultiplier?: number;
+  /** アイテム種類（アイテム取得エフェクト用） */
+  itemType?: import('../../types').ItemTypeValue;
 }
 
 /** エフェクト設定 */

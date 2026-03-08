@@ -133,18 +133,19 @@ export function useGameLoop(
           }
           case TickSoundEffect.ITEM_PICKUP:
             playItemPickupSound();
-            // アイテム取得エフェクト
+            // アイテム取得エフェクト（アイテム種別対応）
             if (effectQueueRef) {
               effectQueueRef.current.push({
                 type: EffectType.ITEM_PICKUP,
                 x: playerRef.current.x,
                 y: playerRef.current.y,
+                itemType: effect.itemType,
               });
             }
             break;
           case TickSoundEffect.HEAL:
             playHealSound();
-            // 回復フローティングテキスト
+            // 回復フローティングテキスト + アイテム取得エフェクト
             if (floatingTextManagerRef) {
               floatingTextManagerRef.current.addText(
                 '+HP',
@@ -153,6 +154,14 @@ export function useGameLoop(
                 FloatingTextType.HEAL,
                 Date.now()
               );
+            }
+            if (effectQueueRef) {
+              effectQueueRef.current.push({
+                type: EffectType.ITEM_PICKUP,
+                x: playerRef.current.x,
+                y: playerRef.current.y,
+                itemType: effect.itemType,
+              });
             }
             break;
           case TickSoundEffect.TRAP_TRIGGERED:

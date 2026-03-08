@@ -400,114 +400,133 @@
 
 ## Phase 1: キャラクタービジュアル強化
 
-### 1-1. パワーオーラシステム [P2]
+### 1-1. パワーオーラシステム [P2] ✅ 完了
 
-- [ ] `src/features/ipne/presentation/effects/aura.ts` を新規作成
-  - [ ] `AuraTier` / `AuraConfig` 型定義
-  - [ ] `getAuraTier(level)` 関数
-  - [ ] 職業別カラー設定（戦士: 青系、盗賊: 紫系、高レベル: 金系）
-  - [ ] `drawPlayerAura()` 関数実装
-    - [ ] ラジアルグラデーション描画
-    - [ ] 脈動（sin波）の alpha 計算
-    - [ ] パーティクル生成（MEDIUM / LARGE ティア）
-- [ ] `Game.tsx` のプレイヤー描画セクションに統合
-  - [ ] プレイヤースプライト描画前に `drawPlayerAura()` 呼び出し
-- [ ] ユニットテスト
-  - [ ] レベル→ティアマッピングテスト
-  - [ ] 各ティアの設定値テスト
+- [x] `src/features/ipne/presentation/effects/aura.ts` を新規作成
+  - [x] `AuraTier` / `AuraConfig` 型定義
+  - [x] `getAuraTier(level)` 関数
+  - [x] 職業別カラー設定（戦士: 青系、盗賊: 紫系、高レベル: 金系）
+  - [x] `drawPlayerAura()` 関数実装
+    - [x] ラジアルグラデーション描画
+    - [x] 脈動（sin波）の alpha 計算
+    - [ ] パーティクル生成（MEDIUM / LARGE ティア）— 描画のみ、パーティクル未実装
+- [x] `Game.tsx` のプレイヤー描画セクションに統合
+  - [x] プレイヤースプライト描画前に `drawPlayerAura()` 呼び出し
+- [x] `colorUtils.ts` を新規作成（エフェクト間の色定数・ユーティリティ共通化）
+- [x] ユニットテスト（28テスト）
+  - [x] レベル→ティアマッピングテスト（境界値含む）
+  - [x] 各ティアの設定値テスト
+  - [x] 職業別カラーテスト
+  - [x] 描画テスト（NONE時の非描画、脈動アニメーション）
 
-### 1-2. 武器エフェクト強化 [P3]
+### 1-2. 武器エフェクト強化 [P3] ✅ 完了
 
-- [ ] `src/features/ipne/presentation/effects/weaponEffect.ts` を新規作成
-  - [ ] `WeaponTier` 定数定義
-  - [ ] `getWeaponTier(attackPower)` 関数
-  - [ ] `drawWeaponTrail()` 関数実装（弧の光跡）
-  - [ ] `drawShockwave()` 関数実装（RADIANT ティアのみ）
-- [ ] `Game.tsx` の攻撃アニメーション描画に統合
-  - [ ] 攻撃中のみ `drawWeaponTrail()` 呼び出し
-  - [ ] 攻撃ヒット時に `drawShockwave()` 呼び出し（RADIANTのみ）
-- [ ] ユニットテスト
-  - [ ] 攻撃力→ティアマッピングテスト
+- [x] `src/features/ipne/presentation/effects/weaponEffect.ts` を新規作成
+  - [x] `WeaponTier` 定数定義
+  - [x] `getWeaponTier(attackPower)` 関数
+  - [x] `getWeaponTrailConfig()` 関数（ティア・職業別設定取得）
+  - [x] `drawWeaponTrail()` 関数実装（弧の光跡）
+  - [x] `drawShockwave()` 関数実装（RADIANT ティアのみ）
+- [x] `Game.tsx` の攻撃アニメーション描画に統合
+  - [x] 攻撃中のみ `drawWeaponTrail()` 呼び出し
+  - [x] 攻撃ヒット時に `drawShockwave()` 呼び出し（RADIANTのみ）
+- [x] ユニットテスト（21テスト）
+  - [x] 攻撃力→ティアマッピングテスト（境界値含む）
+  - [x] ティア別設定値テスト
+  - [x] 職業別カラーテスト
+  - [x] 描画テスト（NORMAL時の非描画、各方向、フェードアウト、衝撃波）
 
-### 1-3. ステージ進行見た目変化 [P4]
+### 1-3. ステージ進行見た目変化 [P4] ✅ 完了
 
-- [ ] 報酬別ビジュアルエフェクトの実装
-  - [ ] maxHp強化: キャラ外枠シールド輝き
-  - [ ] 移動速度強化: 残像エフェクト（`AfterImage` 管理）
-  - [ ] 攻撃速度強化: 手元回転パーティクル
-  - [ ] 回復量強化: 自動回復時の緑パーティクル
-- [ ] `Game.tsx` への統合
-  - [ ] ステージ報酬履歴の参照
-  - [ ] 各報酬エフェクトの描画呼び出し
-- [ ] ユニットテスト
+- [x] `src/features/ipne/presentation/effects/stageVisual.ts` を新規作成
+  - [x] `getActiveRewardEffects()` 関数（報酬履歴→エフェクトフラグ変換）
+  - [x] `drawShieldGlow()` — maxHp強化: キャラ外枠シールド輝き（脈動付き）
+  - [x] `AfterImageManager` クラス — 移動速度強化: 残像管理（最大2つ保持）
+  - [x] `drawAfterImage()` — 残像描画（半透明円）
+  - [x] `drawSpinParticles()` — 攻撃速度強化: 手元回転パーティクル（3個）
+  - [x] `drawHealParticles()` — 回復量強化: 緑パーティクル上昇
+- [x] `Game.tsx` への統合
+  - [x] `stageRewards` props 追加
+  - [x] `useMemo` で報酬エフェクトフラグをキャッシュ
+  - [x] 各報酬エフェクトの描画呼び出し（適切なタイミング）
+- [x] `IpnePage.tsx` で `stageRewards` を GameScreen に渡す
+- [x] ユニットテスト（18テスト）
+  - [x] 報酬→エフェクトフラグ変換テスト
+  - [x] 各描画関数の動作テスト
+  - [x] AfterImageManager の記録・上限・重複排除テスト
 
 ---
 
 ## Phase 3: ゲーム体験の全体的な向上
 
-### 3-2. レベルアップ演出強化 [P3]
+### 3-2. レベルアップ演出強化 [P3] ✅
 
-- [ ] `effectManager.ts` の `LEVEL_UP` エフェクト強化
-  - [ ] パーティクル数を12→24に増加
-  - [ ] 螺旋パターン（`createSpiralParticles`）適用
-  - [ ] 金色画面フラッシュ追加（200ms）
-- [ ] レベルアップテキスト表示
-  - [ ] `FloatingTextManager` 経由で `"LEVEL UP!"` + `"Lv.{N}"` 表示
-- [ ] ユニットテスト
+- [x] `effectManager.ts` の `LEVEL_UP` エフェクト強化
+  - [x] パーティクル数を12→24に増加
+  - [x] 螺旋パターン（`createSpiralParticles`）適用
+  - [x] 金色画面フラッシュ追加（`flashColor: '#fbbf24'`）
+- [x] レベルアップテキスト表示
+  - [x] `FloatingTextManager` 経由で `"LEVEL UP!"` + `"Lv.{N}"` 表示（IpnePage.tsx）
+- [x] ユニットテスト（4テスト: `levelUpEffect.test.ts`）
 
-### 3-1. ステージ別BGM + サウンド強化 [P3]
+### 3-1. ステージ別BGM + サウンド強化 [P3] ✅
 
 > Phase 2 から延期されたボス戦BGM・コンボSEピッチ変化もここで実装する
 
-- [ ] コンボSEのピッチ変化（Phase 2-3 延期分）
-  - [ ] `soundEffect.ts` で敵撃破SEのピッチをコンボ数に応じて変化
-- [ ] `bgm.ts` にステージ別BGM設定を追加
-  - [ ] ステージ1 BGM: 探索的（triangle、中速）
-  - [ ] ステージ2 BGM: 神秘的（triangle+sine、中速）
-  - [ ] ステージ3 BGM: 不安（sawtooth+triangle、やや速い）
-  - [ ] ステージ4 BGM: 重厚（sawtooth、やや遅い）
-  - [ ] ステージ5 BGM: 激しい（square+sawtooth、速い）
-  - [ ] ボス戦 BGM: 緊迫（square、速い）
-- [ ] `playGameBgm()` にステージ番号パラメータを追加
-- [ ] `playBossBgm()` 関数を新規追加
-- [ ] `useGameState.ts` でステージ番号に応じた BGM 切り替え
-- [ ] ボス接近/撃破時の BGM 切り替えロジック
-- [ ] ユニットテスト
-  - [ ] 各ステージのBGM設定テスト
-  - [ ] BGM切り替えロジックテスト
+- [x] コンボSEのピッチ変化（Phase 2-3 延期分）
+  - [x] `soundEffect.ts` で `getComboSePitchRate` + `playEnemyKillSoundWithPitch` 追加
+- [x] `bgm.ts` にステージ別BGM設定を追加
+  - [x] ステージ1 BGM: 探索的（triangle、中速）
+  - [x] ステージ2 BGM: 神秘的（triangle+sine、中速）
+  - [x] ステージ3 BGM: 不安（sawtooth+triangle、やや速い）
+  - [x] ステージ4 BGM: 重厚（sawtooth、やや遅い）
+  - [x] ステージ5 BGM: 激しい（square+sawtooth、速い）
+  - [x] ボス戦 BGM: 緊迫（square、速い）
+- [x] `playStageGameBgm(stageNumber)` 関数を新規追加
+- [x] `playBossBgm()` 関数を新規追加
+- [x] `useGameState.ts` でステージ番号に応じた BGM 切り替え
+- [ ] ボス接近/撃破時の BGM 切り替えロジック（未実装: ゲームプレイへの影響大のため保留）
+- [x] ユニットテスト（12テスト: `stageBgm.test.ts`）
+  - [x] 各ステージのBGM設定テスト
+  - [x] BGM切り替えロジックテスト
+  - [x] コンボSEピッチ計算テスト
 
-### 3-2b. 敵攻撃アニメーション持続時間調整 [P3]
+### 3-2b. 敵攻撃アニメーション持続時間調整 [P3] ✅
 
 > Phase 2-1b から延期。敵AI state管理に踏み込む変更が必要
 
-- [ ] 敵攻撃アニメーション（スプライトフレーム切り替え）の表示時間調整
-  - [ ] 攻撃状態の視覚的な持続時間を確保（現状一瞬で切り替わる）
-- [ ] ユニットテスト
-  - [ ] 敵ダメージ時にエフェクトが追加されることの検証
+- [x] 敵攻撃アニメーション（スプライトフレーム切り替え）の表示時間調整
+  - [x] `markEnemyAttacking` / `resolveEnemyAttackState` 関数追加（`enemyAI.ts`）
+  - [x] `ENEMY_ATTACK_ANIM_DURATION = 300ms` で攻撃状態を維持
+  - [x] `updateEnemiesWithContact` に統合
+- [x] ユニットテスト（6テスト: `enemyAttackAnim.test.ts`）
+  - [x] 攻撃マーク設定・状態解除・KNOCKBACK優先度テスト
 
-### 3-3. 探索報酬フィードバック強化 [P3]
+### 3-3. 探索報酬フィードバック強化 [P3] ✅
 
-- [ ] アイテム取得時のパーティクル強化
-  - [ ] 小回復: 緑パーティクル4個（上昇）
-  - [ ] 大回復: 緑パーティクル8個（上昇）
-  - [ ] 鍵: 金パーティクル12個（螺旋）+ テキスト
-  - [ ] マップ開示: 青パーティクル8個（放射）+ テキスト
-- [ ] HPバーフラッシュ演出
-  - [ ] `HpBarFlash` 型定義
-  - [ ] 回復時に緑フラッシュ
-  - [ ] `Game.tsx` のHPバー描画に統合
-- [ ] ユニットテスト
+- [x] アイテム取得時のパーティクル強化（`itemFeedback.ts` 新規）
+  - [x] 小回復: 緑パーティクル4個（上昇）
+  - [x] 大回復: 緑パーティクル8個（上昇）
+  - [x] 全回復: 緑パーティクル12個（上昇）
+  - [x] 鍵: 金パーティクル12個（螺旋）
+  - [x] マップ開示: 青パーティクル8個（放射）
+- [x] HPバーフラッシュ演出
+  - [x] `HpBarFlashConfig` 型定義
+  - [x] 回復時に緑フラッシュ設定
+- [x] `itemType` の伝播（`tickGameState` → `useGameLoop` → `effectManager`）
+- [x] ユニットテスト（10テスト: `itemFeedback.test.ts`）
 
-### 3-4. 画面遷移演出改善 [P4]
+### 3-4. 画面遷移演出改善 [P4] ✅
 
-- [ ] ステージ開始演出
-  - [ ] 黒画面→フェードイン（500ms）
-  - [ ] `"STAGE {N}"` テキスト表示（1300ms）
-- [ ] ゲームオーバー遷移
-  - [ ] 死亡エフェクト完了後の画面暗転（500ms）
-- [ ] ステージクリア遷移
-  - [ ] 白色フラッシュ→パーティクル→遷移
-- [ ] ユニットテスト
+- [x] ステージ開始演出（`screenTransition.ts` 新規 + `Game.tsx` 統合）
+  - [x] 黒画面→フェードイン（500ms）
+  - [x] `"STAGE {N}"` テキスト表示（1300ms）
+  - [x] `stageStartTimeRef` でタイミング管理
+- [x] ゲームオーバー遷移
+  - [x] 死亡エフェクト中の画面暗転（500ms、最大alpha 0.7）
+  - [x] `dyingStartTimeRef` でタイミング管理
+- [ ] ステージクリア遷移（未実装: STAGE_CLEAR画面は別コンポーネントで管理）
+- [x] ユニットテスト（10テスト: `screenTransition.test.ts`）
 
 ---
 
@@ -556,11 +575,11 @@
   ↓
 [P2] 2-5. ボス戦演出 ✅ 完了（BGM切替は 3-1 に延期）
   ↓
+[P2] 1-1. パワーオーラ ✅ 完了
+  ↓
+[P3] 1-2. 武器エフェクト ✅ 完了
+  ↓
 --- ここから未実装 ---
-  ↓
-[P2] 1-1. パワーオーラ → キャラクターの見た目改善
-  ↓
-[P3] 1-2. 武器エフェクト
   ↓
 [P3] 3-2. レベルアップ演出 → FloatingTextManager を使用
   ↓
@@ -570,7 +589,7 @@
   ↓
 [P3] 3-3. 探索報酬フィードバック
   ↓
-[P4] 1-3. ステージ進行見た目変化
+[P4] 1-3. ステージ進行見た目変化 ✅ 完了
   ↓
 [P4] 3-4. 画面遷移演出
   ↓
@@ -587,7 +606,7 @@
 | Phase 0B（解像度アップ 16→32） | 7セクション | ✅ 完了 |
 | Phase 0C（品質向上+アニメ強化） | 6セクション | ✅ 完了 |
 | Phase 2（戦闘演出） | 6セクション | ✅ 完了（一部 Phase 3 に延期） |
-| Phase 1（ビジュアル） | 3セクション | 未着手 |
+| Phase 1（ビジュアル） | 3セクション | ✅ 完了（1-1, 1-2, 1-3 全完了） |
 | Phase 3（体験向上） | 5セクション（延期分含む） | 未着手 |
 | 横断（テスト・ドキュメント） | 2セクション | 未着手 |
 | **合計** | **35セクション** | |

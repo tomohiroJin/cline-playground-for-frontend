@@ -17,6 +17,7 @@ import {
 } from './particleSystem';
 import { getHitEffectConfig } from './hitEffectScaling';
 import { getEnemyDeathParticleConfig } from './enemyDeath';
+import { getItemPickupEffectConfig } from './itemFeedback';
 
 /** パーティクル上限数 */
 const MAX_PARTICLES = 200;
@@ -159,7 +160,20 @@ export class EffectManager {
         });
         break;
 
-      case EffectType.ITEM_PICKUP:
+      case EffectType.ITEM_PICKUP: {
+        const itemType = options?.itemType;
+        const itemConfig = itemType ? getItemPickupEffectConfig(itemType) : undefined;
+        const pCount = itemConfig?.particleCount ?? 6;
+        const pColors = itemConfig?.colors ?? ['#fbbf24', '#fcd34d', '#fef08a'];
+        const pPattern = itemConfig?.pattern ?? 'rising';
+
+        const particles =
+          pPattern === 'spiral'
+            ? createSpiralParticles(pCount, x, y, pColors, 80, 1.5)
+            : pPattern === 'radial'
+            ? createRadialParticles(pCount, x, y, pColors, 40, 100, 2, 4, 2.0)
+            : createRisingParticles(pCount, x, y, pColors, 2, 3, 2.0);
+
         this.effects.push({
           id,
           type,
@@ -167,14 +181,10 @@ export class EffectManager {
           y,
           startTime: now,
           duration: 500,
-          particles: createRisingParticles(
-            6, x, y,
-            ['#fbbf24', '#fcd34d', '#fef08a'],
-            2, 3,
-            2.0
-          ),
+          particles,
         });
         break;
+      }
 
       case EffectType.LEVEL_UP:
         this.effects.push({
@@ -183,15 +193,17 @@ export class EffectManager {
           x,
           y,
           startTime: now,
-          duration: 800,
-          particles: createRisingParticles(
-            12, x, y,
+          duration: 1500,
+          particles: createSpiralParticles(
+            24, x, y,
             ['#fbbf24', '#fcd34d', '#fef08a', '#ffffff'],
-            2, 4,
-            1.2
+            100,
+            0.7
           ),
           ringRadius: 0,
           ringMaxRadius: 40,
+          flashAlpha: 0.4,
+          flashColor: '#fbbf24',
         });
         break;
 
@@ -421,11 +433,11 @@ export class EffectManager {
         ctx.restore();
       }
 
-      // 画面フラッシュ描画（ボス撃破）
+      // 画面フラッシュ描画（ボス撃破、レベルアップ等）
       if (effect.flashAlpha !== undefined && effect.flashAlpha > 0) {
         ctx.save();
         ctx.globalAlpha = effect.flashAlpha * 0.6;
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = effect.flashColor ?? '#ffffff';
         ctx.fillRect(0, 0, canvasWidth, canvasHeight);
         ctx.restore();
       }
@@ -461,6 +473,13 @@ export class EffectManager {
    */
   getEffectCount(): number {
     return this.effects.length;
+  }
+
+  /**
+   * 全エフェクトを取得する（テスト用）
+   */
+  getEffects(): readonly GameEffect[] {
+    return this.effects;
   }
 
   /**

@@ -36,7 +36,7 @@ export const TickSaveEffect = {
 export type TickSaveEffectValue = (typeof TickSaveEffect)[keyof typeof TickSaveEffect];
 
 export type GameTickEffect =
-  | { kind: 'sound'; type: TickSoundEffectValue; damage?: number; enemyType?: string }
+  | { kind: 'sound'; type: TickSoundEffectValue; damage?: number; enemyType?: string; itemType?: string }
   | { kind: 'display'; type: TickDisplayEffectValue }
   | { kind: 'save'; type: TickSaveEffectValue };
 
@@ -179,13 +179,16 @@ export function tickGameState(
   });
   nextPlayer = pickupResult.player;
   for (const event of pickupResult.events) {
+    // 対応するアイテムの種別を取得
+    const pickedItem = items.find(i => i.id === event.itemId);
+    const itemType = pickedItem?.type;
     if (event.effectType === 'key') {
       // 鍵取得は専用メロディで再生
-      effects.push({ kind: 'sound', type: TickSoundEffect.KEY_PICKUP });
+      effects.push({ kind: 'sound', type: TickSoundEffect.KEY_PICKUP, itemType });
     } else if (event.healed) {
-      effects.push({ kind: 'sound', type: TickSoundEffect.HEAL });
+      effects.push({ kind: 'sound', type: TickSoundEffect.HEAL, itemType });
     } else {
-      effects.push({ kind: 'sound', type: TickSoundEffect.ITEM_PICKUP });
+      effects.push({ kind: 'sound', type: TickSoundEffect.ITEM_PICKUP, itemType });
     }
   }
 

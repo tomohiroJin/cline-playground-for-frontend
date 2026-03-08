@@ -497,6 +497,9 @@ export const updateEnemiesWithContact = (
     const candidateKey = toPositionKey(candidate);
     const playerKey = toPositionKey(player);
 
+    // 攻撃アニメーション状態解決
+    candidate = resolveEnemyAttackState(candidate, currentTime);
+
     // 敵の攻撃判定（射程内でクールダウンが終わっている場合）
     if (canEnemyAttack(candidate, player, currentTime)) {
       if (candidate.damage > attackDamage) {
@@ -504,6 +507,7 @@ export const updateEnemiesWithContact = (
         attackingEnemy = candidate;
       }
       candidate = setEnemyAttackCooldown(candidate, currentTime);
+      candidate = markEnemyAttacking(candidate, currentTime);
     }
 
     // 接触判定
@@ -512,6 +516,7 @@ export const updateEnemiesWithContact = (
         contactDamage = enemy.damage;
         contactEnemy = enemy;
       }
+      candidate = markEnemyAttacking(candidate, currentTime);
       updatedEnemies.push({ ...candidate, x: enemy.x, y: enemy.y });
       occupied.add(toPositionKey(enemy));
       continue;
@@ -529,6 +534,33 @@ export const updateEnemiesWithContact = (
   }
 
   return { enemies: updatedEnemies, contactDamage, contactEnemy, attackDamage, attackingEnemy };
+};
+
+/** 敵攻撃アニメーションの持続時間（ms） */
+export const ENEMY_ATTACK_ANIM_DURATION = 300;
+
+/**
+ * 敵を攻撃状態にマークする
+ * knockback 状態の敵には適用しない
+ */
+export const markEnemyAttacking = (enemy: Enemy, now: number): Enemy => {
+  if (enemy.state === EnemyState.KNOCKBACK) return enemy;
+  return {
+    ...enemy,
+    state: EnemyState.ATTACK,
+    attackAnimUntil: now + ENEMY_ATTACK_ANIM_DURATION,
+  };
+};
+
+/**
+ * 敵の攻撃アニメーション状態を解決する
+ * 持続時間経過後に IDLE 状態に戻す
+ */
+export const resolveEnemyAttackState = (enemy: Enemy, now: number): Enemy => {
+  if (enemy.state !== EnemyState.ATTACK) return enemy;
+  if (enemy.attackAnimUntil === undefined) return { ...enemy, state: EnemyState.IDLE };
+  if (now < enemy.attackAnimUntil) return enemy;
+  return { ...enemy, state: EnemyState.IDLE, attackAnimUntil: undefined };
 };
 
 export { AI_CONFIG };
