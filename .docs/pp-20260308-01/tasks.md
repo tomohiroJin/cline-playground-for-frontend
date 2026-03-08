@@ -55,60 +55,68 @@
 
 ---
 
-## フェーズ2: game-logic.ts のドメイン分割
+## フェーズ2: game-logic.ts のドメイン分割 ✅ 完了
 
 ### 2.1 ドメインディレクトリの構築
 
-- [ ] `domain/` ディレクトリと全サブディレクトリを新設
-- [ ] `domain/shared/utils.ts`: clamp, mkPopup, updatePopups, getSnap, applyStatFx を移動
-- [ ] `domain/shared/civ-utils.ts`: civLvs, civMin, civLv, dominantCiv を移動
+- [x] `domain/` ディレクトリと全サブディレクトリを新設
+- [x] `domain/shared/utils.ts`: clamp, mkPopup, updatePopups, getSnap, applyStatFx を移動
+- [x] `domain/shared/civ-utils.ts`: civLvs, civMin, civLv, dominantCiv を移動
 
 ### 2.2 戦闘ドメイン
 
-- [ ] `domain/battle/combat-calculator.ts`: calcPlayerAtk, effATK, biomeBonus, calcEnvDmg, aliveAllies, deadAllies, scaleEnemy を移動
-- [ ] `domain/battle/tick-phases.ts`: tick, tickEnvPhase, tickPlayerPhase, tickAllyPhase, tickRegenPhase, tickEnemyPhase, tickDeathCheck を移動
-- [ ] `domain/battle/battle-service.ts`: startBattle, afterBattle を移動
-- [ ] `domain/battle/boss-service.ts`: resolveFinalBossKey, startFinalBoss, handleFinalBossKill を移動
+- [x] `domain/battle/combat-calculator.ts`: calcPlayerAtk, effATK, biomeBonus, calcEnvDmg, aliveAllies, deadAllies, scaleEnemy を移動
+- [x] `domain/battle/tick-phases.ts`: tick, tickEnvPhase, tickPlayerPhase, tickAllyPhase, tickRegenPhase, tickEnemyPhase, tickDeathCheck を移動
+- [x] `domain/battle/battle-service.ts`: startBattle, afterBattle を移動
+- [x] `domain/battle/boss-service.ts`: resolveFinalBossKey, startFinalBoss, handleFinalBossKill を移動
 
 ### 2.3 進化ドメイン
 
-- [ ] `domain/evolution/evolution-service.ts`: rollE, applyEvo, simEvo を移動
-- [ ] `domain/evolution/synergy-service.ts`: calcSynergies, applySynergyBonuses を移動
+- [x] `domain/evolution/evolution-service.ts`: rollE, applyEvo, simEvo を移動
+- [x] `domain/evolution/synergy-service.ts`: calcSynergies, applySynergyBonuses を移動
 
 ### 2.4 スキルドメイン
 
-- [ ] `domain/skill/skill-service.ts`: applySkill, calcAvlSkills, tickBuffs, decSkillCds を移動
+- [x] `domain/skill/skill-service.ts`: applySkill, calcAvlSkills, tickBuffs, decSkillCds を移動
 
 ### 2.5 覚醒ドメイン
 
-- [ ] `domain/awakening/awakening-service.ts`: checkAwakeningRules, applyAwkFx, awkInfo を移動
+- [x] `domain/awakening/awakening-service.ts`: checkAwakeningRules, applyAwkFx, awkInfo を移動
 
 ### 2.6 イベントドメイン
 
-- [ ] `domain/event/event-service.ts`: rollEvent, applyEventChoice, computeEventResult, formatEventResult, getEffectHintColor, getEffectHintIcon を移動
+- [x] `domain/event/event-service.ts`: rollEvent, applyEventChoice, computeEventResult, formatEventResult, getEffectHintColor, getEffectHintIcon を移動
 
 ### 2.7 進行ドメイン
 
-- [ ] `domain/progression/run-service.ts`: startRunState, calcRunStats, calcBoneReward, allyReviveCost を移動
-- [ ] `domain/progression/biome-service.ts`: pickBiomeAuto, applyBiomeSelection, applyFirstBiome, applyAutoLastBiome, calcEndlessScale, calcEndlessScaleWithAM, applyEndlessLoop を移動
-- [ ] `domain/progression/tree-service.ts`: getTB, tbSummary, bestDiffLabel を移動
+- [x] `domain/progression/run-service.ts`: startRunState, calcRunStats, calcBoneReward, allyReviveCost を移動
+- [x] `domain/progression/biome-service.ts`: pickBiomeAuto, applyBiomeSelection, applyFirstBiome, applyAutoLastBiome, calcEndlessScale, calcEndlessScaleWithAM, applyEndlessLoop を移動
+- [x] `domain/progression/tree-service.ts`: getTB, tbSummary, bestDiffLabel を移動
 
 ### 2.8 実績・チャレンジドメイン
 
-- [ ] `domain/achievement/achievement-service.ts`: checkAchievement を移動（checkAllAchievements は hooks 内ローカルヘルパーのため P4 で対応）
-- [ ] `domain/challenge/challenge-service.ts`: applyChallenge を移動
+- [x] `domain/achievement/achievement-service.ts`: checkAchievement を移動（checkAllAchievements は hooks 内ローカルヘルパーのため P4 で対応）
+- [x] `domain/challenge/challenge-service.ts`: applyChallenge を移動
 
 ### 2.9 game-logic.ts の barrel 化
 
-- [ ] `game-logic.ts` を re-export barrel ファイルに変換
-- [ ] 全消費側のインポートが正常に解決されることを確認
+- [x] `game-logic.ts` を re-export barrel ファイルに変換
+- [x] 全消費側のインポートが正常に解決されることを確認
 
 ### P2 検証
 
-- [ ] `npm test` 全テストパス
-- [ ] `npx tsc --noEmit` 型エラーなし
-- [ ] `npm run build` ビルド成功
-- [ ] 全エクスポートが `game-logic.ts` 経由で変わらず利用可能
+- [x] `npm test` 全テストパス（245スイート / 3320テスト）
+- [x] `npx tsc --noEmit` 型エラーなし
+- [x] `npm run build` ビルド成功
+- [x] 全エクスポートが `game-logic.ts` 経由で変わらず利用可能
+
+### P2 補足: spec との差異・設計判断
+
+- `deepCloneRun` / `writeSnapToRun` を `shared/utils.ts` にエクスポート可能な関数として配置（ドメイン内共有ユーティリティ。barrel 外部エクスポートは不要）
+- `SynergyBonusResult` インターフェースは `synergy-service.ts` に定義し、barrel から `export type` で再エクスポート
+- `RIT_LOW_HP_RATIO` は `combat-calculator.ts` で定義・エクスポートし、`tick-phases.ts` からインポート（DRY原則に従い重複排除）
+- 各ドメインサービスに対する16テストファイルを TDD で作成（計1,232行）
+- ドメインファイル合計: 16ファイル / 約1,600行（元の game-logic.ts 1,356行 + 内部定数の明示化分）
 
 ---
 
