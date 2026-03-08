@@ -634,7 +634,9 @@ drawReaction(ctx: CanvasRenderingContext2D, text: string,
 | `regular.png` | レギュラー（Normal） | フリー対戦 |
 | `ace.png` | エース（Hard） | フリー対戦 |
 
-**AI 画像生成プロンプト設計** → `tasks.md` の Phase 2 内で詳細定義
+**AI 画像生成プロンプト設計** → `image-prompts.md` に詳細プロンプト・外見設定・ファイル名一覧を定義済み
+
+**コード内の参照パス**: `characters.ts` の各キャラクター `icon` フィールドで `/assets/characters/<ファイル名>` として参照
 
 ---
 

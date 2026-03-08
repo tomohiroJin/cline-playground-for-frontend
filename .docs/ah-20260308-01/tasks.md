@@ -193,17 +193,31 @@
 - [x] ネガティブプロンプト（避けたい要素）が定義されている
 **依存**: P2-02（キャラ設定が必要）
 
-### P2-04: キャラクターアイコン画像生成 ✅（プレースホルダー）
+### P2-04: キャラクターアイコン画像生成 🔧（プレースホルダー → 正式画像に差し替え待ち）
 **ファイル**: `public/assets/characters/` 配下に7枚の PNG
-**内容**: プレースホルダー画像を配置（AI 生成画像は後日差し替え予定）
+**内容**: プレースホルダー画像を配置済み。正式画像に差し替え必要。
+**プロンプト設計**: `.docs/ah-20260308-01/image-prompts.md` 参照
+
+**配置先・ファイル名**:
+
+| ファイル名 | キャラ名 | コード参照パス |
+|-----------|---------|---------------|
+| `public/assets/characters/akira.png` | アキラ（主人公） | `/assets/characters/akira.png` |
+| `public/assets/characters/hiro.png` | ヒロ（ステージ1-1） | `/assets/characters/hiro.png` |
+| `public/assets/characters/misaki.png` | ミサキ（ステージ1-2） | `/assets/characters/misaki.png` |
+| `public/assets/characters/takuma.png` | タクマ（ステージ1-3） | `/assets/characters/takuma.png` |
+| `public/assets/characters/rookie.png` | ルーキー（Easy） | `/assets/characters/rookie.png` |
+| `public/assets/characters/regular.png` | レギュラー（Normal） | `/assets/characters/regular.png` |
+| `public/assets/characters/ace.png` | エース（Hard） | `/assets/characters/ace.png` |
+
 **受け入れ基準**:
-- [x] 7枚の画像（akira, hiro, misaki, takuma, rookie, regular, ace）が配置されている
+- [x] 7枚の画像が上記パスに配置されている
 - [x] 全画像が 128x128px の PNG
-- [ ] アートスタイルが統一されている（同一ツール・同一セッションで生成）← 後日差し替え
-- [ ] 背景が透過（または単色で切り抜き可能）← 後日差し替え
-- [ ] 各キャラの特徴（髪色、表情、雰囲気）が設定と一致している ← 後日差し替え
+- [ ] アートスタイルが統一されている（同一ツール・同一セッションで生成）
+- [ ] 背景が透過（または単色で切り抜き可能）
+- [ ] 各キャラの特徴（髪色、表情、雰囲気）が `image-prompts.md` の設定と一致している
 **依存**: P2-03
-**備考**: 現在はプレースホルダー画像。image-prompts.md のプロンプトを使って AI 画像生成ツールで正式画像に差し替えが必要
+**備考**: 現在はプレースホルダー画像。`image-prompts.md` のプロンプト・外見設定を参考に AI 画像生成ツールで正式画像を作成し、上記ファイル名で差し替えてください
 
 ### P2-05: Scoreboard のキャラ名表示 ✅
 **ファイル**: `components/Scoreboard.tsx`, `AirHockeyGame.tsx`
