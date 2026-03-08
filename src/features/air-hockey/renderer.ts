@@ -735,6 +735,55 @@ export const Renderer = {
     ctx.fillRect(0, 0, W, H);
   },
 
+  // リアクション吹き出し描画（US-2.1: ゴール時のキャラクターリアクション）
+  drawReaction(
+    ctx: CanvasRenderingContext2D,
+    text: string,
+    side: 'player' | 'cpu',
+    consts: GameConstants = CONSTANTS,
+    elapsed: number
+  ) {
+    const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
+    // 1.5秒かけてフェードアウト
+    const REACTION_DURATION = 1500;
+    const alpha = Math.max(0, 1 - elapsed / REACTION_DURATION);
+    if (alpha <= 0) return;
+
+    const x = W * 0.7;
+    const y = side === 'cpu' ? H * 0.15 : H * 0.85;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // 吹き出し背景のサイズ計算
+    const metrics = ctx.measureText(text);
+    const padding = 12;
+    const bw = metrics.width + padding * 2;
+    const bh = 32;
+    const rx = x - bw / 2;
+    const ry = y - bh / 2;
+
+    // 角丸背景
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.beginPath();
+    ctx.roundRect(rx, ry, bw, bh, 8);
+    ctx.fill();
+
+    // 枠線
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // テキスト
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(text, x, y);
+
+    ctx.restore();
+  },
+
   // 試合統計をリザルト画面用にフォーマット
   formatStats(stats: { playerHits: number; cpuHits: number; maxPuckSpeed: number; playerSaves: number; cpuSaves: number; matchDuration: number }) {
     const minutes = Math.floor(stats.matchDuration / 60000);

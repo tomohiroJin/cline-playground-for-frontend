@@ -5,11 +5,12 @@ type ScoreboardProps = {
   scores: { p: number; c: number };
   onMenuClick: () => void;
   onPauseClick?: () => void;
+  cpuName?: string;
 };
 
-export const Scoreboard: React.FC<ScoreboardProps> = ({ scores, onMenuClick, onPauseClick }) => (
+export const Scoreboard: React.FC<ScoreboardProps> = ({ scores, onMenuClick, onPauseClick, cpuName }) => (
   <ScoreBoardContainer>
-    <ScoreText $color="#e74c3c">CPU: {scores.c}</ScoreText>
+    <ScoreText $color="#e74c3c">{cpuName ?? 'CPU'}: {scores.c}</ScoreText>
     <div style={{ display: 'flex', gap: '8px' }}>
       <MenuButton onClick={onMenuClick}>Menu</MenuButton>
       {onPauseClick && <MenuButton onClick={onPauseClick}>⏸</MenuButton>}

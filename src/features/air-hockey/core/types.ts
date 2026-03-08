@@ -145,6 +145,26 @@ export type SlowMotionState = {
   duration: number;
 };
 
+// キャラクターのリアクションテキスト（得点・失点・勝利・敗北 各複数パターン）
+export type CharacterReaction = {
+  onScore: string[];
+  onConcede: string[];
+  onWin: string[];
+  onLose: string[];
+};
+
+// 対戦キャラクター定義
+export type Character = {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  reactions: CharacterReaction;
+};
+
+// ゲームモード（フリー対戦 or ストーリー）
+export type GameMode = 'free' | 'story';
+
 export type SoundSystem = {
   hit: (speed?: number) => void;
   wall: (angle?: number) => void;

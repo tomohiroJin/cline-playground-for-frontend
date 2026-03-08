@@ -4,6 +4,7 @@ import { EntityFactory } from './core/entities';
 import { CONSTANTS } from './core/constants';
 import { createSoundSystem } from './core/sound';
 import { FIELDS } from './core/config';
+import { getCharacterByDifficulty } from './core/characters';
 import { GameState, FieldConfig, Difficulty, SoundSystem, GamePhase, ShakeState, MatchStats } from './core/types';
 import { Achievement, checkAchievements, getUnlockedAchievements, saveUnlockedAchievements } from './core/achievements';
 import { AudioSettings, loadAudioSettings, saveAudioSettings } from './core/audio-settings';
@@ -306,7 +307,7 @@ const AirHockeyGame: React.FC = () => {
           <Scoreboard scores={scores} onMenuClick={() => {
             getSound().bgmStop();
             setScreen('menu');
-          }} onPauseClick={togglePause} />
+          }} onPauseClick={togglePause} cpuName={getCharacterByDifficulty(diff).name} />
           <Field canvasRef={canvasRef} onInput={handleInput} shake={shake} />
         </>
       )}

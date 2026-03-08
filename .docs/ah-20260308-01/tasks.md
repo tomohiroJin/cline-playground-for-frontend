@@ -162,97 +162,102 @@
 
 ## Phase 2: キャラクター基盤（US-2.1, US-2.7, US-2.8）
 
-### P2-01: キャラクター型定義
+### P2-01: キャラクター型定義 ✅
 **ファイル**: `core/types.ts`
 **内容**: `Character`, `CharacterReaction`, `GameMode` 型を追加
 **受け入れ基準**:
-- [ ] `Character` 型: `id`, `name`, `icon`, `color`, `reactions`
-- [ ] `CharacterReaction` 型: `onScore[]`, `onConcede[]`, `onWin[]`, `onLose[]`
-- [ ] `GameMode` 型: `'free' | 'story'`
+- [x] `Character` 型: `id`, `name`, `icon`, `color`, `reactions`
+- [x] `CharacterReaction` 型: `onScore[]`, `onConcede[]`, `onWin[]`, `onLose[]`
+- [x] `GameMode` 型: `'free' | 'story'`
 **依存**: P1-14
 
-### P2-02: キャラクターデータ定義
+### P2-02: キャラクターデータ定義 ✅
 **ファイル**: 新規 `core/characters.ts`
 **内容**: 主人公 + フリー対戦用3キャラ + ストーリー用3キャラのデータ定義
 **受け入れ基準**:
-- [ ] `PLAYER_CHARACTER` が定義されている
-- [ ] `FREE_BATTLE_CHARACTERS` に `easy`, `normal`, `hard` の3キャラ
-- [ ] `STORY_CHARACTERS` に `hiro`, `misaki`, `takuma` の3キャラ
-- [ ] 各キャラにリアクションテキスト（各2-3パターン）
-- [ ] `icon` フィールドはファイルパス文字列（画像は後で追加）
+- [x] `PLAYER_CHARACTER` が定義されている
+- [x] `FREE_BATTLE_CHARACTERS` に `easy`, `normal`, `hard` の3キャラ
+- [x] `STORY_CHARACTERS` に `hiro`, `misaki`, `takuma` の3キャラ
+- [x] 各キャラにリアクションテキスト（各2-3パターン）
+- [x] `icon` フィールドはファイルパス文字列（画像は後で追加）
+- [x] `getCharacterByDifficulty()`, `findCharacterById()`, `getRandomReaction()` ヘルパー関数
 **依存**: P2-01
 
-### P2-03: キャラクターアイコン画像プロンプト設計
+### P2-03: キャラクターアイコン画像プロンプト設計 ✅
 **ファイル**: 新規 `.docs/ah-20260308-01/image-prompts.md`
 **内容**: 7キャラ分の AI 画像生成プロンプトを設計
 **受け入れ基準**:
-- [ ] 各キャラの「外見設定」「性格を反映した表情」「色指定」が明記されている
-- [ ] 全キャラ共通の「アートスタイル指定」が定義されている
-- [ ] 出力仕様（128x128px、PNG、透過背景）が明記されている
-- [ ] ネガティブプロンプト（避けたい要素）が定義されている
+- [x] 各キャラの「外見設定」「性格を反映した表情」「色指定」が明記されている
+- [x] 全キャラ共通の「アートスタイル指定」が定義されている
+- [x] 出力仕様（128x128px、PNG、透過背景）が明記されている
+- [x] ネガティブプロンプト（避けたい要素）が定義されている
 **依存**: P2-02（キャラ設定が必要）
 
-### P2-04: キャラクターアイコン画像生成
+### P2-04: キャラクターアイコン画像生成 ✅（プレースホルダー）
 **ファイル**: `public/assets/characters/` 配下に7枚の PNG
-**内容**: P2-03 のプロンプトを使用して AI 画像生成ツールで画像を作成
+**内容**: プレースホルダー画像を配置（AI 生成画像は後日差し替え予定）
 **受け入れ基準**:
-- [ ] 7枚の画像（akira, hiro, misaki, takuma, rookie, regular, ace）が配置されている
-- [ ] 全画像が 128x128px の PNG
-- [ ] アートスタイルが統一されている（同一ツール・同一セッションで生成）
-- [ ] 背景が透過（または単色で切り抜き可能）
-- [ ] 各キャラの特徴（髪色、表情、雰囲気）が設定と一致している
+- [x] 7枚の画像（akira, hiro, misaki, takuma, rookie, regular, ace）が配置されている
+- [x] 全画像が 128x128px の PNG
+- [ ] アートスタイルが統一されている（同一ツール・同一セッションで生成）← 後日差し替え
+- [ ] 背景が透過（または単色で切り抜き可能）← 後日差し替え
+- [ ] 各キャラの特徴（髪色、表情、雰囲気）が設定と一致している ← 後日差し替え
 **依存**: P2-03
+**備考**: 現在はプレースホルダー画像。image-prompts.md のプロンプトを使って AI 画像生成ツールで正式画像に差し替えが必要
 
-### P2-05: Scoreboard のキャラ名表示
+### P2-05: Scoreboard のキャラ名表示 ✅
 **ファイル**: `components/Scoreboard.tsx`, `AirHockeyGame.tsx`
 **内容**: Scoreboard に `cpuName` props を追加、「CPU」をキャラ名に置換
 **受け入れ基準**:
-- [ ] `cpuName` が指定された場合、「CPU」の代わりにキャラ名が表示される
-- [ ] `cpuName` が未指定の場合、「CPU」がフォールバック表示される
-- [ ] AirHockeyGame から難易度に応じた `FREE_BATTLE_CHARACTERS[diff].name` が渡される
-- [ ] スコアテキストのレイアウトが崩れない
+- [x] `cpuName` が指定された場合、「CPU」の代わりにキャラ名が表示される
+- [x] `cpuName` が未指定の場合、「CPU」がフォールバック表示される
+- [x] AirHockeyGame から難易度に応じた `FREE_BATTLE_CHARACTERS[diff].name` が渡される
+- [x] スコアテキストのレイアウトが崩れない
 **依存**: P2-02
 
-### P2-06: リアクション吹き出し描画
-**ファイル**: `renderer.ts`, `hooks/useGameLoop.ts`
-**内容**: `Renderer.drawReaction()` メソッド追加、ゴール時にリアクション表示
+### P2-06: リアクション吹き出し描画 ✅（描画関数のみ）
+**ファイル**: `renderer.ts`
+**内容**: `Renderer.drawReaction()` メソッド追加
 **受け入れ基準**:
-- [ ] ゴール時に得点側キャラの `onScore` からランダム選択してテキスト表示
-- [ ] 同時に失点側キャラの `onConcede` からランダム選択してテキスト表示
-- [ ] 吹き出しが 1.5 秒かけてフェードアウト
-- [ ] CPU 側は画面上部（y=H*0.15）、プレイヤー側は画面下部（y=H*0.85）に表示
-- [ ] 角丸の半透明黒背景 + 白テキスト
+- [x] 吹き出しが 1.5 秒かけてフェードアウト
+- [x] CPU 側は画面上部（y=H*0.15）、プレイヤー側は画面下部（y=H*0.85）に表示
+- [x] 角丸の半透明黒背景 + 白テキスト
+- [ ] ゴール時に得点側キャラの `onScore` からランダム選択してテキスト表示 ← useGameLoop 統合は Phase 3
+- [ ] 同時に失点側キャラの `onConcede` からランダム選択してテキスト表示 ← useGameLoop 統合は Phase 3
 **依存**: P2-02
+**備考**: useGameLoop からの呼び出し統合は Phase 3（ストーリーモード遷移統合）で実施
 
-### P2-07: ストーリー進行保存
+### P2-07: ストーリー進行保存 ✅
 **ファイル**: 新規 `core/story.ts`
 **内容**: `StoryProgress` 型、`loadStoryProgress()`, `saveStoryProgress()`, `resetStoryProgress()`, `isStageUnlocked()` の実装
 **受け入れ基準**:
-- [ ] `loadStoryProgress()` が localStorage から進行データを読み込む
-- [ ] `saveStoryProgress()` が localStorage に進行データを保存する
-- [ ] `resetStoryProgress()` が localStorage のデータを削除する
-- [ ] `isStageUnlocked()` が前ステージのクリア状態を判定する
-- [ ] localStorage のキーが `ah_story_progress`（既存キーと衝突しない）
+- [x] `loadStoryProgress()` が localStorage から進行データを読み込む
+- [x] `saveStoryProgress()` が localStorage に進行データを保存する
+- [x] `resetStoryProgress()` が localStorage のデータを削除する
+- [x] `isStageUnlocked()` が前ステージのクリア状態を判定する
+- [x] localStorage のキーが `ah_story_progress`（既存キーと衝突しない）
 **依存**: なし
 
-### P2-08: ダイアログデータ定義
+### P2-08: ダイアログデータ定義 ✅
 **ファイル**: 新規 `core/dialogue-data.ts`
 **内容**: 第1章3ステージの `StageDefinition` 配列（ダイアログ含む）
 **受け入れ基準**:
-- [ ] `CHAPTER_1_STAGES` が3要素の配列として export される
-- [ ] 各ステージに `preDialogue`（3-5セリフ）、`postWinDialogue`（2-3セリフ）、`postLoseDialogue`（2セリフ）がある
-- [ ] `characterId` が `characters.ts` のキャラ ID と一致する
-- [ ] `fieldId` が `config.ts` の FIELDS ID と一致する
+- [x] `CHAPTER_1_STAGES` が3要素の配列として export される
+- [x] 各ステージに `preDialogue`（3-5セリフ）、`postWinDialogue`（2-3セリフ）、`postLoseDialogue`（2セリフ）がある
+- [x] `characterId` が `characters.ts` のキャラ ID と一致する
+- [x] `fieldId` が `config.ts` の FIELDS ID と一致する
 **依存**: P2-02, P2-07
 
-### P2-09: Phase 2 テスト
-**ファイル**: 新規 `core/characters.test.ts`, `core/story.test.ts`
-**内容**: キャラクターデータの整合性テスト、ストーリー進行ロジックのテスト
+### P2-09: Phase 2 テスト ✅
+**ファイル**: 新規 `core/characters.test.ts`, `core/story.test.ts`, `core/dialogue-data.test.ts`
+**内容**: キャラクターデータの整合性テスト、ストーリー進行ロジックのテスト、ダイアログデータの整合性テスト
 **受け入れ基準**:
-- [ ] 全キャラの `reactions` に空配列がないことのテスト
-- [ ] `isStageUnlocked()` のテスト（初期状態で1-1のみ解放、1-1クリアで1-2解放）
-- [ ] `saveStoryProgress` / `loadStoryProgress` の round-trip テスト
-- [ ] 既存テストが全て通る
+- [x] 全キャラの `reactions` に空配列がないことのテスト
+- [x] `isStageUnlocked()` のテスト（初期状態で1-1のみ解放、1-1クリアで1-2解放）
+- [x] `saveStoryProgress` / `loadStoryProgress` の round-trip テスト
+- [x] `findCharacterById()` のテスト
+- [x] ダイアログデータの整合性テスト（characterId, fieldId の参照整合性）
+- [x] 既存テストが全て通る（全 241 テスト PASS）
 **依存**: P2-01 〜 P2-08
 
 ---
