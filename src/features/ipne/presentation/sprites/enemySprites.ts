@@ -182,10 +182,66 @@ const patrolFrame2 = applyEnemyPixelEdits(patrolFrame2Base, [
   { x: 22, y: 20, value: 2 },
 ]);
 
+/** パトロール敵 フレーム3: 復帰中間フレーム（frame1ベースのハイライト位置変更） */
+const patrolFrame3 = applyEnemyPixelEdits(patrolFrame1Base, [
+  { x: 13, y: 5, value: 4 },
+  { x: 14, y: 4, value: 4 },
+  { x: 17, y: 4, value: 4 },
+  { x: 18, y: 5, value: 4 },
+  { x: 11, y: 8, value: 4 },
+  { x: 20, y: 8, value: 4 },
+  { x: 12, y: 10, value: 4 },
+  { x: 19, y: 10, value: 4 },
+  { x: 10, y: 13, value: 4 },
+  { x: 21, y: 13, value: 4 },
+  { x: 14, y: 13, value: 4 },
+  { x: 17, y: 13, value: 4 },
+  { x: 13, y: 14, value: 2 },
+  { x: 18, y: 14, value: 2 },
+  { x: 14, y: 15, value: 2 },
+  { x: 17, y: 15, value: 2 },
+  { x: 15, y: 15, value: 1 },
+  { x: 16, y: 15, value: 1 },
+  { x: 14, y: 16, value: 1 },
+  { x: 17, y: 16, value: 1 },
+  { x: 15, y: 17, value: 4 },
+  { x: 16, y: 17, value: 4 },
+  { x: 14, y: 18, value: 2 },
+  { x: 17, y: 18, value: 2 },
+  { x: 13, y: 19, value: 4 },
+  { x: 18, y: 19, value: 4 },
+  { x: 11, y: 21, value: 2 },
+  { x: 20, y: 21, value: 2 },
+]);
+
+/** パトロール敵 フレーム4: 圧縮遷移フレーム（frame2ベースのハイライト位置変更） */
+const patrolFrame4 = applyEnemyPixelEdits(patrolFrame2Base, [
+  { x: 13, y: 10, value: 4 },
+  { x: 18, y: 10, value: 4 },
+  { x: 12, y: 12, value: 4 },
+  { x: 19, y: 12, value: 4 },
+  { x: 10, y: 14, value: 4 },
+  { x: 21, y: 14, value: 4 },
+  { x: 14, y: 15, value: 2 },
+  { x: 17, y: 15, value: 2 },
+  { x: 15, y: 15, value: 1 },
+  { x: 16, y: 15, value: 1 },
+  { x: 13, y: 16, value: 1 },
+  { x: 18, y: 16, value: 1 },
+  { x: 15, y: 17, value: 4 },
+  { x: 16, y: 17, value: 4 },
+  { x: 14, y: 18, value: 2 },
+  { x: 17, y: 18, value: 2 },
+  { x: 13, y: 19, value: 4 },
+  { x: 18, y: 19, value: 4 },
+  { x: 10, y: 20, value: 2 },
+  { x: 21, y: 20, value: 2 },
+]);
+
 /** パトロール敵のスプライトシート */
 export const PATROL_SPRITE_SHEET: SpriteSheetDefinition = {
-  sprites: [patrolFrame1, patrolFrame2],
-  frameDuration: 400,
+  sprites: [patrolFrame1, patrolFrame2, patrolFrame3, patrolFrame4],
+  frameDuration: 250,
 };
 
 // ============================================================================
@@ -365,10 +421,94 @@ const chargeFrame2 = applyEnemyPixelEdits(chargeFrame2Base, [
   { x: 19, y: 20, value: 3 },
 ]);
 
+/** 突進獣 フレーム3: 中間モーション（frame1ベースのハイライト位置変更） */
+const chargeFrame3 = applyEnemyPixelEdits(chargeFrame1Base, [
+  { x: 9, y: 6, value: 4 },
+  { x: 22, y: 6, value: 4 },
+  { x: 11, y: 8, value: 4 },
+  { x: 20, y: 8, value: 4 },
+  { x: 14, y: 8, value: 4 },
+  { x: 17, y: 8, value: 4 },
+  { x: 13, y: 8, value: 4 },
+  { x: 18, y: 8, value: 4 },
+  { x: 13, y: 10, value: 4 },
+  { x: 18, y: 10, value: 4 },
+  { x: 12, y: 10, value: 1 },
+  { x: 19, y: 10, value: 1 },
+  { x: 15, y: 10, value: 1 },
+  { x: 16, y: 10, value: 1 },
+  { x: 14, y: 10, value: 4 },
+  { x: 17, y: 10, value: 4 },
+  { x: 13, y: 12, value: 4 },
+  { x: 18, y: 12, value: 4 },
+  { x: 15, y: 12, value: 1 },
+  { x: 16, y: 12, value: 1 },
+  { x: 14, y: 12, value: 1 },
+  { x: 17, y: 12, value: 1 },
+  { x: 14, y: 13, value: 4 },
+  { x: 17, y: 13, value: 4 },
+  { x: 15, y: 14, value: 1 },
+  { x: 16, y: 14, value: 1 },
+  { x: 14, y: 14, value: 4 },
+  { x: 17, y: 14, value: 4 },
+  { x: 14, y: 16, value: 1 },
+  { x: 17, y: 16, value: 1 },
+  { x: 15, y: 17, value: 4 },
+  { x: 16, y: 17, value: 4 },
+  { x: 14, y: 18, value: 4 },
+  { x: 17, y: 18, value: 4 },
+  { x: 15, y: 18, value: 4 },
+  { x: 16, y: 18, value: 4 },
+  { x: 13, y: 19, value: 3 },
+  { x: 18, y: 19, value: 3 },
+  { x: 15, y: 21, value: 1 },
+  { x: 16, y: 21, value: 1 },
+]);
+
+/** 突進獣 フレーム4: 中間モーション（frame2ベースのハイライト位置変更） */
+const chargeFrame4 = applyEnemyPixelEdits(chargeFrame2Base, [
+  { x: 9, y: 8, value: 4 },
+  { x: 22, y: 8, value: 4 },
+  { x: 14, y: 8, value: 4 },
+  { x: 17, y: 8, value: 4 },
+  { x: 13, y: 8, value: 4 },
+  { x: 18, y: 8, value: 4 },
+  { x: 13, y: 10, value: 4 },
+  { x: 18, y: 10, value: 4 },
+  { x: 12, y: 10, value: 1 },
+  { x: 19, y: 10, value: 1 },
+  { x: 15, y: 10, value: 1 },
+  { x: 16, y: 10, value: 1 },
+  { x: 14, y: 10, value: 4 },
+  { x: 17, y: 10, value: 4 },
+  { x: 13, y: 12, value: 4 },
+  { x: 18, y: 12, value: 4 },
+  { x: 15, y: 12, value: 1 },
+  { x: 16, y: 12, value: 1 },
+  { x: 14, y: 12, value: 1 },
+  { x: 17, y: 12, value: 1 },
+  { x: 14, y: 13, value: 4 },
+  { x: 17, y: 13, value: 4 },
+  { x: 14, y: 14, value: 1 },
+  { x: 17, y: 14, value: 1 },
+  { x: 14, y: 14, value: 4 },
+  { x: 17, y: 14, value: 4 },
+  { x: 15, y: 16, value: 1 },
+  { x: 16, y: 16, value: 1 },
+  { x: 15, y: 18, value: 4 },
+  { x: 16, y: 18, value: 4 },
+  { x: 14, y: 19, value: 4 },
+  { x: 17, y: 19, value: 4 },
+  { x: 15, y: 19, value: 4 },
+  { x: 16, y: 19, value: 4 },
+  { x: 13, y: 20, value: 3 },
+  { x: 18, y: 20, value: 3 },
+]);
+
 /** 突進獣のスプライトシート */
 export const CHARGE_SPRITE_SHEET: SpriteSheetDefinition = {
-  sprites: [chargeFrame1, chargeFrame2],
-  frameDuration: 300,
+  sprites: [chargeFrame1, chargeFrame2, chargeFrame3, chargeFrame4],
+  frameDuration: 200,
 };
 
 // ============================================================================
@@ -538,10 +678,84 @@ const rangedFrame2 = applyEnemyPixelEdits(rangedFrame2Base, [
   { x: 17, y: 22, value: 3 },
 ]);
 
+/** 射手 フレーム3: 杖グロウ変化（frame1ベースのハイライト位置変更） */
+const rangedFrame3 = applyEnemyPixelEdits(rangedFrame1Base, [
+  { x: 10, y: 8, value: 4 },
+  { x: 15, y: 8, value: 4 },
+  { x: 9, y: 9, value: 4 },
+  { x: 16, y: 9, value: 4 },
+  { x: 11, y: 10, value: 4 },
+  { x: 14, y: 10, value: 4 },
+  { x: 10, y: 10, value: 4 },
+  { x: 15, y: 10, value: 4 },
+  { x: 12, y: 10, value: 1 },
+  { x: 13, y: 10, value: 1 },
+  { x: 10, y: 11, value: 4 },
+  { x: 15, y: 11, value: 4 },
+  { x: 12, y: 12, value: 1 },
+  { x: 13, y: 12, value: 1 },
+  { x: 10, y: 12, value: 1 },
+  { x: 15, y: 12, value: 1 },
+  { x: 12, y: 13, value: 4 },
+  { x: 13, y: 13, value: 4 },
+  { x: 11, y: 13, value: 4 },
+  { x: 14, y: 13, value: 4 },
+  { x: 12, y: 14, value: 4 },
+  { x: 13, y: 14, value: 4 },
+  { x: 11, y: 15, value: 4 },
+  { x: 14, y: 15, value: 4 },
+  { x: 10, y: 17, value: 3 },
+  { x: 17, y: 17, value: 3 },
+  { x: 13, y: 18, value: 4 },
+  { x: 14, y: 18, value: 4 },
+  { x: 12, y: 20, value: 4 },
+  { x: 15, y: 20, value: 4 },
+  { x: 11, y: 22, value: 3 },
+  { x: 16, y: 22, value: 3 },
+]);
+
+/** 射手 フレーム4: 杖グロウ変化（frame2ベースのハイライト位置変更） */
+const rangedFrame4 = applyEnemyPixelEdits(rangedFrame2Base, [
+  { x: 10, y: 8, value: 4 },
+  { x: 15, y: 8, value: 4 },
+  { x: 9, y: 9, value: 4 },
+  { x: 16, y: 9, value: 4 },
+  { x: 11, y: 10, value: 4 },
+  { x: 14, y: 10, value: 4 },
+  { x: 10, y: 10, value: 4 },
+  { x: 15, y: 10, value: 4 },
+  { x: 12, y: 10, value: 1 },
+  { x: 13, y: 10, value: 1 },
+  { x: 10, y: 11, value: 4 },
+  { x: 15, y: 11, value: 4 },
+  { x: 12, y: 12, value: 1 },
+  { x: 13, y: 12, value: 1 },
+  { x: 10, y: 12, value: 1 },
+  { x: 15, y: 12, value: 1 },
+  { x: 12, y: 13, value: 4 },
+  { x: 13, y: 13, value: 4 },
+  { x: 11, y: 13, value: 4 },
+  { x: 14, y: 13, value: 4 },
+  { x: 12, y: 14, value: 4 },
+  { x: 13, y: 14, value: 4 },
+  { x: 11, y: 15, value: 4 },
+  { x: 14, y: 15, value: 4 },
+  { x: 10, y: 17, value: 3 },
+  { x: 17, y: 17, value: 3 },
+  { x: 23, y: 18, value: 4 },
+  { x: 24, y: 18, value: 4 },
+  { x: 13, y: 18, value: 4 },
+  { x: 14, y: 18, value: 4 },
+  { x: 12, y: 20, value: 4 },
+  { x: 15, y: 20, value: 4 },
+  { x: 11, y: 22, value: 3 },
+  { x: 16, y: 22, value: 3 },
+]);
+
 /** 射手のスプライトシート */
 export const RANGED_SPRITE_SHEET: SpriteSheetDefinition = {
-  sprites: [rangedFrame1, rangedFrame2],
-  frameDuration: 500,
+  sprites: [rangedFrame1, rangedFrame2, rangedFrame3, rangedFrame4],
+  frameDuration: 300,
 };
 
 // ============================================================================
@@ -695,10 +909,68 @@ const specimenFrame2 = applyEnemyPixelEdits(specimenFrame2Base, [
   { x: 18, y: 19, value: 2 },
 ]);
 
+/** 標本 フレーム3: 脈動バリエーション（frame1ベースのハイライト位置変更） */
+const specimenFrame3 = applyEnemyPixelEdits(specimenFrame1Base, [
+  { x: 15, y: 10, value: 4 },
+  { x: 16, y: 10, value: 4 },
+  { x: 14, y: 10, value: 4 },
+  { x: 17, y: 10, value: 4 },
+  { x: 15, y: 12, value: 4 },
+  { x: 16, y: 12, value: 4 },
+  { x: 14, y: 12, value: 2 },
+  { x: 17, y: 12, value: 2 },
+  { x: 14, y: 14, value: 4 },
+  { x: 17, y: 14, value: 4 },
+  { x: 15, y: 15, value: 2 },
+  { x: 16, y: 15, value: 2 },
+  { x: 14, y: 15, value: 1 },
+  { x: 17, y: 15, value: 1 },
+  { x: 14, y: 16, value: 2 },
+  { x: 17, y: 16, value: 2 },
+  { x: 13, y: 16, value: 1 },
+  { x: 18, y: 16, value: 1 },
+  { x: 15, y: 17, value: 1 },
+  { x: 16, y: 17, value: 1 },
+  { x: 14, y: 18, value: 4 },
+  { x: 17, y: 18, value: 4 },
+  { x: 13, y: 18, value: 4 },
+  { x: 18, y: 18, value: 4 },
+  { x: 14, y: 20, value: 2 },
+  { x: 17, y: 20, value: 2 },
+]);
+
+/** 標本 フレーム4: 脈動バリエーション（frame2ベースのハイライト位置変更） */
+const specimenFrame4 = applyEnemyPixelEdits(specimenFrame2Base, [
+  { x: 15, y: 12, value: 4 },
+  { x: 16, y: 12, value: 4 },
+  { x: 14, y: 12, value: 4 },
+  { x: 17, y: 12, value: 4 },
+  { x: 15, y: 14, value: 4 },
+  { x: 16, y: 14, value: 4 },
+  { x: 14, y: 14, value: 2 },
+  { x: 17, y: 14, value: 2 },
+  { x: 14, y: 15, value: 4 },
+  { x: 17, y: 15, value: 4 },
+  { x: 14, y: 15, value: 1 },
+  { x: 17, y: 15, value: 1 },
+  { x: 15, y: 16, value: 1 },
+  { x: 16, y: 16, value: 1 },
+  { x: 14, y: 16, value: 4 },
+  { x: 17, y: 16, value: 4 },
+  { x: 14, y: 17, value: 4 },
+  { x: 17, y: 17, value: 4 },
+  { x: 15, y: 18, value: 2 },
+  { x: 16, y: 18, value: 2 },
+  { x: 13, y: 18, value: 4 },
+  { x: 18, y: 18, value: 4 },
+  { x: 14, y: 19, value: 2 },
+  { x: 17, y: 19, value: 2 },
+]);
+
 /** 標本のスプライトシート */
 export const SPECIMEN_SPRITE_SHEET: SpriteSheetDefinition = {
-  sprites: [specimenFrame1, specimenFrame2],
-  frameDuration: 600,
+  sprites: [specimenFrame1, specimenFrame2, specimenFrame3, specimenFrame4],
+  frameDuration: 350,
 };
 
 // ============================================================================
@@ -1211,10 +1483,58 @@ const miniBossFrame2 = applyEnemyPixelEdits(miniBossFrame2Base, [
   { x: 21, y: 24, value: 4 },
 ]);
 
+/** ミニボス フレーム3: 中間バリエーション（frame1ベースのハイライト位置変更） */
+const miniBossFrame3 = applyEnemyPixelEdits(miniBossFrame1Base, [
+  { x: 18, y: 14, value: 5 },
+  { x: 21, y: 14, value: 5 },
+  { x: 17, y: 16, value: 5 },
+  { x: 22, y: 16, value: 5 },
+  { x: 19, y: 16, value: 1 },
+  { x: 20, y: 16, value: 1 },
+  { x: 18, y: 16, value: 1 },
+  { x: 21, y: 16, value: 1 },
+  { x: 18, y: 18, value: 1 },
+  { x: 21, y: 18, value: 1 },
+  { x: 19, y: 18, value: 5 },
+  { x: 20, y: 18, value: 5 },
+  { x: 18, y: 19, value: 4 },
+  { x: 21, y: 19, value: 4 },
+  { x: 19, y: 20, value: 4 },
+  { x: 20, y: 20, value: 4 },
+  { x: 18, y: 22, value: 5 },
+  { x: 21, y: 22, value: 5 },
+  { x: 19, y: 24, value: 4 },
+  { x: 20, y: 24, value: 4 },
+]);
+
+/** ミニボス フレーム4: 中間バリエーション（frame2ベースのハイライト位置変更） */
+const miniBossFrame4 = applyEnemyPixelEdits(miniBossFrame2Base, [
+  { x: 18, y: 14, value: 5 },
+  { x: 21, y: 14, value: 5 },
+  { x: 17, y: 16, value: 5 },
+  { x: 22, y: 16, value: 5 },
+  { x: 19, y: 16, value: 1 },
+  { x: 20, y: 16, value: 1 },
+  { x: 18, y: 16, value: 1 },
+  { x: 21, y: 16, value: 1 },
+  { x: 18, y: 18, value: 1 },
+  { x: 21, y: 18, value: 1 },
+  { x: 19, y: 18, value: 5 },
+  { x: 20, y: 18, value: 5 },
+  { x: 18, y: 20, value: 4 },
+  { x: 21, y: 20, value: 4 },
+  { x: 19, y: 22, value: 4 },
+  { x: 20, y: 22, value: 4 },
+  { x: 18, y: 22, value: 5 },
+  { x: 21, y: 22, value: 5 },
+  { x: 19, y: 24, value: 4 },
+  { x: 20, y: 24, value: 4 },
+]);
+
 /** ミニボスのスプライトシート */
 export const MINI_BOSS_SPRITE_SHEET: SpriteSheetDefinition = {
-  sprites: [miniBossFrame1, miniBossFrame2],
-  frameDuration: 350,
+  sprites: [miniBossFrame1, miniBossFrame2, miniBossFrame3, miniBossFrame4],
+  frameDuration: 200,
 };
 
 // ============================================================================
@@ -1394,10 +1714,50 @@ const megaBossFrame2 = applyEnemyPixelEdits({
   { x: 29, y: 26, value: 6 },
 ]);
 
+/** メガボス フレーム3: 中間バリエーション（frame1ベースのハイライト位置変更） */
+const megaBossFrame3 = applyEnemyPixelEdits(megaBossFrame1, [
+  { x: 25, y: 14, value: 6 },
+  { x: 30, y: 14, value: 6 },
+  { x: 24, y: 16, value: 6 },
+  { x: 31, y: 16, value: 6 },
+  { x: 26, y: 16, value: 1 },
+  { x: 29, y: 16, value: 1 },
+  { x: 25, y: 18, value: 6 },
+  { x: 30, y: 18, value: 6 },
+  { x: 26, y: 20, value: 5 },
+  { x: 29, y: 20, value: 5 },
+  { x: 25, y: 22, value: 6 },
+  { x: 30, y: 22, value: 6 },
+  { x: 25, y: 24, value: 5 },
+  { x: 30, y: 24, value: 5 },
+  { x: 25, y: 26, value: 6 },
+  { x: 30, y: 26, value: 6 },
+]);
+
+/** メガボス フレーム4: 中間バリエーション（frame2ベースのハイライト位置変更） */
+const megaBossFrame4 = applyEnemyPixelEdits(megaBossFrame2, [
+  { x: 25, y: 14, value: 6 },
+  { x: 30, y: 14, value: 6 },
+  { x: 24, y: 16, value: 6 },
+  { x: 31, y: 16, value: 6 },
+  { x: 26, y: 16, value: 1 },
+  { x: 29, y: 16, value: 1 },
+  { x: 25, y: 18, value: 6 },
+  { x: 30, y: 18, value: 6 },
+  { x: 26, y: 20, value: 5 },
+  { x: 29, y: 20, value: 5 },
+  { x: 25, y: 22, value: 6 },
+  { x: 30, y: 22, value: 6 },
+  { x: 25, y: 24, value: 5 },
+  { x: 30, y: 24, value: 5 },
+  { x: 25, y: 26, value: 6 },
+  { x: 30, y: 26, value: 6 },
+]);
+
 /** メガボスのスプライトシート */
 export const MEGA_BOSS_SPRITE_SHEET: SpriteSheetDefinition = {
-  sprites: [megaBossFrame1, megaBossFrame2],
-  frameDuration: 300,
+  sprites: [megaBossFrame1, megaBossFrame2, megaBossFrame3, megaBossFrame4],
+  frameDuration: 200,
 };
 
 // ============================================================================
