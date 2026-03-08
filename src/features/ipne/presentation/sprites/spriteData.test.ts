@@ -224,4 +224,15 @@ describe('createSprite', () => {
     expect(imageData.data[4]).toBe(0x22);
     expect(imageData.data[8]).toBe(0x33);
   });
+
+  it('未定義パレット参照でもクラッシュせず診断色で描画する', () => {
+    const imageData = createSprite([[2]], ['transparent', '#111111']);
+
+    expect(imageData.width).toBe(1);
+    expect(imageData.height).toBe(1);
+    expect(imageData.data[0]).toBe(255);
+    expect(imageData.data[1]).toBe(0);
+    expect(imageData.data[2]).toBe(255);
+    expect(imageData.data[3]).toBe(255);
+  });
 });

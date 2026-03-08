@@ -16,6 +16,27 @@ export interface SpriteDefinition {
   palette: string[]; // palette[0] は常に透明
 }
 
+const INVALID_SPRITE_COLOR = '#ff00ff';
+
+/**
+ * パレット参照を安全に解決する
+ *
+ * 未定義の色参照が来てもゲーム全体を落とさず、
+ * 診断色へフォールバックする。
+ */
+function resolvePaletteColor(
+  palette: string[],
+  colorIndex: number,
+  x: number,
+  y: number
+): string {
+  const color = palette[colorIndex];
+  if (typeof color === 'string' && color.length > 0) {
+    return color;
+  }
+  return INVALID_SPRITE_COLOR;
+}
+
 /**
  * 16進数カラーコードを RGBA 値に変換する
  *
@@ -56,7 +77,8 @@ export function createSprite(
         data[offset + 2] = 0;
         data[offset + 3] = 0;
       } else {
-        const [r, g, b, a] = hexToRgba(palette[colorIndex]);
+        const color = resolvePaletteColor(palette, colorIndex, x, y);
+        const [r, g, b, a] = hexToRgba(color);
         data[offset] = r;
         data[offset + 1] = g;
         data[offset + 2] = b;

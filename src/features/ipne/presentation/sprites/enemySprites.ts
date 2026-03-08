@@ -8,6 +8,31 @@
 import { SpriteDefinition } from './spriteData';
 import { SpriteSheetDefinition } from './spriteSheet';
 
+type EnemyPixelEdit = Readonly<{
+  x: number;
+  y: number;
+  value: number;
+}>;
+
+function cloneEnemyPixels(pixels: number[][]): number[][] {
+  return pixels.map((row) => [...row]);
+}
+
+function applyEnemyPixelEdits(base: SpriteDefinition, edits: EnemyPixelEdit[]): SpriteDefinition {
+  const pixels = cloneEnemyPixels(base.pixels);
+
+  edits.forEach(({ x, y, value }) => {
+    if (pixels[y] && pixels[y][x] !== undefined) {
+      pixels[y][x] = value;
+    }
+  });
+
+  return {
+    ...base,
+    pixels,
+  };
+}
+
 // ============================================================================
 // 1. パトロール敵（スライム） - 32×32, 2フレーム
 // ============================================================================
@@ -19,7 +44,7 @@ const PATROL_PALETTE = ['', '#4c1d95', '#6b21a8', '#7c3aed', '#a78bfa'];
  * パトロール敵 フレーム1: 通常の丸い形（待機状態）
  * ぷるぷる質感、不規則な輝きパターン、内部の核や気泡を持つスライム
  */
-const patrolFrame1: SpriteDefinition = {
+const patrolFrame1Base: SpriteDefinition = {
   width: 32,
   height: 32,
   palette: PATROL_PALETTE,
@@ -63,7 +88,7 @@ const patrolFrame1: SpriteDefinition = {
  * パトロール敵 フレーム2: 潰れた形（バウンス状態）
  * 横に広がって縦に縮んだスライム、気泡が浮き上がる
  */
-const patrolFrame2: SpriteDefinition = {
+const patrolFrame2Base: SpriteDefinition = {
   width: 32,
   height: 32,
   palette: PATROL_PALETTE,
@@ -103,6 +128,60 @@ const patrolFrame2: SpriteDefinition = {
   ],
 };
 
+const patrolFrame1 = applyEnemyPixelEdits(patrolFrame1Base, [
+  { x: 12, y: 5, value: 4 },
+  { x: 13, y: 4, value: 4 },
+  { x: 18, y: 4, value: 4 },
+  { x: 19, y: 5, value: 4 },
+  { x: 10, y: 8, value: 4 },
+  { x: 21, y: 8, value: 4 },
+  { x: 11, y: 10, value: 4 },
+  { x: 20, y: 10, value: 4 },
+  { x: 9, y: 13, value: 4 },
+  { x: 22, y: 13, value: 4 },
+  { x: 13, y: 13, value: 4 },
+  { x: 18, y: 13, value: 4 },
+  { x: 14, y: 14, value: 2 },
+  { x: 17, y: 14, value: 2 },
+  { x: 13, y: 15, value: 2 },
+  { x: 18, y: 15, value: 2 },
+  { x: 15, y: 15, value: 1 },
+  { x: 16, y: 15, value: 1 },
+  { x: 14, y: 16, value: 1 },
+  { x: 17, y: 16, value: 1 },
+  { x: 15, y: 17, value: 4 },
+  { x: 16, y: 17, value: 4 },
+  { x: 15, y: 18, value: 2 },
+  { x: 16, y: 18, value: 2 },
+  { x: 12, y: 19, value: 4 },
+  { x: 19, y: 19, value: 4 },
+  { x: 10, y: 21, value: 2 },
+  { x: 21, y: 21, value: 2 },
+]);
+
+const patrolFrame2 = applyEnemyPixelEdits(patrolFrame2Base, [
+  { x: 12, y: 10, value: 4 },
+  { x: 19, y: 10, value: 4 },
+  { x: 11, y: 12, value: 4 },
+  { x: 20, y: 12, value: 4 },
+  { x: 9, y: 14, value: 4 },
+  { x: 22, y: 14, value: 4 },
+  { x: 13, y: 15, value: 2 },
+  { x: 18, y: 15, value: 2 },
+  { x: 15, y: 15, value: 1 },
+  { x: 16, y: 15, value: 1 },
+  { x: 14, y: 16, value: 1 },
+  { x: 17, y: 16, value: 1 },
+  { x: 15, y: 17, value: 4 },
+  { x: 16, y: 17, value: 4 },
+  { x: 15, y: 18, value: 2 },
+  { x: 16, y: 18, value: 2 },
+  { x: 12, y: 19, value: 4 },
+  { x: 19, y: 19, value: 4 },
+  { x: 9, y: 20, value: 2 },
+  { x: 22, y: 20, value: 2 },
+]);
+
 /** パトロール敵のスプライトシート */
 export const PATROL_SPRITE_SHEET: SpriteSheetDefinition = {
   sprites: [patrolFrame1, patrolFrame2],
@@ -120,7 +199,7 @@ const CHARGE_PALETTE = ['', '#7f1d1d', '#991b1b', '#dc2626', '#f87171'];
  * 突進獣 フレーム1: 構え姿勢（待機状態）
  * 角を持つ猛獣が立ち構えているデザイン
  */
-const chargeFrame1: SpriteDefinition = {
+const chargeFrame1Base: SpriteDefinition = {
   width: 32,
   height: 32,
   palette: CHARGE_PALETTE,
@@ -164,7 +243,7 @@ const chargeFrame1: SpriteDefinition = {
  * 突進獣 フレーム2: 突進姿勢（前傾状態）
  * 角を突き出して前方に突進する姿勢
  */
-const chargeFrame2: SpriteDefinition = {
+const chargeFrame2Base: SpriteDefinition = {
   width: 32,
   height: 32,
   palette: CHARGE_PALETTE,
@@ -204,6 +283,88 @@ const chargeFrame2: SpriteDefinition = {
   ],
 };
 
+const chargeFrame1 = applyEnemyPixelEdits(chargeFrame1Base, [
+  { x: 8, y: 6, value: 4 },
+  { x: 23, y: 6, value: 4 },
+  { x: 10, y: 8, value: 4 },
+  { x: 21, y: 8, value: 4 },
+  { x: 13, y: 8, value: 4 },
+  { x: 18, y: 8, value: 4 },
+  { x: 14, y: 8, value: 4 },
+  { x: 17, y: 8, value: 4 },
+  { x: 12, y: 10, value: 4 },
+  { x: 19, y: 10, value: 4 },
+  { x: 11, y: 10, value: 1 },
+  { x: 20, y: 10, value: 1 },
+  { x: 14, y: 10, value: 1 },
+  { x: 17, y: 10, value: 1 },
+  { x: 15, y: 10, value: 4 },
+  { x: 16, y: 10, value: 4 },
+  { x: 12, y: 12, value: 4 },
+  { x: 19, y: 12, value: 4 },
+  { x: 14, y: 12, value: 1 },
+  { x: 17, y: 12, value: 1 },
+  { x: 15, y: 12, value: 1 },
+  { x: 16, y: 12, value: 1 },
+  { x: 15, y: 13, value: 4 },
+  { x: 16, y: 13, value: 4 },
+  { x: 14, y: 14, value: 1 },
+  { x: 17, y: 14, value: 1 },
+  { x: 15, y: 14, value: 4 },
+  { x: 16, y: 14, value: 4 },
+  { x: 13, y: 16, value: 1 },
+  { x: 18, y: 16, value: 1 },
+  { x: 14, y: 17, value: 4 },
+  { x: 17, y: 17, value: 4 },
+  { x: 13, y: 18, value: 4 },
+  { x: 18, y: 18, value: 4 },
+  { x: 15, y: 18, value: 4 },
+  { x: 16, y: 18, value: 4 },
+  { x: 12, y: 19, value: 3 },
+  { x: 19, y: 19, value: 3 },
+  { x: 14, y: 21, value: 1 },
+  { x: 17, y: 21, value: 1 },
+]);
+
+const chargeFrame2 = applyEnemyPixelEdits(chargeFrame2Base, [
+  { x: 8, y: 8, value: 4 },
+  { x: 23, y: 8, value: 4 },
+  { x: 13, y: 8, value: 4 },
+  { x: 18, y: 8, value: 4 },
+  { x: 14, y: 8, value: 4 },
+  { x: 17, y: 8, value: 4 },
+  { x: 12, y: 10, value: 4 },
+  { x: 19, y: 10, value: 4 },
+  { x: 11, y: 10, value: 1 },
+  { x: 20, y: 10, value: 1 },
+  { x: 14, y: 10, value: 1 },
+  { x: 17, y: 10, value: 1 },
+  { x: 15, y: 10, value: 4 },
+  { x: 16, y: 10, value: 4 },
+  { x: 12, y: 12, value: 4 },
+  { x: 19, y: 12, value: 4 },
+  { x: 14, y: 12, value: 1 },
+  { x: 17, y: 12, value: 1 },
+  { x: 15, y: 12, value: 1 },
+  { x: 16, y: 12, value: 1 },
+  { x: 15, y: 13, value: 4 },
+  { x: 16, y: 13, value: 4 },
+  { x: 13, y: 14, value: 1 },
+  { x: 18, y: 14, value: 1 },
+  { x: 15, y: 14, value: 4 },
+  { x: 16, y: 14, value: 4 },
+  { x: 14, y: 16, value: 1 },
+  { x: 17, y: 16, value: 1 },
+  { x: 14, y: 18, value: 4 },
+  { x: 17, y: 18, value: 4 },
+  { x: 13, y: 19, value: 4 },
+  { x: 18, y: 19, value: 4 },
+  { x: 15, y: 19, value: 4 },
+  { x: 16, y: 19, value: 4 },
+  { x: 12, y: 20, value: 3 },
+  { x: 19, y: 20, value: 3 },
+]);
+
 /** 突進獣のスプライトシート */
 export const CHARGE_SPRITE_SHEET: SpriteSheetDefinition = {
   sprites: [chargeFrame1, chargeFrame2],
@@ -221,7 +382,7 @@ const RANGED_PALETTE = ['', '#9a3412', '#c2410c', '#ea580c', '#fb923c'];
  * 射手 フレーム1: 杖を上に構えた姿勢
  * ローブを纏い杖を持つ魔法使い風デザイン
  */
-const rangedFrame1: SpriteDefinition = {
+const rangedFrame1Base: SpriteDefinition = {
   width: 32,
   height: 32,
   palette: RANGED_PALETTE,
@@ -265,7 +426,7 @@ const rangedFrame1: SpriteDefinition = {
  * 射手 フレーム2: 杖を前方に向けた姿勢（詠唱状態）
  * 杖を前方に突き出して魔法を放つポーズ
  */
-const rangedFrame2: SpriteDefinition = {
+const rangedFrame2Base: SpriteDefinition = {
   width: 32,
   height: 32,
   palette: RANGED_PALETTE,
@@ -305,6 +466,78 @@ const rangedFrame2: SpriteDefinition = {
   ],
 };
 
+const rangedFrame1 = applyEnemyPixelEdits(rangedFrame1Base, [
+  { x: 9, y: 8, value: 4 },
+  { x: 16, y: 8, value: 4 },
+  { x: 8, y: 9, value: 4 },
+  { x: 17, y: 9, value: 4 },
+  { x: 10, y: 10, value: 4 },
+  { x: 15, y: 10, value: 4 },
+  { x: 11, y: 10, value: 4 },
+  { x: 14, y: 10, value: 4 },
+  { x: 12, y: 10, value: 1 },
+  { x: 13, y: 10, value: 1 },
+  { x: 11, y: 11, value: 4 },
+  { x: 14, y: 11, value: 4 },
+  { x: 12, y: 12, value: 1 },
+  { x: 13, y: 12, value: 1 },
+  { x: 11, y: 12, value: 1 },
+  { x: 14, y: 12, value: 1 },
+  { x: 12, y: 13, value: 4 },
+  { x: 13, y: 13, value: 4 },
+  { x: 10, y: 13, value: 4 },
+  { x: 15, y: 13, value: 4 },
+  { x: 11, y: 14, value: 4 },
+  { x: 14, y: 14, value: 4 },
+  { x: 10, y: 15, value: 4 },
+  { x: 15, y: 15, value: 4 },
+  { x: 9, y: 17, value: 3 },
+  { x: 18, y: 17, value: 3 },
+  { x: 12, y: 18, value: 4 },
+  { x: 15, y: 18, value: 4 },
+  { x: 11, y: 20, value: 4 },
+  { x: 16, y: 20, value: 4 },
+  { x: 10, y: 22, value: 3 },
+  { x: 17, y: 22, value: 3 },
+]);
+
+const rangedFrame2 = applyEnemyPixelEdits(rangedFrame2Base, [
+  { x: 9, y: 8, value: 4 },
+  { x: 16, y: 8, value: 4 },
+  { x: 8, y: 9, value: 4 },
+  { x: 17, y: 9, value: 4 },
+  { x: 10, y: 10, value: 4 },
+  { x: 15, y: 10, value: 4 },
+  { x: 11, y: 10, value: 4 },
+  { x: 14, y: 10, value: 4 },
+  { x: 12, y: 10, value: 1 },
+  { x: 13, y: 10, value: 1 },
+  { x: 11, y: 11, value: 4 },
+  { x: 14, y: 11, value: 4 },
+  { x: 12, y: 12, value: 1 },
+  { x: 13, y: 12, value: 1 },
+  { x: 11, y: 12, value: 1 },
+  { x: 14, y: 12, value: 1 },
+  { x: 12, y: 13, value: 4 },
+  { x: 13, y: 13, value: 4 },
+  { x: 10, y: 13, value: 4 },
+  { x: 15, y: 13, value: 4 },
+  { x: 11, y: 14, value: 4 },
+  { x: 14, y: 14, value: 4 },
+  { x: 10, y: 15, value: 4 },
+  { x: 15, y: 15, value: 4 },
+  { x: 9, y: 17, value: 3 },
+  { x: 18, y: 17, value: 3 },
+  { x: 24, y: 18, value: 4 },
+  { x: 25, y: 18, value: 4 },
+  { x: 12, y: 18, value: 4 },
+  { x: 15, y: 18, value: 4 },
+  { x: 11, y: 20, value: 4 },
+  { x: 16, y: 20, value: 4 },
+  { x: 10, y: 22, value: 3 },
+  { x: 17, y: 22, value: 3 },
+]);
+
 /** 射手のスプライトシート */
 export const RANGED_SPRITE_SHEET: SpriteSheetDefinition = {
   sprites: [rangedFrame1, rangedFrame2],
@@ -322,7 +555,7 @@ const SPECIMEN_PALETTE = ['', '#1e3a5f', '#1e40af', '#2563eb', '#60a5fa'];
  * 標本 フレーム1: 通常形態
  * 角ばった幾何学的なクリスタルエンティティ
  */
-const specimenFrame1: SpriteDefinition = {
+const specimenFrame1Base: SpriteDefinition = {
   width: 32,
   height: 32,
   palette: SPECIMEN_PALETTE,
@@ -366,7 +599,7 @@ const specimenFrame1: SpriteDefinition = {
  * 標本 フレーム2: 脈動形態（クリスタル発光エフェクト）
  * わずかに回転・脈動しているような発光状態
  */
-const specimenFrame2: SpriteDefinition = {
+const specimenFrame2Base: SpriteDefinition = {
   width: 32,
   height: 32,
   palette: SPECIMEN_PALETTE,
@@ -406,6 +639,62 @@ const specimenFrame2: SpriteDefinition = {
   ],
 };
 
+const specimenFrame1 = applyEnemyPixelEdits(specimenFrame1Base, [
+  { x: 14, y: 10, value: 4 },
+  { x: 17, y: 10, value: 4 },
+  { x: 15, y: 10, value: 4 },
+  { x: 16, y: 10, value: 4 },
+  { x: 14, y: 12, value: 4 },
+  { x: 17, y: 12, value: 4 },
+  { x: 15, y: 12, value: 2 },
+  { x: 16, y: 12, value: 2 },
+  { x: 13, y: 14, value: 4 },
+  { x: 18, y: 14, value: 4 },
+  { x: 14, y: 15, value: 2 },
+  { x: 17, y: 15, value: 2 },
+  { x: 15, y: 15, value: 1 },
+  { x: 16, y: 15, value: 1 },
+  { x: 13, y: 16, value: 2 },
+  { x: 18, y: 16, value: 2 },
+  { x: 14, y: 16, value: 1 },
+  { x: 17, y: 16, value: 1 },
+  { x: 14, y: 17, value: 1 },
+  { x: 17, y: 17, value: 1 },
+  { x: 15, y: 18, value: 4 },
+  { x: 16, y: 18, value: 4 },
+  { x: 12, y: 18, value: 4 },
+  { x: 19, y: 18, value: 4 },
+  { x: 13, y: 20, value: 2 },
+  { x: 18, y: 20, value: 2 },
+]);
+
+const specimenFrame2 = applyEnemyPixelEdits(specimenFrame2Base, [
+  { x: 14, y: 12, value: 4 },
+  { x: 17, y: 12, value: 4 },
+  { x: 15, y: 12, value: 4 },
+  { x: 16, y: 12, value: 4 },
+  { x: 14, y: 14, value: 4 },
+  { x: 17, y: 14, value: 4 },
+  { x: 15, y: 14, value: 2 },
+  { x: 16, y: 14, value: 2 },
+  { x: 13, y: 15, value: 4 },
+  { x: 18, y: 15, value: 4 },
+  { x: 15, y: 15, value: 1 },
+  { x: 16, y: 15, value: 1 },
+  { x: 14, y: 16, value: 1 },
+  { x: 17, y: 16, value: 1 },
+  { x: 15, y: 16, value: 4 },
+  { x: 16, y: 16, value: 4 },
+  { x: 15, y: 17, value: 4 },
+  { x: 16, y: 17, value: 4 },
+  { x: 14, y: 18, value: 2 },
+  { x: 17, y: 18, value: 2 },
+  { x: 12, y: 18, value: 4 },
+  { x: 19, y: 18, value: 4 },
+  { x: 13, y: 19, value: 2 },
+  { x: 18, y: 19, value: 2 },
+]);
+
 /** 標本のスプライトシート */
 export const SPECIMEN_SPRITE_SHEET: SpriteSheetDefinition = {
   sprites: [specimenFrame1, specimenFrame2],
@@ -423,7 +712,7 @@ const BOSS_PALETTE = ['', '#451a03', '#7c2d12', '#dc2626', '#f97316', '#fbbf24',
  * ボス フレーム1: 待機姿勢
  * 角と翼を持つ大型の悪魔的ボスキャラクター
  */
-const bossFrame1: SpriteDefinition = {
+const bossFrame1Base: SpriteDefinition = {
   width: 48,
   height: 48,
   palette: BOSS_PALETTE,
@@ -483,7 +772,7 @@ const bossFrame1: SpriteDefinition = {
  * ボス フレーム2: 翼をやや上げた姿勢
  * 翼が少し持ち上がり始めるアニメーション
  */
-const bossFrame2: SpriteDefinition = {
+const bossFrame2Base: SpriteDefinition = {
   width: 48,
   height: 48,
   palette: BOSS_PALETTE,
@@ -543,7 +832,7 @@ const bossFrame2: SpriteDefinition = {
  * ボス フレーム3: 翼を大きく広げた姿勢（パワーポーズ）
  * 翼を最大限に広げて威圧するポーズ
  */
-const bossFrame3: SpriteDefinition = {
+const bossFrame3Base: SpriteDefinition = {
   width: 48,
   height: 48,
   palette: BOSS_PALETTE,
@@ -603,7 +892,7 @@ const bossFrame3: SpriteDefinition = {
  * ボス フレーム4: 翼を下ろし始める姿勢
  * パワーポーズから戻る途中のアニメーション
  */
-const bossFrame4: SpriteDefinition = {
+const bossFrame4Base: SpriteDefinition = {
   width: 48,
   height: 48,
   palette: BOSS_PALETTE,
@@ -659,6 +948,106 @@ const bossFrame4: SpriteDefinition = {
   ],
 };
 
+const bossFrame1 = applyEnemyPixelEdits(bossFrame1Base, [
+  { x: 21, y: 16, value: 5 },
+  { x: 26, y: 16, value: 5 },
+  { x: 20, y: 18, value: 5 },
+  { x: 27, y: 18, value: 5 },
+  { x: 22, y: 18, value: 6 },
+  { x: 25, y: 18, value: 6 },
+  { x: 23, y: 18, value: 6 },
+  { x: 24, y: 18, value: 6 },
+  { x: 21, y: 20, value: 5 },
+  { x: 26, y: 20, value: 5 },
+  { x: 22, y: 20, value: 6 },
+  { x: 25, y: 20, value: 6 },
+  { x: 23, y: 22, value: 5 },
+  { x: 24, y: 22, value: 5 },
+  { x: 22, y: 22, value: 6 },
+  { x: 25, y: 22, value: 6 },
+  { x: 22, y: 24, value: 4 },
+  { x: 25, y: 24, value: 4 },
+  { x: 21, y: 26, value: 4 },
+  { x: 26, y: 26, value: 4 },
+  { x: 23, y: 26, value: 6 },
+  { x: 24, y: 26, value: 6 },
+]);
+
+const bossFrame2 = applyEnemyPixelEdits(bossFrame2Base, [
+  { x: 21, y: 16, value: 5 },
+  { x: 26, y: 16, value: 5 },
+  { x: 20, y: 18, value: 5 },
+  { x: 27, y: 18, value: 5 },
+  { x: 22, y: 18, value: 6 },
+  { x: 25, y: 18, value: 6 },
+  { x: 23, y: 18, value: 6 },
+  { x: 24, y: 18, value: 6 },
+  { x: 21, y: 20, value: 5 },
+  { x: 26, y: 20, value: 5 },
+  { x: 22, y: 20, value: 6 },
+  { x: 25, y: 20, value: 6 },
+  { x: 23, y: 22, value: 5 },
+  { x: 24, y: 22, value: 5 },
+  { x: 22, y: 22, value: 6 },
+  { x: 25, y: 22, value: 6 },
+  { x: 22, y: 24, value: 4 },
+  { x: 25, y: 24, value: 4 },
+  { x: 21, y: 26, value: 4 },
+  { x: 26, y: 26, value: 4 },
+  { x: 23, y: 26, value: 6 },
+  { x: 24, y: 26, value: 6 },
+]);
+
+const bossFrame3 = applyEnemyPixelEdits(bossFrame3Base, [
+  { x: 21, y: 16, value: 5 },
+  { x: 26, y: 16, value: 5 },
+  { x: 20, y: 18, value: 5 },
+  { x: 27, y: 18, value: 5 },
+  { x: 22, y: 18, value: 6 },
+  { x: 25, y: 18, value: 6 },
+  { x: 23, y: 18, value: 6 },
+  { x: 24, y: 18, value: 6 },
+  { x: 21, y: 20, value: 5 },
+  { x: 26, y: 20, value: 5 },
+  { x: 22, y: 20, value: 6 },
+  { x: 25, y: 20, value: 6 },
+  { x: 23, y: 22, value: 5 },
+  { x: 24, y: 22, value: 5 },
+  { x: 22, y: 22, value: 6 },
+  { x: 25, y: 22, value: 6 },
+  { x: 22, y: 24, value: 4 },
+  { x: 25, y: 24, value: 4 },
+  { x: 21, y: 26, value: 4 },
+  { x: 26, y: 26, value: 4 },
+  { x: 23, y: 26, value: 6 },
+  { x: 24, y: 26, value: 6 },
+]);
+
+const bossFrame4 = applyEnemyPixelEdits(bossFrame4Base, [
+  { x: 21, y: 16, value: 5 },
+  { x: 26, y: 16, value: 5 },
+  { x: 20, y: 18, value: 5 },
+  { x: 27, y: 18, value: 5 },
+  { x: 22, y: 18, value: 6 },
+  { x: 25, y: 18, value: 6 },
+  { x: 23, y: 18, value: 6 },
+  { x: 24, y: 18, value: 6 },
+  { x: 21, y: 20, value: 5 },
+  { x: 26, y: 20, value: 5 },
+  { x: 22, y: 20, value: 6 },
+  { x: 25, y: 20, value: 6 },
+  { x: 23, y: 22, value: 5 },
+  { x: 24, y: 22, value: 5 },
+  { x: 22, y: 22, value: 6 },
+  { x: 25, y: 22, value: 6 },
+  { x: 22, y: 24, value: 4 },
+  { x: 25, y: 24, value: 4 },
+  { x: 21, y: 26, value: 4 },
+  { x: 26, y: 26, value: 4 },
+  { x: 23, y: 26, value: 6 },
+  { x: 24, y: 26, value: 6 },
+]);
+
 /** ボスのスプライトシート */
 export const BOSS_SPRITE_SHEET: SpriteSheetDefinition = {
   sprites: [bossFrame1, bossFrame2, bossFrame3, bossFrame4],
@@ -676,7 +1065,7 @@ const MINI_BOSS_PALETTE = ['', '#3b0d1e', '#6b2136', '#9b3b56', '#c45a78', '#e88
  * ミニボス フレーム1: 待機姿勢
  * 角と鎧を持つ中型の番兵キャラクター
  */
-const miniBossFrame1: SpriteDefinition = {
+const miniBossFrame1Base: SpriteDefinition = {
   width: 40,
   height: 40,
   palette: MINI_BOSS_PALETTE,
@@ -728,7 +1117,7 @@ const miniBossFrame1: SpriteDefinition = {
  * ミニボス フレーム2: 突進姿勢
  * 前傾して攻撃態勢に入ったポーズ
  */
-const miniBossFrame2: SpriteDefinition = {
+const miniBossFrame2Base: SpriteDefinition = {
   width: 40,
   height: 40,
   palette: MINI_BOSS_PALETTE,
@@ -776,6 +1165,52 @@ const miniBossFrame2: SpriteDefinition = {
   ],
 };
 
+const miniBossFrame1 = applyEnemyPixelEdits(miniBossFrame1Base, [
+  { x: 17, y: 14, value: 5 },
+  { x: 22, y: 14, value: 5 },
+  { x: 16, y: 16, value: 5 },
+  { x: 23, y: 16, value: 5 },
+  { x: 18, y: 16, value: 1 },
+  { x: 21, y: 16, value: 1 },
+  { x: 19, y: 16, value: 1 },
+  { x: 20, y: 16, value: 1 },
+  { x: 17, y: 18, value: 1 },
+  { x: 22, y: 18, value: 1 },
+  { x: 18, y: 18, value: 5 },
+  { x: 21, y: 18, value: 5 },
+  { x: 19, y: 19, value: 4 },
+  { x: 20, y: 19, value: 4 },
+  { x: 18, y: 20, value: 4 },
+  { x: 21, y: 20, value: 4 },
+  { x: 19, y: 22, value: 5 },
+  { x: 20, y: 22, value: 5 },
+  { x: 18, y: 24, value: 4 },
+  { x: 21, y: 24, value: 4 },
+]);
+
+const miniBossFrame2 = applyEnemyPixelEdits(miniBossFrame2Base, [
+  { x: 17, y: 14, value: 5 },
+  { x: 22, y: 14, value: 5 },
+  { x: 16, y: 16, value: 5 },
+  { x: 23, y: 16, value: 5 },
+  { x: 18, y: 16, value: 1 },
+  { x: 21, y: 16, value: 1 },
+  { x: 19, y: 16, value: 1 },
+  { x: 20, y: 16, value: 1 },
+  { x: 17, y: 18, value: 1 },
+  { x: 22, y: 18, value: 1 },
+  { x: 18, y: 18, value: 5 },
+  { x: 21, y: 18, value: 5 },
+  { x: 19, y: 20, value: 4 },
+  { x: 20, y: 20, value: 4 },
+  { x: 18, y: 22, value: 4 },
+  { x: 21, y: 22, value: 4 },
+  { x: 19, y: 22, value: 5 },
+  { x: 20, y: 22, value: 5 },
+  { x: 18, y: 24, value: 4 },
+  { x: 21, y: 24, value: 4 },
+]);
+
 /** ミニボスのスプライトシート */
 export const MINI_BOSS_SPRITE_SHEET: SpriteSheetDefinition = {
   sprites: [miniBossFrame1, miniBossFrame2],
@@ -793,7 +1228,7 @@ const MEGA_BOSS_PALETTE = ['', '#1a0330', '#3b0764', '#5b1994', '#7c3aed', '#a78
  * メガボス フレーム1: 待機姿勢
  * 巨大な暗黒の王。複数の目と威圧的なオーラを持つ
  */
-const megaBossFrame1: SpriteDefinition = {
+const megaBossFrame1 = applyEnemyPixelEdits({
   width: 56,
   height: 56,
   palette: MEGA_BOSS_PALETTE,
@@ -855,13 +1290,30 @@ const megaBossFrame1: SpriteDefinition = {
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
   ],
-};
+}, [
+  { x: 24, y: 14, value: 6 },
+  { x: 31, y: 14, value: 6 },
+  { x: 23, y: 16, value: 6 },
+  { x: 32, y: 16, value: 6 },
+  { x: 25, y: 16, value: 1 },
+  { x: 30, y: 16, value: 1 },
+  { x: 26, y: 18, value: 6 },
+  { x: 29, y: 18, value: 6 },
+  { x: 25, y: 20, value: 5 },
+  { x: 30, y: 20, value: 5 },
+  { x: 26, y: 22, value: 6 },
+  { x: 29, y: 22, value: 6 },
+  { x: 24, y: 24, value: 5 },
+  { x: 31, y: 24, value: 5 },
+  { x: 26, y: 26, value: 6 },
+  { x: 29, y: 26, value: 6 },
+]);
 
 /**
  * メガボス フレーム2: 翼を広げた姿勢（パワーポーズ）
  * 翼を最大限に広げて暗黒のオーラを放出するポーズ
  */
-const megaBossFrame2: SpriteDefinition = {
+const megaBossFrame2 = applyEnemyPixelEdits({
   width: 56,
   height: 56,
   palette: MEGA_BOSS_PALETTE,
@@ -923,7 +1375,24 @@ const megaBossFrame2: SpriteDefinition = {
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
   ],
-};
+}, [
+  { x: 24, y: 14, value: 6 },
+  { x: 31, y: 14, value: 6 },
+  { x: 23, y: 16, value: 6 },
+  { x: 32, y: 16, value: 6 },
+  { x: 25, y: 16, value: 1 },
+  { x: 30, y: 16, value: 1 },
+  { x: 26, y: 18, value: 6 },
+  { x: 29, y: 18, value: 6 },
+  { x: 25, y: 20, value: 5 },
+  { x: 30, y: 20, value: 5 },
+  { x: 26, y: 22, value: 6 },
+  { x: 29, y: 22, value: 6 },
+  { x: 24, y: 24, value: 5 },
+  { x: 31, y: 24, value: 5 },
+  { x: 26, y: 26, value: 6 },
+  { x: 29, y: 26, value: 6 },
+]);
 
 /** メガボスのスプライトシート */
 export const MEGA_BOSS_SPRITE_SHEET: SpriteSheetDefinition = {
@@ -939,7 +1408,7 @@ export const MEGA_BOSS_SPRITE_SHEET: SpriteSheetDefinition = {
  * パトロール敵 攻撃フレーム: 膨張した攻撃姿勢
  * 体を膨らませて威嚇・体当たりするデザイン
  */
-export const PATROL_ATTACK_FRAME: SpriteDefinition = {
+export const PATROL_ATTACK_FRAME = applyEnemyPixelEdits({
   width: 32,
   height: 32,
   palette: PATROL_PALETTE,
@@ -977,13 +1446,26 @@ export const PATROL_ATTACK_FRAME: SpriteDefinition = {
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
   ],
-};
+}, [
+  { x: 12, y: 11, value: 4 },
+  { x: 19, y: 11, value: 4 },
+  { x: 13, y: 13, value: 4 },
+  { x: 18, y: 13, value: 4 },
+  { x: 14, y: 14, value: 2 },
+  { x: 17, y: 14, value: 2 },
+  { x: 13, y: 15, value: 2 },
+  { x: 18, y: 15, value: 2 },
+  { x: 14, y: 16, value: 1 },
+  { x: 17, y: 16, value: 1 },
+  { x: 15, y: 17, value: 4 },
+  { x: 16, y: 17, value: 4 },
+]);
 
 /**
  * 突進獣 チャージフレーム: 前傾突進姿勢
  * 角を突き出し、体が前方に大きく傾き、手足が後方に流れるデザイン
  */
-export const CHARGE_RUSH_FRAME: SpriteDefinition = {
+export const CHARGE_RUSH_FRAME = applyEnemyPixelEdits({
   width: 32,
   height: 32,
   palette: CHARGE_PALETTE,
@@ -1021,13 +1503,26 @@ export const CHARGE_RUSH_FRAME: SpriteDefinition = {
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
   ],
-};
+}, [
+  { x: 8, y: 10, value: 4 },
+  { x: 9, y: 10, value: 4 },
+  { x: 10, y: 12, value: 1 },
+  { x: 15, y: 12, value: 1 },
+  { x: 11, y: 13, value: 4 },
+  { x: 14, y: 13, value: 4 },
+  { x: 9, y: 14, value: 1 },
+  { x: 16, y: 14, value: 1 },
+  { x: 10, y: 15, value: 4 },
+  { x: 15, y: 15, value: 4 },
+  { x: 11, y: 16, value: 1 },
+  { x: 14, y: 16, value: 1 },
+]);
 
 /**
  * 射手 キャストフレーム: 両手を掲げた詠唱姿勢
  * 両手を頭上に上げ、杖先が強く発光するデザイン
  */
-export const RANGED_CAST_FRAME: SpriteDefinition = {
+export const RANGED_CAST_FRAME = applyEnemyPixelEdits({
   width: 32,
   height: 32,
   palette: RANGED_PALETTE,
@@ -1065,13 +1560,24 @@ export const RANGED_CAST_FRAME: SpriteDefinition = {
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
   ],
-};
+}, [
+  { x: 12, y: 10, value: 4 },
+  { x: 17, y: 10, value: 4 },
+  { x: 11, y: 11, value: 4 },
+  { x: 18, y: 11, value: 4 },
+  { x: 13, y: 12, value: 1 },
+  { x: 16, y: 12, value: 1 },
+  { x: 14, y: 13, value: 4 },
+  { x: 15, y: 13, value: 4 },
+  { x: 13, y: 14, value: 4 },
+  { x: 16, y: 14, value: 4 },
+]);
 
 /**
  * 標本 変異フレーム: 不規則なシルエットへの変異
  * クリスタルが歪み、不規則に突起が伸びる異常形態
  */
-export const SPECIMEN_MUTATE_FRAME: SpriteDefinition = {
+export const SPECIMEN_MUTATE_FRAME = applyEnemyPixelEdits({
   width: 32,
   height: 32,
   palette: SPECIMEN_PALETTE,
@@ -1109,13 +1615,24 @@ export const SPECIMEN_MUTATE_FRAME: SpriteDefinition = {
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
   ],
-};
+}, [
+  { x: 14, y: 14, value: 4 },
+  { x: 17, y: 14, value: 4 },
+  { x: 13, y: 16, value: 4 },
+  { x: 18, y: 16, value: 4 },
+  { x: 14, y: 17, value: 1 },
+  { x: 17, y: 17, value: 1 },
+  { x: 15, y: 18, value: 4 },
+  { x: 16, y: 18, value: 4 },
+  { x: 14, y: 19, value: 2 },
+  { x: 17, y: 19, value: 2 },
+]);
 
 /**
  * ボス 攻撃フレーム: 前方に腕を振り下ろす攻撃姿勢
  * 翼を広げ、腕を前方に突き出すパワーアタック
  */
-export const BOSS_ATTACK_FRAME: SpriteDefinition = {
+const bossAttackFrameBase: SpriteDefinition = {
   width: 48,
   height: 48,
   palette: BOSS_PALETTE,
@@ -1175,7 +1692,7 @@ export const BOSS_ATTACK_FRAME: SpriteDefinition = {
  * ボス ダメージフレーム: 被弾でのけぞる姿勢
  * 翼が下がり、体が後方に反り返るダメージリアクション
  */
-export const BOSS_DAMAGE_FRAME: SpriteDefinition = {
+const bossDamageFrameBase: SpriteDefinition = {
   width: 48,
   height: 48,
   palette: BOSS_PALETTE,
@@ -1235,7 +1752,7 @@ export const BOSS_DAMAGE_FRAME: SpriteDefinition = {
  * ミニボス 攻撃フレーム: 腕を振り下ろす攻撃姿勢
  * 角を低くし、拳を前方に突き出す力強いポーズ
  */
-export const MINI_BOSS_ATTACK_FRAME: SpriteDefinition = {
+const miniBossAttackFrameBase: SpriteDefinition = {
   width: 40,
   height: 40,
   palette: MINI_BOSS_PALETTE,
@@ -1287,7 +1804,7 @@ export const MINI_BOSS_ATTACK_FRAME: SpriteDefinition = {
  * ミニボス ダメージフレーム: 被弾してのけぞる姿勢
  * 体が後方に反り、角が下がったリアクション
  */
-export const MINI_BOSS_DAMAGE_FRAME: SpriteDefinition = {
+const miniBossDamageFrameBase: SpriteDefinition = {
   width: 40,
   height: 40,
   palette: MINI_BOSS_PALETTE,
@@ -1335,11 +1852,103 @@ export const MINI_BOSS_DAMAGE_FRAME: SpriteDefinition = {
   ],
 };
 
+export const BOSS_ATTACK_FRAME = applyEnemyPixelEdits(bossAttackFrameBase, [
+  { x: 21, y: 16, value: 5 },
+  { x: 26, y: 16, value: 5 },
+  { x: 20, y: 18, value: 5 },
+  { x: 27, y: 18, value: 5 },
+  { x: 22, y: 18, value: 6 },
+  { x: 25, y: 18, value: 6 },
+  { x: 23, y: 18, value: 6 },
+  { x: 24, y: 18, value: 6 },
+  { x: 22, y: 20, value: 6 },
+  { x: 25, y: 20, value: 6 },
+  { x: 21, y: 20, value: 5 },
+  { x: 26, y: 20, value: 5 },
+  { x: 23, y: 22, value: 5 },
+  { x: 24, y: 22, value: 5 },
+  { x: 22, y: 24, value: 4 },
+  { x: 25, y: 24, value: 4 },
+  { x: 21, y: 26, value: 4 },
+  { x: 26, y: 26, value: 4 },
+  { x: 23, y: 26, value: 6 },
+  { x: 24, y: 26, value: 6 },
+]);
+
+export const BOSS_DAMAGE_FRAME = applyEnemyPixelEdits(bossDamageFrameBase, [
+  { x: 21, y: 16, value: 5 },
+  { x: 26, y: 16, value: 5 },
+  { x: 20, y: 18, value: 5 },
+  { x: 27, y: 18, value: 5 },
+  { x: 22, y: 18, value: 6 },
+  { x: 25, y: 18, value: 6 },
+  { x: 23, y: 18, value: 6 },
+  { x: 24, y: 18, value: 6 },
+  { x: 22, y: 20, value: 6 },
+  { x: 25, y: 20, value: 6 },
+  { x: 21, y: 20, value: 5 },
+  { x: 26, y: 20, value: 5 },
+  { x: 23, y: 22, value: 5 },
+  { x: 24, y: 22, value: 5 },
+  { x: 22, y: 24, value: 4 },
+  { x: 25, y: 24, value: 4 },
+  { x: 21, y: 26, value: 4 },
+  { x: 26, y: 26, value: 4 },
+  { x: 23, y: 26, value: 6 },
+  { x: 24, y: 26, value: 6 },
+]);
+
+export const MINI_BOSS_ATTACK_FRAME = applyEnemyPixelEdits(miniBossAttackFrameBase, [
+  { x: 17, y: 14, value: 5 },
+  { x: 22, y: 14, value: 5 },
+  { x: 16, y: 16, value: 5 },
+  { x: 23, y: 16, value: 5 },
+  { x: 18, y: 16, value: 1 },
+  { x: 21, y: 16, value: 1 },
+  { x: 19, y: 16, value: 1 },
+  { x: 20, y: 16, value: 1 },
+  { x: 17, y: 18, value: 1 },
+  { x: 22, y: 18, value: 1 },
+  { x: 18, y: 18, value: 5 },
+  { x: 21, y: 18, value: 5 },
+  { x: 19, y: 19, value: 4 },
+  { x: 20, y: 19, value: 4 },
+  { x: 18, y: 20, value: 4 },
+  { x: 21, y: 20, value: 4 },
+  { x: 19, y: 22, value: 5 },
+  { x: 20, y: 22, value: 5 },
+  { x: 18, y: 24, value: 4 },
+  { x: 21, y: 24, value: 4 },
+]);
+
+export const MINI_BOSS_DAMAGE_FRAME = applyEnemyPixelEdits(miniBossDamageFrameBase, [
+  { x: 17, y: 14, value: 5 },
+  { x: 22, y: 14, value: 5 },
+  { x: 16, y: 16, value: 5 },
+  { x: 23, y: 16, value: 5 },
+  { x: 18, y: 16, value: 1 },
+  { x: 21, y: 16, value: 1 },
+  { x: 19, y: 16, value: 1 },
+  { x: 20, y: 16, value: 1 },
+  { x: 17, y: 18, value: 1 },
+  { x: 22, y: 18, value: 1 },
+  { x: 18, y: 18, value: 5 },
+  { x: 21, y: 18, value: 5 },
+  { x: 19, y: 20, value: 4 },
+  { x: 20, y: 20, value: 4 },
+  { x: 18, y: 22, value: 4 },
+  { x: 21, y: 22, value: 4 },
+  { x: 19, y: 22, value: 5 },
+  { x: 20, y: 22, value: 5 },
+  { x: 18, y: 24, value: 4 },
+  { x: 21, y: 24, value: 4 },
+]);
+
 /**
  * メガボス 攻撃フレーム: 暗黒エネルギーを放出する攻撃姿勢
  * 翼を大きく広げ、体の前方にエネルギーを集中させるポーズ
  */
-export const MEGA_BOSS_ATTACK_FRAME: SpriteDefinition = {
+export const MEGA_BOSS_ATTACK_FRAME = applyEnemyPixelEdits({
   width: 56,
   height: 56,
   palette: MEGA_BOSS_PALETTE,
@@ -1401,13 +2010,30 @@ export const MEGA_BOSS_ATTACK_FRAME: SpriteDefinition = {
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
   ],
-};
+}, [
+  { x: 24, y: 14, value: 6 },
+  { x: 31, y: 14, value: 6 },
+  { x: 23, y: 16, value: 6 },
+  { x: 32, y: 16, value: 6 },
+  { x: 25, y: 16, value: 1 },
+  { x: 30, y: 16, value: 1 },
+  { x: 26, y: 18, value: 6 },
+  { x: 29, y: 18, value: 6 },
+  { x: 25, y: 20, value: 5 },
+  { x: 30, y: 20, value: 5 },
+  { x: 26, y: 22, value: 6 },
+  { x: 29, y: 22, value: 6 },
+  { x: 24, y: 24, value: 5 },
+  { x: 31, y: 24, value: 5 },
+  { x: 26, y: 26, value: 6 },
+  { x: 29, y: 26, value: 6 },
+]);
 
 /**
  * メガボス ダメージフレーム: 被弾で体が歪む姿勢
  * 翼が垂れ下がり、体が縮こまるダメージリアクション
  */
-export const MEGA_BOSS_DAMAGE_FRAME: SpriteDefinition = {
+export const MEGA_BOSS_DAMAGE_FRAME = applyEnemyPixelEdits({
   width: 56,
   height: 56,
   palette: MEGA_BOSS_PALETTE,
@@ -1469,7 +2095,24 @@ export const MEGA_BOSS_DAMAGE_FRAME: SpriteDefinition = {
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
   ],
-};
+}, [
+  { x: 24, y: 14, value: 6 },
+  { x: 31, y: 14, value: 6 },
+  { x: 23, y: 16, value: 6 },
+  { x: 32, y: 16, value: 6 },
+  { x: 25, y: 16, value: 1 },
+  { x: 30, y: 16, value: 1 },
+  { x: 26, y: 18, value: 6 },
+  { x: 29, y: 18, value: 6 },
+  { x: 25, y: 20, value: 5 },
+  { x: 30, y: 20, value: 5 },
+  { x: 26, y: 22, value: 6 },
+  { x: 29, y: 22, value: 6 },
+  { x: 24, y: 24, value: 5 },
+  { x: 31, y: 24, value: 5 },
+  { x: 26, y: 26, value: 6 },
+  { x: 29, y: 26, value: 6 },
+]);
 
 // ============================================================================
 // ヘルパー関数
