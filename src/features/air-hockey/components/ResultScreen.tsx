@@ -14,6 +14,10 @@ type ResultScreenProps = {
   newAchievements?: Achievement[];
   suggestedDifficulty?: Difficulty;
   onAcceptDifficulty?: (d: Difficulty) => void;
+  /** ストーリーモード用: ステージ選択に戻る */
+  onBackToStageSelect?: () => void;
+  /** ストーリーモード用: 次のステージへ */
+  onNextStage?: () => void;
 };
 
 // カウントアップアニメーション用フック
@@ -136,6 +140,7 @@ const ConfettiOverlay: React.FC = () => {
 export const ResultScreen: React.FC<ResultScreenProps> = ({
   winner, scores, onBackToMenu, onReplay, stats, newAchievements,
   suggestedDifficulty, onAcceptDifficulty,
+  onBackToStageSelect, onNextStage,
 }) => {
   const isWin = winner === 'player';
 
@@ -270,6 +275,16 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
           {onReplay && (
             <StartButton onClick={onReplay} style={{ background: 'linear-gradient(135deg, #00ff88, #00cc66)' }}>
               REPLAY
+            </StartButton>
+          )}
+          {onNextStage && isWin && (
+            <StartButton onClick={onNextStage} style={{ background: 'linear-gradient(135deg, #ff6b6b, #ee5a24)' }}>
+              次のステージへ
+            </StartButton>
+          )}
+          {onBackToStageSelect && (
+            <StartButton onClick={onBackToStageSelect} style={{ background: 'linear-gradient(135deg, #a55eea, #8854d0)' }}>
+              ステージ選択
             </StartButton>
           )}
           <StartButton onClick={onBackToMenu}>BACK TO MENU</StartButton>

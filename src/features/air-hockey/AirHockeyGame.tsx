@@ -4,12 +4,15 @@ import { EntityFactory } from './core/entities';
 import { CONSTANTS } from './core/constants';
 import { createSoundSystem } from './core/sound';
 import { FIELDS } from './core/config';
-import { getCharacterByDifficulty } from './core/characters';
-import { GameState, FieldConfig, Difficulty, SoundSystem, GamePhase, ShakeState, MatchStats } from './core/types';
+import { getCharacterByDifficulty, findCharacterById, PLAYER_CHARACTER } from './core/characters';
+import { GameState, FieldConfig, Difficulty, SoundSystem, GamePhase, ShakeState, MatchStats, GameMode } from './core/types';
 import { Achievement, checkAchievements, getUnlockedAchievements, saveUnlockedAchievements } from './core/achievements';
 import { AudioSettings, loadAudioSettings, saveAudioSettings } from './core/audio-settings';
 import { getStreakRecord, saveStreakRecord, recordMatchResult, getSuggestedDifficulty } from './core/difficulty-adjust';
 import { getUnlockState, saveUnlockState, checkUnlocks } from './core/unlock';
+import { loadStoryProgress, saveStoryProgress, resetStoryProgress } from './core/story';
+import type { StageDefinition, StoryProgress } from './core/story';
+import { CHAPTER_1_STAGES } from './core/dialogue-data';
 import { useInput } from './hooks/useInput';
 import { useKeyboardInput } from './hooks/useKeyboardInput';
 import { useGameLoop } from './hooks/useGameLoop';
@@ -22,12 +25,27 @@ import { Transition } from './components/Transition';
 import { Tutorial, isTutorialCompleted } from './components/Tutorial';
 import { SettingsPanel } from './components/SettingsPanel';
 import { DailyChallengeScreen } from './components/DailyChallengeScreen';
+import { StageSelectScreen } from './components/StageSelectScreen';
+import { DialogueOverlay } from './components/DialogueOverlay';
+import { VsScreen } from './components/VsScreen';
 import { generateDailyChallenge, getDailyChallengeResult, saveDailyChallengeResult, DailyChallenge } from './core/daily-challenge';
 import { UnlockState } from './core/unlock';
 import { PageContainer } from './styles';
 
+/** 画面の種類 */
+type ScreenType =
+  | 'menu'
+  | 'game'
+  | 'result'
+  | 'achievements'
+  | 'daily'
+  | 'stageSelect'
+  | 'preDialogue'
+  | 'vsScreen'
+  | 'postDialogue';
+
 const AirHockeyGame: React.FC = () => {
-  const [screen, setScreen] = useState<'menu' | 'game' | 'result' | 'achievements' | 'daily'>('menu');
+  const [screen, setScreen] = useState<ScreenType>('menu');
   const [diff, setDiff] = useState<Difficulty>('normal');
   const [field, setField] = useState<FieldConfig>(FIELDS[0]);
   const [winScore, setWinScore] = useState(3);
@@ -49,6 +67,11 @@ const AirHockeyGame: React.FC = () => {
   const [isDailyMode, setIsDailyMode] = useState(false);
   // トランジション用
   const [transitioning, setTransitioning] = useState(false);
+
+  // ストーリーモード用
+  const [gameMode, setGameMode] = useState<GameMode>('free');
+  const [currentStage, setCurrentStage] = useState<StageDefinition | undefined>(undefined);
+  const [storyProgress, setStoryProgress] = useState<StoryProgress>(() => loadStoryProgress());
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<GameState | null>(null);
@@ -145,8 +168,19 @@ const AirHockeyGame: React.FC = () => {
         });
         setIsDailyMode(false);
       }
+
+      // ストーリーモード: 勝利時にクリアフラグ保存
+      if (gameMode === 'story' && currentStage && isWin) {
+        const updated: StoryProgress = {
+          clearedStages: storyProgress.clearedStages.includes(currentStage.id)
+            ? storyProgress.clearedStages
+            : [...storyProgress.clearedStages, currentStage.id],
+        };
+        saveStoryProgress(updated);
+        setStoryProgress(updated);
+      }
     }
-  }, [screen, diff, winScore, winner, field.id, isDailyMode, dailyChallenge]);
+  }, [screen, diff, winScore, winner, field.id, isDailyMode, dailyChallenge, gameMode, currentStage, storyProgress]);
 
   // 音量設定をサウンドシステムに適用する共通関数
   const applyAudioSettings = useCallback((sound: SoundSystem, settings: AudioSettings) => {
@@ -220,13 +254,110 @@ const AirHockeyGame: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [screen, togglePause]);
 
+  // ── ストーリーモード遷移ハンドラ ──────────────────
+
+  /** ストーリーモード開始: ステージ選択画面へ */
+  const handleStoryClick = useCallback(() => {
+    setGameMode('story');
+    setStoryProgress(loadStoryProgress());
+    setScreen('stageSelect');
+  }, []);
+
+  /** ステージ選択: 試合前ダイアログへ */
+  const handleSelectStage = useCallback((stage: StageDefinition) => {
+    setCurrentStage(stage);
+    // ステージの設定を適用
+    const stageField = FIELDS.find(f => f.id === stage.fieldId) ?? FIELDS[0];
+    setDiff(stage.difficulty);
+    setField(stageField);
+    setWinScore(stage.winScore);
+    setScreen('preDialogue');
+  }, []);
+
+  /** 試合前ダイアログ完了: VS 画面へ */
+  const handlePreDialogueComplete = useCallback(() => {
+    setScreen('vsScreen');
+  }, []);
+
+  /** VS 画面完了: ゲーム開始 */
+  const handleVsComplete = useCallback(() => {
+    const stageField = currentStage
+      ? (FIELDS.find(f => f.id === currentStage.fieldId) ?? FIELDS[0])
+      : field;
+    startGame(stageField);
+  }, [currentStage, field, startGame]);
+
+  /** 試合終了時の遷移（useGameLoop の setScreen を上書き） */
+  const handleScreenChange = useCallback((newScreen: 'menu' | 'game' | 'result') => {
+    if (newScreen === 'result' && gameMode === 'story') {
+      // ストーリーモード: 試合後ダイアログを挟む
+      setScreen('postDialogue');
+    } else {
+      setScreen(newScreen);
+    }
+  }, [gameMode]);
+
+  /** 試合後ダイアログ完了: リザルト画面へ */
+  const handlePostDialogueComplete = useCallback(() => {
+    setScreen('result');
+  }, []);
+
+  /** ストーリーリセット */
+  const handleStoryReset = useCallback(() => {
+    resetStoryProgress();
+    setStoryProgress({ clearedStages: [] });
+  }, []);
+
+  /** 次のステージへ */
+  const handleNextStage = useCallback(() => {
+    if (!currentStage) return;
+    const currentIdx = CHAPTER_1_STAGES.findIndex(s => s.id === currentStage.id);
+    const nextStage = CHAPTER_1_STAGES[currentIdx + 1];
+    if (nextStage) {
+      handleSelectStage(nextStage);
+    }
+  }, [currentStage, handleSelectStage]);
+
+  /** ストーリーモードのリプレイ */
+  const handleStoryReplay = useCallback(() => {
+    if (currentStage) {
+      handleSelectStage(currentStage);
+    }
+  }, [currentStage, handleSelectStage]);
+
+  // ── 現在のステージのキャラクター情報 ──────────────
+  const storyCharacters = (() => {
+    if (!currentStage) return {};
+    const chars: Record<string, typeof PLAYER_CHARACTER> = {};
+    const cpuChar = findCharacterById(currentStage.characterId);
+    if (cpuChar) chars[currentStage.characterId] = cpuChar;
+    chars['player'] = PLAYER_CHARACTER;
+    return chars;
+  })();
+
+  const cpuCharacter = currentStage
+    ? findCharacterById(currentStage.characterId)
+    : undefined;
+
+  /** 次のステージが存在するか */
+  const hasNextStage = (() => {
+    if (!currentStage) return false;
+    const currentIdx = CHAPTER_1_STAGES.findIndex(s => s.id === currentStage.id);
+    return currentIdx < CHAPTER_1_STAGES.length - 1;
+  })();
+
+  // ── ゲームの CPU 名（ストーリー or フリー） ───────
+  const currentCpuName = gameMode === 'story' && cpuCharacter
+    ? cpuCharacter.name
+    : getCharacterByDifficulty(diff).name;
+
   const handleInput = useInput(gameRef, canvasRef, lastInputRef, screen, showHelp, setShowHelp);
   const keysRef = useKeyboardInput(gameRef, lastInputRef, screen, showHelp, setShowHelp);
 
   useGameLoop(
     screen, diff, field, winScore, showHelp, getSound,
     gameRef, canvasRef, lastInputRef, scoreRef,
-    setScores, setWinner, setScreen, setShowHelp,
+    setScores, setWinner, handleScreenChange, setShowHelp,
     phaseRef, countdownStartRef, shakeRef, setShake, bgmEnabled,
     statsRef, matchStartRef, keysRef
   );
@@ -264,7 +395,11 @@ const AirHockeyGame: React.FC = () => {
             winScore={winScore}
             setWinScore={setWinScore}
             highScore={highScore}
-            onStart={startGame}
+            onStart={() => {
+              setGameMode('free');
+              startGame();
+            }}
+            onStoryClick={handleStoryClick}
             onShowAchievements={() => setScreen('achievements')}
             onHelpClick={() => {
               setIsHelpMode(true);
@@ -296,9 +431,48 @@ const AirHockeyGame: React.FC = () => {
             setField(challengeField);
             setWinScore(dailyChallenge.winScore);
             setIsDailyMode(true);
+            setGameMode('free');
             startGame(challengeField);
           }}
           onBack={() => setScreen('menu')}
+        />
+      )}
+
+      {/* ストーリーモード: ステージ選択画面 */}
+      {screen === 'stageSelect' && (
+        <Transition isActive={true} type="fade">
+          <StageSelectScreen
+            stages={CHAPTER_1_STAGES}
+            progress={storyProgress}
+            onSelectStage={handleSelectStage}
+            onBack={() => {
+              setGameMode('free');
+              setScreen('menu');
+            }}
+            onReset={handleStoryReset}
+          />
+        </Transition>
+      )}
+
+      {/* ストーリーモード: 試合前ダイアログ */}
+      {screen === 'preDialogue' && currentStage && (
+        <DialogueOverlay
+          dialogues={currentStage.preDialogue}
+          characters={storyCharacters}
+          onComplete={handlePreDialogueComplete}
+        />
+      )}
+
+      {/* ストーリーモード: VS 画面 */}
+      {screen === 'vsScreen' && currentStage && cpuCharacter && (
+        <VsScreen
+          playerCharacter={PLAYER_CHARACTER}
+          cpuCharacter={cpuCharacter}
+          stageName={currentStage.name}
+          fieldName={
+            (FIELDS.find(f => f.id === currentStage.fieldId) ?? FIELDS[0]).name
+          }
+          onComplete={handleVsComplete}
         />
       )}
 
@@ -306,10 +480,24 @@ const AirHockeyGame: React.FC = () => {
         <>
           <Scoreboard scores={scores} onMenuClick={() => {
             getSound().bgmStop();
+            setGameMode('free');
             setScreen('menu');
-          }} onPauseClick={togglePause} cpuName={getCharacterByDifficulty(diff).name} />
+          }} onPauseClick={togglePause} cpuName={currentCpuName} />
           <Field canvasRef={canvasRef} onInput={handleInput} shake={shake} />
         </>
+      )}
+
+      {/* ストーリーモード: 試合後ダイアログ */}
+      {screen === 'postDialogue' && currentStage && (
+        <DialogueOverlay
+          dialogues={
+            winner === 'player'
+              ? currentStage.postWinDialogue
+              : currentStage.postLoseDialogue
+          }
+          characters={storyCharacters}
+          onComplete={handlePostDialogueComplete}
+        />
       )}
 
       {screen === 'result' && (
@@ -317,17 +505,31 @@ const AirHockeyGame: React.FC = () => {
           <ResultScreen
             winner={winner}
             scores={scores}
-            onBackToMenu={() => setScreen('menu')}
-            onReplay={startGame}
+            onBackToMenu={() => {
+              setGameMode('free');
+              setScreen('menu');
+            }}
+            onReplay={gameMode === 'story' ? handleStoryReplay : startGame}
             stats={matchStats}
             newAchievements={newAchievements}
-            suggestedDifficulty={suggestedDifficulty}
+            suggestedDifficulty={gameMode === 'free' ? suggestedDifficulty : undefined}
             onAcceptDifficulty={(d) => {
               setDiff(d);
               setSuggestedDifficulty(undefined);
               // 連勝/連敗をリセット
               saveStreakRecord({ winStreak: 0, loseStreak: 0 });
             }}
+            onBackToStageSelect={
+              gameMode === 'story'
+                ? () => {
+                    setStoryProgress(loadStoryProgress());
+                    setScreen('stageSelect');
+                  }
+                : undefined
+            }
+            onNextStage={
+              gameMode === 'story' && hasNextStage ? handleNextStage : undefined
+            }
           />
         </Transition>
       )}
