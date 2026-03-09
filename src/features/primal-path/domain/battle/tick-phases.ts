@@ -11,6 +11,8 @@ import { calcSynergies, applySynergyBonuses } from '../evolution/synergy-service
 import { tickBuffs } from '../skill/skill-service';
 import { deepCloneRun } from '../shared/utils';
 import { civLvs } from '../shared/civ-utils';
+import { requireValidPlayer } from '../../contracts/player-contracts';
+import { ensureTickResult } from '../../contracts/tick-postconditions';
 
 /* ===== 定数 ===== */
 
@@ -171,6 +173,9 @@ export function tickDeathCheck(next: RunState, events: TickEvent[]): boolean {
 
 /** 1ターン分の戦闘処理 */
 export function tick(r: RunState, finalMode: boolean, rng = Math.random): TickResult {
+  if (process.env.NODE_ENV !== 'production') {
+    requireValidPlayer(r);
+  }
   const next = deepCloneRun(r);
   if (!next.en) return { nextRun: next, events: [] };
 
@@ -202,12 +207,15 @@ export function tick(r: RunState, finalMode: boolean, rng = Math.random): TickRe
     } else {
       events.push({ type: 'enemy_killed' });
     }
-    return { nextRun: next, events };
+    const result = { nextRun: next, events };
+    if (process.env.NODE_ENV !== 'production') ensureTickResult(result);
+    return result;
   }
 
   tickEnemyPhase(next, e, events, rng, sb);
 
   if (tickDeathCheck(next, events)) {
+    // 死亡時は hp=0 に正規化済み
     return { nextRun: next, events };
   }
 
@@ -222,5 +230,7 @@ export function tick(r: RunState, finalMode: boolean, rng = Math.random): TickRe
   // バフターンデクリメント
   next.sk = tickBuffs(next.sk);
 
-  return { nextRun: next, events };
+  const result = { nextRun: next, events };
+  if (process.env.NODE_ENV !== 'production') ensureTickResult(result);
+  return result;
 }

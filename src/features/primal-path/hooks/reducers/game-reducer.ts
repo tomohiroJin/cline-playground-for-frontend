@@ -16,11 +16,20 @@ import { evolutionReducer } from './evolution-reducer';
 import { eventReducer } from './event-reducer';
 import { progressionReducer } from './progression-reducer';
 import { metaReducer } from './meta-reducer';
+import { assertRunInvariant } from '../../contracts/run-invariants';
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
-  if (isBattleAction(action)) return battleReducer(state, action);
-  if (isEvolutionAction(action)) return evolutionReducer(state, action);
-  if (isEventAction(action)) return eventReducer(state, action);
-  if (isProgressionAction(action)) return progressionReducer(state, action);
-  return metaReducer(state, action);
+  let next: GameState;
+  if (isBattleAction(action)) next = battleReducer(state, action);
+  else if (isEvolutionAction(action)) next = evolutionReducer(state, action);
+  else if (isEventAction(action)) next = eventReducer(state, action);
+  else if (isProgressionAction(action)) next = progressionReducer(state, action);
+  else next = metaReducer(state, action);
+
+  // 開発モードのみ: 状態遷移後に不変条件を検証
+  if (process.env.NODE_ENV !== 'production' && next.run) {
+    assertRunInvariant(next.run);
+  }
+
+  return next;
 }

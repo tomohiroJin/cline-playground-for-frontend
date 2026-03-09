@@ -8,6 +8,7 @@ import type { RunState, ASkillId, SkillSt, TickEvent } from '../../types';
 import { A_SKILLS } from '../../constants';
 import { civLvs } from '../shared/civ-utils';
 import { skillRegistry } from './skill-registry';
+import { requireValidPlayer } from '../../contracts/player-contracts';
 
 /** 文明レベルからスキル解放判定 */
 export function calcAvlSkills(r: RunState): ASkillId[] {
@@ -23,6 +24,9 @@ export function calcAvlSkills(r: RunState): ASkillId[] {
 
 /** スキル発動（純粋関数） — Registry ベースで効果を実行 */
 export function applySkill(r: RunState, sid: ASkillId): { nextRun: RunState; events: TickEvent[] } {
+  if (process.env.NODE_ENV !== 'production') {
+    requireValidPlayer(r);
+  }
   const def = A_SKILLS.find(s => s.id === sid);
   if (!def) return { nextRun: r, events: [] };
 

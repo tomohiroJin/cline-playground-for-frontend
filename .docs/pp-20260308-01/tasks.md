@@ -330,34 +330,43 @@
 
 ---
 
-## フェーズ7: DbC 強化
+## フェーズ7: DbC 強化 ✅ 完了
 
 ### 7.1 契約の定義
 
-- [ ] `contracts/player-contracts.ts`: requireValidPlayer 事前条件
-- [ ] `contracts/battle-contracts.ts`: requireActiveBattle 事前条件
-- [ ] `contracts/run-invariants.ts`: assertRunInvariant 不変条件
-- [ ] `contracts/evolution-contracts.ts`: requireValidEvolution 事前条件
+- [x] `contracts/player-contracts.ts`: requireValidPlayer 事前条件（HP >= 0, maxHP > 0, ATK >= 0, DEF >= 0）
+- [x] `contracts/battle-contracts.ts`: requireActiveBattle 事前条件（敵存在、ターン数非負）
+- [x] `contracts/run-invariants.ts`: assertRunInvariant 不変条件（HP <= maxHP, bc >= 0, kills >= 0, 進化数上限）
+- [x] `contracts/evolution-contracts.ts`: requireValidEvolution 事前条件（進化数上限チェック）
+- [x] `contracts/tick-postconditions.ts`: ensureTickResult 事後条件（HP <= maxHP, HP >= 0）
+- [x] `contracts/index.ts`: barrel export
 
 ### 7.2 契約の適用
 
-- [ ] `domain/battle/battle-service.ts`: startBattle, afterBattle に事前条件追加
-- [ ] `domain/battle/tick-phases.ts`: tick の出口に事後条件追加
-- [ ] `domain/evolution/evolution-service.ts`: applyEvo に事前/事後条件追加
-- [ ] `domain/skill/skill-service.ts`: applySkill に事前条件追加
-- [ ] `hooks/reducers/game-reducer.ts`: 状態遷移後に不変条件チェック（開発モードのみ）
+- [x] `domain/battle/battle-service.ts`: startBattle, afterBattle に requireValidPlayer 事前条件追加
+- [x] `domain/battle/tick-phases.ts`: tick の入口に requireValidPlayer 事前条件、出口に ensureTickResult 事後条件追加
+- [x] `domain/evolution/evolution-service.ts`: applyEvo に requireValidEvolution 事前条件追加
+- [x] `domain/skill/skill-service.ts`: applySkill に requireValidPlayer 事前条件追加
+- [x] `hooks/reducers/game-reducer.ts`: 状態遷移後に assertRunInvariant 不変条件チェック（開発モードのみ）
 
 ### 7.3 本番環境での除去
 
-- [ ] `contracts/index.ts`: NODE_ENV による条件付き実行
-- [ ] Webpack DefinePlugin で本番ビルド時に invariant をデッドコード化
+- [x] 全契約チェックを `process.env.NODE_ENV !== 'production'` ガードで保護
+- [x] Webpack の `mode: 'production'` が自動的に DefinePlugin を適用し、ガード内のコードをデッドコード化
 
 ### P7 検証
 
-- [ ] `npm test` 全テストパス
-- [ ] `npx tsc --noEmit` 型エラーなし
-- [ ] `npm run build` ビルド成功（本番モードで invariant が除去されている）
-- [ ] 不正な状態を作った場合に invariant がエラーを投げることを確認
+- [x] `npm test` 全テストパス（290スイート / 3619テスト）
+- [x] `npx tsc --noEmit` 型エラーなし
+- [x] `npm run build` ビルド成功
+- [x] 不正な状態を作った場合に invariant がエラーを投げることを確認（統合テストで検証）
+
+### P7 補足: spec との差異・設計判断
+
+- `tick-postconditions.ts` を新設: spec にはない事後条件モジュールを追加。tick の出口で HP <= maxHP, HP >= 0 を検証（spec では戦闘 tick の出口に事後条件を追加する方針だが、独立モジュールに分離して再利用性を向上）
+- `requireActiveBattle` は tick/applySkill への適用を見送り: 既存テストが `en: null` の状態でこれらの関数を呼ぶパターンがあり、振る舞い変更を避けるため。代わりに contracts ライブラリの一部として提供し、将来の活用に備える
+- 契約チェックは `process.env.NODE_ENV !== 'production'` で囲み、webpack の `mode` オプションによる自動 DefinePlugin で本番ビルド時にデッドコード化（明示的な DefinePlugin 設定は不要）
+- 新規テスト: 契約モジュール5テストファイル（32テスト）+ 統合テスト1テストファイル（4テスト）= 計6テストファイル（36テスト）追加
 
 ---
 

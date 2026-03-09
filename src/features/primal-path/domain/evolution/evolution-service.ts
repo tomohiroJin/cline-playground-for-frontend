@@ -11,6 +11,7 @@ import { applyStatFx, getSnap, writeSnapToRun, deepCloneRun } from '../shared/ut
 import { civLv } from '../shared/civ-utils';
 import { deadAllies } from '../battle/combat-calculator';
 import { effATK } from '../battle/combat-calculator';
+import { requireValidEvolution } from '../../contracts/evolution-contracts';
 
 /** 進化適用のプレビュー（ステータス確認用） */
 export function simEvo(r: RunState, ev: Evolution): { atk: number; hp: number; mhp: number; def: number; cr: number } {
@@ -59,6 +60,9 @@ export function rollE(r: RunState, rng = Math.random): Evolution[] {
 
 /** 進化を適用する（ステータス更新・文明Lv・仲間追加） */
 export function applyEvo(r: RunState, ev: Evolution, rng = Math.random): ApplyEvoResult {
+  if (process.env.NODE_ENV !== 'production') {
+    requireValidEvolution(r);
+  }
   const next = deepCloneRun(r);
   next.evs.push(ev);
   writeSnapToRun(next, applyStatFx(getSnap(next), ev.e));

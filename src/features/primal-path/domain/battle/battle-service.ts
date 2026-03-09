@@ -9,9 +9,13 @@ import { scaleEnemy } from './combat-calculator';
 import { decSkillCds } from '../skill/skill-service';
 import { calcEndlessScaleWithAM } from '../progression/biome-service';
 import { deepCloneRun } from '../shared/utils';
+import { requireValidPlayer } from '../../contracts/player-contracts';
 
 /** バトル開始処理（敵生成・バトル状態初期化） */
 export function startBattle(r: RunState, _finalMode: boolean): RunState {
+  if (process.env.NODE_ENV !== 'production') {
+    requireValidPlayer(r);
+  }
   const next = deepCloneRun(r);
   next.cW++;
   const boss = next.cW > next.wpb;
@@ -39,6 +43,9 @@ export function startBattle(r: RunState, _finalMode: boolean): RunState {
 
 /** バトル終了処理（ボス判定・回復・スキルCD） */
 export function afterBattle(r: RunState): { nextRun: RunState; biomeCleared: boolean } {
+  if (process.env.NODE_ENV !== 'production') {
+    requireValidPlayer(r);
+  }
   const next = deepCloneRun(r);
   const boss = next.cW > next.wpb;
 
