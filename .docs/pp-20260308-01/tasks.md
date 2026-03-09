@@ -184,77 +184,93 @@
 
 ---
 
-## フェーズ4: hooks.ts の分割と Reducer リファクタリング
+## フェーズ4: hooks.ts の分割と Reducer リファクタリング ✅ 完了
 
 ### 4.1 アクション型のグループ化
 
-- [ ] `hooks/actions.ts`: BattleAction, EvolutionAction, EventAction, ProgressionAction, MetaAction 型定義
-- [ ] `hooks/actions.ts`: GameAction を union 型として再定義
-- [ ] `hooks/actions.ts`: 型ガード関数（isBattleAction 等）を定義
+- [x] `hooks/actions.ts`: BattleAction, EvolutionAction, EventAction, ProgressionAction, MetaAction 型定義
+- [x] `hooks/actions.ts`: GameAction を union 型として再定義
+- [x] `hooks/actions.ts`: 型ガード関数（isBattleAction 等）を定義
 
 ### 4.2 Reducer の分割
 
-- [ ] `hooks/reducers/battle-reducer.ts`: BATTLE_TICK, AFTER_BATTLE, USE_SKILL, CHANGE_SPEED, SURRENDER, FINAL_BOSS_KILLED
-- [ ] `hooks/reducers/evolution-reducer.ts`: SELECT_EVO, SKIP_EVO, SHOW_EVO, PROCEED_AFTER_AWK
-- [ ] `hooks/reducers/event-reducer.ts`: TRIGGER_EVENT, CHOOSE_EVENT, APPLY_EVENT_RESULT
-- [ ] `hooks/reducers/progression-reducer.ts`: START_RUN, START_CHALLENGE, GO_DIFF, GO_HOW, GO_TREE, PREPARE_BIOME_SELECT, PICK_BIOME, GO_FINAL_BOSS, BIOME_CLEARED, PROCEED_TO_BATTLE, SET_PHASE
-- [ ] `hooks/reducers/meta-reducer.ts`: GAME_OVER, RETURN_TO_TITLE, BUY_TREE_NODE, RESET_SAVE, LOAD_SAVE, LOAD_META, RECORD_RUN_END, REVIVE_ALLY, SKIP_REVIVE, ENDLESS_CONTINUE, ENDLESS_RETIRE
-- [ ] hooks 内ローカルヘルパー（transitionAfterBiome, updateAggregate, checkAllAchievements）を適切な reducer に配置
-- [ ] `hooks/reducers/game-reducer.ts`: メインルーター + フェーズ遷移検証
+- [x] `hooks/reducers/battle-reducer.ts`: BATTLE_TICK, AFTER_BATTLE, USE_SKILL, CHANGE_SPEED, SURRENDER, FINAL_BOSS_KILLED
+- [x] `hooks/reducers/evolution-reducer.ts`: SELECT_EVO, SKIP_EVO, SHOW_EVO, PROCEED_AFTER_AWK, PROCEED_TO_BATTLE
+- [x] `hooks/reducers/event-reducer.ts`: TRIGGER_EVENT, CHOOSE_EVENT, APPLY_EVENT_RESULT
+- [x] `hooks/reducers/progression-reducer.ts`: START_RUN, START_CHALLENGE, GO_DIFF, GO_HOW, GO_TREE, PREPARE_BIOME_SELECT, PICK_BIOME, GO_FINAL_BOSS, BIOME_CLEARED, SET_PHASE
+- [x] `hooks/reducers/meta-reducer.ts`: GAME_OVER, RETURN_TO_TITLE, BUY_TREE_NODE, RESET_SAVE, LOAD_SAVE, LOAD_META, RECORD_RUN_END, REVIVE_ALLY, SKIP_REVIVE, ENDLESS_CONTINUE, ENDLESS_RETIRE
+- [x] `hooks/reducer-helpers.ts`: ローカルヘルパー（transitionAfterBiome, updateAggregate, checkAllAchievements）を共有ヘルパーに抽出
+- [x] `hooks/reducers/game-reducer.ts`: メインルーター（型ガードベースのディスパッチ）
 
 ### 4.3 フックの分割
 
-- [ ] `hooks/use-game-state.ts`: useGameState フック
-- [ ] `hooks/use-battle.ts`: useBattle フック
-- [ ] `hooks/use-audio.ts`: useAudio フック
-- [ ] `hooks/use-overlay.ts`: useOverlay フック
-- [ ] `hooks/use-persistence.ts`: usePersistence フック
-- [ ] `hooks/index.ts`: barrel export
+- [x] `hooks/use-game-state.ts`: useGameState フック + initialState + gameReducer re-export
+- [x] `hooks/use-battle.ts`: useBattle フック
+- [x] `hooks/use-audio.ts`: useAudio フック
+- [x] `hooks/use-overlay.ts`: useOverlay フック + OverlayState 型
+- [x] `hooks/use-persistence.ts`: usePersistence フック
+- [x] `hooks/index.ts`: barrel export
 
 ### 4.4 hooks.ts の barrel 化
 
-- [ ] `hooks.ts` を re-export barrel ファイルに変換
-- [ ] 全消費側のインポートが正常に解決されることを確認
+- [x] `hooks.ts` を re-export barrel ファイルに変換
+- [x] 全消費側のインポートが正常に解決されることを確認（25ファイル）
 
 ### P4 検証
 
-- [ ] `npm test` 全テストパス（reducer テスト含む）
-- [ ] `npx tsc --noEmit` 型エラーなし
-- [ ] `npm run build` ビルド成功
+- [x] `npm test` 全テストパス（259スイート / 3475テスト）
+- [x] `npx tsc --noEmit` 型エラーなし
+- [x] `npm run build` ビルド成功
 - [ ] ブラウザ確認: 全フェーズ遷移が正常に動作
+
+### P4 補足: spec との差異・設計判断
+
+- PROCEED_TO_BATTLE は覚醒効果適用のため evolutionReducer に配置（spec では EvolutionAction に分類）
+- `reducer-helpers.ts` を新設: transitionAfterBiome, updateAggregate, checkAllAchievements を共有ヘルパーとして抽出（DRY原則）
+- `transitionToEvoPicks` ヘルパーを追加: rollE + phase 設定の重複を5箇所で解消
+- `setupInitialRun` ヘルパーを追加: START_RUN と START_CHALLENGE の共通ロジックを統合
+- `FULL_REVIVE_COST_MULTIPLIER` 定数を導入: 1.8 のマジックナンバーを名前付き定数に置換
+- フェーズ遷移の assertValidTransition は次フェーズ（P7: DbC 強化）で導入予定（現時点では振る舞い変更を避けるため）
+- 新規テスト: アクション型ガード1テストファイル（41テスト）+ サブ Reducer 5テストファイル（55テスト）= 計6テストファイル追加
 
 ---
 
-## フェーズ5: constants.ts のドメイン別分割
+## フェーズ5: constants.ts のドメイン別分割 ✅ 完了
 
 ### 5.1 定数ファイルの分割
 
-- [ ] `constants/battle.ts`: ENM, BOSS, BOSS_CHAIN_SCALE, FINAL_BOSS_ORDER, SPEED_OPTS, WAVES_PER_BIOME, ENEMY_COLORS, ENEMY_DETAILS, ENEMY_SMALL_DETAILS
-- [ ] `constants/evolution.ts`: EVOS, SYNERGY_BONUSES, SYNERGY_TAG_INFO
-- [ ] `constants/biome.ts`: BIO, BIOME_COUNT, BIOME_AFFINITY, ENV_DMG
-- [ ] `constants/difficulty.ts`: DIFFS
-- [ ] `constants/skill.ts`: A_SKILLS, SFX_DEFS
-- [ ] `constants/event.ts`: RANDOM_EVENTS, EVENT_CHANCE, EVENT_MIN_BATTLES
-- [ ] `constants/tree.ts`: TREE, TIER_UNLOCK, TIER_NAMES
-- [ ] `constants/achievement.ts`: ACHIEVEMENTS, CHALLENGES
-- [ ] `constants/awakening.ts`: AWK_SA, AWK_FA
-- [ ] `constants/ally.ts`: ALT
-- [ ] `constants/ui.ts`: CIV_TYPES, CIV_KEYS, TC, TN, CAT_CL, LOG_COLORS, TB_SUMMARY, TB_DEFAULTS, TB_KEY_COLOR
-- [ ] `constants/save.ts`: FRESH_SAVE, SAVE_KEY, STATS_KEY, ACHIEVEMENTS_KEY, AGGREGATE_KEY, MAX_RUN_STATS
-- [ ] `constants/scaling.ts`: LOOP_SCALE_FACTOR, ENDLESS_LINEAR_SCALE, ENDLESS_EXP_BASE, ENDLESS_AM_REFLECT_RATIO
-- [ ] `constants/audio.ts`: BGM_PATTERNS, VOLUME_KEY
-- [ ] `constants/index.ts`: barrel export
+- [x] `constants/battle.ts`: ENM, BOSS, BOSS_CHAIN_SCALE, FINAL_BOSS_ORDER, SPEED_OPTS, WAVES_PER_BIOME, ENEMY_COLORS, ENEMY_DETAILS, ENEMY_SMALL_DETAILS
+- [x] `constants/evolution.ts`: EVOS, SYNERGY_BONUSES, SYNERGY_TAG_INFO
+- [x] `constants/biome.ts`: BIO, BIOME_COUNT, BIOME_AFFINITY, ENV_DMG
+- [x] `constants/difficulty.ts`: DIFFS
+- [x] `constants/skill.ts`: A_SKILLS, SFX_DEFS
+- [x] `constants/event.ts`: RANDOM_EVENTS, EVENT_CHANCE, EVENT_MIN_BATTLES
+- [x] `constants/tree.ts`: TREE, TIER_UNLOCK, TIER_NAMES
+- [x] `constants/achievement.ts`: ACHIEVEMENTS, CHALLENGES
+- [x] `constants/awakening.ts`: AWK_SA, AWK_FA
+- [x] `constants/ally.ts`: ALT
+- [x] `constants/ui.ts`: CIV_TYPES, CIV_KEYS, TC, TN, CAT_CL, LOG_COLORS, TB_SUMMARY, TB_DEFAULTS, TB_KEY_COLOR
+- [x] `constants/save.ts`: FRESH_SAVE, SAVE_KEY, STATS_KEY, ACHIEVEMENTS_KEY, AGGREGATE_KEY, MAX_RUN_STATS
+- [x] `constants/scaling.ts`: LOOP_SCALE_FACTOR, ENDLESS_LINEAR_SCALE, ENDLESS_EXP_BASE, ENDLESS_AM_REFLECT_RATIO
+- [x] `constants/audio.ts`: BGM_PATTERNS, VOLUME_KEY
+- [x] `constants/index.ts`: barrel export
 
 ### 5.2 constants.ts の barrel 化
 
-- [ ] `constants.ts` を re-export barrel ファイルに変換
-- [ ] 全消費側のインポートが正常に解決されることを確認
+- [x] `constants.ts` を re-export barrel ファイルに変換
+- [x] 全消費側のインポートが正常に解決されることを確認
 
 ### P5 検証
 
-- [ ] `npm test` 全テストパス
-- [ ] `npx tsc --noEmit` 型エラーなし
-- [ ] `npm run build` ビルド成功
+- [x] `npm test` 全テストパス（274スイート / 3552テスト）
+- [x] `npx tsc --noEmit` 型エラーなし
+- [x] `npm run build` ビルド成功
+
+### P5 補足: spec との差異・設計判断
+
+- `TB_KEY_COLOR` を `TreeScreen.tsx` のローカル定義から `constants/ui.ts` に移動: コンポーネント固有の表示マッピングだが、`CAT_CL` に依存する定数のためUI定数として集約（再利用性向上）
+- `TreeScreen.tsx` の不要な `TreeBonus` 型インポートを削除（TB_KEY_COLOR 移動に伴うクリーンアップ）
+- 新規テスト: 各定数モジュール14テストファイル + barrel export テスト1テストファイル = 計15テストファイル（77テスト）追加
 
 ---
 
