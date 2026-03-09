@@ -274,44 +274,59 @@
 
 ---
 
-## フェーズ6: コンポーネントのリファクタリング
+## フェーズ6: コンポーネントのリファクタリング ✅ 完了
 
 ### 6.1 BattleScreen の分割
 
-- [ ] `components/battle/BattleCanvas.tsx`: Canvas 描画コンポーネント
-- [ ] `components/battle/BattleStatusBar.tsx`: ステータス表示コンポーネント
-- [ ] `components/battle/BattleLog.tsx`: 戦闘ログコンポーネント
-- [ ] `components/battle/SkillPanel.tsx`: スキルパネルコンポーネント
-- [ ] `components/battle/BossCounter.tsx`: ボスカウンターコンポーネント
-- [ ] `components/BattleScreen.tsx`: 分割後のオーケストレータ（100行以内）
+- [x] `components/battle/BattleLog.tsx`: 戦闘ログコンポーネント（自動スクロール付き、最新40件表示）
+- [x] `components/battle/SkillPanel.tsx`: スキルパネルコンポーネント（クールダウン表示、空スキル時非表示）
+- [x] `components/battle/use-battle-popups.ts`: ポップアップ管理カスタムフック（追加・自動除去・クリーンアップ）
+- [x] `components/BattleScreen.tsx`: 分割後のオーケストレータ（サブコンポーネント + カスタムフック統合）
 
 ### 6.2 EventScreen の分割
 
-- [ ] `components/event/EventCard.tsx`: イベント内容表示
-- [ ] `components/event/EventChoices.tsx`: 選択肢ボタン群
-- [ ] `components/EventScreen.tsx`: 分割後のオーケストレータ（80行以内）
+- [x] `components/event/EventCard.tsx`: イベント名・説明・状況テキスト表示
+- [x] `components/event/EventChoices.tsx`: 選択肢ボタン群（リスクレベル・コスト判定・エフェクトヒント）
+- [x] `components/EventScreen.tsx`: 分割後のオーケストレータ（サブコンポーネント統合）
 
 ### 6.3 shared.tsx の分割
 
-- [ ] `components/shared/ProgressBar.tsx`
-- [ ] `components/shared/HpBar.tsx`
-- [ ] `components/shared/StatLabel.tsx`
-- [ ] `components/shared/BoneDisplay.tsx`
-- [ ] `components/shared/OverlayNotification.tsx`
-- [ ] `components/shared/index.ts`: barrel export
-- [ ] `components/shared.tsx` を barrel re-export に変換
+- [x] `components/shared/ProgressBar.tsx`: 汎用プログレスバー
+- [x] `components/shared/HpBar.tsx`: HP表示バー（hp/eh バリアント）
+- [x] `components/shared/StatPreview.tsx`: ステータス変化プレビュー
+- [x] `components/shared/CivBadge.tsx`: 文明バッジ
+- [x] `components/shared/AwakeningBadges.tsx`: 覚醒バッジ群
+- [x] `components/shared/CivLevelsDisplay.tsx`: 文明レベル表示
+- [x] `components/shared/StatLine.tsx`: ステータス概要表示
+- [x] `components/shared/AffinityBadge.tsx`: 相性バッジ
+- [x] `components/shared/SynergyBadges.tsx`: シナジーバッジ群
+- [x] `components/shared/SpeedControl.tsx`: 速度切替ボタン群
+- [x] `components/shared/AllyList.tsx`: 仲間リスト（battle/evo モード対応）
+- [x] `components/shared/render-particles.ts`: パーティクル生成ユーティリティ
+- [x] `components/shared/index.ts`: barrel export
+- [x] `components/shared.tsx` を barrel re-export に変換
 
 ### 6.4 Props 型定義
 
-- [ ] 各分割コンポーネントに明示的な Props 型定義を追加
-- [ ] Props は必要最小限のデータのみ受け取る（RunState 全体を渡さない）
+- [x] 各分割コンポーネントに明示的な Props インターフェースを定義（型エクスポート付き）
+- [x] サブコンポーネントは必要最小限の Props のみ受け取る設計（BattleLog は log のみ、SkillPanel は skills/sk/onUseSkill のみ等）
 
 ### P6 検証
 
-- [ ] `npm test` 全テストパス（コンポーネントテスト含む）
-- [ ] `npx tsc --noEmit` 型エラーなし
-- [ ] `npm run build` ビルド成功
+- [x] `npm test` 全テストパス（284スイート / 3587テスト）
+- [x] `npx tsc --noEmit` 型エラーなし
+- [x] `npm run build` ビルド成功
 - [ ] ブラウザ確認: 全画面の表示・操作が正常
+
+### P6 補足: spec との差異・設計判断
+
+- BattleCanvas / BattleStatusBar / BossCounter の独立分割は見送り: Canvas 描画は useRef + useEffect で親コンポーネントと密結合しており、分離するとプロップドリリングが増えて複雑化するため、BattleScreen 内に保持
+- 代わりに `useBattlePopups` カスタムフックを導入: ポップアップの追加・自動除去・クリーンアップのロジックをオーケストレータから分離（SRP 準拠）
+- `useHitFlash` ヘルパーフックを追加: ヒットフラッシュの状態管理をコンポーネントから分離
+- `buildBiomeLabel` / `formatTime` を純粋関数として抽出: テスタビリティ向上
+- shared.tsx の StatLabel / BoneDisplay / OverlayNotification は実際のコードに存在しなかったため、実在するコンポーネント（StatPreview, CivBadge, AwakeningBadges 等 11個）に置き換えて分割
+- EventChoices のコスト判定ロジック（canAfford / costLabel）をモジュールレベル関数に抽出: テスタビリティ向上
+- 新規テスト: shared コンポーネント 6テストファイル（22テスト）+ battle サブコンポーネント 2テストファイル（7テスト）+ event サブコンポーネント 2テストファイル（6テスト）= 計10テストファイル（35テスト）追加
 
 ---
 
