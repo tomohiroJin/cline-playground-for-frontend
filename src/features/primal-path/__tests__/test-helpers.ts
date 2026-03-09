@@ -5,6 +5,9 @@ import type { RunState, SaveData, GameState } from '../types';
 import { DIFFS, TB_DEFAULTS, FRESH_SAVE } from '../constants';
 import { initialState } from '../hooks';
 
+// RunStateBuilder の re-export（新規テストではこちらを推奨）
+export { RunStateBuilder } from './helpers/run-state-builder';
+
 /** テスト用の最小限 RunState を生成 */
 export function makeRun(overrides: Partial<RunState> = {}): RunState {
   return {

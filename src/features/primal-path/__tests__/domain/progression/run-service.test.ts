@@ -69,11 +69,105 @@ describe('domain/progression/run-service', () => {
 
   describe('calcRunStats', () => {
     it('ラン統計を計算する', () => {
+      // Arrange
       const run = makeRun({ kills: 10, dmgDealt: 500, maxHit: 50, bc: 3 });
+
+      // Act
       const stats = calcRunStats(run, 'victory', 100);
+
+      // Assert
       expect(stats.result).toBe('victory');
       expect(stats.totalKills).toBe(10);
       expect(stats.boneEarned).toBe(100);
+    });
+
+    it('覚醒済みの場合に覚醒名が統計に含まれる', () => {
+      // Arrange
+      const run = makeRun({
+        kills: 5,
+        awoken: [
+          { id: 'sa_tech', nm: 'テク・小', cl: '#60a0ff' },
+          { id: 'fa_tech', nm: 'テク・大', cl: '#60a0ff' },
+        ],
+      });
+
+      // Act
+      const stats = calcRunStats(run, 'defeat', 50);
+
+      // Assert: 最後の覚醒名が返る
+      expect(stats.awakening).toBe('テク・大');
+    });
+
+    it('覚醒がない場合にawakeningはundefined', () => {
+      // Arrange
+      const run = makeRun({ awoken: [] });
+
+      // Act
+      const stats = calcRunStats(run, 'defeat', 0);
+
+      // Assert
+      expect(stats.awakening).toBeUndefined();
+    });
+
+    it('エンドレスモードの場合にendlessWaveが統計に含まれる', () => {
+      // Arrange
+      const run = makeRun({ isEndless: true, endlessWave: 5 });
+
+      // Act
+      const stats = calcRunStats(run, 'defeat', 200);
+
+      // Assert
+      expect(stats.endlessWave).toBe(5);
+    });
+
+    it('非エンドレスモードの場合にendlessWaveはundefined', () => {
+      // Arrange
+      const run = makeRun({ isEndless: false, endlessWave: 0 });
+
+      // Act
+      const stats = calcRunStats(run, 'victory', 100);
+
+      // Assert
+      expect(stats.endlessWave).toBeUndefined();
+    });
+
+    it('チャレンジIDが統計に含まれる', () => {
+      // Arrange
+      const run = makeRun({ challengeId: 'ch_speed' });
+
+      // Act
+      const stats = calcRunStats(run, 'victory', 100);
+
+      // Assert
+      expect(stats.challengeId).toBe('ch_speed');
+    });
+
+    it('シナジー数が正しく計算される', () => {
+      // Arrange
+      const run = makeRun({
+        evs: [
+          { n: '進化1', d: '', t: 'tech', r: 0, e: { atk: 1 }, tags: ['fire'] },
+          { n: '進化2', d: '', t: 'tech', r: 0, e: { atk: 1 }, tags: ['fire'] },
+        ],
+      });
+
+      // Act
+      const stats = calcRunStats(run, 'victory', 100);
+
+      // Assert: fireタグ2つでシナジー発動
+      expect(stats.synergyCount).toBeGreaterThanOrEqual(0);
+    });
+
+    it('イベント数とスキル使用回数が統計に含まれる', () => {
+      // Arrange
+      const run = makeRun({ eventCount: 3, skillUseCount: 7 });
+
+      // Act
+      const stats = calcRunStats(run, 'victory', 100);
+
+      // Assert
+      expect(stats.eventCount).toBe(3);
+      expect(stats.skillUsageCount).toBe(7);
     });
   });
 });

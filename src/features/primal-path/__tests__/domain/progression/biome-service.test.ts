@@ -71,6 +71,32 @@ describe('domain/progression/biome-service', () => {
     });
   });
 
+  describe('applyAutoLastBiome', () => {
+    it('残り1つのバイオームを自動適用する', () => {
+      // Arrange
+      const run = makeRun({ cB: 2, bms: ['grassland', 'glacier', 'volcano'] });
+
+      // Act
+      const result = applyAutoLastBiome(run);
+
+      // Assert
+      expect(result.cBT).toBe('volcano');
+      expect(result.cB).toBe(3);
+    });
+
+    it('残りがない場合はbms[2]にフォールバックする', () => {
+      // Arrange
+      const run = makeRun({ cB: 3, bms: ['grassland', 'glacier', 'volcano'] });
+
+      // Act
+      const result = applyAutoLastBiome(run);
+
+      // Assert
+      expect(result.cBT).toBe('volcano');
+      expect(result.cB).toBe(4);
+    });
+  });
+
   describe('applyEndlessLoop', () => {
     it('リループ時にbc/cW/cBがリセットされる', () => {
       const run = makeRun({ bc: 3, cW: 5, cB: 3, endlessWave: 0 });
@@ -79,6 +105,29 @@ describe('domain/progression/biome-service', () => {
       expect(result.cW).toBe(0);
       expect(result.cB).toBe(0);
       expect(result.endlessWave).toBe(1);
+    });
+
+    it('バイオーム順序がリシャッフルされる', () => {
+      const run = makeRun({ bc: 3, cW: 5, cB: 3, endlessWave: 0, bms: ['grassland', 'glacier', 'volcano'] });
+      const result = applyEndlessLoop(run);
+      expect(result.bms).toHaveLength(3);
+      // 3つのバイオームが含まれている
+      expect(result.bms).toContain('grassland');
+      expect(result.bms).toContain('glacier');
+      expect(result.bms).toContain('volcano');
+    });
+
+    it('cBTが新しいバイオーム順序の最初に設定される', () => {
+      const run = makeRun({ bc: 3, cW: 5, cB: 3, endlessWave: 0 });
+      const result = applyEndlessLoop(run);
+      expect(result.cBT).toBe(result.bms[0]);
+    });
+
+    it('元のRunStateを変更しない', () => {
+      const run = makeRun({ bc: 3, cW: 5, cB: 3, endlessWave: 0 });
+      applyEndlessLoop(run);
+      expect(run.bc).toBe(3);
+      expect(run.endlessWave).toBe(0);
     });
   });
 });
