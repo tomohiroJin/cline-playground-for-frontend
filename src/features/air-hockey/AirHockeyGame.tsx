@@ -171,16 +171,17 @@ const AirHockeyGame: React.FC = () => {
 
       // ストーリーモード: 勝利時にクリアフラグ保存
       if (gameMode === 'story' && currentStage && isWin) {
-        const updated: StoryProgress = {
-          clearedStages: storyProgress.clearedStages.includes(currentStage.id)
-            ? storyProgress.clearedStages
-            : [...storyProgress.clearedStages, currentStage.id],
-        };
-        saveStoryProgress(updated);
-        setStoryProgress(updated);
+        const current = loadStoryProgress();
+        if (!current.clearedStages.includes(currentStage.id)) {
+          const updated: StoryProgress = {
+            clearedStages: [...current.clearedStages, currentStage.id],
+          };
+          saveStoryProgress(updated);
+          setStoryProgress(updated);
+        }
       }
     }
-  }, [screen, diff, winScore, winner, field.id, isDailyMode, dailyChallenge, gameMode, currentStage, storyProgress]);
+  }, [screen, diff, winScore, winner, field.id, isDailyMode, dailyChallenge, gameMode, currentStage]);
 
   // 音量設定をサウンドシステムに適用する共通関数
   const applyAudioSettings = useCallback((sound: SoundSystem, settings: AudioSettings) => {
