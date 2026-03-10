@@ -28,6 +28,25 @@ export * from './tag-stats';
 // ゲーム結果保存
 export * from './result-storage';
 
+// 履歴
+export * from './history-storage';
+
+// 実績
+export * from './achievements';
+export * from './achievement-storage';
+
+// 難易度
+export * from './difficulty';
+
+// チャレンジモード
+export * from './challenge-storage';
+
+// デイリークイズ
+export * from './daily-quiz';
+
+// キャラクターナラティブ
+export * from './character-narrative';
+
 // セーブ/ロード
 export * from './save-manager';
 

@@ -5,7 +5,7 @@ import {
   CFG, DIFFICULTY, FX_DEFAULTS,
   computeFx, createPlayer, evalCond, resolveOutcome,
   applyModifiers, applyToPlayer, computeDrain,
-  classifyImpact, computeProgress, clamp,
+  classifyImpact, computeProgress,
 } from '../game-logic';
 import type { Player, FxState, Outcome } from '../game-logic';
 

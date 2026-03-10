@@ -1,4 +1,4 @@
-import { getConstants, GameConstants } from './constants';
+import { CONSTANTS, GameConstants } from './constants';
 import { GameState, Difficulty, Vector } from './types';
 import { clamp, randomRange, distance } from '../../../utils/math-utils';
 
@@ -31,7 +31,7 @@ export const CpuAI = {
     game: GameState,
     difficulty: Difficulty,
     now: number,
-    consts: GameConstants = getConstants()
+    consts: GameConstants = CONSTANTS
   ): Vector {
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
     const { cpu, pucks, cpuTarget, cpuTargetTime } = game;
@@ -79,7 +79,7 @@ export const CpuAI = {
     game: GameState,
     difficulty: Difficulty,
     now: number,
-    consts: GameConstants = getConstants()
+    consts: GameConstants = CONSTANTS
   ): CpuUpdateResult | null {
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
     let cpuTarget = game.cpuTarget;

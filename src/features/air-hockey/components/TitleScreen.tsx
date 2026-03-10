@@ -1,6 +1,7 @@
 import React from 'react';
-import { Difficulty, FieldConfig, CanvasSize } from '../core/types';
-import { FIELDS, DIFFICULTY_OPTIONS, DIFFICULTY_LABELS, WIN_SCORE_OPTIONS, SIZE_OPTIONS } from '../core/config';
+import { Difficulty, FieldConfig } from '../core/types';
+import { FIELDS, DIFFICULTY_OPTIONS, DIFFICULTY_LABELS, WIN_SCORE_OPTIONS } from '../core/config';
+import { UnlockState, UNLOCK_CONDITIONS } from '../core/unlock';
 import {
   MenuCard,
   GameTitle,
@@ -9,6 +10,7 @@ import {
   ButtonGroup,
   ModeButton,
   StartButton,
+  MenuButton,
 } from '../styles';
 
 type TitleScreenProps = {
@@ -20,8 +22,11 @@ type TitleScreenProps = {
   setWinScore: (s: number) => void;
   highScore: number;
   onStart: () => void;
-  canvasSize: CanvasSize;
-  setCanvasSize: (s: CanvasSize) => void;
+  onShowAchievements?: () => void;
+  onHelpClick?: () => void;
+  onSettingsClick?: () => void;
+  onDailyChallengeClick?: () => void;
+  unlockState?: UnlockState;
 };
 
 export const TitleScreen: React.FC<TitleScreenProps> = ({
@@ -33,8 +38,11 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
   setWinScore,
   highScore,
   onStart,
-  canvasSize,
-  setCanvasSize,
+  onShowAchievements,
+  onHelpClick,
+  onSettingsClick,
+  onDailyChallengeClick,
+  unlockState,
 }) => (
   <MenuCard>
     <GameTitle>🏒 Air Hockey</GameTitle>
@@ -53,23 +61,32 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
     <OptionContainer>
       <OptionTitle>Field</OptionTitle>
       <ButtonGroup>
-        {FIELDS.map(f => (
-          <ModeButton key={f.id} onClick={() => setField(f)} $selected={field.id === f.id}>
-            {f.name}
-          </ModeButton>
-        ))}
+        {FIELDS.map(f => {
+          const isLocked = unlockState && !unlockState.unlockedFields.includes(f.id);
+          const unlockCond = UNLOCK_CONDITIONS.find(c => c.type === 'field' && c.targetId === f.id);
+          const tooltip = isLocked && unlockCond ? `🔒 ${unlockCond.description}` : f.name;
+          return (
+            <ModeButton
+              key={f.id}
+              onClick={() => !isLocked && setField(f)}
+              $selected={field.id === f.id}
+              style={isLocked ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
+              title={tooltip}
+            >
+              {isLocked ? `🔒` : f.name}
+            </ModeButton>
+          );
+        })}
       </ButtonGroup>
-    </OptionContainer>
-
-    <OptionContainer>
-      <OptionTitle>Size</OptionTitle>
-      <ButtonGroup>
-        {SIZE_OPTIONS.map(s => (
-          <ModeButton key={s.id} onClick={() => setCanvasSize(s.id)} $selected={canvasSize === s.id}>
-            {s.name}
-          </ModeButton>
-        ))}
-      </ButtonGroup>
+      {/* ロック中フィールドの解放条件を表示 */}
+      {unlockState && FIELDS.some(f => !unlockState.unlockedFields.includes(f.id)) && (
+        <div style={{ fontSize: '0.7rem', color: '#888', marginTop: '4px', textAlign: 'center' }}>
+          {FIELDS.filter(f => !unlockState.unlockedFields.includes(f.id)).map(f => {
+            const cond = UNLOCK_CONDITIONS.find(c => c.type === 'field' && c.targetId === f.id);
+            return cond ? `${f.name}: ${cond.description}` : '';
+          }).filter(Boolean).join(' / ')}
+        </div>
+      )}
     </OptionContainer>
 
     <OptionContainer>
@@ -84,8 +101,23 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
     </OptionContainer>
 
     <StartButton onClick={onStart}>START</StartButton>
-    <div style={{ marginTop: '1rem', color: 'var(--accent-color)', fontWeight: 'bold' }}>
+
+    <div style={{ color: 'var(--accent-color)', fontWeight: 'bold', marginTop: '1rem' }}>
       Best Margin: {highScore > 0 ? '+' + highScore : highScore}
+    </div>
+    <div style={{ display: 'flex', gap: '8px', marginTop: '0.5rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+      {onDailyChallengeClick && (
+        <MenuButton onClick={onDailyChallengeClick}>Daily Challenge</MenuButton>
+      )}
+      {onShowAchievements && (
+        <MenuButton onClick={onShowAchievements}>実績</MenuButton>
+      )}
+      {onHelpClick && (
+        <MenuButton onClick={onHelpClick}>?</MenuButton>
+      )}
+      {onSettingsClick && (
+        <MenuButton onClick={onSettingsClick}>&#9881;</MenuButton>
+      )}
     </div>
   </MenuCard>
 );

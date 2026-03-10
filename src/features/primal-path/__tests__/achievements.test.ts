@@ -4,7 +4,7 @@
 import {
   calcRunStats, checkAchievement, applyChallenge,
 } from '../game-logic';
-import type { RunState, AchievementDef, RunStats, AggregateStats, ChallengeDef } from '../types';
+import type { AchievementDef, RunStats, AggregateStats } from '../types';
 import {
   ACHIEVEMENTS, CHALLENGES,
   STATS_KEY, ACHIEVEMENTS_KEY, AGGREGATE_KEY,
@@ -72,7 +72,7 @@ describe('calcRunStats', () => {
   it('IDはユニークな文字列である', () => {
     const run = makeRun();
     const s1 = calcRunStats(run, 'defeat', 10);
-    const s2 = calcRunStats(run, 'defeat', 10);
+    calcRunStats(run, 'defeat', 10);
     expect(typeof s1.id).toBe('string');
     expect(s1.id.length).toBeGreaterThan(0);
   });

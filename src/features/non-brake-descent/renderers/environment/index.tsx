@@ -26,6 +26,7 @@ export const CloudRenderer: React.FC<{ clouds: Cloud[] }> = React.memo(({ clouds
     ))}
   </g>
 )) as React.FC<{ clouds: Cloud[] }>;
+CloudRenderer.displayName = 'CloudRenderer';
 
 // ビルの描画コンポーネント
 export const BuildingRenderer: React.FC<{ buildings: Building[]; camY: number }> = React.memo(({ buildings, camY }) => (
@@ -53,3 +54,4 @@ export const BuildingRenderer: React.FC<{ buildings: Building[]; camY: number }>
     })}
   </g>
 )) as React.FC<{ buildings: Building[]; camY: number }>;
+BuildingRenderer.displayName = 'BuildingRenderer';

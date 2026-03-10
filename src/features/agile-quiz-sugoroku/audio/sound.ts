@@ -159,6 +159,16 @@ export function playSfxResult(): void {
   });
 }
 
+/** 実績獲得効果音 */
+export function playSfxAchievement(): void {
+  if (!sfxSynth) return;
+  const time = Tone.now();
+  const notes = ['E5', 'G5', 'B5', 'E6'];
+  notes.forEach((note, i) => {
+    sfxSynth!.triggerAttackRelease(note, '16n', time + i * 0.08);
+  });
+}
+
 /**
  * コンボ効果音を再生
  */
@@ -168,4 +178,71 @@ export function playSfxCombo(): void {
   sfxSynth.triggerAttackRelease('E5', '16n', time);
   sfxSynth.triggerAttackRelease('A5', '16n', time + 0.06);
   sfxSynth.triggerAttackRelease('B5', '16n', time + 0.12);
+}
+
+/**
+ * コンボ切れ効果音を再生
+ * 下降するトーンでコンボ途切れを演出
+ */
+export function playSfxComboBreak(): void {
+  if (!sfxSynth) return;
+  const time = Tone.now();
+  sfxSynth.triggerAttackRelease('E4', '16n', time);
+  sfxSynth.triggerAttackRelease('C4', '16n', time + 0.08);
+  sfxSynth.triggerAttackRelease('A3', '8n', time + 0.16);
+}
+
+/** ドラムロールのティック間隔（秒） */
+const DRUMROLL_TICK_INTERVAL = 0.06;
+/** ドラムロールのティック数 */
+const DRUMROLL_TICK_COUNT = 8;
+
+/**
+ * ドラムロール風効果音を再生
+ * 連続するティック音で緊張感を演出
+ */
+export function playSfxDrumroll(): void {
+  if (!sfxSynth) return;
+  const time = Tone.now();
+  for (let i = 0; i < DRUMROLL_TICK_COUNT; i++) {
+    sfxSynth.triggerAttackRelease('A5', '32n', time + i * DRUMROLL_TICK_INTERVAL);
+  }
+}
+
+/** ファンファーレのノート */
+const FANFARE_NOTES = ['C4', 'E4', 'G4', 'C5', 'E5', 'G5', 'C6'] as const;
+/** ファンファーレのノート間隔（秒） */
+const FANFARE_NOTE_INTERVAL = 0.1;
+
+/**
+ * ファンファーレ効果音を再生
+ * 上昇するアルペジオでSランク演出
+ */
+export function playSfxFanfare(): void {
+  if (!sfxSynth) return;
+  const time = Tone.now();
+  FANFARE_NOTES.forEach((note, i) => {
+    sfxSynth!.triggerAttackRelease(note, '8n', time + i * FANFARE_NOTE_INTERVAL);
+  });
+}
+
+/** 緊急ティックの基本ピッチ（Hz） */
+const URGENT_BASE_PITCH = 800;
+/** 残り秒数あたりのピッチ上昇量（Hz） */
+const URGENT_PITCH_STEP = 100;
+/** 緊急ティックの閾値（秒） - この秒数以下でピッチが上がり始める */
+const URGENT_THRESHOLD = 5;
+
+/**
+ * 残り秒数に応じてピッチが変わる緊急ティック音を再生
+ * 残り時間が少ないほど高い音になる
+ */
+export function playSfxTickUrgent(remaining: number): void {
+  if (!tickSynth) return;
+  const pitchBoost =
+    remaining <= URGENT_THRESHOLD
+      ? (URGENT_THRESHOLD - remaining) * URGENT_PITCH_STEP
+      : 0;
+  const frequency = URGENT_BASE_PITCH + pitchBoost;
+  tickSynth.triggerAttackRelease(frequency, '32n', Tone.now());
 }

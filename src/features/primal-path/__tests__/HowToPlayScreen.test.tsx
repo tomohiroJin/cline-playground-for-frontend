@@ -5,7 +5,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { HowToPlayScreen } from '../components/HowToPlayScreen';
-import { EVOS, SYNERGY_BONUSES, SYNERGY_TAG_INFO } from '../constants';
+import { SYNERGY_BONUSES } from '../constants';
 import type { SfxType } from '../types';
 import type { GameAction } from '../hooks';
 

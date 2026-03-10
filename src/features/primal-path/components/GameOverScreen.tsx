@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { RunState, SaveData, SfxType } from '../types';
 import type { GameAction } from '../hooks';
-import { calcBoneReward, aliveAllies, effATK, civLvs } from '../game-logic';
+import { calcBoneReward, aliveAllies } from '../game-logic';
 import { ACHIEVEMENTS, LOG_COLORS } from '../constants';
 import { CivLevelsDisplay } from './shared';
 import { Screen, SubTitle, Divider, GameButton, GamePanel, RunStatRow, Gc, Tc, Xc, BiomeBg, LogReviewContainer, LogLine } from '../styles';

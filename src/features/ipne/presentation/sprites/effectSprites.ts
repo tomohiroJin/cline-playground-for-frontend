@@ -5,7 +5,6 @@
  * 32x32 ピクセルアートのコードスプライト方式で定義する。
  */
 
-import { SpriteDefinition } from './spriteData';
 import { SpriteSheetDefinition } from './spriteSheet';
 
 // ---------------------------------------------------------------------------

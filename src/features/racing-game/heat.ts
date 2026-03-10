@@ -64,7 +64,7 @@ export const updateHeat = (
 };
 
 /** ブースト発動 */
-export const activateBoost = (state: HeatState): HeatState => ({
+export const activateBoost = (_state: HeatState): HeatState => ({
   gauge: 0,
   boostRemaining: HEAT.BOOST_DURATION,
   boostPower: HEAT.BOOST_POWER,

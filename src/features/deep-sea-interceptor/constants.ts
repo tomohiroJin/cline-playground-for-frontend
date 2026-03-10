@@ -2,7 +2,7 @@
 // Deep Sea Interceptor - 定数定義
 // ============================================================================
 
-import type { EnemyType, ItemType, Difficulty } from './types';
+import type { ItemType, Difficulty } from './types';
 
 /** ゲーム全体の設定 */
 export const Config = Object.freeze({

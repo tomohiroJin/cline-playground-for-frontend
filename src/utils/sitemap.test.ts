@@ -59,6 +59,7 @@ describe('sitemap.xml', () => {
     for (const page of newPages) {
       const escapedPage = page.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const match = sitemapContent.match(
+        // eslint-disable-next-line security/detect-non-literal-regexp
         new RegExp(
           `<url>\\s*<loc>https://play\\.niku9\\.click${escapedPage}</loc>\\s*<lastmod>([^<]+)</lastmod>`
         )

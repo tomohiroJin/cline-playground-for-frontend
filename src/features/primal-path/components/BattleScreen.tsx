@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import type { RunState, BiomeId, SfxType, TickEvent, ASkillId } from '../types';
 import type { GameAction } from '../hooks';
-import { BIO, TC, LOG_COLORS, A_SKILLS, TB_SUMMARY } from '../constants';
+import { BIO, LOG_COLORS, A_SKILLS, TB_SUMMARY } from '../constants';
 import { effATK, civLvs, mkPopup, calcAvlSkills, applySkill, calcSynergies, applySynergyBonuses } from '../game-logic';
 import { drawEnemy, drawPlayer, drawBurnFx } from '../sprites';
 import { ProgressBar, HpBar, CivLevelsDisplay, AffinityBadge, AllyList, SynergyBadges, SpeedControl, renderParticles } from './shared';
@@ -47,6 +47,7 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
   useEffect(() => {
     return () => {
       timersRef.current.forEach(clearTimeout);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       timersRef.current.clear();
     };
   }, []);
@@ -77,6 +78,7 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
         }
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [e?.n, e?.hp, e?.mhp, boss, run.burn, run.turn]);
 
   useEffect(() => {
@@ -124,7 +126,7 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
       }, 400);
       timersRef.current.add(hitTid);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [run.turn, tickEvents]);
 
   // Auto-scroll log
@@ -132,19 +134,45 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
   }, [run.log.length]);
 
-  if (!e) return null;
-
-  const ritActive = run.fe === 'rit' && run.hp < run.mhp * 0.3;
-  const feLabel = run.awoken.map(a => (
-    <span key={a.id} style={{ color: a.cl, fontSize: 8 }}>{a.nm} </span>
-  ));
-
   // シナジー計算（evs が変わった時だけ再計算）
   const activeSynergies = useMemo(() => calcSynergies(run.evs), [run.evs]);
   const synergyBonus = useMemo(() => applySynergyBonuses(activeSynergies), [activeSynergies]);
 
   // ツリーボーナスサマリー
   const tbParts = useMemo(() => TB_SUMMARY.filter(s => run.tb[s.k] !== 0).map(s => s.f(run.tb[s.k])), [run.tb]);
+
+  // チャレンジタイマー（RunState の timerStart から経過時間を計算）
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    if (!run.timerStart || !run.timeLimit) return;
+    const tid = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+    return () => clearInterval(tid);
+  }, [run.timerStart, run.timeLimit]);
+
+  // タイムアップ時にゲームオーバーを発火
+  const remaining = (run.timerStart && run.timeLimit)
+    ? Math.max(0, run.timeLimit - Math.floor((now - run.timerStart) / 1000))
+    : undefined;
+
+  useEffect(() => {
+    if (remaining === 0) {
+      dispatch({ type: 'GAME_OVER', won: false });
+    }
+  }, [remaining, dispatch]);
+
+  // バイオーム背景用
+  const biomeForBg = finalMode ? 'final' : (run.cBT as string);
+  const particles = useMemo(() => renderParticles(biomeForBg), [biomeForBg]);
+
+  if (!e) return null;
+
+  const ritActive = run.fe === 'rit' && run.hp < run.mhp * 0.3;
+  const feLabel = run.awoken.map(a => (
+    <span key={a.id} style={{ color: a.cl, fontSize: 8 }}>{a.nm} </span>
+  ));
 
   // スキル関連
   const avlSkills = calcAvlSkills(run);
@@ -162,38 +190,12 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
   // バフアイコン表示用
   const activeBuffs = run.sk.bfs;
 
-  // チャレンジタイマー（RunState の timerStart から経過時間を計算）
-  const [now, setNow] = useState(Date.now());
-
-  useEffect(() => {
-    if (!run.timerStart || !run.timeLimit) return;
-    const tid = setInterval(() => {
-      setNow(Date.now());
-    }, 1000);
-    return () => clearInterval(tid);
-  }, [run.timerStart, run.timeLimit]);
-
-  const remaining = (run.timerStart && run.timeLimit)
-    ? Math.max(0, run.timeLimit - Math.floor((now - run.timerStart) / 1000))
-    : undefined;
-
-  // タイムアップ時にゲームオーバーを発火
-  useEffect(() => {
-    if (remaining === 0) {
-      dispatch({ type: 'GAME_OVER', won: false });
-    }
-  }, [remaining, dispatch]);
-
   /** 秒を mm:ss 形式にフォーマット */
   const formatTime = (s: number): string => {
     const m = Math.floor(s / 60);
     const sec = s % 60;
     return `${m}:${sec.toString().padStart(2, '0')}`;
   };
-
-  // バイオーム背景用
-  const biomeForBg = finalMode ? 'final' : (run.cBT as string);
-  const particles = useMemo(() => renderParticles(biomeForBg), [biomeForBg]);
 
   return (
     <Screen $noScroll>

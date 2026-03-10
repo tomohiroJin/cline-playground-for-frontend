@@ -1,5 +1,5 @@
 import React from 'react';
-import type { RunState, Ally, SfxType } from '../types';
+import type { RunState, SfxType } from '../types';
 import type { GameAction } from '../hooks';
 import { allyReviveCost, deadAllies } from '../game-logic';
 import { TC } from '../constants';

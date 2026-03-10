@@ -9,10 +9,12 @@ const getCanonicalLink = (): HTMLLinkElement | null =>
   document.querySelector('link[rel="canonical"]');
 
 /** MemoryRouter でラップする wrapper を生成 */
-const createWrapper =
-  (initialPath: string) =>
-  ({ children }: { children: React.ReactNode }) =>
+const createWrapper = (initialPath: string) => {
+  const Wrapper = ({ children }: { children: React.ReactNode }) =>
     React.createElement(MemoryRouter, { initialEntries: [initialPath] }, children);
+  Wrapper.displayName = 'TestWrapper';
+  return Wrapper;
+};
 
 describe('useCanonicalUrl', () => {
   let originalLink: HTMLLinkElement;

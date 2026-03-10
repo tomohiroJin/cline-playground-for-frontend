@@ -14,7 +14,6 @@ import {
 import { Rand, calcEffBf, visLabel, GhostPlayer, isValidDailyGhost } from '../utils';
 import { SeededRand, dateToSeed, getDailyId } from '../utils/seeded-random';
 import type { ShareParams } from '../utils/share';
-import { decodeShareUrl } from '../utils/share';
 import type { useStore } from './useStore';
 import type { useAudio } from './useAudio';
 import {
@@ -179,6 +178,7 @@ export function useGameEngine(store: StoreApi, audio: AudioApi) {
       laneArt: LANES.map((l) => resolveArtKey(l)) as ArtKey[],
       emoKey: resolveEmoKey(g),
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patch]);
 
   // アート状態の解決
@@ -211,6 +211,7 @@ export function useGameEngine(store: StoreApi, audio: AudioApi) {
       laneArt: LANES.map((l) => resolveArtKey(l)) as ArtKey[],
       emoKey: resolveEmoKey(g),
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patch, store]);
 
   // 一時的なアート状態変更

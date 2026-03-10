@@ -158,6 +158,7 @@ describe('DiffBadge', () => {
   it('難易度情報が表示される', () => {
     const diff = DIFFICULTY.find(d => d.id === 'normal')!;
     render(<DiffBadge diff={diff} />);
+    // eslint-disable-next-line security/detect-non-literal-regexp
     expect(screen.getByText(new RegExp(diff.name))).toBeInTheDocument();
   });
 

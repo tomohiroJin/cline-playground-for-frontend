@@ -1,7 +1,7 @@
 // Racing Game ゲームロジック（純粋関数）
 
-import type { Point, Checkpoint, Player, DriftState } from './types';
-import { Config, DRIFT, WALL } from './constants';
+import type { Point, Checkpoint, Player } from './types';
+import { Config, DRIFT } from './constants';
 import { Utils } from './utils';
 import { Track } from './track';
 import { Drift } from './drift';

@@ -188,7 +188,7 @@ describe('labyrinth-of-shadows/game-logic', () => {
       const wanderer = state.enemies.find(e => e.type === 'wanderer');
       if (wanderer) {
         wanderer.active = true;
-        const initialDir = wanderer.dir;
+        const _initialDir = wanderer.dir;
         // プレイヤーの目の前に配置してもlastSeenXは更新されない
         wanderer.x = state.player.x + 1;
         wanderer.y = state.player.y;

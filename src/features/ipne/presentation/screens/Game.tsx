@@ -96,17 +96,12 @@ import {
   DEFAULT_MOVEMENT_CONFIG,
   EnemyState,
   EnemyType,
-  updateExploration,
   drawAutoMap,
-  updatePlayerDirection,
   // MVP3追加
   PlayerClass,
   PlayerClassValue,
   Trap,
   Wall,
-  TrapType,
-  WallType,
-  WallState,
   CLASS_CONFIGS,
   LEVEL_UP_CHOICES,
   KILL_COUNT_TABLE,
@@ -121,7 +116,7 @@ import {
 } from '../../index';
 import { GameTimer } from '../../timer';
 import { getElapsedTime, formatTimeShort } from '../../timer';
-import { CONFIG, SPRITE_SIZES } from '../config';
+import { SPRITE_SIZES } from '../config';
 import {
   EffectManager, EffectType, EffectTypeValue, DeathEffect, DeathPhase,
   FloatingTextManager, FloatingTextType, calculatePowerLevel,
@@ -164,8 +159,6 @@ import {
   MINI_BOSS_DAMAGE_FRAME,
   MEGA_BOSS_ATTACK_FRAME,
   MEGA_BOSS_DAMAGE_FRAME,
-  ENEMY_MELEE_SLASH_SPRITE_SHEET,
-  ENEMY_RANGED_SHOT_SPRITE_SHEET,
 } from '../sprites';
 import { drawPlayerAura } from '../effects/aura';
 import { drawWeaponTrail, getWeaponTier, WeaponTier, drawShockwave } from '../effects/weaponEffect';
@@ -1202,6 +1195,7 @@ export const GameScreen: React.FC<{
         drawCoordinateOverlay(ctx, player.x, player.y, playerScreen.x, playerScreen.y);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, player, enemies, items, traps, walls, mapState, goalPos, debugState, renderTime, attackEffect, lastDamageAt, effectQueueRef, floatingTextManagerRef, comboStateRef, spriteRenderer, isDying]);
 
   const setAttackHold = useCallback((isHolding: boolean) => {

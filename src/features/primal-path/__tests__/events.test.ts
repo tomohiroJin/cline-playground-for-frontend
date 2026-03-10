@@ -5,8 +5,8 @@ import {
   rollEvent, applyEventChoice, dominantCiv, formatEventResult,
   computeEventResult, getEffectHintColor, getEffectHintIcon,
 } from '../game-logic';
-import type { RunState, EventChoice, EventId, RandomEventDef, EventEffect } from '../types';
-import { RANDOM_EVENTS, EVOS, EVENT_CHANCE, EVENT_MIN_BATTLES } from '../constants';
+import type { EventChoice, EventId, EventEffect } from '../types';
+import { RANDOM_EVENTS, EVENT_CHANCE, EVENT_MIN_BATTLES } from '../constants';
 import { makeRun } from './test-helpers';
 
 /* ===== 定数検証 ===== */

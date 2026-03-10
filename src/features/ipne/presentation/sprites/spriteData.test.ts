@@ -1,4 +1,4 @@
-import { createSprite, hexToRgba, SpriteDefinition } from './spriteData';
+import { createSprite, hexToRgba } from './spriteData';
 import { SPRITE_SIZES } from '../config';
 
 describe('SPRITE_SIZES', () => {

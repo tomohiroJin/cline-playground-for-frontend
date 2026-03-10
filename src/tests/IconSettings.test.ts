@@ -1,6 +1,19 @@
 import fs from 'fs';
 import path from 'path';
 
+/** マニフェストのアイコン項目 */
+interface ManifestIcon {
+  src: string;
+  sizes: string;
+  type: string;
+}
+
+/** マニフェスト定義 */
+interface Manifest {
+  icons: ManifestIcon[];
+  [key: string]: unknown;
+}
+
 describe('Icon Settings', () => {
   const publicDir = path.resolve(__dirname, '../../public');
   const indexHtmlPath = path.join(publicDir, 'index.html');
@@ -30,7 +43,7 @@ describe('Icon Settings', () => {
   });
 
   describe('manifest.json', () => {
-    let manifest: any;
+    let manifest: Manifest;
 
     beforeAll(() => {
       const content = fs.readFileSync(manifestJsonPath, 'utf8');
@@ -43,17 +56,17 @@ describe('Icon Settings', () => {
     });
 
     it('should include 192x192 icon configuration', () => {
-      const icon192 = manifest.icons.find((i: any) => i.src === '/icon-192.png');
+      const icon192 = manifest.icons.find((i: ManifestIcon) => i.src === '/icon-192.png');
       expect(icon192).toBeDefined();
-      expect(icon192.sizes).toBe('192x192');
-      expect(icon192.type).toBe('image/png');
+      expect(icon192!.sizes).toBe('192x192');
+      expect(icon192!.type).toBe('image/png');
     });
 
     it('should include 512x512 icon configuration', () => {
-      const icon512 = manifest.icons.find((i: any) => i.src === '/icon-512.png');
+      const icon512 = manifest.icons.find((i: ManifestIcon) => i.src === '/icon-512.png');
       expect(icon512).toBeDefined();
-      expect(icon512.sizes).toBe('512x512');
-      expect(icon512.type).toBe('image/png');
+      expect(icon512!.sizes).toBe('512x512');
+      expect(icon512!.type).toBe('image/png');
     });
   });
 });

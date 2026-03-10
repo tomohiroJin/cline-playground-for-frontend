@@ -5,7 +5,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { EventScreen } from '../components/EventScreen';
-import type { RandomEventDef, RunState, EventChoice, SfxType } from '../types';
+import type { RandomEventDef } from '../types';
 import { makeRun } from './test-helpers';
 
 /* ===== テスト用データ ===== */

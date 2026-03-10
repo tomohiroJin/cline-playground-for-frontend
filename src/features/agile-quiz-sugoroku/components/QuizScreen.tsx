@@ -7,13 +7,16 @@ import { GameEvent, Question, GameStats } from '../types';
 import { CONFIG, COLORS, OPTION_LABELS, PHASE_GENRE_MAP, EVENT_BACKGROUND_MAP } from '../constants';
 import { TAG_MAP } from '../questions/tag-master';
 import { AQS_IMAGES } from '../images';
+import type { ReactionSituation } from '../character-reactions';
+import { SugorokuBoard } from './SugorokuBoard';
+import { FlashOverlay } from './FlashOverlay';
+import { ScoreFloat } from './ScoreFloat';
+import { ComboEffect } from './ComboEffect';
+import { CharacterReaction } from './CharacterReaction';
 import {
   PageWrapper,
   Panel,
   Scanlines,
-  TimelineContainer,
-  TimelineItem,
-  TimelinePulse,
   TimerContainer,
   TimerValue,
   TimerBar,
@@ -29,7 +32,6 @@ import {
   HeaderInfo,
   SprintLabel,
   HeaderRight,
-  ComboGlow,
   DebtIndicator,
   QuizQuestion,
   OptionsContainer,
@@ -39,7 +41,6 @@ import {
   OptionIcon,
   ResultBanner,
   BannerMessage,
-  BannerSub,
   BannerExplain,
   Button,
   HotkeyHint,
@@ -88,11 +89,14 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
   visible,
   onAnswer,
   onNext,
-  quizIndex,
+  quizIndex: _quizIndex,
 }) => {
   const [hoveredOption, setHoveredOption] = useState<number | null>(null);
   const [imgError, setImgError] = useState(false);
   const [bgError, setBgError] = useState(false);
+  const [flashType, setFlashType] = useState<'correct' | 'incorrect' | 'timeup' | undefined>();
+  const [scoreText, setScoreText] = useState('');
+  const [prevCombo, setPrevCombo] = useState(0);
   const event = events[eventIndex];
 
   // 背景画像の取得
@@ -100,7 +104,20 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
   const bgImage = bgKey ? AQS_IMAGES.backgrounds[bgKey] : undefined;
   const isEmergency = event.id === 'emergency';
   const answered = selectedAnswer !== null;
-  const comboShow = stats.combo >= 2 && !answered;
+
+  // リアクションの状況を判定（タイマー段階は CharacterReaction 側で解決）
+  const reactionSituation: ReactionSituation = (() => {
+    if (isEmergency && !answered) return 'emergency';
+    if (!answered) return 'idle';
+    if (selectedAnswer === -1) return 'idle';
+    if (selectedAnswer === quiz.answer) {
+      return stats.combo >= 3 ? 'combo' : 'correct';
+    }
+    return 'incorrect';
+  })();
+
+  // コンボ途切れ判定
+  const isComboBreak = answered && prevCombo >= 2 && stats.combo === 0;
 
   // 解説を取得（quiz.explanation 直接参照）
   const explanation = answered ? quiz.explanation : undefined;
@@ -108,9 +125,30 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
   // 現在の工程に関連するジャンルタグ
   const phaseGenres = PHASE_GENRE_MAP[event.id] ?? [];
 
-  // タイマーの色
+  // タイマーの色（段階的な緊迫感）
   const timerColor =
-    timer <= 3 ? COLORS.red : timer <= 7 ? COLORS.yellow : COLORS.accent;
+    timer <= 2 ? COLORS.red : timer <= 4 ? COLORS.red2 : timer <= 7 ? COLORS.yellow : COLORS.accent;
+
+  // 回答時のフラッシュとスコア表示
+  React.useEffect(() => {
+    if (!answered) {
+      setFlashType(undefined);
+      setScoreText('');
+      return;
+    }
+    if (selectedAnswer === -1) {
+      setFlashType('timeup');
+    } else if (selectedAnswer === quiz.answer) {
+      setFlashType('correct');
+      setScoreText('+10pt');
+    } else {
+      setFlashType('incorrect');
+    }
+    setPrevCombo(stats.combo);
+    // フラッシュを自動解除
+    const tid = setTimeout(() => setFlashType(undefined), 600);
+    return () => clearTimeout(tid);
+  }, [answered]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // キーボード操作
   useKeys((e) => {
@@ -139,6 +177,24 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
 
   return (
     <PageWrapper>
+      {/* フラッシュオーバーレイ */}
+      <FlashOverlay type={flashType} />
+
+      {/* タイマー緊迫オーバーレイ */}
+      {!answered && timer <= 2 && timer > 0 && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: COLORS.red,
+            opacity: 0.06,
+            pointerEvents: 'none',
+            zIndex: 50,
+            transition: 'opacity 0.3s',
+          }}
+        />
+      )}
+
       {/* 背景画像 */}
       {bgImage && !bgError && (
         <img
@@ -166,7 +222,6 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
             Sprint {sprint + 1}/{CONFIG.sprintCount}
           </SprintLabel>
           <HeaderRight>
-            {comboShow && <ComboGlow>🔥 {stats.combo} COMBO</ComboGlow>}
             {stats.debt > 0 && (
               <DebtIndicator $severe={stats.debt > 20}>
                 ⚠ {stats.debt}pt
@@ -175,28 +230,12 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
           </HeaderRight>
         </HeaderInfo>
 
-        {/* タイムライン */}
-        <TimelineContainer>
-          {events.map((ev, i) => {
-            const done = i < eventIndex;
-            const active = i === eventIndex;
-            const evIsEmergency = ev.id === 'emergency';
-            return (
-              <TimelineItem
-                key={i}
-                $done={done}
-                $active={active}
-                $isEmergency={evIsEmergency}
-                $color={ev.color}
-              >
-                <div />
-                {active && (
-                  <TimelinePulse $isEmergency={evIsEmergency} $color={ev.color} />
-                )}
-              </TimelineItem>
-            );
-          })}
-        </TimelineContainer>
+        {/* すごろくボード */}
+        <SugorokuBoard
+          events={events}
+          currentIndex={eventIndex}
+          comboActive={stats.combo >= 2}
+        />
 
         {/* イベント情報 */}
         <EventCard $isEmergency={isEmergency} $color={event.color}>
@@ -308,27 +347,40 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
           })}
         </OptionsContainer>
 
+        {/* コンボエフェクト（回答前） */}
+        {!answered && stats.combo >= 2 && (
+          <div style={{ textAlign: 'center', marginBottom: 8 }}>
+            <ComboEffect combo={stats.combo} />
+          </div>
+        )}
+
         {/* 結果表示 */}
         {answered && (
           <div>
             <ResultBanner $ok={selectedAnswer === quiz.answer}>
-              <img
-                src={selectedAnswer === -1 
-                  ? AQS_IMAGES.feedback.timeup 
-                  : selectedAnswer === quiz.answer 
-                    ? AQS_IMAGES.feedback.correct 
-                    : AQS_IMAGES.feedback.incorrect}
-                alt=""
-                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: '50%',
-                  objectFit: 'cover',
-                  marginBottom: 8,
-                  border: '2px solid white',
-                }}
-              />
+              <div style={{ position: 'relative', display: 'inline-block' }}>
+                <img
+                  src={selectedAnswer === -1
+                    ? AQS_IMAGES.feedback.timeup
+                    : selectedAnswer === quiz.answer
+                      ? AQS_IMAGES.feedback.correct
+                      : AQS_IMAGES.feedback.incorrect}
+                  alt=""
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    marginBottom: 8,
+                    border: '2px solid white',
+                  }}
+                />
+                {/* スコアフロート */}
+                {scoreText && selectedAnswer === quiz.answer && (
+                  <ScoreFloat text={scoreText} color={COLORS.green} />
+                )}
+              </div>
               <BannerMessage>
                 {selectedAnswer === -1
                   ? '⏱️ TIME UP'
@@ -336,12 +388,16 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
                   ? '✓ CORRECT'
                   : '✗ INCORRECT'}
               </BannerMessage>
-              {stats.combo > 1 && (
-                <BannerSub>
-                  {selectedAnswer === quiz.answer
-                    ? `🔥 ${stats.combo} COMBO!`
-                    : 'Combo Reset…'}
-                </BannerSub>
+              {/* コンボ or コンボ途切れ */}
+              {selectedAnswer === quiz.answer && stats.combo >= 2 && (
+                <div style={{ marginTop: 6 }}>
+                  <ComboEffect combo={stats.combo} />
+                </div>
+              )}
+              {isComboBreak && (
+                <div style={{ marginTop: 6 }}>
+                  <ComboEffect combo={0} isBreak />
+                </div>
               )}
               {explanation && (
                 <BannerExplain
@@ -362,6 +418,13 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
 
         {/* キーボードヒント */}
         {!answered && <KeyboardHint>⌨ A/B/C/D or 1/2/3/4</KeyboardHint>}
+
+        {/* キャラクターリアクション（常時表示・フロー内配置） */}
+        <CharacterReaction
+          situation={reactionSituation}
+          timer={answered ? undefined : timer}
+          quizTags={quiz.tags}
+        />
       </Panel>
     </PageWrapper>
   );

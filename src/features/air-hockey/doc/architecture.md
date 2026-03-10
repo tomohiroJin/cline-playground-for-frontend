@@ -1,0 +1,73 @@
+# アーキテクチャ・技術詳細
+
+## ファイル構成
+
+```
+src/features/air-hockey/
+  core/
+    physics.ts            # 物理演算（衝突判定、速度計算）
+    ai.ts                 # CPU AI ロジック（3段階難易度、壁反射予測）
+    entities.ts           # エンティティ定義（パック、マレット、統計）
+    items.ts              # アイテムシステム（6種）
+    sound.ts              # 効果音・BGM 生成（Web Audio API）
+    config.ts             # ゲーム設定（ステージ、アイテム定義）
+    constants.ts          # 定数（キャンバス、物理、CPU、フィーバー、カムバック）
+    types.ts              # 型定義
+    achievements.ts       # 実績システム（定義・判定・localStorage 管理）
+    audio-settings.ts     # 音量設定（localStorage 管理）
+    daily-challenge.ts    # デイリーチャレンジ（シード生成・ルール・結果保存）
+    difficulty-adjust.ts  # 難易度オートアジャスト（連勝/連敗判定）
+    keyboard.ts           # キーボード操作（状態管理・移動計算）
+    unlock.ts             # フィールド/アイテムアンロック（条件・状態管理）
+  hooks/
+    useGameLoop.ts        # ゲームループ（フェーズ管理、物理更新、描画）
+    useInput.ts           # マウス/タッチ入力ハンドリング
+    useKeyboardInput.ts   # キーボード入力ハンドリング
+  components/
+    Field.tsx             # フィールド描画（Canvas、シェイク）
+    ResultScreen.tsx       # リザルト画面（統計、実績、紙吹雪、リプレイ）
+    Scoreboard.tsx         # スコアボード（ポーズボタン）
+    TitleScreen.tsx        # タイトル画面（設定選択、実績、デイリー）
+    AchievementList.tsx    # 実績一覧モーダル
+    DailyChallengeScreen.tsx # デイリーチャレンジ画面
+    SettingsPanel.tsx      # 設定パネルモーダル（音量調整）
+    Transition.tsx         # 画面トランジション
+    Tutorial.tsx           # チュートリアルオーバーレイ
+  AirHockeyGame.tsx       # メインゲームコンポーネント
+  renderer.ts             # Canvas 描画（トレイル、グロー、パーティクル、フィーバー演出等）
+  styles.ts               # スタイル定義（レスポンシブ対応）
+  index.ts                # barrel export
+src/pages/AirHockeyPage.tsx  # ページコンポーネント
+```
+
+## 状態管理
+
+- React Hooks（`useState`, `useRef`, `useEffect`）
+- カスタムフック（`useGameLoop`, `useInput`, `useKeyboardInput`）でゲームループと入力を分離
+- `useRef` でゲームループの状態をフレーム間で保持
+- localStorage でハイスコア、実績、音量設定、アンロック状態、デイリーチャレンジ結果を永続化
+
+## 使用技術
+
+| 技術 | 用途 |
+|------|------|
+| Canvas 2D | リアルタイム物理演算＆描画 |
+| Web Audio API | 効果音・BGM の動的生成 |
+| 物理演算 | 衝突判定（円-円、円-壁）、反射、摩擦 |
+| AI | 難易度に応じた CPU 戦略（Easy: ブレ＋低速、Normal: 予測＋積極性、Hard: 壁反射予測＋ポジショニング） |
+| CSS Transform | 画面シェイク、レスポンシブスケーリング |
+
+## テスト
+
+176テスト（Phase 1〜4 合計）:
+
+| テストファイル | 対象 |
+|--------------|------|
+| `core/phase1.test.ts` | レスポンシブ・カウントダウン・シェイク・速度ビジュアル・BGM・サウンド改善 |
+| `core/phase2.test.ts` | ポーズ・新アイテム・コンボ・カムバック・統計 |
+| `core/phase3.test.ts` | 実績・音量設定・チュートリアル |
+| `core/phase4.test.ts` | キーボード操作・難易度調整・アンロック・デイリーチャレンジ |
+| `core/AI.test.ts` | AI ロジック |
+| `core/Physics.test.ts` | 物理演算 |
+| `core/entities.test.ts` | エンティティ |
+| `core/items.test.ts` | アイテムシステム |

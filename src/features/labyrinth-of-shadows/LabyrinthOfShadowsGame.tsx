@@ -55,7 +55,7 @@ export default function LabyrinthOfShadowsGame() {
     stamina: 100,
     highScore: 0,
   });
-  const [mapData, setMapData] = useState({
+  const [_mapData, setMapData] = useState({
     maze: [] as number[][],
     player: { x: 0, y: 0 },
     exit: { x: 0, y: 0 },

@@ -151,7 +151,7 @@ export const AudioEngine = (() => {
           if (s.base) { s.base.stop(); s.base.disconnect(); }
           if (s.pad) { s.pad.stop(); s.pad.disconnect(); }
           if (s.lfo) { s.lfo.stop(); s.lfo.disconnect(); }
-        } catch(_e) { /* 停止済みノードの停止エラーは無視 */ }
+        } catch { /* 停止済みノードの停止エラーは無視 */ }
       }, fadeMs + 100);
       bgmState = null;
     }, "stopBgm"); },

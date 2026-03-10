@@ -1,6 +1,6 @@
 // ゲームループ内の描画ロジック（HUD/カウントダウン/通知）
 
-import type { Player, HeatState } from './types';
+import type { Player } from './types';
 import { Config } from './constants';
 import { Utils } from './utils';
 import { Render } from './renderer';
