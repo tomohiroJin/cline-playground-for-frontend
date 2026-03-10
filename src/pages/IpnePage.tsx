@@ -40,7 +40,7 @@ import { calculateRating } from '../features/ipne/ending';
 import { resolvePlayerDamage } from '../features/ipne/application';
 import {
   playPlayerDamageSound,
-  playEnemyKillSound,
+  playEnemyKillSoundWithPitch,
   playBossKillSound,
   playLevelUpSound,
   playMoveStepSound,
@@ -56,7 +56,8 @@ import {
 import { TitleScreen } from '../features/ipne/presentation/screens/Title';
 import { PrologueScreen } from '../features/ipne/presentation/screens/Prologue';
 import { GameScreen, ClassSelectScreen, LevelUpOverlayComponent, EffectEvent } from '../features/ipne/presentation/screens/Game';
-import { EffectType } from '../features/ipne/presentation/effects';
+import { EffectType, FloatingTextManager, FloatingTextType } from '../features/ipne/presentation/effects';
+import { ComboState, createComboState, registerKill, getComboMultiplier } from '../features/ipne/combo';
 import { GameOverScreen } from '../features/ipne/presentation/screens/Clear';
 import { StageClearScreen } from '../features/ipne/presentation/screens/StageClear';
 import { StageStoryScreen } from '../features/ipne/presentation/screens/StageStory';
@@ -78,6 +79,8 @@ export { ClearScreen } from '../features/ipne/presentation/screens/Clear';
 const IpnePage: React.FC = () => {
   const state = useGameState();
   const effectQueueRef = useRef<EffectEvent[]>([]);
+  const floatingTextManagerRef = useRef(new FloatingTextManager());
+  const comboStateRef = useRef<ComboState>(createComboState());
 
   // ゲームループ
   useGameLoop(state.screen, {
@@ -98,7 +101,7 @@ const IpnePage: React.FC = () => {
     setMapState: state.setMapState,
     setIsGameOver: state.setIsGameOver,
     setScreen: state.setScreen,
-  }, effectQueueRef, state.currentStageConfig.maxLevel);
+  }, effectQueueRef, state.currentStageConfig.maxLevel, floatingTextManagerRef);
 
   // MVP3: レベルアップ選択（ポイント制対応）
   const handleLevelUpChoice = useCallback((stat: StatTypeValue) => {
@@ -277,19 +280,31 @@ const IpnePage: React.FC = () => {
       state.setCombatState(prev => ({ ...prev, lastAttackAt: currentTime }));
 
       // 敵にダメージを与えたかチェック
-      const enemyDamaged = result.enemies.some(e => {
+      const damagedEnemy = result.enemies.find(e => {
         const before = beforeEnemies.find(b => b.id === e.id);
         return before && e.hp < before.hp;
       });
 
-      if (enemyDamaged) {
+      if (damagedEnemy) {
         // 敵被弾音
         playEnemyDamageSound();
+        // フローティングダメージ表示
+        const before = beforeEnemies.find(b => b.id === damagedEnemy.id);
+        if (before) {
+          const dmg = before.hp - damagedEnemy.hp;
+          floatingTextManagerRef.current.addText(
+            `${dmg}`,
+            damagedEnemy.x,
+            damagedEnemy.y,
+            dmg >= result.player.stats.attackPower * 2 ? FloatingTextType.CRITICAL : FloatingTextType.DAMAGE,
+            currentTime
+          );
+        }
       }
 
       if (result.attackPosition) {
         state.setAttackEffect({ position: result.attackPosition, until: currentTime + 150 });
-        if (!enemyDamaged && !result.hitWall) {
+        if (!damagedEnemy && !result.hitWall) {
           // 空振り音（敵にも壁にもヒットしなかった）
           playAttackMissSound();
         }
@@ -310,31 +325,54 @@ const IpnePage: React.FC = () => {
       state.setWalls(result.walls);
     }
 
-    const survivingEnemies = result.enemies.filter(enemy => enemy.hp > 0);
-    const survivingIds = new Set(survivingEnemies.map(e => e.id));
-    const killedEnemies = beforeEnemies.filter(e => !survivingIds.has(e.id));
+    // 新たに死亡した敵を特定（既に isDying の敵は除外）
+    const newlyKilledEnemies = result.enemies.filter(e => e.hp <= 0 && !e.isDying);
+
+    // 死亡した敵を isDying にマーク（即削除ではなくアニメーション表示のため保持）
+    const updatedEnemiesWithDying = result.enemies.map(enemy => {
+      if (enemy.hp <= 0 && !enemy.isDying) {
+        return { ...enemy, isDying: true, deathStartTime: currentTime };
+      }
+      return enemy;
+    });
+    const survivingEnemies = updatedEnemiesWithDying.filter(enemy => enemy.hp > 0 || enemy.isDying);
 
     let updatedPlayer = result.player;
     let updatedItems = state.itemsRef.current;
 
-    if (killedEnemies.length > 0) {
-      const killedBoss = killedEnemies.some(e =>
+    if (newlyKilledEnemies.length > 0) {
+      const killedBoss = newlyKilledEnemies.some(e =>
         e.type === EnemyType.BOSS || e.type === EnemyType.MINI_BOSS || e.type === EnemyType.MEGA_BOSS
       );
       if (killedBoss) {
         playBossKillSound();
         // ボス撃破エフェクト
-        const boss = killedEnemies.find(e =>
+        const boss = newlyKilledEnemies.find(e =>
           e.type === EnemyType.BOSS || e.type === EnemyType.MINI_BOSS || e.type === EnemyType.MEGA_BOSS
         );
         if (boss) {
           effectQueueRef.current.push({ type: EffectType.BOSS_KILL, x: boss.x, y: boss.y });
         }
       } else {
-        playEnemyKillSound();
+        // コンボSEピッチ変化
+        const comboCount = comboStateRef.current.count + newlyKilledEnemies.length;
+        playEnemyKillSoundWithPitch(comboCount);
       }
 
-      for (const enemy of killedEnemies) {
+      // コンボ更新 + 敵撃破エフェクト
+      for (const enemy of newlyKilledEnemies) {
+        comboStateRef.current = registerKill(comboStateRef.current, currentTime);
+        const combo = getComboMultiplier(comboStateRef.current);
+        effectQueueRef.current.push({
+          type: EffectType.ENEMY_DEATH,
+          x: enemy.x,
+          y: enemy.y,
+          enemyType: enemy.type,
+          comboMultiplier: combo,
+        });
+      }
+
+      for (const enemy of newlyKilledEnemies) {
         const deathResult = processEnemyDeath(enemy);
         if (deathResult.droppedItem) {
           updatedItems = [...updatedItems, deathResult.droppedItem];
@@ -342,7 +380,7 @@ const IpnePage: React.FC = () => {
       }
 
       let addedPointsInLoop = 0;
-      for (let i = 0; i < killedEnemies.length; i++) {
+      for (let i = 0; i < newlyKilledEnemies.length; i++) {
         const killResult = incrementKillCount(updatedPlayer);
         updatedPlayer = killResult.player;
 
@@ -354,8 +392,12 @@ const IpnePage: React.FC = () => {
           state.setPendingLevelPoints(prev => prev + 1);
           addedPointsInLoop++;
           playLevelUpSound();
-          // レベルアップエフェクト
+          // レベルアップエフェクト（螺旋パーティクル + 金色フラッシュ）
           effectQueueRef.current.push({ type: EffectType.LEVEL_UP, x: updatedPlayer.x, y: updatedPlayer.y });
+          // レベルアップテキスト表示
+          const nextLevel = effectiveLevel + 1;
+          floatingTextManagerRef.current.addText('LEVEL UP!', updatedPlayer.x, updatedPlayer.y - 1, FloatingTextType.INFO, currentTime);
+          floatingTextManagerRef.current.addText(`Lv.${nextLevel}`, updatedPlayer.x, updatedPlayer.y - 0.5, FloatingTextType.COMBO, currentTime + 200);
         }
       }
     }
@@ -410,9 +452,12 @@ const IpnePage: React.FC = () => {
             pendingLevelPoints={state.pendingLevelPoints}
             onOpenLevelUpModal={handleOpenLevelUpModal}
             effectQueueRef={effectQueueRef}
+            floatingTextManagerRef={floatingTextManagerRef}
+            comboStateRef={comboStateRef}
             isDying={state.screen === ScreenState.DYING}
             currentStage={state.currentStage}
             maxLevel={state.currentStageConfig.maxLevel}
+            stageRewards={state.stageRewards}
           />
           {state.showLevelUpModal && state.pendingLevelPoints > 0 && (
             <LevelUpOverlayComponent

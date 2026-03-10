@@ -1,0 +1,612 @@
+# IPNE ブラッシュアップ — タスクチェックリスト
+
+## 凡例
+
+- [ ] 未着手
+- [x] 完了
+- **P1** = 最優先、**P2** = 高優先、**P3** = 中優先、**P4** = 低優先
+
+---
+
+## Phase 0A: レスポンシブCanvas化 + HUDレイアウト再設計 [P0 最優先]
+
+> 全フェーズの前提。画面を最大限活用し、HUDの視認性を改善する。
+
+### 0A-1. viewport.ts リファクタリング [P0]
+
+- [x] `VIEWPORT_CONFIG` の変更
+  - [x] 固定 `tileSize: 48` を削除
+  - [x] `minTileSize: 32` を追加
+  - [x] `maxTileSize: 128` を追加
+- [x] `calculateTileSize(availableWidth, availableHeight)` 関数を実装
+  - [x] 利用可能領域から最適な tileSize を算出
+  - [x] minTileSize / maxTileSize でクランプ
+  - [x] 整数値に丸め
+- [x] `getCanvasSize(tileSize)` の署名変更
+  - [x] 引数なし → `tileSize` を引数に取る形に変更
+  - [x] 戻り値は `{ width: tilesX * tileSize, height: tilesY * tileSize }`
+- [x] `calculateViewport()` の更新
+  - [x] 固定 tileSize 参照を動的 tileSize に変更
+
+### 0A-2. useCanvasSize フック新規作成 [P0]
+
+- [x] `src/features/ipne/presentation/hooks/useCanvasSize.ts` を新規作成
+  - [x] `useCanvasSize(containerRef)` フック
+  - [x] `ResizeObserver` でコンテナサイズ変化を検知
+  - [x] デバウンス処理（200ms）
+  - [x] 戻り値: `{ tileSize, canvasWidth, canvasHeight }`
+
+### 0A-3. IpnePage.styles.ts レイアウト変更 [P0]
+
+- [x] `PageContainer` の変更
+  - [x] `padding-top: 80px` → `padding-top: 0`（ヘッダー非表示時）
+  - [x] Flexbox で中央配置
+- [x] `CanvasWrapper` ラッパーコンポーネント追加
+  - [x] `flex: 1; min-height: 0` でコントロール領域を除いた残りスペースに制約
+  - [x] Canvas のはみ出しを防止
+- [x] `Canvas` スタイル変更
+  - [x] 固定サイズ指定を削除
+  - [x] `image-rendering: pixelated` を維持
+  - [x] `max-width: 100%; max-height: 100%; object-fit: contain` で安全に収まるよう制約
+- [x] DPad / HUD のレスポンシブ化
+  - [x] DPad ボタンサイズを `clamp(2.75rem, 8vmin, 4rem)` でスケーリング
+  - [x] HUD テキスト（HP, タイマー, ステージ, レベル, ステータス等）を `clamp() + vmin` でレスポンシブ化
+  - [x] HUD 要素のパディング・幅も `clamp()` で可変化
+  - [x] メディアクエリベースの固定値指定を `clamp()` に統一
+
+### 0A-4. Game.tsx Canvas動的サイズ対応 [P0]
+
+- [x] `useCanvasSize` フックの統合
+  - [x] Canvas の `width`/`height` を動的に設定
+  - [x] `spriteScale` 計算に動的 `tileSize` を使用
+- [x] リサイズ時の `SpriteRenderer.clearCache()` 呼び出し
+- [x] ビューポート計算の動的 tileSize 対応
+
+### 0A-5. HUDレイアウト再設計 [P0]
+
+- [x] HPバーの描画位置変更
+  - [x] ホームボタン（~40px）の**下**に配置（top: 3rem）
+  - [x] ホームボタンとの重なりを解消
+- [x] ステージ表示を上部中央に移動（top: 0.75rem）
+- [x] タイマーをステージ表示の直下に配置（top: 2.5rem）
+- [x] レベル・ステータスは右上を維持（right: 1rem）
+- [x] HUD要素のサイズをビューポートに応じてスケーリング（`clamp() + vmin` で実現）
+
+### 0A-6. テスト・動作確認 [P0]
+
+- [x] `useCanvasSize.test.ts` の新規作成
+  - [x] `calculateTileSize` の計算精度テスト
+  - [x] minTileSize / maxTileSize のクランプテスト
+  - [x] `getCanvasSize` の整合性テスト
+- [x] `viewport.test.ts` の更新
+  - [x] 固定値テストを動的計算テストに変更
+- [x] ビルド・起動確認
+  - [x] コンパイルエラーなし
+  - [ ] PC（フルHD以上）での大画面表示確認
+  - [ ] タブレットでの中間サイズ表示確認
+  - [ ] モバイルでの最小サイズ表示確認
+  - [ ] ウィンドウリサイズ時の動作確認
+- [x] HUD配置確認
+  - [x] ホームボタンとHPバーが重なっていないこと
+  - [x] 各HUD要素の視認性が確保されていること
+
+---
+
+## Phase 0B: スプライト解像度アップ（16→32） [P0 最優先]
+
+> Phase 0A 完了後に着手。スプライトサイズが変わるため、他フェーズより先に完了する必要がある。
+
+### 0B-1. 基盤変更 [P0]
+
+- [x] `config.ts` の `SPRITE_SIZES` 更新
+  - [x] `base: 16` → `base: 32`
+  - [x] `item: 8` → `item: 16`
+  - [x] `miniBoss: 20` → `miniBoss: 40`
+  - [x] `boss: 24` → `boss: 48`
+  - [x] `megaBoss: 28` → `megaBoss: 56`
+- [x] `playerSprites.ts` の `createSpriteDefinition` 更新
+  - [x] `width: 16` → `width: 32`
+  - [x] `height: 16` → `height: 32`
+- [x] パレット拡張（8色→12色）
+  - [x] 戦士パレット: 4色追加（アーマー装飾、肌影、剣ハイライト、ベルト/靴）
+  - [x] 盗賊パレット: 4色追加（クローク装飾、肌影、ダガーハイライト、ベルト/靴）
+
+### 0B-2. プレイヤースプライト再設計 [P0]
+
+- [x] **戦士・下向き（正面）** — 3フレーム（idle, walk1, walk2）
+  - [x] 兜の角飾り・バイザー、肩パッドの段差、シールドの紋章、剣の鍔・柄・反射光
+  - [x] 目のハイライト（パレット10）、ベルト（パレット11）、鎧のリベット
+- [x] **戦士・上向き（背面）** — 3フレーム
+  - [x] 背面の盾、剣の持ち方、翻るマントの質感
+- [x] **戦士・左向き** — 3フレーム
+- [x] **戦士・右向き** — 3フレーム
+- [x] **戦士・攻撃フレーム** — 4方向 × 2フレーム = 8スプライト
+  - [x] 剣を振りかぶり→振り下ろしのダイナミックなモーション
+- [x] **戦士・被弾フレーム** — 4方向 × 1フレーム = 4スプライト
+- [x] **戦士・アイドルブリーズ** — 4方向 × 1フレーム = 4スプライト
+- [x] **盗賊・下向き（正面）** — 3フレーム
+  - [x] 尖ったフード、光る目、クロークのたなびき、ダガーの反り、ポーチ
+- [x] **盗賊・上向き（背面）** — 3フレーム
+- [x] **盗賊・左向き** — 3フレーム
+- [x] **盗賊・右向き** — 3フレーム
+- [x] **盗賊・攻撃フレーム** — 4方向 × 2フレーム = 8スプライト
+  - [x] ダガーの突きモーション
+- [x] **盗賊・被弾フレーム** — 4方向 × 1フレーム = 4スプライト
+- [x] **盗賊・アイドルブリーズ** — 4方向 × 1フレーム = 4スプライト
+
+### 0B-3. 通常敵スプライト再設計 [P0]
+
+- [x] **パトロール（スライム）32x32** — 4フレーム
+  - [x] ぷるぷる質感、不規則な輝きパターン、内部の核や気泡
+- [x] **チャージ（ビースト）32x32** — 4フレーム
+  - [x] 四足獣シルエット、鋭い角・牙、毛並み、筋肉の隆起
+- [x] **レンジ（メイジ）32x32** — 4フレーム
+  - [x] ローブと杖、杖先の発光宝珠、ルーン模様、袖の装飾
+- [x] **スペシメン 32x32** — 拡大 + パレット強化 + 体表テクスチャ
+
+### 0B-4. ボス系スプライト再設計 [P0]
+
+- [x] **ボス 48x48** — 4フレーム（idle×2, attack, damage）
+  - [x] 巨大で威圧的なシルエット、装飾的な角や鎧
+- [x] **ミニボス 40x40** — 4フレーム
+- [x] **メガボス 56x56** — 4フレーム
+  - [x] 最も威圧的なデザイン、多色パレット
+
+### 0B-5. 環境スプライト再設計 [P0]
+
+- [x] **tileSprites.ts** — 全タイル32x32化
+  - [x] 床タイル（ステージ別5パターン、目地の描き込み）
+  - [x] 壁タイル（ステージ別5パターン、ひび割れ等の描き込み）
+  - [x] ゴールタイル（装飾模様）
+  - [x] スタートタイル
+- [x] **trapSprites.ts** — 全罠32x32化
+  - [x] ダメージ罠（棘ディテール、血痕表現）
+  - [x] 減速罠（氷結晶パターン、霜の表現）
+  - [x] テレポート罠（魔法陣模様、ルーン文字）
+  - [x] 各罠の hidden/revealed/triggered の各状態
+- [x] **wallSprites.ts** — 全特殊壁32x32化
+  - [x] 破壊可能壁（ひび割れ、レンガの質感）
+  - [x] 通過可能壁
+  - [x] 不可視壁
+  - [x] 破壊段階（intact/damaged/broken）
+
+### 0B-6. アイテム・エフェクトスプライト再設計 [P0]
+
+- [x] **itemSprites.ts** — 全アイテム16x16化
+  - [x] 小回復薬（瓶のシルエット改善、液体の描き込み）
+  - [x] 大回復薬
+  - [x] 全回復薬
+  - [x] レベルアップアイテム
+  - [x] マップ開示アイテム
+  - [x] 鍵（歯の描き込み追加、金属の光沢）
+- [x] **effectSprites.ts** — 全エフェクト32x32化
+  - [x] プレイヤー斬撃エフェクト（3フレーム、光の軌跡を滑らかに）
+  - [x] 敵近接攻撃エフェクト（3フレーム）
+  - [x] 敵遠距離攻撃エフェクト（3フレーム）
+
+### 0B-7. テスト・動作確認 [P0]
+
+- [x] `spriteData.test.ts` のテストデータ更新
+  - [x] 16x16 テストを 32x32 に変更
+  - [x] 8x8 テストを 16x16 に変更
+  - [x] パレット12色の整合性テスト
+- [x] ビルド・起動確認
+  - [x] コンパイルエラーなし（tone ライブラリの既知の型エラーのみ）
+  - [ ] ゲーム画面での表示確認
+  - [ ] 各スプライトの表示位置・サイズが正しいこと
+- [ ] ゲームプレイテスト
+  - [ ] 衝突判定が正常に動作すること
+  - [ ] レスポンシブCanvasとの連携が正しいこと
+  - [ ] パフォーマンスに問題がないこと（32x32キャッシュ増加を確認）
+
+---
+
+## Phase 0C: スプライト品質向上 + アニメーション強化 [P0 最優先]
+
+> Phase 0B 完了後のフィードバック対応。解像度アップだけでは品質が不十分なため、ビジュアルとアニメーションを強化する。
+
+### 0C-1. HUD 右上の重なり修正 [P0]
+
+> 2行分離方式: ボタン群（行1）の下に LevelBadge（行2）→ StatsDisplay（行3）を分離配置する。
+> 詳細は spec.md セクション 0C.2 を参照。
+
+- [x] **LevelBadge の CSS 位置変更**（`IpnePage.styles.ts` 673行目付近）
+  - [x] `top: 0.75rem` → `top: clamp(2.5rem, 5vmin, 3.5rem)` に変更（ボタン行の下に移動）
+  - [x] `right: 4rem` → `right: clamp(0.5rem, 1.5vmin, 1rem)` に変更（右端に寄せて統一）
+- [x] **StatsDisplay の CSS 位置変更**（`IpnePage.styles.ts` 623行目付近）
+  - [x] `top: 3.5rem` → `top: clamp(3.5rem, 7vmin, 5rem)` に変更（LevelBadge の下に移動）
+  - [x] `right: 1rem` → `right: clamp(0.5rem, 1.5vmin, 1rem)` に変更（clamp() でレスポンシブ化）
+- [x] **ボタン群は変更なし**を確認（MapToggleButton / HelpButton / KeyIndicator / PendingPointsBadge）
+- [ ] **画面幅別の表示確認チェックリスト**
+  - [ ] PC（1920px以上）: 各要素が適切な間隔で配置されていること
+  - [ ] タブレット（768px〜1024px）: 要素間の重なりがないこと
+  - [ ] モバイル（390px〜767px）: clamp() により要素が縮小・密着しても重ならないこと
+  - [ ] ウィンドウリサイズ時に要素が連続的に再配置されること
+
+### 0C-2. プレイヤースプライト品質向上 [P0]
+
+- [x] **戦士スプライト再デザイン**（方向の明確化）
+  - [x] 下向き（正面）: 顔の特徴（目・バイザー）を明確化、胸当てのV字ライン
+  - [x] 上向き（背面）: マントの質感、背面の盾を明確化
+  - [x] 左向き: 横顔シルエット、武器を手前に描画
+  - [x] 右向き: 武器持ち手を考慮した独自デザイン
+  - [x] 全方向で明らかに異なるシルエットを確保
+- [x] **盗賊スプライト再デザイン**（方向の明確化）
+  - [x] 下向き: 尖ったフード、光る目を明確化
+  - [x] 上向き: クロークの背面を明確化
+  - [x] 左向き・右向き: ダガーの持ち方を明確化
+- [x] パレット12色の有効活用（ハイライト・影・アクセント）
+
+### 0C-3. プレイヤーアニメーションフレーム数強化 [P1]
+
+- [x] 歩行アニメーション 3フレーム → 4フレーム化
+  - [x] 中間フレーム（mid）の追加（全方向 × 2キャラ = 8フレーム新規作成）
+  - [x] `frameDuration` を調整（戦士: 96ms、盗賊: 92ms）
+- [x] 攻撃アニメーションのフレーム数維持（2フレーム）
+- [x] アイドルブリーズのフレーム数維持（1フレーム）
+
+### 0C-4. 敵スプライト品質向上 + フレーム数強化 [P1]
+
+- [x] **パトロール（スライム）**: 2F → 4F、品質向上（ぷるぷる質感）
+- [x] **チャージ（ビースト）**: 2F → 4F、品質向上（突進の迫力）
+- [x] **レンジ（メイジ）**: 2F → 4F、品質向上（杖の発光変化）
+- [x] **スペシメン**: 2F → 4F、品質向上（不気味な脈動）
+- [x] **ミニボス**: 2F → 4F、品質向上
+- [x] **メガボス**: 2F → 4F、品質向上
+- [x] `frameDuration` の調整（spec.md 0C.4 参照）
+
+### 0C-5. 環境・エフェクトスプライト品質向上 [P2]
+
+- [x] タイルスプライトのディテール改善（目地・テクスチャの描き込み）
+- [x] 壁スプライトの品質向上（ひび割れ・レンガの質感）
+- [x] エフェクトスプライトの品質向上（軌跡の滑らかさ）
+
+### 0C-6. テスト・動作確認 [P0]
+
+- [x] ビルド・起動確認（コンパイルエラーなし）
+- [x] HUD要素の重なりが解消されていること
+- [x] プレイヤーの方向が4方向で明確に判別できること
+- [x] 歩行アニメーションが滑らかであること
+- [x] 敵アニメーションが滑らかであること
+
+---
+
+## Phase 2: 戦闘演出エスカレーション
+
+> 戦闘の手触りに直結するため、Phase 1 より先に実装する
+
+### 2-1. フローティングダメージ表示 [P1]
+
+- [x] `src/features/ipne/presentation/effects/floatingText.ts` を新規作成
+  - [x] `FloatingText` 型定義
+  - [x] `FloatingTextType` 定数定義（DAMAGE / CRITICAL / PLAYER_DAMAGE / HEAL / COMBO / INFO）
+  - [x] `FloatingTextManager` クラス実装
+    - [x] `addText()` メソッド
+    - [x] `update()` メソッド（期限切れ除去）
+    - [x] `draw()` メソッド（Canvas テキスト描画 + アウトライン + フェードアウト）
+  - [x] テキスト種別ごとの設定（色、フォントサイズ、持続時間）
+  - [x] フロート動きの計算（イージング付き上昇、フェードアウト）
+- [x] `Game.tsx` に `FloatingTextManager` を統合
+  - [x] マネージャーのインスタンス化（`useRef`）
+  - [x] 描画ループ内で `update()` + `draw()` 呼び出し
+- [x] トリガーポイントの接続
+  - [x] `playerAttack` 成功時にダメージ数値を追加
+  - [x] `processEnemyContact` でプレイヤー被弾ダメージを追加
+  - [x] HP回復時に回復量を追加
+  - [x] 鍵取得時に `"KEY GET!"` を追加
+- [x] ユニットテスト
+  - [x] `FloatingTextManager` の追加・更新・期限切れテスト
+  - [x] テキスト位置計算のテスト
+
+### 2-1b. 敵攻撃エフェクト可視化 [P1]
+
+- [x] `useGameLoop.ts` で敵ダメージ発生時に `ENEMY_ATTACK` エフェクトをキューに追加
+  - [x] 敵タイプに応じたエフェクトバリエーション（melee / ranged / boss）を適用
+  - [x] エフェクト表示位置をプレイヤー位置に設定
+- ~~敵攻撃アニメーション表示時間調整~~ → Phase 3 に延期（敵AI state管理の変更が必要）
+- ~~ユニットテスト（エフェクト追加検証）~~ → Phase 3 に延期
+
+### 2-4. 敵撃破演出強化 [P1]
+
+- [x] `types.ts` に `Enemy` の拡張フィールド追加
+  - [x] `isDying?: boolean`
+  - [x] `deathStartTime?: number`
+- [x] `effectTypes.ts` に `ENEMY_DEATH` 追加
+- [x] `effectManager.ts` に `ENEMY_DEATH` エフェクト処理追加
+  - [x] 敵タイプ別の破片パーティクル設定
+  - [x] 破片パーティクル生成（`createRadialParticles` 使用）
+- [x] 敵撃破時のアニメーション処理
+  - [x] `IpnePage.tsx` の handleAttack で敵HP<=0 時に `isDying=true` にマーク
+  - [x] `tickGameState.ts` で撃破アニメーション完了後（300ms）に敵リストから除去
+- [x] `Game.tsx` で撃破アニメーション描画
+  - [x] フェーズ1: 縮小描画（100ms）
+  - [x] フェーズ2: 白フラッシュ描画（50ms）
+  - [x] フェーズ3: スプライト非表示（150ms、パーティクルのみ）
+- [x] ユニットテスト
+  - [x] 撃破フラグの遷移テスト（getDeathPhase / getDeathScale / isDeathAnimationComplete）
+  - [x] 敵タイプ別パーティクル設定テスト
+
+### 2-2. 攻撃ヒットエフェクトスケーリング [P2]
+
+- [x] `effectManager.ts` の `addEffect` にオプション引数 `powerLevel` を追加
+- [x] パワーレベル計算関数の実装
+  - [x] `calculatePowerLevel(player): number`（0-4のスケール）
+- [x] `ATTACK_HIT` エフェクトのスケーリング実装
+  - [x] powerLevel 0: パーティクル4個、サイズ小
+  - [x] powerLevel 1: パーティクル8個、サイズ中
+  - [x] powerLevel 2: パーティクル12個 + 衝撃波リング
+  - [x] powerLevel 3: パーティクル16個 + 衝撃波 + 画面フラッシュ
+  - [x] powerLevel 4: パーティクル24個 + 衝撃波 + フラッシュ + シェイク
+- [x] 衝撃波リング描画の実装（EffectManagerのringRadius/ringMaxRadius活用）
+- [x] 画面フラッシュの実装（EffectManagerのflashAlpha活用）
+- [x] `Game.tsx` でエフェクト追加時に `powerLevel` を渡す（`calculatePowerLevel(player)` 使用）
+- [x] ユニットテスト
+  - [x] パワーレベル計算のテスト
+  - [x] 各レベルでのパーティクル数テスト
+
+### 2-3. コンボシステム [P2]
+
+- [x] `src/features/ipne/combo.ts` を新規作成
+  - [x] `ComboState` 型定義
+  - [x] `createComboState()` 関数
+  - [x] `registerKill()` 関数（コンボ更新）
+  - [x] `isComboActive()` 関数（有効性チェック）
+  - [x] `getComboMultiplier()` 関数（エフェクト倍率）
+  - [x] 定数定義（`COMBO_WINDOW_MS`, `COMBO_DISPLAY_MIN`）
+- [x] ゲームループへの統合
+  - [x] `IpnePage.tsx` の handleAttack で敵撃破時に `registerKill` 呼び出し
+  - [x] `ComboState` を `useRef` でゲーム状態に含める
+- [x] コンボカウンターUI描画
+  - [x] `Game.tsx` でコンボカウンター表示（画面上部中央）
+  - [x] ポップアニメーション（コンボ増加時に拡大→縮小）
+  - [x] フェードアウト（コンボ時間切れ時）
+- [x] エフェクトへのコンボ倍率適用
+  - [x] `effectManager.ts` でパーティクル数にコンボ倍率を掛ける（comboMultiplierオプション）
+- ~~コンボSEのピッチ変化~~ → Phase 3（3-1. ステージ別BGM）と合わせて実装
+- [x] ユニットテスト
+  - [x] コンボ登録・時間切れテスト
+  - [x] コンボ倍率計算テスト
+  - [x] 最大コンボ記録テスト
+
+### 2-5. ボス戦演出強化 [P2]
+
+- [x] ボス登場 WARNING 演出
+  - [x] `BossWarningState` 型定義
+  - [x] ボス接近検知ロジック（距離5タイル以内）
+  - [x] WARNINGフェーズ管理（darken → text → fadeout → done）
+  - [x] 1ボスにつき1回のみ発火する制御
+- [x] WARNING 演出の描画統合
+  - [x] WARNING テキスト点滅描画（200ms間隔、赤色）
+  - [x] 画面暗転オーバーレイ（alpha 0→0.5→0）
+- [x] ボスHP残量演出
+  - [x] `getBossAuraConfig()` 関数実装
+  - [x] HP50%以下: 赤オーラ（脈動 800ms周期）
+  - [x] HP25%以下: 激しい赤オーラ（400ms周期）+ 微シェイク
+- [x] ボスHP残量演出の描画統合
+  - [x] ボスHP残量オーラを `Game.tsx` の敵描画ループに統合
+- [x] ボス撃破演出の設定
+  - [x] BOSS: 32個パーティクル + フラッシュ(300ms) + シェイク(400ms)
+  - [x] MINI_BOSS: 24個パーティクル + フラッシュ(200ms) + シェイク(300ms)
+  - [x] MEGA_BOSS: 3段階爆発（48個×3波、400ms間隔）
+- [x] ボス撃破演出の描画統合（BOSS_KILL エフェクトキューで処理）
+- ~~ボス戦BGM切り替え~~ → Phase 3（3-1. ステージ別BGM）と合わせて実装
+- [x] ユニットテスト
+  - [x] WARNING 発火条件テスト
+  - [x] 重複 WARNING 防止テスト
+  - [x] HP残量によるオーラ段階テスト
+  - [x] ボス撃破演出設定テスト
+
+---
+
+## Phase 1: キャラクタービジュアル強化
+
+### 1-1. パワーオーラシステム [P2] ✅ 完了
+
+- [x] `src/features/ipne/presentation/effects/aura.ts` を新規作成
+  - [x] `AuraTier` / `AuraConfig` 型定義
+  - [x] `getAuraTier(level)` 関数
+  - [x] 職業別カラー設定（戦士: 青系、盗賊: 紫系、高レベル: 金系）
+  - [x] `drawPlayerAura()` 関数実装
+    - [x] ラジアルグラデーション描画
+    - [x] 脈動（sin波）の alpha 計算
+    - [ ] パーティクル生成（MEDIUM / LARGE ティア）— 描画のみ、パーティクル未実装
+- [x] `Game.tsx` のプレイヤー描画セクションに統合
+  - [x] プレイヤースプライト描画前に `drawPlayerAura()` 呼び出し
+- [x] `colorUtils.ts` を新規作成（エフェクト間の色定数・ユーティリティ共通化）
+- [x] ユニットテスト（28テスト）
+  - [x] レベル→ティアマッピングテスト（境界値含む）
+  - [x] 各ティアの設定値テスト
+  - [x] 職業別カラーテスト
+  - [x] 描画テスト（NONE時の非描画、脈動アニメーション）
+
+### 1-2. 武器エフェクト強化 [P3] ✅ 完了
+
+- [x] `src/features/ipne/presentation/effects/weaponEffect.ts` を新規作成
+  - [x] `WeaponTier` 定数定義
+  - [x] `getWeaponTier(attackPower)` 関数
+  - [x] `getWeaponTrailConfig()` 関数（ティア・職業別設定取得）
+  - [x] `drawWeaponTrail()` 関数実装（弧の光跡）
+  - [x] `drawShockwave()` 関数実装（RADIANT ティアのみ）
+- [x] `Game.tsx` の攻撃アニメーション描画に統合
+  - [x] 攻撃中のみ `drawWeaponTrail()` 呼び出し
+  - [x] 攻撃ヒット時に `drawShockwave()` 呼び出し（RADIANTのみ）
+- [x] ユニットテスト（21テスト）
+  - [x] 攻撃力→ティアマッピングテスト（境界値含む）
+  - [x] ティア別設定値テスト
+  - [x] 職業別カラーテスト
+  - [x] 描画テスト（NORMAL時の非描画、各方向、フェードアウト、衝撃波）
+
+### 1-3. ステージ進行見た目変化 [P4] ✅ 完了
+
+- [x] `src/features/ipne/presentation/effects/stageVisual.ts` を新規作成
+  - [x] `getActiveRewardEffects()` 関数（報酬履歴→エフェクトフラグ変換）
+  - [x] `drawShieldGlow()` — maxHp強化: キャラ外枠シールド輝き（脈動付き）
+  - [x] `AfterImageManager` クラス — 移動速度強化: 残像管理（最大2つ保持）
+  - [x] `drawAfterImage()` — 残像描画（半透明円）
+  - [x] `drawSpinParticles()` — 攻撃速度強化: 手元回転パーティクル（3個）
+  - [x] `drawHealParticles()` — 回復量強化: 緑パーティクル上昇
+- [x] `Game.tsx` への統合
+  - [x] `stageRewards` props 追加
+  - [x] `useMemo` で報酬エフェクトフラグをキャッシュ
+  - [x] 各報酬エフェクトの描画呼び出し（適切なタイミング）
+- [x] `IpnePage.tsx` で `stageRewards` を GameScreen に渡す
+- [x] ユニットテスト（18テスト）
+  - [x] 報酬→エフェクトフラグ変換テスト
+  - [x] 各描画関数の動作テスト
+  - [x] AfterImageManager の記録・上限・重複排除テスト
+
+---
+
+## Phase 3: ゲーム体験の全体的な向上
+
+### 3-2. レベルアップ演出強化 [P3] ✅
+
+- [x] `effectManager.ts` の `LEVEL_UP` エフェクト強化
+  - [x] パーティクル数を12→24に増加
+  - [x] 螺旋パターン（`createSpiralParticles`）適用
+  - [x] 金色画面フラッシュ追加（`flashColor: '#fbbf24'`）
+- [x] レベルアップテキスト表示
+  - [x] `FloatingTextManager` 経由で `"LEVEL UP!"` + `"Lv.{N}"` 表示（IpnePage.tsx）
+- [x] ユニットテスト（4テスト: `levelUpEffect.test.ts`）
+
+### 3-1. ステージ別BGM + サウンド強化 [P3] ✅
+
+> Phase 2 から延期されたボス戦BGM・コンボSEピッチ変化もここで実装する
+
+- [x] コンボSEのピッチ変化（Phase 2-3 延期分）
+  - [x] `soundEffect.ts` で `getComboSePitchRate` + `playEnemyKillSoundWithPitch` 追加
+- [x] `bgm.ts` にステージ別BGM設定を追加
+  - [x] ステージ1 BGM: 探索的（triangle、中速）
+  - [x] ステージ2 BGM: 神秘的（triangle+sine、中速）
+  - [x] ステージ3 BGM: 不安（sawtooth+triangle、やや速い）
+  - [x] ステージ4 BGM: 重厚（sawtooth、やや遅い）
+  - [x] ステージ5 BGM: 激しい（square+sawtooth、速い）
+  - [x] ボス戦 BGM: 緊迫（square、速い）
+- [x] `playStageGameBgm(stageNumber)` 関数を新規追加
+- [x] `playBossBgm()` 関数を新規追加
+- [x] `useGameState.ts` でステージ番号に応じた BGM 切り替え
+- [ ] ボス接近/撃破時の BGM 切り替えロジック（未実装: ゲームプレイへの影響大のため保留）
+- [x] ユニットテスト（12テスト: `stageBgm.test.ts`）
+  - [x] 各ステージのBGM設定テスト
+  - [x] BGM切り替えロジックテスト
+  - [x] コンボSEピッチ計算テスト
+
+### 3-2b. 敵攻撃アニメーション持続時間調整 [P3] ✅
+
+> Phase 2-1b から延期。敵AI state管理に踏み込む変更が必要
+
+- [x] 敵攻撃アニメーション（スプライトフレーム切り替え）の表示時間調整
+  - [x] `markEnemyAttacking` / `resolveEnemyAttackState` 関数追加（`enemyAI.ts`）
+  - [x] `ENEMY_ATTACK_ANIM_DURATION = 300ms` で攻撃状態を維持
+  - [x] `updateEnemiesWithContact` に統合
+- [x] ユニットテスト（6テスト: `enemyAttackAnim.test.ts`）
+  - [x] 攻撃マーク設定・状態解除・KNOCKBACK優先度テスト
+
+### 3-3. 探索報酬フィードバック強化 [P3] ✅
+
+- [x] アイテム取得時のパーティクル強化（`itemFeedback.ts` 新規）
+  - [x] 小回復: 緑パーティクル4個（上昇）
+  - [x] 大回復: 緑パーティクル8個（上昇）
+  - [x] 全回復: 緑パーティクル12個（上昇）
+  - [x] 鍵: 金パーティクル12個（螺旋）
+  - [x] マップ開示: 青パーティクル8個（放射）
+- [x] HPバーフラッシュ演出
+  - [x] `HpBarFlashConfig` 型定義
+  - [x] 回復時に緑フラッシュ設定
+- [x] `itemType` の伝播（`tickGameState` → `useGameLoop` → `effectManager`）
+- [x] ユニットテスト（10テスト: `itemFeedback.test.ts`）
+
+### 3-4. 画面遷移演出改善 [P4] ✅
+
+- [x] ステージ開始演出（`screenTransition.ts` 新規 + `Game.tsx` 統合）
+  - [x] 黒画面→フェードイン（500ms）
+  - [x] `"STAGE {N}"` テキスト表示（1300ms）
+  - [x] `stageStartTimeRef` でタイミング管理
+- [x] ゲームオーバー遷移
+  - [x] 死亡エフェクト中の画面暗転（500ms、最大alpha 0.7）
+  - [x] `dyingStartTimeRef` でタイミング管理
+- [ ] ステージクリア遷移（未実装: STAGE_CLEAR画面は別コンポーネントで管理）
+- [x] ユニットテスト（10テスト: `screenTransition.test.ts`）
+
+---
+
+## 横断タスク
+
+### テスト・品質保証
+
+- [x] 全新規ファイルのユニットテスト作成
+- [x] `Game.tsx` の統合テスト（描画ループの正常動作確認）
+- [x] パフォーマンステスト
+  - [x] MAX_PARTICLES 上限での FPS 確認
+  - [x] フローティングテキスト MAX 同時表示でのパフォーマンス
+  - [x] ボス撃破時の大量パーティクルでのパフォーマンス
+- [ ] ブラウザ互換性確認（手動検証が必要）
+  - [ ] Chrome / Firefox / Safari でのエフェクト表示確認
+  - [ ] モバイル（iOS / Android）での表示・パフォーマンス確認
+
+### ドキュメント
+
+- [x] `src/features/ipne/README.md` の更新
+  - [x] 新機能（オーラ、コンボ、ステージBGM等）の記述追加
+- [x] `.docs/ipne/specs/` の該当ドキュメント更新
+  - [x] `02-gameplay.md` にコンボシステム追加
+  - [x] `05-technical.md` にエフェクトシステム拡張の記述
+
+---
+
+## 実装順序サマリー
+
+```
+[P0] 0A. レスポンシブCanvas化 + HUDレイアウト再設計 ✅ 完了
+  ↓
+[P0] 0B. スプライト解像度アップ（16→32）✅ 完了
+  ↓
+[P0] 0C. スプライト品質向上 + アニメーション強化 ✅ 完了
+  ↓
+[P1] 2-1. フローティングダメージ ✅ 完了
+  ↓
+[P1] 2-1b. 敵攻撃エフェクト可視化 ✅ 完了（アニメ持続時間調整は 3-2b に延期）
+  ↓
+[P1] 2-4. 敵撃破演出 ✅ 完了
+  ↓
+[P2] 2-2. ヒットエフェクトスケーリング ✅ 完了
+  ↓
+[P2] 2-3. コンボシステム ✅ 完了（SEピッチ変化は 3-1 に延期）
+  ↓
+[P2] 2-5. ボス戦演出 ✅ 完了（BGM切替は 3-1 に延期）
+  ↓
+[P2] 1-1. パワーオーラ ✅ 完了
+  ↓
+[P3] 1-2. 武器エフェクト ✅ 完了
+  ↓
+--- ここから未実装 ---
+  ↓
+[P3] 3-2. レベルアップ演出 → FloatingTextManager を使用
+  ↓
+[P3] 3-2b. 敵攻撃アニメーション持続時間調整（Phase 2-1b 延期分）
+  ↓
+[P3] 3-1. ステージ別BGM + サウンド強化（Phase 2 延期分を含む）
+  ↓
+[P3] 3-3. 探索報酬フィードバック
+  ↓
+[P4] 1-3. ステージ進行見た目変化 ✅ 完了
+  ↓
+[P4] 3-4. 画面遷移演出
+  ↓
+横断: テスト・品質保証・ドキュメント ✅ 完了（ブラウザ互換性は手動検証待ち）
+```
+
+---
+
+## 見積もり
+
+| フェーズ | タスク数 | 状態 |
+|---------|---------|--------|
+| Phase 0A（レスポンシブ+HUD） | 6セクション | ✅ 完了 |
+| Phase 0B（解像度アップ 16→32） | 7セクション | ✅ 完了 |
+| Phase 0C（品質向上+アニメ強化） | 6セクション | ✅ 完了 |
+| Phase 2（戦闘演出） | 6セクション | ✅ 完了（一部 Phase 3 に延期） |
+| Phase 1（ビジュアル） | 3セクション | ✅ 完了（1-1, 1-2, 1-3 全完了） |
+| Phase 3（体験向上） | 5セクション（延期分含む） | 未着手 |
+| 横断（テスト・ドキュメント） | 2セクション | ✅ 完了（ブラウザ互換性は手動検証待ち） |
+| **合計** | **35セクション** | |

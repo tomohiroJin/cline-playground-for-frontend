@@ -395,6 +395,12 @@ export interface Enemy {
   lastMoveAt?: number;
   knockbackUntil?: number;
   knockbackDirection?: DirectionValue;
+  /** 撃破アニメーション中フラグ */
+  isDying?: boolean;
+  /** 撃破開始時刻（ms） */
+  deathStartTime?: number;
+  /** 攻撃アニメーション終了時刻（ms） */
+  attackAnimUntil?: number;
 }
 
 // ===== アイテム関連の型定義 =====
@@ -595,6 +601,12 @@ export type SoundEffectTypeValue = (typeof SoundEffectType)[keyof typeof SoundEf
 export const BgmType = {
   TITLE: 'title',
   GAME: 'game',
+  GAME_STAGE1: 'game_stage1',
+  GAME_STAGE2: 'game_stage2',
+  GAME_STAGE3: 'game_stage3',
+  GAME_STAGE4: 'game_stage4',
+  GAME_STAGE5: 'game_stage5',
+  BOSS: 'boss',
   CLEAR: 'clear',
   GAME_OVER: 'game_over',
 } as const;

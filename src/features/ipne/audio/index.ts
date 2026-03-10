@@ -40,6 +40,8 @@ export {
   playWallBreakSound,
   playTeleportSound,
   playDyingSound,
+  getComboSePitchRate,
+  playEnemyKillSoundWithPitch,
 } from './soundEffect';
 
 // BGM
@@ -56,6 +58,10 @@ export {
   playGameBgm,
   playClearJingle,
   playGameOverJingle,
+  getStageGameBgmType,
+  STAGE_BGM_CONFIGS,
+  playBossBgm,
+  playStageGameBgm,
 } from './bgm';
 
 // 音声設定

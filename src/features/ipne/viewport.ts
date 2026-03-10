@@ -1,6 +1,7 @@
 /**
  * ビューポート/カメラシステム
  * プレイヤー周辺のみを表示するためのビューポート計算
+ * タイルサイズは利用可能領域から動的に計算される
  */
 import { Position } from './types';
 
@@ -14,7 +15,7 @@ export interface Viewport {
   width: number;
   /** 表示するタイル数（縦） */
   height: number;
-  /** 固定タイルサイズ（ピクセル） */
+  /** タイルサイズ（ピクセル） */
   tileSize: number;
 }
 
@@ -24,17 +25,41 @@ export const VIEWPORT_CONFIG = {
   tilesX: 15,
   /** 縦方向に表示するタイル数（視界を狭くして探索感を増す） */
   tilesY: 11,
-  /** 固定タイルサイズ（ピクセル）- プレイヤーを見やすくするため拡大 */
-  tileSize: 48,
+  /** 最小タイルサイズ（ピクセル） */
+  minTileSize: 32,
+  /** 最大タイルサイズ（ピクセル） */
+  maxTileSize: 128,
 } as const;
 
 /**
- * キャンバスサイズを計算
+ * 利用可能な領域からタイルサイズを計算する
+ * @param availableWidth - コンテナの幅（px）
+ * @param availableHeight - コンテナの高さ（px）
+ * @returns 最適な tileSize（px、整数値）
  */
-export function getCanvasSize(): { width: number; height: number } {
+export function calculateTileSize(
+  availableWidth: number,
+  availableHeight: number
+): number {
+  const rawTileW = availableWidth / VIEWPORT_CONFIG.tilesX;
+  const rawTileH = availableHeight / VIEWPORT_CONFIG.tilesY;
+  const rawTile = Math.floor(Math.min(rawTileW, rawTileH));
+  return Math.max(
+    VIEWPORT_CONFIG.minTileSize,
+    Math.min(VIEWPORT_CONFIG.maxTileSize, rawTile)
+  );
+}
+
+/**
+ * tileSize からキャンバスサイズを算出する
+ */
+export function getCanvasSize(tileSize: number): {
+  width: number;
+  height: number;
+} {
   return {
-    width: VIEWPORT_CONFIG.tilesX * VIEWPORT_CONFIG.tileSize,
-    height: VIEWPORT_CONFIG.tilesY * VIEWPORT_CONFIG.tileSize,
+    width: VIEWPORT_CONFIG.tilesX * tileSize,
+    height: VIEWPORT_CONFIG.tilesY * tileSize,
   };
 }
 
@@ -45,12 +70,14 @@ export function getCanvasSize(): { width: number; height: number } {
  * @param player - プレイヤー位置
  * @param mapWidth - マップの幅（タイル数）
  * @param mapHeight - マップの高さ（タイル数）
+ * @param tileSize - タイルサイズ（ピクセル）
  * @returns 計算されたビューポート
  */
 export function calculateViewport(
   player: Position,
   mapWidth: number,
-  mapHeight: number
+  mapHeight: number,
+  tileSize: number = 48
 ): Viewport {
   const halfW = Math.floor(VIEWPORT_CONFIG.tilesX / 2);
   const halfH = Math.floor(VIEWPORT_CONFIG.tilesY / 2);
@@ -72,7 +99,7 @@ export function calculateViewport(
     y,
     width: VIEWPORT_CONFIG.tilesX,
     height: VIEWPORT_CONFIG.tilesY,
-    tileSize: VIEWPORT_CONFIG.tileSize,
+    tileSize,
   };
 }
 

@@ -9,8 +9,15 @@ import { Particle } from './effectTypes';
 /**
  * 指定範囲内のランダム値を返す
  */
-function randomRange(min: number, max: number): number {
+export function randomRange(min: number, max: number): number {
   return min + Math.random() * (max - min);
+}
+
+/**
+ * 色配列からランダムに1色を選択する
+ */
+export function selectRandomColor(colors: string[]): string {
+  return colors[Math.floor(Math.random() * colors.length)];
 }
 
 /**
@@ -48,7 +55,7 @@ export function createRadialParticles(
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed,
       size: randomRange(sizeMin, sizeMax),
-      color: colors[Math.floor(Math.random() * colors.length)],
+      color: selectRandomColor(colors),
       alpha: 1.0,
       life: 1.0,
       decay,
@@ -86,7 +93,7 @@ export function createRisingParticles(
       vx: randomRange(-20, 20),
       vy: randomRange(-80, -30),
       size: randomRange(sizeMin, sizeMax),
-      color: colors[Math.floor(Math.random() * colors.length)],
+      color: selectRandomColor(colors),
       alpha: 1.0,
       life: 1.0,
       decay,
@@ -125,7 +132,7 @@ export function createSpiralParticles(
       vx: Math.cos(angle) * s,
       vy: Math.sin(angle) * s - randomRange(30, 80),
       size: randomRange(2, 5),
-      color: colors[Math.floor(Math.random() * colors.length)],
+      color: selectRandomColor(colors),
       alpha: 1.0,
       life: 1.0,
       decay,
@@ -162,7 +169,7 @@ export function createPulseParticles(
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed,
       size: randomRange(3, 5),
-      color: colors[Math.floor(Math.random() * colors.length)],
+      color: selectRandomColor(colors),
       alpha: 1.0,
       life: 1.0,
       decay,
@@ -207,7 +214,7 @@ export function createTrailParticles(
       vx: (dx / len) * s,
       vy: (dy / len) * s,
       size: randomRange(1.5, 3),
-      color: colors[Math.floor(Math.random() * colors.length)],
+      color: selectRandomColor(colors),
       alpha: 1.0,
       life: 1.0,
       decay,

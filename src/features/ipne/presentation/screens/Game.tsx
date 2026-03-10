@@ -6,6 +6,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import {
   Overlay,
   GameRegion,
+  CanvasWrapper,
   Canvas,
   DPadContainer,
   DPadButton,
@@ -76,6 +77,7 @@ import {
   Item,
   AutoMapState,
   calculateViewport,
+  calculateTileSize,
   getCanvasSize,
   Viewport,
   DebugState,
@@ -115,7 +117,15 @@ import {
 import { GameTimer } from '../../timer';
 import { getElapsedTime, formatTimeShort } from '../../timer';
 import { SPRITE_SIZES } from '../config';
-import { EffectManager, EffectType, EffectTypeValue, DeathEffect } from '../effects';
+import {
+  EffectManager, EffectType, EffectTypeValue, DeathEffect,
+  FloatingTextManager, calculatePowerLevel,
+  getDeathPhase, getDeathScale, isDeathAnimationComplete,
+  createBossWarningState, shouldTriggerWarning, getWarningPhase, getBossAuraConfig,
+  BOSS_WARNING_DURATION,
+} from '../effects';
+import type { BossWarningState } from '../effects';
+import { isComboActive, COMBO_DISPLAY_MIN } from '../../combo';
 import {
   SpriteRenderer,
   SpriteDefinition,
@@ -149,6 +159,10 @@ import {
   MEGA_BOSS_ATTACK_FRAME,
   MEGA_BOSS_DAMAGE_FRAME,
 } from '../sprites';
+import { drawPlayerAura } from '../effects/aura';
+import { drawWeaponTrail, getWeaponTier, WeaponTier, drawShockwave } from '../effects/weaponEffect';
+import { getActiveRewardEffects, drawShieldGlow, drawAfterImage, drawSpinParticles, drawHealParticles, AfterImageManager } from '../effects/stageVisual';
+import { getStageIntroPhase, getStageIntroAlpha, getStageIntroTextAlpha, getGameOverTransitionAlpha } from '../effects/screenTransition';
 import warriorClassImg from '../../../../assets/images/ipne_class_warrior.webp';
 import thiefClassImg from '../../../../assets/images/ipne_class_thief.webp';
 
@@ -180,6 +194,16 @@ export interface EffectEvent {
   type: EffectTypeValue;
   x: number;
   y: number;
+  /** 敵タイプ（ENEMY_DEATH用） */
+  enemyType?: string;
+  /** コンボ倍率 */
+  comboMultiplier?: number;
+  /** パワーレベル（ATTACK_HIT用） */
+  powerLevel?: number;
+  /** エフェクトバリエーション（ENEMY_ATTACK用: melee/ranged/boss） */
+  variant?: string;
+  /** アイテム種類（ITEM_PICKUP用） */
+  itemType?: string;
 }
 
 /**
@@ -373,11 +397,17 @@ export const GameScreen: React.FC<{
   onOpenLevelUpModal: () => void;
   // エフェクトシステム
   effectQueueRef?: React.MutableRefObject<EffectEvent[]>;
+  // フローティングテキスト
+  floatingTextManagerRef?: React.MutableRefObject<FloatingTextManager>;
+  // コンボ状態
+  comboStateRef?: React.MutableRefObject<import('../../combo').ComboState>;
   // 死亡アニメーション中フラグ
   isDying?: boolean;
   // 5ステージ制
   currentStage?: StageNumber;
   maxLevel?: number;
+  // ステージ報酬履歴（ステージ進行見た目変化用）
+  stageRewards?: import('../../types').StageRewardHistory[];
 }> = ({
   map,
   player,
@@ -406,13 +436,20 @@ export const GameScreen: React.FC<{
   onOpenLevelUpModal,
   // エフェクトシステム
   effectQueueRef,
+  // フローティングテキスト
+  floatingTextManagerRef,
+  // コンボ状態
+  comboStateRef,
   // 死亡アニメーション中フラグ
   isDying = false,
   // 5ステージ制
   currentStage,
   maxLevel = 10,
+  // ステージ報酬履歴
+  stageRewards = [],
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasWrapperRef = useRef<HTMLDivElement>(null);
   const movementStateRef = useRef<MovementState>(INITIAL_MOVEMENT_STATE);
   const animationFrameRef = useRef<number | null>(null);
   const attackHoldRef = useRef(false);
@@ -426,6 +463,19 @@ export const GameScreen: React.FC<{
   // 死亡エフェクト
   const deathEffectRef = useRef(new DeathEffect());
 
+  // ボスWARNING状態
+  const bossWarningRef = useRef<BossWarningState>(createBossWarningState());
+
+  // ステージ開始演出タイムスタンプ
+  const stageStartTimeRef = useRef<number>(Date.now());
+
+  // ゲームオーバー遷移タイムスタンプ
+  const dyingStartTimeRef = useRef<number>(0);
+
+  // ステージ進行見た目変化
+  const afterImageManagerRef = useRef(new AfterImageManager());
+  const rewardEffects = useMemo(() => getActiveRewardEffects(stageRewards), [stageRewards]);
+
   // アニメーション状態管理（Phase 3）
   const playerAttackUntilRef = useRef(0);  // 攻撃アニメーション終了時刻
   const playerDamageUntilRef = useRef(0);  // 被弾フレーム終了時刻
@@ -433,14 +483,40 @@ export const GameScreen: React.FC<{
   // スプライトレンダラー（T-02.1）
   const spriteRenderer = useMemo(() => new SpriteRenderer(), []);
 
+  // リサイズ時のスプライトキャッシュクリア
+  useEffect(() => {
+    const container = canvasWrapperRef.current;
+    if (!container || typeof ResizeObserver === 'undefined') return;
+
+    let debounceTimer = 0;
+    const observer = new ResizeObserver(() => {
+      clearTimeout(debounceTimer);
+      debounceTimer = window.setTimeout(() => {
+        spriteRenderer.clearCache();
+      }, 200);
+    });
+
+    observer.observe(container);
+    return () => {
+      observer.disconnect();
+      clearTimeout(debounceTimer);
+    };
+  }, [spriteRenderer]);
+
   // 死亡アニメーション開始
   useEffect(() => {
     if (isDying) {
       deathEffectRef.current.start(Date.now());
+      dyingStartTimeRef.current = Date.now();
     } else {
       deathEffectRef.current.reset();
     }
   }, [isDying]);
+
+  // ステージ変更時にステージ開始演出をリセット
+  useEffect(() => {
+    stageStartTimeRef.current = Date.now();
+  }, [currentStage]);
 
   // 点滅表現用の再描画トリガー
   useEffect(() => {
@@ -473,9 +549,15 @@ export const GameScreen: React.FC<{
     let offsetY = 0;
     let viewport: Viewport;
 
+    // CanvasWrapper サイズからタイルサイズを動的に計算
+    const wrapper = canvasWrapperRef.current;
+    const availableWidth = wrapper ? wrapper.clientWidth : window.innerWidth;
+    const availableHeight = wrapper ? wrapper.clientHeight : window.innerHeight;
+    const dynamicTileSize = calculateTileSize(availableWidth, availableHeight);
+
     if (useFullMap) {
       // 全体マップ表示：マップ全体が収まるようにタイルサイズを計算
-      const canvasSize = getCanvasSize();
+      const canvasSize = getCanvasSize(dynamicTileSize);
       canvas.width = canvasSize.width;
       canvas.height = canvasSize.height;
       tileSize = Math.min(
@@ -488,10 +570,10 @@ export const GameScreen: React.FC<{
       // ダミーのビューポート（全体表示用）
       viewport = { x: 0, y: 0, width: mapWidth, height: mapHeight, tileSize };
     } else {
-      // 通常のビューポート表示
-      viewport = calculateViewport(player, mapWidth, mapHeight);
+      // 通常のビューポート表示（動的 tileSize を使用）
+      viewport = calculateViewport(player, mapWidth, mapHeight, dynamicTileSize);
       tileSize = viewport.tileSize;
-      const canvasSize = getCanvasSize();
+      const canvasSize = getCanvasSize(tileSize);
       canvas.width = canvasSize.width;
       canvas.height = canvasSize.height;
     }
@@ -670,11 +752,7 @@ export const GameScreen: React.FC<{
         if (!useFullMap) continue;
       }
 
-      const blinkOff = enemy.state === EnemyState.KNOCKBACK && Math.floor(now / 100) % 2 === 1;
-      if (blinkOff) continue;
-
       const enemyScreen = toScreenPosition(enemy);
-      const enemySheet = getEnemySpriteSheet(enemy.type);
       const enemySpriteSize =
         enemy.type === EnemyType.MEGA_BOSS ? SPRITE_SIZES.megaBoss :
         enemy.type === EnemyType.BOSS ? SPRITE_SIZES.boss :
@@ -683,6 +761,71 @@ export const GameScreen: React.FC<{
       const enemyDrawSize = enemySpriteSize * spriteScale;
       const enemyDrawX = enemyScreen.x - enemyDrawSize / 2;
       const enemyDrawY = enemyScreen.y - enemyDrawSize / 2;
+
+      // 撃破アニメーション中の描画
+      if (enemy.isDying && enemy.deathStartTime) {
+        const elapsed = now - enemy.deathStartTime;
+        if (isDeathAnimationComplete(elapsed)) continue;
+
+        const phase = getDeathPhase(elapsed);
+        const scale = getDeathScale(elapsed);
+
+        if (phase === 1) {
+          // フェーズ1: 縮小描画（100ms）
+          ctx.save();
+          ctx.translate(enemyScreen.x, enemyScreen.y);
+          ctx.scale(scale, scale);
+          const scaledDrawX = -enemyDrawSize / 2;
+          const scaledDrawY = -enemyDrawSize / 2;
+          const enemySheet = getEnemySpriteSheet(enemy.type);
+          spriteRenderer.drawSprite(ctx, enemySheet.sprites[0], scaledDrawX, scaledDrawY, spriteScale);
+          ctx.restore();
+        } else if (phase === 2) {
+          // フェーズ2: 白フラッシュ（50ms）
+          ctx.save();
+          ctx.globalAlpha = 0.8;
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(enemyScreen.x, enemyScreen.y, enemyDrawSize / 2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+        // フェーズ3: スプライト非表示（パーティクルのみ）
+        continue;
+      }
+
+      // ボスHP残量オーラ描画
+      const isBossType = enemy.type === EnemyType.BOSS ||
+        enemy.type === EnemyType.MINI_BOSS || enemy.type === EnemyType.MEGA_BOSS;
+      if (isBossType && enemy.hp > 0) {
+        const hpRatio = enemy.maxHp > 0 ? enemy.hp / enemy.maxHp : 1;
+        const auraConfig = getBossAuraConfig(hpRatio);
+        if (auraConfig) {
+          const pulseT = (now % auraConfig.pulsePeriod) / auraConfig.pulsePeriod;
+          const pulseAlpha = 0.15 + 0.15 * Math.sin(pulseT * Math.PI * 2);
+          ctx.save();
+          ctx.globalAlpha = pulseAlpha;
+          const gradient = ctx.createRadialGradient(
+            enemyScreen.x, enemyScreen.y, enemyDrawSize * 0.3,
+            enemyScreen.x, enemyScreen.y, enemyDrawSize * 0.8
+          );
+          gradient.addColorStop(0, 'rgba(220, 38, 38, 0.6)');
+          gradient.addColorStop(1, 'rgba(220, 38, 38, 0)');
+          ctx.fillStyle = gradient;
+          ctx.fillRect(
+            enemyScreen.x - enemyDrawSize,
+            enemyScreen.y - enemyDrawSize,
+            enemyDrawSize * 2,
+            enemyDrawSize * 2
+          );
+          ctx.restore();
+        }
+      }
+
+      const blinkOff = enemy.state === EnemyState.KNOCKBACK && Math.floor(now / 100) % 2 === 1;
+      if (blinkOff) continue;
+
+      const enemySheet = getEnemySpriteSheet(enemy.type);
 
       // 敵状態別フレーム選択（Phase 3）
       const enemyStateFrame = getEnemyStateFrame(enemy.type, enemy.state);
@@ -707,14 +850,15 @@ export const GameScreen: React.FC<{
     // パーティクルエフェクトシステム
     const em = effectManagerRef.current;
 
-    // 攻撃ヒットエフェクトのトリガー
+    // 攻撃ヒットエフェクトのトリガー（パワーレベルスケーリング）
     if (attackEffect && now < attackEffect.until) {
       const key = `${attackEffect.position.x}-${attackEffect.position.y}-${attackEffect.until}`;
       if (lastAttackEffectKeyRef.current !== key) {
         lastAttackEffectKeyRef.current = key;
         playerAttackUntilRef.current = attackEffect.until;
         const screenPos = toScreenPosition(attackEffect.position);
-        em.addEffect(EffectType.ATTACK_HIT, screenPos.x, screenPos.y, now);
+        const powerLevel = calculatePowerLevel(player);
+        em.addEffect(EffectType.ATTACK_HIT, screenPos.x, screenPos.y, now, { powerLevel });
       }
     }
 
@@ -732,7 +876,13 @@ export const GameScreen: React.FC<{
     if (effectQueueRef && effectQueueRef.current.length > 0) {
       for (const evt of effectQueueRef.current) {
         const screenPos = toScreenPosition({ x: evt.x, y: evt.y });
-        em.addEffect(evt.type, screenPos.x, screenPos.y, now);
+        em.addEffect(evt.type, screenPos.x, screenPos.y, now, {
+          enemyType: evt.enemyType as import('../../types').EnemyTypeValue | undefined,
+          comboMultiplier: evt.comboMultiplier,
+          powerLevel: evt.powerLevel,
+          variant: evt.variant as 'melee' | 'ranged' | 'boss' | undefined,
+          itemType: evt.itemType as import('../../types').ItemTypeValue | undefined,
+        });
       }
       effectQueueRef.current = [];
     }
@@ -740,6 +890,12 @@ export const GameScreen: React.FC<{
     // エフェクト更新・描画（100ms 間隔）
     em.update(0.1, now);
     em.draw(ctx, canvas.width, canvas.height);
+
+    // フローティングテキスト更新・描画
+    if (floatingTextManagerRef) {
+      floatingTextManagerRef.current.update(now);
+      floatingTextManagerRef.current.draw(ctx, now, (tx, ty) => toScreenPosition({ x: tx, y: ty }));
+    }
 
     // プレイヤー描画（T-02.4: スプライト描画）
     const playerScreen = toScreenPosition(player);
@@ -773,6 +929,24 @@ export const GameScreen: React.FC<{
       // 通常時の描画（Phase 3: 優先度 攻撃 > 被弾 > 移動 > アイドルブリーズ）
       const isBlinkOff = player.isInvincible && Math.floor(now / 100) % 2 === 1;
 
+      // パワーオーラ描画（スプライトの背面）
+      if (!isBlinkOff) {
+        drawPlayerAura(ctx, playerScreen.x, playerScreen.y, viewport.tileSize, player.level, player.playerClass, now);
+
+        // シールド輝き描画（maxHp強化時）
+        if (rewardEffects.hasShieldGlow) {
+          drawShieldGlow(ctx, playerScreen.x, playerScreen.y, viewport.tileSize, now);
+        }
+
+        // 残像描画（移動速度強化時、スプライト背面に描画）
+        if (rewardEffects.hasAfterImage) {
+          for (const img of afterImageManagerRef.current.getAfterImages()) {
+            const imgScreen = toScreenPosition(img);
+            drawAfterImage(ctx, imgScreen.x, imgScreen.y, viewport.tileSize, img.alpha);
+          }
+        }
+      }
+
       if (!isBlinkOff) {
         const pClass = player.playerClass as 'warrior' | 'thief';
         const pDir = player.direction as 'down' | 'up' | 'left' | 'right';
@@ -789,6 +963,17 @@ export const GameScreen: React.FC<{
           const attackSheet = attackSheets[pDir];
           const attackFrameIndex = Math.floor(now / attackSheet.frameDuration) % attackSheet.sprites.length;
           spriteRenderer.drawSprite(ctx, attackSheet.sprites[attackFrameIndex], playerDrawX, playerDrawY, spriteScale);
+
+          // 武器光跡描画（攻撃アニメーション中のみ）
+          const attackDuration = playerAttackUntilRef.current - (playerAttackUntilRef.current - 300);
+          const attackElapsed = now - (playerAttackUntilRef.current - 300);
+          const attackProgress = Math.min(1, Math.max(0, attackElapsed / attackDuration));
+          drawWeaponTrail(ctx, playerScreen.x, playerScreen.y, viewport.tileSize, player.direction, player.stats.attackPower, player.playerClass, attackProgress);
+
+          // 衝撃波描画（RADIANT ティアのみ、攻撃ヒット時）
+          if (getWeaponTier(player.stats.attackPower) === WeaponTier.RADIANT) {
+            drawShockwave(ctx, playerScreen.x, playerScreen.y, viewport.tileSize, attackElapsed);
+          }
         } else if (isDamaged) {
           // 被弾フレーム（200ms表示）
           const damageSprites = pClass === 'warrior' ? WARRIOR_DAMAGE_SPRITES : THIEF_DAMAGE_SPRITES;
@@ -798,12 +983,27 @@ export const GameScreen: React.FC<{
           const playerSheet = getPlayerSpriteSheet(pClass, pDir);
           const walkFrameIndex = Math.floor(now / playerSheet.frameDuration) % 2;
           spriteRenderer.drawSprite(ctx, playerSheet.sprites[1 + walkFrameIndex], playerDrawX, playerDrawY, spriteScale);
+
+          // 残像記録（移動速度強化時）
+          if (rewardEffects.hasAfterImage) {
+            afterImageManagerRef.current.recordPosition(player.x, player.y, player.direction, now);
+          }
         } else {
           // アイドルブリーズアニメーション
           const idleSheets = pClass === 'warrior' ? WARRIOR_IDLE_SPRITE_SHEETS : THIEF_IDLE_SPRITE_SHEETS;
           const idleSheet = idleSheets[pDir];
           const idleFrameIndex = Math.floor(now / idleSheet.frameDuration) % idleSheet.sprites.length;
           spriteRenderer.drawSprite(ctx, idleSheet.sprites[idleFrameIndex], playerDrawX, playerDrawY, spriteScale);
+        }
+
+        // 回転パーティクル描画（攻撃速度強化時、常時微小表示）
+        if (rewardEffects.hasSpinParticles) {
+          drawSpinParticles(ctx, playerScreen.x, playerScreen.y, viewport.tileSize, now);
+        }
+
+        // 回復パーティクル描画（回復量強化時）
+        if (rewardEffects.hasHealParticles) {
+          drawHealParticles(ctx, playerScreen.x, playerScreen.y, viewport.tileSize, now);
         }
       }
     }
@@ -824,9 +1024,153 @@ export const GameScreen: React.FC<{
       ctx.restore();
     }
 
+    // コンボカウンター描画（画面上部中央）
+    if (comboStateRef && isComboActive(comboStateRef.current, now) &&
+        comboStateRef.current.count >= COMBO_DISPLAY_MIN) {
+      const combo = comboStateRef.current;
+      const comboText = `${combo.count} COMBO!`;
+      const timeSinceKill = now - combo.lastKillTime;
+
+      // ポップアニメーション（コンボ増加時に拡大→縮小）
+      const popProgress = Math.min(1, timeSinceKill / 200);
+      const popScale = popProgress < 0.5
+        ? 1.0 + 0.4 * (1 - popProgress * 2)
+        : 1.0;
+
+      // フェードアウト（コンボ時間切れ前の500msでフェードアウト開始）
+      const remaining = 3000 - timeSinceKill;
+      const fadeAlpha = remaining < 500 ? remaining / 500 : 1.0;
+
+      ctx.save();
+      ctx.font = `bold ${Math.round(20 * popScale)}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.globalAlpha = Math.max(0, fadeAlpha);
+
+      // アウトライン
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+      ctx.lineWidth = 3;
+      ctx.strokeText(comboText, canvas.width / 2, 50);
+
+      // 本文（金色）
+      ctx.fillStyle = '#fbbf24';
+      ctx.fillText(comboText, canvas.width / 2, 50);
+      ctx.restore();
+    }
+
+    // ボスWARNING演出
+    const bossWarning = bossWarningRef.current;
+    for (const enemy of enemies) {
+      const isBoss = enemy.type === EnemyType.BOSS || enemy.type === EnemyType.MINI_BOSS || enemy.type === EnemyType.MEGA_BOSS;
+      if (!isBoss || enemy.hp <= 0) continue;
+      if (shouldTriggerWarning(bossWarning, enemy, player.x, player.y)) {
+        bossWarningRef.current = {
+          ...bossWarning,
+          isActive: true,
+          startTime: now,
+          triggeredBossIds: [...bossWarning.triggeredBossIds, enemy.id],
+        };
+        break;
+      }
+    }
+
+    if (bossWarningRef.current.isActive) {
+      const warningElapsed = now - bossWarningRef.current.startTime;
+      if (warningElapsed < BOSS_WARNING_DURATION) {
+        const phase = getWarningPhase(warningElapsed);
+
+        if (phase === 'darken' || phase === 'text') {
+          // 画面暗転
+          const darkenProgress = Math.min(1, warningElapsed / 300);
+          ctx.save();
+          ctx.globalAlpha = 0.5 * darkenProgress;
+          ctx.fillStyle = '#000000';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.restore();
+        }
+
+        if (phase === 'text') {
+          // WARNING テキスト点滅（200ms間隔）
+          const blink = Math.floor(now / 200) % 2 === 0;
+          if (blink) {
+            ctx.save();
+            ctx.font = 'bold 32px monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#dc2626';
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 4;
+            ctx.strokeText('⚠ WARNING ⚠', canvas.width / 2, canvas.height / 2);
+            ctx.fillText('⚠ WARNING ⚠', canvas.width / 2, canvas.height / 2);
+            ctx.restore();
+          }
+        }
+
+        if (phase === 'fadeout') {
+          // フェードアウト
+          const fadeProgress = (warningElapsed - 900) / 300;
+          ctx.save();
+          ctx.globalAlpha = 0.5 * (1 - fadeProgress);
+          ctx.fillStyle = '#000000';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.restore();
+        }
+      } else {
+        // WARNING完了
+        bossWarningRef.current = { ...bossWarningRef.current, isActive: false };
+      }
+    }
+
     // 画面シェイクオフセット復元（HUDはシェイクの影響を受けない）
     if (shakeOffset) {
       ctx.restore();
+    }
+
+    // ゲームオーバー暗転描画（DYING状態）
+    if (isDying) {
+      const dyingElapsed = now - dyingStartTimeRef.current;
+      const gameOverAlpha = getGameOverTransitionAlpha(dyingElapsed);
+      if (gameOverAlpha > 0) {
+        ctx.save();
+        ctx.globalAlpha = gameOverAlpha;
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
+      }
+    }
+
+    // ステージ開始演出描画
+    const stageIntroElapsed = now - stageStartTimeRef.current;
+    const stageIntroPhase = getStageIntroPhase(stageIntroElapsed);
+    if (stageIntroPhase !== 'done') {
+      // 暗転フェードイン
+      const introAlpha = getStageIntroAlpha(stageIntroElapsed);
+      if (introAlpha > 0) {
+        ctx.save();
+        ctx.globalAlpha = introAlpha;
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
+      }
+
+      // ステージ名テキスト
+      const textAlpha = getStageIntroTextAlpha(stageIntroElapsed);
+      if (textAlpha > 0) {
+        ctx.save();
+        ctx.globalAlpha = textAlpha;
+        ctx.font = 'bold 28px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const stageText = currentStage ? `STAGE ${currentStage}` : 'STAGE 1';
+        // テキストアウトライン
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 4;
+        ctx.strokeText(stageText, canvas.width / 2, canvas.height / 2);
+        // テキスト本文
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(stageText, canvas.width / 2, canvas.height / 2);
+        ctx.restore();
+      }
     }
 
     // 自動マップ描画（全体表示モードでは非表示）
@@ -851,7 +1195,7 @@ export const GameScreen: React.FC<{
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map, player, enemies, items, traps, walls, mapState, goalPos, debugState, renderTime, attackEffect, lastDamageAt, effectQueueRef, spriteRenderer, isDying]);
+  }, [map, player, enemies, items, traps, walls, mapState, goalPos, debugState, renderTime, attackEffect, lastDamageAt, effectQueueRef, floatingTextManagerRef, comboStateRef, spriteRenderer, isDying]);
 
   const setAttackHold = useCallback((isHolding: boolean) => {
     attackHoldRef.current = isHolding;
@@ -1104,12 +1448,14 @@ export const GameScreen: React.FC<{
       </HelpButton>
       {showHelp && <HelpOverlayComponent onClose={onHelpToggle} />}
       {showKeyRequiredMessage && <KeyRequiredMessage>🔑 鍵が必要です</KeyRequiredMessage>}
-      <Canvas
-        ref={canvasRef}
-        role="img"
-        aria-label="迷路ゲーム画面"
-        tabIndex={0}
-      />
+      <CanvasWrapper ref={canvasWrapperRef}>
+        <Canvas
+          ref={canvasRef}
+          role="img"
+          aria-label="迷路ゲーム画面"
+          tabIndex={0}
+        />
+      </CanvasWrapper>
       <ControlsContainer>
         <DPadContainer>
           <DPadButton

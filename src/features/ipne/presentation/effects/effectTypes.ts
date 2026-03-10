@@ -18,6 +18,7 @@ export const EffectType = {
   SCREEN_SHAKE: 'screen_shake',
   LOW_HP_WARNING: 'low_hp_warning',
   STAGE_CLEAR: 'stage_clear',
+  ENEMY_DEATH: 'enemy_death',
 } as const;
 
 export type EffectTypeValue = (typeof EffectType)[keyof typeof EffectType];
@@ -72,6 +73,26 @@ export interface GameEffect {
   shakeDecay?: number;
   /** 低HP警告パルスの位相 (0.0〜2π) */
   pulsePhase?: number;
+  /** 画面フラッシュの色（レベルアップ演出用） */
+  flashColor?: string;
+}
+
+/** addEffect のオプション引数 */
+export interface EffectOptions {
+  /** 敵攻撃エフェクトのバリエーション */
+  variant?: 'melee' | 'ranged' | 'boss';
+  /** ダメージ量（シェイク強度計算用） */
+  damage?: number;
+  /** ステージ番号（ステージクリアエフェクト用） */
+  stageNumber?: number;
+  /** パワーレベル（攻撃ヒットスケーリング用） */
+  powerLevel?: number;
+  /** 敵タイプ（敵撃破エフェクト用） */
+  enemyType?: import('../../types').EnemyTypeValue;
+  /** コンボ倍率（パーティクル数増加用） */
+  comboMultiplier?: number;
+  /** アイテム種類（アイテム取得エフェクト用） */
+  itemType?: import('../../types').ItemTypeValue;
 }
 
 /** エフェクト設定 */

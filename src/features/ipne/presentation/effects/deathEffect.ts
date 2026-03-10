@@ -8,7 +8,7 @@
  */
 
 import { Particle } from './effectTypes';
-import { updateParticles, drawParticles } from './particleSystem';
+import { updateParticles, drawParticles, randomRange, selectRandomColor } from './particleSystem';
 
 /** 死亡アニメーションの総時間（ミリ秒） */
 export const DEATH_ANIMATION_DURATION = 1500;
@@ -32,13 +32,6 @@ export const DeathPhase = {
 } as const;
 
 export type DeathPhaseValue = (typeof DeathPhase)[keyof typeof DeathPhase];
-
-/**
- * 指定範囲内のランダム値を返す
- */
-function randomRange(min: number, max: number): number {
-  return min + Math.random() * (max - min);
-}
 
 /**
  * 死亡エフェクト管理クラス
@@ -246,7 +239,7 @@ export class DeathEffect {
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed - randomRange(20, 60),
         size: randomRange(2, 5),
-        color: colors[Math.floor(Math.random() * colors.length)],
+        color: selectRandomColor(colors),
         alpha: 1.0,
         life: 1.0,
         decay: 1.8,

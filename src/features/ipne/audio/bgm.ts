@@ -89,12 +89,155 @@ const GAME_OVER_JINGLE: MelodyNote[] = [
   [131, 0.8],   // C3
 ];
 
+/** ステージ1 BGM - 探索的（穏やかな冒険） */
+const STAGE_1_BGM: MelodyNote[] = [
+  [165, 0.4],  // E3
+  [0, 0.05],
+  [196, 0.4],  // G3
+  [0, 0.05],
+  [220, 0.4],  // A3
+  [0, 0.05],
+  [247, 0.6],  // B3
+  [0, 0.05],
+  [220, 0.4],  // A3
+  [0, 0.05],
+  [196, 0.4],  // G3
+  [0, 0.05],
+  [165, 0.4],  // E3
+  [0, 0.05],
+  [147, 0.6],  // D3
+  [0, 0.1],
+];
+
+/** ステージ2 BGM - 神秘的 */
+const STAGE_2_BGM: MelodyNote[] = [
+  [220, 0.5],  // A3
+  [0, 0.05],
+  [262, 0.5],  // C4
+  [0, 0.05],
+  [330, 0.5],  // E4
+  [0, 0.05],
+  [294, 0.7],  // D4
+  [0, 0.05],
+  [247, 0.5],  // B3
+  [0, 0.05],
+  [220, 0.5],  // A3
+  [0, 0.05],
+  [196, 0.5],  // G3
+  [0, 0.05],
+  [220, 0.7],  // A3
+  [0, 0.1],
+];
+
+/** ステージ3 BGM - 不安を煽る短調 */
+const STAGE_3_BGM: MelodyNote[] = [
+  [147, 0.35],  // D3
+  [0, 0.05],
+  [175, 0.35],  // F3
+  [0, 0.05],
+  [208, 0.35],  // Ab3
+  [0, 0.05],
+  [196, 0.5],   // G3
+  [0, 0.05],
+  [165, 0.35],  // E3
+  [0, 0.05],
+  [147, 0.35],  // D3
+  [0, 0.05],
+  [131, 0.35],  // C3
+  [0, 0.05],
+  [147, 0.5],   // D3
+  [0, 0.1],
+];
+
+/** ステージ4 BGM - 重厚で威圧的 */
+const STAGE_4_BGM: MelodyNote[] = [
+  [131, 0.5],   // C3
+  [0, 0.05],
+  [156, 0.5],   // Eb3
+  [0, 0.05],
+  [175, 0.5],   // F3
+  [0, 0.05],
+  [196, 0.7],   // G3
+  [0, 0.05],
+  [208, 0.5],   // Ab3
+  [0, 0.05],
+  [196, 0.5],   // G3
+  [0, 0.05],
+  [175, 0.5],   // F3
+  [0, 0.05],
+  [156, 0.7],   // Eb3
+  [0, 0.1],
+];
+
+/** ステージ5 BGM - 激しいクライマックス */
+const STAGE_5_BGM: MelodyNote[] = [
+  [330, 0.3],   // E4
+  [0, 0.03],
+  [392, 0.3],   // G4
+  [0, 0.03],
+  [494, 0.3],   // B4
+  [0, 0.03],
+  [440, 0.4],   // A4
+  [0, 0.03],
+  [392, 0.3],   // G4
+  [0, 0.03],
+  [370, 0.3],   // F#4
+  [0, 0.03],
+  [330, 0.3],   // E4
+  [0, 0.03],
+  [294, 0.4],   // D4
+  [0, 0.08],
+];
+
+/** ボス戦BGM - 緊迫 */
+const BOSS_BGM: MelodyNote[] = [
+  [220, 0.25],  // A3
+  [0, 0.03],
+  [262, 0.25],  // C4
+  [0, 0.03],
+  [220, 0.25],  // A3
+  [0, 0.03],
+  [233, 0.35],  // Bb3
+  [0, 0.03],
+  [220, 0.25],  // A3
+  [0, 0.03],
+  [196, 0.25],  // G3
+  [0, 0.03],
+  [220, 0.25],  // A3
+  [0, 0.03],
+  [330, 0.35],  // E4
+  [0, 0.05],
+];
+
 /** BGM設定 */
 interface BgmConfig {
   melody: MelodyNote[];
   oscillatorType: OscillatorType;
   loop: boolean;
   gain: number;
+}
+
+/** ステージ別BGM設定（テスト公開用） */
+export const STAGE_BGM_CONFIGS: BgmConfig[] = [
+  { melody: STAGE_1_BGM, oscillatorType: 'triangle', loop: true, gain: 0.06 },
+  { melody: STAGE_2_BGM, oscillatorType: 'triangle', loop: true, gain: 0.06 },
+  { melody: STAGE_3_BGM, oscillatorType: 'sawtooth', loop: true, gain: 0.05 },
+  { melody: STAGE_4_BGM, oscillatorType: 'sawtooth', loop: true, gain: 0.05 },
+  { melody: STAGE_5_BGM, oscillatorType: 'square', loop: true, gain: 0.06 },
+];
+
+/**
+ * ステージ番号に対応するBGMタイプを返す
+ */
+export function getStageGameBgmType(stageNumber: number): BgmTypeValue {
+  switch (stageNumber) {
+    case 1: return BgmType.GAME_STAGE1;
+    case 2: return BgmType.GAME_STAGE2;
+    case 3: return BgmType.GAME_STAGE3;
+    case 4: return BgmType.GAME_STAGE4;
+    case 5: return BgmType.GAME_STAGE5;
+    default: return BgmType.GAME;
+  }
 }
 
 /** BGM設定マップ */
@@ -110,6 +253,17 @@ const BGM_CONFIGS: Record<BgmTypeValue, BgmConfig> = {
     oscillatorType: 'triangle',
     loop: true,
     gain: 0.06,
+  },
+  [BgmType.GAME_STAGE1]: STAGE_BGM_CONFIGS[0],
+  [BgmType.GAME_STAGE2]: STAGE_BGM_CONFIGS[1],
+  [BgmType.GAME_STAGE3]: STAGE_BGM_CONFIGS[2],
+  [BgmType.GAME_STAGE4]: STAGE_BGM_CONFIGS[3],
+  [BgmType.GAME_STAGE5]: STAGE_BGM_CONFIGS[4],
+  [BgmType.BOSS]: {
+    melody: BOSS_BGM,
+    oscillatorType: 'square',
+    loop: true,
+    gain: 0.07,
   },
   [BgmType.CLEAR]: {
     melody: CLEAR_JINGLE,
@@ -311,3 +465,13 @@ export const playTitleBgm = () => playBgm(BgmType.TITLE);
 export const playGameBgm = () => playBgm(BgmType.GAME);
 export const playClearJingle = () => playBgm(BgmType.CLEAR);
 export const playGameOverJingle = () => playBgm(BgmType.GAME_OVER);
+export const playBossBgm = () => playBgm(BgmType.BOSS);
+
+/**
+ * ステージ番号に対応するゲームBGMを再生する
+ * @param stageNumber ステージ番号（1〜5）
+ */
+export const playStageGameBgm = (stageNumber: number) => {
+  const bgmType = getStageGameBgmType(stageNumber);
+  playBgm(bgmType);
+};

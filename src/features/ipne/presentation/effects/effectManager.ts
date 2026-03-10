@@ -5,7 +5,7 @@
  * パーティクルエフェクトの追加・更新・描画・クリアを提供する。
  */
 
-import { EffectType, EffectTypeValue, GameEffect } from './effectTypes';
+import { EffectType, EffectTypeValue, EffectOptions, GameEffect } from './effectTypes';
 import {
   createRadialParticles,
   createRisingParticles,
@@ -15,6 +15,9 @@ import {
   updateParticles,
   drawParticles,
 } from './particleSystem';
+import { getHitEffectConfig } from './hitEffectScaling';
+import { getEnemyDeathParticleConfig } from './enemyDeath';
+import { getItemPickupEffectConfig } from './itemFeedback';
 
 /** パーティクル上限数 */
 const MAX_PARTICLES = 200;
@@ -44,12 +47,21 @@ export class EffectManager {
    * @param y - ワールド座標 Y（スクリーン座標）
    * @param now - 現在時刻（ミリ秒）
    */
-  addEffect(type: EffectTypeValue, x: number, y: number, now: number = Date.now(), options?: { variant?: 'melee' | 'ranged' | 'boss'; damage?: number; stageNumber?: number }): void {
+  addEffect(type: EffectTypeValue, x: number, y: number, now: number = Date.now(), options?: EffectOptions): void {
     effectIdCounter += 1;
     const id = `effect-${effectIdCounter}`;
 
     switch (type) {
-      case EffectType.ATTACK_HIT:
+      case EffectType.ATTACK_HIT: {
+        const pl = options?.powerLevel ?? 1;
+        const combo = options?.comboMultiplier ?? 1.0;
+        const hitConfig = getHitEffectConfig(pl);
+        const count = Math.round(hitConfig.particleCount * combo);
+        const sizeMin = 2 * hitConfig.sizeMultiplier;
+        const sizeMax = 4 * hitConfig.sizeMultiplier;
+        const speedMin = 60 * hitConfig.speedMultiplier;
+        const speedMax = 150 * hitConfig.speedMultiplier;
+
         this.effects.push({
           id,
           type,
@@ -58,14 +70,23 @@ export class EffectManager {
           startTime: now,
           duration: 300,
           particles: createRadialParticles(
-            8, x, y,
+            count, x, y,
             ['#ffffff', '#ffffcc', '#ffff99'],
-            60, 150,
-            2, 4,
+            speedMin, speedMax,
+            sizeMin, sizeMax,
             3.0
           ),
+          ringRadius: hitConfig.hasShockwave ? 0 : undefined,
+          ringMaxRadius: hitConfig.hasShockwave ? (8 + pl * 4) : undefined,
+          flashAlpha: hitConfig.hasFlash ? 0.4 : undefined,
         });
+
+        // 画面シェイク追加（powerLevel 4）
+        if (hitConfig.hasShake) {
+          this.addEffect(EffectType.SCREEN_SHAKE, 0, 0, now, { damage: 3 });
+        }
         break;
+      }
 
       case EffectType.DAMAGE:
         this.effects.push({
@@ -139,7 +160,20 @@ export class EffectManager {
         });
         break;
 
-      case EffectType.ITEM_PICKUP:
+      case EffectType.ITEM_PICKUP: {
+        const itemType = options?.itemType;
+        const itemConfig = itemType ? getItemPickupEffectConfig(itemType) : undefined;
+        const pCount = itemConfig?.particleCount ?? 6;
+        const pColors = itemConfig?.colors ?? ['#fbbf24', '#fcd34d', '#fef08a'];
+        const pPattern = itemConfig?.pattern ?? 'rising';
+
+        const particles =
+          pPattern === 'spiral'
+            ? createSpiralParticles(pCount, x, y, pColors, 80, 1.5)
+            : pPattern === 'radial'
+            ? createRadialParticles(pCount, x, y, pColors, 40, 100, 2, 4, 2.0)
+            : createRisingParticles(pCount, x, y, pColors, 2, 3, 2.0);
+
         this.effects.push({
           id,
           type,
@@ -147,14 +181,10 @@ export class EffectManager {
           y,
           startTime: now,
           duration: 500,
-          particles: createRisingParticles(
-            6, x, y,
-            ['#fbbf24', '#fcd34d', '#fef08a'],
-            2, 3,
-            2.0
-          ),
+          particles,
         });
         break;
+      }
 
       case EffectType.LEVEL_UP:
         this.effects.push({
@@ -163,15 +193,17 @@ export class EffectManager {
           x,
           y,
           startTime: now,
-          duration: 800,
-          particles: createRisingParticles(
-            12, x, y,
+          duration: 1500,
+          particles: createSpiralParticles(
+            24, x, y,
             ['#fbbf24', '#fcd34d', '#fef08a', '#ffffff'],
-            2, 4,
-            1.2
+            100,
+            0.7
           ),
           ringRadius: 0,
           ringMaxRadius: 40,
+          flashAlpha: 0.4,
+          flashColor: '#fbbf24',
         });
         break;
 
@@ -290,6 +322,31 @@ export class EffectManager {
         });
         break;
       }
+
+      case EffectType.ENEMY_DEATH: {
+        const enemyType = options?.enemyType;
+        if (enemyType) {
+          const deathConfig = getEnemyDeathParticleConfig(enemyType);
+          const combo = options?.comboMultiplier ?? 1.0;
+          const count = Math.round(deathConfig.particleCount * combo);
+          this.effects.push({
+            id,
+            type,
+            x,
+            y,
+            startTime: now,
+            duration: deathConfig.duration,
+            particles: createRadialParticles(
+              count, x, y,
+              deathConfig.colors,
+              deathConfig.speedMin, deathConfig.speedMax,
+              deathConfig.sizeMin, deathConfig.sizeMax,
+              2.0
+            ),
+          });
+        }
+        break;
+      }
     }
 
     // パーティクル上限を超えた場合、古いエフェクトから削除
@@ -376,11 +433,11 @@ export class EffectManager {
         ctx.restore();
       }
 
-      // 画面フラッシュ描画（ボス撃破）
+      // 画面フラッシュ描画（ボス撃破、レベルアップ等）
       if (effect.flashAlpha !== undefined && effect.flashAlpha > 0) {
         ctx.save();
         ctx.globalAlpha = effect.flashAlpha * 0.6;
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = effect.flashColor ?? '#ffffff';
         ctx.fillRect(0, 0, canvasWidth, canvasHeight);
         ctx.restore();
       }
@@ -416,6 +473,13 @@ export class EffectManager {
    */
   getEffectCount(): number {
     return this.effects.length;
+  }
+
+  /**
+   * 全エフェクトを取得する（テスト用）
+   */
+  getEffects(): readonly GameEffect[] {
+    return this.effects;
   }
 
   /**

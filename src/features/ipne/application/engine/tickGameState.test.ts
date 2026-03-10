@@ -63,7 +63,7 @@ describe('tickGameState', () => {
     expect(result.player.hp).toBe(expiredInvinciblePlayer.hp - 2);
     expect(result.enemies).toHaveLength(1);
     expect(result.effects).toEqual(
-      expect.arrayContaining([{ kind: 'sound', type: TickSoundEffect.PLAYER_DAMAGE }])
+      expect.arrayContaining([expect.objectContaining({ kind: 'sound', type: TickSoundEffect.PLAYER_DAMAGE })])
     );
   });
 
@@ -100,10 +100,10 @@ describe('tickGameState', () => {
     expect(result.pendingLevelPoints).toBe(1);
     expect(result.effects).toEqual(
       expect.arrayContaining([
-        { kind: 'sound', type: TickSoundEffect.ITEM_PICKUP },
-        { kind: 'sound', type: TickSoundEffect.HEAL },
-        { kind: 'sound', type: TickSoundEffect.LEVEL_UP },
-        { kind: 'display', type: TickDisplayEffect.MAP_REVEALED },
+        expect.objectContaining({ kind: 'sound', type: TickSoundEffect.ITEM_PICKUP }),
+        expect.objectContaining({ kind: 'sound', type: TickSoundEffect.HEAL }),
+        expect.objectContaining({ kind: 'sound', type: TickSoundEffect.LEVEL_UP }),
+        expect.objectContaining({ kind: 'display', type: TickDisplayEffect.MAP_REVEALED }),
       ])
     );
   });
