@@ -93,7 +93,7 @@ describe('CpuAI.updateWithBehavior', () => {
     const targetWithBounce = CpuAI.calculateTargetWithBehavior(
       game, withBounce, 1000
     );
-    const targetWithoutBounce = CpuAI.calculateTargetWithBehavior(
+    const _targetWithoutBounce = CpuAI.calculateTargetWithBehavior(
       game, withoutBounce, 1000
     );
 

@@ -10,7 +10,7 @@ import type { StoryProgress } from '../core/story';
 import { STORY_CHARACTERS, PLAYER_CHARACTER } from '../core/characters';
 
 // キャラクター検索用ヘルパー
-const findChar = (id: string) => {
+const _findChar = (id: string) => {
   if (id === 'player') return PLAYER_CHARACTER;
   return Object.values(STORY_CHARACTERS).find(c => c.id === id);
 };

@@ -8,10 +8,9 @@ import {
   saveStoryProgress,
   resetStoryProgress,
   isStageUnlocked,
-  STORY_PROGRESS_KEY,
 } from './story';
 import type { StoryProgress } from './story';
-import { findCharacterById, PLAYER_CHARACTER, STORY_CHARACTERS } from './characters';
+import { findCharacterById, PLAYER_CHARACTER } from './characters';
 import { FIELDS } from './config';
 import type { GameMode } from './types';
 

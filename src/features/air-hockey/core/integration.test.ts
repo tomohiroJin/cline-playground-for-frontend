@@ -9,7 +9,7 @@ import {
   resetStoryProgress,
   isStageUnlocked,
 } from './story';
-import type { StoryProgress } from './story';
+// StoryProgress 型はテスト内で直接使用しないが、story モジュールの一部として検証
 import {
   PLAYER_CHARACTER,
   STORY_CHARACTERS,
@@ -24,7 +24,7 @@ import { EntityFactory } from './entities';
 import { CONSTANTS } from './constants';
 import { Physics } from './physics';
 import { getStoryStageBalance, createStageConstants, AI_BEHAVIOR_PRESETS } from './story-balance';
-import { applyItemEffect, ItemEffects } from './items';
+import { applyItemEffect } from './items';
 import type { Difficulty } from './types';
 
 // localStorage モック
