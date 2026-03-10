@@ -118,15 +118,14 @@ import { GameTimer } from '../../timer';
 import { getElapsedTime, formatTimeShort } from '../../timer';
 import { SPRITE_SIZES } from '../config';
 import {
-  EffectManager, EffectType, EffectTypeValue, DeathEffect, DeathPhase,
-  FloatingTextManager, FloatingTextType, calculatePowerLevel,
-  getDeathPhase, getDeathScale, isDeathAnimationComplete, ENEMY_DEATH_DURATION,
+  EffectManager, EffectType, EffectTypeValue, DeathEffect,
+  FloatingTextManager, calculatePowerLevel,
+  getDeathPhase, getDeathScale, isDeathAnimationComplete,
   createBossWarningState, shouldTriggerWarning, getWarningPhase, getBossAuraConfig,
-  BOSS_WARNING_DURATION, BOSS_DETECTION_RANGE,
+  BOSS_WARNING_DURATION,
 } from '../effects';
 import type { BossWarningState } from '../effects';
 import { isComboActive, COMBO_DISPLAY_MIN } from '../../combo';
-import type { ComboState } from '../../combo';
 import {
   SpriteRenderer,
   SpriteDefinition,
@@ -163,7 +162,7 @@ import {
 import { drawPlayerAura } from '../effects/aura';
 import { drawWeaponTrail, getWeaponTier, WeaponTier, drawShockwave } from '../effects/weaponEffect';
 import { getActiveRewardEffects, drawShieldGlow, drawAfterImage, drawSpinParticles, drawHealParticles, AfterImageManager } from '../effects/stageVisual';
-import { getStageIntroPhase, getStageIntroAlpha, getStageIntroTextAlpha, getGameOverTransitionAlpha, STAGE_INTRO_DURATION } from '../effects/screenTransition';
+import { getStageIntroPhase, getStageIntroAlpha, getStageIntroTextAlpha, getGameOverTransitionAlpha } from '../effects/screenTransition';
 import warriorClassImg from '../../../../assets/images/ipne_class_warrior.webp';
 import thiefClassImg from '../../../../assets/images/ipne_class_thief.webp';
 

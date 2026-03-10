@@ -56,8 +56,8 @@ import {
 import { TitleScreen } from '../features/ipne/presentation/screens/Title';
 import { PrologueScreen } from '../features/ipne/presentation/screens/Prologue';
 import { GameScreen, ClassSelectScreen, LevelUpOverlayComponent, EffectEvent } from '../features/ipne/presentation/screens/Game';
-import { EffectType, FloatingTextManager, FloatingTextType, calculatePowerLevel, ENEMY_DEATH_DURATION } from '../features/ipne/presentation/effects';
-import { ComboState, createComboState, registerKill, getComboMultiplier, isComboActive } from '../features/ipne/combo';
+import { EffectType, FloatingTextManager, FloatingTextType } from '../features/ipne/presentation/effects';
+import { ComboState, createComboState, registerKill, getComboMultiplier } from '../features/ipne/combo';
 import { GameOverScreen } from '../features/ipne/presentation/screens/Clear';
 import { StageClearScreen } from '../features/ipne/presentation/screens/StageClear';
 import { StageStoryScreen } from '../features/ipne/presentation/screens/StageStory';
