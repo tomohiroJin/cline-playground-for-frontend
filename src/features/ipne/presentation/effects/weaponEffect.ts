@@ -5,7 +5,7 @@
  * 斬撃/突き部分の光跡と衝撃波を段階的に追加する。
  */
 
-import { DirectionValue, Direction, PlayerClassValue, PlayerClass } from '../../types';
+import { DirectionValue, Direction, PlayerClassValue } from '../../types';
 import { applyAlpha, CLASS_BASE_COLORS, GOLD_COLOR, WHITE_COLOR } from './colorUtils';
 
 /** 武器ティア */

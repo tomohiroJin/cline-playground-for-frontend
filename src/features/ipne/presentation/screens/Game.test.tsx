@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 // Canvas のモック
@@ -99,10 +99,12 @@ jest.mock('../../../../assets/images/ipne_class_warrior.webp', () => 'warrior.we
 jest.mock('../../../../assets/images/ipne_class_thief.webp', () => 'thief.webp');
 
 import { GameScreen } from './Game';
-import { TileType, PlayerClass, Direction, ExplorationState, TimerState } from '../../types';
+import { PlayerClass, ExplorationState, TimerState } from '../../types';
 import type { AutoMapState, Enemy, Item, Trap, Wall, Position, GameTimer } from '../../types';
 import { createPlayer } from '../../player';
-import { createTestMap, createMockCanvasContext } from '../../__tests__/testUtils';
+import { createTestMap } from '../../__tests__/testUtils';
+import { createEnemy } from '../../enemy';
+import { createItem } from '../../item';
 
 /** テスト用の AutoMapState を生成する */
 const createTestMapState = (width: number, height: number): AutoMapState => ({
@@ -201,9 +203,6 @@ describe('GameScreen 統合テスト', () => {
       const props = createMinimalProps();
       const { container } = render(<GameScreen {...props} />);
 
-      // HPバーのテキスト
-      const hpText = container.querySelector('[class*="HPBar"]') ??
-                     screen.queryByText(/HP/i);
       // HPバーコンポーネントが存在する
       expect(container.innerHTML).toContain('HP');
     });
@@ -223,7 +222,6 @@ describe('GameScreen 統合テスト', () => {
   describe('コンポーネント Props', () => {
     it('敵がいる場合もレンダリングできる', () => {
       const props = createMinimalProps();
-      const { createEnemy } = require('../../enemy');
       props.enemies = [createEnemy('patrol', 3, 3)];
 
       expect(() => {
@@ -233,7 +231,6 @@ describe('GameScreen 統合テスト', () => {
 
     it('アイテムがある場合もレンダリングできる', () => {
       const props = createMinimalProps();
-      const { createItem } = require('../../item');
       props.items = [createItem('health_small', 2, 2)];
 
       expect(() => {

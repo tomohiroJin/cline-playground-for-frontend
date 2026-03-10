@@ -12,7 +12,7 @@ import {
   getBossAuraConfig,
   getBossDeathEffectConfig,
 } from './bossEffects';
-import { EnemyType, Enemy, Direction, EnemyState } from '../../types';
+import { EnemyType, Enemy, EnemyState } from '../../types';
 
 /** テスト用ボス敵生成 */
 function createTestBoss(x: number, y: number, id = 'boss-1', type: Enemy['type'] = EnemyType.BOSS): Enemy {

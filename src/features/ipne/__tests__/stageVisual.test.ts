@@ -3,7 +3,7 @@
  *
  * ステージクリア報酬に応じたビジュアルエフェクトの設定と描画を検証する。
  */
-import { Direction, PlayerClass } from '../types';
+import { Direction } from '../types';
 import type { StageRewardHistory } from '../types';
 import {
   getActiveRewardEffects,

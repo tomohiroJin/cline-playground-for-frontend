@@ -27,8 +27,8 @@ const INVALID_SPRITE_COLOR = '#ff00ff';
 function resolvePaletteColor(
   palette: string[],
   colorIndex: number,
-  x: number,
-  y: number
+  _x: number,
+  _y: number
 ): string {
   const color = palette[colorIndex];
   if (typeof color === 'string' && color.length > 0) {

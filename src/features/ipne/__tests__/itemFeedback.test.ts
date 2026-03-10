@@ -7,7 +7,6 @@
 
 import {
   getItemPickupEffectConfig,
-  ItemPickupEffectConfig,
 } from '../presentation/effects/itemFeedback';
 import { ItemType } from '../types';
 

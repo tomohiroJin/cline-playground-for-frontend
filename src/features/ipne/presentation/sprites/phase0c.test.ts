@@ -184,8 +184,8 @@ describe('0C-4: 敵スプライトフレーム数強化', () => {
       sheets.forEach((sheet) => {
         sheet.sprites.forEach((sprite) => {
           const maxIndex = sprite.palette.length - 1;
-          sprite.pixels.forEach((row, y) => {
-            row.forEach((pixel, x) => {
+          sprite.pixels.forEach((row, _y) => {
+            row.forEach((pixel, _x) => {
               expect(pixel).toBeGreaterThanOrEqual(0);
               expect(pixel).toBeLessThanOrEqual(maxIndex);
             });
