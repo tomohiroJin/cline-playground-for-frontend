@@ -27,7 +27,7 @@ describe('AirHockeyPage', () => {
   it('renders the menu correctly', () => {
     render(<AirHockeyPage />);
     expect(screen.getByText('🏒 Air Hockey')).toBeInTheDocument();
-    expect(screen.getByText('START')).toBeInTheDocument();
+    expect(screen.getByText('フリー対戦')).toBeInTheDocument();
   });
 
   it('Size選択セクションが存在しない', () => {

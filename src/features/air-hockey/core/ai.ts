@@ -1,6 +1,7 @@
 import { CONSTANTS, GameConstants } from './constants';
 import { GameState, Difficulty, Vector } from './types';
 import { clamp, randomRange, distance } from '../../../utils/math-utils';
+import { AI_BEHAVIOR_PRESETS, AiBehaviorConfig } from './story-balance';
 
 /**
  * CpuAI.update の戻り値型
@@ -27,9 +28,12 @@ const predictWithWallBounce = (x: number, W: number): number => {
 };
 
 export const CpuAI = {
-  calculateTarget(
+  /**
+   * AiBehaviorConfig ベースのターゲット計算
+   */
+  calculateTargetWithBehavior(
     game: GameState,
-    difficulty: Difficulty,
+    config: AiBehaviorConfig,
     now: number,
     consts: GameConstants = CONSTANTS
   ): Vector {
@@ -37,47 +41,54 @@ export const CpuAI = {
     const { cpu, pucks, cpuTarget, cpuTargetTime } = game;
     const puck = pucks[0];
 
+    // 範囲外ならホームポジションに戻る
     if (cpu.x < 50 || cpu.x > W - 50) return { x: W / 2, y: 80 };
 
+    // パックが CPU 側に向かっている場合
     if (puck && puck.vy < 0 && puck.y < H / 2 + 50) {
-      if (difficulty === 'hard') {
-        // Hard: 高精度予測 + 壁バウンス予測
-        const predictionFactor = 12;
-        const predictedX = predictWithWallBounce(puck.x + puck.vx * predictionFactor, W);
-        return { x: predictedX, y: Math.min(puck.y - 10, H / 2 - 60) };
-      } else if (difficulty === 'normal') {
-        // Normal: 中程度の予測 + パックが近い時にアグレッシブ
-        const predictionFactor = 6;
-        const yDist = puck.y - cpu.y;
-        const aggressiveY = yDist < 100 ? Math.min(puck.y + 20, H / 2 - 60) : Math.min(puck.y - 10, H / 2 - 60);
-        return { x: puck.x + puck.vx * predictionFactor, y: aggressiveY };
-      } else {
-        // Easy: 低精度予測 + ウォブル
-        const predictionFactor = 1;
-        const wobble = randomRange(-30, 30);
-        return { x: puck.x + puck.vx * predictionFactor + wobble, y: Math.min(puck.y - 10, H / 2 - 60) };
+      let predictedX = puck.x + puck.vx * config.predictionFactor;
+
+      // 壁バウンス予測
+      if (config.wallBounce) {
+        predictedX = predictWithWallBounce(predictedX, W);
       }
+
+      // ウォブル（ブレ）
+      if (config.wobble > 0) {
+        predictedX += randomRange(-config.wobble, config.wobble);
+      }
+
+      // centerWeight: ターゲットを中央に寄せる
+      if (config.centerWeight > 0) {
+        predictedX = predictedX * (1 - config.centerWeight) + (W / 2) * config.centerWeight;
+      }
+
+      // アグレッシブ Y: 予測精度が高いほどパックに近づく
+      const yDist = puck.y - cpu.y;
+      const aggressiveY = yDist < 100 && config.predictionFactor >= 4
+        ? Math.min(puck.y + 20, H / 2 - 60)
+        : Math.min(puck.y - 10, H / 2 - 60);
+
+      return { x: predictedX, y: aggressiveY };
     }
 
-    // Hard: パックが来ていない時はゴール中央に戻る
-    if (difficulty === 'hard') {
+    // パックが来ていない時: 高精度 AI はゴール中央に戻る
+    if (config.predictionFactor >= 10) {
       return { x: W / 2, y: 60 };
     }
 
     if (!cpuTarget || now - cpuTargetTime > 2000) {
-      const target = { x: randomRange(80, W - 80), y: randomRange(50, 130) };
-      return target;
+      return { x: randomRange(80, W - 80), y: randomRange(50, 130) };
     }
     return game.cpuTarget!;
   },
 
   /**
-   * CPUの状態を更新（不変更新）
-   * @returns 更新された状態を含むPartial<GameState>、またはスキップ時はnull
+   * AiBehaviorConfig ベースの CPU 更新
    */
-  update(
+  updateWithBehavior(
     game: GameState,
-    difficulty: Difficulty,
+    config: AiBehaviorConfig,
     now: number,
     consts: GameConstants = CONSTANTS
   ): CpuUpdateResult | null {
@@ -87,7 +98,7 @@ export const CpuAI = {
 
     // ターゲット状態の同期ロジック
     if (!cpuTarget || now - cpuTargetTime > 2000) {
-      const target = this.calculateTarget(game, difficulty, now, consts);
+      const target = this.calculateTargetWithBehavior(game, config, now, consts);
       if (target !== cpuTarget) {
         cpuTarget = target;
         cpuTargetTime = now;
@@ -96,18 +107,14 @@ export const CpuAI = {
 
     let target = cpuTarget!;
     // インターセプトロジックの再検証
-    const immediateTarget = this.calculateTarget(game, difficulty, now, consts);
+    const immediateTarget = this.calculateTargetWithBehavior(game, config, now, consts);
     if (!cpuTarget || (immediateTarget.y !== cpuTarget.y && immediateTarget.x !== cpuTarget.x)) {
       target = immediateTarget;
     }
 
-    if (difficulty === 'easy') {
-      target = {
-        x: target.x * 0.3 + (W / 2) * 0.7,
-        y: target.y,
-      };
-      // Easy: スキップ率 5%
-      if (Math.random() < 0.05) return null;
+    // スキップ率
+    if (config.skipRate > 0 && Math.random() < config.skipRate) {
+      return null;
     }
 
     const clampedTargetX = clamp(target.x, 60, W - 60);
@@ -119,7 +126,7 @@ export const CpuAI = {
     let newVx: number;
     let newVy: number;
     if (dist > 3) {
-      const speed = Math.min(dist * 0.08, consts.CPU[difficulty]);
+      const speed = Math.min(dist * 0.08, config.maxSpeed);
       newVx = (dx / dist) * speed;
       newVy = (dy / dist) * speed;
     } else {
@@ -130,18 +137,16 @@ export const CpuAI = {
     let newX = clamp(game.cpu.x + newVx, 50, W - 50);
     let newY = clamp(game.cpu.y + newVy, 40, H / 2 - 40);
 
-    // スタック検出: 実際の移動量が極小なら停滞とみなす
+    // スタック検出
     const actualDx = newX - game.cpu.x;
     const actualDy = newY - game.cpu.y;
     const barelyMoved = Math.abs(actualDx) < 0.5 && Math.abs(actualDy) < 0.5;
 
     let cpuStuckTimer = game.cpuStuckTimer;
     if (barelyMoved) {
-      // スタック開始/継続
       if (cpuStuckTimer === 0) {
         cpuStuckTimer = now;
       } else if (now - cpuStuckTimer > 2000) {
-        // 2秒以上スタック → 中央にリセット
         newX = W / 2;
         newY = 80;
         cpuTarget = { x: W / 2, y: 80 };
@@ -158,5 +163,29 @@ export const CpuAI = {
       cpuTargetTime,
       cpuStuckTimer,
     };
+  },
+
+  /**
+   * Difficulty 文字列ベースのターゲット計算（後方互換）
+   */
+  calculateTarget(
+    game: GameState,
+    difficulty: Difficulty,
+    now: number,
+    consts: GameConstants = CONSTANTS
+  ): Vector {
+    return this.calculateTargetWithBehavior(game, AI_BEHAVIOR_PRESETS[difficulty], now, consts);
+  },
+
+  /**
+   * Difficulty 文字列ベースの CPU 更新（後方互換）
+   */
+  update(
+    game: GameState,
+    difficulty: Difficulty,
+    now: number,
+    consts: GameConstants = CONSTANTS
+  ): CpuUpdateResult | null {
+    return this.updateWithBehavior(game, AI_BEHAVIOR_PRESETS[difficulty], now, consts);
   },
 };

@@ -22,6 +22,7 @@ type TitleScreenProps = {
   setWinScore: (s: number) => void;
   highScore: number;
   onStart: () => void;
+  onStoryClick?: () => void;
   onShowAchievements?: () => void;
   onHelpClick?: () => void;
   onSettingsClick?: () => void;
@@ -38,6 +39,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
   setWinScore,
   highScore,
   onStart,
+  onStoryClick,
   onShowAchievements,
   onHelpClick,
   onSettingsClick,
@@ -100,7 +102,16 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
       </ButtonGroup>
     </OptionContainer>
 
-    <StartButton onClick={onStart}>START</StartButton>
+    <StartButton onClick={onStart}>フリー対戦</StartButton>
+
+    {onStoryClick && (
+      <StartButton
+        onClick={onStoryClick}
+        style={{ background: 'linear-gradient(135deg, #ff6b6b, #ee5a24)', marginTop: '10px' }}
+      >
+        ストーリー
+      </StartButton>
+    )}
 
     <div style={{ color: 'var(--accent-color)', fontWeight: 'bold', marginTop: '1rem' }}>
       Best Margin: {highScore > 0 ? '+' + highScore : highScore}

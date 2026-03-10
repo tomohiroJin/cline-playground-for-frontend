@@ -15,9 +15,13 @@ src/features/air-hockey/
     types.ts              # 型定義
     achievements.ts       # 実績システム（定義・判定・localStorage 管理）
     audio-settings.ts     # 音量設定（localStorage 管理）
+    characters.ts         # キャラクター定義（主人公・対戦相手・リアクション）
     daily-challenge.ts    # デイリーチャレンジ（シード生成・ルール・結果保存）
+    dialogue-data.ts      # ストーリーモード第1章ダイアログデータ
     difficulty-adjust.ts  # 難易度オートアジャスト（連勝/連敗判定）
     keyboard.ts           # キーボード操作（状態管理・移動計算）
+    story.ts              # ストーリー進行管理（保存・読込・リセット・解放判定）
+    story-balance.ts      # ステージ別バランス設定・AI 振る舞いプリセット
     unlock.ts             # フィールド/アイテムアンロック（条件・状態管理）
   hooks/
     useGameLoop.ts        # ゲームループ（フェーズ管理、物理更新、描画）
@@ -31,8 +35,12 @@ src/features/air-hockey/
     AchievementList.tsx    # 実績一覧モーダル
     DailyChallengeScreen.tsx # デイリーチャレンジ画面
     SettingsPanel.tsx      # 設定パネルモーダル（音量調整）
+    CharacterAvatar.tsx    # キャラクターアイコン表示（共通コンポーネント）
+    DialogueOverlay.tsx    # ダイアログオーバーレイ（ストーリーモード）
+    StageSelectScreen.tsx  # ステージ選択画面（ストーリーモード）
     Transition.tsx         # 画面トランジション
     Tutorial.tsx           # チュートリアルオーバーレイ
+    VsScreen.tsx           # VS 画面（ストーリーモード）
   AirHockeyGame.tsx       # メインゲームコンポーネント
   renderer.ts             # Canvas 描画（トレイル、グロー、パーティクル、フィーバー演出等）
   styles.ts               # スタイル定義（レスポンシブ対応）
@@ -59,7 +67,7 @@ src/pages/AirHockeyPage.tsx  # ページコンポーネント
 
 ## テスト
 
-176テスト（Phase 1〜4 合計）:
+355テスト（全フェーズ合計）:
 
 | テストファイル | 対象 |
 |--------------|------|
@@ -68,6 +76,17 @@ src/pages/AirHockeyPage.tsx  # ページコンポーネント
 | `core/phase3.test.ts` | 実績・音量設定・チュートリアル |
 | `core/phase4.test.ts` | キーボード操作・難易度調整・アンロック・デイリーチャレンジ |
 | `core/AI.test.ts` | AI ロジック |
+| `core/ai-configurable.test.ts` | AI 設定可能インターフェース |
 | `core/Physics.test.ts` | 物理演算 |
 | `core/entities.test.ts` | エンティティ |
 | `core/items.test.ts` | アイテムシステム |
+| `core/characters.test.ts` | キャラクターデータ整合性 |
+| `core/story.test.ts` | ストーリー進行ロジック |
+| `core/dialogue-data.test.ts` | ダイアログデータ整合性 |
+| `core/story-mode.test.ts` | ストーリーモード統合テスト |
+| `core/story-balance.test.ts` | バランス設定テスト |
+| `core/integration.test.ts` | クロスモジュール統合テスト |
+| `core/visual-effects.test.ts` | ヒットストップ・スローモーション |
+| `components/StageSelectScreen.test.tsx` | ステージ選択画面 |
+| `components/DialogueOverlay.test.tsx` | ダイアログオーバーレイ |
+| `components/VsScreen.test.tsx` | VS 画面 |

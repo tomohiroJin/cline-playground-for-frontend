@@ -12,12 +12,31 @@ import {
   ObstacleState,
   Particle,
   ComboState,
+  HitStopState,
 } from './core/types';
 import { magnitude } from '../../utils/math-utils';
 
 // パック速度の閾値定数
 const SPEED_NORMAL = 6;
 const SPEED_FAST = 10;
+
+// HEX カラーを RGB 成分に分解する
+const parseHex = (hex: string): [number, number, number] => {
+  const num = parseInt(hex.replace('#', ''), 16);
+  return [(num >> 16) & 0xff, (num >> 8) & 0xff, num & 0xff];
+};
+
+// 色を明るくする
+export const lightenColor = (hex: string, amount: number): string => {
+  const [r, g, b] = parseHex(hex);
+  return `rgb(${Math.min(255, r + amount)}, ${Math.min(255, g + amount)}, ${Math.min(255, b + amount)})`;
+};
+
+// 色を暗くする
+export const darkenColor = (hex: string, amount: number): string => {
+  const [r, g, b] = parseHex(hex);
+  return `rgb(${Math.max(0, r - amount)}, ${Math.max(0, g - amount)}, ${Math.max(0, b - amount)})`;
+};
 
 // 速度に応じたパックの色を取得
 const getPuckColorBySpeed = (speed: number): string => {
@@ -49,38 +68,95 @@ export const Renderer = {
     }
     ctx.fillRect(0, 0, W, H);
   },
-  // フィールドラインネオン強化
+  // フィールドラインネオン強化（US-1.1: 台の質感向上）
   drawField(ctx: CanvasRenderingContext2D, field: FieldConfig, consts: GameConstants = CONSTANTS, obstacleStates: ObstacleState[] = [], now = 0) {
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
+
+    // P1-02: 外枠（木目風グラデーション + 多重線）
+    const frameGrad = ctx.createLinearGradient(0, 0, W, H);
+    frameGrad.addColorStop(0, '#2a1810');
+    frameGrad.addColorStop(0.5, '#3d2518');
+    frameGrad.addColorStop(1, '#1a0e08');
+    ctx.strokeStyle = frameGrad;
+    ctx.lineWidth = 12;
+    ctx.strokeRect(6, 6, W - 12, H - 12);
+
+    // 内枠（光沢ハイライト）
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(12, 12, W - 24, H - 24);
+
+    // フィールドカラーのネオン枠線
     ctx.strokeStyle = field.color;
-    ctx.lineWidth = 5;
-    ctx.shadowColor = field.color;
-    ctx.shadowBlur = 20;
-    ctx.strokeRect(5, 5, W - 10, H - 10);
-    ctx.shadowBlur = 0;
-    ctx.strokeStyle = field.color + '55';
-    ctx.setLineDash([8, 8]);
-    ctx.beginPath();
-    ctx.moveTo(10, H / 2);
-    ctx.lineTo(W - 10, H / 2);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    // 中央円にもネオン効果
+    ctx.lineWidth = 2;
     ctx.shadowColor = field.color;
     ctx.shadowBlur = 15;
+    ctx.strokeRect(12, 12, W - 24, H - 24);
+    ctx.shadowBlur = 0;
+
+    // P1-03: フィールド面の照明効果（放射グラデーション）
+    const lightGrad = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, H * 0.6);
+    lightGrad.addColorStop(0, 'rgba(255, 255, 255, 0.04)');
+    lightGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.015)');
+    lightGrad.addColorStop(1, 'rgba(0, 0, 0, 0.1)');
+    ctx.fillStyle = lightGrad;
+    ctx.fillRect(12, 12, W - 24, H - 24);
+
+    // P1-04: 中央ライン（二重線 + 装飾）
+    ctx.strokeStyle = field.color + '33';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(15, H / 2);
+    ctx.lineTo(W - 15, H / 2);
+    ctx.stroke();
+
+    ctx.strokeStyle = field.color + '66';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(15, H / 2 - 3);
+    ctx.lineTo(W - 15, H / 2 - 3);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(15, H / 2 + 3);
+    ctx.lineTo(W - 15, H / 2 + 3);
+    ctx.stroke();
+
+    // 中央円（装飾 + ネオングロー）
+    ctx.shadowColor = field.color;
+    ctx.shadowBlur = 15;
+    ctx.strokeStyle = field.color + '55';
+    ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(W / 2, H / 2, 60, 0, Math.PI * 2);
     ctx.stroke();
+    // 内側の小円
+    ctx.beginPath();
+    ctx.arc(W / 2, H / 2, 8, 0, Math.PI * 2);
+    ctx.fillStyle = field.color + '44';
+    ctx.fill();
     ctx.shadowBlur = 0;
+
+    // P1-05: ゴールエリア（LED風発光）
     const gs = field.goalSize;
-    ctx.shadowBlur = 15;
-    ctx.shadowColor = '#ff0000';
-    ctx.fillStyle = '#ff3333';
-    ctx.fillRect(W / 2 - gs / 2, 0, gs, 8);
-    ctx.shadowColor = '#00ffff';
-    ctx.fillStyle = '#33ffff';
-    ctx.fillRect(W / 2 - gs / 2, H - 8, gs, 8);
-    ctx.shadowBlur = 0;
+    const drawGoalLED = (y: number, color: string, glowColor: string) => {
+      const gx = W / 2 - gs / 2;
+      ctx.shadowColor = glowColor;
+      ctx.shadowBlur = 25;
+      ctx.fillStyle = color;
+      ctx.fillRect(gx, y, gs, 6);
+      // LED 粒感ドット
+      ctx.shadowBlur = 0;
+      const dotCount = Math.floor(gs / 12);
+      for (let i = 0; i < dotCount; i++) {
+        const dx = gx + 6 + i * 12;
+        ctx.beginPath();
+        ctx.arc(dx, y + 3, 2, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.fill();
+      }
+    };
+    drawGoalLED(0, '#ff3333', '#ff0000');
+    drawGoalLED(H - 6, '#33ffff', '#00ffff');
     field.obstacles.forEach((ob: Obstacle, i: number) => {
       const obState = obstacleStates[i];
 
@@ -166,20 +242,77 @@ export const Renderer = {
       ctx.stroke();
     }
   },
-  // マレットグロー強化（サイズスケール対応）
+  // マレット立体感描画（US-1.2: 平たい円盤＋中央グリップ）
   drawMallet(ctx: CanvasRenderingContext2D, mallet: Mallet, color: string, hasGlow: boolean, consts: GameConstants = CONSTANTS, sizeScale = 1) {
-    const { MALLET: MR } = consts.SIZES;
-    const drawRadius = MR * sizeScale;
-    // 常時弱いグロー
+    const r = consts.SIZES.MALLET * sizeScale;
+    const { x, y } = mallet;
+
+    // 1. ドロップシャドウ（円盤は平たいので円形に近い影）
+    ctx.beginPath();
+    ctx.arc(x + 1, y + 3, r * 0.95, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+    ctx.fill();
+
+    // 2. 本体ディスク（外縁だけ暗くなるフラットなグラデーション）
+    const diskGrad = ctx.createRadialGradient(x, y, 0, x, y, r);
+    diskGrad.addColorStop(0, lightenColor(color, 20));
+    diskGrad.addColorStop(0.75, color);
+    diskGrad.addColorStop(0.92, darkenColor(color, 30));
+    diskGrad.addColorStop(1, darkenColor(color, 60));
+
     ctx.shadowColor = color;
     ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = diskGrad;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // 3. 外周リング（白い縁 = マレットの厚み感）
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // 4. 外周の暗いエッジ（側面の影）
+    ctx.beginPath();
+    ctx.arc(x, y, r + 1, 0, Math.PI * 2);
+    ctx.strokeStyle = darkenColor(color, 50);
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // 5. 上面のハイライト（広い弧で平面感を表現）
+    ctx.beginPath();
+    ctx.arc(x, y - r * 0.15, r * 0.6, Math.PI * 1.15, Math.PI * 1.85);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    // 6. 中央グリップ（ノブ）
+    const gripR = r * 0.38;
+    const gripGrad = ctx.createRadialGradient(x, y, 0, x, y, gripR);
+    gripGrad.addColorStop(0, '#ffffff');
+    gripGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.8)');
+    gripGrad.addColorStop(1, 'rgba(255, 255, 255, 0.25)');
+    ctx.beginPath();
+    ctx.arc(x, y, gripR, 0, Math.PI * 2);
+    ctx.fillStyle = gripGrad;
+    ctx.fill();
+    // グリップの縁
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // 7. グロー（速度エフェクト時）
     if (hasGlow) {
       ctx.shadowColor = '#ff00ff';
       ctx.shadowBlur = 25;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255, 0, 255, 0.4)';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
     }
-    this.drawCircle(ctx, mallet.x, mallet.y, drawRadius, color, '#fff', 3);
-    ctx.shadowBlur = 0;
-    this.drawCircle(ctx, mallet.x, mallet.y, 8, '#fff');
   },
   // パックトレイル（速度対応）
   drawPuckTrail(ctx: CanvasRenderingContext2D, puck: Puck, consts: GameConstants = CONSTANTS) {
@@ -231,24 +364,56 @@ export const Renderer = {
     }
     ctx.restore();
   },
+  // パック金属質感描画（US-1.3）
   drawPuck(ctx: CanvasRenderingContext2D, puck: Puck, consts: GameConstants = CONSTANTS) {
-    const { PUCK: BR } = consts.SIZES;
     if (!puck.visible) return;
-
+    const r = consts.SIZES.PUCK;
     const speed = magnitude(puck.vx, puck.vy);
-    const puckColor = getPuckColorBySpeed(speed);
+    const color = getPuckColorBySpeed(speed);
 
     this.drawPuckTrail(ctx, puck, consts);
     this.drawSpeedLines(ctx, puck);
 
-    // 高速時のグロー効果
+    // 1. ドロップシャドウ
+    ctx.beginPath();
+    ctx.ellipse(puck.x + 1, puck.y + 2, r * 0.85, r * 0.5, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+    ctx.fill();
+
+    // 2. 本体（メタリックグラデーション）
+    const baseColor = color === '#ffffff' ? '#cccccc' : color;
+    const darkBaseColor = color === '#ffffff' ? '#999999' : color;
+    const metalGrad = ctx.createRadialGradient(
+      puck.x - r * 0.2, puck.y - r * 0.2, r * 0.05,
+      puck.x, puck.y, r
+    );
+    metalGrad.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+    metalGrad.addColorStop(0.3, color);
+    metalGrad.addColorStop(0.8, darkenColor(baseColor, 30));
+    metalGrad.addColorStop(1, darkenColor(darkBaseColor, 60));
+
+    // 速度グロー
     if (speed > SPEED_NORMAL) {
-      ctx.shadowColor = puckColor;
-      ctx.shadowBlur = speed > SPEED_FAST ? 20 : 10;
+      ctx.shadowColor = color;
+      ctx.shadowBlur = speed > SPEED_FAST ? 25 : 12;
     }
 
-    this.drawCircle(ctx, puck.x, puck.y, BR, puckColor, '#888', 2);
+    ctx.beginPath();
+    ctx.arc(puck.x, puck.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = metalGrad;
+    ctx.fill();
     ctx.shadowBlur = 0;
+
+    // 3. エッジリング
+    ctx.strokeStyle = 'rgba(200, 200, 200, 0.3)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // 4. ハイライト
+    ctx.beginPath();
+    ctx.arc(puck.x - r * 0.25, puck.y - r * 0.25, r * 0.15, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.fill();
   },
   drawItem(ctx: CanvasRenderingContext2D, item: Item, now: number, consts: GameConstants = CONSTANTS) {
     const { ITEM: IR } = consts.SIZES;
@@ -540,6 +705,85 @@ export const Renderer = {
     ctx.stroke();
     ctx.restore();
   },
+  // 衝撃波描画（US-1.4: ヒットストップ演出）
+  drawShockwave(ctx: CanvasRenderingContext2D, hitStop: HitStopState) {
+    if (!hitStop.active) return;
+    const { impactX, impactY, shockwaveRadius, shockwaveMaxRadius } = hitStop;
+    const alpha = 1 - shockwaveRadius / shockwaveMaxRadius;
+
+    ctx.beginPath();
+    ctx.arc(impactX, impactY, shockwaveRadius, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.7})`;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // 内側の薄い円
+    ctx.beginPath();
+    ctx.arc(impactX, impactY, shockwaveRadius * 0.6, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(255, 200, 100, ${alpha * 0.4})`;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  },
+
+  // ビネット効果描画（US-1.5: ゴールスローモーション演出）
+  drawVignette(ctx: CanvasRenderingContext2D, consts: GameConstants = CONSTANTS, intensity = 0.5) {
+    const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
+    const grad = ctx.createRadialGradient(W / 2, H / 2, W * 0.3, W / 2, H / 2, W * 0.8);
+    grad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    grad.addColorStop(1, `rgba(0, 0, 0, ${intensity})`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+  },
+
+  // リアクション吹き出し描画（US-2.1: ゴール時のキャラクターリアクション）
+  drawReaction(
+    ctx: CanvasRenderingContext2D,
+    text: string,
+    side: 'player' | 'cpu',
+    consts: GameConstants = CONSTANTS,
+    elapsed: number
+  ) {
+    const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
+    // 1.5秒かけてフェードアウト
+    const REACTION_DURATION = 1500;
+    const alpha = Math.max(0, 1 - elapsed / REACTION_DURATION);
+    if (alpha <= 0) return;
+
+    const x = W * 0.7;
+    const y = side === 'cpu' ? H * 0.15 : H * 0.85;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // 吹き出し背景のサイズ計算
+    const metrics = ctx.measureText(text);
+    const padding = 12;
+    const bw = metrics.width + padding * 2;
+    const bh = 32;
+    const rx = x - bw / 2;
+    const ry = y - bh / 2;
+
+    // 角丸背景
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.beginPath();
+    ctx.roundRect(rx, ry, bw, bh, 8);
+    ctx.fill();
+
+    // 枠線
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // テキスト
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(text, x, y);
+
+    ctx.restore();
+  },
+
   // 試合統計をリザルト画面用にフォーマット
   formatStats(stats: { playerHits: number; cpuHits: number; maxPuckSpeed: number; playerSaves: number; cpuSaves: number; matchDuration: number }) {
     const minutes = Math.floor(stats.matchDuration / 60000);
