@@ -12,6 +12,8 @@
     "lint:ci": "eslint src --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "test:scripts": "jest --config scripts/jest.config.js",
+    "test:e2e": "npx playwright test",
+    "test:e2e:ui": "npx playwright test --ui",
     "ci": "npm run lint:ci && npm run typecheck && npm test && npm run build"
   },
   "devDependencies": {
@@ -19,6 +21,7 @@
     "@babel/preset-env": "^7.26.9",
     "@babel/preset-react": "^7.26.3",
     "@babel/preset-typescript": "^7.26.0",
+    "@playwright/test": "^1.58.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
