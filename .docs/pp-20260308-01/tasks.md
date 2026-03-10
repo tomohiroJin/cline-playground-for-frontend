@@ -537,3 +537,23 @@
 - [ ] セーブデータの後方互換性が維持されている
 - [ ] 外部からの import パスに変更がない（barrel re-export で吸収）
 - [ ] ゲームプレイの振る舞いに変更がない
+
+---
+
+## P6 リグレッション修正: ダメージポップアップ重複バグ ✅ 完了
+
+### 原因
+
+P6 で BattleScreen.tsx から `useHitFlash` フックを抽出した際、`triggerHit` 関数が `useCallback` でラップされていなかった。
+ESLint `react-hooks/exhaustive-deps` 準拠のため依存配列に `triggerHit` を追加していたが、毎レンダリングで新しい参照が生成されるため useEffect が毎レンダリングで再実行され、同じ tickEvents に対してポップアップが重複生成されていた。
+
+### 症状
+
+- 大量のダメージ数値が表示される（同じイベントが複数回処理される）
+- 高速で表示される（毎レンダリングで再発火）
+- 表示位置が不安定（重複ポップアップのランダム位置が毎回異なる）
+
+### 修正内容
+
+- `BattleScreen.tsx` の import に `useCallback` を追加
+- `useHitFlash` 内の `triggerHit` を `useCallback(() => { ... }, [])` でラップし、参照を安定化

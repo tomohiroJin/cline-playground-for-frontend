@@ -2,7 +2,7 @@
  * 原始進化録 - PRIMAL PATH - バトル画面
  * サブコンポーネントを統合するオーケストレータ
  */
-import React, { useRef, useEffect, useState, useMemo } from 'react';
+import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import type { RunState, BiomeId, SfxType, TickEvent, ASkillId } from '../types';
 import type { GameAction } from '../hooks';
 import { BIO, A_SKILLS, TB_SUMMARY } from '../constants';
@@ -44,14 +44,14 @@ const useHitFlash = () => {
     };
   }, []);
 
-  const triggerHit = () => {
+  const triggerHit = useCallback(() => {
     setIsHit(true);
     const tid = setTimeout(() => {
       timersRef.current.delete(tid);
       setIsHit(false);
     }, 400);
     timersRef.current.add(tid);
-  };
+  }, []);
 
   return { isHit, triggerHit };
 };
