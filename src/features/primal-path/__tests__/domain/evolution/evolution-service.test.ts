@@ -3,7 +3,7 @@
  */
 import { rollE, applyEvo, simEvo } from '../../../domain/evolution/evolution-service';
 import { RunStateBuilder } from '../../helpers/run-state-builder';
-import { EVOS, ALT } from '../../../constants';
+import { EVOS } from '../../../constants';
 
 describe('domain/evolution/evolution-service', () => {
   describe('simEvo', () => {

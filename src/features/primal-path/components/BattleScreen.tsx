@@ -37,9 +37,10 @@ const useHitFlash = () => {
   const timersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
 
   useEffect(() => {
+    const timers = timersRef.current;
     return () => {
-      timersRef.current.forEach(clearTimeout);
-      timersRef.current.clear();
+      timers.forEach(clearTimeout);
+      timers.clear();
     };
   }, []);
 
@@ -107,7 +108,7 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
       if (ev.type === 'shake_enemy') hasShake = true;
     }
     if (hasShake) triggerHit();
-  }, [run.turn, tickEvents]);
+  }, [run.turn, tickEvents, addPopup, triggerHit]);
 
   // シナジー計算
   const activeSynergies = useMemo(() => calcSynergies(run.evs), [run.evs]);

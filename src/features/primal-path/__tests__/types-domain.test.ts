@@ -14,7 +14,6 @@ import type {
   ChallengeState,
   EndlessState,
 } from '../types/index';
-import type { RunState } from '../types';
 import { makeRun } from './test-helpers';
 
 describe('ドメインモデルの型分割', () => {

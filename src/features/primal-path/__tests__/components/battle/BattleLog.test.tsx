@@ -31,7 +31,7 @@ describe('BattleLog', () => {
     }));
 
     // Act
-    const { container } = render(<BattleLog log={log} />);
+    render(<BattleLog log={log} />);
 
     // Assert: 最新40件 = ログ10〜ログ49
     expect(screen.queryByText('ログ9')).not.toBeInTheDocument();

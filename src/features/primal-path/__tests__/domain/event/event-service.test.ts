@@ -6,7 +6,7 @@ import {
   formatEventResult, computeEventResult,
 } from '../../../domain/event/event-service';
 import { makeRun } from '../../test-helpers';
-import type { EventChoice, EventEffect } from '../../../types';
+import type { EventChoice } from '../../../types';
 
 describe('domain/event/event-service', () => {
   describe('rollEvent', () => {

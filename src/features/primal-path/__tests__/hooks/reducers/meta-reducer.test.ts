@@ -3,7 +3,7 @@
  */
 import { metaReducer } from '../../../hooks/reducers/meta-reducer';
 import { makeRun, makeGameState, makeSave } from '../../test-helpers';
-import { FRESH_SAVE, TREE as TREE_DATA } from '../../../constants';
+import { TREE as TREE_DATA } from '../../../constants';
 import { calcBoneReward } from '../../../game-logic';
 
 describe('metaReducer', () => {

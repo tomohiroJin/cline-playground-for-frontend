@@ -6,11 +6,10 @@
 import type { RunState, Enemy, TickResult, TickEvent } from '../../types';
 import type { SynergyBonusResult } from '../evolution/synergy-service';
 import { ENV_DMG } from '../../constants';
-import { calcEnvDmg, calcPlayerAtk, aliveAllies, effATK, biomeBonus, RIT_LOW_HP_RATIO } from './combat-calculator';
+import { calcEnvDmg, calcPlayerAtk, aliveAllies, RIT_LOW_HP_RATIO } from './combat-calculator';
 import { calcSynergies, applySynergyBonuses } from '../evolution/synergy-service';
 import { tickBuffs } from '../skill/skill-service';
 import { deepCloneRun } from '../shared/utils';
-import { civLvs } from '../shared/civ-utils';
 import { requireValidPlayer } from '../../contracts/player-contracts';
 import { ensureTickResult } from '../../contracts/tick-postconditions';
 

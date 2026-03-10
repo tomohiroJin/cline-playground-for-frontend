@@ -5,8 +5,7 @@
  * ドメイン別のサブステートを個別に設定でき、可読性の高いテストデータ構築を実現する。
  */
 import { RunStateBuilder } from './run-state-builder';
-import { DIFFS, TB_DEFAULTS } from '../../constants';
-import type { RunState } from '../../types';
+import { DIFFS } from '../../constants';
 import type { Enemy } from '../../types/units';
 
 /** テスト用の敵モック */

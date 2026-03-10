@@ -3,10 +3,8 @@
  */
 import { battleReducer } from '../../../hooks/reducers/battle-reducer';
 import { makeRun, makeGameState, makeSave } from '../../test-helpers';
-import { DIFFS, EVOS, SPEED_OPTS, BOSS } from '../../../constants';
+import { DIFFS, BOSS } from '../../../constants';
 import { scaleEnemy } from '../../../game-logic';
-import type { GameState } from '../../../types';
-import type { BattleAction } from '../../../hooks/actions';
 
 describe('battleReducer', () => {
   describe('BATTLE_TICK', () => {

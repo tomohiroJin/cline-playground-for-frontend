@@ -10,7 +10,6 @@ import { CIV_TYPES, CIV_KEYS, EVOS, ALT } from '../../constants';
 import { applyStatFx, getSnap, writeSnapToRun, deepCloneRun } from '../shared/utils';
 import { civLv } from '../shared/civ-utils';
 import { deadAllies } from '../battle/combat-calculator';
-import { effATK } from '../battle/combat-calculator';
 import { requireValidEvolution } from '../../contracts/evolution-contracts';
 
 /** 進化適用のプレビュー（ステータス確認用） */

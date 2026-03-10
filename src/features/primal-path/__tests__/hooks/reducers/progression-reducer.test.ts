@@ -3,7 +3,7 @@
  */
 import { progressionReducer } from '../../../hooks/reducers/progression-reducer';
 import { makeRun, makeGameState, makeSave } from '../../test-helpers';
-import { DIFFS, FRESH_SAVE, LOOP_SCALE_FACTOR } from '../../../constants';
+import { DIFFS, LOOP_SCALE_FACTOR } from '../../../constants';
 
 describe('progressionReducer', () => {
   describe('START_RUN', () => {

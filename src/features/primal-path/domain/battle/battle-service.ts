@@ -4,7 +4,7 @@
  * バトルの開始・終了処理を担当する。
  */
 import type { RunState, BiomeId } from '../../types';
-import { ENM, BOSS, WAVES_PER_BIOME } from '../../constants';
+import { ENM, BOSS } from '../../constants';
 import { scaleEnemy } from './combat-calculator';
 import { decSkillCds } from '../skill/skill-service';
 import { calcEndlessScaleWithAM } from '../progression/biome-service';
