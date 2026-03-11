@@ -88,41 +88,46 @@ P1-09（テスト・動作確認）
 
 ### P1-02: 画像アセット生成
 
-**目的**: D-04 スタイルガイドに基づいて全画像アセットを生成・配置
+**目的**: D-04 スタイルガイドと画像生成ガイドに基づいて全画像アセットを生成・配置
+
+> **重要**: 画像生成は別途手動で実施する。詳細なプロンプトと手順は `image-generation-guide.md` を参照。
+
+**生成ツールの制約**:
+- Google Nanobanana2 は透過背景を生成できない
+- キャラクター画像はグリーンバック（#00FF00）で生成し、後処理で透過変換する
+- 緑色の服のキャラ（ユウ、ソウタ）はブルーバック（#0000FF）で生成する
+- 背景・カットインは透過不要のためそのまま生成
 
 **作業内容**:
 1. ディレクトリ構造の作成
    ```
    public/assets/
-   ├── portraits/          # 立ち絵（512x1024 PNG）
-   │   ├── akira-normal.png
-   │   ├── akira-happy.png
-   │   ├── hiro-normal.png
-   │   ├── hiro-happy.png
-   │   ├── misaki-normal.png
-   │   ├── misaki-happy.png
-   │   ├── takuma-normal.png
-   │   ├── takuma-happy.png
-   │   ├── rookie-normal.png
-   │   ├── rookie-happy.png
-   │   ├── regular-normal.png
-   │   ├── regular-happy.png
-   │   ├── ace-normal.png
-   │   ├── ace-happy.png
-   │   ├── yuu-normal.png
-   │   └── yuu-happy.png
-   ├── backgrounds/        # 背景（450x900 WebP）
+   ├── characters/          # 既存アイコン + ユウ追加
+   │   └── yuu.png          # ★新規（128x128、ブルーバック→透過変換）
+   ├── portraits/           # 立ち絵（512x1024 PNG、クロマキー→透過変換）
+   │   ├── akira-normal.png, akira-happy.png
+   │   ├── hiro-normal.png, hiro-happy.png
+   │   ├── misaki-normal.png, misaki-happy.png
+   │   ├── takuma-normal.png, takuma-happy.png
+   │   ├── yuu-normal.png, yuu-happy.png       # ブルーバック
+   │   ├── rookie-normal.png, rookie-happy.png  # ブルーバック
+   │   ├── regular-normal.png, regular-happy.png
+   │   └── ace-normal.png, ace-happy.png
+   ├── vs/                  # VS用（256x512 PNG、立ち絵からトリミング）
+   ├── backgrounds/         # 背景（450x900 WebP、透過不要）
    │   ├── bg-clubroom.webp
    │   ├── bg-gym.webp
    │   └── bg-school-gate.webp
-   └── cutins/             # カットイン（450x400 PNG）
+   └── cutins/              # カットイン（450x400 PNG、透過不要）
        └── victory-ch1.png
    ```
-2. D-04 のプロンプトを使用して画像生成
-3. 生成画像の品質チェック（スタイル統一性・解像度・透過処理）
+2. `image-generation-guide.md` のプロンプトを使用して画像生成（手動作業）
+3. 後処理: グリーンバック/ブルーバック除去 → 透過PNG変換（ImageMagick 等）
+4. VS画面用画像: 透過済み立ち絵からトリミング+リサイズ（7枚）
+5. 生成画像の品質チェック（スタイル統一性・解像度・透過品質）
 
-**成果物**: 20枚の画像アセット
-**完了条件**: 全画像が正しいサイズ・フォーマットで配置済み
+**成果物**: 生成21枚 + 後処理7枚 = 合計28枚の画像アセット
+**完了条件**: 全画像が正しいサイズ・フォーマット・透過状態で配置済み
 
 ### P1-03: 画像プリロード基盤
 
@@ -161,9 +166,11 @@ type Dialogue = {
   characterId: string;
   text: string;
   expression?: 'normal' | 'happy';  // 表情指定（省略時 normal）
-  background?: string;               // 背景切り替え（省略時は前の背景を維持）
 };
 ```
+
+> **注意**: 背景画像は `StageDefinition.backgroundId` でステージ単位で管理する。
+> ダイアログ単位での背景切り替えは Phase 1 のスコープ外。
 
 **成果物**: 改修された `DialogueOverlay.tsx`
 **完了条件**: 背景・立ち絵・表情が正しく切り替わること

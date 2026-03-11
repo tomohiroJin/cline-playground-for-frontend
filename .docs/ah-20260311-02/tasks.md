@@ -49,43 +49,68 @@
 
 ## P1-02: 画像アセット生成
 
+> **プロンプト・手順の詳細**: `image-generation-guide.md` を参照
+> **生成ツール**: Google Nanobanana2（透過背景非対応 → クロマキー方式で対応）
+
 ### ディレクトリ作成
 - [ ] `public/assets/portraits/` ディレクトリ作成
+- [ ] `public/assets/vs/` ディレクトリ作成
 - [ ] `public/assets/backgrounds/` ディレクトリ作成
 - [ ] `public/assets/cutins/` ディレクトリ作成
 
-### 立ち絵の生成（16枚）
-- [ ] `akira-normal.png` — 512x1024, PNG透過
-- [ ] `akira-happy.png` — 512x1024, PNG透過
-- [ ] `hiro-normal.png` — 512x1024, PNG透過
-- [ ] `hiro-happy.png` — 512x1024, PNG透過
-- [ ] `misaki-normal.png` — 512x1024, PNG透過
-- [ ] `misaki-happy.png` — 512x1024, PNG透過
-- [ ] `takuma-normal.png` — 512x1024, PNG透過
-- [ ] `takuma-happy.png` — 512x1024, PNG透過
-- [ ] `yuu-normal.png` — 512x1024, PNG透過
-- [ ] `yuu-happy.png` — 512x1024, PNG透過
-- [ ] `rookie-normal.png` — 512x1024, PNG透過
-- [ ] `rookie-happy.png` — 512x1024, PNG透過
-- [ ] `regular-normal.png` — 512x1024, PNG透過
-- [ ] `regular-happy.png` — 512x1024, PNG透過
-- [ ] `ace-normal.png` — 512x1024, PNG透過
-- [ ] `ace-happy.png` — 512x1024, PNG透過
+### Step 1: 立ち絵の生成（16枚、クロマキー背景付き）
+- [ ] `akira-normal.png` — 512x1024, グリーンバック
+- [ ] `akira-happy.png` — 512x1024, グリーンバック
+- [ ] `hiro-normal.png` — 512x1024, グリーンバック
+- [ ] `hiro-happy.png` — 512x1024, グリーンバック
+- [ ] `misaki-normal.png` — 512x1024, グリーンバック
+- [ ] `misaki-happy.png` — 512x1024, グリーンバック
+- [ ] `takuma-normal.png` — 512x1024, グリーンバック
+- [ ] `takuma-happy.png` — 512x1024, グリーンバック
+- [ ] `yuu-normal.png` — 512x1024, **ブルーバック**（服が緑のため）
+- [ ] `yuu-happy.png` — 512x1024, **ブルーバック**
+- [ ] `rookie-normal.png` — 512x1024, **ブルーバック**（服が緑のため）
+- [ ] `rookie-happy.png` — 512x1024, **ブルーバック**
+- [ ] `regular-normal.png` — 512x1024, グリーンバック
+- [ ] `regular-happy.png` — 512x1024, グリーンバック
+- [ ] `ace-normal.png` — 512x1024, グリーンバック
+- [ ] `ace-happy.png` — 512x1024, グリーンバック
 
-### 背景の生成（3枚）
+### Step 2: 背景の生成（3枚、透過不要）
 - [ ] `bg-clubroom.webp` — 450x900, WebP
 - [ ] `bg-gym.webp` — 450x900, WebP
 - [ ] `bg-school-gate.webp` — 450x900, WebP
 
-### 勝利カットインの生成（1枚）
+### Step 3: 勝利カットインの生成（1枚、透過不要）
 - [ ] `victory-ch1.png` — 450x400, PNG
+
+### Step 4: ユウのアイコン生成（1枚）
+- [ ] `yuu.png` — 128x128, **ブルーバック** → `public/assets/characters/yuu.png`
+
+### Step 5: 後処理 — クロマキー背景除去
+- [ ] グリーンバック立ち絵 12枚の透過変換（ImageMagick: `convert -fuzz 20% -transparent "#00FF00"`）
+- [ ] ブルーバック立ち絵 4枚の透過変換（ImageMagick: `convert -fuzz 20% -transparent "#0000FF"`）
+- [ ] ユウアイコンのブルーバック除去
+- [ ] フリンジ（にじみ）のチェックと修正
+- [ ] キャラの緑/青の要素が誤って透過されていないことを確認
+
+### Step 6: VS画面用画像のトリミング（7枚）
+- [ ] `akira-vs.png` — 透過済み akira-normal.png の上半身 → 256x512
+- [ ] `hiro-vs.png` — 透過済み hiro-normal.png の上半身 → 256x512
+- [ ] `misaki-vs.png` — 透過済み misaki-normal.png の上半身 → 256x512
+- [ ] `takuma-vs.png` — 透過済み takuma-normal.png の上半身 → 256x512
+- [ ] `rookie-vs.png` — 透過済み rookie-normal.png の上半身 → 256x512
+- [ ] `regular-vs.png` — 透過済み regular-normal.png の上半身 → 256x512
+- [ ] `ace-vs.png` — 透過済み ace-normal.png の上半身 → 256x512
 
 ### 品質チェック
 - [ ] 全画像のサイズ・フォーマットが仕様通り
-- [ ] 立ち絵の背景が正しく透過されている
+- [ ] 立ち絵の背景が正しく透過されている（白背景・黒背景の両方で確認）
+- [ ] 緑/青のフリンジが残っていない
 - [ ] キャラクター間でアートスタイルが統一されている
 - [ ] 立ち絵と既存アイコンの整合性（髪型・配色が一致）
-- [ ] ユウ（yuu）の 128px アイコンも生成（`public/assets/characters/yuu.png`）
+- [ ] normal と happy の表情の違いが明確
+- [ ] 全画像が所定のディレクトリに配置されている
 
 ---
 

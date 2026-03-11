@@ -10,7 +10,7 @@ Phase 1 では、ストーリーモードのビジュアル演出を強化する
 | ID | 成果物 | 種類 | 配置先 |
 |----|--------|------|--------|
 | S-01 | データ層拡張 | コード変更 | `core/types.ts`, `core/characters.ts`, `core/dialogue-data.ts` |
-| S-02 | 画像アセット | 画像ファイル | `public/assets/portraits/`, `backgrounds/`, `cutins/` |
+| S-02 | 画像アセット | 画像ファイル | `public/assets/characters/`, `portraits/`, `vs/`, `backgrounds/`, `cutins/` |
 | S-03 | 画像プリローダー | 新規フック | `hooks/useImagePreloader.ts` |
 | S-04 | DialogueOverlay 改修 | コード変更 | `components/DialogueOverlay.tsx` |
 | S-05 | VsScreen 演出強化 | コード変更 | `components/VsScreen.tsx` |
@@ -172,12 +172,27 @@ yuu: {
 
 ## S-02: 画像アセット仕様
 
+> **詳細なプロンプト・後処理手順**: `image-generation-guide.md` を参照
+>
+> **生成ツール制約**: Nanobanana2 は透過背景を生成できないため、クロマキー方式で対応
+
+### 生成方式
+
+| 画像種別 | 背景方式 | 後処理 |
+|---------|---------|--------|
+| 立ち絵（緑服以外） | グリーンバック (#00FF00) | ImageMagick 等で透過変換 |
+| 立ち絵（ユウ・ソウタ） | ブルーバック (#0000FF) | ImageMagick 等で透過変換 |
+| アイコン（ユウ） | ブルーバック (#0000FF) | ImageMagick 等で透過変換 |
+| 背景 | 不要（背景込み） | なし |
+| カットイン | 不要（背景込み） | なし |
+| VS用 | — | 透過済み立ち絵からトリミング |
+
 ### 立ち絵（portraits/）
 
 | 項目 | 仕様 |
 |------|------|
 | サイズ | 512 × 1024 px |
-| フォーマット | PNG（透過背景） |
+| フォーマット | PNG（クロマキー背景で生成 → 後処理で透過に変換） |
 | 構図 | 膝上〜全身、5.5頭身 |
 | 表情差分 | normal, happy の2パターン |
 | 命名規則 | `{characterId}-{expression}.png` |
@@ -185,16 +200,24 @@ yuu: {
 
 **対象キャラ一覧**:
 
-| キャラID | キャラ名 | ファイル |
-|----------|---------|---------|
-| akira | 蒼葉アキラ | `akira-normal.png`, `akira-happy.png` |
-| hiro | 日向ヒロ | `hiro-normal.png`, `hiro-happy.png` |
-| misaki | 水瀬ミサキ | `misaki-normal.png`, `misaki-happy.png` |
-| takuma | 鷹見タクマ | `takuma-normal.png`, `takuma-happy.png` |
-| yuu | 柊ユウ | `yuu-normal.png`, `yuu-happy.png` |
-| rookie | 春日ソウタ | `rookie-normal.png`, `rookie-happy.png` |
-| regular | 秋山ケンジ | `regular-normal.png`, `regular-happy.png` |
-| ace | 氷室レン | `ace-normal.png`, `ace-happy.png` |
+| キャラID | キャラ名 | ファイル | クロマキー方式 |
+|----------|---------|---------|-------------|
+| akira | 蒼葉アキラ | `akira-normal.png`, `akira-happy.png` | グリーンバック |
+| hiro | 日向ヒロ | `hiro-normal.png`, `hiro-happy.png` | グリーンバック |
+| misaki | 水瀬ミサキ | `misaki-normal.png`, `misaki-happy.png` | グリーンバック |
+| takuma | 鷹見タクマ | `takuma-normal.png`, `takuma-happy.png` | グリーンバック |
+| yuu | 柊ユウ | `yuu-normal.png`, `yuu-happy.png` | **ブルーバック**（服が緑） |
+| rookie | 春日ソウタ | `rookie-normal.png`, `rookie-happy.png` | **ブルーバック**（服が緑） |
+| regular | 秋山ケンジ | `regular-normal.png`, `regular-happy.png` | グリーンバック |
+| ace | 氷室レン | `ace-normal.png`, `ace-happy.png` | グリーンバック |
+
+### アイコン（characters/）
+
+| 項目 | 仕様 |
+|------|------|
+| サイズ | 128 × 128 px |
+| フォーマット | PNG（ブルーバック → 透過変換） |
+| 総数 | 1枚（ユウのみ新規） |
 
 ### 背景（backgrounds/）
 
@@ -202,6 +225,7 @@ yuu: {
 |------|------|
 | サイズ | 450 × 900 px |
 | フォーマット | WebP |
+| 透過 | 不要（そのまま使用） |
 | 総数 | 3枚 |
 
 | 背景ID | 場面 | 説明 |
@@ -216,11 +240,21 @@ yuu: {
 |------|------|
 | サイズ | 450 × 400 px |
 | フォーマット | PNG |
+| 透過 | 不要（背景込みの一枚絵） |
 | 総数 | 1枚（Phase 1） |
 
 | ファイル | 説明 |
 |---------|------|
 | victory-ch1.png | アキラ中央で拳を突き上げ、背景にチームメイト4人（ヒロ・ミサキ・タクマ・ユウ） |
+
+### VS画面用（vs/）
+
+| 項目 | 仕様 |
+|------|------|
+| サイズ | 256 × 512 px |
+| フォーマット | PNG（透過） |
+| 生成方法 | 透過済み立ち絵の上半身をトリミング + リサイズ |
+| 総数 | 7枚 |
 
 ### 背景IDからパスへのマッピング
 
@@ -230,6 +264,20 @@ export const BACKGROUND_MAP: Record<string, string> = {
   'bg-gym': '/assets/backgrounds/bg-gym.webp',
   'bg-school-gate': '/assets/backgrounds/bg-school-gate.webp',
 };
+```
+
+### 画像生成・後処理の全体フロー
+
+```
+1. Nanobanana2 で生成（クロマキー背景付き） — 21枚
+   ↓
+2. グリーンバック/ブルーバック除去 → 透過PNG — 17枚（立ち絵16 + アイコン1）
+   ↓
+3. 透過済み立ち絵からVS用トリミング — 7枚
+   ↓
+4. 品質チェック（透過確認・スタイル統一・設定書との整合）
+   ↓
+5. 所定ディレクトリに配置 — 合計28枚
 ```
 
 ---
