@@ -24,6 +24,8 @@ export interface UseGameLoopParams {
   setStatus: (status: GameStatus) => void;
   loadHighScore: () => void;
   difficulty: Difficulty;
+  onLineClear?: (clearedLines: number) => void;
+  comboMultiplier?: number;
 }
 
 export const useGameLoop = ({
@@ -35,8 +37,11 @@ export const useGameLoop = ({
   setStatus,
   loadHighScore,
   difficulty,
+  onLineClear,
+  comboMultiplier,
 }: UseGameLoopParams): void => {
   const { spawnMultiplier, fallMultiplier, scoreMultiplier, powerUpChance } = DIFFICULTIES[difficulty];
+  const comboMult = comboMultiplier ?? 1.0;
   const spawnTimeRef = useRef<number>(0);
 
   // タイマー（1秒ごとに time を加算）
@@ -87,7 +92,7 @@ export const useGameLoop = ({
         bullets: result.bullets,
         blocks: result.blocks,
         grid: result.grid,
-        score: state.score + Math.round(result.score * scoreMultiplier),
+        score: state.score + Math.round(result.score * scoreMultiplier * comboMult),
       });
 
       result.pendingBombs.forEach(({ x, y }) => handlePowerUp('bomb', x, y));
@@ -114,7 +119,10 @@ export const useGameLoop = ({
       const gridWithLanded = Block.placeOnGrid(landing, state.grid);
       const { grid: clearedGrid, cleared } = Grid.clearFullLines(gridWithLanded);
 
-      if (cleared > 0 && soundEnabled) Audio.line();
+      if (cleared > 0) {
+        if (soundEnabled) Audio.line();
+        if (onLineClear) onLineClear(cleared);
+      }
 
       const newLines = state.lines + cleared;
       const newPlayerY = GameLogic.calculatePlayerY(clearedGrid);

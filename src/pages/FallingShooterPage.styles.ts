@@ -1,4 +1,38 @@
-import styled, { keyframes, css } from 'styled-components';
+import styled, { keyframes, css, createGlobalStyle } from 'styled-components';
+
+/** 画面シェイク用グローバルキーフレーム */
+export const ShakeKeyframes = createGlobalStyle`
+  @keyframes shake-2 {
+    0%, 100% { transform: translate(0, 0); }
+    25% { transform: translate(0, -2px); }
+    50% { transform: translate(0, 2px); }
+    75% { transform: translate(0, -2px); }
+  }
+  @keyframes shake-4 {
+    0%, 100% { transform: translate(0, 0); }
+    25% { transform: translate(-4px, 4px); }
+    50% { transform: translate(4px, -4px); }
+    75% { transform: translate(-4px, -4px); }
+  }
+  @keyframes shake-6 {
+    0%, 100% { transform: translate(0, 0); }
+    25% { transform: translate(-6px, 6px); }
+    50% { transform: translate(6px, -6px); }
+    75% { transform: translate(-6px, -6px); }
+  }
+  @keyframes shake-8 {
+    0%, 100% { transform: translate(0, 0); }
+    25% { transform: translate(-8px, 8px); }
+    50% { transform: translate(8px, -8px); }
+    75% { transform: translate(-8px, -8px); }
+  }
+
+  @keyframes line-flash {
+    0% { background-color: transparent; }
+    50% { background-color: rgba(255, 255, 255, 0.8); }
+    100% { background-color: transparent; }
+  }
+`;
 
 export const PageContainer = styled.div`
   display: flex;
@@ -10,6 +44,11 @@ export const PageContainer = styled.div`
   padding: 0.5rem;
   font-family: 'Inter', sans-serif;
   color: white;
+
+  @media (max-width: 480px) {
+    padding: 0.25rem;
+    justify-content: flex-start;
+  }
 `;
 
 export const Header = styled.div`
@@ -17,12 +56,22 @@ export const Header = styled.div`
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 0.25rem;
+  flex-wrap: wrap;
+
+  @media (max-width: 480px) {
+    gap: 0.25rem;
+    margin-bottom: 0.125rem;
+  }
 `;
 
 export const Title = styled.h1`
   font-size: 1.125rem;
   font-weight: 700;
   color: white;
+
+  @media (max-width: 480px) {
+    font-size: 0.875rem;
+  }
 `;
 
 export const IconButton = styled.button`
@@ -48,7 +97,10 @@ export const GameArea = styled.div<{ $width: number; $height: number }>`
   overflow: hidden;
   width: ${props => props.$width}px;
   height: ${props => props.$height}px;
-  max-width: calc(100vw - 2rem);
+
+  @media (max-width: 480px) {
+    border-width: 2px;
+  }
 `;
 
 export const CellWrapper = styled.div<{
@@ -130,6 +182,11 @@ export const OverlayContent = styled.div`
   padding: 1rem;
   border-radius: 0.5rem;
   text-align: center;
+  max-width: 90vw;
+
+  @media (max-width: 480px) {
+    padding: 0.75rem;
+  }
 `;
 
 export const OverlayTitle = styled.h2<{ $color?: string }>`
@@ -175,41 +232,70 @@ export const ControlsContainer = styled.div`
   display: flex;
   gap: 1rem;
   justify-content: center;
+  align-items: center;
+  position: sticky;
+  bottom: 0;
+  padding: 0.5rem 0;
+
+  @media (max-width: 480px) {
+    margin-top: 0.5rem;
+    gap: 0.75rem;
+  }
 `;
 
 export const ControlBtn = styled.button<{ $variant?: 'fire' | 'default' }>`
-  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-weight: 700;
   color: white;
-  border: none;
   cursor: pointer;
   user-select: none;
   touch-action: manipulation;
-  transition: transform 0.1s;
-  min-height: 48px;
+  transition: transform 0.1s, box-shadow 0.2s, border-color 0.2s;
 
   &:active {
-    transform: scale(0.95);
+    transform: scale(0.92);
   }
 
   ${props =>
     props.$variant === 'fire'
       ? css`
-          background-color: #dc2626;
-          padding: 1rem 2rem;
-          font-size: 1.5rem;
-          min-width: 100px;
+          width: 64px;
+          height: 64px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #dc2626, #991b1b);
+          border: 2px solid rgba(239, 68, 68, 0.7);
+          box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+          &:hover {
+            border-color: rgba(239, 68, 68, 1);
+            box-shadow: 0 0 18px rgba(239, 68, 68, 0.6);
+          }
           &:active {
-            background-color: #b91c1c;
+            box-shadow: 0 0 24px rgba(239, 68, 68, 0.8);
+          }
+          @media (max-width: 480px) {
+            width: 60px;
+            height: 60px;
           }
         `
       : css`
-          background-color: #374151;
-          padding: 1rem 1.5rem;
-          font-size: 1.875rem;
-          min-width: 70px;
+          width: 56px;
+          height: 56px;
+          border-radius: 0.75rem;
+          background: linear-gradient(135deg, #374151, #4b5563);
+          border: 1px solid rgba(99, 102, 241, 0.5);
+          &:hover {
+            border-color: rgba(99, 102, 241, 1);
+            box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
+          }
           &:active {
-            background-color: #4b5563;
+            background: linear-gradient(135deg, #4b5563, #6b7280);
+            box-shadow: 0 0 12px rgba(99, 102, 241, 0.6);
+          }
+          @media (max-width: 480px) {
+            width: 52px;
+            height: 52px;
           }
         `}
 `;
@@ -273,6 +359,11 @@ export const SkillGaugeContainer = styled.div`
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 0.5rem;
+
+  @media (max-width: 480px) {
+    gap: 0.25rem;
+    margin-bottom: 0.25rem;
+  }
 `;
 
 export const GaugeBar = styled.div`
@@ -342,12 +433,37 @@ export const StatusBarContainer = styled.div`
   color: white;
   font-size: 0.75rem;
   font-weight: 700;
+
+  @media (max-width: 480px) {
+    gap: 0.25rem;
+    font-size: 0.625rem;
+  }
 `;
 
 export const StatusBadge = styled.span<{ $color: string }>`
   background-color: ${props => props.$color};
   padding: 0.125rem 0.5rem;
   border-radius: 0.25rem;
+`;
+
+export const LandscapeLayout = styled.div`
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+`;
+
+export const SidePanel = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+export const HighScore = styled.div`
+  font-size: 0.9rem;
+  color: #fbbf24;
+  margin-left: auto;
+  margin-right: 1rem;
 `;
 
 export const DemoContainer = styled.div`

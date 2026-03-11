@@ -13,6 +13,7 @@ const { width: W, height: H } = CONFIG.grid;
 export interface UsePowerUpParams {
   gameState: UseGameStateReturn;
   soundEnabled: boolean;
+  onBomb?: () => void;
 }
 
 export interface UsePowerUpReturn {
@@ -27,6 +28,7 @@ export interface UsePowerUpReturn {
 export const usePowerUp = ({
   gameState,
   soundEnabled,
+  onBomb,
 }: UsePowerUpParams): UsePowerUpReturn => {
   const [powers, setPowers] = useState<Powers>({
     triple: false,
@@ -44,6 +46,7 @@ export const usePowerUp = ({
     (type: PowerType, x: number, y: number) => {
       if (type === 'bomb') {
         if (soundEnabled) Audio.bomb();
+        if (onBomb) onBomb();
         setExplosions(e => [...e, { id: uid(), x, y }]);
         setTimeout(() => {
           const st = gameState.stateRef.current;
@@ -60,7 +63,7 @@ export const usePowerUp = ({
         setTimeout(() => handlePowerExpire(type), CONFIG.powerUp.duration[type]);
       }
     },
-    [soundEnabled, gameState, handlePowerExpire]
+    [soundEnabled, gameState, handlePowerExpire, onBomb]
   );
 
   return {

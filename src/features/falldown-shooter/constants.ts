@@ -1,6 +1,6 @@
 // 落ち物シューティング 定数定義
 
-import type { Config, PowerType, PowerTypeInfo, SkillType, SkillInfo, DemoSlide } from './types';
+import type { Config, PowerType, PowerTypeInfo, SkillType, SkillInfo, DemoSlide, ComboConfig } from './types';
 
 export const CONFIG: Config = {
   grid: { width: 12, height: 18, cellSize: 30 },
@@ -68,6 +68,30 @@ export const SKILLS: Record<SkillType, SkillInfo> = {
   },
   clear: { icon: '✨', name: 'ライン消去', desc: '最下段を消去', color: '#00CED1', key: '3' },
 };
+
+// レスポンシブ ブレイクポイント定数
+export const BREAKPOINTS = {
+  mobile: 480,
+  tablet: 768,
+  desktop: 1024,
+} as const;
+
+// コンボシステム定数
+export const COMBO_CONFIG: ComboConfig = {
+  windowMs: 2000,
+  maxMultiplier: 5.0,
+  multiplierStep: 0.5,
+  skillBonusInterval: 5,
+  skillBonusAmount: 10,
+  multiplierTable: [
+    { minCombo: 0, multiplier: 1.0 },
+    { minCombo: 2, multiplier: 1.5 },
+    { minCombo: 3, multiplier: 2.0 },
+    { minCombo: 5, multiplier: 3.0 },
+    { minCombo: 8, multiplier: 4.5 },
+    { minCombo: 10, multiplier: 5.0 },
+  ],
+} as const;
 
 // エフェクト・タイミング定数
 export const EFFECT = {
