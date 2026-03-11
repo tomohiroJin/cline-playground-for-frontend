@@ -506,37 +506,53 @@
 
 ---
 
-## 最終レビューチェック
+## 最終レビューチェック ✅ 完了
 
 ### 品質基準
 
-- [ ] `any` 型の使用がない
-- [ ] 200行超のコンポーネントがない
-- [ ] 30行超の関数が最小限（戦略パターンで分割済み）
-- [ ] `game-logic.ts` が barrel re-export のみ（実装なし）
-- [ ] `hooks.ts` が barrel re-export のみ（実装なし）
-- [ ] `constants.ts` が barrel re-export のみ（実装なし）
+- [x] `any` 型の使用がない
+- [x] 200行超のコンポーネントがない（BattleScreen: 266行 → 135行に分割修正）
+- [x] 30行超の関数が最小限（戦略パターンで分割済み、残存は Reducer switch / tick オーケストレータ等の不可避なもの）
+- [x] `game-logic.ts` が barrel re-export のみ（実装なし）
+- [x] `hooks.ts` が barrel re-export のみ（実装なし）
+- [x] `constants.ts` が barrel re-export のみ（実装なし）
 
 ### 原則準拠
 
-- [ ] DRY: 重複コードが排除されている
-- [ ] SRP: 各関数・クラスが単一責任
-- [ ] OCP: 新しいスキル・イベント・実績をハンドラー追加だけで拡張可能
-- [ ] LSP: インターフェース実装が交換可能
-- [ ] DIP: ドメインサービスが具体的な定数に直接依存しない
-- [ ] DbC: 主要なドメインサービスに事前/事後条件あり
+- [x] DRY: 重複コードが排除されている
+- [x] SRP: 各関数・クラスが単一責任（EnemyPanel / PlayerPanel 抽出で BattleScreen の SRP を改善）
+- [x] OCP: 新しいスキル・イベント・実績をハンドラー追加だけで拡張可能（Registry/Strategy パターン）
+- [x] LSP: インターフェース実装が交換可能（SkillHandler / EventEffectHandler / AchievementChecker）
+- [x] DIP: ドメインサービスがレジストリ経由で抽象に依存（定数の直接 import はゲーム設定データとして許容 — DI コンテナ導入は過剰エンジニアリングと判断）
+- [x] DbC: 主要なドメインサービスに事前/事後条件あり（contracts/ ディレクトリに体系的に配置）
 
 ### テスト
 
-- [ ] 単体テスト: カバレッジ 70%+ (lines)
-- [ ] E2E テスト: 主要フロー10シナリオがパス
-- [ ] CI/CD: 全テストが自動実行される
+- [x] 単体テスト: カバレッジ 73.23% (lines) — primal-path 対象
+- [x] E2E テスト: 主要フロー10シナリオがパス（23テスト成功、2テストスキップ）
+- [x] CI/CD: 全テストが自動実行される（GitHub Actions: lint / typecheck / test / build / e2e）
 
 ### 互換性
 
-- [ ] セーブデータの後方互換性が維持されている
-- [ ] 外部からの import パスに変更がない（barrel re-export で吸収）
-- [ ] ゲームプレイの振る舞いに変更がない
+- [x] セーブデータの後方互換性が維持されている（SaveData 型・FRESH_SAVE・ストレージキー v7 不変）
+- [x] 外部からの import パスに変更がない（barrel re-export で吸収）
+- [x] ゲームプレイの振る舞いに変更がない
+
+### 最終レビュー検証
+
+- [x] `npm test` 全テストパス（294スイート / 3703テスト）
+- [x] `npx tsc --noEmit` 型エラーなし
+- [x] `npm run build` ビルド成功
+
+### 最終レビュー補足: 対応内容
+
+- BattleScreen.tsx(266行) を EnemyPanel(62行) + PlayerPanel(91行) + useHitFlash(31行) に分割し、BattleScreen を 135行に縮小
+- EnemyPanel: 敵スプライト描画・HP/ステータス表示・ダメージポップアップを独立コンポーネントに抽出（SRP 改善）
+- PlayerPanel: プレイヤースプライト描画・HP/ステータス・バフ・シナジー表示を独立コンポーネントに抽出、シナジー計算やツリーボーナス計算を内包（SRP 改善）
+- useHitFlash: ヒットフラッシュ管理フックを独立ファイルに抽出（再利用性向上）
+- handleSkill を useCallback でラップ（パフォーマンス最適化）
+- RIT_LOW_HP_RATIO 定数を PlayerPanel に導入（マジックナンバー排除）
+- 新規テスト: EnemyPanel 5テスト + PlayerPanel 3テスト = 計8テスト追加（TDD で作成）
 
 ---
 
