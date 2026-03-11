@@ -9,7 +9,7 @@
 | P1-03 画像プリロード基盤 | [x] 完了 | 2026-03-12 |
 | P1-04 DialogueOverlay 改修 | [ ] 未着手 | - |
 | P1-05 VsScreen 演出強化 | [ ] 未着手 | - |
-| P1-06 ChapterTitleCard 新規 | [ ] 未着手 | - |
+| P1-06 ChapterTitleCard 新規 | [x] 完了 | 2026-03-12 |
 | P1-07 VictoryCutIn 新規 | [ ] 未着手 | - |
 | P1-08 統合・遷移管理 | [ ] 未着手 | - |
 | P1-09 テスト・動作確認 | [ ] 未着手 | - |
@@ -200,27 +200,27 @@
 ## P1-06: ChapterTitleCard 新規
 
 ### コンポーネント作成
-- [ ] `components/ChapterTitleCard.tsx` を作成
-- [ ] Props 型定義（`chapter`, `title`, `subtitle?`, `backgroundUrl?`, `onComplete`）
+- [x] `components/ChapterTitleCard.tsx` を作成
+- [x] Props 型定義（`chapter`, `title`, `subtitle?`, `backgroundUrl?`, `onComplete`）
 
 ### 表示
-- [ ] ぼかし背景（blur 10px）+ 暗めオーバーレイ
-- [ ] 章番号テキスト（18px、白半透明）
-- [ ] タイトルテキスト（36px、白、太字、中央配置）
-- [ ] サブタイトルテキスト（20px、白半透明）
-- [ ] 背景なし時の黒背景フォールバック
+- [x] ぼかし背景（blur 10px）+ 暗めオーバーレイ
+- [x] 章番号テキスト（18px、白半透明）
+- [x] タイトルテキスト（36px、白、太字、中央配置）
+- [x] サブタイトルテキスト（20px、白半透明）
+- [x] 背景なし時の黒背景フォールバック
 
 ### アニメーション
-- [ ] 要素の段階的フェードイン
-- [ ] 約4秒の全体演出
-- [ ] タップ/クリックでスキップ可能
-- [ ] フェードアウト後に `onComplete()` 呼び出し
+- [x] 要素の段階的フェードイン
+- [x] 約4秒の全体演出
+- [x] タップ/クリックでスキップ可能
+- [x] フェードアウト後に `onComplete()` 呼び出し
 
 ### テスト
-- [ ] `ChapterTitleCard.test.tsx` を作成
-- [ ] レンダリングテスト
-- [ ] スキップ操作のテスト
-- [ ] `onComplete` コールバックのテスト
+- [x] `ChapterTitleCard.test.tsx` を作成
+- [x] レンダリングテスト
+- [x] スキップ操作のテスト
+- [x] `onComplete` コールバックのテスト
 
 ---
 
