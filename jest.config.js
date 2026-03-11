@@ -3,7 +3,10 @@ module.exports = {
   testEnvironment: 'jsdom',
   // jsdom がリソースを解放しない問題への対処
   forceExit: true,
-  setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
+  setupFilesAfterEnv: [
+    '<rootDir>/src/setupTests.ts',
+    '<rootDir>/src/features/primal-path/__tests__/helpers/jest-matchers.ts',
+  ],
   moduleNameMapper: {
     '\\.(css|less|scss|sass)$': '<rootDir>/__mocks__/styleMock.js',
     '\\.(jpg|jpeg|png|gif|webp|svg)$': '<rootDir>/__mocks__/fileMock.js',
@@ -13,7 +16,7 @@ module.exports = {
     '^.+\\.(ts|tsx)$': 'ts-jest'
   },
   testMatch: ['**/__tests__/**/*.ts?(x)', '**/?(*.)+(spec|test).ts?(x)'],
-  testPathIgnorePatterns: ['/node_modules/', '/__tests__/test-helpers\\.ts$', '<rootDir>/scripts/'],
+  testPathIgnorePatterns: ['/node_modules/', '/__tests__/test-helpers\\.ts$', '/__tests__/helpers/(?!.*\\.test\\.ts)', '<rootDir>/scripts/', '<rootDir>/e2e/'],
   collectCoverage: true,
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
@@ -25,10 +28,16 @@ module.exports = {
   coverageReporters: ['json', 'lcov', 'text', 'clover'],
   coverageThreshold: {
     global: {
-      branches: 20,
-      functions: 30,
-      lines: 30,
-      statements: 30
+      branches: 35,
+      functions: 45,
+      lines: 50,
+      statements: 50
+    },
+    './src/features/primal-path/domain/': {
+      branches: 70,
+      functions: 85,
+      lines: 85,
+      statements: 85
     }
   }
 };
