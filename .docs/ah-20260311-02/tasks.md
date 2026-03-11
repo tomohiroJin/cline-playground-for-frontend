@@ -4,7 +4,7 @@
 
 | タスク | ステータス | 完了日 |
 |--------|-----------|--------|
-| P1-01 データ層整備 | [ ] 未着手 | - |
+| P1-01 データ層整備 | [x] 完了 | 2026-03-12 |
 | P1-02 画像アセット生成 | [ ] 未着手 | - |
 | P1-03 画像プリロード基盤 | [ ] 未着手 | - |
 | P1-04 DialogueOverlay 改修 | [ ] 未着手 | - |
@@ -19,31 +19,32 @@
 ## P1-01: データ層整備
 
 ### 型定義の拡張
-- [ ] `types.ts` に `PortraitSet` 型を追加
-- [ ] `Character` 型に `portrait?: PortraitSet` フィールドを追加
-- [ ] `Dialogue` 型に `expression?: DialogueExpression` フィールドを追加
-- [ ] `StageDefinition` 型に `backgroundId?`, `chapterTitle?`, `chapterSubtitle?`, `isChapterFinale?` を追加
-- [ ] `ScreenType` に `'chapterTitle'` と `'victoryCutIn'` を追加
+- [x] `types.ts` に `PortraitSet` 型を追加
+- [x] `Character` 型に `portrait?: PortraitSet` フィールドを追加
+- [x] `Dialogue` 型に `expression?: DialogueExpression` フィールドを追加
+- [x] `StageDefinition` 型に `backgroundId?`, `chapterTitle?`, `chapterSubtitle?`, `isChapterFinale?` を追加
+- [ ] `ScreenType` に `'chapterTitle'` と `'victoryCutIn'` を追加 → P1-08 で実施予定
 
 ### characters.ts の更新
-- [ ] フリー対戦: rookie（ソウタ）のカラーを `#27ae60` に更新
-- [ ] フリー対戦: regular（ケンジ）のカラーを `#2c3e50` に更新
-- [ ] フリー対戦: ace（レン）のカラーを `#2c3e50` に更新
-- [ ] 全キャラクターに `portrait` フィールドを追加（8キャラ分）
-- [ ] `STORY_CHARACTERS` にユウ（yuu）を追加
-- [ ] ユウ（yuu）の `reactions` を設定
-- [ ] 背景IDマッピング `BACKGROUND_MAP` を追加
+- [x] フリー対戦: rookie（ソウタ）のカラーを `#27ae60` に更新
+- [x] フリー対戦: regular（ケンジ）のカラーを `#2c3e50` に更新
+- [x] フリー対戦: ace（レン）のカラーを `#2c3e50` に更新
+- [x] 全キャラクターに `portrait` フィールドを追加（8キャラ分）
+- [x] `STORY_CHARACTERS` にユウ（yuu）を追加
+- [x] ユウ（yuu）の `reactions` を設定
+- [x] 背景IDマッピング `BACKGROUND_MAP` を追加
 
 ### dialogue-data.ts の更新
-- [ ] ステージ 1-1 に `backgroundId: 'bg-clubroom'`, `chapterTitle`, `chapterSubtitle` を追加
-- [ ] ステージ 1-2 に `backgroundId: 'bg-gym'` を追加
-- [ ] ステージ 1-3 に `backgroundId: 'bg-school-gate'`, `isChapterFinale: true` を追加
-- [ ] 既存ダイアログに適切な `expression` を追加（勝利・励まし場面で `'happy'`）
+- [x] ステージ 1-1 に `backgroundId: 'bg-clubroom'`, `chapterTitle`, `chapterSubtitle` を追加
+- [x] ステージ 1-2 に `backgroundId: 'bg-gym'` を追加
+- [x] ステージ 1-3 に `backgroundId: 'bg-school-gate'`, `isChapterFinale: true` を追加
+- [x] 既存ダイアログに適切な `expression` を追加（勝利・励まし場面で `'happy'`）
 
 ### テスト
-- [ ] `characters.test.ts` が全パス
-- [ ] `dialogue-data.test.ts` が全パス
-- [ ] 型エラーがないこと（`tsc --noEmit`）
+- [x] `characters.test.ts` が全パス
+- [x] `dialogue-data.test.ts` が全パス
+- [x] 型エラーがないこと（`tsc --noEmit`）
+- [x] `p1-01-data-layer.test.ts` 新規39テスト全パス
 
 ---
 

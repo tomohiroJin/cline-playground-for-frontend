@@ -153,6 +153,12 @@ export type CharacterReaction = {
   onLose: string[];
 };
 
+// 立ち絵画像パスのセット（通常・嬉しい）
+export type PortraitSet = {
+  normal: string;
+  happy: string;
+};
+
 // 対戦キャラクター定義
 export type Character = {
   id: string;
@@ -160,6 +166,7 @@ export type Character = {
   icon: string;
   color: string;
   reactions: CharacterReaction;
+  portrait?: PortraitSet;
 };
 
 // ゲームモード（フリー対戦 or ストーリー）

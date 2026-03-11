@@ -6,10 +6,14 @@ import type { Difficulty } from './types';
 
 // ── ストーリー用の型定義 ────────────────────────────
 
+// ダイアログ中の表情指定（省略時は 'normal'）
+export type DialogueExpression = 'normal' | 'happy';
+
 /** ダイアログ1行分 */
 export type Dialogue = {
   characterId: string;
   text: string;
+  expression?: DialogueExpression;
 };
 
 /** ステージ定義 */
@@ -25,6 +29,10 @@ export type StageDefinition = {
   preDialogue: Dialogue[];
   postWinDialogue: Dialogue[];
   postLoseDialogue: Dialogue[];
+  backgroundId?: string;
+  chapterTitle?: string;
+  chapterSubtitle?: string;
+  isChapterFinale?: boolean;
 };
 
 /** ストーリー進行データ */
