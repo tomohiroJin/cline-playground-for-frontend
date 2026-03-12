@@ -12,7 +12,7 @@
 | P1-06 ChapterTitleCard 新規 | [x] 完了 | 2026-03-12 |
 | P1-07 VictoryCutIn 新規 | [x] 完了 | 2026-03-12 |
 | P1-08 統合・遷移管理 | [x] 完了 | 2026-03-13 |
-| P1-09 テスト・動作確認 | [ ] 未着手 | - |
+| P1-09 テスト・動作確認 | [~] 進行中 | - |
 
 ---
 
@@ -287,14 +287,14 @@
 ## P1-09: テスト・動作確認
 
 ### 既存テスト
-- [ ] `npm test` で全テストパス
-- [ ] `tsc --noEmit` で型エラーなし
-- [ ] `npm run lint`（あれば）でエラーなし
+- [x] `npm test` で全テストパス（268スイート・3902テスト全パス）
+- [x] `tsc --noEmit` で型エラーなし
+- [x] `npm run lint`（あれば）でエラーなし（未使用インポート1件を修正）
 
 ### 新規テスト
-- [ ] `ChapterTitleCard.test.tsx` 作成・パス
-- [ ] `VictoryCutIn.test.tsx` 作成・パス
-- [ ] `useImagePreloader.test.ts` 作成・パス
+- [x] `ChapterTitleCard.test.tsx` 作成・パス
+- [x] `VictoryCutIn.test.tsx` 作成・パス
+- [x] `useImagePreloader.test.ts` 作成・パス
 
 ### 通しプレイ確認
 - [ ] タイトル → ストーリー → ステージ選択の遷移

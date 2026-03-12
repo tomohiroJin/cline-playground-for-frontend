@@ -11,7 +11,7 @@ import {
   findCharacterById,
 } from './characters';
 import { CHAPTER_1_STAGES } from './dialogue-data';
-import type { Dialogue, StageDefinition } from './story';
+import type { Dialogue } from './story';
 
 // ── 型定義の拡張テスト ────────────────────────────
 
