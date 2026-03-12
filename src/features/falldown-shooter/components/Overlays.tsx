@@ -40,7 +40,7 @@ const ScoreOverlay: React.FC<{
     {children}
     <OverlayTitle $color={titleColor}>{title}</OverlayTitle>
     <OverlayText $color="white">Score: {score}</OverlayText>
-    <div style={{ marginBottom: '1rem' }}>
+    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
       <ShareButton
         text={shareText}
         hashtags={['FallingShooter', 'GamePlatform']}

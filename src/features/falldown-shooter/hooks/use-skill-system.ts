@@ -13,6 +13,7 @@ export interface UseSkillSystemParams {
   isPlaying: boolean;
   soundEnabled: boolean;
   skillChargeMultiplier: number;
+  onBlast?: () => void;
 }
 
 export interface UseSkillSystemReturn {
@@ -31,6 +32,7 @@ export const useSkillSystem = ({
   isPlaying,
   soundEnabled,
   skillChargeMultiplier,
+  onBlast,
 }: UseSkillSystemParams): UseSkillSystemReturn => {
   const [skillCharge, setSkillCharge] = useState<number>(0);
   const [laserX, setLaserX] = useState<number | null>(null);
@@ -77,6 +79,7 @@ export const useSkillSystem = ({
         case 'blast': {
           setShowBlast(true);
           setTimeout(() => setShowBlast(false), 400);
+          if (onBlast) onBlast();
           const result = GameLogic.applyBlastAll(st.blocks);
           gameState.updateState({
             blocks: result.blocks,
@@ -98,7 +101,7 @@ export const useSkillSystem = ({
         }
       }
     },
-    [skillCharge, playerX, soundEnabled, gameState]
+    [skillCharge, playerX, soundEnabled, gameState, onBlast]
   );
 
   return {

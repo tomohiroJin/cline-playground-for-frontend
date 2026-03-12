@@ -1,8 +1,8 @@
 // 落ち物シューティング メインゲームコンポーネント
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import type { Difficulty, GameStatus } from './types';
-import { CONFIG } from './constants';
+import { CONFIG, SIMULTANEOUS_LINE_BONUS, FLOATING_SCORE_POSITION, HIGH_SCORE_EFFECT_DURATION } from './constants';
 import { DIFFICULTIES } from './difficulty';
 import { useKeyboard, useIdleTimer } from './hooks';
 
@@ -13,6 +13,11 @@ import { useSkillSystem } from './hooks/use-skill-system';
 import { usePowerUp } from './hooks/use-power-up';
 import { useGameLoop } from './hooks/use-game-loop';
 import { useResponsiveSize } from './hooks/use-responsive-size';
+import { useComboSystem } from './hooks/use-combo-system';
+import { useScreenShake } from './hooks/use-screen-shake';
+import { useTestMode } from './hooks/use-test-mode';
+import { useTestModeActions } from './hooks/use-test-mode-actions';
+import { useSafeTimeout } from './hooks/use-safe-timeout';
 
 import { SkillGauge } from './components/SkillGauge';
 import { PowerUpIndicator } from './components/PowerUpIndicator';
@@ -21,18 +26,27 @@ import { DemoScreen } from './components/Overlays';
 import { GameOverlays } from './components/GameOverlays';
 import { GameBoard } from './components/GameBoard';
 import { RankingOverlay } from './components/RankingOverlay';
+import { GameController } from './components/GameController';
+import { ComboDisplay } from './components/ComboDisplay';
+import { FloatingScore } from './components/FloatingScore';
+import { HighScoreEffect } from './components/HighScoreEffect';
+import { TestModeIndicator } from './components/TestModeIndicator';
+import { TestModePanel } from './components/TestModePanel';
+import { useFloatingScores } from './hooks/use-floating-scores';
 
 import {
   PageContainer,
   Header,
   Title,
   IconButton,
-  ControlsContainer,
-  ControlBtn,
+  HighScore,
+  LandscapeLayout,
+  SidePanel,
+  ShakeKeyframes,
 } from '../../pages/FallingShooterPage.styles';
 
 export const FalldownShooterGame: React.FC = () => {
-  const SZ = useResponsiveSize();
+  const { cellSize: SZ, isLandscape } = useResponsiveSize();
 
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const [showDemo, setShowDemo] = useState<boolean>(false);
@@ -44,11 +58,21 @@ export const FalldownShooterGame: React.FC = () => {
   const isPaused = status === 'paused';
   const isIdle = status === 'idle';
 
+  // テストモード
+  const { isTestMode } = useTestMode(status);
+
+  // エフェクトフック
+  const combo = useComboSystem();
+  const shake = useScreenShake();
+  const floatingScores = useFloatingScores();
+  const [showHighScoreEffect, setShowHighScoreEffect] = useState(false);
+  const { setSafeTimeout } = useSafeTimeout();
+
   // カスタムフック
   const gameState = useGameState();
   const { state } = gameState;
 
-  const powerUp = usePowerUp({ gameState, soundEnabled });
+  const powerUp = usePowerUp({ gameState, soundEnabled, onBomb: shake.bombShake });
   const { powers, explosions, handlePowerUp } = powerUp;
 
   const controls = useGameControls({ gameState, powers, soundEnabled });
@@ -60,6 +84,7 @@ export const FalldownShooterGame: React.FC = () => {
     isPlaying,
     soundEnabled,
     skillChargeMultiplier: DIFFICULTIES[difficulty].skillChargeMultiplier,
+    onBlast: shake.blastShake,
   });
 
   const flow = useGameFlow({
@@ -82,6 +107,47 @@ export const FalldownShooterGame: React.FC = () => {
 
   const { resetGame, goToTitle, nextStage } = flow;
 
+  // ライン消しコンボ処理
+  const handleLineClear = useCallback((clearedLines: number) => {
+    for (let i = 0; i < clearedLines; i++) {
+      const result = combo.registerHit();
+      if (result.skillBonus > 0) {
+        skill.setSkillCharge((prev: number) => Math.min(prev + result.skillBonus, 100));
+      }
+    }
+    // フローティングスコア表示（同時消しボーナス × コンボ倍率を反映）
+    const simultaneousBonus = SIMULTANEOUS_LINE_BONUS[clearedLines] ?? 1.0;
+    const { xOffsetRatio, xRangeRatio, yOffsetRatio, yRangeRatio } = FLOATING_SCORE_POSITION;
+    const boardWidth = CONFIG.grid.width * SZ;
+    const boardHeight = CONFIG.grid.height * SZ;
+    const fx = Math.round(boardWidth * xOffsetRatio + Math.random() * boardWidth * xRangeRatio);
+    const fy = Math.round(boardHeight * yOffsetRatio + Math.random() * boardHeight * yRangeRatio);
+    floatingScores.addScore(fx, fy, clearedLines * CONFIG.score.line, simultaneousBonus * combo.comboState.multiplier);
+  }, [combo, skill, floatingScores, SZ]);
+
+  // ハイスコア更新検知
+  const highScoreNotifiedRef = useRef(false);
+  useEffect(() => {
+    const isNewHighScore = isPlaying && state.score > 0 && flow.highScore > 0 && state.score > flow.highScore;
+    if (isNewHighScore && !highScoreNotifiedRef.current) {
+      highScoreNotifiedRef.current = true;
+      setShowHighScoreEffect(true);
+      setSafeTimeout(() => setShowHighScoreEffect(false), HIGH_SCORE_EFFECT_DURATION);
+    }
+    if (status === 'idle') {
+      highScoreNotifiedRef.current = false;
+    }
+  }, [state.score, flow.highScore, isPlaying, status, setSafeTimeout]);
+
+  // ゲームオーバー時のシェイク
+  const prevStatusRef = useRef<GameStatus>(status);
+  useEffect(() => {
+    if (status === 'over' && prevStatusRef.current !== 'over') {
+      shake.gameOverShake();
+    }
+    prevStatusRef.current = status;
+  }, [status, shake]);
+
   // ポーズトグル
   const togglePause = useCallback(() => {
     if (status === 'playing') {
@@ -101,6 +167,8 @@ export const FalldownShooterGame: React.FC = () => {
     setStatus,
     loadHighScore: flow.loadHighScore,
     difficulty,
+    onLineClear: handleLineClear,
+    comboMultiplier: combo.comboState.multiplier,
   });
 
   // キーボード操作（プレイ中またはポーズ中）
@@ -117,18 +185,92 @@ export const FalldownShooterGame: React.FC = () => {
   // アイドルタイマー
   useIdleTimer(CONFIG.demo.idleTimeout, () => setShowDemo(true), isIdle && !showDemo);
 
+  // テストモード用操作ハンドラー
+  const testModeActions = useTestModeActions({
+    gameState,
+    playerX,
+    setSkillCharge: skill.setSkillCharge,
+    setShowHighScoreEffect,
+    setSafeTimeout,
+  });
+  const { handleFillRows, handleClearGrid, handleAddScore, handleSkillMax, handleHighScoreEffect } = testModeActions;
+
+  // HUD部分（スキルゲージ、パワーアップ、ステータスバー、コントローラー）
+  const hudContent = (
+    <>
+      <SkillGauge charge={skill.skillCharge} onUseSkill={skill.activateSkill} />
+      <PowerUpIndicator powers={powers} />
+      <StatusBar
+        stage={state.stage}
+        lines={state.lines}
+        linesNeeded={state.linesNeeded}
+        score={state.score}
+      />
+    </>
+  );
+
+  // ゲーム盤面部分
+  const gameBoardContent = (
+    <div style={{ position: 'relative', ...shake.shakeStyle }}>
+      <ComboDisplay comboState={combo.comboState} />
+      <FloatingScore items={floatingScores.items} />
+      <HighScoreEffect show={showHighScoreEffect} />
+      <GameOverlays
+        status={status}
+        stage={state.stage}
+        score={state.score}
+        difficulty={difficulty}
+        onDifficultyChange={setDifficulty}
+        onStart={resetGame}
+        onResume={togglePause}
+        onTitle={goToTitle}
+        onNext={nextStage}
+        onRanking={() => setShowRanking(true)}
+      />
+
+      <GameBoard
+        state={state}
+        playerX={playerX}
+        cellSize={SZ}
+        explosions={explosions}
+        laserX={skill.laserX}
+        showBlast={skill.showBlast}
+      />
+    </div>
+  );
+
+  // テストモード用デバッグパネル
+  const testModePanel = isTestMode ? (
+    <TestModePanel
+      onFillRows={handleFillRows}
+      onClearGrid={handleClearGrid}
+      playerX={playerX}
+      onBombShake={shake.bombShake}
+      onBlastShake={shake.blastShake}
+      onLineShake={shake.lineShake}
+      onGameOverShake={shake.gameOverShake}
+      onHighScoreEffect={handleHighScoreEffect}
+      onAddScore={handleAddScore}
+      onSkillMax={handleSkillMax}
+      onNextStage={nextStage}
+      comboCount={combo.comboState.count}
+      comboMultiplier={combo.comboState.multiplier}
+      skillCharge={skill.skillCharge}
+      score={state.score}
+      stage={state.stage}
+    />
+  ) : null;
+
   return (
     <PageContainer>
+      <ShakeKeyframes />
+      <TestModeIndicator isTestMode={isTestMode} />
       {showDemo && <DemoScreen onDismiss={() => setShowDemo(false)} />}
       {showRanking && <RankingOverlay onClose={() => setShowRanking(false)} />}
 
       <Header>
         <Title>落ち物シューティング</Title>
-        <div
-          style={{ fontSize: '0.9rem', color: '#fbbf24', marginLeft: 'auto', marginRight: '1rem' }}
-        >
-          High Score: {flow.highScore}
-        </div>
+        <HighScore>High Score: {flow.highScore}</HighScore>
         {isPlaying && (
           <IconButton onClick={togglePause} aria-label="ゲームを一時停止">
             ⏸
@@ -142,46 +284,25 @@ export const FalldownShooterGame: React.FC = () => {
         </IconButton>
       </Header>
 
-      <SkillGauge charge={skill.skillCharge} onUseSkill={skill.activateSkill} />
-      <PowerUpIndicator powers={powers} />
-      <StatusBar
-        stage={state.stage}
-        lines={state.lines}
-        linesNeeded={state.linesNeeded}
-        score={state.score}
-      />
-
-      <div style={{ position: 'relative' }}>
-        <GameOverlays
-          status={status}
-          stage={state.stage}
-          score={state.score}
-          difficulty={difficulty}
-          onDifficultyChange={setDifficulty}
-          onStart={resetGame}
-          onResume={togglePause}
-          onTitle={goToTitle}
-          onNext={nextStage}
-          onRanking={() => setShowRanking(true)}
-        />
-
-        <GameBoard
-          state={state}
-          playerX={playerX}
-          cellSize={SZ}
-          explosions={explosions}
-          laserX={skill.laserX}
-          showBlast={skill.showBlast}
-        />
-      </div>
-
-      <ControlsContainer>
-        <ControlBtn onClick={moveLeft} aria-label="左に移動">←</ControlBtn>
-        <ControlBtn onClick={fire} $variant="fire" aria-label="射撃">
-          🎯
-        </ControlBtn>
-        <ControlBtn onClick={moveRight} aria-label="右に移動">→</ControlBtn>
-      </ControlsContainer>
+      {isLandscape ? (
+        // 横向きレイアウト: ゲーム盤面 + HUD/コントローラー横並び
+        <LandscapeLayout>
+          {gameBoardContent}
+          <SidePanel>
+            {hudContent}
+            <GameController onMoveLeft={moveLeft} onMoveRight={moveRight} onFire={fire} />
+            {testModePanel}
+          </SidePanel>
+        </LandscapeLayout>
+      ) : (
+        // 縦向きレイアウト: 従来の縦積み
+        <>
+          {hudContent}
+          {gameBoardContent}
+          <GameController onMoveLeft={moveLeft} onMoveRight={moveRight} onFire={fire} />
+          {testModePanel}
+        </>
+      )}
     </PageContainer>
   );
 };

@@ -3,7 +3,7 @@
 import { useRef } from 'react';
 import type { Difficulty, GameStatus, PowerType } from '../types';
 import type { UseGameStateReturn } from './use-game-state';
-import { CONFIG } from '../constants';
+import { CONFIG, SIMULTANEOUS_LINE_BONUS } from '../constants';
 import { DIFFICULTIES } from '../difficulty';
 import { Audio } from '../audio';
 import { Block } from '../block';
@@ -24,6 +24,8 @@ export interface UseGameLoopParams {
   setStatus: (status: GameStatus) => void;
   loadHighScore: () => void;
   difficulty: Difficulty;
+  onLineClear?: (clearedLines: number) => void;
+  comboMultiplier?: number;
 }
 
 export const useGameLoop = ({
@@ -35,8 +37,11 @@ export const useGameLoop = ({
   setStatus,
   loadHighScore,
   difficulty,
+  onLineClear,
+  comboMultiplier,
 }: UseGameLoopParams): void => {
   const { spawnMultiplier, fallMultiplier, scoreMultiplier, powerUpChance } = DIFFICULTIES[difficulty];
+  const comboMult = comboMultiplier ?? 1.0;
   const spawnTimeRef = useRef<number>(0);
 
   // タイマー（1秒ごとに time を加算）
@@ -114,11 +119,15 @@ export const useGameLoop = ({
       const gridWithLanded = Block.placeOnGrid(landing, state.grid);
       const { grid: clearedGrid, cleared } = Grid.clearFullLines(gridWithLanded);
 
-      if (cleared > 0 && soundEnabled) Audio.line();
+      if (cleared > 0) {
+        if (soundEnabled) Audio.line();
+        if (onLineClear) onLineClear(cleared);
+      }
 
       const newLines = state.lines + cleared;
       const newPlayerY = GameLogic.calculatePlayerY(clearedGrid);
-      const lineScore = Math.round(cleared * CONFIG.score.line * state.stage * scoreMultiplier);
+      const simultaneousBonus = SIMULTANEOUS_LINE_BONUS[cleared] ?? 1.0;
+      const lineScore = Math.round(cleared * CONFIG.score.line * simultaneousBonus * state.stage * scoreMultiplier * comboMult);
       const finalScore = state.score + lineScore;
 
       gameState.updateState({

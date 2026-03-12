@@ -122,6 +122,27 @@ export interface BulletProcessResult {
   pendingBombs: { x: number; y: number }[];
 }
 
+export interface ComboState {
+  count: number;
+  multiplier: number;
+  isActive: boolean;
+  skillBonus: number;
+  displayText: string;
+}
+
+export interface ComboMultiplierEntry {
+  minCombo: number;
+  multiplier: number;
+}
+
+export interface ComboConfig {
+  windowMs: number;
+  maxMultiplier: number;
+  skillBonusInterval: number;
+  skillBonusAmount: number;
+  multiplierTable: ComboMultiplierEntry[];
+}
+
 export interface DemoSlide {
   title: string;
   content: string[];

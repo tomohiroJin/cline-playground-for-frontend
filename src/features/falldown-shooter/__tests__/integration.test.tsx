@@ -87,9 +87,9 @@ describe('FalldownShooterGame 統合テスト', () => {
 
     test('コントロールボタンが表示されること', () => {
       render(<FalldownShooterGame />);
-      expect(screen.getByText('←')).toBeInTheDocument();
-      expect(screen.getByText('🎯')).toBeInTheDocument();
-      expect(screen.getByText('→')).toBeInTheDocument();
+      expect(screen.getByLabelText('左に移動')).toBeInTheDocument();
+      expect(screen.getByLabelText('射撃')).toBeInTheDocument();
+      expect(screen.getByLabelText('右に移動')).toBeInTheDocument();
     });
 
     test('難易度セレクターが表示されること', () => {
