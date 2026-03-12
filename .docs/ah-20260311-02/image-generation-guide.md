@@ -191,14 +191,14 @@ high quality, detailed
 anime style character illustration, cel-shaded coloring,
 clean bold outlines, young boy age 16, short messy brown hair
 with spiky ends, green eyes, bright friendly grin,
-wearing orange (#e67e22) sports jersey with white accents,
-small wind emblem on chest,
+wearing plain orange (#e67e22) crew-neck sports shirt with white side lines,
+small wind emblem on chest, no numbers on shirt,
 casual standing pose with one hand on hip,
-knee-up shot, 5.5 head proportions,
+strict knee-up shot, 5.5 head proportions,
 3/4 view facing slightly right, soft front lighting,
 bright vivid colors,
 solid bright green (#00FF00) chroma key background, flat uniform green backdrop,
-high quality, detailed
+high quality, highly detailed
 ```
 
 **ネガティブプロンプト**: （共通グリーンバック用）
@@ -209,14 +209,14 @@ high quality, detailed
 anime style character illustration, cel-shaded coloring,
 clean bold outlines, young boy age 16, short messy brown hair
 with spiky ends, green eyes, wide cheerful laugh with eyes closed,
-wearing orange (#e67e22) sports jersey with white accents,
-small wind emblem on chest,
-excited pose with both arms raised in celebration,
-knee-up shot, 5.5 head proportions,
+wearing plain orange (#e67e22) crew-neck sports shirt with white side lines,
+small wind emblem on chest, no numbers on shirt,
+excited pose with one fist raised up,
+strict knee-up shot, 5.5 head proportions,
 3/4 view facing slightly right, soft front lighting,
 bright vivid colors,
 solid bright green (#00FF00) chroma key background, flat uniform green backdrop,
-high quality, detailed
+high quality, highly detailed
 ```
 
 **ネガティブプロンプト**: （共通グリーンバック用）

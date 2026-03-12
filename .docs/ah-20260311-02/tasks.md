@@ -5,7 +5,7 @@
 | タスク | ステータス | 完了日 |
 |--------|-----------|--------|
 | P1-01 データ層整備 | [x] 完了 | 2026-03-12 |
-| P1-02 画像アセット生成 | [ ] 未着手 | - |
+| P1-02 画像アセット生成 | [x] 完了 | 2026-03-13 |
 | P1-03 画像プリロード基盤 | [x] 完了 | 2026-03-12 |
 | P1-04 DialogueOverlay 改修 | [ ] 未着手 | - |
 | P1-05 VsScreen 演出強化 | [ ] 未着手 | - |
@@ -54,10 +54,10 @@
 > **生成ツール**: Google Nanobanana2（透過背景非対応 → クロマキー方式で対応）
 
 ### ディレクトリ作成
-- [ ] `public/assets/portraits/` ディレクトリ作成
-- [ ] `public/assets/vs/` ディレクトリ作成
-- [ ] `public/assets/backgrounds/` ディレクトリ作成
-- [ ] `public/assets/cutins/` ディレクトリ作成
+- [x] `public/assets/portraits/` ディレクトリ作成
+- [x] `public/assets/vs/` ディレクトリ作成
+- [x] `public/assets/backgrounds/` ディレクトリ作成
+- [x] `public/assets/cutins/` ディレクトリ作成
 
 ### Step 1: 立ち絵の生成（16枚、クロマキー背景付き）
 - [x] `akira-normal.png` — 512x1024, グリーンバック
@@ -89,29 +89,29 @@
 - [x] `yuu.png` — 128x128, **ブルーバック** → `public/assets/characters/yuu.png`
 
 ### Step 5: 後処理 — クロマキー背景除去
-- [ ] グリーンバック立ち絵 12枚の透過変換（ImageMagick: `convert -fuzz 20% -transparent "#00FF00"`）
-- [ ] ブルーバック立ち絵 4枚の透過変換（ImageMagick: `convert -fuzz 20% -transparent "#0000FF"`）
-- [ ] ユウアイコンのブルーバック除去
-- [ ] フリンジ（にじみ）のチェックと修正
-- [ ] キャラの緑/青の要素が誤って透過されていないことを確認
+- [x] グリーンバック立ち絵 12枚の透過変換（ImageMagick: `convert -fuzz 30% -fill none -opaque`）
+- [x] ブルーバック立ち絵 4枚の透過変換（実際の背景色を検出して除去）
+- [x] ユウアイコンのブルーバック除去
+- [x] フリンジ（にじみ）のチェックと修正
+- [x] キャラの緑/青の要素が誤って透過されていないことを確認
 
 ### Step 6: VS画面用画像のトリミング（7枚）
-- [ ] `akira-vs.png` — 透過済み akira-normal.png の上半身 → 256x512
-- [ ] `hiro-vs.png` — 透過済み hiro-normal.png の上半身 → 256x512
-- [ ] `misaki-vs.png` — 透過済み misaki-normal.png の上半身 → 256x512
-- [ ] `takuma-vs.png` — 透過済み takuma-normal.png の上半身 → 256x512
-- [ ] `rookie-vs.png` — 透過済み rookie-normal.png の上半身 → 256x512
-- [ ] `regular-vs.png` — 透過済み regular-normal.png の上半身 → 256x512
-- [ ] `ace-vs.png` — 透過済み ace-normal.png の上半身 → 256x512
+- [x] `akira-vs.png` — 透過済み akira-normal.png の上半身 → 256x512
+- [x] `hiro-vs.png` — 透過済み hiro-normal.png の上半身 → 256x512
+- [x] `misaki-vs.png` — 透過済み misaki-normal.png の上半身 → 256x512
+- [x] `takuma-vs.png` — 透過済み takuma-normal.png の上半身 → 256x512
+- [x] `rookie-vs.png` — 透過済み rookie-normal.png の上半身 → 256x512
+- [x] `regular-vs.png` — 透過済み regular-normal.png の上半身 → 256x512
+- [x] `ace-vs.png` — 透過済み ace-normal.png の上半身 → 256x512
 
 ### 品質チェック
-- [ ] 全画像のサイズ・フォーマットが仕様通り
-- [ ] 立ち絵の背景が正しく透過されている（白背景・黒背景の両方で確認）
-- [ ] 緑/青のフリンジが残っていない
-- [ ] キャラクター間でアートスタイルが統一されている
-- [ ] 立ち絵と既存アイコンの整合性（髪型・配色が一致）
-- [ ] normal と happy の表情の違いが明確
-- [ ] 全画像が所定のディレクトリに配置されている
+- [x] 全画像のサイズ・フォーマットが仕様通り
+- [x] 立ち絵の背景が正しく透過されている（白背景・黒背景の両方で確認）
+- [x] 緑/青のフリンジが残っていない
+- [x] キャラクター間でアートスタイルが統一されている
+- [x] 立ち絵と既存アイコンの整合性（髪型・配色が一致）
+- [x] normal と happy の表情の違いが明確
+- [x] 全画像が所定のディレクトリに配置されている
 
 ---
 
