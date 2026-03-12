@@ -58,76 +58,77 @@
 
 ### 共通基盤
 
-- [ ] **T-2.01** `domain/contracts/assertions.ts` 作成: assert, assertRange, assertInteger, assertDefined
-- [ ] **T-2.02** `domain/shared/value-objects.ts` 作成: HP, Score, BeatCounter バリューオブジェクト
-- [ ] **T-2.03** `domain/shared/game-events.ts` 作成: GameEventType, GameEvent, EventHandler, GameEventBus 型定義
-- [ ] **T-2.04** `domain/shared/event-bus.ts` 作成: createEventBus() 同期イベントバス実装
+- [x] **T-2.01** `domain/contracts/assertions.ts` 作成: assert, assertRange, assertInteger, assertDefined
+- [x] **T-2.02** `domain/shared/value-objects.ts` 作成: HP, Score, BeatCounter バリューオブジェクト
+- [x] **T-2.03** `domain/shared/game-events.ts` 作成: GameEventType, GameEvent, EventHandler, GameEventBus 型定義
+- [x] **T-2.04** `domain/shared/event-bus.ts` 作成: createEventBus() 同期イベントバス実装
 
 ### プレイヤードメイン
 
-- [ ] **T-2.05** `domain/player/player-state.ts` 作成: プレイヤー状態管理（HP、スコア、位置）
-- [ ] **T-2.06** `domain/player/player-actions.ts` 作成: 移動、攻撃、ガード等のアクション
+- [x] **T-2.05** `domain/player/player-state.ts` 作成: プレイヤー状態管理（HP、スコア、位置）
+- [x] **T-2.06** `domain/player/player-actions.ts` 作成: 移動、攻撃、ガード等のアクション
 
 ### 敵 AI ドメイン
 
-- [ ] **T-2.07** `domain/enemies/enemy-registry.ts` 作成: EnemyBehaviorRegistry（Strategy パターン）
-- [ ] **T-2.08** `domain/enemies/bat-behavior.ts` 作成: BAT AI（idle → flying → attacking）
-- [ ] **T-2.09** `domain/enemies/spider-behavior.ts` 作成: SPIDER AI（3 段階降下）
-- [ ] **T-2.10** `domain/enemies/mimic-behavior.ts` 作成: MIMIC ロジック（Z 連打で開放）
-- [ ] **T-2.11** `domain/enemies/shifter-behavior.ts` 作成: SHIFTER AI（ビート後レーン移動）
-- [ ] **T-2.12** `domain/enemies/dasher-behavior.ts` 作成: DASHER AI（充電 → 突進）
+- [x] **T-2.07** `domain/enemies/enemy-registry.ts` 作成: EnemyBehaviorRegistry（Strategy パターン）
+- [x] **T-2.08** `domain/enemies/bat-behavior.ts` 作成: BAT AI（hazard-phase 共通ユーティリティで DRY 化）
+- [x] **T-2.09** `domain/enemies/spider-behavior.ts` 作成: SPIDER AI（hazard-phase 共通ユーティリティで DRY 化）
+- [x] **T-2.10** `domain/enemies/mimic-behavior.ts` 作成: MIMIC ロジック（Z 連打で開放）
+- [x] **T-2.11** `domain/enemies/shifter-behavior.ts` 作成: SHIFTER AI（ビート後レーン移動）
+- [x] **T-2.12** `domain/enemies/dasher-behavior.ts` 作成: DASHER AI（充電 → 突進）
+- [x] **T-2.12a** `domain/enemies/hazard-phase.ts` 追加: BAT/SPIDER 共通のフェーズ計算（DRY リファクタリング）
 
 ### 戦闘ドメイン
 
-- [ ] **T-2.13** `domain/combat/damage-calculator.ts` 作成: ダメージ計算、ヒット判定
-- [ ] **T-2.14** `domain/combat/combo-system.ts` 作成: コンボ管理、スウィープ判定
+- [x] **T-2.13** `domain/combat/damage-calculator.ts` 作成: ダメージ計算、ヒット判定
+- [x] **T-2.14** `domain/combat/combo-system.ts` 作成: コンボ管理、スウィープ判定
 
 ### ステージフロードメイン
 
-- [ ] **T-2.15** `domain/stage-flow/stage-transition.ts` 作成: ステージ遷移ルール
-- [ ] **T-2.16** `domain/stage-flow/loop-manager.ts` 作成: ループ進行管理、トゥルーエンド判定
+- [x] **T-2.15** `domain/stage-flow/stage-transition.ts` 作成: ステージ遷移ルール（STAGE_INFO で DRY 化）
+- [x] **T-2.16** `domain/stage-flow/loop-manager.ts` 作成: ループ進行管理、トゥルーエンド判定
 
 ### アイテムドメイン
 
-- [ ] **T-2.17** `domain/items/key-manager.ts` 作成: 鍵の収集・設置ロジック
-- [ ] **T-2.18** `domain/items/gem-manager.ts` 作成: 宝石の設置ロジック
-- [ ] **T-2.19** `domain/items/shield-manager.ts` 作成: シールド獲得・消費ロジック
+- [x] **T-2.17** `domain/items/key-manager.ts` 作成: 鍵の収集・設置ロジック
+- [x] **T-2.18** `domain/items/gem-manager.ts` 作成: 宝石の設置ロジック（DbC アサーション追加）
+- [x] **T-2.19** `domain/items/shield-manager.ts` 作成: シールド獲得・消費ロジック
 
 ### ボスドメイン
 
-- [ ] **T-2.20** `domain/boss/arm-ai.ts` 作成: 腕の進攻 AI（6 本独立制御）
-- [ ] **T-2.21** `domain/boss/rage-system.ts` 作成: レイジウェーブシステム
-- [ ] **T-2.22** `domain/boss/counter-system.ts` 作成: カウンターシステム
+- [x] **T-2.20** `domain/boss/arm-ai.ts` 作成: 腕の進攻 AI（resetArmToRest で DRY 化、DbC 追加）
+- [x] **T-2.21** `domain/boss/rage-system.ts` 作成: レイジウェーブシステム
+- [x] **T-2.22** `domain/boss/counter-system.ts` 作成: カウンターシステム
 
 ### ドメインテスト
 
-- [ ] **T-2.23** `__tests__/domain/contracts.test.ts` 作成: アサーション関数テスト（10 ケース）
-- [ ] **T-2.24** `__tests__/domain/value-objects.test.ts` 作成: HP, Score, BeatCounter テスト（15 ケース）
-- [ ] **T-2.25** `__tests__/domain/event-bus.test.ts` 作成: イベントバステスト（8 ケース）
-- [ ] **T-2.26** `__tests__/domain/player.test.ts` 作成: プレイヤーテスト（12 ケース）
-- [ ] **T-2.27** `__tests__/domain/bat-behavior.test.ts` 作成: BAT AI テスト（8 ケース）
-- [ ] **T-2.28** `__tests__/domain/spider-behavior.test.ts` 作成: SPIDER テスト（6 ケース）
-- [ ] **T-2.29** `__tests__/domain/mimic-behavior.test.ts` 作成: MIMIC テスト（6 ケース）
-- [ ] **T-2.30** `__tests__/domain/shifter-behavior.test.ts` 作成: SHIFTER テスト（6 ケース）
-- [ ] **T-2.31** `__tests__/domain/dasher-behavior.test.ts` 作成: DASHER テスト（6 ケース）
-- [ ] **T-2.32** `__tests__/domain/damage-calculator.test.ts` 作成: ダメージ計算テスト（8 ケース）
-- [ ] **T-2.33** `__tests__/domain/combo-system.test.ts` 作成: コンボテスト（8 ケース）
-- [ ] **T-2.34** `__tests__/domain/stage-transition.test.ts` 作成: ステージ遷移テスト（8 ケース）
-- [ ] **T-2.35** `__tests__/domain/loop-manager.test.ts` 作成: ループ管理テスト（6 ケース）
-- [ ] **T-2.36** `__tests__/domain/key-manager.test.ts` 作成: 鍵管理テスト（6 ケース）
-- [ ] **T-2.37** `__tests__/domain/gem-manager.test.ts` 作成: 宝石管理テスト（4 ケース）
-- [ ] **T-2.38** `__tests__/domain/shield-manager.test.ts` 作成: シールド管理テスト（4 ケース）
-- [ ] **T-2.39** `__tests__/domain/arm-ai.test.ts` 作成: 腕 AI テスト（8 ケース）
-- [ ] **T-2.40** `__tests__/domain/rage-system.test.ts` 作成: レイジテスト（6 ケース）
-- [ ] **T-2.41** `__tests__/domain/counter-system.test.ts` 作成: カウンターテスト（4 ケース）
+- [x] **T-2.23** `__tests__/domain/contracts.test.ts` 作成: アサーション関数テスト（13 ケース）
+- [x] **T-2.24** `__tests__/domain/value-objects.test.ts` 作成: HP, Score, BeatCounter テスト（20 ケース）
+- [x] **T-2.25** `__tests__/domain/event-bus.test.ts` 作成: イベントバステスト（8 ケース）
+- [x] **T-2.26** `__tests__/domain/player.test.ts` 作成: プレイヤーテスト（12 ケース）
+- [x] **T-2.27** `__tests__/domain/bat-behavior.test.ts` 作成: BAT AI テスト（10 ケース）
+- [x] **T-2.28** `__tests__/domain/spider-behavior.test.ts` 作成: SPIDER テスト（7 ケース）
+- [x] **T-2.29** `__tests__/domain/mimic-behavior.test.ts` 作成: MIMIC テスト（8 ケース）
+- [x] **T-2.30** `__tests__/domain/shifter-behavior.test.ts` 作成: SHIFTER テスト（7 ケース）
+- [x] **T-2.31** `__tests__/domain/dasher-behavior.test.ts` 作成: DASHER テスト（7 ケース）
+- [x] **T-2.32** `__tests__/domain/damage-calculator.test.ts` 作成: ダメージ計算テスト（11 ケース）
+- [x] **T-2.33** `__tests__/domain/combo-system.test.ts` 作成: コンボテスト（11 ケース）
+- [x] **T-2.34** `__tests__/domain/stage-transition.test.ts` 作成: ステージ遷移テスト（9 ケース）
+- [x] **T-2.35** `__tests__/domain/loop-manager.test.ts` 作成: ループ管理テスト（5 ケース）
+- [x] **T-2.36** `__tests__/domain/key-manager.test.ts` 作成: 鍵管理テスト（7 ケース）
+- [x] **T-2.37** `__tests__/domain/gem-manager.test.ts` 作成: 宝石管理テスト（8 ケース）
+- [x] **T-2.38** `__tests__/domain/shield-manager.test.ts` 作成: シールド管理テスト（5 ケース）
+- [x] **T-2.39** `__tests__/domain/arm-ai.test.ts` 作成: 腕 AI テスト（12 ケース）
+- [x] **T-2.40** `__tests__/domain/rage-system.test.ts` 作成: レイジテスト（6 ケース）
+- [x] **T-2.41** `__tests__/domain/counter-system.test.ts` 作成: カウンターテスト（4 ケース）
 
 ### Phase 2 検証
 
-- [ ] **V-2.01** `npm run typecheck` — 型チェック通過
-- [ ] **V-2.02** `npm test` — 全テスト通過（80 既存 + ~131 新規ドメインテスト）
-- [ ] **V-2.03** `npm run lint` — ESLint 通過
-- [ ] **V-2.04** `npm run build` — ビルド成功
-- [ ] **V-2.05** ドメインテストカバレッジ: 85% 以上
+- [x] **V-2.01** `npm run typecheck` — 型チェック通過
+- [x] **V-2.02** `npm test` — 全テスト通過（80 既存 + 209 新規ドメインテスト = 289 テスト）
+- [x] **V-2.03** `npm run lint` — ESLint 通過
+- [x] **V-2.04** `npm run build` — ビルド成功（警告のみ）
+- [x] **V-2.05** ドメインテストカバレッジ: 93.46%（目標 85% 超過）
 - [ ] **V-2.06** ブラウザ確認: 全 3 ステージ通しプレイで動作に変化なし
 
 ---
