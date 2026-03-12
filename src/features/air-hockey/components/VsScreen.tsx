@@ -1,17 +1,92 @@
 /**
  * VS 画面コンポーネント
- * US-2.5: 対決演出画面
+ * P1-05: VsScreen 演出強化
  *
- * 300ms フェードイン → 2000ms 表示 → 300ms フェードアウト → onComplete
+ * アニメーションシーケンス（合計3秒）:
+ *   Phase 1 (0ms)         : グラデーション背景フェードイン
+ *   Phase 2 (200〜800ms)  : キャラ左右からスライドイン（ease-out）
+ *   Phase 3 (800ms)       : VS テキスト スケールアップ + バウンス
+ *   Phase 4 (1000ms)      : ステージ名・フィールド名フェードイン
+ *   Phase 5 (1000〜2500ms): 全要素表示で待機
+ *   Phase 6 (2500〜3000ms): 全体フェードアウト
+ *   Phase 7 (3000ms)      : onComplete()
  */
 import React, { useState, useEffect } from 'react';
 import type { Character } from '../core/types';
-import { CharacterAvatar } from './CharacterAvatar';
 
 /** アニメーションタイミング定数 */
-const FADE_IN_MS = 300;
-const DISPLAY_MS = 2000;
-const FADE_OUT_MS = 300;
+const CHAR_SLIDE_START_MS = 200;
+const CHAR_SLIDE_DURATION_MS = 600;
+const VS_TEXT_APPEAR_MS = 800;
+const INFO_APPEAR_MS = 1000;
+const FADE_OUT_START_MS = 2500;
+const TOTAL_DURATION_MS = 3000;
+
+/** スライドイン距離（px） */
+const SLIDE_OFFSET = 256;
+
+/** 背景グラデーションの透明度 */
+const GRADIENT_ALPHA = 0.3;
+
+/** VS用立ち絵のパスを生成 */
+const getVsImageSrc = (character: Character): string => {
+  if (character.portrait) {
+    return `/assets/vs/${character.id}-vs.png`;
+  }
+  return character.icon;
+};
+
+/** HEX カラー（#RGB or #RRGGBB）を rgba 文字列に変換 */
+const hexToRgba = (hex: string, alpha: number): string => {
+  const normalized = hex.length === 4
+    ? `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`
+    : hex;
+  const r = parseInt(normalized.slice(1, 3), 16);
+  const g = parseInt(normalized.slice(3, 5), 16);
+  const b = parseInt(normalized.slice(5, 7), 16);
+  if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) {
+    return `rgba(0, 0, 0, ${alpha})`;
+  }
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+/** キャラクター立ち絵パネル */
+const CharacterPanel: React.FC<{
+  character: Character;
+  translateX: number;
+}> = ({ character, translateX }) => {
+  const hasPortrait = Boolean(character.portrait);
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+      <div
+        style={{
+          transform: `translateX(${translateX}px)`,
+          transition: `transform ${CHAR_SLIDE_DURATION_MS}ms ease-out`,
+        }}
+      >
+        <img
+          src={getVsImageSrc(character)}
+          alt={`${character.name} 立ち絵`}
+          style={{
+            width: hasPortrait ? 256 : 128,
+            height: hasPortrait ? 512 : 128,
+            objectFit: 'contain',
+          }}
+        />
+      </div>
+      <span
+        style={{
+          color: character.color,
+          fontWeight: 'bold',
+          fontSize: '24px',
+          textShadow: `0 0 10px ${character.color}`,
+        }}
+      >
+        {character.name}
+      </span>
+    </div>
+  );
+};
 
 type VsScreenProps = {
   playerCharacter: Character;
@@ -28,100 +103,82 @@ export const VsScreen: React.FC<VsScreenProps> = ({
   fieldName,
   onComplete,
 }) => {
-  const [opacity, setOpacity] = useState(0);
+  const [bgOpacity, setBgOpacity] = useState(0);
+  const [isSlideComplete, setIsSlideComplete] = useState(false);
+  const [isVsVisible, setIsVsVisible] = useState(false);
+  const [isInfoVisible, setIsInfoVisible] = useState(false);
+  const [isFadeOut, setIsFadeOut] = useState(false);
 
   useEffect(() => {
-    // フェードイン
-    const fadeInTimer = requestAnimationFrame(() => {
-      setOpacity(1);
-    });
-
-    // フェードアウト開始
-    const fadeOutTimer = setTimeout(() => {
-      setOpacity(0);
-    }, FADE_IN_MS + DISPLAY_MS);
-
-    // 完了コールバック
-    const completeTimer = setTimeout(() => {
-      onComplete();
-    }, FADE_IN_MS + DISPLAY_MS + FADE_OUT_MS);
+    const bgTimer = requestAnimationFrame(() => setBgOpacity(1));
+    const slideTimer = setTimeout(() => setIsSlideComplete(true), CHAR_SLIDE_START_MS);
+    const vsTimer = setTimeout(() => setIsVsVisible(true), VS_TEXT_APPEAR_MS);
+    const infoTimer = setTimeout(() => setIsInfoVisible(true), INFO_APPEAR_MS);
+    const fadeOutTimer = setTimeout(() => setIsFadeOut(true), FADE_OUT_START_MS);
+    const completeTimer = setTimeout(onComplete, TOTAL_DURATION_MS);
 
     return () => {
-      cancelAnimationFrame(fadeInTimer);
+      cancelAnimationFrame(bgTimer);
+      clearTimeout(slideTimer);
+      clearTimeout(vsTimer);
+      clearTimeout(infoTimer);
       clearTimeout(fadeOutTimer);
       clearTimeout(completeTimer);
     };
   }, [onComplete]);
 
+  const playerTranslateX = isSlideComplete ? 0 : -SLIDE_OFFSET;
+  const cpuTranslateX = isSlideComplete ? 0 : SLIDE_OFFSET;
+  const bgGradient = `linear-gradient(90deg, ${hexToRgba(playerCharacter.color, GRADIENT_ALPHA)}, ${hexToRgba(cpuCharacter.color, GRADIENT_ALPHA)})`;
+
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: 'rgba(0, 0, 0, 0.9)',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 100,
-      opacity,
-      transition: `opacity ${FADE_IN_MS}ms ease-in-out`,
-    }}>
-      {/* 対戦表示 */}
-      <div style={{
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: bgGradient,
         display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
         alignItems: 'center',
-        gap: '40px',
-        marginBottom: '40px',
-      }}>
-        {/* プレイヤー */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-          <CharacterAvatar character={playerCharacter} size={80} showBorder showGlow />
-          <span style={{
+        zIndex: 100,
+        opacity: isFadeOut ? 0 : bgOpacity,
+        transition: isFadeOut
+          ? 'opacity 500ms ease-in-out'
+          : 'opacity 200ms ease-in-out',
+      }}
+    >
+      {/* 対戦表示エリア */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '24px' }}>
+        <CharacterPanel character={playerCharacter} translateX={playerTranslateX} />
+
+        {/* VS テキスト（バウンスアニメーション） */}
+        <span
+          style={{
             color: 'white',
             fontWeight: 'bold',
-            fontSize: '1.1rem',
-            textShadow: `0 0 10px ${playerCharacter.color}`,
-          }}>
-            {playerCharacter.name}
-          </span>
-        </div>
-
-        <span style={{
-          color: 'white',
-          fontWeight: 'bold',
-          fontSize: '3rem',
-          textShadow: '0 0 20px rgba(255, 255, 255, 0.5)',
-        }}>
+            fontSize: '72px',
+            textShadow: '0 0 20px rgba(255, 255, 255, 0.5)',
+            opacity: isVsVisible ? 1 : 0,
+            transform: isVsVisible ? 'scale(1)' : 'scale(0.8)',
+            transition: 'opacity 200ms ease-out, transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+          }}
+        >
           VS
         </span>
 
-        {/* 対戦相手 */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-          <CharacterAvatar character={cpuCharacter} size={80} showBorder showGlow />
-          <span style={{
-            color: 'white',
-            fontWeight: 'bold',
-            fontSize: '1.1rem',
-            textShadow: `0 0 10px ${cpuCharacter.color}`,
-          }}>
-            {cpuCharacter.name}
-          </span>
-        </div>
+        <CharacterPanel character={cpuCharacter} translateX={cpuTranslateX} />
       </div>
 
       {/* ステージ情報 */}
-      <div style={{
-        textAlign: 'center',
-        color: '#aaa',
-        fontSize: '0.9rem',
-      }}>
-        <p style={{ margin: '0 0 4px 0', color: 'white', fontWeight: 'bold' }}>
+      <div style={{ textAlign: 'center', opacity: isInfoVisible ? 1 : 0, transition: 'opacity 300ms ease-in' }}>
+        <p style={{ margin: '0 0 4px 0', color: 'rgba(255, 255, 255, 0.9)', fontWeight: 'bold', fontSize: '16px' }}>
           {stageName}
         </p>
-        <p style={{ margin: 0 }}>
+        <p style={{ margin: 0, color: 'rgba(255, 255, 255, 0.6)', fontSize: '16px' }}>
           {fieldName}
         </p>
       </div>

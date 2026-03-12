@@ -1,18 +1,32 @@
 /**
- * Phase 3: VS 画面のテスト
- * US-2.5（VS 画面）に対応
+ * VS 画面のテスト
+ * P1-05: VsScreen 演出強化
+ *
+ * アニメーションシーケンス:
+ *   0ms       背景グラデーション フェードイン
+ *   200-800ms キャラ左右からスライドイン
+ *   800ms     VS テキスト バウンス
+ *   1000ms    ステージ情報 フェードイン
+ *   1000-2500ms 待機
+ *   2500-3000ms 全体フェードアウト
+ *   3000ms    onComplete
  */
 import React from 'react';
 import { render, screen, act } from '@testing-library/react';
 import { VsScreen } from './VsScreen';
 import type { Character } from '../core/types';
 
+// portrait ありのキャラクター
 const playerChar: Character = {
   id: 'player',
   name: 'アキラ',
   icon: '/assets/characters/akira.png',
   color: '#3498db',
   reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
+  portrait: {
+    normal: '/assets/portraits/akira-normal.png',
+    happy: '/assets/portraits/akira-happy.png',
+  },
 };
 
 const cpuChar: Character = {
@@ -21,25 +35,52 @@ const cpuChar: Character = {
   icon: '/assets/characters/hiro.png',
   color: '#e67e22',
   reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
+  portrait: {
+    normal: '/assets/portraits/hiro-normal.png',
+    happy: '/assets/portraits/hiro-happy.png',
+  },
+};
+
+// portrait なしのキャラクター（フォールバック用）
+const playerCharNoPortrait: Character = {
+  id: 'player',
+  name: 'アキラ',
+  icon: '/assets/characters/akira.png',
+  color: '#3498db',
+  reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
+};
+
+const cpuCharNoPortrait: Character = {
+  id: 'hiro',
+  name: 'ヒロ',
+  icon: '/assets/characters/hiro.png',
+  color: '#e67e22',
+  reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
 };
 
 describe('VsScreen', () => {
+  let defaultProps: {
+    playerCharacter: Character;
+    cpuCharacter: Character;
+    stageName: string;
+    fieldName: string;
+    onComplete: jest.Mock;
+  };
+
   beforeEach(() => {
     jest.useFakeTimers();
-    jest.clearAllMocks();
+    defaultProps = {
+      playerCharacter: playerChar,
+      cpuCharacter: cpuChar,
+      stageName: 'はじめの一打',
+      fieldName: 'Original',
+      onComplete: jest.fn(),
+    };
   });
 
   afterEach(() => {
     jest.useRealTimers();
   });
-
-  const defaultProps = {
-    playerCharacter: playerChar,
-    cpuCharacter: cpuChar,
-    stageName: 'はじめの一打',
-    fieldName: 'Original',
-    onComplete: jest.fn(),
-  };
 
   describe('表示', () => {
     it('VSテキストが表示される', () => {
@@ -68,24 +109,117 @@ describe('VsScreen', () => {
     });
   });
 
+  describe('背景グラデーション', () => {
+    it('プレイヤーカラーとCPUカラーによる2色グラデーション背景が表示される', () => {
+      const { container } = render(<VsScreen {...defaultProps} />);
+      const overlay = container.firstChild as HTMLElement;
+      const bgStyle = overlay.style.background;
+      // プレイヤーカラー(#3498db)とCPUカラー(#e67e22)のグラデーションを含む
+      expect(bgStyle).toContain('linear-gradient');
+    });
+  });
+
+  describe('立ち絵表示', () => {
+    it('portrait ありの場合、VS用立ち絵画像が表示される', () => {
+      render(<VsScreen {...defaultProps} />);
+      const images = screen.getAllByRole('img');
+      const vsImages = images.filter(
+        (img) =>
+          img.getAttribute('src')?.includes('/assets/vs/') ||
+          img.getAttribute('alt')?.includes('立ち絵')
+      );
+      expect(vsImages.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('プレイヤーのVS用立ち絵パスが正しい', () => {
+      render(<VsScreen {...defaultProps} />);
+      const playerImg = screen.getByAltText('アキラ 立ち絵');
+      expect(playerImg).toHaveAttribute('src', '/assets/vs/player-vs.png');
+    });
+
+    it('CPUのVS用立ち絵パスが正しい', () => {
+      render(<VsScreen {...defaultProps} />);
+      const cpuImg = screen.getByAltText('ヒロ 立ち絵');
+      expect(cpuImg).toHaveAttribute('src', '/assets/vs/hiro-vs.png');
+    });
+
+    it('portrait未定義の場合、アイコン画像にフォールバックする', () => {
+      render(
+        <VsScreen
+          {...defaultProps}
+          playerCharacter={playerCharNoPortrait}
+          cpuCharacter={cpuCharNoPortrait}
+        />
+      );
+      const playerImg = screen.getByAltText('アキラ 立ち絵');
+      expect(playerImg).toHaveAttribute('src', '/assets/characters/akira.png');
+      const cpuImg = screen.getByAltText('ヒロ 立ち絵');
+      expect(cpuImg).toHaveAttribute('src', '/assets/characters/hiro.png');
+    });
+  });
+
+  describe('アニメーションフェーズ', () => {
+    it('初期状態ではキャラがスライドイン前の位置にいる', () => {
+      render(<VsScreen {...defaultProps} />);
+      const playerImg = screen.getByAltText('アキラ 立ち絵');
+      // 初期位置: 画面外（translateX で左にオフセット）
+      expect(playerImg.parentElement?.style.transform).toContain('translateX');
+    });
+
+    it('800ms経過後にVSテキストが表示される', () => {
+      render(<VsScreen {...defaultProps} />);
+      const vsText = screen.getByText('VS');
+      // 初期状態では非表示（opacity: 0 or scale: 0）
+      expect(vsText.style.opacity).toBe('0');
+
+      act(() => {
+        jest.advanceTimersByTime(900);
+      });
+      // 800ms 以降は表示開始
+      expect(Number(vsText.style.opacity)).toBeGreaterThan(0);
+    });
+  });
+
   describe('自動遷移', () => {
-    it('2.6秒後にonCompleteが呼ばれる（300msフェードイン + 2000ms表示 + 300msフェードアウト）', () => {
+    it('3秒後にonCompleteが呼ばれる', () => {
       render(<VsScreen {...defaultProps} />);
       expect(defaultProps.onComplete).not.toHaveBeenCalled();
 
-      // 2.6秒後（フェードイン300ms + 表示2000ms + フェードアウト300ms）
       act(() => {
-        jest.advanceTimersByTime(2600);
+        jest.advanceTimersByTime(3000);
       });
       expect(defaultProps.onComplete).toHaveBeenCalledTimes(1);
     });
 
-    it('2秒時点ではまだonCompleteが呼ばれない', () => {
+    it('2.5秒時点ではまだonCompleteが呼ばれない', () => {
       render(<VsScreen {...defaultProps} />);
       act(() => {
-        jest.advanceTimersByTime(2000);
+        jest.advanceTimersByTime(2400);
       });
       expect(defaultProps.onComplete).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('スタイル仕様', () => {
+    it('VSテキストのフォントサイズが72pxである', () => {
+      render(<VsScreen {...defaultProps} />);
+      const vsText = screen.getByText('VS');
+      expect(vsText.style.fontSize).toBe('72px');
+    });
+
+    it('キャラ名のフォントサイズが24pxである', () => {
+      render(<VsScreen {...defaultProps} />);
+      const playerName = screen.getByText('アキラ');
+      expect(playerName.style.fontSize).toBe('24px');
+    });
+
+    it('キャラ名がそれぞれのキャラカラーで表示される', () => {
+      render(<VsScreen {...defaultProps} />);
+      const playerName = screen.getByText('アキラ');
+      const cpuName = screen.getByText('ヒロ');
+      // JSDOM は HEX を rgb() に変換する
+      expect(playerName.style.color).toBe('rgb(52, 152, 219)');
+      expect(cpuName.style.color).toBe('rgb(230, 126, 34)');
     });
   });
 });
