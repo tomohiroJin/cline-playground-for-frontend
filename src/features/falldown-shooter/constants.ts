@@ -88,7 +88,6 @@ export const SIMULTANEOUS_LINE_BONUS: Record<number, number> = {
 export const COMBO_CONFIG: ComboConfig = {
   windowMs: 2000,
   maxMultiplier: 5.0,
-  multiplierStep: 0.5,
   skillBonusInterval: 5,
   skillBonusAmount: 10,
   multiplierTable: [
@@ -100,6 +99,20 @@ export const COMBO_CONFIG: ComboConfig = {
     { minCombo: 10, multiplier: 5.0 },
   ],
 } as const;
+
+// フローティングスコア表示位置の範囲（盤面に対する割合）
+export const FLOATING_SCORE_POSITION = {
+  xOffsetRatio: 0.3,
+  xRangeRatio: 0.4,
+  yOffsetRatio: 0.6,
+  yRangeRatio: 0.2,
+} as const;
+
+// フローティングスコアの最大同時表示数
+export const MAX_FLOATING_SCORES = 10;
+
+// ハイスコアエフェクトの表示時間（ms）
+export const HIGH_SCORE_EFFECT_DURATION = 3000;
 
 // エフェクト・タイミング定数
 export const EFFECT = {

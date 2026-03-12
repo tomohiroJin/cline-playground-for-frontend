@@ -138,7 +138,6 @@ export interface ComboMultiplierEntry {
 export interface ComboConfig {
   windowMs: number;
   maxMultiplier: number;
-  multiplierStep: number;
   skillBonusInterval: number;
   skillBonusAmount: number;
   multiplierTable: ComboMultiplierEntry[];

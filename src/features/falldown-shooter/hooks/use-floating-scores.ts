@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { FloatingScoreItem } from '../components/FloatingScore';
+import { MAX_FLOATING_SCORES } from '../constants';
 
 const FLOAT_DURATION = 800; // フローティングスコアの表示時間（ms）
 
@@ -30,7 +31,11 @@ export const useFloatingScores = (): UseFloatingScoresReturn => {
     const id = `fs-${counterRef.current}`;
     const newItem: FloatingScoreItem = { id, x, y, score, multiplier };
 
-    setItems(prev => [...prev, newItem]);
+    // 最大表示数を超えた場合は古いアイテムを削除
+    setItems(prev => {
+      const updated = [...prev, newItem];
+      return updated.length > MAX_FLOATING_SCORES ? updated.slice(-MAX_FLOATING_SCORES) : updated;
+    });
 
     // 表示時間後に自動削除
     const timer = setTimeout(() => {

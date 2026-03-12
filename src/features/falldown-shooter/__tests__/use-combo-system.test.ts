@@ -8,7 +8,6 @@ describe('COMBO_CONFIG', () => {
   it('コンボ設定定数が正しく定義されている', () => {
     expect(COMBO_CONFIG.windowMs).toBe(2000);
     expect(COMBO_CONFIG.maxMultiplier).toBe(5.0);
-    expect(COMBO_CONFIG.multiplierStep).toBe(0.5);
     expect(COMBO_CONFIG.skillBonusInterval).toBe(5);
     expect(COMBO_CONFIG.skillBonusAmount).toBe(10);
   });

@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import type { Difficulty, GameStatus } from './types';
-import { CONFIG, SIMULTANEOUS_LINE_BONUS } from './constants';
+import { CONFIG, SIMULTANEOUS_LINE_BONUS, FLOATING_SCORE_POSITION, HIGH_SCORE_EFFECT_DURATION } from './constants';
 import { DIFFICULTIES } from './difficulty';
 import { useKeyboard, useIdleTimer } from './hooks';
 
@@ -16,6 +16,8 @@ import { useResponsiveSize } from './hooks/use-responsive-size';
 import { useComboSystem } from './hooks/use-combo-system';
 import { useScreenShake } from './hooks/use-screen-shake';
 import { useTestMode } from './hooks/use-test-mode';
+import { useTestModeActions } from './hooks/use-test-mode-actions';
+import { useSafeTimeout } from './hooks/use-safe-timeout';
 
 import { SkillGauge } from './components/SkillGauge';
 import { PowerUpIndicator } from './components/PowerUpIndicator';
@@ -64,6 +66,7 @@ export const FalldownShooterGame: React.FC = () => {
   const shake = useScreenShake();
   const floatingScores = useFloatingScores();
   const [showHighScoreEffect, setShowHighScoreEffect] = useState(false);
+  const { setSafeTimeout } = useSafeTimeout();
 
   // カスタムフック
   const gameState = useGameState();
@@ -114,8 +117,11 @@ export const FalldownShooterGame: React.FC = () => {
     }
     // フローティングスコア表示（同時消しボーナス × コンボ倍率を反映）
     const simultaneousBonus = SIMULTANEOUS_LINE_BONUS[clearedLines] ?? 1.0;
-    const fx = Math.round(CONFIG.grid.width * SZ * 0.3 + Math.random() * CONFIG.grid.width * SZ * 0.4);
-    const fy = Math.round(CONFIG.grid.height * SZ * 0.6 + Math.random() * CONFIG.grid.height * SZ * 0.2);
+    const { xOffsetRatio, xRangeRatio, yOffsetRatio, yRangeRatio } = FLOATING_SCORE_POSITION;
+    const boardWidth = CONFIG.grid.width * SZ;
+    const boardHeight = CONFIG.grid.height * SZ;
+    const fx = Math.round(boardWidth * xOffsetRatio + Math.random() * boardWidth * xRangeRatio);
+    const fy = Math.round(boardHeight * yOffsetRatio + Math.random() * boardHeight * yRangeRatio);
     floatingScores.addScore(fx, fy, clearedLines * CONFIG.score.line, simultaneousBonus * combo.comboState.multiplier);
   }, [combo, skill, floatingScores, SZ]);
 
@@ -126,12 +132,12 @@ export const FalldownShooterGame: React.FC = () => {
     if (isNewHighScore && !highScoreNotifiedRef.current) {
       highScoreNotifiedRef.current = true;
       setShowHighScoreEffect(true);
-      setTimeout(() => setShowHighScoreEffect(false), 3000);
+      setSafeTimeout(() => setShowHighScoreEffect(false), HIGH_SCORE_EFFECT_DURATION);
     }
     if (status === 'idle') {
       highScoreNotifiedRef.current = false;
     }
-  }, [state.score, flow.highScore, isPlaying, status]);
+  }, [state.score, flow.highScore, isPlaying, status, setSafeTimeout]);
 
   // ゲームオーバー時のシェイク
   const prevStatusRef = useRef<GameStatus>(status);
@@ -180,42 +186,14 @@ export const FalldownShooterGame: React.FC = () => {
   useIdleTimer(CONFIG.demo.idleTimeout, () => setShowDemo(true), isIdle && !showDemo);
 
   // テストモード用操作ハンドラー
-  const handleFillRows = useCallback((rows: number) => {
-    const grid = gameState.stateRef.current.grid;
-    const newGrid = grid.map(row => [...row]);
-    const { width: W, height: H } = CONFIG.grid;
-    // プレイヤー行の1つ上から指定行数分を埋める（プレイヤーXの列だけ空ける）
-    const playerRow = H - 1;
-    const fillColor = '#888888';
-    for (let r = 0; r < rows; r++) {
-      const targetRow = playerRow - 1 - r;
-      if (targetRow >= 0) {
-        for (let x = 0; x < W; x++) {
-          newGrid[targetRow][x] = x === playerX ? null : fillColor;
-        }
-      }
-    }
-    gameState.updateState({ grid: newGrid });
-  }, [gameState, playerX]);
-
-  const handleClearGrid = useCallback(() => {
-    const { width: W, height: H } = CONFIG.grid;
-    const emptyGrid = Array.from({ length: H }, () => Array(W).fill(null) as (string | null)[]);
-    gameState.updateState({ grid: emptyGrid, blocks: [] });
-  }, [gameState]);
-
-  const handleAddScore = useCallback(() => {
-    gameState.updateState({ score: gameState.stateRef.current.score + 1000 });
-  }, [gameState]);
-
-  const handleSkillMax = useCallback(() => {
-    skill.setSkillCharge(100);
-  }, [skill]);
-
-  const handleHighScoreEffect = useCallback(() => {
-    setShowHighScoreEffect(true);
-    setTimeout(() => setShowHighScoreEffect(false), 3000);
-  }, []);
+  const testModeActions = useTestModeActions({
+    gameState,
+    playerX,
+    setSkillCharge: skill.setSkillCharge,
+    setShowHighScoreEffect,
+    setSafeTimeout,
+  });
+  const { handleFillRows, handleClearGrid, handleAddScore, handleSkillMax, handleHighScoreEffect } = testModeActions;
 
   // HUD部分（スキルゲージ、パワーアップ、ステータスバー、コントローラー）
   const hudContent = (
