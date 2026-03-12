@@ -28,8 +28,13 @@ import { DailyChallengeScreen } from './components/DailyChallengeScreen';
 import { StageSelectScreen } from './components/StageSelectScreen';
 import { DialogueOverlay } from './components/DialogueOverlay';
 import { VsScreen } from './components/VsScreen';
+import { ChapterTitleCard } from './components/ChapterTitleCard';
+import { VictoryCutIn } from './components/VictoryCutIn';
 import { generateDailyChallenge, getDailyChallengeResult, saveDailyChallengeResult, DailyChallenge } from './core/daily-challenge';
 import { UnlockState } from './core/unlock';
+import { BACKGROUND_MAP } from './core/characters';
+import { getStageAssetUrls } from './core/get-stage-asset-urls';
+import { useImagePreloader } from './hooks/useImagePreloader';
 import { PageContainer } from './styles';
 
 /** 画面の種類 */
@@ -42,7 +47,9 @@ type ScreenType =
   | 'stageSelect'
   | 'preDialogue'
   | 'vsScreen'
-  | 'postDialogue';
+  | 'postDialogue'
+  | 'chapterTitle'
+  | 'victoryCutIn';
 
 const AirHockeyGame: React.FC = () => {
   const [screen, setScreen] = useState<ScreenType>('menu');
@@ -72,6 +79,9 @@ const AirHockeyGame: React.FC = () => {
   const [gameMode, setGameMode] = useState<GameMode>('free');
   const [currentStage, setCurrentStage] = useState<StageDefinition | undefined>(undefined);
   const [storyProgress, setStoryProgress] = useState<StoryProgress>(() => loadStoryProgress());
+  // 画像プリロード用URL（即座遷移方式: バックグラウンドでプリロードを実行）
+  const [preloadUrls, setPreloadUrls] = useState<string[]>([]);
+  useImagePreloader(preloadUrls);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<GameState | null>(null);
@@ -264,7 +274,7 @@ const AirHockeyGame: React.FC = () => {
     setScreen('stageSelect');
   }, []);
 
-  /** ステージ選択: 試合前ダイアログへ */
+  /** ステージ選択: chapterTitle がある場合はタイトルカードへ、なければ試合前ダイアログへ */
   const handleSelectStage = useCallback((stage: StageDefinition) => {
     setCurrentStage(stage);
     // ステージの設定を適用
@@ -272,6 +282,20 @@ const AirHockeyGame: React.FC = () => {
     setDiff(stage.difficulty);
     setField(stageField);
     setWinScore(stage.winScore);
+
+    // 画像プリロード開始
+    const chars: Record<string, typeof PLAYER_CHARACTER> = {};
+    const cpuChar = findCharacterById(stage.characterId);
+    if (cpuChar) chars[stage.characterId] = cpuChar;
+    chars['player'] = PLAYER_CHARACTER;
+    setPreloadUrls(getStageAssetUrls(stage, chars));
+
+    // chapterTitle の有無で遷移先を分岐
+    setScreen(stage.chapterTitle ? 'chapterTitle' : 'preDialogue');
+  }, []);
+
+  /** チャプタータイトル完了: 試合前ダイアログへ */
+  const handleChapterTitleComplete = useCallback(() => {
     setScreen('preDialogue');
   }, []);
 
@@ -298,8 +322,17 @@ const AirHockeyGame: React.FC = () => {
     }
   }, [gameMode]);
 
-  /** 試合後ダイアログ完了: リザルト画面へ */
+  /** 試合後ダイアログ完了: 章フィナーレ+勝利時は勝利カットイン、それ以外はリザルトへ */
   const handlePostDialogueComplete = useCallback(() => {
+    if (currentStage?.isChapterFinale && winner === 'player') {
+      setScreen('victoryCutIn');
+    } else {
+      setScreen('result');
+    }
+  }, [currentStage, winner]);
+
+  /** 勝利カットイン完了: リザルト画面へ */
+  const handleVictoryCutInComplete = useCallback(() => {
     setScreen('result');
   }, []);
 
@@ -346,6 +379,11 @@ const AirHockeyGame: React.FC = () => {
     const currentIdx = CHAPTER_1_STAGES.findIndex(s => s.id === currentStage.id);
     return currentIdx < CHAPTER_1_STAGES.length - 1;
   })();
+
+  // ── 現在のステージの背景URL ─────────────────────
+  const stageBackgroundUrl = currentStage?.backgroundId
+    ? BACKGROUND_MAP[currentStage.backgroundId]
+    : undefined;
 
   // ── ゲームの CPU 名（ストーリー or フリー） ───────
   const currentCpuName = gameMode === 'story' && cpuCharacter
@@ -455,11 +493,23 @@ const AirHockeyGame: React.FC = () => {
         </Transition>
       )}
 
+      {/* ストーリーモード: チャプタータイトルカード */}
+      {screen === 'chapterTitle' && currentStage && currentStage.chapterTitle && (
+        <ChapterTitleCard
+          chapter={currentStage.chapter}
+          title={currentStage.chapterTitle}
+          subtitle={currentStage.chapterSubtitle}
+          backgroundUrl={stageBackgroundUrl}
+          onComplete={handleChapterTitleComplete}
+        />
+      )}
+
       {/* ストーリーモード: 試合前ダイアログ */}
       {screen === 'preDialogue' && currentStage && (
         <DialogueOverlay
           dialogues={currentStage.preDialogue}
           characters={storyCharacters}
+          backgroundUrl={stageBackgroundUrl}
           onComplete={handlePreDialogueComplete}
         />
       )}
@@ -497,7 +547,16 @@ const AirHockeyGame: React.FC = () => {
               : currentStage.postLoseDialogue
           }
           characters={storyCharacters}
+          backgroundUrl={stageBackgroundUrl}
           onComplete={handlePostDialogueComplete}
+        />
+      )}
+
+      {/* ストーリーモード: 勝利カットイン */}
+      {screen === 'victoryCutIn' && currentStage && (
+        <VictoryCutIn
+          imageUrl={`/assets/cutins/victory-ch${currentStage.chapter}.png`}
+          onComplete={handleVictoryCutInComplete}
         />
       )}
 

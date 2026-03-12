@@ -11,7 +11,7 @@
 | P1-05 VsScreen 演出強化 | [x] 完了 | 2026-03-13 |
 | P1-06 ChapterTitleCard 新規 | [x] 完了 | 2026-03-12 |
 | P1-07 VictoryCutIn 新規 | [x] 完了 | 2026-03-12 |
-| P1-08 統合・遷移管理 | [ ] 未着手 | - |
+| P1-08 統合・遷移管理 | [x] 完了 | 2026-03-13 |
 | P1-09 テスト・動作確認 | [ ] 未着手 | - |
 
 ---
@@ -23,7 +23,7 @@
 - [x] `Character` 型に `portrait?: PortraitSet` フィールドを追加
 - [x] `Dialogue` 型に `expression?: DialogueExpression` フィールドを追加
 - [x] `StageDefinition` 型に `backgroundId?`, `chapterTitle?`, `chapterSubtitle?`, `isChapterFinale?` を追加
-- [ ] `ScreenType` に `'chapterTitle'` と `'victoryCutIn'` を追加 → P1-08 で実施予定
+- [x] `ScreenType` に `'chapterTitle'` と `'victoryCutIn'` を追加（P1-08 で実施済み）
 
 ### characters.ts の更新
 - [x] フリー対戦: rookie（ソウタ）のカラーを `#27ae60` に更新
@@ -257,30 +257,30 @@
 ## P1-08: 統合・遷移管理
 
 ### ScreenType 更新
-- [ ] `AirHockeyGame.tsx` の ScreenType に `'chapterTitle'` を追加
-- [ ] `AirHockeyGame.tsx` の ScreenType に `'victoryCutIn'` を追加
+- [x] `AirHockeyGame.tsx` の ScreenType に `'chapterTitle'` を追加
+- [x] `AirHockeyGame.tsx` の ScreenType に `'victoryCutIn'` を追加
 
 ### 遷移ハンドラ
-- [ ] `handleChapterTitleComplete()` を追加（→ preDialogue）
-- [ ] `handleVictoryCutInComplete()` を追加（→ result）
-- [ ] `handleSelectStage()` を改修（chapterTitle 判定を追加）
-- [ ] `handlePostDialogueComplete()` を改修（victoryCutIn 判定を追加）
+- [x] `handleChapterTitleComplete()` を追加（→ preDialogue）
+- [x] `handleVictoryCutInComplete()` を追加（→ result）
+- [x] `handleSelectStage()` を改修（chapterTitle 判定を追加）
+- [x] `handlePostDialogueComplete()` を改修（victoryCutIn 判定を追加）
 
 ### コンポーネント統合
-- [ ] `ChapterTitleCard` のレンダリング追加（screen === 'chapterTitle'）
-- [ ] `VictoryCutIn` のレンダリング追加（screen === 'victoryCutIn'）
-- [ ] `DialogueOverlay` に背景URL を渡す処理を追加
-- [ ] `VsScreen` の既存呼び出しを確認（Props 変更なし）
+- [x] `ChapterTitleCard` のレンダリング追加（screen === 'chapterTitle'）
+- [x] `VictoryCutIn` のレンダリング追加（screen === 'victoryCutIn'）
+- [x] `DialogueOverlay` に背景URL を渡す処理を追加
+- [x] `VsScreen` の既存呼び出しを確認（Props 変更なし）
 
 ### 画像プリロード統合
-- [ ] ステージ選択時に `getStageAssetUrls()` でURL収集
-- [ ] `useImagePreloader` フックの統合
-- [ ] ロード中の表示（ローディングインジケーター or 即座遷移）
+- [x] ステージ選択時に `getStageAssetUrls()` でURL収集
+- [x] `useImagePreloader` フックの統合
+- [x] ロード中の表示（即座遷移方式 — バックグラウンドプリロード）
 
 ### テスト
-- [ ] ストーリーモードの全遷移パスが正しいこと
-- [ ] フリーモードに影響がないこと
-- [ ] 型エラーがないこと
+- [x] ストーリーモードの全遷移パスが正しいこと（p1-08-integration.test.ts: 26テスト全パス）
+- [x] フリーモードに影響がないこと（全268スイート・3902テストパス）
+- [x] 型エラーがないこと（tsc --noEmit パス）
 
 ---
 
