@@ -42,6 +42,9 @@ describe('CpuAI.updateWithBehavior', () => {
   });
 
   it('ステージ 1-1 の設定で遅い CPU が返る', () => {
+    // skipRate による非決定的な null 返却を防ぐためモック
+    const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0.99);
+
     const game = EntityFactory.createGameState();
     game.pucks[0].y = 200;
     game.pucks[0].vy = -5;
@@ -58,6 +61,8 @@ describe('CpuAI.updateWithBehavior', () => {
       const speed = Math.sqrt(result.cpu.vx ** 2 + result.cpu.vy ** 2);
       expect(speed).toBeLessThanOrEqual(balance.ai.maxSpeed + 0.01);
     }
+
+    randomSpy.mockRestore();
   });
 
   it('スキップ率が高い設定では null を返すことがある', () => {
