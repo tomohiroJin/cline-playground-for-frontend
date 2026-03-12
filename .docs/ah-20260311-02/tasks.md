@@ -10,7 +10,7 @@
 | P1-04 DialogueOverlay 改修 | [ ] 未着手 | - |
 | P1-05 VsScreen 演出強化 | [ ] 未着手 | - |
 | P1-06 ChapterTitleCard 新規 | [x] 完了 | 2026-03-12 |
-| P1-07 VictoryCutIn 新規 | [ ] 未着手 | - |
+| P1-07 VictoryCutIn 新規 | [x] 完了 | 2026-03-12 |
 | P1-08 統合・遷移管理 | [ ] 未着手 | - |
 | P1-09 テスト・動作確認 | [ ] 未着手 | - |
 
@@ -60,33 +60,33 @@
 - [ ] `public/assets/cutins/` ディレクトリ作成
 
 ### Step 1: 立ち絵の生成（16枚、クロマキー背景付き）
-- [ ] `akira-normal.png` — 512x1024, グリーンバック
-- [ ] `akira-happy.png` — 512x1024, グリーンバック
-- [ ] `hiro-normal.png` — 512x1024, グリーンバック
-- [ ] `hiro-happy.png` — 512x1024, グリーンバック
-- [ ] `misaki-normal.png` — 512x1024, グリーンバック
-- [ ] `misaki-happy.png` — 512x1024, グリーンバック
-- [ ] `takuma-normal.png` — 512x1024, グリーンバック
-- [ ] `takuma-happy.png` — 512x1024, グリーンバック
-- [ ] `yuu-normal.png` — 512x1024, **ブルーバック**（服が緑のため）
-- [ ] `yuu-happy.png` — 512x1024, **ブルーバック**
-- [ ] `rookie-normal.png` — 512x1024, **ブルーバック**（服が緑のため）
-- [ ] `rookie-happy.png` — 512x1024, **ブルーバック**
-- [ ] `regular-normal.png` — 512x1024, グリーンバック
-- [ ] `regular-happy.png` — 512x1024, グリーンバック
-- [ ] `ace-normal.png` — 512x1024, グリーンバック
-- [ ] `ace-happy.png` — 512x1024, グリーンバック
+- [x] `akira-normal.png` — 512x1024, グリーンバック
+- [x] `akira-happy.png` — 512x1024, グリーンバック
+- [x] `hiro-normal.png` — 512x1024, グリーンバック
+- [x] `hiro-happy.png` — 512x1024, グリーンバック
+- [x] `misaki-normal.png` — 512x1024, グリーンバック
+- [x] `misaki-happy.png` — 512x1024, グリーンバック
+- [x] `takuma-normal.png` — 512x1024, グリーンバック
+- [x] `takuma-happy.png` — 512x1024, グリーンバック
+- [x] `yuu-normal.png` — 512x1024, **ブルーバック**（服が緑のため）
+- [x] `yuu-happy.png` — 512x1024, **ブルーバック**
+- [x] `rookie-normal.png` — 512x1024, **ブルーバック**（服が緑のため）
+- [x] `rookie-happy.png` — 512x1024, **ブルーバック**
+- [x] `regular-normal.png` — 512x1024, グリーンバック
+- [x] `regular-happy.png` — 512x1024, グリーンバック
+- [x] `ace-normal.png` — 512x1024, グリーンバック
+- [x] `ace-happy.png` — 512x1024, グリーンバック
 
 ### Step 2: 背景の生成（3枚、透過不要）
-- [ ] `bg-clubroom.webp` — 450x900, WebP
-- [ ] `bg-gym.webp` — 450x900, WebP
-- [ ] `bg-school-gate.webp` — 450x900, WebP
+- [x] `bg-clubroom.webp` — 450x900, WebP
+- [x] `bg-gym.webp` — 450x900, WebP
+- [x] `bg-school-gate.webp` — 450x900, WebP
 
 ### Step 3: 勝利カットインの生成（1枚、透過不要）
-- [ ] `victory-ch1.png` — 450x400, PNG
+- [x] `victory-ch1.png` — 450x400, PNG
 
 ### Step 4: ユウのアイコン生成（1枚）
-- [ ] `yuu.png` — 128x128, **ブルーバック** → `public/assets/characters/yuu.png`
+- [x] `yuu.png` — 128x128, **ブルーバック** → `public/assets/characters/yuu.png`
 
 ### Step 5: 後処理 — クロマキー背景除去
 - [ ] グリーンバック立ち絵 12枚の透過変換（ImageMagick: `convert -fuzz 20% -transparent "#00FF00"`）
@@ -227,26 +227,26 @@
 ## P1-07: VictoryCutIn 新規
 
 ### コンポーネント作成
-- [ ] `components/VictoryCutIn.tsx` を作成
-- [ ] Props 型定義（`imageUrl`, `message?`, `onComplete`）
+- [x] `components/VictoryCutIn.tsx` を作成
+- [x] Props 型定義（`imageUrl`, `message?`, `onComplete`）
 
 ### 表示
-- [ ] 黒背景のフェードイン
-- [ ] カットイン画像のスケールアップ（0.8→1.0）+ フェードイン
-- [ ] 「TO BE CONTINUED...」テキストのフェードイン
-- [ ] ユーザー入力待ち（クリック/タップ/Enter/Space）
+- [x] 黒背景のフェードイン
+- [x] カットイン画像のスケールアップ（0.8→1.0）+ フェードイン
+- [x] 「TO BE CONTINUED...」テキストのフェードイン
+- [x] ユーザー入力待ち（クリック/タップ/Enter/Space）
 
 ### アニメーション
-- [ ] 画像表示までの演出（約1秒）
-- [ ] テキスト表示（約2.5秒後）
-- [ ] 入力後のフェードアウト（500ms）
-- [ ] `onComplete()` の呼び出し
+- [x] 画像表示までの演出（約1秒）
+- [x] テキスト表示（約2.5秒後）
+- [x] 入力後のフェードアウト（500ms）
+- [x] `onComplete()` の呼び出し
 
 ### テスト
-- [ ] `VictoryCutIn.test.tsx` を作成
-- [ ] レンダリングテスト
-- [ ] ユーザー入力でのコールバックテスト
-- [ ] デフォルトメッセージのテスト
+- [x] `VictoryCutIn.test.tsx` を作成
+- [x] レンダリングテスト
+- [x] ユーザー入力でのコールバックテスト
+- [x] デフォルトメッセージのテスト
 
 ---
 

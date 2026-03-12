@@ -42,7 +42,7 @@ export const ChapterTitleCard: React.FC<ChapterTitleCardProps> = ({
   const [subtitleOpacity, setSubtitleOpacity] = useState(0);
   const [containerOpacity, setContainerOpacity] = useState(1);
   const isCompletedRef = useRef(false);
-  const skipTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const skipTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   /** 完了処理（二重呼び出し防止） */
   const completeOnce = useCallback(() => {
