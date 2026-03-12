@@ -76,6 +76,14 @@ export const BREAKPOINTS = {
   desktop: 1024,
 } as const;
 
+// 同時消しボーナス倍率テーブル
+export const SIMULTANEOUS_LINE_BONUS: Record<number, number> = {
+  1: 1.0,
+  2: 1.5,
+  3: 2.0,
+  4: 3.0,
+};
+
 // コンボシステム定数
 export const COMBO_CONFIG: ComboConfig = {
   windowMs: 2000,

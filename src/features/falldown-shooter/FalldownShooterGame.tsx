@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import type { Difficulty, GameStatus } from './types';
-import { CONFIG } from './constants';
+import { CONFIG, SIMULTANEOUS_LINE_BONUS } from './constants';
 import { DIFFICULTIES } from './difficulty';
 import { useKeyboard, useIdleTimer } from './hooks';
 
@@ -112,10 +112,11 @@ export const FalldownShooterGame: React.FC = () => {
         skill.setSkillCharge((prev: number) => Math.min(prev + result.skillBonus, 100));
       }
     }
-    // フローティングスコア表示（盤面下部付近に配置）
+    // フローティングスコア表示（同時消しボーナス × コンボ倍率を反映）
+    const simultaneousBonus = SIMULTANEOUS_LINE_BONUS[clearedLines] ?? 1.0;
     const fx = Math.round(CONFIG.grid.width * SZ * 0.3 + Math.random() * CONFIG.grid.width * SZ * 0.4);
     const fy = Math.round(CONFIG.grid.height * SZ * 0.6 + Math.random() * CONFIG.grid.height * SZ * 0.2);
-    floatingScores.addScore(fx, fy, clearedLines * CONFIG.score.line, combo.comboState.multiplier);
+    floatingScores.addScore(fx, fy, clearedLines * CONFIG.score.line, simultaneousBonus * combo.comboState.multiplier);
   }, [combo, skill, floatingScores, SZ]);
 
   // ハイスコア更新検知

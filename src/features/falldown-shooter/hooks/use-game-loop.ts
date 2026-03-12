@@ -3,7 +3,7 @@
 import { useRef } from 'react';
 import type { Difficulty, GameStatus, PowerType } from '../types';
 import type { UseGameStateReturn } from './use-game-state';
-import { CONFIG } from '../constants';
+import { CONFIG, SIMULTANEOUS_LINE_BONUS } from '../constants';
 import { DIFFICULTIES } from '../difficulty';
 import { Audio } from '../audio';
 import { Block } from '../block';
@@ -92,7 +92,7 @@ export const useGameLoop = ({
         bullets: result.bullets,
         blocks: result.blocks,
         grid: result.grid,
-        score: state.score + Math.round(result.score * scoreMultiplier * comboMult),
+        score: state.score + Math.round(result.score * scoreMultiplier),
       });
 
       result.pendingBombs.forEach(({ x, y }) => handlePowerUp('bomb', x, y));
@@ -126,7 +126,8 @@ export const useGameLoop = ({
 
       const newLines = state.lines + cleared;
       const newPlayerY = GameLogic.calculatePlayerY(clearedGrid);
-      const lineScore = Math.round(cleared * CONFIG.score.line * state.stage * scoreMultiplier);
+      const simultaneousBonus = SIMULTANEOUS_LINE_BONUS[cleared] ?? 1.0;
+      const lineScore = Math.round(cleared * CONFIG.score.line * simultaneousBonus * state.stage * scoreMultiplier * comboMult);
       const finalScore = state.score + lineScore;
 
       gameState.updateState({
