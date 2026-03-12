@@ -15,6 +15,7 @@ import { useGameLoop } from './hooks/use-game-loop';
 import { useResponsiveSize } from './hooks/use-responsive-size';
 import { useComboSystem } from './hooks/use-combo-system';
 import { useScreenShake } from './hooks/use-screen-shake';
+import { useTestMode } from './hooks/use-test-mode';
 
 import { SkillGauge } from './components/SkillGauge';
 import { PowerUpIndicator } from './components/PowerUpIndicator';
@@ -27,6 +28,8 @@ import { GameController } from './components/GameController';
 import { ComboDisplay } from './components/ComboDisplay';
 import { FloatingScore } from './components/FloatingScore';
 import { HighScoreEffect } from './components/HighScoreEffect';
+import { TestModeIndicator } from './components/TestModeIndicator';
+import { TestModePanel } from './components/TestModePanel';
 import { useFloatingScores } from './hooks/use-floating-scores';
 
 import {
@@ -52,6 +55,9 @@ export const FalldownShooterGame: React.FC = () => {
   const isPlaying = status === 'playing';
   const isPaused = status === 'paused';
   const isIdle = status === 'idle';
+
+  // テストモード
+  const { isTestMode } = useTestMode(status);
 
   // エフェクトフック
   const combo = useComboSystem();
@@ -172,6 +178,44 @@ export const FalldownShooterGame: React.FC = () => {
   // アイドルタイマー
   useIdleTimer(CONFIG.demo.idleTimeout, () => setShowDemo(true), isIdle && !showDemo);
 
+  // テストモード用操作ハンドラー
+  const handleFillRows = useCallback((rows: number) => {
+    const grid = gameState.stateRef.current.grid;
+    const newGrid = grid.map(row => [...row]);
+    const { width: W, height: H } = CONFIG.grid;
+    // プレイヤー行の1つ上から指定行数分を埋める（プレイヤーXの列だけ空ける）
+    const playerRow = H - 1;
+    const fillColor = '#888888';
+    for (let r = 0; r < rows; r++) {
+      const targetRow = playerRow - 1 - r;
+      if (targetRow >= 0) {
+        for (let x = 0; x < W; x++) {
+          newGrid[targetRow][x] = x === playerX ? null : fillColor;
+        }
+      }
+    }
+    gameState.updateState({ grid: newGrid });
+  }, [gameState, playerX]);
+
+  const handleClearGrid = useCallback(() => {
+    const { width: W, height: H } = CONFIG.grid;
+    const emptyGrid = Array.from({ length: H }, () => Array(W).fill(null) as (string | null)[]);
+    gameState.updateState({ grid: emptyGrid, blocks: [] });
+  }, [gameState]);
+
+  const handleAddScore = useCallback(() => {
+    gameState.updateState({ score: gameState.stateRef.current.score + 1000 });
+  }, [gameState]);
+
+  const handleSkillMax = useCallback(() => {
+    skill.setSkillCharge(100);
+  }, [skill]);
+
+  const handleHighScoreEffect = useCallback(() => {
+    setShowHighScoreEffect(true);
+    setTimeout(() => setShowHighScoreEffect(false), 3000);
+  }, []);
+
   // HUD部分（スキルゲージ、パワーアップ、ステータスバー、コントローラー）
   const hudContent = (
     <>
@@ -216,9 +260,32 @@ export const FalldownShooterGame: React.FC = () => {
     </div>
   );
 
+  // テストモード用デバッグパネル
+  const testModePanel = isTestMode ? (
+    <TestModePanel
+      onFillRows={handleFillRows}
+      onClearGrid={handleClearGrid}
+      playerX={playerX}
+      onBombShake={shake.bombShake}
+      onBlastShake={shake.blastShake}
+      onLineShake={shake.lineShake}
+      onGameOverShake={shake.gameOverShake}
+      onHighScoreEffect={handleHighScoreEffect}
+      onAddScore={handleAddScore}
+      onSkillMax={handleSkillMax}
+      onNextStage={nextStage}
+      comboCount={combo.comboState.count}
+      comboMultiplier={combo.comboState.multiplier}
+      skillCharge={skill.skillCharge}
+      score={state.score}
+      stage={state.stage}
+    />
+  ) : null;
+
   return (
     <PageContainer>
       <ShakeKeyframes />
+      <TestModeIndicator isTestMode={isTestMode} />
       {showDemo && <DemoScreen onDismiss={() => setShowDemo(false)} />}
       {showRanking && <RankingOverlay onClose={() => setShowRanking(false)} />}
 
@@ -245,6 +312,7 @@ export const FalldownShooterGame: React.FC = () => {
           <SidePanel>
             {hudContent}
             <GameController onMoveLeft={moveLeft} onMoveRight={moveRight} onFire={fire} />
+            {testModePanel}
           </SidePanel>
         </LandscapeLayout>
       ) : (
@@ -253,6 +321,7 @@ export const FalldownShooterGame: React.FC = () => {
           {hudContent}
           {gameBoardContent}
           <GameController onMoveLeft={moveLeft} onMoveRight={moveRight} onFire={fire} />
+          {testModePanel}
         </>
       )}
     </PageContainer>
