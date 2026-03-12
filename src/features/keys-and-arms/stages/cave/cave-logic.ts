@@ -14,7 +14,7 @@ import { rng, rngInt, rngSpread } from '../../core/math';
 
 import { Difficulty } from '../../difficulty';
 
-import type { EngineContext, ParticlePool } from '../../types';
+import type { EngineContext } from '../../types';
 
 /**
  * 洞窟ロジックファクトリ
@@ -23,7 +23,7 @@ import type { EngineContext, ParticlePool } from '../../types';
  */
 export function createCaveLogic(ctx: EngineContext) {
   const { G, audio, particles, hud } = ctx;
-  const { S, ea } = audio;
+  const { S } = audio;
   const { Particles, Popups } = particles;
   const { twoBeatDuration, doHurt, transTo } = hud;
 
@@ -41,7 +41,7 @@ export function createCaveLogic(ctx: EngineContext) {
   }
 
   function addStepDust(x: number, y: number) {
-    Particles.spawn(G.stepDust as unknown as ParticlePool, { x, y, n: 4, vxSpread: .6, vySpread: .4, vyBase: -.4, life: 12, s: 1.5 });
+    Particles.spawn(G.stepDust, { x, y, n: 4, vxSpread: .6, vySpread: .4, vyBase: -.4, life: 12, s: 1.5 });
   }
 
   // === 洞窟初期化 ===
@@ -50,11 +50,11 @@ export function createCaveLogic(ctx: EngineContext) {
     G.state = 'cave'; G.beatCtr = 0; G.beatNum = 0; G.sparks = []; G.feathers = []; G.smoke = []; G.stepDust = []; Popups.clear(); G.keySpk = []; initDust();
     G.cav = {
       pos: 0, prevPos: -1, dir: 1, keys: [false, false, false], keysPlaced: 0, carrying: false,
-      trapOn: false, trapBeat: 0, trapSparks: [], trapWasDanger: false,
+      trapOn: false, trapBeat: 0, trapSparks: [], trapWasDanger: 0,
       cageProgress: 0, cageMax: Difficulty.cageMax(G.loop), cageHolding: false,
-      batPhase: 0, batBeat: 0, batHitAnim: 0, batWasDanger: false,
-      mimicOpen: false, mimicBeat: 0, pryCount: 0, mimicShake: 0, mimicWasDanger: false, pryDecayT: 0,
-      spiderY: 0, spiderBeat: 0, spiderWasDanger: false,
+      batPhase: 0, batBeat: 0, batHitAnim: 0, batWasDanger: 0,
+      mimicOpen: false, mimicBeat: 0, pryCount: 0, mimicShake: 0, mimicWasDanger: 0, pryDecayT: 0,
+      spiderY: 0, spiderBeat: 0, spiderWasDanger: 0,
       hurtCD: 0, actAnim: 0, actType: '', walkAnim: 0, idleT: 0, won: false, wonT: 0,
       trailAlpha: 0, roomNameT: 0, roomName: 'ENTRANCE'
     };
@@ -80,7 +80,7 @@ export function createCaveLogic(ctx: EngineContext) {
     const actHeld = G.kd['z'] || G.kd[' '];
     C.cageHolding = false;
     if (C.pos === 9 && !C.keys[0] && !C.carrying && !C.trapOn && actHeld && C.hurtCD <= 0 && C.actAnim <= 0) {
-      ea(); C.cageHolding = true; C.idleT = 0; C.cageProgress += 2.5;
+      C.cageHolding = true; C.idleT = 0; C.cageProgress += 2.5;
       if (G.tick % 3 === 0) S.pry();
       if (C.cageProgress >= C.cageMax) { C.keys[0] = true; C.carrying = true; G.score += 300 * G.loop; S.grab(); C.actAnim = 8; C.actType = 'reach'; addPopup(POS[9].x, POS[9].y - 14, '+' + 300 * G.loop); C.cageProgress = 0; } }
     // ケージ未ホールド時の減衰 — 極めて遅く、ほぼ気付かない
@@ -94,7 +94,7 @@ export function createCaveLogic(ctx: EngineContext) {
     else C.pryDecayT = 0;
     if (C.pos !== 5 && C.pryCount > 0 && G.tick % 120 === 0) C.pryCount = Math.max(0, C.pryCount - 1);
 
-    if (jAct() && C.hurtCD <= 0 && C.actAnim <= 0) { ea(); C.idleT = 0;
+    if (jAct() && C.hurtCD <= 0 && C.actAnim <= 0) { C.idleT = 0;
       if (C.pos === 4 && !C.keys[1] && !C.carrying && C.batPhase === 0) { C.keys[1] = true; C.carrying = true; G.score += 300 * G.loop; S.grab(); C.actAnim = 8; C.actType = 'atk'; C.batHitAnim = 10; C.dir = -1; addPopup(POS[4].x, POS[4].y - 14, '+' + 300 * G.loop);
         for (let i = 0; i < 8; i++) G.feathers.push({ x: POS[4].x, y: L1T + 10, vx: rngSpread(1.5), vy: -rng(0, 2) - 1, life: 12 }); }
       if (C.pos === 5 && !C.keys[2] && !C.carrying && !C.mimicOpen) {
@@ -125,16 +125,15 @@ export function createCaveLogic(ctx: EngineContext) {
     C.mimicBeat++; const mp = Difficulty.hazardCycle(G.loop, 6); C.mimicOpen = (C.mimicBeat % mp) >= (mp - 2);
     C.spiderBeat++; const sp = Difficulty.hazardCycle(G.loop, 7); const sc2 = C.spiderBeat % sp;
     if (sc2 < Math.floor(sp * .35)) C.spiderY = 0; else if (sc2 < Math.floor(sp * .6)) C.spiderY = 1; else C.spiderY = 2;
-    // 危険→安全遷移の追跡
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions -- 既存の危険→安全遷移ロジック
-    if (prevTrap && !C.trapOn) C.trapWasDanger = true; else if (!C.trapOn) C.trapWasDanger && (C.trapWasDanger = !!(C.trapWasDanger = 8));
+    // 危険→安全遷移の追跡（0: 安全、>0: 最近危険だった残りフレーム数）
+    if (prevTrap && !C.trapOn) C.trapWasDanger = 8;
     if (prevBat === 2 && C.batPhase === 0) C.batWasDanger = 8;
     if (prevMim && !C.mimicOpen) C.mimicWasDanger = 8;
     if (prevSp === 2 && C.spiderY === 0) C.spiderWasDanger = 8;
-    if (typeof C.trapWasDanger === 'number' && C.trapWasDanger > 0) C.trapWasDanger--;
-    if (typeof C.batWasDanger === 'number' && C.batWasDanger > 0) C.batWasDanger--;
-    if (typeof C.mimicWasDanger === 'number' && C.mimicWasDanger > 0) C.mimicWasDanger--;
-    if (typeof C.spiderWasDanger === 'number' && C.spiderWasDanger > 0) C.spiderWasDanger--;
+    if (C.trapWasDanger > 0) C.trapWasDanger--;
+    if (C.batWasDanger > 0) C.batWasDanger--;
+    if (C.mimicWasDanger > 0) C.mimicWasDanger--;
+    if (C.spiderWasDanger > 0) C.spiderWasDanger--;
   }
 
   return { cavInit, cavUpdate };

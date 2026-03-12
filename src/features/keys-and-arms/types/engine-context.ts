@@ -6,6 +6,7 @@ import type { DrawingAPI } from './rendering';
 import type { AudioModule } from './audio';
 import type { ParticlesModule } from './particles';
 import type { HUDModule } from './hud';
+import type { GameStorageRepository } from '../infrastructure/storage-repository';
 
 /** エンジンコンテキスト（各モジュールに渡される依存関係の束） */
 export interface EngineContext {
@@ -14,4 +15,5 @@ export interface EngineContext {
   audio: AudioModule;
   particles: ParticlesModule;
   hud: HUDModule;
+  storage: GameStorageRepository;
 }

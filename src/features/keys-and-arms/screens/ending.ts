@@ -11,9 +11,8 @@ import type { EngineContext } from '../types';
  * @param ctx ゲームコンテキスト（状態・描画・音声・パーティクル・HUD）
  */
 export function createEndingScreen(ctx: EngineContext) {
-  const { G, draw, audio, particles: _particles, hud } = ctx;
+  const { G, draw, particles: _particles, hud } = ctx;
   const { $, onFill, txt: _txt, txtC, px } = draw;
-  const { ea } = audio;
   const { transTo } = hud;
 
   // --- 入力ヘルパー ---
@@ -97,7 +96,7 @@ export function createEndingScreen(ctx: EngineContext) {
     if (G.e1T > 420) {
       $.fillStyle = BG; $.globalAlpha = .7; $.fillRect(0, H - 30, W, 30); $.globalAlpha = 1;
       if (Math.floor(G.e1T / 22) % 2) txtC('PRESS Z TO CONTINUE', W / 2, H - 14, 7);
-      if (jAct()) { ea(); G.e1T = 0; G.loop = 2; G.noDmg = true; if (G.hp < G.maxHp) G.hp++; transTo('LOOP 2', G.cavInit, 'HARDER!'); }
+      if (jAct()) { G.e1T = 0; G.loop = 2; G.noDmg = true; if (G.hp < G.maxHp) G.hp++; transTo('LOOP 2', G.cavInit, 'HARDER!'); }
     }
   }
 

@@ -7,7 +7,7 @@ import { W, GRS_LY, GRS_EX, assert } from '../../constants';
 import { TAU, rng, rngInt } from '../../core/math';
 import { Difficulty } from '../../difficulty';
 
-import type { EngineContext, PrairieState, ParticlePool } from '../../types';
+import type { EngineContext, PrairieState } from '../../types';
 
 /**
  * 草原ロジックファクトリ
@@ -16,7 +16,7 @@ import type { EngineContext, PrairieState, ParticlePool } from '../../types';
  */
 export function createPrairieLogic(ctx: EngineContext) {
   const { G, audio, particles, hud } = ctx;
-  const { S, ea } = audio;
+  const { S } = audio;
   const { Particles, Popups } = particles;
   const { BL, twoBeatDuration, doHurt, transTo } = hud;
 
@@ -37,7 +37,7 @@ export function createPrairieLogic(ctx: EngineContext) {
   /** レーン位置にデスパーティクルを生成 — スウィープ/攻撃/ガードキル共通 */
   function grsDeathParticles(lane: number, n: number, spread: number) {
     const ex = GRS_EX[0] + 70, ey = GRS_LY[lane] + 14;
-    Particles.spawn(G.grsDead as unknown as ParticlePool, { x: ex, y: ey, n, vxSpread: spread, vySpread: spread * .7, life: 12, s: 3, rot: true });
+    Particles.spawn(G.grsDead, { x: ex, y: ey, n, vxSpread: spread, vySpread: spread * .7, life: 12, s: 3, rot: true });
   }
 
   /** シールドオーブドロップの確認・付与 — スウィープ/通常キル共通 */
@@ -106,7 +106,7 @@ export function createPrairieLogic(ctx: EngineContext) {
       const ak: [string, number][] = [['arrowup', 0], ['arrowright', 1], ['arrowdown', 2]];
       for (const [k, l] of ak) {
         if (J(k)) {
-          ea(); GS.atkAnim = [l, 5]; GS.atkCD = 2; S.kill();
+          GS.atkAnim = [l, 5]; GS.atkCD = 2; S.kill();
           let hit = false;
           // スウィープ: コンボ >= 4 → step-0の全敵をヒット
           if (GS.sweepReady) {
@@ -150,7 +150,6 @@ export function createPrairieLogic(ctx: EngineContext) {
 
     // ガード (←) — 攻撃と同ティックで使用可能
     if (J('arrowleft') && GS.guards > 0 && GS.atkCD <= 0) {
-      ea();
       for (let i = 0; i < GS.ens.length; i++) {
         const e = GS.ens[i];
         if (!e.dead && e.step === 0) {

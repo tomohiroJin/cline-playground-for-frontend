@@ -3,25 +3,17 @@
  *
  * engine.ts の G オブジェクト生成を委譲する。
  * 入力オブジェクト（kd, jp）は外部から注入し共有する。
+ * ハイスコアは StorageRepository 経由で注入される。
  */
 
-import type { GameState } from '../types';
+import type { UninitializedGameState } from '../types';
 
-/** ハイスコアの読み込み（localStorage 副作用を分離） */
-export function loadHighScore(): number {
-  try {
-    return parseInt(localStorage.getItem('kaG') || '0', 10) || 0;
-  } catch {
-    return 0;
-  }
-}
-
-/** 初期ゲーム状態を生成 */
+/** 初期ゲーム状態を生成（遅延バインド完了後に GameState として使用） */
 export function createInitialGameState(
   kd: Record<string, boolean>,
   jp: Record<string, boolean>,
-  highScore = loadHighScore(),
-): GameState {
+  highScore = 0,
+): UninitializedGameState {
   return {
     // 全体状態
     state: 'title',
@@ -63,7 +55,7 @@ export function createInitialGameState(
     e1T: 0,
     teT: 0,
 
-    // ステージ状態（各ステージ init で初期化される）
+    // ステージ状態（各ステージ init で完全初期化される）
     cav: {},
     sparks: [], dust: [], feathers: [], smoke: [], stepDust: [], keySpk: [], cavDrips: [],
     grs: {},
@@ -72,10 +64,10 @@ export function createInitialGameState(
     bos: {},
     bosParticles: [], bosShieldBreak: [], bosArmTrail: [],
 
-    // 遅延バインド
+    // 遅延バインド（engine.ts で設定される）
     cavInit: undefined,
     grsInit: undefined,
     bosInit: undefined,
     startGame: undefined,
-  } as unknown as GameState;
+  };
 }

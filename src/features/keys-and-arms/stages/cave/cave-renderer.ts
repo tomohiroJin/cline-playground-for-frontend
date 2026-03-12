@@ -70,7 +70,7 @@ export function createCaveRenderer(ctx: EngineContext, drawCaveBG: () => void) {
           case 1: px(wf ? BAT_FU : BAT_FD, cx - 12, midY, s, true); break;
           case 2: px(wf ? BAT_FU : BAT_FD, cx - 12, swoopY, s, true); break; } }
       if (C.batPhase === 2 && !C.keys[1] && Math.floor(G.tick / 4) % 2) txt('!', cx - 20, swoopY + 2, 8);
-      if ((C.batWasDanger as number) > 0 && C.batPhase === 0 && !C.keys[1]) txt('○', cx - 20, perchY + 4, 7); }
+      if (C.batWasDanger > 0 && C.batPhase === 0 && !C.keys[1]) txt('○', cx - 20, perchY + 4, 7); }
 
     // CAGE TRAP（pos 9）— ACTホールドでケージ開放
     { const cx = POS[9].x;
@@ -98,7 +98,7 @@ export function createCaveRenderer(ctx: EngineContext, drawCaveBG: () => void) {
         if (C.trapOn) { onFill(.12 + Math.sin(G.tick * .9) * .06);
           for (let i = 0; i < 6; i++) $.fillRect(cx - 14 + i * 6, L2T + 30 + (i % 2 ? -3 : 3), 5, 2); $.globalAlpha = 1;
           if (Math.floor(G.tick / 3) % 2) txt('!', cx - 4, L2T + 42, 7); }
-        if ((C.trapWasDanger as number) > 0 && !C.trapOn) txt('○', cx - 4, L2T + 42, 7);
+        if (C.trapWasDanger > 0 && !C.trapOn) txt('○', cx - 4, L2T + 42, 7);
         // ホールド振動
         if (C.cageHolding) { const shk = Math.floor(G.tick / 2) % 2 ? 1 : -1;
           onFill(.15); $.fillRect(cx - 24 + shk, L2T + 2, 48, 2); $.fillRect(cx - 24 - shk, L2B - 4, 48, 2); $.globalAlpha = 1; } }
@@ -113,7 +113,7 @@ export function createCaveRenderer(ctx: EngineContext, drawCaveBG: () => void) {
           const breathY = Math.sin(G.tick * .04) * .5;
           if (C.pryCount >= 3) px(MIM_CRK, cx - 14 + shk, by + Math.round(breathY), s, true);
           else px(MIM_C, cx - 14 + shk, by + Math.round(breathY), s, true);
-          if ((C.mimicWasDanger as number) > 0) txt('○', cx - 20, by - 4, 7); }
+          if (C.mimicWasDanger > 0) txt('○', cx - 20, by - 4, 7); }
         if (C.pryCount >= 2) px(KEY_D, cx - 6, by + 8, s, true);
         // 連打進捗バー
         { const bx = cx - 14, by2 = by + 34, bw = 30, bh = 5;
@@ -146,7 +146,7 @@ export function createCaveRenderer(ctx: EngineContext, drawCaveBG: () => void) {
       if (C.spiderY > 0) { $.quadraticCurveTo(thX + 9 + wobble, (L3T + spCY) / 2, thX + 9, spCY + 4); }
       else { $.lineTo(thX + 9, spCY + 4); } $.stroke();
       px(SPIDER_T, thX + 2, spTY, s, false); px(SPIDER, thX, spMY, s, false); px(SPIDER, thX, spBY, s, false);
-      if (C.spiderY === 0) { px(SPIDER_T, thX + 2, spTY, s, true); if ((C.spiderWasDanger as number) > 0) txt('○', thX - 2, spBY + 18, 7); }
+      if (C.spiderY === 0) { px(SPIDER_T, thX + 2, spTY, s, true); if (C.spiderWasDanger > 0) txt('○', thX - 2, spBY + 18, 7); }
       else { const lw = Math.floor(G.tick / 4) % 2; px(SPIDER, thX + (lw ? 0 : 1), spCY, s, true); }
       if (C.spiderY === 2 && Math.floor(G.tick / 4) % 2) txt('!', thX - 2, spBY + 18, 7); }
 

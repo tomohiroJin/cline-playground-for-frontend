@@ -20,7 +20,7 @@ import type { EngineContext } from '../../types';
  */
 export function createBossLogic(ctx: EngineContext) {
   const { G, audio, particles, hud } = ctx;
-  const { S, ea } = audio;
+  const { S } = audio;
   const { Particles, Popups } = particles;
   const { twoBeatDuration, doHurt, transTo } = hud;
 
@@ -126,7 +126,7 @@ export function createBossLogic(ctx: EngineContext) {
       if (B.hasGem && B.peds[pi] === 0) {
         B.peds[pi] = 1; B.hasGem = false; B.placeAnim = [pi, 8];
         G.score += 500 * G.loop; addPopup(pp.x, pp.y - 20, '+' + 500 * G.loop);
-        S.gem(); ea();
+        S.gem();
         if (B.peds.every(p => p > 0)) {
           B.won = true; B.wonT = 0; S.clear(); S.bossDie(); G.score += 5000 * G.loop;
           if (G.noDmg) G.score += 10000 * G.loop;
@@ -134,7 +134,7 @@ export function createBossLogic(ctx: EngineContext) {
       } else if (B.peds[pi] === 1 && B.shields > 0) {
         B.peds[pi] = 2; B.shields--; B.shieldAnim = [pi, 8];
         G.score += 200 * G.loop; addPopup(pp.x, pp.y - 20, 'SHIELD');
-        S.guard(); ea();
+        S.guard();
       }
     }
     // ↑ = シールドショートカット
@@ -143,7 +143,7 @@ export function createBossLogic(ctx: EngineContext) {
       if (B.peds[pi] === 1 && B.shields > 0) {
         B.peds[pi] = 2; B.shields--; B.shieldAnim = [pi, 8];
         G.score += 200 * G.loop; addPopup(pp.x, pp.y - 20, 'SHIELD');
-        S.guard(); ea();
+        S.guard();
       }
     }
 
@@ -161,7 +161,7 @@ export function createBossLogic(ctx: EngineContext) {
           x: PED_POS[pi].x, y: PED_POS[pi].y - 4,
           n: 8, vxSpread: 1.5, vySpread: 1.2, vyBase: -1.5, life: 12, s: 3, gravity: .1
         });
-        B.bossPulse = 5; ea();
+        B.bossPulse = 5;
       }
     }
 

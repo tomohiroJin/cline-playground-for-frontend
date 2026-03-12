@@ -3,7 +3,7 @@
  */
 export type { SpriteData, Position, RoomNavigation, LCDPalette } from './constants';
 export type { InputState } from './input';
-export type { GameScreen, GameState, DustParticle, SmokeParticle, SparkParticle, FeatherParticle, KeySparkParticle, DripParticle, GrassParticle } from './game-state';
+export type { GameScreen, GameState, UninitializedGameState, DustParticle, SmokeParticle, SparkParticle, FeatherParticle, KeySparkParticle, DripParticle, GrassParticle } from './game-state';
 export type { DrawingAPI } from './rendering';
 export type { SoundEffects, AudioModule } from './audio';
 export type { Particle, ParticlePool, ParticleSpawnParams, ParticleSystemAPI, PopupSystemAPI, ParticlesModule, Popup } from './particles';

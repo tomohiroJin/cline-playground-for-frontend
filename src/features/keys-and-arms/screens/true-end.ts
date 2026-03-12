@@ -11,9 +11,8 @@ import type { EngineContext } from '../types';
  * @param ctx ゲームコンテキスト（状態・描画・音声・パーティクル・HUD）
  */
 export function createTrueEndScreen(ctx: EngineContext) {
-  const { G, draw, audio, particles: _particles, hud } = ctx;
+  const { G, draw, particles: _particles, hud, storage } = ctx;
   const { $, circle: _circle, onFill, txt: _txt, txtC, px, iSlime, iGoblin, iSkel, iGem, iBoss } = draw;
-  const { ea } = audio;
   const { transTo } = hud;
 
   // --- 入力ヘルパー ---
@@ -167,8 +166,8 @@ export function createTrueEndScreen(ctx: EngineContext) {
       if (Math.floor(G.teT / 16) % 2) {
         txtC('Z: CONTINUE    ESC: TITLE', W / 2, H - 14, 6);
       }
-      if (jAct()) { ea(); G.loop = 4; G.noDmg = true; if (G.hp < G.maxHp) G.hp++; transTo('LOOP 4 \u2014 BEYOND', G.cavInit, 'HARDER!'); }
-      if (J('escape')) { G.state = 'title'; G.teT = 0; G.blink = 0; if (G.score > G.hi) { G.hi = G.score; localStorage.setItem('kaG', String(G.hi)); } }
+      if (jAct()) { G.loop = 4; G.noDmg = true; if (G.hp < G.maxHp) G.hp++; transTo('LOOP 4 \u2014 BEYOND', G.cavInit, 'HARDER!'); }
+      if (J('escape')) { G.state = 'title'; G.teT = 0; G.blink = 0; if (G.score > G.hi) { G.hi = G.score; storage.setHighScore(G.hi); } }
     }
   }
 

@@ -3,6 +3,7 @@
  */
 import type { InputState } from './input';
 import type { CaveState, PrairieState, BossState } from './stage';
+import type { Particle } from './particles';
 
 /** ゲーム画面状態 */
 export type GameScreen =
@@ -118,30 +119,45 @@ export interface GameState {
   e1T: number;
   teT: number;
 
-  // ステージ状態
+  // ステージ状態（各ステージ init で完全初期化される）
   cav: CaveState;
   sparks: SparkParticle[];
   dust: DustParticle[];
   feathers: FeatherParticle[];
   smoke: SmokeParticle[];
-  stepDust: Array<{ x: number; y: number; vx: number; vy: number; life: number; s: number }>;
+  stepDust: Particle[];
   keySpk: KeySparkParticle[];
   cavDrips: DripParticle[];
 
   grs: PrairieState;
   grsSlash: Array<{ lane: number; life: number; hit: boolean }>;
-  grsDead: Array<{ x: number; y: number; vx: number; vy: number; life: number; s: number; rot?: number }>;
+  grsDead: Particle[];
   grsGrass: GrassParticle[];
-  grsDust: Array<{ x: number; y: number; vx: number; vy: number; life: number; s: number }>;
+  grsDust: Particle[];
   grsLaneFlash: Array<{ lane: number; life: number }>;
   grsMiss: Array<{ lane: number; life: number }>;
 
   bos: BossState;
-  bosParticles: Array<{ x: number; y: number; vx: number; vy: number; life: number; maxLife: number; s: number; rot: number; gravity: number }>;
+  bosParticles: Particle[];
   bosShieldBreak: Array<{ idx: number; life: number }>;
   bosArmTrail: Array<{ idx: number; life: number }>;
 
   // 遅延バインド
+  cavInit: (() => void) | undefined;
+  grsInit: (() => void) | undefined;
+  bosInit: (() => void) | undefined;
+  startGame: (() => void) | undefined;
+}
+
+/**
+ * 初期化途中のゲーム状態
+ * ステージ状態と遅延バインドが未設定の状態を表す。
+ * engine.ts で遅延バインドが完了した後、GameState として使用される。
+ */
+export type UninitializedGameState = Omit<GameState, 'cav' | 'grs' | 'bos' | 'cavInit' | 'grsInit' | 'bosInit' | 'startGame'> & {
+  cav: Partial<CaveState>;
+  grs: Partial<PrairieState>;
+  bos: Partial<BossState>;
   cavInit: (() => void) | undefined;
   grsInit: (() => void) | undefined;
   bosInit: (() => void) | undefined;

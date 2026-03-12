@@ -7,14 +7,16 @@ import type { DrawingAPI } from '../types/rendering';
 import type { GameState } from '../types/game-state';
 import type { AudioModule } from '../types/audio';
 import type { HUDModule } from '../types/hud';
+import type { GameStorageRepository } from '../infrastructure/storage-repository';
 
 /**
  * HUD・トランジションモジュールを生成する
  * @param draw 描画ヘルパー
  * @param G ゲーム状態
  * @param audio オーディオモジュール
+ * @param storage ストレージリポジトリ
  */
-export function createHUD(draw: DrawingAPI, G: GameState, audio: AudioModule): HUDModule {
+export function createHUD(draw: DrawingAPI, G: GameState, audio: AudioModule, storage: GameStorageRepository): HUDModule {
   const { $, onFill, R, txt, txtC, iHeart } = draw;
   const { tn } = audio;
 
@@ -34,7 +36,7 @@ export function createHUD(draw: DrawingAPI, G: GameState, audio: AudioModule): H
     if (G.hp <= 0) {
       G.state = 'over';
       audio.S.over();
-      if (G.score > G.hi) { G.hi = G.score; localStorage.setItem('kaG', String(G.hi)); }
+      if (G.score > G.hi) { G.hi = G.score; storage.setHighScore(G.hi); }
     }
   }
 

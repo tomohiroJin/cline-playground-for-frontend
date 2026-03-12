@@ -12,9 +12,8 @@ import type { EngineContext } from '../types';
  * @param ctx ゲームコンテキスト（状態・描画・音声・パーティクル・HUD）
  */
 export function createGameOverScreen(ctx: EngineContext) {
-  const { G, draw, audio, particles: _particles, hud: _hud } = ctx;
+  const { G, draw, particles: _particles, hud: _hud } = ctx;
   const { $, onFill: _onFill, txt: _txt, txtC, px, circle: _circle } = draw;
-  const { S: _S, ea } = audio;
 
   // --- 入力ヘルパー ---
   function J(k: string) { return G.jp[k.toLowerCase()]; }
@@ -73,7 +72,7 @@ export function createGameOverScreen(ctx: EngineContext) {
       const ra = .6 + Math.sin(G.blink * .08) * .3; $.globalAlpha = Math.floor(G.blink / 18) % 2 === 0 ? ra : 0;
       txtC('PRESS Z TO RETRY', W / 2, 260, 7); $.globalAlpha = 1;
     }
-    if (G.blink > 70 && (jAct() || J('enter'))) { ea(); G.startGame?.(); }
+    if (G.blink > 70 && (jAct() || J('enter'))) { G.startGame?.(); }
   }
 
   return { draw: drawOver };

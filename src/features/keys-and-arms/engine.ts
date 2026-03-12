@@ -1,6 +1,6 @@
 /** KEYS & ARMS — ゲームエンジン（オーケストレータ） */
 
-import type { EngineContext } from './types';
+import type { EngineContext, GameState } from './types';
 import { W, H, BG, TICK_MS } from './constants';
 import { createRendering } from './core/rendering';
 import { createAudio } from './core/audio';
@@ -8,6 +8,7 @@ import { createParticles } from './core/particles';
 import { createHUD } from './core/hud';
 import { createInputHandler } from './core/input';
 import { createInitialGameState } from './core/game-state';
+import { createLocalStorageRepository } from './infrastructure/storage-repository';
 import { createRenderEffects } from './core/render-effects';
 import { createCaveStage } from './stages/cave/index';
 import { createPrairieStage } from './stages/prairie/index';
@@ -38,13 +39,16 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
 
   const input = createInputHandler();
   const { justPressed: J, clearJustPressed: clearJ, isAction: jAct } = input;
-  const G = createInitialGameState(input.kd, input.jp);
+  const storage = createLocalStorageRepository();
+  const uninitG = createInitialGameState(input.kd, input.jp, storage.getHighScore());
+  // 遅延バインド完了後に GameState として使用（各ステージ init でステージ状態が設定される）
+  const G = uninitG as GameState;
   const draw = createRendering($);
   const audio = createAudio(G);
   const particles = createParticles(draw);
-  const hud = createHUD(draw, G, audio);
+  const hud = createHUD(draw, G, audio, storage);
   const effects = createRenderEffects($, draw.onFill, draw.txtC);
-  const ctx: EngineContext = { G, draw, audio, particles, hud };
+  const ctx: EngineContext = { G, draw, audio, particles, hud, storage };
 
   const cave = createCaveStage(ctx);
   const prairie = createPrairieStage(ctx);
@@ -70,7 +74,7 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
       G.resetConfirm--;
       if (jAct()) {
         G.resetConfirm = 0; G.state = 'title'; G.blink = 0;
-        if (G.score > G.hi) { G.hi = G.score; localStorage.setItem('kaG', String(G.hi)); }
+        if (G.score > G.hi) { G.hi = G.score; storage.setHighScore(G.hi); }
         clearJ(); return;
       }
       if (J('escape')) G.resetConfirm = 0;
@@ -113,7 +117,7 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
             if (J(k)) { G.cheatBuf += k; if (G.cheatBuf.length > 10) G.cheatBuf = G.cheatBuf.slice(-10); }
           }
           if (J('arrowup')) { G.state = 'help'; G.helpPage = 0; clearJ(); break; }
-          if (jAct() || J('enter')) { audio.ea(); audio.S.start(); titleScreen.startGame(); }
+          if (jAct() || J('enter')) { audio.S.start(); titleScreen.startGame(); }
           break;
         case 'help': helpScreen.update(); break;
         case 'over': case 'trueEnd': case 'ending1': break;

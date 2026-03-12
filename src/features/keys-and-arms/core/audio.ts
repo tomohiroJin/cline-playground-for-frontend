@@ -16,8 +16,9 @@ export function createAudio(G: GameState): AudioModule {
     if (!ac) ac = new ((window as unknown as Record<string, typeof AudioContext>).AudioContext || (window as unknown as Record<string, typeof AudioContext>).webkitAudioContext)();
   }
 
-  /** トーン生成 */
+  /** トーン生成（AudioContext 未初期化の場合は自動初期化） */
   function tn(f: number, d: number, tp: OscillatorType = 'square', v: number = .04): void {
+    ea();
     if (!ac) return;
     const o: OscillatorNode = ac.createOscillator(), g: GainNode = ac.createGain();
     o.type = tp; o.frequency.value = f; g.gain.setValueAtTime(v, ac.currentTime);
@@ -25,8 +26,9 @@ export function createAudio(G: GameState): AudioModule {
     o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + d);
   }
 
-  /** ノイズ生成 */
+  /** ノイズ生成（AudioContext 未初期化の場合は自動初期化） */
   function noise(d: number, v: number = .02): void {
+    ea();
     if (!ac) return;
     const n: AudioBufferSourceNode = ac.createBufferSource(), buf: AudioBuffer = ac.createBuffer(1, ac.sampleRate * d, ac.sampleRate),
       data: Float32Array = buf.getChannelData(0);
