@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'vitest';
 import { createNullAudioService } from '../../infrastructure/null-audio-service';
 import type { AudioModule } from '../../types/audio';
 

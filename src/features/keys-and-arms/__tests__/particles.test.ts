@@ -2,37 +2,14 @@
  * KEYS & ARMS — パーティクル・ポップアップテスト
  */
 import { createParticles } from '../core/particles';
-import type { DrawingAPI, ParticlesModule, ParticlePool } from '../types';
-
-/** Canvas 2D コンテキストのモック */
-function createMockCtx(): CanvasRenderingContext2D {
-  return {
-    fillStyle: '',
-    globalAlpha: 1,
-    fillRect: jest.fn(),
-    font: '',
-    textAlign: '',
-    textBaseline: '',
-    fillText: jest.fn(),
-  } as unknown as CanvasRenderingContext2D;
-}
-
-/** 描画ヘルパーのモック */
-function createMockDraw(ctx: CanvasRenderingContext2D): DrawingAPI {
-  return {
-    $: ctx,
-    txt: jest.fn(),
-  } as unknown as DrawingAPI;
-}
+import type { ParticlesModule, ParticlePool } from '../types';
+import { createMockDrawingAPI } from './helpers/mock-factories';
 
 describe('Particles', () => {
-  let ctx: CanvasRenderingContext2D;
-  let draw: DrawingAPI;
   let particles: ParticlesModule;
 
   beforeEach(() => {
-    ctx = createMockCtx();
-    draw = createMockDraw(ctx);
+    const draw = createMockDrawingAPI();
     particles = createParticles(draw);
   });
 
@@ -99,13 +76,10 @@ describe('Particles', () => {
 });
 
 describe('Popups', () => {
-  let ctx: CanvasRenderingContext2D;
-  let draw: DrawingAPI;
   let particles: ParticlesModule;
 
   beforeEach(() => {
-    ctx = createMockCtx();
-    draw = createMockDraw(ctx);
+    const draw = createMockDrawingAPI();
     particles = createParticles(draw);
   });
 

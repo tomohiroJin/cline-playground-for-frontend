@@ -1,4 +1,3 @@
-import { describe, it, expect, vi } from 'vitest';
 import { createEventBus } from '../../domain/shared/event-bus';
 import {
   createStageEventEmitter,
@@ -12,7 +11,7 @@ describe('StageEventIntegration', () => {
       // Arrange
       const bus = createEventBus();
       const emitter = createStageEventEmitter(bus);
-      const handler = vi.fn();
+      const handler = jest.fn();
       bus.on('score:add', handler);
 
       // Act
@@ -29,7 +28,7 @@ describe('StageEventIntegration', () => {
       // Arrange
       const bus = createEventBus();
       const emitter = createStageEventEmitter(bus);
-      const handler = vi.fn();
+      const handler = jest.fn();
       bus.on('stage:clear', handler);
 
       // Act
@@ -46,7 +45,7 @@ describe('StageEventIntegration', () => {
       // Arrange
       const bus = createEventBus();
       const emitter = createStageEventEmitter(bus);
-      const handler = vi.fn();
+      const handler = jest.fn();
       bus.on('stage:transition', handler);
 
       // Act
@@ -63,7 +62,7 @@ describe('StageEventIntegration', () => {
       // Arrange
       const bus = createEventBus();
       const emitter = createStageEventEmitter(bus);
-      const handler = vi.fn();
+      const handler = jest.fn();
       bus.on('boss:defeat', handler);
 
       // Act
@@ -81,7 +80,7 @@ describe('StageEventIntegration', () => {
     it('イベントタイプに応じた SFX ハンドラーを呼び出す', () => {
       // Arrange
       const bus = createEventBus();
-      const clearSfx = vi.fn();
+      const clearSfx = jest.fn();
       subscribeSfxTriggers(bus, { 'stage:clear': clearSfx });
 
       // Act
@@ -94,7 +93,7 @@ describe('StageEventIntegration', () => {
     it('アンサブスクライブ後はハンドラーが呼ばれない', () => {
       // Arrange
       const bus = createEventBus();
-      const clearSfx = vi.fn();
+      const clearSfx = jest.fn();
       const unsubscribe = subscribeSfxTriggers(bus, { 'stage:clear': clearSfx });
 
       // Act
@@ -110,8 +109,8 @@ describe('StageEventIntegration', () => {
     it('stage:transition イベントで transTo を呼び出す', () => {
       // Arrange
       const bus = createEventBus();
-      const transTo = vi.fn();
-      const cavInit = vi.fn();
+      const transTo = jest.fn();
+      const cavInit = jest.fn();
       subscribeTransitionHandler(bus, transTo, { CAVE: cavInit });
 
       // Act
@@ -127,7 +126,7 @@ describe('StageEventIntegration', () => {
     it('未登録のステージには transTo を呼ばない', () => {
       // Arrange
       const bus = createEventBus();
-      const transTo = vi.fn();
+      const transTo = jest.fn();
       subscribeTransitionHandler(bus, transTo, {});
 
       // Act

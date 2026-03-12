@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'vitest';
 import { createInitialGameState } from '../../core/game-state';
 
 describe('createInitialGameState', () => {

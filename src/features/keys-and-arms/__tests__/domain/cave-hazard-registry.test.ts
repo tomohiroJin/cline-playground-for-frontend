@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'vitest';
 import { createCaveHazardRegistry } from '../../domain/enemies/cave-hazard-registry';
 
 describe('CaveHazardRegistry', () => {

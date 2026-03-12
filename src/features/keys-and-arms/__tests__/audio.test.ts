@@ -3,70 +3,13 @@
  */
 import { createAudio } from '../core/audio';
 import type { GameState, AudioModule } from '../types';
+import { createMockAudioContext, type MockAudioContext } from './helpers/mock-factories';
 
 /** window に AudioContext / webkitAudioContext を動的に設定するための型 */
 interface WindowWithAudioContext {
   AudioContext: jest.Mock | undefined;
   webkitAudioContext: unknown;
   [key: string]: unknown;
-}
-
-/** モック AudioContext の型 */
-interface MockAudioContext {
-  currentTime: number;
-  sampleRate: number;
-  destination: Record<string, unknown>;
-  createOscillator: jest.Mock;
-  createGain: jest.Mock;
-  createBufferSource: jest.Mock;
-  createBuffer: jest.Mock;
-  _oscillator: { type: string; frequency: { value: number }; connect: jest.Mock; start: jest.Mock; stop: jest.Mock };
-  _gain: { gain: { value: number; setValueAtTime: jest.Mock; exponentialRampToValueAtTime: jest.Mock }; connect: jest.Mock };
-  _bufferSource: { buffer: AudioBuffer | null; connect: jest.Mock; start: jest.Mock; stop: jest.Mock };
-}
-
-/** AudioContext モック */
-function createMockAudioContext(): MockAudioContext {
-  const mockGain = {
-    gain: {
-      value: 0,
-      setValueAtTime: jest.fn(),
-      exponentialRampToValueAtTime: jest.fn(),
-    },
-    connect: jest.fn(),
-  };
-
-  const mockOscillator = {
-    type: '',
-    frequency: { value: 0 },
-    connect: jest.fn(),
-    start: jest.fn(),
-    stop: jest.fn(),
-  };
-
-  const mockBufferSource = {
-    buffer: null as AudioBuffer | null,
-    connect: jest.fn(),
-    start: jest.fn(),
-    stop: jest.fn(),
-  };
-
-  const mockBuffer = {
-    getChannelData: jest.fn().mockReturnValue(new Float32Array(100)),
-  };
-
-  return {
-    currentTime: 0,
-    sampleRate: 44100,
-    destination: {},
-    createOscillator: jest.fn().mockReturnValue(mockOscillator),
-    createGain: jest.fn().mockReturnValue(mockGain),
-    createBufferSource: jest.fn().mockReturnValue(mockBufferSource),
-    createBuffer: jest.fn().mockReturnValue(mockBuffer),
-    _oscillator: mockOscillator,
-    _gain: mockGain,
-    _bufferSource: mockBufferSource,
-  };
 }
 
 describe('audio モジュール', () => {
@@ -109,14 +52,25 @@ describe('audio モジュール', () => {
   });
 
   describe('tn()', () => {
-    it('AudioContext未初期化時は何もしない', () => {
+    it('tn() 呼び出しで ea() が自動初期化される', () => {
+      // Arrange（ea() を明示的に呼ばない）
+
+      // Act
       audio.tn(440, 0.1);
-      expect(mockAC.createOscillator).not.toHaveBeenCalled();
+
+      // Assert — 自動初期化により AudioContext が生成される
+      expect((window as unknown as WindowWithAudioContext).AudioContext).toHaveBeenCalled();
+      expect(mockAC.createOscillator).toHaveBeenCalled();
     });
 
-    it('オシレータが生成される', () => {
+    it('オシレータが生成・接続・開始・停止される', () => {
+      // Arrange
       audio.ea();
+
+      // Act
       audio.tn(440, 0.1);
+
+      // Assert
       expect(mockAC.createOscillator).toHaveBeenCalled();
       expect(mockAC._oscillator.connect).toHaveBeenCalled();
       expect(mockAC._oscillator.start).toHaveBeenCalled();

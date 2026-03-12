@@ -3,44 +3,14 @@
  */
 import { createRendering } from '../core/rendering';
 import type { DrawingAPI } from '../types';
-
-/** Canvas 2D コンテキストのモック */
-function createMockCtx(): CanvasRenderingContext2D {
-  return {
-    fillStyle: '',
-    strokeStyle: '',
-    globalAlpha: 1,
-    lineWidth: 1,
-    font: '',
-    textAlign: '',
-    textBaseline: '',
-    fillRect: jest.fn(),
-    strokeRect: jest.fn(),
-    fillText: jest.fn(),
-    beginPath: jest.fn(),
-    arc: jest.fn(),
-    fill: jest.fn(),
-    stroke: jest.fn(),
-    moveTo: jest.fn(),
-    lineTo: jest.fn(),
-    closePath: jest.fn(),
-    save: jest.fn(),
-    restore: jest.fn(),
-    translate: jest.fn(),
-    rotate: jest.fn(),
-    ellipse: jest.fn(),
-    quadraticCurveTo: jest.fn(),
-    setLineDash: jest.fn(),
-    set lineDashOffset(_v: number) {},
-  } as unknown as CanvasRenderingContext2D;
-}
+import { createMockCanvasContext } from './helpers/mock-factories';
 
 describe('rendering ヘルパー', () => {
   let ctx: CanvasRenderingContext2D;
   let draw: DrawingAPI;
 
   beforeEach(() => {
-    ctx = createMockCtx();
+    ctx = createMockCanvasContext();
     draw = createRendering(ctx);
   });
 

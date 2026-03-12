@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'vitest';
 import { createPrairieEnemyRegistry } from '../../domain/enemies/prairie-enemy-registry';
 import type { PrairieEnemyState } from '../../domain/enemies/prairie-enemy-registry';
 

@@ -1,14 +1,13 @@
-import { describe, it, expect, vi } from 'vitest';
 import { createRenderEffects } from '../../core/render-effects';
 
 /** テスト用の最小 Canvas2D モック */
 function createMockCtx() {
   return {
-    save: vi.fn(),
-    restore: vi.fn(),
-    translate: vi.fn(),
+    save: jest.fn(),
+    restore: jest.fn(),
+    translate: jest.fn(),
     fillStyle: '',
-    fillRect: vi.fn(),
+    fillRect: jest.fn(),
     globalAlpha: 1,
   } as unknown as CanvasRenderingContext2D;
 }
@@ -16,8 +15,8 @@ function createMockCtx() {
 /** テスト用のテキスト描画関数 */
 function createMockDraw() {
   return {
-    onFill: vi.fn(),
-    txtC: vi.fn(),
+    onFill: jest.fn(),
+    txtC: jest.fn(),
   };
 }
 
