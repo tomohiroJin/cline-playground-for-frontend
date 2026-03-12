@@ -1,12 +1,11 @@
-/* eslint-disable */
-// @ts-nocheck
 /**
  * KEYS & ARMS — 描画ヘルパーテスト
  */
 import { createRendering } from '../core/rendering';
+import type { DrawingAPI } from '../types';
 
 /** Canvas 2D コンテキストのモック */
-function createMockCtx() {
+function createMockCtx(): CanvasRenderingContext2D {
   return {
     fillStyle: '',
     strokeStyle: '',
@@ -32,13 +31,13 @@ function createMockCtx() {
     ellipse: jest.fn(),
     quadraticCurveTo: jest.fn(),
     setLineDash: jest.fn(),
-    set lineDashOffset(_v) {},
-  };
+    set lineDashOffset(_v: number) {},
+  } as unknown as CanvasRenderingContext2D;
 }
 
 describe('rendering ヘルパー', () => {
-  let ctx;
-  let draw;
+  let ctx: CanvasRenderingContext2D;
+  let draw: DrawingAPI;
 
   beforeEach(() => {
     ctx = createMockCtx();
@@ -99,7 +98,7 @@ describe('rendering ヘルパー', () => {
       const sprite = [[1, 0, 1], [0, 1, 0]];
       draw.px(sprite, 10, 20, 2, true);
       // 1のピクセルのみ描画される（3つの1があるので3回fillRect）
-      const fillCalls = ctx.fillRect.mock.calls;
+      const fillCalls = (ctx.fillRect as jest.Mock).mock.calls;
       expect(fillCalls.length).toBe(3);
     });
 

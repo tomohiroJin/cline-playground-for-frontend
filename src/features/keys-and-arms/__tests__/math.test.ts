@@ -1,5 +1,3 @@
-/* eslint-disable */
-// @ts-nocheck
 /**
  * KEYS & ARMS — 数学ユーティリティテスト
  */

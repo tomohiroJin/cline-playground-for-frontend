@@ -1,12 +1,32 @@
-/* eslint-disable */
-// @ts-nocheck
 /**
  * KEYS & ARMS — オーディオテスト
  */
 import { createAudio } from '../core/audio';
+import type { GameState, AudioModule } from '../types';
+
+/** window に AudioContext / webkitAudioContext を動的に設定するための型 */
+interface WindowWithAudioContext {
+  AudioContext: jest.Mock | undefined;
+  webkitAudioContext: unknown;
+  [key: string]: unknown;
+}
+
+/** モック AudioContext の型 */
+interface MockAudioContext {
+  currentTime: number;
+  sampleRate: number;
+  destination: Record<string, unknown>;
+  createOscillator: jest.Mock;
+  createGain: jest.Mock;
+  createBufferSource: jest.Mock;
+  createBuffer: jest.Mock;
+  _oscillator: { type: string; frequency: { value: number }; connect: jest.Mock; start: jest.Mock; stop: jest.Mock };
+  _gain: { gain: { value: number; setValueAtTime: jest.Mock; exponentialRampToValueAtTime: jest.Mock }; connect: jest.Mock };
+  _bufferSource: { buffer: AudioBuffer | null; connect: jest.Mock; start: jest.Mock; stop: jest.Mock };
+}
 
 /** AudioContext モック */
-function createMockAudioContext() {
+function createMockAudioContext(): MockAudioContext {
   const mockGain = {
     gain: {
       value: 0,
@@ -25,7 +45,7 @@ function createMockAudioContext() {
   };
 
   const mockBufferSource = {
-    buffer: null,
+    buffer: null as AudioBuffer | null,
     connect: jest.fn(),
     start: jest.fn(),
     stop: jest.fn(),
@@ -50,14 +70,14 @@ function createMockAudioContext() {
 }
 
 describe('audio モジュール', () => {
-  let G;
-  let audio;
-  let mockAC;
+  let G: GameState;
+  let audio: AudioModule;
+  let mockAC: MockAudioContext;
 
   beforeEach(() => {
     mockAC = createMockAudioContext();
-    (window as any).AudioContext = jest.fn().mockReturnValue(mockAC);
-    (window as any).webkitAudioContext = undefined;
+    (window as unknown as WindowWithAudioContext).AudioContext = jest.fn().mockReturnValue(mockAC);
+    (window as unknown as WindowWithAudioContext).webkitAudioContext = undefined;
 
     G = {
       state: 'cave',
@@ -66,25 +86,25 @@ describe('audio モジュール', () => {
       cav: { won: false },
       grs: { won: false },
       bos: { won: false },
-    };
+    } as unknown as GameState;
     audio = createAudio(G);
   });
 
   afterEach(() => {
-    delete (window as any).AudioContext;
-    delete (window as any).webkitAudioContext;
+    delete (window as unknown as WindowWithAudioContext).AudioContext;
+    delete (window as unknown as WindowWithAudioContext).webkitAudioContext;
   });
 
   describe('ea()', () => {
     it('AudioContextが生成される', () => {
       audio.ea();
-      expect((window as any).AudioContext).toHaveBeenCalled();
+      expect((window as unknown as WindowWithAudioContext).AudioContext).toHaveBeenCalled();
     });
 
     it('2回目の呼び出しで新規AudioContextを生成しない', () => {
       audio.ea();
       audio.ea();
-      expect((window as any).AudioContext).toHaveBeenCalledTimes(1);
+      expect((window as unknown as WindowWithAudioContext).AudioContext).toHaveBeenCalledTimes(1);
     });
   });
 

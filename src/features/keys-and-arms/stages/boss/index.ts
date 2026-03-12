@@ -1,5 +1,3 @@
-/* eslint-disable */
-// @ts-nocheck
 /**
  * KEYS & ARMS — ボスステージモジュール
  * engine.ts から抽出した STAGE 3: CASTLE（ボス戦）のロジック。
@@ -7,27 +5,29 @@
  */
 
 import {
-  W, H, BG, GH, ON, RK,
+  W, H, BG, GH, ON,
   BOS_CX, BOS_CY, BOS_R, SAFE_X, SAFE_Y, PED_ANG, PED_POS,
-  K_R, K_RW, K_F, K_HU, KEY_D,
+  K_RW, K_F,
   TICK_RATE,
   assert
 } from '../../constants';
 
-import { TAU, rng, rngInt, rngSpread, shuffle } from '../../core/math';
+import { TAU, rng, rngInt, shuffle } from '../../core/math';
 
 import { Difficulty } from '../../difficulty';
+
+import type { EngineContext, Stage } from '../../types';
 
 /**
  * ボスステージファクトリ
  * @param ctx ゲームコンテキスト（状態・描画・音声・パーティクル・HUD）
  */
-export function createBossStage(ctx) {
+export function createBossStage(ctx: EngineContext): Stage {
   const { G, draw, audio, particles, hud } = ctx;
 
   // 描画ヘルパーの分割代入
-  const { $, circle, circleS, onFill, onStroke, R, txt, txtC, px, drawK,
-          lcdFg, lcdBg, iHeart, iGem, iSlime, iGoblin, iSkel, iBoss, iArmDown, iArmUp } = draw;
+  const { $, circle, circleS, onFill, onStroke, R: _R, txt, txtC, px, drawK: _drawK,
+          lcdFg: _lcdFg, lcdBg: _lcdBg, iHeart: _iHeart, iGem, iSlime: _iSlime, iGoblin: _iGoblin, iSkel: _iSkel, iBoss, iArmDown: _iArmDown, iArmUp: _iArmUp } = draw;
 
   // オーディオの分割代入
   const { S, ea } = audio;
@@ -36,17 +36,17 @@ export function createBossStage(ctx) {
   const { Particles, Popups } = particles;
 
   // HUDの分割代入
-  const { BL, twoBeatDuration, doHurt, transTo } = hud;
+  const { BL: _BL, twoBeatDuration, doHurt, transTo } = hud;
 
   // --- 入力ヘルパー ---
-  function J(k) { return G.jp[k.toLowerCase()]; }
+  function J(k: string) { return G.jp[k.toLowerCase()]; }
   function jAct() { return J('z') || J(' '); }
 
   /** ポップアップ追加のショートカット */
-  function addPopup(x, y, t) { Popups.add(x, y, t); }
+  function addPopup(x: number, y: number, t: string) { Popups.add(x, y, t); }
 
   // --- プレイヤー座標ヘルパー ---
-  function playerXY(pos) {
+  function playerXY(pos: number) {
     if (pos === 0) return { x: SAFE_X, y: SAFE_Y };
     return { x: PED_POS[pos - 1].x, y: PED_POS[pos - 1].y };
   }
@@ -101,7 +101,7 @@ export function createBossStage(ctx) {
   }
 
   // === ボス更新 ===
-  function bosUpdate(nb) {
+  function bosUpdate(nb: boolean) {
     const B = G.bos;
     if (B.hurtCD > 0) B.hurtCD--;
     if (B.moveCD > 0) B.moveCD--;

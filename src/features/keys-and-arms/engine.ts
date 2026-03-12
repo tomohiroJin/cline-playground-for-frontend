@@ -1,11 +1,10 @@
-/* eslint-disable */
-// @ts-nocheck
 /**
  * KEYS & ARMS — ゲームエンジン（オーケストレータ）
  * 各モジュールを組み立て、ゲームループを駆動する。
  */
 
-import { W, H, BG, ON, TICK_MS } from './constants';
+import type { GameState, EngineContext } from './types';
+import { W, H, BG, TICK_MS } from './constants';
 import { createRendering } from './core/rendering';
 import { createAudio } from './core/audio';
 import { createParticles } from './core/particles';
@@ -46,9 +45,10 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
   /* ================================================================
      INPUT — キーボード状態管理
      ================================================================ */
-  const kd = {}, jp = {};
-  function J(k) { return jp[k.toLowerCase()]; }
-  function clearJ() { for (const k in jp) delete jp[k]; }
+  const kd: Record<string, boolean> = {};
+  const jp: Record<string, boolean> = {};
+  function J(k: string): boolean { return jp[k.toLowerCase()]; }
+  function clearJ(): void { for (const k in jp) delete jp[k]; }
   function jAct() { return J('z') || J(' '); }
 
   /* ================================================================
@@ -56,7 +56,7 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
      ================================================================ */
   const G = {
     // 全体状態
-    state: 'title',
+    state: 'title' as const,
     loop: 1,
     score: 0,
     dispScore: 0,
@@ -84,7 +84,7 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
     // トランジション
     trT: 0,
     trTxt: '',
-    trFn: null,
+    trFn: undefined,
     trSub: '',
 
     // タイトル画面
@@ -104,11 +104,13 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
     bosParticles: [], bosShieldBreak: [], bosArmTrail: [],
 
     // 遅延バインド：各ステージ init コールバック
-    cavInit: null,
-    grsInit: null,
-    bosInit: null,
-    startGame: null,
-  };
+    cavInit: undefined,
+    grsInit: undefined,
+    bosInit: undefined,
+    startGame: undefined,
+    // ステージ状態は各ステージの init() で完全初期化されるため、
+    // 初期値は空オブジェクトで unknown 経由のアサーションが必要
+  } as unknown as GameState;
 
   /* ================================================================
      モジュール生成
@@ -118,7 +120,7 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
   const particles = createParticles(draw);
   const hud = createHUD(draw, G, audio);
 
-  const ctx = { G, draw, audio, particles, hud };
+  const ctx: EngineContext = { G, draw, audio, particles, hud };
 
   // ステージ
   const cave = createCaveStage(ctx);
@@ -143,7 +145,7 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
   /* ================================================================
      描画ヘルパー（オーケストレータ用）
      ================================================================ */
-  const { onFill, txt, txtC } = draw;
+  const { onFill, txt: _txt, txtC } = draw;
 
   /* ================================================================
      GAME TICK — 状態マシン
@@ -291,7 +293,7 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
      FRAME — rAF ループ
      ================================================================ */
   let lastTime = 0, accumulator = 0;
-  function frame(now) {
+  function frame(now: number): void {
     if (!lastTime) lastTime = now;
     const dt = Math.min(now - lastTime, 100);
     lastTime = now;

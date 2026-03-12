@@ -1,10 +1,12 @@
-/* eslint-disable */
-// @ts-nocheck
 /**
  * KEYS & ARMS — HUD描画・トランジション
  */
-import { W, H, BG, ON } from '../constants';
+import { W, H, ON } from '../constants';
 import { Difficulty } from '../difficulty';
+import type { DrawingAPI } from '../types/rendering';
+import type { GameState } from '../types/game-state';
+import type { AudioModule } from '../types/audio';
+import type { HUDModule } from '../types/hud';
 
 /**
  * HUD・トランジションモジュールを生成する
@@ -12,18 +14,18 @@ import { Difficulty } from '../difficulty';
  * @param G ゲーム状態
  * @param audio オーディオモジュール
  */
-export function createHUD(draw, G, audio) {
+export function createHUD(draw: DrawingAPI, G: GameState, audio: AudioModule): HUDModule {
   const { $, onFill, R, txt, txtC, iHeart } = draw;
   const { tn } = audio;
 
   /** ビート長（現在のループの） */
-  function BL() { return Difficulty.beatLength(G.loop); }
+  function BL(): number { return Difficulty.beatLength(G.loop); }
 
   /** 2ビート分の持続時間 */
-  function twoBeatDuration() { return BL() * 2; }
+  function twoBeatDuration(): number { return BL() * 2; }
 
   /** ダメージ処理 */
-  function doHurt() {
+  function doHurt(): void {
     G.hp--;
     G.noDmg = false;
     G.hurtFlash = 10;
@@ -37,7 +39,7 @@ export function createHUD(draw, G, audio) {
   }
 
   /** ビート進行 */
-  function doBeat() {
+  function doBeat(): boolean {
     G.beatCtr++;
     if (G.beatCtr >= BL()) {
       G.beatCtr = 0;
@@ -51,7 +53,7 @@ export function createHUD(draw, G, audio) {
   }
 
   /** HUD描画 */
-  function drawHUD() {
+  function drawHUD(): void {
     // スコアロールアップ
     if (G.dispScore < G.score) G.dispScore = Math.min(G.score, G.dispScore + Math.max(1, Math.floor((G.score - G.dispScore) / 8)));
     if (G.dispScore > G.score) G.dispScore = G.score;
@@ -87,13 +89,13 @@ export function createHUD(draw, G, audio) {
   }
 
   /** トランジション開始 */
-  function transTo(t, fn, sub) {
+  function transTo(t: string, fn: (() => void) | undefined, sub?: string): void {
     G.trT = 56; G.trTxt = t; G.trFn = fn; G.trSub = sub || ''; G.bgmBeat = 0;
     if (tn) tn(200, .15, 'triangle', .03);
   }
 
   /** トランジション描画 */
-  function drawTrans() {
+  function drawTrans(): boolean {
     if (G.trT <= 0) return false;
     G.trT--;
     if (G.trT === 28 && G.trFn) G.trFn();

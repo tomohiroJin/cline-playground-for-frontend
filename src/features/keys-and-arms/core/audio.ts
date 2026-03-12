@@ -1,48 +1,47 @@
-/* eslint-disable */
-// @ts-nocheck
 /**
  * KEYS & ARMS — オーディオモジュール
  * Web Audio API によるサウンドエフェクト・BGM
  */
+import type { GameState, AudioModule, SoundEffects } from '../types';
 
 /**
  * オーディオモジュールを生成する
  * @param G ゲーム状態オブジェクト
  */
-export function createAudio(G) {
-  let ac;
+export function createAudio(G: GameState): AudioModule {
+  let ac: AudioContext | undefined;
 
   /** AudioContext を確保 */
-  function ea() {
-    if (!ac) ac = new ((window as any).AudioContext || (window as any).webkitAudioContext)();
+  function ea(): void {
+    if (!ac) ac = new ((window as unknown as Record<string, typeof AudioContext>).AudioContext || (window as unknown as Record<string, typeof AudioContext>).webkitAudioContext)();
   }
 
   /** トーン生成 */
-  function tn(f, d, tp = 'square', v = .04) {
+  function tn(f: number, d: number, tp: OscillatorType = 'square', v: number = .04): void {
     if (!ac) return;
-    const o = ac.createOscillator(), g = ac.createGain();
+    const o: OscillatorNode = ac.createOscillator(), g: GainNode = ac.createGain();
     o.type = tp; o.frequency.value = f; g.gain.setValueAtTime(v, ac.currentTime);
     g.gain.exponentialRampToValueAtTime(.001, ac.currentTime + d);
     o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + d);
   }
 
   /** ノイズ生成 */
-  function noise(d, v = .02) {
+  function noise(d: number, v: number = .02): void {
     if (!ac) return;
-    const n = ac.createBufferSource(), buf = ac.createBuffer(1, ac.sampleRate * d, ac.sampleRate),
-      data = buf.getChannelData(0);
+    const n: AudioBufferSourceNode = ac.createBufferSource(), buf: AudioBuffer = ac.createBuffer(1, ac.sampleRate * d, ac.sampleRate),
+      data: Float32Array = buf.getChannelData(0);
     for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * v;
-    n.buffer = buf; const g = ac.createGain();
+    n.buffer = buf; const g: GainNode = ac.createGain();
     g.gain.setValueAtTime(v, ac.currentTime);
     g.gain.exponentialRampToValueAtTime(.001, ac.currentTime + d);
     n.connect(g); g.connect(ac.destination); n.start(); n.stop(ac.currentTime + d);
   }
 
   /** ヒットストップ */
-  function doHitStop(n) { G.hitStop = n; }
+  function doHitStop(n: number): void { G.hitStop = n; }
 
   /** BGM ティック — ステージ別リズム */
-  function bgmTick() {
+  function bgmTick(): void {
     if (!ac) return;
     // 勝利シーケンス中は無音
     if ((G.state === 'cave' && G.cav.won) || (G.state === 'grass' && G.grs.won) || (G.state === 'boss' && G.bos.won)) return;
@@ -65,7 +64,7 @@ export function createAudio(G) {
   }
 
   /** SFX オブジェクト */
-  const S = {
+  const S: SoundEffects = {
     tick() { tn(1500, .01, 'square', .015); },
     move() { tn(880, .03); },
     grab() { tn(1100, .08); setTimeout(() => tn(1400, .07), 50); doHitStop(3); },
@@ -86,7 +85,7 @@ export function createAudio(G) {
     ladder() { tn(300, .04); setTimeout(() => tn(350, .04), 40); },
     safe() { tn(500, .04, 'sine', .025); setTimeout(() => tn(600, .03, 'sine', .02), 30); },
     drip() { tn(2000, .025, 'sine', .008); },
-    combo(n) { const f = 600 + n * 60; tn(f, .04, 'square', .025); setTimeout(() => tn(f * 1.25, .03), 25); },
+    combo(n: number) { const f = 600 + n * 60; tn(f, .04, 'square', .025); setTimeout(() => tn(f * 1.25, .03), 25); },
     bossDie() { [200, 160, 120, 80].forEach((f, i) => setTimeout(() => { tn(f, .2, 'sawtooth', .06); noise(.08, .02); }, i * 120)); }
   };
 

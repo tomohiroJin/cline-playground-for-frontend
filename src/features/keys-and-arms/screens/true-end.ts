@@ -1,25 +1,23 @@
-/* eslint-disable */
-// @ts-nocheck
 /**
  * KEYS & ARMS -- トゥルーエンド画面モジュール（全3ループクリア後）
  * engine.ts から抽出したトゥルーエンド描画ロジック。
  */
 
-import { W, H, BG, GH, ON, K_R, KEY_D } from '../constants';
-import { TAU } from '../core/math';
+import { W, H, BG, ON, K_R, KEY_D } from '../constants';
+import type { EngineContext } from '../types';
 
 /**
  * トゥルーエンド画面ファクトリ
  * @param ctx ゲームコンテキスト（状態・描画・音声・パーティクル・HUD）
  */
-export function createTrueEndScreen(ctx) {
-  const { G, draw, audio, particles, hud } = ctx;
-  const { $, circle, onFill, txt, txtC, px, iSlime, iGoblin, iSkel, iGem, iBoss } = draw;
+export function createTrueEndScreen(ctx: EngineContext) {
+  const { G, draw, audio, particles: _particles, hud } = ctx;
+  const { $, circle: _circle, onFill, txt: _txt, txtC, px, iSlime, iGoblin, iSkel, iGem, iBoss } = draw;
   const { ea } = audio;
   const { transTo } = hud;
 
   // --- 入力ヘルパー ---
-  function J(k) { return G.jp[k.toLowerCase()]; }
+  function J(k: string) { return G.jp[k.toLowerCase()]; }
   function jAct() { return J('z') || J(' '); }
 
   /** トゥルーエンド画面描画 */
@@ -35,7 +33,7 @@ export function createTrueEndScreen(ctx) {
       $.fillRect(sx, sy, G.teT % (9 + i % 5) < 2 ? 3 : 2, G.teT % (9 + i % 5) < 2 ? 3 : 2);
     }
     $.globalAlpha = 1;
-    const line = (start, text, y, sz) => {
+    const line = (start: number, text: string, y: number, sz?: number) => {
       if (G.teT > start) {
         $.globalAlpha = Math.min(1, (G.teT - start) / 30); txtC(text, W / 2, y, sz || 6); $.globalAlpha = 1;
       }

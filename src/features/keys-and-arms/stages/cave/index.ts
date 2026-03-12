@@ -1,5 +1,3 @@
-/* eslint-disable */
-// @ts-nocheck
 /**
  * KEYS & ARMS — 洞窟ステージモジュール
  * engine.ts から抽出した STAGE 1: CAVE のロジック。
@@ -8,10 +6,10 @@
 
 import {
   SC, L1T, L1B, L2T, L2B, L3T, L3B, SHL, SHR,
-  KY1, KY2, KY3, POS, NAV, ROOM_NAMES,
+  KY1, KY2, POS, NAV, ROOM_NAMES,
   GHOST_SPR, GHOST_DIR, GHOST_DY,
   W, H, BG, ON, RK, GH,
-  K_R, K_RW, K_F, K_PK, K_CLR, K_JP, K_AT, K_PR, K_HU,
+  K_R, K_RW, K_PK, K_CLR, K_JP, K_AT, K_PR, K_HU,
   K_CR, K_CRW, K_CJP, K_CCLR, K_CDK, K_CL, K_CL2,
   K_DK, K_RE,
   BAT_FU, BAT_FD, BAT_P, KEY_D, BOLT,
@@ -24,23 +22,26 @@ import { rng, rngInt, rngSpread, TAU } from '../../core/math';
 
 import { Difficulty } from '../../difficulty';
 
+import type { EngineContext } from '../../types';
+import type { Stage } from '../../types';
+
 /**
  * 洞窟ステージファクトリ
  * @param ctx ゲームコンテキスト（状態・描画・音声・パーティクル・HUD）
  */
-export function createCaveStage(ctx) {
+export function createCaveStage(ctx: EngineContext): Stage {
   const { G, draw, audio, particles, hud } = ctx;
-  const { $, circle, circleS, onFill, onStroke, R, txt, txtC, px, drawK, lcdFg, lcdBg } = draw;
+  const { $, circle, circleS, onFill, onStroke, R, txt, txtC, px, drawK, lcdFg: _lcdFg, lcdBg: _lcdBg } = draw;
   const { S, ea } = audio;
   const { Particles, Popups } = particles;
   const { BL, twoBeatDuration, doHurt, transTo } = hud;
 
   // --- 入力ヘルパー ---
-  function J(k) { return G.jp[k.toLowerCase()]; }
+  function J(k: string) { return G.jp[k.toLowerCase()]; }
   function jAct() { return J('z') || J(' '); }
 
   // --- パーティクル・ポップアップヘルパー ---
-  function addPopup(x, y, t) { Popups.add(x, y, t); }
+  function addPopup(x: number, y: number, t: string) { Popups.add(x, y, t); }
 
   function initDust() {
     G.dust = [];
@@ -48,15 +49,15 @@ export function createCaveStage(ctx) {
       G.dust.push({ x: rng(0, W), y: rng(30, H - 30), vx: rngSpread(.15), vy: rngSpread(.075), s: rng(1, 3), a: rng(.06, .14) });
   }
 
-  function addStepDust(x, y) {
-    Particles.spawn(G.stepDust, { x, y, n: 4, vxSpread: .6, vySpread: .4, vyBase: -.4, life: 12, s: 1.5 });
+  function addStepDust(x: number, y: number) {
+    Particles.spawn(G.stepDust as unknown as import('../../types').ParticlePool, { x, y, n: 4, vxSpread: .6, vySpread: .4, vyBase: -.4, life: 12, s: 1.5 });
   }
 
   // --- 洞窟背景描画 ---
   function drawCaveBG() {
     $.fillStyle = RK; $.fillRect(0, 26, W, H - 36);
     $.fillStyle = BG;
-    const mkP = (pts) => { $.beginPath(); $.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) $.lineTo(pts[i][0], pts[i][1]); $.closePath(); $.fill(); };
+    const mkP = (pts: number[][]) => { $.beginPath(); $.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) $.lineTo(pts[i][0], pts[i][1]); $.closePath(); $.fill(); };
     mkP([[0, L1T - 8], [16, L1T], [80, L1T + 2], [160, L1T - 2], [SHL, L1T], [SHR, L1T], [340, L1T - 3], [400, L1T + 1], [W, L1T],
       [W, L1B], [400, L1B + 2], [340, L1B], [SHR, L1B], [SHL, L1B], [160, L1B + 3], [80, L1B - 1], [16, L1B + 2], [0, L1B + 8]]);
     mkP([[0, L2T - 2], [60, L2T + 1], [70, L2T - 4], [SHL, L2T], [SHR, L2T], [300, L2T - 2], [380, L2T + 1], [W, L2T - 2],
@@ -90,7 +91,7 @@ export function createCaveStage(ctx) {
     $.fillRect(SHL, L1B, 2, L2T - L1B); $.fillRect(SHR - 2, L1T, 2, L1B - L1T);
     $.fillRect(SHL, L2B, 2, L3T - L2B); $.fillRect(SHR - 2, L2T, 2, L2B - L2T); $.fillRect(SHR - 2, L3T, 2, L3B - L3T);
     // ハシゴ
-    const dL = (x, y1, y2) => { $.fillStyle = ON; $.fillRect(x, y1, 2, y2 - y1); $.fillRect(x + 18, y1, 2, y2 - y1); for (let y = y1 + 6; y < y2; y += 9) $.fillRect(x, y, 20, 2); };
+    const dL = (x: number, y1: number, y2: number) => { $.fillStyle = ON; $.fillRect(x, y1, 2, y2 - y1); $.fillRect(x + 18, y1, 2, y2 - y1); for (let y = y1 + 6; y < y2; y += 9) $.fillRect(x, y, 20, 2); };
     dL(SHL + 2, L1B + 2, L2T - 2); dL(SHL + 2, L2B + 2, L3T - 2);
 
     // === 障害物 ===
@@ -107,8 +108,8 @@ export function createCaveStage(ctx) {
     { const rx = POS[8].x - 2, ry = L2B - 2; $.fillStyle = ON; $.beginPath(); $.moveTo(rx - 6, ry); $.lineTo(rx - 2, ry - 8); $.lineTo(rx + 4, ry - 12); $.lineTo(rx + 10, ry - 8); $.lineTo(rx + 14, ry); $.closePath(); $.fill(); $.fillStyle = BG; $.fillRect(rx + 1, ry - 8, 3, 2); }
 
     // 鍾乳石・石筍
-    const sc = (x, y, w, h) => { $.fillStyle = ON; $.beginPath(); $.moveTo(x, y); $.lineTo(x + w, y); $.lineTo(x + w / 2, y + h); $.closePath(); $.fill(); };
-    const sg = (x, y, w, h) => { $.fillStyle = ON; $.beginPath(); $.moveTo(x + w / 2, y); $.lineTo(x, y + h); $.lineTo(x + w, y + h); $.closePath(); $.fill(); };
+    const sc = (x: number, y: number, w: number, h: number) => { $.fillStyle = ON; $.beginPath(); $.moveTo(x, y); $.lineTo(x + w, y); $.lineTo(x + w / 2, y + h); $.closePath(); $.fill(); };
+    const sg = (x: number, y: number, w: number, h: number) => { $.fillStyle = ON; $.beginPath(); $.moveTo(x + w / 2, y); $.lineTo(x, y + h); $.lineTo(x + w, y + h); $.closePath(); $.fill(); };
     sc(65, L1T, 8, 12); sc(270, L1T, 10, 14); sc(350, L1T - 2, 8, 10);
     sg(70, L1B - 10, 6, 10); sg(280, L1B - 10, 10, 10);
     sc(50, L2T, 10, 12); sc(280, L2T - 1, 8, 12); sc(360, L2T - 3, 10, 14);
@@ -126,7 +127,7 @@ export function createCaveStage(ctx) {
     // TRAP部屋（右L2）：天井から鎖
     { const tx = POS[9].x;
       $.fillStyle = ON;
-      const chain = (x, y1, y2) => { for (let y = y1; y < y2; y += 5) { $.fillRect(x, y, 3, 3); $.fillRect(x + 1, y + 3, 1, 2); } };
+      const chain = (x: number, y1: number, y2: number) => { for (let y = y1; y < y2; y += 5) { $.fillRect(x, y, 3, 3); $.fillRect(x + 1, y + 3, 1, 2); } };
       chain(tx - 30, L2T + 2, L2T + 24); chain(tx + 28, L2T + 2, L2T + 20); }
 
     // MIMIC部屋（左L2）：散乱コイン
@@ -143,11 +144,11 @@ export function createCaveStage(ctx) {
 
     // キノコ（固体装飾）
     $.fillStyle = ON;
-    const mush = (x, y) => { $.beginPath(); $.arc(x, y - 2, 3, Math.PI, 0); $.fill(); $.fillRect(x - 1, y - 1, 2, 4); };
+    const mush = (x: number, y: number) => { $.beginPath(); $.arc(x, y - 2, 3, Math.PI, 0); $.fill(); $.fillRect(x - 1, y - 1, 2, 4); };
     mush(85, L1B); mush(175, L2B); mush(340, L1B); mush(310, L3B);
 
     // 松明（光源付き）
-    const torch = (x, y) => {
+    const torch = (x: number, y: number) => {
       // 光の輪
       const gl = .04 + Math.sin(G.tick * .08 + x) * .015; onFill(gl);
       circle(x + 2, y + 4, 18); $.globalAlpha = 1;
@@ -170,20 +171,20 @@ export function createCaveStage(ctx) {
       $.font = '6px "Press Start 2P"'; $.textAlign = 'center'; $.textBaseline = 'top'; $.fillText('CAVE', sx + 18, sy + 3); }
 
     // 水滴（サウンドトリガー付き）
-    const drip = (x, y0, per, off) => { const t = (G.tick + off) % per;
+    const drip = (x: number, y0: number, per: number, off: number) => { const t = (G.tick + off) % per;
       if (t < 15) { onFill(.5); $.fillRect(x, y0 + t * 2, 2, 3); $.globalAlpha = 1; }
       if (t === 15 && off === 0) S.drip();
       if (t >= 15 && t < 28) { const r = (t - 15) * .7; onStroke(.25); $.lineWidth = 1; circleS(x + 1, y0 + 32, r); $.globalAlpha = 1; } };
     drip(152, L1T + 12, 55, 0); drip(290, L2T + 10, 65, 20); drip(240, L3T + 4, 48, 35);
 
     // クリスタル（光源）
-    const cry = (x, y, h) => { const gl = .18 + Math.sin(G.tick * .05 + x) * .1; onFill(gl); $.beginPath(); $.moveTo(x, y + h); $.lineTo(x + 3, y); $.lineTo(x + 6, y + h); $.closePath(); $.fill();
+    const cry = (x: number, y: number, h: number) => { const gl = .18 + Math.sin(G.tick * .05 + x) * .1; onFill(gl); $.beginPath(); $.moveTo(x, y + h); $.lineTo(x + 3, y); $.lineTo(x + 6, y + h); $.closePath(); $.fill();
       $.globalAlpha = gl * .3; circle(x + 3, y + h / 2, h * .6); $.globalAlpha = 1; };
     cry(60, L1B - 16, 10); cry(340, L1B - 12, 8); cry(60, L2B - 14, 10); cry(310, L2B - 12, 8); cry(200, L3B - 10, 8); cry(300, L3B - 12, 10);
 
     // 蜘蛛の巣
     onStroke(.25); $.lineWidth = 1;
-    const web = (x, y, sx, sy) => { $.beginPath(); $.moveTo(x, y); $.quadraticCurveTo(x + sx * .5, y + sy * .3, x + sx, y); $.stroke(); $.beginPath(); $.moveTo(x, y); $.quadraticCurveTo(x + sx * .3, y + sy * .5, x, y + sy); $.stroke(); $.beginPath(); $.moveTo(x, y); $.quadraticCurveTo(x + sx * .4, y + sy * .4, x + sx * .7, y + sy * .7); $.stroke(); };
+    const web = (x: number, y: number, sx: number, sy: number) => { $.beginPath(); $.moveTo(x, y); $.quadraticCurveTo(x + sx * .5, y + sy * .3, x + sx, y); $.stroke(); $.beginPath(); $.moveTo(x, y); $.quadraticCurveTo(x + sx * .3, y + sy * .5, x, y + sy); $.stroke(); $.beginPath(); $.moveTo(x, y); $.quadraticCurveTo(x + sx * .4, y + sy * .4, x + sx * .7, y + sy * .7); $.stroke(); };
     web(0, L1T - 6, 30, 20); web(W - 2, L2T - 4, -30, 20); web(130, L3T - 2, 20, 16); web(W - 2, L1T - 6, -25, 18); $.globalAlpha = 1;
 
     // 骨
@@ -255,7 +256,7 @@ export function createCaveStage(ctx) {
   }
 
   // === 洞窟更新 ===
-  function cavUpdate(nb) {
+  function cavUpdate(nb: boolean) {
     const C = G.cav; if (C.hurtCD > 0) C.hurtCD--; if (C.actAnim > 0) C.actAnim--; if (C.batHitAnim > 0) C.batHitAnim--;
     if (C.mimicShake > 0) C.mimicShake--; if (C.walkAnim > 0) C.walkAnim--; if (C.won) { C.wonT++; if (C.wonT === 120) transTo('PRAIRIE', G.grsInit, 'DEFEAT ENEMIES'); return; }
     if (C.trailAlpha > 0) C.trailAlpha -= .03; if (C.roomNameT > 0) C.roomNameT--;
@@ -320,6 +321,7 @@ export function createCaveStage(ctx) {
     C.spiderBeat++; const sp = Difficulty.hazardCycle(G.loop, 7); const sc2 = C.spiderBeat % sp;
     if (sc2 < Math.floor(sp * .35)) C.spiderY = 0; else if (sc2 < Math.floor(sp * .6)) C.spiderY = 1; else C.spiderY = 2;
     // 危険→安全遷移の追跡
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions -- 既存の危険→安全遷移ロジック
     if (prevTrap && !C.trapOn) C.trapWasDanger = true; else if (!C.trapOn) C.trapWasDanger && (C.trapWasDanger = !!(C.trapWasDanger = 8));
     if (prevBat === 2 && C.batPhase === 0) C.batWasDanger = 8;
     if (prevMim && !C.mimicOpen) C.mimicWasDanger = 8;
@@ -370,7 +372,7 @@ export function createCaveStage(ctx) {
           case 1: px(wf ? BAT_FU : BAT_FD, cx - 12, midY, s, true); break;
           case 2: px(wf ? BAT_FU : BAT_FD, cx - 12, swoopY, s, true); break; } }
       if (C.batPhase === 2 && !C.keys[1] && Math.floor(G.tick / 4) % 2) txt('!', cx - 20, swoopY + 2, 8);
-      if (C.batWasDanger > 0 && C.batPhase === 0 && !C.keys[1]) txt('○', cx - 20, perchY + 4, 7); }
+      if ((C.batWasDanger as number) > 0 && C.batPhase === 0 && !C.keys[1]) txt('○', cx - 20, perchY + 4, 7); }
 
     // CAGE TRAP（pos 9）— ACTホールドでケージ開放
     { const cx = POS[9].x;
@@ -399,7 +401,7 @@ export function createCaveStage(ctx) {
         if (C.trapOn) { onFill(.12 + Math.sin(G.tick * .9) * .06);
           for (let i = 0; i < 6; i++) $.fillRect(cx - 14 + i * 6, L2T + 30 + (i % 2 ? -3 : 3), 5, 2); $.globalAlpha = 1;
           if (Math.floor(G.tick / 3) % 2) txt('!', cx - 4, L2T + 42, 7); }
-        if (C.trapWasDanger > 0 && !C.trapOn) txt('○', cx - 4, L2T + 42, 7);
+        if ((C.trapWasDanger as number) > 0 && !C.trapOn) txt('○', cx - 4, L2T + 42, 7);
         // ホールド振動
         if (C.cageHolding) { const shk = Math.floor(G.tick / 2) % 2 ? 1 : -1;
           onFill(.15); $.fillRect(cx - 24 + shk, L2T + 2, 48, 2); $.fillRect(cx - 24 - shk, L2B - 4, 48, 2); $.globalAlpha = 1; } }
@@ -415,7 +417,7 @@ export function createCaveStage(ctx) {
           const breathY = Math.sin(G.tick * .04) * .5;
           if (C.pryCount >= 3) px(MIM_CRK, cx - 14 + shk, by + Math.round(breathY), s, true);
           else px(MIM_C, cx - 14 + shk, by + Math.round(breathY), s, true);
-          if (C.mimicWasDanger > 0) txt('○', cx - 20, by - 4, 7); }
+          if ((C.mimicWasDanger as number) > 0) txt('○', cx - 20, by - 4, 7); }
         if (C.pryCount >= 2) px(KEY_D, cx - 6, by + 8, s, true);
         // 連打進捗バー
         { const bx = cx - 14, by2 = by + 34, bw = 30, bh = 5;
@@ -453,7 +455,7 @@ export function createCaveStage(ctx) {
       if (C.spiderY > 0) { $.quadraticCurveTo(thX + 9 + wobble, (L3T + spCY) / 2, thX + 9, spCY + 4); }
       else { $.lineTo(thX + 9, spCY + 4); } $.stroke();
       px(SPIDER_T, thX + 2, spTY, s, false); px(SPIDER, thX, spMY, s, false); px(SPIDER, thX, spBY, s, false);
-      if (C.spiderY === 0) { px(SPIDER_T, thX + 2, spTY, s, true); if (C.spiderWasDanger > 0) txt('○', thX - 2, spBY + 18, 7); }
+      if (C.spiderY === 0) { px(SPIDER_T, thX + 2, spTY, s, true); if ((C.spiderWasDanger as number) > 0) txt('○', thX - 2, spBY + 18, 7); }
       else { const lw = Math.floor(G.tick / 4) % 2; px(SPIDER, thX + (lw ? 0 : 1), spCY, s, true); }
       if (C.spiderY === 2 && Math.floor(G.tick / 4) % 2) txt('!', thX - 2, spBY + 18, 7); }
 

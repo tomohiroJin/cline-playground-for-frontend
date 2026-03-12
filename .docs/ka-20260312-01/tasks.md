@@ -13,43 +13,43 @@
 
 ### 型定義ファイルの作成
 
-- [ ] **T-1.01** `types/game-state.ts` 作成: GameState, GameScreen 型定義
-- [ ] **T-1.02** `types/input.ts` 作成: InputState, InputCommand, InputHandler 型定義
-- [ ] **T-1.03** `types/stage.ts` 作成: Stage, CaveState, PrairieState, BossState, PrairieEnemy, BossArm 型定義
-- [ ] **T-1.04** `types/screen.ts` 作成: Screen インターフェース定義
-- [ ] **T-1.05** `types/rendering.ts` 作成: DrawingAPI インターフェース定義
-- [ ] **T-1.06** `types/audio.ts` 作成: AudioService, SoundEffects インターフェース定義
-- [ ] **T-1.07** `types/particles.ts` 作成: Particle, ParticlePool, ParticleSpawnParams, ParticleSystem, Popup, PopupSystem 型定義
-- [ ] **T-1.08** `types/hud.ts` 作成: HUDAPI インターフェース定義
-- [ ] **T-1.09** `types/engine-context.ts` 作成: EngineContext インターフェース定義
-- [ ] **T-1.10** `types/enemies.ts` 作成: EnemyBase, EnemyBehavior, CaveEnemyType, PrairieEnemyType 型定義
-- [ ] **T-1.11** `types/constants.ts` 作成: SpriteData, Position, RoomNavigation, LCDPalette 型定義
+- [x] **T-1.01** `types/game-state.ts` 作成: GameState, GameScreen 型定義
+- [x] **T-1.02** `types/input.ts` 作成: InputState 型定義
+- [x] **T-1.03** `types/stage.ts` 作成: Stage, CaveState, PrairieState, BossState, PrairieEnemy, ShieldOrb 型定義
+- [x] **T-1.04** `types/screen.ts` 作成: Screen インターフェース定義
+- [x] **T-1.05** `types/rendering.ts` 作成: DrawingAPI インターフェース定義
+- [x] **T-1.06** `types/audio.ts` 作成: AudioModule, SoundEffects インターフェース定義
+- [x] **T-1.07** `types/particles.ts` 作成: Particle, ParticlePool, ParticleSpawnParams, ParticleSystemAPI, PopupSystemAPI, ParticlesModule 型定義
+- [x] **T-1.08** `types/hud.ts` 作成: HUDModule インターフェース定義
+- [x] **T-1.09** `types/engine-context.ts` 作成: EngineContext インターフェース定義
+- [x] **T-1.10** `types/enemies.ts` 作成: CaveEnemyType, PrairieEnemyType 型定義
+- [x] **T-1.11** `types/constants.ts` 作成: SpriteData, Position, RoomNavigation, LCDPalette 型定義
 
 ### `@ts-nocheck` 除去（依存の浅い順）
 
-- [ ] **T-1.12** `core/math.ts`: `@ts-nocheck` 除去、型注釈追加、テスト通過確認
-- [ ] **T-1.13** `constants.ts`: `@ts-nocheck` 除去、`as const` 適用、SpriteData 型適用
-- [ ] **T-1.14** `difficulty.ts`: `@ts-nocheck` 除去、引数・戻り値の型注釈追加
-- [ ] **T-1.15** `core/particles.ts`: `@ts-nocheck` 除去、Particle/ParticleSystem 型適用
-- [ ] **T-1.16** `core/rendering.ts`: `@ts-nocheck` 除去、DrawingAPI 型適用
-- [ ] **T-1.17** `core/audio.ts`: `@ts-nocheck` 除去、AudioService 型適用
-- [ ] **T-1.18** `core/hud.ts`: `@ts-nocheck` 除去、HUDAPI 型適用
-- [ ] **T-1.19** `screens/title.ts`: `@ts-nocheck` 除去、EngineContext 型適用
-- [ ] **T-1.20** `screens/help.ts`: `@ts-nocheck` 除去、EngineContext 型適用
-- [ ] **T-1.21** `screens/game-over.ts`: `@ts-nocheck` 除去、EngineContext 型適用
-- [ ] **T-1.22** `screens/ending.ts`: `@ts-nocheck` 除去、EngineContext 型適用
-- [ ] **T-1.23** `screens/true-end.ts`: `@ts-nocheck` 除去、EngineContext 型適用
-- [ ] **T-1.24** `engine.ts`: `@ts-nocheck` 除去、GameState 型適用、モジュール型参照
-- [ ] **T-1.25** `stages/cave/index.ts`: `@ts-nocheck` 除去、CaveState 型適用
-- [ ] **T-1.26** `stages/prairie/index.ts`: `@ts-nocheck` 除去、PrairieState 型適用
-- [ ] **T-1.27** `stages/boss/index.ts`: `@ts-nocheck` 除去、BossState 型適用
+- [x] **T-1.12** `core/math.ts`: `@ts-nocheck` 除去、型注釈追加、テスト通過確認
+- [x] **T-1.13** `constants.ts`: `@ts-nocheck` 除去、SpriteData 型適用
+- [-] **T-1.14** `difficulty.ts`: 元々 `@ts-nocheck` なし（型付き済み）
+- [x] **T-1.15** `core/particles.ts`: `@ts-nocheck` 除去、ParticlesModule 型適用
+- [x] **T-1.16** `core/rendering.ts`: `@ts-nocheck` 除去、DrawingAPI 型適用
+- [x] **T-1.17** `core/audio.ts`: `@ts-nocheck` 除去、AudioModule 型適用
+- [x] **T-1.18** `core/hud.ts`: `@ts-nocheck` 除去、HUDModule 型適用
+- [x] **T-1.19** `screens/title.ts`: `@ts-nocheck` 除去、EngineContext 型適用
+- [x] **T-1.20** `screens/help.ts`: `@ts-nocheck` 除去、EngineContext 型適用
+- [x] **T-1.21** `screens/game-over.ts`: `@ts-nocheck` 除去、EngineContext 型適用
+- [x] **T-1.22** `screens/ending.ts`: `@ts-nocheck` 除去、EngineContext 型適用
+- [x] **T-1.23** `screens/true-end.ts`: `@ts-nocheck` 除去、EngineContext 型適用
+- [x] **T-1.24** `engine.ts`: `@ts-nocheck` 除去、GameState 型適用、モジュール型参照
+- [x] **T-1.25** `stages/cave/index.ts`: `@ts-nocheck` 除去、CaveState 型適用
+- [x] **T-1.26** `stages/prairie/index.ts`: `@ts-nocheck` 除去、PrairieState 型適用
+- [x] **T-1.27** `stages/boss/index.ts`: `@ts-nocheck` 除去、BossState 型適用
 
 ### Phase 1 検証
 
-- [ ] **V-1.01** `npm run typecheck` — 型チェック通過
-- [ ] **V-1.02** `npm test` — 全 80 テスト通過
-- [ ] **V-1.03** `npm run lint` — ESLint 通過
-- [ ] **V-1.04** `npm run build` — ビルド成功
+- [x] **V-1.01** `npx tsc --noEmit` — 型チェック通過
+- [x] **V-1.02** `npm test` — 全 81 テスト通過
+- [x] **V-1.03** `npx eslint src/features/keys-and-arms/` — ESLint 通過（エラー0）
+- [x] **V-1.04** `npm run build` — webpack ビルド成功（警告のみ）
 - [ ] **V-1.05** ブラウザ確認: 全 3 ステージ通しプレイで動作に変化なし
 
 ---

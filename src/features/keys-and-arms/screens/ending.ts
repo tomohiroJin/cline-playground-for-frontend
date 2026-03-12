@@ -1,24 +1,23 @@
-/* eslint-disable */
-// @ts-nocheck
 /**
  * KEYS & ARMS -- エンディング画面モジュール（ループ1クリア後）
  * engine.ts から抽出したエンディング描画ロジック。
  */
 
 import { W, H, BG, ON, K_R } from '../constants';
+import type { EngineContext } from '../types';
 
 /**
  * エンディング画面ファクトリ
  * @param ctx ゲームコンテキスト（状態・描画・音声・パーティクル・HUD）
  */
-export function createEndingScreen(ctx) {
-  const { G, draw, audio, particles, hud } = ctx;
-  const { $, onFill, txt, txtC, px } = draw;
+export function createEndingScreen(ctx: EngineContext) {
+  const { G, draw, audio, particles: _particles, hud } = ctx;
+  const { $, onFill, txt: _txt, txtC, px } = draw;
   const { ea } = audio;
   const { transTo } = hud;
 
   // --- 入力ヘルパー ---
-  function J(k) { return G.jp[k.toLowerCase()]; }
+  function J(k: string) { return G.jp[k.toLowerCase()]; }
   function jAct() { return J('z') || J(' '); }
 
   /** エンディング画面描画 */
@@ -35,9 +34,9 @@ export function createEndingScreen(ctx) {
       if (G.e1T % (8 + i % 4) < 2) $.fillRect(sx, sy + scroll * .5, 2, 2);
     }
     $.globalAlpha = 1;
-    const line = (start, text, y, sz) => {
+    const line = (start: number, text: string, x: number, y: number, sz?: number) => {
       if (G.e1T > start) {
-        $.globalAlpha = Math.min(1, (G.e1T - start) / 30); txtC(text, W / 2, y, sz || 6); $.globalAlpha = 1;
+        $.globalAlpha = Math.min(1, (G.e1T - start) / 30); txtC(text, x, y, sz || 6); $.globalAlpha = 1;
       }
     };
     // シーン1: 城のシルエット＋騎士が歩き出す
@@ -60,8 +59,8 @@ export function createEndingScreen(ctx) {
       }
       $.globalAlpha = 1;
     }
-    line(15, 'The knight emerges', W / 2 + 60, 7);
-    line(40, 'from the cursed castle.', W / 2 + 60, 6);
+    line(15, 'The knight emerges', W / 2, W / 2 + 60, 7);
+    line(40, 'from the cursed castle.', W / 2, W / 2 + 60, 6);
     line(90, 'The demon lord has fallen.', W / 2, 208, 7);
     line(120, 'The six seals are restored.', W / 2, 228, 6);
     line(170, '...But a dark whisper', W / 2, 268, 7);

@@ -1,24 +1,24 @@
-/* eslint-disable */
-// @ts-nocheck
 /**
  * KEYS & ARMS — Stage 2: Prairie
  * 3レーン防衛、コンボシステム、スウィープ攻撃
  * engine.ts から抽出したプレーリーステージモジュール。
  */
 
-import { W, H, BG, GH, ON, RK, GRS_LY, GRS_EX, K_F, K_R, K_AT, KEY_D, assert } from '../../constants';
+import { W, H, BG, GH, ON, GRS_LY, GRS_EX, K_F, K_R, K_AT, assert } from '../../constants';
 import { TAU, rng, rngInt } from '../../core/math';
 import { Difficulty } from '../../difficulty';
+
+import type { EngineContext, Stage, PrairieState } from '../../types';
 
 /**
  * プレーリーステージのファクトリ関数
  * @param ctx ゲームコンテキスト（状態・描画・オーディオ・パーティクル・HUD）
  */
-export function createPrairieStage(ctx) {
+export function createPrairieStage(ctx: EngineContext): Stage {
   const { G, draw, audio, particles, hud } = ctx;
 
   // 描画ヘルパーの分割代入
-  const { $, circle, circleS, onFill, onStroke, R, txt, txtC, px, drawK, iSlime, iGoblin, iSkel } = draw;
+  const { $, circle, circleS, onFill, onStroke, R, txt, txtC, px, drawK: _drawK, iSlime, iGoblin, iSkel } = draw;
 
   // オーディオの分割代入
   const { S, ea } = audio;
@@ -32,11 +32,11 @@ export function createPrairieStage(ctx) {
   /* ================================================================
      入力ヘルパー
      ================================================================ */
-  function J(k) { return G.jp[k.toLowerCase()]; }
-  function jAct() { return J('z') || J(' '); }
+  function J(k: string) { return G.jp[k.toLowerCase()]; }
+  function _jAct() { return J('z') || J(' '); }
 
   /** ポップアップ追加のショートカット */
-  function addPopup(x, y, t) { Popups.add(x, y, t); }
+  function addPopup(x: number, y: number, t: string) { Popups.add(x, y, t); }
 
   /* ================================================================
      草原ヘルパー関数
@@ -51,13 +51,13 @@ export function createPrairieStage(ctx) {
   }
 
   /** レーン位置にデスパーティクルを生成 — スウィープ/攻撃/ガードキル共通 */
-  function grsDeathParticles(lane, n, spread) {
+  function grsDeathParticles(lane: number, n: number, spread: number) {
     const ex = GRS_EX[0] + 70, ey = GRS_LY[lane] + 14;
-    Particles.spawn(G.grsDead, { x: ex, y: ey, n, vxSpread: spread, vySpread: spread * .7, life: 12, s: 3, rot: true });
+    Particles.spawn(G.grsDead as unknown as import('../../types').ParticlePool, { x: ex, y: ey, n, vxSpread: spread, vySpread: spread * .7, life: 12, s: 3, rot: true });
   }
 
   /** シールドオーブドロップの確認・付与 — スウィープ/通常キル共通 */
-  function grsCheckShieldDrop(GS, lane) {
+  function grsCheckShieldDrop(GS: PrairieState, lane: number) {
     if (GS.kills >= GS.nextShieldAt && G.earnedShields < 4) {
       G.earnedShields++; GS.nextShieldAt += 5;
       GS.shieldOrbs.push({ y: GRS_LY[lane] + 20, alpha: 1, t: 0 });
@@ -66,13 +66,13 @@ export function createPrairieStage(ctx) {
   }
 
   /** キル時のコンボ加算 — スウィープ/通常パス共通 */
-  function grsComboHit(GS) {
+  function grsComboHit(GS: PrairieState) {
     GS.kills++; GS.combo++; GS.comboT = BL() * 5;
     if (GS.combo > GS.maxCombo) GS.maxCombo = GS.combo;
   }
 
   /** 敵ファクトリ — Difficultyモジュールから構成 */
-  function spawnEnemy(GS) {
+  function spawnEnemy(GS: PrairieState) {
     const ln = rngInt(0, 2);
     if (GS.ens.some(e => e.lane === ln && e.step >= 2 && !e.dead)) return false;
     let beh = 'normal', type = 'slime'; const r = rng();
@@ -168,7 +168,7 @@ export function createPrairieStage(ctx) {
 
     // 花（より多様に）
     onFill(.18);
-    const fl = (x, y) => { $.fillRect(x, y, 2, 2); $.fillRect(x - 1, y + 1, 1, 1); $.fillRect(x + 2, y + 1, 1, 1); $.fillRect(x, y + 2, 2, 3); };
+    const fl = (x: number, y: number) => { $.fillRect(x, y, 2, 2); $.fillRect(x - 1, y + 1, 1, 1); $.fillRect(x + 2, y + 1, 1, 1); $.fillRect(x, y + 2, 2, 3); };
     fl(72, GRS_LY[0] + 38); fl(190, GRS_LY[1] + 40); fl(310, GRS_LY[2] + 38);
     fl(130, GRS_LY[0] + 42); fl(260, GRS_LY[1] + 38); fl(400, GRS_LY[2] + 42);
     fl(95, GRS_LY[2] + 40); fl(230, GRS_LY[0] + 40); fl(370, GRS_LY[1] + 42); $.globalAlpha = 1;
@@ -206,7 +206,7 @@ export function createPrairieStage(ctx) {
     }
     if (GS.guardFlash > 0) { onFill(GS.guardFlash / 4 * .3); $.fillRect(16, 44, W - 32, 4); $.globalAlpha = 1; }
 
-    const eDr = { slime: iSlime, goblin: iGoblin, skel: iSkel };
+    const eDr: Record<string, (x: number, y: number, on: boolean) => void> = { slime: iSlime, goblin: iGoblin, skel: iSkel };
     const kL = ['↑', '→', '↓'];
 
     for (let ln = 0; ln < 3; ln++) {
@@ -427,7 +427,7 @@ export function createPrairieStage(ctx) {
   /* ================================================================
      プレーリー更新
      ================================================================ */
-  function grsUpdate(nb) {
+  function grsUpdate(nb: boolean) {
     const GS = G.grs;
     if (GS.hurtCD > 0) GS.hurtCD--;
     if (GS.atkAnim[1] > 0) GS.atkAnim[1]--;
@@ -443,7 +443,7 @@ export function createPrairieStage(ctx) {
 
     // 攻撃 (↑→↓ = レーン 0,1,2)
     if (GS.atkCD <= 0) {
-      const ak = [['arrowup', 0], ['arrowright', 1], ['arrowdown', 2]];
+      const ak: [string, number][] = [['arrowup', 0], ['arrowright', 1], ['arrowdown', 2]];
       for (const [k, l] of ak) {
         if (J(k)) {
           ea(); GS.atkAnim = [l, 5]; GS.atkCD = 2; S.kill();
