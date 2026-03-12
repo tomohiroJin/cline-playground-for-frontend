@@ -1,31 +1,52 @@
 /**
  * ダイアログオーバーレイコンポーネント
  * US-2.4: 試合前ダイアログ / US-2.6: 試合後ダイアログ
+ * P1-04: 背景画像・立ち絵・表情差分の演出強化
  *
  * セリフを1文字ずつ表示し、タップで全文表示 → 次のセリフへ進行する。
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import type { Dialogue } from '../core/story';
+import type { Dialogue, DialogueExpression } from '../core/story';
 import type { Character } from '../core/types';
 import { CharacterAvatar } from './CharacterAvatar';
 
 /** 1文字あたりの表示間隔（ms） */
 const CHAR_INTERVAL_MS = 30;
 
+/** 立ち絵のフェードイン時間（ms） */
+const PORTRAIT_FADE_IN_MS = 300;
+
+/** キャラ変更時のクロスフェード時間（ms） */
+const PORTRAIT_CROSSFADE_MS = 200;
+
 type DialogueOverlayProps = {
   dialogues: Dialogue[];
   characters: Record<string, Character>;
   onComplete: () => void;
+  backgroundUrl?: string;
+};
+
+/** 現在のダイアログの表情に対応する立ち絵URLを取得する */
+const getPortraitUrl = (
+  character: Character | undefined,
+  expression: DialogueExpression | undefined,
+): string | undefined => {
+  if (!character?.portrait) return undefined;
+  const expr = expression ?? 'normal';
+  return character.portrait[expr];
 };
 
 export const DialogueOverlay: React.FC<DialogueOverlayProps> = ({
   dialogues,
   characters,
   onComplete,
+  backgroundUrl,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [displayedLength, setDisplayedLength] = useState(0);
   const [isFullyDisplayed, setIsFullyDisplayed] = useState(false);
+  const [isPortraitVisible, setIsPortraitVisible] = useState(false);
+  const [prevCharacterId, setPrevCharacterId] = useState<string | undefined>(undefined);
   const timerRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
   const currentDialogue = dialogues[currentIndex];
@@ -33,6 +54,34 @@ export const DialogueOverlay: React.FC<DialogueOverlayProps> = ({
     ? characters[currentDialogue.characterId]
     : undefined;
   const fullText = currentDialogue?.text ?? '';
+  const portraitUrl = getPortraitUrl(currentCharacter, currentDialogue?.expression);
+
+  // キャラ変更検知（初回レンダリング時は undefined → false）
+  const isCharacterChanged =
+    prevCharacterId !== undefined && prevCharacterId !== currentDialogue?.characterId;
+
+  // 同キャラの表情だけの切り替えか判定
+  const isExpressionOnlyChange = !isCharacterChanged && prevCharacterId !== undefined;
+
+  // 立ち絵のフェードイン制御（キャラ変更時のみフェード、同キャラ表情切り替えは即時）
+  useEffect(() => {
+    if (!portraitUrl) return;
+    if (isExpressionOnlyChange) {
+      // 同キャラの表情切り替え — フェードなしで即時表示
+      setIsPortraitVisible(true);
+      return;
+    }
+    setIsPortraitVisible(false);
+    // 次のフレームでフェードインを開始
+    const raf = requestAnimationFrame(() => setIsPortraitVisible(true));
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [portraitUrl]);
+
+  // 前のキャラクターIDを追跡
+  useEffect(() => {
+    setPrevCharacterId(currentDialogue?.characterId);
+  }, [currentDialogue?.characterId]);
 
   // 文字送りタイマー
   useEffect(() => {
@@ -78,6 +127,11 @@ export const DialogueOverlay: React.FC<DialogueOverlayProps> = ({
     onComplete();
   }, [onComplete]);
 
+  // 同キャラ表情切り替え → transition なし / キャラ変更 → クロスフェード / 初回 → フェードイン
+  const portraitTransition = isExpressionOnlyChange
+    ? ''
+    : `opacity ${isCharacterChanged ? PORTRAIT_CROSSFADE_MS : PORTRAIT_FADE_IN_MS}ms ease-in-out`;
+
   return (
     <div
       data-testid="dialogue-overlay"
@@ -88,7 +142,7 @@ export const DialogueOverlay: React.FC<DialogueOverlayProps> = ({
         left: 0,
         right: 0,
         bottom: 0,
-        background: 'rgba(0, 0, 0, 0.6)',
+        background: backgroundUrl ? 'transparent' : 'rgba(0, 0, 0, 0.6)',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'flex-end',
@@ -97,6 +151,39 @@ export const DialogueOverlay: React.FC<DialogueOverlayProps> = ({
         cursor: 'pointer',
       }}
     >
+      {/* 背景画像（backgroundUrl が指定されている場合のみ） */}
+      {backgroundUrl && (
+        <>
+          <img
+            data-testid="dialogue-background"
+            src={backgroundUrl}
+            alt=""
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              zIndex: -2,
+            }}
+          />
+          {/* 暗めオーバーレイ */}
+          <div
+            data-testid="dialogue-bg-overlay"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              background: 'rgba(0, 0, 0, 0.3)',
+              zIndex: -1,
+            }}
+          />
+        </>
+      )}
+
       {/* スキップボタン */}
       <button
         onClick={handleSkip}
@@ -111,27 +198,59 @@ export const DialogueOverlay: React.FC<DialogueOverlayProps> = ({
           borderRadius: '20px',
           cursor: 'pointer',
           fontSize: '0.85rem',
+          zIndex: 1,
         }}
       >
         スキップ
       </button>
 
-      {/* ダイアログボックス */}
-      <div style={{
-        width: '100%',
-        maxWidth: '450px',
-        padding: '20px',
-        marginBottom: '20px',
-      }}>
+      {/* 立ち絵エリア */}
+      {portraitUrl ? (
         <div style={{
-          background: 'rgba(0, 0, 0, 0.8)',
-          borderRadius: '16px',
+          flex: 1,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'flex-end',
+          paddingBottom: '8px',
+          overflow: 'hidden',
+        }}>
+          <img
+            data-testid="dialogue-portrait"
+            src={portraitUrl}
+            alt={currentCharacter?.name ?? ''}
+            style={{
+              maxHeight: '60vh',
+              objectFit: 'contain',
+              opacity: isPortraitVisible ? 1 : 0,
+              transition: portraitTransition,
+            }}
+          />
+        </div>
+      ) : (
+        // 立ち絵なしのスペーサー
+        <div style={{ flex: 1 }} />
+      )}
+
+      {/* テキストウィンドウ */}
+      <div
+        data-testid="dialogue-text-window"
+        style={{
+          width: '100%',
+          maxWidth: '450px',
+          padding: '20px',
+          marginBottom: '20px',
+        }}
+      >
+        <div style={{
+          background: 'rgba(0, 0, 0, 0.7)',
+          borderRadius: '8px',
           padding: '16px',
           border: '1px solid rgba(255, 255, 255, 0.15)',
         }}>
           {/* キャラ情報 */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-            {currentCharacter && (
+            {/* portrait なしのフォールバック: アイコン表示 */}
+            {currentCharacter && !currentCharacter.portrait && (
               <CharacterAvatar character={currentCharacter} size={48} />
             )}
 
