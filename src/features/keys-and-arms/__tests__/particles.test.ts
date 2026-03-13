@@ -1,51 +1,27 @@
-/* eslint-disable */
-// @ts-nocheck
 /**
  * KEYS & ARMS — パーティクル・ポップアップテスト
  */
 import { createParticles } from '../core/particles';
-
-/** Canvas 2D コンテキストのモック */
-function createMockCtx() {
-  return {
-    fillStyle: '',
-    globalAlpha: 1,
-    fillRect: jest.fn(),
-    font: '',
-    textAlign: '',
-    textBaseline: '',
-    fillText: jest.fn(),
-  };
-}
-
-/** 描画ヘルパーのモック */
-function createMockDraw(ctx) {
-  return {
-    $: ctx,
-    txt: jest.fn(),
-  };
-}
+import type { ParticlesModule, ParticlePool } from '../types';
+import { createMockDrawingAPI } from './helpers/mock-factories';
 
 describe('Particles', () => {
-  let ctx;
-  let draw;
-  let particles;
+  let particles: ParticlesModule;
 
   beforeEach(() => {
-    ctx = createMockCtx();
-    draw = createMockDraw(ctx);
+    const draw = createMockDrawingAPI();
     particles = createParticles(draw);
   });
 
   describe('spawn', () => {
     it('プールにパーティクルを追加する', () => {
-      const pool = [];
+      const pool: ParticlePool = [];
       particles.Particles.spawn(pool, { x: 100, y: 100, n: 4 });
       expect(pool).toHaveLength(4);
     });
 
     it('パラメータが正しく設定される', () => {
-      const pool = [];
+      const pool: ParticlePool = [];
       particles.Particles.spawn(pool, {
         x: 50, y: 60, n: 1, vxSpread: 0, vySpread: 0, vyBase: -1, life: 20, s: 5,
       });
@@ -57,13 +33,13 @@ describe('Particles', () => {
     });
 
     it('デフォルトの生成数は4', () => {
-      const pool = [];
+      const pool: ParticlePool = [];
       particles.Particles.spawn(pool, { x: 0, y: 0 });
       expect(pool).toHaveLength(4);
     });
 
     it('プールを返す', () => {
-      const pool = [];
+      const pool: ParticlePool = [];
       const result = particles.Particles.spawn(pool, { x: 0, y: 0 });
       expect(result).toBe(pool);
     });
@@ -71,7 +47,7 @@ describe('Particles', () => {
 
   describe('updateAndDraw', () => {
     it('ライフが減少する', () => {
-      const pool = [];
+      const pool: ParticlePool = [];
       particles.Particles.spawn(pool, { x: 0, y: 0, n: 1, life: 10, vxSpread: 0, vySpread: 0 });
       const initialLife = pool[0].life;
       particles.Particles.updateAndDraw(pool);
@@ -79,20 +55,37 @@ describe('Particles', () => {
     });
 
     it('座標が更新される', () => {
-      const pool = [{ x: 10, y: 20, vx: 1, vy: -1, life: 10, maxLife: 10, s: 3, gravity: 0 }];
+      const pool: ParticlePool = [{ x: 10, y: 20, vx: 1, vy: -1, life: 10, maxLife: 10, s: 3, rot: 0, gravity: 0 }];
       particles.Particles.updateAndDraw(pool);
       expect(pool[0].x).toBe(11);
       expect(pool[0].y).toBe(19);
     });
 
     it('ライフ切れで削除される', () => {
-      const pool = [{ x: 0, y: 0, vx: 0, vy: 0, life: 1, maxLife: 10, s: 3, gravity: 0 }];
+      const pool: ParticlePool = [{ x: 0, y: 0, vx: 0, vy: 0, life: 1, maxLife: 10, s: 3, rot: 0, gravity: 0 }];
       particles.Particles.updateAndDraw(pool);
       expect(pool).toHaveLength(0);
     });
 
+    it('複数パーティクルで一部がライフ切れでも残りが保持される', () => {
+      // Arrange: 3つのパーティクル（中央のみライフ切れ）
+      const pool: ParticlePool = [
+        { x: 1, y: 0, vx: 0, vy: 0, life: 10, maxLife: 10, s: 3, rot: 0, gravity: 0 },
+        { x: 2, y: 0, vx: 0, vy: 0, life: 1, maxLife: 10, s: 3, rot: 0, gravity: 0 },
+        { x: 3, y: 0, vx: 0, vy: 0, life: 10, maxLife: 10, s: 3, rot: 0, gravity: 0 },
+      ];
+
+      // Act
+      particles.Particles.updateAndDraw(pool);
+
+      // Assert: 2つ残る（順序は保証しない — スワップ削除）
+      expect(pool).toHaveLength(2);
+      const xs = pool.map(p => p.x).sort();
+      expect(xs).toEqual([1, 3]);
+    });
+
     it('重力が適用される', () => {
-      const pool = [{ x: 0, y: 0, vx: 0, vy: 0, life: 10, maxLife: 10, s: 3, gravity: 0.5 }];
+      const pool: ParticlePool = [{ x: 0, y: 0, vx: 0, vy: 0, life: 10, maxLife: 10, s: 3, rot: 0, gravity: 0.5 }];
       particles.Particles.updateAndDraw(pool);
       expect(pool[0].vy).toBe(0.5);
     });
@@ -100,13 +93,10 @@ describe('Particles', () => {
 });
 
 describe('Popups', () => {
-  let ctx;
-  let draw;
-  let particles;
+  let particles: ParticlesModule;
 
   beforeEach(() => {
-    ctx = createMockCtx();
-    draw = createMockDraw(ctx);
+    const draw = createMockDrawingAPI();
     particles = createParticles(draw);
   });
 

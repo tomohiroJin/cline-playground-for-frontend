@@ -1,63 +1,70 @@
-/* eslint-disable */
-// @ts-nocheck
 /**
  * KEYS & ARMS — オーディオテスト
  */
-import { createAudio } from '../core/audio';
+import { createAudio, getAudioContextConstructor } from '../core/audio';
+import type { GameState, AudioModule } from '../types';
+import { createMockAudioContext, type MockAudioContext } from './helpers/mock-factories';
 
-/** AudioContext モック */
-function createMockAudioContext() {
-  const mockGain = {
-    gain: {
-      value: 0,
-      setValueAtTime: jest.fn(),
-      exponentialRampToValueAtTime: jest.fn(),
-    },
-    connect: jest.fn(),
-  };
-
-  const mockOscillator = {
-    type: '',
-    frequency: { value: 0 },
-    connect: jest.fn(),
-    start: jest.fn(),
-    stop: jest.fn(),
-  };
-
-  const mockBufferSource = {
-    buffer: null,
-    connect: jest.fn(),
-    start: jest.fn(),
-    stop: jest.fn(),
-  };
-
-  const mockBuffer = {
-    getChannelData: jest.fn().mockReturnValue(new Float32Array(100)),
-  };
-
-  return {
-    currentTime: 0,
-    sampleRate: 44100,
-    destination: {},
-    createOscillator: jest.fn().mockReturnValue(mockOscillator),
-    createGain: jest.fn().mockReturnValue(mockGain),
-    createBufferSource: jest.fn().mockReturnValue(mockBufferSource),
-    createBuffer: jest.fn().mockReturnValue(mockBuffer),
-    _oscillator: mockOscillator,
-    _gain: mockGain,
-    _bufferSource: mockBufferSource,
-  };
+/** window に AudioContext / webkitAudioContext を動的に設定するための型 */
+interface WindowWithAudioContext {
+  AudioContext: jest.Mock | undefined;
+  webkitAudioContext: unknown;
+  [key: string]: unknown;
 }
 
+describe('getAudioContextConstructor', () => {
+  afterEach(() => {
+    delete (window as unknown as WindowWithAudioContext).AudioContext;
+    delete (window as unknown as WindowWithAudioContext).webkitAudioContext;
+  });
+
+  it('AudioContext が存在する場合はそれを返す', () => {
+    // Arrange
+    const MockCtor = jest.fn();
+    (window as unknown as WindowWithAudioContext).AudioContext = MockCtor;
+
+    // Act
+    const Ctor = getAudioContextConstructor();
+
+    // Assert
+    expect(Ctor).toBe(MockCtor);
+  });
+
+  it('AudioContext がなく webkitAudioContext がある場合はフォールバックする', () => {
+    // Arrange
+    const MockWebKitCtor = jest.fn();
+    (window as unknown as WindowWithAudioContext).AudioContext = undefined;
+    (window as unknown as WindowWithAudioContext).webkitAudioContext = MockWebKitCtor;
+
+    // Act
+    const Ctor = getAudioContextConstructor();
+
+    // Assert
+    expect(Ctor).toBe(MockWebKitCtor);
+  });
+
+  it('どちらもない場合は undefined を返す', () => {
+    // Arrange
+    (window as unknown as WindowWithAudioContext).AudioContext = undefined;
+    (window as unknown as WindowWithAudioContext).webkitAudioContext = undefined;
+
+    // Act
+    const Ctor = getAudioContextConstructor();
+
+    // Assert
+    expect(Ctor).toBeUndefined();
+  });
+});
+
 describe('audio モジュール', () => {
-  let G;
-  let audio;
-  let mockAC;
+  let G: GameState;
+  let audio: AudioModule;
+  let mockAC: MockAudioContext;
 
   beforeEach(() => {
     mockAC = createMockAudioContext();
-    (window as any).AudioContext = jest.fn().mockReturnValue(mockAC);
-    (window as any).webkitAudioContext = undefined;
+    (window as unknown as WindowWithAudioContext).AudioContext = jest.fn().mockReturnValue(mockAC);
+    (window as unknown as WindowWithAudioContext).webkitAudioContext = undefined;
 
     G = {
       state: 'cave',
@@ -66,37 +73,48 @@ describe('audio モジュール', () => {
       cav: { won: false },
       grs: { won: false },
       bos: { won: false },
-    };
+    } as unknown as GameState;
     audio = createAudio(G);
   });
 
   afterEach(() => {
-    delete (window as any).AudioContext;
-    delete (window as any).webkitAudioContext;
+    delete (window as unknown as WindowWithAudioContext).AudioContext;
+    delete (window as unknown as WindowWithAudioContext).webkitAudioContext;
   });
 
   describe('ea()', () => {
     it('AudioContextが生成される', () => {
       audio.ea();
-      expect((window as any).AudioContext).toHaveBeenCalled();
+      expect((window as unknown as WindowWithAudioContext).AudioContext).toHaveBeenCalled();
     });
 
     it('2回目の呼び出しで新規AudioContextを生成しない', () => {
       audio.ea();
       audio.ea();
-      expect((window as any).AudioContext).toHaveBeenCalledTimes(1);
+      expect((window as unknown as WindowWithAudioContext).AudioContext).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('tn()', () => {
-    it('AudioContext未初期化時は何もしない', () => {
+    it('tn() 呼び出しで ea() が自動初期化される', () => {
+      // Arrange（ea() を明示的に呼ばない）
+
+      // Act
       audio.tn(440, 0.1);
-      expect(mockAC.createOscillator).not.toHaveBeenCalled();
+
+      // Assert — 自動初期化により AudioContext が生成される
+      expect((window as unknown as WindowWithAudioContext).AudioContext).toHaveBeenCalled();
+      expect(mockAC.createOscillator).toHaveBeenCalled();
     });
 
-    it('オシレータが生成される', () => {
+    it('オシレータが生成・接続・開始・停止される', () => {
+      // Arrange
       audio.ea();
+
+      // Act
       audio.tn(440, 0.1);
+
+      // Assert
       expect(mockAC.createOscillator).toHaveBeenCalled();
       expect(mockAC._oscillator.connect).toHaveBeenCalled();
       expect(mockAC._oscillator.start).toHaveBeenCalled();

@@ -1,14 +1,22 @@
-/* eslint-disable */
-// @ts-nocheck
 /**
  * KEYS & ARMS — ヘルプ画面テスト
  */
 
+/** テスト用の簡易ゲーム状態 */
+interface HelpTestState {
+  state: string;
+  helpPage: number;
+  blink: number;
+}
+
+/** テスト用のキー入力マップ */
+type KeyMap = Record<string, boolean | undefined>;
+
 describe('ヘルプ画面', () => {
   /** ヘルプ遷移ロジックのシミュレーション（engine.ts の title ケース） */
-  function simulateTitleInput(G, jp) {
-    function J(k) { return jp[k.toLowerCase()]; }
-    function clearJ() { for (const k in jp) delete jp[k]; }
+  function simulateTitleInput(G: HelpTestState, jp: KeyMap): void {
+    function J(k: string): boolean | undefined { return jp[k.toLowerCase()]; }
+    function clearJ(): void { for (const k in jp) delete jp[k]; }
 
     if (G.state === 'title' && J('arrowup')) {
       G.state = 'help';
@@ -19,8 +27,8 @@ describe('ヘルプ画面', () => {
   }
 
   /** ヘルプ画面入力ロジックのシミュレーション（help.ts の update） */
-  function simulateHelpInput(G, jp) {
-    function J(k) { return jp[k.toLowerCase()]; }
+  function simulateHelpInput(G: HelpTestState, jp: KeyMap): void {
+    function J(k: string): boolean | undefined { return jp[k.toLowerCase()]; }
 
     if (J('arrowright') && G.helpPage < 2) { G.helpPage++; }
     if (J('arrowleft') && G.helpPage > 0) { G.helpPage--; }

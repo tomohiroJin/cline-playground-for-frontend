@@ -1,25 +1,23 @@
-/* eslint-disable */
-// @ts-nocheck
 /**
  * KEYS & ARMS -- ゲームオーバー画面モジュール
  * engine.ts から抽出したゲームオーバー描画ロジック。
  */
 
-import { W, H, BG, ON, K_HU } from '../constants';
+import { W, ON, K_HU } from '../constants';
 import { TAU } from '../core/math';
+import { createInputHelpers } from '../core/input';
+import type { EngineContext } from '../types';
 
 /**
  * ゲームオーバー画面ファクトリ
  * @param ctx ゲームコンテキスト（状態・描画・音声・パーティクル・HUD）
  */
-export function createGameOverScreen(ctx) {
-  const { G, draw, audio, particles, hud } = ctx;
-  const { $, onFill, txt, txtC, px, circle } = draw;
-  const { S, ea } = audio;
+export function createGameOverScreen(ctx: EngineContext) {
+  const { G, draw } = ctx;
+  const { $, txtC, px } = draw;
 
   // --- 入力ヘルパー ---
-  function J(k) { return G.jp[k.toLowerCase()]; }
-  function jAct() { return J('z') || J(' '); }
+  const { J, jAct } = createInputHelpers(G.jp);
 
   /** ゲームオーバー画面描画 */
   function drawOver() {
@@ -74,7 +72,7 @@ export function createGameOverScreen(ctx) {
       const ra = .6 + Math.sin(G.blink * .08) * .3; $.globalAlpha = Math.floor(G.blink / 18) % 2 === 0 ? ra : 0;
       txtC('PRESS Z TO RETRY', W / 2, 260, 7); $.globalAlpha = 1;
     }
-    if (G.blink > 70 && (jAct() || J('enter'))) { ea(); G.startGame(); }
+    if (G.blink > 70 && (jAct() || J('enter'))) { G.startGame?.(); }
   }
 
   return { draw: drawOver };

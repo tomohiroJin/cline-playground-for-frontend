@@ -1,22 +1,22 @@
-/* eslint-disable */
-// @ts-nocheck
 /**
  * KEYS & ARMS — 操作ガイド画面モジュール
  * タイトルから ↑ キーで遷移する3ページのヘルプ画面。
  */
 
-import { W, H, BG, ON, K_R, K_RE, K_F, KEY_D } from '../constants';
+import { W, H, BG, K_R, K_RE, K_F, KEY_D } from '../constants';
+import { createInputHelpers } from '../core/input';
+import type { EngineContext } from '../types';
 
 /**
  * ヘルプ画面ファクトリ
  * @param ctx ゲームコンテキスト（状態・描画・音声・パーティクル・HUD）
  */
-export function createHelpScreen(ctx) {
+export function createHelpScreen(ctx: EngineContext) {
   const { G, draw } = ctx;
   const { $, onFill, txtC, txt, px } = draw;
 
   // 入力ヘルパー
-  function J(k) { return G.jp[k.toLowerCase()]; }
+  const { J } = createInputHelpers(G.jp);
 
   // 3ページ構成
   const PAGES = [

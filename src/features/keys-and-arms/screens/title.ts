@@ -1,24 +1,20 @@
-/* eslint-disable */
-// @ts-nocheck
 /**
  * KEYS & ARMS -- タイトル画面モジュール
  * engine.ts から抽出したタイトル描画・ゲーム開始ロジック。
  */
 
-import { W, H, BG, GH, ON, K_R, BAT_FU, BAT_FD, MIM_O, SPIDER, KEY_D } from '../constants';
+import { W, H, ON, K_R, BAT_FU, BAT_FD, MIM_O, SPIDER, KEY_D } from '../constants';
+import type { EngineContext } from '../types';
 
 /**
  * タイトル画面ファクトリ
  * @param ctx ゲームコンテキスト（状態・描画・音声・パーティクル・HUD）
  */
-export function createTitleScreen(ctx) {
-  const { G, draw, audio, particles, hud } = ctx;
+export function createTitleScreen(ctx: EngineContext) {
+  const { G, draw, hud } = ctx;
   const { $, circle, onFill, txt, txtC, px, iSlime, iBoss, iGem } = draw;
   const { transTo } = hud;
-
-  // --- 入力ヘルパー ---
-  function J(k) { return G.jp[k.toLowerCase()]; }
-  function jAct() { return J('z') || J(' '); }
+  // タイトル画面は engine.ts 側で入力を処理するため入力ヘルパー不要
 
   /** タイトル画面描画 */
   function drawTitle() {

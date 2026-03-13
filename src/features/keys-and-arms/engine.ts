@@ -1,15 +1,15 @@
-/* eslint-disable */
-// @ts-nocheck
-/**
- * KEYS & ARMS — ゲームエンジン（オーケストレータ）
- * 各モジュールを組み立て、ゲームループを駆動する。
- */
+/** KEYS & ARMS — ゲームエンジン（オーケストレータ） */
 
-import { W, H, BG, ON, TICK_MS } from './constants';
+import type { EngineContext, GameState } from './types';
+import { W, H, BG, TICK_MS } from './constants';
 import { createRendering } from './core/rendering';
 import { createAudio } from './core/audio';
 import { createParticles } from './core/particles';
 import { createHUD } from './core/hud';
+import { createInputHandler } from './core/input';
+import { createInitialGameState } from './core/game-state';
+import { createLocalStorageRepository } from './infrastructure/storage-repository';
+import { createRenderEffects } from './core/render-effects';
 import { createCaveStage } from './stages/cave/index';
 import { createPrairieStage } from './stages/prairie/index';
 import { createBossStage } from './stages/boss/index';
@@ -28,126 +28,43 @@ export interface Engine {
 }
 
 export function createEngine(canvas: HTMLCanvasElement): Engine {
-
-  /* ================================================================
-     CANVAS セットアップ
-     ================================================================ */
   const cv = canvas;
   const $ = cv.getContext('2d')!;
   cv.width = W; cv.height = H;
-
   function resize() {
     const s = Math.min(window.innerWidth * 0.94 / W, (window.innerHeight * 0.62) / H, 2.5);
-    cv.style.width = (W * s) + 'px';
-    cv.style.height = (H * s) + 'px';
+    cv.style.width = (W * s) + 'px'; cv.style.height = (H * s) + 'px';
   }
   resize();
 
-  /* ================================================================
-     INPUT — キーボード状態管理
-     ================================================================ */
-  const kd = {}, jp = {};
-  function J(k) { return jp[k.toLowerCase()]; }
-  function clearJ() { for (const k in jp) delete jp[k]; }
-  function jAct() { return J('z') || J(' '); }
-
-  /* ================================================================
-     GAME STATE — 共有ゲーム状態オブジェクト
-     ================================================================ */
-  const G = {
-    // 全体状態
-    state: 'title',
-    loop: 1,
-    score: 0,
-    dispScore: 0,
-    hp: 3,
-    maxHp: 3,
-    tick: 0,
-    beatCtr: 0,
-    beatNum: 0,
-    beatPulse: 0,
-    noDmg: true,
-    hurtFlash: 0,
-    shakeT: 0,
-    hitStop: 0,
-    hi: parseInt(localStorage.getItem('kaG') || '0'),
-    resetConfirm: 0,
-    earnedShields: 0,
-    bgmBeat: 0,
-    paused: false,
-    helpPage: 0,
-
-    // 入力（jp はフレーム中の「押された」フラグ）
-    jp,
-    kd,
-
-    // トランジション
-    trT: 0,
-    trTxt: '',
-    trFn: null,
-    trSub: '',
-
-    // タイトル画面
-    blink: 0,
-    cheatBuf: '',
-
-    // エンディング
-    e1T: 0,
-    teT: 0,
-
-    // ステージ状態（各ステージ init で初期化される）
-    cav: {},
-    sparks: [], dust: [], feathers: [], smoke: [], stepDust: [], keySpk: [], cavDrips: [],
-    grs: {},
-    grsSlash: [], grsDead: [], grsGrass: [], grsDust: [],
-    bos: {},
-    bosParticles: [], bosShieldBreak: [], bosArmTrail: [],
-
-    // 遅延バインド：各ステージ init コールバック
-    cavInit: null,
-    grsInit: null,
-    bosInit: null,
-    startGame: null,
-  };
-
-  /* ================================================================
-     モジュール生成
-     ================================================================ */
+  const input = createInputHandler();
+  const { justPressed: J, clearJustPressed: clearJ, isAction: jAct } = input;
+  const storage = createLocalStorageRepository();
+  const uninitG = createInitialGameState(input.kd, input.jp, storage.getHighScore());
+  // 遅延バインド完了後に GameState として使用（各ステージ init でステージ状態が設定される）
+  const G = uninitG as GameState;
   const draw = createRendering($);
   const audio = createAudio(G);
   const particles = createParticles(draw);
-  const hud = createHUD(draw, G, audio);
+  const hud = createHUD(draw, G, audio, storage);
+  const effects = createRenderEffects($, draw.onFill, draw.txtC);
+  const ctx: EngineContext = { G, draw, audio, particles, hud, storage };
 
-  const ctx = { G, draw, audio, particles, hud };
-
-  // ステージ
   const cave = createCaveStage(ctx);
   const prairie = createPrairieStage(ctx);
   const boss = createBossStage(ctx);
-
-  // 画面
   const titleScreen = createTitleScreen(ctx);
   const helpScreen = createHelpScreen(ctx);
   const gameOverScreen = createGameOverScreen(ctx);
   const endingScreen = createEndingScreen(ctx);
   const trueEndScreen = createTrueEndScreen(ctx);
 
-  /* ================================================================
-     遅延バインド — ステージ間の循環参照を解決
-     ================================================================ */
-  G.cavInit = cave.init;
-  G.grsInit = prairie.init;
-  G.bosInit = boss.init;
-  G.startGame = titleScreen.startGame;
+  /* 遅延バインド */
+  G.cavInit = cave.init; G.grsInit = prairie.init;
+  G.bosInit = boss.init; G.startGame = titleScreen.startGame;
+  const isGameplay = () => G.state !== 'title' && G.state !== 'over' && G.state !== 'trueEnd' && G.state !== 'ending1';
 
-  /* ================================================================
-     描画ヘルパー（オーケストレータ用）
-     ================================================================ */
-  const { onFill, txt, txtC } = draw;
-
-  /* ================================================================
-     GAME TICK — 状態マシン
-     ================================================================ */
+  /* GAME TICK — 状態マシン */
   function gameTick() {
     G.tick++;
     if (G.beatPulse > 0) G.beatPulse--;
@@ -157,7 +74,7 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
       G.resetConfirm--;
       if (jAct()) {
         G.resetConfirm = 0; G.state = 'title'; G.blink = 0;
-        if (G.score > G.hi) { G.hi = G.score; localStorage.setItem('kaG', String(G.hi)); }
+        if (G.score > G.hi) { G.hi = G.score; storage.setHighScore(G.hi); }
         clearJ(); return;
       }
       if (J('escape')) G.resetConfirm = 0;
@@ -165,24 +82,19 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
     }
 
     // ポーズトグル（ゲームプレイ中のみ）
-    if (J('p') && G.state !== 'title' && G.state !== 'over'
-        && G.state !== 'trueEnd' && G.state !== 'ending1' && G.state !== 'help') {
+    if (J('p') && isGameplay() && G.state !== 'help') {
       G.paused = !G.paused;
       clearJ(); return;
     }
 
-    // ポーズ中はティックスキップ（ただしESCは受け付ける）
+    // ポーズ中はティックスキップ
     if (G.paused) {
-      // ESC でリセット確認（ポーズ中も有効）
-      if (J('escape')) {
-        G.paused = false;
-        G.resetConfirm = 90;
-      }
+      if (J('escape')) { G.paused = false; G.resetConfirm = 90; }
       clearJ(); return;
     }
 
-    // ESC でリセット確認（ゲームプレイ中のみ）
-    if (J('escape') && G.state !== 'title' && G.state !== 'over' && G.state !== 'trueEnd' && G.state !== 'ending1') {
+    // ESC でリセット確認
+    if (J('escape') && isGameplay()) {
       G.resetConfirm = 90; clearJ(); return;
     }
 
@@ -192,10 +104,10 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
     if (G.shakeT > 0) G.shakeT--;
 
     if (G.trT > 0) {
-      if (G.state !== 'title' && G.state !== 'over' && G.state !== 'trueEnd' && G.state !== 'ending1') hud.doBeat();
+      if (isGameplay()) hud.doBeat();
     } else {
       let nb = false;
-      if (G.state !== 'title' && G.state !== 'over' && G.state !== 'trueEnd' && G.state !== 'ending1') nb = hud.doBeat();
+      if (isGameplay()) nb = hud.doBeat();
       switch (G.state) {
         case 'cave': cave.update(nb); break;
         case 'grass': prairie.update(nb); break;
@@ -205,7 +117,7 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
             if (J(k)) { G.cheatBuf += k; if (G.cheatBuf.length > 10) G.cheatBuf = G.cheatBuf.slice(-10); }
           }
           if (J('arrowup')) { G.state = 'help'; G.helpPage = 0; clearJ(); break; }
-          if (jAct() || J('enter')) { audio.ea(); audio.S.start(); titleScreen.startGame(); }
+          if (jAct() || J('enter')) { audio.S.start(); titleScreen.startGame(); }
           break;
         case 'help': helpScreen.update(); break;
         case 'over': case 'trueEnd': case 'ending1': break;
@@ -214,33 +126,19 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
     clearJ();
   }
 
-  /* ================================================================
-     RENDER — 描画
-     ================================================================ */
+  /* RENDER — 描画 */
   function render() {
     $.save();
     const qk = G.state === 'boss' && G.bos ? G.bos.quake || 0 : 0;
-    const totalShake = G.shakeT + qk;
-    if (totalShake > 0) {
-      const sx = (Math.random() - .5) * totalShake * .7;
-      const sy = (Math.random() - .5) * totalShake * .5;
-      $.translate(sx, sy);
-    }
+    effects.applyScreenShake(G.shakeT, qk);
     $.fillStyle = BG; $.fillRect(0, 0, W, H);
-    // LCD スキャンライン
-    $.fillStyle = 'rgba(145,158,125,0.08)';
-    for (let y = 0; y < H; y += 2) $.fillRect(0, y, W, 1);
-    // ビートパルス
+    effects.drawScanlines();
+
     if (G.beatPulse > 0 && G.state !== 'title' && G.state !== 'over') {
-      onFill(G.beatPulse / 6 * .035); $.fillRect(0, 0, W, H); $.globalAlpha = 1;
+      effects.drawBeatPulse(G.beatPulse);
     }
-    // ダメージフラッシュ
-    if (G.hurtFlash > 0) {
-      const hfa = Math.min(1, G.hurtFlash / 5);
-      $.fillStyle = `rgba(40,10,0,${hfa * .2})`; $.fillRect(0, 0, W, H);
-    }
-    // ヒットストップフラッシュ
-    if (G.hitStop > 0) { $.fillStyle = BG; $.globalAlpha = .1; $.fillRect(0, 0, W, H); $.globalAlpha = 1; }
+    effects.drawDamageFlash(G.hurtFlash);
+    effects.drawHitStopFlash(G.hitStop);
 
     if (G.trT > 0) {
       switch (G.state) {
@@ -262,36 +160,15 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
       }
     }
 
-    // LCD ベゼル影
-    onFill(.03);
-    $.fillRect(0, 0, W, 3); $.fillRect(0, H - 3, W, 3);
-    $.fillRect(0, 0, 3, H); $.fillRect(W - 3, 0, 3, H);
-    $.globalAlpha = 1;
-
-    // ポーズオーバーレイ
-    if (G.paused) {
-      $.fillStyle = 'rgba(26,40,16,.65)'; $.fillRect(0, 0, W, H);
-      $.fillStyle = BG;
-      txtC('PAUSED', W / 2, H / 2 - 20, 16);
-      if (Math.floor(G.tick / 18) % 2) {
-        txtC('P: RESUME    ESC: TITLE', W / 2, H / 2 + 14, 6);
-      }
-    }
-
-    // リセット確認オーバーレイ
-    if (G.resetConfirm > 0) {
-      $.fillStyle = 'rgba(26,40,16,.75)'; $.fillRect(0, 0, W, H);
-      $.fillStyle = BG; txtC('RETURN TO TITLE?', W / 2, H / 2 - 20, 10);
-      if (Math.floor(G.tick / 12) % 2) txtC('Z: YES    ESC: NO', W / 2, H / 2 + 10, 7);
-    }
+    effects.drawLCDBevel();
+    if (G.paused) effects.drawPauseOverlay(G.tick);
+    if (G.resetConfirm > 0) effects.drawResetConfirmOverlay(G.tick);
     $.restore();
   }
 
-  /* ================================================================
-     FRAME — rAF ループ
-     ================================================================ */
+  /* FRAME — rAF ループ */
   let lastTime = 0, accumulator = 0;
-  function frame(now) {
+  function frame(now: number): void {
     if (!lastTime) lastTime = now;
     const dt = Math.min(now - lastTime, 100);
     lastTime = now;
@@ -301,37 +178,24 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
     if (running) animFrameId = requestAnimationFrame(frame);
   }
 
-  /* ================================================================
-     エンジン制御
-     ================================================================ */
+  /* エンジン制御 */
   let animFrameId: number = 0;
   let running = false;
 
-  function start(): void {
-    if (running) return;
-    running = true;
-    lastTime = 0;
-    accumulator = 0;
-    animFrameId = requestAnimationFrame(frame);
-  }
-
-  function stop(): void {
-    running = false;
-    if (animFrameId) {
-      cancelAnimationFrame(animFrameId);
-      animFrameId = 0;
-    }
-  }
-
-  function handleKeyDown(key: string): void {
-    const k = key.toLowerCase();
-    if (!kd[k]) jp[k] = true;
-    kd[k] = true;
-  }
-
-  function handleKeyUp(key: string): void {
-    kd[key.toLowerCase()] = false;
-  }
-
-  return { start, stop, resize, handleKeyDown, handleKeyUp };
+  return {
+    start() {
+      if (running) return;
+      running = true;
+      lastTime = 0;
+      accumulator = 0;
+      animFrameId = requestAnimationFrame(frame);
+    },
+    stop() {
+      running = false;
+      if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = 0; }
+    },
+    resize,
+    handleKeyDown: input.handleKeyDown,
+    handleKeyUp: input.handleKeyUp,
+  };
 }

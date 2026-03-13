@@ -1,5 +1,3 @@
-/* eslint-disable */
-// @ts-nocheck
 /**
  * KEYS & ARMS — ポーズ機能テスト
  *
@@ -8,11 +6,21 @@
  * 該当ロジックを関数として抽出・テストする。
  */
 
+/** テスト用の簡易ゲーム状態 */
+interface PauseTestState {
+  state: string;
+  paused: boolean;
+  resetConfirm: number;
+}
+
+/** テスト用のキー入力マップ */
+type PauseKeyMap = Record<string, boolean | undefined>;
+
 describe('ポーズ機能', () => {
   /** ポーズトグルロジックのシミュレーション */
-  function simulatePauseToggle(G, jp) {
-    function J(k) { return jp[k.toLowerCase()]; }
-    function clearJ() { for (const k in jp) delete jp[k]; }
+  function simulatePauseToggle(G: PauseTestState, jp: PauseKeyMap): string {
+    function J(k: string): boolean | undefined { return jp[k.toLowerCase()]; }
+    function clearJ(): void { for (const k in jp) delete jp[k]; }
 
     // ポーズトグル（ゲームプレイ中のみ）
     if (J('p') && G.state !== 'title' && G.state !== 'over'

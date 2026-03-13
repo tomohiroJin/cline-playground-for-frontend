@@ -136,9 +136,17 @@ describe('Keys & Arms - 難易度設定', () => {
       expect(Difficulty.isTrueEnding(2)).toBe(false);
     });
 
-    it('ループ3以上でtrue', () => {
+    it('3の倍数ループ（3, 6, 9）でtrue', () => {
       expect(Difficulty.isTrueEnding(3)).toBe(true);
-      expect(Difficulty.isTrueEnding(5)).toBe(true);
+      expect(Difficulty.isTrueEnding(6)).toBe(true);
+      expect(Difficulty.isTrueEnding(9)).toBe(true);
+    });
+
+    it('3の倍数でないループ（4, 5, 7, 8）ではfalse', () => {
+      expect(Difficulty.isTrueEnding(4)).toBe(false);
+      expect(Difficulty.isTrueEnding(5)).toBe(false);
+      expect(Difficulty.isTrueEnding(7)).toBe(false);
+      expect(Difficulty.isTrueEnding(8)).toBe(false);
     });
   });
 

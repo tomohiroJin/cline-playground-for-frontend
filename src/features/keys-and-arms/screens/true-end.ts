@@ -1,26 +1,23 @@
-/* eslint-disable */
-// @ts-nocheck
 /**
  * KEYS & ARMS -- トゥルーエンド画面モジュール（全3ループクリア後）
  * engine.ts から抽出したトゥルーエンド描画ロジック。
  */
 
-import { W, H, BG, GH, ON, K_R, KEY_D } from '../constants';
-import { TAU } from '../core/math';
+import { W, H, BG, ON, K_R, KEY_D } from '../constants';
+import { createInputHelpers } from '../core/input';
+import type { EngineContext } from '../types';
 
 /**
  * トゥルーエンド画面ファクトリ
  * @param ctx ゲームコンテキスト（状態・描画・音声・パーティクル・HUD）
  */
-export function createTrueEndScreen(ctx) {
-  const { G, draw, audio, particles, hud } = ctx;
-  const { $, circle, onFill, txt, txtC, px, iSlime, iGoblin, iSkel, iGem, iBoss } = draw;
-  const { ea } = audio;
+export function createTrueEndScreen(ctx: EngineContext) {
+  const { G, draw, hud, storage } = ctx;
+  const { $, onFill, txtC, px, iSlime, iGoblin, iSkel, iGem, iBoss } = draw;
   const { transTo } = hud;
 
   // --- 入力ヘルパー ---
-  function J(k) { return G.jp[k.toLowerCase()]; }
-  function jAct() { return J('z') || J(' '); }
+  const { J, jAct } = createInputHelpers(G.jp);
 
   /** トゥルーエンド画面描画 */
   function drawTrueEnd() {
@@ -35,7 +32,7 @@ export function createTrueEndScreen(ctx) {
       $.fillRect(sx, sy, G.teT % (9 + i % 5) < 2 ? 3 : 2, G.teT % (9 + i % 5) < 2 ? 3 : 2);
     }
     $.globalAlpha = 1;
-    const line = (start, text, y, sz) => {
+    const line = (start: number, text: string, y: number, sz?: number) => {
       if (G.teT > start) {
         $.globalAlpha = Math.min(1, (G.teT - start) / 30); txtC(text, W / 2, y, sz || 6); $.globalAlpha = 1;
       }
@@ -169,8 +166,8 @@ export function createTrueEndScreen(ctx) {
       if (Math.floor(G.teT / 16) % 2) {
         txtC('Z: CONTINUE    ESC: TITLE', W / 2, H - 14, 6);
       }
-      if (jAct()) { ea(); G.loop = 4; G.noDmg = true; if (G.hp < G.maxHp) G.hp++; transTo('LOOP 4 \u2014 BEYOND', G.cavInit, 'HARDER!'); }
-      if (J('escape')) { G.state = 'title'; G.teT = 0; G.blink = 0; if (G.score > G.hi) { G.hi = G.score; localStorage.setItem('kaG', String(G.hi)); } }
+      if (jAct()) { G.loop++; G.noDmg = true; if (G.hp < G.maxHp) G.hp++; transTo(`LOOP ${G.loop} \u2014 BEYOND`, G.cavInit, 'HARDER!'); }
+      if (J('escape')) { G.state = 'title'; G.teT = 0; G.blink = 0; if (G.score > G.hi) { G.hi = G.score; storage.setHighScore(G.hi); } }
     }
   }
 

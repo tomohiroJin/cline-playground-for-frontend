@@ -1,47 +1,16 @@
-/* eslint-disable */
-// @ts-nocheck
 /**
  * KEYS & ARMS — 描画ヘルパーテスト
  */
 import { createRendering } from '../core/rendering';
-
-/** Canvas 2D コンテキストのモック */
-function createMockCtx() {
-  return {
-    fillStyle: '',
-    strokeStyle: '',
-    globalAlpha: 1,
-    lineWidth: 1,
-    font: '',
-    textAlign: '',
-    textBaseline: '',
-    fillRect: jest.fn(),
-    strokeRect: jest.fn(),
-    fillText: jest.fn(),
-    beginPath: jest.fn(),
-    arc: jest.fn(),
-    fill: jest.fn(),
-    stroke: jest.fn(),
-    moveTo: jest.fn(),
-    lineTo: jest.fn(),
-    closePath: jest.fn(),
-    save: jest.fn(),
-    restore: jest.fn(),
-    translate: jest.fn(),
-    rotate: jest.fn(),
-    ellipse: jest.fn(),
-    quadraticCurveTo: jest.fn(),
-    setLineDash: jest.fn(),
-    set lineDashOffset(_v) {},
-  };
-}
+import type { DrawingAPI } from '../types';
+import { createMockCanvasContext } from './helpers/mock-factories';
 
 describe('rendering ヘルパー', () => {
-  let ctx;
-  let draw;
+  let ctx: CanvasRenderingContext2D;
+  let draw: DrawingAPI;
 
   beforeEach(() => {
-    ctx = createMockCtx();
+    ctx = createMockCanvasContext();
     draw = createRendering(ctx);
   });
 
@@ -99,7 +68,7 @@ describe('rendering ヘルパー', () => {
       const sprite = [[1, 0, 1], [0, 1, 0]];
       draw.px(sprite, 10, 20, 2, true);
       // 1のピクセルのみ描画される（3つの1があるので3回fillRect）
-      const fillCalls = ctx.fillRect.mock.calls;
+      const fillCalls = (ctx.fillRect as jest.Mock).mock.calls;
       expect(fillCalls.length).toBe(3);
     });
 
