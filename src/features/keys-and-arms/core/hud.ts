@@ -1,7 +1,7 @@
 /**
  * KEYS & ARMS — HUD描画・トランジション
  */
-import { W, H, ON } from '../constants';
+import { W, H, ON, TRANSITION_TOTAL, TRANSITION_MID, BEAT_PULSE_DURATION, HURT_FLASH_DURATION, SHAKE_DURATION } from '../constants';
 import { Difficulty } from '../difficulty';
 import type { DrawingAPI } from '../types/rendering';
 import type { GameState } from '../types/game-state';
@@ -17,7 +17,7 @@ import type { GameStorageRepository } from '../infrastructure/storage-repository
  * @param storage ストレージリポジトリ
  */
 export function createHUD(draw: DrawingAPI, G: GameState, audio: AudioModule, storage: GameStorageRepository): HUDModule {
-  const { $, onFill, R, txt, txtC, iHeart } = draw;
+  const { $, onFill, R, txt, txtC, iHeart, withAlpha } = draw;
   const { tn } = audio;
 
   /** ビート長（現在のループの） */
@@ -30,8 +30,8 @@ export function createHUD(draw: DrawingAPI, G: GameState, audio: AudioModule, st
   function doHurt(): void {
     G.hp--;
     G.noDmg = false;
-    G.hurtFlash = 10;
-    G.shakeT = 8;
+    G.hurtFlash = HURT_FLASH_DURATION;
+    G.shakeT = SHAKE_DURATION;
     audio.S.hit();
     if (G.hp <= 0) {
       G.state = 'over';
@@ -48,7 +48,7 @@ export function createHUD(draw: DrawingAPI, G: GameState, audio: AudioModule, st
       G.beatNum++;
       audio.S.tick();
       audio.bgmTick();
-      G.beatPulse = 6;
+      G.beatPulse = BEAT_PULSE_DURATION;
       return true;
     }
     return false;
@@ -75,7 +75,7 @@ export function createHUD(draw: DrawingAPI, G: GameState, audio: AudioModule, st
     const bl = BL(); const bp2 = G.beatCtr / bl; const bx = W / 2 - 50, by = H - 12;
     R(bx, by, 100, 7, false); R(bx, by, Math.floor(100 * bp2), 7, true);
     if (G.beatPulse > 0) {
-      onFill(G.beatPulse / 6 * .2);
+      onFill(G.beatPulse / BEAT_PULSE_DURATION * .2);
       $.fillRect(bx - 2, by - 2, 104, 11); $.globalAlpha = 1;
     }
     for (let i = 0; i < 4; i++) {
@@ -84,15 +84,16 @@ export function createHUD(draw: DrawingAPI, G: GameState, audio: AudioModule, st
       $.globalAlpha = G.beatNum % 4 === i ? .4 : .15;
       $.fillRect(dx, by + 8, 3, 3); $.globalAlpha = 1;
     }
-    if (G.beatPulse > 3) {
-      const ba = ((G.beatPulse - 3) / 3) * .06;
+    const BEAT_PULSE_HALF = BEAT_PULSE_DURATION / 2;
+    if (G.beatPulse > BEAT_PULSE_HALF) {
+      const ba = ((G.beatPulse - BEAT_PULSE_HALF) / BEAT_PULSE_HALF) * .06;
       onFill(ba); $.fillRect(0, 0, W, 1); $.fillRect(0, H - 1, W, 1); $.globalAlpha = 1;
     }
   }
 
   /** トランジション開始 */
   function transTo(t: string, fn: (() => void) | undefined, sub?: string): void {
-    G.trT = 56; G.trTxt = t; G.trFn = fn; G.trSub = sub || ''; G.bgmBeat = 0;
+    G.trT = TRANSITION_TOTAL; G.trTxt = t; G.trFn = fn; G.trSub = sub || ''; G.bgmBeat = 0;
     if (tn) tn(200, .15, 'triangle', .03);
   }
 
@@ -100,24 +101,25 @@ export function createHUD(draw: DrawingAPI, G: GameState, audio: AudioModule, st
   function drawTrans(): boolean {
     if (G.trT <= 0) return false;
     G.trT--;
-    if (G.trT === 28 && G.trFn) G.trFn();
-    const p = G.trT > 28 ? (56 - G.trT) / 28 : G.trT / 28;
+    if (G.trT === TRANSITION_MID && G.trFn) G.trFn();
+    const p = G.trT > TRANSITION_MID ? (TRANSITION_TOTAL - G.trT) / TRANSITION_MID : G.trT / TRANSITION_MID;
     const wh = Math.floor(H * p);
     $.fillStyle = `rgba(176,188,152,.95)`;
     $.fillRect(0, H / 2 - wh / 2, W, wh);
     if (p > .4) {
-      $.globalAlpha = (p - .4) / .6;
-      txtC(G.trTxt, W / 2, H / 2 - 10, 12);
-      // サブテキスト
-      if (G.trSub) {
-        $.globalAlpha *= .6;
-        txtC(G.trSub, W / 2, H / 2 + 8, 6);
-      }
-      const lw = 80 * Math.min(1, (p - .4) * 3);
-      $.fillStyle = ON; $.globalAlpha *= .2;
-      $.fillRect(W / 2 - lw / 2, H / 2 + 18, lw, 1);
+      const a = (p - .4) / .6;
+      withAlpha(a, () => {
+        txtC(G.trTxt, W / 2, H / 2 - 10, 12);
+        // サブテキスト
+        if (G.trSub) {
+          $.globalAlpha = a * .6;
+          txtC(G.trSub, W / 2, H / 2 + 8, 6);
+        }
+        const lw = 80 * Math.min(1, (p - .4) * 3);
+        $.fillStyle = ON; $.globalAlpha = a * .2;
+        $.fillRect(W / 2 - lw / 2, H / 2 + 18, lw, 1);
+      });
     }
-    $.globalAlpha = 1;
     return true;
   }
 

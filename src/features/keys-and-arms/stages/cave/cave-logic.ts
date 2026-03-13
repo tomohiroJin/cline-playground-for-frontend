@@ -7,10 +7,13 @@ import {
   L1T,
   KY2, POS, NAV, ROOM_NAMES,
   W, H,
-  assert
+  assert,
+  VICTORY_TIMER,
+  PARTICLE_STEP_DUST,
 } from '../../constants';
 
 import { rng, rngInt, rngSpread } from '../../core/math';
+import { createInputHelpers } from '../../core/input';
 
 import { Difficulty } from '../../difficulty';
 
@@ -28,8 +31,7 @@ export function createCaveLogic(ctx: EngineContext) {
   const { twoBeatDuration, doHurt, transTo } = hud;
 
   // --- 入力ヘルパー ---
-  function J(k: string) { return G.jp[k.toLowerCase()]; }
-  function jAct() { return J('z') || J(' '); }
+  const { J, jAct } = createInputHelpers(G.jp);
 
   // --- ヘルパー ---
   function addPopup(x: number, y: number, t: string) { Popups.add(x, y, t); }
@@ -41,7 +43,7 @@ export function createCaveLogic(ctx: EngineContext) {
   }
 
   function addStepDust(x: number, y: number) {
-    Particles.spawn(G.stepDust, { x, y, n: 4, vxSpread: .6, vySpread: .4, vyBase: -.4, life: 12, s: 1.5 });
+    Particles.spawn(G.stepDust, { x, y, ...PARTICLE_STEP_DUST });
   }
 
   // === 洞窟初期化 ===
@@ -63,7 +65,7 @@ export function createCaveLogic(ctx: EngineContext) {
   // === 洞窟更新 ===
   function cavUpdate(nb: boolean) {
     const C = G.cav; if (C.hurtCD > 0) C.hurtCD--; if (C.actAnim > 0) C.actAnim--; if (C.batHitAnim > 0) C.batHitAnim--;
-    if (C.mimicShake > 0) C.mimicShake--; if (C.walkAnim > 0) C.walkAnim--; if (C.won) { C.wonT++; if (C.wonT === 120) transTo('PRAIRIE', G.grsInit, 'DEFEAT ENEMIES'); return; }
+    if (C.mimicShake > 0) C.mimicShake--; if (C.walkAnim > 0) C.walkAnim--; if (C.won) { C.wonT++; if (C.wonT === VICTORY_TIMER) transTo('PRAIRIE', G.grsInit, 'DEFEAT ENEMIES'); return; }
     if (C.trailAlpha > 0) C.trailAlpha -= .03; if (C.roomNameT > 0) C.roomNameT--;
     C.idleT++;
     // 鍵所持中のきらめき

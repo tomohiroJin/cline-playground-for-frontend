@@ -96,10 +96,18 @@ export function createRendering($: CanvasRenderingContext2D): DrawingAPI {
     $.fillStyle = lcdFg(on); $.fillRect(a + 2, b, 6, 12); $.fillRect(a, b + 10, 10, 4);
   }
 
+  /** globalAlpha をセットし、fn 実行後に 1.0 にリセットする */
+  function withAlpha(alpha: number, fn: () => void): void {
+    $.globalAlpha = alpha;
+    fn();
+    $.globalAlpha = 1;
+  }
+
   return {
     $, lcdFg, lcdBg,
     circle, circleS, onFill, onStroke,
     R, txt, txtC, px, drawK,
-    iHeart, iGem, iSlime, iGoblin, iSkel, iBoss, iArmDown, iArmUp
+    iHeart, iGem, iSlime, iGoblin, iSkel, iBoss, iArmDown, iArmUp,
+    withAlpha
   };
 }

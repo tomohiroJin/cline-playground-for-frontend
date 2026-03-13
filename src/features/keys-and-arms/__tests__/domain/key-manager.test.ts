@@ -77,5 +77,21 @@ describe('items/key-manager', () => {
       const result = dropKey(state);
       expect(result).toEqual(state);
     });
+
+    it('複数鍵取得済みでも最も大きいインデックスの鍵のみ落とす', () => {
+      // Arrange: 鍵0を取得→設置、鍵1を取得（carrying=true, keys=[true,true,false]）
+      let state = createKeyState();
+      state = collectKey(state, 0);
+      state = placeKey(state);
+      state = collectKey(state, 1);
+
+      // Act
+      const result = dropKey(state);
+
+      // Assert: 鍵1（インデックス最大の取得済み）のみ落とし、鍵0はそのまま
+      expect(result.keys[0]).toBe(true);
+      expect(result.keys[1]).toBe(false);
+      expect(result.carrying).toBe(false);
+    });
   });
 });

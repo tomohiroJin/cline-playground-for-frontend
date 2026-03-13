@@ -11,13 +11,10 @@ import type { EngineContext } from '../types';
  * @param ctx ゲームコンテキスト（状態・描画・音声・パーティクル・HUD）
  */
 export function createTitleScreen(ctx: EngineContext) {
-  const { G, draw, audio: _audio, particles: _particles, hud } = ctx;
+  const { G, draw, hud } = ctx;
   const { $, circle, onFill, txt, txtC, px, iSlime, iBoss, iGem } = draw;
   const { transTo } = hud;
-
-  // --- 入力ヘルパー ---
-  function J(k: string) { return G.jp[k.toLowerCase()]; }
-  function _jAct() { return J('z') || J(' '); }
+  // タイトル画面は engine.ts 側で入力を処理するため入力ヘルパー不要
 
   /** タイトル画面描画 */
   function drawTitle() {

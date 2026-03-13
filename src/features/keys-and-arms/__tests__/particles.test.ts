@@ -67,6 +67,23 @@ describe('Particles', () => {
       expect(pool).toHaveLength(0);
     });
 
+    it('複数パーティクルで一部がライフ切れでも残りが保持される', () => {
+      // Arrange: 3つのパーティクル（中央のみライフ切れ）
+      const pool: ParticlePool = [
+        { x: 1, y: 0, vx: 0, vy: 0, life: 10, maxLife: 10, s: 3, rot: 0, gravity: 0 },
+        { x: 2, y: 0, vx: 0, vy: 0, life: 1, maxLife: 10, s: 3, rot: 0, gravity: 0 },
+        { x: 3, y: 0, vx: 0, vy: 0, life: 10, maxLife: 10, s: 3, rot: 0, gravity: 0 },
+      ];
+
+      // Act
+      particles.Particles.updateAndDraw(pool);
+
+      // Assert: 2つ残る（順序は保証しない — スワップ削除）
+      expect(pool).toHaveLength(2);
+      const xs = pool.map(p => p.x).sort();
+      expect(xs).toEqual([1, 3]);
+    });
+
     it('重力が適用される', () => {
       const pool: ParticlePool = [{ x: 0, y: 0, vx: 0, vy: 0, life: 10, maxLife: 10, s: 3, rot: 0, gravity: 0.5 }];
       particles.Particles.updateAndDraw(pool);

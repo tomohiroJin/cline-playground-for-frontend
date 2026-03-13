@@ -4,6 +4,7 @@
  */
 
 import { W, H, BG, ON, K_R, KEY_D } from '../constants';
+import { createInputHelpers } from '../core/input';
 import type { EngineContext } from '../types';
 
 /**
@@ -11,13 +12,12 @@ import type { EngineContext } from '../types';
  * @param ctx ゲームコンテキスト（状態・描画・音声・パーティクル・HUD）
  */
 export function createTrueEndScreen(ctx: EngineContext) {
-  const { G, draw, particles: _particles, hud, storage } = ctx;
-  const { $, circle: _circle, onFill, txt: _txt, txtC, px, iSlime, iGoblin, iSkel, iGem, iBoss } = draw;
+  const { G, draw, hud, storage } = ctx;
+  const { $, onFill, txtC, px, iSlime, iGoblin, iSkel, iGem, iBoss } = draw;
   const { transTo } = hud;
 
   // --- 入力ヘルパー ---
-  function J(k: string) { return G.jp[k.toLowerCase()]; }
-  function jAct() { return J('z') || J(' '); }
+  const { J, jAct } = createInputHelpers(G.jp);
 
   /** トゥルーエンド画面描画 */
   function drawTrueEnd() {

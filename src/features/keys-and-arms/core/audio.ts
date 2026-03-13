@@ -3,6 +3,35 @@
  * Web Audio API によるサウンドエフェクト・BGM
  */
 import type { GameState, AudioModule, SoundEffects } from '../types';
+import { HIT_STOP } from '../constants';
+
+/**
+ * webkitAudioContext を持つ可能性のあるウィンドウ型
+ * Safari 旧バージョンでは AudioContext の代わりに webkitAudioContext を提供
+ */
+interface WindowWithWebKitAudio {
+  webkitAudioContext?: typeof AudioContext;
+}
+
+/**
+ * webkitAudioContext の存在を型安全にチェックする型ガード
+ */
+function hasWebKitAudioContext(win: Window): win is Window & WindowWithWebKitAudio {
+  return 'webkitAudioContext' in win;
+}
+
+/**
+ * AudioContext コンストラクタを取得する型ガード関数
+ * WebKit 互換の webkitAudioContext にもフォールバック
+ */
+export function getAudioContextConstructor(): typeof AudioContext | undefined {
+  if (typeof window === 'undefined') return undefined;
+  if (typeof window.AudioContext === 'function') return window.AudioContext;
+  if (hasWebKitAudioContext(window) && typeof window.webkitAudioContext === 'function') {
+    return window.webkitAudioContext;
+  }
+  return undefined;
+}
 
 /**
  * オーディオモジュールを生成する
@@ -13,7 +42,10 @@ export function createAudio(G: GameState): AudioModule {
 
   /** AudioContext を確保 */
   function ea(): void {
-    if (!ac) ac = new ((window as unknown as Record<string, typeof AudioContext>).AudioContext || (window as unknown as Record<string, typeof AudioContext>).webkitAudioContext)();
+    if (!ac) {
+      const Ctor = getAudioContextConstructor();
+      if (Ctor) ac = new Ctor();
+    }
   }
 
   /** トーン生成（AudioContext 未初期化の場合は自動初期化） */
@@ -69,20 +101,20 @@ export function createAudio(G: GameState): AudioModule {
   const S: SoundEffects = {
     tick() { tn(1500, .01, 'square', .015); },
     move() { tn(880, .03); },
-    grab() { tn(1100, .08); setTimeout(() => tn(1400, .07), 50); doHitStop(3); },
-    hit() { tn(90, .2, 'sawtooth', .08); tn(70, .25, 'square', .04); noise(.15, .03); doHitStop(4); },
-    kill() { tn(800, .04); setTimeout(() => tn(1100, .04), 35); doHitStop(2); },
+    grab() { tn(1100, .08); setTimeout(() => tn(1400, .07), 50); doHitStop(HIT_STOP.MEDIUM); },
+    hit() { tn(90, .2, 'sawtooth', .08); tn(70, .25, 'square', .04); noise(.15, .03); doHitStop(HIT_STOP.HEAVY); },
+    kill() { tn(800, .04); setTimeout(() => tn(1100, .04), 35); doHitStop(HIT_STOP.LIGHT); },
     pry() { tn(500, .03); },
-    guard() { tn(300, .08); tn(600, .06); noise(.04, .01); doHitStop(2); },
+    guard() { tn(300, .08); tn(600, .06); noise(.04, .01); doHitStop(HIT_STOP.LIGHT); },
     clear() { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tn(f, .15, 'square', .05), i * 100)); },
     over() { [400, 320, 240, 160].forEach((f, i) => setTimeout(() => tn(f, .2, 'sawtooth', .05), i * 150)); },
     start() { tn(523, .08); setTimeout(() => tn(659, .08), 70); setTimeout(() => tn(784, .07), 140); G.bgmBeat = 0; },
     warn() { tn(220, .07, 'square', .03); tn(165, .05, 'sawtooth', .02); },
-    steal() { tn(180, .14, 'sawtooth', .06); setTimeout(() => tn(120, .12, 'square', .04), 60); noise(.08, .02); doHitStop(3); },
-    shieldBreak() { tn(400, .06); tn(200, .12, 'sawtooth', .04); noise(.06, .02); doHitStop(3); },
-    gem() { tn(660, .06); setTimeout(() => tn(880, .06), 50); setTimeout(() => tn(1100, .05), 100); doHitStop(2); },
-    zap() { tn(150, .15, 'sawtooth', .06); tn(100, .1, 'square', .04); noise(.1, .02); doHitStop(4); },
-    set() { tn(440, .08); setTimeout(() => tn(660, .08), 60); setTimeout(() => tn(880, .07), 120); doHitStop(3); },
+    steal() { tn(180, .14, 'sawtooth', .06); setTimeout(() => tn(120, .12, 'square', .04), 60); noise(.08, .02); doHitStop(HIT_STOP.MEDIUM); },
+    shieldBreak() { tn(400, .06); tn(200, .12, 'sawtooth', .04); noise(.06, .02); doHitStop(HIT_STOP.MEDIUM); },
+    gem() { tn(660, .06); setTimeout(() => tn(880, .06), 50); setTimeout(() => tn(1100, .05), 100); doHitStop(HIT_STOP.LIGHT); },
+    zap() { tn(150, .15, 'sawtooth', .06); tn(100, .1, 'square', .04); noise(.1, .02); doHitStop(HIT_STOP.HEAVY); },
+    set() { tn(440, .08); setTimeout(() => tn(660, .08), 60); setTimeout(() => tn(880, .07), 120); doHitStop(HIT_STOP.MEDIUM); },
     step() { tn(600, .02, 'square', .015); },
     ladder() { tn(300, .04); setTimeout(() => tn(350, .04), 40); },
     safe() { tn(500, .04, 'sine', .025); setTimeout(() => tn(600, .03, 'sine', .02), 30); },

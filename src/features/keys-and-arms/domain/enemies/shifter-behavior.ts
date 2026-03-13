@@ -6,13 +6,17 @@
  */
 import type { PrairieEnemy } from '../../types/stage';
 
-/** SHIFTER 敵を生成 */
-export function createShifterEnemy(lane: number): Pick<PrairieEnemy, 'beh' | 'lane' | 'step' | 'shiftDir' | 'shifted' | 'dashReady'> {
+/**
+ * SHIFTER 敵を生成
+ * @param lane 初期レーン
+ * @param initialShiftDir 初期移動方向（-1=上, 1=下）。呼び出し元で乱数を解決して渡す
+ */
+export function createShifterEnemy(lane: number, initialShiftDir: -1 | 1): Pick<PrairieEnemy, 'beh' | 'lane' | 'step' | 'shiftDir' | 'shifted' | 'dashReady'> {
   return {
     beh: 'shifter',
     lane,
     step: 3,
-    shiftDir: Math.random() < 0.5 ? -1 : 1,
+    shiftDir: initialShiftDir,
     shifted: false,
     dashReady: false,
   };

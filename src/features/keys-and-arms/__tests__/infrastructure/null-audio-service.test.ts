@@ -56,4 +56,19 @@ describe('NullAudioService', () => {
     expect(() => S.combo(3)).not.toThrow();
     expect(() => S.bossDie()).not.toThrow();
   });
+
+  it('SoundEffects の未定義プロパティアクセスも関数を返す', () => {
+    audio = createNullAudioService();
+    // Proxy による自動 noop: 将来追加されるメソッドにも対応
+    const S = audio.S as unknown as Record<string, unknown>;
+    expect(typeof S['futureMethod']).toBe('function');
+    expect(() => (S['futureMethod'] as () => void)()).not.toThrow();
+  });
+
+  it('AudioModule のトップレベルメソッドも Proxy で noop を返す', () => {
+    audio = createNullAudioService();
+    const a = audio as unknown as Record<string, unknown>;
+    expect(typeof a['futureTopLevel']).toBe('function');
+    expect(() => (a['futureTopLevel'] as () => void)()).not.toThrow();
+  });
 });

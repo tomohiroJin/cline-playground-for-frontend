@@ -51,3 +51,15 @@ export function createInputHandler(): InputHandler {
 
   return { kd, jp, justPressed, clearJustPressed, isAction, handleKeyDown, handleKeyUp };
 }
+
+/**
+ * jp オブジェクトからキー押下ヘルパーを生成
+ * 各ステージ・スクリーンで重複していた J(k) / jAct() を共通化
+ */
+export function createInputHelpers(jp: Record<string, boolean>) {
+  /** キーが今フレーム押されたか */
+  function J(k: string): boolean { return !!jp[k.toLowerCase()]; }
+  /** アクションキー（z / スペース）が押されたか */
+  function jAct(): boolean { return J('z') || J(' '); }
+  return { J, jAct };
+}

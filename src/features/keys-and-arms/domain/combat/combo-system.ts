@@ -4,6 +4,7 @@
  * 草原ステージのコンボ管理とスウィープ判定を担当する。
  */
 import { assert } from '../contracts/assertions';
+import { COMBO_BONUS_POINTS } from '../../constants';
 
 /** コンボ状態 */
 export interface ComboState {
@@ -45,5 +46,5 @@ export function afterSweep(state: ComboState): ComboState {
 export function comboBonus(comboCount: number): number {
   assert(comboCount >= 0, 'コンボ数は 0 以上');
   if (comboCount <= 1) return 0;
-  return (comboCount - 1) * 50;
+  return (comboCount - 1) * COMBO_BONUS_POINTS;
 }

@@ -10,9 +10,19 @@ import {
 describe('enemies/shifter-behavior', () => {
   describe('createShifterEnemy', () => {
     it('shifter タイプで生成される', () => {
-      const enemy = createShifterEnemy(1);
+      const enemy = createShifterEnemy(1, 1);
       expect(enemy.beh).toBe('shifter');
       expect(enemy.lane).toBe(1);
+    });
+
+    it('shiftDir が外部から注入される（決定的テスト）', () => {
+      // Arrange & Act
+      const enemyUp = createShifterEnemy(1, -1);
+      const enemyDown = createShifterEnemy(1, 1);
+
+      // Assert
+      expect(enemyUp.shiftDir).toBe(-1);
+      expect(enemyDown.shiftDir).toBe(1);
     });
   });
 

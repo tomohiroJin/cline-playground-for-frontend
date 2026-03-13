@@ -6,6 +6,7 @@
  *
  * engine.ts と同じ組み立てを行うが、描画は実Canvas不要。
  */
+import { TRANSITION_MID } from '../../constants';
 import type { GameState, GameScreen } from '../../types/game-state';
 import type { EngineContext } from '../../types/engine-context';
 import { createRendering } from '../../core/rendering';
@@ -136,7 +137,7 @@ export class TestEngine {
       if (isGameplay()) this.hud.doBeat();
       // 描画をスキップするため、トランジション処理をここで実行
       G.trT--;
-      if (G.trT === 28 && G.trFn) G.trFn();
+      if (G.trT === TRANSITION_MID && G.trFn) G.trFn();
     } else {
       let nb = false;
       if (isGameplay()) nb = this.hud.doBeat();

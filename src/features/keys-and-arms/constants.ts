@@ -3,6 +3,7 @@
  * 純粋なデータのみ。ロジックや副作用なし。
  */
 import type { SpriteData, Position, RoomNavigation } from './types/constants';
+import type { ParticleSpawnParams } from './types/particles';
 
 /* ================================================================
    DISPLAY CONSTANTS
@@ -11,6 +12,50 @@ export const W = 440;
 export const H = 340;
 export const TICK_RATE = 30;
 export const TICK_MS = 1000 / TICK_RATE;
+
+/* ================================================================
+   GAMEPLAY CONSTANTS
+   ================================================================ */
+/** ヒットストップフレーム数 */
+export const HIT_STOP = { LIGHT: 2, MEDIUM: 3, HEAVY: 4 } as const;
+/** トランジション総フレーム数 */
+export const TRANSITION_TOTAL = 56;
+/** トランジション中間点（ステージ init 実行タイミング） */
+export const TRANSITION_MID = TRANSITION_TOTAL / 2;
+/** 勝利演出後の遷移フレーム数（洞窟・草原） */
+export const VICTORY_TIMER = 120;
+/** 勝利演出後の遷移フレーム数（ボス） */
+export const BOSS_VICTORY_TIMER = 150;
+/** ビートパルス持続フレーム数 */
+export const BEAT_PULSE_DURATION = 6;
+/** ダメージフラッシュ持続フレーム数 */
+export const HURT_FLASH_DURATION = 10;
+/** 画面振動持続フレーム数 */
+export const SHAKE_DURATION = 8;
+/** シールド獲得に必要なキル数間隔 */
+export const SHIELD_KILL_INTERVAL = 5;
+/** ボス腕本数・台座数 */
+export const BOSS_ARM_COUNT = 6;
+/** 腕の最大段階数 */
+export const ARM_MAX_STAGE = 6;
+/** コンボボーナス倍率（1コンボ追加ごとのポイント） */
+export const COMBO_BONUS_POINTS = 50;
+
+/* ================================================================
+   PARTICLE PRESETS — パーティクル生成プリセット
+   x, y は呼び出し時に指定するため含まない
+   ================================================================ */
+/** パーティクルプリセット型（x, y は呼び出し時に指定） */
+export type ParticlePreset = Omit<ParticleSpawnParams, 'x' | 'y'>;
+
+/** 洞窟: 歩行時の土埃 */
+export const PARTICLE_STEP_DUST: ParticlePreset = { n: 4, vxSpread: .6, vySpread: .4, vyBase: -.4, life: 12, s: 1.5 };
+/** ボス: カウンター攻撃 */
+export const PARTICLE_COUNTER: ParticlePreset = { n: 8, vxSpread: 1.5, vySpread: 1.2, vyBase: -1.5, life: 12, s: 3, gravity: .1 };
+/** ボス: 宝石盗み */
+export const PARTICLE_STEAL: ParticlePreset = { n: 8, vxSpread: 1.2, vySpread: 1.2, vyBase: -1.5, life: 14, s: 3, gravity: .1 };
+/** ボス: シールド破壊 */
+export const PARTICLE_SHIELD_BREAK: ParticlePreset = { n: 6, vxSpread: 1.5, vySpread: 1, vyBase: -1, life: 12, s: 3, gravity: .1 };
 
 /* LCD Color Palette */
 export const BG = '#b0bc98';

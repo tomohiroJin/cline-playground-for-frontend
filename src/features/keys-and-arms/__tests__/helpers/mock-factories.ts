@@ -61,6 +61,7 @@ export function createMockDrawingAPI(ctx?: CanvasRenderingContext2D): DrawingAPI
     iBoss: jest.fn(),
     iArmDown: jest.fn(),
     iArmUp: jest.fn(),
+    withAlpha: jest.fn().mockImplementation((_a: number, fn: () => void) => fn()),
   };
 }
 

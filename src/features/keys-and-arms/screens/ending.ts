@@ -4,6 +4,7 @@
  */
 
 import { W, H, BG, ON, K_R } from '../constants';
+import { createInputHelpers } from '../core/input';
 import type { EngineContext } from '../types';
 
 /**
@@ -11,13 +12,12 @@ import type { EngineContext } from '../types';
  * @param ctx ゲームコンテキスト（状態・描画・音声・パーティクル・HUD）
  */
 export function createEndingScreen(ctx: EngineContext) {
-  const { G, draw, particles: _particles, hud } = ctx;
-  const { $, onFill, txt: _txt, txtC, px } = draw;
+  const { G, draw, hud } = ctx;
+  const { $, onFill, txtC, px } = draw;
   const { transTo } = hud;
 
   // --- 入力ヘルパー ---
-  function J(k: string) { return G.jp[k.toLowerCase()]; }
-  function jAct() { return J('z') || J(' '); }
+  const { jAct } = createInputHelpers(G.jp);
 
   /** エンディング画面描画 */
   function drawEnding1() {

@@ -3,7 +3,8 @@
  * 草原ステージの初期化と状態更新（ゲームロジック）を担当する。
  */
 
-import { W, GRS_LY, GRS_EX, assert } from '../../constants';
+import { W, GRS_LY, GRS_EX, assert, VICTORY_TIMER, SHIELD_KILL_INTERVAL } from '../../constants';
+import { createInputHelpers } from '../../core/input';
 import { TAU, rng, rngInt } from '../../core/math';
 import { Difficulty } from '../../difficulty';
 
@@ -21,7 +22,7 @@ export function createPrairieLogic(ctx: EngineContext) {
   const { BL, twoBeatDuration, doHurt, transTo } = hud;
 
   // --- 入力ヘルパー ---
-  function J(k: string) { return G.jp[k.toLowerCase()]; }
+  const { J } = createInputHelpers(G.jp);
 
   /** ポップアップ追加のショートカット */
   function addPopup(x: number, y: number, t: string) { Popups.add(x, y, t); }
@@ -43,7 +44,7 @@ export function createPrairieLogic(ctx: EngineContext) {
   /** シールドオーブドロップの確認・付与 — スウィープ/通常キル共通 */
   function grsCheckShieldDrop(GS: PrairieState, lane: number) {
     if (GS.kills >= GS.nextShieldAt && G.earnedShields < 4) {
-      G.earnedShields++; GS.nextShieldAt += 5;
+      G.earnedShields++; GS.nextShieldAt += SHIELD_KILL_INTERVAL;
       GS.shieldOrbs.push({ y: GRS_LY[lane] + 20, alpha: 1, t: 0 });
       addPopup(W / 2, 20, 'SHIELD +1'); S.guard();
     }
@@ -81,7 +82,7 @@ export function createPrairieLogic(ctx: EngineContext) {
       ens: [], kills: 0, goal: g, maxSpawn: Math.floor(g * 1.6) + 4, spawned: 0, guards: 3,
       atkAnim: [-1, 0], atkCD: 0, guardAnim: 0, guardFlash: 0, hurtCD: 0,
       combo: 0, comboT: 0, maxCombo: 0, won: false, wonT: 0,
-      shieldOrbs: [], nextShieldAt: 5,
+      shieldOrbs: [], nextShieldAt: SHIELD_KILL_INTERVAL,
       sweepReady: false, sweepFlash: 0
     };
   }
@@ -98,7 +99,7 @@ export function createPrairieLogic(ctx: EngineContext) {
     if (GS.comboT > 0) GS.comboT--; // 表示タイマーのみ、コンボは時間でリセットしない
     // シールドオーブ浮遊アニメーション
     GS.shieldOrbs = GS.shieldOrbs.filter(o => { o.t++; o.y -= 1.5; o.alpha = Math.max(0, 1 - o.t / 20); return o.t < 20; });
-    if (GS.won) { GS.wonT++; if (GS.wonT === 120) transTo('CASTLE', G.bosInit, 'SET 6 GEMS'); return; }
+    if (GS.won) { GS.wonT++; if (GS.wonT === VICTORY_TIMER) transTo('CASTLE', G.bosInit, 'SET 6 GEMS'); return; }
     GS.ens.forEach(e => { if (e.dashFlash > 0) e.dashFlash--; if (e.spawnT > 0) e.spawnT--; });
 
     // 攻撃 (↑→↓ = レーン 0,1,2)

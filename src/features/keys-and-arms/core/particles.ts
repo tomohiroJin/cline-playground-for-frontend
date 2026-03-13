@@ -39,7 +39,13 @@ export function createParticles(draw: DrawingAPI): ParticlesModule {
       for (let i = pool.length - 1; i >= 0; i--) {
         const p = pool[i];
         p.x += p.vx; p.y += p.vy; p.vy += p.gravity; p.life--;
-        if (p.life <= 0) { pool.splice(i, 1); continue; }
+        if (p.life <= 0) {
+          // O(1) スワップ削除: 末尾要素と入れ替えて pop
+          const last = pool.length - 1;
+          if (i !== last) pool[i] = pool[last];
+          pool.pop();
+          continue;
+        }
         $.globalAlpha = p.life / p.maxLife;
         $.fillRect(p.x, p.y, p.s, p.s);
       }

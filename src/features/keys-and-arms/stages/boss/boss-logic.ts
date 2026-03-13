@@ -5,10 +5,13 @@
 
 import {
   TICK_RATE, BOS_CX, BOS_CY, PED_POS,
-  assert
+  assert,
+  BOSS_VICTORY_TIMER, BOSS_ARM_COUNT, ARM_MAX_STAGE,
+  PARTICLE_COUNTER, PARTICLE_STEAL, PARTICLE_SHIELD_BREAK,
 } from '../../constants';
 
 import { rng, rngInt, shuffle } from '../../core/math';
+import { createInputHelpers } from '../../core/input';
 import { Difficulty } from '../../difficulty';
 
 import type { EngineContext } from '../../types';
@@ -25,8 +28,7 @@ export function createBossLogic(ctx: EngineContext) {
   const { twoBeatDuration, doHurt, transTo } = hud;
 
   // --- 入力ヘルパー ---
-  function J(k: string) { return G.jp[k.toLowerCase()]; }
-  function jAct() { return J('z') || J(' '); }
+  const { J, jAct } = createInputHelpers(G.jp);
 
   /** ポップアップ追加のショートカット */
   function addPopup(x: number, y: number, t: string) { Popups.add(x, y, t); }
@@ -36,7 +38,7 @@ export function createBossLogic(ctx: EngineContext) {
     const B = G.bos;
     if (B.pos >= 1 && B.pos <= 6) {
       const ai = B.pos - 1;
-      if (B.armStage[ai] >= 6 && B.hurtCD <= 0) {
+      if (B.armStage[ai] >= ARM_MAX_STAGE && B.hurtCD <= 0) {
         B.hurtCD = twoBeatDuration(); if (B.hasGem) B.hasGem = false; B.pos = 0; doHurt();
       }
     }
@@ -52,9 +54,9 @@ export function createBossLogic(ctx: EngineContext) {
     const spdVar = G.loop <= 2 ? 1 : 0;
     const baseRest = Difficulty.bossArmRest(G.loop);
     const restVar = G.loop <= 2 ? 2 : 1;
-    const initDelays = shuffle([0, 3, 6, 9, 12, 15].map(d => d + rngInt(0, 2)));
+    const initDelays = shuffle(Array.from({ length: BOSS_ARM_COUNT }, (_, i) => i * 3).map(d => d + rngInt(0, 2)));
     const spd = [], rest = [];
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < BOSS_ARM_COUNT; i++) {
       spd.push(Math.max(1, baseSpd + rngInt(-spdVar, spdVar)));
       rest.push(Math.max(1, baseRest + rngInt(-restVar, restVar)));
     }
@@ -62,14 +64,14 @@ export function createBossLogic(ctx: EngineContext) {
     const totalShields = Difficulty.bossShields(G.earnedShields);
     G.bos = {
       pos: 0, hasGem: false,
-      peds: [0, 0, 0, 0, 0, 0],
-      armStage: [0, 0, 0, 0, 0, 0], armDir: [1, 1, 1, 1, 1, 1],
+      peds: new Array(BOSS_ARM_COUNT).fill(0),
+      armStage: new Array(BOSS_ARM_COUNT).fill(0), armDir: new Array(BOSS_ARM_COUNT).fill(1),
       armSpeed: spd, armBaseSpd: baseSpd, armSpdVar: spdVar,
       armRest: rest, armBaseRest: baseRest, armRestVar: restVar,
-      armBeat: [0, 0, 0, 0, 0, 0],
-      armResting: [true, true, true, true, true, true],
+      armBeat: new Array(BOSS_ARM_COUNT).fill(0),
+      armResting: new Array(BOSS_ARM_COUNT).fill(true),
       armRestT: [...initDelays],
-      armWarn: [0, 0, 0, 0, 0, 0],
+      armWarn: new Array(BOSS_ARM_COUNT).fill(0),
       shields: totalShields,
       hurtCD: 0, moveCD: 0, won: false, wonT: 0, walkT: 0, prevPos: 0,
       stealAnim: [-1, 0], placeAnim: [-1, 0], shieldAnim: [-1, 0],
@@ -96,7 +98,7 @@ export function createBossLogic(ctx: EngineContext) {
     if (B.walkT > 0) B.walkT--;
     if (B.won) {
       B.wonT++;
-      if (B.wonT === 150) {
+      if (B.wonT === BOSS_VICTORY_TIMER) {
         if (Difficulty.isTrueEnding(G.loop)) { G.state = 'trueEnd'; G.teT = 0; G.tick = 0; }
         else if (G.loop === 1) { G.state = 'ending1'; G.e1T = 0; G.tick = 0; }
         else { G.loop++; G.noDmg = true; if (G.hp < G.maxHp) G.hp++; transTo('LOOP ' + G.loop, G.cavInit, 'HARDER!'); }
@@ -104,7 +106,7 @@ export function createBossLogic(ctx: EngineContext) {
       return;
     }
     B.bossAnger = B.peds.filter(p => p > 0).length;
-    for (let i = 0; i < 6; i++) if (B.armWarn[i] > 0) B.armWarn[i]--;
+    for (let i = 0; i < BOSS_ARM_COUNT; i++) if (B.armWarn[i] > 0) B.armWarn[i]--;
 
     // 移動 ←→ （0-6の循環）
     if (B.moveCD <= 0) {
@@ -157,10 +159,7 @@ export function createBossLogic(ctx: EngineContext) {
         B.counterFlash = [pi, 8];
         G.score += 300 * G.loop; addPopup(PED_POS[pi].x, PED_POS[pi].y - 20, 'COUNTER!');
         S.kill(); G.hitStop = 3;
-        Particles.spawn(G.bosParticles, {
-          x: PED_POS[pi].x, y: PED_POS[pi].y - 4,
-          n: 8, vxSpread: 1.5, vySpread: 1.2, vyBase: -1.5, life: 12, s: 3, gravity: .1
-        });
+        Particles.spawn(G.bosParticles, { x: PED_POS[pi].x, y: PED_POS[pi].y - 4, ...PARTICLE_COUNTER });
         B.bossPulse = 5;
       }
     }
@@ -171,7 +170,7 @@ export function createBossLogic(ctx: EngineContext) {
     if (B.bossAnger >= 3 && B.rageWave <= 0 && rng() < .08 * B.bossAnger) {
       B.rageWave = 1; B.quake = 6;
       let woken = 0; const target = B.bossAnger >= 5 ? 3 : 2;
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < BOSS_ARM_COUNT; i++) {
         if (woken >= target) break;
         if (B.armResting[i] && B.armRestT[i] > 1) {
           B.armRestT[i] = 1; woken++;
@@ -180,7 +179,7 @@ export function createBossLogic(ctx: EngineContext) {
       if (woken > 0) { S.warn(); S.zap(); addPopup(BOS_CX, BOS_CY - 40, 'RAGE!'); }
     }
     if (B.rageWave > 0) B.rageWave--;
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < BOSS_ARM_COUNT; i++) {
       if (B.armResting[i]) {
         B.armRestT[i]--;
         if (B.armRestT[i] === 2) { B.armWarn[i] = Math.round(B.armSpeed[i] * 30 / TICK_RATE * 2 + 12); }
@@ -195,22 +194,18 @@ export function createBossLogic(ctx: EngineContext) {
         B.armBeat[i] = 0;
         B.armStage[i] += B.armDir[i];
         if (B.armStage[i] === 5 && B.armDir[i] === 1) S.warn();
-        if (B.armStage[i] >= 6) {
-          B.armStage[i] = 6; B.armDir[i] = -1; B.bossPulse = 5;
+        if (B.armStage[i] >= ARM_MAX_STAGE) {
+          B.armStage[i] = ARM_MAX_STAGE; B.armDir[i] = -1; B.bossPulse = 5;
           const pp = PED_POS[i];
           if (B.peds[i] === 1) {
             B.peds[i] = 0; B.stealAnim = [i, 10]; S.steal();
-            Particles.spawn(G.bosParticles, {
-              x: pp.x, y: pp.y - 6, n: 8, vxSpread: 1.2, vySpread: 1.2, vyBase: -1.5, life: 14, s: 3, gravity: .1
-            });
+            Particles.spawn(G.bosParticles, { x: pp.x, y: pp.y - 6, ...PARTICLE_STEAL });
             G.bosArmTrail.push({ idx: i, life: 8 });
           }
           if (B.peds[i] === 2) {
             B.peds[i] = 1; B.shieldAnim = [i, 8];
             G.bosShieldBreak.push({ idx: i, life: 10 }); S.shieldBreak();
-            Particles.spawn(G.bosParticles, {
-              x: pp.x, y: pp.y - 6, n: 6, vxSpread: 1.5, vySpread: 1, vyBase: -1, life: 12, s: 3, gravity: .1
-            });
+            Particles.spawn(G.bosParticles, { x: pp.x, y: pp.y - 6, ...PARTICLE_SHIELD_BREAK });
           }
           if (B.pos === i + 1 && B.hurtCD <= 0) {
             B.hurtCD = twoBeatDuration(); if (B.hasGem) B.hasGem = false; B.pos = 0; doHurt();

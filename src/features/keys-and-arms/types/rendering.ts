@@ -25,4 +25,6 @@ export interface DrawingAPI {
   iBoss(x: number, y: number, on: boolean): void;
   iArmDown(x: number, y: number, on: boolean): void;
   iArmUp(x: number, y: number, on: boolean): void;
+  /** globalAlpha をセットし、fn 実行後に 1.0 にリセットする */
+  withAlpha(alpha: number, fn: () => void): void;
 }

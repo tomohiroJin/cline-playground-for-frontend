@@ -5,6 +5,7 @@
 
 import { W, ON, K_HU } from '../constants';
 import { TAU } from '../core/math';
+import { createInputHelpers } from '../core/input';
 import type { EngineContext } from '../types';
 
 /**
@@ -12,12 +13,11 @@ import type { EngineContext } from '../types';
  * @param ctx ゲームコンテキスト（状態・描画・音声・パーティクル・HUD）
  */
 export function createGameOverScreen(ctx: EngineContext) {
-  const { G, draw, particles: _particles, hud: _hud } = ctx;
-  const { $, onFill: _onFill, txt: _txt, txtC, px, circle: _circle } = draw;
+  const { G, draw } = ctx;
+  const { $, txtC, px } = draw;
 
   // --- 入力ヘルパー ---
-  function J(k: string) { return G.jp[k.toLowerCase()]; }
-  function jAct() { return J('z') || J(' '); }
+  const { J, jAct } = createInputHelpers(G.jp);
 
   /** ゲームオーバー画面描画 */
   function drawOver() {

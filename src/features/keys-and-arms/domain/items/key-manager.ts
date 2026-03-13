@@ -51,11 +51,15 @@ export function isAllKeysPlaced(keysPlaced: number): boolean {
   return keysPlaced >= TOTAL_KEYS;
 }
 
-/** 鍵を落とす（スパイダーダメージ時） */
+/**
+ * 鍵を落とす（スパイダーダメージ時）
+ * 最も大きいインデックスの取得済み鍵を 1 つ落とす。
+ * ゲーム仕様上、鍵は昇順（0→1→2）に取得されるため、
+ * 逆順検索 = 最後に取得した鍵 と一致する。
+ */
 export function dropKey(state: KeyState): KeyState {
   if (!state.carrying) return state;
 
-  // 最後に取得した鍵を落とす
   const newKeys = [...state.keys];
   for (let i = newKeys.length - 1; i >= 0; i--) {
     if (newKeys[i]) {

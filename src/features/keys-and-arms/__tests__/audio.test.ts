@@ -1,7 +1,7 @@
 /**
  * KEYS & ARMS — オーディオテスト
  */
-import { createAudio } from '../core/audio';
+import { createAudio, getAudioContextConstructor } from '../core/audio';
 import type { GameState, AudioModule } from '../types';
 import { createMockAudioContext, type MockAudioContext } from './helpers/mock-factories';
 
@@ -11,6 +11,50 @@ interface WindowWithAudioContext {
   webkitAudioContext: unknown;
   [key: string]: unknown;
 }
+
+describe('getAudioContextConstructor', () => {
+  afterEach(() => {
+    delete (window as unknown as WindowWithAudioContext).AudioContext;
+    delete (window as unknown as WindowWithAudioContext).webkitAudioContext;
+  });
+
+  it('AudioContext が存在する場合はそれを返す', () => {
+    // Arrange
+    const MockCtor = jest.fn();
+    (window as unknown as WindowWithAudioContext).AudioContext = MockCtor;
+
+    // Act
+    const Ctor = getAudioContextConstructor();
+
+    // Assert
+    expect(Ctor).toBe(MockCtor);
+  });
+
+  it('AudioContext がなく webkitAudioContext がある場合はフォールバックする', () => {
+    // Arrange
+    const MockWebKitCtor = jest.fn();
+    (window as unknown as WindowWithAudioContext).AudioContext = undefined;
+    (window as unknown as WindowWithAudioContext).webkitAudioContext = MockWebKitCtor;
+
+    // Act
+    const Ctor = getAudioContextConstructor();
+
+    // Assert
+    expect(Ctor).toBe(MockWebKitCtor);
+  });
+
+  it('どちらもない場合は undefined を返す', () => {
+    // Arrange
+    (window as unknown as WindowWithAudioContext).AudioContext = undefined;
+    (window as unknown as WindowWithAudioContext).webkitAudioContext = undefined;
+
+    // Act
+    const Ctor = getAudioContextConstructor();
+
+    // Assert
+    expect(Ctor).toBeUndefined();
+  });
+});
 
 describe('audio モジュール', () => {
   let G: GameState;

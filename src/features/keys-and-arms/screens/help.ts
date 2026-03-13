@@ -4,6 +4,7 @@
  */
 
 import { W, H, BG, K_R, K_RE, K_F, KEY_D } from '../constants';
+import { createInputHelpers } from '../core/input';
 import type { EngineContext } from '../types';
 
 /**
@@ -15,7 +16,7 @@ export function createHelpScreen(ctx: EngineContext) {
   const { $, onFill, txtC, txt, px } = draw;
 
   // 入力ヘルパー
-  function J(k: string) { return G.jp[k.toLowerCase()]; }
+  const { J } = createInputHelpers(G.jp);
 
   // 3ページ構成
   const PAGES = [

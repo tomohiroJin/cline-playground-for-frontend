@@ -25,6 +25,11 @@ describe('boss/counter-system', () => {
         expect(canCounter(pos, 0)).toBe(true);
       }
     });
+
+    it('範囲外の playerPos でも false を返す（DEBUG=false 時はアサーションが no-op）', () => {
+      expect(canCounter(-1, 0)).toBe(false);
+      expect(canCounter(7, 0)).toBe(false);
+    });
   });
 
   describe('calculateCounterRestTime', () => {
