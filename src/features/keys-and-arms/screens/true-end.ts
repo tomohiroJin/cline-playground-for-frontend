@@ -166,7 +166,7 @@ export function createTrueEndScreen(ctx: EngineContext) {
       if (Math.floor(G.teT / 16) % 2) {
         txtC('Z: CONTINUE    ESC: TITLE', W / 2, H - 14, 6);
       }
-      if (jAct()) { G.loop = 4; G.noDmg = true; if (G.hp < G.maxHp) G.hp++; transTo('LOOP 4 \u2014 BEYOND', G.cavInit, 'HARDER!'); }
+      if (jAct()) { G.loop++; G.noDmg = true; if (G.hp < G.maxHp) G.hp++; transTo(`LOOP ${G.loop} \u2014 BEYOND`, G.cavInit, 'HARDER!'); }
       if (J('escape')) { G.state = 'title'; G.teT = 0; G.blink = 0; if (G.score > G.hi) { G.hi = G.score; storage.setHighScore(G.hi); } }
     }
   }

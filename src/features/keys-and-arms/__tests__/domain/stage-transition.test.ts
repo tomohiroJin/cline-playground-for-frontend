@@ -25,8 +25,17 @@ describe('stage-flow/stage-transition', () => {
       expect(getNextStage('boss', 2)).toBe('ending1');
     });
 
-    it('ボスクリア後（ループ 3 以上）はトゥルーエンドに遷移する', () => {
+    it('ボスクリア後（ループ 3）はトゥルーエンドに遷移する', () => {
       expect(getNextStage('boss', 3)).toBe('trueEnd');
+    });
+
+    it('ボスクリア後（ループ 4, 5）はエンディング 1 に遷移する', () => {
+      expect(getNextStage('boss', 4)).toBe('ending1');
+      expect(getNextStage('boss', 5)).toBe('ending1');
+    });
+
+    it('ボスクリア後（ループ 6）はトゥルーエンドに遷移する', () => {
+      expect(getNextStage('boss', 6)).toBe('trueEnd');
     });
   });
 

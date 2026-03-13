@@ -27,9 +27,16 @@ describe('stage-flow/loop-manager', () => {
       expect(isTrueEnding(2)).toBe(false);
     });
 
-    it('ループ 3 以上で true', () => {
+    it('3の倍数ループ（3, 6, 9）で true', () => {
       expect(isTrueEnding(3)).toBe(true);
-      expect(isTrueEnding(5)).toBe(true);
+      expect(isTrueEnding(6)).toBe(true);
+      expect(isTrueEnding(9)).toBe(true);
+    });
+
+    it('3の倍数でないループ（4, 5, 7）では false', () => {
+      expect(isTrueEnding(4)).toBe(false);
+      expect(isTrueEnding(5)).toBe(false);
+      expect(isTrueEnding(7)).toBe(false);
     });
   });
 

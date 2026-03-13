@@ -311,7 +311,7 @@ export function createBossSceneRenderer(ctx: EngineContext) {
         else txtC('...The curse grows stronger...', W / 2, 228, 7);
         $.globalAlpha = 1;
       }
-      if (wt > 130 && G.loop < 3) {
+      if (wt > 130 && !Difficulty.isTrueEnding(G.loop)) {
         $.globalAlpha = Math.min(1, (wt - 130) / 18);
         txtC('LOOP ' + (G.loop + 1) + ' APPROACHES', W / 2, 260, 6); $.globalAlpha = 1;
       }

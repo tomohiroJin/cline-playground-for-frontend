@@ -96,7 +96,7 @@ export function createEndingScreen(ctx: EngineContext) {
     if (G.e1T > 420) {
       $.fillStyle = BG; $.globalAlpha = .7; $.fillRect(0, H - 30, W, 30); $.globalAlpha = 1;
       if (Math.floor(G.e1T / 22) % 2) txtC('PRESS Z TO CONTINUE', W / 2, H - 14, 7);
-      if (jAct()) { G.e1T = 0; G.loop = 2; G.noDmg = true; if (G.hp < G.maxHp) G.hp++; transTo('LOOP 2', G.cavInit, 'HARDER!'); }
+      if (jAct()) { G.e1T = 0; G.loop++; G.noDmg = true; if (G.hp < G.maxHp) G.hp++; transTo(`LOOP ${G.loop}`, G.cavInit, 'HARDER!'); }
     }
   }
 

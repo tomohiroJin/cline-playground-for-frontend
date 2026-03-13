@@ -46,8 +46,8 @@ export const Difficulty = {
   /** Cage max progress for a given loop */
   cageMax(loop: number): number { return 50 + loop * 15; },
 
-  /** Is this loop the true ending? */
-  isTrueEnding(loop: number): boolean { return loop >= 3; },
+  /** Is this loop the true ending? (3周ごと: 3, 6, 9...) */
+  isTrueEnding(loop: number): boolean { return loop >= 3 && loop % 3 === 0; },
 
   /** Shield count for boss stage: base 1 + earned from Stage 2 */
   bossShields(earned: number): number { return Math.min(5, 1 + earned); }
