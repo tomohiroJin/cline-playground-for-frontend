@@ -6,11 +6,18 @@
  */
 import type { Character, Difficulty } from './types';
 
+// ── アセットパス定数 ─────────────────────────────────
+const ASSET_PATH = {
+  character: (name: string) => `/assets/characters/${name}.png`,
+  portrait: (name: string, expr: string) => `/assets/portraits/${name}-${expr}.png`,
+  background: (name: string) => `/assets/backgrounds/${name}.webp`,
+} as const;
+
 // ── 主人公 ─────────────────────────────────────────
 export const PLAYER_CHARACTER: Character = {
   id: 'player',
   name: 'アキラ',
-  icon: '/assets/characters/akira.png',
+  icon: ASSET_PATH.character('akira'),
   color: '#3498db',
   reactions: {
     onScore: ['よし！', 'いける！'],
@@ -19,8 +26,8 @@ export const PLAYER_CHARACTER: Character = {
     onLose: ['次は負けない…'],
   },
   portrait: {
-    normal: '/assets/portraits/akira-normal.png',
-    happy: '/assets/portraits/akira-happy.png',
+    normal: ASSET_PATH.portrait('akira', 'normal'),
+    happy: ASSET_PATH.portrait('akira', 'happy'),
   },
 };
 
@@ -29,7 +36,7 @@ export const FREE_BATTLE_CHARACTERS: Record<Difficulty, Character> = {
   easy: {
     id: 'rookie',
     name: 'ルーキー',
-    icon: '/assets/characters/rookie.png',
+    icon: ASSET_PATH.character('rookie'),
     color: '#27ae60',
     reactions: {
       onScore: ['おっ、入った！', 'ラッキー！'],
@@ -38,14 +45,14 @@ export const FREE_BATTLE_CHARACTERS: Record<Difficulty, Character> = {
       onLose: ['ま、いっか〜'],
     },
     portrait: {
-      normal: '/assets/portraits/rookie-normal.png',
-      happy: '/assets/portraits/rookie-happy.png',
+      normal: ASSET_PATH.portrait('rookie', 'normal'),
+      happy: ASSET_PATH.portrait('rookie', 'happy'),
     },
   },
   normal: {
     id: 'regular',
     name: 'レギュラー',
-    icon: '/assets/characters/regular.png',
+    icon: ASSET_PATH.character('regular'),
     color: '#2c3e50',
     reactions: {
       onScore: ['いい感じ！', 'もらった！'],
@@ -54,14 +61,14 @@ export const FREE_BATTLE_CHARACTERS: Record<Difficulty, Character> = {
       onLose: ['やるじゃないか…'],
     },
     portrait: {
-      normal: '/assets/portraits/regular-normal.png',
-      happy: '/assets/portraits/regular-happy.png',
+      normal: ASSET_PATH.portrait('regular', 'normal'),
+      happy: ASSET_PATH.portrait('regular', 'happy'),
     },
   },
   hard: {
     id: 'ace',
     name: 'エース',
-    icon: '/assets/characters/ace.png',
+    icon: ASSET_PATH.character('ace'),
     color: '#2c3e50',
     reactions: {
       onScore: ['当然だ', 'フッ…'],
@@ -70,8 +77,8 @@ export const FREE_BATTLE_CHARACTERS: Record<Difficulty, Character> = {
       onLose: ['…認めよう、お前は強い'],
     },
     portrait: {
-      normal: '/assets/portraits/ace-normal.png',
-      happy: '/assets/portraits/ace-happy.png',
+      normal: ASSET_PATH.portrait('ace', 'normal'),
+      happy: ASSET_PATH.portrait('ace', 'happy'),
     },
   },
 };
@@ -81,7 +88,7 @@ export const STORY_CHARACTERS = {
   hiro: {
     id: 'hiro',
     name: 'ヒロ',
-    icon: '/assets/characters/hiro.png',
+    icon: ASSET_PATH.character('hiro'),
     color: '#e67e22',
     reactions: {
       onScore: ['へへっ！', 'どんなもんだ！'],
@@ -90,14 +97,14 @@ export const STORY_CHARACTERS = {
       onLose: ['やるじゃん！参った！'],
     },
     portrait: {
-      normal: '/assets/portraits/hiro-normal.png',
-      happy: '/assets/portraits/hiro-happy.png',
+      normal: ASSET_PATH.portrait('hiro', 'normal'),
+      happy: ASSET_PATH.portrait('hiro', 'happy'),
     },
   },
   misaki: {
     id: 'misaki',
     name: 'ミサキ',
-    icon: '/assets/characters/misaki.png',
+    icon: ASSET_PATH.character('misaki'),
     color: '#9b59b6',
     reactions: {
       onScore: ['ふふっ♪', 'こんなもんよ'],
@@ -106,14 +113,14 @@ export const STORY_CHARACTERS = {
       onLose: ['あなた…やるわね'],
     },
     portrait: {
-      normal: '/assets/portraits/misaki-normal.png',
-      happy: '/assets/portraits/misaki-happy.png',
+      normal: ASSET_PATH.portrait('misaki', 'normal'),
+      happy: ASSET_PATH.portrait('misaki', 'happy'),
     },
   },
   takuma: {
     id: 'takuma',
     name: 'タクマ',
-    icon: '/assets/characters/takuma.png',
+    icon: ASSET_PATH.character('takuma'),
     color: '#c0392b',
     reactions: {
       onScore: ['甘いな', 'まだまだだ'],
@@ -122,14 +129,14 @@ export const STORY_CHARACTERS = {
       onLose: ['見事だ…お前を認める'],
     },
     portrait: {
-      normal: '/assets/portraits/takuma-normal.png',
-      happy: '/assets/portraits/takuma-happy.png',
+      normal: ASSET_PATH.portrait('takuma', 'normal'),
+      happy: ASSET_PATH.portrait('takuma', 'happy'),
     },
   },
   yuu: {
     id: 'yuu',
     name: 'ユウ',
-    icon: '/assets/characters/yuu.png',
+    icon: ASSET_PATH.character('yuu'),
     color: '#2ecc71',
     reactions: {
       onScore: ['データ通りですね', '予測が的中しました'],
@@ -138,17 +145,17 @@ export const STORY_CHARACTERS = {
       onLose: ['データが不足していました', '次は別のアプローチで...'],
     },
     portrait: {
-      normal: '/assets/portraits/yuu-normal.png',
-      happy: '/assets/portraits/yuu-happy.png',
+      normal: ASSET_PATH.portrait('yuu', 'normal'),
+      happy: ASSET_PATH.portrait('yuu', 'happy'),
     },
   },
 } as const satisfies Record<string, Character>;
 
 // ── 背景IDからパスへのマッピング ──────────────────
 export const BACKGROUND_MAP: Record<string, string> = {
-  'bg-clubroom': '/assets/backgrounds/bg-clubroom.webp',
-  'bg-gym': '/assets/backgrounds/bg-gym.webp',
-  'bg-school-gate': '/assets/backgrounds/bg-school-gate.webp',
+  'bg-clubroom': ASSET_PATH.background('bg-clubroom'),
+  'bg-gym': ASSET_PATH.background('bg-gym'),
+  'bg-school-gate': ASSET_PATH.background('bg-school-gate'),
 };
 
 // ── ヘルパー関数 ───────────────────────────────────
@@ -158,12 +165,20 @@ export const getCharacterByDifficulty = (difficulty: Difficulty): Character => {
   return FREE_BATTLE_CHARACTERS[difficulty];
 };
 
+/** 全キャラクターの ID → Character マップ（検索用） */
+const ALL_CHARACTERS_BY_ID: Record<string, Character> = {
+  [PLAYER_CHARACTER.id]: PLAYER_CHARACTER,
+  ...Object.fromEntries(
+    Object.values(STORY_CHARACTERS).map(c => [c.id, c])
+  ),
+  ...Object.fromEntries(
+    Object.values(FREE_BATTLE_CHARACTERS).map(c => [c.id, c])
+  ),
+};
+
 /** ID からキャラクターを検索（ストーリー + フリー + 主人公を横断） */
 export const findCharacterById = (id: string): Character | undefined => {
-  if (PLAYER_CHARACTER.id === id) return PLAYER_CHARACTER;
-  const storyChar = Object.values(STORY_CHARACTERS).find(c => c.id === id);
-  if (storyChar) return storyChar;
-  return Object.values(FREE_BATTLE_CHARACTERS).find(c => c.id === id);
+  return ALL_CHARACTERS_BY_ID[id];
 };
 
 /** リアクション配列からランダムに1つ選択 */

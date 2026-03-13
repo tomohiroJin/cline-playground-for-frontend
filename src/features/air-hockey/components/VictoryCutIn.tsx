@@ -147,7 +147,7 @@ export const VictoryCutIn: React.FC<VictoryCutInProps> = ({
         {/* カットイン画像 */}
         <img
           src={imageUrl}
-          alt="Victory"
+          alt="勝利カットイン"
           style={{
             maxWidth: '90%',
             maxHeight: '50vh',

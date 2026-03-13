@@ -364,30 +364,31 @@ const AirHockeyGame: React.FC = () => {
   }, [currentStage, handleSelectStage]);
 
   // ── 現在のステージのキャラクター情報 ──────────────
-  const storyCharacters = (() => {
+  const cpuCharacter = React.useMemo(
+    () => currentStage ? findCharacterById(currentStage.characterId) : undefined,
+    [currentStage],
+  );
+
+  const storyCharacters = React.useMemo(() => {
     if (!currentStage) return {};
     const chars: Record<string, typeof PLAYER_CHARACTER> = {};
-    const cpuChar = findCharacterById(currentStage.characterId);
-    if (cpuChar) chars[currentStage.characterId] = cpuChar;
+    if (cpuCharacter) chars[currentStage.characterId] = cpuCharacter;
     chars['player'] = PLAYER_CHARACTER;
     return chars;
-  })();
-
-  const cpuCharacter = currentStage
-    ? findCharacterById(currentStage.characterId)
-    : undefined;
+  }, [currentStage, cpuCharacter]);
 
   /** 次のステージが存在するか */
-  const hasNextStage = (() => {
+  const hasNextStage = React.useMemo(() => {
     if (!currentStage) return false;
     const currentIdx = CHAPTER_1_STAGES.findIndex(s => s.id === currentStage.id);
     return currentIdx < CHAPTER_1_STAGES.length - 1;
-  })();
+  }, [currentStage]);
 
   // ── 現在のステージの背景URL ─────────────────────
-  const stageBackgroundUrl = currentStage?.backgroundId
-    ? BACKGROUND_MAP[currentStage.backgroundId]
-    : undefined;
+  const stageBackgroundUrl = React.useMemo(
+    () => currentStage?.backgroundId ? BACKGROUND_MAP[currentStage.backgroundId] : undefined,
+    [currentStage],
+  );
 
   // ── ゲームの CPU 名（ストーリー or フリー） ───────
   const currentCpuName = gameMode === 'story' && cpuCharacter

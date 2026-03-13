@@ -47,6 +47,17 @@ export const STORY_PROGRESS_KEY = 'ah_story_progress';
 /** デフォルトのストーリー進行データ */
 const DEFAULT_PROGRESS: StoryProgress = { clearedStages: [] };
 
+/** 型ガード: StoryProgress の構造を検証する */
+const isStoryProgress = (value: unknown): value is StoryProgress => {
+  if (typeof value !== 'object' || value === null) return false;
+  if (!('clearedStages' in value)) return false;
+  const candidate = value as Record<string, unknown>;
+  return (
+    Array.isArray(candidate.clearedStages) &&
+    candidate.clearedStages.every((item: unknown) => typeof item === 'string')
+  );
+};
+
 /** ストーリー進行を読み込む（localStorage 破損時はフォールバック） */
 export const loadStoryProgress = (): StoryProgress => {
   const raw = localStorage.getItem(STORY_PROGRESS_KEY);
@@ -54,16 +65,7 @@ export const loadStoryProgress = (): StoryProgress => {
 
   try {
     const parsed: unknown = JSON.parse(raw);
-    // clearedStages が配列であることを検証
-    if (
-      typeof parsed === 'object' &&
-      parsed !== null &&
-      'clearedStages' in parsed &&
-      Array.isArray((parsed as StoryProgress).clearedStages)
-    ) {
-      return parsed as StoryProgress;
-    }
-    return { ...DEFAULT_PROGRESS };
+    return isStoryProgress(parsed) ? parsed : { ...DEFAULT_PROGRESS };
   } catch {
     return { ...DEFAULT_PROGRESS };
   }
@@ -88,8 +90,10 @@ export const isStageUnlocked = (
   stages: StageDefinition[]
 ): boolean => {
   const idx = stages.findIndex(s => s.id === stageId);
+  // ステージが見つからない場合は解放しない
+  if (idx === -1) return false;
   // 最初のステージは常に解放
-  if (idx <= 0) return true;
+  if (idx === 0) return true;
   // 前のステージがクリア済みなら解放
   const prevStage = stages[idx - 1];
   return progress.clearedStages.includes(prevStage.id);

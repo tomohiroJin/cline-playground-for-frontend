@@ -100,7 +100,7 @@ export const DialogueOverlay: React.FC<DialogueOverlayProps> = ({
     }, CHAR_INTERVAL_MS);
 
     return () => clearInterval(timerRef.current);
-  }, [currentIndex, fullText.length, isFullyDisplayed]);
+  }, [currentIndex, fullText, isFullyDisplayed]);
 
   const handleClick = useCallback(() => {
     if (!isFullyDisplayed) {
@@ -156,7 +156,7 @@ export const DialogueOverlay: React.FC<DialogueOverlayProps> = ({
           <img
             data-testid="dialogue-background"
             src={backgroundUrl}
-            alt=""
+            alt="背景"
             style={{
               position: 'absolute',
               top: 0,

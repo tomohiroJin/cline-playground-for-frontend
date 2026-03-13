@@ -19,34 +19,34 @@ export function getStageAssetUrls(
   stage: StageDefinition,
   characters: Record<string, Character>
 ): string[] {
-  const urls: string[] = [];
+  const urlSet = new Set<string>();
 
   // 背景画像
   if (stage.backgroundId) {
     const bgUrl = BACKGROUND_MAP[stage.backgroundId];
     if (bgUrl) {
-      urls.push(bgUrl);
+      urlSet.add(bgUrl);
     }
   }
 
   // プレイヤーキャラの立ち絵
   const player = characters['player'];
   if (player?.portrait) {
-    urls.push(player.portrait.normal);
-    urls.push(player.portrait.happy);
+    urlSet.add(player.portrait.normal);
+    urlSet.add(player.portrait.happy);
   }
 
   // 対戦相手キャラの立ち絵
   const opponent = characters[stage.characterId];
   if (opponent?.portrait) {
-    urls.push(opponent.portrait.normal);
-    urls.push(opponent.portrait.happy);
+    urlSet.add(opponent.portrait.normal);
+    urlSet.add(opponent.portrait.happy);
   }
 
   // 勝利カットイン（章の最終ステージの場合）
   if (stage.isChapterFinale) {
-    urls.push(getVictoryCutInUrl(stage.chapter));
+    urlSet.add(getVictoryCutInUrl(stage.chapter));
   }
 
-  return urls;
+  return Array.from(urlSet);
 }

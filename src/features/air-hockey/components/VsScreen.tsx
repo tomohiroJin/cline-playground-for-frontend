@@ -11,7 +11,7 @@
  *   Phase 6 (2500〜3000ms): 全体フェードアウト
  *   Phase 7 (3000ms)      : onComplete()
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import type { Character } from '../core/types';
 
 /** アニメーションタイミング定数 */
@@ -129,7 +129,10 @@ export const VsScreen: React.FC<VsScreenProps> = ({
 
   const playerTranslateX = isSlideComplete ? 0 : -SLIDE_OFFSET;
   const cpuTranslateX = isSlideComplete ? 0 : SLIDE_OFFSET;
-  const bgGradient = `linear-gradient(90deg, ${hexToRgba(playerCharacter.color, GRADIENT_ALPHA)}, ${hexToRgba(cpuCharacter.color, GRADIENT_ALPHA)})`;
+  const bgGradient = useMemo(
+    () => `linear-gradient(90deg, ${hexToRgba(playerCharacter.color, GRADIENT_ALPHA)}, ${hexToRgba(cpuCharacter.color, GRADIENT_ALPHA)})`,
+    [playerCharacter.color, cpuCharacter.color],
+  );
 
   return (
     <div
