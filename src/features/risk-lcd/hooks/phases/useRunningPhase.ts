@@ -9,19 +9,17 @@ import {
   ROWS,
   LANES,
   LANE_LABELS,
-  STG,
   MODS,
 } from '../../constants';
 import {
   mergeStyles,
-  wPick,
   calcEffBf,
-  computePoints,
-  comboMult,
-  isAdjacentTo,
   computeStageBonus,
   buildSummary,
 } from '../../utils';
+import { judgeCycle } from '../../domain/judgment';
+import { placeObstacles } from '../../domain/obstacle';
+import { isStageCleared, createStageConfig } from '../../domain/stage-progress';
 import type { AnnounceInfo } from '../useGameEngine';
 import type { useStore } from '../useStore';
 import type { useAudio } from '../useAudio';
@@ -59,33 +57,26 @@ export function useRunningPhase(
     resolveEmoKey,
   } = ctx;
 
-  // 障害配置
+  // 障害配置（domain/obstacle.ts の純粋関数に委譲）
   const pickObs = useCallback(
     (cfg: RuntimeStageConfig): number[] => {
       const g = gRef.current!;
-      const rng = rngRef.current;
-      const w = [0.28, 0.36, 0.36];
-      const first = wPick(w, [], rng.random.bind(rng));
-      const obs = [first];
-      if (
-        cfg.si >= 2 &&
-        rng.chance(0.2 + g.stage * 0.06 + (cfg._dblChance || 0))
-      ) {
-        const second = wPick(w, obs, rng.random.bind(rng));
-        if (second >= 0) obs.push(second);
-      }
-      return obs;
+      return placeObstacles({
+        rng: rngRef.current,
+        stageConfig: cfg,
+        stage: g.stage,
+      });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
 
-  // ステージ継続 / クリア判定
+  // ステージ継続 / クリア判定（domain/stage-progress.ts の純粋関数を使用）
   const cont = useCallback(
     (cfg: RuntimeStageConfig) => {
       const g = gRef.current;
       if (!g?.alive) return;
-      if (g.cycle >= cfg.cy) {
+      if (isStageCleared(g.cycle, cfg)) {
         // ステージクリア
         audio.clr();
         const bn = computeStageBonus(
@@ -125,7 +116,7 @@ export function useRunningPhase(
     [],
   );
 
-  // 解決：被弾/生存判定
+  // 解決：被弾/生存判定（domain/judgment.ts の純粋関数に委譲）
   const resolve = useCallback(
     (obs: number[], cfg: RuntimeStageConfig, pause: number) => {
       const g = gRef.current;
@@ -134,33 +125,47 @@ export function useRunningPhase(
       // ゴースト記録
       g.ghostLog.push(g.lane);
 
-      // ゴースト再生：デイリーモードのみ位置を更新（patch で React state に反映）
+      // ゴースト再生：デイリーモードのみ位置を更新
       if (ghostPlayerRef.current && g.dailyMode) {
         const ghostLane = ghostPlayerRef.current.getPosition(g.total);
         ctx.patch({ ghostLane });
       }
 
-      const sheltered = isShelter(g.lane);
-      const hit = obs.includes(g.lane) && !sheltered;
+      // 1. ドメインロジック（純粋関数呼び出し）
+      const judgment = judgeCycle({
+        playerLane: g.lane,
+        obstacles: obs,
+        shields: g.shields,
+        shelterLanes: g.st.sf,
+        restrictedLanes: g.st.rs,
+        laneMultiplier: laneMultiplier(g.lane),
+        comboCount: g.comboCount,
+        comboBonus: g.comboBonus,
+        scoreMult: g.scoreMult,
+        stageScoreMod: cfg._scoreMod || 1,
+        baseBonus: g.baseBonus,
+        frozen: g.frozen,
+        revive: g.revive,
+        maxCombo: g.maxCombo,
+      });
 
-      // シェルター吸収
-      if (sheltered && obs.includes(g.lane)) {
+      // 2. シェルター吸収の UI 更新
+      if (judgment.sheltered && obs.includes(g.lane)) {
         g.shelterSaves++;
         showPop(g.lane, '◇SHELTER◇');
         audio.sh();
         setArtTemp('safe', 400);
       }
 
-      // 被弾処理
-      if (hit) {
+      // 3. 状態更新 + UI 更新（judgment の結果に基づく）
+      if (judgment.hit) {
         patch({ shaking: true, flash: true });
         g.artState = 'danger';
         updArt();
         addTimer(() => patch({ shaking: false }), 300);
         addTimer(() => patch({ flash: false }), 550);
 
-        // シールドブロック
-        if (g.shields > 0) {
+        if (judgment.shieldUsed) {
           g.shields--;
           g.frozen = g.st.sp;
           audio.sh();
@@ -178,8 +183,7 @@ export function useRunningPhase(
           return;
         }
 
-        // リバイブ
-        if (g.revive > 0) {
+        if (judgment.reviveUsed) {
           g.revive--;
           audio.sh();
           showPop(g.lane, '♥REVIVE');
@@ -209,37 +213,26 @@ export function useRunningPhase(
 
       // 生存処理
       setArtTemp('safe', 300);
-      const adj = isAdjacentTo(obs, g.lane);
-      if (adj) g.nearMiss++;
+      if (judgment.nearMiss) g.nearMiss++;
+      if (judgment.riskPoint) g.riskScore++;
 
-      const mu = laneMultiplier(g.lane);
-      const sm = cfg._scoreMod || 1;
+      g.comboCount = judgment.comboCount;
+      g.maxCombo = judgment.maxCombo;
 
-      if (g.lane === 2 || mu >= 4) g.riskScore++;
-      g.comboCount++;
-      if (g.comboCount > g.maxCombo) g.maxCombo = g.comboCount;
-      const cm = comboMult(g.comboCount, g.comboBonus);
-
-      let pts: number;
-      if (g.frozen > 0) {
+      if (judgment.frozen) {
         g.frozen--;
-        pts = 0;
         showPop(g.lane, 'FROZEN');
-      } else if (mu === 0 || isRestricted(g.lane) || sheltered) {
-        pts = 0;
-        if (sheltered) {
-          g.comboCount = 0;
-        }
-        if (!(sheltered && obs.includes(g.lane))) {
-          showPop(g.lane, sheltered ? '×0 避難' : '×0');
+      } else if (judgment.zeroed) {
+        // シェルター吸収（障害物あり）の表示は上で処理済み
+        if (!(judgment.sheltered && obs.includes(g.lane))) {
+          showPop(g.lane, judgment.sheltered ? '×0 避難' : '×0');
         }
       } else {
-        pts = computePoints(mu, cm, g.scoreMult, sm, g.baseBonus);
-        g.score += pts;
-        audio.ok(mu);
+        g.score += judgment.scoreGained;
+        audio.ok(laneMultiplier(g.lane));
         if (g.comboCount >= 3) audio.combo(g.comboCount);
-        showPop(g.lane, adj ? '+' + pts + '!' : '+' + pts);
-        if (adj) audio.near();
+        showPop(g.lane, judgment.nearMiss ? '+' + judgment.scoreGained + '!' : '+' + judgment.scoreGained);
+        if (judgment.nearMiss) audio.near();
       }
 
       syncGame();
@@ -430,14 +423,16 @@ export function useRunningPhase(
     setArtTemp('idle', 0);
 
     g.curBf0 = rng.shuffle(g.st.bfSet);
-    const cfg: RuntimeStageConfig = {
-      ...STG[Math.min(g.stage, STG.length - 1)],
-    };
+    // モディファイア選択
     g.stageMod = null;
     if (g.stage >= 1 && rng.chance(0.6)) {
       g.stageMod = rng.pick(MODS);
-      g.stageMod.fn(cfg);
     }
+    // ステージ設定生成（domain/stage-progress.ts の純粋関数を使用）
+    const cfg = createStageConfig({
+      stageIndex: g.stage,
+      modifier: g.stageMod ?? undefined,
+    });
     g.curStgCfg = cfg;
     syncGame();
 

@@ -15,56 +15,61 @@
 
 ### 1.1 被弾判定の抽出 [P0]
 
-- [ ] `useRunningPhase.ts` の `resolve` 関数を読み込み、ドメインロジック部分を特定
-- [ ] `domain/judgment.ts` を作成
-- [ ] `judgeCycle` 純粋関数を実装
-- [ ] 単体テスト: 障害物がプレイヤーレーンにある場合 → 被弾
-- [ ] 単体テスト: 障害物がプレイヤーレーンにない場合 → 回避 + スコア加算
-- [ ] 単体テスト: 隣接レーンに障害物 → ニアミス判定
-- [ ] 単体テスト: シールド保持中の被弾 → シールド消費
-- [ ] 単体テスト: シェルターレーンでの被弾 → シェルター回避
-- [ ] 単体テスト: フリーズ中の判定
-- [ ] `useRunningPhase.ts` の `resolve` から `judgeCycle` を呼び出すよう変更
-- [ ] 全既存テスト通過を確認
+- [x] `useRunningPhase.ts` の `resolve` 関数を読み込み、ドメインロジック部分を特定
+- [x] `domain/judgment.ts` を作成
+- [x] `judgeCycle` 純粋関数を実装
+- [x] 単体テスト: 障害物がプレイヤーレーンにある場合 → 被弾（死亡/シールド/リバイブ）
+- [x] 単体テスト: 障害物がプレイヤーレーンにない場合 → 回避 + スコア加算
+- [x] 単体テスト: 隣接レーンに障害物 → ニアミス判定
+- [x] 単体テスト: シールド保持中の被弾 → シールド消費
+- [x] 単体テスト: シェルターレーンでの被弾 → シェルター回避
+- [x] 単体テスト: フリーズ中の判定
+- [x] 単体テスト: リスクスコア判定
+- [x] 単体テスト: コンボ更新
+- [x] `useRunningPhase.ts` の `resolve` から `judgeCycle` を呼び出すよう変更
+- [x] 全既存テスト通過を確認（142テスト）
 
 ### 1.2 スコア計算の移行・拡充 [P0]
 
-- [ ] `domain/scoring.ts` を作成
-- [ ] `game-logic.ts` の `comboMult`, `computePoints`, `computeStageBonus`, `getRank` を移行
-- [ ] `game-logic.ts` は `domain/scoring.ts` からの re-export に変更（後方互換性）
-- [ ] `calculateDailyReward` を新規実装（useStore.recordDailyPlay から報酬計算を抽出）
-- [ ] 単体テスト: 既存テスト（game-logic.test.ts）の移行
-- [ ] 単体テスト: calculateDailyReward（初回/更新/非更新）
-- [ ] 全既存テスト通過を確認
+- [x] `domain/scoring.ts` を作成
+- [x] `game-logic.ts` の全関数を `domain/scoring.ts` に移行（clamp, computeRank, comboMult, calcEffBf, visLabel, wPick, computePoints, computeStageBonus, buildSummary, isAdjacentTo）
+- [x] `game-logic.ts` は `domain/scoring.ts` + `domain/style-merge.ts` からの re-export に変更（後方互換性）
+- [x] `calculateDailyReward` を新規実装（useStore.recordDailyPlay から報酬計算を抽出）
+- [x] 単体テスト: calculateDailyReward（初回/更新/非更新/同点/初回+更新）
+- [x] 既存テスト（game-logic.test.ts）がそのまま通過することを確認
+- [x] 全既存テスト通過を確認
 
 ### 1.3 障害物配置の抽出 [P0]
 
-- [ ] `useRunningPhase.ts` の `pickObs` 関数を読み込み
-- [ ] `domain/obstacle.ts` を作成
-- [ ] `placeObstacles` 純粋関数を実装
-- [ ] 単体テスト: 各ステージ設定での配置パターン
-- [ ] 単体テスト: 制限レーンの反映
-- [ ] 単体テスト: ダブル障害物の確率
-- [ ] `useRunningPhase.ts` から `placeObstacles` を呼び出すよう変更
-- [ ] 全既存テスト通過を確認
+- [x] `useRunningPhase.ts` の `pickObs` 関数を読み込み
+- [x] `domain/obstacle.ts` を作成
+- [x] `placeObstacles` 純粋関数を実装
+- [x] 単体テスト: 単一障害物の配置（各レーンの重み付き選択）
+- [x] 単体テスト: ダブル障害物の確率（si>=2 + chance 成功/失敗）
+- [x] 単体テスト: _dblChance パラメータの反映
+- [x] 単体テスト: 障害物の範囲検証（0-2）
+- [x] `useRunningPhase.ts` から `placeObstacles` を呼び出すよう変更
+- [x] 全既存テスト通過を確認
 
 ### 1.4 ステージ進行の抽出 [P1]
 
-- [ ] `domain/stage-progress.ts` を作成
-- [ ] `isStageCleared` 純粋関数を実装・テスト
-- [ ] `createStageConfig` 純粋関数を実装・テスト
-- [ ] `useRunningPhase.ts` から呼び出すよう変更
-- [ ] 全既存テスト通過を確認
+- [x] `domain/stage-progress.ts` を作成
+- [x] `isStageCleared` 純粋関数を実装・テスト
+- [x] `createStageConfig` 純粋関数を実装・テスト（モディファイア適用、カスタムステージ）
+- [x] `useRunningPhase.ts` の `cont` から `isStageCleared` を呼び出すよう変更
+- [x] `useRunningPhase.ts` の `announce` から `createStageConfig` を呼び出すよう変更
+- [x] 全既存テスト通過を確認
 
 ### 1.5 スタイルマージの移行 [P1]
 
-- [ ] `domain/style-merge.ts` を作成
-- [ ] `game-logic.ts` の `mergeStyles` を移行
-- [ ] `game-logic.ts` は re-export に変更
-- [ ] 単体テスト: 単一スタイル
-- [ ] 単体テスト: 複数スタイルのマージ（倍率: max、修飾: 加算）
-- [ ] 単体テスト: 空配列でエラー
-- [ ] 全既存テスト通過を確認
+- [x] `domain/style-merge.ts` を作成
+- [x] `game-logic.ts` の `mergeStyles` を移行
+- [x] `game-logic.ts` は re-export に変更
+- [x] 単体テスト: 単一スタイル（standard, highrisk, reversal）
+- [x] 単体テスト: 複数スタイルのマージ（倍率: max、速度修飾: 加算、クリアボーナス: max、予告セット: sum小）
+- [x] 単体テスト: 空配列でエラー
+- [x] 単体テスト: 存在しないスタイルIDの無視
+- [x] 全既存テスト通過を確認
 
 ### 1.6 DbC アサーション関数 [P2]
 
