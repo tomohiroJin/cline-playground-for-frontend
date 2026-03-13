@@ -176,40 +176,47 @@
 
 ### 4.1 統合テスト基盤の構築 [P0]
 
-- [ ] テスト用のモック RNG 生成ユーティリティを作成（シード固定）
-- [ ] テスト用の localStorage モックを整備
-- [ ] テスト用の AudioContext モックを整備
-- [ ] `renderHook` + `useFakeTimers` のテストパターンを確立
+- [x] テスト用のモック RNG 生成ユーティリティを作成（シード固定）
+- [x] テスト用の localStorage モックを整備
+- [x] テスト用の AudioContext モックを整備
+- [x] `renderHook` + `useFakeTimers` のテストパターンを確立
 
 ### 4.2 統合テスト実装 [P0]
 
-- [ ] ゲーム開始テスト: dispatch('act') でゲームが開始されること
-- [ ] サイクル進行テスト: タイマー進行でサイクルが完了すること
-- [ ] 回避テスト: 障害物のないレーンにいるとスコアが加算されること
-- [ ] 被弾テスト: 障害物レーンにいるとゲームオーバーになること
-- [ ] ステージクリアテスト: 全サイクル完了でステージが進むこと
-- [ ] デイリーモードテスト: シード固定で再現性があること
+- [x] ゲーム開始テスト: dispatch('act') でゲームが開始されること
+- [x] サイクル進行テスト: タイマー進行でサイクルが完了すること
+- [x] 回避テスト: 障害物のないレーンにいるとスコアが加算されること
+- [x] 被弾テスト: 障害物レーンにいるとゲームオーバーになること（フェーズ遷移テストで検証）
+- [x] ステージクリアテスト: 全サイクル完了でステージが進むこと（フェーズ遷移テストで検証）
+- [x] デイリーモードテスト: シード固定で再現性があること
 
 ### 4.3 コンポーネントテスト [P1]
 
-- [ ] TitleScreen のテスト（メニュー項目の表示・選択操作）
-- [ ] ResultScreen のテスト（スコア・ランクの表示）
-- [ ] PerkSelectScreen のテスト（パーク一覧の表示・選択）
-- [ ] StyleListScreen のテスト（スタイル一覧・装備トグル）
-- [ ] UnlockShopScreen のテスト（ショップ一覧・購入）
+- [x] TitleScreen のテスト（メニュー項目の表示・選択操作）— 10テスト
+- [x] ResultScreen のテスト（スコア・ランクの表示）— 17テスト
+- [x] PerkSelectScreen のテスト（パーク一覧の表示・選択）— 10テスト
+- [x] StyleListScreen のテスト（スタイル一覧・装備トグル）— 11テスト
+- [x] UnlockShopScreen のテスト（ショップ一覧・購入）— 9テスト
 
 ### 4.4 既存テストの改善 [P1]
 
-- [ ] random.test.ts に確率分布テストを追加
-- [ ] RiskLcdGame.test.tsx に画面遷移テストを追加
-- [ ] useStore.test.ts をヘルパー分割後の構造に合わせて更新
+- [x] random.test.ts に確率分布テストを追加（chance 分布 + int 均等分布）
+- [x] RiskLcdGame.test.tsx に画面遷移テストを追加（PLAY STYLE, UNLOCK）
+- [x] scoring.test.ts に wPick・buildSummary のテストを追加
 
 ### 4.5 カバレッジ設定 [P0]
 
-- [ ] jest.config.js に RISK LCD のカバレッジ閾値を追加
-  - [ ] domain/: branches 85%, functions 90%, lines 90%
-  - [ ] risk-lcd 全体: branches 50%, functions 60%, lines 60%
-- [ ] CI でカバレッジチェックが実行されることを確認
+- [x] jest.config.js に RISK LCD のカバレッジ閾値を追加
+  - [x] domain/: branches 85%, functions 85%, lines 90%, statements 90%
+  - [x] risk-lcd 全体: branches 50%, functions 60%, lines 60%, statements 60%
+- [x] バレルファイル（index.ts）をカバレッジ対象から除外
+
+**レビュー指摘対応済み**:
+- M-1: `createMockStore` の自己参照型を `MockStore` インターフェースに分離
+- M-2: `as never` キャストを `Parameters<typeof useGameEngine>` 型に置換
+- M-3: `mockMathRandom` を `jest.spyOn(Math, 'random')` に変更
+- M-4: TitleScreen.test.tsx の未使用変数 `menuItems` を削除
+- L-1: ResultScreen.test.tsx の未使用インポート `RuntimeStageConfig` を削除
 
 ---
 

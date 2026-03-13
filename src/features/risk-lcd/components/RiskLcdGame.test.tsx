@@ -1,31 +1,10 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import RiskLcdGame from './RiskLcdGame';
+import { setupMockAudioContext } from '../__tests__/test-helpers';
 
-// AudioContext のモック
-const mockAudioContext = {
-  state: 'running',
-  resume: jest.fn(),
-  createOscillator: jest.fn(() => ({
-    type: '',
-    frequency: { value: 0 },
-    connect: jest.fn(),
-    start: jest.fn(),
-    stop: jest.fn(),
-  })),
-  createGain: jest.fn(() => ({
-    gain: {
-      setValueAtTime: jest.fn(),
-      exponentialRampToValueAtTime: jest.fn(),
-    },
-    connect: jest.fn(),
-  })),
-  currentTime: 0,
-  destination: {},
-};
-(window as unknown as { AudioContext: unknown }).AudioContext = jest.fn(
-  () => mockAudioContext,
-);
+// AudioContext のモック設定（共通ヘルパーを使用）
+setupMockAudioContext();
 
 describe('RiskLcdGame', () => {
   beforeEach(() => {
@@ -56,5 +35,28 @@ describe('RiskLcdGame', () => {
     expect(
       screen.getByText(/パークを重ねてビルドを構築せよ/),
     ).toBeInTheDocument();
+  });
+
+  it('PLAY STYLE クリックでスタイル選択画面に遷移する', () => {
+    render(<RiskLcdGame />);
+
+    // メニューの PLAY STYLE をクリック
+    const playStyleLinks = screen.getAllByText('PLAY STYLE');
+    fireEvent.click(playStyleLinks[0]);
+
+    // スタイル画面のバフ説明が表示される
+    expect(screen.getByText('+バランス型')).toBeInTheDocument();
+    // EQUIP タグが表示される（standard が装備中）
+    expect(screen.getByText('EQUIP')).toBeInTheDocument();
+  });
+
+  it('UNLOCK クリックでショップ画面に遷移する', () => {
+    render(<RiskLcdGame />);
+
+    const unlockLinks = screen.getAllByText('UNLOCK');
+    fireEvent.click(unlockLinks[0]);
+
+    // ショップアイテムの説明が表示される
+    expect(screen.getByText('障害レーンのセグ列を強調')).toBeInTheDocument();
   });
 });
