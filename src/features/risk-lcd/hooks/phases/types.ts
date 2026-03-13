@@ -1,16 +1,10 @@
 import type { MutableRefObject } from 'react';
 import type { GameState, ArtKey, EmoKey } from '../../types';
 import type { RenderState } from '../useGameEngine';
+import type { RngApi } from '../../interfaces/rng';
 
-// RNG（乱数）API インターフェース
-export interface RngApi {
-  int(n: number): number;
-  pick<T>(a: readonly T[]): T;
-  chance(p: number): boolean;
-  shuffle<T>(a: readonly T[]): T[];
-  /** wPick 用の 0〜1 乱数 */
-  random(): number;
-}
+// RngApi は interfaces/ から re-export（後方互換性維持）
+export type { RngApi } from '../../interfaces/rng';
 
 // フェーズフック共有コンテキスト
 export interface PhaseContext {

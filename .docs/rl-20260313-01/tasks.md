@@ -84,29 +84,31 @@
 
 ### 2.1 インターフェースの定義 [P1]
 
-- [ ] `interfaces/rng.ts` を作成（既存 RngApi を昇格）
-- [ ] `interfaces/storage.ts` を作成
-- [ ] `interfaces/audio.ts` を作成
-- [ ] `interfaces/index.ts` バレルエクスポート作成
-- [ ] 既存の `phases/types.ts` の RngApi を `interfaces/rng.ts` からの re-export に変更
-- [ ] 全既存テスト通過を確認
+- [x] `interfaces/rng.ts` を作成（既存 RngApi を昇格）
+- [x] `interfaces/storage.ts` を作成
+- [x] `interfaces/audio.ts` を作成（Note 型を正として定義）
+- [x] `interfaces/index.ts` バレルエクスポート作成
+- [x] 既存の `phases/types.ts` の RngApi を `interfaces/rng.ts` からの re-export に変更
+- [x] 全既存テスト通過を確認（4477テスト）
 
 ### 2.2 useStore のヘルパー関数分離 [P0]
 
-- [ ] `hooks/store-helpers/` ディレクトリを作成
-- [ ] `point-ops.ts` を作成（addPoints, spendPoints 純粋関数）
-- [ ] `style-ops.ts` を作成（toggleEquip, maxEquipSlots 純粋関数）
-- [ ] `daily-ops.ts` を作成（recordDaily 純粋関数、domain/scoring の calculateDailyReward を使用）
-- [ ] 各ヘルパーの単体テスト作成
-- [ ] `useStore.ts` をヘルパー関数呼び出しに変更（公開 API は維持）
-- [ ] 既存の useStore.test.ts が通過することを確認
-- [ ] 全既存テスト通過を確認
+- [x] `hooks/store-helpers/` ディレクトリを作成
+- [x] `point-ops.ts` を作成（addPoints, spendPoints 純粋関数）
+- [x] `style-ops.ts` を作成（toggleEquip, maxEquipSlots 純粋関数）
+- [x] `daily-ops.ts` を作成（recordDaily 純粋関数、domain/scoring の calculateDailyReward を使用）
+- [x] 各ヘルパーの単体テスト作成（24テスト: point-ops 7, style-ops 7, daily-ops 7 + 不変性テスト3）
+- [x] `useStore.ts` をヘルパー関数呼び出しに変更（公開 API は維持）
+- [x] 既存の useStore.test.ts が通過することを確認
+- [x] 全既存テスト通過を確認（4477テスト）
 
 ### 2.3 useAudio のマジックナンバー定数化 [P1]
 
-- [ ] 音声設定定数オブジェクトを定義（周波数、音量、持続時間）
-- [ ] useAudio.ts の beep 呼び出しを定数参照に変更
-- [ ] 全既存テスト通過を確認
+- [x] `constants/audio-config.ts` に音声設定定数オブジェクトを定義（16種 SE、型安全な設定）
+- [x] useAudio.ts の beep 呼び出しを定数参照に変更
+- [x] Note 型を interfaces/audio.ts に統一（重複定義を解消）
+- [x] seq 関数のパラメータを readonly Note[] に変更（不要なスプレッド + キャストを除去）
+- [x] 全既存テスト通過を確認（risk-lcd 166テスト）
 
 ---
 
