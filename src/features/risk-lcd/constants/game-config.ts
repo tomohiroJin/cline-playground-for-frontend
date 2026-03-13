@@ -18,6 +18,58 @@ export const LANE_COUNT = 3;
 export const LANES: readonly LaneIndex[] = [0, 1, 2];
 export const LANE_LABELS: readonly string[] = ['L', 'C', 'R'];
 
+// ── 演出タイミング（ms） ──
+
+/** コンボ演出・ステージボーナスの最低コンボ数 */
+export const COMBO_THRESHOLD = 3;
+/** 高コンボボーナスの閾値 */
+export const HIGH_COMBO_THRESHOLD = 5;
+/** ニアミス演出の最低回数 */
+export const NEAR_MISS_THRESHOLD = 3;
+/** ニアミスボーナスの閾値（ステージクリア報酬用） */
+export const NEAR_MISS_BONUS_THRESHOLD = 3;
+
+/** 被弾時のシェイク演出時間 */
+export const HIT_SHAKE_MS = 300;
+/** 被弾時のフラッシュ演出時間 */
+export const HIT_FLASH_MS = 550;
+/** シールド消費後の復帰遅延上限 */
+export const SHIELD_RESUME_MS = 400;
+/** リバイブ後の復帰遅延上限 */
+export const REVIVE_RESUME_MS = 500;
+/** 死亡演出時間 */
+export const DEATH_EFFECT_MS = 700;
+/** シェルター吸収時のアート表示時間 */
+export const SHELTER_ART_MS = 400;
+/** 通常回避時のアート表示時間 */
+export const DODGE_ART_MS = 300;
+/** ステージクリア表示時間 */
+export const STAGE_CLEAR_MS = 1600;
+/** アナウンスのモディファイア音声遅延 */
+export const ANNOUNCE_MOD_DELAY_MS = 300;
+/** アナウンス表示時間（モディファイアあり） */
+export const ANNOUNCE_WITH_MOD_MS = 2200;
+/** アナウンス表示時間（モディファイアなし） */
+export const ANNOUNCE_BASE_MS = 1500;
+
+// ── _calm モード閾値 ──
+
+/** _calm モードの終盤判定比率（サイクル進捗がこの比率を超えると加速） */
+export const CALM_THRESHOLD_RATIO = 0.7;
+/** _calm モード時の加速倍率 */
+export const CALM_SPEED_FACTOR = 0.7;
+
+// ── サイクルタイミング係数 ──
+
+/** サイクル末尾の追加ステップ数（解決フェーズ分） */
+export const CYCLE_TAIL_STEPS = 1.8;
+/** ビートアニメーションの余白時間（ms） */
+export const BEAT_ANIMATION_MARGIN_MS = 50;
+/** 解決タイミングの一時停止比率（step に対する倍率） */
+export const RESOLVE_PAUSE_RATIO = 0.9;
+/** 解決遅延のオフセット（ROWS に加算するステップ数） */
+export const RESOLVE_DELAY_OFFSET = 0.8;
+
 // セーブキー
 export const SAVE_KEY = 'rlcd12';
 export const LEGACY_KEYS: readonly string[] = ['rlcd10', 'rlcd11'];

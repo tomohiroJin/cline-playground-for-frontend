@@ -36,6 +36,35 @@ describe('Rand.chance', () => {
       expect(Rand.chance(1)).toBe(true);
     }
   });
+
+  it('確率0.5で概ね50%の分布になる', () => {
+    const trials = 1000;
+    let trueCount = 0;
+    for (let i = 0; i < trials; i++) {
+      if (Rand.chance(0.5)) trueCount++;
+    }
+    // 許容誤差: 期待値の ±40%
+    const expected = trials * 0.5;
+    expect(trueCount).toBeGreaterThan(expected * 0.6);
+    expect(trueCount).toBeLessThan(expected * 1.4);
+  });
+});
+
+describe('Rand.int 分布テスト', () => {
+  it('各値が概ね均等に出現する', () => {
+    const n = 5;
+    const trials = 1000;
+    const counts = new Array(n).fill(0);
+    for (let i = 0; i < trials; i++) {
+      counts[Rand.int(n)]++;
+    }
+    // 各値が期待値の半分以上出現すること
+    const expected = trials / n;
+    for (let i = 0; i < n; i++) {
+      expect(counts[i]).toBeGreaterThan(expected * 0.4);
+      expect(counts[i]).toBeLessThan(expected * 1.6);
+    }
+  });
 });
 
 describe('Rand.shuffle', () => {

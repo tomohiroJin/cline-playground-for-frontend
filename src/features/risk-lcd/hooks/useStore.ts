@@ -2,6 +2,9 @@ import { useState, useCallback, useRef } from 'react';
 import type { SaveData, DailyData } from '../types';
 import { SAVE_KEY, LEGACY_KEYS } from '../constants';
 import { getDailyId } from '../utils/seeded-random';
+import { addPoints, spendPoints } from './store-helpers/point-ops';
+import { toggleEquip, maxEquipSlots } from './store-helpers/style-ops';
+import { recordDaily } from './store-helpers/daily-ops';
 
 // デフォルトセーブデータ
 const DEFAULT: SaveData = {
@@ -63,8 +66,7 @@ export function useStore() {
   // PT追加
   const addPts = useCallback(
     (n: number) => {
-      const d = { ...dataRef.current, pts: dataRef.current.pts + n };
-      persist(d);
+      persist(addPoints(dataRef.current, n));
     },
     [persist],
   );
@@ -72,8 +74,9 @@ export function useStore() {
   // PT消費（足りなければ false）
   const spend = useCallback(
     (n: number): boolean => {
-      if (dataRef.current.pts < n) return false;
-      persist({ ...dataRef.current, pts: dataRef.current.pts - n });
+      const result = spendPoints(dataRef.current, n);
+      if (!result) return false;
+      persist(result);
       return true;
     },
     [persist],
@@ -111,8 +114,7 @@ export function useStore() {
 
   // 最大装備スロット数
   const maxSlots = useCallback((): number => {
-    const d = dataRef.current;
-    return d.ui.includes('slot3') ? 3 : d.ui.includes('slot2') ? 2 : 1;
+    return maxEquipSlots(dataRef.current);
   }, []);
 
   // 装備中か
@@ -124,18 +126,9 @@ export function useStore() {
   // 装備トグル
   const toggleEq = useCallback(
     (id: string): boolean => {
-      const d = dataRef.current;
-      if (!d.sty.includes(id)) return false;
-      if (d.eq.includes(id)) {
-        if (d.eq.length <= 1) return false;
-        persist({ ...d, eq: d.eq.filter((x) => x !== id) });
-        return true;
-      }
-      const mx = d.ui.includes('slot3') ? 3 : d.ui.includes('slot2') ? 2 : 1;
-      const newEq = [...d.eq];
-      if (newEq.length >= mx) newEq.shift();
-      newEq.push(id);
-      persist({ ...d, eq: newEq });
+      const result = toggleEquip(dataRef.current, id);
+      if (!result) return false;
+      persist(result);
       return true;
     },
     [persist],
@@ -172,32 +165,10 @@ export function useStore() {
   // デイリースコアを記録し、獲得PTを返す
   const recordDailyPlay = useCallback(
     (score: number): number => {
-      const d = dataRef.current;
       const today = getDailyId();
-      const prev: DailyData = d.daily && d.daily.date === today
-        ? { ...d.daily }
-        : { date: today, played: false, bestScore: 0, firstPlayRewarded: false };
-
-      let reward = 0;
-
-      // 初回プレイ報酬
-      if (!prev.firstPlayRewarded) {
-        reward += 50;
-        prev.firstPlayRewarded = true;
-      }
-
-      // 自己ベスト更新報酬
-      if (score > prev.bestScore) {
-        const diff = score - prev.bestScore;
-        reward += Math.floor(diff * 0.1);
-        prev.bestScore = score;
-      }
-
-      prev.played = true;
-
-      const next = { ...d, daily: prev, pts: d.pts + reward };
-      persist(next);
-      return reward;
+      const result = recordDaily(dataRef.current, score, today);
+      persist(result.data);
+      return result.reward;
     },
     [persist],
   );

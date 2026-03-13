@@ -1,7 +1,12 @@
 import { useRef, useCallback } from 'react';
+import type { Note } from '../interfaces/audio';
+import {
+  SE_MV, SE_TICK, SE_WR, SE_ER,
+  SE_SEL, SE_DIE, SE_NEAR, SE_SS, SE_UL, SE_SH, SE_PK, SE_MOD,
+  SE_FALL, SE_OK, SE_COMBO, SE_CLR,
+} from '../constants/audio-config';
 
 type OscType = OscillatorType;
-type Note = [number, number, OscType?, number?, number?]; // freq, dur, type, vol, delay
 
 // Web Audio API サウンド生成フック
 export function useAudio() {
@@ -42,7 +47,7 @@ export function useAudio() {
 
   // シーケンス再生
   const seq = useCallback(
-    (notes: Note[]) => {
+    (notes: readonly Note[]) => {
       notes.forEach(([f, d, t, v, dl]) =>
         setTimeout(() => beep(f, d, t || 'square', v || 0.1), dl || 0),
       );
@@ -50,102 +55,98 @@ export function useAudio() {
     [beep],
   );
 
-  // 各種 SE
-  const mv = useCallback(() => beep(1100, 0.04, 'square', 0.06), [beep]);
-  const sel = useCallback(
-    () =>
-      seq([
-        [880, 0.05, 'square', 0.1, 0],
-        [1320, 0.06, 'square', 0.1, 45],
-      ]),
-    [seq],
-  );
-  const tick = useCallback(() => beep(660, 0.025, 'square', 0.03), [beep]);
-  const fall = useCallback(
-    (row: number) => beep(500 - row * 35, 0.04, 'square', 0.025 + row * 0.006),
+  // 各種 SE（定数参照）
+  const mv = useCallback(
+    () => beep(SE_MV.freq, SE_MV.dur, SE_MV.type, SE_MV.vol),
     [beep],
   );
-  const wr = useCallback(() => beep(280, 0.12, 'sawtooth', 0.07), [beep]);
+  const sel = useCallback(
+    () => seq(SE_SEL.notes),
+    [seq],
+  );
+  const tick = useCallback(
+    () => beep(SE_TICK.freq, SE_TICK.dur, SE_TICK.type, SE_TICK.vol),
+    [beep],
+  );
+  const fall = useCallback(
+    (row: number) =>
+      beep(
+        SE_FALL.baseFreq - row * SE_FALL.freqStep,
+        SE_FALL.dur,
+        SE_FALL.type,
+        SE_FALL.baseVol + row * SE_FALL.volStep,
+      ),
+    [beep],
+  );
+  const wr = useCallback(
+    () => beep(SE_WR.freq, SE_WR.dur, SE_WR.type, SE_WR.vol),
+    [beep],
+  );
   const die = useCallback(
-    () =>
-      seq([
-        [220, 0.25, 'sawtooth', 0.14, 0],
-        [110, 0.35, 'sawtooth', 0.11, 170],
-        [70, 0.4, 'sawtooth', 0.08, 350],
-      ]),
+    () => seq(SE_DIE.notes),
     [seq],
   );
   const ok = useCallback(
     (mult: number) => {
-      const v = Math.min(mult, 4);
+      const v = Math.min(mult, SE_OK.maxMult);
       seq([
-        [550 + v * 90, 0.06, 'square', 0.1, 0],
-        [700 + v * 110, 0.08, 'square', 0.1, 50],
+        [SE_OK.baseFreq1 + v * SE_OK.freqMult1, SE_OK.dur1, SE_OK.type, SE_OK.vol, 0],
+        [SE_OK.baseFreq2 + v * SE_OK.freqMult2, SE_OK.dur2, SE_OK.type, SE_OK.vol, SE_OK.delay2],
       ]);
     },
     [seq],
   );
   const combo = useCallback(
-    (n: number) => beep(800 + n * 45, 0.06, 'triangle', 0.08),
+    (n: number) =>
+      beep(
+        SE_COMBO.baseFreq + n * SE_COMBO.freqStep,
+        SE_COMBO.dur,
+        SE_COMBO.type,
+        SE_COMBO.vol,
+      ),
     [beep],
   );
   const near = useCallback(
-    () =>
-      seq([
-        [900, 0.03, 'triangle', 0.04, 0],
-        [1200, 0.04, 'triangle', 0.05, 40],
-      ]),
+    () => seq(SE_NEAR.notes),
     [seq],
   );
   const clr = useCallback(
     () =>
-      [0, 1, 2, 3, 4].forEach((i) =>
-        setTimeout(() => beep(500 + i * 110, 0.1, 'square', 0.09), i * 80),
+      Array.from({ length: SE_CLR.count }, (_, i) => i).forEach((i) =>
+        setTimeout(
+          () => beep(
+            SE_CLR.baseFreq + i * SE_CLR.freqStep,
+            SE_CLR.dur,
+            SE_CLR.type,
+            SE_CLR.vol,
+          ),
+          i * SE_CLR.delayStep,
+        ),
       ),
     [beep],
   );
   const ss = useCallback(
-    () =>
-      seq([
-        [440, 0.07, 'square', 0.1, 0],
-        [550, 0.07, 'square', 0.1, 90],
-        [660, 0.1, 'square', 0.1, 180],
-      ]),
+    () => seq(SE_SS.notes),
     [seq],
   );
   const ul = useCallback(
-    () =>
-      seq([
-        [660, 0.07, 'square', 0.1, 0],
-        [990, 0.07, 'square', 0.1, 70],
-        [1320, 0.1, 'square', 0.1, 140],
-      ]),
+    () => seq(SE_UL.notes),
     [seq],
   );
-  const er = useCallback(() => beep(180, 0.12, 'sawtooth', 0.06), [beep]);
+  const er = useCallback(
+    () => beep(SE_ER.freq, SE_ER.dur, SE_ER.type, SE_ER.vol),
+    [beep],
+  );
   const sh = useCallback(
-    () =>
-      seq([
-        [440, 0.07, 'triangle', 0.08, 0],
-        [880, 0.12, 'triangle', 0.1, 70],
-      ]),
+    () => seq(SE_SH.notes),
     [seq],
   );
   const pk = useCallback(
-    () =>
-      seq([
-        [550, 0.06, 'triangle', 0.07, 0],
-        [770, 0.08, 'triangle', 0.08, 60],
-        [990, 0.1, 'triangle', 0.09, 130],
-      ]),
+    () => seq(SE_PK.notes),
     [seq],
   );
   const mod = useCallback(
-    () =>
-      seq([
-        [330, 0.1, 'sawtooth', 0.05, 0],
-        [440, 0.1, 'sawtooth', 0.06, 100],
-      ]),
+    () => seq(SE_MOD.notes),
     [seq],
   );
 

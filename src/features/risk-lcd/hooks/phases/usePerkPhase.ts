@@ -3,7 +3,7 @@ import type { PerkDef } from '../../types';
 import { PERKS, STACKABLE_PERKS } from '../../constants';
 import type { useStore } from '../useStore';
 import type { useAudio } from '../useAudio';
-import type { PhaseContext } from './types';
+import type { PhaseContext, PhaseCallbacks } from './types';
 
 type StoreApi = ReturnType<typeof useStore>;
 type AudioApi = ReturnType<typeof useAudio>;
@@ -13,7 +13,7 @@ export function usePerkPhase(
   ctx: PhaseContext,
   store: StoreApi,
   audio: AudioApi,
-  announceRef: MutableRefObject<() => void>,
+  callbacksRef: MutableRefObject<PhaseCallbacks>,
 ) {
   const { gRef, rsRef, rng: rngRef, syncGame, patch } = ctx;
 
@@ -60,7 +60,7 @@ export function usePerkPhase(
     g.maxCombo = 0;
     g.nearMiss = 0;
     syncGame();
-    announceRef.current();
+    callbacksRef.current.announce();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

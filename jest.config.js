@@ -23,7 +23,8 @@ module.exports = {
     '!src/**/*.d.ts',
     '!src/**/*.test.{ts,tsx}',
     '!src/index.tsx',
-    '!src/setupTests.ts'
+    '!src/setupTests.ts',
+    '!src/**/index.ts'
   ],
   coverageReporters: ['json', 'lcov', 'text', 'clover'],
   coverageThreshold: {
@@ -38,6 +39,18 @@ module.exports = {
       functions: 85,
       lines: 85,
       statements: 85
+    },
+    './src/features/risk-lcd/domain/': {
+      branches: 85,
+      functions: 85,
+      lines: 90,
+      statements: 90
+    },
+    './src/features/risk-lcd/': {
+      branches: 50,
+      functions: 60,
+      lines: 60,
+      statements: 60
     }
   }
 };
