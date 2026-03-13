@@ -4,7 +4,7 @@
  *
  * urls 配列の画像を並列でプリロードし、進捗を追跡する
  */
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 type PreloaderState = {
   isLoaded: boolean;
@@ -21,7 +21,13 @@ type PreloaderState = {
 export function useImagePreloader(urls: string[]): PreloaderState {
   // urls の内容が変わったときのみ参照を更新（参照安定化）
   const urlsKey = urls.join(',');
-  const stableUrls = useMemo(() => urls, [urlsKey]);
+  const prevKeyRef = useRef(urlsKey);
+  const stableUrlsRef = useRef(urls);
+  if (prevKeyRef.current !== urlsKey) {
+    prevKeyRef.current = urlsKey;
+    stableUrlsRef.current = urls;
+  }
+  const stableUrls = stableUrlsRef.current;
 
   const [state, setState] = useState<PreloaderState>(() => ({
     isLoaded: stableUrls.length === 0,
