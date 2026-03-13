@@ -154,10 +154,6 @@ export function useGameEngine(store: StoreApi, audio: AudioApi) {
   }, [patch]);
 
   // ── ヘルパー関数 ──
-  const isRestricted = (lane: number): boolean =>
-    gRef.current?.st.rs.includes(lane) ?? false;
-  const isShelter = (lane: number): boolean =>
-    gRef.current?.st.sf.includes(lane) ?? false;
   const laneMultiplier = (lane: number): number =>
     gRef.current?.st.mu[lane] ?? 1;
 
@@ -177,8 +173,8 @@ export function useGameEngine(store: StoreApi, audio: AudioApi) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patch]);
 
-  // アート状態の解決
-  const resolveArtKey = (lane: number): ArtKey => {
+  // アート状態の解決（ref と store のみ参照するため参照安定）
+  const resolveArtKey = useCallback((lane: number): ArtKey => {
     const g = gRef.current;
     if (!g || lane !== g.lane) return 'ghost';
     if (!g.alive) return 'dead';
@@ -188,15 +184,15 @@ export function useGameEngine(store: StoreApi, audio: AudioApi) {
     if (g.artState === 'walk') return 'walk';
     if (g.artState === 'safe') return 'safe';
     return 'idle';
-  };
+  }, [store]);
 
-  const resolveEmoKey = (g: GameState | null): EmoKey => {
+  const resolveEmoKey = useCallback((g: GameState | null): EmoKey => {
     if (!g) return 'idle';
     if (!g.alive) return 'dead';
     const art = resolveArtKey(g.lane);
     if (art === 'ghost' || art === 'idle') return 'idle';
     return art as EmoKey;
-  };
+  }, [resolveArtKey]);
 
   // アート状態の更新とレンダリング
   const updArt = useCallback(() => {
@@ -255,8 +251,6 @@ export function useGameEngine(store: StoreApi, audio: AudioApi) {
     setArtTemp,
     showPop,
     clearSegs,
-    isRestricted,
-    isShelter,
     laneMultiplier,
     resolveArtKey,
     resolveEmoKey,

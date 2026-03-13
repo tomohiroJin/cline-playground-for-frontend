@@ -35,8 +35,6 @@ export interface PhaseContext {
   setArtTemp: (state: ArtKey, ms: number) => void;
   showPop: (lane: number, text: string) => void;
   clearSegs: () => void;
-  isRestricted: (lane: number) => boolean;
-  isShelter: (lane: number) => boolean;
   laneMultiplier: (lane: number) => number;
   resolveArtKey: (lane: number) => ArtKey;
   resolveEmoKey: (g: GameState | null) => EmoKey;

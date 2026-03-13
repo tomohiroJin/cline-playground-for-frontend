@@ -1,5 +1,5 @@
 import type { MergedStyle, RankResult } from '../types';
-import { ROWS, RANK_TABLE, LANE_LABELS } from '../constants/game-config';
+import { ROWS, RANK_TABLE, LANE_LABELS, COMBO_THRESHOLD, HIGH_COMBO_THRESHOLD, NEAR_MISS_BONUS_THRESHOLD } from '../constants/game-config';
 import { clamp } from '../../../utils/math-utils';
 
 // 共通数学関数を re-export
@@ -13,7 +13,7 @@ export function computeRank(sc: number, cl: boolean, st: number): RankResult {
 
 // コンボ倍率計算
 export function comboMult(cnt: number, bonus: number): number {
-  return (cnt >= 5 ? 2 : cnt >= 3 ? 1.5 : 1) + bonus * (cnt >= 3 ? 1 : 0);
+  return (cnt >= HIGH_COMBO_THRESHOLD ? 2 : cnt >= COMBO_THRESHOLD ? 1.5 : 1) + bonus * (cnt >= COMBO_THRESHOLD ? 1 : 0);
 }
 
 // 有効予告段数を計算
@@ -36,8 +36,9 @@ export function visLabel(v: number): string {
 }
 
 // 重み付き選択（excludeリストのインデックスは除外）
-export function wPick(w: number[], ex: number[], rng?: () => number): number {
-  const wt = w.map((v, i) => (ex.includes(i) ? 0 : v));
+export function wPick(w: number[], ex: number[] | ReadonlySet<number>, rng?: () => number): number {
+  const exSet = Array.isArray(ex) ? (ex.length === 0 ? undefined : new Set(ex)) : (ex.size === 0 ? undefined : ex);
+  const wt = exSet ? w.map((v, i) => (exSet.has(i) ? 0 : v)) : w;
   const s = wt.reduce((a, b) => a + b, 0);
   if (s <= 0) return -1;
   const rand = rng ?? Math.random;
@@ -71,9 +72,9 @@ export function computeStageBonus(
 ): number {
   let bn = 50 * (stage + 1);
   bn = Math.floor(bn * (1 + cbMod) * scoreMult);
-  if (maxCombo >= 5) bn += 100;
-  else if (maxCombo >= 3) bn += 30;
-  if (nearMiss >= 3) bn += 50;
+  if (maxCombo >= HIGH_COMBO_THRESHOLD) bn += 100;
+  else if (maxCombo >= COMBO_THRESHOLD) bn += 30;
+  if (nearMiss >= NEAR_MISS_BONUS_THRESHOLD) bn += 50;
   return bn;
 }
 

@@ -1,4 +1,4 @@
-import { placeObstacles, type PlaceObstaclesParams } from './obstacle';
+import { placeObstacles } from './obstacle';
 
 // 決定論的なモック RNG
 function createMockRng(randomValues: number[], chanceResult: boolean = false) {

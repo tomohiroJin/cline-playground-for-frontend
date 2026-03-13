@@ -1,6 +1,5 @@
 import { useCallback, type MutableRefObject } from 'react';
 import type {
-  GameState,
   LaneIndex,
   RuntimeStageConfig,
   ArtKey,
@@ -10,6 +9,15 @@ import {
   LANES,
   LANE_LABELS,
   MODS,
+  COMBO_THRESHOLD,
+  NEAR_MISS_THRESHOLD,
+  STAGE_CLEAR_MS,
+  ANNOUNCE_MOD_DELAY_MS,
+  ANNOUNCE_WITH_MOD_MS,
+  ANNOUNCE_BASE_MS,
+  BEAT_ANIMATION_MARGIN_MS,
+  RESOLVE_PAUSE_RATIO,
+  RESOLVE_DELAY_OFFSET,
 } from '../../constants';
 import { applyHitStateUpdate, applyDodgeStateUpdate } from '../resolve-helpers';
 import { calcCycleTiming, pickFakeObstacle } from '../cycle-helpers';
@@ -32,11 +40,6 @@ import type { PhaseContext, PhaseCallbacks } from './types';
 
 type StoreApi = ReturnType<typeof useStore>;
 type AudioApi = ReturnType<typeof useAudio>;
-
-/** コンボ演出の最低コンボ数 */
-const COMBO_THRESHOLD = 3;
-/** ニアミス演出の最低回数 */
-const NEAR_MISS_THRESHOLD = 3;
 
 /** ステージクリア時の予告テキストを組み立てる */
 function formatClearForecast(bonus: number, maxCombo: number, nearMiss: number): string {
@@ -67,8 +70,6 @@ export function useRunningPhase(
     setArtTemp,
     showPop,
     clearSegs,
-    isRestricted,
-    isShelter,
     laneMultiplier,
     resolveArtKey,
     resolveEmoKey,
@@ -124,7 +125,7 @@ export function useRunningPhase(
           } else {
             callbacksRef.current.showPerks();
           }
-        }, 1600);
+        }, STAGE_CLEAR_MS);
       } else {
         nextCycle();
       }
@@ -198,6 +199,72 @@ export function useRunningPhase(
     [],
   );
 
+  // カスケードアニメーションの1行を処理
+  const processCascadeRow = useCallback(
+    (row: number, obs: number[], fakeIdx: number, fog: number) => {
+      const g2 = gRef.current;
+      if (!g2?.alive) return;
+
+      const calcBf = (l: number) =>
+        calcEffBf(g2.curBf0, l, g2.bfAdj, g2.bfAdj_lane, g2.bfAdj_extra, fog);
+
+      const { segs, texts, dangerLanes } = renderCascadeFrame({
+        row, obstacles: obs, fakeIdx, calcBf, shelterLanes: g2.st.sf,
+      });
+
+      // サウンド
+      if (row < 4) audio.tick();
+      else audio.fall(row);
+
+      // 歩行アニメーション
+      if (row % 2 === 0) {
+        g2.artState = g2.walkFrame % 2 === 0 ? 'walk' : 'idle';
+        g2.walkFrame++;
+      }
+      if (row >= ROWS - 3 && obs.includes(g2.lane) && !g2.st.sf.includes(g2.lane)) {
+        g2.artState = 'danger';
+      }
+
+      patch({
+        segments: segs,
+        segTexts: texts,
+        laneArt: LANES.map((l) => {
+          if (dangerLanes.includes(l) && l !== g2.lane) return 'danger' as ArtKey;
+          return resolveArtKey(l);
+        }) as ArtKey[],
+        emoKey: resolveEmoKey(g2),
+      });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  // ファイナルフレーム（判定直前）を表示
+  const showFinalFrame = useCallback(
+    (obs: number[]) => {
+      const g2 = gRef.current;
+      if (!g2?.alive) return;
+
+      const { segs, texts } = renderFinalFrame({
+        obstacles: obs, shelterLanes: g2.st.sf, restrictedLanes: g2.st.rs,
+      });
+
+      audio.wr();
+      g2.phase = 'judge';
+      g2.artState =
+        obs.includes(g2.lane) && !g2.st.sf.includes(g2.lane) ? 'danger' : 'idle';
+
+      patch({
+        segments: segs,
+        segTexts: texts,
+        laneArt: LANES.map((l) => resolveArtKey(l)) as ArtKey[],
+        emoKey: resolveEmoKey(g2),
+      });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
   // サイクル進行
   const nextCycle = useCallback(() => {
     const g = gRef.current;
@@ -219,74 +286,22 @@ export function useRunningPhase(
     const fakeIdx = pickFakeObstacle(cfg, obs, rng);
     const fog = cfg._fogShift || 0;
 
-    // ビートアニメーション開始
+    // ビートアニメーション
     patch({ beatAnimating: true });
-    addTimer(() => patch({ beatAnimating: false }), step * ROWS + 50);
+    addTimer(() => patch({ beatAnimating: false }), step * ROWS + BEAT_ANIMATION_MARGIN_MS);
 
-    // カスケードアニメーション
+    // カスケードアニメーション（各行をタイマーでスケジュール）
     for (let row = 0; row < ROWS; row++) {
-      addTimer(() => {
-        const g2 = gRef.current;
-        if (!g2?.alive) return;
-
-        const calcBf = (l: number) =>
-          calcEffBf(g2.curBf0, l, g2.bfAdj, g2.bfAdj_lane, g2.bfAdj_extra, fog);
-
-        const { segs, texts, dangerLanes } = renderCascadeFrame({
-          row, obstacles: obs, fakeIdx, calcBf, isShelter, shelterLanes: g2.st.sf,
-        });
-
-        // サウンド
-        if (row < 4) audio.tick();
-        else audio.fall(row);
-
-        // 歩行アニメーション
-        if (row % 2 === 0) {
-          g2.artState = g2.walkFrame % 2 === 0 ? 'walk' : 'idle';
-          g2.walkFrame++;
-        }
-        if (row >= ROWS - 3 && obs.includes(g2.lane) && !isShelter(g2.lane)) {
-          g2.artState = 'danger';
-        }
-
-        patch({
-          segments: segs,
-          segTexts: texts,
-          laneArt: LANES.map((l) => {
-            if (dangerLanes.includes(l) && l !== g2.lane) return 'danger' as ArtKey;
-            return resolveArtKey(l);
-          }) as ArtKey[],
-          emoKey: resolveEmoKey(g2),
-        });
-      }, step * row);
+      addTimer(() => processCascadeRow(row, obs, fakeIdx, fog), step * row);
     }
 
     // ファイナル表示
-    addTimer(() => {
-      const g2 = gRef.current;
-      if (!g2?.alive) return;
-
-      const { segs, texts } = renderFinalFrame({
-        obstacles: obs, isShelter, isRestricted, shelterLanes: g2.st.sf,
-      });
-
-      audio.wr();
-      g2.phase = 'judge';
-      g2.artState =
-        obs.includes(g2.lane) && !isShelter(g2.lane) ? 'danger' : 'idle';
-
-      patch({
-        segments: segs,
-        segTexts: texts,
-        laneArt: LANES.map((l) => resolveArtKey(l)) as ArtKey[],
-        emoKey: resolveEmoKey(g2),
-      });
-    }, step * ROWS);
+    addTimer(() => showFinalFrame(obs), step * ROWS);
 
     // 解決
     addTimer(() => {
-      if (gRef.current?.alive) resolve(obs, cfg, step * 0.9);
-    }, step * (ROWS + 0.8));
+      if (gRef.current?.alive) resolve(obs, cfg, step * RESOLVE_PAUSE_RATIO);
+    }, step * (ROWS + RESOLVE_DELAY_OFFSET));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -335,13 +350,13 @@ export function useRunningPhase(
     patch({ announce: info });
     clearSegs();
     audio.ss();
-    if (g.stageMod) addTimer(audio.mod, 300);
+    if (g.stageMod) addTimer(audio.mod, ANNOUNCE_MOD_DELAY_MS);
 
     addTimer(() => {
       patch({ announce: null });
       g.phase = 'idle';
       nextCycle();
-    }, g.stageMod ? 2200 : 1500);
+    }, g.stageMod ? ANNOUNCE_WITH_MOD_MS : ANNOUNCE_BASE_MS);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -381,13 +396,13 @@ export function useRunningPhase(
         return;
       const n = g.lane + dir;
       if (n < 0 || n > 2) return;
-      if (isRestricted(n)) {
+      if (g.st.rs.includes(n)) {
         audio.er();
         return;
       }
       g.lane = n as LaneIndex;
       g.moveOk = false;
-      if (isShelter(n)) audio.sel();
+      if (g.st.sf.includes(n)) audio.sel();
       else audio.mv();
       updArt();
       syncGame();

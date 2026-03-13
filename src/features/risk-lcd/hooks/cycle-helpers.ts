@@ -1,5 +1,5 @@
 import type { RuntimeStageConfig } from '../types';
-import { ROWS } from '../constants';
+import { ROWS, CALM_THRESHOLD_RATIO, CALM_SPEED_FACTOR, CYCLE_TAIL_STEPS } from '../constants';
 import type { RngApi } from './phases/types';
 
 /** サイクルのタイミング計算結果 */
@@ -31,10 +31,10 @@ export interface CycleTimingParams {
 export function calcCycleTiming(params: CycleTimingParams): CycleTiming {
   const { cfg, wm, speedMod, slowMod, cycle } = params;
   // _calm モードの終盤加速
-  const calmMultiplier = cfg._calm && cycle > cfg.cy * 0.7 ? 0.7 : 1;
+  const calmMultiplier = cfg._calm && cycle > cfg.cy * CALM_THRESHOLD_RATIO ? CALM_SPEED_FACTOR : 1;
   const totalDur =
     cfg.spd * (1 + wm + speedMod) * (1 + slowMod) * calmMultiplier;
-  const step = totalDur / (ROWS + 1.8);
+  const step = totalDur / (ROWS + CYCLE_TAIL_STEPS);
   return { totalDur, step };
 }
 

@@ -2,6 +2,16 @@ import type { GameState, RuntimeStageConfig, ArtKey } from '../types';
 import type { CycleJudgment } from '../domain/judgment';
 import type { HitOutcome } from './resolve-helpers';
 import type { RenderState } from './useGameEngine';
+import {
+  COMBO_THRESHOLD,
+  HIT_SHAKE_MS,
+  HIT_FLASH_MS,
+  SHIELD_RESUME_MS,
+  REVIVE_RESUME_MS,
+  DEATH_EFFECT_MS,
+  SHELTER_ART_MS,
+  DODGE_ART_MS,
+} from '../constants';
 
 /** 描画エフェクトが必要とするコンテキスト */
 export interface RenderEffectContext {
@@ -53,8 +63,8 @@ export function renderHitEffect(params: HitEffectParams): void {
 
   patch({ shaking: true, flash: true });
   updArt();
-  addTimer(() => patch({ shaking: false }), 300);
-  addTimer(() => patch({ flash: false }), 550);
+  addTimer(() => patch({ shaking: false }), HIT_SHAKE_MS);
+  addTimer(() => patch({ flash: false }), HIT_FLASH_MS);
 
   if (outcome === 'shield') {
     audio.sh();
@@ -66,7 +76,7 @@ export function renderHitEffect(params: HitEffectParams): void {
       if (!gRef.current?.alive) return;
       setArtTemp('idle', 0);
       cont(cfg);
-    }, Math.min(pause, 400));
+    }, Math.min(pause, SHIELD_RESUME_MS));
     return;
   }
 
@@ -79,7 +89,7 @@ export function renderHitEffect(params: HitEffectParams): void {
       if (!gRef.current?.alive) return;
       setArtTemp('idle', 0);
       cont(cfg);
-    }, Math.min(pause, 500));
+    }, Math.min(pause, REVIVE_RESUME_MS));
     return;
   }
 
@@ -90,7 +100,7 @@ export function renderHitEffect(params: HitEffectParams): void {
   addTimer(() => {
     patch({ flash: false });
     endGame(false);
-  }, 700);
+  }, DEATH_EFFECT_MS);
 }
 
 /**
@@ -105,9 +115,9 @@ export function renderDodgeEffect(params: DodgeEffectParams): void {
   if (isShelterAbsorbed) {
     showPop(g.lane, '◇SHELTER◇');
     audio.sh();
-    setArtTemp('safe', 400);
+    setArtTemp('safe', SHELTER_ART_MS);
   } else {
-    setArtTemp('safe', 300);
+    setArtTemp('safe', DODGE_ART_MS);
   }
 
   // ポップテキスト
@@ -119,7 +129,7 @@ export function renderDodgeEffect(params: DodgeEffectParams): void {
     }
   } else {
     audio.ok(laneMultiplier(g.lane));
-    if (g.comboCount >= 3) audio.combo(g.comboCount);
+    if (g.comboCount >= COMBO_THRESHOLD) audio.combo(g.comboCount);
     showPop(g.lane, judgment.nearMiss ? '+' + judgment.scoreGained + '!' : '+' + judgment.scoreGained);
     if (judgment.nearMiss) audio.near();
   }

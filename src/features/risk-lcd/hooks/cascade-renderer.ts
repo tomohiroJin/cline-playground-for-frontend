@@ -12,8 +12,6 @@ export interface CascadeFrameParams {
   fakeIdx: number;
   /** レーンごとの bf（予告開始行）を計算する関数 */
   calcBf: (lane: number) => number;
-  /** 避難所判定関数 */
-  isShelter: (lane: number) => boolean;
   /** 避難所レーン配列 */
   shelterLanes: readonly number[];
 }
@@ -32,13 +30,13 @@ export interface CascadeFrameResult {
  * 各行（row）ごとに障害物の表示状態を計算する。
  */
 export function renderCascadeFrame(params: CascadeFrameParams): CascadeFrameResult {
-  const { row, obstacles, fakeIdx, calcBf, isShelter, shelterLanes } = params;
+  const { row, obstacles, fakeIdx, calcBf, shelterLanes } = params;
   const segs = createSegments(shelterLanes);
   const texts = createSegTexts(shelterLanes);
 
   obstacles.forEach((l) => {
     const bf = calcBf(l);
-    const shl = isShelter(l);
+    const shl = shelterLanes.includes(l);
 
     // 現在行に障害物セグメントを描画
     if (row >= bf) {
@@ -65,7 +63,7 @@ export function renderCascadeFrame(params: CascadeFrameParams): CascadeFrameResu
   // 接近時の危険レーン判定
   const dangerLanes =
     row >= ROWS - 3
-      ? obstacles.filter((l) => !isShelter(l) && row >= calcBf(l))
+      ? obstacles.filter((l) => !shelterLanes.includes(l) && row >= calcBf(l))
       : [];
 
   return { segs, texts, dangerLanes };
@@ -74,9 +72,10 @@ export function renderCascadeFrame(params: CascadeFrameParams): CascadeFrameResu
 /** ファイナルフレーム描画のパラメータ */
 export interface FinalFrameParams {
   obstacles: readonly number[];
-  isShelter: (lane: number) => boolean;
-  isRestricted: (lane: number) => boolean;
+  /** 避難所レーン配列 */
   shelterLanes: readonly number[];
+  /** 制限レーン配列 */
+  restrictedLanes: readonly number[];
 }
 
 /** ファイナルフレームの描画結果 */
@@ -89,13 +88,13 @@ export interface FinalFrameResult {
  * サイクル最終フレーム（判定直前）の表示を描画する純粋関数
  */
 export function renderFinalFrame(params: FinalFrameParams): FinalFrameResult {
-  const { obstacles, isShelter, isRestricted, shelterLanes } = params;
+  const { obstacles, shelterLanes, restrictedLanes } = params;
   const segs = createSegments(shelterLanes);
   const texts = createSegTexts(shelterLanes);
 
   // 障害物レーンを全行 danger / impact で埋める
   obstacles.forEach((l) => {
-    const shl = isShelter(l);
+    const shl = shelterLanes.includes(l);
     for (let r = 0; r < ROWS; r++) {
       segs[l][r] = shl ? 'shield' : 'danger';
       texts[l][r] = shl ? '─' : '╳';
@@ -109,10 +108,11 @@ export function renderFinalFrame(params: FinalFrameParams): FinalFrameResult {
   // 安全レーン表示
   const mid = Math.floor(ROWS / 2);
   LANES.filter(
-    (l) => (!obstacles.includes(l) && !isRestricted(l)) || isShelter(l),
+    (l) => (!obstacles.includes(l) && !restrictedLanes.includes(l)) || shelterLanes.includes(l),
   ).forEach((l) => {
+    const isShl = shelterLanes.includes(l);
     segs[l][mid] = 'safe';
-    texts[l][mid] = isShelter(l) ? 'SHELTER' : '─SAFE─';
+    texts[l][mid] = isShl ? 'SHELTER' : '─SAFE─';
   });
 
   return { segs, texts };

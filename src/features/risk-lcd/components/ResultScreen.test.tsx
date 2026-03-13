@@ -16,6 +16,7 @@ function createTestGameState(overrides?: Partial<GameState>): GameState {
     db: 0,
     cb: 0,
     bfSet: [0, 4, 6],
+    autoBlock: 0,
   };
 
   return {

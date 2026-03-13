@@ -75,13 +75,19 @@ describe('wPick', () => {
     const result = wPick([1, 2, 3], [0, 1, 2]);
     expect(result).toBe(-1);
   });
+
+  it('Set で exclude を指定できる', () => {
+    // インデックス0を除外 → 残り[0,1,1]の重み配分でインデックス1か2を返す
+    const result = wPick([1, 1, 1], new Set([0]), () => 0.01);
+    expect(result).toBe(1);
+  });
 });
 
 describe('buildSummary', () => {
   it('避難所情報を含むサマリーを生成する', () => {
     const game = {
       scoreMult: 1,
-      st: { mu: [1, 2, 4], rs: [], sf: [0, 2], wm: 0, cm: 0, sh: 0, sp: 0, db: 0, cb: 0, bfSet: [0, 4, 6] },
+      st: { mu: [1, 2, 4], rs: [], sf: [0, 2], wm: 0, cm: 0, sh: 0, sp: 0, db: 0, cb: 0, bfSet: [0, 4, 6], autoBlock: 0 },
       slowMod: 0,
       speedMod: 0,
       revive: 0,
@@ -94,7 +100,7 @@ describe('buildSummary', () => {
   it('速度増加（FAST）情報を含むサマリーを生成する', () => {
     const game = {
       scoreMult: 1,
-      st: { mu: [1, 2, 4], rs: [], sf: [], wm: 0, cm: 0, sh: 0, sp: 0, db: 0, cb: 0, bfSet: [0, 4, 6] },
+      st: { mu: [1, 2, 4], rs: [], sf: [], wm: 0, cm: 0, sh: 0, sp: 0, db: 0, cb: 0, bfSet: [0, 4, 6], autoBlock: 0 },
       slowMod: 0,
       speedMod: -0.2,
       revive: 0,
@@ -107,7 +113,7 @@ describe('buildSummary', () => {
   it('全修飾が含まれるサマリーを生成する', () => {
     const game = {
       scoreMult: 1.5,
-      st: { mu: [1, 2, 4], rs: [], sf: [1], wm: 0, cm: 0, sh: 0, sp: 0, db: 0, cb: 0, bfSet: [0, 4, 6] },
+      st: { mu: [1, 2, 4], rs: [], sf: [1], wm: 0, cm: 0, sh: 0, sp: 0, db: 0, cb: 0, bfSet: [0, 4, 6], autoBlock: 0 },
       slowMod: 0.15,
       speedMod: -0.2,
       revive: 1,
@@ -125,7 +131,7 @@ describe('buildSummary', () => {
   it('修飾がない場合は空文字列を返す', () => {
     const game = {
       scoreMult: 1,
-      st: { mu: [1, 2, 4], rs: [], sf: [], wm: 0, cm: 0, sh: 0, sp: 0, db: 0, cb: 0, bfSet: [0, 4, 6] },
+      st: { mu: [1, 2, 4], rs: [], sf: [], wm: 0, cm: 0, sh: 0, sp: 0, db: 0, cb: 0, bfSet: [0, 4, 6], autoBlock: 0 },
       slowMod: 0,
       speedMod: 0,
       revive: 0,

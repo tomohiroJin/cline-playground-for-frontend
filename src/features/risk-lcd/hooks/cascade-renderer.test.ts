@@ -1,11 +1,9 @@
 import { renderCascadeFrame, renderFinalFrame } from './cascade-renderer';
-import { ROWS, LANES } from '../constants';
-import type { SegState } from './useGameEngine';
+import { ROWS } from '../constants';
 
 describe('renderCascadeFrame', () => {
   // ヘルパー: bf 計算関数のモック
   const calcBf = (_l: number) => 3; // 全レーン bf=3
-  const isShelter = (_l: number) => false;
 
   it('bf 以降の行に障害物セグメントを配置する', () => {
     const result = renderCascadeFrame({
@@ -13,7 +11,6 @@ describe('renderCascadeFrame', () => {
       obstacles: [1],
       fakeIdx: -1,
       calcBf,
-      isShelter,
       shelterLanes: [],
     });
 
@@ -30,7 +27,6 @@ describe('renderCascadeFrame', () => {
       obstacles: [1],
       fakeIdx: -1,
       calcBf: () => 3,
-      isShelter,
       shelterLanes: [],
     });
 
@@ -44,7 +40,6 @@ describe('renderCascadeFrame', () => {
       obstacles: [1],
       fakeIdx: 1,
       calcBf,
-      isShelter,
       shelterLanes: [],
     });
 
@@ -59,7 +54,6 @@ describe('renderCascadeFrame', () => {
       obstacles: [0],
       fakeIdx: -1,
       calcBf,
-      isShelter: (l) => l === 0,
       shelterLanes: [0],
     });
 
@@ -72,7 +66,6 @@ describe('renderCascadeFrame', () => {
       obstacles: [1],
       fakeIdx: -1,
       calcBf,
-      isShelter,
       shelterLanes: [],
     });
 
@@ -81,15 +74,11 @@ describe('renderCascadeFrame', () => {
 });
 
 describe('renderFinalFrame', () => {
-  const isShelter = (_l: number) => false;
-  const isRestricted = (_l: number) => false;
-
   it('障害物レーンが全行 danger になる', () => {
     const result = renderFinalFrame({
       obstacles: [1],
-      isShelter,
-      isRestricted,
       shelterLanes: [],
+      restrictedLanes: [],
     });
 
     for (let r = 0; r < ROWS - 1; r++) {
@@ -102,9 +91,8 @@ describe('renderFinalFrame', () => {
   it('安全レーンに SAFE 表示が入る', () => {
     const result = renderFinalFrame({
       obstacles: [1],
-      isShelter,
-      isRestricted,
       shelterLanes: [],
+      restrictedLanes: [],
     });
 
     const mid = Math.floor(ROWS / 2);
@@ -117,9 +105,8 @@ describe('renderFinalFrame', () => {
   it('避難所レーンに SHELTER 表示が入る', () => {
     const result = renderFinalFrame({
       obstacles: [1],
-      isShelter: (l) => l === 0,
-      isRestricted,
       shelterLanes: [0],
+      restrictedLanes: [],
     });
 
     const mid = Math.floor(ROWS / 2);
@@ -130,9 +117,8 @@ describe('renderFinalFrame', () => {
   it('制限レーンには SAFE 表示が入らない', () => {
     const result = renderFinalFrame({
       obstacles: [1],
-      isShelter,
-      isRestricted: (l) => l === 0,
       shelterLanes: [],
+      restrictedLanes: [0],
     });
 
     const mid = Math.floor(ROWS / 2);
