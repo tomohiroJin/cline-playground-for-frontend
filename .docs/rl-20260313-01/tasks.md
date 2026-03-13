@@ -116,39 +116,59 @@
 
 ### 3.1 セグメント初期化の共通関数化 [P0]
 
-- [ ] 3箇所で重複するセグメント初期化ロジックを特定
-- [ ] `createSegments` 共通関数を作成
-- [ ] `createSegTexts` 共通関数を作成
-- [ ] 3箇所を共通関数呼び出しに変更
-- [ ] 全既存テスト通過を確認
+- [x] 4箇所で重複するセグメント初期化ロジックを特定（initRender, clearSegs, nextCycle×2）
+- [x] `createSegments` 共通関数を作成（segment-helpers.ts）
+- [x] `createSegTexts` 共通関数を作成（segment-helpers.ts）
+- [x] 4箇所を共通関数呼び出しに変更
+- [x] 単体テスト作成（6テスト: 避難所あり/なし、配列独立性）
+- [x] 全既存テスト通過を確認（172テスト→通過）
 
 ### 3.2 resolve の副作用分離 [P0]
 
-- [ ] resolve 内を3段階に分離: (1) 純粋関数呼び出し → (2) 状態更新 → (3) UI 更新
-- [ ] `applyHitEffect` ヘルパー関数を作成（被弾時の状態更新）
-- [ ] `applyDodgeEffect` ヘルパー関数を作成（回避時の状態更新）
-- [ ] `renderJudgmentResult` ヘルパー関数を作成（判定結果の UI 描画）
-- [ ] 全既存テスト通過を確認
-- [ ] ブラウザでの動作確認
+- [x] resolve 内を3段階に分離: (1) 純粋関数呼び出し → (2) 状態更新 → (3) UI 更新
+- [x] `applyHitStateUpdate` ヘルパー関数を作成（resolve-helpers.ts、被弾時の状態更新）
+- [x] `applyDodgeStateUpdate` ヘルパー関数を作成（resolve-helpers.ts、回避時の状態更新）
+- [x] `renderHitEffect` / `renderDodgeEffect` を外部モジュールに抽出（render-effects.ts）
+- [x] 単体テスト作成（9テスト: シールド/リバイブ/死亡/コンボ/ニアミス/リスク/フリーズ/シェルター/zeroed）
+- [x] 全既存テスト通過を確認（181テスト→通過）
 
 ### 3.3 nextCycle のタイマー整理 [P1]
 
-- [ ] nextCycle 内のタイマーチェーンの構造を整理（コメント・変数名の改善）
-- [ ] フェイク障害物の生成ロジックを小関数に抽出
-- [ ] カスケードアニメーションのステップ計算を明確化
-- [ ] 全既存テスト通過を確認
+- [x] `calcCycleTiming` 純粋関数を作成（cycle-helpers.ts、速度計算の抽出）
+- [x] `pickFakeObstacle` 純粋関数を作成（cycle-helpers.ts、フェイク障害物判定の抽出）
+- [x] `renderCascadeFrame` / `renderFinalFrame` 純粋関数を作成（cascade-renderer.ts、描画ロジック抽出）
+- [x] 単体テスト作成（18テスト: タイミング計算5, フェイク判定4, カスケード5, ファイナル4）
+- [x] 全既存テスト通過を確認（190テスト→通過）
 
 ### 3.4 useGameEngine の dispatch 整理 [P1]
 
-- [ ] dispatch 内の switch/case をコメント付きで構造化
-- [ ] 各 case のロジックが3行以上の場合は名前付き関数に抽出
-- [ ] 全既存テスト通過を確認
+- [x] dispatch 内の switch/case を名前付き関数で構造化
+- [x] `dispatchTitle`, `handleMenuSelect`, `dispatchDaily`, `dispatchTutorial`, `dispatchResult` を抽出
+- [x] 全既存テスト通過を確認（190テスト→通過）
 
 ### 3.5 循環依存の改善 [P2]
 
-- [ ] endGameRef / showPerksRef / announceRef の依存構造を図示
-- [ ] ref 経由の相互参照を最小化する方法を検討・実装
-- [ ] 全既存テスト通過を確認
+- [x] `PhaseCallbacks` インターフェースを定義（types.ts、依存構造を一元管理）
+- [x] 3つの ref（endGameRef, showPerksRef, announceRef）を1つの `callbacksRef` に統合
+- [x] useRunningPhase, usePerkPhase のパラメータを簡素化
+- [x] 全既存テスト通過を確認（199テスト→通過）
+
+### 3.6 追加リファクタリング
+
+- [x] `createGameState` ファクトリ関数を別ファイルに抽出（create-game-state.ts）
+- [x] useRunningPhase: 589行 → 388行（34%削減）
+- [x] 全プロジェクト 4510テスト通過
+- [x] TypeScript コンパイルエラーゼロ
+- [ ] ブラウザでの動作確認（通常/デイリー/ショップ/チュートリアル）
+
+**レビュー指摘対応済み**:
+- H-1/H-4: render-effects.ts のパラメータオブジェクト化 + `Partial<RenderState>` 型安全化
+- H-2: resolve-helpers.ts の docstring「副作用なし」→「GameState を直接ミューテーションする」に修正
+- M-1: calcCycleTiming の5引数 → CycleTimingParams パラメータオブジェクトに変更
+- M-2: announce 内の `setTimeout(audio.mod, 300)` → `addTimer` に統一
+- M-3: renderDodgeEffect のシェルター吸収条件を変数に抽出
+
+**注記**: 目標300行に対し388行で着地。残りはタイマーオーケストレーション（nextCycle, announce）とゲーム制御（startGame, movePlayer）であり、これ以上の分割はコンテキスト共有の複雑化を招くため留めた。仕様書記載の「タイマーベースのアニメーション制御は本質的にある程度の長さが必要」に該当。
 
 ---
 
@@ -204,7 +224,9 @@
 ### 5.2 マジックナンバーの排除 [P1]
 
 - [ ] セグメント・レーン関連の数値を定数化
-- [ ] タイミング関連の数値を定数化
+- [ ] タイミング関連の数値を定数化（render-effects.ts: 300/400/500/550/700ms、useRunningPhase.ts: 1500/1600/2200ms）
+- [ ] cycle-helpers.ts の `0.7`（_calm 閾値と加速率）を別名定数に分離（CALM_THRESHOLD_RATIO / CALM_SPEED_FACTOR）
+- [ ] render-effects.ts のコンボ閾値 `3` を共通定数化（useRunningPhase.ts の COMBO_THRESHOLD と統一）
 - [ ] 全箇所をレビュー
 
 ### 5.3 パフォーマンス最適化 [P2]

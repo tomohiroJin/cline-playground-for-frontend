@@ -11,6 +11,7 @@ import {
   ROWS,
   MENUS,
 } from '../constants';
+import { createSegments, createSegTexts } from './segment-helpers';
 import { Rand, calcEffBf, visLabel, GhostPlayer, isValidDailyGhost } from '../utils';
 import { SeededRand, dateToSeed, getDailyId } from '../utils/seeded-random';
 import type { ShareParams } from '../utils/share';
@@ -22,7 +23,7 @@ import {
   useShopPhase,
   useResultPhase,
 } from './phases';
-import type { PhaseContext, RngApi } from './phases';
+import type { PhaseContext, RngApi, PhaseCallbacks } from './phases';
 
 // ── セグメント表示状態 ──
 export type SegState =
@@ -75,10 +76,8 @@ type AudioApi = ReturnType<typeof useAudio>;
 
 // 初期レンダリング状態
 export function initRender(): RenderState {
-  const segs: (SegState | null)[][] = LANES.map(() =>
-    Array(ROWS).fill(null),
-  );
-  const texts: string[][] = LANES.map(() => Array(ROWS).fill('╳'));
+  const segs = createSegments([]);
+  const texts = createSegTexts([]);
   return {
     screen: 'T',
     game: null,
@@ -165,12 +164,9 @@ export function useGameEngine(store: StoreApi, audio: AudioApi) {
   // セグメント状態をクリア
   const clearSegs = useCallback(() => {
     const g = gRef.current;
-    const segs: (SegState | null)[][] = LANES.map((l) =>
-      Array(ROWS).fill(isShelter(l) ? 'shield' : null),
-    );
-    const texts: string[][] = LANES.map((l) =>
-      Array(ROWS).fill(isShelter(l) ? '─' : '╳'),
-    );
+    const shelters = g?.st.sf ?? [];
+    const segs = createSegments(shelters);
+    const texts = createSegTexts(shelters);
     patch({
       segments: segs,
       segTexts: texts,
@@ -266,25 +262,25 @@ export function useGameEngine(store: StoreApi, audio: AudioApi) {
     resolveEmoKey,
   };
 
-  // ── クロスフェーズ参照（循環依存の解消） ──
-  const endGameRef = useRef<(cleared: boolean) => void>(() => {});
-  const showPerksRef = useRef<() => void>(() => {});
-  const announceRef = useRef<() => void>(() => {});
+  // ── フェーズ間コールバック（一元管理） ──
+  const callbacksRef = useRef<PhaseCallbacks>({
+    endGame: () => {},
+    showPerks: () => {},
+    announce: () => {},
+  });
 
   // ── フェーズフック ──
   const { endGame, goTitle } = useResultPhase(ctx, store, audio);
-  const { showPerks, selectPerk } = usePerkPhase(ctx, store, audio, announceRef);
+  const { showPerks, selectPerk } = usePerkPhase(ctx, store, audio, callbacksRef);
   const { startGame, movePlayer, announce } = useRunningPhase(
-    ctx, store, audio, endGameRef, showPerksRef, ghostPlayerRef,
+    ctx, store, audio, callbacksRef, ghostPlayerRef,
   );
   const { dispatchStyle, dispatchShop, dispatchHelp } = useShopPhase(
     ctx, store, audio, goTitle,
   );
 
-  // クロスフェーズ参照の設定
-  endGameRef.current = endGame;
-  showPerksRef.current = showPerks;
-  announceRef.current = announce;
+  // フェーズ間コールバックの設定
+  callbacksRef.current = { endGame, showPerks, announce };
 
   // ── 共有データ読み込み ──
   const loadShareData = useCallback((params: ShareParams) => {
@@ -327,112 +323,97 @@ export function useGameEngine(store: StoreApi, audio: AudioApi) {
 
       // 各画面の入力処理
       switch (screen) {
-        case 'T':
-          if (action === 'up') {
-            patch({ menuIndex: Math.max(0, r.menuIndex - 1) });
-            audio.mv();
-          } else if (action === 'down') {
-            patch({
-              menuIndex: Math.min(MENUS.length - 1, r.menuIndex + 1),
-            });
-            audio.mv();
-          } else if (action === 'act') {
-            audio.sel();
-            // MENUS: GAME START(0) / DAILY(1) / PRACTICE(2) / PLAY STYLE(3) / UNLOCK(4) / HELP(5)
-            switch (r.menuIndex) {
-              case 0: {
-                // チュートリアル判定
-                const sd = store.data;
-                if (!sd.tutorialDone && sd.plays === 0) {
-                  patch({ screen: 'TU', tutorialStep: 0 });
-                } else {
-                  rngRef.current = defaultRng;
-                  ghostPlayerRef.current = null;
-                  startGame('normal');
-                }
-                break;
-              }
-              case 1:
-                patch({ screen: 'D' });
-                break;
-              case 2:
-                rngRef.current = defaultRng;
-                startGame('practice');
-                break;
-              case 3:
-                patch({ screen: 'Y', listIndex: 0 });
-                break;
-              case 4:
-                patch({ screen: 'H', listIndex: 0 });
-                break;
-              case 5:
-                patch({ screen: 'HP', listIndex: 0 });
-                break;
-            }
-          }
-          break;
-
-        case 'Y':
-          dispatchStyle(action);
-          break;
-
-        case 'H':
-          dispatchShop(action);
-          break;
-
-        case 'HP':
-          dispatchHelp(action);
-          break;
-
-        case 'D':
-          if (action === 'act') {
-            // デイリーモード開始
-            audio.sel();
-            const dailyRng = new SeededRand(dateToSeed(getDailyId()));
-            rngRef.current = dailyRng;
-            startGame('daily');
-          } else if (action === 'back' || action === 'left') {
-            goTitle();
-          }
-          break;
-
-        case 'TU': {
-          const curStep = r.tutorialStep ?? 0;
-          if (action === 'act') {
-            if (curStep >= 3) {
-              // チュートリアル完了→ゲーム開始
-              store.markTutorialDone();
-              rngRef.current = defaultRng;
-              startGame('normal');
-            } else {
-              patch({ tutorialStep: curStep + 1 });
-              audio.mv();
-            }
-          } else if (action === 'back' || action === 'left') {
-            if (curStep > 0) {
-              patch({ tutorialStep: curStep - 1 });
-              audio.mv();
-            } else {
-              goTitle();
-            }
-          }
-          break;
-        }
-
-        case 'R':
-          if (action === 'act' || action === 'left' || action === 'back') {
-            ghostPlayerRef.current = null;
-            goTitle();
-          }
-          break;
-
-        default:
-          break;
+        case 'T': dispatchTitle(action, r); break;
+        case 'Y': dispatchStyle(action); break;
+        case 'H': dispatchShop(action); break;
+        case 'HP': dispatchHelp(action); break;
+        case 'D': dispatchDaily(action); break;
+        case 'TU': dispatchTutorial(action, r); break;
+        case 'R': dispatchResult(action); break;
+        default: break;
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
+
+  // タイトル画面の入力処理
+  function dispatchTitle(action: InputAction, r: RenderState) {
+    if (action === 'up') {
+      patch({ menuIndex: Math.max(0, r.menuIndex - 1) });
+      audio.mv();
+    } else if (action === 'down') {
+      patch({ menuIndex: Math.min(MENUS.length - 1, r.menuIndex + 1) });
+      audio.mv();
+    } else if (action === 'act') {
+      audio.sel();
+      handleMenuSelect(r.menuIndex);
+    }
+  }
+
+  // メニュー項目の選択実行
+  function handleMenuSelect(index: number) {
+    switch (index) {
+      case 0: {
+        const sd = store.data;
+        if (!sd.tutorialDone && sd.plays === 0) {
+          patch({ screen: 'TU', tutorialStep: 0 });
+        } else {
+          rngRef.current = defaultRng;
+          ghostPlayerRef.current = null;
+          startGame('normal');
+        }
+        break;
+      }
+      case 1: patch({ screen: 'D' }); break;
+      case 2: rngRef.current = defaultRng; startGame('practice'); break;
+      case 3: patch({ screen: 'Y', listIndex: 0 }); break;
+      case 4: patch({ screen: 'H', listIndex: 0 }); break;
+      case 5: patch({ screen: 'HP', listIndex: 0 }); break;
+    }
+  }
+
+  // デイリー画面の入力処理
+  function dispatchDaily(action: InputAction) {
+    if (action === 'act') {
+      audio.sel();
+      const dailyRng = new SeededRand(dateToSeed(getDailyId()));
+      rngRef.current = dailyRng;
+      startGame('daily');
+    } else if (action === 'back' || action === 'left') {
+      goTitle();
+    }
+  }
+
+  // チュートリアル画面の入力処理
+  function dispatchTutorial(action: InputAction, r: RenderState) {
+    const curStep = r.tutorialStep ?? 0;
+    if (action === 'act') {
+      if (curStep >= 3) {
+        store.markTutorialDone();
+        rngRef.current = defaultRng;
+        startGame('normal');
+      } else {
+        patch({ tutorialStep: curStep + 1 });
+        audio.mv();
+      }
+    } else if (action === 'back' || action === 'left') {
+      if (curStep > 0) {
+        patch({ tutorialStep: curStep - 1 });
+        audio.mv();
+      } else {
+        goTitle();
+      }
+    }
+  }
+
+  // リザルト画面の入力処理
+  function dispatchResult(action: InputAction) {
+    if (action === 'act' || action === 'left' || action === 'back') {
+      ghostPlayerRef.current = null;
+      goTitle();
+    }
+  }
 
   // ゲーム状態からレーン情報を導出
   const getLaneInfo = useCallback(
