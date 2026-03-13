@@ -44,11 +44,29 @@ export type StoryProgress = {
 
 export const STORY_PROGRESS_KEY = 'ah_story_progress';
 
-/** ストーリー進行を読み込む */
+/** デフォルトのストーリー進行データ */
+const DEFAULT_PROGRESS: StoryProgress = { clearedStages: [] };
+
+/** ストーリー進行を読み込む（localStorage 破損時はフォールバック） */
 export const loadStoryProgress = (): StoryProgress => {
   const raw = localStorage.getItem(STORY_PROGRESS_KEY);
-  if (!raw) return { clearedStages: [] };
-  return JSON.parse(raw) as StoryProgress;
+  if (!raw) return { ...DEFAULT_PROGRESS };
+
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    // clearedStages が配列であることを検証
+    if (
+      typeof parsed === 'object' &&
+      parsed !== null &&
+      'clearedStages' in parsed &&
+      Array.isArray((parsed as StoryProgress).clearedStages)
+    ) {
+      return parsed as StoryProgress;
+    }
+    return { ...DEFAULT_PROGRESS };
+  } catch {
+    return { ...DEFAULT_PROGRESS };
+  }
 };
 
 /** ストーリー進行を保存する */

@@ -19,18 +19,19 @@ type PreloaderState = {
  * - アンマウント時にクリーンアップ
  */
 export function useImagePreloader(urls: string[]): PreloaderState {
+  // urls の内容が変わったときのみ参照を更新（参照安定化）
+  const urlsKey = urls.join(',');
+  const stableUrls = useMemo(() => urls, [urlsKey]);
+
   const [state, setState] = useState<PreloaderState>(() => ({
-    isLoaded: urls.length === 0,
-    progress: urls.length === 0 ? 1 : 0,
+    isLoaded: stableUrls.length === 0,
+    progress: stableUrls.length === 0 ? 1 : 0,
     errors: [],
   }));
 
-  // urls の内容が変わったときのみ再実行するためのキー
-  const urlsKey = useMemo(() => urls.join(','), [urls]);
-
   useEffect(() => {
     // 空配列の場合は即座に完了
-    if (urls.length === 0) {
+    if (stableUrls.length === 0) {
       setState({ isLoaded: true, progress: 1, errors: [] });
       return;
     }
@@ -39,7 +40,7 @@ export function useImagePreloader(urls: string[]): PreloaderState {
     setState({ isLoaded: false, progress: 0, errors: [] });
 
     let cancelled = false;
-    const total = urls.length;
+    const total = stableUrls.length;
     let loadedCount = 0;
     const errorUrls: string[] = [];
 
@@ -53,13 +54,14 @@ export function useImagePreloader(urls: string[]): PreloaderState {
       });
     };
 
-    const images = urls.map((url) => {
+    const images = stableUrls.map((url) => {
       const img = new Image();
       img.onload = () => {
         loadedCount++;
         updateState();
       };
       img.onerror = () => {
+        console.warn(`[useImagePreloader] 画像の読み込みに失敗: ${url}`);
         loadedCount++;
         errorUrls.push(url);
         updateState();
@@ -70,13 +72,14 @@ export function useImagePreloader(urls: string[]): PreloaderState {
 
     return () => {
       cancelled = true;
-      // クリーンアップ: イベントハンドラを無効化
+      // クリーンアップ: イベントハンドラを無効化し、リソースを解放
       images.forEach((img) => {
         img.onload = null;
         img.onerror = null;
+        img.src = '';
       });
     };
-  }, [urlsKey]);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [stableUrls]);
 
   return state;
 }

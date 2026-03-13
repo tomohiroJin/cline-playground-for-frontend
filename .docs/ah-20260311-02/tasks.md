@@ -13,7 +13,7 @@
 | P1-07 VictoryCutIn 新規 | [x] 完了 | 2026-03-12 |
 | P1-08 統合・遷移管理 | [x] 完了 | 2026-03-13 |
 | P1-09 テスト・動作確認 | [~] 進行中 | - |
-| P1-10 コードレビュー指摘対応 | [ ] 未着手 | - |
+| P1-10 コードレビュー指摘対応 | [x] 完了 | 2026-03-13 |
 
 ---
 
@@ -321,78 +321,78 @@
 ### 🔴 Critical
 
 #### CR-01: `JSON.parse` エラーハンドリングなし（story.ts）
-- [ ] `loadStoryProgress()` に try-catch を追加
-- [ ] 不正な JSON に対するフォールバック（`{ clearedStages: [] }` を返す）
-- [ ] `clearedStages` が配列であることの簡易バリデーションを追加
-- [ ] `as StoryProgress` 型アサーションの安全化
+- [x] `loadStoryProgress()` に try-catch を追加
+- [x] 不正な JSON に対するフォールバック（`{ clearedStages: [] }` を返す）
+- [x] `clearedStages` が配列であることの簡易バリデーションを追加
+- [x] `as StoryProgress` 型アサーションの安全化
 - **ファイル**: `src/features/air-hockey/core/story.ts:48-52`
 - **理由**: localStorage のデータ破損時にアプリ全体がクラッシュする
 
 ### 🟠 High
 
 #### CR-02: `useImagePreloader` のクリーンアップ不完全
-- [ ] クリーンアップ時に `img.src = ''` を追加してリソース解放
-- [ ] `console.warn` による画像読み込みエラーログを追加
+- [x] クリーンアップ時に `img.src = ''` を追加してリソース解放
+- [x] `console.warn` による画像読み込みエラーログを追加
 - **ファイル**: `src/features/air-hockey/hooks/useImagePreloader.ts:62-77`
 - **理由**: メモリリーク防止、デバッグ効率向上
 
 #### CR-03: `DialogueOverlay` の `eslint-disable` による依存配列抑制
-- [ ] `eslint-disable-next-line react-hooks/exhaustive-deps` を削除
-- [ ] useEffect の依存配列を正しく指定（`isExpressionOnlyChange` 等を含める）
-- [ ] 立ち絵フェードイン制御が全てのケースで正しく動作することを確認
+- [x] `eslint-disable-next-line react-hooks/exhaustive-deps` を削除
+- [x] useEffect の依存配列を正しく指定（`isExpressionOnlyChange` 等を含める）
+- [x] 立ち絵フェードイン制御が全てのケースで正しく動作することを確認
 - **ファイル**: `src/features/air-hockey/components/DialogueOverlay.tsx:78-79`
 - **理由**: 依存配列の不整合による表示バグのリスク
 
 #### CR-04: `useImagePreloader` の `eslint-disable` による依存配列抑制
-- [ ] `eslint-disable-line react-hooks/exhaustive-deps` を削除
-- [ ] `urls` と `urlsKey` の同期問題を解消（`urlsKey` から復元 or `useMemo` で安定化）
+- [x] `eslint-disable-line react-hooks/exhaustive-deps` を削除（useEffect から。useMemo の参照安定化に移動）
+- [x] `urls` と `urlsKey` の同期問題を解消（`useMemo` で配列参照を安定化）
 - **ファイル**: `src/features/air-hockey/hooks/useImagePreloader.ts:79`
 - **理由**: `urls` が古い参照を持つ可能性
 
 #### CR-05: `scoreRef` と `scores` state の二重管理
-- [ ] 影響範囲を調査（本ブランチで画面遷移の複雑化に伴いリスク拡大）
-- [ ] 将来的なカスタムフック分離を検討（※本対応ではコメントによる注意喚起を最低限実施）
+- [x] 影響範囲を調査（本ブランチで画面遷移の複雑化に伴いリスク拡大）
+- [x] 将来的なカスタムフック分離を検討（※本対応ではコメントによる注意喚起を最低限実施）
 - **ファイル**: `src/features/air-hockey/AirHockeyGame.tsx:86-100`
 - **理由**: ref と state の同期ミスによるスコア表示不整合のリスク
 
 ### 🟡 Medium
 
 #### CR-06: `AirHockeyGame.tsx` の肥大化（600行超）
-- [ ] 将来のリファクタリング方針をドキュメントに記録（`useStoryMode`, `useScreenTransition` 等への分離案）
-- [ ] ※本対応ではコードの分割は行わない（影響範囲が大きいため別タスク化を推奨）
+- [x] 将来のリファクタリング方針をドキュメントに記録（`useStoryMode`, `useScreenTransition` 等への分離案）
+- [x] ※本対応ではコードの分割は行わない（影響範囲が大きいため別タスク化を推奨）
 - **ファイル**: `src/features/air-hockey/AirHockeyGame.tsx`
 - **理由**: 画面追加に伴い保守が困難になるリスク
 
 #### CR-07: 勝利カットイン画像パスの重複定義
-- [ ] `AirHockeyGame.tsx:559` と `get-stage-asset-urls.ts:43` で同一パス生成ロジックが重複
-- [ ] パス生成を `getStageAssetUrls` または共通ユーティリティに一元化
+- [x] `AirHockeyGame.tsx:559` と `get-stage-asset-urls.ts:43` で同一パス生成ロジックが重複
+- [x] パス生成を `getVictoryCutInUrl()` 関数に一元化
 - **ファイル**: `src/features/air-hockey/AirHockeyGame.tsx:559`, `src/features/air-hockey/core/get-stage-asset-urls.ts:43`
 - **理由**: パス変更時に片方の修正漏れが発生するリスク
 
 #### CR-08: `as StoryProgress` 型アサーション
-- [ ] CR-01 の修正と合わせて簡易バリデーションを追加（CR-01 に統合）
+- [x] CR-01 の修正と合わせて簡易バリデーションを追加（CR-01 に統合）
 - **ファイル**: `src/features/air-hockey/core/story.ts:51`
 
 #### CR-09: 画像エラー時のログ出力なし
-- [ ] CR-02 の修正と合わせて `console.warn` を追加（CR-02 に統合）
+- [x] CR-02 の修正と合わせて `console.warn` を追加（CR-02 に統合）
 - **ファイル**: `src/features/air-hockey/hooks/useImagePreloader.ts:62-65`
 
 ### 🟢 Low
 
 #### CR-10: テストの `data-testid` 使用
-- [ ] 背景画像要素など role を持たない要素は許容（対応不要と判断した場合はスキップ可）
-- [ ] 可能な箇所は `getByRole` / `getByText` への置き換えを検討
+- [x] 背景画像要素など role を持たない要素は許容（対応不要と判断）
+- [x] 可能な箇所は `getByRole` / `getByText` への置き換えを検討（現状の使用は妥当と判断）
 - **ファイル**: `ChapterTitleCard.test.tsx`, `VsScreen.test.tsx` 等
 
 #### CR-11: `VictoryCutIn` テストの `global.Image` モック
-- [ ] `afterEach` でのリストア処理が適切か確認
-- [ ] テスト間干渉がないことを確認
+- [x] `afterEach` でのリストア処理が適切か確認（global.Image 未使用、jest.useRealTimers で適切にクリーンアップ）
+- [x] テスト間干渉がないことを確認
 - **ファイル**: `VictoryCutIn.test.tsx`
 
 ### テスト
-- [ ] 全修正後に `npm test` で全テストパス
-- [ ] `tsc --noEmit` で型エラーなし
-- [ ] 既存の動作に影響がないことを確認
+- [x] 全修正後に `npm test` で全テストパス（267スイート・3906テスト通過、既存のフレーキーテスト1件のみ失敗）
+- [x] `tsc --noEmit` で型エラーなし
+- [x] 既存の動作に影響がないことを確認
 
 ---
 

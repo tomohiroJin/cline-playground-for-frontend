@@ -90,6 +90,27 @@ describe('Phase 2: ストーリー進行保存', () => {
         const progress = loadStoryProgress();
         expect(progress.clearedStages).toEqual(['1-1', '1-2']);
       });
+
+      it('不正な JSON の場合はフォールバックを返す', () => {
+        localStorageMock.setItem(STORY_PROGRESS_KEY, '{invalid json');
+
+        const progress = loadStoryProgress();
+        expect(progress).toEqual({ clearedStages: [] });
+      });
+
+      it('clearedStages が配列でない場合はフォールバックを返す', () => {
+        localStorageMock.setItem(STORY_PROGRESS_KEY, JSON.stringify({ clearedStages: 'not-array' }));
+
+        const progress = loadStoryProgress();
+        expect(progress).toEqual({ clearedStages: [] });
+      });
+
+      it('パースしたデータに clearedStages がない場合はフォールバックを返す', () => {
+        localStorageMock.setItem(STORY_PROGRESS_KEY, JSON.stringify({ other: 'data' }));
+
+        const progress = loadStoryProgress();
+        expect(progress).toEqual({ clearedStages: [] });
+      });
     });
 
     describe('saveStoryProgress', () => {

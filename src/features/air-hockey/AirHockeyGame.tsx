@@ -33,7 +33,7 @@ import { VictoryCutIn } from './components/VictoryCutIn';
 import { generateDailyChallenge, getDailyChallengeResult, saveDailyChallengeResult, DailyChallenge } from './core/daily-challenge';
 import { UnlockState } from './core/unlock';
 import { BACKGROUND_MAP } from './core/characters';
-import { getStageAssetUrls } from './core/get-stage-asset-urls';
+import { getStageAssetUrls, getVictoryCutInUrl } from './core/get-stage-asset-urls';
 import { useImagePreloader } from './hooks/useImagePreloader';
 import { PageContainer } from './styles';
 
@@ -56,6 +56,10 @@ const AirHockeyGame: React.FC = () => {
   const [diff, setDiff] = useState<Difficulty>('normal');
   const [field, setField] = useState<FieldConfig>(FIELDS[0]);
   const [winScore, setWinScore] = useState(3);
+  // NOTE(CR-05): scores state と scoreRef は二重管理状態。
+  // scoreRef はゲームループ内の即時参照用、scores は UI 再レンダリング用。
+  // 同期ミスによるスコア表示不整合のリスクがあるため、
+  // 将来的にカスタムフック（useGameScores 等）への分離を検討する。
   const [scores, setScores] = useState({ p: 0, c: 0 });
   const [winner, setWinner] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
@@ -555,7 +559,7 @@ const AirHockeyGame: React.FC = () => {
       {/* ストーリーモード: 勝利カットイン */}
       {screen === 'victoryCutIn' && currentStage && (
         <VictoryCutIn
-          imageUrl={`/assets/cutins/victory-ch${currentStage.chapter}.png`}
+          imageUrl={getVictoryCutInUrl(currentStage.chapter)}
           onComplete={handleVictoryCutInComplete}
         />
       )}

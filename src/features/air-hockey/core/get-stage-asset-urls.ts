@@ -6,6 +6,11 @@ import type { Character } from './types';
 import type { StageDefinition } from './story';
 import { BACKGROUND_MAP } from './characters';
 
+/** 勝利カットイン画像のURLを生成する */
+export function getVictoryCutInUrl(chapter: number): string {
+  return `/assets/cutins/victory-ch${chapter}.png`;
+}
+
 /**
  * ステージで使用する全画像アセットのURLリストを返す
  * プリロード対象: 背景画像、プレイヤー立ち絵、対戦相手立ち絵、勝利カットイン
@@ -40,7 +45,7 @@ export function getStageAssetUrls(
 
   // 勝利カットイン（章の最終ステージの場合）
   if (stage.isChapterFinale) {
-    urls.push(`/assets/cutins/victory-ch${stage.chapter}.png`);
+    urls.push(getVictoryCutInUrl(stage.chapter));
   }
 
   return urls;

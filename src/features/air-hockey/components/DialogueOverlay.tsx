@@ -75,8 +75,7 @@ export const DialogueOverlay: React.FC<DialogueOverlayProps> = ({
     // 次のフレームでフェードインを開始
     const raf = requestAnimationFrame(() => setIsPortraitVisible(true));
     return () => cancelAnimationFrame(raf);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [portraitUrl]);
+  }, [portraitUrl, isExpressionOnlyChange]);
 
   // 前のキャラクターIDを追跡
   useEffect(() => {

@@ -186,5 +186,34 @@ describe('useImagePreloader', () => {
       });
       // エラーが発生しなければ成功
     });
+
+    it('アンマウント時に img.src が空文字に設定されリソースが解放される', () => {
+      const urls = ['/img/a.png', '/img/b.png'];
+      const { unmount } = renderHook(() => useImagePreloader(urls));
+
+      unmount();
+
+      // src が空文字に設定されていること（リソース解放）
+      mockImages.forEach(img => {
+        expect(img.src).toBe('');
+      });
+    });
+  });
+
+  describe('エラーログ', () => {
+    it('画像読み込みエラー時に console.warn が出力される', async () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const urls = ['/img/a.png'];
+      renderHook(() => useImagePreloader(urls));
+
+      act(() => {
+        mockImages[0].onerror?.(new Event('error'));
+      });
+
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('/img/a.png')
+      );
+      warnSpy.mockRestore();
+    });
   });
 });
