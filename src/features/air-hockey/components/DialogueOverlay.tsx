@@ -54,6 +54,8 @@ export const DialogueOverlay: React.FC<DialogueOverlayProps> = ({
     ? characters[currentDialogue.characterId]
     : undefined;
   const fullText = currentDialogue?.text ?? '';
+  const fullTextRef = useRef(fullText);
+  fullTextRef.current = fullText;
   const portraitUrl = getPortraitUrl(currentCharacter, currentDialogue?.expression);
 
   // キャラ変更検知（初回レンダリング時は undefined → false）
@@ -82,25 +84,24 @@ export const DialogueOverlay: React.FC<DialogueOverlayProps> = ({
     setPrevCharacterId(currentDialogue?.characterId);
   }, [currentDialogue?.characterId]);
 
-  // 文字送りタイマー
+  // 文字送りタイマー（currentIndex 変更時のみ再開）
   useEffect(() => {
-    if (isFullyDisplayed) return;
-
     setDisplayedLength(0);
+    setIsFullyDisplayed(false);
     let charCount = 0;
 
     timerRef.current = setInterval(() => {
       charCount += 1;
       setDisplayedLength(charCount);
 
-      if (charCount >= fullText.length) {
+      if (charCount >= fullTextRef.current.length) {
         clearInterval(timerRef.current);
         setIsFullyDisplayed(true);
       }
     }, CHAR_INTERVAL_MS);
 
     return () => clearInterval(timerRef.current);
-  }, [currentIndex, fullText, isFullyDisplayed]);
+  }, [currentIndex]);
 
   const handleClick = useCallback(() => {
     if (!isFullyDisplayed) {
@@ -114,7 +115,6 @@ export const DialogueOverlay: React.FC<DialogueOverlayProps> = ({
     // 全文表示済み → 次のセリフ or 完了
     if (currentIndex < dialogues.length - 1) {
       setCurrentIndex(prev => prev + 1);
-      setIsFullyDisplayed(false);
     } else {
       onComplete();
     }

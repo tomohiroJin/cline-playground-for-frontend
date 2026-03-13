@@ -145,7 +145,23 @@ describe('VsScreen', () => {
       expect(cpuImg).toHaveAttribute('src', '/assets/vs/hiro-vs.png');
     });
 
-    it('portrait未定義の場合、アイコン画像にフォールバックする', () => {
+    it('vsImage未定義の場合、アイコン画像にフォールバックする', () => {
+      const playerWithoutVs: Character = { ...playerChar, vsImage: undefined };
+      const cpuWithoutVs: Character = { ...cpuChar, vsImage: undefined };
+      render(
+        <VsScreen
+          {...defaultProps}
+          playerCharacter={playerWithoutVs}
+          cpuCharacter={cpuWithoutVs}
+        />
+      );
+      const playerImg = screen.getByAltText('アキラ 立ち絵');
+      expect(playerImg).toHaveAttribute('src', '/assets/characters/akira.png');
+      const cpuImg = screen.getByAltText('ヒロ 立ち絵');
+      expect(cpuImg).toHaveAttribute('src', '/assets/characters/hiro.png');
+    });
+
+    it('portrait・vsImage両方未定義の場合、アイコン画像にフォールバックする', () => {
       render(
         <VsScreen
           {...defaultProps}
