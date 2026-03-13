@@ -27,6 +27,7 @@ const playerChar: Character = {
     normal: '/assets/portraits/akira-normal.png',
     happy: '/assets/portraits/akira-happy.png',
   },
+  vsImage: '/assets/vs/akira-vs.png',
 };
 
 const cpuChar: Character = {
@@ -39,6 +40,7 @@ const cpuChar: Character = {
     normal: '/assets/portraits/hiro-normal.png',
     happy: '/assets/portraits/hiro-happy.png',
   },
+  vsImage: '/assets/vs/hiro-vs.png',
 };
 
 // portrait なしのキャラクター（フォールバック用）
@@ -134,7 +136,7 @@ describe('VsScreen', () => {
     it('プレイヤーのVS用立ち絵パスが正しい', () => {
       render(<VsScreen {...defaultProps} />);
       const playerImg = screen.getByAltText('アキラ 立ち絵');
-      expect(playerImg).toHaveAttribute('src', '/assets/vs/player-vs.png');
+      expect(playerImg).toHaveAttribute('src', '/assets/vs/akira-vs.png');
     });
 
     it('CPUのVS用立ち絵パスが正しい', () => {

@@ -10,6 +10,7 @@ import type { Character, Difficulty } from './types';
 const ASSET_PATH = {
   character: (name: string) => `/assets/characters/${name}.png`,
   portrait: (name: string, expr: string) => `/assets/portraits/${name}-${expr}.png`,
+  vs: (name: string) => `/assets/vs/${name}-vs.png`,
   background: (name: string) => `/assets/backgrounds/${name}.webp`,
 } as const;
 
@@ -29,6 +30,7 @@ export const PLAYER_CHARACTER: Character = {
     normal: ASSET_PATH.portrait('akira', 'normal'),
     happy: ASSET_PATH.portrait('akira', 'happy'),
   },
+  vsImage: ASSET_PATH.vs('akira'),
 };
 
 // ── フリー対戦用キャラ（難易度別）──────────────────
@@ -48,6 +50,7 @@ export const FREE_BATTLE_CHARACTERS: Record<Difficulty, Character> = {
       normal: ASSET_PATH.portrait('rookie', 'normal'),
       happy: ASSET_PATH.portrait('rookie', 'happy'),
     },
+    vsImage: ASSET_PATH.vs('rookie'),
   },
   normal: {
     id: 'regular',
@@ -64,6 +67,7 @@ export const FREE_BATTLE_CHARACTERS: Record<Difficulty, Character> = {
       normal: ASSET_PATH.portrait('regular', 'normal'),
       happy: ASSET_PATH.portrait('regular', 'happy'),
     },
+    vsImage: ASSET_PATH.vs('regular'),
   },
   hard: {
     id: 'ace',
@@ -80,6 +84,7 @@ export const FREE_BATTLE_CHARACTERS: Record<Difficulty, Character> = {
       normal: ASSET_PATH.portrait('ace', 'normal'),
       happy: ASSET_PATH.portrait('ace', 'happy'),
     },
+    vsImage: ASSET_PATH.vs('ace'),
   },
 };
 
@@ -100,6 +105,7 @@ export const STORY_CHARACTERS = {
       normal: ASSET_PATH.portrait('hiro', 'normal'),
       happy: ASSET_PATH.portrait('hiro', 'happy'),
     },
+    vsImage: ASSET_PATH.vs('hiro'),
   },
   misaki: {
     id: 'misaki',
@@ -116,6 +122,7 @@ export const STORY_CHARACTERS = {
       normal: ASSET_PATH.portrait('misaki', 'normal'),
       happy: ASSET_PATH.portrait('misaki', 'happy'),
     },
+    vsImage: ASSET_PATH.vs('misaki'),
   },
   takuma: {
     id: 'takuma',
@@ -132,6 +139,7 @@ export const STORY_CHARACTERS = {
       normal: ASSET_PATH.portrait('takuma', 'normal'),
       happy: ASSET_PATH.portrait('takuma', 'happy'),
     },
+    vsImage: ASSET_PATH.vs('takuma'),
   },
   yuu: {
     id: 'yuu',
@@ -148,6 +156,7 @@ export const STORY_CHARACTERS = {
       normal: ASSET_PATH.portrait('yuu', 'normal'),
       happy: ASSET_PATH.portrait('yuu', 'happy'),
     },
+    vsImage: ASSET_PATH.vs('yuu'),
   },
 } as const satisfies Record<string, Character>;
 

@@ -167,6 +167,7 @@ export type Character = {
   color: string;
   reactions: CharacterReaction;
   portrait?: PortraitSet;
+  vsImage?: string;
 };
 
 // ゲームモード（フリー対戦 or ストーリー）

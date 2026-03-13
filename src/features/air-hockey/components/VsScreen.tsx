@@ -28,12 +28,9 @@ const SLIDE_OFFSET = 256;
 /** 背景グラデーションの透明度 */
 const GRADIENT_ALPHA = 0.3;
 
-/** VS用立ち絵のパスを生成 */
+/** VS用立ち絵のパスを取得 */
 const getVsImageSrc = (character: Character): string => {
-  if (character.portrait) {
-    return `/assets/vs/${character.id}-vs.png`;
-  }
-  return character.icon;
+  return character.vsImage ?? character.icon;
 };
 
 /** HEX カラー（#RGB or #RRGGBB）を rgba 文字列に変換 */
