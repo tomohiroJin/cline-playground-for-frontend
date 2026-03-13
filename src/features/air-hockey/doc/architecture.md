@@ -90,3 +90,19 @@ src/pages/AirHockeyPage.tsx  # ページコンポーネント
 | `components/StageSelectScreen.test.tsx` | ステージ選択画面 |
 | `components/DialogueOverlay.test.tsx` | ダイアログオーバーレイ |
 | `components/VsScreen.test.tsx` | VS 画面 |
+
+## リファクタリング方針（CR-06）
+
+### AirHockeyGame.tsx の分割案
+
+`AirHockeyGame.tsx` は 600 行超に肥大化しており、画面追加に伴い保守性が低下している。
+以下のカスタムフックへの段階的な分離を推奨する。
+
+| フック名 | 責務 | 抽出対象 |
+|----------|------|----------|
+| `useScreenTransition` | 画面遷移の状態管理 | `screen`, `setScreen`, 遷移ハンドラ群 |
+| `useStoryMode` | ストーリーモード固有ロジック | `currentStage`, `storyProgress`, ストーリー関連ハンドラ |
+| `useGameScores` | スコアの ref/state 二重管理の統合 | `scoreRef`, `scores`, スコア更新ロジック |
+| `useGameLoop` | ゲームループ・描画 | `canvasRef`, `gameRef`, 描画ループ |
+
+**注意**: 影響範囲が大きいため、十分なテストカバレッジを確保した上で段階的に実施すること。
