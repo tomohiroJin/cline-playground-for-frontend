@@ -7,19 +7,19 @@
 ## フェーズ 0: 準備（安全網の構築）
 
 ### 0-1. 現状確認
-- [ ] `npm run ci`（lint + typecheck + test + build）が全パスすることを確認
-- [ ] テストカバレッジのベースラインを記録（`npm run test:coverage`）
-- [ ] 現在のファイル数・行数を記録
+- [x] `npm run ci`（lint + typecheck + test + build）が全パスすることを確認
+- [x] テストカバレッジのベースラインを記録（`npm run test:coverage`）
+- [x] 現在のファイル数・行数を記録
 
 ### 0-2. E2E テストスケルトン
-- [ ] `e2e/agile-quiz-sugoroku/` ディレクトリを作成
-- [ ] `e2e/helpers/aqs-helper.ts`（Page Object）のスケルトンを作成
-- [ ] `e2e/agile-quiz-sugoroku/smoke.spec.ts` を作成（タイトル画面表示のみ）
-- [ ] E2E テストがパスすることを確認
+- [x] `e2e/agile-quiz-sugoroku/` ディレクトリを作成
+- [x] `e2e/helpers/aqs-helper.ts`（Page Object）のスケルトンを作成
+- [x] `e2e/agile-quiz-sugoroku/smoke.spec.ts` を作成（タイトル画面表示のみ）
+- [x] E2E テストがパスすることを確認
 
 ### 0-3. フェーズ 0 完了確認
-- [ ] `npm run ci` パス
-- [ ] `npm run test:e2e` パス（smoke テスト）
+- [x] `npm run ci` パス
+- [x] `npm run test:e2e` パス（smoke テスト）
 - [ ] コミット作成
 
 ---
@@ -436,7 +436,7 @@
 
 | フェーズ | タスク数 | 完了数 | 状態 |
 |---------|---------|--------|------|
-| 0: 準備 | 10 | 0 | 未着手 |
+| 0: 準備 | 10 | 9 | コミット待ち |
 | 1: 型定義分割 | 10 | 0 | 未着手 |
 | 2: ドメイン層抽出 | 37 | 0 | 未着手 |
 | 3: DbC 導入 | 19 | 0 | 未着手 |
