@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ShareButton } from '../../../components/molecules/ShareButton';
 import { MenuCard, GameTitle, StartButton } from '../styles';
-import { MatchStats, Difficulty } from '../core/types';
+import { MatchStats, Difficulty, Character } from '../core/types';
 import { Achievement } from '../core/achievements';
 import { DIFFICULTY_LABELS } from '../core/config';
 
@@ -18,6 +18,12 @@ type ResultScreenProps = {
   onBackToStageSelect?: () => void;
   /** ストーリーモード用: 次のステージへ */
   onNextStage?: () => void;
+  /** 対戦キャラクター情報 */
+  cpuCharacter?: Character;
+  /** プレイヤーキャラクター情報 */
+  playerCharacter?: Character;
+  /** 新規アンロックされたキャラ名（通知用） */
+  newlyUnlockedCharacterName?: string;
 };
 
 // カウントアップアニメーション用フック
@@ -137,10 +143,70 @@ const ConfettiOverlay: React.FC = () => {
   );
 };
 
+// 立ち絵表示コンポーネント
+const PORTRAIT_FADE_IN_MS = 300;
+
+const CharacterPortrait: React.FC<{
+  character: Character;
+  expression: 'normal' | 'happy';
+}> = ({ character, expression }) => {
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  if (!character.portrait) return null;
+  const src = character.portrait[expression];
+  return (
+    <img
+      src={src}
+      alt={character.name}
+      onLoad={() => setIsLoaded(true)}
+      style={{
+        maxWidth: '150px',
+        maxHeight: '200px',
+        objectFit: 'contain',
+        opacity: isLoaded ? 1 : 0,
+        transition: `opacity ${PORTRAIT_FADE_IN_MS}ms ease-out`,
+      }}
+    />
+  );
+};
+
+// アンロック通知バナー
+const UNLOCK_DELAY_MS = 500;
+
+const UNLOCK_BANNER_FADE_MS = 300;
+
+const UnlockBanner: React.FC<{ characterName: string }> = ({ characterName }) => {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), UNLOCK_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <div style={{
+      width: '100%',
+      marginBottom: '1rem',
+      padding: '10px 16px',
+      background: 'rgba(255, 215, 0, 0.15)',
+      borderRadius: '8px',
+      border: '2px solid #ffd700',
+      textAlign: 'center',
+      opacity: isVisible ? 1 : 0,
+      transition: `opacity ${UNLOCK_BANNER_FADE_MS}ms ease-out`,
+    }}>
+      <span style={{ color: '#ffd700', fontWeight: 'bold', fontSize: '0.9rem' }}>
+        🔓 {characterName}が図鑑に追加されました！
+      </span>
+    </div>
+  );
+};
+
 export const ResultScreen: React.FC<ResultScreenProps> = ({
   winner, scores, onBackToMenu, onReplay, stats, newAchievements,
   suggestedDifficulty, onAcceptDifficulty,
   onBackToStageSelect, onNextStage,
+  cpuCharacter, playerCharacter, newlyUnlockedCharacterName,
 }) => {
   const isWin = winner === 'player';
 
@@ -175,6 +241,35 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
         <p style={{ fontSize: '2rem', color: 'white', fontWeight: 'bold', marginBottom: '20px' }}>
           {scores.p} - {scores.c}
         </p>
+
+        {/* キャラ立ち絵エリア */}
+        {(playerCharacter?.portrait || cpuCharacter?.portrait) && (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '20px',
+            marginBottom: '1rem',
+            alignItems: 'flex-end',
+          }}>
+            {playerCharacter && (
+              <CharacterPortrait
+                character={playerCharacter}
+                expression={isWin ? 'happy' : 'normal'}
+              />
+            )}
+            {cpuCharacter && (
+              <CharacterPortrait
+                character={cpuCharacter}
+                expression={isWin ? 'normal' : 'happy'}
+              />
+            )}
+          </div>
+        )}
+
+        {/* アンロック通知 */}
+        {newlyUnlockedCharacterName && (
+          <UnlockBanner characterName={newlyUnlockedCharacterName} />
+        )}
 
         {/* MVP ハイライト */}
         {mvp && isWin && (

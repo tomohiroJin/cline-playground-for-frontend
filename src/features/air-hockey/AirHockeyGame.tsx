@@ -13,6 +13,8 @@ import { getUnlockState, saveUnlockState, checkUnlocks } from './core/unlock';
 import { loadStoryProgress, saveStoryProgress, resetStoryProgress } from './core/story';
 import type { StageDefinition, StoryProgress } from './core/story';
 import { CHAPTER_1_STAGES } from './core/dialogue-data';
+import { checkNewUnlocks, loadDexProgress, saveDexProgress } from './core/dex';
+import { getDexEntryById } from './core/dex-data';
 import { useInput } from './hooks/useInput';
 import { useKeyboardInput } from './hooks/useKeyboardInput';
 import { useGameLoop } from './hooks/useGameLoop';
@@ -79,6 +81,8 @@ const AirHockeyGame: React.FC = () => {
   const [isDailyMode, setIsDailyMode] = useState(false);
   // トランジション用
   const [transitioning, setTransitioning] = useState(false);
+  // リザルト画面用: 新規アンロックキャラ名
+  const [newlyUnlockedCharacterName, setNewlyUnlockedCharacterName] = useState<string | undefined>(undefined);
 
   // ストーリーモード用
   const [gameMode, setGameMode] = useState<GameMode>('free');
@@ -184,7 +188,7 @@ const AirHockeyGame: React.FC = () => {
         setIsDailyMode(false);
       }
 
-      // ストーリーモード: 勝利時にクリアフラグ保存
+      // ストーリーモード: 勝利時にクリアフラグ保存 + 図鑑アンロック判定
       if (gameMode === 'story' && currentStage && isWin) {
         const current = loadStoryProgress();
         if (!current.clearedStages.includes(currentStage.id)) {
@@ -193,7 +197,28 @@ const AirHockeyGame: React.FC = () => {
           };
           saveStoryProgress(updated);
           setStoryProgress(updated);
+
+          // 図鑑アンロック判定
+          const currentDex = loadDexProgress();
+          const newUnlocks = checkNewUnlocks(updated, currentDex);
+          if (newUnlocks.length > 0) {
+            // 新規アンロックを永続化
+            const updatedDex = {
+              unlockedCharacterIds: [...currentDex.unlockedCharacterIds, ...newUnlocks],
+              newlyUnlockedIds: [...currentDex.newlyUnlockedIds, ...newUnlocks],
+            };
+            saveDexProgress(updatedDex);
+            // 最初の新規アンロックキャラ名をリザルト画面に通知
+            const entry = getDexEntryById(newUnlocks[0]);
+            setNewlyUnlockedCharacterName(entry?.profile.fullName);
+          } else {
+            setNewlyUnlockedCharacterName(undefined);
+          }
+        } else {
+          setNewlyUnlockedCharacterName(undefined);
         }
+      } else {
+        setNewlyUnlockedCharacterName(undefined);
       }
     }
   }, [screen, diff, winScore, winner, field.id, isDailyMode, dailyChallenge, gameMode, currentStage]);
@@ -596,6 +621,9 @@ const AirHockeyGame: React.FC = () => {
             onNextStage={
               gameMode === 'story' && hasNextStage ? handleNextStage : undefined
             }
+            cpuCharacter={gameMode === 'story' ? cpuCharacter : undefined}
+            playerCharacter={gameMode === 'story' ? PLAYER_CHARACTER : undefined}
+            newlyUnlockedCharacterName={newlyUnlockedCharacterName}
           />
         </Transition>
       )}
