@@ -1,40 +1,25 @@
 /**
  * Agile Quiz Sugoroku - チャレンジモード ストレージ
  *
- * サバイバルモードのハイスコア管理
+ * 後方互換用の再エクスポート。
+ * 実装は infrastructure/storage/challenge-repository.ts に移行済み。
  */
+import { LocalStorageAdapter } from './infrastructure/storage/local-storage-adapter';
+import { ChallengeRepository } from './infrastructure/storage/challenge-repository';
 
-const STORAGE_KEY = 'aqs_challenge_highscore';
+const repository = new ChallengeRepository(new LocalStorageAdapter());
 
 /** ハイスコアを読み込む */
 export function loadHighScore(): number {
-  try {
-    const data = localStorage.getItem(STORAGE_KEY);
-    if (!data) return 0;
-    const score = Number(data);
-    return isNaN(score) ? 0 : score;
-  } catch {
-    return 0;
-  }
+  return repository.loadHighScore();
 }
 
 /** ハイスコアを保存する（既存より高い場合のみ） */
 export function saveHighScore(score: number): void {
-  try {
-    const current = loadHighScore();
-    if (score > current) {
-      localStorage.setItem(STORAGE_KEY, String(score));
-    }
-  } catch {
-    // localStorage が利用できない場合は無視
-  }
+  repository.saveHighScore(score);
 }
 
 /** ハイスコアを削除する */
 export function clearHighScore(): void {
-  try {
-    localStorage.removeItem(STORAGE_KEY);
-  } catch {
-    // localStorage が利用できない場合は無視
-  }
+  repository.clear();
 }

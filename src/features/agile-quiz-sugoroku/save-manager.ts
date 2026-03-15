@@ -1,56 +1,33 @@
 /**
  * Agile Quiz Sugoroku - ゲーム途中セーブ/ロード管理
+ *
+ * 後方互換用の再エクスポート。
+ * 実装は infrastructure/storage/save-repository.ts に移行済み。
  */
 import { SaveState } from './types';
+import { LocalStorageAdapter } from './infrastructure/storage/local-storage-adapter';
+import { SaveRepository } from './infrastructure/storage/save-repository';
 
 export const SAVE_KEY = 'aqs_save_state';
-const SAVE_VERSION = 1;
+
+const repository = new SaveRepository(new LocalStorageAdapter());
 
 /** ゲーム状態を保存 */
 export function saveGameState(state: SaveState): void {
-  try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
-  } catch {
-    // localStorage が利用できない場合は無視
-  }
+  repository.save(state);
 }
 
-/** ゲーム状態を読み込み */
+/** ゲーム状態を読み込み（破損データは自動削除） */
 export function loadGameState(): SaveState | undefined {
-  try {
-    const data = localStorage.getItem(SAVE_KEY);
-    if (!data) return undefined;
-
-    const parsed = JSON.parse(data) as SaveState;
-
-    // バージョン不一致は削除
-    if (parsed.version !== SAVE_VERSION) {
-      deleteSaveState();
-      return undefined;
-    }
-
-    return parsed;
-  } catch {
-    // 破損データは削除
-    deleteSaveState();
-    return undefined;
-  }
+  return repository.load();
 }
 
 /** セーブデータを削除 */
 export function deleteSaveState(): void {
-  try {
-    localStorage.removeItem(SAVE_KEY);
-  } catch {
-    // localStorage が利用できない場合は無視
-  }
+  repository.delete();
 }
 
 /** セーブデータが存在するか確認 */
 export function hasSaveState(): boolean {
-  try {
-    return localStorage.getItem(SAVE_KEY) !== null;
-  } catch {
-    return false;
-  }
+  return repository.exists();
 }

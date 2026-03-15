@@ -148,47 +148,54 @@
 - [x] 契約テスト全パス（3スイート45テスト）
 - [x] 全テストパス（344スイート4468テスト、既存テスト影響なし）
 - [x] `npm run ci` パス
-- [ ] コミット作成
+- [x] コミット作成（b24bf2d）
 
 ---
 
 ## フェーズ 4: インフラ層の分離
 
 ### 4-1. Port インターフェースの定義
-- [ ] `infrastructure/storage/storage-adapter.ts` を作成（StoragePort インターフェース）
-- [ ] `infrastructure/audio/audio-port.ts` を作成（AudioPort インターフェース）
-- [ ] `infrastructure/random/random-port.ts` を作成（RandomPort インターフェース）
+- [x] `infrastructure/storage/storage-port.ts` を作成（StoragePort インターフェース、has メソッド含む）
+- [x] `infrastructure/audio/audio-port.ts` を作成（AudioPort インターフェース）
+- [x] `infrastructure/random/random-port.ts` を作成（RandomPort インターフェース）
 
 ### 4-2. Storage Adapter の実装
-- [ ] `infrastructure/storage/local-storage-adapter.ts` を作成
-- [ ] テスト用 `InMemoryStorageAdapter` を作成
+- [x] `infrastructure/storage/local-storage-adapter.ts` を作成
+- [x] テスト用 `InMemoryStorageAdapter` を作成
+- [x] 共通テストスイートで両アダプターの StoragePort 準拠を検証（24テスト）
 
 ### 4-3. Repository パターンの実装
-- [ ] `infrastructure/storage/game-repository.ts`（result-storage.ts から移行）
-- [ ] `infrastructure/storage/history-repository.ts`（history-storage.ts から移行）
-- [ ] `infrastructure/storage/achievement-repository.ts`（achievement-storage.ts から移行）
-- [ ] `infrastructure/storage/save-repository.ts`（save-manager.ts から移行）
-- [ ] `infrastructure/storage/challenge-repository.ts`（challenge-storage.ts から移行）
-- [ ] `infrastructure/storage/daily-quiz-repository.ts`（daily-quiz.ts から移行）
-- [ ] マイグレーション処理の統合（DRY: 共通マイグレーションユーティリティ）
-- [ ] 旧ストレージファイルを再エクスポート用に維持
-- [ ] テストパス確認
+- [x] `infrastructure/storage/game-repository.ts`（result-storage.ts から移行、マイグレーション機能含む）
+- [x] `infrastructure/storage/history-repository.ts`（history-storage.ts から移行）
+- [x] `infrastructure/storage/achievement-repository.ts`（achievement-storage.ts から移行）
+- [x] `infrastructure/storage/save-repository.ts`（save-manager.ts から移行、破損データ自動削除機能含む）
+- [x] `infrastructure/storage/challenge-repository.ts`（challenge-storage.ts から移行）
+- [x] `infrastructure/storage/daily-quiz-repository.ts`（daily-quiz.ts から移行）
+- [x] マイグレーション処理は各リポジトリに内包（game-repository: 旧エンジニアタイプ変換、history-repository: 旧結果移行、save-repository: バージョン管理・破損データ削除）
+- [x] 旧ストレージファイルを再エクスポート用に維持（6ファイル）
+- [x] テストパス確認（6リポジトリ合計52テスト）
 
 ### 4-4. Audio Adapter の実装
-- [ ] `infrastructure/audio/tone-audio-adapter.ts`（audio/sound.ts から移行）
-- [ ] `infrastructure/audio/silent-audio-adapter.ts`（テスト用）
-- [ ] 旧 audio ファイルを再エクスポート用に維持
-- [ ] テストパス確認
+- [x] `infrastructure/audio/tone-audio-adapter.ts`（audio/sound.ts に委譲）
+- [x] `infrastructure/audio/silent-audio-adapter.ts`（テスト用）
+- [x] 旧 audio ファイルを再エクスポート用に維持
+- [x] テストパス確認
 
 ### 4-5. Random Adapter の実装
-- [ ] `infrastructure/random/math-random-adapter.ts` を作成
-- [ ] テスト用 `SeededRandomAdapter` を作成（再現可能なテスト用）
-- [ ] テストパス確認
+- [x] `infrastructure/random/abstract-random-adapter.ts` を作成（共通基底クラス、randomInt/shuffle の DRY 化）
+- [x] `infrastructure/random/math-random-adapter.ts` を作成
+- [x] テスト用 `SeededRandomAdapter` を作成（xorshift32 ベース、再現可能なテスト用）
+- [x] テストパス確認
 
 ### 4-6. フェーズ 4 完了確認
-- [ ] `npm run ci` パス
-- [ ] インフラ層テスト全パス
-- [ ] `domain/` に `localStorage` や `Tone.js` の import がないことを確認
+- [x] `npm run ci` パス（353スイート4546テスト、ビルド成功）
+- [x] インフラ層テスト全パス（9スイート76テスト）
+- [x] `domain/` に `localStorage` や `Tone.js` の import がないことを確認
+- [x] レビュー・リファクタリング実施
+  - randomInt / shuffle の重複を AbstractRandomAdapter 基底クラスで解消
+  - テストのインポートパスを `domain/types` に修正
+  - StoragePort に `has` メソッドを追加し save-manager.ts の localStorage 直接参照を除去
+  - SaveRepository に破損データ自動削除ロジックを追加
 - [ ] コミット作成
 
 ---
@@ -460,8 +467,8 @@
 | 0: 準備 | 10 | 10 | **完了** |
 | 1: 型定義分割 | 13 | 10 | **完了**（レビュー指摘3件は後続フェーズで対応） |
 | 2: ドメイン層抽出 | 39 | 39 | **完了** |
-| 3: DbC 導入 | 21 | 19 | **ほぼ完了**（CI確認・コミット待ち） |
-| 4: インフラ層分離 | 25 | 0 | 未着手 |
+| 3: DbC 導入 | 21 | 21 | **完了** |
+| 4: インフラ層分離 | 29 | 28 | **完了**（コミット待ち） |
 | 5: アプリケーション層 | 11 | 0 | 未着手 |
 | 6: 定数分割 | 13 | 0 | 未着手 |
 | 7: プレゼンテーション層 | 34 | 0 | 未着手 |
