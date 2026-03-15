@@ -27,19 +27,25 @@ export type {
 } from './quiz-types';
 
 export type {
-  DerivedStats,
   ClassifyStats,
   EngineerType,
   TeamType,
-  Grade,
-  RadarDataPoint,
-  SavedIncorrectQuestion,
-  SavedGameResult,
-  GameHistoryEntry,
+} from './team-types';
+
+export type {
   AchievementRarity,
   AchievementDefinition,
   AchievementContext,
   AchievementProgress,
+  SavedIncorrectQuestion,
+  SavedGameResult,
+  GameHistoryEntry,
+} from './achievement-types';
+
+export type {
+  DerivedStats,
+  Grade,
+  RadarDataPoint,
   Difficulty,
   DifficultyConfig,
   ChallengeResult,

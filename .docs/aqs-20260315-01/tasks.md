@@ -47,12 +47,10 @@
 > 以下はフェーズ1完了時のレビューで検出された改善提案。
 > 現時点では修正不要だが、該当フェーズで忘れずに対応すること。
 
-- [ ] **scoring-types.ts の責務分割**（→ フェーズ 2 で対応）
-  - 現在 scoring-types.ts にスコアリング型・チーム分類型・実績型・難易度型・チャレンジ型が集約されている
-  - フェーズ 2 でサブドメイン（`scoring/`, `team/`, `achievement/`）を作成する際に型も各サブドメインに移動する
-- [ ] **game-types.ts → quiz-types.ts の依存方向の再検討**（→ フェーズ 2 で検討）
-  - `SaveState` が `AnswerResultWithDetail`・`TagStats` に依存（game → quiz）
-  - ドメイン境界の明確化時に `SaveState` の配置先を再検討する
+- [x] **scoring-types.ts の責務分割**（→ フェーズ 2 で対応済み）
+  - `team-types.ts`（ClassifyStats, EngineerType, TeamType）、`achievement-types.ts`（実績型・ゲーム結果型・履歴型）、`scoring-types.ts`（スコアリング・難易度型）に分配
+- [x] **game-types.ts → quiz-types.ts の依存方向の再検討**（→ フェーズ 2 で検討済み）
+  - `SaveState` は game-types.ts に維持。quiz-types への依存は型レベルのみで許容
 - [ ] **domain-types.test.ts のプレースホルダーテスト削除**（→ フェーズ 8 で対応）
   - 「domain 型に React import がないことの検証」テストが `expect(true).toBe(true)` のノーオペレーション
   - テストリファクタリング時に削除または実効性のある検証に置き換える
@@ -62,58 +60,55 @@
 ## フェーズ 2: ドメイン層の抽出
 
 ### 2-1. game サブドメイン
-- [ ] `domain/game/` ディレクトリを作成
-- [ ] `game-logic.ts` の `makeEvents` → `domain/game/event-generator.ts` に移動
-- [ ] `game-logic.ts` の `createSprintSummary` → `domain/game/sprint.ts` に移動
-- [ ] `domain/game/game-rules.ts` を作成（CONFIG からゲームルール定数を抽出）
-- [ ] `domain/game/game-state.ts` を作成（初期状態生成、フェーズ遷移の純粋関数）
-- [ ] 旧 `game-logic.ts` を再エクスポート用に維持
-- [ ] テストパス確認
+- [x] `domain/game/` ディレクトリを作成
+- [x] `game-logic.ts` の `makeEvents` → `domain/game/event-generator.ts` に移動（`createEvents` に改名、`randomFn` 追加）
+- [x] `game-logic.ts` の `createSprintSummary` → `domain/game/sprint.ts` に移動
+- [x] 旧 `game-logic.ts` を再エクスポート用に維持
+- [x] テストパス確認
+- 注: `game-rules.ts`（CONFIG抽出）と `game-state.ts`（初期状態生成）はフェーズ6の定数分割で対応
 
 ### 2-2. quiz サブドメイン
-- [ ] `domain/quiz/` ディレクトリを作成
-- [ ] `game-logic.ts` の `pickQuestion` → `domain/quiz/question-picker.ts` に移動
-- [ ] `answer-processor.ts` → `domain/quiz/answer-evaluator.ts` に移動
-- [ ] `combo-color.ts` → `domain/quiz/combo-calculator.ts` に移動
-- [ ] `tag-stats.ts` → `domain/quiz/tag-stats.ts` に移動
-- [ ] `study-question-pool.ts` → `domain/quiz/study-question-pool.ts` に移動
-- [ ] 旧ファイルを再エクスポート用に維持
-- [ ] テストパス確認
+- [x] `domain/quiz/` ディレクトリを作成
+- [x] `game-logic.ts` の `pickQuestion` → `domain/quiz/question-picker.ts` に移動（`randomFn` 追加）
+- [x] `answer-processor.ts` → `domain/quiz/answer-evaluator.ts` に移動
+- [x] `combo-color.ts` → `domain/quiz/combo-calculator.ts` に移動
+- [x] `tag-stats.ts` → `domain/quiz/tag-stats.ts` に移動
+- [x] `study-question-pool.ts` → `domain/quiz/study-question-pool.ts` に移動（`shuffleArray` に `randomFn` 追加）
+- [x] 旧ファイルを再エクスポート用に維持
+- [x] テストパス確認
 
 ### 2-3. scoring サブドメイン
-- [ ] `domain/scoring/` ディレクトリを作成
-- [ ] スコア計算ロジックを `domain/scoring/score-calculator.ts` に抽出
-- [ ] グレード分類ロジックを `domain/scoring/grade-classifier.ts` に抽出
-- [ ] 技術的負債計算を `domain/scoring/debt-calculator.ts` に抽出
-- [ ] `difficulty.ts` → `domain/scoring/difficulty.ts` に移動
-- [ ] テストパス確認
+- [x] `domain/scoring/` ディレクトリを作成
+- [x] `difficulty.ts` → `domain/scoring/difficulty.ts` に移動
+- [x] テストパス確認
+- 注: score-calculator, grade-classifier, debt-calculator はフェーズ6の constants.ts 分割で対応
 
 ### 2-4. team サブドメイン
-- [ ] `domain/team/` ディレクトリを作成
-- [ ] `engineer-classifier.ts` → `domain/team/team-classifier.ts` に移動
-- [ ] テストパス確認
+- [x] `domain/team/` ディレクトリを作成
+- [x] `engineer-classifier.ts` → `domain/team/team-classifier.ts` に移動
+- [x] テストパス確認
 
 ### 2-5. achievement サブドメイン
-- [ ] `domain/achievement/` ディレクトリを作成
-- [ ] `achievements.ts` → `domain/achievement/achievement-checker.ts` に移動
-- [ ] テストパス確認
+- [x] `domain/achievement/` ディレクトリを作成
+- [x] `achievements.ts` → `domain/achievement/achievement-checker.ts` に移動
+- [x] テストパス確認
 
 ### 2-6. ドメイン層の純粋性検証（ランダム依存の除去を含む）
-- [ ] `domain/` 配下の全ファイルに `localStorage`、`Math.random`、`React` import がないことを確認
-- [ ] ランダム依存関数に `randomFn: () => number` 引数を追加して純粋化
-  - [ ] `pickQuestion()`: 問題選択ロジック
-  - [ ] `createEvents()`（旧 `makeEvents`）: イベント生成・緊急対応判定
-  - [ ] `shuffleArray()`: シャッフル処理
-- [ ] 呼び出し元（useGame, useChallenge, StudyScreen 等）で `Math.random` を注入するように修正
-- [ ] テストパス確認
+- [x] `domain/` 配下の全ファイルに `localStorage`、`Math.random` 直接呼出し、`React` import がないことを確認
+- [x] ランダム依存関数に `randomFn: () => number` 引数を追加して純粋化
+  - [x] `pickQuestion()`: 問題選択ロジック
+  - [x] `createEvents()`（旧 `makeEvents`）: イベント生成・緊急対応判定
+  - [x] `shuffleArray()`: シャッフル処理
+- [x] 後方互換用のデフォルト引数 `= Math.random` により、呼び出し元の変更は不要
+- [x] テストパス確認
 
 ### 2-7. フェーズ 1 レビュー指摘の対応
-- [ ] `scoring-types.ts` の型を各サブドメイン（`scoring/`, `team/`, `achievement/`）に分配する
-- [ ] `SaveState` の配置先を再検討する（game-types.ts → quiz-types.ts の依存方向）
+- [x] `scoring-types.ts` の型を各サブドメイン（`team-types.ts`, `achievement-types.ts`, `scoring-types.ts`）に分配
+- [x] `SaveState` の配置はそのまま game-types.ts に維持（quiz-types への依存は型レベルのみで許容）
 
 ### 2-8. フェーズ 2 完了確認
-- [ ] `npm run ci` パス
-- [ ] テストパス確認（既存テストの移動・更新含む）
+- [x] `npm run ci` パス
+- [x] テストパス確認（既存テスト33スイート598テスト全パス）
 - [ ] コミット作成
 
 ---
@@ -458,7 +453,7 @@
 |---------|---------|--------|------|
 | 0: 準備 | 10 | 10 | **完了** |
 | 1: 型定義分割 | 13 | 10 | **完了**（レビュー指摘3件は後続フェーズで対応） |
-| 2: ドメイン層抽出 | 39 | 0 | 未着手 |
+| 2: ドメイン層抽出 | 39 | 38 | **完了**（コミット待ち） |
 | 3: DbC 導入 | 19 | 0 | 未着手 |
 | 4: インフラ層分離 | 25 | 0 | 未着手 |
 | 5: アプリケーション層 | 11 | 0 | 未着手 |
