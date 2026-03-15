@@ -6,7 +6,7 @@
 |--------|-----------|---------|--------|
 | P2-00 画像アセット準備 | [x] 完了 | ✅ | 2026-03-15 |
 | P2-01 データ層整備 | [x] 完了 | — | 2026-03-15 |
-| P2-02 アンロックシステム | [ ] 未着手 | — | - |
+| P2-02 アンロックシステム | [x] 完了 | — | 2026-03-15 |
 | P2-03 キャラクター図鑑画面 | [ ] 未着手 | ✅ ※1 | - |
 | P2-04 キャラクタープロフィールカード | [ ] 未着手 | ✅ ※2 | - |
 | P2-05 リザルト画面改修 | [ ] 未着手 | ✅ ※2 | - |
@@ -106,40 +106,40 @@
 ## P2-02: アンロックシステム
 
 ### コアロジック（core/dex.ts）
-- [ ] `core/dex.ts` を新規作成
-- [ ] `DEFAULT_DEX_PROGRESS` 定数を定義（初期解放キャラ: player, yuu, rookie, regular, ace）
-- [ ] `loadDexProgress()` を実装 — localStorage からの読み込み + try-catch + バリデーション
-- [ ] `saveDexProgress()` を実装 — localStorage への保存
-- [ ] `resetDexProgress()` を実装 — 図鑑進行のリセット
-- [ ] `checkNewUnlocks()` を実装 — ストーリー進行状態から新規アンロック対象を判定
-- [ ] `markAsViewed()` を実装 — 新規アンロック通知の既読処理
+- [x] `core/dex.ts` を新規作成
+- [x] `DEFAULT_DEX_PROGRESS` 定数を定義（初期解放キャラ: player, yuu, rookie, regular, ace）
+- [x] `loadDexProgress()` を実装 — localStorage からの読み込み + try-catch + バリデーション
+- [x] `saveDexProgress()` を実装 — localStorage への保存
+- [x] `resetDexProgress()` を実装 — 図鑑進行のリセット
+- [x] `checkNewUnlocks()` を実装 — ストーリー進行状態から新規アンロック対象を判定
+- [x] `markAsViewed()` を実装 — 新規アンロック通知の既読処理
 
 ### カスタムフック（hooks/useCharacterDex.ts）
-- [ ] `hooks/useCharacterDex.ts` を新規作成
-- [ ] `dexEntries` の提供（全図鑑エントリ）
-- [ ] `unlockedIds` の状態管理
-- [ ] `newlyUnlockedIds` の状態管理
-- [ ] `completionRate` の計算
-- [ ] `checkAndUnlock()` アクションの実装
-- [ ] `markViewed()` アクションの実装
-- [ ] `isUnlocked()` 判定関数の実装
-- [ ] `getNewUnlockCount()` 取得関数の実装
+- [x] `hooks/useCharacterDex.ts` を新規作成
+- [x] `dexEntries` の提供（全図鑑エントリ）
+- [x] `unlockedIds` の状態管理
+- [x] `newlyUnlockedIds` の状態管理
+- [x] `completionRate` の計算
+- [x] `checkAndUnlock()` アクションの実装
+- [x] `markViewed()` アクションの実装
+- [x] `isUnlocked()` 判定関数の実装
+- [x] `getNewUnlockCount()` 取得関数の実装
 
 ### テスト
-- [ ] `dex.test.ts` を作成
-  - [ ] `loadDexProgress()` の正常読み込みテスト
-  - [ ] `loadDexProgress()` の localStorage 破損時フォールバックテスト
-  - [ ] `saveDexProgress()` の保存テスト
-  - [ ] `resetDexProgress()` のリセットテスト
-  - [ ] `checkNewUnlocks()` のアンロック判定テスト — 新規アンロックあり
-  - [ ] `checkNewUnlocks()` のアンロック判定テスト — 既にアンロック済み
-  - [ ] `checkNewUnlocks()` のアンロック判定テスト — 条件未達
-  - [ ] `markAsViewed()` の既読処理テスト
-- [ ] `useCharacterDex.test.ts` を作成
-  - [ ] 初期状態のテスト（初期解放キャラがアンロック済み）
-  - [ ] `checkAndUnlock()` でストーリークリア時にアンロックされるテスト
-  - [ ] `markViewed()` で新規アンロック通知が消えるテスト
-  - [ ] `completionRate` が正しく計算されるテスト
+- [x] `dex.test.ts` を作成
+  - [x] `loadDexProgress()` の正常読み込みテスト
+  - [x] `loadDexProgress()` の localStorage 破損時フォールバックテスト
+  - [x] `saveDexProgress()` の保存テスト
+  - [x] `resetDexProgress()` のリセットテスト
+  - [x] `checkNewUnlocks()` のアンロック判定テスト — 新規アンロックあり
+  - [x] `checkNewUnlocks()` のアンロック判定テスト — 既にアンロック済み
+  - [x] `checkNewUnlocks()` のアンロック判定テスト — 条件未達
+  - [x] `markAsViewed()` の既読処理テスト
+- [x] `useCharacterDex.test.ts` を作成
+  - [x] 初期状態のテスト（初期解放キャラがアンロック済み）
+  - [x] `checkAndUnlock()` でストーリークリア時にアンロックされるテスト
+  - [x] `markViewed()` で新規アンロック通知が消えるテスト
+  - [x] `completionRate` が正しく計算されるテスト
 
 ---
 
