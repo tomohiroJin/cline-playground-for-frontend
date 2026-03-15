@@ -4,45 +4,46 @@
 
 ### P1-1: 型ファイルの作成と分割
 
-- [ ] **P1-1-1**: `domain/types/world.ts` を作成
+- [x] **P1-1-1**: `domain/types/world.ts` を作成
   - TileType, TileTypeValue, GameMap, Position, Direction, DirectionValue
   - MazeConfig, Rectangle, Room, Corridor
-- [ ] **P1-1-2**: `domain/types/player.ts` を作成
+  - ExplorationState, ExplorationStateValue, AutoMapState（マップ関連のため追加）
+- [x] **P1-1-2**: `domain/types/player.ts` を作成
   - Player, PlayerClass, PlayerClassValue, ClassConfig, VisibilityType
   - PlayerStats, StatType, StatTypeValue, LevelUpChoice
-  - StageCarryOver
-- [ ] **P1-1-3**: `domain/types/enemy.ts` を作成
+  - ※ StageCarryOver は stage.ts に配置（ステージ間引き継ぎのため）
+- [x] **P1-1-3**: `domain/types/enemy.ts` を作成
   - Enemy, EnemyType, EnemyTypeValue, EnemyState, EnemyStateValue
-- [ ] **P1-1-4**: `domain/types/gimmicks.ts` を作成
+- [x] **P1-1-4**: `domain/types/gimmicks.ts` を作成
   - Trap, TrapType, TrapTypeValue, TrapState, TrapStateValue
   - Wall, WallType, WallTypeValue, WallState, WallStateValue
-- [ ] **P1-1-5**: `domain/types/items.ts` を作成
+- [x] **P1-1-5**: `domain/types/items.ts` を作成
   - Item, ItemType, ItemTypeValue
-- [ ] **P1-1-6**: `domain/types/stage.ts` を作成
+- [x] **P1-1-6**: `domain/types/stage.ts` を作成
   - StageNumber, StageConfig, GimmickPlacementConfig, StrategicPatternLimits
-  - StageRewardType, StageRewardHistory, StoryScene, StorySceneSlide
-- [ ] **P1-1-7**: `domain/types/game-state.ts` を作成
+  - StageRewardType, StageRewardHistory, StageCarryOver, StoryScene, StorySceneSlide
+- [x] **P1-1-7**: `domain/types/game-state.ts` を作成
   - GameState, ScreenState, ScreenStateValue, CombatState
   - Rating, RatingValue, EpilogueText, GameRecord, BestRecords
-- [ ] **P1-1-8**: `domain/types/feedback.ts` を作成
+- [x] **P1-1-8**: `domain/types/feedback.ts` を作成
   - FeedbackType, FeedbackTypeValue, FeedbackEffect
   - TutorialStepType, TutorialStepTypeValue, TutorialStep, TutorialState
   - TimerState, TimerStateValue, GameTimer
-- [ ] **P1-1-9**: `domain/types/audio.ts` を作成
+- [x] **P1-1-9**: `domain/types/audio.ts` を作成
   - AudioSettings, DEFAULT_AUDIO_SETTINGS
   - SoundEffectType, SoundEffectTypeValue, BgmType, BgmTypeValue
   - SoundConfig, MelodyNote, StoryImageEntry
 
 ### P1-2: barrel export の設定
 
-- [ ] **P1-2-1**: `domain/types/index.ts` を作成（全型ファイルの re-export）
-- [ ] **P1-2-2**: 既存 `types.ts` を barrel re-export に変更（`export * from './domain/types'`）
+- [x] **P1-2-1**: `domain/types/index.ts` を作成（全型ファイルの re-export）
+- [x] **P1-2-2**: 既存 `types.ts` を barrel re-export に変更（`export * from './domain/types'`）
 
 ### P1-3: import パスの更新
 
-- [ ] **P1-3-1**: 全ソースファイルの import パスを確認（既存 `types.ts` 経由で動作するか検証）
-- [ ] **P1-3-2**: TypeScript コンパイルが通ることを確認（`npm run typecheck`）
-- [ ] **P1-3-3**: 全テストが通ることを確認（`npm test`）
+- [x] **P1-3-1**: 全ソースファイルの import パスを確認（既存 `types.ts` 経由で動作するか検証）
+- [x] **P1-3-2**: TypeScript コンパイルが通ることを確認（`npm run typecheck`）
+- [x] **P1-3-3**: 全テストが通ることを確認（`npm test`）— 341スイート / 4424テスト全パス
 
 ---
 
