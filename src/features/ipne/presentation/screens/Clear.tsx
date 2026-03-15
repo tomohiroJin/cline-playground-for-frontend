@@ -23,10 +23,12 @@ import {
   getEpilogueText,
   getGameOverText,
   getRatingColor,
+} from '../../domain/services/endingService';
+import {
   getEndingImage,
   getGameOverImage,
   getEndingVideo,
-} from '../../domain/services/endingService';
+} from '../services/endingAssetProvider';
 import { formatTimeShort } from '../../application/services/timerService';
 
 /**

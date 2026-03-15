@@ -4,6 +4,7 @@
 import { describe, test, expect } from '@jest/globals';
 import { calculateDistances, placeStart, placeGoal, isConnected } from '../domain/services/pathfinderService';
 import { GameMap, TileType, Room } from '../types';
+import { MockRandomProvider } from './mocks/MockRandomProvider';
 
 // テスト用の簡単なマップ（5x5）
 const createTestMap = (): GameMap => [
@@ -63,7 +64,8 @@ describe('pathfinder', () => {
     test('スタートが部屋の中心に配置される', () => {
       const rooms = createTestRooms();
 
-      const start = placeStart(rooms);
+      const rng = new MockRandomProvider(0.5);
+      const start = placeStart(rooms, rng);
 
       // 部屋の中心付近に配置されること
       expect(start.x).toBeGreaterThanOrEqual(1);

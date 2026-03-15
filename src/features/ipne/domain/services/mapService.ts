@@ -4,6 +4,7 @@
  */
 
 import { GameMap, MazeConfig, Room, TileType } from '../types';
+import { RandomProvider } from '../ports';
 import { generateMaze } from './mazeGenerator';
 import { placeStart, placeGoal } from './pathfinderService';
 
@@ -27,10 +28,11 @@ const DEFAULT_CONFIG: MazeConfig = {
  * @returns 生成された迷路マップ（スタートとゴール配置済み）
  */
 export const createMapWithRooms = (
-  config: MazeConfig = DEFAULT_CONFIG
+  config: MazeConfig = DEFAULT_CONFIG,
+  random: RandomProvider
 ): { map: GameMap; rooms: Room[] } => {
   // BSPアルゴリズムで迷路生成（部屋情報も取得）
-  const { grid: maze, rooms } = generateMaze(config);
+  const { grid: maze, rooms } = generateMaze(config, random);
 
   // BSP生成の部屋を直接使用（通路は含まれない）
   // 部屋が見つからない場合のみフォールバック
@@ -70,7 +72,7 @@ export const createMapWithRooms = (
   }
 
   // スタート位置を配置（外周付近の部屋を優先）
-  const startPos = placeStart(validRooms, maze[0].length, maze.length);
+  const startPos = placeStart(validRooms, random, maze[0].length, maze.length);
 
   // ゴール位置を配置（スタートから最遠地点）
   const goalPos = placeGoal(maze, startPos);
@@ -85,8 +87,8 @@ export const createMapWithRooms = (
 /**
  * 迷路マップを自動生成する
  */
-export const createMap = (config: MazeConfig = DEFAULT_CONFIG): GameMap => {
-  return createMapWithRooms(config).map;
+export const createMap = (config: MazeConfig = DEFAULT_CONFIG, random: RandomProvider): GameMap => {
+  return createMapWithRooms(config, random).map;
 };
 
 /**

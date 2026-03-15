@@ -3,6 +3,7 @@
  */
 import { Enemy, Item, ItemType, ItemTypeValue, Player, Position, Room } from '../types';
 import { healPlayer, getEffectiveHeal } from './player';
+import { IdGenerator, RandomProvider } from '../ports';
 
 const ITEM_CONFIGS = {
   [ItemType.HEALTH_SMALL]: { healAmount: 3 },
@@ -22,21 +23,10 @@ const SPAWN_CONFIG = {
   [ItemType.KEY]: 1,
 } as const;
 
-let itemIdCounter = 0;
-
-export const generateItemId = (): string => {
-  itemIdCounter += 1;
-  return `item-${itemIdCounter}`;
-};
-
-export const resetItemIdCounter = (): void => {
-  itemIdCounter = 0;
-};
-
-export const createItem = (type: ItemTypeValue, x: number, y: number): Item => {
+export const createItem = (type: ItemTypeValue, x: number, y: number, idGenerator: IdGenerator): Item => {
   const config = ITEM_CONFIGS[type];
   return {
-    id: generateItemId(),
+    id: idGenerator.generateItemId(),
     x,
     y,
     type,
@@ -44,38 +34,30 @@ export const createItem = (type: ItemTypeValue, x: number, y: number): Item => {
   };
 };
 
-export const createHealthSmall = (x: number, y: number): Item => {
-  return createItem(ItemType.HEALTH_SMALL, x, y);
+export const createHealthSmall = (x: number, y: number, idGenerator: IdGenerator): Item => {
+  return createItem(ItemType.HEALTH_SMALL, x, y, idGenerator);
 };
 
-export const createHealthLarge = (x: number, y: number): Item => {
-  return createItem(ItemType.HEALTH_LARGE, x, y);
+export const createHealthLarge = (x: number, y: number, idGenerator: IdGenerator): Item => {
+  return createItem(ItemType.HEALTH_LARGE, x, y, idGenerator);
 };
 
-export const createHealthFull = (x: number, y: number): Item => {
-  return createItem(ItemType.HEALTH_FULL, x, y);
+export const createHealthFull = (x: number, y: number, idGenerator: IdGenerator): Item => {
+  return createItem(ItemType.HEALTH_FULL, x, y, idGenerator);
 };
 
-export const createLevelUpItem = (x: number, y: number): Item => {
-  return createItem(ItemType.LEVEL_UP, x, y);
+export const createLevelUpItem = (x: number, y: number, idGenerator: IdGenerator): Item => {
+  return createItem(ItemType.LEVEL_UP, x, y, idGenerator);
 };
 
-export const createMapRevealItem = (x: number, y: number): Item => {
-  return createItem(ItemType.MAP_REVEAL, x, y);
+export const createMapRevealItem = (x: number, y: number, idGenerator: IdGenerator): Item => {
+  return createItem(ItemType.MAP_REVEAL, x, y, idGenerator);
 };
 
-export const createKeyItem = (x: number, y: number): Item => {
-  return createItem(ItemType.KEY, x, y);
+export const createKeyItem = (x: number, y: number, idGenerator: IdGenerator): Item => {
+  return createItem(ItemType.KEY, x, y, idGenerator);
 };
 
-const shuffle = <T>(items: T[]): T[] => {
-  const copied = [...items];
-  for (let i = copied.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copied[i], copied[j]] = [copied[j], copied[i]];
-  }
-  return copied;
-};
 
 const collectTiles = (rooms: Room[]): Position[] => {
   const tiles: Position[] = [];
@@ -115,9 +97,11 @@ export const spawnItems = (
   rooms: Room[],
   enemies: Enemy[],
   excluded: Position[],
+  idGenerator: IdGenerator,
+  random: RandomProvider,
   goalPos?: Position
 ): Item[] => {
-  const tiles = shuffle(collectTiles(rooms));
+  const tiles = random.shuffle(collectTiles(rooms));
   const items: Item[] = [];
   const maxItems = getTotalMaxItems();
 
@@ -138,7 +122,7 @@ export const spawnItems = (
         if (distance < minDistanceFromGoal) continue;
       }
 
-      items.push(createItem(type, tile.x, tile.y));
+      items.push(createItem(type, tile.x, tile.y, idGenerator));
       if (items.filter(item => item.type === type).length >= count) {
         return;
       }

@@ -52,6 +52,11 @@ import {
   playStageGameBgm,
 } from '../../audio';
 import { useSyncedState } from '../state/useSyncedState';
+import { SequentialIdGenerator } from '../../infrastructure/id/SequentialIdGenerator';
+import { MathRandomProvider } from '../../infrastructure/random/RandomProvider';
+
+const idGenerator = new SequentialIdGenerator();
+const randomProvider = new MathRandomProvider();
 
 /**
  * ゲーム状態管理フックの戻り値型定義
@@ -197,6 +202,9 @@ export function useGameState(): GameState {
     existingPlayer?: Player,
     existingTimer?: GameTimer
   ) => {
+    // ステージ開始時にIDカウンタをリセット（ID追跡の予測可能性を確保）
+    idGenerator.reset();
+
     const startPos = findStartPosition(newMap);
     const goal = findGoalPosition(newMap);
 
@@ -246,15 +254,15 @@ export function useGameState(): GameState {
 
     // ステージ設定に基づいて敵をスポーン
     const spawnedEnemies = stageConfig
-      ? spawnEnemiesForStage(rooms, startPos, goal, stageConfig)
-      : spawnEnemies(rooms, startPos, goal);
-    const spawnedItems = spawnItems(rooms, spawnedEnemies, [startPos, goal], goal);
+      ? spawnEnemiesForStage(rooms, startPos, goal, stageConfig, idGenerator, randomProvider)
+      : spawnEnemies(rooms, startPos, goal, idGenerator, randomProvider);
+    const spawnedItems = spawnItems(rooms, spawnedEnemies, [startPos, goal], idGenerator, randomProvider, goal);
     setEnemies(spawnedEnemies);
     setItems(spawnedItems);
 
     // ステージ設定に基づいてギミックを配置
     const gimmickConfig = stageConfig?.gimmicks;
-    const gimmickResult = placeGimmicks(rooms, newMap, [startPos, goal], gimmickConfig, startPos, goal);
+    const gimmickResult = placeGimmicks(rooms, newMap, [startPos, goal], idGenerator, randomProvider, gimmickConfig, startPos, goal);
     setTraps(gimmickResult.traps);
     setWalls(gimmickResult.walls);
 
@@ -275,7 +283,7 @@ export function useGameState(): GameState {
     existingTimer?: GameTimer
   ) => {
     const stageConfig = getStageConfig(stage);
-    const result = createMapWithRooms(stageConfig.maze);
+    const result = createMapWithRooms(stageConfig.maze, randomProvider);
     setupGameState(result.map, result.rooms, playerClass, stageConfig, existingPlayer, existingTimer);
   }, [setupGameState]);
 

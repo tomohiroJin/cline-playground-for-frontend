@@ -1050,3 +1050,16 @@ export const setupStage = (
 | 循環的複雑度 | 不明 | 10以内 |
 | テストカバレッジ（domain） | 推定50% | 85%以上 |
 | テストカバレッジ（application） | 推定40% | 85%以上 |
+
+---
+
+## 12. Phase 間レビュー残課題
+
+各 Phase のレビューで発見され、後続 Phase で対応すべき課題を記録する。
+
+### 12.1 Phase 3 → Phase 4 への引き継ぎ
+
+| ID | 重要度 | 内容 | 対応先タスク |
+|-----|--------|------|------------|
+| R3-1 | Medium | `resolvePlayerDamage` の戻り値に `actualDamage` が含まれない。`DamageResult.actualDamage` を呼び出し元に伝播させ、フィードバック表示（ダメージ数値）に使えるようにする | P4-4b-1 |
+| R3-2 | Medium | 後方互換シングルトン `MATH_RANDOM_PROVIDER` / `SYSTEM_CLOCK_PROVIDER` が残存。`recordStorage.ts` を ClockProvider DI に変更後、不要なシングルトンを削除する | P4-4b-2 |

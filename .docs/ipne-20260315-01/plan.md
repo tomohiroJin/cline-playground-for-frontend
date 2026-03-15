@@ -567,3 +567,17 @@ Phase 7 (統合・シナリオテスト) ← Phase 3-6 の DI 基盤に依存（
 | マジックナンバーの数 | 20+ | 0（定数化済み） |
 | テストカバレッジ（domain） | 推定50% | 85%以上 |
 | 統合・シナリオテスト数 | 0 | 12以上 |
+
+---
+
+## Phase 間レビュー残課題トラッカー
+
+各 Phase のレビューで発見され、即時対応せず後続 Phase に引き継ぐ課題を追跡する。
+新しい残課題が発生した場合はここに追記し、対応完了時にチェックを入れる。
+
+### Phase 3 → Phase 4
+
+- [ ] **R3-1**: `resolvePlayerDamage` の戻り値に `actualDamage` を追加（→ P4-4b-1）
+  - `damagePlayer()` が返す `DamageResult.actualDamage` が `resolvePlayerDamage` で捨てられており、フィードバック表示に使えない
+- [ ] **R3-2**: 後方互換シングルトン `MATH_RANDOM_PROVIDER` / `SYSTEM_CLOCK_PROVIDER` の整理（→ P4-4b-2）
+  - `recordStorage.ts` を `ClockProvider` DI に変更後、不要になったシングルトンを削除する

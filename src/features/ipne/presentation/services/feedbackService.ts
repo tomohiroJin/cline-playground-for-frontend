@@ -5,6 +5,7 @@
  */
 
 import { FeedbackEffect, FeedbackType, FeedbackTypeValue } from '../../types';
+import { IdGenerator } from '../../domain/ports';
 
 /** フィードバック設定 */
 export const FEEDBACK_CONFIGS: Record<
@@ -54,20 +55,12 @@ export const FEEDBACK_CONFIGS: Record<
   },
 };
 
-let feedbackIdCounter = 0;
-
-/**
- * フィードバックIDカウンタをリセットする（テスト用）
- */
-export function resetFeedbackIdCounter(): void {
-  feedbackIdCounter = 0;
-}
-
 /**
  * 新しいフィードバックエフェクトを作成する
  * @param type フィードバックの種類
  * @param x X座標
  * @param y Y座標
+ * @param idGenerator ID生成器
  * @param text 表示テキスト（オプション）
  * @param now 現在時刻（ミリ秒）- テスト用にオプショナル
  * @returns フィードバックエフェクト
@@ -76,14 +69,14 @@ export function createFeedback(
   type: FeedbackTypeValue,
   x: number,
   y: number,
+  idGenerator: IdGenerator,
   text?: string,
   now: number = Date.now()
 ): FeedbackEffect {
-  feedbackIdCounter += 1;
   const config = FEEDBACK_CONFIGS[type];
 
   return {
-    id: `feedback-${feedbackIdCounter}`,
+    id: idGenerator.generateFeedbackId(),
     type,
     x,
     y,
@@ -106,9 +99,10 @@ export function createDamageFeedback(
   x: number,
   y: number,
   damage: number,
+  idGenerator: IdGenerator,
   now: number = Date.now()
 ): FeedbackEffect {
-  return createFeedback(FeedbackType.DAMAGE, x, y, `-${damage}`, now);
+  return createFeedback(FeedbackType.DAMAGE, x, y, idGenerator, `-${damage}`, now);
 }
 
 /**
@@ -123,9 +117,10 @@ export function createHealFeedback(
   x: number,
   y: number,
   healAmount: number,
+  idGenerator: IdGenerator,
   now: number = Date.now()
 ): FeedbackEffect {
-  return createFeedback(FeedbackType.HEAL, x, y, `+${healAmount}`, now);
+  return createFeedback(FeedbackType.HEAL, x, y, idGenerator, `+${healAmount}`, now);
 }
 
 /**
@@ -140,9 +135,10 @@ export function createLevelUpFeedback(
   x: number,
   y: number,
   level: number,
+  idGenerator: IdGenerator,
   now: number = Date.now()
 ): FeedbackEffect {
-  return createFeedback(FeedbackType.LEVEL_UP, x, y, `Level ${level}!`, now);
+  return createFeedback(FeedbackType.LEVEL_UP, x, y, idGenerator, `Level ${level}!`, now);
 }
 
 /**
@@ -157,9 +153,10 @@ export function createTrapFeedback(
   x: number,
   y: number,
   trapName: string,
+  idGenerator: IdGenerator,
   now: number = Date.now()
 ): FeedbackEffect {
-  return createFeedback(FeedbackType.TRAP, x, y, trapName, now);
+  return createFeedback(FeedbackType.TRAP, x, y, idGenerator, trapName, now);
 }
 
 /**
@@ -174,9 +171,10 @@ export function createItemPickupFeedback(
   x: number,
   y: number,
   itemName: string,
+  idGenerator: IdGenerator,
   now: number = Date.now()
 ): FeedbackEffect {
-  return createFeedback(FeedbackType.ITEM_PICKUP, x, y, itemName, now);
+  return createFeedback(FeedbackType.ITEM_PICKUP, x, y, idGenerator, itemName, now);
 }
 
 /**

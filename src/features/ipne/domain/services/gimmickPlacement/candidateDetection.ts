@@ -1,10 +1,7 @@
 import { calculateDistances } from '../pathfinderService';
 import { GameMap, Position, Room, TileType } from '../../types';
 import { PenetrationCandidate, WallSegment } from './types';
-import { shuffle } from '../../../../../utils/math-utils';
-
-// 後方互換のため shuffleArray を shuffle のエイリアスとして export
-export const shuffleArray = shuffle;
+import { RandomProvider } from '../../ports';
 
 export const collectRoomTiles = (rooms: Room[]): Position[] => {
   const tiles: Position[] = [];
@@ -231,18 +228,18 @@ export const findPenetrationShortcuts = (
   return candidates.sort((a, b) => b.saving - a.saving);
 };
 
-export const detectTrapCandidateTiles = (rooms: Room[], grid: GameMap): Position[] => {
-  const corridorTiles = shuffleArray(collectCorridorTiles(grid, rooms));
-  const roomTiles = shuffleArray(collectRoomTiles(rooms));
+export const detectTrapCandidateTiles = (rooms: Room[], grid: GameMap, random: RandomProvider): Position[] => {
+  const corridorTiles = random.shuffle(collectCorridorTiles(grid, rooms));
+  const roomTiles = random.shuffle(collectRoomTiles(rooms));
   return [...corridorTiles, ...roomTiles];
 };
 
-export const detectWallPlacementCandidates = (grid: GameMap): {
+export const detectWallPlacementCandidates = (grid: GameMap, random: RandomProvider): {
   segments: WallSegment[];
   shortcutPositions: Position[];
   adjacentPositions: Position[];
 } => ({
-  segments: shuffleArray(collectContinuousWallSegments(grid, 2)),
-  shortcutPositions: shuffleArray(collectShortcutWallPositions(grid)),
-  adjacentPositions: shuffleArray(collectWallAdjacentTiles(grid)),
+  segments: random.shuffle(collectContinuousWallSegments(grid, 2)),
+  shortcutPositions: random.shuffle(collectShortcutWallPositions(grid)),
+  adjacentPositions: random.shuffle(collectWallAdjacentTiles(grid)),
 });

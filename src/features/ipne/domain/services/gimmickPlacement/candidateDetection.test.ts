@@ -15,8 +15,10 @@ import {
   detectWallPlacementCandidates,
 } from './candidateDetection';
 import { createTestMap } from '../../../__tests__/testUtils';
+import { MockRandomProvider } from '../../../__tests__/mocks/MockRandomProvider';
 
 describe('candidateDetection', () => {
+  const rng = new MockRandomProvider(0.5);
   describe('collectRoomTiles', () => {
     it('部屋のタイルを全て収集する', () => {
       const rooms: Room[] = [
@@ -182,7 +184,7 @@ describe('candidateDetection', () => {
         { rect: { x: 3, y: 3, width: 2, height: 2 }, center: { x: 4, y: 4 }, tiles: [{ x: 3, y: 3 }, { x: 4, y: 3 }] },
       ];
 
-      const candidates = detectTrapCandidateTiles(rooms, grid);
+      const candidates = detectTrapCandidateTiles(rooms, grid, rng);
       expect(candidates.length).toBeGreaterThan(0);
     });
 
@@ -194,7 +196,7 @@ describe('candidateDetection', () => {
         { rect: { x: 3, y: 3, width: 3, height: 3 }, center: { x: 4, y: 4 }, tiles: [{ x: 3, y: 3 }, { x: 4, y: 3 }, { x: 5, y: 3 }] },
       ];
 
-      const candidates = detectTrapCandidateTiles(rooms, grid);
+      const candidates = detectTrapCandidateTiles(rooms, grid, rng);
       const candidateKeys = new Set(candidates.map(c => `${c.x},${c.y}`));
       // 部屋タイルが含まれる
       expect(candidateKeys.has('3,3') || candidateKeys.has('4,3') || candidateKeys.has('5,3')).toBe(true);
@@ -204,7 +206,7 @@ describe('candidateDetection', () => {
   describe('detectWallPlacementCandidates', () => {
     it('壁配置候補の3種類を返す', () => {
       const grid = createTestMap(7, 7);
-      const result = detectWallPlacementCandidates(grid);
+      const result = detectWallPlacementCandidates(grid, rng);
 
       expect(result).toHaveProperty('segments');
       expect(result).toHaveProperty('shortcutPositions');

@@ -218,14 +218,14 @@ export const processEnemyContact = (
   const enemy = getEnemyAtPosition(enemies, player.x, player.y);
   if (!enemy) return { player, didDamage: false };
 
-  const updatedPlayer = damagePlayer(
+  const damageResult = damagePlayer(
     player,
     enemy.damage,
     currentTime,
     COMBAT_CONFIG.invincibleDuration
   );
 
-  return { player: updatedPlayer, didDamage: updatedPlayer !== player };
+  return { player: damageResult.player, didDamage: damageResult.tookDamage };
 };
 
 export const isKnockbackComplete = (enemy: Enemy, currentTime: number): boolean => {

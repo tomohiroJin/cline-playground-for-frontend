@@ -14,6 +14,7 @@ import {
   TrapTypeValue,
   Position,
 } from '../types';
+import { RandomProvider } from '../ports';
 
 /** BSP木のノード */
 interface BSPNode {
@@ -32,7 +33,7 @@ export interface MazeResult {
 /**
  * 迷路を自動生成する
  */
-export function generateMaze(config: MazeConfig): MazeResult {
+export function generateMaze(config: MazeConfig, random: RandomProvider): MazeResult {
   // 初期グリッド（全て壁）
   const grid: GameMap = Array.from({ length: config.height }, () =>
     Array(config.width).fill(TileType.WALL)
@@ -45,22 +46,22 @@ export function generateMaze(config: MazeConfig): MazeResult {
     width: config.width - 2,
     height: config.height - 2,
   };
-  const root = splitSpace(rootRect, 0, config.maxDepth, config.minRoomSize);
+  const root = splitSpace(rootRect, 0, config.maxDepth, config.minRoomSize, random);
 
   // 各リーフノードに部屋を生成
   const rooms: Room[] = [];
   const corridors: Corridor[] = [];
-  generateRooms(root, config, rooms);
+  generateRooms(root, config, rooms, random);
 
   // 部屋を接続
-  connectRooms(root, config, corridors);
+  connectRooms(root, config, corridors, random);
 
   // グリッドに描画
   drawRooms(grid, rooms);
   drawCorridors(grid, corridors, config.corridorWidth);
 
   // ループを追加（探索の幅を広げる）
-  addLoops(grid, rooms, config.loopCount, config.corridorWidth);
+  addLoops(grid, rooms, config.loopCount, config.corridorWidth, random);
 
   // 各部屋にtilesを追加（部屋内の床タイル座標リスト）
   for (const room of rooms) {
@@ -79,7 +80,7 @@ export function generateMaze(config: MazeConfig): MazeResult {
 /**
  * 空間をBSP分割する
  */
-function splitSpace(rect: Rectangle, depth: number, maxDepth: number, minSize: number): BSPNode {
+function splitSpace(rect: Rectangle, depth: number, maxDepth: number, minSize: number, random: RandomProvider): BSPNode {
   const node: BSPNode = { rect };
 
   // 分割終了条件
@@ -88,13 +89,13 @@ function splitSpace(rect: Rectangle, depth: number, maxDepth: number, minSize: n
   }
 
   // 分割方向を決定（横長なら縦分割、縦長なら横分割の傾向）
-  const horizontal = rect.width > rect.height ? Math.random() > 0.3 : Math.random() > 0.7;
+  const horizontal = rect.width > rect.height ? random.random() > 0.3 : random.random() > 0.7;
 
-  const { left, right } = split(rect, horizontal, minSize);
+  const { left, right } = split(rect, horizontal, minSize, random);
 
   if (left && right) {
-    node.left = splitSpace(left, depth + 1, maxDepth, minSize);
-    node.right = splitSpace(right, depth + 1, maxDepth, minSize);
+    node.left = splitSpace(left, depth + 1, maxDepth, minSize, random);
+    node.right = splitSpace(right, depth + 1, maxDepth, minSize, random);
   }
 
   return node;
@@ -113,7 +114,8 @@ function canSplit(rect: Rectangle, minSize: number): boolean {
 function split(
   rect: Rectangle,
   horizontal: boolean,
-  minSize: number
+  minSize: number,
+  random: RandomProvider
 ): { left: Rectangle | null; right: Rectangle | null } {
   if (horizontal) {
     // 横分割（上下に分ける）
@@ -121,7 +123,7 @@ function split(
     const maxY = rect.y + rect.height - minSize;
     if (minY >= maxY) return { left: null, right: null };
 
-    const splitY = Math.floor(Math.random() * (maxY - minY)) + minY;
+    const splitY = random.randomInt(minY, maxY);
     return {
       left: { x: rect.x, y: rect.y, width: rect.width, height: splitY - rect.y },
       right: {
@@ -137,7 +139,7 @@ function split(
     const maxX = rect.x + rect.width - minSize;
     if (minX >= maxX) return { left: null, right: null };
 
-    const splitX = Math.floor(Math.random() * (maxX - minX)) + minX;
+    const splitX = random.randomInt(minX, maxX);
     return {
       left: { x: rect.x, y: rect.y, width: splitX - rect.x, height: rect.height },
       right: {
@@ -153,17 +155,17 @@ function split(
 /**
  * リーフノードに部屋を生成
  */
-function generateRooms(node: BSPNode, config: MazeConfig, rooms: Room[]): void {
+function generateRooms(node: BSPNode, config: MazeConfig, rooms: Room[], random: RandomProvider): void {
   if (node.left) {
-    generateRooms(node.left, config, rooms);
+    generateRooms(node.left, config, rooms, random);
   }
   if (node.right) {
-    generateRooms(node.right, config, rooms);
+    generateRooms(node.right, config, rooms, random);
   }
 
   // リーフノードの場合、部屋を作成
   if (!node.left && !node.right) {
-    const room = createRoom(node.rect, config);
+    const room = createRoom(node.rect, config, random);
     node.room = room;
     rooms.push(room);
   }
@@ -172,7 +174,7 @@ function generateRooms(node: BSPNode, config: MazeConfig, rooms: Room[]): void {
 /**
  * 矩形内に部屋を作成
  */
-function createRoom(rect: Rectangle, config: MazeConfig): Room {
+function createRoom(rect: Rectangle, config: MazeConfig, random: RandomProvider): Room {
   const { minRoomSize, maxRoomSize } = config;
 
   const maxW = Math.min(rect.width - 2, maxRoomSize);
@@ -180,11 +182,11 @@ function createRoom(rect: Rectangle, config: MazeConfig): Room {
   const minW = Math.min(rect.width - 2, minRoomSize);
   const minH = Math.min(rect.height - 2, minRoomSize);
 
-  const w = Math.floor(Math.random() * (maxW - minW + 1)) + minW;
-  const h = Math.floor(Math.random() * (maxH - minH + 1)) + minH;
+  const w = random.randomInt(minW, maxW + 1);
+  const h = random.randomInt(minH, maxH + 1);
 
-  const x = rect.x + Math.floor(Math.random() * (rect.width - w));
-  const y = rect.y + Math.floor(Math.random() * (rect.height - h));
+  const x = rect.x + random.randomInt(0, rect.width - w);
+  const y = rect.y + random.randomInt(0, rect.height - h);
 
   const roomRect: Rectangle = { x, y, width: w, height: h };
   const center = {
@@ -198,21 +200,21 @@ function createRoom(rect: Rectangle, config: MazeConfig): Room {
 /**
  * 部屋同士を通路で接続
  */
-function connectRooms(node: BSPNode, config: MazeConfig, corridors: Corridor[]): void {
+function connectRooms(node: BSPNode, config: MazeConfig, corridors: Corridor[], random: RandomProvider): void {
   if (node.left) {
-    connectRooms(node.left, config, corridors);
+    connectRooms(node.left, config, corridors, random);
   }
   if (node.right) {
-    connectRooms(node.right, config, corridors);
+    connectRooms(node.right, config, corridors, random);
   }
 
   // 左右の子ノードがあれば、それらを接続
   if (node.left && node.right) {
-    const leftRoom = getRandomRoom(node.left);
-    const rightRoom = getRandomRoom(node.right);
+    const leftRoom = getRandomRoom(node.left, random);
+    const rightRoom = getRandomRoom(node.right, random);
 
     if (leftRoom && rightRoom) {
-      const corridor = createCorridor(leftRoom.center, rightRoom.center);
+      const corridor = createCorridor(leftRoom.center, rightRoom.center, random);
       corridors.push(corridor);
     }
   }
@@ -221,7 +223,7 @@ function connectRooms(node: BSPNode, config: MazeConfig, corridors: Corridor[]):
 /**
  * ノードからランダムに部屋を取得
  */
-function getRandomRoom(node: BSPNode): Room | null {
+function getRandomRoom(node: BSPNode, random: RandomProvider): Room | null {
   if (node.room) {
     return node.room;
   }
@@ -229,7 +231,7 @@ function getRandomRoom(node: BSPNode): Room | null {
   const rooms: Room[] = [];
   collectRooms(node, rooms);
 
-  return rooms.length > 0 ? rooms[Math.floor(Math.random() * rooms.length)] : null;
+  return rooms.length > 0 ? random.pick(rooms) : null;
 }
 
 /**
@@ -250,9 +252,9 @@ function collectRooms(node: BSPNode, rooms: Room[]): void {
 /**
  * L字型通路を作成
  */
-function createCorridor(start: { x: number; y: number }, end: { x: number; y: number }): Corridor {
+function createCorridor(start: { x: number; y: number }, end: { x: number; y: number }, random: RandomProvider): Corridor {
   // 横→縦 or 縦→横 をランダムに選択
-  const horizontal = Math.random() > 0.5;
+  const horizontal = random.random() > 0.5;
   return { start, end, horizontal };
 }
 
@@ -332,15 +334,15 @@ function drawVerticalLine(grid: GameMap, x: number, y1: number, y2: number, widt
 /**
  * ループを追加（ランダムに部屋を接続）
  */
-function addLoops(grid: GameMap, rooms: Room[], loopCount: number, corridorWidth: number): void {
+function addLoops(grid: GameMap, rooms: Room[], loopCount: number, corridorWidth: number, random: RandomProvider): void {
   for (let i = 0; i < loopCount; i++) {
     if (rooms.length < 2) break;
 
-    const room1 = rooms[Math.floor(Math.random() * rooms.length)];
-    const room2 = rooms[Math.floor(Math.random() * rooms.length)];
+    const room1 = random.pick(rooms);
+    const room2 = random.pick(rooms);
 
     if (room1 !== room2) {
-      const corridor = createCorridor(room1.center, room2.center);
+      const corridor = createCorridor(room1.center, room2.center, random);
       drawCorridors(grid, [corridor], corridorWidth);
     }
   }
@@ -484,10 +486,11 @@ export function getPositionsOutsideSafeZone(
  */
 export function generateSafeMaze(
   config: MazeConfig,
+  random: RandomProvider,
   maxRetries: number = MAX_GENERATION_RETRIES
 ): MazeResult | null {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
-    const result = generateMaze(config);
+    const result = generateMaze(config, random);
 
     // 最低限の部屋が生成されていれば成功
     if (result.rooms.length >= 2) {

@@ -94,14 +94,17 @@ describe('player', () => {
   describe('damagePlayer', () => {
     test('ダメージでHPが減少すること', () => {
       const player = createPlayer(1, 1); // 戦士 HP: 20
-      const updated = damagePlayer(player, 3, 1000, 1000);
-      expect(updated.hp).toBe(17); // 20 - 3 = 17
+      const result = damagePlayer(player, 3, 1000, 1000);
+      expect(result.player.hp).toBe(17); // 20 - 3 = 17
+      expect(result.tookDamage).toBe(true);
+      expect(result.actualDamage).toBe(3);
     });
 
     test('HPが0未満にならないこと', () => {
       const player = createPlayer(1, 1);
-      const updated = damagePlayer(player, 999, 1000, 1000);
-      expect(updated.hp).toBe(0);
+      const result = damagePlayer(player, 999, 1000, 1000);
+      expect(result.player.hp).toBe(0);
+      expect(result.tookDamage).toBe(true);
     });
   });
 

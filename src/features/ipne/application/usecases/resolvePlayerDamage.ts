@@ -31,17 +31,17 @@ export function resolvePlayerDamage({
   enemies,
   walls = [],
 }: ResolvePlayerDamageParams): ResolvePlayerDamageResult {
-  const damagedPlayer = damagePlayer(player, damage, currentTime, invincibleDuration);
-  if (damagedPlayer === player) {
+  const damageResult = damagePlayer(player, damage, currentTime, invincibleDuration);
+  if (!damageResult.tookDamage) {
     return { player, tookDamage: false };
   }
 
   if (sourceEnemy && map && enemies) {
     return {
-      player: resolveKnockback(damagedPlayer, sourceEnemy, map, enemies, walls),
+      player: resolveKnockback(damageResult.player, sourceEnemy, map, enemies, walls),
       tookDamage: true,
     };
   }
 
-  return { player: damagedPlayer, tookDamage: true };
+  return { player: damageResult.player, tookDamage: true };
 }

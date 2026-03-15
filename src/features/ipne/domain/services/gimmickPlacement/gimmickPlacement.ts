@@ -5,6 +5,7 @@
 import { createTrap } from '../../entities/trap';
 import { createWall } from '../../entities/wall';
 import { GimmickPlacementConfig, Position, Room, StrategicPatternLimits, Trap, TrapTypeValue, Wall, WallType, GameMap } from '../../types';
+import { IdGenerator, RandomProvider } from '../../ports';
 import {
   detectTrapCandidateTiles,
   detectWallPlacementCandidates,
@@ -61,13 +62,15 @@ export const placeTrap = (
   rooms: Room[],
   grid: GameMap,
   excluded: Position[],
+  idGenerator: IdGenerator,
+  random: RandomProvider,
   config: GimmickPlacementConfig = DEFAULT_GIMMICK_CONFIG
 ): Trap[] => {
   validateGimmickPlacementConfig(config);
 
   const traps: Trap[] = [];
   const usedPositions = new Set<string>(excluded.map(p => `${p.x},${p.y}`));
-  const candidateTiles = detectTrapCandidateTiles(rooms, grid);
+  const candidateTiles = detectTrapCandidateTiles(rooms, grid, random);
 
   for (const tile of candidateTiles) {
     if (traps.length >= config.trapCount) break;
@@ -75,8 +78,8 @@ export const placeTrap = (
     const key = `${tile.x},${tile.y}`;
     if (usedPositions.has(key)) continue;
 
-    const trapType: TrapTypeValue = selectTrapType(config.trapRatio);
-    traps.push(createTrap(trapType, tile.x, tile.y));
+    const trapType: TrapTypeValue = selectTrapType(config.trapRatio, random);
+    traps.push(createTrap(trapType, tile.x, tile.y, idGenerator));
     usedPositions.add(key);
   }
 
@@ -86,13 +89,14 @@ export const placeTrap = (
 export const placeWalls = (
   grid: GameMap,
   excluded: Position[],
+  random: RandomProvider,
   config: GimmickPlacementConfig = DEFAULT_GIMMICK_CONFIG
 ): Wall[] => {
   validateGimmickPlacementConfig(config);
 
   const walls: Wall[] = [];
   const usedPositions = new Set<string>(excluded.map(p => `${p.x},${p.y}`));
-  const { segments, shortcutPositions, adjacentPositions } = detectWallPlacementCandidates(grid);
+  const { segments, shortcutPositions, adjacentPositions } = detectWallPlacementCandidates(grid, random);
   const { breakableCount, passableCount, invisibleCount } = calculateWallTypeCounts(
     config.wallCount,
     config.wallRatio
@@ -167,6 +171,7 @@ export const placeStrategicWalls = (
   excluded: Position[],
   start: Position,
   goal: Position,
+  random: RandomProvider,
   config: GimmickPlacementConfig = DEFAULT_GIMMICK_CONFIG
 ): Wall[] => {
   validateGimmickPlacementConfig(config);
@@ -222,6 +227,7 @@ export const placeStrategicWalls = (
     const fallbackWalls = placeWalls(
       grid,
       [...excluded, ...walls.map(w => ({ x: w.x, y: w.y }))],
+      random,
       { ...config, wallCount: remainingCount }
     );
     walls.push(...fallbackWalls);
@@ -234,18 +240,20 @@ export const placeGimmicks = (
   rooms: Room[],
   grid: GameMap,
   excluded: Position[],
+  idGenerator: IdGenerator,
+  random: RandomProvider,
   config: GimmickPlacementConfig = DEFAULT_GIMMICK_CONFIG,
   start?: Position,
   goal?: Position
 ): GimmickPlacementResult => {
   validateGimmickPlacementConfig(config);
 
-  const traps = placeTrap(rooms, grid, excluded, config);
+  const traps = placeTrap(rooms, grid, excluded, idGenerator, random, config);
   const trapPositions = traps.map(t => ({ x: t.x, y: t.y }));
   const walls =
     start && goal
-      ? placeStrategicWalls(grid, [...excluded, ...trapPositions], start, goal, config)
-      : placeWalls(grid, [...excluded, ...trapPositions], config);
+      ? placeStrategicWalls(grid, [...excluded, ...trapPositions], start, goal, random, config)
+      : placeWalls(grid, [...excluded, ...trapPositions], random, config);
 
   assertGimmickPlacementPostconditions(traps, walls, config);
   return { traps, walls };

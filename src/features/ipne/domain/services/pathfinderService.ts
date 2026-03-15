@@ -2,6 +2,7 @@
  * 経路探索とスタート/ゴール配置
  */
 import { GameMap, Position, Room, TileType } from '../types';
+import { RandomProvider } from '../ports';
 
 /**
  * BFS（幅優先探索）で全タイルへの最短距離を計算
@@ -58,7 +59,7 @@ export function calculateDistances(map: GameMap, start: Position): Map<string, n
 /**
  * スタート位置を配置（外周付近の部屋からランダムに選択）
  */
-export function placeStart(rooms: Room[], mapWidth?: number, mapHeight?: number): Position {
+export function placeStart(rooms: Room[], random: RandomProvider, mapWidth?: number, mapHeight?: number): Position {
   if (rooms.length === 0) {
     throw new Error('No rooms available for start placement');
   }
@@ -88,7 +89,7 @@ export function placeStart(rooms: Room[], mapWidth?: number, mapHeight?: number)
 
     // 外周タイルがあればそこから選択
     if (perimeterTiles.length > 0) {
-      return perimeterTiles[Math.floor(Math.random() * perimeterTiles.length)];
+      return random.pick(perimeterTiles);
     }
 
     // 外周タイルがない場合は、外周付近の部屋（中心座標ベース）から選択
@@ -104,25 +105,25 @@ export function placeStart(rooms: Room[], mapWidth?: number, mapHeight?: number)
     });
 
     if (perimeterRooms.length > 0) {
-      const room = perimeterRooms[Math.floor(Math.random() * perimeterRooms.length)];
+      const room = random.pick(perimeterRooms);
       if (room.tiles && room.tiles.length > 0) {
-        return room.tiles[Math.floor(Math.random() * room.tiles.length)];
+        return random.pick(room.tiles);
       }
     }
   }
 
   // フォールバック: 全部屋からランダム選択
-  const room = rooms[Math.floor(Math.random() * rooms.length)];
+  const room = random.pick(rooms);
 
   // 部屋の実際のタイル座標リストがあればそこから選択（壁を避ける）
   if (room.tiles && room.tiles.length > 0) {
-    return room.tiles[Math.floor(Math.random() * room.tiles.length)];
+    return random.pick(room.tiles);
   }
 
   // tilesがない場合は、部屋の中心付近にランダム配置（後方互換性）
   const { x, y, width, height } = room.rect;
-  const startX = x + Math.floor(Math.random() * width);
-  const startY = y + Math.floor(Math.random() * height);
+  const startX = x + random.randomInt(0, width);
+  const startY = y + random.randomInt(0, height);
 
   return { x: startX, y: startY };
 }

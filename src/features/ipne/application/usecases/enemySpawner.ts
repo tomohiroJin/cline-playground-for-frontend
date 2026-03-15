@@ -11,6 +11,7 @@ import {
   createMiniBoss,
   createMegaBoss,
 } from '../../domain/entities/enemy';
+import { IdGenerator, RandomProvider } from '../../domain/ports';
 
 const SPAWN_CONFIG = {
   total: 25,
@@ -40,29 +41,22 @@ const pickRoomByPosition = (rooms: Room[], position: Position): Room | undefined
   return rooms.find(room => isPositionInRoom(room, position));
 };
 
-const shuffle = <T>(items: T[]): T[] => {
-  const copied = [...items];
-  for (let i = copied.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copied[i], copied[j]] = [copied[j], copied[i]];
-  }
-  return copied;
-};
-
 export const getSpawnPositionsForRoom = (
   room: Room,
   count: number,
-  excluded: Position[]
+  excluded: Position[],
+  random: RandomProvider
 ): Position[] => {
   const roomTiles = room.tiles ?? [];
   const filtered = roomTiles.filter(tile =>
     !excluded.some(pos => pos.x === tile.x && pos.y === tile.y)
   );
-  const shuffled = shuffle(filtered);
+  const shuffled = random.shuffle(filtered);
   return shuffled.slice(0, Math.min(count, shuffled.length));
 };
 
 export const distributeEnemyTypes = (
+  random: RandomProvider,
   config?: { patrol: number; charge: number; ranged: number; specimen: number }
 ): EnemyTypeValue[] => {
   const c = config ?? SPAWN_CONFIG;
@@ -71,7 +65,7 @@ export const distributeEnemyTypes = (
   for (let i = 0; i < c.charge; i++) types.push(EnemyType.CHARGE);
   for (let i = 0; i < c.ranged; i++) types.push(EnemyType.RANGED);
   for (let i = 0; i < c.specimen; i++) types.push(EnemyType.SPECIMEN);
-  return shuffle(types);
+  return random.shuffle(types);
 };
 
 const getRoomSpawnCount = (room: Room): number => {
@@ -106,23 +100,23 @@ export const applyScaling = (
 /**
  * 敵タイプに応じた敵を生成する
  */
-const createEnemyByType = (type: EnemyTypeValue, x: number, y: number): Enemy => {
+const createEnemyByType = (type: EnemyTypeValue, x: number, y: number, idGenerator: IdGenerator): Enemy => {
   switch (type) {
     case EnemyType.PATROL:
-      return createPatrolEnemy(x, y);
+      return createPatrolEnemy(x, y, idGenerator);
     case EnemyType.CHARGE:
-      return createChargeEnemy(x, y);
+      return createChargeEnemy(x, y, idGenerator);
     case EnemyType.RANGED:
-      return createRangedEnemy(x, y);
+      return createRangedEnemy(x, y, idGenerator);
     case EnemyType.MINI_BOSS:
-      return createMiniBoss(x, y);
+      return createMiniBoss(x, y, idGenerator);
     case EnemyType.MEGA_BOSS:
-      return createMegaBoss(x, y);
+      return createMegaBoss(x, y, idGenerator);
     case EnemyType.BOSS:
-      return createBoss(x, y);
+      return createBoss(x, y, idGenerator);
     case EnemyType.SPECIMEN:
     default:
-      return createSpecimenEnemy(x, y);
+      return createSpecimenEnemy(x, y, idGenerator);
   }
 };
 
@@ -132,7 +126,9 @@ const createEnemyByType = (type: EnemyTypeValue, x: number, y: number): Enemy =>
 export const spawnEnemies = (
   rooms: Room[],
   startPos: Position,
-  goalPos: Position
+  goalPos: Position,
+  idGenerator: IdGenerator,
+  random: RandomProvider
 ): Enemy[] => {
   if (rooms.length === 0) return [];
 
@@ -140,19 +136,19 @@ export const spawnEnemies = (
   const goalRoom = pickRoomByPosition(rooms, goalPos) ?? pickLargestRoom(rooms);
 
   const spawnRooms = rooms.filter(room => room !== startRoom && room !== goalRoom);
-  const enemyTypes = distributeEnemyTypes();
+  const enemyTypes = distributeEnemyTypes(random);
   const enemies: Enemy[] = [];
   const usedPositions: Position[] = [startPos, goalPos];
 
   for (const room of spawnRooms) {
     if (enemyTypes.length === 0) break;
     const spawnCount = Math.min(getRoomSpawnCount(room), MAX_PER_ROOM, enemyTypes.length);
-    const positions = getSpawnPositionsForRoom(room, spawnCount, usedPositions);
+    const positions = getSpawnPositionsForRoom(room, spawnCount, usedPositions, random);
 
     for (const position of positions) {
       const type = enemyTypes.shift();
       if (!type) break;
-      const enemy = createEnemyByType(type, position.x, position.y);
+      const enemy = createEnemyByType(type, position.x, position.y, idGenerator);
       enemies.push(enemy);
       usedPositions.push(position);
     }
@@ -160,8 +156,8 @@ export const spawnEnemies = (
 
   if (goalRoom) {
     const bossPosition =
-      getSpawnPositionsForRoom(goalRoom, 1, usedPositions)[0] ?? goalRoom.center;
-    enemies.push(createBoss(bossPosition.x, bossPosition.y));
+      getSpawnPositionsForRoom(goalRoom, 1, usedPositions, random)[0] ?? goalRoom.center;
+    enemies.push(createBoss(bossPosition.x, bossPosition.y, idGenerator));
   }
 
   return enemies;
@@ -179,7 +175,9 @@ export const spawnEnemiesForStage = (
   rooms: Room[],
   startPos: Position,
   goalPos: Position,
-  stageConfig: StageConfig
+  stageConfig: StageConfig,
+  idGenerator: IdGenerator,
+  random: RandomProvider
 ): Enemy[] => {
   if (rooms.length === 0) return [];
 
@@ -188,19 +186,19 @@ export const spawnEnemiesForStage = (
 
   // 通常の雑魚敵をスポーン（ゴール部屋とスタート部屋を除外）
   const spawnRooms = rooms.filter(room => room !== startRoom && room !== goalRoom);
-  const enemyTypes = distributeEnemyTypes(stageConfig.enemies);
+  const enemyTypes = distributeEnemyTypes(random, stageConfig.enemies);
   const enemies: Enemy[] = [];
   const usedPositions: Position[] = [startPos, goalPos];
 
   for (const room of spawnRooms) {
     if (enemyTypes.length === 0) break;
     const spawnCount = Math.min(getRoomSpawnCount(room), MAX_PER_ROOM, enemyTypes.length);
-    const positions = getSpawnPositionsForRoom(room, spawnCount, usedPositions);
+    const positions = getSpawnPositionsForRoom(room, spawnCount, usedPositions, random);
 
     for (const position of positions) {
       const type = enemyTypes.shift();
       if (!type) break;
-      let enemy = createEnemyByType(type, position.x, position.y);
+      let enemy = createEnemyByType(type, position.x, position.y, idGenerator);
       enemy = applyScaling(enemy, stageConfig.scaling);
       enemies.push(enemy);
       usedPositions.push(position);
@@ -209,15 +207,15 @@ export const spawnEnemiesForStage = (
 
   // ミニボスをゴール部屋以外のランダムな部屋に配置
   if (stageConfig.enemies.miniBoss > 0) {
-    const miniBossRooms = shuffle(spawnRooms.filter(room =>
+    const miniBossRooms = random.shuffle(spawnRooms.filter(room =>
       !usedPositions.every(pos => isPositionInRoom(room, pos))
     ));
     let placedMiniBoss = 0;
     for (const room of miniBossRooms) {
       if (placedMiniBoss >= stageConfig.enemies.miniBoss) break;
-      const positions = getSpawnPositionsForRoom(room, 1, usedPositions);
+      const positions = getSpawnPositionsForRoom(room, 1, usedPositions, random);
       if (positions.length === 0) continue;
-      let miniBoss = createMiniBoss(positions[0].x, positions[0].y);
+      let miniBoss = createMiniBoss(positions[0].x, positions[0].y, idGenerator);
       miniBoss = applyScaling(miniBoss, stageConfig.scaling);
       enemies.push(miniBoss);
       usedPositions.push(positions[0]);
@@ -228,13 +226,13 @@ export const spawnEnemiesForStage = (
   // ボスまたはメガボスをゴール部屋に配置
   if (goalRoom) {
     const bossPosition =
-      getSpawnPositionsForRoom(goalRoom, 1, usedPositions)[0] ?? goalRoom.center;
+      getSpawnPositionsForRoom(goalRoom, 1, usedPositions, random)[0] ?? goalRoom.center;
     if (stageConfig.bossType === 'mega_boss') {
-      let megaBoss = createMegaBoss(bossPosition.x, bossPosition.y);
+      let megaBoss = createMegaBoss(bossPosition.x, bossPosition.y, idGenerator);
       megaBoss = applyScaling(megaBoss, stageConfig.scaling);
       enemies.push(megaBoss);
     } else {
-      let boss = createBoss(bossPosition.x, bossPosition.y);
+      let boss = createBoss(bossPosition.x, bossPosition.y, idGenerator);
       boss = applyScaling(boss, stageConfig.scaling);
       enemies.push(boss);
     }

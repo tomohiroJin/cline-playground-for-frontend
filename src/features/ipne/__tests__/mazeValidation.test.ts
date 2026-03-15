@@ -14,6 +14,7 @@ import {
   generateSafeMaze,
 } from '../domain/services/mazeGenerator';
 import { EnemyType, TrapType } from '../types';
+import { MockRandomProvider } from './mocks/MockRandomProvider';
 
 describe('mazeValidation', () => {
   describe('定数', () => {
@@ -207,6 +208,8 @@ describe('mazeValidation', () => {
   });
 
   describe('generateSafeMaze', () => {
+    const rng = new MockRandomProvider(0.5);
+
     const config = {
       width: 50,
       height: 50,
@@ -218,7 +221,8 @@ describe('mazeValidation', () => {
     };
 
     test('迷路を生成できること', () => {
-      const result = generateSafeMaze(config);
+      rng.reset();
+      const result = generateSafeMaze(config, rng);
 
       expect(result).not.toBeNull();
       expect(result?.rooms.length).toBeGreaterThanOrEqual(2);
@@ -238,7 +242,8 @@ describe('mazeValidation', () => {
       };
 
       // 失敗する可能性があるが、結果はnullか有効な迷路のどちらか
-      const result = generateSafeMaze(smallConfig, 1);
+      rng.reset();
+      const result = generateSafeMaze(smallConfig, rng, 1);
       expect(result === null || result.rooms.length >= 0).toBe(true);
     });
   });

@@ -105,6 +105,9 @@ import { createPlayer } from '../../domain/entities/player';
 import { createTestMap } from '../../__tests__/testUtils';
 import { createEnemy } from '../../domain/entities/enemy';
 import { createItem } from '../../domain/entities/item';
+import { MockIdGenerator } from '../../__tests__/mocks/MockIdGenerator';
+
+const idGen = new MockIdGenerator();
 
 /** テスト用の AutoMapState を生成する */
 const createTestMapState = (width: number, height: number): AutoMapState => ({
@@ -222,7 +225,7 @@ describe('GameScreen 統合テスト', () => {
   describe('コンポーネント Props', () => {
     it('敵がいる場合もレンダリングできる', () => {
       const props = createMinimalProps();
-      props.enemies = [createEnemy('patrol', 3, 3)];
+      props.enemies = [createEnemy('patrol', 3, 3, idGen)];
 
       expect(() => {
         render(<GameScreen {...props} />);
@@ -231,7 +234,7 @@ describe('GameScreen 統合テスト', () => {
 
     it('アイテムがある場合もレンダリングできる', () => {
       const props = createMinimalProps();
-      props.items = [createItem('health_small', 2, 2)];
+      props.items = [createItem('health_small', 2, 2, idGen)];
 
       expect(() => {
         render(<GameScreen {...props} />);

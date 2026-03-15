@@ -69,6 +69,9 @@ import { isFinalStage } from '../features/ipne/domain/config/stageConfig';
 // カスタムフック
 import { useGameState } from '../features/ipne/presentation/hooks/useGameState';
 import { useGameLoop } from '../features/ipne/presentation/hooks/useGameLoop';
+import { SequentialIdGenerator } from '../features/ipne/infrastructure/id/SequentialIdGenerator';
+
+const idGenerator = new SequentialIdGenerator();
 
 // テスト互換性のために ClearScreen を re-export
 export { ClearScreen } from '../features/ipne/presentation/screens/Clear';
@@ -373,7 +376,7 @@ const IpnePage: React.FC = () => {
       }
 
       for (const enemy of newlyKilledEnemies) {
-        const deathResult = processEnemyDeath(enemy);
+        const deathResult = processEnemyDeath(enemy, idGenerator, Math.random(), Math.random());
         if (deathResult.droppedItem) {
           updatedItems = [...updatedItems, deathResult.droppedItem];
         }

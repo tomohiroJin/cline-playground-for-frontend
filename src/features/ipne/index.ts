@@ -97,7 +97,7 @@ export {
   applySlowEffect,
   isSlowed,
 } from './domain/entities/player';
-export type { KillCountResult } from './domain/entities/player';
+export type { KillCountResult, DamageResult } from './domain/entities/player';
 
 // 衝突判定
 export { isWall, canMove, checkEnemyCollision, getEnemyAtPosition, getEnemiesInRange } from './domain/services/collisionService';
@@ -151,8 +151,6 @@ export type { MovementConfig, MovementState } from './domain/services/movementSe
 // 敵
 export {
   ENEMY_CONFIGS,
-  generateEnemyId,
-  resetEnemyIdCounter,
   createEnemy,
   createPatrolEnemy,
   createChargeEnemy,
@@ -220,8 +218,6 @@ export { COMBAT_CONFIG, playerAttack, getAttackTarget, processEnemyContact, isKn
 export {
   ITEM_CONFIGS,
   SPAWN_CONFIG as ITEM_SPAWN_CONFIG,
-  generateItemId,
-  resetItemIdCounter,
   createItem,
   createHealthSmall,
   createHealthLarge,
@@ -267,8 +263,6 @@ export {
 // 罠
 export {
   TRAP_CONFIGS,
-  generateTrapId,
-  resetTrapIdCounter,
   createTrap,
   createDamageTrap,
   createSlowTrap,
@@ -319,10 +313,12 @@ export {
   getEpilogueText,
   getGameOverText,
   getRatingColor,
+} from './domain/services/endingService';
+export {
   getEndingImage,
   getGameOverImage,
   getEndingVideo,
-} from './domain/services/endingService';
+} from './presentation/services/endingAssetProvider';
 
 // タイマー
 export {
@@ -377,7 +373,6 @@ export {
 // フィードバック
 export {
   FEEDBACK_CONFIGS,
-  resetFeedbackIdCounter,
   createFeedback,
   createDamageFeedback,
   createHealFeedback,
@@ -498,7 +493,8 @@ export {
   NOOP_STORAGE_PROVIDER,
   createBrowserStorageProvider,
 } from './infrastructure';
-export type { BrowserEnvProvider, ClockProvider, RandomProvider, StorageProvider } from './infrastructure';
+export type { BrowserEnvProvider, StorageProvider } from './infrastructure';
+export type { ClockProvider, RandomProvider } from './domain/ports';
 
 // 契約
 export { assertCondition, assertNumberInRange, assertIntegerInRange, assertUniquePositions } from './shared';

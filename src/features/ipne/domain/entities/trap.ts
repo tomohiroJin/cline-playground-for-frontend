@@ -2,6 +2,7 @@
  * 罠システムモジュール
  */
 import { Trap, TrapType, TrapTypeValue, TrapState, TrapStateValue, Player, GameMap, TileType } from '../types';
+import { IdGenerator, RandomProvider } from '../ports';
 
 /** 罠の設定 */
 interface TrapConfig {
@@ -31,23 +32,6 @@ export const TRAP_CONFIGS: Record<TrapTypeValue, TrapConfig> = {
   },
 };
 
-let trapIdCounter = 0;
-
-/**
- * 罠IDを生成
- */
-export const generateTrapId = (): string => {
-  trapIdCounter += 1;
-  return `trap-${trapIdCounter}`;
-};
-
-/**
- * 罠IDカウンタをリセット
- */
-export const resetTrapIdCounter = (): void => {
-  trapIdCounter = 0;
-};
-
 /**
  * 罠を作成
  */
@@ -55,10 +39,11 @@ export const createTrap = (
   type: TrapTypeValue,
   x: number,
   y: number,
+  idGenerator: IdGenerator,
   state: TrapStateValue = TrapState.HIDDEN
 ): Trap => {
   return {
-    id: generateTrapId(),
+    id: idGenerator.generateTrapId(),
     x,
     y,
     type,
@@ -71,22 +56,22 @@ export const createTrap = (
 /**
  * ダメージ罠を作成
  */
-export const createDamageTrap = (x: number, y: number): Trap => {
-  return createTrap(TrapType.DAMAGE, x, y);
+export const createDamageTrap = (x: number, y: number, idGenerator: IdGenerator): Trap => {
+  return createTrap(TrapType.DAMAGE, x, y, idGenerator);
 };
 
 /**
  * 移動妨害罠を作成
  */
-export const createSlowTrap = (x: number, y: number): Trap => {
-  return createTrap(TrapType.SLOW, x, y);
+export const createSlowTrap = (x: number, y: number, idGenerator: IdGenerator): Trap => {
+  return createTrap(TrapType.SLOW, x, y, idGenerator);
 };
 
 /**
  * テレポート罠を作成
  */
-export const createTeleportTrap = (x: number, y: number): Trap => {
-  return createTrap(TrapType.TELEPORT, x, y);
+export const createTeleportTrap = (x: number, y: number, idGenerator: IdGenerator): Trap => {
+  return createTrap(TrapType.TELEPORT, x, y, idGenerator);
 };
 
 /** テレポート先座標 */
@@ -106,7 +91,7 @@ export interface TrapTriggerResult {
 /**
  * 迷路内のランダムな通行可能タイルを取得
  */
-export const getRandomPassableTile = (map: GameMap): TeleportDestination | undefined => {
+export const getRandomPassableTile = (map: GameMap, random: RandomProvider): TeleportDestination | undefined => {
   const passableTiles: TeleportDestination[] = [];
 
   for (let y = 0; y < map.length; y++) {
@@ -124,8 +109,7 @@ export const getRandomPassableTile = (map: GameMap): TeleportDestination | undef
   }
 
   // ランダムに選択（敵がいる場所へのワープも許可）
-  const index = Math.floor(Math.random() * passableTiles.length);
-  return passableTiles[index];
+  return random.pick(passableTiles);
 };
 
 /**
@@ -135,7 +119,8 @@ export const triggerTrap = (
   trap: Trap,
   player: Player,
   currentTime: number,
-  map?: GameMap
+  map?: GameMap,
+  random?: RandomProvider
 ): TrapTriggerResult => {
   const config = TRAP_CONFIGS[trap.type];
   let newState: TrapStateValue;
@@ -169,9 +154,12 @@ export const triggerTrap = (
       break;
     case TrapType.TELEPORT:
       // 迷路内のランダムな通行可能タイルにワープ
-      if (map) {
-        teleportDestination = getRandomPassableTile(map);
+      if (!map || !random) {
+        // テレポート罠にはマップと乱数プロバイダーが必須
+        console.warn('triggerTrap: テレポート罠に map と random が必要です');
+        break;
       }
+      teleportDestination = getRandomPassableTile(map, random);
       break;
   }
 

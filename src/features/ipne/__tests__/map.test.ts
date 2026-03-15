@@ -1,17 +1,22 @@
 import { createMap } from '../domain/services/mapService';
 import { TileType } from '../types';
+import { MockRandomProvider } from './mocks/MockRandomProvider';
 
 describe('map', () => {
+  const rng = new MockRandomProvider(0.5);
+
   describe('createMap', () => {
     test('固定マップが正しく生成されること', () => {
-      const map = createMap();
+      rng.reset();
+      const map = createMap(undefined, rng);
       expect(map).toBeDefined();
       expect(map.length).toBeGreaterThan(0);
       expect(map[0].length).toBeGreaterThan(0);
     });
 
     test('マップにスタート地点が1つ含まれること', () => {
-      const map = createMap();
+      rng.reset();
+      const map = createMap(undefined, rng);
       let startCount = 0;
       for (const row of map) {
         for (const tile of row) {
@@ -22,7 +27,8 @@ describe('map', () => {
     });
 
     test('マップにゴール地点が1つ含まれること', () => {
-      const map = createMap();
+      rng.reset();
+      const map = createMap(undefined, rng);
       let goalCount = 0;
       for (const row of map) {
         for (const tile of row) {
@@ -33,7 +39,8 @@ describe('map', () => {
     });
 
     test('マップの外周が壁で囲まれていること', () => {
-      const map = createMap();
+      rng.reset();
+      const map = createMap(undefined, rng);
       const height = map.length;
       const width = map[0].length;
 

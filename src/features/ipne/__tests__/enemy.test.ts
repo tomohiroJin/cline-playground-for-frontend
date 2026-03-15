@@ -6,7 +6,6 @@ import {
   damageEnemy,
   isEnemyAlive,
   applyKnockbackToEnemy,
-  resetEnemyIdCounter,
   SPECIMEN_DROP_RATE,
   DROP_ITEM_WEIGHTS,
   shouldDropItem,
@@ -14,55 +13,58 @@ import {
   createDropItem,
   processEnemyDeath,
 } from '../domain/entities/enemy';
-import { resetItemIdCounter } from '../domain/entities/item';
 import { EnemyState, Direction, ItemType } from '../types';
+import { MockIdGenerator } from './mocks/MockIdGenerator';
 
 describe('enemy', () => {
+  let idGen: MockIdGenerator;
+
   beforeEach(() => {
-    resetEnemyIdCounter();
+    idGen = new MockIdGenerator();
   });
+
   test('種類別の敵が正しく生成されること', () => {
-    const patrol = createPatrolEnemy(1, 1);
+    const patrol = createPatrolEnemy(1, 1, idGen);
     expect(patrol.hp).toBe(4);
     expect(patrol.damage).toBe(1);
     expect(patrol.speed).toBe(2);
 
-    const charge = createChargeEnemy(2, 2);
+    const charge = createChargeEnemy(2, 2, idGen);
     expect(charge.hp).toBe(3);
     expect(charge.damage).toBe(2);
     expect(charge.speed).toBe(5);
 
-    const specimen = createSpecimenEnemy(3, 3);
+    const specimen = createSpecimenEnemy(3, 3, idGen);
     expect(specimen.hp).toBe(1);
     expect(specimen.damage).toBe(0);
     expect(specimen.speed).toBe(4);
 
-    const boss = createBoss(4, 4);
+    const boss = createBoss(4, 4, idGen);
     expect(boss.hp).toBe(35);
     expect(boss.damage).toBe(4);
     expect(boss.speed).toBe(1.5);
   });
 
   test('敵IDが一意であること', () => {
-    const enemy1 = createPatrolEnemy(1, 1);
-    const enemy2 = createPatrolEnemy(2, 2);
+    const enemy1 = createPatrolEnemy(1, 1, idGen);
+    const enemy2 = createPatrolEnemy(2, 2, idGen);
     expect(enemy1.id).not.toBe(enemy2.id);
   });
 
   test('ダメージでHPが減少すること', () => {
-    const enemy = createPatrolEnemy(1, 1);
+    const enemy = createPatrolEnemy(1, 1, idGen);
     const damaged = damageEnemy(enemy, 2);
     expect(damaged.hp).toBe(2); // HP 4 - 2 = 2
   });
 
   test('HP0で死亡判定になること', () => {
-    const enemy = createPatrolEnemy(1, 1);
+    const enemy = createPatrolEnemy(1, 1, idGen);
     const damaged = damageEnemy(enemy, 999);
     expect(isEnemyAlive(damaged)).toBe(false);
   });
 
   test('ノックバック状態が設定されること', () => {
-    const enemy = createPatrolEnemy(1, 1);
+    const enemy = createPatrolEnemy(1, 1, idGen);
     const knocked = applyKnockbackToEnemy(enemy, Direction.UP, 1234);
     expect(knocked.state).toBe(EnemyState.KNOCKBACK);
     expect(knocked.knockbackDirection).toBe(Direction.UP);
@@ -72,10 +74,6 @@ describe('enemy', () => {
   // ===== MVP4 SPECIMENドロップテスト =====
 
   describe('SPECIMENドロップ', () => {
-    beforeEach(() => {
-      resetItemIdCounter();
-    });
-
     describe('SPECIMEN_DROP_RATE', () => {
       test('ドロップ率が0.3であること', () => {
         expect(SPECIMEN_DROP_RATE).toBe(0.3);
@@ -92,21 +90,21 @@ describe('enemy', () => {
 
     describe('shouldDropItem', () => {
       test('SPECIMENで確率未満の場合はtrueを返すこと', () => {
-        const specimen = createSpecimenEnemy(1, 1);
+        const specimen = createSpecimenEnemy(1, 1, idGen);
         expect(shouldDropItem(specimen, 0.1)).toBe(true);
         expect(shouldDropItem(specimen, 0.29)).toBe(true);
       });
 
       test('SPECIMENで確率以上の場合はfalseを返すこと', () => {
-        const specimen = createSpecimenEnemy(1, 1);
+        const specimen = createSpecimenEnemy(1, 1, idGen);
         expect(shouldDropItem(specimen, 0.3)).toBe(false);
         expect(shouldDropItem(specimen, 0.5)).toBe(false);
       });
 
       test('SPECIMEN以外の敵はfalseを返すこと', () => {
-        const patrol = createPatrolEnemy(1, 1);
-        const charge = createChargeEnemy(1, 1);
-        const boss = createBoss(1, 1);
+        const patrol = createPatrolEnemy(1, 1, idGen);
+        const charge = createChargeEnemy(1, 1, idGen);
+        const boss = createBoss(1, 1, idGen);
 
         expect(shouldDropItem(patrol, 0.1)).toBe(false);
         expect(shouldDropItem(charge, 0.1)).toBe(false);
@@ -133,8 +131,8 @@ describe('enemy', () => {
 
     describe('createDropItem', () => {
       test('小回復アイテムを作成すること', () => {
-        const specimen = createSpecimenEnemy(5, 7);
-        const item = createDropItem(specimen, 0);
+        const specimen = createSpecimenEnemy(5, 7, idGen);
+        const item = createDropItem(specimen, idGen, 0);
 
         expect(item).not.toBeNull();
         expect(item?.type).toBe(ItemType.HEALTH_SMALL);
@@ -143,16 +141,16 @@ describe('enemy', () => {
       });
 
       test('大回復アイテムを作成すること', () => {
-        const specimen = createSpecimenEnemy(3, 4);
-        const item = createDropItem(specimen, 0.5);
+        const specimen = createSpecimenEnemy(3, 4, idGen);
+        const item = createDropItem(specimen, idGen, 0.5);
 
         expect(item).not.toBeNull();
         expect(item?.type).toBe(ItemType.HEALTH_LARGE);
       });
 
       test('レベルアップアイテムを作成すること', () => {
-        const specimen = createSpecimenEnemy(2, 3);
-        const item = createDropItem(specimen, 0.9);
+        const specimen = createSpecimenEnemy(2, 3, idGen);
+        const item = createDropItem(specimen, idGen, 0.9);
 
         expect(item).not.toBeNull();
         expect(item?.type).toBe(ItemType.LEVEL_UP);
@@ -161,16 +159,16 @@ describe('enemy', () => {
 
     describe('processEnemyDeath', () => {
       test('生存中の敵は死亡処理しないこと', () => {
-        const specimen = createSpecimenEnemy(1, 1);
-        const result = processEnemyDeath(specimen, 0.1, 0);
+        const specimen = createSpecimenEnemy(1, 1, idGen);
+        const result = processEnemyDeath(specimen, idGen, 0.1, 0);
 
         expect(result.isDead).toBe(false);
         expect(result.droppedItem).toBeNull();
       });
 
       test('死亡したSPECIMENでアイテムをドロップすること', () => {
-        const specimen = damageEnemy(createSpecimenEnemy(3, 4), 999);
-        const result = processEnemyDeath(specimen, 0.1, 0);
+        const specimen = damageEnemy(createSpecimenEnemy(3, 4, idGen), 999);
+        const result = processEnemyDeath(specimen, idGen, 0.1, 0);
 
         expect(result.isDead).toBe(true);
         expect(result.droppedItem).not.toBeNull();
@@ -179,25 +177,24 @@ describe('enemy', () => {
       });
 
       test('死亡したSPECIMENでドロップしない場合があること', () => {
-        const specimen = damageEnemy(createSpecimenEnemy(1, 1), 999);
-        const result = processEnemyDeath(specimen, 0.5, 0);
+        const specimen = damageEnemy(createSpecimenEnemy(1, 1, idGen), 999);
+        const result = processEnemyDeath(specimen, idGen, 0.5, 0);
 
         expect(result.isDead).toBe(true);
         expect(result.droppedItem).toBeNull();
       });
 
       test('死亡したPATROL敵はアイテムをドロップしないこと', () => {
-        const patrol = damageEnemy(createPatrolEnemy(1, 1), 999);
-        const result = processEnemyDeath(patrol, 0.1, 0);
+        const patrol = damageEnemy(createPatrolEnemy(1, 1, idGen), 999);
+        const result = processEnemyDeath(patrol, idGen, 0.1, 0);
 
         expect(result.isDead).toBe(true);
         expect(result.droppedItem).toBeNull();
       });
 
       test('死亡したBOSSは必ず鍵をドロップすること', () => {
-        resetItemIdCounter();
-        const boss = damageEnemy(createBoss(5, 6), 999);
-        const result = processEnemyDeath(boss, 0.9, 0.9);
+        const boss = damageEnemy(createBoss(5, 6, idGen), 999);
+        const result = processEnemyDeath(boss, idGen, 0.9, 0.9);
 
         expect(result.isDead).toBe(true);
         expect(result.droppedItem).not.toBeNull();

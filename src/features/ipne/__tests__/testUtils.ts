@@ -26,6 +26,10 @@ import {
 import { createPlayer } from '../domain/entities/player';
 import { createEnemy } from '../domain/entities/enemy';
 import { createItem } from '../domain/entities/item';
+import { MockIdGenerator } from './mocks/MockIdGenerator';
+
+/** テスト用共通IdGenerator */
+const testIdGen = new MockIdGenerator();
 
 /**
  * テスト用マップを生成
@@ -69,7 +73,7 @@ export const createTestEnemy = (
   x = 2,
   y = 2
 ): Enemy => {
-  return createEnemy(type, x, y);
+  return createEnemy(type, x, y, testIdGen);
 };
 
 /**
@@ -80,19 +84,10 @@ export const createTestItem = (
   x = 3,
   y = 3
 ): Item => {
-  return createItem(type, x, y);
+  return createItem(type, x, y, testIdGen);
 };
 
 // ===== MVP3 テストヘルパー =====
-
-let trapIdCounter = 0;
-
-/**
- * 罠IDカウンタをリセット
- */
-export const resetTrapIdCounter = (): void => {
-  trapIdCounter = 0;
-};
 
 /**
  * テスト用罠を生成
@@ -103,9 +98,8 @@ export const createTestTrap = (
   y = 2,
   state: TrapStateValue = TrapState.HIDDEN
 ): Trap => {
-  trapIdCounter += 1;
   return {
-    id: `trap-${trapIdCounter}`,
+    id: testIdGen.generateTrapId(),
     x,
     y,
     type,

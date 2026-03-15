@@ -4,6 +4,7 @@
 import { describe, test, expect } from '@jest/globals';
 import { generateMaze } from '../domain/services/mazeGenerator';
 import { MazeConfig, TileType } from '../types';
+import { MockRandomProvider } from './mocks/MockRandomProvider';
 
 const testConfig: MazeConfig = {
   width: 40,
@@ -16,16 +17,18 @@ const testConfig: MazeConfig = {
 };
 
 describe('mazeGenerator', () => {
+  const rng = new MockRandomProvider(0.5);
+
   describe('generateMaze', () => {
     test('指定サイズの迷路を生成する', () => {
-      const { grid: maze } = generateMaze(testConfig);
+      const { grid: maze } = generateMaze(testConfig, rng);
 
       expect(maze.length).toBe(testConfig.height);
       expect(maze[0].length).toBe(testConfig.width);
     });
 
     test('外周が壁で囲まれている', () => {
-      const { grid: maze } = generateMaze(testConfig);
+      const { grid: maze } = generateMaze(testConfig, rng);
 
       // 上下の外周チェック
       for (let x = 0; x < testConfig.width; x++) {
@@ -41,7 +44,7 @@ describe('mazeGenerator', () => {
     });
 
     test('床タイルが存在する', () => {
-      const { grid: maze } = generateMaze(testConfig);
+      const { grid: maze } = generateMaze(testConfig, rng);
       let floorCount = 0;
 
       for (let y = 0; y < testConfig.height; y++) {
@@ -57,7 +60,7 @@ describe('mazeGenerator', () => {
     });
 
     test('BSP生成された部屋情報が返される', () => {
-      const { rooms } = generateMaze(testConfig);
+      const { rooms } = generateMaze(testConfig, rng);
 
       // 部屋が生成されている
       expect(rooms.length).toBeGreaterThan(0);
@@ -80,7 +83,7 @@ describe('mazeGenerator', () => {
     });
 
     test('部屋タイルは通路ではなく実際の部屋内座標である', () => {
-      const { grid: maze, rooms } = generateMaze(testConfig);
+      const { grid: maze, rooms } = generateMaze(testConfig, rng);
 
       // 各部屋のtilesは実際に床タイルになっている
       for (const room of rooms) {

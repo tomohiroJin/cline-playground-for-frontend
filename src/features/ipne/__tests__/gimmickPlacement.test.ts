@@ -16,8 +16,9 @@ import {
   findCorridorBlockWalls,
 } from '../domain/services/gimmickPlacement/gimmickPlacement';
 import { TileType, Room, TrapType, WallType, Position } from '../types';
-import { resetTrapIdCounter } from '../domain/entities/trap';
 import { isConnected } from '../domain/services/pathfinderService';
+import { MockIdGenerator } from './mocks/MockIdGenerator';
+import { MockRandomProvider } from './mocks/MockRandomProvider';
 
 /**
  * テスト用のマップとルームを作成
@@ -69,22 +70,26 @@ const createTestMazeResult = () => {
 };
 
 describe('gimmickPlacement', () => {
+  let idGen: MockIdGenerator;
+  let rng: MockRandomProvider;
+
   beforeEach(() => {
-    resetTrapIdCounter();
+    idGen = new MockIdGenerator();
+    rng = new MockRandomProvider(0.5);
   });
 
   describe('placeTrap', () => {
     test('指定数の罠が配置されること', () => {
       const { grid, rooms } = createTestMazeResult();
       const config = { ...DEFAULT_GIMMICK_CONFIG, trapCount: 5 };
-      const traps = placeTrap(rooms, grid, [], config);
+      const traps = placeTrap(rooms, grid, [], idGen, rng, config);
       expect(traps.length).toBe(5);
     });
 
     test('除外位置には罠が配置されないこと', () => {
       const { grid, rooms } = createTestMazeResult();
       const excluded = [{ x: 2, y: 2 }, { x: 5, y: 5 }];
-      const traps = placeTrap(rooms, grid, excluded, DEFAULT_GIMMICK_CONFIG);
+      const traps = placeTrap(rooms, grid, excluded, idGen, rng, DEFAULT_GIMMICK_CONFIG);
 
       for (const trap of traps) {
         expect(excluded.some(e => e.x === trap.x && e.y === trap.y)).toBe(false);
@@ -94,7 +99,7 @@ describe('gimmickPlacement', () => {
     test('罠IDが一意であること', () => {
       const { grid, rooms } = createTestMazeResult();
       const config = { ...DEFAULT_GIMMICK_CONFIG, trapCount: 3 };
-      const traps = placeTrap(rooms, grid, [], config);
+      const traps = placeTrap(rooms, grid, [], idGen, rng, config);
 
       const ids = new Set(traps.map(t => t.id));
       expect(ids.size).toBe(traps.length);
@@ -107,7 +112,7 @@ describe('gimmickPlacement', () => {
         trapCount: 100,
         trapRatio: { damage: 1.0, slow: 0, teleport: 0 },
       };
-      const traps = placeTrap(rooms, grid, [], config);
+      const traps = placeTrap(rooms, grid, [], idGen, rng, config);
 
       // 全てダメージ罠であること
       for (const trap of traps) {
@@ -120,14 +125,14 @@ describe('gimmickPlacement', () => {
     test('指定数の特殊壁が配置されること', () => {
       const { grid } = createTestMazeResult();
       const config = { ...DEFAULT_GIMMICK_CONFIG, wallCount: 3 };
-      const walls = placeWalls(grid, [], config);
+      const walls = placeWalls(grid, [], rng, config);
       expect(walls.length).toBeLessThanOrEqual(3);
     });
 
     test('除外位置には壁が配置されないこと', () => {
       const { grid } = createTestMazeResult();
       const excluded = [{ x: 4, y: 2 }, { x: 5, y: 3 }];
-      const walls = placeWalls(grid, excluded, DEFAULT_GIMMICK_CONFIG);
+      const walls = placeWalls(grid, excluded, rng, DEFAULT_GIMMICK_CONFIG);
 
       for (const wall of walls) {
         expect(excluded.some(e => e.x === wall.x && e.y === wall.y)).toBe(false);
@@ -141,7 +146,7 @@ describe('gimmickPlacement', () => {
         wallCount: 50,
         wallRatio: { breakable: 1.0, passable: 0, invisible: 0 },
       };
-      const walls = placeWalls(grid, [], config);
+      const walls = placeWalls(grid, [], rng, config);
 
       // 配置された壁は全て破壊可能壁であること
       for (const wall of walls) {
@@ -157,7 +162,7 @@ describe('gimmickPlacement', () => {
         wallRatio: { breakable: 1.0, passable: 0, invisible: 0 },
       };
 
-      const walls = placeWalls(grid, [], config);
+      const walls = placeWalls(grid, [], rng, config);
       const breakableWalls = walls.filter(w => w.type === WallType.BREAKABLE);
 
       expect(breakableWalls.length).toBeGreaterThan(0);
@@ -185,7 +190,7 @@ describe('gimmickPlacement', () => {
         wallCount: 5,
         wallRatio: { breakable: 1.0, passable: 0, invisible: 0 },
       };
-      const walls = placeWalls(grid, [], config);
+      const walls = placeWalls(grid, [], rng, config);
 
       // BREAKABLE壁が複数連続して配置されていることを確認
       const breakableWalls = walls.filter(w => w.type === WallType.BREAKABLE);
@@ -205,7 +210,7 @@ describe('gimmickPlacement', () => {
         trapCount: 3,
         wallCount: 2,
       };
-      const result = placeGimmicks(rooms, grid, [], config);
+      const result = placeGimmicks(rooms, grid, [], idGen, rng, config);
 
       expect(result.traps.length).toBe(3);
       expect(result.walls.length).toBeLessThanOrEqual(2);
@@ -213,7 +218,7 @@ describe('gimmickPlacement', () => {
 
     test('罠と壁が同じ位置に配置されないこと', () => {
       const { grid, rooms } = createTestMazeResult();
-      const result = placeGimmicks(rooms, grid, [], DEFAULT_GIMMICK_CONFIG);
+      const result = placeGimmicks(rooms, grid, [], idGen, rng, DEFAULT_GIMMICK_CONFIG);
 
       const trapPositions = new Set(result.traps.map(t => `${t.x},${t.y}`));
       for (const wall of result.walls) {
@@ -224,7 +229,7 @@ describe('gimmickPlacement', () => {
     test('除外位置には何も配置されないこと', () => {
       const { grid, rooms } = createTestMazeResult();
       const excluded = [{ x: 2, y: 2 }, { x: 7, y: 7 }];
-      const result = placeGimmicks(rooms, grid, excluded, DEFAULT_GIMMICK_CONFIG);
+      const result = placeGimmicks(rooms, grid, excluded, idGen, rng, DEFAULT_GIMMICK_CONFIG);
 
       for (const trap of result.traps) {
         expect(excluded.some(e => e.x === trap.x && e.y === trap.y)).toBe(false);
@@ -238,7 +243,7 @@ describe('gimmickPlacement', () => {
       const { grid, rooms } = createTestMazeResult();
       const start = { x: 2, y: 2 };
       const goal = { x: 7, y: 7 };
-      const result = placeGimmicks(rooms, grid, [start, goal], DEFAULT_GIMMICK_CONFIG, start, goal);
+      const result = placeGimmicks(rooms, grid, [start, goal], idGen, rng, DEFAULT_GIMMICK_CONFIG, start, goal);
 
       // 壁が配置されていること
       expect(result.walls.length).toBeGreaterThan(0);
@@ -258,7 +263,7 @@ describe('gimmickPlacement', () => {
         },
       };
 
-      expect(() => placeGimmicks(rooms, grid, [], invalidConfig)).toThrow();
+      expect(() => placeGimmicks(rooms, grid, [], idGen, rng, invalidConfig)).toThrow();
     });
 
     test('設定値の個数が不正な場合はエラーになること', () => {
@@ -268,7 +273,7 @@ describe('gimmickPlacement', () => {
         wallCount: -1,
       };
 
-      expect(() => placeGimmicks(rooms, grid, [], invalidConfig)).toThrow();
+      expect(() => placeGimmicks(rooms, grid, [], idGen, rng, invalidConfig)).toThrow();
     });
   });
 
@@ -466,7 +471,7 @@ describe('gimmickPlacement', () => {
       const start = { x: 2, y: 2 };
       const goal = { x: 7, y: 7 };
 
-      const walls = placeStrategicWalls(grid, [start, goal], start, goal, DEFAULT_GIMMICK_CONFIG);
+      const walls = placeStrategicWalls(grid, [start, goal], start, goal, rng, DEFAULT_GIMMICK_CONFIG);
 
       // 壁が配置されていること
       expect(walls.length).toBeGreaterThan(0);
@@ -493,7 +498,7 @@ describe('gimmickPlacement', () => {
         },
       };
 
-      placeStrategicWalls(grid, [start, goal], start, goal, config);
+      placeStrategicWalls(grid, [start, goal], start, goal, rng, config);
 
       // INVISIBLE壁はブロッキングを避けるため、元のマップで到達可能性は変わらない
       // （INVISIBLEは床に配置されるが、hasAlternativeRouteでチェックされている）
@@ -516,7 +521,7 @@ describe('gimmickPlacement', () => {
         },
       };
 
-      const walls = placeStrategicWalls(grid, [start, goal], start, goal, config);
+      const walls = placeStrategicWalls(grid, [start, goal], start, goal, rng, config);
 
       // パターン制限により最大4個＋フォールバック分
       expect(walls.length).toBeLessThanOrEqual(config.wallCount);
@@ -639,7 +644,7 @@ describe('gimmickPlacement', () => {
         },
       };
 
-      const walls = placeStrategicWalls(grid, [start, goal], start, goal, config);
+      const walls = placeStrategicWalls(grid, [start, goal], start, goal, rng, config);
 
       // BREAKABLE壁が配置されていること
       const breakableWalls = walls.filter(w => w.type === WallType.BREAKABLE);
@@ -668,7 +673,7 @@ describe('gimmickPlacement', () => {
         wallCount: 6,
       };
 
-      const walls = placeStrategicWalls(grid, [start, goal], start, goal, config);
+      const walls = placeStrategicWalls(grid, [start, goal], start, goal, rng, config);
 
       // 壁が配置されていること
       expect(walls.length).toBeGreaterThan(0);
@@ -716,7 +721,7 @@ describe('gimmickPlacement', () => {
         ...DEFAULT_GIMMICK_CONFIG,
         wallCount: 3,
       };
-      const walls = placeStrategicWalls(grid, [start, goal], start, goal, config);
+      const walls = placeStrategicWalls(grid, [start, goal], start, goal, rng, config);
 
       // 壁が配置されていること
       expect(walls.length).toBeGreaterThan(0);

@@ -2,6 +2,7 @@ import { createWall } from '../../entities/wall';
 import { assertCondition, assertIntegerInRange, assertNumberInRange } from '../../contracts';
 import { Position, Trap, TrapType, TrapTypeValue, Wall, WallType } from '../../types';
 import { MultiWallCandidate } from './types';
+import { RandomProvider } from '../../ports';
 
 export interface PlacementConfigLike {
   trapCount: number;
@@ -18,8 +19,8 @@ export interface PlacementConfigLike {
   };
 }
 
-export const selectTrapType = (ratio: PlacementConfigLike['trapRatio']): TrapTypeValue => {
-  const rand = Math.random();
+export const selectTrapType = (ratio: PlacementConfigLike['trapRatio'], random: RandomProvider): TrapTypeValue => {
+  const rand = random.random();
   if (rand < ratio.damage) {
     return TrapType.DAMAGE;
   } else if (rand < ratio.damage + ratio.slow) {
@@ -29,8 +30,8 @@ export const selectTrapType = (ratio: PlacementConfigLike['trapRatio']): TrapTyp
   }
 };
 
-export const selectWallType = (ratio: PlacementConfigLike['wallRatio']): typeof WallType[keyof typeof WallType] => {
-  const rand = Math.random();
+export const selectWallType = (ratio: PlacementConfigLike['wallRatio'], random: RandomProvider): typeof WallType[keyof typeof WallType] => {
+  const rand = random.random();
   if (rand < ratio.breakable) {
     return WallType.BREAKABLE;
   } else if (rand < ratio.breakable + ratio.passable) {

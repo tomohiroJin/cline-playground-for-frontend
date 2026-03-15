@@ -3,6 +3,9 @@ import { createPlayer } from '../../domain/entities/player';
 import { COMBAT_CONFIG } from '../../domain/services/combatService';
 import { Direction, EnemyType, GameMap, TileType } from '../../types';
 import { resolvePlayerDamage } from './resolvePlayerDamage';
+import { MockIdGenerator } from '../../__tests__/mocks/MockIdGenerator';
+
+const idGen = new MockIdGenerator();
 
 describe('resolvePlayerDamage', () => {
   const createFloorMap = (size: number): GameMap =>
@@ -10,7 +13,7 @@ describe('resolvePlayerDamage', () => {
 
   it('ダメージが通る場合はHPを減らし、ノックバックを適用する', () => {
     const map = createFloorMap(7);
-    const sourceEnemy = createEnemy(EnemyType.PATROL, 2, 3);
+    const sourceEnemy = createEnemy(EnemyType.PATROL, 2, 3, idGen);
     const player = createPlayer(3, 3);
 
     const result = resolvePlayerDamage({
@@ -32,7 +35,7 @@ describe('resolvePlayerDamage', () => {
 
   it('無敵中はダメージもノックバックも適用しない', () => {
     const map = createFloorMap(7);
-    const sourceEnemy = createEnemy(EnemyType.PATROL, 2, 3);
+    const sourceEnemy = createEnemy(EnemyType.PATROL, 2, 3, idGen);
     const player = {
       ...createPlayer(3, 3),
       isInvincible: true,

@@ -10,7 +10,8 @@ import {
   createBrowserStorageProvider,
   NOOP_STORAGE_PROVIDER,
 } from './StorageProvider';
-import { ClockProvider, SYSTEM_CLOCK_PROVIDER } from '../clock/ClockProvider';
+import { ClockProvider } from '../../domain/ports';
+import { SYSTEM_CLOCK_PROVIDER } from '../clock/ClockProvider';
 
 // 型の再エクスポート
 export type { BestRecords, GameRecord } from '../../types';

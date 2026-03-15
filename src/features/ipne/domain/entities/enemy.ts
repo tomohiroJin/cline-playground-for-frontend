@@ -3,6 +3,7 @@
  */
 import { DirectionValue, Enemy, EnemyState, EnemyType, EnemyTypeValue, Item, Position } from '../types';
 import { createHealthSmall, createHealthLarge, createLevelUpItem, createKeyItem } from './item';
+import { IdGenerator } from '../ports';
 
 const ENEMY_CONFIGS = {
   [EnemyType.PATROL]: {
@@ -64,23 +65,12 @@ const ENEMY_CONFIGS = {
   },
 } as const;
 
-let enemyIdCounter = 0;
-
-export const generateEnemyId = (): string => {
-  enemyIdCounter += 1;
-  return `enemy-${enemyIdCounter}`;
-};
-
-export const resetEnemyIdCounter = (): void => {
-  enemyIdCounter = 0;
-};
-
-export const createEnemy = (type: EnemyTypeValue, x: number, y: number): Enemy => {
+export const createEnemy = (type: EnemyTypeValue, x: number, y: number, idGenerator: IdGenerator): Enemy => {
   const config = ENEMY_CONFIGS[type];
   const homePosition: Position = { x, y };
 
   return {
-    id: generateEnemyId(),
+    id: idGenerator.generateEnemyId(),
     x,
     y,
     type,
@@ -100,34 +90,34 @@ export const createEnemy = (type: EnemyTypeValue, x: number, y: number): Enemy =
   };
 };
 
-export const createPatrolEnemy = (x: number, y: number): Enemy => {
-  return createEnemy(EnemyType.PATROL, x, y);
+export const createPatrolEnemy = (x: number, y: number, idGenerator: IdGenerator): Enemy => {
+  return createEnemy(EnemyType.PATROL, x, y, idGenerator);
 };
 
-export const createChargeEnemy = (x: number, y: number): Enemy => {
-  return createEnemy(EnemyType.CHARGE, x, y);
+export const createChargeEnemy = (x: number, y: number, idGenerator: IdGenerator): Enemy => {
+  return createEnemy(EnemyType.CHARGE, x, y, idGenerator);
 };
 
-export const createRangedEnemy = (x: number, y: number): Enemy => {
-  return createEnemy(EnemyType.RANGED, x, y);
+export const createRangedEnemy = (x: number, y: number, idGenerator: IdGenerator): Enemy => {
+  return createEnemy(EnemyType.RANGED, x, y, idGenerator);
 };
 
-export const createSpecimenEnemy = (x: number, y: number): Enemy => {
-  return createEnemy(EnemyType.SPECIMEN, x, y);
+export const createSpecimenEnemy = (x: number, y: number, idGenerator: IdGenerator): Enemy => {
+  return createEnemy(EnemyType.SPECIMEN, x, y, idGenerator);
 };
 
-export const createBoss = (x: number, y: number): Enemy => {
-  return createEnemy(EnemyType.BOSS, x, y);
+export const createBoss = (x: number, y: number, idGenerator: IdGenerator): Enemy => {
+  return createEnemy(EnemyType.BOSS, x, y, idGenerator);
 };
 
 /** ミニボスを生成する */
-export const createMiniBoss = (x: number, y: number): Enemy => {
-  return createEnemy(EnemyType.MINI_BOSS, x, y);
+export const createMiniBoss = (x: number, y: number, idGenerator: IdGenerator): Enemy => {
+  return createEnemy(EnemyType.MINI_BOSS, x, y, idGenerator);
 };
 
 /** メガボスを生成する */
-export const createMegaBoss = (x: number, y: number): Enemy => {
-  return createEnemy(EnemyType.MEGA_BOSS, x, y);
+export const createMegaBoss = (x: number, y: number, idGenerator: IdGenerator): Enemy => {
+  return createEnemy(EnemyType.MEGA_BOSS, x, y, idGenerator);
 };
 
 export const isEnemyAlive = (enemy: Enemy): boolean => {
@@ -170,7 +160,7 @@ export const DROP_ITEM_WEIGHTS = {
  * @param random 乱数（0.0〜1.0）- テスト用にオプショナル
  * @returns ドロップする場合true
  */
-export function shouldDropItem(enemy: Enemy, random: number = Math.random()): boolean {
+export function shouldDropItem(enemy: Enemy, random: number): boolean {
   // SPECIMENのみドロップ
   if (enemy.type !== EnemyType.SPECIMEN) {
     return false;
@@ -183,7 +173,7 @@ export function shouldDropItem(enemy: Enemy, random: number = Math.random()): bo
  * @param random 乱数（0.0〜1.0）- テスト用にオプショナル
  * @returns アイテムタイプ
  */
-export function selectDropItemType(random: number = Math.random()): 'health_small' | 'health_large' | 'level_up' {
+export function selectDropItemType(random: number): 'health_small' | 'health_large' | 'level_up' {
   const totalWeight =
     DROP_ITEM_WEIGHTS.HEALTH_SMALL + DROP_ITEM_WEIGHTS.HEALTH_LARGE + DROP_ITEM_WEIGHTS.LEVEL_UP;
   const roll = random * totalWeight;
@@ -203,16 +193,16 @@ export function selectDropItemType(random: number = Math.random()): 'health_smal
  * @param itemRandom アイテム種類の乱数
  * @returns 作成されたアイテム、またはnull
  */
-export function createDropItem(enemy: Enemy, itemRandom: number = Math.random()): Item | null {
+export function createDropItem(enemy: Enemy, idGenerator: IdGenerator, itemRandom: number): Item | null {
   const itemType = selectDropItemType(itemRandom);
 
   switch (itemType) {
     case 'health_small':
-      return createHealthSmall(enemy.x, enemy.y);
+      return createHealthSmall(enemy.x, enemy.y, idGenerator);
     case 'health_large':
-      return createHealthLarge(enemy.x, enemy.y);
+      return createHealthLarge(enemy.x, enemy.y, idGenerator);
     case 'level_up':
-      return createLevelUpItem(enemy.x, enemy.y);
+      return createLevelUpItem(enemy.x, enemy.y, idGenerator);
     default:
       return null;
   }
@@ -235,8 +225,9 @@ export interface EnemyDeathResult {
  */
 export function processEnemyDeath(
   enemy: Enemy,
-  dropRandom: number = Math.random(),
-  itemRandom: number = Math.random()
+  idGenerator: IdGenerator,
+  dropRandom: number,
+  itemRandom: number
 ): EnemyDeathResult {
   if (isEnemyAlive(enemy)) {
     return { isDead: false, droppedItem: null };
@@ -246,12 +237,12 @@ export function processEnemyDeath(
 
   // ボスとメガボスは必ず鍵をドロップする
   if (enemy.type === EnemyType.BOSS || enemy.type === EnemyType.MEGA_BOSS) {
-    droppedItem = createKeyItem(enemy.x, enemy.y);
+    droppedItem = createKeyItem(enemy.x, enemy.y, idGenerator);
   } else if (enemy.type === EnemyType.MINI_BOSS) {
     // ミニボスは大回復アイテムを確定ドロップ
-    droppedItem = createHealthLarge(enemy.x, enemy.y);
+    droppedItem = createHealthLarge(enemy.x, enemy.y, idGenerator);
   } else if (shouldDropItem(enemy, dropRandom)) {
-    droppedItem = createDropItem(enemy, itemRandom);
+    droppedItem = createDropItem(enemy, idGenerator, itemRandom);
   }
 
   return { isDead: true, droppedItem };

@@ -145,67 +145,65 @@
 
 ### P3-1: ポートインターフェースの定義
 
-- [ ] **P3-1-1**: `domain/ports/IdGenerator.ts` を作成
-- [ ] **P3-1-2**: `domain/ports/RandomProvider.ts` を作成
-- [ ] **P3-1-3**: `domain/ports/ClockProvider.ts` を作成
-- [ ] **P3-1-4**: `domain/ports/index.ts` を作成（barrel export）
+- [x] **P3-1-1**: `domain/ports/IdGenerator.ts` を作成
+- [x] **P3-1-2**: `domain/ports/RandomProvider.ts` を作成
+- [x] **P3-1-3**: `domain/ports/ClockProvider.ts` を作成
+- [x] **P3-1-4**: `domain/ports/index.ts` を作成（barrel export）
 
 ### P3-2: インフラ実装の作成
 
-- [ ] **P3-2-1**: `infrastructure/id/SequentialIdGenerator.ts` を作成
-- [ ] **P3-2-2**: 既存 `infrastructure/random/RandomProvider.ts` を port 実装に更新
-- [ ] **P3-2-3**: 既存 `infrastructure/clock/ClockProvider.ts` を port 実装に更新
-- [ ] **P3-2-4**: テスト用 `__tests__/mocks/MockIdGenerator.ts` を作成
-- [ ] **P3-2-5**: テスト用 `__tests__/mocks/MockRandomProvider.ts` を作成
-- [ ] **P3-2-6**: テスト用 `__tests__/mocks/MockClockProvider.ts` を作成
+- [x] **P3-2-1**: `infrastructure/id/SequentialIdGenerator.ts` を作成
+- [x] **P3-2-2**: 既存 `infrastructure/random/RandomProvider.ts` を port 実装に更新
+- [x] **P3-2-3**: 既存 `infrastructure/clock/ClockProvider.ts` を port 実装に更新
+- [x] **P3-2-4**: テスト用 `__tests__/mocks/MockIdGenerator.ts` を作成
+- [x] **P3-2-5**: テスト用 `__tests__/mocks/MockRandomProvider.ts` を作成
+- [x] **P3-2-6**: テスト用 `__tests__/mocks/MockClockProvider.ts` を作成
 
 ### P3-3: グローバル ID カウンタの除去
 
-- [ ] **P3-3-1**: `domain/entities/enemy.ts` から `enemyIdCounter` を削除、`createEnemy` に `IdGenerator` 引数を追加
-- [ ] **P3-3-2**: `domain/entities/trap.ts` から `trapIdCounter` を削除、`createTrap` に `IdGenerator` 引数を追加
-- [ ] **P3-3-3**: `domain/entities/item.ts` から `itemIdCounter` を削除、`createItem` に `IdGenerator` 引数を追加
-- [ ] **P3-3-4**: `presentation/services/feedbackService.ts` から `feedbackIdCounter` を削除（存在する場合）
-- [ ] **P3-3-5**: 全呼び出し箇所を更新（IdGenerator を渡すように）
-- [ ] **P3-3-6**: `testUtils.ts` の `resetEnemyIdCounter()` 等を削除
-- [ ] **P3-3-7**: テストを更新（MockIdGenerator を使用）
-- [ ] **P3-3-8**: 全テストが通ることを確認
+- [x] **P3-3-1**: `domain/entities/enemy.ts` から `enemyIdCounter` を削除、`createEnemy` に `IdGenerator` 引数を追加
+- [x] **P3-3-2**: `domain/entities/trap.ts` から `trapIdCounter` を削除、`createTrap` に `IdGenerator` 引数を追加
+- [x] **P3-3-3**: `domain/entities/item.ts` から `itemIdCounter` を削除、`createItem` に `IdGenerator` 引数を追加
+- [x] **P3-3-4**: `presentation/services/feedbackService.ts` から `feedbackIdCounter` を削除
+- [x] **P3-3-5**: 全呼び出し箇所を更新（IdGenerator を渡すように）
+- [x] **P3-3-6**: `testUtils.ts` の `resetEnemyIdCounter()` 等を削除
+- [x] **P3-3-7**: テストを更新（MockIdGenerator を使用）
+- [x] **P3-3-8**: 全テストが通ることを確認 — 67スイート / 1048テスト全パス
 
 ### P3-4: Math.random() の直接呼び出し除去
 
-- [ ] **P3-4-1**: `domain/entities/enemy.ts` の `createDropItem()` から `Math.random()` デフォルト引数を削除
-- [ ] **P3-4-2**: その他 `Math.random()` 直接呼び出し箇所を検索・修正
-- [ ] **P3-4-3**: 全呼び出し箇所で `RandomProvider` を使用するように更新
-- [ ] **P3-4-4**: テストを更新（MockRandomProvider を使用）
-- [ ] **P3-4-5**: 全テストが通ることを確認
+- [x] **P3-4-1**: `domain/entities/enemy.ts` の `createDropItem()` から `Math.random()` デフォルト引数を削除
+- [x] **P3-4-2**: その他 `Math.random()` 直接呼び出し箇所を検索・修正（mazeGenerator, pathfinderService, placementDecision, candidateDetection, enemySpawner, item, trap）
+- [x] **P3-4-3**: 全呼び出し箇所で `RandomProvider` を使用するように更新
+- [x] **P3-4-4**: テストを更新（MockRandomProvider を使用）
+- [x] **P3-4-5**: 全テストが通ることを確認 — 67スイート / 1048テスト全パス
 
 ### P3-5: DamageResult 型の導入
 
-- [ ] **P3-5-1**: `domain/entities/player.ts` に `DamageResult` 型を定義
-- [ ] **P3-5-2**: `damagePlayer()` の戻り値を `DamageResult` に変更
-- [ ] **P3-5-3**: `application/usecases/resolvePlayerDamage.ts` を更新（参照同等性チェックを削除）
-- [ ] **P3-5-4**: 全呼び出し箇所を更新
-- [ ] **P3-5-5**: テストを更新
-- [ ] **P3-5-6**: 全テストが通ることを確認
+- [x] **P3-5-1**: `domain/entities/player.ts` に `DamageResult` 型を定義
+- [x] **P3-5-2**: `damagePlayer()` の戻り値を `DamageResult` に変更
+- [x] **P3-5-3**: `application/usecases/resolvePlayerDamage.ts` を更新（参照同等性チェックを削除）
+- [x] **P3-5-4**: 全呼び出し箇所を更新（combatService.ts 含む）
+- [x] **P3-5-5**: テストを更新
+- [x] **P3-5-6**: 全テストが通ることを確認 — 67スイート / 1048テスト全パス
 
 ### P3-7: Phase 2 レビュー指摘事項の対応（レイヤー違反の修正）
 
-- [ ] **P3-7-1**: `domain/services/endingService.ts` のアセット直接importを分離
-  - 画像/動画のimport（11-17行目）を `presentation/services/endingAssetProvider.ts` 等に移動
-  - domain層にはアセットパスを返すインターフェースを定義し、DI 経由で注入
-  - ※ domain層が `../../../../assets/images/*.webp` を直接参照しているレイヤー違反の解消
-- [ ] **P3-7-2**: `domain/services/gimmickPlacement/candidateDetection.ts` の feature 外ユーティリティ参照を解消
-  - `../../../../../utils/math-utils` の `shuffle` 関数を domain 層内にコピーするか、RandomProvider 経由に変更
-  - ※ domain層が feature 外モジュールに依存している自己完結性の問題の解消
-- [ ] **P3-7-3**: 全テストが通ることを確認
+- [x] **P3-7-1**: `domain/services/endingService.ts` のアセット直接importを分離
+  - 画像/動画のimportを `presentation/services/endingAssetProvider.ts` に移動
+  - domain層からアセットへの直接参照を完全に除去
+- [x] **P3-7-2**: `domain/services/gimmickPlacement/candidateDetection.ts` の feature 外ユーティリティ参照を解消
+  - `../../../../../utils/math-utils` の `shuffle` 関数を `RandomProvider.shuffle` 経由に変更
+- [x] **P3-7-3**: 全テストが通ることを確認 — 67スイート / 1048テスト全パス
 
 ### P3-8: Phase 3 完了確認
 
-- [ ] **P3-8-1**: グローバル可変状態が0であることを確認（`let .*Counter` の検索）
-- [ ] **P3-8-2**: `Math.random()` 直接呼び出しが0であることを確認（テスト以外）
-- [ ] **P3-8-3**: domain層から application/infrastructure/presentation への参照が0であることを確認
-- [ ] **P3-8-4**: domain層から feature 外モジュールへの直接参照が0であることを確認
-- [ ] **P3-8-5**: `npm run typecheck` が通ることを確認
-- [ ] **P3-8-6**: `npm test` が通ることを確認
+- [x] **P3-8-1**: グローバル可変状態が0であることを確認（domain/application層に `let .*Counter` なし）
+- [x] **P3-8-2**: `Math.random()` 直接呼び出しが0であることを確認（domain/application層）
+- [x] **P3-8-3**: domain層から application/infrastructure/presentation への参照が0であることを確認
+- [x] **P3-8-4**: domain層から feature 外モジュールへの直接参照が0であることを確認
+- [x] **P3-8-5**: `npm run typecheck` が通ることを確認
+- [x] **P3-8-6**: `npm test` が通ることを確認 — 67スイート / 1048テスト全パス
 
 ---
 
@@ -259,6 +257,17 @@
   - エフェクトディスパッチロジック（useGameLoop 101-200行相当）
 - [ ] **P4-4-2**: `useGameLoop.ts` を整理
 - [ ] **P4-4-3**: 全テストが通ることを確認
+
+### P4-4b: Phase 3 レビュー残課題の対応
+
+- [ ] **P4-4b-1**: `resolvePlayerDamage` の戻り値に `actualDamage` を追加
+  - `DamageResult.actualDamage` を `ResolvePlayerDamageResult` に伝播させる
+  - フィードバック表示（ダメージ数値表示）に `actualDamage` を利用可能にする
+  - ※ Phase 3 レビューで指摘: `damagePlayer()` が返す `actualDamage` が `resolvePlayerDamage` で捨てられている
+- [ ] **P4-4b-2**: 後方互換シングルトン `MATH_RANDOM_PROVIDER` / `SYSTEM_CLOCK_PROVIDER` の整理
+  - `recordStorage.ts` の `SYSTEM_CLOCK_PROVIDER` 使用箇所を `ClockProvider` DI 経由に変更
+  - 不要になったシングルトンエクスポートを削除
+  - ※ Phase 3 レビューで指摘: `useGameState.ts` は `new MathRandomProvider()` を使用しており、シングルトンとの方針が混在
 
 ### P4-5: Phase 4 完了確認
 
@@ -468,7 +477,7 @@
 |-------|---------|-----------|------|
 | Phase 1: 型定義の分割 | 13 | 小 | ✅ 完了 |
 | Phase 2: レイヤー移動 | 43 (+4 レビュー・リファクタリング) | 大 | ✅ 完了 |
-| Phase 3: 副作用除去・DI | 28 (+6 レビュー指摘対応) | 中 | |
+| Phase 3: 副作用除去・DI | 28 (+6 レビュー指摘対応) | 中 | ✅ 完了 |
 | Phase 4: 責務分離 | 19 | 大 | |
 | Phase 5: DRY・パターン | 23 | 中 | |
 | Phase 6: テスト改善 | 23 (+2 レビュー指摘対応) | 中 | |

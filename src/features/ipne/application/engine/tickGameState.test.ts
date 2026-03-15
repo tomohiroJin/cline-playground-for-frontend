@@ -4,6 +4,9 @@ import { createPlayer } from '../../domain/entities/player';
 import { createTrap } from '../../domain/entities/trap';
 import { EnemyType, ItemType, TileType, TrapState, TrapType } from '../../types';
 import { tickGameState, TickDisplayEffect, TickSoundEffect } from './tickGameState';
+import { MockIdGenerator } from '../../__tests__/mocks/MockIdGenerator';
+
+const idGen = new MockIdGenerator();
 
 describe('tickGameState', () => {
   const createFloorMap = (size: number) =>
@@ -12,7 +15,7 @@ describe('tickGameState', () => {
   const createBaseInput = () => ({
     map: createFloorMap(7),
     player: createPlayer(2, 2),
-    enemies: [createEnemy(EnemyType.PATROL, 4, 4)],
+    enemies: [createEnemy(EnemyType.PATROL, 4, 4, idGen)],
     items: [],
     traps: [],
     walls: [],
@@ -28,8 +31,8 @@ describe('tickGameState', () => {
       isInvincible: true,
       invincibleUntil: 900,
     };
-    const survivingEnemy = createEnemy(EnemyType.PATROL, 5, 5);
-    const deadEnemy = { ...createEnemy(EnemyType.PATROL, 6, 6), hp: 0 };
+    const survivingEnemy = createEnemy(EnemyType.PATROL, 5, 5, idGen);
+    const deadEnemy = { ...createEnemy(EnemyType.PATROL, 6, 6, idGen), hp: 0 };
     const damagedPlayer = { ...expiredInvinciblePlayer, hp: expiredInvinciblePlayer.hp - 2, isInvincible: true };
 
     const updateEnemiesWithContact = jest.fn().mockReturnValue({
@@ -69,8 +72,8 @@ describe('tickGameState', () => {
 
   test('アイテム取得イベントから効果音・表示エフェクト・レベルアップポイントを生成すること', () => {
     const input = createBaseInput();
-    const levelUpItem = createItem(ItemType.LEVEL_UP, input.player.x, input.player.y);
-    const mapRevealItem = createItem(ItemType.MAP_REVEAL, input.player.x, input.player.y);
+    const levelUpItem = createItem(ItemType.LEVEL_UP, input.player.x, input.player.y, idGen);
+    const mapRevealItem = createItem(ItemType.MAP_REVEAL, input.player.x, input.player.y, idGen);
     const nextPlayer = { ...input.player };
     const updateEnemiesWithContact = jest.fn().mockReturnValue({
       enemies: input.enemies,
@@ -110,7 +113,7 @@ describe('tickGameState', () => {
 
   test('罠発動で罠更新・スロー・テレポート・ダメージエフェクトが適用されること', () => {
     const input = createBaseInput();
-    const trap = createTrap(TrapType.DAMAGE, input.player.x, input.player.y);
+    const trap = createTrap(TrapType.DAMAGE, input.player.x, input.player.y, idGen);
     const updateEnemiesWithContact = jest.fn().mockReturnValue({
       enemies: input.enemies,
       contactDamage: 0,

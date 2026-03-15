@@ -113,22 +113,34 @@ export const updatePlayerDirection = (player: Player, direction: DirectionValue)
   return { ...player, direction };
 };
 
+/** ダメージ処理結果（参照同等性に依存しない明示的な結果型） */
+export interface DamageResult {
+  player: Player;
+  tookDamage: boolean;
+  actualDamage: number;
+}
+
 /** ダメージ処理 */
 export const damagePlayer = (
   player: Player,
   damage: number,
   currentTime: number,
   invincibleDuration: number
-): Player => {
-  if (damage <= 0) return player;
-  if (isPlayerInvincible(player, currentTime)) return player;
+): DamageResult => {
+  if (damage <= 0) return { player, tookDamage: false, actualDamage: 0 };
+  if (isPlayerInvincible(player, currentTime)) return { player, tookDamage: false, actualDamage: 0 };
 
+  const actualDamage = Math.min(damage, player.hp);
   const newHp = Math.max(0, player.hp - damage);
   return {
-    ...player,
-    hp: newHp,
-    isInvincible: true,
-    invincibleUntil: currentTime + invincibleDuration,
+    player: {
+      ...player,
+      hp: newHp,
+      isInvincible: true,
+      invincibleUntil: currentTime + invincibleDuration,
+    },
+    tookDamage: true,
+    actualDamage,
   };
 };
 
