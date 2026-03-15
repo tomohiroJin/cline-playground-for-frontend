@@ -1,4 +1,5 @@
 import React from 'react';
+import styled, { keyframes } from 'styled-components';
 import { Difficulty, FieldConfig } from '../core/types';
 import { FIELDS, DIFFICULTY_OPTIONS, DIFFICULTY_LABELS, WIN_SCORE_OPTIONS } from '../core/config';
 import { UnlockState, UNLOCK_CONDITIONS } from '../core/unlock';
@@ -12,6 +13,44 @@ import {
   StartButton,
   MenuButton,
 } from '../styles';
+
+// バッジのパルスアニメーション（1.5秒周期）
+const badgePulse = keyframes`
+  0%, 100% { transform: scale(1.0); }
+  50% { transform: scale(1.15); }
+`;
+
+// キャラクターボタンのラッパー（バッジ配置用）
+const CharacterButtonWrapper = styled.div`
+  position: relative;
+  width: 100%;
+  margin-top: 10px;
+`;
+
+// キャラクターボタン（紫系グラデーション）
+const CharacterButton = styled(StartButton)`
+  background: linear-gradient(135deg, #9b59b6, #8e44ad);
+  width: 100%;
+  margin-top: 0;
+`;
+
+// 通知バッジ（赤丸 + 白文字）
+const NotificationBadge = styled.span`
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #e74c3c;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: ${badgePulse} 1.5s ease-in-out infinite;
+`;
 
 type TitleScreenProps = {
   diff: Difficulty;
@@ -27,6 +66,8 @@ type TitleScreenProps = {
   onHelpClick?: () => void;
   onSettingsClick?: () => void;
   onDailyChallengeClick?: () => void;
+  onCharacterDexClick?: () => void;
+  newUnlockCount?: number;
   unlockState?: UnlockState;
 };
 
@@ -44,6 +85,8 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
   onHelpClick,
   onSettingsClick,
   onDailyChallengeClick,
+  onCharacterDexClick,
+  newUnlockCount,
   unlockState,
 }) => (
   <MenuCard>
@@ -111,6 +154,19 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
       >
         ストーリー
       </StartButton>
+    )}
+
+    {onCharacterDexClick && (
+      <CharacterButtonWrapper>
+        <CharacterButton onClick={onCharacterDexClick}>
+          キャラクター
+        </CharacterButton>
+        {newUnlockCount != null && newUnlockCount > 0 && (
+          <NotificationBadge data-testid="character-badge">
+            {newUnlockCount}
+          </NotificationBadge>
+        )}
+      </CharacterButtonWrapper>
     )}
 
     <div style={{ color: 'var(--accent-color)', fontWeight: 'bold', marginTop: '1rem' }}>
