@@ -203,20 +203,24 @@
 ## フェーズ 5: アプリケーション層の構築
 
 ### 5-1. ユースケースの作成
-- [ ] `application/` ディレクトリを作成
-- [ ] `application/start-game.ts` を作成（ゲーム初期化ユースケース）
-- [ ] `application/answer-question.ts` を作成（回答処理ユースケース）
-- [ ] `application/advance-event.ts` を作成（イベント進行ユースケース）
-- [ ] `application/finish-sprint.ts` を作成（スプリント終了ユースケース）
-- [ ] `application/save-load-game.ts` を作成（セーブ/ロードユースケース）
+- [x] `application/` ディレクトリを作成
+- [x] `application/start-game.ts` を作成（ゲーム初期化ユースケース）
+- [x] `application/answer-question.ts` を作成（回答処理ユースケース）
+- [x] `application/advance-event.ts` を作成（イベント進行ユースケース）
+- [x] `application/finish-sprint.ts` を作成（スプリント終了ユースケース）
+- [x] `application/save-load-game.ts` を作成（セーブ/ロードユースケース）
 
 ### 5-2. ユースケーステスト
-- [ ] 各ユースケースの単体テストを作成
-- [ ] インフラ依存はモック（InMemoryStorage, SilentAudio）で注入
-- [ ] テストパス確認
+- [x] 各ユースケースの単体テストを作成（5スイート30テスト）
+- [x] インフラ依存はモック（InMemoryStorage, SilentAudio, SeededRandom）で注入
+- [x] テストパス確認
 
 ### 5-3. フェーズ 5 完了確認
-- [ ] `npm run ci` パス
+- [x] `npm run ci` パス（358スイート4576テスト、ビルド成功）
+- [x] レビュー・リファクタリング実施
+  - start-game / advance-event の問題選択ロジックを `load-question.ts` に共通化（DRY）
+  - SaveGameDeps / LoadGameDeps を SaveLoadDeps に統合
+  - 型インポートを `import type` に整理
 - [ ] コミット作成
 
 ---
