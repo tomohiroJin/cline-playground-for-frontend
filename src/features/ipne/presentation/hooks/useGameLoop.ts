@@ -1,41 +1,29 @@
 /**
  * ゲームループフック
- * 敵AI・接触・アイテム取得の更新ループと効果ディスパッチを管理
+ * 200msごとに敵AI・接触・アイテム取得を更新する
  */
-import { useEffect, useCallback } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
-  GameMap,
   Player,
   Enemy,
   Item,
   Trap,
   Wall,
+  GameMap,
   ScreenState,
   ScreenStateValue,
   AutoMapState,
   CombatState,
   MAX_LEVEL,
 } from '../../index';
-import { tickGameState, TickDisplayEffect, TickSoundEffect, GameTickEffect } from '../../application';
-import {
-  playPlayerDamageSound,
-  playItemPickupSound,
-  playHealSound,
-  playTrapTriggeredSound,
-  playLevelUpSound,
-  playDodgeSound,
-  playKeyPickupSound,
-  playTeleportSound,
-  playDyingSound,
-} from '../../audio';
-import { EffectType, FloatingTextManager, FloatingTextType } from '../effects';
-import { EnemyType } from '../../index';
+import { tickGameState } from '../../application';
+import { MathRandomProvider } from '../../infrastructure/random/RandomProvider';
+import { FloatingTextManager } from '../effects';
 import type { EffectEvent } from '../screens/Game';
+import { useEffectDispatcher } from './useEffectDispatcher';
 
-/**
- * ゲームループで使用するRef群の型定義
- */
-interface GameStateRefs {
+/** ゲームループで使用するRef群 */
+interface GameLoopRefs {
   mapRef: React.MutableRefObject<GameMap>;
   playerRef: React.MutableRefObject<Player>;
   enemiesRef: React.MutableRefObject<Enemy[]>;
@@ -45,10 +33,8 @@ interface GameStateRefs {
   pendingLevelPointsRef: React.MutableRefObject<number>;
 }
 
-/**
- * ゲームループの状態更新関数群の型定義
- */
-interface GameStateSetters {
+/** ゲームループの状態更新関数群 */
+interface GameLoopSetters {
   setPlayer: (player: Player | ((prev: Player) => Player)) => void;
   setEnemies: (enemies: Enemy[] | ((prev: Enemy[]) => Enemy[])) => void;
   setItems: (items: Item[] | ((prev: Item[]) => Item[])) => void;
@@ -62,184 +48,32 @@ interface GameStateSetters {
 
 /**
  * ゲームループフック
- * 200msごとに敵AI・接触・アイテム取得を更新する
  */
 export function useGameLoop(
   screen: ScreenStateValue,
-  refs: GameStateRefs,
-  setters: GameStateSetters,
+  refs: GameLoopRefs,
+  setters: GameLoopSetters,
   effectQueueRef?: React.MutableRefObject<EffectEvent[]>,
   stageMaxLevel?: number,
   floatingTextManagerRef?: React.MutableRefObject<FloatingTextManager>,
 ) {
   const {
-    mapRef,
-    playerRef,
-    enemiesRef,
-    itemsRef,
-    trapsRef,
-    wallsRef,
-    pendingLevelPointsRef,
+    mapRef, playerRef, enemiesRef, itemsRef,
+    trapsRef, wallsRef, pendingLevelPointsRef,
   } = refs;
 
   const {
-    setPlayer,
-    setEnemies,
-    setItems,
-    setTraps,
-    setPendingLevelPoints,
-    setCombatState,
-    setMapState,
-    setIsGameOver,
-    setScreen,
+    setPlayer, setEnemies, setItems, setTraps,
+    setPendingLevelPoints, setCombatState, setMapState,
+    setIsGameOver, setScreen,
   } = setters;
 
-  const dispatchTickEffects = useCallback((effects: GameTickEffect[]) => {
-    for (const effect of effects) {
-      if (effect.kind === 'sound') {
-        switch (effect.type) {
-          case TickSoundEffect.PLAYER_DAMAGE: {
-            const now = Date.now();
-            setCombatState(prev => ({ ...prev, lastDamageAt: now }));
-            playPlayerDamageSound();
-            // プレイヤー被弾フローティングテキスト
-            if (floatingTextManagerRef && effect.damage) {
-              floatingTextManagerRef.current.addText(
-                `${effect.damage}`,
-                playerRef.current.x,
-                playerRef.current.y,
-                FloatingTextType.PLAYER_DAMAGE,
-                now
-              );
-            }
-            // 敵攻撃エフェクト（敵タイプに応じたバリエーション）
-            if (effectQueueRef) {
-              const enemyType = effect.enemyType;
-              const variant = (
-                enemyType === EnemyType.BOSS ||
-                enemyType === EnemyType.MINI_BOSS ||
-                enemyType === EnemyType.MEGA_BOSS
-              ) ? 'boss' : (
-                enemyType === EnemyType.RANGED ? 'ranged' : 'melee'
-              );
-              effectQueueRef.current.push({
-                type: EffectType.ENEMY_ATTACK,
-                x: playerRef.current.x,
-                y: playerRef.current.y,
-                variant,
-              } as EffectEvent);
-            }
-            break;
-          }
-          case TickSoundEffect.ITEM_PICKUP:
-            playItemPickupSound();
-            // アイテム取得エフェクト（アイテム種別対応）
-            if (effectQueueRef) {
-              effectQueueRef.current.push({
-                type: EffectType.ITEM_PICKUP,
-                x: playerRef.current.x,
-                y: playerRef.current.y,
-                itemType: effect.itemType,
-              });
-            }
-            break;
-          case TickSoundEffect.HEAL:
-            playHealSound();
-            // 回復フローティングテキスト + アイテム取得エフェクト
-            if (floatingTextManagerRef) {
-              floatingTextManagerRef.current.addText(
-                '+HP',
-                playerRef.current.x,
-                playerRef.current.y,
-                FloatingTextType.HEAL,
-                Date.now()
-              );
-            }
-            if (effectQueueRef) {
-              effectQueueRef.current.push({
-                type: EffectType.ITEM_PICKUP,
-                x: playerRef.current.x,
-                y: playerRef.current.y,
-                itemType: effect.itemType,
-              });
-            }
-            break;
-          case TickSoundEffect.TRAP_TRIGGERED:
-            playTrapTriggeredSound();
-            // 罠発動エフェクト（ダメージ罠・減速罠）
-            if (effectQueueRef) {
-              effectQueueRef.current.push({
-                type: EffectType.TRAP_DAMAGE,
-                x: playerRef.current.x,
-                y: playerRef.current.y,
-              });
-            }
-            break;
-          case TickSoundEffect.LEVEL_UP:
-            playLevelUpSound();
-            // レベルアップエフェクト
-            if (effectQueueRef) {
-              effectQueueRef.current.push({
-                type: EffectType.LEVEL_UP,
-                x: playerRef.current.x,
-                y: playerRef.current.y,
-              });
-            }
-            break;
-          case TickSoundEffect.DODGE:
-            playDodgeSound();
-            break;
-          case TickSoundEffect.KEY_PICKUP:
-            playKeyPickupSound();
-            // 鍵取得フローティングテキスト
-            if (floatingTextManagerRef) {
-              floatingTextManagerRef.current.addText(
-                'KEY GET!',
-                playerRef.current.x,
-                playerRef.current.y,
-                FloatingTextType.INFO,
-                Date.now()
-              );
-            }
-            break;
-          case TickSoundEffect.TELEPORT:
-            playTeleportSound();
-            // テレポート罠エフェクト
-            if (effectQueueRef) {
-              effectQueueRef.current.push({
-                type: EffectType.TRAP_TELEPORT,
-                x: playerRef.current.x,
-                y: playerRef.current.y,
-              });
-            }
-            break;
-          case TickSoundEffect.DYING:
-            playDyingSound();
-            break;
-          default:
-            break;
-        }
-      } else if (effect.kind === 'display') {
-        switch (effect.type) {
-          case TickDisplayEffect.MAP_REVEALED: {
-            const fullExploration = mapRef.current.map(row => row.map(() => 1 as const));
-            setMapState(prev => ({ ...prev, exploration: fullExploration }));
-            break;
-          }
-          case TickDisplayEffect.GAME_OVER:
-            // 死亡アニメーション状態に遷移（1.5秒後にゲームオーバー画面へ）
-            setScreen(ScreenState.DYING);
-            setTimeout(() => {
-              setIsGameOver(true);
-              setScreen(ScreenState.GAME_OVER);
-            }, 1500);
-            break;
-          default:
-            break;
-        }
-      }
-    }
-  }, [mapRef, playerRef, setCombatState, setIsGameOver, setMapState, setScreen, effectQueueRef, floatingTextManagerRef]);
+  const randomProvider = useMemo(() => new MathRandomProvider(), []);
+
+  const { dispatchTickEffects } = useEffectDispatcher(
+    { mapRef, playerRef, effectQueueRef, floatingTextManagerRef },
+    { setCombatState, setMapState, setIsGameOver, setScreen },
+  );
 
   useEffect(() => {
     if (screen !== ScreenState.GAME) return;
@@ -256,6 +90,7 @@ export function useGameLoop(
         pendingLevelPoints: pendingLevelPointsRef.current,
         currentTime,
         maxLevel: stageMaxLevel ?? MAX_LEVEL,
+        random: randomProvider,
       });
 
       dispatchTickEffects(tickResult.effects);
@@ -268,20 +103,10 @@ export function useGameLoop(
 
     return () => clearInterval(interval);
   }, [
-    screen,
-    dispatchTickEffects,
-    enemiesRef,
-    itemsRef,
-    mapRef,
-    pendingLevelPointsRef,
-    playerRef,
-    setEnemies,
-    setItems,
-    setPendingLevelPoints,
-    setPlayer,
-    setTraps,
-    trapsRef,
-    wallsRef,
-    stageMaxLevel,
+    screen, dispatchTickEffects,
+    enemiesRef, itemsRef, mapRef, pendingLevelPointsRef,
+    playerRef, setEnemies, setItems, setPendingLevelPoints,
+    setPlayer, setTraps, trapsRef, wallsRef, stageMaxLevel,
+    randomProvider,
   ]);
 }

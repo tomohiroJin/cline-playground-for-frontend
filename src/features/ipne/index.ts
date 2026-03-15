@@ -488,8 +488,6 @@ export {
 // インフラ抽象
 export {
   BROWSER_ENV_PROVIDER,
-  SYSTEM_CLOCK_PROVIDER,
-  MATH_RANDOM_PROVIDER,
   NOOP_STORAGE_PROVIDER,
   createBrowserStorageProvider,
 } from './infrastructure';

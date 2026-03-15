@@ -5,6 +5,7 @@ import { createTrap } from '../../domain/entities/trap';
 import { EnemyType, ItemType, TileType, TrapState, TrapType } from '../../types';
 import { tickGameState, TickDisplayEffect, TickSoundEffect } from './tickGameState';
 import { MockIdGenerator } from '../../__tests__/mocks/MockIdGenerator';
+import { MockRandomProvider } from '../../__tests__/mocks/MockRandomProvider';
 
 const idGen = new MockIdGenerator();
 
@@ -43,7 +44,7 @@ describe('tickGameState', () => {
     });
     const resolvePlayerDamage = jest
       .fn()
-      .mockReturnValueOnce({ player: damagedPlayer, tookDamage: true });
+      .mockReturnValueOnce({ player: damagedPlayer, tookDamage: true, actualDamage: 2 });
     const resolveItemPickupEffects = jest.fn().mockReturnValue({
       player: damagedPlayer,
       remainingItems: [],
@@ -111,7 +112,8 @@ describe('tickGameState', () => {
     );
   });
 
-  test('罠発動で罠更新・スロー・テレポート・ダメージエフェクトが適用されること', () => {
+  test('罠発動で罠更新・ダメージエフェクトが適用されること', () => {
+    // Arrange: DAMAGE罠をプレイヤー位置に配置（実際のtrap関数を使用）
     const input = createBaseInput();
     const trap = createTrap(TrapType.DAMAGE, input.player.x, input.player.y, idGen);
     const updateEnemiesWithContact = jest.fn().mockReturnValue({
@@ -127,43 +129,62 @@ describe('tickGameState', () => {
       triggerKeyPickup: false,
       events: [],
     });
-    const resolvePlayerDamage = jest.fn().mockReturnValue({
-      player: { ...input.player, hp: input.player.hp - 3 },
-      tookDamage: true,
-    });
-    const triggerTrap = jest.fn().mockReturnValue({
-      trap: { ...trap, state: TrapState.REVEALED },
-      damage: 3,
-      slowDuration: 500,
-      teleportDestination: { x: 5, y: 5 },
-    });
-    const applySlowEffect = jest
-      .fn()
-      .mockImplementation((player, currentTime, duration) => ({ ...player, slowedUntil: currentTime + duration }));
 
+    // Act
     const result = tickGameState(
       { ...input, traps: [trap] },
       {
         updateEnemiesWithContact,
         resolveItemPickupEffects,
-        resolvePlayerDamage,
-        getTrapAt: () => trap,
-        canTriggerTrap: () => true,
-        triggerTrap,
-        applySlowEffect,
       }
     );
 
+    // Assert: DAMAGE罠（damage: 3）が発動し、罠状態がREVEALEDに変更
     expect(result.traps[0].state).toBe(TrapState.REVEALED);
     expect(result.player.hp).toBe(input.player.hp - 3);
-    expect(result.player.slowedUntil).toBe(input.currentTime + 500);
-    expect(result.player.x).toBe(5);
-    expect(result.player.y).toBe(5);
     expect(result.effects).toEqual(
       expect.arrayContaining([
         { kind: 'sound', type: TickSoundEffect.TRAP_TRIGGERED },
         { kind: 'sound', type: TickSoundEffect.PLAYER_DAMAGE },
       ])
     );
+  });
+
+  test('テレポート罠が発動し、random が resolveTraps に渡されること', () => {
+    // Arrange
+    const input = createBaseInput();
+    const random = new MockRandomProvider(0.5);
+    const trap = createTrap(TrapType.TELEPORT, input.player.x, input.player.y, idGen);
+    const updateEnemiesWithContact = jest.fn().mockReturnValue({
+      enemies: input.enemies,
+      contactDamage: 0,
+      attackDamage: 0,
+    });
+    const resolveItemPickupEffects = jest.fn().mockReturnValue({
+      player: input.player,
+      remainingItems: input.items,
+      triggerLevelUp: false,
+      triggerMapReveal: false,
+      triggerKeyPickup: false,
+      events: [],
+    });
+
+    // Act
+    const result = tickGameState(
+      { ...input, traps: [trap], random },
+      {
+        updateEnemiesWithContact,
+        resolveItemPickupEffects,
+      }
+    );
+
+    // Assert: テレポート罠が発動し、プレイヤー位置が変更される
+    expect(result.effects).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: 'sound', type: TickSoundEffect.TELEPORT }),
+      ])
+    );
+    // テレポートによりプレイヤーの位置が変わる
+    expect(result.player.x !== input.player.x || result.player.y !== input.player.y).toBe(true);
   });
 });

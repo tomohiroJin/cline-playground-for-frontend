@@ -1,72 +1,10 @@
 /**
- * ゲーム画面コンポーネント群
- * GameScreen, ClassSelectScreen, LevelUpOverlayComponent, HelpOverlayComponent
+ * ゲーム画面コンポーネント群（統合モジュール）
+ * GameScreen をメインコンポーネントとして、GameHUD, GameControls, GameCanvas, GameModals を統合
  */
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
-  Overlay,
   GameRegion,
-  CanvasWrapper,
-  Canvas,
-  DPadContainer,
-  DPadButton,
-  ControlsContainer,
-  MapToggleButton,
-  HPBarContainer,
-  HPBarFill,
-  HPBarText,
-  AttackButton,
-  DamageOverlay,
-  // MVP3追加
-  ClassSelectContainer,
-  ClassSelectTitle,
-  ClassCardsContainer,
-  ClassCard,
-  ClassName,
-  ClassDescription,
-  ClassStats,
-  ClassSelectButton,
-  LevelUpOverlay,
-  LevelUpTitle,
-  LevelUpSubtitle,
-  LevelUpChoicesContainer,
-  LevelUpChoice,
-  LevelUpChoiceLabel,
-  LevelUpChoiceValue,
-  StatsDisplay,
-  StatRow,
-  StatLabel,
-  StatValue,
-  ExperienceBar,
-  ExperienceBarFill,
-  LevelBadge,
-  // MVP4追加
-  HelpButton,
-  HelpOverlay as HelpOverlayStyled,
-  HelpContainer,
-  HelpTitle,
-  HelpSection,
-  HelpSectionTitle,
-  HelpKeyList,
-  HelpKeyItem,
-  HelpKey,
-  HelpKeyDescription,
-  HelpCloseButton,
-  HelpHint,
-  TimerDisplay,
-  // MVP6追加
-  KeyIndicator,
-  KeyIcon,
-  KeyRequiredMessage,
-  ClassImage,
-  // レベルアップポイント制UI
-  PendingPointsBadge,
-  PendingPointsCount,
-  EnhanceButtonText,
-  LevelUpCloseButton,
-  RemainingPointsText,
-  // 5ステージ制
-  StageIndicator,
 } from '../../../../pages/IpnePage.styles';
 import {
   Direction,
@@ -85,40 +23,24 @@ import {
   drawCoordinateOverlay,
   findPath,
   Position,
-  DirectionValue,
   MovementState,
-  getDirectionFromKey,
-  startMovement,
-  stopMovement,
-  updateMovement,
-  getEffectiveMoveInterval,
   INITIAL_MOVEMENT_STATE,
-  DEFAULT_MOVEMENT_CONFIG,
   EnemyState,
   EnemyType,
   drawAutoMap,
   // MVP3追加
-  PlayerClass,
-  PlayerClassValue,
   Trap,
   Wall,
-  CLASS_CONFIGS,
-  LEVEL_UP_CHOICES,
-  KILL_COUNT_TABLE,
   canSeeTrap,
   canSeeSpecialWall,
   getTrapAlpha,
   getWallAlpha,
-  canChooseStat,
-  getNextKillsRequired,
-  StatTypeValue,
   StageNumber,
 } from '../../index';
 import { GameTimer } from '../../application/services/timerService';
-import { getElapsedTime, formatTimeShort } from '../../application/services/timerService';
 import { SPRITE_SIZES } from '../config';
 import {
-  EffectManager, EffectType, EffectTypeValue, DeathEffect,
+  EffectManager, EffectType, DeathEffect,
   FloatingTextManager, calculatePowerLevel,
   getDeathPhase, getDeathScale, isDeathAnimationComplete,
   createBossWarningState, shouldTriggerWarning, getWarningPhase, getBossAuraConfig,
@@ -163,8 +85,15 @@ import { drawPlayerAura } from '../effects/aura';
 import { drawWeaponTrail, getWeaponTier, WeaponTier, drawShockwave } from '../effects/weaponEffect';
 import { getActiveRewardEffects, drawShieldGlow, drawAfterImage, drawSpinParticles, drawHealParticles, AfterImageManager } from '../effects/stageVisual';
 import { getStageIntroPhase, getStageIntroAlpha, getStageIntroTextAlpha, getGameOverTransitionAlpha } from '../effects/screenTransition';
-import warriorClassImg from '../../../../assets/images/ipne_class_warrior.webp';
-import thiefClassImg from '../../../../assets/images/ipne_class_thief.webp';
+
+// 分割コンポーネントのインポート
+import { GameHUD } from './GameHUD';
+import { GameControls } from './GameControls';
+import { GameCanvas } from './GameCanvas';
+
+// re-export（後方互換性維持）
+export { ClassSelectScreen, LevelUpOverlayComponent, HelpOverlayComponent } from './GameModals';
+export type { EffectEvent } from './GameModals';
 
 /** 敵の状態に応じた特殊フレームを返す（Phase 3） */
 function getEnemyStateFrame(enemyType: string, enemyState: string): SpriteDefinition | null {
@@ -188,183 +117,6 @@ function getEnemyStateFrame(enemyType: string, enemyState: string): SpriteDefini
   }
   return null;
 }
-
-/** 外部からキューイングされるエフェクトイベント */
-export interface EffectEvent {
-  type: EffectTypeValue;
-  x: number;
-  y: number;
-  /** 敵タイプ（ENEMY_DEATH用） */
-  enemyType?: string;
-  /** コンボ倍率 */
-  comboMultiplier?: number;
-  /** パワーレベル（ATTACK_HIT用） */
-  powerLevel?: number;
-  /** エフェクトバリエーション（ENEMY_ATTACK用: melee/ranged/boss） */
-  variant?: string;
-  /** アイテム種類（ITEM_PICKUP用） */
-  itemType?: string;
-}
-
-/**
- * 職業選択画面コンポーネント（MVP3）
- */
-export const ClassSelectScreen: React.FC<{
-  onSelect: (playerClass: PlayerClassValue) => void;
-}> = ({ onSelect }) => {
-  const [selectedClass, setSelectedClass] = useState<PlayerClassValue | null>(null);
-
-  const handleConfirm = () => {
-    if (selectedClass) {
-      onSelect(selectedClass);
-    }
-  };
-
-  return (
-    <Overlay>
-      <ClassSelectContainer>
-        <ClassSelectTitle>職業を選択</ClassSelectTitle>
-        <ClassCardsContainer>
-          <ClassCard
-            $classType="warrior"
-            $selected={selectedClass === PlayerClass.WARRIOR}
-            onClick={() => setSelectedClass(PlayerClass.WARRIOR)}
-          >
-            <ClassImage src={warriorClassImg} alt="戦士" />
-            <ClassName>{CLASS_CONFIGS[PlayerClass.WARRIOR].name}</ClassName>
-            <ClassDescription>
-              耐久力と攻撃力が高く、正面突破スタイル。罠・特殊壁は触れて判明。
-            </ClassDescription>
-            <ClassStats>
-              <span>HP: 20 / 攻撃力: 2</span>
-              <span>攻撃速度: 速 / 回復+1</span>
-            </ClassStats>
-          </ClassCard>
-          <ClassCard
-            $classType="thief"
-            $selected={selectedClass === PlayerClass.THIEF}
-            onClick={() => setSelectedClass(PlayerClass.THIEF)}
-          >
-            <ClassImage src={thiefClassImg} alt="盗賊" />
-            <ClassName>{CLASS_CONFIGS[PlayerClass.THIEF].name}</ClassName>
-            <ClassDescription>
-              移動速度が高く、罠を避けて進むスタイル。罠・特殊壁がうっすら見える。
-            </ClassDescription>
-            <ClassStats>
-              <span>HP: 12 / 攻撃力: 1</span>
-              <span>移動速度: 速 / 罠視認: ○</span>
-            </ClassStats>
-          </ClassCard>
-        </ClassCardsContainer>
-        <ClassSelectButton $disabled={!selectedClass} onClick={handleConfirm}>
-          この職業で開始
-        </ClassSelectButton>
-      </ClassSelectContainer>
-    </Overlay>
-  );
-};
-
-/**
- * レベルアップオーバーレイコンポーネント（MVP3、ポイント制対応）
- */
-export const LevelUpOverlayComponent: React.FC<{
-  player: Player;
-  pendingPoints: number;
-  onChoose: (stat: StatTypeValue) => void;
-  onClose: () => void;
-}> = ({ player, pendingPoints, onChoose, onClose }) => {
-  const choices = LEVEL_UP_CHOICES.map(choice => ({
-    ...choice,
-    canChoose: canChooseStat(player.stats, choice.stat),
-    currentValue: player.stats[choice.stat as keyof typeof player.stats],
-  }));
-
-  return (
-    <LevelUpOverlay>
-      <LevelUpTitle>🎉 レベルアップ！</LevelUpTitle>
-      <LevelUpSubtitle>強化する能力を選んでください</LevelUpSubtitle>
-      {pendingPoints > 1 && (
-        <RemainingPointsText>残りポイント: {pendingPoints}</RemainingPointsText>
-      )}
-      <LevelUpChoicesContainer>
-        {choices.map(choice => (
-          <LevelUpChoice
-            key={choice.stat}
-            $disabled={!choice.canChoose}
-            onClick={() => choice.canChoose && onChoose(choice.stat)}
-          >
-            <LevelUpChoiceLabel>{choice.description}</LevelUpChoiceLabel>
-            <LevelUpChoiceValue $disabled={!choice.canChoose}>
-              {choice.canChoose
-                ? `${choice.currentValue} → ${choice.currentValue + choice.increase}`
-                : '上限'}
-            </LevelUpChoiceValue>
-          </LevelUpChoice>
-        ))}
-      </LevelUpChoicesContainer>
-      <LevelUpCloseButton onClick={onClose}>後で選ぶ</LevelUpCloseButton>
-    </LevelUpOverlay>
-  );
-};
-
-/**
- * ヘルプオーバーレイコンポーネント（MVP4）
- */
-export const HelpOverlayComponent: React.FC<{ onClose: () => void }> = ({ onClose }) => (
-  <HelpOverlayStyled onClick={onClose}>
-    <HelpContainer onClick={e => e.stopPropagation()}>
-      <HelpTitle>操作方法</HelpTitle>
-
-      <HelpSection>
-        <HelpSectionTitle>移動</HelpSectionTitle>
-        <HelpKeyList>
-          <HelpKeyItem>
-            <HelpKey>W A S D</HelpKey>
-            <HelpKeyDescription>上/左/下/右に移動</HelpKeyDescription>
-          </HelpKeyItem>
-          <HelpKeyItem>
-            <HelpKey>↑ ← ↓ →</HelpKey>
-            <HelpKeyDescription>矢印キーでも移動可能</HelpKeyDescription>
-          </HelpKeyItem>
-        </HelpKeyList>
-      </HelpSection>
-
-      <HelpSection>
-        <HelpSectionTitle>アクション</HelpSectionTitle>
-        <HelpKeyList>
-          <HelpKeyItem>
-            <HelpKey>Space</HelpKey>
-            <HelpKeyDescription>攻撃（押しながら移動キーで向き変更）</HelpKeyDescription>
-          </HelpKeyItem>
-          <HelpKeyItem>
-            <HelpKey>M</HelpKey>
-            <HelpKeyDescription>マップ表示切替（小窓→全画面→非表示）</HelpKeyDescription>
-          </HelpKeyItem>
-          <HelpKeyItem>
-            <HelpKey>H</HelpKey>
-            <HelpKeyDescription>このヘルプを表示/非表示</HelpKeyDescription>
-          </HelpKeyItem>
-        </HelpKeyList>
-      </HelpSection>
-
-      <HelpSection>
-        <HelpSectionTitle>ゲームの目的</HelpSectionTitle>
-        <HelpKeyList>
-          <HelpKeyItem>
-            <HelpKeyDescription>
-              迷宮を探索してゴール（緑色のタイル）を目指しましょう。
-              敵を倒してレベルアップし、アイテムを取得して有利に進めましょう。
-              クリアタイムで評価が決まります！
-            </HelpKeyDescription>
-          </HelpKeyItem>
-        </HelpKeyList>
-      </HelpSection>
-
-      <HelpCloseButton onClick={onClose}>閉じる</HelpCloseButton>
-      <HelpHint>画面外をクリックしても閉じられます</HelpHint>
-    </HelpContainer>
-  </HelpOverlayStyled>
-);
 
 /**
  * ゲーム画面コンポーネント
@@ -396,7 +148,7 @@ export const GameScreen: React.FC<{
   pendingLevelPoints: number;
   onOpenLevelUpModal: () => void;
   // エフェクトシステム
-  effectQueueRef?: React.MutableRefObject<EffectEvent[]>;
+  effectQueueRef?: React.MutableRefObject<import('./GameModals').EffectEvent[]>;
   // フローティングテキスト
   floatingTextManagerRef?: React.MutableRefObject<FloatingTextManager>;
   // コンボ状態
@@ -451,8 +203,6 @@ export const GameScreen: React.FC<{
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasWrapperRef = useRef<HTMLDivElement>(null);
   const movementStateRef = useRef<MovementState>(INITIAL_MOVEMENT_STATE);
-  const animationFrameRef = useRef<number | null>(null);
-  const attackHoldRef = useRef(false);
   const [renderTime, setRenderTime] = useState(0);
 
   // エフェクトシステム
@@ -1197,335 +947,44 @@ export const GameScreen: React.FC<{
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, player, enemies, items, traps, walls, mapState, goalPos, debugState, renderTime, attackEffect, lastDamageAt, effectQueueRef, floatingTextManagerRef, comboStateRef, spriteRenderer, isDying]);
 
-  const setAttackHold = useCallback((isHolding: boolean) => {
-    attackHoldRef.current = isHolding;
-    if (isHolding) {
-      movementStateRef.current = INITIAL_MOVEMENT_STATE;
-    }
-  }, []);
-
-  // 連続移動のアニメーションループ
-  useEffect(() => {
-    const tick = () => {
-      const currentTime = Date.now();
-
-      // プレイヤーの移動速度を考慮した移動間隔を計算
-      const effectiveMoveInterval = getEffectiveMoveInterval(
-        player,
-        DEFAULT_MOVEMENT_CONFIG.moveInterval,
-        currentTime
-      );
-      const effectiveConfig = {
-        ...DEFAULT_MOVEMENT_CONFIG,
-        moveInterval: effectiveMoveInterval,
-      };
-
-      const { shouldMove, newState } = updateMovement(
-        movementStateRef.current,
-        currentTime,
-        effectiveConfig
-      );
-
-      movementStateRef.current = newState;
-
-      if (shouldMove && newState.activeDirection && !attackHoldRef.current && !isDying) {
-        onMove(newState.activeDirection);
-      }
-
-      animationFrameRef.current = requestAnimationFrame(tick);
-    };
-
-    animationFrameRef.current = requestAnimationFrame(tick);
-
-    return () => {
-      if (animationFrameRef.current !== null) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, [onMove, player, isDying]);
-
-  // キーボード入力
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // DYING 状態中は入力無効化
-      if (isDying) return;
-
-      const key = e.key.toLowerCase();
-
-      // 攻撃（Spaceキー）
-      if (key === ' ' || key === 'space') {
-        e.preventDefault();
-        setAttackHold(true);
-        onAttack();
-        return;
-      }
-
-      // マップ切替（Mキー）
-      if (key === 'm') {
-        e.preventDefault();
-        onMapToggle();
-        return;
-      }
-
-      // ヘルプ切替（Hキー）
-      if (key === 'h') {
-        e.preventDefault();
-        onHelpToggle();
-        return;
-      }
-
-      // デバッグモード時のキー（Shift + キーで操作、移動キーと競合しない）
-      if (debugState.enabled && e.shiftKey) {
-        if (key === 'd') {
-          e.preventDefault();
-          onDebugToggle('showPanel');
-          return;
-        } else if (key === 'f') {
-          e.preventDefault();
-          onDebugToggle('showFullMap');
-          return;
-        } else if (key === 'c') {
-          e.preventDefault();
-          onDebugToggle('showCoordinates');
-          return;
-        } else if (key === 'p') {
-          e.preventDefault();
-          onDebugToggle('showPath');
-          return;
-        }
-      }
-
-      // 移動キーの場合、連続移動状態を開始
-      const direction = getDirectionFromKey(e.key);
-      if (direction) {
-        e.preventDefault();
-        if (attackHoldRef.current) {
-          onTurn(direction);
-          return;
-        }
-        const currentTime = Date.now();
-
-        // 最初の1マス目は即座に移動
-        if (movementStateRef.current.activeDirection !== direction) {
-          onMove(direction);
-        }
-
-        movementStateRef.current = startMovement(
-          movementStateRef.current,
-          direction,
-          currentTime
-        );
-      }
-    };
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      const key = e.key.toLowerCase();
-      if (key === ' ' || key === 'space') {
-        setAttackHold(false);
-        return;
-      }
-      // 移動キーの場合、連続移動状態を停止
-      const direction = getDirectionFromKey(e.key);
-      if (direction) {
-        movementStateRef.current = stopMovement(movementStateRef.current, direction);
-      }
-    };
-
-    // フォーカス喪失時にすべてのキー状態をリセット
-    const handleBlur = () => {
-      movementStateRef.current = INITIAL_MOVEMENT_STATE;
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-    window.addEventListener('blur', handleBlur);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-      window.removeEventListener('blur', handleBlur);
-    };
-  }, [onMove, onTurn, onAttack, onMapToggle, onHelpToggle, debugState.enabled, onDebugToggle, setAttackHold, isDying]);
-
-  // D-pad押下開始時のハンドラー
-  const handleDPadPointerDown = useCallback(
-    (direction: DirectionValue) => {
-      // DYING 状態中は入力無効化
-      if (isDying) return;
-      const currentTime = Date.now();
-      if (attackHoldRef.current) {
-        onTurn(direction);
-        return;
-      }
-      // 最初の1マス目は即座に移動
-      onMove(direction);
-      // 連続移動状態を開始
-      movementStateRef.current = startMovement(
-        movementStateRef.current,
-        direction,
-        currentTime
-      );
-    },
-    [onMove, onTurn, isDying]
-  );
-
-  // D-pad離し時のハンドラー
-  const handleDPadPointerUp = useCallback((direction: DirectionValue) => {
-    movementStateRef.current = stopMovement(movementStateRef.current, direction);
-  }, []);
-
-  const hpRatio = player.maxHp === 0 ? 0 : player.hp / player.maxHp;
-  const hpColor = hpRatio > 0.66 ? '#22c55e' : hpRatio > 0.33 ? '#facc15' : '#ef4444';
   const isAttackReady = renderTime >= player.attackCooldownUntil;
-
-  // タイマー表示用の現在時刻
-  const currentElapsed = getElapsedTime(timer, renderTime);
 
   return (
     <GameRegion role="region" aria-label="ゲーム画面">
-      <DamageOverlay $visible={renderTime - lastDamageAt < 150} />
-      <TimerDisplay>{formatTimeShort(currentElapsed)}</TimerDisplay>
-      {currentStage && <StageIndicator>STAGE {currentStage}</StageIndicator>}
-      <HPBarContainer>
-        <HPBarFill $ratio={hpRatio} $color={hpColor} />
-        <HPBarText>
-          HP {player.hp}/{player.maxHp}
-        </HPBarText>
-      </HPBarContainer>
-      <LevelBadge>Lv.{player.level}</LevelBadge>
-      <ExperienceBar>
-        <ExperienceBarFill
-          $ratio={
-            player.level >= maxLevel
-              ? 1
-              : (player.killCount - (KILL_COUNT_TABLE[player.level] || 0)) /
-                Math.max(1, getNextKillsRequired(player.level, player.killCount) + (player.killCount - (KILL_COUNT_TABLE[player.level] || 0)))
-          }
-        />
-      </ExperienceBar>
-      <StatsDisplay>
-        <StatRow>
-          <StatLabel>攻撃力</StatLabel>
-          <StatValue>{player.stats.attackPower}</StatValue>
-        </StatRow>
-        <StatRow>
-          <StatLabel>攻撃距離</StatLabel>
-          <StatValue>{player.stats.attackRange}</StatValue>
-        </StatRow>
-        <StatRow>
-          <StatLabel>移動速度</StatLabel>
-          <StatValue>{player.stats.moveSpeed}</StatValue>
-        </StatRow>
-        <StatRow>
-          <StatLabel>攻撃速度</StatLabel>
-          <StatValue>{player.stats.attackSpeed.toFixed(1)}</StatValue>
-        </StatRow>
-        <StatRow>
-          <StatLabel>撃破数</StatLabel>
-          <StatValue>{player.killCount}</StatValue>
-        </StatRow>
-      </StatsDisplay>
-      <PendingPointsBadge
-        $hasPoints={pendingLevelPoints > 0}
-        onClick={onOpenLevelUpModal}
-        aria-label={pendingLevelPoints > 0 ? `未割り振りポイント: ${pendingLevelPoints}` : '未割り振りポイントなし'}
-      >
-        <PendingPointsCount $hasPoints={pendingLevelPoints > 0}>
-          ★ {pendingLevelPoints}
-        </PendingPointsCount>
-        <EnhanceButtonText $hasPoints={pendingLevelPoints > 0}>
-          強化
-        </EnhanceButtonText>
-      </PendingPointsBadge>
-      <KeyIndicator $hasKey={player.hasKey} aria-label={player.hasKey ? '鍵を所持' : '鍵未所持'}>
-        <KeyIcon $hasKey={player.hasKey}>🔑</KeyIcon>
-      </KeyIndicator>
-      <MapToggleButton onClick={onMapToggle} aria-label="マップ表示切替">
-        🗺️
-      </MapToggleButton>
-      <HelpButton onClick={onHelpToggle} aria-label="ヘルプ表示">
-        H
-      </HelpButton>
-      {showHelp && <HelpOverlayComponent onClose={onHelpToggle} />}
-      {showKeyRequiredMessage && <KeyRequiredMessage>🔑 鍵が必要です</KeyRequiredMessage>}
-      <CanvasWrapper ref={canvasWrapperRef}>
-        <Canvas
-          ref={canvasRef}
-          role="img"
-          aria-label="迷路ゲーム画面"
-          tabIndex={0}
-        />
-      </CanvasWrapper>
-      <ControlsContainer>
-        <DPadContainer>
-          <DPadButton
-            $direction="up"
-            onPointerDown={e => {
-              e.preventDefault();
-              handleDPadPointerDown(Direction.UP);
-            }}
-            onPointerUp={() => handleDPadPointerUp(Direction.UP)}
-            onPointerLeave={() => handleDPadPointerUp(Direction.UP)}
-            onPointerCancel={() => handleDPadPointerUp(Direction.UP)}
-            aria-label="上に移動"
-          >
-            ▲
-          </DPadButton>
-          <DPadButton
-            $direction="left"
-            onPointerDown={e => {
-              e.preventDefault();
-              handleDPadPointerDown(Direction.LEFT);
-            }}
-            onPointerUp={() => handleDPadPointerUp(Direction.LEFT)}
-            onPointerLeave={() => handleDPadPointerUp(Direction.LEFT)}
-            onPointerCancel={() => handleDPadPointerUp(Direction.LEFT)}
-            aria-label="左に移動"
-          >
-            ◀
-          </DPadButton>
-          <AttackButton
-            onPointerDown={e => {
-              e.preventDefault();
-              setAttackHold(true);
-              if (isAttackReady) onAttack();
-            }}
-            onPointerUp={() => setAttackHold(false)}
-            onPointerLeave={() => setAttackHold(false)}
-            onPointerCancel={() => setAttackHold(false)}
-            $ready={isAttackReady}
-            aria-label="攻撃"
-          >
-            ATK
-          </AttackButton>
-          <DPadButton
-            $direction="right"
-            onPointerDown={e => {
-              e.preventDefault();
-              handleDPadPointerDown(Direction.RIGHT);
-            }}
-            onPointerUp={() => handleDPadPointerUp(Direction.RIGHT)}
-            onPointerLeave={() => handleDPadPointerUp(Direction.RIGHT)}
-            onPointerCancel={() => handleDPadPointerUp(Direction.RIGHT)}
-            aria-label="右に移動"
-          >
-            ▶
-          </DPadButton>
-          <DPadButton
-            $direction="down"
-            onPointerDown={e => {
-              e.preventDefault();
-              handleDPadPointerDown(Direction.DOWN);
-            }}
-            onPointerUp={() => handleDPadPointerUp(Direction.DOWN)}
-            onPointerLeave={() => handleDPadPointerUp(Direction.DOWN)}
-            onPointerCancel={() => handleDPadPointerUp(Direction.DOWN)}
-            aria-label="下に移動"
-          >
-            ▼
-          </DPadButton>
-        </DPadContainer>
-      </ControlsContainer>
+      {/* HUD（ステータス表示、ボタン等） */}
+      <GameHUD
+        player={player}
+        lastDamageAt={lastDamageAt}
+        renderTime={renderTime}
+        timer={timer}
+        currentStage={currentStage}
+        maxLevel={maxLevel}
+        pendingLevelPoints={pendingLevelPoints}
+        onOpenLevelUpModal={onOpenLevelUpModal}
+        onMapToggle={onMapToggle}
+        showHelp={showHelp}
+        onHelpToggle={onHelpToggle}
+        showKeyRequiredMessage={showKeyRequiredMessage}
+      />
+      {/* Canvas描画エリア */}
+      <GameCanvas
+        canvasRef={canvasRef}
+        canvasWrapperRef={canvasWrapperRef}
+      />
+      {/* コントロール（D-pad、攻撃ボタン、キーボード入力） */}
+      <GameControls
+        player={player}
+        debugState={debugState}
+        onMove={onMove}
+        onTurn={onTurn}
+        onAttack={onAttack}
+        onMapToggle={onMapToggle}
+        onHelpToggle={onHelpToggle}
+        onDebugToggle={onDebugToggle}
+        isDying={isDying}
+        isAttackReady={isAttackReady}
+        movementStateRef={movementStateRef}
+      />
     </GameRegion>
   );
 };

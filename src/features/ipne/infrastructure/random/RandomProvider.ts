@@ -29,6 +29,3 @@ export class MathRandomProvider implements RandomProvider {
     return result;
   }
 }
-
-/** 後方互換: 旧インターフェース */
-export const MATH_RANDOM_PROVIDER = new MathRandomProvider();

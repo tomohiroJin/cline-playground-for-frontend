@@ -9,6 +9,3 @@ export class DateClockProvider implements ClockProvider {
     return Date.now();
   }
 }
-
-/** 後方互換: 旧インターフェース */
-export const SYSTEM_CLOCK_PROVIDER = new DateClockProvider();

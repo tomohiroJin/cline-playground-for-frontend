@@ -13,9 +13,10 @@ interface ResolvePlayerDamageParams {
   walls?: Wall[];
 }
 
-interface ResolvePlayerDamageResult {
+export interface ResolvePlayerDamageResult {
   player: Player;
   tookDamage: boolean;
+  actualDamage: number;
 }
 
 /**
@@ -33,15 +34,16 @@ export function resolvePlayerDamage({
 }: ResolvePlayerDamageParams): ResolvePlayerDamageResult {
   const damageResult = damagePlayer(player, damage, currentTime, invincibleDuration);
   if (!damageResult.tookDamage) {
-    return { player, tookDamage: false };
+    return { player, tookDamage: false, actualDamage: 0 };
   }
 
   if (sourceEnemy && map && enemies) {
     return {
       player: resolveKnockback(damageResult.player, sourceEnemy, map, enemies, walls),
       tookDamage: true,
+      actualDamage: damageResult.actualDamage,
     };
   }
 
-  return { player: damageResult.player, tookDamage: true };
+  return { player: damageResult.player, tookDamage: true, actualDamage: damageResult.actualDamage };
 }

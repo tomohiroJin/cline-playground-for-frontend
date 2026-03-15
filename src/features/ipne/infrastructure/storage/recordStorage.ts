@@ -11,7 +11,7 @@ import {
   NOOP_STORAGE_PROVIDER,
 } from './StorageProvider';
 import { ClockProvider } from '../../domain/ports';
-import { SYSTEM_CLOCK_PROVIDER } from '../clock/ClockProvider';
+import { DateClockProvider } from '../clock/ClockProvider';
 
 // 型の再エクスポート
 export type { BestRecords, GameRecord } from '../../types';
@@ -23,7 +23,7 @@ export const STORAGE_KEYS = {
 } as const;
 
 let record_storage_provider: StorageProvider = createBrowserStorageProvider();
-let record_clock_provider: ClockProvider = SYSTEM_CLOCK_PROVIDER;
+let record_clock_provider: ClockProvider = new DateClockProvider();
 
 /**
  * 記録モジュールのストレージ依存を差し替える
@@ -52,7 +52,7 @@ export function setRecordClockProvider(provider: ClockProvider): void {
  * 記録モジュールの時刻依存をデフォルトに戻す
  */
 export function resetRecordClockProvider(): void {
-  record_clock_provider = SYSTEM_CLOCK_PROVIDER;
+  record_clock_provider = new DateClockProvider();
 }
 
 function getRecordStorageProvider(): StorageProvider {

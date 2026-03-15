@@ -31,6 +31,22 @@ describe('resolvePlayerDamage', () => {
     expect(result.player.hp).toBe(player.hp - 2);
     expect(result.player.x).toBe(4);
     expect(result.player.y).toBe(3);
+    expect(result.actualDamage).toBe(2);
+  });
+
+  it('actualDamage はプレイヤーの残りHP以下になる', () => {
+    const player = { ...createPlayer(3, 3), hp: 1 };
+
+    const result = resolvePlayerDamage({
+      player,
+      damage: 5,
+      currentTime: 1000,
+      invincibleDuration: COMBAT_CONFIG.invincibleDuration,
+    });
+
+    expect(result.tookDamage).toBe(true);
+    expect(result.actualDamage).toBe(1);
+    expect(result.player.hp).toBe(0);
   });
 
   it('無敵中はダメージもノックバックも適用しない', () => {
@@ -55,6 +71,7 @@ describe('resolvePlayerDamage', () => {
 
     expect(result.tookDamage).toBe(false);
     expect(result.player).toBe(player);
+    expect(result.actualDamage).toBe(0);
   });
 
   it('攻撃元がない場合はダメージのみ適用する', () => {
