@@ -4,7 +4,7 @@
 
 | タスク | ステータス | 画像必要 | 完了日 |
 |--------|-----------|---------|--------|
-| P2-00 画像アセット準備 | [ ] 未着手 | ✅ | - |
+| P2-00 画像アセット準備 | [x] 完了 | ✅ | 2026-03-15 |
 | P2-01 データ層整備 | [ ] 未着手 | — | - |
 | P2-02 アンロックシステム | [ ] 未着手 | — | - |
 | P2-03 キャラクター図鑑画面 | [ ] 未着手 | ✅ ※1 | - |
@@ -30,11 +30,11 @@
 
 ### 既存アセットの確認
 
-- [ ] 全 8 キャラのアイコン（`characters/*.png` — 128x128）が存在することを確認
-- [ ] 全 16 枚の立ち絵（`portraits/*.png` — 512x1024）が存在することを確認
-- [ ] 立ち絵の normal / happy で表情の違いが明確であることを確認
-- [ ] 立ち絵の背景が正しく透過されていることを確認（白背景・黒背景の両方で確認）
-- [ ] 既存 VS 画像 7 枚（`vs/*.png` — 256x512）が存在することを確認
+- [x] 全 8 キャラのアイコン（`characters/*.png` — 128x128）が存在することを確認
+- [x] 全 16 枚の立ち絵（`portraits/*.png` — 512x1024）が存在することを確認
+- [x] 立ち絵の normal / happy で表情の違いが明確であることを確認
+- [x] 立ち絵の背景が正しく透過されていることを確認（白背景・黒背景の両方で確認）
+- [x] 既存 VS 画像 7 枚（`vs/*.png` — 256x512）が存在することを確認
 
 ### yuu-vs.png の作成（★唯一の新規作成）
 
@@ -42,32 +42,32 @@
 > Phase 2 の図鑑機能でキャラクターデータの完全性が必要なため、このタイミングで作成します。
 > `characters.ts` でユウに `vsImage` を設定するためにも必要です。
 
-- [ ] 既存 VS 画像の構図を確認（`identify public/assets/vs/akira-vs.png` 等で参考）
-- [ ] `portraits/yuu-normal.png`（512x1024、透過済み）からトリミング + リサイズ
-- [ ] 方法A（全体リサイズ）:
+- [x] 既存 VS 画像の構図を確認（`identify public/assets/vs/akira-vs.png` 等で参考）
+- [x] `portraits/yuu-normal.png`（512x1024、透過済み）からトリミング + リサイズ
+- [x] 方法A（全体リサイズ）:
   ```bash
   convert public/assets/portraits/yuu-normal.png \
     -resize 256x512 \
     public/assets/vs/yuu-vs.png
   ```
-- [ ] 方法B（上半身トリミング、頭部が小さい場合）:
+- [x] 方法B（上半身トリミング、頭部が小さい場合）:
   ```bash
   convert public/assets/portraits/yuu-normal.png \
     -crop 512x768+0+0 -resize 256x384 \
     -gravity North -extent 256x512 \
     public/assets/vs/yuu-vs.png
   ```
-- [ ] サイズが 256 × 512 px であること
-- [ ] 背景が透過されていること
-- [ ] 他の VS 画像と同じ構図・サイズ感であること
-- [ ] ユウの特徴（丸メガネ、ストップウォッチ、緑の服）が認識できること
-- [ ] `characters.ts` のユウに `vsImage: '/assets/vs/yuu-vs.png'` を追加
+- [x] サイズが 256 × 512 px であること
+- [x] 背景が透過されていること
+- [x] 他の VS 画像と同じ構図・サイズ感であること
+- [x] ユウの特徴（丸メガネ、ストップウォッチ、緑の服）が認識できること
+- [x] `characters.ts` のユウに `vsImage: '/assets/vs/yuu-vs.png'` を追加
 
 ### 完了条件
 
-- [ ] `public/assets/vs/yuu-vs.png` が配置されている
-- [ ] 全 8 キャラの VS 画像が揃っている（akira, hiro, misaki, takuma, yuu, rookie, regular, ace）
-- [ ] 既存アセット（アイコン・立ち絵）に問題がないことを確認済み
+- [x] `public/assets/vs/yuu-vs.png` が配置されている
+- [x] 全 8 キャラの VS 画像が揃っている（akira, hiro, misaki, takuma, yuu, rookie, regular, ace）
+- [x] 既存アセット（アイコン・立ち絵）に問題がないことを確認済み
 
 ---
 
