@@ -1,11 +1,10 @@
 /**
- * Agile Quiz Sugoroku - 型定義（後方互換用）
+ * ドメイン型定義 - 再エクスポート
  *
- * 実体は domain/types/ に分割済み。
- * 既存のインポートパスを壊さないよう再エクスポートを維持する。
+ * 全ドメイン型をこのファイルから一括インポート可能にする。
  */
+
 export type {
-  // game-types
   GamePhase,
   EventId,
   GameEvent,
@@ -16,14 +15,18 @@ export type {
   StoryEntry,
   EndingEntry,
   SaveState,
-  // quiz-types
+} from './game-types';
+
+export type {
   Question,
   QuestionsByCategory,
   AnswerResult,
   AnswerResultWithDetail,
   TagStats,
   ExplanationMap,
-  // scoring-types
+} from './quiz-types';
+
+export type {
   DerivedStats,
   ClassifyStats,
   EngineerType,
@@ -40,4 +43,4 @@ export type {
   Difficulty,
   DifficultyConfig,
   ChallengeResult,
-} from './domain/types';
+} from './scoring-types';

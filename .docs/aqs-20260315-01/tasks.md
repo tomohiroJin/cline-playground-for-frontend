@@ -27,19 +27,19 @@
 ## フェーズ 1: 型定義の分割
 
 ### 1-1. ドメイン型ディレクトリの作成
-- [ ] `src/features/agile-quiz-sugoroku/domain/types/` ディレクトリを作成
-- [ ] `domain/types/game-types.ts` を作成（GamePhase, GameEvent, GameStats, SprintSummary, SaveState）
-- [ ] `domain/types/quiz-types.ts` を作成（Question, AnswerInput, AnswerResult, TagStats）
-- [ ] `domain/types/scoring-types.ts` を作成（Grade, DerivedStats, ClassifyStats, TeamType, SavedGameResult）
-- [ ] `domain/types/index.ts` を作成（全型を再エクスポート）
+- [x] `src/features/agile-quiz-sugoroku/domain/types/` ディレクトリを作成
+- [x] `domain/types/game-types.ts` を作成（GamePhase, GameEvent, GameStats, SprintSummary, SaveState）
+- [x] `domain/types/quiz-types.ts` を作成（Question, AnswerInput, AnswerResult, TagStats）
+- [x] `domain/types/scoring-types.ts` を作成（Grade, DerivedStats, ClassifyStats, TeamType, SavedGameResult）
+- [x] `domain/types/index.ts` を作成（全型を再エクスポート）
 
 ### 1-2. 後方互換の維持
-- [ ] 旧 `types.ts` を `domain/types/` からの再エクスポートに書き換え
-- [ ] 全テストがパスすることを確認
+- [x] 旧 `types.ts` を `domain/types/` からの再エクスポートに書き換え
+- [x] 全テストがパスすることを確認
 
 ### 1-3. フェーズ 1 完了確認
-- [ ] `npm run ci` パス
-- [ ] 型の依存関係が正しいことを確認（domain 型に React import がない）
+- [x] `npm run ci` パス
+- [x] 型の依存関係が正しいことを確認（domain 型に React import がない）
 - [ ] コミット作成
 
 ---
@@ -437,7 +437,7 @@
 | フェーズ | タスク数 | 完了数 | 状態 |
 |---------|---------|--------|------|
 | 0: 準備 | 10 | 10 | **完了** |
-| 1: 型定義分割 | 10 | 0 | 未着手 |
+| 1: 型定義分割 | 10 | 9 | **進行中** |
 | 2: ドメイン層抽出 | 37 | 0 | 未着手 |
 | 3: DbC 導入 | 19 | 0 | 未着手 |
 | 4: インフラ層分離 | 25 | 0 | 未着手 |
