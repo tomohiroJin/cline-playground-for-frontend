@@ -49,7 +49,8 @@ type ScreenType =
   | 'vsScreen'
   | 'postDialogue'
   | 'chapterTitle'
-  | 'victoryCutIn';
+  | 'victoryCutIn'
+  | 'characterDex';
 
 const AirHockeyGame: React.FC = () => {
   const [screen, setScreen] = useState<ScreenType>('menu');

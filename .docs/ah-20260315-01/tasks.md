@@ -5,7 +5,7 @@
 | タスク | ステータス | 画像必要 | 完了日 |
 |--------|-----------|---------|--------|
 | P2-00 画像アセット準備 | [x] 完了 | ✅ | 2026-03-15 |
-| P2-01 データ層整備 | [ ] 未着手 | — | - |
+| P2-01 データ層整備 | [x] 完了 | — | 2026-03-15 |
 | P2-02 アンロックシステム | [ ] 未着手 | — | - |
 | P2-03 キャラクター図鑑画面 | [ ] 未着手 | ✅ ※1 | - |
 | P2-04 キャラクタープロフィールカード | [ ] 未着手 | ✅ ※2 | - |
@@ -74,32 +74,32 @@
 ## P2-01: データ層整備
 
 ### 型定義の追加
-- [ ] `types.ts` に `CharacterProfile` 型を追加
-- [ ] `types.ts` に `UnlockCondition` 型を追加
-- [ ] `types.ts` に `DexEntry` 型を追加
-- [ ] `types.ts` に `DexProgress` 型を追加
-- [ ] `ScreenType` に `'characterDex'` を追加
+- [x] `types.ts` に `CharacterProfile` 型を追加
+- [x] `types.ts` に `UnlockCondition` 型を追加
+- [x] `types.ts` に `DexEntry` 型を追加
+- [x] `types.ts` に `DexProgress` 型を追加
+- [x] `ScreenType` に `'characterDex'` を追加
 
 ### 図鑑データの作成
-- [ ] `core/dex-data.ts` を新規作成
-- [ ] アキラ（characterId: `'player'`）の `DexEntry` を作成 — アンロック: `{ type: 'default' }`
-- [ ] ユウ（characterId: `'yuu'`）の `DexEntry` を作成 — アンロック: `{ type: 'default' }`
-- [ ] ヒロ（characterId: `'hiro'`）の `DexEntry` を作成 — アンロック: `{ type: 'story-clear', stageId: '1-1' }`
-- [ ] ミサキ（characterId: `'misaki'`）の `DexEntry` を作成 — アンロック: `{ type: 'story-clear', stageId: '1-2' }`
-- [ ] タクマ（characterId: `'takuma'`）の `DexEntry` を作成 — アンロック: `{ type: 'story-clear', stageId: '1-3' }`
-- [ ] ソウタ（characterId: `'rookie'`）の `DexEntry` を作成 — アンロック: `{ type: 'default' }`
-- [ ] ケンジ（characterId: `'regular'`）の `DexEntry` を作成 — アンロック: `{ type: 'default' }`
-- [ ] レン（characterId: `'ace'`）の `DexEntry` を作成 — アンロック: `{ type: 'default' }`
-- [ ] `getDexEntryById()` ヘルパー関数を実装
-- [ ] `getAllDexEntries()` ヘルパー関数を実装
-- [ ] `character-profiles.md` との内容整合性を確認
-  - [ ] フルネーム・読み・学年・年齢・身長・学校・部活が一致
-  - [ ] プレイスタイル・得意技・代表セリフが一致
-  - [ ] 性格キーワードが一致
+- [x] `core/dex-data.ts` を新規作成
+- [x] アキラ（characterId: `'player'`）の `DexEntry` を作成 — アンロック: `{ type: 'default' }`
+- [x] ユウ（characterId: `'yuu'`）の `DexEntry` を作成 — アンロック: `{ type: 'default' }`
+- [x] ヒロ（characterId: `'hiro'`）の `DexEntry` を作成 — アンロック: `{ type: 'story-clear', stageId: '1-1' }`
+- [x] ミサキ（characterId: `'misaki'`）の `DexEntry` を作成 — アンロック: `{ type: 'story-clear', stageId: '1-2' }`
+- [x] タクマ（characterId: `'takuma'`）の `DexEntry` を作成 — アンロック: `{ type: 'story-clear', stageId: '1-3' }`
+- [x] ソウタ（characterId: `'rookie'`）の `DexEntry` を作成 — アンロック: `{ type: 'default' }`
+- [x] ケンジ（characterId: `'regular'`）の `DexEntry` を作成 — アンロック: `{ type: 'default' }`
+- [x] レン（characterId: `'ace'`）の `DexEntry` を作成 — アンロック: `{ type: 'default' }`
+- [x] `getDexEntryById()` ヘルパー関数を実装
+- [x] `getAllDexEntries()` ヘルパー関数を実装
+- [x] `character-profiles.md` との内容整合性を確認
+  - [x] フルネーム・読み・学年・年齢・身長・学校・部活が一致
+  - [x] プレイスタイル・得意技・代表セリフが一致
+  - [x] 性格キーワードが一致
 
 ### テスト
-- [ ] `tsc --noEmit` で型エラーがないこと
-- [ ] 既存テストが全パス
+- [x] `tsc --noEmit` で型エラーがないこと
+- [x] 既存テストが全パス
 
 ---
 

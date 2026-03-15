@@ -189,3 +189,39 @@ export type SoundSystem = {
   setSeVolume: (volume: number) => void;
   setMuted: (muted: boolean) => void;
 };
+
+// キャラクターのプロフィール情報（図鑑表示用）
+export type CharacterProfile = {
+  characterId: string;
+  fullName: string;
+  reading: string;
+  grade: string;
+  age: number;
+  birthday: string;
+  height: string;
+  school: string;
+  club: string;
+  personality: string[];
+  quote: string;
+  playStyle: string;
+  specialMove: string;
+  specialMoveDesc: string;
+  description: string;
+};
+
+// アンロック条件
+export type UnlockCondition =
+  | { type: 'default' }
+  | { type: 'story-clear'; stageId: string };
+
+// 図鑑エントリ（プロフィール + アンロック条件の組み合わせ）
+export type DexEntry = {
+  profile: CharacterProfile;
+  unlockCondition: UnlockCondition;
+};
+
+// 図鑑の永続化データ
+export type DexProgress = {
+  unlockedCharacterIds: string[];
+  newlyUnlockedIds: string[];
+};
