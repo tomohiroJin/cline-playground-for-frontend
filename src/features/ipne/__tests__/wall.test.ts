@@ -12,7 +12,7 @@ import {
   isWallBlocking,
   revealWall,
   getWallAt,
-} from '../wall';
+} from '../domain/entities/wall';
 import { WallType, WallState, Wall } from '../types';
 
 describe('wall', () => {

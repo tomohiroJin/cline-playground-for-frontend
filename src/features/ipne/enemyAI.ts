@@ -2,7 +2,7 @@
  * 敵AIロジック
  */
 import { Enemy, EnemyState, EnemyType, GameMap, Position } from './types';
-import { canMove } from './collision';
+import { canMove } from './domain/services/collisionService';
 import { buildDefaultEnemyAiPolicyRegistry } from './domain/policies/enemyAi/policies';
 
 const AI_CONFIG = {

@@ -1,4 +1,4 @@
-import { isWall, canMove } from '../collision';
+import { isWall, canMove } from '../domain/services/collisionService';
 import { TileType, GameMap } from '../types';
 
 describe('collision', () => {

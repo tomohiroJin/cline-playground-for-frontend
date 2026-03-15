@@ -1,5 +1,5 @@
-import { createEnemy } from '../../enemy';
-import { createPlayer } from '../../player';
+import { createEnemy } from '../../domain/entities/enemy';
+import { createPlayer } from '../../domain/entities/player';
 import { EnemyType, GameMap, TileType } from '../../types';
 import { resolveKnockback } from './resolveKnockback';
 

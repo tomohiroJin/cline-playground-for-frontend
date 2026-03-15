@@ -8,7 +8,7 @@ import {
   canSeeSpecialWall,
   getTrapAlpha,
   getWallAlpha,
-} from '../class';
+} from '../domain/valueObjects/playerClass';
 import { PlayerClass, TrapState, WallState, WallType } from '../types';
 
 describe('class', () => {

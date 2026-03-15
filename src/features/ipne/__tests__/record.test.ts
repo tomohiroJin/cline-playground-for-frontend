@@ -14,7 +14,7 @@ import {
   getAllBestRecords,
   setRecordStorageProvider,
   resetRecordStorageProvider,
-} from '../record';
+} from '../infrastructure/storage/recordStorage';
 import { PlayerClass, Rating } from '../types';
 import { StorageProvider } from '../infrastructure/storage/StorageProvider';
 

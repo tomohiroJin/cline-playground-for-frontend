@@ -12,7 +12,7 @@ import {
   validateGeneration,
   getPositionsOutsideSafeZone,
   generateSafeMaze,
-} from '../mazeGenerator';
+} from '../domain/services/mazeGenerator';
 import { EnemyType, TrapType } from '../types';
 
 describe('mazeValidation', () => {

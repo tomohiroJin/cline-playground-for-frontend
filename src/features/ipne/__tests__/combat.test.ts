@@ -1,4 +1,4 @@
-import { playerAttack, processEnemyContact, COMBAT_CONFIG, getAttackTarget, getAttackableWall } from '../combat';
+import { playerAttack, processEnemyContact, COMBAT_CONFIG, getAttackTarget, getAttackableWall } from '../domain/services/combatService';
 import { createTestEnemy, createTestMap, createTestPlayer, createTestPlayerWithStats, createTestWall } from './testUtils';
 import { Direction, EnemyType, WallType, WallState } from '../types';
 

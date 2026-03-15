@@ -31,10 +31,10 @@ import {
   Wall,
   placeGimmicks,
 } from '../../index';
-import { createTimer, startTimer, resumeTimer, GameTimer } from '../../timer';
+import { createTimer, startTimer, resumeTimer, GameTimer } from '../../application/services/timerService';
 import { RatingValue, AudioSettings, StageNumber, StageRewardType, StageRewardHistory, StageConfig } from '../../types';
-import { getStageConfig, getNextStage, isFinalStage } from '../../stageConfig';
-import { applyStageReward, canChooseReward } from '../../progression';
+import { getStageConfig, getNextStage, isFinalStage } from '../../domain/config/stageConfig';
+import { applyStageReward, canChooseReward } from '../../domain/services/progressionService';
 import {
   enableAudio,
   initializeAudioSettings,

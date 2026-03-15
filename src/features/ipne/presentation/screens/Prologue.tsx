@@ -8,8 +8,8 @@ import {
   StoryText,
   SkipButton,
 } from '../../../../pages/IpnePage.styles';
-import { getPrologueStory } from '../../story';
-import { getStoryImage } from '../../storyImages';
+import { getPrologueStory } from '../../domain/config/story';
+import { getStoryImage } from '../services/storyImages';
 import prologueBg from '../../../../assets/images/ipne_prologue_bg.webp';
 import prologueBgMobile from '../../../../assets/images/ipne_prologue_bg_mobile.webp';
 

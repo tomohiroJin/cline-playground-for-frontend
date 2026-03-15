@@ -3,4 +3,4 @@ export {
   assertNumberInRange,
   assertIntegerInRange,
   assertUniquePositions,
-} from './contracts';
+} from '../domain/contracts';

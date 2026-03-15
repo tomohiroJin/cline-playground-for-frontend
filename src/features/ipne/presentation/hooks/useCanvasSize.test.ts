@@ -2,7 +2,7 @@
  * useCanvasSize フックのテスト
  * calculateTileSize と getCanvasSize の統合テスト
  */
-import { calculateTileSize, getCanvasSize, VIEWPORT_CONFIG } from '../../viewport';
+import { calculateTileSize, getCanvasSize, VIEWPORT_CONFIG } from '../services/viewportService';
 
 describe('useCanvasSize 関連関数', () => {
   describe('calculateTileSize の計算精度', () => {

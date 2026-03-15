@@ -12,7 +12,7 @@ import {
   revealTrap,
   resetTrapIdCounter,
   getRandomPassableTile,
-} from '../trap';
+} from '../domain/entities/trap';
 import { TrapType, TrapState, Trap, TileType, GameMap } from '../types';
 import { createTestPlayer } from './testUtils';
 

@@ -22,9 +22,9 @@ import {
   getRatingColor,
   getEndingImage,
   getEndingVideo,
-} from '../../ending';
-import { getEndingEpilogue } from '../../story';
-import { formatTimeShort } from '../../timer';
+} from '../../domain/services/endingService';
+import { getEndingEpilogue } from '../../domain/config/story';
+import { formatTimeShort } from '../../application/services/timerService';
 
 /** 演出タイムライン（ms） */
 const TIMELINE = [

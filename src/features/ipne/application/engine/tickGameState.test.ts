@@ -1,7 +1,7 @@
-import { createEnemy } from '../../enemy';
-import { createItem } from '../../item';
-import { createPlayer } from '../../player';
-import { createTrap } from '../../trap';
+import { createEnemy } from '../../domain/entities/enemy';
+import { createItem } from '../../domain/entities/item';
+import { createPlayer } from '../../domain/entities/player';
+import { createTrap } from '../../domain/entities/trap';
 import { EnemyType, ItemType, TileType, TrapState, TrapType } from '../../types';
 import { tickGameState, TickDisplayEffect, TickSoundEffect } from './tickGameState';
 

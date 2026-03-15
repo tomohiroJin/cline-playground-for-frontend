@@ -14,7 +14,7 @@ import {
   assertGimmickPlacementPostconditions,
   PlacementConfigLike,
 } from './placementDecision';
-import { createWall } from '../../../wall';
+import { createWall } from '../../entities/wall';
 
 describe('placementDecision', () => {
   describe('selectTrapType', () => {

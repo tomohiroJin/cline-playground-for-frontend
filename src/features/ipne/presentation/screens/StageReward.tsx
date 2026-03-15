@@ -7,7 +7,7 @@ import {
   Overlay,
 } from '../../../../pages/IpnePage.styles';
 import { StageRewardType } from '../../types';
-import { STAGE_REWARD_CHOICES } from '../../story';
+import { STAGE_REWARD_CHOICES } from '../../domain/config/story';
 
 const RewardContainer = styled.div`
   display: flex;

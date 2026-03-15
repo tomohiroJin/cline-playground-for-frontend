@@ -1,4 +1,4 @@
-import { Enemy, GameMap, Position, EnemyTypeValue } from '../../../types';
+import { Enemy, GameMap, Position, EnemyTypeValue } from '../../types';
 
 export interface EnemyAiUpdateContext {
   enemy: Enemy;

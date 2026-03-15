@@ -1,4 +1,4 @@
-import { getEnemyAtPosition, canMove } from '../../collision';
+import { getEnemyAtPosition, canMove } from '../../domain/services/collisionService';
 import { Enemy, GameMap, Player, Wall } from '../../types';
 
 /**

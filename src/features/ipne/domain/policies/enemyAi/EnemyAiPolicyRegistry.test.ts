@@ -1,4 +1,4 @@
-import { createEnemy } from '../../../enemy';
+import { createEnemy } from '../../entities/enemy';
 import { createTestMap, createTestPlayer } from '../../../__tests__/testUtils';
 import { EnemyType } from '../../../types';
 import { EnemyAiPolicyRegistry } from './EnemyAiPolicyRegistry';

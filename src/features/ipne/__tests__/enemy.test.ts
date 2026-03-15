@@ -13,8 +13,8 @@ import {
   selectDropItemType,
   createDropItem,
   processEnemyDeath,
-} from '../enemy';
-import { resetItemIdCounter } from '../item';
+} from '../domain/entities/enemy';
+import { resetItemIdCounter } from '../domain/entities/item';
 import { EnemyState, Direction, ItemType } from '../types';
 
 describe('enemy', () => {

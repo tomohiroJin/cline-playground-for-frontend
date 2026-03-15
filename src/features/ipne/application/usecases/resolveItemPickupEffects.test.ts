@@ -1,5 +1,5 @@
-import { createPlayer } from '../../player';
-import { createHealthSmall, createLevelUpItem, createMapRevealItem } from '../../item';
+import { createPlayer } from '../../domain/entities/player';
+import { createHealthSmall, createLevelUpItem, createMapRevealItem } from '../../domain/entities/item';
 import { resolveItemPickupEffects } from './resolveItemPickupEffects';
 
 describe('resolveItemPickupEffects', () => {

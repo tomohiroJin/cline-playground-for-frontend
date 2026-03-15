@@ -1,6 +1,6 @@
-import { createWall } from '../../../wall';
-import { assertCondition, assertIntegerInRange, assertNumberInRange } from '../../../shared/contracts';
-import { Position, Trap, TrapType, TrapTypeValue, Wall, WallType } from '../../../types';
+import { createWall } from '../../entities/wall';
+import { assertCondition, assertIntegerInRange, assertNumberInRange } from '../../contracts';
+import { Position, Trap, TrapType, TrapTypeValue, Wall, WallType } from '../../types';
 import { MultiWallCandidate } from './types';
 
 export interface PlacementConfigLike {

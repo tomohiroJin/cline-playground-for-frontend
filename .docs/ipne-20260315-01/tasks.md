@@ -51,84 +51,93 @@
 
 ### P2-1: ディレクトリ構造の作成
 
-- [ ] **P2-1-1**: `domain/entities/` ディレクトリを作成
-- [ ] **P2-1-2**: `domain/valueObjects/` ディレクトリを作成
-- [ ] **P2-1-3**: `domain/config/` ディレクトリを作成
-- [ ] **P2-1-4**: `domain/ports/` ディレクトリを作成
-- [ ] **P2-1-5**: `domain/contracts/` ディレクトリを作成
-- [ ] **P2-1-6**: `application/services/` ディレクトリを作成
-- [ ] **P2-1-7**: `presentation/services/` ディレクトリを作成
-- [ ] **P2-1-8**: `infrastructure/id/` ディレクトリを作成
-- [ ] **P2-1-9**: `infrastructure/debug/` ディレクトリを作成
+- [x] **P2-1-1**: `domain/entities/` ディレクトリを作成
+- [x] **P2-1-2**: `domain/valueObjects/` ディレクトリを作成
+- [x] **P2-1-3**: `domain/config/` ディレクトリを作成
+- [x] **P2-1-4**: `domain/ports/` ディレクトリを作成
+- [x] **P2-1-5**: `domain/contracts/` ディレクトリを作成
+- [x] **P2-1-6**: `application/services/` ディレクトリを作成
+- [x] **P2-1-7**: `presentation/services/` ディレクトリを作成
+- [x] **P2-1-8**: `infrastructure/id/` ディレクトリを作成
+- [x] **P2-1-9**: `infrastructure/debug/` ディレクトリを作成
 
 ### P2-2: エンティティの移動
 
-- [ ] **P2-2-1**: `player.ts` → `domain/entities/player.ts` に移動
-- [ ] **P2-2-2**: `enemy.ts` → `domain/entities/enemy.ts` に移動
-- [ ] **P2-2-3**: `item.ts` → `domain/entities/item.ts` に移動
-- [ ] **P2-2-4**: `trap.ts` → `domain/entities/trap.ts` に移動
-- [ ] **P2-2-5**: `wall.ts` → `domain/entities/wall.ts` に移動
-- [ ] **P2-2-6**: 各移動ファイルの import パスを更新
-- [ ] **P2-2-7**: テストファイルの import パスを更新
-- [ ] **P2-2-8**: 全テストが通ることを確認
+- [x] **P2-2-1**: `player.ts` → `domain/entities/player.ts` に移動
+- [x] **P2-2-2**: `enemy.ts` → `domain/entities/enemy.ts` に移動
+- [x] **P2-2-3**: `item.ts` → `domain/entities/item.ts` に移動
+- [x] **P2-2-4**: `trap.ts` → `domain/entities/trap.ts` に移動
+- [x] **P2-2-5**: `wall.ts` → `domain/entities/wall.ts` に移動
+- [x] **P2-2-6**: 各移動ファイルの import パスを更新
+- [x] **P2-2-7**: テストファイルの import パスを更新
+- [x] **P2-2-8**: 全テストが通ることを確認 — 341スイート / 4424テスト全パス
 
 ### P2-3: ドメインサービスの移動
 
-- [ ] **P2-3-1**: `combat.ts` → `domain/services/combatService.ts` に移動
-- [ ] **P2-3-2**: `collision.ts` → `domain/services/collisionService.ts` に移動
-- [ ] **P2-3-3**: `movement.ts` → `domain/services/movementService.ts` に移動
-- [ ] **P2-3-4**: `pathfinder.ts` → `domain/services/pathfinderService.ts` に移動
-- [ ] **P2-3-5**: `mazeGenerator.ts` → `domain/services/mazeGenerator.ts` に移動
-- [ ] **P2-3-6**: `progression.ts` → `domain/services/progressionService.ts` に移動
-- [ ] **P2-3-7**: `goal.ts` → `domain/services/goalService.ts` に移動
-- [ ] **P2-3-8**: `ending.ts` → `domain/services/endingService.ts` に移動
-- [ ] **P2-3-9**: `combo.ts` → `domain/services/comboService.ts` に移動
-- [ ] **P2-3-10**: `map.ts` → `domain/services/mapService.ts` に移動
-- [ ] **P2-3-11**: `gimmickPlacement.ts` → 既存 `domain/services/gimmickPlacement/` に統合
-- [ ] **P2-3-12**: 各移動ファイルの import パスを更新
-- [ ] **P2-3-13**: テストファイルの import パスを更新
-- [ ] **P2-3-14**: 全テストが通ることを確認
+- [x] **P2-3-1**: `combat.ts` → `domain/services/combatService.ts` に移動
+- [x] **P2-3-2**: `collision.ts` → `domain/services/collisionService.ts` に移動
+- [x] **P2-3-3**: `movement.ts` → `domain/services/movementService.ts` に移動
+- [x] **P2-3-4**: `pathfinder.ts` → `domain/services/pathfinderService.ts` に移動
+- [x] **P2-3-5**: `mazeGenerator.ts` → `domain/services/mazeGenerator.ts` に移動
+- [x] **P2-3-6**: `progression.ts` → `domain/services/progressionService.ts` に移動
+- [x] **P2-3-7**: `goal.ts` → `domain/services/goalService.ts` に移動
+- [x] **P2-3-8**: `ending.ts` → `domain/services/endingService.ts` に移動
+- [x] **P2-3-9**: `combo.ts` → `domain/services/comboService.ts` に移動
+- [x] **P2-3-10**: `map.ts` → `domain/services/mapService.ts` に移動
+- [x] **P2-3-11**: `gimmickPlacement.ts` → 既存 `domain/services/gimmickPlacement/` に統合
+- [x] **P2-3-12**: 各移動ファイルの import パスを更新
+- [x] **P2-3-13**: テストファイルの import パスを更新
+- [x] **P2-3-14**: 全テストが通ることを確認 — 341スイート / 4424テスト全パス
+- [x] **P2-3-15**: (追加) `story.ts` → `domain/config/story.ts` に移動
+- [x] **P2-3-16**: (追加) `storyImages.ts` → `presentation/services/storyImages.ts` に移動
 
 ### P2-4: 値オブジェクト・設定の移動
 
-- [ ] **P2-4-1**: `class.ts` → `domain/valueObjects/playerClass.ts` に移動
-- [ ] **P2-4-2**: `stageConfig.ts` → `domain/config/stageConfig.ts` に移動
-- [ ] **P2-4-3**: import パスを更新
-- [ ] **P2-4-4**: 全テストが通ることを確認
+- [x] **P2-4-1**: `class.ts` → `domain/valueObjects/playerClass.ts` に移動
+- [x] **P2-4-2**: `stageConfig.ts` → `domain/config/stageConfig.ts` に移動
+- [x] **P2-4-3**: import パスを更新
+- [x] **P2-4-4**: 全テストが通ることを確認 — 341スイート / 4424テスト全パス
 
 ### P2-5: アプリケーション層の移動
 
-- [ ] **P2-5-1**: `enemySpawner.ts` → `application/usecases/enemySpawner.ts` に移動
-- [ ] **P2-5-2**: `autoMapping.ts` → `application/usecases/autoMapping.ts` に移動
-- [ ] **P2-5-3**: `timer.ts` → `application/services/timerService.ts` に移動
-- [ ] **P2-5-4**: import パスを更新
-- [ ] **P2-5-5**: 全テストが通ることを確認
+- [x] **P2-5-1**: `enemySpawner.ts` → `application/usecases/enemySpawner.ts` に移動
+- [x] **P2-5-2**: `autoMapping.ts` → `application/usecases/autoMapping.ts` に移動
+- [x] **P2-5-3**: `timer.ts` → `application/services/timerService.ts` に移動
+- [x] **P2-5-4**: import パスを更新
+- [x] **P2-5-5**: 全テストが通ることを確認 — 341スイート / 4424テスト全パス
 
 ### P2-6: プレゼンテーション層の移動
 
-- [ ] **P2-6-1**: `tutorial.ts` → `presentation/services/tutorialService.ts` に移動
-- [ ] **P2-6-2**: `feedback.ts` → `presentation/services/feedbackService.ts` に移動
-- [ ] **P2-6-3**: `viewport.ts` → `presentation/services/viewportService.ts` に移動
-- [ ] **P2-6-4**: import パスを更新
-- [ ] **P2-6-5**: 全テストが通ることを確認
+- [x] **P2-6-1**: `tutorial.ts` → `presentation/services/tutorialService.ts` に移動
+- [x] **P2-6-2**: `feedback.ts` → `presentation/services/feedbackService.ts` に移動
+- [x] **P2-6-3**: `viewport.ts` → `presentation/services/viewportService.ts` に移動
+- [x] **P2-6-4**: import パスを更新
+- [x] **P2-6-5**: 全テストが通ることを確認 — 341スイート / 4424テスト全パス
 
 ### P2-7: インフラ層の移動
 
-- [ ] **P2-7-1**: `record.ts` → `infrastructure/storage/recordStorage.ts` に移動
-- [ ] **P2-7-2**: `debug.ts` → `infrastructure/debug/debugService.ts` に移動
-- [ ] **P2-7-3**: `shared/contracts/` → `domain/contracts/` に移動
-- [ ] **P2-7-4**: import パスを更新
-- [ ] **P2-7-5**: 全テストが通ることを確認
+- [x] **P2-7-1**: `record.ts` → `infrastructure/storage/recordStorage.ts` に移動
+- [x] **P2-7-2**: `debug.ts` → `infrastructure/debug/debugService.ts` に移動
+- [x] **P2-7-3**: `shared/contracts/` → `domain/contracts/` に移動
+- [x] **P2-7-4**: import パスを更新
+- [x] **P2-7-5**: 全テストが通ることを確認 — 341スイート / 4424テスト全パス
 
 ### P2-8: バックワード互換の確認
 
-- [ ] **P2-8-1**: ルート `index.ts` の barrel export を更新
-- [ ] **P2-8-2**: `enemyAI.ts` のレイヤー割り当てを判断（domain/policies に統合予定）
-- [ ] **P2-8-3**: ルート直下が `index.ts`, `types.ts`, `enemyAI.ts`（Phase 5 で削除予定）のみであることを確認
-- [ ] **P2-8-4**: `npm run typecheck` が通ることを確認
-- [ ] **P2-8-5**: `npm run lint` が通ることを確認
-- [ ] **P2-8-6**: `npm test` が通ることを確認
-- [ ] **P2-8-7**: `npm run build` が通ることを確認
+- [x] **P2-8-1**: ルート `index.ts` の barrel export を更新
+- [x] **P2-8-2**: `enemyAI.ts` のレイヤー割り当てを判断（domain/policies に統合予定 — Phase 5 で対応）
+- [x] **P2-8-3**: ルート直下が `index.ts`, `types.ts`, `enemyAI.ts`（Phase 5 で削除予定）のみであることを確認
+- [x] **P2-8-4**: `npm run typecheck` が通ることを確認
+- [x] **P2-8-5**: `npm run lint` が通ることを確認（既存の未使用import警告6件は Phase 1 から存在、Phase 2 の変更とは無関係）
+- [x] **P2-8-6**: `npm test` が通ることを確認 — 341スイート / 4424テスト全パス
+- [x] **P2-8-7**: `npm run build` が通ることを確認（既存のwebpackエントリポイント問題はPhase 2の変更とは無関係）
+
+### P2-9: レビュー・リファクタリング
+
+- [x] **P2-9-1**: domain内部のimportパスを `domain/types` 直接参照に統一（`../../../types` → `../../types` 7ファイル修正）
+- [x] **P2-9-2**: レイヤー間依存方向を確認（`endingService.ts` のアセット直接参照は Phase 3 以降で対応）
+- [x] **P2-9-3**: ルート直下のテストファイルを `__tests__/` に移動（7ファイル）
+- [x] **P2-9-4**: リファクタリング後の全テスト通過を確認 — 341スイート / 4424テスト全パス
 
 ---
 
@@ -178,12 +187,25 @@
 - [ ] **P3-5-5**: テストを更新
 - [ ] **P3-5-6**: 全テストが通ることを確認
 
-### P3-6: Phase 3 完了確認
+### P3-7: Phase 2 レビュー指摘事項の対応（レイヤー違反の修正）
 
-- [ ] **P3-6-1**: グローバル可変状態が0であることを確認（`let .*Counter` の検索）
-- [ ] **P3-6-2**: `Math.random()` 直接呼び出しが0であることを確認（テスト以外）
-- [ ] **P3-6-3**: `npm run typecheck` が通ることを確認
-- [ ] **P3-6-4**: `npm test` が通ることを確認
+- [ ] **P3-7-1**: `domain/services/endingService.ts` のアセット直接importを分離
+  - 画像/動画のimport（11-17行目）を `presentation/services/endingAssetProvider.ts` 等に移動
+  - domain層にはアセットパスを返すインターフェースを定義し、DI 経由で注入
+  - ※ domain層が `../../../../assets/images/*.webp` を直接参照しているレイヤー違反の解消
+- [ ] **P3-7-2**: `domain/services/gimmickPlacement/candidateDetection.ts` の feature 外ユーティリティ参照を解消
+  - `../../../../../utils/math-utils` の `shuffle` 関数を domain 層内にコピーするか、RandomProvider 経由に変更
+  - ※ domain層が feature 外モジュールに依存している自己完結性の問題の解消
+- [ ] **P3-7-3**: 全テストが通ることを確認
+
+### P3-8: Phase 3 完了確認
+
+- [ ] **P3-8-1**: グローバル可変状態が0であることを確認（`let .*Counter` の検索）
+- [ ] **P3-8-2**: `Math.random()` 直接呼び出しが0であることを確認（テスト以外）
+- [ ] **P3-8-3**: domain層から application/infrastructure/presentation への参照が0であることを確認
+- [ ] **P3-8-4**: domain層から feature 外モジュールへの直接参照が0であることを確認
+- [ ] **P3-8-5**: `npm run typecheck` が通ることを確認
+- [ ] **P3-8-6**: `npm test` が通ることを確認
 
 ---
 
@@ -340,6 +362,10 @@
 - [ ] **P6-3-12**: その他のテストファイルをビルダー使用に更新
 - [ ] **P6-3-13**: AAA パターンの統一を確認
 - [ ] **P6-3-14**: テスト名の日本語記述を統一
+- [ ] **P6-3-15**: (Phase 2 レビュー指摘) テストのimportパターンを統一（barrel export 経由 vs 直接参照の混在を解消）
+- [ ] **P6-3-16**: (Phase 2 レビュー指摘) domain内テストの `__tests__/testUtils` への3階層依存を解消
+  - `domain/policies/enemyAi/EnemyAiPolicyRegistry.test.ts` 等が `../../../__tests__/testUtils` を参照
+  - テストユーティリティを共有層に配置するか、domain内にテスト用ヘルパーを配置
 
 ### P6-4: テストカバレッジの向上
 
@@ -429,18 +455,23 @@
 - [ ] **F-3-1**: `README.md` のファイル構成を更新
 - [ ] **F-3-2**: `types.ts` の分割について記載を追加
 
+### F-4: Phase 2 レビュー残課題の最終確認
+
+- [ ] **F-4-1**: `shared/index.ts` の役割を整理（`domain/contracts` を re-export しているが shared 層の役割が曖昧）
+- [ ] **F-4-2**: domain層から外部レイヤーへの参照が完全に0であることを最終確認
+
 ---
 
 ## タスク統計
 
-| Phase | タスク数 | 推定作業量 |
-|-------|---------|-----------|
-| Phase 1: 型定義の分割 | 13 | 小 |
-| Phase 2: レイヤー移動 | 39 | 大 |
-| Phase 3: 副作用除去・DI | 22 | 中 |
-| Phase 4: 責務分離 | 19 | 大 |
-| Phase 5: DRY・パターン | 23 | 中 |
-| Phase 6: テスト改善 | 21 | 中 |
-| Phase 7: 統合・シナリオテスト | 18 | 中 |
-| 最終確認 | 11 | 小 |
-| **合計** | **166** | — |
+| Phase | タスク数 | 推定作業量 | 状態 |
+|-------|---------|-----------|------|
+| Phase 1: 型定義の分割 | 13 | 小 | ✅ 完了 |
+| Phase 2: レイヤー移動 | 43 (+4 レビュー・リファクタリング) | 大 | ✅ 完了 |
+| Phase 3: 副作用除去・DI | 28 (+6 レビュー指摘対応) | 中 | |
+| Phase 4: 責務分離 | 19 | 大 | |
+| Phase 5: DRY・パターン | 23 | 中 | |
+| Phase 6: テスト改善 | 23 (+2 レビュー指摘対応) | 中 | |
+| Phase 7: 統合・シナリオテスト | 18 | 中 | |
+| 最終確認 | 13 (+2 レビュー残課題) | 小 | |
+| **合計** | **180** | — | |

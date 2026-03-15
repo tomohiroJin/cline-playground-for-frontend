@@ -10,7 +10,7 @@ import {
   applyLevelUpChoice,
   canChooseStat,
   getNextKillsRequired,
-} from '../progression';
+} from '../domain/services/progressionService';
 import { PlayerStats, StatType } from '../types';
 
 describe('progression', () => {

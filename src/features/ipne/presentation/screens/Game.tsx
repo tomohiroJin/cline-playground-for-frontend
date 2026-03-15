@@ -114,8 +114,8 @@ import {
   StatTypeValue,
   StageNumber,
 } from '../../index';
-import { GameTimer } from '../../timer';
-import { getElapsedTime, formatTimeShort } from '../../timer';
+import { GameTimer } from '../../application/services/timerService';
+import { getElapsedTime, formatTimeShort } from '../../application/services/timerService';
 import { SPRITE_SIZES } from '../config';
 import {
   EffectManager, EffectType, EffectTypeValue, DeathEffect,
@@ -125,7 +125,7 @@ import {
   BOSS_WARNING_DURATION,
 } from '../effects';
 import type { BossWarningState } from '../effects';
-import { isComboActive, COMBO_DISPLAY_MIN } from '../../combo';
+import { isComboActive, COMBO_DISPLAY_MIN } from '../../domain/services/comboService';
 import {
   SpriteRenderer,
   SpriteDefinition,
@@ -400,7 +400,7 @@ export const GameScreen: React.FC<{
   // フローティングテキスト
   floatingTextManagerRef?: React.MutableRefObject<FloatingTextManager>;
   // コンボ状態
-  comboStateRef?: React.MutableRefObject<import('../../combo').ComboState>;
+  comboStateRef?: React.MutableRefObject<import('../../domain/services/comboService').ComboState>;
   // 死亡アニメーション中フラグ
   isDying?: boolean;
   // 5ステージ制

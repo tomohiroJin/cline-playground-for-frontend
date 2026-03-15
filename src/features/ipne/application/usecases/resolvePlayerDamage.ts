@@ -1,4 +1,4 @@
-import { damagePlayer } from '../../player';
+import { damagePlayer } from '../../domain/entities/player';
 import { Enemy, GameMap, Player, Wall } from '../../types';
 import { resolveKnockback } from './resolveKnockback';
 

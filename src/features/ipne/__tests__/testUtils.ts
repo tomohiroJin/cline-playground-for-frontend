@@ -23,9 +23,9 @@ import {
   WallState,
   WallStateValue,
 } from '../types';
-import { createPlayer } from '../player';
-import { createEnemy } from '../enemy';
-import { createItem } from '../item';
+import { createPlayer } from '../domain/entities/player';
+import { createEnemy } from '../domain/entities/enemy';
+import { createItem } from '../domain/entities/item';
 
 /**
  * テスト用マップを生成

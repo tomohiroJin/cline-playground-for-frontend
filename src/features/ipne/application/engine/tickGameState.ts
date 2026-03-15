@@ -1,7 +1,7 @@
 import { updateEnemiesWithContact } from '../../enemyAI';
-import { COMBAT_CONFIG } from '../../combat';
-import { applySlowEffect } from '../../player';
-import { canTriggerTrap, getTrapAt, triggerTrap } from '../../trap';
+import { COMBAT_CONFIG } from '../../domain/services/combatService';
+import { applySlowEffect } from '../../domain/entities/player';
+import { canTriggerTrap, getTrapAt, triggerTrap } from '../../domain/entities/trap';
 import { EnemyUpdateResult } from '../../enemyAI';
 import { GameMap, Item, Player, Trap, Wall, Enemy, TrapType } from '../../types';
 import { resolveItemPickupEffects } from '../usecases/resolveItemPickupEffects';

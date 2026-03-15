@@ -7,7 +7,7 @@ import {
   canPickupItem,
   pickupItem,
   resetItemIdCounter,
-} from '../item';
+} from '../domain/entities/item';
 import { ItemType } from '../types';
 import { createTestPlayer, createTestPlayerWithStats } from './testUtils';
 

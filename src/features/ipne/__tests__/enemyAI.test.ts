@@ -7,7 +7,7 @@ import {
   updateRangedEnemy,
   generatePatrolPath,
 } from '../enemyAI';
-import { createPatrolEnemy, createSpecimenEnemy, createRangedEnemy } from '../enemy';
+import { createPatrolEnemy, createSpecimenEnemy, createRangedEnemy } from '../domain/entities/enemy';
 import { EnemyState } from '../types';
 import { createTestMap, createTestPlayer } from './testUtils';
 

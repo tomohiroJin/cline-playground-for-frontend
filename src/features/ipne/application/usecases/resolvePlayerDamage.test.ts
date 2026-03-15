@@ -1,6 +1,6 @@
-import { createEnemy } from '../../enemy';
-import { createPlayer } from '../../player';
-import { COMBAT_CONFIG } from '../../combat';
+import { createEnemy } from '../../domain/entities/enemy';
+import { createPlayer } from '../../domain/entities/player';
+import { COMBAT_CONFIG } from '../../domain/services/combatService';
 import { Direction, EnemyType, GameMap, TileType } from '../../types';
 import { resolvePlayerDamage } from './resolvePlayerDamage';
 

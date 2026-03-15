@@ -1,5 +1,5 @@
-import { calculateDistances, findPath, isConnected } from '../../../pathfinder';
-import { GameMap, Position, TileType } from '../../../types';
+import { calculateDistances, findPath, isConnected } from '../pathfinderService';
+import { GameMap, Position, TileType } from '../../types';
 import { findPenetrationShortcuts } from './candidateDetection';
 import { MultiWallCandidate, ScoredWallCandidate } from './types';
 

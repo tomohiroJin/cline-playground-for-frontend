@@ -10,7 +10,7 @@ import {
   getGameOverImage,
   RATING_THRESHOLDS,
   RATING_COLORS,
-} from '../ending';
+} from '../domain/services/endingService';
 import { Rating } from '../types';
 
 describe('ending', () => {

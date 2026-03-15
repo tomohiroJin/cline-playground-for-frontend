@@ -8,7 +8,7 @@ import {
   SkipButton,
 } from '../../../../pages/IpnePage.styles';
 import { StoryScene } from '../../types';
-import { getStoryImage } from '../../storyImages';
+import { getStoryImage } from '../services/storyImages';
 
 const StoryContainer = styled.div`
   width: 100%;

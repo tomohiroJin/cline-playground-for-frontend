@@ -1,4 +1,4 @@
-import { createMap } from '../map';
+import { createMap } from '../domain/services/mapService';
 import { TileType } from '../types';
 
 describe('map', () => {

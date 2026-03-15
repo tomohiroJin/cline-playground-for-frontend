@@ -1,4 +1,4 @@
-import { isGoal, findGoalPosition, findStartPosition } from '../goal';
+import { isGoal, findGoalPosition, findStartPosition } from '../domain/services/goalService';
 import { TileType, GameMap } from '../types';
 
 describe('goal', () => {

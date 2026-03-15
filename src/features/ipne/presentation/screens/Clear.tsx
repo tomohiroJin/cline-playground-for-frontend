@@ -26,8 +26,8 @@ import {
   getEndingImage,
   getGameOverImage,
   getEndingVideo,
-} from '../../ending';
-import { formatTimeShort } from '../../timer';
+} from '../../domain/services/endingService';
+import { formatTimeShort } from '../../application/services/timerService';
 
 /**
  * クリア画面コンポーネント（MVP4拡張）

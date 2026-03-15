@@ -2,7 +2,7 @@
  * コンテナサイズに応じて Canvas サイズと tileSize を動的に計算するフック
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { calculateTileSize, getCanvasSize } from '../../viewport';
+import { calculateTileSize, getCanvasSize } from '../services/viewportService';
 
 /** デバウンスの待機時間（ms） */
 const RESIZE_DEBOUNCE_MS = 200;

@@ -17,7 +17,7 @@ import {
   drawTrapEffect,
   drawPopup,
   needsFlash,
-} from '../feedback';
+} from '../presentation/services/feedbackService';
 import { FeedbackType } from '../types';
 import { createMockCanvasContext } from './testUtils';
 

@@ -14,10 +14,10 @@ import {
   findTrickWalls,
   findSecretPassageWalls,
   findCorridorBlockWalls,
-} from '../gimmickPlacement';
+} from '../domain/services/gimmickPlacement/gimmickPlacement';
 import { TileType, Room, TrapType, WallType, Position } from '../types';
-import { resetTrapIdCounter } from '../trap';
-import { isConnected } from '../pathfinder';
+import { resetTrapIdCounter } from '../domain/entities/trap';
+import { isConnected } from '../domain/services/pathfinderService';
 
 /**
  * テスト用のマップとルームを作成

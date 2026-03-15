@@ -1,4 +1,4 @@
-import { Enemy } from '../../../types';
+import { Enemy } from '../../types';
 import { EnemyAiPolicy, EnemyAiUpdateContext } from './types';
 
 export class EnemyAiPolicyRegistry {

@@ -1,5 +1,5 @@
-import { calculateDistances } from '../../../pathfinder';
-import { GameMap, Position, Room, TileType } from '../../../types';
+import { calculateDistances } from '../pathfinderService';
+import { GameMap, Position, Room, TileType } from '../../types';
 import { PenetrationCandidate, WallSegment } from './types';
 import { shuffle } from '../../../../../utils/math-utils';
 

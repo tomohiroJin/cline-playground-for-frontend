@@ -101,10 +101,10 @@ jest.mock('../../../../assets/images/ipne_class_thief.webp', () => 'thief.webp')
 import { GameScreen } from './Game';
 import { PlayerClass, ExplorationState, TimerState } from '../../types';
 import type { AutoMapState, Enemy, Item, Trap, Wall, Position, GameTimer } from '../../types';
-import { createPlayer } from '../../player';
+import { createPlayer } from '../../domain/entities/player';
 import { createTestMap } from '../../__tests__/testUtils';
-import { createEnemy } from '../../enemy';
-import { createItem } from '../../item';
+import { createEnemy } from '../../domain/entities/enemy';
+import { createItem } from '../../domain/entities/item';
 
 /** テスト用の AutoMapState を生成する */
 const createTestMapState = (width: number, height: number): AutoMapState => ({

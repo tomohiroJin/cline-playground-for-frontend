@@ -1,4 +1,4 @@
-import { STAGE_CONFIGS, getStageConfig, getNextStage, isFinalStage, TOTAL_STAGES } from '../stageConfig';
+import { STAGE_CONFIGS, getStageConfig, getNextStage, isFinalStage, TOTAL_STAGES } from '../domain/config/stageConfig';
 
 describe('stageConfig', () => {
   describe('STAGE_CONFIGS', () => {

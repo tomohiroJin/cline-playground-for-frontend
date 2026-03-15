@@ -14,7 +14,7 @@ import {
   getEffectiveHeal,
   applySlowEffect,
   isSlowed,
-} from '../player';
+} from '../domain/entities/player';
 import { TileType, GameMap, Direction, PlayerClass, StatType } from '../types';
 
 describe('player', () => {
