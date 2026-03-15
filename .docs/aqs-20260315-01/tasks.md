@@ -116,32 +116,38 @@
 ## フェーズ 3: DbC（Design by Contract）の導入
 
 ### 3-1. 契約ディレクトリの作成
-- [ ] `contracts/` ディレクトリを作成
+- [x] `contracts/` ディレクトリを作成
 
 ### 3-2. ゲーム契約
-- [ ] `contracts/game-contracts.ts` を作成
-  - [ ] `assertValidGameState`: ゲーム状態の不変条件
-  - [ ] `assertCanStartSprint`: スプリント開始事前条件
-  - [ ] `assertValidSprintNumber`: スプリント番号の範囲検証
-- [ ] 契約テストの作成
+- [x] `contracts/game-contracts.ts` を作成
+  - [x] `assertValidGameStats`: ゲーム統計の不変条件（仕様の `assertValidGameState` を実際の型名 `GameStats` に合わせて命名）
+  - [x] `assertCanStartSprint`: スプリント開始事前条件
+  - [x] `assertValidSprintNumber`: スプリント番号の範囲検証
+- [x] 契約テストの作成（20テスト）
 
 ### 3-3. クイズ契約
-- [ ] `contracts/quiz-contracts.ts` を作成
-  - [ ] `assertCanPickQuestion`: 問題選択事前条件
-  - [ ] `assertValidAnswerResult`: 回答結果事後条件
-  - [ ] `assertValidCombo`: コンボ値の不変条件
-- [ ] 契約テストの作成
+- [x] `contracts/quiz-contracts.ts` を作成
+  - [x] `assertCanPickQuestion`: 問題選択事前条件
+  - [x] `assertValidAnswerResult`: 回答結果事後条件
+  - [x] `assertValidCombo`: コンボ値の不変条件
+- [x] 契約テストの作成（12テスト）
 
 ### 3-4. スコア契約
-- [ ] `contracts/scoring-contracts.ts` を作成
-  - [ ] `assertValidGradeClassification`: グレード分類不変条件
-  - [ ] `assertValidDerivedStats`: 派生統計の事後条件
-  - [ ] `assertNonNegativeDebt`: 負債非負条件
-- [ ] 契約テストの作成
+- [x] `contracts/scoring-contracts.ts` を作成
+  - [x] `assertValidGradeClassification`: グレード分類不変条件
+  - [x] `assertValidDerivedStats`: 派生統計の事後条件
+  - [x] `assertNonNegativeDebt`: 負債非負条件
+- [x] 契約テストの作成（13テスト）
 
-### 3-5. フェーズ 3 完了確認
-- [ ] `npm run ci` パス
-- [ ] 契約テスト全パス
+### 3-5. 共通基盤
+- [x] `contracts/contract-error.ts` を作成（ContractViolationError, assertContract）
+- [x] `contracts/index.ts` を作成（統一エクスポート）
+
+### 3-6. フェーズ 3 完了確認
+- [x] 型チェックパス（`npm run typecheck`）
+- [x] 契約テスト全パス（3スイート45テスト）
+- [x] 全テストパス（344スイート4468テスト、既存テスト影響なし）
+- [x] `npm run ci` パス
 - [ ] コミット作成
 
 ---
@@ -454,7 +460,7 @@
 | 0: 準備 | 10 | 10 | **完了** |
 | 1: 型定義分割 | 13 | 10 | **完了**（レビュー指摘3件は後続フェーズで対応） |
 | 2: ドメイン層抽出 | 39 | 39 | **完了** |
-| 3: DbC 導入 | 19 | 0 | 未着手 |
+| 3: DbC 導入 | 21 | 19 | **ほぼ完了**（CI確認・コミット待ち） |
 | 4: インフラ層分離 | 25 | 0 | 未着手 |
 | 5: アプリケーション層 | 11 | 0 | 未着手 |
 | 6: 定数分割 | 13 | 0 | 未着手 |
