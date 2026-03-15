@@ -244,11 +244,11 @@ export const CharacterProfileCard: React.FC<CharacterProfileCardProps> = ({
   };
 
   // 立ち絵タップで表情切替
-  const handlePortraitClick = () => {
+  const handlePortraitClick = useCallback(() => {
     if (hasPortrait) {
       setIsHappy((prev) => !prev);
     }
-  };
+  }, [hasPortrait]);
 
   // 表示する画像の src を決定
   const { portrait } = character;

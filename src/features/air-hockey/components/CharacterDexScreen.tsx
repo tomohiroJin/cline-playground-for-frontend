@@ -7,7 +7,7 @@
  * ロック中: グレースケール + シルエット + 「???」
  * NEW バッジ: 赤背景 + 白文字、カード右上
  */
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import styled, { keyframes } from 'styled-components';
 import type { Character, DexEntry } from '../core/types';
 
@@ -16,6 +16,7 @@ const CARD_HEIGHT_PX = 120;
 const ICON_SIZE_PX = 64;
 const GRID_GAP_PX = 12;
 const STAGGER_DELAY_MS = 50;
+const DEFAULT_BORDER_COLOR = 'rgba(255,255,255,0.1)';
 
 // ── アニメーション ────────────────────────────────────
 const fadeInUp = keyframes`
@@ -189,12 +190,14 @@ export const CharacterDexScreen: React.FC<CharacterDexScreenProps> = ({
   onBack,
   onMarkViewed,
 }) => {
-  // 図鑑画面を開いた際に、未確認のアンロックを既読にする
+  // 図鑑画面を開いた際に、未確認のアンロックを既読にする（初回マウント時のみ）
+  const hasMarkedViewed = useRef(false);
   useEffect(() => {
-    if (newlyUnlockedIds.length > 0) {
+    if (!hasMarkedViewed.current && newlyUnlockedIds.length > 0) {
+      hasMarkedViewed.current = true;
       onMarkViewed(newlyUnlockedIds);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [newlyUnlockedIds, onMarkViewed]);
 
   const totalCount = dexEntries.length;
   const unlockedCount = unlockedIds.length;
@@ -227,7 +230,7 @@ export const CharacterDexScreen: React.FC<CharacterDexScreenProps> = ({
           const displayName = isUnlocked
             ? (character?.name ?? entry.profile.fullName)
             : '???';
-          const borderColor = character?.color ?? 'rgba(255,255,255,0.1)';
+          const borderColor = character?.color ?? DEFAULT_BORDER_COLOR;
 
           return (
             <CardWrapper key={charId} $index={index}>
