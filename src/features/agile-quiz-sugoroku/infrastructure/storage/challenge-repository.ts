@@ -13,7 +13,7 @@ export class ChallengeRepository {
   /** ハイスコアを読み込む（データがない場合は 0） */
   loadHighScore(): number {
     const data = this.storage.get<number>(STORAGE_KEY);
-    if (data === undefined || isNaN(data)) return 0;
+    if (data === undefined || Number.isNaN(data)) return 0;
     return data;
   }
 

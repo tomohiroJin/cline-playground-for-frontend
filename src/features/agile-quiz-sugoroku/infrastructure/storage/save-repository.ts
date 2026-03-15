@@ -44,8 +44,8 @@ export class SaveRepository {
     this.storage.remove(SAVE_KEY);
   }
 
-  /** セーブデータが存在するか確認する */
+  /** セーブデータが存在するか確認する（生データレベルで判定） */
   exists(): boolean {
-    return this.storage.get(SAVE_KEY) !== undefined;
+    return this.storage.has(SAVE_KEY);
   }
 }
