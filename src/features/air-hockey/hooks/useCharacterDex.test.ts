@@ -36,7 +36,8 @@ describe('useCharacterDex', () => {
     expect(result.current.newlyUnlockedIds).toEqual([]);
     expect(result.current.dexEntries).toEqual(DEX_ENTRIES);
     expect(result.current.isUnlocked('player')).toBe(true);
-    expect(result.current.isUnlocked('yuu')).toBe(true);
+    // ユウは隠しキャラのため初期ロック
+    expect(result.current.isUnlocked('yuu')).toBe(false);
     expect(result.current.isUnlocked('hiro')).toBe(false);
   });
 
@@ -64,7 +65,7 @@ describe('useCharacterDex', () => {
   it('markViewed で新規アンロック通知が消える', () => {
     // Arrange: ヒロがアンロック済み＋未確認状態
     const saved: DexProgress = {
-      unlockedCharacterIds: ['player', 'yuu', 'rookie', 'regular', 'ace', 'hiro'],
+      unlockedCharacterIds: ['player', 'hiro'],
       newlyUnlockedIds: ['hiro'],
     };
     mockStorage[DEX_STORAGE_KEY] = JSON.stringify(saved);
@@ -81,7 +82,7 @@ describe('useCharacterDex', () => {
   });
 
   it('completionRate が正しく計算される', () => {
-    // Arrange: デフォルトで5キャラアンロック、全8キャラ
+    // Arrange: デフォルトで1キャラ（player）アンロック、全8キャラ
     const { result } = renderHook(() => useCharacterDex());
 
     // Assert
@@ -93,7 +94,7 @@ describe('useCharacterDex', () => {
   it('getNewUnlockCount が未確認数を正しく返す', () => {
     // Arrange
     const saved: DexProgress = {
-      unlockedCharacterIds: ['player', 'yuu', 'rookie', 'regular', 'ace', 'hiro', 'misaki'],
+      unlockedCharacterIds: ['player', 'hiro', 'misaki'],
       newlyUnlockedIds: ['hiro', 'misaki'],
     };
     mockStorage[DEX_STORAGE_KEY] = JSON.stringify(saved);

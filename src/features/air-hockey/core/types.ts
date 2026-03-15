@@ -212,7 +212,8 @@ export type CharacterProfile = {
 // アンロック条件
 export type UnlockCondition =
   | { type: 'default' }
-  | { type: 'story-clear'; stageId: string };
+  | { type: 'story-clear'; stageId: string }
+  | { type: 'hidden' }; // 現時点では解放不可（将来のアップデートで解放条件を追加予定）
 
 // 図鑑エントリ（プロフィール + アンロック条件の組み合わせ）
 export type DexEntry = {

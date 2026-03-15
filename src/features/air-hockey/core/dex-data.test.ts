@@ -60,6 +60,11 @@ describe('P2-01: データ層整備', () => {
       }
     });
 
+    it('UnlockCondition が hidden 型を持てる', () => {
+      const condition: UnlockCondition = { type: 'hidden' };
+      expect(condition.type).toBe('hidden');
+    });
+
     it('DexEntry がプロフィールとアンロック条件を持つ', () => {
       const entry: DexEntry = {
         profile: {
@@ -151,12 +156,16 @@ describe('P2-01: データ層整備', () => {
     });
 
     describe('アンロック条件', () => {
-      it('アキラとユウは初期解放（default）', () => {
+      it('アキラは初期解放（default）', () => {
         const akira = getDexEntryById('player');
-        const yuu = getDexEntryById('yuu');
 
         expect(akira?.unlockCondition.type).toBe('default');
-        expect(yuu?.unlockCondition.type).toBe('default');
+      });
+
+      it('ユウは隠しキャラ（hidden）', () => {
+        const yuu = getDexEntryById('yuu');
+
+        expect(yuu?.unlockCondition.type).toBe('hidden');
       });
 
       it('ヒロ・ミサキ・タクマはストーリークリアで解放', () => {
@@ -178,14 +187,14 @@ describe('P2-01: データ層整備', () => {
         });
       });
 
-      it('フリー対戦キャラは初期解放（default）', () => {
+      it('フリー対戦キャラは隠し（hidden）', () => {
         const rookie = getDexEntryById('rookie');
         const regular = getDexEntryById('regular');
         const ace = getDexEntryById('ace');
 
-        expect(rookie?.unlockCondition.type).toBe('default');
-        expect(regular?.unlockCondition.type).toBe('default');
-        expect(ace?.unlockCondition.type).toBe('default');
+        expect(rookie?.unlockCondition.type).toBe('hidden');
+        expect(regular?.unlockCondition.type).toBe('hidden');
+        expect(ace?.unlockCondition.type).toBe('hidden');
       });
 
       it('story-clear の stageId が dialogue-data.ts のステージ ID と一致する', () => {

@@ -124,7 +124,7 @@ export const DEX_ENTRIES: DexEntry[] = [
       description:
         'チームの「頭脳」としてデータ面から部を支える解説役。アキラとは入学式で出会い、一緒に入部した同期の親友。',
     },
-    unlockCondition: { type: 'default' },
+    unlockCondition: { type: 'hidden' }, // 隠しキャラ（将来のアップデートで解放予定）
   },
 
   // ── フリー対戦キャラクター ──────────────────────────
@@ -149,7 +149,7 @@ export const DEX_ENTRIES: DexEntry[] = [
       description:
         '風見丘高校エアホッケー同好会の1年生。勝敗にこだわらず楽しむことが最優先。楽しんでるうちにいつの間にか強くなっているタイプ。',
     },
-    unlockCondition: { type: 'default' },
+    unlockCondition: { type: 'hidden' }, // 現時点では解放不可
   },
 
   {
@@ -172,7 +172,7 @@ export const DEX_ENTRIES: DexEntry[] = [
       description:
         '翠嶺学園エアホッケー部の2年生。堅実なプレイスタイルで「基本に忠実」な強さを持つ。落ち着いているが、闘志は秘めている。',
     },
-    unlockCondition: { type: 'default' },
+    unlockCondition: { type: 'hidden' }, // 現時点では解放不可
   },
 
   {
@@ -195,7 +195,7 @@ export const DEX_ENTRIES: DexEntry[] = [
       description:
         '黒鉄高校エアホッケー部のエース。必要最低限の言葉しか発さないが、実力を認めた相手にだけ敬意を示す。地区大会決勝のボスとして立ちはだかる。',
     },
-    unlockCondition: { type: 'default' },
+    unlockCondition: { type: 'hidden' }, // 現時点では解放不可
   },
 ];
 

@@ -137,7 +137,7 @@ describe('AirHockeyGame P2-07 統合テスト', () => {
       render(<AirHockeyGame />);
       fireEvent.click(screen.getByText('キャラクター'));
 
-      // 初期解放キャラ（アキラ、ユウ、ソウタ、ケンジ、レン）が名前表示
+      // 初期解放キャラ（アキラのみ）が名前表示
       expect(screen.getByText('アキラ')).toBeInTheDocument();
     });
 
@@ -145,9 +145,9 @@ describe('AirHockeyGame P2-07 統合テスト', () => {
       render(<AirHockeyGame />);
       fireEvent.click(screen.getByText('キャラクター'));
 
-      // ヒロ/ミサキ/タクマ はストーリークリアが必要なのでロック
+      // アキラ以外の7キャラ（ヒロ/ミサキ/タクマ/ユウ/ソウタ/ケンジ/レン）がロック
       const questionMarks = screen.getAllByText('???');
-      expect(questionMarks.length).toBe(3); // hiro, misaki, takuma
+      expect(questionMarks.length).toBe(7);
     });
   });
 

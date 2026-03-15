@@ -12,7 +12,7 @@ export const DEX_STORAGE_KEY = 'ah_dex_progress';
 
 /** デフォルトの初期状態（初期解放キャラを含む） */
 export const DEFAULT_DEX_PROGRESS: DexProgress = {
-  unlockedCharacterIds: ['player', 'yuu', 'rookie', 'regular', 'ace'],
+  unlockedCharacterIds: ['player'],
   newlyUnlockedIds: [],
 };
 

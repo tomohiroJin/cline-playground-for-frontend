@@ -37,17 +37,18 @@ describe('loadDexProgress', () => {
     // Assert
     expect(progress).toEqual(DEFAULT_DEX_PROGRESS);
     expect(progress.unlockedCharacterIds).toContain('player');
-    expect(progress.unlockedCharacterIds).toContain('yuu');
-    expect(progress.unlockedCharacterIds).toContain('rookie');
-    expect(progress.unlockedCharacterIds).toContain('regular');
-    expect(progress.unlockedCharacterIds).toContain('ace');
+    // ユウ・ルーキー・レギュラー・エースは初期ロック
+    expect(progress.unlockedCharacterIds).not.toContain('yuu');
+    expect(progress.unlockedCharacterIds).not.toContain('rookie');
+    expect(progress.unlockedCharacterIds).not.toContain('regular');
+    expect(progress.unlockedCharacterIds).not.toContain('ace');
     expect(progress.newlyUnlockedIds).toEqual([]);
   });
 
   it('localStorage から正常にデータを読み込む', () => {
     // Arrange
     const saved: DexProgress = {
-      unlockedCharacterIds: ['player', 'yuu', 'rookie', 'regular', 'ace', 'hiro'],
+      unlockedCharacterIds: ['player', 'hiro'],
       newlyUnlockedIds: ['hiro'],
     };
     mockStorage[DEX_STORAGE_KEY] = JSON.stringify(saved);
@@ -87,7 +88,7 @@ describe('saveDexProgress', () => {
   it('localStorage にデータを保存する', () => {
     // Arrange
     const progress: DexProgress = {
-      unlockedCharacterIds: ['player', 'yuu', 'rookie', 'regular', 'ace', 'hiro'],
+      unlockedCharacterIds: ['player', 'hiro'],
       newlyUnlockedIds: ['hiro'],
     };
 
@@ -118,7 +119,7 @@ describe('checkNewUnlocks', () => {
     // Arrange: ステージ 1-1 をクリア済み
     const storyProgress: StoryProgress = { clearedStages: ['1-1'] };
     const currentDexProgress: DexProgress = {
-      unlockedCharacterIds: ['player', 'yuu', 'rookie', 'regular', 'ace'],
+      unlockedCharacterIds: ['player'],
       newlyUnlockedIds: [],
     };
 
@@ -133,7 +134,7 @@ describe('checkNewUnlocks', () => {
     // Arrange: ステージ 1-1 クリア済み、ヒロはアンロック済み
     const storyProgress: StoryProgress = { clearedStages: ['1-1'] };
     const currentDexProgress: DexProgress = {
-      unlockedCharacterIds: ['player', 'yuu', 'rookie', 'regular', 'ace', 'hiro'],
+      unlockedCharacterIds: ['player', 'hiro'],
       newlyUnlockedIds: [],
     };
 
@@ -148,7 +149,7 @@ describe('checkNewUnlocks', () => {
     // Arrange: ストーリー未クリア
     const storyProgress: StoryProgress = { clearedStages: [] };
     const currentDexProgress: DexProgress = {
-      unlockedCharacterIds: ['player', 'yuu', 'rookie', 'regular', 'ace'],
+      unlockedCharacterIds: ['player'],
       newlyUnlockedIds: [],
     };
 
@@ -163,7 +164,7 @@ describe('checkNewUnlocks', () => {
     // Arrange: ステージ 1-1, 1-2, 1-3 をクリア済み
     const storyProgress: StoryProgress = { clearedStages: ['1-1', '1-2', '1-3'] };
     const currentDexProgress: DexProgress = {
-      unlockedCharacterIds: ['player', 'yuu', 'rookie', 'regular', 'ace'],
+      unlockedCharacterIds: ['player'],
       newlyUnlockedIds: [],
     };
 
@@ -182,7 +183,7 @@ describe('markAsViewed', () => {
   it('指定されたキャラIDを newlyUnlockedIds から除去する', () => {
     // Arrange
     const progress: DexProgress = {
-      unlockedCharacterIds: ['player', 'yuu', 'rookie', 'regular', 'ace', 'hiro', 'misaki'],
+      unlockedCharacterIds: ['player', 'hiro', 'misaki'],
       newlyUnlockedIds: ['hiro', 'misaki'],
     };
 
@@ -198,7 +199,7 @@ describe('markAsViewed', () => {
   it('全ての未確認を既読にできる', () => {
     // Arrange
     const progress: DexProgress = {
-      unlockedCharacterIds: ['player', 'yuu', 'rookie', 'regular', 'ace', 'hiro', 'misaki'],
+      unlockedCharacterIds: ['player', 'hiro', 'misaki'],
       newlyUnlockedIds: ['hiro', 'misaki'],
     };
 

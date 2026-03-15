@@ -30,7 +30,6 @@ const CharacterButtonWrapper = styled.div`
 // キャラクターボタン（紫系グラデーション）
 const CharacterButton = styled(StartButton)`
   background: linear-gradient(135deg, #9b59b6, #8e44ad);
-  width: 100%;
   margin-top: 0;
 `;
 

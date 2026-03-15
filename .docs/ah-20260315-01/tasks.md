@@ -356,6 +356,44 @@
 
 ---
 
+## P2-09: フィードバック修正（2026-03-16）
+
+> 動作確認後のフィードバックに基づく修正。TDD で実施。
+
+### FB-1: タイトル画面のボタン幅統一
+- [x] フリー対戦・ストーリーボタンに `width: 100%` を追加し、キャラクターボタンと幅を統一
+- [x] テスト更新: `TitleScreen.test.tsx` にボタン幅統一のテストを追加
+
+### FB-2: キャラクター図鑑のレイアウト修正
+- [x] 戻るボタンとタイトルを別行に配置（Header を `flex-direction: column` に変更）
+- [x] 戻るボタンを `align-self: flex-start` で左寄せ
+- [x] `ScreenContainer` を `height: 100vh` + `overflow-y: auto` に変更し、スクロールを画面内に収める
+- [x] テスト更新: `CharacterDexScreen.test.tsx` にヘッダーレイアウトのテストを追加
+
+### FB-3: 初期解放キャラの変更
+- [x] `UnlockCondition` 型に `{ type: 'hidden' }` を追加（types.ts）
+- [x] ユウ（yuu）のアンロック条件を `default` → `hidden` に変更（隠しキャラ）
+- [x] ルーキー（rookie）、レギュラー（regular）、エース（ace）のアンロック条件を `default` → `hidden` に変更
+- [x] `DEFAULT_DEX_PROGRESS` を `['player']` のみに変更（dex.ts）
+- [x] テスト更新: `dex-data.test.ts` のアンロック条件テストを更新
+- [x] テスト更新: `dex.test.ts` の初期解放テストを更新
+- [x] テスト更新: `useCharacterDex.test.ts` の初期状態テストを更新
+- [x] テスト更新: `AirHockeyGame.test.tsx` のロック表示テストを更新（3 → 7）
+
+### FB-4: スクロール修正
+- [x] `ScreenContainer` に `overflow-y: auto; overflow-x: hidden; box-sizing: border-box` を追加
+- [x] `min-height: 100vh` → `height: 100vh` に変更（永遠にスクロールが出る問題を修正）
+- [x] Grid に `padding-bottom: 20px` を追加（末尾のスペース確保）
+
+### ドキュメント更新
+- [x] spec.md: UnlockCondition 型に `hidden` タイプを追記
+- [x] spec.md: アンロック条件テーブルを更新
+- [x] spec.md: DEFAULT_DEX_PROGRESS を更新
+- [x] spec.md: ボタン仕様の幅統一を反映
+- [x] tasks.md: P2-09 セクションを追加
+
+---
+
 ## 完了条件
 
 - [x] 全チェックボックスが完了

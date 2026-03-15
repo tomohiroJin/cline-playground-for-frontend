@@ -52,7 +52,8 @@ export type CharacterProfile = {
 // アンロック条件
 export type UnlockCondition =
   | { type: 'default' }                        // 初期解放
-  | { type: 'story-clear'; stageId: string };  // ストーリークリアで解放
+  | { type: 'story-clear'; stageId: string }   // ストーリークリアで解放
+  | { type: 'hidden' };                        // 現時点では解放不可（将来のアップデートで解放条件を追加予定）
 
 // 図鑑エントリ（プロフィール + アンロック条件の組み合わせ）
 export type DexEntry = {
@@ -127,15 +128,15 @@ export function getAllDexEntries(): DexEntry[];
 | キャラID | キャラ名 | アンロック条件 | stageId |
 |----------|---------|---------------|---------|
 | `player` | 蒼葉 アキラ | 初期解放（default） | — |
-| `yuu` | 柊 ユウ | 初期解放（default） | — |
+| `yuu` | 柊 ユウ | 隠しキャラ（hidden） | — |
 | `hiro` | 日向 ヒロ | ステージ 1-1 クリア | `'1-1'` |
 | `misaki` | 水瀬 ミサキ | ステージ 1-2 クリア | `'1-2'` |
 | `takuma` | 鷹見 タクマ | ステージ 1-3 クリア | `'1-3'` |
-| `rookie` | 春日 ソウタ | 初期解放（default） | — |
-| `regular` | 秋山 ケンジ | 初期解放（default） | — |
-| `ace` | 氷室 レン | 初期解放（default） | — |
+| `rookie` | 春日 ソウタ | 隠し（hidden） | — |
+| `regular` | 秋山 ケンジ | 隠し（hidden） | — |
+| `ace` | 氷室 レン | 隠し（hidden） | — |
 
-> **設計判断**: アキラとユウは主人公と同期であり最初から顔見知りのため初期解放。ストーリーモードの対戦相手（ヒロ・ミサキ・タクマ）は対戦して「知る」体験に合わせてクリア解放。フリー対戦キャラは図鑑の情報量を確保するため初期解放。
+> **設計判断（更新: 2026-03-16）**: アキラのみ初期解放。ユウは隠しキャラとして将来のアップデートで登場予定。ストーリーモードの対戦相手（ヒロ・ミサキ・タクマ）は対戦して「知る」体験に合わせてクリア解放。フリー対戦キャラ（ソウタ・ケンジ・レン）は現状では解放不可（hidden）で、将来のアップデートで解放条件を追加予定。
 
 ---
 
@@ -150,7 +151,7 @@ const DEX_STORAGE_KEY = 'ah_dex_progress';
 
 // デフォルトの初期状態（初期解放キャラを含む）
 const DEFAULT_DEX_PROGRESS: DexProgress = {
-  unlockedCharacterIds: ['player', 'yuu', 'rookie', 'regular', 'ace'],
+  unlockedCharacterIds: ['player'],
   newlyUnlockedIds: [],
 };
 
@@ -448,7 +449,7 @@ type TitleScreenProps = {
 | 要素 | 仕様 |
 |------|------|
 | ボタンテキスト | 「キャラクター」 |
-| ボタンスタイル | ストーリーモードボタンと同じスタイル（幅100%、角丸、グラデーション背景） |
+| ボタンスタイル | フリー対戦・ストーリーと同じスタイル（幅100%、角丸、グラデーション背景）— 3つのメインボタンは幅を統一 |
 | ボタンカラー | #9b59b6（紫系、ストーリーの青とは別色で視覚的に区別） |
 | 通知バッジ | 赤丸（直径 20px）+ 白文字の数字、ボタン右上に配置 |
 | バッジ表示条件 | `newUnlockCount > 0` の場合のみ表示 |

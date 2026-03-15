@@ -40,17 +40,22 @@ const ScreenContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-height: 100vh;
+  height: 100vh;
   background: var(--bg-gradient);
   padding: 20px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
 `;
 
 const Header = styled.div`
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   width: 100%;
   max-width: 450px;
   margin-bottom: 16px;
+  gap: 8px;
 `;
 
 const BackButton = styled.button`
@@ -61,6 +66,7 @@ const BackButton = styled.button`
   border-radius: 20px;
   cursor: pointer;
   font-size: 14px;
+  align-self: flex-start;
 
   &:hover {
     background: rgba(255, 255, 255, 0.1);
@@ -69,7 +75,6 @@ const BackButton = styled.button`
 `;
 
 const Title = styled.h1`
-  flex: 1;
   text-align: center;
   font-size: 1.5rem;
   font-weight: 800;
@@ -112,6 +117,7 @@ const Grid = styled.div`
   gap: ${GRID_GAP_PX}px;
   width: 100%;
   max-width: 450px;
+  padding-bottom: 20px;
 `;
 
 const CardWrapper = styled.div<{ $index: number }>`

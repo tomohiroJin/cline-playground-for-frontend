@@ -40,6 +40,22 @@ describe('TitleScreen', () => {
     });
   });
 
+  describe('メインボタン', () => {
+    it('フリー対戦・ストーリー・キャラクターの3つのメインボタンがすべて表示される', () => {
+      render(
+        <TitleScreen
+          {...defaultProps}
+          onCharacterDexClick={jest.fn()}
+          newUnlockCount={0}
+        />
+      );
+
+      expect(screen.getByText('フリー対戦')).toBeInTheDocument();
+      expect(screen.getByText('ストーリー')).toBeInTheDocument();
+      expect(screen.getByText('キャラクター')).toBeInTheDocument();
+    });
+  });
+
   describe('キャラクターボタン', () => {
     it('onCharacterDexClick が渡された場合、「キャラクター」ボタンが表示される', () => {
       render(
