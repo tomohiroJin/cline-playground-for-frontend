@@ -1,5 +1,6 @@
-/** セーブデータのlocalStorageキー */
-export const SAVE_KEY = 'labyrinth-echo-save';
+/** セーブデータのlocalStorageキー（infrastructure 層の定数を re-export） */
+import { META_KEY } from './infrastructure/storage/local-storage-adapter';
+export { META_KEY as SAVE_KEY } from './infrastructure/storage/local-storage-adapter';
 
 /** 安全に非同期処理を実行するヘルパー */
 export const safeAsync = async <T>(
@@ -19,12 +20,12 @@ export const safeAsync = async <T>(
 export const Storage = Object.freeze({
   save: (data: unknown) =>
     safeAsync(
-      async () => localStorage.setItem(SAVE_KEY, JSON.stringify(data)),
+      async () => localStorage.setItem(META_KEY, JSON.stringify(data)),
       'Storage.save'
     ),
   load: () =>
     safeAsync(async () => {
-      const r = localStorage.getItem(SAVE_KEY);
+      const r = localStorage.getItem(META_KEY);
       return r ? JSON.parse(r) : null;
     }, 'Storage.load'),
 });

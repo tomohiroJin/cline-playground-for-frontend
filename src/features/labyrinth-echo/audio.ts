@@ -5,6 +5,7 @@
  * Web Audio API による効果音の生成・再生を担当。
  */
 import { safeSync } from './contracts';
+import { AUDIO_SETTINGS_KEY } from './infrastructure/storage/local-storage-adapter';
 
 /** 音声設定の型 */
 export interface AudioSettings {
@@ -21,8 +22,6 @@ export const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
   bgmVolume: 0.5,
   sfxVolume: 0.7,
 };
-
-const AUDIO_SETTINGS_KEY = 'labyrinth-echo-audio-settings';
 
 /** localStorage から音声設定を読み込み */
 export const loadAudioSettings = (): AudioSettings => {
