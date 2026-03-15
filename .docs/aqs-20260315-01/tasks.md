@@ -221,7 +221,7 @@
   - start-game / advance-event の問題選択ロジックを `load-question.ts` に共通化（DRY）
   - SaveGameDeps / LoadGameDeps を SaveLoadDeps に統合
   - 型インポートを `import type` に整理
-- [ ] コミット作成
+- [x] コミット作成（f6d794c）
 
 ---
 
