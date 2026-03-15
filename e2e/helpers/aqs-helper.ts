@@ -64,7 +64,7 @@ export class AqsHelper {
    * 現在のフェーズを取得する。
    * 複数のフェーズマーカーを監視し、最初にマッチしたフェーズを返す。
    */
-  async getCurrentPhase(): Promise<string | undefined> {
+  async getCurrentPhase(): Promise<string> {
     for (const [phase, marker] of Object.entries(PHASE_MARKERS)) {
       const isVisible = await this.page
         .getByText(marker)
@@ -73,6 +73,6 @@ export class AqsHelper {
         .catch(() => false);
       if (isVisible) return phase;
     }
-    return undefined;
+    return 'unknown';
   }
 }
