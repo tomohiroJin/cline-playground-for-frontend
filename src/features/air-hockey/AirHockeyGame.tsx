@@ -13,8 +13,10 @@ import { getUnlockState, saveUnlockState, checkUnlocks } from './core/unlock';
 import { loadStoryProgress, saveStoryProgress, resetStoryProgress } from './core/story';
 import type { StageDefinition, StoryProgress } from './core/story';
 import { CHAPTER_1_STAGES } from './core/dialogue-data';
-import { checkNewUnlocks, loadDexProgress, saveDexProgress } from './core/dex';
 import { getDexEntryById } from './core/dex-data';
+import { useCharacterDex } from './hooks/useCharacterDex';
+import { CharacterDexScreen } from './components/CharacterDexScreen';
+import { CharacterProfileCard } from './components/CharacterProfileCard';
 import { useInput } from './hooks/useInput';
 import { useKeyboardInput } from './hooks/useKeyboardInput';
 import { useGameLoop } from './hooks/useGameLoop';
@@ -83,6 +85,19 @@ const AirHockeyGame: React.FC = () => {
   const [transitioning, setTransitioning] = useState(false);
   // リザルト画面用: 新規アンロックキャラ名
   const [newlyUnlockedCharacterName, setNewlyUnlockedCharacterName] = useState<string | undefined>(undefined);
+  // 図鑑: プロフィールカード表示用
+  const [selectedCharacterId, setSelectedCharacterId] = useState<string | undefined>(undefined);
+
+  // キャラクター図鑑フック
+  const {
+    dexEntries,
+    unlockedIds,
+    newlyUnlockedIds,
+    completionRate,
+    checkAndUnlock,
+    markViewed,
+    getNewUnlockCount,
+  } = useCharacterDex();
 
   // ストーリーモード用
   const [gameMode, setGameMode] = useState<GameMode>('free');
@@ -198,17 +213,9 @@ const AirHockeyGame: React.FC = () => {
           saveStoryProgress(updated);
           setStoryProgress(updated);
 
-          // 図鑑アンロック判定
-          const currentDex = loadDexProgress();
-          const newUnlocks = checkNewUnlocks(updated, currentDex);
+          // 図鑑アンロック判定（useCharacterDex フック経由）
+          const newUnlocks = checkAndUnlock(updated);
           if (newUnlocks.length > 0) {
-            // 新規アンロックを永続化
-            const updatedDex = {
-              unlockedCharacterIds: [...currentDex.unlockedCharacterIds, ...newUnlocks],
-              newlyUnlockedIds: [...currentDex.newlyUnlockedIds, ...newUnlocks],
-            };
-            saveDexProgress(updatedDex);
-            // 最初の新規アンロックキャラ名をリザルト画面に通知
             const entry = getDexEntryById(newUnlocks[0]);
             setNewlyUnlockedCharacterName(entry?.profile.fullName);
           } else {
@@ -221,7 +228,7 @@ const AirHockeyGame: React.FC = () => {
         setNewlyUnlockedCharacterName(undefined);
       }
     }
-  }, [screen, diff, winScore, winner, field.id, isDailyMode, dailyChallenge, gameMode, currentStage]);
+  }, [screen, diff, winScore, winner, field.id, isDailyMode, dailyChallenge, gameMode, currentStage, checkAndUnlock]);
 
   // 音量設定をサウンドシステムに適用する共通関数
   const applyAudioSettings = useCallback((sound: SoundSystem, settings: AudioSettings) => {
@@ -294,6 +301,29 @@ const AirHockeyGame: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [screen, togglePause]);
+
+  // ── 図鑑遷移ハンドラ ────────────────────────────
+
+  /** 図鑑画面への遷移 */
+  const handleCharacterDexClick = useCallback(() => {
+    setScreen('characterDex');
+  }, []);
+
+  /** 図鑑画面から戻る */
+  const handleBackFromDex = useCallback(() => {
+    setSelectedCharacterId(undefined);
+    setScreen('menu');
+  }, []);
+
+  /** 図鑑: キャラクター選択（プロフィールカード表示） */
+  const handleSelectCharacter = useCallback((characterId: string) => {
+    setSelectedCharacterId(characterId);
+  }, []);
+
+  /** 図鑑: プロフィールカードを閉じる */
+  const handleCloseProfile = useCallback(() => {
+    setSelectedCharacterId(undefined);
+  }, []);
 
   // ── ストーリーモード遷移ハンドラ ──────────────────
 
@@ -403,6 +433,26 @@ const AirHockeyGame: React.FC = () => {
     return chars;
   }, [currentStage, cpuCharacter]);
 
+  // ── 図鑑: プロフィールカード用のデータ ──────────────
+  const selectedDexEntry = React.useMemo(
+    () => selectedCharacterId ? getDexEntryById(selectedCharacterId) : undefined,
+    [selectedCharacterId],
+  );
+  const selectedCharacter = React.useMemo(
+    () => selectedCharacterId ? findCharacterById(selectedCharacterId) : undefined,
+    [selectedCharacterId],
+  );
+
+  // ── 図鑑用のキャラクターマップ ──────────────────
+  const dexCharacterMap = React.useMemo(() => {
+    const map: Record<string, typeof PLAYER_CHARACTER> = {};
+    for (const entry of dexEntries) {
+      const char = findCharacterById(entry.profile.characterId);
+      if (char) map[entry.profile.characterId] = char;
+    }
+    return map;
+  }, [dexEntries]);
+
   /** 次のステージが存在するか */
   const hasNextStage = React.useMemo(() => {
     if (!currentStage) return false;
@@ -482,12 +532,37 @@ const AirHockeyGame: React.FC = () => {
               setScreen('daily');
             }}
             unlockState={unlockState}
+            onCharacterDexClick={handleCharacterDexClick}
+            newUnlockCount={getNewUnlockCount()}
           />
         </Transition>
       )}
 
       {screen === 'achievements' && (
         <AchievementList onBack={() => setScreen('menu')} />
+      )}
+
+      {/* キャラクター図鑑画面（P2-07） */}
+      {screen === 'characterDex' && (
+        <>
+          <CharacterDexScreen
+            dexEntries={dexEntries}
+            unlockedIds={unlockedIds}
+            newlyUnlockedIds={newlyUnlockedIds}
+            characters={dexCharacterMap}
+            completionRate={completionRate}
+            onSelectCharacter={handleSelectCharacter}
+            onBack={handleBackFromDex}
+            onMarkViewed={markViewed}
+          />
+          {selectedDexEntry && selectedCharacter && (
+            <CharacterProfileCard
+              entry={selectedDexEntry}
+              character={selectedCharacter}
+              onClose={handleCloseProfile}
+            />
+          )}
+        </>
       )}
 
       {screen === 'daily' && dailyChallenge && (

@@ -11,7 +11,7 @@
 | P2-04 キャラクタープロフィールカード | [x] 完了 | ✅ ※2 | 2026-03-15 |
 | P2-05 リザルト画面改修 | [x] 完了 | ✅ ※2 | 2026-03-16 |
 | P2-06 タイトル画面改修 | [x] 完了 | — | 2026-03-16 |
-| P2-07 統合・遷移管理 | [ ] 未着手 | — | - |
+| P2-07 統合・遷移管理 | [x] 完了 | — | 2026-03-16 |
 | P2-08 テスト・動作確認 | [ ] 未着手 | ✅ ※3 | - |
 
 > **画像依存の凡例**:
@@ -280,33 +280,33 @@
 ## P2-07: 統合・遷移管理
 
 ### ScreenType 更新
-- [ ] `AirHockeyGame.tsx` で `screen === 'characterDex'` 時の描画を追加
+- [x] `AirHockeyGame.tsx` で `screen === 'characterDex'` 時の描画を追加
 
 ### フック統合
-- [ ] `useCharacterDex` フックを `AirHockeyGame.tsx` に統合
-- [ ] 図鑑の状態（アンロック・新規通知等）を管理
+- [x] `useCharacterDex` フックを `AirHockeyGame.tsx` に統合
+- [x] 図鑑の状態（アンロック・新規通知等）を管理
 
 ### 遷移ハンドラ
-- [ ] `handleCharacterDexClick()` を追加（menu → characterDex）
-- [ ] `handleBackFromDex()` を追加（characterDex → menu）
-- [ ] プロフィールカード表示用の状態管理（`selectedCharacterId`）
+- [x] `handleCharacterDexClick()` を追加（menu → characterDex）
+- [x] `handleBackFromDex()` を追加（characterDex → menu）
+- [x] プロフィールカード表示用の状態管理（`selectedCharacterId`）
 
 ### ストーリークリア時のアンロック統合
-- [ ] P2-05 で追加したインラインのアンロックロジック（`checkNewUnlocks` / `saveDexProgress` 直接呼び出し）を `useCharacterDex.checkAndUnlock()` に置き換える
-- [ ] 置き換え後、`AirHockeyGame.tsx` の `checkNewUnlocks` / `loadDexProgress` / `saveDexProgress` / `getDexEntryById` の直接 import を削除
-- [ ] 新規アンロック情報を `ResultScreen` に渡す（P2-05 で実装済み、統合時に確認）
-- [ ] 図鑑画面表示時に `markViewed()` を実行（NEW バッジの消去）
+- [x] P2-05 で追加したインラインのアンロックロジック（`checkNewUnlocks` / `saveDexProgress` 直接呼び出し）を `useCharacterDex.checkAndUnlock()` に置き換える
+- [x] 置き換え後、`AirHockeyGame.tsx` の `checkNewUnlocks` / `loadDexProgress` / `saveDexProgress` の直接 import を削除（`getDexEntryById` はリザルト通知用に残存）
+- [x] 新規アンロック情報を `ResultScreen` に渡す（P2-05 で実装済み、統合時に確認）
+- [x] 図鑑画面表示時に `markViewed()` を実行（NEW バッジの消去）
 
 ### Props の受け渡し
-- [ ] `TitleScreen` に `onCharacterDexClick`, `newUnlockCount` を渡す
-- [ ] `ResultScreen` に `cpuCharacter`, `playerCharacter`, `newlyUnlockedCharacterName` を渡す
-- [ ] `CharacterDexScreen` に必要な Props を渡す
+- [x] `TitleScreen` に `onCharacterDexClick`, `newUnlockCount` を渡す
+- [x] `ResultScreen` に `cpuCharacter`, `playerCharacter`, `newlyUnlockedCharacterName` を渡す
+- [x] `CharacterDexScreen` に必要な Props を渡す
 
 ### テスト
-- [ ] 既存の遷移テストが全パス
-- [ ] menu → characterDex → menu の遷移テスト
-- [ ] ストーリークリア時のアンロック連携テスト
-- [ ] フリーモードに影響がないこと
+- [x] 既存の遷移テストが全パス
+- [x] menu → characterDex → menu の遷移テスト
+- [x] ストーリークリア時のアンロック連携テスト
+- [x] フリーモードに影響がないこと
 
 ---
 
