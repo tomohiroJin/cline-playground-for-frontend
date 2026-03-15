@@ -2,6 +2,7 @@
  * quiz サブドメイン - 再エクスポート
  */
 export { pickQuestion } from './question-picker';
+export type { PickQuestionOptions } from './question-picker';
 export {
   computeAnswerResult,
   computeDebtDelta,
@@ -24,5 +25,5 @@ export type { TagStatEntry } from './tag-stats';
 export {
   buildStudyPool,
   countStudyQuestions,
-  shuffleArray,
 } from './study-question-pool';
+export type { BuildStudyPoolOptions } from './study-question-pool';

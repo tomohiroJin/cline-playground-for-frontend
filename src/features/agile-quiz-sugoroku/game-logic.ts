@@ -9,8 +9,11 @@
 export { shuffle, clamp, average, percentage } from '../../utils/math-utils';
 
 // game サブドメイン
-export { createEvents, makeEvents } from './domain/game';
+export { createEvents } from './domain/game';
 export { createSprintSummary } from './domain/game';
+
+/** @deprecated createEvents を使用してください */
+export { createEvents as makeEvents } from './domain/game';
 
 // quiz サブドメイン
 export { pickQuestion } from './domain/quiz';

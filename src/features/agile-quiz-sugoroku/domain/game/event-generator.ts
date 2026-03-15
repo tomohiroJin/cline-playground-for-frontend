@@ -36,9 +36,3 @@ export function createEvents(
 
   return events;
 }
-
-/**
- * 後方互換用エイリアス
- * @deprecated createEvents を使用してください
- */
-export const makeEvents = createEvents;

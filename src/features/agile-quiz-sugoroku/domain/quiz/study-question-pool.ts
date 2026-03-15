@@ -2,35 +2,37 @@
  * 勉強会モード問題プール構築
  *
  * 旧 study-question-pool.ts から移動。
- * shuffleArray に randomFn を追加して純粋化。
  */
 import { Question } from '../types';
 import { QUESTIONS } from '../../quiz-data';
+import { shuffle } from '../../../../utils/math-utils';
 
-/** 配列をシャッフル（Fisher-Yates） */
-export function shuffleArray<T>(
-  arr: T[],
-  randomFn: () => number = Math.random,
-): T[] {
-  const result = [...arr];
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(randomFn() * (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
-  }
-  return result;
+/** buildStudyPool のオプション */
+export interface BuildStudyPoolOptions {
+  /** 最大問題数（0 = 制限なし） */
+  limit?: number;
+  /** 乱数生成関数（テスト用に注入可能） */
+  randomFn?: () => number;
 }
 
 /**
  * 選択されたジャンルに該当する問題を全カテゴリから横断的に収集
+ *
  * @param selectedTags 選択されたジャンルタグID
- * @param limit 最大問題数（0 = 制限なし）
- * @param randomFn 乱数生成関数（テスト用に注入可能）
+ * @param optionsOrLimit オプションオブジェクト、または後方互換用の limit 値
  */
 export function buildStudyPool(
   selectedTags: string[],
-  limit: number = 0,
-  randomFn: () => number = Math.random,
+  optionsOrLimit?: BuildStudyPoolOptions | number,
 ): Question[] {
+  // 後方互換: number が渡された場合はオプションに変換
+  const options: BuildStudyPoolOptions =
+    typeof optionsOrLimit === 'number'
+      ? { limit: optionsOrLimit }
+      : optionsOrLimit ?? {};
+
+  const { limit = 0, randomFn = Math.random } = options;
+
   const allQuestions: Question[] = [];
 
   // 全カテゴリから問題を収集
@@ -43,7 +45,7 @@ export function buildStudyPool(
   }
 
   // シャッフル
-  const shuffled = shuffleArray(allQuestions, randomFn);
+  const shuffled = shuffle(allQuestions, randomFn);
 
   // 制限
   if (limit > 0 && shuffled.length > limit) {

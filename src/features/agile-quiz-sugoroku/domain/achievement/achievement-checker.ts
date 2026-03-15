@@ -2,7 +2,7 @@
  * 実績システム
  *
  * 旧 achievements.ts から移動。
- * 15個の実績定義と判定ロジック
+ * 20個の実績定義と判定ロジック
  */
 import { AchievementDefinition, AchievementContext } from '../types';
 

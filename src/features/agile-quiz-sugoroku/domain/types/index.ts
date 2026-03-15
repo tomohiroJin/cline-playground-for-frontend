@@ -33,13 +33,16 @@ export type {
 } from './team-types';
 
 export type {
+  SavedIncorrectQuestion,
+  SavedGameResult,
+  GameHistoryEntry,
+} from './game-result-types';
+
+export type {
   AchievementRarity,
   AchievementDefinition,
   AchievementContext,
   AchievementProgress,
-  SavedIncorrectQuestion,
-  SavedGameResult,
-  GameHistoryEntry,
 } from './achievement-types';
 
 export type {
