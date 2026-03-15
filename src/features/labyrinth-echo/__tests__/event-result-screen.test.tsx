@@ -6,15 +6,13 @@ import userEvent from '@testing-library/user-event';
 import { EventResultScreen } from '../components/EventResultScreen';
 import { FLOOR_META } from '../definitions';
 import type { LogEntry } from '../definitions';
-import type { Player, DifficultyDef } from '../game-logic';
 import { DIFFICULTY } from '../game-logic';
+import { createTestPlayer } from './helpers/factories';
 import type { GameEvent } from '../events/event-utils';
 
-const normalDiff: DifficultyDef = DIFFICULTY.find(d => d.id === 'normal')!;
+const normalDiff = DIFFICULTY.find(d => d.id === 'normal')!;
 
-const testPlayer: Player = {
-  hp: 60, maxHp: 100, mn: 50, maxMn: 80, inf: 25, st: [],
-};
+const testPlayer = createTestPlayer({ hp: 60, maxHp: 100, mn: 50, maxMn: 80, inf: 25 });
 
 const testEvent: GameEvent = {
   id: "test001", fl: [1], tp: "exploration",
@@ -67,81 +65,122 @@ const makeProps = (overrides: Partial<Parameters<typeof EventResultScreen>[0]> =
 describe('EventResultScreen', () => {
   describe('イベント表示', () => {
     it('イベントテキストが表示される', () => {
+      // Arrange & Act
       render(<EventResultScreen {...makeProps()} />);
+
+      // Assert
       expect(screen.getByText(testEvent.sit)).toBeInTheDocument();
     });
 
-    it('選択肢が表示される', () => {
+    it('全選択肢が表示される', () => {
+      // Arrange & Act
       render(<EventResultScreen {...makeProps()} />);
+
+      // Assert
       expect(screen.getByText('選択肢A')).toBeInTheDocument();
       expect(screen.getByText('選択肢B')).toBeInTheDocument();
       expect(screen.getByText('選択肢C')).toBeInTheDocument();
     });
 
-    it('キーボードインジケーター [N] が表示される', () => {
+    it('キーボードインジケーター[N]が表示される', () => {
+      // Arrange & Act
       render(<EventResultScreen {...makeProps()} />);
+
+      // Assert
       expect(screen.getByText('[1]')).toBeInTheDocument();
       expect(screen.getByText('[2]')).toBeInTheDocument();
       expect(screen.getByText('[3]')).toBeInTheDocument();
     });
 
-    it('選択肢クリックで handleChoice が呼ばれる', async () => {
+    it('選択肢をクリックするとhandleChoiceが正しいインデックスで呼ばれる', async () => {
+      // Arrange
       const user = userEvent.setup();
       const props = makeProps();
       render(<EventResultScreen {...props} />);
+
+      // Act
       await user.click(screen.getByText('選択肢B'));
+
+      // Assert
       expect(props.handleChoice).toHaveBeenCalledWith(1);
     });
   });
 
   describe('ヒント表示', () => {
-    it('INF >= 50 の場合に詳細ヒントテキストが表示される', () => {
-      render(<EventResultScreen {...makeProps({ player: { ...testPlayer, inf: 50 } })} />);
+    it('INF>=50のプレイヤーを渡すと詳細ヒントテキストが表示される', () => {
+      // Arrange
+      const highInfPlayer = createTestPlayer({ hp: 60, maxHp: 100, mn: 50, maxMn: 80, inf: 50 });
+
+      // Act
+      render(<EventResultScreen {...makeProps({ player: highInfPlayer })} />);
+
+      // Assert
       expect(screen.getByText(/体力に余裕があるなら/)).toBeInTheDocument();
     });
 
-    it('INF < 50 の場合に詳細ヒントテキストが表示されない', () => {
-      render(<EventResultScreen {...makeProps({ player: { ...testPlayer, inf: 25 } })} />);
+    it('INF<50のプレイヤーを渡すと詳細ヒントテキストが表示されない', () => {
+      // Arrange & Act
+      render(<EventResultScreen {...makeProps({ player: testPlayer })} />);
+
+      // Assert
       expect(screen.queryByText(/体力に余裕があるなら/)).not.toBeInTheDocument();
     });
 
-    it('INF >= 20 の場合に条件アイコンが表示される', () => {
-      render(<EventResultScreen {...makeProps({ player: { ...testPlayer, inf: 20 } })} />);
-      // inf 20-34 → "?" アイコン（条件の存在を示唆）
+    it('INF>=20のプレイヤーを渡すと条件アイコンが表示される', () => {
+      // Arrange
+      const midInfPlayer = createTestPlayer({ hp: 60, maxHp: 100, mn: 50, maxMn: 80, inf: 20 });
+
+      // Act
+      render(<EventResultScreen {...makeProps({ player: midInfPlayer })} />);
+
+      // Assert — inf 20-34 → "?" アイコン
       expect(screen.getAllByTitle('条件あり').length).toBeGreaterThan(0);
     });
   });
 
   describe('ステータスバー', () => {
-    it('HP と精神力のステータスバーが表示される', () => {
+    it('HPと精神力のステータスバーが表示される', () => {
+      // Arrange & Act
       render(<EventResultScreen {...makeProps()} />);
+
+      // Assert
       expect(screen.getAllByText(/体力/).length).toBeGreaterThan(0);
       expect(screen.getAllByText(/精神力/).length).toBeGreaterThan(0);
     });
 
     it('情報値が表示される', () => {
+      // Arrange & Act
       render(<EventResultScreen {...makeProps()} />);
+
+      // Assert
       expect(screen.getAllByText('25').length).toBeGreaterThan(0);
     });
 
     it('フロア表示が正しい', () => {
+      // Arrange & Act
       render(<EventResultScreen {...makeProps()} />);
+
+      // Assert
       expect(screen.getAllByText(/第1層/).length).toBeGreaterThan(0);
     });
   });
 
   describe('結果画面', () => {
     it('結果テキストが表示される', () => {
+      // Arrange & Act
       render(<EventResultScreen {...makeProps({
         phase: "result",
         revealed: "結果テキストです。",
         resTxt: "結果テキストです。",
         resChg: { hp: -10, mn: 5, inf: 3 },
       })} />);
+
+      // Assert
       expect(screen.getByText('結果テキストです。')).toBeInTheDocument();
     });
 
     it('HP/精神/情報の変化量が表示される', () => {
+      // Arrange & Act
       render(<EventResultScreen {...makeProps({
         phase: "result",
         revealed: "結果",
@@ -150,12 +189,15 @@ describe('EventResultScreen', () => {
         done: true,
         ready: true,
       })} />);
+
+      // Assert
       expect(screen.getByText(/HP.*▼.*-10/)).toBeInTheDocument();
       expect(screen.getByText(/精神.*▲.*\+5/)).toBeInTheDocument();
       expect(screen.getByText(/情報.*▲.*\+3/)).toBeInTheDocument();
     });
 
-    it('「先に進む」ボタンクリックで proceed が呼ばれる', async () => {
+    it('「先に進む」ボタンをクリックするとproceedが呼ばれる', async () => {
+      // Arrange
       const user = userEvent.setup();
       const props = makeProps({
         phase: "result",
@@ -166,14 +208,21 @@ describe('EventResultScreen', () => {
         ready: true,
       });
       render(<EventResultScreen {...props} />);
+
+      // Act
       await user.click(screen.getByText('先に進む'));
+
+      // Assert
       expect(props.proceed).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('ログパネル', () => {
     it('ログが開かれている場合にフィルターボタンが表示される', () => {
+      // Arrange & Act
       render(<EventResultScreen {...makeProps({ showLog: true })} />);
+
+      // Assert
       expect(screen.getByText('全て')).toBeInTheDocument();
       expect(screen.getByText('被害')).toBeInTheDocument();
       expect(screen.getByText('回復')).toBeInTheDocument();
@@ -181,21 +230,31 @@ describe('EventResultScreen', () => {
     });
 
     it('ログエントリーが表示される', () => {
+      // Arrange & Act
       render(<EventResultScreen {...makeProps({ showLog: true })} />);
+
+      // Assert
       expect(screen.getByText('探索した')).toBeInTheDocument();
       expect(screen.getByText('休憩した')).toBeInTheDocument();
     });
 
     it('フロアセパレーターが表示される', () => {
+      // Arrange & Act
       render(<EventResultScreen {...makeProps({ showLog: true })} />);
+
+      // Assert
       expect(screen.getByText(/── 第2層 ──/)).toBeInTheDocument();
     });
 
-    it('被害フィルターで被害ログのみ表示される', async () => {
+    it('被害フィルターをクリックすると被害ログのみ表示される', async () => {
+      // Arrange
       const user = userEvent.setup();
       render(<EventResultScreen {...makeProps({ showLog: true })} />);
+
+      // Act
       await user.click(screen.getByText('被害'));
-      // HP -10 と HP -15 のログが表示される
+
+      // Assert — HP -10 と HP -15 のログが表示される
       expect(screen.getByText('探索した')).toBeInTheDocument();
       expect(screen.getByText('遭遇した')).toBeInTheDocument();
       // 回復ログは表示されない
@@ -203,7 +262,10 @@ describe('EventResultScreen', () => {
     });
 
     it('コピーボタンが表示される', () => {
+      // Arrange & Act
       render(<EventResultScreen {...makeProps({ showLog: true })} />);
+
+      // Assert
       expect(screen.getByText('📋')).toBeInTheDocument();
     });
   });
