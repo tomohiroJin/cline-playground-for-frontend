@@ -77,6 +77,7 @@ export const StartButton = styled.button`
   color: white;
   font-size: 1.2rem;
   font-weight: 800;
+  width: 100%;
   padding: 15px 60px;
   border-radius: 50px;
   border: none;
@@ -84,6 +85,7 @@ export const StartButton = styled.button`
   margin-top: 20px;
   box-shadow: 0 4px 15px rgba(0, 210, 255, 0.3);
   transition: all 0.2s;
+  box-sizing: border-box;
 
   &:hover {
     transform: scale(1.05);

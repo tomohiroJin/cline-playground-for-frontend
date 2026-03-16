@@ -13,6 +13,10 @@ import { getUnlockState, saveUnlockState, checkUnlocks } from './core/unlock';
 import { loadStoryProgress, saveStoryProgress, resetStoryProgress } from './core/story';
 import type { StageDefinition, StoryProgress } from './core/story';
 import { CHAPTER_1_STAGES } from './core/dialogue-data';
+import { getDexEntryById } from './core/dex-data';
+import { useCharacterDex } from './hooks/useCharacterDex';
+import { CharacterDexScreen } from './components/CharacterDexScreen';
+import { CharacterProfileCard } from './components/CharacterProfileCard';
 import { useInput } from './hooks/useInput';
 import { useKeyboardInput } from './hooks/useKeyboardInput';
 import { useGameLoop } from './hooks/useGameLoop';
@@ -49,7 +53,8 @@ type ScreenType =
   | 'vsScreen'
   | 'postDialogue'
   | 'chapterTitle'
-  | 'victoryCutIn';
+  | 'victoryCutIn'
+  | 'characterDex';
 
 const AirHockeyGame: React.FC = () => {
   const [screen, setScreen] = useState<ScreenType>('menu');
@@ -78,6 +83,21 @@ const AirHockeyGame: React.FC = () => {
   const [isDailyMode, setIsDailyMode] = useState(false);
   // トランジション用
   const [transitioning, setTransitioning] = useState(false);
+  // リザルト画面用: 新規アンロックキャラ名
+  const [newlyUnlockedCharacterName, setNewlyUnlockedCharacterName] = useState<string | undefined>(undefined);
+  // 図鑑: プロフィールカード表示用
+  const [selectedCharacterId, setSelectedCharacterId] = useState<string | undefined>(undefined);
+
+  // キャラクター図鑑フック
+  const {
+    dexEntries,
+    unlockedIds,
+    newlyUnlockedIds,
+    completionRate,
+    checkAndUnlock,
+    markViewed,
+    getNewUnlockCount,
+  } = useCharacterDex();
 
   // ストーリーモード用
   const [gameMode, setGameMode] = useState<GameMode>('free');
@@ -183,7 +203,7 @@ const AirHockeyGame: React.FC = () => {
         setIsDailyMode(false);
       }
 
-      // ストーリーモード: 勝利時にクリアフラグ保存
+      // ストーリーモード: 勝利時にクリアフラグ保存 + 図鑑アンロック判定
       if (gameMode === 'story' && currentStage && isWin) {
         const current = loadStoryProgress();
         if (!current.clearedStages.includes(currentStage.id)) {
@@ -192,10 +212,23 @@ const AirHockeyGame: React.FC = () => {
           };
           saveStoryProgress(updated);
           setStoryProgress(updated);
+
+          // 図鑑アンロック判定（useCharacterDex フック経由）
+          const newUnlocks = checkAndUnlock(updated);
+          if (newUnlocks.length > 0) {
+            const entry = getDexEntryById(newUnlocks[0]);
+            setNewlyUnlockedCharacterName(entry?.profile.fullName);
+          } else {
+            setNewlyUnlockedCharacterName(undefined);
+          }
+        } else {
+          setNewlyUnlockedCharacterName(undefined);
         }
+      } else {
+        setNewlyUnlockedCharacterName(undefined);
       }
     }
-  }, [screen, diff, winScore, winner, field.id, isDailyMode, dailyChallenge, gameMode, currentStage]);
+  }, [screen, diff, winScore, winner, field.id, isDailyMode, dailyChallenge, gameMode, currentStage, checkAndUnlock]);
 
   // 音量設定をサウンドシステムに適用する共通関数
   const applyAudioSettings = useCallback((sound: SoundSystem, settings: AudioSettings) => {
@@ -268,6 +301,29 @@ const AirHockeyGame: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [screen, togglePause]);
+
+  // ── 図鑑遷移ハンドラ ────────────────────────────
+
+  /** 図鑑画面への遷移 */
+  const handleCharacterDexClick = useCallback(() => {
+    setScreen('characterDex');
+  }, []);
+
+  /** 図鑑画面から戻る */
+  const handleBackFromDex = useCallback(() => {
+    setSelectedCharacterId(undefined);
+    setScreen('menu');
+  }, []);
+
+  /** 図鑑: キャラクター選択（プロフィールカード表示） */
+  const handleSelectCharacter = useCallback((characterId: string) => {
+    setSelectedCharacterId(characterId);
+  }, []);
+
+  /** 図鑑: プロフィールカードを閉じる */
+  const handleCloseProfile = useCallback(() => {
+    setSelectedCharacterId(undefined);
+  }, []);
 
   // ── ストーリーモード遷移ハンドラ ──────────────────
 
@@ -377,6 +433,26 @@ const AirHockeyGame: React.FC = () => {
     return chars;
   }, [currentStage, cpuCharacter]);
 
+  // ── 図鑑: プロフィールカード用のデータ ──────────────
+  const selectedDexEntry = React.useMemo(
+    () => selectedCharacterId ? getDexEntryById(selectedCharacterId) : undefined,
+    [selectedCharacterId],
+  );
+  const selectedCharacter = React.useMemo(
+    () => selectedCharacterId ? findCharacterById(selectedCharacterId) : undefined,
+    [selectedCharacterId],
+  );
+
+  // ── 図鑑用のキャラクターマップ ──────────────────
+  const dexCharacterMap = React.useMemo(() => {
+    const map: Record<string, typeof PLAYER_CHARACTER> = {};
+    for (const entry of dexEntries) {
+      const char = findCharacterById(entry.profile.characterId);
+      if (char) map[entry.profile.characterId] = char;
+    }
+    return map;
+  }, [dexEntries]);
+
   /** 次のステージが存在するか */
   const hasNextStage = React.useMemo(() => {
     if (!currentStage) return false;
@@ -456,12 +532,37 @@ const AirHockeyGame: React.FC = () => {
               setScreen('daily');
             }}
             unlockState={unlockState}
+            onCharacterDexClick={handleCharacterDexClick}
+            newUnlockCount={getNewUnlockCount()}
           />
         </Transition>
       )}
 
       {screen === 'achievements' && (
         <AchievementList onBack={() => setScreen('menu')} />
+      )}
+
+      {/* キャラクター図鑑画面（P2-07） */}
+      {screen === 'characterDex' && (
+        <>
+          <CharacterDexScreen
+            dexEntries={dexEntries}
+            unlockedIds={unlockedIds}
+            newlyUnlockedIds={newlyUnlockedIds}
+            characters={dexCharacterMap}
+            completionRate={completionRate}
+            onSelectCharacter={handleSelectCharacter}
+            onBack={handleBackFromDex}
+            onMarkViewed={markViewed}
+          />
+          {selectedDexEntry && selectedCharacter && (
+            <CharacterProfileCard
+              entry={selectedDexEntry}
+              character={selectedCharacter}
+              onClose={handleCloseProfile}
+            />
+          )}
+        </>
       )}
 
       {screen === 'daily' && dailyChallenge && (
@@ -595,6 +696,9 @@ const AirHockeyGame: React.FC = () => {
             onNextStage={
               gameMode === 'story' && hasNextStage ? handleNextStage : undefined
             }
+            cpuCharacter={gameMode === 'story' ? cpuCharacter : undefined}
+            playerCharacter={gameMode === 'story' ? PLAYER_CHARACTER : undefined}
+            newlyUnlockedCharacterName={newlyUnlockedCharacterName}
           />
         </Transition>
       )}
