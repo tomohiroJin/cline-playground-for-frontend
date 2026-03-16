@@ -1,6 +1,8 @@
 /**
  * プレイヤーテストデータビルダー
  * テストで使用するPlayerオブジェクトを流暢なAPIで構築する
+ *
+ * デフォルト値は GAME_BALANCE の戦士設定と一致させている。
  */
 import {
   Player,
@@ -10,22 +12,26 @@ import {
   Direction,
   DirectionValue,
 } from '../../types';
+import { GAME_BALANCE } from '../../domain/config/gameBalance';
 
-/** デフォルトの能力値（戦士） */
+/** デフォルトの能力値（GAME_BALANCE の戦士設定と同期） */
 const DEFAULT_STATS: PlayerStats = {
-  attackPower: 1,
-  attackRange: 1,
-  moveSpeed: 3,
-  attackSpeed: 1,
-  healBonus: 0,
+  attackPower: GAME_BALANCE.player.warrior.attackPower,
+  attackRange: GAME_BALANCE.player.warrior.attackRange,
+  moveSpeed: GAME_BALANCE.player.warrior.moveSpeed,
+  attackSpeed: GAME_BALANCE.player.warrior.attackSpeed,
+  healBonus: GAME_BALANCE.player.warrior.healBonus,
 };
+
+/** デフォルトHP（GAME_BALANCE の戦士設定と同期） */
+const DEFAULT_HP = GAME_BALANCE.player.warrior.initialHp;
 
 export class PlayerBuilder {
   private data: Player = {
     x: 1,
     y: 1,
-    hp: 20,
-    maxHp: 20,
+    hp: DEFAULT_HP,
+    maxHp: DEFAULT_HP,
     direction: Direction.DOWN,
     isInvincible: false,
     invincibleUntil: 0,

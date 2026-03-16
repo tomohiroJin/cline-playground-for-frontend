@@ -5,7 +5,7 @@ import {
   getEnemyAtPosition,
   getEnemiesInRange,
 } from '../domain/services/collisionService';
-import { aMap, anEnemy, resetEnemyBuilderCounter } from './builders';
+import { aMap, anEnemy } from './builders';
 import { WallType, WallState, Wall } from '../types';
 
 describe('collision', () => {
@@ -114,10 +114,6 @@ describe('collision', () => {
   });
 
   describe('checkEnemyCollision', () => {
-    beforeEach(() => {
-      resetEnemyBuilderCounter();
-    });
-
     test('プレイヤーと同じ位置の敵がいる場合trueを返すこと', () => {
       // Arrange
       const player = { x: 5, y: 5 };
@@ -155,10 +151,6 @@ describe('collision', () => {
   });
 
   describe('getEnemyAtPosition', () => {
-    beforeEach(() => {
-      resetEnemyBuilderCounter();
-    });
-
     test('指定位置に敵がいる場合その敵を返すこと', () => {
       // Arrange
       const enemy = anEnemy().at(3, 4).build();
@@ -184,10 +176,6 @@ describe('collision', () => {
   });
 
   describe('getEnemiesInRange', () => {
-    beforeEach(() => {
-      resetEnemyBuilderCounter();
-    });
-
     test('マンハッタン距離が範囲内の敵を返すこと', () => {
       // Arrange
       const nearEnemy = anEnemy().at(2, 3).build();

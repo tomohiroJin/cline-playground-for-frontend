@@ -69,8 +69,8 @@ describe('PlayerBuilder', () => {
       const player = aPlayer().withStats({ attackPower: 5, attackRange: 3 }).build();
       expect(player.stats.attackPower).toBe(5);
       expect(player.stats.attackRange).toBe(3);
-      // 未設定の能力値はデフォルト値を保持
-      expect(player.stats.moveSpeed).toBe(3);
+      // 未設定の能力値はデフォルト値（戦士: moveSpeed=4）を保持
+      expect(player.stats.moveSpeed).toBe(4);
     });
 
     it('withDirection() で向きを設定する', () => {
@@ -138,7 +138,7 @@ describe('EnemyBuilder', () => {
     it('デフォルトの敵を生成する', () => {
       const enemy = anEnemy().build();
 
-      expect(enemy.id).toBeDefined();
+      expect(enemy.id).toBe('enemy-test-default');
       expect(enemy.x).toBe(5);
       expect(enemy.y).toBe(5);
       expect(enemy.type).toBe(EnemyType.PATROL);

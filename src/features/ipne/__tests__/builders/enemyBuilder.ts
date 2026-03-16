@@ -12,24 +12,12 @@ import {
   DirectionValue,
 } from '../../types';
 
-/** テスト用の連番ID */
-let testEnemyIdCounter = 0;
-const nextTestEnemyId = (): string => {
-  testEnemyIdCounter += 1;
-  return `enemy-test-${testEnemyIdCounter}`;
-};
-
-/** テスト開始前にカウンタをリセット（beforeEach等で呼び出す） */
-export const resetEnemyBuilderCounter = (): void => {
-  testEnemyIdCounter = 0;
-};
-
 export class EnemyBuilder {
   private data: Enemy;
 
   constructor() {
     this.data = {
-      id: nextTestEnemyId(),
+      id: 'enemy-test-default',
       x: 5,
       y: 5,
       type: EnemyType.PATROL,
@@ -130,6 +118,7 @@ export class EnemyBuilder {
     return {
       ...this.data,
       homePosition: { ...this.data.homePosition },
+      ...(this.data.patrolPath ? { patrolPath: this.data.patrolPath.map(p => ({ ...p })) } : {}),
     };
   }
 }

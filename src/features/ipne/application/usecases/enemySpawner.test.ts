@@ -439,17 +439,20 @@ describe('enemySpawner', () => {
       );
 
       // Assert
-      // ボスも含めすべての敵にスケーリングが適用されている
-      // 少なくとも1体の敵が存在する
       expect(enemies.length).toBeGreaterThan(0);
-      // ボスのスピードがスケーリングされていることを確認
+      // 全敵のHP・ダメージ・速度がスケーリングされていることを確認
+      for (const enemy of enemies) {
+        // スケーリング倍率2.0のため、HPは元値の2倍（ceil丸め）
+        // 最低でも元のHP以上であること
+        expect(enemy.hp).toBeGreaterThanOrEqual(2);
+        expect(enemy.hp).toBe(enemy.maxHp);
+      }
+      // ボスの速度が具体的にスケーリングされていること（元1.5 × 1.5 = 2.25）
       const boss = enemies.find(
         e => e.type === EnemyType.BOSS || e.type === EnemyType.MEGA_BOSS
       );
-      if (boss) {
-        // スケーリング適用済みなので speed は元の値 * 1.5
-        expect(boss.speed).toBeGreaterThan(0);
-      }
+      expect(boss).toBeDefined();
+      expect(boss!.speed).toBeCloseTo(1.5 * 1.5);
     });
 
     it('ミニボスが指定数配置される', () => {

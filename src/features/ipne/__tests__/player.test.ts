@@ -1,3 +1,9 @@
+/**
+ * プレイヤーエンティティのテスト
+ *
+ * 方針: ファクトリ関数（createPlayer）自体のテストには createPlayer() を直接使用し、
+ * それ以外のテストではビルダー（aPlayer()）を使用する。
+ */
 import {
   movePlayer,
   createPlayer,

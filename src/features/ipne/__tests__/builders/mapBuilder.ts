@@ -5,13 +5,9 @@
 import { GameMap, TileType } from '../../types';
 
 export class MapBuilder {
-  private width: number;
-  private height: number;
   private tiles: GameMap;
 
   constructor(width = 10, height = 10) {
-    this.width = width;
-    this.height = height;
     // 壁で囲まれた空の部屋を生成
     this.tiles = Array.from({ length: height }, (_, y) =>
       Array.from({ length: width }, (_, x) =>

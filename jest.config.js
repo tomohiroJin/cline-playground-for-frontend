@@ -16,7 +16,7 @@ module.exports = {
     '^.+\\.(ts|tsx)$': 'ts-jest'
   },
   testMatch: ['**/__tests__/**/*.ts?(x)', '**/?(*.)+(spec|test).ts?(x)'],
-  testPathIgnorePatterns: ['/node_modules/', '/__tests__/test-helpers\\.ts$', '/__tests__/helpers/(?!.*\\.test\\.ts)', '/__tests__/mocks/', '/__tests__/builders/(?!.*\\.test\\.ts)', '/__tests__/fixtures/', '<rootDir>/scripts/', '<rootDir>/e2e/'],
+  testPathIgnorePatterns: ['/node_modules/', '/__tests__/test-helpers\\.ts$', '/__tests__/helpers/(?!.*\\.test\\.ts)', '/__tests__/mocks/', '/__tests__/builders/(?!.*\\.test\\.ts)', '<rootDir>/scripts/', '<rootDir>/e2e/'],
   collectCoverage: true,
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
