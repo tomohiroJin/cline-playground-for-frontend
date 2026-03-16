@@ -65,7 +65,7 @@ describe('RandomProvider インターフェース', () => {
     it('randomInt(min, max) が min以上max未満の整数を返す', () => {
       const rng: RandomProvider = {
         random: () => 0.5,
-        randomInt: (min, max) => min,
+        randomInt: (min, _max) => min,
         pick: <T>(arr: readonly T[]) => arr[0],
         shuffle: <T>(arr: readonly T[]) => [...arr],
       };

@@ -37,14 +37,7 @@ import {
 } from '../domain/types/items';
 
 // === stage.ts からのエクスポート検証 ===
-import type {
-  StageNumber,
-  StageConfig,
-  GimmickPlacementConfig,
-  StrategicPatternLimits,
-  StoryScene,
-  StorySceneSlide,
-} from '../domain/types/stage';
+// 型のみのエクスポート（StageNumber, StageConfig 等）は TypeScript コンパイルで検証済み
 
 // === game-state.ts からのエクスポート検証 ===
 import {

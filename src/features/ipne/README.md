@@ -63,76 +63,119 @@
 
 ### ファイル構成
 
+`types.ts` は Phase 1 で 9 つのドメイン別ファイル（`domain/types/`）に分割され、
+`types.ts` 自体は barrel re-export として後方互換性を維持しています。
+
 ```
 src/features/ipne/
-  index.ts                  # barrel export
-  types.ts                  # 型定義
-  application/              # アプリケーション層
+  index.ts                    # barrel export
+  types.ts                    # barrel re-export（domain/types/ への後方互換）
+  domain/                     # ドメイン層（ビジネスルール、外部依存なし）
+    types/                    # 型定義（9ファイルに分割）
+      world.ts                #   TileType, GameMap, Position, Direction, MazeConfig 等
+      player.ts               #   Player, PlayerClass, ClassConfig, PlayerStats 等
+      enemy.ts                #   Enemy, EnemyType, EnemyState
+      gimmicks.ts             #   Trap, TrapType, Wall, WallType 等
+      items.ts                #   Item, ItemType
+      stage.ts                #   StageNumber, StageConfig, StageRewardType 等
+      game-state.ts           #   GameState, ScreenState, CombatState, Rating 等
+      feedback.ts             #   FeedbackType, FeedbackEffect, TutorialState 等
+      audio.ts                #   AudioSettings, SoundEffectType, BgmType 等
+      index.ts                #   barrel export
+    entities/                 # エンティティ（純粋関数、IdGenerator DI）
+      player.ts               #   プレイヤー生成・状態変更
+      enemy.ts                #   敵生成・状態変更・ドロップ判定
+      trap.ts                 #   罠生成・状態変更
+      wall.ts                 #   壁生成・状態変更
+      item.ts                 #   アイテム生成
+    valueObjects/             # 値オブジェクト
+      playerClass.ts          #   職業設定（WARRIOR, THIEF）
+    services/                 # ドメインサービス
+      combatService.ts        #   戦闘判定・ダメージ計算
+      collisionService.ts     #   衝突判定
+      movementService.ts      #   移動ロジック
+      pathfinderService.ts    #   経路探索（A*）
+      mazeGenerator.ts        #   迷路生成（BSP法）
+      progressionService.ts   #   レベルアップ・能力値成長
+      goalService.ts          #   ゴール判定
+      endingService.ts        #   エンディング条件・評価計算
+      comboService.ts         #   コンボカウンター管理
+      mapService.ts           #   マップ管理
+      gimmickPlacement/       #   ギミック配置サービス
+    policies/                 # ドメインポリシー（Strategy パターン）
+      enemyAi/                #   敵AIポリシー（patrol, charge, ranged, flee 等）
+    config/                   # ドメイン定数
+      stageConfig.ts          #   5ステージ設定データ
+      gameBalance.ts          #   全バランス定数（マジックナンバー集約）
+      story.ts                #   ストーリーデータ
+    ports/                    # ポート（依存性逆転用インターフェース）
+      IdGenerator.ts          #   ID 生成器
+      RandomProvider.ts       #   乱数プロバイダー
+      ClockProvider.ts        #   時計プロバイダー
+    contracts/                # DbC アサーション（require, ensure, invariant）
+    factories/                # 統一ファクトリ
+      entityFactory.ts        #   EntityFactory（enemy, trap, wall, item）
+  application/                # アプリケーション層（ユースケース）
     engine/
-      tickGameState.ts      # ゲームティック処理
+      tickGameState.ts        #   ゲームティック（オーケストレーター）
     usecases/
-      resolveItemPickupEffects.ts  # アイテム取得効果
-      resolveKnockback.ts   # ノックバック処理
-      resolvePlayerDamage.ts # ダメージ処理
-  domain/                   # ドメイン層
-    policies/
-      enemyAi/              # 敵AIポリシー
+      resolvePlayerDamage.ts  #   ダメージ解決
+      resolveItemPickupEffects.ts # アイテム取得効果
+      resolveKnockback.ts     #   ノックバック処理
+      resolveTraps.ts         #   罠トリガー処理
+      resolveRegen.ts         #   リジェネ処理
+      resolveEnemyUpdates.ts  #   敵更新・死亡フィルタ
+      enemySpawner.ts         #   敵スポーン
+      autoMapping.ts          #   オートマッピング
     services/
-      gimmickPlacement/     # ギミック配置サービス
-  infrastructure/           # インフラ層
-    browser/                # ブラウザ環境
-    clock/                  # 時計プロバイダー
-    random/                 # 乱数プロバイダー
-    storage/                # ストレージプロバイダー
-  presentation/             # プレゼンテーション層
-    config.ts               # 表示設定
-    index.ts                # barrel export
+      timerService.ts         #   ゲームタイマー
+  infrastructure/             # インフラ層（外部依存の実装）
+    browser/                  #   ブラウザ環境
+    clock/                    #   ClockProvider 実装
+    random/                   #   RandomProvider 実装
+    storage/                  #   StorageProvider / recordStorage
+    id/                       #   SequentialIdGenerator 実装
+    debug/                    #   デバッグサービス
+  presentation/               # プレゼンテーション層（React UI）
     hooks/
-      useGameLoop.ts        # ゲームループ
-      useGameState.ts       # ゲーム状態管理
+      useGameState.ts         #   統合 Facade フック
+      useGameSetup.ts         #   マップ生成・初期化
+      useScreenTransition.ts  #   画面遷移ハンドラー
+      useStageManagement.ts   #   ステージ進行・報酬・引き継ぎ
+      useGameAudio.ts         #   BGM/SE管理
+      useGameLoop.ts          #   ゲームループ
+      useEffectDispatcher.ts  #   エフェクトディスパッチ
     screens/
-      Title.tsx             # タイトル画面
-      Prologue.tsx          # プロローグ画面
-      Game.tsx              # ゲーム画面
-      Clear.tsx             # クリア画面
+      Game.tsx                #   メインゲーム画面
+      GameCanvas.tsx          #   Canvas 描画
+      GameHUD.tsx             #   HUD 表示
+      GameControls.tsx        #   入力操作（モバイル十字キー含む）
+      GameModals.tsx          #   モーダル（レベルアップ選択等）
+      Title.tsx               #   タイトル画面
+      Prologue.tsx            #   プロローグ画面
+      Clear.tsx               #   クリア画面
+    effects/                  #   エフェクトシステム
+    services/
+      tutorialService.ts      #   チュートリアル
+      feedbackService.ts      #   フィードバック
+      viewportService.ts      #   ビューポート
     state/
-      useSyncedState.ts     # 同期状態管理
-  shared/
-    contracts/              # DbC アサーション
-  audio/
-    bgm.ts                  # BGM管理
-    soundEffect.ts          # 効果音
-    audioContext.ts          # AudioContext 管理
-    audioSettings.ts        # オーディオ設定
-  mazeGenerator.ts          # 迷路生成
-  player.ts                 # プレイヤーロジック
-  enemy.ts                  # 敵ロジック
-  enemyAI.ts                # 敵AIロジック
-  enemySpawner.ts           # 敵スポーン
-  item.ts                   # アイテム
-  combat.ts                 # 戦闘システム
-  movement.ts               # 移動ロジック
-  pathfinder.ts             # 経路探索
-  autoMapping.ts            # オートマップ
-  class.ts                  # クラスシステム
-  collision.ts              # 衝突判定
-  progression.ts            # 成長・レベルアップ管理（撃破テーブル、能力上限）
-  stageConfig.ts            # 5ステージ設定データ（迷路サイズ、敵数、レベル上限）
-  trap.ts                   # 罠ギミック
-  wall.ts                   # 壁ギミック
-  gimmickPlacement.ts       # ギミック配置
-  goal.ts                   # ゴール判定
-  tutorial.ts               # チュートリアル
-  record.ts                 # 記録管理
-  timer.ts                  # タイマー
-  ending.ts                 # エンディング処理
-  feedback.ts               # フィードバック
-  viewport.ts               # ビューポート
-  map.ts                    # マップ管理
-  debug.ts                  # デバッグ
-  __tests__/                # ユニットテスト
-src/pages/IpnePage.tsx      # ページコンポーネント（薄いラッパー）
-src/pages/IpnePage.styles.ts # スタイルコンポーネント
+      useSyncedState.ts       #   同期状態管理
+  audio/                      # 音声モジュール
+    bgm.ts                    #   BGM管理
+    soundEffect.ts            #   効果音
+    audioContext.ts            #   AudioContext 管理
+    audioSettings.ts          #   オーディオ設定
+  shared/                     # 共有モジュール（公開API用再エクスポート）
+  __tests__/                  # テスト
+    builders/                 #   テストデータビルダー
+    fixtures/                 #   テストフィクスチャ
+    helpers/                  #   テストヘルパー（SeededRandomProvider 等）
+    integration/              #   統合テスト
+    scenarios/                #   決定的シナリオテスト
+    mocks/                    #   テスト用モック
+src/pages/IpnePage.tsx        # ページコンポーネント（薄いラッパー）
+src/pages/IpnePage.styles.ts  # スタイルコンポーネント
 ```
 
 ### エフェクトシステム
