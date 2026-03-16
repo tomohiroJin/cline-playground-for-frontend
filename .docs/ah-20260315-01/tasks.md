@@ -83,13 +83,13 @@
 ### 図鑑データの作成
 - [x] `core/dex-data.ts` を新規作成
 - [x] アキラ（characterId: `'player'`）の `DexEntry` を作成 — アンロック: `{ type: 'default' }`
-- [x] ユウ（characterId: `'yuu'`）の `DexEntry` を作成 — アンロック: `{ type: 'default' }`
+- [x] ユウ（characterId: `'yuu'`）の `DexEntry` を作成 — アンロック: `{ type: 'hidden' }`（P2-09 で変更）
 - [x] ヒロ（characterId: `'hiro'`）の `DexEntry` を作成 — アンロック: `{ type: 'story-clear', stageId: '1-1' }`
 - [x] ミサキ（characterId: `'misaki'`）の `DexEntry` を作成 — アンロック: `{ type: 'story-clear', stageId: '1-2' }`
 - [x] タクマ（characterId: `'takuma'`）の `DexEntry` を作成 — アンロック: `{ type: 'story-clear', stageId: '1-3' }`
-- [x] ソウタ（characterId: `'rookie'`）の `DexEntry` を作成 — アンロック: `{ type: 'default' }`
-- [x] ケンジ（characterId: `'regular'`）の `DexEntry` を作成 — アンロック: `{ type: 'default' }`
-- [x] レン（characterId: `'ace'`）の `DexEntry` を作成 — アンロック: `{ type: 'default' }`
+- [x] ソウタ（characterId: `'rookie'`）の `DexEntry` を作成 — アンロック: `{ type: 'hidden' }`（P2-09 で変更）
+- [x] ケンジ（characterId: `'regular'`）の `DexEntry` を作成 — アンロック: `{ type: 'hidden' }`（P2-09 で変更）
+- [x] レン（characterId: `'ace'`）の `DexEntry` を作成 — アンロック: `{ type: 'hidden' }`（P2-09 で変更）
 - [x] `getDexEntryById()` ヘルパー関数を実装
 - [x] `getAllDexEntries()` ヘルパー関数を実装
 - [x] `character-profiles.md` との内容整合性を確認
@@ -107,7 +107,7 @@
 
 ### コアロジック（core/dex.ts）
 - [x] `core/dex.ts` を新規作成
-- [x] `DEFAULT_DEX_PROGRESS` 定数を定義（初期解放キャラ: player, yuu, rookie, regular, ace）
+- [x] `DEFAULT_DEX_PROGRESS` 定数を定義（初期解放キャラ: player のみ — P2-09 で変更）
 - [x] `loadDexProgress()` を実装 — localStorage からの読み込み + try-catch + バリデーション
 - [x] `saveDexProgress()` を実装 — localStorage への保存
 - [x] `resetDexProgress()` を実装 — 図鑑進行のリセット
@@ -391,6 +391,32 @@
 - [x] spec.md: DEFAULT_DEX_PROGRESS を更新
 - [x] spec.md: ボタン仕様の幅統一を反映
 - [x] tasks.md: P2-09 セクションを追加
+
+---
+
+## P2-10: フィードバック修正 第2弾（2026-03-16）
+
+> 動作確認後の追加フィードバックに基づく修正。TDD で実施。
+
+### FB-5: hidden キャラの非表示化
+- [x] `dex-data.ts` に `getVisibleDexEntries()` 関数を追加（hidden タイプを除外）
+- [x] `useCharacterDex.ts` で `getAllDexEntries()` → `getVisibleDexEntries()` に変更
+- [x] `CharacterDexScreen.tsx` で hidden エントリをフィルタリング
+- [x] コンプリート率が表示対象（4件）のみで計算されるように修正
+- [x] テスト追加: `dex-data.test.ts` に `getVisibleDexEntries()` のテスト 3件
+- [x] テスト更新: `useCharacterDex.test.ts` の `dexEntries` 期待値を visible entries に変更
+- [x] テスト更新: `useCharacterDex.test.ts` の `completionRate` テストを 1/4 に更新
+- [x] テスト追加: `CharacterDexScreen.test.tsx` に hidden キャラ非表示テスト
+- [x] テスト更新: `AirHockeyGame.test.tsx` のロック表示数を 7 → 3 に更新
+
+### FB-6: スクロール問題の根本修正
+- [x] `ScreenContainer` を `overflow: hidden` に変更（全体スクロールを無効化）
+- [x] `ScrollArea` styled-component を新設（`flex: 1; overflow-y: auto`）
+- [x] Grid を `ScrollArea` で包み、ヘッダー/プログレスは固定表示
+- [x] hidden キャラ除外により表示件数が 4 件に削減され、通常画面ではスクロール不要
+
+### ドキュメント更新
+- [x] tasks.md: P2-10 セクションを追加
 
 ---
 

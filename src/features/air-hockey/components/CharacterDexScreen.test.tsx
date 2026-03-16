@@ -184,4 +184,23 @@ describe('CharacterDexScreen', () => {
       expect(screen.getByText('キャラクター図鑑')).toBeInTheDocument();
     });
   });
+
+  describe('hidden キャラの非表示', () => {
+    it('フックが hidden を除外済みのエントリのみ渡すため、hidden キャラは表示されない', () => {
+      // Arrange: hidden キャラを除外済みのエントリ（フック側で除外される想定）
+      // visible entries のみで構成（default + story-clear のみ）
+      render(<CharacterDexScreen {...defaultProps} />);
+
+      // hidden キャラ（ユウ等）は dexEntries に含まれないため表示されない
+      // アンロック済み: アキラ、ヒロ（2件）
+      expect(screen.getByText('アキラ')).toBeInTheDocument();
+      expect(screen.getByText('ヒロ')).toBeInTheDocument();
+      // ロック中: ミサキ、タクマ（2件）
+      const lockedCards = screen.getAllByText('???');
+      expect(lockedCards).toHaveLength(2);
+      // 合計4件のカードのみ表示
+      const allCards = [...screen.getAllByText(/アキラ|ヒロ/), ...lockedCards];
+      expect(allCards).toHaveLength(4);
+    });
+  });
 });

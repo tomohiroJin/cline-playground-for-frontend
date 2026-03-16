@@ -6,7 +6,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import type { DexEntry } from '../core/types';
 import type { StoryProgress } from '../core/story';
-import { getAllDexEntries } from '../core/dex-data';
+import { getVisibleDexEntries } from '../core/dex-data';
 import {
   loadDexProgress,
   saveDexProgress,
@@ -29,7 +29,7 @@ export type UseCharacterDexReturn = {
 export const useCharacterDex = (): UseCharacterDexReturn => {
   const [dexProgress, setDexProgress] = useState(() => loadDexProgress());
 
-  const dexEntries: DexEntry[] = useMemo(() => getAllDexEntries(), []);
+  const dexEntries: DexEntry[] = useMemo(() => getVisibleDexEntries(), []);
 
   const unlockedIds = dexProgress.unlockedCharacterIds;
   const newlyUnlockedIds = dexProgress.newlyUnlockedIds;

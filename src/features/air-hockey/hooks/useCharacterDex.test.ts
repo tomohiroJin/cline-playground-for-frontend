@@ -7,7 +7,7 @@ import { useCharacterDex } from './useCharacterDex';
 import { DEX_STORAGE_KEY, DEFAULT_DEX_PROGRESS } from '../core/dex';
 import type { DexProgress } from '../core/types';
 import type { StoryProgress } from '../core/story';
-import { DEX_ENTRIES } from '../core/dex-data';
+import { getVisibleDexEntries } from '../core/dex-data';
 import {
   getMockStorage,
   setupMockLocalStorage,
@@ -34,7 +34,7 @@ describe('useCharacterDex', () => {
       DEFAULT_DEX_PROGRESS.unlockedCharacterIds
     );
     expect(result.current.newlyUnlockedIds).toEqual([]);
-    expect(result.current.dexEntries).toEqual(DEX_ENTRIES);
+    expect(result.current.dexEntries).toEqual(getVisibleDexEntries());
     expect(result.current.isUnlocked('player')).toBe(true);
     // ユウは隠しキャラのため初期ロック
     expect(result.current.isUnlocked('yuu')).toBe(false);
@@ -81,14 +81,14 @@ describe('useCharacterDex', () => {
     expect(result.current.getNewUnlockCount()).toBe(0);
   });
 
-  it('completionRate が正しく計算される', () => {
-    // Arrange: デフォルトで1キャラ（player）アンロック、全8キャラ
+  it('completionRate が表示対象キャラのみで計算される', () => {
+    // Arrange: デフォルトで1キャラ（player）アンロック
     const { result } = renderHook(() => useCharacterDex());
 
-    // Assert
-    const totalEntries = DEX_ENTRIES.length;
-    const defaultUnlocked = DEFAULT_DEX_PROGRESS.unlockedCharacterIds.length;
-    expect(result.current.completionRate).toBe(defaultUnlocked / totalEntries);
+    // Assert: hidden キャラを除外した4件が母数
+    // player(1) / visible(4) = 0.25
+    expect(result.current.dexEntries).toHaveLength(4);
+    expect(result.current.completionRate).toBe(1 / 4);
   });
 
   it('getNewUnlockCount が未確認数を正しく返す', () => {

@@ -7,7 +7,7 @@
  * ロック中: グレースケール + シルエット + 「???」
  * NEW バッジ: 赤背景 + 白文字、カード右上
  */
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import styled, { keyframes } from 'styled-components';
 import type { Character, DexEntry } from '../core/types';
 
@@ -42,9 +42,8 @@ const ScreenContainer = styled.div`
   align-items: center;
   height: 100vh;
   background: var(--bg-gradient);
-  padding: 20px;
-  overflow-y: auto;
-  overflow-x: hidden;
+  padding: 20px 20px 0;
+  overflow: hidden;
   box-sizing: border-box;
 `;
 
@@ -111,13 +110,22 @@ const ProgressText = styled.span`
   font-size: 14px;
 `;
 
+const ScrollArea = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+`;
+
 const Grid = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: ${GRID_GAP_PX}px;
   width: 100%;
   max-width: 450px;
+  margin: 0 auto;
   padding-bottom: 20px;
+  align-content: start;
 `;
 
 const CardWrapper = styled.div<{ $index: number }>`
@@ -206,7 +214,11 @@ export const CharacterDexScreen: React.FC<CharacterDexScreenProps> = ({
   }, [newlyUnlockedIds, onMarkViewed]);
 
   const totalCount = dexEntries.length;
-  const unlockedCount = unlockedIds.length;
+  // 表示対象エントリに含まれるアンロック済みキャラのみカウント
+  const unlockedCount = useMemo(() => {
+    const visibleCharIds = dexEntries.map((e) => e.profile.characterId);
+    return unlockedIds.filter((id) => visibleCharIds.includes(id)).length;
+  }, [dexEntries, unlockedIds]);
 
   const handleCardClick = (characterId: string, isLocked: boolean) => {
     if (isLocked) return;
@@ -227,36 +239,38 @@ export const CharacterDexScreen: React.FC<CharacterDexScreenProps> = ({
         <ProgressText>{unlockedCount} / {totalCount}</ProgressText>
       </ProgressSection>
 
-      <Grid>
-        {dexEntries.map((entry, index) => {
-          const charId = entry.profile.characterId;
-          const isUnlocked = unlockedIds.includes(charId);
-          const isNew = newlyUnlockedIds.includes(charId);
-          const character = characters[charId];
-          const displayName = isUnlocked
-            ? (character?.name ?? entry.profile.fullName)
-            : '???';
-          const borderColor = character?.color ?? DEFAULT_BORDER_COLOR;
+      <ScrollArea>
+        <Grid>
+          {dexEntries.map((entry, index) => {
+            const charId = entry.profile.characterId;
+            const isUnlocked = unlockedIds.includes(charId);
+            const isNew = newlyUnlockedIds.includes(charId);
+            const character = characters[charId];
+            const displayName = isUnlocked
+              ? (character?.name ?? entry.profile.fullName)
+              : '???';
+            const borderColor = character?.color ?? DEFAULT_BORDER_COLOR;
 
-          return (
-            <CardWrapper key={charId} $index={index}>
-              <Card
-                $borderColor={borderColor}
-                $isLocked={!isUnlocked}
-                onClick={() => handleCardClick(charId, !isUnlocked)}
-              >
-                {isNew && <NewBadge>NEW</NewBadge>}
-                <CharIcon
-                  src={character?.icon ?? ''}
-                  alt={displayName}
+            return (
+              <CardWrapper key={charId} $index={index}>
+                <Card
+                  $borderColor={borderColor}
                   $isLocked={!isUnlocked}
-                />
-                <CharName $isLocked={!isUnlocked}>{displayName}</CharName>
-              </Card>
-            </CardWrapper>
-          );
-        })}
-      </Grid>
+                  onClick={() => handleCardClick(charId, !isUnlocked)}
+                >
+                  {isNew && <NewBadge>NEW</NewBadge>}
+                  <CharIcon
+                    src={character?.icon ?? ''}
+                    alt={displayName}
+                    $isLocked={!isUnlocked}
+                  />
+                  <CharName $isLocked={!isUnlocked}>{displayName}</CharName>
+                </Card>
+              </CardWrapper>
+            );
+          })}
+        </Grid>
+      </ScrollArea>
     </ScreenContainer>
   );
 };

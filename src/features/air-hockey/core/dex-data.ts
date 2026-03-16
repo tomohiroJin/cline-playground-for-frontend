@@ -207,3 +207,7 @@ export const getDexEntryById = (
 
 /** 全図鑑エントリを取得する */
 export const getAllDexEntries = (): DexEntry[] => DEX_ENTRIES;
+
+/** 表示対象の図鑑エントリを取得する（hidden を除外） */
+export const getVisibleDexEntries = (): DexEntry[] =>
+  DEX_ENTRIES.filter((entry) => entry.unlockCondition.type !== 'hidden');

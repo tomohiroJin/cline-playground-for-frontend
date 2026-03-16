@@ -12,6 +12,7 @@ import {
   DEX_ENTRIES,
   getDexEntryById,
   getAllDexEntries,
+  getVisibleDexEntries,
 } from './dex-data';
 import { findCharacterById } from './characters';
 import { CHAPTER_1_STAGES } from './dialogue-data';
@@ -329,6 +330,38 @@ describe('P2-01: データ層整備', () => {
     it('返される配列はDEX_ENTRIESと同じ内容を持つ', () => {
       const entries = getAllDexEntries();
       expect(entries).toEqual(DEX_ENTRIES);
+    });
+  });
+
+  describe('getVisibleDexEntries()', () => {
+    it('hidden タイプのエントリを除外する', () => {
+      const visible = getVisibleDexEntries();
+
+      // hidden キャラ（yuu, rookie, regular, ace）が含まれない
+      const visibleIds = visible.map((e) => e.profile.characterId);
+      expect(visibleIds).not.toContain('yuu');
+      expect(visibleIds).not.toContain('rookie');
+      expect(visibleIds).not.toContain('regular');
+      expect(visibleIds).not.toContain('ace');
+    });
+
+    it('default と story-clear タイプのエントリのみ返す', () => {
+      const visible = getVisibleDexEntries();
+
+      // player（default） + hiro, misaki, takuma（story-clear）= 4件
+      expect(visible).toHaveLength(4);
+      const visibleIds = visible.map((e) => e.profile.characterId);
+      expect(visibleIds).toContain('player');
+      expect(visibleIds).toContain('hiro');
+      expect(visibleIds).toContain('misaki');
+      expect(visibleIds).toContain('takuma');
+    });
+
+    it('エントリの順序が元の配列と同じ', () => {
+      const visible = getVisibleDexEntries();
+      const visibleIds = visible.map((e) => e.profile.characterId);
+
+      expect(visibleIds).toEqual(['player', 'hiro', 'misaki', 'takuma']);
     });
   });
 });
