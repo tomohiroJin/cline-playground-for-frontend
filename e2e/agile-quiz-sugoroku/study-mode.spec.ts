@@ -26,27 +26,16 @@ test.describe('Agile Quiz Sugoroku - 勉強会モード', () => {
   });
 
   test('勉強会モード: ジャンルを選択して学習を開始できる', async ({ page }) => {
-    // Arrange
-    await aqs.goToStudyMode();
-
-    // Act: 最初のジャンルボタンをクリック
-    const genreButtons = page.locator('button').filter({ hasText: /スクラム|アジャイル/ });
-    await genreButtons.first().click();
-
-    // Act: 学習開始ボタンをクリック
-    await page.getByText('学習開始').click();
+    // Act
+    await aqs.startStudySession();
 
     // Assert: クイズ画面（STUDY MODE のまま問題表示）
     await expect(page.getByText('STUDY MODE').first()).toBeVisible({ timeout: 5_000 });
   });
 
   test('勉強会モード: 問題と選択肢が表示される', async ({ page }) => {
-    // Arrange: 勉強会を開始
-    await aqs.goToStudyMode();
-    const genreButtons = page.locator('button').filter({ hasText: /スクラム|アジャイル/ });
-    await genreButtons.first().click();
-    await page.getByText('学習開始').click();
-    await page.waitForTimeout(1000);
+    // Arrange
+    await aqs.startStudySession();
 
     // Assert: 選択肢ボタンが表示される
     const optionA = page.locator('button').filter({ hasText: 'A' });
@@ -55,11 +44,7 @@ test.describe('Agile Quiz Sugoroku - 勉強会モード', () => {
 
   test('勉強会モード: 回答後に結果画面に到達する', async ({ page }) => {
     // Arrange: 10問モードで勉強会を開始
-    await aqs.goToStudyMode();
-    const genreButtons = page.locator('button').filter({ hasText: /スクラム|アジャイル/ });
-    await genreButtons.first().click();
-    await page.getByText('学習開始').click();
-    await page.waitForTimeout(1000);
+    await aqs.startStudySession();
 
     // Act: 10問回答する
     for (let i = 0; i < 10; i++) {

@@ -25,15 +25,19 @@ const NOTICE_STORAGE_KEY = 'game-notice-accepted:/agile-quiz-sugoroku';
 const PHASE_MARKERS = {
   studyResult: 'STUDY RESULT',
   dailyQuiz: 'DAILY QUIZ',
+  // studySelect と studyQuiz は同じ 'STUDY MODE' テキストを共有するため、
+  // ここでは意図的に区別しない（勉強会の選択画面とクイズ画面の判定は呼び出し側で行う）
   studySelect: 'STUDY MODE',
   achievement: 'ACHIEVEMENTS',
-  history: 'HISTORY',
+  // 'HISTORY' だと結果画面の 'SPRINT HISTORY' にもマッチするため、
+  // 履歴画面固有の 'プレイ履歴' を使用する
+  history: 'プレイ履歴',
   result: 'BUILD SUCCESS',
   retro: 'RETROSPECTIVE',
   story: 'スキップ',
   sprintStart: 'Begin Sprint',
   quiz: 'EVENT',
-  guide: '遊び方',
+  guide: 'GUIDE & TEAM',
   title: 'Sprint Start',
 } as const;
 
@@ -107,7 +111,7 @@ export class AqsHelper {
   async goToHistory(): Promise<void> {
     await this.page.getByText('履歴').click();
     await expect(
-      this.page.getByText('HISTORY').first()
+      this.page.getByText('プレイ履歴').first()
     ).toBeVisible({ timeout: 5_000 });
   }
 
@@ -122,7 +126,9 @@ export class AqsHelper {
   /** ガイド画面に遷移する */
   async goToGuide(): Promise<void> {
     await this.page.getByText('遊び方').click();
-    await this.page.waitForTimeout(500);
+    await expect(
+      this.page.getByText('GUIDE & TEAM').first()
+    ).toBeVisible({ timeout: 5_000 });
   }
 
   /** デイリークイズ画面に遷移する */
@@ -136,6 +142,20 @@ export class AqsHelper {
   /** 戻るボタンをクリックする */
   async goBack(): Promise<void> {
     await this.page.getByText(/戻る/).first().click();
+  }
+
+  /**
+   * 勉強会セッションを開始する（ジャンル選択 → 学習開始）
+   *
+   * goToStudyMode() でジャンル選択画面に遷移後、
+   * 指定パターンにマッチするジャンルを選択して学習を開始する。
+   */
+  async startStudySession(genrePattern: RegExp = /スクラム|アジャイル/): Promise<void> {
+    await this.goToStudyMode();
+    const genreButtons = this.page.locator('button').filter({ hasText: genrePattern });
+    await genreButtons.first().click();
+    await this.page.getByText('学習開始').click();
+    await this.page.waitForTimeout(1000);
   }
 
   /* ========== クイズ操作 ========== */
@@ -173,6 +193,12 @@ export class AqsHelper {
 
       await this.page.waitForTimeout(1000);
     }
+
+    const finalPhase = await this.getCurrentPhase();
+    throw new Error(
+      `waitForQuizScreen が最大試行回数(${maxAttempts})でクイズ画面に到達できませんでした。` +
+      `最終フェーズ: '${finalPhase}'`
+    );
   }
 
   /* ========== フェーズ検出 ========== */
@@ -243,6 +269,13 @@ export class AqsHelper {
       // 未知のフェーズまたは遷移中は待機
       await this.page.waitForTimeout(1000);
     }
+
+    // 最大反復回数に到達しても目的フェーズに到達できなかった場合
+    const finalPhase = await this.getCurrentPhase();
+    throw new Error(
+      `advanceToPhase('${target}') が最大反復回数(${maxIterations})で到達できませんでした。` +
+      `最終フェーズ: '${finalPhase}'`
+    );
   }
 
   /** 結果画面が表示されるまで待機する */
