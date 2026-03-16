@@ -4,7 +4,7 @@
  * Phase 4 リファクタリング: GameInner のロジックを useGameOrchestrator に移動。
  * ErrorBoundary + GameProvider + GameRouter の構成。
  */
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { CFG } from '../domain/constants/config';
 import { UNLOCKS } from '../domain/constants/unlock-defs';
 import { computeFx, createNewPlayer } from '../domain/services/unlock-service';
@@ -46,6 +46,20 @@ const EVENTS = validateEvents(EV, EVENT_TYPE);
 
 /** ゲーム内部コンポーネント — useGameOrchestrator で状態管理 */
 function GameInner() {
+  // setTimeout クリーンアップ用
+  const pendingTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(() => {
+    return () => { pendingTimers.current.forEach(clearTimeout); };
+  }, []);
+  const safeTimeout = useCallback((fn: () => void, ms: number) => {
+    const id = setTimeout(() => {
+      fn();
+      pendingTimers.current = pendingTimers.current.filter(t => t !== id);
+    }, ms);
+    pendingTimers.current.push(id);
+    return id;
+  }, []);
+
   const { state, dispatch, contextValue } = useGameOrchestrator();
   const { meta, updateMeta, resetMeta, loaded } = usePersistenceSync(Storage);
 
@@ -136,7 +150,7 @@ function GameInner() {
 
   const enterFloor = useCallback(() => {
     sfx(AudioEngine.sfx.floor);
-    setTimeout(() => sfx(() => AudioEngine.sfx.ambient(state.floor)), 500);
+    safeTimeout(() => sfx(() => AudioEngine.sfx.ambient(state.floor)), 500);
     if (state.chainNext) {
       const ce = findChainEvent(EVENTS, state.chainNext);
       if (ce) { dispatch({ type: 'SET_EVENT', event: ce }); return; }
@@ -144,7 +158,7 @@ function GameInner() {
     const e = pickEvent(EVENTS, state.floor, [...state.usedIds], meta, fx, getRandomSource());
     if (e) dispatch({ type: 'SET_EVENT', event: e });
     else console.warn(`[enterFloor] No events for floor ${state.floor}`);
-  }, [state.floor, state.usedIds, state.chainNext, sfx, meta, fx, dispatch]);
+  }, [state.floor, state.usedIds, state.chainNext, sfx, safeTimeout, meta, fx, dispatch]);
 
   const handleChoice = useCallback((idx: number) => {
     if (!state.event || !state.player) return;
@@ -168,9 +182,9 @@ function GameInner() {
     } else if (impact === "heal") {
       flash("heal", 500); sfx(AudioEngine.sfx.heal);
     }
-    if (playerFlag?.startsWith("add:"))    setTimeout(() => sfx(AudioEngine.sfx.status), 200);
-    if (playerFlag?.startsWith("remove:")) setTimeout(() => sfx(AudioEngine.sfx.clear), 200);
-    if (drain) setTimeout(() => sfx(AudioEngine.sfx.drain), 400);
+    if (playerFlag?.startsWith("add:"))    safeTimeout(() => sfx(AudioEngine.sfx.status), 200);
+    if (playerFlag?.startsWith("remove:")) safeTimeout(() => sfx(AudioEngine.sfx.clear), 200);
+    if (drain) safeTimeout(() => sfx(AudioEngine.sfx.drain), 400);
 
     // リデューサーに結果を送信
     dispatch({
@@ -191,8 +205,8 @@ function GameInner() {
       const isNew = !meta.endings?.includes(end.id);
       const diffId = state.diff?.id;
       const isNewDiff = diffId ? !meta.clearedDifficulties?.includes(diffId) : false;
-      setTimeout(() => sfx(AudioEngine.sfx.victory), 500);
-      setTimeout(() => {
+      safeTimeout(() => sfx(AudioEngine.sfx.victory), 500);
+      safeTimeout(() => {
         dispatch({ type: 'SET_VICTORY', ending: end, isNewEnding: isNew, isNewDiffClear: isNewDiff });
         updateMeta(m => ({
           escapes: m.escapes + 1,
@@ -209,8 +223,8 @@ function GameInner() {
     // 死亡
     if (drained.hp <= 0 || drained.mn <= 0) {
       const deathCause = drained.hp <= 0 ? "体力消耗" : "精神崩壊";
-      setTimeout(() => sfx(AudioEngine.sfx.over), 800);
-      setTimeout(() => {
+      safeTimeout(() => sfx(AudioEngine.sfx.over), 800);
+      safeTimeout(() => {
         dispatch({ type: 'SET_GAME_OVER' });
         updateMeta(m => ({
           kp: m.kp + (state.diff?.rewards.kpOnDeath ?? 2),
@@ -220,7 +234,7 @@ function GameInner() {
         }));
       }, 2500);
     }
-  }, [state.event, state.player, state.diff, state.floor, state.step, state.log, state.usedSecondLife, state.chainNext, fx, sfx, doShake, flash, dispatch, updateMeta, meta.endings, meta.clearedDifficulties]);
+  }, [state.event, state.player, state.diff, state.floor, state.step, state.log, state.usedSecondLife, state.chainNext, fx, sfx, safeTimeout, doShake, flash, dispatch, updateMeta, meta.endings, meta.clearedDifficulties]);
 
   const proceed = useCallback(() => {
     if (!state.event) return;
@@ -290,9 +304,9 @@ function GameInner() {
     if (!def || meta.unlocked.includes(uid) || meta.kp < def.cost) return;
     sfx(AudioEngine.sfx.heal);
     dispatch({ type: 'SET_LAST_BOUGHT', id: uid });
-    setTimeout(() => dispatch({ type: 'SET_LAST_BOUGHT', id: null }), 600);
+    safeTimeout(() => dispatch({ type: 'SET_LAST_BOUGHT', id: null }), 600);
     updateMeta(m => ({ unlocked: [...m.unlocked, uid], kp: m.kp - def.cost }));
-  }, [meta, sfx, dispatch, updateMeta]);
+  }, [meta, sfx, safeTimeout, dispatch, updateMeta]);
 
   const setPhase = useCallback((phase: string) => {
     if (phase === "title") {

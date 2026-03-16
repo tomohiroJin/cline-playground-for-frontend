@@ -62,11 +62,11 @@ export const applyChangesToPlayer = (
   changes: { hp: number; mn: number; inf: number },
   flag: string | null,
 ): Player => {
-  const sts = [...player.statuses];
-  let newSts: string[] = sts;
+  const sts: string[] = [...player.statuses];
+  let newSts = sts;
   if (flag?.startsWith('add:')) {
     const s = flag.slice(4);
-    if (!(sts as readonly string[]).includes(s)) newSts = [...sts, s];
+    if (!sts.includes(s)) newSts = [...sts, s];
   }
   if (flag?.startsWith('remove:')) {
     newSts = sts.filter(s => s !== flag.slice(7));

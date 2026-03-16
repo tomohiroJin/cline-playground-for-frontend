@@ -4,27 +4,9 @@
  * Condition Discriminated Union型による型安全な条件評価。
  * 旧文字列形式との互換性も提供。
  */
-import type { StatusEffectId } from '../models/player';
+import type { Player, StatusEffectId } from '../models/player';
 import type { FxState } from '../models/unlock';
 import { invariant } from '../contracts/invariants';
-
-/**
- * 条件評価で使用する Player 互換型
- * 旧型（st: string[]）と新型（statuses: StatusEffectId[]）の両方をサポートする。
- */
-export interface PlayerLike {
-  readonly hp: number;
-  readonly maxHp: number;
-  readonly mn: number;
-  readonly maxMn: number;
-  readonly inf: number;
-  readonly st?: readonly string[];
-  readonly statuses?: readonly StatusEffectId[];
-}
-
-/** プレイヤーのステータス配列を安全に取得する（旧st/新statuses 互換） */
-const getPlayerStatuses = (player: PlayerLike): readonly string[] =>
-  (player.statuses as readonly string[] | undefined) ?? player.st ?? [];
 
 /** 比較演算子 */
 export type ComparisonOp = '>' | '<' | '>=' | '<=';
@@ -48,13 +30,13 @@ const compare = (actual: number, op: ComparisonOp, threshold: number): boolean =
 };
 
 /** プレイヤーのHP実効値を取得する（dangerSense考慮） */
-const getEffectiveHp = (player: PlayerLike, fx: FxState): number => {
+const getEffectiveHp = (player: Player, fx: FxState): number => {
   if (fx.dangerSense && player.hp < 30) return player.hp + 20;
   return player.hp;
 };
 
 /** プレイヤーのMN実効値を取得する（negotiator, mentalSense考慮） */
-const getEffectiveMn = (player: PlayerLike, fx: FxState): number => {
+const getEffectiveMn = (player: Player, fx: FxState): number => {
   let mn = player.mn;
   if (fx.negotiator) mn += 8;
   if (fx.mentalSense && player.mn < 25) mn += 15;
@@ -65,12 +47,12 @@ const getEffectiveMn = (player: PlayerLike, fx: FxState): number => {
 /**
  * 条件を評価する純粋関数
  */
-export const evaluateCondition = (condition: Condition, player: PlayerLike, fx: FxState): boolean => {
+export const evaluateCondition = (condition: Condition, player: Player, fx: FxState): boolean => {
   switch (condition.type) {
     case 'default':
       return true;
     case 'status':
-      return getPlayerStatuses(player).includes(condition.statusId);
+      return (player.statuses as readonly string[]).includes(condition.statusId);
     case 'hp': {
       // dangerSense は hp > 条件のみに適用（旧 evalCond 互換）
       const hpValue = condition.op === '>' ? getEffectiveHp(player, fx) : player.hp;
@@ -118,7 +100,7 @@ export const parseCondition = (condStr: string): Condition => {
 /**
  * 後方互換ラッパー — 旧 evalCond と同じシグネチャ
  */
-export const evalCondCompat = (cond: string, player: PlayerLike, fx: FxState): boolean => {
+export const evalCondCompat = (cond: string, player: Player, fx: FxState): boolean => {
   try {
     const condition = parseCondition(cond);
     return evaluateCondition(condition, player, fx);

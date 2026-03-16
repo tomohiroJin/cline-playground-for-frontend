@@ -4,41 +4,23 @@
  * LabyrinthEchoGame.tsx §5 から抽出。
  * イベント選択・選択肢処理・バリデーション等の純粋関数群。
  *
- * NOTE: processChoice は旧型（フラット DifficultyDef, Player.st）で呼ばれるため、
- * ドメイン層の関数をそのまま使えない。ドメイン移行が完了するまでローカルに
- * 旧互換の関数を保持する。
+ * ドメイン層の関数に委譲済み。ローカルの重複ロジックは削除。
  */
 import { invariant } from '../domain/contracts/invariants';
-import { clamp, shuffle } from '../../../utils/math-utils';
+import { shuffle } from '../../../utils/math-utils';
 import { evalCondCompat } from '../domain/events/condition';
-import type { StatusEffectId } from '../domain/models/player';
+import { applyModifiers, applyChangesToPlayer, computeDrain, classifyImpact } from '../domain/services/combat-service';
+import type { Player } from '../domain/models/player';
+import type { DifficultyDef } from '../domain/models/difficulty';
 import type { CSSProperties } from 'react';
 import { shuffleWith } from '../domain/events/random';
 import type { RandomSource } from '../domain/events/random';
 
-// ── ドメイン型（LabyrinthEchoGame.tsx がドメイン型に移行済み） ──
+// ── ドメイン型の再エクスポート（後方互換） ──
+export type { Player } from '../domain/models/player';
+export type { DifficultyDef } from '../domain/models/difficulty';
 
-/** プレイヤー状態（statuses: readonly StatusEffectId[] 形式） */
-export interface Player {
-  hp: number; maxHp: number;
-  mn: number; maxMn: number;
-  inf: number;
-  statuses: readonly StatusEffectId[];
-}
-
-/** 難易度定義（modifiers/rewards サブオブジェクト形式） */
-export interface DifficultyDef {
-  id: string; name: string; subtitle: string;
-  color: string; icon: string; description: string;
-  modifiers: {
-    hpMod: number; mnMod: number; drainMod: number; dmgMult: number;
-  };
-  rewards: {
-    kpOnDeath: number; kpOnWin: number;
-  };
-}
-
-/** FxState（ドメイン FxState と同一構造） */
+/** FxState（ドメイン FxState を再エクスポート） */
 import type { FxState } from '../domain/models/unlock';
 export type { FxState };
 
@@ -59,17 +41,6 @@ export interface Choice {
   o: Outcome[];
 }
 
-// ── 旧互換ロジック（ドメイン移行完了まで） ──
-
-/** ステータスメタ情報（computeDrain用） */
-const STATUS_META: Readonly<Record<string, { tick: { hp: number; mn: number } | null }>> = {
-  "負傷": { tick: null },
-  "混乱": { tick: null },
-  "出血": { tick: { hp: -5, mn: 0 } },
-  "恐怖": { tick: { hp: 0, mn: -4 } },
-  "呪い": { tick: null },
-};
-
 /**
  * 条件を評価してアウトカムを決定する（旧evalCond互換）
  */
@@ -79,68 +50,6 @@ const resolveOutcome = (choice: Choice, player: Player, fx: FxState): Outcome =>
     if (o.c !== "default" && evalCondCompat(o.c, player, fx)) return o;
   }
   return choice.o.find(o => o.c === "default") ?? choice.o[0];
-};
-
-/**
- * FX/難易度の修正値を適用する（旧フラット DifficultyDef 互換）
- */
-const applyModifiers = (outcome: Outcome, fx: FxState, diff: DifficultyDef | null, playerStatuses: readonly string[]): { hp: number; mn: number; inf: number } => {
-  let hp = outcome.hp ?? 0, mn = outcome.mn ?? 0, inf = outcome.inf ?? 0;
-  if (hp > 0) hp = Math.round(hp * fx.healMult);
-  if (hp < 0) hp = Math.round(hp * fx.hpReduce);
-  if (diff && diff.modifiers.dmgMult !== 1) {
-    if (hp < 0) hp = Math.round(hp * diff.modifiers.dmgMult);
-    if (mn < 0) mn = Math.round(mn * diff.modifiers.dmgMult);
-  }
-  if (inf > 0) inf = Math.round(inf * fx.infoMult);
-  if (mn < 0) mn = Math.round(mn * fx.mnReduce);
-  if (playerStatuses.includes("呪い") && inf > 0) inf = Math.round(inf * 0.5);
-  return { hp, mn, inf };
-};
-
-/**
- * プレイヤーにステータス変更を適用する（ドメイン Player.statuses 形式）
- */
-const applyToPlayer = (player: Player, { hp, mn, inf }: { hp: number; mn: number; inf: number }, flag: string | null): Player => {
-  let sts: StatusEffectId[] = [...player.statuses];
-  if (flag?.startsWith("add:"))    { const s = flag.slice(4) as StatusEffectId; if (!sts.includes(s)) sts.push(s); }
-  if (flag?.startsWith("remove:")) { sts = sts.filter(s => s !== flag.slice(7)); }
-  return {
-    ...player,
-    hp:  clamp(player.hp + hp, 0, player.maxHp),
-    mn:  clamp(player.mn + mn, 0, player.maxMn),
-    inf: Math.max(0, player.inf + inf),
-    statuses: sts,
-  };
-};
-
-/**
- * ターン経過ドレインを計算する（ドメイン DifficultyDef, Player.statuses 形式）
- */
-const computeDrain = (player: Player, fx: FxState, diff: DifficultyDef | null): { player: Player; drain: { hp: number; mn: number } | null } => {
-  const base = diff ? diff.modifiers.drainMod : -1;
-  let hpD = 0, mnD = fx.drainImmune ? 0 : base;
-  for (const s of player.statuses) {
-    const tick = STATUS_META[s]?.tick;
-    if (!tick) continue;
-    let h = tick.hp;
-    const m = tick.mn;
-    if (s === "出血" && fx.bleedReduce) h = Math.round(h * 0.5);
-    hpD += h; mnD += m;
-  }
-  if (hpD === 0 && mnD === 0) return { player, drain: null };
-  return {
-    player: { ...player, hp: clamp(player.hp + hpD, 0, player.maxHp), mn: clamp(player.mn + mnD, 0, player.maxMn) },
-    drain: { hp: hpD, mn: mnD },
-  };
-};
-
-/** ダメージ/回復のインパクトを分類する */
-const classifyImpact = (hp: number, mn: number): string | null => {
-  if (hp < -15) return "bigDmg";
-  if (hp < 0 || mn < -10) return "dmg";
-  if (hp > 0) return "heal";
-  return null;
 };
 
 /** イベント定義 */
@@ -195,7 +104,7 @@ export const processChoice = (event: GameEvent, choiceIdx: number, player: Playe
   const chainId = parseChainFlag(outcome.fl ?? null);
   let playerFlag: string | null = chainId ? null : (outcome.fl ?? null);
   if (fx.curseImmune && playerFlag === "add:呪い") playerFlag = null;
-  const updated  = applyToPlayer(player, mods, playerFlag);
+  const updated  = applyChangesToPlayer(player, mods, playerFlag);
   const { player: drained, drain } = computeDrain(updated, fx, diff);
   const impact   = classifyImpact(mods.hp, mods.mn);
   return { choice, outcome, mods, chainId, playerFlag, drained, drain, impact };

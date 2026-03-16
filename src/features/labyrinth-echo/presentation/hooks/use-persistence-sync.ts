@@ -24,7 +24,7 @@ export interface PersistenceSyncResult {
 }
 
 /** localStorage の旧フィールド名を新フィールド名にマイグレーション */
-const migrateMetaState = (raw: Record<string, unknown>): Record<string, unknown> => {
+export const migrateMetaState = (raw: Record<string, unknown>): Record<string, unknown> => {
   const migrated = { ...raw };
   // MetaState のフィールド名変更
   if ('bestFl' in migrated && !('bestFloor' in migrated)) {
