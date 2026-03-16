@@ -4,7 +4,9 @@
  * 複数の画面で共有されるベースコンポーネント
  */
 import styled, { css } from 'styled-components';
-import { COLORS, FONTS } from '../../constants';
+import { DESIGN_TOKENS } from '../../presentation/styles/design-tokens';
+
+const { colors: COLORS, fonts: FONTS } = DESIGN_TOKENS;
 import { floatY } from './animations';
 
 /** ページラッパー */

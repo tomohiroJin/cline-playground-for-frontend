@@ -2,7 +2,9 @@
  * Agile Quiz Sugoroku - アニメーション定義
  */
 import { keyframes } from 'styled-components';
-import { COLORS } from '../../constants';
+import { DESIGN_TOKENS } from '../../presentation/styles/design-tokens';
+
+const { colors: COLORS } = DESIGN_TOKENS;
 
 export const pulse = keyframes`
   0%, 100% { opacity: 1; }

@@ -8,5 +8,5 @@ import { ENGINEER_TYPES } from '../../constants';
 
 /** エンジニアタイプを判定 */
 export function classifyEngineerType(data: ClassifyStats): EngineerType {
-  return ENGINEER_TYPES.find((t) => t.condition(data)) ?? ENGINEER_TYPES[ENGINEER_TYPES.length - 1];
+  return ENGINEER_TYPES.find((t: EngineerType) => t.condition(data)) ?? ENGINEER_TYPES[ENGINEER_TYPES.length - 1];
 }

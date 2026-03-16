@@ -228,22 +228,31 @@
 ## フェーズ 6: 定数の分割とデザイントークン化
 
 ### 6-1. constants.ts の分割
-- [ ] `constants/game-config.ts` を作成（CONFIG, ゲーム設定）
-- [ ] `constants/events.ts` を作成（EVENTS 定義）
-- [ ] `constants/grades.ts` を作成（GRADES, getGrade, getSummaryText）
-- [ ] `constants/index.ts` を作成（再エクスポート）
-- [ ] 全定数に `Object.freeze` を適用
-- [ ] 旧 `constants.ts` を再エクスポート用に維持
-- [ ] テストパス確認
+- [x] `constants/game-config.ts` を作成（CONFIG, SPRINT_OPTIONS, INITIAL_GAME_STATS, DEBT_EVENTS, getDebtPoints, FONTS, OPTION_LABELS, CATEGORY_NAMES, PHASE_GENRE_MAP, EVENT_BACKGROUND_MAP）
+- [x] `constants/colors.ts` を作成（COLORS, getColorByThreshold, getInverseColorByThreshold）
+- [x] `constants/events.ts` を作成（EVENTS, EMERGENCY_EVENT）
+- [x] `constants/grades.ts` を作成（GRADES, getGrade, getSummaryText, STRENGTH_THRESHOLDS, CHALLENGE_EVALUATIONS, getStrengthText, getChallengeText, ENGINEER_TYPES）
+- [x] `constants/index.ts` を作成（再エクスポート）
+- [x] 全定数に `Object.freeze` を適用（型も `readonly` / `Readonly<>` に統一）
+- [x] 旧 `constants.ts` を再エクスポート用に維持
+- [x] テストパス確認（54スイート824テスト全パス）
 
 ### 6-2. デザイントークンの作成
-- [ ] `presentation/styles/design-tokens.ts` を作成
-- [ ] COLORS 定数をデザイントークンに統合
-- [ ] 既存スタイルファイルからデザイントークンを参照するように更新
-- [ ] テストパス確認
+- [x] `presentation/styles/design-tokens.ts` を作成（DESIGN_TOKENS: colors, spacing, borderRadius, fontSize, transition, fonts）
+- [x] COLORS 定数をデザイントークンに統合（セマンティックカラー追加）
+- [x] 既存スタイルファイル（6ファイル）からデザイントークンを参照するように更新
+- [x] テストパス確認
 
 ### 6-3. フェーズ 6 完了確認
-- [ ] `npm run ci` パス
+- [x] `npm run ci` パス（lint + typecheck + test + build 全パス）
+- [x] レビュー・リファクタリング実施
+  - GRADES, EVENTS, ENGINEER_TYPES の型を `readonly` に統一
+  - game-config.ts の全定数に `Object.freeze` + `Readonly<>` 適用
+  - CHALLENGE_EVALUATIONS の未使用引数に `_` プレフィックス追加
+  - 不要な `as` キャスト・二重キャストを除去
+  - `colors.test.ts` 追加（COLORS 凍結テスト + 閾値関数の境界値テスト）
+  - `design-tokens.ts` の fonts をスプレッド構文に簡素化
+  - `readonly` 化に伴う `difficulty.ts` / `team-classifier.ts` の型注釈追加
 - [ ] コミット作成
 
 ---

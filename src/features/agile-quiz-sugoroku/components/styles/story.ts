@@ -2,7 +2,9 @@
  * Agile Quiz Sugoroku - ストーリー画面スタイル
  */
 import styled, { keyframes } from 'styled-components';
-import { COLORS, FONTS } from '../../constants';
+import { DESIGN_TOKENS } from '../../presentation/styles/design-tokens';
+
+const { colors: COLORS, fonts: FONTS } = DESIGN_TOKENS;
 
 /** テキストのフェードインアニメーション */
 const fadeIn = keyframes`

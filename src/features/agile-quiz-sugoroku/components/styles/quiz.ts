@@ -4,7 +4,9 @@
  * クイズ画面の選択肢ボタン、結果バナー、問題テキスト等
  */
 import styled from 'styled-components';
-import { COLORS, FONTS } from '../../constants';
+import { DESIGN_TOKENS } from '../../presentation/styles/design-tokens';
+
+const { colors: COLORS, fonts: FONTS } = DESIGN_TOKENS;
 import { popIn, fadeSlideIn } from './animations';
 
 /* ================================

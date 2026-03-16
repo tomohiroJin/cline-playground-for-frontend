@@ -4,7 +4,9 @@
  * タイムライン、タイマー、ヘッダー、イベント、特徴リスト等のレイアウト系コンポーネント
  */
 import styled, { css } from 'styled-components';
-import { COLORS, FONTS } from '../../constants';
+import { DESIGN_TOKENS } from '../../presentation/styles/design-tokens';
+
+const { colors: COLORS, fonts: FONTS } = DESIGN_TOKENS;
 import { pulse, shake, titleGlow, comboGlow } from './animations';
 
 /* ================================

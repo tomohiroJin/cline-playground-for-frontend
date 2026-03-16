@@ -89,5 +89,5 @@ export function calculateGradeWithDifficulty(
     score *= config.gradeBonus;
   }
 
-  return GRADES.find(g => score >= g.min) ?? GRADES[GRADES.length - 1];
+  return GRADES.find((g: Grade) => score >= g.min) ?? GRADES[GRADES.length - 1];
 }
