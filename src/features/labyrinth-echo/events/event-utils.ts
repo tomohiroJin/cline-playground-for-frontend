@@ -11,6 +11,8 @@ import {
 } from '../game-logic';
 import type { Player, FxState, DifficultyDef, MetaState, Choice } from '../game-logic';
 import type { CSSProperties } from 'react';
+import { shuffleWith } from '../domain/events/random';
+import type { RandomSource } from '../domain/events/random';
 
 /** イベント定義 */
 export interface GameEvent {
@@ -91,7 +93,7 @@ export const validateEvents = (events: GameEvent[], EVENT_TYPE: Record<string, E
  * クロスランイベントは metaCond のチェックが必要。
  * chainBoost: チェイン結果を持つイベントの重みを倍にする。
  */
-export const pickEvent = (events: GameEvent[], floor: number, usedIds: string[], meta: MetaState, fx: FxState): GameEvent | null => {
+export const pickEvent = (events: GameEvent[], floor: number, usedIds: string[], meta: MetaState, fx: FxState, rng?: RandomSource): GameEvent | null => {
   const pool = events.filter(e =>
     e.fl.includes(floor) && !usedIds.includes(e.id) && !e.chainOnly
     && (!e.metaCond || e.metaCond(meta))
@@ -109,6 +111,8 @@ export const pickEvent = (events: GameEvent[], floor: number, usedIds: string[],
     // 安息イベントの出現確率を上げる
     if (e.tp === "rest") weighted.push(e);
   }
+  // 乱数ソースが指定されていればそれを使い、なければ旧来のshuffleを使用
+  if (rng) return shuffleWith(weighted, rng)[0];
   return shuffle(weighted)[0];
 };
 

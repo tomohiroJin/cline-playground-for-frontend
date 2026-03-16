@@ -13,6 +13,7 @@ import { AudioEngine, loadAudioSettings, saveAudioSettings } from '../audio';
 import type { AudioSettings } from '../audio';
 import { EV } from '../events/event-data';
 import { computeVignette, processChoice, validateEvents, pickEvent, findChainEvent } from '../events/event-utils';
+import { getRandomSource, resetRandomSourceCache } from './get-random-source';
 import { FLOOR_META, EVENT_TYPE, determineEnding } from '../definitions';
 import { useTextReveal, useImagePreload } from '../hooks';
 import { LE_BG_IMAGES } from '../images';
@@ -109,6 +110,8 @@ function GameInner() {
 
   const selectDiff = useCallback((d: DifficultyDef) => {
     enableAudio();
+    // テスト用: ゲーム開始時に乱数キャッシュをリセットし、同じ seed から再現可能にする
+    resetRandomSourceCache();
     const player = createPlayer(d, fx);
     dispatch({ type: 'SELECT_DIFFICULTY', difficulty: d, player });
     updateMeta(m => ({ runs: m.runs + 1 }));
@@ -121,7 +124,7 @@ function GameInner() {
       const ce = findChainEvent(EVENTS, state.chainNext);
       if (ce) { dispatch({ type: 'SET_EVENT', event: ce }); return; }
     }
-    const e = pickEvent(EVENTS, state.floor, state.usedIds as string[], meta, fx);
+    const e = pickEvent(EVENTS, state.floor, state.usedIds as string[], meta, fx, getRandomSource());
     if (e) dispatch({ type: 'SET_EVENT', event: e });
     else console.warn(`[enterFloor] No events for floor ${state.floor}`);
   }, [state.floor, state.usedIds, state.chainNext, sfx, meta, fx, dispatch]);
@@ -231,7 +234,7 @@ function GameInner() {
       const lastBossIdx = nu.lastIndexOf(CFG.BOSS_EVENT_ID);
       const postBoss = nu.length - lastBossIdx - 1;
       if (bossCount < CFG.MAX_BOSS_RETRIES && postBoss < 2) {
-        const next = pickEvent(EVENTS, state.floor, nu, meta, fx);
+        const next = pickEvent(EVENTS, state.floor, nu, meta, fx, getRandomSource());
         if (next) { dispatch({ type: 'ADVANCE_STEP', event: next, step: ns, usedIds: nu }); return; }
       }
       if (bossCount < CFG.MAX_BOSS_RETRIES && boss) {
@@ -249,7 +252,7 @@ function GameInner() {
       return;
     }
 
-    const next = pickEvent(EVENTS, state.floor, nu, meta, fx);
+    const next = pickEvent(EVENTS, state.floor, nu, meta, fx, getRandomSource());
     if (next) {
       dispatch({ type: 'ADVANCE_STEP', event: next, step: ns, usedIds: nu });
     } else {
