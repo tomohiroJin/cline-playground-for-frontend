@@ -253,7 +253,7 @@
   - `colors.test.ts` 追加（COLORS 凍結テスト + 閾値関数の境界値テスト）
   - `design-tokens.ts` の fonts をスプレッド構文に簡素化
   - `readonly` 化に伴う `difficulty.ts` / `team-classifier.ts` の型注釈追加
-- [ ] コミット作成
+- [x] コミット作成（9fffd59）
 
 ---
 
