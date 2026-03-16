@@ -14,17 +14,20 @@ import {
   assertGimmickPlacementPostconditions,
   PlacementConfigLike,
 } from './placementDecision';
-import { createWall } from '../../../wall';
+import { createWall } from '../../entities/wall';
+import { MockRandomProvider } from '../../../__tests__/mocks/MockRandomProvider';
 
 describe('placementDecision', () => {
   describe('selectTrapType', () => {
     it('乱数に基づいて罠タイプを選択する', () => {
       const ratio = { damage: 0.5, slow: 0.3, teleport: 0.2 };
 
-      // 多数回実行して全タイプが出現することを確認
+      // 異なる乱数値で全タイプが出現することを確認
+      const values = Array.from({ length: 100 }, (_, i) => i / 100);
+      const rng = new MockRandomProvider(values);
       const types = new Set<string>();
       for (let i = 0; i < 100; i++) {
-        types.add(selectTrapType(ratio));
+        types.add(selectTrapType(ratio, rng));
       }
       expect(types.has(TrapType.DAMAGE)).toBe(true);
       expect(types.has(TrapType.SLOW)).toBe(true);
@@ -33,8 +36,9 @@ describe('placementDecision', () => {
 
     it('damage比率1.0では常にDAMAGEを返す', () => {
       const ratio = { damage: 1.0, slow: 0, teleport: 0 };
+      const rng = new MockRandomProvider(0.5);
       for (let i = 0; i < 10; i++) {
-        expect(selectTrapType(ratio)).toBe(TrapType.DAMAGE);
+        expect(selectTrapType(ratio, rng)).toBe(TrapType.DAMAGE);
       }
     });
   });
@@ -43,9 +47,12 @@ describe('placementDecision', () => {
     it('乱数に基づいて壁タイプを選択する', () => {
       const ratio = { breakable: 0.4, passable: 0.3, invisible: 0.3 };
 
+      // 異なる乱数値で全タイプが出現することを確認
+      const values = Array.from({ length: 100 }, (_, i) => i / 100);
+      const rng = new MockRandomProvider(values);
       const types = new Set<string>();
       for (let i = 0; i < 100; i++) {
-        types.add(selectWallType(ratio));
+        types.add(selectWallType(ratio, rng));
       }
       expect(types.has(WallType.BREAKABLE)).toBe(true);
       expect(types.has(WallType.PASSABLE)).toBe(true);

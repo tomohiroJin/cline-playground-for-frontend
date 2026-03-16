@@ -10,7 +10,7 @@ import {
   calculateShortcutValue,
   hasAlternativeRoute,
 } from './scoring';
-import { createTestMap } from '../../../__tests__/testUtils';
+import { aMap } from '../../../__tests__/builders';
 
 describe('scoring', () => {
   describe('getDistanceFromPath', () => {
@@ -75,7 +75,7 @@ describe('scoring', () => {
 
   describe('hasAlternativeRoute', () => {
     it('壁位置で経路が分断されない場合 true を返す', () => {
-      const grid = createTestMap(7, 7);
+      const grid = aMap(7, 7).withStart(1, 1).withGoal(5, 5).build();
       const start = { x: 1, y: 1 };
       const goal = { x: 5, y: 5 };
 
@@ -85,7 +85,7 @@ describe('scoring', () => {
     });
 
     it('壁タイルに対しては true を返す（既に壁なので影響なし）', () => {
-      const grid = createTestMap(7, 7);
+      const grid = aMap(7, 7).withStart(1, 1).withGoal(5, 5).build();
       const start = { x: 1, y: 1 };
       const goal = { x: 5, y: 5 };
 

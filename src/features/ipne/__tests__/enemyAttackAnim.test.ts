@@ -12,7 +12,7 @@ import {
   markEnemyAttacking,
   resolveEnemyAttackState,
   ENEMY_ATTACK_ANIM_DURATION,
-} from '../enemyAI';
+} from '../domain/policies/enemyAi/enemyAiFunctions';
 
 describe('敵攻撃アニメーション持続時間（Phase 3-2b）', () => {
   describe('markEnemyAttacking', () => {

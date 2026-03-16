@@ -6,11 +6,13 @@ import {
   getEpilogueText,
   getGameOverText,
   getRatingColor,
-  getEndingImage,
-  getGameOverImage,
   RATING_THRESHOLDS,
   RATING_COLORS,
-} from '../ending';
+} from '../domain/services/endingService';
+import {
+  getEndingImage,
+  getGameOverImage,
+} from '../presentation/services/endingAssetProvider';
 import { Rating } from '../types';
 
 describe('ending', () => {

@@ -1,12 +1,15 @@
-import { createPlayer } from '../../player';
-import { createHealthSmall, createLevelUpItem, createMapRevealItem } from '../../item';
+import { createPlayer } from '../../domain/entities/player';
+import { createHealthSmall, createLevelUpItem, createMapRevealItem } from '../../domain/entities/item';
 import { resolveItemPickupEffects } from './resolveItemPickupEffects';
+import { MockIdGenerator } from '../../__tests__/mocks/MockIdGenerator';
+
+const idGen = new MockIdGenerator();
 
 describe('resolveItemPickupEffects', () => {
   it('取得可能なアイテムのみ処理して、残りアイテムを返す', () => {
     const player = { ...createPlayer(2, 2), hp: 5 };
-    const healItem = createHealthSmall(2, 2);
-    const otherItem = createHealthSmall(5, 5);
+    const healItem = createHealthSmall(2, 2, idGen);
+    const otherItem = createHealthSmall(5, 5, idGen);
 
     const result = resolveItemPickupEffects({
       player,
@@ -22,8 +25,8 @@ describe('resolveItemPickupEffects', () => {
 
   it('レベルアップとマップ公開のフラグを集約する', () => {
     const player = createPlayer(2, 2);
-    const levelUpItem = createLevelUpItem(2, 2);
-    const mapRevealItem = createMapRevealItem(2, 2);
+    const levelUpItem = createLevelUpItem(2, 2, idGen);
+    const mapRevealItem = createMapRevealItem(2, 2, idGen);
 
     const result = resolveItemPickupEffects({
       player,

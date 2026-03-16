@@ -1,4 +1,4 @@
-import { PROLOGUE_STORY, getStageStory, getAllStoryScenes, getEndingEpilogue, STAGE_REWARD_CHOICES } from '../story';
+import { PROLOGUE_STORY, getStageStory, getAllStoryScenes, getEndingEpilogue, STAGE_REWARD_CHOICES } from '../domain/config/story';
 import { StageNumber } from '../types';
 
 describe('story', () => {

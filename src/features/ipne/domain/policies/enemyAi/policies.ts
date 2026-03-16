@@ -1,4 +1,4 @@
-import { EnemyType, Enemy, GameMap, Position } from '../../../types';
+import { EnemyType, Enemy, GameMap, Position } from '../../types';
 import { EnemyAiPolicyRegistry } from './EnemyAiPolicyRegistry';
 
 interface EnemyAiPolicyDeps {

@@ -1,4 +1,4 @@
-import { damagePlayer } from '../../player';
+import { damagePlayer } from '../../domain/entities/player';
 import { Enemy, GameMap, Player, Wall } from '../../types';
 import { resolveKnockback } from './resolveKnockback';
 
@@ -13,9 +13,10 @@ interface ResolvePlayerDamageParams {
   walls?: Wall[];
 }
 
-interface ResolvePlayerDamageResult {
+export interface ResolvePlayerDamageResult {
   player: Player;
   tookDamage: boolean;
+  actualDamage: number;
 }
 
 /**
@@ -31,17 +32,18 @@ export function resolvePlayerDamage({
   enemies,
   walls = [],
 }: ResolvePlayerDamageParams): ResolvePlayerDamageResult {
-  const damagedPlayer = damagePlayer(player, damage, currentTime, invincibleDuration);
-  if (damagedPlayer === player) {
-    return { player, tookDamage: false };
+  const damageResult = damagePlayer(player, damage, currentTime, invincibleDuration);
+  if (!damageResult.tookDamage) {
+    return { player, tookDamage: false, actualDamage: 0 };
   }
 
   if (sourceEnemy && map && enemies) {
     return {
-      player: resolveKnockback(damagedPlayer, sourceEnemy, map, enemies, walls),
+      player: resolveKnockback(damageResult.player, sourceEnemy, map, enemies, walls),
       tookDamage: true,
+      actualDamage: damageResult.actualDamage,
     };
   }
 
-  return { player: damagedPlayer, tookDamage: true };
+  return { player: damageResult.player, tookDamage: true, actualDamage: damageResult.actualDamage };
 }

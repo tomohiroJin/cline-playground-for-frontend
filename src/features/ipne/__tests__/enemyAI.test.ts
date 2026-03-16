@@ -6,14 +6,17 @@ import {
   updateFleeEnemy,
   updateRangedEnemy,
   generatePatrolPath,
-} from '../enemyAI';
-import { createPatrolEnemy, createSpecimenEnemy, createRangedEnemy } from '../enemy';
+} from '../domain/policies/enemyAi/enemyAiFunctions';
+import { createPatrolEnemy, createSpecimenEnemy, createRangedEnemy } from '../domain/entities/enemy';
 import { EnemyState } from '../types';
 import { createTestMap, createTestPlayer } from './testUtils';
+import { MockIdGenerator } from './mocks/MockIdGenerator';
+
+const idGen = new MockIdGenerator();
 
 describe('enemyAI', () => {
   test('視認判定が正しいこと', () => {
-    const enemy = createPatrolEnemy(1, 1);
+    const enemy = createPatrolEnemy(1, 1, idGen);
     const player = createTestPlayer(2, 2);
     expect(detectPlayer(enemy, player)).toBe(true);
 
@@ -22,13 +25,13 @@ describe('enemyAI', () => {
   });
 
   test('追跡開始条件が正しいこと', () => {
-    const enemy = createPatrolEnemy(1, 1);
+    const enemy = createPatrolEnemy(1, 1, idGen);
     const player = createTestPlayer(2, 2);
     expect(shouldChase(enemy, player)).toBe(true);
   });
 
   test('追跡中断条件が正しいこと（距離超過）', () => {
-    const enemy = createPatrolEnemy(1, 1);
+    const enemy = createPatrolEnemy(1, 1, idGen);
     const player = createTestPlayer(20, 20);
     expect(shouldStopChase(enemy, player, 0)).toBe(true);
   });
@@ -41,7 +44,7 @@ describe('enemyAI', () => {
   test('巡回移動がパスに沿って進むこと', () => {
     const map = createTestMap();
     const enemy = {
-      ...createPatrolEnemy(1, 1),
+      ...createPatrolEnemy(1, 1, idGen),
       patrolPath: [
         { x: 1, y: 1 },
         { x: 2, y: 1 },
@@ -58,7 +61,7 @@ describe('enemyAI', () => {
 
   test('標本型移動がプレイヤーから離れること', () => {
     const map = createTestMap();
-    const enemy = createSpecimenEnemy(3, 3);
+    const enemy = createSpecimenEnemy(3, 3, idGen);
     const player = createTestPlayer(2, 3);
 
     const updated = updateFleeEnemy(enemy, player, map, 0);
@@ -67,14 +70,14 @@ describe('enemyAI', () => {
 
   describe('遠隔攻撃型敵', () => {
     test('遠隔攻撃型敵が正しく生成されること', () => {
-      const enemy = createRangedEnemy(3, 3);
+      const enemy = createRangedEnemy(3, 3, idGen);
       expect(enemy.attackRange).toBe(4);
       expect(enemy.detectionRange).toBe(7);
     });
 
     test('プレイヤーが近すぎる場合は後退すること', () => {
       const map = createTestMap(10, 10); // 大きいマップを使用
-      const enemy = createRangedEnemy(4, 4);
+      const enemy = createRangedEnemy(4, 4, idGen);
       const player = createTestPlayer(3, 4); // 距離1（近すぎる）
 
       const updated = updateRangedEnemy(enemy, player, map, 0);
@@ -85,7 +88,7 @@ describe('enemyAI', () => {
 
     test('プレイヤーが攻撃射程外の場合は接近すること', () => {
       const map = createTestMap(15, 15); // 大きいマップを使用
-      const enemy = createRangedEnemy(2, 2);
+      const enemy = createRangedEnemy(2, 2, idGen);
       const player = createTestPlayer(8, 2); // 距離6（射程4外）
 
       const updated = updateRangedEnemy(enemy, player, map, 0);
@@ -96,7 +99,7 @@ describe('enemyAI', () => {
 
     test('適切な距離を保っている場合はその場に留まること', () => {
       const map = createTestMap(10, 10);
-      const enemy = createRangedEnemy(5, 3);
+      const enemy = createRangedEnemy(5, 3, idGen);
       const player = createTestPlayer(2, 3); // 距離3（適切な距離）
 
       const updated = updateRangedEnemy(enemy, player, map, 0);
@@ -109,7 +112,7 @@ describe('enemyAI', () => {
     test('プレイヤーを見失ったら帰還すること', () => {
       const map = createTestMap(10, 10);
       const enemy = {
-        ...createRangedEnemy(3, 3),
+        ...createRangedEnemy(3, 3, idGen),
         state: EnemyState.CHASE,
         lastSeenAt: 0,
       };

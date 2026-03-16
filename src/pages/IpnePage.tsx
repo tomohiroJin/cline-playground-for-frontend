@@ -31,12 +31,12 @@ import {
   stopTimer,
   pauseTimer,
   getElapsedTime,
-} from '../features/ipne/timer';
+} from '../features/ipne/application/services/timerService';
 import {
   createRecord,
   saveRecord,
-} from '../features/ipne/record';
-import { calculateRating } from '../features/ipne/ending';
+} from '../features/ipne/infrastructure/storage/recordStorage';
+import { calculateRating } from '../features/ipne/domain/services/endingService';
 import { resolvePlayerDamage } from '../features/ipne/application';
 import {
   playPlayerDamageSound,
@@ -57,18 +57,21 @@ import { TitleScreen } from '../features/ipne/presentation/screens/Title';
 import { PrologueScreen } from '../features/ipne/presentation/screens/Prologue';
 import { GameScreen, ClassSelectScreen, LevelUpOverlayComponent, EffectEvent } from '../features/ipne/presentation/screens/Game';
 import { EffectType, FloatingTextManager, FloatingTextType } from '../features/ipne/presentation/effects';
-import { ComboState, createComboState, registerKill, getComboMultiplier } from '../features/ipne/combo';
+import { ComboState, createComboState, registerKill, getComboMultiplier } from '../features/ipne/domain/services/comboService';
 import { GameOverScreen } from '../features/ipne/presentation/screens/Clear';
 import { StageClearScreen } from '../features/ipne/presentation/screens/StageClear';
 import { StageStoryScreen } from '../features/ipne/presentation/screens/StageStory';
 import { StageRewardScreen } from '../features/ipne/presentation/screens/StageReward';
 import { FinalClearScreen } from '../features/ipne/presentation/screens/FinalClear';
-import { getStageStory } from '../features/ipne/story';
-import { isFinalStage } from '../features/ipne/stageConfig';
+import { getStageStory } from '../features/ipne/domain/config/story';
+import { isFinalStage } from '../features/ipne/domain/config/stageConfig';
 
 // カスタムフック
 import { useGameState } from '../features/ipne/presentation/hooks/useGameState';
 import { useGameLoop } from '../features/ipne/presentation/hooks/useGameLoop';
+import { SequentialIdGenerator } from '../features/ipne/infrastructure/id/SequentialIdGenerator';
+
+const idGenerator = new SequentialIdGenerator();
 
 // テスト互換性のために ClearScreen を re-export
 export { ClearScreen } from '../features/ipne/presentation/screens/Clear';
@@ -373,7 +376,7 @@ const IpnePage: React.FC = () => {
       }
 
       for (const enemy of newlyKilledEnemies) {
-        const deathResult = processEnemyDeath(enemy);
+        const deathResult = processEnemyDeath(enemy, idGenerator, Math.random(), Math.random());
         if (deathResult.droppedItem) {
           updatedItems = [...updatedItems, deathResult.droppedItem];
         }

@@ -12,7 +12,7 @@ import {
   formatTimeShort,
   isTimerRunning,
   isTimerPaused,
-} from '../timer';
+} from '../application/services/timerService';
 import { TimerState } from '../types';
 
 describe('timer', () => {

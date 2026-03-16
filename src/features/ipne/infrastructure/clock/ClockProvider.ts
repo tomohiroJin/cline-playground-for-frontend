@@ -1,11 +1,11 @@
 /**
- * 時刻抽象
+ * Date.now ベースの時計プロバイダー
+ * domain/ports/ClockProvider の実装
  */
+import { ClockProvider } from '../../domain/ports';
 
-export interface ClockProvider {
-  now(): number;
+export class DateClockProvider implements ClockProvider {
+  now(): number {
+    return Date.now();
+  }
 }
-
-export const SYSTEM_CLOCK_PROVIDER: ClockProvider = {
-  now: () => Date.now(),
-};

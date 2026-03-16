@@ -14,9 +14,11 @@ import {
   detectTrapCandidateTiles,
   detectWallPlacementCandidates,
 } from './candidateDetection';
-import { createTestMap } from '../../../__tests__/testUtils';
+import { aMap } from '../../../__tests__/builders';
+import { MockRandomProvider } from '../../../__tests__/mocks/MockRandomProvider';
 
 describe('candidateDetection', () => {
+  const rng = new MockRandomProvider(0.5);
   describe('collectRoomTiles', () => {
     it('部屋のタイルを全て収集する', () => {
       const rooms: Room[] = [
@@ -45,7 +47,7 @@ describe('candidateDetection', () => {
 
   describe('collectCorridorTiles', () => {
     it('部屋に含まれない床タイルを通路として収集する', () => {
-      const grid = createTestMap(7, 7);
+      const grid = aMap(7, 7).withStart(1, 1).withGoal(5, 5).build();
       const rooms: Room[] = [
         { rect: { x: 1, y: 1, width: 2, height: 2 }, center: { x: 2, y: 2 }, tiles: [{ x: 1, y: 1 }, { x: 2, y: 1 }, { x: 1, y: 2 }, { x: 2, y: 2 }] },
       ];
@@ -62,7 +64,7 @@ describe('candidateDetection', () => {
 
     it('全てのタイルが部屋に含まれる場合は空配列を返す', () => {
       // 3x3マップ（内部は1x1の床のみ）
-      const grid = createTestMap(3, 3);
+      const grid = aMap(3, 3).withStart(1, 1).build();
       const rooms: Room[] = [
         { rect: { x: 1, y: 1, width: 1, height: 1 }, center: { x: 1, y: 1 }, tiles: [{ x: 1, y: 1 }] },
       ];
@@ -74,7 +76,7 @@ describe('candidateDetection', () => {
 
   describe('collectWallAdjacentTiles', () => {
     it('床に隣接する壁タイルを収集する', () => {
-      const grid = createTestMap(7, 7);
+      const grid = aMap(7, 7).withStart(1, 1).withGoal(5, 5).build();
       const tiles = collectWallAdjacentTiles(grid);
 
       // 各タイルは壁であり、かつ床に隣接している
@@ -99,7 +101,7 @@ describe('candidateDetection', () => {
 
     it('内部に壁があるマップでは結果が空でない', () => {
       // 内部に壁を含むマップを作成
-      const grid = createTestMap(7, 7);
+      const grid = aMap(7, 7).withStart(1, 1).withGoal(5, 5).build();
       grid[3][3] = TileType.WALL; // 内部に壁を配置（周囲が床）
       const tiles = collectWallAdjacentTiles(grid);
       expect(tiles.length).toBeGreaterThan(0);
@@ -177,24 +179,24 @@ describe('candidateDetection', () => {
 
   describe('detectTrapCandidateTiles', () => {
     it('通路タイルと部屋タイルを候補として返す', () => {
-      const grid = createTestMap(7, 7);
+      const grid = aMap(7, 7).withStart(1, 1).withGoal(5, 5).build();
       const rooms: Room[] = [
         { rect: { x: 3, y: 3, width: 2, height: 2 }, center: { x: 4, y: 4 }, tiles: [{ x: 3, y: 3 }, { x: 4, y: 3 }] },
       ];
 
-      const candidates = detectTrapCandidateTiles(rooms, grid);
+      const candidates = detectTrapCandidateTiles(rooms, grid, rng);
       expect(candidates.length).toBeGreaterThan(0);
     });
 
     it('通路タイルが部屋タイルよりも先に配置される', () => {
       // detectTrapCandidateTiles は [...corridorTiles, ...roomTiles] の順序
       // シャッフルされるため順序保証はないが、両方含まれることを確認
-      const grid = createTestMap(9, 9);
+      const grid = aMap(9, 9).withStart(1, 1).withGoal(7, 7).build();
       const rooms: Room[] = [
         { rect: { x: 3, y: 3, width: 3, height: 3 }, center: { x: 4, y: 4 }, tiles: [{ x: 3, y: 3 }, { x: 4, y: 3 }, { x: 5, y: 3 }] },
       ];
 
-      const candidates = detectTrapCandidateTiles(rooms, grid);
+      const candidates = detectTrapCandidateTiles(rooms, grid, rng);
       const candidateKeys = new Set(candidates.map(c => `${c.x},${c.y}`));
       // 部屋タイルが含まれる
       expect(candidateKeys.has('3,3') || candidateKeys.has('4,3') || candidateKeys.has('5,3')).toBe(true);
@@ -203,8 +205,8 @@ describe('candidateDetection', () => {
 
   describe('detectWallPlacementCandidates', () => {
     it('壁配置候補の3種類を返す', () => {
-      const grid = createTestMap(7, 7);
-      const result = detectWallPlacementCandidates(grid);
+      const grid = aMap(7, 7).withStart(1, 1).withGoal(5, 5).build();
+      const result = detectWallPlacementCandidates(grid, rng);
 
       expect(result).toHaveProperty('segments');
       expect(result).toHaveProperty('shortcutPositions');

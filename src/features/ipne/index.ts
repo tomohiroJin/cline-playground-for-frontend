@@ -76,7 +76,7 @@ export type {
 } from './types';
 
 // マップ
-export { createMap, createMapWithRooms, getMapWidth, getMapHeight } from './map';
+export { createMap, createMapWithRooms, getMapWidth, getMapHeight } from './domain/services/mapService';
 
 // プレイヤー
 export {
@@ -96,20 +96,20 @@ export {
   getEffectiveHeal,
   applySlowEffect,
   isSlowed,
-} from './player';
-export type { KillCountResult } from './player';
+} from './domain/entities/player';
+export type { KillCountResult, DamageResult } from './domain/entities/player';
 
 // 衝突判定
-export { isWall, canMove, checkEnemyCollision, getEnemyAtPosition, getEnemiesInRange } from './collision';
+export { isWall, canMove, checkEnemyCollision, getEnemyAtPosition, getEnemiesInRange } from './domain/services/collisionService';
 
 // ゴール判定
-export { isGoal, findGoalPosition, findStartPosition, canGoal } from './goal';
+export { isGoal, findGoalPosition, findStartPosition, canGoal } from './domain/services/goalService';
 
 // 経路探索
-export { findPath } from './pathfinder';
+export { findPath } from './domain/services/pathfinderService';
 
 // 自動マッピング
-export { initExploration, updateExploration, isGoalDiscovered, drawAutoMap } from './autoMapping';
+export { initExploration, updateExploration, isGoalDiscovered, drawAutoMap } from './application/usecases/autoMapping';
 
 // ビューポート
 export {
@@ -119,8 +119,8 @@ export {
   isPlayerInViewport,
   getCanvasSize,
   VIEWPORT_CONFIG,
-} from './viewport';
-export type { Viewport } from './viewport';
+} from './presentation/services/viewportService';
+export type { Viewport } from './presentation/services/viewportService';
 
 // デバッグ
 export {
@@ -132,8 +132,8 @@ export {
   DEFAULT_DEBUG_STATE,
   setDebugBrowserEnvProvider,
   resetDebugBrowserEnvProvider,
-} from './debug';
-export type { DebugState } from './debug';
+} from './infrastructure/debug/debugService';
+export type { DebugState } from './infrastructure/debug/debugService';
 
 // 連続移動
 export {
@@ -145,14 +145,12 @@ export {
   getEffectiveMoveInterval,
   DEFAULT_MOVEMENT_CONFIG,
   INITIAL_MOVEMENT_STATE,
-} from './movement';
-export type { MovementConfig, MovementState } from './movement';
+} from './domain/services/movementService';
+export type { MovementConfig, MovementState } from './domain/services/movementService';
 
 // 敵
 export {
   ENEMY_CONFIGS,
-  generateEnemyId,
-  resetEnemyIdCounter,
   createEnemy,
   createPatrolEnemy,
   createChargeEnemy,
@@ -163,9 +161,9 @@ export {
   isEnemyAlive,
   damageEnemy,
   applyKnockbackToEnemy,
-} from './enemy';
+} from './domain/entities/enemy';
 
-export { SPAWN_CONFIG as ENEMY_SPAWN_CONFIG, spawnEnemies, spawnEnemiesForStage, applyScaling, getSpawnPositionsForRoom, distributeEnemyTypes } from './enemySpawner';
+export { SPAWN_CONFIG as ENEMY_SPAWN_CONFIG, spawnEnemies, spawnEnemiesForStage, applyScaling, getSpawnPositionsForRoom, distributeEnemyTypes } from './application/usecases/enemySpawner';
 
 export {
   AI_CONFIG,
@@ -185,8 +183,8 @@ export {
   setEnemyAttackCooldown,
   getDirectPathToPlayer,
   calculateFleeDirection,
-} from './enemyAI';
-export type { EnemyUpdateResult } from './enemyAI';
+} from './domain/policies/enemyAi/enemyAiFunctions';
+export type { EnemyUpdateResult } from './domain/policies/enemyAi/enemyAiFunctions';
 export { EnemyAiPolicyRegistry, buildDefaultEnemyAiPolicyRegistry } from './domain';
 export type { EnemyAiPolicy, EnemyAiUpdateContext } from './domain';
 
@@ -214,14 +212,12 @@ export type {
 export { useSyncedState } from './presentation';
 
 // 戦闘
-export { COMBAT_CONFIG, playerAttack, getAttackTarget, processEnemyContact, isKnockbackComplete } from './combat';
+export { COMBAT_CONFIG, playerAttack, getAttackTarget, processEnemyContact, isKnockbackComplete } from './domain/services/combatService';
 
 // アイテム
 export {
   ITEM_CONFIGS,
   SPAWN_CONFIG as ITEM_SPAWN_CONFIG,
-  generateItemId,
-  resetItemIdCounter,
   createItem,
   createHealthSmall,
   createHealthLarge,
@@ -232,8 +228,8 @@ export {
   spawnItems,
   canPickupItem,
   pickupItem,
-} from './item';
-export type { ItemEffectType, ItemPickupResult } from './item';
+} from './domain/entities/item';
+export type { ItemEffectType, ItemPickupResult } from './domain/entities/item';
 
 // ===== MVP3 追加モジュール =====
 
@@ -245,7 +241,7 @@ export {
   canSeeSpecialWall,
   getTrapAlpha,
   getWallAlpha,
-} from './class';
+} from './domain/valueObjects/playerClass';
 
 // 成長
 export {
@@ -262,13 +258,11 @@ export {
   applyStageReward,
   canChooseReward,
   shouldLevelUpInStage,
-} from './progression';
+} from './domain/services/progressionService';
 
 // 罠
 export {
   TRAP_CONFIGS,
-  generateTrapId,
-  resetTrapIdCounter,
   createTrap,
   createDamageTrap,
   createSlowTrap,
@@ -278,8 +272,8 @@ export {
   getTrapAt,
   revealTrap,
   getRandomPassableTile,
-} from './trap';
-export type { TrapTriggerResult, TeleportDestination } from './trap';
+} from './domain/entities/trap';
+export type { TrapTriggerResult, TeleportDestination } from './domain/entities/trap';
 
 // 壁
 export {
@@ -293,7 +287,7 @@ export {
   isWallBlocking,
   revealWall,
   getWallAt,
-} from './wall';
+} from './domain/entities/wall';
 
 // ギミック配置
 export {
@@ -301,13 +295,13 @@ export {
   placeTrap,
   placeWalls,
   placeGimmicks,
-} from './gimmickPlacement';
-export type { GimmickPlacementResult } from './gimmickPlacement';
+} from './domain/services/gimmickPlacement/gimmickPlacement';
+export type { GimmickPlacementResult } from './domain/services/gimmickPlacement/gimmickPlacement';
 export type { GimmickPlacementConfig, StrategicPatternLimits } from './types';
 
 // 敵AI（RANGED追加）
-export { createRangedEnemy } from './enemy';
-export { updateRangedEnemy } from './enemyAI';
+export { createRangedEnemy } from './domain/entities/enemy';
+export { updateRangedEnemy } from './domain/policies/enemyAi/enemyAiFunctions';
 
 // ===== MVP4 追加モジュール =====
 
@@ -319,10 +313,12 @@ export {
   getEpilogueText,
   getGameOverText,
   getRatingColor,
+} from './domain/services/endingService';
+export {
   getEndingImage,
   getGameOverImage,
   getEndingVideo,
-} from './ending';
+} from './presentation/services/endingAssetProvider';
 
 // タイマー
 export {
@@ -336,7 +332,7 @@ export {
   formatTimeShort,
   isTimerRunning,
   isTimerPaused,
-} from './timer';
+} from './application/services/timerService';
 
 // 記録
 export {
@@ -354,7 +350,7 @@ export {
   resetRecordStorageProvider,
   setRecordClockProvider,
   resetRecordClockProvider,
-} from './record';
+} from './infrastructure/storage/recordStorage';
 
 // チュートリアル
 export {
@@ -372,12 +368,11 @@ export {
   getTutorialProgress,
   setTutorialStorageProvider,
   resetTutorialStorageProvider,
-} from './tutorial';
+} from './presentation/services/tutorialService';
 
 // フィードバック
 export {
   FEEDBACK_CONFIGS,
-  resetFeedbackIdCounter,
   createFeedback,
   createDamageFeedback,
   createHealFeedback,
@@ -391,7 +386,7 @@ export {
   drawTrapEffect,
   drawPopup,
   needsFlash,
-} from './feedback';
+} from './presentation/services/feedbackService';
 
 // 敵ドロップ（MVP4追加）
 export {
@@ -401,8 +396,8 @@ export {
   selectDropItemType,
   createDropItem,
   processEnemyDeath,
-} from './enemy';
-export type { EnemyDeathResult } from './enemy';
+} from './domain/entities/enemy';
+export type { EnemyDeathResult } from './domain/entities/enemy';
 
 // 迷路生成安定化（MVP4追加）
 export {
@@ -416,8 +411,8 @@ export {
   validateGeneration,
   getPositionsOutsideSafeZone,
   generateSafeMaze,
-} from './mazeGenerator';
-export type { ValidationResult, MazeResult } from './mazeGenerator';
+} from './domain/services/mazeGenerator';
+export type { ValidationResult, MazeResult } from './domain/services/mazeGenerator';
 
 // ===== MVP5 音声モジュール =====
 
@@ -493,12 +488,11 @@ export {
 // インフラ抽象
 export {
   BROWSER_ENV_PROVIDER,
-  SYSTEM_CLOCK_PROVIDER,
-  MATH_RANDOM_PROVIDER,
   NOOP_STORAGE_PROVIDER,
   createBrowserStorageProvider,
 } from './infrastructure';
-export type { BrowserEnvProvider, ClockProvider, RandomProvider, StorageProvider } from './infrastructure';
+export type { BrowserEnvProvider, StorageProvider } from './infrastructure';
+export type { ClockProvider, RandomProvider } from './domain/ports';
 
 // 契約
 export { assertCondition, assertNumberInRange, assertIntegerInRange, assertUniquePositions } from './shared';
@@ -512,7 +506,7 @@ export {
   getStageConfig,
   getNextStage,
   isFinalStage,
-} from './stageConfig';
+} from './domain/config/stageConfig';
 
 // ストーリー
 export {
@@ -522,4 +516,4 @@ export {
   getPrologueStory,
   getEndingEpilogue,
   getAllStoryScenes,
-} from './story';
+} from './domain/config/story';

@@ -1,4 +1,4 @@
-import { canPickupItem, ItemEffectType, ItemPickupResult, pickupItem } from '../../item';
+import { canPickupItem, ItemEffectType, ItemPickupResult, pickupItem } from '../../domain/entities/item';
 import { Item, Player } from '../../types';
 
 interface ResolveItemPickupEffectsParams {

@@ -3,7 +3,6 @@
  */
 import {
   FEEDBACK_CONFIGS,
-  resetFeedbackIdCounter,
   createFeedback,
   createDamageFeedback,
   createHealFeedback,
@@ -17,13 +16,16 @@ import {
   drawTrapEffect,
   drawPopup,
   needsFlash,
-} from '../feedback';
+} from '../presentation/services/feedbackService';
 import { FeedbackType } from '../types';
 import { createMockCanvasContext } from './testUtils';
+import { MockIdGenerator } from './mocks/MockIdGenerator';
 
 describe('feedback', () => {
+  let idGen: MockIdGenerator;
+
   beforeEach(() => {
-    resetFeedbackIdCounter();
+    idGen = new MockIdGenerator();
   });
 
   describe('FEEDBACK_CONFIGS', () => {
@@ -50,7 +52,7 @@ describe('feedback', () => {
 
   describe('createFeedback', () => {
     test('フィードバックを作成すること', () => {
-      const feedback = createFeedback(FeedbackType.DAMAGE, 10, 20, '-5', 1000);
+      const feedback = createFeedback(FeedbackType.DAMAGE, 10, 20, idGen, '-5', 1000);
 
       expect(feedback.id).toBe('feedback-1');
       expect(feedback.type).toBe(FeedbackType.DAMAGE);
@@ -61,8 +63,8 @@ describe('feedback', () => {
     });
 
     test('連続で作成するとIDがインクリメントされること', () => {
-      const feedback1 = createFeedback(FeedbackType.DAMAGE, 0, 0, undefined, 1000);
-      const feedback2 = createFeedback(FeedbackType.HEAL, 0, 0, undefined, 1000);
+      const feedback1 = createFeedback(FeedbackType.DAMAGE, 0, 0, idGen, undefined, 1000);
+      const feedback2 = createFeedback(FeedbackType.HEAL, 0, 0, idGen, undefined, 1000);
 
       expect(feedback1.id).toBe('feedback-1');
       expect(feedback2.id).toBe('feedback-2');
@@ -71,7 +73,7 @@ describe('feedback', () => {
 
   describe('createDamageFeedback', () => {
     test('ダメージフィードバックを作成すること', () => {
-      const feedback = createDamageFeedback(10, 20, 5, 1000);
+      const feedback = createDamageFeedback(10, 20, 5, idGen, 1000);
 
       expect(feedback.type).toBe(FeedbackType.DAMAGE);
       expect(feedback.text).toBe('-5');
@@ -80,7 +82,7 @@ describe('feedback', () => {
 
   describe('createHealFeedback', () => {
     test('回復フィードバックを作成すること', () => {
-      const feedback = createHealFeedback(10, 20, 10, 1000);
+      const feedback = createHealFeedback(10, 20, 10, idGen, 1000);
 
       expect(feedback.type).toBe(FeedbackType.HEAL);
       expect(feedback.text).toBe('+10');
@@ -89,7 +91,7 @@ describe('feedback', () => {
 
   describe('createLevelUpFeedback', () => {
     test('レベルアップフィードバックを作成すること', () => {
-      const feedback = createLevelUpFeedback(10, 20, 3, 1000);
+      const feedback = createLevelUpFeedback(10, 20, 3, idGen, 1000);
 
       expect(feedback.type).toBe(FeedbackType.LEVEL_UP);
       expect(feedback.text).toBe('Level 3!');
@@ -98,7 +100,7 @@ describe('feedback', () => {
 
   describe('createTrapFeedback', () => {
     test('罠フィードバックを作成すること', () => {
-      const feedback = createTrapFeedback(10, 20, 'ダメージ罠', 1000);
+      const feedback = createTrapFeedback(10, 20, 'ダメージ罠', idGen, 1000);
 
       expect(feedback.type).toBe(FeedbackType.TRAP);
       expect(feedback.text).toBe('ダメージ罠');
@@ -107,7 +109,7 @@ describe('feedback', () => {
 
   describe('createItemPickupFeedback', () => {
     test('アイテム取得フィードバックを作成すること', () => {
-      const feedback = createItemPickupFeedback(10, 20, '回復薬（小）', 1000);
+      const feedback = createItemPickupFeedback(10, 20, '回復薬（小）', idGen, 1000);
 
       expect(feedback.type).toBe(FeedbackType.ITEM_PICKUP);
       expect(feedback.text).toBe('回復薬（小）');
@@ -116,20 +118,20 @@ describe('feedback', () => {
 
   describe('isFeedbackActive', () => {
     test('開始直後はアクティブであること', () => {
-      const feedback = createFeedback(FeedbackType.DAMAGE, 0, 0, undefined, 1000);
+      const feedback = createFeedback(FeedbackType.DAMAGE, 0, 0, idGen, undefined, 1000);
 
       expect(isFeedbackActive(feedback, 1000)).toBe(true);
     });
 
     test('持続時間内はアクティブであること', () => {
-      const feedback = createFeedback(FeedbackType.DAMAGE, 0, 0, undefined, 1000);
+      const feedback = createFeedback(FeedbackType.DAMAGE, 0, 0, idGen, undefined, 1000);
       const config = FEEDBACK_CONFIGS[FeedbackType.DAMAGE];
 
       expect(isFeedbackActive(feedback, 1000 + config.duration - 1)).toBe(true);
     });
 
     test('持続時間を過ぎると非アクティブになること', () => {
-      const feedback = createFeedback(FeedbackType.DAMAGE, 0, 0, undefined, 1000);
+      const feedback = createFeedback(FeedbackType.DAMAGE, 0, 0, idGen, undefined, 1000);
       const config = FEEDBACK_CONFIGS[FeedbackType.DAMAGE];
 
       expect(isFeedbackActive(feedback, 1000 + config.duration)).toBe(false);
@@ -138,20 +140,20 @@ describe('feedback', () => {
 
   describe('getFeedbackProgress', () => {
     test('開始時は0を返すこと', () => {
-      const feedback = createFeedback(FeedbackType.DAMAGE, 0, 0, undefined, 1000);
+      const feedback = createFeedback(FeedbackType.DAMAGE, 0, 0, idGen, undefined, 1000);
 
       expect(getFeedbackProgress(feedback, 1000)).toBe(0);
     });
 
     test('終了時は1を返すこと', () => {
-      const feedback = createFeedback(FeedbackType.DAMAGE, 0, 0, undefined, 1000);
+      const feedback = createFeedback(FeedbackType.DAMAGE, 0, 0, idGen, undefined, 1000);
       const config = FEEDBACK_CONFIGS[FeedbackType.DAMAGE];
 
       expect(getFeedbackProgress(feedback, 1000 + config.duration)).toBe(1);
     });
 
     test('中間で0.5を返すこと', () => {
-      const feedback = createFeedback(FeedbackType.DAMAGE, 0, 0, undefined, 1000);
+      const feedback = createFeedback(FeedbackType.DAMAGE, 0, 0, idGen, undefined, 1000);
       const config = FEEDBACK_CONFIGS[FeedbackType.DAMAGE];
 
       expect(getFeedbackProgress(feedback, 1000 + config.duration / 2)).toBe(0.5);
@@ -160,8 +162,8 @@ describe('feedback', () => {
 
   describe('updateFeedbacks', () => {
     test('アクティブなフィードバックのみを残すこと', () => {
-      const active = createFeedback(FeedbackType.DAMAGE, 0, 0, undefined, 1000);
-      const inactive = createFeedback(FeedbackType.HEAL, 0, 0, undefined, 0);
+      const active = createFeedback(FeedbackType.DAMAGE, 0, 0, idGen, undefined, 1000);
+      const inactive = createFeedback(FeedbackType.HEAL, 0, 0, idGen, undefined, 0);
       const feedbacks = [active, inactive];
 
       const updated = updateFeedbacks(feedbacks, 1100);
@@ -171,7 +173,7 @@ describe('feedback', () => {
     });
 
     test('空配列を返すこと（全て期限切れの場合）', () => {
-      const feedback = createFeedback(FeedbackType.DAMAGE, 0, 0, undefined, 0);
+      const feedback = createFeedback(FeedbackType.DAMAGE, 0, 0, idGen, undefined, 0);
       const updated = updateFeedbacks([feedback], 10000);
 
       expect(updated).toHaveLength(0);
@@ -181,7 +183,7 @@ describe('feedback', () => {
   describe('drawDamageFlash', () => {
     test('フラッシュ時間内は描画すること', () => {
       const ctx = createMockCanvasContext() as CanvasRenderingContext2D;
-      const feedback = createDamageFeedback(0, 0, 5, 1000);
+      const feedback = createDamageFeedback(0, 0, 5, idGen, 1000);
 
       drawDamageFlash(ctx, 800, 600, feedback, 1050);
 
@@ -190,7 +192,7 @@ describe('feedback', () => {
 
     test('フラッシュ時間を過ぎると描画しないこと', () => {
       const ctx = createMockCanvasContext() as CanvasRenderingContext2D;
-      const feedback = createDamageFeedback(0, 0, 5, 1000);
+      const feedback = createDamageFeedback(0, 0, 5, idGen, 1000);
       const config = FEEDBACK_CONFIGS[FeedbackType.DAMAGE];
 
       drawDamageFlash(ctx, 800, 600, feedback, 1000 + config.flashDuration! + 1);
@@ -200,7 +202,7 @@ describe('feedback', () => {
 
     test('フラッシュ設定がないタイプは描画しないこと', () => {
       const ctx = createMockCanvasContext() as CanvasRenderingContext2D;
-      const feedback = createHealFeedback(0, 0, 10, 1000);
+      const feedback = createHealFeedback(0, 0, 10, idGen, 1000);
 
       drawDamageFlash(ctx, 800, 600, feedback, 1050);
 
@@ -211,7 +213,7 @@ describe('feedback', () => {
   describe('drawTrapEffect', () => {
     test('罠エフェクトを描画すること', () => {
       const ctx = createMockCanvasContext() as CanvasRenderingContext2D;
-      const feedback = createTrapFeedback(0, 0, 'ダメージ罠', 1000);
+      const feedback = createTrapFeedback(0, 0, 'ダメージ罠', idGen, 1000);
 
       drawTrapEffect(ctx, 800, 600, feedback, 1050);
 
@@ -222,7 +224,7 @@ describe('feedback', () => {
   describe('drawPopup', () => {
     test('テキストがある場合は描画すること', () => {
       const ctx = createMockCanvasContext() as CanvasRenderingContext2D;
-      const feedback = createDamageFeedback(0, 0, 5, 1000);
+      const feedback = createDamageFeedback(0, 0, 5, idGen, 1000);
 
       drawPopup(ctx, feedback, 400, 300, 1100);
 
@@ -232,7 +234,7 @@ describe('feedback', () => {
 
     test('テキストがない場合は描画しないこと', () => {
       const ctx = createMockCanvasContext() as CanvasRenderingContext2D;
-      const feedback = createFeedback(FeedbackType.DAMAGE, 0, 0, undefined, 1000);
+      const feedback = createFeedback(FeedbackType.DAMAGE, 0, 0, idGen, undefined, 1000);
 
       drawPopup(ctx, feedback, 400, 300, 1100);
 
@@ -242,12 +244,12 @@ describe('feedback', () => {
 
   describe('needsFlash', () => {
     test('フラッシュ設定があるタイプはtrueを返すこと', () => {
-      const feedback = createDamageFeedback(0, 0, 5, 1000);
+      const feedback = createDamageFeedback(0, 0, 5, idGen, 1000);
       expect(needsFlash(feedback)).toBe(true);
     });
 
     test('フラッシュ設定がないタイプはfalseを返すこと', () => {
-      const feedback = createHealFeedback(0, 0, 10, 1000);
+      const feedback = createHealFeedback(0, 0, 10, idGen, 1000);
       expect(needsFlash(feedback)).toBe(false);
     });
   });

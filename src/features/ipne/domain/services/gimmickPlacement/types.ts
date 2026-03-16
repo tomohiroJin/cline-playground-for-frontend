@@ -1,4 +1,4 @@
-import { Position } from '../../../types';
+import { Position } from '../../types';
 
 /** 連続した壁セグメント */
 export interface WallSegment {

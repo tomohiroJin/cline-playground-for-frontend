@@ -16,9 +16,9 @@ import {
   getTutorialProgress,
   setTutorialStorageProvider,
   resetTutorialStorageProvider,
-} from '../tutorial';
+} from '../presentation/services/tutorialService';
 import { TutorialStepType, TutorialStepTypeValue } from '../types';
-import { STORAGE_KEYS } from '../record';
+import { STORAGE_KEYS } from '../infrastructure/storage/recordStorage';
 import { StorageProvider } from '../infrastructure/storage/StorageProvider';
 
 describe('tutorial', () => {

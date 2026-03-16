@@ -23,11 +23,13 @@ import {
   getEpilogueText,
   getGameOverText,
   getRatingColor,
+} from '../../domain/services/endingService';
+import {
   getEndingImage,
   getGameOverImage,
   getEndingVideo,
-} from '../../ending';
-import { formatTimeShort } from '../../timer';
+} from '../services/endingAssetProvider';
+import { formatTimeShort } from '../../application/services/timerService';
 
 /**
  * クリア画面コンポーネント（MVP4拡張）

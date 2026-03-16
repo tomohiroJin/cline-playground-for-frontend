@@ -1,11 +1,17 @@
-import { updateEnemiesWithContact } from '../../enemyAI';
-import { COMBAT_CONFIG } from '../../combat';
-import { applySlowEffect } from '../../player';
-import { canTriggerTrap, getTrapAt, triggerTrap } from '../../trap';
-import { EnemyUpdateResult } from '../../enemyAI';
-import { GameMap, Item, Player, Trap, Wall, Enemy, TrapType } from '../../types';
+/**
+ * ゲームティック — オーケストレーター
+ * 各ユースケースを順番に呼び出してゲーム状態を更新する
+ */
+import { updateEnemiesWithContact } from '../../domain/policies/enemyAi/enemyAiFunctions';
+import { COMBAT_CONFIG } from '../../domain/services/combatService';
+import { EnemyUpdateResult } from '../../domain/policies/enemyAi/enemyAiFunctions';
+import { GameMap, Item, Player, Trap, Wall, Enemy } from '../../types';
+import { RandomProvider } from '../../domain/ports';
 import { resolveItemPickupEffects } from '../usecases/resolveItemPickupEffects';
 import { resolvePlayerDamage } from '../usecases/resolvePlayerDamage';
+import { resolveEnemyUpdates } from '../usecases/resolveEnemyUpdates';
+import { resolveRegen } from '../usecases/resolveRegen';
+import { resolveTraps } from '../usecases/resolveTraps';
 
 export const TickSoundEffect = {
   PLAYER_DAMAGE: 'player_damage',
@@ -13,7 +19,6 @@ export const TickSoundEffect = {
   HEAL: 'heal',
   TRAP_TRIGGERED: 'trap_triggered',
   LEVEL_UP: 'level_up',
-  // 新規
   DODGE: 'dodge',
   KEY_PICKUP: 'key_pickup',
   TELEPORT: 'teleport',
@@ -40,12 +45,6 @@ export type GameTickEffect =
   | { kind: 'display'; type: TickDisplayEffectValue }
   | { kind: 'save'; type: TickSaveEffectValue };
 
-// リジェネ定数
-const BASE_REGEN_INTERVAL = 12000;     // 基本回復間隔（12秒）
-const REGEN_REDUCTION_PER_BONUS = 1000; // healBonus 1ポイントあたり 1秒短縮
-const MIN_REGEN_INTERVAL = 5000;       // 最短回復間隔（5秒）
-const REGEN_AMOUNT = 1;                // 回復量（固定1HP）
-
 export interface TickGameStateInput {
   map: GameMap;
   player: Player;
@@ -57,6 +56,7 @@ export interface TickGameStateInput {
   currentTime: number;
   invincibleDuration?: number;
   maxLevel: number;
+  random?: RandomProvider;
 }
 
 export interface TickGameStateResult {
@@ -78,20 +78,12 @@ interface TickGameStateDependencies {
   ) => EnemyUpdateResult;
   resolvePlayerDamage: typeof resolvePlayerDamage;
   resolveItemPickupEffects: typeof resolveItemPickupEffects;
-  getTrapAt: typeof getTrapAt;
-  canTriggerTrap: typeof canTriggerTrap;
-  triggerTrap: typeof triggerTrap;
-  applySlowEffect: typeof applySlowEffect;
 }
 
 const defaultDependencies: TickGameStateDependencies = {
   updateEnemiesWithContact,
   resolvePlayerDamage,
   resolveItemPickupEffects,
-  getTrapAt,
-  canTriggerTrap,
-  triggerTrap,
-  applySlowEffect,
 };
 
 export function tickGameState(
@@ -99,36 +91,28 @@ export function tickGameState(
   deps: Partial<TickGameStateDependencies> = {}
 ): TickGameStateResult {
   const {
-    map,
-    player,
-    enemies,
-    items,
-    traps,
-    walls,
-    currentTime,
-    maxLevel,
+    map, player, enemies, items, traps, walls,
+    currentTime, maxLevel, random,
     invincibleDuration = COMBAT_CONFIG.invincibleDuration,
   } = input;
-  const dependencies: TickGameStateDependencies = { ...defaultDependencies, ...deps };
+  const d = { ...defaultDependencies, ...deps };
   const effects: GameTickEffect[] = [];
 
+  // 1. 無敵状態の解除判定
   let nextPlayer = player;
   if (nextPlayer.isInvincible && currentTime >= nextPlayer.invincibleUntil) {
     nextPlayer = { ...nextPlayer, isInvincible: false };
   }
 
-  const updateResult = dependencies.updateEnemiesWithContact(enemies, nextPlayer, map, currentTime);
-  // isDying 状態の敵はアニメーション完了まで保持（300ms）
-  const updatedEnemies = updateResult.enemies.filter(enemy => {
-    if (enemy.hp > 0) return true;
-    if (enemy.isDying && enemy.deathStartTime) {
-      return currentTime - enemy.deathStartTime < 300;
-    }
-    return false;
-  });
+  // 2. 敵AI更新・接触判定
+  const updateResult = d.updateEnemiesWithContact(enemies, nextPlayer, map, currentTime);
 
+  // 3. 死亡アニメーション完了した敵を除去
+  const updatedEnemies = resolveEnemyUpdates(updateResult.enemies, currentTime);
+
+  // 4. 接触ダメージ処理
   if (updateResult.contactDamage > 0) {
-    const damageResult = dependencies.resolvePlayerDamage({
+    const damageResult = d.resolvePlayerDamage({
       player: nextPlayer,
       damage: updateResult.contactDamage,
       currentTime,
@@ -147,13 +131,13 @@ export function tickGameState(
         enemyType: updateResult.contactEnemy?.type,
       });
     } else {
-      // 無敵時間中にダメージを回避
       effects.push({ kind: 'sound', type: TickSoundEffect.DODGE });
     }
   }
 
+  // 5. 攻撃ダメージ処理
   if (updateResult.attackDamage > 0) {
-    const damageResult = dependencies.resolvePlayerDamage({
+    const damageResult = d.resolvePlayerDamage({
       player: nextPlayer,
       damage: updateResult.attackDamage,
       currentTime,
@@ -168,22 +152,17 @@ export function tickGameState(
         enemyType: updateResult.contactEnemy?.type,
       });
     } else {
-      // 無敵時間中にダメージを回避
       effects.push({ kind: 'sound', type: TickSoundEffect.DODGE });
     }
   }
 
-  const pickupResult = dependencies.resolveItemPickupEffects({
-    player: nextPlayer,
-    items,
-  });
+  // 6. アイテム拾得処理
+  const pickupResult = d.resolveItemPickupEffects({ player: nextPlayer, items });
   nextPlayer = pickupResult.player;
   for (const event of pickupResult.events) {
-    // 対応するアイテムの種別を取得
     const pickedItem = items.find(i => i.id === event.itemId);
     const itemType = pickedItem?.type;
     if (event.effectType === 'key') {
-      // 鍵取得は専用メロディで再生
       effects.push({ kind: 'sound', type: TickSoundEffect.KEY_PICKUP, itemType });
     } else if (event.healed) {
       effects.push({ kind: 'sound', type: TickSoundEffect.HEAL, itemType });
@@ -192,56 +171,22 @@ export function tickGameState(
     }
   }
 
-  // リジェネ処理（時間ベースHP回復）
-  const regenInterval = Math.max(
-    MIN_REGEN_INTERVAL,
-    BASE_REGEN_INTERVAL - nextPlayer.stats.healBonus * REGEN_REDUCTION_PER_BONUS
-  );
-  if (
-    currentTime - nextPlayer.lastRegenAt >= regenInterval &&
-    nextPlayer.hp < nextPlayer.maxHp &&
-    nextPlayer.hp > 0
-  ) {
-    nextPlayer = {
-      ...nextPlayer,
-      hp: Math.min(nextPlayer.hp + REGEN_AMOUNT, nextPlayer.maxHp),
-      lastRegenAt: currentTime,
-    };
-  }
+  // 7. リジェネ処理
+  nextPlayer = resolveRegen(nextPlayer, currentTime);
 
-  let nextTraps = traps;
-  const trapAtPlayer = dependencies.getTrapAt(nextTraps, nextPlayer.x, nextPlayer.y);
-  if (trapAtPlayer && dependencies.canTriggerTrap(trapAtPlayer, currentTime)) {
-    const trapResult = dependencies.triggerTrap(trapAtPlayer, nextPlayer, currentTime, map);
-    const trapDamageResult = dependencies.resolvePlayerDamage({
-      player: nextPlayer,
-      damage: trapResult.damage,
-      currentTime,
-      invincibleDuration,
-    });
-    nextPlayer = trapDamageResult.player;
-    if (trapResult.slowDuration > 0) {
-      nextPlayer = dependencies.applySlowEffect(nextPlayer, currentTime, trapResult.slowDuration);
-    }
-    if (trapResult.teleportDestination) {
-      nextPlayer = {
-        ...nextPlayer,
-        x: trapResult.teleportDestination.x,
-        y: trapResult.teleportDestination.y,
-      };
-    }
-    nextTraps = nextTraps.map(t => (t.id === trapResult.trap.id ? trapResult.trap : t));
-    // テレポート罠は専用の効果音、それ以外は共通の罠発動音
-    if (trapAtPlayer.type === TrapType.TELEPORT) {
-      effects.push({ kind: 'sound', type: TickSoundEffect.TELEPORT });
-    } else {
-      effects.push({ kind: 'sound', type: TickSoundEffect.TRAP_TRIGGERED });
-    }
-    if (trapDamageResult.tookDamage) {
-      effects.push({ kind: 'sound', type: TickSoundEffect.PLAYER_DAMAGE });
-    }
-  }
+  // 8. 罠処理
+  const trapResult = resolveTraps({
+    player: nextPlayer,
+    traps,
+    currentTime,
+    invincibleDuration,
+    map,
+    random,
+  });
+  nextPlayer = trapResult.player;
+  effects.push(...trapResult.effects);
 
+  // 9. レベルアップ判定
   let nextPendingLevelPoints = input.pendingLevelPoints;
   const effectiveLevel = nextPlayer.level + nextPendingLevelPoints;
   if (pickupResult.triggerLevelUp && effectiveLevel < maxLevel) {
@@ -253,6 +198,7 @@ export function tickGameState(
     effects.push({ kind: 'display', type: TickDisplayEffect.MAP_REVEALED });
   }
 
+  // 10. ゲームオーバー判定
   const isGameOver = nextPlayer.hp <= 0;
   if (isGameOver) {
     effects.push({ kind: 'sound', type: TickSoundEffect.DYING });
@@ -263,7 +209,7 @@ export function tickGameState(
     player: nextPlayer,
     enemies: updatedEnemies,
     items: pickupResult.remainingItems,
-    traps: nextTraps,
+    traps: trapResult.traps,
     pendingLevelPoints: nextPendingLevelPoints,
     isGameOver,
     effects,

@@ -10,20 +10,23 @@ import {
   canTriggerTrap,
   getTrapAt,
   revealTrap,
-  resetTrapIdCounter,
   getRandomPassableTile,
-} from '../trap';
+} from '../domain/entities/trap';
 import { TrapType, TrapState, Trap, TileType, GameMap } from '../types';
 import { createTestPlayer } from './testUtils';
+import { MockIdGenerator } from './mocks/MockIdGenerator';
+import { MockRandomProvider } from './mocks/MockRandomProvider';
 
 describe('trap', () => {
+  let idGen: MockIdGenerator;
+
   beforeEach(() => {
-    resetTrapIdCounter();
+    idGen = new MockIdGenerator();
   });
 
   describe('罠生成', () => {
     test('ダメージ罠が正しく生成されること', () => {
-      const trap = createDamageTrap(5, 5);
+      const trap = createDamageTrap(5, 5, idGen);
       expect(trap.x).toBe(5);
       expect(trap.y).toBe(5);
       expect(trap.type).toBe(TrapType.DAMAGE);
@@ -32,21 +35,21 @@ describe('trap', () => {
     });
 
     test('移動妨害罠が正しく生成されること', () => {
-      const trap = createSlowTrap(3, 3);
+      const trap = createSlowTrap(3, 3, idGen);
       expect(trap.type).toBe(TrapType.SLOW);
       expect(trap.state).toBe(TrapState.HIDDEN);
     });
 
     test('テレポート罠が正しく生成されること', () => {
-      const trap = createTeleportTrap(2, 2);
+      const trap = createTeleportTrap(2, 2, idGen);
       expect(trap.type).toBe(TrapType.TELEPORT);
       expect(trap.state).toBe(TrapState.HIDDEN);
     });
 
     test('罠IDが一意であること', () => {
-      const trap1 = createDamageTrap(1, 1);
-      const trap2 = createSlowTrap(2, 2);
-      const trap3 = createTeleportTrap(3, 3);
+      const trap1 = createDamageTrap(1, 1, idGen);
+      const trap2 = createSlowTrap(2, 2, idGen);
+      const trap3 = createTeleportTrap(3, 3, idGen);
       expect(trap1.id).not.toBe(trap2.id);
       expect(trap2.id).not.toBe(trap3.id);
     });
@@ -54,14 +57,14 @@ describe('trap', () => {
 
   describe('ダメージ罠', () => {
     test('発動でダメージが計算されること', () => {
-      const trap = createDamageTrap(1, 1);
+      const trap = createDamageTrap(1, 1, idGen);
       const player = createTestPlayer(1, 1);
       const result = triggerTrap(trap, player, 0);
       expect(result.damage).toBe(TRAP_CONFIGS[TrapType.DAMAGE].damage);
     });
 
     test('クールダウン後に再発動可能であること', () => {
-      const trap = createDamageTrap(1, 1);
+      const trap = createDamageTrap(1, 1, idGen);
       const player = createTestPlayer(1, 1);
       const result = triggerTrap(trap, player, 0);
       expect(result.trap.state).toBe(TrapState.REVEALED);
@@ -77,14 +80,14 @@ describe('trap', () => {
 
   describe('移動妨害罠', () => {
     test('発動で速度低下時間が返されること', () => {
-      const trap = createSlowTrap(1, 1);
+      const trap = createSlowTrap(1, 1, idGen);
       const player = createTestPlayer(1, 1);
       const result = triggerTrap(trap, player, 0);
       expect(result.slowDuration).toBe(TRAP_CONFIGS[TrapType.SLOW].slowDuration);
     });
 
     test('クールダウン後に再発動可能であること', () => {
-      const trap = createSlowTrap(1, 1);
+      const trap = createSlowTrap(1, 1, idGen);
       const player = createTestPlayer(1, 1);
       const result = triggerTrap(trap, player, 0);
 
@@ -108,20 +111,20 @@ describe('trap', () => {
     ];
 
     test('発動でテレポート先が返されること', () => {
-      const trap = createTeleportTrap(1, 1);
+      const trap = createTeleportTrap(1, 1, idGen);
       const player = createTestPlayer(1, 1);
       const map = createTestMap();
-      const result = triggerTrap(trap, player, 0, map);
+      const result = triggerTrap(trap, player, 0, map, new MockRandomProvider(0.5));
       expect(result.teleportDestination).toBeDefined();
       expect(result.teleportDestination?.x).toBeGreaterThanOrEqual(0);
       expect(result.teleportDestination?.y).toBeGreaterThanOrEqual(0);
     });
 
     test('テレポート先が通行可能タイルであること', () => {
-      const trap = createTeleportTrap(1, 1);
+      const trap = createTeleportTrap(1, 1, idGen);
       const player = createTestPlayer(1, 1);
       const map = createTestMap();
-      const result = triggerTrap(trap, player, 0, map);
+      const result = triggerTrap(trap, player, 0, map, new MockRandomProvider(0.5));
 
       if (result.teleportDestination) {
         const { x, y } = result.teleportDestination;
@@ -131,10 +134,10 @@ describe('trap', () => {
     });
 
     test('クールダウン後に再発動可能であること', () => {
-      const trap = createTeleportTrap(1, 1);
+      const trap = createTeleportTrap(1, 1, idGen);
       const player = createTestPlayer(1, 1);
       const map = createTestMap();
-      const result = triggerTrap(trap, player, 0, map);
+      const result = triggerTrap(trap, player, 0, map, new MockRandomProvider(0.5));
       expect(result.trap.state).toBe(TrapState.REVEALED);
 
       // クールダウン中は不可
@@ -146,7 +149,7 @@ describe('trap', () => {
     });
 
     test('マップなしで発動した場合はテレポート先がundefinedになること', () => {
-      const trap = createTeleportTrap(1, 1);
+      const trap = createTeleportTrap(1, 1, idGen);
       const player = createTestPlayer(1, 1);
       const result = triggerTrap(trap, player, 0);
       expect(result.teleportDestination).toBeUndefined();
@@ -154,13 +157,16 @@ describe('trap', () => {
   });
 
   describe('getRandomPassableTile', () => {
+    const rng = new MockRandomProvider(0.5);
+
     test('通行可能タイルがある場合は座標を返すこと', () => {
       const map: GameMap = [
         [TileType.WALL, TileType.WALL, TileType.WALL],
         [TileType.WALL, TileType.FLOOR, TileType.WALL],
         [TileType.WALL, TileType.WALL, TileType.WALL],
       ];
-      const result = getRandomPassableTile(map);
+      rng.reset();
+      const result = getRandomPassableTile(map, rng);
       expect(result).toEqual({ x: 1, y: 1 });
     });
 
@@ -169,21 +175,22 @@ describe('trap', () => {
         [TileType.WALL, TileType.WALL],
         [TileType.WALL, TileType.WALL],
       ];
-      const result = getRandomPassableTile(map);
+      rng.reset();
+      const result = getRandomPassableTile(map, rng);
       expect(result).toBeUndefined();
     });
   });
 
   describe('発見状態', () => {
     test('発動で発見済みになること', () => {
-      const trap = createDamageTrap(1, 1);
+      const trap = createDamageTrap(1, 1, idGen);
       const player = createTestPlayer(1, 1);
       const result = triggerTrap(trap, player, 0);
       expect(result.trap.state).not.toBe(TrapState.HIDDEN);
     });
 
     test('revealTrapで発見済みになること', () => {
-      const trap = createDamageTrap(1, 1);
+      const trap = createDamageTrap(1, 1, idGen);
       const revealed = revealTrap(trap);
       expect(revealed.state).toBe(TrapState.REVEALED);
     });
@@ -191,17 +198,17 @@ describe('trap', () => {
 
   describe('canTriggerTrap', () => {
     test('未発見罠は発動可能であること', () => {
-      const trap = createDamageTrap(1, 1);
+      const trap = createDamageTrap(1, 1, idGen);
       expect(canTriggerTrap(trap, 0)).toBe(true);
     });
 
     test('発見済み罠も発動可能であること', () => {
-      const trap: Trap = { ...createDamageTrap(1, 1), state: TrapState.REVEALED };
+      const trap: Trap = { ...createDamageTrap(1, 1, idGen), state: TrapState.REVEALED };
       expect(canTriggerTrap(trap, 0)).toBe(true);
     });
 
     test('クールダウン中の罠は発動不可であること', () => {
-      const trap: Trap = { ...createDamageTrap(1, 1), state: TrapState.REVEALED, cooldownUntil: 5000 };
+      const trap: Trap = { ...createDamageTrap(1, 1, idGen), state: TrapState.REVEALED, cooldownUntil: 5000 };
       expect(canTriggerTrap(trap, 1000)).toBe(false);
       expect(canTriggerTrap(trap, 5001)).toBe(true);
     });
@@ -210,9 +217,9 @@ describe('trap', () => {
   describe('getTrapAt', () => {
     test('指定位置の罠を取得できること', () => {
       const traps: Trap[] = [
-        createDamageTrap(1, 1),
-        createSlowTrap(2, 2),
-        createTeleportTrap(3, 3),
+        createDamageTrap(1, 1, idGen),
+        createSlowTrap(2, 2, idGen),
+        createTeleportTrap(3, 3, idGen),
       ];
       const trap = getTrapAt(traps, 2, 2);
       expect(trap).toBeDefined();
@@ -220,7 +227,7 @@ describe('trap', () => {
     });
 
     test('罠がない位置ではundefinedを返すこと', () => {
-      const traps: Trap[] = [createDamageTrap(1, 1)];
+      const traps: Trap[] = [createDamageTrap(1, 1, idGen)];
       const trap = getTrapAt(traps, 5, 5);
       expect(trap).toBeUndefined();
     });

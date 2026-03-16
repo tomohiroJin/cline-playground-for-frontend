@@ -1,5 +1,10 @@
 /**
  * テスト用ユーティリティ
+ *
+ * 新しいテストではビルダーパターンの使用を推奨:
+ *   import { aPlayer, anEnemy, aMap, aGameState } from './builders';
+ *
+ * 既存の createTest* 関数は後方互換のため維持しています。
  */
 import {
   GameMap,
@@ -23,9 +28,16 @@ import {
   WallState,
   WallStateValue,
 } from '../types';
-import { createPlayer } from '../player';
-import { createEnemy } from '../enemy';
-import { createItem } from '../item';
+import { createPlayer } from '../domain/entities/player';
+import { createEnemy } from '../domain/entities/enemy';
+import { createItem } from '../domain/entities/item';
+import { MockIdGenerator } from './mocks/MockIdGenerator';
+
+// ビルダーの re-export（新しいテストではこちらを使用）
+export { aPlayer, anEnemy, aMap, aGameState } from './builders';
+
+/** テスト用共通IdGenerator */
+const testIdGen = new MockIdGenerator();
 
 /**
  * テスト用マップを生成
@@ -69,7 +81,7 @@ export const createTestEnemy = (
   x = 2,
   y = 2
 ): Enemy => {
-  return createEnemy(type, x, y);
+  return createEnemy(type, x, y, testIdGen);
 };
 
 /**
@@ -80,19 +92,10 @@ export const createTestItem = (
   x = 3,
   y = 3
 ): Item => {
-  return createItem(type, x, y);
+  return createItem(type, x, y, testIdGen);
 };
 
 // ===== MVP3 テストヘルパー =====
-
-let trapIdCounter = 0;
-
-/**
- * 罠IDカウンタをリセット
- */
-export const resetTrapIdCounter = (): void => {
-  trapIdCounter = 0;
-};
 
 /**
  * テスト用罠を生成
@@ -103,9 +106,8 @@ export const createTestTrap = (
   y = 2,
   state: TrapStateValue = TrapState.HIDDEN
 ): Trap => {
-  trapIdCounter += 1;
   return {
-    id: `trap-${trapIdCounter}`,
+    id: testIdGen.generateTrapId(),
     x,
     y,
     type,
