@@ -80,19 +80,22 @@ export const StatsPanel: React.FC<StatsPanelProps> = ({
     <>
       {/* チームの成熟度 */}
       <TypeCard $color={teamType.color}>
-        {!typeImgError && AQS_IMAGES.types[teamType.id as keyof typeof AQS_IMAGES.types] ? (
-          <img
-            src={AQS_IMAGES.types[teamType.id as keyof typeof AQS_IMAGES.types]!}
-            alt={teamType.name}
+        {(() => {
+          const imgSrc = AQS_IMAGES.types[teamType.id as keyof typeof AQS_IMAGES.types];
+          return !typeImgError && imgSrc ? (
+            <img
+              src={imgSrc}
+              alt={teamType.name}
             onError={() => setTypeImgError(true)}
             style={{
               width: 88, height: 88, borderRadius: '50%', objectFit: 'cover',
               border: `3px solid ${teamType.color}`, marginBottom: 12,
             }}
           />
-        ) : (
-          <TypeEmoji>{teamType.emoji}</TypeEmoji>
-        )}
+          ) : (
+            <TypeEmoji>{teamType.emoji}</TypeEmoji>
+          );
+        })()}
         <TypeLabel>TEAM MATURITY</TypeLabel>
         <TypeName $color={teamType.color}>{teamType.name}</TypeName>
         <TypeDescription>{teamType.description}</TypeDescription>

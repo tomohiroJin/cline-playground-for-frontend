@@ -107,6 +107,9 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
     setPrevCombo(stats.combo);
     const tid = setTimeout(() => setFlashType(undefined), 600);
     return () => clearTimeout(tid);
+  // 意図的に answered のみを依存配列にしている:
+  // フラッシュ・スコア表示は「回答した瞬間」にのみトリガーする。
+  // selectedAnswer, quiz.answer 等を含めると再実行が過剰になる。
   }, [answered]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useKeys((e) => {

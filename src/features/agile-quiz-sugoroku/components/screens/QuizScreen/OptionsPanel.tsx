@@ -45,7 +45,7 @@ export const OptionsPanel: React.FC<OptionsPanelProps> = ({
 
         return (
           <OptionButton
-            key={i}
+            key={optionIndex}
             $answered={answered}
             $isCorrect={isCorrect}
             $isSelected={isSelected}
