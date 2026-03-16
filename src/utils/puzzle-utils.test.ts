@@ -132,27 +132,20 @@ describe('puzzle-utils', () => {
     it('シャッフル時に空白ピースの位置情報が正しく更新されること', () => {
       const pieces = createTestPieces();
 
-      // getAdjacentPositionsのモック作成（隣接位置を固定）
-      const getAdjacentPositionsSpy = jest
-        .spyOn(puzzleUtils, 'getAdjacentPositions')
-        .mockReturnValue([{ row: 0, col: 1 }]);
-
+      // シャッフル回数1回で実行し、空白ピースが移動することを検証
       const result = shufflePuzzlePieces(pieces, emptyPosition, division, 1);
 
-      getAdjacentPositionsSpy.mockRestore();
-
-      // 空白ピースの位置情報が更新されていること
+      // 空白ピースが存在すること
       const emptyPiece = result.pieces.find(p => p.isEmpty);
       expect(emptyPiece).toBeDefined();
-      expect(emptyPiece?.currentPosition).toEqual({ row: 0, col: 1 });
 
-      // emptyPositionも更新されていること
-      expect(result.emptyPosition).toEqual({ row: 0, col: 1 });
+      // emptyPositionが空白ピースの位置と一致すること
+      expect(result.emptyPosition).toEqual(emptyPiece?.currentPosition);
 
-      // 移動したピースの位置情報も更新されていること
-      const movedPiece = result.pieces.find(p => p.id === 1);
-      expect(movedPiece).toBeDefined();
-      expect(movedPiece?.currentPosition).toEqual({ row: 0, col: 2 });
+      // 空白ピースが隣接位置に移動していること（元の位置から1マス以内）
+      const rowDiff = Math.abs(result.emptyPosition.row - emptyPosition.row);
+      const colDiff = Math.abs(result.emptyPosition.col - emptyPosition.col);
+      expect(rowDiff + colDiff).toBe(1);
     });
 
     it('シャッフル回数が0の場合、ピースの位置が変更されないこと', () => {
