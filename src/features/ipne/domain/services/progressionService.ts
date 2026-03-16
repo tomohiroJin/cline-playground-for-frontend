@@ -2,9 +2,10 @@
  * 成長システムモジュール
  */
 import { LevelUpChoice, Player, PlayerStats, StageRewardType, StatType, StatTypeValue } from '../types';
+import { GAME_BALANCE } from '../config/gameBalance';
 
 /** 最大レベル */
-export const MAX_LEVEL = 22;
+export const MAX_LEVEL = GAME_BALANCE.player.maxLevel;
 
 /** 各レベルに必要な累計撃破数 */
 export const KILL_COUNT_TABLE: Record<number, number> = {
@@ -39,10 +40,10 @@ export const KILL_COUNT_TABLE: Record<number, number> = {
 
 /** 能力値の上限 */
 export const STAT_LIMITS: Partial<Record<StatTypeValue, number>> = {
-  [StatType.ATTACK_RANGE]: 3,
-  [StatType.MOVE_SPEED]: 8,
-  [StatType.ATTACK_SPEED]: 0.5,
-  [StatType.HEAL_BONUS]: 5,
+  [StatType.ATTACK_RANGE]: GAME_BALANCE.player.statLimits.attackRange,
+  [StatType.MOVE_SPEED]: GAME_BALANCE.player.statLimits.moveSpeed,
+  [StatType.ATTACK_SPEED]: GAME_BALANCE.player.statLimits.attackSpeed,
+  [StatType.HEAL_BONUS]: GAME_BALANCE.player.statLimits.healBonus,
   // ATTACK_POWERは上限なし
 };
 

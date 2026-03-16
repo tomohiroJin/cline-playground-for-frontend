@@ -5,6 +5,8 @@
  * エフェクトが強化される。ダメージ倍率には影響しない。
  */
 
+import { GAME_BALANCE } from '../config/gameBalance';
+
 /** コンボ状態 */
 export interface ComboState {
   /** 現在のコンボ数 */
@@ -16,10 +18,10 @@ export interface ComboState {
 }
 
 /** コンボの時間窓（ms） */
-export const COMBO_WINDOW_MS = 3000;
+export const COMBO_WINDOW_MS = GAME_BALANCE.combo.windowMs;
 
 /** コンボ表示の最小値 */
-export const COMBO_DISPLAY_MIN = 2;
+export const COMBO_DISPLAY_MIN = GAME_BALANCE.combo.minDisplay;
 
 /**
  * 初期コンボ状態を生成する

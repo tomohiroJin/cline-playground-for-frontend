@@ -15,29 +15,31 @@ import {
 } from '../types';
 import { canMove } from '../services/collisionService';
 import { shouldLevelUp, applyLevelUpChoice } from '../services/progressionService';
+import { GAME_BALANCE } from '../config/gameBalance';
+import { ensure } from '../contracts';
 
 /** 職業別初期能力値 */
 const INITIAL_STATS: Record<PlayerClassValue, PlayerStats> = {
   [PlayerClass.WARRIOR]: {
-    attackPower: 2,
-    attackRange: 1,
-    moveSpeed: 4,
-    attackSpeed: 0.7, // 攻撃が速い
-    healBonus: 1, // 回復量ボーナス
+    attackPower: GAME_BALANCE.player.warrior.attackPower,
+    attackRange: GAME_BALANCE.player.warrior.attackRange,
+    moveSpeed: GAME_BALANCE.player.warrior.moveSpeed,
+    attackSpeed: GAME_BALANCE.player.warrior.attackSpeed,
+    healBonus: GAME_BALANCE.player.warrior.healBonus,
   },
   [PlayerClass.THIEF]: {
-    attackPower: 1,
-    attackRange: 1,
-    moveSpeed: 6,
-    attackSpeed: 1.0,
-    healBonus: 0,
+    attackPower: GAME_BALANCE.player.thief.attackPower,
+    attackRange: GAME_BALANCE.player.thief.attackRange,
+    moveSpeed: GAME_BALANCE.player.thief.moveSpeed,
+    attackSpeed: GAME_BALANCE.player.thief.attackSpeed,
+    healBonus: GAME_BALANCE.player.thief.healBonus,
   },
 };
 
 /** 職業別初期HP */
 const INITIAL_HP: Record<PlayerClassValue, number> = {
-  [PlayerClass.WARRIOR]: 20, // 耐久力が高い
-  [PlayerClass.THIEF]: 12, // 罠感知の代わりにHPが低い
+  [PlayerClass.WARRIOR]: GAME_BALANCE.player.warrior.initialHp,
+  [PlayerClass.THIEF]: GAME_BALANCE.player.thief.initialHp,
 };
 
 /**
@@ -132,6 +134,10 @@ export const damagePlayer = (
 
   const actualDamage = Math.min(damage, player.hp);
   const newHp = Math.max(0, player.hp - damage);
+
+  ensure(newHp >= 0, 'ダメージ後のHPは0以上である必要があります');
+  ensure(newHp <= player.maxHp, 'ダメージ後のHPはmaxHPを超えてはなりません');
+
   return {
     player: {
       ...player,
@@ -207,7 +213,7 @@ export const processLevelUp = (player: Player, statChoice: StatTypeValue): Playe
 export const getEffectiveMoveSpeed = (player: Player, currentTime: number): number => {
   const baseSpeed = player.stats.moveSpeed;
   if (isSlowed(player, currentTime)) {
-    return baseSpeed * 0.5; // 50%低下
+    return baseSpeed * GAME_BALANCE.movement.slowedSpeedMultiplier;
   }
   return baseSpeed;
 };

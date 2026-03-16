@@ -183,8 +183,8 @@ export {
   setEnemyAttackCooldown,
   getDirectPathToPlayer,
   calculateFleeDirection,
-} from './enemyAI';
-export type { EnemyUpdateResult } from './enemyAI';
+} from './domain/policies/enemyAi/enemyAiFunctions';
+export type { EnemyUpdateResult } from './domain/policies/enemyAi/enemyAiFunctions';
 export { EnemyAiPolicyRegistry, buildDefaultEnemyAiPolicyRegistry } from './domain';
 export type { EnemyAiPolicy, EnemyAiUpdateContext } from './domain';
 
@@ -301,7 +301,7 @@ export type { GimmickPlacementConfig, StrategicPatternLimits } from './types';
 
 // 敵AI（RANGED追加）
 export { createRangedEnemy } from './domain/entities/enemy';
-export { updateRangedEnemy } from './enemyAI';
+export { updateRangedEnemy } from './domain/policies/enemyAi/enemyAiFunctions';
 
 // ===== MVP4 追加モジュール =====
 

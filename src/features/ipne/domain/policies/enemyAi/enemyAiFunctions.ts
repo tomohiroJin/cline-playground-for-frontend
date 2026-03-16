@@ -1,14 +1,51 @@
 /**
  * 敵AIロジック
+ *
+ * 各敵タイプ別のAI更新関数と、敵の一括更新を行うオーケストレーション関数を提供する。
+ * Policy パターンによりタイプ別のAI更新が統一的に管理される。
  */
-import { Enemy, EnemyState, EnemyType, GameMap, Position } from './types';
-import { canMove } from './domain/services/collisionService';
-import { buildDefaultEnemyAiPolicyRegistry } from './domain/policies/enemyAi/policies';
+import { Enemy, EnemyState, EnemyType, GameMap, Position } from '../../types';
+import { canMove } from '../../services/collisionService';
+import { buildDefaultEnemyAiPolicyRegistry } from './policies';
+import { GAME_BALANCE } from '../../config/gameBalance';
+import { RandomProvider } from '../../ports';
+
+/** デフォルトの乱数プロバイダー（Math.random ベース） */
+const defaultRandom: RandomProvider = {
+  random: () => Math.random(),
+  randomInt: (min, max) => min + Math.floor(Math.random() * (max - min)),
+  pick: (array) => array[Math.floor(Math.random() * array.length)],
+  shuffle: (array) => {
+    const result = [...array];
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
+  },
+};
+
+/** モジュールで使用する乱数プロバイダー */
+let _random: RandomProvider = defaultRandom;
+
+/**
+ * 乱数プロバイダーを設定する（テスト用）
+ */
+export function setRandomProvider(random: RandomProvider): void {
+  _random = random;
+}
+
+/**
+ * 乱数プロバイダーをデフォルトにリセットする
+ */
+export function resetRandomProvider(): void {
+  _random = defaultRandom;
+}
 
 const AI_CONFIG = {
-  updateInterval: 200,
-  chaseTimeout: 3000,
-  attackCooldown: 1000,
+  updateInterval: GAME_BALANCE.enemyAi.updateIntervalMs,
+  chaseTimeout: GAME_BALANCE.enemyAi.chaseTimeoutMs,
+  attackCooldown: GAME_BALANCE.enemyAi.attackCooldownMs,
 } as const;
 
 const getManhattanDistance = (a: Position, b: Position): number => {
@@ -25,7 +62,7 @@ export const canEnemyAttack = (enemy: Enemy, player: Position, currentTime: numb
 
 /** 敵の攻撃クールダウンを設定 */
 export const setEnemyAttackCooldown = (enemy: Enemy, currentTime: number): Enemy => {
-  const cooldown = enemy.type === EnemyType.BOSS ? 700 : AI_CONFIG.attackCooldown;
+  const cooldown = enemy.type === EnemyType.BOSS ? GAME_BALANCE.enemyAi.bossAttackCooldownMs : AI_CONFIG.attackCooldown;
   return { ...enemy, attackCooldownUntil: currentTime + cooldown };
 };
 
@@ -108,7 +145,7 @@ const attemptLunge = (
 ): Enemy | null => {
   const distance = getManhattanDistance(enemy, target);
   if (distance > maxDistance) return null;
-  if (Math.random() > chance) return null;
+  if (_random.random() > chance) return null;
 
   const dx = target.x - enemy.x;
   const dy = target.y - enemy.y;
@@ -139,12 +176,9 @@ const stepRandom = (enemy: Enemy, map: GameMap): Position => {
   ];
 
   // ランダムにシャッフル
-  for (let i = directions.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [directions[i], directions[j]] = [directions[j], directions[i]];
-  }
+  const shuffled = _random.shuffle(directions);
 
-  for (const pos of directions) {
+  for (const pos of shuffled) {
     if (canMove(map, pos.x, pos.y)) {
       return pos;
     }
@@ -169,8 +203,8 @@ const moveEnemyRandom = (enemy: Enemy, map: GameMap): Enemy => {
 };
 
 export const generatePatrolPath = (origin: Position): Position[] => {
-  const length = 4 + Math.floor(Math.random() * 5); // 4-8
-  const horizontal = Math.random() > 0.5;
+  const length = _random.randomInt(4, 9); // 4-8
+  const horizontal = _random.random() > 0.5;
   const path: Position[] = [];
 
   for (let i = 0; i < length; i++) {
@@ -344,7 +378,7 @@ export const updateFleeEnemy = (
 };
 
 /** RANGED敵が維持したい距離 */
-const RANGED_PREFERRED_DISTANCE = 3;
+const RANGED_PREFERRED_DISTANCE = GAME_BALANCE.enemyAi.rangedPreferredDistance;
 
 /**
  * RANGED敵のAI更新
@@ -537,7 +571,7 @@ export const updateEnemiesWithContact = (
 };
 
 /** 敵攻撃アニメーションの持続時間（ms） */
-export const ENEMY_ATTACK_ANIM_DURATION = 300;
+export const ENEMY_ATTACK_ANIM_DURATION = GAME_BALANCE.enemyAi.attackAnimDurationMs;
 
 /**
  * 敵を攻撃状態にマークする

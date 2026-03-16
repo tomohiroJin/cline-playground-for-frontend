@@ -7,13 +7,14 @@ import { canPlayerAttack, damagePlayer, setAttackCooldown, getEffectiveAttackCoo
 import { canMove, getEnemyAtPosition } from './collisionService';
 import { isWall } from './collisionService';
 import { damageWall as applyDamageToWall, getWallAt } from '../entities/wall';
+import { GAME_BALANCE } from '../config/gameBalance';
 
 const COMBAT_CONFIG = {
-  playerAttackDamage: 1,
-  attackCooldown: 500,
-  knockbackDistance: 1,
-  knockbackDuration: 200,
-  invincibleDuration: 1000,
+  playerAttackDamage: GAME_BALANCE.combat.playerAttackDamage,
+  attackCooldown: GAME_BALANCE.combat.baseCooldownMs,
+  knockbackDistance: GAME_BALANCE.combat.knockbackDistance,
+  knockbackDuration: GAME_BALANCE.combat.knockbackDurationMs,
+  invincibleDuration: GAME_BALANCE.combat.invincibleDurationMs,
 } as const;
 
 export interface PlayerAttackResult {

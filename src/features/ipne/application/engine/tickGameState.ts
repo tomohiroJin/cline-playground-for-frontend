@@ -2,9 +2,9 @@
  * ゲームティック — オーケストレーター
  * 各ユースケースを順番に呼び出してゲーム状態を更新する
  */
-import { updateEnemiesWithContact } from '../../enemyAI';
+import { updateEnemiesWithContact } from '../../domain/policies/enemyAi/enemyAiFunctions';
 import { COMBAT_CONFIG } from '../../domain/services/combatService';
-import { EnemyUpdateResult } from '../../enemyAI';
+import { EnemyUpdateResult } from '../../domain/policies/enemyAi/enemyAiFunctions';
 import { GameMap, Item, Player, Trap, Wall, Enemy } from '../../types';
 import { RandomProvider } from '../../domain/ports';
 import { resolveItemPickupEffects } from '../usecases/resolveItemPickupEffects';

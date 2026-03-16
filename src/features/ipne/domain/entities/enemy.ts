@@ -4,68 +4,23 @@
 import { DirectionValue, Enemy, EnemyState, EnemyType, EnemyTypeValue, Item, Position } from '../types';
 import { createHealthSmall, createHealthLarge, createLevelUpItem, createKeyItem } from './item';
 import { IdGenerator } from '../ports';
+import { require as requireContract } from '../contracts';
+import { GAME_BALANCE } from '../config/gameBalance';
 
 const ENEMY_CONFIGS = {
-  [EnemyType.PATROL]: {
-    hp: 4,
-    damage: 1,
-    speed: 2,
-    detectionRange: 5,
-    chaseRange: 8,
-    attackRange: 3,
-  },
-  [EnemyType.CHARGE]: {
-    hp: 3,
-    damage: 2,
-    speed: 5,
-    detectionRange: 6,
-    chaseRange: 10,
-    attackRange: 1,
-  },
-  [EnemyType.RANGED]: {
-    hp: 3,
-    damage: 1,
-    speed: 1.5,
-    detectionRange: 7,
-    chaseRange: 10,
-    attackRange: 4,
-  },
-  [EnemyType.SPECIMEN]: {
-    hp: 1,
-    damage: 0,
-    speed: 4,
-    detectionRange: 4,
-    chaseRange: undefined,
-    attackRange: 0,
-  },
-  [EnemyType.BOSS]: {
-    hp: 35,
-    damage: 4,
-    speed: 1.5,
-    detectionRange: 8,
-    chaseRange: 15,
-    attackRange: 3,
-  },
-  // 5ステージ制で追加
-  [EnemyType.MINI_BOSS]: {
-    hp: 15,
-    damage: 3,
-    speed: 2,
-    detectionRange: 7,
-    chaseRange: 12,
-    attackRange: 2,
-  },
-  [EnemyType.MEGA_BOSS]: {
-    hp: 80,
-    damage: 4,
-    speed: 1.8,
-    detectionRange: 12,
-    chaseRange: 20,
-    attackRange: 4,
-  },
+  [EnemyType.PATROL]: GAME_BALANCE.enemy.patrol,
+  [EnemyType.CHARGE]: GAME_BALANCE.enemy.charge,
+  [EnemyType.RANGED]: GAME_BALANCE.enemy.ranged,
+  [EnemyType.SPECIMEN]: GAME_BALANCE.enemy.specimen,
+  [EnemyType.BOSS]: GAME_BALANCE.enemy.boss,
+  [EnemyType.MINI_BOSS]: GAME_BALANCE.enemy.miniBoss,
+  [EnemyType.MEGA_BOSS]: GAME_BALANCE.enemy.megaBoss,
 } as const;
 
 export const createEnemy = (type: EnemyTypeValue, x: number, y: number, idGenerator: IdGenerator): Enemy => {
+  requireContract(x >= 0, 'x座標は0以上である必要があります');
+  requireContract(y >= 0, 'y座標は0以上である必要があります');
+
   const config = ENEMY_CONFIGS[type];
   const homePosition: Position = { x, y };
 

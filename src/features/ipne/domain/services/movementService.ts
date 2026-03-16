@@ -5,6 +5,7 @@
 
 import { DirectionValue, Player } from '../types';
 import { getEffectiveMoveSpeed } from '../entities/player';
+import { GAME_BALANCE } from '../config/gameBalance';
 
 /** 移動設定 */
 export interface MovementConfig {
@@ -16,8 +17,8 @@ export interface MovementConfig {
 
 /** デフォルトの移動設定 */
 export const DEFAULT_MOVEMENT_CONFIG: MovementConfig = {
-  moveInterval: 140, // 140ms間隔（秒速7マス程度）
-  initialDelay: 180, // 初回は180ms後に連続移動開始
+  moveInterval: GAME_BALANCE.movement.baseMoveIntervalMs,
+  initialDelay: GAME_BALANCE.movement.initialMoveDelayMs,
 };
 
 /** 連続移動状態 */
@@ -171,7 +172,7 @@ export function updateMovement(
 }
 
 /** 基準移動速度（戦士の初期値） */
-const BASE_SPEED = 4;
+const BASE_SPEED = GAME_BALANCE.player.warrior.moveSpeed;
 
 /**
  * プレイヤーの移動速度を考慮した実効移動間隔を計算
