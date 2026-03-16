@@ -1,10 +1,11 @@
 /**
  * ジャンル分析・不正解レビュー・サマリーコンポーネント
  */
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import type { DerivedStats, GameStats, TagStats, AnswerResultWithDetail } from '../../../types';
 import { COLORS, FONTS, getSummaryText } from '../../../constants';
 import { computeTagStatEntries, getWeakGenres } from '../../../tag-stats';
+import type { TagStatEntry } from '../../../tag-stats';
 import { TAG_MAP } from '../../../questions/tag-master';
 import { AQS_IMAGES } from '../../../images';
 import {
@@ -12,6 +13,50 @@ import {
   SectionTitle,
   SummaryText,
 } from '../../styles';
+
+/** ジャンル別正答率セクション */
+const GenreStatsSection: React.FC<{ tagStats: TagStats }> = ({ tagStats }) => {
+  const entries = useMemo(() => computeTagStatEntries(tagStats), [tagStats]);
+  const weak = useMemo(() => getWeakGenres(tagStats), [tagStats]);
+
+  return (
+    <SectionBox>
+      <SectionTitle>GENRE ANALYSIS</SectionTitle>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+        {entries.map((entry: TagStatEntry) => (
+          <div
+            key={entry.tagId}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '5px 8px', background: `${entry.color}08`,
+              borderRadius: 6, border: `1px solid ${entry.color}18`,
+            }}
+          >
+            <span style={{ fontSize: 11, color: COLORS.muted, flex: 1 }}>{entry.tagName}</span>
+            <span style={{ fontSize: 10, color: COLORS.muted, fontFamily: FONTS.mono }}>
+              {entry.correct}/{entry.total}
+            </span>
+            <span style={{
+              fontSize: 13, fontWeight: 700, color: entry.color,
+              fontFamily: FONTS.mono, minWidth: 40, textAlign: 'right',
+            }}>
+              {entry.rate}%
+            </span>
+          </div>
+        ))}
+      </div>
+      {weak.length > 0 && (
+        <div style={{ marginTop: 10, fontSize: 12, color: COLORS.yellow, lineHeight: 1.8 }}>
+          {weak.map((g) => (
+            <div key={g.tagId}>
+              💡 {g.tagName}が苦手そうです。もう一度挑戦してみましょう！
+            </div>
+          ))}
+        </div>
+      )}
+    </SectionBox>
+  );
+};
 
 interface GenreAnalysisProps {
   derived: DerivedStats;
@@ -36,47 +81,9 @@ export const GenreAnalysis: React.FC<GenreAnalysisProps> = ({
   return (
     <>
       {/* ジャンル別正答率 */}
-      {tagStats && Object.keys(tagStats).length > 0 && (() => {
-        const entries = computeTagStatEntries(tagStats);
-        const weak = getWeakGenres(tagStats);
-        return (
-          <SectionBox>
-            <SectionTitle>GENRE ANALYSIS</SectionTitle>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-              {entries.map((entry) => (
-                <div
-                  key={entry.tagId}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    padding: '5px 8px', background: `${entry.color}08`,
-                    borderRadius: 6, border: `1px solid ${entry.color}18`,
-                  }}
-                >
-                  <span style={{ fontSize: 11, color: COLORS.muted, flex: 1 }}>{entry.tagName}</span>
-                  <span style={{ fontSize: 10, color: COLORS.muted, fontFamily: FONTS.mono }}>
-                    {entry.correct}/{entry.total}
-                  </span>
-                  <span style={{
-                    fontSize: 13, fontWeight: 700, color: entry.color,
-                    fontFamily: FONTS.mono, minWidth: 40, textAlign: 'right',
-                  }}>
-                    {entry.rate}%
-                  </span>
-                </div>
-              ))}
-            </div>
-            {weak.length > 0 && (
-              <div style={{ marginTop: 10, fontSize: 12, color: COLORS.yellow, lineHeight: 1.8 }}>
-                {weak.map((g) => (
-                  <div key={g.tagId}>
-                    💡 {g.tagName}が苦手そうです。もう一度挑戦してみましょう！
-                  </div>
-                ))}
-              </div>
-            )}
-          </SectionBox>
-        );
-      })()}
+      {tagStats && Object.keys(tagStats).length > 0 && (
+        <GenreStatsSection tagStats={tagStats} />
+      )}
 
       {/* 不正解問題レビュー */}
       {incorrectQuestions && incorrectQuestions.length > 0 && (

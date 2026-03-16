@@ -36,6 +36,35 @@ import { TimerDisplay } from './TimerDisplay';
 import { OptionsPanel } from './OptionsPanel';
 import { QuizResult } from './QuizResult';
 
+/** フィードバック状態（フラッシュとスコア表示を統合管理） */
+interface FeedbackState {
+  flashType: 'correct' | 'incorrect' | 'timeup' | undefined;
+  scoreText: string;
+}
+
+/** 初期フィードバック状態 */
+const INITIAL_FEEDBACK: FeedbackState = { flashType: undefined, scoreText: '' };
+
+/** リアクション状況を判定するヘルパー関数 */
+function determineReaction(
+  answered: boolean,
+  selectedAnswer: number | null,
+  isEmergency: boolean,
+  combo: number,
+  correctAnswer: number,
+): ReactionSituation {
+  if (!answered) {
+    return isEmergency ? 'emergency' : 'idle';
+  }
+  if (selectedAnswer === null || selectedAnswer === -1) {
+    return 'idle';
+  }
+  if (selectedAnswer === correctAnswer) {
+    return combo >= 3 ? 'combo' : 'correct';
+  }
+  return 'incorrect';
+}
+
 interface QuizScreenProps {
   sprint: number;
   eventIndex: number;
@@ -67,8 +96,7 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
 }) => {
   const [imgError, setImgError] = useState(false);
   const [bgError, setBgError] = useState(false);
-  const [flashType, setFlashType] = useState<'correct' | 'incorrect' | 'timeup' | undefined>();
-  const [scoreText, setScoreText] = useState('');
+  const [feedback, setFeedback] = useState<FeedbackState>(INITIAL_FEEDBACK);
   const [prevCombo, setPrevCombo] = useState(0);
   const event = events[eventIndex];
 
@@ -77,35 +105,31 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
   const isEmergency = event.id === 'emergency';
   const answered = selectedAnswer !== null;
 
-  const reactionSituation: ReactionSituation = (() => {
-    if (isEmergency && !answered) return 'emergency';
-    if (!answered) return 'idle';
-    if (selectedAnswer === -1) return 'idle';
-    if (selectedAnswer === quiz.answer) {
-      return stats.combo >= 3 ? 'combo' : 'correct';
-    }
-    return 'incorrect';
-  })();
+  const reactionSituation = determineReaction(
+    answered, selectedAnswer, isEmergency, stats.combo, quiz.answer,
+  );
 
   const isComboBreak = answered && prevCombo >= 2 && stats.combo === 0;
   const phaseGenres = PHASE_GENRE_MAP[event.id] ?? [];
 
+  // イベント画像のローカル変数化（型キャスト + non-null assertion 解消）
+  const eventImgSrc = AQS_IMAGES.events[event.id as keyof typeof AQS_IMAGES.events];
+
   React.useEffect(() => {
     if (!answered) {
-      setFlashType(undefined);
-      setScoreText('');
+      setFeedback(INITIAL_FEEDBACK);
       return;
     }
     if (selectedAnswer === -1) {
-      setFlashType('timeup');
+      setFeedback({ flashType: 'timeup', scoreText: '' });
     } else if (selectedAnswer === quiz.answer) {
-      setFlashType('correct');
-      setScoreText('+10pt');
+      setFeedback({ flashType: 'correct', scoreText: '+10pt' });
     } else {
-      setFlashType('incorrect');
+      setFeedback({ flashType: 'incorrect', scoreText: '' });
     }
     setPrevCombo(stats.combo);
-    const tid = setTimeout(() => setFlashType(undefined), 600);
+    // フラッシュを自動解除
+    const tid = setTimeout(() => setFeedback((prev) => ({ ...prev, flashType: undefined })), 600);
     return () => clearTimeout(tid);
   // 意図的に answered のみを依存配列にしている:
   // フラッシュ・スコア表示は「回答した瞬間」にのみトリガーする。
@@ -124,10 +148,10 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
 
   return (
     <PageWrapper>
-      <FlashOverlay type={flashType} />
+      <FlashOverlay type={feedback.flashType} />
       {bgImage && !bgError && (
         <img
-          src={bgImage} alt="" onError={() => setBgError(true)}
+          src={bgImage} alt="" aria-hidden="true" onError={() => setBgError(true)}
           style={{
             position: 'fixed', inset: 0, width: '100%', height: '100%',
             objectFit: 'cover', opacity: 0.15, transition: 'opacity 0.5s ease-in-out',
@@ -147,9 +171,9 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
         <SugorokuBoard events={events} currentIndex={eventIndex} comboActive={stats.combo >= 2} />
 
         <EventCard $isEmergency={isEmergency} $color={event.color}>
-          {!imgError && AQS_IMAGES.events[event.id as keyof typeof AQS_IMAGES.events] ? (
+          {!imgError && eventImgSrc ? (
             <img
-              src={AQS_IMAGES.events[event.id as keyof typeof AQS_IMAGES.events]!}
+              src={eventImgSrc}
               alt={event.name} onError={() => setImgError(true)}
               style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', border: `2px solid ${event.color}` }}
             />
@@ -199,7 +223,7 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
             stats={stats}
             eventIndex={eventIndex}
             eventsLength={events.length}
-            scoreText={scoreText}
+            scoreText={feedback.scoreText}
             isComboBreak={isComboBreak}
             onNext={onNext}
           />

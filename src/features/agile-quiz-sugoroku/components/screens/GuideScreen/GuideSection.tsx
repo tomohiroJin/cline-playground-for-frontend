@@ -2,7 +2,7 @@
  * ガイドセクションコンポーネント
  * ゲーム説明の各セクションを表示する再利用可能コンポーネント
  */
-import React from 'react';
+import React, { useState } from 'react';
 import { COLORS, FONTS, CONFIG, ENGINEER_TYPES, GRADES, PHASE_GENRE_MAP } from '../../../constants';
 import { TAG_MAP } from '../../../questions/tag-master';
 import { AQS_IMAGES } from '../../../images';
@@ -22,6 +22,37 @@ const PHASE_DISPLAY = [
   { phase: 'review', label: 'レビュー', icon: '📊' },
   { phase: 'emergency', label: '緊急対応', icon: '🚨' },
 ];
+
+/** 画像 + 絵文字フォールバック（React 制御） */
+const ImageWithFallback: React.FC<{
+  src: string | undefined;
+  alt: string;
+  emoji: string;
+  size: number;
+  borderColor: string;
+}> = ({ src, alt, emoji, size, borderColor }) => {
+  const [hasError, setHasError] = useState(false);
+
+  if (!src || hasError) {
+    return (
+      <div style={{ fontSize: size * 0.6, minWidth: size, textAlign: 'center', flexShrink: 0 }}>
+        {emoji}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      onError={() => setHasError(true)}
+      style={{
+        width: size, height: size, borderRadius: '50%', objectFit: 'cover',
+        border: `2px solid ${borderColor}`, flexShrink: 0,
+      }}
+    />
+  );
+};
 
 /** ガイドヘッダー */
 export const GuideHeader: React.FC = () => (
@@ -55,93 +86,78 @@ export const AboutSection: React.FC = () => (
 );
 
 /** チームメンバーセクション */
-export const TeamSection: React.FC = () => (
-  <SectionBox>
-    <SectionTitle>TEAM</SectionTitle>
-    {AQS_IMAGES.characters.team ? (
-      <img
-        src={AQS_IMAGES.characters.team}
-        alt="チームバナー"
-        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-        style={{ width: '100%', height: 'auto', borderRadius: 8, marginBottom: 12 }}
-      />
-    ) : null}
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {CHARACTER_PROFILES.map((char) => {
-        const imgSrc = AQS_IMAGES.characters[char.id as keyof typeof AQS_IMAGES.characters];
-        return (
-          <div
-            key={char.id}
-            style={{
-              display: 'flex',
-              gap: 12,
-              padding: '12px',
-              background: `${char.color}08`,
-              borderRadius: 10,
-              border: `1px solid ${char.color}22`,
-              alignItems: 'flex-start',
-            }}
-          >
-            {imgSrc ? (
-              <img
+export const TeamSection: React.FC = () => {
+  const [bannerError, setBannerError] = useState(false);
+
+  return (
+    <SectionBox>
+      <SectionTitle>TEAM</SectionTitle>
+      {AQS_IMAGES.characters.team && !bannerError ? (
+        <img
+          src={AQS_IMAGES.characters.team}
+          alt="チームバナー"
+          onError={() => setBannerError(true)}
+          style={{ width: '100%', height: 'auto', borderRadius: 8, marginBottom: 12 }}
+        />
+      ) : null}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {CHARACTER_PROFILES.map((char) => {
+          const imgSrc = AQS_IMAGES.characters[char.id as keyof typeof AQS_IMAGES.characters];
+          return (
+            <div
+              key={char.id}
+              style={{
+                display: 'flex',
+                gap: 12,
+                padding: '12px',
+                background: `${char.color}08`,
+                borderRadius: 10,
+                border: `1px solid ${char.color}22`,
+                alignItems: 'flex-start',
+              }}
+            >
+              <ImageWithFallback
                 src={imgSrc}
                 alt={char.name}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                  const parent = (e.target as HTMLImageElement).parentElement;
-                  if (parent) {
-                    const emoji = document.createElement('div');
-                    emoji.textContent = char.emoji;
-                    emoji.style.fontSize = '32px';
-                    emoji.style.minWidth = '48px';
-                    emoji.style.textAlign = 'center';
-                    parent.prepend(emoji);
-                  }
-                }}
-                style={{
-                  width: 52, height: 52, borderRadius: '50%', objectFit: 'cover',
-                  border: `2px solid ${char.color}`, flexShrink: 0,
-                }}
+                emoji={char.emoji}
+                size={52}
+                borderColor={char.color}
               />
-            ) : (
-              <div style={{ fontSize: 32, minWidth: 48, textAlign: 'center', flexShrink: 0 }}>
-                {char.emoji}
-              </div>
-            )}
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: char.color, marginBottom: 2 }}>
-                {char.emoji} {char.name}
-              </div>
-              <div style={{ fontSize: 10, color: COLORS.muted, marginBottom: 6, fontFamily: FONTS.mono }}>
-                {char.role}
-              </div>
-              <div style={{ fontSize: 11, color: COLORS.text, lineHeight: 1.6, marginBottom: 6 }}>
-                {char.personality}
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginBottom: 6 }}>
-                {char.skills.map((skill) => (
-                  <span
-                    key={skill}
-                    style={{
-                      fontSize: 9, padding: '1px 6px', borderRadius: 3,
-                      background: `${char.color}15`, color: char.color,
-                      border: `1px solid ${char.color}22`,
-                    }}
-                  >
-                    {skill}
-                  </span>
-                ))}
-              </div>
-              <div style={{ fontSize: 11, color: char.color, fontStyle: 'italic', lineHeight: 1.5 }}>
-                {char.catchphrase}
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: char.color, marginBottom: 2 }}>
+                  {char.emoji} {char.name}
+                </div>
+                <div style={{ fontSize: 10, color: COLORS.muted, marginBottom: 6, fontFamily: FONTS.mono }}>
+                  {char.role}
+                </div>
+                <div style={{ fontSize: 11, color: COLORS.text, lineHeight: 1.6, marginBottom: 6 }}>
+                  {char.personality}
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginBottom: 6 }}>
+                  {char.skills.map((skill) => (
+                    <span
+                      key={skill}
+                      style={{
+                        fontSize: 9, padding: '1px 6px', borderRadius: 3,
+                        background: `${char.color}15`, color: char.color,
+                        border: `1px solid ${char.color}22`,
+                      }}
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+                <div style={{ fontSize: 11, color: char.color, fontStyle: 'italic', lineHeight: 1.5 }}>
+                  {char.catchphrase}
+                </div>
               </div>
             </div>
-          </div>
-        );
-      })}
-    </div>
-  </SectionBox>
-);
+          );
+        })}
+      </div>
+    </SectionBox>
+  );
+};
 
 /** 遊び方セクション */
 export const HowToPlaySection: React.FC = () => (
@@ -257,32 +273,13 @@ export const EngineerTypesSection: React.FC = () => (
               border: `1px solid ${type.color}22`, alignItems: 'center',
             }}
           >
-            {imgSrc ? (
-              <img
-                src={imgSrc}
-                alt={type.name}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                  const parent = (e.target as HTMLImageElement).parentElement;
-                  if (parent) {
-                    const emoji = document.createElement('div');
-                    emoji.textContent = type.emoji;
-                    emoji.style.fontSize = '32px';
-                    emoji.style.minWidth = '48px';
-                    emoji.style.textAlign = 'center';
-                    parent.prepend(emoji);
-                  }
-                }}
-                style={{
-                  width: 52, height: 52, borderRadius: '50%', objectFit: 'cover',
-                  border: `2px solid ${type.color}`, flexShrink: 0,
-                }}
-              />
-            ) : (
-              <div style={{ fontSize: 32, minWidth: 48, textAlign: 'center', flexShrink: 0 }}>
-                {type.emoji}
-              </div>
-            )}
+            <ImageWithFallback
+              src={imgSrc}
+              alt={type.name}
+              emoji={type.emoji}
+              size={52}
+              borderColor={type.color}
+            />
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: type.color, marginBottom: 4 }}>
                 {type.name}

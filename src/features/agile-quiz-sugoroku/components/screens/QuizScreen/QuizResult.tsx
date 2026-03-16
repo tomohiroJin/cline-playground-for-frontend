@@ -2,7 +2,7 @@
  * クイズ結果表示コンポーネント
  * 正解/不正解のフィードバック、コンボエフェクト、解説
  */
-import React from 'react';
+import React, { useState } from 'react';
 import type { Question, GameStats } from '../../../types';
 import { COLORS } from '../../../constants';
 import { AQS_IMAGES } from '../../../images';
@@ -27,6 +27,20 @@ interface QuizResultProps {
   onNext: () => void;
 }
 
+/** フィードバック画像を選択する */
+function getFeedbackImage(selectedAnswer: number, correctAnswer: number): string {
+  if (selectedAnswer === -1) return AQS_IMAGES.feedback.timeup;
+  if (selectedAnswer === correctAnswer) return AQS_IMAGES.feedback.correct;
+  return AQS_IMAGES.feedback.incorrect;
+}
+
+/** フィードバックメッセージを選択する */
+function getFeedbackMessage(selectedAnswer: number, correctAnswer: number): string {
+  if (selectedAnswer === -1) return '⏱️ TIME UP';
+  if (selectedAnswer === correctAnswer) return '✓ CORRECT';
+  return '✗ INCORRECT';
+}
+
 /**
  * 回答後の結果表示
  */
@@ -40,37 +54,33 @@ export const QuizResult: React.FC<QuizResultProps> = ({
   isComboBreak,
   onNext,
 }) => {
-  const explanation = quiz.explanation;
+  const [imgError, setImgError] = useState(false);
+  const isCorrect = selectedAnswer === quiz.answer;
 
   return (
     <div>
-      <ResultBanner $ok={selectedAnswer === quiz.answer}>
+      <ResultBanner $ok={isCorrect}>
         <div style={{ position: 'relative', display: 'inline-block' }}>
-          <img
-            src={selectedAnswer === -1
-              ? AQS_IMAGES.feedback.timeup
-              : selectedAnswer === quiz.answer
-                ? AQS_IMAGES.feedback.correct
-                : AQS_IMAGES.feedback.incorrect}
-            alt=""
-            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-            style={{
-              width: 48, height: 48, borderRadius: '50%', objectFit: 'cover',
-              marginBottom: 8, border: '2px solid white',
-            }}
-          />
-          {scoreText && selectedAnswer === quiz.answer && (
+          {!imgError && (
+            <img
+              src={getFeedbackImage(selectedAnswer, quiz.answer)}
+              alt=""
+              aria-hidden="true"
+              onError={() => setImgError(true)}
+              style={{
+                width: 48, height: 48, borderRadius: '50%', objectFit: 'cover',
+                marginBottom: 8, border: '2px solid white',
+              }}
+            />
+          )}
+          {scoreText && isCorrect && (
             <ScoreFloat text={scoreText} color={COLORS.green} />
           )}
         </div>
         <BannerMessage>
-          {selectedAnswer === -1
-            ? '⏱️ TIME UP'
-            : selectedAnswer === quiz.answer
-            ? '✓ CORRECT'
-            : '✗ INCORRECT'}
+          {getFeedbackMessage(selectedAnswer, quiz.answer)}
         </BannerMessage>
-        {selectedAnswer === quiz.answer && stats.combo >= 2 && (
+        {isCorrect && stats.combo >= 2 && (
           <div style={{ marginTop: 6 }}>
             <ComboEffect combo={stats.combo} />
           </div>
@@ -80,9 +90,9 @@ export const QuizResult: React.FC<QuizResultProps> = ({
             <ComboEffect combo={0} isBreak />
           </div>
         )}
-        {explanation && (
-          <BannerExplain $color={selectedAnswer === quiz.answer ? COLORS.green : COLORS.red}>
-            💡 {explanation}
+        {quiz.explanation && (
+          <BannerExplain $color={isCorrect ? COLORS.green : COLORS.red}>
+            💡 {quiz.explanation}
           </BannerExplain>
         )}
       </ResultBanner>

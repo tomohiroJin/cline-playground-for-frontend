@@ -40,7 +40,7 @@ export const OptionsPanel: React.FC<OptionsPanelProps> = ({
     <OptionsContainer>
       {options.map((optionIndex, i) => {
         const isCorrect = optionIndex === quiz.answer;
-        const isSelected = selectedAnswer === optionIndex;
+        const isSelected = selectedAnswer !== null && selectedAnswer === optionIndex;
         const hovered = hoveredOption === i;
 
         return (
