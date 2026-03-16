@@ -4,9 +4,12 @@
  * テストデータの生成を統一し、テストの可読性・保守性を向上させる。
  * 各ファクトリは型安全なデフォルト値を提供し、overrides で部分的な上書きが可能。
  */
-import type { Player, FxState, DifficultyDef, MetaState, Outcome } from '../../game-logic';
-import { FX_DEFAULTS } from '../../game-logic';
-import type { GameEvent } from '../../events/event-utils';
+import type { Player } from '../../domain/models/player';
+import type { DifficultyDef, DifficultyModifiers, DifficultyRewards } from '../../domain/models/difficulty';
+import type { MetaState } from '../../domain/models/meta-state';
+import type { FxState } from '../../domain/models/unlock';
+import { FX_DEFAULTS } from '../../domain/models/unlock';
+import type { GameEvent, Outcome } from '../../events/event-utils';
 
 /** テスト用プレイヤーを生成する */
 export const createTestPlayer = (overrides: Partial<Player> = {}): Player => ({
@@ -15,7 +18,7 @@ export const createTestPlayer = (overrides: Partial<Player> = {}): Player => ({
   mn: 35,
   maxMn: 35,
   inf: 5,
-  st: [],
+  statuses: [],
   ...overrides,
 });
 
@@ -25,13 +28,13 @@ export const createTestMeta = (overrides: Partial<MetaState> = {}): MetaState =>
   escapes: 0,
   kp: 0,
   unlocked: [],
-  bestFl: 0,
+  bestFloor: 0,
   totalEvents: 0,
   endings: [],
-  clearedDiffs: [],
+  clearedDifficulties: [],
   totalDeaths: 0,
   lastRun: null,
-  title: null,
+  activeTitle: null,
   ...overrides,
 });
 
@@ -65,21 +68,35 @@ export const createTestFx = (overrides: Partial<FxState> = {}): FxState => ({
 });
 
 /** テスト用難易度定義を生成する（normal難易度ベース） */
-export const createTestDifficulty = (overrides: Partial<DifficultyDef> = {}): DifficultyDef => ({
-  id: 'normal',
-  name: '挑戦者',
-  sub: '標準難度',
-  color: '#818cf8',
-  icon: '⚔',
-  desc: '均衡の取れた難易度。',
-  hpMod: 0,
-  mnMod: 0,
-  drainMod: -1,
-  dmgMult: 1,
-  kpDeath: 1,
-  kpWin: 3,
-  ...overrides,
-});
+export const createTestDifficulty = (
+  overrides: {
+    modifiers?: Partial<DifficultyModifiers>;
+    rewards?: Partial<DifficultyRewards>;
+  } & Partial<Omit<DifficultyDef, 'modifiers' | 'rewards'>> = {},
+): DifficultyDef => {
+  const { modifiers, rewards, ...rest } = overrides;
+  return {
+    id: 'normal',
+    name: '挑戦者',
+    subtitle: '標準難度',
+    color: '#818cf8',
+    icon: '⚔',
+    description: '均衡の取れた難易度。',
+    modifiers: {
+      hpMod: 0,
+      mnMod: 0,
+      drainMod: -1,
+      dmgMult: 1,
+      ...modifiers,
+    },
+    rewards: {
+      kpOnDeath: 1,
+      kpOnWin: 3,
+      ...rewards,
+    },
+    ...rest,
+  };
+};
 
 /** テスト用アウトカムを生成する */
 export const createTestOutcome = (overrides: Partial<Outcome> = {}): Outcome => ({
@@ -90,3 +107,11 @@ export const createTestOutcome = (overrides: Partial<Outcome> = {}): Outcome => 
   inf: 0,
   ...overrides,
 });
+
+// ── ドメイン型ファクトリ（後方互換エイリアス） ──────────────────
+
+/** ドメイン型テスト用プレイヤーを生成する（createTestPlayer のエイリアス） */
+export const createDomainTestPlayer = createTestPlayer;
+
+/** ドメイン型テスト用難易度定義を生成する（createTestDifficulty のエイリアス） */
+export const createDomainTestDifficulty = createTestDifficulty;

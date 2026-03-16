@@ -4,10 +4,10 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DiffSelectScreen } from '../components/DiffSelectScreen';
-import { DIFFICULTY } from '../game-logic';
+import { DIFFICULTY } from '../domain/constants/difficulty-defs';
 import { createTestMeta, createTestFx } from './helpers/factories';
 
-const baseMeta = createTestMeta({ runs: 1, kp: 10, bestFl: 2, totalEvents: 10, totalDeaths: 1 });
+const baseMeta = createTestMeta({ runs: 1, kp: 10, bestFloor: 2, totalEvents: 10, totalDeaths: 1 });
 const baseFx = createTestFx();
 
 const makeProps = (overrides: Partial<Parameters<typeof DiffSelectScreen>[0]> = {}) => ({
@@ -44,7 +44,7 @@ describe('DiffSelectScreen', () => {
 
     // Assert
     for (const d of DIFFICULTY) {
-      expect(screen.getByText(d.desc)).toBeInTheDocument();
+      expect(screen.getByText(d.description)).toBeInTheDocument();
     }
   });
 
@@ -54,13 +54,13 @@ describe('DiffSelectScreen', () => {
 
     // Assert
     for (const d of DIFFICULTY) {
-      expect(screen.getAllByText(`脱出 +${d.kpWin}pt`).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText(`脱出 +${d.rewards.kpOnWin}pt`).length).toBeGreaterThanOrEqual(1);
     }
   });
 
   it('クリア済み難易度がある場合に「クリア済」マークが表示される', () => {
     // Arrange
-    const meta = createTestMeta({ runs: 1, clearedDiffs: ["normal"] });
+    const meta = createTestMeta({ runs: 1, clearedDifficulties: ["normal"] });
 
     // Act
     render(<DiffSelectScreen {...makeProps({ meta })} />);

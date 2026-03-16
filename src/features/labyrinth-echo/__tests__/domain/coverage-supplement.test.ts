@@ -22,7 +22,7 @@ import {
 } from '../../domain/services/combat-service';
 import { EVENT_TYPE } from '../../domain/constants/event-type-defs';
 import { FLOOR_META } from '../../domain/constants/floor-meta';
-import { createTestPlayer, createTestFx, createTestOutcome, createTestDifficulty } from '../helpers/factories';
+import { createTestPlayer, createTestFx, createTestOutcome, createTestDifficulty, createDomainTestPlayer, createDomainTestDifficulty } from '../helpers/factories';
 import { createMetaState } from '../../domain/models/meta-state';
 import type { Player } from '../../domain/models/player';
 import type { Condition } from '../../domain/events/condition';
@@ -372,7 +372,7 @@ describe('CombatService 補完', () => {
       // Arrange
       const outcome = createTestOutcome({ hp: 10 });
       const fx = createTestFx();
-      const diff = createTestDifficulty({ dmgMult: 2 });
+      const diff = createDomainTestDifficulty({ modifiers: { dmgMult: 2 } });
 
       // Act
       const result = applyModifiers(outcome, fx, diff, []);
@@ -409,45 +409,44 @@ describe('CombatService 補完', () => {
   describe('applyChangesToPlayer', () => {
     it('同じステータスの重複追加を防ぐ', () => {
       // Arrange
-      const player = createTestPlayer({ st: ['負傷'] });
+      const player = createDomainTestPlayer({ statuses: ['負傷'] });
 
       // Act
       const result = applyChangesToPlayer(player, { hp: 0, mn: 0, inf: 0 }, 'add:負傷');
 
       // Assert
-      const statuses = result.st ?? [];
-      expect(statuses.filter((s: string) => s === '負傷')).toHaveLength(1);
+      expect(result.statuses.filter((s: string) => s === '負傷')).toHaveLength(1);
     });
 
     it('存在しないステータスのremoveはエラーにならない', () => {
       // Arrange
-      const player = createTestPlayer({ st: ['負傷'] });
+      const player = createDomainTestPlayer({ statuses: ['負傷'] });
 
       // Act
       const result = applyChangesToPlayer(player, { hp: 0, mn: 0, inf: 0 }, 'remove:混乱');
 
       // Assert
-      expect(result.st).toContain('負傷');
+      expect(result.statuses).toContain('負傷');
     });
 
     it('flagがnullの場合はステータス変更なし', () => {
       // Arrange
-      const player = createTestPlayer({ st: ['負傷'] });
+      const player = createDomainTestPlayer({ statuses: ['負傷'] });
 
       // Act
       const result = applyChangesToPlayer(player, { hp: 0, mn: 0, inf: 0 }, null);
 
       // Assert
-      expect(result.st).toEqual(['負傷']);
+      expect(result.statuses).toEqual(['負傷']);
     });
   });
 
   describe('computeDrain', () => {
     it('難易度のdrainModが適用される', () => {
       // Arrange
-      const player = createTestPlayer({ hp: 50, maxHp: 55, mn: 30, maxMn: 35, st: [] });
+      const player = createDomainTestPlayer({ hp: 50, maxHp: 55, mn: 30, maxMn: 35, statuses: [] });
       const fx = createTestFx({ drainImmune: false });
-      const diff = createTestDifficulty({ drainMod: -3 });
+      const diff = createDomainTestDifficulty({ modifiers: { drainMod: -3 } });
 
       // Act
       const result = computeDrain(player, fx, diff);
@@ -459,7 +458,7 @@ describe('CombatService 補完', () => {
 
     it('ステータス効果のtickがない場合（恐怖にはtickがある）', () => {
       // Arrange
-      const player = createTestPlayer({ hp: 50, maxHp: 55, mn: 30, maxMn: 35, st: ['恐怖'] });
+      const player = createDomainTestPlayer({ hp: 50, maxHp: 55, mn: 30, maxMn: 35, statuses: ['恐怖'] });
       const fx = createTestFx({ drainImmune: true });
 
       // Act

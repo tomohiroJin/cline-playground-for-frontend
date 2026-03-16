@@ -9,7 +9,7 @@ import {
   createTestDifficulty,
   createTestOutcome,
 } from './factories';
-import { FX_DEFAULTS } from '../../game-logic';
+import { FX_DEFAULTS } from '../../domain/models/unlock';
 
 describe('テスト用ファクトリ関数', () => {
   describe('createTestPlayer', () => {
@@ -23,17 +23,17 @@ describe('テスト用ファクトリ関数', () => {
       expect(player.mn).toBe(35);
       expect(player.maxMn).toBe(35);
       expect(player.inf).toBe(5);
-      expect(player.st).toEqual([]);
+      expect(player.statuses).toEqual([]);
     });
 
     it('overridesで部分的にプロパティを上書きできる', () => {
       // Act
-      const player = createTestPlayer({ hp: 30, st: ['呪い'] });
+      const player = createTestPlayer({ hp: 30, statuses: ['呪い'] });
 
       // Assert
       expect(player.hp).toBe(30);
       expect(player.maxHp).toBe(55);
-      expect(player.st).toEqual(['呪い']);
+      expect(player.statuses).toEqual(['呪い']);
     });
   });
 
@@ -47,13 +47,13 @@ describe('テスト用ファクトリ関数', () => {
       expect(meta.escapes).toBe(0);
       expect(meta.kp).toBe(0);
       expect(meta.unlocked).toEqual([]);
-      expect(meta.bestFl).toBe(0);
+      expect(meta.bestFloor).toBe(0);
       expect(meta.totalEvents).toBe(0);
       expect(meta.endings).toEqual([]);
-      expect(meta.clearedDiffs).toEqual([]);
+      expect(meta.clearedDifficulties).toEqual([]);
       expect(meta.totalDeaths).toBe(0);
       expect(meta.lastRun).toBeNull();
-      expect(meta.title).toBeNull();
+      expect(meta.activeTitle).toBeNull();
     });
 
     it('overridesで部分的にプロパティを上書きできる', () => {
@@ -120,18 +120,18 @@ describe('テスト用ファクトリ関数', () => {
 
       // Assert
       expect(diff.id).toBe('normal');
-      expect(diff.dmgMult).toBe(1);
-      expect(diff.hpMod).toBe(0);
-      expect(diff.mnMod).toBe(0);
+      expect(diff.modifiers.dmgMult).toBe(1);
+      expect(diff.modifiers.hpMod).toBe(0);
+      expect(diff.modifiers.mnMod).toBe(0);
     });
 
     it('overridesで部分的にプロパティを上書きできる', () => {
       // Act
-      const diff = createTestDifficulty({ id: 'hard', dmgMult: 1.35 });
+      const diff = createTestDifficulty({ id: 'hard', modifiers: { dmgMult: 1.35 } });
 
       // Assert
       expect(diff.id).toBe('hard');
-      expect(diff.dmgMult).toBe(1.35);
+      expect(diff.modifiers.dmgMult).toBe(1.35);
       expect(diff.name).toBe('挑戦者');
     });
   });

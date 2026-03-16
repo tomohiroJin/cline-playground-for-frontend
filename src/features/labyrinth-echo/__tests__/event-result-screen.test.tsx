@@ -4,9 +4,9 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EventResultScreen } from '../components/EventResultScreen';
-import { FLOOR_META } from '../definitions';
-import type { LogEntry } from '../definitions';
-import { DIFFICULTY } from '../game-logic';
+import { FLOOR_META } from '../domain/constants/floor-meta';
+import type { LogEntry } from '../domain/models/game-state';
+import { DIFFICULTY } from '../domain/constants/difficulty-defs';
 import { createTestPlayer } from './helpers/factories';
 import type { GameEvent } from '../events/event-utils';
 

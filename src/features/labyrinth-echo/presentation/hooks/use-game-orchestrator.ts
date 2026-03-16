@@ -6,8 +6,10 @@
  * 副作用は useEffect + ChoiceFeedback で分離。
  */
 import { useReducer, useMemo, createContext, useContext } from 'react';
-import type { Player, DifficultyDef } from '../../game-logic';
-import type { EndingDef, LogEntry } from '../../definitions';
+import type { Player } from '../../domain/models/player';
+import type { DifficultyDef } from '../../domain/models/difficulty';
+import type { EndingDef } from '../../domain/models/ending';
+import type { LogEntry } from '../../domain/models/game-state';
 import type { GameEvent } from '../../events/event-utils';
 
 /** UI フェーズ（プレゼンテーション層固有のフェーズ一覧） */

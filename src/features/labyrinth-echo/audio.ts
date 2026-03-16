@@ -4,7 +4,7 @@
  * LabyrinthEchoGame.tsx §2 から抽出。
  * Web Audio API による効果音の生成・再生を担当。
  */
-import { safeSync } from './contracts';
+import { safeSync } from './domain/contracts/invariants';
 import { AUDIO_SETTINGS_KEY } from './infrastructure/storage/local-storage-adapter';
 
 /** 音声設定の型 */

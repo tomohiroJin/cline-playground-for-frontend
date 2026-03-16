@@ -5,24 +5,41 @@
  * ErrorBoundary + GameProvider + GameRouter の構成。
  */
 import { useState, useCallback, useMemo, useEffect } from "react";
-import { CFG, UNLOCKS, computeFx, createPlayer, computeProgress } from '../game-logic';
-import { rand } from '../game-logic';
-import type { DifficultyDef } from '../game-logic';
+import { CFG } from '../domain/constants/config';
+import { UNLOCKS } from '../domain/constants/unlock-defs';
+import { computeFx, createNewPlayer } from '../domain/services/unlock-service';
+import { FLOOR_META } from '../domain/constants/floor-meta';
+import { EVENT_TYPE } from '../domain/constants/event-type-defs';
+import { determineEnding } from '../domain/services/ending-service';
+import { randomInt } from '../../../utils/math-utils';
+import type { DifficultyDef } from '../domain/models/difficulty';
 import { ErrorBoundary } from '../contracts';
 import { AudioEngine, loadAudioSettings, saveAudioSettings } from '../audio';
 import type { AudioSettings } from '../audio';
 import { EV } from '../events/event-data';
 import { computeVignette, processChoice, validateEvents, pickEvent, findChainEvent } from '../events/event-utils';
 import { getRandomSource, resetRandomSourceCache } from './get-random-source';
-import { FLOOR_META, EVENT_TYPE, determineEnding } from '../definitions';
-import { useTextReveal, useImagePreload } from '../hooks';
+import { useTextReveal } from './hooks/use-text-reveal';
+import { useImagePreload } from './hooks/use-image-preload';
 import { LE_BG_IMAGES } from '../images';
 import { useGameOrchestrator, GameContext, type UIPhase } from './hooks/use-game-orchestrator';
 import { useAudioEffects } from './hooks/use-audio-effects';
 import { usePersistenceSync } from './hooks/use-persistence-sync';
 import { useVisualFx } from './hooks/use-visual-fx';
 import { GameRouter, LoadingScreen } from './components/GameRouter';
-import { Storage } from '../storage';
+import { LocalStorageAdapter } from '../infrastructure/storage/local-storage-adapter';
+import type { StorageInterface } from './hooks/use-persistence-sync';
+
+/** StorageInterface に適合するアダプターインスタンス */
+const storageAdapter = new LocalStorageAdapter();
+const Storage: StorageInterface = {
+  save: (meta) => storageAdapter.saveMeta(meta),
+  load: () => storageAdapter.loadMeta(),
+};
+
+/** 全体進捗率を計算する（プレゼンテーション層のユーティリティ） */
+const computeProgress = (floor: number, step: number): number =>
+  Math.min(100, ((floor - 1) * CFG.EVENTS_PER_FLOOR + step) / (CFG.MAX_FLOOR * CFG.EVENTS_PER_FLOOR) * 100);
 
 // イベントデータのバリデーション
 const EVENTS = validateEvents(EV, EVENT_TYPE);
@@ -78,7 +95,7 @@ function GameInner() {
   // パーティクル
   const Particles = useMemo(() => (
     <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden" }}>
-      {[...Array(20)].map((_, i) => <div key={i} style={{ position: "absolute", width: rand(1, 3), height: rand(1, 3), background: `rgba(${rand(100, 200)},${rand(120, 220)},${rand(180, 255)},${(rand(10, 25) / 100).toFixed(2)})`, borderRadius: "50%", left: `${rand(0, 100)}%`, top: `${rand(0, 100)}%`, animation: `float ${rand(8, 22)}s ease-in-out infinite ${rand(0, 10)}s` }} />)}
+      {[...Array(20)].map((_, i) => <div key={i} style={{ position: "absolute", width: randomInt(1, 3), height: randomInt(1, 3), background: `rgba(${randomInt(100, 200)},${randomInt(120, 220)},${randomInt(180, 255)},${(randomInt(10, 25) / 100).toFixed(2)})`, borderRadius: "50%", left: `${randomInt(0, 100)}%`, top: `${randomInt(0, 100)}%`, animation: `float ${randomInt(8, 22)}s ease-in-out infinite ${randomInt(0, 10)}s` }} />)}
       <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 20% 80%,rgba(99,102,241,.04) 0%,transparent 60%)", animation: "breathe 8s ease-in-out infinite" }} />
       <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 80% 20%,rgba(139,92,246,.03) 0%,transparent 50%)", animation: "breathe 12s ease-in-out infinite 3s" }} />
     </div>
@@ -112,7 +129,7 @@ function GameInner() {
     enableAudio();
     // テスト用: ゲーム開始時に乱数キャッシュをリセットし、同じ seed から再現可能にする
     resetRandomSourceCache();
-    const player = createPlayer(d, fx);
+    const player = createNewPlayer(d, fx);
     dispatch({ type: 'SELECT_DIFFICULTY', difficulty: d, player });
     updateMeta(m => ({ runs: m.runs + 1 }));
   }, [fx, enableAudio, dispatch, updateMeta]);
@@ -124,7 +141,7 @@ function GameInner() {
       const ce = findChainEvent(EVENTS, state.chainNext);
       if (ce) { dispatch({ type: 'SET_EVENT', event: ce }); return; }
     }
-    const e = pickEvent(EVENTS, state.floor, state.usedIds as string[], meta, fx, getRandomSource());
+    const e = pickEvent(EVENTS, state.floor, [...state.usedIds], meta, fx, getRandomSource());
     if (e) dispatch({ type: 'SET_EVENT', event: e });
     else console.warn(`[enterFloor] No events for floor ${state.floor}`);
   }, [state.floor, state.usedIds, state.chainNext, sfx, meta, fx, dispatch]);
@@ -170,20 +187,20 @@ function GameInner() {
 
     // 脱出
     if (outcome.fl === "escape") {
-      const end = determineEnding(drained, state.log as { fl: number; step: number; ch: string; hp: number; mn: number; inf: number; flag?: string }[], state.diff);
+      const end = determineEnding(drained, [...state.log], state.diff);
       const isNew = !meta.endings?.includes(end.id);
-      const isNewDiff = !meta.clearedDiffs?.includes(state.diff?.id ?? "");
+      const diffId = state.diff?.id;
+      const isNewDiff = diffId ? !meta.clearedDifficulties?.includes(diffId) : false;
       setTimeout(() => sfx(AudioEngine.sfx.victory), 500);
       setTimeout(() => {
         dispatch({ type: 'SET_VICTORY', ending: end, isNewEnding: isNew, isNewDiffClear: isNewDiff });
-        const diffId = state.diff?.id ?? "";
         updateMeta(m => ({
           escapes: m.escapes + 1,
-          kp: m.kp + (state.diff?.kpWin ?? 4) + end.bonusKp,
-          bestFl: Math.max(m.bestFl, state.floor),
+          kp: m.kp + (state.diff?.rewards.kpOnWin ?? 4) + end.bonusKp,
+          bestFloor: Math.max(m.bestFloor, state.floor),
           endings: m.endings.includes(end.id) ? m.endings : [...m.endings, end.id],
-          clearedDiffs: m.clearedDiffs.includes(diffId) ? m.clearedDiffs : [...m.clearedDiffs, diffId],
-          lastRun: { cause: "escape", floor: state.floor, ending: end.id, hp: drained.hp, mn: drained.mn, inf: drained.inf },
+          clearedDifficulties: !diffId || m.clearedDifficulties.includes(diffId) ? m.clearedDifficulties : [...m.clearedDifficulties, diffId],
+          lastRun: { cause: "escape", floor: state.floor, endingId: end.id, hp: drained.hp, mn: drained.mn, inf: drained.inf },
         }));
       }, 2500);
       return;
@@ -196,19 +213,19 @@ function GameInner() {
       setTimeout(() => {
         dispatch({ type: 'SET_GAME_OVER' });
         updateMeta(m => ({
-          kp: m.kp + (state.diff?.kpDeath ?? 2),
-          bestFl: Math.max(m.bestFl, state.floor),
+          kp: m.kp + (state.diff?.rewards.kpOnDeath ?? 2),
+          bestFloor: Math.max(m.bestFloor, state.floor),
           totalDeaths: (m.totalDeaths ?? 0) + 1,
-          lastRun: { cause: deathCause, floor: state.floor, ending: null, hp: drained.hp, mn: drained.mn, inf: drained.inf },
+          lastRun: { cause: deathCause, floor: state.floor, endingId: null, hp: drained.hp, mn: drained.mn, inf: drained.inf },
         }));
       }, 2500);
     }
-  }, [state.event, state.player, state.diff, state.floor, state.step, state.log, state.usedSecondLife, state.chainNext, fx, sfx, doShake, flash, dispatch, updateMeta, meta.endings, meta.clearedDiffs]);
+  }, [state.event, state.player, state.diff, state.floor, state.step, state.log, state.usedSecondLife, state.chainNext, fx, sfx, doShake, flash, dispatch, updateMeta, meta.endings, meta.clearedDifficulties]);
 
   const proceed = useCallback(() => {
     if (!state.event) return;
     const ns = state.step + 1;
-    const nu = [...(state.usedIds as string[]), state.event.id];
+    const nu = [...state.usedIds, state.event.id];
 
     if (state.chainNext) {
       const ce = findChainEvent(EVENTS, state.chainNext);
@@ -244,10 +261,10 @@ function GameInner() {
       sfx(AudioEngine.sfx.over);
       dispatch({ type: 'SET_GAME_OVER' });
       updateMeta(m => ({
-        kp: m.kp + (state.diff?.kpDeath ?? 2),
-        bestFl: Math.max(m.bestFl, state.floor),
+        kp: m.kp + (state.diff?.rewards.kpOnDeath ?? 2),
+        bestFloor: Math.max(m.bestFloor, state.floor),
         totalDeaths: (m.totalDeaths ?? 0) + 1,
-        lastRun: { cause: "精神崩壊", floor: state.floor, ending: null, hp: state.player?.hp ?? 0, mn: 0, inf: state.player?.inf ?? 0 },
+        lastRun: { cause: "精神崩壊", floor: state.floor, endingId: null, hp: state.player?.hp ?? 0, mn: 0, inf: state.player?.inf ?? 0 },
       }));
       return;
     }
@@ -260,10 +277,10 @@ function GameInner() {
       sfx(AudioEngine.sfx.over);
       dispatch({ type: 'SET_GAME_OVER' });
       updateMeta(m => ({
-        kp: m.kp + (state.diff?.kpDeath ?? 2),
-        bestFl: Math.max(m.bestFl, state.floor),
+        kp: m.kp + (state.diff?.rewards.kpOnDeath ?? 2),
+        bestFloor: Math.max(m.bestFloor, state.floor),
         totalDeaths: (m.totalDeaths ?? 0) + 1,
-        lastRun: { cause: "精神崩壊", floor: state.floor, ending: null, hp: state.player?.hp ?? 0, mn: 0, inf: state.player?.inf ?? 0 },
+        lastRun: { cause: "精神崩壊", floor: state.floor, endingId: null, hp: state.player?.hp ?? 0, mn: 0, inf: state.player?.inf ?? 0 },
       }));
     }
   }, [state, sfx, meta, fx, dispatch, updateMeta]);
@@ -302,7 +319,7 @@ function GameInner() {
         isNewDiffClear={state.isNewDiffClear}
         usedSecondLife={state.usedSecondLife}
         chainNext={state.chainNext}
-        log={state.log as { fl: number; step: number; ch: string; hp: number; mn: number; inf: number; flag?: string }[]}
+        log={state.log}
         resTxt={state.resTxt}
         resChg={state.resChg}
         drainInfo={state.drainInfo}

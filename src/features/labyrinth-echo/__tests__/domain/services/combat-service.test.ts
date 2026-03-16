@@ -8,7 +8,7 @@ import {
   classifyImpact,
   checkSecondLife,
 } from '../../../domain/services/combat-service';
-import { createTestPlayer, createTestFx, createTestOutcome, createTestDifficulty } from '../../helpers/factories';
+import { createDomainTestPlayer, createTestFx, createTestOutcome, createDomainTestDifficulty } from '../../helpers/factories';
 import type { StatusEffectId } from '../../../domain/models/player';
 
 describe('CombatService', () => {
@@ -81,7 +81,7 @@ describe('CombatService', () => {
         // Arrange
         const outcome = createTestOutcome({ hp: -10 });
         const fx = createTestFx();
-        const diff = createTestDifficulty({ dmgMult: 1.5 });
+        const diff = createDomainTestDifficulty({ modifiers: { dmgMult: 1.5 } });
 
         // Act
         const result = applyModifiers(outcome, fx, diff, []);
@@ -94,7 +94,7 @@ describe('CombatService', () => {
         // Arrange
         const outcome = createTestOutcome({ mn: -10 });
         const fx = createTestFx();
-        const diff = createTestDifficulty({ dmgMult: 2 });
+        const diff = createDomainTestDifficulty({ modifiers: { dmgMult: 2 } });
 
         // Act
         const result = applyModifiers(outcome, fx, diff, []);
@@ -107,7 +107,7 @@ describe('CombatService', () => {
         // Arrange
         const outcome = createTestOutcome({ hp: -10 });
         const fx = createTestFx();
-        const diff = createTestDifficulty({ dmgMult: 1 });
+        const diff = createDomainTestDifficulty({ modifiers: { dmgMult: 1 } });
 
         // Act
         const result = applyModifiers(outcome, fx, diff, []);
@@ -150,7 +150,7 @@ describe('CombatService', () => {
     describe('正常系', () => {
       it('HPダメージが適用される', () => {
         // Arrange
-        const player = createTestPlayer({ hp: 50, maxHp: 55 });
+        const player = createDomainTestPlayer({ hp: 50, maxHp: 55 });
 
         // Act
         const result = applyChangesToPlayer(player, { hp: -10, mn: 0, inf: 0 }, null);
@@ -161,32 +161,32 @@ describe('CombatService', () => {
 
       it('状態異常が追加される', () => {
         // Arrange
-        const player = createTestPlayer({ st: [] });
+        const player = createDomainTestPlayer({ statuses: [] });
 
         // Act
         const result = applyChangesToPlayer(player, { hp: 0, mn: 0, inf: 0 }, 'add:負傷');
 
         // Assert
-        expect(result.st).toContain('負傷');
+        expect(result.statuses).toContain('負傷');
       });
 
       it('状態異常が除去される', () => {
         // Arrange
-        const player = createTestPlayer({ st: ['負傷', '混乱'] });
+        const player = createDomainTestPlayer({ statuses: ['負傷', '混乱'] });
 
         // Act
         const result = applyChangesToPlayer(player, { hp: 0, mn: 0, inf: 0 }, 'remove:負傷');
 
         // Assert
-        expect(result.st).not.toContain('負傷');
-        expect(result.st).toContain('混乱');
+        expect(result.statuses).not.toContain('負傷');
+        expect(result.statuses).toContain('混乱');
       });
     });
 
     describe('境界値', () => {
       it('HPが0未満にならない', () => {
         // Arrange
-        const player = createTestPlayer({ hp: 5, maxHp: 55 });
+        const player = createDomainTestPlayer({ hp: 5, maxHp: 55 });
 
         // Act
         const result = applyChangesToPlayer(player, { hp: -100, mn: 0, inf: 0 }, null);
@@ -197,7 +197,7 @@ describe('CombatService', () => {
 
       it('HPがmaxHpを超えない', () => {
         // Arrange
-        const player = createTestPlayer({ hp: 50, maxHp: 55 });
+        const player = createDomainTestPlayer({ hp: 50, maxHp: 55 });
 
         // Act
         const result = applyChangesToPlayer(player, { hp: 100, mn: 0, inf: 0 }, null);
@@ -208,7 +208,7 @@ describe('CombatService', () => {
 
       it('INFが0未満にならない', () => {
         // Arrange
-        const player = createTestPlayer({ inf: 3 });
+        const player = createDomainTestPlayer({ inf: 3 });
 
         // Act
         const result = applyChangesToPlayer(player, { hp: 0, mn: 0, inf: -100 }, null);
@@ -223,7 +223,7 @@ describe('CombatService', () => {
     describe('正常系', () => {
       it('ドレインなしの場合はdrainがnullになる', () => {
         // Arrange
-        const player = createTestPlayer({ st: [] });
+        const player = createDomainTestPlayer({ statuses: [] });
         const fx = createTestFx({ drainImmune: true });
 
         // Act
@@ -235,7 +235,7 @@ describe('CombatService', () => {
 
       it('出血ステータスでHPドレインが適用される', () => {
         // Arrange
-        const player = createTestPlayer({ hp: 50, maxHp: 55, st: ['出血'] });
+        const player = createDomainTestPlayer({ hp: 50, maxHp: 55, statuses: ['出血'] });
         const fx = createTestFx();
 
         // Act
@@ -248,7 +248,7 @@ describe('CombatService', () => {
 
       it('bleedReduceで出血ダメージが半減する', () => {
         // Arrange
-        const player = createTestPlayer({ hp: 50, maxHp: 55, st: ['出血'] });
+        const player = createDomainTestPlayer({ hp: 50, maxHp: 55, statuses: ['出血'] });
         const fx = createTestFx({ bleedReduce: true });
 
         // Act
@@ -260,9 +260,9 @@ describe('CombatService', () => {
 
       it('drainImmuneで精神ドレインが無効化される', () => {
         // Arrange
-        const player = createTestPlayer({ st: [] });
+        const player = createDomainTestPlayer({ statuses: [] });
         const fx = createTestFx({ drainImmune: true });
-        const diff = createTestDifficulty({ drainMod: -3 });
+        const diff = createDomainTestDifficulty({ modifiers: { drainMod: -3 } });
 
         // Act
         const result = computeDrain(player, fx, diff);
@@ -298,7 +298,7 @@ describe('CombatService', () => {
   describe('checkSecondLife', () => {
     it('HP=0でsecondLife有効かつ未使用の場合に復活する', () => {
       // Arrange
-      const player = createTestPlayer({ hp: 0, maxHp: 60, mn: 20, maxMn: 40 });
+      const player = createDomainTestPlayer({ hp: 0, maxHp: 60, mn: 20, maxMn: 40 });
       const fx = createTestFx({ secondLife: true });
 
       // Act
@@ -312,7 +312,7 @@ describe('CombatService', () => {
 
     it('MN=0でsecondLife有効かつ未使用の場合に復活する', () => {
       // Arrange
-      const player = createTestPlayer({ hp: 30, maxHp: 60, mn: 0, maxMn: 40 });
+      const player = createDomainTestPlayer({ hp: 30, maxHp: 60, mn: 0, maxMn: 40 });
       const fx = createTestFx({ secondLife: true });
 
       // Act
@@ -325,7 +325,7 @@ describe('CombatService', () => {
 
     it('secondLife未取得の場合は復活しない', () => {
       // Arrange
-      const player = createTestPlayer({ hp: 0, maxHp: 60 });
+      const player = createDomainTestPlayer({ hp: 0, maxHp: 60 });
       const fx = createTestFx({ secondLife: false });
 
       // Act
@@ -337,7 +337,7 @@ describe('CombatService', () => {
 
     it('使用済みの場合は復活しない', () => {
       // Arrange
-      const player = createTestPlayer({ hp: 0, maxHp: 60 });
+      const player = createDomainTestPlayer({ hp: 0, maxHp: 60 });
       const fx = createTestFx({ secondLife: true });
 
       // Act
@@ -349,7 +349,7 @@ describe('CombatService', () => {
 
     it('HP/MNが0でない場合は発動しない', () => {
       // Arrange
-      const player = createTestPlayer({ hp: 10, maxHp: 60, mn: 10, maxMn: 40 });
+      const player = createDomainTestPlayer({ hp: 10, maxHp: 60, mn: 10, maxMn: 40 });
       const fx = createTestFx({ secondLife: true });
 
       // Act

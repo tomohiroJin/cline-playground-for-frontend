@@ -6,11 +6,6 @@
 import type { EndingDef } from '../models/ending';
 import type { Player } from '../models/player';
 import type { LogEntry } from '../models/game-state';
-import { getPlayerStatuses } from '../models/compat';
-
-/** プレイヤーのステータス配列を安全に取得する（共通ヘルパー経由） */
-const getStatuses = (p: Player): readonly string[] =>
-  getPlayerStatuses(p);
 
 /** エンディング定義一覧（最初にマッチしたものが優先される） */
 export const ENDINGS: readonly EndingDef[] = Object.freeze([
@@ -49,7 +44,7 @@ export const ENDINGS: readonly EndingDef[] = Object.freeze([
   {
     id: "iron", name: "不屈の生還", subtitle: "UNYIELDING SURVIVOR",
     description: "傷だらけでも折れなかった。痛みを超え、意志の力だけで帰還を果たした。",
-    cond: (p: Player) => p.hp > p.maxHp * 0.5 && getStatuses(p).length > 0,
+    cond: (p: Player) => p.hp > p.maxHp * 0.5 && p.statuses.length > 0,
     color: "#f97316", icon: "🔥", bonusKp: 2, gradient: "linear-gradient(135deg, #f97316, #ef4444)",
   },
   {
@@ -67,7 +62,7 @@ export const ENDINGS: readonly EndingDef[] = Object.freeze([
   {
     id: "cursed", name: "呪われし帰還者", subtitle: "CURSED RETURNER",
     description: "脱出は果たした。だが迷宮の呪いは身体に刻まれたまま。\nあの闇の一部が、今もあなたの中にいる。",
-    cond: (p: Player) => getStatuses(p).includes("呪い") || (getStatuses(p).includes("出血") && getStatuses(p).includes("恐怖")),
+    cond: (p: Player) => p.statuses.includes("呪い") || (p.statuses.includes("出血") && p.statuses.includes("恐怖")),
     color: "#fb923c", icon: "⛧", bonusKp: 2, gradient: "linear-gradient(135deg, #fb923c, #9a3412)",
   },
   {

@@ -5,9 +5,14 @@
  * ビジネスロジックを一切持たない純粋なルーティングコンポーネント。
  */
 import type { ReactNode, CSSProperties } from 'react';
-import type { Player, DifficultyDef, MetaState, FxState } from '../../game-logic';
+import type { Player } from '../../domain/models/player';
+import type { DifficultyDef } from '../../domain/models/difficulty';
+import type { MetaState } from '../../domain/models/meta-state';
+import type { FxState } from '../../domain/models/unlock';
 import type { AudioSettings } from '../../audio';
-import type { EndingDef, FloorMetaDef, LogEntry } from '../../definitions';
+import type { EndingDef } from '../../domain/models/ending';
+import type { FloorMetaDef } from '../../domain/constants/floor-meta';
+import type { LogEntry } from '../../domain/models/game-state';
 import type { GameEvent } from '../../events/event-utils';
 import type { UIPhase } from '../hooks/use-game-orchestrator';
 
@@ -40,7 +45,7 @@ export interface GameRouterProps {
   isNewDiffClear: boolean;
   usedSecondLife: boolean;
   chainNext: string | null;
-  log: LogEntry[];
+  log: readonly LogEntry[];
 
   // 結果表示
   resTxt: string;
@@ -160,11 +165,11 @@ export const GameRouter = (props: GameRouterProps) => {
         <EventScreen
           Particles={Particles} vignette={vignette} overlay={overlay} shake={shake} player={player}
           floor={floor} floorMeta={floorMeta} floorColor={floorColor} diff={diff} step={step} progressPct={progressPct}
-          audioOn={audioOn} toggleAudio={toggleAudio} showLog={showLog} setShowLog={setShowLog} log={log as LogEntry[]}
+          audioOn={audioOn} toggleAudio={toggleAudio} showLog={showLog} setShowLog={setShowLog} log={log}
           event={event} revealed={revealed} done={done} ready={ready} skip={skip}
           handleChoice={handleChoice} lowMental={lowMental}
         />
-        <StatusOverlay statuses={player.st} />
+        <StatusOverlay statuses={[...player.statuses]} />
         <GuidanceOverlay show={showGuidance} />
       </>
     );
@@ -176,22 +181,22 @@ export const GameRouter = (props: GameRouterProps) => {
         <ResultScreen
           Particles={Particles} vignette={vignette} overlay={overlay} shake={shake} player={player}
           floor={floor} floorMeta={floorMeta} floorColor={floorColor} diff={diff} step={step} progressPct={progressPct}
-          audioOn={audioOn} toggleAudio={toggleAudio} showLog={showLog} setShowLog={setShowLog} log={log as LogEntry[]}
+          audioOn={audioOn} toggleAudio={toggleAudio} showLog={showLog} setShowLog={setShowLog} log={log}
           resTxt={resTxt} revealed={revealed} done={done} ready={ready} skip={skip}
           resChg={resChg} drainInfo={drainInfo} proceed={proceed} lowMental={lowMental}
           isChainEvent={!!event?.chainOnly}
         />
-        <StatusOverlay statuses={player.st} />
+        <StatusOverlay statuses={[...player.statuses]} />
         <GuidanceOverlay show={showGuidance} />
       </>
     );
   }
 
   if (phase === "gameover") {
-    return <GameOverScreen Particles={Particles} player={player} meta={meta} diff={diff} floor={floor} floorMeta={floorMeta} floorColor={floorColor} progressPct={progressPct} log={log as LogEntry[]} usedSecondLife={usedSecondLife} startRun={startRun} setPhase={setPhase} />;
+    return <GameOverScreen Particles={Particles} player={player} meta={meta} diff={diff} floor={floor} floorMeta={floorMeta} floorColor={floorColor} progressPct={progressPct} log={log} usedSecondLife={usedSecondLife} startRun={startRun} setPhase={setPhase} />;
   }
   if (phase === "victory") {
-    return <VictoryScreen Particles={Particles} ending={ending} isNewEnding={isNewEnding} isNewDiffClear={isNewDiffClear} diff={diff} player={player} usedSecondLife={usedSecondLife} log={log as LogEntry[]} meta={meta} floor={floor} startRun={startRun} setPhase={setPhase} />;
+    return <VictoryScreen Particles={Particles} ending={ending} isNewEnding={isNewEnding} isNewDiffClear={isNewDiffClear} diff={diff} player={player} usedSecondLife={usedSecondLife} log={log} meta={meta} floor={floor} startRun={startRun} setPhase={setPhase} />;
   }
 
   return null;

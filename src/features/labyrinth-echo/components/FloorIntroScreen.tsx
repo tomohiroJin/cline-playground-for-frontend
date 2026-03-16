@@ -5,9 +5,11 @@ import { ReactNode } from 'react';
 import { Page } from './Page';
 import { DiffLabel, FloorProgress, StatSummary } from './GameComponents';
 import { LE_IMAGES } from '../images';
-import { useKeyboardControl } from '../hooks';
-import type { Player, DifficultyDef, MetaState } from '../game-logic';
-import type { FloorMetaDef } from '../definitions';
+import { useKeyboardControl } from '../presentation/hooks/use-keyboard-control';
+import type { Player } from '../domain/models/player';
+import type { DifficultyDef } from '../domain/models/difficulty';
+import type { MetaState } from '../domain/models/meta-state';
+import type { FloorMetaDef } from '../domain/constants/floor-meta';
 
 interface FloorIntroScreenProps {
   Particles: ReactNode;

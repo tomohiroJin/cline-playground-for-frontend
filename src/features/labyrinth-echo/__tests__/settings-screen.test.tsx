@@ -15,8 +15,8 @@ const defaultAudioSettings: AudioSettings = {
 };
 
 const baseMeta = createTestMeta({
-  runs: 5, escapes: 2, kp: 30, unlocked: ["u1"], bestFl: 4,
-  totalEvents: 40, endings: ["standard"], clearedDiffs: ["normal"], totalDeaths: 3,
+  runs: 5, escapes: 2, kp: 30, unlocked: ["u1"], bestFloor: 4,
+  totalEvents: 40, endings: ["standard"], clearedDifficulties: ["normal"], totalDeaths: 3,
 });
 
 describe('SettingsScreen', () => {

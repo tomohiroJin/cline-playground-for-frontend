@@ -12,3 +12,15 @@ export function invariant(cond: unknown, ctx: string, detail = ""): asserts cond
     throw new Error(msg);
   }
 }
+
+/** 同期コールバックの安全実行 — 例外を握りつぶして null を返す */
+export const safeSync = <T,>(fn: () => T, ctx: string): T | null => {
+  try { return fn(); }
+  catch (e) { console.error(`[${ctx}]`, (e as Error).message); return null; }
+};
+
+/** 非同期コールバックの安全実行 — 例外を握りつぶして null を返す */
+export const safeAsync = async <T,>(fn: () => Promise<T>, ctx: string): Promise<T | null> => {
+  try { return await fn(); }
+  catch (e) { console.error(`[${ctx}]`, (e as Error).message); return null; }
+};

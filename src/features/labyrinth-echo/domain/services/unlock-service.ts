@@ -9,14 +9,10 @@ import { CFG } from '../constants/config';
 import { UNLOCKS } from '../constants/unlock-defs';
 import { FX_DEFAULTS, FX_MULT, FX_BOOL } from '../models/unlock';
 import type { FxState } from '../models/unlock';
-import type { PlayerLike } from '../models/compat';
+import type { Player } from '../models/player';
+import { createPlayer } from '../models/player';
+import type { DifficultyDef } from '../models/difficulty';
 import type { MetaState } from '../models/meta-state';
-
-/** プレイヤー生成用の難易度型（hpMod, mnMod が必須） */
-interface DifficultyForPlayer {
-  readonly hpMod: number;
-  readonly mnMod: number;
-}
 
 /**
  * アンロック効果を集約する（純粋関数）
@@ -42,12 +38,12 @@ export const computeFx = (unlockIds: readonly string[]): FxState => {
  * @pre diff != null && fx != null
  * @post hp > 0 && mn > 0
  */
-export const createNewPlayer = (diff: DifficultyForPlayer, fx: FxState): PlayerLike => {
+export const createNewPlayer = (diff: DifficultyDef, fx: FxState): Player => {
   invariant(diff != null, 'createNewPlayer', 'diff is required');
   invariant(fx != null, 'createNewPlayer', 'fx is required');
-  const hp = CFG.BASE_HP + fx.hpBonus + diff.hpMod;
-  const mn = CFG.BASE_MN + fx.mentalBonus + diff.mnMod;
-  return { hp, maxHp: hp, mn, maxMn: mn, inf: CFG.BASE_INF + fx.infoBonus, st: [], statuses: [] };
+  const hp = CFG.BASE_HP + fx.hpBonus + diff.modifiers.hpMod;
+  const mn = CFG.BASE_MN + fx.mentalBonus + diff.modifiers.mnMod;
+  return createPlayer({ hp, maxHp: hp, mn, maxMn: mn, inf: CFG.BASE_INF + fx.infoBonus, statuses: [] });
 };
 
 /**

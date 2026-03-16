@@ -6,15 +6,16 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { GameOverScreen, VictoryScreen } from '../components/EndScreens';
-import { ENDINGS, FLOOR_META } from '../definitions';
-import { DIFFICULTY } from '../game-logic';
-import type { LogEntry } from '../definitions';
+import { ENDINGS } from '../domain/constants/ending-defs';
+import { DIFFICULTY } from '../domain/constants/difficulty-defs';
+import { FLOOR_META } from '../domain/constants/floor-meta';
+import type { LogEntry } from '../domain/models/game-state';
 import { createTestPlayer, createTestMeta } from './helpers/factories';
 
 const normalDiff = DIFFICULTY.find(d => d.id === 'normal')!;
 
 const baseMeta = createTestMeta({
-  runs: 3, escapes: 1, kp: 20, bestFl: 4,
+  runs: 3, escapes: 1, kp: 20, bestFloor: 4,
   totalEvents: 30, endings: ["standard"], totalDeaths: 2,
 });
 
@@ -165,7 +166,7 @@ describe('VictoryScreen', () => {
     render(<VictoryScreen {...makeProps()} />);
 
     // Assert — desc には改行が含まれるため部分一致で検索
-    const firstLine = standardEnding.desc.split('\n')[0];
+    const firstLine = standardEnding.description.split('\n')[0];
     // eslint-disable-next-line security/detect-non-literal-regexp
     expect(screen.getByText(new RegExp(firstLine.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))).toBeInTheDocument();
   });
@@ -199,7 +200,7 @@ describe('VictoryScreen', () => {
     render(<VictoryScreen {...makeProps()} />);
 
     // Assert
-    const expectedKp = (normalDiff.kpWin ?? 4) + standardEnding.bonusKp;
+    const expectedKp = (normalDiff.rewards.kpOnWin ?? 4) + standardEnding.bonusKp;
     // eslint-disable-next-line security/detect-non-literal-regexp
     expect(screen.getByText(new RegExp(`\\+${expectedKp}pt`))).toBeInTheDocument();
   });

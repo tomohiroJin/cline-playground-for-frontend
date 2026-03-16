@@ -2,9 +2,11 @@
  * 迷宮の残響 - 設定・リセット確認画面
  */
 import { ReactNode } from 'react';
-import { UNLOCKS } from '../game-logic';
-import type { MetaState } from '../game-logic';
-import { ENDINGS, TITLES, getUnlockedTitles } from '../definitions';
+import { UNLOCKS } from '../domain/constants/unlock-defs';
+import type { MetaState } from '../domain/models/meta-state';
+import { ENDINGS } from '../domain/constants/ending-defs';
+import { TITLES } from '../domain/constants/title-defs';
+import { getUnlockedTitles } from '../domain/services/title-service';
 import type { AudioSettings } from '../audio';
 import { Page } from './Page';
 import { Section } from './Section';
@@ -123,7 +125,7 @@ export const ResetConfirm1Screen = ({ Particles, meta, setPhase }: ResetConfirm1
         <div>• 知見ポイント ◈ {meta.kp}pt</div>
         <div>• 解放済みアビリティ {meta.unlocked.length}個</div>
         <div>• エンディング回収 {meta.endings?.length ?? 0}種</div>
-        <div>• 難易度クリア記録 {meta.clearedDiffs?.length ?? 0}種</div>
+        <div>• 難易度クリア記録 {meta.clearedDifficulties?.length ?? 0}種</div>
         <div>• 称号 {getUnlockedTitles(meta).length}種</div>
       </div>
       <button className="btn tc" style={{ color: "#f87171", borderColor: "rgba(248,113,113,.4)", fontWeight: 700 }} onClick={() => setPhase("reset_confirm2")}>

@@ -13,9 +13,9 @@ const freshMeta = createTestMeta();
 
 /** テスト用メタ状態（複数回プレイ済み） */
 const veteranMeta = createTestMeta({
-  runs: 5, escapes: 2, kp: 30, unlocked: ["u1", "u2"], bestFl: 4,
-  totalEvents: 40, endings: ["standard"], clearedDiffs: ["normal"], totalDeaths: 3,
-  lastRun: { cause: "体力消耗", floor: 3, ending: null, hp: 0, mn: 20, inf: 5 },
+  runs: 5, escapes: 2, kp: 30, unlocked: ["u1", "u2"], bestFloor: 4,
+  totalEvents: 40, endings: ["standard"], clearedDifficulties: ["normal"], totalDeaths: 3,
+  lastRun: { cause: "体力消耗", floor: 3, endingId: null, hp: 0, mn: 20, inf: 5 },
 });
 
 /** 共通 props ファクトリ */

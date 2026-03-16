@@ -5,9 +5,9 @@
  * マウント時にロード、変更時に自動保存、トロフィー/実績の自動解放を処理する。
  */
 import { useState, useCallback, useEffect } from 'react';
-import type { MetaState } from '../../game-logic';
-import { UNLOCKS } from '../../game-logic';
-import { FRESH_META } from '../../definitions';
+import type { MetaState } from '../../domain/models/meta-state';
+import { UNLOCKS } from '../../domain/constants/unlock-defs';
+import { FRESH_META } from '../../domain/constants/config';
 
 /** ストレージインターフェース（テスト時にモック可能） */
 export interface StorageInterface {
@@ -23,6 +23,34 @@ export interface PersistenceSyncResult {
   readonly loaded: boolean;
 }
 
+/** localStorage の旧フィールド名を新フィールド名にマイグレーション */
+const migrateMetaState = (raw: Record<string, unknown>): Record<string, unknown> => {
+  const migrated = { ...raw };
+  // MetaState のフィールド名変更
+  if ('bestFl' in migrated && !('bestFloor' in migrated)) {
+    migrated.bestFloor = migrated.bestFl;
+    delete migrated.bestFl;
+  }
+  if ('clearedDiffs' in migrated && !('clearedDifficulties' in migrated)) {
+    migrated.clearedDifficulties = migrated.clearedDiffs;
+    delete migrated.clearedDiffs;
+  }
+  if ('title' in migrated && !('activeTitle' in migrated)) {
+    migrated.activeTitle = migrated.title;
+    delete migrated.title;
+  }
+  // lastRun の ending → endingId
+  if (migrated.lastRun && typeof migrated.lastRun === 'object') {
+    const lr = migrated.lastRun as Record<string, unknown>;
+    if ('ending' in lr && !('endingId' in lr)) {
+      lr.endingId = lr.ending;
+      delete lr.ending;
+    }
+    migrated.lastRun = lr;
+  }
+  return migrated;
+};
+
 /** 永続化同期フック — MetaState 変更時に自動保存 */
 export const usePersistenceSync = (storage: StorageInterface): PersistenceSyncResult => {
   const [meta, setMeta] = useState<MetaState>({ ...FRESH_META });
@@ -33,10 +61,11 @@ export const usePersistenceSync = (storage: StorageInterface): PersistenceSyncRe
     (async () => {
       const saved = await storage.load();
       if (saved) {
+        const migrated = migrateMetaState(saved as unknown as Record<string, unknown>);
         setMeta(prev => {
           const m = { ...prev } as Record<string, unknown>;
           for (const k of Object.keys(FRESH_META)) {
-            m[k] = (saved as unknown as Record<string, unknown>)[k] ?? (FRESH_META as unknown as Record<string, unknown>)[k];
+            m[k] = migrated[k] ?? (FRESH_META as unknown as Record<string, unknown>)[k];
           }
           return m as unknown as MetaState;
         });
@@ -52,9 +81,9 @@ export const usePersistenceSync = (storage: StorageInterface): PersistenceSyncRe
     const next = [...meta.unlocked];
     for (const u of UNLOCKS) {
       if (next.includes(u.id)) continue;
-      if (u.cat === 'trophy' && u.req && meta.clearedDiffs.includes(u.req)) { next.push(u.id); changed = true; }
-      if (u.cat === 'trophy' && u.req && meta.endings?.includes(u.req)) { next.push(u.id); changed = true; }
-      if (u.cat === 'achieve' && u.achReq && u.achReq(meta)) { next.push(u.id); changed = true; }
+      if (u.category === 'trophy' && u.difficultyRequirement && (meta.clearedDifficulties as readonly string[]).includes(u.difficultyRequirement)) { next.push(u.id); changed = true; }
+      if (u.category === 'trophy' && u.difficultyRequirement && meta.endings?.includes(u.difficultyRequirement)) { next.push(u.id); changed = true; }
+      if (u.category === 'achieve' && u.achievementCondition && u.achievementCondition(meta)) { next.push(u.id); changed = true; }
     }
 
     if (changed) {
@@ -62,7 +91,7 @@ export const usePersistenceSync = (storage: StorageInterface): PersistenceSyncRe
       newItems.forEach(id => window.dispatchEvent(new CustomEvent('labyrinth-echo-unlock', { detail: id })));
       setMeta(prev => ({ ...prev, unlocked: next }));
     }
-  }, [meta.runs, meta.escapes, meta.totalEvents, meta.totalDeaths, meta.endings, meta.clearedDiffs, loaded, meta.unlocked, meta]);
+  }, [meta.runs, meta.escapes, meta.totalEvents, meta.totalDeaths, meta.endings, meta.clearedDifficulties, loaded, meta.unlocked, meta]);
 
   // 自動保存
   useEffect(() => {

@@ -5,7 +5,7 @@
  * 条件文字列のフォーマット、チェイン参照の整合性などを検証する。
  */
 import { EV } from '../events/event-data';
-import { EVENT_TYPE } from '../definitions';
+import { EVENT_TYPE } from '../domain/constants/event-type-defs';
 import type { GameEvent } from '../events/event-utils';
 
 /** 型安全にイベントデータを扱うためキャスト */

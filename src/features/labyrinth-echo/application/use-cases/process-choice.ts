@@ -5,13 +5,15 @@
  * 純粋関数として実装し、副作用を含まない。
  * 音声再生・タイマー設定等の副作用は ChoiceFeedback を元に presentation 層が実行する。
  *
- * TODO(Phase 6): compat.ts の PlayerLike/DifficultyLike 依存を新型に移行する
+ * Phase 6: compat.ts の PlayerLike/DifficultyLike 依存をドメイン型に移行済み
  */
 import { invariant } from '../../domain/contracts/invariants';
 import type { GameState, LogEntry } from '../../domain/models/game-state';
 import type { MetaState } from '../../domain/models/meta-state';
 import type { GameEvent, Outcome } from '../../domain/events/game-event';
-import type { StatusEffectId } from '../../domain/models/player';
+import type { Player, StatusEffectId } from '../../domain/models/player';
+import { isStatusEffectId } from '../../domain/models/player';
+import type { DifficultyDef } from '../../domain/models/difficulty';
 import type { FxState } from '../../domain/models/unlock';
 import {
   applyModifiers, applyChangesToPlayer, computeDrain,
@@ -19,8 +21,6 @@ import {
 } from '../../domain/services/combat-service';
 import { computeFx } from '../../domain/services/unlock-service';
 import { evalCondCompat } from '../../domain/events/condition';
-import { isStatusEffectId, getPlayerStatuses } from '../../domain/models/compat';
-import type { PlayerLike, DifficultyLike } from '../../domain/models/compat';
 
 /** 選択肢処理の入力 */
 export interface ProcessChoiceInput {
@@ -62,22 +62,10 @@ export interface ProcessChoiceOutput {
   readonly feedback: ChoiceFeedback;
 }
 
-/** 新形式の DifficultyDef を DifficultyLike に変換する */
-const toDifficultyLike = (diff: GameState['difficulty']): DifficultyLike | null => {
-  if (!diff) return null;
-  return {
-    id: diff.id,
-    hpMod: diff.modifiers.hpMod,
-    mnMod: diff.modifiers.mnMod,
-    drainMod: diff.modifiers.drainMod,
-    dmgMult: diff.modifiers.dmgMult,
-  };
-};
-
 /** アウトカムを解決する（旧 resolveOutcome 互換） */
 const resolveOutcome = (
   choice: GameEvent['ch'][number],
-  player: PlayerLike,
+  player: Player,
   fx: FxState,
 ): Outcome => {
   for (const o of choice.o) {
@@ -146,20 +134,20 @@ const parseFlag = (flag: string | null, currentChainNextId: string | null): Flag
 
 /** プレイヤー更新 + ドレイン + SecondLife を適用する */
 const resolvePlayerUpdate = (
-  playerLike: PlayerLike,
+  player: Player,
   statChanges: { hp: number; mn: number; inf: number },
   statusFlag: string | null,
   fx: FxState,
-  diffLike: DifficultyLike | null,
+  diff: DifficultyDef | null,
   usedSecondLife: boolean,
 ): {
-  player: PlayerLike;
+  player: Player;
   drain: { hp: number; mn: number } | null;
   secondLifeActivated: boolean;
   usedSecondLife: boolean;
 } => {
-  const afterChoice = applyChangesToPlayer(playerLike, statChanges, statusFlag);
-  const drainResult = computeDrain(afterChoice, fx, diffLike);
+  const afterChoice = applyChangesToPlayer(player, statChanges, statusFlag);
+  const drainResult = computeDrain(afterChoice, fx, diff);
   const afterDrain = drainResult.player;
 
   const isDead = afterDrain.hp <= 0 || afterDrain.mn <= 0;
@@ -177,7 +165,7 @@ const resolvePlayerUpdate = (
 };
 
 /** フェーズを決定する */
-const determinePhase = (player: PlayerLike, isEscape: boolean): GameState['phase'] => {
+const determinePhase = (player: Player, isEscape: boolean): GameState['phase'] => {
   if (player.hp <= 0 || player.mn <= 0) return 'game_over';
   if (isEscape) return 'ending';
   return 'result';
@@ -190,17 +178,14 @@ export const processChoice = (input: ProcessChoiceInput): ProcessChoiceOutput =>
   invariant(gameState.player !== null, 'processChoice', 'player が存在しません');
   const player = gameState.player;
   const fx = computeFx(meta.unlocked);
-  const diffLike = toDifficultyLike(gameState.difficulty);
-
-  // PlayerLike に変換
-  const playerLike: PlayerLike = { ...player, st: [...player.statuses] };
+  const diff = gameState.difficulty ?? null;
 
   // アウトカムを解決
   const choice = event.ch[choiceIndex];
-  const outcome = resolveOutcome(choice, playerLike, fx);
+  const outcome = resolveOutcome(choice, player, fx);
 
   // 修正値を計算
-  const statChanges = applyModifiers(outcome, fx, diffLike, player.statuses);
+  const statChanges = applyModifiers(outcome, fx, diff, player.statuses);
 
   // フラグを解析
   const flag = outcome.fl ?? null;
@@ -208,15 +193,15 @@ export const processChoice = (input: ProcessChoiceInput): ProcessChoiceOutput =>
 
   // プレイヤー状態を更新（ドレイン・SecondLife含む）
   const playerUpdate = resolvePlayerUpdate(
-    playerLike, statChanges, flagResult.statusFlag,
-    fx, diffLike, gameState.usedSecondLife,
+    player, statChanges, flagResult.statusFlag,
+    fx, diff, gameState.usedSecondLife,
   );
 
   // フェーズを決定
   const newPhase = determinePhase(playerUpdate.player, flagResult.isEscape);
 
   // ステータスを型安全に取得
-  const updatedStatuses = getPlayerStatuses(playerUpdate.player).filter(isStatusEffectId);
+  const updatedStatuses = playerUpdate.player.statuses.filter(isStatusEffectId);
 
   // ログエントリーを作成
   const logEntry: LogEntry = {

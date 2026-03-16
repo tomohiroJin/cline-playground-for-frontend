@@ -8,8 +8,8 @@ import {
   StatBar, StatusTag, Change, FlagIndicator,
   DrainDisplay, LogEntry, StepDots, DiffBadge,
 } from '../components/GameComponents';
-import { DIFFICULTY } from '../game-logic';
-import type { LogEntry as LogEntryDef } from '../definitions';
+import { DIFFICULTY } from '../domain/constants/difficulty-defs';
+import type { LogEntry as LogEntryDef } from '../domain/models/game-state';
 
 describe('StatBar', () => {
   it('ラベルと値が表示される', () => {

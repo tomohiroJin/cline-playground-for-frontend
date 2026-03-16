@@ -17,8 +17,8 @@ export type {
   UnlockDef, FxState,
 } from './models/unlock';
 export { FX_DEFAULTS, FX_MULT, FX_BOOL } from './models/unlock';
-export type { PlayerLike, DifficultyLike } from './models/compat';
-export { isStatusEffectId, getPlayerStatuses } from './models/compat';
+export type { PlayerLike } from './events/condition';
+export { isStatusEffectId } from './models/player';
 export type { EndingDef } from './models/ending';
 export type {
   GamePhase, DeathCause, MenuScreen, LogEntry, GameState,

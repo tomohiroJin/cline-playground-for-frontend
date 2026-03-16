@@ -4,14 +4,16 @@
  * EventResultScreen から分割。選択結果の表示部分を担当する。
  */
 import type { ReactNode, CSSProperties } from 'react';
-import { CFG } from '../../../game-logic';
-import type { Player, DifficultyDef } from '../../../game-logic';
-import type { FloorMetaDef, LogEntry as LogEntryDef } from '../../../definitions';
+import { CFG } from '../../../domain/constants/config';
+import type { Player } from '../../../domain/models/player';
+import type { DifficultyDef } from '../../../domain/models/difficulty';
+import type { FloorMetaDef } from '../../../domain/constants/floor-meta';
+import type { LogEntry as LogEntryDef } from '../../../domain/models/game-state';
 import { Page } from '../../../components/Page';
 import {
   TypewriterText, Change, FlagIndicator, DrainDisplay,
 } from '../../../components/GameComponents';
-import { useKeyboardControl } from '../../../hooks';
+import { useKeyboardControl } from '../../hooks/use-keyboard-control';
 import { StatusPanel } from './StatusPanel';
 
 /** 結果表示の変化量 */
@@ -45,7 +47,7 @@ export interface ResultScreenProps {
   toggleAudio: () => void;
   showLog: boolean;
   setShowLog: (v: boolean) => void;
-  log: LogEntryDef[];
+  log: readonly LogEntryDef[];
   resTxt: string;
   revealed: string;
   done: boolean;

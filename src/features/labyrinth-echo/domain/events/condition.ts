@@ -7,8 +7,24 @@
 import type { StatusEffectId } from '../models/player';
 import type { FxState } from '../models/unlock';
 import { invariant } from '../contracts/invariants';
-import { getPlayerStatuses } from '../models/compat';
-import type { PlayerLike } from '../models/compat';
+
+/**
+ * 条件評価で使用する Player 互換型
+ * 旧型（st: string[]）と新型（statuses: StatusEffectId[]）の両方をサポートする。
+ */
+export interface PlayerLike {
+  readonly hp: number;
+  readonly maxHp: number;
+  readonly mn: number;
+  readonly maxMn: number;
+  readonly inf: number;
+  readonly st?: readonly string[];
+  readonly statuses?: readonly StatusEffectId[];
+}
+
+/** プレイヤーのステータス配列を安全に取得する（旧st/新statuses 互換） */
+const getPlayerStatuses = (player: PlayerLike): readonly string[] =>
+  (player.statuses as readonly string[] | undefined) ?? player.st ?? [];
 
 /** 比較演算子 */
 export type ComparisonOp = '>' | '<' | '>=' | '<=';
@@ -45,9 +61,6 @@ const getEffectiveMn = (player: PlayerLike, fx: FxState): number => {
   return mn;
 };
 
-/** プレイヤーのステータス配列を取得する（共通ヘルパー経由） */
-const getStatuses = (player: PlayerLike): readonly string[] =>
-  getPlayerStatuses(player);
 
 /**
  * 条件を評価する純粋関数
@@ -57,7 +70,7 @@ export const evaluateCondition = (condition: Condition, player: PlayerLike, fx: 
     case 'default':
       return true;
     case 'status':
-      return getStatuses(player).includes(condition.statusId);
+      return getPlayerStatuses(player).includes(condition.statusId);
     case 'hp': {
       // dangerSense は hp > 条件のみに適用（旧 evalCond 互換）
       const hpValue = condition.op === '>' ? getEffectiveHp(player, fx) : player.hp;

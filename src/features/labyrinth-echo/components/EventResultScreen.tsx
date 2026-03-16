@@ -3,10 +3,13 @@
  */
 import { useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
-import { CFG } from '../game-logic';
-import type { Player, DifficultyDef } from '../game-logic';
-import { EVENT_TYPE, FLOOR_META } from '../definitions';
-import type { FloorMetaDef, LogEntry as LogEntryDef } from '../definitions';
+import { CFG } from '../domain/constants/config';
+import type { Player } from '../domain/models/player';
+import type { DifficultyDef } from '../domain/models/difficulty';
+import { EVENT_TYPE } from '../domain/constants/event-type-defs';
+import { FLOOR_META } from '../domain/constants/floor-meta';
+import type { FloorMetaDef } from '../domain/constants/floor-meta';
+import type { LogEntry as LogEntryDef } from '../domain/models/game-state';
 import type { GameEvent } from '../events/event-utils';
 import { Page } from './Page';
 import {
@@ -14,7 +17,7 @@ import {
   TypewriterText, Change, FlagIndicator, DrainDisplay, LogEntry,
 } from './GameComponents';
 import { LE_IMAGES, getSceneImage } from '../images';
-import { useKeyboardControl } from '../hooks';
+import { useKeyboardControl } from '../presentation/hooks/use-keyboard-control';
 
 /** 条件文字列を具体的なヒントテキストに変換（高情報値で開放） */
 const conditionToDetailedHint = (cond: string): string => {
@@ -193,7 +196,7 @@ export const EventResultScreen = ({
   const isChainEvent = event?.chainOnly;
 
   const bgImageUrl = event
-    ? (getSceneImage(event, floor, player.st) ?? LE_IMAGES.events[event.tp as keyof typeof LE_IMAGES.events] ?? LE_IMAGES.events.exploration)
+    ? (getSceneImage(event, floor, [...player.statuses]) ?? LE_IMAGES.events[event.tp as keyof typeof LE_IMAGES.events] ?? LE_IMAGES.events.exploration)
     : '';
 
   const eventOptionsCount = phase === "event" && done && ready && event ? event.ch.length : 0;
@@ -231,7 +234,7 @@ export const EventResultScreen = ({
         <StatBar label="精神力" value={player.mn} max={player.maxMn} color={player.mn < player.maxMn * .25 ? "#7c3aed" : "linear-gradient(90deg,#6366f1,#818cf8)"} icon="◈" />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4, flexWrap: "wrap", gap: 6 }}>
           <div style={{ fontSize: 11, color: "var(--dim)", fontFamily: "var(--sans)" }}>📖 情報: <span style={{ color: "#fbbf24", fontWeight: 700 }}>{player.inf}</span></div>
-          <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>{player.st.map(s => <StatusTag key={s} name={s} />)}</div>
+          <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>{player.statuses.map(s => <StatusTag key={s} name={s} />)}</div>
         </div>
         <div style={{ marginTop: 10, height: 3, background: "rgba(20,20,50,.8)", borderRadius: 2, overflow: "hidden" }}>
           <div style={{ height: "100%", width: `${progressPct}%`, background: `linear-gradient(90deg,#6366f1,${floorColor})`, borderRadius: 2, transition: "width .5s" }} />

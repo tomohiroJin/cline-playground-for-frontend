@@ -4,10 +4,12 @@
  * EventScreen / ResultScreen で共有するステータス表示部分。
  */
 import { useState } from 'react';
-import { CFG } from '../../../game-logic';
-import type { Player, DifficultyDef } from '../../../game-logic';
-import { FLOOR_META } from '../../../definitions';
-import type { FloorMetaDef, LogEntry as LogEntryDef } from '../../../definitions';
+import { CFG } from '../../../domain/constants/config';
+import type { Player } from '../../../domain/models/player';
+import type { DifficultyDef } from '../../../domain/models/difficulty';
+import { FLOOR_META } from '../../../domain/constants/floor-meta';
+import type { FloorMetaDef } from '../../../domain/constants/floor-meta';
+import type { LogEntry as LogEntryDef } from '../../../domain/models/game-state';
 import {
   StatBar, StatusTag, StepDots, DiffBadge, LogEntry,
 } from '../../../components/GameComponents';
@@ -24,7 +26,7 @@ const LOG_FILTERS: { key: LogFilter; label: string }[] = [
 ];
 
 /** ログパネル */
-const LogPanel = ({ log }: { log: LogEntryDef[] }) => {
+const LogPanel = ({ log }: { log: readonly LogEntryDef[] }) => {
   const [filter, setFilter] = useState<LogFilter>("all");
   const [copied, setCopied] = useState(false);
 
@@ -106,7 +108,7 @@ export interface StatusPanelProps {
   toggleAudio: () => void;
   showLog: boolean;
   setShowLog: (v: boolean) => void;
-  log: LogEntryDef[];
+  log: readonly LogEntryDef[];
   shake: boolean;
   isChainEvent: boolean;
 }
@@ -130,7 +132,7 @@ export const StatusPanel = ({
     <StatBar label="精神力" value={player.mn} max={player.maxMn} color={player.mn < player.maxMn * .25 ? "#7c3aed" : "linear-gradient(90deg,#6366f1,#818cf8)"} icon="◈" />
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4, flexWrap: "wrap", gap: 6 }}>
       <div style={{ fontSize: 11, color: "var(--dim)", fontFamily: "var(--sans)" }}>📖 情報: <span style={{ color: "#fbbf24", fontWeight: 700 }}>{player.inf}</span></div>
-      <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>{player.st.map(s => <StatusTag key={s} name={s} />)}</div>
+      <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>{player.statuses.map(s => <StatusTag key={s} name={s} />)}</div>
     </div>
     <div style={{ marginTop: 10, height: 3, background: "rgba(20,20,50,.8)", borderRadius: 2, overflow: "hidden" }}>
       <div style={{ height: "100%", width: `${progressPct}%`, background: `linear-gradient(90deg,#6366f1,${floorColor})`, borderRadius: 2, transition: "width .5s" }} />

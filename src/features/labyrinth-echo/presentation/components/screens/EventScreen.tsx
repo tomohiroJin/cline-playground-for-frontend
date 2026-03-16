@@ -4,17 +4,19 @@
  * EventResultScreen から分割。イベント表示・選択肢部分を担当する。
  */
 import type { ReactNode } from 'react';
-import { CFG } from '../../../game-logic';
-import type { Player, DifficultyDef } from '../../../game-logic';
-import { EVENT_TYPE } from '../../../definitions';
-import type { FloorMetaDef, LogEntry as LogEntryDef } from '../../../definitions';
+import { CFG } from '../../../domain/constants/config';
+import type { Player } from '../../../domain/models/player';
+import type { DifficultyDef } from '../../../domain/models/difficulty';
+import { EVENT_TYPE } from '../../../domain/constants/event-type-defs';
+import type { FloorMetaDef } from '../../../domain/constants/floor-meta';
+import type { LogEntry as LogEntryDef } from '../../../domain/models/game-state';
 import type { GameEvent } from '../../../events/event-utils';
 import { Page } from '../../../components/Page';
 import {
   TypewriterText,
 } from '../../../components/GameComponents';
 import { LE_IMAGES, getSceneImage } from '../../../images';
-import { useKeyboardControl } from '../../../hooks';
+import { useKeyboardControl } from '../../hooks/use-keyboard-control';
 import { StatusPanel } from './StatusPanel';
 
 /** 条件文字列を具体的なヒントテキストに変換 */
@@ -73,7 +75,7 @@ export interface EventScreenProps {
   toggleAudio: () => void;
   showLog: boolean;
   setShowLog: (v: boolean) => void;
-  log: LogEntryDef[];
+  log: readonly LogEntryDef[];
   event: GameEvent;
   revealed: string;
   done: boolean;
@@ -90,7 +92,7 @@ export const EventScreen = ({
 }: EventScreenProps) => {
   const evType = EVENT_TYPE[event.tp];
   const isChainEvent = event.chainOnly;
-  const bgImageUrl = getSceneImage(event, floor, player.st) ?? LE_IMAGES.events[event.tp as keyof typeof LE_IMAGES.events] ?? LE_IMAGES.events.exploration;
+  const bgImageUrl = getSceneImage(event, floor, [...player.statuses]) ?? LE_IMAGES.events[event.tp as keyof typeof LE_IMAGES.events] ?? LE_IMAGES.events.exploration;
 
   const eventOptionsCount = done && ready ? event.ch.length : 0;
   const { selectedIndex: eventSelIdx, setSelectedIndex: setEventSelIdx } = useKeyboardControl({

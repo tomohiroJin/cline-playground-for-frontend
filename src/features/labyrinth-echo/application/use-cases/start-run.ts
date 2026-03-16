@@ -30,15 +30,7 @@ export const startRun = (input: StartRunInput): StartRunOutput => {
   const fx = computeFx(meta.unlocked);
 
   // プレイヤーを生成（ドメインサービスに委譲）
-  const playerLike = createNewPlayer(difficulty.modifiers, fx);
-  const player: Player = {
-    hp: playerLike.hp,
-    maxHp: playerLike.maxHp,
-    mn: playerLike.mn,
-    maxMn: playerLike.maxMn,
-    inf: playerLike.inf,
-    statuses: [],
-  };
+  const player: Player = createNewPlayer(difficulty, fx);
 
   // GameState を初期化
   const gameState: GameState = {

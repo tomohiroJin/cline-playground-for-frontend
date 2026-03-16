@@ -8,7 +8,7 @@ import { render, screen } from '@testing-library/react';
 import { GameRouter, LoadingScreen } from '../../../presentation/components/GameRouter';
 import type { GameRouterProps } from '../../../presentation/components/GameRouter';
 import { createTestPlayer, createTestDifficulty, createTestMeta, createTestFx, createTestEvent } from '../../helpers/factories';
-import { FLOOR_META } from '../../../definitions';
+import { FLOOR_META } from '../../../domain/constants/floor-meta';
 
 // モック
 jest.mock('../../../audio', () => ({

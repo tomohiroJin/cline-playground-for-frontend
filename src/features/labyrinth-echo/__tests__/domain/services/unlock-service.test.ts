@@ -7,7 +7,7 @@ import {
   canPurchaseUnlock,
   checkAutoUnlocks,
 } from '../../../domain/services/unlock-service';
-import { createTestFx, createTestDifficulty } from '../../helpers/factories';
+import { createTestFx, createDomainTestDifficulty } from '../../helpers/factories';
 import { createMetaState } from '../../../domain/models/meta-state';
 import { FX_DEFAULTS } from '../../../domain/models/unlock';
 
@@ -75,7 +75,7 @@ describe('UnlockService', () => {
     describe('正常系', () => {
       it('基本難易度（normal）でプレイヤーが生成される', () => {
         // Arrange
-        const diff = createTestDifficulty();
+        const diff = createDomainTestDifficulty();
         const fx = createTestFx();
 
         // Act
@@ -92,7 +92,7 @@ describe('UnlockService', () => {
 
       it('FX効果が反映される', () => {
         // Arrange
-        const diff = createTestDifficulty();
+        const diff = createDomainTestDifficulty();
         const fx = createTestFx({ hpBonus: 10, mentalBonus: 5, infoBonus: 3 });
 
         // Act
@@ -106,7 +106,7 @@ describe('UnlockService', () => {
 
       it('難易度修正が反映される', () => {
         // Arrange
-        const diff = createTestDifficulty({ hpMod: -15, mnMod: -12 });
+        const diff = createDomainTestDifficulty({ modifiers: { hpMod: -15, mnMod: -12 } });
         const fx = createTestFx();
 
         // Act
