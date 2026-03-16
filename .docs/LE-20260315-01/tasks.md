@@ -893,15 +893,51 @@
 
 ### Phase 6 レビュー指摘事項（将来の改善候補）
 
-1. **event-utils.ts の関数重複（DRY 原則）**
-   - 対象: `events/event-utils.ts:87-144`
-   - 問題: `applyModifiers`, `applyToPlayer`, `computeDrain`, `classifyImpact` がドメインサービスとほぼ同一ロジック
-   - 対策: event-utils.ts の関数をドメインサービスへの委譲に置き換え
+#### 🟠 High（優先対応推奨）
 
-2. **Phase 4 レビューの setTimeout クリーンアップ**
+1. **event-utils.ts の `STATUS_META` 定義が domain 層と不整合のリスク**
+   - 対象: `events/event-utils.ts:65-71`
+   - 問題: `STATUS_META` をローカルにハードコードしている。domain 層の `status-effect-defs.ts` の定義が変更された場合、event-utils.ts 側が追従しない
+   - 対策: ドメイン層の `STATUS_META` をインポートし、必要なフィールドだけ抽出する。または event-utils.ts 全体をドメインサービスへの委譲に統一する
+
+2. **event-utils.ts の関数重複（DRY 原則違反）**
+   - 対象: `events/event-utils.ts:76-144`
+   - 問題: `resolveOutcome`, `applyModifiers`, `applyToPlayer`, `computeDrain`, `classifyImpact` が `domain/services/combat-service.ts` とほぼ同一ロジック。バグ修正時に 2 箇所の修正が必要になる
+   - 対策: event-utils.ts はドメインサービスの関数を呼び出すラッパーに変更し、ロジック重複を解消する（約100行削減見込み）
+
+#### 🟡 Medium（改善推奨）
+
+3. **condition.ts に残存する `PlayerLike` 互換型**
+   - 対象: `domain/events/condition.ts:15-23`
+   - 問題: compat.ts は削除されたが、condition.ts 内にローカルの `PlayerLike` 型と `getPlayerStatuses` ヘルパーが残存。`st` フィールドのサポートが残っている
+   - 対策: `PlayerLike` を domain `Player` に置き換え、`getPlayerStatuses` を `player.statuses` に簡素化する
+
+4. **`applyToPlayer` の `as StatusEffectId` キャスト**
+   - 対象: `events/event-utils.ts:106`
+   - 問題: `flag.slice(4) as StatusEffectId` — add: フラグの値が `StatusEffectId` であることを型チェックせずにキャストしている
+   - 対策: `isStatusEffectId` 型ガード（`domain/models/player.ts`）を使ってバリデーションする
+
+5. **`combat-service.ts` の `as readonly string[]` キャスト**
+   - 対象: `domain/services/combat-service.ts:66`
+   - 問題: `(sts as readonly string[]).includes(s)` — `StatusEffectId[]` を `string[]` にキャストして `includes` を呼んでいる
+   - 対策: `sts.includes(s as StatusEffectId)` または比較ヘルパーを使用
+
+6. **`migrateMetaState` のテスト不足**
+   - 対象: `presentation/hooks/use-persistence-sync.ts:26-52`
+   - 問題: localStorage マイグレーション関数が export されておらず、直接テストされていない
+   - 対策: 関数を export してユニットテストを追加するか、結合テストで旧形式データのロードを検証する
+
+#### 🟢 Low（改善提案）
+
+7. **Phase 4 レビューの setTimeout クリーンアップ**
    - 対象: `presentation/LabyrinthEchoGame.tsx` の `handleChoice`、`enterFloor`、`doUnlock`
    - 問題: `setTimeout` がコンポーネントアンマウント時にクリアされない
    - 対策: `useGameActions` カスタムフックに分離し、`useRef` でタイマー管理
+
+8. **index.ts のフック re-export の欠落可能性**
+   - 対象: `index.ts:26-29`
+   - 問題: `usePersistence` が `hooks.ts` 削除に伴い re-export から消えている。外部から使用されていた場合に影響
+   - 対策: labyrinth-echo 外部からの利用有無を確認し、必要であれば `usePersistenceSync` を re-export する
 
 ---
 
