@@ -322,48 +322,48 @@
 ## フェーズ 8: テストリファクタリング
 
 ### 8-1. テスト構造の整理
-- [ ] `domain/` 配下に各サブドメインの `__tests__/` を作成
-- [ ] `infrastructure/` 配下に `__tests__/` を作成
-- [ ] `application/` 配下に `__tests__/` を作成
-- [ ] 旧 `__tests__/` のテストを新しい場所に移動
-- [ ] `domain-types.test.ts` のプレースホルダーテスト（`expect(true).toBe(true)`）を削除または実効性のある検証に置換（フェーズ 1 レビュー指摘）
-- [ ] テストパス確認
+- [x] `domain/` 配下に各サブドメインの `__tests__/` を作成
+- [x] `infrastructure/` 配下に `__tests__/` を作成
+- [x] `application/` 配下に `__tests__/` を作成
+- [x] 旧 `__tests__/` のテストを新しい場所に移動
+- [x] `domain-types.test.ts` のプレースホルダーテスト（`expect(true).toBe(true)`）を削除または実効性のある検証に置換（フェーズ 1 レビュー指摘）
+- [x] テストパス確認
 
 ### 8-2. テストファクトリの作成
-- [ ] テスト用データファクトリ（`createQuestion`, `createGameStats` 等）を作成
-- [ ] テストヘルパー（`renderWithProviders` 等）を作成
-- [ ] テストパス確認
+- [x] テスト用データファクトリ（`createQuestion`, `createGameStats` 等）を作成
+- [x] テストヘルパー（`renderWithProviders` 等）を作成
+- [x] テストパス確認
 
 ### 8-3. ドメインテストの改善（ランダム要素の確定的テスト含む）
-- [ ] AAA パターンの徹底（Arrange / Act / Assert のコメント統一）
-- [ ] 境界値テストの追加（スコア 0, 最大スコア, 負債 0 等）
-- [ ] game-state テストの追加
-- [ ] **ランダム依存関数の確定的テスト追加**
-  - [ ] `createEvents`: `randomFn` 注入で緊急対応の発生パスと非発生パスの両方を検証
-  - [ ] `createEvents`: 緊急対応の挿入位置が `randomFn` で制御されることを検証
-  - [ ] `pickQuestion`: 乱数固定で特定の問題が選択されることを検証
-  - [ ] `pickQuestion`: 全問題使用済み時のリサイクル動作を検証
-  - [ ] `shouldTriggerEmergency`: 負債量に応じた確率変動の境界値テスト
-- [ ] テストパス確認
+- [x] AAA パターンの徹底（Arrange / Act / Assert のコメント統一）
+- [x] 境界値テストの追加（スコア 0, 最大スコア, 負債 0 等）
+- [x] game-state テストの追加
+- [x] **ランダム依存関数の確定的テスト追加**
+  - [x] `createEvents`: `randomFn` 注入で緊急対応の発生パスと非発生パスの両方を検証
+  - [x] `createEvents`: 緊急対応の挿入位置が `randomFn` で制御されることを検証
+  - [x] `pickQuestion`: 乱数固定で特定の問題が選択されることを検証
+  - [x] `pickQuestion`: 全問題使用済み時のリサイクル動作を検証
+  - [x] `shouldTriggerEmergency`: 負債量に応じた確率変動の境界値テスト
+- [x] テストパス確認
 
 ### 8-4. インフラテストの改善
-- [ ] InMemoryStorageAdapter を使用したリポジトリテスト
-- [ ] マイグレーションテストの統合
-- [ ] SeededRandomAdapter の作成と動作確認テスト
-- [ ] テストパス確認
+- [x] InMemoryStorageAdapter を使用したリポジトリテスト
+- [x] マイグレーションテストの統合
+- [x] SeededRandomAdapter の作成と動作確認テスト
+- [x] テストパス確認
 
 ### 8-5. コンポーネントテストの改善
-- [ ] `getByRole` / `getByText` を優先使用に統一
-- [ ] ユーザー操作フローのテスト追加
-- [ ] 分割後のコンポーネントのテスト追加
-- [ ] テストパス確認
+- [x] `getByRole` / `getByText` を優先使用に統一
+- [x] ユーザー操作フローのテスト追加
+- [x] 分割後のコンポーネントのテスト追加
+- [x] テストパス確認
 
 ### 8-6. フェーズ 8 完了確認
-- [ ] `npm run ci` パス
-- [ ] カバレッジが目標に達していることを確認
-  - [ ] `domain/`: branches ≥ 70%, functions ≥ 85%, lines ≥ 85%
-  - [ ] 全体: statements ≥ 50%, lines ≥ 50%
-- [ ] コミット作成
+- [x] `npm run ci` パス
+- [x] カバレッジが目標に達していることを確認
+  - [x] `domain/`: branches 95.09% ≥ 70%, functions 88.54% ≥ 85%, lines 99.5% ≥ 85%
+  - [x] 全体: statements 57.08% ≥ 50%, lines 61.75% ≥ 50%
+- [x] コミット作成
 
 ---
 
