@@ -1,5 +1,5 @@
 import { createEnemy } from '../../entities/enemy';
-import { createTestMap, createTestPlayer } from '../../../__tests__/testUtils';
+import { aPlayer, aMap } from '../../../__tests__/builders';
 import { EnemyType } from '../../../types';
 import { MockIdGenerator } from '../../../__tests__/mocks/MockIdGenerator';
 
@@ -20,8 +20,8 @@ describe('EnemyAiPolicyRegistry', () => {
     const enemy = createEnemy(EnemyType.PATROL, 2, 2, idGen);
     const result = registry.update({
       enemy,
-      player: createTestPlayer(5, 5),
-      map: createTestMap(),
+      player: aPlayer().at(5, 5).build(),
+      map: aMap(7, 7).build(),
       currentTime: 0,
     });
 
@@ -34,8 +34,8 @@ describe('EnemyAiPolicyRegistry', () => {
 
     const result = registry.update({
       enemy,
-      player: createTestPlayer(5, 5),
-      map: createTestMap(),
+      player: aPlayer().at(5, 5).build(),
+      map: aMap(7, 7).build(),
       currentTime: 0,
     });
 
@@ -65,8 +65,8 @@ describe('buildDefaultEnemyAiPolicyRegistry', () => {
       },
     });
 
-    const map = createTestMap();
-    const player = createTestPlayer(1, 1);
+    const map = aMap(7, 7).build();
+    const player = aPlayer().build();
     const currentTime = 0;
 
     registry.update({ enemy: createEnemy(EnemyType.PATROL, 1, 1, idGen), player, map, currentTime });

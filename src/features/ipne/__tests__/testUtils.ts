@@ -1,5 +1,10 @@
 /**
  * テスト用ユーティリティ
+ *
+ * 新しいテストではビルダーパターンの使用を推奨:
+ *   import { aPlayer, anEnemy, aMap, aGameState } from './builders';
+ *
+ * 既存の createTest* 関数は後方互換のため維持しています。
  */
 import {
   GameMap,
@@ -27,6 +32,9 @@ import { createPlayer } from '../domain/entities/player';
 import { createEnemy } from '../domain/entities/enemy';
 import { createItem } from '../domain/entities/item';
 import { MockIdGenerator } from './mocks/MockIdGenerator';
+
+// ビルダーの re-export（新しいテストではこちらを使用）
+export { aPlayer, anEnemy, aMap, aGameState } from './builders';
 
 /** テスト用共通IdGenerator */
 const testIdGen = new MockIdGenerator();
