@@ -4,8 +4,8 @@
 import {
   ACHIEVEMENTS,
   checkAchievements,
-} from '../achievements';
-import { AchievementContext, GameHistoryEntry, SavedGameResult } from '../types';
+} from '../achievement-checker';
+import { AchievementContext, GameHistoryEntry, SavedGameResult } from '../../types';
 
 /** テスト用のデフォルト結果データ */
 const makeResult = (overrides: Partial<SavedGameResult> = {}): SavedGameResult => ({
@@ -226,7 +226,7 @@ describe('achievements', () => {
 
     it('3回プレイで「リピーター」を獲得', () => {
       const history = Array.from({ length: 2 }, (_, i) =>
-        makeHistoryEntry({ timestamp: i * 1000 })
+        makeHistoryEntry({ timestamp: i * 1000 }),
       );
       const ctx = makeContext({ history });
       const newlyUnlocked = checkAchievements(ctx);
@@ -242,7 +242,7 @@ describe('achievements', () => {
 
     it('10回プレイで「常連プレイヤー」を獲得', () => {
       const history = Array.from({ length: 9 }, (_, i) =>
-        makeHistoryEntry({ timestamp: i * 1000 })
+        makeHistoryEntry({ timestamp: i * 1000 }),
       );
       const ctx = makeContext({ history });
       const newlyUnlocked = checkAchievements(ctx);
@@ -250,9 +250,8 @@ describe('achievements', () => {
     });
 
     it('累計正解100問で「百問道場」を獲得', () => {
-      // 過去の履歴で累計90問正解、今回10問正解 → 合計100
       const history = Array.from({ length: 9 }, (_, i) =>
-        makeHistoryEntry({ totalCorrect: 10, timestamp: i * 1000 })
+        makeHistoryEntry({ totalCorrect: 10, timestamp: i * 1000 }),
       );
       const ctx = makeContext({
         result: makeResult({ totalCorrect: 10 }),
@@ -264,7 +263,7 @@ describe('achievements', () => {
 
     it('累計99問正解ではまだ「百問道場」を獲得しない', () => {
       const history = Array.from({ length: 9 }, (_, i) =>
-        makeHistoryEntry({ totalCorrect: 10, timestamp: i * 1000 })
+        makeHistoryEntry({ totalCorrect: 10, timestamp: i * 1000 }),
       );
       const ctx = makeContext({
         result: makeResult({ totalCorrect: 9 }),
@@ -275,7 +274,6 @@ describe('achievements', () => {
     });
 
     it('正答率の向上で「成長の証」を獲得', () => {
-      // 過去3回が50%, 55%, 60%で今回70% → 直近が10%以上向上
       const history = [
         makeHistoryEntry({ correctRate: 50, timestamp: 1000 }),
         makeHistoryEntry({ correctRate: 55, timestamp: 2000 }),
@@ -305,7 +303,7 @@ describe('achievements', () => {
 
     it('累計正解500問で「知識の泉」を獲得', () => {
       const history = Array.from({ length: 24 }, (_, i) =>
-        makeHistoryEntry({ totalCorrect: 20, timestamp: i * 1000 })
+        makeHistoryEntry({ totalCorrect: 20, timestamp: i * 1000 }),
       );
       const ctx = makeContext({
         result: makeResult({ totalCorrect: 20 }),

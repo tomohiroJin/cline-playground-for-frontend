@@ -109,5 +109,43 @@ describe('SeededRandomAdapter', () => {
       adapter.shuffle(original);
       expect(original).toEqual(copy);
     });
+
+    it('空配列はそのまま返す', () => {
+      const adapter = new SeededRandomAdapter(42);
+      expect(adapter.shuffle([])).toEqual([]);
+    });
+
+    it('単一要素はそのまま返す', () => {
+      const adapter = new SeededRandomAdapter(42);
+      expect(adapter.shuffle([99])).toEqual([99]);
+    });
+  });
+
+  describe('seed=0 のエッジケース', () => {
+    it('seed=0 でも正常に動作する', () => {
+      // Arrange: seed=0 は内部で 1 に変換される
+      const adapter = new SeededRandomAdapter(0);
+
+      // Act & Assert
+      const val = adapter.random();
+      expect(val).toBeGreaterThanOrEqual(0);
+      expect(val).toBeLessThan(1);
+    });
+  });
+
+  describe('ドメイン関数との統合: 確定的テストに使用可能', () => {
+    it('SeededRandomAdapter.random を randomFn として注入できる', () => {
+      // Arrange
+      const adapter = new SeededRandomAdapter(42);
+      const randomFn = () => adapter.random();
+
+      // Act: 同じシードから同じ結果が得られる
+      const adapter2 = new SeededRandomAdapter(42);
+      const randomFn2 = () => adapter2.random();
+
+      // Assert
+      expect(randomFn()).toBe(randomFn2());
+      expect(randomFn()).toBe(randomFn2());
+    });
   });
 });

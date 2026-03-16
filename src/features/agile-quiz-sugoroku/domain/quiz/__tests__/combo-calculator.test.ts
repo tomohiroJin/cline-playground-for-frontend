@@ -1,13 +1,13 @@
 /**
  * コンボ段階定数のテスト
  */
-import { COLORS } from '../constants';
-import { getComboColor } from '../combo-color';
+import { COLORS } from '../../../constants';
 import {
   COMBO_STAGES,
   getComboStage,
+  getComboColor,
   ComboStage,
-} from '../combo-color';
+} from '../combo-calculator';
 
 describe('コンボ段階定数', () => {
   // ── COMBO_STAGES ────────────────────────────────────
@@ -70,11 +70,7 @@ describe('コンボ段階定数', () => {
     });
 
     it('コンボ2は fire 段階を返す', () => {
-      // Arrange & Act
-      const stage = getComboStage(2);
-
-      // Assert
-      expect(stage?.id).toBe('fire');
+      expect(getComboStage(2)?.id).toBe('fire');
     });
 
     it('コンボ3は fire 段階を返す', () => {
