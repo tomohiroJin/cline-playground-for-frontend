@@ -17,7 +17,7 @@ import {
   RulesSection,
   ScoringSection,
   SprintPhasesSection,
-  EngineerTypesSection,
+  TeamTypesSection,
   DifficultySection,
   TextSection,
 } from './GuideSection';
@@ -42,7 +42,7 @@ export const GuideScreen: React.FC<GuideScreenProps> = ({ onBack }) => {
         <RulesSection />
         <ScoringSection />
         <SprintPhasesSection />
-        <EngineerTypesSection />
+        <TeamTypesSection />
         <DifficultySection />
 
         <TextSection

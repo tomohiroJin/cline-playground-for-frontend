@@ -5,19 +5,19 @@ import React, { useState, useMemo } from 'react';
 import { useKeys } from '../hooks';
 import { CONFIG, COLORS, FONTS } from '../constants';
 import { AQS_IMAGES } from '../images';
-import { loadGameResult } from '../result-storage';
-import { loadGameState, deleteSaveState } from '../save-manager';
-import type { SaveState, Difficulty } from '../types';
+import { GameResultRepository } from '../infrastructure/storage/game-repository';
+import { SaveRepository } from '../infrastructure/storage/save-repository';
+import { LocalStorageAdapter } from '../infrastructure/storage/local-storage-adapter';
+import type { SaveState, Difficulty } from '../domain/types';
 import { ParticleEffect } from './ParticleEffect';
 import { DifficultySelector } from './DifficultySelector';
 import { SprintCountSelector } from './screens/SprintCountSelector';
 import { OverwriteConfirmDialog } from './screens/OverwriteConfirmDialog';
+import { TitleButtons } from './TitleButtons';
 import {
   PageWrapper,
   Panel,
   SectionBox,
-  Button,
-  HotkeyHint,
   Scanlines,
   TitleGlow,
   FeatureItem,
@@ -26,6 +26,9 @@ import {
   FeatureText,
   Divider,
 } from './styles';
+
+const gameResultRepo = new GameResultRepository(new LocalStorageAdapter());
+const saveRepo = new SaveRepository(new LocalStorageAdapter());
 
 interface TitleScreenProps {
   onStart: (sprintCount: number, difficulty?: string) => void;
@@ -54,19 +57,21 @@ function formatSaveDate(timestamp: number): string {
   return `${d.getMonth() + 1}月${d.getDate()}日 ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
 }
 
-export const TitleScreen: React.FC<TitleScreenProps> = ({ onStart, onResume, onStudy, onGuide, onAchievements, onHistory, onChallenge, onDailyQuiz }) => {
+export const TitleScreen: React.FC<TitleScreenProps> = ({
+  onStart, onResume, onStudy, onGuide, onAchievements, onHistory, onChallenge, onDailyQuiz,
+}) => {
   const [sprintCount, setSprintCount] = useState<number>(CONFIG.sprintCount);
   const [difficulty, setDifficulty] = useState<Difficulty>('normal');
   const [showOverwriteConfirm, setShowOverwriteConfirm] = useState(false);
 
-  const lastResult = useMemo(() => loadGameResult(), []);
-  const saveState = useMemo(() => loadGameState(), []);
+  const lastResult = useMemo(() => gameResultRepo.load(), []);
+  const saveState = useMemo(() => saveRepo.load(), []);
   const features = useMemo(() => makeFeatures(sprintCount), [sprintCount]);
 
   const handleResume = () => {
     if (saveState && onResume) {
       onResume(saveState);
-      deleteSaveState();
+      saveRepo.delete();
     }
   };
 
@@ -79,15 +84,13 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({ onStart, onResume, onS
   };
 
   const handleConfirmOverwrite = () => {
-    deleteSaveState();
+    saveRepo.delete();
     setShowOverwriteConfirm(false);
     onStart(sprintCount, difficulty);
   };
 
   useKeys((e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      handleNewGame();
-    }
+    if (e.key === 'Enter' || e.key === ' ') handleNewGame();
   });
 
   return (
@@ -121,7 +124,6 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({ onStart, onResume, onS
           <Divider />
         </div>
 
-        {/* 前回結果サマリー */}
         {lastResult && (
           <div style={{
             background: `${COLORS.accent}0a`, border: `1px solid ${COLORS.accent}18`,
@@ -150,66 +152,21 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({ onStart, onResume, onS
           ))}
         </SectionBox>
 
-        {/* スプリント数選択 */}
         <SprintCountSelector value={sprintCount} onChange={setSprintCount} />
-
-        {/* 難易度選択 */}
         <DifficultySelector value={difficulty} onChange={setDifficulty} />
 
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, marginTop: 4 }}>
-          {saveState && onResume && (
-            <Button
-              $color={COLORS.yellow}
-              onClick={handleResume}
-              style={{ padding: '12px 44px', fontSize: 13 }}
-            >
-              ▶ 続きから（スプリント {saveState.currentSprint + 1}/{saveState.sprintCount} - {formatSaveDate(saveState.timestamp)}）
-            </Button>
-          )}
-
-          <Button
-            $color="#34d399"
-            onClick={handleNewGame}
-            style={{ padding: '14px 52px', fontSize: 14 }}
-          >
-            ▶ Sprint Start
-            <HotkeyHint>[Enter]</HotkeyHint>
-          </Button>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
-            {onChallenge && (
-              <Button $color={COLORS.red} onClick={onChallenge} style={{ padding: '10px 32px', fontSize: 12 }}>
-                Challenge
-              </Button>
-            )}
-            {onDailyQuiz && (
-              <Button $color={COLORS.green} onClick={onDailyQuiz} style={{ padding: '10px 32px', fontSize: 12 }}>
-                Daily Quiz
-              </Button>
-            )}
-          </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
-            {onStudy && (
-              <Button $color={COLORS.accent} onClick={onStudy} style={{ padding: '10px 20px', fontSize: 12 }}>
-                勉強会モード
-              </Button>
-            )}
-            {onAchievements && (
-              <Button $color={COLORS.yellow} onClick={onAchievements} style={{ padding: '10px 20px', fontSize: 12 }}>
-                実績
-              </Button>
-            )}
-            {onHistory && (
-              <Button $color={COLORS.cyan} onClick={onHistory} style={{ padding: '10px 20px', fontSize: 12 }}>
-                履歴
-              </Button>
-            )}
-            {onGuide && (
-              <Button $color={COLORS.muted} onClick={onGuide} style={{ padding: '10px 20px', fontSize: 12 }}>
-                遊び方
-              </Button>
-            )}
-          </div>
-        </div>
+        <TitleButtons
+          saveState={saveState}
+          onResume={saveState && onResume ? handleResume : undefined}
+          onNewGame={handleNewGame}
+          onStudy={onStudy}
+          onGuide={onGuide}
+          onAchievements={onAchievements}
+          onHistory={onHistory}
+          onChallenge={onChallenge}
+          onDailyQuiz={onDailyQuiz}
+          formatSaveDate={formatSaveDate}
+        />
 
         {showOverwriteConfirm && (
           <OverwriteConfirmDialog

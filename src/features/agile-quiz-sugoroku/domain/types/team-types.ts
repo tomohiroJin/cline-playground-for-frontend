@@ -12,16 +12,6 @@ export interface ClassifyStats {
   spd: number;
 }
 
-/** エンジニアタイプ（後方互換性のため残存） */
-export interface EngineerType {
-  id: string;
-  name: string;
-  emoji: string;
-  color: string;
-  description: string;
-  condition: (stats: ClassifyStats) => boolean;
-}
-
 /** チームタイプ */
 export interface TeamType {
   id: string;

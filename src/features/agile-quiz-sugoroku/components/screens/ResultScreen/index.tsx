@@ -4,7 +4,7 @@
  */
 import React, { useState, useMemo, useCallback } from 'react';
 import { useKeys } from '../../../hooks';
-import type { DerivedStats, GameStats, SprintSummary, TagStats, AnswerResultWithDetail } from '../../../types';
+import type { DerivedStats, GameStats, SprintSummary, TagStats, AnswerResultWithDetail } from '../../../domain/types';
 import { getGrade } from '../../../constants';
 import { ParticleEffect } from '../../ParticleEffect';
 import {

@@ -1,12 +1,6 @@
 /**
- * エンジニアタイプ分類
+ * チームタイプ分類（classifyTeamType は team-classifier.ts に定義済み）
  *
- * 旧 engineer-classifier.ts から移動。
+ * このファイルは domain/team モジュール内での再エクスポート用。
+ * 実体は ../../team-classifier.ts を参照。
  */
-import { EngineerType, ClassifyStats } from '../types';
-import { ENGINEER_TYPES } from '../../constants';
-
-/** エンジニアタイプを判定 */
-export function classifyEngineerType(data: ClassifyStats): EngineerType {
-  return ENGINEER_TYPES.find((t: EngineerType) => t.condition(data)) ?? ENGINEER_TYPES[ENGINEER_TYPES.length - 1];
-}

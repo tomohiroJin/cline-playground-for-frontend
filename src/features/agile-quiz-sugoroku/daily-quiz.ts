@@ -5,8 +5,8 @@
  * ストレージ処理は infrastructure/storage/daily-quiz-repository.ts に移行済み。
  * 問題選出ロジック（getDailyQuestions 等）は本ファイルに残留。
  */
-import { Question } from './types';
-import { QUESTIONS } from './quiz-data';
+import { Question } from './domain/types';
+import { QUESTIONS } from './questions';
 import { LocalStorageAdapter } from './infrastructure/storage/local-storage-adapter';
 import {
   DailyQuizRepository,

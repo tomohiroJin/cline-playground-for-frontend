@@ -26,7 +26,7 @@ import { QuizScreen } from '../components/QuizScreen';
 import { SprintStartScreen } from '../components/SprintStartScreen';
 import { RetrospectiveScreen } from '../components/RetrospectiveScreen';
 import { ResultScreen } from '../components/ResultScreen';
-import { SprintSummary, GameStats, DerivedStats, GameEvent, Question } from '../types';
+import { SprintSummary, GameStats, DerivedStats, GameEvent, Question } from '../domain/types';
 
 // styled-components のアニメーション警告を抑制
 beforeAll(() => {

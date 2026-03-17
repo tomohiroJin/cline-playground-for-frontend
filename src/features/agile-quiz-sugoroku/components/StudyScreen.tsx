@@ -3,9 +3,9 @@
  */
 import React, { useState, useMemo } from 'react';
 import { useKeys } from '../hooks';
-import { Question } from '../types';
+import { Question } from '../domain/types';
 import { COLORS, OPTION_LABELS } from '../constants';
-import { shuffle } from '../game-logic';
+import { shuffle } from '../../../utils/math-utils';
 import { TAG_MAP } from '../questions/tag-master';
 import {
   PageWrapper,

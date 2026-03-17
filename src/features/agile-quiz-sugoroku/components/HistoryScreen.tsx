@@ -3,9 +3,11 @@
  */
 import React, { useMemo } from 'react';
 import { COLORS, FONTS } from '../constants';
-import { loadHistory } from '../history-storage';
+import { HistoryRepository } from '../infrastructure/storage/history-repository';
+import { LocalStorageAdapter } from '../infrastructure/storage/local-storage-adapter';
 import { LineChart } from './LineChart';
 import { ParticleEffect } from './ParticleEffect';
+import { HistoryList } from './HistoryList';
 import {
   PageWrapper,
   Panel,
@@ -13,6 +15,8 @@ import {
   Button,
   Scanlines,
 } from './styles';
+
+const historyRepo = new HistoryRepository(new LocalStorageAdapter());
 
 interface HistoryScreenProps {
   onBack: () => void;
@@ -25,9 +29,8 @@ function formatDate(timestamp: number): string {
 }
 
 export const HistoryScreen: React.FC<HistoryScreenProps> = ({ onBack }) => {
-  const history = useMemo(() => loadHistory(), []);
+  const history = useMemo(() => historyRepo.loadAll(), []);
 
-  // 最高グレード
   const bestGrade = useMemo(() => {
     if (history.length === 0) return '-';
     const gradeOrder = ['D', 'C', 'B', 'A', 'S'];
@@ -40,7 +43,6 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ onBack }) => {
     return best;
   }, [history]);
 
-  // グラフデータ
   const correctRates = history.map(h => h.correctRate);
   const speeds = history.map(h => h.averageSpeed);
   const labels = history.map(h => formatDate(h.timestamp));
@@ -52,11 +54,8 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ onBack }) => {
       <Panel $fadeIn={false} style={{ position: 'relative', zIndex: 1 }}>
         <div style={{ textAlign: 'center', marginBottom: 16 }}>
           <div style={{
-            fontSize: 10,
-            color: COLORS.muted,
-            letterSpacing: 2,
-            fontFamily: FONTS.mono,
-            fontWeight: 700,
+            fontSize: 10, color: COLORS.muted, letterSpacing: 2,
+            fontFamily: FONTS.mono, fontWeight: 700,
           }}>
             HISTORY
           </div>
@@ -65,11 +64,8 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ onBack }) => {
           </h2>
           {history.length > 0 && (
             <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              gap: 20,
-              fontSize: 12,
-              color: COLORS.muted,
+              display: 'flex', justifyContent: 'center', gap: 20,
+              fontSize: 12, color: COLORS.muted,
             }}>
               <span>プレイ回数: <span style={{ color: COLORS.text, fontWeight: 700 }}>{history.length}</span></span>
               <span>最高グレード: <span style={{ color: COLORS.accent, fontWeight: 700 }}>{bestGrade}</span></span>
@@ -85,106 +81,31 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ onBack }) => {
           </SectionBox>
         ) : (
           <>
-            {/* 正答率推移グラフ */}
             <SectionBox>
               <div style={{
-                fontSize: 11,
-                color: COLORS.muted,
-                fontWeight: 700,
-                marginBottom: 8,
-                fontFamily: FONTS.mono,
-                letterSpacing: 1,
+                fontSize: 11, color: COLORS.muted, fontWeight: 700,
+                marginBottom: 8, fontFamily: FONTS.mono, letterSpacing: 1,
               }}>
                 正答率の推移
               </div>
               <div style={{ display: 'flex', justifyContent: 'center' }}>
-                <LineChart
-                  data={correctRates}
-                  labels={labels}
-                  color={COLORS.green}
-                  yLabel="%"
-                  width={360}
-                  height={180}
-                />
+                <LineChart data={correctRates} labels={labels} color={COLORS.green} yLabel="%" width={360} height={180} />
               </div>
             </SectionBox>
 
-            {/* 平均速度推移グラフ */}
             <SectionBox>
               <div style={{
-                fontSize: 11,
-                color: COLORS.muted,
-                fontWeight: 700,
-                marginBottom: 8,
-                fontFamily: FONTS.mono,
-                letterSpacing: 1,
+                fontSize: 11, color: COLORS.muted, fontWeight: 700,
+                marginBottom: 8, fontFamily: FONTS.mono, letterSpacing: 1,
               }}>
                 平均回答速度の推移
               </div>
               <div style={{ display: 'flex', justifyContent: 'center' }}>
-                <LineChart
-                  data={speeds}
-                  labels={labels}
-                  color={COLORS.cyan}
-                  yLabel="秒"
-                  maxValue={20}
-                  width={360}
-                  height={180}
-                />
+                <LineChart data={speeds} labels={labels} color={COLORS.cyan} yLabel="秒" maxValue={20} width={360} height={180} />
               </div>
             </SectionBox>
 
-            {/* 履歴一覧 */}
-            <SectionBox style={{ maxHeight: '30vh', overflowY: 'auto' }}>
-              <div style={{
-                fontSize: 11,
-                color: COLORS.muted,
-                fontWeight: 700,
-                marginBottom: 8,
-                fontFamily: FONTS.mono,
-                letterSpacing: 1,
-              }}>
-                直近の結果
-              </div>
-              {[...history].reverse().map((entry, i) => (
-                <div
-                  key={entry.timestamp}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '6px 8px',
-                    borderRadius: 6,
-                    background: i === 0 ? `${COLORS.accent}08` : 'transparent',
-                    border: `1px solid ${i === 0 ? `${COLORS.accent}15` : COLORS.border}`,
-                    marginBottom: 4,
-                    fontSize: 11,
-                  }}
-                >
-                  <span style={{
-                    fontFamily: FONTS.mono,
-                    color: COLORS.muted,
-                    minWidth: 44,
-                  }}>
-                    {formatDate(entry.timestamp)}
-                  </span>
-                  <span style={{
-                    fontFamily: FONTS.mono,
-                    fontWeight: 700,
-                    color: COLORS.accent,
-                    minWidth: 24,
-                  }}>
-                    {entry.grade}
-                  </span>
-                  <span style={{ color: COLORS.text }}>
-                    正答率 {entry.correctRate}%
-                  </span>
-                  <span style={{ color: COLORS.muted, marginLeft: 'auto' }}>
-                    {entry.teamTypeName}
-                  </span>
-                </div>
-              ))}
-            </SectionBox>
+            <HistoryList history={history} />
           </>
         )}
 

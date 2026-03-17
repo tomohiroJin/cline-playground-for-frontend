@@ -3,7 +3,7 @@
  * 正解/不正解のフィードバック、コンボエフェクト、解説
  */
 import React, { useState } from 'react';
-import type { Question, GameStats } from '../../../types';
+import type { Question, GameStats } from '../../../domain/types';
 import { COLORS } from '../../../constants';
 import { AQS_IMAGES } from '../../../images';
 import { ScoreFloat } from '../../ScoreFloat';

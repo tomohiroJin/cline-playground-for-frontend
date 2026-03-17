@@ -3,10 +3,10 @@
  */
 import React from 'react';
 import { useKeys } from '../hooks';
-import { TagStats, AnswerResultWithDetail } from '../types';
+import { TagStats, AnswerResultWithDetail } from '../domain/types';
 import { COLORS, FONTS } from '../constants';
-import { TAG_MAP } from '../questions/tag-master';
-import { computeTagStatEntries, getWeakGenres, getTagColor } from '../tag-stats';
+import { computeTagStatEntries, getWeakGenres, getTagColor } from '../domain/quiz';
+import { IncorrectReview } from './IncorrectReview';
 import {
   PageWrapper,
   ScrollablePanel,
@@ -28,12 +28,7 @@ interface StudyResultScreenProps {
 }
 
 export const StudyResultScreen: React.FC<StudyResultScreenProps> = ({
-  tagStats,
-  incorrectQuestions,
-  totalCorrect,
-  totalAnswered,
-  onRetry,
-  onBack,
+  tagStats, incorrectQuestions, totalCorrect, totalAnswered, onRetry, onBack,
 }) => {
   const entries = computeTagStatEntries(tagStats);
   const weakGenres = getWeakGenres(tagStats);
@@ -41,9 +36,7 @@ export const StudyResultScreen: React.FC<StudyResultScreenProps> = ({
   const overallColor = getTagColor(overallRate);
 
   useKeys((e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      onBack();
-    }
+    if (e.key === 'Enter' || e.key === ' ') onBack();
   });
 
   return (
@@ -51,25 +44,13 @@ export const StudyResultScreen: React.FC<StudyResultScreenProps> = ({
       <Scanlines />
       <ScrollablePanel $fadeIn={false} style={{ maxWidth: 580 }}>
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <div
-            style={{
-              fontSize: 10,
-              color: COLORS.accent,
-              letterSpacing: 3,
-              fontFamily: FONTS.mono,
-              fontWeight: 700,
-            }}
-          >
+          <div style={{
+            fontSize: 10, color: COLORS.accent, letterSpacing: 3,
+            fontFamily: FONTS.mono, fontWeight: 700,
+          }}>
             STUDY RESULT
           </div>
-          <div
-            style={{
-              fontSize: 22,
-              fontWeight: 800,
-              color: COLORS.text2,
-              marginTop: 6,
-            }}
-          >
+          <div style={{ fontSize: 22, fontWeight: 800, color: COLORS.text2, marginTop: 6 }}>
             学習結果
           </div>
           <Divider />
@@ -99,29 +80,19 @@ export const StudyResultScreen: React.FC<StudyResultScreenProps> = ({
                 <div
                   key={entry.tagId}
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '6px 8px',
-                    background: `${entry.color}08`,
-                    borderRadius: 6,
-                    border: `1px solid ${entry.color}18`,
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '6px 8px', background: `${entry.color}08`,
+                    borderRadius: 6, border: `1px solid ${entry.color}18`,
                   }}
                 >
                   <span style={{ fontSize: 11, color: COLORS.muted, flex: 1 }}>{entry.tagName}</span>
                   <span style={{ fontSize: 10, color: COLORS.muted, fontFamily: FONTS.mono }}>
                     {entry.correct}/{entry.total}
                   </span>
-                  <span
-                    style={{
-                      fontSize: 13,
-                      fontWeight: 700,
-                      color: entry.color,
-                      fontFamily: FONTS.mono,
-                      minWidth: 40,
-                      textAlign: 'right',
-                    }}
-                  >
+                  <span style={{
+                    fontSize: 13, fontWeight: 700, color: entry.color,
+                    fontFamily: FONTS.mono, minWidth: 40, textAlign: 'right',
+                  }}>
                     {entry.rate}%
                   </span>
                 </div>
@@ -143,61 +114,7 @@ export const StudyResultScreen: React.FC<StudyResultScreenProps> = ({
           </SectionBox>
         )}
 
-        {/* 不正解問題レビュー */}
-        {incorrectQuestions.length > 0 && (
-          <SectionBox>
-            <SectionTitle>INCORRECT REVIEW ({incorrectQuestions.length})</SectionTitle>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {incorrectQuestions.map((q, i) => (
-                <div
-                  key={i}
-                  style={{
-                    padding: '10px 12px',
-                    background: `${COLORS.red}08`,
-                    borderRadius: 8,
-                    border: `1px solid ${COLORS.red}18`,
-                  }}
-                >
-                  <div style={{ fontSize: 12, color: COLORS.text, marginBottom: 6, lineHeight: 1.6 }}>
-                    {q.questionText}
-                  </div>
-                  <div style={{ fontSize: 11, color: COLORS.red, marginBottom: 2 }}>
-                    ✗ あなたの回答: {q.options[q.selectedAnswer] ?? 'TIME UP'}
-                  </div>
-                  <div style={{ fontSize: 11, color: COLORS.green, marginBottom: 4 }}>
-                    ✓ 正解: {q.options[q.correctAnswer]}
-                  </div>
-                  {q.explanation && (
-                    <div style={{ fontSize: 11, color: COLORS.muted, lineHeight: 1.6 }}>
-                      💡 {q.explanation}
-                    </div>
-                  )}
-                  {q.tags.length > 0 && (
-                    <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
-                      {q.tags.map((tagId) => {
-                        const tag = TAG_MAP.get(tagId);
-                        return (
-                          <span
-                            key={tagId}
-                            style={{
-                              fontSize: 9,
-                              padding: '1px 6px',
-                              borderRadius: 3,
-                              background: `${tag?.color ?? COLORS.accent}15`,
-                              color: tag?.color ?? COLORS.accent,
-                            }}
-                          >
-                            {tag?.name ?? tagId}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </SectionBox>
-        )}
+        <IncorrectReview questions={incorrectQuestions} />
 
         {/* ボタン */}
         <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>

@@ -3,7 +3,7 @@
  * リプレイ、コピー、シェアボタン
  */
 import React, { useState, useMemo } from 'react';
-import type { DerivedStats, GameStats } from '../../../types';
+import type { DerivedStats, GameStats } from '../../../domain/types';
 import { COLORS } from '../../../constants';
 import { classifyTeamType } from '../../../team-classifier';
 import {

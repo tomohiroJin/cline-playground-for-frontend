@@ -4,11 +4,9 @@
  */
 import React, { useState } from 'react';
 import { useKeys } from '../../../hooks';
-import type { GameEvent, Question, GameStats } from '../../../types';
-import { CONFIG, COLORS, PHASE_GENRE_MAP, EVENT_BACKGROUND_MAP } from '../../../constants';
-import { TAG_MAP } from '../../../questions/tag-master';
+import type { GameEvent, Question, GameStats } from '../../../domain/types';
+import { CONFIG, PHASE_GENRE_MAP, EVENT_BACKGROUND_MAP } from '../../../constants';
 import { AQS_IMAGES } from '../../../images';
-import type { ReactionSituation } from '../../../character-reactions';
 import { SugorokuBoard } from '../../SugorokuBoard';
 import { FlashOverlay } from '../../FlashOverlay';
 import { ComboEffect } from '../../ComboEffect';
@@ -35,35 +33,8 @@ import {
 import { TimerDisplay } from './TimerDisplay';
 import { OptionsPanel } from './OptionsPanel';
 import { QuizResult } from './QuizResult';
-
-/** フィードバック状態（フラッシュとスコア表示を統合管理） */
-interface FeedbackState {
-  flashType: 'correct' | 'incorrect' | 'timeup' | undefined;
-  scoreText: string;
-}
-
-/** 初期フィードバック状態 */
-const INITIAL_FEEDBACK: FeedbackState = { flashType: undefined, scoreText: '' };
-
-/** リアクション状況を判定するヘルパー関数 */
-function determineReaction(
-  answered: boolean,
-  selectedAnswer: number | null,
-  isEmergency: boolean,
-  combo: number,
-  correctAnswer: number,
-): ReactionSituation {
-  if (!answered) {
-    return isEmergency ? 'emergency' : 'idle';
-  }
-  if (selectedAnswer === null || selectedAnswer === -1) {
-    return 'idle';
-  }
-  if (selectedAnswer === correctAnswer) {
-    return combo >= 3 ? 'combo' : 'correct';
-  }
-  return 'incorrect';
-}
+import { PhaseGenreTags } from './PhaseGenreTags';
+import { FeedbackState, INITIAL_FEEDBACK, determineReaction } from './quiz-helpers';
 
 interface QuizScreenProps {
   sprint: number;
@@ -190,21 +161,7 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
           </EventCounter>
         </EventCard>
 
-        {phaseGenres.length > 0 && (
-          <div style={{ display: 'flex', gap: 4, marginBottom: 8, flexWrap: 'wrap' }}>
-            {phaseGenres.map((tagId) => {
-              const tag = TAG_MAP.get(tagId);
-              return (
-                <span key={tagId} style={{
-                  fontSize: 9, padding: '2px 6px', borderRadius: 3,
-                  background: `${tag?.color ?? COLORS.accent}10`,
-                  border: `1px solid ${tag?.color ?? COLORS.accent}22`,
-                  color: tag?.color ?? COLORS.accent, fontWeight: 500,
-                }}>{tag?.name ?? tagId}</span>
-              );
-            })}
-          </div>
-        )}
+        <PhaseGenreTags tagIds={phaseGenres} />
 
         <TimerDisplay timer={timer} answered={answered} />
         <QuizQuestion>{quiz.question}</QuizQuestion>

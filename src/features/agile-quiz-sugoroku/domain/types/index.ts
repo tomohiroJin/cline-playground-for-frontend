@@ -28,7 +28,6 @@ export type {
 
 export type {
   ClassifyStats,
-  EngineerType,
   TeamType,
 } from './team-types';
 

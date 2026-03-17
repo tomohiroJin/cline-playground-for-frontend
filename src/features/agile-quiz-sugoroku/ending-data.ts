@@ -4,7 +4,7 @@
  * 全スプリント完了後に表示するエンディングストーリー。
  * 共通パート（プロジェクト完了）＋チームタイプ別エピローグ（6種類）の2部構成。
  */
-import { EndingEntry } from './types';
+import { EndingEntry } from './domain/types';
 
 /** 共通パート: 「プロジェクト完了 — 旅の終わり、新たな始まり」 */
 export const ENDING_COMMON: EndingEntry = {

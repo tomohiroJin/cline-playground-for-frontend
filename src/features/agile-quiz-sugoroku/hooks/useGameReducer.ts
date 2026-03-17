@@ -13,9 +13,9 @@ import type {
   GameStats,
   TagStats,
   AnswerResultWithDetail,
-} from '../types';
+} from '../domain/types';
 import { EVENTS, INITIAL_GAME_STATS } from '../constants';
-import { computeAnswerResult, computeDebtDelta, nextGameStats } from '../answer-processor';
+import { computeAnswerResult, computeDebtDelta, nextGameStats } from '../domain/quiz';
 
 // ── State ─────────────────────────────────────
 
@@ -196,6 +196,45 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
   }
 }
 
+// ── 回答処理のヘルパー関数 ────────────────────
+
+/** タグ統計を更新する */
+function updateTagStats(
+  tagStats: TagStats,
+  tags: string[] | undefined,
+  isCorrect: boolean,
+): TagStats {
+  if (!tags) return tagStats;
+
+  const updated = { ...tagStats };
+  for (const tag of tags) {
+    const prev = updated[tag] ?? { correct: 0, total: 0 };
+    updated[tag] = {
+      correct: prev.correct + (isCorrect ? 1 : 0),
+      total: prev.total + 1,
+    };
+  }
+  return updated;
+}
+
+/** 不正解時の詳細レコードを生成する */
+function buildIncorrectRecord(
+  quiz: Question,
+  optionIndex: number,
+  eventId: string,
+): AnswerResultWithDetail {
+  return {
+    questionText: quiz.question,
+    options: quiz.options,
+    selectedAnswer: optionIndex,
+    correctAnswer: quiz.answer,
+    correct: false,
+    tags: quiz.tags ?? [],
+    explanation: quiz.explanation,
+    eventId,
+  };
+}
+
 // ── 回答処理のサブ Reducer ────────────────────
 
 /** 回答処理（副作用なし） */
@@ -214,39 +253,12 @@ function reduceAnswer(state: GameState, action: AnswerAction): GameState {
   });
   const debtDelta = computeDebtDelta(result.correct, result.eventId);
 
-  // 統計更新
+  // 各種統計を更新
   const newStats = nextGameStats(state.stats, result, debtDelta);
-
-  // タグ統計更新
-  let newTagStats = state.tagStats;
-  if (state.quiz.tags) {
-    newTagStats = { ...state.tagStats };
-    for (const tag of state.quiz.tags) {
-      const prev = newTagStats[tag] ?? { correct: 0, total: 0 };
-      newTagStats[tag] = {
-        correct: prev.correct + (result.correct ? 1 : 0),
-        total: prev.total + 1,
-      };
-    }
-  }
-
-  // 不正解問題の蓄積
-  let newIncorrect = state.incorrectQuestions;
-  if (!result.correct) {
-    newIncorrect = [
-      ...state.incorrectQuestions,
-      {
-        questionText: state.quiz.question,
-        options: state.quiz.options,
-        selectedAnswer: optionIndex,
-        correctAnswer: state.quiz.answer,
-        correct: false,
-        tags: state.quiz.tags ?? [],
-        explanation: state.quiz.explanation,
-        eventId: result.eventId,
-      },
-    ];
-  }
+  const newTagStats = updateTagStats(state.tagStats, state.quiz.tags, result.correct);
+  const newIncorrect = result.correct
+    ? state.incorrectQuestions
+    : [...state.incorrectQuestions, buildIncorrectRecord(state.quiz, optionIndex, result.eventId)];
 
   return {
     ...state,

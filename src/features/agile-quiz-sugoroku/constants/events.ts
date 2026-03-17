@@ -3,7 +3,7 @@
  *
  * スプリントイベントと緊急対応イベントの定義
  */
-import { GameEvent } from '../types';
+import { GameEvent } from '../domain/types';
 import { COLORS } from './colors';
 
 /** スプリントイベント */

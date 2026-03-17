@@ -1,47 +1,47 @@
 /**
- * チャレンジモード - 単体テスト
+ * チャレンジモードリポジトリ - 単体テスト
  */
-import {
-  saveHighScore,
-  loadHighScore,
-  clearHighScore,
-} from '../challenge-storage';
+import { ChallengeRepository } from '../infrastructure/storage/challenge-repository';
+import { LocalStorageAdapter } from '../infrastructure/storage/local-storage-adapter';
 
-describe('challenge-storage', () => {
+describe('ChallengeRepository', () => {
+  let repository: ChallengeRepository;
+
   beforeEach(() => {
     localStorage.clear();
+    repository = new ChallengeRepository(new LocalStorageAdapter());
   });
 
   describe('loadHighScore', () => {
     it('初期状態では0を返す', () => {
-      expect(loadHighScore()).toBe(0);
+      expect(repository.loadHighScore()).toBe(0);
     });
   });
 
   describe('saveHighScore', () => {
     it('ハイスコアを保存できる', () => {
-      saveHighScore(15);
-      expect(loadHighScore()).toBe(15);
+      repository.saveHighScore(15);
+      expect(repository.loadHighScore()).toBe(15);
     });
 
     it('既存のハイスコアより高い場合のみ更新する', () => {
-      saveHighScore(15);
-      saveHighScore(10);
-      expect(loadHighScore()).toBe(15);
+      repository.saveHighScore(15);
+      repository.saveHighScore(10);
+      expect(repository.loadHighScore()).toBe(15);
     });
 
     it('既存のハイスコアより高ければ更新する', () => {
-      saveHighScore(10);
-      saveHighScore(20);
-      expect(loadHighScore()).toBe(20);
+      repository.saveHighScore(10);
+      repository.saveHighScore(20);
+      expect(repository.loadHighScore()).toBe(20);
     });
   });
 
-  describe('clearHighScore', () => {
+  describe('clear', () => {
     it('ハイスコアを削除する', () => {
-      saveHighScore(15);
-      clearHighScore();
-      expect(loadHighScore()).toBe(0);
+      repository.saveHighScore(15);
+      repository.clear();
+      expect(repository.loadHighScore()).toBe(0);
     });
   });
 });

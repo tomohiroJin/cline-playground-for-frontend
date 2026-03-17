@@ -13,18 +13,12 @@ import type {
   TagStats,
   AnswerResultWithDetail,
   SaveState,
-} from '../types';
+} from '../domain/types';
 import { AudioActions, createDefaultAudioActions } from '../audio/audio-actions';
-import {
-  shuffle,
-  average,
-  percentage,
-  clamp,
-  pickQuestion,
-  makeEvents,
-  createSprintSummary,
-} from '../game-logic';
-import { QUESTIONS } from '../quiz-data';
+import { shuffle, average, percentage, clamp } from '../../../utils/math-utils';
+import { pickQuestion } from '../domain/quiz';
+import { createEvents, createSprintSummary } from '../domain/game';
+import { QUESTIONS } from '../questions';
 import { gameReducer, createInitialGameState } from './useGameReducer';
 
 export interface UseGameReturn {
@@ -145,7 +139,7 @@ export function useGame(audio?: AudioActions): UseGameReturn {
       currentStats: GameStats,
       currentUsed: { [key: string]: Set<number> },
     ) => {
-      const newEvents = makeEvents(sprintNumber, currentStats.debt);
+      const newEvents = createEvents(sprintNumber, currentStats.debt);
       const questionPayload = prepareQuestion(newEvents, 0, currentUsed);
 
       dispatch({

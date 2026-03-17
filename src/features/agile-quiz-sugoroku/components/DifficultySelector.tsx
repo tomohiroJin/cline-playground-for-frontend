@@ -3,8 +3,8 @@
  */
 import React from 'react';
 import { COLORS, FONTS } from '../constants';
-import { DIFFICULTY_CONFIGS } from '../difficulty';
-import { Difficulty } from '../types';
+import { DIFFICULTY_CONFIGS } from '../domain/scoring';
+import { Difficulty } from '../domain/types';
 import { SectionBox } from './styles';
 
 interface DifficultySelectorProps {

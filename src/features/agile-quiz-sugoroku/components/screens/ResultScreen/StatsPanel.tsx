@@ -3,7 +3,7 @@
  * チームタイプ、レーダーチャート、統計グリッド、スプリント履歴
  */
 import React, { useState, useMemo } from 'react';
-import type { DerivedStats, GameStats, SprintSummary, RadarDataPoint, TagStats, AnswerResultWithDetail } from '../../../types';
+import type { DerivedStats, GameStats, SprintSummary, RadarDataPoint, TagStats, AnswerResultWithDetail } from '../../../domain/types';
 import { clamp } from '../../../../../utils/math-utils';
 import {
   COLORS,
@@ -12,7 +12,7 @@ import {
   getInverseColorByThreshold,
 } from '../../../constants';
 import { classifyTeamType } from '../../../team-classifier';
-import { getComboColor } from '../../../combo-color';
+import { getComboColor } from '../../../domain/quiz';
 import { AQS_IMAGES } from '../../../images';
 import { RadarChart } from '../../RadarChart';
 import { BarChart } from '../../BarChart';

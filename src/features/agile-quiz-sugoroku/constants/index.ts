@@ -34,5 +34,4 @@ export {
   CHALLENGE_EVALUATIONS,
   getStrengthText,
   getChallengeText,
-  ENGINEER_TYPES,
 } from './grades';

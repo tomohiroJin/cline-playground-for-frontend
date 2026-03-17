@@ -3,7 +3,7 @@
  */
 import React, { useMemo } from 'react';
 import { useKeys } from '../hooks';
-import { GameStats, DerivedStats } from '../types';
+import { GameStats, DerivedStats } from '../domain/types';
 import {
   CONFIG,
   EVENTS,
@@ -11,10 +11,11 @@ import {
   getColorByThreshold,
   getInverseColorByThreshold,
 } from '../constants';
-import { getComboColor } from '../combo-color';
+import { getComboColor } from '../domain/quiz';
 import { AQS_IMAGES } from '../images';
 import { getNarrativeComment } from '../character-narrative';
 import { ParticleEffect } from './ParticleEffect';
+import { NarrativeComment } from './NarrativeComment';
 import {
   PageWrapper,
   Panel,
@@ -37,15 +38,10 @@ import {
 } from './styles';
 
 interface SprintStartScreenProps {
-  /** スプリント番号（0始まり） */
   sprint: number;
-  /** 現在のゲーム統計 */
   stats: GameStats;
-  /** 派生統計 */
   derived: DerivedStats;
-  /** 表示状態 */
   visible: boolean;
-  /** 開始時のコールバック */
   onBegin: () => void;
 }
 
@@ -53,13 +49,8 @@ interface SprintStartScreenProps {
  * スプリント開始画面
  */
 export const SprintStartScreen: React.FC<SprintStartScreenProps> = ({
-  sprint,
-  stats,
-  derived,
-  visible,
-  onBegin,
+  sprint, stats, derived, visible, onBegin,
 }) => {
-  // キャラクターナラティブ
   const narrative = useMemo(() => getNarrativeComment({
     sprintNumber: sprint + 1,
     phase: 'sprintStart',
@@ -70,9 +61,7 @@ export const SprintStartScreen: React.FC<SprintStartScreenProps> = ({
   const narrativeCharImg = AQS_IMAGES.characters[narrative.characterId as keyof typeof AQS_IMAGES.characters];
 
   useKeys((e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      onBegin();
-    }
+    if (e.key === 'Enter' || e.key === ' ') onBegin();
   });
 
   return (
@@ -81,26 +70,18 @@ export const SprintStartScreen: React.FC<SprintStartScreenProps> = ({
       <Scanlines />
       <Panel $visible={visible}>
         <div style={{
-          width: '100%',
-          height: 120,
+          width: '100%', height: 120,
           backgroundImage: `url(${AQS_IMAGES.sprintStart})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          opacity: 0.3,
-          borderRadius: 8,
-          marginBottom: 16,
+          backgroundSize: 'cover', backgroundPosition: 'center',
+          opacity: 0.3, borderRadius: 8, marginBottom: 16,
         }} />
 
         {/* スプリント番号表示 */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <div
-            style={{
-              fontSize: 10,
-              color: COLORS.muted,
-              letterSpacing: 3,
-              fontFamily: "'JetBrains Mono', monospace",
-            }}
-          >
+          <div style={{
+            fontSize: 10, color: COLORS.muted, letterSpacing: 3,
+            fontFamily: "'JetBrains Mono', monospace",
+          }}>
             SPRINT
           </div>
           <SprintNumber>
@@ -158,52 +139,7 @@ export const SprintStartScreen: React.FC<SprintStartScreenProps> = ({
           ))}
         </SectionBox>
 
-        {/* キャラクターナラティブ */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          padding: '10px 14px',
-          marginBottom: 16,
-          background: `${COLORS.accent}08`,
-          borderRadius: 8,
-          border: `1px solid ${COLORS.accent}18`,
-        }}>
-          {narrativeCharImg ? (
-            <img
-              src={narrativeCharImg}
-              alt=""
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: '50%',
-                objectFit: 'cover',
-                flexShrink: 0,
-              }}
-            />
-          ) : (
-            <div style={{
-              width: 40,
-              height: 40,
-              borderRadius: '50%',
-              background: `${COLORS.accent}15`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 20,
-              flexShrink: 0,
-            }}>
-              ?
-            </div>
-          )}
-          <div style={{
-            fontSize: 12,
-            color: COLORS.text,
-            lineHeight: 1.5,
-          }}>
-            {narrative.text}
-          </div>
-        </div>
+        <NarrativeComment characterImage={narrativeCharImg} text={narrative.text} />
 
         {/* 開始ボタン */}
         <div style={{ textAlign: 'center' }}>

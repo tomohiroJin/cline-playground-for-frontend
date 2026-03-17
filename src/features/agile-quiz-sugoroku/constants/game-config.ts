@@ -3,7 +3,7 @@
  *
  * CONFIG, スプリント設定, 負債設定, フォント, マッピング等のゲーム設定を集約
  */
-import { GameStats } from '../types';
+import { GameStats } from '../domain/types';
 
 /** ゲーム設定 */
 export const CONFIG = Object.freeze({

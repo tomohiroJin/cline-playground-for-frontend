@@ -2,7 +2,7 @@
  * pickQuestion - 問題選択のテスト
  */
 import { pickQuestion } from '../question-picker';
-import { QUESTIONS } from '../../../quiz-data';
+import { QUESTIONS } from '../../../questions';
 
 describe('pickQuestion - 問題の選択', () => {
   const planningQuestions = QUESTIONS.planning;

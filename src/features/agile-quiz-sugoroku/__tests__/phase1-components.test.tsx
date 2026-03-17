@@ -33,7 +33,7 @@ jest.mock('tone', () => ({
 
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { GameEvent } from '../types';
+import { GameEvent } from '../domain/types';
 
 // ── A. アニメーション定義テスト ────────────────────────────
 

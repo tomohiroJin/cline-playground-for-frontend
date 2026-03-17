@@ -2,10 +2,10 @@
  * ジャンル分析・不正解レビュー・サマリーコンポーネント
  */
 import React, { useState, useMemo } from 'react';
-import type { DerivedStats, GameStats, TagStats, AnswerResultWithDetail } from '../../../types';
+import type { DerivedStats, GameStats, TagStats, AnswerResultWithDetail } from '../../../domain/types';
 import { COLORS, FONTS, getSummaryText } from '../../../constants';
-import { computeTagStatEntries, getWeakGenres } from '../../../tag-stats';
-import type { TagStatEntry } from '../../../tag-stats';
+import { computeTagStatEntries, getWeakGenres } from '../../../domain/quiz';
+import type { TagStatEntry } from '../../../domain/quiz';
 import { TAG_MAP } from '../../../questions/tag-master';
 import { AQS_IMAGES } from '../../../images';
 import {

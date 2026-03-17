@@ -3,7 +3,7 @@
  *
  * グレード設定、エンジニアタイプ分類、評価テキスト生成
  */
-import { EngineerType, Grade } from '../types';
+import { Grade } from '../domain/types';
 import { COLORS } from './colors';
 import { CONFIG } from './game-config';
 
@@ -77,55 +77,3 @@ export function getChallengeText(debt: number, spd: number, rate: number): strin
   return match?.text ?? CHALLENGE_EVALUATIONS[CHALLENGE_EVALUATIONS.length - 1].text;
 }
 
-/** エンジニアタイプ */
-const engineerTypes: EngineerType[] = [
-  {
-    id: 'stable',
-    name: '安定運用型エンジニア',
-    emoji: '🛡️',
-    color: COLORS.green,
-    description: '堅実にスプリントを回し品質を維持。チームの安定感を支える信頼の存在。',
-    condition: s => s.stab >= 65 && s.debt <= 20 && s.tp >= 60,
-  },
-  {
-    id: 'firefighter',
-    name: '火消し職人エンジニア',
-    emoji: '🔥',
-    color: COLORS.orange,
-    description: '緊急事態に強く障害対応で真価を発揮。修羅場を突破する力の持ち主。',
-    condition: s => s.emSuc >= 2,
-  },
-  {
-    id: 'growth',
-    name: '成長曲線型エンジニア',
-    emoji: '📈',
-    color: COLORS.yellow,
-    description: '序盤はラフだがスプリントごとに精度が上がる。経験値でカバーするタイプ。',
-    condition: s => s.sc.length >= 2 && s.sc[0] < 50 && s.sc[s.sc.length - 1] >= 65,
-  },
-  {
-    id: 'speed',
-    name: '高速レスポンスエンジニア',
-    emoji: '⚡',
-    color: COLORS.purple,
-    description: '回答速度が圧倒的に速い。直感と経験で即断即決するタイプ。',
-    condition: s => s.spd <= 5.5 && s.tp >= 50,
-  },
-  {
-    id: 'debt',
-    name: '技術的負債と共に生きる人',
-    emoji: '💀',
-    color: COLORS.red,
-    description: '負債を抱えながらも前に進む覚悟の開発者。',
-    condition: s => s.debt >= 35,
-  },
-  {
-    id: 'default',
-    name: '無難に回すエンジニア',
-    emoji: '⚙️',
-    color: COLORS.muted,
-    description: '安定してスプリントを回す。地道な堅実さが武器。',
-    condition: () => true,
-  },
-];
-export const ENGINEER_TYPES: readonly EngineerType[] = Object.freeze(engineerTypes);

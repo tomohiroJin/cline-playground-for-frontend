@@ -9,9 +9,7 @@ import {
   CHALLENGE_EVALUATIONS,
   getStrengthText,
   getChallengeText,
-  ENGINEER_TYPES,
 } from '../grades';
-import { ClassifyStats } from '../../types';
 
 describe('constants/grades', () => {
   // ── GRADES ──────────────────────────────────────────
@@ -153,58 +151,4 @@ describe('constants/grades', () => {
     });
   });
 
-  // ── ENGINEER_TYPES ──────────────────────────────────
-  describe('ENGINEER_TYPES - エンジニアタイプ分類', () => {
-    it('安定運用型: 安定度65以上、負債20以下、正答率60以上', () => {
-      const stats: ClassifyStats = {
-        stab: 70, debt: 15, emSuc: 0, sc: [60, 70], tp: 65, spd: 7,
-      };
-      const type = ENGINEER_TYPES.find(t => t.condition(stats));
-      expect(type?.name).toBe('安定運用型エンジニア');
-    });
-
-    it('火消し職人: 緊急対応成功2回以上', () => {
-      const stats: ClassifyStats = {
-        stab: 30, debt: 40, emSuc: 2, sc: [40, 50], tp: 45, spd: 8,
-      };
-      const type = ENGINEER_TYPES.find(t => t.condition(stats));
-      expect(type?.name).toBe('火消し職人エンジニア');
-    });
-
-    it('成長曲線型: 初回50%未満かつ最終65%以上', () => {
-      const stats: ClassifyStats = {
-        stab: 50, debt: 25, emSuc: 0, sc: [40, 55, 70], tp: 55, spd: 8,
-      };
-      const type = ENGINEER_TYPES.find(t => t.condition(stats));
-      expect(type?.name).toBe('成長曲線型エンジニア');
-    });
-
-    it('高速レスポンス型: 速度5.5以下かつ正答率50%以上', () => {
-      const stats: ClassifyStats = {
-        stab: 50, debt: 25, emSuc: 0, sc: [60, 60], tp: 60, spd: 4.0,
-      };
-      const type = ENGINEER_TYPES.find(t => t.condition(stats));
-      expect(type?.name).toBe('高速レスポンスエンジニア');
-    });
-
-    it('技術的負債と共に生きる人: 負債35以上', () => {
-      const stats: ClassifyStats = {
-        stab: 10, debt: 40, emSuc: 0, sc: [30, 30], tp: 30, spd: 10,
-      };
-      const type = ENGINEER_TYPES.find(t => t.condition(stats));
-      expect(type?.name).toBe('技術的負債と共に生きる人');
-    });
-
-    it('どの条件にも当てはまらない場合は無難に回すエンジニア', () => {
-      const stats: ClassifyStats = {
-        stab: 50, debt: 25, emSuc: 0, sc: [55, 55], tp: 55, spd: 7,
-      };
-      const type = ENGINEER_TYPES.find(t => t.condition(stats));
-      expect(type?.name).toBe('無難に回すエンジニア');
-    });
-
-    it('Object.freeze で凍結されている', () => {
-      expect(Object.isFrozen(ENGINEER_TYPES)).toBe(true);
-    });
-  });
 });

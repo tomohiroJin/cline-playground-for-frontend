@@ -4,7 +4,7 @@
  * 旧 study-question-pool.ts から移動。
  */
 import { Question } from '../types';
-import { QUESTIONS } from '../../quiz-data';
+import { QUESTIONS } from '../../questions';
 import { shuffle } from '../../../../utils/math-utils';
 
 /** buildStudyPool のオプション */

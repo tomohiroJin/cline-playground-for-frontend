@@ -3,7 +3,7 @@
  * 4つの選択肢ボタンを表示
  */
 import React, { useState } from 'react';
-import type { Question } from '../../../types';
+import type { Question } from '../../../domain/types';
 import { OPTION_LABELS } from '../../../constants';
 import {
   OptionsContainer,

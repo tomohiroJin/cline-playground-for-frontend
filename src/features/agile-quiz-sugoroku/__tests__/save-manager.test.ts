@@ -1,18 +1,18 @@
 /**
- * save-manager のテスト
+ * セーブリポジトリのテスト
  */
-import { SaveState } from '../types';
-import {
-  saveGameState,
-  loadGameState,
-  deleteSaveState,
-  hasSaveState,
-  SAVE_KEY,
-} from '../save-manager';
+import { SaveState } from '../domain/types';
+import { SaveRepository } from '../infrastructure/storage/save-repository';
+import { LocalStorageAdapter } from '../infrastructure/storage/local-storage-adapter';
 
-describe('save-manager', () => {
+const SAVE_KEY = 'aqs_save_state';
+
+describe('SaveRepository', () => {
+  let repository: SaveRepository;
+
   beforeEach(() => {
     localStorage.clear();
+    repository = new SaveRepository(new LocalStorageAdapter());
   });
 
   const mockSaveState: SaveState = {
@@ -78,9 +78,9 @@ describe('save-manager', () => {
 
   // ── 正常系 ──────────────────────────────
 
-  describe('saveGameState', () => {
+  describe('save', () => {
     it('ゲーム状態をlocalStorageに保存する', () => {
-      saveGameState(mockSaveState);
+      repository.save(mockSaveState);
       const stored = localStorage.getItem(SAVE_KEY);
       expect(stored).not.toBeNull();
       const parsed = JSON.parse(stored!);
@@ -90,10 +90,10 @@ describe('save-manager', () => {
     });
   });
 
-  describe('loadGameState', () => {
+  describe('load', () => {
     it('保存されたゲーム状態を読み込む', () => {
-      saveGameState(mockSaveState);
-      const state = loadGameState();
+      repository.save(mockSaveState);
+      const state = repository.load();
       expect(state).toBeDefined();
       expect(state!.sprintCount).toBe(5);
       expect(state!.currentSprint).toBe(2);
@@ -103,28 +103,28 @@ describe('save-manager', () => {
     });
 
     it('保存データがない場合はundefinedを返す', () => {
-      expect(loadGameState()).toBeUndefined();
+      expect(repository.load()).toBeUndefined();
     });
   });
 
-  describe('deleteSaveState', () => {
+  describe('delete', () => {
     it('セーブデータを削除する', () => {
-      saveGameState(mockSaveState);
-      expect(hasSaveState()).toBe(true);
-      deleteSaveState();
-      expect(hasSaveState()).toBe(false);
-      expect(loadGameState()).toBeUndefined();
+      repository.save(mockSaveState);
+      expect(repository.exists()).toBe(true);
+      repository.delete();
+      expect(repository.exists()).toBe(false);
+      expect(repository.load()).toBeUndefined();
     });
   });
 
-  describe('hasSaveState', () => {
+  describe('exists', () => {
     it('セーブデータが存在する場合はtrueを返す', () => {
-      saveGameState(mockSaveState);
-      expect(hasSaveState()).toBe(true);
+      repository.save(mockSaveState);
+      expect(repository.exists()).toBe(true);
     });
 
     it('セーブデータが存在しない場合はfalseを返す', () => {
-      expect(hasSaveState()).toBe(false);
+      expect(repository.exists()).toBe(false);
     });
   });
 
@@ -133,40 +133,40 @@ describe('save-manager', () => {
   describe('異常系', () => {
     it('不正なJSONデータの場合はundefinedを返す', () => {
       localStorage.setItem(SAVE_KEY, 'invalid json data');
-      expect(loadGameState()).toBeUndefined();
+      expect(repository.load()).toBeUndefined();
     });
 
     it('破損データは自動削除される', () => {
       localStorage.setItem(SAVE_KEY, 'corrupt');
-      loadGameState();
+      repository.load();
       expect(localStorage.getItem(SAVE_KEY)).toBeNull();
     });
 
     it('バージョンが不一致の場合はundefinedを返し、データを削除する', () => {
       const oldVersionData = { ...mockSaveState, version: 999 };
       localStorage.setItem(SAVE_KEY, JSON.stringify(oldVersionData));
-      expect(loadGameState()).toBeUndefined();
+      expect(repository.load()).toBeUndefined();
       expect(localStorage.getItem(SAVE_KEY)).toBeNull();
     });
 
     it('localStorage が使用不可でもエラーにならない（save）', () => {
       const originalSetItem = Storage.prototype.setItem;
       Storage.prototype.setItem = () => { throw new Error('QuotaExceeded'); };
-      expect(() => saveGameState(mockSaveState)).not.toThrow();
+      expect(() => repository.save(mockSaveState)).not.toThrow();
       Storage.prototype.setItem = originalSetItem;
     });
 
     it('localStorage が使用不可でもエラーにならない（load）', () => {
       const originalGetItem = Storage.prototype.getItem;
       Storage.prototype.getItem = () => { throw new Error('SecurityError'); };
-      expect(loadGameState()).toBeUndefined();
+      expect(repository.load()).toBeUndefined();
       Storage.prototype.getItem = originalGetItem;
     });
 
-    it('localStorage が使用不可でもエラーにならない（hasSaveState）', () => {
+    it('localStorage が使用不可でもエラーにならない（exists）', () => {
       const originalGetItem = Storage.prototype.getItem;
       Storage.prototype.getItem = () => { throw new Error('SecurityError'); };
-      expect(hasSaveState()).toBe(false);
+      expect(repository.exists()).toBe(false);
       Storage.prototype.getItem = originalGetItem;
     });
   });
@@ -175,8 +175,8 @@ describe('save-manager', () => {
 
   describe('データ整合性', () => {
     it('保存→読み込みでデータが完全に一致する', () => {
-      saveGameState(mockSaveState);
-      const loaded = loadGameState()!;
+      repository.save(mockSaveState);
+      const loaded = repository.load()!;
       expect(loaded.version).toBe(mockSaveState.version);
       expect(loaded.timestamp).toBe(mockSaveState.timestamp);
       expect(loaded.sprintCount).toBe(mockSaveState.sprintCount);
