@@ -5,6 +5,7 @@
  * game-logic.ts から抽出。
  */
 import { clamp } from '../../../../utils/math-utils';
+import { CFG } from '../constants/config';
 import { STATUS_META } from '../constants/status-effect-defs';
 import type { Player, StatusEffectId } from '../models/player';
 import { isStatusEffectId } from '../models/player';
@@ -49,7 +50,7 @@ export const applyModifiers = (
   if (mn < 0) mn = Math.round(mn * fx.mnReduce);
 
   // 呪い状態で情報値半減
-  if (playerStatuses.includes('呪い') && inf > 0) inf = Math.round(inf * 0.5);
+  if (playerStatuses.includes('呪い') && inf > 0) inf = Math.round(inf * CFG.CURSE_INFO_PENALTY);
 
   return { hp, mn, inf };
 };
@@ -64,12 +65,12 @@ export const applyChangesToPlayer = (
 ): Player => {
   const sts: string[] = [...player.statuses];
   let newSts = sts;
-  if (flag?.startsWith('add:')) {
-    const s = flag.slice(4);
+  if (flag?.startsWith(CFG.STATUS_FLAG_ADD_PREFIX)) {
+    const s = flag.slice(CFG.STATUS_FLAG_ADD_PREFIX.length);
     if (!sts.includes(s)) newSts = [...sts, s];
   }
-  if (flag?.startsWith('remove:')) {
-    newSts = sts.filter(s => s !== flag.slice(7));
+  if (flag?.startsWith(CFG.STATUS_FLAG_REMOVE_PREFIX)) {
+    newSts = sts.filter(s => s !== flag.slice(CFG.STATUS_FLAG_REMOVE_PREFIX.length));
   }
   // 有効な StatusEffectId のみを保持する
   const validStatuses = newSts.filter(isStatusEffectId);
@@ -100,7 +101,7 @@ export const computeDrain = (
     if (!tick) continue;
     let h = tick.hpDelta;
     const m = tick.mnDelta;
-    if (s === '出血' && fx.bleedReduce) h = Math.round(h * 0.5);
+    if (s === '出血' && fx.bleedReduce) h = Math.round(h * CFG.BLEED_REDUCE_MULT);
     hpD += h;
     mnD += m;
   }
@@ -119,8 +120,8 @@ export const computeDrain = (
 
 /** ダメージ/回復のインパクトを分類する */
 export const classifyImpact = (hp: number, mn: number): string | null => {
-  if (hp < -15) return 'bigDmg';
-  if (hp < 0 || mn < -10) return 'dmg';
+  if (hp < CFG.IMPACT_BIG_DMG_HP) return 'bigDmg';
+  if (hp < 0 || mn < CFG.IMPACT_DMG_MN) return 'dmg';
   if (hp > 0) return 'heal';
   return null;
 };
@@ -143,8 +144,8 @@ export const checkSecondLife = (
     activated: true,
     player: {
       ...player,
-      hp: Math.max(player.hp, Math.floor(player.maxHp / 2)),
-      mn: Math.max(player.mn, Math.floor(player.maxMn / 2)),
+      hp: Math.max(player.hp, Math.floor(player.maxHp * CFG.SECOND_LIFE_RECOVER_RATE)),
+      mn: Math.max(player.mn, Math.floor(player.maxMn * CFG.SECOND_LIFE_RECOVER_RATE)),
     },
   };
 };

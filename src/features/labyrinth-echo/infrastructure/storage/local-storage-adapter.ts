@@ -87,8 +87,9 @@ export class LocalStorageAdapter implements StoragePort {
   saveAudioSettings(settings: AudioSettings): void {
     try {
       localStorage.setItem(AUDIO_SETTINGS_KEY, JSON.stringify(settings));
-    } catch {
-      /* localStorage が使えない環境では無視 */
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error('[LocalStorageAdapter.saveAudioSettings]', msg);
     }
   }
 
@@ -101,7 +102,27 @@ export class LocalStorageAdapter implements StoragePort {
       if (typeof parsed !== 'object' || parsed === null) {
         return { ...DEFAULT_AUDIO_SETTINGS };
       }
-      return { ...DEFAULT_AUDIO_SETTINGS, ...(parsed as Partial<AudioSettings>) };
+      const obj = parsed as Record<string, unknown>;
+      // 各フィールドを個別に検証し、不正値・範囲外はデフォルト値でフォールバック
+      const validated: AudioSettings = {
+        bgmVolume:
+          typeof obj.bgmVolume === 'number' &&
+          obj.bgmVolume >= 0 &&
+          obj.bgmVolume <= 1
+            ? obj.bgmVolume
+            : DEFAULT_AUDIO_SETTINGS.bgmVolume,
+        sfxVolume:
+          typeof obj.sfxVolume === 'number' &&
+          obj.sfxVolume >= 0 &&
+          obj.sfxVolume <= 1
+            ? obj.sfxVolume
+            : DEFAULT_AUDIO_SETTINGS.sfxVolume,
+        enabled:
+          typeof obj.enabled === 'boolean'
+            ? obj.enabled
+            : DEFAULT_AUDIO_SETTINGS.enabled,
+      };
+      return validated;
     } catch {
       return { ...DEFAULT_AUDIO_SETTINGS };
     }

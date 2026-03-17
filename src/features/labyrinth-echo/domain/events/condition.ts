@@ -5,8 +5,10 @@
  * 旧文字列形式との互換性も提供。
  */
 import type { Player, StatusEffectId } from '../models/player';
+import { isStatusEffectId } from '../models/player';
 import type { FxState } from '../models/unlock';
 import { invariant } from '../contracts/invariants';
+import { CFG } from '../constants/config';
 
 /** 比較演算子 */
 export type ComparisonOp = '>' | '<' | '>=' | '<=';
@@ -31,15 +33,15 @@ const compare = (actual: number, op: ComparisonOp, threshold: number): boolean =
 
 /** プレイヤーのHP実効値を取得する（dangerSense考慮） */
 const getEffectiveHp = (player: Player, fx: FxState): number => {
-  if (fx.dangerSense && player.hp < 30) return player.hp + 20;
+  if (fx.dangerSense && player.hp < CFG.DANGER_SENSE_HP_THRESHOLD) return player.hp + CFG.DANGER_SENSE_HP_BOOST;
   return player.hp;
 };
 
 /** プレイヤーのMN実効値を取得する（negotiator, mentalSense考慮） */
 const getEffectiveMn = (player: Player, fx: FxState): number => {
   let mn = player.mn;
-  if (fx.negotiator) mn += 8;
-  if (fx.mentalSense && player.mn < 25) mn += 15;
+  if (fx.negotiator) mn += CFG.NEGOTIATOR_MN_BOOST;
+  if (fx.mentalSense && player.mn < CFG.MENTAL_SENSE_MN_THRESHOLD) mn += CFG.MENTAL_SENSE_MN_BOOST;
   return mn;
 };
 
@@ -52,7 +54,7 @@ export const evaluateCondition = (condition: Condition, player: Player, fx: FxSt
     case 'default':
       return true;
     case 'status':
-      return (player.statuses as readonly string[]).includes(condition.statusId);
+      return player.statuses.includes(condition.statusId);
     case 'hp': {
       // dangerSense は hp > 条件のみに適用（旧 evalCond 互換）
       const hpValue = condition.op === '>' ? getEffectiveHp(player, fx) : player.hp;
@@ -79,7 +81,8 @@ export const parseCondition = (condStr: string): Condition => {
   if (condStr.startsWith('status:')) {
     const statusId = condStr.slice(7);
     invariant(statusId.length > 0, 'parseCondition', 'ステータスIDが空です');
-    return { type: 'status', statusId: statusId as StatusEffectId };
+    invariant(isStatusEffectId(statusId), 'parseCondition', `不正なステータスID: "${statusId}"`);
+    return { type: 'status', statusId };
   }
 
   // hp>, hp<, mn>, mn<, inf>, inf< をパース
@@ -106,6 +109,6 @@ export const evalCondCompat = (cond: string, player: Player, fx: FxState): boole
     return evaluateCondition(condition, player, fx);
   } catch {
     console.warn(`[evalCondCompat] Unknown format: "${cond}"`);
-    return true;
+    return false;
   }
 };

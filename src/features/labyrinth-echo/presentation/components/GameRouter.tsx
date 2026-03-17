@@ -92,7 +92,7 @@ export interface GameRouterProps {
   doUnlock: (uid: string) => void;
   toggleAudio: () => void;
   setShowLog: (v: boolean) => void;
-  setPhase: (phase: string) => void;
+  setPhase: (phase: UIPhase) => void;
   updateMeta: (updater: (prev: MetaState) => Partial<MetaState>) => void;
   resetMeta: () => Promise<void>;
   handleAudioSettingsChange: (next: AudioSettings) => void;

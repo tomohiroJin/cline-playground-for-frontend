@@ -10,7 +10,7 @@ export type { StatusEffectId, PlayerStats, Player } from './models/player';
 export { createPlayer as createPlayerModel } from './models/player';
 export type { DifficultyId, DifficultyModifiers, DifficultyRewards, DifficultyDef } from './models/difficulty';
 export type { LastRunInfo, MetaState } from './models/meta-state';
-export { createMetaState } from './models/meta-state';
+export { createMetaState, FRESH_META } from './models/meta-state';
 export type { StatusEffectVisual, StatusEffectTick, StatusEffectDef } from './models/status-effect';
 export type {
   UnlockCategory, UnlockEffectKey, UnlockEffectValue,
@@ -50,6 +50,5 @@ export { UNLOCKS } from './constants/unlock-defs';
 export { ENDINGS } from './constants/ending-defs';
 export { TITLES } from './constants/title-defs';
 export { STATUS_META } from './constants/status-effect-defs';
-export { FRESH_META } from './constants/config';
 export { UNLOCK_CATS } from './constants/unlock-defs';
 export { DEATH_FLAVORS, DEATH_TIPS } from './constants/ending-defs';

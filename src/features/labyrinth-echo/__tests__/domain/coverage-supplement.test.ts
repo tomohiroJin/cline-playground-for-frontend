@@ -22,7 +22,7 @@ import {
 } from '../../domain/services/combat-service';
 import { EVENT_TYPE } from '../../domain/constants/event-type-defs';
 import { FLOOR_META } from '../../domain/constants/floor-meta';
-import { createTestPlayer, createTestFx, createTestOutcome, createTestDifficulty, createDomainTestPlayer, createDomainTestDifficulty } from '../helpers/factories';
+import { createTestFx, createTestOutcome, createTestDifficulty, createDomainTestPlayer, createDomainTestDifficulty } from '../helpers/factories';
 import { createMetaState } from '../../domain/models/meta-state';
 import type { Player } from '../../domain/models/player';
 import type { Condition } from '../../domain/events/condition';

@@ -15,6 +15,7 @@ import type { Player, StatusEffectId } from '../../domain/models/player';
 import { isStatusEffectId } from '../../domain/models/player';
 import type { DifficultyDef } from '../../domain/models/difficulty';
 import type { FxState } from '../../domain/models/unlock';
+import { CFG } from '../../domain/constants/config';
 import {
   applyModifiers, applyChangesToPlayer, computeDrain,
   classifyImpact, checkSecondLife,
@@ -68,6 +69,8 @@ const resolveOutcome = (
   player: Player,
   fx: FxState,
 ): Outcome => {
+  // アウトカムが存在することを事前条件として確認
+  invariant(choice.o.length > 0, 'resolveOutcome', 'アウトカムが空です');
   for (const o of choice.o) {
     if (o.c !== 'default' && evalCondCompat(o.c, player, fx)) return o;
   }
@@ -101,26 +104,26 @@ const parseFlag = (flag: string | null): FlagParseResult => {
     };
   }
 
-  if (flag.startsWith('add:')) {
-    const s = flag.slice(4);
+  if (flag.startsWith(CFG.STATUS_FLAG_ADD_PREFIX)) {
+    const s = flag.slice(CFG.STATUS_FLAG_ADD_PREFIX.length);
     return {
       statusAdded: isStatusEffectId(s) ? s : null, statusRemoved: null,
       chainTriggered: false, chainNextId: null,
       isEscape: false, statusFlag: flag,
     };
   }
-  if (flag.startsWith('remove:')) {
-    const s = flag.slice(7);
+  if (flag.startsWith(CFG.STATUS_FLAG_REMOVE_PREFIX)) {
+    const s = flag.slice(CFG.STATUS_FLAG_REMOVE_PREFIX.length);
     return {
       statusAdded: null, statusRemoved: isStatusEffectId(s) ? s : null,
       chainTriggered: false, chainNextId: null,
       isEscape: false, statusFlag: flag,
     };
   }
-  if (flag.startsWith('chain:')) {
+  if (flag.startsWith(CFG.STATUS_FLAG_CHAIN_PREFIX)) {
     return {
       statusAdded: null, statusRemoved: null,
-      chainTriggered: true, chainNextId: flag.slice(6),
+      chainTriggered: true, chainNextId: flag.slice(CFG.STATUS_FLAG_CHAIN_PREFIX.length),
       isEscape: false, statusFlag: null,
     };
   }
@@ -139,20 +142,24 @@ const parseFlag = (flag: string | null): FlagParseResult => {
   };
 };
 
+/** プレイヤー更新コンテキスト */
+interface PlayerUpdateContext {
+  readonly player: Player;
+  readonly statChanges: { hp: number; mn: number; inf: number };
+  readonly statusFlag: string | null;
+  readonly fx: FxState;
+  readonly diff: DifficultyDef | null;
+  readonly usedSecondLife: boolean;
+}
+
 /** プレイヤー更新 + ドレイン + SecondLife を適用する */
-const resolvePlayerUpdate = (
-  player: Player,
-  statChanges: { hp: number; mn: number; inf: number },
-  statusFlag: string | null,
-  fx: FxState,
-  diff: DifficultyDef | null,
-  usedSecondLife: boolean,
-): {
+const resolvePlayerUpdate = (ctx: PlayerUpdateContext): {
   player: Player;
   drain: { hp: number; mn: number } | null;
   secondLifeActivated: boolean;
   usedSecondLife: boolean;
 } => {
+  const { player, statChanges, statusFlag, fx, diff, usedSecondLife } = ctx;
   const afterChoice = applyChangesToPlayer(player, statChanges, statusFlag);
   const drainResult = computeDrain(afterChoice, fx, diff);
   const afterDrain = drainResult.player;
@@ -187,6 +194,13 @@ export const processChoice = (input: ProcessChoiceInput): ProcessChoiceOutput =>
   const fx = computeFx(meta.unlocked);
   const diff = gameState.difficulty ?? null;
 
+  // choiceIndex の境界チェック
+  invariant(
+    choiceIndex >= 0 && choiceIndex < event.ch.length,
+    'processChoice',
+    `choiceIndex ${choiceIndex} は範囲外です (0..${event.ch.length - 1})`,
+  );
+
   // アウトカムを解決
   const choice = event.ch[choiceIndex];
   const outcome = resolveOutcome(choice, player, fx);
@@ -199,10 +213,14 @@ export const processChoice = (input: ProcessChoiceInput): ProcessChoiceOutput =>
   const flagResult = parseFlag(flag);
 
   // プレイヤー状態を更新（ドレイン・SecondLife含む）
-  const playerUpdate = resolvePlayerUpdate(
-    player, statChanges, flagResult.statusFlag,
-    fx, diff, gameState.usedSecondLife,
-  );
+  const playerUpdate = resolvePlayerUpdate({
+    player,
+    statChanges,
+    statusFlag: flagResult.statusFlag,
+    fx,
+    diff,
+    usedSecondLife: gameState.usedSecondLife,
+  });
 
   // フェーズを決定
   const newPhase = determinePhase(playerUpdate.player, flagResult.isEscape);

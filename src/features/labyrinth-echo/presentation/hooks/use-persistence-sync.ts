@@ -75,23 +75,26 @@ export const usePersistenceSync = (storage: StorageInterface): PersistenceSyncRe
   }, [storage]);
 
   // トロフィーと実績報酬の自動解放
+  // トリガー: meta の個別フィールド変更時に再評価（setMeta のコールバック内で prev を参照し、meta 全体の参照変更による無限ループを防止）
   useEffect(() => {
     if (!loaded) return;
-    let changed = false;
-    const next = [...meta.unlocked];
-    for (const u of UNLOCKS) {
-      if (next.includes(u.id)) continue;
-      if (u.category === 'trophy' && u.difficultyRequirement && (meta.clearedDifficulties as readonly string[]).includes(u.difficultyRequirement)) { next.push(u.id); changed = true; }
-      if (u.category === 'trophy' && u.difficultyRequirement && meta.endings?.includes(u.difficultyRequirement)) { next.push(u.id); changed = true; }
-      if (u.category === 'achieve' && u.achievementCondition && u.achievementCondition(meta)) { next.push(u.id); changed = true; }
-    }
-
-    if (changed) {
-      const newItems = next.filter(id => !meta.unlocked.includes(id));
-      newItems.forEach(id => window.dispatchEvent(new CustomEvent('labyrinth-echo-unlock', { detail: id })));
-      setMeta(prev => ({ ...prev, unlocked: next }));
-    }
-  }, [meta.runs, meta.escapes, meta.totalEvents, meta.totalDeaths, meta.endings, meta.clearedDifficulties, loaded, meta.unlocked, meta]);
+    setMeta(prev => {
+      let changed = false;
+      const next = [...prev.unlocked];
+      for (const u of UNLOCKS) {
+        if (next.includes(u.id)) continue;
+        if (u.category === 'trophy' && u.difficultyRequirement && (prev.clearedDifficulties as readonly string[]).includes(u.difficultyRequirement)) { next.push(u.id); changed = true; }
+        if (u.category === 'trophy' && u.difficultyRequirement && prev.endings?.includes(u.difficultyRequirement)) { next.push(u.id); changed = true; }
+        if (u.category === 'achieve' && u.achievementCondition && u.achievementCondition(prev)) { next.push(u.id); changed = true; }
+      }
+      if (changed) {
+        const newItems = next.filter(id => !prev.unlocked.includes(id));
+        newItems.forEach(id => window.dispatchEvent(new CustomEvent('labyrinth-echo-unlock', { detail: id })));
+        return { ...prev, unlocked: next };
+      }
+      return prev;
+    });
+  }, [meta.runs, meta.escapes, meta.totalEvents, meta.totalDeaths, meta.endings, meta.clearedDifficulties, loaded, meta.unlocked]);
 
   // 自動保存
   useEffect(() => {

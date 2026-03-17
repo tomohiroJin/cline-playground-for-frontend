@@ -481,4 +481,65 @@ describe('processChoice', () => {
       expect(result.gameState.phase).toBe('result');
     });
   });
+
+  describe('境界チェック', () => {
+    it('choiceIndexが選択肢の数以上の場合にエラーをスローする', () => {
+      // Arrange: 選択肢が2つのイベントに対してインデックス2（範囲外）を指定
+      const event = createTestEvent(); // ch が2つ（インデックス0, 1のみ有効）
+      const gameState = createTestGameState();
+      const meta = createMetaState();
+
+      // Act & Assert
+      expect(() =>
+        processChoice({
+          gameState,
+          choiceIndex: 2,
+          event,
+          meta,
+        })
+      ).toThrow();
+    });
+
+    it('choiceIndexが負の場合にエラーをスローする', () => {
+      // Arrange: 負のインデックスを指定
+      const event = createTestEvent();
+      const gameState = createTestGameState();
+      const meta = createMetaState();
+
+      // Act & Assert
+      expect(() =>
+        processChoice({
+          gameState,
+          choiceIndex: -1,
+          event,
+          meta,
+        })
+      ).toThrow();
+    });
+
+    it('アウトカムが空の選択肢でエラーをスローする', () => {
+      // Arrange: アウトカムが空（o: []）の選択肢を持つイベント
+      const event = createTestEvent({
+        ch: [
+          {
+            t: 'アウトカムなし選択肢',
+            // 型エラーを避けるためキャストで空配列を渡す
+            o: [] as unknown as [{ c: string; r: string; hp: number; mn: number; inf: number }],
+          },
+        ],
+      });
+      const gameState = createTestGameState();
+      const meta = createMetaState();
+
+      // Act & Assert
+      expect(() =>
+        processChoice({
+          gameState,
+          choiceIndex: 0,
+          event,
+          meta,
+        })
+      ).toThrow();
+    });
+  });
 });

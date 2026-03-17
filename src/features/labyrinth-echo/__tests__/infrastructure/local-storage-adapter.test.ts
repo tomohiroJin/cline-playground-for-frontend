@@ -229,6 +229,54 @@ describe('LocalStorageAdapter', () => {
         // Assert
         expect(loaded).toEqual(DEFAULT_AUDIO_SETTINGS);
       });
+
+      it('saveAudioSettings が例外時にエラーログを出力する', () => {
+        // Arrange
+        mockStorage.setItem.mockImplementation(() => {
+          throw new Error('QuotaExceededError');
+        });
+        const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
+        // Act
+        adapter.saveAudioSettings(DEFAULT_AUDIO_SETTINGS);
+
+        // Assert — エラーログが出力されること
+        expect(consoleSpy).toHaveBeenCalledWith(
+          '[LocalStorageAdapter.saveAudioSettings]',
+          'QuotaExceededError'
+        );
+        consoleSpy.mockRestore();
+      });
+
+      it('loadAudioSettings で不正な型のフィールドが含まれる場合にデフォルト値でフォールバック', () => {
+        // Arrange — bgmVolume が文字列、enabled が数値（不正な型）
+        mockStorage.getItem.mockReturnValue(
+          JSON.stringify({ bgmVolume: 'loud', sfxVolume: 0.5, enabled: 1 })
+        );
+
+        // Act
+        const loaded = adapter.loadAudioSettings();
+
+        // Assert — 不正なフィールドはデフォルト値に置き換わること
+        expect(loaded.bgmVolume).toBe(DEFAULT_AUDIO_SETTINGS.bgmVolume);
+        expect(loaded.sfxVolume).toBe(0.5);
+        expect(loaded.enabled).toBe(DEFAULT_AUDIO_SETTINGS.enabled);
+      });
+
+      it('loadAudioSettings で範囲外の数値が含まれる場合にデフォルト値でフォールバック', () => {
+        // Arrange — bgmVolume が範囲外（-0.1, 1.5）
+        mockStorage.getItem.mockReturnValue(
+          JSON.stringify({ bgmVolume: -0.1, sfxVolume: 1.5, enabled: true })
+        );
+
+        // Act
+        const loaded = adapter.loadAudioSettings();
+
+        // Assert — 範囲外のフィールドはデフォルト値に置き換わること
+        expect(loaded.bgmVolume).toBe(DEFAULT_AUDIO_SETTINGS.bgmVolume);
+        expect(loaded.sfxVolume).toBe(DEFAULT_AUDIO_SETTINGS.sfxVolume);
+        expect(loaded.enabled).toBe(true);
+      });
     });
   });
 

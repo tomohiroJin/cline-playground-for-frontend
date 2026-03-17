@@ -20,17 +20,21 @@ import type { MetaState } from '../models/meta-state';
  * @post 返却値の全キーがFX_DEFAULTSと一致する
  */
 export const computeFx = (unlockIds: readonly string[]): FxState => {
-  const fx: Record<string, number | boolean> = { ...FX_DEFAULTS };
+  // FX_DEFAULTS をコピーして FxState として初期化する
+  const fx = { ...FX_DEFAULTS };
   for (const uid of unlockIds) {
     const def = UNLOCKS.find(u => u.id === uid);
     if (!def?.effects) continue;
     for (const [k, v] of Object.entries(def.effects)) {
-      if (FX_MULT.has(k)) (fx[k] as number) *= v as number;
-      else if (FX_BOOL.has(k)) fx[k] = v as boolean;
-      else (fx[k] as number) += v as number;
+      // ループ内のプロパティ更新のみ Record キャストを使用
+      const mutable = fx as Record<string, number | boolean>;
+      if (FX_MULT.has(k)) mutable[k] = (mutable[k] as number) * (v as number);
+      else if (FX_BOOL.has(k)) mutable[k] = v as boolean;
+      else mutable[k] = (mutable[k] as number) + (v as number);
     }
   }
-  return fx as unknown as FxState;
+  // FX_DEFAULTS をスプレッドした結果は FxState と同じ型構造を持つ
+  return fx;
 };
 
 /**

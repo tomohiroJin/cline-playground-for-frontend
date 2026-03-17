@@ -6,6 +6,7 @@
 import type { EndingDef } from '../models/ending';
 import type { Player } from '../models/player';
 import type { LogEntry } from '../models/game-state';
+import { CFG } from './config';
 
 /** エンディング定義一覧（最初にマッチしたものが優先される） */
 export const ENDINGS: readonly EndingDef[] = Object.freeze([
@@ -13,7 +14,7 @@ export const ENDINGS: readonly EndingDef[] = Object.freeze([
   {
     id: "abyss_perfect", name: "修羅の覇者", subtitle: "LORD OF CARNAGE",
     description: "修羅──死と隣り合わせの極限。その全てを制し、傷なく、狂わず、全てを知り尽くした。\n迷宮が震えている。恐怖しているのだ、お前という存在に。\nこの偉業を成し遂げた者は、歴史上ただ一人。",
-    cond: (p: Player, _log: LogEntry[], d) => d?.id === "abyss" && p.hp > p.maxHp * 0.7 && p.mn > p.maxMn * 0.7 && p.inf > 35,
+    cond: (p: Player, _log: LogEntry[], d) => d?.id === "abyss" && p.hp > p.maxHp * CFG.ENDING_PERFECT_STAT_RATIO && p.mn > p.maxMn * CFG.ENDING_PERFECT_STAT_RATIO && p.inf > CFG.ENDING_PERFECT_INF_MIN,
     color: "#ff0040", icon: "💀👑", bonusKp: 6, gradient: "linear-gradient(135deg, #ff0040, #fbbf24, #ff0040)",
   },
   {
@@ -32,31 +33,31 @@ export const ENDINGS: readonly EndingDef[] = Object.freeze([
   {
     id: "perfect", name: "完全なる帰還", subtitle: "THE PERFECT RETURN",
     description: "傷ひとつなく、正気を保ち、迷宮の全てを理解した上での脱出。\nこれ以上ない完璧な探索だった。",
-    cond: (p: Player) => p.hp > p.maxHp * 0.7 && p.mn > p.maxMn * 0.7 && p.inf > 35,
+    cond: (p: Player) => p.hp > p.maxHp * CFG.ENDING_PERFECT_STAT_RATIO && p.mn > p.maxMn * CFG.ENDING_PERFECT_STAT_RATIO && p.inf > CFG.ENDING_PERFECT_INF_MIN,
     color: "#fde68a", icon: "👑", bonusKp: 2, gradient: "linear-gradient(135deg, #fbbf24, #f59e0b)",
   },
   {
     id: "scholar", name: "知識の導き", subtitle: "GUIDED BY WISDOM",
     description: "蓄積した知識が道を照らした。\n迷宮の秘密を胸に、あなたは光の中へ歩み出す。",
-    cond: (p: Player) => p.inf >= 40,
+    cond: (p: Player) => p.inf >= CFG.ENDING_SCHOLAR_INF_MIN,
     color: "#fbbf24", icon: "📖", bonusKp: 2, gradient: "linear-gradient(135deg, #fbbf24, #f97316)",
   },
   {
     id: "iron", name: "不屈の生還", subtitle: "UNYIELDING SURVIVOR",
     description: "傷だらけでも折れなかった。痛みを超え、意志の力だけで帰還を果たした。",
-    cond: (p: Player) => p.hp > p.maxHp * 0.5 && p.statuses.length > 0,
+    cond: (p: Player) => p.hp > p.maxHp * CFG.ENDING_IRON_HP_RATIO && p.statuses.length > 0,
     color: "#f97316", icon: "🔥", bonusKp: 2, gradient: "linear-gradient(135deg, #f97316, #ef4444)",
   },
   {
     id: "battered", name: "満身創痍の脱出", subtitle: "BARELY ALIVE",
     description: "意識が朦朧とする中、最後の一歩を踏み出した。\n生きている。それだけが、全てだ。",
-    cond: (p: Player) => p.hp <= p.maxHp * 0.25 && p.hp > 0,
+    cond: (p: Player) => p.hp <= p.maxHp * CFG.ENDING_BATTERED_HP_RATIO && p.hp > 0,
     color: "#ef4444", icon: "💔", bonusKp: 1, gradient: "linear-gradient(135deg, #ef4444, #991b1b)",
   },
   {
     id: "madness", name: "狂気の淵より", subtitle: "EDGE OF MADNESS",
     description: "現実と幻覚の境界が曖昧なまま出口に辿り着いた。\n自分の名前を思い出すのに、数分かかった。",
-    cond: (p: Player) => p.mn <= p.maxMn * 0.25 && p.mn > 0,
+    cond: (p: Player) => p.mn <= p.maxMn * CFG.ENDING_MADNESS_MN_RATIO && p.mn > 0,
     color: "#a78bfa", icon: "🌀", bonusKp: 1, gradient: "linear-gradient(135deg, #a78bfa, #6d28d9)",
   },
   {
@@ -68,7 +69,7 @@ export const ENDINGS: readonly EndingDef[] = Object.freeze([
   {
     id: "veteran", name: "歴戦の探索者", subtitle: "SEASONED EXPLORER",
     description: "数多の困難を乗り越え、迷宮の深奥から帰還した。\nあなたの経験は、後に続く者の道標となるだろう。",
-    cond: (_p: Player, log: LogEntry[]) => log.length >= 13,
+    cond: (_p: Player, log: LogEntry[]) => log.length >= CFG.ENDING_VETERAN_LOG_MIN,
     color: "#c084fc", icon: "⚔", bonusKp: 1, gradient: "linear-gradient(135deg, #c084fc, #7c3aed)",
   },
   {

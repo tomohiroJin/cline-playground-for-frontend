@@ -3,7 +3,7 @@
  *
  * キーボード操作制御を管理する。
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export interface KeyboardControlParams {
   optionsCount: number;
@@ -14,6 +14,9 @@ export interface KeyboardControlParams {
 
 export const useKeyboardControl = ({ optionsCount, onSelect, onCancel, isActive }: KeyboardControlParams) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
+  // Enter/Space キーで常に最新の selectedIndex を参照するために ref を使用
+  const selectedIndexRef = useRef(selectedIndex);
+  selectedIndexRef.current = selectedIndex;
 
   useEffect(() => {
     setSelectedIndex(0);
@@ -49,7 +52,8 @@ export const useKeyboardControl = ({ optionsCount, onSelect, onCancel, isActive 
           break;
         case 'Enter':
         case ' ':
-          onSelect(selectedIndex);
+          // ref 経由で常に最新の selectedIndex を参照（依存配列から selectedIndex を除去するため）
+          onSelect(selectedIndexRef.current);
           e.preventDefault();
           break;
         case 'Escape':
@@ -64,7 +68,7 @@ export const useKeyboardControl = ({ optionsCount, onSelect, onCancel, isActive 
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isActive, optionsCount, selectedIndex, onSelect, onCancel]);
+  }, [isActive, optionsCount, onSelect, onCancel]);
 
   return { selectedIndex, setSelectedIndex };
 };

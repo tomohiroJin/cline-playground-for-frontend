@@ -53,7 +53,12 @@ const LogPanel = ({ log }: { log: readonly LogEntryDef[] }) => {
     });
   };
 
-  let lastFloor = -1;
+  // フロア区切り情報を事前計算（レンダリング中の副作用を避ける）
+  const withSeparators = filtered.map((l, i) => ({
+    entry: l,
+    showSep: i === 0 || l.fl !== filtered[i - 1].fl,
+    index: i,
+  }));
 
   return (
     <div style={{ marginTop: 8, background: "rgba(0,0,0,.25)", borderRadius: 8, padding: 12 }}>
@@ -77,18 +82,14 @@ const LogPanel = ({ log }: { log: readonly LogEntryDef[] }) => {
         }}>{copied ? "✓" : "📋"}</button>
       </div>
       <div style={{ maxHeight: 180, overflowY: "auto" }}>
-        {filtered.length === 0
+        {withSeparators.length === 0
           ? <div style={{ fontSize: 11, color: "#404060", fontFamily: "var(--sans)" }}>ログなし</div>
-          : filtered.map((l, i) => {
-            const showSep = l.fl !== lastFloor;
-            lastFloor = l.fl;
-            return (
-              <div key={i}>
-                {showSep && <div style={{ fontSize: 9, color: FLOOR_META[l.fl]?.color ?? "#818cf8", fontFamily: "var(--sans)", marginTop: i > 0 ? 6 : 0, marginBottom: 4, borderBottom: `1px solid ${FLOOR_META[l.fl]?.color ?? "#818cf8"}22`, paddingBottom: 2, letterSpacing: 1 }}>── 第{l.fl}層 ──</div>}
-                <LogEntry index={i} entry={l} />
-              </div>
-            );
-          })
+          : withSeparators.map(({ entry: l, showSep, index: i }) => (
+            <div key={i}>
+              {showSep && <div style={{ fontSize: 9, color: FLOOR_META[l.fl]?.color ?? "#818cf8", fontFamily: "var(--sans)", marginTop: i > 0 ? 6 : 0, marginBottom: 4, borderBottom: `1px solid ${FLOOR_META[l.fl]?.color ?? "#818cf8"}22`, paddingBottom: 2, letterSpacing: 1 }}>── 第{l.fl}層 ──</div>}
+              <LogEntry index={i} entry={l} />
+            </div>
+          ))
         }
       </div>
     </div>

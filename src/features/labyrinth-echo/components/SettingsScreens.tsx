@@ -8,6 +8,7 @@ import { ENDINGS } from '../domain/constants/ending-defs';
 import { TITLES } from '../domain/constants/title-defs';
 import { getUnlockedTitles } from '../domain/services/title-service';
 import type { AudioSettings } from '../audio';
+import type { UIPhase } from '../presentation/hooks/use-game-orchestrator';
 import { Page } from './Page';
 import { Section } from './Section';
 import { BackBtn } from './GameComponents';
@@ -30,7 +31,7 @@ interface SettingsScreenProps {
   eventCount: number;
   audioSettings: AudioSettings;
   onChangeAudioSettings: (settings: AudioSettings) => void;
-  setPhase: (phase: string) => void;
+  setPhase: (phase: UIPhase) => void;
 }
 
 /** 設定画面 */
@@ -108,7 +109,7 @@ export const SettingsScreen = ({ Particles, eventCount, audioSettings, onChangeA
 interface ResetConfirm1ScreenProps {
   Particles: ReactNode;
   meta: MetaState;
-  setPhase: (phase: string) => void;
+  setPhase: (phase: UIPhase) => void;
 }
 
 /** リセット確認ステップ1 */
@@ -138,7 +139,7 @@ export const ResetConfirm1Screen = ({ Particles, meta, setPhase }: ResetConfirm1
 
 interface ResetConfirm2ScreenProps {
   Particles: ReactNode;
-  setPhase: (phase: string) => void;
+  setPhase: (phase: UIPhase) => void;
   resetMeta: () => Promise<void>;
 }
 

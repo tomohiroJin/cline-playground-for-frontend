@@ -1,5 +1,11 @@
 /**
  * CombatService（戦闘計算サービス）のテスト
+ *
+ * 修正内容（TDD対応）:
+ * - classifyImpact の境界値テスト: CFG定数を使った閾値チェック
+ * - applyChangesToPlayer のステータスフラグテスト: プレフィックス定数の間接確認
+ * - applyModifiers の呪いペナルティテスト: CFG.CURSE_INFO_PENALTY の確認
+ * - checkSecondLife の回復率テスト: CFG.SECOND_LIFE_RECOVER_RATE の確認
  */
 import {
   applyModifiers,
@@ -8,6 +14,7 @@ import {
   classifyImpact,
   checkSecondLife,
 } from '../../../domain/services/combat-service';
+import { CFG } from '../../../domain/constants/config';
 import { createDomainTestPlayer, createTestFx, createTestOutcome, createDomainTestDifficulty } from '../../helpers/factories';
 import type { StatusEffectId } from '../../../domain/models/player';
 
@@ -217,6 +224,33 @@ describe('CombatService', () => {
         expect(result.inf).toBe(0);
       });
     });
+
+    describe('ステータスフラグプレフィックスの動作確認', () => {
+      it('CFG.STATUS_FLAG_ADD_PREFIX（"add:"）でステータスが追加される', () => {
+        // Arrange: プレフィックス定数経由でフラグを構築
+        const player = createDomainTestPlayer({ statuses: [] });
+        const addFlag = `${CFG.STATUS_FLAG_ADD_PREFIX}負傷`;
+
+        // Act
+        const result = applyChangesToPlayer(player, { hp: 0, mn: 0, inf: 0 }, addFlag);
+
+        // Assert
+        expect(result.statuses).toContain('負傷');
+      });
+
+      it('CFG.STATUS_FLAG_REMOVE_PREFIX（"remove:"）でステータスが除去される', () => {
+        // Arrange: プレフィックス定数経由でフラグを構築
+        const player = createDomainTestPlayer({ statuses: ['負傷', '混乱'] });
+        const removeFlag = `${CFG.STATUS_FLAG_REMOVE_PREFIX}負傷`;
+
+        // Act
+        const result = applyChangesToPlayer(player, { hp: 0, mn: 0, inf: 0 }, removeFlag);
+
+        // Assert
+        expect(result.statuses).not.toContain('負傷');
+        expect(result.statuses).toContain('混乱');
+      });
+    });
   });
 
   describe('computeDrain', () => {
@@ -292,6 +326,32 @@ describe('CombatService', () => {
 
     it('変化なしの場合にnullを返す', () => {
       expect(classifyImpact(0, 0)).toBeNull();
+    });
+
+    describe('CFG定数を使った境界値テスト', () => {
+      it('hp === CFG.IMPACT_BIG_DMG_HP（ちょうど-15）は bigDmg ではなく dmg を返す', () => {
+        // Arrange: ちょうど閾値（< -15 に該当しない）
+        // Act & Assert
+        expect(classifyImpact(CFG.IMPACT_BIG_DMG_HP, 0)).toBe('dmg');
+      });
+
+      it('hp < CFG.IMPACT_BIG_DMG_HP（-16）は bigDmg を返す', () => {
+        // Arrange: 閾値より小さい値
+        // Act & Assert
+        expect(classifyImpact(CFG.IMPACT_BIG_DMG_HP - 1, 0)).toBe('bigDmg');
+      });
+
+      it('mn === CFG.IMPACT_DMG_MN（ちょうど-10）は dmg ではなく null を返す', () => {
+        // Arrange: ちょうど閾値（< -10 に該当しない）
+        // Act & Assert
+        expect(classifyImpact(0, CFG.IMPACT_DMG_MN)).toBeNull();
+      });
+
+      it('mn < CFG.IMPACT_DMG_MN（-11）は dmg を返す', () => {
+        // Arrange: 閾値より小さい値
+        // Act & Assert
+        expect(classifyImpact(0, CFG.IMPACT_DMG_MN - 1)).toBe('dmg');
+      });
     });
   });
 

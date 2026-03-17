@@ -2,6 +2,10 @@
  * 条件評価システムのテスト
  *
  * parseCondition / evaluateCondition / evalCondCompat の振る舞いを検証する。
+ *
+ * 修正内容（TDD対応）:
+ * - evalCondCompat の不正条件文字列テスト: true → false に変更
+ * - parseCondition の不正 statusId テスト: isStatusEffectId で検証するための新規テスト追加
  */
 import { createPlayer } from '../../../domain/models/player';
 import type { Player } from '../../../domain/models/player';
@@ -53,6 +57,17 @@ describe('parseCondition', () => {
     it('"status:混乱" を status条件にパースする', () => {
       const result = parseCondition('status:混乱');
       expect(result).toEqual({ type: 'status', statusId: '混乱' });
+    });
+
+    describe('不正な statusId', () => {
+      beforeEach(() => { jest.spyOn(console, 'error').mockImplementation(() => {}); });
+      afterEach(() => { jest.restoreAllMocks(); });
+
+      it('"status:unknownStatus" の場合にエラーを投げる', () => {
+        // Arrange: isStatusEffectId で検証されるため、不正な ID はエラーになる
+        // Act & Assert
+        expect(() => parseCondition('status:unknownStatus')).toThrow();
+      });
     });
   });
 
@@ -327,8 +342,9 @@ describe('evalCondCompat', () => {
     expect(evalCondCompat('inf>5', makePlayer({ inf: 10 }), makeFx())).toBe(true);
   });
 
-  it('不正な条件文字列でtrueを返す（後方互換）', () => {
-    // 旧 evalCond は不正形式で warn + true を返す
-    expect(evalCondCompat('invalid', makePlayer(), makeFx())).toBe(true);
+  it('不正な条件文字列でfalseを返す（修正後: 不正入力は安全側に倒す）', () => {
+    // 旧 evalCond は不正形式で warn + true を返していたが、
+    // 安全性のため false に変更（不正な条件は条件を満たさないと判定）
+    expect(evalCondCompat('invalid', makePlayer(), makeFx())).toBe(false);
   });
 });

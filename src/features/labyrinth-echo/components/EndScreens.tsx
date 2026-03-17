@@ -9,6 +9,7 @@ import type { LogEntry } from '../domain/models/game-state';
 import type { Player } from '../domain/models/player';
 import type { DifficultyDef } from '../domain/models/difficulty';
 import type { MetaState } from '../domain/models/meta-state';
+import type { UIPhase } from '../presentation/hooks/use-game-orchestrator';
 import { Page } from './Page';
 import { Section } from './Section';
 import { DiffLabel, RecordPanel, EndingGrid } from './GameComponents';
@@ -28,7 +29,7 @@ interface GameOverScreenProps {
   log: readonly LogEntry[];
   usedSecondLife: boolean;
   startRun: () => void;
-  setPhase: (phase: string) => void;
+  setPhase: (phase: UIPhase) => void;
 }
 
 /** ゲームオーバー画面 */
@@ -116,7 +117,7 @@ interface VictoryScreenProps {
   meta: MetaState;
   floor: number;
   startRun: () => void;
-  setPhase: (phase: string) => void;
+  setPhase: (phase: UIPhase) => void;
 }
 
 /** 勝利画面（マルチエンディング） */

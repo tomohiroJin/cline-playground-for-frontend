@@ -2,6 +2,7 @@
  * 迷宮の残響 - コレクション系画面（アンロック・称号・実績）
  */
 import { ReactNode } from 'react';
+import type { UIPhase } from '../presentation/hooks/use-game-orchestrator';
 import { DIFFICULTY } from '../domain/constants/difficulty-defs';
 import { UNLOCKS } from '../domain/constants/unlock-defs';
 import { UNLOCK_CATS } from '../domain/constants/unlock-defs';
@@ -19,7 +20,7 @@ interface UnlocksScreenProps {
   meta: MetaState;
   lastBought: string | null;
   doUnlock: (uid: string) => void;
-  setPhase: (phase: string) => void;
+  setPhase: (phase: UIPhase) => void;
 }
 
 /** アンロック画面 */
@@ -76,7 +77,7 @@ interface TitlesScreenProps {
   Particles: ReactNode;
   meta: MetaState;
   updateMeta: (updater: (prev: MetaState) => Partial<MetaState>) => void;
-  setPhase: (phase: string) => void;
+  setPhase: (phase: UIPhase) => void;
 }
 
 /** 称号選択画面 */
@@ -123,7 +124,7 @@ export const TitlesScreen = ({ Particles, meta, updateMeta, setPhase }: TitlesSc
 interface RecordsScreenProps {
   Particles: ReactNode;
   meta: MetaState;
-  setPhase: (phase: string) => void;
+  setPhase: (phase: UIPhase) => void;
 }
 
 /** 実績・記録画面 */

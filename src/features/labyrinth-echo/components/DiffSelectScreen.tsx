@@ -7,6 +7,7 @@ import { DIFFICULTY } from '../domain/constants/difficulty-defs';
 import type { FxState } from '../domain/models/unlock';
 import type { DifficultyDef } from '../domain/models/difficulty';
 import type { MetaState } from '../domain/models/meta-state';
+import type { UIPhase } from '../presentation/hooks/use-game-orchestrator';
 import { Page } from './Page';
 import { DiffCard, BackBtn } from './GameComponents';
 
@@ -16,7 +17,7 @@ interface DiffSelectScreenProps {
   fx: FxState;
   meta: MetaState;
   selectDiff: (d: DifficultyDef) => void;
-  setPhase: (phase: string) => void;
+  setPhase: (phase: UIPhase) => void;
 }
 
 export const DiffSelectScreen = ({ Particles, fx, meta, selectDiff, setPhase }: DiffSelectScreenProps) => (

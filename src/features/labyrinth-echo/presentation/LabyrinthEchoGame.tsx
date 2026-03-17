@@ -152,13 +152,36 @@ function GameInner() {
     sfx(AudioEngine.sfx.floor);
     safeTimeout(() => sfx(() => AudioEngine.sfx.ambient(state.floor)), 500);
     if (state.chainNext) {
-      const ce = findChainEvent(EVENTS, state.chainNext);
-      if (ce) { dispatch({ type: 'SET_EVENT', event: ce }); return; }
+      const chainEvent = findChainEvent(EVENTS, state.chainNext);
+      if (chainEvent) { dispatch({ type: 'SET_EVENT', event: chainEvent }); return; }
     }
-    const e = pickEvent(EVENTS, state.floor, [...state.usedIds], meta, fx, getRandomSource());
-    if (e) dispatch({ type: 'SET_EVENT', event: e });
-    else console.warn(`[enterFloor] No events for floor ${state.floor}`);
+    const nextEvent = pickEvent(EVENTS, state.floor, [...state.usedIds], meta, fx, getRandomSource());
+    if (nextEvent) dispatch({ type: 'SET_EVENT', event: nextEvent });
+    else {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn(`[enterFloor] No events for floor ${state.floor}`);
+      }
+    }
   }, [state.floor, state.usedIds, state.chainNext, sfx, safeTimeout, meta, fx, dispatch]);
+
+  /** ゲームオーバー処理を共通化したヘルパー */
+  const handleGameOver = useCallback((cause: string) => {
+    sfx(AudioEngine.sfx.over);
+    dispatch({ type: 'SET_GAME_OVER' });
+    updateMeta(m => ({
+      kp: m.kp + (state.diff?.rewards.kpOnDeath ?? 2),
+      bestFloor: Math.max(m.bestFloor, state.floor),
+      totalDeaths: (m.totalDeaths ?? 0) + 1,
+      lastRun: {
+        cause,
+        floor: state.floor,
+        endingId: null,
+        hp: state.player?.hp ?? 0,
+        mn: state.player?.mn ?? 0,
+        inf: state.player?.inf ?? 0,
+      },
+    }));
+  }, [sfx, dispatch, updateMeta, state.diff, state.floor, state.player]);
 
   const handleChoice = useCallback((idx: number) => {
     if (!state.event || !state.player) return;
@@ -223,81 +246,60 @@ function GameInner() {
     // 死亡
     if (drained.hp <= 0 || drained.mn <= 0) {
       const deathCause = drained.hp <= 0 ? "体力消耗" : "精神崩壊";
-      safeTimeout(() => sfx(AudioEngine.sfx.over), 800);
-      safeTimeout(() => {
-        dispatch({ type: 'SET_GAME_OVER' });
-        updateMeta(m => ({
-          kp: m.kp + (state.diff?.rewards.kpOnDeath ?? 2),
-          bestFloor: Math.max(m.bestFloor, state.floor),
-          totalDeaths: (m.totalDeaths ?? 0) + 1,
-          lastRun: { cause: deathCause, floor: state.floor, endingId: null, hp: drained.hp, mn: drained.mn, inf: drained.inf },
-        }));
-      }, 2500);
+      safeTimeout(() => handleGameOver(deathCause), 2500);
     }
-  }, [state.event, state.player, state.diff, state.floor, state.step, state.log, state.usedSecondLife, fx, sfx, safeTimeout, doShake, flash, dispatch, updateMeta, meta.endings, meta.clearedDifficulties]);
+  }, [state.event, state.player, state.diff, state.floor, state.step, state.log, state.usedSecondLife, fx, sfx, safeTimeout, doShake, flash, dispatch, updateMeta, meta.endings, meta.clearedDifficulties, handleGameOver]);
 
   const proceed = useCallback(() => {
     if (!state.event) return;
-    const ns = state.step + 1;
-    const nu = [...state.usedIds, state.event.id];
+    const nextStep = state.step + 1;
+    const nextUsedIds = [...state.usedIds, state.event.id];
 
     if (state.chainNext) {
-      const ce = findChainEvent(EVENTS, state.chainNext);
-      if (ce) { dispatch({ type: 'ADVANCE_STEP', event: ce, step: ns, usedIds: nu }); return; }
+      const chainEvent = findChainEvent(EVENTS, state.chainNext);
+      if (chainEvent) { dispatch({ type: 'ADVANCE_STEP', event: chainEvent, step: nextStep, usedIds: nextUsedIds }); return; }
     }
 
     const isShort = state.resChg?.fl === "shortcut";
-    const nf = isShort ? Math.min(state.floor + 2, CFG.MAX_FLOOR) : (ns >= CFG.EVENTS_PER_FLOOR ? state.floor + 1 : state.floor);
+    const nextFloor = isShort ? Math.min(state.floor + 2, CFG.MAX_FLOOR) : (nextStep >= CFG.EVENTS_PER_FLOOR ? state.floor + 1 : state.floor);
 
-    if (nf > state.floor && nf <= CFG.MAX_FLOOR) {
+    if (nextFloor > state.floor && nextFloor <= CFG.MAX_FLOOR) {
       sfx(AudioEngine.sfx.levelUp);
-      dispatch({ type: 'CHANGE_FLOOR', floor: nf });
+      dispatch({ type: 'CHANGE_FLOOR', floor: nextFloor });
       return;
     }
 
-    if (nf > CFG.MAX_FLOOR) {
+    if (nextFloor > CFG.MAX_FLOOR) {
       const boss = EVENTS.find(e => e.id === CFG.BOSS_EVENT_ID);
-      if (boss && !nu.includes(CFG.BOSS_EVENT_ID)) {
-        dispatch({ type: 'ADVANCE_STEP', event: boss, step: ns, usedIds: nu });
+      if (boss && !nextUsedIds.includes(CFG.BOSS_EVENT_ID)) {
+        dispatch({ type: 'ADVANCE_STEP', event: boss, step: nextStep, usedIds: nextUsedIds });
         return;
       }
-      const bossCount = nu.filter(id => id === CFG.BOSS_EVENT_ID).length;
-      const lastBossIdx = nu.lastIndexOf(CFG.BOSS_EVENT_ID);
-      const postBoss = nu.length - lastBossIdx - 1;
+      const bossCount = nextUsedIds.filter(id => id === CFG.BOSS_EVENT_ID).length;
+      const lastBossIdx = nextUsedIds.lastIndexOf(CFG.BOSS_EVENT_ID);
+      const postBoss = nextUsedIds.length - lastBossIdx - 1;
       if (bossCount < CFG.MAX_BOSS_RETRIES && postBoss < 2) {
-        const next = pickEvent(EVENTS, state.floor, nu, meta, fx, getRandomSource());
-        if (next) { dispatch({ type: 'ADVANCE_STEP', event: next, step: ns, usedIds: nu }); return; }
+        const nextEvent = pickEvent(EVENTS, state.floor, nextUsedIds, meta, fx, getRandomSource());
+        if (nextEvent) { dispatch({ type: 'ADVANCE_STEP', event: nextEvent, step: nextStep, usedIds: nextUsedIds }); return; }
       }
       if (bossCount < CFG.MAX_BOSS_RETRIES && boss) {
-        dispatch({ type: 'ADVANCE_STEP', event: boss, step: ns, usedIds: nu });
+        dispatch({ type: 'ADVANCE_STEP', event: boss, step: nextStep, usedIds: nextUsedIds });
         return;
       }
-      sfx(AudioEngine.sfx.over);
-      dispatch({ type: 'SET_GAME_OVER' });
-      updateMeta(m => ({
-        kp: m.kp + (state.diff?.rewards.kpOnDeath ?? 2),
-        bestFloor: Math.max(m.bestFloor, state.floor),
-        totalDeaths: (m.totalDeaths ?? 0) + 1,
-        lastRun: { cause: "精神崩壊", floor: state.floor, endingId: null, hp: state.player?.hp ?? 0, mn: 0, inf: state.player?.inf ?? 0 },
-      }));
+      handleGameOver("精神崩壊");
       return;
     }
 
-    const next = pickEvent(EVENTS, state.floor, nu, meta, fx, getRandomSource());
-    if (next) {
-      dispatch({ type: 'ADVANCE_STEP', event: next, step: ns, usedIds: nu });
+    const nextEvent = pickEvent(EVENTS, state.floor, nextUsedIds, meta, fx, getRandomSource());
+    if (nextEvent) {
+      dispatch({ type: 'ADVANCE_STEP', event: nextEvent, step: nextStep, usedIds: nextUsedIds });
     } else {
-      console.warn(`[proceed] No events left for floor ${state.floor}`);
-      sfx(AudioEngine.sfx.over);
-      dispatch({ type: 'SET_GAME_OVER' });
-      updateMeta(m => ({
-        kp: m.kp + (state.diff?.rewards.kpOnDeath ?? 2),
-        bestFloor: Math.max(m.bestFloor, state.floor),
-        totalDeaths: (m.totalDeaths ?? 0) + 1,
-        lastRun: { cause: "精神崩壊", floor: state.floor, endingId: null, hp: state.player?.hp ?? 0, mn: 0, inf: state.player?.inf ?? 0 },
-      }));
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn(`[proceed] No events left for floor ${state.floor}`);
+      }
+      handleGameOver("精神崩壊");
     }
-  }, [state, sfx, meta, fx, dispatch, updateMeta]);
+  }, [state, sfx, meta, fx, dispatch, handleGameOver]);
 
   const doUnlock = useCallback((uid: string) => {
     const def = UNLOCKS.find(u => u.id === uid);
@@ -308,11 +310,11 @@ function GameInner() {
     updateMeta(m => ({ unlocked: [...m.unlocked, uid], kp: m.kp - def.cost }));
   }, [meta, sfx, safeTimeout, dispatch, updateMeta]);
 
-  const setPhase = useCallback((phase: string) => {
+  const setPhase = useCallback((phase: UIPhase) => {
     if (phase === "title") {
       dispatch({ type: 'BACK_TO_TITLE' });
     } else {
-      dispatch({ type: 'NAVIGATE_MENU', screen: phase as UIPhase });
+      dispatch({ type: 'NAVIGATE_MENU', screen: phase });
     }
   }, [dispatch]);
 

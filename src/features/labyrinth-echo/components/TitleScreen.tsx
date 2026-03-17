@@ -6,6 +6,7 @@ import { CFG } from '../domain/constants/config';
 import { DIFFICULTY } from '../domain/constants/difficulty-defs';
 import { UNLOCKS } from '../domain/constants/unlock-defs';
 import type { MetaState } from '../domain/models/meta-state';
+import type { UIPhase } from '../presentation/hooks/use-game-orchestrator';
 import { ENDINGS } from '../domain/constants/ending-defs';
 import { getActiveTitle } from '../domain/services/title-service';
 import { Page } from './Page';
@@ -17,7 +18,7 @@ interface TitleScreenProps {
   Particles: ReactNode;
   startRun: () => void;
   enableAudio: () => void;
-  setPhase: (phase: string) => void;
+  setPhase: (phase: UIPhase) => void;
   eventCount: number;
 }
 
