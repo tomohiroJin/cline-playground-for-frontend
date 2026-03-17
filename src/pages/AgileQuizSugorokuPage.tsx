@@ -604,6 +604,7 @@ const AgileQuizSugorokuPage: React.FC = () => {
           onAnswer={handleChallengeAnswer}
           onNext={handleChallengeNext}
           quizIndex={0}
+          nextButtonLabel="▶ Next"
         />
       )}
 

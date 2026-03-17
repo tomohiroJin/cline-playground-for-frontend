@@ -49,6 +49,8 @@ interface QuizScreenProps {
   onAnswer: (optionIndex: number) => void;
   onNext: () => void;
   quizIndex: number;
+  /** ボタンラベルを外部から指定（チャレンジモード等で使用） */
+  nextButtonLabel?: string;
 }
 
 export const QuizScreen: React.FC<QuizScreenProps> = ({
@@ -64,6 +66,7 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
   onAnswer,
   onNext,
   quizIndex: _quizIndex,
+  nextButtonLabel,
 }) => {
   const [imgError, setImgError] = useState(false);
   const [bgError, setBgError] = useState(false);
@@ -183,6 +186,7 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
             scoreText={feedback.scoreText}
             isComboBreak={isComboBreak}
             onNext={onNext}
+            nextButtonLabel={nextButtonLabel}
           />
         )}
 
