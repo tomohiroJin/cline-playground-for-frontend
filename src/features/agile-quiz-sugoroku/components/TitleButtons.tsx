@@ -35,7 +35,7 @@ export const TitleButtons: React.FC<TitleButtonsProps> = ({
     )}
 
     <Button
-      $color="#34d399"
+      $color={COLORS.green}
       onClick={onNewGame}
       style={{ padding: '14px 52px', fontSize: 14 }}
     >

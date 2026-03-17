@@ -21,7 +21,7 @@ export const IncorrectReview: React.FC<IncorrectReviewProps> = ({ questions }) =
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {questions.map((q, i) => (
           <div
-            key={i}
+            key={`${q.questionText.slice(0, 20)}-${i}`}
             style={{
               padding: '10px 12px',
               background: `${COLORS.red}08`,

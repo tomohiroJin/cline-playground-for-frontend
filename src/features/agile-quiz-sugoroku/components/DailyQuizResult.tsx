@@ -22,6 +22,11 @@ interface DailyQuizResultProps {
   onBack: () => void;
 }
 
+/** デイリークイズ結果の良好判定しきい値 */
+const DAILY_GOOD_THRESHOLD = 4;
+/** デイリークイズ結果の普通判定しきい値 */
+const DAILY_FAIR_THRESHOLD = 2;
+
 export const DailyQuizResult: React.FC<DailyQuizResultProps> = ({
   result,
   dateKey,
@@ -51,7 +56,7 @@ export const DailyQuizResult: React.FC<DailyQuizResultProps> = ({
         <div style={{ textAlign: 'center' }}>
           <div style={{
             fontSize: 36, fontWeight: 800,
-            color: result.correctCount >= 4 ? COLORS.green : result.correctCount >= 2 ? COLORS.yellow : COLORS.red,
+            color: result.correctCount >= DAILY_GOOD_THRESHOLD ? COLORS.green : result.correctCount >= DAILY_FAIR_THRESHOLD ? COLORS.yellow : COLORS.red,
             fontFamily: FONTS.mono,
           }}>
             {result.correctCount} / {result.totalCount}

@@ -39,6 +39,13 @@ import { HistoryRepository } from '../features/agile-quiz-sugoroku/infrastructur
 import { ChallengeRepository } from '../features/agile-quiz-sugoroku/infrastructure/storage/challenge-repository';
 import { LocalStorageAdapter } from '../features/agile-quiz-sugoroku/infrastructure/storage/local-storage-adapter';
 
+/** 有効な難易度値 */
+const VALID_DIFFICULTIES: readonly Difficulty[] = ['easy', 'normal', 'hard', 'extreme'] as const;
+
+/** 文字列が有効な Difficulty 値かどうかを判定する型ガード */
+const isDifficulty = (value: string): value is Difficulty =>
+  (VALID_DIFFICULTIES as readonly string[]).includes(value);
+
 const audio = createDefaultAudioActions();
 
 const storageAdapter = new LocalStorageAdapter();
@@ -121,8 +128,8 @@ const AgileQuizSugorokuPage: React.FC = () => {
   /** ゲーム開始 */
   const handleStart = (selectedSprintCount: number, selectedDifficulty?: string) => {
     setSprintCount(selectedSprintCount);
-    if (selectedDifficulty) {
-      setDifficulty(selectedDifficulty as Difficulty);
+    if (selectedDifficulty && isDifficulty(selectedDifficulty)) {
+      setDifficulty(selectedDifficulty);
     }
     const storyList = getStoriesForSprintCount(selectedSprintCount);
     setStories(storyList);

@@ -22,13 +22,13 @@ export const CategoryBar: React.FC<CategoryBarProps> = ({ cats }) => {
 
   return (
     <CategoryBarContainer>
-      {keys.map((k) => {
-        const c = cats[k];
-        const rate = c.total ? Math.round((c.correct / c.total) * 100) : 0;
+      {keys.map((categoryKey) => {
+        const categoryData = cats[categoryKey];
+        const rate = categoryData.total ? Math.round((categoryData.correct / categoryData.total) * 100) : 0;
         const color = getColorByThreshold(rate, 70, 50);
         return (
-          <CategoryBadge key={k} $color={color}>
-            <CategoryName>{CATEGORY_NAMES[k] ?? k} </CategoryName>
+          <CategoryBadge key={categoryKey} $color={color}>
+            <CategoryName>{CATEGORY_NAMES[categoryKey] ?? categoryKey} </CategoryName>
             <CategoryValue $color={color}>{rate}%</CategoryValue>
           </CategoryBadge>
         );

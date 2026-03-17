@@ -42,6 +42,8 @@ export const useCharacterComment = (
   const idleTimerRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const prevSituationRef = useRef<ReactionSituation>('idle');
   const hintShownRef = useRef(false);
+  const latestTextRef = useRef(state.text);
+  latestTextRef.current = state.text;
 
   const updateIdleComment = useCallback(() => {
     const reaction = getRandomReaction('idle', characterId);
@@ -54,7 +56,7 @@ export const useCharacterComment = (
     }
 
     // 同じ状況の連続更新をスキップ（ガタつき防止）
-    if (situation === prevSituationRef.current && state.text) {
+    if (situation === prevSituationRef.current && latestTextRef.current) {
       // ただし timeMild でヒントを未表示なら表示する
       if (situation === 'timeMild' && !hintShownRef.current && quizTags.length > 0) {
         const hint = getHintForTags(quizTags, characterId);
@@ -63,7 +65,7 @@ export const useCharacterComment = (
           hintShownRef.current = true;
         }
       }
-      return;
+      return () => { /* noop */ };
     }
     prevSituationRef.current = situation;
 
@@ -86,12 +88,12 @@ export const useCharacterComment = (
         if (hint.characterId === characterId) {
           setState({ text: hint.text, isHint: true });
           hintShownRef.current = true;
-          return;
+          return () => { /* noop */ };
         }
       }
       const reaction = getRandomReaction('timeMild', characterId);
       setState({ text: reaction.text, isHint: false });
-      return;
+      return () => { /* noop */ };
     }
 
     // その他の状況コメント
@@ -102,7 +104,7 @@ export const useCharacterComment = (
     // 回答後の状況（correct/incorrect/combo）はコメントを固定表示
     const isPostAnswer = situation === 'correct' || situation === 'incorrect' || situation === 'combo';
     if (isPostAnswer) {
-      return;
+      return () => { /* noop */ };
     }
 
     // それ以外（emergency/timeWarning）は一定時間後に idle に戻す
@@ -115,7 +117,7 @@ export const useCharacterComment = (
       clearTimeout(timeout);
       if (idleTimerRef.current) clearInterval(idleTimerRef.current);
     };
-  }, [situation, characterId, quizTags, updateIdleComment, idleDelay]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [situation, characterId, quizTags, updateIdleComment, idleDelay]);
 
   return state;
 };

@@ -83,7 +83,7 @@ export const DailyQuizQuestion: React.FC<DailyQuizQuestionProps> = ({
 
             return (
               <button
-                key={i}
+                key={`opt-${i}`}
                 onClick={() => onAnswer(i)}
                 disabled={isAnswered}
                 style={{

@@ -99,7 +99,7 @@ export const DifficultySection: React.FC = () => (
         { name: 'Easy', color: COLORS.green, desc: '制限時間20秒 / 負債0.5倍 / ヒント機能付き' },
         { name: 'Normal', color: COLORS.accent, desc: '制限時間15秒 / 標準設定' },
         { name: 'Hard', color: COLORS.orange, desc: '制限時間10秒 / 負債2倍 / 緊急対応+20% / グレードボーナス1.1倍' },
-        { name: 'Extreme', color: '#f06070', desc: '制限時間8秒 / 負債3倍 / 1ミスで負債+15 / グレードボーナス1.2倍' },
+        { name: 'Extreme', color: COLORS.red, desc: '制限時間8秒 / 負債3倍 / 1ミスで負債+15 / グレードボーナス1.2倍' },
       ].map(d => (
         <div key={d.name} style={{
           padding: '6px 10px', borderRadius: 6,

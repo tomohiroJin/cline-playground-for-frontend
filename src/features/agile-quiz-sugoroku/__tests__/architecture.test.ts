@@ -38,13 +38,6 @@ function extractImportPaths(filePath: string): { line: number; importPath: strin
   return imports;
 }
 
-/** 相対パスから解決先のファイル名（拡張子なし）を取得 */
-function _resolveRelativeImport(sourceFile: string, importPath: string): string {
-  if (!importPath.startsWith('.')) return importPath;
-  const resolved = path.resolve(path.dirname(sourceFile), importPath);
-  return path.relative(FEATURE_ROOT, resolved);
-}
-
 describe('アーキテクチャ: 後方互換の再エクスポート', () => {
   // 削除されるべき再エクスポートファイル
   const DEPRECATED_REEXPORT_FILES = [
