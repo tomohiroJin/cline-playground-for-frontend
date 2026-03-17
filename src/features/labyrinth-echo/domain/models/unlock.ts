@@ -76,6 +76,15 @@ export const FX_DEFAULTS: Readonly<FxState> = Object.freeze({
   mentalSense: false,
 });
 
-/** FX key の分類 */
-export const FX_MULT = new Set<string>(['infoMult', 'healMult', 'mnReduce', 'hpReduce']);
-export const FX_BOOL = new Set<string>(['dangerSense', 'bleedReduce', 'drainImmune', 'curseImmune', 'secondLife', 'chainBoost', 'negotiator', 'mentalSense']);
+/** FX 乗算キーの型 */
+export type FxMultKey = 'infoMult' | 'healMult' | 'mnReduce' | 'hpReduce';
+
+/** FX ブールキーの型 */
+export type FxBoolKey = 'dangerSense' | 'bleedReduce' | 'drainImmune' | 'curseImmune' | 'secondLife' | 'chainBoost' | 'negotiator' | 'mentalSense';
+
+/** FX 加算キーの型 */
+export type FxAddKey = 'hpBonus' | 'mentalBonus' | 'infoBonus';
+
+/** FX key の分類（型安全なセット） */
+export const FX_MULT = new Set<FxMultKey>(['infoMult', 'healMult', 'mnReduce', 'hpReduce']);
+export const FX_BOOL = new Set<FxBoolKey>(['dangerSense', 'bleedReduce', 'drainImmune', 'curseImmune', 'secondLife', 'chainBoost', 'negotiator', 'mentalSense']);

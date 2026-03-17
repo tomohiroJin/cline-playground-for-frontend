@@ -114,7 +114,7 @@ export const ResultScreen = ({
                 </div>
               );
             })()}
-            {showProceed && <button className={`btn btn-p tc ${resSelIdx === 0 ? 'selected' : ''}`} onClick={proceed}>先に進む</button>}
+            {showProceed && <button className={`btn btn-p tc ${resSelIdx === 0 ? 'selected' : ''}`} onClick={proceed} aria-label="先に進む">先に進む</button>}
           </div>
         )}
       </div>

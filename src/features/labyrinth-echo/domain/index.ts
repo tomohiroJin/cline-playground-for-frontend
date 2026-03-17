@@ -14,7 +14,7 @@ export { createMetaState, FRESH_META } from './models/meta-state';
 export type { StatusEffectVisual, StatusEffectTick, StatusEffectDef } from './models/status-effect';
 export type {
   UnlockCategory, UnlockEffectKey, UnlockEffectValue,
-  UnlockDef, FxState,
+  UnlockDef, FxState, FxMultKey, FxBoolKey, FxAddKey,
 } from './models/unlock';
 export { FX_DEFAULTS, FX_MULT, FX_BOOL } from './models/unlock';
 export { isStatusEffectId } from './models/player';

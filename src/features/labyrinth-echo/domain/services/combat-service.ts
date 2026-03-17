@@ -39,7 +39,15 @@ export const applyModifiers = (
   let mn = outcome.mn ?? 0;
   let inf = outcome.inf ?? 0;
 
-  // 回復・ダメージ効果の適用
+  // ── 修正値の適用順序 ──
+  // 1. FX効果（アンロック由来）を先に適用
+  //    - 回復量: healMult で増幅（hp > 0 の場合のみ）
+  //    - ダメージ: hpReduce / mnReduce で軽減（hp < 0 / mn < 0 の場合のみ）
+  // 2. 難易度修正（dmgMult）を後から適用
+  //    - ダメージのみに影響し、回復には影響しない
+  //    - HP と MN の両方に同じ倍率を適用
+  // 3. 情報値は FX の infoMult のみ影響（難易度修正なし）
+  // この順序により、FX軽減→難易度増幅の順でダメージが決定される。
   if (hp > 0) hp = Math.round(hp * fx.healMult);
   if (hp < 0) hp = Math.round(hp * fx.hpReduce);
   if (diff && diff.modifiers.dmgMult !== 1) {

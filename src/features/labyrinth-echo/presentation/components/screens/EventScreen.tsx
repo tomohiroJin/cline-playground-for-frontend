@@ -41,7 +41,7 @@ const conditionToVagueHint = (cond: string): string => {
 };
 
 /** アウトカムのカテゴリを判定 */
-const classifyOutcomeCategory = (outcomes: { hp?: number; mn?: number; inf?: number; fl?: string }[]): string[] => {
+const classifyOutcomeCategory = (outcomes: readonly { readonly hp?: number; readonly mn?: number; readonly inf?: number; readonly fl?: string }[]): string[] => {
   const cats: string[] = [];
   if (outcomes.some(o => (o.hp ?? 0) > 0 || (o.mn ?? 0) > 0)) cats.push("recovery");
   if (outcomes.some(o => (o.hp ?? 0) < 0 || (o.mn ?? 0) < 0)) cats.push("damage");
@@ -57,6 +57,39 @@ const CATEGORY_ICONS: Record<string, string> = {
   info: "📖",
   flag: "⚑",
 };
+
+/** 選択肢ごとのヒント情報を事前計算する */
+interface ChoiceHint {
+  readonly hintIcon: string | null;
+  readonly hintText: string;
+  readonly categories: string[];
+}
+
+const computeChoiceHints = (
+  choices: readonly { readonly t: string; readonly o: readonly { readonly c: string; readonly hp?: number; readonly mn?: number; readonly inf?: number; readonly fl?: string }[] }[],
+  playerInf: number,
+): ChoiceHint[] =>
+  choices.map(c => {
+    const conds = c.o.filter(o => o.c !== "default").map(o => o.c);
+    const hasConditions = conds.length > 0;
+    const showVagueIcon = playerInf >= 20 && hasConditions;
+    const showSpecificIcon = playerInf >= 35 && hasConditions;
+    const showCatIcons = playerInf >= 50;
+
+    const hintIcon = showSpecificIcon
+      ? conds[0].startsWith("hp") ? "❤" : conds[0].startsWith("mn") ? "◈" : conds[0].startsWith("inf") ? "📖" : conds[0].startsWith("status") ? "●" : null
+      : showVagueIcon ? "?" : null;
+
+    const hintText = playerInf >= 50 && hasConditions
+      ? conditionToDetailedHint(conds[0])
+      : playerInf >= 35 && hasConditions
+        ? conditionToVagueHint(conds[0])
+        : "";
+
+    const categories = showCatIcons ? classifyOutcomeCategory(c.o) : [];
+
+    return { hintIcon, hintText, categories };
+  });
 
 /** EventScreen の Props */
 export interface EventScreenProps {
@@ -134,41 +167,31 @@ export const EventScreen = ({
           </div>
         )}
         <TypewriterText text={event.sit} revealed={revealed} done={done} ready={ready} skip={skip} />
-        {done && ready && (
-          <div style={{ animation: "fadeUp .4s" }}>
-            <div className="sec-hd" style={{ color: "#505078" }}>── 行動を選択 ──</div>
-            {event.ch.map((c, i) => {
-              const conds = c.o?.filter(o => o.c !== "default").map(o => o.c) ?? [];
-              const hasConditions = conds.length > 0;
-              const showVagueIcon = player.inf >= 20 && hasConditions;
-              const showSpecificIcon = player.inf >= 35 && hasConditions;
-              const showCatIcons = player.inf >= 50;
-              const hintIcon = showSpecificIcon
-                ? conds[0].startsWith("hp") ? "❤" : conds[0].startsWith("mn") ? "◈" : conds[0].startsWith("inf") ? "📖" : conds[0].startsWith("status") ? "●" : null
-                : showVagueIcon ? "?" : null;
-              const hintText = player.inf >= 50 && hasConditions
-                ? conditionToDetailedHint(conds[0])
-                : player.inf >= 35 && hasConditions
-                  ? conditionToVagueHint(conds[0])
-                  : "";
-              const cats = showCatIcons ? classifyOutcomeCategory(c.o) : [];
-              return (
-                <button key={i} className={`btn ${eventSelIdx === i ? 'selected' : ''}`} onMouseEnter={() => setEventSelIdx(i)} onClick={() => handleChoice(i)} style={{ display: "flex", alignItems: "flex-start", animation: `slideIn .3s ease ${i * 0.08}s both` }}>
-                  <span className="cn">{i + 1}</span>
-                  <span style={{ flex: 1 }}>
-                    {c.t}
-                    {hintText && <span className="key-hint" style={{ display: "block", fontSize: 10, color: "#a5b4fc", opacity: 0.6, marginTop: 2, animation: "fadeIn 0.3s ease 0.2s both" }}>{hintText}</span>}
-                  </span>
-                  <span style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: 6, alignSelf: "center" }}>
-                    {cats.map(cat => <span key={cat} style={{ fontSize: 9, opacity: .35 }} title={cat}>{CATEGORY_ICONS[cat]}</span>)}
-                    {hintIcon && <span style={{ fontSize: 9, opacity: .4 }} title="条件あり">{hintIcon}</span>}
-                    <span className="key-hint" style={{ fontSize: "0.7em", opacity: 0.5, fontFamily: "var(--sans)", color: "var(--dim)" }}>[{i + 1}]</span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        )}
+        {done && ready && (() => {
+          const hints = computeChoiceHints(event.ch, player.inf);
+          return (
+            <div style={{ animation: "fadeUp .4s" }}>
+              <div className="sec-hd" style={{ color: "#505078" }}>── 行動を選択 ──</div>
+              {event.ch.map((c, i) => {
+                const { hintIcon, hintText, categories } = hints[i];
+                return (
+                  <button key={i} className={`btn ${eventSelIdx === i ? 'selected' : ''}`} onMouseEnter={() => setEventSelIdx(i)} onClick={() => handleChoice(i)} style={{ display: "flex", alignItems: "flex-start", animation: `slideIn .3s ease ${i * 0.08}s both` }}>
+                    <span className="cn">{i + 1}</span>
+                    <span style={{ flex: 1 }}>
+                      {c.t}
+                      {hintText && <span className="key-hint" style={{ display: "block", fontSize: 10, color: "#a5b4fc", opacity: 0.6, marginTop: 2, animation: "fadeIn 0.3s ease 0.2s both" }}>{hintText}</span>}
+                    </span>
+                    <span style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: 6, alignSelf: "center" }}>
+                      {categories.map(cat => <span key={cat} style={{ fontSize: 9, opacity: .35 }} aria-label={cat} title={cat}>{CATEGORY_ICONS[cat]}</span>)}
+                      {hintIcon && <span style={{ fontSize: 9, opacity: .4 }} aria-label="条件あり" title="条件あり">{hintIcon}</span>}
+                      <span className="key-hint" style={{ fontSize: "0.7em", opacity: 0.5, fontFamily: "var(--sans)", color: "var(--dim)" }}>[{i + 1}]</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })()}
       </div>
     </Page>
   );

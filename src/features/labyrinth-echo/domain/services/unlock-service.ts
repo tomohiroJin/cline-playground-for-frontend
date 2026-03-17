@@ -4,11 +4,10 @@
  * アンロック効果の集約・プレイヤー生成・購入判定を行う純粋関数群。
  * game-logic.ts から抽出。
  */
-import { invariant } from '../contracts/invariants';
 import { CFG } from '../constants/config';
 import { UNLOCKS } from '../constants/unlock-defs';
 import { FX_DEFAULTS, FX_MULT, FX_BOOL } from '../models/unlock';
-import type { FxState } from '../models/unlock';
+import type { FxState, FxMultKey, FxBoolKey, FxAddKey } from '../models/unlock';
 import type { Player } from '../models/player';
 import { createPlayer } from '../models/player';
 import type { DifficultyDef } from '../models/difficulty';
@@ -16,35 +15,52 @@ import type { MetaState } from '../models/meta-state';
 
 /**
  * アンロック効果を集約する（純粋関数）
- * @pre 各idがUNLOCKSに存在する
- * @post 返却値の全キーがFX_DEFAULTSと一致する
+ * 指定されたアンロックIDリストの効果を合算して FxState を生成する。
+ * 存在しないIDは無視される。
+ * @post 返却値は FX_DEFAULTS と同じキーセットを持つ
  */
 export const computeFx = (unlockIds: readonly string[]): FxState => {
-  // FX_DEFAULTS をコピーして FxState として初期化する
-  const fx = { ...FX_DEFAULTS };
+  // Partial で段階的に構築し、最後に FxState へ合成する
+  const mult: Record<FxMultKey, number> = {
+    infoMult: FX_DEFAULTS.infoMult,
+    healMult: FX_DEFAULTS.healMult,
+    mnReduce: FX_DEFAULTS.mnReduce,
+    hpReduce: FX_DEFAULTS.hpReduce,
+  };
+  const bool: Record<FxBoolKey, boolean> = {
+    dangerSense: FX_DEFAULTS.dangerSense,
+    bleedReduce: FX_DEFAULTS.bleedReduce,
+    drainImmune: FX_DEFAULTS.drainImmune,
+    curseImmune: FX_DEFAULTS.curseImmune,
+    secondLife: FX_DEFAULTS.secondLife,
+    chainBoost: FX_DEFAULTS.chainBoost,
+    negotiator: FX_DEFAULTS.negotiator,
+    mentalSense: FX_DEFAULTS.mentalSense,
+  };
+  const add: Record<FxAddKey, number> = {
+    hpBonus: FX_DEFAULTS.hpBonus,
+    mentalBonus: FX_DEFAULTS.mentalBonus,
+    infoBonus: FX_DEFAULTS.infoBonus,
+  };
+
   for (const uid of unlockIds) {
     const def = UNLOCKS.find(u => u.id === uid);
     if (!def?.effects) continue;
     for (const [k, v] of Object.entries(def.effects)) {
-      // ループ内のプロパティ更新のみ Record キャストを使用
-      const mutable = fx as Record<string, number | boolean>;
-      if (FX_MULT.has(k)) mutable[k] = (mutable[k] as number) * (v as number);
-      else if (FX_BOOL.has(k)) mutable[k] = v as boolean;
-      else mutable[k] = (mutable[k] as number) + (v as number);
+      if (FX_MULT.has(k as FxMultKey)) mult[k as FxMultKey] *= v as number;
+      else if (FX_BOOL.has(k as FxBoolKey)) bool[k as FxBoolKey] = v as boolean;
+      else add[k as FxAddKey] += v as number;
     }
   }
-  // FX_DEFAULTS をスプレッドした結果は FxState と同じ型構造を持つ
-  return fx;
+
+  return { ...add, ...mult, ...bool };
 };
 
 /**
  * プレイヤーの初期ステータスを生成する（Factory パターン）
- * @pre diff != null && fx != null
  * @post hp > 0 && mn > 0
  */
 export const createNewPlayer = (diff: DifficultyDef, fx: FxState): Player => {
-  invariant(diff != null, 'createNewPlayer', 'diff is required');
-  invariant(fx != null, 'createNewPlayer', 'fx is required');
   const hp = CFG.BASE_HP + fx.hpBonus + diff.modifiers.hpMod;
   const mn = CFG.BASE_MN + fx.mentalBonus + diff.modifiers.mnMod;
   return createPlayer({ hp, maxHp: hp, mn, maxMn: mn, inf: CFG.BASE_INF + fx.infoBonus, statuses: [] });

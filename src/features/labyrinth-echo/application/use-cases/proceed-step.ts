@@ -33,100 +33,121 @@ export interface ProceedStepOutput {
   readonly transition: StepTransition;
 }
 
-/** ステップ進行ユースケース（純粋関数） */
-export const proceedStep = (input: ProceedStepInput): ProceedStepOutput => {
-  const { gameState, events, meta, rng } = input;
-  const fx = computeFx(meta.unlocked);
+/**
+ * チェインイベントの解決を試みる
+ * @returns チェインイベントが見つかった場合は出力、なければ null
+ */
+const resolveChainEvent = (
+  gameState: GameState,
+  events: readonly GameEvent[],
+): ProceedStepOutput | null => {
+  if (!gameState.chainNextId) return null;
 
-  // 1. チェインイベントの処理
-  if (gameState.chainNextId) {
-    const chainEvent = findChainEvent(events, gameState.chainNextId);
-    if (chainEvent) {
-      const updatedGameState: GameState = {
-        ...gameState,
-        phase: 'event',
-        chainNextId: null,
-        usedEventIds: [...gameState.usedEventIds, chainEvent.id],
-      };
-      return {
-        gameState: updatedGameState,
-        transition: { type: 'chain_event', event: chainEvent },
-      };
-    }
+  const chainEvent = findChainEvent(events, gameState.chainNextId);
+  if (!chainEvent) return null;
+
+  return {
+    gameState: {
+      ...gameState,
+      phase: 'event',
+      chainNextId: null,
+      usedEventIds: [...gameState.usedEventIds, chainEvent.id],
+    },
+    transition: { type: 'chain_event', event: chainEvent },
+  };
+};
+
+/**
+ * フロア遷移またはボス遭遇を判定する
+ * @returns 遷移が必要な場合は出力、不要なら null
+ */
+const resolveFloorTransition = (
+  gameState: GameState,
+): ProceedStepOutput | null => {
+  if (gameState.step < CFG.EVENTS_PER_FLOOR) return null;
+
+  // 最終フロア → ボス遭遇
+  if (gameState.floor >= CFG.MAX_FLOOR) {
+    return {
+      gameState: { ...gameState, phase: 'event' },
+      transition: { type: 'boss_encounter' },
+    };
   }
 
-  // 2. フロア遷移・ボス判定
-  if (gameState.step >= CFG.EVENTS_PER_FLOOR) {
-    if (gameState.floor >= CFG.MAX_FLOOR) {
-      // 最終フロア → ボス遭遇
-      const updatedGameState: GameState = {
-        ...gameState,
-        phase: 'event',
-      };
-      return {
-        gameState: updatedGameState,
-        transition: { type: 'boss_encounter' },
-      };
-    }
-
-    // 次のフロアへ遷移
-    const newFloor = gameState.floor + 1;
-    const updatedGameState: GameState = {
+  // 次のフロアへ遷移
+  const newFloor = gameState.floor + 1;
+  return {
+    gameState: {
       ...gameState,
       phase: 'explore',
       floor: newFloor,
       step: 0,
       usedEventIds: [],
-    };
-    return {
-      gameState: updatedGameState,
-      transition: { type: 'floor_change', newFloor },
-    };
-  }
+    },
+    transition: { type: 'floor_change', newFloor },
+  };
+};
 
-  // 3. 通常のイベント選出
-  const selectedEvent = pickEvent(
-    events,
-    gameState.floor,
-    gameState.usedEventIds,
-    meta,
-    fx,
-    rng,
-  );
+/**
+ * 通常のイベント選出（枯渇時のフォールバック含む）
+ */
+const selectNextEvent = (
+  gameState: GameState,
+  events: readonly GameEvent[],
+  meta: MetaState,
+  rng: RandomPort,
+): ProceedStepOutput => {
+  const fx = computeFx(meta.unlocked);
+  const selectedEvent = pickEvent(events, gameState.floor, gameState.usedEventIds, meta, fx, rng);
 
-  // イベント枯渇時のフォールバック
-  if (!selectedEvent) {
-    // 最終フロアでイベント枯渇 → ボス遭遇（無限ループ防止）
-    if (gameState.floor >= CFG.MAX_FLOOR) {
-      return {
-        gameState: { ...gameState, phase: 'event' },
-        transition: { type: 'boss_encounter' },
-      };
-    }
-    // それ以外 → 次のフロアへ遷移
-    const newFloor = gameState.floor + 1;
+  // イベントが見つかった場合
+  if (selectedEvent) {
     return {
       gameState: {
         ...gameState,
-        phase: 'explore',
-        floor: newFloor,
-        step: 0,
-        usedEventIds: [],
+        phase: 'event',
+        step: gameState.step + 1,
+        usedEventIds: [...gameState.usedEventIds, selectedEvent.id],
       },
-      transition: { type: 'floor_change', newFloor },
+      transition: { type: 'next_event', event: selectedEvent },
     };
   }
 
-  // 通常の次イベント
-  const updatedGameState: GameState = {
-    ...gameState,
-    phase: 'event',
-    step: gameState.step + 1,
-    usedEventIds: [...gameState.usedEventIds, selectedEvent.id],
-  };
+  // イベント枯渇時のフォールバック
+  // 最終フロアでイベント枯渇 → ボス遭遇（無限ループ防止）
+  if (gameState.floor >= CFG.MAX_FLOOR) {
+    return {
+      gameState: { ...gameState, phase: 'event' },
+      transition: { type: 'boss_encounter' },
+    };
+  }
 
+  // それ以外 → 次のフロアへ遷移
+  const newFloor = gameState.floor + 1;
   return {
-    gameState: updatedGameState,
-    transition: { type: 'next_event', event: selectedEvent },
+    gameState: {
+      ...gameState,
+      phase: 'explore',
+      floor: newFloor,
+      step: 0,
+      usedEventIds: [],
+    },
+    transition: { type: 'floor_change', newFloor },
   };
+};
+
+/** ステップ進行ユースケース（純粋関数） */
+export const proceedStep = (input: ProceedStepInput): ProceedStepOutput => {
+  const { gameState, events, meta, rng } = input;
+
+  // 1. チェインイベントの処理（優先）
+  const chainResult = resolveChainEvent(gameState, events);
+  if (chainResult) return chainResult;
+
+  // 2. フロア遷移・ボス判定
+  const floorResult = resolveFloorTransition(gameState);
+  if (floorResult) return floorResult;
+
+  // 3. 通常のイベント選出
+  return selectNextEvent(gameState, events, meta, rng);
 };

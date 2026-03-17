@@ -5,11 +5,7 @@
  */
 import type { Player } from './player';
 import type { LogEntry } from './game-state';
-
-/** 旧互換用のDifficultyDef型（循環依存回避） */
-interface DifficultyDefLike {
-  readonly id: string;
-}
+import type { DifficultyId } from './difficulty';
 
 /** エンディング定義 */
 export interface EndingDef {
@@ -17,7 +13,7 @@ export interface EndingDef {
   readonly name: string;
   readonly subtitle: string;
   readonly description: string;
-  readonly cond: (player: Player, log: LogEntry[], diff: DifficultyDefLike | null) => boolean;
+  readonly cond: (player: Player, log: LogEntry[], diff: { readonly id: DifficultyId | string } | null) => boolean;
   readonly color: string;
   readonly icon: string;
   readonly bonusKp: number;

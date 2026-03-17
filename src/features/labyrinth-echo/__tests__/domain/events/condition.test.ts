@@ -7,35 +7,21 @@
  * - evalCondCompat の不正条件文字列テスト: true → false に変更
  * - parseCondition の不正 statusId テスト: isStatusEffectId で検証するための新規テスト追加
  */
-import { createPlayer } from '../../../domain/models/player';
-import type { Player } from '../../../domain/models/player';
-import { FX_DEFAULTS } from '../../../domain/models/unlock';
-import type { FxState } from '../../../domain/models/unlock';
 import {
   parseCondition,
   evaluateCondition,
   evalCondCompat,
 } from '../../../domain/events/condition';
 import type { Condition } from '../../../domain/events/condition';
+import { createTestPlayer, createTestFx } from '../../helpers/factories';
 
 // --- ヘルパー ---
+// 共通ファクトリを使用し、このテスト固有のデフォルト値を設定
+const makePlayer = (overrides: Parameters<typeof createTestPlayer>[0] = {}) =>
+  createTestPlayer({ hp: 50, maxHp: 100, mn: 30, maxMn: 60, inf: 10, ...overrides });
 
-/** テスト用プレイヤーを生成する */
-const makePlayer = (overrides: Partial<Parameters<typeof createPlayer>[0]> = {}): Player =>
-  createPlayer({
-    hp: 50,
-    maxHp: 100,
-    mn: 30,
-    maxMn: 60,
-    inf: 10,
-    ...overrides,
-  });
-
-/** テスト用FxStateを生成する */
-const makeFx = (overrides: Partial<FxState> = {}): FxState => ({
-  ...FX_DEFAULTS,
-  ...overrides,
-});
+// createTestFx を直接使用（不要なエイリアスを排除）
+const makeFx = (overrides: Parameters<typeof createTestFx>[0] = {}) => createTestFx(overrides);
 
 // =============================================================================
 // parseCondition

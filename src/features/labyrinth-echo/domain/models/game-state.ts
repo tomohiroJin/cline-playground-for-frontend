@@ -12,18 +12,32 @@ export type DeathCause = '体力消耗' | '精神崩壊';
 /** メニュー画面種別 */
 export type MenuScreen = 'unlocks' | 'titles' | 'records' | 'settings' | 'reset_confirm1' | 'reset_confirm2';
 
-/** ログエントリー定義 */
+/**
+ * ログエントリー定義
+ *
+ * 1ラン中に大量に蓄積されるため、プロパティ名はデータサイズ削減を目的に短縮形。
+ */
 export interface LogEntry {
+  /** floor — フロア番号 */
   readonly fl: number;
+  /** ステップ番号 */
   readonly step: number;
+  /** choice — 選択した選択肢のテキスト */
   readonly ch: string;
+  /** HP変化量 */
   readonly hp: number;
+  /** MN(精神力)変化量 */
   readonly mn: number;
+  /** INF(情報値)変化量 */
   readonly inf: number;
+  /** フラグ文字列（"add:負傷" | "chain:xxx" 等） */
   readonly flag?: string;
 }
 
-/** 旧互換用のGamePhase文字列型（移行期間中に使用） */
+/**
+ * 旧互換用のGamePhase文字列型（移行期間中に使用）
+ * TODO(2026-06-30): Discriminated Union への移行完了後に削除予定
+ */
 export type LegacyGamePhase =
   | 'title'
   | 'difficulty'

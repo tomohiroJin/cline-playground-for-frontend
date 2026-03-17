@@ -13,13 +13,13 @@ import type { AudioPort, SfxType, EventMood } from '../../application/ports/audi
  * 実際のインスタンスは audio.ts から提供される。
  */
 export interface AudioEngineType {
-  init: () => unknown;
+  init: () => void;
   resume: () => void;
   sfx: Record<SfxType, (...args: number[]) => void>;
   bgm: {
     startFloorBgm: (floor: number) => void;
     stopBgm: (fadeMs?: number) => void;
-    setEventMood: (type: string) => void;
+    setEventMood: (mood: EventMood) => void;
     updateCrisis: (hpPct: number, mnPct: number) => void;
     setBgmVolume: (vol: number) => void;
     currentVolume: number;

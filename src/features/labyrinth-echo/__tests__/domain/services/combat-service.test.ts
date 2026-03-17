@@ -334,7 +334,7 @@ describe('CombatService', () => {
         [CFG.IMPACT_BIG_DMG_HP - 1, 0,                     'bigDmg', 'hp < 閾値(-16)は bigDmg'],
         [0,                          CFG.IMPACT_DMG_MN,     null,     'mn === 閾値(-10)は dmg ではなく null'],
         [0,                          CFG.IMPACT_DMG_MN - 1, 'dmg',    'mn < 閾値(-11)は dmg'],
-      ] as const)('hp=%i, mn=%i → %s（%s）', (hp, mn, expected) => {
+      ] as const)('hp=%i, mn=%i → %s（%s）', (hp, mn, expected, _label) => {
         expect(classifyImpact(hp, mn)).toBe(expected);
       });
     });

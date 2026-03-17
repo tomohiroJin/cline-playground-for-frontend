@@ -6,27 +6,14 @@ import {
   getDeathFlavor,
   getDeathTip,
 } from '../../../domain/services/ending-service';
-import { createTestDifficulty } from '../../helpers/factories';
-
-import type { Player } from '../../../domain/models/player';
-
-/** 新型Player（statuses付き）を生成するヘルパー */
-const createDomainPlayer = (overrides: Partial<Player> = {}): Player => ({
-  hp: 55,
-  maxHp: 55,
-  mn: 35,
-  maxMn: 35,
-  inf: 5,
-  statuses: [],
-  ...overrides,
-});
+import { createTestPlayer, createTestDifficulty } from '../../helpers/factories';
 
 describe('EndingService', () => {
   describe('determineEnding', () => {
     describe('難易度固有エンディング', () => {
       it('修羅で高ステータス生還時にabyss_perfectを返す', () => {
         // Arrange
-        const player = createDomainPlayer({ hp: 50, maxHp: 55, mn: 30, maxMn: 35, inf: 40, statuses: [] });
+        const player = createTestPlayer({ hp: 50, maxHp: 55, mn: 30, maxMn: 35, inf: 40, statuses: [] });
         const diff = createTestDifficulty({ id: 'abyss' });
 
         // Act
@@ -38,7 +25,7 @@ describe('EndingService', () => {
 
       it('修羅で通常生還時にabyss_clearを返す', () => {
         // Arrange
-        const player = createDomainPlayer({ hp: 20, maxHp: 55, mn: 10, maxMn: 35, inf: 5, statuses: [] });
+        const player = createTestPlayer({ hp: 20, maxHp: 55, mn: 10, maxMn: 35, inf: 5, statuses: [] });
         const diff = createTestDifficulty({ id: 'abyss' });
 
         // Act
@@ -50,7 +37,7 @@ describe('EndingService', () => {
 
       it('求道者クリア時にhard_clearを返す', () => {
         // Arrange
-        const player = createDomainPlayer({ hp: 20, maxHp: 55, mn: 10, maxMn: 35, inf: 5, statuses: [] });
+        const player = createTestPlayer({ hp: 20, maxHp: 55, mn: 10, maxMn: 35, inf: 5, statuses: [] });
         const diff = createTestDifficulty({ id: 'hard' });
 
         // Act
@@ -64,7 +51,7 @@ describe('EndingService', () => {
     describe('汎用エンディング', () => {
       it('HP/MN高く情報値高い場合にperfectを返す', () => {
         // Arrange
-        const player = createDomainPlayer({ hp: 50, maxHp: 55, mn: 30, maxMn: 35, inf: 40, statuses: [] });
+        const player = createTestPlayer({ hp: 50, maxHp: 55, mn: 30, maxMn: 35, inf: 40, statuses: [] });
         const diff = createTestDifficulty({ id: 'normal' });
 
         // Act
@@ -76,7 +63,7 @@ describe('EndingService', () => {
 
       it('情報値が高い場合にscholarを返す', () => {
         // Arrange
-        const player = createDomainPlayer({ hp: 20, maxHp: 55, mn: 10, maxMn: 35, inf: 45, statuses: [] });
+        const player = createTestPlayer({ hp: 20, maxHp: 55, mn: 10, maxMn: 35, inf: 45, statuses: [] });
         const diff = createTestDifficulty({ id: 'normal' });
 
         // Act
@@ -88,7 +75,7 @@ describe('EndingService', () => {
 
       it('HP25%以下の場合にbatteredを返す', () => {
         // Arrange
-        const player = createDomainPlayer({ hp: 10, maxHp: 55, mn: 30, maxMn: 35, inf: 5, statuses: [] });
+        const player = createTestPlayer({ hp: 10, maxHp: 55, mn: 30, maxMn: 35, inf: 5, statuses: [] });
         const diff = createTestDifficulty({ id: 'normal' });
 
         // Act
@@ -100,7 +87,7 @@ describe('EndingService', () => {
 
       it('条件にマッチしない場合はstandardを返す', () => {
         // Arrange
-        const player = createDomainPlayer({ hp: 30, maxHp: 55, mn: 20, maxMn: 35, inf: 5, statuses: [] });
+        const player = createTestPlayer({ hp: 30, maxHp: 55, mn: 20, maxMn: 35, inf: 5, statuses: [] });
         const diff = createTestDifficulty({ id: 'normal' });
 
         // Act
@@ -114,7 +101,7 @@ describe('EndingService', () => {
     describe('優先度', () => {
       it('難易度エンディングが汎用エンディングより優先される', () => {
         // Arrange — 修羅 + perfect条件を同時に満たす
-        const player = createDomainPlayer({ hp: 50, maxHp: 55, mn: 30, maxMn: 35, inf: 40, statuses: [] });
+        const player = createTestPlayer({ hp: 50, maxHp: 55, mn: 30, maxMn: 35, inf: 40, statuses: [] });
         const diff = createTestDifficulty({ id: 'abyss' });
 
         // Act

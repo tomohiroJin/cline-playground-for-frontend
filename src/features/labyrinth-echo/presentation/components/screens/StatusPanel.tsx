@@ -65,7 +65,7 @@ const LogPanel = ({ log }: { log: readonly LogEntryDef[] }) => {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
         <div style={{ display: "flex", gap: 4 }}>
           {LOG_FILTERS.map(f => (
-            <button key={f.key} onClick={() => setFilter(f.key)} style={{
+            <button key={f.key} onClick={() => setFilter(f.key)} aria-label={`フィルター：${f.label}`} aria-pressed={filter === f.key} style={{
               fontSize: 9, padding: "2px 8px", borderRadius: 10, border: "1px solid",
               borderColor: filter === f.key ? "rgba(99,102,241,.4)" : "rgba(50,50,80,.2)",
               background: filter === f.key ? "rgba(99,102,241,.12)" : "transparent",

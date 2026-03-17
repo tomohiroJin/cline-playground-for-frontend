@@ -185,6 +185,39 @@ const determinePhase = (player: Player, isEscape: boolean): GameState['phase'] =
   return 'result';
 };
 
+/** ログエントリーを構築する */
+const buildLogEntry = (
+  gameState: GameState,
+  choiceText: string,
+  player: Player,
+  flag: string | null,
+): LogEntry => ({
+  fl: gameState.floor,
+  step: gameState.step,
+  ch: choiceText,
+  hp: player.hp,
+  mn: player.mn,
+  inf: player.inf,
+  flag: flag ?? undefined,
+});
+
+/** フィードバック情報を構築する */
+const buildFeedback = (
+  statChanges: { hp: number; mn: number; inf: number },
+  flagResult: FlagParseResult,
+  playerUpdate: { drain: { hp: number; mn: number } | null; secondLifeActivated: boolean },
+  resultText: string,
+): ChoiceFeedback => ({
+  impact: classifyImpact(statChanges.hp, statChanges.mn),
+  statChanges,
+  drain: playerUpdate.drain,
+  statusAdded: flagResult.statusAdded,
+  statusRemoved: flagResult.statusRemoved,
+  secondLifeActivated: playerUpdate.secondLifeActivated,
+  chainTriggered: flagResult.chainTriggered,
+  resultText,
+});
+
 /** 選択肢処理ユースケース（純粋関数） */
 export const processChoice = (input: ProcessChoiceInput): ProcessChoiceOutput => {
   const { gameState, choiceIndex, event, meta } = input;
@@ -194,74 +227,39 @@ export const processChoice = (input: ProcessChoiceInput): ProcessChoiceOutput =>
   const fx = computeFx(meta.unlocked);
   const diff = gameState.difficulty ?? null;
 
-  // choiceIndex の境界チェック
   invariant(
     choiceIndex >= 0 && choiceIndex < event.ch.length,
     'processChoice',
     `choiceIndex ${choiceIndex} は範囲外です (0..${event.ch.length - 1})`,
   );
 
-  // アウトカムを解決
+  // アウトカム解決 → 修正値計算 → フラグ解析
   const choice = event.ch[choiceIndex];
   const outcome = resolveOutcome(choice, player, fx);
-
-  // 修正値を計算
   const statChanges = applyModifiers(outcome, fx, diff, player.statuses);
-
-  // フラグを解析
   const flag = outcome.fl ?? null;
   const flagResult = parseFlag(flag);
 
-  // プレイヤー状態を更新（ドレイン・SecondLife含む）
+  // プレイヤー状態更新（ドレイン・SecondLife含む）
   const playerUpdate = resolvePlayerUpdate({
-    player,
-    statChanges,
-    statusFlag: flagResult.statusFlag,
-    fx,
-    diff,
-    usedSecondLife: gameState.usedSecondLife,
+    player, statChanges, statusFlag: flagResult.statusFlag,
+    fx, diff, usedSecondLife: gameState.usedSecondLife,
   });
-
-  // フェーズを決定
-  const newPhase = determinePhase(playerUpdate.player, flagResult.isEscape);
-
-  // ログエントリーを作成
-  const logEntry: LogEntry = {
-    fl: gameState.floor,
-    step: gameState.step,
-    ch: choice.t,
-    hp: playerUpdate.player.hp,
-    mn: playerUpdate.player.mn,
-    inf: playerUpdate.player.inf,
-    flag: flag ?? undefined,
-  };
 
   return {
     gameState: {
       ...gameState,
-      phase: newPhase,
+      phase: determinePhase(playerUpdate.player, flagResult.isEscape),
       player: {
-        hp: playerUpdate.player.hp,
-        maxHp: playerUpdate.player.maxHp,
-        mn: playerUpdate.player.mn,
-        maxMn: playerUpdate.player.maxMn,
-        inf: playerUpdate.player.inf,
-        statuses: playerUpdate.player.statuses,
+        hp: playerUpdate.player.hp, maxHp: playerUpdate.player.maxHp,
+        mn: playerUpdate.player.mn, maxMn: playerUpdate.player.maxMn,
+        inf: playerUpdate.player.inf, statuses: playerUpdate.player.statuses,
       },
       usedSecondLife: playerUpdate.usedSecondLife,
       chainNextId: flagResult.chainNextId,
-      log: [...gameState.log, logEntry],
+      log: [...gameState.log, buildLogEntry(gameState, choice.t, playerUpdate.player, flag)],
     },
     updatedMeta: meta,
-    feedback: {
-      impact: classifyImpact(statChanges.hp, statChanges.mn),
-      statChanges,
-      drain: playerUpdate.drain,
-      statusAdded: flagResult.statusAdded,
-      statusRemoved: flagResult.statusRemoved,
-      secondLifeActivated: playerUpdate.secondLifeActivated,
-      chainTriggered: flagResult.chainTriggered,
-      resultText: outcome.r,
-    },
+    feedback: buildFeedback(statChanges, flagResult, playerUpdate, outcome.r),
   };
 };

@@ -11,3 +11,5 @@ export { useTextReveal } from './use-text-reveal';
 export { useVisualFx } from './use-visual-fx';
 export { useKeyboardControl } from './use-keyboard-control';
 export { useImagePreload } from './use-image-preload';
+export { useGameActions } from './use-game-actions';
+export type { GameActionsDeps, GameActionsResult } from './use-game-actions';
