@@ -20,13 +20,11 @@ interface QuizResultProps {
   quiz: Question;
   selectedAnswer: number;
   stats: GameStats;
-  eventIndex: number;
-  eventsLength: number;
   scoreText: string;
   isComboBreak: boolean;
   onNext: () => void;
-  /** ボタンラベルを外部から指定（チャレンジモード等で使用） */
-  nextButtonLabel?: string;
+  /** 次へボタンのラベル */
+  nextButtonLabel: string;
 }
 
 /** フィードバック画像を選択する */
@@ -50,8 +48,6 @@ export const QuizResult: React.FC<QuizResultProps> = ({
   quiz,
   selectedAnswer,
   stats,
-  eventIndex,
-  eventsLength,
   scoreText,
   isComboBreak,
   onNext,
@@ -101,7 +97,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
       </ResultBanner>
       <div style={{ textAlign: 'right' }}>
         <Button onClick={onNext}>
-          {nextButtonLabel ?? (eventIndex + 1 >= eventsLength ? '▶ Retrospective' : '▶ Next')}
+          {nextButtonLabel}
           <HotkeyHint>[Enter]</HotkeyHint>
         </Button>
       </div>

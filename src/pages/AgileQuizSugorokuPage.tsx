@@ -46,6 +46,7 @@ import {
   AchievementScreen,
   AchievementToast,
   HistoryScreen,
+  ChallengeQuizScreen,
   ChallengeResultScreen,
   DailyQuizScreen,
 } from '../features/agile-quiz-sugoroku/components';
@@ -582,29 +583,17 @@ const AgileQuizSugorokuPage: React.FC = () => {
       )}
 
       {game.phase === 'challenge' && challenge.quiz && (
-        <QuizScreen
-          sprint={0}
-          eventIndex={0}
-          events={[{ id: 'challenge', name: 'チャレンジ', icon: '\u{1F525}', description: 'サバイバル', color: '#f06070' }]}
+        <ChallengeQuizScreen
           quiz={challenge.quiz}
           options={challenge.options}
           selectedAnswer={challenge.selectedAnswer}
-          stats={{
-            totalCorrect: challenge.correctCount,
-            totalQuestions: challenge.correctCount + (challenge.isGameOver ? 1 : 0),
-            speeds: [],
-            debt: 0,
-            emergencyCount: 0,
-            emergencySuccess: 0,
-            combo: challenge.combo,
-            maxCombo: challenge.maxCombo,
-          }}
+          combo={challenge.combo}
+          maxCombo={challenge.maxCombo}
+          correctCount={challenge.correctCount}
+          isGameOver={challenge.isGameOver}
           timer={challengeCountdown.time}
-          visible={true}
           onAnswer={handleChallengeAnswer}
           onNext={handleChallengeNext}
-          quizIndex={0}
-          nextButtonLabel="▶ Next"
         />
       )}
 

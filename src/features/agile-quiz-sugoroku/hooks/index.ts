@@ -11,3 +11,5 @@ export { useKeys } from './useKeys';
 export { useStudy } from './useStudy';
 export type { UseStudyReturn } from './useStudy';
 export { useChallenge } from './useChallenge';
+export { useQuizFeedback } from './useQuizFeedback';
+export { useQuizKeys } from './useQuizKeys';

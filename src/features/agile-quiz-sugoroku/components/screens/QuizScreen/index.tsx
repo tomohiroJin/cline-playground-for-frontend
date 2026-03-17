@@ -3,7 +3,7 @@
  * TimerDisplay, OptionsPanel, QuizResult を組み合わせる
  */
 import React, { useState } from 'react';
-import { useKeys } from '../../../hooks';
+import { useQuizFeedback, useQuizKeys } from '../../../hooks';
 import type { GameEvent, Question, GameStats } from '../../../domain/types';
 import { CONFIG, PHASE_GENRE_MAP, EVENT_BACKGROUND_MAP } from '../../../constants';
 import { AQS_IMAGES } from '../../../images';
@@ -34,7 +34,7 @@ import { TimerDisplay } from './TimerDisplay';
 import { OptionsPanel } from './OptionsPanel';
 import { QuizResult } from './QuizResult';
 import { PhaseGenreTags } from './PhaseGenreTags';
-import { FeedbackState, INITIAL_FEEDBACK, determineReaction } from './quiz-helpers';
+import { determineReaction } from './quiz-helpers';
 
 interface QuizScreenProps {
   sprint: number;
@@ -49,8 +49,6 @@ interface QuizScreenProps {
   onAnswer: (optionIndex: number) => void;
   onNext: () => void;
   quizIndex: number;
-  /** ボタンラベルを外部から指定（チャレンジモード等で使用） */
-  nextButtonLabel?: string;
 }
 
 export const QuizScreen: React.FC<QuizScreenProps> = ({
@@ -66,12 +64,9 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
   onAnswer,
   onNext,
   quizIndex: _quizIndex,
-  nextButtonLabel,
 }) => {
   const [imgError, setImgError] = useState(false);
   const [bgError, setBgError] = useState(false);
-  const [feedback, setFeedback] = useState<FeedbackState>(INITIAL_FEEDBACK);
-  const [prevCombo, setPrevCombo] = useState(0);
   const event = events[eventIndex];
 
   const bgKey = EVENT_BACKGROUND_MAP[event.id] as keyof typeof AQS_IMAGES.backgrounds | undefined;
@@ -79,46 +74,20 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
   const isEmergency = event.id === 'emergency';
   const answered = selectedAnswer !== null;
 
+  const { feedback, isComboBreak } = useQuizFeedback({
+    answered, selectedAnswer, correctAnswer: quiz.answer, combo: stats.combo,
+  });
+
   const reactionSituation = determineReaction(
     answered, selectedAnswer, isEmergency, stats.combo, quiz.answer,
   );
 
-  const isComboBreak = answered && prevCombo >= 2 && stats.combo === 0;
   const phaseGenres = PHASE_GENRE_MAP[event.id] ?? [];
 
   // イベント画像のローカル変数化（型キャスト + non-null assertion 解消）
   const eventImgSrc = AQS_IMAGES.events[event.id as keyof typeof AQS_IMAGES.events];
 
-  React.useEffect(() => {
-    if (!answered) {
-      setFeedback(INITIAL_FEEDBACK);
-      return;
-    }
-    if (selectedAnswer === -1) {
-      setFeedback({ flashType: 'timeup', scoreText: '' });
-    } else if (selectedAnswer === quiz.answer) {
-      setFeedback({ flashType: 'correct', scoreText: '+10pt' });
-    } else {
-      setFeedback({ flashType: 'incorrect', scoreText: '' });
-    }
-    setPrevCombo(stats.combo);
-    // フラッシュを自動解除
-    const tid = setTimeout(() => setFeedback((prev) => ({ ...prev, flashType: undefined })), 600);
-    return () => clearTimeout(tid);
-  // 意図的に answered のみを依存配列にしている:
-  // フラッシュ・スコア表示は「回答した瞬間」にのみトリガーする。
-  // selectedAnswer, quiz.answer 等を含めると再実行が過剰になる。
-  }, [answered]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useKeys((e) => {
-    if (answered) {
-      if (e.key === 'Enter' || e.key === ' ') onNext();
-      return;
-    }
-    const keyMap: { [key: string]: number } = { '1': 0, '2': 1, '3': 2, '4': 3, a: 0, b: 1, c: 2, d: 3 };
-    const idx = keyMap[e.key.toLowerCase()];
-    if (idx !== undefined && options[idx] !== undefined) onAnswer(options[idx]);
-  });
+  useQuizKeys({ answered, options, onAnswer, onNext });
 
   return (
     <PageWrapper>
@@ -181,12 +150,10 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({
             quiz={quiz}
             selectedAnswer={selectedAnswer}
             stats={stats}
-            eventIndex={eventIndex}
-            eventsLength={events.length}
             scoreText={feedback.scoreText}
             isComboBreak={isComboBreak}
             onNext={onNext}
-            nextButtonLabel={nextButtonLabel}
+            nextButtonLabel={eventIndex + 1 >= events.length ? '▶ Retrospective' : '▶ Next'}
           />
         )}
 
