@@ -262,6 +262,66 @@ describe('processChoice', () => {
       expect(result.feedback.chainTriggered).toBe(true);
       expect(result.gameState.chainNextId).toBe('evt002');
     });
+
+    it('チェインイベント消化後にchainフラグがない場合はchainNextIdがクリアされる', () => {
+      // Arrange: chainNextId が設定された状態で、chainフラグのないイベントを処理
+      const event = createTestEvent({
+        ch: [{ t: '通常選択', o: [{ c: 'default', r: '通常の結果', hp: -5, mn: 0, inf: 3 }] }],
+      });
+      const gameState = createTestGameState({ chainNextId: 'e141' });
+      const meta = createMetaState();
+
+      // Act
+      const result = processChoice({
+        gameState,
+        choiceIndex: 0,
+        event,
+        meta,
+      });
+
+      // Assert: チェインが終了したのでchainNextIdはnullになるべき
+      expect(result.gameState.chainNextId).toBeNull();
+    });
+
+    it('チェインイベント消化後にadd:フラグがある場合もchainNextIdがクリアされる', () => {
+      // Arrange
+      const event = createTestEvent({
+        ch: [{ t: '呪いを受ける', o: [{ c: 'default', r: '呪いを受けた', hp: 0, mn: 0, inf: 0, fl: 'add:呪い' }] }],
+      });
+      const gameState = createTestGameState({ chainNextId: 'e166' });
+      const meta = createMetaState();
+
+      // Act
+      const result = processChoice({
+        gameState,
+        choiceIndex: 0,
+        event,
+        meta,
+      });
+
+      // Assert
+      expect(result.gameState.chainNextId).toBeNull();
+    });
+
+    it('チェインイベントから新しいチェインが発生した場合は新しいIDが設定される', () => {
+      // Arrange
+      const event = createTestEvent({
+        ch: [{ t: 'チェイン選択', o: [{ c: 'default', r: '連鎖発生', hp: 0, mn: 0, inf: 0, fl: 'chain:e168' }] }],
+      });
+      const gameState = createTestGameState({ chainNextId: 'e167' });
+      const meta = createMetaState();
+
+      // Act
+      const result = processChoice({
+        gameState,
+        choiceIndex: 0,
+        event,
+        meta,
+      });
+
+      // Assert: 古いIDではなく新しいIDが設定される
+      expect(result.gameState.chainNextId).toBe('e168');
+    });
   });
 
   describe('ChoiceFeedback', () => {

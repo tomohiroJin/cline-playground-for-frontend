@@ -360,6 +360,58 @@ describe('gameReducer', () => {
     });
   });
 
+  describe('チェインイベントのループ防止', () => {
+    it('chainNextが設定されている状態でAPPLY_CHOICEにchainNext=nullを渡すとchainNextがクリアされる', () => {
+      // Arrange: chainNextが設定された状態
+      const state = createTestState({
+        phase: 'event',
+        player: createTestPlayer(),
+        event: createTestEvent({ id: 'e141', chainOnly: true }),
+        chainNext: 'e141',
+      });
+
+      // Act: チェインイベントの結果でchainNextをnullに設定
+      const next = gameReducer(state, {
+        type: 'APPLY_CHOICE',
+        player: createTestPlayer(),
+        resTxt: '結果',
+        resChg: { hp: -5, mn: 0, inf: 3 },
+        drainInfo: null,
+        logEntry: { fl: 1, step: 1, ch: 'テスト', hp: -5, mn: 0, inf: 3 },
+        chainNext: null,
+        usedSecondLife: false,
+      });
+
+      // Assert: chainNextはnullにクリアされるべき（ループ防止）
+      expect(next.chainNext).toBeNull();
+    });
+
+    it('チェインイベントから新しいチェインが発生した場合はchainNextが更新される', () => {
+      // Arrange
+      const state = createTestState({
+        phase: 'event',
+        player: createTestPlayer(),
+        event: createTestEvent({ id: 'e167' }),
+        chainNext: 'e167',
+      });
+
+      // Act
+      const next = gameReducer(state, {
+        type: 'APPLY_CHOICE',
+        player: createTestPlayer(),
+        resTxt: '結果',
+        resChg: { hp: 0, mn: 0, inf: 0 },
+        drainInfo: null,
+        logEntry: { fl: 1, step: 1, ch: 'テスト', hp: 0, mn: 0, inf: 0 },
+        chainNext: 'e168',
+        usedSecondLife: false,
+      });
+
+      // Assert
+      expect(next.chainNext).toBe('e168');
+    });
+  });
+
   describe('不変性', () => {
     it('状態オブジェクトを変更せず新しいオブジェクトを返す', () => {
       // Arrange

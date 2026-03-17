@@ -194,7 +194,7 @@ function GameInner() {
       resChg: { hp: mods.hp, mn: mods.mn, inf: mods.inf, fl: outcome.fl },
       drainInfo: drain,
       logEntry: { fl: state.floor, step: state.step + 1, ch: choice.t, hp: mods.hp, mn: mods.mn, inf: mods.inf, flag: playerFlag ?? undefined },
-      chainNext: chainId ?? state.chainNext,
+      chainNext: chainId,
       usedSecondLife: state.usedSecondLife || didSecondLife,
     });
     updateMeta(m => ({ totalEvents: m.totalEvents + 1 }));
@@ -234,7 +234,7 @@ function GameInner() {
         }));
       }, 2500);
     }
-  }, [state.event, state.player, state.diff, state.floor, state.step, state.log, state.usedSecondLife, state.chainNext, fx, sfx, safeTimeout, doShake, flash, dispatch, updateMeta, meta.endings, meta.clearedDifficulties]);
+  }, [state.event, state.player, state.diff, state.floor, state.step, state.log, state.usedSecondLife, fx, sfx, safeTimeout, doShake, flash, dispatch, updateMeta, meta.endings, meta.clearedDifficulties]);
 
   const proceed = useCallback(() => {
     if (!state.event) return;

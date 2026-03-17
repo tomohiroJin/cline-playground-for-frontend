@@ -84,12 +84,19 @@ interface FlagParseResult {
   readonly statusFlag: string | null;
 }
 
-/** フラグ文字列を解析する（純粋関数） */
-const parseFlag = (flag: string | null, currentChainNextId: string | null): FlagParseResult => {
+/**
+ * フラグ文字列を解析する（純粋関数）
+ *
+ * chain: フラグの場合のみ新しい chainNextId を設定する。
+ * それ以外のフラグ（add:, remove:, escape, null 等）では
+ * chainNextId を null にクリアし、チェインを終了させる。
+ * これにより chainOnly イベント消化後のループを防止する。
+ */
+const parseFlag = (flag: string | null): FlagParseResult => {
   if (!flag) {
     return {
       statusAdded: null, statusRemoved: null,
-      chainTriggered: false, chainNextId: currentChainNextId,
+      chainTriggered: false, chainNextId: null,
       isEscape: false, statusFlag: null,
     };
   }
@@ -98,7 +105,7 @@ const parseFlag = (flag: string | null, currentChainNextId: string | null): Flag
     const s = flag.slice(4);
     return {
       statusAdded: isStatusEffectId(s) ? s : null, statusRemoved: null,
-      chainTriggered: false, chainNextId: currentChainNextId,
+      chainTriggered: false, chainNextId: null,
       isEscape: false, statusFlag: flag,
     };
   }
@@ -106,7 +113,7 @@ const parseFlag = (flag: string | null, currentChainNextId: string | null): Flag
     const s = flag.slice(7);
     return {
       statusAdded: null, statusRemoved: isStatusEffectId(s) ? s : null,
-      chainTriggered: false, chainNextId: currentChainNextId,
+      chainTriggered: false, chainNextId: null,
       isEscape: false, statusFlag: flag,
     };
   }
@@ -120,14 +127,14 @@ const parseFlag = (flag: string | null, currentChainNextId: string | null): Flag
   if (flag === 'escape') {
     return {
       statusAdded: null, statusRemoved: null,
-      chainTriggered: false, chainNextId: currentChainNextId,
+      chainTriggered: false, chainNextId: null,
       isEscape: true, statusFlag: null,
     };
   }
 
   return {
     statusAdded: null, statusRemoved: null,
-    chainTriggered: false, chainNextId: currentChainNextId,
+    chainTriggered: false, chainNextId: null,
     isEscape: false, statusFlag: null,
   };
 };
@@ -189,7 +196,7 @@ export const processChoice = (input: ProcessChoiceInput): ProcessChoiceOutput =>
 
   // フラグを解析
   const flag = outcome.fl ?? null;
-  const flagResult = parseFlag(flag, gameState.chainNextId);
+  const flagResult = parseFlag(flag);
 
   // プレイヤー状態を更新（ドレイン・SecondLife含む）
   const playerUpdate = resolvePlayerUpdate(
