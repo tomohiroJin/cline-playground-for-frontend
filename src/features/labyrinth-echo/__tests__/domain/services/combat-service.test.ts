@@ -329,28 +329,13 @@ describe('CombatService', () => {
     });
 
     describe('CFG定数を使った境界値テスト', () => {
-      it('hp === CFG.IMPACT_BIG_DMG_HP（ちょうど-15）は bigDmg ではなく dmg を返す', () => {
-        // Arrange: ちょうど閾値（< -15 に該当しない）
-        // Act & Assert
-        expect(classifyImpact(CFG.IMPACT_BIG_DMG_HP, 0)).toBe('dmg');
-      });
-
-      it('hp < CFG.IMPACT_BIG_DMG_HP（-16）は bigDmg を返す', () => {
-        // Arrange: 閾値より小さい値
-        // Act & Assert
-        expect(classifyImpact(CFG.IMPACT_BIG_DMG_HP - 1, 0)).toBe('bigDmg');
-      });
-
-      it('mn === CFG.IMPACT_DMG_MN（ちょうど-10）は dmg ではなく null を返す', () => {
-        // Arrange: ちょうど閾値（< -10 に該当しない）
-        // Act & Assert
-        expect(classifyImpact(0, CFG.IMPACT_DMG_MN)).toBeNull();
-      });
-
-      it('mn < CFG.IMPACT_DMG_MN（-11）は dmg を返す', () => {
-        // Arrange: 閾値より小さい値
-        // Act & Assert
-        expect(classifyImpact(0, CFG.IMPACT_DMG_MN - 1)).toBe('dmg');
+      it.each([
+        [CFG.IMPACT_BIG_DMG_HP,     0,                     'dmg',    'hp === 閾値(-15)は bigDmg ではなく dmg'],
+        [CFG.IMPACT_BIG_DMG_HP - 1, 0,                     'bigDmg', 'hp < 閾値(-16)は bigDmg'],
+        [0,                          CFG.IMPACT_DMG_MN,     null,     'mn === 閾値(-10)は dmg ではなく null'],
+        [0,                          CFG.IMPACT_DMG_MN - 1, 'dmg',    'mn < 閾値(-11)は dmg'],
+      ] as const)('hp=%i, mn=%i → %s（%s）', (hp, mn, expected) => {
+        expect(classifyImpact(hp, mn)).toBe(expected);
       });
     });
   });

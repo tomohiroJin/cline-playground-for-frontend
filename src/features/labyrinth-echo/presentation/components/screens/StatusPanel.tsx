@@ -85,7 +85,7 @@ const LogPanel = ({ log }: { log: readonly LogEntryDef[] }) => {
         {withSeparators.length === 0
           ? <div style={{ fontSize: 11, color: "#404060", fontFamily: "var(--sans)" }}>ログなし</div>
           : withSeparators.map(({ entry: l, showSep, index: i }) => (
-            <div key={i}>
+            <div key={`${l.fl}-${l.step}-${i}`}>
               {showSep && <div style={{ fontSize: 9, color: FLOOR_META[l.fl]?.color ?? "#818cf8", fontFamily: "var(--sans)", marginTop: i > 0 ? 6 : 0, marginBottom: 4, borderBottom: `1px solid ${FLOOR_META[l.fl]?.color ?? "#818cf8"}22`, paddingBottom: 2, letterSpacing: 1 }}>── 第{l.fl}層 ──</div>}
               <LogEntry index={i} entry={l} />
             </div>

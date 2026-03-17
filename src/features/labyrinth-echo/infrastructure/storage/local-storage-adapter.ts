@@ -123,7 +123,9 @@ export class LocalStorageAdapter implements StoragePort {
             : DEFAULT_AUDIO_SETTINGS.enabled,
       };
       return validated;
-    } catch {
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error('[LocalStorageAdapter.loadAudioSettings]', msg);
       return { ...DEFAULT_AUDIO_SETTINGS };
     }
   }

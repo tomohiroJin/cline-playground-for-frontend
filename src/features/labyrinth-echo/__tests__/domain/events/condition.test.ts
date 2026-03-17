@@ -342,9 +342,19 @@ describe('evalCondCompat', () => {
     expect(evalCondCompat('inf>5', makePlayer({ inf: 10 }), makeFx())).toBe(true);
   });
 
-  it('不正な条件文字列でfalseを返す（修正後: 不正入力は安全側に倒す）', () => {
-    // 旧 evalCond は不正形式で warn + true を返していたが、
-    // 安全性のため false に変更（不正な条件は条件を満たさないと判定）
-    expect(evalCondCompat('invalid', makePlayer(), makeFx())).toBe(false);
+  it('不正な条件文字列でfalseを返しwarnログを出力する', () => {
+    // Arrange
+    const player = makePlayer();
+    const fx = makeFx();
+
+    // Act
+    const result = evalCondCompat('invalid', player, fx);
+
+    // Assert — 安全側（false）に倒し、警告ログを出力
+    expect(result).toBe(false);
+    expect(console.warn).toHaveBeenCalledWith(
+      expect.stringContaining('[evalCondCompat]'),
+      // warn は既に beforeEach でモック済み
+    );
   });
 });

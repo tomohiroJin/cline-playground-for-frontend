@@ -225,9 +225,6 @@ export const processChoice = (input: ProcessChoiceInput): ProcessChoiceOutput =>
   // フェーズを決定
   const newPhase = determinePhase(playerUpdate.player, flagResult.isEscape);
 
-  // ステータスを型安全に取得
-  const updatedStatuses = playerUpdate.player.statuses.filter(isStatusEffectId);
-
   // ログエントリーを作成
   const logEntry: LogEntry = {
     fl: gameState.floor,
@@ -249,7 +246,7 @@ export const processChoice = (input: ProcessChoiceInput): ProcessChoiceOutput =>
         mn: playerUpdate.player.mn,
         maxMn: playerUpdate.player.maxMn,
         inf: playerUpdate.player.inf,
-        statuses: updatedStatuses,
+        statuses: playerUpdate.player.statuses,
       },
       usedSecondLife: playerUpdate.usedSecondLife,
       chainNextId: flagResult.chainNextId,

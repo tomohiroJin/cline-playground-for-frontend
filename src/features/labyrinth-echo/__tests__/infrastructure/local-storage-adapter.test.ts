@@ -208,15 +208,21 @@ describe('LocalStorageAdapter', () => {
         expect(loaded).toEqual(DEFAULT_AUDIO_SETTINGS);
       });
 
-      it('破損した JSON データの場合、デフォルト値を返す', () => {
+      it('破損した JSON データの場合、デフォルト値を返しエラーログを出力する', () => {
         // Arrange
         mockStorage.getItem.mockReturnValue('not valid json');
+        const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 
         // Act
         const loaded = adapter.loadAudioSettings();
 
         // Assert
         expect(loaded).toEqual(DEFAULT_AUDIO_SETTINGS);
+        expect(consoleSpy).toHaveBeenCalledWith(
+          '[LocalStorageAdapter.loadAudioSettings]',
+          expect.any(String)
+        );
+        consoleSpy.mockRestore();
       });
 
       it('プリミティブ値の JSON の場合、デフォルト値を返す', () => {

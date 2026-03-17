@@ -489,7 +489,8 @@ describe('processChoice', () => {
       const gameState = createTestGameState();
       const meta = createMetaState();
 
-      // Act & Assert
+      // Act & Assert — エラーメッセージに「範囲外」が含まれること
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
       expect(() =>
         processChoice({
           gameState,
@@ -497,7 +498,8 @@ describe('processChoice', () => {
           event,
           meta,
         })
-      ).toThrow();
+      ).toThrow(/範囲外/);
+      consoleSpy.mockRestore();
     });
 
     it('choiceIndexが負の場合にエラーをスローする', () => {
@@ -506,7 +508,8 @@ describe('processChoice', () => {
       const gameState = createTestGameState();
       const meta = createMetaState();
 
-      // Act & Assert
+      // Act & Assert — エラーメッセージに「範囲外」が含まれること
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
       expect(() =>
         processChoice({
           gameState,
@@ -514,7 +517,8 @@ describe('processChoice', () => {
           event,
           meta,
         })
-      ).toThrow();
+      ).toThrow(/範囲外/);
+      consoleSpy.mockRestore();
     });
 
     it('アウトカムが空の選択肢でエラーをスローする', () => {
@@ -531,7 +535,8 @@ describe('processChoice', () => {
       const gameState = createTestGameState();
       const meta = createMetaState();
 
-      // Act & Assert
+      // Act & Assert — エラーメッセージに「アウトカム」が含まれること
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
       expect(() =>
         processChoice({
           gameState,
@@ -539,7 +544,8 @@ describe('processChoice', () => {
           event,
           meta,
         })
-      ).toThrow();
+      ).toThrow(/アウトカム/);
+      consoleSpy.mockRestore();
     });
   });
 });
