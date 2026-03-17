@@ -1,5 +1,9 @@
 /**
- * Agile Quiz Sugoroku - 定数とユーティリティのテスト
+ * Agile Quiz Sugoroku - 定数バレルエクスポートの検証テスト
+ *
+ * 各定数・関数の詳細なテストは constants/__tests__/ 配下で行う。
+ * このテストではバレルエクスポート（constants/index.ts）から
+ * 全てのシンボルが正しくエクスポートされていることを確認する。
  */
 import {
   CONFIG,
@@ -16,228 +20,110 @@ import {
   GRADES,
   INITIAL_GAME_STATS,
   CATEGORY_NAMES,
+  STRENGTH_THRESHOLDS,
+  CHALLENGE_EVALUATIONS,
+  SPRINT_OPTIONS,
+  DEBT_EVENTS,
+  FONTS,
+  OPTION_LABELS,
+  PHASE_GENRE_MAP,
+  EVENT_BACKGROUND_MAP,
 } from '../constants';
-describe('Agile Quiz Sugoroku - 定数とユーティリティ', () => {
-  // ── getDebtPoints ────────────────────────────────────
 
-  describe('getDebtPoints - イベント別の負債ポイント', () => {
-    it('impl系イベントは負債5ポイント', () => {
-      expect(getDebtPoints('impl1')).toBe(CONFIG.debt.impl);
-      expect(getDebtPoints('impl2')).toBe(CONFIG.debt.impl);
+describe('constants バレルエクスポートの検証', () => {
+  // ── 定数オブジェクトのエクスポート確認 ──────────────────
+
+  describe('定数オブジェクトがエクスポートされている', () => {
+    it('CONFIG が定義されている', () => {
+      expect(CONFIG).toBeDefined();
     });
 
-    it('test系イベントは負債3ポイント', () => {
-      expect(getDebtPoints('test1')).toBe(CONFIG.debt.test);
-      expect(getDebtPoints('test2')).toBe(CONFIG.debt.test);
+    it('COLORS が定義されている', () => {
+      expect(COLORS).toBeDefined();
     });
 
-    it('refinementは負債4ポイント', () => {
-      expect(getDebtPoints('refinement')).toBe(CONFIG.debt.refinement);
+    it('EVENTS が定義されている', () => {
+      expect(EVENTS).toBeDefined();
     });
 
-    it('planningは負債0ポイント', () => {
-      expect(getDebtPoints('planning')).toBe(0);
+    it('EMERGENCY_EVENT が定義されている', () => {
+      expect(EMERGENCY_EVENT).toBeDefined();
     });
 
-    it('reviewは負債0ポイント', () => {
-      expect(getDebtPoints('review')).toBe(0);
+    it('GRADES が定義されている', () => {
+      expect(GRADES).toBeDefined();
     });
 
-    it('不明なイベントは負債0ポイント', () => {
-      expect(getDebtPoints('unknown')).toBe(0);
-    });
-  });
-
-  // ── getColorByThreshold ──────────────────────────────
-
-  describe('getColorByThreshold - 閾値に応じた色', () => {
-    it('上限以上で緑を返す', () => {
-      expect(getColorByThreshold(80, 70, 40)).toBe(COLORS.green);
+    it('INITIAL_GAME_STATS が定義されている', () => {
+      expect(INITIAL_GAME_STATS).toBeDefined();
     });
 
-    it('上限と下限の間で黄色を返す', () => {
-      expect(getColorByThreshold(50, 70, 40)).toBe(COLORS.yellow);
+    it('CATEGORY_NAMES が定義されている', () => {
+      expect(CATEGORY_NAMES).toBeDefined();
     });
 
-    it('下限未満で赤を返す', () => {
-      expect(getColorByThreshold(30, 70, 40)).toBe(COLORS.red);
+    it('STRENGTH_THRESHOLDS が定義されている', () => {
+      expect(STRENGTH_THRESHOLDS).toBeDefined();
     });
 
-    it('境界値（上限ちょうど）で緑を返す', () => {
-      expect(getColorByThreshold(70, 70, 40)).toBe(COLORS.green);
+    it('CHALLENGE_EVALUATIONS が定義されている', () => {
+      expect(CHALLENGE_EVALUATIONS).toBeDefined();
     });
 
-    it('境界値（下限ちょうど）で黄色を返す', () => {
-      expect(getColorByThreshold(40, 70, 40)).toBe(COLORS.yellow);
-    });
-  });
-
-  // ── getInverseColorByThreshold ───────────────────────
-
-  describe('getInverseColorByThreshold - 逆閾値の色（低いほど良い）', () => {
-    it('低値で緑を返す', () => {
-      expect(getInverseColorByThreshold(5, 10, 20)).toBe(COLORS.green);
+    it('SPRINT_OPTIONS が定義されている', () => {
+      expect(SPRINT_OPTIONS).toBeDefined();
     });
 
-    it('中間値で黄色を返す', () => {
-      expect(getInverseColorByThreshold(15, 10, 20)).toBe(COLORS.yellow);
+    it('DEBT_EVENTS が定義されている', () => {
+      expect(DEBT_EVENTS).toBeDefined();
     });
 
-    it('高値で赤を返す', () => {
-      expect(getInverseColorByThreshold(25, 10, 20)).toBe(COLORS.red);
+    it('FONTS が定義されている', () => {
+      expect(FONTS).toBeDefined();
+    });
+
+    it('OPTION_LABELS が定義されている', () => {
+      expect(OPTION_LABELS).toBeDefined();
+    });
+
+    it('PHASE_GENRE_MAP が定義されている', () => {
+      expect(PHASE_GENRE_MAP).toBeDefined();
+    });
+
+    it('EVENT_BACKGROUND_MAP が定義されている', () => {
+      expect(EVENT_BACKGROUND_MAP).toBeDefined();
     });
   });
 
-  // ── getGrade ─────────────────────────────────────────
+  // ── ユーティリティ関数のエクスポート確認 ──────────────────
 
-  describe('getGrade - グレード計算', () => {
-    it('高スコアでSグレードを返す', () => {
-      // score = 100*0.5 + 100*0.3 + max(0,min(100,100-0*8))*0.2 = 50+30+20 = 100
-      const grade = getGrade(100, 100, 0);
-      expect(grade.grade).toBe('S');
+  describe('ユーティリティ関数がエクスポートされている', () => {
+    it('getDebtPoints が関数である', () => {
+      expect(typeof getDebtPoints).toBe('function');
     });
 
-    it('正答率50%、安定度30%、速度20%の重みで計算される', () => {
-      // tp=60 → 30, stab=50 → 15, spd=5 → (100-40)*0.2 = 12 → total=57 → C
-      const grade = getGrade(60, 50, 5);
-      expect(grade.grade).toBe('C');
+    it('getColorByThreshold が関数である', () => {
+      expect(typeof getColorByThreshold).toBe('function');
     });
 
-    it('低スコアでDグレードを返す', () => {
-      // tp=10 → 5, stab=10 → 3, spd=15 → max(0,-20)*0.2 = 0 → total=8 → D
-      const grade = getGrade(10, 10, 15);
-      expect(grade.grade).toBe('D');
+    it('getInverseColorByThreshold が関数である', () => {
+      expect(typeof getInverseColorByThreshold).toBe('function');
     });
 
-    it('各グレードにはラベルが設定されている', () => {
-      const grade = getGrade(100, 100, 0);
-      expect(grade.label).toBe('Dream Team');
-      expect(grade.color).toBeDefined();
-    });
-  });
-
-  // ── getSummaryText ───────────────────────────────────
-
-  describe('getSummaryText - サマリーテキスト生成', () => {
-    it('正答率70%以上で高評価テキストを返す', () => {
-      const text = getSummaryText(75, 5, 10, 0);
-      expect(text).toContain('素晴らしい');
+    it('getGrade が関数である', () => {
+      expect(typeof getGrade).toBe('function');
     });
 
-    it('正答率70%以上かつ速度6以下で速度の言及がある', () => {
-      const text = getSummaryText(75, 5, 10, 0);
-      expect(text).toContain('意思決定のスピード');
+    it('getSummaryText が関数である', () => {
+      expect(typeof getSummaryText).toBe('function');
     });
 
-    it('正答率70%以上かつ速度7で速度の言及がない', () => {
-      const text = getSummaryText(75, 7, 10, 0);
-      expect(text).not.toContain('回答速度も優秀');
+    it('getStrengthText が関数である', () => {
+      expect(typeof getStrengthText).toBe('function');
     });
 
-    it('正答率50-69%で基礎力テキストを返す', () => {
-      const text = getSummaryText(55, 7, 10, 0);
-      expect(text).toContain('基礎力');
-    });
-
-    it('正答率50-69%かつ負債21以上で負債警告を含む', () => {
-      const text = getSummaryText(55, 7, 25, 0);
-      expect(text).toContain('技術的負債');
-    });
-
-    it('正答率50%未満で走り抜いたテキストを返す', () => {
-      const text = getSummaryText(40, 8, 5, 0);
-      expect(text).toContain('走り抜いた');
-    });
-
-    it('正答率50%未満かつ緊急対応成功ありでその言及がある', () => {
-      const text = getSummaryText(40, 8, 5, 1);
-      expect(text).toContain('緊急対応力');
-    });
-  });
-
-  // ── getStrengthText ──────────────────────────────────
-
-  describe('getStrengthText - 強み評価テキスト', () => {
-    it('80%以上で非常に高い精度のテキスト', () => {
-      expect(getStrengthText(85)).toContain('非常に高い精度');
-    });
-
-    it('60%以上で安定したテキスト', () => {
-      expect(getStrengthText(65)).toContain('安定');
-    });
-
-    it('40%以上で基礎知識のテキスト', () => {
-      expect(getStrengthText(45)).toContain('基礎知識');
-    });
-
-    it('40%未満で伸びる余地のテキスト', () => {
-      expect(getStrengthText(20)).toContain('伸びる余地');
-    });
-  });
-
-  // ── getChallengeText ─────────────────────────────────
-
-  describe('getChallengeText - 課題評価テキスト', () => {
-    it('負債30以上で深刻化テキスト', () => {
-      expect(getChallengeText(35, 5, 60)).toContain('深刻化');
-    });
-
-    it('負債15以上で注意テキスト', () => {
-      expect(getChallengeText(20, 5, 60)).toContain('注意');
-    });
-
-    it('速度10超で速度改善テキスト', () => {
-      expect(getChallengeText(10, 12, 60)).toContain('回答速度');
-    });
-
-    it('正答率50%未満で正答率向上テキスト', () => {
-      expect(getChallengeText(10, 8, 40)).toContain('正答率');
-    });
-
-    it('問題がない場合は高水準テキスト', () => {
-      expect(getChallengeText(5, 5, 80)).toContain('高水準');
-    });
-  });
-
-  // ── 定数データの構造検証 ─────────────────────────────
-
-  describe('定数データの構造検証', () => {
-    it('EVENTSは7つのイベントを含む', () => {
-      expect(EVENTS).toHaveLength(7);
-    });
-
-    it('各イベントに必須プロパティが存在する', () => {
-      EVENTS.forEach((event) => {
-        expect(event.id).toBeDefined();
-        expect(event.name).toBeDefined();
-        expect(event.icon).toBeDefined();
-        expect(event.description).toBeDefined();
-        expect(event.color).toBeDefined();
-      });
-    });
-
-    it('EMERGENCY_EVENTのidはemergency', () => {
-      expect(EMERGENCY_EVENT.id).toBe('emergency');
-    });
-
-    it('INITIAL_GAME_STATSの初期値がゼロ', () => {
-      expect(INITIAL_GAME_STATS.totalCorrect).toBe(0);
-      expect(INITIAL_GAME_STATS.totalQuestions).toBe(0);
-      expect(INITIAL_GAME_STATS.debt).toBe(0);
-      expect(INITIAL_GAME_STATS.speeds).toEqual([]);
-    });
-
-    it('GRADESは降順にソートされている', () => {
-      for (let i = 0; i < GRADES.length - 1; i++) {
-        expect(GRADES[i].min).toBeGreaterThan(GRADES[i + 1].min);
-      }
-    });
-
-    it('CATEGORY_NAMESに全イベントIDのマッピングが存在する', () => {
-      EVENTS.forEach((event) => {
-        expect(CATEGORY_NAMES[event.id]).toBeDefined();
-      });
-      expect(CATEGORY_NAMES['emergency']).toBeDefined();
+    it('getChallengeText が関数である', () => {
+      expect(typeof getChallengeText).toBe('function');
     });
   });
 });

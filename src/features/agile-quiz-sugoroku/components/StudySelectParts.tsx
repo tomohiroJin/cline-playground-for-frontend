@@ -6,7 +6,7 @@ import { PHASE_GENRE_MAP, COLORS } from '../constants';
 import { CHARACTER_GENRE_MAP } from '../character-genre-map';
 import { SectionBox, SectionTitle } from './styles';
 
-// 分割ファイルから再エクスポート
+// ジャンル選択・問題数選択セクションは別ファイルで定義
 export { GenreSelectSection, QuestionCountSection } from './StudySelectGenre';
 
 // ── 定数 ──────────────────────────────────────────────

@@ -3,14 +3,17 @@
  */
 import React, { useState } from 'react';
 
-/** 画像 + 絵文字フォールバック（React 制御） */
-export const ImageWithFallback: React.FC<{
+/** 画像 + 絵文字フォールバックコンポーネントの Props */
+interface ImageWithFallbackProps {
   src: string | undefined;
   alt: string;
   emoji: string;
   size: number;
   borderColor: string;
-}> = ({ src, alt, emoji, size, borderColor }) => {
+}
+
+/** 画像 + 絵文字フォールバック（React 制御） */
+export const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({ src, alt, emoji, size, borderColor }) => {
   const [hasError, setHasError] = useState(false);
 
   if (!src || hasError) {

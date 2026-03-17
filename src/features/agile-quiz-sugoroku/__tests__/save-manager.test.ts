@@ -17,7 +17,7 @@ describe('SaveRepository', () => {
 
   const mockSaveState: SaveState = {
     version: 1,
-    timestamp: Date.now(),
+    timestamp: 1700000000000,
     sprintCount: 5,
     currentSprint: 2,
     stats: {
@@ -151,23 +151,32 @@ describe('SaveRepository', () => {
 
     it('localStorage が使用不可でもエラーにならない（save）', () => {
       const originalSetItem = Storage.prototype.setItem;
-      Storage.prototype.setItem = () => { throw new Error('QuotaExceeded'); };
-      expect(() => repository.save(mockSaveState)).not.toThrow();
-      Storage.prototype.setItem = originalSetItem;
+      try {
+        Storage.prototype.setItem = () => { throw new Error('QuotaExceeded'); };
+        expect(() => repository.save(mockSaveState)).not.toThrow();
+      } finally {
+        Storage.prototype.setItem = originalSetItem;
+      }
     });
 
     it('localStorage が使用不可でもエラーにならない（load）', () => {
       const originalGetItem = Storage.prototype.getItem;
-      Storage.prototype.getItem = () => { throw new Error('SecurityError'); };
-      expect(repository.load()).toBeUndefined();
-      Storage.prototype.getItem = originalGetItem;
+      try {
+        Storage.prototype.getItem = () => { throw new Error('SecurityError'); };
+        expect(repository.load()).toBeUndefined();
+      } finally {
+        Storage.prototype.getItem = originalGetItem;
+      }
     });
 
     it('localStorage が使用不可でもエラーにならない（exists）', () => {
       const originalGetItem = Storage.prototype.getItem;
-      Storage.prototype.getItem = () => { throw new Error('SecurityError'); };
-      expect(repository.exists()).toBe(false);
-      Storage.prototype.getItem = originalGetItem;
+      try {
+        Storage.prototype.getItem = () => { throw new Error('SecurityError'); };
+        expect(repository.exists()).toBe(false);
+      } finally {
+        Storage.prototype.getItem = originalGetItem;
+      }
     });
   });
 

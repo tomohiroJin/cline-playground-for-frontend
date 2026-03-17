@@ -2,11 +2,37 @@
  * Agile Quiz Sugoroku ゲームページ
  */
 import React, { useState, useMemo, useEffect } from 'react';
+
+// 型定義
+import type { SprintSummary, SaveState, StoryEntry, EndingEntry, Difficulty, AchievementDefinition } from '../features/agile-quiz-sugoroku/domain/types';
+
+// 定数
+import { CONFIG } from '../features/agile-quiz-sugoroku/constants';
+
+// ドメインロジック
+import { getDifficultyConfig, calculateGradeWithDifficulty } from '../features/agile-quiz-sugoroku/domain/scoring';
+import { checkAchievements } from '../features/agile-quiz-sugoroku/domain/achievement';
+import { classifyTeamType } from '../features/agile-quiz-sugoroku/team-classifier';
+import { getStoriesForSprintCount } from '../features/agile-quiz-sugoroku/story-data';
+import { getEndingStories } from '../features/agile-quiz-sugoroku/ending-data';
+
+// 音声
+import { createDefaultAudioActions } from '../features/agile-quiz-sugoroku/audio/audio-actions';
+
+// フック
+import { useGame, useCountdown, useFade, useStudy } from '../features/agile-quiz-sugoroku/hooks';
+import { useChallenge } from '../features/agile-quiz-sugoroku/hooks/useChallenge';
+
+// インフラストラクチャ（リポジトリ）
+import { LocalStorageAdapter } from '../features/agile-quiz-sugoroku/infrastructure/storage/local-storage-adapter';
+import { GameResultRepository } from '../features/agile-quiz-sugoroku/infrastructure/storage/game-repository';
+import { SaveRepository } from '../features/agile-quiz-sugoroku/infrastructure/storage/save-repository';
+import { AchievementRepository } from '../features/agile-quiz-sugoroku/infrastructure/storage/achievement-repository';
+import { HistoryRepository } from '../features/agile-quiz-sugoroku/infrastructure/storage/history-repository';
+import { ChallengeRepository } from '../features/agile-quiz-sugoroku/infrastructure/storage/challenge-repository';
+
+// UIコンポーネント
 import {
-  useGame,
-  useCountdown,
-  useFade,
-  useStudy,
   TitleScreen,
   SprintStartScreen,
   QuizScreen,
@@ -22,22 +48,7 @@ import {
   HistoryScreen,
   ChallengeResultScreen,
   DailyQuizScreen,
-  CONFIG,
-} from '../features/agile-quiz-sugoroku';
-import { createDefaultAudioActions } from '../features/agile-quiz-sugoroku/audio/audio-actions';
-import { SprintSummary, SaveState, StoryEntry, EndingEntry, Difficulty, AchievementDefinition } from '../features/agile-quiz-sugoroku/domain/types';
-import { classifyTeamType } from '../features/agile-quiz-sugoroku/team-classifier';
-import { getStoriesForSprintCount } from '../features/agile-quiz-sugoroku/story-data';
-import { getEndingStories } from '../features/agile-quiz-sugoroku/ending-data';
-import { getDifficultyConfig, calculateGradeWithDifficulty } from '../features/agile-quiz-sugoroku/domain/scoring';
-import { checkAchievements } from '../features/agile-quiz-sugoroku/domain/achievement';
-import { useChallenge } from '../features/agile-quiz-sugoroku/hooks/useChallenge';
-import { GameResultRepository } from '../features/agile-quiz-sugoroku/infrastructure/storage/game-repository';
-import { SaveRepository } from '../features/agile-quiz-sugoroku/infrastructure/storage/save-repository';
-import { AchievementRepository } from '../features/agile-quiz-sugoroku/infrastructure/storage/achievement-repository';
-import { HistoryRepository } from '../features/agile-quiz-sugoroku/infrastructure/storage/history-repository';
-import { ChallengeRepository } from '../features/agile-quiz-sugoroku/infrastructure/storage/challenge-repository';
-import { LocalStorageAdapter } from '../features/agile-quiz-sugoroku/infrastructure/storage/local-storage-adapter';
+} from '../features/agile-quiz-sugoroku/components';
 
 /** 有効な難易度値 */
 const VALID_DIFFICULTIES: readonly Difficulty[] = ['easy', 'normal', 'hard', 'extreme'] as const;

@@ -40,7 +40,7 @@ describe('GameResultRepository', () => {
     gradeLabel: 'High-Performing',
     teamTypeId: 'synergy',
     teamTypeName: 'シナジーチーム',
-    timestamp: Date.now(),
+    timestamp: 1700000000000,
   };
 
   describe('save', () => {
@@ -121,7 +121,7 @@ describe('GameResultRepository', () => {
           tagStats: {}, incorrectQuestions: [], sprintLog: [],
           grade: 'C', gradeLabel: 'Developing',
           engineerTypeId: oldId, engineerTypeName: oldName,
-          timestamp: Date.now(),
+          timestamp: 1700000000000,
         };
         localStorage.setItem('aqs_last_result', JSON.stringify(oldData));
         const result = repository.load();
@@ -137,7 +137,7 @@ describe('GameResultRepository', () => {
         tagStats: {}, incorrectQuestions: [], sprintLog: [],
         grade: 'C', gradeLabel: 'Average',
         engineerTypeId: 'unknown_type', engineerTypeName: '不明なタイプ',
-        timestamp: Date.now(),
+        timestamp: 1700000000000,
       };
       localStorage.setItem('aqs_last_result', JSON.stringify(oldData));
       const result = repository.load();

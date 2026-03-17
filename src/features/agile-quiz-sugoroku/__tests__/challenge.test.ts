@@ -37,6 +37,13 @@ describe('ChallengeRepository', () => {
     });
   });
 
+  describe('loadHighScore - 異常系', () => {
+    it('localStorageに不正な（非数値）データがある場合は0を返す', () => {
+      localStorage.setItem('aqs_challenge_highscore', 'invalid json');
+      expect(repository.loadHighScore()).toBe(0);
+    });
+  });
+
   describe('clear', () => {
     it('ハイスコアを削除する', () => {
       repository.saveHighScore(15);

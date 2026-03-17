@@ -157,15 +157,17 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
 
         <TitleButtons
           saveState={saveState}
-          onResume={saveState && onResume ? handleResume : undefined}
           onNewGame={handleNewGame}
-          onStudy={onStudy}
-          onGuide={onGuide}
-          onAchievements={onAchievements}
-          onHistory={onHistory}
-          onChallenge={onChallenge}
-          onDailyQuiz={onDailyQuiz}
           formatSaveDate={formatSaveDate}
+          navigation={{
+            onResume: saveState && onResume ? handleResume : undefined,
+            onStudy,
+            onGuide,
+            onAchievements,
+            onHistory,
+            onChallenge,
+            onDailyQuiz,
+          }}
         />
 
         {showOverwriteConfirm && (

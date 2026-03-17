@@ -6,23 +6,29 @@ import { COLORS } from '../constants';
 import type { SaveState } from '../domain/types';
 import { Button, HotkeyHint } from './styles';
 
-interface TitleButtonsProps {
-  saveState: SaveState | undefined;
+/** ナビゲーション系コールバックをまとめたオブジェクト */
+export interface TitleNavigation {
   onResume?: () => void;
-  onNewGame: () => void;
   onStudy?: () => void;
   onGuide?: () => void;
   onAchievements?: () => void;
   onHistory?: () => void;
   onChallenge?: () => void;
   onDailyQuiz?: () => void;
+}
+
+interface TitleButtonsProps {
+  saveState: SaveState | undefined;
+  onNewGame: () => void;
   formatSaveDate: (timestamp: number) => string;
+  navigation: TitleNavigation;
 }
 
 export const TitleButtons: React.FC<TitleButtonsProps> = ({
-  saveState, onResume, onNewGame, onStudy, onGuide,
-  onAchievements, onHistory, onChallenge, onDailyQuiz, formatSaveDate,
-}) => (
+  saveState, onNewGame, formatSaveDate, navigation,
+}) => {
+  const { onResume, onStudy, onGuide, onAchievements, onHistory, onChallenge, onDailyQuiz } = navigation;
+  return (
   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, marginTop: 4 }}>
     {saveState && onResume && (
       <Button
@@ -77,4 +83,5 @@ export const TitleButtons: React.FC<TitleButtonsProps> = ({
       )}
     </div>
   </div>
-);
+  );
+};
