@@ -19,5 +19,6 @@ export { AchievementToast } from './AchievementToast';
 export { HistoryScreen } from './HistoryScreen';
 export { LineChart } from './LineChart';
 export { DifficultySelector } from './DifficultySelector';
+export { ChallengeQuizScreen } from './screens/ChallengeQuizScreen';
 export { ChallengeResultScreen } from './ChallengeResultScreen';
 export { DailyQuizScreen } from './DailyQuizScreen';

@@ -26,7 +26,7 @@ import { QuizScreen } from '../components/QuizScreen';
 import { SprintStartScreen } from '../components/SprintStartScreen';
 import { RetrospectiveScreen } from '../components/RetrospectiveScreen';
 import { ResultScreen } from '../components/ResultScreen';
-import { SprintSummary, GameStats, DerivedStats, GameEvent, Question } from '../types';
+import { SprintSummary, GameStats, DerivedStats, GameEvent, Question } from '../domain/types';
 
 // styled-components のアニメーション警告を抑制
 beforeAll(() => {
@@ -108,7 +108,7 @@ describe('TitleScreen', () => {
     const onStart = jest.fn();
     render(<TitleScreen onStart={onStart} />);
 
-    const button = screen.getByText(/Sprint Start/);
+    const button = screen.getByRole('button', { name: /Sprint Start/ });
     fireEvent.click(button);
     expect(onStart).toHaveBeenCalledTimes(1);
   });
@@ -290,7 +290,7 @@ describe('QuizScreen', () => {
 
   it('回答後にNextボタンが表示される', () => {
     render(<QuizScreen {...defaultProps} selectedAnswer={1} />);
-    expect(screen.getByText(/Next/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Next/ })).toBeInTheDocument();
   });
 
   it('キーボードヒントが未回答時に表示される', () => {
@@ -332,7 +332,7 @@ describe('SprintStartScreen', () => {
     const onBegin = jest.fn();
     render(<SprintStartScreen {...defaultProps} onBegin={onBegin} />);
 
-    const button = screen.getByText(/Begin Sprint/);
+    const button = screen.getByRole('button', { name: /Begin Sprint/ });
     fireEvent.click(button);
     expect(onBegin).toHaveBeenCalledTimes(1);
   });
@@ -406,7 +406,7 @@ describe('RetrospectiveScreen', () => {
     const onNext = jest.fn();
     render(<RetrospectiveScreen {...defaultProps} onNext={onNext} />);
 
-    const button = screen.getByText(/Sprint 2/);
+    const button = screen.getByRole('button', { name: /Sprint 2/ });
     fireEvent.click(button);
     expect(onNext).toHaveBeenCalledTimes(1);
   });
@@ -439,18 +439,18 @@ describe('RetrospectiveScreen', () => {
   it('onSaveが渡されると保存ボタンが表示される', () => {
     const onSave = jest.fn();
     render(<RetrospectiveScreen {...defaultProps} onSave={onSave} />);
-    expect(screen.getByText(/保存して中断/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /保存して中断/ })).toBeInTheDocument();
   });
 
   it('onSaveが未定義の場合は保存ボタンが非表示', () => {
     render(<RetrospectiveScreen {...defaultProps} />);
-    expect(screen.queryByText(/保存して中断/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /保存して中断/ })).not.toBeInTheDocument();
   });
 
   it('保存ボタンクリックでonSaveが呼ばれトーストが表示される', () => {
     const onSave = jest.fn();
     render(<RetrospectiveScreen {...defaultProps} onSave={onSave} />);
-    fireEvent.click(screen.getByText(/保存して中断/));
+    fireEvent.click(screen.getByRole('button', { name: /保存して中断/ }));
     expect(onSave).toHaveBeenCalledTimes(1);
     expect(screen.getByText(/保存しました/)).toBeInTheDocument();
   });
@@ -490,7 +490,7 @@ describe('ResultScreen', () => {
     const onReplay = jest.fn();
     render(<ResultScreen {...defaultProps} onReplay={onReplay} />);
 
-    const button = screen.getByText(/Play Again/);
+    const button = screen.getByRole('button', { name: /Play Again/ });
     fireEvent.click(button);
     expect(onReplay).toHaveBeenCalledTimes(1);
   });
@@ -498,6 +498,56 @@ describe('ResultScreen', () => {
   it('Shareボタンが表示される', () => {
     render(<ResultScreen {...defaultProps} />);
     expect(screen.getByText(/Share/)).toBeInTheDocument();
+  });
+});
+
+/* ================================
+   ユーザー操作フローテスト
+   ================================ */
+
+describe('QuizScreen - ユーザー操作フロー', () => {
+  const defaultProps = {
+    sprint: 0,
+    eventIndex: 0,
+    events: mockEvents,
+    quiz: mockQuiz,
+    options: [0, 1, 2, 3],
+    selectedAnswer: null,
+    stats: mockStats,
+    timer: 10,
+    visible: true,
+    onAnswer: jest.fn(),
+    onNext: jest.fn(),
+    quizIndex: 0,
+  };
+
+  it('選択肢をクリックすると回答コールバックが正しい引数で呼ばれる', () => {
+    // Arrange
+    const onAnswer = jest.fn();
+    render(<QuizScreen {...defaultProps} onAnswer={onAnswer} />);
+
+    // Act: 正解の選択肢をクリック
+    fireEvent.click(screen.getByText('サーバント・リーダー'));
+
+    // Assert
+    expect(onAnswer).toHaveBeenCalledWith(1);
+  });
+
+  it('正解後にCORRECTフィードバックとNextボタンが表示される', () => {
+    // Arrange & Act: 正解状態でレンダリング
+    render(<QuizScreen {...defaultProps} selectedAnswer={1} />);
+
+    // Assert
+    expect(screen.getByText('✓ CORRECT')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Next/ })).toBeInTheDocument();
+  });
+
+  it('不正解後にINCORRECTフィードバックが表示される', () => {
+    // Arrange & Act: 不正解状態でレンダリング
+    render(<QuizScreen {...defaultProps} selectedAnswer={0} />);
+
+    // Assert
+    expect(screen.getByText('✗ INCORRECT')).toBeInTheDocument();
   });
 });
 

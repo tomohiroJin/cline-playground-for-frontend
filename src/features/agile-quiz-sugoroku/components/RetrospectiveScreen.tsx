@@ -3,11 +3,10 @@
  */
 import React, { useState, useMemo } from 'react';
 import { useKeys } from '../hooks';
-import { SprintSummary, GameStats, CategoryStats } from '../types';
+import { SprintSummary, GameStats } from '../domain/types';
 import {
   CONFIG,
   COLORS,
-  CATEGORY_NAMES,
   getColorByThreshold,
   getInverseColorByThreshold,
   getStrengthText,
@@ -17,6 +16,9 @@ import { AQS_IMAGES } from '../images';
 import { getNarrativeComment } from '../character-narrative';
 import { ParticleEffect } from './ParticleEffect';
 import { BarChart } from './BarChart';
+import { CategoryBar } from './CategoryBar';
+import { NarrativeComment } from './NarrativeComment';
+import { SaveToast } from './SaveToast';
 import {
   PageWrapper,
   Panel,
@@ -30,80 +32,31 @@ import {
   StatLabel,
   StatValue,
   EmergencyMessage,
-  CategoryBarContainer,
-  CategoryBadge,
-  CategoryName,
-  CategoryValue,
   SectionDivider,
   StrengthText,
   ChallengeText,
 } from './styles';
 
 interface RetrospectiveScreenProps {
-  /** スプリント集計 */
   summary: SprintSummary;
-  /** スプリントログ */
   log: SprintSummary[];
-  /** ゲーム統計 */
   stats: GameStats;
-  /** スプリント番号（0始まり） */
   sprint: number;
-  /** 表示状態 */
   visible: boolean;
-  /** 次へ進む時のコールバック */
   onNext: () => void;
-  /** 保存して中断する時のコールバック */
   onSave?: () => void;
-  /** スプリント数 */
   sprintCount?: number;
 }
 
-interface CategoryBarProps {
-  cats: CategoryStats;
-}
-
-/** カテゴリバー */
-const CategoryBar: React.FC<CategoryBarProps> = ({ cats }) => {
-  const keys = Object.keys(cats);
-  if (!keys.length) return null;
-
-  return (
-    <CategoryBarContainer>
-      {keys.map((k) => {
-        const c = cats[k];
-        const rate = c.total ? Math.round((c.correct / c.total) * 100) : 0;
-        const color = getColorByThreshold(rate, 70, 50);
-        return (
-          <CategoryBadge key={k} $color={color}>
-            <CategoryName>{CATEGORY_NAMES[k] ?? k} </CategoryName>
-            <CategoryValue $color={color}>{rate}%</CategoryValue>
-          </CategoryBadge>
-        );
-      })}
-    </CategoryBarContainer>
-  );
-};
-
-/**
- * 振り返り画面
- */
 /** トースト表示の自動消滅時間（ms） */
 const TOAST_DURATION = 2000;
 
 export const RetrospectiveScreen: React.FC<RetrospectiveScreenProps> = ({
-  summary,
-  log,
-  stats,
-  sprint,
-  visible,
-  onNext,
-  onSave,
-  sprintCount,
+  summary, log, stats, sprint, visible, onNext, onSave, sprintCount,
 }) => {
   const [showToast, setShowToast] = useState(false);
   const isLast = sprint + 1 >= (sprintCount ?? CONFIG.sprintCount);
 
-  // キャラクターナラティブ
   const narrative = useMemo(() => getNarrativeComment({
     sprintNumber: summary.sprintNumber,
     phase: 'retro',
@@ -112,63 +65,45 @@ export const RetrospectiveScreen: React.FC<RetrospectiveScreenProps> = ({
 
   const narrativeCharImg = AQS_IMAGES.characters[narrative.characterId as keyof typeof AQS_IMAGES.characters];
 
-  /** 保存して中断 */
   const handleSave = () => {
     if (!onSave) return;
     onSave();
     setShowToast(true);
     setTimeout(() => setShowToast(false), TOAST_DURATION);
   };
+
   const emMessage = summary.hadEmergency
     ? `🚨 緊急対応 — ${summary.emergencySuccessCount > 0 ? '対応成功！' : '対応失敗…'}`
     : null;
 
   useKeys((e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      onNext();
-    }
+    if (e.key === 'Enter' || e.key === ' ') onNext();
   });
 
   return (
     <PageWrapper>
       <ParticleEffect />
       <Scanlines />
-      
-      {/* Background Image Layer */}
+
+      {/* 背景画像レイヤー */}
       <div style={{
-        position: 'absolute',
-        inset: 0,
+        position: 'absolute', inset: 0,
         backgroundImage: `url(${AQS_IMAGES.retro})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        opacity: 0.12,
-        filter: 'blur(2px)',
-        pointerEvents: 'none',
-        zIndex: 0,
+        backgroundSize: 'cover', backgroundPosition: 'center',
+        opacity: 0.12, filter: 'blur(2px)',
+        pointerEvents: 'none', zIndex: 0,
       }} />
 
       <Panel $visible={visible} style={{ position: 'relative', zIndex: 1 }}>
         {/* ヘッダー */}
         <div style={{ textAlign: 'center', marginBottom: 22 }}>
-          <div
-            style={{
-              fontSize: 10,
-              color: COLORS.accent,
-              letterSpacing: 3,
-              fontFamily: "'JetBrains Mono', monospace",
-              fontWeight: 700,
-            }}
-          >
+          <div style={{
+            fontSize: 10, color: COLORS.accent, letterSpacing: 3,
+            fontFamily: "'JetBrains Mono', monospace", fontWeight: 700,
+          }}>
             RETROSPECTIVE
           </div>
-          <div
-            style={{
-              fontSize: 22,
-              fontWeight: 800,
-              color: COLORS.text2,
-              marginTop: 6,
-            }}
-          >
+          <div style={{ fontSize: 22, fontWeight: 800, color: COLORS.text2, marginTop: 6 }}>
             Sprint {summary.sprintNumber} 振り返り
           </div>
         </div>
@@ -196,27 +131,19 @@ export const RetrospectiveScreen: React.FC<RetrospectiveScreenProps> = ({
             </StatBox>
           </StatsGrid>
 
-          {/* 緊急対応メッセージ */}
           {emMessage && <EmergencyMessage>{emMessage}</EmergencyMessage>}
 
           {/* カテゴリ別 */}
           <div style={{ marginBottom: 12 }}>
-            <div
-              style={{
-                fontSize: 10,
-                color: COLORS.accent,
-                marginBottom: 8,
-                letterSpacing: 1.5,
-                fontFamily: "'JetBrains Mono', monospace",
-                fontWeight: 600,
-              }}
-            >
+            <div style={{
+              fontSize: 10, color: COLORS.accent, marginBottom: 8,
+              letterSpacing: 1.5, fontFamily: "'JetBrains Mono', monospace", fontWeight: 600,
+            }}>
               CATEGORY
             </div>
             <CategoryBar cats={summary.categoryStats} />
           </div>
 
-          {/* 強み・課題 */}
           <SectionDivider>
             <StrengthText>✓ 強み: {getStrengthText(summary.correctRate)}</StrengthText>
             <ChallengeText>
@@ -235,61 +162,13 @@ export const RetrospectiveScreen: React.FC<RetrospectiveScreenProps> = ({
 
         {/* 総合スコア */}
         <div style={{
-          textAlign: 'center',
-          marginBottom: 14,
-          fontSize: 12,
-          color: COLORS.muted,
-          fontFamily: "'JetBrains Mono', monospace",
+          textAlign: 'center', marginBottom: 14, fontSize: 12,
+          color: COLORS.muted, fontFamily: "'JetBrains Mono', monospace",
         }}>
           正解: {summary.correctCount}/{summary.totalCount}
         </div>
 
-        {/* キャラクターナラティブ */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          padding: '10px 14px',
-          marginBottom: 14,
-          background: `${COLORS.accent}08`,
-          borderRadius: 8,
-          border: `1px solid ${COLORS.accent}18`,
-        }}>
-          {narrativeCharImg ? (
-            <img
-              src={narrativeCharImg}
-              alt=""
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: '50%',
-                objectFit: 'cover',
-                flexShrink: 0,
-              }}
-            />
-          ) : (
-            <div style={{
-              width: 40,
-              height: 40,
-              borderRadius: '50%',
-              background: `${COLORS.accent}15`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 20,
-              flexShrink: 0,
-            }}>
-              ?
-            </div>
-          )}
-          <div style={{
-            fontSize: 12,
-            color: COLORS.text,
-            lineHeight: 1.5,
-          }}>
-            {narrative.text}
-          </div>
-        </div>
+        <NarrativeComment characterImage={narrativeCharImg} text={narrative.text} />
 
         {/* ボタンエリア */}
         <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
@@ -312,25 +191,7 @@ export const RetrospectiveScreen: React.FC<RetrospectiveScreenProps> = ({
           )}
         </div>
 
-        {/* 保存完了トースト */}
-        {showToast && (
-          <div style={{
-            position: 'fixed',
-            bottom: 24,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: COLORS.green,
-            color: '#fff',
-            padding: '10px 24px',
-            borderRadius: 8,
-            fontSize: 13,
-            fontWeight: 700,
-            zIndex: 1000,
-            boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
-          }}>
-            ✓ 保存しました
-          </div>
-        )}
+        <SaveToast visible={showToast} />
       </Panel>
     </PageWrapper>
   );

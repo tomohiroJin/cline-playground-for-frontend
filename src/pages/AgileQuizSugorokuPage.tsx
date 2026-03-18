@@ -2,11 +2,37 @@
  * Agile Quiz Sugoroku ゲームページ
  */
 import React, { useState, useMemo, useEffect } from 'react';
+
+// 型定義
+import type { SprintSummary, SaveState, StoryEntry, EndingEntry, Difficulty, AchievementDefinition } from '../features/agile-quiz-sugoroku/domain/types';
+
+// 定数
+import { CONFIG } from '../features/agile-quiz-sugoroku/constants';
+
+// ドメインロジック
+import { getDifficultyConfig, calculateGradeWithDifficulty } from '../features/agile-quiz-sugoroku/domain/scoring';
+import { checkAchievements } from '../features/agile-quiz-sugoroku/domain/achievement';
+import { classifyTeamType } from '../features/agile-quiz-sugoroku/team-classifier';
+import { getStoriesForSprintCount } from '../features/agile-quiz-sugoroku/story-data';
+import { getEndingStories } from '../features/agile-quiz-sugoroku/ending-data';
+
+// 音声
+import { createDefaultAudioActions } from '../features/agile-quiz-sugoroku/audio/audio-actions';
+
+// フック
+import { useGame, useCountdown, useFade, useStudy } from '../features/agile-quiz-sugoroku/hooks';
+import { useChallenge } from '../features/agile-quiz-sugoroku/hooks/useChallenge';
+
+// インフラストラクチャ（リポジトリ）
+import { LocalStorageAdapter } from '../features/agile-quiz-sugoroku/infrastructure/storage/local-storage-adapter';
+import { GameResultRepository } from '../features/agile-quiz-sugoroku/infrastructure/storage/game-repository';
+import { SaveRepository } from '../features/agile-quiz-sugoroku/infrastructure/storage/save-repository';
+import { AchievementRepository } from '../features/agile-quiz-sugoroku/infrastructure/storage/achievement-repository';
+import { HistoryRepository } from '../features/agile-quiz-sugoroku/infrastructure/storage/history-repository';
+import { ChallengeRepository } from '../features/agile-quiz-sugoroku/infrastructure/storage/challenge-repository';
+
+// UIコンポーネント
 import {
-  useGame,
-  useCountdown,
-  useFade,
-  useStudy,
   TitleScreen,
   SprintStartScreen,
   QuizScreen,
@@ -20,25 +46,26 @@ import {
   AchievementScreen,
   AchievementToast,
   HistoryScreen,
+  ChallengeQuizScreen,
   ChallengeResultScreen,
   DailyQuizScreen,
-  CONFIG,
-} from '../features/agile-quiz-sugoroku';
-import { createDefaultAudioActions } from '../features/agile-quiz-sugoroku/audio/audio-actions';
-import { SprintSummary, SaveState, StoryEntry, EndingEntry, Difficulty, AchievementDefinition } from '../features/agile-quiz-sugoroku/types';
-import { saveGameResult } from '../features/agile-quiz-sugoroku/result-storage';
-import { saveGameState } from '../features/agile-quiz-sugoroku/save-manager';
-import { classifyTeamType } from '../features/agile-quiz-sugoroku/team-classifier';
-import { getStoriesForSprintCount } from '../features/agile-quiz-sugoroku/story-data';
-import { getEndingStories } from '../features/agile-quiz-sugoroku/ending-data';
-import { getDifficultyConfig, calculateGradeWithDifficulty } from '../features/agile-quiz-sugoroku/difficulty';
-import { checkAchievements } from '../features/agile-quiz-sugoroku/achievements';
-import { getUnlockedIds, saveAchievementUnlock } from '../features/agile-quiz-sugoroku/achievement-storage';
-import { saveHistory, toHistoryEntry, migrateLastResultToHistory, loadHistory } from '../features/agile-quiz-sugoroku/history-storage';
-import { useChallenge } from '../features/agile-quiz-sugoroku/hooks/useChallenge';
-import { saveHighScore } from '../features/agile-quiz-sugoroku/challenge-storage';
+} from '../features/agile-quiz-sugoroku/components';
+
+/** 有効な難易度値 */
+const VALID_DIFFICULTIES: readonly Difficulty[] = ['easy', 'normal', 'hard', 'extreme'] as const;
+
+/** 文字列が有効な Difficulty 値かどうかを判定する型ガード */
+const isDifficulty = (value: string): value is Difficulty =>
+  (VALID_DIFFICULTIES as readonly string[]).includes(value);
 
 const audio = createDefaultAudioActions();
+
+const storageAdapter = new LocalStorageAdapter();
+const gameResultRepo = new GameResultRepository(storageAdapter);
+const saveRepo = new SaveRepository(storageAdapter);
+const achievementRepo = new AchievementRepository(storageAdapter);
+const historyRepo = new HistoryRepository(storageAdapter);
+const challengeRepo = new ChallengeRepository(storageAdapter);
 
 /**
  * Agile Quiz Sugoroku ゲームコンポーネント
@@ -51,7 +78,7 @@ const AgileQuizSugorokuPage: React.FC = () => {
 
   // 初回ロード時にマイグレーション実行
   useEffect(() => {
-    migrateLastResultToHistory();
+    historyRepo.migrateLastResultToHistory();
   }, []);
 
   // アンマウント時にBGMを停止
@@ -113,8 +140,8 @@ const AgileQuizSugorokuPage: React.FC = () => {
   /** ゲーム開始 */
   const handleStart = (selectedSprintCount: number, selectedDifficulty?: string) => {
     setSprintCount(selectedSprintCount);
-    if (selectedDifficulty) {
-      setDifficulty(selectedDifficulty as Difficulty);
+    if (selectedDifficulty && isDifficulty(selectedDifficulty)) {
+      setDifficulty(selectedDifficulty);
     }
     const storyList = getStoriesForSprintCount(selectedSprintCount);
     setStories(storyList);
@@ -213,14 +240,14 @@ const AgileQuizSugorokuPage: React.FC = () => {
       teamTypeName: teamType.name,
       timestamp: Date.now(),
     };
-    saveGameResult(resultData);
+    gameResultRepo.save(resultData);
 
     // 履歴に保存
-    saveHistory(toHistoryEntry(resultData));
+    historyRepo.save(HistoryRepository.toHistoryEntry(resultData));
 
     // 実績判定
-    const unlockedIds = getUnlockedIds();
-    const history = loadHistory();
+    const unlockedIds = achievementRepo.getUnlockedIds();
+    const history = historyRepo.loadAll();
     const newlyUnlocked = checkAchievements({
       result: resultData,
       sprintCorrectRates: game.derived.sprintCorrectRates,
@@ -230,7 +257,7 @@ const AgileQuizSugorokuPage: React.FC = () => {
     });
     // 実績をストレージに保存
     const now = Date.now();
-    newlyUnlocked.forEach(a => saveAchievementUnlock(a.id, now));
+    newlyUnlocked.forEach(a => achievementRepo.saveUnlock(a.id, now));
     if (newlyUnlocked.length > 0) {
       setNewAchievements(newlyUnlocked);
     }
@@ -289,7 +316,7 @@ const AgileQuizSugorokuPage: React.FC = () => {
   /** 振り返り画面で保存して中断 */
   const handleSave = () => {
     const saveState = game.buildSaveState(sprintCount);
-    saveGameState(saveState);
+    saveRepo.save(saveState);
     // タイトル画面に戻る（少し遅延して遷移）
     setTimeout(() => {
       audio.onBgmStop();
@@ -351,7 +378,7 @@ const AgileQuizSugorokuPage: React.FC = () => {
   /** チャレンジモード次へ */
   const handleChallengeNext = () => {
     if (challenge.isGameOver) {
-      saveHighScore(challenge.correctCount);
+      challengeRepo.saveHighScore(challenge.correctCount);
       game.setPhase('challenge-result');
     } else {
       challenge.next();
@@ -556,28 +583,17 @@ const AgileQuizSugorokuPage: React.FC = () => {
       )}
 
       {game.phase === 'challenge' && challenge.quiz && (
-        <QuizScreen
-          sprint={0}
-          eventIndex={0}
-          events={[{ id: 'challenge', name: 'チャレンジ', icon: '\u{1F525}', description: 'サバイバル', color: '#f06070' }]}
+        <ChallengeQuizScreen
           quiz={challenge.quiz}
           options={challenge.options}
           selectedAnswer={challenge.selectedAnswer}
-          stats={{
-            totalCorrect: challenge.correctCount,
-            totalQuestions: challenge.correctCount + (challenge.isGameOver ? 1 : 0),
-            speeds: [],
-            debt: 0,
-            emergencyCount: 0,
-            emergencySuccess: 0,
-            combo: challenge.combo,
-            maxCombo: challenge.maxCombo,
-          }}
+          combo={challenge.combo}
+          maxCombo={challenge.maxCombo}
+          correctCount={challenge.correctCount}
+          isGameOver={challenge.isGameOver}
           timer={challengeCountdown.time}
-          visible={true}
           onAnswer={handleChallengeAnswer}
           onNext={handleChallengeNext}
-          quizIndex={0}
         />
       )}
 

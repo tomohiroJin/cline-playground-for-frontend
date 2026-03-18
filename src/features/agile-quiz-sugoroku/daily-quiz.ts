@@ -1,37 +1,24 @@
 /**
  * Agile Quiz Sugoroku - デイリークイズ
  *
- * 日付をシードとしたランダム選出で毎日5問の日替わりクイズを提供する
+ * 後方互換用の再エクスポート。
+ * ストレージ処理は infrastructure/storage/daily-quiz-repository.ts に移行済み。
+ * 問題選出ロジック（getDailyQuestions 等）は本ファイルに残留。
  */
-import { Question } from './types';
-import { QUESTIONS } from './quiz-data';
+import { Question } from './domain/types';
+import { QUESTIONS } from './questions';
+import { LocalStorageAdapter } from './infrastructure/storage/local-storage-adapter';
+import {
+  DailyQuizRepository,
+  formatDateKey,
+} from './infrastructure/storage/daily-quiz-repository';
+import type { DailyResult } from './infrastructure/storage/daily-quiz-repository';
 
-// ── 型定義 ────────────────────────────────────────────────
+// 型の再エクスポート
+export type { DailyResult };
+export { formatDateKey };
 
-/** デイリークイズの結果 */
-export interface DailyResult {
-  /** 日付キー（YYYY-MM-DD） */
-  dateKey: string;
-  /** 正解数 */
-  correctCount: number;
-  /** 出題数 */
-  totalCount: number;
-  /** タイムスタンプ */
-  timestamp: number;
-}
-
-/** デイリークイズ日別保存データ */
-interface DailyStorage {
-  [dateKey: string]: DailyResult;
-}
-
-// ── 定数 ──────────────────────────────────────────────────
-
-/** デイリークイズの出題数 */
-const DAILY_QUESTION_COUNT = 5;
-
-/** localStorage キー */
-const STORAGE_KEY = 'aqs_daily';
+const repository = new DailyQuizRepository(new LocalStorageAdapter());
 
 // ── シード付きランダム ────────────────────────────────────
 
@@ -50,7 +37,6 @@ export const dateSeed = (date: Date): number => {
  */
 export const seededRandom = (seed: number): (() => number) => {
   let state = seed | 0;
-  // シードが0の場合のフォールバック
   if (state === 0) state = 1;
   return () => {
     state ^= state << 13;
@@ -62,93 +48,39 @@ export const seededRandom = (seed: number): (() => number) => {
 
 // ── 問題選出 ──────────────────────────────────────────────
 
-/**
- * 全カテゴリの問題をフラットにまとめる
- */
+/** 全カテゴリの問題をフラットにまとめる */
 const getAllQuestions = (): Question[] => {
   return Object.values(QUESTIONS).flat();
 };
 
-/**
- * 日付に基づいて5問を選出する
- * 同じ日付では常に同じ問題セットが返される
- */
+/** 日付に基づいて5問を選出する */
 export const getDailyQuestions = (date: Date): Question[] => {
   const seed = dateSeed(date);
   const rng = seededRandom(seed);
   const all = getAllQuestions();
 
-  // Fisher-Yates シャッフル（シード付き）
   const shuffled = [...all];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
 
-  return shuffled.slice(0, DAILY_QUESTION_COUNT);
+  return shuffled.slice(0, 5);
 };
 
-// ── ストレージ ────────────────────────────────────────────
+// ── ストレージ（後方互換） ────────────────────────────────
 
-/**
- * デイリー結果の保存データを読み込む
- */
-const loadStorage = (): DailyStorage => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return {};
-    return JSON.parse(raw) as DailyStorage;
-  } catch {
-    return {};
-  }
-};
-
-/**
- * デイリー結果を保存する
- */
+/** デイリー結果を保存する */
 export const saveDailyResult = (result: DailyResult): void => {
-  const storage = loadStorage();
-  storage[result.dateKey] = result;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(storage));
+  repository.saveResult(result);
 };
 
-/**
- * 指定日のデイリー結果を取得する
- */
+/** 指定日のデイリー結果を取得する */
 export const getDailyResult = (dateKey: string): DailyResult | undefined => {
-  const storage = loadStorage();
-  return storage[dateKey];
+  return repository.getResult(dateKey);
 };
 
-// ── ストリーク計算 ────────────────────────────────────────
-
-/**
- * 日付キーをフォーマットする（YYYY-MM-DD）
- */
-export const formatDateKey = (date: Date): string => {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-};
-
-/**
- * 連続参加日数（ストリーク）を計算する
- */
+/** 連続参加日数（ストリーク）を計算する */
 export const getDailyStreak = (today: Date): number => {
-  const storage = loadStorage();
-  let streak = 0;
-  const current = new Date(today);
-
-  while (true) {
-    const key = formatDateKey(current);
-    if (storage[key]) {
-      streak++;
-      current.setDate(current.getDate() - 1);
-    } else {
-      break;
-    }
-  }
-
-  return streak;
+  return repository.getStreak(today);
 };

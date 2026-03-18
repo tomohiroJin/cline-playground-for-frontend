@@ -2,7 +2,7 @@
  * レーダーチャートコンポーネント
  */
 import React from 'react';
-import { RadarDataPoint } from '../types';
+import { RadarDataPoint } from '../domain/types';
 import { COLORS, FONTS } from '../constants';
 import { RadarPolygon } from './styles';
 

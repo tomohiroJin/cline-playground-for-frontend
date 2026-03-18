@@ -3,7 +3,8 @@
  */
 import React, { useMemo } from 'react';
 import { COLORS, FONTS } from '../constants';
-import { loadHighScore } from '../challenge-storage';
+import { ChallengeRepository } from '../infrastructure/storage/challenge-repository';
+import { LocalStorageAdapter } from '../infrastructure/storage/local-storage-adapter';
 import { ParticleEffect } from './ParticleEffect';
 import {
   PageWrapper,
@@ -12,6 +13,8 @@ import {
   Button,
   Scanlines,
 } from './styles';
+
+const challengeRepo = new ChallengeRepository(new LocalStorageAdapter());
 
 interface ChallengeResultScreenProps {
   correctCount: number;
@@ -26,7 +29,7 @@ export const ChallengeResultScreen: React.FC<ChallengeResultScreenProps> = ({
   onRetry,
   onBack,
 }) => {
-  const highScore = useMemo(() => loadHighScore(), []);
+  const highScore = useMemo(() => challengeRepo.loadHighScore(), []);
   const isNewRecord = correctCount >= highScore && correctCount > 0;
 
   return (

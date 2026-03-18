@@ -3,9 +3,10 @@
  */
 import React, { useMemo } from 'react';
 import { COLORS, FONTS } from '../constants';
-import { ACHIEVEMENTS } from '../achievements';
-import { loadAchievementProgress } from '../achievement-storage';
-import { AchievementRarity } from '../types';
+import { ACHIEVEMENTS } from '../domain/achievement';
+import { AchievementRepository } from '../infrastructure/storage/achievement-repository';
+import { LocalStorageAdapter } from '../infrastructure/storage/local-storage-adapter';
+import { AchievementRarity } from '../domain/types';
 import { ParticleEffect } from './ParticleEffect';
 import {
   PageWrapper,
@@ -18,6 +19,8 @@ import {
 interface AchievementScreenProps {
   onBack: () => void;
 }
+
+const achievementRepo = new AchievementRepository(new LocalStorageAdapter());
 
 /** レア度ごとの色 */
 const RARITY_COLORS: Record<AchievementRarity, string> = {
@@ -36,7 +39,7 @@ const RARITY_ICONS: Record<AchievementRarity, string> = {
 };
 
 export const AchievementScreen: React.FC<AchievementScreenProps> = ({ onBack }) => {
-  const progress = useMemo(() => loadAchievementProgress(), []);
+  const progress = useMemo(() => achievementRepo.loadProgress(), []);
   const unlockedCount = Object.keys(progress.unlocked).length;
 
   return (

@@ -1,7 +1,8 @@
 /**
  * AudioActions インターフェース + ファクトリ
  *
- * 音声副作用を抽象化し、ゲームロジックから分離する。
+ * 後方互換用。
+ * 新規コードは infrastructure/audio/ を直接使用してください。
  */
 import {
   initAudio,

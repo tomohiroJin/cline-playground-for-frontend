@@ -4,7 +4,7 @@
  * ノベルゲーム風にストーリーテキストを1行ずつ表示する
  */
 import React, { useState, useCallback, useEffect } from 'react';
-import { StoryEntry } from '../types';
+import { StoryEntry } from '../domain/types';
 import { CHARACTER_PROFILES } from '../character-profiles';
 import { AQS_IMAGES } from '../images';
 import {

@@ -4,7 +4,9 @@
  * クイズ画面の選択肢ボタン、結果バナー、問題テキスト等
  */
 import styled from 'styled-components';
-import { COLORS, FONTS } from '../../constants';
+import { DESIGN_TOKENS } from '../../presentation/styles/design-tokens';
+
+const { colors: COLORS, fonts: FONTS } = DESIGN_TOKENS;
 import { popIn, fadeSlideIn } from './animations';
 
 /* ================================
@@ -171,6 +173,23 @@ export const BannerSub = styled.div`
   font-size: 13px;
   margin-top: 6px;
   opacity: 0.85;
+`;
+
+/* ================================
+   チャレンジモード ヘッダー
+   ================================ */
+
+export const ChallengeHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  background: linear-gradient(90deg, #f06070 0%, #ff8a65 100%);
+  border-radius: 8px;
+  color: #fff;
+  font-weight: bold;
+  font-family: ${FONTS.jp};
 `;
 
 export const BannerExplain = styled.div<{ $color?: string }>`

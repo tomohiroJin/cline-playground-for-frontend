@@ -19,7 +19,7 @@ jest.mock('tone', () => ({
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { StoryScreen } from '../components/StoryScreen';
-import { StoryEntry } from '../types';
+import { StoryEntry } from '../domain/types';
 
 // styled-components のアニメーション警告を抑制
 beforeAll(() => {

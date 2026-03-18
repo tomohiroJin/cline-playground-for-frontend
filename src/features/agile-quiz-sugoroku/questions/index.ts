@@ -1,4 +1,4 @@
-import { Question, QuestionsByCategory } from '../types';
+import { Question, QuestionsByCategory } from '../domain/types';
 import { VALID_TAG_IDS } from './tag-master';
 import planningQuestions from './planning.json';
 import impl1Questions from './impl1.json';
