@@ -5,7 +5,7 @@
  * ステータスバー、タグ、カード等のゲーム固有UIプリミティブを提供する。
  */
 import type { ReactNode } from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { CFG } from '../domain/constants/config';
 import { STATUS_META } from '../domain/constants/status-effect-defs';
 import { UNLOCKS } from '../domain/constants/unlock-defs';
@@ -377,18 +377,22 @@ const GUIDANCE_INTERVAL = 5000;
 export const GuidanceOverlay = ({ show }: GuidanceOverlayProps) => {
   const [index, setIndex] = useState(0);
   const [visible, setVisible] = useState(true);
+  const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!show) return;
     const timer = setInterval(() => {
       // フェードアウト → メッセージ切替 → フェードイン
       setVisible(false);
-      setTimeout(() => {
+      fadeTimerRef.current = setTimeout(() => {
         setIndex(prev => (prev + 1) % GUIDANCE_MESSAGES.length);
         setVisible(true);
       }, 400);
     }, GUIDANCE_INTERVAL);
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      if (fadeTimerRef.current !== null) clearTimeout(fadeTimerRef.current);
+    };
   }, [show]);
 
   if (!show) return null;

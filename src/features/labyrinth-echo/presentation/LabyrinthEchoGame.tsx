@@ -158,7 +158,7 @@ function GameInner() {
       const chainEvent = findChainEvent(EVENTS, state.chainNext);
       if (chainEvent) { dispatch({ type: 'SET_EVENT', event: chainEvent }); return; }
     }
-    const nextEvent = pickEvent(EVENTS, state.floor, [...state.usedIds], meta, fx, getRandomSource());
+    const nextEvent = pickEvent({ events: EVENTS, floor: state.floor, usedIds: [...state.usedIds], meta, fx, rng: getRandomSource() });
     if (nextEvent) dispatch({ type: 'SET_EVENT', event: nextEvent });
     else {
       if (process.env.NODE_ENV !== 'production') {
@@ -182,51 +182,59 @@ function GameInner() {
     <GameContext.Provider value={contextValue}>
       <GameRouter
         phase={state.phase}
-        player={state.player}
-        diff={state.diff}
-        event={state.event}
-        floor={state.floor}
-        step={state.step}
-        ending={state.ending}
-        isNewEnding={state.isNewEnding}
-        isNewDiffClear={state.isNewDiffClear}
-        usedSecondLife={state.usedSecondLife}
-        chainNext={state.chainNext}
-        log={state.log}
-        resTxt={state.resTxt}
-        resChg={state.resChg}
-        drainInfo={state.drainInfo}
-        meta={meta}
-        fx={fx}
-        progressPct={progressPct}
-        floorMeta={floorMeta}
-        floorColor={floorColor}
-        vignette={vignette}
-        lowMental={lowMental}
-        showLog={state.showLog}
-        audioSettings={audioSettings}
-        lastBought={state.lastBought}
-        shake={shake}
-        overlay={overlay}
-        revealed={revealed}
-        done={done}
-        ready={ready}
-        skip={skip}
+        game={{
+          player: state.player,
+          diff: state.diff,
+          event: state.event,
+          floor: state.floor,
+          step: state.step,
+          ending: state.ending,
+          isNewEnding: state.isNewEnding,
+          isNewDiffClear: state.isNewDiffClear,
+          usedSecondLife: state.usedSecondLife,
+          chainNext: state.chainNext,
+          log: state.log,
+          resTxt: state.resTxt,
+          resChg: state.resChg,
+          drainInfo: state.drainInfo,
+        }}
+        derived={{
+          meta,
+          fx,
+          progressPct,
+          floorMeta,
+          floorColor,
+          vignette,
+          lowMental,
+        }}
+        ui={{
+          showLog: state.showLog,
+          audioSettings,
+          lastBought: state.lastBought,
+          shake,
+          overlay,
+          revealed,
+          done,
+          ready,
+        }}
+        handlers={{
+          startRun,
+          enableAudio,
+          selectDiff,
+          enterFloor,
+          handleChoice,
+          proceed,
+          doUnlock,
+          toggleAudio,
+          setShowLog: () => dispatch({ type: 'TOGGLE_LOG' }),
+          setPhase,
+          updateMeta,
+          resetMeta,
+          handleAudioSettingsChange,
+          skip,
+        }}
         Particles={Particles}
         eventCount={EVENTS.length}
-        startRun={startRun}
-        enableAudio={enableAudio}
-        selectDiff={selectDiff}
-        enterFloor={enterFloor}
-        handleChoice={handleChoice}
-        proceed={proceed}
-        doUnlock={doUnlock}
-        toggleAudio={toggleAudio}
-        setShowLog={() => dispatch({ type: 'TOGGLE_LOG' })}
-        setPhase={setPhase}
-        updateMeta={updateMeta}
-        resetMeta={resetMeta}
-        handleAudioSettingsChange={handleAudioSettingsChange}
       />
     </GameContext.Provider>
   );

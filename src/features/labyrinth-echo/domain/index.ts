@@ -19,6 +19,7 @@ export type {
 export { FX_DEFAULTS, FX_MULT, FX_BOOL } from './models/unlock';
 export { isStatusEffectId } from './models/player';
 export type { EndingDef } from './models/ending';
+export type { AudioSettings } from './models/audio-settings';
 export type {
   GamePhase, DeathCause, MenuScreen, LogEntry, GameState,
 } from './models/game-state';

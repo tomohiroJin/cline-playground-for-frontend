@@ -115,6 +115,46 @@ const handleEscapeOutcome = (
   }, 2500);
 };
 
+// ── SecondLife 復活判定 ──
+
+/** SecondLife 復活のチェック結果 */
+interface SecondLifeCheckResult {
+  readonly player: Player;
+  readonly activated: boolean;
+}
+
+/** SecondLife 復活を判定する（純粋関数） */
+const checkSecondLifeActivation = (
+  player: Player,
+  fx: FxState,
+  usedSecondLife: boolean,
+): SecondLifeCheckResult => {
+  const isDead = player.hp <= 0 || player.mn <= 0;
+  if (!isDead || !fx.secondLife || usedSecondLife) {
+    return { player, activated: false };
+  }
+  return {
+    player: {
+      ...player,
+      hp: Math.max(player.hp, Math.ceil(player.maxHp / 2)),
+      mn: Math.max(player.mn, Math.ceil(player.maxMn / 2)),
+    },
+    activated: true,
+  };
+};
+
+/** 死亡判定を実行し、該当する場合はゲームオーバーを遅延発火する */
+const scheduleDeathIfNeeded = (
+  player: Player,
+  safeTimeout: GameActionsDeps['safeTimeout'],
+  handleGameOver: (cause: string) => void,
+): void => {
+  if (player.hp <= 0 || player.mn <= 0) {
+    const deathCause = player.hp <= 0 ? "体力消耗" : "精神崩壊";
+    safeTimeout(() => handleGameOver(deathCause), 2500);
+  }
+};
+
 // ── ボス再戦ロジックのヘルパー ──
 
 /** 最終フロア超過時のボス再戦・イベント選出を処理する */
@@ -142,7 +182,7 @@ const resolveBossRetry = (
 
   // ボス再戦前に通常イベントを挟む
   if (bossCount < CFG.MAX_BOSS_RETRIES && postBoss < 2) {
-    const nextEvent = pickEvent(events, state.floor, nextUsedIds, meta, fx, getRandomSource());
+    const nextEvent = pickEvent({ events, floor: state.floor, usedIds: nextUsedIds, meta, fx, rng: getRandomSource() });
     if (nextEvent) {
       dispatch({ type: 'ADVANCE_STEP', event: nextEvent, step: nextStep, usedIds: nextUsedIds });
       return;
@@ -195,18 +235,11 @@ const useHandleChoice = (deps: GameActionsDeps, handleGameOver: (cause: string) 
     const {
       choice, outcome, mods, chainId, playerFlag,
       drained: rawDrained, drain, impact,
-    } = legacyProcessChoice(state.event, idx, state.player, fx, state.diff);
+    } = legacyProcessChoice({ event: state.event, choiceIdx: idx, player: state.player, fx, diff: state.diff });
 
-    // SecondLife 復活
-    let drained = rawDrained;
-    let didSecondLife = false;
-    if (fx.secondLife && !state.usedSecondLife && (drained.hp <= 0 || drained.mn <= 0)) {
-      drained = {
-        ...drained,
-        hp: Math.max(drained.hp, Math.ceil(drained.maxHp / 2)),
-        mn: Math.max(drained.mn, Math.ceil(drained.maxMn / 2)),
-      };
-      didSecondLife = true;
+    // SecondLife 復活判定
+    const secondLife = checkSecondLifeActivation(rawDrained, fx, state.usedSecondLife);
+    if (secondLife.activated) {
       flash("heal", 800);
       sfx(audioSfx.heal);
     }
@@ -217,8 +250,8 @@ const useHandleChoice = (deps: GameActionsDeps, handleGameOver: (cause: string) 
     // リデューサーに結果を送信
     dispatch({
       type: 'APPLY_CHOICE',
-      player: drained,
-      resTxt: didSecondLife
+      player: secondLife.player,
+      resTxt: secondLife.activated
         ? outcome.r + "\n\n──「二度目の命」が発動した。致命の闇から引き戻される。"
         : outcome.r,
       resChg: { hp: mods.hp, mn: mods.mn, inf: mods.inf, fl: outcome.fl },
@@ -228,25 +261,21 @@ const useHandleChoice = (deps: GameActionsDeps, handleGameOver: (cause: string) 
         hp: mods.hp, mn: mods.mn, inf: mods.inf, flag: playerFlag ?? undefined,
       },
       chainNext: chainId,
-      usedSecondLife: state.usedSecondLife || didSecondLife,
+      usedSecondLife: state.usedSecondLife || secondLife.activated,
     });
     updateMeta(m => ({ totalEvents: m.totalEvents + 1 }));
 
     // 脱出判定
     if (outcome.fl === "escape") {
-      handleEscapeOutcome(drained, state, meta, dispatch, updateMeta, sfx, safeTimeout, audioSfx);
+      handleEscapeOutcome(secondLife.player, state, meta, dispatch, updateMeta, sfx, safeTimeout, audioSfx);
       return;
     }
 
     // 死亡判定
-    if (drained.hp <= 0 || drained.mn <= 0) {
-      const deathCause = drained.hp <= 0 ? "体力消耗" : "精神崩壊";
-      safeTimeout(() => handleGameOver(deathCause), 2500);
-    }
+    scheduleDeathIfNeeded(secondLife.player, safeTimeout, handleGameOver);
   }, [
-    state.event, state.player, state.diff, state.floor, state.step,
-    state.log, state.usedSecondLife, fx, sfx, audioSfx, safeTimeout,
-    doShake, flash, dispatch, updateMeta, meta.endings, meta.clearedDifficulties,
+    state, meta, fx, sfx, audioSfx, safeTimeout,
+    doShake, flash, dispatch, updateMeta,
     handleGameOver,
   ]);
 };
@@ -288,7 +317,7 @@ const useProceed = (deps: GameActionsDeps, handleGameOver: (cause: string) => vo
     }
 
     // 通常のイベント選出
-    const nextEvent = pickEvent(events, state.floor, nextUsedIds, meta, fx, getRandomSource());
+    const nextEvent = pickEvent({ events, floor: state.floor, usedIds: nextUsedIds, meta, fx, rng: getRandomSource() });
     if (nextEvent) {
       dispatch({ type: 'ADVANCE_STEP', event: nextEvent, step: nextStep, usedIds: nextUsedIds });
     } else {
@@ -298,8 +327,7 @@ const useProceed = (deps: GameActionsDeps, handleGameOver: (cause: string) => vo
       handleGameOver("精神崩壊");
     }
   }, [
-    state.event, state.step, state.usedIds, state.floor, state.resChg, state.chainNext,
-    sfx, audioSfx, meta, fx, events, dispatch, handleGameOver,
+    state, sfx, audioSfx, meta, fx, events, dispatch, handleGameOver,
   ]);
 };
 

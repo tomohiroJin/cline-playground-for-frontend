@@ -250,6 +250,40 @@ describe('useAudioEffects', () => {
       expect(mockAudioEngine.sfx.clear).toHaveBeenCalled();
     });
 
+    it('同じ内容の feedback が新しいオブジェクト参照で渡されても SFX を再再生しない', () => {
+      // Arrange: 同じ resultText を持つ2つの異なるオブジェクト参照
+      const feedback1 = createFeedback({ impact: 'bigDmg', resultText: '同じ結果テキスト' });
+      const feedback2 = createFeedback({ impact: 'bigDmg', resultText: '同じ結果テキスト' });
+      // 参照が異なることを確認
+      expect(feedback1).not.toBe(feedback2);
+
+      const baseProps = {
+        phase: 'result' as const,
+        floor: 1,
+        event: null,
+        player: null,
+        sfxEnabled: true,
+        bgmEnabled: false,
+        bgmVolume: 0,
+        audioEngine: mockAudioEngine,
+      };
+
+      // Act: feedback1 で初回レンダリング
+      const { rerender } = renderHook(
+        (props: { feedback: ChoiceFeedback }) =>
+          useAudioEffects({ ...baseProps, feedback: props.feedback }),
+        { initialProps: { feedback: feedback1 } },
+      );
+
+      expect(mockAudioEngine.sfx.bigHit).toHaveBeenCalledTimes(1);
+
+      // Act: 同じ内容だが新しいオブジェクト参照の feedback2 で再レンダリング
+      rerender({ feedback: feedback2 });
+
+      // Assert: 値ベースの比較により、再再生されないこと
+      expect(mockAudioEngine.sfx.bigHit).toHaveBeenCalledTimes(1);
+    });
+
     it('SFX 無効時は効果音を再生しない', () => {
       // Arrange
       const feedback = createFeedback({ impact: 'bigDmg' });

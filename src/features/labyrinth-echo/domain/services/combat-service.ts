@@ -75,7 +75,8 @@ export const applyChangesToPlayer = (
   let newSts = sts;
   if (flag?.startsWith(CFG.STATUS_FLAG_ADD_PREFIX)) {
     const s = flag.slice(CFG.STATUS_FLAG_ADD_PREFIX.length);
-    if (!sts.includes(s)) newSts = [...sts, s];
+    // 型ガードで有効なステータスIDのみ追加する
+    if (isStatusEffectId(s) && !sts.includes(s)) newSts = [...sts, s];
   }
   if (flag?.startsWith(CFG.STATUS_FLAG_REMOVE_PREFIX)) {
     newSts = sts.filter(s => s !== flag.slice(CFG.STATUS_FLAG_REMOVE_PREFIX.length));
@@ -105,7 +106,9 @@ export const computeDrain = (
   let mnD = fx.drainImmune ? 0 : base;
 
   for (const s of player.statuses) {
-    const tick = STATUS_META[s as StatusEffectId]?.tick;
+    // 型ガードで有効なステータスIDのみ処理する
+    if (!isStatusEffectId(s)) continue;
+    const tick = STATUS_META[s]?.tick;
     if (!tick) continue;
     let h = tick.hpDelta;
     const m = tick.mnDelta;

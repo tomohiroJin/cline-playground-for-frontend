@@ -93,6 +93,12 @@ export const parseCondition = (condStr: string): Condition => {
   const value = parseInt(val, 10);
   invariant(!Number.isNaN(value), 'parseCondition', `数値の解析に失敗: "${val}"`);
 
+  // 正規表現が (hp|mn|inf) と ([><]=?) にマッチしているため型安全
+  const validStats = ['hp', 'mn', 'inf'] as const;
+  const validOps = ['>', '<', '>=', '<='] as const;
+  invariant(validStats.includes(stat as typeof validStats[number]), 'parseCondition', `不正なstat: "${stat}"`);
+  invariant(validOps.includes(op as typeof validOps[number]), 'parseCondition', `不正なop: "${op}"`);
+
   return {
     type: stat as 'hp' | 'mn' | 'inf',
     op: op as ComparisonOp,

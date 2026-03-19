@@ -18,7 +18,8 @@ export const AUDIO_SETTINGS_KEY = 'labyrinth-echo-audio-settings';
 export const DEFAULT_AUDIO_SETTINGS: Readonly<AudioSettings> = Object.freeze({
   bgmVolume: 0.5,
   sfxVolume: 0.7,
-  enabled: true,
+  bgmEnabled: true,
+  sfxEnabled: true,
 });
 
 /**
@@ -117,10 +118,14 @@ export class LocalStorageAdapter implements StoragePort {
           obj.sfxVolume <= 1
             ? obj.sfxVolume
             : DEFAULT_AUDIO_SETTINGS.sfxVolume,
-        enabled:
-          typeof obj.enabled === 'boolean'
-            ? obj.enabled
-            : DEFAULT_AUDIO_SETTINGS.enabled,
+        bgmEnabled:
+          typeof obj.bgmEnabled === 'boolean'
+            ? obj.bgmEnabled
+            : DEFAULT_AUDIO_SETTINGS.bgmEnabled,
+        sfxEnabled:
+          typeof obj.sfxEnabled === 'boolean'
+            ? obj.sfxEnabled
+            : DEFAULT_AUDIO_SETTINGS.sfxEnabled,
       };
       return validated;
     } catch (e: unknown) {

@@ -29,12 +29,8 @@ import { EventScreen } from './screens/EventScreen';
 import { ResultScreen } from './screens/ResultScreen';
 import { Page } from '../../components/Page';
 
-/** GameRouter の Props */
-export interface GameRouterProps {
-  // フェーズ
-  phase: UIPhase;
-
-  // ゲーム状態
+/** ゲーム状態 */
+export interface GameState {
   player: Player | null;
   diff: DifficultyDef | null;
   event: GameEvent | null;
@@ -46,13 +42,13 @@ export interface GameRouterProps {
   usedSecondLife: boolean;
   chainNext: string | null;
   log: readonly LogEntry[];
-
-  // 結果表示
   resTxt: string;
   resChg: { hp: number; mn: number; inf: number; fl?: string } | null;
   drainInfo: { hp: number; mn: number } | null;
+}
 
-  // メタ・派生値
+/** 派生値・メタ情報 */
+export interface DerivedState {
   meta: MetaState;
   fx: FxState;
   progressPct: number;
@@ -60,29 +56,22 @@ export interface GameRouterProps {
   floorColor: string;
   vignette: CSSProperties;
   lowMental: boolean;
+}
 
-  // UI 状態
+/** UI 状態 */
+export interface UIState {
   showLog: boolean;
   audioSettings: AudioSettings;
   lastBought: string | null;
-
-  // ビジュアルFX
   shake: boolean;
   overlay: string | null;
-
-  // テキスト表示
   revealed: string;
   done: boolean;
   ready: boolean;
-  skip: () => void;
+}
 
-  // パーティクル
-  Particles: ReactNode;
-
-  // イベント数
-  eventCount: number;
-
-  // ハンドラ
+/** ハンドラ */
+export interface GameHandlers {
   startRun: () => void;
   enableAudio: () => void;
   selectDiff: (d: DifficultyDef) => void;
@@ -96,6 +85,18 @@ export interface GameRouterProps {
   updateMeta: (updater: (prev: MetaState) => Partial<MetaState>) => void;
   resetMeta: () => Promise<void>;
   handleAudioSettingsChange: (next: AudioSettings) => void;
+  skip: () => void;
+}
+
+/** GameRouter の Props */
+export interface GameRouterProps {
+  phase: UIPhase;
+  game: GameState;
+  derived: DerivedState;
+  ui: UIState;
+  handlers: GameHandlers;
+  Particles: ReactNode;
+  eventCount: number;
 }
 
 /** ローディング画面 */
@@ -110,16 +111,25 @@ export const LoadingScreen = ({ Particles }: { Particles: ReactNode }) => (
 
 /** フェーズに応じた画面を切り替えるルーターコンポーネント */
 export const GameRouter = (props: GameRouterProps) => {
+  const { phase, game, derived, ui, handlers, Particles, eventCount } = props;
+
   const {
-    phase, player, diff, event, floor, step, ending, isNewEnding, isNewDiffClear,
+    player, diff, event, floor, step, ending, isNewEnding, isNewDiffClear,
     usedSecondLife, chainNext, log, resTxt, resChg, drainInfo,
-    meta, fx, progressPct, floorMeta, floorColor, vignette, lowMental,
+  } = game;
+
+  const { meta, fx, progressPct, floorMeta, floorColor, vignette, lowMental } = derived;
+
+  const {
     showLog, audioSettings, lastBought, shake, overlay,
-    revealed, done, ready, skip, Particles, eventCount,
+    revealed, done, ready,
+  } = ui;
+
+  const {
     startRun, enableAudio, selectDiff, enterFloor, handleChoice, proceed,
     doUnlock, toggleAudio, setShowLog, setPhase, updateMeta, resetMeta,
-    handleAudioSettingsChange,
-  } = props;
+    handleAudioSettingsChange, skip,
+  } = handlers;
 
   const audioOn = audioSettings.sfxEnabled;
   // 1周目はガイダンスを表示

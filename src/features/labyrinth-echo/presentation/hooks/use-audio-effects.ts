@@ -91,12 +91,12 @@ const useCrisisUpdate = (params: AudioEffectsParams): void => {
 /** ChoiceFeedback に応じた効果音再生 */
 const useFeedbackSfx = (params: AudioEffectsParams): void => {
   const { feedback, sfxEnabled, audioEngine } = params;
-  const prevFeedbackRef = useRef<ChoiceFeedback | null>(null);
+  const prevResultTextRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // feedback が変わった時のみ再生
-    if (!feedback || feedback === prevFeedbackRef.current) return;
-    prevFeedbackRef.current = feedback;
+    // resultText が同じなら重複とみなしスキップ（値ベースの比較）
+    if (!feedback || feedback.resultText === prevResultTextRef.current) return;
+    prevResultTextRef.current = feedback.resultText;
 
     if (!sfxEnabled) return;
 

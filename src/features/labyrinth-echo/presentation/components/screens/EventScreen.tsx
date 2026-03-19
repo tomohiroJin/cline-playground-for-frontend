@@ -3,6 +3,7 @@
  *
  * EventResultScreen から分割。イベント表示・選択肢部分を担当する。
  */
+import { useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { CFG } from '../../../domain/constants/config';
 import type { Player } from '../../../domain/models/player';
@@ -125,6 +126,7 @@ export const EventScreen = ({
 }: EventScreenProps) => {
   const evType = EVENT_TYPE[event.tp];
   const isChainEvent = event.chainOnly;
+  const hints = useMemo(() => computeChoiceHints(event.ch, player.inf), [event.ch, player.inf]);
   const bgImageUrl = getSceneImage(event, floor, [...player.statuses]) ?? LE_IMAGES.events[event.tp as keyof typeof LE_IMAGES.events] ?? LE_IMAGES.events.exploration;
 
   const eventOptionsCount = done && ready ? event.ch.length : 0;
@@ -167,31 +169,28 @@ export const EventScreen = ({
           </div>
         )}
         <TypewriterText text={event.sit} revealed={revealed} done={done} ready={ready} skip={skip} />
-        {done && ready && (() => {
-          const hints = computeChoiceHints(event.ch, player.inf);
-          return (
-            <div style={{ animation: "fadeUp .4s" }}>
-              <div className="sec-hd" style={{ color: "#505078" }}>── 行動を選択 ──</div>
-              {event.ch.map((c, i) => {
-                const { hintIcon, hintText, categories } = hints[i];
-                return (
-                  <button key={i} className={`btn ${eventSelIdx === i ? 'selected' : ''}`} onMouseEnter={() => setEventSelIdx(i)} onClick={() => handleChoice(i)} style={{ display: "flex", alignItems: "flex-start", animation: `slideIn .3s ease ${i * 0.08}s both` }}>
-                    <span className="cn">{i + 1}</span>
-                    <span style={{ flex: 1 }}>
-                      {c.t}
-                      {hintText && <span className="key-hint" style={{ display: "block", fontSize: 10, color: "#a5b4fc", opacity: 0.6, marginTop: 2, animation: "fadeIn 0.3s ease 0.2s both" }}>{hintText}</span>}
-                    </span>
-                    <span style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: 6, alignSelf: "center" }}>
-                      {categories.map(cat => <span key={cat} style={{ fontSize: 9, opacity: .35 }} aria-label={cat} title={cat}>{CATEGORY_ICONS[cat]}</span>)}
-                      {hintIcon && <span style={{ fontSize: 9, opacity: .4 }} aria-label="条件あり" title="条件あり">{hintIcon}</span>}
-                      <span className="key-hint" style={{ fontSize: "0.7em", opacity: 0.5, fontFamily: "var(--sans)", color: "var(--dim)" }}>[{i + 1}]</span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          );
-        })()}
+        {done && ready && (
+          <div style={{ animation: "fadeUp .4s" }}>
+            <div className="sec-hd" style={{ color: "#505078" }}>── 行動を選択 ──</div>
+            {event.ch.map((c, i) => {
+              const { hintIcon, hintText, categories } = hints[i];
+              return (
+                <button key={i} className={`btn ${eventSelIdx === i ? 'selected' : ''}`} onMouseEnter={() => setEventSelIdx(i)} onClick={() => handleChoice(i)} style={{ display: "flex", alignItems: "flex-start", animation: `slideIn .3s ease ${i * 0.08}s both` }}>
+                  <span className="cn">{i + 1}</span>
+                  <span style={{ flex: 1 }}>
+                    {c.t}
+                    {hintText && <span className="key-hint" style={{ display: "block", fontSize: 10, color: "#a5b4fc", opacity: 0.6, marginTop: 2, animation: "fadeIn 0.3s ease 0.2s both" }}>{hintText}</span>}
+                  </span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: 6, alignSelf: "center" }}>
+                    {categories.map(cat => <span key={cat} style={{ fontSize: 9, opacity: .35 }} aria-label={cat} title={cat}>{CATEGORY_ICONS[cat]}</span>)}
+                    {hintIcon && <span style={{ fontSize: 9, opacity: .4 }} aria-label="条件あり" title="条件あり">{hintIcon}</span>}
+                    <span className="key-hint" style={{ fontSize: "0.7em", opacity: 0.5, fontFamily: "var(--sans)", color: "var(--dim)" }}>[{i + 1}]</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </Page>
   );

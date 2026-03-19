@@ -8,5 +8,6 @@
 export interface AudioSettings {
   readonly bgmVolume: number;
   readonly sfxVolume: number;
-  readonly enabled: boolean;
+  readonly bgmEnabled: boolean;
+  readonly sfxEnabled: boolean;
 }

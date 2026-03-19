@@ -19,7 +19,7 @@ export const getActiveTitle = (meta: MetaState): TitleDef => {
     if (found?.cond(meta)) return found;
   }
   const unlocked = getUnlockedTitles(meta);
-  return unlocked[unlocked.length - 1] ?? TITLES[0];
+  return unlocked.at(-1) ?? TITLES.at(0) ?? { id: 't00', name: '迷い人', cond: () => true };
 };
 
 export type { TitleDef };

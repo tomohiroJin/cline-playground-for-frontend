@@ -35,10 +35,11 @@ export interface LogEntry {
 }
 
 /**
- * 旧互換用のGamePhase文字列型（移行期間中に使用）
- * TODO(2026-06-30): Discriminated Union への移行完了後に削除予定
+ * ゲームフェーズ
+ * ドメイン層で認識するフェーズの基本型。
+ * プレゼンテーション層の UIPhase はこれを拡張して画面遷移を管理する。
  */
-export type LegacyGamePhase =
+export type GamePhase =
   | 'title'
   | 'difficulty'
   | 'explore'
@@ -49,13 +50,6 @@ export type LegacyGamePhase =
   | 'ending'
   | 'unlocks'
   | 'stats';
-
-/**
- * ゲームフェーズ（Discriminated Union）
- * 将来的に各フェーズに関連データを同梱する予定。
- * 移行期間中はLegacyGamePhase文字列と併用。
- */
-export type GamePhase = LegacyGamePhase;
 
 /** ゲーム状態（1ラン分） */
 export interface GameState {

@@ -225,6 +225,41 @@ describe('CombatService', () => {
       });
     });
 
+    describe('無効なフラグの型ガード', () => {
+      it('無効なadd:フラグを渡した場合、ステータスが追加されない', () => {
+        // Arrange
+        const player = createDomainTestPlayer({ statuses: [] });
+
+        // Act
+        const result = applyChangesToPlayer(player, { hp: 0, mn: 0, inf: 0 }, 'add:unknown_status');
+
+        // Assert: 無効なステータスIDはフィルタリングされる
+        expect(result.statuses).toEqual([]);
+      });
+
+      it('有効なadd:フラグを渡した場合、ステータスが追加される', () => {
+        // Arrange
+        const player = createDomainTestPlayer({ statuses: [] });
+
+        // Act
+        const result = applyChangesToPlayer(player, { hp: 0, mn: 0, inf: 0 }, 'add:負傷');
+
+        // Assert
+        expect(result.statuses).toContain('負傷');
+      });
+
+      it('無効なremove:フラグを渡した場合でもエラーにならない', () => {
+        // Arrange
+        const player = createDomainTestPlayer({ statuses: ['負傷'] });
+
+        // Act & Assert: エラーが発生しないこと
+        const result = applyChangesToPlayer(player, { hp: 0, mn: 0, inf: 0 }, 'remove:unknown_status');
+
+        // 既存のステータスは維持される
+        expect(result.statuses).toContain('負傷');
+      });
+    });
+
     describe('ステータスフラグプレフィックスの動作確認', () => {
       it('CFG.STATUS_FLAG_ADD_PREFIX（"add:"）でステータスが追加される', () => {
         // Arrange: プレフィックス定数経由でフラグを構築
@@ -290,6 +325,24 @@ describe('CombatService', () => {
 
         // Assert
         expect(result.drain!.hp).toBe(-2); // Math.round(-5 * 0.5) = -2
+      });
+
+      it('無効なステータスが含まれていてもクラッシュしない', () => {
+        // Arrange: statusesに無効な値が含まれるプレイヤーを作成
+        const player = createDomainTestPlayer({ hp: 50, maxHp: 55, statuses: [] });
+        // 型安全を迂回して無効なステータスを注入
+        const playerWithInvalid = {
+          ...player,
+          statuses: ['invalid_status', '出血'] as StatusEffectId[],
+        };
+        const fx = createTestFx();
+
+        // Act: クラッシュせずに処理が完了すること
+        const result = computeDrain(playerWithInvalid, fx, null);
+
+        // Assert: 出血のドレインは正常に適用される
+        expect(result.drain).not.toBeNull();
+        expect(result.drain!.hp).toBe(-5);
       });
 
       it('drainImmuneで精神ドレインが無効化される', () => {

@@ -4,6 +4,9 @@
  * 乱数の注入可能化によりテストの決定論的再現を実現する。
  */
 
+/** xorshift32 の出力を [0, 1) に正規化するためのスケール値 */
+const XORSHIFT_SCALE = 0x100000000;
+
 /** 乱数ソースのインターフェース */
 export interface RandomSource {
   /** 0以上1未満の乱数を返す（Math.random()と同じ契約） */
@@ -34,7 +37,7 @@ export class SeededRandomSource implements RandomSource {
     this.state ^= this.state << 13;
     this.state ^= this.state >> 17;
     this.state ^= this.state << 5;
-    return (this.state >>> 0) / 0x100000000;
+    return (this.state >>> 0) / XORSHIFT_SCALE;
   }
 }
 

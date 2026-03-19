@@ -6,7 +6,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { GameRouter, LoadingScreen } from '../../../presentation/components/GameRouter';
-import type { GameRouterProps } from '../../../presentation/components/GameRouter';
+import type { GameRouterProps, GameState, UIState } from '../../../presentation/components/GameRouter';
 import { createTestPlayer, createTestDifficulty, createTestMeta, createTestFx, createTestEvent } from '../../helpers/factories';
 import { FLOOR_META } from '../../../domain/constants/floor-meta';
 
@@ -17,9 +17,8 @@ jest.mock('../../../audio', () => ({
   saveAudioSettings: jest.fn(),
 }));
 
-/** テスト用のデフォルトProps */
-const createDefaultProps = (overrides: Partial<GameRouterProps> = {}): GameRouterProps => ({
-  phase: 'title',
+/** デフォルトのゲーム状態 */
+const DEFAULT_GAME: GameState = {
   player: null,
   diff: null,
   event: null,
@@ -34,13 +33,10 @@ const createDefaultProps = (overrides: Partial<GameRouterProps> = {}): GameRoute
   resTxt: '',
   resChg: null,
   drainInfo: null,
-  meta: createTestMeta(),
-  fx: createTestFx(),
-  progressPct: 0,
-  floorMeta: FLOOR_META[1],
-  floorColor: FLOOR_META[1].color,
-  vignette: {},
-  lowMental: false,
+};
+
+/** デフォルトのUI状態 */
+const DEFAULT_UI: UIState = {
   showLog: false,
   audioSettings: { sfxEnabled: false, bgmEnabled: false, bgmVolume: 0.5, sfxVolume: 1 },
   lastBought: null,
@@ -49,24 +45,50 @@ const createDefaultProps = (overrides: Partial<GameRouterProps> = {}): GameRoute
   revealed: '',
   done: false,
   ready: false,
-  skip: jest.fn(),
-  Particles: <div data-testid="particles" />,
-  eventCount: 100,
-  startRun: jest.fn(),
-  enableAudio: jest.fn(),
-  selectDiff: jest.fn(),
-  enterFloor: jest.fn(),
-  handleChoice: jest.fn(),
-  proceed: jest.fn(),
-  doUnlock: jest.fn(),
-  toggleAudio: jest.fn(),
-  setShowLog: jest.fn(),
-  setPhase: jest.fn(),
-  updateMeta: jest.fn(),
-  resetMeta: jest.fn(),
-  handleAudioSettingsChange: jest.fn(),
-  ...overrides,
-});
+};
+
+/** テスト用のデフォルトProps（ネストされたオブジェクトの部分上書きをサポート） */
+const createDefaultProps = (overrides: {
+  phase?: GameRouterProps['phase'];
+  game?: Partial<GameState>;
+  ui?: Partial<UIState>;
+  [key: string]: unknown;
+} = {}): GameRouterProps => {
+  const { phase, game, ui, ...rest } = overrides;
+  return {
+    phase: phase ?? 'title',
+    game: { ...DEFAULT_GAME, ...game },
+    derived: {
+      meta: createTestMeta(),
+      fx: createTestFx(),
+      progressPct: 0,
+      floorMeta: FLOOR_META[1],
+      floorColor: FLOOR_META[1].color,
+      vignette: {},
+      lowMental: false,
+    },
+    ui: { ...DEFAULT_UI, ...ui },
+    handlers: {
+      startRun: jest.fn(),
+      enableAudio: jest.fn(),
+      selectDiff: jest.fn(),
+      enterFloor: jest.fn(),
+      handleChoice: jest.fn(),
+      proceed: jest.fn(),
+      doUnlock: jest.fn(),
+      toggleAudio: jest.fn(),
+      setShowLog: jest.fn(),
+      setPhase: jest.fn(),
+      updateMeta: jest.fn(),
+      resetMeta: jest.fn(),
+      handleAudioSettingsChange: jest.fn(),
+      skip: jest.fn(),
+    },
+    Particles: <div data-testid="particles" />,
+    eventCount: 100,
+    ...rest,
+  };
+};
 
 describe('GameRouter', () => {
   describe('フェーズルーティング', () => {
@@ -90,8 +112,7 @@ describe('GameRouter', () => {
       // Arrange & Act
       render(<GameRouter {...createDefaultProps({
         phase: 'floor_intro',
-        player: createTestPlayer(),
-        diff: createTestDifficulty(),
+        game: { player: createTestPlayer(), diff: createTestDifficulty() },
       })} />);
 
       // Assert
@@ -102,8 +123,7 @@ describe('GameRouter', () => {
       // Arrange & Act
       render(<GameRouter {...createDefaultProps({
         phase: 'gameover',
-        player: createTestPlayer({ hp: 0 }),
-        diff: createTestDifficulty(),
+        game: { player: createTestPlayer({ hp: 0 }), diff: createTestDifficulty() },
       })} />);
 
       // Assert
@@ -127,12 +147,8 @@ describe('GameRouter', () => {
       // Act
       render(<GameRouter {...createDefaultProps({
         phase: 'event',
-        player: createTestPlayer(),
-        diff: createTestDifficulty(),
-        event,
-        revealed: 'テストシチュエーション',
-        done: true,
-        ready: true,
+        game: { player: createTestPlayer(), diff: createTestDifficulty(), event },
+        ui: { revealed: 'テストシチュエーション', done: true, ready: true },
       })} />);
 
       // Assert
@@ -145,14 +161,14 @@ describe('GameRouter', () => {
       // Arrange & Act
       render(<GameRouter {...createDefaultProps({
         phase: 'result',
-        player: createTestPlayer(),
-        diff: createTestDifficulty(),
-        event: createTestEvent(),
-        resTxt: 'テスト結果テキスト',
-        resChg: { hp: -5, mn: 0, inf: 3 },
-        revealed: 'テスト結果テキスト',
-        done: true,
-        ready: true,
+        game: {
+          player: createTestPlayer(),
+          diff: createTestDifficulty(),
+          event: createTestEvent(),
+          resTxt: 'テスト結果テキスト',
+          resChg: { hp: -5, mn: 0, inf: 3 },
+        },
+        ui: { revealed: 'テスト結果テキスト', done: true, ready: true },
       })} />);
 
       // Assert

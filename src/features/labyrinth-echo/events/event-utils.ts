@@ -90,12 +90,21 @@ export const parseChainFlag = (flag: string | undefined | null): string | null =
   return null;
 };
 
+/** processChoice の入力パラメータ */
+export interface ProcessChoiceParams {
+  readonly event: GameEvent;
+  readonly choiceIdx: number;
+  readonly player: Player;
+  readonly fx: FxState;
+  readonly diff: DifficultyDef | null;
+}
+
 /**
  * プレイヤーの選択を処理 — 純粋計算、副作用なし。
  * @pre event と player が non-null、0 <= choiceIdx < event.ch.length
  * @post UI コールバックに必要な全派生データを返す
  */
-export const processChoice = (event: GameEvent, choiceIdx: number, player: Player, fx: FxState, diff: DifficultyDef | null) => {
+export const processChoice = ({ event, choiceIdx, player, fx, diff }: ProcessChoiceParams) => {
   invariant(event && player, "processChoice", "event and player required");
   invariant(choiceIdx >= 0 && choiceIdx < event.ch.length, "processChoice", `invalid index ${choiceIdx}`);
   const choice  = event.ch[choiceIdx];
@@ -125,13 +134,23 @@ export const validateEvents = (events: GameEvent[], EVENT_TYPE: Record<string, E
   return events;
 };
 
+/** pickEvent の入力パラメータ */
+export interface PickEventParams {
+  readonly events: GameEvent[];
+  readonly floor: number;
+  readonly usedIds: string[];
+  readonly meta: MetaState;
+  readonly fx: FxState;
+  readonly rng?: RandomSource;
+}
+
 /**
  * イベントを選択（chainOnlyイベントと使用済みIDを除外）。
  * チェインイベントは明示的なチェインフラグでのみトリガーされる。
  * クロスランイベントは metaCond のチェックが必要。
  * chainBoost: チェイン結果を持つイベントの重みを倍にする。
  */
-export const pickEvent = (events: GameEvent[], floor: number, usedIds: string[], meta: MetaState, fx: FxState, rng?: RandomSource): GameEvent | null => {
+export const pickEvent = ({ events, floor, usedIds, meta, fx, rng }: PickEventParams): GameEvent | null => {
   const pool = events.filter(e =>
     e.fl.includes(floor) && !usedIds.includes(e.id) && !e.chainOnly
     && (!e.metaCond || e.metaCond(meta))

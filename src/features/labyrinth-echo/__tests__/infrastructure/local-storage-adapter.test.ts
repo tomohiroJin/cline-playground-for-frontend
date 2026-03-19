@@ -158,7 +158,8 @@ describe('LocalStorageAdapter', () => {
         const settings: AudioSettings = {
           bgmVolume: 0.8,
           sfxVolume: 0.6,
-          enabled: true,
+          bgmEnabled: true,
+          sfxEnabled: true,
         };
 
         // Act
@@ -255,9 +256,9 @@ describe('LocalStorageAdapter', () => {
       });
 
       it('loadAudioSettings で不正な型のフィールドが含まれる場合にデフォルト値でフォールバック', () => {
-        // Arrange — bgmVolume が文字列、enabled が数値（不正な型）
+        // Arrange — bgmVolume が文字列、bgmEnabled が数値（不正な型）
         mockStorage.getItem.mockReturnValue(
-          JSON.stringify({ bgmVolume: 'loud', sfxVolume: 0.5, enabled: 1 })
+          JSON.stringify({ bgmVolume: 'loud', sfxVolume: 0.5, bgmEnabled: 1, sfxEnabled: true })
         );
 
         // Act
@@ -266,13 +267,14 @@ describe('LocalStorageAdapter', () => {
         // Assert — 不正なフィールドはデフォルト値に置き換わること
         expect(loaded.bgmVolume).toBe(DEFAULT_AUDIO_SETTINGS.bgmVolume);
         expect(loaded.sfxVolume).toBe(0.5);
-        expect(loaded.enabled).toBe(DEFAULT_AUDIO_SETTINGS.enabled);
+        expect(loaded.bgmEnabled).toBe(DEFAULT_AUDIO_SETTINGS.bgmEnabled);
+        expect(loaded.sfxEnabled).toBe(true);
       });
 
       it('loadAudioSettings で範囲外の数値が含まれる場合にデフォルト値でフォールバック', () => {
         // Arrange — bgmVolume が範囲外（-0.1, 1.5）
         mockStorage.getItem.mockReturnValue(
-          JSON.stringify({ bgmVolume: -0.1, sfxVolume: 1.5, enabled: true })
+          JSON.stringify({ bgmVolume: -0.1, sfxVolume: 1.5, bgmEnabled: true, sfxEnabled: true })
         );
 
         // Act
@@ -281,7 +283,7 @@ describe('LocalStorageAdapter', () => {
         // Assert — 範囲外のフィールドはデフォルト値に置き換わること
         expect(loaded.bgmVolume).toBe(DEFAULT_AUDIO_SETTINGS.bgmVolume);
         expect(loaded.sfxVolume).toBe(DEFAULT_AUDIO_SETTINGS.sfxVolume);
-        expect(loaded.enabled).toBe(true);
+        expect(loaded.bgmEnabled).toBe(true);
       });
     });
   });
@@ -301,7 +303,8 @@ describe('LocalStorageAdapter', () => {
       expect(DEFAULT_AUDIO_SETTINGS).toEqual({
         bgmVolume: 0.5,
         sfxVolume: 0.7,
-        enabled: true,
+        bgmEnabled: true,
+        sfxEnabled: true,
       });
     });
   });
