@@ -4,10 +4,14 @@
  * 1ミスで即終了のサバイバルモード
  */
 import { useState, useCallback, useRef } from 'react';
-import { Question, AnswerResult } from '../types';
-import { QUESTIONS } from '../quiz-data';
-import { shuffle, pickQuestion } from '../game-logic';
-import { saveHighScore } from '../challenge-storage';
+import { Question, AnswerResult } from '../domain/types';
+import { QUESTIONS } from '../questions';
+import { shuffle } from '../../../utils/math-utils';
+import { pickQuestion } from '../domain/quiz';
+import { ChallengeRepository } from '../infrastructure/storage/challenge-repository';
+import { LocalStorageAdapter } from '../infrastructure/storage/local-storage-adapter';
+
+const challengeRepo = new ChallengeRepository(new LocalStorageAdapter());
 
 /** 全カテゴリのキー一覧 */
 const ALL_CATEGORIES = Object.keys(QUESTIONS);
@@ -108,7 +112,7 @@ export function useChallenge(): UseChallengeReturn {
       setCombo(0);
       setIsGameOver(true);
       // ハイスコア保存
-      saveHighScore(correctCount);
+      challengeRepo.saveHighScore(correctCount);
     }
 
     return { correct, speed, eventId: 'challenge' };

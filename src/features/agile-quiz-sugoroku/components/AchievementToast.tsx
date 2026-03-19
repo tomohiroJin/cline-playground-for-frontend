@@ -4,7 +4,7 @@
 import React, { useEffect, useState } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { COLORS, FONTS } from '../constants';
-import { AchievementDefinition, AchievementRarity } from '../types';
+import { AchievementDefinition, AchievementRarity } from '../domain/types';
 
 interface AchievementToastProps {
   /** 新たに獲得した実績リスト */

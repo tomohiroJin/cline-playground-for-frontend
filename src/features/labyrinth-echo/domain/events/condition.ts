@@ -1,0 +1,120 @@
+/**
+ * 迷宮の残響 - 条件評価システム
+ *
+ * Condition Discriminated Union型による型安全な条件評価。
+ * 旧文字列形式との互換性も提供。
+ */
+import type { Player, StatusEffectId } from '../models/player';
+import { isStatusEffectId } from '../models/player';
+import type { FxState } from '../models/unlock';
+import { invariant } from '../contracts/invariants';
+import { CFG } from '../constants/config';
+
+/** 比較演算子 */
+export type ComparisonOp = '>' | '<' | '>=' | '<=';
+
+/** 条件の Discriminated Union */
+export type Condition =
+  | { type: 'default' }
+  | { type: 'hp'; op: ComparisonOp; value: number }
+  | { type: 'mn'; op: ComparisonOp; value: number }
+  | { type: 'inf'; op: ComparisonOp; value: number }
+  | { type: 'status'; statusId: StatusEffectId };
+
+/** 比較演算を実行する */
+const compare = (actual: number, op: ComparisonOp, threshold: number): boolean => {
+  switch (op) {
+    case '>': return actual > threshold;
+    case '<': return actual < threshold;
+    case '>=': return actual >= threshold;
+    case '<=': return actual <= threshold;
+  }
+};
+
+/** プレイヤーのHP実効値を取得する（dangerSense考慮） */
+const getEffectiveHp = (player: Player, fx: FxState): number => {
+  if (fx.dangerSense && player.hp < CFG.DANGER_SENSE_HP_THRESHOLD) return player.hp + CFG.DANGER_SENSE_HP_BOOST;
+  return player.hp;
+};
+
+/** プレイヤーのMN実効値を取得する（negotiator, mentalSense考慮） */
+const getEffectiveMn = (player: Player, fx: FxState): number => {
+  let mn = player.mn;
+  if (fx.negotiator) mn += CFG.NEGOTIATOR_MN_BOOST;
+  if (fx.mentalSense && player.mn < CFG.MENTAL_SENSE_MN_THRESHOLD) mn += CFG.MENTAL_SENSE_MN_BOOST;
+  return mn;
+};
+
+
+/**
+ * 条件を評価する純粋関数
+ */
+export const evaluateCondition = (condition: Condition, player: Player, fx: FxState): boolean => {
+  switch (condition.type) {
+    case 'default':
+      return true;
+    case 'status':
+      return player.statuses.includes(condition.statusId);
+    case 'hp': {
+      // dangerSense は hp > 条件のみに適用（旧 evalCond 互換）
+      const hpValue = condition.op === '>' ? getEffectiveHp(player, fx) : player.hp;
+      return compare(hpValue, condition.op, condition.value);
+    }
+    case 'mn': {
+      // negotiator/mentalSense は mn > 条件のみに適用（旧 evalCond 互換）
+      const mnValue = condition.op === '>' ? getEffectiveMn(player, fx) : player.mn;
+      return compare(mnValue, condition.op, condition.value);
+    }
+    case 'inf':
+      return compare(player.inf, condition.op, condition.value);
+  }
+};
+
+/**
+ * 旧形式の文字列条件を新形式に変換する（移行期間用）
+ * @throws 不明な条件形式の場合
+ */
+export const parseCondition = (condStr: string): Condition => {
+  invariant(condStr.length > 0, 'parseCondition', '条件文字列が空です');
+
+  if (condStr === 'default') return { type: 'default' };
+  if (condStr.startsWith('status:')) {
+    const statusId = condStr.slice(7);
+    invariant(statusId.length > 0, 'parseCondition', 'ステータスIDが空です');
+    invariant(isStatusEffectId(statusId), 'parseCondition', `不正なステータスID: "${statusId}"`);
+    return { type: 'status', statusId };
+  }
+
+  // hp>, hp<, mn>, mn<, inf>, inf< をパース
+  const match = condStr.match(/^(hp|mn|inf)([><]=?)(\d+)$/);
+  invariant(match !== null, 'parseCondition', `不明な条件形式: "${condStr}"`);
+
+  const [, stat, op, val] = match;
+  const value = parseInt(val, 10);
+  invariant(!Number.isNaN(value), 'parseCondition', `数値の解析に失敗: "${val}"`);
+
+  // 正規表現が (hp|mn|inf) と ([><]=?) にマッチしているため型安全
+  const validStats = ['hp', 'mn', 'inf'] as const;
+  const validOps = ['>', '<', '>=', '<='] as const;
+  invariant(validStats.includes(stat as typeof validStats[number]), 'parseCondition', `不正なstat: "${stat}"`);
+  invariant(validOps.includes(op as typeof validOps[number]), 'parseCondition', `不正なop: "${op}"`);
+
+  return {
+    type: stat as 'hp' | 'mn' | 'inf',
+    op: op as ComparisonOp,
+    value,
+  };
+};
+
+/**
+ * 後方互換ラッパー — 旧 evalCond と同じシグネチャ
+ */
+export const evalCondCompat = (cond: string, player: Player, fx: FxState): boolean => {
+  try {
+    const condition = parseCondition(cond);
+    return evaluateCondition(condition, player, fx);
+  } catch {
+    console.warn(`[evalCondCompat] Unknown format: "${cond}"`);
+    return false;
+  }
+};

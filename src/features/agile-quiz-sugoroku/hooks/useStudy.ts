@@ -2,8 +2,8 @@
  * 勉強会モード用フック
  */
 import { useState, useCallback, useMemo } from 'react';
-import { Question, TagStats, AnswerResultWithDetail } from '../types';
-import { buildStudyPool } from '../study-question-pool';
+import { Question, TagStats, AnswerResultWithDetail } from '../domain/types';
+import { buildStudyPool } from '../domain/quiz';
 
 export interface UseStudyReturn {
   /** 問題リスト */

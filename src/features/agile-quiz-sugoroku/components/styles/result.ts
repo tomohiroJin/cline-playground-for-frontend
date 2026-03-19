@@ -4,7 +4,9 @@
  * グレード表示、エンジニアタイプ、チャート、カテゴリ等のリザルト関連コンポーネント
  */
 import styled from 'styled-components';
-import { COLORS, FONTS } from '../../constants';
+import { DESIGN_TOKENS } from '../../presentation/styles/design-tokens';
+
+const { colors: COLORS, fonts: FONTS } = DESIGN_TOKENS;
 import { gradeReveal, barGrow, radarFill } from './animations';
 
 /* ================================

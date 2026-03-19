@@ -1,20 +1,22 @@
 /**
  * 迷宮の残響 - イベント・結果画面
  */
-import { useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
-import { CFG } from '../game-logic';
-import type { Player, DifficultyDef } from '../game-logic';
-import { EVENT_TYPE, FLOOR_META } from '../definitions';
-import type { FloorMetaDef, LogEntry as LogEntryDef } from '../definitions';
+import { CFG } from '../domain/constants/config';
+import type { Player } from '../domain/models/player';
+import type { DifficultyDef } from '../domain/models/difficulty';
+import { EVENT_TYPE } from '../domain/constants/event-type-defs';
+import type { FloorMetaDef } from '../domain/constants/floor-meta';
+import type { LogEntry as LogEntryDef } from '../domain/models/game-state';
 import type { GameEvent } from '../events/event-utils';
 import { Page } from './Page';
 import {
   StatBar, StatusTag, StepDots, DiffBadge,
-  TypewriterText, Change, FlagIndicator, DrainDisplay, LogEntry,
+  TypewriterText, Change, FlagIndicator, DrainDisplay,
 } from './GameComponents';
 import { LE_IMAGES, getSceneImage } from '../images';
-import { useKeyboardControl } from '../hooks';
+import { useKeyboardControl } from '../presentation/hooks/use-keyboard-control';
+import { LogPanel } from './LogPanel';
 
 /** 条件文字列を具体的なヒントテキストに変換（高情報値で開放） */
 const conditionToDetailedHint = (cond: string): string => {
@@ -69,89 +71,6 @@ interface DrainInfo {
   mn: number;
 }
 
-/** ログフィルタータイプ */
-type LogFilter = "all" | "damage" | "recovery" | "flag";
-
-/** フィルター定義 */
-const LOG_FILTERS: { key: LogFilter; label: string }[] = [
-  { key: "all", label: "全て" },
-  { key: "damage", label: "被害" },
-  { key: "recovery", label: "回復" },
-  { key: "flag", label: "状態変化" },
-];
-
-/** ログパネル（フィルター・フロアセパレーター・コピー機能付き） */
-const LogPanel = ({ log }: { log: LogEntryDef[] }) => {
-  const [filter, setFilter] = useState<LogFilter>("all");
-  const [copied, setCopied] = useState(false);
-
-  const reversed = log.slice().reverse();
-  const filtered = filter === "all" ? reversed : reversed.filter(l => {
-    if (filter === "damage") return l.hp < 0 || l.mn < 0;
-    if (filter === "recovery") return l.hp > 0 || l.mn > 0;
-    if (filter === "flag") return !!l.flag;
-    return true;
-  });
-
-  const handleCopy = () => {
-    const text = log.map(l => {
-      const parts = [`第${l.fl}層-${l.step}: ${l.ch}`];
-      if (l.hp !== 0) parts.push(`HP${l.hp > 0 ? "+" : ""}${l.hp}`);
-      if (l.mn !== 0) parts.push(`精神${l.mn > 0 ? "+" : ""}${l.mn}`);
-      if (l.inf !== 0) parts.push(`情報${l.inf > 0 ? "+" : ""}${l.inf}`);
-      if (l.flag) parts.push(`[${l.flag}]`);
-      return parts.join(" ");
-    }).join("\n");
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    });
-  };
-
-  let lastFloor = -1;
-
-  return (
-    <div style={{ marginTop: 8, background: "rgba(0,0,0,.25)", borderRadius: 8, padding: 12 }}>
-      {/* フィルターバー */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <div style={{ display: "flex", gap: 4 }}>
-          {LOG_FILTERS.map(f => (
-            <button key={f.key} onClick={() => setFilter(f.key)} style={{
-              fontSize: 9, padding: "2px 8px", borderRadius: 10, border: "1px solid",
-              borderColor: filter === f.key ? "rgba(99,102,241,.4)" : "rgba(50,50,80,.2)",
-              background: filter === f.key ? "rgba(99,102,241,.12)" : "transparent",
-              color: filter === f.key ? "#a5b4fc" : "#505070",
-              cursor: "pointer", fontFamily: "var(--sans)", transition: "all .2s",
-            }}>{f.label}</button>
-          ))}
-        </div>
-        <button onClick={handleCopy} style={{
-          fontSize: 9, padding: "2px 8px", borderRadius: 10, border: "1px solid rgba(50,50,80,.2)",
-          background: copied ? "rgba(74,222,128,.12)" : "transparent",
-          color: copied ? "#4ade80" : "#505070",
-          cursor: "pointer", fontFamily: "var(--sans)", transition: "all .2s",
-        }}>{copied ? "✓" : "📋"}</button>
-      </div>
-      {/* ログ本体 */}
-      <div style={{ maxHeight: 180, overflowY: "auto" }}>
-        {filtered.length === 0
-          ? <div style={{ fontSize: 11, color: "#404060", fontFamily: "var(--sans)" }}>ログなし</div>
-          : filtered.map((l, i) => {
-            const showSep = l.fl !== lastFloor;
-            lastFloor = l.fl;
-            return (
-              <div key={i}>
-                {showSep && <div style={{ fontSize: 9, color: FLOOR_META[l.fl]?.color ?? "#818cf8", fontFamily: "var(--sans)", marginTop: i > 0 ? 6 : 0, marginBottom: 4, borderBottom: `1px solid ${FLOOR_META[l.fl]?.color ?? "#818cf8"}22`, paddingBottom: 2, letterSpacing: 1 }}>── 第{l.fl}層 ──</div>}
-                <LogEntry index={i} entry={l} />
-              </div>
-            );
-          })
-        }
-      </div>
-    </div>
-  );
-};
-
 /** EventResultScreen の Props */
 interface EventResultScreenProps {
   Particles: ReactNode;
@@ -193,7 +112,7 @@ export const EventResultScreen = ({
   const isChainEvent = event?.chainOnly;
 
   const bgImageUrl = event
-    ? (getSceneImage(event, floor, player.st) ?? LE_IMAGES.events[event.tp as keyof typeof LE_IMAGES.events] ?? LE_IMAGES.events.exploration)
+    ? (getSceneImage(event, floor, [...player.statuses]) ?? LE_IMAGES.events[event.tp as keyof typeof LE_IMAGES.events] ?? LE_IMAGES.events.exploration)
     : '';
 
   const eventOptionsCount = phase === "event" && done && ready && event ? event.ch.length : 0;
@@ -231,7 +150,7 @@ export const EventResultScreen = ({
         <StatBar label="精神力" value={player.mn} max={player.maxMn} color={player.mn < player.maxMn * .25 ? "#7c3aed" : "linear-gradient(90deg,#6366f1,#818cf8)"} icon="◈" />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4, flexWrap: "wrap", gap: 6 }}>
           <div style={{ fontSize: 11, color: "var(--dim)", fontFamily: "var(--sans)" }}>📖 情報: <span style={{ color: "#fbbf24", fontWeight: 700 }}>{player.inf}</span></div>
-          <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>{player.st.map(s => <StatusTag key={s} name={s} />)}</div>
+          <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>{player.statuses.map(s => <StatusTag key={s} name={s} />)}</div>
         </div>
         <div style={{ marginTop: 10, height: 3, background: "rgba(20,20,50,.8)", borderRadius: 2, overflow: "hidden" }}>
           <div style={{ height: "100%", width: `${progressPct}%`, background: `linear-gradient(90deg,#6366f1,${floorColor})`, borderRadius: 2, transition: "width .5s" }} />

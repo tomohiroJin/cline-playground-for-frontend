@@ -4,7 +4,7 @@
  * LabyrinthEchoGame.tsx §6b から抽出。
  * 163件のイベント定義（データのみ）。
  */
-import type { MetaState } from '../game-logic';
+import type { MetaState } from '../domain/models/meta-state';
 const EV = [
   // ═══ FLOOR 1 (6 events) ═══
   {id:"e001",fl:[1],tp:"trap",
@@ -2027,7 +2027,7 @@ const EV = [
         {c:"default",r:"壁の記録の余白に、未到達の結末を示唆する文字列を発見。全てのエンディングを見届けたくなった。",hp:0,mn:5,inf:15}
       ]}
     ]},
-  {id:"e163",fl:[3,4,5],tp:"trap",metaCond:(m: MetaState)=>m.bestFl>=4,
+  {id:"e163",fl:[3,4,5],tp:"trap",metaCond:(m: MetaState)=>m.bestFloor>=4,
     sit:"以前第四層以降に到達した記憶が蘇る。この罠は見覚えがある──前回は引っかかったが、今回は構造を覚えている。",
     ch:[
       {t:"記憶通りに回避する",o:[
@@ -2497,7 +2497,7 @@ const EV = [
         {c:"default",r:"新しいルートは予想以上に過酷だった。だが前回の経験が精神的な支えになった。",hp:-12,mn:-5,inf:8}
       ]}
     ]},
-  {id:"e192",fl:[4,5],tp:"exploration",metaCond:(m: MetaState)=>(m.clearedDiffs?.length??0)>=2,
+  {id:"e192",fl:[4,5],tp:"exploration",metaCond:(m: MetaState)=>(m.clearedDifficulties?.length??0)>=2,
     sit:"複数の難易度をクリアした者にだけ開く隠し部屋。壁に各難易度の攻略情報が網羅されている。迷宮が「熟練者」として認定した証。",
     ch:[
       {t:"攻略情報を全て吸収する",o:[

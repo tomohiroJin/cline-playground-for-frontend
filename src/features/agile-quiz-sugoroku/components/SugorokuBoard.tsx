@@ -7,7 +7,7 @@
 import React, { useEffect, useRef } from 'react';
 import styled, { css } from 'styled-components';
 import { COLORS, FONTS } from '../constants';
-import { GameEvent } from '../types';
+import { GameEvent } from '../domain/types';
 import { slideMove, emergencyBlink } from './styles';
 
 // ── Props 型定義 ─────────────────────────────────────────────

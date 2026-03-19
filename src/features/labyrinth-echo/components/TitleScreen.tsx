@@ -2,19 +2,23 @@
  * 迷宮の残響 - タイトル画面
  */
 import { useState, useEffect, ReactNode } from 'react';
-import { CFG, DIFFICULTY, UNLOCKS } from '../game-logic';
-import type { MetaState } from '../game-logic';
-import { ENDINGS, getActiveTitle } from '../definitions';
+import { CFG } from '../domain/constants/config';
+import { DIFFICULTY } from '../domain/constants/difficulty-defs';
+import { UNLOCKS } from '../domain/constants/unlock-defs';
+import type { MetaState } from '../domain/models/meta-state';
+import type { UIPhase } from '../presentation/hooks/use-game-orchestrator';
+import { ENDINGS } from '../domain/constants/ending-defs';
+import { getActiveTitle } from '../domain/services/title-service';
 import { Page } from './Page';
 import { LE_IMAGES, LE_TITLE_LAYERS } from '../images';
-import { useKeyboardControl } from '../hooks';
+import { useKeyboardControl } from '../presentation/hooks/use-keyboard-control';
 
 interface TitleScreenProps {
   meta: MetaState;
   Particles: ReactNode;
   startRun: () => void;
   enableAudio: () => void;
-  setPhase: (phase: string) => void;
+  setPhase: (phase: UIPhase) => void;
   eventCount: number;
 }
 
@@ -114,7 +118,7 @@ export const TitleScreen = ({ meta, Particles, startRun, enableAudio, setPhase, 
           {meta.runs > 0 ? `${meta.runs + 1}回目の探索を開始` : "探索を開始する"}
         </button>
         {meta.runs > 0 && (() => {
-          const buyable = UNLOCKS.filter(u => !meta.unlocked.includes(u.id) && u.cost > 0 && meta.kp >= u.cost && (!u.gate || meta.clearedDiffs?.includes(u.gate))).length;
+          const buyable = UNLOCKS.filter(u => !meta.unlocked.includes(u.id) && u.cost > 0 && meta.kp >= u.cost && (!u.gateRequirement || meta.clearedDifficulties?.includes(u.gateRequirement))).length;
           return <button className={`btn tc ${selectedIndex === 1 ? 'selected' : ''}`} onMouseEnter={() => setSelectedIndex(1)} onClick={() => { enableAudio(); setPhase("unlocks"); }}>
             知見の継承{"\u3000"}<span style={{ color: "#fbbf24", fontFamily: "var(--sans)" }}>◈ {meta.kp}pt</span>
             {buyable > 0 && <span style={{ fontSize: 10, color: "#4ade80", marginLeft: 8, fontFamily: "var(--sans)" }}>({buyable}個解放可能)</span>}
@@ -128,14 +132,14 @@ export const TitleScreen = ({ meta, Particles, startRun, enableAudio, setPhase, 
         {meta.runs > 0 && <div style={{ marginTop: 20, fontSize: 11, fontFamily: "var(--sans)", display: "flex", justifyContent: "center", gap: 14, flexWrap: "wrap" }}>
           <span style={{ color: "#818cf8" }}>探索 {meta.runs}回</span>
           <span style={{ color: "#4ade80" }}>脱出 {meta.escapes}回</span>
-          <span style={{ color: "#fbbf24" }}>最深 第{meta.bestFl}層</span>
+          <span style={{ color: "#fbbf24" }}>最深 第{meta.bestFloor}層</span>
           <span style={{ color: meta.escapes / meta.runs > 0.3 ? "#4ade80" : "#f87171" }}>生還率 {Math.round(meta.escapes / meta.runs * 100)}%</span>
           <span style={{ color: "#c084fc" }}>ED {meta.endings?.length ?? 0}/{ENDINGS.length}</span>
           <span style={{ color: "#60a5fa" }}>継承 {meta.unlocked.length}/{UNLOCKS.length}</span>
         </div>}
-        {meta.clearedDiffs?.length > 0 && <div style={{ marginTop: 10, display: "flex", justifyContent: "center", gap: 8, flexWrap: "wrap" }}>
+        {meta.clearedDifficulties?.length > 0 && <div style={{ marginTop: 10, display: "flex", justifyContent: "center", gap: 8, flexWrap: "wrap" }}>
           {DIFFICULTY.map(d => {
-            const cleared = meta.clearedDiffs.includes(d.id);
+            const cleared = meta.clearedDifficulties.includes(d.id);
             return cleared ? <span key={d.id} style={{ fontSize: 10, color: d.color, fontFamily: "var(--sans)", padding: "2px 8px", borderRadius: 4, background: `${d.color}15`, border: `1px solid ${d.color}30` }}>{d.icon}{d.name}クリア</span> : null;
           })}
         </div>}

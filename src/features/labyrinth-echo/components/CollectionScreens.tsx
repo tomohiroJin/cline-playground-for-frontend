@@ -2,9 +2,14 @@
  * 迷宮の残響 - コレクション系画面（アンロック・称号・実績）
  */
 import { ReactNode } from 'react';
-import { DIFFICULTY, UNLOCKS } from '../game-logic';
-import type { MetaState } from '../game-logic';
-import { UNLOCK_CATS, TITLES, ENDINGS, getUnlockedTitles, getActiveTitle } from '../definitions';
+import type { UIPhase } from '../presentation/hooks/use-game-orchestrator';
+import { DIFFICULTY } from '../domain/constants/difficulty-defs';
+import { UNLOCKS } from '../domain/constants/unlock-defs';
+import { UNLOCK_CATS } from '../domain/constants/unlock-defs';
+import type { MetaState } from '../domain/models/meta-state';
+import { TITLES } from '../domain/constants/title-defs';
+import { ENDINGS } from '../domain/constants/ending-defs';
+import { getUnlockedTitles, getActiveTitle } from '../domain/services/title-service';
 import { Page } from './Page';
 import { Section } from './Section';
 import { Badge } from './Badge';
@@ -15,7 +20,7 @@ interface UnlocksScreenProps {
   meta: MetaState;
   lastBought: string | null;
   doUnlock: (uid: string) => void;
-  setPhase: (phase: string) => void;
+  setPhase: (phase: UIPhase) => void;
 }
 
 /** アンロック画面 */
@@ -28,7 +33,7 @@ export const UnlocksScreen = ({ Particles, meta, lastBought, doUnlock, setPhase 
       </div>
       <p style={{ fontSize: 12, color: "var(--dim)", marginBottom: 20, fontFamily: "var(--sans)", lineHeight: 1.7 }}>探索で得た知見を恒久的なアビリティとして解放する。</p>
       {UNLOCK_CATS.map(cat => {
-        const items = UNLOCKS.filter(u => (u.cat ?? "basic") === cat.key);
+        const items = UNLOCKS.filter(u => (u.category ?? "basic") === cat.key);
         if (items.length === 0) return null;
         return (
           <div key={cat.key} style={{ marginBottom: 20 }}>
@@ -36,15 +41,15 @@ export const UnlocksScreen = ({ Particles, meta, lastBought, doUnlock, setPhase 
             {items.map(u => {
               const own = meta.unlocked.includes(u.id);
               const af  = meta.kp >= u.cost;
-              const trophyLocked = u.cat === "trophy" && u.req && !meta.clearedDiffs.includes(u.req) && !meta.endings?.includes(u.req);
-              const achieveLocked = u.cat === "achieve" && u.achReq && !u.achReq(meta);
-              const gateLocked = u.gate && !meta.clearedDiffs?.includes(u.gate);
+              const trophyLocked = u.category === "trophy" && u.difficultyRequirement && !(meta.clearedDifficulties as readonly string[]).includes(u.difficultyRequirement) && !meta.endings?.includes(u.difficultyRequirement);
+              const achieveLocked = u.category === "achieve" && u.achievementCondition && !u.achievementCondition(meta);
+              const gateLocked = u.gateRequirement && !meta.clearedDifficulties?.includes(u.gateRequirement);
               const locked = !!(trophyLocked || achieveLocked || gateLocked);
-              const lockDesc = gateLocked ? `${DIFFICULTY.find(d=>d.id===u.gate)?.name ?? u.gate}をクリアして解放`
-                : achieveLocked ? u.achDesc
-                : trophyLocked ? `${DIFFICULTY.find(d=>d.id===u.req)?.name ?? u.req}難度をクリアして解放`
-                : u.desc;
-              const descText = locked && !own ? lockDesc : u.desc;
+              const lockDesc = gateLocked ? `${DIFFICULTY.find(d=>d.id===u.gateRequirement)?.name ?? u.gateRequirement}をクリアして解放`
+                : achieveLocked ? u.achievementDescription
+                : trophyLocked ? `${DIFFICULTY.find(d=>d.id===u.difficultyRequirement)?.name ?? u.difficultyRequirement}難度をクリアして解放`
+                : u.description;
+              const descText = locked && !own ? lockDesc : u.description;
               return (
                 <UnlockRow key={u.id} icon={u.icon} name={u.name} desc={descText} own={own} locked={locked} justBought={lastBought === u.id}
                   right={
@@ -72,7 +77,7 @@ interface TitlesScreenProps {
   Particles: ReactNode;
   meta: MetaState;
   updateMeta: (updater: (prev: MetaState) => Partial<MetaState>) => void;
-  setPhase: (phase: string) => void;
+  setPhase: (phase: UIPhase) => void;
 }
 
 /** 称号選択画面 */
@@ -92,7 +97,7 @@ export const TitlesScreen = ({ Particles, meta, updateMeta, setPhase }: TitlesSc
           const isActive = active.id === t.id;
           return (
             <div key={t.id} className={`uc ${isActive ? "own" : ""}`} style={{ opacity: isUnlocked ? 1 : 0.35, cursor: isUnlocked ? "pointer" : "default" }}
-              onClick={() => { if (isUnlocked) updateMeta(() => ({ title: t.id })); }}>
+              onClick={() => { if (isUnlocked) updateMeta(() => ({ activeTitle: t.id })); }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <span style={{ fontSize: 20, filter: isUnlocked ? "none" : "grayscale(1)" }}>{isUnlocked ? t.icon : "?"}</span>
                 <div>
@@ -119,7 +124,7 @@ export const TitlesScreen = ({ Particles, meta, updateMeta, setPhase }: TitlesSc
 interface RecordsScreenProps {
   Particles: ReactNode;
   meta: MetaState;
-  setPhase: (phase: string) => void;
+  setPhase: (phase: UIPhase) => void;
 }
 
 /** 実績・記録画面 */
@@ -136,7 +141,7 @@ export const RecordsScreen = ({ Particles, meta, setPhase }: RecordsScreenProps)
             <StatEntry label="生還回数" color="#4ade80" value={meta.escapes} />
             <StatEntry label="死亡回数" color="#f87171" value={meta.totalDeaths ?? 0} />
             <StatEntry label="生還率" color={survivalRate > 30 ? "#4ade80" : "#f87171"} value={`${survivalRate}%`} />
-            <StatEntry label="最深到達" color="#fbbf24" value={`第${meta.bestFl}層`} />
+            <StatEntry label="最深到達" color="#fbbf24" value={`第${meta.bestFloor}層`} />
             <StatEntry label="累計イベント" color="#c084fc" value={meta.totalEvents} />
             <StatEntry label="知見ポイント" color="#fbbf24" value={`◈ ${meta.kp}pt`} />
             <StatEntry label="継承解放数" color="#60a5fa" value={`${meta.unlocked.length}/${UNLOCKS.length}`} />
@@ -145,7 +150,7 @@ export const RecordsScreen = ({ Particles, meta, setPhase }: RecordsScreenProps)
         <Section label="難易度クリア">
           <div className="flex-wrap-c" style={{ gap: 8 }}>
             {DIFFICULTY.map(d => {
-              const cleared = meta.clearedDiffs?.includes(d.id);
+              const cleared = meta.clearedDifficulties?.includes(d.id);
               return <span key={d.id} style={{ fontSize: 11, fontFamily: "var(--sans)", padding: "4px 12px", borderRadius: 6, background: cleared ? `${d.color}15` : "rgba(30,30,50,.5)", border: `1px solid ${cleared ? `${d.color}40` : "rgba(40,40,60,.3)"}`, color: cleared ? d.color : "#353555" }}>{d.icon} {d.name} {cleared ? "✓" : "─"}</span>;
             })}
           </div>
@@ -154,16 +159,16 @@ export const RecordsScreen = ({ Particles, meta, setPhase }: RecordsScreenProps)
           <EndingGrid endings={ENDINGS} collected={meta.endings} />
         </Section>
         <Section label="難易度クリア報酬" color="#f97316">
-          {UNLOCKS.filter(u => u.cat === "trophy").map(u => {
+          {UNLOCKS.filter(u => u.category === "trophy").map(u => {
             const own = meta.unlocked.includes(u.id);
-            return <UnlockRow key={u.id} icon={u.icon} name={own ? u.name : "???"} desc={own ? u.desc : `${DIFFICULTY.find(d=>d.id===u.req)?.name ?? u.req}難度をクリアして解放`} own={own} locked={!own}
+            return <UnlockRow key={u.id} icon={u.icon} name={own ? u.name : "???"} desc={own ? u.description : `${DIFFICULTY.find(d=>d.id===u.difficultyRequirement)?.name ?? u.difficultyRequirement}難度をクリアして解放`} own={own} locked={!own}
               right={own ? <span style={{ fontSize: 10, color: "#4ade80" }}>達成</span> : <span style={{ fontSize: 10, color: "#505070" }}>🔒</span>} />;
           })}
         </Section>
         <Section label="実績解放" color="#4ade80">
-          {UNLOCKS.filter(u => u.cat === "achieve").map(u => {
+          {UNLOCKS.filter(u => u.category === "achieve").map(u => {
             const own = meta.unlocked.includes(u.id);
-            return <UnlockRow key={u.id} icon={u.icon} name={own ? u.name : "???"} desc={own ? u.desc : u.achDesc} own={own} locked={!own}
+            return <UnlockRow key={u.id} icon={u.icon} name={own ? u.name : "???"} desc={own ? u.description : u.achievementDescription} own={own} locked={!own}
               right={own ? <span style={{ fontSize: 10, color: "#4ade80" }}>達成</span> : <span style={{ fontSize: 10, color: "#505070" }}>🔒</span>} />;
           })}
         </Section>

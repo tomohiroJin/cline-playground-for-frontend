@@ -61,12 +61,16 @@ export const lerp = (a: number, b: number, t: number): number => a + (b - a) * t
 /**
  * 配列をFisher-Yatesアルゴリズムでシャッフルする（元の配列は変更しない）
  * @param array シャッフルする配列
+ * @param randomFn 乱数生成関数（テスト用に注入可能、デフォルト: Math.random）
  * @returns シャッフルされた新しい配列
  */
-export const shuffle = <T>(array: readonly T[]): T[] => {
+export const shuffle = <T>(
+  array: readonly T[],
+  randomFn: () => number = Math.random,
+): T[] => {
   const result = [...array];
   for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(randomFn() * (i + 1));
     [result[i], result[j]] = [result[j], result[i]];
   }
   return result;

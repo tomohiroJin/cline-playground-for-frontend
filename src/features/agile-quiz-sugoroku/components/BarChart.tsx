@@ -2,7 +2,7 @@
  * バーチャートコンポーネント
  */
 import React from 'react';
-import { SprintSummary } from '../types';
+import { SprintSummary } from '../domain/types';
 import { getColorByThreshold } from '../constants';
 import {
   BarChartContainer,

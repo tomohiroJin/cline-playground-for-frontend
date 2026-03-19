@@ -4,7 +4,7 @@
  * 8スプリント分の成長物語テキストと
  * スプリント数に応じたストーリーマッピングを定義
  */
-import { StoryEntry } from './types';
+import { StoryEntry } from './domain/types';
 
 /** 8スプリント分のストーリーデータ */
 export const STORY_ENTRIES: StoryEntry[] = [

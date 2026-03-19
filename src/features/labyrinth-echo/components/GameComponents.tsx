@@ -5,13 +5,18 @@
  * ステータスバー、タグ、カード等のゲーム固有UIプリミティブを提供する。
  */
 import type { ReactNode } from 'react';
-import { useState, useEffect } from 'react';
-import { CFG, STATUS_META, UNLOCKS } from '../game-logic';
-import type { Player, DifficultyDef, UnlockDef } from '../game-logic';
+import { useState, useEffect, useRef } from 'react';
+import { CFG } from '../domain/constants/config';
+import { STATUS_META } from '../domain/constants/status-effect-defs';
+import { UNLOCKS } from '../domain/constants/unlock-defs';
+import type { Player } from '../domain/models/player';
+import type { DifficultyDef } from '../domain/models/difficulty';
+import type { UnlockDef } from '../domain/models/unlock';
 import { Section } from './Section';
 import { Badge } from './Badge';
-import { FLOOR_META } from '../definitions';
-import type { EndingDef, LogEntry as LogEntryDef } from '../definitions';
+import { FLOOR_META } from '../domain/constants/floor-meta';
+import type { EndingDef } from '../domain/models/ending';
+import type { LogEntry as LogEntryDef } from '../domain/models/game-state';
 import { LE_IMAGES } from '../images';
 
 // ── Props型定義 ──────────────────────────────────────────
@@ -125,7 +130,7 @@ interface StepDotsProps {
 
 interface EndingGridProps {
   endings: readonly EndingDef[];
-  collected: string[] | undefined;
+  collected: readonly string[] | undefined;
 }
 
 interface GuidanceOverlayProps {
@@ -181,10 +186,12 @@ export const StatBar = ({ label, value, max, color, icon }: StatBarProps) => {
 
 /** 状態異常タグ */
 export const StatusTag = ({ name }: StatusTagProps) => {
-  const meta = STATUS_META[name] || { colors: ["#f87171", "rgba(248,113,113,0.08)", "rgba(248,113,113,0.18)"], tick: null };
-  const hasTick = !!meta.tick;
+  const meta = STATUS_META[name as keyof typeof STATUS_META];
+  const fallbackVisual = { primaryColor: "#f87171", bgColor: "rgba(248,113,113,0.08)", borderColor: "rgba(248,113,113,0.18)" };
+  const visual = meta?.visual ?? fallbackVisual;
+  const hasTick = !!meta?.tick;
   return (
-    <span className="tag" style={{ color: meta.colors[0], background: meta.colors[1], border: `1px solid ${meta.colors[2]}`, animation: hasTick ? "statusPulse 2s infinite" : "none" }}>
+    <span className="tag" style={{ color: visual.primaryColor, background: visual.bgColor, border: `1px solid ${visual.borderColor}`, animation: hasTick ? "statusPulse 2s infinite" : "none" }}>
       {hasTick ? "● " : ""}{name}
     </span>
   );
@@ -225,9 +232,9 @@ export const StatSummary = ({ player }: StatSummaryProps) => (
     <span style={{ color: "#f87171" }}>HP {player.hp}/{player.maxHp}</span>{"\u3000"}
     <span style={{ color: "#818cf8" }}>精神 {player.mn}/{player.maxMn}</span>{"\u3000"}
     <span style={{ color: "#fbbf24" }}>情報 {player.inf}</span>
-    {player.st.length > 0 && (
+    {player.statuses.length > 0 && (
       <div style={{ marginTop: 6, display: "flex", gap: 4, justifyContent: "center", flexWrap: "wrap" }}>
-        {player.st.map(s => <StatusTag key={s} name={s} />)}
+        {player.statuses.map(s => <StatusTag key={s} name={s} />)}
       </div>
     )}
   </div>
@@ -264,22 +271,22 @@ export const DiffCard = ({ d, hp, mn, inf, onSelect, cleared }: DiffCardProps) =
         <span style={{ fontSize: 22 }}>{d.icon}</span>
         <div>
           <span style={{ fontSize: 16, fontWeight: 700, color: d.color, fontFamily: "var(--sans)" }}>{d.name}</span>
-          <span style={{ fontSize: 11, color: "var(--dim)", marginLeft: 8, fontFamily: "var(--sans)" }}>{d.sub}</span>
+          <span style={{ fontSize: 11, color: "var(--dim)", marginLeft: 8, fontFamily: "var(--sans)" }}>{d.subtitle}</span>
           {cleared && <span style={{ fontSize: 9, color: d.color, marginLeft: 8, fontFamily: "var(--sans)", padding: "1px 6px", borderRadius: 4, background: `${d.color}18`, border: `1px solid ${d.color}30` }}>✓ クリア済</span>}
         </div>
       </div>
       <div style={{ textAlign: "right", fontFamily: "var(--sans)" }}>
-        <div style={{ fontSize: 11, color: "#fbbf24" }}>脱出 +{d.kpWin}pt</div>
-        <div style={{ fontSize: 10, color: "#706080" }}>失敗 +{d.kpDeath}pt</div>
+        <div style={{ fontSize: 11, color: "#fbbf24" }}>脱出 +{d.rewards.kpOnWin}pt</div>
+        <div style={{ fontSize: 10, color: "#706080" }}>失敗 +{d.rewards.kpOnDeath}pt</div>
       </div>
     </div>
-    <p style={{ fontSize: 11, color: "#808098", lineHeight: 1.6, margin: "0 0 10px 32px", fontFamily: "var(--sans)" }}>{d.desc}</p>
+    <p style={{ fontSize: 11, color: "#808098", lineHeight: 1.6, margin: "0 0 10px 32px", fontFamily: "var(--sans)" }}>{d.description}</p>
     <div style={{ display: "flex", gap: 12, marginLeft: 32, fontSize: 10, fontFamily: "var(--sans)", flexWrap: "wrap" }}>
       <span style={{ color: "#f87171" }}>HP {hp}</span>
       <span style={{ color: "#818cf8" }}>精神 {mn}</span>
       <span style={{ color: "#fbbf24" }}>情報 {inf}</span>
-      {d.drainMod !== 0 ? <span style={{ color: "#a78bfa" }}>侵蝕 {d.drainMod}/手</span> : <span style={{ color: "#4ade80" }}>侵蝕 なし</span>}
-      {d.dmgMult !== 1 && <span style={{ color: d.dmgMult > 1 ? "#f59e0b" : "#4ade80" }}>被ダメ ×{d.dmgMult}</span>}
+      {d.modifiers.drainMod !== 0 ? <span style={{ color: "#a78bfa" }}>侵蝕 {d.modifiers.drainMod}/手</span> : <span style={{ color: "#4ade80" }}>侵蝕 なし</span>}
+      {d.modifiers.dmgMult !== 1 && <span style={{ color: d.modifiers.dmgMult > 1 ? "#f59e0b" : "#4ade80" }}>被ダメ ×{d.modifiers.dmgMult}</span>}
     </div>
     </div>
   </button>
@@ -370,18 +377,22 @@ const GUIDANCE_INTERVAL = 5000;
 export const GuidanceOverlay = ({ show }: GuidanceOverlayProps) => {
   const [index, setIndex] = useState(0);
   const [visible, setVisible] = useState(true);
+  const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!show) return;
     const timer = setInterval(() => {
       // フェードアウト → メッセージ切替 → フェードイン
       setVisible(false);
-      setTimeout(() => {
+      fadeTimerRef.current = setTimeout(() => {
         setIndex(prev => (prev + 1) % GUIDANCE_MESSAGES.length);
         setVisible(true);
       }, 400);
     }, GUIDANCE_INTERVAL);
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      if (fadeTimerRef.current !== null) clearTimeout(fadeTimerRef.current);
+    };
   }, [show]);
 
   if (!show) return null;
@@ -438,16 +449,16 @@ export const ToastContainer = () => {
     <div style={{ position: "fixed", top: 20, right: 20, zIndex: 9999, display: "flex", flexDirection: "column", gap: 10, pointerEvents: "none" }}>
       {toasts.map((t) => (
         <div key={t.time} style={{
-          background: "rgba(15, 23, 42, 0.95)", border: `1px solid ${t.def.cat === 'trophy' ? '#fbbf24' : '#60a5fa'}`,
+          background: "rgba(15, 23, 42, 0.95)", border: `1px solid ${t.def.category === 'trophy' ? '#fbbf24' : '#60a5fa'}`,
           padding: "16px 20px", borderRadius: 8, boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
           animation: "slideIn 0.4s ease-out, fadeOut 0.4s ease-in 4.6s forwards",
           color: "var(--text)", width: 280, backdropFilter: "blur(8px)"
         }}>
-          <div style={{ fontSize: 11, color: t.def.cat === 'trophy' ? '#fcd34d' : '#93c5fd', fontFamily: "var(--sans)", fontWeight: 700, marginBottom: 4, letterSpacing: 1 }}>
-            {t.def.cat === 'trophy' ? "🏆 トロフィー獲得" : "🎖️ 実績解除"}
+          <div style={{ fontSize: 11, color: t.def.category === 'trophy' ? '#fcd34d' : '#93c5fd', fontFamily: "var(--sans)", fontWeight: 700, marginBottom: 4, letterSpacing: 1 }}>
+            {t.def.category === 'trophy' ? "🏆 トロフィー獲得" : "🎖️ 実績解除"}
           </div>
           <div style={{ fontSize: 14, fontWeight: "bold", fontFamily: "var(--sans)" }}>{t.def.name}</div>
-          <div style={{ fontSize: 11, color: "var(--dim)", marginTop: 4, fontFamily: "var(--sans)" }}>{t.def.desc}</div>
+          <div style={{ fontSize: 11, color: "var(--dim)", marginTop: 4, fontFamily: "var(--sans)" }}>{t.def.description}</div>
         </div>
       ))}
       <style>{`

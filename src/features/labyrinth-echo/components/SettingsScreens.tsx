@@ -2,10 +2,13 @@
  * 迷宮の残響 - 設定・リセット確認画面
  */
 import { ReactNode } from 'react';
-import { UNLOCKS } from '../game-logic';
-import type { MetaState } from '../game-logic';
-import { ENDINGS, TITLES, getUnlockedTitles } from '../definitions';
+import { UNLOCKS } from '../domain/constants/unlock-defs';
+import type { MetaState } from '../domain/models/meta-state';
+import { ENDINGS } from '../domain/constants/ending-defs';
+import { TITLES } from '../domain/constants/title-defs';
+import { getUnlockedTitles } from '../domain/services/title-service';
 import type { AudioSettings } from '../audio';
+import type { UIPhase } from '../presentation/hooks/use-game-orchestrator';
 import { Page } from './Page';
 import { Section } from './Section';
 import { BackBtn } from './GameComponents';
@@ -28,7 +31,7 @@ interface SettingsScreenProps {
   eventCount: number;
   audioSettings: AudioSettings;
   onChangeAudioSettings: (settings: AudioSettings) => void;
-  setPhase: (phase: string) => void;
+  setPhase: (phase: UIPhase) => void;
 }
 
 /** 設定画面 */
@@ -106,7 +109,7 @@ export const SettingsScreen = ({ Particles, eventCount, audioSettings, onChangeA
 interface ResetConfirm1ScreenProps {
   Particles: ReactNode;
   meta: MetaState;
-  setPhase: (phase: string) => void;
+  setPhase: (phase: UIPhase) => void;
 }
 
 /** リセット確認ステップ1 */
@@ -123,7 +126,7 @@ export const ResetConfirm1Screen = ({ Particles, meta, setPhase }: ResetConfirm1
         <div>• 知見ポイント ◈ {meta.kp}pt</div>
         <div>• 解放済みアビリティ {meta.unlocked.length}個</div>
         <div>• エンディング回収 {meta.endings?.length ?? 0}種</div>
-        <div>• 難易度クリア記録 {meta.clearedDiffs?.length ?? 0}種</div>
+        <div>• 難易度クリア記録 {meta.clearedDifficulties?.length ?? 0}種</div>
         <div>• 称号 {getUnlockedTitles(meta).length}種</div>
       </div>
       <button className="btn tc" style={{ color: "#f87171", borderColor: "rgba(248,113,113,.4)", fontWeight: 700 }} onClick={() => setPhase("reset_confirm2")}>
@@ -136,7 +139,7 @@ export const ResetConfirm1Screen = ({ Particles, meta, setPhase }: ResetConfirm1
 
 interface ResetConfirm2ScreenProps {
   Particles: ReactNode;
-  setPhase: (phase: string) => void;
+  setPhase: (phase: UIPhase) => void;
   resetMeta: () => Promise<void>;
 }
 

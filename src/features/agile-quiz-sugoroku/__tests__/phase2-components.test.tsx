@@ -10,7 +10,7 @@ import { DifficultySelector } from '../components/DifficultySelector';
 import { ChallengeResultScreen } from '../components/ChallengeResultScreen';
 import { LineChart } from '../components/LineChart';
 import { AchievementToast } from '../components/AchievementToast';
-import { AchievementDefinition } from '../types';
+import { AchievementDefinition } from '../domain/types';
 
 // styled-components 対応のモック
 jest.mock('../components/ParticleEffect', () => ({

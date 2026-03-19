@@ -1,22 +1,13 @@
 /**
- * 迷宮の残響 - 契約・エラーハンドリング
+ * 迷宮の残響 - エラーハンドリング
  *
- * LabyrinthEchoGame.tsx §1 から抽出。
- * safeSync / safeAsync / ErrorBoundary を提供する。
+ * React ErrorBoundary を提供する。
+ * safeSync / safeAsync は domain/contracts/invariants.ts に一元化。
  */
 import { Component, type ErrorInfo, type ReactNode } from "react";
 
-/** 同期コールバックの安全実行 */
-export const safeSync = <T,>(fn: () => T, ctx: string): T | null => {
-  try { return fn(); }
-  catch (e) { console.error(`[${ctx}]`, (e as Error).message); return null; }
-};
-
-/** 非同期コールバックの安全実行 */
-export const safeAsync = async <T,>(fn: () => Promise<T>, ctx: string): Promise<T | null> => {
-  try { return await fn(); }
-  catch (e) { console.error(`[${ctx}]`, (e as Error).message); return null; }
-};
+// 一元化された safeSync / safeAsync を re-export（後方互換）
+export { safeSync, safeAsync } from './domain/contracts/invariants';
 
 interface ErrorBoundaryProps {
   children: ReactNode;

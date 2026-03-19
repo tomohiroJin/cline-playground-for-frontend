@@ -1,8 +1,8 @@
 /**
- * ゲーム状態管理フック
+ * ゲーム状態管理フック（Reducer ベース）
  */
-import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
-import {
+import { useCallback, useRef, useMemo, useEffect, useReducer } from 'react';
+import type {
   GamePhase,
   GameEvent,
   Question,
@@ -13,23 +13,13 @@ import {
   TagStats,
   AnswerResultWithDetail,
   SaveState,
-} from '../types';
-import {
-  EVENTS,
-  INITIAL_GAME_STATS,
-} from '../constants';
+} from '../domain/types';
 import { AudioActions, createDefaultAudioActions } from '../audio/audio-actions';
-import {
-  shuffle,
-  average,
-  percentage,
-  clamp,
-  pickQuestion,
-  makeEvents,
-  createSprintSummary,
-} from '../game-logic';
-import { QUESTIONS } from '../quiz-data';
-import { computeAnswerResult, computeDebtDelta, nextGameStats } from '../answer-processor';
+import { shuffle, average, percentage, clamp } from '../../../utils/math-utils';
+import { pickQuestion } from '../domain/quiz';
+import { createEvents, createSprintSummary } from '../domain/game';
+import { QUESTIONS } from '../questions';
+import { gameReducer, createInitialGameState } from './useGameReducer';
 
 export interface UseGameReturn {
   /** 現在のフェーズ */
@@ -86,6 +76,32 @@ export interface UseGameReturn {
   buildSaveState: (sprintCount: number) => SaveState;
 }
 
+/** 問題を読み込み、dispatch 用のペイロードを生成 */
+function prepareQuestion(
+  eventList: GameEvent[],
+  index: number,
+  used: { [key: string]: Set<number> },
+): {
+  quiz: Question;
+  quizIndex: number;
+  options: number[];
+  usedQuestions: { [key: string]: Set<number> };
+} {
+  const eventId = eventList[index].id;
+  const questions = QUESTIONS[eventId] ?? QUESTIONS.planning;
+  const { question, index: qIdx } = pickQuestion(questions, used[eventId]);
+
+  const newUsed = { ...used };
+  newUsed[eventId] = new Set([...(used[eventId] ?? []), qIdx]);
+
+  return {
+    quiz: question,
+    quizIndex: qIdx,
+    options: shuffle([0, 1, 2, 3]),
+    usedQuestions: newUsed,
+  };
+}
+
 /**
  * ゲーム状態管理
  * @param audio 音声アクション（省略時はデフォルト音声）
@@ -95,65 +111,25 @@ export function useGame(audio?: AudioActions): UseGameReturn {
   useEffect(() => {
     if (audio) sfxRef.current = audio;
   }, [audio]);
-  const [phase, setPhase] = useState<GamePhase>('title');
-  const [sprint, setSprint] = useState(0);
-  const [eventIndex, setEventIndex] = useState(0);
-  const [events, setEvents] = useState<GameEvent[]>([...EVENTS]);
-  const [quiz, setQuiz] = useState<Question | null>(null);
-  const [quizIndex, setQuizIndex] = useState(-1);
-  const [options, setOptions] = useState<number[]>([]);
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [usedQuestions, setUsedQuestions] = useState<{
-    [key: string]: Set<number>;
-  }>({});
-  const [sprintAnswers, setSprintAnswers] = useState<AnswerResult[]>([]);
-  const [log, setLog] = useState<SprintSummary[]>([]);
-  const [stats, setStats] = useState<GameStats>({ ...INITIAL_GAME_STATS });
-  const [tagStats, setTagStats] = useState<TagStats>({});
-  const [incorrectQuestions, setIncorrectQuestions] = useState<AnswerResultWithDetail[]>([]);
+
+  const [state, dispatch] = useReducer(gameReducer, undefined, createInitialGameState);
 
   const answered = useRef(false);
   const startTime = useRef(0);
 
-  /** 問題を読み込む */
-  const loadQuestion = useCallback(
-    (
-      eventList: GameEvent[],
-      index: number,
-      used: { [key: string]: Set<number> }
-    ): { [key: string]: Set<number> } => {
-      const eventId = eventList[index].id;
-      const questions = QUESTIONS[eventId] ?? QUESTIONS.planning;
-      const { question, index: qIdx } = pickQuestion(questions, used[eventId]);
-
-      // 使用済みに追加
-      const newUsed = { ...used };
-      newUsed[eventId] = new Set([...(used[eventId] ?? []), qIdx]);
-
-      setUsedQuestions(newUsed);
-      setQuiz(question);
-      setQuizIndex(qIdx);
-      setOptions(shuffle([0, 1, 2, 3]));
-      setSelectedAnswer(null);
-      answered.current = false;
-      startTime.current = Date.now();
-
-      return newUsed;
-    },
-    []
-  );
-
   /** ゲームを初期化 */
   const init = useCallback(() => {
-    setEvents([...EVENTS]);
-    setSprint(0);
-    setEventIndex(0);
-    setSprintAnswers([]);
-    setLog([]);
-    setStats({ ...INITIAL_GAME_STATS });
-    setUsedQuestions({});
-    setTagStats({});
-    setIncorrectQuestions([]);
+    dispatch({ type: 'INIT' });
+  }, []);
+
+  /** フェーズを設定 */
+  const setPhase = useCallback((phase: GamePhase) => {
+    dispatch({ type: 'SET_PHASE', phase });
+  }, []);
+
+  /** スプリント番号を設定 */
+  const setSprint = useCallback((sprint: number) => {
+    dispatch({ type: 'SET_SPRINT', sprint });
   }, []);
 
   /** スプリントを開始 */
@@ -161,75 +137,47 @@ export function useGame(audio?: AudioActions): UseGameReturn {
     (
       sprintNumber: number,
       currentStats: GameStats,
-      currentUsed: { [key: string]: Set<number> }
+      currentUsed: { [key: string]: Set<number> },
     ) => {
-      const newEvents = makeEvents(sprintNumber, currentStats.debt);
-      setEvents(newEvents);
-      setEventIndex(0);
-      setSprintAnswers([]);
-      loadQuestion(newEvents, 0, currentUsed);
+      const newEvents = createEvents(sprintNumber, currentStats.debt);
+      const questionPayload = prepareQuestion(newEvents, 0, currentUsed);
+
+      dispatch({
+        type: 'BEGIN_SPRINT',
+        events: newEvents,
+        ...questionPayload,
+      });
+
+      answered.current = false;
+      startTime.current = Date.now();
     },
-    [loadQuestion]
+    [],
   );
 
   /** 回答を処理 */
   const answer = useCallback(
     (optionIndex: number): AnswerResult | null => {
-      if (answered.current || !quiz) return null;
+      if (answered.current || !state.quiz) return null;
       answered.current = true;
 
       const speed = Math.round((Date.now() - startTime.current) / 100) / 10;
-      setSelectedAnswer(optionIndex);
 
-      // 1. 純粋関数で結果を計算
-      const result = computeAnswerResult({
+      dispatch({
+        type: 'ANSWER',
         optionIndex,
-        correctAnswer: quiz.answer,
         speed,
-        eventId: events[eventIndex].id,
       });
-      const debtDelta = computeDebtDelta(result.correct, result.eventId);
 
-      // 2. 状態更新
-      setSprintAnswers((prev) => [...prev, result]);
-      setStats((prev) => nextGameStats(prev, result, debtDelta));
+      // 回答結果を算出して返却（副作用用）
+      const isCorrect = optionIndex === state.quiz.answer;
+      const result: AnswerResult = {
+        correct: isCorrect,
+        speed,
+        eventId: state.events[state.eventIndex].id,
+      };
 
-      // 2b. タグ別統計更新
-      if (quiz.tags) {
-        setTagStats((prev) => {
-          const next = { ...prev };
-          for (const tag of quiz.tags!) {
-            if (!next[tag]) {
-              next[tag] = { correct: 0, total: 0 };
-            }
-            next[tag] = {
-              correct: next[tag].correct + (result.correct ? 1 : 0),
-              total: next[tag].total + 1,
-            };
-          }
-          return next;
-        });
-      }
-
-      // 2c. 不正解問題を蓄積
-      if (!result.correct) {
-        setIncorrectQuestions((prev) => [
-          ...prev,
-          {
-            questionText: quiz.question,
-            options: quiz.options,
-            selectedAnswer: optionIndex,
-            correctAnswer: quiz.answer,
-            correct: false,
-            tags: quiz.tags ?? [],
-            explanation: quiz.explanation,
-            eventId: result.eventId,
-          },
-        ]);
-      }
-
-      // 3. 音声副作用
-      if (result.correct) {
+      // 音声副作用
+      if (isCorrect) {
         sfxRef.current.onCorrectAnswer();
       } else {
         sfxRef.current.onIncorrectAnswer();
@@ -237,90 +185,99 @@ export function useGame(audio?: AudioActions): UseGameReturn {
 
       return result;
     },
-    [quiz, events, eventIndex]
+    [state.quiz, state.events, state.eventIndex],
   );
 
   /** 次のイベントへ進む */
   const advance = useCallback((): boolean => {
-    const nextIndex = eventIndex + 1;
-    if (nextIndex >= events.length) {
+    const nextIndex = state.eventIndex + 1;
+    if (nextIndex >= state.events.length) {
       return false;
     }
-    setEventIndex(nextIndex);
-    loadQuestion(events, nextIndex, usedQuestions);
+
+    const questionPayload = prepareQuestion(state.events, nextIndex, state.usedQuestions);
+    dispatch({
+      type: 'ADVANCE_EVENT',
+      ...questionPayload,
+    });
+
+    answered.current = false;
+    startTime.current = Date.now();
     return true;
-  }, [eventIndex, events, usedQuestions, loadQuestion]);
+  }, [state.eventIndex, state.events, state.usedQuestions]);
 
   /** スプリントを終了 */
   const finish = useCallback((): SprintSummary => {
-    const summary = createSprintSummary(sprintAnswers, sprint, stats.debt);
-    setLog((prev) => [...prev, summary]);
+    const summary = createSprintSummary(state.sprintAnswers, state.sprint, state.stats.debt);
+    dispatch({ type: 'FINISH_SPRINT', summary });
     return summary;
-  }, [sprintAnswers, sprint, stats.debt]);
+  }, [state.sprintAnswers, state.sprint, state.stats.debt]);
 
   /** セーブデータから復元 */
   const restoreFromSave = useCallback((saveState: SaveState) => {
-    // 配列→Set 変換
     const restoredUsed: { [key: string]: Set<number> } = {};
     for (const [key, indices] of Object.entries(saveState.usedQuestions)) {
       restoredUsed[key] = new Set(indices);
     }
 
-    setSprint(saveState.currentSprint);
-    setStats(saveState.stats);
-    setLog(saveState.log);
-    setUsedQuestions(restoredUsed);
-    setTagStats(saveState.tagStats);
-    setIncorrectQuestions(saveState.incorrectQuestions);
-    setSprintAnswers([]);
-    setEventIndex(0);
+    dispatch({
+      type: 'RESTORE_SAVE',
+      sprint: saveState.currentSprint,
+      stats: saveState.stats,
+      log: saveState.log,
+      usedQuestions: restoredUsed,
+      tagStats: saveState.tagStats,
+      incorrectQuestions: saveState.incorrectQuestions,
+    });
   }, []);
 
   /** 現在の状態からセーブデータを構築 */
-  const buildSaveState = useCallback((sprintCount: number): SaveState => {
-    // Set→配列 変換
-    const serializedUsed: Record<string, number[]> = {};
-    for (const [key, indices] of Object.entries(usedQuestions)) {
-      serializedUsed[key] = [...indices];
-    }
+  const buildSaveState = useCallback(
+    (sprintCount: number): SaveState => {
+      const serializedUsed: Record<string, number[]> = {};
+      for (const [key, indices] of Object.entries(state.usedQuestions)) {
+        serializedUsed[key] = [...indices];
+      }
 
-    return {
-      version: 1,
-      timestamp: Date.now(),
-      sprintCount,
-      currentSprint: sprint + 1,
-      stats,
-      log,
-      usedQuestions: serializedUsed,
-      tagStats,
-      incorrectQuestions,
-    };
-  }, [sprint, stats, log, usedQuestions, tagStats, incorrectQuestions]);
+      return {
+        version: 1,
+        timestamp: Date.now(),
+        sprintCount,
+        currentSprint: state.sprint + 1,
+        stats: state.stats,
+        log: state.log,
+        usedQuestions: serializedUsed,
+        tagStats: state.tagStats,
+        incorrectQuestions: state.incorrectQuestions,
+      };
+    },
+    [state.sprint, state.stats, state.log, state.usedQuestions, state.tagStats, state.incorrectQuestions],
+  );
 
   /** 派生統計 */
   const derived = useMemo((): DerivedStats => {
     return {
-      correctRate: percentage(stats.totalCorrect, stats.totalQuestions),
-      averageSpeed: average(stats.speeds),
-      stability: clamp(100 - stats.debt * 1.5, 0, 100),
-      sprintCorrectRates: log.map((x) => x.correctRate),
+      correctRate: percentage(state.stats.totalCorrect, state.stats.totalQuestions),
+      averageSpeed: average(state.stats.speeds),
+      stability: clamp(100 - state.stats.debt * 1.5, 0, 100),
+      sprintCorrectRates: state.log.map((x) => x.correctRate),
     };
-  }, [stats, log]);
+  }, [state.stats, state.log]);
 
   return {
-    phase,
+    phase: state.phase,
     setPhase,
-    sprint,
+    sprint: state.sprint,
     setSprint,
-    eventIndex,
-    events,
-    quiz,
-    quizIndex,
-    options,
-    selectedAnswer,
-    stats,
-    log,
-    usedQuestions,
+    eventIndex: state.eventIndex,
+    events: state.events,
+    quiz: state.quiz,
+    quizIndex: state.quizIndex,
+    options: state.options,
+    selectedAnswer: state.selectedAnswer,
+    stats: state.stats,
+    log: state.log,
+    usedQuestions: state.usedQuestions,
     answered,
     init,
     begin,
@@ -328,8 +285,8 @@ export function useGame(audio?: AudioActions): UseGameReturn {
     advance,
     finish,
     derived,
-    tagStats,
-    incorrectQuestions,
+    tagStats: state.tagStats,
+    incorrectQuestions: state.incorrectQuestions,
     restoreFromSave,
     buildSaveState,
   };

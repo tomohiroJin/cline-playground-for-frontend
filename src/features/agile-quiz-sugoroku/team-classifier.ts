@@ -3,7 +3,7 @@
  *
  * エンジニア個人の能力診断ではなく、チームとしての成熟段階を判定する。
  */
-import { TeamType, ClassifyStats } from './types';
+import { TeamType, ClassifyStats } from './domain/types';
 import { COLORS } from './constants';
 
 /** チームタイプ定義（6種類） */
