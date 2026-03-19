@@ -2,14 +2,19 @@
  * 迷宮の残響 - ゲームオーバー・勝利画面
  */
 import React from 'react';
-import { ENDINGS, DEATH_FLAVORS, DEATH_TIPS } from '../definitions';
-import type { FloorMetaDef, EndingDef, LogEntry } from '../definitions';
-import type { Player, DifficultyDef, MetaState } from '../game-logic';
+import { ENDINGS, DEATH_FLAVORS, DEATH_TIPS } from '../domain/constants/ending-defs';
+import type { FloorMetaDef } from '../domain/constants/floor-meta';
+import type { EndingDef } from '../domain/models/ending';
+import type { LogEntry } from '../domain/models/game-state';
+import type { Player } from '../domain/models/player';
+import type { DifficultyDef } from '../domain/models/difficulty';
+import type { MetaState } from '../domain/models/meta-state';
+import type { UIPhase } from '../presentation/hooks/use-game-orchestrator';
 import { Page } from './Page';
 import { Section } from './Section';
 import { DiffLabel, RecordPanel, EndingGrid } from './GameComponents';
 import { LE_IMAGES } from '../images';
-import { useKeyboardControl } from '../hooks';
+import { useKeyboardControl } from '../presentation/hooks/use-keyboard-control';
 
 /** ゲームオーバー画面の Props */
 interface GameOverScreenProps {
@@ -21,10 +26,10 @@ interface GameOverScreenProps {
   floorMeta: FloorMetaDef;
   floorColor: string;
   progressPct: number;
-  log: LogEntry[];
+  log: readonly LogEntry[];
   usedSecondLife: boolean;
   startRun: () => void;
-  setPhase: (phase: string) => void;
+  setPhase: (phase: UIPhase) => void;
 }
 
 /** ゲームオーバー画面 */
@@ -71,11 +76,11 @@ export const GameOverScreen = ({ Particles, player, meta, diff, floor, floorMeta
           { label: "全体進捗",   color: "#818cf8", value: `${Math.round(progressPct)}%` },
           { label: "死因",       color: "#f87171", value: deathCause },
           ...(usedSecondLife ? [{ label: "二度目の命", color: "#fbbf24", value: "発動済（使い切り）" }] : []),
-          { label: "状態異常",   color: (player?.st?.length ?? 0) > 0 ? "#f87171" : "#4ade80", value: (player?.st?.length ?? 0) > 0 ? player!.st.join("・") : "なし" },
+          { label: "状態異常",   color: (player?.statuses?.length ?? 0) > 0 ? "#f87171" : "#4ade80", value: (player?.statuses?.length ?? 0) > 0 ? player!.statuses.join("・") : "なし" },
         ]} />
         <div style={{ padding: "10px 16px", background: "rgba(74,222,128,.04)", borderRadius: 10, border: "1px solid rgba(74,222,128,.1)", marginBottom: 16, animation: "popIn .4s ease .3s both" }}>
           <div style={{ fontSize: 12, color: "#4ade80", fontFamily: "var(--sans)", fontWeight: 700, textAlign: "center" }}>
-            獲得知見 +{diff?.kpDeath ?? 2}pt
+            獲得知見 +{diff?.rewards.kpOnDeath ?? 2}pt
             <span style={{ fontSize: 10, color: "#706080", fontWeight: 400, marginLeft: 6 }}>（合計 {meta.kp}pt）</span>
           </div>
         </div>
@@ -108,17 +113,17 @@ interface VictoryScreenProps {
   diff: DifficultyDef | null;
   player: Player | null;
   usedSecondLife: boolean;
-  log: LogEntry[];
+  log: readonly LogEntry[];
   meta: MetaState;
   floor: number;
   startRun: () => void;
-  setPhase: (phase: string) => void;
+  setPhase: (phase: UIPhase) => void;
 }
 
 /** 勝利画面（マルチエンディング） */
 export const VictoryScreen = ({ Particles, ending, isNewEnding, isNewDiffClear, diff, player, usedSecondLife, log, meta, floor, startRun, setPhase }: VictoryScreenProps) => {
   const end = ending ?? ENDINGS[ENDINGS.length - 1];
-  const totalKp = (diff?.kpWin ?? 4) + end.bonusKp;
+  const totalKp = (diff?.rewards.kpOnWin ?? 4) + end.bonusKp;
   const endingKey = end.id as EndingImageKey;
   const bgImg = LE_IMAGES.endings[endingKey] || LE_IMAGES.endings.standard;
 
@@ -178,14 +183,14 @@ export const VictoryScreen = ({ Particles, ending, isNewEnding, isNewDiffClear, 
       }} />
 
       <div className="card tc" style={{ marginTop: "6vh", animation: "fadeUp .8s", borderColor: `${end.color}30`, background: "rgba(14, 14, 28, 0.75)", backdropFilter: "blur(8px)" }}>
-        <div style={{ fontSize: 10, color: end.color, letterSpacing: 6, marginBottom: 8, fontFamily: "var(--sans)", fontWeight: 600 }}>{end.sub}</div>
+        <div style={{ fontSize: 10, color: end.color, letterSpacing: 6, marginBottom: 8, fontFamily: "var(--sans)", fontWeight: 600 }}>{end.subtitle}</div>
         <div style={{ fontSize: 48, marginBottom: 12, animation: "endingGlow 3s ease-in-out infinite", lineHeight: 1 }}>{end.icon}</div>
         {isNewEnding && <div style={{ display: "inline-block", padding: "2px 12px", borderRadius: 12, fontSize: 10, fontFamily: "var(--sans)", fontWeight: 700, background: `${end.color}20`, border: `1px solid ${end.color}40`, color: end.color, marginBottom: 8, letterSpacing: 2, animation: "pulse 2s infinite" }}>★ NEW ENDING ★</div>}
         {isNewDiffClear && <div style={{ display: "inline-block", padding: "2px 12px", borderRadius: 12, fontSize: 10, fontFamily: "var(--sans)", fontWeight: 700, background: `${diff?.color ?? "#818cf8"}20`, border: `1px solid ${diff?.color ?? "#818cf8"}40`, color: diff?.color ?? "#818cf8", marginBottom: 8, marginLeft: isNewEnding ? 6 : 0, letterSpacing: 2, animation: "pulse 2s infinite 0.3s" }}>🏆 {diff?.name}初クリア</div>}
         <h2 style={{ fontSize: 28, color: end.color, letterSpacing: 5, marginBottom: 20, lineHeight: 1.5, textShadow: `0 0 30px ${end.color}40` }}>{end.name}</h2>
 
         <DiffLabel diff={diff} />
-        <p style={{ fontSize: 13, color: "#a0a0c0", lineHeight: 2, marginBottom: 24, fontFamily: "var(--sans)", whiteSpace: "pre-wrap" }}>{end.desc}</p>
+        <p style={{ fontSize: 13, color: "#a0a0c0", lineHeight: 2, marginBottom: 24, fontFamily: "var(--sans)", whiteSpace: "pre-wrap" }}>{end.description}</p>
         <div style={{ width: 80, height: 2, background: end.gradient, margin: "0 auto 24px", borderRadius: 2 }} />
         <RecordPanel labelText="生還記録" labelColor={end.color} borderColor={`${end.color}20`} entries={[
           { label: "エンディング", color: end.color, value: end.name },
@@ -193,14 +198,14 @@ export const VictoryScreen = ({ Particles, ending, isNewEnding, isNewDiffClear, 
           { label: "残存HP",     color: "#f87171", value: `${player?.hp}/${player?.maxHp}` },
           { label: "残存精神",   color: "#818cf8", value: `${player?.mn}/${player?.maxMn}` },
           { label: "情報値",     color: "#fbbf24", value: `${player?.inf}` },
-          { label: "状態異常",   color: (player?.st?.length ?? 0) > 0 ? "#f87171" : "#4ade80", value: (player?.st?.length ?? 0) > 0 ? player!.st.join("・") : "なし" },
+          { label: "状態異常",   color: (player?.statuses?.length ?? 0) > 0 ? "#f87171" : "#4ade80", value: (player?.statuses?.length ?? 0) > 0 ? player!.statuses.join("・") : "なし" },
           ...(usedSecondLife ? [{ label: "二度目の命", color: "#fbbf24", value: "発動（復活1回消費）" }] : []),
           { label: "通過イベント", color: "#c084fc", value: `${log.length}件` },
         ]} />
         <div style={{ padding: "12px 16px", background: "rgba(251,191,36,.05)", borderRadius: 10, border: "1px solid rgba(251,191,36,.12)", marginBottom: 20, animation: "popIn .4s ease .3s both" }}>
           <div style={{ fontSize: 13, color: "#fbbf24", fontFamily: "var(--sans)", fontWeight: 700, textAlign: "center" }}>
             獲得知見 +{totalKp}pt
-            <span style={{ fontSize: 10, color: "#706080", fontWeight: 400, marginLeft: 6 }}>（基本{diff?.kpWin ?? 4} + ED{end.bonusKp}）</span>
+            <span style={{ fontSize: 10, color: "#706080", fontWeight: 400, marginLeft: 6 }}>（基本{diff?.rewards.kpOnWin ?? 4} + ED{end.bonusKp}）</span>
           </div>
           <div style={{ fontSize: 11, color: "#706080", fontFamily: "var(--sans)", textAlign: "center", marginTop: 4 }}>合計: {meta.kp}pt</div>
         </div>

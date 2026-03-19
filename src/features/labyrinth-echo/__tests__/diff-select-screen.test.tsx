@@ -4,16 +4,11 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DiffSelectScreen } from '../components/DiffSelectScreen';
-import { DIFFICULTY, FX_DEFAULTS } from '../game-logic';
-import type { MetaState, FxState } from '../game-logic';
+import { DIFFICULTY } from '../domain/constants/difficulty-defs';
+import { createTestMeta, createTestFx } from './helpers/factories';
 
-const baseMeta: MetaState = {
-  runs: 1, escapes: 0, kp: 10, unlocked: [], bestFl: 2,
-  totalEvents: 10, endings: [], clearedDiffs: [], totalDeaths: 1,
-  lastRun: null, title: null,
-};
-
-const baseFx: FxState = { ...FX_DEFAULTS };
+const baseMeta = createTestMeta({ runs: 1, kp: 10, bestFloor: 2, totalEvents: 10, totalDeaths: 1 });
+const baseFx = createTestFx();
 
 const makeProps = (overrides: Partial<Parameters<typeof DiffSelectScreen>[0]> = {}) => ({
   Particles: <div data-testid="particles" />,
@@ -26,57 +21,82 @@ const makeProps = (overrides: Partial<Parameters<typeof DiffSelectScreen>[0]> = 
 
 describe('DiffSelectScreen', () => {
   it('「難易度選択」見出しが表示される', () => {
+    // Arrange & Act
     render(<DiffSelectScreen {...makeProps()} />);
+
+    // Assert
     expect(screen.getByText('難易度選択')).toBeInTheDocument();
   });
 
   it('全4難易度カードが表示される', () => {
+    // Arrange & Act
     render(<DiffSelectScreen {...makeProps()} />);
+
+    // Assert
     for (const d of DIFFICULTY) {
       expect(screen.getByText(d.name)).toBeInTheDocument();
     }
   });
 
   it('各難易度の説明テキストが表示される', () => {
+    // Arrange & Act
     render(<DiffSelectScreen {...makeProps()} />);
+
+    // Assert
     for (const d of DIFFICULTY) {
-      expect(screen.getByText(d.desc)).toBeInTheDocument();
+      expect(screen.getByText(d.description)).toBeInTheDocument();
     }
   });
 
   it('各難易度の獲得知見ポイントが表示される', () => {
+    // Arrange & Act
     render(<DiffSelectScreen {...makeProps()} />);
+
+    // Assert
     for (const d of DIFFICULTY) {
-      expect(screen.getAllByText(`脱出 +${d.kpWin}pt`).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText(`脱出 +${d.rewards.kpOnWin}pt`).length).toBeGreaterThanOrEqual(1);
     }
   });
 
-  it('クリア済み難易度に「クリア済」マークが表示される', () => {
-    const meta = { ...baseMeta, clearedDiffs: ["normal"] };
+  it('クリア済み難易度がある場合に「クリア済」マークが表示される', () => {
+    // Arrange
+    const meta = createTestMeta({ runs: 1, clearedDifficulties: ["normal"] });
+
+    // Act
     render(<DiffSelectScreen {...makeProps({ meta })} />);
+
+    // Assert
     expect(screen.getByText(/クリア済/)).toBeInTheDocument();
   });
 
-  it('難易度カードクリックで selectDiff が正しい引数で呼ばれる', async () => {
+  it('難易度カードをクリックするとselectDiffが正しい引数で呼ばれる', async () => {
+    // Arrange
     const user = userEvent.setup();
     const props = makeProps();
     render(<DiffSelectScreen {...props} />);
 
+    // Act
     const normalCard = screen.getByText(DIFFICULTY[1].name).closest('button');
     expect(normalCard).not.toBeNull();
     await user.click(normalCard!);
 
+    // Assert
     expect(props.selectDiff).toHaveBeenCalledTimes(1);
     expect(props.selectDiff).toHaveBeenCalledWith(
       expect.objectContaining({ id: DIFFICULTY[1].id })
     );
   });
 
-  it('「戻る」ボタンクリックで setPhase("title") が呼ばれる', async () => {
+  it('「戻る」ボタンをクリックするとsetPhase("title")が呼ばれる', async () => {
+    // Arrange
     const user = userEvent.setup();
     const props = makeProps();
     render(<DiffSelectScreen {...props} />);
+
+    // Act
     await user.click(screen.getByText('戻る'));
+
+    // Assert
     expect(props.setPhase).toHaveBeenCalledWith('title');
   });
 });

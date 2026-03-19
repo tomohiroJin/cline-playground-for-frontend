@@ -3,14 +3,54 @@
  *
  * LabyrinthEchoGame.tsx §5 から抽出。
  * イベント選択・選択肢処理・バリデーション等の純粋関数群。
+ *
+ * ドメイン層の関数に委譲済み。ローカルの重複ロジックは削除。
  */
-import {
-  invariant, shuffle, resolveOutcome,
-  applyModifiers, applyToPlayer, computeDrain,
-  classifyImpact,
-} from '../game-logic';
-import type { Player, FxState, DifficultyDef, MetaState, Choice } from '../game-logic';
+import { invariant } from '../domain/contracts/invariants';
+import { shuffle } from '../../../utils/math-utils';
+import { evalCondCompat } from '../domain/events/condition';
+import { applyModifiers, applyChangesToPlayer, computeDrain, classifyImpact } from '../domain/services/combat-service';
+import type { Player } from '../domain/models/player';
+import type { DifficultyDef } from '../domain/models/difficulty';
 import type { CSSProperties } from 'react';
+import { shuffleWith } from '../domain/events/random';
+import type { RandomSource } from '../domain/events/random';
+
+// ── ドメイン型の再エクスポート（後方互換） ──
+export type { Player } from '../domain/models/player';
+export type { DifficultyDef } from '../domain/models/difficulty';
+
+/** FxState（ドメイン FxState を再エクスポート） */
+import type { FxState } from '../domain/models/unlock';
+export type { FxState };
+
+/** MetaState（ドメイン MetaState を再エクスポート） */
+import type { MetaState } from '../domain/models/meta-state';
+export type { MetaState };
+
+/** 旧アウトカム */
+export interface Outcome {
+  c: string; r: string;
+  hp?: number; mn?: number; inf?: number;
+  fl?: string;
+}
+
+/** 旧選択肢 */
+export interface Choice {
+  t: string;
+  o: Outcome[];
+}
+
+/**
+ * 条件を評価してアウトカムを決定する（旧evalCond互換）
+ */
+const resolveOutcome = (choice: Choice, player: Player, fx: FxState): Outcome => {
+  invariant(choice?.o?.length > 0, "resolveOutcome", "choice must have outcomes");
+  for (const o of choice.o) {
+    if (o.c !== "default" && evalCondCompat(o.c, player, fx)) return o;
+  }
+  return choice.o.find(o => o.c === "default") ?? choice.o[0];
+};
 
 /** イベント定義 */
 export interface GameEvent {
@@ -50,21 +90,30 @@ export const parseChainFlag = (flag: string | undefined | null): string | null =
   return null;
 };
 
+/** processChoice の入力パラメータ */
+export interface ProcessChoiceParams {
+  readonly event: GameEvent;
+  readonly choiceIdx: number;
+  readonly player: Player;
+  readonly fx: FxState;
+  readonly diff: DifficultyDef | null;
+}
+
 /**
  * プレイヤーの選択を処理 — 純粋計算、副作用なし。
  * @pre event と player が non-null、0 <= choiceIdx < event.ch.length
  * @post UI コールバックに必要な全派生データを返す
  */
-export const processChoice = (event: GameEvent, choiceIdx: number, player: Player, fx: FxState, diff: DifficultyDef | null) => {
+export const processChoice = ({ event, choiceIdx, player, fx, diff }: ProcessChoiceParams) => {
   invariant(event && player, "processChoice", "event and player required");
   invariant(choiceIdx >= 0 && choiceIdx < event.ch.length, "processChoice", `invalid index ${choiceIdx}`);
   const choice  = event.ch[choiceIdx];
   const outcome = resolveOutcome(choice, player, fx);
-  const mods    = applyModifiers(outcome, fx, diff, player.st);
+  const mods    = applyModifiers(outcome, fx, diff, player.statuses);
   const chainId = parseChainFlag(outcome.fl ?? null);
   let playerFlag: string | null = chainId ? null : (outcome.fl ?? null);
   if (fx.curseImmune && playerFlag === "add:呪い") playerFlag = null;
-  const updated  = applyToPlayer(player, mods, playerFlag);
+  const updated  = applyChangesToPlayer(player, mods, playerFlag);
   const { player: drained, drain } = computeDrain(updated, fx, diff);
   const impact   = classifyImpact(mods.hp, mods.mn);
   return { choice, outcome, mods, chainId, playerFlag, drained, drain, impact };
@@ -85,13 +134,23 @@ export const validateEvents = (events: GameEvent[], EVENT_TYPE: Record<string, E
   return events;
 };
 
+/** pickEvent の入力パラメータ */
+export interface PickEventParams {
+  readonly events: GameEvent[];
+  readonly floor: number;
+  readonly usedIds: string[];
+  readonly meta: MetaState;
+  readonly fx: FxState;
+  readonly rng?: RandomSource;
+}
+
 /**
  * イベントを選択（chainOnlyイベントと使用済みIDを除外）。
  * チェインイベントは明示的なチェインフラグでのみトリガーされる。
  * クロスランイベントは metaCond のチェックが必要。
  * chainBoost: チェイン結果を持つイベントの重みを倍にする。
  */
-export const pickEvent = (events: GameEvent[], floor: number, usedIds: string[], meta: MetaState, fx: FxState): GameEvent | null => {
+export const pickEvent = ({ events, floor, usedIds, meta, fx, rng }: PickEventParams): GameEvent | null => {
   const pool = events.filter(e =>
     e.fl.includes(floor) && !usedIds.includes(e.id) && !e.chainOnly
     && (!e.metaCond || e.metaCond(meta))
@@ -109,6 +168,8 @@ export const pickEvent = (events: GameEvent[], floor: number, usedIds: string[],
     // 安息イベントの出現確率を上げる
     if (e.tp === "rest") weighted.push(e);
   }
+  // 乱数ソースが指定されていればそれを使い、なければ旧来のshuffleを使用
+  if (rng) return shuffleWith(weighted, rng)[0];
   return shuffle(weighted)[0];
 };
 
