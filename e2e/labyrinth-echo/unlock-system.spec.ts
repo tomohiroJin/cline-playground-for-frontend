@@ -14,13 +14,13 @@ async function setupMetaWithKP(page: import('@playwright/test').Page, kp: number
       escapes: 0,
       kp,
       unlocked: [],
-      bestFl: 2,
+      bestFloor: 2,
       totalEvents: runs * 3,
       endings: [],
-      clearedDiffs: [],
+      clearedDifficulties: [],
       totalDeaths: runs,
-      lastRun: runs > 0 ? { cause: '体力消耗', floor: 2, ending: null, hp: 0, mn: 10, inf: 3 } : null,
-      title: null,
+      lastRun: runs > 0 ? { cause: '体力消耗', floor: 2, endingId: null, hp: 0, mn: 10, inf: 3 } : null,
+      activeTitle: null,
     };
     localStorage.setItem('labyrinth-echo-save', JSON.stringify(data));
   }, { kp, runs });
