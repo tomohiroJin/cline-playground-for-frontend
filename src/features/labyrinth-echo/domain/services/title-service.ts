@@ -19,7 +19,8 @@ export const getActiveTitle = (meta: MetaState): TitleDef => {
     if (found?.cond(meta)) return found;
   }
   const unlocked = getUnlockedTitles(meta);
-  return unlocked.at(-1) ?? TITLES.at(0) ?? { id: 't00', name: '迷い人', cond: () => true };
+  // TITLES は定数配列のため空になることはないが、型安全のため非アサーション演算子を使用
+  return unlocked.at(-1) ?? TITLES.at(0)!;
 };
 
 export type { TitleDef };

@@ -53,12 +53,12 @@ export const migrateMetaState = (raw: Record<string, unknown>): Record<string, u
 
 /** マイグレーション済みデータをFRESH_METAのデフォルト値で補完してMetaStateを構築する */
 export const mergeWithDefaults = (migrated: Record<string, unknown>): MetaState => {
-  const freshRecord = FRESH_META as Record<string, unknown>;
+  const freshRecord = FRESH_META as unknown as Record<string, unknown>;
   const result: Record<string, unknown> = {};
   for (const k of Object.keys(FRESH_META)) {
     result[k] = migrated[k] ?? freshRecord[k];
   }
-  return result as MetaState;
+  return result as unknown as MetaState;
 };
 
 /** 永続化同期フック — MetaState 変更時に自動保存 */
@@ -71,7 +71,7 @@ export const usePersistenceSync = (storage: StorageInterface): PersistenceSyncRe
     (async () => {
       const saved = await storage.load();
       if (saved) {
-        const migrated = migrateMetaState(saved as Record<string, unknown>);
+        const migrated = migrateMetaState(saved as unknown as Record<string, unknown>);
         setMeta(mergeWithDefaults(migrated));
       }
       setLoaded(true);
