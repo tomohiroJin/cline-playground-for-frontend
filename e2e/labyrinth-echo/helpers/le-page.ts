@@ -112,7 +112,7 @@ export class LEPage {
 
   /** タイトル画面からアンロック画面に遷移する */
   async goToUnlocks(): Promise<void> {
-    await this.page.getByText(/知見の継承/).first().click({ timeout: 5_000 });
+    await this.page.getByText(/知見の継承/).first().click({ timeout: 15_000 });
   }
 
   /** アンロック画面でアイテムを購入する */

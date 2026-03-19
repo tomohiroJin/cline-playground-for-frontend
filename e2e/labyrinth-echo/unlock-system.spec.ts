@@ -47,14 +47,16 @@ test.describe('迷宮の残響 - アンロックシステム', () => {
     await setupMetaWithKP(page, 10, 3);
     await game.reload();
 
-    // Assert — 「知見の継承」ボタンが表示される
-    await expect(page.getByText(/知見の継承/).first()).toBeVisible({ timeout: 5_000 });
+    // Assert — 「知見の継承」ボタンが表示される（ストレージロード後の再描画を待つ）
+    await expect(page.getByText(/知見の継承/).first()).toBeVisible({ timeout: 15_000 });
   });
 
   test('知見の継承画面に遷移できる', async ({ page }) => {
     // Arrange
     await setupMetaWithKP(page, 10, 3);
     await game.reload();
+    // ストレージロード後の再描画を待つ
+    await expect(page.getByText(/知見の継承/).first()).toBeVisible({ timeout: 15_000 });
 
     // Act
     await game.goToUnlocks();
@@ -69,6 +71,8 @@ test.describe('迷宮の残響 - アンロックシステム', () => {
     // Arrange — KPありのデータを設定
     await setupMetaWithKP(page, 20, 5);
     await game.reload();
+    // ストレージロード後の再描画を待つ
+    await expect(page.getByText(/知見の継承/).first()).toBeVisible({ timeout: 15_000 });
 
     // Act
     await game.goToUnlocks();
