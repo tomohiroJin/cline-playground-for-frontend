@@ -39,23 +39,33 @@ describe('Highlight モジュール', () => {
       expect(tracker.lastPositions).toEqual([0, 0]);
       expect(tracker.lastHeatGauge).toEqual([0, 0]);
       expect(tracker.lastDriftActive).toEqual([false, false]);
+      expect(tracker.lastDriftDuration).toEqual([0, 0]);
     });
   });
 
   describe('checkDriftBonus', () => {
-    test('ドリフト終了かつ duration>=1.5s でイベントを返す', () => {
-      // 前フレームでドリフト中だった状態を設定
-      const tracker = { ...createHighlightTracker(), lastDriftActive: [true, false] };
-      const drift = makeDrift({ active: false, duration: 2.0 });
+    test('ドリフト終了かつ前フレームの duration>=1.5s でイベントを返す', () => {
+      // 前フレーム: ドリフト中で duration=2.0 だった
+      // 今フレーム: endDrift 後なので active=false, duration=0
+      const tracker = {
+        ...createHighlightTracker(),
+        lastDriftActive: [true, false],
+        lastDriftDuration: [2.0, 0],
+      };
+      const drift = makeDrift({ active: false, duration: 0 });
       const { event } = checkDriftBonus(tracker, drift, 0, 1, 5000);
       expect(event).not.toBeNull();
       expect(event!.type).toBe('drift_bonus');
       expect(event!.score).toBe(Math.floor(2.0 * 100));
     });
 
-    test('duration<1.5s の場合はイベントなし', () => {
-      const tracker = { ...createHighlightTracker(), lastDriftActive: [true, false] };
-      const drift = makeDrift({ active: false, duration: 1.0 });
+    test('前フレームの duration<1.5s の場合はイベントなし', () => {
+      const tracker = {
+        ...createHighlightTracker(),
+        lastDriftActive: [true, false],
+        lastDriftDuration: [1.0, 0],
+      };
+      const drift = makeDrift({ active: false, duration: 0 });
       const { event } = checkDriftBonus(tracker, drift, 0, 1, 5000);
       expect(event).toBeNull();
     });
