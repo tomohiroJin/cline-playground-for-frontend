@@ -4,7 +4,7 @@
 > 作成日: 2026-03-20
 > 関連計画書: RG-20260320-01-PLAN
 > 関連仕様書: RG-20260320-01-SPEC
-> ステータス: ドラフト
+> ステータス: フェーズ2 完了（2-6 定数分散配置を除く）
 
 ---
 
@@ -141,7 +141,7 @@
 - [x] `domain/player/constants.ts` の作成
   - [x] `DRIFT` 定数の移行
   - [x] `HEAT` 定数の移行
-  - [ ] プレイヤー関連定数の移行（フェーズ2-6で実施）
+  - [x] `PLAYER` 定数の追加（TURN_RATE, SPEED_RECOVERY）
 - [x] `domain/player/drift.ts` の作成
   - [x] `createDriftState` の実装
   - [x] `startDrift` の実装（DbC アサーション付き）
@@ -197,11 +197,11 @@
 - [ ] `domain/track/course.ts` の作成（コースデータ移行は2-6で実施）
   - [ ] コースデータの定義（`constants.ts` から移行）
 - [x] 旧 `track.ts` / `wall-physics.ts` / `course-effects.ts` を re-export に変更
-- [ ] テスト移行（新ドメインモジュールの直接テスト）
-  - [ ] `track.test.ts` → `domain/track/track.test.ts`
-  - [ ] `wall-physics.test.ts` → `domain/track/wall-physics.test.ts`
-  - [ ] `course-effects.test.ts` → `domain/track/course-effect.test.ts`
-  - [ ] テストの振る舞いベース化
+- [x] テスト移行（新ドメインモジュールの直接テスト）
+  - [x] `domain/track/track.test.ts`（新規作成）
+  - [x] `domain/track/wall-physics.test.ts`（新規作成）
+  - [x] `domain/track/course-effect.test.ts`（新規作成）
+  - [x] テストの振る舞いベース化
 - [x] 全テスト実行・パス確認
 
 ### 2-3. Race ドメインの構築 🟡
@@ -230,7 +230,7 @@
 
 ### 2-4. Card ドメインの構築 🟢
 
-- [ ] `domain/card/constants.ts` の作成（カード固有定数は現在不要）
+- [x] `domain/card/deck.ts` 内に `MIN_POOL_SIZE`, `RARITY_ORDER`, `RARITY_PROB` 定数を定義
 - [x] `domain/card/card-catalog.ts` の作成
   - [x] 15枚のカードマスターデータ定義（`draft-cards.ts` から移行）
 - [x] `domain/card/deck.ts` の作成
@@ -243,10 +243,10 @@
   - [x] `computeCardEffects` の実装
   - [x] `getCardMultiplier` の実装
 - [x] 旧 `card-effects.ts` を re-export に変更
-- [ ] テスト移行
-  - [ ] `draft-cards.test.ts` → `domain/card/deck.test.ts`
-  - [ ] `card-effects.test.ts` → `domain/card/card-effect.test.ts`
-  - [ ] テストの振る舞いベース化
+- [x] テスト移行
+  - [x] `domain/card/deck.test.ts`（新規作成、11テスト）
+  - [x] `domain/card/card-effect.test.ts`（新規作成）
+  - [x] テストの振る舞いベース化
 - [x] 全テスト実行・パス確認
 
 ### 2-5. Highlight ドメインの構築 🟢
@@ -264,23 +264,25 @@
   - [x] `detectFastestLap` の実装
   - [x] `detectPhotoFinish` の実装
 - [x] 旧 `highlight.ts` を re-export に変更
-- [ ] テスト移行
-  - [ ] `highlight.test.ts` → `domain/highlight/event-detector.test.ts`
-  - [ ] テストの振る舞いベース化
+- [x] テスト移行
+  - [x] `domain/highlight/event-detector.test.ts`（新規作成）
+  - [x] テストの振る舞いベース化
 - [x] 全テスト実行・パス確認
 
 ### 2-6. 定数の分散配置 🟡
 
 - [ ] `constants.ts` の各定数を対応するドメインへ移行
-  - [ ] `Config.game` → 各ドメインの `constants.ts`
+  - [ ] `Config.game` → 各ドメインの `constants.ts`（一部完了: turnRate, speedRecovery → PLAYER 定数）
   - [ ] `Config.canvas` → `infrastructure/renderer/` の定数
   - [ ] `Config.audio` → `infrastructure/audio/` の定数
-  - [ ] `Config.timing` → `domain/race/constants.ts`
+  - [ ] `Config.timing` → `domain/race/constants.ts`（一部完了: RACE_TIMING）
   - [ ] `Colors` → `infrastructure/renderer/` の定数
   - [ ] `Options` → `presentation/` の定数
   - [ ] `Courses` → `domain/track/course.ts`
-  - [ ] `DRIFT` → `domain/player/constants.ts`
-  - [ ] `HEAT` → `domain/player/constants.ts`
+  - [x] `DRIFT` → `domain/player/constants.ts`
+  - [x] `HEAT` → `domain/player/constants.ts`
+  - [x] `WALL` → `domain/track/constants.ts`
+  - [x] `HIGHLIGHT` → `domain/highlight/constants.ts`
 - [ ] 旧 `constants.ts` を re-export に変更
 - [ ] 全参照先のインポートパス更新
 - [ ] 全テスト実行・パス確認
@@ -545,12 +547,12 @@
 
 ### 5-3. 単体テストの拡充・リファクタリング 🟢
 
-- [ ] テスト用ファクトリの作成
-  - [ ] `__tests__/helpers/test-factories.ts`
-  - [ ] `createTestPlayer` の実装
-  - [ ] `createTestDeck` の実装
-  - [ ] `createTestTrackPoints` の実装
-  - [ ] `createTestCard` の実装
+- [x] テスト用ファクトリの作成
+  - [x] `__tests__/helpers/test-factories.ts`
+  - [x] `createTestPlayer` の実装
+  - [x] `createTestDeck` の実装
+  - [x] `createTestTrackPoints` の実装
+  - [x] `createTestCard` の実装
 - [ ] ドメイン層テストの最終確認
   - [ ] 全テストが振る舞いベースであること
   - [ ] AAA パターンの遵守
