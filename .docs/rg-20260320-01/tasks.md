@@ -517,11 +517,10 @@
   - [ ] **目標: 200行以下**
     > **方針**: 新フックは作成済み。RacingGame.tsx の書き換えは既存ゲームの動作に影響するため、
     > 手動テスト付きの別 PR で実施することを推奨。
-- [ ] `presentation/components/` への移行
-  - [ ] `MenuPanel.tsx` の移動
-  - [ ] `ResultPanel.tsx` の移動
-  - [ ] `VolumeControl.tsx` の移動
-    > **方針**: コンポーネントの移動はパス変更のみ。RacingGame.tsx リファクタリングと同時に実施。
+- [x] `presentation/components/` への移行（re-export で配置）
+  - [x] `MenuPanel.tsx` の re-export
+  - [x] `ResultPanel.tsx` の re-export
+  - [x] `VolumeControl.tsx` の re-export
 - [x] 全テスト実行・パス確認
 
 ### 5-2. 旧ファイルの削除 🟡
