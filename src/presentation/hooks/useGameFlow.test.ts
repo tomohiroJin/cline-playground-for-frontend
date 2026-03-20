@@ -33,7 +33,7 @@ describe('useGameFlow', () => {
       const { result } = renderHook(() => useGameFlow(createOptions()), { wrapper });
 
       act(() => {
-        result.current.handleStartGame(2);
+        result.current.handleStartGame();
       });
 
       expect(result.current.gamePhase).toBe('playing');
@@ -42,8 +42,13 @@ describe('useGameFlow', () => {
     it('ゲーム開始でパズルが初期化される', () => {
       const { result } = renderHook(() => useGameFlow(createOptions()), { wrapper });
 
+      // 分割数を事前設定
       act(() => {
-        result.current.handleStartGame(3);
+        result.current.handleDifficultyChange(3);
+      });
+
+      act(() => {
+        result.current.handleStartGame();
       });
 
       expect(result.current.boardState).not.toBeNull();
@@ -55,7 +60,11 @@ describe('useGameFlow', () => {
 
       // 3×3 を使用（2×2 はシャッフル後に完成状態に戻る確率がある）
       act(() => {
-        result.current.handleStartGame(3);
+        result.current.handleDifficultyChange(3);
+      });
+
+      act(() => {
+        result.current.handleStartGame();
       });
 
       expect(result.current.boardState?.isCompleted).toBe(false);
@@ -67,10 +76,9 @@ describe('useGameFlow', () => {
       const { result } = renderHook(() => useGameFlow(createOptions()), { wrapper });
 
       act(() => {
-        result.current.handleStartGame(2);
+        result.current.handleStartGame();
       });
 
-      // エラーなく呼び出せることを確認
       act(() => {
         result.current.handlePieceMove(0);
       });
@@ -83,13 +91,17 @@ describe('useGameFlow', () => {
     it('リセットでパズルが再初期化される', () => {
       const { result } = renderHook(() => useGameFlow(createOptions()), { wrapper });
 
-      // 3×3 を使用（2×2 はシャッフル後に完成状態に戻る確率がある）
+      // 3×3 を使用
       act(() => {
-        result.current.handleStartGame(3);
+        result.current.handleDifficultyChange(3);
       });
 
       act(() => {
-        result.current.handleResetGame(3);
+        result.current.handleStartGame();
+      });
+
+      act(() => {
+        result.current.handleResetGame();
       });
 
       expect(result.current.boardState?.moveCount).toBe(0);
@@ -102,7 +114,7 @@ describe('useGameFlow', () => {
       const { result } = renderHook(() => useGameFlow(createOptions()), { wrapper });
 
       act(() => {
-        result.current.handleStartGame(2);
+        result.current.handleStartGame();
       });
 
       expect(result.current.gamePhase).toBe('playing');
@@ -120,7 +132,7 @@ describe('useGameFlow', () => {
       const { result } = renderHook(() => useGameFlow(createOptions()), { wrapper });
 
       act(() => {
-        result.current.handleStartGame(2);
+        result.current.handleStartGame();
       });
 
       act(() => {
@@ -136,7 +148,7 @@ describe('useGameFlow', () => {
       const { result } = renderHook(() => useGameFlow(createOptions()), { wrapper });
 
       act(() => {
-        result.current.handleStartGame(2);
+        result.current.handleStartGame();
       });
 
       act(() => {
@@ -162,16 +174,27 @@ describe('useGameFlow', () => {
       });
 
       act(() => {
-        result.current.handleStartGame(2);
+        result.current.handleStartGame();
       });
 
       act(() => {
         result.current.completeForDebug();
       });
 
-      // 完成後にストレージが使用されることを確認
       expect(totalClearsStorage.get()).toBe(1);
       expect(recordStorage.getAll().length).toBe(1);
+    });
+  });
+
+  describe('handleDifficultyChange', () => {
+    it('分割数を変更できる', () => {
+      const { result } = renderHook(() => useGameFlow(createOptions()), { wrapper });
+
+      act(() => {
+        result.current.handleDifficultyChange(5);
+      });
+
+      expect(result.current.division).toBe(5);
     });
   });
 });

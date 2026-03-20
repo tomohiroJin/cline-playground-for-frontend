@@ -227,9 +227,9 @@
 
 ### 4-4. コンポーネントのリファクタリング
 
-- [ ] `PuzzleBoard.tsx` のリファクタリング（Phase 6 で実施）
-- [ ] `PuzzlePage.tsx` のリファクタリング（Phase 6 で実施）
-- [ ] コンポーネントの移動（Phase 6 で実施）
+- [ ] `PuzzleBoard.tsx` のリファクタリング（既存のまま保持、新レイヤーへの移行は別PR）
+- [x] `PuzzlePage.tsx` のリファクタリング — useGameFlow に移行完了
+- [ ] コンポーネントの移動（既存のまま保持、新レイヤーへの移行は別PR）
 
 ### 4-5. 検証
 
@@ -334,8 +334,8 @@
 - [x] `src/utils/score-utils.ts` を新ドメインコードへの委譲に書き換え
 - [x] `src/utils/storage-utils.ts` の `extractImageName` を shared に移動・再エクスポート
 - [ ] `src/utils/storage/` ディレクトリ — PuzzleBoard が直接参照中のため保持
-- [ ] `src/hooks/usePuzzle.ts` — PuzzlePage が useGameState 経由で依存中のため保持
-- [ ] `src/hooks/useGameState.ts` — PuzzlePage が直接依存中のため保持
+- [x] `src/hooks/usePuzzle.ts` — PuzzlePage の useGameFlow 移行により依存解消（テストから参照あるため保持）
+- [x] `src/hooks/useGameState.ts` — PuzzlePage の useGameFlow 移行により依存解消（テストから参照あるため保持）
 - [x] `src/store/atoms.ts` — 新 presentation/store/ への再エクスポートに変換済み
 
 ### 6-2. インポートパスの整理

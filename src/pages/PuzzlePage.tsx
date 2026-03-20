@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   PuzzlePageContainer,
   Instructions,
@@ -9,8 +9,14 @@ import ClearHistoryList from '../components/molecules/ClearHistoryList';
 import { getClearHistory, ClearHistory, migrateClearHistory, getPuzzleRecords, getTotalClears } from '../utils/storage-utils';
 import { PuzzleRecord } from '../types/puzzle';
 import { SetupSectionComponent, GameSectionComponent } from '../components/PuzzleSections';
-import { useGameState } from '../hooks/useGameState';
+import { useGameFlow } from '../presentation/hooks/useGameFlow';
+import { LocalPuzzleRecordStorage } from '../infrastructure/storage/puzzle-records-store';
+import { LocalTotalClearsStorage } from '../infrastructure/storage/total-clears-store';
 import TitleScreen from '../components/TitleScreen';
+
+// ストレージインスタンス（コンポーネント外で生成してリレンダリングを防ぐ）
+const recordStorage = new LocalPuzzleRecordStorage();
+const totalClearsStorage = new LocalTotalClearsStorage();
 
 /**
  * パズルゲームページコンポーネント
@@ -25,10 +31,20 @@ const PuzzlePage: React.FC = () => {
   const [puzzleRecords, setPuzzleRecords] = useState<PuzzleRecord[]>([]);
   const [totalClears, setTotalClears] = useState(0);
 
-  // 状態管理をフックに移動
+  // 新しいゲームフロー制御フック
   const {
+    gamePhase,
+    imageUrl,
+    imageSize,
+    division,
+    boardState,
+    elapsedTime,
+    score,
+    isBestScore,
+    hintModeEnabled,
+    correctRate,
+    emptyPanelClicks,
     toggleHintMode,
-    gameStarted,
     handleImageSelect,
     handleDifficultyChange,
     handleStartGame,
@@ -36,9 +52,10 @@ const PuzzlePage: React.FC = () => {
     handleResetGame,
     handleEndGame,
     handleEmptyPanelClick,
-    handleCompletePuzzleForDebug,
-    gameState,
-  } = useGameState();
+    completeForDebug,
+  } = useGameFlow({ recordStorage, totalClearsStorage });
+
+  const gameStarted = gamePhase === 'playing';
 
   // 初回マウント時にデータマイグレーション実行
   useEffect(() => {
@@ -51,7 +68,8 @@ const PuzzlePage: React.FC = () => {
     setClearHistory(history);
     setPuzzleRecords(getPuzzleRecords());
     setTotalClears(getTotalClears());
-  }, [gameStarted]); // gameStartedが変わったとき（ゲーム終了時など）に履歴を更新
+  }, [gameStarted]);
+
   return (
     <PuzzlePageContainer>
       {showTitle ? (
@@ -64,22 +82,33 @@ const PuzzlePage: React.FC = () => {
           handleImageSelect={handleImageSelect}
           handleDifficultyChange={handleDifficultyChange}
           handleStartGame={handleStartGame}
-          imageUrl={gameState.imageUrl}
-          originalImageSize={gameState.originalImageSize}
-          division={gameState.division}
+          imageUrl={imageUrl}
+          originalImageSize={imageSize}
+          division={division}
           records={puzzleRecords}
           totalClears={totalClears}
         />
       ) : (
         <GameSectionComponent
-          {...gameState}
-          emptyPosition={gameState.emptyPosition || { row: 0, col: 0 }} // Provide default position if null
-          toggleHintMode={toggleHintMode}
+          imageUrl={imageUrl}
+          originalImageSize={imageSize}
+          pieces={boardState ? [...boardState.pieces] : []}
+          division={boardState?.division ?? division}
+          elapsedTime={elapsedTime}
+          completed={boardState?.isCompleted ?? false}
+          hintModeEnabled={hintModeEnabled}
+          emptyPosition={boardState?.emptyPosition ?? { row: 0, col: 0 }}
+          moveCount={boardState?.moveCount ?? 0}
+          correctRate={correctRate}
+          score={score}
+          isBestScore={isBestScore}
           handlePieceMove={handlePieceMove}
           handleResetGame={handleResetGame}
-          handleEndGame={handleEndGame}
+          toggleHintMode={toggleHintMode}
           handleEmptyPanelClick={handleEmptyPanelClick}
-          onCompletePuzzleForDebug={handleCompletePuzzleForDebug}
+          handleEndGame={handleEndGame}
+          emptyPanelClicks={emptyPanelClicks}
+          onCompletePuzzleForDebug={completeForDebug}
           debugMode={debugMode}
         />
       )}

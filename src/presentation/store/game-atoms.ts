@@ -16,6 +16,9 @@ export const selectedImageUrlAtom = atom<string | null>(null);
 /** 選択画像の元サイズ */
 export const selectedImageSizeAtom = atom<{ width: number; height: number } | null>(null);
 
+/** パズルの分割数 */
+export const puzzleDivisionAtom = atom<number>(4);
+
 /** パズル開始時間（タイムスタンプ） */
 export const puzzleStartTimeAtom = atom<number | null>(null);
 
