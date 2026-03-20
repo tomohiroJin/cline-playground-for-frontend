@@ -58,10 +58,10 @@ export default function RacingGameNew() {
     const cIdx = Utils.clamp(course, 0, Courses.length - 1);
     const cur = Courses[cIdx];
     const baseSpd = Utils.safeIndex(Options.speed, speed, Options.speed[1]).value;
-    const cpuCfg = Utils.safeIndex(Options.cpu, cpu, Options.cpu[1]);
     const col1 = Colors.car[Utils.clamp(color1, 0, 5)];
     const col2 = Colors.car[Utils.clamp(color2, 0, 5)];
-    const difficulty: CpuDifficulty = cpuCfg.skill >= 0.8 ? 'hard' : cpuCfg.skill >= 0.4 ? 'normal' : 'easy';
+    const DIFFICULTY_MAP: CpuDifficulty[] = ['easy', 'normal', 'hard'];
+    const difficulty: CpuDifficulty = DIFFICULTY_MAP[Utils.clamp(cpu, 0, 2)];
 
     setOrchConfig({
       renderer: createCanvasRenderer(ctx, width, height),
