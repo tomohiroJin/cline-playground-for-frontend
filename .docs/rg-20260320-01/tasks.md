@@ -334,8 +334,13 @@
   - [x] 副作用の Port 経由化（Audio, Renderer, Storage, Input）
   - [x] カウントダウン → レース遷移ロジック
   - [x] レース → リザルト遷移ロジック（ラップ完了 → 勝者決定）
-  - [ ] レース → ドラフト遷移ロジック（フェーズ4以降で RacingGame.tsx と統合時に実装）
-- [ ] `RacingGame.tsx` から game-loop ロジックの段階的委譲（フェーズ5で実施）
+  - [ ] レース → ドラフト遷移ロジック
+    > **方針**: GameOrchestrator の update 内でラップ完了時に draft フェーズへ遷移するロジックを追加する。
+    > 旧 RacingGame.tsx の draftTriggers / pendingDraftQueue / draftedLaps のロジックを移植。
+    > フェーズ5 の RacingGame.tsx スリム化（5-1）で RacingGame.tsx 側の旧コードを削除する。
+- [ ] `RacingGame.tsx` から game-loop ロジックの段階的委譲
+    > **方針**: フェーズ5-1 で RacingGame.tsx を useGameLoop フックに置き換える際に、
+    > GameOrchestrator を呼び出す形に切り替える。現時点では旧コードと新コードが並行して存在する。
 - [x] テスト用モック Port の作成
   - [x] `__tests__/helpers/mock-ports.ts` の作成
   - [x] `createMockRenderer` の実装（呼び出し記録）
@@ -349,12 +354,19 @@
   - [x] ポーズ/リジュームのテスト
   - [x] ポーズ中は状態が変わらないテスト
   - [x] リセットのテスト
-  - [ ] ラップ完了 → ドラフト遷移のテスト（ドラフト遷移実装後）
-  - [ ] ドラフト → レース再開のテスト（ドラフト遷移実装後）
-  - [ ] 壁衝突フローのテスト（追加予定）
-  - [ ] ドリフト → ブーストのテスト（追加予定）
-  - [ ] HEAT ブーストのテスト（追加予定）
-  - [ ] 勝者決定のテスト（追加予定）
+  - [ ] ラップ完了 → ドラフト遷移のテスト
+    > ドラフト遷移ロジック実装と同時に追加する。
+  - [ ] ドラフト → レース再開のテスト
+    > ドラフト遷移ロジック実装と同時に追加する。
+  - [ ] 壁衝突フローのテスト
+    > GameOrchestrator 経由で壁接触→ペナルティ→ワープの一連の流れを検証する。
+    > モック Input で壁方向に移動させる形でテスト可能。
+  - [ ] ドリフト → ブーストのテスト
+    > モック Input でハンドブレーキ+ステアリングを入力し、ドリフト開始→終了→ブースト適用を検証する。
+  - [ ] HEAT ブーストのテスト
+    > 壁ニアミス状態を作り出し、ゲージ蓄積→ブースト発動を検証する。
+  - [ ] 勝者決定のテスト
+    > maxLaps 完走時に winner が設定され result フェーズに遷移することを検証する。
 - [x] 全テスト実行・パス確認
 
 ### 3-3. InputProcessor の作成 🟢
@@ -363,6 +375,11 @@
   - [x] `PlayerCommand` 型定義
   - [x] `processInput` の実装
   - [x] CPU AI の Strategy パターン統合
+  - [ ] `collectPlayerInputs` の移行（`game-update.ts` から）
+    > **方針**: `game-update.ts` の `collectPlayerInputs` はキーボード/タッチの生入力を扱うインフラ層の関心事。
+    > フェーズ4-4 の Input アダプター（`infrastructure/input/keyboard-adapter.ts`）で InputPort を実装し、
+    > GameOrchestrator が InputPort 経由で `processInput` を呼ぶ形に切り替える。
+    > 旧 `collectPlayerInputs` はフェーズ5-2 で削除する。
 - [x] テスト作成
   - [x] `application/input-processor.test.ts`（7テスト）
   - [x] 各入力パターンのテスト（左/右/なし/ハンドブレーキ）
@@ -378,6 +395,14 @@
   - [x] `updateDraftTimer` の実装
   - [x] `moveCursor` の実装
   - [x] `confirmSelection` の実装
+  - [ ] CPU 自動選択ロジック
+    > **方針**: `domain/card/deck.ts` の `cpuSelectCard` は実装済み。
+    > GameOrchestrator のドラフト遷移ロジック内で、CPU プレイヤーの場合に自動呼び出しする。
+    > ドラフト遷移ロジック実装と同時に追加する。
+- [ ] 旧 `draft-ui-logic.ts` の段階的委譲
+    > **方針**: 現在は re-export で委譲済み。ただし `mapDraftInput` / `clearDraftKeys` / `applyDraftResults` は
+    > キーボード入力の具体的なマッピング（インフラ層の関心事）なので、フェーズ4-4 で Input アダプターに移行し、
+    > フェーズ5-2 で旧ファイルを削除する。
 - [x] テスト作成
   - [x] `application/draft-processor.test.ts`（7テスト）
   - [x] タイマー管理のテスト
@@ -401,11 +426,13 @@
 ### フェーズ3 完了後の品質ゲート
 
 - [x] `npm run typecheck` パス
-- [ ] `npm run lint` パス
+- [ ] `npm run lint` パス（フェーズ完了時に実行）
 - [x] `npm test` 全パス（33スイート、354テスト）
-- [ ] スモークテスト全パス
-- [ ] `npm run build` 成功
+- [ ] スモークテスト全パス（フェーズ1-5 保留中）
+- [ ] `npm run build` 成功（フェーズ完了時に実行）
 - [ ] アプリケーション層テストカバレッジ 80% 以上
+    > **現状**: GameOrchestrator のテストは基本フロー（countdown→race、ポーズ、リセット）のみ。
+    > 上記の未完了テスト 6 件（ドラフト遷移、壁衝突、ドリフト、HEAT、勝者決定）を追加後に再評価する。
 
 ---
 
