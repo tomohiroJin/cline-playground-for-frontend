@@ -289,11 +289,14 @@
 
 ### 5-4. 旧テストの削除（Phase 6 で実施）
 
-- [ ] `src/utils/puzzle-utils.test.ts` を削除
-- [ ] `src/hooks/usePuzzle.test.tsx` を削除
-- [ ] `src/components/organisms/PuzzleBoard.test.tsx` を削除
-- [ ] `src/components/molecules/PuzzlePiece.test.tsx` を移動・更新
-- [ ] `src/pages/PuzzlePage.test.tsx` を移動・更新
+- [x] `src/utils/puzzle-utils.test.ts` — 委譲ラッパーのテストとして保持
+- [x] `src/hooks/usePuzzle.test.tsx` — 旧コードと共に削除
+- [x] `src/hooks/useGameState.test.ts` — 旧コードと共に削除
+- [x] `src/hooks/usePuzzle.ts` — PuzzlePage 移行完了により削除
+- [x] `src/hooks/useGameState.ts` — PuzzlePage 移行完了により削除
+- [x] `src/components/organisms/PuzzleBoard.test.tsx` — インポートパス更新済み（保持）
+- [x] `src/components/molecules/PuzzlePiece.test.tsx` — 現状保持
+- [x] `src/pages/PuzzlePage.test.tsx` — Jotai Provider 対応に更新済み（保持）
 
 ### 5-5. コードレビュー指摘対応
 
