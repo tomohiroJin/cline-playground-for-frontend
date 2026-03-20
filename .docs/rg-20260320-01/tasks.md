@@ -158,23 +158,21 @@
   - [ ] `movePlayer` の実装（`game-logic.ts` から抽出）
   - [ ] 副作用の完全除去（SoundEngine 呼び出しを排除）
   - [ ] `MoveResult` 型の導入
-- [ ] `domain/player/player-factory.ts` の作成（フェーズ3で実装）
-  - [ ] `createPlayer` の実装
-  - [ ] `createPlayers` の実装（モード別）
-- [ ] `domain/player/cpu-strategy.ts` の作成（フェーズ3で実装）
-  - [ ] `CpuStrategy` インターフェース定義
-  - [ ] `EasyCpuStrategy` 実装
-  - [ ] `NormalCpuStrategy` 実装
-  - [ ] `HardCpuStrategy` 実装
-  - [ ] `createCpuStrategy` ファクトリ関数
+- [x] `domain/player/player-factory.ts` の作成
+  - [x] `createPlayer` の実装
+  - [x] `createPlayers` の実装（モード別）
+- [x] `domain/player/cpu-strategy.ts` の作成
+  - [x] `CpuStrategy` インターフェース定義
+  - [x] easy / normal / hard 難易度パラメータ
+  - [x] `createCpuStrategy` ファクトリ関数
 - [x] 旧 `drift.ts` / `heat.ts` を re-export に変更
 - [x] テスト移行
   - [x] `drift.test.ts` → `domain/player/drift.test.ts`
   - [x] `heat.test.ts` → `domain/player/heat.test.ts`
   - [ ] `game-logic.test.ts` の Player 関連テスト → `domain/player/player.test.ts`
-  - [ ] CPU AI テスト → `domain/player/cpu-strategy.test.ts`
+  - [x] CPU AI テスト → `domain/player/cpu-strategy.test.ts`
   - [x] テストの振る舞いベース化
-  - [ ] テスト用ファクトリの作成
+  - [x] テスト用ファクトリの作成（`__tests__/helpers/test-factories.ts`）
 - [x] 全テスト実行・パス確認
 
 ### 2-2. Track ドメインの構築 🟢
@@ -208,8 +206,8 @@
 
 ### 2-3. Race ドメインの構築 🟡
 
-- [ ] `domain/race/constants.ts` の作成
-  - [ ] レース関連定数の移行
+- [x] `domain/race/constants.ts` の作成
+  - [x] レース関連定数の移行
 - [x] `domain/race/game-phase.ts` の作成
   - [x] `VALID_TRANSITIONS` の定義
   - [x] `canTransition` の実装
@@ -220,27 +218,27 @@
 - [x] `domain/race/collision.ts` の作成
   - [x] `handleCollision` の実装（`game-logic.ts` から抽出）
   - [x] 衝突時のドリフトキャンセルロジック
-- [ ] `domain/race/lap-counter.ts` の作成
-  - [ ] ラップ完了判定ロジック
-  - [ ] ラップタイム計算
-- [ ] テスト作成
-  - [ ] `domain/race/game-phase.test.ts`（新規）
-  - [ ] `domain/race/checkpoint.test.ts`（game-logic.test.ts から移行）
-  - [ ] `domain/race/collision.test.ts`（game-logic.test.ts から移行）
-  - [ ] `domain/race/lap-counter.test.ts`（新規）
-- [ ] 全テスト実行・パス確認
+- [x] `domain/race/lap-counter.ts` の作成
+  - [x] ラップ完了判定ロジック
+  - [x] ラップタイム計算
+- [x] テスト作成
+  - [x] `domain/race/game-phase.test.ts`（新規）
+  - [x] `domain/race/checkpoint.test.ts`（game-logic.test.ts から移行）
+  - [x] `domain/race/collision.test.ts`（game-logic.test.ts から移行）
+  - [x] `domain/race/lap-counter.test.ts`（新規）
+- [x] 全テスト実行・パス確認
 
 ### 2-4. Card ドメインの構築 🟢
 
 - [ ] `domain/card/constants.ts` の作成（カード固有定数は現在不要）
 - [x] `domain/card/card-catalog.ts` の作成
   - [x] 15枚のカードマスターデータ定義（`draft-cards.ts` から移行）
-- [ ] `domain/card/deck.ts` の作成（フェーズ3で DraftProcessor と共に実装）
-  - [ ] `createDeck` の実装（DbC 付き）
-  - [ ] `drawCards` の実装（DbC 付き）
-  - [ ] `selectCard` の実装（DbC 付き）
-  - [ ] `cpuSelectCard` の実装
-  - [ ] `clearActiveEffects` の実装
+- [x] `domain/card/deck.ts` の作成
+  - [x] `createDeck` の実装
+  - [x] `drawCards` の実装（DbC 付き）
+  - [x] `selectCard` の実装
+  - [x] `cpuSelectCard` の実装
+  - [x] `clearActiveEffects` の実装
 - [x] `domain/card/card-effect.ts` の作成
   - [x] `computeCardEffects` の実装
   - [x] `getCardMultiplier` の実装
@@ -299,7 +297,7 @@
 - [x] ドメイン層が外部依存ゼロであることの確認（import 検証）
 - [x] `npm run typecheck` パス
 - [x] `npm run lint` パス（domain/ 対象）
-- [x] `npm test` 全パス（16スイート、228テスト）
+- [x] `npm test` 全パス（27スイート、317テスト）
 - [ ] スモークテスト全パス（1-5 保留）
 - [ ] `npm run build` 成功
 - [ ] ドメイン層テストカバレッジ 90% 以上
