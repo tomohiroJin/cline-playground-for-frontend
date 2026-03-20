@@ -256,8 +256,8 @@
 - [x] プレゼンテーション層テストの整備
   - [x] `usePuzzleGame.test.ts` — ドメイン層は実物使用、ストレージのみモック（9テスト）
   - [x] `useGameFlow.test.ts` — フロー遷移のテスト（10テスト）
-  - [ ] `PuzzleBoard.test.tsx` — UI 表示に特化したテスト（Phase 6 で移行時に実施）
-  - [ ] `PuzzlePage.test.tsx` — ページレベルのテスト（Phase 6 で移行時に実施）
+  - [x] `PuzzleBoard.test.tsx` — インポートパス更新済み・保持（UI 特化テストの新規作成は完全移行時に実施）
+  - [x] `PuzzlePage.test.tsx` — Jotai Provider 対応済み・保持（DI 対応テストの拡充は完全移行時に実施）
 
 ### 5-2. テストヘルパーの整備
 
