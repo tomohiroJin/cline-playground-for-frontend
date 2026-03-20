@@ -25,7 +25,7 @@ import { getCourseEffect, getSegmentFriction, getSegmentSpeedModifier } from '..
 import { handleCollision } from '../domain/race/collision';
 import { updateCheckpoints } from '../domain/race/checkpoint';
 import { checkLapComplete } from '../domain/race/lap-counter';
-import { createDeck, clearActiveEffects } from '../domain/card/deck';
+import { createDeck, drawCards, selectCard, clearActiveEffects, cpuSelectCard } from '../domain/card/deck';
 import { computeAllCardEffects } from '../domain/card/card-effect';
 import { updateHeat, getHeatBoost } from '../domain/player/heat';
 import { createTracker } from '../domain/highlight/highlight';
@@ -47,6 +47,12 @@ export interface GameOrchestratorConfig {
   readonly playerNames: readonly [string, string];
 }
 
+/** ドラフトトリガー情報 */
+interface DraftTrigger {
+  playerIndex: number;
+  lap: number;
+}
+
 /** オーケストレーター状態 */
 export interface GameOrchestratorState {
   phase: GamePhase;
@@ -62,6 +68,20 @@ export interface GameOrchestratorState {
   winner: string | null;
   paused: boolean;
   engineOn: boolean;
+  /** ドラフト待ちキュー */
+  draftQueue: DraftTrigger[];
+  /** 実施済みドラフトの記録（"playerIndex-lap" 形式） */
+  draftedLaps: Set<string>;
+  /** 現在ドラフト中のプレイヤーインデックス */
+  draftCurrentPlayer: number;
+  /** ドラフトの選択インデックス */
+  draftSelectedIndex: number;
+  /** ドラフトが確定済みか */
+  draftConfirmed: boolean;
+  /** ドラフトタイマー（秒） */
+  draftTimer: number;
+  /** ドラフト開始時刻 */
+  draftStartTime: number;
 }
 
 /** オーケストレーターインターフェース */
@@ -95,6 +115,13 @@ const createInitialState = (config: GameOrchestratorConfig): GameOrchestratorSta
     winner: null,
     paused: false,
     engineOn: false,
+    draftQueue: [],
+    draftedLaps: new Set(),
+    draftCurrentPlayer: 0,
+    draftSelectedIndex: 1,
+    draftConfirmed: false,
+    draftTimer: 15,
+    draftStartTime: 0,
   };
 };
 
@@ -178,6 +205,16 @@ const updateSinglePlayer = (
     if (np.lap === raceConfig.maxLaps) {
       config.audio.playSfx('finalLap');
     }
+
+    // ドラフトトリガー（カード有効 & 非ソロ & 最終ラップ以外）
+    if (raceConfig.cardsEnabled && raceConfig.mode !== 'solo'
+        && np.lap <= raceConfig.maxLaps && raceConfig.maxLaps > 1) {
+      const draftKey = `${i}-${np.lap - 1}`;
+      if (!state.draftedLaps.has(draftKey)) {
+        state.draftedLaps.add(draftKey);
+        state.draftQueue.push({ playerIndex: i, lap: np.lap - 1 });
+      }
+    }
   }
 
   // セグメント・進行度更新
@@ -232,6 +269,90 @@ const updateRacePhase = (
     ? (state.players[0].speed + state.players[1].speed) / 2
     : state.players[0].speed;
   config.audio.updateEngine(avgSpeed);
+
+  // ドラフト遷移（勝者未決定時のみ）
+  if (state.draftQueue.length > 0 && !state.winner) {
+    processDraftQueue(state, config, now);
+  }
+};
+
+/** ドラフトキューを処理する */
+const processDraftQueue = (
+  state: GameOrchestratorState,
+  config: GameOrchestratorConfig,
+  now: number,
+): void => {
+  // CPU プレイヤーのドラフトは自動処理
+  while (state.draftQueue.length > 0) {
+    const trigger = state.draftQueue[0];
+    const player = state.players[trigger.playerIndex];
+    if (player.isCpu) {
+      state.draftQueue.shift();
+      // CPU: 3 枚ドローして自動選択
+      state.decks[trigger.playerIndex] = drawCards(state.decks[trigger.playerIndex], 3);
+      const cpuSkill = config.raceConfig.cpuDifficulty === 'hard' ? 1.0 : config.raceConfig.cpuDifficulty === 'normal' ? 0.5 : 0.25;
+      state.decks[trigger.playerIndex] = cpuSelectCard(state.decks[trigger.playerIndex], cpuSkill);
+      // カード効果をプレイヤーに適用
+      const deck = state.decks[trigger.playerIndex];
+      state.players[trigger.playerIndex] = {
+        ...state.players[trigger.playerIndex],
+        activeCards: deck.active,
+        shieldCount: state.players[trigger.playerIndex].shieldCount + deck.active.reduce((acc, e) => acc + (e.shieldCount ?? 0), 0),
+      };
+    } else {
+      // 人間プレイヤー: ドラフトフェーズに遷移
+      const next = state.draftQueue.shift()!;
+      state.phase = 'draft';
+      state.draftCurrentPlayer = next.playerIndex;
+      state.draftSelectedIndex = 1;
+      state.draftConfirmed = false;
+      state.draftTimer = 15;
+      state.draftStartTime = now;
+      state.decks[next.playerIndex] = drawCards(state.decks[next.playerIndex], 3);
+      return;
+    }
+  }
+};
+
+/** ドラフトフェーズの更新 */
+const updateDraftPhase = (
+  state: GameOrchestratorState,
+  config: GameOrchestratorConfig,
+  now: number,
+): void => {
+  // タイマー更新
+  const elapsed = (now - state.draftStartTime) / 1000;
+  state.draftTimer = Math.max(0, 15 - elapsed);
+
+  // タイムアウトまたは確定済み → レースに戻る
+  if (state.draftTimer <= 0 || state.draftConfirmed) {
+    // 未確定ならタイムアウトで選択中のカードを自動選択
+    if (!state.draftConfirmed) {
+      const pi = state.draftCurrentPlayer;
+      const deck = state.decks[pi];
+      if (deck.hand.length > 0) {
+        const cardId = deck.hand[Math.min(state.draftSelectedIndex, deck.hand.length - 1)]?.id;
+        if (cardId) {
+          state.decks[pi] = selectCard(state.decks[pi], cardId);
+          const newDeck = state.decks[pi];
+          state.players[pi] = {
+            ...state.players[pi],
+            activeCards: newDeck.active,
+            shieldCount: state.players[pi].shieldCount + newDeck.active.reduce((acc, e) => acc + (e.shieldCount ?? 0), 0),
+          };
+        }
+      }
+    }
+
+    // 残りキューがあればそちらを処理、なければレースに戻る
+    if (state.draftQueue.length > 0) {
+      processDraftQueue(state, config, now);
+    } else {
+      state.phase = 'race';
+      // ラップ開始時刻をリセット
+      state.players = state.players.map(p => ({ ...p, lapStart: now }));
+    }
+  }
 };
 
 /** ゲームオーケストレーターの生成 */
@@ -259,7 +380,10 @@ export const createOrchestrator = (config: GameOrchestratorConfig): GameOrchestr
         return;
       }
 
-      if (state.phase === 'draft') return;
+      if (state.phase === 'draft') {
+        updateDraftPhase(state, config, now);
+        return;
+      }
 
       if (state.phase === 'race') {
         updateRacePhase(state, config, cpuStrategy, courseEffect, sl, now);

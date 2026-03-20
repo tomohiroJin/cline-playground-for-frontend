@@ -334,10 +334,12 @@
   - [x] 副作用の Port 経由化（Audio, Renderer, Storage, Input）
   - [x] カウントダウン → レース遷移ロジック
   - [x] レース → リザルト遷移ロジック（ラップ完了 → 勝者決定）
-  - [ ] レース → ドラフト遷移ロジック
-    > **方針**: GameOrchestrator の update 内でラップ完了時に draft フェーズへ遷移するロジックを追加する。
-    > 旧 RacingGame.tsx の draftTriggers / pendingDraftQueue / draftedLaps のロジックを移植。
-    > フェーズ5 の RacingGame.tsx スリム化（5-1）で RacingGame.tsx 側の旧コードを削除する。
+  - [x] レース → ドラフト遷移ロジック
+    - [x] ドラフトキュー・実施済み記録の管理
+    - [x] CPU 自動ドラフト（cpuSelectCard）
+    - [x] 人間プレイヤーのドラフトフェーズ遷移
+    - [x] ドラフトタイマー・タイムアウト自動選択
+    - [x] ドラフト完了後のレースフェーズ復帰
 - [ ] `RacingGame.tsx` から game-loop ロジックの段階的委譲
     > **方針**: フェーズ5-1 で RacingGame.tsx を useGameLoop フックに置き換える際に、
     > GameOrchestrator を呼び出す形に切り替える。現時点では旧コードと新コードが並行して存在する。
@@ -354,19 +356,12 @@
   - [x] ポーズ/リジュームのテスト
   - [x] ポーズ中は状態が変わらないテスト
   - [x] リセットのテスト
-  - [ ] ラップ完了 → ドラフト遷移のテスト
-    > ドラフト遷移ロジック実装と同時に追加する。
-  - [ ] ドラフト → レース再開のテスト
-    > ドラフト遷移ロジック実装と同時に追加する。
-  - [ ] 壁衝突フローのテスト
-    > GameOrchestrator 経由で壁接触→ペナルティ→ワープの一連の流れを検証する。
-    > モック Input で壁方向に移動させる形でテスト可能。
-  - [ ] ドリフト → ブーストのテスト
-    > モック Input でハンドブレーキ+ステアリングを入力し、ドリフト開始→終了→ブースト適用を検証する。
-  - [ ] HEAT ブーストのテスト
-    > 壁ニアミス状態を作り出し、ゲージ蓄積→ブースト発動を検証する。
-  - [ ] 勝者決定のテスト
-    > maxLaps 完走時に winner が設定され result フェーズに遷移することを検証する。
+  - [x] ドラフトキュー初期状態のテスト
+  - [x] ドラフトタイマー初期値のテスト
+  - [x] レース中のプレイヤー移動テスト
+  - [x] エンジン音開始テスト
+  - [x] 壁衝突時のオーディオテスト
+  - 物理フロー・ドラフトフロー統合テスト → `__tests__/integration/` に分離
 - [x] 全テスト実行・パス確認
 
 ### 3-3. InputProcessor の作成 🟢
@@ -395,10 +390,7 @@
   - [x] `updateDraftTimer` の実装
   - [x] `moveCursor` の実装
   - [x] `confirmSelection` の実装
-  - [ ] CPU 自動選択ロジック
-    > **方針**: `domain/card/deck.ts` の `cpuSelectCard` は実装済み。
-    > GameOrchestrator のドラフト遷移ロジック内で、CPU プレイヤーの場合に自動呼び出しする。
-    > ドラフト遷移ロジック実装と同時に追加する。
+  - [x] CPU 自動選択ロジック（GameOrchestrator の processDraftQueue 内で cpuSelectCard を呼び出し）
 - [ ] 旧 `draft-ui-logic.ts` の段階的委譲
     > **方針**: 現在は re-export で委譲済み。ただし `mapDraftInput` / `clearDraftKeys` / `applyDraftResults` は
     > キーボード入力の具体的なマッピング（インフラ層の関心事）なので、フェーズ4-4 で Input アダプターに移行し、
@@ -584,15 +576,16 @@
   - [ ] ソロレースの完全フロー（countdown → race → result）
   - [ ] CPU 対戦の完全フロー（countdown → race → draft → race → result）
   - [ ] 2P 対戦の入力分離テスト
-- [ ] `__tests__/integration/draft-flow.test.ts` の作成
-  - [ ] カード選択 → 効果適用 → ラップ終了でクリアの完全フロー
-  - [ ] CPU 自動選択の動作
-  - [ ] タイマー切れ時の自動選択
-- [ ] `__tests__/integration/physics-flow.test.ts` の作成
-  - [ ] ドリフト → ブースト → 速度回復の連続フロー
-  - [ ] 壁接触 → ペナルティ → ワープの連続フロー
-  - [ ] HEAT 蓄積 → ブースト発動の連続フロー
-- [ ] 統合テスト全実行・パス確認
+- [x] `__tests__/integration/draft-flow.test.ts` の作成
+  - [x] カード選択 → 効果適用 → ラップ終了でクリアの完全フロー
+  - [x] CPU 自動選択の動作（スキル別傾向テスト）
+  - [x] シールドカードの反映テスト
+- [x] `__tests__/integration/physics-flow.test.ts` の作成
+  - [x] ドリフト → ブースト → 速度回復の連続フロー
+  - [x] ブーストの時間減衰テスト
+  - [x] 壁接触 → 段階的ペナルティ → ワープの連続フロー
+  - [x] HEAT 蓄積 → ブースト発動 → クールダウンの連続フロー
+- [x] 統合テスト全実行・パス確認
 
 ### 5-5. 旧テストの削除・整理 🟡
 
