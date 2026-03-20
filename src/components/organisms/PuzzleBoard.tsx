@@ -15,13 +15,13 @@ import {
 import { PuzzlePiece as PuzzlePieceType, PuzzleScore } from '../../types/puzzle';
 import PuzzlePiece from '../molecules/PuzzlePiece';
 import { formatElapsedTime } from '../../shared/utils/format';
-import { useCompletionOverlay } from '../../hooks/useCompletionOverlay';
-import { useVideoPlayback } from '../../hooks/useVideoPlayback';
+import { useCompletionOverlay } from '../../presentation/hooks/useCompletionOverlay';
+import { useVideoPlayback } from '../../presentation/hooks/useVideoPlayback';
 import { addClearHistory } from '../../utils/storage/clearHistory';
 import { extractImageName } from '../../shared/utils/image-utils';
 import ResultScreen from '../molecules/ResultScreen';
-import { useSwipe } from '../../hooks/useSwipe';
-import { useKeyboard } from '../../hooks/useKeyboard';
+import { useSwipe } from '../../presentation/hooks/useSwipe';
+import { useKeyboard } from '../../presentation/hooks/useKeyboard';
 import VideoOverlay from './VideoOverlay';
 import ConfettiOverlay from './ConfettiOverlay';
 

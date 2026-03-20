@@ -1,15 +1,15 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import PuzzleBoard from './PuzzleBoard';
-import { useCompletionOverlay } from '../../hooks/useCompletionOverlay';
-import { useVideoPlayback } from '../../hooks/useVideoPlayback';
+import { useCompletionOverlay } from '../../presentation/hooks/useCompletionOverlay';
+import { useVideoPlayback } from '../../presentation/hooks/useVideoPlayback';
 import { addClearHistory } from '../../utils/storage/clearHistory';
 import { extractImageName } from '../../shared/utils/image-utils';
 import { PuzzlePiece } from '../../types/puzzle';
 
 // モックの設定
-jest.mock('../../hooks/useCompletionOverlay');
-jest.mock('../../hooks/useVideoPlayback');
+jest.mock('../../presentation/hooks/useCompletionOverlay');
+jest.mock('../../presentation/hooks/useVideoPlayback');
 jest.mock('../../utils/storage/clearHistory');
 jest.mock('../../shared/utils/image-utils');
 

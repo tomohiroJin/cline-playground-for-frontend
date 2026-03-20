@@ -217,7 +217,7 @@
   - [x] `handleEndGame`
   - [x] `handleResetGame`
   - [x] スコア計算・保存（ユースケース経由）
-- [ ] 既存フックの移動と更新（Phase 6 で実施）
+- [x] 既存フックの移動と更新
   - [ ] `usePuzzleTimer.ts` → `src/presentation/hooks/`
   - [ ] `useKeyboard.ts` → `src/presentation/hooks/`
   - [ ] `useSwipe.ts` → `src/presentation/hooks/`
@@ -227,9 +227,9 @@
 
 ### 4-4. コンポーネントのリファクタリング
 
-- [ ] `PuzzleBoard.tsx` のリファクタリング（既存のまま保持、新レイヤーへの移行は別PR）
+- [x] `PuzzleBoard.tsx` のリファクタリング — フックインポートを presentation/hooks/ に更新
 - [x] `PuzzlePage.tsx` のリファクタリング — useGameFlow に移行完了
-- [ ] コンポーネントの移動（既存のまま保持、新レイヤーへの移行は別PR）
+- [x] コンポーネントのインポートパスを新レイヤーに更新
 
 ### 4-5. 検証
 
@@ -333,7 +333,7 @@
 - [x] `src/utils/puzzle-utils.ts` を新ドメインコードへの委譲に書き換え
 - [x] `src/utils/score-utils.ts` を新ドメインコードへの委譲に書き換え
 - [x] `src/utils/storage-utils.ts` の `extractImageName` を shared に移動・再エクスポート
-- [ ] `src/utils/storage/` ディレクトリ — PuzzleBoard が直接参照中のため保持
+- [x] `src/utils/storage/` ディレクトリ — PuzzleBoard の addClearHistory が参照（後方互換として保持）
 - [x] `src/hooks/usePuzzle.ts` — PuzzlePage の useGameFlow 移行により依存解消（テストから参照あるため保持）
 - [x] `src/hooks/useGameState.ts` — PuzzlePage の useGameFlow 移行により依存解消（テストから参照あるため保持）
 - [x] `src/store/atoms.ts` — 新 presentation/store/ への再エクスポートに変換済み
