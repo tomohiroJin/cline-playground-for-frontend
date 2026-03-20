@@ -46,9 +46,10 @@ export const createCanvasRenderer = (
     Render.kart(ctx, player);
   },
 
-  renderHud(players: readonly Player[], courseName: string, maxLaps: number, raceStart: number): void {
-    // 旧 Render にはまとめた hud がないため、個別にラップ情報等を描画
-    // フェーズ5 でリファクタリング予定。現時点では基本的な情報のみ。
+  renderHud(_players: readonly Player[], _courseName: string, _maxLaps: number, _raceStart: number): void {
+    // 現在 RacingGame.tsx が Render オブジェクトを直接呼んで HUD を描画しているため、
+    // この RendererPort 経由では呼ばれない。
+    // フェーズ5-1 で RacingGame.tsx をスリム化する際に hud-renderer.ts として実装する。
   },
 
   renderEffects(particles: readonly Particle[], sparks: readonly Spark[]): void {
@@ -63,9 +64,10 @@ export const createCanvasRenderer = (
     Render.highlightBanner(ctx, event as HighlightEvent & { displayTime: number }, colors, index);
   },
 
-  renderCountdown(elapsed: number): void {
-    // 旧 Render にはカウントダウン専用メソッドがないため no-op
-    // RacingGame.tsx 内でインライン描画されている
+  renderCountdown(_elapsed: number): void {
+    // カウントダウン描画は RacingGame.tsx でインライン実装されているため、
+    // この RendererPort 経由では呼ばれない。
+    // フェーズ5-1 で hud-renderer.ts に移行する。
   },
 
   renderResult(confetti: readonly Confetti[]): void {

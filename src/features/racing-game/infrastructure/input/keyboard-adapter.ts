@@ -51,10 +51,15 @@ const clearKeys = (keys: Record<string, boolean>, mapping: readonly string[]): v
   mapping.forEach(k => { keys[k] = false; });
 };
 
+/** Ref ライクなオブジェクト（React 非依存） */
+interface Ref<T> {
+  current: T;
+}
+
 /** キーボード入力アダプターの生成 */
 export const createKeyboardAdapter = (
-  keys: React.MutableRefObject<Record<string, boolean>>,
-  touch: React.MutableRefObject<{ L: boolean; R: boolean }>,
+  keys: Ref<Record<string, boolean>>,
+  touch: Ref<{ L: boolean; R: boolean }>,
   mode: string,
 ): InputPort => {
   const getMapping = (playerIndex: number): KeyMapping => {
