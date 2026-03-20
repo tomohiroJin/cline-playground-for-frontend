@@ -570,10 +570,11 @@
 
 ### 5-4. レイヤー横断統合テストの作成 🟢
 
-- [ ] `__tests__/integration/race-flow.test.ts` の作成
-  - [ ] ソロレースの完全フロー（countdown → race → result）
-  - [ ] CPU 対戦の完全フロー（countdown → race → draft → race → result）
-  - [ ] 2P 対戦の入力分離テスト
+- [x] `__tests__/integration/race-flow.test.ts` の作成
+  - [x] ソロレースのフェーズ遷移テスト
+  - [x] CPU 対戦の 2 プレイヤー生成・移動テスト
+  - [x] 2P 対戦の入力分離テスト
+  - [x] ゲーム状態整合性テスト（lapStart, decks）
 - [x] `__tests__/integration/draft-flow.test.ts` の作成
   - [x] カード選択 → 効果適用 → ラップ終了でクリアの完全フロー
   - [x] CPU 自動選択の動作（スキル別傾向テスト）
@@ -587,18 +588,18 @@
 
 ### 5-5. 旧テストの削除・整理 🟡
 
-- [ ] `__tests__/drift.test.ts` の削除（移行済み確認後）
-- [ ] `__tests__/heat.test.ts` の削除（移行済み確認後）
-- [ ] `__tests__/game-logic.test.ts` の削除（移行済み確認後）
-- [ ] `__tests__/track.test.ts` の削除（移行済み確認後）
-- [ ] `__tests__/wall-physics.test.ts` の削除（移行済み確認後）
-- [ ] `__tests__/course-effects.test.ts` の削除（移行済み確認後）
-- [ ] `__tests__/draft-cards.test.ts` の削除（移行済み確認後）
-- [ ] `__tests__/card-effects.test.ts` の削除（移行済み確認後）
-- [ ] `__tests__/highlight.test.ts` の削除（移行済み確認後）
-- [ ] `__tests__/utils.test.ts` の削除（移行済み確認後）
-- [ ] `__tests__/entities.test.ts` の削除（移行済み確認後）
-- [ ] 旧 `__tests__/` ディレクトリの削除
+- [x] `__tests__/drift.test.ts` の削除
+- [x] `__tests__/heat.test.ts` の削除
+- [x] `__tests__/game-logic.test.ts` の削除
+- [x] `__tests__/track.test.ts` の削除
+- [x] `__tests__/wall-physics.test.ts` の削除
+- [x] `__tests__/course-effects.test.ts` の削除
+- [x] `__tests__/draft-cards.test.ts` の削除
+- [x] `__tests__/card-effects.test.ts` の削除
+- [x] `__tests__/highlight.test.ts` の削除
+- [x] `__tests__/utils.test.ts` の削除
+- [x] `__tests__/entities.test.ts` の削除
+- [ ] 旧 `__tests__/` ディレクトリの削除（domain/ application/ integration/ helpers/ が残るため構造維持）
 
 ---
 
