@@ -1,6 +1,6 @@
 import React from 'react';
 import { PuzzleScore } from '../../types/puzzle';
-import { formatElapsedTime } from '../../utils/puzzle-utils';
+import { formatElapsedTime } from '../../shared/utils/format';
 import { ShareButton } from './ShareButton';
 import {
   ResultOverlay,

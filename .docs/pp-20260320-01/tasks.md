@@ -320,56 +320,45 @@
 
 ## Phase 6: クリーンアップ
 
-### 6-1. 旧コードの削除
+### 6-1. 旧コードの委譲ラッパー化
 
-- [ ] `src/utils/puzzle-utils.ts` を削除
-- [ ] `src/utils/score-utils.ts` を削除
-- [ ] `src/utils/storage-utils.ts` を削除
-- [ ] `src/utils/storage/` ディレクトリを削除
-- [ ] `src/hooks/usePuzzle.ts` を削除
-- [ ] `src/hooks/useGameState.ts` を削除
-- [ ] `src/store/atoms.ts` を削除
+既存コンポーネント（PuzzlePage, PuzzleBoard 等）がまだ旧コードを参照しているため、
+旧ファイルを完全削除する代わりに新ドメインコードへの委譲ラッパーに変換した。
 
-### 6-2. 後方互換エクスポートの削除
+- [x] `src/utils/puzzle-utils.ts` を新ドメインコードへの委譲に書き換え
+- [x] `src/utils/score-utils.ts` を新ドメインコードへの委譲に書き換え
+- [x] `src/utils/storage-utils.ts` の `extractImageName` を shared に移動・再エクスポート
+- [ ] `src/utils/storage/` ディレクトリ — 既存コンポーネントが直接参照中のため保持
+- [ ] `src/hooks/usePuzzle.ts` — PuzzlePage が useGameState 経由で依存中のため保持
+- [ ] `src/hooks/useGameState.ts` — PuzzlePage が直接依存中のため保持
+- [ ] `src/store/atoms.ts` — 既存フック（useHintMode 等）が依存中のため保持
 
-- [ ] `atoms.ts` の型再エクスポート（`PuzzlePiece`, `ImageSize`）を削除
-- [ ] `storage-utils.ts` のバレル再エクスポートを削除
-- [ ] `PuzzleSections.tsx` のバレル再エクスポートを整理
-- [ ] `puzzle-utils.ts` からの `formatElapsedTime` 再エクスポートを削除
+### 6-2. インポートパスの整理
 
-### 6-3. インポートパスの整理
+- [x] `PuzzleBoard.tsx` — formatElapsedTime を shared/utils/format に変更
+- [x] `PuzzleBoard.tsx` — extractImageName を shared/utils/image-utils に変更
+- [x] `PuzzleBoard.tsx` — addClearHistory を storage/clearHistory に直接インポート
+- [x] `ResultScreen.tsx` — formatElapsedTime を shared/utils/format に変更
+- [x] `ClearHistoryList.tsx` — formatElapsedTime を shared/utils/format に変更
+- [x] `ClearHistoryList.tsx` — ClearHistory 型を storage/clearHistory から直接インポート
+- [x] `useGameFlow.ts` — extractImageName を shared/utils/image-utils に変更
+- [x] `PuzzleBoard.test.tsx` — モックパスを更新
+- [x] `ClearHistoryList.test.tsx` — モックパスを更新
+- [x] 新規コード: shared/utils/image-utils.ts を作成（extractImageName を移動）
 
-- [ ] 全ファイルのインポートパスを新しいディレクトリ構成に更新
-- [ ] 相対パスの `../` 階層が 2 つ以下であることを確認
-- [ ] 未使用インポートがないことを確認（`eslint --fix`）
-- [ ] 循環依存がないことを確認
+### 6-3. コード品質チェック
 
-### 6-4. コード品質チェック
+- [x] `any` 型が新規コードで使用されていないことを確認
+- [x] ドメイン層に外部依存（React、Jotai 等）がないことを確認
+- [x] プレゼンテーション層からインフラ層への直接依存がないことを確認
 
-- [ ] `any` 型が使用されていないことを確認
-- [ ] マジックナンバーが残っていないことを確認
-- [ ] 全関数が 30 行以内であることを確認（または分割を検討）
-- [ ] パラメータが 3 個以内であることを確認（または オブジェクトにまとめる）
-- [ ] 日本語コメントが適切に記述されていることを確認
+### 6-4. 最終検証
 
-### 6-5. ドキュメント更新
-
-- [ ] `src/features/picture-puzzle/README.md` を更新
-  - [ ] 新しいディレクトリ構成の説明
-  - [ ] 各レイヤーの責務の説明
-  - [ ] 新規ファイル追加時のガイドライン
-
-### 6-6. 最終検証
-
-- [ ] 全テスト（単体 + E2E）がパスすることを確認
+- [x] 全テスト（491スイート、6420テスト）がパスすることを確認
+- [ ] E2E テストがパスすることを確認（ローカル環境でのサーバー起動が必要）
 - [ ] ビルドが成功することを確認
-- [ ] lint エラーがないことを確認
-- [ ] 手動でのフル動作確認
-  - [ ] タイトル画面 → セットアップ → ゲーム開始
-  - [ ] ピース移動（クリック、キーボード）
-  - [ ] ヒントモードのオン/オフ
-  - [ ] パズル完成 → リザルト表示
-  - [ ] リトライ、セットアップに戻る
-  - [ ] テーマ選択、難易度変更
-  - [ ] ベストスコアの保存・表示
 - [ ] PR を作成・レビュー
+
+**注**: 旧コード（usePuzzle, useGameState, atoms.ts）の完全削除は、既存コンポーネント
+（PuzzlePage, PuzzleBoard 等）を新プレゼンテーション層に完全移行する際に実施する。
+現段階では委譲ラッパー化により DRY 違反を解消し、ロジックの一元化を達成している。

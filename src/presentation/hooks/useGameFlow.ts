@@ -11,7 +11,7 @@ import { emptyPanelClicksAtom, hintUsedAtom } from '../store/ui-atoms';
 import { usePuzzleGame } from './usePuzzleGame';
 import { completePuzzleUseCase } from '../../application/use-cases/complete-puzzle';
 import { PuzzleRecordStorage, TotalClearsStorage } from '../../application/ports/storage-port';
-import { extractImageName } from '../../utils/storage-utils';
+import { extractImageName } from '../../shared/utils/image-utils';
 
 /** ゲームフロー制御フックのオプション（DI 用） */
 export interface UseGameFlowOptions {

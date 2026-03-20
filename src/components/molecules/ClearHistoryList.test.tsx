@@ -1,11 +1,11 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import ClearHistoryList from './ClearHistoryList';
-import { ClearHistory } from '../../utils/storage-utils';
+import { ClearHistory } from '../../utils/storage/clearHistory';
 import { PuzzleRecord } from '../../types/puzzle';
 
 // formatElapsedTimeをモック
-jest.mock('../../utils/puzzle-utils', () => ({
+jest.mock('../../shared/utils/format', () => ({
   formatElapsedTime: (seconds: number) => `${Math.floor(seconds / 60)}:${seconds % 60}`,
 }));
 

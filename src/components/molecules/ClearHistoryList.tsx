@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { ClearHistory } from '../../utils/storage-utils';
+import { ClearHistory } from '../../utils/storage/clearHistory';
 import { PuzzleRecord } from '../../types/puzzle';
-import { formatElapsedTime } from '../../utils/puzzle-utils';
+import { formatElapsedTime } from '../../shared/utils/format';
 import {
   HistoryContainer,
   TabRow,

@@ -14,10 +14,11 @@ import {
 } from './PuzzleBoard.styles';
 import { PuzzlePiece as PuzzlePieceType, PuzzleScore } from '../../types/puzzle';
 import PuzzlePiece from '../molecules/PuzzlePiece';
-import { formatElapsedTime } from '../../utils/puzzle-utils';
+import { formatElapsedTime } from '../../shared/utils/format';
 import { useCompletionOverlay } from '../../hooks/useCompletionOverlay';
 import { useVideoPlayback } from '../../hooks/useVideoPlayback';
-import { addClearHistory, extractImageName } from '../../utils/storage-utils';
+import { addClearHistory } from '../../utils/storage/clearHistory';
+import { extractImageName } from '../../shared/utils/image-utils';
 import ResultScreen from '../molecules/ResultScreen';
 import { useSwipe } from '../../hooks/useSwipe';
 import { useKeyboard } from '../../hooks/useKeyboard';
