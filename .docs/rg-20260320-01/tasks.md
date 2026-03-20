@@ -434,11 +434,16 @@
   - [x] `withContext` ヘルパー
   - [x] `drawText` ヘルパー
   - [x] `drawRoundedRect` ヘルパー
-- [ ] `infrastructure/renderer/track-renderer.ts` の作成（フェーズ5 で旧 renderer.ts を分割時に実施）
-- [ ] `infrastructure/renderer/kart-renderer.ts` の作成（同上）
-- [ ] `infrastructure/renderer/hud-renderer.ts` の作成（同上）
-- [ ] `infrastructure/renderer/effect-renderer.ts` の作成（同上）
-- [ ] `infrastructure/renderer/draft-renderer.ts` の作成（同上）
+- [x] `infrastructure/renderer/track-renderer.ts` の作成
+  - [x] renderBackground, renderTrack, renderStartLine, renderCheckpoints, renderCourseEffect
+- [x] `infrastructure/renderer/kart-renderer.ts` の作成
+  - [x] renderKart, renderHeatGauge, renderDriftIndicator
+- [x] `infrastructure/renderer/hud-renderer.ts` の作成
+  - [x] renderHighlightBanner, renderHud, renderCountdown, renderCpuNotification
+- [x] `infrastructure/renderer/effect-renderer.ts` の作成
+  - [x] renderParticles, renderConfetti, renderFireworks
+- [x] `infrastructure/renderer/draft-renderer.ts` の作成
+  - [x] renderDraftUI
 - [x] `infrastructure/renderer/canvas-renderer.ts` の作成
   - [x] `RendererPort` の実装（既存 Render オブジェクトへの委譲）
   - [x] Canvas コンテキスト管理
@@ -457,9 +462,9 @@
   - [x] `AudioPort` の実装（createWebAudioEngine）
   - [x] 既存 `SoundEngine` のアダプター化（SfxType → メソッドマッピング）
   - [x] 効果音メソッドの型安全化（SfxType / WallStage）
-- [ ] `infrastructure/audio/audio-effects.ts` の作成（効果音定義の分離）
-    > **方針**: 現在は sound-engine.ts が旧 SoundEngine に委譲。
-    > フェーズ5 で旧 audio.ts の効果音定義を audio-effects.ts に分離する。
+- [x] `infrastructure/audio/audio-effects.ts` の作成
+  - [x] 効果音周波数データの分離（FREQUENCIES）
+  - [x] SFX_PATTERNS 定義（各効果音のパターン）
 - [ ] 旧 `audio.ts` の段階的委譲（フェーズ5-2 で削除）
 - [x] 全テスト実行・パス確認
 
