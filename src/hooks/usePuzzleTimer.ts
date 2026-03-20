@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useAtom } from 'jotai';
-import { puzzleStartTimeAtom, puzzleElapsedTimeAtom, puzzleCompletedAtom } from '../store/atoms';
+import { puzzleStartTimeAtom, gameElapsedTimeAtom as puzzleElapsedTimeAtom } from '../presentation/store/game-atoms';
+import { puzzleCompletedAtom } from '../store/atoms';
 
 /**
  * パズルのタイマーを管理するカスタムフック

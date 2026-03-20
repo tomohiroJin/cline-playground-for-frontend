@@ -1,6 +1,6 @@
 import { useAtom } from 'jotai';
 import { useCallback } from 'react';
-import { hintModeEnabledAtom, hintUsedAtom } from '../store/atoms';
+import { hintModeEnabledAtom, hintUsedAtom } from '../presentation/store/ui-atoms';
 
 /**
  * ヒントモードの状態と操作を管理するカスタムフック

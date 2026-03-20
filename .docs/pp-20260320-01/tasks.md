@@ -195,8 +195,13 @@
   - [x] `hintUsedAtom`
   - [x] `debugModeAtom`
   - [x] `emptyPanelClicksAtom`
-- [ ] 旧 `src/store/atoms.ts` からの移行（Phase 6 で実施）
-  - [ ] 各コンポーネント・フックのインポート先を更新
+- [x] 旧 `src/store/atoms.ts` からの移行
+  - [x] atoms.ts を新 presentation/store/ への再エクスポートに変換
+  - [x] useHintMode.ts → presentation/store/ui-atoms からインポート
+  - [x] usePuzzleTimer.ts → presentation/store/game-atoms からインポート
+  - [x] useCompletionOverlay.ts → presentation/store/ui-atoms からインポート
+  - [x] useVideoPlayback.ts → presentation/store/ui-atoms からインポート
+  - [x] useGameState.ts → presentation/store/ui-atoms からインポート
 
 ### 4-3. フックのリファクタリング
 
@@ -328,10 +333,10 @@
 - [x] `src/utils/puzzle-utils.ts` を新ドメインコードへの委譲に書き換え
 - [x] `src/utils/score-utils.ts` を新ドメインコードへの委譲に書き換え
 - [x] `src/utils/storage-utils.ts` の `extractImageName` を shared に移動・再エクスポート
-- [ ] `src/utils/storage/` ディレクトリ — 既存コンポーネントが直接参照中のため保持
+- [ ] `src/utils/storage/` ディレクトリ — PuzzleBoard が直接参照中のため保持
 - [ ] `src/hooks/usePuzzle.ts` — PuzzlePage が useGameState 経由で依存中のため保持
 - [ ] `src/hooks/useGameState.ts` — PuzzlePage が直接依存中のため保持
-- [ ] `src/store/atoms.ts` — 既存フック（useHintMode 等）が依存中のため保持
+- [x] `src/store/atoms.ts` — 新 presentation/store/ への再エクスポートに変換済み
 
 ### 6-2. インポートパスの整理
 

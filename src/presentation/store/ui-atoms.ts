@@ -7,13 +7,13 @@ import { atom } from 'jotai';
 export const hintModeEnabledAtom = atom<boolean>(false);
 
 /** 完成オーバーレイ表示フラグ */
-export const overlayVisibleAtom = atom<boolean>(true);
+export const completionOverlayVisibleAtom = atom<boolean>(true);
 
-/** 動画再生状態 */
-export const videoPlaybackAtom = atom<{ enabled: boolean; url: string | null }>({
-  enabled: false,
-  url: null,
-});
+/** 動画再生モード有効フラグ */
+export const videoPlaybackEnabledAtom = atom<boolean>(false);
+
+/** 再生する動画のURL */
+export const videoUrlAtom = atom<string | null>(null);
 
 /** ヒント使用フラグ */
 export const hintUsedAtom = atom<boolean>(false);

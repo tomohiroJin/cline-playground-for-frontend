@@ -1,6 +1,6 @@
 import { useAtom } from 'jotai';
 import { useCallback } from 'react';
-import { completionOverlayVisibleAtom } from '../store/atoms';
+import { completionOverlayVisibleAtom } from '../presentation/store/ui-atoms';
 
 /**
  * 完成オーバーレイの表示/非表示を管理するカスタムフック

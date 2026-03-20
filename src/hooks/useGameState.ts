@@ -3,7 +3,7 @@ import { useAtom } from 'jotai';
 import { usePuzzle } from './usePuzzle';
 import { usePuzzleTimer } from './usePuzzleTimer';
 import { useHintMode } from './useHintMode';
-import { hintUsedAtom } from '../store/atoms';
+import { hintUsedAtom } from '../presentation/store/ui-atoms';
 import { calculateScore } from '../utils/score-utils';
 import { PuzzleScore } from '../types/puzzle';
 import { recordScore as recordPuzzleScore, extractImageName, incrementTotalClears } from '../utils/storage-utils';

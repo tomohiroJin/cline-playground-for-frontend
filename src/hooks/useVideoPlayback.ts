@@ -1,6 +1,6 @@
 import { useAtom } from 'jotai';
 import { useCallback } from 'react';
-import { videoPlaybackEnabledAtom, videoUrlAtom } from '../store/atoms';
+import { videoPlaybackEnabledAtom, videoUrlAtom } from '../presentation/store/ui-atoms';
 import { themes } from '../data/themes';
 
 /** 動画対応画像のファイル名（拡張子なし）セット — themes.ts から導出 */
