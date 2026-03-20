@@ -7,6 +7,9 @@ import { assertPositive } from '../shared/assertions';
 /** レアリティのソート順 */
 const RARITY_ORDER: Record<CardRarity, number> = { R: 1, SR: 2, SSR: 3 };
 
+/** プールの最小サイズ（これ未満になったら全カードで再生成） */
+const MIN_POOL_SIZE = 3;
+
 /** レアリティごとのドロー確率 */
 const RARITY_PROB: Record<CardRarity, number> = {
   R: 0.6,
@@ -72,7 +75,7 @@ export const selectCard = (deck: DeckState, cardId: string): DeckState => {
   // 残り手札はプールに戻す
   const remaining = deck.hand.filter(c => c.id !== cardId);
   const newPool = [...deck.pool, ...remaining];
-  const pool = newPool.length < 3 ? shuffle([...ALL_CARDS]) : newPool;
+  const pool = newPool.length < MIN_POOL_SIZE ? shuffle([...ALL_CARDS]) : newPool;
 
   // ワイルドカード処理
   let effects: CardEffect[];

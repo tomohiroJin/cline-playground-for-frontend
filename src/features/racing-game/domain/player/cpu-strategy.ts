@@ -2,7 +2,7 @@
 
 import type { Player } from './types';
 import type { Point } from '../shared/types';
-import { DRIFT } from './constants';
+import { DRIFT, PLAYER } from './constants';
 import { normalizeAngle, randomRange } from '../shared/math-utils';
 import { getTrackInfo } from '../track/track';
 
@@ -10,7 +10,6 @@ import { getTrackInfo } from '../track/track';
 interface CpuParams {
   readonly skill: number;
   readonly miss: number;
-  readonly turnRate: number;
 }
 
 /** CPU AI の思考インターフェース */
@@ -26,9 +25,9 @@ export type CpuDifficulty = 'easy' | 'normal' | 'hard';
 
 /** 難易度ごとのパラメータ */
 const DIFFICULTY_PARAMS: Record<CpuDifficulty, CpuParams> = {
-  easy: { skill: 0.25, miss: 0.12, turnRate: 0.065 },
-  normal: { skill: 0.5, miss: 0.05, turnRate: 0.065 },
-  hard: { skill: 1.0, miss: 0, turnRate: 0.065 },
+  easy: { skill: 0.25, miss: 0.12 },
+  normal: { skill: 0.5, miss: 0.05 },
+  hard: { skill: 1.0, miss: 0 },
 };
 
 /** CPU Strategy の生成 */
@@ -44,7 +43,7 @@ export const createCpuStrategy = (difficulty: CpuDifficulty): CpuStrategy => {
       const target = info.dist / trackWidth > 0.6 ? toCenter : toNext;
       let diff = normalizeAngle(target - player.angle);
       if (Math.random() < params.miss) diff += randomRange(-0.4, 0.4);
-      const rate = params.turnRate * params.skill;
+      const rate = PLAYER.TURN_RATE * params.skill;
       return diff > 0.03 ? rate : diff < -0.03 ? -rate : 0;
     },
 

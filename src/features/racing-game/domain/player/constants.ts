@@ -13,6 +13,12 @@ export const DRIFT = Object.freeze({
   BOOST_DURATION: 1.0,
 });
 
+/** プレイヤー操作定数 */
+export const PLAYER = Object.freeze({
+  TURN_RATE: 0.065,
+  SPEED_RECOVERY: 0.02,
+});
+
 /** HEAT（ニアミスボーナス）定数 */
 export const HEAT = Object.freeze({
   WALL_THRESHOLD: 25,
