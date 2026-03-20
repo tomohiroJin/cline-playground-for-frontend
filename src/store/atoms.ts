@@ -27,8 +27,11 @@ export {
   hintUsedAtom,
 } from '../presentation/store/ui-atoms';
 
-// パズルボード状態 — 旧フック互換
-// 旧 usePuzzle.ts が個別 atom を使っているため、互換用に残す
+// パズルボード状態 — 旧 usePuzzle.ts 専用
+// 注意: 以下の atom は旧 usePuzzle.ts でのみ使用される。
+// 新コード（usePuzzleGame.ts）は puzzleBoardStateAtom を使うため、
+// 旧コードと新コードで状態は同期しない（意図的な分離）。
+// PuzzlePage.tsx を useGameFlow に移行後に削除可能。
 import { atom } from 'jotai';
 import { GridPosition } from '../types/geometry';
 import type { PuzzlePiece } from '../types/puzzle';
