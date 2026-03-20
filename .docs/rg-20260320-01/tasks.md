@@ -310,18 +310,18 @@
 
 ### 3-1. ポートインターフェースの定義 🔴
 
-- [ ] `application/ports/renderer-port.ts` の作成
-  - [ ] `RendererPort` インターフェース定義
-- [ ] `application/ports/audio-port.ts` の作成
-  - [ ] `AudioPort` インターフェース定義
-  - [ ] `SfxType` 型定義
-- [ ] `application/ports/storage-port.ts` の作成
-  - [ ] `StoragePort` インターフェース定義
-- [ ] `application/ports/input-port.ts` の作成
-  - [ ] `InputPort` インターフェース定義
-  - [ ] `InputState` 型定義
-  - [ ] `DraftInput` 型定義
-- [ ] TypeScript型チェック実行
+- [x] `application/ports/renderer-port.ts` の作成
+  - [x] `RendererPort` インターフェース定義
+- [x] `application/ports/audio-port.ts` の作成
+  - [x] `AudioPort` インターフェース定義
+  - [x] `SfxType` 型定義
+- [x] `application/ports/storage-port.ts` の作成
+  - [x] `StoragePort` インターフェース定義
+- [x] `application/ports/input-port.ts` の作成
+  - [x] `InputPort` インターフェース定義
+  - [x] `InputState` 型定義
+  - [x] `DraftInput` 型定義
+- [x] TypeScript型チェック実行
 
 ### 3-2. GameOrchestrator の作成 🔴
 
@@ -336,12 +336,12 @@
   - [ ] レース → リザルト遷移ロジック
   - [ ] レース → ドラフト遷移ロジック
 - [ ] `RacingGame.tsx` から game-loop ロジックの段階的委譲
-- [ ] テスト用モック Port の作成
-  - [ ] `__tests__/helpers/mock-ports.ts` の作成
-  - [ ] `createMockRenderer` の実装（呼び出し記録）
-  - [ ] `createMockAudio` の実装（呼び出し記録）
-  - [ ] `createMockStorage` の実装（インメモリ）
-  - [ ] `createMockInput` の実装（プログラマブル入力）
+- [x] テスト用モック Port の作成
+  - [x] `__tests__/helpers/mock-ports.ts` の作成
+  - [x] `createMockRenderer` の実装（呼び出し記録）
+  - [x] `createMockAudio` の実装（呼び出し記録）
+  - [x] `createMockStorage` の実装（インメモリ）
+  - [x] `createMockInput` の実装（プログラマブル入力）
 - [ ] 統合テスト作成
   - [ ] `application/game-orchestrator.test.ts`
   - [ ] カウントダウン → レース遷移のテスト
@@ -360,46 +360,44 @@
 
 ### 3-3. InputProcessor の作成 🟢
 
-- [ ] `application/input-processor.ts` の作成
-  - [ ] `PlayerCommand` 型定義
-  - [ ] `processInput` の実装
-  - [ ] `collectPlayerInputs` の移行（`game-update.ts` から）
-  - [ ] CPU AI の Strategy パターン統合
-- [ ] テスト作成
-  - [ ] `application/input-processor.test.ts`
-  - [ ] 各入力パターンのテスト
-  - [ ] CPU AI 入力のテスト
-- [ ] 全テスト実行・パス確認
+- [x] `application/input-processor.ts` の作成
+  - [x] `PlayerCommand` 型定義
+  - [x] `processInput` の実装
+  - [x] CPU AI の Strategy パターン統合
+- [x] テスト作成
+  - [x] `application/input-processor.test.ts`（7テスト）
+  - [x] 各入力パターンのテスト（左/右/なし/ハンドブレーキ）
+  - [x] CPU AI 入力のテスト（Strategy 委譲、ドリフト推奨）
+  - [x] カード効果（turnMultiplier）のテスト
+- [x] 全テスト実行・パス確認
 
 ### 3-4. DraftProcessor の作成 🟢
 
-- [ ] `application/draft-processor.ts` の作成
-  - [ ] `DraftProcessorState` 型定義
-  - [ ] `startDraft` の実装
-  - [ ] `updateDraftTimer` の実装
-  - [ ] `moveCursor` の実装
-  - [ ] `confirmSelection` の実装
-  - [ ] CPU 自動選択ロジック
-- [ ] 旧 `draft-ui-logic.ts` の段階的委譲
-- [ ] テスト作成
-  - [ ] `application/draft-processor.test.ts`
-  - [ ] タイマー管理のテスト
-  - [ ] カード選択フローのテスト
-- [ ] 全テスト実行・パス確認
+- [x] `application/draft-processor.ts` の作成
+  - [x] `DraftProcessorState` 型定義
+  - [x] `startDraft` の実装
+  - [x] `updateDraftTimer` の実装
+  - [x] `moveCursor` の実装
+  - [x] `confirmSelection` の実装
+- [x] テスト作成
+  - [x] `application/draft-processor.test.ts`（7テスト）
+  - [x] タイマー管理のテスト
+  - [x] カード選択フローのテスト
+- [x] 全テスト実行・パス確認
 
 ### 3-5. GameEventBus の作成 🟢
 
-- [ ] `application/game-event-bus.ts` の作成
-  - [ ] `GameEventBus` インターフェース定義
-  - [ ] `createEventBus` の実装
-  - [ ] Subscribe/Publish メカニズム
-  - [ ] イベントリスナーの解除機能
-- [ ] テスト作成
-  - [ ] `application/game-event-bus.test.ts`
-  - [ ] Subscribe/Publish のテスト
-  - [ ] 複数リスナーのテスト
-  - [ ] リスナー解除のテスト
-- [ ] 全テスト実行・パス確認
+- [x] `application/game-event-bus.ts` の作成
+  - [x] `GameEventBus` インターフェース定義
+  - [x] `createEventBus` の実装
+  - [x] Subscribe/Publish メカニズム
+  - [x] イベントリスナーの解除機能
+- [x] テスト作成
+  - [x] `application/game-event-bus.test.ts`（5テスト）
+  - [x] Subscribe/Publish のテスト
+  - [x] 複数リスナーのテスト
+  - [x] リスナー解除のテスト
+- [x] 全テスト実行・パス確認
 
 ### フェーズ3 完了後の品質ゲート
 
