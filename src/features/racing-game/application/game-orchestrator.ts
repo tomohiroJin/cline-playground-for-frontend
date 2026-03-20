@@ -16,7 +16,7 @@ import type { CpuStrategy } from '../domain/player/cpu-strategy';
 import type { StartLine } from '../domain/track/types';
 import type { CourseEffect } from '../domain/track/types';
 import { createPlayers } from '../domain/player/player-factory';
-import { createCpuStrategy } from '../domain/player/cpu-strategy';
+import { createCpuStrategy, getCpuSkill } from '../domain/player/cpu-strategy';
 import { movePlayer } from '../domain/player/player';
 import { processInput } from './input-processor';
 import { getTrackInfo } from '../domain/track/track';
@@ -32,6 +32,13 @@ import { createTracker } from '../domain/highlight/highlight';
 import { detectDriftBonus, detectHeatBoost, detectNearMiss, detectOvertake, detectFastestLap } from '../domain/highlight/event-detector';
 import { RACE_TIMING, GAME } from '../domain/race/constants';
 import { distance } from '../domain/shared/math-utils';
+
+/** カード効果をプレイヤーに適用する共通ヘルパー */
+const applyCardEffectsToPlayer = (player: Player, deck: DeckState): Player => ({
+  ...player,
+  activeCards: deck.active,
+  shieldCount: player.shieldCount + deck.active.reduce((acc, e) => acc + (e.shieldCount ?? 0), 0),
+});
 
 /** オーケストレーター設定 */
 export interface GameOrchestratorConfig {
@@ -290,15 +297,8 @@ const processDraftQueue = (
       state.draftQueue.shift();
       // CPU: 3 枚ドローして自動選択
       state.decks[trigger.playerIndex] = drawCards(state.decks[trigger.playerIndex], 3);
-      const cpuSkill = config.raceConfig.cpuDifficulty === 'hard' ? 1.0 : config.raceConfig.cpuDifficulty === 'normal' ? 0.5 : 0.25;
-      state.decks[trigger.playerIndex] = cpuSelectCard(state.decks[trigger.playerIndex], cpuSkill);
-      // カード効果をプレイヤーに適用
-      const deck = state.decks[trigger.playerIndex];
-      state.players[trigger.playerIndex] = {
-        ...state.players[trigger.playerIndex],
-        activeCards: deck.active,
-        shieldCount: state.players[trigger.playerIndex].shieldCount + deck.active.reduce((acc, e) => acc + (e.shieldCount ?? 0), 0),
-      };
+      state.decks[trigger.playerIndex] = cpuSelectCard(state.decks[trigger.playerIndex], getCpuSkill(config.raceConfig.cpuDifficulty));
+      state.players[trigger.playerIndex] = applyCardEffectsToPlayer(state.players[trigger.playerIndex], state.decks[trigger.playerIndex]);
     } else {
       // 人間プレイヤー: ドラフトフェーズに遷移
       const next = state.draftQueue.shift()!;
@@ -334,12 +334,7 @@ const updateDraftPhase = (
         const cardId = deck.hand[Math.min(state.draftSelectedIndex, deck.hand.length - 1)]?.id;
         if (cardId) {
           state.decks[pi] = selectCard(state.decks[pi], cardId);
-          const newDeck = state.decks[pi];
-          state.players[pi] = {
-            ...state.players[pi],
-            activeCards: newDeck.active,
-            shieldCount: state.players[pi].shieldCount + newDeck.active.reduce((acc, e) => acc + (e.shieldCount ?? 0), 0),
-          };
+          state.players[pi] = applyCardEffectsToPlayer(state.players[pi], state.decks[pi]);
         }
       }
     }

@@ -30,6 +30,10 @@ const DIFFICULTY_PARAMS: Record<CpuDifficulty, CpuParams> = {
   hard: { skill: 1.0, miss: 0 },
 };
 
+/** 難易度から skill 値を取得 */
+export const getCpuSkill = (difficulty: CpuDifficulty): number =>
+  DIFFICULTY_PARAMS[difficulty].skill;
+
 /** CPU Strategy の生成 */
 export const createCpuStrategy = (difficulty: CpuDifficulty): CpuStrategy => {
   const params = DIFFICULTY_PARAMS[difficulty];
