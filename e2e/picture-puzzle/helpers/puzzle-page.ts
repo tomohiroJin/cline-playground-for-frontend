@@ -16,10 +16,16 @@ export class PuzzlePage {
 
   /** パズルページに遷移する */
   async navigate(): Promise<void> {
-    await this.page.goto('/picture-puzzle', {
+    await this.page.goto('/puzzle', {
       waitUntil: 'domcontentloaded',
       timeout: 90_000,
     });
+    // 注意事項モーダルが表示される場合は OK をクリック
+    const okButton = this.page.getByRole('dialog').getByText('OK');
+    const isNoticeVisible = await okButton.isVisible({ timeout: 5_000 }).catch(() => false);
+    if (isNoticeVisible) {
+      await okButton.click();
+    }
     await expect(
       this.page.getByText('ピクチャーパズル').first()
     ).toBeVisible({ timeout: 30_000 });
@@ -37,8 +43,8 @@ export class PuzzlePage {
   /** 「はじめる」をクリックしてセットアップ画面に進む */
   async startFromTitle(): Promise<void> {
     await this.page.getByText('はじめる').click();
-    // セットアップ画面の要素が表示されるまで待機
-    await expect(this.page.getByText('パズルを開始')).toBeVisible({ timeout: 5_000 });
+    // セットアップ画面のボタンが表示されるまで待機
+    await expect(this.startPuzzleButton).toBeVisible({ timeout: 5_000 });
   }
 
   /** デバッグモードを有効化する */
@@ -52,9 +58,14 @@ export class PuzzlePage {
 
   /* ========== セットアップ画面 ========== */
 
+  /** 「パズルを開始」ボタンのロケーター */
+  private get startPuzzleButton() {
+    return this.page.getByRole('button', { name: 'パズルを開始' });
+  }
+
   /** セットアップ画面が表示されているか確認する */
   async expectSetupScreen(): Promise<void> {
-    await expect(this.page.getByText('パズルを開始')).toBeVisible();
+    await expect(this.startPuzzleButton).toBeVisible();
   }
 
   /** テーマの最初の画像を選択する */
@@ -62,19 +73,20 @@ export class PuzzlePage {
     const images = this.page.locator('img[alt]');
     await images.first().click({ timeout: 10_000 });
     // 画像選択後に難易度セレクターが有効化されるまで待機
-    await expect(this.page.getByText('パズルを開始')).toBeVisible();
+    await expect(this.startPuzzleButton).toBeVisible();
   }
 
   /** 難易度（分割数）を選択する */
   async selectDifficulty(division: number): Promise<void> {
-    await this.page.getByText(`${division}×${division}`, { exact: false }).click();
+    const select = this.page.getByRole('combobox', { name: '難易度を選択' });
+    await select.selectOption(String(division));
   }
 
   /** 「パズルを開始」をクリックしてゲームを開始する */
   async clickStartPuzzle(): Promise<void> {
-    await this.page.getByText('パズルを開始').click();
+    await this.startPuzzleButton.click();
     // ゲーム画面のステータスバーが表示されるまで待機
-    await expect(this.page.getByText(/⏱/)).toBeVisible({ timeout: 10_000 });
+    await expect(this.statusTimer).toBeVisible({ timeout: 10_000 });
   }
 
   /** セットアップから画像選択 → ゲーム開始まで一括操作する */
@@ -87,18 +99,27 @@ export class PuzzlePage {
 
   /* ========== ゲーム画面 ========== */
 
+  /** ステータスバーのタイマー表示ロケーター */
+  private get statusTimer() {
+    return this.page.getByText(/⏱/).first();
+  }
+
   /** ゲーム画面が表示されているか確認する */
   async expectGameScreen(): Promise<void> {
-    await expect(this.page.getByText(/⏱/)).toBeVisible();
-    await expect(this.page.getByText(/👣/)).toBeVisible();
-    await expect(this.page.getByText(/📊/)).toBeVisible();
-    await expect(this.page.getByText('ヒントを表示')).toBeVisible();
+    await expect(this.statusTimer).toBeVisible();
+    await expect(this.page.getByText(/👣/).first()).toBeVisible();
+    await expect(this.page.getByText(/📊/).first()).toBeVisible();
+    await expect(this.hintButton).toBeVisible();
+  }
+
+  /** ヒントボタンのロケーター */
+  private get hintButton() {
+    return this.page.getByRole('button', { name: /ヒントを(表示|隠す)/ });
   }
 
   /** ヒントボタンをクリックする */
   async toggleHint(): Promise<void> {
-    const hintButton = this.page.getByText(/ヒントを(表示|隠す)/);
-    await hintButton.click();
+    await this.hintButton.click();
   }
 
   /** ヒント画像が表示されているか確認する */
@@ -127,7 +148,7 @@ export class PuzzlePage {
 
   /** 手数を取得する */
   async getMoveCount(): Promise<string> {
-    const statusText = await this.page.getByText(/👣/).textContent();
+    const statusText = await this.page.getByText(/👣/).first().textContent();
     return statusText ?? '0';
   }
 
@@ -141,9 +162,9 @@ export class PuzzlePage {
 
   /** 「ゲームを終了して設定に戻る」をクリックする */
   async endGame(): Promise<void> {
-    await this.page.getByText(/設定に戻る/).click();
+    await this.page.getByRole('button', { name: /設定に戻る/ }).first().click();
     // セットアップ画面に戻るまで待機
-    await expect(this.page.getByText('パズルを開始')).toBeVisible({ timeout: 5_000 });
+    await expect(this.startPuzzleButton).toBeVisible({ timeout: 5_000 });
   }
 
   /* ========== リザルト画面 ========== */
@@ -157,7 +178,7 @@ export class PuzzlePage {
   async clickRetry(): Promise<void> {
     await this.page.getByText('もう一度').click({ timeout: 5_000 });
     // ゲーム画面に戻るまで待機
-    await expect(this.page.getByText(/⏱/)).toBeVisible({ timeout: 10_000 });
+    await expect(this.statusTimer).toBeVisible({ timeout: 10_000 });
   }
 
   /* ========== ユーティリティ ========== */

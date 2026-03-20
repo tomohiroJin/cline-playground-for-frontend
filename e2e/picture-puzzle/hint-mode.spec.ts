@@ -12,7 +12,8 @@ test.describe('ヒントモード', () => {
   test.beforeEach(async ({ page }) => {
     puzzlePage = new PuzzlePage(page);
     await puzzlePage.navigate();
-    await puzzlePage.setupAndStartGame(2);
+    // 3×3 を使用（2×2 はシャッフル後に即完成する確率があり、完成状態ではヒント非表示）
+    await puzzlePage.setupAndStartGame(3);
   });
 
   test('ヒント表示/非表示の切り替え', async () => {
@@ -27,13 +28,13 @@ test.describe('ヒントモード', () => {
 
     // Assert: ヒント画像が表示される
     await puzzlePage.expectHintVisible();
-    await expect(puzzlePage.page.getByText('ヒントを隠す')).toBeVisible();
+    await expect(puzzlePage.page.getByRole('button', { name: 'ヒントを隠す' })).toBeVisible();
 
     // Act: ヒントを非表示
     await puzzlePage.toggleHint();
 
     // Assert: ヒント画像が非表示になる
     await puzzlePage.expectHintHidden();
-    await expect(puzzlePage.page.getByText('ヒントを表示')).toBeVisible();
+    await expect(puzzlePage.page.getByRole('button', { name: 'ヒントを表示' })).toBeVisible();
   });
 });

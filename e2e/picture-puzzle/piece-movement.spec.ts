@@ -40,6 +40,6 @@ test.describe('ピース移動', () => {
     await puzzlePage.clickPieceAt(1, 0, 2);
 
     // Assert: ステータスバーが引き続き表示されている
-    await expect(puzzlePage.page.getByText(/⏱/)).toBeVisible();
+    await expect(puzzlePage.page.getByText(/⏱/).first()).toBeVisible();
   });
 });

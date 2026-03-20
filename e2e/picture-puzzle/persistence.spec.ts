@@ -63,7 +63,7 @@ test.describe('データ永続化', () => {
 
     // Assert: localStorage にクリア履歴が保存されている
     const history = await puzzlePage.page.evaluate(() => {
-      const data = localStorage.getItem('clearHistory');
+      const data = localStorage.getItem('puzzle_clear_history');
       return data ? JSON.parse(data) : [];
     });
     expect(history.length).toBeGreaterThan(0);

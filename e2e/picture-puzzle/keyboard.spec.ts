@@ -12,7 +12,8 @@ test.describe('キーボード操作', () => {
   test.beforeEach(async ({ page }) => {
     puzzlePage = new PuzzlePage(page);
     await puzzlePage.navigate();
-    await puzzlePage.setupAndStartGame(2);
+    // 3×3 を使用（2×2 はシャッフル後に即完成する確率があり、ヒントや操作テストが不安定）
+    await puzzlePage.setupAndStartGame(3);
     await puzzlePage.expectGameScreen();
   });
 
@@ -24,7 +25,7 @@ test.describe('キーボード操作', () => {
     await puzzlePage.page.keyboard.press('ArrowRight');
 
     // Assert: ステータスバーが引き続き表示されている（エラーなし）
-    await expect(puzzlePage.page.getByText(/⏱/)).toBeVisible();
+    await expect(puzzlePage.page.getByText(/⏱/).first()).toBeVisible();
   });
 
   test('WASD キーでピースが移動する', async () => {
@@ -35,7 +36,7 @@ test.describe('キーボード操作', () => {
     await puzzlePage.page.keyboard.press('d');
 
     // Assert: ステータスバーが引き続き表示されている（エラーなし）
-    await expect(puzzlePage.page.getByText(/⏱/)).toBeVisible();
+    await expect(puzzlePage.page.getByText(/⏱/).first()).toBeVisible();
   });
 
   test('H キーでヒントが切り替わる', async () => {
