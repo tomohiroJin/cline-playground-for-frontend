@@ -218,12 +218,12 @@
   - [x] `handleResetGame`
   - [x] スコア計算・保存（ユースケース経由）
 - [x] 既存フックの移動と更新
-  - [ ] `usePuzzleTimer.ts` → `src/presentation/hooks/`
-  - [ ] `useKeyboard.ts` → `src/presentation/hooks/`
-  - [ ] `useSwipe.ts` → `src/presentation/hooks/`
-  - [ ] `useHintMode.ts` → `src/presentation/hooks/`
-  - [ ] `useCompletionOverlay.ts` → `src/presentation/hooks/`
-  - [ ] `useVideoPlayback.ts` → `src/presentation/hooks/`
+  - [x] `usePuzzleTimer.ts` → `src/presentation/hooks/`
+  - [x] `useKeyboard.ts` → `src/presentation/hooks/`
+  - [x] `useSwipe.ts` → `src/presentation/hooks/`
+  - [x] `useHintMode.ts` → `src/presentation/hooks/`
+  - [x] `useCompletionOverlay.ts` → `src/presentation/hooks/`
+  - [x] `useVideoPlayback.ts` → `src/presentation/hooks/`
 
 ### 4-4. コンポーネントのリファクタリング
 
