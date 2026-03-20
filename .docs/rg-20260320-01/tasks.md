@@ -4,7 +4,7 @@
 > 作成日: 2026-03-20
 > 関連計画書: RG-20260320-01-PLAN
 > 関連仕様書: RG-20260320-01-SPEC
-> ステータス: フェーズ2 完了（2-6 定数分散配置を除く）
+> ステータス: フェーズ2 完了
 
 ---
 
@@ -79,7 +79,7 @@
   - [x] `GamePhase` 型
   - [x] `GameMode` 型
   - [x] `RaceConfig` 型
-  - [ ] `RaceState` 型（フェーズ2-3 で実装）
+  - [x] `RaceState` 型
 - [x] `domain/track/types.ts` の作成
   - [x] `TrackInfo` 型
   - [x] `StartLine` 型
@@ -154,10 +154,10 @@
   - [x] `createHeatState` の実装
   - [x] `updateHeat` の実装（DbC アサーション付き）
   - [x] `getHeatBoost` の実装
-- [ ] `domain/player/player.ts` の作成（フェーズ3で GameOrchestrator と共に実装）
-  - [ ] `movePlayer` の実装（`game-logic.ts` から抽出）
-  - [ ] 副作用の完全除去（SoundEngine 呼び出しを排除）
-  - [ ] `MoveResult` 型の導入
+- [x] `domain/player/player.ts` の作成
+  - [x] `movePlayer` の実装（`game-logic.ts` から抽出）
+  - [x] 副作用の完全除去（Config 依存を引数注入に変更）
+  - [x] `MoveResult` 型の導入
 - [x] `domain/player/player-factory.ts` の作成
   - [x] `createPlayer` の実装
   - [x] `createPlayers` の実装（モード別）
@@ -169,7 +169,7 @@
 - [x] テスト移行
   - [x] `drift.test.ts` → `domain/player/drift.test.ts`
   - [x] `heat.test.ts` → `domain/player/heat.test.ts`
-  - [ ] `game-logic.test.ts` の Player 関連テスト → `domain/player/player.test.ts`
+  - [x] `game-logic.test.ts` の Player 関連テスト → `domain/player/player.test.ts`（9テスト）
   - [x] CPU AI テスト → `domain/player/cpu-strategy.test.ts`
   - [x] テストの振る舞いベース化
   - [x] テスト用ファクトリの作成（`__tests__/helpers/test-factories.ts`）
@@ -194,8 +194,8 @@
   - [x] `getCourseEffect` の実装
   - [x] `getSegmentFriction` の実装
   - [x] `getSegmentSpeedModifier` の実装
-- [ ] `domain/track/course.ts` の作成（コースデータ移行は2-6で実施）
-  - [ ] コースデータの定義（`constants.ts` から移行）
+- [x] `domain/track/course.ts` の作成
+  - [x] コースデータの定義（`constants.ts` から移行）
 - [x] 旧 `track.ts` / `wall-physics.ts` / `course-effects.ts` を re-export に変更
 - [x] テスト移行（新ドメインモジュールの直接テスト）
   - [x] `domain/track/track.test.ts`（新規作成）
@@ -271,35 +271,35 @@
 
 ### 2-6. 定数の分散配置 🟡
 
-- [ ] `constants.ts` の各定数を対応するドメインへ移行
-  - [ ] `Config.game` → 各ドメインの `constants.ts`（一部完了: turnRate, speedRecovery → PLAYER 定数）
-  - [ ] `Config.canvas` → `infrastructure/renderer/` の定数
-  - [ ] `Config.audio` → `infrastructure/audio/` の定数
-  - [ ] `Config.timing` → `domain/race/constants.ts`（一部完了: RACE_TIMING）
-  - [ ] `Colors` → `infrastructure/renderer/` の定数
-  - [ ] `Options` → `presentation/` の定数
-  - [ ] `Courses` → `domain/track/course.ts`
+- [x] `constants.ts` の各定数を対応するドメインへ移行
+  - [x] `Config.game` → `domain/race/constants.ts`（GAME: TRACK_WIDTH, COLLISION_DIST, CHECKPOINT_RADIUS）+ `domain/player/constants.ts`（PLAYER）
+  - [x] `Config.canvas` → `infrastructure/renderer/constants.ts`（CANVAS）
+  - [x] `Config.audio` → `infrastructure/audio/constants.ts`（AUDIO）
+  - [x] `Config.timing` → `domain/race/constants.ts`（RACE_TIMING）
+  - [x] `Colors` → `infrastructure/renderer/constants.ts`（COLORS）
+  - [x] `Options` → `presentation/constants.ts`（OPTIONS）
+  - [x] `Courses` → `domain/track/course.ts`（COURSES）
   - [x] `DRIFT` → `domain/player/constants.ts`
   - [x] `HEAT` → `domain/player/constants.ts`
   - [x] `WALL` → `domain/track/constants.ts`
   - [x] `HIGHLIGHT` → `domain/highlight/constants.ts`
-- [ ] 旧 `constants.ts` を re-export に変更
-- [ ] 全参照先のインポートパス更新
-- [ ] 全テスト実行・パス確認
+- [x] 旧 `constants.ts` を re-export に変更
+- [x] 全参照先のインポートパス更新（旧 Config 互換オブジェクトを維持）
+- [x] 全テスト実行・パス確認
 
 ### 2-7. ドメインイベントの定義 🟢
 
 - [x] `domain/events.ts` の作成
   - [x] `DomainEvent` ユニオン型の定義
   - [x] 各イベント型の定義（lap_completed, collision, drift_start 等）
-- [ ] テスト作成（型レベルのテスト）
+- [x] テスト作成（型レベルのテスト: `__tests__/domain/events.test.ts`）
 
 ### フェーズ2 完了後の品質ゲート
 
 - [x] ドメイン層が外部依存ゼロであることの確認（import 検証）
 - [x] `npm run typecheck` パス
 - [x] `npm run lint` パス（domain/ 対象）
-- [x] `npm test` 全パス（27スイート、317テスト）
+- [x] `npm test` 全パス（29スイート、328テスト）
 - [ ] スモークテスト全パス（1-5 保留）
 - [ ] `npm run build` 成功
 - [ ] ドメイン層テストカバレッジ 90% 以上

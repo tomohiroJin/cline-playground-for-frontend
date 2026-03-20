@@ -11,7 +11,7 @@ export type { TrackInfo, StartLine, Course, CourseEffect } from './domain/track/
 export type { DriftState, HeatState, Player } from './domain/player/types';
 
 // Race ドメイン型
-export type { GamePhase, GameMode, RaceConfig, GameResults } from './domain/race/types';
+export type { GamePhase, GameMode, RaceConfig, RaceState, GameResults } from './domain/race/types';
 
 // Card ドメイン型
 export type { CardCategory, CardRarity, CardEffect, Card, DeckState } from './domain/card/types';

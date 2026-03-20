@@ -6,3 +6,10 @@ export const RACE_TIMING = Object.freeze({
   DEMO: 15000,
   IDLE: 8,
 });
+
+/** ゲーム全体のドメイン定数 */
+export const GAME = Object.freeze({
+  TRACK_WIDTH: 55,
+  COLLISION_DIST: 25,
+  CHECKPOINT_RADIUS: 90,
+});
