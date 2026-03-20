@@ -70,9 +70,8 @@ describe('StageSelectScreen', () => {
   describe('解放状態', () => {
     it('初期状態ではステージ1-1のみ解放されている', () => {
       render(<StageSelectScreen {...defaultProps} />);
-      // 1-1 は選択可能
-      const stage1Card = screen.getByTestId('stage-card-1-1');
-      expect(stage1Card).toBeInTheDocument();
+      // 1-1 は選択可能（テキストで確認）
+      expect(screen.getByText(/1-1/)).toBeInTheDocument();
       // 1-2, 1-3 はロック表示
       expect(screen.getAllByText('🔒').length).toBe(2);
     });
@@ -97,15 +96,15 @@ describe('StageSelectScreen', () => {
   describe('操作', () => {
     it('解放済みステージをクリックするとonSelectStageが呼ばれる', () => {
       render(<StageSelectScreen {...defaultProps} />);
-      const stage1Card = screen.getByTestId('stage-card-1-1');
-      fireEvent.click(stage1Card);
+      // ステージカードの data-testid で安定的に取得
+      fireEvent.click(screen.getByTestId('stage-card-1-1'));
       expect(defaultProps.onSelectStage).toHaveBeenCalledWith(CHAPTER_1_STAGES[0]);
     });
 
     it('ロックされたステージをクリックしてもonSelectStageは呼ばれない', () => {
       render(<StageSelectScreen {...defaultProps} />);
-      const stage2Card = screen.getByTestId('stage-card-1-2');
-      fireEvent.click(stage2Card);
+      // ロック状態のステージカードの data-testid で取得
+      fireEvent.click(screen.getByTestId('stage-card-1-2'));
       expect(defaultProps.onSelectStage).not.toHaveBeenCalled();
     });
 
