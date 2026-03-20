@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import type { GamePhase } from '../../domain/race/types';
 import type { GameOrchestratorConfig, GameOrchestrator } from '../../application/game-orchestrator';
 import { createOrchestrator } from '../../application/game-orchestrator';
-import type { HighlightTrackerState } from '../../domain/highlight/highlight';
 import { getSummary } from '../../domain/highlight/highlight';
 import type { HighlightType } from '../../domain/highlight/types';
 
@@ -24,6 +23,7 @@ export const useGameLoop = (
   config: GameOrchestratorConfig | null,
 ): UseGameLoopResult => {
   const orchestratorRef = useRef<GameOrchestrator | null>(null);
+  const winnerRef = useRef<string | null>(null);
   const [phase, setPhase] = useState<GamePhase>('menu');
   const [paused, setPaused] = useState(false);
   const [winner, setWinner] = useState<string | null>(null);
@@ -34,6 +34,7 @@ export const useGameLoop = (
 
     const orchestrator = createOrchestrator(config);
     orchestratorRef.current = orchestrator;
+    winnerRef.current = null;
     setPhase('countdown');
 
     let isRunning = true;
@@ -45,7 +46,8 @@ export const useGameLoop = (
         const state = orchestrator.getState();
         setPhase(state.phase);
         setPaused(state.paused);
-        if (state.winner && !winner) {
+        if (state.winner && !winnerRef.current) {
+          winnerRef.current = state.winner;
           setWinner(state.winner);
           setHighlightSummary(getSummary(state.highlightTracker));
         }
@@ -60,7 +62,7 @@ export const useGameLoop = (
       isRunning = false;
       orchestratorRef.current = null;
     };
-  }, [config, canvasRef, winner]);
+  }, [config, canvasRef]);
 
   const togglePause = useCallback(() => {
     orchestratorRef.current?.togglePause();
@@ -68,6 +70,7 @@ export const useGameLoop = (
 
   const reset = useCallback(() => {
     orchestratorRef.current?.reset();
+    winnerRef.current = null;
     setPhase('countdown');
     setPaused(false);
     setWinner(null);
