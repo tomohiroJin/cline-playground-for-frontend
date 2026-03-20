@@ -25,12 +25,14 @@ import { Entity } from './entities';
 import { Track } from './track';
 import { Render, renderDecos } from './renderer';
 import { Logic } from './game-logic';
-import { Heat } from './heat';
-import { CourseEffects } from './course-effects';
+import { updateHeat, getHeatBoost } from './domain/player/heat';
+import { getCourseEffect, getSegmentFriction, getSegmentSpeedModifier } from './domain/track/course-effect';
 import { DraftCards } from './draft-cards';
-import { Highlight } from './highlight';
-import type { HighlightTracker } from './highlight';
-import { computeAllCardEffects } from './card-effects';
+import { createTracker as createHighlightTracker, getSummary as getHighlightSummary } from './domain/highlight/highlight';
+import type { HighlightTrackerState } from './domain/highlight/highlight';
+import { detectDriftBonus, detectHeatBoost, detectNearMiss, detectOvertake, detectFastestLap, detectPhotoFinish } from './domain/highlight/event-detector';
+import { HIGHLIGHT_LABELS, HIGHLIGHT_COLORS } from './highlight';
+import { computeAllCardEffects } from './domain/card/card-effect';
 import { collectPlayerInputs, updateParticles, updateSparks, updateConfetti } from './game-update';
 import { drawHUD, drawCountdown, drawCpuNotification } from './game-draw';
 import {
@@ -186,7 +188,7 @@ export default function RacingGame() {
     const pendingDraftQueue: { playerIndex: number; lap: number }[] = [];
 
     // ハイライト状態
-    let hlTracker: HighlightTracker = Highlight.createTracker(players.length);
+    let hlTracker: HighlightTrackerState = createHighlightTracker(players.length);
     const hlNotifications: (HighlightEvent & { displayTime: number; startTime: number })[] = [];
     const MAX_NOTIFICATIONS = 1;
 
@@ -340,14 +342,14 @@ export default function RacingGame() {
           SoundEngine.updateEngine(avgSpeed);
         }
 
-        const courseEffect = CourseEffects.getEffect(cur.deco);
+        const courseEffect = getCourseEffect(cur.deco);
 
         players = players.map((p, i) => {
           const trackInfo = Track.getInfo(p.x, p.y, pts);
-          const friction = CourseEffects.getFriction(
+          const friction = getSegmentFriction(
             courseEffect, trackInfo.seg, pts.length, trackInfo.dist, Config.game.trackWidth
           );
-          const spdMod = CourseEffects.getSpeedModifier(courseEffect, trackInfo.seg, pts.length);
+          const spdMod = getSegmentSpeedModifier(courseEffect, trackInfo.seg, pts.length);
 
           // カード効果一括計算
           const ce = computeAllCardEffects(p.activeCards);
@@ -376,9 +378,9 @@ export default function RacingGame() {
           // HEAT 計算
           const otherPlayer = players.length >= 2 ? players[1 - i] : undefined;
           const carDist = otherPlayer ? Utils.dist(np.x, np.y, otherPlayer.x, otherPlayer.y) : Infinity;
-          const newHeat = Heat.update(np.heat, info.dist, carDist, 1 / 60, ce.heatGainMul);
+          const newHeat = updateHeat(np.heat, info.dist, carDist, 1 / 60, ce.heatGainMul, Config.game.trackWidth, Config.game.collisionDist);
 
-          const heatBoost = Heat.getBoost(newHeat);
+          const heatBoost = getHeatBoost(newHeat);
           if (heatBoost > 0) {
             np = { ...np, speed: Math.min(1, np.speed + heatBoost * 0.1) };
           }
@@ -386,15 +388,15 @@ export default function RacingGame() {
 
           // ハイライト検出
           if (!demo) {
-            const driftResult = Highlight.checkDriftBonus(hlTracker, np.drift, i, np.lap, raceTime);
+            const driftResult = detectDriftBonus(hlTracker, np.drift, i, np.lap, raceTime);
             hlTracker = driftResult.tracker;
             if (driftResult.event) pushNotification(driftResult.event);
 
-            const heatResult = Highlight.checkHeatBoost(hlTracker, np.heat, i, np.lap, raceTime);
+            const heatResult = detectHeatBoost(hlTracker, np.heat, i, np.lap, raceTime);
             hlTracker = heatResult.tracker;
             if (heatResult.event) pushNotification(heatResult.event);
 
-            const nearResult = Highlight.checkNearMiss(
+            const nearResult = detectNearMiss(
               hlTracker, info.dist, Config.game.trackWidth, 1 / 60, i, np.lap, raceTime
             );
             hlTracker = nearResult.tracker;
@@ -423,7 +425,7 @@ export default function RacingGame() {
               np.lapStart = Date.now();
 
               if (!demo) {
-                const flResult = Highlight.checkFastestLap(hlTracker, lapTime, i, np.lap - 1, raceTime);
+                const flResult = detectFastestLap(hlTracker, lapTime, i, np.lap - 1, raceTime);
                 hlTracker = flResult.tracker;
                 if (flResult.event) pushNotification(flResult.event);
               }
@@ -458,7 +460,7 @@ export default function RacingGame() {
         if (!demo && players.length >= 2) {
           const positions = players.map(p => p.progress);
           for (let i = 0; i < 2; i++) {
-            const otResult = Highlight.checkOvertake(hlTracker, positions, i, players[i].lap, raceTime);
+            const otResult = detectOvertake(hlTracker, positions, i, players[i].lap, raceTime);
             hlTracker = otResult.tracker;
             if (otResult.event) pushNotification(otResult.event);
           }
@@ -516,12 +518,12 @@ export default function RacingGame() {
         const p2Time = players.length >= 2 ? players[1].lapTimes.reduce((a, b) => a + b, 0) : 0;
 
         if (players.length >= 2 && players[0].lapTimes.length > 0 && players[1].lapTimes.length > 0) {
-          const pfResult = Highlight.checkPhotoFinish(hlTracker, [p1Time, p2Time], maxLaps, raceTime);
+          const pfResult = detectPhotoFinish(hlTracker, [p1Time, p2Time], maxLaps, raceTime);
           hlTracker = pfResult.tracker;
           if (pfResult.event) pushNotification(pfResult.event);
         }
 
-        setHighlightSummary(Highlight.getSummary(hlTracker));
+        setHighlightSummary(getHighlightSummary(hlTracker));
 
         const allLapTimes = players.length >= 2
           ? [...players[0].lapTimes, ...players[1].lapTimes]
@@ -561,7 +563,7 @@ export default function RacingGame() {
       renderDecos(ctx, decos, cur.deco);
       Render.track(ctx, pts);
 
-      const courseVisual = CourseEffects.getEffect(cur.deco).visualEffect;
+      const courseVisual = getCourseEffect(cur.deco).visualEffect;
       if (courseVisual !== 'none') Render.courseEffect(ctx, courseVisual, Date.now());
       Render.startLine(ctx, sl);
       Render.checkpoints(ctx, cpCoords);
@@ -619,7 +621,7 @@ export default function RacingGame() {
       // ハイライト通知バナー
       if (gamePhaseRef.current === 'race' || gamePhaseRef.current === 'draft') {
         hlNotifications.forEach((notif, index) => {
-          Render.highlightBanner(ctx, notif, Highlight.COLORS, index);
+          Render.highlightBanner(ctx, notif, HIGHLIGHT_COLORS, index);
         });
       }
 

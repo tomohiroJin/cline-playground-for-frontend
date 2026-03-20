@@ -525,25 +525,25 @@
 
 ### 5-2. 旧ファイルの削除 🟡
 
-- [ ] 旧 `utils.ts` の re-export 確認・削除
-- [ ] 旧 `types.ts` の re-export 確認・削除
-- [ ] 旧 `constants.ts` の re-export 確認・削除
-- [ ] 旧 `drift.ts` の re-export 確認・削除
-- [ ] 旧 `heat.ts` の re-export 確認・削除
-- [ ] 旧 `track.ts` の re-export 確認・削除
-- [ ] 旧 `wall-physics.ts` の re-export 確認・削除
-- [ ] 旧 `course-effects.ts` の re-export 確認・削除
-- [ ] 旧 `game-logic.ts` の re-export 確認・削除
-- [ ] 旧 `draft-cards.ts` の re-export 確認・削除
-- [ ] 旧 `card-effects.ts` の re-export 確認・削除
-- [ ] 旧 `highlight.ts` の re-export 確認・削除
-- [ ] 旧 `entities.ts` の re-export 確認・削除
-- [ ] 旧 `renderer.ts` の re-export 確認・削除
-- [ ] 旧 `audio.ts` の re-export 確認・削除
-- [ ] 旧 `hooks.ts` の re-export 確認・削除
-- [ ] 旧 `game-update.ts` の re-export 確認・削除
-- [ ] 旧 `game-draw.ts` の re-export 確認・削除
-- [ ] 旧 `draft-ui-logic.ts` の re-export 確認・削除
+- [ ] 旧 `utils.ts`（独自ロジックファイルが参照中のため維持）
+- [ ] 旧 `types.ts`（独自ロジックファイルが参照中のため維持）
+- [ ] 旧 `constants.ts`（独自ロジックファイルが参照中のため維持）
+- [x] 旧 `drift.ts` → 削除済み
+- [x] 旧 `heat.ts` → 削除済み
+- [ ] 旧 `track.ts`（game-logic.ts, game-update.ts が参照中）
+- [x] 旧 `wall-physics.ts` → 削除済み
+- [x] 旧 `course-effects.ts` → 削除済み
+- [ ] 旧 `game-logic.ts`（game-update.ts が参照中）
+- [ ] 旧 `draft-cards.ts`（RacingGame.tsx が参照中）
+- [ ] 旧 `card-effects.ts`（game-update.ts が参照中）
+- [x] 旧 `highlight.ts` → HIGHLIGHT_LABELS/COLORS のみに最小化
+- [ ] 旧 `entities.ts`（RacingGame.tsx が参照中）
+- [ ] 旧 `renderer.ts`（RacingGame.tsx が参照中）
+- [ ] 旧 `audio.ts`（RacingGame.tsx が参照中）
+- [ ] 旧 `hooks.ts`（RacingGame.tsx が参照中）
+- [ ] 旧 `game-update.ts`（RacingGame.tsx が参照中）
+- [ ] 旧 `game-draw.ts`（RacingGame.tsx が参照中）
+- [ ] 旧 `draft-ui-logic.ts`（RacingGame.tsx が参照中）
 - [x] `index.ts` の更新（新ドメイン/アプリ/インフラ/プレゼンテーション層の re-export 追加）
 - [ ] 未使用のインポート・ファイルの最終確認
 - [ ] 全テスト実行・パス確認
