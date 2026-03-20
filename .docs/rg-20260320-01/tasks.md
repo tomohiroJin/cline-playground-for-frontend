@@ -500,26 +500,29 @@
 
 ### 5-1. RacingGame.tsx のスリム化 🟡
 
-- [ ] `presentation/hooks/useGameLoop.ts` の作成
-  - [ ] Canvas ref の管理
-  - [ ] GameOrchestrator の初期化・破棄
-  - [ ] requestAnimationFrame ループ管理
-  - [ ] ゲーム状態の React ステートへの反映
-- [ ] `presentation/hooks/useGameState.ts` の作成
-  - [ ] メニュー設定ステートの管理
-  - [ ] ベストタイムの管理
-- [ ] `presentation/hooks/useIdle.ts` の移行
-  - [ ] 既存 `hooks.ts` から移行
+- [x] `presentation/hooks/useGameLoop.ts` の作成
+  - [x] Canvas ref の管理
+  - [x] GameOrchestrator の初期化・破棄
+  - [x] requestAnimationFrame ループ管理
+  - [x] ゲーム状態の React ステートへの反映
+- [x] `presentation/hooks/useGameState.ts` の作成
+  - [x] メニュー設定ステートの管理
+  - [x] ベストタイムの管理
+- [x] `presentation/hooks/useIdle.ts` の移行
+  - [x] 既存 `hooks.ts` から移行
 - [ ] `presentation/RacingGame.tsx` のリファクタリング
   - [ ] ゲームループロジックの削除（useGameLoop に委譲）
   - [ ] 設定ステートの削除（useGameState に委譲）
   - [ ] コンポーネントの組み合わせのみに
   - [ ] **目標: 200行以下**
+    > **方針**: 新フックは作成済み。RacingGame.tsx の書き換えは既存ゲームの動作に影響するため、
+    > 手動テスト付きの別 PR で実施することを推奨。
 - [ ] `presentation/components/` への移行
   - [ ] `MenuPanel.tsx` の移動
   - [ ] `ResultPanel.tsx` の移動
   - [ ] `VolumeControl.tsx` の移動
-- [ ] 全テスト実行・パス確認
+    > **方針**: コンポーネントの移動はパス変更のみ。RacingGame.tsx リファクタリングと同時に実施。
+- [x] 全テスト実行・パス確認
 
 ### 5-2. 旧ファイルの削除 🟡
 
@@ -554,16 +557,16 @@
   - [x] `createTestDeck` の実装
   - [x] `createTestTrackPoints` の実装
   - [x] `createTestCard` の実装
-- [ ] ドメイン層テストの最終確認
-  - [ ] 全テストが振る舞いベースであること
-  - [ ] AAA パターンの遵守
-  - [ ] テスト名が日本語で意図が明確であること
-  - [ ] DbC アサーションのテスト
-- [ ] 不足テストの追加
-  - [ ] エッジケースのテスト（境界値、null/undefined、空配列等）
-  - [ ] 不変条件のテスト
-  - [ ] 複合シナリオのテスト（ドリフト中の壁衝突 等）
-- [ ] テストの重複排除
+- [x] ドメイン層テストの最終確認
+  - [x] 全テストが振る舞いベースであること
+  - [x] AAA パターンの遵守
+  - [x] テスト名が日本語で意図が明確であること
+  - [x] DbC アサーションのテスト
+- [x] 不足テストの追加（`__tests__/domain/shared/edge-cases.test.ts`）
+  - [x] エッジケースのテスト（clamp 境界値、normalizeAngle π/-π、空配列等）
+  - [x] 不変条件のテスト（速度が 1 を超えない等）
+  - [x] 複合シナリオのテスト（ドリフト中の壁衝突、両者ドリフト中の衝突等）
+- [x] テストの重複排除（旧テスト 11 ファイル削除済み）
 - [ ] カバレッジ確認
   - [ ] ドメイン層: 90% 以上
   - [ ] 全体: 80% 以上
