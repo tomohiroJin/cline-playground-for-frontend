@@ -48,7 +48,7 @@ export const Mallet = {
   /** マレットを自陣に制限する */
   clampToSide(mallet: MalletState, canvasWidth: number, canvasHeight: number): MalletState {
     const r = mallet.radius;
-    let x = clamp(mallet.x, r, canvasWidth - r);
+    const x = clamp(mallet.x, r, canvasWidth - r);
     let y: number;
 
     if (mallet.side === 'player') {

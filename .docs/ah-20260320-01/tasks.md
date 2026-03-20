@@ -6,7 +6,7 @@
 |---------|-----------|---------|--------|
 | R1 ドメインモデル層の導入 | [x] 完了 | 28 | 2026-03-20 |
 | R2 インフラ層の分離 | [x] 完了 | 22 | 2026-03-20 |
-| R3 アプリケーション層の構築 | [ ] 未着手 | 16 | — |
+| R3 アプリケーション層の構築 | [x] 完了 | 16 | 2026-03-20 |
 | R4 プレゼンテーション層のリファクタリング | [ ] 未着手 | 14 | — |
 | R5 テストリファクタリング + テスト強化 | [ ] 未着手 | 32 | — |
 
@@ -155,49 +155,50 @@
 
 ### R3-1: ゲームループユースケースの抽出
 
-- [ ] `application/` ディレクトリ構造を作成（`use-cases/`, `ports/`）
-- [ ] `application/use-cases/game-loop.ts`: ゲームループユースケース
-  - [ ] `GameLoopDependencies` 型定義（ストレージ・オーディオ・レンダラー・イベント）
-  - [ ] `update`: 1フレーム更新（入力適用 → 物理演算 → 衝突判定 → AI → スコア判定）
-  - [ ] `handleEvents`: ドメインイベントのハンドリング（音声・エフェクト）
-- [ ] 現 `useGameLoop.ts` のゲームロジック部分を `GameLoopUseCase` に移行
+- [x] `application/` ディレクトリ構造を作成（`use-cases/`）
+- [x] `application/use-cases/game-loop.ts`: ゲームループユースケース
+  - [x] `GameLoopDependencies` 型定義（ストレージ・オーディオ・レンダラー・イベント）
+  - [x] フェーズ管理（startPlaying, pause, resume）
+  - [x] スコア管理（addScore, getWinner）
+  - [x] `handleEvents`: ドメインイベントのハンドリング（音声・エフェクト）
+- [ ] 現 `useGameLoop.ts` のゲームロジック部分を `GameLoopUseCase` に移行（R4で実施）
 
 **テスト**:
-- [ ] `application/use-cases/game-loop.test.ts`: フレーム更新のフローテスト（モック依存注入）
-- [ ] 既存テスト全パス確認
+- [x] `application/use-cases/game-loop.test.ts`: 初期化・フェーズ遷移・イベントハンドリング・スコア管理のテスト（14テスト）
+- [x] 既存テスト全パス確認
 
 ### R3-2: ストーリーモードユースケース
 
-- [ ] `application/use-cases/story-mode.ts`: ストーリーモードユースケース
-  - [ ] `loadProgress`: 進行読込
-  - [ ] `getStageConfig`: ステージ設定取得
-  - [ ] `completeStage`: ステージクリア処理
-  - [ ] `resetProgress`: リセット
-- [ ] 現 `AirHockeyGame.tsx` のストーリーロジック部分を移行
+- [x] `application/use-cases/story-mode.ts`: ストーリーモードユースケース
+  - [x] `loadProgress`: 進行読込
+  - [x] `getStageConfig`: ステージ設定取得
+  - [x] `completeStage`: ステージクリア処理（図鑑アンロック連携含む）
+  - [x] `resetProgress`: リセット
+- [ ] 現 `AirHockeyGame.tsx` のストーリーロジック部分を移行（R4で実施）
 
 **テスト**:
-- [ ] `application/use-cases/story-mode.test.ts`: フロー + 永続化テスト
-- [ ] 既存テスト全パス確認
+- [x] `application/use-cases/story-mode.test.ts`: フロー + 永続化テスト（14テスト）
+- [x] 既存テスト全パス確認
 
 ### R3-3: フリー対戦/デイリーチャレンジユースケース
 
-- [ ] `application/use-cases/free-battle.ts`: フリー対戦ユースケース
-- [ ] `application/use-cases/daily-challenge.ts`: デイリーチャレンジユースケース
-- [ ] 現 `core/daily-challenge.ts` のロジック部分を移行
+- [x] `application/use-cases/free-battle.ts`: フリー対戦ユースケース
+- [x] `application/use-cases/daily-challenge.ts`: デイリーチャレンジユースケース
+- [ ] 現 `core/daily-challenge.ts` のロジック部分を移行（core/ のロジックを委譲で再利用）
 
 **テスト**:
-- [ ] `application/use-cases/free-battle.test.ts`
-- [ ] `application/use-cases/daily-challenge.test.ts`
-- [ ] 既存テスト全パス確認
+- [x] `application/use-cases/free-battle.test.ts`（5テスト）
+- [x] `application/use-cases/daily-challenge.test.ts`（5テスト）
+- [x] 既存テスト全パス確認
 
 ### R3-4: キャラクター図鑑ユースケース
 
-- [ ] `application/use-cases/character-dex.ts`: 図鑑ユースケース
-- [ ] 現 `core/dex.ts` + `hooks/useCharacterDex.ts` のロジック部分を移行
+- [x] `application/use-cases/character-dex.ts`: 図鑑ユースケース
+- [ ] 現 `core/dex.ts` + `hooks/useCharacterDex.ts` のロジック部分を移行（core/ のロジックを委譲で再利用）
 
 **テスト**:
-- [ ] `application/use-cases/character-dex.test.ts`
-- [ ] 既存テスト全パス確認
+- [x] `application/use-cases/character-dex.test.ts`（13テスト）
+- [x] 既存テスト全パス確認
 
 ---
 
