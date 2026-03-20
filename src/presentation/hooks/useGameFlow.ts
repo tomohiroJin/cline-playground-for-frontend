@@ -44,8 +44,7 @@ export const useGameFlow = (options: UseGameFlowOptions) => {
   const [score, setScore] = useAtom(gameScoreAtom);
   const [isBestScore, setIsBestScore] = useAtom(isBestScoreAtom);
   const [elapsedTime, setElapsedTime] = useAtom(gameElapsedTimeAtom);
-  const [, setStartTime] = useAtom(puzzleStartTimeAtom);
-  const [startTime] = useAtom(puzzleStartTimeAtom);
+  const [startTime, setStartTime] = useAtom(puzzleStartTimeAtom);
   const [emptyPanelClicks, setEmptyPanelClicks] = useAtom(emptyPanelClicksAtom);
   const [hintUsed] = useAtom(hintUsedAtom);
   const [hintModeEnabled, setHintModeEnabled] = useAtom(hintModeEnabledAtom);
