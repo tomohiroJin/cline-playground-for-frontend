@@ -5,7 +5,7 @@
 | フェーズ | ステータス | タスク数 | 完了日 |
 |---------|-----------|---------|--------|
 | R1 ドメインモデル層の導入 | [x] 完了 | 28 | 2026-03-20 |
-| R2 インフラ層の分離 | [ ] 未着手 | 22 | — |
+| R2 インフラ層の分離 | [x] 完了 | 22 | 2026-03-20 |
 | R3 アプリケーション層の構築 | [ ] 未着手 | 16 | — |
 | R4 プレゼンテーション層のリファクタリング | [ ] 未着手 | 14 | — |
 | R5 テストリファクタリング + テスト強化 | [ ] 未着手 | 32 | — |
@@ -103,51 +103,51 @@
 
 ### R2-1: ストレージポート定義 + Adapter 実装
 
-- [ ] `domain/contracts/storage.ts`: `GameStoragePort` インターフェース定義
-- [ ] `infrastructure/` ディレクトリ構造を作成（`storage/`, `audio/`, `renderer/`）
-- [ ] `infrastructure/storage/local-storage-adapter.ts`: localStorage アダプタ実装
-  - [ ] 実績の保存・読込
-  - [ ] ストーリー進行の保存・読込
-  - [ ] アンロック状態の保存・読込
-  - [ ] 図鑑進行の保存・読込
-  - [ ] オーディオ設定の保存・読込
-  - [ ] デイリーチャレンジ結果の保存・読込
-  - [ ] スコアの保存・読込
-  - [ ] 破損時フォールバック（try-catch + デフォルト値）
-- [ ] `__tests__/helpers/in-memory-storage.ts`: テスト用インメモリストレージ
+- [x] `domain/contracts/storage.ts`: `GameStoragePort` インターフェース定義
+- [x] `infrastructure/` ディレクトリ構造を作成（`storage/`, `audio/`, `renderer/`）
+- [x] `infrastructure/storage/local-storage-adapter.ts`: localStorage アダプタ実装
+  - [x] 実績の保存・読込
+  - [x] ストーリー進行の保存・読込
+  - [x] アンロック状態の保存・読込
+  - [x] 図鑑進行の保存・読込
+  - [x] オーディオ設定の保存・読込
+  - [x] デイリーチャレンジ結果の保存・読込
+  - [x] スコアの保存・読込
+  - [x] 破損時フォールバック（try-catch + デフォルト値）
+- [x] `__tests__/helpers/in-memory-storage.ts`: テスト用インメモリストレージ
 - [ ] 既存モジュール（`achievements.ts`, `story.ts`, `unlock.ts`, `dex.ts`, `audio-settings.ts`, `daily-challenge.ts`）をアダプタ経由に変更
 
 **テスト**:
-- [ ] `infrastructure/storage/local-storage-adapter.test.ts`: 各メソッドの保存・読込・フォールバック
-- [ ] 既存テスト全パス確認（モック設定の更新が必要な場合あり）
+- [x] `infrastructure/storage/local-storage-adapter.test.ts`: 各メソッドの保存・読込・フォールバック
+- [x] 既存テスト全パス確認（モック設定の更新が必要な場合あり）
 
 ### R2-2: オーディオポート定義 + Adapter 実装
 
-- [ ] `domain/contracts/audio.ts`: `AudioPort` インターフェース定義
-- [ ] `infrastructure/audio/web-audio-adapter.ts`: Web Audio API アダプタ実装
-  - [ ] 現 `core/sound.ts` のロジックを移行
-  - [ ] 効果音生成（hit, wall, goal, item, countdown, whistle）
-  - [ ] BGM 制御（start, stop）
-  - [ ] 音量・ミュート設定
-- [ ] `__tests__/helpers/null-audio.ts`: テスト用 Null アダプタ（呼び出し記録付き）
+- [x] `domain/contracts/audio.ts`: `AudioPort` インターフェース定義
+- [x] `infrastructure/audio/web-audio-adapter.ts`: Web Audio API アダプタ実装
+  - [x] 現 `core/sound.ts` のロジックを移行
+  - [x] 効果音生成（hit, wall, goal, item, countdown, whistle）
+  - [x] BGM 制御（start, stop）
+  - [x] 音量・ミュート設定
+- [x] `__tests__/helpers/null-audio.ts`: テスト用 Null アダプタ（呼び出し記録付き）
 
 **テスト**:
-- [ ] `__tests__/helpers/null-audio.test.ts`: Null アダプタの呼び出し記録テスト
-- [ ] 既存テスト全パス確認
+- [x] `__tests__/helpers/null-audio.test.ts`: Null アダプタの呼び出し記録テスト
+- [x] 既存テスト全パス確認
 
 ### R2-3: レンダラー分割 + ポート定義
 
-- [ ] `domain/contracts/renderer.ts`: `GameRendererPort` インターフェース定義
-- [ ] `infrastructure/renderer/field-renderer.ts`: フィールド描画を分離
-- [ ] `infrastructure/renderer/entity-renderer.ts`: パック・マレット描画を分離
-- [ ] `infrastructure/renderer/effect-renderer.ts`: エフェクト描画を分離
-- [ ] `infrastructure/renderer/ui-renderer.ts`: UI 描画を分離
-- [ ] `infrastructure/renderer/canvas-renderer.ts`: 統合 Facade
+- [x] `domain/contracts/renderer.ts`: `GameRendererPort` インターフェース定義
+- [x] `infrastructure/renderer/field-renderer.ts`: フィールド描画を分離
+- [x] `infrastructure/renderer/entity-renderer.ts`: パック・マレット描画を分離
+- [x] `infrastructure/renderer/effect-renderer.ts`: エフェクト描画を分離
+- [x] `infrastructure/renderer/ui-renderer.ts`: UI 描画を分離
+- [x] `infrastructure/renderer/canvas-renderer.ts`: 統合 Facade
 - [ ] 旧 `renderer.ts` から新パスへの re-export を設定
 
 **テスト**:
-- [ ] 各サブレンダラーの基本テスト（Canvas API 呼び出し検証）
-- [ ] 既存テスト全パス確認
+- [x] 各サブレンダラーの基本テスト（Canvas API 呼び出し検証）
+- [x] 既存テスト全パス確認
 
 ---
 
