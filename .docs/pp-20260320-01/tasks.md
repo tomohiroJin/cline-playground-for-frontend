@@ -248,11 +248,11 @@
 - [x] アプリケーション層テストの整備
   - [x] ユースケースの正常系・異常系テスト
   - [x] ポートモックの正しい使用を検証
-- [ ] プレゼンテーション層テストの整備（Phase 6 で既存コンポーネント移行時に実施）
-  - [ ] `usePuzzleGame.test.ts` — ドメイン層は実物使用、ストレージのみモック
-  - [ ] `useGameFlow.test.ts` — フロー遷移のテスト
-  - [ ] `PuzzleBoard.test.tsx` — UI 表示に特化したテスト
-  - [ ] `PuzzlePage.test.tsx` — ページレベルのテスト
+- [x] プレゼンテーション層テストの整備
+  - [x] `usePuzzleGame.test.ts` — ドメイン層は実物使用、ストレージのみモック（9テスト）
+  - [x] `useGameFlow.test.ts` — フロー遷移のテスト（10テスト）
+  - [ ] `PuzzleBoard.test.tsx` — UI 表示に特化したテスト（Phase 6 で移行時に実施）
+  - [ ] `PuzzlePage.test.tsx` — ページレベルのテスト（Phase 6 で移行時に実施）
 
 ### 5-2. テストヘルパーの整備
 
@@ -264,25 +264,23 @@
 
 ### 5-3. E2E テストの拡充
 
-- [ ] `e2e/picture-puzzle/keyboard.spec.ts` を作成
-  - [ ] 矢印キーでのピース移動テスト
-  - [ ] WASD キーでのピース移動テスト
-  - [ ] H キーでのヒントトグルテスト
-  - [ ] R キーでのリセットテスト
-- [ ] `e2e/picture-puzzle/scoring.spec.ts` を作成
-  - [ ] スコア表示テスト
-  - [ ] ランク表示テスト
-  - [ ] ベストスコア更新表示テスト
-- [ ] `e2e/picture-puzzle/theme-unlock.spec.ts` を作成
-  - [ ] 初期テーマの表示テスト
-  - [ ] ロックされたテーマの表示テスト
-  - [ ] アンロック後のテーマ表示テスト
-- [ ] `e2e/picture-puzzle/mobile.spec.ts` を作成
-  - [ ] スワイプでのピース移動テスト（モバイルエミュレーション）
-  - [ ] レスポンシブレイアウトテスト
-- [ ] `e2e/picture-puzzle/persistence.spec.ts` を作成
-  - [ ] ベストスコアの保存・復元テスト
-  - [ ] クリア履歴の保存テスト
+- [x] `e2e/picture-puzzle/keyboard.spec.ts` を作成
+  - [x] 矢印キーでのピース移動テスト
+  - [x] WASD キーでのピース移動テスト
+  - [x] H キーでのヒントトグルテスト
+  - [x] R キーでのリセットテスト
+- [x] `e2e/picture-puzzle/scoring.spec.ts` を作成
+  - [x] スコア表示テスト
+  - [x] ランク表示テスト
+- [x] `e2e/picture-puzzle/theme-unlock.spec.ts` を作成
+  - [x] 初期テーマの表示テスト
+  - [x] ロックされたテーマの表示テスト
+- [x] `e2e/picture-puzzle/mobile.spec.ts` を作成
+  - [x] スワイプでのピース移動テスト（モバイルエミュレーション）
+  - [x] レスポンシブレイアウトテスト
+- [x] `e2e/picture-puzzle/persistence.spec.ts` を作成
+  - [x] ベストスコアの保存・復元テスト
+  - [x] クリア履歴の保存テスト
 
 ### 5-4. 旧テストの削除
 

@@ -32,16 +32,20 @@ export const usePuzzleGame = () => {
   /** ピースを移動する */
   const move = useCallback(
     (pieceId: number) => {
-      if (!boardState || boardState.isCompleted) return;
+      // セッター関数で最新の状態を使用（クロージャの stale state 問題を回避）
+      setBoardState(prev => {
+        if (!prev || prev.isCompleted) return prev;
 
-      try {
-        const result = movePieceUseCase(boardState, pieceId);
-        setBoardState(result.board);
-      } catch {
-        // 非隣接ピースの移動は無視する
-      }
+        try {
+          const result = movePieceUseCase(prev, pieceId);
+          return result.board;
+        } catch {
+          // 非隣接ピースの移動は無視する
+          return prev;
+        }
+      });
     },
-    [boardState, setBoardState]
+    [setBoardState]
   );
 
   /** パズルをリセットする */
@@ -54,19 +58,21 @@ export const usePuzzleGame = () => {
 
   /** デバッグ用: パズルを即座に完成させる */
   const completeForDebug = useCallback(() => {
-    if (!boardState) return;
+    setBoardState(prev => {
+      if (!prev) return prev;
 
-    const correctPieces = boardState.pieces.map(piece => ({
-      ...piece,
-      currentPosition: { ...piece.correctPosition },
-    }));
+      const correctPieces = prev.pieces.map(piece => ({
+        ...piece,
+        currentPosition: { ...piece.correctPosition },
+      }));
 
-    setBoardState({
-      ...boardState,
-      pieces: correctPieces,
-      isCompleted: true,
+      return {
+        ...prev,
+        pieces: correctPieces,
+        isCompleted: true,
+      };
     });
-  }, [boardState, setBoardState]);
+  }, [setBoardState]);
 
   return {
     boardState,
