@@ -192,4 +192,72 @@ describe('LocalStorageAdapter', () => {
       expect(adapter.loadHighScores('easy')).toEqual([]);
     });
   });
+
+  describe('異常系: localStorage 容量超過', () => {
+    it('saveAchievements で QuotaExceededError がスローされる', () => {
+      // Arrange: setItem が QuotaExceededError をスローするようにモック
+      const quotaError = new DOMException('容量超過', 'QuotaExceededError');
+      jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+        throw quotaError;
+      });
+
+      // Act & Assert
+      expect(() => adapter.saveAchievements(['first_win'])).toThrow(quotaError);
+    });
+
+    it('saveStoryProgress で QuotaExceededError がスローされる', () => {
+      // Arrange
+      const quotaError = new DOMException('容量超過', 'QuotaExceededError');
+      jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+        throw quotaError;
+      });
+
+      // Act & Assert
+      expect(() =>
+        adapter.saveStoryProgress({ clearedStages: ['1-1'] })
+      ).toThrow(quotaError);
+    });
+
+    it('saveHighScore で QuotaExceededError がスローされる', () => {
+      // Arrange
+      const quotaError = new DOMException('容量超過', 'QuotaExceededError');
+      jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+        throw quotaError;
+      });
+
+      // Act & Assert
+      expect(() => adapter.saveHighScore('easy', 10)).toThrow(quotaError);
+    });
+
+    it('saveAudioSettings で QuotaExceededError がスローされる', () => {
+      // Arrange
+      const quotaError = new DOMException('容量超過', 'QuotaExceededError');
+      jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+        throw quotaError;
+      });
+
+      // Act & Assert
+      expect(() =>
+        adapter.saveAudioSettings({ bgmVolume: 80, seVolume: 30, muted: false })
+      ).toThrow(quotaError);
+    });
+
+    it('saveDailyChallengeResult で QuotaExceededError がスローされる', () => {
+      // Arrange
+      const quotaError = new DOMException('容量超過', 'QuotaExceededError');
+      jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+        throw quotaError;
+      });
+
+      // Act & Assert
+      expect(() =>
+        adapter.saveDailyChallengeResult('2026-03-20', {
+          date: '2026-03-20',
+          isCleared: true,
+          playerScore: 7,
+          cpuScore: 3,
+        })
+      ).toThrow(quotaError);
+    });
+  });
 });

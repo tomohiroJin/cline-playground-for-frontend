@@ -197,4 +197,99 @@ describe('CanvasRenderer', () => {
       expect((ctx.arc as jest.Mock).mock.calls.length).toBe(arcBefore);
     });
   });
+
+  describe('drawItem', () => {
+    it('アイテムを描画してもエラーにならない', () => {
+      const item = {
+        id: 'split' as const,
+        name: 'Split',
+        color: '#FF6B6B',
+        icon: '◆',
+        x: 200,
+        y: 300,
+        vx: 0,
+        vy: 0,
+        r: 24,
+      };
+      expect(() => renderer.drawItem(item, 1000)).not.toThrow();
+    });
+  });
+
+  describe('drawEffectZones', () => {
+    it('エフェクトゾーンを描画してもエラーにならない', () => {
+      const effects = {
+        playerEffects: {},
+        cpuEffects: {},
+        fieldEffect: null,
+      };
+      expect(() => renderer.drawEffectZones(effects as never, 1000)).not.toThrow();
+    });
+  });
+
+  describe('drawVignette', () => {
+    it('ビネットエフェクトを描画する', () => {
+      expect(() => renderer.drawVignette(0.5)).not.toThrow();
+      expect(ctx.createRadialGradient).toHaveBeenCalled();
+    });
+  });
+
+  describe('drawShield', () => {
+    it('プレイヤー側のシールドを描画する', () => {
+      expect(() => renderer.drawShield(true, 120)).not.toThrow();
+    });
+
+    it('CPU 側のシールドを描画する', () => {
+      expect(() => renderer.drawShield(false, 120)).not.toThrow();
+    });
+  });
+
+  describe('drawMagnetEffect', () => {
+    it('マグネットエフェクトを描画する', () => {
+      const mallet = { x: 225, y: 750, vx: 0, vy: 0 };
+      expect(() => renderer.drawMagnetEffect(mallet, 1000)).not.toThrow();
+    });
+  });
+
+  describe('drawReaction', () => {
+    it('プレイヤー側のリアクションを描画する', () => {
+      expect(() => renderer.drawReaction('Nice!', 'player', 500)).not.toThrow();
+      expect(ctx.fillText).toHaveBeenCalled();
+    });
+
+    it('CPU 側のリアクションを描画する', () => {
+      expect(() => renderer.drawReaction('Oh no!', 'cpu', 500)).not.toThrow();
+    });
+  });
+
+  describe('drawHUD', () => {
+    it('HUD を描画してもエラーにならない', () => {
+      // Arrange: drawHUD は effects.player を参照するため正しい構造を渡す
+      const effects = {
+        player: { speed: null, invisible: 0 },
+        cpu: { speed: null, invisible: 0 },
+      };
+      expect(() => renderer.drawHUD(effects as never, 1000)).not.toThrow();
+    });
+  });
+
+  describe('drawHelp', () => {
+    it('ヘルプをフィールド指定なしで描画する', () => {
+      expect(() => renderer.drawHelp()).not.toThrow();
+      expect(ctx.fillText).toHaveBeenCalled();
+    });
+
+    it('ヘルプをフィールド指定ありで描画する', () => {
+      const field = {
+        id: 'classic',
+        name: 'Classic',
+        goalSize: 120,
+        color: '#00d4ff',
+        obstacles: [],
+        destructible: false,
+        obstacleHp: 0,
+        obstacleRespawnMs: 0,
+      };
+      expect(() => renderer.drawHelp(field)).not.toThrow();
+    });
+  });
 });

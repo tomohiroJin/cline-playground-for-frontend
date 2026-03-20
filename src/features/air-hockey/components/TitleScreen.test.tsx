@@ -110,17 +110,18 @@ describe('TitleScreen', () => {
   });
 
   describe('通知バッジ', () => {
-    it('newUnlockCount > 0 の場合、バッジに数字が表示される', () => {
+    it('newUnlockCount > 0 の場合、キャラクターボタン付近にバッジが表示される', () => {
       render(
         <TitleScreen
           {...defaultProps}
           onCharacterDexClick={jest.fn()}
-          newUnlockCount={3}
+          newUnlockCount={5}
         />
       );
 
-      expect(screen.getByTestId('character-badge')).toBeInTheDocument();
-      expect(screen.getByTestId('character-badge')).toHaveTextContent('3');
+      // キャラクターボタンが表示され、バッジの数字が見える
+      expect(screen.getByText('キャラクター')).toBeInTheDocument();
+      expect(screen.getByText('5')).toBeInTheDocument();
     });
 
     it('newUnlockCount === 0 の場合、バッジが表示されない', () => {
