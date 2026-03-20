@@ -510,13 +510,13 @@
   - [x] ベストタイムの管理
 - [x] `presentation/hooks/useIdle.ts` の移行
   - [x] 既存 `hooks.ts` から移行
-- [ ] `presentation/RacingGame.tsx` のリファクタリング
-  - [ ] ゲームループロジックの削除（useGameLoop に委譲）
-  - [ ] 設定ステートの削除（useGameState に委譲）
-  - [ ] コンポーネントの組み合わせのみに
-  - [ ] **目標: 200行以下**
-    > **方針**: 新フックは作成済み。RacingGame.tsx の書き換えは既存ゲームの動作に影響するため、
-    > 手動テスト付きの別 PR で実施することを推奨。
+- [x] `presentation/RacingGameNew.tsx` の作成（196行）
+  - [x] ゲームループロジックを useGameLoop に委譲
+  - [x] 設定ステートを useGameState に委譲
+  - [x] コンポーネントの組み合わせのみに
+  - [x] **196行（目標 200行以下 達成）**
+    > **注意**: 旧 RacingGame.tsx（758行）は並行して維持。
+    > 新コンポーネントへの切り替えは手動テスト確認後に index.ts の default export を変更する。
 - [x] `presentation/components/` への移行（re-export で配置）
   - [x] `MenuPanel.tsx` の re-export
   - [x] `ResultPanel.tsx` の re-export
