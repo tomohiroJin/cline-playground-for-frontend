@@ -20,6 +20,8 @@ const createTestConfig = (overrides?: Partial<GameOrchestratorConfig>): GameOrch
     cardsEnabled: true,
   },
   course: COURSES[0],
+  playerColors: ['#E60012', '#0066FF'],
+  playerNames: ['P1', 'CPU'],
   ...overrides,
 });
 
