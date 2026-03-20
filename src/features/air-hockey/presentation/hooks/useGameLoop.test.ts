@@ -6,7 +6,7 @@
  */
 import { renderHook } from '@testing-library/react';
 import { useGameLoop, type GameLoopConfig, type GameLoopRefs, type GameLoopCallbacks } from './useGameLoop';
-import type { GameState, FieldConfig, MatchStats, GamePhase, ShakeState } from '../../core/types';
+import type { MatchStats, GamePhase } from '../../core/types';
 import type { SoundSystem } from '../../core/types';
 import { FIELDS } from '../../core/config';
 
@@ -57,9 +57,9 @@ jest.mock('../../renderer', () => ({
 }));
 
 // rAF モック
-let rafCallback: FrameRequestCallback | null = null;
+let _rafCallback: FrameRequestCallback | null = null;
 const mockRAF = jest.fn((cb: FrameRequestCallback) => {
-  rafCallback = cb;
+  _rafCallback = cb;
   return 1;
 });
 const mockCAF = jest.fn();

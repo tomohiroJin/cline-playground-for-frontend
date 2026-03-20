@@ -27,7 +27,7 @@ import { CharacterProfileCard } from '../components/CharacterProfileCard';
 import { useInput } from '../hooks/useInput';
 import { useKeyboardInput } from '../hooks/useKeyboardInput';
 import { useGameLoop } from './hooks/useGameLoop';
-import { useScreenNavigation, type ScreenType } from './hooks/useScreenNavigation';
+import { useScreenNavigation } from './hooks/useScreenNavigation';
 import { useGameMode } from './hooks/useGameMode';
 import { useResultProcessing } from './hooks/useResultProcessing';
 import { useAudioManager } from './hooks/useAudioManager';
@@ -106,6 +106,7 @@ const AirHockeyGame: React.FC = () => {
     countdownStartRef.current = Date.now();
     statsRef.current = EntityFactory.createMatchStats();
     matchStartRef.current = Date.now();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- mode全体を依存に入れるとゲーム開始時に不要な再レンダリングが発生するため、必要な値のみ指定
   }, [mode.field, navigateWithTransition]);
 
   const togglePause = useCallback(() => {
