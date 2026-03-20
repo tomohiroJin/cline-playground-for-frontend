@@ -32,7 +32,10 @@ export const readLocalStorage = <T>(
       return validator(parsed) ? parsed : fallback;
     }
 
-    // 基本的な型チェック: フォールバックと同じ型であることを確認
+    // 基本的な型チェック: フォールバックと同じ構造型であることを確認
+    if (Array.isArray(fallback)) {
+      return Array.isArray(parsed) ? (parsed as T) : fallback;
+    }
     if (typeof parsed !== typeof fallback && fallback !== null) {
       return fallback;
     }

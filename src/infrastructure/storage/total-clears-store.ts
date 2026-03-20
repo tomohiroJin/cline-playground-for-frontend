@@ -12,7 +12,9 @@ export class LocalTotalClearsStorage implements TotalClearsStorage {
   get(): number {
     try {
       const value = localStorage.getItem(TOTAL_CLEARS_KEY);
-      return value ? parseInt(value, 10) : 0;
+      if (!value) return 0;
+      const num = parseInt(value, 10);
+      return Number.isNaN(num) ? 0 : num;
     } catch {
       return 0;
     }

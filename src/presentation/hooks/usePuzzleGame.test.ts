@@ -56,8 +56,9 @@ describe('usePuzzleGame', () => {
     it('隣接ピースを移動すると手数が増える', () => {
       const { result } = renderHook(() => usePuzzleGame(), { wrapper });
 
+      // 3×3 を使用（2×2 はシャッフル後に即完成する確率があり、完成後は移動が無視される）
       act(() => {
-        result.current.initialize(2);
+        result.current.initialize(3);
       });
 
       const board = result.current.boardState;

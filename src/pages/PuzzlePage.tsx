@@ -13,15 +13,26 @@ import { useGameFlow } from '../presentation/hooks/useGameFlow';
 import { LocalPuzzleRecordStorage } from '../infrastructure/storage/puzzle-records-store';
 import { LocalTotalClearsStorage } from '../infrastructure/storage/total-clears-store';
 import TitleScreen from '../components/TitleScreen';
+import { PuzzleRecordStorage, TotalClearsStorage } from '../application/ports/storage-port';
 
-// ストレージインスタンス（コンポーネント外で生成してリレンダリングを防ぐ）
-const recordStorage = new LocalPuzzleRecordStorage();
-const totalClearsStorage = new LocalTotalClearsStorage();
+/** デフォルトのストレージインスタンス（コンポーネント外で生成してリレンダリングを防ぐ） */
+const defaultRecordStorage = new LocalPuzzleRecordStorage();
+const defaultTotalClearsStorage = new LocalTotalClearsStorage();
+
+interface PuzzlePageProps {
+  /** パズル記録ストレージ（テスト時のモック差し替え用） */
+  readonly recordStorage?: PuzzleRecordStorage;
+  /** 累計クリア数ストレージ（テスト時のモック差し替え用） */
+  readonly totalClearsStorage?: TotalClearsStorage;
+}
 
 /**
  * パズルゲームページコンポーネント
  */
-const PuzzlePage: React.FC = () => {
+const PuzzlePage: React.FC<PuzzlePageProps> = ({
+  recordStorage = defaultRecordStorage,
+  totalClearsStorage = defaultTotalClearsStorage,
+}) => {
   // タイトル画面の状態
   const [showTitle, setShowTitle] = useState(true);
   const [debugMode, setDebugMode] = useState(false);

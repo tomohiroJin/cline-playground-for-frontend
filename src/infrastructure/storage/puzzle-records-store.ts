@@ -2,7 +2,7 @@
  * パズル記録ストア — PuzzleRecordStorage ポートの localStorage 実装
  */
 import { PuzzleRecord } from '../../types/puzzle';
-import { PuzzleRecordStorage } from '../../application/ports/storage-port';
+import { PuzzleRecordStorage, buildRecordScore } from '../../application/ports/storage-port';
 import { readLocalStorage, writeLocalStorage } from './local-storage-adapter';
 
 const RECORDS_KEY = 'puzzle_records';
@@ -32,38 +32,5 @@ export class LocalPuzzleRecordStorage implements PuzzleRecordStorage {
     writeLocalStorage(RECORDS_KEY, records);
   }
 
-  recordScore(
-    imageId: string,
-    division: number,
-    score: number,
-    rank: PuzzleRecord['bestRank'],
-    time: number,
-    moves: number
-  ): { isBestScore: boolean } {
-    const existing = this.get(imageId, division);
-    const isBestScore = !existing || score > existing.bestScore;
-
-    if (isBestScore) {
-      this.save({
-        imageId,
-        division,
-        bestScore: score,
-        bestRank: rank,
-        bestTime: existing ? Math.min(existing.bestTime, time) : time,
-        bestMoves: existing?.bestMoves !== null && existing?.bestMoves !== undefined
-          ? Math.min(existing.bestMoves, moves)
-          : moves,
-        clearCount: (existing?.clearCount ?? 0) + 1,
-        lastClearDate: new Date().toISOString(),
-      });
-    } else if (existing) {
-      this.save({
-        ...existing,
-        clearCount: existing.clearCount + 1,
-        lastClearDate: new Date().toISOString(),
-      });
-    }
-
-    return { isBestScore };
-  }
+  recordScore = buildRecordScore(this);
 }

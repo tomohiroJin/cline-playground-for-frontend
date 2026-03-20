@@ -46,12 +46,15 @@ export const useGameFlow = (options: UseGameFlowOptions) => {
   const [elapsedTime, setElapsedTime] = useAtom(gameElapsedTimeAtom);
   const [startTime, setStartTime] = useAtom(puzzleStartTimeAtom);
   const [emptyPanelClicks, setEmptyPanelClicks] = useAtom(emptyPanelClicksAtom);
-  const [hintUsed] = useAtom(hintUsedAtom);
+  const [hintUsed, setHintUsed] = useAtom(hintUsedAtom);
   const [hintModeEnabled, setHintModeEnabled] = useAtom(hintModeEnabledAtom);
 
   const { boardState, initialize, move, reset, completeForDebug } = usePuzzleGame();
 
   const prevCompletedRef = useRef(false);
+  // 完成時の Effect で最新値を参照するための Ref（依存配列から除外するため）
+  const elapsedTimeRef = useRef(elapsedTime);
+  elapsedTimeRef.current = elapsedTime;
 
   // タイマー: ゲーム開始後、完了するまで毎秒経過時間を更新
   useEffect(() => {
@@ -73,7 +76,7 @@ export const useGameFlow = (options: UseGameFlowOptions) => {
         imageId,
         actualMoves: boardState.moveCount,
         optimalMoves: boardState.division * boardState.division * 2,
-        elapsedSeconds: elapsedTime,
+        elapsedSeconds: elapsedTimeRef.current,
         hintUsed,
         division: boardState.division,
         recordStorage,
@@ -83,12 +86,16 @@ export const useGameFlow = (options: UseGameFlowOptions) => {
       setIsBestScore(result.isBestScore);
     }
     prevCompletedRef.current = boardState?.isCompleted ?? false;
-  }, [boardState?.isCompleted, boardState?.moveCount, boardState?.division, elapsedTime, hintUsed, imageUrl, recordStorage, totalClearsStorage, setScore, setIsBestScore]);
+  }, [boardState?.isCompleted, boardState?.moveCount, boardState?.division, hintUsed, imageUrl, recordStorage, totalClearsStorage, setScore, setIsBestScore]);
 
   /** ヒントモードのトグル */
   const toggleHintMode = useCallback(() => {
-    setHintModeEnabled(prev => !prev);
-  }, [setHintModeEnabled]);
+    setHintModeEnabled(prev => {
+      // ヒントを有効化する場合、使用フラグを立てる（スコア計算のペナルティ用）
+      if (!prev) setHintUsed(true);
+      return !prev;
+    });
+  }, [setHintModeEnabled, setHintUsed]);
 
   /** 画像を選択する */
   const handleImageSelect = useCallback(
