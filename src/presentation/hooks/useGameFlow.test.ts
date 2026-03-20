@@ -3,8 +3,6 @@ import React from 'react';
 import { Provider } from 'jotai';
 import { useGameFlow, UseGameFlowOptions } from './useGameFlow';
 import { MockPuzzleRecordStorage, MockTotalClearsStorage } from '../../test-helpers/mock-storage';
-import { gamePhaseAtom } from '../store/game-atoms';
-import { useAtomValue } from 'jotai';
 
 /** Jotai Provider でラップするヘルパー */
 const wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>

@@ -2,7 +2,6 @@ import { renderHook, act } from '@testing-library/react';
 import React from 'react';
 import { Provider } from 'jotai';
 import { usePuzzleGame } from './usePuzzleGame';
-import { puzzleBoardStateAtom } from '../store/puzzle-atoms';
 import { hintUsedAtom } from '../store/ui-atoms';
 import { useAtomValue } from 'jotai';
 
@@ -117,8 +116,6 @@ describe('usePuzzleGame', () => {
       act(() => {
         result.current.initialize(2);
       });
-
-      const firstBoard = result.current.boardState;
 
       act(() => {
         result.current.reset(2);
