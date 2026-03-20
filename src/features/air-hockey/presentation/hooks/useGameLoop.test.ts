@@ -114,7 +114,7 @@ describe('useGameLoop（プレゼンテーション層）', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    rafCallback = null;
+    _rafCallback = null;
   });
 
   describe('パラメータインターフェース', () => {
