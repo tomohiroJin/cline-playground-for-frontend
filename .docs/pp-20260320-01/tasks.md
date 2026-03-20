@@ -282,7 +282,7 @@
   - [x] ベストスコアの保存・復元テスト
   - [x] クリア履歴の保存テスト
 
-### 5-4. 旧テストの削除
+### 5-4. 旧テストの削除（Phase 6 で実施）
 
 - [ ] `src/utils/puzzle-utils.test.ts` を削除
 - [ ] `src/hooks/usePuzzle.test.tsx` を削除
@@ -290,10 +290,30 @@
 - [ ] `src/components/molecules/PuzzlePiece.test.tsx` を移動・更新
 - [ ] `src/pages/PuzzlePage.test.tsx` を移動・更新
 
-### 5-5. 検証
+### 5-5. コードレビュー指摘対応
 
-- [ ] テストカバレッジが 80% 以上であることを確認
-- [ ] 全テスト（単体 + E2E）がパスすることを確認
+- [x] `RANK_THRESHOLDS` をドメイン層（score-calculator.ts）に移動
+- [x] `assert` を TypeScript assertion function に変更（`asserts condition`）
+- [x] `PuzzlePiece` 型に `readonly` 追加
+- [x] `shufflePuzzle` に `MAX_ATTEMPTS` ループ上限追加
+- [x] `shufflePuzzle` の `isCompleted` を実際に計算するように変更
+- [x] `DIVISION_MULTIPLIERS` を `Record<Division, number>` に変更（型安全）
+- [x] `createGridPosition` に `Number.isInteger` チェック追加
+- [x] `useGameFlow` のインフラ直接依存を DI パターンに修正
+- [x] `useGameFlow` の `elapsedSeconds` を `gameElapsedTimeAtom` から取得に修正
+- [x] `MockPuzzleRecordStorage.recordScore` のベストタイム/ベスト手数比較を追加
+- [x] `completePuzzleUseCase` にクラス版（コンストラクタインジェクション）追加
+- [x] `puzzle-utils.ts` を新ドメインコードへの委譲に書き換え（DRY 解消）
+- [x] `readLocalStorage` に `validator` パラメータ追加（型安全性向上）
+- [x] `BrowserTimer` に `running` フラグ追加
+- [x] E2E テストを `waitForTimeout` から状態ベース待機に変更
+- [x] `usePuzzleGame.ts` の stale state 問題をセッター関数パターンで修正
+- [x] テストの不安定性修正（2×2 → 3×3 に変更）
+
+### 5-6. 検証
+
+- [x] 全テスト（単体）がパスすることを確認（6401テスト中 6401 パス）
+- [ ] E2E テストがパスすることを確認（ローカル環境でのサーバー起動が必要）
 - [ ] PR を作成・レビュー
 
 ---
