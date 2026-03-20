@@ -3,9 +3,12 @@
 import type { Player, DriftState, HeatState } from '../../domain/player/types';
 import type { DeckState, Card, CardEffect } from '../../domain/card/types';
 import type { Point } from '../../domain/shared/types';
+import type { GameOrchestratorConfig } from '../../application/game-orchestrator';
 import { createPlayer } from '../../domain/player/player-factory';
 import { createDriftState } from '../../domain/player/drift';
 import { createHeatState } from '../../domain/player/heat';
+import { COURSES } from '../../domain/track/course';
+import { createMockRenderer, createMockAudio, createMockStorage, createMockInput } from './mock-ports';
 
 /** テスト用プレイヤーを生成 */
 export const createTestPlayer = (overrides: Partial<Player> = {}): Player => ({
@@ -51,6 +54,28 @@ export const createTestCard = (overrides: Partial<Card> = {}): Card => ({
 
 /** テスト用カード効果を生成 */
 export const createTestCardEffect = (overrides: Partial<CardEffect> = {}): CardEffect => ({
+  ...overrides,
+});
+
+/** テスト用 GameOrchestrator 設定を生成 */
+export const createTestOrchestratorConfig = (
+  overrides?: Partial<GameOrchestratorConfig>,
+): GameOrchestratorConfig => ({
+  renderer: createMockRenderer(),
+  audio: createMockAudio(),
+  storage: createMockStorage(),
+  input: createMockInput(),
+  raceConfig: {
+    mode: 'cpu',
+    courseIndex: 0,
+    maxLaps: 3,
+    baseSpeed: 3.2,
+    cpuDifficulty: 'normal',
+    cardsEnabled: true,
+  },
+  course: COURSES[0],
+  playerColors: ['#E60012', '#0066FF'],
+  playerNames: ['P1', 'CPU'],
   ...overrides,
 });
 

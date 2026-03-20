@@ -1,29 +1,11 @@
 // GameOrchestrator の統合テスト
 
 import { createOrchestrator } from '../../application/game-orchestrator';
-import type { GameOrchestratorConfig } from '../../application/game-orchestrator';
-import { createMockRenderer, createMockAudio, createMockStorage, createMockInput } from '../helpers/mock-ports';
-import { COURSES } from '../../domain/track/course';
+import { createTestOrchestratorConfig } from '../helpers/test-factories';
+import { createMockAudio } from '../helpers/mock-ports';
 import { RACE_TIMING } from '../../domain/race/constants';
 
-const createTestConfig = (overrides?: Partial<GameOrchestratorConfig>): GameOrchestratorConfig => ({
-  renderer: createMockRenderer(),
-  audio: createMockAudio(),
-  storage: createMockStorage(),
-  input: createMockInput(),
-  raceConfig: {
-    mode: 'cpu',
-    courseIndex: 0,
-    maxLaps: 3,
-    baseSpeed: 3.2,
-    cpuDifficulty: 'normal',
-    cardsEnabled: true,
-  },
-  course: COURSES[0],
-  playerColors: ['#E60012', '#0066FF'],
-  playerNames: ['P1', 'CPU'],
-  ...overrides,
-});
+const createTestConfig = createTestOrchestratorConfig;
 
 describe('GameOrchestrator', () => {
   describe('createOrchestrator', () => {
