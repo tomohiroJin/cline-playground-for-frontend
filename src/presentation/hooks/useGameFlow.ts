@@ -137,10 +137,13 @@ export const useGameFlow = (options: UseGameFlowOptions) => {
   const handleResetGame = useCallback(() => {
     setScore(null);
     setIsBestScore(false);
+    setEmptyPanelClicks(0);
+    setHintModeEnabled(false);
     setElapsedTime(0);
     setStartTime(Date.now());
+    prevCompletedRef.current = false;
     reset(division);
-  }, [reset, division, setScore, setIsBestScore, setElapsedTime, setStartTime]);
+  }, [reset, division, setScore, setIsBestScore, setEmptyPanelClicks, setHintModeEnabled, setElapsedTime, setStartTime]);
 
   /** ゲームを終了する */
   const handleEndGame = useCallback(() => {
