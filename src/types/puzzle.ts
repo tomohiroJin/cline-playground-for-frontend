@@ -14,22 +14,18 @@ export interface PuzzleScore {
   shuffleMoves: number;
 }
 
-/** ランク閾値 */
-export const RANK_THRESHOLDS = {
-  THREE_STAR: 8000,
-  TWO_STAR: 5000,
-  ONE_STAR: 2000,
-};
+// 後方互換: RANK_THRESHOLDS は domain/scoring/score-calculator.ts に移動済み
+export { RANK_THRESHOLDS } from '../domain/scoring/score-calculator';
 
 /** 画像サイズ */
 export type ImageSize = { width: number; height: number };
 
 /** パズルのピース情報 */
 export type PuzzlePiece = {
-  id: number;
-  correctPosition: GridPosition;
-  currentPosition: GridPosition;
-  isEmpty: boolean;
+  readonly id: number;
+  readonly correctPosition: GridPosition;
+  readonly currentPosition: GridPosition;
+  readonly isEmpty: boolean;
 };
 
 /** テーマ識別子 */
