@@ -14,7 +14,8 @@ test.describe('スコア・ランク表示', () => {
     await puzzlePage.navigate();
     // デバッグモード有効化
     await puzzlePage.activateDebugMode();
-    await puzzlePage.setupAndStartGame(2);
+    // 3×3 を使用（2×2 はシャッフル後に即完成する確率があり、デバッグボタンが表示されない）
+    await puzzlePage.setupAndStartGame(3);
   });
 
   test('パズル完成後にスコアが表示される', async () => {
