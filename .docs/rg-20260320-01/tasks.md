@@ -440,81 +440,68 @@
 
 ### 4-1. Renderer の分割 🟡
 
-- [ ] `infrastructure/renderer/render-helpers.ts` の作成
-  - [ ] `withContext` ヘルパー
-  - [ ] `drawText` ヘルパー
-  - [ ] `drawRoundedRect` ヘルパー
-- [ ] `infrastructure/renderer/track-renderer.ts` の作成
-  - [ ] `renderBackground` の実装
-  - [ ] `renderTrack` の実装
-  - [ ] `renderStartLine` の実装
-  - [ ] `renderCheckpoints` の実装
-  - [ ] `renderDecorations` の実装
-  - [ ] `renderCourseEffect` の実装
-- [ ] `infrastructure/renderer/kart-renderer.ts` の作成
-  - [ ] `renderKart` の実装
-  - [ ] 名前タグ描画
-  - [ ] ブースト表示
-- [ ] `infrastructure/renderer/hud-renderer.ts` の作成
-  - [ ] `renderHud` の実装
-  - [ ] HEAT ゲージ描画
-  - [ ] ラップ情報描画
-  - [ ] カウントダウン描画
-  - [ ] CPU通知バナー描画
-- [ ] `infrastructure/renderer/effect-renderer.ts` の作成
-  - [ ] `renderParticles` の実装
-  - [ ] `renderSparks` の実装
-  - [ ] `renderConfetti` の実装
-  - [ ] `renderFireworks` の実装
-- [ ] `infrastructure/renderer/draft-renderer.ts` の作成
-  - [ ] `renderDraftUI` の実装
-- [ ] `infrastructure/renderer/canvas-renderer.ts` の作成
-  - [ ] `RendererPort` の実装
-  - [ ] Canvas コンテキスト管理
-  - [ ] フレーム開始/終了
-  - [ ] シェイク処理
-- [ ] 旧 `renderer.ts` / `game-draw.ts` の段階的委譲
-- [ ] 全テスト実行・パス確認
+- [x] `infrastructure/renderer/render-helpers.ts` の作成
+  - [x] `withContext` ヘルパー
+  - [x] `drawText` ヘルパー
+  - [x] `drawRoundedRect` ヘルパー
+- [ ] `infrastructure/renderer/track-renderer.ts` の作成（フェーズ5 で旧 renderer.ts を分割時に実施）
+- [ ] `infrastructure/renderer/kart-renderer.ts` の作成（同上）
+- [ ] `infrastructure/renderer/hud-renderer.ts` の作成（同上）
+- [ ] `infrastructure/renderer/effect-renderer.ts` の作成（同上）
+- [ ] `infrastructure/renderer/draft-renderer.ts` の作成（同上）
+- [x] `infrastructure/renderer/canvas-renderer.ts` の作成
+  - [x] `RendererPort` の実装（既存 Render オブジェクトへの委譲）
+  - [x] Canvas コンテキスト管理
+  - [x] フレーム開始/終了（beginFrame/endFrame）
+  - [x] シェイク処理
+- [ ] 旧 `renderer.ts` / `game-draw.ts` の段階的委譲（フェーズ5 で実施）
+    > **方針**: 現時点では canvas-renderer.ts が既存 Render オブジェクトに委譲する形。
+    > フェーズ5 で renderer.ts（682行）を track-renderer / kart-renderer / hud-renderer /
+    > effect-renderer / draft-renderer に分割する。
+- [x] 全テスト実行・パス確認
 - [ ] 視覚的回帰テスト（手動確認）
 
 ### 4-2. Audio アダプターの整理 🟢
 
-- [ ] `infrastructure/audio/sound-engine.ts` の作成
-  - [ ] `AudioPort` の実装
-  - [ ] 既存 `SoundEngine` のアダプター化
-  - [ ] 効果音メソッドの型安全化
-- [ ] `infrastructure/audio/audio-effects.ts` の作成
-  - [ ] 効果音定義の分離
-- [ ] 旧 `audio.ts` の段階的委譲
-- [ ] 全テスト実行・パス確認
+- [x] `infrastructure/audio/sound-engine.ts` の作成
+  - [x] `AudioPort` の実装（createWebAudioEngine）
+  - [x] 既存 `SoundEngine` のアダプター化（SfxType → メソッドマッピング）
+  - [x] 効果音メソッドの型安全化（SfxType / WallStage）
+- [ ] `infrastructure/audio/audio-effects.ts` の作成（効果音定義の分離）
+    > **方針**: 現在は sound-engine.ts が旧 SoundEngine に委譲。
+    > フェーズ5 で旧 audio.ts の効果音定義を audio-effects.ts に分離する。
+- [ ] 旧 `audio.ts` の段階的委譲（フェーズ5-2 で削除）
+- [x] 全テスト実行・パス確認
 
 ### 4-3. Storage リポジトリの作成 🟢
 
-- [ ] `infrastructure/storage/score-repository.ts` の作成
-  - [ ] `StoragePort` の実装
-  - [ ] 既存 `score-storage` ユーティリティのアダプター化
-- [ ] テスト作成
-  - [ ] `infrastructure/storage/score-repository.test.ts`
-- [ ] 全テスト実行・パス確認
+- [x] `infrastructure/storage/score-repository.ts` の作成
+  - [x] `StoragePort` の実装（createLocalStorageRepository）
+  - [x] 既存 `score-storage` ユーティリティのアダプター化
+- [x] テスト作成
+  - [x] `infrastructure/storage/score-repository.test.ts`（2テスト）
+- [x] 全テスト実行・パス確認
 
 ### 4-4. Input アダプターの整理 🟢
 
-- [ ] `infrastructure/input/keyboard-adapter.ts` の作成
-  - [ ] `InputPort` の実装（キーボード）
-  - [ ] キーマッピングの定義
-  - [ ] モード別入力設定
-- [ ] `infrastructure/input/touch-adapter.ts` の作成
-  - [ ] `InputPort` の実装（タッチ）
-- [ ] 旧 `hooks.ts` の入力部分を段階的委譲
-- [ ] 全テスト実行・パス確認
+- [x] `infrastructure/input/keyboard-adapter.ts` の作成
+  - [x] `InputPort` の実装（キーボード）
+  - [x] キーマッピングの定義（P1 ソロ/2P、P2）
+  - [x] モード別入力設定
+- [x] `infrastructure/input/touch-adapter.ts` の作成
+  - [x] `InputPort` の実装（タッチ — 骨格のみ、現在はキーボードアダプターに統合）
+- [ ] 旧 `hooks.ts` の入力部分を段階的委譲（フェーズ5 で実施）
+    > **方針**: keyboard-adapter.ts が InputPort を実装済み。
+    > フェーズ5-1 で useGameLoop フックが keyboard-adapter 経由で入力を取得する形に切り替える。
+- [x] 全テスト実行・パス確認
 
 ### フェーズ4 完了後の品質ゲート
 
-- [ ] `npm run typecheck` パス
-- [ ] `npm run lint` パス
-- [ ] `npm test` 全パス
-- [ ] スモークテスト全パス
-- [ ] `npm run build` 成功
+- [x] `npm run typecheck` パス
+- [ ] `npm run lint` パス（フェーズ完了時に実行）
+- [x] `npm test` 全パス（34スイート、356テスト）
+- [ ] スモークテスト全パス（フェーズ1-5 保留中）
+- [ ] `npm run build` 成功（フェーズ完了時に実行）
 - [ ] ゲームの動作確認（手動テスト）
 
 ---
