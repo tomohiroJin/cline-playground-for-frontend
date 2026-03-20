@@ -1,24 +1,14 @@
 // プレイヤー移動ロジックのテスト
 
 import { movePlayer } from '../../../domain/player/player';
-import { createPlayer } from '../../../domain/player/player-factory';
+import { createTestPlayer, createTestTrackPoints } from '../../helpers/test-factories';
 import type { Player } from '../../../domain/player/types';
-import type { Point } from '../../../domain/shared/types';
 
-// テスト用正方形トラック
-const simpleTrack: Point[] = [
-  { x: 0, y: 0 },
-  { x: 100, y: 0 },
-  { x: 100, y: 100 },
-  { x: 0, y: 100 },
-];
-
+const simpleTrack = createTestTrackPoints(4);
 const trackWidth = 55;
 
-const makePlayer = (overrides: Partial<Player> = {}): Player => ({
-  ...createPlayer({ x: 50, y: 0, angle: 0, color: '#f00', name: 'P1', isCpu: false }),
-  ...overrides,
-});
+const makePlayer = (overrides: Partial<Player> = {}): Player =>
+  createTestPlayer({ x: 50, y: 0, ...overrides });
 
 describe('player', () => {
   describe('movePlayer', () => {

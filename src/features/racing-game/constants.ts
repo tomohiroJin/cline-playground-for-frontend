@@ -3,8 +3,7 @@
 // 旧コードの後方互換のため Config / Colors / Options / Courses の旧形式を維持
 
 import type { Course } from './types';
-import { DRIFT as DRIFT_DOMAIN } from './domain/player/constants';
-import { HEAT as HEAT_DOMAIN } from './domain/player/constants';
+import { DRIFT as DRIFT_DOMAIN, HEAT as HEAT_DOMAIN, PLAYER } from './domain/player/constants';
 import { WALL as WALL_DOMAIN } from './domain/track/constants';
 import { HIGHLIGHT as HIGHLIGHT_DOMAIN } from './domain/highlight/constants';
 import { GAME, RACE_TIMING } from './domain/race/constants';
@@ -18,10 +17,10 @@ export const Config = Object.freeze({
   canvas: { width: CANVAS.WIDTH, height: CANVAS.HEIGHT },
   game: {
     trackWidth: GAME.TRACK_WIDTH,
-    turnRate: 0.065,
+    turnRate: PLAYER.TURN_RATE,
     collisionDist: GAME.COLLISION_DIST,
-    wallWarpThreshold: 10,
-    speedRecovery: 0.02,
+    wallWarpThreshold: GAME.WALL_WARP_THRESHOLD,
+    speedRecovery: PLAYER.SPEED_RECOVERY,
     sparkThreshold: RENDER.sparkThreshold,
     particleCount: RENDER.particleCount,
     decoCount: RENDER.decoCount,

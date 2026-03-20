@@ -12,4 +12,5 @@ export const GAME = Object.freeze({
   TRACK_WIDTH: 55,
   COLLISION_DIST: 25,
   CHECKPOINT_RADIUS: 90,
+  WALL_WARP_THRESHOLD: 10,
 });
