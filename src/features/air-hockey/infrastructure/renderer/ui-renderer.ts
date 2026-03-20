@@ -2,7 +2,7 @@
  * UI レンダラー
  * - カウントダウン・スコア・HUD・ポーズ・コンボ・ヘルプ画面の描画
  */
-import type { GameEffects, FieldConfig, ComboState } from '../../core/types';
+import type { GameEffects, FieldConfig, ComboState } from '../../domain/types';
 import type { GameConstants } from '../../core/constants';
 
 export class UiRenderer {

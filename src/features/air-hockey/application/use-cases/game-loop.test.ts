@@ -52,6 +52,10 @@ describe('GameLoopUseCase', () => {
       expect(score.player).toBe(0);
       expect(score.cpu).toBe(0);
     });
+
+    it('初期状態で勝者がundefinedである', () => {
+      expect(useCase.getWinner()).toBeUndefined();
+    });
   });
 
   describe('フェーズ遷移', () => {

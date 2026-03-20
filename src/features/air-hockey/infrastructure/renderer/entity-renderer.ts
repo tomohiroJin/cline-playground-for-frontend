@@ -2,7 +2,7 @@
  * エンティティレンダラー
  * - パック・マレット・アイテムの描画
  */
-import type { Mallet, Puck, Item } from '../../core/types';
+import type { Mallet, Puck, Item } from '../../domain/types';
 import type { GameConstants } from '../../core/constants';
 import { magnitude } from '../../../../utils/math-utils';
 import {

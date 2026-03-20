@@ -9,17 +9,10 @@
  */
 import { GameRunner } from '../helpers/game-runner';
 import { TestFactory } from '../helpers/factories';
+import { createRunner } from '../helpers/create-runner';
 import { PHYSICS_CONSTANTS } from '../../domain/constants/physics';
 
 const { CANVAS_WIDTH, CANVAS_HEIGHT, PUCK_RADIUS, MALLET_RADIUS } = PHYSICS_CONSTANTS;
-
-/** テスト用の GameRunner を生成する */
-const createRunner = (initialState?: Parameters<typeof TestFactory.createTestGameState>[0]) => {
-  const field = TestFactory.createTestFieldConfig();
-  const aiConfig = TestFactory.createTestAiConfig();
-  const state = initialState ? TestFactory.createTestGameState(initialState) : undefined;
-  return new GameRunner(field, aiConfig, state);
-};
 
 describe('ゲームフロー統合テスト', () => {
   describe('ゴール判定', () => {

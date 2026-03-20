@@ -15,7 +15,7 @@ import type {
   Particle,
   ComboState,
   HitStopState,
-} from '../../core/types';
+} from '../../domain/types';
 import type { GameConstants } from '../../core/constants';
 import { FieldRenderer } from './field-renderer';
 import { EntityRenderer } from './entity-renderer';

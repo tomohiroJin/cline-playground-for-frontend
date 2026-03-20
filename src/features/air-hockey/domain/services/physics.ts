@@ -3,10 +3,9 @@
  * - core/physics.ts のロジックを移行（API 変更なし）
  * - 純粋関数のみ
  */
+import type { Entity } from '../types';
 import { PHYSICS_CONSTANTS } from '../constants/physics';
 import { distance, magnitude } from '../../../../utils/math-utils';
-
-type Entity = { x: number; y: number; vx: number; vy: number };
 
 /** 反射時の反発係数（0-1、1で完全弾性衝突） */
 const RESTITUTION = PHYSICS_CONSTANTS.RESTITUTION;

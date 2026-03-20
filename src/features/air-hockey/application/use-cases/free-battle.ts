@@ -35,10 +35,6 @@ export class FreeBattleUseCase {
   private winStreak = 0;
   /** 勝利済みフィールド */
   private fieldsWon: string[] = [];
-  /** 使用済みアイテムタイプ */
-  private itemTypesUsed: string[] = [];
-  /** 最大スコア差 */
-  private maxScoreDiff = 0;
 
   constructor(
     private readonly storage: GameStoragePort,
@@ -110,9 +106,10 @@ export class FreeBattleUseCase {
         matchDuration: stats.matchDuration,
       },
       winStreak: this.winStreak,
-      maxScoreDiff: this.maxScoreDiff,
+      maxScoreDiff: Math.abs(finalScore.player - finalScore.cpu),
       fieldsWon: this.fieldsWon,
-      itemTypesUsed: this.itemTypesUsed,
+      // TODO(2026-03-20): アイテム使用履歴のトラッキングを実装
+      itemTypesUsed: [],
     };
 
     const newAchievements = checkAchievements(achievementCtx, alreadyUnlocked);

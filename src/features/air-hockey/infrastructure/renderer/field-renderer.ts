@@ -2,7 +2,7 @@
  * フィールドレンダラー
  * - フィールド背景・障害物・ゴールエリアの描画
  */
-import type { FieldConfig, Obstacle, ObstacleState } from '../../core/types';
+import type { FieldConfig, Obstacle, ObstacleState } from '../../domain/types';
 import type { GameConstants } from '../../core/constants';
 
 export class FieldRenderer {

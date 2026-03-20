@@ -23,10 +23,15 @@ export type StageCompleteResult = {
 };
 
 export class StoryModeUseCase {
+  private readonly dex: CharacterDexUseCase;
+
   constructor(
     private readonly storage: GameStoragePort,
-    private readonly eventDispatcher: GameEventDispatcher
-  ) {}
+    private readonly eventDispatcher: GameEventDispatcher,
+    dex?: CharacterDexUseCase
+  ) {
+    this.dex = dex ?? new CharacterDexUseCase(storage);
+  }
 
   /** ストーリー進行を読み込む */
   loadProgress(): StoryProgress {
@@ -68,9 +73,8 @@ export class StoryModeUseCase {
     const updatedProgress: StoryProgress = { clearedStages };
     this.storage.saveStoryProgress(updatedProgress);
 
-    // 図鑑アンロック判定（CharacterDexUseCase に委譲）
-    const dex = new CharacterDexUseCase(this.storage);
-    const newUnlocks = dex.checkAndUnlock(updatedProgress);
+    // 図鑑アンロック判定（注入された CharacterDexUseCase に委譲）
+    const newUnlocks = this.dex.checkAndUnlock(updatedProgress);
 
     return {
       progress: updatedProgress,

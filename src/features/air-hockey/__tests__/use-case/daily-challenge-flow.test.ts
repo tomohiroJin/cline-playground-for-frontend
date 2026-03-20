@@ -14,6 +14,10 @@ describe('デイリーチャレンジフロー', () => {
     useCase = new DailyChallengeUseCase(storage);
   });
 
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   it('今日のチャレンジが日付ベースで一意に生成される', () => {
     // Arrange & Act
     const challenge = useCase.getTodayChallenge();
@@ -76,7 +80,5 @@ describe('デイリーチャレンジフロー', () => {
 
     // Assert: 日付が異なる
     expect(challenge1.date).not.toBe(challenge2.date);
-
-    jest.useRealTimers();
   });
 });

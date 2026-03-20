@@ -358,7 +358,10 @@ export class GameRunner {
     return remainingPucks;
   }
 
-  /** コンボの更新とイベント発行 */
+  /** フィーバー発動のコンボ閾値 */
+  private static readonly FEVER_COMBO_THRESHOLD = 3;
+
+  /** コンボの更新・フィーバー判定・イベント発行 */
   private updateCombo(scorer: 'player' | 'cpu'): void {
     const combo = this.state.combo;
     if (combo.lastScorer === scorer) {
@@ -370,10 +373,19 @@ export class GameRunner {
       if (newCount >= 2) {
         this.dispatcher.dispatch({ type: 'COMBO_INCREASED', count: newCount });
       }
+      // フィーバー発動判定
+      if (newCount >= GameRunner.FEVER_COMBO_THRESHOLD && !this.state.fever.active) {
+        this.state = {
+          ...this.state,
+          fever: { ...this.state.fever, active: true },
+        };
+        this.dispatcher.dispatch({ type: 'FEVER_ACTIVATED' });
+      }
     } else {
       this.state = {
         ...this.state,
         combo: { count: 1, lastScorer: scorer },
+        fever: { ...this.state.fever, active: false },
       };
     }
   }

@@ -71,12 +71,12 @@ describe('AI ドメインサービス', () => {
       expect(result).not.toBeNull();
     });
 
-    it('skipRate > 0 でランダム値が閾値未満なら null を返す', () => {
+    it('skipRate > 0 でランダム値が閾値未満なら undefined を返す', () => {
       jest.spyOn(Math, 'random').mockReturnValue(0.01);
       const game = createGame();
       const config = { ...DOMAIN_AI_BEHAVIOR_PRESETS.easy, skipRate: 0.05 };
       const result = DomainCpuAI.updateWithBehavior(game, config, Date.now());
-      expect(result).toBeNull();
+      expect(result).toBeUndefined();
     });
 
     it('CPU がフィールド端にいる場合、中央に戻るターゲットを計算する', () => {
@@ -88,6 +88,17 @@ describe('AI ドメインサービス', () => {
       // フィールド端にいるとき中央に戻る
       expect(target.x).toBe(225);
       expect(target.y).toBe(80);
+    });
+
+    it('乱数生成器を注入してターゲットを計算できる', () => {
+      const game = createGame();
+      const config = { ...DOMAIN_AI_BEHAVIOR_PRESETS.easy, wobble: 10 };
+      const fixedRandom = () => 0.3;
+      const target = DomainCpuAI.calculateTargetWithBehavior(
+        game, config, 1000, { random: fixedRandom }
+      );
+      expect(target.x).toBeDefined();
+      expect(target.y).toBeDefined();
     });
 
     it('wallBounce 有効時に予測位置が壁で反射する', () => {

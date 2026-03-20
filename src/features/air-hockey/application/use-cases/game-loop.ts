@@ -42,7 +42,7 @@ export class GameLoopUseCase {
   private state: GameState;
   private phase: GamePhase = 'countdown';
   private score: Score;
-  private winner: 'player' | 'cpu' | null = null;
+  private winner: 'player' | 'cpu' | undefined = undefined;
 
   constructor(
     private readonly deps: GameLoopDependencies,
@@ -70,7 +70,7 @@ export class GameLoopUseCase {
   }
 
   /** 勝者を取得する */
-  getWinner(): 'player' | 'cpu' | null {
+  getWinner(): 'player' | 'cpu' | undefined {
     return this.winner;
   }
 

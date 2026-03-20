@@ -57,6 +57,59 @@ describe('コンボ・フィーバー統合テスト', () => {
     });
   });
 
+  describe('フィーバー', () => {
+    it('コンボ3以上でフィーバーが発動する', () => {
+      // Arrange
+      const runner = new GameRunner(defaultField, easyAi, { winScore: 10 });
+
+      // Act: プレイヤーが3回連続ゴール
+      for (let i = 0; i < 3; i++) {
+        runner.setPuckPosition(0, CANVAS_WIDTH / 2, PUCK_RADIUS + 5);
+        runner.setPuckVelocity(0, 0, -15);
+        runner.runUntil(() => runner.getScore().player > i, 100);
+      }
+
+      // Assert: フィーバーが発動している
+      const state = runner.getState();
+      expect(state.fever.active).toBe(true);
+    });
+
+    it('フィーバー発動時に FEVER_ACTIVATED イベントが発行される', () => {
+      // Arrange
+      const runner = new GameRunner(defaultField, easyAi, { winScore: 10 });
+
+      // Act: プレイヤーが3回連続ゴール
+      for (let i = 0; i < 3; i++) {
+        runner.setPuckPosition(0, CANVAS_WIDTH / 2, PUCK_RADIUS + 5);
+        runner.setPuckVelocity(0, 0, -15);
+        runner.runUntil(() => runner.getScore().player > i, 100);
+      }
+
+      // Assert
+      const feverEvents = runner.getEventsOfType('FEVER_ACTIVATED');
+      expect(feverEvents.length).toBe(1);
+    });
+
+    it('異なるプレイヤーがゴールするとフィーバーは発動しない', () => {
+      // Arrange
+      const runner = new GameRunner(defaultField, easyAi, { winScore: 10 });
+
+      // Act: プレイヤー2回 → CPU1回
+      for (let i = 0; i < 2; i++) {
+        runner.setPuckPosition(0, CANVAS_WIDTH / 2, PUCK_RADIUS + 5);
+        runner.setPuckVelocity(0, 0, -15);
+        runner.runUntil(() => runner.getScore().player > i, 100);
+      }
+      runner.setPuckPosition(0, CANVAS_WIDTH / 2, CANVAS_HEIGHT - PUCK_RADIUS - 5);
+      runner.setPuckVelocity(0, 0, 15);
+      runner.runUntil(() => runner.getScore().cpu > 0, 100);
+
+      // Assert: フィーバーは発動していない
+      const state = runner.getState();
+      expect(state.fever.active).toBe(false);
+    });
+  });
+
   describe('COMBO_INCREASED イベント', () => {
     it('コンボ2以上でイベントが発行される', () => {
       // Arrange

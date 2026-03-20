@@ -7,7 +7,7 @@ import {
   BigEffect,
   ItemEffectRegistry,
 } from './item-effect';
-import type { GameState } from '../../core/types';
+import type { GameState } from '../types';
 
 describe('ItemEffect Strategy パターン', () => {
   const createGameState = (): GameState => ({

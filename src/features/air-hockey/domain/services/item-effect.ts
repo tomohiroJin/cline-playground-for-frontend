@@ -3,8 +3,28 @@
  * - 各アイテムは ItemEffectStrategy を実装
  * - 新アイテム追加時は Strategy の実装を追加するのみ
  */
-import type { GameState, ItemType, Puck, GameEffects } from '../../core/types';
+import type { GameState, ItemType, Puck, GameEffects } from '../types';
 import { magnitude } from '../../../../utils/math-utils';
+
+/** エフェクト関連定数 */
+const EFFECT_CONSTANTS = {
+  /** 速度エフェクト持続時間（ms） */
+  SPEED_DURATION: 8000,
+  /** 不可視エフェクトカウント */
+  INVISIBLE_COUNT: 5,
+  /** マグネットエフェクト持続時間（ms） */
+  MAGNET_DURATION: 5000,
+  /** 巨大化エフェクト持続時間（ms） */
+  BIG_DURATION: 8000,
+  /** 巨大化スケール */
+  BIG_SCALE: 1.5,
+  /** 分裂時のデフォルト速度 */
+  SPLIT_DEFAULT_SPEED: 3,
+  /** 分裂時の角度オフセット */
+  SPLIT_ANGLE_OFFSET: 0.5,
+  /** 分裂時のX座標オフセット */
+  SPLIT_X_OFFSET: 20,
+} as const;
 
 /**
  * アイテムエフェクト Strategy インターフェース
@@ -26,12 +46,22 @@ export class SplitEffect implements ItemEffectStrategy {
   apply(state: GameState, _target: 'player' | 'cpu', _now: number): GameState {
     if (state.pucks.length !== 1) return state;
     const p = state.pucks[0];
-    const speed = magnitude(p.vx, p.vy) || 3;
+    const speed = magnitude(p.vx, p.vy) || EFFECT_CONSTANTS.SPLIT_DEFAULT_SPEED;
     const angle = Math.atan2(p.vy, p.vx);
     const newPucks: Puck[] = [
       { ...p },
-      { ...p, x: p.x - 20, vx: Math.cos(angle - 0.5) * speed, vy: Math.sin(angle - 0.5) * speed },
-      { ...p, x: p.x + 20, vx: Math.cos(angle + 0.5) * speed, vy: Math.sin(angle + 0.5) * speed },
+      {
+        ...p,
+        x: p.x - EFFECT_CONSTANTS.SPLIT_X_OFFSET,
+        vx: Math.cos(angle - EFFECT_CONSTANTS.SPLIT_ANGLE_OFFSET) * speed,
+        vy: Math.sin(angle - EFFECT_CONSTANTS.SPLIT_ANGLE_OFFSET) * speed,
+      },
+      {
+        ...p,
+        x: p.x + EFFECT_CONSTANTS.SPLIT_X_OFFSET,
+        vx: Math.cos(angle + EFFECT_CONSTANTS.SPLIT_ANGLE_OFFSET) * speed,
+        vy: Math.sin(angle + EFFECT_CONSTANTS.SPLIT_ANGLE_OFFSET) * speed,
+      },
     ];
     return { ...state, pucks: newPucks };
   }
@@ -46,7 +76,7 @@ export class SpeedEffect implements ItemEffectStrategy {
       ...state.effects,
       [target]: {
         ...state.effects[target],
-        speed: { start: now, duration: 8000 },
+        speed: { start: now, duration: EFFECT_CONSTANTS.SPEED_DURATION },
       },
     };
     return { ...state, effects: newEffects };
@@ -62,7 +92,7 @@ export class InvisibleEffect implements ItemEffectStrategy {
       ...state.effects,
       [target]: {
         ...state.effects[target],
-        invisible: 5,
+        invisible: EFFECT_CONSTANTS.INVISIBLE_COUNT,
       },
     };
     return { ...state, effects: newEffects };
@@ -94,7 +124,7 @@ export class MagnetEffect implements ItemEffectStrategy {
       ...state.effects,
       [target]: {
         ...state.effects[target],
-        magnet: { start: now, duration: 5000 },
+        magnet: { start: now, duration: EFFECT_CONSTANTS.MAGNET_DURATION },
       },
     };
     return { ...state, effects: newEffects };
@@ -110,7 +140,7 @@ export class BigEffect implements ItemEffectStrategy {
       ...state.effects,
       [target]: {
         ...state.effects[target],
-        big: { start: now, duration: 8000, scale: 1.5 },
+        big: { start: now, duration: EFFECT_CONSTANTS.BIG_DURATION, scale: EFFECT_CONSTANTS.BIG_SCALE },
       },
     };
     return { ...state, effects: newEffects };

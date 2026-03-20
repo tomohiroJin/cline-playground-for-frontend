@@ -3,7 +3,7 @@
  * - ゲーム内で発生する重要な出来事を表現
  * - Observer パターンで購読可能
  */
-import type { ItemType, GamePhase } from '../../core/types';
+import type { ItemType, GamePhase } from '../types';
 
 export type GameEvent =
   | { type: 'GOAL_SCORED'; scorer: 'player' | 'cpu'; speed: number }

@@ -2,15 +2,16 @@
  * エフェクトレンダラー
  * - パーティクル・衝撃波・ヒットストップ・フィーバーなどの描画
  */
-import { ITEMS } from '../../core/config';
+import { DOMAIN_ITEMS } from '../../domain/constants/items';
 import type {
   GameEffects,
   EffectState,
   GoalEffect,
   Mallet,
+  ItemType,
   Particle,
   HitStopState,
-} from '../../core/types';
+} from '../../domain/types';
 import type { GameConstants } from '../../core/constants';
 
 export class EffectRenderer {
@@ -43,9 +44,7 @@ export class EffectRenderer {
     const alpha = 1 - (now - flash.time) / this.consts.TIMING.FLASH;
     this.ctx.fillStyle = `rgba(255,255,255,${alpha * 0.3})`;
     this.ctx.fillRect(0, 0, W, H);
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    const item = ITEMS.find(i => i.id === flash.type);
+    const item = DOMAIN_ITEMS.find(i => i.id === (flash.type as ItemType));
     if (item) {
       this.ctx.font = 'bold 18px Arial';
       this.ctx.textAlign = 'center';
