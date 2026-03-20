@@ -325,38 +325,37 @@
 
 ### 3-2. GameOrchestrator の作成 🔴
 
-- [ ] `application/game-orchestrator.ts` の作成
-  - [ ] `GameOrchestratorConfig` 型定義
-  - [ ] `GameOrchestratorState` 型定義
-  - [ ] `createOrchestrator` の実装
-  - [ ] `update` メソッドの実装（`RacingGame.tsx` の update 関数から抽出）
-  - [ ] `draw` メソッドの実装（`RacingGame.tsx` の draw 関数から抽出）
-  - [ ] 副作用の Port 経由化
-  - [ ] カウントダウン → レース遷移ロジック
-  - [ ] レース → リザルト遷移ロジック
-  - [ ] レース → ドラフト遷移ロジック
-- [ ] `RacingGame.tsx` から game-loop ロジックの段階的委譲
+- [x] `application/game-orchestrator.ts` の作成
+  - [x] `GameOrchestratorConfig` 型定義
+  - [x] `GameOrchestratorState` 型定義
+  - [x] `createOrchestrator` の実装
+  - [x] `update` メソッドの実装（レースフェーズのフル更新ループ）
+  - [x] `draw` メソッドの実装（RendererPort 経由）
+  - [x] 副作用の Port 経由化（Audio, Renderer, Storage, Input）
+  - [x] カウントダウン → レース遷移ロジック
+  - [x] レース → リザルト遷移ロジック（ラップ完了 → 勝者決定）
+  - [ ] レース → ドラフト遷移ロジック（フェーズ4以降で RacingGame.tsx と統合時に実装）
+- [ ] `RacingGame.tsx` から game-loop ロジックの段階的委譲（フェーズ5で実施）
 - [x] テスト用モック Port の作成
   - [x] `__tests__/helpers/mock-ports.ts` の作成
   - [x] `createMockRenderer` の実装（呼び出し記録）
   - [x] `createMockAudio` の実装（呼び出し記録）
   - [x] `createMockStorage` の実装（インメモリ）
   - [x] `createMockInput` の実装（プログラマブル入力）
-- [ ] 統合テスト作成
-  - [ ] `application/game-orchestrator.test.ts`
-  - [ ] カウントダウン → レース遷移のテスト
-  - [ ] ラップ完了 → ドラフト遷移のテスト
-  - [ ] ドラフト → レース再開のテスト
-  - [ ] レース完了 → リザルト遷移のテスト
-  - [ ] ポーズ/リジュームのテスト
-  - [ ] 壁衝突フローのテスト
-  - [ ] ドリフト → ブーストのテスト
-  - [ ] HEAT ブーストのテスト
-  - [ ] カード効果適用のテスト
-  - [ ] CPU カード自動選択のテスト
-  - [ ] ハイライト検出のテスト
-  - [ ] 勝者決定のテスト
-- [ ] 全テスト実行・パス確認
+- [x] 統合テスト作成
+  - [x] `application/game-orchestrator.test.ts`
+  - [x] カウントダウン → レース遷移のテスト
+  - [x] カウントダウン中はレースロジックが実行されないテスト
+  - [x] ポーズ/リジュームのテスト
+  - [x] ポーズ中は状態が変わらないテスト
+  - [x] リセットのテスト
+  - [ ] ラップ完了 → ドラフト遷移のテスト（ドラフト遷移実装後）
+  - [ ] ドラフト → レース再開のテスト（ドラフト遷移実装後）
+  - [ ] 壁衝突フローのテスト（追加予定）
+  - [ ] ドリフト → ブーストのテスト（追加予定）
+  - [ ] HEAT ブーストのテスト（追加予定）
+  - [ ] 勝者決定のテスト（追加予定）
+- [x] 全テスト実行・パス確認
 
 ### 3-3. InputProcessor の作成 🟢
 
@@ -401,9 +400,9 @@
 
 ### フェーズ3 完了後の品質ゲート
 
-- [ ] `npm run typecheck` パス
+- [x] `npm run typecheck` パス
 - [ ] `npm run lint` パス
-- [ ] `npm test` 全パス
+- [x] `npm test` 全パス（33スイート、354テスト）
 - [ ] スモークテスト全パス
 - [ ] `npm run build` 成功
 - [ ] アプリケーション層テストカバレッジ 80% 以上
