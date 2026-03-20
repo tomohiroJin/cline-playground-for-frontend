@@ -49,4 +49,4 @@ export const calculateShuffleMoves = (division: number): number =>
  * 分割数から難易度倍率を取得する
  */
 export const getDivisionMultiplier = (division: number): number =>
-  DIVISION_MULTIPLIERS[division] ?? 1.0;
+  (DIVISION_MULTIPLIERS as Record<number, number>)[division] ?? 1.0;
