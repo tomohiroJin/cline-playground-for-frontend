@@ -10,7 +10,6 @@ import { puzzleBoardStateAtom } from '../store/puzzle-atoms';
 import { hintUsedAtom } from '../store/ui-atoms';
 import { initializePuzzle } from '../../application/use-cases/initialize-puzzle';
 import { movePieceUseCase } from '../../application/use-cases/move-piece';
-import { PuzzleBoardState } from '../../domain/puzzle/aggregates/puzzle-board';
 
 /**
  * パズルゲームの状態と操作を管理するフック

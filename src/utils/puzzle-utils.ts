@@ -10,7 +10,6 @@ import { createPuzzleBoard } from '../domain/puzzle/aggregates/puzzle-board';
 import { shufflePuzzle } from '../domain/puzzle/services/shuffle-service';
 import {
   isInCorrectPosition,
-  movePieceTo,
 } from '../domain/puzzle/entities/puzzle-piece';
 import {
   getAdjacentPositions as domainGetAdjacentPositions,
