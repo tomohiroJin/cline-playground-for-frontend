@@ -45,45 +45,45 @@
 **コミットタイプ:** `refactor`
 
 ### 2-1. ドメイン層のディレクトリ構造作成
-- [ ] `domain/` ディレクトリを作成
-- [ ] `domain/models/` ディレクトリを作成
-- [ ] `domain/types.ts` にドメイン固有の型定義を移動・整理
+- [x] `domain/` ディレクトリを作成
+- [x] `domain/models/` ディレクトリを作成
+- [x] `domain/types.ts` にドメイン固有の型定義を移動・整理
 
 ### 2-2. Grid 値オブジェクトの実装
-- [ ] テストを先に作成（`__tests__/domain/grid.test.ts`）
-- [ ] `domain/models/grid.ts` に Grid クラスを実装
+- [x] テストを先に作成（`__tests__/domain/grid.test.ts`）
+- [x] `domain/models/grid.ts` に Grid クラスを実装
   - 不変性保証（全操作が新インスタンスを返す）
   - DbC バリデーション（座標範囲チェック）
   - 既存 `grid.ts` と同等の機能を提供
-- [ ] 既存 `grid.ts` の呼び出し元を新 Grid に段階的に移行
-- [ ] テスト実行・パス確認
+- [x] 既存 `grid.ts` の呼び出し元を新 Grid に段階的に移行
+- [x] テスト実行・パス確認
 
 ### 2-3. Block 値オブジェクトの実装
-- [ ] テストを先に作成（`__tests__/domain/block.test.ts`）
-- [ ] `domain/models/block.ts` に Block クラスを実装
+- [x] テストを先に作成（`__tests__/domain/block.test.ts`）
+- [x] `domain/models/block.ts` に Block クラスを実装
   - 不変性保証
   - `getCells`, `canMoveTo`, `toSingleCells` メソッド
   - 生成ロジックは `SpawnService` に分離（Phase 3 で実装、ここではスタブ）
-- [ ] 既存 `block.ts` の呼び出し元を段階的に移行
-- [ ] テスト実行・パス確認
+- [x] 既存 `block.ts` の呼び出し元を段階的に移行
+- [x] テスト実行・パス確認
 
 ### 2-4. Bullet 値オブジェクトの実装
-- [ ] テストを先に作成（`__tests__/domain/bullet.test.ts`）
-- [ ] `domain/models/bullet.ts` に Bullet クラスを実装
+- [x] テストを先に作成（`__tests__/domain/bullet.test.ts`）
+- [x] `domain/models/bullet.ts` に Bullet クラスを実装
   - `move`, `isInBounds` メソッド
   - Factory メソッド（`createSpread`, `createWithDownshot` 等）
-- [ ] 既存 `bullet.ts` の呼び出し元を段階的に移行
-- [ ] テスト実行・パス確認
+- [x] 既存 `bullet.ts` の呼び出し元を段階的に移行
+- [x] テスト実行・パス確認
 
 ### 2-5. Score 値オブジェクトの実装
-- [ ] テストを先に作成（`__tests__/domain/score.test.ts`）
-- [ ] `domain/models/score.ts` にスコア計算ロジックを集約
+- [x] テストを先に作成（`__tests__/domain/score.test.ts`）
+- [x] `domain/models/score.ts` にスコア計算ロジックを集約
   - `calculateBlockScore`: ブロック破壊スコア
   - `calculateLineScore`: ライン消しスコア（同時消しボーナス・コンボ・ステージ倍率含む）
   - `calculateSkillScore`: スキル使用時のスコア
-- [ ] `use-game-loop.ts` 内のインラインスコア計算を Score に委譲
-- [ ] `score-balance.test.ts` を新 Score モジュールのテストに統合
-- [ ] テスト実行・パス確認
+- [x] `use-game-loop.ts` 内のインラインスコア計算を Score に委譲
+- [x] `score-balance.test.ts` を新 Score モジュールのテストに統合
+- [x] テスト実行・パス確認
 
 ---
 
@@ -303,10 +303,10 @@
 | Phase | 状態 | タスク数 | 完了 |
 |-------|------|---------|------|
 | Phase 1: テスト基盤 | 完了 | 11 | 11 |
-| Phase 2: ドメインモデル | 未着手 | 20 | 0 |
+| Phase 2: ドメインモデル | 完了 | 20 | 20 |
 | Phase 3: ドメインサービス | 未着手 | 16 | 0 |
 | Phase 4: アプリケーション層 | 未着手 | 9 | 0 |
 | Phase 5: プレゼンテーション層 | 未着手 | 14 | 0 |
 | Phase 6: テスト総合リファクタリング | 未着手 | 17 | 0 |
 | Phase 7: 最終整理 | 未着手 | 15 | 0 |
-| **合計** | | **102** | **11** |
+| **合計** | | **102** | **31** |
