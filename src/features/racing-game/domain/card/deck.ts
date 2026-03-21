@@ -3,6 +3,7 @@
 import type { Card, CardEffect, CardRarity, DeckState } from './types';
 import { ALL_CARDS } from './card-catalog';
 import { assertPositive } from '../shared/assertions';
+import { getRandom } from '../shared/random';
 
 /** レアリティのソート順 */
 const RARITY_ORDER: Record<CardRarity, number> = { R: 1, SR: 2, SSR: 3 };
@@ -21,7 +22,7 @@ const RARITY_PROB: Record<CardRarity, number> = {
 const shuffle = <T,>(arr: T[]): T[] => {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(getRandom()() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
@@ -44,7 +45,7 @@ export const drawCards = (deck: DeckState, count: number): DeckState => {
 
   const hand: Card[] = [];
   for (let i = 0; i < count; i++) {
-    const roll = Math.random();
+    const roll = getRandom()();
     let targetRarity: CardRarity;
     if (roll < RARITY_PROB.SSR) {
       targetRarity = 'SSR';
@@ -84,7 +85,7 @@ export const selectCard = (deck: DeckState, cardId: string): DeckState => {
     const candidates = [...others];
     const picked: Card[] = [];
     for (let i = 0; i < 2 && candidates.length > 0; i++) {
-      const idx = Math.floor(Math.random() * candidates.length);
+      const idx = Math.floor(getRandom()() * candidates.length);
       picked.push(candidates[idx]);
       candidates.splice(idx, 1);
     }
@@ -107,7 +108,8 @@ export const cpuSelectCard = (deck: DeckState, skill: number): DeckState => {
 
   const sorted = [...deck.hand].sort((a, b) => RARITY_ORDER[b.rarity] - RARITY_ORDER[a.rarity]);
 
-  const idx = Math.random() < skill ? 0 : Math.floor(Math.random() * sorted.length);
+  const rng = getRandom();
+  const idx = rng() < skill ? 0 : Math.floor(rng() * sorted.length);
   return selectCard(deck, sorted[idx].id);
 };
 

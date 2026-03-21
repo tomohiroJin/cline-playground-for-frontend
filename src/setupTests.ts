@@ -1,8 +1,14 @@
 // jest-dom の拡張マッチャーを追加
 import '@testing-library/jest-dom';
 import { TextEncoder, TextDecoder } from 'util';
+import { resetGlobalRandom } from './features/racing-game/domain/shared/random';
 
 Object.assign(global, { TextEncoder, TextDecoder });
+
+// 各テスト後にグローバル乱数をリセット（テスト間の状態漏洩を防止）
+afterEach(() => {
+  resetGlobalRandom();
+});
 
 // ImageData Polyfill（jsdom では未定義のため）
 if (typeof globalThis.ImageData === 'undefined') {

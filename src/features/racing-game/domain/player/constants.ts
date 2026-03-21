@@ -19,6 +19,18 @@ export const PLAYER = Object.freeze({
   SPEED_RECOVERY: 0.02,
 });
 
+/** プレイヤー移動定数 */
+export const PLAYER_PHYSICS = Object.freeze({
+  /** dt はフレームレートから推定（60fps 想定） */
+  FRAME_DT: 1 / 60,
+  /** 壁接触中の速度回復率（30% に制限） */
+  WALL_RECOVERY_RATE: 0.3,
+  /** ワープ後の速度 */
+  WARP_SPEED: 0.3,
+  /** 最低速度（壁接触後） */
+  MIN_SPEED_AFTER_WALL: 0.1,
+});
+
 /** HEAT（ニアミスボーナス）定数 */
 export const HEAT = Object.freeze({
   WALL_THRESHOLD: 25,

@@ -4,6 +4,7 @@ import type { Player } from './types';
 import type { Point } from '../shared/types';
 import { DRIFT, PLAYER } from './constants';
 import { normalizeAngle, randomRange } from '../shared/math-utils';
+import { getRandom } from '../shared/random';
 import { getTrackInfo } from '../track/track';
 
 /** CPU 操作パラメータ */
@@ -46,7 +47,7 @@ export const createCpuStrategy = (difficulty: CpuDifficulty): CpuStrategy => {
       const toNext = Math.atan2(trackPoints[nextIdx].y - player.y, trackPoints[nextIdx].x - player.x);
       const target = info.dist / trackWidth > 0.6 ? toCenter : toNext;
       let diff = normalizeAngle(target - player.angle);
-      if (Math.random() < params.miss) diff += randomRange(-0.4, 0.4);
+      if (getRandom()() < params.miss) diff += randomRange(-0.4, 0.4);
       const rate = PLAYER.TURN_RATE * params.skill;
       return diff > 0.03 ? rate : diff < -0.03 ? -rate : 0;
     },
@@ -55,7 +56,7 @@ export const createCpuStrategy = (difficulty: CpuDifficulty): CpuStrategy => {
       if (params.skill < 0.2) return false;
       const info = getTrackInfo(player.x, player.y, trackPoints, trackWidth);
       const isCorner = info.dist / trackWidth > 0.25;
-      return isCorner && player.speed >= DRIFT.MIN_SPEED && Math.random() < params.skill * 0.5;
+      return isCorner && player.speed >= DRIFT.MIN_SPEED && getRandom()() < params.skill * 0.5;
     },
   };
 };

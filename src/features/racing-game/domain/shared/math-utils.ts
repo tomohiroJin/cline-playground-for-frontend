@@ -1,5 +1,7 @@
 // 数学ユーティリティ関数（純粋関数）
 
+import { getRandom } from './random';
+
 /** 値を範囲内にクランプ */
 export const clamp = (value: number, min: number, max: number): number => {
   const n = Number(value);
@@ -21,11 +23,11 @@ export const distance = (x1: number, y1: number, x2: number, y2: number): number
 
 /** ランダム整数 [0, max) */
 export const randomInt = (max: number): number =>
-  Math.floor(Math.random() * Math.max(1, Math.floor(max)));
+  Math.floor(getRandom()() * Math.max(1, Math.floor(max)));
 
 /** ランダム浮動小数 [min, max) */
 export const randomRange = (min: number, max: number): number =>
-  min >= max ? min : Math.random() * (max - min) + min;
+  min >= max ? min : getRandom()() * (max - min) + min;
 
 /** 時間フォーマット（M:SS.C） */
 export const formatTime = (ms: number): string => {
