@@ -15,7 +15,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { EntityFactory } from '../core/entities';
 import { CONSTANTS } from '../core/constants';
 import { FIELDS } from '../core/config';
-import { getCharacterByDifficulty, findCharacterById, PLAYER_CHARACTER } from '../core/characters';
+import { getCharacterByDifficulty, findCharacterById, getAllCharacters, PLAYER_CHARACTER } from '../core/characters';
 import type { GameState, GamePhase, ShakeState, MatchStats } from '../core/types';
 import { loadStoryProgress, resetStoryProgress } from '../core/story';
 import type { StageDefinition } from '../core/story';
@@ -320,7 +320,7 @@ const AirHockeyGame: React.FC = () => {
 
       {screen === 'characterSelect' && (
         <CharacterSelectScreen
-          characters={selectableCharacters}
+          characters={getAllCharacters()}
           unlockedFieldIds={result.unlockState?.unlockedFields ?? ['classic', 'wide']}
           fields={FIELDS}
           onStartBattle={handleStartBattle}

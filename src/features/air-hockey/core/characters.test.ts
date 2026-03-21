@@ -9,6 +9,7 @@ import {
   getCharacterByDifficulty,
   getRandomReaction,
   findCharacterById,
+  getAllCharacters,
 } from './characters';
 import type { Character, CharacterReaction } from './types';
 
@@ -190,6 +191,41 @@ describe('Phase 2: キャラクター基盤', () => {
       const ids = allCharacters.map(c => c.id);
       const uniqueIds = new Set(ids);
       expect(uniqueIds.size).toBe(ids.length);
+    });
+  });
+
+  describe('getAllCharacters', () => {
+    it('全キャラクター（主人公 + ストーリー + フリー対戦）を返す', () => {
+      const all = getAllCharacters();
+
+      // 主人公 1 + ストーリー 4 + フリー対戦 3 = 8
+      expect(all.length).toBe(8);
+    });
+
+    it('主人公（アキラ）が含まれる', () => {
+      const all = getAllCharacters();
+      expect(all.find(c => c.id === 'player')).toBeDefined();
+    });
+
+    it('ストーリーキャラクターが含まれる', () => {
+      const all = getAllCharacters();
+      expect(all.find(c => c.id === 'hiro')).toBeDefined();
+      expect(all.find(c => c.id === 'misaki')).toBeDefined();
+      expect(all.find(c => c.id === 'takuma')).toBeDefined();
+      expect(all.find(c => c.id === 'yuu')).toBeDefined();
+    });
+
+    it('フリー対戦キャラクターが含まれる', () => {
+      const all = getAllCharacters();
+      expect(all.find(c => c.id === 'rookie')).toBeDefined();
+      expect(all.find(c => c.id === 'regular')).toBeDefined();
+      expect(all.find(c => c.id === 'ace')).toBeDefined();
+    });
+
+    it('重複がない', () => {
+      const all = getAllCharacters();
+      const ids = all.map(c => c.id);
+      expect(new Set(ids).size).toBe(ids.length);
     });
   });
 });
