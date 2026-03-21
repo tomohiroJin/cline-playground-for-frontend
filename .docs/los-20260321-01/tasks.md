@@ -38,7 +38,8 @@
 - [x] LabyrinthOfShadowsGame のスリム化（354行→175行）
 - [x] フックロジックのテスト追加（use-input, use-audio）
 
-## Phase 6: E2E テスト・最終整備
-- [ ] 画面遷移 E2E テスト
-- [ ] index.ts エクスポート整理
-- [ ] 既存テスト最終リファクタリング
+## Phase 6: E2E テスト・最終整備 ✅
+- [x] 画面遷移 E2E テスト（e2e/labyrinth-of-shadows/screen-flow.spec.ts）
+- [x] index.ts エクスポート整理（ドメイン・インフラ層のエクスポート追加）
+- [x] 全テスト通過確認（16 suites, 177 tests）
+- [x] lint クリーン確認
