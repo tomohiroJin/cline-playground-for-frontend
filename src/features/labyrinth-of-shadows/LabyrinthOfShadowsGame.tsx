@@ -20,7 +20,7 @@ import {
   Overlay,
   ModalContent,
   ControlBtn,
-} from '../../pages/MazeHorrorPage.styles';
+} from './presentation/styles/game.styles';
 
 // HUD データの浅い比較
 const hudEqual = (a: HUDData, b: HUDData): boolean =>

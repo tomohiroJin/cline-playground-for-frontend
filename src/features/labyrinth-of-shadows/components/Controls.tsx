@@ -1,5 +1,5 @@
 import React from 'react';
-import { ControlsContainer, ControlBtn } from '../../../pages/MazeHorrorPage.styles';
+import { ControlsContainer, ControlBtn } from '../presentation/styles/game.styles';
 
 interface ControlsProps {
   keysRef: React.RefObject<Record<string, boolean>>;

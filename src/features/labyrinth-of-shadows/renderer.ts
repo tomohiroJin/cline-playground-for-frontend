@@ -2,35 +2,7 @@ import { CONFIG, CONTENT } from './constants';
 import type { GameState, Sprite, EntityType } from './types';
 import { clamp, distance, normAngle, toHex } from './utils';
 import { MazeService } from './maze-service';
-
-// レンガパターンの色を計算
-const getBrickColor = (hitX: number, hitY: number, shade: number): [number, number, number] => {
-  // レンガの繰り返しパターン
-  const brickW = 0.5, brickH = 0.25;
-  const row = Math.floor(hitY / brickH);
-  const offset = (row % 2) * brickW * 0.5;
-  const bx = (hitX + offset) % brickW;
-  const by = hitY % brickH;
-
-  // 目地（モルタル）の判定
-  const mortarW = 0.03;
-  const isMortar = bx < mortarW || by < mortarW;
-
-  if (isMortar) {
-    return [
-      Math.floor(35 * shade),
-      Math.floor(30 * shade),
-      Math.floor(28 * shade),
-    ];
-  }
-
-  // レンガ本体の色バリエーション
-  const noise = Math.sin(hitX * 13.7 + hitY * 7.3) * 0.5 + 0.5;
-  const r = (70 + noise * 20) * shade;
-  const g = (38 + noise * 10) * shade;
-  const b = (45 + noise * 12) * shade;
-  return [Math.floor(r), Math.floor(g), Math.floor(b)];
-};
+import { getBrickColor } from './infrastructure/rendering/brick-texture';
 
 // ==================== RENDERER ====================
 export const Renderer = {
