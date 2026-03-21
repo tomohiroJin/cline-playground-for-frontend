@@ -178,7 +178,7 @@
 > **延期**: マレット描画のキャラカラー反映は Phase 3-4 のゲーム中 UI 対応と合わせて実施予定。
 > 現状のマレット色のままでも 2P 対戦は成立する。
 
-- [ ] マレット描画にキャラテーマカラーを適用（後続フェーズで実施）
+- [x] マレット描画にキャラテーマカラーを適用 — `useGameLoop` の `playerMalletColor` / `cpuMalletColor` で実装済み
 
 ### 3-3-3: 2P 対戦設定フロー
 
@@ -236,7 +236,7 @@
 > **延期**: スコアラベルの Canvas 描画改修は AirHockeyGame.tsx 統合時に対応予定。
 > 現状のラベル（Player/CPU）のままでも 2P 対戦は成立する。
 
-- [ ] スコアラベルの 2P 対応（後続フェーズで実施）
+- [x] スコアラベルの 2P 対応 — `Scoreboard` の `playerName` / `cpuName` / `playerColor` / `cpuColor` で実装済み
 
 ---
 
