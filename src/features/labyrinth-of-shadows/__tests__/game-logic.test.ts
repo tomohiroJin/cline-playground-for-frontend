@@ -3,7 +3,6 @@ import { GameStateFactory } from '../entity-factory';
 import type { GameState } from '../types';
 import { setupAudioContextMock } from './helpers/audio-mock';
 import { GameStateBuilder } from './helpers/game-state-builder';
-import { OPEN_MAZE_7X7 } from './helpers/fixed-maze';
 
 // AudioContext のモック（共通ヘルパー使用）
 beforeAll(() => {

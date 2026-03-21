@@ -3,13 +3,12 @@ import type { GameState, Enemy } from './types';
 import { clamp, distance, normAngle } from './utils';
 import { MazeService } from './maze-service';
 import { AudioService } from './audio';
+import { GAME_BALANCE } from './domain/constants';
+import { isPlayerNearItem, isPlayerNearExit, isPlayerCollidingEnemy } from './domain/services/collision';
+import { calculateKeyScore, calculateVictoryScore, calculateCombo } from './domain/services/scoring';
+import { bfsPath } from './domain/services/pathfinding';
 
-// BFS パス再計算間隔（ms）
-const PATH_RECALC_INTERVAL = 500;
-// テレポートクールダウン（ms）
-const TELEPORT_COOLDOWN = 8000;
-// テレポート追跡範囲
-const TELEPORT_CHASE_RANGE = 4;
+const { PATH_RECALC_INTERVAL, TELEPORT_COOLDOWN, TELEPORT_CHASE_RANGE } = GAME_BALANCE.enemy;
 
 // ==================== GAME LOGIC ====================
 export const GameLogic = {
@@ -83,15 +82,15 @@ export const GameLogic = {
 
   updateItems(g: GameState) {
     for (const item of g.items) {
-      if (item.got || distance(g.player.x, g.player.y, item.x + 0.5, item.y + 0.5) >= 0.5)
+      if (item.got || !isPlayerNearItem(g.player.x, g.player.y, item.x, item.y))
         continue;
 
       item.got = true;
       switch (item.type) {
         case 'key': {
-          g.combo = g.gTime - g.lastKeyTime < 10000 ? g.combo + 1 : 1;
+          g.combo = calculateCombo(g.combo, g.gTime, g.lastKeyTime);
           g.lastKeyTime = g.gTime;
-          const bonus = CONFIG.score.keyBase * g.combo;
+          const bonus = calculateKeyScore(g.combo);
           g.keys++;
           g.score += bonus;
           g.msg = `🔑 鍵を入手！ +${bonus}pt (${g.keys}/${g.reqKeys})`;
@@ -109,8 +108,8 @@ export const GameLogic = {
             g.lives++;
             g.msg = '💊 回復薬！ ライフ+1';
           } else {
-            g.score += 50;
-            g.msg = '💊 体力満タン！ +50pt';
+            g.score += GAME_BALANCE.scoring.HEAL_FULL_BONUS;
+            g.msg = `💊 体力満タン！ +${GAME_BALANCE.scoring.HEAL_FULL_BONUS}pt`;
           }
           AudioService.play('heal', 0.4);
           break;
@@ -130,16 +129,16 @@ export const GameLogic = {
   },
 
   checkExit(g: GameState): keyof typeof CONTENT.stories | null {
-    if (distance(g.player.x, g.player.y, g.exit.x, g.exit.y) >= 0.55) return null;
+    if (!isPlayerNearExit(g.player.x, g.player.y, g.exit.x, g.exit.y)) return null;
 
     if (g.keys >= g.reqKeys) {
-      g.score += Math.floor(g.time / 100) + CONFIG.score.victoryBonus;
+      g.score += calculateVictoryScore(g.time);
       AudioService.play('door', 0.5);
       return 'victory';
     }
     if (g.msgTimer <= 0) {
       g.msg = `🔒 鍵が足りない！ (${g.keys}/${g.reqKeys})`;
-      g.msgTimer = 1500;
+      g.msgTimer = GAME_BALANCE.timing.LOCKED_MESSAGE_DURATION;
     }
     return null;
   },
@@ -152,8 +151,8 @@ export const GameLogic = {
       e.dir += Math.PI * (0.5 + Math.random() * 0.5);
     }
 
-    const nx = e.x + Math.cos(e.dir) * g.eSpeed * 0.6 * dt;
-    const ny = e.y + Math.sin(e.dir) * g.eSpeed * 0.6 * dt;
+    const nx = e.x + Math.cos(e.dir) * g.eSpeed * GAME_BALANCE.enemy.WANDERER_SPEED_MULTIPLIER * dt;
+    const ny = e.y + Math.sin(e.dir) * g.eSpeed * GAME_BALANCE.enemy.WANDERER_SPEED_MULTIPLIER * dt;
     if (MazeService.isWalkable(g.maze, nx, ny)) {
       e.x = nx;
       e.y = ny;
@@ -172,7 +171,7 @@ export const GameLogic = {
 
       // BFS パスを定期的に再計算
       if (g.gTime - e.pathTime > PATH_RECALC_INTERVAL) {
-        e.path = MazeService.bfsPath(g.maze, e.x, e.y, g.player.x, g.player.y);
+        e.path = bfsPath(g.maze, e.x, e.y, g.player.x, g.player.y);
         e.pathTime = g.gTime;
       }
 
@@ -180,7 +179,7 @@ export const GameLogic = {
       if (e.path.length > 0) {
         const next = e.path[0];
         const distToNext = distance(e.x, e.y, next.x, next.y);
-        if (distToNext < 0.3) {
+        if (distToNext < GAME_BALANCE.enemy.PATH_NODE_REACH_DISTANCE) {
           e.path.shift();
         }
         if (e.path.length > 0) {
@@ -193,7 +192,7 @@ export const GameLogic = {
       }
 
       // 視野内で加速
-      const speedMult = d < 4 ? 1.2 : 1;
+      const speedMult = d < GAME_BALANCE.enemy.CLOSE_RANGE_THRESHOLD ? GAME_BALANCE.enemy.CLOSE_RANGE_SPEED_MULTIPLIER : 1;
       const nx = e.x + Math.cos(e.dir) * g.eSpeed * speedMult * dt;
       const ny = e.y + Math.sin(e.dir) * g.eSpeed * speedMult * dt;
       if (MazeService.isWalkable(g.maze, nx, ny)) {
@@ -237,8 +236,8 @@ export const GameLogic = {
       const emptyCells = MazeService.getEmptyCells(g.maze);
       // プレイヤーから適度な距離のセルを選ぶ
       const candidate = emptyCells.find(c =>
-        distance(c.x + 0.5, c.y + 0.5, g.player.x, g.player.y) > 3 &&
-        distance(c.x + 0.5, c.y + 0.5, g.player.x, g.player.y) < 8
+        distance(c.x + 0.5, c.y + 0.5, g.player.x, g.player.y) > GAME_BALANCE.enemy.TELEPORT_MIN_DISTANCE &&
+        distance(c.x + 0.5, c.y + 0.5, g.player.x, g.player.y) < GAME_BALANCE.enemy.TELEPORT_MAX_DISTANCE
       );
       if (candidate) {
         e.x = candidate.x + 0.5;
@@ -251,8 +250,8 @@ export const GameLogic = {
     // 短距離追跡
     if (!g.hiding && d < TELEPORT_CHASE_RANGE) {
       e.dir = Math.atan2(g.player.y - e.y, g.player.x - e.x);
-      const nx = e.x + Math.cos(e.dir) * g.eSpeed * 0.8 * dt;
-      const ny = e.y + Math.sin(e.dir) * g.eSpeed * 0.8 * dt;
+      const nx = e.x + Math.cos(e.dir) * g.eSpeed * GAME_BALANCE.enemy.TELEPORTER_CHASE_SPEED_MULTIPLIER * dt;
+      const ny = e.y + Math.sin(e.dir) * g.eSpeed * GAME_BALANCE.enemy.TELEPORTER_CHASE_SPEED_MULTIPLIER * dt;
       if (MazeService.isWalkable(g.maze, nx, ny)) {
         e.x = nx;
         e.y = ny;
@@ -260,8 +259,8 @@ export const GameLogic = {
     } else {
       // ゆっくり巡回
       e.dir += (Math.random() - 0.5) * 0.04;
-      const nx = e.x + Math.cos(e.dir) * g.eSpeed * 0.4 * dt;
-      const ny = e.y + Math.sin(e.dir) * g.eSpeed * 0.4 * dt;
+      const nx = e.x + Math.cos(e.dir) * g.eSpeed * GAME_BALANCE.enemy.TELEPORTER_PATROL_SPEED_MULTIPLIER * dt;
+      const ny = e.y + Math.sin(e.dir) * g.eSpeed * GAME_BALANCE.enemy.TELEPORTER_PATROL_SPEED_MULTIPLIER * dt;
       if (MazeService.isWalkable(g.maze, nx, ny)) {
         e.x = nx;
         e.y = ny;
@@ -280,19 +279,19 @@ export const GameLogic = {
     const d = distance(g.player.x, g.player.y, e.x, e.y);
 
     // 衝突判定
-    if (d < 0.45 && !g.hiding && g.invince <= 0) {
+    if (isPlayerCollidingEnemy(g.player.x, g.player.y, e.x, e.y) && !g.hiding && g.invince <= 0) {
       g.lives--;
       g.invince = CONFIG.timing.invinceDuration;
       g.score = Math.max(0, g.score - CONFIG.score.damagePenalty);
       g.combo = 0;
       g.msg = '💔 ダメージ！';
-      g.msgTimer = 1500;
+      g.msgTimer = GAME_BALANCE.timing.DAMAGE_MESSAGE_DURATION;
       AudioService.play('hurt', 0.5);
 
       const edx = g.player.x - e.x,
         edy = g.player.y - e.y;
-      e.x -= (edx / d) * 2.5;
-      e.y -= (edy / d) * 2.5;
+      e.x -= (edx / d) * GAME_BALANCE.collision.ENEMY_KNOCKBACK_DISTANCE;
+      e.y -= (edy / d) * GAME_BALANCE.collision.ENEMY_KNOCKBACK_DISTANCE;
       e.dir += Math.PI;
     }
 
@@ -313,7 +312,7 @@ export const GameLogic = {
   },
 
   updateEnemies(g: GameState, dt: number) {
-    let closest = 99;
+    let closest = GAME_BALANCE.enemy.INITIAL_CLOSEST_DISTANCE;
     for (const e of g.enemies) {
       const d = this.updateEnemy(g, e, dt);
       if (d < closest) closest = d;
