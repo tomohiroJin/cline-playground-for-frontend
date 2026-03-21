@@ -1,6 +1,7 @@
 import { Renderer } from '../renderer';
 import { GameStateFactory } from '../entity-factory';
 import type { GameState } from '../types';
+import { setupAudioContextMock } from './helpers/audio-mock';
 
 // Canvas 2D コンテキストのモック
 const createMockCtx = (): CanvasRenderingContext2D => {
@@ -27,33 +28,9 @@ const createMockCtx = (): CanvasRenderingContext2D => {
   return ctx;
 };
 
-// AudioContext のモック
+// AudioContext のモック（共通ヘルパー使用）
 beforeAll(() => {
-  (window as { AudioContext?: typeof AudioContext }).AudioContext = jest.fn().mockImplementation(
-    () => ({
-      createOscillator: () => ({
-        connect: jest.fn(),
-        start: jest.fn(),
-        stop: jest.fn(),
-        frequency: { value: 0 },
-        type: '',
-      }),
-      createGain: () => ({
-        connect: jest.fn(),
-        gain: {
-          value: 0,
-          setValueAtTime: jest.fn(),
-          exponentialRampToValueAtTime: jest.fn(),
-        },
-      }),
-      createStereoPanner: () => ({
-        connect: jest.fn(),
-        pan: { value: 0 },
-      }),
-      destination: {},
-      currentTime: 0,
-    })
-  );
+  setupAudioContextMock();
 });
 
 describe('labyrinth-of-shadows/renderer', () => {
