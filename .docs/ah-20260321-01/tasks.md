@@ -4,7 +4,7 @@
 
 | フェーズ | ステータス | タスク数 | 完了日 |
 |---------|-----------|---------|--------|
-| 3-1 2P 入力システム | [ ] 未着手 | 20 | — |
+| 3-1 2P 入力システム | [x] 完了 | 20 | 2026-03-21 |
 | 3-2 ゲームモード拡張 | [ ] 未着手 | 16 | — |
 | 3-3 キャラクター選択 | [ ] 未着手 | 18 | — |
 | 3-4 画面・演出対応 | [ ] 未着手 | 20 | — |
@@ -17,54 +17,50 @@
 
 ### 3-1-1: 入力抽象化
 
-- [ ] `domain/contracts/input.ts` を新規作成
-  - [ ] `InputSource` インターフェース定義（`getPosition`, `isActive`, `update`, `dispose`）
-  - [ ] `PlayerSlot` 型定義（`'player1' | 'player2'`）
-- [ ] `domain/types.ts` に `PlayerSlot` を追加（re-export）
+- [x] `domain/contracts/input.ts` を新規作成
+  - [x] ~~`InputSource` インターフェース定義~~ → 設計変更: Phase 3-1 では `PlayerSlot` 型のみ定義。InputSource は既存の keyboard.ts + useInput.ts の仕組みを活用し、`updateKeyboardStateForPlayer` + `calculateKeyboardMovement` の `playerSlot` パラメータで 2P 分離を実現
+  - [x] `PlayerSlot` 型定義（`'player1' | 'player2'`）
+- [x] ~~`domain/types.ts` に `PlayerSlot` を追加（re-export）~~ → `domain/contracts/input.ts` から直接 import する方針に変更
 
 **テスト**:
-- [ ] `tsc --noEmit` で型エラーなし
+- [x] `tsc --noEmit` で型エラーなし
+- [x] `domain/contracts/input.test.ts`: PlayerSlot 型テスト（2テスト）
 
 ### 3-1-2: WASD キーボード入力
 
-- [ ] `hooks/useKeyboardInput.ts` を拡張
-  - [ ] `KeyboardState` に WASD キーの状態を追加（`w`, `a`, `s`, `d`）
-  - [ ] `keydown` / `keyup` ハンドラで WASD キーを処理
-  - [ ] `applyKeyboardMovement()` に `playerSlot` パラメータを追加
-  - [ ] 1P（矢印キー）と 2P（WASD）で独立した移動ベクトルを計算
-- [ ] 2P 用のキーボード入力が既存の 1P 入力に干渉しないことを確認
+- [x] `core/keyboard.ts` を拡張（設計変更: hooks ではなく core 層で分離）
+  - [x] `PLAYER1_KEY_MAP`（矢印キーのみ）と `PLAYER2_KEY_MAP`（WASD のみ）を分離エクスポート
+  - [x] `updateKeyboardStateForPlayer()` を追加: プレイヤー別キーマッピング
+  - [x] `calculateKeyboardMovement()` に `playerSlot` パラメータを追加（デフォルト `'player1'`）
+  - [x] 2P 用の Y 軸クランプ範囲（上半分: `MR+5` 〜 `H/2-MR-10`）を実装
+  - [x] マジックナンバーを `WALL_MARGIN`, `CENTER_LINE_MARGIN` として定数化
+  - [x] 重複ロジックを `applyKeyMap()` に共通化
+- [x] 後方互換: `updateKeyboardState()` は矢印 + WASD 両方を受け付ける既存動作を維持
 
 **テスト**:
-- [ ] `useKeyboardInput.test.ts` に WASD 入力のテストを追加
-  - [ ] W キーで上方向の移動が発生する
-  - [ ] A キーで左方向の移動が発生する
-  - [ ] S キーで下方向の移動が発生する
-  - [ ] D キーで右方向の移動が発生する
-  - [ ] WASD と矢印キーの同時押しがそれぞれ独立して動作する
-  - [ ] 2P モード以外では WASD が無視される
+- [x] `core/keyboard.test.ts` を新規作成（30テスト）
+  - [x] `createKeyboardState`: 初期状態テスト
+  - [x] `updateKeyboardState`: 後方互換テスト（矢印・WASD・無関係キー）
+  - [x] `PLAYER1_KEY_MAP`: 矢印キーのみ含む / WASD 含まない
+  - [x] `PLAYER2_KEY_MAP`: WASD のみ含む / 矢印キー含まない
+  - [x] `updateKeyboardStateForPlayer`: 1P 矢印キー（4方向 + WASD 無視）
+  - [x] `updateKeyboardStateForPlayer`: 2P WASD（4方向 + 矢印無視 + 大文字対応）
+  - [x] 1P と 2P の独立性テスト（相互非干渉）
+  - [x] `calculateKeyboardMovement`: 4方向移動 + 入力なし + 下半分クランプ
+  - [x] `calculateKeyboardMovement` 2P: 上半分クランプ + 上端制限 + player1 デフォルト互換
 
 ### 3-1-3: マルチタッチ入力
 
-- [ ] `hooks/useMultiTouchInput.ts` を新規作成
-  - [ ] Canvas 要素の上下分割（1P: 下半分、2P: 上半分）
-  - [ ] `Touch.identifier` によるタッチポイント追跡
-  - [ ] 各ゾーンで最初の 1 タッチのみ追跡
-  - [ ] タッチ座標 → Canvas 座標系への変換
-  - [ ] `touchstart`, `touchmove`, `touchend`, `touchcancel` の処理
-  - [ ] `touch-action: none` の適用（ブラウザジェスチャー無効化）
+> **延期**: キーボード対戦を先行する方針により、マルチタッチは後続フェーズで実装予定。
+> キーボード 2P 対戦だけでも完全な対戦体験が成立する。
 
-**テスト**:
-- [ ] `useMultiTouchInput.test.ts` を作成
-  - [ ] 下半分のタッチで 1P 位置が更新される
-  - [ ] 上半分のタッチで 2P 位置が更新される
-  - [ ] 同時に 2 つのタッチが独立して追跡される
-  - [ ] タッチ終了で位置が undefined になる
+- [ ] `hooks/useMultiTouchInput.ts` を新規作成（後続フェーズで実施）
 
 ### 3-1-4: 既存入力の適合
 
-- [ ] 既存の `useInput.ts`（マウス/タッチ）が 1P モードで変わらず動作することを確認
-- [ ] 既存の `useKeyboardInput.ts`（矢印キー）が 1P モードで変わらず動作することを確認
-- [ ] 既存テスト全パス確認
+- [x] 既存の `useInput.ts`（マウス/タッチ）が 1P モードで変わらず動作することを確認
+- [x] 既存の `useKeyboardInput.ts`（矢印キー）が 1P モードで変わらず動作することを確認
+- [x] 既存テスト全パス確認（73スイート、1011テスト）
 
 ---
 
