@@ -1,48 +1,9 @@
 import { AudioService } from '../audio';
+import { setupAudioContextMock } from './helpers/audio-mock';
 
-// AudioContext のモック
-const mockOscillator = {
-  connect: jest.fn(),
-  start: jest.fn(),
-  stop: jest.fn(),
-  frequency: { value: 0 },
-  type: '',
-};
-
-const mockGain = {
-  connect: jest.fn(),
-  gain: {
-    value: 0,
-    setValueAtTime: jest.fn(),
-    exponentialRampToValueAtTime: jest.fn(),
-  },
-};
-
-const mockPanner = {
-  connect: jest.fn(),
-  pan: { value: 0 },
-};
-
-const mockAudioContext = {
-  createOscillator: jest.fn(() => ({ ...mockOscillator })),
-  createGain: jest.fn(() => ({
-    ...mockGain,
-    gain: {
-      value: 0,
-      setValueAtTime: jest.fn(),
-      exponentialRampToValueAtTime: jest.fn(),
-    },
-    connect: jest.fn(),
-  })),
-  createStereoPanner: jest.fn(() => ({ ...mockPanner, connect: jest.fn() })),
-  destination: {},
-  currentTime: 0,
-};
-
+// AudioContext のモック（共通ヘルパー使用）
 beforeAll(() => {
-  (window as { AudioContext?: typeof AudioContext }).AudioContext = jest
-    .fn()
-    .mockImplementation(() => ({ ...mockAudioContext }));
+  setupAudioContextMock();
 });
 
 beforeEach(() => {

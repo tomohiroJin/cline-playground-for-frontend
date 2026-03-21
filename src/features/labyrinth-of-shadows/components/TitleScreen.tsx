@@ -18,7 +18,7 @@ import {
   HelpPanel,
   HelpGrid,
   KeyHelp,
-} from '../../../pages/MazeHorrorPage.styles';
+} from '../presentation/styles/game.styles';
 
 interface TitleScreenProps {
   onStart: (d: Difficulty) => void;

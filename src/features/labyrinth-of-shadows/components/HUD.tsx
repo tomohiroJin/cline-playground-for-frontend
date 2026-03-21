@@ -7,7 +7,7 @@ import {
   HUDPanel,
   BarContainer,
   BarFill,
-} from '../../../pages/MazeHorrorPage.styles';
+} from '../presentation/styles/game.styles';
 
 interface HUDProps {
   h: HUDData;
