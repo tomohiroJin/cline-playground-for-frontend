@@ -202,4 +202,45 @@ describe('AirHockeyGame P2-07 統合テスト', () => {
       expect(startButton).toBeInTheDocument();
     });
   });
+
+  describe('2P 対戦フロー: menu → characterSelect → game', () => {
+    it('タイトル画面に「2P 対戦」ボタンが表示される', () => {
+      render(<AirHockeyGame />);
+
+      expect(screen.getByText('2P 対戦')).toBeInTheDocument();
+    });
+
+    it('「2P 対戦」ボタンをクリックするとキャラクター選択画面に遷移する', () => {
+      render(<AirHockeyGame />);
+
+      fireEvent.click(screen.getByText('2P 対戦'));
+
+      // キャラクター選択画面のタイトルが表示される
+      expect(screen.getByText('2P 対戦')).toBeInTheDocument();
+      expect(screen.getByText('VS')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '対戦開始！' })).toBeInTheDocument();
+    });
+
+    it('キャラクター選択画面の「← 戻る」でタイトルに戻る', () => {
+      render(<AirHockeyGame />);
+
+      fireEvent.click(screen.getByText('2P 対戦'));
+      fireEvent.click(screen.getByRole('button', { name: '← 戻る' }));
+
+      // タイトル画面に戻る
+      expect(screen.getByText('🏒 Air Hockey')).toBeInTheDocument();
+    });
+
+    it('「対戦開始！」をクリックしてもエラーが発生しない', () => {
+      render(<AirHockeyGame />);
+
+      fireEvent.click(screen.getByText('2P 対戦'));
+      expect(screen.getByRole('button', { name: '対戦開始！' })).toBeInTheDocument();
+
+      // 対戦開始をクリック（エラーなく実行されること）
+      expect(() => {
+        fireEvent.click(screen.getByRole('button', { name: '対戦開始！' }));
+      }).not.toThrow();
+    });
+  });
 });

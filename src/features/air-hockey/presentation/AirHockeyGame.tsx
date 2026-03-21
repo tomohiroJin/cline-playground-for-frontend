@@ -24,6 +24,9 @@ import { getDexEntryById } from '../core/dex-data';
 import { useCharacterDex } from '../hooks/useCharacterDex';
 import { CharacterDexScreen } from '../components/CharacterDexScreen';
 import { CharacterProfileCard } from '../components/CharacterProfileCard';
+import { CharacterSelectScreen } from '../components/CharacterSelectScreen';
+import type { TwoPlayerConfig } from '../application/use-cases/two-player-battle';
+import { createKeyboardState, updateKeyboardStateForPlayer } from '../core/keyboard';
 import { useInput } from '../hooks/useInput';
 import { useKeyboardInput } from '../hooks/useKeyboardInput';
 import { useGameLoop } from './hooks/useGameLoop';
@@ -81,6 +84,7 @@ const AirHockeyGame: React.FC = () => {
   const shakeRef = useRef<ShakeState | null>(null);
   const statsRef = useRef<MatchStats>(EntityFactory.createMatchStats());
   const matchStartRef = useRef(0);
+  const player2KeysRef = useRef(createKeyboardState());
 
   // ── リザルト処理 ──
   const result = useResultProcessing({ screen, winner, scoreRef, statsRef, mode, dex });
@@ -212,6 +216,18 @@ const AirHockeyGame: React.FC = () => {
     }
   }, [mode.currentStage, winner, navigateTo]);
   const handleResultBackToMenu = useCallback(() => { mode.resetToFree(); navigateTo('menu'); }, [mode, navigateTo]);
+  // ── 2P 対戦 ──
+  const handleTwoPlayerClick = useCallback(() => { navigateTo('characterSelect'); }, [navigateTo]);
+  const handleStartBattle = useCallback((config: TwoPlayerConfig) => {
+    mode.setGameMode('2p-local');
+    mode.setPlayer1Character(config.player1Character);
+    mode.setPlayer2Character(config.player2Character);
+    mode.setField(config.field);
+    mode.setWinScore(config.winScore);
+    startGame(config.field);
+  }, [mode, startGame]);
+  const handleBackFromCharacterSelect = useCallback(() => { navigateTo('menu'); }, [navigateTo]);
+  const handleBackToCharacterSelect = useCallback(() => { navigateTo('characterSelect'); }, [navigateTo]);
   const handleAcceptDifficulty = useCallback((d: typeof mode.difficulty) => { mode.setDifficulty(d); saveStreakRecord({ winStreak: 0, loseStreak: 0 }); }, [mode]);
   const handleBackToStageSelect = useCallback(() => { mode.setStoryProgress(loadStoryProgress()); navigateTo('stageSelect'); }, [mode, navigateTo]);
   const handleNextStage = useCallback(() => {
@@ -222,10 +238,36 @@ const AirHockeyGame: React.FC = () => {
   // ── 入力・ゲームループ ──
   const handleInput = useInput(gameRef, canvasRef, lastInputRef, screen, showHelp, setShowHelp);
   const keysRef = useKeyboardInput(gameRef, lastInputRef, screen, showHelp, setShowHelp);
+
+  // 2P 用キーボード入力リスナー（WASD → player2KeysRef）
+  useEffect(() => {
+    if (mode.gameMode !== '2p-local' || screen !== 'game') return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const updated = updateKeyboardStateForPlayer(player2KeysRef.current, e.key, true, 'player2');
+      if (updated !== player2KeysRef.current) {
+        player2KeysRef.current = updated;
+        e.preventDefault();
+      }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      const updated = updateKeyboardStateForPlayer(player2KeysRef.current, e.key, false, 'player2');
+      if (updated !== player2KeysRef.current) {
+        player2KeysRef.current = updated;
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      player2KeysRef.current = createKeyboardState();
+    };
+  }, [mode.gameMode, screen]);
+
   useGameLoop({
     screen, showHelp,
-    config: { difficulty: mode.difficulty, field: mode.field, winScore: mode.winScore, getSound: audio.getSound, bgmEnabled: audio.bgmEnabled },
-    refs: { gameRef, canvasRef, lastInputRef, scoreRef, phaseRef, countdownStartRef, shakeRef, statsRef, matchStartRef, keysRef },
+    config: { difficulty: mode.difficulty, field: mode.field, winScore: mode.winScore, getSound: audio.getSound, bgmEnabled: audio.bgmEnabled, gameMode: mode.gameMode },
+    refs: { gameRef, canvasRef, lastInputRef, scoreRef, phaseRef, countdownStartRef, shakeRef, statsRef, matchStartRef, keysRef, player2KeysRef: mode.gameMode === '2p-local' ? player2KeysRef : undefined },
     callbacks: { setScores, setWinner, setScreen: handleScreenChange, setShowHelp, setShake },
   });
 
@@ -250,8 +292,19 @@ const AirHockeyGame: React.FC = () => {
             unlockState={result.unlockState}
             onCharacterDexClick={() => navigateTo('characterDex')}
             newUnlockCount={dex.getNewUnlockCount()}
+            onTwoPlayerClick={handleTwoPlayerClick}
           />
         </Transition>
+      )}
+
+      {screen === 'characterSelect' && (
+        <CharacterSelectScreen
+          characters={dex.unlockedIds.map(id => findCharacterById(id)).filter((c): c is NonNullable<typeof c> => c !== undefined)}
+          unlockedFieldIds={result.unlockState?.unlockedFields ?? ['classic', 'wide']}
+          fields={FIELDS}
+          onStartBattle={handleStartBattle}
+          onBack={handleBackFromCharacterSelect}
+        />
       )}
 
       {screen === 'achievements' && <AchievementList onBack={() => navigateTo('menu')} />}
@@ -311,9 +364,13 @@ const AirHockeyGame: React.FC = () => {
             onAcceptDifficulty={handleAcceptDifficulty}
             onBackToStageSelect={mode.gameMode === 'story' ? handleBackToStageSelect : undefined}
             onNextStage={mode.gameMode === 'story' && hasNextStage ? handleNextStage : undefined}
-            cpuCharacter={mode.gameMode === 'story' ? cpuCharacter : undefined}
-            playerCharacter={mode.gameMode === 'story' ? PLAYER_CHARACTER : undefined}
+            cpuCharacter={mode.gameMode === 'story' ? cpuCharacter : mode.gameMode === '2p-local' ? mode.player2Character : undefined}
+            playerCharacter={mode.gameMode === 'story' ? PLAYER_CHARACTER : mode.gameMode === '2p-local' ? mode.player1Character : undefined}
             newlyUnlockedCharacterName={result.newlyUnlockedCharacterName}
+            is2PMode={mode.gameMode === '2p-local'}
+            player1CharacterName={mode.player1Character?.name}
+            player2CharacterName={mode.player2Character?.name}
+            onBackToCharacterSelect={mode.gameMode === '2p-local' ? handleBackToCharacterSelect : undefined}
           />
         </Transition>
       )}
