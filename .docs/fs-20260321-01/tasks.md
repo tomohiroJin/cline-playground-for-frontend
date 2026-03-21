@@ -93,39 +93,39 @@
 **コミットタイプ:** `refactor`
 
 ### 3-1. CollisionService の実装
-- [x] テストを先に作成（`__tests__/domain/collision-service.test.ts`）
-- [x] `domain/services/collision-service.ts` を作成
+- [ ] テストを先に作成（`__tests__/domain/collision-service.test.ts`）
+- [ ] `domain/services/collision-service.ts` を作成
   - `buildCollisionMap`: 衝突マップ構築
   - `detectCollision`: 弾丸の衝突判定（純粋関数）
   - `getExplosionArea`: 爆発範囲計算
-- [x] 既存 `collision.ts` のロジックを移行
-- [x] テスト実行・パス確認
+- [ ] 既存 `collision.ts` のロジックを移行
+- [ ] テスト実行・パス確認
 
 ### 3-2. SpawnService の実装
-- [x] テストを先に作成（`__tests__/domain/spawn-service.test.ts`）
-- [x] `domain/services/spawn-service.ts` を作成
+- [ ] テストを先に作成（`__tests__/domain/spawn-service.test.ts`）
+- [ ] `domain/services/spawn-service.ts` を作成
   - `canSpawn`: スポーン可否判定
   - `spawnBlock`: ブロック生成（`Block.create` のロジックを移行）
   - 衝突回避ロジックの分離と明確化
-- [x] `Block.create` の呼び出し元を `SpawnService` に移行
-- [x] テスト実行・パス確認
+- [ ] `Block.create` の呼び出し元を `SpawnService` に移行
+- [ ] テスト実行・パス確認
 
 ### 3-3. SkillService の実装（Strategy パターン）
-- [x] テストを先に作成（`__tests__/domain/skill-service.test.ts`）
-- [x] `domain/services/skill-service.ts` を作成
-- [x] 各スキルの Strategy を実装
+- [ ] テストを先に作成（`__tests__/domain/skill-service.test.ts`）
+- [ ] `domain/services/skill-service.ts` を作成
+- [ ] 各スキルの Strategy を実装
   - `LaserStrategy`: 縦レーザー（列消去）
   - `BlastStrategy`: 全画面爆破（落下中ブロック全破壊）
   - `ClearStrategy`: ライン消去（最下段消去）
-- [x] `game-logic.ts` の `applyLaserColumn`, `applyBlastAll`, `applyClearBottom` を Strategy に移行
-- [x] テスト実行・パス確認
+- [ ] `game-logic.ts` の `applyLaserColumn`, `applyBlastAll`, `applyClearBottom` を Strategy に移行
+- [ ] テスト実行・パス確認
 
 ### 3-4. processBullets のリファクタリング
-- [x] `game-logic.ts` の `processBullets` を `CollisionService` と連携する形にリファクタリング
+- [ ] `game-logic.ts` の `processBullets` を `CollisionService` と連携する形にリファクタリング
   - 衝突判定ロジックを `CollisionService` に委譲
   - パワーアップ通知をイベント結果として返す（コールバックからの脱却）
   - ネストの浅いフラットな制御フローに変更
-- [x] テスト実行・パス確認
+- [ ] テスト実行・パス確認
 
 ---
 
@@ -135,26 +135,26 @@
 **コミットタイプ:** `refactor`
 
 ### 4-1. AudioService インターフェースの定義
-- [ ] テストを先に作成（`__tests__/application/audio-service.test.ts`）
-- [ ] `application/audio-service.ts` にインターフェースを定義
-- [ ] `infrastructure/web-audio-adapter.ts` に現在の `audio.ts` のロジックを移行
+- [x] テストを先に作成（`__tests__/application/audio-service.test.ts`）
+- [x] `application/audio-service.ts` にインターフェースを定義
+- [x] `infrastructure/web-audio-adapter.ts` に現在の `audio.ts` のロジックを移行
   - IIFE シングルトンからクラスベースに変換
   - `IAudioService` インターフェースを実装
-- [ ] Null Object パターンで `NullAudioAdapter` を実装（サウンド無効時用）
-- [ ] テスト実行・パス確認
+- [x] Null Object パターンで `NullAudioAdapter` を実装（サウンド無効時用）
+- [x] テスト実行・パス確認
 
 ### 4-2. ScoreStorageAdapter の実装
-- [ ] `infrastructure/score-storage-adapter.ts` を作成
+- [x] `infrastructure/score-storage-adapter.ts` を作成
   - 既存の `score-storage` ユーティリティをラップ
   - `IScoreRepository` インターフェースを実装
-- [ ] フックからの直接 import を Adapter 経由に変更
-- [ ] テスト実行・パス確認
+- [x] フックからの直接 import を Adapter 経由に変更
+- [x] テスト実行・パス確認
 
 ### 4-3. 定数・設定の依存注入準備
-- [ ] `domain/constants.ts` にドメイン定数を移動
-- [ ] CONFIG への直接参照を、必要に応じてパラメータ渡しに変更
+- [x] `domain/constants.ts` にドメイン定数を移動
+- [x] CONFIG への直接参照を、必要に応じてパラメータ渡しに変更
   - 特に `Grid.clearColumn`, `Block.canMoveTo` 等で CONFIG に直接依存しているもの
-- [ ] テスト実行・パス確認
+- [x] テスト実行・パス確認
 
 ---
 
@@ -304,9 +304,9 @@
 |-------|------|---------|------|
 | Phase 1: テスト基盤 | 完了 | 11 | 11 |
 | Phase 2: ドメインモデル | 完了 | 20 | 20 |
-| Phase 3: ドメインサービス | 完了 | 16 | 16 |
-| Phase 4: アプリケーション層 | 未着手 | 9 | 0 |
+| Phase 3: ドメインサービス | 未着手 | 16 | 0 |
+| Phase 4: アプリケーション層 | 完了 | 9 | 9 |
 | Phase 5: プレゼンテーション層 | 未着手 | 14 | 0 |
 | Phase 6: テスト総合リファクタリング | 未着手 | 17 | 0 |
 | Phase 7: 最終整理 | 未着手 | 15 | 0 |
-| **合計** | | **102** | **47** |
+| **合計** | | **102** | **56** |
