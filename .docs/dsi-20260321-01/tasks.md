@@ -263,3 +263,9 @@ Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5 → Phase 6
 ```
 
 Phase 1 は他の全 Phase の前提条件です。Phase 4 と Phase 5 は Phase 3 完了後に並行して進めることが可能です。
+
+---
+
+## 手動動作確認 ✅
+- [x] ゲームを開始してプレイできること
+- [x] ブラウザでの動作に問題がないこと
