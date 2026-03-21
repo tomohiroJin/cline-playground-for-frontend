@@ -1,6 +1,6 @@
 import { Collision } from '../collision';
 import { Grid } from '../grid';
-import type { BlockData } from '../types';
+import { createBlock } from './helpers/factories';
 
 describe('Collision', () => {
   describe('buildMap', () => {
@@ -15,14 +15,14 @@ describe('Collision', () => {
 
     test('ブロックをマップに登録すること', () => {
       const grid = Grid.create(3, 3);
-      const block: BlockData = {
+      const block = createBlock({
         id: 'b1',
         x: 0,
         y: 1,
         shape: [[1, 1]],
         color: 'red',
         power: 'triple',
-      };
+      });
       const map = Collision.buildMap([block], grid);
       expect(map.has('0,1')).toBe(true);
       const target = map.get('0,1');
@@ -33,14 +33,14 @@ describe('Collision', () => {
 
     test('y < 0 のブロックセルは登録しないこと', () => {
       const grid = Grid.create(3, 3);
-      const block: BlockData = {
+      const block = createBlock({
         id: 'b1',
         x: 0,
         y: -1,
         shape: [[1]],
         color: 'red',
         power: null,
-      };
+      });
       const map = Collision.buildMap([block], grid);
       expect(map.has('0,-1')).toBe(false);
     });
