@@ -1,4 +1,5 @@
-// ゲームループ内の更新ロジック（純粋関数）
+// ゲームループ内の更新ロジック
+// 移行期間中: application/input-processor.ts + ドメイン関数へ委譲
 
 import type { Player, Point, Particle, Spark, Confetti } from './types';
 import { Config } from './constants';
@@ -14,7 +15,7 @@ export interface PlayerInput {
   readonly handbrake: boolean;
 }
 
-/** プレイヤー入力を収集（純粋関数、keys/touchの読み取りのみ） */
+/** プレイヤー入力を収集（旧インターフェース: RacingGame.tsx から呼ばれる） */
 export const collectPlayerInputs = (
   players: readonly Player[],
   keys: Record<string, boolean>,
@@ -23,7 +24,7 @@ export const collectPlayerInputs = (
   demo: boolean,
   cpuSkill: number,
   cpuMiss: number,
-  pts: readonly Point[]
+  pts: readonly Point[],
 ): PlayerInput[] =>
   players.map((p, i) => {
     let rot = 0;
@@ -32,7 +33,6 @@ export const collectPlayerInputs = (
       rot = Logic.cpuTurn(p, pts as Point[], demo ? 0.7 : cpuSkill, demo ? 0.03 : cpuMiss);
       if (!demo && Logic.cpuShouldDrift(p, pts as Point[], cpuSkill)) {
         handbrake = true;
-        // ドリフト発動にはステアリングが必要 → 最低限のステアリングを保証
         if (rot === 0) {
           const info = Track.getInfo(p.x, p.y, pts as Point[]);
           const toCenter = Math.atan2(info.pt.y - p.y, info.pt.x - p.x);
@@ -49,9 +49,7 @@ export const collectPlayerInputs = (
       if (keys.ArrowRight) rot = Config.game.turnRate;
       handbrake = !!keys['code:ShiftRight'] || !!keys.Enter;
     }
-    // カード効果: 旋回速度倍率
     const turnMul = getCardMultiplier(p.activeCards, 'turnMultiplier');
-    // ドリフト中は旋回速度を増幅
     const turnRate = p.drift.active && rot !== 0
       ? Math.sign(rot) * (Config.game.turnRate * 1.8 * turnMul)
       : rot * turnMul;

@@ -10,7 +10,7 @@ import {
   ActionButton,
 } from '../../../pages/RacingGamePage.styles';
 import { Utils } from '../utils';
-import { Highlight } from '../highlight';
+import { HIGHLIGHT_LABELS } from '../highlight';
 import type { HighlightType } from '../types';
 
 export interface ResultPanelProps {
@@ -79,7 +79,7 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
         </div>
         {highlightSummary.map((s, i) => (
           <ResultRow key={i}>
-            <span>{Highlight.LABELS[s.type]} × {s.count}</span>
+            <span>{HIGHLIGHT_LABELS[s.type]} × {s.count}</span>
             <span>+{s.totalScore}pt</span>
           </ResultRow>
         ))}

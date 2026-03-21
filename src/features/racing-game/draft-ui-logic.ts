@@ -1,21 +1,17 @@
-// ドラフト状態管理・遷移ロジック（純粋関数中心）
+// ドラフト状態管理・遷移ロジック
+// 移行期間中: application/draft-processor.ts へ委譲
 
 import type { Player, DeckState } from './types';
 import { DraftCards } from './draft-cards';
+import {
+  startDraft as startDraftNew,
+  updateDraftTimer as updateDraftTimerNew,
+  moveCursor as moveCursorNew,
+} from './application/draft-processor';
+import type { DraftProcessorState } from './application/draft-processor';
 
-/** ドラフト状態の型定義 */
-export interface DraftState {
-  active: boolean;
-  currentPlayer: number;
-  triggerPlayer: number;
-  selectedIndex: number;
-  confirmed: boolean;
-  timer: number;
-  lastTick: number;
-  animStart: number;
-  completedLap: number;
-  pendingResume: boolean;
-}
+/** ドラフト状態の型定義（旧インターフェース互換） */
+export type DraftState = DraftProcessorState;
 
 /** ドラフト状態の初期値 */
 export const INITIAL_DRAFT_STATE: DraftState = {
@@ -32,44 +28,20 @@ export const INITIAL_DRAFT_STATE: DraftState = {
 };
 
 /** ドラフト開始状態を生成 */
-export const initDraftState = (completedLap: number, now: number, triggerPlayer: number): DraftState => ({
-  active: true,
-  currentPlayer: triggerPlayer,
-  triggerPlayer,
-  selectedIndex: 1,
-  confirmed: false,
-  timer: 15,
-  lastTick: now,
-  animStart: now,
-  completedLap,
-  pendingResume: false,
-});
+export const initDraftState = (completedLap: number, now: number, triggerPlayer: number): DraftState =>
+  startDraftNew(completedLap, triggerPlayer, now);
 
-/** タイマー更新（純粋関数） */
-export const updateDraftTimer = (state: DraftState, now: number): DraftState => {
-  const elapsed = (now - state.lastTick) / 1000;
-  return {
-    ...state,
-    timer: state.timer - elapsed,
-    lastTick: now,
-  };
-};
+/** タイマー更新 */
+export const updateDraftTimer = updateDraftTimerNew;
 
-/** カーソル移動（純粋関数） */
-export const moveDraftCursor = (
-  index: number,
-  direction: 'left' | 'right',
-  handLength: number
-): number =>
-  direction === 'left'
-    ? Math.max(0, index - 1)
-    : Math.min(handLength - 1, index + 1);
+/** カーソル移動 */
+export const moveDraftCursor = moveCursorNew;
 
-/** キー入力マッピング → {left, right, confirm} 判定 */
+/** キー入力マッピング（インフラ層の関心事のため旧実装を維持） */
 export const mapDraftInput = (
   keys: Record<string, boolean>,
   playerIndex: number,
-  mode: string
+  mode: string,
 ): { left: boolean; right: boolean; confirm: boolean } => {
   if (playerIndex === 0) {
     return {
@@ -85,28 +57,17 @@ export const mapDraftInput = (
   };
 };
 
-/** キー状態クリア（副作用関数） */
+/** キー状態クリア（副作用関数、インフラ層の関心事） */
 export const clearDraftKeys = (
   keys: Record<string, boolean>,
   playerIndex: number,
-  mode: string,
-  action: 'left' | 'right' | 'confirm'
+  _mode: string,
+  action: 'left' | 'right' | 'confirm',
 ): void => {
   if (playerIndex === 0) {
-    if (action === 'left') {
-      keys.a = false;
-      keys.A = false;
-      keys.ArrowLeft = false;
-    } else if (action === 'right') {
-      keys.d = false;
-      keys.D = false;
-      keys.ArrowRight = false;
-    } else {
-      keys.w = false;
-      keys.W = false;
-      keys.Enter = false;
-      keys[' '] = false;
-    }
+    if (action === 'left') { keys.a = false; keys.A = false; keys.ArrowLeft = false; }
+    else if (action === 'right') { keys.d = false; keys.D = false; keys.ArrowRight = false; }
+    else { keys.w = false; keys.W = false; keys.Enter = false; keys[' '] = false; }
   } else {
     if (action === 'left') keys.ArrowLeft = false;
     else if (action === 'right') keys.ArrowRight = false;
@@ -114,11 +75,11 @@ export const clearDraftKeys = (
   }
 };
 
-/** カード効果適用（純粋関数） */
+/** カード効果適用 */
 export const applyDraftResults = (
   players: Player[],
   decks: DeckState[],
-  triggerPlayer?: number
+  triggerPlayer?: number,
 ): Player[] =>
   players.map((p, i) => {
     if (triggerPlayer !== undefined && i !== triggerPlayer) return p;
