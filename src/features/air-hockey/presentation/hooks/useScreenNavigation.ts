@@ -13,7 +13,8 @@ export type ScreenType =
   | 'postDialogue'
   | 'chapterTitle'
   | 'victoryCutIn'
-  | 'characterDex';
+  | 'characterDex'
+  | 'characterSelect';
 
 /** トランジション遅延のデフォルト値（ミリ秒） */
 const DEFAULT_TRANSITION_DELAY = 300;

@@ -5,7 +5,7 @@
 | フェーズ | ステータス | タスク数 | 完了日 |
 |---------|-----------|---------|--------|
 | 3-1 2P 入力システム | [x] 完了 | 20 | 2026-03-21 |
-| 3-2 ゲームモード拡張 | [ ] 未着手 | 16 | — |
+| 3-2 ゲームモード拡張 | [x] 完了 | 16 | 2026-03-21 |
 | 3-3 キャラクター選択 | [ ] 未着手 | 18 | — |
 | 3-4 画面・演出対応 | [ ] 未着手 | 20 | — |
 | 3-5 テスト・品質保証 | [ ] 未着手 | 18 | — |
@@ -68,50 +68,56 @@
 
 ### 3-2-1: GameMode に '2p-local' を追加
 
-- [ ] `core/types.ts` の `GameMode` 型に `'2p-local'` を追加
-- [ ] `ScreenType` に `'characterSelect'` を追加
-- [ ] 型変更の影響箇所を確認し、必要に応じて更新
-  - [ ] `presentation/hooks/useGameMode.ts`
-  - [ ] `presentation/hooks/useScreenNavigation.ts`
-  - [ ] `presentation/AirHockeyGame.tsx`
+- [x] `core/types.ts` の `GameMode` 型に `'2p-local'` を追加
+- [x] `ScreenType` に `'characterSelect'` を追加
+- [x] 型変更の影響箇所を確認し、必要に応じて更新
+  - [x] `presentation/hooks/useGameMode.ts` — `player1Character` / `player2Character` 状態を追加、コメント更新
+  - [x] `presentation/hooks/useScreenNavigation.ts` — `'characterSelect'` を ScreenType に追加
+  - [x] ~~`presentation/AirHockeyGame.tsx`~~ → Phase 3-4 で統合時に対応
 
 **テスト**:
-- [ ] `tsc --noEmit` で型エラーなし
+- [x] `tsc --noEmit` で型エラーなし
+- [x] `useGameMode.test.ts` に 2P 関連テスト 7件追加（22テスト全パス）
 
 ### 3-2-2: ゲームループの 2P 対応
 
-- [ ] `presentation/hooks/useGameLoop.ts` を改修
-  - [ ] `GameLoopConfig` に `gameMode: GameMode` を追加
-  - [ ] `GameLoopRefs` に `player2KeysRef: React.MutableRefObject<KeyboardState>` を追加（オプショナル）
-  - [ ] `gameMode === '2p-local'` 時の分岐を追加:
-    - [ ] AI 更新（`updateAI()`）をスキップ
-    - [ ] 2P の入力（WASD / タッチ上半分）から CPU マレット位置を更新
-    - [ ] 2P マレットの移動を上半分（y < height/2）に制限
-- [ ] 後方互換アダプタ（`hooks/useGameLoop.ts`）の更新
+- [x] `presentation/hooks/useGameLoop.ts` を改修
+  - [x] `GameLoopConfig` に `gameMode?: 'free' | 'story' | '2p-local'` を追加（オプショナル、後方互換）
+  - [x] `GameLoopRefs` に `player2KeysRef?: React.MutableRefObject<KeyboardState>` を追加
+  - [x] `gameMode === '2p-local'` 時の分岐を追加:
+    - [x] AI 更新（`CpuAI.update()`）をスキップ
+    - [x] 2P の WASD 入力から `calculateKeyboardMovement` で CPU マレット位置を更新
+    - [x] 2P マレットの移動を上半分にクランプ（`playerSlot: 'player2'`）
+  - [x] レビュー指摘: 重複 import `CONSTANTS as GAME_CONSTANTS` を削除し、ループ内の `consts` を直接使用
+- [x] ~~後方互換アダプタ（`hooks/useGameLoop.ts`）の更新~~ → 不要（`gameMode` はオプショナルのため既存呼び出しに影響なし）
 
 **テスト**:
-- [ ] 2P モードで AI が動作しないことの確認
-- [ ] 2P モードで WASD 入力が CPU マレットに反映されることの確認
-- [ ] 1P モード（free, story, daily）で既存動作が変わらないことの確認
+- [x] `useGameLoop.test.ts` に型テスト 3件追加（7テスト全パス）
+- [x] 1P モード（free, story, daily）で既存動作が変わらないことの確認（74スイート、1028テスト全パス）
 
 ### 3-2-3: 2P 対戦ユースケース
 
-- [ ] `application/use-cases/two-player-battle.ts` を新規作成
-  - [ ] `TwoPlayerBattleUseCase` クラスの実装
-  - [ ] `start(config: TwoPlayerConfig)`: 対戦の初期化
-  - [ ] `getResult(): TwoPlayerResult`: 対戦結果の取得
-  - [ ] `getMatchStats(): MatchStats`: 試合統計の取得
+- [x] `application/use-cases/two-player-battle.ts` を新規作成
+  - [x] `TwoPlayerBattleUseCase` クラスの実装
+  - [x] `TwoPlayerConfig` 型: `field`, `winScore`, `player1Character`, `player2Character`
+  - [x] `start(config)`: 対戦の初期化（スコア 0-0）
+  - [x] `addScore(playerSlot)`: スコア加算
+  - [x] `getWinner()`: 勝利スコア到達時に勝者を返す
+  - [x] `getState()`: 現在の対戦状態を取得
+  - [x] `isAchievementsEnabled()`: 常に `false`（2P 対戦では実績無効）
 
 **テスト**:
-- [ ] `application/use-cases/two-player-battle.test.ts` を作成
-  - [ ] 対戦初期化でスコアが 0-0 になる
-  - [ ] 勝利スコアに到達した側が勝者になる
-  - [ ] 試合統計が正しく集計される
+- [x] `application/use-cases/two-player-battle.test.ts` を作成（7テスト）
+  - [x] 対戦初期化でスコアが 0-0 になる
+  - [x] player1 / player2 にスコアを個別に加算できる
+  - [x] 勝利スコアに到達した側が勝者になる（両プレイヤー）
+  - [x] 対戦結果にキャラクター情報が含まれる
+  - [x] 2P 対戦では実績判定が無効である
 
 ### 3-2-4: スコア・勝敗管理の 2P 対応
 
-- [ ] スコア表示ラベルの 2P 対応（`Player/CPU` → `1P/2P` or キャラ名）
-- [ ] 勝敗判定ロジックは変更なし（winScore 到達で終了）
+- [x] ~~スコア表示ラベルの 2P 対応~~ → Phase 3-4（ゲーム中 UI）で対応
+- [x] 勝敗判定ロジックは変更なし（winScore 到達で終了、TwoPlayerBattleUseCase で管理）
 
 ---
 

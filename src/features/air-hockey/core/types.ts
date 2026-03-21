@@ -170,8 +170,8 @@ export type Character = {
   vsImage?: string;
 };
 
-// ゲームモード（フリー対戦 or ストーリー）
-export type GameMode = 'free' | 'story';
+// ゲームモード
+export type GameMode = 'free' | 'story' | '2p-local';
 
 export type SoundSystem = {
   hit: (speed?: number) => void;

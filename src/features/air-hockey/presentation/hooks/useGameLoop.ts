@@ -32,6 +32,7 @@ import type {
 } from '../../core/types';
 import { applyKeyboardMovement } from '../../hooks/useKeyboardInput';
 import type { KeyboardState } from '../../core/keyboard';
+import { calculateKeyboardMovement } from '../../core/keyboard';
 
 // ランダム選択ヘルパー
 const randomChoice = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
@@ -54,6 +55,7 @@ export type GameLoopConfig = {
   winScore: number;
   getSound: () => SoundSystem;
   bgmEnabled: boolean;
+  gameMode?: 'free' | 'story' | '2p-local';
 };
 
 /** Ref グループ（ゲームループが参照・更新する ref） */
@@ -68,6 +70,7 @@ export type GameLoopRefs = {
   statsRef: React.MutableRefObject<MatchStats>;
   matchStartRef: React.MutableRefObject<number>;
   keysRef?: React.MutableRefObject<KeyboardState>;
+  player2KeysRef?: React.MutableRefObject<KeyboardState>;
 };
 
 /** React state 更新コールバックグループ */
@@ -99,12 +102,13 @@ export type UseGameLoopParams = {
  * - callbacks: React state 更新コールバック
  */
 export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGameLoopParams): void {
-  const { difficulty: diff, field, winScore, getSound, bgmEnabled } = config;
+  const { difficulty: diff, field, winScore, getSound, bgmEnabled, gameMode } = config;
   const {
     gameRef, canvasRef, lastInputRef, scoreRef,
     phaseRef, countdownStartRef, shakeRef,
-    statsRef, matchStartRef, keysRef,
+    statsRef, matchStartRef, keysRef, player2KeysRef,
   } = refs;
+  const is2PMode = gameMode === '2p-local';
   const { setScores, setWinner, setScreen, setShowHelp, setShake } = callbacks;
 
   useEffect(() => {
@@ -429,13 +433,26 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         applyKeyboardMovement(game, keysRef, lastInputRef);
       }
 
-      // CPU AI 更新
-      const cpuUpdate = CpuAI.update(game, diff, now, consts);
-      if (cpuUpdate) {
-        game.cpu = cpuUpdate.cpu;
-        game.cpuTarget = cpuUpdate.cpuTarget;
-        game.cpuTargetTime = cpuUpdate.cpuTargetTime;
-        game.cpuStuckTimer = cpuUpdate.cpuStuckTimer;
+      // 2P モード: WASD キーボード入力で CPU マレットを操作
+      // 1P モード: CPU AI で CPU マレットを操作
+      if (is2PMode && player2KeysRef) {
+        const keys2 = player2KeysRef.current;
+        const hasInput = keys2.up || keys2.down || keys2.left || keys2.right;
+        if (hasInput) {
+          const result = calculateKeyboardMovement(keys2, { x: game.cpu.x, y: game.cpu.y }, consts, 'player2');
+          game.cpu.vx = result.vx;
+          game.cpu.vy = result.vy;
+          game.cpu.x = result.x;
+          game.cpu.y = result.y;
+        }
+      } else {
+        const cpuUpdate = CpuAI.update(game, diff, now, consts);
+        if (cpuUpdate) {
+          game.cpu = cpuUpdate.cpu;
+          game.cpuTarget = cpuUpdate.cpuTarget;
+          game.cpuTargetTime = cpuUpdate.cpuTargetTime;
+          game.cpuStuckTimer = cpuUpdate.cpuStuckTimer;
+        }
       }
 
       // フィーバー判定

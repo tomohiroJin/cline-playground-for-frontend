@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { Difficulty, FieldConfig, GameMode } from '../../core/types';
+import type { Character, Difficulty, FieldConfig, GameMode } from '../../core/types';
 import type { StageDefinition, StoryProgress } from '../../core/story';
 import type { DailyChallenge } from '../../core/daily-challenge';
 import { FIELDS } from '../../core/config';
@@ -27,12 +27,16 @@ export type UseGameModeReturn = {
   setDailyChallenge: (c: DailyChallenge | undefined) => void;
   storyProgress: StoryProgress;
   setStoryProgress: (p: StoryProgress) => void;
+  player1Character: Character | undefined;
+  setPlayer1Character: (c: Character | undefined) => void;
+  player2Character: Character | undefined;
+  setPlayer2Character: (c: Character | undefined) => void;
   resetToFree: () => void;
 };
 
 /**
  * ゲームモード管理フック
- * - フリー対戦/ストーリーモード/デイリーチャレンジの切り替え
+ * - フリー対戦/ストーリーモード/デイリーチャレンジ/2P 対戦の切り替え
  * - 各モードの設定管理
  */
 export function useGameMode(): UseGameModeReturn {
@@ -44,6 +48,8 @@ export function useGameMode(): UseGameModeReturn {
   const [isDailyMode, setIsDailyMode] = useState(false);
   const [dailyChallenge, setDailyChallenge] = useState<DailyChallenge | undefined>(undefined);
   const [storyProgress, setStoryProgress] = useState<StoryProgress>({ clearedStages: [] });
+  const [player1Character, setPlayer1Character] = useState<Character | undefined>(undefined);
+  const [player2Character, setPlayer2Character] = useState<Character | undefined>(undefined);
 
   /** 勝利スコアをバリデーション付きで設定 */
   const setWinScore = useCallback((s: number) => {
@@ -55,6 +61,8 @@ export function useGameMode(): UseGameModeReturn {
   const resetToFree = useCallback(() => {
     setGameMode('free');
     setIsDailyMode(false);
+    setPlayer1Character(undefined);
+    setPlayer2Character(undefined);
   }, []);
 
   return {
@@ -74,6 +82,10 @@ export function useGameMode(): UseGameModeReturn {
     setDailyChallenge,
     storyProgress,
     setStoryProgress,
+    player1Character,
+    setPlayer1Character,
+    player2Character,
+    setPlayer2Character,
     resetToFree,
   };
 }

@@ -137,5 +137,81 @@ describe('useGameMode', () => {
       expect(result.current.gameMode).toBe('free');
       expect(result.current.isDailyMode).toBe(false);
     });
+
+    it('setGameMode で 2p-local に切り替えられる', () => {
+      const { result } = renderHook(() => useGameMode());
+
+      act(() => {
+        result.current.setGameMode('2p-local');
+      });
+
+      expect(result.current.gameMode).toBe('2p-local');
+    });
+
+    it('resetToFree で 2p-local からフリーモードにリセットされる', () => {
+      const { result } = renderHook(() => useGameMode());
+
+      act(() => {
+        result.current.setGameMode('2p-local');
+      });
+
+      act(() => {
+        result.current.resetToFree();
+      });
+
+      expect(result.current.gameMode).toBe('free');
+    });
+  });
+
+  describe('2P 対戦用の状態管理', () => {
+    it('初期の player1Character は undefined である', () => {
+      const { result } = renderHook(() => useGameMode());
+      expect(result.current.player1Character).toBeUndefined();
+    });
+
+    it('初期の player2Character は undefined である', () => {
+      const { result } = renderHook(() => useGameMode());
+      expect(result.current.player2Character).toBeUndefined();
+    });
+
+    it('setPlayer1Character でキャラクターを設定できる', () => {
+      const { result } = renderHook(() => useGameMode());
+      const mockCharacter = { id: 'player', name: 'アキラ', icon: '', color: '#3498db', reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] } };
+
+      act(() => {
+        result.current.setPlayer1Character(mockCharacter);
+      });
+
+      expect(result.current.player1Character).toEqual(mockCharacter);
+    });
+
+    it('setPlayer2Character でキャラクターを設定できる', () => {
+      const { result } = renderHook(() => useGameMode());
+      const mockCharacter = { id: 'hiro', name: 'ヒロ', icon: '', color: '#e74c3c', reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] } };
+
+      act(() => {
+        result.current.setPlayer2Character(mockCharacter);
+      });
+
+      expect(result.current.player2Character).toEqual(mockCharacter);
+    });
+
+    it('resetToFree でキャラクター選択もリセットされる', () => {
+      const { result } = renderHook(() => useGameMode());
+      const mockCharacter = { id: 'player', name: 'アキラ', icon: '', color: '#3498db', reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] } };
+
+      act(() => {
+        result.current.setGameMode('2p-local');
+        result.current.setPlayer1Character(mockCharacter);
+        result.current.setPlayer2Character(mockCharacter);
+      });
+
+      act(() => {
+        result.current.resetToFree();
+      });
+
+      expect(result.current.player1Character).toBeUndefined();
+      expect(result.current.player2Character).toBeUndefined();
+    });
   });
 });
