@@ -2,7 +2,7 @@
 // Deep Sea Interceptor - ギミック戦略インターフェース
 // ============================================================================
 
-import type { GameState, EnemyType } from '../../../types';
+import type { GameState } from '../../../types';
 
 /** ギミック戦略インターフェース */
 export interface GimmickStrategy {

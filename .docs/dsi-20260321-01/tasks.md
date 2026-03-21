@@ -173,72 +173,72 @@
 ## Phase 5: プレゼンテーション層のリファクタリング
 
 ### 5-1: 画面コンポーネントの分割
-- [ ] `presentation/screens/TitleScreen.tsx` を作成（`DeepSeaInterceptorGame.tsx` から抽出）
-- [ ] `presentation/screens/ResultScreen.tsx` を作成
-- [ ] `presentation/screens/PlayScreen.tsx` を作成
-- [ ] `DeepSeaInterceptorGame.tsx` を画面切替のみの薄いコンテナに縮小
-- [ ] コミット: `refactor: メインコンポーネントを3画面に分割`
+- [x] `presentation/screens/TitleScreen.tsx` を作成（`DeepSeaInterceptorGame.tsx` から抽出）
+- [x] `presentation/screens/ResultScreen.tsx` を作成
+- [x] `presentation/screens/PlayScreen.tsx` を作成
+- [x] `DeepSeaInterceptorGame.tsx` を画面切替のみの薄いコンテナに縮小
+- [x] コミット: `refactor: メインコンポーネントを3画面に分割`
 
 ### 5-2: 演出コンポーネントの分離
-- [ ] `presentation/components/GimmickEffects.tsx` を作成（海流表示、熱水柱、発光、水圧の壁）
-- [ ] `presentation/components/ScreenOverlays.tsx` を作成（WARNING、ボス撃破、ステージクリア）
-- [ ] コミット: `refactor: 演出コンポーネントを分離`
+- [x] `presentation/components/GimmickEffects.tsx` を作成（海流表示、熱水柱、発光、水圧の壁）
+- [x] `presentation/components/ScreenOverlays.tsx` を作成（WARNING、ボス撃破、ステージクリア）
+- [x] コミット: `refactor: 演出コンポーネントを分離`
 
 ### 5-3: スタイルの統一
-- [ ] インラインスタイルを styled-components に移行
-- [ ] `presentation/styles/theme.ts` にカラーテーマを集約
-- [ ] マジックナンバー（フォントサイズ、パディング等）を定数化
-- [ ] コミット: `style: インラインスタイルを styled-components に移行`
+- [x] インラインスタイルを styled-components に移行
+- [x] `presentation/styles/theme.ts` にカラーテーマを集約
+- [x] マジックナンバー（フォントサイズ、パディング等）を定数化
+- [x] コミット: `style: インラインスタイルを styled-components に移行`
 
 ### 5-4: フックの分割
-- [ ] `presentation/hooks/use-game-loop.ts` を作成（ゲームループ制御のみ）
-- [ ] `presentation/hooks/use-input.ts` を作成（入力処理のみ）
-- [ ] `presentation/hooks/use-audio.ts` を作成（オーディオ制御のみ）
-- [ ] `presentation/hooks/use-deep-sea-game.ts` を薄い統合フックに縮小
-- [ ] コミット: `refactor: カスタムフックを責務ごとに分割`
+- [x] `presentation/hooks/use-game-loop.ts` を作成（ゲームループ制御のみ）
+- [x] `presentation/hooks/use-input.ts` を作成（入力処理のみ）
+- [x] `presentation/hooks/use-audio.ts` を作成（オーディオ制御のみ）
+- [x] `presentation/hooks/use-deep-sea-game.ts` を薄い統合フックに縮小
+- [x] コミット: `refactor: カスタムフックを責務ごとに分割`
 
 ### 5-5: 画面コンポーネントのテスト追加
-- [ ] `TitleScreen` の統合テスト（武器選択、難易度選択、ゲーム開始）
-- [ ] `ResultScreen` の統合テスト（スコア表示、リトライ、タイトル戻り）
-- [ ] `PlayScreen` の統合テスト（HUD 表示）
-- [ ] コミット: `test: 画面コンポーネントの統合テストを追加`
+- [x] `TitleScreen` の統合テスト（武器選択、難易度選択、ゲーム開始）
+- [x] `ResultScreen` の統合テスト（スコア表示、リトライ、タイトル戻り）
+- [x] `PlayScreen` の統合テスト（HUD 表示）
+- [x] コミット: `test: 画面コンポーネントの統合テストを追加`
 
 ---
 
 ## Phase 6: テストリファクタリングと最終確認
 
 ### 6-1: テスト構造のリファクタリング
-- [ ] テストファイルを新ディレクトリ構造に移動
+- [x] テストファイルを新ディレクトリ構造に移動
   - `__tests__/domain/entities/`
   - `__tests__/domain/services/`
   - `__tests__/domain/strategies/`
   - `__tests__/application/`
   - `__tests__/presentation/`
-- [ ] 全テストで AAA パターンのコメントを明示
-- [ ] `describe` ネストを「正常系」「異常系」「境界値」で統一
-- [ ] テスト名を日本語で「何をしたら何が起きるか」に統一
-- [ ] コミット: `test: テスト構造をリファクタリングし AAA パターンを明示`
+- [x] 全テストで AAA パターンのコメントを明示
+- [x] `describe` ネストを「正常系」「異常系」「境界値」で統一
+- [x] テスト名を日本語で「何をしたら何が起きるか」に統一
+- [x] コミット: `test: テスト構造をリファクタリングし AAA パターンを明示`
 
 ### 6-2: Date.now() 依存の排除
-- [ ] すべてのドメイン関数から `Date.now()` 直接呼び出しを排除
-- [ ] タイムスタンプは引数として注入する設計に統一
-- [ ] テストでタイムスタンプを制御可能にする
-- [ ] コミット: `refactor: Date.now() 依存を排除しタイムスタンプ注入に統一`
+- [x] すべてのドメイン関数から `Date.now()` 直接呼び出しを排除
+- [x] タイムスタンプは引数として注入する設計に統一
+- [x] テストでタイムスタンプを制御可能にする
+- [x] コミット: `refactor: Date.now() 依存を排除しタイムスタンプ注入に統一`
 
 ### 6-3: カバレッジ確認と不足テスト追加
-- [ ] カバレッジレポートを確認
-- [ ] ドメインロジック 90% 以上を達成
-- [ ] アプリケーション層 80% 以上を達成
-- [ ] 不足しているテストを追加
-- [ ] コミット: `test: カバレッジ基準を達成するテストを追加`
+- [x] カバレッジレポートを確認
+- [x] ドメインロジック 90% 以上を達成
+- [x] アプリケーション層 80% 以上を達成
+- [x] 不足しているテストを追加
+- [x] コミット: `test: カバレッジ基準を達成するテストを追加`
 
 ### 6-4: 後方互換性と最終確認
-- [ ] `index.ts` の公開 API が変更されていないことを確認
-- [ ] 古い `import` パスが re-export で動作することを確認
-- [ ] 全テストがパスすることを最終確認
-- [ ] ゲームを手動で動作確認（タイトル → 各ステージ → リザルト）
-- [ ] パフォーマンス確認（60fps 維持）
-- [ ] コミット: `chore: リファクタリング完了、後方互換性を確認`
+- [x] `index.ts` の公開 API が変更されていないことを確認
+- [x] 古い `import` パスが re-export で動作することを確認
+- [x] 全テストがパスすることを最終確認
+- [x] ゲームを手動で動作確認（タイトル → 各ステージ → リザルト）
+- [x] パフォーマンス確認（60fps 維持）
+- [x] コミット: `chore: リファクタリング完了、後方互換性を確認`
 
 ---
 
