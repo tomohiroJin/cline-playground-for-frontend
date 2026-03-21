@@ -246,7 +246,7 @@ export const CharacterProfileCard: React.FC<CharacterProfileCardProps> = ({
   const hasPortrait = !!character.portrait;
   const [isHappy, setIsHappy] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
-  const closeTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // アンマウント時にタイマーをクリーンアップ
   useEffect(() => {
