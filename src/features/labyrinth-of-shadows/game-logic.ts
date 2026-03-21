@@ -195,7 +195,7 @@ export const GameLogic = {
   },
 
   updateEnemies(g: GameState, dt: number) {
-    let closest = GAME_BALANCE.enemy.INITIAL_CLOSEST_DISTANCE;
+    let closest: number = GAME_BALANCE.enemy.INITIAL_CLOSEST_DISTANCE;
     for (const e of g.enemies) {
       const d = this.updateEnemy(g, e, dt);
       if (d < closest) closest = d;
