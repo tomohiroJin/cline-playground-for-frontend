@@ -3,12 +3,25 @@
 // ============================================================================
 
 import { clamp as baseClamp, randomRange } from '../../utils/math-utils';
-import { Config, StageConfig, ItemConfig, DifficultyConfig } from './constants';
+import {
+  Config, StageConfig, ItemConfig, DifficultyConfig,
+  COMBO_TIMEOUT_MS, BOSS_DEFEAT_DELAY_MS,
+  CURRENT_CHANGE_INTERVAL_MS, CURRENT_FORCE, CURRENT_BULLET_FACTOR,
+  MINE_SPAWN_INTERVAL_MS, MINE_MAX_COUNT,
+  THERMAL_VENT_INTERVAL_MS, THERMAL_VENT_WIDTH, THERMAL_VENT_WARNING_MS,
+  THERMAL_VENT_ACTIVE_MS, THERMAL_VENT_MAX_LIFE_MS,
+  BIOLUMINESCENCE_SPAWN_CHANCE, BIOLUMINESCENCE_DURATION_MS, BIOLUMINESCENCE_DETECT_RANGE,
+  PRESSURE_START_MS, PRESSURE_SHRINK_RATE, PRESSURE_MIN_WIDTH_RATIO,
+  GRAZE_SCORE, MAX_COMBO_MULTIPLIER, COMBO_MULTIPLIER_INCREMENT,
+  BOSS_PHASE2_HP_RATIO, BOSS_DEFEAT_SCREEN_SHAKE, BOSS_DEFEAT_SCREEN_FLASH,
+  MIDBOSS_DEFEAT_SCREEN_SHAKE, BOSS_PHASE_CHANGE_SCREEN_SHAKE,
+  WARNING_DURATION_MS, BOMB_SCORE_BONUS, FRAME_MS,
+} from './constants';
 import { EntityFactory, randomChoice, isBoss, isMidboss } from './entities';
 import { MovementStrategies } from './movement';
 import { Collision } from './collision';
 import { EnemyAI } from './enemy-ai';
-import type { GameState, UiState, Difficulty, Enemy, Bullet, EnemyBullet, Item, Position, AudioEvent } from './types';
+import type { GameState, UiState, Difficulty, Enemy, EnemyType, Bullet, EnemyBullet, Item, Position, AudioEvent } from './types';
 
 /** 敵エンティティの移動関数型 */
 type EnemyMoveFn = (e: Enemy) => Enemy;
@@ -90,38 +103,35 @@ export interface FrameResult {
 
 /** Stage 1: 海流 — プレイヤーと弾に横方向の力を適用 */
 function applyCurrentGimmick(gd: GameState, now: number): void {
-  // 10秒ごとに方向切替
-  if (now - gd.currentChangeTime > 10000) {
+  if (now - gd.currentChangeTime > CURRENT_CHANGE_INTERVAL_MS) {
     gd.currentDirection *= -1;
     gd.currentChangeTime = now;
   }
-  const force = gd.currentDirection * 0.5;
+  const force = gd.currentDirection * CURRENT_FORCE;
   gd.player.x += force;
-  gd.enemyBullets.forEach(b => { b.vx += force * 0.3; });
+  gd.enemyBullets.forEach(b => { b.vx += force * CURRENT_BULLET_FACTOR; });
 }
 
 /** Stage 2: 機雷原 — 機雷スポーン */
 function applyMinefieldGimmick(gd: GameState, now: number, stage: number): void {
-  // 3秒おきに機雷を配置
-  if (now % 3000 < 16 && gd.enemies.filter(e => e.enemyType === 'mine').length < 5) {
+  if (now % MINE_SPAWN_INTERVAL_MS < FRAME_MS && gd.enemies.filter(e => e.enemyType === 'mine').length < MINE_MAX_COUNT) {
     gd.enemies.push(
-      EntityFactory.enemy('mine', randomRange(40, 360), randomRange(50, 300), stage)
+      EntityFactory.enemy('mine' as EnemyType, randomRange(40, 360), randomRange(50, 300), stage)
     );
   }
 }
 
 /** Stage 3: 熱水柱 — 定期的に噴出 */
 function applyThermalVentGimmick(gd: GameState, now: number): void {
-  gd.thermalVentTimer += 16;
-  // 5秒ごとに熱水柱を生成
-  if (gd.thermalVentTimer > 5000) {
+  gd.thermalVentTimer += FRAME_MS;
+  if (gd.thermalVentTimer > THERMAL_VENT_INTERVAL_MS) {
     gd.thermalVentTimer = 0;
     const x = randomRange(40, 360);
     gd.thermalVents.push({
       x,
-      width: 40,
+      width: THERMAL_VENT_WIDTH,
       active: false,
-      startTime: now + 1000,
+      startTime: now + THERMAL_VENT_WARNING_MS,
       warningTime: now,
     });
   }
@@ -130,10 +140,8 @@ function applyThermalVentGimmick(gd: GameState, now: number): void {
     if (!v.active && now >= v.startTime) {
       v.active = true;
     }
-    // アクティブ期間: 2秒
-    if (v.active && now - v.startTime > 2000) return false;
-    // 予告期間含めて最大3秒で消滅
-    if (now - v.warningTime > 3000) return false;
+    if (v.active && now - v.startTime > THERMAL_VENT_ACTIVE_MS) return false;
+    if (now - v.warningTime > THERMAL_VENT_MAX_LIFE_MS) return false;
     // ダメージ判定: アクティブ中にプレイヤーが範囲内
     if (v.active) {
       const px = gd.player.x;
@@ -148,8 +156,7 @@ function applyThermalVentGimmick(gd: GameState, now: number): void {
 
 /** Stage 4: 発光プランクトン — 光る粒子を生成 */
 function applyBioluminescenceGimmick(gd: GameState, now: number): void {
-  // 発光粒子を生成
-  if (Math.random() < 0.05 && gd.particles.length < 60) {
+  if (Math.random() < BIOLUMINESCENCE_SPAWN_CHANCE && gd.particles.length < 60) {
     gd.particles.push(EntityFactory.particle(
       randomRange(10, 390),
       randomRange(10, 550),
@@ -160,12 +167,12 @@ function applyBioluminescenceGimmick(gd: GameState, now: number): void {
   if (!gd.luminescence) {
     const nearParticle = gd.particles.some(p =>
       p.color === '#44ffaa' &&
-      Math.abs(p.x - gd.player.x) < 30 &&
-      Math.abs(p.y - gd.player.y) < 30
+      Math.abs(p.x - gd.player.x) < BIOLUMINESCENCE_DETECT_RANGE &&
+      Math.abs(p.y - gd.player.y) < BIOLUMINESCENCE_DETECT_RANGE
     );
     if (nearParticle) {
       gd.luminescence = true;
-      gd.luminescenceEndTime = now + 3000;
+      gd.luminescenceEndTime = now + BIOLUMINESCENCE_DURATION_MS;
     }
   }
   if (gd.luminescence && now > gd.luminescenceEndTime) {
@@ -173,13 +180,12 @@ function applyBioluminescenceGimmick(gd: GameState, now: number): void {
   }
 }
 
-/** Stage 5: 水圧 — 30秒後から壁が収縮 */
+/** Stage 5: 水圧 — 一定時間後から壁が収縮 */
 function applyPressureGimmick(gd: GameState, now: number): void {
   const elapsed = now - gd.gameStartTime;
-  if (elapsed > 30000 && !gd.bossDefeated) {
-    const shrinkRate = 0.02;
-    const minWidth = Config.canvas.width * 0.6;
-    const targetHalfWidth = Math.max(minWidth / 2, Config.canvas.width / 2 - (elapsed - 30000) * shrinkRate / 16);
+  if (elapsed > PRESSURE_START_MS && !gd.bossDefeated) {
+    const minWidth = Config.canvas.width * PRESSURE_MIN_WIDTH_RATIO;
+    const targetHalfWidth = Math.max(minWidth / 2, Config.canvas.width / 2 - (elapsed - PRESSURE_START_MS) * PRESSURE_SHRINK_RATE / FRAME_MS);
     const cx = Config.canvas.width / 2;
     gd.pressureBounds.left = cx - targetHalfWidth;
     gd.pressureBounds.right = cx + targetHalfWidth;
@@ -225,7 +231,7 @@ export function updatePlayerPosition(
 
 /** 2-3: 敵タイプと移動パターンから移動戦略を取得 */
 export function getMovementStrategy(
-  enemyType: string,
+  enemyType: EnemyType | string,
   movementPattern: number
 ): EnemyMoveFn {
   if (enemyType === 'boss' || enemyType.startsWith('boss') || enemyType.startsWith('midboss')) {
@@ -285,12 +291,12 @@ export function processBulletEnemyCollisions(
           combo++;
           comboTimer = Date.now();
           maxCombo = Math.max(maxCombo, combo);
-          const multiplier = Math.min(5.0, 1.0 + combo * 0.1);
+          const multiplier = Math.min(MAX_COMBO_MULTIPLIER, 1.0 + combo * COMBO_MULTIPLIER_INCREMENT);
           scoreDelta += Math.floor(e.points * multiplier * diffConfig.scoreMultiplier);
           if (isBoss(e)) {
             bossDefeated = true;
-            screenShake = 500;
-            screenFlash = 200;
+            screenShake = BOSS_DEFEAT_SCREEN_SHAKE;
+            screenFlash = BOSS_DEFEAT_SCREEN_FLASH;
             newItems.push(EntityFactory.item(e.x, e.y, 'bomb'));
             for (let i = 0; i < 20; i++) {
               newParticles.push(EntityFactory.particle(
@@ -300,7 +306,7 @@ export function processBulletEnemyCollisions(
               ));
             }
           } else if (isMidboss(e)) {
-            screenShake = 200;
+            screenShake = MIDBOSS_DEFEAT_SCREEN_SHAKE;
             const dropItem = Math.random() < 0.5 ? 'life' : 'power';
             newItems.push(EntityFactory.item(e.x, e.y, dropItem as 'life' | 'power'));
             for (let i = 0; i < 10; i++) {
@@ -358,7 +364,8 @@ export function processItemCollection(
   now: number,
 ): ItemCollectionResult {
   const audioEvents: AudioEvent[] = [];
-  const uiChanges: Partial<UiState> = { ...uiState };
+  // 完全な UiState のコピーで as キャストを排除
+  const updatedUi: UiState = { ...uiState };
   let clearBullets = false;
   // 敵 HP のコピー
   const updatedEnemies = enemies.map(e => ({ ...e }));
@@ -366,26 +373,26 @@ export function processItemCollection(
   const remainingItems = items.filter(i => {
     if (Collision.playerItem(player, i)) {
       audioEvents.push({ name: 'item' });
-      if (i.itemType === 'power') (uiChanges as UiState).power = (uiChanges as UiState).power + 1;
-      if (i.itemType === 'shield') (uiChanges as UiState).shieldEndTime = now + 8000;
+      if (i.itemType === 'power') updatedUi.power = updatedUi.power + 1;
+      if (i.itemType === 'shield') updatedUi.shieldEndTime = now + 8000;
       if (i.itemType === 'speed')
-        (uiChanges as UiState).speedLevel = Math.min(3, ((uiChanges as UiState).speedLevel || 0) + 1);
+        updatedUi.speedLevel = Math.min(3, (updatedUi.speedLevel || 0) + 1);
       if (i.itemType === 'life')
-        (uiChanges as UiState).lives = Math.min(Config.player.maxLives, (uiChanges as UiState).lives + 1);
-      if (i.itemType === 'spread') (uiChanges as UiState).spreadTime = now + 10000;
+        updatedUi.lives = Math.min(Config.player.maxLives, updatedUi.lives + 1);
+      if (i.itemType === 'spread') updatedUi.spreadTime = now + 10000;
       if (i.itemType === 'bomb') {
         updatedEnemies.forEach(e => {
           if (!isBoss(e)) e.hp = 0;
         });
         clearBullets = true;
-        (uiChanges as UiState).score = (uiChanges as UiState).score + 500;
+        updatedUi.score = updatedUi.score + BOMB_SCORE_BONUS;
       }
       return false;
     }
     return true;
   });
 
-  return { remainingItems, uiChanges, enemies: updatedEnemies, audioEvents, clearBullets };
+  return { remainingItems, uiChanges: updatedUi, enemies: updatedEnemies, audioEvents, clearBullets };
 }
 
 /** 2-6: プレイヤーダメージ結果 */
@@ -452,7 +459,7 @@ export function processPlayerDamage(
     hit: true,
     livesLost: 1,
     invincible: !isGameOver,
-    invincibleEndTime: isGameOver ? state.invincibleEndTime : now + 2000,
+    invincibleEndTime: isGameOver ? state.invincibleEndTime : now + Config.timing.invincibility,
     comboReset: true,
     event: isGameOver ? 'gameover' : 'none',
     audioEvents,
@@ -491,8 +498,8 @@ export function processGraze(
       grazeCount++;
       comboTimer = now;
       grazeFlashTime = now;
-      const multiplier = Math.min(5.0, 1.0 + currentCombo * 0.1);
-      scoreDelta += Math.floor(50 * multiplier);
+      const multiplier = Math.min(MAX_COMBO_MULTIPLIER, 1.0 + currentCombo * COMBO_MULTIPLIER_INCREMENT);
+      scoreDelta += Math.floor(GRAZE_SCORE * multiplier);
       audioEvents.push({ name: 'graze' });
     }
   });
@@ -517,7 +524,7 @@ export function checkStageProgression(
   grazeCount: number,
   now: number,
 ): StageProgressionResult {
-  if (!bossDefeated || now - bossDefeatedTime <= 2000) {
+  if (!bossDefeated || now - bossDefeatedTime <= BOSS_DEFEAT_DELAY_MS) {
     return { event: 'none', nextStage: stage, bonus: 0 };
   }
 
@@ -543,14 +550,14 @@ export function updateFrame(
   const audioEvents: AudioEvent[] = [];
 
   // 演出タイマー減衰
-  if (gd.screenShake > 0) gd.screenShake = Math.max(0, gd.screenShake - 16);
-  if (gd.screenFlash > 0) gd.screenFlash = Math.max(0, gd.screenFlash - 16);
+  if (gd.screenShake > 0) gd.screenShake = Math.max(0, gd.screenShake - FRAME_MS);
+  if (gd.screenFlash > 0) gd.screenFlash = Math.max(0, gd.screenFlash - FRAME_MS);
 
   // WARNING演出チェック
   if (gd.bossWarning) {
-    if (now - gd.bossWarningStartTime > 2000) {
+    if (now - gd.bossWarningStartTime > WARNING_DURATION_MS) {
       gd.bossWarning = false;
-      const bossType = `boss${currentUi.stage}`;
+      const bossType = `boss${currentUi.stage}` as EnemyType;
       gd.enemies.push(EntityFactory.enemy(bossType, 200, -60, currentUi.stage));
       audioEvents.push({ name: 'bossAppear' });
     }
@@ -586,7 +593,7 @@ export function updateFrame(
 
   // 敵スポーン
   if (!gd.bossDefeated && !gd.bossWarning) {
-    gd.spawnTimer += 16;
+    gd.spawnTimer += FRAME_MS;
     if (gd.spawnTimer > stg.rate / diffConfig.spawnRateMultiplier && gd.enemies.length < Config.enemy.maxCount(currentUi.stage)) {
       gd.enemies.push(
         EntityFactory.enemy(
@@ -604,7 +611,7 @@ export function updateFrame(
       currentUi.score >= stg.bossScore * 0.5 &&
       !gd.enemies.some(e => isMidboss(e))
     ) {
-      const midbossType = `midboss${currentUi.stage}`;
+      const midbossType = `midboss${currentUi.stage}` as EnemyType;
       gd.enemies.push(EntityFactory.enemy(midbossType, 200, -50, currentUi.stage));
       gd.midBossSpawned = true;
     }
@@ -637,11 +644,11 @@ export function updateFrame(
   gd.enemies = gd.enemies
     .map(e => {
       // ボスのフェーズ遷移チェック
-      if (isBoss(e) && e.bossPhase === 1 && e.hp <= e.maxHp * 0.5) {
+      if (isBoss(e) && e.bossPhase === 1 && e.hp <= e.maxHp * BOSS_PHASE2_HP_RATIO) {
         e.bossPhase = 2;
         audioEvents.push({ name: 'bossPhaseChange' });
         gd.enemyBullets = [];
-        gd.screenShake = 300;
+        gd.screenShake = BOSS_PHASE_CHANGE_SCREEN_SHAKE;
       }
 
       // 移動戦略取得（サブ関数利用）
@@ -675,7 +682,7 @@ export function updateFrame(
     ...currentUi,
     score: currentUi.score + collisionResult.scoreDelta,
     combo: gd.combo,
-    multiplier: Math.min(5.0, 1.0 + gd.combo * 0.1),
+    multiplier: Math.min(MAX_COMBO_MULTIPLIER, 1.0 + gd.combo * COMBO_MULTIPLIER_INCREMENT),
     maxCombo: gd.maxCombo,
   };
 
@@ -728,7 +735,7 @@ export function updateFrame(
   if (gd.invincible && now > gd.invincibleEndTime) gd.invincible = false;
 
   // コンボタイマー切れ判定
-  if (gd.combo > 0 && now - gd.comboTimer > 3000) {
+  if (gd.combo > 0 && now - gd.comboTimer > COMBO_TIMEOUT_MS) {
     gd.combo = 0;
     currentUi = { ...currentUi, combo: 0, multiplier: 1.0 };
   }

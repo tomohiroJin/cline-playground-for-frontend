@@ -78,7 +78,7 @@ export const EntityFactory = {
   },
 
   /** 敵キャラクターの生成 */
-  enemy: (type: string, x: number, y: number, stage = 1): Enemy => {
+  enemy: (type: EnemyType, x: number, y: number, stage = 1): Enemy => {
     const cfg = EnemyConfig[type];
     if (!cfg) throw new Error(`Invalid enemy type: ${type}`);
     const boss = type === 'boss' || (type.startsWith('boss') && !type.startsWith('midboss'));
@@ -89,7 +89,7 @@ export const EntityFactory = {
       y,
       createdAt: Date.now(),
       type: 'enemy',
-      enemyType: type as import('./types').EnemyType,
+      enemyType: type,
       hp,
       maxHp: hp,
       speed: cfg.speed,

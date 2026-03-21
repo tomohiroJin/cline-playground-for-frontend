@@ -2,7 +2,7 @@
 // Deep Sea Interceptor - 定数定義
 // ============================================================================
 
-import type { ItemType, Difficulty } from './types';
+import type { ItemType, Difficulty, EnemyType } from './types';
 
 /** ゲーム全体の設定 */
 export const Config = Object.freeze({
@@ -25,7 +25,7 @@ export const Config = Object.freeze({
 /** ステージ設定 */
 export const StageConfig: Record<
   number,
-  { name: string; bg: string; types: string[]; rate: number; bossScore: number; gimmick: string }
+  { name: string; bg: string; types: EnemyType[]; rate: number; bossScore: number; gimmick: string }
 > = Object.freeze({
   1: { name: '浅層海域', bg: '#0a1a2a', types: ['basic', 'fast'], rate: 800, bossScore: 3000, gimmick: 'current' },
   2: {
@@ -64,7 +64,7 @@ export const StageConfig: Record<
 
 /** 敵タイプ別設定 */
 export const EnemyConfig: Record<
-  string,
+  EnemyType,
   {
     hp: number;
     speed: number;
@@ -139,9 +139,100 @@ export const DifficultyConfig: Record<
   },
 });
 
+// ================================================================
+// ゲームロジック用定数（マジックナンバーの定数化）
+// ================================================================
+
+/** コンボタイマーのタイムアウト（ms） */
+export const COMBO_TIMEOUT_MS = 3000;
+
+/** ボス撃破後の待機時間（ms） */
+export const BOSS_DEFEAT_DELAY_MS = 2000;
+
+/** 海流方向の切替間隔（ms） */
+export const CURRENT_CHANGE_INTERVAL_MS = 10000;
+
+/** 海流の力の強さ */
+export const CURRENT_FORCE = 0.5;
+
+/** 海流の敵弾への影響係数 */
+export const CURRENT_BULLET_FACTOR = 0.3;
+
+/** 機雷スポーン判定間隔（ms） */
+export const MINE_SPAWN_INTERVAL_MS = 3000;
+
+/** 機雷の最大数 */
+export const MINE_MAX_COUNT = 5;
+
+/** 熱水柱の生成間隔（ms） */
+export const THERMAL_VENT_INTERVAL_MS = 5000;
+
+/** 熱水柱の幅 */
+export const THERMAL_VENT_WIDTH = 40;
+
+/** 熱水柱の予告時間（ms） */
+export const THERMAL_VENT_WARNING_MS = 1000;
+
+/** 熱水柱のアクティブ期間（ms） */
+export const THERMAL_VENT_ACTIVE_MS = 2000;
+
+/** 熱水柱の最大存在期間（ms） */
+export const THERMAL_VENT_MAX_LIFE_MS = 3000;
+
+/** 発光プランクトンの生成確率 */
+export const BIOLUMINESCENCE_SPAWN_CHANCE = 0.05;
+
+/** 発光持続時間（ms） */
+export const BIOLUMINESCENCE_DURATION_MS = 3000;
+
+/** 発光プランクトンの検知範囲 */
+export const BIOLUMINESCENCE_DETECT_RANGE = 30;
+
+/** 水圧ギミックの開始タイミング（ms） */
+export const PRESSURE_START_MS = 30000;
+
+/** 水圧の壁の収縮速度 */
+export const PRESSURE_SHRINK_RATE = 0.02;
+
+/** 水圧の壁の最小幅係数 */
+export const PRESSURE_MIN_WIDTH_RATIO = 0.6;
+
+/** グレイズスコア基本値 */
+export const GRAZE_SCORE = 50;
+
+/** コンボ倍率の最大値 */
+export const MAX_COMBO_MULTIPLIER = 5.0;
+
+/** コンボ倍率の増加係数 */
+export const COMBO_MULTIPLIER_INCREMENT = 0.1;
+
+/** ボスのフェーズ2移行HP比率 */
+export const BOSS_PHASE2_HP_RATIO = 0.5;
+
+/** ボス撃破時の画面シェイク量 */
+export const BOSS_DEFEAT_SCREEN_SHAKE = 500;
+
+/** ボス撃破時の画面フラッシュ量 */
+export const BOSS_DEFEAT_SCREEN_FLASH = 200;
+
+/** ミッドボス撃破時の画面シェイク量 */
+export const MIDBOSS_DEFEAT_SCREEN_SHAKE = 200;
+
+/** ボスフェーズ変更時の画面シェイク量 */
+export const BOSS_PHASE_CHANGE_SCREEN_SHAKE = 300;
+
+/** WARNING演出の持続時間（ms） */
+export const WARNING_DURATION_MS = 2000;
+
+/** ボムアイテムのスコアボーナス */
+export const BOMB_SCORE_BONUS = 500;
+
+/** フレーム時間（ms） - 60fps基準 */
+export const FRAME_MS = 16;
+
 /** カラーパレット */
 export const ColorPalette: {
-  enemy: Record<string, string>;
+  enemy: Record<EnemyType, string>;
   ui: Record<string, string>;
   particle: Record<string, string>;
 } = Object.freeze({

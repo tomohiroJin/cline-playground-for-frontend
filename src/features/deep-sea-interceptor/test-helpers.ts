@@ -1,16 +1,5 @@
 // ============================================================================
-// Deep Sea Interceptor - テストヘルパー
+// Deep Sea Interceptor - テストヘルパー（後方互換性のための re-export）
 // ============================================================================
 
-import { createInitialGameState, createInitialUiState } from './game-logic';
-import type { GameState, UiState } from './types';
-
-/** テスト用 GameState ファクトリ */
-export function buildGameState(overrides: Partial<GameState> = {}): GameState {
-  return { ...createInitialGameState(), ...overrides };
-}
-
-/** テスト用 UiState ファクトリ */
-export function buildUiState(overrides: Partial<UiState> = {}): UiState {
-  return { ...createInitialUiState(), ...overrides };
-}
+export { buildGameState, buildUiState } from './test-factories';
