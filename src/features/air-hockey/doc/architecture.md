@@ -40,7 +40,8 @@ src/features/air-hockey/
     StageSelectScreen.tsx  # ステージ選択画面（ストーリーモード）
     Transition.tsx         # 画面トランジション
     Tutorial.tsx           # チュートリアルオーバーレイ
-    VsScreen.tsx           # VS 画面（ストーリーモード）
+    VsScreen.tsx           # VS 画面（ストーリーモード・2P 対戦）
+    CharacterSelectScreen.tsx  # キャラクター選択画面（2P 対戦）
   AirHockeyGame.tsx       # メインゲームコンポーネント
   renderer.ts             # Canvas 描画（トレイル、グロー、パーティクル、フィーバー演出等）
   styles.ts               # スタイル定義（レスポンシブ対応）
@@ -54,6 +55,34 @@ src/pages/AirHockeyPage.tsx  # ページコンポーネント
 - カスタムフック（`useGameLoop`, `useInput`, `useKeyboardInput`）でゲームループと入力を分離
 - `useRef` でゲームループの状態をフレーム間で保持
 - localStorage でハイスコア、実績、音量設定、アンロック状態、デイリーチャレンジ結果を永続化
+
+## 2P 対戦のアーキテクチャ
+
+### 入力分離
+
+`keyboard.ts` で 1P（矢印キー）と 2P（WASD）のキーマッピングを分離:
+- `PLAYER1_KEY_MAP`: 矢印キーのみ
+- `PLAYER2_KEY_MAP`: WASD のみ
+- `updateKeyboardStateForPlayer()`: プレイヤー別に独立したキー状態を管理
+- `calculateKeyboardMovement()`: `playerSlot` に応じて Y 軸クランプ範囲を切替（1P: 下半分、2P: 上半分）
+
+### ゲームループの 2P 分岐
+
+```
+gameMode === '2p-local' の場合:
+  AI 更新をスキップ → WASD 入力で CPU マレット位置を更新
+gameMode !== '2p-local' の場合:
+  従来の CPU AI でマレット位置を更新
+```
+
+### レイヤー配置
+
+| レイヤー | 2P 対戦関連 |
+|---------|------------|
+| domain | `PlayerSlot` 型 |
+| application | `TwoPlayerBattleUseCase`（スコア・勝敗管理） |
+| presentation | `useGameMode`（キャラ選択状態）、`useGameLoop`（2P 入力分岐） |
+| components | `CharacterSelectScreen`、`TitleScreen`（2P ボタン）、`ResultScreen`（2P 表示） |
 
 ## 使用技術
 
