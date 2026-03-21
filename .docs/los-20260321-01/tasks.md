@@ -31,12 +31,12 @@
 - [x] レンダリング設定の分離（infrastructure/rendering/render-config.ts）
 - [x] スタイル定義の feature 内移動（presentation/styles/game.styles.ts）
 
-## Phase 5: プレゼンテーション層の分割
-- [ ] useGameLoop カスタムフック抽出
-- [ ] useInput カスタムフック抽出
-- [ ] useAudio カスタムフック抽出
-- [ ] LabyrinthOfShadowsGame のスリム化
-- [ ] コンポーネントテスト追加
+## Phase 5: プレゼンテーション層の分割 ✅
+- [x] useInput カスタムフック抽出
+- [x] useAudio カスタムフック抽出
+- [x] useGameLoop カスタムフック抽出
+- [x] LabyrinthOfShadowsGame のスリム化（354行→175行）
+- [x] フックロジックのテスト追加（use-input, use-audio）
 
 ## Phase 6: E2E テスト・最終整備
 - [ ] 画面遷移 E2E テスト

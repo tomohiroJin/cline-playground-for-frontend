@@ -4,15 +4,15 @@ import { saveScore, getHighScore } from '../../utils/score-storage';
 import { CONFIG, CONTENT } from './constants';
 import type { Difficulty, Item, Enemy, GameState, HUDData } from './types';
 import { GameStateFactory } from './entity-factory';
-import { GameLogic } from './game-logic';
-import { Renderer } from './renderer';
-import { MinimapRenderer } from './minimap-renderer';
 import { AudioService } from './audio';
 import { TitleScreen } from './components/TitleScreen';
 import { ResultScreen } from './components/ResultScreen';
 import { HUD } from './components/HUD';
 import { Minimap } from './components/Minimap';
 import { Controls } from './components/Controls';
+import { useInput } from './presentation/hooks/use-input';
+import { useGameLoop } from './presentation/hooks/use-game-loop';
+import type { MapData } from './presentation/hooks/use-game-loop';
 import {
   PageContainer,
   Canvas,
@@ -21,20 +21,6 @@ import {
   ModalContent,
   ControlBtn,
 } from './presentation/styles/game.styles';
-
-// HUD データの浅い比較
-const hudEqual = (a: HUDData, b: HUDData): boolean =>
-  a.keys === b.keys &&
-  a.req === b.req &&
-  a.time === b.time &&
-  a.lives === b.lives &&
-  a.maxL === b.maxL &&
-  a.hide === b.hide &&
-  a.energy === b.energy &&
-  a.eNear === b.eNear &&
-  a.score === b.score &&
-  a.stamina === b.stamina &&
-  a.highScore === b.highScore;
 
 export default function LabyrinthOfShadowsGame() {
   const [screen, setScreen] = useState<'title' | 'story' | 'playing'>('title');
@@ -55,7 +41,7 @@ export default function LabyrinthOfShadowsGame() {
     stamina: 100,
     highScore: 0,
   });
-  const [_mapData, setMapData] = useState({
+  const [_mapData, setMapData] = useState<MapData>({
     maze: [] as number[][],
     player: { x: 0, y: 0 },
     exit: { x: 0, y: 0 },
@@ -69,12 +55,9 @@ export default function LabyrinthOfShadowsGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const minimapCanvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<GameState | null>(null);
-  const keysRef = useRef<Record<string, boolean>>({});
-  const rafRef = useRef<number | null>(null);
-  const prevHudRef = useRef<HUDData>(hud);
-  const prevMapKeyRef = useRef('');
   const [highScores, setHighScores] = useState<Record<string, number>>({});
 
+  // ハイスコアの読み込み
   useEffect(() => {
     Promise.all(Object.keys(CONFIG.difficulties).map(d => getHighScore('maze_horror', d))).then(
       scores => {
@@ -87,10 +70,9 @@ export default function LabyrinthOfShadowsGame() {
     );
   }, []);
 
+  // ゲーム終了処理
   const endGame = useCallback(
     (type: keyof typeof CONTENT.stories) => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
       AudioService.stopBGM();
       const g = gameRef.current;
       if (g) {
@@ -111,19 +93,6 @@ export default function LabyrinthOfShadowsGame() {
     [diff, highScores]
   );
 
-  const startGame = useCallback((d: Difficulty) => {
-    setDiff(d);
-    setStoryType('intro');
-    setScreen('story');
-  }, []);
-
-  const onStoryDone = useCallback(() => {
-    if (storyType === 'intro') {
-      gameRef.current = GameStateFactory.create(diff);
-      setScreen('playing');
-    } else setScreen('title');
-  }, [storyType, diff]);
-
   // ポーズトグル
   const togglePause = useCallback(() => {
     setPaused(prev => {
@@ -136,154 +105,41 @@ export default function LabyrinthOfShadowsGame() {
     });
   }, []);
 
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && screen === 'playing') {
-        e.preventDefault();
-        togglePause();
-        return;
-      }
-      keysRef.current[e.key.toLowerCase()] = true;
-      if (e.key === ' ' || e.key.startsWith('Arrow')) e.preventDefault();
-    };
-    const onKeyUp = (e: KeyboardEvent) => {
-      keysRef.current[e.key.toLowerCase()] = false;
-    };
-    window.addEventListener('keydown', onKeyDown);
-    window.addEventListener('keyup', onKeyUp);
-    return () => {
-      window.removeEventListener('keydown', onKeyDown);
-      window.removeEventListener('keyup', onKeyUp);
-    };
-  }, [screen, togglePause]);
+  // 入力管理
+  const { keysRef } = useInput(screen, togglePause);
 
-  useEffect(() => {
-    if (screen !== 'playing' || !gameRef.current || !canvasRef.current) return;
+  // ゲームループ
+  const { stopLoop } = useGameLoop({
+    screen,
+    paused,
+    diff,
+    highScores,
+    canvasRef,
+    minimapCanvasRef,
+    gameRef,
+    keysRef,
+    onHudUpdate: setHud,
+    onMapUpdate: setMapData,
+    onGameEnd: (type) => {
+      stopLoop();
+      endGame(type);
+    },
+  });
 
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    const { width: W, height: H } = CONFIG.render;
+  // ゲーム開始
+  const startGame = useCallback((d: Difficulty) => {
+    setDiff(d);
+    setStoryType('intro');
+    setScreen('story');
+  }, []);
 
-    // BGM開始
-    AudioService.startBGM();
-
-    const loop = () => {
-      const g = gameRef.current;
-      if (!g) return;
-
-      const now = performance.now();
-      const dt = Math.min(50, now - g.lastT);
-      g.lastT = now;
-
-      // ポーズ中は描画のみ
-      if (paused) {
-        Renderer.render(ctx, g, W, H, 99);
-        rafRef.current = requestAnimationFrame(loop);
-        return;
-      }
-
-      g.gTime += dt;
-      g.time -= dt;
-      if (g.invince > 0) g.invince -= dt;
-      if (g.msgTimer > 0) g.msgTimer -= dt;
-      if (g.speedBoost > 0) g.speedBoost -= dt;
-
-      if (g.time <= 0) {
-        endGame('timeout');
-        return;
-      }
-
-      const k = keysRef.current;
-      const input = {
-        left: k['a'] || k['arrowleft'],
-        right: k['d'] || k['arrowright'],
-        forward: k['w'] || k['arrowup'],
-        backward: k['s'] || k['arrowdown'],
-      };
-
-      GameLogic.updateHiding(g, k[' '], dt);
-      GameLogic.updateSprinting(g, k['shift'], dt);
-      const moved = GameLogic.updatePlayer(g, input, dt);
-      GameLogic.updateFootstep(g, moved, dt);
-      GameLogic.updateItems(g);
-
-      const exitResult = GameLogic.checkExit(g);
-      if (exitResult) {
-        endGame(exitResult);
-        return;
-      }
-
-      const closestEnemy = GameLogic.updateEnemies(g, dt);
-      if (g.lives <= 0) {
-        endGame('gameover');
-        return;
-      }
-
-      GameLogic.updateSounds(g, closestEnemy, dt);
-      AudioService.updateBGM(Math.max(0, 1 - closestEnemy / 8));
-      Renderer.render(ctx, g, W, H, closestEnemy);
-
-      // Minimap Canvas描画
-      const minimapCtx = minimapCanvasRef.current?.getContext('2d');
-      if (minimapCtx) {
-        MinimapRenderer.render(minimapCtx, {
-          maze: g.maze,
-          player: g.player,
-          exit: g.exit,
-          items: g.items,
-          enemies: g.enemies,
-          keys: g.keys,
-          reqKeys: g.reqKeys,
-          explored: g.explored,
-          time: g.gTime / 1000,
-        });
-      }
-
-      // HUD更新（変化検知付き）
-      const newHud: HUDData = {
-        keys: g.keys,
-        req: g.reqKeys,
-        time: Math.ceil(g.time / 1000),
-        lives: g.lives,
-        maxL: g.maxLives,
-        hide: g.hiding,
-        energy: Math.round(g.energy),
-        eNear: Math.max(0, 1 - closestEnemy / 7),
-        score: g.score,
-        stamina: Math.round(g.player.stamina),
-        highScore: highScores[diff] || 0,
-      };
-      if (!hudEqual(newHud, prevHudRef.current)) {
-        prevHudRef.current = newHud;
-        setHud(newHud);
-      }
-
-      // MapData更新（変化検知: 重要フィールドのみ比較）
-      const mapKey = `${g.keys}-${Math.floor(g.player.x)},${Math.floor(g.player.y)}-${g.enemies.map(e => `${e.active}${Math.floor(e.x)}${Math.floor(e.y)}`).join('')}-${g.items.filter(i => i.got).length}`;
-      if (mapKey !== prevMapKeyRef.current) {
-        prevMapKeyRef.current = mapKey;
-        setMapData({
-          maze: g.maze,
-          player: g.player,
-          exit: g.exit,
-          items: g.items,
-          enemies: g.enemies,
-          keys: g.keys,
-          reqKeys: g.reqKeys,
-          explored: g.explored,
-        });
-      }
-
-      rafRef.current = requestAnimationFrame(loop);
-    };
-
-    rafRef.current = requestAnimationFrame(loop);
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      AudioService.stopBGM();
-    };
-  }, [screen, endGame, diff, highScores, paused]);
+  // ストーリー完了時
+  const onStoryDone = useCallback(() => {
+    if (storyType === 'intro') {
+      gameRef.current = GameStateFactory.create(diff);
+      setScreen('playing');
+    } else setScreen('title');
+  }, [storyType, diff]);
 
   if (screen === 'title') return <TitleScreen onStart={startGame} highScores={highScores} />;
   if (screen === 'story')
