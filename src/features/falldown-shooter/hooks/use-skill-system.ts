@@ -6,6 +6,7 @@ import type { UseGameStateReturn } from './use-game-state';
 import { CONFIG } from '../constants';
 import { Audio } from '../audio';
 import { GameLogic } from '../game-logic';
+import { useSafeTimeout } from './use-safe-timeout';
 
 export interface UseSkillSystemParams {
   gameState: UseGameStateReturn;
@@ -38,6 +39,7 @@ export const useSkillSystem = ({
   const [laserX, setLaserX] = useState<number | null>(null);
   const [showBlast, setShowBlast] = useState<boolean>(false);
   const prevScoreRef = useRef<number>(0);
+  const { setSafeTimeout } = useSafeTimeout();
 
   // スキルチャージエフェクト
   useEffect(() => {
@@ -67,7 +69,7 @@ export const useSkillSystem = ({
       switch (skillType) {
         case 'laser': {
           setLaserX(playerX);
-          setTimeout(() => setLaserX(null), 300);
+          setSafeTimeout(() => setLaserX(null), 300);
           const result = GameLogic.applyLaserColumn(playerX, st.blocks, st.grid);
           gameState.updateState({
             blocks: result.blocks,
@@ -78,7 +80,7 @@ export const useSkillSystem = ({
         }
         case 'blast': {
           setShowBlast(true);
-          setTimeout(() => setShowBlast(false), 400);
+          setSafeTimeout(() => setShowBlast(false), 400);
           if (onBlast) onBlast();
           const result = GameLogic.applyBlastAll(st.blocks);
           gameState.updateState({
@@ -101,7 +103,7 @@ export const useSkillSystem = ({
         }
       }
     },
-    [skillCharge, playerX, soundEnabled, gameState, onBlast]
+    [skillCharge, playerX, soundEnabled, gameState, onBlast, setSafeTimeout]
   );
 
   return {

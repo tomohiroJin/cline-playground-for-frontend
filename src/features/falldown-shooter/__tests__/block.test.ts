@@ -1,17 +1,11 @@
 import { Block } from '../block';
 import { Grid } from '../grid';
-import type { BlockData } from '../types';
+import { createBlock } from './helpers/factories';
 
 describe('Block', () => {
-  const makeBlock = (overrides: Partial<BlockData> = {}): BlockData => ({
-    id: 'test-block',
-    x: 0,
-    y: 0,
-    shape: [[1, 1]],
-    color: '#FF0000',
-    power: null,
-    ...overrides,
-  });
+  // ブロックテスト用のデフォルトshapeを横2マスに設定
+  const makeBlock = (overrides: Partial<Parameters<typeof createBlock>[0]> = {}) =>
+    createBlock({ shape: [[1, 1]], ...overrides });
 
   describe('getCells', () => {
     test('ブロックのセル座標を返すこと', () => {
