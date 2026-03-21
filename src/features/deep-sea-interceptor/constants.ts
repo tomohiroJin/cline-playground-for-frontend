@@ -26,7 +26,7 @@ export const Config = Object.freeze({
 export const StageConfig: Record<
   number,
   { name: string; bg: string; types: EnemyType[]; rate: number; bossScore: number; gimmick: string }
-> = Object.freeze({
+> = {
   1: { name: '浅層海域', bg: '#0a1a2a', types: ['basic', 'fast'], rate: 800, bossScore: 3000, gimmick: 'current' },
   2: {
     name: '深海防衛ライン',
@@ -60,7 +60,7 @@ export const StageConfig: Record<
     bossScore: 25000,
     gimmick: 'pressure',
   },
-});
+};
 
 /** 敵タイプ別設定 */
 export const EnemyConfig: Record<
