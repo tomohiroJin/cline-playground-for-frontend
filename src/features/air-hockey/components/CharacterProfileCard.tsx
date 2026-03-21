@@ -6,8 +6,8 @@
  * 立ち絵タップで表情切替（normal ⇔ happy）。
  * 閉じる: ✕ ボタン / 背景タップ / Escape キー。
  */
-import React, { useState, useEffect, useCallback } from 'react';
-import styled, { keyframes } from 'styled-components';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import styled, { keyframes, css } from 'styled-components';
 import type { Character, DexEntry } from '../core/types';
 
 // ── 定数 ──────────────────────────────────────────
@@ -50,7 +50,9 @@ const slideDown = keyframes`
 `;
 
 /** フェードアウトアニメーションの長さ（ms） */
-const FADE_OUT_DURATION_MS = 200;
+export const FADE_OUT_DURATION_MS = 200;
+/** スライドアップアニメーションの長さ（ms） */
+const SLIDE_UP_DURATION_MS = 300;
 
 // ── styled-components ─────────────────────────────
 const Overlay = styled.div<{ $closing?: boolean }>`
@@ -75,7 +77,11 @@ const CardContainer = styled.div<{ $closing?: boolean }>`
   background: #fff;
   border-radius: ${CARD_BORDER_RADIUS_PX}px;
   overflow-y: auto;
-  animation: ${({ $closing }) => $closing ? slideDown : slideUp} ${({ $closing }) => $closing ? FADE_OUT_DURATION_MS : 300}ms ease-out forwards;
+  animation: ${({ $closing }) =>
+    $closing
+      ? css`${slideDown} ${FADE_OUT_DURATION_MS}ms ease-out forwards`
+      : css`${slideUp} ${SLIDE_UP_DURATION_MS}ms ease-out forwards`
+  };
 `;
 
 const CloseButton = styled.button`
@@ -240,12 +246,20 @@ export const CharacterProfileCard: React.FC<CharacterProfileCardProps> = ({
   const hasPortrait = !!character.portrait;
   const [isHappy, setIsHappy] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // アンマウント時にタイマーをクリーンアップ
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    };
+  }, []);
 
   // フェードアウトアニメーション付きで閉じる
   const startClose = useCallback(() => {
     if (isClosing) return;
     setIsClosing(true);
-    setTimeout(() => onClose(), FADE_OUT_DURATION_MS);
+    closeTimerRef.current = setTimeout(() => onClose(), FADE_OUT_DURATION_MS);
   }, [isClosing, onClose]);
 
   // Escape キーで閉じる

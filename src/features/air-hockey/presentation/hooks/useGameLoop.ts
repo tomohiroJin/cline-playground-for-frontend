@@ -18,6 +18,7 @@ import { magnitude, randomRange } from '../../../../utils/math-utils';
 import { Renderer } from '../../renderer';
 import type {
   GameState,
+  Mallet,
   FieldConfig,
   Difficulty,
   SoundSystem,
@@ -30,6 +31,14 @@ import type {
   HitStopState,
   SlowMotionState,
 } from '../../core/types';
+
+/** マレットを目標位置に移動し速度を設定する */
+function moveMalletTo(mallet: Mallet, targetX: number, targetY: number): void {
+  mallet.vx = targetX - mallet.x;
+  mallet.vy = targetY - mallet.y;
+  mallet.x = targetX;
+  mallet.y = targetY;
+}
 import { applyKeyboardMovement } from '../../hooks/useKeyboardInput';
 import type { KeyboardState } from '../../core/keyboard';
 import { calculateKeyboardMovement } from '../../core/keyboard';
@@ -450,17 +459,11 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       if (is2PMode && multiTouchRef?.current) {
         const touchState = multiTouchRef.current;
         if (touchState.player1Position) {
-          game.player.vx = touchState.player1Position.x - game.player.x;
-          game.player.vy = touchState.player1Position.y - game.player.y;
-          game.player.x = touchState.player1Position.x;
-          game.player.y = touchState.player1Position.y;
+          moveMalletTo(game.player, touchState.player1Position.x, touchState.player1Position.y);
           lastInputRef.current = Date.now();
         }
         if (touchState.player2Position) {
-          game.cpu.vx = touchState.player2Position.x - game.cpu.x;
-          game.cpu.vy = touchState.player2Position.y - game.cpu.y;
-          game.cpu.x = touchState.player2Position.x;
-          game.cpu.y = touchState.player2Position.y;
+          moveMalletTo(game.cpu, touchState.player2Position.x, touchState.player2Position.y);
         }
       }
 
@@ -471,10 +474,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         const hasInput = keys2.up || keys2.down || keys2.left || keys2.right;
         if (hasInput) {
           const result = calculateKeyboardMovement(keys2, { x: game.cpu.x, y: game.cpu.y }, consts, 'player2');
-          game.cpu.vx = result.vx;
-          game.cpu.vy = result.vy;
-          game.cpu.x = result.x;
-          game.cpu.y = result.y;
+          moveMalletTo(game.cpu, result.x, result.y);
         }
       } else {
         const cpuUpdate = CpuAI.update(game, diff, now, consts);

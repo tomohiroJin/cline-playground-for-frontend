@@ -13,7 +13,7 @@
  */
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { CharacterProfileCard } from './CharacterProfileCard';
+import { CharacterProfileCard, FADE_OUT_DURATION_MS } from './CharacterProfileCard';
 import type { Character, DexEntry } from '../core/types';
 
 // テスト用の図鑑エントリ（立ち絵あり）
@@ -211,7 +211,7 @@ describe('CharacterProfileCard', () => {
       expect(defaultProps.onClose).not.toHaveBeenCalled();
 
       // フェードアウト完了後に onClose が呼ばれる
-      jest.advanceTimersByTime(250);
+      jest.advanceTimersByTime(FADE_OUT_DURATION_MS + 50);
       expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
     });
 
@@ -221,7 +221,7 @@ describe('CharacterProfileCard', () => {
       fireEvent.click(screen.getByTestId('profile-overlay'));
 
       expect(defaultProps.onClose).not.toHaveBeenCalled();
-      jest.advanceTimersByTime(250);
+      jest.advanceTimersByTime(FADE_OUT_DURATION_MS + 50);
       expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
     });
 
@@ -229,7 +229,7 @@ describe('CharacterProfileCard', () => {
       render(<CharacterProfileCard {...defaultProps} />);
 
       fireEvent.click(screen.getByTestId('profile-card'));
-      jest.advanceTimersByTime(250);
+      jest.advanceTimersByTime(FADE_OUT_DURATION_MS + 50);
       expect(defaultProps.onClose).not.toHaveBeenCalled();
     });
 
@@ -239,7 +239,7 @@ describe('CharacterProfileCard', () => {
       fireEvent.keyDown(document, { key: 'Escape' });
 
       expect(defaultProps.onClose).not.toHaveBeenCalled();
-      jest.advanceTimersByTime(250);
+      jest.advanceTimersByTime(FADE_OUT_DURATION_MS + 50);
       expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
     });
   });

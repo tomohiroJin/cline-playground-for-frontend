@@ -210,6 +210,18 @@ const UnlockBanner: React.FC<{ characterName: string }> = ({ characterName }) =>
   );
 };
 
+/** 勝者表示テキストを生成する */
+function getWinnerText(
+  is2PMode: boolean | undefined,
+  isWin: boolean,
+  player1Name?: string,
+  player2Name?: string
+): string {
+  if (!is2PMode) return isWin ? 'YOU WIN!' : 'YOU LOSE';
+  if (isWin) return player1Name ? `${player1Name} Win!` : '1P Win!';
+  return player2Name ? `${player2Name} Win!` : '2P Win!';
+}
+
 export const ResultScreen: React.FC<ResultScreenProps> = ({
   winner, scores, onBackToMenu, onReplay, stats, newAchievements,
   suggestedDifficulty, onAcceptDifficulty,
@@ -244,12 +256,8 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
         <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>
           {is2PMode ? '🎊' : isWin ? '🎉' : '😢'}
         </div>
-        <GameTitle style={{ color: is2PMode ? 'var(--accent-color)' : isWin ? 'var(--accent-color)' : '#ff4444' }}>
-          {is2PMode
-            ? (isWin
-                ? (player1CharacterName ? `${player1CharacterName} Win!` : '1P Win!')
-                : (player2CharacterName ? `${player2CharacterName} Win!` : '2P Win!'))
-            : (isWin ? 'YOU WIN!' : 'YOU LOSE')}
+        <GameTitle style={{ color: (is2PMode || isWin) ? 'var(--accent-color)' : '#ff4444' }}>
+          {getWinnerText(is2PMode, isWin, player1CharacterName, player2CharacterName)}
         </GameTitle>
         <p style={{ fontSize: '2rem', color: 'white', fontWeight: 'bold', marginBottom: '20px' }}>
           {scores.p} - {scores.c}

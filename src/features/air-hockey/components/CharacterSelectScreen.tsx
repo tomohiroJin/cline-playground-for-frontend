@@ -18,8 +18,6 @@ type CharacterSelectScreenProps = {
   onBack: () => void;
 };
 
-/** 選択中のプレイヤースロット（domain 層の PlayerSlot 型を再利用） */
-
 /** デフォルト勝利スコア */
 const DEFAULT_WIN_SCORE = 3;
 
