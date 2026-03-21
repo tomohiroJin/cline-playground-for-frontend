@@ -124,24 +124,24 @@
 ## Phase 3: アプリケーション層の整理
 
 ### 3-1: FrameProcessor の作成
-- [ ] `application/game-loop/frame-processor.ts` を作成
-- [ ] `updateFrame` のミューテーションをイミュータブル更新に変更
-- [ ] `audioPlay` コールバックを排除し、イベント配列で返却
-- [ ] 既存テストを新 API に移行
-- [ ] 全テストがパスすることを確認
-- [ ] コミット: `refactor: FrameProcessor を作成し updateFrame をイミュータブルに変更`
+- [x] `application/game-loop/frame-processor.ts` を作成
+- [x] `updateFrame` のミューテーションをイミュータブル更新に変更
+- [x] `audioPlay` コールバックを排除し、イベント配列で返却
+- [x] 既存テストを新 API に移行
+- [x] 全テストがパスすることを確認
+- [x] コミット: `refactor: FrameProcessor を作成し updateFrame をイミュータブルに変更`
 
 ### 3-2: ステージ管理の分離
-- [ ] `application/stages/stage-progression.ts` を作成（既存の `checkStageProgression` を移動）
-- [ ] `application/stages/stage-config.ts` を作成（`StageConfig` を移動）
-- [ ] テストを移行
-- [ ] コミット: `refactor: ステージ管理をアプリケーション層に分離`
+- [x] `application/stages/stage-progression.ts` を作成（既存の `checkStageProgression` を移動）
+- [x] `application/stages/stage-config.ts` を作成（`StageConfig` を移動）
+- [x] テストを移行
+- [x] コミット: `refactor: ステージ管理をアプリケーション層に分離`
 
 ### 3-3: 実績管理の分離
-- [ ] `application/achievements/achievement-checker.ts` を作成
-- [ ] `application/achievements/achievement-list.ts` を作成
-- [ ] テストを移行
-- [ ] コミット: `refactor: 実績管理をアプリケーション層に分離`
+- [x] `application/achievements/achievement-checker.ts` を作成
+- [x] `application/achievements/achievement-list.ts` を作成
+- [x] テストを移行
+- [x] コミット: `refactor: 実績管理をアプリケーション層に分離`
 
 ---
 
