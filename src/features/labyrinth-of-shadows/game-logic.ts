@@ -1,14 +1,13 @@
 import { CONFIG, CONTENT } from './constants';
 import type { GameState, Enemy } from './types';
-import { clamp, distance, normAngle } from './utils';
+import { clamp, distance } from './utils';
 import { MazeService } from './maze-service';
 import { AudioService } from './audio';
 import { GAME_BALANCE } from './domain/constants';
 import { isPlayerNearItem, isPlayerNearExit, isPlayerCollidingEnemy } from './domain/services/collision';
 import { calculateKeyScore, calculateVictoryScore, calculateCombo } from './domain/services/scoring';
-import { bfsPath } from './domain/services/pathfinding';
-
-const { PATH_RECALC_INTERVAL, TELEPORT_COOLDOWN, TELEPORT_CHASE_RANGE } = GAME_BALANCE.enemy;
+import { getEnemyStrategy } from './domain/services/enemy-strategy';
+import type { GameEvent } from './application/game-events';
 
 // ==================== GAME LOGIC ====================
 export const GameLogic = {
@@ -73,7 +72,6 @@ export const GameLogic = {
       for (let oy = -1; oy <= 1; oy++) g.explored[`${px + ox},${py + oy}`] = true;
   },
 
-  // 地図アイテム使用時、広範囲を探索済みにする
   revealMap(g: GameState, cx: number, cy: number) {
     const r = CONFIG.items.mapRevealRadius;
     for (let ox = -r; ox <= r; ox++)
@@ -82,8 +80,7 @@ export const GameLogic = {
 
   updateItems(g: GameState) {
     for (const item of g.items) {
-      if (item.got || !isPlayerNearItem(g.player.x, g.player.y, item.x, item.y))
-        continue;
+      if (item.got || !isPlayerNearItem(g.player.x, g.player.y, item.x, item.y)) continue;
 
       item.got = true;
       switch (item.type) {
@@ -143,137 +140,11 @@ export const GameLogic = {
     return null;
   },
 
-  // 徘徊型AI: ランダムに巡回、プレイヤーを追跡しない
-  updateWanderer(g: GameState, e: Enemy, dt: number) {
-    e.dir += (Math.random() - 0.5) * 0.04;
-    // たまに方向転換
-    if (Math.random() < 0.002) {
-      e.dir += Math.PI * (0.5 + Math.random() * 0.5);
-    }
-
-    const nx = e.x + Math.cos(e.dir) * g.eSpeed * GAME_BALANCE.enemy.WANDERER_SPEED_MULTIPLIER * dt;
-    const ny = e.y + Math.sin(e.dir) * g.eSpeed * GAME_BALANCE.enemy.WANDERER_SPEED_MULTIPLIER * dt;
-    if (MazeService.isWalkable(g.maze, nx, ny)) {
-      e.x = nx;
-      e.y = ny;
-    } else {
-      e.dir += Math.PI * 0.5 + Math.random() * 0.5;
-    }
-  },
-
-  // 追跡型AI: BFSパスファインディングで追跡
-  updateChaser(g: GameState, e: Enemy, dt: number) {
-    const d = distance(g.player.x, g.player.y, e.x, e.y);
-
-    if (!g.hiding && d < CONFIG.enemy.chaseRange) {
-      e.lastSeenX = g.player.x;
-      e.lastSeenY = g.player.y;
-
-      // BFS パスを定期的に再計算
-      if (g.gTime - e.pathTime > PATH_RECALC_INTERVAL) {
-        e.path = bfsPath(g.maze, e.x, e.y, g.player.x, g.player.y);
-        e.pathTime = g.gTime;
-      }
-
-      // パスの次のノードへ移動
-      if (e.path.length > 0) {
-        const next = e.path[0];
-        const distToNext = distance(e.x, e.y, next.x, next.y);
-        if (distToNext < GAME_BALANCE.enemy.PATH_NODE_REACH_DISTANCE) {
-          e.path.shift();
-        }
-        if (e.path.length > 0) {
-          const target = e.path[0];
-          e.dir = Math.atan2(target.y - e.y, target.x - e.x);
-        }
-      } else {
-        // パスが空の場合は直接追跡（フォールバック）
-        e.dir += normAngle(Math.atan2(g.player.y - e.y, g.player.x - e.x) - e.dir) * 0.045;
-      }
-
-      // 視野内で加速
-      const speedMult = d < GAME_BALANCE.enemy.CLOSE_RANGE_THRESHOLD ? GAME_BALANCE.enemy.CLOSE_RANGE_SPEED_MULTIPLIER : 1;
-      const nx = e.x + Math.cos(e.dir) * g.eSpeed * speedMult * dt;
-      const ny = e.y + Math.sin(e.dir) * g.eSpeed * speedMult * dt;
-      if (MazeService.isWalkable(g.maze, nx, ny)) {
-        e.x = nx;
-        e.y = ny;
-      } else {
-        e.dir += Math.PI * 0.5 + Math.random() * 0.5;
-      }
-    } else if (e.lastSeenX > 0 && distance(e.x, e.y, e.lastSeenX, e.lastSeenY) > 1) {
-      e.dir += normAngle(Math.atan2(e.lastSeenY - e.y, e.lastSeenX - e.x) - e.dir) * 0.025;
-      const nx = e.x + Math.cos(e.dir) * g.eSpeed * dt;
-      const ny = e.y + Math.sin(e.dir) * g.eSpeed * dt;
-      if (MazeService.isWalkable(g.maze, nx, ny)) {
-        e.x = nx;
-        e.y = ny;
-      } else {
-        e.dir += Math.PI * 0.5 + Math.random() * 0.5;
-      }
-    } else {
-      e.dir += (Math.random() - 0.5) * 0.055;
-      e.lastSeenX = -1;
-      const nx = e.x + Math.cos(e.dir) * g.eSpeed * 0.5 * dt;
-      const ny = e.y + Math.sin(e.dir) * g.eSpeed * 0.5 * dt;
-      if (MazeService.isWalkable(g.maze, nx, ny)) {
-        e.x = nx;
-        e.y = ny;
-      } else {
-        e.dir += Math.PI * 0.5 + Math.random() * 0.5;
-      }
-    }
-  },
-
-  // テレポート型AI: 一定間隔でテレポート、短距離追跡
-  updateTeleporter(g: GameState, e: Enemy, dt: number) {
-    e.teleportCooldown -= dt;
-
-    const d = distance(g.player.x, g.player.y, e.x, e.y);
-
-    // テレポート
-    if (e.teleportCooldown <= 0 && !g.hiding) {
-      const emptyCells = MazeService.getEmptyCells(g.maze);
-      // プレイヤーから適度な距離のセルを選ぶ
-      const candidate = emptyCells.find(c =>
-        distance(c.x + 0.5, c.y + 0.5, g.player.x, g.player.y) > GAME_BALANCE.enemy.TELEPORT_MIN_DISTANCE &&
-        distance(c.x + 0.5, c.y + 0.5, g.player.x, g.player.y) < GAME_BALANCE.enemy.TELEPORT_MAX_DISTANCE
-      );
-      if (candidate) {
-        e.x = candidate.x + 0.5;
-        e.y = candidate.y + 0.5;
-        e.teleportCooldown = TELEPORT_COOLDOWN;
-        AudioService.play('teleport', 0.3);
-      }
-    }
-
-    // 短距離追跡
-    if (!g.hiding && d < TELEPORT_CHASE_RANGE) {
-      e.dir = Math.atan2(g.player.y - e.y, g.player.x - e.x);
-      const nx = e.x + Math.cos(e.dir) * g.eSpeed * GAME_BALANCE.enemy.TELEPORTER_CHASE_SPEED_MULTIPLIER * dt;
-      const ny = e.y + Math.sin(e.dir) * g.eSpeed * GAME_BALANCE.enemy.TELEPORTER_CHASE_SPEED_MULTIPLIER * dt;
-      if (MazeService.isWalkable(g.maze, nx, ny)) {
-        e.x = nx;
-        e.y = ny;
-      }
-    } else {
-      // ゆっくり巡回
-      e.dir += (Math.random() - 0.5) * 0.04;
-      const nx = e.x + Math.cos(e.dir) * g.eSpeed * GAME_BALANCE.enemy.TELEPORTER_PATROL_SPEED_MULTIPLIER * dt;
-      const ny = e.y + Math.sin(e.dir) * g.eSpeed * GAME_BALANCE.enemy.TELEPORTER_PATROL_SPEED_MULTIPLIER * dt;
-      if (MazeService.isWalkable(g.maze, nx, ny)) {
-        e.x = nx;
-        e.y = ny;
-      } else {
-        e.dir += Math.PI * 0.5 + Math.random() * 0.5;
-      }
-    }
-  },
-
-  updateEnemy(g: GameState, e: Enemy, dt: number) {
+  /** Strategy パターンで敵 AI を更新する */
+  updateEnemyWithStrategy(g: GameState, e: Enemy, dt: number): { distance: number; events: readonly GameEvent[] } {
     if (!e.active) {
       if (g.gTime >= e.actTime) e.active = true;
-      return Infinity;
+      return { distance: Infinity, events: [] };
     }
 
     const d = distance(g.player.x, g.player.y, e.x, e.y);
@@ -288,27 +159,39 @@ export const GameLogic = {
       g.msgTimer = GAME_BALANCE.timing.DAMAGE_MESSAGE_DURATION;
       AudioService.play('hurt', 0.5);
 
-      const edx = g.player.x - e.x,
-        edy = g.player.y - e.y;
+      const edx = g.player.x - e.x;
+      const edy = g.player.y - e.y;
       e.x -= (edx / d) * GAME_BALANCE.collision.ENEMY_KNOCKBACK_DISTANCE;
       e.y -= (edy / d) * GAME_BALANCE.collision.ENEMY_KNOCKBACK_DISTANCE;
       e.dir += Math.PI;
     }
 
-    // タイプ別AI
-    switch (e.type) {
-      case 'wanderer':
-        this.updateWanderer(g, e, dt);
-        break;
-      case 'chaser':
-        this.updateChaser(g, e, dt);
-        break;
-      case 'teleporter':
-        this.updateTeleporter(g, e, dt);
-        break;
+    // Strategy パターンによるタイプ別 AI 更新
+    const strategy = getEnemyStrategy(e.type);
+    const result = strategy.update({
+      enemy: e,
+      playerX: g.player.x,
+      playerY: g.player.y,
+      isPlayerHiding: g.hiding,
+      maze: g.maze,
+      enemySpeed: g.eSpeed,
+      dt,
+      gameTime: g.gTime,
+      randomFn: Math.random,
+    });
+
+    // Strategy から発生したイベントを処理
+    for (const event of result.events) {
+      if (event.type === 'SOUND_PLAY') {
+        AudioService.play(event.sound, event.volume);
+      }
     }
 
-    return d;
+    return { distance: d, events: result.events };
+  },
+
+  updateEnemy(g: GameState, e: Enemy, dt: number) {
+    return this.updateEnemyWithStrategy(g, e, dt).distance;
   },
 
   updateEnemies(g: GameState, dt: number) {
