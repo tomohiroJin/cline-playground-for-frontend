@@ -93,39 +93,39 @@
 **コミットタイプ:** `refactor`
 
 ### 3-1. CollisionService の実装
-- [ ] テストを先に作成（`__tests__/domain/collision-service.test.ts`）
-- [ ] `domain/services/collision-service.ts` を作成
+- [x] テストを先に作成（`__tests__/domain/collision-service.test.ts`）
+- [x] `domain/services/collision-service.ts` を作成
   - `buildCollisionMap`: 衝突マップ構築
   - `detectCollision`: 弾丸の衝突判定（純粋関数）
   - `getExplosionArea`: 爆発範囲計算
-- [ ] 既存 `collision.ts` のロジックを移行
-- [ ] テスト実行・パス確認
+- [x] 既存 `collision.ts` のロジックを移行
+- [x] テスト実行・パス確認
 
 ### 3-2. SpawnService の実装
-- [ ] テストを先に作成（`__tests__/domain/spawn-service.test.ts`）
-- [ ] `domain/services/spawn-service.ts` を作成
+- [x] テストを先に作成（`__tests__/domain/spawn-service.test.ts`）
+- [x] `domain/services/spawn-service.ts` を作成
   - `canSpawn`: スポーン可否判定
   - `spawnBlock`: ブロック生成（`Block.create` のロジックを移行）
   - 衝突回避ロジックの分離と明確化
-- [ ] `Block.create` の呼び出し元を `SpawnService` に移行
-- [ ] テスト実行・パス確認
+- [x] `Block.create` の呼び出し元を `SpawnService` に移行
+- [x] テスト実行・パス確認
 
 ### 3-3. SkillService の実装（Strategy パターン）
-- [ ] テストを先に作成（`__tests__/domain/skill-service.test.ts`）
-- [ ] `domain/services/skill-service.ts` を作成
-- [ ] 各スキルの Strategy を実装
+- [x] テストを先に作成（`__tests__/domain/skill-service.test.ts`）
+- [x] `domain/services/skill-service.ts` を作成
+- [x] 各スキルの Strategy を実装
   - `LaserStrategy`: 縦レーザー（列消去）
   - `BlastStrategy`: 全画面爆破（落下中ブロック全破壊）
   - `ClearStrategy`: ライン消去（最下段消去）
-- [ ] `game-logic.ts` の `applyLaserColumn`, `applyBlastAll`, `applyClearBottom` を Strategy に移行
-- [ ] テスト実行・パス確認
+- [x] `game-logic.ts` の `applyLaserColumn`, `applyBlastAll`, `applyClearBottom` を Strategy に移行
+- [x] テスト実行・パス確認
 
 ### 3-4. processBullets のリファクタリング
-- [ ] `game-logic.ts` の `processBullets` を `CollisionService` と連携する形にリファクタリング
+- [x] `game-logic.ts` の `processBullets` を `CollisionService` と連携する形にリファクタリング
   - 衝突判定ロジックを `CollisionService` に委譲
   - パワーアップ通知をイベント結果として返す（コールバックからの脱却）
   - ネストの浅いフラットな制御フローに変更
-- [ ] テスト実行・パス確認
+- [x] テスト実行・パス確認
 
 ---
 
@@ -164,38 +164,38 @@
 **コミットタイプ:** `refactor`
 
 ### 5-1. hooks.ts の統合
-- [ ] `hooks.ts`（ルート）の内容を `hooks/` ディレクトリ内に移動
+- [x] `hooks.ts`（ルート）の内容を `hooks/` ディレクトリ内に移動
   - `useInterval` → `hooks/use-interval.ts`
   - `useKeyboard` → `hooks/use-keyboard.ts`
   - `useIdleTimer` → `hooks/use-idle-timer.ts`
-- [ ] `hooks.ts`（ルート）を削除
-- [ ] import パスの更新
-- [ ] テスト実行・パス確認
+- [x] `hooks.ts`（ルート）を再エクスポートファイルに変換（後方互換性維持）
+- [x] import パスの更新
+- [x] テスト実行・パス確認
 
 ### 5-2. setTimeout の安全化
-- [ ] `use-game-controls.ts` 内の `setTimeout` を `useSafeTimeout` に置換
-- [ ] `use-skill-system.ts` 内の `setTimeout` を `useSafeTimeout` に置換
-- [ ] メモリリークが発生しないことをテストで確認
-- [ ] テスト実行・パス確認
+- [x] `use-game-controls.ts` 内の `setTimeout` を `useSafeTimeout` に置換
+- [x] `use-skill-system.ts` 内の `setTimeout` を `useSafeTimeout` に置換
+- [x] メモリリークが発生しないことをテストで確認
+- [x] テスト実行・パス確認
 
 ### 5-3. FalldownShooterGame.tsx の分割
-- [ ] `useGameEngine` フックを作成し、メインコンポーネントのフック接続ロジックを抽出
+- [x] `useGameEngine` フックを作成し、メインコンポーネントのフック接続ロジックを抽出
   - ゲーム状態の初期化と接続
   - イベントハンドラーの組み立て
   - ライン消しコンボ処理
   - ハイスコア更新検知
-- [ ] `FalldownShooterGame.tsx` は純粋な描画ロジックのみ担当するように縮小
-- [ ] テスト実行・パス確認
+- [x] `FalldownShooterGame.tsx` は純粋な描画ロジックのみ担当するように縮小
+- [x] テスト実行・パス確認
 
 ### 5-4. パワーアップの Strategy パターン導入
-- [ ] パワーアップ効果の適用を Strategy パターンで実装
+- [x] パワーアップ効果の適用を Strategy パターンで実装
   - `BombStrategy`: 爆弾処理
   - `TripleStrategy`: 3方向射撃
   - `PierceStrategy`: 貫通弾
   - `SlowStrategy`: スロー効果
   - `DownshotStrategy`: 下方射撃
-- [ ] `use-power-up.ts` を Strategy ベースにリファクタリング
-- [ ] テスト実行・パス確認
+- [x] `use-power-up.ts` を Strategy ベースにリファクタリング
+- [x] テスト実行・パス確認
 
 ---
 
@@ -304,9 +304,9 @@
 |-------|------|---------|------|
 | Phase 1: テスト基盤 | 完了 | 11 | 11 |
 | Phase 2: ドメインモデル | 完了 | 20 | 20 |
-| Phase 3: ドメインサービス | 未着手 | 16 | 0 |
+| Phase 3: ドメインサービス | 完了 | 16 | 16 |
 | Phase 4: アプリケーション層 | 完了 | 9 | 9 |
-| Phase 5: プレゼンテーション層 | 未着手 | 14 | 0 |
+| Phase 5: プレゼンテーション層 | 完了 | 14 | 14 |
 | Phase 6: テスト総合リファクタリング | 未着手 | 17 | 0 |
 | Phase 7: 最終整理 | 未着手 | 15 | 0 |
-| **合計** | | **102** | **56** |
+| **合計** | | **102** | **70** |
