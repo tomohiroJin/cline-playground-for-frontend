@@ -93,39 +93,39 @@
 **コミットタイプ:** `refactor`
 
 ### 3-1. CollisionService の実装
-- [ ] テストを先に作成（`__tests__/domain/collision-service.test.ts`）
-- [ ] `domain/services/collision-service.ts` を作成
+- [x] テストを先に作成（`__tests__/domain/collision-service.test.ts`）
+- [x] `domain/services/collision-service.ts` を作成
   - `buildCollisionMap`: 衝突マップ構築
   - `detectCollision`: 弾丸の衝突判定（純粋関数）
   - `getExplosionArea`: 爆発範囲計算
-- [ ] 既存 `collision.ts` のロジックを移行
-- [ ] テスト実行・パス確認
+- [x] 既存 `collision.ts` のロジックを移行
+- [x] テスト実行・パス確認
 
 ### 3-2. SpawnService の実装
-- [ ] テストを先に作成（`__tests__/domain/spawn-service.test.ts`）
-- [ ] `domain/services/spawn-service.ts` を作成
+- [x] テストを先に作成（`__tests__/domain/spawn-service.test.ts`）
+- [x] `domain/services/spawn-service.ts` を作成
   - `canSpawn`: スポーン可否判定
   - `spawnBlock`: ブロック生成（`Block.create` のロジックを移行）
   - 衝突回避ロジックの分離と明確化
-- [ ] `Block.create` の呼び出し元を `SpawnService` に移行
-- [ ] テスト実行・パス確認
+- [x] `Block.create` の呼び出し元を `SpawnService` に移行
+- [x] テスト実行・パス確認
 
 ### 3-3. SkillService の実装（Strategy パターン）
-- [ ] テストを先に作成（`__tests__/domain/skill-service.test.ts`）
-- [ ] `domain/services/skill-service.ts` を作成
-- [ ] 各スキルの Strategy を実装
+- [x] テストを先に作成（`__tests__/domain/skill-service.test.ts`）
+- [x] `domain/services/skill-service.ts` を作成
+- [x] 各スキルの Strategy を実装
   - `LaserStrategy`: 縦レーザー（列消去）
   - `BlastStrategy`: 全画面爆破（落下中ブロック全破壊）
   - `ClearStrategy`: ライン消去（最下段消去）
-- [ ] `game-logic.ts` の `applyLaserColumn`, `applyBlastAll`, `applyClearBottom` を Strategy に移行
-- [ ] テスト実行・パス確認
+- [x] `game-logic.ts` の `applyLaserColumn`, `applyBlastAll`, `applyClearBottom` を Strategy に移行
+- [x] テスト実行・パス確認
 
 ### 3-4. processBullets のリファクタリング
-- [ ] `game-logic.ts` の `processBullets` を `CollisionService` と連携する形にリファクタリング
+- [x] `game-logic.ts` の `processBullets` を `CollisionService` と連携する形にリファクタリング
   - 衝突判定ロジックを `CollisionService` に委譲
   - パワーアップ通知をイベント結果として返す（コールバックからの脱却）
   - ネストの浅いフラットな制御フローに変更
-- [ ] テスト実行・パス確認
+- [x] テスト実行・パス確認
 
 ---
 
@@ -304,9 +304,9 @@
 |-------|------|---------|------|
 | Phase 1: テスト基盤 | 完了 | 11 | 11 |
 | Phase 2: ドメインモデル | 完了 | 20 | 20 |
-| Phase 3: ドメインサービス | 未着手 | 16 | 0 |
+| Phase 3: ドメインサービス | 完了 | 16 | 16 |
 | Phase 4: アプリケーション層 | 未着手 | 9 | 0 |
 | Phase 5: プレゼンテーション層 | 未着手 | 14 | 0 |
 | Phase 6: テスト総合リファクタリング | 未着手 | 17 | 0 |
 | Phase 7: 最終整理 | 未着手 | 15 | 0 |
-| **合計** | | **102** | **31** |
+| **合計** | | **102** | **47** |
