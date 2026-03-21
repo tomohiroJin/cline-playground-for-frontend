@@ -1,5 +1,5 @@
 // ============================================================================
-// Deep Sea Interceptor - テストヘルパー（後方互換性のための re-export）
+// Deep Sea Interceptor - 実績判定（re-export）
 // ============================================================================
 
-export { buildGameState, buildUiState } from './test-factories';
+export { checkNewAchievements, loadAchievements, saveAchievements } from '../../achievements';

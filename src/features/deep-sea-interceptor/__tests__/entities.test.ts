@@ -1,4 +1,5 @@
 import { EntityFactory, randomChoice, isBoss, isMidboss } from '../entities';
+import type { EnemyType } from '../types';
 
 describe('EntityFactory', () => {
   describe('bullet', () => {
@@ -52,7 +53,8 @@ describe('EntityFactory', () => {
     });
 
     test('無効な敵タイプでエラーが発生すること', () => {
-      expect(() => EntityFactory.enemy('invalid', 0, 0)).toThrow('Invalid enemy type: invalid');
+      // 型安全だが、ランタイムでの防御も確認
+      expect(() => EntityFactory.enemy('invalid' as import('../types').EnemyType, 0, 0)).toThrow('Invalid enemy type: invalid');
     });
 
     test('tank敵のサイズが大きいこと', () => {
@@ -125,14 +127,14 @@ describe('isBoss', () => {
   });
 
   test('boss1〜boss5 タイプを正しく判定すること', () => {
-    for (const type of ['boss1', 'boss2', 'boss3', 'boss4', 'boss5']) {
+    for (const type of ['boss1', 'boss2', 'boss3', 'boss4', 'boss5'] as EnemyType[]) {
       const enemy = EntityFactory.enemy(type, 200, -60);
       expect(isBoss(enemy)).toBe(true);
     }
   });
 
   test('通常の敵はボスではないこと', () => {
-    for (const type of ['basic', 'fast', 'shooter', 'tank']) {
+    for (const type of ['basic', 'fast', 'shooter', 'tank'] as EnemyType[]) {
       const enemy = EntityFactory.enemy(type, 100, 50);
       expect(isBoss(enemy)).toBe(false);
     }
@@ -146,7 +148,7 @@ describe('isBoss', () => {
 
 describe('isMidboss', () => {
   test('midboss1〜midboss5 を正しく判定すること', () => {
-    for (const type of ['midboss1', 'midboss2', 'midboss3', 'midboss4', 'midboss5']) {
+    for (const type of ['midboss1', 'midboss2', 'midboss3', 'midboss4', 'midboss5'] as EnemyType[]) {
       const enemy = EntityFactory.enemy(type, 200, -60);
       expect(isMidboss(enemy)).toBe(true);
     }
