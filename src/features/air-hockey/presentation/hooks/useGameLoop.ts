@@ -79,6 +79,8 @@ export type GameLoopRefs = {
   matchStartRef: React.MutableRefObject<number>;
   keysRef?: React.MutableRefObject<KeyboardState>;
   player2KeysRef?: React.MutableRefObject<KeyboardState>;
+  /** マルチタッチ状態の Ref（2P タッチ入力用） */
+  multiTouchRef?: React.RefObject<import('../../core/multi-touch').MultiTouchState>;
 };
 
 /** React state 更新コールバックグループ */
@@ -116,7 +118,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
   const {
     gameRef, canvasRef, lastInputRef, scoreRef,
     phaseRef, countdownStartRef, shakeRef,
-    statsRef, matchStartRef, keysRef, player2KeysRef,
+    statsRef, matchStartRef, keysRef, player2KeysRef, multiTouchRef,
   } = refs;
   const is2PMode = gameMode === '2p-local';
   const { setScores, setWinner, setScreen, setShowHelp, setShake } = callbacks;
@@ -441,6 +443,24 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       // キーボード入力
       if (keysRef) {
         applyKeyboardMovement(game, keysRef, lastInputRef);
+      }
+
+      // 2P モード: マルチタッチ入力でマレット位置を直接反映
+      if (is2PMode && multiTouchRef?.current) {
+        const touchState = multiTouchRef.current;
+        if (touchState.player1Position) {
+          game.player.vx = touchState.player1Position.x - game.player.x;
+          game.player.vy = touchState.player1Position.y - game.player.y;
+          game.player.x = touchState.player1Position.x;
+          game.player.y = touchState.player1Position.y;
+          lastInputRef.current = Date.now();
+        }
+        if (touchState.player2Position) {
+          game.cpu.vx = touchState.player2Position.x - game.cpu.x;
+          game.cpu.vy = touchState.player2Position.y - game.cpu.y;
+          game.cpu.x = touchState.player2Position.x;
+          game.cpu.y = touchState.player2Position.y;
+        }
       }
 
       // 2P モード: WASD キーボード入力で CPU マレットを操作

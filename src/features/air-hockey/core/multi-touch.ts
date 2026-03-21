@@ -4,12 +4,8 @@
  */
 import { clamp } from '../../../utils/math-utils';
 import type { GameConstants } from './constants';
+import { MALLET_WALL_MARGIN, MALLET_CENTER_LINE_MARGIN } from './constants';
 import type { PlayerSlot } from '../domain/contracts/input';
-
-/** マレットと壁の間のマージン */
-const WALL_MARGIN = 5;
-/** マレットと中央ラインの間のマージン */
-const CENTER_LINE_MARGIN = 10;
 
 /** タッチ位置（Canvas 座標系） */
 export type TouchPosition = {
@@ -50,14 +46,14 @@ function clampToPlayerZone(
   const { WIDTH: W, HEIGHT: H } = constants.CANVAS;
   const MR = constants.SIZES.MALLET;
 
-  const x = clamp(pos.canvasX, MR + WALL_MARGIN, W - MR - WALL_MARGIN);
+  const x = clamp(pos.canvasX, MR + MALLET_WALL_MARGIN, W - MR - MALLET_WALL_MARGIN);
 
   const minY = playerSlot === 'player2'
-    ? MR + WALL_MARGIN
-    : H / 2 + MR + CENTER_LINE_MARGIN;
+    ? MR + MALLET_WALL_MARGIN
+    : H / 2 + MR + MALLET_CENTER_LINE_MARGIN;
   const maxY = playerSlot === 'player2'
-    ? H / 2 - MR - CENTER_LINE_MARGIN
-    : H - MR - WALL_MARGIN;
+    ? H / 2 - MR - MALLET_CENTER_LINE_MARGIN
+    : H - MR - MALLET_WALL_MARGIN;
   const y = clamp(pos.canvasY, minY, maxY);
 
   return { x, y };

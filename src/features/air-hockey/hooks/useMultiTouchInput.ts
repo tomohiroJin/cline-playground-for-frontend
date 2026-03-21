@@ -10,16 +10,12 @@ import {
   processTouchStart,
   processTouchMove,
   processTouchEnd,
-  getPlayerPosition,
   type MultiTouchState,
-  type TouchPosition,
 } from '../core/multi-touch';
 
 type UseMultiTouchInputReturn = {
-  /** 1P の現在タッチ位置（Canvas 座標、未タッチ時は undefined） */
-  player1Position: TouchPosition | undefined;
-  /** 2P の現在タッチ位置（Canvas 座標、未タッチ時は undefined） */
-  player2Position: TouchPosition | undefined;
+  /** マルチタッチ状態の Ref（ゲームループから毎フレーム参照可能） */
+  stateRef: React.RefObject<MultiTouchState>;
 };
 
 /**
@@ -90,8 +86,5 @@ export function useMultiTouchInput(
     };
   }, [canvasRef, enabled, toCanvasCoords]);
 
-  return {
-    player1Position: getPlayerPosition(stateRef.current, 'player1'),
-    player2Position: getPlayerPosition(stateRef.current, 'player2'),
-  };
+  return { stateRef };
 }

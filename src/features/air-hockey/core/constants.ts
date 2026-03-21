@@ -8,6 +8,11 @@ export type GameConstants = {
   COMEBACK: { THRESHOLD: number; MALLET_BONUS: number; GOAL_REDUCTION: number };
 };
 
+/** マレットと壁の間のマージン（px） */
+export const MALLET_WALL_MARGIN = 5;
+/** マレットと中央ラインの間のマージン（px） */
+export const MALLET_CENTER_LINE_MARGIN = 10;
+
 // 内部解像度 450x900 固定（CSS でビューポートに応答的にスケーリング）
 export const CONSTANTS: GameConstants = {
   CANVAS: { WIDTH: 450, HEIGHT: 900 },

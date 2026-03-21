@@ -17,12 +17,12 @@ describe('useMultiTouchInput', () => {
     return { current: canvas };
   };
 
-  it('初期状態では両プレイヤーの位置が undefined', () => {
+  it('初期状態ではマルチタッチ状態の ref が初期値', () => {
     const canvasRef = createMockCanvasRef();
     const { result } = renderHook(() => useMultiTouchInput(canvasRef, true));
 
-    expect(result.current.player1Position).toBeUndefined();
-    expect(result.current.player2Position).toBeUndefined();
+    expect(result.current.stateRef.current.player1Position).toBeUndefined();
+    expect(result.current.stateRef.current.player2Position).toBeUndefined();
   });
 
   it('enabled が false の場合はリスナーが登録されない', () => {

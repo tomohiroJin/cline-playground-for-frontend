@@ -246,29 +246,7 @@ const AirHockeyGame: React.FC = () => {
 
   // 2P 用マルチタッチ入力（画面上下分割）
   const is2PGame = mode.gameMode === '2p-local' && screen === 'game';
-  const multiTouch = useMultiTouchInput(canvasRef, is2PGame);
-
-  // マルチタッチ位置をゲームループに反映（毎フレーム ref 経由で適用）
-  useEffect(() => {
-    if (!is2PGame) return;
-    const game = gameRef.current;
-    if (!game) return;
-
-    if (multiTouch.player1Position) {
-      game.player.vx = multiTouch.player1Position.x - game.player.x;
-      game.player.vy = multiTouch.player1Position.y - game.player.y;
-      game.player.x = multiTouch.player1Position.x;
-      game.player.y = multiTouch.player1Position.y;
-      lastInputRef.current = Date.now();
-    }
-
-    if (multiTouch.player2Position) {
-      game.cpu.vx = multiTouch.player2Position.x - game.cpu.x;
-      game.cpu.vy = multiTouch.player2Position.y - game.cpu.y;
-      game.cpu.x = multiTouch.player2Position.x;
-      game.cpu.y = multiTouch.player2Position.y;
-    }
-  });
+  const { stateRef: multiTouchRef } = useMultiTouchInput(canvasRef, is2PGame);
 
   // 2P 用キーボード入力リスナー（WASD → player2KeysRef）
   useEffect(() => {
@@ -303,7 +281,11 @@ const AirHockeyGame: React.FC = () => {
       playerMalletColor: mode.gameMode === '2p-local' ? mode.player1Character?.color : undefined,
       cpuMalletColor: mode.gameMode === '2p-local' ? mode.player2Character?.color : undefined,
     },
-    refs: { gameRef, canvasRef, lastInputRef, scoreRef, phaseRef, countdownStartRef, shakeRef, statsRef, matchStartRef, keysRef, player2KeysRef: mode.gameMode === '2p-local' ? player2KeysRef : undefined },
+    refs: {
+      gameRef, canvasRef, lastInputRef, scoreRef, phaseRef, countdownStartRef, shakeRef, statsRef, matchStartRef, keysRef,
+      player2KeysRef: mode.gameMode === '2p-local' ? player2KeysRef : undefined,
+      multiTouchRef: mode.gameMode === '2p-local' ? multiTouchRef : undefined,
+    },
     callbacks: { setScores, setWinner, setScreen: handleScreenChange, setShowHelp, setShake },
   });
 
