@@ -205,52 +205,52 @@
 **コミットタイプ:** `test`
 
 ### 6-1. ドメイン層テストの拡充
-- [ ] `domain/models/grid.ts` のカバレッジ 95% 以上を達成
-- [ ] `domain/models/block.ts` のカバレッジ 95% 以上を達成
-- [ ] `domain/models/bullet.ts` のカバレッジ 95% 以上を達成
-- [ ] `domain/models/score.ts` のカバレッジ 95% 以上を達成
-- [ ] `domain/services/collision-service.ts` のカバレッジ 90% 以上を達成
-- [ ] `domain/services/spawn-service.ts` のカバレッジ 90% 以上を達成
-- [ ] `domain/services/skill-service.ts` のカバレッジ 90% 以上を達成
+- [x] `domain/models/grid.ts` のカバレッジ 95% 以上を達成
+- [x] `domain/models/block.ts` のカバレッジ 95% 以上を達成
+- [x] `domain/models/bullet.ts` のカバレッジ 95% 以上を達成
+- [x] `domain/models/score.ts` のカバレッジ 95% 以上を達成
+- [x] `domain/services/collision-service.ts` のカバレッジ 90% 以上を達成
+- [x] `domain/services/spawn-service.ts` のカバレッジ 90% 以上を達成
+- [x] `domain/services/skill-service.ts` のカバレッジ 90% 以上を達成
 
 ### 6-2. フックのテスト追加
-- [ ] `use-game-flow.ts` のテストを作成
+- [x] `use-game-flow.ts` のテストを作成
   - ゲーム開始フロー
   - ステージ遷移
   - タイトルへの戻り
   - ハイスコア読み込み
-- [ ] `use-game-loop.ts` のテストを作成（モックタイマー使用）
+- [x] `use-game-loop.ts` のテストを作成（モックタイマー使用）
   - ブロックスポーンタイミング
   - 弾丸処理の呼び出し
   - ライン消し判定とステージクリア
   - ゲームオーバー判定
-- [ ] `use-skill-system.ts` のテストを作成
+- [x] `use-skill-system.ts` のテストを作成
   - スキルチャージの蓄積
   - スキル発動条件（ゲージ100%）
   - 各スキルタイプの発動
-- [ ] `use-power-up.ts` のテストを作成
+- [x] `use-power-up.ts` のテストを作成
   - パワーアップの取得と期限切れ
   - 爆弾の処理
   - 複数パワーアップの同時管理
 
 ### 6-3. 統合テストの改善
-- [ ] `integration.test.tsx` の DOM 構造依存を削減
+- [x] `integration.test.tsx` の DOM 構造依存を削減
   - `parentElement` チェーンを `getByRole`, `getByText` ベースに変更
   - テスト ID の追加が必要な場合は最小限に
-- [ ] テスト記述パターンの統一
+- [x] テスト記述パターンの統一
   - すべてのテスト名を日本語に統一
   - AAA パターンの徹底
   - `describe` / `it` の構造を統一（正常系/異常系）
 
 ### 6-4. カバレッジレポートの確認
-- [ ] 全テストを実行し、カバレッジレポートを生成
-- [ ] カバレッジ目標の達成状況を確認
+- [x] 全テストを実行し、カバレッジレポートを生成
+- [x] カバレッジ目標の達成状況を確認
   - domain/models: 95% 以上
   - domain/services: 90% 以上
   - application: 85% 以上
   - presentation/hooks: 80% 以上
   - presentation/components: 70% 以上
-- [ ] 未達の場合はテストを追加
+- [x] 未達の場合はテストを追加
 
 ---
 
@@ -307,6 +307,6 @@
 | Phase 3: ドメインサービス | 完了 | 16 | 16 |
 | Phase 4: アプリケーション層 | 完了 | 9 | 9 |
 | Phase 5: プレゼンテーション層 | 完了 | 14 | 14 |
-| Phase 6: テスト総合リファクタリング | 未着手 | 17 | 0 |
+| Phase 6: テスト総合リファクタリング | 完了 | 17 | 17 |
 | Phase 7: 最終整理 | 未着手 | 15 | 0 |
-| **合計** | | **102** | **70** |
+| **合計** | | **102** | **87** |
