@@ -3,8 +3,6 @@
 
 import type { Point, Checkpoint, Player } from './types';
 import { Config } from './constants';
-import { Utils } from './utils';
-import { Track } from './track';
 import { movePlayer as movePlayerDomain } from './domain/player/player';
 import { updateCheckpoints as updateCheckpointsDomain, allCheckpointsPassed } from './domain/race/checkpoint';
 import { handleCollision as handleCollisionDomain } from './domain/race/collision';
@@ -12,7 +10,7 @@ import { createCpuStrategy } from './domain/player/cpu-strategy';
 import type { CpuDifficulty } from './domain/player/cpu-strategy';
 
 export const Logic = {
-  cpuTurn: (p: Player, pts: Point[], skill: number, miss: number) => {
+  cpuTurn: (p: Player, pts: Point[], skill: number, _miss: number) => {
     // 旧インターフェースを維持しつつ CpuStrategy に委譲
     const difficulty: CpuDifficulty = skill >= 0.8 ? 'hard' : skill >= 0.4 ? 'normal' : 'easy';
     const strategy = createCpuStrategy(difficulty);

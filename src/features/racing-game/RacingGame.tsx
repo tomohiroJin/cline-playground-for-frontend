@@ -31,7 +31,7 @@ import { DraftCards } from './draft-cards';
 import { createTracker as createHighlightTracker, getSummary as getHighlightSummary } from './domain/highlight/highlight';
 import type { HighlightTrackerState } from './domain/highlight/highlight';
 import { detectDriftBonus, detectHeatBoost, detectNearMiss, detectOvertake, detectFastestLap, detectPhotoFinish } from './domain/highlight/event-detector';
-import { HIGHLIGHT_LABELS, HIGHLIGHT_COLORS } from './highlight';
+import { HIGHLIGHT_COLORS } from './highlight';
 import { computeAllCardEffects } from './domain/card/card-effect';
 import { collectPlayerInputs, updateParticles, updateSparks, updateConfetti } from './game-update';
 import { drawHUD, drawCountdown, drawCpuNotification } from './game-draw';

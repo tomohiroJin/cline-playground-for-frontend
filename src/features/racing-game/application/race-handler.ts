@@ -5,8 +5,6 @@ import type { StartLine, CourseEffect } from '../domain/track/types';
 import type { WallStage } from './ports/audio-port';
 import type { CpuStrategy } from '../domain/player/cpu-strategy';
 import type { GameOrchestratorConfig, GameOrchestratorState } from './orchestrator-state';
-import { applyCardEffectsToPlayer } from './orchestrator-state';
-
 import { movePlayer } from '../domain/player/player';
 import { processInput } from './input-processor';
 import { getTrackInfo } from '../domain/track/track';
@@ -72,7 +70,7 @@ const handleLapComplete = (
   state.highlightTracker = flResult.tracker;
 
   // ラップ進行
-  let updated: Player = {
+  const updated: Player = {
     ...np,
     lap: np.lap + 1,
     checkpointFlags: 0,

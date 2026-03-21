@@ -41,7 +41,7 @@ export default function RacingGameNew() {
 
   // GameOrchestrator 設定の構築
   const [orchConfig, setOrchConfig] = useState<GameOrchestratorConfig | null>(null);
-  const { phase, paused, winner, highlightSummary, togglePause, reset: resetLoop } = useGameLoop(canvasRef, orchConfig);
+  const { phase, paused, highlightSummary, togglePause, reset: resetLoop } = useGameLoop(canvasRef, orchConfig);
 
   const [_demo, _setDemo] = useIdle(!orchConfig, Config.timing.idle);
 

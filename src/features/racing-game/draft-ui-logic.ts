@@ -7,7 +7,6 @@ import {
   startDraft as startDraftNew,
   updateDraftTimer as updateDraftTimerNew,
   moveCursor as moveCursorNew,
-  confirmSelection as confirmSelectionNew,
 } from './application/draft-processor';
 import type { DraftProcessorState } from './application/draft-processor';
 

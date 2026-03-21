@@ -30,9 +30,6 @@ describe('draft-flow', () => {
       const effects = computeAllCardEffects(deck.active);
 
       // Assert: 少なくとも 1 つのフィールドが 1 ではない（効果がある）
-      const hasEffect = effects.speedMul !== 1 || effects.accelMul !== 1 ||
-        effects.turnMul !== 1 || effects.driftBoostMul !== 1 ||
-        effects.heatGainMul !== 1 || effects.wallDamageMul !== 1;
       // 選んだカードの効果による
       expect(typeof effects.speedMul).toBe('number');
     });

@@ -2,7 +2,6 @@
 
 import { createDriftState, startDrift, updateDrift, endDrift, getDriftBoost } from '../../domain/player/drift';
 import { createHeatState, updateHeat, getHeatBoost } from '../../domain/player/heat';
-import { DRIFT } from '../../domain/player/constants';
 import { calculateWallPenalty, shouldWarp } from '../../domain/track/wall-physics';
 
 describe('physics-flow', () => {

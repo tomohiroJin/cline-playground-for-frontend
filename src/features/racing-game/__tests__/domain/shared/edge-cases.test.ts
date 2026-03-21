@@ -2,7 +2,7 @@
 
 import { clamp, normalizeAngle, distance, formatTime, safeIndex, min } from '../../../domain/shared/math-utils';
 import { createDriftState, startDrift, updateDrift, endDrift, cancelDrift } from '../../../domain/player/drift';
-import { createHeatState, updateHeat } from '../../../domain/player/heat';
+import { updateHeat } from '../../../domain/player/heat';
 import { movePlayer } from '../../../domain/player/player';
 import { handleCollision } from '../../../domain/race/collision';
 import { createTestPlayer, createTestTrackPoints } from '../../helpers/test-factories';
