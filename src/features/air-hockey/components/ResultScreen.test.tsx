@@ -176,7 +176,7 @@ describe('ResultScreen', () => {
   });
 
   describe('2P 対戦モード', () => {
-    it('2P モードで player1 勝利時に「1P Win!」が表示される', () => {
+    it('2P モードでキャラ名ありの場合「{キャラ名} Win!」が表示される', () => {
       render(
         <ResultScreen
           {...defaultProps}
@@ -187,10 +187,10 @@ describe('ResultScreen', () => {
         />,
       );
 
-      expect(screen.getByText('1P Win!')).toBeInTheDocument();
+      expect(screen.getByText('アキラ Win!')).toBeInTheDocument();
     });
 
-    it('2P モードで player2（cpu）勝利時に「2P Win!」が表示される', () => {
+    it('2P モードで player2 勝利時にキャラ名で表示される', () => {
       render(
         <ResultScreen
           {...defaultProps}
@@ -201,7 +201,19 @@ describe('ResultScreen', () => {
         />,
       );
 
-      expect(screen.getByText('2P Win!')).toBeInTheDocument();
+      expect(screen.getByText('ヒロ Win!')).toBeInTheDocument();
+    });
+
+    it('2P モードでキャラ名なしの場合「1P Win!」「2P Win!」にフォールバックする', () => {
+      render(
+        <ResultScreen
+          {...defaultProps}
+          winner="player"
+          is2PMode
+        />,
+      );
+
+      expect(screen.getByText('1P Win!')).toBeInTheDocument();
     });
 
     it('2P モードでは実績通知が表示されない', () => {

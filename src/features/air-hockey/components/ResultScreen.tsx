@@ -246,7 +246,9 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
         </div>
         <GameTitle style={{ color: is2PMode ? 'var(--accent-color)' : isWin ? 'var(--accent-color)' : '#ff4444' }}>
           {is2PMode
-            ? (isWin ? '1P Win!' : '2P Win!')
+            ? (isWin
+                ? (player1CharacterName ? `${player1CharacterName} Win!` : '1P Win!')
+                : (player2CharacterName ? `${player2CharacterName} Win!` : '2P Win!'))
             : (isWin ? 'YOU WIN!' : 'YOU LOSE')}
         </GameTitle>
         <p style={{ fontSize: '2rem', color: 'white', fontWeight: 'bold', marginBottom: '20px' }}>

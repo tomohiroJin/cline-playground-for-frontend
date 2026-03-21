@@ -3,9 +3,10 @@
  * - 2P 対戦時に各プレイヤーがキャラクターを選択する
  * - フィールド・勝利スコアの設定も行う
  */
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import type { Character, FieldConfig } from '../core/types';
 import type { TwoPlayerConfig } from '../application/use-cases/two-player-battle';
+import type { PlayerSlot } from '../domain/contracts/input';
 import { WIN_SCORE_OPTIONS } from '../core/config';
 
 /** キャラクター選択画面の Props */
@@ -17,8 +18,7 @@ type CharacterSelectScreenProps = {
   onBack: () => void;
 };
 
-/** 選択中のプレイヤースロット */
-type ActiveSlot = 'player1' | 'player2';
+/** 選択中のプレイヤースロット（domain 層の PlayerSlot 型を再利用） */
 
 /** デフォルト勝利スコア */
 const DEFAULT_WIN_SCORE = 3;
@@ -179,15 +179,18 @@ export function CharacterSelectScreen({
   onStartBattle,
   onBack,
 }: CharacterSelectScreenProps) {
+  // アンロック済みフィールドのフィルタ
+  const availableFields = useMemo(
+    () => fields.filter(f => unlockedFieldIds.includes(f.id)),
+    [fields, unlockedFieldIds]
+  );
+
   // 選択状態
   const [player1, setPlayer1] = useState<Character>(characters[0]);
   const [player2, setPlayer2] = useState<Character>(characters[1] ?? characters[0]);
-  const [activeSlot, setActiveSlot] = useState<ActiveSlot>('player1');
-  const [selectedField, setSelectedField] = useState<FieldConfig>(fields[0]);
+  const [activeSlot, setActiveSlot] = useState<PlayerSlot>('player1');
+  const [selectedField, setSelectedField] = useState<FieldConfig>(availableFields[0] ?? fields[0]);
   const [winScore, setWinScore] = useState(DEFAULT_WIN_SCORE);
-
-  // アンロック済みフィールドのフィルタ
-  const availableFields = fields.filter(f => unlockedFieldIds.includes(f.id));
 
   // キャラクター選択ハンドラ
   const handleCharacterSelect = useCallback((character: Character) => {
