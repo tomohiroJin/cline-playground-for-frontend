@@ -3,8 +3,8 @@
  * 画面を上下に分割し、1P（下半分）と 2P（上半分）のタッチを独立追跡する
  * 2P 対戦モードで Canvas 要素にタッチリスナーを登録する
  */
-import { useEffect, useRef, useCallback } from 'react';
-import { CONSTANTS } from '../core/constants';
+import { useEffect, useRef } from 'react';
+import { CONSTANTS, screenToCanvas } from '../core/constants';
 import {
   createMultiTouchState,
   processTouchStart,
@@ -29,15 +29,6 @@ export function useMultiTouchInput(
 ): UseMultiTouchInputReturn {
   const stateRef = useRef<MultiTouchState>(createMultiTouchState());
 
-  // Canvas 座標変換ヘルパー
-  const toCanvasCoords = useCallback((touch: Touch, rect: DOMRect) => {
-    const { WIDTH: W, HEIGHT: H } = CONSTANTS.CANVAS;
-    return {
-      canvasX: ((touch.clientX - rect.left) / rect.width) * W,
-      canvasY: ((touch.clientY - rect.top) / rect.height) * H,
-    };
-  }, []);
-
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !enabled) return;
@@ -47,7 +38,7 @@ export function useMultiTouchInput(
       const rect = canvas.getBoundingClientRect();
       for (let i = 0; i < e.changedTouches.length; i++) {
         const touch = e.changedTouches[i];
-        const pos = toCanvasCoords(touch, rect);
+        const pos = screenToCanvas(touch.clientX, touch.clientY, rect, CONSTANTS);
         stateRef.current = processTouchStart(stateRef.current, touch.identifier, pos, CONSTANTS);
       }
     };
@@ -57,7 +48,7 @@ export function useMultiTouchInput(
       const rect = canvas.getBoundingClientRect();
       for (let i = 0; i < e.changedTouches.length; i++) {
         const touch = e.changedTouches[i];
-        const pos = toCanvasCoords(touch, rect);
+        const pos = screenToCanvas(touch.clientX, touch.clientY, rect, CONSTANTS);
         stateRef.current = processTouchMove(stateRef.current, touch.identifier, pos, CONSTANTS);
       }
     };
@@ -84,7 +75,7 @@ export function useMultiTouchInput(
       canvas.removeEventListener('touchcancel', handleTouchEnd);
       stateRef.current = createMultiTouchState();
     };
-  }, [canvasRef, enabled, toCanvasCoords]);
+  }, [canvasRef, enabled]);
 
   return { stateRef };
 }

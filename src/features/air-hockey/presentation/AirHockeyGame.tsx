@@ -244,13 +244,16 @@ const AirHockeyGame: React.FC = () => {
   const handleInput = useInput(gameRef, canvasRef, lastInputRef, screen, showHelp, setShowHelp);
   const keysRef = useKeyboardInput(gameRef, lastInputRef, screen, showHelp, setShowHelp);
 
+  // ── 2P モード判定 ──
+  const is2PMode = mode.gameMode === '2p-local';
+  const is2PGame = is2PMode && screen === 'game';
+
   // 2P 用マルチタッチ入力（画面上下分割）
-  const is2PGame = mode.gameMode === '2p-local' && screen === 'game';
   const { stateRef: multiTouchRef } = useMultiTouchInput(canvasRef, is2PGame);
 
   // 2P 用キーボード入力リスナー（WASD → player2KeysRef）
   useEffect(() => {
-    if (mode.gameMode !== '2p-local' || screen !== 'game') return;
+    if (!is2PGame) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       const updated = updateKeyboardStateForPlayer(player2KeysRef.current, e.key, true, 'player2');
       if (updated !== player2KeysRef.current) {
@@ -278,13 +281,13 @@ const AirHockeyGame: React.FC = () => {
     config: {
       difficulty: mode.difficulty, field: mode.field, winScore: mode.winScore,
       getSound: audio.getSound, bgmEnabled: audio.bgmEnabled, gameMode: mode.gameMode,
-      playerMalletColor: mode.gameMode === '2p-local' ? mode.player1Character?.color : undefined,
-      cpuMalletColor: mode.gameMode === '2p-local' ? mode.player2Character?.color : undefined,
+      playerMalletColor: is2PMode ? mode.player1Character?.color : undefined,
+      cpuMalletColor: is2PMode ? mode.player2Character?.color : undefined,
     },
     refs: {
       gameRef, canvasRef, lastInputRef, scoreRef, phaseRef, countdownStartRef, shakeRef, statsRef, matchStartRef, keysRef,
-      player2KeysRef: mode.gameMode === '2p-local' ? player2KeysRef : undefined,
-      multiTouchRef: mode.gameMode === '2p-local' ? multiTouchRef : undefined,
+      player2KeysRef: is2PMode ? player2KeysRef : undefined,
+      multiTouchRef: is2PMode ? multiTouchRef : undefined,
     },
     callbacks: { setScores, setWinner, setScreen: handleScreenChange, setShowHelp, setShake },
   });
@@ -362,10 +365,10 @@ const AirHockeyGame: React.FC = () => {
         <>
           <Scoreboard
             scores={scores} onMenuClick={handleGameMenuClick} onPauseClick={togglePause}
-            cpuName={mode.gameMode === '2p-local' ? (mode.player2Character?.name ?? '2P') : currentCpuName}
-            playerName={mode.gameMode === '2p-local' ? (mode.player1Character?.name ?? '1P') : undefined}
-            playerColor={mode.gameMode === '2p-local' ? mode.player1Character?.color : undefined}
-            cpuColor={mode.gameMode === '2p-local' ? mode.player2Character?.color : undefined}
+            cpuName={is2PMode ? (mode.player2Character?.name ?? '2P') : currentCpuName}
+            playerName={is2PMode ? (mode.player1Character?.name ?? '1P') : undefined}
+            playerColor={is2PMode ? mode.player1Character?.color : undefined}
+            cpuColor={is2PMode ? mode.player2Character?.color : undefined}
           />
           <Field canvasRef={canvasRef} onInput={handleInput} shake={shake} />
         </>
@@ -388,13 +391,13 @@ const AirHockeyGame: React.FC = () => {
             onAcceptDifficulty={handleAcceptDifficulty}
             onBackToStageSelect={mode.gameMode === 'story' ? handleBackToStageSelect : undefined}
             onNextStage={mode.gameMode === 'story' && hasNextStage ? handleNextStage : undefined}
-            cpuCharacter={mode.gameMode === 'story' ? cpuCharacter : mode.gameMode === '2p-local' ? mode.player2Character : undefined}
-            playerCharacter={mode.gameMode === 'story' ? PLAYER_CHARACTER : mode.gameMode === '2p-local' ? mode.player1Character : undefined}
+            cpuCharacter={mode.gameMode === 'story' ? cpuCharacter : is2PMode ? mode.player2Character : undefined}
+            playerCharacter={mode.gameMode === 'story' ? PLAYER_CHARACTER : is2PMode ? mode.player1Character : undefined}
             newlyUnlockedCharacterName={result.newlyUnlockedCharacterName}
-            is2PMode={mode.gameMode === '2p-local'}
+            is2PMode={is2PMode}
             player1CharacterName={mode.player1Character?.name}
             player2CharacterName={mode.player2Character?.name}
-            onBackToCharacterSelect={mode.gameMode === '2p-local' ? handleBackToCharacterSelect : undefined}
+            onBackToCharacterSelect={is2PMode ? handleBackToCharacterSelect : undefined}
           />
         </Transition>
       )}

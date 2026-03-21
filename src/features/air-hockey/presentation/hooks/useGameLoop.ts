@@ -48,9 +48,7 @@ const HIT_SHAKE_INTENSITY = 3;
 const HIT_SHAKE_DURATION = 150;
 const STRONG_HIT_SPEED_THRESHOLD = 8;
 
-/** デフォルトのマレット色 */
-const DEFAULT_PLAYER_MALLET_COLOR = '#3498db';
-const DEFAULT_CPU_MALLET_COLOR = '#e74c3c';
+import { DEFAULT_PLAYER_MALLET_COLOR, DEFAULT_CPU_MALLET_COLOR } from '../../core/constants';
 
 /** ゲーム設定グループ */
 export type GameLoopConfig = {
@@ -445,7 +443,10 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         applyKeyboardMovement(game, keysRef, lastInputRef);
       }
 
-      // 2P モード: マルチタッチ入力でマレット位置を直接反映
+      // 2P 入力の優先順位:
+      //   1. マルチタッチ（タッチ中のみ反映、指を離すと停止）
+      //   2. キーボード（タッチ未使用時のフォールバック、またはタッチ後にキーボードで上書き）
+      // 同一フレームで両方アクティブな場合、キーボードがタッチの結果を上書きする（意図的な設計）
       if (is2PMode && multiTouchRef?.current) {
         const touchState = multiTouchRef.current;
         if (touchState.player1Position) {
@@ -788,5 +789,6 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       gameRef, canvasRef, lastInputRef, scoreRef,
       setScores, setWinner, setScreen, setShowHelp,
       phaseRef, countdownStartRef, shakeRef, setShake, bgmEnabled,
-      statsRef, matchStartRef, keysRef]);
+      statsRef, matchStartRef, keysRef,
+      is2PMode, pColor, cColor, player2KeysRef, multiTouchRef]);
 }

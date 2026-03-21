@@ -4,7 +4,7 @@
  */
 import { clamp } from '../../../utils/math-utils';
 import type { GameConstants } from './constants';
-import { MALLET_WALL_MARGIN, MALLET_CENTER_LINE_MARGIN } from './constants';
+import { getPlayerXBounds, getPlayerYBounds } from './constants';
 import type { PlayerSlot } from '../domain/contracts/input';
 
 /** タッチ位置（Canvas 座標系） */
@@ -43,20 +43,12 @@ function clampToPlayerZone(
   playerSlot: PlayerSlot,
   constants: GameConstants
 ): TouchPosition {
-  const { WIDTH: W, HEIGHT: H } = constants.CANVAS;
-  const MR = constants.SIZES.MALLET;
-
-  const x = clamp(pos.canvasX, MR + MALLET_WALL_MARGIN, W - MR - MALLET_WALL_MARGIN);
-
-  const minY = playerSlot === 'player2'
-    ? MR + MALLET_WALL_MARGIN
-    : H / 2 + MR + MALLET_CENTER_LINE_MARGIN;
-  const maxY = playerSlot === 'player2'
-    ? H / 2 - MR - MALLET_CENTER_LINE_MARGIN
-    : H - MR - MALLET_WALL_MARGIN;
-  const y = clamp(pos.canvasY, minY, maxY);
-
-  return { x, y };
+  const { minX, maxX } = getPlayerXBounds(constants);
+  const { minY, maxY } = getPlayerYBounds(playerSlot, constants);
+  return {
+    x: clamp(pos.canvasX, minX, maxX),
+    y: clamp(pos.canvasY, minY, maxY),
+  };
 }
 
 /** タッチ位置がどちらのゾーンかを判定 */

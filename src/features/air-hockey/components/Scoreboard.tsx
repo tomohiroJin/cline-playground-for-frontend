@@ -1,9 +1,6 @@
 import React from 'react';
 import { ScoreBoardContainer, ScoreText, MenuButton } from '../styles';
-
-/** デフォルトのスコアカラー */
-const DEFAULT_PLAYER_COLOR = '#3498db';
-const DEFAULT_CPU_COLOR = '#e74c3c';
+import { DEFAULT_PLAYER_MALLET_COLOR, DEFAULT_CPU_MALLET_COLOR } from '../core/constants';
 
 type ScoreboardProps = {
   scores: { p: number; c: number };
@@ -22,11 +19,11 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({
   scores, onMenuClick, onPauseClick, cpuName, playerName, playerColor, cpuColor,
 }) => (
   <ScoreBoardContainer>
-    <ScoreText $color={cpuColor ?? DEFAULT_CPU_COLOR}>{cpuName ?? 'CPU'}: {scores.c}</ScoreText>
+    <ScoreText $color={cpuColor ?? DEFAULT_CPU_MALLET_COLOR}>{cpuName ?? 'CPU'}: {scores.c}</ScoreText>
     <div style={{ display: 'flex', gap: '8px' }}>
       <MenuButton onClick={onMenuClick}>Menu</MenuButton>
       {onPauseClick && <MenuButton onClick={onPauseClick}>⏸</MenuButton>}
     </div>
-    <ScoreText $color={playerColor ?? DEFAULT_PLAYER_COLOR}>{playerName ?? 'YOU'}: {scores.p}</ScoreText>
+    <ScoreText $color={playerColor ?? DEFAULT_PLAYER_MALLET_COLOR}>{playerName ?? 'YOU'}: {scores.p}</ScoreText>
   </ScoreBoardContainer>
 );

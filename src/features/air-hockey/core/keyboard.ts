@@ -3,7 +3,7 @@
  * 1P（矢印キー）/ 2P（WASD）でマレットを移動する
  */
 import { clamp } from '../../../utils/math-utils';
-import { GameConstants, MALLET_WALL_MARGIN, MALLET_CENTER_LINE_MARGIN } from './constants';
+import { GameConstants, getPlayerXBounds, getPlayerYBounds } from './constants';
 import { PlayerSlot } from '../domain/contracts/input';
 
 /** キーボードの押下状態 */
@@ -17,7 +17,7 @@ export type KeyboardState = {
 /** キーボード移動速度（マウスより遅め） */
 export const KEYBOARD_MOVE_SPEED = 6;
 
-// クランプ定数は core/constants.ts の MALLET_WALL_MARGIN / MALLET_CENTER_LINE_MARGIN を使用
+// クランプ計算は core/constants.ts の getPlayerXBounds / getPlayerYBounds を使用
 
 /** キーボード状態の初期値を生成 */
 export function createKeyboardState(): KeyboardState {
@@ -101,9 +101,6 @@ export function calculateKeyboardMovement(
   constants: GameConstants,
   playerSlot: PlayerSlot = 'player1'
 ): { x: number; y: number; vx: number; vy: number } {
-  const { WIDTH: W, HEIGHT: H } = constants.CANVAS;
-  const { MALLET: MR } = constants.SIZES;
-
   let dx = 0;
   let dy = 0;
 
@@ -112,15 +109,9 @@ export function calculateKeyboardMovement(
   if (state.up) dy -= KEYBOARD_MOVE_SPEED;
   if (state.down) dy += KEYBOARD_MOVE_SPEED;
 
-  const newX = clamp(currentPos.x + dx, MR + MALLET_WALL_MARGIN, W - MR - MALLET_WALL_MARGIN);
-
-  // プレイヤーごとの Y 軸クランプ範囲
-  const minY = playerSlot === 'player2'
-    ? MR + MALLET_WALL_MARGIN
-    : H / 2 + MR + MALLET_CENTER_LINE_MARGIN;
-  const maxY = playerSlot === 'player2'
-    ? H / 2 - MR - MALLET_CENTER_LINE_MARGIN
-    : H - MR - MALLET_WALL_MARGIN;
+  const { minX, maxX } = getPlayerXBounds(constants);
+  const { minY, maxY } = getPlayerYBounds(playerSlot, constants);
+  const newX = clamp(currentPos.x + dx, minX, maxX);
   const newY = clamp(currentPos.y + dy, minY, maxY);
 
   return {
