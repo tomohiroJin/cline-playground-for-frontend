@@ -48,6 +48,10 @@ const HIT_SHAKE_INTENSITY = 3;
 const HIT_SHAKE_DURATION = 150;
 const STRONG_HIT_SPEED_THRESHOLD = 8;
 
+/** デフォルトのマレット色 */
+const DEFAULT_PLAYER_MALLET_COLOR = '#3498db';
+const DEFAULT_CPU_MALLET_COLOR = '#e74c3c';
+
 /** ゲーム設定グループ */
 export type GameLoopConfig = {
   difficulty: Difficulty;
@@ -56,6 +60,10 @@ export type GameLoopConfig = {
   getSound: () => SoundSystem;
   bgmEnabled: boolean;
   gameMode?: 'free' | 'story' | '2p-local';
+  /** プレイヤーマレットの色（2P 対戦時にキャラカラーを反映） */
+  playerMalletColor?: string;
+  /** CPU/2P マレットの色（2P 対戦時にキャラカラーを反映） */
+  cpuMalletColor?: string;
 };
 
 /** Ref グループ（ゲームループが参照・更新する ref） */
@@ -102,7 +110,9 @@ export type UseGameLoopParams = {
  * - callbacks: React state 更新コールバック
  */
 export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGameLoopParams): void {
-  const { difficulty: diff, field, winScore, getSound, bgmEnabled, gameMode } = config;
+  const { difficulty: diff, field, winScore, getSound, bgmEnabled, gameMode, playerMalletColor, cpuMalletColor } = config;
+  const pColor = playerMalletColor ?? DEFAULT_PLAYER_MALLET_COLOR;
+  const cColor = cpuMalletColor ?? DEFAULT_CPU_MALLET_COLOR;
   const {
     gameRef, canvasRef, lastInputRef, scoreRef,
     phaseRef, countdownStartRef, shakeRef,
@@ -312,8 +322,8 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
 
         Renderer.clear(ctx, consts, now);
         Renderer.drawField(ctx, field, consts, game.obstacleStates, now);
-        Renderer.drawMallet(ctx, game.cpu, '#e74c3c', false, consts);
-        Renderer.drawMallet(ctx, game.player, '#3498db', false, consts);
+        Renderer.drawMallet(ctx, game.cpu, cColor, false, consts);
+        Renderer.drawMallet(ctx, game.player, pColor, false, consts);
 
         if (elapsed < COUNTDOWN_DURATION) {
           const countdownValue = 3 - Math.floor(elapsed / 1000);
@@ -347,8 +357,8 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         Renderer.drawEffectZones(ctx, game.effects, now, consts);
         game.items.forEach((item: Item) => Renderer.drawItem(ctx, item, now, consts));
         game.pucks.forEach((puck: Puck) => Renderer.drawPuck(ctx, puck, consts));
-        Renderer.drawMallet(ctx, game.cpu, '#e74c3c', false, consts);
-        Renderer.drawMallet(ctx, game.player, '#3498db', game.effects.player.invisible > 0, consts);
+        Renderer.drawMallet(ctx, game.cpu, cColor, false, consts);
+        Renderer.drawMallet(ctx, game.player, pColor, game.effects.player.invisible > 0, consts);
         Renderer.drawPauseOverlay(ctx, consts);
         animationRef = requestAnimationFrame(gameLoop);
         return;
@@ -384,8 +394,8 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         game.pucks.forEach((puck: Puck) => Renderer.drawPuck(ctx, puck, consts));
         const cpuScale = getMalletScale('cpu');
         const playerScale = getMalletScale('player');
-        Renderer.drawMallet(ctx, game.cpu, '#e74c3c', false, consts, cpuScale);
-        Renderer.drawMallet(ctx, game.player, '#3498db', game.effects.player.invisible > 0, consts, playerScale);
+        Renderer.drawMallet(ctx, game.cpu, cColor, false, consts, cpuScale);
+        Renderer.drawMallet(ctx, game.player, pColor, game.effects.player.invisible > 0, consts, playerScale);
         Renderer.drawParticles(ctx, game.particles);
         Renderer.drawShockwave(ctx, hitStop);
         animationRef = requestAnimationFrame(gameLoop);
@@ -639,8 +649,8 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       Renderer.drawEffectZones(ctx, game.effects, now, consts);
       game.items.forEach((item: Item) => Renderer.drawItem(ctx, item, now, consts));
       game.pucks.forEach((puck: Puck) => Renderer.drawPuck(ctx, puck, consts));
-      Renderer.drawMallet(ctx, game.cpu, '#e74c3c', false, consts, getMalletScale('cpu'));
-      Renderer.drawMallet(ctx, game.player, '#3498db', game.effects.player.invisible > 0, consts, getMalletScale('player'));
+      Renderer.drawMallet(ctx, game.cpu, cColor, false, consts, getMalletScale('cpu'));
+      Renderer.drawMallet(ctx, game.player, pColor, game.effects.player.invisible > 0, consts, getMalletScale('player'));
       Renderer.drawParticles(ctx, game.particles);
       Renderer.drawHUD(ctx, game.effects, now, consts);
       Renderer.drawFlash(ctx, game.flash, now, consts);

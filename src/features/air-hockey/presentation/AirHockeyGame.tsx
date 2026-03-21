@@ -270,7 +270,12 @@ const AirHockeyGame: React.FC = () => {
 
   useGameLoop({
     screen, showHelp,
-    config: { difficulty: mode.difficulty, field: mode.field, winScore: mode.winScore, getSound: audio.getSound, bgmEnabled: audio.bgmEnabled, gameMode: mode.gameMode },
+    config: {
+      difficulty: mode.difficulty, field: mode.field, winScore: mode.winScore,
+      getSound: audio.getSound, bgmEnabled: audio.bgmEnabled, gameMode: mode.gameMode,
+      playerMalletColor: mode.gameMode === '2p-local' ? mode.player1Character?.color : undefined,
+      cpuMalletColor: mode.gameMode === '2p-local' ? mode.player2Character?.color : undefined,
+    },
     refs: { gameRef, canvasRef, lastInputRef, scoreRef, phaseRef, countdownStartRef, shakeRef, statsRef, matchStartRef, keysRef, player2KeysRef: mode.gameMode === '2p-local' ? player2KeysRef : undefined },
     callbacks: { setScores, setWinner, setScreen: handleScreenChange, setShowHelp, setShake },
   });
@@ -346,7 +351,13 @@ const AirHockeyGame: React.FC = () => {
 
       {screen === 'game' && (
         <>
-          <Scoreboard scores={scores} onMenuClick={handleGameMenuClick} onPauseClick={togglePause} cpuName={currentCpuName} />
+          <Scoreboard
+            scores={scores} onMenuClick={handleGameMenuClick} onPauseClick={togglePause}
+            cpuName={mode.gameMode === '2p-local' ? (mode.player2Character?.name ?? '2P') : currentCpuName}
+            playerName={mode.gameMode === '2p-local' ? (mode.player1Character?.name ?? '1P') : undefined}
+            playerColor={mode.gameMode === '2p-local' ? mode.player1Character?.color : undefined}
+            cpuColor={mode.gameMode === '2p-local' ? mode.player2Character?.color : undefined}
+          />
           <Field canvasRef={canvasRef} onInput={handleInput} shake={shake} />
         </>
       )}
