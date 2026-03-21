@@ -29,6 +29,7 @@ import type { TwoPlayerConfig } from '../application/use-cases/two-player-battle
 import { createKeyboardState, updateKeyboardStateForPlayer } from '../core/keyboard';
 import { useInput } from '../hooks/useInput';
 import { useKeyboardInput } from '../hooks/useKeyboardInput';
+import { useMultiTouchInput } from '../hooks/useMultiTouchInput';
 import { useGameLoop } from './hooks/useGameLoop';
 import { useScreenNavigation } from './hooks/useScreenNavigation';
 import { useGameMode } from './hooks/useGameMode';
@@ -242,6 +243,32 @@ const AirHockeyGame: React.FC = () => {
   // ── 入力・ゲームループ ──
   const handleInput = useInput(gameRef, canvasRef, lastInputRef, screen, showHelp, setShowHelp);
   const keysRef = useKeyboardInput(gameRef, lastInputRef, screen, showHelp, setShowHelp);
+
+  // 2P 用マルチタッチ入力（画面上下分割）
+  const is2PGame = mode.gameMode === '2p-local' && screen === 'game';
+  const multiTouch = useMultiTouchInput(canvasRef, is2PGame);
+
+  // マルチタッチ位置をゲームループに反映（毎フレーム ref 経由で適用）
+  useEffect(() => {
+    if (!is2PGame) return;
+    const game = gameRef.current;
+    if (!game) return;
+
+    if (multiTouch.player1Position) {
+      game.player.vx = multiTouch.player1Position.x - game.player.x;
+      game.player.vy = multiTouch.player1Position.y - game.player.y;
+      game.player.x = multiTouch.player1Position.x;
+      game.player.y = multiTouch.player1Position.y;
+      lastInputRef.current = Date.now();
+    }
+
+    if (multiTouch.player2Position) {
+      game.cpu.vx = multiTouch.player2Position.x - game.cpu.x;
+      game.cpu.vy = multiTouch.player2Position.y - game.cpu.y;
+      game.cpu.x = multiTouch.player2Position.x;
+      game.cpu.y = multiTouch.player2Position.y;
+    }
+  });
 
   // 2P 用キーボード入力リスナー（WASD → player2KeysRef）
   useEffect(() => {

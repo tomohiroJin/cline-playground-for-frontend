@@ -51,10 +51,25 @@
 
 ### 3-1-3: マルチタッチ入力
 
-> **延期**: キーボード対戦を先行する方針により、マルチタッチは後続フェーズで実装予定。
-> キーボード 2P 対戦だけでも完全な対戦体験が成立する。
+- [x] `core/multi-touch.ts` を新規作成: マルチタッチのコアロジック（純粋関数）
+  - [x] `MultiTouchState` 型: 両プレイヤーのタッチ ID と位置を管理
+  - [x] `processTouchStart()`: タッチ開始 → ゾーン判定（上半分: 2P、下半分: 1P）→ 追跡開始
+  - [x] `processTouchMove()`: 追跡中タッチの位置更新
+  - [x] `processTouchEnd()`: タッチ終了 → 追跡解除
+  - [x] `getPlayerPosition()`: プレイヤーの現在タッチ位置を取得
+  - [x] 各ゾーンで最初の 1 タッチのみ追跡（2 番目以降は無視）
+  - [x] プレイヤーごとの Y 軸クランプ（keyboard.ts と同じ WALL_MARGIN / CENTER_LINE_MARGIN）
+- [x] `hooks/useMultiTouchInput.ts` を新規作成: React フック
+  - [x] Canvas 要素にタッチリスナーを登録（`touchstart`, `touchmove`, `touchend`, `touchcancel`）
+  - [x] `touch-action: none` でブラウザジェスチャーを無効化
+  - [x] `enabled` フラグで 2P モード + ゲーム画面時のみ有効化
+  - [x] クリーンアップでリスナー解除 + 状態リセット
+- [x] AirHockeyGame.tsx にマルチタッチを統合
+  - [x] `useMultiTouchInput` のタッチ位置を毎フレーム gameRef のマレットに反映
 
-- [ ] `hooks/useMultiTouchInput.ts` を新規作成（後続フェーズで実施）
+**テスト**:
+- [x] `core/multi-touch.test.ts`: 17テスト（状態管理、ゾーン判定、クランプ、独立追跡）
+- [x] `hooks/useMultiTouchInput.test.ts`: 4テスト（初期状態、リスナー登録/解除、enabled 制御）
 
 ### 3-1-4: 既存入力の適合
 
