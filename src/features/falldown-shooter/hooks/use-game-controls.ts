@@ -7,6 +7,7 @@ import { CONFIG } from '../constants';
 import { Audio } from '../audio';
 import { Bullet } from '../bullet';
 import { clamp } from '../../../utils/math-utils';
+import { useSafeTimeout } from './use-safe-timeout';
 
 const { width: W } = CONFIG.grid;
 
@@ -33,6 +34,7 @@ export const useGameControls = ({
 }: UseGameControlsParams): UseGameControlsReturn => {
   const [playerX, setPlayerX] = useState<number>(Math.floor(W / 2));
   const [canFire, setCanFire] = useState<boolean>(true);
+  const { setSafeTimeout } = useSafeTimeout();
 
   const moveLeft = useCallback(() => setPlayerX(x => clamp(x - 1, 0, W - 1)), []);
   const moveRight = useCallback(() => setPlayerX(x => clamp(x + 1, 0, W - 1)), []);
@@ -57,8 +59,8 @@ export const useGameControls = ({
       bullets: [...gameState.stateRef.current.bullets, ...newBullets],
     });
     setCanFire(false);
-    setTimeout(() => setCanFire(true), CONFIG.timing.bullet.cooldown);
-  }, [canFire, playerX, powers, soundEnabled, gameState]);
+    setSafeTimeout(() => setCanFire(true), CONFIG.timing.bullet.cooldown);
+  }, [canFire, playerX, powers, soundEnabled, gameState, setSafeTimeout]);
 
   return {
     playerX,
