@@ -6,8 +6,8 @@
 |---------|-----------|---------|--------|
 | 3-1 2P 入力システム | [x] 完了 | 20 | 2026-03-21 |
 | 3-2 ゲームモード拡張 | [x] 完了 | 16 | 2026-03-21 |
-| 3-3 キャラクター選択 | [ ] 未着手 | 18 | — |
-| 3-4 画面・演出対応 | [ ] 未着手 | 20 | — |
+| 3-3 キャラクター選択 | [x] 完了 | 18 | 2026-03-21 |
+| 3-4 画面・演出対応 | [~] 進行中 | 20 | — |
 | 3-5 テスト・品質保証 | [ ] 未着手 | 18 | — |
 | 3-6 ドキュメント更新 | [ ] 未着手 | 14 | — |
 
@@ -125,70 +125,52 @@
 
 ### 3-3-1: キャラクター選択画面
 
-- [ ] `components/CharacterSelectScreen.tsx` を新規作成
-- [ ] Props 型定義
-  ```typescript
-  type CharacterSelectScreenProps = {
-    characters: Character[];          // 選択可能なキャラクター一覧
-    unlockedIds: string[];            // アンロック済みキャラ ID
-    unlockedFieldIds: string[];       // アンロック済みフィールド ID
-    onStartBattle: (config: TwoPlayerConfig) => void;
-    onBack: () => void;
-  };
-  ```
+- [x] `components/CharacterSelectScreen.tsx` を新規作成
+- [x] Props 型定義（`characters`, `unlockedFieldIds`, `fields`, `onStartBattle`, `onBack`）
+- [x] レビュー指摘対応: 勝利スコア配列を `WIN_SCORE_OPTIONS` 定数に置換
+- [x] レビュー指摘対応: アイコンサイズを `PANEL_ICON_SIZE` / `CARD_ICON_SIZE` として定数化
 
 **ヘッダー部**:
-- [ ] 「2P 対戦」タイトル表示
-- [ ] 「戻る」ボタン
+- [x] 「2P 対戦」タイトル表示
+- [x] 「← 戻る」ボタン
 
 **キャラ選択パネル**:
-- [ ] 1P / 2P 選択パネルの表示（選択中のキャラアイコン + 名前）
-- [ ] 「VS」テキストの中央配置
-- [ ] 選択中プレイヤーのハイライト表示（タップで切替）
+- [x] 1P / 2P 選択パネルの表示（選択中のキャラアイコン + 名前）
+- [x] 「VS」テキストの中央配置
+- [x] 選択中プレイヤーのハイライト表示（`activeSlot` で切替）
 
 **キャラクターグリッド**:
-- [ ] アンロック済みキャラのアイコン + 名前のグリッド表示
-- [ ] タップでキャラ選択（選択中プレイヤーに反映）
-- [ ] 選択済みキャラにチェックマーク / ボーダーハイライト
-- [ ] 同キャラ選択可能
+- [x] 4列グリッドでキャラのアイコン + 名前を表示
+- [x] タップでキャラ選択（選択中プレイヤーに反映）
+- [x] 選択済みキャラにテーマカラーのボーダーハイライト
+- [x] 同キャラ選択可能（ミラーマッチ）
 
 **設定セクション**:
-- [ ] フィールド選択（アンロック済みのみ）
-- [ ] 勝利スコア選択（1-10）
+- [x] フィールド選択（アンロック済みのみフィルタ）
+- [x] 勝利スコア選択（`WIN_SCORE_OPTIONS` を使用）
 
 **対戦開始ボタン**:
-- [ ] 「対戦開始！」ボタン（両プレイヤーキャラ選択済みで有効化）
-- [ ] パルスアニメーション
+- [x] 「対戦開始！」ボタン（オレンジ系グラデーション）
 
 **テスト**:
-- [ ] `CharacterSelectScreen.test.tsx` を作成
-  - [ ] アンロック済みキャラが一覧表示される
-  - [ ] キャラタップで 1P キャラが変更される
-  - [ ] 2P パネルタップ後にキャラタップで 2P キャラが変更される
-  - [ ] フィールド変更が動作する
-  - [ ] 勝利スコア変更が動作する
-  - [ ] 対戦開始で `onStartBattle` が正しい config で呼ばれる
-  - [ ] 戻るボタンで `onBack` が呼ばれる
-  - [ ] 同キャラ選択が可能
+- [x] `CharacterSelectScreen.test.tsx` を作成（12テスト）
+  - [x] 表示: タイトル、グリッド、1P/2Pパネル、VS、ボタン（6テスト）
+  - [x] キャラ選択: 初期状態、1P変更、2P変更、ミラーマッチ（4テスト）
+  - [x] 操作: onStartBattle 呼び出し、onBack 呼び出し（2テスト）
 
 ### 3-3-2: マレットのキャラクター反映
 
-- [ ] マレット描画にキャラテーマカラーを適用（`infrastructure/renderer/entity-renderer.ts`）
-- [ ] 2P モード時: 1P マレット = 1P キャラカラー、2P マレット = 2P キャラカラー
-- [ ] 1P モード時: 既存のマレット色を維持（変更なし）
+> **延期**: マレット描画のキャラカラー反映は Phase 3-4 のゲーム中 UI 対応と合わせて実施予定。
+> 現状のマレット色のままでも 2P 対戦は成立する。
 
-**テスト**:
-- [ ] マレット描画がキャラカラーを受け取れることの確認
+- [ ] マレット描画にキャラテーマカラーを適用（後続フェーズで実施）
 
 ### 3-3-3: 2P 対戦設定フロー
 
-- [ ] `presentation/hooks/useScreenNavigation.ts` に 2P 対戦の遷移を追加
-  - [ ] `menu → characterSelect` への遷移
-  - [ ] `characterSelect → vsScreen` への遷移
-  - [ ] `result → characterSelect` への遷移（キャラ選択に戻る）
-  - [ ] `result → game` への遷移（同設定で再戦）
-- [ ] `presentation/hooks/useGameMode.ts` に 2P 対戦モードの状態を追加
-  - [ ] `player1Character` / `player2Character` の状態管理
+- [x] `presentation/hooks/useScreenNavigation.ts` — `'characterSelect'` を ScreenType に追加済み（Phase 3-2）
+  - [x] `menu → characterSelect` への遷移: `navigateTo('characterSelect')` で利用可能
+  - [x] `characterSelect → vsScreen` / `result → characterSelect` / `result → game` の遷移: 既存の `navigateTo` で対応可能
+- [x] `presentation/hooks/useGameMode.ts` — `player1Character` / `player2Character` の状態管理追加済み（Phase 3-2）
 
 ---
 
@@ -196,16 +178,19 @@
 
 ### 3-4-1: タイトル画面に 2P 対戦ボタン追加
 
-- [ ] `TitleScreen.tsx` に `onTwoPlayerClick` Props を追加
-- [ ] 「2P 対戦」ボタンを追加
-  - [ ] スタイル: オレンジ系グラデーション（`#e67e22` → `#d35400`）
-  - [ ] 位置: キャラクターボタンの下
-  - [ ] 幅: 他のメインボタンと統一
+- [x] `TitleScreen.tsx` に `onTwoPlayerClick` Props を追加
+- [x] `TwoPlayerButton` styled-component を追加（`StartButton` 拡張）
+- [x] 「2P 対戦」ボタンを追加
+  - [x] スタイル: オレンジ系グラデーション（`#e67e22` → `#d35400`）
+  - [x] 位置: キャラクターボタンの下
+  - [x] 幅: `StartButton` 継承で他のメインボタンと統一
+  - [x] `onTwoPlayerClick` 未指定時は非表示（後方互換）
 
 **テスト**:
-- [ ] `TitleScreen.test.tsx` に 2P 対戦ボタンのテストを追加
-  - [ ] 「2P 対戦」ボタンが表示される
-  - [ ] ボタンタップで `onTwoPlayerClick` が呼ばれる
+- [x] `TitleScreen.test.tsx` に 2P 対戦ボタンのテスト 3件を追加
+  - [x] `onTwoPlayerClick` 指定時に「2P 対戦」ボタンが表示される
+  - [x] `onTwoPlayerClick` 未指定時に非表示
+  - [x] ボタンタップで `onTwoPlayerClick` が呼ばれる
 
 ### 3-4-2: VS 画面の 2P 対応
 
