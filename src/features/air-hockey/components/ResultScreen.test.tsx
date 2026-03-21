@@ -174,4 +174,59 @@ describe('ResultScreen', () => {
       expect(screen.queryByText(/図鑑に追加されました/)).not.toBeInTheDocument();
     });
   });
+
+  describe('2P 対戦モード', () => {
+    it('2P モードで player1 勝利時に「1P Win!」が表示される', () => {
+      render(
+        <ResultScreen
+          {...defaultProps}
+          winner="player"
+          is2PMode
+          player1CharacterName="アキラ"
+          player2CharacterName="ヒロ"
+        />,
+      );
+
+      expect(screen.getByText('1P Win!')).toBeInTheDocument();
+    });
+
+    it('2P モードで player2（cpu）勝利時に「2P Win!」が表示される', () => {
+      render(
+        <ResultScreen
+          {...defaultProps}
+          winner="cpu"
+          is2PMode
+          player1CharacterName="アキラ"
+          player2CharacterName="ヒロ"
+        />,
+      );
+
+      expect(screen.getByText('2P Win!')).toBeInTheDocument();
+    });
+
+    it('2P モードでは実績通知が表示されない', () => {
+      render(
+        <ResultScreen
+          {...defaultProps}
+          is2PMode
+          newAchievements={[{ id: 'first_win', name: '初勝利', description: '初めて勝利', icon: '🏆' }]}
+        />,
+      );
+
+      expect(screen.queryByText('初勝利')).not.toBeInTheDocument();
+    });
+
+    it('2P モードで「キャラ選択に戻る」ボタンが表示される', () => {
+      const onBackToCharacterSelect = jest.fn();
+      render(
+        <ResultScreen
+          {...defaultProps}
+          is2PMode
+          onBackToCharacterSelect={onBackToCharacterSelect}
+        />,
+      );
+
+      expect(screen.getByText('キャラ選択に戻る')).toBeInTheDocument();
+    });
+  });
 });
