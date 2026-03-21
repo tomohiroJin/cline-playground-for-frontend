@@ -1,29 +1,12 @@
 import { GameLogic } from '../game-logic';
 import { GameStateFactory } from '../entity-factory';
 import type { GameState } from '../types';
+import { setupAudioContextMock } from './helpers/audio-mock';
+import { GameStateBuilder } from './helpers/game-state-builder';
 
-// AudioContext のモック
+// AudioContext のモック（共通ヘルパー使用）
 beforeAll(() => {
-  (window as { AudioContext?: typeof AudioContext }).AudioContext = jest.fn().mockImplementation(
-    () => ({
-      createOscillator: () => ({
-        connect: jest.fn(),
-        start: jest.fn(),
-        stop: jest.fn(),
-        frequency: { value: 0 },
-        type: '',
-      }),
-      createGain: () => ({
-        connect: jest.fn(),
-        gain: {
-          setValueAtTime: jest.fn(),
-          exponentialRampToValueAtTime: jest.fn(),
-        },
-      }),
-      destination: {},
-      currentTime: 0,
-    })
-  );
+  setupAudioContextMock();
 });
 
 describe('labyrinth-of-shadows/game-logic', () => {
@@ -129,47 +112,63 @@ describe('labyrinth-of-shadows/game-logic', () => {
 
   describe('updateItems（新アイテム）', () => {
     test('回復薬でライフが回復する', () => {
-      state.lives = 2;
-      const healItem = state.items.find(i => i.type === 'heal');
-      if (healItem) {
-        state.player.x = healItem.x + 0.5;
-        state.player.y = healItem.y + 0.5;
-        GameLogic.updateItems(state);
-        expect(state.lives).toBe(3);
-      }
+      // Arrange: ビルダーで回復薬を確実に配置
+      const testState = GameStateBuilder.create()
+        .withLives(2, 5)
+        .withItem('heal', 1, 1)
+        .withPlayer({ x: 1.5, y: 1.5 })
+        .build();
+
+      // Act
+      GameLogic.updateItems(testState);
+
+      // Assert
+      expect(testState.lives).toBe(3);
     });
 
     test('ライフ満タン時の回復薬はスコアボーナス', () => {
-      state.lives = state.maxLives;
-      const healItem = state.items.find(i => i.type === 'heal');
-      if (healItem) {
-        const prevScore = state.score;
-        state.player.x = healItem.x + 0.5;
-        state.player.y = healItem.y + 0.5;
-        GameLogic.updateItems(state);
-        expect(state.score).toBe(prevScore + 50);
-      }
+      // Arrange: ライフ満タンで回復薬を配置
+      const testState = GameStateBuilder.create()
+        .withLives(5, 5)
+        .withScore(0)
+        .withItem('heal', 1, 1)
+        .withPlayer({ x: 1.5, y: 1.5 })
+        .build();
+
+      // Act
+      GameLogic.updateItems(testState);
+
+      // Assert
+      expect(testState.score).toBe(50);
     });
 
     test('加速アイテムでspeedBoostが設定される', () => {
-      const speedItem = state.items.find(i => i.type === 'speed');
-      if (speedItem) {
-        state.player.x = speedItem.x + 0.5;
-        state.player.y = speedItem.y + 0.5;
-        GameLogic.updateItems(state);
-        expect(state.speedBoost).toBeGreaterThan(0);
-      }
+      // Arrange: 加速アイテムを確実に配置
+      const testState = GameStateBuilder.create()
+        .withItem('speed', 1, 1)
+        .withPlayer({ x: 1.5, y: 1.5 })
+        .build();
+
+      // Act
+      GameLogic.updateItems(testState);
+
+      // Assert
+      expect(testState.speedBoost).toBeGreaterThan(0);
     });
 
     test('地図アイテムで周囲が探索済みになる', () => {
-      const mapItem = state.items.find(i => i.type === 'map');
-      if (mapItem) {
-        state.player.x = mapItem.x + 0.5;
-        state.player.y = mapItem.y + 0.5;
-        GameLogic.updateItems(state);
-        // 中心セルが探索済みになる
-        expect(state.explored[`${mapItem.x},${mapItem.y}`]).toBe(true);
-      }
+      // Arrange: 地図アイテムを確実に配置
+      const testState = GameStateBuilder.create()
+        .withItem('map', 3, 3)
+        .withPlayer({ x: 3.5, y: 3.5 })
+        .withEmptyExplored()
+        .build();
+
+      // Act
+      GameLogic.updateItems(testState);
+
+      // Assert: 中心セルが探索済みになる
+      expect(testState.explored['3,3']).toBe(true);
     });
   });
 
@@ -185,86 +184,124 @@ describe('labyrinth-of-shadows/game-logic', () => {
 
   describe('敵タイプ別AI', () => {
     test('徘徊型（wanderer）はプレイヤーを追跡しない', () => {
-      const wanderer = state.enemies.find(e => e.type === 'wanderer');
-      if (wanderer) {
-        wanderer.active = true;
-        const _initialDir = wanderer.dir;
-        // プレイヤーの目の前に配置してもlastSeenXは更新されない
-        wanderer.x = state.player.x + 1;
-        wanderer.y = state.player.y;
-        GameLogic.updateEnemy(state, wanderer, 16);
-        expect(wanderer.lastSeenX).toBe(-1);
-        // 方向が多少変化する（ランダム巡回）
-        expect(typeof wanderer.dir).toBe('number');
-      }
+      // Arrange: ビルダーで wanderer を確実に配置
+      const testState = GameStateBuilder.create()
+        .withEnemy('wanderer', {
+          x: 2.5,
+          y: 1.5,
+          active: true,
+        })
+        .build();
+      const wanderer = testState.enemies[0];
+
+      // Act
+      GameLogic.updateEnemy(testState, wanderer, 16);
+
+      // Assert: lastSeenX は更新されない（追跡しない）
+      expect(wanderer.lastSeenX).toBe(-1);
+      expect(typeof wanderer.dir).toBe('number');
     });
 
     test('追跡型（chaser）はプレイヤーの方向を記憶する', () => {
-      const stateNormal = GameStateFactory.create('NORMAL');
-      const chaser = stateNormal.enemies.find(e => e.type === 'chaser');
-      if (chaser) {
-        chaser.active = true;
-        // プレイヤーの近くに配置
-        chaser.x = stateNormal.player.x + 2;
-        chaser.y = stateNormal.player.y;
-        GameLogic.updateEnemy(stateNormal, chaser, 16);
-        // lastSeenX が更新される
-        expect(chaser.lastSeenX).toBeGreaterThan(0);
-      }
+      // Arrange: ビルダーで chaser を確実にプレイヤーの近くに配置
+      const testState = GameStateBuilder.create()
+        .withEnemy('chaser', {
+          x: 3.5,
+          y: 1.5,
+          active: true,
+        })
+        .build();
+      const chaser = testState.enemies[0];
+
+      // Act
+      GameLogic.updateEnemy(testState, chaser, 16);
+
+      // Assert: lastSeenX が更新される
+      expect(chaser.lastSeenX).toBeGreaterThan(0);
     });
 
     test('テレポート型（teleporter）のクールダウンが減少する', () => {
-      const stateHard = GameStateFactory.create('HARD');
-      const teleporter = stateHard.enemies.find(e => e.type === 'teleporter');
-      if (teleporter) {
-        teleporter.active = true;
-        teleporter.teleportCooldown = 5000;
-        GameLogic.updateEnemy(stateHard, teleporter, 100);
-        expect(teleporter.teleportCooldown).toBeLessThan(5000);
-      }
+      // Arrange: ビルダーで teleporter を確実に配置
+      const testState = GameStateBuilder.create()
+        .withEnemy('teleporter', {
+          x: 5.5,
+          y: 5.5,
+          active: true,
+          teleportCooldown: 5000,
+        })
+        .build();
+      const teleporter = testState.enemies[0];
+
+      // Act
+      GameLogic.updateEnemy(testState, teleporter, 100);
+
+      // Assert
+      expect(teleporter.teleportCooldown).toBeLessThan(5000);
     });
 
     test('非アクティブな敵は更新されない（距離Infinity）', () => {
-      const wanderer = state.enemies.find(e => e.type === 'wanderer');
-      if (wanderer) {
-        wanderer.active = false;
-        const d = GameLogic.updateEnemy(state, wanderer, 16);
-        expect(d).toBe(Infinity);
-      }
+      // Arrange: 非アクティブな wanderer を配置
+      const testState = GameStateBuilder.create()
+        .withEnemy('wanderer', {
+          x: 3.5,
+          y: 3.5,
+          active: false,
+          actTime: 99999,
+        })
+        .build();
+      const wanderer = testState.enemies[0];
+
+      // Act
+      const d = GameLogic.updateEnemy(testState, wanderer, 16);
+
+      // Assert
+      expect(d).toBe(Infinity);
     });
 
     test('updateEnemyはタイプに応じたAIを呼び出す', () => {
-      // wanderer は移動する（位置が変わる可能性がある）
-      const wanderer = state.enemies.find(e => e.type === 'wanderer');
-      if (wanderer) {
-        wanderer.active = true;
-        const initX = wanderer.x;
-        const initY = wanderer.y;
-        // 多くのフレームで更新
-        for (let i = 0; i < 100; i++) {
-          GameLogic.updateEnemy(state, wanderer, 16);
-        }
-        // 100フレーム後、位置が変わっている可能性が高い
-        const moved = wanderer.x !== initX || wanderer.y !== initY;
-        expect(moved).toBe(true);
+      // Arrange: 開放空間で wanderer を配置（壁衝突を回避）
+      const testState = GameStateBuilder.create()
+        .withOpenMaze()
+        .withPlayer({ x: 1.5, y: 1.5 })
+        .withEnemy('wanderer', {
+          x: 3.5,
+          y: 3.5,
+          active: true,
+        })
+        .withEnemySpeed(0.006)
+        .build();
+      const wanderer = testState.enemies[0];
+      const initX = wanderer.x;
+      const initY = wanderer.y;
+
+      // Act: 多くのフレームで更新
+      for (let i = 0; i < 100; i++) {
+        GameLogic.updateEnemy(testState, wanderer, 16);
       }
+
+      // Assert: 100フレーム後、位置が変わっている
+      const moved = wanderer.x !== initX || wanderer.y !== initY;
+      expect(moved).toBe(true);
     });
   });
 
   describe('updatePlayer（加速ブースト）', () => {
     test('加速ブースト中は速度が上がる', () => {
-      // 小さなdt(1フレーム)で壁衝突を回避して比較
-      const stateNormal = GameStateFactory.create('EASY');
-      const stateBoosted = GameStateFactory.create('EASY');
-      // 同じ迷路と同じ初期位置を使用
-      stateBoosted.maze = stateNormal.maze;
-      stateBoosted.player = { ...stateNormal.player };
-      stateBoosted.explored = { ...stateNormal.explored };
-      stateBoosted.speedBoost = 5000;
+      // Arrange: 開放空間で壁衝突を回避して比較
+      const stateNormal = GameStateBuilder.create()
+        .withOpenMaze()
+        .withPlayer({ x: 3.5, y: 3.5, angle: 0, stamina: 100 })
+        .build();
+      const stateBoosted = GameStateBuilder.create()
+        .withOpenMaze()
+        .withPlayer({ x: 3.5, y: 3.5, angle: 0, stamina: 100 })
+        .withSpeedBoost(5000)
+        .build();
 
-      const x0 = stateNormal.player.x;
-      const dt = 16; // 1フレーム分（壁衝突しにくい短いdt）
+      const x0 = 3.5;
+      const dt = 16;
 
+      // Act
       GameLogic.updatePlayer(
         stateNormal,
         { left: false, right: false, forward: true, backward: false },
@@ -276,16 +313,12 @@ describe('labyrinth-of-shadows/game-logic', () => {
         dt
       );
 
-      const movedNormal = Math.abs(stateNormal.player.x - x0) + Math.abs(stateNormal.player.y - (stateBoosted.player.y - (stateBoosted.player.y - stateNormal.player.y)));
+      // Assert: 開放空間なので両方必ず移動し、加速の方が大きい
+      const movedNormal = Math.abs(stateNormal.player.x - x0);
       const movedBoosted = Math.abs(stateBoosted.player.x - x0);
 
-      // 両方移動していれば加速の方が大きい
-      if (movedNormal > 0 && movedBoosted > 0) {
-        expect(movedBoosted).toBeGreaterThan(stateNormal.player.x - x0);
-      } else {
-        // 短いdtでも壁に当たる場合（開始位置が壁際）はスキップ
-        expect(true).toBe(true);
-      }
+      expect(movedNormal).toBeGreaterThan(0);
+      expect(movedBoosted).toBeGreaterThan(movedNormal);
     });
   });
 });

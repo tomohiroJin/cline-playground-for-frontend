@@ -6,7 +6,7 @@ import {
   StoryText,
   ModalContent,
   ControlBtn,
-} from '../../../pages/MazeHorrorPage.styles';
+} from '../presentation/styles/game.styles';
 
 interface ResultScreenProps {
   type: keyof typeof CONTENT.stories;

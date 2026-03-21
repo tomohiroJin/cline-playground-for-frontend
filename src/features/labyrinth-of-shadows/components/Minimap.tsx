@@ -1,5 +1,5 @@
 import React from 'react';
-import { MinimapContainer } from '../../../pages/MazeHorrorPage.styles';
+import { MinimapContainer } from '../presentation/styles/game.styles';
 
 interface MinimapProps {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
