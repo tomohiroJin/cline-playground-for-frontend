@@ -176,10 +176,16 @@ const AirHockeyGame: React.FC = () => {
   );
   const selectedDexEntry = React.useMemo(() => selectedCharacterId ? getDexEntryById(selectedCharacterId) : undefined, [selectedCharacterId]);
   const selectedCharacter = React.useMemo(() => selectedCharacterId ? findCharacterById(selectedCharacterId) : undefined, [selectedCharacterId]);
-  const selectableCharacters = React.useMemo(
-    () => dex.unlockedIds.map(id => findCharacterById(id)).filter((c): c is NonNullable<typeof c> => c !== undefined),
-    [dex.unlockedIds]
-  );
+  // 2P 対戦用: 基本キャラ（アキラ+ルーキー/レギュラー/エース）+ 図鑑解放済みストーリーキャラ
+  const twoPlayerCharacters = React.useMemo(() => {
+    const base = getBattleCharacters();
+    const baseIds = new Set(base.map(c => c.id));
+    const unlocked = dex.unlockedIds
+      .filter(id => !baseIds.has(id))
+      .map(id => findCharacterById(id))
+      .filter((c): c is NonNullable<typeof c> => c !== undefined);
+    return [...base, ...unlocked];
+  }, [dex.unlockedIds]);
   const dexCharacterMap = React.useMemo(() => {
     const map: Record<string, typeof PLAYER_CHARACTER> = {};
     for (const entry of dex.dexEntries) {
@@ -324,7 +330,7 @@ const AirHockeyGame: React.FC = () => {
 
       {screen === 'characterSelect' && (
         <CharacterSelectScreen
-          characters={getBattleCharacters()}
+          characters={twoPlayerCharacters}
           unlockedFieldIds={result.unlockState?.unlockedFields ?? ['classic', 'wide']}
           fields={FIELDS}
           onStartBattle={handleStartBattle}
