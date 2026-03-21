@@ -22,13 +22,9 @@ export function randomChoice<T>(arr: T[]): T {
   return arr[baseRandomInt(0, arr.length - 1)];
 }
 
-/** ボス判定（boss, boss1〜boss5） */
-export const isBoss = (e: { enemyType: EnemyType }): boolean =>
-  e.enemyType === 'boss' || (e.enemyType.startsWith('boss') && !e.enemyType.startsWith('midboss'));
-
-/** ミッドボス判定（midboss1〜midboss5） */
-export const isMidboss = (e: { enemyType: EnemyType }): boolean =>
-  e.enemyType.startsWith('midboss');
+// ボス判定・ミッドボス判定はドメイン層に委譲（後方互換性のため re-export）
+export { isBoss, isMidboss } from './domain/entities';
+import { isBossType } from './domain/entities';
 
 /** エンティティファクトリ */
 export const EntityFactory = {
@@ -78,10 +74,10 @@ export const EntityFactory = {
   },
 
   /** 敵キャラクターの生成 */
-  enemy: (type: string, x: number, y: number, stage = 1): Enemy => {
+  enemy: (type: EnemyType, x: number, y: number, stage = 1): Enemy => {
     const cfg = EnemyConfig[type];
     if (!cfg) throw new Error(`Invalid enemy type: ${type}`);
-    const boss = type === 'boss' || (type.startsWith('boss') && !type.startsWith('midboss'));
+    const boss = isBossType(type);
     const hp = boss ? cfg.hp + stage * 15 : cfg.hp;
     return {
       id: uniqueId(),
@@ -89,7 +85,7 @@ export const EntityFactory = {
       y,
       createdAt: Date.now(),
       type: 'enemy',
-      enemyType: type as import('./types').EnemyType,
+      enemyType: type,
       hp,
       maxHp: hp,
       speed: cfg.speed,

@@ -52,7 +52,8 @@ describe('EntityFactory', () => {
     });
 
     test('無効な敵タイプでエラーが発生すること', () => {
-      expect(() => EntityFactory.enemy('invalid', 0, 0)).toThrow('Invalid enemy type: invalid');
+      // 型安全だが、ランタイムでの防御も確認
+      expect(() => EntityFactory.enemy('invalid' as import('../types').EnemyType, 0, 0)).toThrow('Invalid enemy type: invalid');
     });
 
     test('tank敵のサイズが大きいこと', () => {

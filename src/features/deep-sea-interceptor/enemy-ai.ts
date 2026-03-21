@@ -3,7 +3,13 @@
 // ============================================================================
 
 import { EntityFactory } from './entities';
-import type { Enemy, EnemyBullet, Position } from './types';
+import type { Enemy, EnemyBullet, EnemyType, Position } from './types';
+
+/** ボスタイプのサブセット */
+type BossType = Extract<EnemyType, 'boss1' | 'boss2' | 'boss3' | 'boss4' | 'boss5'>;
+
+/** ミッドボスタイプのサブセット */
+type MidbossType = Extract<EnemyType, 'midboss1' | 'midboss2' | 'midboss3' | 'midboss4' | 'midboss5'>;
 
 /** Position ベクトルを正規化 */
 const normalize = ({ x, y }: Position): Position => {
@@ -18,7 +24,7 @@ const rotateVector = (v: Position, angle: number): Position => ({
 });
 
 /** ボス別攻撃パターン */
-export const BossPatterns: Record<string, Record<number, (boss: Enemy, target: Position) => EnemyBullet[]>> = {
+export const BossPatterns: Record<BossType, Record<number, (boss: Enemy, target: Position) => EnemyBullet[]>> = {
   // boss1: アンコウ・ガーディアン
   boss1: {
     // Phase 1: 5発の扇状弾
@@ -161,7 +167,7 @@ export const BossPatterns: Record<string, Record<number, (boss: Enemy, target: P
 };
 
 /** ミッドボス別攻撃パターン */
-export const MidbossPatterns: Record<string, (boss: Enemy, target: Position) => EnemyBullet[]> = {
+export const MidbossPatterns: Record<MidbossType, (boss: Enemy, target: Position) => EnemyBullet[]> = {
   // midboss1: ヤドカリ — 3WAY弾
   midboss1: (boss, target) => {
     const dir = normalize({ x: target.x - boss.x, y: target.y - boss.y });
@@ -214,15 +220,15 @@ export const EnemyAI = {
   /** 敵弾を生成（ボスはタイプ×フェーズ別パターン、ミッドボスは専用パターン） */
   createBullets: (e: Enemy, target: Position) => {
     // ミッドボスパターンへディスパッチ
-    const midbossPattern = MidbossPatterns[e.enemyType];
-    if (midbossPattern) {
-      return midbossPattern(e, target);
+    const midbossKey = e.enemyType as MidbossType;
+    if (midbossKey in MidbossPatterns) {
+      return MidbossPatterns[midbossKey](e, target);
     }
 
     // ボスタイプ別パターンへディスパッチ
-    const bossType = e.enemyType === 'boss' ? 'boss1' : e.enemyType;
-    const pattern = BossPatterns[bossType];
-    if (pattern) {
+    const bossType: BossType = e.enemyType === 'boss' ? 'boss1' : e.enemyType as BossType;
+    if (bossType in BossPatterns) {
+      const pattern = BossPatterns[bossType];
       const phase = e.bossPhase || 1;
       const phaseFn = pattern[phase] || pattern[1];
       return phaseFn(e, target);
