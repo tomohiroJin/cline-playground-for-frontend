@@ -2,7 +2,7 @@
  * 2P 対戦ユースケースのテスト
  */
 import { TwoPlayerBattleUseCase } from './two-player-battle';
-import type { Character, FieldConfig } from '../../core/types';
+import type { Character } from '../../core/types';
 import { FIELDS } from '../../core/config';
 
 describe('TwoPlayerBattleUseCase', () => {

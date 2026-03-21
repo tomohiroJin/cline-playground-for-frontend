@@ -6,7 +6,6 @@ import {
   createKeyboardState,
   updateKeyboardState,
   calculateKeyboardMovement,
-  KeyboardState,
   KEYBOARD_MOVE_SPEED,
   PLAYER1_KEY_MAP,
   PLAYER2_KEY_MAP,

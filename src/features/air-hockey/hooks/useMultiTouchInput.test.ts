@@ -1,11 +1,8 @@
 /**
  * マルチタッチ入力フックのテスト
  */
-import { renderHook, act } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import { useMultiTouchInput } from './useMultiTouchInput';
-import { CONSTANTS } from '../core/constants';
-
-const { HEIGHT: H } = CONSTANTS.CANVAS;
 
 describe('useMultiTouchInput', () => {
   const createMockCanvasRef = () => {

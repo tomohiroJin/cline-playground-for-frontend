@@ -274,7 +274,7 @@ const AirHockeyGame: React.FC = () => {
       window.removeEventListener('keyup', handleKeyUp);
       player2KeysRef.current = createKeyboardState();
     };
-  }, [mode.gameMode, screen]);
+  }, [is2PGame]);
 
   useGameLoop({
     screen, showHelp,

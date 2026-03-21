@@ -8,7 +8,6 @@ import {
   processTouchMove,
   processTouchEnd,
   getPlayerPosition,
-  MultiTouchState,
 } from './multi-touch';
 import { CONSTANTS } from './constants';
 
