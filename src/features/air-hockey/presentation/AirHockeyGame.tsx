@@ -171,6 +171,10 @@ const AirHockeyGame: React.FC = () => {
   );
   const selectedDexEntry = React.useMemo(() => selectedCharacterId ? getDexEntryById(selectedCharacterId) : undefined, [selectedCharacterId]);
   const selectedCharacter = React.useMemo(() => selectedCharacterId ? findCharacterById(selectedCharacterId) : undefined, [selectedCharacterId]);
+  const selectableCharacters = React.useMemo(
+    () => dex.unlockedIds.map(id => findCharacterById(id)).filter((c): c is NonNullable<typeof c> => c !== undefined),
+    [dex.unlockedIds]
+  );
   const dexCharacterMap = React.useMemo(() => {
     const map: Record<string, typeof PLAYER_CHARACTER> = {};
     for (const entry of dex.dexEntries) {
@@ -299,7 +303,7 @@ const AirHockeyGame: React.FC = () => {
 
       {screen === 'characterSelect' && (
         <CharacterSelectScreen
-          characters={dex.unlockedIds.map(id => findCharacterById(id)).filter((c): c is NonNullable<typeof c> => c !== undefined)}
+          characters={selectableCharacters}
           unlockedFieldIds={result.unlockState?.unlockedFields ?? ['classic', 'wide']}
           fields={FIELDS}
           onStartBattle={handleStartBattle}
