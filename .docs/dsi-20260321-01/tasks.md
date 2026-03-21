@@ -148,25 +148,25 @@
 ## Phase 4: インフラ層の分離
 
 ### 4-1: オーディオシステムの抽象化
-- [ ] `infrastructure/audio/audio-system.ts` で `AudioPort` インターフェースを定義
-- [ ] `createWebAudioSystem` を実装（既存 `audio.ts` のリファクタリング）
-- [ ] `createNullAudioSystem` をテスト用に作成
-- [ ] テストを追加
-- [ ] コミット: `refactor: オーディオシステムをインターフェースで抽象化`
+- [x] `infrastructure/audio/audio-system.ts` で `AudioPort` インターフェースを定義
+- [x] `createWebAudioSystem` を実装（既存 `audio.ts` のリファクタリング）
+- [x] `createNullAudioSystem` をテスト用に作成
+- [x] テストを追加
+- [x] コミット: `refactor: オーディオシステムをインターフェースで抽象化`
 
 ### 4-2: ストレージの抽象化
-- [ ] `infrastructure/storage/score-repository.ts` を作成
-- [ ] `infrastructure/storage/achievement-repository.ts` を作成
-- [ ] `localStorage` 直接参照を排除
-- [ ] テストを追加
-- [ ] コミット: `refactor: ストレージ操作をリポジトリパターンで抽象化`
+- [x] `infrastructure/storage/score-repository.ts` を作成
+- [x] `infrastructure/storage/achievement-repository.ts` を作成
+- [x] `localStorage` 直接参照を排除
+- [x] テストを追加
+- [x] コミット: `refactor: ストレージ操作をリポジトリパターンで抽象化`
 
 ### 4-3: 入力ハンドラの抽象化
-- [ ] `infrastructure/input/input-handler.ts` で `InputAdapter` インターフェースを定義
-- [ ] `keyboard-adapter.ts`、`touch-adapter.ts` を実装
-- [ ] `hooks.ts` の入力処理ロジックを移行
-- [ ] テストを追加
-- [ ] コミット: `refactor: 入力処理をアダプタパターンで抽象化`
+- [x] `infrastructure/input/input-handler.ts` で `InputAdapter` インターフェースを定義
+- [x] `keyboard-adapter.ts`、`touch-adapter.ts` を実装
+- [x] `hooks.ts` の入力処理ロジックを移行
+- [x] テストを追加
+- [x] コミット: `refactor: 入力処理をアダプタパターンで抽象化`
 
 ---
 
