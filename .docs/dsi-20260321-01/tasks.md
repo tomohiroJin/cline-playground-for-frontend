@@ -43,81 +43,81 @@
 ## Phase 2: ドメイン層の抽出
 
 ### 2-1: ディレクトリ構造の作成
-- [ ] `domain/entities/`, `domain/services/`, `domain/strategies/`, `domain/events/` ディレクトリを作成
-- [ ] コミット: `chore: ドメイン層のディレクトリ構造を作成`
+- [x] `domain/entities/`, `domain/services/`, `domain/strategies/`, `domain/events/` ディレクトリを作成
+- [x] コミット: `chore: ドメイン層のディレクトリ構造を作成`
 
 ### 2-2: 値オブジェクトとエンティティの分離
-- [ ] `domain/entities/position.ts` を作成（`Position` 値オブジェクト + 演算関数 + DbC アサーション）
-- [ ] `domain/entities/player.ts` を作成（プレイヤー関連ロジック）
-- [ ] `domain/entities/bullet.ts` を作成（`Bullet`, `EnemyBullet` 生成ロジック）
-- [ ] `domain/entities/enemy.ts` を作成（`Enemy` + `isBoss`/`isMidboss` 判定）
-- [ ] `domain/entities/item.ts` を作成
-- [ ] `domain/entities/particle.ts` を作成（`Particle`, `Bubble`）
-- [ ] 既存の `entities.ts` からの移行（re-export で後方互換性を維持）
-- [ ] 各エンティティのテストを追加/移行
-- [ ] 全テストがパスすることを確認
-- [ ] コミット: `refactor: エンティティをドメイン層に分離`
+- [x] `domain/entities/position.ts` を作成（`Position` 値オブジェクト + 演算関数 + DbC アサーション）
+- [x] `domain/entities/player.ts` を作成（プレイヤー関連ロジック）
+- [x] `domain/entities/bullet.ts` を作成（`Bullet`, `EnemyBullet` 生成ロジック）
+- [x] `domain/entities/enemy.ts` を作成（`Enemy` + `isBoss`/`isMidboss` 判定）
+- [x] `domain/entities/item.ts` を作成
+- [x] `domain/entities/particle.ts` を作成（`Particle`, `Bubble`）
+- [x] 既存の `entities.ts` からの移行（re-export で後方互換性を維持）
+- [x] 各エンティティのテストを追加/移行
+- [x] 全テストがパスすることを確認
+- [x] コミット: `refactor: エンティティをドメイン層に分離`
 
 ### 2-3: 衝突判定サービスの分離
-- [ ] `domain/services/collision-service.ts` を作成（既存の `collision.ts` を移動）
-- [ ] DbC アサーション追加（半径 >= 0 等）
-- [ ] テストを移行
-- [ ] コミット: `refactor: 衝突判定をドメインサービスに移動`
+- [x] `domain/services/collision-service.ts` を作成（既存の `collision.ts` を移動）
+- [x] DbC アサーション追加（半径 >= 0 等）
+- [x] テストを移行
+- [x] コミット: `refactor: 衝突判定をドメインサービスに移動`
 
 ### 2-4: スコアリングサービスの分離
-- [ ] `domain/services/scoring-service.ts` を作成
+- [x] `domain/services/scoring-service.ts` を作成
   - コンボ計算ロジック
   - スコア倍率計算
   - ランク判定（`calculateRank`）
   - ステージクリアボーナス計算
-- [ ] テストを追加/移行
-- [ ] コミット: `refactor: スコアリングロジックをドメインサービスに分離`
+- [x] テストを追加/移行
+- [x] コミット: `refactor: スコアリングロジックをドメインサービスに分離`
 
 ### 2-5: ダメージサービスの分離
-- [ ] `domain/services/damage-service.ts` を作成
+- [x] `domain/services/damage-service.ts` を作成
   - 敵ダメージ処理（弾 → 敵）
   - プレイヤーダメージ処理
   - グレイズ判定
-- [ ] 既存の `processBulletEnemyCollisions`, `processPlayerDamage`, `processGraze` を移行
-- [ ] テストを移行
-- [ ] コミット: `refactor: ダメージ処理をドメインサービスに分離`
+- [x] 既存の `processBulletEnemyCollisions`, `processPlayerDamage`, `processGraze` を移行
+- [x] テストを移行
+- [x] コミット: `refactor: ダメージ処理をドメインサービスに分離`
 
 ### 2-6: 移動戦略の Strategy パターン化
-- [ ] `domain/strategies/movement/movement-strategy.ts` でインターフェースを定義
-- [ ] 各移動戦略を個別ファイルに分離（straight, sine, drift, boss, homing）
-- [ ] 既存の `movement.ts` を re-export で後方互換維持
-- [ ] テストを移行
-- [ ] コミット: `refactor: 移動ロジックを Strategy パターンに変更`
+- [x] `domain/strategies/movement/movement-strategy.ts` でインターフェースを定義
+- [x] 各移動戦略を個別ファイルに分離（straight, sine, drift, boss, homing）
+- [x] 既存の `movement.ts` を re-export で後方互換維持
+- [x] テストを移行
+- [x] コミット: `refactor: 移動ロジックを Strategy パターンに変更`
 
 ### 2-7: ギミック戦略の Strategy パターン化
-- [ ] `domain/strategies/gimmick/gimmick-strategy.ts` でインターフェースを定義
-- [ ] 各ギミックを個別ファイルに分離（current, minefield, thermal-vent, bioluminescence, pressure）
-- [ ] `gimmick-registry.ts` でギミック名→戦略の対応を管理
-- [ ] `game-logic.ts` の `switch` 文をレジストリ呼び出しに置換
-- [ ] 各ギミックのテストを追加
-- [ ] コミット: `refactor: 環境ギミックを Strategy パターン + レジストリに変更`
+- [x] `domain/strategies/gimmick/gimmick-strategy.ts` でインターフェースを定義
+- [x] 各ギミックを個別ファイルに分離（current, minefield, thermal-vent, bioluminescence, pressure）
+- [x] `gimmick-registry.ts` でギミック名→戦略の対応を管理
+- [x] `game-logic.ts` の `switch` 文をレジストリ呼び出しに置換
+- [x] 各ギミックのテストを追加
+- [x] コミット: `refactor: 環境ギミックを Strategy パターン + レジストリに変更`
 
 ### 2-8: 武器戦略の Strategy パターン化
-- [ ] `domain/strategies/weapon/weapon-strategy.ts` でインターフェースを定義
-- [ ] 各武器を個別ファイルに分離（torpedo, sonar-wave, bio-missile）
-- [ ] `weapon-registry.ts` でディスパッチ
-- [ ] 既存の `weapon.ts` からの移行
-- [ ] テストを移行
-- [ ] コミット: `refactor: 武器ロジックを Strategy パターンに変更`
+- [x] `domain/strategies/weapon/weapon-strategy.ts` でインターフェースを定義
+- [x] 各武器を個別ファイルに分離（torpedo, sonar-wave, bio-missile）
+- [x] `weapon-registry.ts` でディスパッチ
+- [x] 既存の `weapon.ts` からの移行
+- [x] テストを移行
+- [x] コミット: `refactor: 武器ロジックを Strategy パターンに変更`
 
 ### 2-9: 敵AI戦略の整理
-- [ ] `domain/strategies/enemy-ai/attack-pattern.ts` でインターフェースを定義
-- [ ] ボスパターン、ミッドボスパターン、通常パターンを個別ファイルに分離
-- [ ] `Date.now()` の直接参照を排除し、タイムスタンプを引数で受け取る
-- [ ] テストを移行/追加
-- [ ] コミット: `refactor: 敵AI を Strategy パターンに整理`
+- [x] `domain/strategies/enemy-ai/attack-pattern.ts` でインターフェースを定義
+- [x] ボスパターン、ミッドボスパターン、通常パターンを個別ファイルに分離
+- [x] `Date.now()` の直接参照を排除し、タイムスタンプを引数で受け取る
+- [x] テストを移行/追加
+- [x] コミット: `refactor: 敵AI を Strategy パターンに整理`
 
 ### 2-10: ドメインイベントの定義
-- [ ] `domain/events/game-events.ts` を作成
-- [ ] `AudioEvent` を `GameEvent` ユニオン型に統合
-- [ ] `game-logic.ts` 内のイベント生成を `GameEvent` に移行
-- [ ] テストを更新
-- [ ] コミット: `refactor: ドメインイベント型を定義し AudioEvent を統合`
+- [x] `domain/events/game-events.ts` を作成
+- [x] `AudioEvent` を `GameEvent` ユニオン型に統合
+- [x] `game-logic.ts` 内のイベント生成を `GameEvent` に移行
+- [x] テストを更新
+- [x] コミット: `refactor: ドメインイベント型を定義し AudioEvent を統合`
 
 ---
 
