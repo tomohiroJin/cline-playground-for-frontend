@@ -10,15 +10,14 @@
 import React, { useEffect } from 'react';
 import { Physics } from '../../core/physics';
 import { CpuAI } from '../../core/ai';
-import { EntityFactory } from '../../core/entities';
+import { EntityFactory, moveMalletTo } from '../../core/entities';
 import { applyItemEffect } from '../../core/items';
-import { CONSTANTS } from '../../core/constants';
+import { CONSTANTS, DEFAULT_PLAYER_MALLET_COLOR, DEFAULT_CPU_MALLET_COLOR } from '../../core/constants';
 import { ITEMS } from '../../core/config';
 import { magnitude, randomRange } from '../../../../utils/math-utils';
 import { Renderer } from '../../renderer';
 import type {
   GameState,
-  Mallet,
   FieldConfig,
   Difficulty,
   SoundSystem,
@@ -31,14 +30,6 @@ import type {
   HitStopState,
   SlowMotionState,
 } from '../../core/types';
-
-/** マレットを目標位置に移動し速度を設定する */
-function moveMalletTo(mallet: Mallet, targetX: number, targetY: number): void {
-  mallet.vx = targetX - mallet.x;
-  mallet.vy = targetY - mallet.y;
-  mallet.x = targetX;
-  mallet.y = targetY;
-}
 import { applyKeyboardMovement } from '../../hooks/useKeyboardInput';
 import type { KeyboardState } from '../../core/keyboard';
 import { calculateKeyboardMovement } from '../../core/keyboard';
@@ -56,8 +47,6 @@ const GOAL_SHAKE_DURATION = 300;
 const HIT_SHAKE_INTENSITY = 3;
 const HIT_SHAKE_DURATION = 150;
 const STRONG_HIT_SPEED_THRESHOLD = 8;
-
-import { DEFAULT_PLAYER_MALLET_COLOR, DEFAULT_CPU_MALLET_COLOR } from '../../core/constants';
 
 /** ゲーム設定グループ */
 export type GameLoopConfig = {

@@ -2,6 +2,7 @@ import React, { useCallback, RefObject } from 'react';
 import { clamp } from '../../../utils/math-utils';
 import { CONSTANTS, screenToCanvas, getPlayerXBounds, getPlayerYBounds } from '../core/constants';
 import { GameState } from '../core/types';
+import { moveMalletTo } from '../core/entities';
 
 /**
  * マウス/タッチ入力を処理し、プレイヤーのマレット位置を更新するフック
@@ -45,10 +46,7 @@ export function useInput(
       const newX = clamp(canvas.canvasX, minX, maxX);
       const newY = clamp(canvas.canvasY, minY, maxY);
 
-      game.player.vx = newX - game.player.x;
-      game.player.vy = newY - game.player.y;
-      game.player.x = newX;
-      game.player.y = newY;
+      moveMalletTo(game.player, newX, newY);
     },
     [screen, showHelp, gameRef, canvasRef, lastInputRef, setShowHelp]
   );
