@@ -15,7 +15,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { EntityFactory } from '../core/entities';
 import { CONSTANTS } from '../core/constants';
 import { FIELDS } from '../core/config';
-import { getCharacterByDifficulty, findCharacterById, getAllCharacters, PLAYER_CHARACTER } from '../core/characters';
+import { getCharacterByDifficulty, findCharacterById, getBattleCharacters, PLAYER_CHARACTER } from '../core/characters';
 import type { GameState, GamePhase, ShakeState, MatchStats } from '../core/types';
 import { loadStoryProgress, resetStoryProgress } from '../core/story';
 import type { StageDefinition } from '../core/story';
@@ -166,9 +166,13 @@ const AirHockeyGame: React.FC = () => {
     const idx = CHAPTER_1_STAGES.findIndex(s => s.id === mode.currentStage!.id);
     return idx < CHAPTER_1_STAGES.length - 1;
   }, [mode.currentStage]);
+  const freeBattleCpuCharacter = React.useMemo(
+    () => getCharacterByDifficulty(mode.difficulty),
+    [mode.difficulty]
+  );
   const currentCpuName = React.useMemo(
-    () => mode.gameMode === 'story' && cpuCharacter ? cpuCharacter.name : getCharacterByDifficulty(mode.difficulty).name,
-    [mode.gameMode, cpuCharacter, mode.difficulty]
+    () => mode.gameMode === 'story' && cpuCharacter ? cpuCharacter.name : freeBattleCpuCharacter.name,
+    [mode.gameMode, cpuCharacter, freeBattleCpuCharacter]
   );
   const selectedDexEntry = React.useMemo(() => selectedCharacterId ? getDexEntryById(selectedCharacterId) : undefined, [selectedCharacterId]);
   const selectedCharacter = React.useMemo(() => selectedCharacterId ? findCharacterById(selectedCharacterId) : undefined, [selectedCharacterId]);
@@ -320,7 +324,7 @@ const AirHockeyGame: React.FC = () => {
 
       {screen === 'characterSelect' && (
         <CharacterSelectScreen
-          characters={getAllCharacters()}
+          characters={getBattleCharacters()}
           unlockedFieldIds={result.unlockState?.unlockedFields ?? ['classic', 'wide']}
           fields={FIELDS}
           onStartBattle={handleStartBattle}
@@ -391,8 +395,8 @@ const AirHockeyGame: React.FC = () => {
             onAcceptDifficulty={handleAcceptDifficulty}
             onBackToStageSelect={mode.gameMode === 'story' ? handleBackToStageSelect : undefined}
             onNextStage={mode.gameMode === 'story' && hasNextStage ? handleNextStage : undefined}
-            cpuCharacter={mode.gameMode === 'story' ? cpuCharacter : is2PMode ? mode.player2Character : undefined}
-            playerCharacter={mode.gameMode === 'story' ? PLAYER_CHARACTER : is2PMode ? mode.player1Character : undefined}
+            cpuCharacter={mode.gameMode === 'story' ? cpuCharacter : is2PMode ? mode.player2Character : freeBattleCpuCharacter}
+            playerCharacter={mode.gameMode === 'story' ? PLAYER_CHARACTER : is2PMode ? mode.player1Character : PLAYER_CHARACTER}
             newlyUnlockedCharacterName={result.newlyUnlockedCharacterName}
             is2PMode={is2PMode}
             player1CharacterName={mode.player1Character?.name}

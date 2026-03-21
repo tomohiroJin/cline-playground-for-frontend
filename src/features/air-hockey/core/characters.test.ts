@@ -10,6 +10,7 @@ import {
   getRandomReaction,
   findCharacterById,
   getAllCharacters,
+  getBattleCharacters,
 } from './characters';
 import type { Character, CharacterReaction } from './types';
 
@@ -226,6 +227,35 @@ describe('Phase 2: キャラクター基盤', () => {
       const all = getAllCharacters();
       const ids = all.map(c => c.id);
       expect(new Set(ids).size).toBe(ids.length);
+    });
+  });
+
+  describe('getBattleCharacters', () => {
+    it('主人公 + フリー対戦キャラ（4名）を返す', () => {
+      const chars = getBattleCharacters();
+      expect(chars.length).toBe(4);
+    });
+
+    it('主人公（アキラ）が含まれる', () => {
+      const chars = getBattleCharacters();
+      expect(chars[0].id).toBe('player');
+    });
+
+    it('フリー対戦キャラ（ルーキー/レギュラー/エース）が含まれる', () => {
+      const chars = getBattleCharacters();
+      const ids = chars.map(c => c.id);
+      expect(ids).toContain('rookie');
+      expect(ids).toContain('regular');
+      expect(ids).toContain('ace');
+    });
+
+    it('ストーリーキャラクターは含まれない', () => {
+      const chars = getBattleCharacters();
+      const ids = chars.map(c => c.id);
+      expect(ids).not.toContain('hiro');
+      expect(ids).not.toContain('misaki');
+      expect(ids).not.toContain('takuma');
+      expect(ids).not.toContain('yuu');
     });
   });
 });
