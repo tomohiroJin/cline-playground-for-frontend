@@ -26,4 +26,4 @@ export const EntityFactory = {
   createRamp,
   createCloud,
   createBuilding,
-} as const;
+};
