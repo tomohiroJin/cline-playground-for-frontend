@@ -33,6 +33,12 @@ const CharacterButton = styled(StartButton)`
   margin-top: 0;
 `;
 
+// 2P 対戦ボタン（オレンジ系グラデーション）
+const TwoPlayerButton = styled(StartButton)`
+  background: linear-gradient(135deg, #e67e22, #d35400);
+  margin-top: 10px;
+`;
+
 // 通知バッジ（赤丸 + 白文字）
 const NotificationBadge = styled.span`
   position: absolute;
@@ -66,6 +72,7 @@ type TitleScreenProps = {
   onSettingsClick?: () => void;
   onDailyChallengeClick?: () => void;
   onCharacterDexClick?: () => void;
+  onTwoPlayerClick?: () => void;
   newUnlockCount?: number;
   unlockState?: UnlockState;
 };
@@ -85,6 +92,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
   onSettingsClick,
   onDailyChallengeClick,
   onCharacterDexClick,
+  onTwoPlayerClick,
   newUnlockCount,
   unlockState,
 }) => (
@@ -166,6 +174,12 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
           </NotificationBadge>
         )}
       </CharacterButtonWrapper>
+    )}
+
+    {onTwoPlayerClick && (
+      <TwoPlayerButton onClick={onTwoPlayerClick}>
+        2P 対戦
+      </TwoPlayerButton>
     )}
 
     <div style={{ color: 'var(--accent-color)', fontWeight: 'bold', marginTop: '1rem' }}>

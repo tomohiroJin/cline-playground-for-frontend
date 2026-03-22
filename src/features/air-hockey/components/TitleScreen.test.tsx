@@ -147,4 +147,36 @@ describe('TitleScreen', () => {
       expect(screen.queryByTestId('character-badge')).not.toBeInTheDocument();
     });
   });
+
+  describe('2P 対戦ボタン', () => {
+    it('onTwoPlayerClick が渡された場合、「2P 対戦」ボタンが表示される', () => {
+      render(
+        <TitleScreen
+          {...defaultProps}
+          onTwoPlayerClick={jest.fn()}
+        />
+      );
+
+      expect(screen.getByText('2P 対戦')).toBeInTheDocument();
+    });
+
+    it('onTwoPlayerClick が未指定の場合、「2P 対戦」ボタンが表示されない', () => {
+      render(<TitleScreen {...defaultProps} />);
+
+      expect(screen.queryByText('2P 対戦')).not.toBeInTheDocument();
+    });
+
+    it('「2P 対戦」ボタンをクリックすると onTwoPlayerClick が呼ばれる', () => {
+      const onTwoPlayerClick = jest.fn();
+      render(
+        <TitleScreen
+          {...defaultProps}
+          onTwoPlayerClick={onTwoPlayerClick}
+        />
+      );
+
+      fireEvent.click(screen.getByText('2P 対戦'));
+      expect(onTwoPlayerClick).toHaveBeenCalledTimes(1);
+    });
+  });
 });

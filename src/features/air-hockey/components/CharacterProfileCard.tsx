@@ -6,8 +6,8 @@
  * 立ち絵タップで表情切替（normal ⇔ happy）。
  * 閉じる: ✕ ボタン / 背景タップ / Escape キー。
  */
-import React, { useState, useEffect, useCallback } from 'react';
-import styled, { keyframes } from 'styled-components';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import styled, { keyframes, css } from 'styled-components';
 import type { Character, DexEntry } from '../core/types';
 
 // ── 定数 ──────────────────────────────────────────
@@ -22,6 +22,11 @@ const fadeIn = keyframes`
   to { opacity: 1; }
 `;
 
+const fadeOut = keyframes`
+  from { opacity: 1; }
+  to { opacity: 0; }
+`;
+
 const slideUp = keyframes`
   from {
     opacity: 0;
@@ -33,8 +38,24 @@ const slideUp = keyframes`
   }
 `;
 
+const slideDown = keyframes`
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+`;
+
+/** フェードアウトアニメーションの長さ（ms） */
+export const FADE_OUT_DURATION_MS = 200;
+/** スライドアップアニメーションの長さ（ms） */
+const SLIDE_UP_DURATION_MS = 300;
+
 // ── styled-components ─────────────────────────────
-const Overlay = styled.div`
+const Overlay = styled.div<{ $closing?: boolean }>`
   position: fixed;
   top: 0;
   left: 0;
@@ -45,10 +66,10 @@ const Overlay = styled.div`
   align-items: center;
   justify-content: center;
   z-index: 200;
-  animation: ${fadeIn} 200ms ease-out;
+  animation: ${({ $closing }) => $closing ? fadeOut : fadeIn} ${FADE_OUT_DURATION_MS}ms ease-out forwards;
 `;
 
-const CardContainer = styled.div`
+const CardContainer = styled.div<{ $closing?: boolean }>`
   position: relative;
   width: 90%;
   max-width: 400px;
@@ -56,7 +77,11 @@ const CardContainer = styled.div`
   background: #fff;
   border-radius: ${CARD_BORDER_RADIUS_PX}px;
   overflow-y: auto;
-  animation: ${slideUp} 300ms ease-out;
+  animation: ${({ $closing }) =>
+    $closing
+      ? css`${slideDown} ${FADE_OUT_DURATION_MS}ms ease-out forwards`
+      : css`${slideUp} ${SLIDE_UP_DURATION_MS}ms ease-out forwards`
+  };
 `;
 
 const CloseButton = styled.button`
@@ -220,15 +245,31 @@ export const CharacterProfileCard: React.FC<CharacterProfileCardProps> = ({
   const { profile } = entry;
   const hasPortrait = !!character.portrait;
   const [isHappy, setIsHappy] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  // アンマウント時にタイマーをクリーンアップ
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    };
+  }, []);
+
+  // フェードアウトアニメーション付きで閉じる
+  const startClose = useCallback(() => {
+    if (isClosing) return;
+    setIsClosing(true);
+    closeTimerRef.current = setTimeout(() => onClose(), FADE_OUT_DURATION_MS);
+  }, [isClosing, onClose]);
 
   // Escape キーで閉じる
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        startClose();
       }
     },
-    [onClose]
+    [startClose]
   );
 
   useEffect(() => {
@@ -239,7 +280,7 @@ export const CharacterProfileCard: React.FC<CharacterProfileCardProps> = ({
   // 背景オーバーレイクリックで閉じる
   const handleOverlayClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
-      onClose();
+      startClose();
     }
   };
 
@@ -261,9 +302,9 @@ export const CharacterProfileCard: React.FC<CharacterProfileCardProps> = ({
   const themeColor = character.color;
 
   return (
-    <Overlay data-testid="profile-overlay" onClick={handleOverlayClick}>
-      <CardContainer data-testid="profile-card" onClick={(e) => e.stopPropagation()}>
-        <CloseButton onClick={onClose} aria-label="閉じる">
+    <Overlay data-testid="profile-overlay" onClick={handleOverlayClick} $closing={isClosing}>
+      <CardContainer data-testid="profile-card" onClick={(e) => e.stopPropagation()} $closing={isClosing}>
+        <CloseButton onClick={startClose} aria-label="閉じる">
           ✕
         </CloseButton>
 
@@ -297,7 +338,7 @@ export const CharacterProfileCard: React.FC<CharacterProfileCardProps> = ({
             {profile.grade} | {profile.age}歳 | {profile.height}
           </div>
           <div>
-            {profile.birthday}生 | {profile.school}
+            {profile.birthday}生 | {profile.school} {profile.club}
           </div>
         </InfoSection>
 

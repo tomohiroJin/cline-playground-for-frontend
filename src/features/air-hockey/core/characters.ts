@@ -190,6 +190,16 @@ export const findCharacterById = (id: string): Character | undefined => {
   return ALL_CHARACTERS_BY_ID[id];
 };
 
+/** 全キャラクターをリストで取得（主人公 + ストーリー + フリー対戦） */
+export const getAllCharacters = (): Character[] => {
+  return Object.values(ALL_CHARACTERS_BY_ID);
+};
+
+/** 対戦可能キャラクターを取得（主人公 + フリー対戦キャラ） */
+export const getBattleCharacters = (): Character[] => {
+  return [PLAYER_CHARACTER, ...Object.values(FREE_BATTLE_CHARACTERS)];
+};
+
 /** リアクション配列からランダムに1つ選択 */
 export const getRandomReaction = (reactions: string[]): string => {
   return reactions[Math.floor(Math.random() * reactions.length)];

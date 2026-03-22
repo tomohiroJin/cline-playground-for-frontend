@@ -10,9 +10,9 @@
 import React, { useEffect } from 'react';
 import { Physics } from '../../core/physics';
 import { CpuAI } from '../../core/ai';
-import { EntityFactory } from '../../core/entities';
+import { EntityFactory, moveMalletTo } from '../../core/entities';
 import { applyItemEffect } from '../../core/items';
-import { CONSTANTS } from '../../core/constants';
+import { CONSTANTS, DEFAULT_PLAYER_MALLET_COLOR, DEFAULT_CPU_MALLET_COLOR } from '../../core/constants';
 import { ITEMS } from '../../core/config';
 import { magnitude, randomRange } from '../../../../utils/math-utils';
 import { Renderer } from '../../renderer';
@@ -32,6 +32,7 @@ import type {
 } from '../../core/types';
 import { applyKeyboardMovement } from '../../hooks/useKeyboardInput';
 import type { KeyboardState } from '../../core/keyboard';
+import { calculateKeyboardMovement } from '../../core/keyboard';
 
 // ランダム選択ヘルパー
 const randomChoice = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
@@ -54,6 +55,11 @@ export type GameLoopConfig = {
   winScore: number;
   getSound: () => SoundSystem;
   bgmEnabled: boolean;
+  gameMode?: 'free' | 'story' | '2p-local';
+  /** プレイヤーマレットの色（2P 対戦時にキャラカラーを反映） */
+  playerMalletColor?: string;
+  /** CPU/2P マレットの色（2P 対戦時にキャラカラーを反映） */
+  cpuMalletColor?: string;
 };
 
 /** Ref グループ（ゲームループが参照・更新する ref） */
@@ -68,6 +74,9 @@ export type GameLoopRefs = {
   statsRef: React.MutableRefObject<MatchStats>;
   matchStartRef: React.MutableRefObject<number>;
   keysRef?: React.MutableRefObject<KeyboardState>;
+  player2KeysRef?: React.MutableRefObject<KeyboardState>;
+  /** マルチタッチ状態の Ref（2P タッチ入力用） */
+  multiTouchRef?: React.RefObject<import('../../core/multi-touch').MultiTouchState>;
 };
 
 /** React state 更新コールバックグループ */
@@ -99,12 +108,15 @@ export type UseGameLoopParams = {
  * - callbacks: React state 更新コールバック
  */
 export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGameLoopParams): void {
-  const { difficulty: diff, field, winScore, getSound, bgmEnabled } = config;
+  const { difficulty: diff, field, winScore, getSound, bgmEnabled, gameMode, playerMalletColor, cpuMalletColor } = config;
+  const pColor = playerMalletColor ?? DEFAULT_PLAYER_MALLET_COLOR;
+  const cColor = cpuMalletColor ?? DEFAULT_CPU_MALLET_COLOR;
   const {
     gameRef, canvasRef, lastInputRef, scoreRef,
     phaseRef, countdownStartRef, shakeRef,
-    statsRef, matchStartRef, keysRef,
+    statsRef, matchStartRef, keysRef, player2KeysRef, multiTouchRef,
   } = refs;
+  const is2PMode = gameMode === '2p-local';
   const { setScores, setWinner, setScreen, setShowHelp, setShake } = callbacks;
 
   useEffect(() => {
@@ -308,8 +320,8 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
 
         Renderer.clear(ctx, consts, now);
         Renderer.drawField(ctx, field, consts, game.obstacleStates, now);
-        Renderer.drawMallet(ctx, game.cpu, '#e74c3c', false, consts);
-        Renderer.drawMallet(ctx, game.player, '#3498db', false, consts);
+        Renderer.drawMallet(ctx, game.cpu, cColor, false, consts);
+        Renderer.drawMallet(ctx, game.player, pColor, false, consts);
 
         if (elapsed < COUNTDOWN_DURATION) {
           const countdownValue = 3 - Math.floor(elapsed / 1000);
@@ -343,8 +355,8 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         Renderer.drawEffectZones(ctx, game.effects, now, consts);
         game.items.forEach((item: Item) => Renderer.drawItem(ctx, item, now, consts));
         game.pucks.forEach((puck: Puck) => Renderer.drawPuck(ctx, puck, consts));
-        Renderer.drawMallet(ctx, game.cpu, '#e74c3c', false, consts);
-        Renderer.drawMallet(ctx, game.player, '#3498db', game.effects.player.invisible > 0, consts);
+        Renderer.drawMallet(ctx, game.cpu, cColor, false, consts);
+        Renderer.drawMallet(ctx, game.player, pColor, game.effects.player.invisible > 0, consts);
         Renderer.drawPauseOverlay(ctx, consts);
         animationRef = requestAnimationFrame(gameLoop);
         return;
@@ -380,8 +392,8 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         game.pucks.forEach((puck: Puck) => Renderer.drawPuck(ctx, puck, consts));
         const cpuScale = getMalletScale('cpu');
         const playerScale = getMalletScale('player');
-        Renderer.drawMallet(ctx, game.cpu, '#e74c3c', false, consts, cpuScale);
-        Renderer.drawMallet(ctx, game.player, '#3498db', game.effects.player.invisible > 0, consts, playerScale);
+        Renderer.drawMallet(ctx, game.cpu, cColor, false, consts, cpuScale);
+        Renderer.drawMallet(ctx, game.player, pColor, game.effects.player.invisible > 0, consts, playerScale);
         Renderer.drawParticles(ctx, game.particles);
         Renderer.drawShockwave(ctx, hitStop);
         animationRef = requestAnimationFrame(gameLoop);
@@ -429,13 +441,38 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         applyKeyboardMovement(game, keysRef, lastInputRef);
       }
 
-      // CPU AI 更新
-      const cpuUpdate = CpuAI.update(game, diff, now, consts);
-      if (cpuUpdate) {
-        game.cpu = cpuUpdate.cpu;
-        game.cpuTarget = cpuUpdate.cpuTarget;
-        game.cpuTargetTime = cpuUpdate.cpuTargetTime;
-        game.cpuStuckTimer = cpuUpdate.cpuStuckTimer;
+      // 2P 入力の優先順位:
+      //   1. マルチタッチ（タッチ中のみ反映、指を離すと停止）
+      //   2. キーボード（タッチ未使用時のフォールバック、またはタッチ後にキーボードで上書き）
+      // 同一フレームで両方アクティブな場合、キーボードがタッチの結果を上書きする（意図的な設計）
+      if (is2PMode && multiTouchRef?.current) {
+        const touchState = multiTouchRef.current;
+        if (touchState.player1Position) {
+          moveMalletTo(game.player, touchState.player1Position.x, touchState.player1Position.y);
+          lastInputRef.current = Date.now();
+        }
+        if (touchState.player2Position) {
+          moveMalletTo(game.cpu, touchState.player2Position.x, touchState.player2Position.y);
+        }
+      }
+
+      // 2P モード: WASD キーボード入力で CPU マレットを操作
+      // 1P モード: CPU AI で CPU マレットを操作
+      if (is2PMode && player2KeysRef) {
+        const keys2 = player2KeysRef.current;
+        const hasInput = keys2.up || keys2.down || keys2.left || keys2.right;
+        if (hasInput) {
+          const result = calculateKeyboardMovement(keys2, { x: game.cpu.x, y: game.cpu.y }, consts, 'player2');
+          moveMalletTo(game.cpu, result.x, result.y);
+        }
+      } else {
+        const cpuUpdate = CpuAI.update(game, diff, now, consts);
+        if (cpuUpdate) {
+          game.cpu = cpuUpdate.cpu;
+          game.cpuTarget = cpuUpdate.cpuTarget;
+          game.cpuTargetTime = cpuUpdate.cpuTargetTime;
+          game.cpuStuckTimer = cpuUpdate.cpuStuckTimer;
+        }
       }
 
       // フィーバー判定
@@ -622,8 +659,8 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       Renderer.drawEffectZones(ctx, game.effects, now, consts);
       game.items.forEach((item: Item) => Renderer.drawItem(ctx, item, now, consts));
       game.pucks.forEach((puck: Puck) => Renderer.drawPuck(ctx, puck, consts));
-      Renderer.drawMallet(ctx, game.cpu, '#e74c3c', false, consts, getMalletScale('cpu'));
-      Renderer.drawMallet(ctx, game.player, '#3498db', game.effects.player.invisible > 0, consts, getMalletScale('player'));
+      Renderer.drawMallet(ctx, game.cpu, cColor, false, consts, getMalletScale('cpu'));
+      Renderer.drawMallet(ctx, game.player, pColor, game.effects.player.invisible > 0, consts, getMalletScale('player'));
       Renderer.drawParticles(ctx, game.particles);
       Renderer.drawHUD(ctx, game.effects, now, consts);
       Renderer.drawFlash(ctx, game.flash, now, consts);
@@ -741,5 +778,6 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       gameRef, canvasRef, lastInputRef, scoreRef,
       setScores, setWinner, setScreen, setShowHelp,
       phaseRef, countdownStartRef, shakeRef, setShake, bgmEnabled,
-      statsRef, matchStartRef, keysRef]);
+      statsRef, matchStartRef, keysRef,
+      is2PMode, pColor, cColor, player2KeysRef, multiTouchRef]);
 }

@@ -13,7 +13,7 @@
  */
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { CharacterProfileCard } from './CharacterProfileCard';
+import { CharacterProfileCard, FADE_OUT_DURATION_MS } from './CharacterProfileCard';
 import type { Character, DexEntry } from '../core/types';
 
 // テスト用の図鑑エントリ（立ち絵あり）
@@ -194,35 +194,62 @@ describe('CharacterProfileCard', () => {
   });
 
   describe('閉じる操作', () => {
-    it('閉じるボタンで onClose が呼ばれる', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('閉じるボタンでフェードアウト後に onClose が呼ばれる', () => {
       render(<CharacterProfileCard {...defaultProps} />);
 
-      const closeButton = screen.getByRole('button', { name: '閉じる' });
-      fireEvent.click(closeButton);
+      fireEvent.click(screen.getByRole('button', { name: '閉じる' }));
+
+      // フェードアウト中は onClose が呼ばれない
+      expect(defaultProps.onClose).not.toHaveBeenCalled();
+
+      // フェードアウト完了後に onClose が呼ばれる
+      jest.advanceTimersByTime(FADE_OUT_DURATION_MS + 50);
       expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
     });
 
-    it('背景オーバーレイタップで onClose が呼ばれる', () => {
+    it('背景オーバーレイタップでフェードアウト後に onClose が呼ばれる', () => {
       render(<CharacterProfileCard {...defaultProps} />);
 
-      const overlay = screen.getByTestId('profile-overlay');
-      fireEvent.click(overlay);
+      fireEvent.click(screen.getByTestId('profile-overlay'));
+
+      expect(defaultProps.onClose).not.toHaveBeenCalled();
+      jest.advanceTimersByTime(FADE_OUT_DURATION_MS + 50);
       expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
     });
 
     it('カード本体のクリックでは onClose が呼ばれない', () => {
       render(<CharacterProfileCard {...defaultProps} />);
 
-      const card = screen.getByTestId('profile-card');
-      fireEvent.click(card);
+      fireEvent.click(screen.getByTestId('profile-card'));
+      jest.advanceTimersByTime(FADE_OUT_DURATION_MS + 50);
       expect(defaultProps.onClose).not.toHaveBeenCalled();
     });
 
-    it('Escape キーで onClose が呼ばれる', () => {
+    it('Escape キーでフェードアウト後に onClose が呼ばれる', () => {
       render(<CharacterProfileCard {...defaultProps} />);
 
       fireEvent.keyDown(document, { key: 'Escape' });
+
+      expect(defaultProps.onClose).not.toHaveBeenCalled();
+      jest.advanceTimersByTime(FADE_OUT_DURATION_MS + 50);
       expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('club フィールド表示', () => {
+    it('部活名が学校名の横に表示される', () => {
+      render(<CharacterProfileCard {...defaultProps} />);
+
+      // 「蒼風館高校 エアホッケー部」がセットで表示される
+      expect(screen.getByText(/蒼風館高校.*エアホッケー部/)).toBeInTheDocument();
     });
   });
 });

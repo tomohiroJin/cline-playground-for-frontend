@@ -24,6 +24,14 @@ type ResultScreenProps = {
   playerCharacter?: Character;
   /** 新規アンロックされたキャラ名（通知用） */
   newlyUnlockedCharacterName?: string;
+  /** 2P 対戦モードかどうか */
+  is2PMode?: boolean;
+  /** 1P のキャラクター名（2P 対戦用） */
+  player1CharacterName?: string;
+  /** 2P のキャラクター名（2P 対戦用） */
+  player2CharacterName?: string;
+  /** キャラ選択に戻る（2P 対戦用） */
+  onBackToCharacterSelect?: () => void;
 };
 
 // カウントアップアニメーション用フック
@@ -202,11 +210,24 @@ const UnlockBanner: React.FC<{ characterName: string }> = ({ characterName }) =>
   );
 };
 
+/** 勝者表示テキストを生成する */
+function getWinnerText(
+  is2PMode: boolean | undefined,
+  isWin: boolean,
+  player1Name?: string,
+  player2Name?: string
+): string {
+  if (!is2PMode) return isWin ? 'YOU WIN!' : 'YOU LOSE';
+  if (isWin) return player1Name ? `${player1Name} Win!` : '1P Win!';
+  return player2Name ? `${player2Name} Win!` : '2P Win!';
+}
+
 export const ResultScreen: React.FC<ResultScreenProps> = ({
   winner, scores, onBackToMenu, onReplay, stats, newAchievements,
   suggestedDifficulty, onAcceptDifficulty,
   onBackToStageSelect, onNextStage,
   cpuCharacter, playerCharacter, newlyUnlockedCharacterName,
+  is2PMode, player1CharacterName, player2CharacterName, onBackToCharacterSelect,
 }) => {
   const isWin = winner === 'player';
 
@@ -229,14 +250,14 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
 
   return (
     <MenuCard style={{ position: 'relative', overflow: 'hidden' }}>
-      {isWin && <ConfettiOverlay />}
+      {(is2PMode || isWin) && <ConfettiOverlay />}
 
       <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
         <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>
-          {isWin ? '🎉' : '😢'}
+          {is2PMode ? '🎊' : isWin ? '🎉' : '😢'}
         </div>
-        <GameTitle style={{ color: isWin ? 'var(--accent-color)' : '#ff4444' }}>
-          {isWin ? 'YOU WIN!' : 'YOU LOSE'}
+        <GameTitle style={{ color: (is2PMode || isWin) ? 'var(--accent-color)' : '#ff4444' }}>
+          {getWinnerText(is2PMode, isWin, player1CharacterName, player2CharacterName)}
         </GameTitle>
         <p style={{ fontSize: '2rem', color: 'white', fontWeight: 'bold', marginBottom: '20px' }}>
           {scores.p} - {scores.c}
@@ -300,8 +321,8 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
           </div>
         )}
 
-        {/* 新規実績 */}
-        {newAchievements && newAchievements.length > 0 && (
+        {/* 新規実績（2P 対戦では非表示） */}
+        {!is2PMode && newAchievements && newAchievements.length > 0 && (
           <div style={{ width: '100%', marginBottom: '1rem' }}>
             <p style={{ color: '#ffd700', fontSize: '0.8rem', textAlign: 'center', marginBottom: '8px', fontWeight: 'bold' }}>
               NEW ACHIEVEMENTS!
@@ -380,6 +401,11 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
           {onBackToStageSelect && (
             <StartButton onClick={onBackToStageSelect} style={{ background: 'linear-gradient(135deg, #a55eea, #8854d0)' }}>
               ステージ選択
+            </StartButton>
+          )}
+          {is2PMode && onBackToCharacterSelect && (
+            <StartButton onClick={onBackToCharacterSelect} style={{ background: 'linear-gradient(135deg, #e67e22, #d35400)' }}>
+              キャラ選択に戻る
             </StartButton>
           )}
           <StartButton onClick={onBackToMenu}>BACK TO MENU</StartButton>

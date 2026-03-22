@@ -3,6 +3,14 @@ import { GameState, Mallet, Puck, Item, ItemType, FieldConfig, ObstacleState, Ma
 
 const randomRange = (min: number, max: number) => Math.random() * (max - min) + min;
 
+/** マレットを目標位置に移動し速度を設定する */
+export function moveMalletTo(mallet: Mallet, targetX: number, targetY: number): void {
+  mallet.vx = targetX - mallet.x;
+  mallet.vy = targetY - mallet.y;
+  mallet.x = targetX;
+  mallet.y = targetY;
+}
+
 export const EntityFactory = {
   createMallet: (x: number, y: number): Mallet => ({ x, y, vx: 0, vy: 0 }),
   createPuck: (x: number, y: number, vx = 0, vy = 1.5): Puck => ({

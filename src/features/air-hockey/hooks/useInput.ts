@@ -1,7 +1,8 @@
 import React, { useCallback, RefObject } from 'react';
 import { clamp } from '../../../utils/math-utils';
-import { CONSTANTS } from '../core/constants';
+import { CONSTANTS, screenToCanvas, getPlayerXBounds, getPlayerYBounds } from '../core/constants';
 import { GameState } from '../core/types';
+import { moveMalletTo } from '../core/entities';
 
 /**
  * マウス/タッチ入力を処理し、プレイヤーのマレット位置を更新するフック
@@ -18,9 +19,6 @@ export function useInput(
     (e: React.MouseEvent | React.TouchEvent) => {
       const game = gameRef.current;
       if (!game || screen !== 'game') return;
-
-      const { WIDTH: W, HEIGHT: H } = CONSTANTS.CANVAS;
-      const { MALLET: MR } = CONSTANTS.SIZES;
 
       const now = Date.now();
       lastInputRef.current = now;
@@ -42,13 +40,13 @@ export function useInput(
         clientY = (e as React.MouseEvent).clientY;
       }
 
-      const newX = clamp(((clientX - rect.left) / rect.width) * W, MR + 5, W - MR - 5);
-      const newY = clamp(((clientY - rect.top) / rect.height) * H, H / 2 + MR + 10, H - MR - 5);
+      const canvas = screenToCanvas(clientX, clientY, rect, CONSTANTS);
+      const { minX, maxX } = getPlayerXBounds(CONSTANTS);
+      const { minY, maxY } = getPlayerYBounds('player1', CONSTANTS);
+      const newX = clamp(canvas.canvasX, minX, maxX);
+      const newY = clamp(canvas.canvasY, minY, maxY);
 
-      game.player.vx = newX - game.player.x;
-      game.player.vy = newY - game.player.y;
-      game.player.x = newX;
-      game.player.y = newY;
+      moveMalletTo(game.player, newX, newY);
     },
     [screen, showHelp, gameRef, canvasRef, lastInputRef, setShowHelp]
   );

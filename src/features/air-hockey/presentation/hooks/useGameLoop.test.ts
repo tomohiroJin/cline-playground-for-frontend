@@ -134,6 +134,31 @@ describe('useGameLoop（プレゼンテーション層）', () => {
     });
   });
 
+  describe('GameLoopConfig', () => {
+    it('gameMode を指定できる', () => {
+      const config: GameLoopConfig = {
+        ...createDefaultConfig(),
+        gameMode: '2p-local',
+      };
+      expect(config.gameMode).toBe('2p-local');
+    });
+
+    it('gameMode を省略するとデフォルトは undefined（後方互換）', () => {
+      const config = createDefaultConfig();
+      expect(config.gameMode).toBeUndefined();
+    });
+  });
+
+  describe('GameLoopRefs', () => {
+    it('player2KeysRef を含められる', () => {
+      const refs = {
+        ...createMockRefs(),
+        player2KeysRef: { current: { up: false, down: false, left: false, right: false } },
+      };
+      expect(refs.player2KeysRef).toBeDefined();
+    });
+  });
+
   describe('rAF 管理', () => {
     it('screen が game のとき requestAnimationFrame が呼ばれる', () => {
       const { unmount } = renderHook(() =>

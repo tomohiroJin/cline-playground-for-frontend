@@ -76,5 +76,5 @@ export const ITEMS = [
 ] as const;
 
 export const DIFFICULTY_OPTIONS = ['easy', 'normal', 'hard'] as const;
-export const DIFFICULTY_LABELS = { easy: 'Easy', normal: 'Normal', hard: 'Hard' };
+export const DIFFICULTY_LABELS = { easy: 'ルーキー', normal: 'レギュラー', hard: 'エース' };
 export const WIN_SCORE_OPTIONS = [3, 7, 15];
