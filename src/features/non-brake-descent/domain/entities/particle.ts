@@ -9,7 +9,7 @@ export const createParticle = (
   x: number,
   y: number,
   color: string,
-  lifetime = Config.particle.lifetime
+  lifetime: number = Config.particle.lifetime
 ): Particle => ({
   x,
   y,
