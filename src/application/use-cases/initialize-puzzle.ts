@@ -26,13 +26,15 @@ export const initializePuzzle = (
   const board = createPuzzleBoard(division);
   const moves = shuffleMovesOverride ?? calculateShuffleMoves(division);
 
-  for (let attempt = 0; attempt < MAX_RESHUFFLE_ATTEMPTS; attempt++) {
-    const shuffled = shufflePuzzle(board, moves);
+  for (let attempt = 0; attempt <= MAX_RESHUFFLE_ATTEMPTS; attempt++) {
+    // 最終試行ではシャッフル回数を倍にして完成状態を回避
+    const shuffleMoves = attempt < MAX_RESHUFFLE_ATTEMPTS ? moves : moves * 2;
+    const shuffled = shufflePuzzle(board, shuffleMoves);
     if (!shuffled.isCompleted) {
       return shuffled;
     }
   }
 
-  // 極めて稀なケース: 最終試行結果を返す（完成状態の可能性あり）
-  return shufflePuzzle(board, moves);
+  // 理論上到達不可能だが型安全のため
+  return shufflePuzzle(board, moves * 2);
 };
