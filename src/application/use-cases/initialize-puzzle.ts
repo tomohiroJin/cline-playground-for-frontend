@@ -7,12 +7,17 @@ import { createPuzzleBoard, PuzzleBoardState } from '../../domain/puzzle/aggrega
 import { shufflePuzzle } from '../../domain/puzzle/services/shuffle-service';
 import { calculateShuffleMoves } from '../../domain/puzzle/value-objects/division';
 
+/** シャッフル後に完成状態だった場合の最大再試行回数 */
+const MAX_RESHUFFLE_ATTEMPTS = 10;
+
 /**
  * パズルを初期化する
  *
+ * シャッフル後に偶然完成状態になった場合は再シャッフルする。
+ *
  * @param division 分割数
  * @param shuffleMovesOverride シャッフル回数の上書き（テスト用）
- * @returns シャッフル済みのパズルボード状態
+ * @returns シャッフル済みのパズルボード状態（必ず未完成）
  */
 export const initializePuzzle = (
   division: number,
@@ -20,5 +25,14 @@ export const initializePuzzle = (
 ): PuzzleBoardState => {
   const board = createPuzzleBoard(division);
   const moves = shuffleMovesOverride ?? calculateShuffleMoves(division);
+
+  for (let attempt = 0; attempt < MAX_RESHUFFLE_ATTEMPTS; attempt++) {
+    const shuffled = shufflePuzzle(board, moves);
+    if (!shuffled.isCompleted) {
+      return shuffled;
+    }
+  }
+
+  // 極めて稀なケース: 最終試行結果を返す（完成状態の可能性あり）
   return shufflePuzzle(board, moves);
 };

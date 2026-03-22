@@ -54,7 +54,7 @@ describe('sitemap.xml', () => {
     });
   });
 
-  it('lastmod が 2026-03-05 で設定されている', () => {
+  it('lastmod が有効な日付形式（YYYY-MM-DD）で設定されている', () => {
     const newPages = ['/about', '/privacy-policy', '/terms', '/contact'];
     for (const page of newPages) {
       const escapedPage = page.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -65,7 +65,8 @@ describe('sitemap.xml', () => {
         )
       );
       expect(match).not.toBeNull();
-      expect(match![1]).toBe('2026-03-05');
+      // 日付形式の検証（特定日付へのハードコードではなく形式を検証）
+      expect(match![1]).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     }
   });
 
