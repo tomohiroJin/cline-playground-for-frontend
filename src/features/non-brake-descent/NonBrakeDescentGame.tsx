@@ -79,7 +79,7 @@ const createCollisionHandlers = (
       onEnemyKill(ox);
       return 'slow';
     }
-    bounce(px < ox ? -5 : 5);
+    bounce(px < ox ? -Config.combat.bounceSpeed : Config.combat.bounceSpeed);
     return false;
   };
   return {
@@ -296,13 +296,13 @@ export const NonBrakeDescentGame: React.FC<NonBrakeDescentGameProps> = ({ onScor
           window.setTimeout(() => {
             Audio.playMelody('gameOverScreen');
             Audio.playMelody('rankReveal');
-          }, 300);
+          }, Config.animation.gameOverScreenDelay);
           return current;
         }
         return { ...current, frame: current.frame + 1 };
       });
-      setShake(current => Math.max(0, current * 0.88));
-    }, 35);
+      setShake(current => Math.max(0, current * Config.animation.shakeDecay));
+    }, Config.animation.deathAnimInterval);
     return () => window.clearInterval(iv);
   }, [state]);
 
@@ -322,7 +322,7 @@ export const NonBrakeDescentGame: React.FC<NonBrakeDescentGameProps> = ({ onScor
           }
           return { ...current, frame: current.frame + 1 };
         }),
-      30
+      Config.animation.clearAnimInterval
     );
     return () => window.clearInterval(iv);
   }, [state]);
@@ -352,7 +352,7 @@ export const NonBrakeDescentGame: React.FC<NonBrakeDescentGameProps> = ({ onScor
 
   useEffect(() => {
     if (state === GameState.TITLE) {
-      const t = window.setTimeout(() => Audio.playMelody('title'), 500);
+      const t = window.setTimeout(() => Audio.playMelody('title'), Config.animation.titleMelodyDelay);
       return () => window.clearTimeout(t);
     }
     return;
@@ -383,7 +383,7 @@ export const NonBrakeDescentGame: React.FC<NonBrakeDescentGameProps> = ({ onScor
       setClouds(current => ParticleSys.updateClouds(current, speed));
       setJetParticles(prev => {
         let updated = ParticleSys.updateAndFilter(prev, ParticleSys.updateParticle);
-        if (speed > 5 && frameRef.current % 2 === 0) {
+        if (speed > Config.particle.jetSpeedThreshold && frameRef.current % 2 === 0) {
           const ramp = ramps[player.ramp];
           if (ramp) {
             const geo = GeometryDomain.getRampGeometry(ramp, W, RAMP_H);
@@ -460,7 +460,7 @@ export const NonBrakeDescentGame: React.FC<NonBrakeDescentGameProps> = ({ onScor
             onEnemyKill: ox => {
               Audio.play('enemyKill');
               setScore(current => current + Config.score.enemy);
-              setSpeed(current => Math.max(MIN_SPD, current - 2));
+              setSpeed(current => Math.max(MIN_SPD, current - Config.combat.enemyKillSlowdown));
               addParticles(ox, prev.ramp * RAMP_H - camY + 25, '#ff8800', 10);
               addScorePopup(ox, prev.ramp * RAMP_H - camY, `+${Config.score.enemy}`, '#ff8800');
             },
@@ -491,12 +491,12 @@ export const NonBrakeDescentGame: React.FC<NonBrakeDescentGameProps> = ({ onScor
           if (handler) {
             const result = handler(col, obstacle, ox, prev.x);
             if (result === true) return prev;
-            if (result === 'slow') return { ...prev, vx: -prev.vx * 0.4 };
+            if (result === 'slow') return { ...prev, vx: -prev.vx * Config.combat.bounceMultiplier };
           }
         }
         return prev;
       });
-      setCamY(current => MathUtils.lerp(current, player.ramp * RAMP_H - H / 3, 0.1));
+      setCamY(current => MathUtils.lerp(current, player.ramp * RAMP_H - H / Config.camera.offsetDivisor, Config.camera.followRate));
     }, 1000 / 60);
     return () => window.clearInterval(loop);
   }, [state, W, H, MIN_SPD, RAMP_H, addParticles, addScorePopup,

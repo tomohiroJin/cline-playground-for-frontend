@@ -10,7 +10,7 @@ export const Physics = {
     vx *= Config.physics.friction;
     return {
       ...player,
-      x: MathUtils.clamp(player.x + dir * speed * 1.2 + vx, 25, Config.screen.width - 25),
+      x: MathUtils.clamp(player.x + dir * speed * 1.2 + vx, Config.player.moveMargin, Config.screen.width - Config.player.moveMargin),
       vx,
     };
   },
@@ -56,13 +56,13 @@ export const Physics = {
     const ramp = ramps[player.ramp];
     if (!ramp || player.jumping) return { transitioned: false, player };
     const atEnd =
-      (ramp.dir === 1 && player.x >= width - 30) || (ramp.dir === -1 && player.x <= 30);
+      (ramp.dir === 1 && player.x >= width - Config.ramp.transitionMargin) || (ramp.dir === -1 && player.x <= Config.ramp.transitionMargin);
     if (!atEnd) return { transitioned: false, player };
     const next = player.ramp + 1;
     if (next >= ramps.length) return { transitioned: false, player, isGoal: true };
     return {
       transitioned: true,
-      player: { ...player, ramp: next, x: ramps[next].dir === 1 ? 45 : width - 45, y: 0 },
+      player: { ...player, ramp: next, x: ramps[next].dir === 1 ? Config.ramp.startOffset : width - Config.ramp.startOffset, y: 0 },
     };
   },
 } as const;
