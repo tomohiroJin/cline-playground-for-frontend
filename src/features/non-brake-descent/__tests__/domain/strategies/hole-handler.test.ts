@@ -1,7 +1,7 @@
 import { holeSmallHandler, holeLargeHandler } from '../../../domain/strategies/collision/hole-handler';
 import { CollisionContext } from '../../../domain/strategies/collision/collision-handler';
 import { SpeedRank } from '../../../constants';
-import { CollisionCheckResult, Obstacle } from '../../../types';
+import { Obstacle } from '../../../types';
 
 /** テスト用のデフォルトコンテキストを生成する */
 const createContext = (overrides: Partial<CollisionContext> = {}): CollisionContext => ({

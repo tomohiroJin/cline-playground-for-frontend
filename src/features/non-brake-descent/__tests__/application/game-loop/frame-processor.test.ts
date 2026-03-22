@@ -14,7 +14,7 @@ import {
   createInitialGameWorld,
   createInitialUIState,
 } from '../../../application/game-loop/game-state';
-import type { GameWorld, UIState } from '../../../application/game-loop/game-state';
+import type { GameWorld } from '../../../application/game-loop/game-state';
 import { buildPlayer, buildRamp } from '../../helpers/test-factories';
 
 /** テスト用のデフォルト FrameContext を生成する */

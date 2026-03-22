@@ -6,7 +6,7 @@
  * Phase 2 で作成した CollisionRegistry を使用してハンドラを呼び出す。
  */
 import { Config } from '../../config';
-import { createNearMissEffect } from '../../domain/entities';
+
 import { GameEvent } from '../../domain/events/game-events';
 import { CollisionDomain } from '../../domain/services/collision-service';
 import { GeometryDomain } from '../../domain/services/geometry-service';

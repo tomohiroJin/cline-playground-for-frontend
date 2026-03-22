@@ -3,8 +3,7 @@
  *
  * 既存の generators.test.ts と同等のテストを application 層のモジュールに対して実施する。
  */
-import { Config } from '../../../config';
-import { ObstacleType, RampType } from '../../../constants';
+import { RampType } from '../../../constants';
 import { RampGen } from '../../../application/generators/ramp-generator';
 import { ObstacleGen } from '../../../application/generators/obstacle-generator';
 import { BackgroundGen } from '../../../application/generators/background-generator';

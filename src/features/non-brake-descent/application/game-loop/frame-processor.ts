@@ -7,17 +7,17 @@
  */
 import { Config } from '../../config';
 import { EffectType } from '../../constants';
-import { createJetParticle, createNearMissEffect } from '../../domain/entities';
+import { createJetParticle } from '../../domain/entities';
 import { GameEvent } from '../../domain/events/game-events';
 import { MathUtils } from '../../domain/math-utils';
-import { CollisionDomain } from '../../domain/services/collision-service';
+
 import { ComboDomain } from '../../domain/services/combo-service';
 import { DangerDomain } from '../../domain/services/danger-service';
 import { GeometryDomain } from '../../domain/services/geometry-service';
 import { Physics } from '../../domain/services/physics-service';
 import { ScoringDomain } from '../../domain/services/scoring-service';
 import { SpeedDomain } from '../../domain/services/speed-service';
-import { CollisionRegistry } from '../../domain/strategies/collision/collision-registry';
+
 import { ParticleSys } from '../../particles';
 import type { EffectState, InputState, Ramp } from '../../types';
 import { processCollisions } from '../collision/collision-processor';
