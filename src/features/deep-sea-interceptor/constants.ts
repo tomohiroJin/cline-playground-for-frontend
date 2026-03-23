@@ -4,8 +4,8 @@
 
 import type { ItemType, Difficulty, EnemyType } from './types';
 
-/** 画面スケール係数（旧 400x560 → 新 800x1000） */
-export const SCALE = 2.0;
+// 画面スケール係数メモ: 旧 400x560 → 新 800x1000（×2.0）
+// 各定数は手動でスケーリング済み
 
 /** ゲーム全体の設定 */
 export const Config = Object.freeze({
@@ -225,6 +225,34 @@ export const BOSS_NAMES: Record<number, string> = {
   4: 'LUMINOUS LEVIATHAN',
   5: 'ABYSSAL CORE',
 };
+
+// ================================================================
+// Boss5（最終ボス）3段階変形用の定数
+// ================================================================
+
+/** Boss5 第1形態: 外殻が開いている時間（ms） */
+export const BOSS5_SHELL_OPEN_MS = 2000;
+
+/** Boss5 第1形態: 外殻が閉じている時間（ms） */
+export const BOSS5_SHELL_CLOSE_MS = 3000;
+
+/** Boss5 第2形態: 雑魚召喚の間隔（ms） */
+export const BOSS5_SUMMON_INTERVAL_MS = 10000;
+
+/** Boss5 第2形態: 1回あたりの召喚数 */
+export const BOSS5_SUMMON_COUNT = 4;
+
+/** Boss5 第3形態: 攻撃間隔の基準値（ms） */
+export const BOSS5_PHASE3_BASE_FIRE_RATE = 500;
+
+/** Boss5 第3形態: 攻撃間隔の下限値（ms） */
+export const BOSS5_PHASE3_MIN_FIRE_RATE = 200;
+
+/** Boss5 第3形態: 常時画面振動の強度 */
+export const BOSS5_PHASE3_SCREEN_SHAKE = 50;
+
+/** Boss5 第3形態: 赤フラッシュが発生するHP比率 */
+export const BOSS5_PHASE3_FLASH_HP_RATIO = 0.15;
 
 /** ボス撃破時の画面シェイク量 */
 export const BOSS_DEFEAT_SCREEN_SHAKE = 500;

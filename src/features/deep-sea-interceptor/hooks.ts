@@ -45,7 +45,7 @@ export function useDeepSeaGame() {
     const handleTestModeInput = (e: KeyboardEvent) => {
       if (e.type !== 'keydown') return;
       const key = e.key.toLowerCase();
-      if (key.length === 1) {
+      if (/^[a-z]$/.test(key)) {
         testModeBuffer.current += key;
         // バッファを最新20文字に制限
         if (testModeBuffer.current.length > 20) {
@@ -86,9 +86,9 @@ export function useDeepSeaGame() {
       lives: isTestMode ? 99 : diffConfig.initialLives,
       power: isTestMode ? Config.player.maxPower : 1,
       stage: 1,
-      shieldEndTime: isTestMode ? Number.MAX_SAFE_INTEGER : 0,
+      shieldEndTime: isTestMode ? Infinity : 0,
       speedLevel: isTestMode ? Config.player.maxSpeedLevel : 0,
-      spreadTime: isTestMode ? Number.MAX_SAFE_INTEGER : 0,
+      spreadTime: isTestMode ? Infinity : 0,
       combo: 0,
       multiplier: 1.0,
       grazeCount: 0,
@@ -100,7 +100,7 @@ export function useDeepSeaGame() {
       setUiState(p => ({ ...p, highScore }));
     });
     setGameState('playing');
-  }, [selectedWeapon, selectedDifficulty]);
+  }, [selectedWeapon, selectedDifficulty, testMode]);
 
   // チャージ処理
   const handleCharge = useCallback(() => {

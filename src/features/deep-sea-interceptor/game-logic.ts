@@ -17,6 +17,10 @@ import {
   BOSS_DEFEAT_SCREEN_SHAKE, BOSS_DEFEAT_SCREEN_FLASH,
   MIDBOSS_DEFEAT_SCREEN_SHAKE, BOSS_PHASE_CHANGE_SCREEN_SHAKE,
   WARNING_DURATION_MS, BOMB_SCORE_BONUS, FRAME_MS,
+  BOSS5_SHELL_OPEN_MS, BOSS5_SHELL_CLOSE_MS,
+  BOSS5_SUMMON_INTERVAL_MS, BOSS5_SUMMON_COUNT,
+  BOSS5_PHASE3_BASE_FIRE_RATE, BOSS5_PHASE3_MIN_FIRE_RATE,
+  BOSS5_PHASE3_SCREEN_SHAKE, BOSS5_PHASE3_FLASH_HP_RATIO,
 } from './constants';
 import { EntityFactory, randomChoice, isBoss, isMidboss } from './entities';
 import { MovementStrategies } from './movement';
@@ -286,9 +290,9 @@ export function processBulletEnemyCollisions(
     let hit = false;
     enemies.forEach((e, idx) => {
       if (enemyHps[idx] > 0 && Collision.bulletEnemy(b, e)) {
-        // Boss5 第1形態: 外殻が閉じている間はダメージ無効
+        // Boss5 第1形態: 外殻が閉じている間はダメージ無効（貫通弾は貫通する）
         if (e.enemyType === 'boss5' && e.bossPhase === 1 && !e.shellOpen) {
-          hit = true;
+          if (!b.piercing) hit = true;
           audioEvents.push({ name: 'hit' });
           return;
         }
@@ -663,6 +667,9 @@ export function updateFrame(
     return MovementStrategies.item(i);
   }).filter(i => i.y < Config.canvas.height + 60);
 
+  // Boss5 第2形態の雑魚召喚用（イテレーション中の push を回避）
+  const summonedEnemies: Enemy[] = [];
+
   gd.enemies = gd.enemies
     .map(e => {
       // ボスのフェーズ遷移チェック（3フェーズ対応）
@@ -681,25 +688,25 @@ export function updateFrame(
 
       // Boss5 特殊処理
       if (e.enemyType === 'boss5') {
-        // 第1形態: 外殻の開閉（3秒閉/2秒開）
+        // 第1形態: 外殻の開閉
         if (e.bossPhase === 1) {
           const shellTimer = now - (e.shellToggleTime ?? now);
           const isOpen = e.shellOpen ?? false;
-          if (isOpen && shellTimer > 2000) {
+          if (isOpen && shellTimer > BOSS5_SHELL_OPEN_MS) {
             e.shellOpen = false;
             e.shellToggleTime = now;
-          } else if (!isOpen && shellTimer > 3000) {
+          } else if (!isOpen && shellTimer > BOSS5_SHELL_CLOSE_MS) {
             e.shellOpen = true;
             e.shellToggleTime = now;
           }
         }
-        // 第2形態: 雑魚召喚（10秒おき、basic×4）
+        // 第2形態: 雑魚召喚
         if (e.bossPhase === 2) {
           const lastSummon = e.lastSummonTime ?? 0;
-          if (now - lastSummon > 10000) {
+          if (now - lastSummon > BOSS5_SUMMON_INTERVAL_MS) {
             e.lastSummonTime = now;
-            for (let i = 0; i < 4; i++) {
-              gd.enemies.push(
+            for (let i = 0; i < BOSS5_SUMMON_COUNT; i++) {
+              summonedEnemies.push(
                 EntityFactory.enemy('basic', randomRange(100, 700), -60, currentUi.stage)
               );
             }
@@ -708,9 +715,12 @@ export function updateFrame(
         // 第3形態: HP依存の攻撃間隔短縮 + 常時画面微振動
         if (e.bossPhase === 3) {
           const hpRatio = e.hp / e.maxHp;
-          e.fireRate = Math.max(200, Math.floor(500 * (0.5 + hpRatio * 0.5)));
-          gd.screenShake = Math.max(gd.screenShake, 50);
-          if (hpRatio < 0.15) {
+          e.fireRate = Math.max(
+            BOSS5_PHASE3_MIN_FIRE_RATE,
+            Math.floor(BOSS5_PHASE3_BASE_FIRE_RATE * (0.5 + hpRatio * 0.5))
+          );
+          gd.screenShake = Math.max(gd.screenShake, BOSS5_PHASE3_SCREEN_SHAKE);
+          if (hpRatio < BOSS5_PHASE3_FLASH_HP_RATIO) {
             gd.screenFlash = Math.max(gd.screenFlash, 30);
           }
         }
@@ -726,6 +736,11 @@ export function updateFrame(
       return next;
     })
     .filter(e => e.y < Config.canvas.height + 60);
+
+  // 召喚された雑魚敵を追加（map完了後に安全に追加）
+  if (summonedEnemies.length > 0) {
+    gd.enemies.push(...summonedEnemies);
+  }
 
   // 衝突判定: 弾 → 敵（サブ関数利用）
   const collisionResult = processBulletEnemyCollisions(gd.bullets, gd.enemies, gd.combo, diffConfig);
