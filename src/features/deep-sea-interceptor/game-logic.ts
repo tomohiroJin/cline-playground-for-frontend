@@ -42,6 +42,7 @@ export const createInitialGameState = (): GameState => ({
   charging: false,
   chargeLevel: 0,
   chargeStartTime: 0,
+  lastShotTime: 0,
   spawnTimer: 0,
   bossDefeated: false,
   bossDefeatedTime: 0,

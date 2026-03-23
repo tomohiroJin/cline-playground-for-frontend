@@ -244,6 +244,13 @@ export const WARNING_DURATION_MS = 3000;
 /** ボムアイテムのスコアボーナス */
 export const BOMB_SCORE_BONUS = 500;
 
+/** 武器別射撃クールダウン（ms） */
+export const WEAPON_COOLDOWN: Record<import('./types').WeaponType, number> = {
+  torpedo: 120,
+  sonarWave: 150,
+  bioMissile: 200,
+};
+
 /** フレーム時間（ms） - 60fps基準 */
 export const FRAME_MS = 16;
 

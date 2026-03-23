@@ -5,7 +5,7 @@
 import { useState, useEffect, useRef, useCallback, useReducer } from 'react';
 import { getHighScore, saveScore } from '../../utils/score-storage';
 import { createAudioSystem } from './audio';
-import { DifficultyConfig } from './constants';
+import { DifficultyConfig, WEAPON_COOLDOWN } from './constants';
 import { createInitialGameState, createInitialUiState, updateFrame, calculateRank } from './game-logic';
 import { createBulletsForWeapon, createChargedShot } from './weapon';
 import { loadAchievements, saveAchievements, checkNewAchievements } from './achievements';
@@ -117,16 +117,21 @@ export function useDeepSeaGame() {
 
         if (isDown && (k === 'z' || k === 'Z') && gameState === 'playing') {
           const gd = gameData.current;
-          const hasSpread = uiState.spreadTime > Date.now();
-          const newBullets = createBulletsForWeapon(
-            gd.player.x,
-            gd.player.y,
-            uiState.weaponType,
-            uiState.power,
-            hasSpread
-          );
-          gd.bullets.push(...newBullets);
-          audio.current.play('shot');
+          const now = Date.now();
+          const cooldown = WEAPON_COOLDOWN[uiState.weaponType];
+          if (now - gd.lastShotTime >= cooldown) {
+            const hasSpread = uiState.spreadTime > now;
+            const newBullets = createBulletsForWeapon(
+              gd.player.x,
+              gd.player.y,
+              uiState.weaponType,
+              uiState.power,
+              hasSpread
+            );
+            gd.bullets.push(...newBullets);
+            gd.lastShotTime = now;
+            audio.current.play('shot');
+          }
         }
         if ((k === 'x' || k === 'X') && gameState === 'playing') {
           if (isDown && !gameData.current.charging) {
@@ -213,15 +218,20 @@ export function useDeepSeaGame() {
   // タッチ射撃
   const handleTouchShoot = useCallback(() => {
     const gd = gameData.current;
-    const newBullets = createBulletsForWeapon(
-      gd.player.x,
-      gd.player.y,
-      selectedWeapon,
-      uiState.power,
-      uiState.spreadTime > Date.now()
-    );
-    gd.bullets.push(...newBullets);
-    audio.current.play('shot');
+    const now = Date.now();
+    const cooldown = WEAPON_COOLDOWN[selectedWeapon];
+    if (now - gd.lastShotTime >= cooldown) {
+      const newBullets = createBulletsForWeapon(
+        gd.player.x,
+        gd.player.y,
+        selectedWeapon,
+        uiState.power,
+        uiState.spreadTime > now
+      );
+      gd.bullets.push(...newBullets);
+      gd.lastShotTime = now;
+      audio.current.play('shot');
+    }
   }, [selectedWeapon, uiState.power, uiState.spreadTime]);
 
   // タッチ移動

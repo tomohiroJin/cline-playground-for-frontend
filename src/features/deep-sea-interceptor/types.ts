@@ -107,6 +107,8 @@ export interface GameState {
   charging: boolean;
   chargeLevel: number;
   chargeStartTime: number;
+  /** 最終射撃時刻（クールダウン制御用） */
+  lastShotTime: number;
   spawnTimer: number;
   bossDefeated: boolean;
   bossDefeatedTime: number;
