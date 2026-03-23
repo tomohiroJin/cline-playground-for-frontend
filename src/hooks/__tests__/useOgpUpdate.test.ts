@@ -61,6 +61,36 @@ describe('useOgpUpdate', () => {
     });
   });
 
+  describe('情報ページでの OGP 更新', () => {
+    it('About ページで og:title が更新されること', () => {
+      mockPathname.pathname = '/about';
+      renderHook(() => useOgpUpdate());
+
+      expect(getOgMeta('og:title')).toBe('サイトについて - Game Platform');
+    });
+
+    it('About ページで og:description が更新されること', () => {
+      mockPathname.pathname = '/about';
+      renderHook(() => useOgpUpdate());
+
+      expect(getOgMeta('og:description')).toContain('サイト概要');
+    });
+
+    it('About ページで og:url が更新されること', () => {
+      mockPathname.pathname = '/about';
+      renderHook(() => useOgpUpdate());
+
+      expect(getOgMeta('og:url')).toBe('https://play.niku9.click/about');
+    });
+
+    it('Contact ページで og:title が更新されること', () => {
+      mockPathname.pathname = '/contact';
+      renderHook(() => useOgpUpdate());
+
+      expect(getOgMeta('og:title')).toBe('お問い合わせ - Game Platform');
+    });
+  });
+
   describe('ホームページでの OGP', () => {
     it('ホームページでは元の OGP が維持されること', () => {
       mockPathname.pathname = '/';
