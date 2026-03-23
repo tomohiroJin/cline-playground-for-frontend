@@ -64,6 +64,7 @@ export default function DeepSeaInterceptorGame() {
     selectedDifficulty,
     setSelectedDifficulty,
     newAchievements,
+    testMode,
   } = useDeepSeaGame();
 
   const gd = gameData.current;
@@ -141,6 +142,22 @@ export default function DeepSeaInterceptorGame() {
             <Button $primary onClick={startGame}>
               START GAME
             </Button>
+            {testMode && (
+              <div style={{
+                marginTop: 16,
+                padding: '8px 24px',
+                background: 'rgba(255,200,0,0.2)',
+                border: '2px solid #fc0',
+                borderRadius: 8,
+                color: '#fc0',
+                fontSize: 20,
+                fontWeight: 'bold',
+                textShadow: '0 0 10px #fa0',
+                animation: 'blink 1s infinite',
+              }}>
+                TEST MODE ACTIVATED
+              </div>
+            )}
             <div style={{ marginTop: 36, fontSize: 20, color: '#aaa' }}>
               HIGH SCORE: {uiState.highScore}
             </div>
@@ -372,6 +389,7 @@ export default function DeepSeaInterceptorGame() {
           stageName={cfg.name}
           bossEnemy={bossEnemy}
           showGraze={showGraze}
+          testMode={testMode}
         />
 
         {/* エンティティ */}

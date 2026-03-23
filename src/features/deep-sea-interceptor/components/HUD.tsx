@@ -11,10 +11,11 @@ interface HUDProps {
   stageName: string;
   bossEnemy?: Enemy;
   showGraze?: boolean;
+  testMode?: boolean;
 }
 
 /** ゲーム中のスコア・ライフ・パワー表示 */
-const HUD = memo(function HUD({ uiState, stageName, bossEnemy, showGraze }: HUDProps) {
+const HUD = memo(function HUD({ uiState, stageName, bossEnemy, showGraze, testMode }: HUDProps) {
   return (
     <>
       <div
@@ -134,6 +135,25 @@ const HUD = memo(function HUD({ uiState, stageName, bossEnemy, showGraze }: HUDP
               }}
             />
           </div>
+        </div>
+      )}
+      {testMode && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 16,
+            right: 16,
+            padding: '4px 12px',
+            background: 'rgba(255,200,0,0.2)',
+            border: '1px solid #fc0',
+            borderRadius: 4,
+            color: '#fc0',
+            fontSize: 14,
+            fontWeight: 'bold',
+            opacity: 0.6,
+          }}
+        >
+          TEST
         </div>
       )}
     </>

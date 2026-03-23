@@ -5,10 +5,11 @@
 import { useState, useEffect, useRef, useCallback, useReducer } from 'react';
 import { getHighScore, saveScore } from '../../utils/score-storage';
 import { createAudioSystem } from './audio';
-import { DifficultyConfig, WEAPON_COOLDOWN } from './constants';
+import { Config, DifficultyConfig, WEAPON_COOLDOWN } from './constants';
 import { createInitialGameState, createInitialUiState, updateFrame, calculateRank } from './game-logic';
 import { createBulletsForWeapon, createChargedShot } from './weapon';
 import { loadAchievements, saveAchievements, checkNewAchievements } from './achievements';
+import { checkTestModeInput } from './test-mode';
 import type { GameState, UiState, WeaponType, Difficulty, Achievement } from './types';
 
 /** ゲーム画面の状態 */
@@ -23,6 +24,8 @@ export function useDeepSeaGame() {
   const [selectedWeapon, setSelectedWeapon] = useState<WeaponType>('torpedo');
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('standard');
   const [newAchievements, setNewAchievements] = useState<Achievement[]>([]);
+  const [testMode, setTestMode] = useState(false);
+  const testModeBuffer = useRef('');
   const [, forceRender] = useReducer(x => x + 1, 0) as [number, () => void];
 
   const gameData = useRef<GameState>(createInitialGameState());
@@ -36,6 +39,39 @@ export function useDeepSeaGame() {
     });
   }, []);
 
+  // テストモード入力検知（タイトル画面のみ）
+  useEffect(() => {
+    if (gameState !== 'title') return;
+    const handleTestModeInput = (e: KeyboardEvent) => {
+      if (e.type !== 'keydown') return;
+      const key = e.key.toLowerCase();
+      if (key.length === 1) {
+        testModeBuffer.current += key;
+        // バッファを最新20文字に制限
+        if (testModeBuffer.current.length > 20) {
+          testModeBuffer.current = testModeBuffer.current.slice(-20);
+        }
+        const result = checkTestModeInput(testModeBuffer.current);
+        if (result.activated && !testMode) {
+          setTestMode(true);
+          testModeBuffer.current = '';
+          audio.current.init();
+          audio.current.play('testModeActivated');
+        }
+      }
+    };
+    window.addEventListener('keydown', handleTestModeInput);
+    return () => window.removeEventListener('keydown', handleTestModeInput);
+  }, [gameState, testMode]);
+
+  // タイトルに戻った時にテストモード解除
+  useEffect(() => {
+    if (gameState === 'title') {
+      setTestMode(false);
+      testModeBuffer.current = '';
+    }
+  }, [gameState]);
+
   // ゲーム開始
   const startGame = useCallback(() => {
     audio.current.init();
@@ -43,15 +79,16 @@ export function useDeepSeaGame() {
     const diffConfig = DifficultyConfig[selectedDifficulty];
     gameData.current = createInitialGameState();
     gameData.current.gameStartTime = Date.now();
+    const isTestMode = testMode;
     setUiState(p => ({
       ...p,
       score: 0,
-      lives: diffConfig.initialLives,
-      power: 1,
+      lives: isTestMode ? 99 : diffConfig.initialLives,
+      power: isTestMode ? Config.player.maxPower : 1,
       stage: 1,
-      shieldEndTime: 0,
-      speedLevel: 0,
-      spreadTime: 0,
+      shieldEndTime: isTestMode ? Number.MAX_SAFE_INTEGER : 0,
+      speedLevel: isTestMode ? Config.player.maxSpeedLevel : 0,
+      spreadTime: isTestMode ? Number.MAX_SAFE_INTEGER : 0,
       combo: 0,
       multiplier: 1.0,
       grazeCount: 0,
@@ -181,7 +218,9 @@ export function useDeepSeaGame() {
 
       if (result.event === 'gameover' || result.event === 'ending') {
         setGameState(result.event === 'ending' ? 'ending' : 'gameover');
-        saveScore(GAME_KEY, result.uiState.score);
+        if (!testMode) {
+          saveScore(GAME_KEY, result.uiState.score);
+        }
         // 実績チェック
         const gd = gameData.current;
         const ui = result.uiState;
@@ -259,5 +298,6 @@ export function useDeepSeaGame() {
     selectedDifficulty,
     setSelectedDifficulty,
     newAchievements,
+    testMode,
   };
 }
