@@ -4,7 +4,7 @@
 
 | フェーズ | ステータス | タスク数 | 完了日 |
 |---------|-----------|---------|--------|
-| S1-1 定数・型定義の更新 | [ ] 未着手 | 11 | |
+| S1-1 定数・型定義の更新 | [x] 完了 | 11 | 2026-03-24 |
 | S1-2 レンダラーの対応 | [ ] 未着手 | 9 | |
 | S1-3 ゲームロジックの対応 | [ ] 未着手 | 10 | |
 | S1-4 CSS・UI の対応 | [ ] 未着手 | 5 | |
@@ -26,40 +26,43 @@ S1-1（定数更新）
 
 ### S1-1-1: Canvas サイズ定数の変更
 
-- [ ] `core/constants.ts` の `CONSTANTS.CANVAS` を `{ WIDTH: 600, HEIGHT: 1200 }` に変更
-- [ ] コメントを更新: `// 内部解像度 600x1200 固定`
+- [x] `core/constants.ts` の `CONSTANTS.CANVAS` を `{ WIDTH: 600, HEIGHT: 1200 }` に変更
+- [x] コメントを更新: `// 内部解像度 600x1200 固定`
 
 ### S1-1-2: ゴール・障害物座標のスケーリング
 
-- [ ] `core/config.ts` の全フィールドのゴールサイズを更新
-  - [ ] Classic: 120 → 160
-  - [ ] Wide: 180 → 240
-  - [ ] Pillars: 120 → 160
-  - [ ] Zigzag: 135 → 180
-  - [ ] Fortress: 105 → 140
-  - [ ] Bastion: 120 → 160
-- [ ] `core/config.ts` の全障害物座標を 1.33x スケーリング（半径は据え置き）
-  - [ ] Pillars: 5 障害物の x, y を更新
-  - [ ] Zigzag: 3 障害物の x, y を更新
-  - [ ] Fortress: 4 障害物の x, y を更新
-  - [ ] Bastion: 7 障害物の x, y を更新
-- [ ] コメントを更新: `// 障害物座標は 600x1200 解像度基準`
+- [x] `core/config.ts` の全フィールドのゴールサイズを更新
+  - [x] Classic: 120 → 160
+  - [x] Wide: 180 → 240
+  - [x] Pillars: 120 → 160
+  - [x] Zigzag: 135 → 180
+  - [x] Fortress: 105 → 140
+  - [x] Bastion: 120 → 160
+- [x] `core/config.ts` の全障害物座標を 1.33x スケーリング（半径は据え置き）
+  - [x] Pillars: 5 障害物の x, y を更新
+  - [x] Zigzag: 3 障害物の x, y を更新
+  - [x] Fortress: 4 障害物の x, y を更新
+  - [x] Bastion: 7 障害物の x, y を更新
+- [x] コメントを更新: `// 障害物座標は 600x1200 解像度基準`
 
 ### S1-1-3: 物理・速度パラメータの調整
 
-- [ ] `core/constants.ts` の物理パラメータ更新
-  - [ ] `PHYSICS.MAX_POWER`: 12 → 16
-  - [ ] `PHYSICS.MIN_SPEED`: 1.5 → 2.0
-  - [ ] `CPU.easy`: 1.5 → 2.0
-  - [ ] `CPU.normal`: 3.5 → 4.7
-  - [ ] `CPU.hard`: 6.0 → 8.0
-- [ ] `core/keyboard.ts` の `KEYBOARD_MOVE_SPEED`: 6 → 8
-- [ ] `infrastructure/renderer/renderer-utils.ts` の速度閾値更新
-  - [ ] `SPEED_NORMAL`: 6 → 8
-  - [ ] `SPEED_FAST`: 10 → 13
+- [x] `core/constants.ts` の物理パラメータ更新
+  - [x] `PHYSICS.MAX_POWER`: 12 → 16
+  - [x] `PHYSICS.MIN_SPEED`: 1.5 → 2.0
+  - [x] `CPU.easy`: 1.5 → 2.0
+  - [x] `CPU.normal`: 3.5 → 4.7
+  - [x] `CPU.hard`: 6.0 → 8.0
+- [x] `core/keyboard.ts` の `KEYBOARD_MOVE_SPEED`: 6 → 8
+- [x] `infrastructure/renderer/renderer-utils.ts` の速度閾値更新
+  - [x] `SPEED_NORMAL`: 6 → 8
+  - [x] `SPEED_FAST`: 10 → 13
+- [x] `core/story-balance.ts` の AI_BEHAVIOR_PRESETS を 1.33x スケーリング
+- [x] `core/story-balance.ts` のステージ別 AI パラメータを 1.33x スケーリング
 
 **確認**:
-- [ ] `tsc --noEmit` で型エラーなし
+- [x] `tsc --noEmit` で型エラーなし
+- [x] 全テストパス（78 スイート、1091 テスト）
 
 ---
 

@@ -82,12 +82,12 @@ describe('getStoryStageBalance', () => {
     });
 
     it('初心者向けの低い CPU 速度', () => {
-      // easy (1.5) よりさらに遅い設定
-      expect(balance.ai.maxSpeed).toBeLessThanOrEqual(1.5);
+      // easy プリセットよりさらに遅い設定
+      expect(balance.ai.maxSpeed).toBeLessThanOrEqual(CONSTANTS.CPU.easy);
     });
 
     it('予測精度が低い（初心者が2-3回で勝てるように）', () => {
-      expect(balance.ai.predictionFactor).toBeLessThanOrEqual(1);
+      expect(balance.ai.predictionFactor).toBeLessThanOrEqual(1.5);
     });
 
     it('高めのスキップ率（CPU がときどきミスする）', () => {
@@ -113,7 +113,7 @@ describe('getStoryStageBalance', () => {
     it('中程度の CPU 速度', () => {
       const stage1 = getStoryStageBalance('1-1');
       expect(balance.ai.maxSpeed).toBeGreaterThan(stage1.ai.maxSpeed);
-      expect(balance.ai.maxSpeed).toBeLessThanOrEqual(3.5);
+      expect(balance.ai.maxSpeed).toBeLessThanOrEqual(CONSTANTS.CPU.normal);
     });
 
     it('アイテム出現が速い（アイテム活用を促す）', () => {
@@ -174,7 +174,7 @@ describe('getStoryStageBalance', () => {
 describe('createStageConstants', () => {
   it('ステージ1-1のカスタム定数を生成する', () => {
     const consts = createStageConstants('1-1');
-    expect(consts.CPU.easy).toBeLessThanOrEqual(1.5);
+    expect(consts.CPU.easy).toBeLessThanOrEqual(CONSTANTS.CPU.easy);
   });
 
   it('ベースの CONSTANTS を変更しない（不変性）', () => {

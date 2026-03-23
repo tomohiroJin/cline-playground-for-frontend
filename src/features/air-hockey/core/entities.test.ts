@@ -139,11 +139,11 @@ describe('Air Hockey - エンティティ生成', () => {
       expect(state.obstacleStates).toEqual([]);
     });
 
-    it('450x900 の固定解像度でマレットが配置される', () => {
+    it('固定解像度でマレットが中央・上下に配置される', () => {
       const state = EntityFactory.createGameState();
-      expect(state.player.x).toBe(225);
-      expect(state.player.y).toBe(830);
-      expect(state.cpu.x).toBe(225);
+      expect(state.player.x).toBe(W / 2);
+      expect(state.player.y).toBe(H - 70);
+      expect(state.cpu.x).toBe(W / 2);
       expect(state.cpu.y).toBe(70);
     });
   });

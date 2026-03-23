@@ -1,67 +1,67 @@
 import { FieldConfig, ItemType } from './types';
 
-// 障害物座標は 450x900 解像度基準（旧 standard の x1.5 スケール）
+// 障害物座標は 600x1200 解像度基準（450x900 から 1.33x スケール）
 export const FIELDS: readonly FieldConfig[] = [
-  { id: 'classic', name: 'Original', goalSize: 120, color: '#00d4ff', obstacles: [] },
-  { id: 'wide', name: 'Wide', goalSize: 180, color: '#00ff88', obstacles: [] },
+  { id: 'classic', name: 'Original', goalSize: 160, color: '#00d4ff', obstacles: [] },
+  { id: 'wide', name: 'Wide', goalSize: 240, color: '#00ff88', obstacles: [] },
   {
     id: 'pillars',
     name: 'Pillars',
-    goalSize: 120,
+    goalSize: 160,
     color: '#ff00ff',
     obstacles: [
-      { x: 113, y: 300, r: 27 },
-      { x: 338, y: 300, r: 27 },
-      { x: 225, y: 450, r: 33 },
-      { x: 113, y: 600, r: 27 },
-      { x: 338, y: 600, r: 27 },
+      { x: 150, y: 400, r: 27 },
+      { x: 450, y: 400, r: 27 },
+      { x: 300, y: 600, r: 33 },
+      { x: 150, y: 800, r: 27 },
+      { x: 450, y: 800, r: 27 },
     ],
   },
   {
     id: 'zigzag',
     name: 'Zigzag',
-    goalSize: 135,
+    goalSize: 180,
     color: '#ffaa00',
     obstacles: [
-      { x: 113, y: 270, r: 24 },
-      { x: 338, y: 450, r: 24 },
-      { x: 113, y: 630, r: 24 },
+      { x: 150, y: 360, r: 24 },
+      { x: 450, y: 600, r: 24 },
+      { x: 150, y: 840, r: 24 },
     ],
   },
   {
     id: 'fortress',
     name: 'Fortress',
-    goalSize: 105,
+    goalSize: 140,
     color: '#ff4488',
     destructible: true,
     obstacleHp: 3,
     obstacleRespawnMs: 5000,
     obstacles: [
-      { x: 165, y: 90, r: 21 },
-      { x: 285, y: 90, r: 21 },
-      { x: 165, y: 810, r: 21 },
-      { x: 285, y: 810, r: 21 },
+      { x: 220, y: 120, r: 21 },
+      { x: 380, y: 120, r: 21 },
+      { x: 220, y: 1080, r: 21 },
+      { x: 380, y: 1080, r: 21 },
     ],
   },
   {
     id: 'bastion',
     name: 'Bastion',
-    goalSize: 120,
+    goalSize: 160,
     color: '#ff8800',
     destructible: true,
     obstacleHp: 3,
     obstacleRespawnMs: 5000,
     obstacles: [
       // 上段の壁
-      { x: 150, y: 240, r: 23 },
-      { x: 300, y: 240, r: 23 },
+      { x: 200, y: 320, r: 23 },
+      { x: 400, y: 320, r: 23 },
       // 中央ブロック
-      { x: 120, y: 450, r: 30 },
-      { x: 225, y: 420, r: 24 },
-      { x: 330, y: 450, r: 30 },
+      { x: 160, y: 600, r: 30 },
+      { x: 300, y: 560, r: 24 },
+      { x: 440, y: 600, r: 30 },
       // 下段の壁
-      { x: 150, y: 660, r: 23 },
-      { x: 300, y: 660, r: 23 },
+      { x: 200, y: 880, r: 23 },
+      { x: 400, y: 880, r: 23 },
     ],
   },
 ] as const;

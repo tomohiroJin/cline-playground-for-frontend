@@ -63,13 +63,13 @@ export function screenToCanvas(
   };
 }
 
-// 内部解像度 450x900 固定（CSS でビューポートに応答的にスケーリング）
+// 内部解像度 600x1200 固定（CSS でビューポートに応答的にスケーリング）
 export const CONSTANTS: GameConstants = {
-  CANVAS: { WIDTH: 450, HEIGHT: 900 },
+  CANVAS: { WIDTH: 600, HEIGHT: 1200 },
   SIZES: { MALLET: 42, PUCK: 21, ITEM: 24 },
-  PHYSICS: { FRICTION: 0.998, MIN_SPEED: 1.5, MAX_POWER: 12 },
+  PHYSICS: { FRICTION: 0.998, MIN_SPEED: 2.0, MAX_POWER: 16 },
   TIMING: { ITEM_SPAWN: 6000, GOAL_EFFECT: 1500, FLASH: 500, HELP_TIMEOUT: 5000, FEVER_TRIGGER: 15000, FEVER_INTERVAL: 10000, OBSTACLE_RESPAWN: 5000 },
-  CPU: { easy: 1.5, normal: 3.5, hard: 6 },
+  CPU: { easy: 2.0, normal: 4.7, hard: 8.0 },
   FEVER: { MAX_EXTRA_PUCKS: 2 },
   COMEBACK: { THRESHOLD: 3, MALLET_BONUS: 0.1, GOAL_REDUCTION: 0.1 },
 };

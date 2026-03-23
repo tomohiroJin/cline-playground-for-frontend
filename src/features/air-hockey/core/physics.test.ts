@@ -39,12 +39,13 @@ describe('Physics Module', () => {
       expect(res.vx).toBeGreaterThan(0);
     });
 
-    it('450x900 解像度で右壁バウンスが正しく動作する', () => {
-      const obj = { x: 460, y: 100, vx: 5, vy: 0 };
+    it('右壁バウンスが正しく動作する', () => {
+      const W = CONSTANTS.CANVAS.WIDTH;
+      const obj = { x: W + 10, y: 100, vx: 5, vy: 0 };
       const res = Physics.applyWallBounce(obj, 10, goalChecker, noOp);
 
-      // 450 - 10 - 5 = 435
-      expect(res.x).toBe(435);
+      // W - 10 - 5 = W - 15
+      expect(res.x).toBe(W - 15);
       expect(res.vx).toBeLessThan(0);
     });
   });
