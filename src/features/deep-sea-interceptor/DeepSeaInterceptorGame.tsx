@@ -5,7 +5,7 @@
 import React from 'react';
 import { PageContainer } from '../../pages/DeepSeaShooterPage.styles';
 import { ShareButton } from '../../components/molecules/ShareButton';
-import { StageConfig, ItemConfig, DifficultyConfig, Config } from './constants';
+import { StageConfig, ItemConfig, DifficultyConfig, Config, BOSS_NAMES } from './constants';
 import { calculateRank } from './game-logic';
 import { useDeepSeaGame } from './hooks';
 import {
@@ -15,6 +15,7 @@ import {
   GameSubTitle,
   InfoBox,
   Button,
+  GameGlobalStyles,
 } from './styles';
 import PlayerSprite from './components/PlayerSprite';
 import EnemySprite from './components/EnemySprite';
@@ -72,6 +73,7 @@ export default function DeepSeaInterceptorGame() {
   if (gameState === 'title')
     return (
       <PageContainer>
+        <GameGlobalStyles />
         <StyledGameContainer role="region" aria-label="深海シューティングゲーム画面" tabIndex={0}>
           <FullScreenOverlay $bg="linear-gradient(180deg,#0a1a2a,#020810)">
             <GameTitle>深海迎撃</GameTitle>
@@ -472,13 +474,14 @@ export default function DeepSeaInterceptorGame() {
           charging={gd.charging}
         />
 
-        {/* WARNING表示 */}
+        {/* WARNING表示（強化版） */}
         {gd.bossWarning && (
           <div
             style={{
               position: 'absolute',
               inset: 0,
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
               pointerEvents: 'none',
@@ -488,20 +491,59 @@ export default function DeepSeaInterceptorGame() {
             <div
               style={{
                 color: '#f44',
-                fontSize: 42,
+                fontSize: 56,
                 fontWeight: 'bold',
-                textShadow: '0 0 30px #f00',
-                animation: 'blink 0.5s infinite',
+                textShadow: '0 0 40px #f00, 0 0 80px #f00',
+                animation: 'warningPulse 0.5s ease-in-out infinite',
+                letterSpacing: 8,
               }}
             >
               ⚠ WARNING ⚠
             </div>
-            {/* 画面端の赤いフラッシュ */}
+            {/* ボス名表示 */}
+            <div
+              style={{
+                color: '#fc0',
+                fontSize: 28,
+                fontWeight: 'bold',
+                textShadow: '0 0 20px #fa0',
+                marginTop: 20,
+                opacity: (Date.now() - gd.bossWarningStartTime) > 500 ? 1 : 0,
+                transition: 'opacity 0.5s ease-in',
+              }}
+            >
+              {BOSS_NAMES[uiState.stage] ?? 'UNKNOWN'}
+            </div>
+            {/* 画面端の赤い点滅エフェクト */}
             <div
               style={{
                 position: 'absolute',
                 inset: 0,
-                border: '6px solid rgba(255,0,0,0.3)',
+                border: '8px solid rgba(255,0,0,0.4)',
+                pointerEvents: 'none',
+                animation: 'warningBorder 0.5s ease-in-out infinite',
+              }}
+            />
+            {/* 上下の赤いグラデーション */}
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 80,
+                background: 'linear-gradient(180deg, rgba(255,0,0,0.3), transparent)',
+                pointerEvents: 'none',
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 80,
+                background: 'linear-gradient(0deg, rgba(255,0,0,0.3), transparent)',
                 pointerEvents: 'none',
               }}
             />

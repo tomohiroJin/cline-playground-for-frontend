@@ -167,7 +167,13 @@ export function useDeepSeaGame() {
         gameData.current,
         uiStateRef.current,
         now,
-        (name: string) => audio.current.play(name)
+        (name: string) => {
+          if (name === 'warning') {
+            audio.current.playWarningSiren();
+          } else {
+            audio.current.play(name);
+          }
+        }
       );
 
       uiStateRef.current = result.uiState;

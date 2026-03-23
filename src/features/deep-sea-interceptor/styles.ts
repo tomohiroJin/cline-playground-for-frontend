@@ -2,7 +2,7 @@
 // Deep Sea Interceptor - スタイル定義
 // ============================================================================
 
-import styled, { keyframes, css } from 'styled-components';
+import styled, { keyframes, css, createGlobalStyle } from 'styled-components';
 
 /** 画面振動アニメーション */
 const shakeAnimation = keyframes`
@@ -84,5 +84,21 @@ export const Button = styled.button<{ $primary?: boolean }>`
   margin-top: ${props => (props.$primary ? '0' : '15px')};
   &:hover {
     transform: scale(1.05);
+  }
+`;
+
+/** グローバルアニメーション定義（WARNING演出等） */
+export const GameGlobalStyles = createGlobalStyle`
+  @keyframes warningPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.7; }
+  }
+  @keyframes warningBorder {
+    0%, 100% { border-color: rgba(255,0,0,0.5); }
+    50% { border-color: rgba(255,0,0,0.1); }
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
   }
 `;
