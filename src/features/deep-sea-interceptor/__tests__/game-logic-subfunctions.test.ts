@@ -53,22 +53,22 @@ describe('updatePlayerPosition', () => {
 
   test('左端でクランプされること', () => {
     const result = updatePlayerPosition({ x: 5, y: 400 }, { dx: -1, dy: 0 }, 10);
-    expect(result.x).toBe(15);
+    expect(result.x).toBe(30);
   });
 
   test('右端でクランプされること', () => {
-    const result = updatePlayerPosition({ x: 395, y: 400 }, { dx: 1, dy: 0 }, 10);
-    expect(result.x).toBe(385);
+    const result = updatePlayerPosition({ x: 775, y: 400 }, { dx: 1, dy: 0 }, 10);
+    expect(result.x).toBe(770);
   });
 
   test('上端でクランプされること', () => {
     const result = updatePlayerPosition({ x: 200, y: 5 }, { dx: 0, dy: -1 }, 10);
-    expect(result.y).toBe(15);
+    expect(result.y).toBe(30);
   });
 
   test('下端でクランプされること', () => {
-    const result = updatePlayerPosition({ x: 200, y: 520 }, { dx: 0, dy: 1 }, 10);
-    expect(result.y).toBe(510);
+    const result = updatePlayerPosition({ x: 200, y: 910 }, { dx: 0, dy: 1 }, 10);
+    expect(result.y).toBe(900);
   });
 });
 
@@ -278,9 +278,9 @@ describe('processPlayerDamage', () => {
 describe('processGraze', () => {
   test('グレイズ範囲内でスコアが加算されること', () => {
     const player = { x: 100, y: 100 };
-    // グレイズ範囲: 衝突半径(8+4=12)の外側、グレイズ半径(8+16=24)の内側
-    // distance = 15 → hitRadius=12, grazeRadius=24 → グレイズ成功
-    const enemyBullet = EntityFactory.enemyBullet(115, 100, { x: 0, y: 1 });
+    // グレイズ範囲: 衝突半径(16+4=20)の外側、グレイズ半径(16+16=32)の内側
+    // distance = 25 → hitRadius=20, grazeRadius=32 → グレイズ成功
+    const enemyBullet = EntityFactory.enemyBullet(125, 100, { x: 0, y: 1 });
     const grazedIds = new Set<number>();
     const now = Date.now();
     const result = processGraze(player, [enemyBullet], grazedIds, 0, buildUiState(), now);
@@ -291,7 +291,7 @@ describe('processGraze', () => {
 
   test('既にグレイズ済みの弾は無視されること', () => {
     const player = { x: 100, y: 100 };
-    const enemyBullet = EntityFactory.enemyBullet(115, 100, { x: 0, y: 1 });
+    const enemyBullet = EntityFactory.enemyBullet(125, 100, { x: 0, y: 1 });
     const grazedIds = new Set<number>([enemyBullet.id]);
     const now = Date.now();
     const result = processGraze(player, [enemyBullet], grazedIds, 0, buildUiState(), now);

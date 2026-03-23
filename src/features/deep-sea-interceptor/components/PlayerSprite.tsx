@@ -19,21 +19,21 @@ const PlayerSprite = memo(function PlayerSprite({ x, y, opacity, shield }: Playe
         <div
           style={{
             position: 'absolute',
-            left: x - 20,
-            top: y - 20,
-            width: 40,
-            height: 40,
+            left: x - 40,
+            top: y - 40,
+            width: 80,
+            height: 80,
             borderRadius: '50%',
-            border: '2px solid #4af',
+            border: '3px solid #4af',
             opacity: 0.5,
             animation: 'pulse 0.5s infinite',
           }}
         />
       )}
       <svg
-        style={{ position: 'absolute', left: x - 10, top: y - 10, opacity }}
-        width={20}
-        height={26}
+        style={{ position: 'absolute', left: x - 20, top: y - 20, opacity }}
+        width={40}
+        height={52}
         viewBox="0 0 24 32"
       >
         <defs>

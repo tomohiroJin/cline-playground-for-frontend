@@ -46,8 +46,8 @@ describe('createBulletsForWeapon', () => {
 
     test('power=5 で高い damage と lifespan を持つこと', () => {
       const bullets = createBulletsForWeapon(200, 300, 'sonarWave', 5, false);
-      expect(bullets[0].damage).toBe(2.5);
-      expect(bullets[0].lifespan).toBe(40);
+      expect(bullets[0].damage).toBe(4.0);
+      expect(bullets[0].lifespan).toBe(70);
     });
   });
 
@@ -80,9 +80,9 @@ describe('createChargedShot', () => {
     expect(bullets[0].damage).toBe(5);
   });
 
-  test('sonarWave チャージショットは8発の全方位弾であること', () => {
+  test('sonarWave チャージショットは12発の全方位弾であること', () => {
     const bullets = createChargedShot(200, 300, 'sonarWave');
-    expect(bullets).toHaveLength(8);
+    expect(bullets).toHaveLength(12);
     bullets.forEach(b => {
       expect(b.charged).toBe(true);
       expect(b.weaponType).toBe('sonarWave');

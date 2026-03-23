@@ -33,17 +33,31 @@ export const BossPatterns: Record<BossType, Record<number, (boss: Enemy, target:
       const angles = [-0.52, -0.26, 0, 0.26, 0.52];
       return angles.map(a => {
         const rotated = rotateVector(dir, a);
-        return EntityFactory.enemyBullet(boss.x, boss.y, { x: rotated.x * 3, y: rotated.y * 3 });
+        return EntityFactory.enemyBullet(boss.x, boss.y, { x: rotated.x * 4, y: rotated.y * 4 });
       });
     },
     // Phase 2: 引き寄せ + 自機狙い弾
     2: (boss, target) => {
       const dir = normalize({ x: target.x - boss.x, y: target.y - boss.y });
       return [
-        EntityFactory.enemyBullet(boss.x, boss.y, { x: dir.x * 4, y: dir.y * 4 }),
-        EntityFactory.enemyBullet(boss.x - 15, boss.y, { x: dir.x * 3.5, y: dir.y * 3.5 }),
-        EntityFactory.enemyBullet(boss.x + 15, boss.y, { x: dir.x * 3.5, y: dir.y * 3.5 }),
+        EntityFactory.enemyBullet(boss.x, boss.y, { x: dir.x * 5, y: dir.y * 5 }),
+        EntityFactory.enemyBullet(boss.x - 30, boss.y, { x: dir.x * 4.5, y: dir.y * 4.5 }),
+        EntityFactory.enemyBullet(boss.x + 30, boss.y, { x: dir.x * 4.5, y: dir.y * 4.5 }),
       ];
+    },
+    // Phase 3: 扇状弾 + 自機狙い弾を交互
+    3: (boss, target) => {
+      const dir = normalize({ x: target.x - boss.x, y: target.y - boss.y });
+      const fanBullets = [-0.52, -0.26, 0, 0.26, 0.52].map(a => {
+        const rotated = rotateVector(dir, a);
+        return EntityFactory.enemyBullet(boss.x, boss.y, { x: rotated.x * 4.5, y: rotated.y * 4.5 });
+      });
+      const aimedBullets = [
+        EntityFactory.enemyBullet(boss.x, boss.y, { x: dir.x * 5.5, y: dir.y * 5.5 }),
+        EntityFactory.enemyBullet(boss.x - 30, boss.y, { x: dir.x * 5, y: dir.y * 5 }),
+        EntityFactory.enemyBullet(boss.x + 30, boss.y, { x: dir.x * 5, y: dir.y * 5 }),
+      ];
+      return [...fanBullets, ...aimedBullets];
     },
   },
 
@@ -51,20 +65,30 @@ export const BossPatterns: Record<BossType, Record<number, (boss: Enemy, target:
   boss2: {
     // Phase 1: 機雷設置風（静止弾）+ 直線弾
     1: (boss, _target) => [
-      // 静止弾（機雷風）
-      EntityFactory.enemyBullet(boss.x, boss.y + 20, { x: 0, y: 0.5 }),
-      // 左右からの直線弾
-      EntityFactory.enemyBullet(boss.x - 30, boss.y, { x: -1.5, y: 3 }),
-      EntityFactory.enemyBullet(boss.x + 30, boss.y, { x: 1.5, y: 3 }),
+      EntityFactory.enemyBullet(boss.x, boss.y + 40, { x: 0, y: 0.7 }),
+      EntityFactory.enemyBullet(boss.x - 60, boss.y, { x: -2, y: 4 }),
+      EntityFactory.enemyBullet(boss.x + 60, boss.y, { x: 2, y: 4 }),
     ],
     // Phase 2: 高速機雷 + 自機狙い弾
     2: (boss, target) => {
       const dir = normalize({ x: target.x - boss.x, y: target.y - boss.y });
       return [
-        EntityFactory.enemyBullet(boss.x - 20, boss.y + 10, { x: 0, y: 0.8 }),
-        EntityFactory.enemyBullet(boss.x + 20, boss.y + 10, { x: 0, y: 0.8 }),
+        EntityFactory.enemyBullet(boss.x - 40, boss.y + 20, { x: 0, y: 1.0 }),
+        EntityFactory.enemyBullet(boss.x + 40, boss.y + 20, { x: 0, y: 1.0 }),
+        EntityFactory.enemyBullet(boss.x, boss.y, { x: dir.x * 5, y: dir.y * 5 }),
         EntityFactory.enemyBullet(boss.x, boss.y, { x: dir.x * 4, y: dir.y * 4 }),
-        EntityFactory.enemyBullet(boss.x, boss.y, { x: dir.x * 3, y: dir.y * 3 }),
+      ];
+    },
+    // Phase 3: 機雷設置 + 高速自機狙いを同時
+    3: (boss, target) => {
+      const dir = normalize({ x: target.x - boss.x, y: target.y - boss.y });
+      return [
+        EntityFactory.enemyBullet(boss.x, boss.y + 40, { x: 0, y: 0.7 }),
+        EntityFactory.enemyBullet(boss.x - 60, boss.y, { x: -2, y: 4 }),
+        EntityFactory.enemyBullet(boss.x + 60, boss.y, { x: 2, y: 4 }),
+        EntityFactory.enemyBullet(boss.x, boss.y, { x: dir.x * 5.5, y: dir.y * 5.5 }),
+        EntityFactory.enemyBullet(boss.x - 40, boss.y, { x: dir.x * 5, y: dir.y * 5 }),
+        EntityFactory.enemyBullet(boss.x + 40, boss.y, { x: dir.x * 5, y: dir.y * 5 }),
       ];
     },
   },
@@ -79,8 +103,8 @@ export const BossPatterns: Record<BossType, Record<number, (boss: Enemy, target:
         const angle = offset + (Math.PI * 2 * i) / 12;
         bullets.push(
           EntityFactory.enemyBullet(boss.x, boss.y, {
-            x: Math.cos(angle) * 2.5,
-            y: Math.sin(angle) * 2.5,
+            x: Math.cos(angle) * 3.5,
+            y: Math.sin(angle) * 3.5,
           })
         );
       }
@@ -94,14 +118,31 @@ export const BossPatterns: Record<BossType, Record<number, (boss: Enemy, target:
         const angle = offset + (Math.PI * 2 * i) / 16;
         bullets.push(
           EntityFactory.enemyBullet(boss.x, boss.y, {
-            x: Math.cos(angle) * 3,
-            y: Math.sin(angle) * 3,
+            x: Math.cos(angle) * 4,
+            y: Math.sin(angle) * 4,
           })
         );
       }
-      // 自機狙い弾も追加
       const dir = normalize({ x: target.x - boss.x, y: target.y - boss.y });
-      bullets.push(EntityFactory.enemyBullet(boss.x, boss.y, { x: dir.x * 4.5, y: dir.y * 4.5 }));
+      bullets.push(EntityFactory.enemyBullet(boss.x, boss.y, { x: dir.x * 5.5, y: dir.y * 5.5 }));
+      return bullets;
+    },
+    // Phase 3: 12方向弾幕 + 自機狙いを同時
+    3: (boss, target) => {
+      const bullets: EnemyBullet[] = [];
+      const offset = (Date.now() / 350) % (Math.PI * 2);
+      for (let i = 0; i < 16; i++) {
+        const angle = offset + (Math.PI * 2 * i) / 16;
+        bullets.push(
+          EntityFactory.enemyBullet(boss.x, boss.y, {
+            x: Math.cos(angle) * 4.5,
+            y: Math.sin(angle) * 4.5,
+          })
+        );
+      }
+      const dir = normalize({ x: target.x - boss.x, y: target.y - boss.y });
+      bullets.push(EntityFactory.enemyBullet(boss.x, boss.y, { x: dir.x * 6, y: dir.y * 6 }));
+      bullets.push(EntityFactory.enemyBullet(boss.x, boss.y, { x: dir.x * 5, y: dir.y * 5 }));
       return bullets;
     },
   },
@@ -113,9 +154,9 @@ export const BossPatterns: Record<BossType, Record<number, (boss: Enemy, target:
       const bullets: EnemyBullet[] = [];
       for (let i = -2; i <= 2; i++) {
         bullets.push(
-          EntityFactory.enemyBullet(boss.x + i * 25, boss.y, {
-            x: Math.sin(Date.now() / 300 + i) * 1.5,
-            y: 3,
+          EntityFactory.enemyBullet(boss.x + i * 50, boss.y, {
+            x: Math.sin(Date.now() / 300 + i) * 2,
+            y: 4,
           })
         );
       }
@@ -124,11 +165,29 @@ export const BossPatterns: Record<BossType, Record<number, (boss: Enemy, target:
     // Phase 2: 稲妻パターン（縦線弾幕）
     2: (boss, _target) => {
       const bullets: EnemyBullet[] = [];
-      // 縦線上に複数弾を配置
       for (let i = 0; i < 8; i++) {
-        const xOffset = (i - 3.5) * 40;
+        const xOffset = (i - 3.5) * 80;
         bullets.push(
-          EntityFactory.enemyBullet(boss.x + xOffset, boss.y, { x: 0, y: 3.5 + Math.random() })
+          EntityFactory.enemyBullet(boss.x + xOffset, boss.y, { x: 0, y: 4.5 + Math.random() })
+        );
+      }
+      return bullets;
+    },
+    // Phase 3: 波状弾幕 + 稲妻パターンを同時
+    3: (boss, _target) => {
+      const bullets: EnemyBullet[] = [];
+      for (let i = -2; i <= 2; i++) {
+        bullets.push(
+          EntityFactory.enemyBullet(boss.x + i * 50, boss.y, {
+            x: Math.sin(Date.now() / 300 + i) * 2.5,
+            y: 4.5,
+          })
+        );
+      }
+      for (let i = 0; i < 6; i++) {
+        const xOffset = (i - 2.5) * 80;
+        bullets.push(
+          EntityFactory.enemyBullet(boss.x + xOffset, boss.y, { x: 0, y: 5 + Math.random() })
         );
       }
       return bullets;
@@ -137,7 +196,7 @@ export const BossPatterns: Record<BossType, Record<number, (boss: Enemy, target:
 
   // boss5: アビサル・コア
   boss5: {
-    // Phase 1: 他ボスのパターンをランダム選択
+    // Phase 1（外殻）: 他ボスのパターンをランダム選択
     1: (boss, target) => {
       const patterns = [
         BossPatterns.boss1[1],
@@ -148,19 +207,41 @@ export const BossPatterns: Record<BossType, Record<number, (boss: Enemy, target:
       const idx = Math.floor(Date.now() / 3000) % patterns.length;
       return patterns[idx](boss, target);
     },
-    // Phase 2: 16方向全方位弾 + 回転
-    2: (boss, _target) => {
+    // Phase 2（内核露出）: 16方向回転弾幕
+    2: (boss, target) => {
       const bullets: EnemyBullet[] = [];
       const offset = (Date.now() / 300) % (Math.PI * 2);
       for (let i = 0; i < 16; i++) {
         const angle = offset + (Math.PI * 2 * i) / 16;
         bullets.push(
           EntityFactory.enemyBullet(boss.x, boss.y, {
-            x: Math.cos(angle) * 3,
-            y: Math.sin(angle) * 3,
+            x: Math.cos(angle) * 4.5,
+            y: Math.sin(angle) * 4.5,
           })
         );
       }
+      // 自機狙い弾
+      const dir = normalize({ x: target.x - boss.x, y: target.y - boss.y });
+      bullets.push(EntityFactory.enemyBullet(boss.x, boss.y, { x: dir.x * 5, y: dir.y * 5 }));
+      return bullets;
+    },
+    // Phase 3（暴走コア）: 24方向全方位弾幕 + ホーミング弾
+    3: (boss, target) => {
+      const bullets: EnemyBullet[] = [];
+      const offset = (Date.now() / 250) % (Math.PI * 2);
+      for (let i = 0; i < 24; i++) {
+        const angle = offset + (Math.PI * 2 * i) / 24;
+        bullets.push(
+          EntityFactory.enemyBullet(boss.x, boss.y, {
+            x: Math.cos(angle) * 5,
+            y: Math.sin(angle) * 5,
+          })
+        );
+      }
+      // 自機狙い弾×2
+      const dir = normalize({ x: target.x - boss.x, y: target.y - boss.y });
+      bullets.push(EntityFactory.enemyBullet(boss.x - 40, boss.y, { x: dir.x * 6, y: dir.y * 6 }));
+      bullets.push(EntityFactory.enemyBullet(boss.x + 40, boss.y, { x: dir.x * 6, y: dir.y * 6 }));
       return bullets;
     },
   },
@@ -173,13 +254,13 @@ export const MidbossPatterns: Record<MidbossType, (boss: Enemy, target: Position
     const dir = normalize({ x: target.x - boss.x, y: target.y - boss.y });
     return [-0.3, 0, 0.3].map(a => {
       const rotated = rotateVector(dir, a);
-      return EntityFactory.enemyBullet(boss.x, boss.y, { x: rotated.x * 3, y: rotated.y * 3 });
+      return EntityFactory.enemyBullet(boss.x, boss.y, { x: rotated.x * 4, y: rotated.y * 4 });
     });
   },
   // midboss2: 双子エイ — 左右交互弾
   midboss2: (boss, _target) => [
-    EntityFactory.enemyBullet(boss.x - 20, boss.y, { x: -1.5, y: 3 }),
-    EntityFactory.enemyBullet(boss.x + 20, boss.y, { x: 1.5, y: 3 }),
+    EntityFactory.enemyBullet(boss.x - 40, boss.y, { x: -2, y: 4 }),
+    EntityFactory.enemyBullet(boss.x + 40, boss.y, { x: 2, y: 4 }),
   ],
   // midboss3: 溶岩カメ — 8方向熱波
   midboss3: (boss, _target) => {
@@ -188,8 +269,8 @@ export const MidbossPatterns: Record<MidbossType, (boss: Enemy, target: Position
       const angle = (Math.PI * 2 * i) / 8;
       bullets.push(
         EntityFactory.enemyBullet(boss.x, boss.y, {
-          x: Math.cos(angle) * 2.5,
-          y: Math.sin(angle) * 2.5,
+          x: Math.cos(angle) * 3.5,
+          y: Math.sin(angle) * 3.5,
         })
       );
     }
@@ -200,14 +281,14 @@ export const MidbossPatterns: Record<MidbossType, (boss: Enemy, target: Position
     const dir = normalize({ x: target.x - boss.x, y: target.y - boss.y });
     return [-0.4, -0.2, 0, 0.2, 0.4].map(a => {
       const rotated = rotateVector(dir, a);
-      return EntityFactory.enemyBullet(boss.x, boss.y, { x: rotated.x * 2.5, y: rotated.y * 2.5 });
+      return EntityFactory.enemyBullet(boss.x, boss.y, { x: rotated.x * 3.5, y: rotated.y * 3.5 });
     });
   },
   // midboss5: 深海サメ — 高速直線弾
   midboss5: (boss, target) => {
     const dir = normalize({ x: target.x - boss.x, y: target.y - boss.y });
     return [
-      EntityFactory.enemyBullet(boss.x, boss.y, { x: dir.x * 5, y: dir.y * 5 }),
+      EntityFactory.enemyBullet(boss.x, boss.y, { x: dir.x * 6, y: dir.y * 6 }),
     ];
   },
 };
@@ -236,7 +317,7 @@ export const EnemyAI = {
 
     // 通常敵の弾生成
     const dir = normalize({ x: target.x - e.x, y: target.y - e.y });
-    const speed = 3.5;
+    const speed = 4.5;
     const baseVel = { x: dir.x * speed, y: dir.y * speed };
     return [EntityFactory.enemyBullet(e.x, e.y, baseVel)];
   },

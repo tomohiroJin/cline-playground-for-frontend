@@ -109,7 +109,7 @@ export const EntityFactory = {
     type: 'enemyBullet',
     vx: velocity.x,
     vy: velocity.y,
-    size: 8,
+    size: 16,
   }),
 
   /** アイテムの生成 */
@@ -120,8 +120,8 @@ export const EntityFactory = {
     createdAt: Date.now(),
     type: 'item',
     itemType,
-    size: 24,
-    speed: 1.5,
+    size: 48,
+    speed: 2.0,
   }),
 
   /** パーティクルの生成 */
@@ -144,17 +144,17 @@ export const EntityFactory = {
     vy: velocity?.y ?? randomRange(-3, 3),
     life,
     maxLife: life,
-    size: randomRange(2, 5),
+    size: randomRange(4, 10),
   }),
 
   /** 泡の生成 */
   bubble: (): Bubble => ({
     id: uniqueId(),
     x: randomRange(0, Config.canvas.width),
-    y: Config.canvas.height + 5,
+    y: Config.canvas.height + 10,
     createdAt: Date.now(),
-    size: randomRange(2, 7),
-    speed: randomRange(0.3, 0.9),
+    size: randomRange(4, 14),
+    speed: randomRange(0.5, 1.5),
     opacity: randomRange(0.1, 0.3),
   }),
 };

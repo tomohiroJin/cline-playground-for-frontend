@@ -13,8 +13,11 @@ const shakeAnimation = keyframes`
 `;
 
 export const StyledGameContainer = styled.div<{ $shake?: boolean }>`
-  width: 400px;
-  height: 560px;
+  width: 800px;
+  height: 1000px;
+  max-width: 100vw;
+  max-height: 100vh;
+  aspect-ratio: 4 / 5;
   background: #000;
   position: relative;
   overflow: hidden;
@@ -23,6 +26,16 @@ export const StyledGameContainer = styled.div<{ $shake?: boolean }>`
   user-select: none;
   touch-action: none;
   ${props => props.$shake && css`animation: ${shakeAnimation} 0.1s linear infinite;`}
+
+  /* レスポンシブスケーリング */
+  @media (max-width: 800px) {
+    width: 100vw;
+    height: auto;
+  }
+  @media (max-height: 1000px) and (min-width: 800px) {
+    height: 100vh;
+    width: auto;
+  }
 `;
 
 export const FullScreenOverlay = styled.div<{ $bg: string }>`
@@ -37,31 +50,31 @@ export const FullScreenOverlay = styled.div<{ $bg: string }>`
 `;
 
 export const GameTitle = styled.h1`
-  font-size: 28px;
+  font-size: 48px;
   font-weight: bold;
   text-shadow: 0 0 20px #0af;
-  margin: 0 0 6px;
+  margin: 0 0 12px;
 `;
 
 export const GameSubTitle = styled.p`
-  font-size: 11px;
+  font-size: 18px;
   opacity: 0.7;
-  margin: 0 0 30px;
+  margin: 0 0 40px;
 `;
 
 export const InfoBox = styled.div`
   background: rgba(0, 30, 60, 0.6);
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  font-size: 10px;
+  padding: 24px;
+  border-radius: 12px;
+  margin-bottom: 30px;
+  font-size: 16px;
   line-height: 1.8;
   width: 80%;
 `;
 
 export const Button = styled.button<{ $primary?: boolean }>`
-  padding: 12px 40px;
-  font-size: 14px;
+  padding: 18px 60px;
+  font-size: 22px;
   background: ${props => (props.$primary ? 'linear-gradient(180deg,#2a6a9a,#1a4a6a)' : '#633')};
   border: 2px solid ${props => (props.$primary ? '#4a9acf' : '#966')};
   border-radius: 25px;

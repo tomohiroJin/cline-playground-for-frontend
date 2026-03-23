@@ -78,48 +78,48 @@ export default function DeepSeaInterceptorGame() {
             <GameSubTitle>DEEP SEA INTERCEPTOR</GameSubTitle>
 
             {/* 武器選択 */}
-            <div style={{ width: '80%', marginBottom: 12 }}>
-              <div style={{ fontSize: 10, color: '#8ac', marginBottom: 6 }}>WEAPON SELECT</div>
+            <div style={{ width: '80%', marginBottom: 20 }}>
+              <div style={{ fontSize: 18, color: '#8ac', marginBottom: 10 }}>WEAPON SELECT</div>
               {(Object.keys(WeaponInfo) as WeaponType[]).map(w => (
                 <div
                   key={w}
                   onClick={() => setSelectedWeapon(w)}
                   style={{
-                    padding: '6px 10px',
-                    marginBottom: 4,
-                    borderRadius: 6,
-                    border: `1px solid ${selectedWeapon === w ? '#4a9acf' : '#334'}`,
+                    padding: '10px 18px',
+                    marginBottom: 8,
+                    borderRadius: 8,
+                    border: `2px solid ${selectedWeapon === w ? '#4a9acf' : '#334'}`,
                     background: selectedWeapon === w ? 'rgba(40,80,120,0.5)' : 'rgba(0,20,40,0.4)',
                     cursor: 'pointer',
-                    fontSize: 10,
+                    fontSize: 18,
                   }}
                 >
                   <span style={{ color: selectedWeapon === w ? '#6cf' : '#888' }}>
                     {selectedWeapon === w ? '●' : '○'}{' '}
                   </span>
                   <strong>{WeaponInfo[w].name}</strong>
-                  <span style={{ color: '#888', marginLeft: 6 }}>{WeaponInfo[w].description}</span>
+                  <span style={{ color: '#888', marginLeft: 10 }}>{WeaponInfo[w].description}</span>
                 </div>
               ))}
             </div>
 
             {/* 難易度選択 */}
-            <div style={{ width: '80%', marginBottom: 12 }}>
-              <div style={{ fontSize: 10, color: '#8ac', marginBottom: 6 }}>DIFFICULTY</div>
-              <div style={{ display: 'flex', gap: 4 }}>
+            <div style={{ width: '80%', marginBottom: 20 }}>
+              <div style={{ fontSize: 18, color: '#8ac', marginBottom: 10 }}>DIFFICULTY</div>
+              <div style={{ display: 'flex', gap: 8 }}>
                 {(Object.keys(DifficultyConfig) as Difficulty[]).map(d => (
                   <div
                     key={d}
                     onClick={() => setSelectedDifficulty(d)}
                     style={{
                       flex: 1,
-                      padding: '6px 4px',
-                      borderRadius: 6,
-                      border: `1px solid ${selectedDifficulty === d ? '#4a9acf' : '#334'}`,
+                      padding: '10px 8px',
+                      borderRadius: 8,
+                      border: `2px solid ${selectedDifficulty === d ? '#4a9acf' : '#334'}`,
                       background:
                         selectedDifficulty === d ? 'rgba(40,80,120,0.5)' : 'rgba(0,20,40,0.4)',
                       cursor: 'pointer',
-                      fontSize: 9,
+                      fontSize: 16,
                       textAlign: 'center',
                     }}
                   >
@@ -139,7 +139,7 @@ export default function DeepSeaInterceptorGame() {
             <Button $primary onClick={startGame}>
               START GAME
             </Button>
-            <div style={{ marginTop: 20, fontSize: 12, color: '#aaa' }}>
+            <div style={{ marginTop: 36, fontSize: 20, color: '#aaa' }}>
               HIGH SCORE: {uiState.highScore}
             </div>
           </FullScreenOverlay>
@@ -159,7 +159,7 @@ export default function DeepSeaInterceptorGame() {
       <PageContainer>
         <StyledGameContainer>
           <FullScreenOverlay $bg={isCleared ? '#0a1a2a' : '#1a0a0a'}>
-            <h1 style={{ color: isCleared ? '#6ac' : '#f66', fontSize: 18, margin: '0 0 10px' }}>
+            <h1 style={{ color: isCleared ? '#6ac' : '#f66', fontSize: 32, margin: '0 0 18px' }}>
               {isCleared ? 'MISSION COMPLETE' : 'MISSION FAILED'}
             </h1>
 
@@ -168,9 +168,9 @@ export default function DeepSeaInterceptorGame() {
               style={{
                 width: '80%',
                 background: 'rgba(0,20,40,0.6)',
-                borderRadius: 8,
-                padding: 12,
-                fontSize: 10,
+                borderRadius: 10,
+                padding: 20,
+                fontSize: 18,
                 lineHeight: 2,
               }}
             >
@@ -179,7 +179,7 @@ export default function DeepSeaInterceptorGame() {
               </div>
               <div>DIFFICULTY: {DifficultyConfig[uiState.difficulty].label}</div>
               <div>WEAPON: {WeaponInfo[uiState.weaponType].name}</div>
-              <div style={{ borderTop: '1px solid #334', margin: '4px 0', paddingTop: 4 }}>
+              <div style={{ borderTop: '1px solid #334', margin: '8px 0', paddingTop: 8 }}>
                 SCORE: <strong style={{ color: '#fff' }}>{uiState.score.toLocaleString()}</strong>
               </div>
               <div>MAX COMBO: {uiState.maxCombo}</div>
@@ -190,11 +190,11 @@ export default function DeepSeaInterceptorGame() {
             {/* ランク表示 */}
             <div
               style={{
-                fontSize: 36,
+                fontSize: 64,
                 fontWeight: 'bold',
                 color: rankColor,
-                textShadow: `0 0 20px ${rankColor}`,
-                margin: '10px 0',
+                textShadow: `0 0 30px ${rankColor}`,
+                margin: '18px 0',
               }}
             >
               RANK: {rank}
@@ -206,25 +206,25 @@ export default function DeepSeaInterceptorGame() {
                 style={{
                   width: '80%',
                   background: 'rgba(40,40,0,0.4)',
-                  borderRadius: 8,
-                  padding: 8,
-                  marginBottom: 8,
+                  borderRadius: 10,
+                  padding: 14,
+                  marginBottom: 14,
                 }}
               >
-                <div style={{ fontSize: 9, color: '#fc4', marginBottom: 4 }}>NEW ACHIEVEMENTS!</div>
+                <div style={{ fontSize: 16, color: '#fc4', marginBottom: 8 }}>NEW ACHIEVEMENTS!</div>
                 {newAchievements.map(a => (
-                  <div key={a.id} style={{ fontSize: 9, color: '#fd6', lineHeight: 1.8 }}>
-                    🏆 {a.name} - {a.description}
+                  <div key={a.id} style={{ fontSize: 16, color: '#fd6', lineHeight: 1.8 }}>
+                    {a.name} - {a.description}
                   </div>
                 ))}
               </div>
             )}
 
-            <p style={{ fontSize: 10, color: '#aaa', margin: 0 }}>
+            <p style={{ fontSize: 18, color: '#aaa', margin: 0 }}>
               HIGH SCORE: {uiState.highScore}
             </p>
 
-            <div style={{ margin: '10px 0' }}>
+            <div style={{ margin: '18px 0' }}>
               <ShareButton
                 text={`Deep Sea Interceptor ${isCleared ? 'クリア' : ''}！スコア: ${uiState.score}点 ランク: ${rank} コンボ: ${uiState.maxCombo}`}
                 hashtags={['DeepSeaShooter', 'GamePlatform']}
@@ -293,10 +293,10 @@ export default function DeepSeaInterceptorGame() {
           <div
             style={{
               position: 'absolute',
-              bottom: 8,
-              left: 8,
+              bottom: 16,
+              left: 16,
               color: 'rgba(100,180,220,0.4)',
-              fontSize: 16,
+              fontSize: 28,
               pointerEvents: 'none',
             }}
           >
@@ -317,8 +317,8 @@ export default function DeepSeaInterceptorGame() {
               background: v.active
                 ? 'rgba(255,80,20,0.25)'
                 : 'rgba(255,200,100,0.1)',
-              borderLeft: v.active ? '2px solid rgba(255,100,30,0.4)' : '1px dashed rgba(255,200,100,0.2)',
-              borderRight: v.active ? '2px solid rgba(255,100,30,0.4)' : '1px dashed rgba(255,200,100,0.2)',
+              borderLeft: v.active ? '3px solid rgba(255,100,30,0.4)' : '2px dashed rgba(255,200,100,0.2)',
+              borderRight: v.active ? '3px solid rgba(255,100,30,0.4)' : '2px dashed rgba(255,200,100,0.2)',
               pointerEvents: 'none',
             }}
           />
@@ -390,13 +390,13 @@ export default function DeepSeaInterceptorGame() {
             key={b.id}
             style={{
               position: 'absolute',
-              left: b.x - 4,
-              top: b.y - 4,
-              width: 8,
-              height: 8,
+              left: b.x - 8,
+              top: b.y - 8,
+              width: 16,
+              height: 16,
               borderRadius: '50%',
               background: 'radial-gradient(circle,#f66,#a33)',
-              boxShadow: '0 0 6px #f33',
+              boxShadow: '0 0 9px #f33',
             }}
           />
         ))}
@@ -413,12 +413,12 @@ export default function DeepSeaInterceptorGame() {
                 height: i.size,
                 borderRadius: '50%',
                 background: `radial-gradient(circle, ${ic.color}, ${ic.color}88)`,
-                boxShadow: `0 0 10px ${ic.color}`,
+                boxShadow: `0 0 15px ${ic.color}`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: '#fff',
-                fontSize: 12,
+                fontSize: 20,
                 fontWeight: 'bold',
               }}
             >
@@ -447,10 +447,10 @@ export default function DeepSeaInterceptorGame() {
           <div
             style={{
               position: 'absolute',
-              left: gd.player.x - 20,
-              top: gd.player.y + 22,
-              width: 40,
-              height: 5,
+              left: gd.player.x - 40,
+              top: gd.player.y + 44,
+              width: 80,
+              height: 10,
               background: 'rgba(0,0,0,0.6)',
             }}
           >
@@ -488,9 +488,9 @@ export default function DeepSeaInterceptorGame() {
             <div
               style={{
                 color: '#f44',
-                fontSize: 24,
+                fontSize: 42,
                 fontWeight: 'bold',
-                textShadow: '0 0 20px #f00',
+                textShadow: '0 0 30px #f00',
                 animation: 'blink 0.5s infinite',
               }}
             >
@@ -501,7 +501,7 @@ export default function DeepSeaInterceptorGame() {
               style={{
                 position: 'absolute',
                 inset: 0,
-                border: '4px solid rgba(255,0,0,0.3)',
+                border: '6px solid rgba(255,0,0,0.3)',
                 pointerEvents: 'none',
               }}
             />
@@ -517,9 +517,9 @@ export default function DeepSeaInterceptorGame() {
               left: '50%',
               transform: 'translate(-50%,-50%)',
               color: '#6f8',
-              fontSize: 15,
+              fontSize: 28,
               fontWeight: 'bold',
-              textShadow: '0 0 15px #0f0',
+              textShadow: '0 0 22px #0f0',
             }}
           >
             BOSS DEFEATED!
@@ -542,14 +542,14 @@ export default function DeepSeaInterceptorGame() {
             <div
               style={{
                 color: '#6cf',
-                fontSize: 20,
+                fontSize: 36,
                 fontWeight: 'bold',
-                textShadow: '0 0 15px #4af',
+                textShadow: '0 0 22px #4af',
               }}
             >
               STAGE CLEAR
             </div>
-            <div style={{ color: '#adf', fontSize: 11, marginTop: 8 }}>
+            <div style={{ color: '#adf', fontSize: 20, marginTop: 14 }}>
               BONUS: +{1000 * (uiState.stage - 1) + gd.maxCombo * 10 + gd.grazeCount * 5}
             </div>
           </div>

@@ -10,7 +10,7 @@ describe('EntityFactory', () => {
       expect(bullet.y).toBe(200);
       expect(bullet.charged).toBe(false);
       expect(bullet.damage).toBe(1);
-      expect(bullet.size).toBe(6);
+      expect(bullet.size).toBe(12);
       expect(bullet.angle).toBe(-Math.PI / 2);
     });
 
@@ -18,8 +18,8 @@ describe('EntityFactory', () => {
       const bullet = EntityFactory.bullet(100, 200, { charged: true });
       expect(bullet.charged).toBe(true);
       expect(bullet.damage).toBe(5);
-      expect(bullet.size).toBe(22);
-      expect(bullet.speed).toBe(9);
+      expect(bullet.size).toBe(44);
+      expect(bullet.speed).toBe(12);
     });
 
     test('角度を指定して弾を生成できること', () => {
@@ -48,8 +48,8 @@ describe('EntityFactory', () => {
       const boss1 = EntityFactory.enemy('boss', 200, -60, 1);
       const boss2 = EntityFactory.enemy('boss', 200, -60, 2);
       expect(boss2.hp).toBeGreaterThan(boss1.hp);
-      expect(boss1.hp).toBe(40 + 1 * 15);
-      expect(boss2.hp).toBe(40 + 2 * 15);
+      expect(boss1.hp).toBe(60 + 1 * 15);
+      expect(boss2.hp).toBe(60 + 2 * 15);
     });
 
     test('無効な敵タイプでエラーが発生すること', () => {
@@ -70,7 +70,7 @@ describe('EntityFactory', () => {
       expect(bullet.type).toBe('enemyBullet');
       expect(bullet.vx).toBe(2);
       expect(bullet.vy).toBe(3);
-      expect(bullet.size).toBe(8);
+      expect(bullet.size).toBe(16);
     });
   });
 
@@ -79,7 +79,7 @@ describe('EntityFactory', () => {
       const item = EntityFactory.item(100, 200, 'power');
       expect(item.type).toBe('item');
       expect(item.itemType).toBe('power');
-      expect(item.size).toBe(24);
+      expect(item.size).toBe(48);
     });
   });
 
@@ -105,8 +105,8 @@ describe('EntityFactory', () => {
     test('泡を生成できること', () => {
       const bubble = EntityFactory.bubble();
       expect(bubble.x).toBeGreaterThanOrEqual(0);
-      expect(bubble.x).toBeLessThanOrEqual(400);
-      expect(bubble.y).toBe(565);
+      expect(bubble.x).toBeLessThanOrEqual(800);
+      expect(bubble.y).toBe(1010);
       expect(bubble.opacity).toBeGreaterThan(0);
     });
   });

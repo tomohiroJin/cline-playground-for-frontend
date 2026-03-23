@@ -13,7 +13,8 @@ import {
   BIOLUMINESCENCE_SPAWN_CHANCE, BIOLUMINESCENCE_DURATION_MS, BIOLUMINESCENCE_DETECT_RANGE,
   PRESSURE_START_MS, PRESSURE_SHRINK_RATE, PRESSURE_MIN_WIDTH_RATIO,
   GRAZE_SCORE, MAX_COMBO_MULTIPLIER, COMBO_MULTIPLIER_INCREMENT,
-  BOSS_PHASE2_HP_RATIO, BOSS_DEFEAT_SCREEN_SHAKE, BOSS_DEFEAT_SCREEN_FLASH,
+  BOSS_PHASE2_HP_RATIO, BOSS_PHASE3_HP_RATIO,
+  BOSS_DEFEAT_SCREEN_SHAKE, BOSS_DEFEAT_SCREEN_FLASH,
   MIDBOSS_DEFEAT_SCREEN_SHAKE, BOSS_PHASE_CHANGE_SCREEN_SHAKE,
   WARNING_DURATION_MS, BOMB_SCORE_BONUS, FRAME_MS,
 } from './constants';
@@ -31,7 +32,7 @@ const clamp = (min: number, max: number) => (value: number) => baseClamp(value, 
 
 /** 初期ゲーム状態を生成 */
 export const createInitialGameState = (): GameState => ({
-  player: { x: Config.canvas.width / 2, y: Config.canvas.height - 80 },
+  player: { x: Config.canvas.width / 2, y: Config.canvas.height - 160 },
   bullets: [],
   enemies: [],
   enemyBullets: [],
@@ -116,7 +117,7 @@ function applyCurrentGimmick(gd: GameState, now: number): void {
 function applyMinefieldGimmick(gd: GameState, now: number, stage: number): void {
   if (now % MINE_SPAWN_INTERVAL_MS < FRAME_MS && gd.enemies.filter(e => e.enemyType === 'mine').length < MINE_MAX_COUNT) {
     gd.enemies.push(
-      EntityFactory.enemy('mine' as EnemyType, randomRange(40, 360), randomRange(50, 300), stage)
+      EntityFactory.enemy('mine' as EnemyType, randomRange(80, 720), randomRange(100, 600), stage)
     );
   }
 }
@@ -126,7 +127,7 @@ function applyThermalVentGimmick(gd: GameState, now: number): void {
   gd.thermalVentTimer += FRAME_MS;
   if (gd.thermalVentTimer > THERMAL_VENT_INTERVAL_MS) {
     gd.thermalVentTimer = 0;
-    const x = randomRange(40, 360);
+    const x = randomRange(80, 720);
     gd.thermalVents.push({
       x,
       width: THERMAL_VENT_WIDTH,
@@ -158,8 +159,8 @@ function applyThermalVentGimmick(gd: GameState, now: number): void {
 function applyBioluminescenceGimmick(gd: GameState, now: number): void {
   if (Math.random() < BIOLUMINESCENCE_SPAWN_CHANCE && gd.particles.length < 60) {
     gd.particles.push(EntityFactory.particle(
-      randomRange(10, 390),
-      randomRange(10, 550),
+      randomRange(20, 780),
+      randomRange(20, 980),
       { color: '#44ffaa', velocity: { x: (Math.random() - 0.5) * 0.5, y: -0.3 }, life: 120 }
     ));
   }
@@ -190,7 +191,7 @@ function applyPressureGimmick(gd: GameState, now: number): void {
     gd.pressureBounds.left = cx - targetHalfWidth;
     gd.pressureBounds.right = cx + targetHalfWidth;
     // プレイヤーを壁内に制限
-    gd.player.x = clamp(gd.pressureBounds.left + 15, gd.pressureBounds.right - 15)(gd.player.x);
+    gd.player.x = clamp(gd.pressureBounds.left + 30, gd.pressureBounds.right - 30)(gd.player.x);
   }
   // ボス撃破で解除
   if (gd.bossDefeated) {
@@ -224,8 +225,8 @@ export function updatePlayerPosition(
   speed: number
 ): Position {
   return {
-    x: clamp(15, Config.canvas.width - 15)(player.x + input.dx * speed),
-    y: clamp(15, Config.canvas.height - 50)(player.y + input.dy * speed),
+    x: clamp(30, Config.canvas.width - 30)(player.x + input.dx * speed),
+    y: clamp(30, Config.canvas.height - 100)(player.y + input.dy * speed),
   };
 }
 
@@ -298,10 +299,11 @@ export function processBulletEnemyCollisions(
             screenShake = BOSS_DEFEAT_SCREEN_SHAKE;
             screenFlash = BOSS_DEFEAT_SCREEN_FLASH;
             newItems.push(EntityFactory.item(e.x, e.y, 'bomb'));
+            newItems.push(EntityFactory.item(e.x + 30, e.y, 'power'));
             for (let i = 0; i < 20; i++) {
               newParticles.push(EntityFactory.particle(
-                e.x + randomRange(-30, 30),
-                e.y + randomRange(-30, 30),
+                e.x + randomRange(-60, 60),
+                e.y + randomRange(-60, 60),
                 { color: randomChoice(['#ff6', '#f80', '#fa0', '#ff4']) },
               ));
             }
@@ -309,14 +311,16 @@ export function processBulletEnemyCollisions(
             screenShake = MIDBOSS_DEFEAT_SCREEN_SHAKE;
             const dropItem = Math.random() < 0.5 ? 'life' : 'power';
             newItems.push(EntityFactory.item(e.x, e.y, dropItem as 'life' | 'power'));
+            // 確定追加ドロップ
+            newItems.push(EntityFactory.item(e.x + 20, e.y, randomChoice(['power', 'speed', 'shield'] as Array<'power' | 'speed' | 'shield'>)));
             for (let i = 0; i < 10; i++) {
               newParticles.push(EntityFactory.particle(
-                e.x + randomRange(-20, 20),
-                e.y + randomRange(-20, 20),
+                e.x + randomRange(-40, 40),
+                e.y + randomRange(-40, 40),
                 { color: randomChoice(['#88f', '#aaf', '#66f']) },
               ));
             }
-          } else if (Math.random() < 0.2) {
+          } else if (Math.random() < Config.spawn.itemChance) {
             newItems.push(EntityFactory.item(e.x, e.y, randomChoice(Object.keys(ItemConfig) as Array<keyof typeof ItemConfig>)));
           }
         } else {
@@ -558,7 +562,7 @@ export function updateFrame(
     if (now - gd.bossWarningStartTime > WARNING_DURATION_MS) {
       gd.bossWarning = false;
       const bossType = `boss${currentUi.stage}` as EnemyType;
-      gd.enemies.push(EntityFactory.enemy(bossType, 200, -60, currentUi.stage));
+      gd.enemies.push(EntityFactory.enemy(bossType, 400, -120, currentUi.stage));
       audioEvents.push({ name: 'bossAppear' });
     }
   }
@@ -588,8 +592,8 @@ export function updateFrame(
     case 'pressure': applyPressureGimmick(gd, now); break;
   }
   // ギミック適用後もプレイヤーが画面内に収まるよう再clamp
-  gd.player.x = clamp(15, Config.canvas.width - 15)(gd.player.x);
-  gd.player.y = clamp(15, Config.canvas.height - 50)(gd.player.y);
+  gd.player.x = clamp(30, Config.canvas.width - 30)(gd.player.x);
+  gd.player.y = clamp(30, Config.canvas.height - 100)(gd.player.y);
 
   // 敵スポーン
   if (!gd.bossDefeated && !gd.bossWarning) {
@@ -598,8 +602,8 @@ export function updateFrame(
       gd.enemies.push(
         EntityFactory.enemy(
           randomChoice(stg.types),
-          randomRange(30, 370),
-          -40,
+          randomRange(60, 740),
+          -80,
           currentUi.stage
         )
       );
@@ -612,7 +616,7 @@ export function updateFrame(
       !gd.enemies.some(e => isMidboss(e))
     ) {
       const midbossType = `midboss${currentUi.stage}` as EnemyType;
-      gd.enemies.push(EntityFactory.enemy(midbossType, 200, -50, currentUi.stage));
+      gd.enemies.push(EntityFactory.enemy(midbossType, 400, -100, currentUi.stage));
       gd.midBossSpawned = true;
     }
     // ボスWARNING開始
@@ -634,18 +638,35 @@ export function updateFrame(
       if (b.homing) return MovementStrategies.homing(b, gd.enemies);
       return MovementStrategies.bullet(b);
     })
-    .filter(b => b.y > -20 && b.y < 580 && (b.lifespan === undefined || b.lifespan > 0));
+    .filter(b => b.y > -40 && b.y < Config.canvas.height + 40 && (b.lifespan === undefined || b.lifespan > 0));
   gd.enemyBullets = gd.enemyBullets
     .map(MovementStrategies.enemyBullet)
-    .filter(b => b.y < 575 && b.x > -15 && b.x < 415);
+    .filter(b => b.y < Config.canvas.height + 30 && b.x > -30 && b.x < Config.canvas.width + 30);
   gd.particles = gd.particles.map(MovementStrategies.particle).filter(p => p.life > 0);
-  gd.items = gd.items.map(MovementStrategies.item).filter(i => i.y < 590);
+  // アイテム: 吸引 + 画面下部滞留
+  gd.items = gd.items.map(i => {
+    const dx = gd.player.x - i.x;
+    const dy = gd.player.y - i.y;
+    const dist = Math.hypot(dx, dy);
+    // 吸引範囲内なら引き寄せる
+    if (dist < Config.itemAttract.range && dist > 0) {
+      const factor = Config.itemAttract.speed / dist;
+      return { ...i, x: i.x + dx * factor, y: i.y + dy * factor };
+    }
+    return MovementStrategies.item(i);
+  }).filter(i => i.y < Config.canvas.height + 60);
 
   gd.enemies = gd.enemies
     .map(e => {
-      // ボスのフェーズ遷移チェック
+      // ボスのフェーズ遷移チェック（3フェーズ対応）
       if (isBoss(e) && e.bossPhase === 1 && e.hp <= e.maxHp * BOSS_PHASE2_HP_RATIO) {
         e.bossPhase = 2;
+        audioEvents.push({ name: 'bossPhaseChange' });
+        gd.enemyBullets = [];
+        gd.screenShake = BOSS_PHASE_CHANGE_SCREEN_SHAKE;
+      }
+      if (isBoss(e) && e.bossPhase === 2 && e.hp <= e.maxHp * BOSS_PHASE3_HP_RATIO) {
+        e.bossPhase = 3;
         audioEvents.push({ name: 'bossPhaseChange' });
         gd.enemyBullets = [];
         gd.screenShake = BOSS_PHASE_CHANGE_SCREEN_SHAKE;
@@ -660,7 +681,7 @@ export function updateFrame(
       }
       return next;
     })
-    .filter(e => e.y < 600);
+    .filter(e => e.y < Config.canvas.height + 60);
 
   // 衝突判定: 弾 → 敵（サブ関数利用）
   const collisionResult = processBulletEnemyCollisions(gd.bullets, gd.enemies, gd.combo, diffConfig);

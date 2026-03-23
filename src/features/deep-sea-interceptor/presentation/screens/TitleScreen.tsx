@@ -46,48 +46,48 @@ export function TitleScreen({
         <GameSubTitle>DEEP SEA INTERCEPTOR</GameSubTitle>
 
         {/* 武器選択 */}
-        <div style={{ width: '80%', marginBottom: 12 }}>
-          <div style={{ fontSize: 10, color: '#8ac', marginBottom: 6 }}>WEAPON SELECT</div>
+        <div style={{ width: '80%', marginBottom: 20 }}>
+          <div style={{ fontSize: 18, color: '#8ac', marginBottom: 10 }}>WEAPON SELECT</div>
           {(Object.keys(WeaponInfo) as WeaponType[]).map(w => (
             <div
               key={w}
               onClick={() => onSelectWeapon(w)}
               style={{
-                padding: '6px 10px',
-                marginBottom: 4,
-                borderRadius: 6,
-                border: `1px solid ${selectedWeapon === w ? '#4a9acf' : '#334'}`,
+                padding: '10px 18px',
+                marginBottom: 8,
+                borderRadius: 8,
+                border: `2px solid ${selectedWeapon === w ? '#4a9acf' : '#334'}`,
                 background: selectedWeapon === w ? 'rgba(40,80,120,0.5)' : 'rgba(0,20,40,0.4)',
                 cursor: 'pointer',
-                fontSize: 10,
+                fontSize: 18,
               }}
             >
               <span style={{ color: selectedWeapon === w ? '#6cf' : '#888' }}>
                 {selectedWeapon === w ? '●' : '○'}{' '}
               </span>
               <strong>{WeaponInfo[w].name}</strong>
-              <span style={{ color: '#888', marginLeft: 6 }}>{WeaponInfo[w].description}</span>
+              <span style={{ color: '#888', marginLeft: 10 }}>{WeaponInfo[w].description}</span>
             </div>
           ))}
         </div>
 
         {/* 難易度選択 */}
-        <div style={{ width: '80%', marginBottom: 12 }}>
-          <div style={{ fontSize: 10, color: '#8ac', marginBottom: 6 }}>DIFFICULTY</div>
-          <div style={{ display: 'flex', gap: 4 }}>
+        <div style={{ width: '80%', marginBottom: 20 }}>
+          <div style={{ fontSize: 18, color: '#8ac', marginBottom: 10 }}>DIFFICULTY</div>
+          <div style={{ display: 'flex', gap: 8 }}>
             {(Object.keys(DifficultyConfig) as Difficulty[]).map(d => (
               <div
                 key={d}
                 onClick={() => onSelectDifficulty(d)}
                 style={{
                   flex: 1,
-                  padding: '6px 4px',
-                  borderRadius: 6,
-                  border: `1px solid ${selectedDifficulty === d ? '#4a9acf' : '#334'}`,
+                  padding: '10px 8px',
+                  borderRadius: 8,
+                  border: `2px solid ${selectedDifficulty === d ? '#4a9acf' : '#334'}`,
                   background:
                     selectedDifficulty === d ? 'rgba(40,80,120,0.5)' : 'rgba(0,20,40,0.4)',
                   cursor: 'pointer',
-                  fontSize: 9,
+                  fontSize: 16,
                   textAlign: 'center',
                 }}
               >
@@ -107,7 +107,7 @@ export function TitleScreen({
         <Button $primary onClick={onStartGame}>
           START GAME
         </Button>
-        <div style={{ marginTop: 20, fontSize: 12, color: '#aaa' }}>
+        <div style={{ marginTop: 36, fontSize: 20, color: '#aaa' }}>
           HIGH SCORE: {highScore}
         </div>
       </FullScreenOverlay>
