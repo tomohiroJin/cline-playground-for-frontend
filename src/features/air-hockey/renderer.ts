@@ -28,6 +28,12 @@ import {
 export const lightenColor = _lightenColor;
 export const darkenColor = _darkenColor;
 
+/** 基準解像度（フォントサイズ・レイアウトオフセットのスケール基準） */
+const BASE_WIDTH = 450;
+
+/** 描画スケール係数を算出（Canvas 幅 / 基準幅） */
+const getDrawScale = (consts: GameConstants) => consts.CANVAS.WIDTH / BASE_WIDTH;
+
 // Renderer モジュール - 描画責務のみ
 export const Renderer = {
   // 背景グラデーションアニメーション
@@ -47,6 +53,7 @@ export const Renderer = {
   // フィールドラインネオン強化（US-1.1: 台の質感向上）
   drawField(ctx: CanvasRenderingContext2D, field: FieldConfig, consts: GameConstants = CONSTANTS, obstacleStates: ObstacleState[] = [], now = 0) {
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
+    const s = getDrawScale(consts);
 
     // P1-02: 外枠（木目風グラデーション + 多重線）
     const frameGrad = ctx.createLinearGradient(0, 0, W, H);
@@ -54,20 +61,23 @@ export const Renderer = {
     frameGrad.addColorStop(0.5, '#3d2518');
     frameGrad.addColorStop(1, '#1a0e08');
     ctx.strokeStyle = frameGrad;
-    ctx.lineWidth = 12;
-    ctx.strokeRect(6, 6, W - 12, H - 12);
+    const frameW = Math.round(12 * s);
+    const frameOuter = Math.round(6 * s);
+    const frameInner = Math.round(12 * s);
+    ctx.lineWidth = frameW;
+    ctx.strokeRect(frameOuter, frameOuter, W - frameOuter * 2, H - frameOuter * 2);
 
     // 内枠（光沢ハイライト）
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
     ctx.lineWidth = 1;
-    ctx.strokeRect(12, 12, W - 24, H - 24);
+    ctx.strokeRect(frameInner, frameInner, W - frameInner * 2, H - frameInner * 2);
 
     // フィールドカラーのネオン枠線
     ctx.strokeStyle = field.color;
     ctx.lineWidth = 2;
     ctx.shadowColor = field.color;
-    ctx.shadowBlur = 15;
-    ctx.strokeRect(12, 12, W - 24, H - 24);
+    ctx.shadowBlur = Math.round(15 * s);
+    ctx.strokeRect(frameInner, frameInner, W - frameInner * 2, H - frameInner * 2);
     ctx.shadowBlur = 0;
 
     // P1-03: フィールド面の照明効果（放射グラデーション）
@@ -76,63 +86,69 @@ export const Renderer = {
     lightGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.015)');
     lightGrad.addColorStop(1, 'rgba(0, 0, 0, 0.1)');
     ctx.fillStyle = lightGrad;
-    ctx.fillRect(12, 12, W - 24, H - 24);
+    ctx.fillRect(frameInner, frameInner, W - frameInner * 2, H - frameInner * 2);
 
     // P1-04: 中央ライン（二重線 + 装飾）
+    const lineMargin = Math.round(15 * s);
+    const lineGap = Math.round(3 * s);
     ctx.strokeStyle = field.color + '33';
     ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo(15, H / 2);
-    ctx.lineTo(W - 15, H / 2);
+    ctx.moveTo(lineMargin, H / 2);
+    ctx.lineTo(W - lineMargin, H / 2);
     ctx.stroke();
 
     ctx.strokeStyle = field.color + '66';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(15, H / 2 - 3);
-    ctx.lineTo(W - 15, H / 2 - 3);
+    ctx.moveTo(lineMargin, H / 2 - lineGap);
+    ctx.lineTo(W - lineMargin, H / 2 - lineGap);
     ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(15, H / 2 + 3);
-    ctx.lineTo(W - 15, H / 2 + 3);
+    ctx.moveTo(lineMargin, H / 2 + lineGap);
+    ctx.lineTo(W - lineMargin, H / 2 + lineGap);
     ctx.stroke();
 
     // 中央円（装飾 + ネオングロー）
+    const centerCircleR = Math.round(60 * s);
+    const centerDotR = Math.round(8 * s);
     ctx.shadowColor = field.color;
-    ctx.shadowBlur = 15;
+    ctx.shadowBlur = Math.round(15 * s);
     ctx.strokeStyle = field.color + '55';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(W / 2, H / 2, 60, 0, Math.PI * 2);
+    ctx.arc(W / 2, H / 2, centerCircleR, 0, Math.PI * 2);
     ctx.stroke();
     // 内側の小円
     ctx.beginPath();
-    ctx.arc(W / 2, H / 2, 8, 0, Math.PI * 2);
+    ctx.arc(W / 2, H / 2, centerDotR, 0, Math.PI * 2);
     ctx.fillStyle = field.color + '44';
     ctx.fill();
     ctx.shadowBlur = 0;
 
     // P1-05: ゴールエリア（LED風発光）
     const gs = field.goalSize;
+    const ledH = Math.round(6 * s);
+    const ledSpacing = Math.round(12 * s);
     const drawGoalLED = (y: number, color: string, glowColor: string) => {
       const gx = W / 2 - gs / 2;
       ctx.shadowColor = glowColor;
-      ctx.shadowBlur = 25;
+      ctx.shadowBlur = Math.round(25 * s);
       ctx.fillStyle = color;
-      ctx.fillRect(gx, y, gs, 6);
+      ctx.fillRect(gx, y, gs, ledH);
       // LED 粒感ドット
       ctx.shadowBlur = 0;
-      const dotCount = Math.floor(gs / 12);
+      const dotCount = Math.floor(gs / ledSpacing);
       for (let i = 0; i < dotCount; i++) {
-        const dx = gx + 6 + i * 12;
+        const dx = gx + ledSpacing / 2 + i * ledSpacing;
         ctx.beginPath();
-        ctx.arc(dx, y + 3, 2, 0, Math.PI * 2);
+        ctx.arc(dx, y + ledH / 2, Math.round(2 * s), 0, Math.PI * 2);
         ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
         ctx.fill();
       }
     };
     drawGoalLED(0, '#ff3333', '#ff0000');
-    drawGoalLED(H - 6, '#33ffff', '#00ffff');
+    drawGoalLED(H - ledH, '#33ffff', '#00ffff');
     field.obstacles.forEach((ob: Obstacle, i: number) => {
       const obState = obstacleStates[i];
 
@@ -396,26 +412,28 @@ export const Renderer = {
     const pulse = 1 + Math.sin(now * 0.008) * 0.2;
     this.drawCircle(ctx, item.x, item.y, IR * pulse, item.color);
     ctx.fillStyle = '#fff';
-    ctx.font = 'bold 14px Arial';
+    const s2 = getDrawScale(consts);
+    ctx.font = `bold ${Math.round(14 * s2)}px Arial`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(item.icon, item.x, item.y);
   },
   drawHUD(ctx: CanvasRenderingContext2D, effects: GameEffects, now: number, consts: GameConstants = CONSTANTS) {
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
+    const s = getDrawScale(consts);
     ctx.textAlign = 'center';
-    ctx.font = 'bold 12px Arial';
+    ctx.font = `bold ${Math.round(12 * s)}px Arial`;
     const playerEff = effects.player;
     if (playerEff.speed && now - playerEff.speed.start < playerEff.speed.duration) {
       const remaining = Math.ceil(
         (playerEff.speed.duration - (now - playerEff.speed.start)) / 1000
       );
       ctx.fillStyle = '#00ffff';
-      ctx.fillText(`⚡${remaining}s`, W / 2, H - 25);
+      ctx.fillText(`⚡${remaining}s`, W / 2, H - Math.round(25 * s));
     }
     if (playerEff.invisible > 0) {
       ctx.fillStyle = '#ff00ff';
-      ctx.fillText(`👻x${playerEff.invisible}`, W / 2, H - 45);
+      ctx.fillText(`👻x${playerEff.invisible}`, W / 2, H - Math.round(45 * s));
     }
   },
   drawFlash(
@@ -433,7 +451,8 @@ export const Renderer = {
     // @ts-ignore
     const item = ITEMS.find(i => i.id === flash.type);
     if (item) {
-      ctx.font = 'bold 18px Arial';
+      const s = getDrawScale(consts);
+      ctx.font = `bold ${Math.round(18 * s)}px Arial`;
       ctx.textAlign = 'center';
       ctx.fillStyle = `rgba(255,255,255,${alpha})`;
       ctx.fillText(`${item.icon} ${item.name}!`, W / 2, H / 2);
@@ -448,36 +467,38 @@ export const Renderer = {
     const alpha = Math.max(0, 0.5 - elapsed / 1000);
     ctx.fillStyle = isPlayerGoal ? `rgba(0,255,255,${alpha})` : `rgba(255,0,0,${alpha})`;
     ctx.fillRect(0, 0, W, H);
+    const s = getDrawScale(consts);
     ctx.textAlign = 'center';
-    ctx.font = 'bold 36px Arial';
-    const textY = H / 2 + Math.sin(elapsed * 0.01) * 10;
+    ctx.font = `bold ${Math.round(36 * s)}px Arial`;
+    const textY = H / 2 + Math.sin(elapsed * 0.01) * Math.round(10 * s);
     ctx.fillStyle = isPlayerGoal ? '#00ffff' : '#ff4444';
     ctx.shadowColor = isPlayerGoal ? '#00ffff' : '#ff0000';
-    ctx.shadowBlur = 20;
+    ctx.shadowBlur = Math.round(20 * s);
     ctx.fillText(isPlayerGoal ? 'GOAL!' : 'LOSE...', W / 2, textY);
-    ctx.font = 'bold 20px Arial';
-    ctx.fillText(isPlayerGoal ? '🎉 +1 Pt!' : '😢 -1 Pt', W / 2, textY + 40);
+    ctx.font = `bold ${Math.round(20 * s)}px Arial`;
+    ctx.fillText(isPlayerGoal ? '🎉 +1 Pt!' : '😢 -1 Pt', W / 2, textY + Math.round(40 * s));
     ctx.shadowBlur = 0;
   },
   drawHelp(ctx: CanvasRenderingContext2D, consts: GameConstants = CONSTANTS, field?: FieldConfig) {
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
+    const s = getDrawScale(consts);
     ctx.fillStyle = 'rgba(0,0,0,0.92)';
     ctx.fillRect(0, 0, W, H);
     ctx.textAlign = 'center';
 
     // タイトル
     ctx.fillStyle = '#fff';
-    ctx.font = 'bold 18px Arial';
-    ctx.fillText('How to Play', W / 2, 36);
+    ctx.font = `bold ${Math.round(18 * s)}px Arial`;
+    ctx.fillText('How to Play', W / 2, Math.round(36 * s));
 
-    ctx.font = '12px Arial';
+    ctx.font = `${Math.round(12 * s)}px Arial`;
     ctx.fillStyle = '#ccc';
-    ctx.fillText('Hit the puck into the opponent\'s goal!', W / 2, 58);
+    ctx.fillText('Hit the puck into the opponent\'s goal!', W / 2, Math.round(58 * s));
 
     // アイテム一覧
-    ctx.font = 'bold 14px Arial';
+    ctx.font = `bold ${Math.round(14 * s)}px Arial`;
     ctx.fillStyle = 'var(--accent-color, #00d4ff)';
-    ctx.fillText('-- Items --', W / 2, 86);
+    ctx.fillText('-- Items --', W / 2, Math.round(86 * s));
 
     const items = [
       { icon: '◆', name: 'Split', color: '#FF6B6B', desc: 'Puck splits into 3' },
@@ -488,46 +509,46 @@ export const Renderer = {
       { icon: '⬆', name: 'Big', color: '#00FF88', desc: 'Mallet size up' },
     ];
 
-    const startY = 108;
-    const lineH = 28;
+    const startY = Math.round(108 * s);
+    const lineH = Math.round(28 * s);
     ctx.textAlign = 'left';
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
       const y = startY + i * lineH;
       // アイコン + 名前
-      ctx.font = 'bold 13px Arial';
+      ctx.font = `bold ${Math.round(13 * s)}px Arial`;
       ctx.fillStyle = item.color;
-      ctx.fillText(`${item.icon} ${item.name}`, 30, y);
+      ctx.fillText(`${item.icon} ${item.name}`, Math.round(30 * s), y);
       // 説明
-      ctx.font = '11px Arial';
+      ctx.font = `${Math.round(11 * s)}px Arial`;
       ctx.fillStyle = '#aaa';
-      ctx.fillText(item.desc, 150, y);
+      ctx.fillText(item.desc, Math.round(150 * s), y);
     }
 
     // フィールド情報
     if (field) {
-      const fieldY = startY + items.length * lineH + 16;
+      const fieldY = startY + items.length * lineH + Math.round(16 * s);
       ctx.textAlign = 'center';
-      ctx.font = 'bold 14px Arial';
+      ctx.font = `bold ${Math.round(14 * s)}px Arial`;
       ctx.fillStyle = field.color;
       ctx.fillText(`Field: ${field.name}`, W / 2, fieldY);
 
-      ctx.font = '11px Arial';
+      ctx.font = `${Math.round(11 * s)}px Arial`;
       ctx.fillStyle = '#999';
       const traits: string[] = [];
       if (field.obstacles.length > 0) traits.push(`${field.obstacles.length} obstacles`);
       if (field.destructible) traits.push('destructible');
-      if (field.goalSize >= 150) traits.push('wide goal');
-      if (field.goalSize <= 110) traits.push('narrow goal');
+      if (field.goalSize >= 200) traits.push('wide goal');
+      if (field.goalSize <= 150) traits.push('narrow goal');
       if (traits.length === 0) traits.push('standard');
-      ctx.fillText(traits.join(' / '), W / 2, fieldY + 18);
+      ctx.fillText(traits.join(' / '), W / 2, fieldY + Math.round(18 * s));
     }
 
     // フッタ
     ctx.textAlign = 'center';
     ctx.fillStyle = '#888';
-    ctx.font = '12px Arial';
-    ctx.fillText('Tap to Resume', W / 2, H - 20);
+    ctx.font = `${Math.round(12 * s)}px Arial`;
+    ctx.fillText('Tap to Resume', W / 2, H - Math.round(20 * s));
   },
   drawFeverEffect(ctx: CanvasRenderingContext2D, active: boolean, now: number, consts: GameConstants = CONSTANTS) {
     if (!active) return;
@@ -535,15 +556,16 @@ export const Renderer = {
     const hue = (now * 0.1) % 360;
     ctx.fillStyle = `hsla(${hue}, 100%, 50%, 0.05)`;
     ctx.fillRect(0, 0, W, H);
+    const s = getDrawScale(consts);
     ctx.save();
     ctx.textAlign = 'center';
-    ctx.font = 'bold 24px Arial';
+    ctx.font = `bold ${Math.round(24 * s)}px Arial`;
     const textHue = (now * 0.2) % 360;
     ctx.fillStyle = `hsl(${textHue}, 100%, 60%)`;
     ctx.shadowColor = `hsl(${textHue}, 100%, 50%)`;
-    ctx.shadowBlur = 15;
-    const bounce = Math.sin(now * 0.005) * 5;
-    ctx.fillText('FEVER TIME!', W / 2, 30 + bounce);
+    ctx.shadowBlur = Math.round(15 * s);
+    const bounce = Math.sin(now * 0.005) * Math.round(5 * s);
+    ctx.fillText('FEVER TIME!', W / 2, Math.round(30 * s) + bounce);
     ctx.shadowBlur = 0;
     ctx.restore();
   },
@@ -574,18 +596,19 @@ export const Renderer = {
     ctx.translate(W / 2, H / 2);
     ctx.scale(scale, scale);
 
+    const s = getDrawScale(consts);
     if (countdownValue > 0) {
       // 数字: 白色
-      ctx.font = 'bold 80px Arial';
+      ctx.font = `bold ${Math.round(80 * s)}px Arial`;
       ctx.fillStyle = '#ffffff';
       ctx.shadowColor = '#00d4ff';
-      ctx.shadowBlur = 30;
+      ctx.shadowBlur = Math.round(30 * s);
     } else {
       // GO!: ネオンカラー
-      ctx.font = 'bold 90px Arial';
+      ctx.font = `bold ${Math.round(90 * s)}px Arial`;
       ctx.fillStyle = '#00ff88';
       ctx.shadowColor = '#00ff88';
-      ctx.shadowBlur = 40;
+      ctx.shadowBlur = Math.round(40 * s);
     }
 
     ctx.fillText(text, 0, 0);
@@ -604,20 +627,21 @@ export const Renderer = {
     ctx.textBaseline = 'middle';
 
     // PAUSED テキスト
-    ctx.font = 'bold 48px Arial';
+    const s = getDrawScale(consts);
+    ctx.font = `bold ${Math.round(48 * s)}px Arial`;
     ctx.fillStyle = '#ffffff';
     ctx.shadowColor = '#00d4ff';
-    ctx.shadowBlur = 20;
-    ctx.fillText('PAUSED', W / 2, H / 2 - 60);
+    ctx.shadowBlur = Math.round(20 * s);
+    ctx.fillText('PAUSED', W / 2, H / 2 - Math.round(60 * s));
     ctx.shadowBlur = 0;
 
     // メニューオプション
-    ctx.font = 'bold 20px Arial';
+    ctx.font = `bold ${Math.round(20 * s)}px Arial`;
     ctx.fillStyle = '#00d4ff';
-    ctx.fillText('Tap to Resume', W / 2, H / 2 + 20);
+    ctx.fillText('Tap to Resume', W / 2, H / 2 + Math.round(20 * s));
     ctx.fillStyle = '#888888';
-    ctx.font = '16px Arial';
-    ctx.fillText('Press ESC or P to toggle', W / 2, H / 2 + 60);
+    ctx.font = `${Math.round(16 * s)}px Arial`;
+    ctx.fillText('Press ESC or P to toggle', W / 2, H / 2 + Math.round(60 * s));
 
     ctx.restore();
   },
@@ -640,12 +664,13 @@ export const Renderer = {
       color = '#ff6600';
     }
 
+    const s = getDrawScale(consts);
     const scale = 1 + Math.sin(now * 0.01) * 0.1;
-    ctx.font = `bold ${Math.floor(28 * scale)}px Arial`;
+    ctx.font = `bold ${Math.floor(28 * s * scale)}px Arial`;
     ctx.fillStyle = color;
     ctx.shadowColor = color;
-    ctx.shadowBlur = 15;
-    ctx.fillText(`x${combo.count} COMBO!`, W / 2, 60);
+    ctx.shadowBlur = Math.round(15 * s);
+    ctx.fillText(`x${combo.count} COMBO!`, W / 2, Math.round(60 * s));
     ctx.shadowBlur = 0;
 
     ctx.restore();
@@ -673,7 +698,7 @@ export const Renderer = {
   drawMagnetEffect(ctx: CanvasRenderingContext2D, mallet: Mallet, now: number) {
     ctx.save();
     const pulse = 1 + Math.sin(now * 0.008) * 0.3;
-    const radius = 60 * pulse;
+    const radius = 80 * pulse;
     ctx.beginPath();
     ctx.arc(mallet.x, mallet.y, radius, 0, Math.PI * 2);
     ctx.strokeStyle = 'rgba(255, 107, 53, 0.3)';
@@ -728,17 +753,18 @@ export const Renderer = {
     const x = W * 0.7;
     const y = side === 'cpu' ? H * 0.15 : H * 0.85;
 
+    const s = getDrawScale(consts);
     ctx.save();
     ctx.globalAlpha = alpha;
-    ctx.font = 'bold 14px sans-serif';
+    ctx.font = `bold ${Math.round(14 * s)}px sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
     // 吹き出し背景のサイズ計算
     const metrics = ctx.measureText(text);
-    const padding = 12;
+    const padding = Math.round(12 * s);
     const bw = metrics.width + padding * 2;
-    const bh = 32;
+    const bh = Math.round(32 * s);
     const rx = x - bw / 2;
     const ry = y - bh / 2;
 

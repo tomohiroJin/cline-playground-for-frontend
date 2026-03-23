@@ -28,7 +28,7 @@ export const MenuCard = styled(GlassCard)`
   flex-direction: column;
   align-items: center;
   padding: 40px;
-  max-width: 450px;
+  max-width: 600px;
   width: 100%;
 `;
 
@@ -98,7 +98,7 @@ export const ScoreBoardContainer = styled.div`
   display: flex;
   justify-content: space-between;
   width: 100%;
-  max-width: 450px;
+  max-width: 600px;
   margin-bottom: 10px;
 `;
 
@@ -116,7 +116,7 @@ export const GameCanvas = styled.canvas`
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
   background: #0d1117;
   width: 100%;
-  max-width: 450px;
+  max-width: 600px;
   max-height: calc(100vh - 100px);
   aspect-ratio: 1 / 2;
   height: auto;

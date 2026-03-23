@@ -5,9 +5,9 @@
 | フェーズ | ステータス | タスク数 | 完了日 |
 |---------|-----------|---------|--------|
 | S1-1 定数・型定義の更新 | [x] 完了 | 11 | 2026-03-24 |
-| S1-2 レンダラーの対応 | [ ] 未着手 | 9 | |
-| S1-3 ゲームロジックの対応 | [ ] 未着手 | 10 | |
-| S1-4 CSS・UI の対応 | [ ] 未着手 | 5 | |
+| S1-2 レンダラーの対応 | [x] 完了 | 9 | 2026-03-24 |
+| S1-3 ゲームロジックの対応 | [x] 完了 | 10 | 2026-03-24 |
+| S1-4 CSS・UI の対応 | [x] 完了 | 5 | 2026-03-24 |
 | S1-5 テスト・品質保証 | [ ] 未着手 | 8 | |
 
 ### 並行作業ガイド
@@ -70,23 +70,24 @@ S1-1（定数更新）
 
 ### S1-2-1: ハードコード座標の定数化（renderer.ts）
 
-- [ ] `renderer.ts` 内の数値リテラルを洗い出し
-- [ ] 外枠描画のオフセット値の確認・必要に応じて修正
-- [ ] 中央サークル半径（60px）を `W * 0.1` に変更
-- [ ] 中央ドット半径の確認
-- [ ] ゴール LED 描画の座標確認
-- [ ] カウントダウン・ゴールエフェクトのフォントサイズ確認
+- [x] `renderer.ts` 内の数値リテラルを洗い出し
+- [x] `getDrawScale()` ヘルパーを導入し、全フォントサイズ・レイアウトオフセットをスケーリング
+- [x] 外枠描画のオフセット値をスケーリング（6/12/15px → s 倍）
+- [x] 中央サークル半径をスケーリング（60→80px at 600w）
+- [x] 中央ドット半径をスケーリング（8→11px at 600w）
+- [x] ゴール LED 描画をスケーリング（高さ・ドット間隔）
+- [x] カウントダウン・ゴールエフェクト・ポーズ・ヘルプ等の全フォントサイズをスケーリング
 
 ### S1-2-2: entity-renderer.ts の確認
 
-- [ ] `infrastructure/renderer/entity-renderer.ts` のハードコード座標を確認
-- [ ] マレット描画が `consts.SIZES.MALLET` を参照していることを確認
-- [ ] パック描画が `consts.SIZES.PUCK` を参照していることを確認
+- [x] `infrastructure/renderer/entity-renderer.ts` は直接使用されていない（renderer.ts が使用中）
+- [x] マレット描画が `consts.SIZES.MALLET` を参照していることを確認
+- [x] パック描画が `consts.SIZES.PUCK` を参照していることを確認
 
 ### S1-2-3: その他描画関連の確認
 
-- [ ] ポーズオーバーレイの座標確認
-- [ ] ヘルプ表示の座標確認
+- [x] ポーズオーバーレイのフォント・座標をスケーリング
+- [x] ヘルプ表示のフォント・座標をスケーリング
 
 ---
 
@@ -94,29 +95,24 @@ S1-1（定数更新）
 
 ### S1-3-1: マレット移動制約の確認
 
-- [ ] `getPlayerYBounds` が `constants` パラメータから正しく計算されることを確認
-- [ ] `getPlayerXBounds` が `constants` パラメータから正しく計算されることを確認
-- [ ] `calculateKeyboardMovement` のクランプが `consts` を使用していることを確認
+- [x] `getPlayerYBounds` が `constants` パラメータから正しく計算されることを確認（変更不要）
+- [x] `getPlayerXBounds` が `constants` パラメータから正しく計算されることを確認（変更不要）
+- [x] `calculateKeyboardMovement` のクランプが `consts` を使用していることを確認
 
 ### S1-3-2: AI パラメータの再調整
 
-- [ ] `core/story-balance.ts` のステージ 1-1 の AI パラメータを更新
-  - [ ] maxSpeed: 1.2 → 1.6, predictionFactor: 0.5 → 0.7, wobble: 40 → 53
-- [ ] `core/story-balance.ts` のステージ 1-2 の AI パラメータを更新
-  - [ ] maxSpeed: 3.0 → 4.0, predictionFactor: 4 → 5.3, wobble: 10 → 13
-- [ ] `core/story-balance.ts` のステージ 1-3 の AI パラメータを更新
-  - [ ] maxSpeed: 5.0 → 6.7, predictionFactor: 10 → 13.3
-- [ ] `core/ai.ts` のスタックリセット座標が `W/2` 参照であることを確認
+- [x] S1-1 で AI_BEHAVIOR_PRESETS とステージバランスの両方を更新済み
+- [x] `core/ai.ts` のスタックリセット座標が `W/2` 参照であることを確認（変更不要）
 
 ### S1-3-3: キーボード移動速度の確認
 
-- [ ] `KEYBOARD_MOVE_SPEED` 変更の影響範囲を確認（S1-1-3 で変更済み）
-- [ ] 2P 用 WASD 入力が同じ定数を使用していることを確認
+- [x] `KEYBOARD_MOVE_SPEED` を S1-1 で 6→8 に変更済み
+- [x] 2P 用 WASD 入力が同じ定数を使用していることを確認
 
 ### S1-3-4: マルチタッチ入力の確認
 
-- [ ] `core/multi-touch.ts` のゾーン判定が `canvasHeight / 2` 使用を確認
-- [ ] タッチ座標→マレット位置の変換が `consts` 参照を確認
+- [x] `core/multi-touch.ts` のゾーン判定が `constants.CANVAS.HEIGHT / 2` を使用していることを確認（変更不要）
+- [x] タッチ座標→マレット位置の変換が `consts` 参照であることを確認
 
 ---
 
@@ -124,17 +120,17 @@ S1-1（定数更新）
 
 ### S1-4-1: GameCanvas の更新
 
-- [ ] `styles.ts` の `GameCanvas` の `max-width` を `600px` に変更
+- [x] `styles.ts` の `GameCanvas` の `max-width` を `600px` に変更
 
 ### S1-4-2: ScoreBoardContainer の更新
 
-- [ ] `styles.ts` の `ScoreBoardContainer` の `max-width` を `600px` に変更
+- [x] `styles.ts` の `ScoreBoardContainer` の `max-width` を `600px` に変更
 
 ### S1-4-3: MenuCard の確認
 
-- [ ] `MenuCard` の `max-width` を据え置き（450px）とするか判断
-- [ ] 他の UI コンポーネントで `max-width: 450px` がハードコードされている箇所を確認
-- [ ] レスポンシブ表示の確認
+- [x] `MenuCard` の `max-width` を `600px` に変更（ゲームフィールドと統一）
+- [x] `styles.ts` 内の全 `max-width: 450px` を一括更新済み（3 箇所）
+- [x] レスポンシブ表示: `aspect-ratio: 1 / 2` と `max-height` 制約は維持
 
 ---
 
