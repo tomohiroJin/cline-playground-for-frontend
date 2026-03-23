@@ -59,6 +59,12 @@ export interface Enemy extends BaseEntity {
   movementPattern: number;
   angle: number;
   bossPhase: number;
+  /** Boss5 外殻の状態（true=開いている=ダメージ有効） */
+  shellOpen?: boolean;
+  /** Boss5 外殻の最終切替時刻 */
+  shellToggleTime?: number;
+  /** Boss5 雑魚召喚の最終時刻 */
+  lastSummonTime?: number;
 }
 
 /** 敵の弾 */
