@@ -10,7 +10,7 @@
 import React, { useEffect } from 'react';
 import { Physics } from '../../core/physics';
 import { CpuAI } from '../../core/ai';
-import { AI_BEHAVIOR_PRESETS } from '../../core/story-balance';
+import { AI_BEHAVIOR_PRESETS, type AiBehaviorConfig } from '../../core/story-balance';
 import { EntityFactory, moveMalletTo } from '../../core/entities';
 import { applyItemEffect } from '../../core/items';
 import { CONSTANTS, DEFAULT_PLAYER_MALLET_COLOR, DEFAULT_CPU_MALLET_COLOR } from '../../core/constants';
@@ -57,6 +57,8 @@ export type GameLoopConfig = {
   getSound: () => SoundSystem;
   bgmEnabled: boolean;
   gameMode?: 'free' | 'story' | '2p-local';
+  /** ステージ固有の AI 設定（指定時は difficulty プリセットより優先） */
+  aiConfig?: AiBehaviorConfig;
   /** プレイヤーマレットの色（2P 対戦時にキャラカラーを反映） */
   playerMalletColor?: string;
   /** CPU/2P マレットの色（2P 対戦時にキャラカラーを反映） */
@@ -109,7 +111,7 @@ export type UseGameLoopParams = {
  * - callbacks: React state 更新コールバック
  */
 export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGameLoopParams): void {
-  const { difficulty: diff, field, winScore, getSound, bgmEnabled, gameMode, playerMalletColor, cpuMalletColor } = config;
+  const { difficulty: diff, field, winScore, getSound, bgmEnabled, gameMode, aiConfig, playerMalletColor, cpuMalletColor } = config;
   const pColor = playerMalletColor ?? DEFAULT_PLAYER_MALLET_COLOR;
   const cColor = cpuMalletColor ?? DEFAULT_CPU_MALLET_COLOR;
   const {
@@ -469,7 +471,9 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       } else {
         // CPU が負けている点差を計算して適応度ロジックに渡す
         const scoreDiff = Math.max(0, scoreRef.current.p - scoreRef.current.c);
-        const cpuUpdate = CpuAI.updateWithBehavior(game, AI_BEHAVIOR_PRESETS[diff], now, consts, scoreDiff);
+        // ステージ固有 AI 設定があれば優先、なければ難易度プリセットを使用
+        const effectiveAiConfig = aiConfig ?? AI_BEHAVIOR_PRESETS[diff];
+        const cpuUpdate = CpuAI.updateWithBehavior(game, effectiveAiConfig, now, consts, scoreDiff);
         if (cpuUpdate) {
           game.cpu = cpuUpdate.cpu;
           game.cpuTarget = cpuUpdate.cpuTarget;
@@ -782,5 +786,5 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       setScores, setWinner, setScreen, setShowHelp,
       phaseRef, countdownStartRef, shakeRef, setShake, bgmEnabled,
       statsRef, matchStartRef, keysRef,
-      is2PMode, pColor, cColor, player2KeysRef, multiTouchRef]);
+      is2PMode, pColor, cColor, player2KeysRef, multiTouchRef, aiConfig]);
 }

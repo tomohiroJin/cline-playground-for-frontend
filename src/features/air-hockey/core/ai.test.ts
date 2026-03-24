@@ -1,7 +1,26 @@
-import { CpuAI } from './ai';
+import { CpuAI, applyAdaptability } from './ai';
 import { EntityFactory } from './entities';
 import { CONSTANTS } from './constants';
 import type { AiBehaviorConfig } from './story-balance';
+import type { AiPlayStyle } from './character-ai-profiles';
+import { DEFAULT_PLAY_STYLE } from './character-ai-profiles';
+
+/** テスト用ヘルパー: デフォルトを基にプレイスタイルを生成 */
+const createPlayStyle = (overrides?: Partial<AiPlayStyle>): AiPlayStyle => ({
+  ...DEFAULT_PLAY_STYLE,
+  ...overrides,
+});
+
+/** テスト用ヘルパー: デフォルトを基に AI 設定を生成 */
+const createConfig = (overrides?: Partial<AiBehaviorConfig>): AiBehaviorConfig => ({
+  maxSpeed: 4.7,
+  predictionFactor: 8,
+  wobble: 0,
+  skipRate: 0,
+  centerWeight: 0,
+  wallBounce: false,
+  ...overrides,
+});
 
 const { WIDTH: W } = CONSTANTS.CANVAS;
 
@@ -14,7 +33,9 @@ describe('CpuAI Module', () => {
     game.pucks[0].vx = 0;
 
     const diff = 'normal';
-    // now=0 で揺さぶりオフセットが 0（sin(0)=0）になるため X がパック位置と一致する
+    // normal プリセットには regular プロファイル（lateralOscillation=10）が設定されている。
+    // now=0 で sin(0)=0 となり揺さぶりオフセットが 0 になるため、X がパック位置と一致する。
+    // これは意図した動作変更: フリー対戦 normal 難易度でも微小な揺さぶりが加わる仕様。
     const now = 0;
 
     const result = CpuAI.update(game, diff, now);
@@ -49,18 +70,8 @@ describe('CpuAI Module', () => {
       // Arrange
       const game = EntityFactory.createGameState();
       makePuckComingTowardCpu(game);
-      const configWithoutStyle: AiBehaviorConfig = {
-        maxSpeed: 4.7,
-        predictionFactor: 8,
-        wobble: 0,
-        skipRate: 0,
-        centerWeight: 0,
-        wallBounce: false,
-      };
-      const configWithStyle: AiBehaviorConfig = {
-        ...configWithoutStyle,
-        playStyle: { sidePreference: 0, lateralOscillation: 0, lateralPeriod: 0, aggressiveness: 0.5, adaptability: 0 },
-      };
+      const configWithoutStyle = createConfig();
+      const configWithStyle = createConfig({ playStyle: createPlayStyle() });
 
       // Act
       const targetWithout = CpuAI.calculateTargetWithBehavior(game, configWithoutStyle, 1000);
@@ -74,15 +85,9 @@ describe('CpuAI Module', () => {
       // Arrange
       const game = EntityFactory.createGameState();
       makePuckComingTowardCpu(game);
-      const config: AiBehaviorConfig = {
-        maxSpeed: 4.7,
-        predictionFactor: 8,
-        wobble: 0,
-        skipRate: 0,
-        centerWeight: 0,
-        wallBounce: false,
-        playStyle: { sidePreference: 0, lateralOscillation: 40, lateralPeriod: 2000, aggressiveness: 0.5, adaptability: 0 },
-      };
+      const config = createConfig({
+        playStyle: createPlayStyle({ lateralOscillation: 40, lateralPeriod: 2000 }),
+      });
 
       // Act: sin の位相が異なる now 値で計算
       const target1 = CpuAI.calculateTargetWithBehavior(game, config, 0);
@@ -96,15 +101,7 @@ describe('CpuAI Module', () => {
       // Arrange
       const game = EntityFactory.createGameState();
       makePuckComingTowardCpu(game);
-      const config: AiBehaviorConfig = {
-        maxSpeed: 4.7,
-        predictionFactor: 8,
-        wobble: 0,
-        skipRate: 0,
-        centerWeight: 0,
-        wallBounce: false,
-        playStyle: { sidePreference: 0, lateralOscillation: 0, lateralPeriod: 0, aggressiveness: 0.5, adaptability: 0 },
-      };
+      const config = createConfig({ playStyle: createPlayStyle() });
 
       // Act
       const target1 = CpuAI.calculateTargetWithBehavior(game, config, 0);
@@ -118,15 +115,9 @@ describe('CpuAI Module', () => {
       // Arrange
       const game = EntityFactory.createGameState();
       makePuckComingTowardCpu(game);
-      const configDefensive: AiBehaviorConfig = {
-        maxSpeed: 4.7,
-        predictionFactor: 8,
-        wobble: 0,
-        skipRate: 0,
-        centerWeight: 0,
-        wallBounce: false,
-        playStyle: { sidePreference: 0, lateralOscillation: 0, lateralPeriod: 0, aggressiveness: 0, adaptability: 0 },
-      };
+      const configDefensive = createConfig({
+        playStyle: createPlayStyle({ aggressiveness: 0 }),
+      });
 
       // Act
       const target = CpuAI.calculateTargetWithBehavior(game, configDefensive, 1000);
@@ -139,19 +130,12 @@ describe('CpuAI Module', () => {
       // Arrange
       const game = EntityFactory.createGameState();
       makePuckComingTowardCpu(game);
-      const configAggressive: AiBehaviorConfig = {
-        maxSpeed: 4.7,
-        predictionFactor: 8,
-        wobble: 0,
-        skipRate: 0,
-        centerWeight: 0,
-        wallBounce: false,
-        playStyle: { sidePreference: 0, lateralOscillation: 0, lateralPeriod: 0, aggressiveness: 1, adaptability: 0 },
-      };
-      const configDefensive: AiBehaviorConfig = {
-        ...configAggressive,
-        playStyle: { sidePreference: 0, lateralOscillation: 0, lateralPeriod: 0, aggressiveness: 0, adaptability: 0 },
-      };
+      const configAggressive = createConfig({
+        playStyle: createPlayStyle({ aggressiveness: 1 }),
+      });
+      const configDefensive = createConfig({
+        playStyle: createPlayStyle({ aggressiveness: 0 }),
+      });
 
       // Act
       const targetAggressive = CpuAI.calculateTargetWithBehavior(game, configAggressive, 1000);
@@ -165,15 +149,11 @@ describe('CpuAI Module', () => {
       // Arrange
       const game = EntityFactory.createGameState();
       makePuckComingTowardCpu(game);
-      const config: AiBehaviorConfig = {
+      const config = createConfig({
         maxSpeed: 4.0,
-        predictionFactor: 8,
         wobble: 10,
-        skipRate: 0,
-        centerWeight: 0,
-        wallBounce: false,
-        playStyle: { sidePreference: 0, lateralOscillation: 0, lateralPeriod: 0, aggressiveness: 0.5, adaptability: 0.8 },
-      };
+        playStyle: createPlayStyle({ adaptability: 0.8 }),
+      });
 
       // Act: scoreDiff = 3（CPU が 3 点負けている）
       const resultWith = CpuAI.updateWithBehavior(game, config, 1000, CONSTANTS, 3);
@@ -192,15 +172,10 @@ describe('CpuAI Module', () => {
       // Arrange
       const game = EntityFactory.createGameState();
       makePuckComingTowardCpu(game);
-      const config: AiBehaviorConfig = {
+      const config = createConfig({
         maxSpeed: 4.0,
-        predictionFactor: 8,
-        wobble: 0,
-        skipRate: 0,
-        centerWeight: 0,
-        wallBounce: false,
-        playStyle: { sidePreference: 0, lateralOscillation: 0, lateralPeriod: 0, aggressiveness: 0.5, adaptability: 0 },
-      };
+        playStyle: createPlayStyle({ adaptability: 0 }),
+      });
 
       // Act
       const resultWith = CpuAI.updateWithBehavior(game, config, 1000, CONSTANTS, 3);
@@ -218,15 +193,10 @@ describe('CpuAI Module', () => {
       // Arrange
       const game = EntityFactory.createGameState();
       makePuckComingTowardCpu(game);
-      const config: AiBehaviorConfig = {
+      const config = createConfig({
         maxSpeed: 4.0,
-        predictionFactor: 8,
-        wobble: 0,
-        skipRate: 0,
-        centerWeight: 0,
-        wallBounce: false,
-        playStyle: { sidePreference: 0, lateralOscillation: 0, lateralPeriod: 0, aggressiveness: 0.5, adaptability: 1.0 },
-      };
+        playStyle: createPlayStyle({ adaptability: 1.0 }),
+      });
 
       // Act
       const resultZero = CpuAI.updateWithBehavior(game, config, 1000, CONSTANTS, 0);
@@ -238,6 +208,55 @@ describe('CpuAI Module', () => {
       const speedZero = Math.hypot(resultZero!.cpu.vx, resultZero!.cpu.vy);
       const speedNoArg = Math.hypot(resultNoArg!.cpu.vx, resultNoArg!.cpu.vy);
       expect(speedZero).toBeCloseTo(speedNoArg, 5);
+    });
+  });
+
+  describe('applyAdaptability 単体テスト', () => {
+    it('adaptability > 0, scoreDiff > 0 で maxSpeed が増加する', () => {
+      const config = createConfig({
+        maxSpeed: 4.0,
+        predictionFactor: 8,
+        wobble: 10,
+        playStyle: createPlayStyle({ adaptability: 1.0 }),
+      });
+      const result = applyAdaptability(config, 3);
+      expect(result.maxSpeed).toBeGreaterThan(config.maxSpeed);
+      expect(result.predictionFactor).toBeGreaterThan(config.predictionFactor);
+      expect(result.wobble).toBeLessThan(config.wobble);
+    });
+
+    it('adaptability = 0 の場合は元の config をそのまま返す', () => {
+      const config = createConfig({
+        maxSpeed: 4.0,
+        playStyle: createPlayStyle({ adaptability: 0 }),
+      });
+      const result = applyAdaptability(config, 3);
+      expect(result).toBe(config);
+    });
+
+    it('scoreDiff = 0 の場合は元の config をそのまま返す', () => {
+      const config = createConfig({
+        maxSpeed: 4.0,
+        playStyle: createPlayStyle({ adaptability: 1.0 }),
+      });
+      const result = applyAdaptability(config, 0);
+      expect(result).toBe(config);
+    });
+
+    it('scoreDiff が 3 を超えても boost は上限で頭打ちになる', () => {
+      const config = createConfig({
+        maxSpeed: 4.0,
+        playStyle: createPlayStyle({ adaptability: 1.0 }),
+      });
+      const result3 = applyAdaptability(config, 3);
+      const result10 = applyAdaptability(config, 10);
+      expect(result3.maxSpeed).toBeCloseTo(result10.maxSpeed, 5);
+    });
+
+    it('playStyle 未設定時は DEFAULT_PLAY_STYLE（adaptability=0）でフォールバックする', () => {
+      const config = createConfig();
+      const result = applyAdaptability(config, 3);
+      expect(result).toBe(config);
     });
   });
 

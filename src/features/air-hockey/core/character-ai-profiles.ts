@@ -5,6 +5,7 @@
 
 /** CPU AI のプレイスタイル（キャラクター個性）を制御するパラメータ */
 export type AiPlayStyle = {
+  // TODO(2026-03-24): sidePreference ロジックは Step 3（フリー対戦のキャラ選択）で実装予定
   /** 横方向のターゲットオフセット傾向（-1.0 左寄せ 〜 0 中央 〜 1.0 右寄せ） */
   sidePreference: number;
   /** ターゲット位置の横ブレの振幅（px）— 揺さぶり */

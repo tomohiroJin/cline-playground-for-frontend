@@ -20,6 +20,7 @@ import type { GameState, GamePhase, ShakeState, MatchStats } from '../core/types
 import { loadStoryProgress, resetStoryProgress } from '../core/story';
 import type { StageDefinition } from '../core/story';
 import { CHAPTER_1_STAGES } from '../core/dialogue-data';
+import { getStoryStageBalance } from '../core/story-balance';
 import { getDexEntryById } from '../core/dex-data';
 import { useCharacterDex } from '../hooks/useCharacterDex';
 import { CharacterDexScreen } from '../components/CharacterDexScreen';
@@ -166,6 +167,11 @@ const AirHockeyGame: React.FC = () => {
     const idx = CHAPTER_1_STAGES.findIndex(s => s.id === mode.currentStage!.id);
     return idx < CHAPTER_1_STAGES.length - 1;
   }, [mode.currentStage]);
+  // ストーリーモード時はステージ固有の AI 設定（キャラ個性付き）を使用
+  const storyAiConfig = React.useMemo(
+    () => mode.currentStage ? getStoryStageBalance(mode.currentStage.id).ai : undefined,
+    [mode.currentStage]
+  );
   const freeBattleCpuCharacter = React.useMemo(
     () => getCharacterByDifficulty(mode.difficulty),
     [mode.difficulty]
@@ -291,6 +297,7 @@ const AirHockeyGame: React.FC = () => {
     config: {
       difficulty: mode.difficulty, field: mode.field, winScore: mode.winScore,
       getSound: audio.getSound, bgmEnabled: audio.bgmEnabled, gameMode: mode.gameMode,
+      aiConfig: mode.gameMode === 'story' ? storyAiConfig : undefined,
       playerMalletColor: is2PMode ? mode.player1Character?.color : undefined,
       cpuMalletColor: is2PMode ? mode.player2Character?.color : undefined,
     },

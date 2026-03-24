@@ -28,11 +28,17 @@ const predictWithWallBounce = (x: number, W: number): number => {
   return clamp(px, margin, W - margin);
 };
 
+// ── アグレッシブネス定数 ──────────────────────────
+/** ゴール付近の守備ポジション Y 座標 */
+const DEFENSIVE_Y = 80;
+/** 中央ラインからのマージン（攻撃最前線のオフセット） */
+const AGGRESSIVE_MARGIN = 100;
+
 /**
  * スコア差に応じて AI のパラメータを強化する
  * scoreDiff: CPU が負けている点差（0 以上）
  */
-const applyAdaptability = (config: AiBehaviorConfig, scoreDiff: number): AiBehaviorConfig => {
+export const applyAdaptability = (config: AiBehaviorConfig, scoreDiff: number): AiBehaviorConfig => {
   const playStyle = config.playStyle ?? DEFAULT_PLAY_STYLE;
   if (playStyle.adaptability <= 0 || scoreDiff <= 0) return config;
 
@@ -83,6 +89,8 @@ export const CpuAI = {
         predictedX = predictedX * (1 - config.centerWeight) + (W / 2) * config.centerWeight;
       }
 
+      // TODO(2026-03-24): sidePreference による X オフセットは Step 3 で実装予定
+
       // 揺さぶり: lateralOscillation > 0 の場合に正弦波オフセットを加算
       if (playStyle.lateralOscillation > 0 && playStyle.lateralPeriod > 0) {
         const oscillation = Math.sin(now * Math.PI * 2 / playStyle.lateralPeriod)
@@ -91,9 +99,8 @@ export const CpuAI = {
       }
 
       // aggressiveness によるY座標制御（守備的〜攻撃的ポジション）
-      const DEFENSIVE_Y = 80;
-      const AGGRESSIVE_Y = H / 2 - 100;
-      const baseY = DEFENSIVE_Y + (AGGRESSIVE_Y - DEFENSIVE_Y) * playStyle.aggressiveness;
+      const aggressiveY = H / 2 - AGGRESSIVE_MARGIN;
+      const baseY = DEFENSIVE_Y + (aggressiveY - DEFENSIVE_Y) * playStyle.aggressiveness;
       const targetY = Math.min(puck.y + 20, baseY);
 
       return { x: predictedX, y: targetY };

@@ -149,7 +149,7 @@ S2-1（型定義・プロファイル）
 
 ### S2-4-4: 既存テスト全パス確認
 
-- [x] `npm test` で全テストパス（7194 テスト全パス）
+- [x] `npm test` で全テストパス（7199 テスト全パス）
 - [x] `tsc --noEmit` で型エラーなし
 
 ### S2-4-5: ビルド確認
@@ -173,3 +173,12 @@ S2-1（型定義・プロファイル）
 
 - `AiPlayStyle` 型と `DEFAULT_PLAY_STYLE` は循環参照を防ぐため `character-ai-profiles.ts` に定義し、`story-balance.ts` から re-export
 - `getBehaviorConfig` ヘルパーメソッドはリファクタリングで削除し、呼び出し元で直接 `AI_BEHAVIOR_PRESETS[diff]` を使用
+
+### レビュー指摘対応
+
+- H1: `sidePreference` に TODO コメント追加（Step 3 で実装予定）
+- H2: テスト `now` 値変更の意図をコメントで明確化
+- M1: `DEFENSIVE_Y`/`AGGRESSIVE_MARGIN` をモジュールレベル定数に抽出
+- M2: `GameLoopConfig` に `aiConfig?` 追加、ストーリーモードで `getStoryStageBalance` の AI 設定を優先使用
+- M3: テストに `createPlayStyle`/`createConfig` ヘルパーを追加し冗長なリテラルを解消
+- L1: `applyAdaptability` を export し単体テスト 5 件追加
