@@ -80,7 +80,7 @@ describe('FreeBattleCharacterSelect', () => {
       />
     );
 
-    fireEvent.click(screen.getByText('戻る'));
+    fireEvent.click(screen.getByText('← 戻る'));
 
     expect(onBack).toHaveBeenCalled();
   });

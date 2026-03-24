@@ -8,8 +8,8 @@
 | S3-2 キャラ選択 UI | [x] 完了 | 4 | 2026-03-24 |
 | S3-3 ゲームプレイへの反映 | [x] 完了 | 5 | 2026-03-24 |
 | S3-4 テスト・品質保証 | [x] 完了 | 8 | 2026-03-24 |
-| S3-5a バグ修正（winScore） | [ ] 未着手 | 1 | |
-| S3-5b UI 改善（FB対応） | [ ] 未着手 | 7 | |
+| S3-5a バグ修正（winScore） | [x] 完了 | 1 | 2026-03-25 |
+| S3-5b UI 改善（FB対応） | [x] 完了 | 7 | 2026-03-25 |
 
 ### 並行作業ガイド
 
@@ -130,45 +130,46 @@ S3-1（状態管理・型の拡張）
 
 ### S3-5a-1: aiConfig の useMemo メモ化
 
-- [ ] `buildFreeBattleAiConfig` の結果を `useMemo` でメモ化
-- [ ] 依存配列: `[mode.difficulty, mode.selectedCpuCharacter]`
-- [ ] `useGameLoop` に渡す `aiConfig` をメモ化した値に変更
+- [x] `buildFreeBattleAiConfig` の結果を `useMemo` でメモ化
+- [x] 依存配列: `[mode.difficulty, mode.selectedCpuCharacter]`
+- [x] `useGameLoop` に渡す `aiConfig` をメモ化した値に変更
 
 **確認**:
-- [ ] フリー対戦で winScore=3 のとき 3 点でゲーム終了する
-- [ ] `tsc --noEmit` で型エラーなし
-- [ ] 既存テストパス
+- [x] フリー対戦で winScore=3 のとき 3 点でゲーム終了する
+- [x] `tsc --noEmit` で型エラーなし
+- [x] 既存テストパス
 
 ---
 
 ## Phase S3-5b: UI 改善（フィードバック対応）
 
-### S3-5-1: キャラカードにアイコン画像を使用
+### S3-5b-1: キャラカードにアイコン画像を使用
 
-- [ ] `character.icon` を `<img>` で表示（2P 対戦の `styles.cardIcon` と同パターン）
-- [ ] ロック時はグレーフィルター + 鍵アイコンオーバーレイ
-- [ ] カードサイズを 2P 対戦に合わせる（`CARD_SIZE = 80`, `CARD_ICON_SIZE = 36`）
+- [x] `character.icon` を `<img>` で表示（2P 対戦の `styles.cardIcon` と同パターン）
+- [x] ロック時はグレーフィルター（`grayscale + brightness`）+ 鍵アイコンオーバーレイ
+- [x] カードサイズを 2P 対戦に合わせる（`CARD_SIZE = 80`, `CARD_ICON_SIZE = 36`）
 
-### S3-5-2: ヘッダーレイアウト改善
+### S3-5b-2: ヘッダーレイアウト改善
 
-- [ ] 「← 戻る」ボタンのスタイルを 2P 対戦と統一
-- [ ] タイトルとの間にスペースを確保
-- [ ] セクション区切り線を追加（`sectionTitle` スタイル）
+- [x] 「← 戻る」ボタンのスタイルを 2P 対戦と統一
+- [x] タイトルとの間にスペースを確保（`justifyContent: space-between`）
+- [x] セクション区切り線を追加（`sectionTitle` スタイル）
 
-### S3-5-3: レスポンシブ・サイズ統一
+### S3-5b-3: レスポンシブ・サイズ統一
 
-- [ ] `container` を `overflow: hidden` に変更
-- [ ] グリッドを `repeat(4, 80px)` + `justifyContent: 'center'` に変更
-- [ ] 「対戦開始！」ボタンを `width: 100%` + グラデーション背景に統一
+- [x] `container` を `overflow: hidden` に変更
+- [x] グリッドを `repeat(4, 80px)` + `justifyContent: 'center'` に変更
+- [x] 「対戦開始！」ボタンを `width: 100%` + グラデーション背景に統一
 
-### S3-5-4: 選択中キャラの詳細表示を充実
+### S3-5b-4: 選択中キャラの詳細表示を充実
 
-- [ ] アイコン画像（大）+ 名前 + キャラカラーのアクセント表示
+- [x] VS パネル（プレイヤー vs CPU）でアイコン画像（大）+ 名前 + カラーボーダー表示
 
 **確認**:
-- [ ] `tsc --noEmit` で型エラーなし
-- [ ] 既存テストパス
-- [ ] 2P 対戦と見た目が統一されている
+- [x] `tsc --noEmit` で型エラーなし
+- [x] 全 7211 テストパス
+- [x] ビルド成功
+- [x] 2P 対戦と見た目が統一されている
 
 ---
 

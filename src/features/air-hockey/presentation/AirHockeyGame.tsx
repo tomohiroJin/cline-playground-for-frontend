@@ -173,6 +173,13 @@ const AirHockeyGame: React.FC = () => {
     () => mode.currentStage ? getStoryStageBalance(mode.currentStage.id).ai : undefined,
     [mode.currentStage]
   );
+  // フリー対戦用 AI 設定（メモ化して useEffect の不要な再実行を防止）
+  const freeBattleAiConfig = React.useMemo(
+    () => mode.selectedCpuCharacter
+      ? buildFreeBattleAiConfig(mode.difficulty, mode.selectedCpuCharacter.id)
+      : undefined,
+    [mode.difficulty, mode.selectedCpuCharacter]
+  );
   const freeBattleCpuCharacter = React.useMemo(
     () => getCharacterByDifficulty(mode.difficulty),
     [mode.difficulty]
@@ -316,11 +323,7 @@ const AirHockeyGame: React.FC = () => {
     config: {
       difficulty: mode.difficulty, field: mode.field, winScore: mode.winScore,
       getSound: audio.getSound, bgmEnabled: audio.bgmEnabled, gameMode: mode.gameMode,
-      aiConfig: mode.gameMode === 'story'
-        ? storyAiConfig
-        : mode.selectedCpuCharacter
-          ? buildFreeBattleAiConfig(mode.difficulty, mode.selectedCpuCharacter.id)
-          : undefined,
+      aiConfig: mode.gameMode === 'story' ? storyAiConfig : freeBattleAiConfig,
       playerMalletColor: is2PMode ? mode.player1Character?.color : undefined,
       cpuMalletColor: is2PMode ? mode.player2Character?.color : undefined,
     },
