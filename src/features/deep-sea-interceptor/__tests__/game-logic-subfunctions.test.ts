@@ -7,10 +7,11 @@ import {
   processPlayerDamage,
   processGraze,
   checkStageProgression,
+  updateBoss5State,
 } from '../game-logic';
 import { EntityFactory } from '../entities';
 import { MovementStrategies } from '../movement';
-import { buildUiState } from '../test-helpers';
+import { buildGameState, buildUiState } from '../test-helpers';
 import { DifficultyConfig } from '../constants';
 
 describe('resolvePlayerInput', () => {
@@ -187,6 +188,22 @@ describe('processItemCollection', () => {
     expect(result.uiChanges.lives).toBe(3);
   });
 
+  test('テストモード時、ライフアイテム取得でライフが maxLives にクランプされないこと', () => {
+    const player = { x: 100, y: 100 };
+    const item = EntityFactory.item(100, 100, 'life');
+    const enemies: ReturnType<typeof EntityFactory.enemy>[] = [];
+    const result = processItemCollection(player, [item], buildUiState({ lives: 99, testMode: true }), enemies, Date.now());
+    expect(result.uiChanges.lives).toBe(100);
+  });
+
+  test('通常モード時、ライフアイテム取得でライフが maxLives にクランプされること', () => {
+    const player = { x: 100, y: 100 };
+    const item = EntityFactory.item(100, 100, 'life');
+    const enemies: ReturnType<typeof EntityFactory.enemy>[] = [];
+    const result = processItemCollection(player, [item], buildUiState({ lives: 4 }), enemies, Date.now());
+    expect(result.uiChanges.lives).toBe(5);
+  });
+
   test('スピードアイテムでspeedLevel増加すること', () => {
     const player = { x: 100, y: 100 };
     const item = EntityFactory.item(100, 100, 'speed');
@@ -324,5 +341,66 @@ describe('checkStageProgression', () => {
     const now = Date.now();
     const result = checkStageProgression(true, now - 500, 1, 1000, 0, 0, now);
     expect(result.event).toBe('none');
+  });
+});
+
+describe('updateBoss5State', () => {
+  test('フェーズ1で閉鎖時間経過後に外殻が開くこと', () => {
+    const enemy = EntityFactory.enemy('boss5', 400, 180, 5);
+    enemy.bossPhase = 1;
+    enemy.shellOpen = false;
+    enemy.shellToggleTime = 0;
+    const gd = buildGameState();
+    const ui = buildUiState({ stage: 5 });
+    // 3001ms 経過 → 閉鎖時間(3000ms)を超過
+    updateBoss5State(enemy, gd, 3001, ui, []);
+    expect(enemy.shellOpen).toBe(true);
+  });
+
+  test('フェーズ1で開放時間経過後に外殻が閉じること', () => {
+    const enemy = EntityFactory.enemy('boss5', 400, 180, 5);
+    enemy.bossPhase = 1;
+    enemy.shellOpen = true;
+    enemy.shellToggleTime = 1000;
+    const gd = buildGameState();
+    const ui = buildUiState({ stage: 5 });
+    // 1000+2001=3001ms → 開放時間(2000ms)を超過
+    updateBoss5State(enemy, gd, 3001, ui, []);
+    expect(enemy.shellOpen).toBe(false);
+  });
+
+  test('フェーズ1で閉鎖時間内は外殻が閉じたままであること', () => {
+    const enemy = EntityFactory.enemy('boss5', 400, 180, 5);
+    enemy.bossPhase = 1;
+    enemy.shellOpen = false;
+    enemy.shellToggleTime = 0;
+    const gd = buildGameState();
+    const ui = buildUiState({ stage: 5 });
+    // 2000ms → 閉鎖時間(3000ms)未満
+    updateBoss5State(enemy, gd, 2000, ui, []);
+    expect(enemy.shellOpen).toBe(false);
+  });
+
+  test('フェーズ2で雑魚が召喚されること', () => {
+    const enemy = EntityFactory.enemy('boss5', 400, 180, 5);
+    enemy.bossPhase = 2;
+    enemy.lastSummonTime = 0;
+    const gd = buildGameState();
+    const ui = buildUiState({ stage: 5 });
+    const summoned: ReturnType<typeof EntityFactory.enemy>[] = [];
+    updateBoss5State(enemy, gd, 10001, ui, summoned);
+    expect(summoned.length).toBe(4);
+  });
+
+  test('フェーズ3でHP依存の攻撃間隔短縮が適用されること', () => {
+    const enemy = EntityFactory.enemy('boss5', 400, 180, 5);
+    enemy.bossPhase = 3;
+    enemy.hp = 50;
+    enemy.maxHp = 225;
+    const gd = buildGameState();
+    const ui = buildUiState({ stage: 5 });
+    updateBoss5State(enemy, gd, 1000, ui, []);
+    expect(enemy.fireRate).toBeLessThan(500);
+    expect(enemy.fireRate).toBeGreaterThanOrEqual(200);
   });
 });

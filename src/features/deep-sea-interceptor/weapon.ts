@@ -19,9 +19,9 @@ interface SonarWaveConfig {
 
 /** パワーレベルの閾値に基づいてソナーウェーブ設定を返す */
 const SONAR_WAVE_CONFIGS: { minPower: number; config: SonarWaveConfig }[] = [
-  { minPower: 5, config: { spreadAngle: 0.40, lifespan: 70, damage: 4.0, count: 7 } },
-  { minPower: 3, config: { spreadAngle: 0.30, lifespan: 55, damage: 3.0, count: 5 } },
-  { minPower: 0, config: { spreadAngle: 0.20, lifespan: 45, damage: 2.0, count: 3 } },
+  { minPower: 5, config: { spreadAngle: 0.40, lifespan: 70, damage: 2.5, count: 5 } },
+  { minPower: 3, config: { spreadAngle: 0.30, lifespan: 55, damage: 2.0, count: 5 } },
+  { minPower: 0, config: { spreadAngle: 0.20, lifespan: 45, damage: 1.5, count: 3 } },
 ];
 
 /** パワーレベルに応じたソナーウェーブ設定を取得する */
@@ -42,7 +42,8 @@ const getTorpedoAngles = (power: number): number[] =>
   TORPEDO_ANGLES_BY_POWER.find(({ minPower }) => power >= minPower)!.angles;
 
 /** スプレッド時のトーピード発射角度 */
-const TORPEDO_SPREAD_ANGLES = [-0.25, 0, 0.25];
+/** スプレッド時のトーピード発射角度（5WAY） */
+const TORPEDO_SPREAD_ANGLES = [-0.3, -0.15, 0, 0.15, 0.3];
 
 /** バイオミサイルのパワーレベル別発射数テーブル */
 const BIO_MISSILE_COUNT_BY_POWER: { minPower: number; count: number }[] = [
@@ -81,6 +82,16 @@ export function createBulletsForWeapon(
             angle: -Math.PI / 2 + a,
             weaponType: 'torpedo',
             damage: power >= 2 && a === 0 ? 1.5 : 1,
+          })
+        );
+      }
+      // Power5 + スプレッド時: 追加の中央弾（トーピードの個性強化）
+      if (hasSpread && power >= 5) {
+        bullets.push(
+          EntityFactory.bullet(x, y - 24, {
+            angle: -Math.PI / 2,
+            weaponType: 'torpedo',
+            damage: 1.5,
           })
         );
       }
@@ -146,16 +157,16 @@ export function createChargedShot(
       );
       break;
     case 'sonarWave':
-      // 全方位12発パルス（貫通付き）
-      for (let i = 0; i < 12; i++) {
-        const angle = (Math.PI * 2 * i) / 12;
+      // 全方位8発パルス（貫通付き）
+      for (let i = 0; i < 8; i++) {
+        const angle = (Math.PI * 2 * i) / 8;
         bullets.push(
           EntityFactory.bullet(x, y, {
             charged: true,
             weaponType: 'sonarWave',
             angle,
             speed: 10,
-            damage: 6,
+            damage: 4,
             lifespan: 50,
             piercing: true,
           })

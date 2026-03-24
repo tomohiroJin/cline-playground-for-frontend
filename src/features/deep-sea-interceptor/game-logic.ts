@@ -96,6 +96,7 @@ export const createInitialUiState = (highScore = 0): UiState => ({
   maxCombo: 0,
   difficulty: 'standard' as const,
   weaponType: 'torpedo' as const,
+  testMode: false,
 });
 
 /** ゲームループ内の1フレーム更新を処理 */
@@ -394,7 +395,9 @@ export function processItemCollection(
       if (i.itemType === 'speed')
         updatedUi.speedLevel = Math.min(3, (updatedUi.speedLevel || 0) + 1);
       if (i.itemType === 'life')
-        updatedUi.lives = Math.min(Config.player.maxLives, updatedUi.lives + 1);
+        updatedUi.lives = updatedUi.testMode
+          ? updatedUi.lives + 1
+          : Math.min(Config.player.maxLives, updatedUi.lives + 1);
       if (i.itemType === 'spread') updatedUi.spreadTime = now + 10000;
       if (i.itemType === 'bomb') {
         updatedEnemies.forEach(e => {
@@ -557,7 +560,7 @@ export function checkStageProgression(
 // ================================================================
 
 /** Boss5 の各フェーズに応じた特殊処理を適用 */
-function updateBoss5State(
+export function updateBoss5State(
   e: Enemy,
   gd: GameState,
   now: number,
@@ -611,6 +614,11 @@ function updateSingleEnemy(
   audioEvents: AudioEvent[],
   summonedEnemies: Enemy[]
 ): Enemy {
+  // Boss5 特殊処理（フェーズ遷移前に実行し、外殻開閉等がスキップされないようにする）
+  if (e.enemyType === 'boss5') {
+    updateBoss5State(e, gd, now, currentUi, summonedEnemies);
+  }
+
   // ボスのフェーズ遷移チェック（3フェーズ対応）
   if (isBoss(e) && e.bossPhase === 1 && e.hp <= e.maxHp * BOSS_PHASE2_HP_RATIO) {
     e.bossPhase = 2;
@@ -623,11 +631,6 @@ function updateSingleEnemy(
     audioEvents.push({ name: 'bossPhaseChange' });
     gd.enemyBullets = [];
     gd.screenShake = BOSS_PHASE_CHANGE_SCREEN_SHAKE;
-  }
-
-  // Boss5 特殊処理
-  if (e.enemyType === 'boss5') {
-    updateBoss5State(e, gd, now, currentUi, summonedEnemies);
   }
 
   // 移動戦略取得（サブ関数利用）

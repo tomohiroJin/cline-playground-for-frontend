@@ -282,7 +282,7 @@ export const BOMB_SCORE_BONUS = 500;
 /** 武器別射撃クールダウン（ms） */
 export const WEAPON_COOLDOWN: Record<import('./types').WeaponType, number> = {
   torpedo: 120,
-  sonarWave: 150,
+  sonarWave: 200,
   bioMissile: 200,
 };
 

@@ -163,6 +163,8 @@ export interface UiState {
   maxCombo: number;
   difficulty: Difficulty;
   weaponType: WeaponType;
+  /** テストモードフラグ */
+  testMode: boolean;
 }
 
 /** プレイ統計（リザルト画面用） */

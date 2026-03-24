@@ -225,6 +225,7 @@ export function useDeepSeaGame() {
       maxCombo: 0,
       difficulty: selectedDifficulty,
       weaponType: selectedWeapon,
+      testMode: isTestMode,
     }));
     getHighScore(GAME_KEY).then(highScore => {
       setUiState(p => ({ ...p, highScore }));
