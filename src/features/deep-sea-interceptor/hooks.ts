@@ -64,12 +64,14 @@ export function useDeepSeaGame() {
     return () => window.removeEventListener('keydown', handleTestModeInput);
   }, [gameState, testMode]);
 
-  // タイトルに戻った時にテストモード解除
+  // タイトルに戻った時にテストモード解除（ゲーム終了→タイトル遷移時のみ）
+  const prevGameState = useRef<ScreenState>(gameState);
   useEffect(() => {
-    if (gameState === 'title') {
+    if (prevGameState.current !== 'title' && gameState === 'title') {
       setTestMode(false);
       testModeBuffer.current = '';
     }
+    prevGameState.current = gameState;
   }, [gameState]);
 
   // ゲーム開始

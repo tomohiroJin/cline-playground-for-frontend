@@ -254,6 +254,13 @@ export const BOSS5_PHASE3_SCREEN_SHAKE = 50;
 /** Boss5 第3形態: 赤フラッシュが発生するHP比率 */
 export const BOSS5_PHASE3_FLASH_HP_RATIO = 0.15;
 
+/** Boss5 第3形態: 赤フラッシュの強度 */
+export const BOSS5_PHASE3_SCREEN_FLASH = 30;
+
+/** Boss5 第2形態: 召喚敵のスポーン X 座標範囲 */
+export const BOSS5_SUMMON_X_MIN = 100;
+export const BOSS5_SUMMON_X_MAX = 700;
+
 /** ボス撃破時の画面シェイク量 */
 export const BOSS_DEFEAT_SCREEN_SHAKE = 500;
 

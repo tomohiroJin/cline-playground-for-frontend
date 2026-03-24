@@ -21,6 +21,7 @@ import {
   BOSS5_SUMMON_INTERVAL_MS, BOSS5_SUMMON_COUNT,
   BOSS5_PHASE3_BASE_FIRE_RATE, BOSS5_PHASE3_MIN_FIRE_RATE,
   BOSS5_PHASE3_SCREEN_SHAKE, BOSS5_PHASE3_FLASH_HP_RATIO,
+  BOSS5_PHASE3_SCREEN_FLASH, BOSS5_SUMMON_X_MIN, BOSS5_SUMMON_X_MAX,
 } from './constants';
 import { EntityFactory, randomChoice, isBoss, isMidboss } from './entities';
 import { MovementStrategies } from './movement';
@@ -707,7 +708,7 @@ export function updateFrame(
             e.lastSummonTime = now;
             for (let i = 0; i < BOSS5_SUMMON_COUNT; i++) {
               summonedEnemies.push(
-                EntityFactory.enemy('basic', randomRange(100, 700), -60, currentUi.stage)
+                EntityFactory.enemy('basic', randomRange(BOSS5_SUMMON_X_MIN, BOSS5_SUMMON_X_MAX), -60, currentUi.stage)
               );
             }
           }
@@ -721,7 +722,7 @@ export function updateFrame(
           );
           gd.screenShake = Math.max(gd.screenShake, BOSS5_PHASE3_SCREEN_SHAKE);
           if (hpRatio < BOSS5_PHASE3_FLASH_HP_RATIO) {
-            gd.screenFlash = Math.max(gd.screenFlash, 30);
+            gd.screenFlash = Math.max(gd.screenFlash, BOSS5_PHASE3_SCREEN_FLASH);
           }
         }
       }
