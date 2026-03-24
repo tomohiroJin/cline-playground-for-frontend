@@ -10,6 +10,7 @@
 import React, { useEffect } from 'react';
 import { Physics } from '../../core/physics';
 import { CpuAI } from '../../core/ai';
+import { AI_BEHAVIOR_PRESETS } from '../../core/story-balance';
 import { EntityFactory, moveMalletTo } from '../../core/entities';
 import { applyItemEffect } from '../../core/items';
 import { CONSTANTS, DEFAULT_PLAYER_MALLET_COLOR, DEFAULT_CPU_MALLET_COLOR } from '../../core/constants';
@@ -466,7 +467,9 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
           moveMalletTo(game.cpu, result.x, result.y);
         }
       } else {
-        const cpuUpdate = CpuAI.update(game, diff, now, consts);
+        // CPU が負けている点差を計算して適応度ロジックに渡す
+        const scoreDiff = Math.max(0, scoreRef.current.p - scoreRef.current.c);
+        const cpuUpdate = CpuAI.updateWithBehavior(game, AI_BEHAVIOR_PRESETS[diff], now, consts, scoreDiff);
         if (cpuUpdate) {
           game.cpu = cpuUpdate.cpu;
           game.cpuTarget = cpuUpdate.cpuTarget;

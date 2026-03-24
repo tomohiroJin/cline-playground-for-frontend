@@ -5,6 +5,11 @@
 import type { Difficulty } from './types';
 import type { GameConstants } from './constants';
 import { CONSTANTS } from './constants';
+import { type AiPlayStyle, DEFAULT_PLAY_STYLE, CHARACTER_AI_PROFILES } from './character-ai-profiles';
+
+// AiPlayStyle と DEFAULT_PLAY_STYLE を re-export（後方互換のため）
+export type { AiPlayStyle };
+export { DEFAULT_PLAY_STYLE };
 
 // ── AI 振る舞い設定型 ──────────────────────────────
 
@@ -22,6 +27,8 @@ export type AiBehaviorConfig = {
   centerWeight: number;
   /** 壁バウンス予測の有無 */
   wallBounce: boolean;
+  /** キャラクター個性によるプレイスタイル（オプショナル・後方互換） */
+  playStyle?: AiPlayStyle;
 };
 
 // ── 難易度プリセット ──────────────────────────────
@@ -34,6 +41,7 @@ export const AI_BEHAVIOR_PRESETS: Record<Difficulty, AiBehaviorConfig> = {
     skipRate: 0.05,
     centerWeight: 0.7,
     wallBounce: false,
+    playStyle: CHARACTER_AI_PROFILES['rookie'],
   },
   normal: {
     maxSpeed: 4.7,
@@ -42,6 +50,7 @@ export const AI_BEHAVIOR_PRESETS: Record<Difficulty, AiBehaviorConfig> = {
     skipRate: 0,
     centerWeight: 0,
     wallBounce: false,
+    playStyle: CHARACTER_AI_PROFILES['regular'],
   },
   hard: {
     maxSpeed: 8.0,
@@ -50,6 +59,7 @@ export const AI_BEHAVIOR_PRESETS: Record<Difficulty, AiBehaviorConfig> = {
     skipRate: 0,
     centerWeight: 0,
     wallBounce: true,
+    playStyle: CHARACTER_AI_PROFILES['ace'],
   },
 };
 
@@ -81,6 +91,7 @@ const STAGE_BALANCE_MAP: Record<string, StageBalanceConfig> = {
       skipRate: 0.1,
       centerWeight: 0.8,
       wallBounce: false,
+      playStyle: CHARACTER_AI_PROFILES['hiro'],
     },
     itemSpawnInterval: CONSTANTS.TIMING.ITEM_SPAWN,
     comebackThreshold: CONSTANTS.COMEBACK.THRESHOLD,
@@ -96,6 +107,7 @@ const STAGE_BALANCE_MAP: Record<string, StageBalanceConfig> = {
       skipRate: 0.02,
       centerWeight: 0.2,
       wallBounce: false,
+      playStyle: CHARACTER_AI_PROFILES['misaki'],
     },
     itemSpawnInterval: 4000, // アイテム出現を速めて活用を促す
     comebackThreshold: 2, // スコア差2で発動（デフォルト3より早い）
@@ -111,6 +123,7 @@ const STAGE_BALANCE_MAP: Record<string, StageBalanceConfig> = {
       skipRate: 0,
       centerWeight: 0,
       wallBounce: true,
+      playStyle: CHARACTER_AI_PROFILES['takuma'],
     },
     itemSpawnInterval: CONSTANTS.TIMING.ITEM_SPAWN,
     comebackThreshold: 2,

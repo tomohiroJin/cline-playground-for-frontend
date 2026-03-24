@@ -4,6 +4,7 @@
  */
 import { CHAPTER_1_STAGES } from './dialogue-data';
 import { CONSTANTS } from './constants';
+import { CHARACTER_AI_PROFILES } from './character-ai-profiles';
 
 import {
   AiBehaviorConfig,
@@ -222,5 +223,44 @@ describe('カムバック補正の適切な機能', () => {
       expect(balance.comebackGoalReduction).toBeGreaterThanOrEqual(0);
       expect(balance.comebackGoalReduction).toBeLessThanOrEqual(0.2);
     }
+  });
+});
+
+// ── S2-4-3: キャラクター AI プロファイル統合テスト ──────────
+
+describe('キャラクター AI プロファイルのステージ統合', () => {
+  it('ステージ 1-1（ヒロ）に playStyle が設定されている', () => {
+    const balance = getStoryStageBalance('1-1');
+    expect(balance.ai.playStyle).toBeDefined();
+    expect(balance.ai.playStyle).toEqual(CHARACTER_AI_PROFILES['hiro']);
+  });
+
+  it('ステージ 1-2（ミサキ）に playStyle が設定されている', () => {
+    const balance = getStoryStageBalance('1-2');
+    expect(balance.ai.playStyle).toBeDefined();
+    expect(balance.ai.playStyle).toEqual(CHARACTER_AI_PROFILES['misaki']);
+  });
+
+  it('ステージ 1-3（タクマ）に playStyle が設定されている', () => {
+    const balance = getStoryStageBalance('1-3');
+    expect(balance.ai.playStyle).toBeDefined();
+    expect(balance.ai.playStyle).toEqual(CHARACTER_AI_PROFILES['takuma']);
+  });
+});
+
+describe('AI_BEHAVIOR_PRESETS のキャラクター AI プロファイル統合', () => {
+  it('easy プリセットに playStyle が設定されている（ルーキー）', () => {
+    expect(AI_BEHAVIOR_PRESETS.easy.playStyle).toBeDefined();
+    expect(AI_BEHAVIOR_PRESETS.easy.playStyle).toEqual(CHARACTER_AI_PROFILES['rookie']);
+  });
+
+  it('normal プリセットに playStyle が設定されている（レギュラー）', () => {
+    expect(AI_BEHAVIOR_PRESETS.normal.playStyle).toBeDefined();
+    expect(AI_BEHAVIOR_PRESETS.normal.playStyle).toEqual(CHARACTER_AI_PROFILES['regular']);
+  });
+
+  it('hard プリセットに playStyle が設定されている（エース）', () => {
+    expect(AI_BEHAVIOR_PRESETS.hard.playStyle).toBeDefined();
+    expect(AI_BEHAVIOR_PRESETS.hard.playStyle).toEqual(CHARACTER_AI_PROFILES['ace']);
   });
 });
