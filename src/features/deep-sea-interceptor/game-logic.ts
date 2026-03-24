@@ -268,6 +268,23 @@ export interface CollisionResult {
   screenFlash: number;
 }
 
+/** 撃破時のパーティクルを生成する */
+function createDefeatParticles(
+  x: number,
+  y: number,
+  count: number,
+  spread: number,
+  colors: string[]
+): import('./types').Particle[] {
+  return Array.from({ length: count }, () =>
+    EntityFactory.particle(
+      x + randomRange(-spread, spread),
+      y + randomRange(-spread, spread),
+      { color: randomChoice(colors) },
+    )
+  );
+}
+
 /** 2-4: 弾-敵衝突処理（純粋関数） */
 export function processBulletEnemyCollisions(
   bullets: Bullet[],
@@ -313,24 +330,12 @@ export function processBulletEnemyCollisions(
             screenShake = BOSS_DEFEAT_SCREEN_SHAKE;
             screenFlash = BOSS_DEFEAT_SCREEN_FLASH;
             newItems.push(EntityFactory.item(e.x, e.y, 'bomb'));
-            for (let i = 0; i < 20; i++) {
-              newParticles.push(EntityFactory.particle(
-                e.x + randomRange(-60, 60),
-                e.y + randomRange(-60, 60),
-                { color: randomChoice(['#ff6', '#f80', '#fa0', '#ff4']) },
-              ));
-            }
+            newParticles.push(...createDefeatParticles(e.x, e.y, 20, 60, ['#ff6', '#f80', '#fa0', '#ff4']));
           } else if (isMidboss(e)) {
             screenShake = MIDBOSS_DEFEAT_SCREEN_SHAKE;
             const dropItem = Math.random() < 0.5 ? 'life' : 'power';
             newItems.push(EntityFactory.item(e.x, e.y, dropItem as 'life' | 'power'));
-            for (let i = 0; i < 10; i++) {
-              newParticles.push(EntityFactory.particle(
-                e.x + randomRange(-40, 40),
-                e.y + randomRange(-40, 40),
-                { color: randomChoice(['#88f', '#aaf', '#66f']) },
-              ));
-            }
+            newParticles.push(...createDefeatParticles(e.x, e.y, 10, 40, ['#88f', '#aaf', '#66f']));
           } else if (Math.random() < Config.spawn.itemChance) {
             newItems.push(EntityFactory.item(e.x, e.y, randomChoice(Object.keys(ItemConfig) as Array<keyof typeof ItemConfig>)));
           }
@@ -379,7 +384,7 @@ export function processItemCollection(
   now: number,
 ): ItemCollectionResult {
   const audioEvents: AudioEvent[] = [];
-  // 完全な UiState のコピーで as キャストを排除
+  // UiState の完全コピーを作成（元の uiState を変更しない）
   const updatedUi: UiState = { ...uiState };
   let clearBullets = false;
   // 敵 HP のコピー

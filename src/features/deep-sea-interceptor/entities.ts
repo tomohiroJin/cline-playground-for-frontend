@@ -135,8 +135,8 @@ export const EntityFactory = {
     {
       color,
       life = 15,
-      velocity = null,
-    }: { color: string; life?: number; velocity?: Position | null } = { color: '#fff' }
+      velocity,
+    }: { color: string; life?: number; velocity?: Position } = { color: '#fff' }
   ): Particle => ({
     id: uniqueId(),
     x,

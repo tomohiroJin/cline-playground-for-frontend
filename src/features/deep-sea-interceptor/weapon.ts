@@ -24,37 +24,33 @@ const SONAR_WAVE_CONFIGS: { minPower: number; config: SonarWaveConfig }[] = [
   { minPower: 0, config: { spreadAngle: 0.20, lifespan: 25, damage: 2.5, count: 3 } },
 ];
 
-/** パワーレベルに応じたソナーウェーブ設定を取得する */
-const getSonarWaveConfig = (power: number): SonarWaveConfig =>
-  // minPower 降順のため、最初にマッチしたものが正しい設定
-  SONAR_WAVE_CONFIGS.find(({ minPower }) => power >= minPower)!.config;
+/** minPower 降順テーブルから、パワーレベルに応じた設定値を取得する汎用関数 */
+function lookupByPower<T>(table: readonly { minPower: number; value: T }[], power: number): T {
+  const entry = table.find(({ minPower }) => power >= minPower);
+  if (!entry) throw new Error(`パワーレベル ${power} に対応する設定が見つかりません`);
+  return entry.value;
+}
+
+/** ソナーウェーブ設定テーブル */
+const SONAR_WAVE_TABLE = SONAR_WAVE_CONFIGS.map(({ minPower, config }) => ({ minPower, value: config }));
 
 /** トーピードのパワーレベル別発射角度テーブル */
-const TORPEDO_ANGLES_BY_POWER: { minPower: number; angles: number[] }[] = [
-  { minPower: 5, angles: [-0.1, 0, 0.1, 0] },
-  { minPower: 4, angles: [-0.1, 0, 0.1] },
-  { minPower: 3, angles: [-0.1, 0.1] },
-  { minPower: 0, angles: [0] },
+const TORPEDO_ANGLES_TABLE: readonly { minPower: number; value: number[] }[] = [
+  { minPower: 5, value: [-0.1, 0, 0.1, 0] },
+  { minPower: 4, value: [-0.1, 0, 0.1] },
+  { minPower: 3, value: [-0.1, 0.1] },
+  { minPower: 0, value: [0] },
 ];
 
-/** パワーレベルに応じたトーピード発射角度を取得する */
-const getTorpedoAngles = (power: number): number[] =>
-  TORPEDO_ANGLES_BY_POWER.find(({ minPower }) => power >= minPower)!.angles;
-
-/** スプレッド時のトーピード発射角度 */
 /** スプレッド時のトーピード発射角度（3WAY） */
 const TORPEDO_SPREAD_ANGLES = [-0.2, 0, 0.2];
 
 /** バイオミサイルのパワーレベル別発射数テーブル */
-const BIO_MISSILE_COUNT_BY_POWER: { minPower: number; count: number }[] = [
-  { minPower: 5, count: 3 },
-  { minPower: 3, count: 2 },
-  { minPower: 0, count: 1 },
+const BIO_MISSILE_COUNT_TABLE: readonly { minPower: number; value: number }[] = [
+  { minPower: 5, value: 3 },
+  { minPower: 3, value: 2 },
+  { minPower: 0, value: 1 },
 ];
-
-/** パワーレベルに応じたバイオミサイル発射数を取得する */
-const getBioMissileCount = (power: number): number =>
-  BIO_MISSILE_COUNT_BY_POWER.find(({ minPower }) => power >= minPower)!.count;
 
 // ---------------------------------------------------------------------------
 // 武器生成関数
@@ -75,7 +71,7 @@ export function createBulletsForWeapon(
       // トーピード: power レベルに応じた弾数
       const angles = hasSpread
         ? TORPEDO_SPREAD_ANGLES
-        : getTorpedoAngles(power);
+        : lookupByPower(TORPEDO_ANGLES_TABLE, power);
       for (const a of angles) {
         bullets.push(
           EntityFactory.bullet(x, y - 24, {
@@ -88,7 +84,7 @@ export function createBulletsForWeapon(
       break;
     }
     case 'sonarWave': {
-      const { lifespan, damage } = getSonarWaveConfig(power);
+      const { lifespan, damage } = lookupByPower(SONAR_WAVE_TABLE, power);
       if (hasSpread) {
         // スプレッド時: 後方含む全方位8方向（接近戦特化）
         for (let i = 0; i < 8; i++) {
@@ -105,7 +101,7 @@ export function createBulletsForWeapon(
         }
       } else {
         // 通常: 扇状発射、高火力・射程制限あり
-        const { spreadAngle, count } = getSonarWaveConfig(power);
+        const { spreadAngle, count } = lookupByPower(SONAR_WAVE_TABLE, power);
         for (let i = 0; i < count; i++) {
           const a = (i - (count - 1) / 2) * (spreadAngle / ((count - 1) / 2 || 1));
           bullets.push(
@@ -123,7 +119,7 @@ export function createBulletsForWeapon(
     }
     case 'bioMissile': {
       // バイオミサイル: ホーミング弾
-      const count = getBioMissileCount(power);
+      const count = lookupByPower(BIO_MISSILE_COUNT_TABLE, power);
       const dmg = 1;
       for (let i = 0; i < count; i++) {
         const offset = (i - (count - 1) / 2) * 0.2;
