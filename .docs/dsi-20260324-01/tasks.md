@@ -184,8 +184,34 @@
 
 ---
 
+## コードレビュー・リファクタリング
+
+### レビュー指摘修正（2回）
+
+- [x] startGame の useCallback 依存配列に testMode 追加
+- [x] Boss5 外殻閉時に貫通弾が消費されないよう修正
+- [x] イテレーション中の enemies.push を一時配列に分離
+- [x] Boss5 マジックナンバーを 11 個の定数に
+- [x] 未使用の SCALE 定数をコメントに変更
+- [x] テストモード入力検知を /^[a-z]$/ に変更
+- [x] テストモード無期限効果を Infinity に変更
+- [x] Boss5 Phase3 screenFlash 定数化
+- [x] Boss5 召喚敵スポーン座標 定数化
+- [x] テストモード解除を遷移時のみに限定
+
+### リファクタリング（4ファイル）
+
+- [x] game-logic.ts: updateFrame から 4 サブ関数を抽出
+- [x] enemy-ai.ts: 弾幕生成ヘルパー 3 関数を抽出（重複コード削減）
+- [x] weapon.ts: パワーレベル設定をテーブルルックアップに変更
+- [x] hooks.ts: useTestMode フック分離、handleGameEnd/fireShot/releaseCharge 抽出
+
+---
+
 ## 最終確認
 
 - [x] 全 Phase 統合後の全テスト通過（174 件）
 - [x] 型チェック（tsc --noEmit）エラーなし
+- [x] コードレビュー 2 回実施・全指摘対応済み
+- [x] リファクタリング 4 ファイル実施済み
 - [ ] 実際のゲームプレイでの動作確認（手動テスト）
