@@ -286,7 +286,48 @@ Phase S3-4（テスト・品質保証）
 
 ---
 
-## Phase S3-5: UI 改善（フィードバック対応）
+## Phase S3-5a: バグ修正 — winScore が反映されずゲームが終了しない
+
+### 症状
+
+フリー対戦で Win Score を 3 に設定しても、9 点取ってもゲームが終了しない。
+
+### 原因
+
+`AirHockeyGame.tsx` の `useGameLoop` に渡す `aiConfig` が**毎レンダリングで新しいオブジェクトを生成**している。
+
+```typescript
+// 問題箇所: buildFreeBattleAiConfig は毎回新しいオブジェクトを返す
+aiConfig: mode.selectedCpuCharacter
+  ? buildFreeBattleAiConfig(mode.difficulty, mode.selectedCpuCharacter.id)
+  : undefined,
+```
+
+`useGameLoop` の `useEffect` 依存配列に `aiConfig` が含まれるため、
+参照が毎回変わり **useEffect が毎フレーム再実行** される。
+
+再実行のたびに cleanup で `clearTimeout(resultTimerId)` が呼ばれ、
+**得点時の勝利判定タイマーが即キャンセル** → ゲームが永遠に終了しない。
+
+### 修正方針
+
+`buildFreeBattleAiConfig` の結果を `useMemo` でメモ化する。
+
+```typescript
+const freeBattleAiConfig = React.useMemo(
+  () => mode.selectedCpuCharacter
+    ? buildFreeBattleAiConfig(mode.difficulty, mode.selectedCpuCharacter.id)
+    : undefined,
+  [mode.difficulty, mode.selectedCpuCharacter]
+);
+```
+
+これで `mode.difficulty` と `mode.selectedCpuCharacter` が変わらない限り、
+同じオブジェクト参照が維持され `useEffect` の不要な再実行を防ぐ。
+
+---
+
+## Phase S3-5b: UI 改善（フィードバック対応）
 
 **目的**: フリー対戦キャラ選択画面の見た目を 2P 対戦と統一し、品質を向上させる
 

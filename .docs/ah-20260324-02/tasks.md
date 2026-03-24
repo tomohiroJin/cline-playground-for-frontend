@@ -8,7 +8,8 @@
 | S3-2 キャラ選択 UI | [x] 完了 | 4 | 2026-03-24 |
 | S3-3 ゲームプレイへの反映 | [x] 完了 | 5 | 2026-03-24 |
 | S3-4 テスト・品質保証 | [x] 完了 | 8 | 2026-03-24 |
-| S3-5 UI 改善（FB対応） | [ ] 未着手 | 7 | |
+| S3-5a バグ修正（winScore） | [ ] 未着手 | 1 | |
+| S3-5b UI 改善（FB対応） | [ ] 未着手 | 7 | |
 
 ### 並行作業ガイド
 
@@ -125,7 +126,22 @@ S3-1（状態管理・型の拡張）
 
 ---
 
-## Phase S3-5: UI 改善（フィードバック対応）
+## Phase S3-5a: バグ修正 — winScore 未反映
+
+### S3-5a-1: aiConfig の useMemo メモ化
+
+- [ ] `buildFreeBattleAiConfig` の結果を `useMemo` でメモ化
+- [ ] 依存配列: `[mode.difficulty, mode.selectedCpuCharacter]`
+- [ ] `useGameLoop` に渡す `aiConfig` をメモ化した値に変更
+
+**確認**:
+- [ ] フリー対戦で winScore=3 のとき 3 点でゲーム終了する
+- [ ] `tsc --noEmit` で型エラーなし
+- [ ] 既存テストパス
+
+---
+
+## Phase S3-5b: UI 改善（フィードバック対応）
 
 ### S3-5-1: キャラカードにアイコン画像を使用
 
