@@ -283,3 +283,63 @@ Phase S3-4（テスト・品質保証）
 - 選択キャラの AI 個性がゲーム中に反映される
 - VS 画面で対戦相手が表示される
 - 既存モード（ストーリー・2P・デイリー・図鑑）に影響なし
+
+---
+
+## Phase S3-5: UI 改善（フィードバック対応）
+
+**目的**: フリー対戦キャラ選択画面の見た目を 2P 対戦と統一し、品質を向上させる
+
+### 背景
+
+打鍵確認で以下のフィードバックがあった:
+
+1. キャラカードの表示が簡素すぎる（文字1文字のみ）→ `character.icon`（アイコン画像）を使う
+2. 「戻る」ボタンと「対戦相手を選べ！」がくっついている → ヘッダーレイアウトの改善
+3. 画面サイズが小さく他画面と不揃い → レスポンシブ対応
+4. 全体的に 2P 対戦画面と見た目を統一する
+
+### S3-5-1: キャラカードにアイコン画像を使用
+
+- `character.icon` を `<img>` タグで表示（2P 対戦の `styles.cardIcon` と同じパターン）
+- ロック時はグレーフィルター + 鍵アイコンオーバーレイ
+- カードサイズを 2P 対戦に合わせる（`CARD_SIZE = 80`, `CARD_ICON_SIZE = 36`）
+
+### S3-5-2: ヘッダーレイアウト改善
+
+- 「← 戻る」ボタンのスタイルを 2P 対戦と統一
+- タイトルとの間にスペースを確保
+- ヘッダー下部にセクション区切り線を追加
+
+### S3-5-3: レスポンシブ対応
+
+- `container` を `overflow: hidden` に（2P 対戦と統一）
+- グリッドを `repeat(4, CARD_SIZE px)` + `justifyContent: 'center'` に変更
+  - 2P 対戦と同じ固定サイズ + 中央寄せパターン
+- 選択中キャラの詳細エリアを拡充
+- 「対戦開始！」ボタンを 2P 対戦の `startButton` スタイル（`width: 100%`, グラデーション）に統一
+
+### S3-5-4: 選択中キャラの詳細表示を充実
+
+- アイコン画像（大）+ 名前 + キャラカラーのアクセント表示
+- 2P 対戦の `playerPanel` に近いビジュアル
+
+### 参考: 2P 対戦 CharacterSelectScreen のスタイルパターン
+
+```
+PANEL_ICON_SIZE = 48    // VS パネルのアイコンサイズ
+CARD_ICON_SIZE = 36     // グリッドカードのアイコンサイズ
+CARD_SIZE = 80          // カードの固定サイズ
+GRID_GAP = 8            // グリッドギャップ
+
+container: overflow: hidden
+header: justifyContent: space-between
+backButton: 「← 戻る」テキスト
+grid: repeat(4, 80px) + justifyContent: center
+card: 80px 固定高さ + 2px ボーダー + transition
+cardIcon: img タグ + borderRadius: 50% + objectFit: cover
+startButton: width: 100% + linear-gradient(135deg, #e67e22, #d35400)
+```
+
+**成果物**: 更新 FreeBattleCharacterSelect.tsx
+**完了条件**: 2P 対戦と統一された見た目、レスポンシブ対応
