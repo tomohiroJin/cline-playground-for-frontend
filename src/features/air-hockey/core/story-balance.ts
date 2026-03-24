@@ -5,7 +5,7 @@
 import type { Difficulty } from './types';
 import type { GameConstants } from './constants';
 import { CONSTANTS } from './constants';
-import { type AiPlayStyle, DEFAULT_PLAY_STYLE, CHARACTER_AI_PROFILES } from './character-ai-profiles';
+import { type AiPlayStyle, DEFAULT_PLAY_STYLE, CHARACTER_AI_PROFILES, getCharacterAiProfile } from './character-ai-profiles';
 
 // AiPlayStyle と DEFAULT_PLAY_STYLE を re-export（後方互換のため）
 export type { AiPlayStyle };
@@ -142,6 +142,19 @@ const DEFAULT_BALANCE: StageBalanceConfig = {
 };
 
 // ── 公開関数 ──────────────────────────────────────
+
+/** フリー対戦用 AI 設定を構築する（難易度ベース + キャラ playStyle） */
+export const buildFreeBattleAiConfig = (
+  difficulty: Difficulty,
+  characterId?: string
+): AiBehaviorConfig => {
+  const base = AI_BEHAVIOR_PRESETS[difficulty];
+  if (!characterId) return base;
+  return {
+    ...base,
+    playStyle: getCharacterAiProfile(characterId),
+  };
+};
 
 /** ステージ ID に対応するバランス設定を取得 */
 export const getStoryStageBalance = (stageId: string): StageBalanceConfig => {

@@ -20,7 +20,8 @@ import type { GameState, GamePhase, ShakeState, MatchStats } from '../core/types
 import { loadStoryProgress, resetStoryProgress } from '../core/story';
 import type { StageDefinition } from '../core/story';
 import { CHAPTER_1_STAGES } from '../core/dialogue-data';
-import { getStoryStageBalance } from '../core/story-balance';
+import { getStoryStageBalance, buildFreeBattleAiConfig } from '../core/story-balance';
+import { FreeBattleCharacterSelect } from '../components/FreeBattleCharacterSelect';
 import { getDexEntryById } from '../core/dex-data';
 import { useCharacterDex } from '../hooks/useCharacterDex';
 import { CharacterDexScreen } from '../components/CharacterDexScreen';
@@ -177,8 +178,10 @@ const AirHockeyGame: React.FC = () => {
     [mode.difficulty]
   );
   const currentCpuName = React.useMemo(
-    () => mode.gameMode === 'story' && cpuCharacter ? cpuCharacter.name : freeBattleCpuCharacter.name,
-    [mode.gameMode, cpuCharacter, freeBattleCpuCharacter]
+    () => mode.gameMode === 'story' && cpuCharacter
+      ? cpuCharacter.name
+      : (mode.selectedCpuCharacter ?? freeBattleCpuCharacter).name,
+    [mode.gameMode, cpuCharacter, mode.selectedCpuCharacter, freeBattleCpuCharacter]
   );
   const selectedDexEntry = React.useMemo(() => selectedCharacterId ? getDexEntryById(selectedCharacterId) : undefined, [selectedCharacterId]);
   const selectedCharacter = React.useMemo(() => selectedCharacterId ? findCharacterById(selectedCharacterId) : undefined, [selectedCharacterId]);
@@ -208,7 +211,7 @@ const AirHockeyGame: React.FC = () => {
     setIsHelpMode(false);
   }, [isHelpMode, screen]);
 
-  const handleFreeStart = useCallback(() => { mode.setGameMode('free'); startGame(); }, [mode, startGame]);
+  const handleFreeStart = useCallback(() => { mode.setGameMode('free'); navigateTo('freeBattleCharacterSelect'); }, [mode, navigateTo]);
   const handleStoryClick = useCallback(() => { mode.setGameMode('story'); mode.setStoryProgress(loadStoryProgress()); navigateTo('stageSelect'); }, [mode, navigateTo]);
   const handleDailyChallengeClick = useCallback(() => { mode.setDailyChallenge(generateDailyChallenge(new Date())); navigateTo('daily'); }, [mode, navigateTo]);
   const handleDailyChallengeStart = useCallback(() => {
@@ -247,6 +250,22 @@ const AirHockeyGame: React.FC = () => {
     mode.setWinScore(config.winScore);
     startGame(config.field);
   }, [mode, startGame]);
+  // ── フリー対戦キャラ選択 ──
+  const freeBattleSelectableCharacters = React.useMemo(() => {
+    const base = getBattleCharacters().filter(c => c.id !== 'player');
+    const baseIds = new Set(base.map(c => c.id));
+    const unlocked = dex.unlockedIds
+      .filter(id => !baseIds.has(id) && id !== 'player')
+      .map(id => findCharacterById(id))
+      .filter((c): c is NonNullable<typeof c> => c !== undefined);
+    return [...base, ...unlocked];
+  }, [dex.unlockedIds]);
+  const handleFreeBattleCharacterConfirm = useCallback((character: import('../core/types').Character) => {
+    mode.setSelectedCpuCharacter(character);
+    navigateTo('vsScreen');
+  }, [mode, navigateTo]);
+  const handleBackFromFreeBattleSelect = useCallback(() => { navigateTo('menu'); }, [navigateTo]);
+
   const handleBackFromCharacterSelect = useCallback(() => { navigateTo('menu'); }, [navigateTo]);
   const handleBackToCharacterSelect = useCallback(() => { navigateTo('characterSelect'); }, [navigateTo]);
   const handleAcceptDifficulty = useCallback((d: typeof mode.difficulty) => { mode.setDifficulty(d); saveStreakRecord({ winStreak: 0, loseStreak: 0 }); }, [mode]);
@@ -297,7 +316,11 @@ const AirHockeyGame: React.FC = () => {
     config: {
       difficulty: mode.difficulty, field: mode.field, winScore: mode.winScore,
       getSound: audio.getSound, bgmEnabled: audio.bgmEnabled, gameMode: mode.gameMode,
-      aiConfig: mode.gameMode === 'story' ? storyAiConfig : undefined,
+      aiConfig: mode.gameMode === 'story'
+        ? storyAiConfig
+        : mode.selectedCpuCharacter
+          ? buildFreeBattleAiConfig(mode.difficulty, mode.selectedCpuCharacter.id)
+          : undefined,
       playerMalletColor: is2PMode ? mode.player1Character?.color : undefined,
       cpuMalletColor: is2PMode ? mode.player2Character?.color : undefined,
     },
@@ -333,6 +356,16 @@ const AirHockeyGame: React.FC = () => {
             onTwoPlayerClick={handleTwoPlayerClick}
           />
         </Transition>
+      )}
+
+      {screen === 'freeBattleCharacterSelect' && (
+        <FreeBattleCharacterSelect
+          characters={freeBattleSelectableCharacters}
+          unlockedIds={dex.unlockedIds}
+          difficulty={mode.difficulty}
+          onConfirm={handleFreeBattleCharacterConfirm}
+          onBack={handleBackFromFreeBattleSelect}
+        />
       )}
 
       {screen === 'characterSelect' && (
@@ -374,8 +407,11 @@ const AirHockeyGame: React.FC = () => {
       {screen === 'preDialogue' && mode.currentStage && (
         <DialogueOverlay dialogues={mode.currentStage.preDialogue} characters={storyCharacters} backgroundUrl={stageBackgroundUrl} onComplete={() => navigateTo('vsScreen')} />
       )}
-      {screen === 'vsScreen' && mode.currentStage && cpuCharacter && (
+      {screen === 'vsScreen' && mode.gameMode === 'story' && mode.currentStage && cpuCharacter && (
         <VsScreen playerCharacter={PLAYER_CHARACTER} cpuCharacter={cpuCharacter} stageName={mode.currentStage.name} fieldName={(FIELDS.find(f => f.id === mode.currentStage!.fieldId) ?? FIELDS[0]).name} onComplete={handleVsComplete} />
+      )}
+      {screen === 'vsScreen' && mode.gameMode === 'free' && mode.selectedCpuCharacter && (
+        <VsScreen playerCharacter={PLAYER_CHARACTER} cpuCharacter={mode.selectedCpuCharacter} stageName="フリー対戦" fieldName={mode.field.name} onComplete={handleVsComplete} />
       )}
 
       {screen === 'game' && (
@@ -408,7 +444,7 @@ const AirHockeyGame: React.FC = () => {
             onAcceptDifficulty={handleAcceptDifficulty}
             onBackToStageSelect={mode.gameMode === 'story' ? handleBackToStageSelect : undefined}
             onNextStage={mode.gameMode === 'story' && hasNextStage ? handleNextStage : undefined}
-            cpuCharacter={mode.gameMode === 'story' ? cpuCharacter : is2PMode ? mode.player2Character : freeBattleCpuCharacter}
+            cpuCharacter={mode.gameMode === 'story' ? cpuCharacter : is2PMode ? mode.player2Character : mode.selectedCpuCharacter ?? freeBattleCpuCharacter}
             playerCharacter={mode.gameMode === 'story' ? PLAYER_CHARACTER : is2PMode ? mode.player1Character : PLAYER_CHARACTER}
             newlyUnlockedCharacterName={result.newlyUnlockedCharacterName}
             is2PMode={is2PMode}

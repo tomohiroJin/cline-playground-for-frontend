@@ -12,7 +12,9 @@ import {
   getStoryStageBalance,
   StageBalanceConfig,
   createStageConstants,
+  buildFreeBattleAiConfig,
 } from './story-balance';
+import { DEFAULT_PLAY_STYLE, getCharacterAiProfile } from './character-ai-profiles';
 
 // ── AI 振る舞い設定の抽象化テスト ────────────────────
 
@@ -245,6 +247,32 @@ describe('キャラクター AI プロファイルのステージ統合', () => 
     const balance = getStoryStageBalance('1-3');
     expect(balance.ai.playStyle).toBeDefined();
     expect(balance.ai.playStyle).toEqual(CHARACTER_AI_PROFILES['takuma']);
+  });
+});
+
+describe('buildFreeBattleAiConfig', () => {
+  it('難易度の基本パラメータが維持される', () => {
+    const config = buildFreeBattleAiConfig('hard', 'misaki');
+    expect(config.maxSpeed).toBe(AI_BEHAVIOR_PRESETS.hard.maxSpeed);
+    expect(config.predictionFactor).toBe(AI_BEHAVIOR_PRESETS.hard.predictionFactor);
+    expect(config.wobble).toBe(AI_BEHAVIOR_PRESETS.hard.wobble);
+    expect(config.skipRate).toBe(AI_BEHAVIOR_PRESETS.hard.skipRate);
+    expect(config.wallBounce).toBe(AI_BEHAVIOR_PRESETS.hard.wallBounce);
+  });
+
+  it('選択キャラの playStyle が反映される', () => {
+    const config = buildFreeBattleAiConfig('normal', 'misaki');
+    expect(config.playStyle).toEqual(getCharacterAiProfile('misaki'));
+  });
+
+  it('characterId 未指定で AI_BEHAVIOR_PRESETS をそのまま返す', () => {
+    const config = buildFreeBattleAiConfig('normal');
+    expect(config).toBe(AI_BEHAVIOR_PRESETS.normal);
+  });
+
+  it('未知の characterId で DEFAULT_PLAY_STYLE にフォールバックする', () => {
+    const config = buildFreeBattleAiConfig('easy', 'unknown-char');
+    expect(config.playStyle).toEqual(DEFAULT_PLAY_STYLE);
   });
 });
 

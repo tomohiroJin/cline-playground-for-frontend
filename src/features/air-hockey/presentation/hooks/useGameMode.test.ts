@@ -163,6 +163,39 @@ describe('useGameMode', () => {
     });
   });
 
+  describe('フリー対戦 CPU キャラ選択', () => {
+    it('初期の selectedCpuCharacter は undefined である', () => {
+      const { result } = renderHook(() => useGameMode());
+      expect(result.current.selectedCpuCharacter).toBeUndefined();
+    });
+
+    it('setSelectedCpuCharacter で CPU キャラクターを設定できる', () => {
+      const { result } = renderHook(() => useGameMode());
+      const mockCharacter = { id: 'hiro', name: 'ヒロ', icon: '', color: '#e67e22', reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] } };
+
+      act(() => {
+        result.current.setSelectedCpuCharacter(mockCharacter);
+      });
+
+      expect(result.current.selectedCpuCharacter).toEqual(mockCharacter);
+    });
+
+    it('resetToFree で selectedCpuCharacter もリセットされる', () => {
+      const { result } = renderHook(() => useGameMode());
+      const mockCharacter = { id: 'hiro', name: 'ヒロ', icon: '', color: '#e67e22', reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] } };
+
+      act(() => {
+        result.current.setSelectedCpuCharacter(mockCharacter);
+      });
+
+      act(() => {
+        result.current.resetToFree();
+      });
+
+      expect(result.current.selectedCpuCharacter).toBeUndefined();
+    });
+  });
+
   describe('2P 対戦用の状態管理', () => {
     it('初期の player1Character は undefined である', () => {
       const { result } = renderHook(() => useGameMode());

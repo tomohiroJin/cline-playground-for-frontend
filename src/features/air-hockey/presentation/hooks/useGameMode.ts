@@ -27,6 +27,8 @@ export type UseGameModeReturn = {
   setDailyChallenge: (c: DailyChallenge | undefined) => void;
   storyProgress: StoryProgress;
   setStoryProgress: (p: StoryProgress) => void;
+  selectedCpuCharacter: Character | undefined;
+  setSelectedCpuCharacter: (c: Character | undefined) => void;
   player1Character: Character | undefined;
   setPlayer1Character: (c: Character | undefined) => void;
   player2Character: Character | undefined;
@@ -48,6 +50,7 @@ export function useGameMode(): UseGameModeReturn {
   const [isDailyMode, setIsDailyMode] = useState(false);
   const [dailyChallenge, setDailyChallenge] = useState<DailyChallenge | undefined>(undefined);
   const [storyProgress, setStoryProgress] = useState<StoryProgress>({ clearedStages: [] });
+  const [selectedCpuCharacter, setSelectedCpuCharacter] = useState<Character | undefined>(undefined);
   const [player1Character, setPlayer1Character] = useState<Character | undefined>(undefined);
   const [player2Character, setPlayer2Character] = useState<Character | undefined>(undefined);
 
@@ -61,6 +64,7 @@ export function useGameMode(): UseGameModeReturn {
   const resetToFree = useCallback(() => {
     setGameMode('free');
     setIsDailyMode(false);
+    setSelectedCpuCharacter(undefined);
     setPlayer1Character(undefined);
     setPlayer2Character(undefined);
   }, []);
@@ -74,6 +78,8 @@ export function useGameMode(): UseGameModeReturn {
     setField,
     winScore,
     setWinScore,
+    selectedCpuCharacter,
+    setSelectedCpuCharacter,
     currentStage,
     setCurrentStage,
     isDailyMode,
