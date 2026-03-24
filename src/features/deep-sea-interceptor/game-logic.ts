@@ -566,7 +566,7 @@ function updateBoss5State(
 ): void {
   // 第1形態: 外殻の開閉
   if (e.bossPhase === 1) {
-    const shellTimer = now - (e.shellToggleTime ?? now);
+    const shellTimer = now - (e.shellToggleTime ?? 0);
     const isOpen = e.shellOpen ?? false;
     if (isOpen && shellTimer > BOSS5_SHELL_OPEN_MS) {
       e.shellOpen = false;

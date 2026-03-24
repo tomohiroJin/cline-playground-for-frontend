@@ -97,6 +97,10 @@ export const EntityFactory = {
       movementPattern: baseRandomInt(0, 2),
       angle: 0,
       bossPhase: boss ? 1 : 0,
+      // Boss5 用: 外殻は閉じた状態から開始、タイマーを 0 にして即座にカウント開始
+      shellOpen: false,
+      shellToggleTime: 0,
+      lastSummonTime: 0,
     };
   },
 
