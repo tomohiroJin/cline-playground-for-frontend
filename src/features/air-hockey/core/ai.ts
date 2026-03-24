@@ -28,11 +28,21 @@ const predictWithWallBounce = (x: number, W: number): number => {
   return clamp(px, margin, W - margin);
 };
 
-// ── アグレッシブネス定数 ──────────────────────────
+// ── ポジショニング定数 ──────────────────────────
 /** ゴール付近の守備ポジション Y 座標 */
 const DEFENSIVE_Y = 80;
 /** 中央ラインからのマージン（攻撃最前線のオフセット） */
 const AGGRESSIVE_MARGIN = 100;
+
+// ── 適応度定数 ────────────────────────────────
+/** 適応度が頭打ちになるスコア差 */
+const ADAPTABILITY_MAX_SCORE_DIFF = 3;
+/** maxSpeed への最大ブースト率 */
+const ADAPTABILITY_SPEED_BOOST = 0.2;
+/** predictionFactor への最大ブースト率 */
+const ADAPTABILITY_PREDICTION_BOOST = 0.3;
+/** wobble への最大減少率 */
+const ADAPTABILITY_WOBBLE_REDUCTION = 0.5;
 
 /**
  * スコア差に応じて AI のパラメータを強化する
@@ -42,14 +52,37 @@ export const applyAdaptability = (config: AiBehaviorConfig, scoreDiff: number): 
   const playStyle = config.playStyle ?? DEFAULT_PLAY_STYLE;
   if (playStyle.adaptability <= 0 || scoreDiff <= 0) return config;
 
-  // boost: 0（差なし）〜 adaptability（3点差以上）
-  const boost = playStyle.adaptability * Math.min(scoreDiff, 3) / 3;
+  const boost = playStyle.adaptability
+    * Math.min(scoreDiff, ADAPTABILITY_MAX_SCORE_DIFF) / ADAPTABILITY_MAX_SCORE_DIFF;
   return {
     ...config,
-    maxSpeed: config.maxSpeed * (1 + boost * 0.2),                          // 最大 +20%
-    predictionFactor: config.predictionFactor * (1 + boost * 0.3),          // 最大 +30%
-    wobble: config.wobble * Math.max(0.5, 1 - boost * 0.5),                 // 最大 -50%
+    maxSpeed: config.maxSpeed * (1 + boost * ADAPTABILITY_SPEED_BOOST),
+    predictionFactor: config.predictionFactor * (1 + boost * ADAPTABILITY_PREDICTION_BOOST),
+    wobble: config.wobble * Math.max(ADAPTABILITY_WOBBLE_REDUCTION, 1 - boost * ADAPTABILITY_WOBBLE_REDUCTION),
   };
+};
+
+/**
+ * 揺さぶりオフセットを計算する
+ * lateralOscillation と lateralPeriod に基づく正弦波を返す
+ */
+const calculateOscillation = (playStyle: import('./character-ai-profiles').AiPlayStyle, now: number): number => {
+  if (playStyle.lateralOscillation <= 0 || playStyle.lateralPeriod <= 0) return 0;
+  return Math.sin(now * Math.PI * 2 / playStyle.lateralPeriod) * playStyle.lateralOscillation;
+};
+
+/**
+ * aggressiveness に基づくターゲット Y 座標を計算する
+ * パック位置より前には出ない制約を適用
+ */
+const calculateAggressiveY = (
+  aggressiveness: number,
+  halfH: number,
+  puckY: number
+): number => {
+  const aggressiveY = halfH - AGGRESSIVE_MARGIN;
+  const baseY = DEFENSIVE_Y + (aggressiveY - DEFENSIVE_Y) * aggressiveness;
+  return Math.min(puckY + 20, baseY);
 };
 
 export const CpuAI = {
@@ -91,17 +124,11 @@ export const CpuAI = {
 
       // TODO(2026-03-24): sidePreference による X オフセットは Step 3 で実装予定
 
-      // 揺さぶり: lateralOscillation > 0 の場合に正弦波オフセットを加算
-      if (playStyle.lateralOscillation > 0 && playStyle.lateralPeriod > 0) {
-        const oscillation = Math.sin(now * Math.PI * 2 / playStyle.lateralPeriod)
-                            * playStyle.lateralOscillation;
-        predictedX += oscillation;
-      }
+      // 揺さぶり: 正弦波によるX方向オフセット
+      predictedX += calculateOscillation(playStyle, now);
 
       // aggressiveness によるY座標制御（守備的〜攻撃的ポジション）
-      const aggressiveY = H / 2 - AGGRESSIVE_MARGIN;
-      const baseY = DEFENSIVE_Y + (aggressiveY - DEFENSIVE_Y) * playStyle.aggressiveness;
-      const targetY = Math.min(puck.y + 20, baseY);
+      const targetY = calculateAggressiveY(playStyle.aggressiveness, H / 2, puck.y);
 
       return { x: predictedX, y: targetY };
     }
