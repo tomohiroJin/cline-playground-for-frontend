@@ -134,13 +134,6 @@ const styles = {
     opacity: isLocked ? 0.4 : 1,
     position: 'relative' as const,
   }),
-  cardIconBase: {
-    width: `${CARD_ICON_SIZE}px`,
-    height: `${CARD_ICON_SIZE}px`,
-    borderRadius: '50%',
-    objectFit: 'cover' as const,
-    marginBottom: '4px',
-  },
   cardIcon: (isLocked: boolean) => ({
     width: `${CARD_ICON_SIZE}px`,
     height: `${CARD_ICON_SIZE}px`,
