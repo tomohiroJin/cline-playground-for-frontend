@@ -206,6 +206,12 @@
 - [x] weapon.ts: パワーレベル設定をテーブルルックアップに変更
 - [x] hooks.ts: useTestMode フック分離、handleGameEnd/fireShot/releaseCharge 抽出
 
+### Boss5 形態変化の視覚表現
+
+- [x] 第1形態「外殻」: shellOpen に応じた色・SVG 切替（閉:#5a2a5a / 開:#8a4a8a + コア発光）
+- [x] 第2形態「内核露出」: 赤紫(#8a2a3a)、触手5本、コアパルスアニメ
+- [x] 第3形態「暴走コア」: 赤(#ff2a2a)、12方向回転放射線、HP低下で点滅強化
+
 ---
 
 ## 最終確認
