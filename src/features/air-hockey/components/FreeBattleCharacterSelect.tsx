@@ -134,21 +134,21 @@ const styles = {
     opacity: isLocked ? 0.4 : 1,
     position: 'relative' as const,
   }),
-  cardIcon: {
+  cardIconBase: {
     width: `${CARD_ICON_SIZE}px`,
     height: `${CARD_ICON_SIZE}px`,
     borderRadius: '50%',
     objectFit: 'cover' as const,
     marginBottom: '4px',
   },
-  cardIconLocked: {
+  cardIcon: (isLocked: boolean) => ({
     width: `${CARD_ICON_SIZE}px`,
     height: `${CARD_ICON_SIZE}px`,
     borderRadius: '50%',
     objectFit: 'cover' as const,
     marginBottom: '4px',
-    filter: 'grayscale(100%) brightness(0.5)',
-  },
+    ...(isLocked ? { filter: 'grayscale(100%) brightness(0.5)' } : {}),
+  }),
   lockOverlay: {
     position: 'absolute' as const,
     top: '4px',
@@ -258,7 +258,7 @@ export const FreeBattleCharacterSelect: React.FC<FreeBattleCharacterSelectProps>
               <img
                 src={character.icon}
                 alt={character.name}
-                style={locked ? styles.cardIconLocked : styles.cardIcon}
+                style={styles.cardIcon(locked)}
               />
               {locked && <span style={styles.lockOverlay}>🔒</span>}
               <span style={styles.cardName}>{character.name}</span>

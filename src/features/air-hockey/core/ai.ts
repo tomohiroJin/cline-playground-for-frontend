@@ -1,7 +1,7 @@
 import { CONSTANTS, GameConstants } from './constants';
 import { GameState, Difficulty, Vector } from './types';
 import { clamp, randomRange, distance } from '../../../utils/math-utils';
-import { AI_BEHAVIOR_PRESETS, AiBehaviorConfig } from './story-balance';
+import { AI_BEHAVIOR_PRESETS, AiBehaviorConfig, type AiPlayStyle } from './story-balance';
 import { DEFAULT_PLAY_STYLE } from './character-ai-profiles';
 
 /**
@@ -66,7 +66,7 @@ export const applyAdaptability = (config: AiBehaviorConfig, scoreDiff: number): 
  * 揺さぶりオフセットを計算する
  * lateralOscillation と lateralPeriod に基づく正弦波を返す
  */
-const calculateOscillation = (playStyle: import('./character-ai-profiles').AiPlayStyle, now: number): number => {
+const calculateOscillation = (playStyle: AiPlayStyle, now: number): number => {
   if (playStyle.lateralOscillation <= 0 || playStyle.lateralPeriod <= 0) return 0;
   return Math.sin(now * Math.PI * 2 / playStyle.lateralPeriod) * playStyle.lateralOscillation;
 };
@@ -122,7 +122,7 @@ export const CpuAI = {
         predictedX = predictedX * (1 - config.centerWeight) + (W / 2) * config.centerWeight;
       }
 
-      // TODO(2026-03-24): sidePreference による X オフセットは Step 3 で実装予定
+      // TODO(2026-03-25): sidePreference による X オフセットは将来のキャラ拡張時に実装予定
 
       // 揺さぶり: 正弦波によるX方向オフセット
       predictedX += calculateOscillation(playStyle, now);

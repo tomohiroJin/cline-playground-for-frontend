@@ -16,7 +16,7 @@ import { EntityFactory } from '../core/entities';
 import { CONSTANTS } from '../core/constants';
 import { FIELDS } from '../core/config';
 import { getCharacterByDifficulty, findCharacterById, getBattleCharacters, PLAYER_CHARACTER } from '../core/characters';
-import type { GameState, GamePhase, ShakeState, MatchStats } from '../core/types';
+import type { Character, GameState, GamePhase, ShakeState, MatchStats } from '../core/types';
 import { loadStoryProgress, resetStoryProgress } from '../core/story';
 import type { StageDefinition } from '../core/story';
 import { CHAPTER_1_STAGES } from '../core/dialogue-data';
@@ -267,7 +267,7 @@ const AirHockeyGame: React.FC = () => {
       .filter((c): c is NonNullable<typeof c> => c !== undefined);
     return [...base, ...unlocked];
   }, [dex.unlockedIds]);
-  const handleFreeBattleCharacterConfirm = useCallback((character: import('../core/types').Character) => {
+  const handleFreeBattleCharacterConfirm = useCallback((character: Character) => {
     mode.setSelectedCpuCharacter(character);
     navigateTo('vsScreen');
   }, [mode, navigateTo]);
