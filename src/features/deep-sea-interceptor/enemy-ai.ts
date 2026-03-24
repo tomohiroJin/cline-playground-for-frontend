@@ -23,6 +23,75 @@ const rotateVector = (v: Position, angle: number): Position => ({
   y: v.x * Math.sin(angle) + v.y * Math.cos(angle),
 });
 
+// ============================================================================
+// 弾幕生成ヘルパー関数
+// ============================================================================
+
+/** 自機狙い弾の設定 */
+interface AimedBulletConfig {
+  readonly offsetX: number;
+  readonly speed: number;
+}
+
+/**
+ * 扇状弾を生成する
+ * 指定した角度配列に沿って、ターゲット方向を基準に弾を扇状に展開する
+ */
+const createFanBullets = (
+  boss: Enemy,
+  dir: Position,
+  angles: readonly number[],
+  speed: number
+): EnemyBullet[] =>
+  angles.map(a => {
+    const rotated = rotateVector(dir, a);
+    return EntityFactory.enemyBullet(boss.x, boss.y, {
+      x: rotated.x * speed,
+      y: rotated.y * speed,
+    });
+  });
+
+/**
+ * N方向回転弾を生成する
+ * 等間隔にN方向へ弾を放射状に発射する
+ */
+const createRadialBullets = (
+  boss: Enemy,
+  count: number,
+  speed: number,
+  offsetAngle = 0
+): EnemyBullet[] => {
+  const bullets: EnemyBullet[] = [];
+  for (let i = 0; i < count; i++) {
+    const angle = offsetAngle + (Math.PI * 2 * i) / count;
+    bullets.push(
+      EntityFactory.enemyBullet(boss.x, boss.y, {
+        x: Math.cos(angle) * speed,
+        y: Math.sin(angle) * speed,
+      })
+    );
+  }
+  return bullets;
+};
+
+/**
+ * 自機狙い弾を生成する
+ * 設定配列に基づいて、ターゲット方向への弾を複数生成する
+ */
+const createAimedBullets = (
+  boss: Enemy,
+  target: Position,
+  configs: readonly AimedBulletConfig[]
+): EnemyBullet[] => {
+  const dir = normalize({ x: target.x - boss.x, y: target.y - boss.y });
+  return configs.map(({ offsetX, speed }) =>
+    EntityFactory.enemyBullet(boss.x + offsetX, boss.y, {
+      x: dir.x * speed,
+      y: dir.y * speed,
+    })
+  );
+};
+
 /** ボス別攻撃パターン */
 export const BossPatterns: Record<BossType, Record<number, (boss: Enemy, target: Position) => EnemyBullet[]>> = {
   // boss1: アンコウ・ガーディアン
@@ -30,33 +99,24 @@ export const BossPatterns: Record<BossType, Record<number, (boss: Enemy, target:
     // Phase 1: 5発の扇状弾
     1: (boss, target) => {
       const dir = normalize({ x: target.x - boss.x, y: target.y - boss.y });
-      const angles = [-0.52, -0.26, 0, 0.26, 0.52];
-      return angles.map(a => {
-        const rotated = rotateVector(dir, a);
-        return EntityFactory.enemyBullet(boss.x, boss.y, { x: rotated.x * 4, y: rotated.y * 4 });
-      });
+      return createFanBullets(boss, dir, [-0.52, -0.26, 0, 0.26, 0.52], 4);
     },
     // Phase 2: 引き寄せ + 自機狙い弾
-    2: (boss, target) => {
-      const dir = normalize({ x: target.x - boss.x, y: target.y - boss.y });
-      return [
-        EntityFactory.enemyBullet(boss.x, boss.y, { x: dir.x * 5, y: dir.y * 5 }),
-        EntityFactory.enemyBullet(boss.x - 30, boss.y, { x: dir.x * 4.5, y: dir.y * 4.5 }),
-        EntityFactory.enemyBullet(boss.x + 30, boss.y, { x: dir.x * 4.5, y: dir.y * 4.5 }),
-      ];
-    },
+    2: (boss, target) =>
+      createAimedBullets(boss, target, [
+        { offsetX: 0, speed: 5 },
+        { offsetX: -30, speed: 4.5 },
+        { offsetX: 30, speed: 4.5 },
+      ]),
     // Phase 3: 扇状弾 + 自機狙い弾を交互
     3: (boss, target) => {
       const dir = normalize({ x: target.x - boss.x, y: target.y - boss.y });
-      const fanBullets = [-0.52, -0.26, 0, 0.26, 0.52].map(a => {
-        const rotated = rotateVector(dir, a);
-        return EntityFactory.enemyBullet(boss.x, boss.y, { x: rotated.x * 4.5, y: rotated.y * 4.5 });
-      });
-      const aimedBullets = [
-        EntityFactory.enemyBullet(boss.x, boss.y, { x: dir.x * 5.5, y: dir.y * 5.5 }),
-        EntityFactory.enemyBullet(boss.x - 30, boss.y, { x: dir.x * 5, y: dir.y * 5 }),
-        EntityFactory.enemyBullet(boss.x + 30, boss.y, { x: dir.x * 5, y: dir.y * 5 }),
-      ];
+      const fanBullets = createFanBullets(boss, dir, [-0.52, -0.26, 0, 0.26, 0.52], 4.5);
+      const aimedBullets = createAimedBullets(boss, target, [
+        { offsetX: 0, speed: 5.5 },
+        { offsetX: -30, speed: 5 },
+        { offsetX: 30, speed: 5 },
+      ]);
       return [...fanBullets, ...aimedBullets];
     },
   },
@@ -70,80 +130,52 @@ export const BossPatterns: Record<BossType, Record<number, (boss: Enemy, target:
       EntityFactory.enemyBullet(boss.x + 60, boss.y, { x: 2, y: 4 }),
     ],
     // Phase 2: 高速機雷 + 自機狙い弾
-    2: (boss, target) => {
-      const dir = normalize({ x: target.x - boss.x, y: target.y - boss.y });
-      return [
-        EntityFactory.enemyBullet(boss.x - 40, boss.y + 20, { x: 0, y: 1.0 }),
-        EntityFactory.enemyBullet(boss.x + 40, boss.y + 20, { x: 0, y: 1.0 }),
-        EntityFactory.enemyBullet(boss.x, boss.y, { x: dir.x * 5, y: dir.y * 5 }),
-        EntityFactory.enemyBullet(boss.x, boss.y, { x: dir.x * 4, y: dir.y * 4 }),
-      ];
-    },
+    2: (boss, target) => [
+      EntityFactory.enemyBullet(boss.x - 40, boss.y + 20, { x: 0, y: 1.0 }),
+      EntityFactory.enemyBullet(boss.x + 40, boss.y + 20, { x: 0, y: 1.0 }),
+      ...createAimedBullets(boss, target, [
+        { offsetX: 0, speed: 5 },
+        { offsetX: 0, speed: 4 },
+      ]),
+    ],
     // Phase 3: 機雷設置 + 高速自機狙いを同時
-    3: (boss, target) => {
-      const dir = normalize({ x: target.x - boss.x, y: target.y - boss.y });
-      return [
-        EntityFactory.enemyBullet(boss.x, boss.y + 40, { x: 0, y: 0.7 }),
-        EntityFactory.enemyBullet(boss.x - 60, boss.y, { x: -2, y: 4 }),
-        EntityFactory.enemyBullet(boss.x + 60, boss.y, { x: 2, y: 4 }),
-        EntityFactory.enemyBullet(boss.x, boss.y, { x: dir.x * 5.5, y: dir.y * 5.5 }),
-        EntityFactory.enemyBullet(boss.x - 40, boss.y, { x: dir.x * 5, y: dir.y * 5 }),
-        EntityFactory.enemyBullet(boss.x + 40, boss.y, { x: dir.x * 5, y: dir.y * 5 }),
-      ];
-    },
+    3: (boss, target) => [
+      EntityFactory.enemyBullet(boss.x, boss.y + 40, { x: 0, y: 0.7 }),
+      EntityFactory.enemyBullet(boss.x - 60, boss.y, { x: -2, y: 4 }),
+      EntityFactory.enemyBullet(boss.x + 60, boss.y, { x: 2, y: 4 }),
+      ...createAimedBullets(boss, target, [
+        { offsetX: 0, speed: 5.5 },
+        { offsetX: -40, speed: 5 },
+        { offsetX: 40, speed: 5 },
+      ]),
+    ],
   },
 
   // boss3: サーマルドラゴン
   boss3: {
     // Phase 1: 回転弾（12方向）
     1: (boss, _target) => {
-      const bullets: EnemyBullet[] = [];
       const offset = (Date.now() / 500) % (Math.PI * 2);
-      for (let i = 0; i < 12; i++) {
-        const angle = offset + (Math.PI * 2 * i) / 12;
-        bullets.push(
-          EntityFactory.enemyBullet(boss.x, boss.y, {
-            x: Math.cos(angle) * 3.5,
-            y: Math.sin(angle) * 3.5,
-          })
-        );
-      }
-      return bullets;
+      return createRadialBullets(boss, 12, 3.5, offset);
     },
     // Phase 2: 高密度回転弾
     2: (boss, target) => {
-      const bullets: EnemyBullet[] = [];
       const offset = (Date.now() / 400) % (Math.PI * 2);
-      for (let i = 0; i < 16; i++) {
-        const angle = offset + (Math.PI * 2 * i) / 16;
-        bullets.push(
-          EntityFactory.enemyBullet(boss.x, boss.y, {
-            x: Math.cos(angle) * 4,
-            y: Math.sin(angle) * 4,
-          })
-        );
-      }
-      const dir = normalize({ x: target.x - boss.x, y: target.y - boss.y });
-      bullets.push(EntityFactory.enemyBullet(boss.x, boss.y, { x: dir.x * 5.5, y: dir.y * 5.5 }));
-      return bullets;
+      return [
+        ...createRadialBullets(boss, 16, 4, offset),
+        ...createAimedBullets(boss, target, [{ offsetX: 0, speed: 5.5 }]),
+      ];
     },
-    // Phase 3: 12方向弾幕 + 自機狙いを同時
+    // Phase 3: 16方向弾幕 + 自機狙いを同時
     3: (boss, target) => {
-      const bullets: EnemyBullet[] = [];
       const offset = (Date.now() / 350) % (Math.PI * 2);
-      for (let i = 0; i < 16; i++) {
-        const angle = offset + (Math.PI * 2 * i) / 16;
-        bullets.push(
-          EntityFactory.enemyBullet(boss.x, boss.y, {
-            x: Math.cos(angle) * 4.5,
-            y: Math.sin(angle) * 4.5,
-          })
-        );
-      }
-      const dir = normalize({ x: target.x - boss.x, y: target.y - boss.y });
-      bullets.push(EntityFactory.enemyBullet(boss.x, boss.y, { x: dir.x * 6, y: dir.y * 6 }));
-      bullets.push(EntityFactory.enemyBullet(boss.x, boss.y, { x: dir.x * 5, y: dir.y * 5 }));
-      return bullets;
+      return [
+        ...createRadialBullets(boss, 16, 4.5, offset),
+        ...createAimedBullets(boss, target, [
+          { offsetX: 0, speed: 6 },
+          { offsetX: 0, speed: 5 },
+        ]),
+      ];
     },
   },
 
@@ -209,40 +241,22 @@ export const BossPatterns: Record<BossType, Record<number, (boss: Enemy, target:
     },
     // Phase 2（内核露出）: 16方向回転弾幕
     2: (boss, target) => {
-      const bullets: EnemyBullet[] = [];
       const offset = (Date.now() / 300) % (Math.PI * 2);
-      for (let i = 0; i < 16; i++) {
-        const angle = offset + (Math.PI * 2 * i) / 16;
-        bullets.push(
-          EntityFactory.enemyBullet(boss.x, boss.y, {
-            x: Math.cos(angle) * 4.5,
-            y: Math.sin(angle) * 4.5,
-          })
-        );
-      }
-      // 自機狙い弾
-      const dir = normalize({ x: target.x - boss.x, y: target.y - boss.y });
-      bullets.push(EntityFactory.enemyBullet(boss.x, boss.y, { x: dir.x * 5, y: dir.y * 5 }));
-      return bullets;
+      return [
+        ...createRadialBullets(boss, 16, 4.5, offset),
+        ...createAimedBullets(boss, target, [{ offsetX: 0, speed: 5 }]),
+      ];
     },
     // Phase 3（暴走コア）: 24方向全方位弾幕 + ホーミング弾
     3: (boss, target) => {
-      const bullets: EnemyBullet[] = [];
       const offset = (Date.now() / 250) % (Math.PI * 2);
-      for (let i = 0; i < 24; i++) {
-        const angle = offset + (Math.PI * 2 * i) / 24;
-        bullets.push(
-          EntityFactory.enemyBullet(boss.x, boss.y, {
-            x: Math.cos(angle) * 5,
-            y: Math.sin(angle) * 5,
-          })
-        );
-      }
-      // 自機狙い弾×2
-      const dir = normalize({ x: target.x - boss.x, y: target.y - boss.y });
-      bullets.push(EntityFactory.enemyBullet(boss.x - 40, boss.y, { x: dir.x * 6, y: dir.y * 6 }));
-      bullets.push(EntityFactory.enemyBullet(boss.x + 40, boss.y, { x: dir.x * 6, y: dir.y * 6 }));
-      return bullets;
+      return [
+        ...createRadialBullets(boss, 24, 5, offset),
+        ...createAimedBullets(boss, target, [
+          { offsetX: -40, speed: 6 },
+          { offsetX: 40, speed: 6 },
+        ]),
+      ];
     },
   },
 };
@@ -252,10 +266,7 @@ export const MidbossPatterns: Record<MidbossType, (boss: Enemy, target: Position
   // midboss1: ヤドカリ — 3WAY弾
   midboss1: (boss, target) => {
     const dir = normalize({ x: target.x - boss.x, y: target.y - boss.y });
-    return [-0.3, 0, 0.3].map(a => {
-      const rotated = rotateVector(dir, a);
-      return EntityFactory.enemyBullet(boss.x, boss.y, { x: rotated.x * 4, y: rotated.y * 4 });
-    });
+    return createFanBullets(boss, dir, [-0.3, 0, 0.3], 4);
   },
   // midboss2: 双子エイ — 左右交互弾
   midboss2: (boss, _target) => [
@@ -263,34 +274,15 @@ export const MidbossPatterns: Record<MidbossType, (boss: Enemy, target: Position
     EntityFactory.enemyBullet(boss.x + 40, boss.y, { x: 2, y: 4 }),
   ],
   // midboss3: 溶岩カメ — 8方向熱波
-  midboss3: (boss, _target) => {
-    const bullets: EnemyBullet[] = [];
-    for (let i = 0; i < 8; i++) {
-      const angle = (Math.PI * 2 * i) / 8;
-      bullets.push(
-        EntityFactory.enemyBullet(boss.x, boss.y, {
-          x: Math.cos(angle) * 3.5,
-          y: Math.sin(angle) * 3.5,
-        })
-      );
-    }
-    return bullets;
-  },
+  midboss3: (boss, _target) => createRadialBullets(boss, 8, 3.5),
   // midboss4: 発光イカ — 拡散弾
   midboss4: (boss, target) => {
     const dir = normalize({ x: target.x - boss.x, y: target.y - boss.y });
-    return [-0.4, -0.2, 0, 0.2, 0.4].map(a => {
-      const rotated = rotateVector(dir, a);
-      return EntityFactory.enemyBullet(boss.x, boss.y, { x: rotated.x * 3.5, y: rotated.y * 3.5 });
-    });
+    return createFanBullets(boss, dir, [-0.4, -0.2, 0, 0.2, 0.4], 3.5);
   },
   // midboss5: 深海サメ — 高速直線弾
-  midboss5: (boss, target) => {
-    const dir = normalize({ x: target.x - boss.x, y: target.y - boss.y });
-    return [
-      EntityFactory.enemyBullet(boss.x, boss.y, { x: dir.x * 6, y: dir.y * 6 }),
-    ];
-  },
+  midboss5: (boss, target) =>
+    createAimedBullets(boss, target, [{ offsetX: 0, speed: 6 }]),
 };
 
 /** 敵AIモジュール */

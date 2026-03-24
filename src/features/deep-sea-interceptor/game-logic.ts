@@ -552,6 +552,166 @@ export function checkStageProgression(
   return { event: 'ending', nextStage: stage, bonus: 0 };
 }
 
+// ================================================================
+// updateFrame サブ関数群（ファイル内プライベート）
+// ================================================================
+
+/** Boss5 の各フェーズに応じた特殊処理を適用 */
+function updateBoss5State(
+  e: Enemy,
+  gd: GameState,
+  now: number,
+  currentUi: UiState,
+  summonedEnemies: Enemy[]
+): void {
+  // 第1形態: 外殻の開閉
+  if (e.bossPhase === 1) {
+    const shellTimer = now - (e.shellToggleTime ?? now);
+    const isOpen = e.shellOpen ?? false;
+    if (isOpen && shellTimer > BOSS5_SHELL_OPEN_MS) {
+      e.shellOpen = false;
+      e.shellToggleTime = now;
+    } else if (!isOpen && shellTimer > BOSS5_SHELL_CLOSE_MS) {
+      e.shellOpen = true;
+      e.shellToggleTime = now;
+    }
+  }
+  // 第2形態: 雑魚召喚
+  if (e.bossPhase === 2) {
+    const lastSummon = e.lastSummonTime ?? 0;
+    if (now - lastSummon > BOSS5_SUMMON_INTERVAL_MS) {
+      e.lastSummonTime = now;
+      for (let i = 0; i < BOSS5_SUMMON_COUNT; i++) {
+        summonedEnemies.push(
+          EntityFactory.enemy('basic', randomRange(BOSS5_SUMMON_X_MIN, BOSS5_SUMMON_X_MAX), -60, currentUi.stage)
+        );
+      }
+    }
+  }
+  // 第3形態: HP依存の攻撃間隔短縮 + 常時画面微振動
+  if (e.bossPhase === 3) {
+    const hpRatio = e.hp / e.maxHp;
+    e.fireRate = Math.max(
+      BOSS5_PHASE3_MIN_FIRE_RATE,
+      Math.floor(BOSS5_PHASE3_BASE_FIRE_RATE * (0.5 + hpRatio * 0.5))
+    );
+    gd.screenShake = Math.max(gd.screenShake, BOSS5_PHASE3_SCREEN_SHAKE);
+    if (hpRatio < BOSS5_PHASE3_FLASH_HP_RATIO) {
+      gd.screenFlash = Math.max(gd.screenFlash, BOSS5_PHASE3_SCREEN_FLASH);
+    }
+  }
+}
+
+/** 単一の敵エンティティを更新（フェーズ遷移・Boss5特殊処理・移動・射撃） */
+function updateSingleEnemy(
+  e: Enemy,
+  gd: GameState,
+  now: number,
+  currentUi: UiState,
+  audioEvents: AudioEvent[],
+  summonedEnemies: Enemy[]
+): Enemy {
+  // ボスのフェーズ遷移チェック（3フェーズ対応）
+  if (isBoss(e) && e.bossPhase === 1 && e.hp <= e.maxHp * BOSS_PHASE2_HP_RATIO) {
+    e.bossPhase = 2;
+    audioEvents.push({ name: 'bossPhaseChange' });
+    gd.enemyBullets = [];
+    gd.screenShake = BOSS_PHASE_CHANGE_SCREEN_SHAKE;
+  }
+  if (isBoss(e) && e.bossPhase === 2 && e.hp <= e.maxHp * BOSS_PHASE3_HP_RATIO) {
+    e.bossPhase = 3;
+    audioEvents.push({ name: 'bossPhaseChange' });
+    gd.enemyBullets = [];
+    gd.screenShake = BOSS_PHASE_CHANGE_SCREEN_SHAKE;
+  }
+
+  // Boss5 特殊処理
+  if (e.enemyType === 'boss5') {
+    updateBoss5State(e, gd, now, currentUi, summonedEnemies);
+  }
+
+  // 移動戦略取得（サブ関数利用）
+  const moveFn = getMovementStrategy(e.enemyType, e.movementPattern);
+  const next = moveFn(e);
+  if (e.canShoot && now - e.lastShotAt > e.fireRate && e.y > 0) {
+    next.lastShotAt = now;
+    gd.enemyBullets.push(...EnemyAI.createBullets(next, gd.player));
+  }
+  return next;
+}
+
+/** 敵のスポーン処理（通常敵・ミッドボス・ボスWARNING） */
+function spawnEnemies(
+  gd: GameState,
+  stg: typeof StageConfig[number],
+  diffConfig: typeof DifficultyConfig[Difficulty],
+  currentUi: UiState,
+  now: number,
+  audioEvents: AudioEvent[]
+): void {
+  if (gd.bossDefeated || gd.bossWarning) return;
+
+  gd.spawnTimer += FRAME_MS;
+  if (gd.spawnTimer > stg.rate / diffConfig.spawnRateMultiplier && gd.enemies.length < Config.enemy.maxCount(currentUi.stage)) {
+    gd.enemies.push(
+      EntityFactory.enemy(
+        randomChoice(stg.types),
+        randomRange(60, 740),
+        -80,
+        currentUi.stage
+      )
+    );
+    gd.spawnTimer = 0;
+  }
+  // ミッドボススポーン
+  if (
+    !gd.midBossSpawned &&
+    currentUi.score >= stg.bossScore * 0.5 &&
+    !gd.enemies.some(e => isMidboss(e))
+  ) {
+    const midbossType = `midboss${currentUi.stage}` as EnemyType;
+    gd.enemies.push(EntityFactory.enemy(midbossType, 400, -100, currentUi.stage));
+    gd.midBossSpawned = true;
+  }
+  // ボスWARNING開始
+  if (
+    currentUi.score >= stg.bossScore &&
+    !gd.bossWarning &&
+    !gd.enemies.some(e => isBoss(e))
+  ) {
+    gd.bossWarning = true;
+    gd.bossWarningStartTime = now;
+    audioEvents.push({ name: 'warning' });
+  }
+}
+
+/** エンティティ（弾・敵弾・パーティクル・アイテム）の移動更新 */
+function updateEntities(gd: GameState, now: number): void {
+  gd.bullets = gd.bullets
+    .map(b => {
+      if (b.lifespan !== undefined) b = { ...b, lifespan: b.lifespan - 1 };
+      if (b.homing) return MovementStrategies.homing(b, gd.enemies);
+      return MovementStrategies.bullet(b);
+    })
+    .filter(b => b.y > -40 && b.y < Config.canvas.height + 40 && (b.lifespan === undefined || b.lifespan > 0));
+  gd.enemyBullets = gd.enemyBullets
+    .map(MovementStrategies.enemyBullet)
+    .filter(b => b.y < Config.canvas.height + 30 && b.x > -30 && b.x < Config.canvas.width + 30);
+  gd.particles = gd.particles.map(MovementStrategies.particle).filter(p => p.life > 0);
+  // アイテム: 吸引 + 画面下部滞留
+  gd.items = gd.items.map(i => {
+    const dx = gd.player.x - i.x;
+    const dy = gd.player.y - i.y;
+    const dist = Math.hypot(dx, dy);
+    // 吸引範囲内なら引き寄せる
+    if (dist < Config.itemAttract.range && dist > 0) {
+      const factor = Config.itemAttract.speed / dist;
+      return { ...i, x: i.x + dx * factor, y: i.y + dy * factor };
+    }
+    return MovementStrategies.item(i);
+  }).filter(i => i.y < Config.canvas.height + 60);
+}
+
 /** 1フレームのゲーム状態を更新 */
 export function updateFrame(
   gd: GameState,
@@ -608,134 +768,17 @@ export function updateFrame(
   gd.player.y = clamp(30, Config.canvas.height - 100)(gd.player.y);
 
   // 敵スポーン
-  if (!gd.bossDefeated && !gd.bossWarning) {
-    gd.spawnTimer += FRAME_MS;
-    if (gd.spawnTimer > stg.rate / diffConfig.spawnRateMultiplier && gd.enemies.length < Config.enemy.maxCount(currentUi.stage)) {
-      gd.enemies.push(
-        EntityFactory.enemy(
-          randomChoice(stg.types),
-          randomRange(60, 740),
-          -80,
-          currentUi.stage
-        )
-      );
-      gd.spawnTimer = 0;
-    }
-    // ミッドボススポーン
-    if (
-      !gd.midBossSpawned &&
-      currentUi.score >= stg.bossScore * 0.5 &&
-      !gd.enemies.some(e => isMidboss(e))
-    ) {
-      const midbossType = `midboss${currentUi.stage}` as EnemyType;
-      gd.enemies.push(EntityFactory.enemy(midbossType, 400, -100, currentUi.stage));
-      gd.midBossSpawned = true;
-    }
-    // ボスWARNING開始
-    if (
-      currentUi.score >= stg.bossScore &&
-      !gd.bossWarning &&
-      !gd.enemies.some(e => isBoss(e))
-    ) {
-      gd.bossWarning = true;
-      gd.bossWarningStartTime = now;
-      audioEvents.push({ name: 'warning' });
-    }
-  }
+  spawnEnemies(gd, stg, diffConfig, currentUi, now, audioEvents);
 
   // エンティティ更新
-  gd.bullets = gd.bullets
-    .map(b => {
-      if (b.lifespan !== undefined) b = { ...b, lifespan: b.lifespan - 1 };
-      if (b.homing) return MovementStrategies.homing(b, gd.enemies);
-      return MovementStrategies.bullet(b);
-    })
-    .filter(b => b.y > -40 && b.y < Config.canvas.height + 40 && (b.lifespan === undefined || b.lifespan > 0));
-  gd.enemyBullets = gd.enemyBullets
-    .map(MovementStrategies.enemyBullet)
-    .filter(b => b.y < Config.canvas.height + 30 && b.x > -30 && b.x < Config.canvas.width + 30);
-  gd.particles = gd.particles.map(MovementStrategies.particle).filter(p => p.life > 0);
-  // アイテム: 吸引 + 画面下部滞留
-  gd.items = gd.items.map(i => {
-    const dx = gd.player.x - i.x;
-    const dy = gd.player.y - i.y;
-    const dist = Math.hypot(dx, dy);
-    // 吸引範囲内なら引き寄せる
-    if (dist < Config.itemAttract.range && dist > 0) {
-      const factor = Config.itemAttract.speed / dist;
-      return { ...i, x: i.x + dx * factor, y: i.y + dy * factor };
-    }
-    return MovementStrategies.item(i);
-  }).filter(i => i.y < Config.canvas.height + 60);
+  updateEntities(gd, now);
 
   // Boss5 第2形態の雑魚召喚用（イテレーション中の push を回避）
   const summonedEnemies: Enemy[] = [];
 
+  // 敵の個別更新（フェーズ遷移・Boss5特殊処理・移動・射撃）
   gd.enemies = gd.enemies
-    .map(e => {
-      // ボスのフェーズ遷移チェック（3フェーズ対応）
-      if (isBoss(e) && e.bossPhase === 1 && e.hp <= e.maxHp * BOSS_PHASE2_HP_RATIO) {
-        e.bossPhase = 2;
-        audioEvents.push({ name: 'bossPhaseChange' });
-        gd.enemyBullets = [];
-        gd.screenShake = BOSS_PHASE_CHANGE_SCREEN_SHAKE;
-      }
-      if (isBoss(e) && e.bossPhase === 2 && e.hp <= e.maxHp * BOSS_PHASE3_HP_RATIO) {
-        e.bossPhase = 3;
-        audioEvents.push({ name: 'bossPhaseChange' });
-        gd.enemyBullets = [];
-        gd.screenShake = BOSS_PHASE_CHANGE_SCREEN_SHAKE;
-      }
-
-      // Boss5 特殊処理
-      if (e.enemyType === 'boss5') {
-        // 第1形態: 外殻の開閉
-        if (e.bossPhase === 1) {
-          const shellTimer = now - (e.shellToggleTime ?? now);
-          const isOpen = e.shellOpen ?? false;
-          if (isOpen && shellTimer > BOSS5_SHELL_OPEN_MS) {
-            e.shellOpen = false;
-            e.shellToggleTime = now;
-          } else if (!isOpen && shellTimer > BOSS5_SHELL_CLOSE_MS) {
-            e.shellOpen = true;
-            e.shellToggleTime = now;
-          }
-        }
-        // 第2形態: 雑魚召喚
-        if (e.bossPhase === 2) {
-          const lastSummon = e.lastSummonTime ?? 0;
-          if (now - lastSummon > BOSS5_SUMMON_INTERVAL_MS) {
-            e.lastSummonTime = now;
-            for (let i = 0; i < BOSS5_SUMMON_COUNT; i++) {
-              summonedEnemies.push(
-                EntityFactory.enemy('basic', randomRange(BOSS5_SUMMON_X_MIN, BOSS5_SUMMON_X_MAX), -60, currentUi.stage)
-              );
-            }
-          }
-        }
-        // 第3形態: HP依存の攻撃間隔短縮 + 常時画面微振動
-        if (e.bossPhase === 3) {
-          const hpRatio = e.hp / e.maxHp;
-          e.fireRate = Math.max(
-            BOSS5_PHASE3_MIN_FIRE_RATE,
-            Math.floor(BOSS5_PHASE3_BASE_FIRE_RATE * (0.5 + hpRatio * 0.5))
-          );
-          gd.screenShake = Math.max(gd.screenShake, BOSS5_PHASE3_SCREEN_SHAKE);
-          if (hpRatio < BOSS5_PHASE3_FLASH_HP_RATIO) {
-            gd.screenFlash = Math.max(gd.screenFlash, BOSS5_PHASE3_SCREEN_FLASH);
-          }
-        }
-      }
-
-      // 移動戦略取得（サブ関数利用）
-      const moveFn = getMovementStrategy(e.enemyType, e.movementPattern);
-      const next = moveFn(e);
-      if (e.canShoot && now - e.lastShotAt > e.fireRate && e.y > 0) {
-        next.lastShotAt = now;
-        gd.enemyBullets.push(...EnemyAI.createBullets(next, gd.player));
-      }
-      return next;
-    })
+    .map(e => updateSingleEnemy(e, gd, now, currentUi, audioEvents, summonedEnemies))
     .filter(e => e.y < Config.canvas.height + 60);
 
   // 召喚された雑魚敵を追加（map完了後に安全に追加）

@@ -17,27 +17,35 @@ export type ScreenState = 'title' | 'playing' | 'gameover' | 'ending';
 
 const GAME_KEY = 'deep_sea_shooter';
 
-/** Deep Sea Interceptor のメインゲームフック */
-export function useDeepSeaGame() {
-  const [gameState, setGameState] = useState<ScreenState>('title');
-  const [uiState, setUiState] = useState<UiState>(createInitialUiState());
-  const [selectedWeapon, setSelectedWeapon] = useState<WeaponType>('torpedo');
-  const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('standard');
-  const [newAchievements, setNewAchievements] = useState<Achievement[]>([]);
+/** ゲーム操作に使用するキーの一覧 */
+const GAME_CONTROL_KEYS = [
+  'ArrowUp',
+  'ArrowDown',
+  'ArrowLeft',
+  'ArrowRight',
+  'w',
+  'a',
+  's',
+  'd',
+  'z',
+  'x',
+  ' ',
+] as const;
+
+// ----------------------------------------------------------------------------
+// useTestMode - テストモード入力検知フック
+// ----------------------------------------------------------------------------
+
+/** テストモードの状態管理に必要な引数 */
+interface UseTestModeArgs {
+  gameState: ScreenState;
+  audio: React.MutableRefObject<ReturnType<typeof createAudioSystem>>;
+}
+
+/** タイトル画面でのキー入力によるテストモード検知を管理する */
+function useTestMode({ gameState, audio }: UseTestModeArgs) {
   const [testMode, setTestMode] = useState(false);
   const testModeBuffer = useRef('');
-  const [, forceRender] = useReducer(x => x + 1, 0) as [number, () => void];
-
-  const gameData = useRef<GameState>(createInitialGameState());
-  const audio = useRef(createAudioSystem());
-  const raf = useRef<number | null>(null);
-
-  // ハイスコア読み込み
-  useEffect(() => {
-    getHighScore(GAME_KEY).then(h => {
-      setUiState(prev => ({ ...prev, highScore: h }));
-    });
-  }, []);
 
   // テストモード入力検知（タイトル画面のみ）
   useEffect(() => {
@@ -62,7 +70,7 @@ export function useDeepSeaGame() {
     };
     window.addEventListener('keydown', handleTestModeInput);
     return () => window.removeEventListener('keydown', handleTestModeInput);
-  }, [gameState, testMode]);
+  }, [gameState, testMode, audio]);
 
   // タイトルに戻った時にテストモード解除（ゲーム終了→タイトル遷移時のみ）
   const prevGameState = useRef<ScreenState>(gameState);
@@ -73,6 +81,126 @@ export function useDeepSeaGame() {
     }
     prevGameState.current = gameState;
   }, [gameState]);
+
+  return { testMode };
+}
+
+// ----------------------------------------------------------------------------
+// ゲーム終了時の処理（実績チェック・スコア保存）
+// ----------------------------------------------------------------------------
+
+/** ゲーム終了時の実績チェックとスコア保存を行う */
+function handleGameEnd(
+  event: 'gameover' | 'ending',
+  gameData: GameState,
+  resultUiState: UiState,
+  isTestMode: boolean,
+  audioRef: ReturnType<typeof createAudioSystem>,
+  setNewAchievements: React.Dispatch<React.SetStateAction<Achievement[]>>
+) {
+  // テストモードでなければスコアを保存
+  if (!isTestMode) {
+    saveScore(GAME_KEY, resultUiState.score);
+  }
+
+  // 実績チェック
+  const playTime = Date.now() - (gameData.gameStartTime || Date.now());
+  const rank = calculateRank(resultUiState.score, resultUiState.lives, resultUiState.difficulty);
+  const stats = {
+    score: resultUiState.score,
+    maxCombo: gameData.maxCombo,
+    grazeCount: gameData.grazeCount,
+    livesLost: DifficultyConfig[resultUiState.difficulty].initialLives - resultUiState.lives,
+    playTime,
+    difficulty: resultUiState.difficulty,
+    weaponType: resultUiState.weaponType,
+    stagesCleared: event === 'ending' ? 5 : resultUiState.stage - 1,
+    rank,
+  };
+  const saved = loadAchievements();
+  const newAch = checkNewAchievements(stats, saved);
+  if (newAch.length > 0) {
+    saved.unlockedIds.push(...newAch.map(a => a.id));
+    saved.lastUpdated = Date.now();
+    saveAchievements(saved);
+    setNewAchievements(newAch);
+    audioRef.play('achievement');
+  } else {
+    setNewAchievements([]);
+  }
+}
+
+// ----------------------------------------------------------------------------
+// ショット・チャージの入力処理関数
+// ----------------------------------------------------------------------------
+
+/** 通常ショットの発射処理 */
+function fireShot(
+  gameData: GameState,
+  weaponType: WeaponType,
+  power: number,
+  spreadTime: number,
+  audioRef: ReturnType<typeof createAudioSystem>
+) {
+  const now = Date.now();
+  const cooldown = WEAPON_COOLDOWN[weaponType];
+  if (now - gameData.lastShotTime >= cooldown) {
+    const hasSpread = spreadTime > now;
+    const newBullets = createBulletsForWeapon(
+      gameData.player.x,
+      gameData.player.y,
+      weaponType,
+      power,
+      hasSpread
+    );
+    gameData.bullets.push(...newBullets);
+    gameData.lastShotTime = now;
+    audioRef.play('shot');
+  }
+}
+
+/** チャージショットの解放処理 */
+function releaseCharge(
+  gameData: GameState,
+  weaponType: WeaponType,
+  audioRef: ReturnType<typeof createAudioSystem>
+) {
+  if (gameData.charging) {
+    if (gameData.chargeLevel >= 0.8) {
+      gameData.bullets.push(...createChargedShot(gameData.player.x, gameData.player.y, weaponType));
+      audioRef.play('charged');
+    }
+    gameData.charging = false;
+    gameData.chargeLevel = 0;
+  }
+}
+
+// ----------------------------------------------------------------------------
+// useDeepSeaGame - メインゲームフック
+// ----------------------------------------------------------------------------
+
+/** Deep Sea Interceptor のメインゲームフック */
+export function useDeepSeaGame() {
+  const [gameState, setGameState] = useState<ScreenState>('title');
+  const [uiState, setUiState] = useState<UiState>(createInitialUiState());
+  const [selectedWeapon, setSelectedWeapon] = useState<WeaponType>('torpedo');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('standard');
+  const [newAchievements, setNewAchievements] = useState<Achievement[]>([]);
+  const [, forceRender] = useReducer(x => x + 1, 0) as [number, () => void];
+
+  const gameData = useRef<GameState>(createInitialGameState());
+  const audio = useRef(createAudioSystem());
+  const raf = useRef<number | null>(null);
+
+  // テストモード管理
+  const { testMode } = useTestMode({ gameState, audio });
+
+  // ハイスコア読み込み
+  useEffect(() => {
+    getHighScore(GAME_KEY).then(h => {
+      setUiState(prev => ({ ...prev, highScore: h }));
+    });
+  }, []);
 
   // ゲーム開始
   const startGame = useCallback(() => {
@@ -106,15 +234,7 @@ export function useDeepSeaGame() {
 
   // チャージ処理
   const handleCharge = useCallback(() => {
-    const gd = gameData.current;
-    if (gd.charging) {
-      if (gd.chargeLevel >= 0.8) {
-        gd.bullets.push(...createChargedShot(gd.player.x, gd.player.y, selectedWeapon));
-        audio.current.play('charged');
-      }
-      gd.charging = false;
-      gd.chargeLevel = 0;
-    }
+    releaseCharge(gameData.current, selectedWeapon, audio.current);
   }, [selectedWeapon]);
 
   // チャージ開始/終了処理
@@ -136,42 +256,15 @@ export function useDeepSeaGame() {
     (e: KeyboardEvent) => {
       const k = e.key;
       const isDown = e.type === 'keydown';
-      if (
-        [
-          'ArrowUp',
-          'ArrowDown',
-          'ArrowLeft',
-          'ArrowRight',
-          'w',
-          'a',
-          's',
-          'd',
-          'z',
-          'x',
-          ' ',
-        ].includes(k)
-      ) {
+      if ((GAME_CONTROL_KEYS as readonly string[]).includes(k)) {
         if (e.preventDefault) e.preventDefault();
         gameData.current.keys[k] = isDown;
 
+        // ショット発射（z キー）
         if (isDown && (k === 'z' || k === 'Z') && gameState === 'playing') {
-          const gd = gameData.current;
-          const now = Date.now();
-          const cooldown = WEAPON_COOLDOWN[uiState.weaponType];
-          if (now - gd.lastShotTime >= cooldown) {
-            const hasSpread = uiState.spreadTime > now;
-            const newBullets = createBulletsForWeapon(
-              gd.player.x,
-              gd.player.y,
-              uiState.weaponType,
-              uiState.power,
-              hasSpread
-            );
-            gd.bullets.push(...newBullets);
-            gd.lastShotTime = now;
-            audio.current.play('shot');
-          }
+          fireShot(gameData.current, uiState.weaponType, uiState.power, uiState.spreadTime, audio.current);
         }
+        // チャージ操作（x キー）
         if ((k === 'x' || k === 'X') && gameState === 'playing') {
           if (isDown && !gameData.current.charging) {
             gameData.current.charging = true;
@@ -220,36 +313,14 @@ export function useDeepSeaGame() {
 
       if (result.event === 'gameover' || result.event === 'ending') {
         setGameState(result.event === 'ending' ? 'ending' : 'gameover');
-        if (!testMode) {
-          saveScore(GAME_KEY, result.uiState.score);
-        }
-        // 実績チェック
-        const gd = gameData.current;
-        const ui = result.uiState;
-        const playTime = Date.now() - (gd.gameStartTime || Date.now());
-        const rank = calculateRank(ui.score, ui.lives, ui.difficulty);
-        const stats = {
-          score: ui.score,
-          maxCombo: gd.maxCombo,
-          grazeCount: gd.grazeCount,
-          livesLost: DifficultyConfig[ui.difficulty].initialLives - ui.lives,
-          playTime,
-          difficulty: ui.difficulty,
-          weaponType: ui.weaponType,
-          stagesCleared: result.event === 'ending' ? 5 : ui.stage - 1,
-          rank,
-        };
-        const saved = loadAchievements();
-        const newAch = checkNewAchievements(stats, saved);
-        if (newAch.length > 0) {
-          saved.unlockedIds.push(...newAch.map(a => a.id));
-          saved.lastUpdated = Date.now();
-          saveAchievements(saved);
-          setNewAchievements(newAch);
-          audio.current.play('achievement');
-        } else {
-          setNewAchievements([]);
-        }
+        handleGameEnd(
+          result.event as 'gameover' | 'ending',
+          gameData.current,
+          result.uiState,
+          testMode,
+          audio.current,
+          setNewAchievements
+        );
       }
 
       forceRender();
@@ -264,21 +335,7 @@ export function useDeepSeaGame() {
 
   // タッチ射撃
   const handleTouchShoot = useCallback(() => {
-    const gd = gameData.current;
-    const now = Date.now();
-    const cooldown = WEAPON_COOLDOWN[selectedWeapon];
-    if (now - gd.lastShotTime >= cooldown) {
-      const newBullets = createBulletsForWeapon(
-        gd.player.x,
-        gd.player.y,
-        selectedWeapon,
-        uiState.power,
-        uiState.spreadTime > now
-      );
-      gd.bullets.push(...newBullets);
-      gd.lastShotTime = now;
-      audio.current.play('shot');
-    }
+    fireShot(gameData.current, selectedWeapon, uiState.power, uiState.spreadTime, audio.current);
   }, [selectedWeapon, uiState.power, uiState.spreadTime]);
 
   // タッチ移動
