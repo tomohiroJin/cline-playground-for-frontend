@@ -78,6 +78,7 @@ export const createInitialGameState = (): GameState => ({
   luminescence: false,
   luminescenceEndTime: 0,
   pressureBounds: { left: 0, right: Config.canvas.width },
+  stageStartScore: 0,
 });
 
 /** 初期UI状態を生成 */
@@ -312,7 +313,6 @@ export function processBulletEnemyCollisions(
             screenShake = BOSS_DEFEAT_SCREEN_SHAKE;
             screenFlash = BOSS_DEFEAT_SCREEN_FLASH;
             newItems.push(EntityFactory.item(e.x, e.y, 'bomb'));
-            newItems.push(EntityFactory.item(e.x + 30, e.y, 'power'));
             for (let i = 0; i < 20; i++) {
               newParticles.push(EntityFactory.particle(
                 e.x + randomRange(-60, 60),
@@ -324,8 +324,6 @@ export function processBulletEnemyCollisions(
             screenShake = MIDBOSS_DEFEAT_SCREEN_SHAKE;
             const dropItem = Math.random() < 0.5 ? 'life' : 'power';
             newItems.push(EntityFactory.item(e.x, e.y, dropItem as 'life' | 'power'));
-            // 確定追加ドロップ
-            newItems.push(EntityFactory.item(e.x + 20, e.y, randomChoice(['power', 'speed', 'shield'] as Array<'power' | 'speed' | 'shield'>)));
             for (let i = 0; i < 10; i++) {
               newParticles.push(EntityFactory.particle(
                 e.x + randomRange(-40, 40),
@@ -666,10 +664,13 @@ function spawnEnemies(
     );
     gd.spawnTimer = 0;
   }
+  // ステージ内スコア（累計スコア - ステージ開始時スコア）
+  const stageScore = currentUi.score - gd.stageStartScore;
+
   // ミッドボススポーン
   if (
     !gd.midBossSpawned &&
-    currentUi.score >= stg.bossScore * 0.5 &&
+    stageScore >= stg.bossScore * 0.5 &&
     !gd.enemies.some(e => isMidboss(e))
   ) {
     const midbossType = `midboss${currentUi.stage}` as EnemyType;
@@ -678,7 +679,7 @@ function spawnEnemies(
   }
   // ボスWARNING開始
   if (
-    currentUi.score >= stg.bossScore &&
+    stageScore >= stg.bossScore &&
     !gd.bossWarning &&
     !gd.enemies.some(e => isBoss(e))
   ) {
@@ -891,6 +892,8 @@ export function updateFrame(
     gd.thermalVentTimer = 0;
     gd.luminescence = false;
     gd.pressureBounds = { left: 0, right: Config.canvas.width };
+    // ステージ開始スコアを記録（次ステージのボス判定用）
+    gd.stageStartScore = currentUi.score;
     event = 'stageCleared';
   } else if (stageResult.event === 'ending') {
     event = 'ending';

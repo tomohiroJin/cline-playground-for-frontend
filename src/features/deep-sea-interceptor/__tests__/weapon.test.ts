@@ -24,30 +24,9 @@ describe('createBulletsForWeapon', () => {
       expect(bullets).toHaveLength(4);
     });
 
-    test('hasSpread=true で5発の弾を生成すること', () => {
+    test('hasSpread=true で3発の弾を生成すること', () => {
       const bullets = createBulletsForWeapon(200, 300, 'torpedo', 1, true);
-      expect(bullets).toHaveLength(5);
-    });
-
-    test('hasSpread=true のスプレッド角度が5方向であること', () => {
-      const bullets = createBulletsForWeapon(200, 300, 'torpedo', 1, true);
-      const angles = bullets.map(b => b.angle.toFixed(4));
-      const uniqueAngles = new Set(angles);
-      expect(uniqueAngles.size).toBe(5);
-    });
-
-    test('power=5 + hasSpread=true で6発の弾を生成すること', () => {
-      const bullets = createBulletsForWeapon(200, 300, 'torpedo', 5, true);
-      expect(bullets).toHaveLength(6);
-    });
-
-    test('power=5 + hasSpread=true で中央弾のダメージが1.5であること', () => {
-      const bullets = createBulletsForWeapon(200, 300, 'torpedo', 5, true);
-      const centerBullets = bullets.filter(
-        b => Math.abs(b.angle - (-Math.PI / 2)) < 0.001
-      );
-      expect(centerBullets.length).toBeGreaterThanOrEqual(1);
-      expect(centerBullets[0].damage).toBe(1.5);
+      expect(bullets).toHaveLength(3);
     });
   });
 
@@ -58,21 +37,26 @@ describe('createBulletsForWeapon', () => {
       expect(bullets[0].weaponType).toBe('sonarWave');
     });
 
-    test('power=1 の damage が 1.5 であること', () => {
+    test('power=1 の damage が 2.5 であること', () => {
       const bullets = createBulletsForWeapon(200, 300, 'sonarWave', 1, false);
-      expect(bullets[0].damage).toBe(1.5);
+      expect(bullets[0].damage).toBe(2.5);
     });
 
-    test('power=3 で5発、damage=2.0 であること', () => {
+    test('power=3 で5発、damage=3.5 であること', () => {
       const bullets = createBulletsForWeapon(200, 300, 'sonarWave', 3, false);
       expect(bullets).toHaveLength(5);
-      expect(bullets[0].damage).toBe(2.0);
+      expect(bullets[0].damage).toBe(3.5);
     });
 
-    test('power=5 で5発、damage=2.5 であること', () => {
+    test('power=5 で5発、damage=4.5 であること', () => {
       const bullets = createBulletsForWeapon(200, 300, 'sonarWave', 5, false);
       expect(bullets).toHaveLength(5);
-      expect(bullets[0].damage).toBe(2.5);
+      expect(bullets[0].damage).toBe(4.5);
+    });
+
+    test('power=5 で lifespan=35 であること（短射程）', () => {
+      const bullets = createBulletsForWeapon(200, 300, 'sonarWave', 5, false);
+      expect(bullets[0].lifespan).toBe(35);
     });
 
     test('lifespan が設定されていること', () => {
@@ -83,9 +67,16 @@ describe('createBulletsForWeapon', () => {
       });
     });
 
-    test('power=5 で lifespan=70 であること', () => {
-      const bullets = createBulletsForWeapon(200, 300, 'sonarWave', 5, false);
-      expect(bullets[0].lifespan).toBe(70);
+    test('hasSpread=true で8発の全方位弾を生成すること', () => {
+      const bullets = createBulletsForWeapon(200, 300, 'sonarWave', 1, true);
+      expect(bullets).toHaveLength(8);
+    });
+
+    test('hasSpread=true で後方にも弾が発射されること', () => {
+      const bullets = createBulletsForWeapon(200, 300, 'sonarWave', 1, true);
+      // 下方向（+π/2付近）の弾があるか
+      const downwardBullets = bullets.filter(b => Math.sin(b.angle) > 0.5);
+      expect(downwardBullets.length).toBeGreaterThan(0);
     });
   });
 

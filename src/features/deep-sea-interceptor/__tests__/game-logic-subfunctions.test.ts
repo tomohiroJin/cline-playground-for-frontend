@@ -352,8 +352,8 @@ describe('updateBoss5State', () => {
     enemy.shellToggleTime = 0;
     const gd = buildGameState();
     const ui = buildUiState({ stage: 5 });
-    // 3001ms 経過 → 閉鎖時間(3000ms)を超過
-    updateBoss5State(enemy, gd, 3001, ui, []);
+    // 4001ms 経過 → 閉鎖時間(4000ms)を超過
+    updateBoss5State(enemy, gd, 4001, ui, []);
     expect(enemy.shellOpen).toBe(true);
   });
 
@@ -364,8 +364,8 @@ describe('updateBoss5State', () => {
     enemy.shellToggleTime = 1000;
     const gd = buildGameState();
     const ui = buildUiState({ stage: 5 });
-    // 1000+2001=3001ms → 開放時間(2000ms)を超過
-    updateBoss5State(enemy, gd, 3001, ui, []);
+    // 1000+1201=2201ms → 開放時間(1200ms)を超過
+    updateBoss5State(enemy, gd, 2201, ui, []);
     expect(enemy.shellOpen).toBe(false);
   });
 
@@ -376,7 +376,7 @@ describe('updateBoss5State', () => {
     enemy.shellToggleTime = 0;
     const gd = buildGameState();
     const ui = buildUiState({ stage: 5 });
-    // 2000ms → 閉鎖時間(3000ms)未満
+    // 2000ms → 閉鎖時間(4000ms)未満
     updateBoss5State(enemy, gd, 2000, ui, []);
     expect(enemy.shellOpen).toBe(false);
   });

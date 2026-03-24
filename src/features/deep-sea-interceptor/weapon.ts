@@ -19,9 +19,9 @@ interface SonarWaveConfig {
 
 /** パワーレベルの閾値に基づいてソナーウェーブ設定を返す */
 const SONAR_WAVE_CONFIGS: { minPower: number; config: SonarWaveConfig }[] = [
-  { minPower: 5, config: { spreadAngle: 0.40, lifespan: 70, damage: 2.5, count: 5 } },
-  { minPower: 3, config: { spreadAngle: 0.30, lifespan: 55, damage: 2.0, count: 5 } },
-  { minPower: 0, config: { spreadAngle: 0.20, lifespan: 45, damage: 1.5, count: 3 } },
+  { minPower: 5, config: { spreadAngle: 0.40, lifespan: 35, damage: 4.5, count: 5 } },
+  { minPower: 3, config: { spreadAngle: 0.30, lifespan: 30, damage: 3.5, count: 5 } },
+  { minPower: 0, config: { spreadAngle: 0.20, lifespan: 25, damage: 2.5, count: 3 } },
 ];
 
 /** パワーレベルに応じたソナーウェーブ設定を取得する */
@@ -42,8 +42,8 @@ const getTorpedoAngles = (power: number): number[] =>
   TORPEDO_ANGLES_BY_POWER.find(({ minPower }) => power >= minPower)!.angles;
 
 /** スプレッド時のトーピード発射角度 */
-/** スプレッド時のトーピード発射角度（5WAY） */
-const TORPEDO_SPREAD_ANGLES = [-0.3, -0.15, 0, 0.15, 0.3];
+/** スプレッド時のトーピード発射角度（3WAY） */
+const TORPEDO_SPREAD_ANGLES = [-0.2, 0, 0.2];
 
 /** バイオミサイルのパワーレベル別発射数テーブル */
 const BIO_MISSILE_COUNT_BY_POWER: { minPower: number; count: number }[] = [
@@ -85,32 +85,39 @@ export function createBulletsForWeapon(
           })
         );
       }
-      // Power5 + スプレッド時: 追加の中央弾（トーピードの個性強化）
-      if (hasSpread && power >= 5) {
-        bullets.push(
-          EntityFactory.bullet(x, y - 24, {
-            angle: -Math.PI / 2,
-            weaponType: 'torpedo',
-            damage: 1.5,
-          })
-        );
-      }
       break;
     }
     case 'sonarWave': {
-      // ソナーウェーブ: 扇状発射、高火力・射程制限あり（強化済み）
-      const { spreadAngle, lifespan, damage, count } = getSonarWaveConfig(power);
-      for (let i = 0; i < count; i++) {
-        const a = (i - (count - 1) / 2) * (spreadAngle / ((count - 1) / 2 || 1));
-        bullets.push(
-          EntityFactory.bullet(x, y - 24, {
-            angle: -Math.PI / 2 + a,
-            weaponType: 'sonarWave',
-            speed: 13,
-            damage,
-            lifespan,
-          })
-        );
+      const { lifespan, damage } = getSonarWaveConfig(power);
+      if (hasSpread) {
+        // スプレッド時: 後方含む全方位8方向（接近戦特化）
+        for (let i = 0; i < 8; i++) {
+          const a = (Math.PI * 2 * i) / 8;
+          bullets.push(
+            EntityFactory.bullet(x, y, {
+              angle: a,
+              weaponType: 'sonarWave',
+              speed: 13,
+              damage,
+              lifespan,
+            })
+          );
+        }
+      } else {
+        // 通常: 扇状発射、高火力・射程制限あり
+        const { spreadAngle, count } = getSonarWaveConfig(power);
+        for (let i = 0; i < count; i++) {
+          const a = (i - (count - 1) / 2) * (spreadAngle / ((count - 1) / 2 || 1));
+          bullets.push(
+            EntityFactory.bullet(x, y - 24, {
+              angle: -Math.PI / 2 + a,
+              weaponType: 'sonarWave',
+              speed: 13,
+              damage,
+              lifespan,
+            })
+          );
+        }
       }
       break;
     }

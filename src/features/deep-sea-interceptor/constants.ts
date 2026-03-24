@@ -20,8 +20,8 @@ export const Config = Object.freeze({
     chargeTime: 800,
   },
   enemy: { baseSize: 56, maxCount: (stage: number) => 10 + stage * 2 },
-  timing: { invincibility: 2000, shield: 8000, spread: 10000 },
-  spawn: { itemChance: 0.25, bossItemChance: 1, multiSpawnChance: 0.3 },
+  timing: { invincibility: 2000, shield: 5000, spread: 10000 },
+  spawn: { itemChance: 0.15, bossItemChance: 1, multiSpawnChance: 0.3 },
   limits: { maxBullets: 50, maxEnemyBullets: 100, maxParticles: 80, maxItems: 20, maxBubbles: 30 },
   /** アイテム吸引設定 */
   itemAttract: { range: 120, speed: 3.0, lingerTime: 3000 },
@@ -83,12 +83,12 @@ export const EnemyConfig: Record<
   fast: { hp: 1, speed: 4.0, points: 150, sizeRatio: 0.9, canShoot: false, fireRate: 0 },
   shooter: { hp: 2, speed: 1.6, points: 200, sizeRatio: 1.1, canShoot: true, fireRate: 2000 },
   tank: { hp: 5, speed: 1.0, points: 300, sizeRatio: 1.4, canShoot: false, fireRate: 0 },
-  boss: { hp: 60, speed: 0.7, points: 2000, sizeRatio: 3.5, canShoot: true, fireRate: 800 },
-  boss1: { hp: 60, speed: 0.7, points: 2000, sizeRatio: 3.5, canShoot: true, fireRate: 800 },
-  boss2: { hp: 70, speed: 0.5, points: 3000, sizeRatio: 3.8, canShoot: true, fireRate: 1000 },
-  boss3: { hp: 80, speed: 0.8, points: 4000, sizeRatio: 4.0, canShoot: true, fireRate: 700 },
-  boss4: { hp: 100, speed: 0.4, points: 5000, sizeRatio: 4.5, canShoot: true, fireRate: 600 },
-  boss5: { hp: 150, speed: 0.5, points: 6000, sizeRatio: 5.0, canShoot: true, fireRate: 500 },
+  boss: { hp: 80, speed: 0.7, points: 2000, sizeRatio: 3.5, canShoot: true, fireRate: 800 },
+  boss1: { hp: 80, speed: 0.7, points: 2000, sizeRatio: 3.5, canShoot: true, fireRate: 800 },
+  boss2: { hp: 100, speed: 0.5, points: 3000, sizeRatio: 3.8, canShoot: true, fireRate: 1000 },
+  boss3: { hp: 120, speed: 0.8, points: 4000, sizeRatio: 4.0, canShoot: true, fireRate: 700 },
+  boss4: { hp: 150, speed: 0.4, points: 5000, sizeRatio: 4.5, canShoot: true, fireRate: 600 },
+  boss5: { hp: 200, speed: 0.5, points: 6000, sizeRatio: 5.0, canShoot: true, fireRate: 500 },
   // 機雷（Stage 2 ギミック）
   mine: { hp: 2, speed: 0, points: 50, sizeRatio: 0.8, canShoot: false, fireRate: 0 },
   // ミッドボス（各ステージ）
@@ -231,10 +231,10 @@ export const BOSS_NAMES: Record<number, string> = {
 // ================================================================
 
 /** Boss5 第1形態: 外殻が開いている時間（ms） */
-export const BOSS5_SHELL_OPEN_MS = 2000;
+export const BOSS5_SHELL_OPEN_MS = 1200;
 
 /** Boss5 第1形態: 外殻が閉じている時間（ms） */
-export const BOSS5_SHELL_CLOSE_MS = 3000;
+export const BOSS5_SHELL_CLOSE_MS = 4000;
 
 /** Boss5 第2形態: 雑魚召喚の間隔（ms） */
 export const BOSS5_SUMMON_INTERVAL_MS = 10000;

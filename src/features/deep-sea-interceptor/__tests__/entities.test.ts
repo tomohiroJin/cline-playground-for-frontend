@@ -48,8 +48,8 @@ describe('EntityFactory', () => {
       const boss1 = EntityFactory.enemy('boss', 200, -60, 1);
       const boss2 = EntityFactory.enemy('boss', 200, -60, 2);
       expect(boss2.hp).toBeGreaterThan(boss1.hp);
-      expect(boss1.hp).toBe(60 + 1 * 15);
-      expect(boss2.hp).toBe(60 + 2 * 15);
+      expect(boss1.hp).toBe(80 + 1 * 15);
+      expect(boss2.hp).toBe(80 + 2 * 15);
     });
 
     test('無効な敵タイプでエラーが発生すること', () => {

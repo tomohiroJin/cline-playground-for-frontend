@@ -145,6 +145,8 @@ export interface GameState {
   luminescence: boolean;
   luminescenceEndTime: number;
   pressureBounds: { left: number; right: number };
+  /** ステージ開始時のスコア（ボスWARNING判定用） */
+  stageStartScore: number;
 }
 
 /** UI表示用状態（React state で管理） */
