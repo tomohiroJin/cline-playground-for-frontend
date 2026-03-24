@@ -686,7 +686,7 @@ function spawnEnemies(
 }
 
 /** エンティティ（弾・敵弾・パーティクル・アイテム）の移動更新 */
-function updateEntities(gd: GameState, now: number): void {
+function updateEntities(gd: GameState, _now: number): void {
   gd.bullets = gd.bullets
     .map(b => {
       if (b.lifespan !== undefined) b = { ...b, lifespan: b.lifespan - 1 };
