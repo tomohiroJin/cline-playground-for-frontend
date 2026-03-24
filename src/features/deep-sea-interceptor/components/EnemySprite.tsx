@@ -118,15 +118,15 @@ function BossSvg({ enemy, color }: { enemy: Enemy; color: string }) {
       );
     }
 
-    // 第2形態「内核露出」: 赤紫・触手・パルスアニメ
+    // 第2形態「内核露出」: オレンジ系・触手・パルスアニメ
     if (phase === 2) {
       return (
         <svg width={s} height={s} viewBox="0 0 40 40">
-          <circle cx="20" cy="20" r="16" fill="#8a2a3a" opacity="0.85" />
-          <circle cx="20" cy="20" r="9" fill="#c44a6a" opacity="0.6">
+          <circle cx="20" cy="20" r="16" fill="#cc6620" opacity="0.85" />
+          <circle cx="20" cy="20" r="9" fill="#ff8830" opacity="0.6">
             <animate attributeName="r" values="9;11;9" dur="0.8s" repeatCount="indefinite" />
           </circle>
-          <circle cx="20" cy="20" r="5" fill="#f4a" opacity="0.9">
+          <circle cx="20" cy="20" r="5" fill="#ffcc44" opacity="0.9">
             <animate attributeName="opacity" values="0.9;0.5;0.9" dur="0.6s" repeatCount="indefinite" />
           </circle>
           {/* 触手状の付属物 */}
@@ -134,39 +134,39 @@ function BossSvg({ enemy, color }: { enemy: Enemy; color: string }) {
             <path
               key={deg}
               d={`M${20 + Math.cos((deg * Math.PI) / 180) * 14} ${20 + Math.sin((deg * Math.PI) / 180) * 14} Q${20 + Math.cos(((deg + 20) * Math.PI) / 180) * 22} ${20 + Math.sin(((deg + 20) * Math.PI) / 180) * 22} ${20 + Math.cos(((deg + 40) * Math.PI) / 180) * 18} ${20 + Math.sin(((deg + 40) * Math.PI) / 180) * 18}`}
-              stroke="#f4a" strokeWidth="1.5" fill="none" opacity="0.5"
+              stroke="#ffaa44" strokeWidth="1.5" fill="none" opacity="0.5"
             />
           ))}
-          <circle cx="15" cy="16" r="3" fill="#ff6688" opacity="0.8" />
-          <circle cx="25" cy="16" r="3" fill="#ff6688" opacity="0.8" />
+          <circle cx="15" cy="16" r="3" fill="#ffdd66" opacity="0.8" />
+          <circle cx="25" cy="16" r="3" fill="#ffdd66" opacity="0.8" />
         </svg>
       );
     }
 
-    // 第1形態「外殻」: 閉/開で色と構造が変化
-    const shellColor = isOpen ? '#8a4a8a' : '#5a2a5a';
+    // 第1形態「外殻」: 青系、閉/開で色と構造が変化
+    const shellColor = isOpen ? '#2a8a8a' : '#2a3a6a';
     const coreVisible = isOpen;
     const lineWidth = isOpen ? 2 : 1;
-    const lineColor = isOpen ? '#f4f' : '#a4f';
+    const lineColor = isOpen ? '#44ffcc' : '#4466aa';
     return (
       <svg width={s} height={s} viewBox="0 0 40 40">
         <circle cx="20" cy="20" r="18" fill={shellColor} opacity="0.85" />
         {isOpen && (
           <>
             {/* 外殻が割れる表現 */}
-            <path d="M 20 2 L 18 10 L 22 10 Z" fill="#2a1a2a" opacity="0.6" />
-            <path d="M 38 20 L 30 18 L 30 22 Z" fill="#2a1a2a" opacity="0.6" />
-            <path d="M 20 38 L 18 30 L 22 30 Z" fill="#2a1a2a" opacity="0.6" />
-            <path d="M 2 20 L 10 18 L 10 22 Z" fill="#2a1a2a" opacity="0.6" />
+            <path d="M 20 2 L 18 10 L 22 10 Z" fill="#0a1a2a" opacity="0.6" />
+            <path d="M 38 20 L 30 18 L 30 22 Z" fill="#0a1a2a" opacity="0.6" />
+            <path d="M 20 38 L 18 30 L 22 30 Z" fill="#0a1a2a" opacity="0.6" />
+            <path d="M 2 20 L 10 18 L 10 22 Z" fill="#0a1a2a" opacity="0.6" />
           </>
         )}
-        <circle cx="20" cy="20" r="10" fill={coreVisible ? 'rgba(200,100,255,0.5)' : 'rgba(100,50,150,0.4)'} />
+        <circle cx="20" cy="20" r="10" fill={coreVisible ? 'rgba(40,200,200,0.5)' : 'rgba(40,60,120,0.4)'} />
         {coreVisible && (
-          <circle cx="20" cy="20" r="5" fill="#f4f" opacity="0.9">
+          <circle cx="20" cy="20" r="5" fill="#44ffcc" opacity="0.9">
             <animate attributeName="opacity" values="0.9;0.5;0.9" dur="0.5s" repeatCount="indefinite" />
           </circle>
         )}
-        {!coreVisible && <circle cx="20" cy="20" r="5" fill="#a4f" opacity="0.5" />}
+        {!coreVisible && <circle cx="20" cy="20" r="5" fill="#4466aa" opacity="0.5" />}
         {/* 放射状の線 */}
         {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => (
           <line
@@ -178,8 +178,8 @@ function BossSvg({ enemy, color }: { enemy: Enemy; color: string }) {
             opacity={isOpen ? 0.7 : 0.4}
           />
         ))}
-        <circle cx="15" cy="16" r="3" fill={isOpen ? '#f4f' : '#f4a'} opacity="0.8" />
-        <circle cx="25" cy="16" r="3" fill={isOpen ? '#f4f' : '#f4a'} opacity="0.8" />
+        <circle cx="15" cy="16" r="3" fill={isOpen ? '#44ffcc' : '#6688cc'} opacity="0.8" />
+        <circle cx="25" cy="16" r="3" fill={isOpen ? '#44ffcc' : '#6688cc'} opacity="0.8" />
       </svg>
     );
   }
