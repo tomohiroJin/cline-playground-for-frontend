@@ -491,8 +491,11 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       }
 
       // マレット移動後、衝突処理前にパックとの食い込みを解消（パックを弾く）
-      resolveMalletPuckOverlap(game.player, game.pucks, MR, BR, consts.PHYSICS.MAX_POWER);
-      resolveMalletPuckOverlap(game.cpu, game.pucks, MR, BR, consts.PHYSICS.MAX_POWER);
+      // effectiveMR を使い、processCollisions との二重衝突を防止
+      const playerMR = MR * getMalletScale('player');
+      const cpuMR = MR * getMalletScale('cpu');
+      resolveMalletPuckOverlap(game.player, game.pucks, playerMR, BR, consts.PHYSICS.MAX_POWER);
+      resolveMalletPuckOverlap(game.cpu, game.pucks, cpuMR, BR, consts.PHYSICS.MAX_POWER);
 
       // フィーバー判定
       if (!game.fever.active && now - game.fever.lastGoalTime >= consts.TIMING.FEVER_TRIGGER) {

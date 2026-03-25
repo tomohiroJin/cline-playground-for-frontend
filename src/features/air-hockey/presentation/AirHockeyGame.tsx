@@ -286,7 +286,7 @@ const AirHockeyGame: React.FC = () => {
   }, [mode.currentStage, handleSelectStage]);
 
   // ── 入力・ゲームループ ──
-  const handleInput = useInput(gameRef, canvasRef, lastInputRef, playerTargetRef, screen, showHelp, setShowHelp);
+  const handleInput = useInput(canvasRef, lastInputRef, playerTargetRef, screen, showHelp, setShowHelp);
   const keysRef = useKeyboardInput(gameRef, lastInputRef, screen, showHelp, setShowHelp);
 
   // ── 2P モード判定 ──
