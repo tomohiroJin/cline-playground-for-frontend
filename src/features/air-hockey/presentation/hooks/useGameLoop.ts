@@ -77,6 +77,8 @@ export type GameLoopRefs = {
   statsRef: React.MutableRefObject<MatchStats>;
   matchStartRef: React.MutableRefObject<number>;
   keysRef?: React.MutableRefObject<KeyboardState>;
+  /** マウス/タッチ入力の目標位置 Ref（フレーム同期用） */
+  playerTargetRef?: React.MutableRefObject<import('../../hooks/useInput').PlayerTargetPosition>;
   player2KeysRef?: React.MutableRefObject<KeyboardState>;
   /** マルチタッチ状態の Ref（2P タッチ入力用） */
   multiTouchRef?: React.RefObject<import('../../core/multi-touch').MultiTouchState>;
@@ -117,7 +119,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
   const {
     gameRef, canvasRef, lastInputRef, scoreRef,
     phaseRef, countdownStartRef, shakeRef,
-    statsRef, matchStartRef, keysRef, player2KeysRef, multiTouchRef,
+    statsRef, matchStartRef, keysRef, playerTargetRef, player2KeysRef, multiTouchRef,
   } = refs;
   const is2PMode = gameMode === '2p-local';
   const { setScores, setWinner, setScreen, setShowHelp, setShake } = callbacks;
@@ -437,6 +439,12 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       // ヘルプ表示判定
       if (now - lastInputRef.current > consts.TIMING.HELP_TIMEOUT && !showHelp) {
         setShowHelp(true);
+      }
+
+      // マウス/タッチ入力（フレーム同期: ref から目標位置を読み取り適用）
+      if (playerTargetRef?.current) {
+        moveMalletTo(game.player, playerTargetRef.current.x, playerTargetRef.current.y);
+        playerTargetRef.current = null;
       }
 
       // キーボード入力
@@ -790,5 +798,5 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       setScores, setWinner, setScreen, setShowHelp,
       phaseRef, countdownStartRef, shakeRef, setShake, bgmEnabled,
       statsRef, matchStartRef, keysRef,
-      is2PMode, pColor, cColor, player2KeysRef, multiTouchRef, aiConfig]);
+      is2PMode, pColor, cColor, playerTargetRef, player2KeysRef, multiTouchRef, aiConfig]);
 }

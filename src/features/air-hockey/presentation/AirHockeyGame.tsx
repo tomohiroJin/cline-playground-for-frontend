@@ -88,6 +88,7 @@ const AirHockeyGame: React.FC = () => {
   const statsRef = useRef<MatchStats>(EntityFactory.createMatchStats());
   const matchStartRef = useRef(0);
   const player2KeysRef = useRef(createKeyboardState());
+  const playerTargetRef = useRef<import('../hooks/useInput').PlayerTargetPosition>(null);
 
   // ── リザルト処理 ──
   const result = useResultProcessing({ screen, winner, scoreRef, statsRef, mode, dex });
@@ -285,7 +286,7 @@ const AirHockeyGame: React.FC = () => {
   }, [mode.currentStage, handleSelectStage]);
 
   // ── 入力・ゲームループ ──
-  const handleInput = useInput(gameRef, canvasRef, lastInputRef, screen, showHelp, setShowHelp);
+  const handleInput = useInput(gameRef, canvasRef, lastInputRef, playerTargetRef, screen, showHelp, setShowHelp);
   const keysRef = useKeyboardInput(gameRef, lastInputRef, screen, showHelp, setShowHelp);
 
   // ── 2P モード判定 ──
@@ -331,6 +332,7 @@ const AirHockeyGame: React.FC = () => {
     },
     refs: {
       gameRef, canvasRef, lastInputRef, scoreRef, phaseRef, countdownStartRef, shakeRef, statsRef, matchStartRef, keysRef,
+      playerTargetRef,
       player2KeysRef: is2PMode ? player2KeysRef : undefined,
       multiTouchRef: is2PMode ? multiTouchRef : undefined,
     },

@@ -2,15 +2,19 @@ import React, { useCallback, RefObject } from 'react';
 import { clamp } from '../../../utils/math-utils';
 import { CONSTANTS, screenToCanvas, getPlayerXBounds, getPlayerYBounds } from '../core/constants';
 import { GameState } from '../core/types';
-import { moveMalletTo } from '../core/entities';
+
+/** プレイヤーマレットの目標位置 */
+export type PlayerTargetPosition = { x: number; y: number } | null;
 
 /**
- * マウス/タッチ入力を処理し、プレイヤーのマレット位置を更新するフック
+ * マウス/タッチ入力を処理し、目標位置を ref に保存するフック
+ * 実際のマレット移動はゲームループ内で行う（フレーム同期）
  */
 export function useInput(
   gameRef: RefObject<GameState | null>,
   canvasRef: RefObject<HTMLCanvasElement | null>,
   lastInputRef: React.MutableRefObject<number>,
+  playerTargetRef: React.MutableRefObject<PlayerTargetPosition>,
   screen: string,
   showHelp: boolean,
   setShowHelp: (v: boolean) => void
@@ -46,8 +50,9 @@ export function useInput(
       const newX = clamp(canvas.canvasX, minX, maxX);
       const newY = clamp(canvas.canvasY, minY, maxY);
 
-      moveMalletTo(game.player, newX, newY);
+      // 目標位置を ref に保存（ゲームループで適用）
+      playerTargetRef.current = { x: newX, y: newY };
     },
-    [screen, showHelp, gameRef, canvasRef, lastInputRef, setShowHelp]
+    [screen, showHelp, gameRef, canvasRef, lastInputRef, playerTargetRef, setShowHelp]
   );
 }
