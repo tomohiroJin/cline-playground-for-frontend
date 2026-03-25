@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import type { Character, Difficulty, FieldConfig, GameMode } from '../../core/types';
 import type { StageDefinition, StoryProgress } from '../../core/story';
 import type { DailyChallenge } from '../../core/daily-challenge';
-import { FIELDS } from '../../core/config';
+import { FIELDS, DEFAULT_WIN_SCORE } from '../../core/config';
 
 /** 勝利スコアの最小値 */
 const MIN_WIN_SCORE = 1;
@@ -45,7 +45,7 @@ export function useGameMode(): UseGameModeReturn {
   const [gameMode, setGameMode] = useState<GameMode>('free');
   const [difficulty, setDifficulty] = useState<Difficulty>('normal');
   const [field, setField] = useState<FieldConfig>(FIELDS[0]);
-  const [winScore, setWinScoreRaw] = useState(3);
+  const [winScore, setWinScoreRaw] = useState(DEFAULT_WIN_SCORE);
   const [currentStage, setCurrentStage] = useState<StageDefinition | undefined>(undefined);
   const [isDailyMode, setIsDailyMode] = useState(false);
   const [dailyChallenge, setDailyChallenge] = useState<DailyChallenge | undefined>(undefined);
@@ -64,6 +64,7 @@ export function useGameMode(): UseGameModeReturn {
   const resetToFree = useCallback(() => {
     setGameMode('free');
     setIsDailyMode(false);
+    setWinScoreRaw(DEFAULT_WIN_SCORE);
     setSelectedCpuCharacter(undefined);
     setPlayer1Character(undefined);
     setPlayer2Character(undefined);

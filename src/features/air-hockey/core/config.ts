@@ -78,3 +78,5 @@ export const ITEMS = [
 export const DIFFICULTY_OPTIONS = ['easy', 'normal', 'hard'] as const;
 export const DIFFICULTY_LABELS = { easy: 'ルーキー', normal: 'レギュラー', hard: 'エース' };
 export const WIN_SCORE_OPTIONS = [3, 7, 15];
+/** フリー対戦のデフォルト勝利スコア */
+export const DEFAULT_WIN_SCORE = 3;

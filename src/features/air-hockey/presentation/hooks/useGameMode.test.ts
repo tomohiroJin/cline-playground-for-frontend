@@ -138,6 +138,22 @@ describe('useGameMode', () => {
       expect(result.current.isDailyMode).toBe(false);
     });
 
+    it('resetToFree で winScore がデフォルト値（3）にリセットされる', () => {
+      const { result } = renderHook(() => useGameMode());
+
+      // ストーリーモードで winScore=5 に変更
+      act(() => {
+        result.current.setWinScore(5);
+      });
+      expect(result.current.winScore).toBe(5);
+
+      // resetToFree でデフォルト値に戻る
+      act(() => {
+        result.current.resetToFree();
+      });
+      expect(result.current.winScore).toBe(3);
+    });
+
     it('setGameMode で 2p-local に切り替えられる', () => {
       const { result } = renderHook(() => useGameMode());
 
