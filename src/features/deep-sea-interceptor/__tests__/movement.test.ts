@@ -28,9 +28,9 @@ describe('MovementStrategies', () => {
     });
 
     test('右側のエンティティは左にドリフトすること', () => {
-      const entity = { x: 300, y: 50, speed: 2 };
+      const entity = { x: 500, y: 50, speed: 2 };
       const result = MovementStrategies.drift(entity);
-      expect(result.x).toBe(299.5);
+      expect(result.x).toBe(499.5);
     });
   });
 
@@ -42,10 +42,10 @@ describe('MovementStrategies', () => {
       expect(result.angle).toBeCloseTo(0.015);
     });
 
-    test('Y座標90を超えないこと', () => {
-      const entity = { x: 200, y: 89.8, speed: 0.5, angle: 0 };
+    test('Y座標180を超えないこと', () => {
+      const entity = { x: 200, y: 179.8, speed: 0.5, angle: 0 };
       const result = MovementStrategies.boss(entity);
-      expect(result.y).toBe(90);
+      expect(result.y).toBe(180);
     });
   });
 

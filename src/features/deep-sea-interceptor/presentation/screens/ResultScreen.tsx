@@ -64,7 +64,7 @@ export function ResultScreen({
   return (
     <StyledGameContainer>
       <FullScreenOverlay $bg={isCleared ? '#0a1a2a' : '#1a0a0a'}>
-        <h1 style={{ color: isCleared ? '#6ac' : '#f66', fontSize: 18, margin: '0 0 10px' }}>
+        <h1 style={{ color: isCleared ? '#6ac' : '#f66', fontSize: 32, margin: '0 0 18px' }}>
           {isCleared ? 'MISSION COMPLETE' : 'MISSION FAILED'}
         </h1>
 
@@ -73,16 +73,16 @@ export function ResultScreen({
           style={{
             width: '80%',
             background: 'rgba(0,20,40,0.6)',
-            borderRadius: 8,
-            padding: 12,
-            fontSize: 10,
+            borderRadius: 10,
+            padding: 20,
+            fontSize: 18,
             lineHeight: 2,
           }}
         >
           <div>STAGE: {uiState.stage} - {stageName}</div>
           <div>DIFFICULTY: {DifficultyConfig[uiState.difficulty].label}</div>
           <div>WEAPON: {WeaponInfo[uiState.weaponType].name}</div>
-          <div style={{ borderTop: '1px solid #334', margin: '4px 0', paddingTop: 4 }}>
+          <div style={{ borderTop: '1px solid #334', margin: '8px 0', paddingTop: 8 }}>
             SCORE: <strong style={{ color: '#fff' }}>{uiState.score.toLocaleString()}</strong>
           </div>
           <div>MAX COMBO: {maxCombo}</div>
@@ -93,11 +93,11 @@ export function ResultScreen({
         {/* ランク表示 */}
         <div
           style={{
-            fontSize: 36,
+            fontSize: 64,
             fontWeight: 'bold',
             color: rankColor,
-            textShadow: `0 0 20px ${rankColor}`,
-            margin: '10px 0',
+            textShadow: `0 0 30px ${rankColor}`,
+            margin: '18px 0',
           }}
         >
           RANK: {rank}
@@ -109,25 +109,25 @@ export function ResultScreen({
             style={{
               width: '80%',
               background: 'rgba(40,40,0,0.4)',
-              borderRadius: 8,
-              padding: 8,
-              marginBottom: 8,
+              borderRadius: 10,
+              padding: 14,
+              marginBottom: 14,
             }}
           >
-            <div style={{ fontSize: 9, color: '#fc4', marginBottom: 4 }}>NEW ACHIEVEMENTS!</div>
+            <div style={{ fontSize: 16, color: '#fc4', marginBottom: 8 }}>NEW ACHIEVEMENTS!</div>
             {newAchievements.map(a => (
-              <div key={a.id} style={{ fontSize: 9, color: '#fd6', lineHeight: 1.8 }}>
+              <div key={a.id} style={{ fontSize: 16, color: '#fd6', lineHeight: 1.8 }}>
                 {a.name} - {a.description}
               </div>
             ))}
           </div>
         )}
 
-        <p style={{ fontSize: 10, color: '#aaa', margin: 0 }}>
+        <p style={{ fontSize: 18, color: '#aaa', margin: 0 }}>
           HIGH SCORE: {uiState.highScore}
         </p>
 
-        <div style={{ margin: '10px 0' }}>
+        <div style={{ margin: '18px 0' }}>
           <ShareButton
             text={`Deep Sea Interceptor ${isCleared ? 'クリア' : ''}！スコア: ${uiState.score}点 ランク: ${rank} コンボ: ${maxCombo}`}
             hashtags={['DeepSeaShooter', 'GamePlatform']}

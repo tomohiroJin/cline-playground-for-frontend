@@ -1,4 +1,5 @@
 import { createBulletsForWeapon, createChargedShot } from '../weapon';
+import { WEAPON_COOLDOWN } from '../constants';
 
 describe('createBulletsForWeapon', () => {
   describe('torpedo', () => {
@@ -30,10 +31,32 @@ describe('createBulletsForWeapon', () => {
   });
 
   describe('sonarWave', () => {
-    test('常に3発の弾を生成すること', () => {
+    test('power=1 で3発の弾を生成すること', () => {
       const bullets = createBulletsForWeapon(200, 300, 'sonarWave', 1, false);
       expect(bullets).toHaveLength(3);
       expect(bullets[0].weaponType).toBe('sonarWave');
+    });
+
+    test('power=1 の damage が 2.5 であること', () => {
+      const bullets = createBulletsForWeapon(200, 300, 'sonarWave', 1, false);
+      expect(bullets[0].damage).toBe(2.5);
+    });
+
+    test('power=3 で5発、damage=3.5 であること', () => {
+      const bullets = createBulletsForWeapon(200, 300, 'sonarWave', 3, false);
+      expect(bullets).toHaveLength(5);
+      expect(bullets[0].damage).toBe(3.5);
+    });
+
+    test('power=5 で5発、damage=4.5 であること', () => {
+      const bullets = createBulletsForWeapon(200, 300, 'sonarWave', 5, false);
+      expect(bullets).toHaveLength(5);
+      expect(bullets[0].damage).toBe(4.5);
+    });
+
+    test('power=5 で lifespan=35 であること（短射程）', () => {
+      const bullets = createBulletsForWeapon(200, 300, 'sonarWave', 5, false);
+      expect(bullets[0].lifespan).toBe(35);
     });
 
     test('lifespan が設定されていること', () => {
@@ -44,10 +67,16 @@ describe('createBulletsForWeapon', () => {
       });
     });
 
-    test('power=5 で高い damage と lifespan を持つこと', () => {
-      const bullets = createBulletsForWeapon(200, 300, 'sonarWave', 5, false);
-      expect(bullets[0].damage).toBe(2.5);
-      expect(bullets[0].lifespan).toBe(40);
+    test('hasSpread=true で8発の全方位弾を生成すること', () => {
+      const bullets = createBulletsForWeapon(200, 300, 'sonarWave', 1, true);
+      expect(bullets).toHaveLength(8);
+    });
+
+    test('hasSpread=true で後方にも弾が発射されること', () => {
+      const bullets = createBulletsForWeapon(200, 300, 'sonarWave', 1, true);
+      // 下方向（+π/2付近）の弾があるか
+      const downwardBullets = bullets.filter(b => Math.sin(b.angle) > 0.5);
+      expect(downwardBullets.length).toBeGreaterThan(0);
     });
   });
 
@@ -83,6 +112,7 @@ describe('createChargedShot', () => {
   test('sonarWave チャージショットは8発の全方位弾であること', () => {
     const bullets = createChargedShot(200, 300, 'sonarWave');
     expect(bullets).toHaveLength(8);
+    expect(bullets[0].damage).toBe(4.0);
     bullets.forEach(b => {
       expect(b.charged).toBe(true);
       expect(b.weaponType).toBe('sonarWave');
@@ -96,5 +126,11 @@ describe('createChargedShot', () => {
       expect(b.charged).toBe(true);
       expect(b.homing).toBe(true);
     });
+  });
+});
+
+describe('WEAPON_COOLDOWN', () => {
+  test('sonarWave のクールダウンが 200ms であること', () => {
+    expect(WEAPON_COOLDOWN.sonarWave).toBe(200);
   });
 });

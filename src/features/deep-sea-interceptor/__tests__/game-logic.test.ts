@@ -4,8 +4,8 @@ import { EntityFactory } from '../entities';
 describe('createInitialGameState', () => {
   test('初期ゲーム状態を正しく生成すること', () => {
     const state = createInitialGameState();
-    expect(state.player.x).toBe(200);
-    expect(state.player.y).toBe(480);
+    expect(state.player.x).toBe(400);
+    expect(state.player.y).toBe(840);
     expect(state.bullets).toHaveLength(0);
     expect(state.enemies).toHaveLength(0);
     expect(state.charging).toBe(false);
@@ -45,7 +45,7 @@ describe('updateFrame', () => {
 
     updateFrame(gd, ui, now, mockAudioPlay);
 
-    expect(gd.player.x).toBeGreaterThan(200);
+    expect(gd.player.x).toBeGreaterThan(400);
   });
 
   test('プレイヤーが画面端を超えないこと', () => {
@@ -56,7 +56,7 @@ describe('updateFrame', () => {
 
     updateFrame(gd, ui, Date.now(), mockAudioPlay);
 
-    expect(gd.player.x).toBeGreaterThanOrEqual(15);
+    expect(gd.player.x).toBeGreaterThanOrEqual(30);
   });
 
   test('弾が画面外に出たら除去されること', () => {

@@ -27,8 +27,8 @@ export const MovementStrategies = {
   /** ボス移動（上部で左右に揺れる） */
   boss: <T extends AngleEntity>(e: T): T => ({
     ...e,
-    y: Math.min(90, e.y + e.speed),
-    x: Config.canvas.width / 2 + Math.sin(e.angle) * 80,
+    y: Math.min(180, e.y + e.speed),
+    x: Config.canvas.width / 2 + Math.sin(e.angle) * 160,
     angle: e.angle + 0.015,
   }),
 

@@ -59,6 +59,12 @@ export interface Enemy extends BaseEntity {
   movementPattern: number;
   angle: number;
   bossPhase: number;
+  /** Boss5 外殻の状態（true=開いている=ダメージ有効） */
+  shellOpen?: boolean;
+  /** Boss5 外殻の最終切替時刻 */
+  shellToggleTime?: number;
+  /** Boss5 雑魚召喚の最終時刻 */
+  lastSummonTime?: number;
 }
 
 /** 敵の弾 */
@@ -107,6 +113,8 @@ export interface GameState {
   charging: boolean;
   chargeLevel: number;
   chargeStartTime: number;
+  /** 最終射撃時刻（クールダウン制御用） */
+  lastShotTime: number;
   spawnTimer: number;
   bossDefeated: boolean;
   bossDefeatedTime: number;
@@ -137,6 +145,8 @@ export interface GameState {
   luminescence: boolean;
   luminescenceEndTime: number;
   pressureBounds: { left: number; right: number };
+  /** ステージ開始時のスコア（ボスWARNING判定用） */
+  stageStartScore: number;
 }
 
 /** UI表示用状態（React state で管理） */
@@ -155,6 +165,8 @@ export interface UiState {
   maxCombo: number;
   difficulty: Difficulty;
   weaponType: WeaponType;
+  /** テストモードフラグ */
+  testMode: boolean;
 }
 
 /** プレイ統計（リザルト画面用） */

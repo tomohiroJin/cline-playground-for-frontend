@@ -19,7 +19,7 @@ const BulletSprite = memo(function BulletSprite({ bullet }: { bullet: Bullet }) 
         background: bullet.charged
           ? 'radial-gradient(circle,#fff,#64c8ff,#06c)'
           : 'radial-gradient(circle,#fff,#64c8ff)',
-        boxShadow: bullet.charged ? '0 0 15px #64c8ff' : '0 0 6px #64c8ff',
+        boxShadow: bullet.charged ? '0 0 22px #64c8ff' : '0 0 9px #64c8ff',
       }}
     />
   );
