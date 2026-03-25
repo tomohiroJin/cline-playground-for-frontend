@@ -154,17 +154,17 @@ describe('resolveMalletPuckOverlap', () => {
   const PR = 21;
   const MAX_POWER = 16;
 
-  it('重なっている場合にパックを押し出し速度を与える', () => {
-    const mallet = { x: 100, y: 100, vx: 5, vy: -10 };
+  it('重なっている場合にパックをマレット移動方向に押し出し速度を与える', () => {
+    // マレットが右に動いてパックと重なった
+    const mallet = { x: 100, y: 100, vx: 20, vy: 0 };
     const puck = EntityFactory.createPuck(110, 100, 0, 0);
 
     resolveMalletPuckOverlap(mallet, [puck], MR, PR, MAX_POWER);
 
-    // パックがマレットから離れた位置に押し出される
-    const dist = Math.sqrt((puck.x - mallet.x) ** 2 + (puck.y - mallet.y) ** 2);
-    expect(dist).toBeGreaterThanOrEqual(MR + PR);
-    // パックに速度が与えられる
-    expect(Math.abs(puck.vx) + Math.abs(puck.vy)).toBeGreaterThan(0);
+    // パックがマレットの移動方向（右）に押し出される
+    expect(puck.x).toBeGreaterThan(mallet.x);
+    // パックに右向きの速度が与えられる
+    expect(puck.vx).toBeGreaterThan(0);
   });
 
   it('重なっていない場合はパックを変更しない', () => {
@@ -177,7 +177,7 @@ describe('resolveMalletPuckOverlap', () => {
     expect(puck.y).toBe(200);
   });
 
-  it('完全重複でもマレット速度があればパックを押し出す', () => {
+  it('完全重複でもマレット速度があればパックを移動方向に押し出す', () => {
     const mallet = { x: 100, y: 100, vx: 0, vy: -10 };
     const puck = EntityFactory.createPuck(100, 100, 0, 0);
 
@@ -185,7 +185,20 @@ describe('resolveMalletPuckOverlap', () => {
 
     // マレットの移動方向（上）にパックが押し出される
     expect(puck.y).toBeLessThan(100);
-    expect(Math.abs(puck.vy)).toBeGreaterThan(0);
+    expect(puck.vy).toBeLessThan(0);
+  });
+
+  it('マレットがパックを飛び越えた深い食い込みでも正しくパックが弾かれる', () => {
+    // マレットが上に大きく動き、パックの上を通過した（深い食い込み）
+    const mallet = { x: 300, y: 565, vx: 0, vy: -35 };
+    const puck = EntityFactory.createPuck(300, 570, 0, 0);
+    // 幾何学的法線はマレット→パック=下向き（ny=+1）だが、マレットは上に動いている
+
+    resolveMalletPuckOverlap(mallet, [puck], MR, PR, MAX_POWER);
+
+    // パックはマレットの移動方向（上）に弾かれるべき
+    expect(puck.vy).toBeLessThan(-5);
+    expect(puck.y).toBeLessThan(mallet.y);
   });
 
   it('パックの速度が maxPower を超えない', () => {

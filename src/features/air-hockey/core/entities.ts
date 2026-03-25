@@ -14,7 +14,11 @@ export function moveMalletTo(mallet: Mallet, targetX: number, targetY: number): 
 /**
  * マレットとパックの食い込みを解消する
  * moveMalletTo の瞬間移動でマレットがパックに重なった場合、
- * パックを押し出し、マレット速度に応じた反射速度を与える
+ * パックをマレットの移動方向に押し出し、速度を与える。
+ *
+ * 幾何学的法線（マレット→パック）ではなくマレットの移動方向を使う理由:
+ * マレットがパックを飛び越えて深くめり込んだ場合、幾何学的法線は
+ * マレットの移動方向と逆向きになり、力が相殺されてパックが動かなくなるため。
  */
 export function resolveMalletPuckOverlap(
   mallet: Mallet,
@@ -30,34 +34,33 @@ export function resolveMalletPuckOverlap(
     const minDist = malletRadius + puckRadius;
     if (dist >= minDist) continue;
 
-    // マレットの移動速度
     const malletSpeed = Math.sqrt(mallet.vx * mallet.vx + mallet.vy * mallet.vy);
 
-    let nx: number;
-    let ny: number;
-    if (dist > 0.1) {
-      // 通常: パック方向の法線
-      nx = dx / dist;
-      ny = dy / dist;
-    } else if (malletSpeed > 0.1) {
-      // 完全重複: マレットの移動方向に押し出す
-      nx = mallet.vx / malletSpeed;
-      ny = mallet.vy / malletSpeed;
+    // 押し出し方向: マレットの移動方向を優先（幾何学的法線は深い食い込み時に逆向きになる）
+    let pushNx: number;
+    let pushNy: number;
+    if (malletSpeed > 0.1) {
+      // マレットが動いている → 移動方向にパックを弾く
+      pushNx = mallet.vx / malletSpeed;
+      pushNy = mallet.vy / malletSpeed;
+    } else if (dist > 0.1) {
+      // マレットが静止 → 幾何学的法線（マレット→パック方向）で押し出す
+      pushNx = dx / dist;
+      pushNy = dy / dist;
     } else {
-      // 速度もない: 上方向に逃がす（CPU 側）
-      nx = 0;
-      ny = -1;
+      // 完全重複 + 静止 → 上方向に逃がす
+      pushNx = 0;
+      pushNy = -1;
     }
 
-    // パックを押し出す
-    const penetration = minDist - dist;
-    puck.x = mallet.x + nx * (minDist + 1);
-    puck.y = mallet.y + ny * (minDist + 1);
+    // パックをマレットの移動方向に押し出す
+    puck.x = mallet.x + pushNx * (minDist + 1);
+    puck.y = mallet.y + pushNy * (minDist + 1);
 
     // マレット速度に応じた反射力をパックに与える
     const power = Math.min(maxPower, 5 + malletSpeed * 1.2);
-    puck.vx = nx * power + mallet.vx * 0.4;
-    puck.vy = ny * power + mallet.vy * 0.4;
+    puck.vx = pushNx * power + mallet.vx * 0.4;
+    puck.vy = pushNy * power + mallet.vy * 0.4;
   }
 }
 
