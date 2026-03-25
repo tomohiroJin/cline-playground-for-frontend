@@ -1,7 +1,7 @@
 /**
  * Air Hockey - エンティティ生成のテスト
  */
-import { EntityFactory } from './entities';
+import { EntityFactory, preventMalletPuckOverlap } from './entities';
 import { CONSTANTS } from './constants';
 
 const { WIDTH: W, HEIGHT: H } = CONSTANTS.CANVAS;
@@ -146,5 +146,52 @@ describe('Air Hockey - エンティティ生成', () => {
       expect(state.cpu.x).toBe(W / 2);
       expect(state.cpu.y).toBe(70);
     });
+  });
+});
+
+describe('preventMalletPuckOverlap', () => {
+  const MR = 42;
+  const PR = 21;
+
+  it('重なっている場合にマレットを押し戻す', () => {
+    const mallet = { x: 100, y: 100, vx: 0, vy: 0 };
+    const puck = { x: 110, y: 100 };
+
+    preventMalletPuckOverlap(mallet, [puck], MR, PR);
+
+    const dist = Math.sqrt((mallet.x - puck.x) ** 2 + (mallet.y - puck.y) ** 2);
+    expect(dist).toBeCloseTo(MR + PR, 1);
+  });
+
+  it('重なっていない場合はマレット位置を変更しない', () => {
+    const mallet = { x: 100, y: 100, vx: 0, vy: 0 };
+    const puck = { x: 200, y: 200 };
+
+    preventMalletPuckOverlap(mallet, [puck], MR, PR);
+
+    expect(mallet.x).toBe(100);
+    expect(mallet.y).toBe(100);
+  });
+
+  it('完全に同じ位置の場合は変更しない（dist=0 ガード）', () => {
+    const mallet = { x: 100, y: 100, vx: 0, vy: 0 };
+    const puck = { x: 100, y: 100 };
+
+    preventMalletPuckOverlap(mallet, [puck], MR, PR);
+
+    // dist=0 の場合は処理しない（0除算防止）
+    expect(mallet.x).toBe(100);
+    expect(mallet.y).toBe(100);
+  });
+
+  it('複数パックに対して全て重なりを解消する', () => {
+    const mallet = { x: 100, y: 100, vx: 0, vy: 0 };
+    const puck1 = { x: 110, y: 100 };
+    const puck2 = { x: 100, y: 110 };
+
+    preventMalletPuckOverlap(mallet, [puck1, puck2], MR, PR);
+
+    const dist2 = Math.sqrt((mallet.x - puck2.x) ** 2 + (mallet.y - puck2.y) ** 2);
+    expect(dist2).toBeGreaterThanOrEqual(MR + PR - 1);
   });
 });

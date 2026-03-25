@@ -11,6 +11,30 @@ export function moveMalletTo(mallet: Mallet, targetX: number, targetY: number): 
   mallet.y = targetY;
 }
 
+/**
+ * マレットとパックの重なりを解消する
+ * moveMalletTo の瞬間移動でパックに食い込んだ場合に押し戻す
+ */
+export function preventMalletPuckOverlap(
+  mallet: Mallet,
+  pucks: ReadonlyArray<Pick<Puck, 'x' | 'y'>>,
+  malletRadius: number,
+  puckRadius: number
+): void {
+  for (const puck of pucks) {
+    const dx = mallet.x - puck.x;
+    const dy = mallet.y - puck.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const minDist = malletRadius + puckRadius;
+    if (dist < minDist && dist > 0) {
+      const nx = dx / dist;
+      const ny = dy / dist;
+      mallet.x = puck.x + nx * minDist;
+      mallet.y = puck.y + ny * minDist;
+    }
+  }
+}
+
 export const EntityFactory = {
   createMallet: (x: number, y: number): Mallet => ({ x, y, vx: 0, vy: 0 }),
   createPuck: (x: number, y: number, vx = 0, vy = 1.5): Puck => ({
