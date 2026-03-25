@@ -6,10 +6,9 @@ export const PageContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-height: 100vh;
+  height: 100vh;
   background: var(--bg-gradient);
   padding: 20px;
-  touch-action: none;
   overflow-y: auto;
 `;
 
@@ -31,6 +30,7 @@ export const MenuCard = styled(GlassCard)`
   max-width: 600px;
   width: 100%;
   margin: auto 0;
+  overflow: visible;
 `;
 
 // オプション選択エリア

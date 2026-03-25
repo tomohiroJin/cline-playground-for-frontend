@@ -11,7 +11,7 @@ import React, { useEffect } from 'react';
 import { Physics } from '../../core/physics';
 import { CpuAI } from '../../core/ai';
 import { AI_BEHAVIOR_PRESETS, type AiBehaviorConfig } from '../../core/story-balance';
-import { EntityFactory, moveMalletTo, preventMalletPuckOverlap } from '../../core/entities';
+import { EntityFactory, moveMalletTo, resolveMalletPuckOverlap } from '../../core/entities';
 import { applyItemEffect } from '../../core/items';
 import { CONSTANTS, DEFAULT_PLAYER_MALLET_COLOR, DEFAULT_CPU_MALLET_COLOR } from '../../core/constants';
 import { ITEMS } from '../../core/config';
@@ -482,9 +482,9 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         }
       }
 
-      // マレット移動後、衝突処理前にパックとの重なりを解消
-      preventMalletPuckOverlap(game.player, game.pucks, MR, BR);
-      preventMalletPuckOverlap(game.cpu, game.pucks, MR, BR);
+      // マレット移動後、衝突処理前にパックとの食い込みを解消（パックを弾く）
+      resolveMalletPuckOverlap(game.player, game.pucks, MR, BR, consts.PHYSICS.MAX_POWER);
+      resolveMalletPuckOverlap(game.cpu, game.pucks, MR, BR, consts.PHYSICS.MAX_POWER);
 
       // フィーバー判定
       if (!game.fever.active && now - game.fever.lastGoalTime >= consts.TIMING.FEVER_TRIGGER) {

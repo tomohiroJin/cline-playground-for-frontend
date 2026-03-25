@@ -93,11 +93,13 @@ const AirHockeyGame: React.FC = () => {
   const result = useResultProcessing({ screen, winner, scoreRef, statsRef, mode, dex });
 
   // ── 副作用 ──
+  // ゲーム画面のみ touchmove を抑制（メニュー/リザルトではスクロール可能にする）
   useEffect(() => {
+    if (screen !== 'game') return;
     const handler = (e: TouchEvent) => e.preventDefault();
     document.addEventListener('touchmove', handler, { passive: false });
     return () => document.removeEventListener('touchmove', handler);
-  }, []);
+  }, [screen]);
 
   // ── ゲーム制御 ──
   const startGame = useCallback((fieldOverride?: typeof mode.field) => {

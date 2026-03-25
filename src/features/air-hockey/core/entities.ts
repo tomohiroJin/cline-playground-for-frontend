@@ -12,26 +12,52 @@ export function moveMalletTo(mallet: Mallet, targetX: number, targetY: number): 
 }
 
 /**
- * マレットとパックの重なりを解消する
- * moveMalletTo の瞬間移動でパックに食い込んだ場合に押し戻す
+ * マレットとパックの食い込みを解消する
+ * moveMalletTo の瞬間移動でマレットがパックに重なった場合、
+ * パックを押し出し、マレット速度に応じた反射速度を与える
  */
-export function preventMalletPuckOverlap(
+export function resolveMalletPuckOverlap(
   mallet: Mallet,
-  pucks: ReadonlyArray<Pick<Puck, 'x' | 'y'>>,
+  pucks: Puck[],
   malletRadius: number,
-  puckRadius: number
+  puckRadius: number,
+  maxPower: number
 ): void {
   for (const puck of pucks) {
-    const dx = mallet.x - puck.x;
-    const dy = mallet.y - puck.y;
+    const dx = puck.x - mallet.x;
+    const dy = puck.y - mallet.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
     const minDist = malletRadius + puckRadius;
-    if (dist < minDist && dist > 0) {
-      const nx = dx / dist;
-      const ny = dy / dist;
-      mallet.x = puck.x + nx * minDist;
-      mallet.y = puck.y + ny * minDist;
+    if (dist >= minDist) continue;
+
+    // マレットの移動速度
+    const malletSpeed = Math.sqrt(mallet.vx * mallet.vx + mallet.vy * mallet.vy);
+
+    let nx: number;
+    let ny: number;
+    if (dist > 0.1) {
+      // 通常: パック方向の法線
+      nx = dx / dist;
+      ny = dy / dist;
+    } else if (malletSpeed > 0.1) {
+      // 完全重複: マレットの移動方向に押し出す
+      nx = mallet.vx / malletSpeed;
+      ny = mallet.vy / malletSpeed;
+    } else {
+      // 速度もない: 上方向に逃がす（CPU 側）
+      nx = 0;
+      ny = -1;
     }
+
+    // パックを押し出す
+    const penetration = minDist - dist;
+    puck.x = mallet.x + nx * (minDist + 1);
+    puck.y = mallet.y + ny * (minDist + 1);
+
+    // マレット速度に応じた反射力をパックに与える
+    const power = Math.min(maxPower, 5 + malletSpeed * 1.2);
+    puck.vx = nx * power + mallet.vx * 0.4;
+    puck.vy = ny * power + mallet.vy * 0.4;
   }
 }
 
