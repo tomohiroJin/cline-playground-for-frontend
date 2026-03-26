@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { SaveData, SfxType } from '../types';
 import type { GameAction } from '../hooks';
 import { DIFFS } from '../constants';
+import { IFS } from '../constants/ui';
 import { Screen, SubTitle, Divider, GameButton, Xc } from '../styles';
 
 /** ステージ別テーマ説明 */
@@ -40,7 +41,7 @@ export const DifficultyScreen: React.FC<Props> = ({ save, dispatch, playSfx, onS
           >
             ◀
           </GameButton>
-          <span style={{ color: '#f0c040', fontSize: 13, minWidth: 60, textAlign: 'center' }}>
+          <span style={{ color: '#f0c040', fontSize: IFS.xl, minWidth: 60, textAlign: 'center' }}>
             {selectedLoop + 1}周目
           </span>
           <GameButton
@@ -68,15 +69,15 @@ export const DifficultyScreen: React.FC<Props> = ({ save, dispatch, playSfx, onS
             onClick={() => { playSfx('click'); onStart(i, selectedLoop); }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ color: '#f0c040', fontSize: 12 }}>
+              <span style={{ color: '#f0c040', fontSize: IFS.lg }}>
                 {d.ic} {d.n}{save.best?.[i] ? ' 🏆' : ''}
               </span>
-              {i > 0 && <span style={{ fontSize: 9, color: '#605848' }}>骨×{d.bm}</span>}
+              {i > 0 && <span style={{ fontSize: IFS.sm, color: '#605848' }}>骨×{d.bm}</span>}
             </div>
-            <div style={{ color: '#908070', fontSize: 9, marginTop: 2 }}>
+            <div style={{ color: '#908070', fontSize: IFS.sm, marginTop: 2 }}>
               {STAGE_THEMES[i]}
             </div>
-            <div style={{ color: '#605848', fontSize: 10, marginTop: 2 }}>
+            <div style={{ color: '#605848', fontSize: IFS.md, marginTop: 2 }}>
               {d.d}{d.bb > 1 && ` 最終ボス${d.bb}連戦`}{locked && <Xc> (クリア{d.ul}回で解放)</Xc>}
             </div>
           </GameButton>

@@ -3,6 +3,7 @@ import type { RunState, CivTypeExt, SfxType } from '../types';
 import type { GameAction } from '../hooks';
 import { AWK_SA, AWK_FA } from '../constants';
 import { StatLine } from './shared';
+import { IFS } from '../constants/ui';
 import { Screen, SubTitle, Divider, GameButton, GamePanel, StatText, AwkFlashOverlay, BiomeBg } from '../styles';
 
 interface Props {
@@ -42,20 +43,20 @@ export const AwakeningScreen: React.FC<Props> = ({ run, awkId: _awkId, awkType, 
         <div style={{ fontSize: 18, color: info.cl, marginBottom: 8, textShadow: `0 0 14px ${info.cl}50`, letterSpacing: 1 }}>
           {icon} {info.nm}
         </div>
-        <div style={{ color: '#a09878', lineHeight: 1.6, marginBottom: 10, fontSize: 10 }}>{info.ds}</div>
+        <div style={{ color: '#a09878', lineHeight: 1.6, marginBottom: 10, fontSize: IFS.md }}>{info.ds}</div>
         {info.bn && (
           <div style={{
-            color: '#f0c040', fontSize: 10, background: '#f0c04010',
+            color: '#f0c040', fontSize: IFS.md, background: '#f0c04010',
             padding: '6px 10px', border: '1px solid #f0c04025', borderRadius: 3,
             display: 'inline-block', lineHeight: 1.4,
           }}>
             {info.bn}
           </div>
         )}
-        <StatText style={{ marginTop: 8, fontSize: 9 }}>現在: <StatLine run={run} /></StatText>
+        <StatText style={{ marginTop: 8, fontSize: IFS.sm }}>現在: <StatLine run={run} /></StatText>
       </GamePanel>
       <GameButton
-        style={{ marginTop: 10, borderColor: info.cl + '60', color: info.cl, minWidth: 190, fontSize: 13 }}
+        style={{ marginTop: 10, borderColor: info.cl + '60', color: info.cl, minWidth: 190, fontSize: IFS.xl }}
         onClick={handleAwaken}
       >
         {icon} 覚醒する

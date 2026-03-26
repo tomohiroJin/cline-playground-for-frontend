@@ -3,6 +3,21 @@
  */
 import type { CivType, CivTypeExt, TreeBonus } from '../types';
 
+/**
+ * インラインフォントサイズ（コンポーネント内のインラインスタイルで使用）
+ *
+ * ※ styled-components 用の FONT_SIZES とは別管理。
+ *   FONT_SIZES: styled-components の各コンポーネントに対応（Title, StatText 等）
+ *   IFS:        インラインスタイルの fontSize に使用する汎用サイズスケール
+ */
+export const IFS = Object.freeze({
+  xs: 12,   // 旧 7px: タグ、シナジーバッジ、相性表示
+  sm: 14,   // 旧 8-9px: 説明文、統計、バッジ、コスト表示
+  md: 16,   // 旧 10px: ラベル、ステータス、ツリーボーナス
+  lg: 18,   // 旧 11-12px: セクションタイトル、ボタンテキスト
+  xl: 20,   // 旧 13px: サブ情報テキスト
+});
+
 /** ゲーム画面の基準幅（px） */
 export const GAME_WIDTH = 800;
 

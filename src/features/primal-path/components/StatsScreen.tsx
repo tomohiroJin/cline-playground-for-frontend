@@ -5,6 +5,7 @@ import React from 'react';
 import type { RunStats, AggregateStats, SfxType } from '../types';
 import type { GameAction } from '../hooks';
 import { DIFFS } from '../constants';
+import { IFS } from '../constants/ui';
 import { Screen, SubTitle, Divider, GameButton, GamePanel, RunStatRow, Gc } from '../styles';
 
 interface Props {
@@ -32,7 +33,7 @@ export const StatsScreen: React.FC<Props> = ({ runStats, aggregate, dispatch, pl
       <Divider />
 
       <GamePanel style={{ padding: '8px 10px' }}>
-        <div style={{ fontSize: 10, color: '#f0c040', marginBottom: 4, textAlign: 'center' }}>── 累計統計 ──</div>
+        <div style={{ fontSize: IFS.md, color: '#f0c040', marginBottom: 4, textAlign: 'center' }}>── 累計統計 ──</div>
         <RunStatRow><span>総プレイ回数</span><span>{aggregate.totalRuns}</span></RunStatRow>
         <RunStatRow><span>総クリア回数</span><span><Gc>{aggregate.totalClears}</Gc></span></RunStatRow>
         <RunStatRow><span>クリア率</span><span>{clearRate}%</span></RunStatRow>
@@ -42,9 +43,9 @@ export const StatsScreen: React.FC<Props> = ({ runStats, aggregate, dispatch, pl
       </GamePanel>
 
       <GamePanel style={{ padding: '8px 10px', maxHeight: 280, overflowY: 'auto' }}>
-        <div style={{ fontSize: 10, color: '#f0c040', marginBottom: 4, textAlign: 'center' }}>── 直近のラン ──</div>
+        <div style={{ fontSize: IFS.md, color: '#f0c040', marginBottom: 4, textAlign: 'center' }}>── 直近のラン ──</div>
         {runStats.length === 0 && (
-          <div style={{ fontSize: 10, color: '#605848', textAlign: 'center', padding: 8 }}>
+          <div style={{ fontSize: IFS.md, color: '#605848', textAlign: 'center', padding: 8 }}>
             まだプレイ記録がありません
           </div>
         )}
@@ -53,7 +54,7 @@ export const StatsScreen: React.FC<Props> = ({ runStats, aggregate, dispatch, pl
           const icon = s.result === 'victory' ? '✅' : '❌';
           const awk = s.awakening ? ` / ${s.awakening}` : '';
           return (
-            <div key={s.id} style={{ fontSize: 9, padding: '3px 0', borderBottom: '1px solid #1a1a22', color: '#a89878' }}>
+            <div key={s.id} style={{ fontSize: IFS.sm, padding: '3px 0', borderBottom: '1px solid #1a1a22', color: '#a89878' }}>
               <span>{icon} </span>
               <span>{diff?.ic ?? ''} {diff?.n ?? ''}</span>
               <span>{awk}</span>

@@ -4,6 +4,7 @@ import type { GameAction } from '../hooks';
 import { bestDiffLabel } from '../game-logic';
 import { drawTitle } from '../sprites';
 import { BgmEngine, AudioEngine } from '../audio';
+import { IFS } from '../constants/ui';
 import { Screen, Title, Divider, GameButton, Gc } from '../styles';
 
 interface Props {
@@ -40,9 +41,9 @@ export const TitleScreen: React.FC<Props> = ({ save, dispatch, playSfx }) => {
       <div style={{ fontSize: 18, color: '#b89830', letterSpacing: 7, marginBottom: 2 }}>PRIMAL PATH</div>
       <Divider />
       <div style={{ fontSize: 14, color: '#605848', letterSpacing: 2 }}>文明を選ぶたびに、未来が変わる</div>
-      {bd && <div style={{ fontSize: 13, color: '#f0c040', marginTop: 4 }}>🏆 {bd}</div>}
+      {bd && <div style={{ fontSize: IFS.xl, color: '#f0c040', marginTop: 4 }}>🏆 {bd}</div>}
       <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <GameButton style={{ minWidth: 210, fontSize: 13 }} onClick={() => { playSfx('click'); dispatch({ type: 'GO_DIFF' }); }}>
+        <GameButton style={{ minWidth: 210, fontSize: IFS.xl }} onClick={() => { playSfx('click'); dispatch({ type: 'GO_DIFF' }); }}>
           ▶ はじめる
         </GameButton>
         <GameButton style={{ minWidth: 210 }} onClick={() => { playSfx('click'); dispatch({ type: 'GO_TREE' }); }}>
@@ -62,7 +63,7 @@ export const TitleScreen: React.FC<Props> = ({ save, dispatch, playSfx }) => {
         </GameButton>
       </div>
       {/* 音量設定 */}
-      <div style={{ display: 'flex', gap: 16, marginTop: 10, fontSize: 9, color: '#605848', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 16, marginTop: 10, fontSize: IFS.sm, color: '#605848', alignItems: 'center' }}>
         <span
           style={{ cursor: 'pointer', userSelect: 'none' }}
           onClick={() => {
@@ -88,7 +89,7 @@ export const TitleScreen: React.FC<Props> = ({ save, dispatch, playSfx }) => {
         </span>
       </div>
 
-      <div style={{ marginTop: 'auto', display: 'flex', gap: 12, fontSize: 9, color: '#2a2a3a', paddingBottom: 4 }}>
+      <div style={{ marginTop: 'auto', display: 'flex', gap: 12, fontSize: IFS.sm, color: '#2a2a3a', paddingBottom: 4 }}>
         <span>クリア{save.clears}回</span>
         <span>ラン{save.runs}回</span>
         <span

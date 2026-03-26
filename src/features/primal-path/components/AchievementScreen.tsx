@@ -5,6 +5,7 @@ import React from 'react';
 import type { AchievementState, SfxType } from '../types';
 import type { GameAction } from '../hooks';
 import { ACHIEVEMENTS } from '../constants';
+import { IFS } from '../constants/ui';
 import { Screen, SubTitle, Divider, GameButton, GamePanel } from '../styles';
 
 interface Props {
@@ -25,7 +26,7 @@ export const AchievementScreen: React.FC<Props> = ({ achievementStates, dispatch
   return (
     <Screen $center>
       <SubTitle>🏆 実績</SubTitle>
-      <div style={{ fontSize: 10, color: '#908870', marginBottom: 4 }}>
+      <div style={{ fontSize: IFS.md, color: '#908870', marginBottom: 4 }}>
         解除: {unlockedCount} / {totalCount}
       </div>
       <Divider />
@@ -48,20 +49,20 @@ export const AchievementScreen: React.FC<Props> = ({ achievementStates, dispatch
                 {ach.icon}
               </span>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 11, color: isUnlocked ? '#f0c040' : '#605848' }}>
+                <div style={{ fontSize: IFS.lg, color: isUnlocked ? '#f0c040' : '#605848' }}>
                   {ach.name}
                 </div>
-                <div style={{ fontSize: 9, color: '#605848' }}>
+                <div style={{ fontSize: IFS.sm, color: '#605848' }}>
                   {ach.description}
                 </div>
                 {isUnlocked && st?.unlockedDate && (
-                  <div style={{ fontSize: 8, color: '#403828', marginTop: 1 }}>
+                  <div style={{ fontSize: IFS.sm, color: '#403828', marginTop: 1 }}>
                     {st.unlockedDate.slice(0, 10)}
                   </div>
                 )}
               </div>
               {isUnlocked && (
-                <span style={{ fontSize: 10, color: '#50e090' }}>✅</span>
+                <span style={{ fontSize: IFS.md, color: '#50e090' }}>✅</span>
               )}
             </div>
           );

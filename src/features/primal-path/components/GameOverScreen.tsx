@@ -3,6 +3,7 @@ import type { RunState, SaveData, SfxType } from '../types';
 import type { GameAction } from '../hooks';
 import { calcBoneReward, aliveAllies } from '../game-logic';
 import { ACHIEVEMENTS, LOG_COLORS } from '../constants';
+import { IFS } from '../constants/ui';
 import { CivLevelsDisplay } from './shared';
 import { Screen, SubTitle, Divider, GameButton, GamePanel, RunStatRow, Gc, Tc, Xc, BiomeBg, LogReviewContainer, LogLine } from '../styles';
 
@@ -66,11 +67,11 @@ export const GameOverScreen: React.FC<Props> = ({ run, won, save, dispatch, play
               : '次こそは…'}
         </div>
         <div style={{ fontSize: 14, marginBottom: 8 }}>🦴 <Gc style={{ fontSize: 16 }}>+{boneReward}</Gc></div>
-        <div style={{ fontSize: 11, color: '#908870' }}>所持骨：<Gc>{save.bones}</Gc></div>
+        <div style={{ fontSize: IFS.lg, color: '#908870' }}>所持骨：<Gc>{save.bones}</Gc></div>
       </GamePanel>
 
       <GamePanel style={{ padding: '8px 10px' }}>
-        <div style={{ fontSize: 10, color: '#f0c040', marginBottom: 4, textAlign: 'center' }}>── ラン統計 ──</div>
+        <div style={{ fontSize: IFS.md, color: '#f0c040', marginBottom: 4, textAlign: 'center' }}>── ラン統計 ──</div>
         <RunStatRow><span>難易度</span><span>{d.ic} {d.n}</span></RunStatRow>
         <RunStatRow><span>ターン数</span><span>{run.turn}</span></RunStatRow>
         <RunStatRow><span>撃破数</span><span>{run.kills}</span></RunStatRow>
@@ -88,7 +89,7 @@ export const GameOverScreen: React.FC<Props> = ({ run, won, save, dispatch, play
       {/* エンドレスモード結果表示 */}
       {run.isEndless && (
         <GamePanel style={{ padding: '8px 10px' }}>
-          <div style={{ fontSize: 10, color: '#f0c040', marginBottom: 4, textAlign: 'center' }}>── エンドレス結果 ──</div>
+          <div style={{ fontSize: IFS.md, color: '#f0c040', marginBottom: 4, textAlign: 'center' }}>── エンドレス結果 ──</div>
           <RunStatRow><span>到達ウェーブ</span><span><Gc>{run.endlessWave}</Gc></span></RunStatRow>
           <RunStatRow><span>総撃破数</span><span><Gc>{run.kills}</Gc></span></RunStatRow>
         </GamePanel>
@@ -96,12 +97,12 @@ export const GameOverScreen: React.FC<Props> = ({ run, won, save, dispatch, play
 
       {newAchievements.length > 0 && (
         <GamePanel style={{ padding: '8px 10px' }}>
-          <div style={{ fontSize: 10, color: '#f0c040', marginBottom: 4, textAlign: 'center' }}>── 実績解除！ ──</div>
+          <div style={{ fontSize: IFS.md, color: '#f0c040', marginBottom: 4, textAlign: 'center' }}>── 実績解除！ ──</div>
           {newAchievements.map(id => {
             const ach = ACHIEVEMENTS.find(a => a.id === id);
             if (!ach) return null;
             return (
-              <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0', fontSize: 10, color: '#f0c040' }}>
+              <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0', fontSize: IFS.md, color: '#f0c040' }}>
                 <span style={{ fontSize: 16 }}>{ach.icon}</span>
                 <span>{ach.name}</span>
               </div>
@@ -113,7 +114,7 @@ export const GameOverScreen: React.FC<Props> = ({ run, won, save, dispatch, play
       {/* 戦闘ログ見返し */}
       <GamePanel style={{ padding: '8px 10px' }}>
         <GameButton
-          style={{ width: '100%', fontSize: 10, padding: '4px 8px' }}
+          style={{ width: '100%', fontSize: IFS.md, padding: '4px 8px' }}
           onClick={() => { playSfx('click'); setIsLogOpen(prev => !prev); }}
         >
           {isLogOpen ? '▲ 戦闘ログを閉じる' : '▼ 戦闘ログを見る'}
@@ -127,7 +128,7 @@ export const GameOverScreen: React.FC<Props> = ({ run, won, save, dispatch, play
         )}
       </GamePanel>
 
-      <GameButton style={{ marginTop: 8, minWidth: 190, fontSize: 12 }}
+      <GameButton style={{ marginTop: 8, minWidth: 190, fontSize: IFS.lg }}
         onClick={() => { playSfx('click'); dispatch({ type: 'RETURN_TO_TITLE' }); }}>
         タイトルへ
       </GameButton>

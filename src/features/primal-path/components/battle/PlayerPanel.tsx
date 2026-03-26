@@ -7,7 +7,7 @@ import type { RunState } from '../../types';
 import { A_SKILLS, TB_SUMMARY } from '../../constants';
 import { effATK, civLvs, calcSynergies, applySynergyBonuses } from '../../game-logic';
 import { drawPlayer } from '../../sprites';
-import { FONT_SIZES } from '../../constants/ui';
+import { FONT_SIZES, IFS } from '../../constants/ui';
 import { HpBar, CivLevelsDisplay, AffinityBadge, AllyList, SynergyBadges } from '../shared';
 import { GamePanel, StatText, Tc, Bc, PopupContainer, PopupText } from '../../styles';
 import type { PopupEntry } from './use-battle-popups';
@@ -36,7 +36,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({ run, popups }) => {
   const activeBuffs = run.sk.bfs;
 
   const feLabel = run.awoken.map(a => (
-    <span key={a.id} style={{ color: a.cl, fontSize: 8 }}>{a.nm} </span>
+    <span key={a.id} style={{ color: a.cl, fontSize: IFS.sm }}>{a.nm} </span>
   ));
 
   return (
@@ -52,17 +52,17 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({ run, popups }) => {
             部族長 {feLabel}
             <AffinityBadge biome={run.cBT} levels={lvs} />
             {ritActive && (
-              <span style={{ fontSize: 7, color: '#ff4060', background: '#ff406015', border: '1px solid #ff406030', padding: '1px 5px', borderRadius: 6 }}>⚡ATK×3</span>
+              <span style={{ fontSize: IFS.xs, color: '#ff4060', background: '#ff406015', border: '1px solid #ff406030', padding: '2px 6px', borderRadius: 6 }}>⚡ATK×3</span>
             )}
           </div>
           <HpBar value={run.hp} max={run.mhp} variant="hp" low={run.hp < run.mhp * 0.25} showPct />
           <StatText>
-            ATK <Tc>{effATK(run)}</Tc>{synergyBonus.atkBonus > 0 && <span style={{ color: '#f0c040', fontSize: 7 }}>+{synergyBonus.atkBonus}</span>}{' '}
-            DEF <span style={{ color: '#50c8e8' }}>{run.def}</span>{synergyBonus.defBonus > 0 && <span style={{ color: '#50c8e8', fontSize: 7 }}>+{synergyBonus.defBonus}</span>}{' '}
+            ATK <Tc>{effATK(run)}</Tc>{synergyBonus.atkBonus > 0 && <span style={{ color: '#f0c040', fontSize: IFS.xs }}>+{synergyBonus.atkBonus}</span>}{' '}
+            DEF <span style={{ color: '#50c8e8' }}>{run.def}</span>{synergyBonus.defBonus > 0 && <span style={{ color: '#50c8e8', fontSize: IFS.xs }}>+{synergyBonus.defBonus}</span>}{' '}
             🦴<Bc>{run.bE}</Bc> <CivLevelsDisplay run={run} />
           </StatText>
           {tbParts.length > 0 && (
-            <div style={{ fontSize: 10, color: '#aaa', marginTop: 1 }}>🌳 {tbParts.join(' ')}</div>
+            <div style={{ fontSize: IFS.md, color: '#aaa', marginTop: 1 }}>🌳 {tbParts.join(' ')}</div>
           )}
         </div>
       </div>
@@ -72,7 +72,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({ run, popups }) => {
           {activeBuffs.map((b, i) => {
             const def = A_SKILLS.find(s => s.id === b.sid);
             return (
-              <span key={i} style={{ fontSize: 8, color: '#f0c040', background: '#f0c04015', border: '1px solid #f0c04025', padding: '1px 4px', borderRadius: 4 }}>
+              <span key={i} style={{ fontSize: IFS.sm, color: '#f0c040', background: '#f0c04015', border: '1px solid #f0c04025', padding: '2px 6px', borderRadius: 4 }}>
                 {def?.ic} {b.rT}T
               </span>
             );

@@ -3,6 +3,7 @@ import type { RunState, SfxType } from '../types';
 import type { GameAction } from '../hooks';
 import { aliveAllies } from '../game-logic';
 import { StatLine, CivLevelsDisplay, AwakeningBadges, AllyList } from './shared';
+import { IFS } from '../constants/ui';
 import { Screen, SubTitle, Divider, GameButton, GamePanel, StatText, Gc, BiomeBg } from '../styles';
 
 /** カウントダウン秒数 */
@@ -59,7 +60,7 @@ export const PreFinalScreen: React.FC<Props> = ({ run, dispatch, playSfx }) => {
       <Divider />
       <GamePanel style={{ textAlign: 'center', padding: 14 }}>
         <div style={{ fontSize: 15, color: '#f0c040', marginBottom: 10, letterSpacing: 1 }}>最終決戦の準備</div>
-        <StatText style={{ fontSize: 11 }}>
+        <StatText style={{ fontSize: IFS.lg }}>
           <StatLine run={run} /> 会心 <Gc>{(run.cr * 100).toFixed(0)}%</Gc>
         </StatText>
         <StatText>🦴 {run.bE} <CivLevelsDisplay run={run} /> 👥 仲間{aliveA}体</StatText>
@@ -72,13 +73,13 @@ export const PreFinalScreen: React.FC<Props> = ({ run, dispatch, playSfx }) => {
 
       {/* カウントダウン表示 */}
       {countdown > 0 && (
-        <div style={{ fontSize: 13, color: '#f0c040', marginTop: 8, letterSpacing: 1 }}>
+        <div style={{ fontSize: IFS.xl, color: '#f0c040', marginTop: 8, letterSpacing: 1 }}>
           最終戦開始まで…{countdown}
         </div>
       )}
 
       <GameButton
-        style={{ marginTop: 10, minWidth: 190, borderColor: '#f0c04060', color: '#f0c040', fontSize: 13 }}
+        style={{ marginTop: 10, minWidth: 190, borderColor: '#f0c04060', color: '#f0c040', fontSize: IFS.xl }}
         onClick={handleGoNow}
       >
         ⚡ すぐに挑む

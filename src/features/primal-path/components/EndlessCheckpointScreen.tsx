@@ -2,6 +2,7 @@ import React from 'react';
 import type { RunState, SfxType } from '../types';
 import type { GameAction } from '../hooks';
 import { calcEndlessScaleWithAM } from '../game-logic';
+import { IFS } from '../constants/ui';
 import { Screen, SubTitle, Divider, GameButton, GamePanel, RunStatRow, Gc } from '../styles';
 
 interface Props {
@@ -22,14 +23,14 @@ export const EndlessCheckpointScreen: React.FC<Props> = ({ run, dispatch, playSf
       <Divider />
 
       <GamePanel style={{ padding: '10px 12px' }}>
-        <div style={{ fontSize: 10, color: '#f0c040', marginBottom: 4, textAlign: 'center' }}>── 現在の戦績 ──</div>
+        <div style={{ fontSize: IFS.md, color: '#f0c040', marginBottom: 4, textAlign: 'center' }}>── 現在の戦績 ──</div>
         <RunStatRow><span>到達ウェーブ</span><span><Gc>{run.endlessWave}</Gc></span></RunStatRow>
         <RunStatRow><span>撃破数</span><span><Gc>{run.kills}</Gc></span></RunStatRow>
         <RunStatRow><span>獲得骨</span><span><Gc>🦴 {run.bE + run.bb}</Gc></span></RunStatRow>
       </GamePanel>
 
       <GamePanel style={{ padding: '10px 12px' }}>
-        <div style={{ fontSize: 10, color: '#f08050', marginBottom: 4, textAlign: 'center' }}>── 次のウェーブ ──</div>
+        <div style={{ fontSize: IFS.md, color: '#f08050', marginBottom: 4, textAlign: 'center' }}>── 次のウェーブ ──</div>
         <RunStatRow><span>ウェーブ</span><span>{nextWave}</span></RunStatRow>
         <RunStatRow>
           <span>敵強化倍率</span>
@@ -41,13 +42,13 @@ export const EndlessCheckpointScreen: React.FC<Props> = ({ run, dispatch, playSf
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10, alignItems: 'center' }}>
         <GameButton
-          style={{ minWidth: 190, fontSize: 12 }}
+          style={{ minWidth: 190, fontSize: IFS.lg }}
           onClick={() => { playSfx('click'); dispatch({ type: 'ENDLESS_CONTINUE' }); }}
         >
           ⚔️ 続行する
         </GameButton>
         <GameButton
-          style={{ minWidth: 190, fontSize: 11, opacity: 0.85 }}
+          style={{ minWidth: 190, fontSize: IFS.lg, opacity: 0.85 }}
           onClick={() => { playSfx('click'); dispatch({ type: 'ENDLESS_RETIRE' }); }}
         >
           🏠 ここで終了する

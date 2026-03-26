@@ -4,6 +4,7 @@ import type { GameAction } from '../hooks';
 import { BIO, TC, TN, CIV_TYPES, SYNERGY_TAG_INFO } from '../constants';
 import { effATK, simEvo, civLvs, civLv, awkInfo, calcSynergies } from '../game-logic';
 import { ProgressBar, StatPreview, CivBadge, AwakeningBadges, CivLevelsDisplay, StatLine, AffinityBadge, AllyList, SynergyBadges, SpeedControl, renderParticles } from './shared';
+import { IFS } from '../constants/ui';
 import { Screen, SubTitle, EvoCard, GamePanel, GameButton, StatText, SpeedBar, Gc, BiomeBg, WeatherParticles } from '../styles';
 
 interface Props {
@@ -41,7 +42,7 @@ export const EvolutionScreen: React.FC<Props> = ({ run, evoPicks, dispatch, play
         {particles}
       </WeatherParticles>
       <div style={{ fontSize: 16, marginTop: 2 }}>⚡</div>
-      <SubTitle style={{ fontSize: 13 }}>{isMaxEvoReached ? '進化上限' : '進化を選べ'}</SubTitle>
+      <SubTitle style={{ fontSize: IFS.xl }}>{isMaxEvoReached ? '進化上限' : '進化を選べ'}</SubTitle>
       {m && <ProgressBar current={run.cW} max={run.wpb + 1} label={`${m.ic} ${m.nm}`} />}
       <StatText style={{ marginBottom: 2 }}>
         <CivLevelsDisplay run={run} /> <AwakeningBadges awoken={run.awoken} />
@@ -52,7 +53,7 @@ export const EvolutionScreen: React.FC<Props> = ({ run, evoPicks, dispatch, play
         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 3 }}>
           {nxtA.map((a, i) => (
             <span key={i} style={{
-              fontSize: 7, color: a.cl, background: a.cl + '10',
+              fontSize: IFS.xs, color: a.cl, background: a.cl + '10',
               border: `1px solid ${a.cl}30`, padding: '1px 4px', borderRadius: 6,
             }}>
               {a.nm} {a.need}
@@ -67,7 +68,7 @@ export const EvolutionScreen: React.FC<Props> = ({ run, evoPicks, dispatch, play
       {/* maxEvo 到達時: 進化選択肢の代わりにスキップUIを表示 */}
       {isMaxEvoReached && (
         <GamePanel style={{ textAlign: 'center', padding: 12, marginTop: 6 }}>
-          <div style={{ fontSize: 11, color: '#f08050', marginBottom: 6 }}>
+          <div style={{ fontSize: IFS.lg, color: '#f08050', marginBottom: 6 }}>
             進化上限に達しました（{run.evs.length}/{run.maxEvo}）
           </div>
           <GameButton
@@ -86,10 +87,10 @@ export const EvolutionScreen: React.FC<Props> = ({ run, evoPicks, dispatch, play
           <EvoCard key={i} $rare={!!ev.r} onClick={() => handlePick(ev)}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <span style={{ fontSize: 11, color: '#f0c040' }}>{ev.r ? '★ ' : ''}{ev.n}</span>{' '}
-                <span style={{ fontSize: 9, color: '#908870' }}>{ev.d}</span>
+                <span style={{ fontSize: IFS.lg, color: '#f0c040' }}>{ev.r ? '★ ' : ''}{ev.n}</span>{' '}
+                <span style={{ fontSize: IFS.sm, color: '#908870' }}>{ev.d}</span>
                 <span style={{
-                  fontSize: 7, padding: '0 4px', borderRadius: 6, marginLeft: 3,
+                  fontSize: IFS.xs, padding: '0 4px', borderRadius: 6, marginLeft: 3,
                   background: TC[ev.t] + '20', color: TC[ev.t], border: `1px solid ${TC[ev.t]}40`,
                 }}>
                   {TN[ev.t]} Lv{lvUp[ev.t]}
@@ -104,9 +105,9 @@ export const EvolutionScreen: React.FC<Props> = ({ run, evoPicks, dispatch, play
               {sim.cr !== run.cr && (
                 <StatPreview label="会心" current={Math.round(run.cr * 100)} next={Math.round(sim.cr * 100)} max={Math.max(Math.round(sim.cr * 100), 30)} color="#f0c040" />
               )}
-              {ev.e.aHL && <div style={{ fontSize: 7, color: '#50e090', marginTop: 1 }}>💚 仲間HP+{ev.e.aHL}</div>}
-              {ev.e.bb && <div style={{ fontSize: 7, color: '#e0c060', marginTop: 1 }}>🦴 骨+{ev.e.bb}</div>}
-              {ev.e.revA && <div style={{ fontSize: 7, color: '#d060ff', marginTop: 1 }}>✨ 仲間蘇生 HP{ev.e.revA}%</div>}
+              {ev.e.aHL && <div style={{ fontSize: IFS.xs, color: '#50e090', marginTop: 1 }}>💚 仲間HP+{ev.e.aHL}</div>}
+              {ev.e.bb && <div style={{ fontSize: IFS.xs, color: '#e0c060', marginTop: 1 }}>🦴 骨+{ev.e.bb}</div>}
+              {ev.e.revA && <div style={{ fontSize: IFS.xs, color: '#d060ff', marginTop: 1 }}>✨ 仲間蘇生 HP{ev.e.revA}%</div>}
               {ev.tags && ev.tags.length > 0 && (
                 <div style={{ display: 'flex', gap: 3, marginTop: 2 }}>
                   {ev.tags.map(tag => {
@@ -117,7 +118,7 @@ export const EvolutionScreen: React.FC<Props> = ({ run, evoPicks, dispatch, play
                     const isNew = nextCount === 2;
                     return (
                       <span key={tag} style={{
-                        fontSize: 7, color: info.cl, padding: '0 3px', borderRadius: 4,
+                        fontSize: IFS.xs, color: info.cl, padding: '0 3px', borderRadius: 4,
                         background: isNew ? info.cl + '30' : info.cl + '10',
                         border: `1px solid ${info.cl}${isNew ? '60' : '25'}`,
                       }}>
@@ -141,7 +142,7 @@ export const EvolutionScreen: React.FC<Props> = ({ run, evoPicks, dispatch, play
             nxtLvs.forEach(nl => {
               if (lv < nl && lv + 1 === nl) {
                 hints.push(
-                  <span key={`${t}-${nl}`} style={{ fontSize: 7, color: TC[t] }}>{TN[t]}Lv{nl}で仲間加入 </span>
+                  <span key={`${t}-${nl}`} style={{ fontSize: IFS.xs, color: TC[t] }}>{TN[t]}Lv{nl}で仲間加入 </span>
                 );
               }
             });

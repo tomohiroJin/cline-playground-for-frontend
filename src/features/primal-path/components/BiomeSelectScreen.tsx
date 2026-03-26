@@ -4,6 +4,7 @@ import type { GameAction } from '../hooks';
 import { BIO } from '../constants';
 import { civLvs, biomeBonus, calcEnvDmg } from '../game-logic';
 import { ProgressBar } from './shared';
+import { IFS } from '../constants/ui';
 import { Screen, SubTitle, Divider, GameButton } from '../styles';
 
 interface Props {
@@ -38,11 +39,11 @@ export const BiomeSelectScreen: React.FC<Props> = ({ run, options, dispatch, pla
           return (
             <GameButton key={b} style={{ width: 140, padding: '14px 10px' }} onClick={() => handlePick(b)}>
               <div style={{ fontSize: 28 }}>{m.ic}</div>
-              <div style={{ fontSize: 13, color: '#f0c040', margin: '4px 0' }}>{m.nm}</div>
-              <div style={{ fontSize: 9, color: '#605848' }}>{m.ds}</div>
-              {afn > 1 && <div style={{ fontSize: 8, color: '#50e090', marginTop: 3 }}>✦ 相性◎ ATK×{afn}</div>}
+              <div style={{ fontSize: IFS.xl, color: '#f0c040', margin: '4px 0' }}>{m.nm}</div>
+              <div style={{ fontSize: IFS.sm, color: '#605848' }}>{m.ds}</div>
+              {afn > 1 && <div style={{ fontSize: IFS.sm, color: '#50e090', marginTop: 3 }}>✦ 相性◎ ATK×{afn}</div>}
               {envD > 0 && (
-                <div style={{ fontSize: 8, color: envD >= 4 ? '#f05050' : '#e0a040', marginTop: 2 }}>
+                <div style={{ fontSize: IFS.sm, color: envD >= 4 ? '#f05050' : '#e0a040', marginTop: 2 }}>
                   {b === 'glacier' ? '❄' : '🌋'} 毎T -{envD}
                 </div>
               )}

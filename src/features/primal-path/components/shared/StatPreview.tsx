@@ -3,6 +3,7 @@
  * 進化選択時のステータス変化プレビュー表示
  */
 import React from 'react';
+import { IFS } from '../../constants/ui';
 
 export interface StatPreviewProps {
   label: string;
@@ -22,13 +23,13 @@ export const StatPreview: React.FC<StatPreviewProps> = ({ label, current, next, 
   const deltaColor = next > current ? '#50e090' : next < current ? '#f05050' : 'transparent';
 
   return (
-    <div style={{ display: 'flex', gap: 3, alignItems: 'center', margin: '1px 0', fontSize: 8 }}>
+    <div style={{ display: 'flex', gap: 3, alignItems: 'center', margin: '1px 0', fontSize: IFS.sm }}>
       <div style={{ width: 22, color: '#605848', textAlign: 'right', flexShrink: 0 }}>{label}</div>
       <div style={{ flex: 1, height: 5, background: '#1a1a22', borderRadius: 3, overflow: 'hidden', position: 'relative' }}>
         <div style={{ height: '100%', borderRadius: 3, position: 'absolute', top: 0, left: 0, transition: 'width .2s', width: `${baseW}%`, background: color }} />
         <div style={{ height: '100%', borderRadius: 3, position: 'absolute', top: 0, left: `${deltaStart}%`, width: `${deltaW}%`, background: deltaColor, opacity: 0.7 }} />
       </div>
-      <div style={{ minWidth: 52, color: '#908870', fontSize: 8, flexShrink: 0, textAlign: 'right' }}>
+      <div style={{ minWidth: 52, color: '#908870', fontSize: IFS.sm, flexShrink: 0, textAlign: 'right' }}>
         {next}{' '}
         {diff > 0 ? <span style={{ color: '#50e090' }}>+{diff}</span>
           : diff < 0 ? <span style={{ color: '#f05050' }}>{diff}</span>

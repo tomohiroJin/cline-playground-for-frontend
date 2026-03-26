@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import type { AggregateStats, SaveData, SfxType, ChallengeDef } from '../types';
 import type { GameAction } from '../hooks';
 import { CHALLENGES, DIFFS } from '../constants';
+import { IFS } from '../constants/ui';
 import { Screen, SubTitle, Divider, GameButton, GamePanel, EvoCard, Xc } from '../styles';
 
 interface Props {
@@ -25,7 +26,7 @@ export const ChallengeScreen: React.FC<Props> = ({ aggregate, save, dispatch, pl
     return (
       <Screen $center>
         <SubTitle>⚔️ {selectedChallenge.name}</SubTitle>
-        <div style={{ fontSize: 9, color: '#908870', marginBottom: 4 }}>
+        <div style={{ fontSize: IFS.sm, color: '#908870', marginBottom: 4 }}>
           難易度を選択してください
         </div>
         <Divider />
@@ -54,14 +55,14 @@ export const ChallengeScreen: React.FC<Props> = ({ aggregate, save, dispatch, pl
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ fontSize: 16 }}>{dd.ic}</span>
                   <div>
-                    <div style={{ fontSize: 11, color: isSelected ? '#f0c040' : '#c0a880' }}>
+                    <div style={{ fontSize: IFS.lg, color: isSelected ? '#f0c040' : '#c0a880' }}>
                       {dd.n}
                     </div>
-                    <div style={{ fontSize: 8, color: '#908870' }}>{dd.d}</div>
+                    <div style={{ fontSize: IFS.sm, color: '#908870' }}>{dd.d}</div>
                   </div>
                 </div>
                 {!isUnlocked && (
-                  <div style={{ fontSize: 8, color: '#605848', marginTop: 2 }}>
+                  <div style={{ fontSize: IFS.sm, color: '#605848', marginTop: 2 }}>
                     前の難易度をクリアして解放
                   </div>
                 )}
@@ -92,7 +93,7 @@ export const ChallengeScreen: React.FC<Props> = ({ aggregate, save, dispatch, pl
   return (
     <Screen $center>
       <SubTitle>⚔️ チャレンジモード</SubTitle>
-      <div style={{ fontSize: 9, color: '#908870', marginBottom: 4 }}>
+      <div style={{ fontSize: IFS.sm, color: '#908870', marginBottom: 4 }}>
         特殊なルールで腕試し
       </div>
       <Divider />
@@ -107,16 +108,16 @@ export const ChallengeScreen: React.FC<Props> = ({ aggregate, save, dispatch, pl
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                 <span style={{ fontSize: 18 }}>{ch.icon}</span>
                 <div>
-                  <div style={{ fontSize: 12, color: '#f0c040' }}>
+                  <div style={{ fontSize: IFS.lg, color: '#f0c040' }}>
                     {ch.name}
-                    {isCleared && <span style={{ marginLeft: 6, fontSize: 10, color: '#50e090' }}>✅</span>}
+                    {isCleared && <span style={{ marginLeft: 6, fontSize: IFS.md, color: '#50e090' }}>✅</span>}
                   </div>
                 </div>
               </div>
-              <div style={{ fontSize: 9, color: '#a89878', lineHeight: 1.5 }}>
+              <div style={{ fontSize: IFS.sm, color: '#a89878', lineHeight: 1.5 }}>
                 {ch.description}
               </div>
-              <div style={{ fontSize: 8, color: '#605848', marginTop: 4 }}>
+              <div style={{ fontSize: IFS.sm, color: '#605848', marginTop: 4 }}>
                 {ch.modifiers.map((m, i) => {
                   switch (m.type) {
                     case 'hp_multiplier':

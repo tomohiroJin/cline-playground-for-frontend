@@ -6,6 +6,7 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import type { RunState, BiomeId, SfxType, TickEvent, ASkillId } from '../types';
 import type { GameAction } from '../hooks';
 import { BIO, A_SKILLS } from '../constants';
+import { IFS } from '../constants/ui';
 import { calcAvlSkills, applySkill } from '../game-logic';
 import { ProgressBar, SpeedControl, renderParticles } from './shared';
 import { BattleLog } from './battle/BattleLog';
@@ -112,7 +113,7 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
 
         <SpeedBar>
           <SpeedControl battleSpd={battleSpd} dispatch={dispatch} />
-          <span style={{ fontSize: 12, color: '#403828', marginLeft: 4 }}>T{run.turn} DPS:{wDps}</span>
+          <span style={{ fontSize: IFS.lg, color: '#403828', marginLeft: 4 }}>T{run.turn} DPS:{wDps}</span>
           <SurrenderBtn onClick={() => {
             if (window.confirm('降伏しますか？骨は半分になります。')) dispatch({ type: 'SURRENDER' });
           }}>降伏</SurrenderBtn>

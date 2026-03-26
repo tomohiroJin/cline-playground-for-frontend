@@ -267,11 +267,12 @@ export const EvoCard = styled.button<{ $rare?: boolean }>`
 export const TreeNodeBox = styled.div<{ $bought?: boolean; $locked?: boolean; $canBuy?: boolean }>`
   background: linear-gradient(180deg, #14141e, #0e0e16);
   border: 1px solid #262636;
-  padding: 5px 6px;
+  padding: 6px 8px;
   font-size: ${FONT_SIZES.treeNode}px;
   text-align: center;
-  min-width: 84px;
+  min-width: 110px;
   border-radius: 3px;
+  overflow-wrap: break-word;
   cursor: pointer;
   transition: all 0.12s;
 
@@ -366,11 +367,14 @@ export const SurrenderBtn = styled.button`
 export const AllyBadge = styled.div<{ $dead?: boolean }>`
   background: #0c0c14;
   border: 1px solid #262636;
-  padding: 3px 6px;
+  padding: 4px 8px;
   font-size: ${FONT_SIZES.allyBadge}px;
   text-align: center;
-  min-width: 62px;
+  min-width: 80px;
   border-radius: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 
   ${p => p.$dead && css`
     opacity: 0.2;
@@ -536,7 +540,7 @@ export const SkillBtn = styled.button<{ $off?: boolean }>`
   border-radius: 4px;
   font-family: inherit;
   transition: all 0.12s;
-  min-width: 96px;
+  min-width: 120px;
   min-height: 44px;
   animation: ${skillPulse} 2s ease-in-out infinite;
 

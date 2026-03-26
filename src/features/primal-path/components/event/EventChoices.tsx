@@ -36,7 +36,7 @@ const ChoiceBtn = styled.button<{ $risk: string; $disabled?: boolean }>`
   margin: 4px 0;
   cursor: pointer;
   font-family: inherit;
-  font-size: 11px;
+  font-size: 18px;
   text-align: left;
   border-radius: 3px;
   transition: all 0.15s;
@@ -55,24 +55,24 @@ const ChoiceBtn = styled.button<{ $risk: string; $disabled?: boolean }>`
 `;
 
 const ChoiceLabel = styled.div`
-  font-size: 12px;
+  font-size: 18px;
   font-weight: bold;
   margin-bottom: 2px;
 `;
 
 const ChoiceHint = styled.div`
-  font-size: 9px;
+  font-size: 14px;
   color: #908870;
 `;
 
 const CostTag = styled.span`
-  font-size: 9px;
+  font-size: 14px;
   color: #e0c060;
   margin-left: 6px;
 `;
 
 const EffectHintBadge = styled.span<{ $color: string }>`
-  font-size: 9px;
+  font-size: 14px;
   color: ${p => p.$color};
   margin-left: 6px;
   opacity: 0.85;

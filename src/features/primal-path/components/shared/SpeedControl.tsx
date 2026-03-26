@@ -5,6 +5,7 @@
 import React from 'react';
 import type { GameAction } from '../../hooks';
 import { SPEED_OPTS } from '../../constants';
+import { IFS } from '../../constants/ui';
 import { SpeedBtn } from '../../styles';
 
 export interface SpeedControlProps {
@@ -14,7 +15,7 @@ export interface SpeedControlProps {
 
 export const SpeedControl: React.FC<SpeedControlProps> = ({ battleSpd, dispatch }) => (
   <>
-    <span style={{ fontSize: 8, color: '#403828' }}>速度</span>
+    <span style={{ fontSize: IFS.sm, color: '#403828' }}>速度</span>
     {SPEED_OPTS.map(([label, spd]) => (
       <SpeedBtn key={spd} $active={battleSpd === spd}
         onClick={() => dispatch({ type: 'CHANGE_SPEED', speed: spd })}>

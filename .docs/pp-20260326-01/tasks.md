@@ -21,7 +21,7 @@
 - [x] ビルドが通ることを確認
 - [ ] デスクトップ表示の目視確認（基準サイズでの表示）
 
-## Phase 2: フォントサイズの拡大
+## Phase 2: フォントサイズの拡大（styled-components）
 
 ### 2-1. 大サイズフォント
 
@@ -45,10 +45,68 @@
 - [x] `AllyBadge` のフォントサイズを 9px → 13px
 - [x] `SurrenderBtn` のフォントサイズを 8px → 12px
 
-### 2-4. フォント変更の動作確認
+## Phase 2b: インラインフォントサイズの拡大（146 箇所）
 
-- [ ] 全画面のテキスト表示確認（はみ出し、改行崩れがないか）
-- [ ] ボタンラベルの収まり確認
+※ 詳細な方針・はみ出し対策は `plan-phase2-fix.md` を参照
+
+### 2b-1. 定数追加 + テスト
+
+- [x] `constants/ui.ts` に `IFS` 定数マップ（xs=12, sm=14, md=16, lg=18, xl=20）を追加
+- [x] `IFS` の全値が 12px 以上であるテストを作成（7件パス）
+
+### 2b-2. styles.ts はみ出し防止 + レイアウト調整
+
+- [x] `AllyBadge`: `min-width` 62→80px、`padding` 3px 6px→4px 8px、overflow+ellipsis 追加
+- [x] `TreeNodeBox`: `min-width` 84→110px、`padding` 5px 6px→6px 8px、overflow-wrap: break-word 追加
+- [x] `SkillBtn`: `min-width` 96→120px
+
+### 2b-3. 大量修正（10+ 箇所）— フォント + はみ出し対策を同時実施
+
+- [x] `HowToPlayScreen.tsx` — 19 箇所
+- [x] `EvolutionScreen.tsx` — 11 箇所
+- [x] `TreeScreen.tsx` — 7 箇所 + TreeNodeBox レイアウト確認（flex-wrap 設定済み）
+
+### 2b-4. 中規模修正（4〜9 箇所）— フォント + はみ出し対策を同時実施
+
+- [x] `ChallengeScreen.tsx` — 9 箇所
+- [x] `GameOverScreen.tsx` — 8 箇所
+- [x] `PlayerPanel.tsx` — 7 箇所 + バフ・バッジ padding 拡大
+- [x] `AllyReviveScreen.tsx` — 7 箇所
+- [x] `StatsScreen.tsx` — 5 箇所
+- [x] `DifficultyScreen.tsx` — 5 箇所
+- [x] `AchievementScreen.tsx` — 5 箇所
+- [x] `BiomeSelectScreen.tsx` — 5 箇所
+- [x] `TitleScreen.tsx` — 4 箇所
+- [x] `AwakeningScreen.tsx` — 4 箇所
+- [x] `EndlessCheckpointScreen.tsx` — 4 箇所
+
+### 2b-5. 小規模修正（1〜3 箇所）— フォント + はみ出し対策を同時実施
+
+- [x] `BattleScreen.tsx` — 1 箇所（12→`IFS.lg`=18px）
+- [x] `EnemyPanel.tsx` — 1 箇所 + 敵名 overflow+ellipsis 対策
+- [x] `PreFinalScreen.tsx` — 3 箇所
+- [x] `contracts.tsx` — 2 箇所
+- [x] `AllyList.tsx` — 2 箇所
+- [x] `HpBar.tsx` — 1 箇所
+- [x] `AffinityBadge.tsx` — 2 箇所 + padding 拡大
+- [x] `CivBadge.tsx` — 1 箇所 + padding 拡大
+- [x] `SynergyBadges.tsx` — 1 箇所 + padding 拡大
+- [x] `StatPreview.tsx` — 2 箇所
+- [x] `SpeedControl.tsx` — 1 箇所
+- [x] `AwakeningBadges.tsx` — 1 箇所 + padding 拡大
+- [x] `ProgressBar.tsx` — 1 箇所 + overflow+ellipsis 対策
+
+### 2b-6. styled-components 修正（CSS-in-JS）
+
+- [x] `EventChoices.tsx` — 5 箇所（ChoiceBtn, ChoiceLabel, ChoiceHint, CostTag, EffectHintBadge）
+- [x] `EventCard.tsx` — 2 箇所（EventDesc, SituationText）
+
+### 2b-7. 最終検証
+
+- [x] ビルド成功確認
+- [x] テスト全件パス確認（598 スイート / 7481 テスト）
+- [x] `grep` でリテラル数値の fontSize が 14 未満で残存していないことを確認（0 件）
+- [x] コードレビュー + リファクタリング
 
 ## Phase 3: スプライトの拡大とクォリティアップ
 

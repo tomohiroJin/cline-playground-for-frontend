@@ -4,6 +4,7 @@
  * Labyrinth Echo contracts.tsx パターン準拠。
  */
 import { Component, type ReactNode } from 'react';
+import { IFS } from './constants/ui';
 
 /** 不変条件アサーション */
 export function invariant(cond: unknown, msg: string): asserts cond {
@@ -46,13 +47,13 @@ export class ErrorBoundary extends Component<EBProps, EBState> {
         }}>
           <h2 style={{ marginBottom: 16, letterSpacing: 4 }}>エラーが発生しました</h2>
           <p style={{
-            color: '#808068', fontSize: 13, marginBottom: 24,
+            color: '#808068', fontSize: IFS.xl, marginBottom: 24,
             textAlign: 'center', maxWidth: 400, lineHeight: 1.8,
           }}>
             ゲームデータの読み込み中にエラーが発生しました。<br />ページを再読み込みしてください。
           </p>
           <pre style={{
-            fontSize: 11, color: '#706080', background: 'rgba(20,20,30,.8)',
+            fontSize: IFS.lg, color: '#706080', background: 'rgba(20,20,30,.8)',
             padding: 16, borderRadius: 8, maxWidth: '90vw', overflow: 'auto', marginBottom: 24,
           }}>
             {this.state.error.message}
