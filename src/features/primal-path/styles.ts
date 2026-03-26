@@ -104,8 +104,8 @@ export const ScaleWrapper = styled.div<{ $scale: number }>`
 `;
 
 export const GameShell = styled.div<{ $scale?: number }>`
-  width: 800px;
-  height: 1200px;
+  width: ${GAME_WIDTH}px;
+  height: ${GAME_HEIGHT}px;
   background: #12121e;
   position: relative;
   overflow: hidden;

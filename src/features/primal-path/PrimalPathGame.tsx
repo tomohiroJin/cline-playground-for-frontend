@@ -156,126 +156,126 @@ function GameInner() {
     <GameContainer>
       <ScaleWrapper $scale={scale}>
         <GameShell $scale={scale}>
-        <Overlay overlay={overlay} />
+          <Overlay overlay={overlay} />
 
-        {phase === 'title' && (
-          <TitleScreen save={save} dispatch={dispatch} playSfx={playSfx} />
-        )}
+          {phase === 'title' && (
+            <TitleScreen save={save} dispatch={dispatch} playSfx={playSfx} />
+          )}
 
-        {phase === 'diff' && (
-          <DifficultyScreen save={save} dispatch={dispatch} playSfx={playSfx} onStart={handleStartRun} />
-        )}
+          {phase === 'diff' && (
+            <DifficultyScreen save={save} dispatch={dispatch} playSfx={playSfx} onStart={handleStartRun} />
+          )}
 
-        {phase === 'how' && (
-          <HowToPlayScreen dispatch={dispatch} playSfx={playSfx} />
-        )}
+          {phase === 'how' && (
+            <HowToPlayScreen dispatch={dispatch} playSfx={playSfx} />
+          )}
 
-        {phase === 'tree' && (
-          <TreeScreen save={save} dispatch={dispatch} playSfx={playSfx} showOverlay={showOverlay} />
-        )}
+          {phase === 'tree' && (
+            <TreeScreen save={save} dispatch={dispatch} playSfx={playSfx} showOverlay={showOverlay} />
+          )}
 
-        {phase === 'biome' && run && (
-          <BiomeSelectScreen
-            run={run}
-            options={pickBiomeAuto(run).options}
-            dispatch={dispatch}
-            playSfx={playSfx}
-            showOverlay={showOverlay}
-          />
-        )}
+          {phase === 'biome' && run && (
+            <BiomeSelectScreen
+              run={run}
+              options={pickBiomeAuto(run).options}
+              dispatch={dispatch}
+              playSfx={playSfx}
+              showOverlay={showOverlay}
+            />
+          )}
 
-        {phase === 'evo' && run && (
-          <EvolutionScreen run={run} evoPicks={evoPicks} dispatch={dispatch} playSfx={playSfx} battleSpd={battleSpd} />
-        )}
+          {phase === 'evo' && run && (
+            <EvolutionScreen run={run} evoPicks={evoPicks} dispatch={dispatch} playSfx={playSfx} battleSpd={battleSpd} />
+          )}
 
-        {phase === 'event' && run && currentEvent && (
-          <EventScreen
-            event={currentEvent}
-            run={run}
-            onChoose={async (choice) => {
-              playSfx('event');
-              // 事前計算で結果を確定し、正確なフィードバックを表示
-              const { nextRun, evoName } = computeEventResult(run, choice);
-              const { icon, text } = formatEventResult(choice.effect, choice.cost, evoName);
-              await showOverlay(icon, text, 1200);
-              dispatch({ type: 'APPLY_EVENT_RESULT', nextRun });
-            }}
-            playSfx={playSfx}
-          />
-        )}
+          {phase === 'event' && run && currentEvent && (
+            <EventScreen
+              event={currentEvent}
+              run={run}
+              onChoose={async (choice) => {
+                playSfx('event');
+                // 事前計算で結果を確定し、正確なフィードバックを表示
+                const { nextRun, evoName } = computeEventResult(run, choice);
+                const { icon, text } = formatEventResult(choice.effect, choice.cost, evoName);
+                await showOverlay(icon, text, 1200);
+                dispatch({ type: 'APPLY_EVENT_RESULT', nextRun });
+              }}
+              playSfx={playSfx}
+            />
+          )}
 
-        {phase === 'battle' && run && (
-          <BattleScreen
-            run={run}
-            finalMode={finalMode}
-            battleSpd={battleSpd}
-            dispatch={dispatch}
-            playSfx={playSfx}
-            tickEvents={tickEvents}
-          />
-        )}
+          {phase === 'battle' && run && (
+            <BattleScreen
+              run={run}
+              finalMode={finalMode}
+              battleSpd={battleSpd}
+              dispatch={dispatch}
+              playSfx={playSfx}
+              tickEvents={tickEvents}
+            />
+          )}
 
-        {phase === 'awakening' && run && pendingAwk && (
-          <AwakeningScreen
-            run={run}
-            awkId={pendingAwk.id}
-            awkType={pendingAwk.t}
-            awkTier={pendingAwk.tier}
-            dispatch={dispatch}
-            playSfx={playSfx}
-            showOverlay={showOverlay}
-          />
-        )}
+          {phase === 'awakening' && run && pendingAwk && (
+            <AwakeningScreen
+              run={run}
+              awkId={pendingAwk.id}
+              awkType={pendingAwk.t}
+              awkTier={pendingAwk.tier}
+              dispatch={dispatch}
+              playSfx={playSfx}
+              showOverlay={showOverlay}
+            />
+          )}
 
-        {phase === 'endless_checkpoint' && run && (
-          <EndlessCheckpointScreen run={run} dispatch={dispatch} playSfx={playSfx} />
-        )}
+          {phase === 'endless_checkpoint' && run && (
+            <EndlessCheckpointScreen run={run} dispatch={dispatch} playSfx={playSfx} />
+          )}
 
-        {phase === 'prefinal' && run && (
-          <PreFinalScreen run={run} dispatch={dispatch} playSfx={playSfx} />
-        )}
+          {phase === 'prefinal' && run && (
+            <PreFinalScreen run={run} dispatch={dispatch} playSfx={playSfx} />
+          )}
 
-        {phase === 'ally_revive' && run && (
-          <AllyReviveScreen run={run} dispatch={dispatch} playSfx={playSfx} showOverlay={showOverlay} />
-        )}
+          {phase === 'ally_revive' && run && (
+            <AllyReviveScreen run={run} dispatch={dispatch} playSfx={playSfx} showOverlay={showOverlay} />
+          )}
 
-        {phase === 'over' && run && gameResult !== null && (
-          <GameOverScreen
-            run={run}
-            won={gameResult}
-            save={save}
-            dispatch={dispatch}
-            playSfx={playSfx}
-            newAchievements={state.newAchievements}
-          />
-        )}
+          {phase === 'over' && run && gameResult !== null && (
+            <GameOverScreen
+              run={run}
+              won={gameResult}
+              save={save}
+              dispatch={dispatch}
+              playSfx={playSfx}
+              newAchievements={state.newAchievements}
+            />
+          )}
 
-        {phase === 'stats' && (
-          <StatsScreen
-            runStats={state.runStats}
-            aggregate={state.aggregate}
-            dispatch={dispatch}
-            playSfx={playSfx}
-          />
-        )}
+          {phase === 'stats' && (
+            <StatsScreen
+              runStats={state.runStats}
+              aggregate={state.aggregate}
+              dispatch={dispatch}
+              playSfx={playSfx}
+            />
+          )}
 
-        {phase === 'achievements' && (
-          <AchievementScreen
-            achievementStates={state.achievementStates}
-            dispatch={dispatch}
-            playSfx={playSfx}
-          />
-        )}
+          {phase === 'achievements' && (
+            <AchievementScreen
+              achievementStates={state.achievementStates}
+              dispatch={dispatch}
+              playSfx={playSfx}
+            />
+          )}
 
-        {phase === 'challenge' && (
-          <ChallengeScreen
-            aggregate={state.aggregate}
-            save={save}
-            dispatch={dispatch}
-            playSfx={playSfx}
-            onStartChallenge={handleStartChallenge}
-          />
-        )}
+          {phase === 'challenge' && (
+            <ChallengeScreen
+              aggregate={state.aggregate}
+              save={save}
+              dispatch={dispatch}
+              playSfx={playSfx}
+              onStartChallenge={handleStartChallenge}
+            />
+          )}
         </GameShell>
       </ScaleWrapper>
     </GameContainer>
