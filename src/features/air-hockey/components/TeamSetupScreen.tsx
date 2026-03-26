@@ -4,7 +4,7 @@
  */
 import React, { useState } from 'react';
 import { FieldConfig } from '../core/types';
-import { FIELDS, WIN_SCORE_OPTIONS } from '../core/config';
+import { WIN_SCORE_OPTIONS } from '../core/config';
 import {
   MenuCard,
   OptionContainer,

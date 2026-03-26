@@ -39,6 +39,7 @@ import { useResultProcessing } from './hooks/useResultProcessing';
 import { useAudioManager } from './hooks/useAudioManager';
 import { TitleScreen } from '../components/TitleScreen';
 import { TeamSetupScreen } from '../components/TeamSetupScreen';
+import type { TeamSetupConfig } from '../components/TeamSetupScreen';
 import { Scoreboard } from '../components/Scoreboard';
 import { Field } from '../components/Field';
 import { ResultScreen } from '../components/ResultScreen';
@@ -258,7 +259,7 @@ const AirHockeyGame: React.FC = () => {
   const handlePairMatchClick = useCallback(() => {
     navigateTo('teamSetup');
   }, [navigateTo]);
-  const handlePairMatchStart = useCallback((config: import('../components/TeamSetupScreen').TeamSetupConfig) => {
+  const handlePairMatchStart = useCallback((config: TeamSetupConfig) => {
     mode.setGameMode('2v2-local');
     mode.setField(config.field);
     mode.setWinScore(config.winScore);
