@@ -103,6 +103,14 @@ function positionKey(slot: PlayerSlot): PosKey {
   return `${slot}Position`;
 }
 
+/** 全スロット一覧 */
+const ALL_SLOTS: readonly PlayerSlot[] = ['player1', 'player2', 'player3', 'player4'];
+
+/** タッチ ID に対応するスロットを検索する */
+function findSlotByTouchId(state: MultiTouchState, touchId: number): PlayerSlot | undefined {
+  return ALL_SLOTS.find(slot => state[touchIdKey(slot)] === touchId);
+}
+
 /**
  * タッチ開始を処理する
  * @param is4Zone true=4分割ゾーン（2v2）、false=上下2分割（2P）。デフォルト false。
@@ -135,16 +143,12 @@ export function processTouchMove(
   pos: CanvasPosition,
   constants: GameConstants
 ): MultiTouchState {
-  const slots: PlayerSlot[] = ['player1', 'player2', 'player3', 'player4'];
-  for (const slot of slots) {
-    if (touchId === state[touchIdKey(slot)]) {
-      return {
-        ...state,
-        [positionKey(slot)]: clampToPlayerZone(pos, slot, constants),
-      };
-    }
-  }
-  return state;
+  const slot = findSlotByTouchId(state, touchId);
+  if (!slot) return state;
+  return {
+    ...state,
+    [positionKey(slot)]: clampToPlayerZone(pos, slot, constants),
+  };
 }
 
 /** タッチ終了を処理する */
@@ -152,17 +156,13 @@ export function processTouchEnd(
   state: MultiTouchState,
   touchId: number
 ): MultiTouchState {
-  const slots: PlayerSlot[] = ['player1', 'player2', 'player3', 'player4'];
-  for (const slot of slots) {
-    if (touchId === state[touchIdKey(slot)]) {
-      return {
-        ...state,
-        [touchIdKey(slot)]: undefined,
-        [positionKey(slot)]: undefined,
-      };
-    }
-  }
-  return state;
+  const slot = findSlotByTouchId(state, touchId);
+  if (!slot) return state;
+  return {
+    ...state,
+    [touchIdKey(slot)]: undefined,
+    [positionKey(slot)]: undefined,
+  };
 }
 
 /** プレイヤーの現在位置を取得する */

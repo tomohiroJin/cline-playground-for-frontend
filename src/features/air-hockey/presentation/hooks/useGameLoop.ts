@@ -12,7 +12,7 @@ import { Physics } from '../../core/physics';
 import { CpuAI } from '../../core/ai';
 import { AI_BEHAVIOR_PRESETS, type AiBehaviorConfig } from '../../core/story-balance';
 import { EntityFactory, moveMalletTo, resolveMalletPuckOverlap } from '../../core/entities';
-import { getAllMallets } from '../../core/pair-match-logic';
+import { getAllMallets, updateExtraMalletAI } from '../../core/pair-match-logic';
 import { applyItemEffect } from '../../core/items';
 import { CONSTANTS, DEFAULT_PLAYER_MALLET_COLOR, DEFAULT_CPU_MALLET_COLOR } from '../../core/constants';
 import { ITEMS } from '../../core/config';
@@ -132,6 +132,11 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
     const consts = CONSTANTS;
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
     const { MALLET: MR, PUCK: BR, ITEM: IR } = consts.SIZES;
+
+    // パーティクル生成の定数
+    const OBSTACLE_PARTICLE_COUNT = 12;
+    const SHIELD_PARTICLE_COUNT = 8;
+    const GOAL_PARTICLE_COUNT = 20;
 
     const sound = getSound();
 
@@ -284,7 +289,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
             if (obState.hp <= 0) {
               obState.destroyed = true;
               obState.destroyedAt = Date.now();
-              for (let pi = 0; pi < 12; pi++) {
+              for (let pi = 0; pi < OBSTACLE_PARTICLE_COUNT; pi++) {
                 game.particles.push({
                   x: ob.x + randomRange(-5, 5),
                   y: ob.y + randomRange(-5, 5),
@@ -499,45 +504,36 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       }
 
       // 2v2 モード: ally（P2）と enemy（P4）の CPU AI 制御
-      // TODO(2026-03-26): CpuAI.updateWithBehavior がマレット単体を受け取る形にリファクタリングすれば
-      // 毎フレームの GameState スプレッドコピー（ally/enemy 分の2回）を削減できる
       if (is2v2Mode) {
         const scoreDiff2v2 = Math.max(0, scoreRef.current.p - scoreRef.current.c);
         const effectiveAiConfig2v2 = aiConfig ?? AI_BEHAVIOR_PRESETS[diff];
+        const updateFn = CpuAI.updateWithBehavior;
 
-        // P2（ally）: AI で制御（cpu フィールドに ally を設定し、AI 状態も引き継ぐ）
         if (game.ally) {
-          const allyAsGame = {
-            ...game,
-            cpu: game.ally,
-            cpuTarget: game.allyTarget ?? null,
-            cpuTargetTime: game.allyTargetTime ?? 0,
-            cpuStuckTimer: game.allyStuckTimer ?? 0,
-          };
-          const allyUpdate = CpuAI.updateWithBehavior(allyAsGame, effectiveAiConfig2v2, now, consts, scoreDiff2v2);
-          if (allyUpdate) {
-            game.ally = allyUpdate.cpu;
-            game.allyTarget = allyUpdate.cpuTarget;
-            game.allyTargetTime = allyUpdate.cpuTargetTime;
-            game.allyStuckTimer = allyUpdate.cpuStuckTimer;
+          const result = updateExtraMalletAI(
+            game, game.ally,
+            { target: game.allyTarget ?? null, targetTime: game.allyTargetTime ?? 0, stuckTimer: game.allyStuckTimer ?? 0 },
+            updateFn, effectiveAiConfig2v2, now, consts, scoreDiff2v2
+          );
+          if (result) {
+            game.ally = result.mallet;
+            game.allyTarget = result.aiState.target;
+            game.allyTargetTime = result.aiState.targetTime;
+            game.allyStuckTimer = result.aiState.stuckTimer;
           }
         }
 
-        // P4（enemy）: AI で制御
         if (game.enemy) {
-          const enemyAsGame = {
-            ...game,
-            cpu: game.enemy,
-            cpuTarget: game.enemyTarget ?? null,
-            cpuTargetTime: game.enemyTargetTime ?? 0,
-            cpuStuckTimer: game.enemyStuckTimer ?? 0,
-          };
-          const enemyUpdate = CpuAI.updateWithBehavior(enemyAsGame, effectiveAiConfig2v2, now, consts, scoreDiff2v2);
-          if (enemyUpdate) {
-            game.enemy = enemyUpdate.cpu;
-            game.enemyTarget = enemyUpdate.cpuTarget;
-            game.enemyTargetTime = enemyUpdate.cpuTargetTime;
-            game.enemyStuckTimer = enemyUpdate.cpuStuckTimer;
+          const result = updateExtraMalletAI(
+            game, game.enemy,
+            { target: game.enemyTarget ?? null, targetTime: game.enemyTargetTime ?? 0, stuckTimer: game.enemyStuckTimer ?? 0 },
+            updateFn, effectiveAiConfig2v2, now, consts, scoreDiff2v2
+          );
+          if (result) {
+            game.enemy = result.mallet;
+            game.enemyTarget = result.aiState.target;
+            game.enemyTargetTime = result.aiState.targetTime;
+            game.enemyStuckTimer = result.aiState.stuckTimer;
           }
         }
       }
@@ -655,10 +651,10 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
             }
           }
         };
-        applyMagnet(game.player, game.effects.player);
-        applyMagnet(game.cpu, game.effects.cpu);
-        if (game.ally && game.effects.ally) applyMagnet(game.ally, game.effects.ally);
-        if (game.enemy && game.effects.enemy) applyMagnet(game.enemy, game.effects.enemy);
+        for (const { mallet: m, side } of getAllMallets(game)) {
+          const eff = game.effects[side];
+          if (eff) applyMagnet(m, eff);
+        }
 
         if (!puck.visible) {
           puck.invisibleCount--;
@@ -687,7 +683,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
               puck.vy = Math.abs(puck.vy) * 0.8;
               puck.y = 15;
               game.pucks[i] = puck;
-              for (let pi = 0; pi < 8; pi++) {
+              for (let pi = 0; pi < SHIELD_PARTICLE_COUNT; pi++) {
                 game.particles.push({
                   x: puck.x + randomRange(-10, 10), y: 8,
                   vx: randomRange(-2, 2), vy: randomRange(1, 3),
@@ -712,7 +708,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
               puck.vy = -Math.abs(puck.vy) * 0.8;
               puck.y = H - 15;
               game.pucks[i] = puck;
-              for (let pi = 0; pi < 8; pi++) {
+              for (let pi = 0; pi < SHIELD_PARTICLE_COUNT; pi++) {
                 game.particles.push({
                   x: puck.x + randomRange(-10, 10), y: H - 8,
                   vx: randomRange(-2, 2), vy: randomRange(-3, -1),
@@ -823,7 +819,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         // ゴールパーティクル
         const goalY = scored === 'cpu' ? 5 : H - 5;
         const particleColor = scored === 'cpu' ? 'rgb(0, 255, 255)' : 'rgb(255, 68, 68)';
-        for (let pi = 0; pi < 20; pi++) {
+        for (let pi = 0; pi < GOAL_PARTICLE_COUNT; pi++) {
           const particle: Particle = {
             x: W / 2 + randomRange(-30, 30),
             y: goalY,
