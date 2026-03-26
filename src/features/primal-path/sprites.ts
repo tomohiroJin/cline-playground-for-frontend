@@ -56,83 +56,84 @@ function pxRect(ctx: CanvasRenderingContext2D, s: number, x: number, y: number, 
   ctx.fillRect(x * s, y * s, w * s, h * s);
 }
 
-/** プレイヤーキャラクターをピクセルアートで描画する（覚醒オーラ・シンボル対応）
- * 24×32 グリッド、デフォルトスケール 3 */
-export function drawPlayer(c: HTMLCanvasElement, s = SPRITE_SCALE, fe?: CivTypeExt | null, awoken?: AwokenRecord[]): void {
-  const bw = PLAYER_BASE.w;
-  const bh = PLAYER_BASE.h;
-  const x = c.getContext('2d')!;
-  c.width = bw * s;
-  c.height = bh * s;
-  x.clearRect(0, 0, c.width, c.height);
-  const d = (a: number, b: number, w: number, h: number, cl: string) => pxRect(x, s, a, b, w, h, cl);
+type DrawFn = (a: number, b: number, w: number, h: number, cl: string) => void;
 
-  // 大覚醒時のオーラ（背景レイヤー）
-  const visual = awoken ? getAwakeningVisual(fe ?? null, awoken) : undefined;
-  if (visual?.hasAura && visual.auraColor) {
-    x.globalAlpha = 0.15;
-    x.fillStyle = visual.auraColor;
-    x.fillRect(0, 0, c.width, c.height);
-    x.globalAlpha = 0.4;
-    x.strokeStyle = visual.auraColor;
-    x.lineWidth = 3;
-    x.strokeRect(1, 1, c.width - 2, c.height - 2);
-    x.globalAlpha = 1;
-  }
+/** 大覚醒オーラを背景レイヤーとして描画 */
+function drawPlayerAura(ctx: CanvasRenderingContext2D, cw: number, ch: number, auraColor: string): void {
+  ctx.globalAlpha = 0.15;
+  ctx.fillStyle = auraColor;
+  ctx.fillRect(0, 0, cw, ch);
+  ctx.globalAlpha = 0.4;
+  ctx.strokeStyle = auraColor;
+  ctx.lineWidth = 3;
+  ctx.strokeRect(1, 1, cw - 2, ch - 2);
+  ctx.globalAlpha = 1;
+}
 
-  const skinMap: Record<string, string> = { rit: '#a06080', tech: '#d0a050', bal: '#c0a870' };
-  const hairMap: Record<string, string> = { rit: '#601040', tech: '#c04020', bal: '#806020' };
-  const skin = (fe && skinMap[fe]) || '#c09060';
-  const hair = (fe && hairMap[fe]) || '#4a2818';
-
-  // 頭部（24px グリッドで丸みのあるシルエット）
-  d(7, 0, 10, 9, skin); d(7, 0, 10, 3, hair); d(5, 0, 3, 5, hair);
-  // 目
-  d(9, 3, 3, 2, '#fff'); d(9, 3, 2, 1, fe === 'rit' ? '#e01040' : '#222');
-  // 胴体（肩幅の表現）
-  d(5, 9, 14, 11, skin); d(5, 16, 14, 4, fe === 'life' ? '#306030' : '#806030');
-  // 腕（左右非対称のポーズ）
-  d(2, 9, 4, 8, skin); d(18, 9, 4, 8, skin);
-  // 足（2px 幅の脚表現）
-  d(6, 20, 4, 10, skin); d(14, 20, 4, 10, skin);
-  // 武器（柄と刃先の区別）
-  d(20, 3, 3, 20, '#8a6a40'); d(19, 0, 5, 4, fe === 'tech' ? '#e04020' : '#b0b0b0');
-  d(19, 4, 1, 2, '#666');
-
-  // 文明アクセント
+/** 文明ごとの装飾アクセントを描画 */
+function drawPlayerAccents(fe: CivTypeExt, d: DrawFn): void {
   const accents: Record<string, [number, number, number, number, string][]> = {
     tech: [[0, 6, 4, 3, '#f06020'], [1, 5, 2, 1, '#f0a020'], [20, 0, 1, 4, '#ff4020']],
     life: [[4, 0, 2, 3, '#50ff90'], [18, 0, 2, 3, '#50ff90'], [5, 9, 14, 1, '#306030']],
     rit: [[5, 0, 14, 1, '#f040f0'], [4, 8, 16, 1, '#800080'], [22, 6, 2, 8, '#a020a0']],
     bal: [[0, 6, 4, 3, '#e0c060'], [20, 6, 4, 3, '#e0c060'], [7, 0, 10, 1, '#f0c040'], [5, 9, 14, 1, '#c0a040']],
   };
-  (fe && accents[fe] || []).forEach(a => d(a[0], a[1], a[2], a[3], a[4]));
+  (accents[fe] || []).forEach(a => d(a[0], a[1], a[2], a[3], a[4]));
+}
 
-  // 小覚醒時のシンボル（頭上に描画）
-  if (visual && visual.symbols.length > 0 && !visual.hasAura) {
-    const symbolSize = 4;
-    const startX = Math.floor((bw - visual.symbols.length * (symbolSize + 1)) / 2);
-    visual.symbols.forEach((sym, i) => {
-      const sx = startX + i * (symbolSize + 1);
-      x.fillStyle = sym.color;
-      x.globalAlpha = 0.8;
-      if (sym.shape === 'flame') {
-        pxRect(x, s, sx + 1, 0, 2, 1, sym.color);
-        pxRect(x, s, sx, 1, 4, 1, sym.color);
-      } else if (sym.shape === 'leaf') {
-        pxRect(x, s, sx + 1, 0, 2, 1, sym.color);
-        pxRect(x, s, sx, 1, 4, 1, sym.color);
-        pxRect(x, s, sx + 1, 2, 2, 1, sym.color);
-      } else if (sym.shape === 'skull') {
-        pxRect(x, s, sx, 0, 4, 3, sym.color);
-      } else {
-        pxRect(x, s, sx + 1, 0, 2, 1, sym.color);
-        pxRect(x, s, sx, 1, 4, 1, sym.color);
-        pxRect(x, s, sx + 1, 2, 2, 1, sym.color);
+/** 小覚醒シンボルを頭上に描画 */
+function drawPlayerSymbols(ctx: CanvasRenderingContext2D, symbols: AwakeningSymbol[], bw: number, s: number): void {
+  const symbolSize = 4;
+  const startX = Math.floor((bw - symbols.length * (symbolSize + 1)) / 2);
+  symbols.forEach((sym, i) => {
+    const sx = startX + i * (symbolSize + 1);
+    ctx.globalAlpha = 0.8;
+    if (sym.shape === 'skull') {
+      pxRect(ctx, s, sx, 0, 4, 3, sym.color);
+    } else {
+      pxRect(ctx, s, sx + 1, 0, 2, 1, sym.color);
+      pxRect(ctx, s, sx, 1, 4, 1, sym.color);
+      if (sym.shape !== 'flame') {
+        pxRect(ctx, s, sx + 1, 2, 2, 1, sym.color);
       }
-      x.globalAlpha = 1;
-    });
-  }
+    }
+    ctx.globalAlpha = 1;
+  });
+}
+
+/** プレイヤーキャラクターをピクセルアートで描画する（覚醒オーラ・シンボル対応）
+ * 24×32 グリッド、デフォルトスケール 3 */
+export function drawPlayer(c: HTMLCanvasElement, s = SPRITE_SCALE, fe?: CivTypeExt | null, awoken?: AwokenRecord[]): void {
+  const bw = PLAYER_BASE.w;
+  const bh = PLAYER_BASE.h;
+  const ctx = c.getContext('2d')!;
+  c.width = bw * s;
+  c.height = bh * s;
+  ctx.clearRect(0, 0, c.width, c.height);
+  const d: DrawFn = (a, b, w, h, cl) => pxRect(ctx, s, a, b, w, h, cl);
+
+  // 覚醒ビジュアル
+  const visual = awoken ? getAwakeningVisual(fe ?? null, awoken) : undefined;
+  if (visual?.hasAura && visual.auraColor) drawPlayerAura(ctx, c.width, c.height, visual.auraColor);
+
+  const skinMap: Record<string, string> = { rit: '#a06080', tech: '#d0a050', bal: '#c0a870' };
+  const hairMap: Record<string, string> = { rit: '#601040', tech: '#c04020', bal: '#806020' };
+  const skin = (fe && skinMap[fe]) || '#c09060';
+  const hair = (fe && hairMap[fe]) || '#4a2818';
+
+  // 頭部・目
+  d(7, 0, 10, 9, skin); d(7, 0, 10, 3, hair); d(5, 0, 3, 5, hair);
+  d(9, 3, 3, 2, '#fff'); d(9, 3, 2, 1, fe === 'rit' ? '#e01040' : '#222');
+  // 胴体・腕・足
+  d(5, 9, 14, 11, skin); d(5, 16, 14, 4, fe === 'life' ? '#306030' : '#806030');
+  d(2, 9, 4, 8, skin); d(18, 9, 4, 8, skin);
+  d(6, 20, 4, 10, skin); d(14, 20, 4, 10, skin);
+  // 武器
+  d(20, 3, 3, 20, '#8a6a40'); d(19, 0, 5, 4, fe === 'tech' ? '#e04020' : '#b0b0b0');
+  d(19, 4, 1, 2, '#666');
+
+  if (fe) drawPlayerAccents(fe, d);
+  if (visual && visual.symbols.length > 0 && !visual.hasAura) drawPlayerSymbols(ctx, visual.symbols, bw, s);
 }
 
 /** 味方キャラクターをピクセルアートで描画する（18×24 グリッド） */

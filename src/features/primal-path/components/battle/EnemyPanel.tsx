@@ -5,7 +5,7 @@
 import React, { useRef, useEffect } from 'react';
 import type { Enemy } from '../../types';
 import { drawEnemy, drawBurnFx } from '../../sprites';
-import { ENEMY_PANEL_NORMAL, ENEMY_PANEL_BOSS, FONT_SIZES, IFS } from '../../constants/ui';
+import { ENEMY_PANEL_NORMAL, ENEMY_PANEL_BOSS, FONT_SIZES, IFS, ELLIPSIS_STYLE } from '../../constants/ui';
 import { HpBar } from '../shared';
 import { GamePanel, EnemySprite, StatText, PopupContainer, PopupText } from '../../styles';
 import type { PopupEntry } from './use-battle-popups';
@@ -45,7 +45,7 @@ export const EnemyPanel: React.FC<EnemyPanelProps> = ({ enemy, boss, burn, turn,
           height: boss ? ENEMY_PANEL_BOSS.h : ENEMY_PANEL_NORMAL.h,
         }} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: FONT_SIZES.gameButton, color: boss ? '#ff6040' : '#f05050', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div style={{ fontSize: FONT_SIZES.gameButton, color: boss ? '#ff6040' : '#f05050', marginBottom: 2, ...ELLIPSIS_STYLE }}>
             {boss ? '👑 ' : ''}{enemy.n}{enemy.hp <= 0 ? ' 💀' : ''}
             {burn ? <span style={{ marginLeft: 4, fontSize: IFS.md, animation: 'none' }}>🔥</span> : null}
           </div>

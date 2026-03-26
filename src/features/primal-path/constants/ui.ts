@@ -18,6 +18,13 @@ export const IFS = Object.freeze({
   xl: 20,   // 旧 13px: サブ情報テキスト
 });
 
+/** テキスト省略スタイル（overflow + ellipsis + nowrap） */
+export const ELLIPSIS_STYLE = Object.freeze({
+  overflow: 'hidden' as const,
+  textOverflow: 'ellipsis' as const,
+  whiteSpace: 'nowrap' as const,
+});
+
 /** ゲーム画面の基準幅（px） */
 export const GAME_WIDTH = 800;
 
