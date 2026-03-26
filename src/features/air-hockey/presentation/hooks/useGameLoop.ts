@@ -15,7 +15,6 @@ import { EntityFactory, moveMalletTo, resolveMalletPuckOverlap } from '../../cor
 import { getAllMallets, updateExtraMalletAI } from '../../core/pair-match-logic';
 import { applyItemEffect } from '../../core/items';
 import { CONSTANTS, DEFAULT_PLAYER_MALLET_COLOR, DEFAULT_CPU_MALLET_COLOR, getPlayerZone } from '../../core/constants';
-import { KEYBOARD_MOVE_SPEED } from '../../core/keyboard';
 import { ITEMS } from '../../core/config';
 import { magnitude, randomRange, clamp } from '../../../../utils/math-utils';
 import { Renderer } from '../../renderer';
@@ -35,7 +34,7 @@ import type {
 } from '../../core/types';
 import { applyKeyboardMovement } from '../../hooks/useKeyboardInput';
 import type { KeyboardState } from '../../core/keyboard';
-import { calculateKeyboardMovement } from '../../core/keyboard';
+import { calculateKeyboardMovement, KEYBOARD_MOVE_SPEED } from '../../core/keyboard';
 
 // ランダム選択ヘルパー
 const randomChoice = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
@@ -499,6 +498,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         }
 
         // CPU AI: cpu（P3）は常に AI、ally（P2）は人間操作のため AI スキップ
+        // scoreDiff / effectiveAiConfig は enemy（P4）の AI でも共有する
         const scoreDiff = Math.max(0, scoreRef.current.p - scoreRef.current.c);
         const effectiveAiConfig = aiConfig ?? AI_BEHAVIOR_PRESETS[diff];
         const cpuUpdate = CpuAI.updateWithBehavior(game, effectiveAiConfig, now, consts, scoreDiff);
