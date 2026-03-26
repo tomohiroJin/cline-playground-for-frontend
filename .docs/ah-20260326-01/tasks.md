@@ -254,6 +254,50 @@ S4-7-4（キャラ選択 UI）       ← 完全独立（2ファイルのみ）
 
 ---
 
+## Phase S4-8: 致命的バグ修正（2v2 が全く動作しない）
+
+### 進捗サマリー
+
+| フェーズ | ステータス | 内容 | 並行可否 |
+|---------|-----------|------|---------|
+| S4-8-1 startGame 同期化 | [ ] 未着手 | **最優先** 全バグの根本原因 | — |
+| S4-8-2 2P 設定 UI 削除 | [ ] 未着手 | CharacterSelectScreen 簡素化 | S4-8-1 と並行可 |
+| S4-8-3 レイアウト統一 | [ ] 未着手 | TeamSetupScreen の配置修正 | S4-8-1 と並行可 |
+
+### 根本原因
+
+React setState の非同期性により、`mode.setGameMode('2v2-local')` の直後に
+`startGame()` を呼んでも `mode.gameMode` がまだ `'free'` のまま。
+`createGameState` が `is2v2 = false` で呼ばれ、ally/enemy が生成されない。
+
+---
+
+### S4-8-1: startGame の gameMode 同期化【最優先】
+
+- [ ] `startGame` に `gameModeOverride?: GameMode` パラメータを追加
+- [ ] `handlePairMatchStart` で `'2v2-local'` を同期渡し
+- [ ] `handleStartBattle` で `'2p-local'` を同期渡し
+- [ ] フリー対戦・ストーリーの既存動作が壊れないことを確認
+- [ ] 動作確認: ally/enemy マレット4つ表示、マウスで操作可能
+- [ ] テスト確認: `tsc --noEmit` + 既存テスト全パス
+
+---
+
+### S4-8-2: 2P 対戦の設定 UI 削除
+
+- [ ] CharacterSelectScreen から「設定」セクション（Field / Win Score）を削除
+- [ ] `handleStartBattle` でタイトル画面の `mode.field` / `mode.winScore` を使用
+- [ ] テスト確認: `tsc --noEmit` + 既存テスト全パス
+
+---
+
+### S4-8-3: TeamSetupScreen のレイアウト統一
+
+- [ ] 戻るボタン・タイトルの配置を他画面（CharacterSelectScreen 等）と統一
+- [ ] テスト確認: `tsc --noEmit` + 既存テスト全パス
+
+---
+
 ## 各フェーズの共通完了条件
 
 各フェーズ完了時に以下をすべて確認:

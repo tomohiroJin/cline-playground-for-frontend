@@ -469,3 +469,63 @@ grad.addColorStop(1, 'rgb(8, 12, 18)');
 - キャラアイコンの表示を拡大（36px → 42px）
 - パネルの最小幅を広げ（100px → 120px）タップしやすくする
 - `FreeBattleCharacterSelect` と `CharacterSelectScreen` の共通スタイル定数を統一
+
+---
+
+## S-14: startGame の gameMode 同期化（S4-8-1）
+
+### 問題
+
+React の `setState` は非同期のため、`mode.setGameMode('2v2-local')` の直後に
+`startGame()` を呼んでも `mode.gameMode` はまだ更新されていない。
+
+### 修正
+
+`startGame` に `gameModeOverride` パラメータを追加:
+
+```typescript
+const startGame = useCallback((fieldOverride?: FieldConfig, gameModeOverride?: GameMode) => {
+  const activeField = fieldOverride ?? mode.field;
+  const effectiveGameMode = gameModeOverride ?? mode.gameMode;
+  const is2v2 = effectiveGameMode === '2v2-local';
+  gameRef.current = EntityFactory.createGameState(CONSTANTS, activeField, is2v2);
+  // ...
+}, [mode.field, mode.gameMode, navigateWithTransition]);
+```
+
+各 handler での呼び出し:
+
+```typescript
+// ペアマッチ
+const handlePairMatchStart = useCallback(() => {
+  mode.setGameMode('2v2-local');
+  startGame(mode.field, '2v2-local');
+}, [mode, startGame]);
+
+// 2P 対戦
+const handleStartBattle = useCallback((config: TwoPlayerConfig) => {
+  mode.setGameMode('2p-local');
+  startGame(mode.field, '2p-local');
+}, [mode, startGame]);
+
+// フリー対戦・ストーリー: 既存動作維持（gameModeOverride 未指定）
+```
+
+---
+
+## S-15: 2P 対戦 CharacterSelectScreen の設定 UI 削除（S4-8-2）
+
+### 変更
+
+CharacterSelectScreen から「設定」セクション（フィールド選択・勝利スコア選択）を削除。
+`TwoPlayerConfig` から `field` / `winScore` を削除し、
+`handleStartBattle` でタイトル画面の `mode.field` / `mode.winScore` を使用。
+
+---
+
+## S-16: TeamSetupScreen のレイアウト統一（S4-8-3）
+
+### 変更
+
+戻るボタンとタイトルの配置を他の画面（CharacterSelectScreen 等）と統一。
+現在のインラインスタイル flexbox → 共通の header スタイルパターンに合わせる。
