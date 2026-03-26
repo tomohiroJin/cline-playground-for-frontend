@@ -14,9 +14,10 @@ import { AI_BEHAVIOR_PRESETS, type AiBehaviorConfig } from '../../core/story-bal
 import { EntityFactory, moveMalletTo, resolveMalletPuckOverlap } from '../../core/entities';
 import { getAllMallets, updateExtraMalletAI } from '../../core/pair-match-logic';
 import { applyItemEffect } from '../../core/items';
-import { CONSTANTS, DEFAULT_PLAYER_MALLET_COLOR, DEFAULT_CPU_MALLET_COLOR } from '../../core/constants';
+import { CONSTANTS, DEFAULT_PLAYER_MALLET_COLOR, DEFAULT_CPU_MALLET_COLOR, getPlayerZone } from '../../core/constants';
+import { KEYBOARD_MOVE_SPEED } from '../../core/keyboard';
 import { ITEMS } from '../../core/config';
-import { magnitude, randomRange } from '../../../../utils/math-utils';
+import { magnitude, randomRange, clamp } from '../../../../utils/math-utils';
 import { Renderer } from '../../renderer';
 import type {
   GameState,
@@ -455,44 +456,50 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       }
 
       // マウス/タッチ入力（フレーム同期: ref から目標位置を読み取り適用）
-      if (playerTargetRef?.current) {
+      // 2v2 モードではマルチタッチの player1Position を使うため無効化
+      if (!is2v2Mode && playerTargetRef?.current) {
         moveMalletTo(game.player, playerTargetRef.current.x, playerTargetRef.current.y);
         playerTargetRef.current = null;
       }
 
-      // キーボード入力
+      // キーボード入力（P1: 矢印キー）
       if (keysRef) {
         applyKeyboardMovement(game, keysRef, lastInputRef);
       }
 
-      // 2P 入力の優先順位:
-      //   1. マルチタッチ（タッチ中のみ反映、指を離すと停止）
-      //   2. キーボード（タッチ未使用時のフォールバック、またはタッチ後にキーボードで上書き）
-      // 同一フレームで両方アクティブな場合、キーボードがタッチの結果を上書きする（意図的な設計）
-      if (is2PMode && multiTouchRef?.current) {
-        const touchState = multiTouchRef.current;
-        if (touchState.player1Position) {
-          moveMalletTo(game.player, touchState.player1Position.x, touchState.player1Position.y);
-          lastInputRef.current = Date.now();
+      if (is2v2Mode) {
+        // ── 2v2 モード入力 ──
+        // マルチタッチ: player1 → game.player、player2 → game.ally
+        if (multiTouchRef?.current) {
+          const touchState = multiTouchRef.current;
+          if (touchState.player1Position) {
+            moveMalletTo(game.player, touchState.player1Position.x, touchState.player1Position.y);
+            lastInputRef.current = Date.now();
+          }
+          if (touchState.player2Position && game.ally) {
+            moveMalletTo(game.ally, touchState.player2Position.x, touchState.player2Position.y);
+          }
         }
-        if (touchState.player2Position) {
-          moveMalletTo(game.cpu, touchState.player2Position.x, touchState.player2Position.y);
-        }
-      }
 
-      // 2P モード: WASD キーボード入力で CPU マレットを操作
-      // 1P モード: CPU AI で CPU マレットを操作
-      if (is2PMode && player2KeysRef) {
-        const keys2 = player2KeysRef.current;
-        const hasInput = keys2.up || keys2.down || keys2.left || keys2.right;
-        if (hasInput) {
-          const result = calculateKeyboardMovement(keys2, { x: game.cpu.x, y: game.cpu.y }, consts, 'player2');
-          moveMalletTo(game.cpu, result.x, result.y);
+        // WASD → game.ally（getPlayerZone で右下ゾーンに X/Y 両方クランプ）
+        if (player2KeysRef && game.ally) {
+          const keys2 = player2KeysRef.current;
+          const hasInput = keys2.up || keys2.down || keys2.left || keys2.right;
+          if (hasInput) {
+            const zone = getPlayerZone('player2', consts);
+            let dx = 0, dy = 0;
+            if (keys2.left) dx -= KEYBOARD_MOVE_SPEED;
+            if (keys2.right) dx += KEYBOARD_MOVE_SPEED;
+            if (keys2.up) dy -= KEYBOARD_MOVE_SPEED;
+            if (keys2.down) dy += KEYBOARD_MOVE_SPEED;
+            const newX = clamp(game.ally.x + dx, zone.minX, zone.maxX);
+            const newY = clamp(game.ally.y + dy, zone.minY, zone.maxY);
+            moveMalletTo(game.ally, newX, newY);
+          }
         }
-      } else {
-        // CPU が負けている点差を計算して適応度ロジックに渡す
+
+        // CPU AI: cpu（P3）は常に AI、ally（P2）は人間操作のため AI スキップ
         const scoreDiff = Math.max(0, scoreRef.current.p - scoreRef.current.c);
-        // ステージ固有 AI 設定があれば優先、なければ難易度プリセットを使用
         const effectiveAiConfig = aiConfig ?? AI_BEHAVIOR_PRESETS[diff];
         const cpuUpdate = CpuAI.updateWithBehavior(game, effectiveAiConfig, now, consts, scoreDiff);
         if (cpuUpdate) {
@@ -501,33 +508,14 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
           game.cpuTargetTime = cpuUpdate.cpuTargetTime;
           game.cpuStuckTimer = cpuUpdate.cpuStuckTimer;
         }
-      }
 
-      // 2v2 モード: ally（P2）と enemy（P4）の CPU AI 制御
-      if (is2v2Mode) {
-        const scoreDiff2v2 = Math.max(0, scoreRef.current.p - scoreRef.current.c);
-        const effectiveAiConfig2v2 = aiConfig ?? AI_BEHAVIOR_PRESETS[diff];
-        const updateFn = CpuAI.updateWithBehavior;
-
-        if (game.ally) {
-          const result = updateExtraMalletAI(
-            game, game.ally,
-            { target: game.allyTarget ?? null, targetTime: game.allyTargetTime ?? 0, stuckTimer: game.allyStuckTimer ?? 0 },
-            updateFn, effectiveAiConfig2v2, now, consts, scoreDiff2v2
-          );
-          if (result) {
-            game.ally = result.mallet;
-            game.allyTarget = result.aiState.target;
-            game.allyTargetTime = result.aiState.targetTime;
-            game.allyStuckTimer = result.aiState.stuckTimer;
-          }
-        }
-
+        // enemy（P4）のみ CPU AI で制御
         if (game.enemy) {
+          const updateFn = CpuAI.updateWithBehavior;
           const result = updateExtraMalletAI(
             game, game.enemy,
             { target: game.enemyTarget ?? null, targetTime: game.enemyTargetTime ?? 0, stuckTimer: game.enemyStuckTimer ?? 0 },
-            updateFn, effectiveAiConfig2v2, now, consts, scoreDiff2v2
+            updateFn, effectiveAiConfig, now, consts, scoreDiff
           );
           if (result) {
             game.enemy = result.mallet;
@@ -535,6 +523,38 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
             game.enemyTargetTime = result.aiState.targetTime;
             game.enemyStuckTimer = result.aiState.stuckTimer;
           }
+        }
+      } else if (is2PMode) {
+        // ── 2P モード入力 ──
+        if (multiTouchRef?.current) {
+          const touchState = multiTouchRef.current;
+          if (touchState.player1Position) {
+            moveMalletTo(game.player, touchState.player1Position.x, touchState.player1Position.y);
+            lastInputRef.current = Date.now();
+          }
+          if (touchState.player2Position) {
+            moveMalletTo(game.cpu, touchState.player2Position.x, touchState.player2Position.y);
+          }
+        }
+
+        if (player2KeysRef) {
+          const keys2 = player2KeysRef.current;
+          const hasInput = keys2.up || keys2.down || keys2.left || keys2.right;
+          if (hasInput) {
+            const result = calculateKeyboardMovement(keys2, { x: game.cpu.x, y: game.cpu.y }, consts, 'player2');
+            moveMalletTo(game.cpu, result.x, result.y);
+          }
+        }
+      } else {
+        // ── 1P モード: CPU AI ──
+        const scoreDiff = Math.max(0, scoreRef.current.p - scoreRef.current.c);
+        const effectiveAiConfig = aiConfig ?? AI_BEHAVIOR_PRESETS[diff];
+        const cpuUpdate = CpuAI.updateWithBehavior(game, effectiveAiConfig, now, consts, scoreDiff);
+        if (cpuUpdate) {
+          game.cpu = cpuUpdate.cpu;
+          game.cpuTarget = cpuUpdate.cpuTarget;
+          game.cpuTargetTime = cpuUpdate.cpuTargetTime;
+          game.cpuStuckTimer = cpuUpdate.cpuStuckTimer;
         }
       }
 

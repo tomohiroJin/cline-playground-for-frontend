@@ -195,10 +195,10 @@ S4-1（型定義・データ構造）
 
 | フェーズ | ステータス | 内容 | 並行可否 |
 |---------|-----------|------|---------|
-| S4-7-1 ally 入力接続 | [ ] 未着手 | **最優先** ゲーム成立に必須 | — |
-| S4-7-2 設定画面簡素化 | [ ] 未着手 | TeamSetupScreen から重複削除 | S4-7-1 と並行可 |
-| S4-7-3 背景ちらつき修正 | [ ] 未着手 | renderer.ts のみ | 完全独立 |
-| S4-7-4 キャラ選択 UI 改善 | [ ] 未着手 | レスポンシブ化 | 完全独立 |
+| S4-7-1 ally 入力接続 | [x] 完了 | **最優先** ゲーム成立に必須 | — |
+| S4-7-2 設定画面簡素化 | [x] 完了 | TeamSetupScreen から重複削除 | S4-7-1 と並行可 |
+| S4-7-3 背景ちらつき修正 | [x] 完了 | renderer.ts のみ | 完全独立 |
+| S4-7-4 キャラ選択 UI 改善 | [x] 完了 | レスポンシブ化 | 完全独立 |
 
 ### 並行作業ガイド
 
@@ -213,43 +213,43 @@ S4-7-4（キャラ選択 UI）       ← 完全独立（2ファイルのみ）
 
 ### S4-7-1: ally（P2）入力接続【最優先】
 
-- [ ] 2v2 モード時に `playerTargetRef` を無効化（マルチタッチと二重処理を防止）
-- [ ] useGameLoop に `is2v2Mode` のタッチ入力分岐を追加（player1Position → player, player2Position → ally）
-- [ ] useGameLoop に `is2v2Mode` の WASD 入力分岐を追加（keys2 → game.ally）
-- [ ] ally のゾーンクランプに `getPlayerZone('player2')` を使用（`getPlayerYBounds` ではなく X/Y 両方クランプ）
-- [ ] ally の CPU AI を2v2モードでは常にスキップ（将来の CPU/人間切替で制御）
-- [ ] テスト確認: `tsc --noEmit` + 既存テスト全パス
+- [x] 2v2 モード時に `playerTargetRef` を無効化（マルチタッチと二重処理を防止）
+- [x] useGameLoop に `is2v2Mode` のタッチ入力分岐を追加（player1Position → player, player2Position → ally）
+- [x] useGameLoop に `is2v2Mode` の WASD 入力分岐を追加（keys2 → game.ally）
+- [x] ally のゾーンクランプに `getPlayerZone('player2')` を使用（`getPlayerYBounds` ではなく X/Y 両方クランプ）
+- [x] ally の CPU AI を2v2モードでは常にスキップ（将来の CPU/人間切替で制御）
+- [x] テスト確認: `tsc --noEmit` + 既存テスト全パス
 
 ---
 
 ### S4-7-2: TeamSetupScreen 簡素化
 
-- [ ] TeamSetupScreen から Field / Win Score 選択 UI を削除
-- [ ] `TeamSetupConfig` 型を完全に削除
-- [ ] `onStart` のシグネチャを `() => void` に変更（引数なし）
-- [ ] `handlePairMatchStart` から `config` 引数を削除し `mode.field` / `mode.winScore` を直接使用
-- [ ] TeamSetupScreenProps を `{ onStart: () => void; onBack: () => void }` に簡素化
-- [ ] チーム構成表示（P1〜P4 の役割）を見やすく整理
-- [ ] TeamSetupScreen のテストを追加（表示確認 + onStart/onBack コールバック）
-- [ ] テスト確認: `tsc --noEmit` + 既存テスト全パス
+- [x] TeamSetupScreen から Field / Win Score 選択 UI を削除
+- [x] `TeamSetupConfig` 型を完全に削除
+- [x] `onStart` のシグネチャを `() => void` に変更（引数なし）
+- [x] `handlePairMatchStart` から `config` 引数を削除し `mode.field` / `mode.winScore` を直接使用
+- [x] TeamSetupScreenProps を `{ onStart: () => void; onBack: () => void }` に簡素化
+- [x] チーム構成表示（P1〜P4 の役割）を見やすく整理
+- [x] TeamSetupScreen のテスト追加（表示確認 + onStart/onBack + Field/WinScore 非表示）4件
+- [x] テスト確認: `tsc --noEmit` + 既存テスト全パス
 
 ---
 
 ### S4-7-3: 背景ちらつき修正
 
-- [ ] renderer.ts の clear() から `Math.sin(now * 0.0005) * 10` の背景振動を削除
-- [ ] 静的グラデーション（暗い配色維持）に変更
-- [ ] テスト確認: `tsc --noEmit` + 既存テスト全パス
+- [x] renderer.ts の clear() から `Math.sin(now * 0.0005) * 10` の背景振動を削除
+- [x] 静的グラデーション（暗い配色維持）に変更
+- [x] テスト確認: `tsc --noEmit` + 既存テスト全パス
 
 ---
 
 ### S4-7-4: キャラ選択 UI 改善
 
-- [ ] FreeBattleCharacterSelect のカードサイズを CSS `min()` / `vw` ベースのレスポンシブ化
-- [ ] CharacterSelectScreen のカードサイズをレスポンシブ化
-- [ ] キャラアイコンサイズ拡大（36px → 42px）
-- [ ] パネル最小幅拡大（100px → 120px）でタッチ領域改善
-- [ ] 共通スタイル定数の統一
+- [x] FreeBattleCharacterSelect のカードサイズを CSS `min()` / `vw` ベースのレスポンシブ化
+- [x] CharacterSelectScreen のカードサイズをレスポンシブ化
+- [x] キャラアイコンサイズ拡大（36px → 42px）
+- [x] パネル最小幅拡大（100px → 120px）でタッチ領域改善
+- [x] 共通スタイル定数の統一（CARD_ICON_SIZE=42, GRID_GAP=10）
 - [ ] テスト確認: `tsc --noEmit` + 既存テスト全パス
 
 ---

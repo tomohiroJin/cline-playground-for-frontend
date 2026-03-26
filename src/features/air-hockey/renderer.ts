@@ -36,18 +36,13 @@ const getDrawScale = (consts: GameConstants) => consts.CANVAS.WIDTH / BASE_WIDTH
 
 // Renderer モジュール - 描画責務のみ
 export const Renderer = {
-  // 背景グラデーションアニメーション
-  clear(ctx: CanvasRenderingContext2D, consts: GameConstants = CONSTANTS, now = 0) {
+  // 背景グラデーション（静的）
+  clear(ctx: CanvasRenderingContext2D, consts: GameConstants = CONSTANTS, _now = 0) {
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
-    if (now > 0) {
-      const shift = Math.sin(now * 0.0005) * 10;
-      const grad = ctx.createLinearGradient(0, 0, 0, H);
-      grad.addColorStop(0, `rgb(${13 + shift}, ${17 + shift}, ${23 + shift})`);
-      grad.addColorStop(1, `rgb(${13 - shift}, ${17 - shift}, ${23 - shift})`);
-      ctx.fillStyle = grad;
-    } else {
-      ctx.fillStyle = '#0d1117';
-    }
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, 'rgb(18, 22, 28)');
+    grad.addColorStop(1, 'rgb(8, 12, 18)');
+    ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
   },
   // フィールドラインネオン強化（US-1.1: 台の質感向上）

@@ -28,9 +28,8 @@ type FreeBattleCharacterSelectProps = {
 
 // ── スタイル定数（2P 対戦と統一） ───────────────
 const PANEL_ICON_SIZE = 48;
-const CARD_ICON_SIZE = 36;
-const CARD_SIZE = 80;
-const GRID_GAP = 8;
+const CARD_ICON_SIZE = 42;
+const GRID_GAP = 10;
 
 const styles = {
   container: {
@@ -79,7 +78,7 @@ const styles = {
     borderRadius: '8px',
     border: isHighlighted ? `3px solid ${color}` : '3px solid #333',
     backgroundColor: isHighlighted ? 'rgba(255,255,255,0.05)' : 'transparent',
-    minWidth: '100px',
+    minWidth: '120px',
     transition: 'border-color 0.2s',
   }),
   playerLabel: {
@@ -114,7 +113,7 @@ const styles = {
   // キャラグリッド
   grid: {
     display: 'grid',
-    gridTemplateColumns: `repeat(4, ${CARD_SIZE}px)`,
+    gridTemplateColumns: `repeat(4, min(90px, calc((100vw - 64px) / 4)))`,
     gap: `${GRID_GAP}px`,
     justifyContent: 'center',
     marginBottom: '16px',
@@ -124,13 +123,13 @@ const styles = {
     flexDirection: 'column' as const,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '6px',
+    padding: '8px',
     borderRadius: '8px',
     border: isSelected ? `2px solid ${color}` : '2px solid #444',
     backgroundColor: isSelected ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.02)',
     cursor: isLocked ? 'not-allowed' : 'pointer',
     transition: 'transform 0.1s, border-color 0.2s',
-    height: `${CARD_SIZE}px`,
+    aspectRatio: '1',
     opacity: isLocked ? 0.4 : 1,
     position: 'relative' as const,
   }),
