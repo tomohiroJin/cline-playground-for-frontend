@@ -755,17 +755,11 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       if (game.effects.player.shield || game.effects.ally?.shield) Renderer.drawShield(ctx, true, baseGoalSize, consts);
       if (game.effects.cpu.shield || game.effects.enemy?.shield) Renderer.drawShield(ctx, false, baseGoalSize, consts);
 
-      if (game.effects.player.magnet && now - game.effects.player.magnet.start < game.effects.player.magnet.duration) {
-        Renderer.drawMagnetEffect(ctx, game.player, now);
-      }
-      if (game.effects.cpu.magnet && now - game.effects.cpu.magnet.start < game.effects.cpu.magnet.duration) {
-        Renderer.drawMagnetEffect(ctx, game.cpu, now);
-      }
-      if (game.ally && game.effects.ally?.magnet && now - game.effects.ally.magnet.start < game.effects.ally.magnet.duration) {
-        Renderer.drawMagnetEffect(ctx, game.ally, now);
-      }
-      if (game.enemy && game.effects.enemy?.magnet && now - game.effects.enemy.magnet.start < game.effects.enemy.magnet.duration) {
-        Renderer.drawMagnetEffect(ctx, game.enemy, now);
+      for (const { mallet: m, side } of getAllMallets(game)) {
+        const eff = game.effects[side];
+        if (eff?.magnet && now - eff.magnet.start < eff.magnet.duration) {
+          Renderer.drawMagnetEffect(ctx, m, now);
+        }
       }
 
       if (slowMo.active) {

@@ -34,7 +34,7 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
   onBack,
 }) => {
   const [field, setField] = useState<FieldConfig>(fields[0]);
-  const [winScore, setWinScore] = useState(7);
+  const [winScore, setWinScore] = useState(WIN_SCORE_OPTIONS[1]);
 
   const handleStart = () => {
     onStart({ field, winScore });
