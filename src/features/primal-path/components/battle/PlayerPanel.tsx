@@ -7,6 +7,7 @@ import type { RunState } from '../../types';
 import { A_SKILLS, TB_SUMMARY } from '../../constants';
 import { effATK, civLvs, calcSynergies, applySynergyBonuses } from '../../game-logic';
 import { drawPlayer } from '../../sprites';
+import { FONT_SIZES } from '../../constants/ui';
 import { HpBar, CivLevelsDisplay, AffinityBadge, AllyList, SynergyBadges } from '../shared';
 import { GamePanel, StatText, Tc, Bc, PopupContainer, PopupText } from '../../styles';
 import type { PopupEntry } from './use-battle-popups';
@@ -24,7 +25,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({ run, popups }) => {
 
   // プレイヤースプライト描画
   useEffect(() => {
-    if (psprRef.current) drawPlayer(psprRef.current, 2, run.fe, run.awoken);
+    if (psprRef.current) drawPlayer(psprRef.current, undefined, run.fe, run.awoken);
   }, [run.fe, run.awoken]);
 
   const lvs = civLvs(run);
@@ -42,12 +43,12 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({ run, popups }) => {
     <GamePanel style={{ position: 'relative' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <canvas ref={psprRef} aria-hidden="true" style={{
-          width: 40, height: 55,
+          width: 72, height: 96,
           border: '1px solid #222', borderRadius: 3, background: '#08080c', flexShrink: 0,
           imageRendering: 'pixelated',
         }} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 11, color: '#50e090', marginBottom: 2 }}>
+          <div style={{ fontSize: FONT_SIZES.statText, color: '#50e090', marginBottom: 2 }}>
             部族長 {feLabel}
             <AffinityBadge biome={run.cBT} levels={lvs} />
             {ritActive && (

@@ -118,7 +118,7 @@ describe('スプライトバリエーション', () => {
 
     it('枠線が描画される', () => {
       drawEnemyHpBar(ctx, 50, 100, 10, 20, 60);
-      expect(ctx.strokeRect).toHaveBeenCalledWith(10, 20, 60, 3);
+      expect(ctx.strokeRect).toHaveBeenCalledWith(10, 20, 60, 5);
     });
   });
 

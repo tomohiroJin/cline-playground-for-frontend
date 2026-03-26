@@ -22,3 +22,4 @@ export { useAudio } from './use-audio';
 export { useOverlay } from './use-overlay';
 export type { OverlayState } from './use-overlay';
 export { usePersistence } from './use-persistence';
+export { useGameScale } from './use-game-scale';

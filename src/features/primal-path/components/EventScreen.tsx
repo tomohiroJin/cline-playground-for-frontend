@@ -52,7 +52,7 @@ export const EventScreen: React.FC<Props> = ({ event, run, onChoose, playSfx }) 
 
   // プレイヤースプライト描画
   useEffect(() => {
-    if (canvasRef.current) drawPlayer(canvasRef.current, 2, run.fe, run.awoken);
+    if (canvasRef.current) drawPlayer(canvasRef.current, undefined, run.fe, run.awoken);
   }, [run.fe, run.awoken]);
 
   const glowColor = EVENT_GLOW_COLORS[run.cBT as string];
@@ -71,7 +71,7 @@ export const EventScreen: React.FC<Props> = ({ event, run, onChoose, playSfx }) 
         {/* プレイヤースプライト */}
         <div style={{ textAlign: 'center', marginBottom: 6 }}>
           <canvas ref={canvasRef} aria-hidden="true" style={{
-            width: 32, height: 44,
+            width: 48, height: 64,
             imageRendering: 'pixelated',
           }} />
         </div>

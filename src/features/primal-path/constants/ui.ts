@@ -3,6 +3,78 @@
  */
 import type { CivType, CivTypeExt, TreeBonus } from '../types';
 
+/** ゲーム画面の基準幅（px） */
+export const GAME_WIDTH = 800;
+
+/** ゲーム画面の基準高さ（px） */
+export const GAME_HEIGHT = 1200;
+
+/** スケーリングの最小値 */
+export const MIN_SCALE = 0.4;
+
+/** スケーリングの最大値 */
+export const MAX_SCALE = 1.0;
+
+/** フォントサイズ定義（px） - 仕様書準拠、最小 12px */
+export const FONT_SIZES = Object.freeze({
+  title: 32,
+  subTitle: 20,
+  overlayText: 22,
+  overlayIcon: 64,
+  skillBtn: 20,
+  gameButton: 16,
+  statText: 14,
+  log: 13,
+  speedBtn: 13,
+  allyBadge: 13,
+  surrenderBtn: 12,
+  paused: 36,
+  tab: 14,
+  logReview: 13,
+  timer: 16,
+  treeNode: 14,
+  tierHeader: 14,
+  runStatRow: 14,
+});
+
+/** スプライトのデフォルトスケール係数 */
+export const SPRITE_SCALE = 3;
+
+/** プレイヤーのベースサイズ（px） */
+export const PLAYER_BASE = Object.freeze({ w: 24, h: 32 });
+
+/** 味方のベースサイズ（px） */
+export const ALLY_BASE = Object.freeze({ w: 18, h: 24 });
+
+/** 敵（通常）のベースサイズ（px） */
+export const ENEMY_BASE = Object.freeze({ w: 24, h: 24 });
+
+/** 敵（ボス）のベースサイズ（px） */
+export const BOSS_BASE = Object.freeze({ w: 32, h: 32 });
+
+/** タイトルロゴのサイズ（px） */
+export const TITLE_SIZE = Object.freeze({ w: 400, h: 200 });
+
+/** HPバーの高さ（px） */
+export const HP_BAR_HEIGHT = 5;
+
+/** EnemyPanel 通常敵表示枠サイズ（px） */
+export const ENEMY_PANEL_NORMAL = Object.freeze({ w: 80, h: 80 });
+
+/** EnemyPanel ボス表示枠サイズ（px） */
+export const ENEMY_PANEL_BOSS = Object.freeze({ w: 104, h: 104 });
+
+/** ボタンパディング定義 */
+export const BUTTON_PADDING = Object.freeze({
+  gameButton: '10px 20px',
+  skillBtn: '8px 14px',
+  speedBtn: '4px 10px',
+  surrenderBtn: '4px 12px',
+});
+
+/** タブの最小高さ（px） */
+export const TAB_MIN_HEIGHT = 36;
+
 /** 文明タイプ一覧 */
 export const CIV_TYPES: readonly CivType[] = Object.freeze(['tech', 'life', 'rit']);
 

@@ -35,12 +35,12 @@ export const TitleScreen: React.FC<Props> = ({ save, dispatch, playSfx }) => {
 
   return (
     <Screen $center>
-      <canvas ref={canvasRef} aria-hidden="true" width={240} height={130} style={{ width: 360, height: 195, marginBottom: 4, imageRendering: 'pixelated' }} />
+      <canvas ref={canvasRef} aria-hidden="true" width={400} height={200} style={{ width: 400, height: 200, marginBottom: 6, imageRendering: 'pixelated' }} />
       <Title>原始進化録</Title>
-      <div style={{ fontSize: 13, color: '#b89830', letterSpacing: 7, marginBottom: 2 }}>PRIMAL PATH</div>
+      <div style={{ fontSize: 18, color: '#b89830', letterSpacing: 7, marginBottom: 2 }}>PRIMAL PATH</div>
       <Divider />
-      <div style={{ fontSize: 10, color: '#605848', letterSpacing: 2 }}>文明を選ぶたびに、未来が変わる</div>
-      {bd && <div style={{ fontSize: 9, color: '#f0c040', marginTop: 4 }}>🏆 {bd}</div>}
+      <div style={{ fontSize: 14, color: '#605848', letterSpacing: 2 }}>文明を選ぶたびに、未来が変わる</div>
+      {bd && <div style={{ fontSize: 13, color: '#f0c040', marginTop: 4 }}>🏆 {bd}</div>}
       <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 2 }}>
         <GameButton style={{ minWidth: 210, fontSize: 13 }} onClick={() => { playSfx('click'); dispatch({ type: 'GO_DIFF' }); }}>
           ▶ はじめる

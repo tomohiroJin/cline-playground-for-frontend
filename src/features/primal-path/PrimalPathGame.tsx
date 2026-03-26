@@ -6,13 +6,14 @@
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useGameState, useBattle, useAudio, useOverlay, usePersistence } from './hooks';
+import { useGameScale } from './hooks/use-game-scale';
 import type { TickEvent, BiomeId, BgmType } from './types';
 import { ErrorBoundary } from './contracts';
 import { DIFFS } from './constants';
 import { pickBiomeAuto, formatEventResult, computeEventResult } from './game-logic';
 import { MetaStorage } from './storage';
 
-import { GameContainer, GameShell } from './styles';
+import { GameContainer, ScaleWrapper, GameShell } from './styles';
 import { Overlay } from './components/Overlay';
 import { TitleScreen } from './components/TitleScreen';
 import { DifficultyScreen } from './components/DifficultyScreen';
@@ -37,6 +38,7 @@ function GameInner() {
   const { overlay, showOverlay } = useOverlay();
   const { loaded } = usePersistence(state, dispatch);
 
+  const scale = useGameScale();
   const [tickEvents, setTickEvents] = useState<TickEvent[]>([]);
   /** ラン終了記録の二重発火防止用 */
   const recordedRef = useRef(false);
@@ -152,7 +154,8 @@ function GameInner() {
 
   return (
     <GameContainer>
-      <GameShell>
+      <ScaleWrapper $scale={scale}>
+        <GameShell $scale={scale}>
         <Overlay overlay={overlay} />
 
         {phase === 'title' && (
@@ -273,7 +276,8 @@ function GameInner() {
             onStartChallenge={handleStartChallenge}
           />
         )}
-      </GameShell>
+        </GameShell>
+      </ScaleWrapper>
     </GameContainer>
   );
 }

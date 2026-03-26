@@ -2,6 +2,7 @@
  * 原始進化録 - PRIMAL PATH - スタイル定義
  */
 import styled, { keyframes, css } from 'styled-components';
+import { FONT_SIZES, BUTTON_PADDING, TAB_MIN_HEIGHT, GAME_WIDTH, GAME_HEIGHT } from './constants/ui';
 
 /* ===== Keyframes ===== */
 
@@ -85,26 +86,33 @@ export const GameContainer = styled.div`
   height: 100%;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   background: #0a0a12;
   font-family: 'Courier New', monospace;
   image-rendering: pixelated;
+  overflow: hidden;
 `;
 
-export const GameShell = styled.div`
-  width: 480px;
-  height: 720px;
+/** スケーリング後の実サイズに合わせるラッパー */
+export const ScaleWrapper = styled.div<{ $scale: number }>`
+  width: ${p => GAME_WIDTH * p.$scale}px;
+  height: ${p => GAME_HEIGHT * p.$scale}px;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  margin: auto 0;
+`;
+
+export const GameShell = styled.div<{ $scale?: number }>`
+  width: 800px;
+  height: 1200px;
   background: #12121e;
   position: relative;
   overflow: hidden;
   border: 2px solid #2a2a3e;
   box-shadow: 0 0 30px #0006;
-
-  @media (max-width: 500px) {
-    width: 100vw;
-    height: 100vh;
-    border: none;
-  }
+  transform: scale(${p => p.$scale ?? 1});
+  transform-origin: top center;
 `;
 
 /* ===== Screen (generic phase container) ===== */
@@ -147,12 +155,12 @@ export const OverlayWrap = styled.div<{ $visible: boolean }>`
 `;
 
 export const OverlayIcon = styled.div`
-  font-size: 48px;
+  font-size: ${FONT_SIZES.overlayIcon}px;
   filter: drop-shadow(0 0 12px #f0c04040);
 `;
 
 export const OverlayText = styled.div`
-  font-size: 16px;
+  font-size: ${FONT_SIZES.overlayText}px;
   color: #f0c040;
   text-shadow: 0 0 14px #f0c04060;
   text-align: center;
@@ -163,7 +171,7 @@ export const OverlayText = styled.div`
 /* ===== Common Elements ===== */
 
 export const Title = styled.h1`
-  font-size: 22px;
+  font-size: ${FONT_SIZES.title}px;
   color: #f0c040;
   text-shadow: 0 0 12px #f0c04060, 2px 2px #503800;
   letter-spacing: 3px;
@@ -172,7 +180,7 @@ export const Title = styled.h1`
 `;
 
 export const SubTitle = styled.h2`
-  font-size: 14px;
+  font-size: ${FONT_SIZES.subTitle}px;
   color: #f0c040;
   margin: 6px 0;
   animation: ${fadeInUp} 0.4s ease-out;
@@ -189,11 +197,11 @@ export const GameButton = styled.button<{ $off?: boolean }>`
   background: linear-gradient(180deg, #1c1c2c, #141420);
   color: #c0b898;
   border: 1px solid #333;
-  padding: 8px 18px;
+  padding: ${BUTTON_PADDING.gameButton};
   margin: 3px;
   cursor: pointer;
   font-family: inherit;
-  font-size: 12px;
+  font-size: ${FONT_SIZES.gameButton}px;
   min-width: 110px;
   text-align: center;
   border-radius: 2px;
@@ -224,7 +232,7 @@ export const GamePanel = styled.div`
 `;
 
 export const StatText = styled.div`
-  font-size: 10px;
+  font-size: ${FONT_SIZES.statText}px;
   color: #908870;
   margin: 2px 0;
 `;
@@ -260,7 +268,7 @@ export const TreeNodeBox = styled.div<{ $bought?: boolean; $locked?: boolean; $c
   background: linear-gradient(180deg, #14141e, #0e0e16);
   border: 1px solid #262636;
   padding: 5px 6px;
-  font-size: 10px;
+  font-size: ${FONT_SIZES.treeNode}px;
   text-align: center;
   min-width: 84px;
   border-radius: 3px;
@@ -285,9 +293,10 @@ export const TreeNodeBox = styled.div<{ $bought?: boolean; $locked?: boolean; $c
 `;
 
 export const LogContainer = styled.div`
-  font-size: 9px;
+  font-size: ${FONT_SIZES.log}px;
   color: #808068;
-  max-height: 160px;
+  line-height: 1.4;
+  max-height: 200px;
   overflow-y: auto;
   width: 100%;
   padding: 4px 6px;
@@ -318,8 +327,8 @@ export const SpeedBtn = styled.button<{ $active?: boolean }>`
   background: #0c0c14;
   border: 1px solid #262636;
   color: #605848;
-  font-size: 9px;
-  padding: 1px 6px;
+  font-size: ${FONT_SIZES.speedBtn}px;
+  padding: ${BUTTON_PADDING.speedBtn};
   cursor: pointer;
   border-radius: 2px;
   transition: all 0.1s;
@@ -338,11 +347,11 @@ export const SpeedBtn = styled.button<{ $active?: boolean }>`
 `;
 
 export const SurrenderBtn = styled.button`
-  font-size: 8px;
+  font-size: ${FONT_SIZES.surrenderBtn}px;
   color: #403828;
   background: none;
   border: 1px solid #262636;
-  padding: 1px 6px;
+  padding: ${BUTTON_PADDING.surrenderBtn};
   cursor: pointer;
   border-radius: 2px;
   font-family: inherit;
@@ -358,7 +367,7 @@ export const AllyBadge = styled.div<{ $dead?: boolean }>`
   background: #0c0c14;
   border: 1px solid #262636;
   padding: 3px 6px;
-  font-size: 9px;
+  font-size: ${FONT_SIZES.allyBadge}px;
   text-align: center;
   min-width: 62px;
   border-radius: 3px;
@@ -378,7 +387,7 @@ export const AllyRow = styled.div`
 `;
 
 export const TierHeader = styled.div<{ $locked?: boolean }>`
-  font-size: 10px;
+  font-size: ${FONT_SIZES.tierHeader}px;
   color: ${p => p.$locked ? '#401020' : '#605848'};
   margin: 8px 0 3px;
   padding-bottom: 3px;
@@ -391,7 +400,7 @@ export const TierHeader = styled.div<{ $locked?: boolean }>`
 export const RunStatRow = styled.div`
   display: flex;
   justify-content: space-between;
-  font-size: 10px;
+  font-size: ${FONT_SIZES.runStatRow}px;
   color: #605848;
   padding: 2px 8px;
   width: 100%;
@@ -413,7 +422,7 @@ export const PausedOverlay = styled.div`
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 24px;
+  font-size: ${FONT_SIZES.paused}px;
   color: #f0c040;
   text-shadow: 0 0 16px #f0c04060, 0 0 32px #f0c04030;
   letter-spacing: 8px;
@@ -521,8 +530,8 @@ export const SkillBtn = styled.button<{ $off?: boolean }>`
   background: linear-gradient(180deg, #1a1a28, #12121c);
   border: 1px solid #444;
   color: #e0d8c8;
-  font-size: 14px;
-  padding: 10px 16px;
+  font-size: ${FONT_SIZES.skillBtn}px;
+  padding: ${BUTTON_PADDING.skillBtn};
   cursor: pointer;
   border-radius: 4px;
   font-family: inherit;
@@ -569,12 +578,12 @@ export const snowfall = keyframes`
   0% { transform: translateY(-10px) translateX(0); opacity: 0; }
   10% { opacity: 0.8; }
   90% { opacity: 0.6; }
-  100% { transform: translateY(720px) translateX(20px); opacity: 0; }
+  100% { transform: translateY(1200px) translateX(20px); opacity: 0; }
 `;
 
 /** 火の粉キーフレーム */
 export const ember = keyframes`
-  0% { transform: translateY(720px) translateX(0); opacity: 0; }
+  0% { transform: translateY(1200px) translateX(0); opacity: 0; }
   10% { opacity: 0.9; }
   80% { opacity: 0.5; }
   100% { transform: translateY(-20px) translateX(-15px); opacity: 0; }
@@ -600,8 +609,8 @@ export const WeatherParticles = styled.div<{ $biome: string }>`
   ${p => p.$biome === 'glacier' && css`
     & > span {
       position: absolute;
-      width: 3px;
-      height: 3px;
+      width: 5px;
+      height: 5px;
       background: rgba(200, 220, 255, 0.85);
       border-radius: 50%;
       animation: ${snowfall} linear infinite;
@@ -613,8 +622,8 @@ export const WeatherParticles = styled.div<{ $biome: string }>`
   ${p => p.$biome === 'volcano' && css`
     & > span {
       position: absolute;
-      width: 3px;
-      height: 3px;
+      width: 5px;
+      height: 5px;
       background: rgba(255, 140, 40, 0.9);
       border-radius: 50%;
       animation: ${ember} linear infinite;
@@ -638,7 +647,7 @@ export const WeatherParticles = styled.div<{ $biome: string }>`
 
 /** チャレンジタイマー */
 export const TimerDisplay = styled.div<{ $urgent?: boolean }>`
-  font-size: 12px;
+  font-size: ${FONT_SIZES.timer}px;
   color: ${p => p.$urgent ? '#f05050' : '#f0c040'};
   text-shadow: 0 0 6px ${p => p.$urgent ? '#f0505060' : '#f0c04040'};
   font-weight: bold;
@@ -652,8 +661,9 @@ export const TabBtn = styled.button<{ $active?: boolean }>`
   background: #0c0c14;
   border: 1px solid #262636;
   color: #605848;
-  font-size: 10px;
+  font-size: ${FONT_SIZES.tab}px;
   padding: 4px 10px;
+  min-height: ${TAB_MIN_HEIGHT}px;
   cursor: pointer;
   border-radius: 3px;
   transition: all 0.15s;
@@ -669,7 +679,7 @@ export const TabBtn = styled.button<{ $active?: boolean }>`
 
 /** ゲームオーバー画面用ログ見返しコンテナ */
 export const LogReviewContainer = styled.div`
-  font-size: 9px;
+  font-size: ${FONT_SIZES.logReview}px;
   color: #808068;
   max-height: 200px;
   overflow-y: auto;

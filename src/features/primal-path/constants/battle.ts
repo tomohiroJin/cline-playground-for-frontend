@@ -70,22 +70,22 @@ export const ENEMY_COLORS: Readonly<Record<string, string>> = Object.freeze({
   '天空の裁定者': '#e0d050', '混沌の始祖龍': '#8040c0',
 });
 
-/** 敵詳細パーツ (大型) */
+/** 敵詳細パーツ (大型 32×32 グリッド) */
 export const ENEMY_DETAILS: readonly { match: string; parts: readonly (readonly [number, number, number, number, string | null])[] }[] = Object.freeze([
-  Object.freeze({ match: 'マンモス', parts: Object.freeze([Object.freeze([6, 12, 3, 10, '#c0b090'] as const), Object.freeze([4, 20, 3, 3, '#c0b090'] as const)]) }),
-  Object.freeze({ match: '竜', parts: Object.freeze([Object.freeze([0, 4, 5, 8, null] as const), Object.freeze([19, 4, 5, 8, null] as const)]) }),
-  Object.freeze({ match: '魔神', parts: Object.freeze([Object.freeze([0, 4, 5, 8, null] as const), Object.freeze([19, 4, 5, 8, null] as const)]) }),
-  Object.freeze({ match: '神獣', parts: Object.freeze([Object.freeze([8, 0, 2, 3, '#fff'] as const), Object.freeze([14, 0, 2, 3, '#fff'] as const)]) }),
-  Object.freeze({ match: '守護者', parts: Object.freeze([Object.freeze([2, 0, 4, 4, '#60c060'] as const), Object.freeze([18, 0, 4, 4, '#60c060'] as const)]) }),
-  Object.freeze({ match: 'タイガー', parts: Object.freeze([Object.freeze([6, 10, 2, 4, '#fff'] as const), Object.freeze([16, 10, 2, 4, '#fff'] as const)]) }),
-  Object.freeze({ match: '裁定者', parts: Object.freeze([Object.freeze([0, 4, 5, 8, null] as const), Object.freeze([19, 4, 5, 8, null] as const)]) }),
-  Object.freeze({ match: '始祖龍', parts: Object.freeze([Object.freeze([0, 4, 5, 8, null] as const), Object.freeze([19, 4, 5, 8, null] as const)]) }),
+  Object.freeze({ match: 'マンモス', parts: Object.freeze([Object.freeze([8, 16, 4, 14, '#c0b090'] as const), Object.freeze([5, 27, 4, 4, '#c0b090'] as const)]) }),
+  Object.freeze({ match: '竜', parts: Object.freeze([Object.freeze([0, 5, 7, 11, null] as const), Object.freeze([25, 5, 7, 11, null] as const)]) }),
+  Object.freeze({ match: '魔神', parts: Object.freeze([Object.freeze([0, 5, 7, 11, null] as const), Object.freeze([25, 5, 7, 11, null] as const)]) }),
+  Object.freeze({ match: '神獣', parts: Object.freeze([Object.freeze([10, 0, 3, 4, '#fff'] as const), Object.freeze([19, 0, 3, 4, '#fff'] as const)]) }),
+  Object.freeze({ match: '守護者', parts: Object.freeze([Object.freeze([2, 0, 6, 6, '#60c060'] as const), Object.freeze([24, 0, 6, 6, '#60c060'] as const)]) }),
+  Object.freeze({ match: 'タイガー', parts: Object.freeze([Object.freeze([8, 13, 3, 6, '#fff'] as const), Object.freeze([21, 13, 3, 6, '#fff'] as const)]) }),
+  Object.freeze({ match: '裁定者', parts: Object.freeze([Object.freeze([0, 5, 7, 11, null] as const), Object.freeze([25, 5, 7, 11, null] as const)]) }),
+  Object.freeze({ match: '始祖龍', parts: Object.freeze([Object.freeze([0, 5, 7, 11, null] as const), Object.freeze([25, 5, 7, 11, null] as const)]) }),
 ]);
 
-/** 敵詳細パーツ (小型) */
+/** 敵詳細パーツ (小型 24×24 グリッド) */
 export const ENEMY_SMALL_DETAILS: readonly { match: string; parts: readonly (readonly [number, number, number, number, string | null])[] }[] = Object.freeze([
-  Object.freeze({ match: '鳥', parts: Object.freeze([Object.freeze([2, 0, 3, 6, null] as const), Object.freeze([11, 0, 3, 6, null] as const)]) }),
-  Object.freeze({ match: 'ヘビ', parts: Object.freeze([Object.freeze([3, 8, 10, 2, null] as const), Object.freeze([12, 6, 3, 3, null] as const)]) }),
-  Object.freeze({ match: '蛇', parts: Object.freeze([Object.freeze([3, 8, 10, 2, null] as const), Object.freeze([12, 6, 3, 3, null] as const)]) }),
-  Object.freeze({ match: 'ベア', parts: Object.freeze([Object.freeze([4, 0, 2, 2, null] as const), Object.freeze([10, 0, 2, 2, null] as const)]) }),
+  Object.freeze({ match: '鳥', parts: Object.freeze([Object.freeze([3, 0, 4, 9, null] as const), Object.freeze([17, 0, 4, 9, null] as const)]) }),
+  Object.freeze({ match: 'ヘビ', parts: Object.freeze([Object.freeze([4, 12, 16, 3, null] as const), Object.freeze([18, 9, 4, 4, null] as const)]) }),
+  Object.freeze({ match: '蛇', parts: Object.freeze([Object.freeze([4, 12, 16, 3, null] as const), Object.freeze([18, 9, 4, 4, null] as const)]) }),
+  Object.freeze({ match: 'ベア', parts: Object.freeze([Object.freeze([6, 0, 3, 3, null] as const), Object.freeze([15, 0, 3, 3, null] as const)]) }),
 ]);
