@@ -39,6 +39,8 @@ export type EffectState = {
 export type GameEffects = {
   player: EffectState;
   cpu: EffectState;
+  ally?: EffectState;   // 2v2 時のみ（P2 味方）
+  enemy?: EffectState;  // 2v2 時のみ（P4 敵2）
 };
 
 export type GoalEffect = {
@@ -89,6 +91,8 @@ export type FieldConfig = {
 export type GameState = {
   player: Mallet;
   cpu: Mallet;
+  ally?: Mallet;       // P2 味方（2v2 時のみ）
+  enemy?: Mallet;      // P4 敵2（2v2 時のみ）
   pucks: Puck[];
   items: Item[];
   effects: GameEffects;
@@ -98,6 +102,13 @@ export type GameState = {
   cpuTarget: Vector | null;
   cpuTargetTime: number;
   cpuStuckTimer: number;
+  // 2v2 モード用の追加 AI 状態
+  allyTarget?: Vector | null;
+  allyTargetTime?: number;
+  allyStuckTimer?: number;
+  enemyTarget?: Vector | null;
+  enemyTargetTime?: number;
+  enemyStuckTimer?: number;
   fever: FeverState;
   particles: Particle[];
   obstacleStates: ObstacleState[]; // 障害物の破壊状態
@@ -171,7 +182,10 @@ export type Character = {
 };
 
 // ゲームモード
-export type GameMode = 'free' | 'story' | '2p-local';
+export type GameMode = 'free' | 'story' | '2p-local' | '2v2-local';
+
+// 2v2 モードのプレイヤースロット（domain/contracts/input から re-export）
+export type { PlayerSlot } from '../domain/contracts/input';
 
 export type SoundSystem = {
   hit: (speed?: number) => void;

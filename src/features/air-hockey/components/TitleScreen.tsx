@@ -39,6 +39,12 @@ const TwoPlayerButton = styled(StartButton)`
   margin-top: 10px;
 `;
 
+// ペアマッチボタン（緑系グラデーション）
+const PairMatchButton = styled(StartButton)`
+  background: linear-gradient(135deg, #27ae60, #2ecc71);
+  margin-top: 10px;
+`;
+
 // 通知バッジ（赤丸 + 白文字）
 const NotificationBadge = styled.span`
   position: absolute;
@@ -73,6 +79,7 @@ type TitleScreenProps = {
   onDailyChallengeClick?: () => void;
   onCharacterDexClick?: () => void;
   onTwoPlayerClick?: () => void;
+  onPairMatchClick?: () => void;
   newUnlockCount?: number;
   unlockState?: UnlockState;
 };
@@ -93,6 +100,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
   onDailyChallengeClick,
   onCharacterDexClick,
   onTwoPlayerClick,
+  onPairMatchClick,
   newUnlockCount,
   unlockState,
 }) => (
@@ -180,6 +188,12 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
       <TwoPlayerButton onClick={onTwoPlayerClick}>
         2P 対戦
       </TwoPlayerButton>
+    )}
+
+    {onPairMatchClick && (
+      <PairMatchButton onClick={onPairMatchClick}>
+        ペアマッチ
+      </PairMatchButton>
     )}
 
     <div style={{ color: 'var(--accent-color)', fontWeight: 'bold', marginTop: '1rem' }}>

@@ -4,7 +4,8 @@
  * - 実績・アンロック判定は 2P 対戦では無効
  */
 import type { Character, FieldConfig } from '../../core/types';
-import type { PlayerSlot } from '../../domain/contracts/input';
+/** 2P 対戦で使用するスロット（player1/player2 のみ） */
+type TwoPlayerSlot = 'player1' | 'player2';
 
 /** 2P 対戦の設定 */
 export type TwoPlayerConfig = {
@@ -41,13 +42,13 @@ export class TwoPlayerBattleUseCase {
   }
 
   /** スコアを加算する */
-  addScore(playerSlot: PlayerSlot): void {
+  addScore(playerSlot: TwoPlayerSlot): void {
     if (!this.state) return;
     this.state.scores[playerSlot] += 1;
   }
 
   /** 勝者を取得する（未決着の場合は undefined） */
-  getWinner(): PlayerSlot | undefined {
+  getWinner(): TwoPlayerSlot | undefined {
     if (!this.state) return undefined;
     const { scores, winScore } = this.state;
     if (scores.player1 >= winScore) return 'player1';

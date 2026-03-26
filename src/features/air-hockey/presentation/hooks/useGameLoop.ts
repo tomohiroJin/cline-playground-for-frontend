@@ -12,6 +12,7 @@ import { Physics } from '../../core/physics';
 import { CpuAI } from '../../core/ai';
 import { AI_BEHAVIOR_PRESETS, type AiBehaviorConfig } from '../../core/story-balance';
 import { EntityFactory, moveMalletTo, resolveMalletPuckOverlap } from '../../core/entities';
+import { getAllMallets } from '../../core/pair-match-logic';
 import { applyItemEffect } from '../../core/items';
 import { CONSTANTS, DEFAULT_PLAYER_MALLET_COLOR, DEFAULT_CPU_MALLET_COLOR } from '../../core/constants';
 import { ITEMS } from '../../core/config';
@@ -56,7 +57,7 @@ export type GameLoopConfig = {
   winScore: number;
   getSound: () => SoundSystem;
   bgmEnabled: boolean;
-  gameMode?: 'free' | 'story' | '2p-local';
+  gameMode?: 'free' | 'story' | '2p-local' | '2v2-local';
   /** ステージ固有の AI 設定（指定時は difficulty プリセットより優先） */
   aiConfig?: AiBehaviorConfig;
   /** プレイヤーマレットの色（2P 対戦時にキャラカラーを反映） */
@@ -122,6 +123,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
     statsRef, matchStartRef, keysRef, playerTargetRef, player2KeysRef, multiTouchRef,
   } = refs;
   const is2PMode = gameMode === '2p-local';
+  const is2v2Mode = gameMode === '2v2-local';
   const { setScores, setWinner, setScreen, setShowHelp, setShake } = callbacks;
 
   useEffect(() => {
@@ -205,14 +207,12 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       isPuck = false,
       now = Date.now()
     ): T => {
-      const mallets = [
-        { mallet: game.player, isPlayer: true },
-        { mallet: game.cpu, isPlayer: false },
-      ];
+      const mallets = getAllMallets(game);
 
-      for (const { mallet, isPlayer } of mallets) {
-        const side = isPlayer ? 'player' : 'cpu';
-        const bigEffect = game.effects[side].big;
+      for (const { mallet, isPlayer, side } of mallets) {
+        const effectState = game.effects[side];
+        if (!effectState) continue;
+        const bigEffect = effectState.big;
         const bigScale = bigEffect && now - bigEffect.start < bigEffect.duration ? bigEffect.scale : 1;
 
         const pScore = scoreRef.current.p;
@@ -228,10 +228,10 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
 
           obj = Physics.resolveCollision(obj, col, power, mallet.vx, mallet.vy, 0.4);
 
-          if (isPuck && isPlayer && game.effects.player.invisible > 0) {
+          if (isPuck && isPlayer && effectState.invisible > 0) {
             (obj as Puck).visible = false;
             (obj as Puck).invisibleCount = 25;
-            game.effects.player.invisible--;
+            effectState.invisible--;
           }
 
           sound.hit(speed);
@@ -326,6 +326,8 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         Renderer.clear(ctx, consts, now);
         Renderer.drawField(ctx, field, consts, game.obstacleStates, now);
         Renderer.drawMallet(ctx, game.cpu, cColor, false, consts);
+        if (game.enemy) Renderer.drawMallet(ctx, game.enemy, cColor, false, consts);
+        if (game.ally) Renderer.drawMallet(ctx, game.ally, pColor, false, consts);
         Renderer.drawMallet(ctx, game.player, pColor, false, consts);
 
         if (elapsed < COUNTDOWN_DURATION) {
@@ -361,6 +363,8 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         game.items.forEach((item: Item) => Renderer.drawItem(ctx, item, now, consts));
         game.pucks.forEach((puck: Puck) => Renderer.drawPuck(ctx, puck, consts));
         Renderer.drawMallet(ctx, game.cpu, cColor, false, consts);
+        if (game.enemy) Renderer.drawMallet(ctx, game.enemy, cColor, false, consts);
+        if (game.ally) Renderer.drawMallet(ctx, game.ally, pColor, false, consts);
         Renderer.drawMallet(ctx, game.player, pColor, game.effects.player.invisible > 0, consts);
         Renderer.drawPauseOverlay(ctx, consts);
         animationRef = requestAnimationFrame(gameLoop);
@@ -368,9 +372,11 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       }
 
       // マレットサイズスケール計算
-      const getMalletScale = (side: 'player' | 'cpu'): number => {
+      const getMalletScale = (side: 'player' | 'cpu' | 'ally' | 'enemy'): number => {
         let scale = 1;
-        const bigEff = game.effects[side].big;
+        const sideEffects = game.effects[side];
+        if (!sideEffects) return scale;
+        const bigEff = sideEffects.big;
         if (bigEff && now - bigEff.start < bigEff.duration) {
           scale *= bigEff.scale;
         }
@@ -398,6 +404,8 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         const cpuScale = getMalletScale('cpu');
         const playerScale = getMalletScale('player');
         Renderer.drawMallet(ctx, game.cpu, cColor, false, consts, cpuScale);
+        if (game.enemy) Renderer.drawMallet(ctx, game.enemy, cColor, false, consts, getMalletScale('enemy'));
+        if (game.ally) Renderer.drawMallet(ctx, game.ally, pColor, false, consts, getMalletScale('ally'));
         Renderer.drawMallet(ctx, game.player, pColor, game.effects.player.invisible > 0, consts, playerScale);
         Renderer.drawParticles(ctx, game.particles);
         Renderer.drawShockwave(ctx, hitStop);
@@ -490,12 +498,64 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         }
       }
 
+      // 2v2 モード: ally（P2）と enemy（P4）の CPU AI 制御
+      if (is2v2Mode) {
+        const scoreDiff2v2 = Math.max(0, scoreRef.current.p - scoreRef.current.c);
+        const effectiveAiConfig2v2 = aiConfig ?? AI_BEHAVIOR_PRESETS[diff];
+
+        // P2（ally）: AI で制御（cpu フィールドに ally を設定し、AI 状態も引き継ぐ）
+        if (game.ally) {
+          const allyAsGame = {
+            ...game,
+            cpu: game.ally,
+            cpuTarget: game.allyTarget ?? null,
+            cpuTargetTime: game.allyTargetTime ?? 0,
+            cpuStuckTimer: game.allyStuckTimer ?? 0,
+          };
+          const allyUpdate = CpuAI.updateWithBehavior(allyAsGame, effectiveAiConfig2v2, now, consts, scoreDiff2v2);
+          if (allyUpdate) {
+            game.ally = allyUpdate.cpu;
+            game.allyTarget = allyUpdate.cpuTarget;
+            game.allyTargetTime = allyUpdate.cpuTargetTime;
+            game.allyStuckTimer = allyUpdate.cpuStuckTimer;
+          }
+        }
+
+        // P4（enemy）: AI で制御
+        if (game.enemy) {
+          const enemyAsGame = {
+            ...game,
+            cpu: game.enemy,
+            cpuTarget: game.enemyTarget ?? null,
+            cpuTargetTime: game.enemyTargetTime ?? 0,
+            cpuStuckTimer: game.enemyStuckTimer ?? 0,
+          };
+          const enemyUpdate = CpuAI.updateWithBehavior(enemyAsGame, effectiveAiConfig2v2, now, consts, scoreDiff2v2);
+          if (enemyUpdate) {
+            game.enemy = enemyUpdate.cpu;
+            game.enemyTarget = enemyUpdate.cpuTarget;
+            game.enemyTargetTime = enemyUpdate.cpuTargetTime;
+            game.enemyStuckTimer = enemyUpdate.cpuStuckTimer;
+          }
+        }
+      }
+
       // マレット移動後、衝突処理前にパックとの食い込みを解消（パックを弾く）
       // effectiveMR を使い、processCollisions との二重衝突を防止
       const playerMR = MR * getMalletScale('player');
       const cpuMR = MR * getMalletScale('cpu');
       resolveMalletPuckOverlap(game.player, game.pucks, playerMR, BR, consts.PHYSICS.MAX_POWER);
       resolveMalletPuckOverlap(game.cpu, game.pucks, cpuMR, BR, consts.PHYSICS.MAX_POWER);
+
+      // 2v2: ally/enemy のパック食い込み解消
+      if (game.ally) {
+        const allyMR = MR * getMalletScale('ally');
+        resolveMalletPuckOverlap(game.ally, game.pucks, allyMR, BR, consts.PHYSICS.MAX_POWER);
+      }
+      if (game.enemy) {
+        const enemyMR = MR * getMalletScale('enemy');
+        resolveMalletPuckOverlap(game.enemy, game.pucks, enemyMR, BR, consts.PHYSICS.MAX_POWER);
+      }
 
       // フィーバー判定
       if (!game.fever.active && now - game.fever.lastGoalTime >= consts.TIMING.FEVER_TRIGGER) {
@@ -605,6 +665,8 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         };
         applyMagnet(game.player, game.effects.player);
         applyMagnet(game.cpu, game.effects.cpu);
+        if (game.ally && game.effects.ally) applyMagnet(game.ally, game.effects.ally);
+        if (game.enemy && game.effects.enemy) applyMagnet(game.enemy, game.effects.enemy);
 
         if (!puck.visible) {
           puck.invisibleCount--;
@@ -621,8 +683,15 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
 
         if (scored === null) {
           if (puck.y < 5 && goalCheckerWithSide(puck.x, 'cpu')) {
-            if (game.effects.cpu.shield) {
-              game.effects.cpu.shield = false;
+            // チーム2側（cpu/enemy）のシールドをチェック
+            const cpuTeamHasShield = game.effects.cpu.shield || (game.effects.enemy?.shield ?? false);
+            if (cpuTeamHasShield) {
+              // enemy のシールドを優先消費、なければ cpu のシールドを消費
+              if (game.effects.enemy?.shield) {
+                game.effects.enemy.shield = false;
+              } else {
+                game.effects.cpu.shield = false;
+              }
               puck.vy = Math.abs(puck.vy) * 0.8;
               puck.y = 15;
               game.pucks[i] = puck;
@@ -639,8 +708,15 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
               scoredIndex = i;
             }
           } else if (puck.y > H - 5 && goalCheckerWithSide(puck.x, 'player')) {
-            if (game.effects.player.shield) {
-              game.effects.player.shield = false;
+            // チーム1側（player/ally）のシールドをチェック
+            const playerTeamHasShield = game.effects.player.shield || (game.effects.ally?.shield ?? false);
+            if (playerTeamHasShield) {
+              // ally のシールドを優先消費、なければ player のシールドを消費
+              if (game.effects.ally?.shield) {
+                game.effects.ally.shield = false;
+              } else {
+                game.effects.player.shield = false;
+              }
               puck.vy = -Math.abs(puck.vy) * 0.8;
               puck.y = H - 15;
               game.pucks[i] = puck;
@@ -682,6 +758,8 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       game.items.forEach((item: Item) => Renderer.drawItem(ctx, item, now, consts));
       game.pucks.forEach((puck: Puck) => Renderer.drawPuck(ctx, puck, consts));
       Renderer.drawMallet(ctx, game.cpu, cColor, false, consts, getMalletScale('cpu'));
+      if (game.enemy) Renderer.drawMallet(ctx, game.enemy, cColor, false, consts, getMalletScale('enemy'));
+      if (game.ally) Renderer.drawMallet(ctx, game.ally, pColor, game.effects.ally?.invisible ? game.effects.ally.invisible > 0 : false, consts, getMalletScale('ally'));
       Renderer.drawMallet(ctx, game.player, pColor, game.effects.player.invisible > 0, consts, getMalletScale('player'));
       Renderer.drawParticles(ctx, game.particles);
       Renderer.drawHUD(ctx, game.effects, now, consts);
@@ -689,14 +767,20 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       Renderer.drawFeverEffect(ctx, game.fever.active, now, consts);
       Renderer.drawCombo(ctx, game.combo, now, consts);
 
-      if (game.effects.player.shield) Renderer.drawShield(ctx, true, baseGoalSize, consts);
-      if (game.effects.cpu.shield) Renderer.drawShield(ctx, false, baseGoalSize, consts);
+      if (game.effects.player.shield || game.effects.ally?.shield) Renderer.drawShield(ctx, true, baseGoalSize, consts);
+      if (game.effects.cpu.shield || game.effects.enemy?.shield) Renderer.drawShield(ctx, false, baseGoalSize, consts);
 
       if (game.effects.player.magnet && now - game.effects.player.magnet.start < game.effects.player.magnet.duration) {
         Renderer.drawMagnetEffect(ctx, game.player, now);
       }
       if (game.effects.cpu.magnet && now - game.effects.cpu.magnet.start < game.effects.cpu.magnet.duration) {
         Renderer.drawMagnetEffect(ctx, game.cpu, now);
+      }
+      if (game.ally && game.effects.ally?.magnet && now - game.effects.ally.magnet.start < game.effects.ally.magnet.duration) {
+        Renderer.drawMagnetEffect(ctx, game.ally, now);
+      }
+      if (game.enemy && game.effects.enemy?.magnet && now - game.effects.enemy.magnet.start < game.effects.enemy.magnet.duration) {
+        Renderer.drawMagnetEffect(ctx, game.enemy, now);
       }
 
       if (slowMo.active) {

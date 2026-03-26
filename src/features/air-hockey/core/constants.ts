@@ -20,12 +20,18 @@ export const DEFAULT_CPU_MALLET_COLOR = '#e74c3c';
 
 /**
  * プレイヤーのマレット移動範囲（Y 軸）を取得する
- * player1: 下半分、player2: 上半分
+ * player1/player2: 下半分/上半分（2Pモード互換）
+ * player3/player4: getPlayerZone 経由で上半分に制約
  */
 export function getPlayerYBounds(
-  playerSlot: 'player1' | 'player2',
+  playerSlot: 'player1' | 'player2' | 'player3' | 'player4',
   constants: GameConstants
 ): { minY: number; maxY: number } {
+  // player3/player4 は4分割ゾーンから取得
+  if (playerSlot === 'player3' || playerSlot === 'player4') {
+    const zone = getPlayerZone(playerSlot, constants);
+    return { minY: zone.minY, maxY: zone.maxY };
+  }
   const { HEIGHT: H } = constants.CANVAS;
   const MR = constants.SIZES.MALLET;
   const minY = playerSlot === 'player2'
@@ -46,6 +52,33 @@ export function getPlayerXBounds(
   const { WIDTH: W } = constants.CANVAS;
   const MR = constants.SIZES.MALLET;
   return { minX: MR + MALLET_WALL_MARGIN, maxX: W - MR - MALLET_WALL_MARGIN };
+}
+
+/**
+ * 2v2 モードの4分割ゾーン境界を取得する
+ * 各マレットは自分のゾーン内でのみ移動可能
+ */
+export function getPlayerZone(
+  slot: 'player1' | 'player2' | 'player3' | 'player4',
+  constants: GameConstants
+): { minX: number; maxX: number; minY: number; maxY: number } {
+  const { WIDTH: W, HEIGHT: H } = constants.CANVAS;
+  const MR = constants.SIZES.MALLET;
+  const margin = MALLET_WALL_MARGIN;
+  const centerMargin = MALLET_CENTER_LINE_MARGIN;
+  const halfW = W / 2;
+  const halfH = H / 2;
+
+  switch (slot) {
+    case 'player1': // 左下
+      return { minX: MR + margin, maxX: halfW, minY: halfH + MR + centerMargin, maxY: H - MR - margin };
+    case 'player2': // 右下
+      return { minX: halfW, maxX: W - MR - margin, minY: halfH + MR + centerMargin, maxY: H - MR - margin };
+    case 'player3': // 左上
+      return { minX: MR + margin, maxX: halfW, minY: MR + margin, maxY: halfH - MR - centerMargin };
+    case 'player4': // 右上
+      return { minX: halfW, maxX: W - MR - margin, minY: MR + margin, maxY: halfH - MR - centerMargin };
+  }
 }
 
 /**

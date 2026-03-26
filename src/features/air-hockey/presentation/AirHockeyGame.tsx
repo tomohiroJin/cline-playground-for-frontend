@@ -105,7 +105,8 @@ const AirHockeyGame: React.FC = () => {
   // ── ゲーム制御 ──
   const startGame = useCallback((fieldOverride?: typeof mode.field) => {
     const activeField = fieldOverride ?? mode.field;
-    gameRef.current = EntityFactory.createGameState(CONSTANTS, activeField);
+    const is2v2 = mode.gameMode === '2v2-local';
+    gameRef.current = EntityFactory.createGameState(CONSTANTS, activeField, is2v2);
     scoreRef.current = { p: 0, c: 0 };
     setScores({ p: 0, c: 0 });
     setWinner(null);
@@ -117,7 +118,7 @@ const AirHockeyGame: React.FC = () => {
     statsRef.current = EntityFactory.createMatchStats();
     matchStartRef.current = Date.now();
   // eslint-disable-next-line react-hooks/exhaustive-deps -- mode全体を依存に入れるとゲーム開始時に不要な再レンダリングが発生するため、必要な値のみ指定
-  }, [mode.field, navigateWithTransition]);
+  }, [mode.field, mode.gameMode, navigateWithTransition]);
 
   const togglePause = useCallback(() => {
     if (phaseRef.current === 'playing') phaseRef.current = 'paused';
@@ -252,6 +253,11 @@ const AirHockeyGame: React.FC = () => {
   const handleResultBackToMenu = useCallback(() => { mode.resetToFree(); navigateTo('menu'); }, [mode, navigateTo]);
   // ── 2P 対戦 ──
   const handleTwoPlayerClick = useCallback(() => { navigateTo('characterSelect'); }, [navigateTo]);
+  // ── ペアマッチ（2v2）──
+  const handlePairMatchClick = useCallback(() => {
+    mode.setGameMode('2v2-local');
+    startGame(mode.field);
+  }, [mode, startGame]);
   const handleStartBattle = useCallback((config: TwoPlayerConfig) => {
     mode.setGameMode('2p-local');
     mode.setPlayer1Character(config.player1Character);
@@ -289,9 +295,10 @@ const AirHockeyGame: React.FC = () => {
   const handleInput = useInput(canvasRef, lastInputRef, playerTargetRef, screen, showHelp, setShowHelp);
   const keysRef = useKeyboardInput(gameRef, lastInputRef, screen, showHelp, setShowHelp);
 
-  // ── 2P モード判定 ──
+  // ── 2P / 2v2 モード判定 ──
   const is2PMode = mode.gameMode === '2p-local';
-  const is2PGame = is2PMode && screen === 'game';
+  const is2v2Mode = mode.gameMode === '2v2-local';
+  const is2PGame = (is2PMode || is2v2Mode) && screen === 'game';
 
   // 2P 用マルチタッチ入力（画面上下分割）
   const { stateRef: multiTouchRef } = useMultiTouchInput(canvasRef, is2PGame);
@@ -333,8 +340,8 @@ const AirHockeyGame: React.FC = () => {
     refs: {
       gameRef, canvasRef, lastInputRef, scoreRef, phaseRef, countdownStartRef, shakeRef, statsRef, matchStartRef, keysRef,
       playerTargetRef,
-      player2KeysRef: is2PMode ? player2KeysRef : undefined,
-      multiTouchRef: is2PMode ? multiTouchRef : undefined,
+      player2KeysRef: (is2PMode || is2v2Mode) ? player2KeysRef : undefined,
+      multiTouchRef: (is2PMode || is2v2Mode) ? multiTouchRef : undefined,
     },
     callbacks: { setScores, setWinner, setScreen: handleScreenChange, setShowHelp, setShake },
   });
@@ -361,6 +368,7 @@ const AirHockeyGame: React.FC = () => {
             onCharacterDexClick={() => navigateTo('characterDex')}
             newUnlockCount={dex.getNewUnlockCount()}
             onTwoPlayerClick={handleTwoPlayerClick}
+            onPairMatchClick={handlePairMatchClick}
           />
         </Transition>
       )}

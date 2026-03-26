@@ -102,16 +102,27 @@ export const EntityFactory = {
       destroyedAt: 0,
     }));
   },
-  createGameState: (consts: GameConstants = CONSTANTS, field?: FieldConfig): GameState => {
+  createGameState: (consts: GameConstants = CONSTANTS, field?: FieldConfig, is2v2 = false): GameState => {
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
+    const defaultEffect = (): import('./types').EffectState => ({ speed: null, invisible: 0, shield: false, magnet: null, big: null });
+
+    // 2v2 モードではマレット位置を4分割配置に変更
+    const playerX = is2v2 ? W / 4 : W / 2;
+    const playerY = is2v2 ? H - 120 : H - 70;
+    const cpuX = is2v2 ? W / 4 : W / 2;
+    const cpuY = is2v2 ? 120 : 70;
+
     return {
-      player: EntityFactory.createMallet(W / 2, H - 70),
-      cpu: EntityFactory.createMallet(W / 2, 70),
+      player: EntityFactory.createMallet(playerX, playerY),
+      cpu: EntityFactory.createMallet(cpuX, cpuY),
+      ally: is2v2 ? EntityFactory.createMallet(W * 3 / 4, H - 120) : undefined,
+      enemy: is2v2 ? EntityFactory.createMallet(W * 3 / 4, 120) : undefined,
       pucks: [EntityFactory.createPuck(W / 2, H / 2, randomRange(-0.5, 0.5), Math.random() > 0.5 ? 1.5 : -1.5)],
       items: [],
       effects: {
-        player: { speed: null, invisible: 0, shield: false, magnet: null, big: null },
-        cpu: { speed: null, invisible: 0, shield: false, magnet: null, big: null },
+        player: defaultEffect(),
+        cpu: defaultEffect(),
+        ...(is2v2 ? { ally: defaultEffect(), enemy: defaultEffect() } : {}),
       },
       lastItemSpawn: Date.now(),
       flash: null,
