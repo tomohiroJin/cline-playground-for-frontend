@@ -16,7 +16,7 @@ import { EntityFactory } from '../core/entities';
 import { CONSTANTS } from '../core/constants';
 import { FIELDS } from '../core/config';
 import { getCharacterByDifficulty, findCharacterById, getBattleCharacters, PLAYER_CHARACTER } from '../core/characters';
-import type { Character, GameState, GamePhase, ShakeState, MatchStats } from '../core/types';
+import type { Character, GameState, GamePhase, ShakeState, MatchStats, GameMode } from '../core/types';
 import { loadStoryProgress, resetStoryProgress } from '../core/story';
 import type { StageDefinition } from '../core/story';
 import { CHAPTER_1_STAGES } from '../core/dialogue-data';
@@ -104,9 +104,10 @@ const AirHockeyGame: React.FC = () => {
   }, [screen]);
 
   // ── ゲーム制御 ──
-  const startGame = useCallback((fieldOverride?: typeof mode.field) => {
+  const startGame = useCallback((fieldOverride?: typeof mode.field, gameModeOverride?: GameMode) => {
     const activeField = fieldOverride ?? mode.field;
-    const is2v2 = mode.gameMode === '2v2-local';
+    const effectiveGameMode = gameModeOverride ?? mode.gameMode;
+    const is2v2 = effectiveGameMode === '2v2-local';
     gameRef.current = EntityFactory.createGameState(CONSTANTS, activeField, is2v2);
     scoreRef.current = { p: 0, c: 0 };
     setScores({ p: 0, c: 0 });
@@ -260,16 +261,14 @@ const AirHockeyGame: React.FC = () => {
   }, [navigateTo]);
   const handlePairMatchStart = useCallback(() => {
     mode.setGameMode('2v2-local');
-    startGame(mode.field);
+    startGame(mode.field, '2v2-local');
   }, [mode, startGame]);
   const handleBackFromTeamSetup = useCallback(() => { navigateTo('menu'); }, [navigateTo]);
   const handleStartBattle = useCallback((config: TwoPlayerConfig) => {
     mode.setGameMode('2p-local');
     mode.setPlayer1Character(config.player1Character);
     mode.setPlayer2Character(config.player2Character);
-    mode.setField(config.field);
-    mode.setWinScore(config.winScore);
-    startGame(config.field);
+    startGame(mode.field, '2p-local');
   }, [mode, startGame]);
   // ── フリー対戦キャラ選択 ──
   const freeBattleSelectableCharacters = React.useMemo(() => {

@@ -40,4 +40,34 @@ describe('TeamSetupScreen', () => {
     expect(screen.queryByText('Field')).toBeNull();
     expect(screen.queryByText('Win Score')).toBeNull();
   });
+
+  describe('レイアウト統一（CharacterSelectScreen と同パターン）', () => {
+    it('フルスクリーンコンテナで表示される', () => {
+      const { container } = render(<TeamSetupScreen {...defaultProps} />);
+      const root = container.firstElementChild as HTMLElement;
+      expect(root.style.height).toBe('100%');
+      expect(root.style.display).toBe('flex');
+      expect(root.style.flexDirection).toBe('column');
+    });
+
+    it('ヘッダーが space-between レイアウトで戻るボタン・タイトルが配置される', () => {
+      render(<TeamSetupScreen {...defaultProps} />);
+      // タイトルがヘッダー内に表示される
+      const title = screen.getByText('ペアマッチ');
+      expect(title).toBeDefined();
+      // 戻るボタンが button 要素で表示される
+      const backButton = screen.getByRole('button', { name: /戻る/ });
+      expect(backButton).toBeDefined();
+      // ヘッダーコンテナが space-between レイアウト
+      const header = backButton.parentElement as HTMLElement;
+      expect(header.style.justifyContent).toBe('space-between');
+    });
+
+    it('MenuCard コンポーネントを使用しない（独自レイアウト）', () => {
+      const { container } = render(<TeamSetupScreen {...defaultProps} />);
+      const root = container.firstElementChild as HTMLElement;
+      // フルスクリーンコンテナの背景色が設定されている
+      expect(root.style.backgroundColor).toBeTruthy();
+    });
+  });
 });

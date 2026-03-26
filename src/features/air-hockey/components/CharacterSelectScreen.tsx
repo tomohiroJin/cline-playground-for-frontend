@@ -281,36 +281,6 @@ export function CharacterSelectScreen({
         ))}
       </div>
 
-      {/* 設定 */}
-      <div style={styles.sectionTitle}>設定</div>
-      <div style={styles.settingsRow}>
-        <span style={styles.settingsLabel}>フィールド</span>
-        <select
-          style={styles.settingsSelect}
-          value={selectedField.id}
-          onChange={e => {
-            const found = fields.find(f => f.id === e.target.value);
-            if (found) setSelectedField(found);
-          }}
-        >
-          {availableFields.map(f => (
-            <option key={f.id} value={f.id}>{f.name}</option>
-          ))}
-        </select>
-      </div>
-      <div style={styles.settingsRow}>
-        <span style={styles.settingsLabel}>勝利スコア</span>
-        <select
-          style={styles.settingsSelect}
-          value={winScore}
-          onChange={e => setWinScore(Number(e.target.value))}
-        >
-          {WIN_SCORE_OPTIONS.map(n => (
-            <option key={n} value={n}>{n}</option>
-          ))}
-        </select>
-      </div>
-
       {/* 対戦開始ボタン */}
       <button style={styles.startButton} onClick={handleStartBattle}>
         対戦開始！

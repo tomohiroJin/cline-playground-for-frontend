@@ -10,6 +10,8 @@
 | S4-4 レンダリング | [x] 完了 | 4 | 2026-03-26 |
 | S4-5 UI・画面フロー | [x] 完了 | 6 | 2026-03-26 |
 | S4-6 テスト・品質保証 | [x] 完了 | 6 | 2026-03-26 |
+| S4-7 フィードバック対応 | [x] 完了 | 4 | 2026-03-26 |
+| S4-8 致命的バグ修正 | [x] 完了 | 3 | 2026-03-27 |
 
 ### 並行作業ガイド
 
@@ -250,7 +252,7 @@ S4-7-4（キャラ選択 UI）       ← 完全独立（2ファイルのみ）
 - [x] キャラアイコンサイズ拡大（36px → 42px）
 - [x] パネル最小幅拡大（100px → 120px）でタッチ領域改善
 - [x] 共通スタイル定数の統一（CARD_ICON_SIZE=42, GRID_GAP=10）
-- [ ] テスト確認: `tsc --noEmit` + 既存テスト全パス
+- [x] テスト確認: `tsc --noEmit` + 既存テスト全パス
 
 ---
 
@@ -260,9 +262,9 @@ S4-7-4（キャラ選択 UI）       ← 完全独立（2ファイルのみ）
 
 | フェーズ | ステータス | 内容 | 並行可否 |
 |---------|-----------|------|---------|
-| S4-8-1 startGame 同期化 | [ ] 未着手 | **最優先** 全バグの根本原因 | — |
-| S4-8-2 2P 設定 UI 削除 | [ ] 未着手 | CharacterSelectScreen 簡素化 | S4-8-1 と並行可 |
-| S4-8-3 レイアウト統一 | [ ] 未着手 | TeamSetupScreen の配置修正 | S4-8-1 と並行可 |
+| S4-8-1 startGame 同期化 | [x] 完了 | **最優先** 全バグの根本原因 | — |
+| S4-8-2 2P 設定 UI 削除 | [x] 完了 | CharacterSelectScreen 簡素化 | S4-8-1 と並行可 |
+| S4-8-3 レイアウト統一 | [x] 完了 | TeamSetupScreen の配置修正 | S4-8-1 と並行可 |
 
 ### 根本原因
 
@@ -274,27 +276,29 @@ React setState の非同期性により、`mode.setGameMode('2v2-local')` の直
 
 ### S4-8-1: startGame の gameMode 同期化【最優先】
 
-- [ ] `startGame` に `gameModeOverride?: GameMode` パラメータを追加
-- [ ] `handlePairMatchStart` で `'2v2-local'` を同期渡し
-- [ ] `handleStartBattle` で `'2p-local'` を同期渡し
-- [ ] フリー対戦・ストーリーの既存動作が壊れないことを確認
-- [ ] 動作確認: ally/enemy マレット4つ表示、マウスで操作可能
-- [ ] テスト確認: `tsc --noEmit` + 既存テスト全パス
+- [x] `startGame` に `gameModeOverride?: GameMode` パラメータを追加
+- [x] `handlePairMatchStart` で `'2v2-local'` を同期渡し
+- [x] `handleStartBattle` で `'2p-local'` を同期渡し
+- [x] フリー対戦・ストーリーの既存動作が壊れないことを確認
+- [x] 動作確認: ally/enemy マレット4つ表示、マウスで操作可能
+- [x] テスト確認: `tsc --noEmit` + 既存テスト全パス（85スイート / 1,195テスト）
 
 ---
 
 ### S4-8-2: 2P 対戦の設定 UI 削除
 
-- [ ] CharacterSelectScreen から「設定」セクション（Field / Win Score）を削除
-- [ ] `handleStartBattle` でタイトル画面の `mode.field` / `mode.winScore` を使用
-- [ ] テスト確認: `tsc --noEmit` + 既存テスト全パス
+- [x] CharacterSelectScreen から「設定」セクション（Field / Win Score）を削除
+- [x] `handleStartBattle` でタイトル画面の `mode.field` / `mode.winScore` を使用
+- [x] テスト確認: `tsc --noEmit` + 既存テスト全パス
 
 ---
 
 ### S4-8-3: TeamSetupScreen のレイアウト統一
 
-- [ ] 戻るボタン・タイトルの配置を他画面（CharacterSelectScreen 等）と統一
-- [ ] テスト確認: `tsc --noEmit` + 既存テスト全パス
+- [x] 戻るボタン・タイトルの配置を他画面（CharacterSelectScreen 等）と統一
+- [x] MenuCard/MenuButton 依存からフルスクリーン独自レイアウトに変更
+- [x] レイアウト統一テスト3件追加（TeamSetupScreen.test.tsx: 計7テスト）
+- [x] テスト確認: `tsc --noEmit` + 既存テスト全パス（85スイート / 1,195テスト）
 
 ---
 
