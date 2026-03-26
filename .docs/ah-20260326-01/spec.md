@@ -278,39 +278,78 @@ ResultScreen（チーム制リザルト）
 
 ## S-10: ally（P2）入力接続（S4-7-1）
 
+### 2v2 モード入力フロー全体図
+
+```
+P1（あなた）:  マウス/タッチ/矢印キー → game.player（左下ゾーン）
+P2（味方）  :  タッチ(右下)/WASD      → game.ally  （右下ゾーン）
+P3（敵1）   :  CPU AI                 → game.cpu   （左上ゾーン）
+P4（敵2）   :  CPU AI                 → game.enemy （右上ゾーン）
+```
+
 ### useGameLoop の入力処理変更
 
+2v2 モードでは `playerTargetRef`（useInput フック経由のマウス/タッチ）を**無効化**し、
+マルチタッチの `player1Position` で P1 を操作する（P2 との一貫性を保つため）。
+
 ```typescript
-// 2v2 モード: P2（ally）をプレイヤー入力で操作
+// マウス/タッチ入力（フレーム同期）— 2v2 モードでは無効化
+// 2v2 ではマルチタッチの player1Position を使用する
+if (!is2v2Mode && playerTargetRef?.current) {
+  moveMalletTo(game.player, playerTargetRef.current.x, playerTargetRef.current.y);
+  playerTargetRef.current = null;
+}
+
+// 2v2 モード: マルチタッチで P1 と P2（ally）を操作
 if (is2v2Mode && multiTouchRef?.current) {
   const touchState = multiTouchRef.current;
-  // P1: player1Position → game.player（既存）
+  // P1: player1Position → game.player
   if (touchState.player1Position) {
     moveMalletTo(game.player, touchState.player1Position.x, touchState.player1Position.y);
+    lastInputRef.current = Date.now();
   }
-  // P2: player2Position → game.ally（新規）
+  // P2: player2Position → game.ally（4分割ゾーンで右下にクランプ済み）
   if (touchState.player2Position && game.ally) {
     moveMalletTo(game.ally, touchState.player2Position.x, touchState.player2Position.y);
   }
 }
 
-// 2v2 キーボード: WASD → game.ally
+// 2v2 キーボード: WASD → game.ally（右下ゾーンにクランプ）
+// getPlayerZone('player2') で右下ゾーン境界を取得し、X/Y 両方をクランプ
 if (is2v2Mode && player2KeysRef && game.ally) {
   const keys2 = player2KeysRef.current;
   const hasInput = keys2.up || keys2.down || keys2.left || keys2.right;
   if (hasInput) {
     const zone = getPlayerZone('player2', consts);
-    // ally は右下ゾーンにクランプ
-    const result = calculateKeyboardMovement(keys2, { x: game.ally.x, y: game.ally.y }, consts, 'player2');
-    moveMalletTo(game.ally, result.x, result.y);
+    let dx = 0, dy = 0;
+    if (keys2.left) dx -= KEYBOARD_MOVE_SPEED;
+    if (keys2.right) dx += KEYBOARD_MOVE_SPEED;
+    if (keys2.up) dy -= KEYBOARD_MOVE_SPEED;
+    if (keys2.down) dy += KEYBOARD_MOVE_SPEED;
+    const newX = clamp(game.ally.x + dx, zone.minX, zone.maxX);
+    const newY = clamp(game.ally.y + dy, zone.minY, zone.maxY);
+    moveMalletTo(game.ally, newX, newY);
   }
 }
 ```
 
+**注意**: `calculateKeyboardMovement` は `getPlayerYBounds('player2')` を内部で使い、
+これは上半分を返す（2P モード互換）。2v2 の ally は右下にいるため、
+`getPlayerZone('player2')` を直接使い、X/Y 両方を正しいゾーンにクランプする。
+
 ### ally の CPU AI スキップ
 
-人間が P2 を操作している場合、ally の CPU AI 更新をスキップする。
-判定基準: WASD 入力があるか、または player2 タッチが追跡中。
+**2v2 モードでは ally の CPU AI を常にスキップする。**
+初期リリースでは ally は常に人間操作とする。
+将来 CPU/人間 切替機能を TeamSetupScreen に追加する際に、フラグで制御する。
+
+```typescript
+// 2v2 モード: enemy（P4）のみ CPU AI で制御。ally は人間操作のため AI スキップ
+if (is2v2Mode && game.enemy) {
+  const result = updateExtraMalletAI(...);
+  // ally の updateExtraMalletAI 呼び出しは削除
+}
+```
 
 ---
 
@@ -348,8 +387,44 @@ if (is2v2Mode && player2KeysRef && game.ally) {
 └─────────────────────────────────────┘
 ```
 
-Field / Win Score はタイトル画面の選択値をそのまま使用する。
-`handlePairMatchStart` で `mode.field` / `mode.winScore` を渡す。
+### 型・コールバック変更
+
+`TeamSetupConfig` 型を**完全に削除**する。
+`onStart` のシグネチャを `() => void` に変更し、引数なしのコールバックにする。
+
+```typescript
+// 変更前
+type TeamSetupScreenProps = {
+  fields: readonly FieldConfig[];
+  unlockedFieldIds: string[];
+  onStart: (config: TeamSetupConfig) => void;
+  onBack: () => void;
+};
+
+// 変更後
+type TeamSetupScreenProps = {
+  onStart: () => void;
+  onBack: () => void;
+};
+```
+
+`handlePairMatchStart` は `mode.field` / `mode.winScore` を直接使用する:
+
+```typescript
+// 変更前
+const handlePairMatchStart = useCallback((config: TeamSetupConfig) => {
+  mode.setGameMode('2v2-local');
+  mode.setField(config.field);
+  mode.setWinScore(config.winScore);
+  startGame(config.field);
+}, [mode, startGame]);
+
+// 変更後
+const handlePairMatchStart = useCallback(() => {
+  mode.setGameMode('2v2-local');
+  startGame(mode.field);  // タイトル画面の設定値をそのまま使用
+}, [mode, startGame]);
+```
 
 ---
 
@@ -387,7 +462,10 @@ grad.addColorStop(1, 'rgb(8, 12, 18)');
 
 ### 改善方針
 
-- カードサイズを `min(90px, (画面幅 - パディング) / 4列)` のレスポンシブ計算に
+- カードサイズを CSS の `min()` / `vw` ベースのレスポンシブ化に変更（JS 計算不要）
+  ```css
+  width: min(90px, calc((100vw - 64px) / 4));
+  ```
 - キャラアイコンの表示を拡大（36px → 42px）
 - パネルの最小幅を広げ（100px → 120px）タップしやすくする
 - `FreeBattleCharacterSelect` と `CharacterSelectScreen` の共通スタイル定数を統一

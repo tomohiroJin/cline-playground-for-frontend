@@ -213,21 +213,24 @@ S4-7-4（キャラ選択 UI）       ← 完全独立（2ファイルのみ）
 
 ### S4-7-1: ally（P2）入力接続【最優先】
 
-- [ ] useGameLoop に `is2v2Mode` のタッチ入力分岐を追加（player2Position → game.ally）
+- [ ] 2v2 モード時に `playerTargetRef` を無効化（マルチタッチと二重処理を防止）
+- [ ] useGameLoop に `is2v2Mode` のタッチ入力分岐を追加（player1Position → player, player2Position → ally）
 - [ ] useGameLoop に `is2v2Mode` の WASD 入力分岐を追加（keys2 → game.ally）
-- [ ] ally のゾーンクランプ（右下エリア）を適用
-- [ ] ally が人間操作中は CPU AI をスキップする判定を追加
+- [ ] ally のゾーンクランプに `getPlayerZone('player2')` を使用（`getPlayerYBounds` ではなく X/Y 両方クランプ）
+- [ ] ally の CPU AI を2v2モードでは常にスキップ（将来の CPU/人間切替で制御）
 - [ ] テスト確認: `tsc --noEmit` + 既存テスト全パス
 
 ---
 
 ### S4-7-2: TeamSetupScreen 簡素化
 
-- [ ] TeamSetupScreen から Field 選択 UI を削除
-- [ ] TeamSetupScreen から Win Score 選択 UI を削除
-- [ ] TeamSetupConfig から field / winScore を削除
-- [ ] AirHockeyGame.tsx の handlePairMatchStart でタイトル設定値（mode.field / mode.winScore）を使用
+- [ ] TeamSetupScreen から Field / Win Score 選択 UI を削除
+- [ ] `TeamSetupConfig` 型を完全に削除
+- [ ] `onStart` のシグネチャを `() => void` に変更（引数なし）
+- [ ] `handlePairMatchStart` から `config` 引数を削除し `mode.field` / `mode.winScore` を直接使用
+- [ ] TeamSetupScreenProps を `{ onStart: () => void; onBack: () => void }` に簡素化
 - [ ] チーム構成表示（P1〜P4 の役割）を見やすく整理
+- [ ] TeamSetupScreen のテストを追加（表示確認 + onStart/onBack コールバック）
 - [ ] テスト確認: `tsc --noEmit` + 既存テスト全パス
 
 ---
@@ -242,7 +245,7 @@ S4-7-4（キャラ選択 UI）       ← 完全独立（2ファイルのみ）
 
 ### S4-7-4: キャラ選択 UI 改善
 
-- [ ] FreeBattleCharacterSelect のカードサイズをレスポンシブ化（80px → 画面幅ベース）
+- [ ] FreeBattleCharacterSelect のカードサイズを CSS `min()` / `vw` ベースのレスポンシブ化
 - [ ] CharacterSelectScreen のカードサイズをレスポンシブ化
 - [ ] キャラアイコンサイズ拡大（36px → 42px）
 - [ ] パネル最小幅拡大（100px → 120px）でタッチ領域改善
