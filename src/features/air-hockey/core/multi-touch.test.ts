@@ -1,6 +1,6 @@
 /**
  * マルチタッチ入力のコアロジックテスト
- * 4分割ゾーンで各プレイヤーの独立したタッチ追跡を検証する
+ * 2P モード（上下2分割）と 2v2 モード（4分割ゾーン）の両方を検証する
  */
 import {
   createMultiTouchState,
@@ -19,9 +19,11 @@ const canvasPos = (x: number, y: number) => ({ canvasX: x, canvasY: y });
 
 // 各ゾーンの代表座標
 const BOTTOM_LEFT = canvasPos(W / 4, H * 0.75);   // player1
-const BOTTOM_RIGHT = canvasPos(W * 3 / 4, H * 0.75); // player2
-const TOP_LEFT = canvasPos(W / 4, H * 0.25);      // player3
-const TOP_RIGHT = canvasPos(W * 3 / 4, H * 0.25); // player4
+const BOTTOM_RIGHT = canvasPos(W * 3 / 4, H * 0.75); // player2（2v2 時）
+const TOP_LEFT = canvasPos(W / 4, H * 0.25);      // player3（2v2 時）/ player2（2P 時）
+const TOP_RIGHT = canvasPos(W * 3 / 4, H * 0.25); // player4（2v2 時）/ player2（2P 時）
+
+const IS_4ZONE = true;
 
 describe('createMultiTouchState', () => {
   it('初期状態では全プレイヤーのタッチが未追跡である', () => {
@@ -37,10 +39,10 @@ describe('createMultiTouchState', () => {
   });
 });
 
-describe('processTouchStart', () => {
+describe('processTouchStart（2v2: is4Zone=true）', () => {
   it('左下タッチで player1 が追跡される', () => {
     const state = createMultiTouchState();
-    const result = processTouchStart(state, 1, BOTTOM_LEFT, CONSTANTS);
+    const result = processTouchStart(state, 1, BOTTOM_LEFT, CONSTANTS, IS_4ZONE);
 
     expect(result.player1TouchId).toBe(1);
     expect(result.player1Position).toBeDefined();
@@ -49,7 +51,7 @@ describe('processTouchStart', () => {
 
   it('右上タッチで player4 が追跡される', () => {
     const state = createMultiTouchState();
-    const result = processTouchStart(state, 2, TOP_RIGHT, CONSTANTS);
+    const result = processTouchStart(state, 2, TOP_RIGHT, CONSTANTS, IS_4ZONE);
 
     expect(result.player4TouchId).toBe(2);
     expect(result.player4Position).toBeDefined();
@@ -58,10 +60,10 @@ describe('processTouchStart', () => {
 
   it('4つ同時にタッチできる', () => {
     let state = createMultiTouchState();
-    state = processTouchStart(state, 1, BOTTOM_LEFT, CONSTANTS);
-    state = processTouchStart(state, 2, BOTTOM_RIGHT, CONSTANTS);
-    state = processTouchStart(state, 3, TOP_LEFT, CONSTANTS);
-    state = processTouchStart(state, 4, TOP_RIGHT, CONSTANTS);
+    state = processTouchStart(state, 1, BOTTOM_LEFT, CONSTANTS, IS_4ZONE);
+    state = processTouchStart(state, 2, BOTTOM_RIGHT, CONSTANTS, IS_4ZONE);
+    state = processTouchStart(state, 3, TOP_LEFT, CONSTANTS, IS_4ZONE);
+    state = processTouchStart(state, 4, TOP_RIGHT, CONSTANTS, IS_4ZONE);
 
     expect(state.player1TouchId).toBe(1);
     expect(state.player2TouchId).toBe(2);
@@ -71,16 +73,15 @@ describe('processTouchStart', () => {
 
   it('同じゾーンの 2 番目のタッチは無視される', () => {
     let state = createMultiTouchState();
-    state = processTouchStart(state, 1, BOTTOM_LEFT, CONSTANTS);
-    state = processTouchStart(state, 3, canvasPos(W / 4, H * 0.8), CONSTANTS);
+    state = processTouchStart(state, 1, BOTTOM_LEFT, CONSTANTS, IS_4ZONE);
+    state = processTouchStart(state, 3, canvasPos(W / 4, H * 0.8), CONSTANTS, IS_4ZONE);
 
-    // 最初のタッチのみ追跡
     expect(state.player1TouchId).toBe(1);
   });
 
   it('player1 の位置が下半分にクランプされる', () => {
     const state = createMultiTouchState();
-    const result = processTouchStart(state, 1, BOTTOM_LEFT, CONSTANTS);
+    const result = processTouchStart(state, 1, BOTTOM_LEFT, CONSTANTS, IS_4ZONE);
 
     expect(result.player1Position!.y).toBeGreaterThanOrEqual(H / 2 + MR + 10);
     expect(result.player1Position!.y).toBeLessThanOrEqual(H - MR - 5);
@@ -88,17 +89,52 @@ describe('processTouchStart', () => {
 
   it('player3 の位置が上半分にクランプされる', () => {
     const state = createMultiTouchState();
-    const result = processTouchStart(state, 2, TOP_LEFT, CONSTANTS);
+    const result = processTouchStart(state, 2, TOP_LEFT, CONSTANTS, IS_4ZONE);
 
     expect(result.player3Position!.y).toBeGreaterThanOrEqual(MR + 5);
     expect(result.player3Position!.y).toBeLessThanOrEqual(H / 2 - MR - 10);
   });
 });
 
+describe('processTouchStart（2P: is4Zone=false）', () => {
+  it('下半分タッチは player1 に割り当てられる', () => {
+    const state = createMultiTouchState();
+    const result = processTouchStart(state, 1, canvasPos(W / 2, H * 0.75), CONSTANTS);
+
+    expect(result.player1TouchId).toBe(1);
+    expect(result.player1Position).toBeDefined();
+  });
+
+  it('上半分タッチは player2 に割り当てられる', () => {
+    const state = createMultiTouchState();
+    const result = processTouchStart(state, 2, canvasPos(W / 2, H * 0.25), CONSTANTS);
+
+    expect(result.player2TouchId).toBe(2);
+    expect(result.player2Position).toBeDefined();
+  });
+
+  it('右下タッチも player1（上下分割のみ判定）', () => {
+    const state = createMultiTouchState();
+    const result = processTouchStart(state, 1, BOTTOM_RIGHT, CONSTANTS);
+
+    expect(result.player1TouchId).toBe(1);
+    expect(result.player2TouchId).toBeUndefined();
+  });
+
+  it('両方同時にタッチできる', () => {
+    let state = createMultiTouchState();
+    state = processTouchStart(state, 1, canvasPos(W / 2, H * 0.75), CONSTANTS);
+    state = processTouchStart(state, 2, canvasPos(W / 2, H * 0.25), CONSTANTS);
+
+    expect(state.player1TouchId).toBe(1);
+    expect(state.player2TouchId).toBe(2);
+  });
+});
+
 describe('processTouchMove', () => {
   it('追跡中の player1 タッチを移動すると位置が更新される', () => {
     let state = createMultiTouchState();
-    state = processTouchStart(state, 1, BOTTOM_LEFT, CONSTANTS);
+    state = processTouchStart(state, 1, BOTTOM_LEFT, CONSTANTS, IS_4ZONE);
     const result = processTouchMove(state, 1, canvasPos(200, H * 0.8), CONSTANTS);
 
     expect(result.player1Position!.x).toBeCloseTo(200, 0);
@@ -106,7 +142,7 @@ describe('processTouchMove', () => {
 
   it('追跡中の player3 タッチを移動すると位置が更新される', () => {
     let state = createMultiTouchState();
-    state = processTouchStart(state, 2, TOP_LEFT, CONSTANTS);
+    state = processTouchStart(state, 2, TOP_LEFT, CONSTANTS, IS_4ZONE);
     const result = processTouchMove(state, 2, canvasPos(100, H * 0.2), CONSTANTS);
 
     expect(result.player3Position!.x).toBeCloseTo(100, 0);
@@ -114,7 +150,7 @@ describe('processTouchMove', () => {
 
   it('追跡していないタッチ ID の移動は無視される', () => {
     let state = createMultiTouchState();
-    state = processTouchStart(state, 1, BOTTOM_LEFT, CONSTANTS);
+    state = processTouchStart(state, 1, BOTTOM_LEFT, CONSTANTS, IS_4ZONE);
     const result = processTouchMove(state, 99, canvasPos(100, 100), CONSTANTS);
 
     expect(result).toBe(state);
@@ -124,7 +160,7 @@ describe('processTouchMove', () => {
 describe('processTouchEnd', () => {
   it('player1 のタッチ終了で位置がクリアされる', () => {
     let state = createMultiTouchState();
-    state = processTouchStart(state, 1, BOTTOM_LEFT, CONSTANTS);
+    state = processTouchStart(state, 1, BOTTOM_LEFT, CONSTANTS, IS_4ZONE);
     const result = processTouchEnd(state, 1);
 
     expect(result.player1TouchId).toBeUndefined();
@@ -133,7 +169,7 @@ describe('processTouchEnd', () => {
 
   it('player3 のタッチ終了で位置がクリアされる', () => {
     let state = createMultiTouchState();
-    state = processTouchStart(state, 2, TOP_LEFT, CONSTANTS);
+    state = processTouchStart(state, 2, TOP_LEFT, CONSTANTS, IS_4ZONE);
     const result = processTouchEnd(state, 2);
 
     expect(result.player3TouchId).toBeUndefined();
@@ -142,8 +178,8 @@ describe('processTouchEnd', () => {
 
   it('一方のタッチ終了で他方は影響を受けない', () => {
     let state = createMultiTouchState();
-    state = processTouchStart(state, 1, BOTTOM_LEFT, CONSTANTS);
-    state = processTouchStart(state, 2, TOP_LEFT, CONSTANTS);
+    state = processTouchStart(state, 1, BOTTOM_LEFT, CONSTANTS, IS_4ZONE);
+    state = processTouchStart(state, 2, TOP_LEFT, CONSTANTS, IS_4ZONE);
     const result = processTouchEnd(state, 1);
 
     expect(result.player1TouchId).toBeUndefined();
@@ -169,11 +205,11 @@ describe('getPlayerPosition', () => {
     expect(pos!.x).toBeCloseTo(200, 0);
   });
 
-  it('player3 の現在位置を取得できる', () => {
+  it('player2 の現在位置を取得できる（2P モード: 上半分タッチ）', () => {
     let state = createMultiTouchState();
     state = processTouchStart(state, 2, canvasPos(100, H * 0.3), CONSTANTS);
 
-    const pos = getPlayerPosition(state, 'player3');
+    const pos = getPlayerPosition(state, 'player2');
     expect(pos).toBeDefined();
     expect(pos!.x).toBeCloseTo(100, 0);
   });

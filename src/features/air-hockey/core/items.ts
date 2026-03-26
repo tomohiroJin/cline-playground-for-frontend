@@ -1,13 +1,10 @@
-import { GameState, ItemType, Puck, GameEffects, EffectState } from './types';
+import { GameState, ItemType, Puck, GameEffects, EffectState, EffectTarget } from './types';
 import { magnitude } from '../../../utils/math-utils';
 
 /**
  * アイテムエフェクト適用結果の型
  */
 export type ItemEffectResult = Partial<Pick<GameState, 'pucks' | 'effects' | 'flash'>>;
-
-/** エフェクト適用対象（2v2 時は ally/enemy も対象） */
-export type EffectTarget = 'player' | 'cpu' | 'ally' | 'enemy';
 
 /** 対象のエフェクト状態を安全に取得（ally/enemy が undefined の場合はデフォルト値） */
 function getEffectState(effects: GameEffects, target: EffectTarget): EffectState {

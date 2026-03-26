@@ -38,6 +38,7 @@ import { useGameMode } from './hooks/useGameMode';
 import { useResultProcessing } from './hooks/useResultProcessing';
 import { useAudioManager } from './hooks/useAudioManager';
 import { TitleScreen } from '../components/TitleScreen';
+import { TeamSetupScreen } from '../components/TeamSetupScreen';
 import { Scoreboard } from '../components/Scoreboard';
 import { Field } from '../components/Field';
 import { ResultScreen } from '../components/ResultScreen';
@@ -255,9 +256,15 @@ const AirHockeyGame: React.FC = () => {
   const handleTwoPlayerClick = useCallback(() => { navigateTo('characterSelect'); }, [navigateTo]);
   // ── ペアマッチ（2v2）──
   const handlePairMatchClick = useCallback(() => {
+    navigateTo('teamSetup');
+  }, [navigateTo]);
+  const handlePairMatchStart = useCallback((config: import('../components/TeamSetupScreen').TeamSetupConfig) => {
     mode.setGameMode('2v2-local');
-    startGame(mode.field);
+    mode.setField(config.field);
+    mode.setWinScore(config.winScore);
+    startGame(config.field);
   }, [mode, startGame]);
+  const handleBackFromTeamSetup = useCallback(() => { navigateTo('menu'); }, [navigateTo]);
   const handleStartBattle = useCallback((config: TwoPlayerConfig) => {
     mode.setGameMode('2p-local');
     mode.setPlayer1Character(config.player1Character);
@@ -301,7 +308,7 @@ const AirHockeyGame: React.FC = () => {
   const is2PGame = (is2PMode || is2v2Mode) && screen === 'game';
 
   // 2P 用マルチタッチ入力（画面上下分割）
-  const { stateRef: multiTouchRef } = useMultiTouchInput(canvasRef, is2PGame);
+  const { stateRef: multiTouchRef } = useMultiTouchInput(canvasRef, is2PGame, is2v2Mode);
 
   // 2P 用キーボード入力リスナー（WASD → player2KeysRef）
   useEffect(() => {
@@ -390,6 +397,15 @@ const AirHockeyGame: React.FC = () => {
           fields={FIELDS}
           onStartBattle={handleStartBattle}
           onBack={handleBackFromCharacterSelect}
+        />
+      )}
+
+      {screen === 'teamSetup' && (
+        <TeamSetupScreen
+          fields={FIELDS}
+          unlockedFieldIds={result.unlockState?.unlockedFields ?? ['classic', 'wide']}
+          onStart={handlePairMatchStart}
+          onBack={handleBackFromTeamSetup}
         />
       )}
 

@@ -2,17 +2,14 @@
  * 2v2 ペアマッチのゲームロジックヘルパー
  * processCollisions や resolveMalletPuckOverlap で使用するマレット配列構築など
  */
-import type { GameState, Mallet } from './types';
+import type { GameState, Mallet, EffectTarget } from './types';
 
 /** マレット情報（衝突処理用） */
 export type MalletEntry = {
   mallet: Mallet;
-  side: 'player' | 'cpu' | 'ally' | 'enemy';
+  side: EffectTarget;
   isPlayer: boolean; // チーム1（player/ally）= true
 };
-
-/** エフェクトの対象側 */
-export type EffectSide = 'player' | 'cpu' | 'ally' | 'enemy';
 
 /**
  * GameState から全マレットを配列として取得する
@@ -35,9 +32,19 @@ export function getAllMallets(game: GameState): MalletEntry[] {
   return mallets;
 }
 
+/** チームスコアの型 */
+export type TeamScore = { p: number; c: number };
+
 /**
- * マレット側からエフェクトアクセス用のキーを取得する
+ * ゴール得点を処理する
+ * パックが上ゴール（cpu 側）に入る → team1（p）得点
+ * パックが下ゴール（player 側）に入る → team2（c）得点
  */
-export function getMalletEffectSide(side: EffectSide): EffectSide {
-  return side;
+export function applyGoalScore(
+  score: TeamScore,
+  scored: 'player' | 'cpu'
+): TeamScore {
+  return scored === 'cpu'
+    ? { ...score, p: score.p + 1 }
+    : { ...score, c: score.c + 1 };
 }

@@ -21,11 +21,13 @@ type UseMultiTouchInputReturn = {
 /**
  * マルチタッチ入力フック
  * @param canvasRef Canvas 要素の Ref
- * @param enabled 有効フラグ（2P モード + ゲーム画面時のみ true）
+ * @param enabled 有効フラグ（2P/2v2 モード + ゲーム画面時のみ true）
+ * @param is4Zone true=4分割ゾーン（2v2）、false=上下2分割（2P）
  */
 export function useMultiTouchInput(
   canvasRef: React.RefObject<HTMLCanvasElement | null>,
-  enabled: boolean
+  enabled: boolean,
+  is4Zone = false
 ): UseMultiTouchInputReturn {
   const stateRef = useRef<MultiTouchState>(createMultiTouchState());
 
@@ -39,7 +41,7 @@ export function useMultiTouchInput(
       for (let i = 0; i < e.changedTouches.length; i++) {
         const touch = e.changedTouches[i];
         const pos = screenToCanvas(touch.clientX, touch.clientY, rect, CONSTANTS);
-        stateRef.current = processTouchStart(stateRef.current, touch.identifier, pos, CONSTANTS);
+        stateRef.current = processTouchStart(stateRef.current, touch.identifier, pos, CONSTANTS, is4Zone);
       }
     };
 
@@ -75,7 +77,7 @@ export function useMultiTouchInput(
       canvas.removeEventListener('touchcancel', handleTouchEnd);
       stateRef.current = createMultiTouchState();
     };
-  }, [canvasRef, enabled]);
+  }, [canvasRef, enabled, is4Zone]);
 
   return { stateRef };
 }

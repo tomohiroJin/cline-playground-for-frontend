@@ -184,6 +184,9 @@ export type Character = {
 // ゲームモード
 export type GameMode = 'free' | 'story' | '2p-local' | '2v2-local';
 
+// エフェクト適用対象（2v2 時は ally/enemy も対象）
+export type EffectTarget = 'player' | 'cpu' | 'ally' | 'enemy';
+
 // 2v2 モードのプレイヤースロット（domain/contracts/input から re-export）
 export type { PlayerSlot } from '../domain/contracts/input';
 

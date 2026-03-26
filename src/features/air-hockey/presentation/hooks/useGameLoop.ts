@@ -317,6 +317,17 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         return;
       }
 
+      /** 全マレットを描画順序（奥→手前）で描画するヘルパー */
+      const drawAllMallets = (
+        scaleFn?: (side: 'player' | 'cpu' | 'ally' | 'enemy') => number
+      ): void => {
+        const s = (side: 'player' | 'cpu' | 'ally' | 'enemy') => scaleFn ? scaleFn(side) : undefined;
+        Renderer.drawMallet(ctx, game.cpu, cColor, false, consts, s('cpu'));
+        if (game.enemy) Renderer.drawMallet(ctx, game.enemy, cColor, false, consts, s('enemy'));
+        if (game.ally) Renderer.drawMallet(ctx, game.ally, pColor, game.effects.ally?.invisible ? game.effects.ally.invisible > 0 : false, consts, s('ally'));
+        Renderer.drawMallet(ctx, game.player, pColor, game.effects.player.invisible > 0, consts, s('player'));
+      };
+
       const now = Date.now();
 
       // カウントダウンフェーズ
@@ -325,10 +336,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
 
         Renderer.clear(ctx, consts, now);
         Renderer.drawField(ctx, field, consts, game.obstacleStates, now);
-        Renderer.drawMallet(ctx, game.cpu, cColor, false, consts);
-        if (game.enemy) Renderer.drawMallet(ctx, game.enemy, cColor, false, consts);
-        if (game.ally) Renderer.drawMallet(ctx, game.ally, pColor, false, consts);
-        Renderer.drawMallet(ctx, game.player, pColor, false, consts);
+        drawAllMallets();
 
         if (elapsed < COUNTDOWN_DURATION) {
           const countdownValue = 3 - Math.floor(elapsed / 1000);
@@ -362,10 +370,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         Renderer.drawEffectZones(ctx, game.effects, now, consts);
         game.items.forEach((item: Item) => Renderer.drawItem(ctx, item, now, consts));
         game.pucks.forEach((puck: Puck) => Renderer.drawPuck(ctx, puck, consts));
-        Renderer.drawMallet(ctx, game.cpu, cColor, false, consts);
-        if (game.enemy) Renderer.drawMallet(ctx, game.enemy, cColor, false, consts);
-        if (game.ally) Renderer.drawMallet(ctx, game.ally, pColor, false, consts);
-        Renderer.drawMallet(ctx, game.player, pColor, game.effects.player.invisible > 0, consts);
+        drawAllMallets();
         Renderer.drawPauseOverlay(ctx, consts);
         animationRef = requestAnimationFrame(gameLoop);
         return;
@@ -401,12 +406,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         Renderer.drawEffectZones(ctx, game.effects, now, consts);
         game.items.forEach((item: Item) => Renderer.drawItem(ctx, item, now, consts));
         game.pucks.forEach((puck: Puck) => Renderer.drawPuck(ctx, puck, consts));
-        const cpuScale = getMalletScale('cpu');
-        const playerScale = getMalletScale('player');
-        Renderer.drawMallet(ctx, game.cpu, cColor, false, consts, cpuScale);
-        if (game.enemy) Renderer.drawMallet(ctx, game.enemy, cColor, false, consts, getMalletScale('enemy'));
-        if (game.ally) Renderer.drawMallet(ctx, game.ally, pColor, false, consts, getMalletScale('ally'));
-        Renderer.drawMallet(ctx, game.player, pColor, game.effects.player.invisible > 0, consts, playerScale);
+        drawAllMallets(getMalletScale);
         Renderer.drawParticles(ctx, game.particles);
         Renderer.drawShockwave(ctx, hitStop);
         animationRef = requestAnimationFrame(gameLoop);
@@ -499,6 +499,8 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       }
 
       // 2v2 モード: ally（P2）と enemy（P4）の CPU AI 制御
+      // TODO(2026-03-26): CpuAI.updateWithBehavior がマレット単体を受け取る形にリファクタリングすれば
+      // 毎フレームの GameState スプレッドコピー（ally/enemy 分の2回）を削減できる
       if (is2v2Mode) {
         const scoreDiff2v2 = Math.max(0, scoreRef.current.p - scoreRef.current.c);
         const effectiveAiConfig2v2 = aiConfig ?? AI_BEHAVIOR_PRESETS[diff];
@@ -542,19 +544,9 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
 
       // マレット移動後、衝突処理前にパックとの食い込みを解消（パックを弾く）
       // effectiveMR を使い、processCollisions との二重衝突を防止
-      const playerMR = MR * getMalletScale('player');
-      const cpuMR = MR * getMalletScale('cpu');
-      resolveMalletPuckOverlap(game.player, game.pucks, playerMR, BR, consts.PHYSICS.MAX_POWER);
-      resolveMalletPuckOverlap(game.cpu, game.pucks, cpuMR, BR, consts.PHYSICS.MAX_POWER);
-
-      // 2v2: ally/enemy のパック食い込み解消
-      if (game.ally) {
-        const allyMR = MR * getMalletScale('ally');
-        resolveMalletPuckOverlap(game.ally, game.pucks, allyMR, BR, consts.PHYSICS.MAX_POWER);
-      }
-      if (game.enemy) {
-        const enemyMR = MR * getMalletScale('enemy');
-        resolveMalletPuckOverlap(game.enemy, game.pucks, enemyMR, BR, consts.PHYSICS.MAX_POWER);
+      for (const { mallet, side } of getAllMallets(game)) {
+        const mr = MR * getMalletScale(side);
+        resolveMalletPuckOverlap(mallet, game.pucks, mr, BR, consts.PHYSICS.MAX_POWER);
       }
 
       // フィーバー判定
@@ -757,10 +749,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       Renderer.drawEffectZones(ctx, game.effects, now, consts);
       game.items.forEach((item: Item) => Renderer.drawItem(ctx, item, now, consts));
       game.pucks.forEach((puck: Puck) => Renderer.drawPuck(ctx, puck, consts));
-      Renderer.drawMallet(ctx, game.cpu, cColor, false, consts, getMalletScale('cpu'));
-      if (game.enemy) Renderer.drawMallet(ctx, game.enemy, cColor, false, consts, getMalletScale('enemy'));
-      if (game.ally) Renderer.drawMallet(ctx, game.ally, pColor, game.effects.ally?.invisible ? game.effects.ally.invisible > 0 : false, consts, getMalletScale('ally'));
-      Renderer.drawMallet(ctx, game.player, pColor, game.effects.player.invisible > 0, consts, getMalletScale('player'));
+      drawAllMallets(getMalletScale);
       Renderer.drawParticles(ctx, game.particles);
       Renderer.drawHUD(ctx, game.effects, now, consts);
       Renderer.drawFlash(ctx, game.flash, now, consts);

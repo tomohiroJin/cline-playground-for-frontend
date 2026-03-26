@@ -69,12 +69,22 @@ function clampToPlayerZone(
   };
 }
 
-/** タッチ位置がどのゾーンかを判定（4分割） */
-function detectZone(pos: CanvasPosition, constants: GameConstants): PlayerSlot {
+/**
+ * タッチ位置がどのゾーンかを判定する
+ * is4Zone=true（2v2モード）: 画面を4分割（左下/右下/左上/右上）
+ * is4Zone=false（2Pモード）: 画面を上下2分割（下=player1, 上=player2）
+ */
+function detectZone(pos: CanvasPosition, constants: GameConstants, is4Zone: boolean): PlayerSlot {
   const { WIDTH: W, HEIGHT: H } = constants.CANVAS;
   const isBottom = pos.canvasY >= H / 2;
-  const isLeft = pos.canvasX < W / 2;
 
+  if (!is4Zone) {
+    // 2P モード: 従来の上下分割
+    return isBottom ? 'player1' : 'player2';
+  }
+
+  // 2v2 モード: 4分割
+  const isLeft = pos.canvasX < W / 2;
   if (isBottom && isLeft) return 'player1';
   if (isBottom && !isLeft) return 'player2';
   if (!isBottom && isLeft) return 'player3';
@@ -93,14 +103,18 @@ function positionKey(slot: PlayerSlot): PosKey {
   return `${slot}Position`;
 }
 
-/** タッチ開始を処理する */
+/**
+ * タッチ開始を処理する
+ * @param is4Zone true=4分割ゾーン（2v2）、false=上下2分割（2P）。デフォルト false。
+ */
 export function processTouchStart(
   state: MultiTouchState,
   touchId: number,
   pos: CanvasPosition,
-  constants: GameConstants
+  constants: GameConstants,
+  is4Zone = false
 ): MultiTouchState {
-  const zone = detectZone(pos, constants);
+  const zone = detectZone(pos, constants, is4Zone);
   const tidKey = touchIdKey(zone);
   const posKey = positionKey(zone);
 

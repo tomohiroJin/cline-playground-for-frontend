@@ -1,5 +1,5 @@
 import { CONSTANTS, GameConstants } from './constants';
-import { GameState, Mallet, Puck, Item, ItemType, FieldConfig, ObstacleState, MatchStats } from './types';
+import { GameState, Mallet, Puck, Item, ItemType, FieldConfig, ObstacleState, MatchStats, EffectState } from './types';
 
 const randomRange = (min: number, max: number) => Math.random() * (max - min) + min;
 
@@ -104,7 +104,7 @@ export const EntityFactory = {
   },
   createGameState: (consts: GameConstants = CONSTANTS, field?: FieldConfig, is2v2 = false): GameState => {
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
-    const defaultEffect = (): import('./types').EffectState => ({ speed: null, invisible: 0, shield: false, magnet: null, big: null });
+    const defaultEffect = (): EffectState => ({ speed: null, invisible: 0, shield: false, magnet: null, big: null });
 
     // 2v2 モードではマレット位置を4分割配置に変更
     const playerX = is2v2 ? W / 4 : W / 2;

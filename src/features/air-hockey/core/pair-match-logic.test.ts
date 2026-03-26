@@ -3,7 +3,7 @@
  */
 import { EntityFactory, resolveMalletPuckOverlap } from './entities';
 import { CONSTANTS } from './constants';
-import { getAllMallets, getMalletEffectSide } from './pair-match-logic';
+import { getAllMallets, applyGoalScore } from './pair-match-logic';
 import { applyItemEffect } from './items';
 import type { GameState, Mallet } from './types';
 
@@ -88,46 +88,32 @@ describe('Phase S4-3: ペアマッチゲームロジック', () => {
     });
   });
 
-  // ── S4-3-3: getMalletEffectSide ──────────────────
+  // ── S4-3-3: ゴール判定のチーム制対応 ──────────────
 
-  describe('S4-3-3: getMalletEffectSide', () => {
-    it('player のエフェクト側は player', () => {
-      expect(getMalletEffectSide('player')).toBe('player');
+  describe('S4-3-3: チーム制ゴール判定（applyGoalScore）', () => {
+    it('上ゴールに入る（scored=cpu）→ チーム1（p）得点', () => {
+      const result = applyGoalScore({ p: 0, c: 0 }, 'cpu');
+      expect(result).toEqual({ p: 1, c: 0 });
     });
 
-    it('ally のエフェクト側は ally', () => {
-      expect(getMalletEffectSide('ally')).toBe('ally');
+    it('下ゴールに入る（scored=player）→ チーム2（c）得点', () => {
+      const result = applyGoalScore({ p: 0, c: 0 }, 'player');
+      expect(result).toEqual({ p: 0, c: 1 });
     });
 
-    it('cpu のエフェクト側は cpu', () => {
-      expect(getMalletEffectSide('cpu')).toBe('cpu');
+    it('連続得点が正しく加算される', () => {
+      let score = { p: 0, c: 0 };
+      score = applyGoalScore(score, 'cpu');
+      score = applyGoalScore(score, 'cpu');
+      score = applyGoalScore(score, 'player');
+      expect(score).toEqual({ p: 2, c: 1 });
     });
 
-    it('enemy のエフェクト側は enemy', () => {
-      expect(getMalletEffectSide('enemy')).toBe('enemy');
-    });
-  });
-
-  // ── S4-3-4: ゴール判定のチーム制対応 ──────────────
-
-  describe('S4-3-4: チーム制ゴール判定', () => {
-    it('上ゴールに入る → チーム1（player側）得点', () => {
-      // 既存のスコア構造: p = team1, c = team2
-      // scored === 'cpu' のとき p++ (team1得点)
-      // この仕様は既存ロジックそのまま使える
-      const score = { p: 0, c: 0 };
-      const scored = 'cpu'; // パックが上ゴール(cpu側)に入った
-      if (scored === 'cpu') score.p++;
-      expect(score.p).toBe(1);
-      expect(score.c).toBe(0);
-    });
-
-    it('下ゴールに入る → チーム2（cpu側）得点', () => {
-      const score = { p: 0, c: 0 };
-      const scored = 'player'; // パックが下ゴール(player側)に入った
-      if (scored === 'player') score.c++;
-      expect(score.p).toBe(0);
-      expect(score.c).toBe(1);
+    it('元のスコアオブジェクトを変更しない（不変更新）', () => {
+      const original = { p: 3, c: 2 };
+      const result = applyGoalScore(original, 'cpu');
+      expect(original).toEqual({ p: 3, c: 2 });
+      expect(result).toEqual({ p: 4, c: 2 });
     });
   });
 
