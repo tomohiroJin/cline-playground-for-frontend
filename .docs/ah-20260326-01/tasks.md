@@ -189,6 +189,68 @@ S4-1（型定義・データ構造）
 
 ---
 
+## Phase S4-7: フィードバック対応（バグ修正・UI 改善）
+
+### 進捗サマリー
+
+| フェーズ | ステータス | 内容 | 並行可否 |
+|---------|-----------|------|---------|
+| S4-7-1 ally 入力接続 | [ ] 未着手 | **最優先** ゲーム成立に必須 | — |
+| S4-7-2 設定画面簡素化 | [ ] 未着手 | TeamSetupScreen から重複削除 | S4-7-1 と並行可 |
+| S4-7-3 背景ちらつき修正 | [ ] 未着手 | renderer.ts のみ | 完全独立 |
+| S4-7-4 キャラ選択 UI 改善 | [ ] 未着手 | レスポンシブ化 | 完全独立 |
+
+### 並行作業ガイド
+
+```
+S4-7-1（ally 入力接続）       ← 最優先。ゲーム成立の前提
+S4-7-2（設定画面簡素化）      ← S4-7-1 と並行可能（ファイル競合なし）
+S4-7-3（背景ちらつき）        ← 完全独立（renderer.ts のみ）
+S4-7-4（キャラ選択 UI）       ← 完全独立（2ファイルのみ）
+```
+
+---
+
+### S4-7-1: ally（P2）入力接続【最優先】
+
+- [ ] useGameLoop に `is2v2Mode` のタッチ入力分岐を追加（player2Position → game.ally）
+- [ ] useGameLoop に `is2v2Mode` の WASD 入力分岐を追加（keys2 → game.ally）
+- [ ] ally のゾーンクランプ（右下エリア）を適用
+- [ ] ally が人間操作中は CPU AI をスキップする判定を追加
+- [ ] テスト確認: `tsc --noEmit` + 既存テスト全パス
+
+---
+
+### S4-7-2: TeamSetupScreen 簡素化
+
+- [ ] TeamSetupScreen から Field 選択 UI を削除
+- [ ] TeamSetupScreen から Win Score 選択 UI を削除
+- [ ] TeamSetupConfig から field / winScore を削除
+- [ ] AirHockeyGame.tsx の handlePairMatchStart でタイトル設定値（mode.field / mode.winScore）を使用
+- [ ] チーム構成表示（P1〜P4 の役割）を見やすく整理
+- [ ] テスト確認: `tsc --noEmit` + 既存テスト全パス
+
+---
+
+### S4-7-3: 背景ちらつき修正
+
+- [ ] renderer.ts の clear() から `Math.sin(now * 0.0005) * 10` の背景振動を削除
+- [ ] 静的グラデーション（暗い配色維持）に変更
+- [ ] テスト確認: `tsc --noEmit` + 既存テスト全パス
+
+---
+
+### S4-7-4: キャラ選択 UI 改善
+
+- [ ] FreeBattleCharacterSelect のカードサイズをレスポンシブ化（80px → 画面幅ベース）
+- [ ] CharacterSelectScreen のカードサイズをレスポンシブ化
+- [ ] キャラアイコンサイズ拡大（36px → 42px）
+- [ ] パネル最小幅拡大（100px → 120px）でタッチ領域改善
+- [ ] 共通スタイル定数の統一
+- [ ] テスト確認: `tsc --noEmit` + 既存テスト全パス
+
+---
+
 ## 各フェーズの共通完了条件
 
 各フェーズ完了時に以下をすべて確認:

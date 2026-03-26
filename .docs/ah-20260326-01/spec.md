@@ -273,3 +273,121 @@ ResultScreen（チーム制リザルト）
 |-------|---------|
 | チーム制得点 | 上ゴール → team1 得点、下ゴール → team2 得点 |
 | 勝利判定 | winScore に達したチームが勝利 |
+
+---
+
+## S-10: ally（P2）入力接続（S4-7-1）
+
+### useGameLoop の入力処理変更
+
+```typescript
+// 2v2 モード: P2（ally）をプレイヤー入力で操作
+if (is2v2Mode && multiTouchRef?.current) {
+  const touchState = multiTouchRef.current;
+  // P1: player1Position → game.player（既存）
+  if (touchState.player1Position) {
+    moveMalletTo(game.player, touchState.player1Position.x, touchState.player1Position.y);
+  }
+  // P2: player2Position → game.ally（新規）
+  if (touchState.player2Position && game.ally) {
+    moveMalletTo(game.ally, touchState.player2Position.x, touchState.player2Position.y);
+  }
+}
+
+// 2v2 キーボード: WASD → game.ally
+if (is2v2Mode && player2KeysRef && game.ally) {
+  const keys2 = player2KeysRef.current;
+  const hasInput = keys2.up || keys2.down || keys2.left || keys2.right;
+  if (hasInput) {
+    const zone = getPlayerZone('player2', consts);
+    // ally は右下ゾーンにクランプ
+    const result = calculateKeyboardMovement(keys2, { x: game.ally.x, y: game.ally.y }, consts, 'player2');
+    moveMalletTo(game.ally, result.x, result.y);
+  }
+}
+```
+
+### ally の CPU AI スキップ
+
+人間が P2 を操作している場合、ally の CPU AI 更新をスキップする。
+判定基準: WASD 入力があるか、または player2 タッチが追跡中。
+
+---
+
+## S-11: TeamSetupScreen 簡素化（S4-7-2）
+
+### 変更前
+
+```
+┌─────────────────────────────────────┐
+│ ← 戻る      ペアマッチ設定          │
+├─────────────────────────────────────┤
+│ [チーム構成]                        │
+│ フィールド: [クラシック ▼]          │  ← タイトルと重複
+│ 勝利スコア: [3] [7] [15]           │  ← タイトルと重複
+├─────────────────────────────────────┤
+│         ［ 対戦開始！ ］             │
+└─────────────────────────────────────┘
+```
+
+### 変更後
+
+```
+┌─────────────────────────────────────┐
+│ ← 戻る      ペアマッチ             │
+├─────────────────────────────────────┤
+│ [チーム1（下）]                     │
+│  P1: あなた                         │
+│  P2: CPU（味方）                    │
+│                                     │
+│ [チーム2（上）]                     │
+│  P3: CPU（敵1）                     │
+│  P4: CPU（敵2）                     │
+├─────────────────────────────────────┤
+│         ［ 対戦開始！ ］             │
+└─────────────────────────────────────┘
+```
+
+Field / Win Score はタイトル画面の選択値をそのまま使用する。
+`handlePairMatchStart` で `mode.field` / `mode.winScore` を渡す。
+
+---
+
+## S-12: 背景ちらつき修正（S4-7-3）
+
+### 変更前（renderer.ts clear()）
+
+```typescript
+const shift = Math.sin(now * 0.0005) * 10;
+const grad = ctx.createLinearGradient(0, 0, 0, H);
+grad.addColorStop(0, `rgb(${13 + shift}, ${17 + shift}, ${23 + shift})`);
+grad.addColorStop(1, `rgb(${13 - shift}, ${17 - shift}, ${23 - shift})`);
+```
+
+### 変更後
+
+```typescript
+const grad = ctx.createLinearGradient(0, 0, 0, H);
+grad.addColorStop(0, 'rgb(18, 22, 28)');
+grad.addColorStop(1, 'rgb(8, 12, 18)');
+```
+
+静的グラデーションで暗い雰囲気を維持しつつ、ちらつきを排除。
+
+---
+
+## S-13: キャラ選択 UI 改善（S4-7-4）
+
+### 問題点
+
+- `CARD_SIZE=80` の固定サイズが画面幅に対して小さい
+- タッチ操作でのタップ領域が狭い
+- 他の画面（TitleScreen 等）は styled-components を使用しているのに
+  キャラ選択はインラインスタイルで統一性がない
+
+### 改善方針
+
+- カードサイズを `min(90px, (画面幅 - パディング) / 4列)` のレスポンシブ計算に
+- キャラアイコンの表示を拡大（36px → 42px）
+- パネルの最小幅を広げ（100px → 120px）タップしやすくする
+- `FreeBattleCharacterSelect` と `CharacterSelectScreen` の共通スタイル定数を統一

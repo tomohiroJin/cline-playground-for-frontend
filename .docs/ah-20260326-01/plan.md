@@ -143,3 +143,116 @@ Phase S4-6（テスト・品質保証）
 - チーム制スコアで勝敗判定
 - タッチ操作で最大4人同時操作可能
 - 既存モード（フリー対戦、ストーリー、2P、デイリー、図鑑）に影響なし
+
+---
+
+## Phase S4-7: フィードバック対応（バグ修正・UI 改善）
+
+### 背景
+
+Phase S4-1〜S4-6 の実装後に以下の問題が報告された:
+
+1. **ペアマッチで味方（P2）が操作できない** — 4マレット表示されるが P2 は CPU AI のみで制御され、人間が操作できない
+2. **ペアマッチ設定画面がタイトル画面と重複** — Field / Win Score の選択が両画面に存在する
+3. **背景のちらつきエフェクトが見づらい** — `renderer.ts` の `clear()` で背景色が毎フレーム振動し、プラットフォームによっては視認性が低下する
+4. **フリー対戦・2P 対戦のキャラ選択 UI が狭く使いにくい** — 他の画面と異なるスタイルで表示が窮屈
+
+### 問題分析
+
+#### 問題1: ally（P2）が操作不能
+
+**原因**: `useGameLoop.ts` の入力処理で `is2PMode` チェック（L472-490）が 2v2 モードを除外している。
+- マルチタッチ: `if (is2PMode && multiTouchRef?.current)` → 2v2 では `false`
+- キーボード: `if (is2PMode && player2KeysRef)` → 2v2 では `false`
+- 結果として ally は CPU AI（L506-539）のみで制御される
+
+2v2 モードではタッチの `player2Position` → `game.ally` に、WASD → `game.ally` に接続する必要がある。
+既存の2P入力コードは `game.cpu` を動かしているが、2v2 では `game.ally` を動かすべき。
+
+**修正方針**: ゲームループの入力セクションに `is2v2Mode` 分岐を追加し、
+player2 入力 → `game.ally` に接続する。WASD 入力も ally のゾーン（右下）にクランプ。
+
+#### 問題2: TeamSetupScreen がタイトルと重複
+
+**原因**: `TeamSetupScreen` が Field / Win Score の選択を独自に持っている。
+タイトル画面でも同じ選択があるため、2箇所で設定する意味がない。
+
+**修正方針**: `TeamSetupScreen` から Field / Win Score を削除し、タイトル画面の設定値をそのまま使う。
+設定画面はチーム構成の確認と「対戦開始」ボタンのみにする。
+
+#### 問題3: 背景のちらつき
+
+**原因**: `renderer.ts` の `clear()` 関数で `Math.sin(now * 0.0005) * 10` により
+背景色の RGB が毎フレーム ±10 の範囲で振動する。
+低リフレッシュレートのディスプレイやコントラストの高い環境ではちらつきとして知覚される。
+
+**修正方針**: `clear()` の背景アニメーションを静的な固定色に変更する。
+
+#### 問題4: キャラ選択 UI が狭い
+
+**原因**: `FreeBattleCharacterSelect` と `CharacterSelectScreen` は独自のインラインスタイルで
+`CARD_SIZE=80, GRID_GAP=8` の固定サイズを使用。画面幅に対してカードが小さく、
+タップ領域が狭い。他の画面（TitleScreen 等）は `styled-components` の共通スタイルを使用。
+
+**修正方針**: カードサイズを画面幅に応じたレスポンシブ設計に変更し、
+タッチ対象を大きくする。共通の `styles.ts` コンポーネントとの統一を検討。
+
+---
+
+### Phase S4-7 フェーズ構成
+
+```
+Phase S4-7-1（ally 入力接続 — 最優先・ゲーム成立に必須）
+  ├── S4-7-1a: useGameLoop に is2v2Mode の入力分岐を追加
+  │             player2 タッチ/WASD → game.ally に接続
+  ├── S4-7-1b: ally のゾーンクランプ（右下エリア）
+  └── S4-7-1c: ally が人間操作時に CPU AI をスキップ
+        ↓
+Phase S4-7-2（TeamSetupScreen 簡素化 — S4-7-1 と並行可能）
+  ├── S4-7-2a: Field / Win Score の選択を削除
+  ├── S4-7-2b: タイトル画面の設定値を直接使用
+  └── S4-7-2c: チーム構成表示のみのシンプル画面に
+        ↓
+Phase S4-7-3（背景ちらつき修正 — 独立・並行可能）
+  └── S4-7-3a: renderer.ts clear() の背景振動を停止し固定色に
+        ↓
+Phase S4-7-4（キャラ選択 UI 改善 — 独立・並行可能）
+  ├── S4-7-4a: カードサイズのレスポンシブ化
+  ├── S4-7-4b: スタイルを styled-components に統一
+  └── S4-7-4c: タッチ領域の拡大
+```
+
+### 並行作業ガイド
+
+```
+S4-7-1（ally 入力接続）     ← 最優先。ゲーム成立の前提
+  └──→ テスト確認
+                              ↑ 並行可能 ↓
+S4-7-2（設定画面簡素化）     ← S4-7-1 と並行可能（ファイル競合なし）
+                              ↑ 並行可能 ↓
+S4-7-3（背景ちらつき）       ← 完全独立。renderer.ts のみ変更
+                              ↑ 並行可能 ↓
+S4-7-4（キャラ選択 UI）      ← 完全独立。FreeBattleCharacterSelect + CharacterSelectScreen のみ
+```
+
+S4-7-1 は **ゲームが成立するための必須修正** のため最優先。
+S4-7-2〜S4-7-4 は互いに独立しており、全て S4-7-1 と並行して作業可能。
+
+### 影響範囲
+
+| ファイル | Phase | 変更内容 |
+|---------|-------|---------|
+| `presentation/hooks/useGameLoop.ts` | S4-7-1 | 2v2 入力分岐で ally 操作接続 |
+| `components/TeamSetupScreen.tsx` | S4-7-2 | Field / Win Score 削除、簡素化 |
+| `presentation/AirHockeyGame.tsx` | S4-7-2 | タイトル設定値の引き渡し変更 |
+| `renderer.ts` | S4-7-3 | clear() の背景アニメーション削除 |
+| `components/FreeBattleCharacterSelect.tsx` | S4-7-4 | レスポンシブカード・スタイル統一 |
+| `components/CharacterSelectScreen.tsx` | S4-7-4 | レスポンシブカード・スタイル統一 |
+
+### リスク管理
+
+| リスク | 影響度 | 対策 |
+|--------|--------|------|
+| ally 入力接続で 2P モードが壊れる | 高 | is2PMode / is2v2Mode の分岐を明確に分離。既存テストで保護 |
+| 背景色変更でビジュアルの印象が変わる | 低 | 静的グラデーション維持で雰囲気を保持 |
+| キャラ選択 UI 変更で既存テストが壊れる | 中 | getByRole / getByText ベースのテストなので構造変更に強い |
