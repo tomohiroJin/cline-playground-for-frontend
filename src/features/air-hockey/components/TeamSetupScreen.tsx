@@ -2,50 +2,17 @@
  * ペアマッチ（2v2）チーム確認画面
  * チーム構成を表示して対戦開始
  * Field / Win Score はタイトル画面の設定値をそのまま使用する
- * レイアウトは CharacterSelectScreen と同パターン（フルスクリーン + ヘッダー中央タイトル）
  */
 import React from 'react';
+import { screenLayout } from './screen-layout';
 
 type TeamSetupScreenProps = {
   onStart: () => void;
   onBack: () => void;
 };
 
-// ── スタイル定数 ─────────────────────────────
+// ── 画面固有スタイル ─────────────────────────────
 const styles = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    height: '100%',
-    backgroundColor: '#1a1a2e',
-    color: '#fff',
-    padding: '16px',
-    boxSizing: 'border-box' as const,
-    overflow: 'hidden',
-  },
-  header: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: '12px',
-  },
-  title: {
-    fontSize: '20px',
-    fontWeight: 'bold' as const,
-    color: '#e67e22',
-  },
-  backButton: {
-    background: 'none',
-    border: '1px solid #555',
-    color: '#ccc',
-    padding: '6px 12px',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '14px',
-  },
-  spacer: {
-    width: '60px',
-  },
   teamSection: {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: '8px',
@@ -65,15 +32,8 @@ const styles = {
     paddingLeft: '8px',
   },
   startButton: {
-    width: '100%',
-    padding: '14px',
-    fontSize: '18px',
-    fontWeight: 'bold' as const,
-    color: '#fff',
+    ...screenLayout.actionButton,
     background: 'linear-gradient(135deg, #27ae60, #2ecc71)',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
     marginTop: '16px',
   },
 };
@@ -82,14 +42,14 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
   onStart,
   onBack,
 }) => (
-  <div style={styles.container}>
+  <div style={screenLayout.container}>
     {/* ヘッダー */}
-    <div style={styles.header}>
-      <button style={styles.backButton} onClick={onBack}>
+    <div style={screenLayout.header}>
+      <button style={screenLayout.backButton} onClick={onBack}>
         ← 戻る
       </button>
-      <span style={styles.title}>ペアマッチ</span>
-      <div style={styles.spacer} />
+      <span style={screenLayout.title}>ペアマッチ</span>
+      <div style={screenLayout.spacer} />
     </div>
 
     {/* チーム1 */}

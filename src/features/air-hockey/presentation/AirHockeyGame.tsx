@@ -198,8 +198,8 @@ const AirHockeyGame: React.FC = () => {
   );
   const selectedDexEntry = React.useMemo(() => selectedCharacterId ? getDexEntryById(selectedCharacterId) : undefined, [selectedCharacterId]);
   const selectedCharacter = React.useMemo(() => selectedCharacterId ? findCharacterById(selectedCharacterId) : undefined, [selectedCharacterId]);
-  // 2P 対戦用: 基本キャラ（アキラ+ルーキー/レギュラー/エース）+ 図鑑解放済みストーリーキャラ
-  const twoPlayerCharacters = React.useMemo(() => {
+  // 基本キャラ + 図鑑解放済みストーリーキャラ（2P 対戦 / フリー対戦共通）
+  const allBattleCharacters = React.useMemo(() => {
     const base = getBattleCharacters();
     const baseIds = new Set(base.map(c => c.id));
     const unlocked = dex.unlockedIds
@@ -253,6 +253,8 @@ const AirHockeyGame: React.FC = () => {
     }
   }, [mode.currentStage, winner, navigateTo]);
   const handleResultBackToMenu = useCallback(() => { mode.resetToFree(); navigateTo('menu'); }, [mode, navigateTo]);
+  // ── 画面遷移（共通） ──
+  const handleBackToMenu = useCallback(() => { navigateTo('menu'); }, [navigateTo]);
   // ── 2P 対戦 ──
   const handleTwoPlayerClick = useCallback(() => { navigateTo('characterSelect'); }, [navigateTo]);
   // ── ペアマッチ（2v2）──
@@ -263,30 +265,21 @@ const AirHockeyGame: React.FC = () => {
     mode.setGameMode('2v2-local');
     startGame(mode.field, '2v2-local');
   }, [mode, startGame]);
-  const handleBackFromTeamSetup = useCallback(() => { navigateTo('menu'); }, [navigateTo]);
   const handleStartBattle = useCallback((config: TwoPlayerConfig) => {
     mode.setGameMode('2p-local');
     mode.setPlayer1Character(config.player1Character);
     mode.setPlayer2Character(config.player2Character);
     startGame(mode.field, '2p-local');
   }, [mode, startGame]);
-  // ── フリー対戦キャラ選択 ──
-  const freeBattleSelectableCharacters = React.useMemo(() => {
-    const base = getBattleCharacters().filter(c => c.id !== 'player');
-    const baseIds = new Set(base.map(c => c.id));
-    const unlocked = dex.unlockedIds
-      .filter(id => !baseIds.has(id) && id !== 'player')
-      .map(id => findCharacterById(id))
-      .filter((c): c is NonNullable<typeof c> => c !== undefined);
-    return [...base, ...unlocked];
-  }, [dex.unlockedIds]);
+  // ── フリー対戦キャラ選択（自キャラ除外） ──
+  const freeBattleSelectableCharacters = React.useMemo(
+    () => allBattleCharacters.filter(c => c.id !== 'player'),
+    [allBattleCharacters]
+  );
   const handleFreeBattleCharacterConfirm = useCallback((character: Character) => {
     mode.setSelectedCpuCharacter(character);
     navigateTo('vsScreen');
   }, [mode, navigateTo]);
-  const handleBackFromFreeBattleSelect = useCallback(() => { navigateTo('menu'); }, [navigateTo]);
-
-  const handleBackFromCharacterSelect = useCallback(() => { navigateTo('menu'); }, [navigateTo]);
   const handleBackToCharacterSelect = useCallback(() => { navigateTo('characterSelect'); }, [navigateTo]);
   const handleAcceptDifficulty = useCallback((d: typeof mode.difficulty) => { mode.setDifficulty(d); saveStreakRecord({ winStreak: 0, loseStreak: 0 }); }, [mode]);
   const handleBackToStageSelect = useCallback(() => { mode.setStoryProgress(loadStoryProgress()); navigateTo('stageSelect'); }, [mode, navigateTo]);
@@ -383,26 +376,26 @@ const AirHockeyGame: React.FC = () => {
           unlockedIds={dex.unlockedIds}
           difficulty={mode.difficulty}
           onConfirm={handleFreeBattleCharacterConfirm}
-          onBack={handleBackFromFreeBattleSelect}
+          onBack={handleBackToMenu}
         />
       )}
 
       {screen === 'characterSelect' && (
         <CharacterSelectScreen
-          characters={twoPlayerCharacters}
+          characters={allBattleCharacters}
           onStartBattle={handleStartBattle}
-          onBack={handleBackFromCharacterSelect}
+          onBack={handleBackToMenu}
         />
       )}
 
       {screen === 'teamSetup' && (
         <TeamSetupScreen
           onStart={handlePairMatchStart}
-          onBack={handleBackFromTeamSetup}
+          onBack={handleBackToMenu}
         />
       )}
 
-      {screen === 'achievements' && <AchievementList onBack={() => navigateTo('menu')} />}
+      {screen === 'achievements' && <AchievementList onBack={handleBackToMenu} />}
 
       {screen === 'characterDex' && (
         <>
@@ -416,7 +409,7 @@ const AirHockeyGame: React.FC = () => {
       )}
 
       {screen === 'daily' && mode.dailyChallenge && (
-        <DailyChallengeScreen challenge={mode.dailyChallenge} result={getDailyChallengeResult(mode.dailyChallenge.date)} onStart={handleDailyChallengeStart} onBack={() => navigateTo('menu')} />
+        <DailyChallengeScreen challenge={mode.dailyChallenge} result={getDailyChallengeResult(mode.dailyChallenge.date)} onStart={handleDailyChallengeStart} onBack={handleBackToMenu} />
       )}
 
       {screen === 'stageSelect' && (

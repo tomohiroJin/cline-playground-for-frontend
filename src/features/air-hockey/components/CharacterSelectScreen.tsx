@@ -6,6 +6,7 @@ import React, { useState, useCallback } from 'react';
 import type { Character } from '../core/types';
 import type { TwoPlayerConfig } from '../application/use-cases/two-player-battle';
 import type { PlayerSlot } from '../domain/contracts/input';
+import { screenLayout } from './screen-layout';
 
 /** キャラクター選択画面の Props */
 type CharacterSelectScreenProps = {
@@ -20,36 +21,6 @@ const CARD_ICON_SIZE = 42;
 const GRID_GAP = 10;
 
 const styles = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    height: '100%',
-    backgroundColor: '#1a1a2e',
-    color: '#fff',
-    padding: '16px',
-    boxSizing: 'border-box' as const,
-    overflow: 'hidden',
-  },
-  header: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: '12px',
-  },
-  title: {
-    fontSize: '20px',
-    fontWeight: 'bold' as const,
-    color: '#e67e22',
-  },
-  backButton: {
-    background: 'none',
-    border: '1px solid #555',
-    color: '#ccc',
-    padding: '6px 12px',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '14px',
-  },
   vsPanel: {
     display: 'flex',
     alignItems: 'center',
@@ -130,15 +101,8 @@ const styles = {
     textAlign: 'center' as const,
   },
   startButton: {
-    width: '100%',
-    padding: '14px',
-    borderRadius: '8px',
-    border: 'none',
+    ...screenLayout.actionButton,
     background: 'linear-gradient(135deg, #e67e22, #d35400)',
-    color: '#fff',
-    fontSize: '18px',
-    fontWeight: 'bold' as const,
-    cursor: 'pointer',
     marginTop: 'auto',
   },
 };
@@ -177,14 +141,14 @@ export function CharacterSelectScreen({
   };
 
   return (
-    <div style={styles.container}>
+    <div style={screenLayout.container}>
       {/* ヘッダー */}
-      <div style={styles.header}>
-        <button style={styles.backButton} onClick={onBack}>
+      <div style={screenLayout.header}>
+        <button style={screenLayout.backButton} onClick={onBack}>
           ← 戻る
         </button>
-        <span style={styles.title}>2P 対戦</span>
-        <div style={{ width: '60px' }} />
+        <span style={screenLayout.title}>2P 対戦</span>
+        <div style={screenLayout.spacer} />
       </div>
 
       {/* 1P vs 2P パネル */}
