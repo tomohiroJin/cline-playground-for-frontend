@@ -17,8 +17,8 @@ describe('TeamSetupScreen', () => {
 
   it('チーム構成が表示される', () => {
     render(<TeamSetupScreen {...defaultProps} />);
-    expect(screen.getByText('P1: あなた')).toBeDefined();
-    expect(screen.getByText('P2: CPU（味方）')).toBeDefined();
+    expect(screen.getByText('P1: あなた（マウス/タッチ）')).toBeDefined();
+    expect(screen.getByText('P2: パートナー（WASD/タッチ）')).toBeDefined();
     expect(screen.getByText('P3: CPU（敵1）')).toBeDefined();
     expect(screen.getByText('P4: CPU（敵2）')).toBeDefined();
   });

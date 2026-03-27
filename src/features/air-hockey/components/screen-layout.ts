@@ -11,6 +11,8 @@ export const screenLayout = {
   container: {
     display: 'flex',
     flexDirection: 'column' as const,
+    width: '100%',
+    maxWidth: '600px',
     height: '100%',
     backgroundColor: '#1a1a2e',
     color: '#fff',

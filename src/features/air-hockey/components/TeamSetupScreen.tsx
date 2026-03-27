@@ -56,8 +56,8 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
     <div style={styles.teamSection}>
       <div style={styles.teamTitle}>チーム1（下）</div>
       <div style={styles.memberList}>
-        <div>P1: あなた</div>
-        <div>P2: CPU（味方）</div>
+        <div>P1: あなた（マウス/タッチ）</div>
+        <div>P2: パートナー（WASD/タッチ）</div>
       </div>
     </div>
 

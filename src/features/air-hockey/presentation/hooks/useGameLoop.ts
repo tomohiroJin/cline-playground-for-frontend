@@ -455,8 +455,8 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       }
 
       // マウス/タッチ入力（フレーム同期: ref から目標位置を読み取り適用）
-      // 2v2 モードではマルチタッチの player1Position を使うため無効化
-      if (!is2v2Mode && playerTargetRef?.current) {
+      // 2v2 モードでもマウスのフォールバックとして有効（マルチタッチ時は後続で上書き）
+      if (playerTargetRef?.current) {
         moveMalletTo(game.player, playerTargetRef.current.x, playerTargetRef.current.y);
         playerTargetRef.current = null;
       }
@@ -621,6 +621,15 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
           if (itemEffect.pucks) game.pucks = itemEffect.pucks;
           if (itemEffect.effects) game.effects = itemEffect.effects;
           if (itemEffect.flash) game.flash = itemEffect.flash;
+          // 2v2 モード: チームメイトにも同じエフェクトを適用
+          if (is2v2Mode) {
+            const teammate = scoredTarget === 'player' ? 'ally' : 'enemy';
+            const hasMate = teammate === 'ally' ? game.ally : game.enemy;
+            if (hasMate) {
+              const teamEffect = applyItemEffect(game, item, teammate, now);
+              if (teamEffect.effects) game.effects = teamEffect.effects;
+            }
+          }
           sound.item();
           game.items.splice(i, 1);
           if (scoredTarget === 'player') {
