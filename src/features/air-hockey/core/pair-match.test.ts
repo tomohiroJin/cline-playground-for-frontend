@@ -2,8 +2,8 @@
  * Phase S4-1: ペアマッチ（2v2）型定義・データ構造のテスト
  */
 import { EntityFactory } from './entities';
-import { CONSTANTS, getPlayerZone, getPlayerXBounds, getPlayerYBounds } from './constants';
-import type { GameState, GameMode, GameEffects, PlayerSlot } from './types';
+import { CONSTANTS, getPlayerZone, getPlayerYBounds } from './constants';
+import type { GameMode, PlayerSlot } from './types';
 
 const { WIDTH: W, HEIGHT: H } = CONSTANTS.CANVAS;
 const MR = CONSTANTS.SIZES.MALLET;

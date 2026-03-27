@@ -5,9 +5,8 @@ import { EntityFactory, resolveMalletPuckOverlap } from './entities';
 import { CONSTANTS } from './constants';
 import { getAllMallets, applyGoalScore } from './pair-match-logic';
 import { applyItemEffect } from './items';
-import type { GameState, Mallet } from './types';
+import type { GameState } from './types';
 
-const { WIDTH: W, HEIGHT: H } = CONSTANTS.CANVAS;
 const MR = CONSTANTS.SIZES.MALLET;
 const BR = CONSTANTS.SIZES.PUCK;
 

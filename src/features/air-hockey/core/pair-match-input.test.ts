@@ -13,7 +13,7 @@ import {
   updateKeyboardStateForPlayer,
   calculateKeyboardMovement,
 } from './keyboard';
-import { CONSTANTS, getPlayerZone } from './constants';
+import { CONSTANTS } from './constants';
 
 const { WIDTH: W, HEIGHT: H } = CONSTANTS.CANVAS;
 const IS_4ZONE = true;
