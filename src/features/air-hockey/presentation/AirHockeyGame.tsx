@@ -297,6 +297,9 @@ const AirHockeyGame: React.FC = () => {
   const is2v2Mode = mode.gameMode === '2v2-local';
   const isMultiPlayer = is2PMode || is2v2Mode;
   const is2PGame = isMultiPlayer && screen === 'game';
+  // マルチプレイヤー時のスコアボード・リザルト表示名
+  const multiPlayerName = is2v2Mode ? 'チーム1' : (mode.player1Character?.name ?? '1P');
+  const multiOpponentName = is2v2Mode ? 'チーム2' : (mode.player2Character?.name ?? '2P');
 
   // 2P 用マルチタッチ入力（画面上下分割）
   const { stateRef: multiTouchRef } = useMultiTouchInput(canvasRef, is2PGame, is2v2Mode);
@@ -436,8 +439,8 @@ const AirHockeyGame: React.FC = () => {
         <>
           <Scoreboard
             scores={scores} onMenuClick={handleGameMenuClick} onPauseClick={togglePause}
-            cpuName={isMultiPlayer ? (is2v2Mode ? 'チーム2' : (mode.player2Character?.name ?? '2P')) : currentCpuName}
-            playerName={isMultiPlayer ? (is2v2Mode ? 'チーム1' : (mode.player1Character?.name ?? '1P')) : undefined}
+            cpuName={isMultiPlayer ? multiOpponentName : currentCpuName}
+            playerName={isMultiPlayer ? multiPlayerName : undefined}
             playerColor={is2PMode ? mode.player1Character?.color : undefined}
             cpuColor={is2PMode ? mode.player2Character?.color : undefined}
           />
@@ -462,12 +465,12 @@ const AirHockeyGame: React.FC = () => {
             onAcceptDifficulty={handleAcceptDifficulty}
             onBackToStageSelect={mode.gameMode === 'story' ? handleBackToStageSelect : undefined}
             onNextStage={mode.gameMode === 'story' && hasNextStage ? handleNextStage : undefined}
-            cpuCharacter={mode.gameMode === 'story' ? cpuCharacter : isMultiPlayer ? mode.player2Character : mode.selectedCpuCharacter ?? freeBattleCpuCharacter}
-            playerCharacter={mode.gameMode === 'story' ? PLAYER_CHARACTER : isMultiPlayer ? mode.player1Character : PLAYER_CHARACTER}
+            cpuCharacter={mode.gameMode === 'story' ? cpuCharacter : is2PMode ? mode.player2Character : is2v2Mode ? freeBattleCpuCharacter : mode.selectedCpuCharacter ?? freeBattleCpuCharacter}
+            playerCharacter={mode.gameMode === 'story' ? PLAYER_CHARACTER : is2PMode ? mode.player1Character : PLAYER_CHARACTER}
             newlyUnlockedCharacterName={result.newlyUnlockedCharacterName}
             is2PMode={isMultiPlayer}
-            player1CharacterName={isMultiPlayer ? (is2v2Mode ? 'チーム1' : mode.player1Character?.name) : undefined}
-            player2CharacterName={isMultiPlayer ? (is2v2Mode ? 'チーム2' : mode.player2Character?.name) : undefined}
+            player1CharacterName={isMultiPlayer ? multiPlayerName : undefined}
+            player2CharacterName={isMultiPlayer ? multiOpponentName : undefined}
             onBackToCharacterSelect={is2PMode ? handleBackToCharacterSelect : undefined}
           />
         </Transition>

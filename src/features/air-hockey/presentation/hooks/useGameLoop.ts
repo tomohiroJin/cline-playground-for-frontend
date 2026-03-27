@@ -622,12 +622,15 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
           if (itemEffect.effects) game.effects = itemEffect.effects;
           if (itemEffect.flash) game.flash = itemEffect.flash;
           // 2v2 モード: チームメイトにも同じエフェクトを適用
+          // ※ game.effects は上で代入済みのため、applyItemEffect は更新後の effects をベースにスプレッドする
+          //   → 1回目の target エフェクトが失われることはない（不変更新パターン）
           if (is2v2Mode) {
             const teammate = scoredTarget === 'player' ? 'ally' : 'enemy';
             const hasMate = teammate === 'ally' ? game.ally : game.enemy;
             if (hasMate) {
               const teamEffect = applyItemEffect(game, item, teammate, now);
               if (teamEffect.effects) game.effects = teamEffect.effects;
+              if (teamEffect.flash) game.flash = teamEffect.flash;
             }
           }
           sound.item();
