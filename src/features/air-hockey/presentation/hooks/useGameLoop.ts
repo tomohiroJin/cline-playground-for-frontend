@@ -896,5 +896,5 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       setScores, setWinner, setScreen, setShowHelp,
       phaseRef, countdownStartRef, shakeRef, setShake, bgmEnabled,
       statsRef, matchStartRef, keysRef,
-      is2PMode, pColor, cColor, playerTargetRef, player2KeysRef, multiTouchRef, aiConfig]);
+      is2PMode, is2v2Mode, pColor, cColor, playerTargetRef, player2KeysRef, multiTouchRef, aiConfig]);
 }
