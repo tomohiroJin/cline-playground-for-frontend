@@ -33,6 +33,14 @@ export type UseGameModeReturn = {
   setPlayer1Character: (c: Character | undefined) => void;
   player2Character: Character | undefined;
   setPlayer2Character: (c: Character | undefined) => void;
+  allyCharacter: Character | undefined;
+  setAllyCharacter: (c: Character | undefined) => void;
+  enemyCharacter1: Character | undefined;
+  setEnemyCharacter1: (c: Character | undefined) => void;
+  enemyCharacter2: Character | undefined;
+  setEnemyCharacter2: (c: Character | undefined) => void;
+  pairMatchDifficulty: Difficulty;
+  setPairMatchDifficulty: (d: Difficulty) => void;
   resetToFree: () => void;
 };
 
@@ -53,6 +61,10 @@ export function useGameMode(): UseGameModeReturn {
   const [selectedCpuCharacter, setSelectedCpuCharacter] = useState<Character | undefined>(undefined);
   const [player1Character, setPlayer1Character] = useState<Character | undefined>(undefined);
   const [player2Character, setPlayer2Character] = useState<Character | undefined>(undefined);
+  const [allyCharacter, setAllyCharacter] = useState<Character | undefined>(undefined);
+  const [enemyCharacter1, setEnemyCharacter1] = useState<Character | undefined>(undefined);
+  const [enemyCharacter2, setEnemyCharacter2] = useState<Character | undefined>(undefined);
+  const [pairMatchDifficulty, setPairMatchDifficulty] = useState<Difficulty>('normal');
 
   /** 勝利スコアをバリデーション付きで設定 */
   const setWinScore = useCallback((s: number) => {
@@ -68,6 +80,9 @@ export function useGameMode(): UseGameModeReturn {
     setSelectedCpuCharacter(undefined);
     setPlayer1Character(undefined);
     setPlayer2Character(undefined);
+    setAllyCharacter(undefined);
+    setEnemyCharacter1(undefined);
+    setEnemyCharacter2(undefined);
   }, []);
 
   return {
@@ -93,6 +108,14 @@ export function useGameMode(): UseGameModeReturn {
     setPlayer1Character,
     player2Character,
     setPlayer2Character,
+    allyCharacter,
+    setAllyCharacter,
+    enemyCharacter1,
+    setEnemyCharacter1,
+    enemyCharacter2,
+    setEnemyCharacter2,
+    pairMatchDifficulty,
+    setPairMatchDifficulty,
     resetToFree,
   };
 }

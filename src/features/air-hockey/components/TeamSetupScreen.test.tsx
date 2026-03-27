@@ -4,70 +4,185 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TeamSetupScreen } from './TeamSetupScreen';
+import type { Character, Difficulty } from '../core/types';
+
+// テスト用キャラクターデータ
+const mockPlayerCharacter: Character = {
+  id: 'player', name: 'アキラ', icon: '/akira.png', color: '#3498db',
+  reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
+};
+const mockAlly: Character = {
+  id: 'rookie', name: 'ルーキー', icon: '/rookie.png', color: '#27ae60',
+  reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
+};
+const mockEnemy1: Character = {
+  id: 'regular', name: 'レギュラー', icon: '/regular.png', color: '#e67e22',
+  reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
+};
+const mockEnemy2: Character = {
+  id: 'ace', name: 'エース', icon: '/ace.png', color: '#e74c3c',
+  reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
+};
+const mockLockedChar: Character = {
+  id: 'hiro', name: 'ヒロ', icon: '/hiro.png', color: '#9b59b6',
+  reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
+};
+
+const allCharacters = [mockAlly, mockEnemy1, mockEnemy2, mockLockedChar];
+const unlockedIds = ['rookie', 'regular', 'ace'];
+
+const createDefaultProps = () => ({
+  allCharacters,
+  unlockedIds,
+  playerCharacter: mockPlayerCharacter,
+  allyCharacter: mockAlly,
+  enemyCharacter1: mockEnemy1,
+  enemyCharacter2: mockEnemy2,
+  onAllyChange: jest.fn(),
+  onEnemy1Change: jest.fn(),
+  onEnemy2Change: jest.fn(),
+  difficulty: 'normal' as Difficulty,
+  onDifficultyChange: jest.fn(),
+  onStart: jest.fn(),
+  onBack: jest.fn(),
+});
 
 describe('TeamSetupScreen', () => {
-  const defaultProps = {
-    onStart: jest.fn(),
-    onBack: jest.fn(),
-  };
-
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('チーム構成が表示される', () => {
-    render(<TeamSetupScreen {...defaultProps} />);
-    expect(screen.getByText('P1: あなた（マウス/タッチ）')).toBeDefined();
-    expect(screen.getByText('P2: パートナー（WASD/タッチ）')).toBeDefined();
-    expect(screen.getByText('P3: CPU（敵1）')).toBeDefined();
-    expect(screen.getByText('P4: CPU（敵2）')).toBeDefined();
-  });
+  describe('レイアウト', () => {
+    it('ヘッダーにタイトル「ペアマッチ設定」と戻るボタンが表示される', () => {
+      render(<TeamSetupScreen {...createDefaultProps()} />);
+      expect(screen.getByText('ペアマッチ設定')).toBeDefined();
+      expect(screen.getByRole('button', { name: /戻る/ })).toBeDefined();
+    });
 
-  it('「対戦開始！」ボタンで onStart が呼ばれる', () => {
-    render(<TeamSetupScreen {...defaultProps} />);
-    fireEvent.click(screen.getByText('対戦開始！'));
-    expect(defaultProps.onStart).toHaveBeenCalledTimes(1);
-  });
-
-  it('「戻る」ボタンで onBack が呼ばれる', () => {
-    render(<TeamSetupScreen {...defaultProps} />);
-    fireEvent.click(screen.getByText('← 戻る'));
-    expect(defaultProps.onBack).toHaveBeenCalledTimes(1);
-  });
-
-  it('Field / Win Score の選択 UI が存在しない', () => {
-    render(<TeamSetupScreen {...defaultProps} />);
-    expect(screen.queryByText('Field')).toBeNull();
-    expect(screen.queryByText('Win Score')).toBeNull();
-  });
-
-  describe('レイアウト統一（CharacterSelectScreen と同パターン）', () => {
     it('フルスクリーンコンテナで表示される', () => {
-      const { container } = render(<TeamSetupScreen {...defaultProps} />);
+      const { container } = render(<TeamSetupScreen {...createDefaultProps()} />);
       const root = container.firstElementChild as HTMLElement;
       expect(root.style.height).toBe('100%');
       expect(root.style.display).toBe('flex');
       expect(root.style.flexDirection).toBe('column');
     });
 
-    it('ヘッダーが space-between レイアウトで戻るボタン・タイトルが配置される', () => {
-      render(<TeamSetupScreen {...defaultProps} />);
-      // タイトルがヘッダー内に表示される
-      const title = screen.getByText('ペアマッチ');
-      expect(title).toBeDefined();
-      // 戻るボタンが button 要素で表示される
-      const backButton = screen.getByRole('button', { name: /戻る/ });
-      expect(backButton).toBeDefined();
-      // ヘッダーコンテナが space-between レイアウト
-      const header = backButton.parentElement as HTMLElement;
-      expect(header.style.justifyContent).toBe('space-between');
+    it('対戦開始ボタンが表示される', () => {
+      render(<TeamSetupScreen {...createDefaultProps()} />);
+      expect(screen.getByRole('button', { name: '対戦開始！' })).toBeDefined();
+    });
+  });
+
+  describe('チーム構成表示', () => {
+    it('P1（プレイヤー）のキャラ名が表示される', () => {
+      render(<TeamSetupScreen {...createDefaultProps()} />);
+      expect(screen.getByText('アキラ')).toBeDefined();
     });
 
-    it('MenuCard コンポーネントを使用しない（独自レイアウト）', () => {
-      const { container } = render(<TeamSetupScreen {...defaultProps} />);
-      const root = container.firstElementChild as HTMLElement;
-      // フルスクリーンコンテナの背景色が設定されている
-      expect(root.style.backgroundColor).toBeTruthy();
+    it('P2（味方）の選択済みキャラ名が表示される', () => {
+      render(<TeamSetupScreen {...createDefaultProps()} />);
+      expect(screen.getByText('ルーキー')).toBeDefined();
+    });
+
+    it('P3（敵1）の選択済みキャラ名が表示される', () => {
+      render(<TeamSetupScreen {...createDefaultProps()} />);
+      expect(screen.getByText('レギュラー')).toBeDefined();
+    });
+
+    it('P4（敵2）の選択済みキャラ名が表示される', () => {
+      render(<TeamSetupScreen {...createDefaultProps()} />);
+      expect(screen.getByText('エース')).toBeDefined();
+    });
+
+    it('チーム1/チーム2のセクションが表示される', () => {
+      render(<TeamSetupScreen {...createDefaultProps()} />);
+      expect(screen.getByText(/チーム1/)).toBeDefined();
+      expect(screen.getByText(/チーム2/)).toBeDefined();
+    });
+  });
+
+  describe('キャラクター選択', () => {
+    it('P2 スロットをクリックすると選択パネルが展開される', () => {
+      render(<TeamSetupScreen {...createDefaultProps()} />);
+      const p2Slot = screen.getByTestId('slot-p2');
+      fireEvent.click(p2Slot);
+      // 展開後、キャラクターグリッドが表示される
+      expect(screen.getByTestId('character-grid-p2')).toBeDefined();
+    });
+
+    it('選択パネルでキャラをクリックすると onAllyChange が呼ばれる', () => {
+      const props = createDefaultProps();
+      render(<TeamSetupScreen {...props} />);
+      fireEvent.click(screen.getByTestId('slot-p2'));
+      // エースを選択
+      const aceButton = screen.getByTestId('char-select-ace');
+      fireEvent.click(aceButton);
+      expect(props.onAllyChange).toHaveBeenCalledWith(mockEnemy2);
+    });
+
+    it('P3 スロットをクリックして onEnemy1Change でキャラを変更できる', () => {
+      const props = createDefaultProps();
+      render(<TeamSetupScreen {...props} />);
+      fireEvent.click(screen.getByTestId('slot-p3'));
+      const rookieButton = screen.getByTestId('char-select-rookie');
+      fireEvent.click(rookieButton);
+      expect(props.onEnemy1Change).toHaveBeenCalledWith(mockAlly);
+    });
+
+    it('P4 スロットをクリックして onEnemy2Change でキャラを変更できる', () => {
+      const props = createDefaultProps();
+      render(<TeamSetupScreen {...props} />);
+      fireEvent.click(screen.getByTestId('slot-p4'));
+      const regularButton = screen.getByTestId('char-select-regular');
+      fireEvent.click(regularButton);
+      expect(props.onEnemy2Change).toHaveBeenCalledWith(mockEnemy1);
+    });
+
+    it('ロック済みキャラは選択できない（disabled）', () => {
+      const props = createDefaultProps();
+      render(<TeamSetupScreen {...props} />);
+      fireEvent.click(screen.getByTestId('slot-p2'));
+      const lockedButton = screen.getByTestId('char-select-hiro');
+      expect(lockedButton).toBeDisabled();
+    });
+  });
+
+  describe('難易度選択', () => {
+    it('3つの難易度ボタンが表示される', () => {
+      render(<TeamSetupScreen {...createDefaultProps()} />);
+      expect(screen.getByText('かんたん')).toBeDefined();
+      expect(screen.getByText('ふつう')).toBeDefined();
+      expect(screen.getByText('むずかしい')).toBeDefined();
+    });
+
+    it('現在の難易度がハイライトされる', () => {
+      render(<TeamSetupScreen {...createDefaultProps()} />);
+      const normalButton = screen.getByText('ふつう');
+      // ハイライトされたボタンはスタイルが異なる
+      expect(normalButton.closest('button')?.style.backgroundColor).toBeTruthy();
+    });
+
+    it('難易度ボタンクリックで onDifficultyChange が呼ばれる', () => {
+      const props = createDefaultProps();
+      render(<TeamSetupScreen {...props} />);
+      fireEvent.click(screen.getByText('かんたん'));
+      expect(props.onDifficultyChange).toHaveBeenCalledWith('easy');
+    });
+  });
+
+  describe('アクション', () => {
+    it('「対戦開始！」ボタンで onStart が呼ばれる', () => {
+      const props = createDefaultProps();
+      render(<TeamSetupScreen {...props} />);
+      fireEvent.click(screen.getByText('対戦開始！'));
+      expect(props.onStart).toHaveBeenCalledTimes(1);
+    });
+
+    it('「戻る」ボタンで onBack が呼ばれる', () => {
+      const props = createDefaultProps();
+      render(<TeamSetupScreen {...props} />);
+      fireEvent.click(screen.getByText('← 戻る'));
+      expect(props.onBack).toHaveBeenCalledTimes(1);
     });
   });
 });

@@ -26,6 +26,8 @@ type ResultScreenProps = {
   newlyUnlockedCharacterName?: string;
   /** 2P 対戦モードかどうか */
   is2PMode?: boolean;
+  /** 2v2 ペアマッチモードかどうか */
+  is2v2Mode?: boolean;
   /** 1P のキャラクター名（2P 対戦用） */
   player1CharacterName?: string;
   /** 2P のキャラクター名（2P 対戦用） */
@@ -213,10 +215,12 @@ const UnlockBanner: React.FC<{ characterName: string }> = ({ characterName }) =>
 /** 勝者表示テキストを生成する */
 function getWinnerText(
   is2PMode: boolean | undefined,
+  is2v2Mode: boolean | undefined,
   isWin: boolean,
   player1Name?: string,
   player2Name?: string
 ): string {
+  if (is2v2Mode) return isWin ? 'チーム1 WIN!' : 'チーム2 WIN!';
   if (!is2PMode) return isWin ? 'YOU WIN!' : 'YOU LOSE';
   if (isWin) return player1Name ? `${player1Name} Win!` : '1P Win!';
   return player2Name ? `${player2Name} Win!` : '2P Win!';
@@ -227,7 +231,7 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
   suggestedDifficulty, onAcceptDifficulty,
   onBackToStageSelect, onNextStage,
   cpuCharacter, playerCharacter, newlyUnlockedCharacterName,
-  is2PMode, player1CharacterName, player2CharacterName, onBackToCharacterSelect,
+  is2PMode, is2v2Mode, player1CharacterName, player2CharacterName, onBackToCharacterSelect,
 }) => {
   const isWin = winner === 'player';
 
@@ -250,14 +254,14 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
 
   return (
     <MenuCard style={{ position: 'relative', overflow: 'hidden' }}>
-      {(is2PMode || isWin) && <ConfettiOverlay />}
+      {(is2PMode || is2v2Mode || isWin) && <ConfettiOverlay />}
 
       <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
         <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>
-          {is2PMode ? '🎊' : isWin ? '🎉' : '😢'}
+          {(is2PMode || is2v2Mode) ? '🎊' : isWin ? '🎉' : '😢'}
         </div>
-        <GameTitle style={{ color: (is2PMode || isWin) ? 'var(--accent-color)' : '#ff4444' }}>
-          {getWinnerText(is2PMode, isWin, player1CharacterName, player2CharacterName)}
+        <GameTitle style={{ color: (is2PMode || is2v2Mode || isWin) ? 'var(--accent-color)' : '#ff4444' }}>
+          {getWinnerText(is2PMode, is2v2Mode, isWin, player1CharacterName, player2CharacterName)}
         </GameTitle>
         <p style={{ fontSize: '2rem', color: 'white', fontWeight: 'bold', marginBottom: '20px' }}>
           {scores.p} - {scores.c}
@@ -321,8 +325,8 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
           </div>
         )}
 
-        {/* 新規実績（2P 対戦では非表示） */}
-        {!is2PMode && newAchievements && newAchievements.length > 0 && (
+        {/* 新規実績（2P / 2v2 対戦では非表示） */}
+        {!is2PMode && !is2v2Mode && newAchievements && newAchievements.length > 0 && (
           <div style={{ width: '100%', marginBottom: '1rem' }}>
             <p style={{ color: '#ffd700', fontSize: '0.8rem', textAlign: 'center', marginBottom: '8px', fontWeight: 'bold' }}>
               NEW ACHIEVEMENTS!

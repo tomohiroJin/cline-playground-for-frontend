@@ -241,4 +241,57 @@ describe('ResultScreen', () => {
       expect(screen.getByText('キャラ選択に戻る')).toBeInTheDocument();
     });
   });
+
+  describe('2v2 ペアマッチモード', () => {
+    it('2v2 モードでチーム1勝利時に「チーム1 WIN!」が表示される', () => {
+      render(
+        <ResultScreen
+          {...defaultProps}
+          winner="player"
+          is2v2Mode
+          player1CharacterName="アキラ"
+          player2CharacterName="ヒロ"
+        />,
+      );
+
+      expect(screen.getByText('チーム1 WIN!')).toBeInTheDocument();
+    });
+
+    it('2v2 モードでチーム2勝利時に「チーム2 WIN!」が表示される', () => {
+      render(
+        <ResultScreen
+          {...defaultProps}
+          winner="cpu"
+          is2v2Mode
+          player1CharacterName="アキラ"
+          player2CharacterName="ヒロ"
+        />,
+      );
+
+      expect(screen.getByText('チーム2 WIN!')).toBeInTheDocument();
+    });
+
+    it('2v2 モードでは実績通知が表示されない', () => {
+      render(
+        <ResultScreen
+          {...defaultProps}
+          is2v2Mode
+          newAchievements={[{ id: 'first_win', name: '初勝利', description: '初めて勝利', icon: '🏆' }]}
+        />,
+      );
+
+      expect(screen.queryByText('初勝利')).not.toBeInTheDocument();
+    });
+
+    it('2v2 モードで「BACK TO MENU」ボタンが表示される', () => {
+      render(
+        <ResultScreen
+          {...defaultProps}
+          is2v2Mode
+        />,
+      );
+
+      expect(screen.getByText('BACK TO MENU')).toBeInTheDocument();
+    });
+  });
 });

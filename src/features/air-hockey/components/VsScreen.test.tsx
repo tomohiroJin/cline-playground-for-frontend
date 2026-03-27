@@ -240,4 +240,86 @@ describe('VsScreen', () => {
       expect(cpuName.style.color).toBe('rgb(230, 126, 34)');
     });
   });
+
+  describe('2v2 モード', () => {
+    const allyChar: Character = {
+      id: 'rookie',
+      name: 'ルーキー',
+      icon: '/assets/characters/rookie.png',
+      color: '#27ae60',
+      reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
+    };
+
+    const enemy2Char: Character = {
+      id: 'ace',
+      name: 'エース',
+      icon: '/assets/characters/ace.png',
+      color: '#e74c3c',
+      reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
+    };
+
+    it('is2v2=true で 4 キャラの名前が全て表示される', () => {
+      render(
+        <VsScreen
+          {...defaultProps}
+          is2v2
+          allyCharacter={allyChar}
+          enemyCharacter2={enemy2Char}
+        />
+      );
+      expect(screen.getByText('アキラ')).toBeInTheDocument();
+      expect(screen.getByText('ルーキー')).toBeInTheDocument();
+      expect(screen.getByText('ヒロ')).toBeInTheDocument();
+      expect(screen.getByText('エース')).toBeInTheDocument();
+    });
+
+    it('is2v2=true で VS テキストが表示される', () => {
+      render(
+        <VsScreen
+          {...defaultProps}
+          is2v2
+          allyCharacter={allyChar}
+          enemyCharacter2={enemy2Char}
+        />
+      );
+      expect(screen.getByText('VS')).toBeInTheDocument();
+    });
+
+    it('is2v2=true で 4 キャラの立ち絵/アイコンが表示される', () => {
+      render(
+        <VsScreen
+          {...defaultProps}
+          is2v2
+          allyCharacter={allyChar}
+          enemyCharacter2={enemy2Char}
+        />
+      );
+      const images = screen.getAllByRole('img');
+      // P1, P2, P3, P4 の 4 つの立ち絵
+      expect(images.length).toBeGreaterThanOrEqual(4);
+    });
+
+    it('is2v2=true でも 3 秒後に onComplete が呼ばれる', () => {
+      render(
+        <VsScreen
+          {...defaultProps}
+          is2v2
+          allyCharacter={allyChar}
+          enemyCharacter2={enemy2Char}
+        />
+      );
+      expect(defaultProps.onComplete).not.toHaveBeenCalled();
+      act(() => {
+        jest.advanceTimersByTime(3000);
+      });
+      expect(defaultProps.onComplete).toHaveBeenCalledTimes(1);
+    });
+
+    it('is2v2 未指定時は従来の 2 キャラ表示（後方互換）', () => {
+      render(<VsScreen {...defaultProps} />);
+      // ally / enemy2 のキャラは表示されない
+      expect(screen.queryByText('ルーキー')).not.toBeInTheDocument();
+      expect(screen.queryByText('エース')).not.toBeInTheDocument();
+    });
+  });
 });
