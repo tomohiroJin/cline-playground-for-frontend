@@ -1,25 +1,18 @@
 /**
  * キャラクター選択画面
- * - 2P 対戦時に各プレイヤーがキャラクターを選択する
- * - フィールド・勝利スコアの設定も行う
+ * 2P 対戦時に各プレイヤーがキャラクターを選択する
  */
-import React, { useState, useCallback, useMemo } from 'react';
-import type { Character, FieldConfig } from '../core/types';
+import React, { useState, useCallback } from 'react';
+import type { Character } from '../core/types';
 import type { TwoPlayerConfig } from '../application/use-cases/two-player-battle';
 import type { PlayerSlot } from '../domain/contracts/input';
-import { WIN_SCORE_OPTIONS } from '../core/config';
 
 /** キャラクター選択画面の Props */
 type CharacterSelectScreenProps = {
   characters: Character[];
-  unlockedFieldIds: string[];
-  fields: readonly FieldConfig[];
   onStartBattle: (config: TwoPlayerConfig) => void;
   onBack: () => void;
 };
-
-/** デフォルト勝利スコア */
-const DEFAULT_WIN_SCORE = 3;
 
 // ── スタイル定数 ─────────────────────────────
 const PANEL_ICON_SIZE = 48;
@@ -136,25 +129,6 @@ const styles = {
     color: '#ddd',
     textAlign: 'center' as const,
   },
-  settingsRow: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: '8px',
-    padding: '0 8px',
-  },
-  settingsLabel: {
-    fontSize: '13px',
-    color: '#aaa',
-  },
-  settingsSelect: {
-    backgroundColor: '#2a2a4a',
-    color: '#fff',
-    border: '1px solid #555',
-    borderRadius: '4px',
-    padding: '4px 8px',
-    fontSize: '13px',
-  },
   startButton: {
     width: '100%',
     padding: '14px',
@@ -171,23 +145,13 @@ const styles = {
 
 export function CharacterSelectScreen({
   characters,
-  unlockedFieldIds,
-  fields,
   onStartBattle,
   onBack,
 }: CharacterSelectScreenProps) {
-  // アンロック済みフィールドのフィルタ
-  const availableFields = useMemo(
-    () => fields.filter(f => unlockedFieldIds.includes(f.id)),
-    [fields, unlockedFieldIds]
-  );
-
   // 選択状態
   const [player1, setPlayer1] = useState<Character>(characters[0]);
   const [player2, setPlayer2] = useState<Character>(characters[1] ?? characters[0]);
   const [activeSlot, setActiveSlot] = useState<PlayerSlot>('player1');
-  const [selectedField, setSelectedField] = useState<FieldConfig>(availableFields[0] ?? fields[0]);
-  const [winScore, setWinScore] = useState(DEFAULT_WIN_SCORE);
 
   // キャラクター選択ハンドラ
   const handleCharacterSelect = useCallback((character: Character) => {
@@ -203,10 +167,8 @@ export function CharacterSelectScreen({
     onStartBattle({
       player1Character: player1,
       player2Character: player2,
-      field: selectedField,
-      winScore,
     });
-  }, [onStartBattle, player1, player2, selectedField, winScore]);
+  }, [onStartBattle, player1, player2]);
 
   // キャラクターが選択中か判定
   const isCharacterSelected = (character: Character) => {

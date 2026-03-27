@@ -3,14 +3,12 @@
  * - ローカル 2P 対戦の設定・スコア管理・勝敗判定を担当
  * - 実績・アンロック判定は 2P 対戦では無効
  */
-import type { Character, FieldConfig } from '../../core/types';
+import type { Character } from '../../core/types';
 /** 2P 対戦で使用するスロット（player1/player2 のみ） */
 type TwoPlayerSlot = 'player1' | 'player2';
 
-/** 2P 対戦の設定 */
+/** 2P 対戦のキャラクター選択結果 */
 export type TwoPlayerConfig = {
-  field: FieldConfig;
-  winScore: number;
   player1Character: Character;
   player2Character: Character;
 };
@@ -21,7 +19,6 @@ type TwoPlayerState = {
   player1Character: Character;
   player2Character: Character;
   winScore: number;
-  field: FieldConfig;
 };
 
 /**
@@ -31,13 +28,12 @@ export class TwoPlayerBattleUseCase {
   private state: TwoPlayerState | undefined;
 
   /** 対戦を初期化する */
-  start(config: TwoPlayerConfig): void {
+  start(config: TwoPlayerConfig, winScore: number): void {
     this.state = {
       scores: { player1: 0, player2: 0 },
       player1Character: config.player1Character,
       player2Character: config.player2Character,
-      winScore: config.winScore,
-      field: config.field,
+      winScore,
     };
   }
 

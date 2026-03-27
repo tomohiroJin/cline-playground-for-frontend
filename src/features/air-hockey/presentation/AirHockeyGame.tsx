@@ -390,8 +390,6 @@ const AirHockeyGame: React.FC = () => {
       {screen === 'characterSelect' && (
         <CharacterSelectScreen
           characters={twoPlayerCharacters}
-          unlockedFieldIds={result.unlockState?.unlockedFields ?? ['classic', 'wide']}
-          fields={FIELDS}
           onStartBattle={handleStartBattle}
           onBack={handleBackFromCharacterSelect}
         />

@@ -5,7 +5,6 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { CharacterSelectScreen } from './CharacterSelectScreen';
 import type { Character } from '../core/types';
-import { FIELDS } from '../core/config';
 
 // テスト用キャラクターデータ
 const createTestCharacter = (id: string, name: string, color = '#000'): Character => ({
@@ -26,8 +25,6 @@ const mockCharacters: Character[] = [
 describe('CharacterSelectScreen', () => {
   const defaultProps = {
     characters: mockCharacters,
-    unlockedFieldIds: ['classic', 'wide'],
-    fields: FIELDS,
     onStartBattle: jest.fn(),
     onBack: jest.fn(),
   };
@@ -129,19 +126,25 @@ describe('CharacterSelectScreen', () => {
   });
 
   describe('操作', () => {
-    it('対戦開始ボタンで onStartBattle が正しい config で呼ばれる', () => {
+    it('対戦開始ボタンで onStartBattle がキャラクター情報のみで呼ばれる', () => {
       render(<CharacterSelectScreen {...defaultProps} />);
 
       fireEvent.click(screen.getByRole('button', { name: '対戦開始！' }));
 
-      expect(defaultProps.onStartBattle).toHaveBeenCalledWith(
-        expect.objectContaining({
-          player1Character: expect.objectContaining({ id: 'player' }),
-          player2Character: expect.objectContaining({ id: 'hiro' }),
-          field: expect.objectContaining({ id: 'classic' }),
-          winScore: expect.any(Number),
-        })
-      );
+      expect(defaultProps.onStartBattle).toHaveBeenCalledWith({
+        player1Character: expect.objectContaining({ id: 'player' }),
+        player2Character: expect.objectContaining({ id: 'hiro' }),
+      });
+    });
+
+    it('onStartBattle に field / winScore が含まれない', () => {
+      render(<CharacterSelectScreen {...defaultProps} />);
+
+      fireEvent.click(screen.getByRole('button', { name: '対戦開始！' }));
+
+      const config = defaultProps.onStartBattle.mock.calls[0][0];
+      expect(config).not.toHaveProperty('field');
+      expect(config).not.toHaveProperty('winScore');
     });
 
     it('戻るボタンで onBack が呼ばれる', () => {
