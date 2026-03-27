@@ -511,7 +511,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
 
         // enemy（P4）のみ CPU AI で制御
         if (game.enemy) {
-          const updateFn = CpuAI.updateWithBehavior;
+          const updateFn = CpuAI.updateWithBehavior.bind(CpuAI);
           const result = updateExtraMalletAI(
             game, game.enemy,
             { target: game.enemyTarget ?? null, targetTime: game.enemyTargetTime ?? 0, stuckTimer: game.enemyStuckTimer ?? 0 },
