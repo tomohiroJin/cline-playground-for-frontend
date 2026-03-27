@@ -297,9 +297,16 @@ const AirHockeyGame: React.FC = () => {
   const is2v2Mode = mode.gameMode === '2v2-local';
   const isMultiPlayer = is2PMode || is2v2Mode;
   const is2PGame = isMultiPlayer && screen === 'game';
-  // マルチプレイヤー時のスコアボード・リザルト表示名
+  // マルチプレイヤー時のスコアボード・リザルト表示名・キャラクター
   const multiPlayerName = is2v2Mode ? 'チーム1' : (mode.player1Character?.name ?? '1P');
   const multiOpponentName = is2v2Mode ? 'チーム2' : (mode.player2Character?.name ?? '2P');
+  const resultPlayerCharacter = mode.gameMode === 'story' ? PLAYER_CHARACTER
+    : is2PMode ? mode.player1Character
+    : PLAYER_CHARACTER;
+  const resultOpponentCharacter = mode.gameMode === 'story' ? cpuCharacter
+    : is2PMode ? mode.player2Character
+    : is2v2Mode ? freeBattleCpuCharacter
+    : mode.selectedCpuCharacter ?? freeBattleCpuCharacter;
 
   // 2P 用マルチタッチ入力（画面上下分割）
   const { stateRef: multiTouchRef } = useMultiTouchInput(canvasRef, is2PGame, is2v2Mode);
@@ -465,8 +472,8 @@ const AirHockeyGame: React.FC = () => {
             onAcceptDifficulty={handleAcceptDifficulty}
             onBackToStageSelect={mode.gameMode === 'story' ? handleBackToStageSelect : undefined}
             onNextStage={mode.gameMode === 'story' && hasNextStage ? handleNextStage : undefined}
-            cpuCharacter={mode.gameMode === 'story' ? cpuCharacter : is2PMode ? mode.player2Character : is2v2Mode ? freeBattleCpuCharacter : mode.selectedCpuCharacter ?? freeBattleCpuCharacter}
-            playerCharacter={mode.gameMode === 'story' ? PLAYER_CHARACTER : is2PMode ? mode.player1Character : PLAYER_CHARACTER}
+            cpuCharacter={resultOpponentCharacter}
+            playerCharacter={resultPlayerCharacter}
             newlyUnlockedCharacterName={result.newlyUnlockedCharacterName}
             is2PMode={isMultiPlayer}
             player1CharacterName={isMultiPlayer ? multiPlayerName : undefined}
