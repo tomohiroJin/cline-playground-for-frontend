@@ -389,26 +389,26 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
 
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
           {onReplay && (
-            <StartButton onClick={onReplay} style={{ background: 'linear-gradient(135deg, #00ff88, #00cc66)' }}>
+            <StartButton onClick={onReplay} style={{ background: 'linear-gradient(135deg, #00ff88, #00cc66)', marginTop: 0 }}>
               REPLAY
             </StartButton>
           )}
           {onNextStage && isWin && (
-            <StartButton onClick={onNextStage} style={{ background: 'linear-gradient(135deg, #ff6b6b, #ee5a24)' }}>
+            <StartButton onClick={onNextStage} style={{ background: 'linear-gradient(135deg, #ff6b6b, #ee5a24)', marginTop: 0 }}>
               次のステージへ
             </StartButton>
           )}
           {onBackToStageSelect && (
-            <StartButton onClick={onBackToStageSelect} style={{ background: 'linear-gradient(135deg, #a55eea, #8854d0)' }}>
+            <StartButton onClick={onBackToStageSelect} style={{ background: 'linear-gradient(135deg, #a55eea, #8854d0)', marginTop: 0 }}>
               ステージ選択
             </StartButton>
           )}
           {is2PMode && onBackToCharacterSelect && (
-            <StartButton onClick={onBackToCharacterSelect} style={{ background: 'linear-gradient(135deg, #e67e22, #d35400)' }}>
+            <StartButton onClick={onBackToCharacterSelect} style={{ background: 'linear-gradient(135deg, #e67e22, #d35400)', marginTop: 0 }}>
               キャラ選択に戻る
             </StartButton>
           )}
-          <StartButton onClick={onBackToMenu}>BACK TO MENU</StartButton>
+          <StartButton onClick={onBackToMenu} style={{ marginTop: 0 }}>BACK TO MENU</StartButton>
         </div>
       </div>
     </MenuCard>

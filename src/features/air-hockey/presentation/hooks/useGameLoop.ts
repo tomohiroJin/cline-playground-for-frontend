@@ -10,11 +10,13 @@
 import React, { useEffect } from 'react';
 import { Physics } from '../../core/physics';
 import { CpuAI } from '../../core/ai';
-import { EntityFactory, moveMalletTo } from '../../core/entities';
+import { AI_BEHAVIOR_PRESETS, type AiBehaviorConfig } from '../../core/story-balance';
+import { EntityFactory, moveMalletTo, resolveMalletPuckOverlap } from '../../core/entities';
+import { getAllMallets, updateExtraMalletAI } from '../../core/pair-match-logic';
 import { applyItemEffect } from '../../core/items';
-import { CONSTANTS, DEFAULT_PLAYER_MALLET_COLOR, DEFAULT_CPU_MALLET_COLOR } from '../../core/constants';
+import { CONSTANTS, DEFAULT_PLAYER_MALLET_COLOR, DEFAULT_CPU_MALLET_COLOR, getPlayerZone } from '../../core/constants';
 import { ITEMS } from '../../core/config';
-import { magnitude, randomRange } from '../../../../utils/math-utils';
+import { magnitude, randomRange, clamp } from '../../../../utils/math-utils';
 import { Renderer } from '../../renderer';
 import type {
   GameState,
@@ -32,7 +34,7 @@ import type {
 } from '../../core/types';
 import { applyKeyboardMovement } from '../../hooks/useKeyboardInput';
 import type { KeyboardState } from '../../core/keyboard';
-import { calculateKeyboardMovement } from '../../core/keyboard';
+import { calculateKeyboardMovement, KEYBOARD_MOVE_SPEED } from '../../core/keyboard';
 
 // ランダム選択ヘルパー
 const randomChoice = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
@@ -55,7 +57,9 @@ export type GameLoopConfig = {
   winScore: number;
   getSound: () => SoundSystem;
   bgmEnabled: boolean;
-  gameMode?: 'free' | 'story' | '2p-local';
+  gameMode?: 'free' | 'story' | '2p-local' | '2v2-local';
+  /** ステージ固有の AI 設定（指定時は difficulty プリセットより優先） */
+  aiConfig?: AiBehaviorConfig;
   /** プレイヤーマレットの色（2P 対戦時にキャラカラーを反映） */
   playerMalletColor?: string;
   /** CPU/2P マレットの色（2P 対戦時にキャラカラーを反映） */
@@ -74,6 +78,8 @@ export type GameLoopRefs = {
   statsRef: React.MutableRefObject<MatchStats>;
   matchStartRef: React.MutableRefObject<number>;
   keysRef?: React.MutableRefObject<KeyboardState>;
+  /** マウス/タッチ入力の目標位置 Ref（フレーム同期用） */
+  playerTargetRef?: React.MutableRefObject<import('../../hooks/useInput').PlayerTargetPosition>;
   player2KeysRef?: React.MutableRefObject<KeyboardState>;
   /** マルチタッチ状態の Ref（2P タッチ入力用） */
   multiTouchRef?: React.RefObject<import('../../core/multi-touch').MultiTouchState>;
@@ -108,15 +114,16 @@ export type UseGameLoopParams = {
  * - callbacks: React state 更新コールバック
  */
 export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGameLoopParams): void {
-  const { difficulty: diff, field, winScore, getSound, bgmEnabled, gameMode, playerMalletColor, cpuMalletColor } = config;
+  const { difficulty: diff, field, winScore, getSound, bgmEnabled, gameMode, aiConfig, playerMalletColor, cpuMalletColor } = config;
   const pColor = playerMalletColor ?? DEFAULT_PLAYER_MALLET_COLOR;
   const cColor = cpuMalletColor ?? DEFAULT_CPU_MALLET_COLOR;
   const {
     gameRef, canvasRef, lastInputRef, scoreRef,
     phaseRef, countdownStartRef, shakeRef,
-    statsRef, matchStartRef, keysRef, player2KeysRef, multiTouchRef,
+    statsRef, matchStartRef, keysRef, playerTargetRef, player2KeysRef, multiTouchRef,
   } = refs;
   const is2PMode = gameMode === '2p-local';
+  const is2v2Mode = gameMode === '2v2-local';
   const { setScores, setWinner, setScreen, setShowHelp, setShake } = callbacks;
 
   useEffect(() => {
@@ -125,6 +132,11 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
     const consts = CONSTANTS;
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
     const { MALLET: MR, PUCK: BR, ITEM: IR } = consts.SIZES;
+
+    // パーティクル生成の定数
+    const OBSTACLE_PARTICLE_COUNT = 12;
+    const SHIELD_PARTICLE_COUNT = 8;
+    const GOAL_PARTICLE_COUNT = 20;
 
     const sound = getSound();
 
@@ -200,14 +212,12 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       isPuck = false,
       now = Date.now()
     ): T => {
-      const mallets = [
-        { mallet: game.player, isPlayer: true },
-        { mallet: game.cpu, isPlayer: false },
-      ];
+      const mallets = getAllMallets(game);
 
-      for (const { mallet, isPlayer } of mallets) {
-        const side = isPlayer ? 'player' : 'cpu';
-        const bigEffect = game.effects[side].big;
+      for (const { mallet, isPlayer, side } of mallets) {
+        const effectState = game.effects[side];
+        if (!effectState) continue;
+        const bigEffect = effectState.big;
         const bigScale = bigEffect && now - bigEffect.start < bigEffect.duration ? bigEffect.scale : 1;
 
         const pScore = scoreRef.current.p;
@@ -223,10 +233,10 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
 
           obj = Physics.resolveCollision(obj, col, power, mallet.vx, mallet.vy, 0.4);
 
-          if (isPuck && isPlayer && game.effects.player.invisible > 0) {
+          if (isPuck && isPlayer && effectState.invisible > 0) {
             (obj as Puck).visible = false;
             (obj as Puck).invisibleCount = 25;
-            game.effects.player.invisible--;
+            effectState.invisible--;
           }
 
           sound.hit(speed);
@@ -279,7 +289,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
             if (obState.hp <= 0) {
               obState.destroyed = true;
               obState.destroyedAt = Date.now();
-              for (let pi = 0; pi < 12; pi++) {
+              for (let pi = 0; pi < OBSTACLE_PARTICLE_COUNT; pi++) {
                 game.particles.push({
                   x: ob.x + randomRange(-5, 5),
                   y: ob.y + randomRange(-5, 5),
@@ -312,6 +322,17 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         return;
       }
 
+      /** 全マレットを描画順序（奥→手前）で描画するヘルパー */
+      const drawAllMallets = (
+        scaleFn?: (side: 'player' | 'cpu' | 'ally' | 'enemy') => number
+      ): void => {
+        const s = (side: 'player' | 'cpu' | 'ally' | 'enemy') => scaleFn ? scaleFn(side) : undefined;
+        Renderer.drawMallet(ctx, game.cpu, cColor, false, consts, s('cpu'));
+        if (game.enemy) Renderer.drawMallet(ctx, game.enemy, cColor, false, consts, s('enemy'));
+        if (game.ally) Renderer.drawMallet(ctx, game.ally, pColor, game.effects.ally?.invisible ? game.effects.ally.invisible > 0 : false, consts, s('ally'));
+        Renderer.drawMallet(ctx, game.player, pColor, game.effects.player.invisible > 0, consts, s('player'));
+      };
+
       const now = Date.now();
 
       // カウントダウンフェーズ
@@ -320,8 +341,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
 
         Renderer.clear(ctx, consts, now);
         Renderer.drawField(ctx, field, consts, game.obstacleStates, now);
-        Renderer.drawMallet(ctx, game.cpu, cColor, false, consts);
-        Renderer.drawMallet(ctx, game.player, pColor, false, consts);
+        drawAllMallets();
 
         if (elapsed < COUNTDOWN_DURATION) {
           const countdownValue = 3 - Math.floor(elapsed / 1000);
@@ -355,17 +375,18 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         Renderer.drawEffectZones(ctx, game.effects, now, consts);
         game.items.forEach((item: Item) => Renderer.drawItem(ctx, item, now, consts));
         game.pucks.forEach((puck: Puck) => Renderer.drawPuck(ctx, puck, consts));
-        Renderer.drawMallet(ctx, game.cpu, cColor, false, consts);
-        Renderer.drawMallet(ctx, game.player, pColor, game.effects.player.invisible > 0, consts);
+        drawAllMallets();
         Renderer.drawPauseOverlay(ctx, consts);
         animationRef = requestAnimationFrame(gameLoop);
         return;
       }
 
       // マレットサイズスケール計算
-      const getMalletScale = (side: 'player' | 'cpu'): number => {
+      const getMalletScale = (side: 'player' | 'cpu' | 'ally' | 'enemy'): number => {
         let scale = 1;
-        const bigEff = game.effects[side].big;
+        const sideEffects = game.effects[side];
+        if (!sideEffects) return scale;
+        const bigEff = sideEffects.big;
         if (bigEff && now - bigEff.start < bigEff.duration) {
           scale *= bigEff.scale;
         }
@@ -390,10 +411,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         Renderer.drawEffectZones(ctx, game.effects, now, consts);
         game.items.forEach((item: Item) => Renderer.drawItem(ctx, item, now, consts));
         game.pucks.forEach((puck: Puck) => Renderer.drawPuck(ctx, puck, consts));
-        const cpuScale = getMalletScale('cpu');
-        const playerScale = getMalletScale('player');
-        Renderer.drawMallet(ctx, game.cpu, cColor, false, consts, cpuScale);
-        Renderer.drawMallet(ctx, game.player, pColor, game.effects.player.invisible > 0, consts, playerScale);
+        drawAllMallets(getMalletScale);
         Renderer.drawParticles(ctx, game.particles);
         Renderer.drawShockwave(ctx, hitStop);
         animationRef = requestAnimationFrame(gameLoop);
@@ -436,43 +454,115 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         setShowHelp(true);
       }
 
-      // キーボード入力
+      // マウス/タッチ入力（フレーム同期: ref から目標位置を読み取り適用）
+      // 2v2 モードでもマウスのフォールバックとして有効（マルチタッチ時は後続で上書き）
+      if (playerTargetRef?.current) {
+        moveMalletTo(game.player, playerTargetRef.current.x, playerTargetRef.current.y);
+        playerTargetRef.current = null;
+      }
+
+      // キーボード入力（P1: 矢印キー）
       if (keysRef) {
         applyKeyboardMovement(game, keysRef, lastInputRef);
       }
 
-      // 2P 入力の優先順位:
-      //   1. マルチタッチ（タッチ中のみ反映、指を離すと停止）
-      //   2. キーボード（タッチ未使用時のフォールバック、またはタッチ後にキーボードで上書き）
-      // 同一フレームで両方アクティブな場合、キーボードがタッチの結果を上書きする（意図的な設計）
-      if (is2PMode && multiTouchRef?.current) {
-        const touchState = multiTouchRef.current;
-        if (touchState.player1Position) {
-          moveMalletTo(game.player, touchState.player1Position.x, touchState.player1Position.y);
-          lastInputRef.current = Date.now();
+      if (is2v2Mode) {
+        // ── 2v2 モード入力 ──
+        // マルチタッチ: player1 → game.player、player2 → game.ally
+        if (multiTouchRef?.current) {
+          const touchState = multiTouchRef.current;
+          if (touchState.player1Position) {
+            moveMalletTo(game.player, touchState.player1Position.x, touchState.player1Position.y);
+            lastInputRef.current = Date.now();
+          }
+          if (touchState.player2Position && game.ally) {
+            moveMalletTo(game.ally, touchState.player2Position.x, touchState.player2Position.y);
+          }
         }
-        if (touchState.player2Position) {
-          moveMalletTo(game.cpu, touchState.player2Position.x, touchState.player2Position.y);
-        }
-      }
 
-      // 2P モード: WASD キーボード入力で CPU マレットを操作
-      // 1P モード: CPU AI で CPU マレットを操作
-      if (is2PMode && player2KeysRef) {
-        const keys2 = player2KeysRef.current;
-        const hasInput = keys2.up || keys2.down || keys2.left || keys2.right;
-        if (hasInput) {
-          const result = calculateKeyboardMovement(keys2, { x: game.cpu.x, y: game.cpu.y }, consts, 'player2');
-          moveMalletTo(game.cpu, result.x, result.y);
+        // WASD → game.ally（getPlayerZone で右下ゾーンに X/Y 両方クランプ）
+        if (player2KeysRef && game.ally) {
+          const keys2 = player2KeysRef.current;
+          const hasInput = keys2.up || keys2.down || keys2.left || keys2.right;
+          if (hasInput) {
+            const zone = getPlayerZone('player2', consts);
+            let dx = 0, dy = 0;
+            if (keys2.left) dx -= KEYBOARD_MOVE_SPEED;
+            if (keys2.right) dx += KEYBOARD_MOVE_SPEED;
+            if (keys2.up) dy -= KEYBOARD_MOVE_SPEED;
+            if (keys2.down) dy += KEYBOARD_MOVE_SPEED;
+            const newX = clamp(game.ally.x + dx, zone.minX, zone.maxX);
+            const newY = clamp(game.ally.y + dy, zone.minY, zone.maxY);
+            moveMalletTo(game.ally, newX, newY);
+          }
         }
-      } else {
-        const cpuUpdate = CpuAI.update(game, diff, now, consts);
+
+        // CPU AI: cpu（P3）は常に AI、ally（P2）は人間操作のため AI スキップ
+        // scoreDiff / effectiveAiConfig は enemy（P4）の AI でも共有する
+        const scoreDiff = Math.max(0, scoreRef.current.p - scoreRef.current.c);
+        const effectiveAiConfig = aiConfig ?? AI_BEHAVIOR_PRESETS[diff];
+        const cpuUpdate = CpuAI.updateWithBehavior(game, effectiveAiConfig, now, consts, scoreDiff);
         if (cpuUpdate) {
           game.cpu = cpuUpdate.cpu;
           game.cpuTarget = cpuUpdate.cpuTarget;
           game.cpuTargetTime = cpuUpdate.cpuTargetTime;
           game.cpuStuckTimer = cpuUpdate.cpuStuckTimer;
         }
+
+        // enemy（P4）のみ CPU AI で制御
+        if (game.enemy) {
+          const updateFn = CpuAI.updateWithBehavior.bind(CpuAI);
+          const result = updateExtraMalletAI(
+            game, game.enemy,
+            { target: game.enemyTarget ?? null, targetTime: game.enemyTargetTime ?? 0, stuckTimer: game.enemyStuckTimer ?? 0 },
+            updateFn, effectiveAiConfig, now, consts, scoreDiff
+          );
+          if (result) {
+            game.enemy = result.mallet;
+            game.enemyTarget = result.aiState.target;
+            game.enemyTargetTime = result.aiState.targetTime;
+            game.enemyStuckTimer = result.aiState.stuckTimer;
+          }
+        }
+      } else if (is2PMode) {
+        // ── 2P モード入力 ──
+        if (multiTouchRef?.current) {
+          const touchState = multiTouchRef.current;
+          if (touchState.player1Position) {
+            moveMalletTo(game.player, touchState.player1Position.x, touchState.player1Position.y);
+            lastInputRef.current = Date.now();
+          }
+          if (touchState.player2Position) {
+            moveMalletTo(game.cpu, touchState.player2Position.x, touchState.player2Position.y);
+          }
+        }
+
+        if (player2KeysRef) {
+          const keys2 = player2KeysRef.current;
+          const hasInput = keys2.up || keys2.down || keys2.left || keys2.right;
+          if (hasInput) {
+            const result = calculateKeyboardMovement(keys2, { x: game.cpu.x, y: game.cpu.y }, consts, 'player2');
+            moveMalletTo(game.cpu, result.x, result.y);
+          }
+        }
+      } else {
+        // ── 1P モード: CPU AI ──
+        const scoreDiff = Math.max(0, scoreRef.current.p - scoreRef.current.c);
+        const effectiveAiConfig = aiConfig ?? AI_BEHAVIOR_PRESETS[diff];
+        const cpuUpdate = CpuAI.updateWithBehavior(game, effectiveAiConfig, now, consts, scoreDiff);
+        if (cpuUpdate) {
+          game.cpu = cpuUpdate.cpu;
+          game.cpuTarget = cpuUpdate.cpuTarget;
+          game.cpuTargetTime = cpuUpdate.cpuTargetTime;
+          game.cpuStuckTimer = cpuUpdate.cpuStuckTimer;
+        }
+      }
+
+      // マレット移動後、衝突処理前にパックとの食い込みを解消（パックを弾く）
+      // effectiveMR を使い、processCollisions との二重衝突を防止
+      for (const { mallet, side } of getAllMallets(game)) {
+        const mr = MR * getMalletScale(side);
+        resolveMalletPuckOverlap(mallet, game.pucks, mr, BR, consts.PHYSICS.MAX_POWER);
       }
 
       // フィーバー判定
@@ -531,6 +621,18 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
           if (itemEffect.pucks) game.pucks = itemEffect.pucks;
           if (itemEffect.effects) game.effects = itemEffect.effects;
           if (itemEffect.flash) game.flash = itemEffect.flash;
+          // 2v2 モード: チームメイトにも同じエフェクトを適用
+          // ※ game.effects は上で代入済みのため、applyItemEffect は更新後の effects をベースにスプレッドする
+          //   → 1回目の target エフェクトが失われることはない（不変更新パターン）
+          if (is2v2Mode) {
+            const teammate = scoredTarget === 'player' ? 'ally' : 'enemy';
+            const hasMate = teammate === 'ally' ? game.ally : game.enemy;
+            if (hasMate) {
+              const teamEffect = applyItemEffect(game, item, teammate, now);
+              if (teamEffect.effects) game.effects = teamEffect.effects;
+              if (teamEffect.flash) game.flash = teamEffect.flash;
+            }
+          }
           sound.item();
           game.items.splice(i, 1);
           if (scoredTarget === 'player') {
@@ -581,8 +683,10 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
             }
           }
         };
-        applyMagnet(game.player, game.effects.player);
-        applyMagnet(game.cpu, game.effects.cpu);
+        for (const { mallet: m, side } of getAllMallets(game)) {
+          const eff = game.effects[side];
+          if (eff) applyMagnet(m, eff);
+        }
 
         if (!puck.visible) {
           puck.invisibleCount--;
@@ -599,12 +703,19 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
 
         if (scored === null) {
           if (puck.y < 5 && goalCheckerWithSide(puck.x, 'cpu')) {
-            if (game.effects.cpu.shield) {
-              game.effects.cpu.shield = false;
+            // チーム2側（cpu/enemy）のシールドをチェック
+            const cpuTeamHasShield = game.effects.cpu.shield || (game.effects.enemy?.shield ?? false);
+            if (cpuTeamHasShield) {
+              // enemy のシールドを優先消費、なければ cpu のシールドを消費
+              if (game.effects.enemy?.shield) {
+                game.effects.enemy.shield = false;
+              } else {
+                game.effects.cpu.shield = false;
+              }
               puck.vy = Math.abs(puck.vy) * 0.8;
               puck.y = 15;
               game.pucks[i] = puck;
-              for (let pi = 0; pi < 8; pi++) {
+              for (let pi = 0; pi < SHIELD_PARTICLE_COUNT; pi++) {
                 game.particles.push({
                   x: puck.x + randomRange(-10, 10), y: 8,
                   vx: randomRange(-2, 2), vy: randomRange(1, 3),
@@ -617,12 +728,19 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
               scoredIndex = i;
             }
           } else if (puck.y > H - 5 && goalCheckerWithSide(puck.x, 'player')) {
-            if (game.effects.player.shield) {
-              game.effects.player.shield = false;
+            // チーム1側（player/ally）のシールドをチェック
+            const playerTeamHasShield = game.effects.player.shield || (game.effects.ally?.shield ?? false);
+            if (playerTeamHasShield) {
+              // ally のシールドを優先消費、なければ player のシールドを消費
+              if (game.effects.ally?.shield) {
+                game.effects.ally.shield = false;
+              } else {
+                game.effects.player.shield = false;
+              }
               puck.vy = -Math.abs(puck.vy) * 0.8;
               puck.y = H - 15;
               game.pucks[i] = puck;
-              for (let pi = 0; pi < 8; pi++) {
+              for (let pi = 0; pi < SHIELD_PARTICLE_COUNT; pi++) {
                 game.particles.push({
                   x: puck.x + randomRange(-10, 10), y: H - 8,
                   vx: randomRange(-2, 2), vy: randomRange(-3, -1),
@@ -659,22 +777,21 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       Renderer.drawEffectZones(ctx, game.effects, now, consts);
       game.items.forEach((item: Item) => Renderer.drawItem(ctx, item, now, consts));
       game.pucks.forEach((puck: Puck) => Renderer.drawPuck(ctx, puck, consts));
-      Renderer.drawMallet(ctx, game.cpu, cColor, false, consts, getMalletScale('cpu'));
-      Renderer.drawMallet(ctx, game.player, pColor, game.effects.player.invisible > 0, consts, getMalletScale('player'));
+      drawAllMallets(getMalletScale);
       Renderer.drawParticles(ctx, game.particles);
       Renderer.drawHUD(ctx, game.effects, now, consts);
       Renderer.drawFlash(ctx, game.flash, now, consts);
       Renderer.drawFeverEffect(ctx, game.fever.active, now, consts);
       Renderer.drawCombo(ctx, game.combo, now, consts);
 
-      if (game.effects.player.shield) Renderer.drawShield(ctx, true, baseGoalSize, consts);
-      if (game.effects.cpu.shield) Renderer.drawShield(ctx, false, baseGoalSize, consts);
+      if (game.effects.player.shield || game.effects.ally?.shield) Renderer.drawShield(ctx, true, baseGoalSize, consts);
+      if (game.effects.cpu.shield || game.effects.enemy?.shield) Renderer.drawShield(ctx, false, baseGoalSize, consts);
 
-      if (game.effects.player.magnet && now - game.effects.player.magnet.start < game.effects.player.magnet.duration) {
-        Renderer.drawMagnetEffect(ctx, game.player, now);
-      }
-      if (game.effects.cpu.magnet && now - game.effects.cpu.magnet.start < game.effects.cpu.magnet.duration) {
-        Renderer.drawMagnetEffect(ctx, game.cpu, now);
+      for (const { mallet: m, side } of getAllMallets(game)) {
+        const eff = game.effects[side];
+        if (eff?.magnet && now - eff.magnet.start < eff.magnet.duration) {
+          Renderer.drawMagnetEffect(ctx, m, now);
+        }
       }
 
       if (slowMo.active) {
@@ -728,7 +845,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         // ゴールパーティクル
         const goalY = scored === 'cpu' ? 5 : H - 5;
         const particleColor = scored === 'cpu' ? 'rgb(0, 255, 255)' : 'rgb(255, 68, 68)';
-        for (let pi = 0; pi < 20; pi++) {
+        for (let pi = 0; pi < GOAL_PARTICLE_COUNT; pi++) {
           const particle: Particle = {
             x: W / 2 + randomRange(-30, 30),
             y: goalY,
@@ -779,5 +896,5 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       setScores, setWinner, setScreen, setShowHelp,
       phaseRef, countdownStartRef, shakeRef, setShake, bgmEnabled,
       statsRef, matchStartRef, keysRef,
-      is2PMode, pColor, cColor, player2KeysRef, multiTouchRef]);
+      is2PMode, is2v2Mode, pColor, cColor, playerTargetRef, player2KeysRef, multiTouchRef, aiConfig]);
 }

@@ -3,7 +3,6 @@
  */
 import { TwoPlayerBattleUseCase } from './two-player-battle';
 import type { Character } from '../../core/types';
-import { FIELDS } from '../../core/config';
 
 describe('TwoPlayerBattleUseCase', () => {
   const mockCharacter = (id: string, name: string): Character => ({
@@ -15,15 +14,13 @@ describe('TwoPlayerBattleUseCase', () => {
   });
 
   const defaultConfig = {
-    field: FIELDS[0],
-    winScore: 3,
     player1Character: mockCharacter('player', 'アキラ'),
     player2Character: mockCharacter('hiro', 'ヒロ'),
   };
 
   it('対戦を初期化するとスコアが 0-0 になる', () => {
     const useCase = new TwoPlayerBattleUseCase();
-    useCase.start(defaultConfig);
+    useCase.start(defaultConfig, 3);
 
     const result = useCase.getState();
     expect(result.scores.player1).toBe(0);
@@ -32,7 +29,7 @@ describe('TwoPlayerBattleUseCase', () => {
 
   it('player1 にスコアを加算できる', () => {
     const useCase = new TwoPlayerBattleUseCase();
-    useCase.start(defaultConfig);
+    useCase.start(defaultConfig, 3);
     useCase.addScore('player1');
 
     const result = useCase.getState();
@@ -42,7 +39,7 @@ describe('TwoPlayerBattleUseCase', () => {
 
   it('player2 にスコアを加算できる', () => {
     const useCase = new TwoPlayerBattleUseCase();
-    useCase.start(defaultConfig);
+    useCase.start(defaultConfig, 3);
     useCase.addScore('player2');
 
     const result = useCase.getState();
@@ -52,7 +49,7 @@ describe('TwoPlayerBattleUseCase', () => {
 
   it('勝利スコアに到達した側が勝者になる', () => {
     const useCase = new TwoPlayerBattleUseCase();
-    useCase.start({ ...defaultConfig, winScore: 2 });
+    useCase.start(defaultConfig, 2);
 
     useCase.addScore('player1');
     expect(useCase.getWinner()).toBeUndefined();
@@ -63,7 +60,7 @@ describe('TwoPlayerBattleUseCase', () => {
 
   it('player2 が勝利スコアに到達した場合', () => {
     const useCase = new TwoPlayerBattleUseCase();
-    useCase.start({ ...defaultConfig, winScore: 1 });
+    useCase.start(defaultConfig, 1);
 
     useCase.addScore('player2');
     expect(useCase.getWinner()).toBe('player2');
@@ -71,7 +68,7 @@ describe('TwoPlayerBattleUseCase', () => {
 
   it('対戦結果にキャラクター情報が含まれる', () => {
     const useCase = new TwoPlayerBattleUseCase();
-    useCase.start(defaultConfig);
+    useCase.start(defaultConfig, 3);
 
     const state = useCase.getState();
     expect(state.player1Character.id).toBe('player');
@@ -80,7 +77,7 @@ describe('TwoPlayerBattleUseCase', () => {
 
   it('2P 対戦では実績判定が無効である', () => {
     const useCase = new TwoPlayerBattleUseCase();
-    useCase.start(defaultConfig);
+    useCase.start(defaultConfig, 3);
 
     expect(useCase.isAchievementsEnabled()).toBe(false);
   });

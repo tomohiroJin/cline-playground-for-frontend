@@ -30,9 +30,9 @@ window.AudioContext = jest.fn().mockImplementation(() => ({
 describe('Phase 1: 基盤改善＋ゲームフィール強化', () => {
   // ── 1.0 レスポンシブデザイン ──────────────────────
   describe('1.0 レスポンシブデザイン - 固定解像度', () => {
-    it('CONSTANTS が 450x900 の固定解像度である', () => {
-      expect(CONSTANTS.CANVAS.WIDTH).toBe(450);
-      expect(CONSTANTS.CANVAS.HEIGHT).toBe(900);
+    it('CONSTANTS が 600x1200 の固定解像度である', () => {
+      expect(CONSTANTS.CANVAS.WIDTH).toBe(600);
+      expect(CONSTANTS.CANVAS.HEIGHT).toBe(1200);
     });
 
     it('マレットサイズが 42 である', () => {
@@ -47,12 +47,13 @@ describe('Phase 1: 基盤改善＋ゲームフィール強化', () => {
       expect(CONSTANTS.SIZES.ITEM).toBe(24);
     });
 
-    it('ゲーム状態が 450x900 解像度で初期化される', () => {
+    it('ゲーム状態が固定解像度で初期化される', () => {
       const state = EntityFactory.createGameState();
+      const { WIDTH: W, HEIGHT: H } = CONSTANTS.CANVAS;
       // プレイヤーが下半分、CPUが上半分
-      expect(state.player.x).toBe(225); // 450/2
-      expect(state.player.y).toBe(830); // 900-70
-      expect(state.cpu.x).toBe(225);
+      expect(state.player.x).toBe(W / 2);
+      expect(state.player.y).toBe(H - 70);
+      expect(state.cpu.x).toBe(W / 2);
       expect(state.cpu.y).toBe(70);
     });
   });

@@ -4,5 +4,5 @@
  * - ドメイン層で定義し、プレゼンテーション/インフラ層で実装する
  */
 
-/** プレイヤースロット（1P / 2P の識別子） */
-export type PlayerSlot = 'player1' | 'player2';
+/** プレイヤースロット（1P〜4P の識別子） */
+export type PlayerSlot = 'player1' | 'player2' | 'player3' | 'player4';

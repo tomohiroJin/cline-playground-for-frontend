@@ -15,7 +15,7 @@ export type KeyboardState = {
 };
 
 /** キーボード移動速度（マウスより遅め） */
-export const KEYBOARD_MOVE_SPEED = 6;
+export const KEYBOARD_MOVE_SPEED = 8;
 
 // クランプ計算は core/constants.ts の getPlayerXBounds / getPlayerYBounds を使用
 

@@ -5,8 +5,8 @@
  */
 
 // パック速度の閾値定数
-export const SPEED_NORMAL = 6;
-export const SPEED_FAST = 10;
+export const SPEED_NORMAL = 8;
+export const SPEED_FAST = 13;
 
 // HEX カラーを RGB 成分に分解する
 const parseHex = (hex: string): [number, number, number] => {

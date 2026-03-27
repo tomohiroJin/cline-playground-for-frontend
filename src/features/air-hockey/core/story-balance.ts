@@ -5,6 +5,11 @@
 import type { Difficulty } from './types';
 import type { GameConstants } from './constants';
 import { CONSTANTS } from './constants';
+import { type AiPlayStyle, DEFAULT_PLAY_STYLE, CHARACTER_AI_PROFILES, getCharacterAiProfile } from './character-ai-profiles';
+
+// AiPlayStyle と DEFAULT_PLAY_STYLE を re-export（後方互換のため）
+export type { AiPlayStyle };
+export { DEFAULT_PLAY_STYLE };
 
 // ── AI 振る舞い設定型 ──────────────────────────────
 
@@ -22,34 +27,39 @@ export type AiBehaviorConfig = {
   centerWeight: number;
   /** 壁バウンス予測の有無 */
   wallBounce: boolean;
+  /** キャラクター個性によるプレイスタイル（オプショナル・後方互換） */
+  playStyle?: AiPlayStyle;
 };
 
 // ── 難易度プリセット ──────────────────────────────
 
 export const AI_BEHAVIOR_PRESETS: Record<Difficulty, AiBehaviorConfig> = {
   easy: {
-    maxSpeed: 1.5,
-    predictionFactor: 1,
-    wobble: 30,
+    maxSpeed: 2.0,
+    predictionFactor: 1.3,
+    wobble: 40,
     skipRate: 0.05,
     centerWeight: 0.7,
     wallBounce: false,
+    playStyle: CHARACTER_AI_PROFILES['rookie'],
   },
   normal: {
-    maxSpeed: 3.5,
-    predictionFactor: 6,
+    maxSpeed: 4.7,
+    predictionFactor: 8,
     wobble: 0,
     skipRate: 0,
     centerWeight: 0,
     wallBounce: false,
+    playStyle: CHARACTER_AI_PROFILES['regular'],
   },
   hard: {
-    maxSpeed: 6,
-    predictionFactor: 12,
+    maxSpeed: 8.0,
+    predictionFactor: 16,
     wobble: 0,
     skipRate: 0,
     centerWeight: 0,
     wallBounce: true,
+    playStyle: CHARACTER_AI_PROFILES['ace'],
   },
 };
 
@@ -75,12 +85,13 @@ const STAGE_BALANCE_MAP: Record<string, StageBalanceConfig> = {
   // ステージ 1-1: はじめの一打（初心者が2-3回で勝てる）
   '1-1': {
     ai: {
-      maxSpeed: 1.2,
-      predictionFactor: 0.5,
-      wobble: 40,
+      maxSpeed: 1.6,
+      predictionFactor: 0.7,
+      wobble: 53,
       skipRate: 0.1,
       centerWeight: 0.8,
       wallBounce: false,
+      playStyle: CHARACTER_AI_PROFILES['hiro'],
     },
     itemSpawnInterval: CONSTANTS.TIMING.ITEM_SPAWN,
     comebackThreshold: CONSTANTS.COMEBACK.THRESHOLD,
@@ -90,12 +101,13 @@ const STAGE_BALANCE_MAP: Record<string, StageBalanceConfig> = {
   // ステージ 1-2: テクニカルな壁（アイテム活用で勝てる）
   '1-2': {
     ai: {
-      maxSpeed: 3.0,
-      predictionFactor: 4,
-      wobble: 10,
+      maxSpeed: 4.0,
+      predictionFactor: 5.3,
+      wobble: 13,
       skipRate: 0.02,
       centerWeight: 0.2,
       wallBounce: false,
+      playStyle: CHARACTER_AI_PROFILES['misaki'],
     },
     itemSpawnInterval: 4000, // アイテム出現を速めて活用を促す
     comebackThreshold: 2, // スコア差2で発動（デフォルト3より早い）
@@ -105,12 +117,13 @@ const STAGE_BALANCE_MAP: Record<string, StageBalanceConfig> = {
   // ステージ 1-3: 部長の壁（苦戦するが練習すれば勝てる）
   '1-3': {
     ai: {
-      maxSpeed: 5.0,
-      predictionFactor: 10,
+      maxSpeed: 6.7,
+      predictionFactor: 13.3,
       wobble: 0,
       skipRate: 0,
       centerWeight: 0,
       wallBounce: true,
+      playStyle: CHARACTER_AI_PROFILES['takuma'],
     },
     itemSpawnInterval: CONSTANTS.TIMING.ITEM_SPAWN,
     comebackThreshold: 2,
@@ -129,6 +142,19 @@ const DEFAULT_BALANCE: StageBalanceConfig = {
 };
 
 // ── 公開関数 ──────────────────────────────────────
+
+/** フリー対戦用 AI 設定を構築する（難易度ベース + キャラ playStyle） */
+export const buildFreeBattleAiConfig = (
+  difficulty: Difficulty,
+  characterId?: string
+): AiBehaviorConfig => {
+  const base = AI_BEHAVIOR_PRESETS[difficulty];
+  if (!characterId) return base;
+  return {
+    ...base,
+    playStyle: getCharacterAiProfile(characterId),
+  };
+};
 
 /** ステージ ID に対応するバランス設定を取得 */
 export const getStoryStageBalance = (stageId: string): StageBalanceConfig => {

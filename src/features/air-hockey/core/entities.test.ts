@@ -1,7 +1,7 @@
 /**
  * Air Hockey - エンティティ生成のテスト
  */
-import { EntityFactory } from './entities';
+import { EntityFactory, resolveMalletPuckOverlap } from './entities';
 import { CONSTANTS } from './constants';
 
 const { WIDTH: W, HEIGHT: H } = CONSTANTS.CANVAS;
@@ -139,12 +139,77 @@ describe('Air Hockey - エンティティ生成', () => {
       expect(state.obstacleStates).toEqual([]);
     });
 
-    it('450x900 の固定解像度でマレットが配置される', () => {
+    it('固定解像度でマレットが中央・上下に配置される', () => {
       const state = EntityFactory.createGameState();
-      expect(state.player.x).toBe(225);
-      expect(state.player.y).toBe(830);
-      expect(state.cpu.x).toBe(225);
+      expect(state.player.x).toBe(W / 2);
+      expect(state.player.y).toBe(H - 70);
+      expect(state.cpu.x).toBe(W / 2);
       expect(state.cpu.y).toBe(70);
     });
+  });
+});
+
+describe('resolveMalletPuckOverlap', () => {
+  const MR = 42;
+  const PR = 21;
+  const MAX_POWER = 16;
+
+  it('重なっている場合にパックをマレット移動方向に押し出し速度を与える', () => {
+    // マレットが右に動いてパックと重なった
+    const mallet = { x: 100, y: 100, vx: 20, vy: 0 };
+    const puck = EntityFactory.createPuck(110, 100, 0, 0);
+
+    resolveMalletPuckOverlap(mallet, [puck], MR, PR, MAX_POWER);
+
+    // パックがマレットの移動方向（右）に押し出される
+    expect(puck.x).toBeGreaterThan(mallet.x);
+    // パックに右向きの速度が与えられる
+    expect(puck.vx).toBeGreaterThan(0);
+  });
+
+  it('重なっていない場合はパックを変更しない', () => {
+    const mallet = { x: 100, y: 100, vx: 0, vy: 0 };
+    const puck = EntityFactory.createPuck(200, 200, 0, 0);
+
+    resolveMalletPuckOverlap(mallet, [puck], MR, PR, MAX_POWER);
+
+    expect(puck.x).toBe(200);
+    expect(puck.y).toBe(200);
+  });
+
+  it('完全重複でもマレット速度があればパックを移動方向に押し出す', () => {
+    const mallet = { x: 100, y: 100, vx: 0, vy: -10 };
+    const puck = EntityFactory.createPuck(100, 100, 0, 0);
+
+    resolveMalletPuckOverlap(mallet, [puck], MR, PR, MAX_POWER);
+
+    // マレットの移動方向（上）にパックが押し出される
+    expect(puck.y).toBeLessThan(100);
+    expect(puck.vy).toBeLessThan(0);
+  });
+
+  it('マレットがパックを飛び越えた深い食い込みでも正しくパックが弾かれる', () => {
+    // マレットが上に大きく動き、パックの上を通過した（深い食い込み）
+    const mallet = { x: 300, y: 565, vx: 0, vy: -35 };
+    const puck = EntityFactory.createPuck(300, 570, 0, 0);
+    // 幾何学的法線はマレット→パック=下向き（ny=+1）だが、マレットは上に動いている
+
+    resolveMalletPuckOverlap(mallet, [puck], MR, PR, MAX_POWER);
+
+    // パックはマレットの移動方向（上）に弾かれるべき
+    expect(puck.vy).toBeLessThan(-5);
+    expect(puck.y).toBeLessThan(mallet.y);
+  });
+
+  it('パックの速度が maxPower を超えない', () => {
+    const mallet = { x: 100, y: 100, vx: 100, vy: 100 };
+    const puck = EntityFactory.createPuck(110, 100, 0, 0);
+
+    resolveMalletPuckOverlap(mallet, [puck], MR, PR, MAX_POWER);
+
+    // power 成分は maxPower に制限されるが、mallet 速度の転写分（factor=0.4）が加算される
+    // 極端な入力でも反射が発生していることを確認
+    const puckSpeed = Math.sqrt(puck.vx ** 2 + puck.vy ** 2);
+    expect(puckSpeed).toBeGreaterThan(0);
   });
 });

@@ -4,6 +4,7 @@
  */
 import { CHAPTER_1_STAGES } from './dialogue-data';
 import { CONSTANTS } from './constants';
+import { CHARACTER_AI_PROFILES } from './character-ai-profiles';
 
 import {
   AiBehaviorConfig,
@@ -11,7 +12,9 @@ import {
   getStoryStageBalance,
   StageBalanceConfig,
   createStageConstants,
+  buildFreeBattleAiConfig,
 } from './story-balance';
+import { DEFAULT_PLAY_STYLE, getCharacterAiProfile } from './character-ai-profiles';
 
 // ── AI 振る舞い設定の抽象化テスト ────────────────────
 
@@ -82,12 +85,12 @@ describe('getStoryStageBalance', () => {
     });
 
     it('初心者向けの低い CPU 速度', () => {
-      // easy (1.5) よりさらに遅い設定
-      expect(balance.ai.maxSpeed).toBeLessThanOrEqual(1.5);
+      // easy プリセットよりさらに遅い設定
+      expect(balance.ai.maxSpeed).toBeLessThanOrEqual(CONSTANTS.CPU.easy);
     });
 
     it('予測精度が低い（初心者が2-3回で勝てるように）', () => {
-      expect(balance.ai.predictionFactor).toBeLessThanOrEqual(1);
+      expect(balance.ai.predictionFactor).toBeLessThanOrEqual(1.5);
     });
 
     it('高めのスキップ率（CPU がときどきミスする）', () => {
@@ -113,7 +116,7 @@ describe('getStoryStageBalance', () => {
     it('中程度の CPU 速度', () => {
       const stage1 = getStoryStageBalance('1-1');
       expect(balance.ai.maxSpeed).toBeGreaterThan(stage1.ai.maxSpeed);
-      expect(balance.ai.maxSpeed).toBeLessThanOrEqual(3.5);
+      expect(balance.ai.maxSpeed).toBeLessThanOrEqual(CONSTANTS.CPU.normal);
     });
 
     it('アイテム出現が速い（アイテム活用を促す）', () => {
@@ -174,7 +177,7 @@ describe('getStoryStageBalance', () => {
 describe('createStageConstants', () => {
   it('ステージ1-1のカスタム定数を生成する', () => {
     const consts = createStageConstants('1-1');
-    expect(consts.CPU.easy).toBeLessThanOrEqual(1.5);
+    expect(consts.CPU.easy).toBeLessThanOrEqual(CONSTANTS.CPU.easy);
   });
 
   it('ベースの CONSTANTS を変更しない（不変性）', () => {
@@ -222,5 +225,70 @@ describe('カムバック補正の適切な機能', () => {
       expect(balance.comebackGoalReduction).toBeGreaterThanOrEqual(0);
       expect(balance.comebackGoalReduction).toBeLessThanOrEqual(0.2);
     }
+  });
+});
+
+// ── S2-4-3: キャラクター AI プロファイル統合テスト ──────────
+
+describe('キャラクター AI プロファイルのステージ統合', () => {
+  it('ステージ 1-1（ヒロ）に playStyle が設定されている', () => {
+    const balance = getStoryStageBalance('1-1');
+    expect(balance.ai.playStyle).toBeDefined();
+    expect(balance.ai.playStyle).toEqual(CHARACTER_AI_PROFILES['hiro']);
+  });
+
+  it('ステージ 1-2（ミサキ）に playStyle が設定されている', () => {
+    const balance = getStoryStageBalance('1-2');
+    expect(balance.ai.playStyle).toBeDefined();
+    expect(balance.ai.playStyle).toEqual(CHARACTER_AI_PROFILES['misaki']);
+  });
+
+  it('ステージ 1-3（タクマ）に playStyle が設定されている', () => {
+    const balance = getStoryStageBalance('1-3');
+    expect(balance.ai.playStyle).toBeDefined();
+    expect(balance.ai.playStyle).toEqual(CHARACTER_AI_PROFILES['takuma']);
+  });
+});
+
+describe('buildFreeBattleAiConfig', () => {
+  it('難易度の基本パラメータが維持される', () => {
+    const config = buildFreeBattleAiConfig('hard', 'misaki');
+    expect(config.maxSpeed).toBe(AI_BEHAVIOR_PRESETS.hard.maxSpeed);
+    expect(config.predictionFactor).toBe(AI_BEHAVIOR_PRESETS.hard.predictionFactor);
+    expect(config.wobble).toBe(AI_BEHAVIOR_PRESETS.hard.wobble);
+    expect(config.skipRate).toBe(AI_BEHAVIOR_PRESETS.hard.skipRate);
+    expect(config.wallBounce).toBe(AI_BEHAVIOR_PRESETS.hard.wallBounce);
+  });
+
+  it('選択キャラの playStyle が反映される', () => {
+    const config = buildFreeBattleAiConfig('normal', 'misaki');
+    expect(config.playStyle).toEqual(getCharacterAiProfile('misaki'));
+  });
+
+  it('characterId 未指定で AI_BEHAVIOR_PRESETS をそのまま返す', () => {
+    const config = buildFreeBattleAiConfig('normal');
+    expect(config).toBe(AI_BEHAVIOR_PRESETS.normal);
+  });
+
+  it('未知の characterId で DEFAULT_PLAY_STYLE にフォールバックする', () => {
+    const config = buildFreeBattleAiConfig('easy', 'unknown-char');
+    expect(config.playStyle).toEqual(DEFAULT_PLAY_STYLE);
+  });
+});
+
+describe('AI_BEHAVIOR_PRESETS のキャラクター AI プロファイル統合', () => {
+  it('easy プリセットに playStyle が設定されている（ルーキー）', () => {
+    expect(AI_BEHAVIOR_PRESETS.easy.playStyle).toBeDefined();
+    expect(AI_BEHAVIOR_PRESETS.easy.playStyle).toEqual(CHARACTER_AI_PROFILES['rookie']);
+  });
+
+  it('normal プリセットに playStyle が設定されている（レギュラー）', () => {
+    expect(AI_BEHAVIOR_PRESETS.normal.playStyle).toBeDefined();
+    expect(AI_BEHAVIOR_PRESETS.normal.playStyle).toEqual(CHARACTER_AI_PROFILES['regular']);
+  });
+
+  it('hard プリセットに playStyle が設定されている（エース）', () => {
+    expect(AI_BEHAVIOR_PRESETS.hard.playStyle).toBeDefined();
+    expect(AI_BEHAVIOR_PRESETS.hard.playStyle).toEqual(CHARACTER_AI_PROFILES['ace']);
   });
 });

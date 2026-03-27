@@ -138,6 +138,22 @@ describe('useGameMode', () => {
       expect(result.current.isDailyMode).toBe(false);
     });
 
+    it('resetToFree で winScore がデフォルト値（3）にリセットされる', () => {
+      const { result } = renderHook(() => useGameMode());
+
+      // ストーリーモードで winScore=5 に変更
+      act(() => {
+        result.current.setWinScore(5);
+      });
+      expect(result.current.winScore).toBe(5);
+
+      // resetToFree でデフォルト値に戻る
+      act(() => {
+        result.current.resetToFree();
+      });
+      expect(result.current.winScore).toBe(3);
+    });
+
     it('setGameMode で 2p-local に切り替えられる', () => {
       const { result } = renderHook(() => useGameMode());
 
@@ -160,6 +176,39 @@ describe('useGameMode', () => {
       });
 
       expect(result.current.gameMode).toBe('free');
+    });
+  });
+
+  describe('フリー対戦 CPU キャラ選択', () => {
+    it('初期の selectedCpuCharacter は undefined である', () => {
+      const { result } = renderHook(() => useGameMode());
+      expect(result.current.selectedCpuCharacter).toBeUndefined();
+    });
+
+    it('setSelectedCpuCharacter で CPU キャラクターを設定できる', () => {
+      const { result } = renderHook(() => useGameMode());
+      const mockCharacter = { id: 'hiro', name: 'ヒロ', icon: '', color: '#e67e22', reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] } };
+
+      act(() => {
+        result.current.setSelectedCpuCharacter(mockCharacter);
+      });
+
+      expect(result.current.selectedCpuCharacter).toEqual(mockCharacter);
+    });
+
+    it('resetToFree で selectedCpuCharacter もリセットされる', () => {
+      const { result } = renderHook(() => useGameMode());
+      const mockCharacter = { id: 'hiro', name: 'ヒロ', icon: '', color: '#e67e22', reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] } };
+
+      act(() => {
+        result.current.setSelectedCpuCharacter(mockCharacter);
+      });
+
+      act(() => {
+        result.current.resetToFree();
+      });
+
+      expect(result.current.selectedCpuCharacter).toBeUndefined();
     });
   });
 

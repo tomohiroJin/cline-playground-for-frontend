@@ -14,7 +14,9 @@ export type ScreenType =
   | 'chapterTitle'
   | 'victoryCutIn'
   | 'characterDex'
-  | 'characterSelect';
+  | 'characterSelect'
+  | 'freeBattleCharacterSelect'
+  | 'teamSetup';
 
 /** トランジション遅延のデフォルト値（ミリ秒） */
 const DEFAULT_TRANSITION_DELAY = 300;
