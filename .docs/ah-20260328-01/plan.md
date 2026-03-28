@@ -76,9 +76,62 @@ Phase S5-6: テスト・品質保証
 
 ## 完了チェックリスト
 
-- [ ] すべてのフェーズが完了
-- [ ] 既存テスト全パス（`npm test`）
-- [ ] 型エラーなし（`tsc --noEmit`）
-- [ ] ESLint エラーなし（`npm run lint:ci`）
-- [ ] ビルド成功（`npm run build`）
-- [ ] ペアマッチの一連フロー（チーム設定 → VS → ゲーム → リザルト）が動作
+- [x] すべてのフェーズが完了（S5-1〜S5-6: 2026-03-28）
+- [x] 既存テスト全パス（85 スイート / 1226 テスト）
+- [x] 型エラーなし（`tsc --noEmit`）
+- [x] ESLint エラーなし
+- [x] ビルド成功（`npm run build`）
+- [x] ペアマッチの一連フロー（チーム設定 → VS → ゲーム → リザルト）が動作
+
+---
+
+## Phase S5-7: フィードバック対応（2026-03-28）
+
+### 発見された問題
+
+| # | 問題 | 種別 | 今回対応 |
+|---|------|------|---------|
+| FB-1 | P2（パートナー）が「CPU」表記だが人間操作になっている | バグ | **修正する** |
+| FB-2 | P2 に人間を選択するオプションがない | 機能不足 | **修正する** |
+| FB-3 | P3/P4（対戦相手）も人間が操作できると盛り上がる | 要望 | 将来対応 |
+| FB-4 | ゲーム全体のパフォーマンスが低下してきた | 課題 | 将来対応 |
+
+### FB-1 / FB-2: P2 の CPU/人間切り替え
+
+**原因**: `useGameLoop.ts` の 2v2 入力処理（L500）で ally（P2）の CPU AI がスキップされ、
+常に WASD/タッチで人間操作されるようにハードコードされている。
+
+**修正方針**:
+1. `useGameMode` に `allyControlType: 'cpu' | 'human'` state を追加（デフォルト: `'cpu'`）
+2. `TeamSetupScreen` の P2 スロットに CPU/人間の切り替えトグルを追加
+3. `useGameLoop` で `allyControlType` を参照し:
+   - `'cpu'` → ally に CPU AI を適用（`updateExtraMalletAI` を使用）
+   - `'human'` → 現在の WASD/タッチ入力を適用
+4. P2 が CPU の場合、選択キャラの AI プロファイルで動作する
+
+**影響範囲**:
+- `presentation/hooks/useGameMode.ts` — state 追加
+- `components/TeamSetupScreen.tsx` — トグル UI 追加
+- `presentation/hooks/useGameLoop.ts` — ally の入力/AI 分岐
+- `presentation/AirHockeyGame.tsx` — Props 受け渡し
+
+### FB-3: P3/P4 の人間操作（将来対応）
+
+**理由**: 4 人分の独立した入力系統が必要。現在のキーボード（矢印 + WASD）では 2 人が限界。
+ゲームパッド対応やネットワーク入力を導入した後に対応するのが適切。
+
+**次のステップ候補**:
+- ゲームパッド API 対応（Gamepad API）
+- 追加キーマッピング（IJKL 等）の検討
+- ネットワーク対戦の基盤構築
+
+### FB-4: パフォーマンス改善（将来対応）
+
+**観測**: 4 マレット＋複数パックの同時処理でフレームレートが低下している可能性。
+
+**次のステップ候補**:
+- Chrome DevTools / React Profiler でボトルネック計測
+- Canvas 描画の最適化（ダーティリージョン、オフスクリーンバッファ）
+- 物理演算の最適化（空間分割、衝突判定の早期リターン）
+- React の不要な再レンダリング削減（memo / useMemo の見直し）
+- requestAnimationFrame のフレームスキップ戦略

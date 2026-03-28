@@ -81,6 +81,26 @@
 - [x] **S5-6-6**: 既存モード（フリー対戦・ストーリー・2P）への影響がないことを確認
   - 対象: 既存テスト + 手動確認
 
+## Phase S5-7: フィードバック対応 — P2 CPU/人間切り替え（M）
+
+- [ ] **S5-7-1**: `useGameMode` に `allyControlType: 'cpu' | 'human'` state を追加（デフォルト: `'cpu'`）
+  - 対象: `presentation/hooks/useGameMode.ts`
+- [ ] **S5-7-2**: テスト — allyControlType の初期値・変更・resetToFree での挙動
+  - 対象: `presentation/hooks/useGameMode.test.ts`
+- [ ] **S5-7-3**: `TeamSetupScreen` の P2 スロットに CPU/人間 トグルボタンを追加
+  - 対象: `components/TeamSetupScreen.tsx`
+  - Props に `allyControlType` / `onAllyControlTypeChange` を追加
+- [ ] **S5-7-4**: テスト — トグルの表示・切り替え・コールバック
+  - 対象: `components/TeamSetupScreen.test.tsx`
+- [ ] **S5-7-5**: `useGameLoop` の 2v2 入力処理を `allyControlType` で分岐
+  - `'cpu'`: ally に `updateExtraMalletAI` を適用（enemy と同じ方式）
+  - `'human'`: 現在の WASD/タッチ入力を適用
+  - 対象: `presentation/hooks/useGameLoop.ts`
+- [ ] **S5-7-6**: `AirHockeyGame` で `allyControlType` を useGameLoop に伝達
+  - 対象: `presentation/AirHockeyGame.tsx`
+- [ ] **S5-7-7**: テスト・品質保証（型チェック・テスト全パス・ビルド成功）
+  - 対象: 全体
+
 ---
 
 ## サイズ見積もり
@@ -93,6 +113,7 @@
 | S5-4 | M | 2 | 〜50行 |
 | S5-5 | S | 1 | 〜40行 |
 | S5-6 | M | — | テスト実行 |
+| S5-7 | M | 4 | 〜60行 |
 
 ## 進捗サマリー
 
@@ -104,3 +125,4 @@
 | S5-4 ゲーム開始フロー接続 | [x] 完了 | 2026-03-28 |
 | S5-5 ResultScreen 2v2 最適化 | [x] 完了 | 2026-03-28 |
 | S5-6 テスト・品質保証 | [x] 完了 | 2026-03-28 |
+| S5-7 P2 CPU/人間切り替え | [ ] 未着手 | — |

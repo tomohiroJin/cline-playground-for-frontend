@@ -4,20 +4,21 @@
 
 ### 1.1 チーム構成タイプ
 
-初期リリースでは以下の 1 パターンを実装する:
+P2（パートナー）は CPU/人間を切り替え可能:
 
 | 構成 | チーム1（下） | チーム2（上） | 説明 |
 |------|-------------|-------------|------|
-| **人+CPU vs CPU+CPU** | P1: 人間 / P2: CPU味方 | P3: CPU敵1 / P4: CPU敵2 | 基本形 |
+| **人+CPU vs CPU+CPU** | P1: 人間 / P2: CPU味方 | P3: CPU / P4: CPU | 基本形（デフォルト） |
+| **人+人 vs CPU+CPU** | P1: 人間 / P2: 人間（WASD/タッチ） | P3: CPU / P4: CPU | 協力プレイ |
 
-> **将来拡張**: 人+人 vs CPU+CPU、人+CPU vs 人+CPU は入力デバイス拡張後に対応
+> **将来拡張**: P3/P4 の人間操作は入力デバイス拡張後に対応（ゲームパッド API 等）
 
 ### 1.2 スロット定義
 
 | スロット | 役割 | 入力 | キャラ選択 |
 |---------|------|------|-----------|
 | P1 | プレイヤー | マウス/タッチ | 固定（アキラ） |
-| P2 | 味方 CPU | AI 制御 | ユーザー選択 |
+| P2 | パートナー | CPU（AI制御）/ 人間（WASD/タッチ）切り替え | ユーザー選択 |
 | P3 | 敵 CPU 1 | AI 制御 | ユーザー選択 |
 | P4 | 敵 CPU 2 | AI 制御 | ユーザー選択 |
 
@@ -41,11 +42,14 @@ selectedCpuCharacter: Character | undefined;   // フリー対戦用
 player1Character: Character | undefined;       // 2P 用
 player2Character: Character | undefined;       // 2P 用
 
-// 追加
-allyCharacter: Character | undefined;          // P2: 味方 CPU キャラ
+// 追加（S5-1〜S5-6 で実装済み）
+allyCharacter: Character | undefined;          // P2: パートナーキャラ
 enemyCharacter1: Character | undefined;        // P3: 敵 CPU 1
 enemyCharacter2: Character | undefined;        // P4: 敵 CPU 2
 pairMatchDifficulty: Difficulty;               // 2v2 用難易度
+
+// 追加（S5-7 で実装）
+allyControlType: 'cpu' | 'human';              // P2: CPU/人間切り替え（デフォルト: 'cpu'）
 ```
 
 ### 2.2 resetToFree への追加
@@ -71,7 +75,7 @@ const resetToFree = useCallback(() => {
 │                                  │
 │  ── チーム1（下）──               │
 │  P1: アキラ（あなた）  [固定]     │  ← アイコン + 名前
-│  P2: [キャラ選択ボタン]           │  ← タップでキャラ選択
+│  P2: [CPU ⇔ 人間] [キャラ選択]   │  ← トグル + タップでキャラ選択
 │                                  │
 │  ── チーム2（上）──               │
 │  P3: [キャラ選択ボタン]           │  ← タップでキャラ選択
@@ -100,7 +104,18 @@ const resetToFree = useCallback(() => {
 - 難易度は P2（味方）/ P3 / P4 の全 CPU に共通適用
 - 表示: かんたん / ふつう / むずかしい の 3 択ボタン
 
-### 3.4 Props インターフェース
+### 3.4 P2 操作タイプ切り替え
+
+P2 スロットに CPU/人間の切り替えトグルを表示する:
+
+- **CPU**（デフォルト）: P2 は AI が制御する。選択キャラの AI プロファイルで動作
+- **人間**: P2 は WASD / マルチタッチ（2本目）で人間が操作する
+
+切り替え時の挙動:
+- 選択済みキャラクターは保持される（切り替えてもリセットしない）
+- CPU → 人間に切り替えた場合、操作説明（WASD/タッチ）を表示する
+
+### 3.5 Props インターフェース
 
 ```typescript
 type TeamSetupScreenProps = {
@@ -113,6 +128,9 @@ type TeamSetupScreenProps = {
   onAllyChange: (c: Character) => void;
   onEnemy1Change: (c: Character) => void;
   onEnemy2Change: (c: Character) => void;
+  // P2 操作タイプ
+  allyControlType: 'cpu' | 'human';
+  onAllyControlTypeChange: (t: 'cpu' | 'human') => void;
   // 難易度
   difficulty: Difficulty;
   onDifficultyChange: (d: Difficulty) => void;
@@ -239,9 +257,20 @@ type ResultScreenProps = {
 
 | スロット | 難易度適用 | 備考 |
 |---------|----------|------|
-| P2（味方 CPU） | `pairMatchDifficulty` | 味方も同じ難易度 |
-| P3（敵 CPU 1） | `pairMatchDifficulty` | 敵も同じ難易度 |
-| P4（敵 CPU 2） | `pairMatchDifficulty` | 敵も同じ難易度 |
+| P2（パートナー） | `pairMatchDifficulty`（CPU 時のみ） | 人間操作時は AI 不使用 |
+| P3（敵 CPU 1） | `pairMatchDifficulty` | 常に CPU |
+| P4（敵 CPU 2） | `pairMatchDifficulty` | 常に CPU |
 
 > **設計判断**: 全 CPU 同一難易度にすることで、チーム間の実力差はキャラの AI プロファイルで表現する。
 > 難易度はあくまで「ゲーム全体の強さ」を制御するパラメータとする。
+
+### 7.2 useGameLoop の P2 入力/AI 分岐
+
+```typescript
+// allyControlType による分岐
+if (allyControlType === 'human') {
+  // 現在の実装: WASD / マルチタッチで人間が操作
+} else {
+  // CPU AI: updateExtraMalletAI で ally を制御（enemy と同じ方式）
+}
+```
