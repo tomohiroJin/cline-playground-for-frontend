@@ -250,3 +250,63 @@ Phase S5-6: テスト・品質保証
 | SR-4 | 到達不能パス | 2v2 で `onBackToCharacterSelect` が undefined（2P との非対称性） | 中 | SR-1 と合わせて対応 |
 | SR-5 | 状態リセット | ペアマッチ中断時に `resetToFree` で全設定がリセットされる | 低 | 将来対応（確認ダイアログ検討） |
 | SR-6 | 情報欠如 | VsScreen 2v2 で P2 が CPU か人間かの表示がない | 低 | S5-9-11 でラベル追加 |
+
+---
+
+## Phase S5-10: ゲームプレイ品質改善（2026-03-28）
+
+### 発見された問題
+
+| # | 問題 | 種別 | 原因 |
+|---|------|------|------|
+| GP-1 | 味方 CPU が相手陣地に移動して 3 対 1 になる | バグ | `updateExtraMalletAI` → `CpuAI` が CPU 側（上半分）のゾーン制約をハードコード。ally は下半分に制約されるべき |
+| GP-2 | マレット同士が重なる | 機能不足 | マレット間の衝突判定が未実装。パック・アイテムとの衝突のみ |
+| GP-3 | 人間同士（P1+P2）のとき WASD で P1 も動く | バグ | `applyKeyboardMovement` が playerSlot を区別せず、KEY_MAP が矢印+WASD 両方を含む |
+| GP-4 | CPU の動きが全員同じでキャラ個性がない | 機能不足 | ally/enemy に同じ `effectiveAiConfig` を使用。キャラ別 AI プロファイル未反映 |
+
+### GP-1: ally CPU のゾーン制約修正
+
+**原因**: `CpuAI.updateWithBehavior` 内の Y 座標クランプ `clamp(target.y, 50, H/2 - 50)` が常に上半分を前提としている。
+
+**修正方針**:
+- `updateExtraMalletAI` に `team: 'player' | 'cpu'` パラメータを追加
+- ally（player チーム）は Y 座標を `H/2 + 50` 〜 `H - 50`（下半分）に制約
+- enemy（cpu チーム）は従来通り `50` 〜 `H/2 - 50`（上半分）に制約
+- または `getPlayerZone` で取得したゾーンを AI に渡してクランプ
+
+**影響ファイル**: `core/pair-match-logic.ts`, `core/ai.ts`
+
+### GP-2: マレット間衝突判定の追加
+
+**修正方針**:
+- 4 マレット間の全ペア（最大 6 組）に対して距離判定を実行
+- 重なり検出時、2 つのマレットを距離が `MALLET_RADIUS * 2` になるまで押し戻す
+- 既存の `resolveMalletPuckOverlap` を参考に `resolveMalletMalletOverlap` を実装
+- 押し戻し方向: 中心間ベクトルに沿って均等に分離
+
+**影響ファイル**: `core/entities.ts` or `core/physics.ts`, `presentation/hooks/useGameLoop.ts`
+
+### GP-3: P1/P2 キーマッピング分離
+
+**原因**: `useKeyboardInput` の `KEY_MAP` が矢印キーと WASD の両方を含み、`applyKeyboardMovement` が常に `game.player` を更新する。
+
+**修正方針**:
+- P1 用キーマッピング: **矢印キーのみ**（↑↓←→）
+- P2 用キーマッピング: **WASD**（既存の `player2KeysRef` で使用中）
+- `useKeyboardInput` の `KEY_MAP` から WASD を除外（2v2 の P2 入力は別系統で処理済み）
+- 2P 対戦時の既存 `PLAYER2.KEY_MAP`（WASD）との互換性を維持
+
+**影響ファイル**: `hooks/useKeyboardInput.ts`, `core/keyboard.ts`
+
+### GP-4: キャラ別 AI プロファイル反映
+
+**原因**: `effectiveAiConfig` が 1 つだけ生成され、ally/enemy/cpu 全員に同じ設定が適用される。
+
+**修正方針**:
+- ally CPU 用: `buildFreeBattleAiConfig(difficulty, allyCharacter.id)` で生成
+- enemy1（P3）用: `buildFreeBattleAiConfig(difficulty, enemyCharacter1.id)` で生成
+- enemy2（P4）用: `buildFreeBattleAiConfig(difficulty, enemyCharacter2.id)` で生成
+- cpu（P3）の既存 AI にも enemyCharacter1 の ID を反映
+- キャラ ID を `useGameLoop` の config に渡す
+
+**影響ファイル**: `presentation/hooks/useGameLoop.ts`, `presentation/AirHockeyGame.tsx`

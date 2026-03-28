@@ -204,6 +204,55 @@
 - [x] **S5-9-13**: テスト・品質保証（型チェック・テスト全パス・ビルド成功）
   - 対象: 全体
 
+## Phase S5-10: ゲームプレイ品質改善（L）
+
+### GP-1: ally CPU ゾーン制約修正
+
+- [ ] **S5-10-1**: `updateExtraMalletAI` に `team` パラメータを追加し、ally は下半分に制約
+  - 対象: `core/pair-match-logic.ts`
+  - ally（player チーム）: Y を `H/2 + MR` 〜 `H - MR` にクランプ
+  - enemy（cpu チーム）: Y を `MR` 〜 `H/2 - MR` にクランプ
+- [ ] **S5-10-2**: `useGameLoop` で ally AI 呼び出し時に `team: 'player'` を渡す
+  - 対象: `presentation/hooks/useGameLoop.ts`
+- [ ] **S5-10-3**: テスト — ally CPU が下半分ゾーンに制約される
+  - 対象: `core/pair-match-logic.test.ts` or 新規
+
+### GP-2: マレット間衝突判定
+
+- [ ] **S5-10-4**: `resolveMalletMalletOverlap` 関数を実装
+  - 対象: `core/entities.ts` or `core/physics.ts`
+  - 2 マレットの中心間距離 < `MALLET_RADIUS * 2` のとき、中心間ベクトルに沿って均等に押し戻し
+- [ ] **S5-10-5**: `useGameLoop` のフレーム更新後にマレット間衝突解消を実行
+  - 対象: `presentation/hooks/useGameLoop.ts`
+  - 全マレットペア（最大 6 組）に対して判定
+- [ ] **S5-10-6**: テスト — 重なったマレットが分離される
+  - 対象: テストファイル新規 or 既存追加
+
+### GP-3: P1/P2 キーマッピング分離
+
+- [ ] **S5-10-7**: P1 用 KEY_MAP から WASD を除外（矢印キーのみ）
+  - 対象: `hooks/useKeyboardInput.ts` or `core/keyboard.ts`
+  - 2v2 人間操作時の P2 は既存 `player2KeysRef` 系統で処理済み
+- [ ] **S5-10-8**: テスト — WASD 入力が P1 に影響しないこと
+  - 対象: テストファイル
+
+### GP-4: キャラ別 AI プロファイル反映
+
+- [ ] **S5-10-9**: `GameLoopConfig` にキャラ ID フィールドを追加
+  - 対象: `presentation/hooks/useGameLoop.ts`
+  - `allyCharacterId`, `enemyCharacter1Id`, `enemyCharacter2Id` を追加
+- [ ] **S5-10-10**: ally/enemy/cpu に `buildFreeBattleAiConfig(difficulty, characterId)` で個別 AI 設定を生成
+  - 対象: `presentation/hooks/useGameLoop.ts`
+- [ ] **S5-10-11**: `AirHockeyGame` からキャラ ID を useGameLoop に渡す
+  - 対象: `presentation/AirHockeyGame.tsx`
+- [ ] **S5-10-12**: テスト — 異なるキャラ ID で異なる AI 設定が使われる
+  - 対象: テストファイル
+
+### 品質保証
+
+- [ ] **S5-10-13**: テスト・品質保証（型チェック・テスト全パス・ビルド成功）
+  - 対象: 全体
+
 ---
 
 ## サイズ見積もり
@@ -219,6 +268,7 @@
 | S5-7 | M | 4 | 〜60行 |
 | S5-8 | M | 4 | 〜120行 |
 | S5-9 | L | 4 | 〜150行 |
+| S5-10 | L | 5-6 | 〜200行 |
 
 ## 進捗サマリー
 
@@ -233,3 +283,4 @@
 | S5-7 P2 CPU/人間切り替え | [x] 完了 | 2026-03-28 |
 | S5-8 デザインレビュー UI/UX 改善 | [x] 完了 | 2026-03-28 |
 | S5-9 デザイン残課題 レスポンシブ・UX 磨き込み | [x] 完了 | 2026-03-28 |
+| S5-10 ゲームプレイ品質改善 | [ ] 未着手 | — |
