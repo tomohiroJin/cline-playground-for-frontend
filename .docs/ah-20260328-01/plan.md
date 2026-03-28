@@ -438,7 +438,8 @@ const pairMatchGoalSize = Math.max(field.goalSize * 1.5, PAIR_MATCH_MIN_GOAL_SIZ
 - パックの速度が一定フレーム数以上ほぼゼロのとき「スタック」と判定
 - スタック検出時、パックにランダム方向の初速を与えて脱出させる
 - しきい値: 速度 < `MIN_SPEED` が 30 フレーム（約 0.5 秒）以上継続
-- 脱出速度: `MIN_SPEED * 2` 程度でランダム方向に射出
+- 脱出方向: フィールド中央（`W/2, H/2`）に向かう方向（ゴール直入りの不公平を防止）
+- 脱出速度: `MIN_SPEED * 2` 程度
 
 **影響ファイル**: `presentation/hooks/useGameLoop.ts`
 
@@ -447,10 +448,11 @@ const pairMatchGoalSize = Math.max(field.goalSize * 1.5, PAIR_MATCH_MIN_GOAL_SIZ
 **原因**: `startGame` で `activeField`（ゴールサイズ上書き済み）を作成し `EntityFactory.createGameState` に渡すが、
 `useGameLoop` の `config.field` は `mode.field`（元のフィールド設定）を参照しており、上書きが伝わらない。
 
-**修正方針**:
-- `startGame` で 2v2 ゴールサイズ上書き済みのフィールドを `mode.setField` で状態に反映する
-- これにより `useGameLoop` の `config.field` にも自動的に伝播する
-- ゲーム終了後に `resetToFree` で元のフィールドに戻るため、副作用なし
+**修正方針（累積適用の防止を考慮）**:
+- `startGame` 内で毎回**元のフィールド設定**を基準にゴールサイズを計算する
+- 元の `goalSize` は `FIELDS` 配列から ID で引き直すか、`baseField`（`mode.field` ではなく `fieldOverride ?? mode.field`）を使用
+- 計算済みの `activeField` を `mode.setField` で反映（useGameLoop に伝播）
+- リプレイ時の累積防止: `FIELDS.find(f => f.id === baseField.id)` で原本を参照
 
 **影響ファイル**: `presentation/AirHockeyGame.tsx`
 
