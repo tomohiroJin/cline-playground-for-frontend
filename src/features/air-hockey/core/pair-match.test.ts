@@ -56,65 +56,46 @@ describe('Phase S4-1: ペアマッチ型定義・データ構造', () => {
     });
   });
 
-  // ── S4-1-3: 4分割ゾーン境界の定義 ─────────────────
+  // ── S4-1-3: 上下2分割ゾーン境界の定義 ─────────────────
 
-  describe('S4-1-3: 4分割ゾーン境界', () => {
+  describe('S4-1-3: 上下2分割ゾーン境界', () => {
     it('PlayerSlot 型が4スロット分使用できる', () => {
       const slots: PlayerSlot[] = ['player1', 'player2', 'player3', 'player4'];
       expect(slots).toHaveLength(4);
     });
 
-    it('player1（左下）ゾーンが正しい範囲', () => {
+    it('player1（チーム1・下半分）ゾーンが正しい範囲', () => {
       const zone = getPlayerZone('player1', CONSTANTS);
-      // 左下: x は左半分、y は下半分
       expect(zone.minX).toBeGreaterThanOrEqual(MR);
-      expect(zone.maxX).toBeLessThanOrEqual(W / 2);
-      expect(zone.minY).toBeGreaterThan(H / 2);
-      expect(zone.maxY).toBeLessThanOrEqual(H);
-    });
-
-    it('player2（右下）ゾーンが正しい範囲', () => {
-      const zone = getPlayerZone('player2', CONSTANTS);
-      // 右下: x は右半分、y は下半分
-      expect(zone.minX).toBeGreaterThanOrEqual(W / 2);
       expect(zone.maxX).toBeLessThanOrEqual(W);
       expect(zone.minY).toBeGreaterThan(H / 2);
       expect(zone.maxY).toBeLessThanOrEqual(H);
     });
 
-    it('player3（左上）ゾーンが正しい範囲', () => {
+    it('player2（チーム1・下半分）は player1 と同じゾーン', () => {
+      const z1 = getPlayerZone('player1', CONSTANTS);
+      const z2 = getPlayerZone('player2', CONSTANTS);
+      expect(z2).toEqual(z1);
+    });
+
+    it('player3（チーム2・上半分）ゾーンが正しい範囲', () => {
       const zone = getPlayerZone('player3', CONSTANTS);
-      // 左上: x は左半分、y は上半分
       expect(zone.minX).toBeGreaterThanOrEqual(0);
-      expect(zone.maxX).toBeLessThanOrEqual(W / 2);
-      expect(zone.minY).toBeGreaterThanOrEqual(0);
-      expect(zone.maxY).toBeLessThan(H / 2);
-    });
-
-    it('player4（右上）ゾーンが正しい範囲', () => {
-      const zone = getPlayerZone('player4', CONSTANTS);
-      // 右上: x は右半分、y は上半分
-      expect(zone.minX).toBeGreaterThanOrEqual(W / 2);
       expect(zone.maxX).toBeLessThanOrEqual(W);
       expect(zone.minY).toBeGreaterThanOrEqual(0);
       expect(zone.maxY).toBeLessThan(H / 2);
     });
 
-    it('4ゾーンが重複しない', () => {
-      const slots: PlayerSlot[] = ['player1', 'player2', 'player3', 'player4'];
-      const zones = slots.map(s => getPlayerZone(s, CONSTANTS));
+    it('player4（チーム2・上半分）は player3 と同じゾーン', () => {
+      const z3 = getPlayerZone('player3', CONSTANTS);
+      const z4 = getPlayerZone('player4', CONSTANTS);
+      expect(z4).toEqual(z3);
+    });
 
-      // 各ゾーンペアについて、X軸またはY軸で分離していることを確認
-      for (let i = 0; i < zones.length; i++) {
-        for (let j = i + 1; j < zones.length; j++) {
-          const a = zones[i];
-          const b = zones[j];
-          const xOverlap = a.minX < b.maxX && b.minX < a.maxX;
-          const yOverlap = a.minY < b.maxY && b.minY < a.maxY;
-          // 少なくとも一方の軸で分離している
-          expect(xOverlap && yOverlap).toBe(false);
-        }
-      }
+    it('チーム1とチーム2のゾーンが Y 軸で分離している', () => {
+      const team1 = getPlayerZone('player1', CONSTANTS);
+      const team2 = getPlayerZone('player3', CONSTANTS);
+      expect(team1.minY).toBeGreaterThan(team2.maxY);
     });
 
     it('既存の getPlayerYBounds が引き続き動作する', () => {

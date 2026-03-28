@@ -41,8 +41,6 @@ type TeamSetupScreenProps = {
   onEnemy2Change: (c: Character) => void;
   allyControlType: AllyControlType;
   onAllyControlTypeChange: (t: AllyControlType) => void;
-  difficulty: Difficulty;
-  onDifficultyChange: (d: Difficulty) => void;
   onStart: () => void;
   onBack: () => void;
 };
@@ -285,8 +283,6 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
   onEnemy2Change,
   allyControlType,
   onAllyControlTypeChange,
-  difficulty,
-  onDifficultyChange,
   onStart,
   onBack,
 }) => {
@@ -318,22 +314,6 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
 
       {/* スクロールエリア */}
       <div style={styles.scrollArea} data-testid="scroll-area">
-        {/* 難易度（チーム構成の上に配置） */}
-        <div style={styles.difficultySection}>
-          <div style={styles.difficultyTitle}>CPU 難易度</div>
-          <div style={styles.difficultyRow}>
-            {DIFFICULTIES.map(d => (
-              <button
-                key={d}
-                style={styles.difficultyButton(d === difficulty)}
-                onClick={() => onDifficultyChange(d)}
-              >
-                {DIFFICULTY_LABELS[d]}
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* チーム1 */}
         <div style={styles.teamSection(TEAM1_COLOR)} data-testid="team1-section">
           <div style={styles.teamTitle(TEAM1_COLOR)}>チーム1（下）</div>

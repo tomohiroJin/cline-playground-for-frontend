@@ -55,8 +55,10 @@ export function getPlayerXBounds(
 }
 
 /**
- * 2v2 モードの4分割ゾーン境界を取得する
- * 各マレットは自分のゾーン内でのみ移動可能
+ * 2v2 モードのゾーン境界を取得する
+ * チーム1（player1/player2）: 下半分全体
+ * チーム2（player3/player4）: 上半分全体
+ * 味方同士は同じ半面全体を自由に動ける
  */
 export function getPlayerZone(
   slot: 'player1' | 'player2' | 'player3' | 'player4',
@@ -66,18 +68,15 @@ export function getPlayerZone(
   const MR = constants.SIZES.MALLET;
   const margin = MALLET_WALL_MARGIN;
   const centerMargin = MALLET_CENTER_LINE_MARGIN;
-  const halfW = W / 2;
   const halfH = H / 2;
 
   switch (slot) {
-    case 'player1': // 左下
-      return { minX: MR + margin, maxX: halfW, minY: halfH + MR + centerMargin, maxY: H - MR - margin };
-    case 'player2': // 右下
-      return { minX: halfW, maxX: W - MR - margin, minY: halfH + MR + centerMargin, maxY: H - MR - margin };
-    case 'player3': // 左上
-      return { minX: MR + margin, maxX: halfW, minY: MR + margin, maxY: halfH - MR - centerMargin };
-    case 'player4': // 右上
-      return { minX: halfW, maxX: W - MR - margin, minY: MR + margin, maxY: halfH - MR - centerMargin };
+    case 'player1': // 下半分（チーム1）
+    case 'player2': // 下半分（チーム1）
+      return { minX: MR + margin, maxX: W - MR - margin, minY: halfH + MR + centerMargin, maxY: H - MR - margin };
+    case 'player3': // 上半分（チーム2）
+    case 'player4': // 上半分（チーム2）
+      return { minX: MR + margin, maxX: W - MR - margin, minY: MR + margin, maxY: halfH - MR - centerMargin };
   }
 }
 

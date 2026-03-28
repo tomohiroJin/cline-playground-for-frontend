@@ -105,9 +105,13 @@ const AirHockeyGame: React.FC = () => {
 
   // ── ゲーム制御 ──
   const startGame = useCallback((fieldOverride?: typeof mode.field, gameModeOverride?: GameMode) => {
-    const activeField = fieldOverride ?? mode.field;
+    const baseField = fieldOverride ?? mode.field;
     const effectiveGameMode = gameModeOverride ?? mode.gameMode;
     const is2v2 = effectiveGameMode === '2v2-local';
+    // 2v2 時はゴールサイズを拡大（マレット3つ分下限保証、Canvas幅60%上限）
+    const activeField = is2v2
+      ? { ...baseField, goalSize: Math.min(Math.max(baseField.goalSize * 1.5, CONSTANTS.SIZES.MALLET * 2 * 3), CONSTANTS.CANVAS.WIDTH * 0.6) }
+      : baseField;
     gameRef.current = EntityFactory.createGameState(CONSTANTS, activeField, is2v2);
     scoreRef.current = { p: 0, c: 0 };
     setScores({ p: 0, c: 0 });
@@ -297,11 +301,11 @@ const AirHockeyGame: React.FC = () => {
   // ── 2P / 2v2 モード判定（入力フックより前に宣言） ──
   const is2PMode = mode.gameMode === '2p-local';
   const is2v2Mode = mode.gameMode === '2v2-local';
+  const isMultiPlayer = is2PMode || is2v2Mode;
 
   // ── 入力・ゲームループ ──
   const handleInput = useInput(canvasRef, lastInputRef, playerTargetRef, screen, showHelp, setShowHelp);
-  const keysRef = useKeyboardInput(gameRef, lastInputRef, screen, showHelp, setShowHelp, is2v2Mode);
-  const isMultiPlayer = is2PMode || is2v2Mode;
+  const keysRef = useKeyboardInput(gameRef, lastInputRef, screen, showHelp, setShowHelp, isMultiPlayer);
   const is2PGame = isMultiPlayer && screen === 'game';
   // ペアマッチ用キャラクターのデフォルト値（フォールバックを一元管理）
   const pairAlly = React.useMemo(
@@ -355,13 +359,10 @@ const AirHockeyGame: React.FC = () => {
     };
   }, [is2PGame]);
 
-  // 2v2 時は pairMatchDifficulty を使用
-  const effectiveDifficulty = is2v2Mode ? mode.pairMatchDifficulty : mode.difficulty;
-
   useGameLoop({
     screen, showHelp,
     config: {
-      difficulty: effectiveDifficulty, field: mode.field, winScore: mode.winScore,
+      difficulty: mode.difficulty, field: mode.field, winScore: mode.winScore,
       getSound: audio.getSound, bgmEnabled: audio.bgmEnabled, gameMode: mode.gameMode,
       aiConfig: mode.gameMode === 'story' ? storyAiConfig : freeBattleAiConfig,
       playerMalletColor: is2PMode ? mode.player1Character?.color : undefined,
@@ -438,8 +439,6 @@ const AirHockeyGame: React.FC = () => {
           onEnemy2Change={mode.setEnemyCharacter2}
           allyControlType={mode.allyControlType}
           onAllyControlTypeChange={mode.setAllyControlType}
-          difficulty={mode.pairMatchDifficulty}
-          onDifficultyChange={mode.setPairMatchDifficulty}
           onStart={handlePairMatchStart}
           onBack={handleBackToMenu}
         />

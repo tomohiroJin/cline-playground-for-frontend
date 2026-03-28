@@ -43,8 +43,6 @@ const createDefaultProps = () => ({
   onEnemy2Change: jest.fn(),
   allyControlType: 'cpu' as 'cpu' | 'human',
   onAllyControlTypeChange: jest.fn(),
-  difficulty: 'normal' as Difficulty,
-  onDifficultyChange: jest.fn(),
   onStart: jest.fn(),
   onBack: jest.fn(),
 });
@@ -149,26 +147,10 @@ describe('TeamSetupScreen', () => {
     });
   });
 
-  describe('難易度選択', () => {
-    it('3つの難易度ボタンが表示される', () => {
+  describe('難易度セクション', () => {
+    it('難易度セクションが表示されない（タイトル画面の設定を使用）', () => {
       render(<TeamSetupScreen {...createDefaultProps()} />);
-      expect(screen.getByText('かんたん')).toBeDefined();
-      expect(screen.getByText('ふつう')).toBeDefined();
-      expect(screen.getByText('むずかしい')).toBeDefined();
-    });
-
-    it('現在の難易度がハイライトされる', () => {
-      render(<TeamSetupScreen {...createDefaultProps()} />);
-      const normalButton = screen.getByText('ふつう');
-      // ハイライトされたボタンはスタイルが異なる
-      expect(normalButton.closest('button')?.style.backgroundColor).toBeTruthy();
-    });
-
-    it('難易度ボタンクリックで onDifficultyChange が呼ばれる', () => {
-      const props = createDefaultProps();
-      render(<TeamSetupScreen {...props} />);
-      fireEvent.click(screen.getByText('かんたん'));
-      expect(props.onDifficultyChange).toHaveBeenCalledWith('easy');
+      expect(screen.queryByText('CPU 難易度')).toBeNull();
     });
   });
 
@@ -242,13 +224,11 @@ describe('TeamSetupScreen', () => {
       expect(p1Slot.style.opacity).toBe('');
     });
 
-    it('難易度セクションがチームセクションより前に表示される', () => {
+    it('スクロールエリアの最初の要素がチーム1セクションである', () => {
       const { container } = render(<TeamSetupScreen {...createDefaultProps()} />);
       const scrollArea = container.querySelector('[data-testid="scroll-area"]') as HTMLElement;
-      const children = Array.from(scrollArea.children);
-      const diffIndex = children.findIndex(el => el.textContent?.includes('CPU 難易度'));
-      const team1Index = children.findIndex(el => el.textContent?.includes('チーム1'));
-      expect(diffIndex).toBeLessThan(team1Index);
+      const firstChild = scrollArea.children[0];
+      expect(firstChild.textContent).toContain('チーム1');
     });
 
     it('CPU/人間トグルのタッチターゲットが 44px 以上', () => {

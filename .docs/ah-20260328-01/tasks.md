@@ -271,49 +271,49 @@
 
 ### PT-1: 2P 対戦の WASD 分離
 
-- [ ] **S5-11-1**: `useKeyboardInput` のパラメータを `is2v2Mode` → `isMultiPlayerMode` に変更
+- [x] **S5-11-1**: `useKeyboardInput` のパラメータを `is2v2Mode` → `isMultiPlayerMode` に変更
   - 対象: `hooks/useKeyboardInput.ts`
   - 2P 対戦 / 2v2 の両方で P1 は矢印キーのみに制限
-- [ ] **S5-11-2**: `AirHockeyGame` で `isMultiPlayer` を `useKeyboardInput` に渡す
+- [x] **S5-11-2**: `AirHockeyGame` で `isMultiPlayer` を `useKeyboardInput` に渡す
   - 対象: `presentation/AirHockeyGame.tsx`
 
 ### PT-2: ペアマッチ難易度セクション削除
 
-- [ ] **S5-11-3**: TeamSetupScreen から難易度セクション・Props を削除
+- [x] **S5-11-3**: TeamSetupScreen から難易度セクション・Props を削除
   - 対象: `components/TeamSetupScreen.tsx`
-- [ ] **S5-11-4**: AirHockeyGame で `effectiveDifficulty` を `mode.difficulty` に統一
+- [x] **S5-11-4**: AirHockeyGame で `effectiveDifficulty` を `mode.difficulty` に統一
   - 対象: `presentation/AirHockeyGame.tsx`
 
 ### PT-3: マレット移動範囲を上下2分割に変更
 
-- [ ] **S5-11-5**: `getPlayerZone` を 2 分割に変更（味方同士は同じ半面全体を移動可能）
+- [x] **S5-11-5**: `getPlayerZone` を 2 分割に変更（味方同士は同じ半面全体を移動可能）
   - 対象: `core/constants.ts`
   - player1/player2: 下半分全体（X 全幅）
   - player3/player4: 上半分全体（X 全幅）
-- [ ] **S5-11-5b**: ゾーン変更後に `resolveMalletMalletOverlaps` と `updateExtraMalletAI` が正しく動作するか検証
+- [x] **S5-11-5b**: ゾーン変更後に `resolveMalletMalletOverlaps` と `updateExtraMalletAI` が正しく動作するか検証
   - 対象: テスト + 既存ロジック確認
-- [ ] **S5-11-6**: テスト — ゾーン変更の確認
+- [x] **S5-11-6**: テスト — ゾーン変更の確認
   - 対象: テストファイル
 
 ### PT-4: 2v2 ゴールサイズ拡大
 
-- [ ] **S5-11-7**: 2v2 モード開始時にゴールサイズを拡大する仕組みを追加
+- [x] **S5-11-7**: 2v2 モード開始時にゴールサイズを拡大する仕組みを追加
   - 対象: `presentation/AirHockeyGame.tsx`
   - `startGame` 時にフィールドを immutable コピーし `goalSize` を上書き
   - 計算式: `Math.min(Math.max(goalSize * 1.5, MALLET_RADIUS * 2 * 3), W * 0.6)`
   - マレット 3 つ分（252px）以上を下限保証、Canvas 幅 60%（360px）を上限
-- [ ] **S5-11-8**: レンダラー・物理演算がゴールサイズ変更に追従することを確認
+- [x] **S5-11-8**: レンダラー・物理演算がゴールサイズ変更に追従することを確認
   - 対象: テスト + 動作確認
 
 ### PT-5: ゲーム中のヘルプ自動表示を無効化
 
-- [ ] **S5-11-9**: `useGameLoop` 内のヘルプ自動表示ロジック（HELP_TIMEOUT）を削除
+- [x] **S5-11-9**: `useGameLoop` 内のヘルプ自動表示ロジック（HELP_TIMEOUT）を削除
   - 対象: `presentation/hooks/useGameLoop.ts`
   - タイトル画面の「？」ボタンからの手動表示は維持
 
 ### 品質保証
 
-- [ ] **S5-11-10**: テスト・品質保証（型チェック・テスト全パス・ビルド成功）
+- [x] **S5-11-10**: テスト・品質保証（型チェック・テスト全パス・ビルド成功）
   - 対象: 全体
 
 ---
@@ -348,4 +348,4 @@
 | S5-8 デザインレビュー UI/UX 改善 | [x] 完了 | 2026-03-28 |
 | S5-9 デザイン残課題 レスポンシブ・UX 磨き込み | [x] 完了 | 2026-03-28 |
 | S5-10 ゲームプレイ品質改善 | [x] 完了 | 2026-03-28 |
-| S5-11 プレイテストフィードバック対応 | [ ] 未着手 | — |
+| S5-11 プレイテストフィードバック対応 | [x] 完了 | 2026-03-29 |

@@ -455,10 +455,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       }
       game.goalEffect = null;
 
-      // ヘルプ表示判定
-      if (now - lastInputRef.current > consts.TIMING.HELP_TIMEOUT && !showHelp) {
-        setShowHelp(true);
-      }
+      // ヘルプ自動表示は無効化（タイトル画面の手動ヘルプのみ維持）
 
       // マウス/タッチ入力（フレーム同期: ref から目標位置を読み取り適用）
       // 2v2 モードでもマウスのフォールバックとして有効（マルチタッチ時は後続で上書き）
