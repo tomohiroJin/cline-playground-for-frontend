@@ -124,6 +124,8 @@ export const Screen = styled.div`
   position: relative;
   overflow: hidden;
   box-shadow: inset 0 1px 6px rgba(0, 0, 0, 0.07);
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 
   /* スキャンライン */
   &::before {

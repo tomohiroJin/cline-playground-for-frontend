@@ -1,8 +1,10 @@
 import { createGlobalStyle } from 'styled-components';
+import { lightTokens, darkTokens } from './tokens';
 
 export const GlobalStyle = createGlobalStyle`
   :root {
-    --bg-gradient: linear-gradient(135deg, #0cebeb, #20e3b2, #29ffc6); /* 鮮やかなティール系グラデーション（初期値） - ダークモードで上書き推奨 */
+    /* 既存変数（後方互換） */
+    --bg-gradient: linear-gradient(135deg, #0cebeb, #20e3b2, #29ffc6);
     --text-primary: #333;
     --text-secondary: #666;
     --accent-color: #4caf50;
@@ -10,10 +12,14 @@ export const GlobalStyle = createGlobalStyle`
     --glass-bg: rgba(255, 255, 255, 0.8);
     --glass-border: rgba(255, 255, 255, 0.5);
     --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+
+    /* デザイントークン */
+    ${lightTokens}
   }
 
   /* Dark Theme / Premium Theme Override */
   body.premium-theme {
+    /* 既存変数（後方互換） */
     --bg-gradient: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
     --text-primary: #ffffff;
     --text-secondary: rgba(255, 255, 255, 0.75);
@@ -22,6 +28,9 @@ export const GlobalStyle = createGlobalStyle`
     --glass-bg: rgba(255, 255, 255, 0.05);
     --glass-border: rgba(255, 255, 255, 0.1);
     --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+
+    /* デザイントークン（ダークモードオーバーライド） */
+    ${darkTokens}
 
     /* パララックス背景が全面を覆うためグラデーションアニメーション不要 */
     animation: none;
