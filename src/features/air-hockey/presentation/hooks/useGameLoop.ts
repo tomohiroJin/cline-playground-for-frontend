@@ -132,6 +132,9 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
   const is2v2Mode = gameMode === '2v2-local';
   const { setScores, setWinner, setScreen, setShowHelp, setShake } = callbacks;
 
+  // パックスタック検出用カウンター（useEffect 再実行でもリセットされない）
+  const puckStuckCountersRef = React.useRef<number[]>([]);
+
   useEffect(() => {
     if (screen !== 'game') return;
 
@@ -139,9 +142,8 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
     const { MALLET: MR, PUCK: BR, ITEM: IR } = consts.SIZES;
 
-    // パックスタック検出用カウンター（パックインデックス → 連続低速フレーム数）
     const PUCK_STUCK_THRESHOLD = 30; // 約0.5秒
-    const puckStuckCounters: number[] = [];
+    const puckStuckCounters = puckStuckCountersRef.current;
 
     // パーティクル生成の定数
     const OBSTACLE_PARTICLE_COUNT = 12;

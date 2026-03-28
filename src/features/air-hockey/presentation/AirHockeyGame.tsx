@@ -129,7 +129,7 @@ const AirHockeyGame: React.FC = () => {
     statsRef.current = EntityFactory.createMatchStats();
     matchStartRef.current = Date.now();
   // eslint-disable-next-line react-hooks/exhaustive-deps -- mode全体を依存に入れるとゲーム開始時に不要な再レンダリングが発生するため、必要な値のみ指定
-  }, [mode.field, mode.gameMode, navigateWithTransition]);
+  }, [mode.field, mode.gameMode, mode.setField, navigateWithTransition]);
 
   const togglePause = useCallback(() => {
     if (phaseRef.current === 'playing') phaseRef.current = 'paused';
