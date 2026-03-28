@@ -290,15 +290,18 @@
   - 対象: `core/constants.ts`
   - player1/player2: 下半分全体（X 全幅）
   - player3/player4: 上半分全体（X 全幅）
+- [ ] **S5-11-5b**: ゾーン変更後に `resolveMalletMalletOverlaps` と `updateExtraMalletAI` が正しく動作するか検証
+  - 対象: テスト + 既存ロジック確認
 - [ ] **S5-11-6**: テスト — ゾーン変更の確認
   - 対象: テストファイル
 
 ### PT-4: 2v2 ゴールサイズ拡大
 
-- [ ] **S5-11-7**: 2v2 モード開始時にゴールサイズを 1.5 倍に拡大する仕組みを追加
-  - 対象: `presentation/AirHockeyGame.tsx` or `core/config.ts`
-  - `PAIR_MATCH_GOAL_SCALE = 1.5` を定数化
-  - `startGame` 時にフィールド設定を上書き
+- [ ] **S5-11-7**: 2v2 モード開始時にゴールサイズを拡大する仕組みを追加
+  - 対象: `presentation/AirHockeyGame.tsx`
+  - `startGame` 時にフィールドを immutable コピーし `goalSize` を上書き
+  - 計算式: `Math.min(Math.max(goalSize * 1.5, MALLET_RADIUS * 2 * 3), W * 0.6)`
+  - マレット 3 つ分（252px）以上を下限保証、Canvas 幅 60%（360px）を上限
 - [ ] **S5-11-8**: レンダラー・物理演算がゴールサイズ変更に追従することを確認
   - 対象: テスト + 動作確認
 
