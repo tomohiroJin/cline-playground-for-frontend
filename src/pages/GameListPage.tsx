@@ -1,5 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useMemo } from 'react';
 import { useScrollReveal } from '../hooks/useScrollReveal';
 import { useLazyImage } from '../hooks/useLazyImage';
 import { useItemListSchema } from '../hooks/useItemListSchema';
@@ -170,7 +169,6 @@ const GAME_CARDS: GameCardData[] = [
 
 /** 個別ゲームカードコンポーネント */
 const GameCard: React.FC<{ card: GameCardData; index: number }> = ({ card, index }) => {
-  const navigate = useNavigate();
   const isEager = index < EAGER_CARD_COUNT;
 
   // static import がある場合はそのまま使用、ない場合は遅延読み込み
@@ -181,27 +179,10 @@ const GameCard: React.FC<{ card: GameCardData; index: number }> = ({ card, index
 
   const imageSrc = card.staticImage ?? lazySrc;
 
-  const handleClick = useCallback(() => {
-    navigate(card.path);
-  }, [navigate, card.path]);
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        navigate(card.path);
-      }
-    },
-    [navigate, card.path]
-  );
-
   return (
     <GameCardContainer
-      onClick={handleClick}
-      role="button"
+      to={card.path}
       aria-label={card.ariaLabel}
-      tabIndex={0}
-      onKeyDown={handleKeyDown}
     >
       <CardImageArea ref={ref}>
         {imageSrc && (
@@ -216,7 +197,7 @@ const GameCard: React.FC<{ card: GameCardData; index: number }> = ({ card, index
       <CardContent>
         <CardTitle>{card.title}</CardTitle>
         <GameDescription>{card.description}</GameDescription>
-        <PlayButton aria-hidden="true" tabIndex={-1}>
+        <PlayButton aria-hidden="true">
           Play Now <span>→</span>
         </PlayButton>
       </CardContent>

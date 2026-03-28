@@ -35,6 +35,8 @@ export const Bezel = styled.div`
 export const Canvas = styled.canvas`
   display: block;
   border-radius: 3px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 `;
 
 export const ButtonRow = styled.div`

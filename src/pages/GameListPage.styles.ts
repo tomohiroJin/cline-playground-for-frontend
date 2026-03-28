@@ -1,4 +1,5 @@
 import styled from 'styled-components';
+import { Link } from 'react-router-dom';
 import { GlassCard } from '../components/atoms/GlassCard';
 
 export const PageContainer = styled.div`
@@ -92,8 +93,8 @@ export const HeroSection = styled.header`
 `;
 
 export const HeroTitle = styled.h2`
-  font-size: 3.5rem;
-  margin-bottom: 16px;
+  font-size: var(--font-size-3xl);
+  margin-bottom: var(--space-4);
   background: linear-gradient(to right, #fff, #a5f3fc);
   background-clip: text;
   -webkit-background-clip: text;
@@ -140,12 +141,20 @@ export const BentoGrid = styled.section`
   width: 100%;
 `;
 
-export const GameCardContainer = styled(GlassCard)`
+export const GameCardContainer = styled(GlassCard).attrs({ as: Link })`
   display: flex;
   flex-direction: column;
   min-height: 300px;
   cursor: pointer;
   padding: 0;
+  text-decoration: none;
+  color: inherit;
+
+  /* フォーカスインジケーター（キーボードナビゲーション） */
+  &:focus-visible {
+    outline: 2px solid var(--color-accent-primary);
+    outline-offset: 2px;
+  }
 
   /* ホバー時にシアンのボーダー + パープルのアウターグロウ */
   &:hover {
@@ -220,30 +229,31 @@ export const GameDescription = styled.p`
   flex-grow: 1;
 `;
 
-export const PlayButton = styled.button`
-  background: linear-gradient(135deg, var(--accent-color), #3a7bd5);
+export const PlayButton = styled.span`
+  background: linear-gradient(135deg, var(--color-accent-primary), #3a7bd5);
   color: white;
   border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 1rem;
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-md);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-base);
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 210, 255, 0.3);
+  box-shadow: var(--shadow-glow-cyan);
   width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
+  min-height: 44px;
 
-  &:hover {
+  ${GameCardContainer}:hover & {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0, 210, 255, 0.5);
     filter: brightness(1.1);
   }
 
-  &:active {
+  ${GameCardContainer}:active & {
     transform: translateY(0);
   }
 `;
