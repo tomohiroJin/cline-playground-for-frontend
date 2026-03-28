@@ -14,7 +14,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { EntityFactory } from '../core/entities';
 import { CONSTANTS } from '../core/constants';
-import { FIELDS } from '../core/config';
+import { FIELDS, PAIR_MATCH_GOAL_SIZES } from '../core/config';
 import { getCharacterByDifficulty, findCharacterById, getBattleCharacters, PLAYER_CHARACTER } from '../core/characters';
 import type { Character, GameState, GamePhase, ShakeState, MatchStats, GameMode } from '../core/types';
 import { loadStoryProgress, resetStoryProgress } from '../core/story';
@@ -108,10 +108,15 @@ const AirHockeyGame: React.FC = () => {
     const baseField = fieldOverride ?? mode.field;
     const effectiveGameMode = gameModeOverride ?? mode.gameMode;
     const is2v2 = effectiveGameMode === '2v2-local';
-    // 2v2 時はゴールサイズを拡大（マレット3つ分下限保証、Canvas幅60%上限）
-    const activeField = is2v2
-      ? { ...baseField, goalSize: Math.min(Math.max(baseField.goalSize * 1.5, CONSTANTS.SIZES.MALLET * 2 * 3), CONSTANTS.CANVAS.WIDTH * 0.6) }
+    // 2v2 時はゴールサイズを固定値で拡大
+    const pairGoalSize = PAIR_MATCH_GOAL_SIZES[baseField.id];
+    const activeField = is2v2 && pairGoalSize
+      ? { ...baseField, goalSize: pairGoalSize }
       : baseField;
+    // 2v2 時はフィールドを mode に反映して useGameLoop に伝播
+    if (is2v2 && pairGoalSize) {
+      mode.setField(activeField);
+    }
     gameRef.current = EntityFactory.createGameState(CONSTANTS, activeField, is2v2);
     scoreRef.current = { p: 0, c: 0 };
     setScores({ p: 0, c: 0 });

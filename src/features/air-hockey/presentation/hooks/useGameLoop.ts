@@ -139,6 +139,10 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
     const { MALLET: MR, PUCK: BR, ITEM: IR } = consts.SIZES;
 
+    // パックスタック検出用カウンター（パックインデックス → 連続低速フレーム数）
+    const PUCK_STUCK_THRESHOLD = 30; // 約0.5秒
+    const puckStuckCounters: number[] = [];
+
     // パーティクル生成の定数
     const OBSTACLE_PARTICLE_COUNT = 12;
     const SHIELD_PARTICLE_COUNT = 8;
@@ -732,6 +736,31 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
 
         const puckSpeed = magnitude(puck.vx, puck.vy);
         statsRef.current.maxPuckSpeed = Math.max(statsRef.current.maxPuckSpeed, puckSpeed);
+
+        // パックスタック検出: 低速が一定フレーム継続 → フィールド中央方向に脱出
+        if (puckStuckCounters[i] === undefined) puckStuckCounters[i] = 0;
+        if (puckSpeed < consts.PHYSICS.MIN_SPEED * 0.5) {
+          puckStuckCounters[i]++;
+          if (puckStuckCounters[i] >= PUCK_STUCK_THRESHOLD) {
+            const cx = W / 2;
+            const cy = H / 2;
+            const dx = cx - puck.x;
+            const dy = cy - puck.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const escapeSpeed = consts.PHYSICS.MIN_SPEED * 2;
+            if (dist > 1) {
+              puck.vx = (dx / dist) * escapeSpeed;
+              puck.vy = (dy / dist) * escapeSpeed;
+            } else {
+              puck.vx = escapeSpeed;
+              puck.vy = 0;
+            }
+            puckStuckCounters[i] = 0;
+            game.pucks[i] = puck;
+          }
+        } else {
+          puckStuckCounters[i] = 0;
+        }
 
         if (scored === null) {
           if (puck.y < 5 && goalCheckerWithSide(puck.x, 'cpu')) {
