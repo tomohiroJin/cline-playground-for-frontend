@@ -197,7 +197,7 @@ export const VsScreen: React.FC<VsScreenProps> = ({
             <span style={{ fontSize: '12px', color: '#3498db', fontWeight: 'bold' }}>チーム1</span>
             <div style={{ display: 'flex', gap: '12px', transform: `translateX(${teamTranslateX}px)`, transition: prefersReducedMotion ? 'none' : `transform ${CHAR_SLIDE_DURATION_MS}ms ease-out` }}>
               <CharacterPanel character={playerCharacter} prefersReducedMotion={prefersReducedMotion} />
-              <CharacterPanel character={allyCharacter} prefersReducedMotion={prefersReducedMotion} label={allyControlType === 'human' ? '2P' : 'CPU'} />
+              <CharacterPanel character={allyCharacter} prefersReducedMotion={prefersReducedMotion} label={allyControlType != null ? (allyControlType === 'human' ? '2P' : 'CPU') : undefined} />
             </div>
           </div>
 

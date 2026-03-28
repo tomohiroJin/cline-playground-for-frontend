@@ -268,6 +268,9 @@ const AirHockeyGame: React.FC = () => {
   const handlePairMatchVsComplete = useCallback(() => {
     startGame(mode.field, '2v2-local');
   }, [mode.field, startGame]);
+  const handleBackToTeamSetup = useCallback(() => {
+    navigateTo('teamSetup');
+  }, [navigateTo]);
   const handleStartBattle = useCallback((config: TwoPlayerConfig) => {
     mode.setGameMode('2p-local');
     mode.setPlayer1Character(config.player1Character);
@@ -528,7 +531,7 @@ const AirHockeyGame: React.FC = () => {
             player1CharacterName={isMultiPlayer ? multiPlayerName : undefined}
             player2CharacterName={isMultiPlayer ? multiOpponentName : undefined}
             onBackToCharacterSelect={is2PMode ? handleBackToCharacterSelect : undefined}
-            onBackToTeamSetup={is2v2Mode ? () => navigateTo('teamSetup') : undefined}
+            onBackToTeamSetup={is2v2Mode ? handleBackToTeamSetup : undefined}
           />
         </Transition>
       )}
