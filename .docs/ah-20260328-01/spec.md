@@ -319,9 +319,43 @@ if (allyControlType === 'human') {
 }
 ```
 
-## 8. デザイン残課題の実装仕様（Phase S5-9）
+## 8. シナリオレビュー指摘の実装仕様（Phase S5-9）
 
-### 8.1 VsScreen 2v2 レスポンシブ立ち絵サイズ
+### 8.0 画面遷移フロー（更新版）
+
+```
+TitleScreen
+  └→ [ペアマッチ] → TeamSetupScreen
+                      ├→ [← 戻る] → TitleScreen
+                      └→ [対戦開始！] → VsScreen(2v2)
+                                          └→ [3秒後] → Game(2v2)
+                                                         ├→ [メニュー] → TitleScreen
+                                                         └→ [ゲーム終了] → ResultScreen(2v2)
+                                                                            ├→ [BACK TO MENU] → TitleScreen
+                                                                            ├→ [同じ設定でリプレイ] → Game(2v2)
+                                                                            └→ [チーム設定に戻る] → TeamSetupScreen ← 新規追加
+```
+
+### 8.0.1 ResultScreen 2v2 の「チーム設定に戻る」ボタン
+
+- 2P の「キャラ選択に戻る」と同等の導線
+- `onBackToTeamSetup?: () => void` Props を追加
+- `is2v2Mode` 時のみ表示
+- ボタンカラー: オレンジ系グラデーション（既存の「キャラ選択に戻る」と統一）
+
+### 8.0.2 VsScreen 2v2 の P2 操作タイプラベル
+
+- P2 キャラ名の下に `fontSize: 10px` で「CPU」or「2P」を表示
+- `allyControlType?: 'cpu' | 'human'` Props を追加（オプショナル）
+
+### 8.0.3 2v2 リプレイボタンのラベル変更
+
+- `is2v2Mode` 時: 「REPLAY」→「同じ設定でリプレイ」
+- 1v1 / 2P: 従来の「REPLAY」を維持
+
+## 9. デザイン残課題の実装仕様（Phase S5-9）
+
+### 9.1 VsScreen 2v2 レスポンシブ立ち絵サイズ
 
 `CharacterPanel` の立ち絵サイズを `min()` でビューポート依存にする:
 
@@ -345,7 +379,7 @@ const nameStyle2v2 = {
 > ブレイクポイント不要のレスポンシブ化を実現する。480px 未満での縦並びレイアウトは見送り、
 > `min()` によるサイズ縮小で対応する（4 キャラが自然に収まるサイズになるため）。
 
-### 8.2 CharacterPanel の reduced-motion 対応
+### 9.2 CharacterPanel の reduced-motion 対応
 
 `CharacterPanel` に `prefersReducedMotion` Props を追加:
 
@@ -360,7 +394,7 @@ const CharacterPanel: React.FC<{
 };
 ```
 
-### 8.3 キャラ選択パネルの開閉アニメーション
+### 9.3 キャラ選択パネルの開閉アニメーション
 
 `useRef` でグリッドコンテナの実際の高さを計測し、`max-height` でアニメーション:
 
@@ -383,7 +417,7 @@ style={{
 }}
 ```
 
-### 8.4 グリッド展開時の自動スクロール
+### 9.4 グリッド展開時の自動スクロール
 
 展開アニメーション完了後にスクロール:
 
@@ -401,7 +435,7 @@ useEffect(() => {
 }, [isOpen, prefersReducedMotion]);
 ```
 
-### 8.5 ResultScreen 2v2 チーム間区切り
+### 9.5 ResultScreen 2v2 チーム間区切り
 
 ```
   [P1] [P2]  ⚡  [P3] [P4]

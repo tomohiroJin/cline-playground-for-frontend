@@ -172,18 +172,36 @@
 - [ ] **S5-9-7**: テスト — アニメーション・スクロール・タッチターゲット
   - 対象: `components/TeamSetupScreen.test.tsx`
 
-### ResultScreen チーム区切り（DR-4）
+### ResultScreen 改善（DR-4 + シナリオ #1/#4）
 
 - [ ] **S5-9-8**: 2v2 立ち絵エリアのチーム間に視覚的区切りを追加
   - 対象: `components/ResultScreen.tsx`
   - チーム内 gap: `8px`、チーム間 gap: `24px` + 小さな VS 区切り
   - チーム1/チーム2 のキャラをグループ化する `div` でラップ
-- [ ] **S5-9-9**: テスト — 2v2 立ち絵のチーム区切り
+- [ ] **S5-9-9**: 2v2 ResultScreen に「チーム設定に戻る」ボタンを追加
+  - 対象: `components/ResultScreen.tsx` + `presentation/AirHockeyGame.tsx`
+  - 2P の「キャラ選択に戻る」と同等の導線
+  - `onBackToTeamSetup` Props を追加、2v2 時のみ表示
+  - AirHockeyGame で `navigateTo('teamSetup')` にハンドラを接続
+- [ ] **S5-9-10**: テスト — 2v2 立ち絵のチーム区切り・チーム設定戻りボタン
   - 対象: `components/ResultScreen.test.tsx`
+
+### VsScreen 情報表示（シナリオ #6）
+
+- [ ] **S5-9-11**: 2v2 VsScreen で P2 の操作タイプ（CPU / 2P）をラベル表示
+  - 対象: `components/VsScreen.tsx`
+  - P2 キャラ名の下に小さく「CPU」or「2P」のラベルを追加
+  - Props に `allyControlType` を追加（オプショナル）
+
+### リプレイ体験（シナリオ #2）
+
+- [ ] **S5-9-12**: 2v2 リプレイボタンのラベルを「同じ設定でリプレイ」に変更
+  - 対象: `components/ResultScreen.tsx`
+  - `is2v2Mode` 時のみラベル変更（1v1 / 2P は従来の「REPLAY」を維持）
 
 ### 品質保証
 
-- [ ] **S5-9-10**: テスト・品質保証（型チェック・テスト全パス・ビルド成功）
+- [ ] **S5-9-13**: テスト・品質保証（型チェック・テスト全パス・ビルド成功）
   - 対象: 全体
 
 ---
@@ -200,7 +218,7 @@
 | S5-6 | M | — | テスト実行 |
 | S5-7 | M | 4 | 〜60行 |
 | S5-8 | M | 4 | 〜120行 |
-| S5-9 | M | 3 | 〜100行 |
+| S5-9 | L | 4 | 〜150行 |
 
 ## 進捗サマリー
 
