@@ -135,3 +135,71 @@ Phase S5-6: テスト・品質保証
 - 物理演算の最適化（空間分割、衝突判定の早期リターン）
 - React の不要な再レンダリング削減（memo / useMemo の見直し）
 - requestAnimationFrame のフレームスキップ戦略
+
+---
+
+## Phase S5-8: デザインレビュー指摘対応（2026-03-28）
+
+### 発見された問題
+
+| # | 指摘 | 分類 | 対象画面 |
+|---|------|------|---------|
+| MF-1 | キャラ選択グリッド展開時の自動スクロール不足 | 必須 | TeamSetupScreen |
+| MF-2 | VsScreen 2v2 の小画面でキャラが重なる | 必須 | VsScreen |
+| MF-3 | `prefers-reduced-motion` 未対応 | 必須 | VsScreen |
+| R-1 | S5-7 CPU/人間トグルのビジュアル仕様不足 | 推奨 | TeamSetupScreen |
+| R-2 | P1 スロットの「固定」表示がわかりにくい | 推奨 | TeamSetupScreen |
+| R-3 | 2v2 リザルトに P2/P4 のキャラアイコンがない | 推奨 | ResultScreen |
+| R-4 | チーム1/チーム2 の色分けが不明確 | 推奨 | TeamSetupScreen |
+| S-1 | 難易度セクションの配置位置 | 提案 | TeamSetupScreen |
+| S-2 | VsScreen 2v2 のチームラベル表示 | 提案 | VsScreen |
+| S-3 | キャラ選択パネルの開閉アニメーション | 提案 | TeamSetupScreen |
+
+### 修正方針
+
+**MF-1: キャラ選択グリッド展開時の自動スクロール**
+- グリッド展開時に `scrollIntoView({ behavior: 'smooth', block: 'nearest' })` を実行
+- 既存の排他制御（1 スロットのみ展開）と組み合わせて視認性を確保
+
+**MF-2: VsScreen 2v2 の小画面対応**
+- 2v2 時は立ち絵サイズを `min(128px, 20vw)` / `min(256px, 40vw)` に縮小
+- 画面幅 480px 以下では 2 段レイアウト（チーム1 上段 / VS / チーム2 下段）に切り替え
+
+**MF-3: `prefers-reduced-motion` 対応**
+- `window.matchMedia('(prefers-reduced-motion: reduce)')` を検出
+- reduced-motion 時はスライドイン・バウンスをスキップし即座に表示
+- フェードアウト → onComplete の遷移のみ短縮して維持
+
+**R-1: CPU/人間トグルのビジュアル**（S5-7 と同時実装）
+- セグメントコントロール（`[CPU | 人間]`）を P2 スロット行内に配置
+- 選択中: アクセントカラー（`#e67e22`）背景、未選択: グレー
+- タッチターゲット 44x44px 以上確保
+- 「人間」選択時: 操作ヒント `WASD / タッチ` を表示
+
+**R-2: P1 固定スロットの改善**
+- `opacity: 0.7` → `opacity: 1` に変更、代わりに「あなた」ラベルを強調
+- `cursor: default` に設定（not-allowed は不適切）
+
+**R-3: ResultScreen 2v2 キャラアイコン 4 体表示**
+- 2v2 時のキャラ立ち絵エリアを 4 分割: チーム1（P1+P2）/ チーム2（P3+P4）
+- `allyCharacter` / `enemyCharacter2` を ResultScreen に渡す
+
+**R-4: チーム色分け**
+- チーム1 セクション: 左ボーダー `#3498db`（プレイヤーカラー青系）
+- チーム2 セクション: 左ボーダー `#e74c3c`（敵カラー赤系）
+- タイトル色もチームカラーに対応
+
+**S-1: 難易度セクションの配置**
+- チーム構成の上に移動（難易度 → チーム1 → チーム2 → 開始）
+
+**S-2: VsScreen チームラベル**
+- VS テキストの左右に小さく「チーム1」「チーム2」ラベルを表示
+
+**S-3: キャラ選択パネルの開閉アニメーション**
+- `max-height` + `overflow: hidden` で 200ms ease-out アニメーション
+
+**影響範囲**:
+- `components/TeamSetupScreen.tsx` — MF-1, R-1, R-2, R-4, S-1, S-3
+- `components/VsScreen.tsx` — MF-2, MF-3, S-2
+- `components/ResultScreen.tsx` — R-3
+- `presentation/AirHockeyGame.tsx` — R-3（Props 受け渡し）
