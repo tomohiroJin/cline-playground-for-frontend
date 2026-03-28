@@ -552,8 +552,13 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
           }
         }
 
-        // マレット間衝突解消（全ペア判定）
-        resolveMalletMalletOverlaps(getAllMallets(game), consts.SIZES.MALLET);
+        // マレット間衝突解消（全ペア判定 + ゾーン再クランプ）
+        const allMallets = getAllMallets(game);
+        const malletZones = allMallets.map(m => {
+          const slot = m.side === 'player' ? 'player1' : m.side === 'ally' ? 'player2' : m.side === 'cpu' ? 'player3' : 'player4';
+          return getPlayerZone(slot, consts);
+        });
+        resolveMalletMalletOverlaps(allMallets, consts.SIZES.MALLET, malletZones);
       } else if (is2PMode) {
         // ── 2P モード入力 ──
         if (multiTouchRef?.current) {
