@@ -448,13 +448,16 @@ const pairMatchGoalSize = Math.max(field.goalSize * 1.5, PAIR_MATCH_MIN_GOAL_SIZ
 **原因**: `startGame` で `activeField`（ゴールサイズ上書き済み）を作成し `EntityFactory.createGameState` に渡すが、
 `useGameLoop` の `config.field` は `mode.field`（元のフィールド設定）を参照しており、上書きが伝わらない。
 
-**修正方針（累積適用の防止を考慮）**:
-- `startGame` 内で毎回**元のフィールド設定**を基準にゴールサイズを計算する
-- 元の `goalSize` は `FIELDS` 配列から ID で引き直すか、`baseField`（`mode.field` ではなく `fieldOverride ?? mode.field`）を使用
-- 計算済みの `activeField` を `mode.setField` で反映（useGameLoop に伝播）
-- リプレイ時の累積防止: `FIELDS.find(f => f.id === baseField.id)` で原本を参照
+**修正方針（フィールドごとの固定値）**:
+- 動的計算を廃止し、2v2 用ゴールサイズを固定値で管理
+- 定数マップ `PAIR_MATCH_GOAL_SIZES` を定義:
+  - 通常フィールド（classic/pillars/zigzag/fortress/bastion）: **240px**（カバー率 70%）
+  - wide: **280px**（カバー率 60%）
+- `startGame` で `PAIR_MATCH_GOAL_SIZES[field.id]` を参照してフィールドをコピー
+- コピーしたフィールドを `mode.setField` で反映（useGameLoop に伝播）
+- 累積適用の問題なし（固定値のため何度リプレイしても同じ値）
 
-**影響ファイル**: `presentation/AirHockeyGame.tsx`
+**影響ファイル**: `core/config.ts`（定数追加）, `presentation/AirHockeyGame.tsx`
 
 ### PB-3: CPU 戦略強化（後工程記録）
 

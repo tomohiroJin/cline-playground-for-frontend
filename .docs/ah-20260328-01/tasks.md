@@ -330,12 +330,12 @@
 
 ### PB-2: ゴールサイズ拡大の修正
 
-- [ ] **S5-12-3**: `startGame` で元フィールドを基準にゴールサイズを計算し `mode.setField` で反映
+- [ ] **S5-12-3**: `PAIR_MATCH_GOAL_SIZES` 定数マップを定義
+  - 対象: `core/config.ts`
+  - 通常フィールド: 240px、wide: 280px
+- [ ] **S5-12-4**: `startGame` で 2v2 時に固定ゴールサイズでフィールドをコピーし `mode.setField` で反映
   - 対象: `presentation/AirHockeyGame.tsx`
-  - FIELDS 配列から ID で原本を引き直し、累積適用を防止
-  - `useGameLoop` の `config.field` に自動伝播する
-- [ ] **S5-12-4**: テスト — 2v2 開始時にゴールサイズが拡大されていることを確認
-  - 対象: テスト + 動作確認
+  - `PAIR_MATCH_GOAL_SIZES[field.id]` で参照、累積適用なし
 
 ### PB-3: CPU 戦略強化（ドキュメント記録のみ）
 
