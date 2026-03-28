@@ -6,43 +6,56 @@
 src/features/air-hockey/
   core/
     physics.ts            # 物理演算（衝突判定、速度計算）
-    ai.ts                 # CPU AI ロジック（3段階難易度、壁反射予測）
-    entities.ts           # エンティティ定義（パック、マレット、統計）
+    ai.ts                 # CPU AI ロジック（3段階難易度、壁反射予測、キャラ別プロファイル）
+    entities.ts           # エンティティ定義（パック、マレット、マレット間衝突判定）
     items.ts              # アイテムシステム（6種）
     sound.ts              # 効果音・BGM 生成（Web Audio API）
-    config.ts             # ゲーム設定（ステージ、アイテム定義）
-    constants.ts          # 定数（キャンバス、物理、CPU、フィーバー、カムバック）
+    config.ts             # ゲーム設定（ステージ、アイテム、2v2ゴールサイズ定義）
+    constants.ts          # 定数（キャンバス、物理、CPU、フィーバー、カムバック、ゾーン境界）
     types.ts              # 型定義
     achievements.ts       # 実績システム（定義・判定・localStorage 管理）
     audio-settings.ts     # 音量設定（localStorage 管理）
-    characters.ts         # キャラクター定義（主人公・対戦相手・リアクション）
+    characters.ts         # キャラクター定義（主人公・対戦相手・リアクション・ALWAYS_UNLOCKED_IDS）
     daily-challenge.ts    # デイリーチャレンジ（シード生成・ルール・結果保存）
     dialogue-data.ts      # ストーリーモード第1章ダイアログデータ
     difficulty-adjust.ts  # 難易度オートアジャスト（連勝/連敗判定）
-    keyboard.ts           # キーボード操作（状態管理・移動計算）
+    keyboard.ts           # キーボード操作（P1/P2 キーマッピング分離・移動計算）
+    pair-match-logic.ts   # 2v2 ペアマッチロジック（マレット配列・ゴール判定・ally AI 座標反転）
     story.ts              # ストーリー進行管理（保存・読込・リセット・解放判定）
-    story-balance.ts      # ステージ別バランス設定・AI 振る舞いプリセット
+    story-balance.ts      # ステージ別バランス設定・AI プリセット・味方CPU補正（buildAllyAiConfig）
     unlock.ts             # フィールド/アイテムアンロック（条件・状態管理）
   hooks/
-    useGameLoop.ts        # ゲームループ（フェーズ管理、物理更新、描画）
     useInput.ts           # マウス/タッチ入力ハンドリング
-    useKeyboardInput.ts   # キーボード入力ハンドリング
+    useKeyboardInput.ts   # キーボード入力（isMultiPlayerMode でキーマッピング切替）
+    useMultiTouchInput.ts # マルチタッチ入力（2P/2v2 用画面分割）
+    useCharacterDex.ts    # キャラクター図鑑管理
+    useImagePreloader.ts  # 画像プリロード
+  presentation/
+    AirHockeyGame.tsx     # メインコンポーネント（プレゼンテーション層）
+    hooks/
+      useGameLoop.ts      # ゲームループ（フェーズ管理、物理更新、描画、パックスタック検出）
+      useGameMode.ts      # ゲームモード管理（free/story/2p/2v2/daily + キャラ・難易度状態）
+      useScreenNavigation.ts # 画面遷移管理
+      useResultProcessing.ts # リザルト処理
+      useAudioManager.ts  # 音声管理
   components/
     Field.tsx             # フィールド描画（Canvas、シェイク）
-    ResultScreen.tsx       # リザルト画面（統計、実績、紙吹雪、リプレイ）
+    ResultScreen.tsx       # リザルト画面（1v1/2P/2v2 対応、4体立ち絵、チーム区切り）
     Scoreboard.tsx         # スコアボード（ポーズボタン）
-    TitleScreen.tsx        # タイトル画面（設定選択、実績、デイリー）
+    TitleScreen.tsx        # タイトル画面（設定選択、実績、デイリー、ペアマッチ）
+    TeamSetupScreen.tsx    # ペアマッチ設定画面（キャラ選択、CPU/人間切替）
+    team-setup-screen-styles.ts # TeamSetupScreen スタイル定義
+    FreeBattleCharacterSelect.tsx # フリー対戦キャラ選択
+    CharacterSelectScreen.tsx  # キャラクター選択画面（2P 対戦）
+    VsScreen.tsx           # VS 画面（1v1/2v2 対応、チームラベル、reduced-motion）
     AchievementList.tsx    # 実績一覧モーダル
     DailyChallengeScreen.tsx # デイリーチャレンジ画面
     SettingsPanel.tsx      # 設定パネルモーダル（音量調整）
-    CharacterAvatar.tsx    # キャラクターアイコン表示（共通コンポーネント）
     DialogueOverlay.tsx    # ダイアログオーバーレイ（ストーリーモード）
     StageSelectScreen.tsx  # ステージ選択画面（ストーリーモード）
     Transition.tsx         # 画面トランジション
     Tutorial.tsx           # チュートリアルオーバーレイ
-    VsScreen.tsx           # VS 画面（ストーリーモード・2P 対戦）
-    CharacterSelectScreen.tsx  # キャラクター選択画面（2P 対戦）
-  AirHockeyGame.tsx       # メインゲームコンポーネント
+    screen-layout.ts       # 画面共通レイアウトスタイル
   renderer.ts             # Canvas 描画（トレイル、グロー、パーティクル、フィーバー演出等）
   styles.ts               # スタイル定義（レスポンシブ対応）
   index.ts                # barrel export
