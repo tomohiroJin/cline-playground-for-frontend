@@ -264,17 +264,26 @@ Phase S5-6: テスト・品質保証
 | GP-3 | 人間同士（P1+P2）のとき WASD で P1 も動く | バグ | `applyKeyboardMovement` が playerSlot を区別せず、KEY_MAP が矢印+WASD 両方を含む |
 | GP-4 | CPU の動きが全員同じでキャラ個性がない | 機能不足 | ally/enemy に同じ `effectiveAiConfig` を使用。キャラ別 AI プロファイル未反映 |
 
-### GP-1: ally CPU のゾーン制約修正
+### GP-1: ally CPU のゾーン制約 + AI ターゲット計算のチーム対応
 
-**原因**: `CpuAI.updateWithBehavior` 内の Y 座標クランプ `clamp(target.y, 50, H/2 - 50)` が常に上半分を前提としている。
+**原因**: 2 箇所に問題がある。
 
-**修正方針**:
+1. `CpuAI.updateWithBehavior`（`ai.ts:186,202-203`）の Y 座標クランプが常に上半分前提
+2. `CpuAI.calculateTargetWithBehavior`（`ai.ts:92-143`）が上半分 CPU を前提とした挙動:
+   - ホームポジション `{ x: W/2, y: 80 }` → ally は `H - 80` 付近であるべき
+   - パック反応条件 `puck.vy < 0` → ally は `puck.vy > 0`（下向き）に反応すべき
+   - `calculateAggressiveY(aggressiveness, H/2, puck.y)` → ally は下半分で計算すべき
+
+**修正方針（座標反転アプローチ）**:
 - `updateExtraMalletAI` に `team: 'player' | 'cpu'` パラメータを追加
-- ally（player チーム）は Y 座標を `H/2 + 50` 〜 `H - 50`（下半分）に制約
-- enemy（cpu チーム）は従来通り `50` 〜 `H/2 - 50`（上半分）に制約
-- または `getPlayerZone` で取得したゾーンを AI に渡してクランプ
+- ally（player チーム）の場合、AI に渡す前にパック座標・速度を Y 軸反転:
+  - `puck.y → H - puck.y`, `puck.vy → -puck.vy`
+  - `mallet.y → H - mallet.y`
+- AI 計算結果を再度 Y 軸反転して戻す
+- これにより `calculateTargetWithBehavior` 本体を変更せずにチーム対応が可能
+- 最終結果を `getPlayerZone` でクランプして安全性を確保
 
-**影響ファイル**: `core/pair-match-logic.ts`, `core/ai.ts`
+**影響ファイル**: `core/pair-match-logic.ts`（主な変更）, `presentation/hooks/useGameLoop.ts`（呼び出し側）
 
 ### GP-2: マレット間衝突判定の追加
 
@@ -283,6 +292,8 @@ Phase S5-6: テスト・品質保証
 - 重なり検出時、2 つのマレットを距離が `MALLET_RADIUS * 2` になるまで押し戻す
 - 既存の `resolveMalletPuckOverlap` を参考に `resolveMalletMalletOverlap` を実装
 - 押し戻し方向: 中心間ベクトルに沿って均等に分離
+- **ゾーン制約の再適用**: 押し戻し後に `getPlayerZone` でクランプし直す（中央ライン付近で相手ゾーンに押し出されるのを防止）
+- 衝突時のフィードバック: 軽い衝撃波エフェクト（既存の hit エフェクトを流用可能）
 
 **影響ファイル**: `core/entities.ts` or `core/physics.ts`, `presentation/hooks/useGameLoop.ts`
 
@@ -290,23 +301,24 @@ Phase S5-6: テスト・品質保証
 
 **原因**: `useKeyboardInput` の `KEY_MAP` が矢印キーと WASD の両方を含み、`applyKeyboardMovement` が常に `game.player` を更新する。
 
-**修正方針**:
-- P1 用キーマッピング: **矢印キーのみ**（↑↓←→）
-- P2 用キーマッピング: **WASD**（既存の `player2KeysRef` で使用中）
-- `useKeyboardInput` の `KEY_MAP` から WASD を除外（2v2 の P2 入力は別系統で処理済み）
-- 2P 対戦時の既存 `PLAYER2.KEY_MAP`（WASD）との互換性を維持
+**修正方針（モード依存切り替え）**:
+- **1v1 / ストーリーモード**: 従来通り矢印キー + WASD の両方で P1 を操作可能（既存ユーザー体験を維持）
+- **2v2 モード**: P1 は矢印キーのみ、WASD は P2 専用（キーマッピング競合を解消）
+- `useKeyboardInput` に `is2v2Mode` パラメータを追加し、KEY_MAP を動的に切り替え
+- TeamSetupScreen の操作ヒント更新: P1「矢印キー / マウス」、P2「WASD / タッチ」
 
-**影響ファイル**: `hooks/useKeyboardInput.ts`, `core/keyboard.ts`
+**影響ファイル**: `hooks/useKeyboardInput.ts`, `core/keyboard.ts`, `presentation/AirHockeyGame.tsx`
 
 ### GP-4: キャラ別 AI プロファイル反映
 
 **原因**: `effectiveAiConfig` が 1 つだけ生成され、ally/enemy/cpu 全員に同じ設定が適用される。
 
 **修正方針**:
-- ally CPU 用: `buildFreeBattleAiConfig(difficulty, allyCharacter.id)` で生成
-- enemy1（P3）用: `buildFreeBattleAiConfig(difficulty, enemyCharacter1.id)` で生成
-- enemy2（P4）用: `buildFreeBattleAiConfig(difficulty, enemyCharacter2.id)` で生成
-- cpu（P3）の既存 AI にも enemyCharacter1 の ID を反映
+- cpu（P3）用: `buildFreeBattleAiConfig(difficulty, enemyCharacter1.id)` で生成
+- enemy（P4）用: `buildFreeBattleAiConfig(difficulty, enemyCharacter2.id)` で生成
+- ally CPU 用: `buildFreeBattleAiConfig(difficulty, allyCharacter.id)` をベースに**味方補正**を適用
+  - 味方補正: aggressiveness に上限（0.5 以下）を設け、守備的に行動させる
+  - 理由: 攻撃的すぎる味方はゴールを空にして失点リスクを増す
 - キャラ ID を `useGameLoop` の config に渡す
 
-**影響ファイル**: `presentation/hooks/useGameLoop.ts`, `presentation/AirHockeyGame.tsx`
+**影響ファイル**: `presentation/hooks/useGameLoop.ts`, `presentation/AirHockeyGame.tsx`, `core/story-balance.ts`（味方補正関数追加）
