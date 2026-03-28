@@ -267,6 +267,52 @@
 - [x] **S5-10-14**: テスト・品質保証（型チェック・テスト全パス・ビルド成功）
   - 対象: 全体
 
+## Phase S5-11: プレイテストフィードバック対応（M）
+
+### PT-1: 2P 対戦の WASD 分離
+
+- [ ] **S5-11-1**: `useKeyboardInput` のパラメータを `is2v2Mode` → `isMultiPlayerMode` に変更
+  - 対象: `hooks/useKeyboardInput.ts`
+  - 2P 対戦 / 2v2 の両方で P1 は矢印キーのみに制限
+- [ ] **S5-11-2**: `AirHockeyGame` で `isMultiPlayer` を `useKeyboardInput` に渡す
+  - 対象: `presentation/AirHockeyGame.tsx`
+
+### PT-2: ペアマッチ難易度セクション削除
+
+- [ ] **S5-11-3**: TeamSetupScreen から難易度セクション・Props を削除
+  - 対象: `components/TeamSetupScreen.tsx`
+- [ ] **S5-11-4**: AirHockeyGame で `effectiveDifficulty` を `mode.difficulty` に統一
+  - 対象: `presentation/AirHockeyGame.tsx`
+
+### PT-3: マレット移動範囲を上下2分割に変更
+
+- [ ] **S5-11-5**: `getPlayerZone` を 2 分割に変更（味方同士は同じ半面全体を移動可能）
+  - 対象: `core/constants.ts`
+  - player1/player2: 下半分全体（X 全幅）
+  - player3/player4: 上半分全体（X 全幅）
+- [ ] **S5-11-6**: テスト — ゾーン変更の確認
+  - 対象: テストファイル
+
+### PT-4: 2v2 ゴールサイズ拡大
+
+- [ ] **S5-11-7**: 2v2 モード開始時にゴールサイズを 1.5 倍に拡大する仕組みを追加
+  - 対象: `presentation/AirHockeyGame.tsx` or `core/config.ts`
+  - `PAIR_MATCH_GOAL_SCALE = 1.5` を定数化
+  - `startGame` 時にフィールド設定を上書き
+- [ ] **S5-11-8**: レンダラー・物理演算がゴールサイズ変更に追従することを確認
+  - 対象: テスト + 動作確認
+
+### PT-5: ゲーム中のヘルプ自動表示を無効化
+
+- [ ] **S5-11-9**: `useGameLoop` 内のヘルプ自動表示ロジック（HELP_TIMEOUT）を削除
+  - 対象: `presentation/hooks/useGameLoop.ts`
+  - タイトル画面の「？」ボタンからの手動表示は維持
+
+### 品質保証
+
+- [ ] **S5-11-10**: テスト・品質保証（型チェック・テスト全パス・ビルド成功）
+  - 対象: 全体
+
 ---
 
 ## サイズ見積もり
@@ -283,6 +329,7 @@
 | S5-8 | M | 4 | 〜120行 |
 | S5-9 | L | 4 | 〜150行 |
 | S5-10 | L | 6-7 | 〜250行 |
+| S5-11 | M | 5-6 | 〜100行 |
 
 ## 進捗サマリー
 
@@ -298,3 +345,4 @@
 | S5-8 デザインレビュー UI/UX 改善 | [x] 完了 | 2026-03-28 |
 | S5-9 デザイン残課題 レスポンシブ・UX 磨き込み | [x] 完了 | 2026-03-28 |
 | S5-10 ゲームプレイ品質改善 | [x] 完了 | 2026-03-28 |
+| S5-11 プレイテストフィードバック対応 | [ ] 未着手 | — |

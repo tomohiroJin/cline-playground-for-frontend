@@ -322,3 +322,79 @@ Phase S5-6: テスト・品質保証
 - キャラ ID を `useGameLoop` の config に渡す
 
 **影響ファイル**: `presentation/hooks/useGameLoop.ts`, `presentation/AirHockeyGame.tsx`, `core/story-balance.ts`（味方補正関数追加）
+
+---
+
+## Phase S5-11: プレイテストフィードバック対応（2026-03-28）
+
+### 発見された問題
+
+| # | 問題 | 種別 | 今回対応 |
+|---|------|------|---------|
+| PT-1 | 2P 対戦で WASD が 1P にも効く | バグ | **修正** |
+| PT-2 | ペアマッチの難易度設定が不要 | UI 簡素化 | **修正** |
+| PT-3 | マレット移動範囲が4分割で狭すぎる | 仕様変更 | **修正** |
+| PT-4 | 2v2 でゴール前にマレットを並べると無敵 | ゲームバランス | **修正** |
+| PT-5 | ゲーム中のヘルプ画面が邪魔 | UX 改善 | **修正** |
+| PT-6 | ゲームの方向性が良い | ポジティブ | 記録のみ |
+
+### PT-1: 2P 対戦の WASD 分離
+
+**原因**: `useKeyboardInput` の `is2v2Mode` 判定が 2P 対戦（`2p-local`）では false のため、
+P1 が WASD でも動く。2P の `player2KeysRef` でも WASD を処理するため入力が重複。
+
+**修正方針**:
+- `useKeyboardInput` のパラメータを `is2v2Mode` → `isMultiPlayerMode` に変更
+- 2P 対戦 / 2v2 の両方でマルチプレイヤー時に P1 は矢印キーのみに制限
+
+**影響ファイル**: `hooks/useKeyboardInput.ts`, `presentation/AirHockeyGame.tsx`
+
+### PT-2: ペアマッチの難易度設定を削除
+
+**方針**: TeamSetupScreen の難易度セクションを削除し、タイトル画面の `difficulty` をそのまま使用。
+`pairMatchDifficulty` 状態は残すが、UI は非表示にして `difficulty` を直接参照する。
+
+**修正方針**:
+- TeamSetupScreen から難易度セクション（Props 含む）を削除
+- `useGameLoop` の `effectiveDifficulty` を `mode.difficulty` に統一
+- `pairMatchDifficulty` / `setPairMatchDifficulty` は将来用に残置
+
+**影響ファイル**: `components/TeamSetupScreen.tsx`, `presentation/AirHockeyGame.tsx`
+
+### PT-3: マレット移動範囲を上下2分割に変更
+
+**原因**: `getPlayerZone` が 4 分割（左下/右下/左上/右上）で、各マレットが自分のゾーンのみ移動可能。
+パックが片側に来た時にもう一人のチームメイトが追えない。
+
+**修正方針**:
+- `getPlayerZone` を 2 分割に変更:
+  - player1 / player2（チーム1）: 下半分全体（X: 全幅、Y: H/2〜H）
+  - player3 / player4（チーム2）: 上半分全体（X: 全幅、Y: 0〜H/2）
+- X 軸の左右分割を廃止（味方同士が自由に動き回れる）
+
+**影響ファイル**: `core/constants.ts`
+
+### PT-4: 2v2 ゴールサイズ拡大
+
+**原因**: 2 マレット（直径 84px × 2 = 168px）でゴール幅（classic: 160px）をほぼ完全にカバーできる。
+
+**修正方針**:
+- 2v2 モード開始時にゴールサイズを 1.5 倍に拡大する
+  - classic: 160 → 240px、wide: 240 → 360px 等
+- `EntityFactory.createGameState` でゴールサイズを動的に設定するか、
+  `startGame` 時にフィールド設定を上書きする
+- ゴールサイズの拡大倍率を定数化（`PAIR_MATCH_GOAL_SCALE = 1.5`）
+
+**影響ファイル**: `core/entities.ts` or `core/config.ts`, `presentation/AirHockeyGame.tsx`
+
+### PT-5: ゲーム中のヘルプ画面を無効化
+
+**原因**: `useGameLoop` の `HELP_TIMEOUT`（5 秒）で操作なし時にヘルプが自動表示される。
+ペアマッチで CPU 操作中は P1 が操作しないこともあるため頻繁に出る。
+
+**修正方針**:
+- `useGameLoop` 内のヘルプ自動表示ロジックを削除または無効化
+- タイトル画面の「？」ボタンからの手動表示は維持
+- `HELP_TIMEOUT` 定数は残置（将来用）
+
+**影響ファイル**: `presentation/hooks/useGameLoop.ts`
