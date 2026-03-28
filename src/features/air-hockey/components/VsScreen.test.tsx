@@ -358,5 +358,46 @@ describe('VsScreen', () => {
       // reduced-motion 時は translateX(0) で初期表示
       expect(playerImg.parentElement?.style.transform).toContain('translateX(0');
     });
+
+    it('reduced-motion 時に 1v1 でも transition が none になる', () => {
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: jest.fn().mockImplementation((query: string) => ({
+          matches: query === '(prefers-reduced-motion: reduce)',
+          media: query, onchange: null,
+          addListener: jest.fn(), removeListener: jest.fn(),
+          addEventListener: jest.fn(), removeEventListener: jest.fn(), dispatchEvent: jest.fn(),
+        })),
+      });
+
+      render(<VsScreen {...defaultProps} />);
+      const playerImg = screen.getByAltText('アキラ 立ち絵');
+      expect(playerImg.parentElement?.style.transition).toBe('none');
+    });
+  });
+
+  describe('2v2 P2 操作タイプラベル', () => {
+    const allyChar: Character = {
+      id: 'rookie', name: 'ルーキー', icon: '/assets/characters/rookie.png', color: '#27ae60',
+      reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
+    };
+    const enemy2Char: Character = {
+      id: 'ace', name: 'エース', icon: '/assets/characters/ace.png', color: '#e74c3c',
+      reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
+    };
+
+    it('allyControlType=cpu 時に「CPU」ラベルが表示される', () => {
+      render(
+        <VsScreen {...defaultProps} is2v2 allyCharacter={allyChar} enemyCharacter2={enemy2Char} allyControlType="cpu" />
+      );
+      expect(screen.getByText('CPU')).toBeInTheDocument();
+    });
+
+    it('allyControlType=human 時に「2P」ラベルが表示される', () => {
+      render(
+        <VsScreen {...defaultProps} is2v2 allyCharacter={allyChar} enemyCharacter2={enemy2Char} allyControlType="human" />
+      );
+      expect(screen.getByText('2P')).toBeInTheDocument();
+    });
   });
 });

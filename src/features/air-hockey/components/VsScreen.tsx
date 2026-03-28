@@ -51,14 +51,16 @@ const hexToRgba = (hex: string, alpha: number): string => {
 const CharacterPanel: React.FC<{
   character: Character;
   translateX?: number;
-}> = ({ character, translateX = 0 }) => {
+  prefersReducedMotion?: boolean;
+  label?: string;
+}> = ({ character, translateX = 0, prefersReducedMotion = false, label }) => {
   const hasPortrait = Boolean(character.portrait);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
       <div
         style={{
           transform: `translateX(${translateX}px)`,
-          transition: `transform ${CHAR_SLIDE_DURATION_MS}ms ease-out`,
+          transition: prefersReducedMotion ? 'none' : `transform ${CHAR_SLIDE_DURATION_MS}ms ease-out`,
         }}
       >
         <img
@@ -81,6 +83,9 @@ const CharacterPanel: React.FC<{
       >
         {character.name}
       </span>
+      {label && (
+        <span style={{ fontSize: '10px', color: '#aaa' }}>{label}</span>
+      )}
     </div>
   );
 };
@@ -97,6 +102,8 @@ type VsScreenProps = {
   allyCharacter?: Character;
   /** P4: 敵2キャラ（2v2 時） */
   enemyCharacter2?: Character;
+  /** P2 の操作タイプ（2v2 時） */
+  allyControlType?: 'cpu' | 'human';
 };
 
 export const VsScreen: React.FC<VsScreenProps> = ({
@@ -108,6 +115,7 @@ export const VsScreen: React.FC<VsScreenProps> = ({
   is2v2,
   allyCharacter,
   enemyCharacter2,
+  allyControlType,
 }) => {
   const prefersReducedMotion = typeof window !== 'undefined'
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -188,8 +196,8 @@ export const VsScreen: React.FC<VsScreenProps> = ({
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
             <span style={{ fontSize: '12px', color: '#3498db', fontWeight: 'bold' }}>チーム1</span>
             <div style={{ display: 'flex', gap: '12px', transform: `translateX(${teamTranslateX}px)`, transition: prefersReducedMotion ? 'none' : `transform ${CHAR_SLIDE_DURATION_MS}ms ease-out` }}>
-              <CharacterPanel character={playerCharacter} />
-              <CharacterPanel character={allyCharacter} />
+              <CharacterPanel character={playerCharacter} prefersReducedMotion={prefersReducedMotion} />
+              <CharacterPanel character={allyCharacter} prefersReducedMotion={prefersReducedMotion} label={allyControlType === 'human' ? '2P' : 'CPU'} />
             </div>
           </div>
 
@@ -199,17 +207,17 @@ export const VsScreen: React.FC<VsScreenProps> = ({
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
             <span style={{ fontSize: '12px', color: '#e74c3c', fontWeight: 'bold' }}>チーム2</span>
             <div style={{ display: 'flex', gap: '12px', transform: `translateX(${enemyTranslateX}px)`, transition: prefersReducedMotion ? 'none' : `transform ${CHAR_SLIDE_DURATION_MS}ms ease-out` }}>
-              <CharacterPanel character={cpuCharacter} />
-              <CharacterPanel character={enemyCharacter2} />
+              <CharacterPanel character={cpuCharacter} prefersReducedMotion={prefersReducedMotion} />
+              <CharacterPanel character={enemyCharacter2} prefersReducedMotion={prefersReducedMotion} />
             </div>
           </div>
         </div>
       ) : (
         /* 1v1 レイアウト（従来） */
         <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '24px' }}>
-          <CharacterPanel character={playerCharacter} translateX={teamTranslateX} />
+          <CharacterPanel character={playerCharacter} translateX={teamTranslateX} prefersReducedMotion={prefersReducedMotion} />
           {vsText}
-          <CharacterPanel character={cpuCharacter} translateX={enemyTranslateX} />
+          <CharacterPanel character={cpuCharacter} translateX={enemyTranslateX} prefersReducedMotion={prefersReducedMotion} />
         </div>
       )}
 

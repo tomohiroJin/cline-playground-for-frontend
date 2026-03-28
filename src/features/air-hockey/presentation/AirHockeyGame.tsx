@@ -484,6 +484,7 @@ const AirHockeyGame: React.FC = () => {
           is2v2
           allyCharacter={pairAlly}
           enemyCharacter2={pairEnemy2}
+          allyControlType={mode.allyControlType}
         />
       )}
 
@@ -527,6 +528,7 @@ const AirHockeyGame: React.FC = () => {
             player1CharacterName={isMultiPlayer ? multiPlayerName : undefined}
             player2CharacterName={isMultiPlayer ? multiOpponentName : undefined}
             onBackToCharacterSelect={is2PMode ? handleBackToCharacterSelect : undefined}
+            onBackToTeamSetup={is2v2Mode ? () => navigateTo('teamSetup') : undefined}
           />
         </Transition>
       )}

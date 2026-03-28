@@ -38,6 +38,8 @@ type ResultScreenProps = {
   allyCharacter?: Character;
   /** P4 敵2キャラ（2v2 立ち絵表示用） */
   enemyCharacter2?: Character;
+  /** チーム設定に戻る（2v2 用） */
+  onBackToTeamSetup?: () => void;
 };
 
 // カウントアップアニメーション用フック
@@ -236,7 +238,7 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
   onBackToStageSelect, onNextStage,
   cpuCharacter, playerCharacter, newlyUnlockedCharacterName,
   is2PMode, is2v2Mode, player1CharacterName, player2CharacterName, onBackToCharacterSelect,
-  allyCharacter, enemyCharacter2,
+  allyCharacter, enemyCharacter2, onBackToTeamSetup,
 }) => {
   const isWin = winner === 'player';
   const isMultiPlayerMode = is2PMode || is2v2Mode;
@@ -275,26 +277,34 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
 
         {/* キャラ立ち絵エリア */}
         {is2v2Mode && (playerCharacter || allyCharacter || cpuCharacter || enemyCharacter2) ? (
-          /* 2v2: 4 体表示（チーム1: P1+P2 / チーム2: P3+P4） */
+          /* 2v2: 4 体表示（チーム1: P1+P2 ⚡ チーム2: P3+P4） */
           <div style={{
             display: 'flex',
             justifyContent: 'center',
-            gap: '20px',
+            gap: '24px',
             marginBottom: '1rem',
             alignItems: 'flex-end',
           }}>
-            {playerCharacter && (
-              <CharacterPortrait character={playerCharacter} expression={isWin ? 'happy' : 'normal'} />
-            )}
-            {allyCharacter && (
-              <CharacterPortrait character={allyCharacter} expression={isWin ? 'happy' : 'normal'} />
-            )}
-            {cpuCharacter && (
-              <CharacterPortrait character={cpuCharacter} expression={isWin ? 'normal' : 'happy'} />
-            )}
-            {enemyCharacter2 && (
-              <CharacterPortrait character={enemyCharacter2} expression={isWin ? 'normal' : 'happy'} />
-            )}
+            {/* チーム1 */}
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {playerCharacter && (
+                <CharacterPortrait character={playerCharacter} expression={isWin ? 'happy' : 'normal'} />
+              )}
+              {allyCharacter && (
+                <CharacterPortrait character={allyCharacter} expression={isWin ? 'happy' : 'normal'} />
+              )}
+            </div>
+            {/* チーム間区切り */}
+            <span data-testid="team-separator" style={{ color: '#666', fontSize: '1.2rem', alignSelf: 'center' }}>⚡</span>
+            {/* チーム2 */}
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {cpuCharacter && (
+                <CharacterPortrait character={cpuCharacter} expression={isWin ? 'normal' : 'happy'} />
+              )}
+              {enemyCharacter2 && (
+                <CharacterPortrait character={enemyCharacter2} expression={isWin ? 'normal' : 'happy'} />
+              )}
+            </div>
           </div>
         ) : (playerCharacter?.portrait || cpuCharacter?.portrait) ? (
           /* 1v1 / 2P: 従来の 2 体表示 */
@@ -417,7 +427,7 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
           {onReplay && (
             <StartButton onClick={onReplay} style={{ background: 'linear-gradient(135deg, #00ff88, #00cc66)', marginTop: 0 }}>
-              REPLAY
+              {is2v2Mode ? '同じ設定でリプレイ' : 'REPLAY'}
             </StartButton>
           )}
           {onNextStage && isWin && (
@@ -433,6 +443,11 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
           {is2PMode && onBackToCharacterSelect && (
             <StartButton onClick={onBackToCharacterSelect} style={{ background: 'linear-gradient(135deg, #e67e22, #d35400)', marginTop: 0 }}>
               キャラ選択に戻る
+            </StartButton>
+          )}
+          {is2v2Mode && onBackToTeamSetup && (
+            <StartButton onClick={onBackToTeamSetup} style={{ background: 'linear-gradient(135deg, #e67e22, #d35400)', marginTop: 0 }}>
+              チーム設定に戻る
             </StartButton>
           )}
           <StartButton onClick={onBackToMenu} style={{ marginTop: 0 }}>BACK TO MENU</StartButton>

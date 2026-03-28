@@ -3,7 +3,7 @@
  * P2-05: リザルト画面改修 — キャラ表情差分・アンロック通知
  */
 import React from 'react';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, fireEvent } from '@testing-library/react';
 import { ResultScreen } from './ResultScreen';
 import type { Character } from '../core/types';
 
@@ -323,6 +323,64 @@ describe('ResultScreen', () => {
       expect(screen.getByAltText('ルーキー')).toBeInTheDocument();
       expect(screen.getByAltText('ヒロ')).toBeInTheDocument();
       expect(screen.getByAltText('エース')).toBeInTheDocument();
+    });
+
+    it('2v2 モードで「チーム設定に戻る」ボタンが表示される', () => {
+      const onBackToTeamSetup = jest.fn();
+      render(
+        <ResultScreen
+          {...defaultProps}
+          is2v2Mode
+          onBackToTeamSetup={onBackToTeamSetup}
+        />,
+      );
+      const button = screen.getByText('チーム設定に戻る');
+      expect(button).toBeInTheDocument();
+      fireEvent.click(button);
+      expect(onBackToTeamSetup).toHaveBeenCalledTimes(1);
+    });
+
+    it('2v2 モードで「チーム設定に戻る」は onBackToTeamSetup 未指定時に非表示', () => {
+      render(<ResultScreen {...defaultProps} is2v2Mode />);
+      expect(screen.queryByText('チーム設定に戻る')).not.toBeInTheDocument();
+    });
+
+    it('2v2 モードでリプレイボタンが「同じ設定でリプレイ」と表示される', () => {
+      render(
+        <ResultScreen
+          {...defaultProps}
+          is2v2Mode
+          onReplay={jest.fn()}
+        />,
+      );
+      expect(screen.getByText('同じ設定でリプレイ')).toBeInTheDocument();
+    });
+
+    it('2v2 モードで立ち絵にチーム間区切りがある', () => {
+      const allyChar: Character = {
+        id: 'rookie', name: 'ルーキー', icon: '/assets/characters/rookie.png', color: '#27ae60',
+        reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
+        portrait: { normal: '/assets/portraits/rookie-normal.png', happy: '/assets/portraits/rookie-happy.png' },
+      };
+      const enemy2: Character = {
+        id: 'ace', name: 'エース', icon: '/assets/characters/ace.png', color: '#e74c3c',
+        reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
+        portrait: { normal: '/assets/portraits/ace-normal.png', happy: '/assets/portraits/ace-happy.png' },
+      };
+
+      render(
+        <ResultScreen
+          {...defaultProps}
+          winner="player"
+          is2v2Mode
+          playerCharacter={playerCharacter}
+          cpuCharacter={cpuCharacter}
+          allyCharacter={allyChar}
+          enemyCharacter2={enemy2}
+        />,
+      );
+      // チーム間区切りマーク
+      expect(screen.getByTestId('team-separator')).toBeInTheDocument();
     });
   });
 });

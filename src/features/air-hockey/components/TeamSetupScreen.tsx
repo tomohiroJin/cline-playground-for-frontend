@@ -199,7 +199,7 @@ const styles = {
     fontWeight: 'bold' as const,
     cursor: 'pointer',
     minWidth: '44px',
-    minHeight: '32px',
+    minHeight: '44px',
   }),
   controlHint: {
     fontSize: '11px',

@@ -250,5 +250,11 @@ describe('TeamSetupScreen', () => {
       const team1Index = children.findIndex(el => el.textContent?.includes('チーム1'));
       expect(diffIndex).toBeLessThan(team1Index);
     });
+
+    it('CPU/人間トグルのタッチターゲットが 44px 以上', () => {
+      render(<TeamSetupScreen {...createDefaultProps()} />);
+      const cpuButton = screen.getByText('CPU').closest('button') as HTMLElement;
+      expect(cpuButton.style.minHeight).toBe('44px');
+    });
   });
 });

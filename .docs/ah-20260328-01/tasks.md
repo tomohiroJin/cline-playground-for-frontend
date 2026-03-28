@@ -144,64 +144,64 @@
 
 ### VsScreen レスポンシブ（DR-1 + DR-6）
 
-- [ ] **S5-9-1**: `CharacterPanel` に `prefersReducedMotion` Props を追加し `transition` を制御
+- [x] **S5-9-1**: `CharacterPanel` に `prefersReducedMotion` Props を追加し `transition` を制御
   - 対象: `components/VsScreen.tsx`
   - 1v1 レイアウトでも reduced-motion 時に transition を無効化
-- [ ] **S5-9-2**: 2v2 時の立ち絵サイズをビューポート依存に変更
+- [x] **S5-9-2**: 2v2 時の立ち絵サイズをビューポート依存に変更
   - 対象: `components/VsScreen.tsx`
   - portrait あり: `width: min(128px, 20vw)` / `height: min(256px, 40vw)`
   - portrait なし: `width: min(96px, 18vw)` / `height: min(96px, 18vw)`
   - キャラ名フォントサイズ: `clamp(12px, 3vw, 24px)`
-- [ ] **S5-9-3**: テスト — VsScreen の reduced-motion が 1v1 でも有効
+- [x] **S5-9-3**: テスト — VsScreen の reduced-motion が 1v1 でも有効
   - 対象: `components/VsScreen.test.tsx`
 
 ### TeamSetupScreen UX 改善（DR-2 + DR-3 + DR-5）
 
-- [ ] **S5-9-4**: キャラ選択パネルの開閉アニメーション
+- [x] **S5-9-4**: キャラ選択パネルの開閉アニメーション
   - 対象: `components/TeamSetupScreen.tsx`
   - `useRef` でグリッドコンテナの高さを計測
   - `max-height: 0` → `max-height: {計測値}px` で 200ms ease-out
   - `overflow: hidden` で展開中のはみ出し防止
-- [ ] **S5-9-5**: グリッド展開時の自動スクロール
+- [x] **S5-9-5**: グリッド展開時の自動スクロール
   - 対象: `components/TeamSetupScreen.tsx`
   - `useEffect` でグリッド展開完了後に `scrollIntoView({ behavior: 'smooth', block: 'nearest' })`
   - `prefersReducedMotion` 時は `behavior: 'auto'`
-- [ ] **S5-9-6**: CPU/人間トグルのタッチターゲットを 44px に拡大
+- [x] **S5-9-6**: CPU/人間トグルのタッチターゲットを 44px に拡大
   - 対象: `components/TeamSetupScreen.tsx`
   - `minHeight: '32px'` → `minHeight: '44px'`
-- [ ] **S5-9-7**: テスト — アニメーション・スクロール・タッチターゲット
+- [x] **S5-9-7**: テスト — アニメーション・スクロール・タッチターゲット
   - 対象: `components/TeamSetupScreen.test.tsx`
 
 ### ResultScreen 改善（DR-4 + シナリオ #1/#4）
 
-- [ ] **S5-9-8**: 2v2 立ち絵エリアのチーム間に視覚的区切りを追加
+- [x] **S5-9-8**: 2v2 立ち絵エリアのチーム間に視覚的区切りを追加
   - 対象: `components/ResultScreen.tsx`
   - チーム内 gap: `8px`、チーム間 gap: `24px` + 小さな VS 区切り
   - チーム1/チーム2 のキャラをグループ化する `div` でラップ
-- [ ] **S5-9-9**: 2v2 ResultScreen に「チーム設定に戻る」ボタンを追加
+- [x] **S5-9-9**: 2v2 ResultScreen に「チーム設定に戻る」ボタンを追加
   - 対象: `components/ResultScreen.tsx` + `presentation/AirHockeyGame.tsx`
   - 2P の「キャラ選択に戻る」と同等の導線
   - `onBackToTeamSetup` Props を追加、2v2 時のみ表示
   - AirHockeyGame で `navigateTo('teamSetup')` にハンドラを接続
-- [ ] **S5-9-10**: テスト — 2v2 立ち絵のチーム区切り・チーム設定戻りボタン
+- [x] **S5-9-10**: テスト — 2v2 立ち絵のチーム区切り・チーム設定戻りボタン
   - 対象: `components/ResultScreen.test.tsx`
 
 ### VsScreen 情報表示（シナリオ #6）
 
-- [ ] **S5-9-11**: 2v2 VsScreen で P2 の操作タイプ（CPU / 2P）をラベル表示
+- [x] **S5-9-11**: 2v2 VsScreen で P2 の操作タイプ（CPU / 2P）をラベル表示
   - 対象: `components/VsScreen.tsx`
   - P2 キャラ名の下に小さく「CPU」or「2P」のラベルを追加
   - Props に `allyControlType` を追加（オプショナル）
 
 ### リプレイ体験（シナリオ #2）
 
-- [ ] **S5-9-12**: 2v2 リプレイボタンのラベルを「同じ設定でリプレイ」に変更
+- [x] **S5-9-12**: 2v2 リプレイボタンのラベルを「同じ設定でリプレイ」に変更
   - 対象: `components/ResultScreen.tsx`
   - `is2v2Mode` 時のみラベル変更（1v1 / 2P は従来の「REPLAY」を維持）
 
 ### 品質保証
 
-- [ ] **S5-9-13**: テスト・品質保証（型チェック・テスト全パス・ビルド成功）
+- [x] **S5-9-13**: テスト・品質保証（型チェック・テスト全パス・ビルド成功）
   - 対象: 全体
 
 ---
@@ -232,4 +232,4 @@
 | S5-6 テスト・品質保証 | [x] 完了 | 2026-03-28 |
 | S5-7 P2 CPU/人間切り替え | [x] 完了 | 2026-03-28 |
 | S5-8 デザインレビュー UI/UX 改善 | [x] 完了 | 2026-03-28 |
-| S5-9 デザイン残課題 レスポンシブ・UX 磨き込み | [ ] 未着手 | — |
+| S5-9 デザイン残課題 レスポンシブ・UX 磨き込み | [x] 完了 | 2026-03-28 |
