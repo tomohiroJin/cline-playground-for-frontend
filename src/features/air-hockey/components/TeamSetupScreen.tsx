@@ -341,7 +341,7 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
           <div style={styles.slotRowFixed} data-testid="slot-p1">
             <img src={playerCharacter.icon} alt={playerCharacter.name} style={styles.slotIcon} />
             <div style={styles.slotInfo}>
-              <span style={styles.slotLabel}>P1: あなた</span>
+              <span style={styles.slotLabel}>P1: あなた（矢印キー / マウス）</span>
               <span style={styles.slotName}>{playerCharacter.name}</span>
             </div>
           </div>

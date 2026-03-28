@@ -1,10 +1,12 @@
 /**
  * Phase S4-3: ペアマッチ（2v2）ゲームロジックのテスト
  */
-import { EntityFactory, resolveMalletPuckOverlap } from './entities';
+import { EntityFactory, resolveMalletPuckOverlap, resolveMalletMalletOverlaps } from './entities';
 import { CONSTANTS } from './constants';
-import { getAllMallets, applyGoalScore } from './pair-match-logic';
+import { getAllMallets, applyGoalScore, updateExtraMalletAI } from './pair-match-logic';
 import { applyItemEffect } from './items';
+import { CpuAI } from './ai';
+import { AI_BEHAVIOR_PRESETS } from './story-balance';
 import type { GameState } from './types';
 
 const MR = CONSTANTS.SIZES.MALLET;
@@ -136,6 +138,84 @@ describe('Phase S4-3: ペアマッチゲームロジック', () => {
       const state = EntityFactory.createGameState(CONSTANTS);
       const result = applyItemEffect(state, { id: 'shield' }, 'player', Date.now());
       expect(result.effects?.player?.shield).toBe(true);
+    });
+  });
+
+  // ── GP-1: ally CPU ゾーン制約 ──────────────────
+
+  describe('GP-1: ally CPU ゾーン制約（座標反転アプローチ）', () => {
+    it('ally（player チーム）の AI 結果が下半分に制約される', () => {
+      const state = create2v2State();
+      const H = CONSTANTS.CANVAS.HEIGHT;
+      // パックを下半分に配置（ally に向かって来る方向）
+      state.pucks[0].x = 300;
+      state.pucks[0].y = H - 100;
+      state.pucks[0].vy = 5;
+
+      const updateFn = CpuAI.updateWithBehavior.bind(CpuAI);
+      const config = AI_BEHAVIOR_PRESETS.normal;
+      const result = updateExtraMalletAI(
+        state, state.ally!,
+        { target: null, targetTime: 0, stuckTimer: 0 },
+        updateFn, config, Date.now(), CONSTANTS, 0,
+        'player'
+      );
+
+      expect(result).toBeDefined();
+      // ally の Y 座標が下半分（H/2 以上）に制約される
+      expect(result!.mallet.y).toBeGreaterThanOrEqual(H / 2);
+    });
+
+    it('enemy（cpu チーム）の AI 結果が上半分に制約される', () => {
+      const state = create2v2State();
+      const H = CONSTANTS.CANVAS.HEIGHT;
+      state.pucks[0].x = 300;
+      state.pucks[0].y = 100;
+      state.pucks[0].vy = -5;
+
+      const updateFn = CpuAI.updateWithBehavior.bind(CpuAI);
+      const config = AI_BEHAVIOR_PRESETS.normal;
+      const result = updateExtraMalletAI(
+        state, state.enemy!,
+        { target: null, targetTime: 0, stuckTimer: 0 },
+        updateFn, config, Date.now(), CONSTANTS, 0,
+        'cpu'
+      );
+
+      expect(result).toBeDefined();
+      // enemy の Y 座標が上半分（H/2 以下）に制約される
+      expect(result!.mallet.y).toBeLessThanOrEqual(H / 2);
+    });
+  });
+
+  // ── GP-2: マレット間衝突判定 ──────────────────
+
+  describe('GP-2: マレット間衝突判定', () => {
+    it('重なったマレットが分離される', () => {
+      const state = create2v2State();
+      // player と ally を同じ位置に配置
+      state.player.x = 300;
+      state.player.y = 800;
+      state.ally!.x = 300;
+      state.ally!.y = 800;
+
+      resolveMalletMalletOverlaps(getAllMallets(state), MR);
+
+      const dx = state.player.x - state.ally!.x;
+      const dy = state.player.y - state.ally!.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      expect(dist).toBeGreaterThanOrEqual(MR * 2 - 1); // 浮動小数点誤差許容
+    });
+
+    it('離れているマレットは影響を受けない', () => {
+      const state = create2v2State();
+      const origPlayerX = state.player.x;
+      const origPlayerY = state.player.y;
+
+      resolveMalletMalletOverlaps(getAllMallets(state), MR);
+
+      expect(state.player.x).toBe(origPlayerX);
+      expect(state.player.y).toBe(origPlayerY);
     });
   });
 });

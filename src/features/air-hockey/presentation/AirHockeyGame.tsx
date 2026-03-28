@@ -294,13 +294,13 @@ const AirHockeyGame: React.FC = () => {
     if (CHAPTER_1_STAGES[idx + 1]) handleSelectStage(CHAPTER_1_STAGES[idx + 1]);
   }, [mode.currentStage, handleSelectStage]);
 
-  // ── 入力・ゲームループ ──
-  const handleInput = useInput(canvasRef, lastInputRef, playerTargetRef, screen, showHelp, setShowHelp);
-  const keysRef = useKeyboardInput(gameRef, lastInputRef, screen, showHelp, setShowHelp);
-
-  // ── 2P / 2v2 モード判定 ──
+  // ── 2P / 2v2 モード判定（入力フックより前に宣言） ──
   const is2PMode = mode.gameMode === '2p-local';
   const is2v2Mode = mode.gameMode === '2v2-local';
+
+  // ── 入力・ゲームループ ──
+  const handleInput = useInput(canvasRef, lastInputRef, playerTargetRef, screen, showHelp, setShowHelp);
+  const keysRef = useKeyboardInput(gameRef, lastInputRef, screen, showHelp, setShowHelp, is2v2Mode);
   const isMultiPlayer = is2PMode || is2v2Mode;
   const is2PGame = isMultiPlayer && screen === 'game';
   // ペアマッチ用キャラクターのデフォルト値（フォールバックを一元管理）
@@ -367,6 +367,9 @@ const AirHockeyGame: React.FC = () => {
       playerMalletColor: is2PMode ? mode.player1Character?.color : undefined,
       cpuMalletColor: is2PMode ? mode.player2Character?.color : undefined,
       allyControlType: is2v2Mode ? mode.allyControlType : undefined,
+      allyCharacterId: is2v2Mode ? pairAlly.id : undefined,
+      enemyCharacter1Id: is2v2Mode ? pairEnemy1.id : undefined,
+      enemyCharacter2Id: is2v2Mode ? pairEnemy2.id : undefined,
     },
     refs: {
       gameRef, canvasRef, lastInputRef, scoreRef, phaseRef, countdownStartRef, shakeRef, statsRef, matchStartRef, keysRef,

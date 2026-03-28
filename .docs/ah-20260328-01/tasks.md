@@ -208,63 +208,63 @@
 
 ### GP-1: ally CPU ゾーン制約 + AI ターゲット計算のチーム対応
 
-- [ ] **S5-10-1**: `updateExtraMalletAI` に `team` パラメータを追加し、座標反転アプローチを実装
+- [x] **S5-10-1**: `updateExtraMalletAI` に `team` パラメータを追加し、座標反転アプローチを実装
   - 対象: `core/pair-match-logic.ts`
   - ally（player チーム）: AI 呼び出し前にパック・マレット座標を Y 軸反転
   - AI 計算結果を再度 Y 軸反転して戻す
   - 最終結果を `getPlayerZone` でクランプして安全性を確保
-- [ ] **S5-10-2**: `useGameLoop` で ally AI 呼び出し時に `team: 'player'`、enemy に `team: 'cpu'` を渡す
+- [x] **S5-10-2**: `useGameLoop` で ally AI 呼び出し時に `team: 'player'`、enemy に `team: 'cpu'` を渡す
   - 対象: `presentation/hooks/useGameLoop.ts`
-- [ ] **S5-10-3**: テスト — ally CPU が下半分ゾーンに制約され、パックが下に向かう時に反応する
+- [x] **S5-10-3**: テスト — ally CPU が下半分ゾーンに制約され、パックが下に向かう時に反応する
   - 対象: `core/pair-match-logic.test.ts` or 新規
 
 ### GP-2: マレット間衝突判定
 
-- [ ] **S5-10-4**: `resolveMalletMalletOverlap` 関数を実装
+- [x] **S5-10-4**: `resolveMalletMalletOverlap` 関数を実装
   - 対象: `core/entities.ts` or `core/physics.ts`
   - 2 マレットの中心間距離 < `MALLET_RADIUS * 2` のとき、中心間ベクトルに沿って均等に押し戻し
   - 押し戻し後に `getPlayerZone` でクランプし直す（相手ゾーンへの押し出し防止）
-- [ ] **S5-10-5**: `useGameLoop` のフレーム更新後にマレット間衝突解消を実行
+- [x] **S5-10-5**: `useGameLoop` のフレーム更新後にマレット間衝突解消を実行
   - 対象: `presentation/hooks/useGameLoop.ts`
   - 全マレットペア（最大 6 組）に対して判定
-- [ ] **S5-10-6**: テスト — 重なったマレットが分離され、ゾーン内に収まる
+- [x] **S5-10-6**: テスト — 重なったマレットが分離され、ゾーン内に収まる
   - 対象: テストファイル新規 or 既存追加
 
 ### GP-3: P1/P2 キーマッピング分離
 
-- [ ] **S5-10-7**: `useKeyboardInput` に `is2v2Mode` パラメータを追加し、2v2 時は P1 の KEY_MAP から WASD を除外
+- [x] **S5-10-7**: `useKeyboardInput` に `is2v2Mode` パラメータを追加し、2v2 時は P1 の KEY_MAP から WASD を除外
   - 対象: `hooks/useKeyboardInput.ts`, `core/keyboard.ts`
   - 1v1 / ストーリーモード: 矢印キー + WASD 両方で P1 操作（既存動作を維持）
   - 2v2 モード: P1 は矢印キーのみ、WASD は P2 専用
-- [ ] **S5-10-7b**: `AirHockeyGame` から `useKeyboardInput` に `is2v2Mode` を渡す
+- [x] **S5-10-7b**: `AirHockeyGame` から `useKeyboardInput` に `is2v2Mode` を渡す
   - 対象: `presentation/AirHockeyGame.tsx`
-- [ ] **S5-10-8**: テスト — 2v2 時に WASD が P1 に影響せず、1v1 時は影響すること
+- [x] **S5-10-8**: テスト — 2v2 時に WASD が P1 に影響せず、1v1 時は影響すること
   - 対象: テストファイル
 
 ### GP-4: キャラ別 AI プロファイル反映
 
-- [ ] **S5-10-9**: `GameLoopConfig` にキャラ ID フィールドを追加
+- [x] **S5-10-9**: `GameLoopConfig` にキャラ ID フィールドを追加
   - 対象: `presentation/hooks/useGameLoop.ts`
   - `allyCharacterId`, `enemyCharacter1Id`, `enemyCharacter2Id` を追加
-- [ ] **S5-10-10**: cpu/enemy に `buildFreeBattleAiConfig(difficulty, characterId)` で個別 AI 設定を生成
+- [x] **S5-10-10**: cpu/enemy に `buildFreeBattleAiConfig(difficulty, characterId)` で個別 AI 設定を生成
   - 対象: `presentation/hooks/useGameLoop.ts`
-- [ ] **S5-10-10b**: ally CPU 用に味方補正を適用（aggressiveness 上限 0.5）
+- [x] **S5-10-10b**: ally CPU 用に味方補正を適用（aggressiveness 上限 0.5）
   - 対象: `core/story-balance.ts`（`buildAllyAiConfig` 関数追加）
   - ally は守備的に行動させる（ゴールを空にしない）
-- [ ] **S5-10-11**: `AirHockeyGame` からキャラ ID を useGameLoop に渡す
+- [x] **S5-10-11**: `AirHockeyGame` からキャラ ID を useGameLoop に渡す
   - 対象: `presentation/AirHockeyGame.tsx`
-- [ ] **S5-10-12**: テスト — 異なるキャラ ID で異なる AI 設定が使われる
+- [x] **S5-10-12**: テスト — 異なるキャラ ID で異なる AI 設定が使われる
   - 対象: テストファイル
 
 ### UX 補足
 
-- [ ] **S5-10-13**: TeamSetupScreen の操作ヒント更新（P1「矢印キー / マウス」、P2「WASD / タッチ」）
+- [x] **S5-10-13**: TeamSetupScreen の操作ヒント更新（P1「矢印キー / マウス」、P2「WASD / タッチ」）
   - 対象: `components/TeamSetupScreen.tsx`
   - 2v2 モードでのキー割り当てが分かるように表示
 
 ### 品質保証
 
-- [ ] **S5-10-14**: テスト・品質保証（型チェック・テスト全パス・ビルド成功）
+- [x] **S5-10-14**: テスト・品質保証（型チェック・テスト全パス・ビルド成功）
   - 対象: 全体
 
 ---
@@ -297,4 +297,4 @@
 | S5-7 P2 CPU/人間切り替え | [x] 完了 | 2026-03-28 |
 | S5-8 デザインレビュー UI/UX 改善 | [x] 完了 | 2026-03-28 |
 | S5-9 デザイン残課題 レスポンシブ・UX 磨き込み | [x] 完了 | 2026-03-28 |
-| S5-10 ゲームプレイ品質改善 | [ ] 未着手 | — |
+| S5-10 ゲームプレイ品質改善 | [x] 完了 | 2026-03-28 |

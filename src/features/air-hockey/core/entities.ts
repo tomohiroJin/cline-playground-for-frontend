@@ -64,6 +64,44 @@ export function resolveMalletPuckOverlap(
   }
 }
 
+/**
+ * マレット間の重なりを解消する
+ * 全マレットペアの距離を判定し、重なっている場合は中心間ベクトルに沿って均等に押し戻す
+ */
+export function resolveMalletMalletOverlaps(
+  mallets: { mallet: Mallet }[],
+  malletRadius: number
+): void {
+  const minDist = malletRadius * 2;
+  for (let i = 0; i < mallets.length; i++) {
+    for (let j = i + 1; j < mallets.length; j++) {
+      const a = mallets[i].mallet;
+      const b = mallets[j].mallet;
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist >= minDist) continue;
+
+      // 完全重複時はランダム方向に押し出す
+      let nx: number;
+      let ny: number;
+      if (dist < 0.01) {
+        const angle = Math.random() * Math.PI * 2;
+        nx = Math.cos(angle);
+        ny = Math.sin(angle);
+      } else {
+        nx = dx / dist;
+        ny = dy / dist;
+      }
+      const overlap = (minDist - dist) / 2;
+      a.x -= nx * overlap;
+      a.y -= ny * overlap;
+      b.x += nx * overlap;
+      b.y += ny * overlap;
+    }
+  }
+}
+
 export const EntityFactory = {
   createMallet: (x: number, y: number): Mallet => ({ x, y, vx: 0, vy: 0 }),
   createPuck: (x: number, y: number, vx = 0, vy = 1.5): Puck => ({

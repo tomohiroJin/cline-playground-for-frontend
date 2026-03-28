@@ -244,3 +244,35 @@ describe('calculateKeyboardMovement（2P: 上半分クランプ）', () => {
     expect(resultP1).toEqual(resultDefault);
   });
 });
+
+describe('GP-3: 2v2 モードでのキーマッピング分離', () => {
+  it('updateKeyboardState は WASD を受け付ける（1v1 後方互換）', () => {
+    let state = createKeyboardState();
+    state = updateKeyboardState(state, 'w', true);
+    expect(state.up).toBe(true);
+  });
+
+  it('updateKeyboardStateForPlayer(player1) は WASD を無視する', () => {
+    let state = createKeyboardState();
+    state = updateKeyboardStateForPlayer(state, 'w', true, 'player1');
+    expect(state.up).toBe(false);
+  });
+
+  it('updateKeyboardStateForPlayer(player1) は矢印キーを受け付ける', () => {
+    let state = createKeyboardState();
+    state = updateKeyboardStateForPlayer(state, 'ArrowUp', true, 'player1');
+    expect(state.up).toBe(true);
+  });
+
+  it('updateKeyboardStateForPlayer(player2) は WASD を受け付ける', () => {
+    let state = createKeyboardState();
+    state = updateKeyboardStateForPlayer(state, 'w', true, 'player2');
+    expect(state.up).toBe(true);
+  });
+
+  it('updateKeyboardStateForPlayer(player2) は矢印キーを無視する', () => {
+    let state = createKeyboardState();
+    state = updateKeyboardStateForPlayer(state, 'ArrowUp', true, 'player2');
+    expect(state.up).toBe(false);
+  });
+});
