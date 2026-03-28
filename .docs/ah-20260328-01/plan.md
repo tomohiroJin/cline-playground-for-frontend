@@ -203,3 +203,18 @@ Phase S5-6: テスト・品質保証
 - `components/VsScreen.tsx` — MF-2, MF-3, S-2
 - `components/ResultScreen.tsx` — R-3
 - `presentation/AirHockeyGame.tsx` — R-3（Props 受け渡し）
+
+### S5-8 実装結果と残課題（2026-03-28）
+
+**対応済み**: MF-3, R-1, R-2, R-3, R-4, S-1, S-2
+
+**残課題（将来フェーズで対応）**:
+
+| # | 指摘 | 対象 | 内容 |
+|---|------|------|------|
+| DR-1 | VsScreen 2v2 のレスポンシブ対応 | VsScreen | 立ち絵サイズが固定（256px×4=1024px）でモバイル画面ではみ出す。`min()` での縮小、480px 未満で縦並びレイアウトが必要 |
+| DR-2 | キャラ選択パネルの開閉アニメーション | TeamSetupScreen | `max-height` + `overflow: hidden` で 200ms ease-out。現在は即座に表示/非表示 |
+| DR-3 | グリッド展開時の自動スクロール | TeamSetupScreen | `scrollIntoView({ behavior: 'smooth', block: 'nearest' })` 未実装 |
+| DR-4 | ResultScreen 2v2 立ち絵のチーム間区切り | ResultScreen | 4 体が等間隔で横並びのため、チーム1/チーム2 の境界が不明瞭。gap の差別化または VS マークが必要 |
+| DR-5 | CPU/人間トグルのタッチターゲット | TeamSetupScreen | 現在 `minHeight: 32px`、仕様では 44px 以上 |
+| DR-6 | VsScreen 1v1 レイアウトの `prefersReducedMotion` 漏れ | VsScreen | `CharacterPanel` 内の `transition` が 1v1 レイアウトでは常に有効 |
