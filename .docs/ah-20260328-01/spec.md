@@ -318,3 +318,112 @@ if (allyControlType === 'human') {
   // CPU AI: updateExtraMalletAI で ally を制御（enemy と同じ方式）
 }
 ```
+
+## 8. デザイン残課題の実装仕様（Phase S5-9）
+
+### 8.1 VsScreen 2v2 レスポンシブ立ち絵サイズ
+
+`CharacterPanel` の立ち絵サイズを `min()` でビューポート依存にする:
+
+```typescript
+// 2v2 時のサイズ（インラインスタイルで min() を使用）
+const portraitSize2v2 = {
+  width: 'min(128px, 20vw)',
+  height: 'min(256px, 40vw)',
+};
+const iconSize2v2 = {
+  width: 'min(96px, 18vw)',
+  height: 'min(96px, 18vw)',
+};
+// キャラ名
+const nameStyle2v2 = {
+  fontSize: 'clamp(12px, 3vw, 24px)',
+};
+```
+
+> **設計判断**: `@media` クエリはインラインスタイルで使えないため、CSS の `min()` / `clamp()` で
+> ブレイクポイント不要のレスポンシブ化を実現する。480px 未満での縦並びレイアウトは見送り、
+> `min()` によるサイズ縮小で対応する（4 キャラが自然に収まるサイズになるため）。
+
+### 8.2 CharacterPanel の reduced-motion 対応
+
+`CharacterPanel` に `prefersReducedMotion` Props を追加:
+
+```typescript
+const CharacterPanel: React.FC<{
+  character: Character;
+  translateX?: number;
+  prefersReducedMotion?: boolean;  // 追加
+}> = ({ character, translateX = 0, prefersReducedMotion = false }) => {
+  // transition を条件的に無効化
+  transition: prefersReducedMotion ? 'none' : `transform ${CHAR_SLIDE_DURATION_MS}ms ease-out`,
+};
+```
+
+### 8.3 キャラ選択パネルの開閉アニメーション
+
+`useRef` でグリッドコンテナの実際の高さを計測し、`max-height` でアニメーション:
+
+```typescript
+const gridRef = useRef<HTMLDivElement>(null);
+const [gridHeight, setGridHeight] = useState(0);
+
+// 展開時に高さを計測
+useEffect(() => {
+  if (isOpen && gridRef.current) {
+    setGridHeight(gridRef.current.scrollHeight);
+  }
+}, [isOpen]);
+
+// スタイル
+style={{
+  maxHeight: isOpen ? `${gridHeight}px` : '0px',
+  overflow: 'hidden',
+  transition: 'max-height 200ms ease-out',
+}}
+```
+
+### 8.4 グリッド展開時の自動スクロール
+
+展開アニメーション完了後にスクロール:
+
+```typescript
+useEffect(() => {
+  if (isOpen && gridRef.current) {
+    const timer = setTimeout(() => {
+      gridRef.current?.scrollIntoView({
+        behavior: prefersReducedMotion ? 'auto' : 'smooth',
+        block: 'nearest',
+      });
+    }, 210); // アニメーション完了(200ms) + バッファ(10ms)
+    return () => clearTimeout(timer);
+  }
+}, [isOpen, prefersReducedMotion]);
+```
+
+### 8.5 ResultScreen 2v2 チーム間区切り
+
+```
+  [P1] [P2]  ⚡  [P3] [P4]
+```
+
+- チーム内 gap: `8px`（近接の法則で同チームを認知）
+- チーム間 gap: `24px`（分離で対立関係を表現）
+- 間に小さな区切りマーク（`⚡` または縦線 `|`）を配置
+
+```typescript
+<div style={{ display: 'flex', alignItems: 'flex-end', gap: '24px' }}>
+  {/* チーム1 */}
+  <div style={{ display: 'flex', gap: '8px' }}>
+    <CharacterPortrait ... />
+    <CharacterPortrait ... />
+  </div>
+  {/* 区切り */}
+  <span style={{ color: '#666', fontSize: '1.2rem' }}>⚡</span>
+  {/* チーム2 */}
+  <div style={{ display: 'flex', gap: '8px' }}>
+    <CharacterPortrait ... />
+    <CharacterPortrait ... />
+  </div>
+</div>
+```

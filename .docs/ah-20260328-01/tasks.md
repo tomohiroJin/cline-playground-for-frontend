@@ -110,43 +110,80 @@
 
 - [x] **S5-8-1**: チーム1/チーム2 セクションの色分け（青/赤の左ボーダー + タイトル色）
   - 対象: `components/TeamSetupScreen.tsx`
-  - チーム1: `#3498db`（青系）、チーム2: `#e74c3c`（赤系）
 - [x] **S5-8-2**: P1 固定スロットの改善（`opacity: 1` + `cursor: default` + ラベル強調）
   - 対象: `components/TeamSetupScreen.tsx`
 - [x] **S5-8-3**: 難易度セクションをチーム構成の上に移動
   - 対象: `components/TeamSetupScreen.tsx`
-- [x] **S5-8-4**: キャラ選択パネルの開閉アニメーション（`max-height` 200ms ease-out）
-  - 対象: `components/TeamSetupScreen.tsx`
-- [x] **S5-8-5**: キャラ選択グリッド展開時の自動スクロール（`scrollIntoView`）
-  - 対象: `components/TeamSetupScreen.tsx`
-- [x] **S5-8-6**: テスト — TeamSetupScreen の色分け・P1 表示・セクション順序
+- [x] **S5-8-4**: テスト — TeamSetupScreen の色分け・P1 表示・セクション順序
   - 対象: `components/TeamSetupScreen.test.tsx`
 
 ### VsScreen 改善
 
-- [x] **S5-8-7**: 2v2 時の立ち絵サイズをレスポンシブ化（`min()` で縮小）
+- [x] **S5-8-5**: `prefers-reduced-motion` 対応（アニメーションスキップ）
   - 対象: `components/VsScreen.tsx`
-  - 480px 未満で縦並びレイアウトに切り替え
-- [x] **S5-8-8**: `prefers-reduced-motion` 対応（アニメーションスキップ）
+- [x] **S5-8-6**: 2v2 時のチームラベル表示（「チーム1」「チーム2」）
   - 対象: `components/VsScreen.tsx`
-- [x] **S5-8-9**: 2v2 時のチームラベル表示（「チーム1」「チーム2」）
-  - 対象: `components/VsScreen.tsx`
-- [x] **S5-8-10**: テスト — VsScreen のレスポンシブ・reduced-motion・ラベル
+- [x] **S5-8-7**: テスト — VsScreen の reduced-motion・ラベル
   - 対象: `components/VsScreen.test.tsx`
 
 ### ResultScreen 改善
 
-- [x] **S5-8-11**: 2v2 時の立ち絵 4 体表示（P1+P2 / P3+P4）
+- [x] **S5-8-8**: 2v2 時の立ち絵 4 体表示（P1+P2 / P3+P4）
   - 対象: `components/ResultScreen.tsx`
-  - `allyCharacter` / `enemyCharacter2` Props を追加
-- [x] **S5-8-12**: `AirHockeyGame` から ResultScreen へ ally/enemy2 キャラを渡す
+- [x] **S5-8-9**: `AirHockeyGame` から ResultScreen へ ally/enemy2 キャラを渡す
   - 対象: `presentation/AirHockeyGame.tsx`
-- [x] **S5-8-13**: テスト — ResultScreen の 2v2 立ち絵 4 体表示
+- [x] **S5-8-10**: テスト — ResultScreen の 2v2 立ち絵 4 体表示
   - 対象: `components/ResultScreen.test.tsx`
 
 ### 品質保証
 
-- [x] **S5-8-14**: テスト・品質保証（型チェック・テスト全パス・ビルド成功）
+- [x] **S5-8-11**: テスト・品質保証（型チェック・テスト全パス・ビルド成功）
+  - 対象: 全体
+
+## Phase S5-9: デザイン残課題対応 — レスポンシブ・UX 磨き込み（M）
+
+### VsScreen レスポンシブ（DR-1 + DR-6）
+
+- [ ] **S5-9-1**: `CharacterPanel` に `prefersReducedMotion` Props を追加し `transition` を制御
+  - 対象: `components/VsScreen.tsx`
+  - 1v1 レイアウトでも reduced-motion 時に transition を無効化
+- [ ] **S5-9-2**: 2v2 時の立ち絵サイズをビューポート依存に変更
+  - 対象: `components/VsScreen.tsx`
+  - portrait あり: `width: min(128px, 20vw)` / `height: min(256px, 40vw)`
+  - portrait なし: `width: min(96px, 18vw)` / `height: min(96px, 18vw)`
+  - キャラ名フォントサイズ: `clamp(12px, 3vw, 24px)`
+- [ ] **S5-9-3**: テスト — VsScreen の reduced-motion が 1v1 でも有効
+  - 対象: `components/VsScreen.test.tsx`
+
+### TeamSetupScreen UX 改善（DR-2 + DR-3 + DR-5）
+
+- [ ] **S5-9-4**: キャラ選択パネルの開閉アニメーション
+  - 対象: `components/TeamSetupScreen.tsx`
+  - `useRef` でグリッドコンテナの高さを計測
+  - `max-height: 0` → `max-height: {計測値}px` で 200ms ease-out
+  - `overflow: hidden` で展開中のはみ出し防止
+- [ ] **S5-9-5**: グリッド展開時の自動スクロール
+  - 対象: `components/TeamSetupScreen.tsx`
+  - `useEffect` でグリッド展開完了後に `scrollIntoView({ behavior: 'smooth', block: 'nearest' })`
+  - `prefersReducedMotion` 時は `behavior: 'auto'`
+- [ ] **S5-9-6**: CPU/人間トグルのタッチターゲットを 44px に拡大
+  - 対象: `components/TeamSetupScreen.tsx`
+  - `minHeight: '32px'` → `minHeight: '44px'`
+- [ ] **S5-9-7**: テスト — アニメーション・スクロール・タッチターゲット
+  - 対象: `components/TeamSetupScreen.test.tsx`
+
+### ResultScreen チーム区切り（DR-4）
+
+- [ ] **S5-9-8**: 2v2 立ち絵エリアのチーム間に視覚的区切りを追加
+  - 対象: `components/ResultScreen.tsx`
+  - チーム内 gap: `8px`、チーム間 gap: `24px` + 小さな VS 区切り
+  - チーム1/チーム2 のキャラをグループ化する `div` でラップ
+- [ ] **S5-9-9**: テスト — 2v2 立ち絵のチーム区切り
+  - 対象: `components/ResultScreen.test.tsx`
+
+### 品質保証
+
+- [ ] **S5-9-10**: テスト・品質保証（型チェック・テスト全パス・ビルド成功）
   - 対象: 全体
 
 ---
@@ -162,7 +199,8 @@
 | S5-5 | S | 1 | 〜40行 |
 | S5-6 | M | — | テスト実行 |
 | S5-7 | M | 4 | 〜60行 |
-| S5-8 | L | 4 | 〜200行 |
+| S5-8 | M | 4 | 〜120行 |
+| S5-9 | M | 3 | 〜100行 |
 
 ## 進捗サマリー
 
@@ -176,3 +214,4 @@
 | S5-6 テスト・品質保証 | [x] 完了 | 2026-03-28 |
 | S5-7 P2 CPU/人間切り替え | [x] 完了 | 2026-03-28 |
 | S5-8 デザインレビュー UI/UX 改善 | [x] 完了 | 2026-03-28 |
+| S5-9 デザイン残課題 レスポンシブ・UX 磨き込み | [ ] 未着手 | — |

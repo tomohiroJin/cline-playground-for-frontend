@@ -208,13 +208,32 @@ Phase S5-6: テスト・品質保証
 
 **対応済み**: MF-3, R-1, R-2, R-3, R-4, S-1, S-2
 
-**残課題（将来フェーズで対応）**:
+**残課題 → Phase S5-9 として計画化**:
 
-| # | 指摘 | 対象 | 内容 |
-|---|------|------|------|
-| DR-1 | VsScreen 2v2 のレスポンシブ対応 | VsScreen | 立ち絵サイズが固定（256px×4=1024px）でモバイル画面ではみ出す。`min()` での縮小、480px 未満で縦並びレイアウトが必要 |
-| DR-2 | キャラ選択パネルの開閉アニメーション | TeamSetupScreen | `max-height` + `overflow: hidden` で 200ms ease-out。現在は即座に表示/非表示 |
-| DR-3 | グリッド展開時の自動スクロール | TeamSetupScreen | `scrollIntoView({ behavior: 'smooth', block: 'nearest' })` 未実装 |
-| DR-4 | ResultScreen 2v2 立ち絵のチーム間区切り | ResultScreen | 4 体が等間隔で横並びのため、チーム1/チーム2 の境界が不明瞭。gap の差別化または VS マークが必要 |
-| DR-5 | CPU/人間トグルのタッチターゲット | TeamSetupScreen | 現在 `minHeight: 32px`、仕様では 44px 以上 |
-| DR-6 | VsScreen 1v1 レイアウトの `prefersReducedMotion` 漏れ | VsScreen | `CharacterPanel` 内の `transition` が 1v1 レイアウトでは常に有効 |
+| # | 指摘 | S5-9 タスク | 実装方針 |
+|---|------|-----------|---------|
+| DR-1 | VsScreen 2v2 レスポンシブ | S5-9-2 | `min()` で立ち絵サイズをビューポート依存に。`clamp()` でキャラ名縮小 |
+| DR-2 | キャラ選択パネル開閉アニメ | S5-9-4 | `useRef` で高さ計測 → `max-height` 200ms ease-out |
+| DR-3 | グリッド展開時の自動スクロール | S5-9-5 | `scrollIntoView` + reduced-motion 考慮 |
+| DR-4 | ResultScreen チーム間区切り | S5-9-8 | チーム内 gap `8px`、チーム間 gap `24px` + VS 区切り |
+| DR-5 | トグルのタッチターゲット | S5-9-6 | `minHeight: 32px` → `44px` |
+| DR-6 | 1v1 の reduced-motion 漏れ | S5-9-1 | `CharacterPanel` に `prefersReducedMotion` Props 追加 |
+
+### デザインシステム観点からの精査結果
+
+**現状の課題**:
+- 色定義が 312 箇所以上のコンポーネントに分散（renderer.ts, config.ts, 各コンポーネント）
+- フォントサイズが `px` / `rem` 混在（10px〜72px まで 12 種類）
+- スペーシングにトークン化されたスケールがない
+- インラインスタイルで CSS の `@media` クエリが使えない制約
+
+**S5-9 での対応方針**:
+- インラインスタイルの制約内で `min()` / `clamp()` を活用（CSS @media 不要）
+- `window.innerWidth` ベースのレイアウト切り替えは避ける（SSR 非対応・レンダリングコスト）
+- `prefersReducedMotion` は `CharacterPanel` Props で伝播（コンポーネント境界を尊重）
+- 色の一元管理（TEAM1_COLOR / TEAM2_COLOR 等）は既存の定数パターンを踏襲
+
+**将来的な改善余地（S5-9 スコープ外）**:
+- CSS カスタムプロパティによるゲーム UI テーマトークンの導入
+- `styled-components` の `ThemeProvider` でデザイントークン注入
+- フォントサイズ・スペーシングのスケール定義と一元管理
