@@ -234,6 +234,7 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
   is2PMode, is2v2Mode, player1CharacterName, player2CharacterName, onBackToCharacterSelect,
 }) => {
   const isWin = winner === 'player';
+  const isMultiPlayerMode = is2PMode || is2v2Mode;
 
   // カウントアップアニメーション
   const animHits = useCountUp(stats?.playerHits ?? 0);
@@ -254,13 +255,13 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
 
   return (
     <MenuCard style={{ position: 'relative', overflow: 'hidden' }}>
-      {(is2PMode || is2v2Mode || isWin) && <ConfettiOverlay />}
+      {(isMultiPlayerMode || isWin) && <ConfettiOverlay />}
 
       <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
         <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>
-          {(is2PMode || is2v2Mode) ? '🎊' : isWin ? '🎉' : '😢'}
+          {isMultiPlayerMode ? '🎊' : isWin ? '🎉' : '😢'}
         </div>
-        <GameTitle style={{ color: (is2PMode || is2v2Mode || isWin) ? 'var(--accent-color)' : '#ff4444' }}>
+        <GameTitle style={{ color: (isMultiPlayerMode || isWin) ? 'var(--accent-color)' : '#ff4444' }}>
           {getWinnerText(is2PMode, is2v2Mode, isWin, player1CharacterName, player2CharacterName)}
         </GameTitle>
         <p style={{ fontSize: '2rem', color: 'white', fontWeight: 'bold', marginBottom: '20px' }}>
@@ -325,8 +326,8 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
           </div>
         )}
 
-        {/* 新規実績（2P / 2v2 対戦では非表示） */}
-        {!is2PMode && !is2v2Mode && newAchievements && newAchievements.length > 0 && (
+        {/* 新規実績（マルチプレイヤー対戦では非表示） */}
+        {!isMultiPlayerMode && newAchievements && newAchievements.length > 0 && (
           <div style={{ width: '100%', marginBottom: '1rem' }}>
             <p style={{ color: '#ffd700', fontSize: '0.8rem', textAlign: 'center', marginBottom: '8px', fontWeight: 'bold' }}>
               NEW ACHIEVEMENTS!

@@ -4,8 +4,9 @@
  * - 難易度選択（かんたん / ふつう / むずかしい）
  * - フィールド / 勝利スコアはタイトル画面の設定値を使用
  */
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import type { Character, Difficulty } from '../core/types';
+import { ALWAYS_UNLOCKED_IDS } from '../core/characters';
 import { screenLayout } from './screen-layout';
 
 /** スロット識別子 */
@@ -20,9 +21,6 @@ const DIFFICULTY_LABELS: Record<Difficulty, string> = {
 
 /** 難易度一覧 */
 const DIFFICULTIES: Difficulty[] = ['easy', 'normal', 'hard'];
-
-/** フリー対戦キャラ（常に解放済み） */
-const ALWAYS_UNLOCKED_IDS = new Set(['rookie', 'regular', 'ace']);
 
 type TeamSetupScreenProps = {
   allCharacters: Character[];
@@ -191,11 +189,10 @@ const CharacterSlot: React.FC<{
   isOpen: boolean;
   onToggle: () => void;
   allCharacters: Character[];
-  unlockedIds: string[];
+  unlockedSet: Set<string>;
   selectedCharacterId: string;
   onSelect: (character: Character) => void;
-}> = ({ label, character, slotId, isOpen, onToggle, allCharacters, unlockedIds, selectedCharacterId, onSelect }) => {
-  const unlockedSet = new Set(unlockedIds);
+}> = ({ label, character, slotId, isOpen, onToggle, allCharacters, unlockedSet, selectedCharacterId, onSelect }) => {
   const isUnlocked = (c: Character) => ALWAYS_UNLOCKED_IDS.has(c.id) || unlockedSet.has(c.id);
 
   return (
@@ -258,6 +255,7 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
   onBack,
 }) => {
   const [openSlot, setOpenSlot] = useState<SlotId | undefined>(undefined);
+  const unlockedSet = useMemo(() => new Set(unlockedIds), [unlockedIds]);
 
   const toggleSlot = useCallback((slotId: SlotId) => {
     setOpenSlot(prev => prev === slotId ? undefined : slotId);
@@ -303,7 +301,7 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
             isOpen={openSlot === 'p2'}
             onToggle={() => toggleSlot('p2')}
             allCharacters={allCharacters}
-            unlockedIds={unlockedIds}
+            unlockedSet={unlockedSet}
             selectedCharacterId={allyCharacter.id}
             onSelect={(c) => handleSelect('p2', c)}
           />
@@ -320,7 +318,7 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
             isOpen={openSlot === 'p3'}
             onToggle={() => toggleSlot('p3')}
             allCharacters={allCharacters}
-            unlockedIds={unlockedIds}
+            unlockedSet={unlockedSet}
             selectedCharacterId={enemyCharacter1.id}
             onSelect={(c) => handleSelect('p3', c)}
           />
@@ -332,7 +330,7 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
             isOpen={openSlot === 'p4'}
             onToggle={() => toggleSlot('p4')}
             allCharacters={allCharacters}
-            unlockedIds={unlockedIds}
+            unlockedSet={unlockedSet}
             selectedCharacterId={enemyCharacter2.id}
             onSelect={(c) => handleSelect('p4', c)}
           />

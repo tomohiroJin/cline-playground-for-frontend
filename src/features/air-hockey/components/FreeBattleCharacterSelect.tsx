@@ -6,7 +6,7 @@
  */
 import React, { useState, useCallback } from 'react';
 import type { Character, Difficulty } from '../core/types';
-import { PLAYER_CHARACTER } from '../core/characters';
+import { PLAYER_CHARACTER, ALWAYS_UNLOCKED_IDS } from '../core/characters';
 
 /** 難易度→デフォルトキャラ ID のマッピング */
 const DEFAULT_CHARACTER_BY_DIFFICULTY: Record<Difficulty, string> = {
@@ -14,9 +14,6 @@ const DEFAULT_CHARACTER_BY_DIFFICULTY: Record<Difficulty, string> = {
   normal: 'regular',
   hard: 'ace',
 };
-
-/** フリー対戦キャラ（常に解放済み） */
-const ALWAYS_UNLOCKED_IDS = new Set(['rookie', 'regular', 'ace']);
 
 type FreeBattleCharacterSelectProps = {
   characters: Character[];

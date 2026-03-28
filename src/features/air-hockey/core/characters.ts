@@ -195,6 +195,11 @@ export const getAllCharacters = (): Character[] => {
   return Object.values(ALL_CHARACTERS_BY_ID);
 };
 
+/** フリー対戦キャラ（常にアンロック済み）の ID セット */
+export const ALWAYS_UNLOCKED_IDS = new Set(
+  Object.values(FREE_BATTLE_CHARACTERS).map(c => c.id)
+);
+
 /** 対戦可能キャラクターを取得（主人公 + フリー対戦キャラ） */
 export const getBattleCharacters = (): Character[] => {
   return [PLAYER_CHARACTER, ...Object.values(FREE_BATTLE_CHARACTERS)];

@@ -50,8 +50,8 @@ const hexToRgba = (hex: string, alpha: number): string => {
 /** キャラクター立ち絵パネル */
 const CharacterPanel: React.FC<{
   character: Character;
-  translateX: number;
-}> = ({ character, translateX }) => {
+  translateX?: number;
+}> = ({ character, translateX = 0 }) => {
   const hasPortrait = Boolean(character.portrait);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
@@ -183,16 +183,16 @@ export const VsScreen: React.FC<VsScreenProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px' }}>
           {/* チーム1 */}
           <div style={{ display: 'flex', gap: '12px', transform: `translateX(${teamTranslateX}px)`, transition: `transform ${CHAR_SLIDE_DURATION_MS}ms ease-out` }}>
-            <CharacterPanel character={playerCharacter} translateX={0} />
-            <CharacterPanel character={allyCharacter} translateX={0} />
+            <CharacterPanel character={playerCharacter} />
+            <CharacterPanel character={allyCharacter} />
           </div>
 
           {vsText}
 
           {/* チーム2 */}
           <div style={{ display: 'flex', gap: '12px', transform: `translateX(${enemyTranslateX}px)`, transition: `transform ${CHAR_SLIDE_DURATION_MS}ms ease-out` }}>
-            <CharacterPanel character={cpuCharacter} translateX={0} />
-            <CharacterPanel character={enemyCharacter2} translateX={0} />
+            <CharacterPanel character={cpuCharacter} />
+            <CharacterPanel character={enemyCharacter2} />
           </div>
         </div>
       ) : (
