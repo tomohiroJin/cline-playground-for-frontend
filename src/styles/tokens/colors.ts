@@ -44,6 +44,9 @@ export const lightColors = `
   --color-interactive-bg: rgba(255, 255, 255, 0.7);
   --color-interactive-bg-hover: rgba(255, 255, 255, 0.9);
   --color-interactive-border: #cccccc;
+
+  /* ボタングラデーション */
+  --color-button-gradient-end: #3a7bd5;
 `;
 
 /** ダークモード（premium-theme）用カラー CSS変数 */
@@ -83,6 +86,9 @@ export const darkColors = `
   --color-interactive-bg: rgba(255, 255, 255, 0.08);
   --color-interactive-bg-hover: rgba(255, 255, 255, 0.15);
   --color-interactive-border: rgba(255, 255, 255, 0.2);
+
+  /* ボタングラデーション */
+  --color-button-gradient-end: #4a8be0;
 `;
 
 /** styled-components 内でタイポ防止に使う TypeScript 定数 */
@@ -111,4 +117,5 @@ export const colors = {
   interactiveBg: 'var(--color-interactive-bg)',
   interactiveBgHover: 'var(--color-interactive-bg-hover)',
   interactiveBorder: 'var(--color-interactive-border)',
+  buttonGradientEnd: 'var(--color-button-gradient-end)',
 } as const;
