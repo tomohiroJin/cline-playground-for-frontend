@@ -276,53 +276,36 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
         </p>
 
         {/* キャラ立ち絵エリア */}
-        {is2v2Mode && (playerCharacter || allyCharacter || cpuCharacter || enemyCharacter2) ? (
-          /* 2v2: 4 体表示（チーム1: P1+P2 ⚡ チーム2: P3+P4） */
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '24px',
-            marginBottom: '1rem',
-            alignItems: 'flex-end',
-          }}>
-            {/* チーム1 */}
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {playerCharacter && (
-                <CharacterPortrait character={playerCharacter} expression={isWin ? 'happy' : 'normal'} />
-              )}
-              {allyCharacter && (
-                <CharacterPortrait character={allyCharacter} expression={isWin ? 'happy' : 'normal'} />
-              )}
-            </div>
-            {/* チーム間区切り */}
-            <span data-testid="team-separator" style={{ color: '#666', fontSize: '1.2rem', alignSelf: 'center' }}>⚡</span>
-            {/* チーム2 */}
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {cpuCharacter && (
-                <CharacterPortrait character={cpuCharacter} expression={isWin ? 'normal' : 'happy'} />
-              )}
-              {enemyCharacter2 && (
-                <CharacterPortrait character={enemyCharacter2} expression={isWin ? 'normal' : 'happy'} />
-              )}
-            </div>
-          </div>
-        ) : (playerCharacter?.portrait || cpuCharacter?.portrait) ? (
-          /* 1v1 / 2P: 従来の 2 体表示 */
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '20px',
-            marginBottom: '1rem',
-            alignItems: 'flex-end',
-          }}>
-            {playerCharacter && (
-              <CharacterPortrait character={playerCharacter} expression={isWin ? 'happy' : 'normal'} />
-            )}
-            {cpuCharacter && (
-              <CharacterPortrait character={cpuCharacter} expression={isWin ? 'normal' : 'happy'} />
-            )}
-          </div>
-        ) : null}
+        {(() => {
+          const portraitContainer = (gap: string) => ({
+            display: 'flex' as const, justifyContent: 'center' as const,
+            gap, marginBottom: '1rem', alignItems: 'flex-end' as const,
+          });
+          if (is2v2Mode && (playerCharacter || allyCharacter || cpuCharacter || enemyCharacter2)) {
+            return (
+              <div style={portraitContainer('24px')}>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {playerCharacter && <CharacterPortrait character={playerCharacter} expression={isWin ? 'happy' : 'normal'} />}
+                  {allyCharacter && <CharacterPortrait character={allyCharacter} expression={isWin ? 'happy' : 'normal'} />}
+                </div>
+                <span data-testid="team-separator" style={{ color: '#666', fontSize: '1.2rem', alignSelf: 'center' }}>⚡</span>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {cpuCharacter && <CharacterPortrait character={cpuCharacter} expression={isWin ? 'normal' : 'happy'} />}
+                  {enemyCharacter2 && <CharacterPortrait character={enemyCharacter2} expression={isWin ? 'normal' : 'happy'} />}
+                </div>
+              </div>
+            );
+          }
+          if (playerCharacter?.portrait || cpuCharacter?.portrait) {
+            return (
+              <div style={portraitContainer('20px')}>
+                {playerCharacter && <CharacterPortrait character={playerCharacter} expression={isWin ? 'happy' : 'normal'} />}
+                {cpuCharacter && <CharacterPortrait character={cpuCharacter} expression={isWin ? 'normal' : 'happy'} />}
+              </div>
+            );
+          }
+          return null;
+        })()}
 
         {/* アンロック通知 */}
         {newlyUnlockedCharacterName && (
