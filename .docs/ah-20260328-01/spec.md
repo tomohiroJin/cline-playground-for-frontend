@@ -100,10 +100,8 @@ const resetToFree = useCallback(() => {
 
 ### 3.3 難易度設定
 
-- 2v2 用の難易度は独立した状態（`pairMatchDifficulty`）で管理
-- 難易度は P2（味方）/ P3 / P4 の全 CPU に共通適用
-- 表示: かんたん / ふつう / むずかしい の 3 択ボタン
-- **配置**: チーム構成セクションの上に配置（難易度 → チーム1 → チーム2 → 開始の流れ）
+- タイトル画面の難易度設定をそのまま使用（ペアマッチ固有の難易度 UI は削除済み）
+- 難易度は P2（味方 CPU）/ P3 / P4 の全 CPU に共通適用
 
 ### 3.4 P2 操作タイプ切り替え
 
@@ -232,32 +230,15 @@ type VsScreenProps = {
 
 ```
 TitleScreen
-  └→ [ペアマッチ] ボタン
-     └→ TeamSetupScreen（キャラ選択・難易度・フィールド設定）
-        └→ [対戦開始！] ボタン
-           └→ VsScreen（4キャラ VS 演出）
-              └→ onComplete
-                 └→ Game（2v2 ゲームプレイ）
-                    └→ ゲーム終了
-                       └→ ResultScreen（2v2 リザルト）
-                          └→ [メニューに戻る]
-                             └→ TitleScreen
-```
-
-### 5.2 handlePairMatchStart の変更
-
-```typescript
-// 現在
-const handlePairMatchStart = useCallback(() => {
-  mode.setGameMode('2v2-local');
-  startGame(mode.field, '2v2-local');
-}, [mode, startGame]);
-
-// 変更後: VsScreen を挟む
-const handlePairMatchStart = useCallback(() => {
-  mode.setGameMode('2v2-local');
-  navigateTo('vsScreen');  // VsScreen → onComplete → startGame
-}, [mode, navigateTo]);
+  └→ [ペアマッチ] → TeamSetupScreen（キャラ選択・CPU/人間切替）
+                      ├→ [← 戻る] → TitleScreen
+                      └→ [対戦開始！] → VsScreen（4キャラ VS 演出）
+                                          └→ [3秒後] → Game（2v2 ゲームプレイ）
+                                                         ├→ [メニュー] → TitleScreen
+                                                         └→ [ゲーム終了] → ResultScreen（2v2 リザルト）
+                                                                            ├→ [BACK TO MENU] → TitleScreen
+                                                                            ├→ [同じ設定でリプレイ] → Game（2v2）
+                                                                            └→ [チーム設定に戻る] → TeamSetupScreen
 ```
 
 ## 6. ResultScreen 2v2 最適化
@@ -461,3 +442,53 @@ useEffect(() => {
   </div>
 </div>
 ```
+
+## 10. ゲームプレイロジック仕様（S5-10〜S5-12 で実装）
+
+### 10.1 マレット移動ゾーン
+
+2v2 では上下 2 分割ゾーン（味方同士は同じ半面全体を自由に移動可能）:
+- チーム1（P1/P2）: 下半分全体（X: 全幅、Y: H/2〜H）
+- チーム2（P3/P4）: 上半分全体（X: 全幅、Y: 0〜H/2）
+
+### 10.2 マレット間衝突判定
+
+- 全マレットペア（最大 6 組）の距離を毎フレーム判定
+- 距離 < `MALLET_RADIUS * 2` のとき、中心間ベクトルに沿って均等に押し戻し
+- 押し戻し後にゾーン制約を再適用（相手ゾーンへの侵入を防止）
+
+### 10.3 パックスタック脱出
+
+- パック速度 < `MIN_SPEED * 0.5` が 30 フレーム（約 0.5 秒）以上継続で「スタック」判定
+- スタック時、フィールド中央（`W/2, H/2`）に向かう方向に `MIN_SPEED * 2` で射出
+- カウンターは `useRef` で管理（`useEffect` 再実行でもリセットされない）
+
+### 10.4 2v2 ゴールサイズ
+
+フィールドごとの固定値（`PAIR_MATCH_GOAL_SIZES`）:
+
+| フィールド | 1v1 | 2v2 |
+|-----------|-----|-----|
+| classic/pillars/fortress/bastion | 140〜160 | **240** |
+| zigzag | 180 | **240** |
+| wide | 240 | **280** |
+
+### 10.5 キーマッピング
+
+| モード | P1 | P2 |
+|--------|-----|-----|
+| 1v1 / ストーリー | 矢印キー + WASD | — |
+| 2P / 2v2 | **矢印キーのみ** | **WASD** |
+
+### 10.6 キャラ別 AI プロファイル
+
+- cpu（P3）: `buildFreeBattleAiConfig(difficulty, enemyCharacter1.id)`
+- enemy（P4）: `buildFreeBattleAiConfig(difficulty, enemyCharacter2.id)`
+- ally（P2・CPU 時）: `buildAllyAiConfig(difficulty, allyCharacter.id)` — aggressiveness 上限 0.5
+
+### 10.7 ally CPU の座標反転アプローチ
+
+AI エンジンは上半分 CPU を前提とするため、ally（下半分）の場合:
+1. パック・マレット座標を Y 軸反転して AI に渡す
+2. AI 計算結果を再度 Y 軸反転して戻す
+3. `getPlayerZone` でゾーンクランプ
