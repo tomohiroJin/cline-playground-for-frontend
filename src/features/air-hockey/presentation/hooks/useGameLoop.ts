@@ -64,6 +64,8 @@ export type GameLoopConfig = {
   playerMalletColor?: string;
   /** CPU/2P マレットの色（2P 対戦時にキャラカラーを反映） */
   cpuMalletColor?: string;
+  /** P2 の操作タイプ（2v2 時のみ使用） */
+  allyControlType?: 'cpu' | 'human';
 };
 
 /** Ref グループ（ゲームループが参照・更新する ref） */
@@ -114,7 +116,7 @@ export type UseGameLoopParams = {
  * - callbacks: React state 更新コールバック
  */
 export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGameLoopParams): void {
-  const { difficulty: diff, field, winScore, getSound, bgmEnabled, gameMode, aiConfig, playerMalletColor, cpuMalletColor } = config;
+  const { difficulty: diff, field, winScore, getSound, bgmEnabled, gameMode, aiConfig, playerMalletColor, cpuMalletColor, allyControlType } = config;
   const pColor = playerMalletColor ?? DEFAULT_PLAYER_MALLET_COLOR;
   const cColor = cpuMalletColor ?? DEFAULT_CPU_MALLET_COLOR;
   const {
@@ -468,20 +470,22 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
 
       if (is2v2Mode) {
         // ── 2v2 モード入力 ──
-        // マルチタッチ: player1 → game.player、player2 → game.ally
+        const isAllyHuman = allyControlType === 'human';
+
+        // マルチタッチ: player1 → game.player、player2 → game.ally（人間操作時のみ）
         if (multiTouchRef?.current) {
           const touchState = multiTouchRef.current;
           if (touchState.player1Position) {
             moveMalletTo(game.player, touchState.player1Position.x, touchState.player1Position.y);
             lastInputRef.current = Date.now();
           }
-          if (touchState.player2Position && game.ally) {
+          if (isAllyHuman && touchState.player2Position && game.ally) {
             moveMalletTo(game.ally, touchState.player2Position.x, touchState.player2Position.y);
           }
         }
 
-        // WASD → game.ally（getPlayerZone で右下ゾーンに X/Y 両方クランプ）
-        if (player2KeysRef && game.ally) {
+        // WASD → game.ally（人間操作時のみ）
+        if (isAllyHuman && player2KeysRef && game.ally) {
           const keys2 = player2KeysRef.current;
           const hasInput = keys2.up || keys2.down || keys2.left || keys2.right;
           if (hasInput) {
@@ -497,8 +501,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
           }
         }
 
-        // CPU AI: cpu（P3）は常に AI、ally（P2）は人間操作のため AI スキップ
-        // scoreDiff / effectiveAiConfig は enemy（P4）の AI でも共有する
+        // CPU AI: cpu（P3）は常に AI
         const scoreDiff = Math.max(0, scoreRef.current.p - scoreRef.current.c);
         const effectiveAiConfig = aiConfig ?? AI_BEHAVIOR_PRESETS[diff];
         const cpuUpdate = CpuAI.updateWithBehavior(game, effectiveAiConfig, now, consts, scoreDiff);
@@ -509,7 +512,23 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
           game.cpuStuckTimer = cpuUpdate.cpuStuckTimer;
         }
 
-        // enemy（P4）のみ CPU AI で制御
+        // ally（P2）: CPU 操作時のみ AI で制御
+        if (!isAllyHuman && game.ally) {
+          const updateFn = CpuAI.updateWithBehavior.bind(CpuAI);
+          const allyResult = updateExtraMalletAI(
+            game, game.ally,
+            { target: game.allyTarget ?? null, targetTime: game.allyTargetTime ?? 0, stuckTimer: game.allyStuckTimer ?? 0 },
+            updateFn, effectiveAiConfig, now, consts, scoreDiff
+          );
+          if (allyResult) {
+            game.ally = allyResult.mallet;
+            game.allyTarget = allyResult.aiState.target;
+            game.allyTargetTime = allyResult.aiState.targetTime;
+            game.allyStuckTimer = allyResult.aiState.stuckTimer;
+          }
+        }
+
+        // enemy（P4）: CPU AI で制御
         if (game.enemy) {
           const updateFn = CpuAI.updateWithBehavior.bind(CpuAI);
           const result = updateExtraMalletAI(

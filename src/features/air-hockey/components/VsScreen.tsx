@@ -109,10 +109,13 @@ export const VsScreen: React.FC<VsScreenProps> = ({
   allyCharacter,
   enemyCharacter2,
 }) => {
-  const [bgOpacity, setBgOpacity] = useState(0);
-  const [isSlideComplete, setIsSlideComplete] = useState(false);
-  const [isVsVisible, setIsVsVisible] = useState(false);
-  const [isInfoVisible, setIsInfoVisible] = useState(false);
+  const prefersReducedMotion = typeof window !== 'undefined'
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const [bgOpacity, setBgOpacity] = useState(prefersReducedMotion ? 1 : 0);
+  const [isSlideComplete, setIsSlideComplete] = useState(prefersReducedMotion);
+  const [isVsVisible, setIsVsVisible] = useState(prefersReducedMotion);
+  const [isInfoVisible, setIsInfoVisible] = useState(prefersReducedMotion);
   const [isFadeOut, setIsFadeOut] = useState(false);
 
   useEffect(() => {
@@ -182,17 +185,23 @@ export const VsScreen: React.FC<VsScreenProps> = ({
         /* 2v2 レイアウト: チーム1 (P1+P2) VS チーム2 (P3+P4) */
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px' }}>
           {/* チーム1 */}
-          <div style={{ display: 'flex', gap: '12px', transform: `translateX(${teamTranslateX}px)`, transition: `transform ${CHAR_SLIDE_DURATION_MS}ms ease-out` }}>
-            <CharacterPanel character={playerCharacter} />
-            <CharacterPanel character={allyCharacter} />
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+            <span style={{ fontSize: '12px', color: '#3498db', fontWeight: 'bold' }}>チーム1</span>
+            <div style={{ display: 'flex', gap: '12px', transform: `translateX(${teamTranslateX}px)`, transition: prefersReducedMotion ? 'none' : `transform ${CHAR_SLIDE_DURATION_MS}ms ease-out` }}>
+              <CharacterPanel character={playerCharacter} />
+              <CharacterPanel character={allyCharacter} />
+            </div>
           </div>
 
           {vsText}
 
           {/* チーム2 */}
-          <div style={{ display: 'flex', gap: '12px', transform: `translateX(${enemyTranslateX}px)`, transition: `transform ${CHAR_SLIDE_DURATION_MS}ms ease-out` }}>
-            <CharacterPanel character={cpuCharacter} />
-            <CharacterPanel character={enemyCharacter2} />
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+            <span style={{ fontSize: '12px', color: '#e74c3c', fontWeight: 'bold' }}>チーム2</span>
+            <div style={{ display: 'flex', gap: '12px', transform: `translateX(${enemyTranslateX}px)`, transition: prefersReducedMotion ? 'none' : `transform ${CHAR_SLIDE_DURATION_MS}ms ease-out` }}>
+              <CharacterPanel character={cpuCharacter} />
+              <CharacterPanel character={enemyCharacter2} />
+            </div>
           </div>
         </div>
       ) : (

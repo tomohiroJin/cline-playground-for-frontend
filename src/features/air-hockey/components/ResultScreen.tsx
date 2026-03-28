@@ -34,6 +34,10 @@ type ResultScreenProps = {
   player2CharacterName?: string;
   /** キャラ選択に戻る（2P 対戦用） */
   onBackToCharacterSelect?: () => void;
+  /** P2 味方キャラ（2v2 立ち絵表示用） */
+  allyCharacter?: Character;
+  /** P4 敵2キャラ（2v2 立ち絵表示用） */
+  enemyCharacter2?: Character;
 };
 
 // カウントアップアニメーション用フック
@@ -232,6 +236,7 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
   onBackToStageSelect, onNextStage,
   cpuCharacter, playerCharacter, newlyUnlockedCharacterName,
   is2PMode, is2v2Mode, player1CharacterName, player2CharacterName, onBackToCharacterSelect,
+  allyCharacter, enemyCharacter2,
 }) => {
   const isWin = winner === 'player';
   const isMultiPlayerMode = is2PMode || is2v2Mode;
@@ -269,7 +274,8 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
         </p>
 
         {/* キャラ立ち絵エリア */}
-        {(playerCharacter?.portrait || cpuCharacter?.portrait) && (
+        {is2v2Mode && (playerCharacter || allyCharacter || cpuCharacter || enemyCharacter2) ? (
+          /* 2v2: 4 体表示（チーム1: P1+P2 / チーム2: P3+P4） */
           <div style={{
             display: 'flex',
             justifyContent: 'center',
@@ -278,19 +284,35 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
             alignItems: 'flex-end',
           }}>
             {playerCharacter && (
-              <CharacterPortrait
-                character={playerCharacter}
-                expression={isWin ? 'happy' : 'normal'}
-              />
+              <CharacterPortrait character={playerCharacter} expression={isWin ? 'happy' : 'normal'} />
+            )}
+            {allyCharacter && (
+              <CharacterPortrait character={allyCharacter} expression={isWin ? 'happy' : 'normal'} />
             )}
             {cpuCharacter && (
-              <CharacterPortrait
-                character={cpuCharacter}
-                expression={isWin ? 'normal' : 'happy'}
-              />
+              <CharacterPortrait character={cpuCharacter} expression={isWin ? 'normal' : 'happy'} />
+            )}
+            {enemyCharacter2 && (
+              <CharacterPortrait character={enemyCharacter2} expression={isWin ? 'normal' : 'happy'} />
             )}
           </div>
-        )}
+        ) : (playerCharacter?.portrait || cpuCharacter?.portrait) ? (
+          /* 1v1 / 2P: 従来の 2 体表示 */
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '20px',
+            marginBottom: '1rem',
+            alignItems: 'flex-end',
+          }}>
+            {playerCharacter && (
+              <CharacterPortrait character={playerCharacter} expression={isWin ? 'happy' : 'normal'} />
+            )}
+            {cpuCharacter && (
+              <CharacterPortrait character={cpuCharacter} expression={isWin ? 'normal' : 'happy'} />
+            )}
+          </div>
+        ) : null}
 
         {/* アンロック通知 */}
         {newlyUnlockedCharacterName && (

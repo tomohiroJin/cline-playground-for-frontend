@@ -22,6 +22,13 @@ const DIFFICULTY_LABELS: Record<Difficulty, string> = {
 /** 難易度一覧 */
 const DIFFICULTIES: Difficulty[] = ['easy', 'normal', 'hard'];
 
+/** チームカラー */
+const TEAM1_COLOR = '#3498db';
+const TEAM2_COLOR = '#e74c3c';
+
+/** P2 操作タイプ */
+type AllyControlType = 'cpu' | 'human';
+
 type TeamSetupScreenProps = {
   allCharacters: Character[];
   unlockedIds: string[];
@@ -32,6 +39,8 @@ type TeamSetupScreenProps = {
   onAllyChange: (c: Character) => void;
   onEnemy1Change: (c: Character) => void;
   onEnemy2Change: (c: Character) => void;
+  allyControlType: AllyControlType;
+  onAllyControlTypeChange: (t: AllyControlType) => void;
   difficulty: Difficulty;
   onDifficultyChange: (d: Difficulty) => void;
   onStart: () => void;
@@ -47,17 +56,18 @@ const styles = {
     flexDirection: 'column' as const,
     gap: '12px',
   },
-  teamSection: {
+  teamSection: (teamColor: string) => ({
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: '8px',
     padding: '12px',
-  },
-  teamTitle: {
+    borderLeft: `3px solid ${teamColor}`,
+  }),
+  teamTitle: (teamColor: string) => ({
     fontSize: '16px',
     fontWeight: 'bold' as const,
     marginBottom: '8px',
-    color: '#e67e22',
-  },
+    color: teamColor,
+  }),
   slotRow: {
     display: 'flex',
     alignItems: 'center',
@@ -76,7 +86,7 @@ const styles = {
     borderRadius: '6px',
     marginBottom: '4px',
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    opacity: 0.7,
+    cursor: 'default',
   },
   slotIcon: {
     width: '36px',
@@ -173,6 +183,30 @@ const styles = {
     fontWeight: 'bold' as const,
     cursor: 'pointer',
   }),
+  // CPU/人間 トグル
+  controlToggle: {
+    display: 'flex',
+    gap: '4px',
+    marginLeft: 'auto',
+  },
+  controlButton: (isActive: boolean) => ({
+    padding: '6px 12px',
+    borderRadius: '4px',
+    border: 'none',
+    backgroundColor: isActive ? 'rgba(230, 126, 34, 0.3)' : 'transparent',
+    color: isActive ? '#e67e22' : '#aaa',
+    fontSize: '12px',
+    fontWeight: 'bold' as const,
+    cursor: 'pointer',
+    minWidth: '44px',
+    minHeight: '32px',
+  }),
+  controlHint: {
+    fontSize: '11px',
+    color: '#888',
+    padding: '4px 8px',
+    fontStyle: 'italic' as const,
+  },
   // 開始ボタン
   startButton: {
     ...screenLayout.actionButton,
@@ -249,6 +283,8 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
   onAllyChange,
   onEnemy1Change,
   onEnemy2Change,
+  allyControlType,
+  onAllyControlTypeChange,
   difficulty,
   onDifficultyChange,
   onStart,
@@ -281,21 +317,57 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
       </div>
 
       {/* スクロールエリア */}
-      <div style={styles.scrollArea}>
+      <div style={styles.scrollArea} data-testid="scroll-area">
+        {/* 難易度（チーム構成の上に配置） */}
+        <div style={styles.difficultySection}>
+          <div style={styles.difficultyTitle}>CPU 難易度</div>
+          <div style={styles.difficultyRow}>
+            {DIFFICULTIES.map(d => (
+              <button
+                key={d}
+                style={styles.difficultyButton(d === difficulty)}
+                onClick={() => onDifficultyChange(d)}
+              >
+                {DIFFICULTY_LABELS[d]}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* チーム1 */}
-        <div style={styles.teamSection}>
-          <div style={styles.teamTitle}>チーム1（下）</div>
+        <div style={styles.teamSection(TEAM1_COLOR)} data-testid="team1-section">
+          <div style={styles.teamTitle(TEAM1_COLOR)}>チーム1（下）</div>
           {/* P1: 固定 */}
-          <div style={styles.slotRowFixed}>
+          <div style={styles.slotRowFixed} data-testid="slot-p1">
             <img src={playerCharacter.icon} alt={playerCharacter.name} style={styles.slotIcon} />
             <div style={styles.slotInfo}>
               <span style={styles.slotLabel}>P1: あなた</span>
               <span style={styles.slotName}>{playerCharacter.name}</span>
             </div>
           </div>
-          {/* P2: 味方 CPU */}
+          {/* P2: パートナー（CPU/人間切り替え） */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', marginTop: '4px' }}>
+            <span style={{ fontSize: '12px', color: '#888' }}>P2 操作:</span>
+            <div style={styles.controlToggle}>
+              <button
+                style={styles.controlButton(allyControlType === 'cpu')}
+                onClick={() => onAllyControlTypeChange('cpu')}
+              >
+                CPU
+              </button>
+              <button
+                style={styles.controlButton(allyControlType === 'human')}
+                onClick={() => onAllyControlTypeChange('human')}
+              >
+                人間
+              </button>
+            </div>
+          </div>
+          {allyControlType === 'human' && (
+            <div style={styles.controlHint}>操作: WASD / タッチ（2本目）</div>
+          )}
           <CharacterSlot
-            label="P2: パートナー（CPU）"
+            label={allyControlType === 'cpu' ? 'P2: パートナー（CPU）' : 'P2: パートナー（人間）'}
             character={allyCharacter}
             slotId="p2"
             isOpen={openSlot === 'p2'}
@@ -308,8 +380,8 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
         </div>
 
         {/* チーム2 */}
-        <div style={styles.teamSection}>
-          <div style={styles.teamTitle}>チーム2（上）</div>
+        <div style={styles.teamSection(TEAM2_COLOR)} data-testid="team2-section">
+          <div style={styles.teamTitle(TEAM2_COLOR)}>チーム2（上）</div>
           {/* P3: 敵 CPU 1 */}
           <CharacterSlot
             label="P3: 敵1（CPU）"
@@ -334,22 +406,6 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
             selectedCharacterId={enemyCharacter2.id}
             onSelect={(c) => handleSelect('p4', c)}
           />
-        </div>
-
-        {/* 難易度 */}
-        <div style={styles.difficultySection}>
-          <div style={styles.difficultyTitle}>CPU 難易度</div>
-          <div style={styles.difficultyRow}>
-            {DIFFICULTIES.map(d => (
-              <button
-                key={d}
-                style={styles.difficultyButton(d === difficulty)}
-                onClick={() => onDifficultyChange(d)}
-              >
-                {DIFFICULTY_LABELS[d]}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
 

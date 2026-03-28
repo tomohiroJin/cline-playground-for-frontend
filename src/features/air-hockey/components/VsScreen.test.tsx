@@ -321,5 +321,42 @@ describe('VsScreen', () => {
       expect(screen.queryByText('ルーキー')).not.toBeInTheDocument();
       expect(screen.queryByText('エース')).not.toBeInTheDocument();
     });
+
+    it('is2v2=true でチームラベル「チーム1」「チーム2」が表示される', () => {
+      render(
+        <VsScreen
+          {...defaultProps}
+          is2v2
+          allyCharacter={allyChar}
+          enemyCharacter2={enemy2Char}
+        />
+      );
+      expect(screen.getByText('チーム1')).toBeInTheDocument();
+      expect(screen.getByText('チーム2')).toBeInTheDocument();
+    });
+  });
+
+  describe('prefers-reduced-motion 対応', () => {
+    it('reduced-motion 時にスライドアニメーションがスキップされる', () => {
+      // matchMedia をモック
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: jest.fn().mockImplementation((query: string) => ({
+          matches: query === '(prefers-reduced-motion: reduce)',
+          media: query,
+          onchange: null,
+          addListener: jest.fn(),
+          removeListener: jest.fn(),
+          addEventListener: jest.fn(),
+          removeEventListener: jest.fn(),
+          dispatchEvent: jest.fn(),
+        })),
+      });
+
+      render(<VsScreen {...defaultProps} />);
+      const playerImg = screen.getByAltText('アキラ 立ち絵');
+      // reduced-motion 時は translateX(0) で初期表示
+      expect(playerImg.parentElement?.style.transform).toContain('translateX(0');
+    });
   });
 });

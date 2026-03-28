@@ -361,5 +361,34 @@ describe('useGameMode', () => {
 
       expect(result.current.pairMatchDifficulty).toBe('hard');
     });
+
+    it('初期の allyControlType は cpu である', () => {
+      const { result } = renderHook(() => useGameMode());
+      expect(result.current.allyControlType).toBe('cpu');
+    });
+
+    it('setAllyControlType で human に変更できる', () => {
+      const { result } = renderHook(() => useGameMode());
+
+      act(() => {
+        result.current.setAllyControlType('human');
+      });
+
+      expect(result.current.allyControlType).toBe('human');
+    });
+
+    it('resetToFree で allyControlType は cpu にリセットされる', () => {
+      const { result } = renderHook(() => useGameMode());
+
+      act(() => {
+        result.current.setAllyControlType('human');
+      });
+
+      act(() => {
+        result.current.resetToFree();
+      });
+
+      expect(result.current.allyControlType).toBe('cpu');
+    });
   });
 });

@@ -363,6 +363,7 @@ const AirHockeyGame: React.FC = () => {
       aiConfig: mode.gameMode === 'story' ? storyAiConfig : freeBattleAiConfig,
       playerMalletColor: is2PMode ? mode.player1Character?.color : undefined,
       cpuMalletColor: is2PMode ? mode.player2Character?.color : undefined,
+      allyControlType: is2v2Mode ? mode.allyControlType : undefined,
     },
     refs: {
       gameRef, canvasRef, lastInputRef, scoreRef, phaseRef, countdownStartRef, shakeRef, statsRef, matchStartRef, keysRef,
@@ -429,6 +430,8 @@ const AirHockeyGame: React.FC = () => {
           onAllyChange={mode.setAllyCharacter}
           onEnemy1Change={mode.setEnemyCharacter1}
           onEnemy2Change={mode.setEnemyCharacter2}
+          allyControlType={mode.allyControlType}
+          onAllyControlTypeChange={mode.setAllyControlType}
           difficulty={mode.pairMatchDifficulty}
           onDifficultyChange={mode.setPairMatchDifficulty}
           onStart={handlePairMatchStart}
@@ -519,6 +522,8 @@ const AirHockeyGame: React.FC = () => {
             newlyUnlockedCharacterName={result.newlyUnlockedCharacterName}
             is2PMode={isMultiPlayer}
             is2v2Mode={is2v2Mode}
+            allyCharacter={is2v2Mode ? pairAlly : undefined}
+            enemyCharacter2={is2v2Mode ? pairEnemy2 : undefined}
             player1CharacterName={isMultiPlayer ? multiPlayerName : undefined}
             player2CharacterName={isMultiPlayer ? multiOpponentName : undefined}
             onBackToCharacterSelect={is2PMode ? handleBackToCharacterSelect : undefined}

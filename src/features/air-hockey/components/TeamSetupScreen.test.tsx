@@ -41,6 +41,8 @@ const createDefaultProps = () => ({
   onAllyChange: jest.fn(),
   onEnemy1Change: jest.fn(),
   onEnemy2Change: jest.fn(),
+  allyControlType: 'cpu' as 'cpu' | 'human',
+  onAllyControlTypeChange: jest.fn(),
   difficulty: 'normal' as Difficulty,
   onDifficultyChange: jest.fn(),
   onStart: jest.fn(),
@@ -183,6 +185,70 @@ describe('TeamSetupScreen', () => {
       render(<TeamSetupScreen {...props} />);
       fireEvent.click(screen.getByText('← 戻る'));
       expect(props.onBack).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('P2 CPU/人間トグル', () => {
+    it('CPU/人間のセグメントコントロールが表示される', () => {
+      render(<TeamSetupScreen {...createDefaultProps()} />);
+      expect(screen.getByText('CPU')).toBeDefined();
+      expect(screen.getByText('人間')).toBeDefined();
+    });
+
+    it('allyControlType=cpu のとき CPU ボタンがハイライトされる', () => {
+      render(<TeamSetupScreen {...createDefaultProps()} />);
+      const cpuButton = screen.getByText('CPU').closest('button') as HTMLElement;
+      expect(cpuButton.style.backgroundColor).toBeTruthy();
+    });
+
+    it('「人間」をクリックすると onAllyControlTypeChange(human) が呼ばれる', () => {
+      const props = createDefaultProps();
+      render(<TeamSetupScreen {...props} />);
+      fireEvent.click(screen.getByText('人間'));
+      expect(props.onAllyControlTypeChange).toHaveBeenCalledWith('human');
+    });
+
+    it('allyControlType=human のとき操作ヒントが表示される', () => {
+      const props = { ...createDefaultProps(), allyControlType: 'human' as const };
+      render(<TeamSetupScreen {...props} />);
+      expect(screen.getByText(/WASD/)).toBeDefined();
+    });
+
+    it('allyControlType=cpu のとき操作ヒントが表示されない', () => {
+      render(<TeamSetupScreen {...createDefaultProps()} />);
+      expect(screen.queryByText(/WASD/)).toBeNull();
+    });
+  });
+
+  describe('デザイン改善（S5-8）', () => {
+    it('チーム1セクションに青系の左ボーダーがある', () => {
+      render(<TeamSetupScreen {...createDefaultProps()} />);
+      const section = screen.getByTestId('team1-section');
+      // JSDOM は HEX を rgb() に変換する
+      expect(section.style.borderLeft).toContain('3px solid');
+      expect(section.style.borderLeft).toContain('52, 152, 219');
+    });
+
+    it('チーム2セクションに赤系の左ボーダーがある', () => {
+      render(<TeamSetupScreen {...createDefaultProps()} />);
+      const section = screen.getByTestId('team2-section');
+      expect(section.style.borderLeft).toContain('3px solid');
+      expect(section.style.borderLeft).toContain('231, 76, 60');
+    });
+
+    it('P1 スロットの opacity が 1 である', () => {
+      render(<TeamSetupScreen {...createDefaultProps()} />);
+      const p1Slot = screen.getByTestId('slot-p1');
+      expect(p1Slot.style.opacity).toBe('');
+    });
+
+    it('難易度セクションがチームセクションより前に表示される', () => {
+      const { container } = render(<TeamSetupScreen {...createDefaultProps()} />);
+      const scrollArea = container.querySelector('[data-testid="scroll-area"]') as HTMLElement;
+      const children = Array.from(scrollArea.children);
+      const diffIndex = children.findIndex(el => el.textContent?.includes('CPU 難易度'));
+      const team1Index = children.findIndex(el => el.textContent?.includes('チーム1'));
+      expect(diffIndex).toBeLessThan(team1Index);
     });
   });
 });

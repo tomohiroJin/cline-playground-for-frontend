@@ -293,5 +293,36 @@ describe('ResultScreen', () => {
 
       expect(screen.getByText('BACK TO MENU')).toBeInTheDocument();
     });
+
+    it('2v2 モードで ally と enemy2 の立ち絵が表示される', () => {
+      const allyChar: Character = {
+        id: 'rookie', name: 'ルーキー', icon: '/assets/characters/rookie.png', color: '#27ae60',
+        reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
+        portrait: { normal: '/assets/portraits/rookie-normal.png', happy: '/assets/portraits/rookie-happy.png' },
+      };
+      const enemy2: Character = {
+        id: 'ace', name: 'エース', icon: '/assets/characters/ace.png', color: '#e74c3c',
+        reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
+        portrait: { normal: '/assets/portraits/ace-normal.png', happy: '/assets/portraits/ace-happy.png' },
+      };
+
+      render(
+        <ResultScreen
+          {...defaultProps}
+          winner="player"
+          is2v2Mode
+          playerCharacter={playerCharacter}
+          cpuCharacter={cpuCharacter}
+          allyCharacter={allyChar}
+          enemyCharacter2={enemy2}
+        />,
+      );
+
+      // 4 体のキャラクター立ち絵が表示される
+      expect(screen.getByAltText('アキラ')).toBeInTheDocument();
+      expect(screen.getByAltText('ルーキー')).toBeInTheDocument();
+      expect(screen.getByAltText('ヒロ')).toBeInTheDocument();
+      expect(screen.getByAltText('エース')).toBeInTheDocument();
+    });
   });
 });
