@@ -5,23 +5,13 @@
  * - フィールド / 勝利スコアはタイトル画面の設定値を使用
  */
 import React, { useState, useCallback, useMemo } from 'react';
-import type { Character, Difficulty } from '../core/types';
+import type { Character } from '../core/types';
 import { ALWAYS_UNLOCKED_IDS } from '../core/characters';
 import { screenLayout } from './screen-layout';
 import { teamSetupStyles as styles } from './team-setup-screen-styles';
 
 /** スロット識別子 */
 type SlotId = 'p2' | 'p3' | 'p4';
-
-/** 難易度の表示ラベル */
-const DIFFICULTY_LABELS: Record<Difficulty, string> = {
-  easy: 'かんたん',
-  normal: 'ふつう',
-  hard: 'むずかしい',
-};
-
-/** 難易度一覧 */
-const DIFFICULTIES: Difficulty[] = ['easy', 'normal', 'hard'];
 
 /** チームカラー */
 const TEAM1_COLOR = '#3498db';

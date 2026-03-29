@@ -4,7 +4,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TeamSetupScreen } from './TeamSetupScreen';
-import type { Character, Difficulty } from '../core/types';
+import type { Character } from '../core/types';
 
 // テスト用キャラクターデータ
 const mockPlayerCharacter: Character = {
