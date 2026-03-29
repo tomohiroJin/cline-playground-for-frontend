@@ -14,7 +14,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { EntityFactory } from '../core/entities';
 import { CONSTANTS } from '../core/constants';
-import { FIELDS } from '../core/config';
+import { FIELDS, PAIR_MATCH_GOAL_SIZES } from '../core/config';
 import { getCharacterByDifficulty, findCharacterById, getBattleCharacters, PLAYER_CHARACTER } from '../core/characters';
 import type { Character, GameState, GamePhase, ShakeState, MatchStats, GameMode } from '../core/types';
 import { loadStoryProgress, resetStoryProgress } from '../core/story';
@@ -105,9 +105,18 @@ const AirHockeyGame: React.FC = () => {
 
   // ── ゲーム制御 ──
   const startGame = useCallback((fieldOverride?: typeof mode.field, gameModeOverride?: GameMode) => {
-    const activeField = fieldOverride ?? mode.field;
+    const baseField = fieldOverride ?? mode.field;
     const effectiveGameMode = gameModeOverride ?? mode.gameMode;
     const is2v2 = effectiveGameMode === '2v2-local';
+    // 2v2 時はゴールサイズを固定値で拡大
+    const pairGoalSize = PAIR_MATCH_GOAL_SIZES[baseField.id];
+    const activeField = is2v2 && pairGoalSize
+      ? { ...baseField, goalSize: pairGoalSize }
+      : baseField;
+    // 2v2 時はフィールドを mode に反映して useGameLoop に伝播
+    if (is2v2 && pairGoalSize) {
+      mode.setField(activeField);
+    }
     gameRef.current = EntityFactory.createGameState(CONSTANTS, activeField, is2v2);
     scoreRef.current = { p: 0, c: 0 };
     setScores({ p: 0, c: 0 });
@@ -120,7 +129,7 @@ const AirHockeyGame: React.FC = () => {
     statsRef.current = EntityFactory.createMatchStats();
     matchStartRef.current = Date.now();
   // eslint-disable-next-line react-hooks/exhaustive-deps -- mode全体を依存に入れるとゲーム開始時に不要な再レンダリングが発生するため、必要な値のみ指定
-  }, [mode.field, mode.gameMode, navigateWithTransition]);
+  }, [mode.field, mode.gameMode, mode.setField, navigateWithTransition]);
 
   const togglePause = useCallback(() => {
     if (phaseRef.current === 'playing') phaseRef.current = 'paused';
@@ -263,8 +272,14 @@ const AirHockeyGame: React.FC = () => {
   }, [navigateTo]);
   const handlePairMatchStart = useCallback(() => {
     mode.setGameMode('2v2-local');
+    navigateTo('vsScreen');
+  }, [mode, navigateTo]);
+  const handlePairMatchVsComplete = useCallback(() => {
     startGame(mode.field, '2v2-local');
-  }, [mode, startGame]);
+  }, [mode.field, startGame]);
+  const handleBackToTeamSetup = useCallback(() => {
+    navigateTo('teamSetup');
+  }, [navigateTo]);
   const handleStartBattle = useCallback((config: TwoPlayerConfig) => {
     mode.setGameMode('2p-local');
     mode.setPlayer1Character(config.player1Character);
@@ -288,15 +303,28 @@ const AirHockeyGame: React.FC = () => {
     if (CHAPTER_1_STAGES[idx + 1]) handleSelectStage(CHAPTER_1_STAGES[idx + 1]);
   }, [mode.currentStage, handleSelectStage]);
 
-  // ── 入力・ゲームループ ──
-  const handleInput = useInput(canvasRef, lastInputRef, playerTargetRef, screen, showHelp, setShowHelp);
-  const keysRef = useKeyboardInput(gameRef, lastInputRef, screen, showHelp, setShowHelp);
-
-  // ── 2P / 2v2 モード判定 ──
+  // ── 2P / 2v2 モード判定（入力フックより前に宣言） ──
   const is2PMode = mode.gameMode === '2p-local';
   const is2v2Mode = mode.gameMode === '2v2-local';
   const isMultiPlayer = is2PMode || is2v2Mode;
+
+  // ── 入力・ゲームループ ──
+  const handleInput = useInput(canvasRef, lastInputRef, playerTargetRef, screen, showHelp, setShowHelp);
+  const keysRef = useKeyboardInput(gameRef, lastInputRef, screen, showHelp, setShowHelp, isMultiPlayer);
   const is2PGame = isMultiPlayer && screen === 'game';
+  // ペアマッチ用キャラクターのデフォルト値（フォールバックを一元管理）
+  const pairAlly = React.useMemo(
+    () => mode.allyCharacter ?? freeBattleSelectableCharacters[0],
+    [mode.allyCharacter, freeBattleSelectableCharacters]
+  );
+  const pairEnemy1 = React.useMemo(
+    () => mode.enemyCharacter1 ?? freeBattleSelectableCharacters[1] ?? freeBattleSelectableCharacters[0],
+    [mode.enemyCharacter1, freeBattleSelectableCharacters]
+  );
+  const pairEnemy2 = React.useMemo(
+    () => mode.enemyCharacter2 ?? freeBattleSelectableCharacters[2] ?? freeBattleSelectableCharacters[0],
+    [mode.enemyCharacter2, freeBattleSelectableCharacters]
+  );
   // マルチプレイヤー時のスコアボード・リザルト表示名・キャラクター
   const multiPlayerName = is2v2Mode ? 'チーム1' : (mode.player1Character?.name ?? '1P');
   const multiOpponentName = is2v2Mode ? 'チーム2' : (mode.player2Character?.name ?? '2P');
@@ -344,6 +372,10 @@ const AirHockeyGame: React.FC = () => {
       aiConfig: mode.gameMode === 'story' ? storyAiConfig : freeBattleAiConfig,
       playerMalletColor: is2PMode ? mode.player1Character?.color : undefined,
       cpuMalletColor: is2PMode ? mode.player2Character?.color : undefined,
+      allyControlType: is2v2Mode ? mode.allyControlType : undefined,
+      allyCharacterId: is2v2Mode ? pairAlly.id : undefined,
+      enemyCharacter1Id: is2v2Mode ? pairEnemy1.id : undefined,
+      enemyCharacter2Id: is2v2Mode ? pairEnemy2.id : undefined,
     },
     refs: {
       gameRef, canvasRef, lastInputRef, scoreRef, phaseRef, countdownStartRef, shakeRef, statsRef, matchStartRef, keysRef,
@@ -401,6 +433,17 @@ const AirHockeyGame: React.FC = () => {
 
       {screen === 'teamSetup' && (
         <TeamSetupScreen
+          allCharacters={freeBattleSelectableCharacters}
+          unlockedIds={dex.unlockedIds}
+          playerCharacter={PLAYER_CHARACTER}
+          allyCharacter={pairAlly}
+          enemyCharacter1={pairEnemy1}
+          enemyCharacter2={pairEnemy2}
+          onAllyChange={mode.setAllyCharacter}
+          onEnemy1Change={mode.setEnemyCharacter1}
+          onEnemy2Change={mode.setEnemyCharacter2}
+          allyControlType={mode.allyControlType}
+          onAllyControlTypeChange={mode.setAllyControlType}
           onStart={handlePairMatchStart}
           onBack={handleBackToMenu}
         />
@@ -441,6 +484,19 @@ const AirHockeyGame: React.FC = () => {
       {screen === 'vsScreen' && mode.gameMode === 'free' && mode.selectedCpuCharacter && (
         <VsScreen playerCharacter={PLAYER_CHARACTER} cpuCharacter={mode.selectedCpuCharacter} stageName="フリー対戦" fieldName={mode.field.name} onComplete={handleVsComplete} />
       )}
+      {screen === 'vsScreen' && mode.gameMode === '2v2-local' && (
+        <VsScreen
+          playerCharacter={PLAYER_CHARACTER}
+          cpuCharacter={pairEnemy1}
+          stageName="ペアマッチ"
+          fieldName={mode.field.name}
+          onComplete={handlePairMatchVsComplete}
+          is2v2
+          allyCharacter={pairAlly}
+          enemyCharacter2={pairEnemy2}
+          allyControlType={mode.allyControlType}
+        />
+      )}
 
       {screen === 'game' && (
         <>
@@ -476,9 +532,13 @@ const AirHockeyGame: React.FC = () => {
             playerCharacter={resultPlayerCharacter}
             newlyUnlockedCharacterName={result.newlyUnlockedCharacterName}
             is2PMode={isMultiPlayer}
+            is2v2Mode={is2v2Mode}
+            allyCharacter={is2v2Mode ? pairAlly : undefined}
+            enemyCharacter2={is2v2Mode ? pairEnemy2 : undefined}
             player1CharacterName={isMultiPlayer ? multiPlayerName : undefined}
             player2CharacterName={isMultiPlayer ? multiOpponentName : undefined}
             onBackToCharacterSelect={is2PMode ? handleBackToCharacterSelect : undefined}
+            onBackToTeamSetup={is2v2Mode ? handleBackToTeamSetup : undefined}
           />
         </Transition>
       )}

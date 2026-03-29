@@ -50,15 +50,17 @@ const hexToRgba = (hex: string, alpha: number): string => {
 /** キャラクター立ち絵パネル */
 const CharacterPanel: React.FC<{
   character: Character;
-  translateX: number;
-}> = ({ character, translateX }) => {
+  translateX?: number;
+  prefersReducedMotion?: boolean;
+  label?: string;
+}> = ({ character, translateX = 0, prefersReducedMotion = false, label }) => {
   const hasPortrait = Boolean(character.portrait);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
       <div
         style={{
           transform: `translateX(${translateX}px)`,
-          transition: `transform ${CHAR_SLIDE_DURATION_MS}ms ease-out`,
+          transition: prefersReducedMotion ? 'none' : `transform ${CHAR_SLIDE_DURATION_MS}ms ease-out`,
         }}
       >
         <img
@@ -81,6 +83,9 @@ const CharacterPanel: React.FC<{
       >
         {character.name}
       </span>
+      {label && (
+        <span style={{ fontSize: '10px', color: '#aaa' }}>{label}</span>
+      )}
     </div>
   );
 };
@@ -91,6 +96,14 @@ type VsScreenProps = {
   stageName: string;
   fieldName: string;
   onComplete: () => void;
+  /** 2v2 モード表示 */
+  is2v2?: boolean;
+  /** P2: 味方キャラ（2v2 時） */
+  allyCharacter?: Character;
+  /** P4: 敵2キャラ（2v2 時） */
+  enemyCharacter2?: Character;
+  /** P2 の操作タイプ（2v2 時） */
+  allyControlType?: 'cpu' | 'human';
 };
 
 export const VsScreen: React.FC<VsScreenProps> = ({
@@ -99,11 +112,18 @@ export const VsScreen: React.FC<VsScreenProps> = ({
   stageName,
   fieldName,
   onComplete,
+  is2v2,
+  allyCharacter,
+  enemyCharacter2,
+  allyControlType,
 }) => {
-  const [bgOpacity, setBgOpacity] = useState(0);
-  const [isSlideComplete, setIsSlideComplete] = useState(false);
-  const [isVsVisible, setIsVsVisible] = useState(false);
-  const [isInfoVisible, setIsInfoVisible] = useState(false);
+  const prefersReducedMotion = typeof window !== 'undefined'
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const [bgOpacity, setBgOpacity] = useState(prefersReducedMotion ? 1 : 0);
+  const [isSlideComplete, setIsSlideComplete] = useState(prefersReducedMotion);
+  const [isVsVisible, setIsVsVisible] = useState(prefersReducedMotion);
+  const [isInfoVisible, setIsInfoVisible] = useState(prefersReducedMotion);
   const [isFadeOut, setIsFadeOut] = useState(false);
 
   useEffect(() => {
@@ -124,11 +144,28 @@ export const VsScreen: React.FC<VsScreenProps> = ({
     };
   }, [onComplete]);
 
-  const playerTranslateX = isSlideComplete ? 0 : -SLIDE_OFFSET;
-  const cpuTranslateX = isSlideComplete ? 0 : SLIDE_OFFSET;
+  const teamTranslateX = isSlideComplete ? 0 : -SLIDE_OFFSET;
+  const enemyTranslateX = isSlideComplete ? 0 : SLIDE_OFFSET;
   const bgGradient = useMemo(
     () => `linear-gradient(90deg, ${hexToRgba(playerCharacter.color, GRADIENT_ALPHA)}, ${hexToRgba(cpuCharacter.color, GRADIENT_ALPHA)})`,
     [playerCharacter.color, cpuCharacter.color],
+  );
+
+  /** VS テキスト */
+  const vsText = (
+    <span
+      style={{
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: '72px',
+        textShadow: '0 0 20px rgba(255, 255, 255, 0.5)',
+        opacity: isVsVisible ? 1 : 0,
+        transform: isVsVisible ? 'scale(1)' : 'scale(0.8)',
+        transition: 'opacity 200ms ease-out, transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+      }}
+    >
+      VS
+    </span>
   );
 
   return (
@@ -152,26 +189,37 @@ export const VsScreen: React.FC<VsScreenProps> = ({
       }}
     >
       {/* 対戦表示エリア */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '24px' }}>
-        <CharacterPanel character={playerCharacter} translateX={playerTranslateX} />
+      {is2v2 && allyCharacter && enemyCharacter2 ? (
+        /* 2v2 レイアウト: チーム1 (P1+P2) VS チーム2 (P3+P4) */
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px' }}>
+          {/* チーム1 */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+            <span style={{ fontSize: '12px', color: '#3498db', fontWeight: 'bold' }}>チーム1</span>
+            <div style={{ display: 'flex', gap: '12px', transform: `translateX(${teamTranslateX}px)`, transition: prefersReducedMotion ? 'none' : `transform ${CHAR_SLIDE_DURATION_MS}ms ease-out` }}>
+              <CharacterPanel character={playerCharacter} prefersReducedMotion={prefersReducedMotion} />
+              <CharacterPanel character={allyCharacter} prefersReducedMotion={prefersReducedMotion} label={allyControlType != null ? (allyControlType === 'human' ? '2P' : 'CPU') : undefined} />
+            </div>
+          </div>
 
-        {/* VS テキスト（バウンスアニメーション） */}
-        <span
-          style={{
-            color: 'white',
-            fontWeight: 'bold',
-            fontSize: '72px',
-            textShadow: '0 0 20px rgba(255, 255, 255, 0.5)',
-            opacity: isVsVisible ? 1 : 0,
-            transform: isVsVisible ? 'scale(1)' : 'scale(0.8)',
-            transition: 'opacity 200ms ease-out, transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
-          }}
-        >
-          VS
-        </span>
+          {vsText}
 
-        <CharacterPanel character={cpuCharacter} translateX={cpuTranslateX} />
-      </div>
+          {/* チーム2 */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+            <span style={{ fontSize: '12px', color: '#e74c3c', fontWeight: 'bold' }}>チーム2</span>
+            <div style={{ display: 'flex', gap: '12px', transform: `translateX(${enemyTranslateX}px)`, transition: prefersReducedMotion ? 'none' : `transform ${CHAR_SLIDE_DURATION_MS}ms ease-out` }}>
+              <CharacterPanel character={cpuCharacter} prefersReducedMotion={prefersReducedMotion} />
+              <CharacterPanel character={enemyCharacter2} prefersReducedMotion={prefersReducedMotion} />
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* 1v1 レイアウト（従来） */
+        <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '24px' }}>
+          <CharacterPanel character={playerCharacter} translateX={teamTranslateX} prefersReducedMotion={prefersReducedMotion} />
+          {vsText}
+          <CharacterPanel character={cpuCharacter} translateX={enemyTranslateX} prefersReducedMotion={prefersReducedMotion} />
+        </div>
+      )}
 
       {/* ステージ情報 */}
       <div style={{ textAlign: 'center', opacity: isInfoVisible ? 1 : 0, transition: 'opacity 300ms ease-in' }}>

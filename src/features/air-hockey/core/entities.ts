@@ -64,6 +64,57 @@ export function resolveMalletPuckOverlap(
   }
 }
 
+/**
+ * マレット間の重なりを解消する
+ * 全マレットペアの距離を判定し、重なっている場合は中心間ベクトルに沿って均等に押し戻す
+ * zoneBounds が指定された場合、押し戻し後にゾーン内にクランプする
+ */
+export function resolveMalletMalletOverlaps(
+  mallets: { mallet: Mallet }[],
+  malletRadius: number,
+  zoneBounds?: { minX: number; maxX: number; minY: number; maxY: number }[]
+): void {
+  const minDist = malletRadius * 2;
+  for (let i = 0; i < mallets.length; i++) {
+    for (let j = i + 1; j < mallets.length; j++) {
+      const a = mallets[i].mallet;
+      const b = mallets[j].mallet;
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist >= minDist) continue;
+
+      // 完全重複時は X 軸正方向に押し出す（決定的でテスト再現性あり）
+      let nx: number;
+      let ny: number;
+      if (dist < 0.01) {
+        nx = 1;
+        ny = 0;
+      } else {
+        nx = dx / dist;
+        ny = dy / dist;
+      }
+      const overlap = (minDist - dist) / 2;
+      a.x -= nx * overlap;
+      a.y -= ny * overlap;
+      b.x += nx * overlap;
+      b.y += ny * overlap;
+    }
+  }
+
+  // ゾーン制約の再適用（押し戻しで相手ゾーンに出ないように）
+  if (zoneBounds) {
+    for (let i = 0; i < mallets.length && i < zoneBounds.length; i++) {
+      const m = mallets[i].mallet;
+      const z = zoneBounds[i];
+      if (m.x < z.minX) m.x = z.minX;
+      if (m.x > z.maxX) m.x = z.maxX;
+      if (m.y < z.minY) m.y = z.minY;
+      if (m.y > z.maxY) m.y = z.maxY;
+    }
+  }
+}
+
 export const EntityFactory = {
   createMallet: (x: number, y: number): Mallet => ({ x, y, vx: 0, vy: 0 }),
   createPuck: (x: number, y: number, vx = 0, vy = 1.5): Puck => ({

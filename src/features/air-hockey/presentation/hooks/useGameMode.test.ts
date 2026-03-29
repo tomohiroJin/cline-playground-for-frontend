@@ -263,4 +263,132 @@ describe('useGameMode', () => {
       expect(result.current.player2Character).toBeUndefined();
     });
   });
+
+  describe('ペアマッチ（2v2）用の状態管理', () => {
+    const mockAlly = { id: 'rookie', name: 'ルーキー', icon: '', color: '#27ae60', reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] } };
+    const mockEnemy1 = { id: 'regular', name: 'レギュラー', icon: '', color: '#e67e22', reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] } };
+    const mockEnemy2 = { id: 'ace', name: 'エース', icon: '', color: '#e74c3c', reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] } };
+
+    it('初期の allyCharacter は undefined である', () => {
+      const { result } = renderHook(() => useGameMode());
+      expect(result.current.allyCharacter).toBeUndefined();
+    });
+
+    it('初期の enemyCharacter1 は undefined である', () => {
+      const { result } = renderHook(() => useGameMode());
+      expect(result.current.enemyCharacter1).toBeUndefined();
+    });
+
+    it('初期の enemyCharacter2 は undefined である', () => {
+      const { result } = renderHook(() => useGameMode());
+      expect(result.current.enemyCharacter2).toBeUndefined();
+    });
+
+    it('初期の pairMatchDifficulty は normal である', () => {
+      const { result } = renderHook(() => useGameMode());
+      expect(result.current.pairMatchDifficulty).toBe('normal');
+    });
+
+    it('setAllyCharacter で味方キャラクターを設定できる', () => {
+      const { result } = renderHook(() => useGameMode());
+
+      act(() => {
+        result.current.setAllyCharacter(mockAlly);
+      });
+
+      expect(result.current.allyCharacter).toEqual(mockAlly);
+    });
+
+    it('setEnemyCharacter1 で敵1キャラクターを設定できる', () => {
+      const { result } = renderHook(() => useGameMode());
+
+      act(() => {
+        result.current.setEnemyCharacter1(mockEnemy1);
+      });
+
+      expect(result.current.enemyCharacter1).toEqual(mockEnemy1);
+    });
+
+    it('setEnemyCharacter2 で敵2キャラクターを設定できる', () => {
+      const { result } = renderHook(() => useGameMode());
+
+      act(() => {
+        result.current.setEnemyCharacter2(mockEnemy2);
+      });
+
+      expect(result.current.enemyCharacter2).toEqual(mockEnemy2);
+    });
+
+    it('setPairMatchDifficulty でペアマッチ難易度を変更できる', () => {
+      const { result } = renderHook(() => useGameMode());
+
+      act(() => {
+        result.current.setPairMatchDifficulty('hard');
+      });
+
+      expect(result.current.pairMatchDifficulty).toBe('hard');
+    });
+
+    it('resetToFree でペアマッチ用キャラクターもリセットされる', () => {
+      const { result } = renderHook(() => useGameMode());
+
+      act(() => {
+        result.current.setGameMode('2v2-local');
+        result.current.setAllyCharacter(mockAlly);
+        result.current.setEnemyCharacter1(mockEnemy1);
+        result.current.setEnemyCharacter2(mockEnemy2);
+      });
+
+      act(() => {
+        result.current.resetToFree();
+      });
+
+      expect(result.current.allyCharacter).toBeUndefined();
+      expect(result.current.enemyCharacter1).toBeUndefined();
+      expect(result.current.enemyCharacter2).toBeUndefined();
+    });
+
+    it('resetToFree で pairMatchDifficulty はリセットされない', () => {
+      const { result } = renderHook(() => useGameMode());
+
+      act(() => {
+        result.current.setPairMatchDifficulty('hard');
+      });
+
+      act(() => {
+        result.current.resetToFree();
+      });
+
+      expect(result.current.pairMatchDifficulty).toBe('hard');
+    });
+
+    it('初期の allyControlType は cpu である', () => {
+      const { result } = renderHook(() => useGameMode());
+      expect(result.current.allyControlType).toBe('cpu');
+    });
+
+    it('setAllyControlType で human に変更できる', () => {
+      const { result } = renderHook(() => useGameMode());
+
+      act(() => {
+        result.current.setAllyControlType('human');
+      });
+
+      expect(result.current.allyControlType).toBe('human');
+    });
+
+    it('resetToFree で allyControlType は cpu にリセットされる', () => {
+      const { result } = renderHook(() => useGameMode());
+
+      act(() => {
+        result.current.setAllyControlType('human');
+      });
+
+      act(() => {
+        result.current.resetToFree();
+      });
+
+      expect(result.current.allyControlType).toBe('cpu');
+    });
+  });
 });

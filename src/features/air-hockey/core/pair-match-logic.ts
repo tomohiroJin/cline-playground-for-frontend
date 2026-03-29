@@ -2,10 +2,12 @@
  * 2v2 ペアマッチのゲームロジックヘルパー
  * processCollisions や resolveMalletPuckOverlap で使用するマレット配列構築など
  */
-import type { GameState, Mallet, Vector, EffectTarget } from './types';
+import type { GameState, Mallet, Vector, EffectTarget, Puck } from './types';
 import type { CpuUpdateResult } from './ai';
 import type { AiBehaviorConfig } from './story-balance';
 import type { GameConstants } from './constants';
+import { getPlayerZone } from './constants';
+import { clamp } from '../../../utils/math-utils';
 
 /** マレット情報（衝突処理用） */
 export type MalletEntry = {
@@ -59,10 +61,22 @@ export type ExtraMalletAiState = {
   stuckTimer: number;
 };
 
+/** Y 軸を反転する（ally 用座標変換） */
+function flipY(y: number, H: number): number {
+  return H - y;
+}
+
+/** パック配列の Y 座標・速度を反転したコピーを生成 */
+function flipPucks(pucks: Puck[], H: number): Puck[] {
+  return pucks.map(p => ({ ...p, y: flipY(p.y, H), vy: -p.vy }));
+}
+
 /**
  * 追加マレット（ally/enemy）の CPU AI を更新する
- * CpuAI.updateWithBehavior は GameState.cpu を操作するため、
- * 一時的に cpu フィールドを差し替えて呼び出し、結果を返す
+ * CpuAI.updateWithBehavior は CPU 側（上半分）を前提とするため、
+ * ally（player チーム・下半分）の場合は座標を Y 軸反転して渡し、結果を再度反転する
+ *
+ * @param team - 'player': ally（下半分）, 'cpu': enemy（上半分、反転不要）
  */
 export function updateExtraMalletAI(
   game: GameState,
@@ -72,21 +86,50 @@ export function updateExtraMalletAI(
   config: AiBehaviorConfig,
   now: number,
   consts: GameConstants,
-  scoreDiff: number
+  scoreDiff: number,
+  team: 'player' | 'cpu' = 'cpu'
 ): { mallet: Mallet; aiState: ExtraMalletAiState } | undefined {
+  const H = consts.CANVAS.HEIGHT;
+  const isPlayerTeam = team === 'player';
+
+  // ally（player チーム）の場合、座標を Y 軸反転して AI に渡す
+  const effectiveMallet = isPlayerTeam
+    ? { ...mallet, y: flipY(mallet.y, H), vy: -mallet.vy }
+    : mallet;
+  const effectivePucks = isPlayerTeam ? flipPucks(game.pucks, H) : game.pucks;
+  const effectiveTarget = isPlayerTeam && aiState.target
+    ? { ...aiState.target, y: flipY(aiState.target.y, H) }
+    : aiState.target;
+
   const tempGame = {
     ...game,
-    cpu: mallet,
-    cpuTarget: aiState.target,
+    pucks: effectivePucks,
+    cpu: effectiveMallet,
+    cpuTarget: effectiveTarget,
     cpuTargetTime: aiState.targetTime,
     cpuStuckTimer: aiState.stuckTimer,
   };
   const result = updateFn(tempGame, config, now, consts, scoreDiff);
   if (!result) return undefined;
+
+  // ally の場合、結果を Y 軸再反転して戻す
+  const finalMallet = isPlayerTeam
+    ? { ...result.cpu, y: flipY(result.cpu.y, H), vy: -result.cpu.vy }
+    : result.cpu;
+  const finalTarget = isPlayerTeam && result.cpuTarget
+    ? { ...result.cpuTarget, y: flipY(result.cpuTarget.y, H) }
+    : result.cpuTarget;
+
+  // ゾーン制約で安全性を確保
+  const slot = isPlayerTeam ? 'player2' : 'player4';
+  const zone = getPlayerZone(slot, consts);
+  finalMallet.x = clamp(finalMallet.x, zone.minX, zone.maxX);
+  finalMallet.y = clamp(finalMallet.y, zone.minY, zone.maxY);
+
   return {
-    mallet: result.cpu,
+    mallet: finalMallet,
     aiState: {
-      target: result.cpuTarget,
+      target: finalTarget,
       targetTime: result.cpuTargetTime,
       stuckTimer: result.cpuStuckTimer,
     },

@@ -26,12 +26,20 @@ type ResultScreenProps = {
   newlyUnlockedCharacterName?: string;
   /** 2P 対戦モードかどうか */
   is2PMode?: boolean;
+  /** 2v2 ペアマッチモードかどうか */
+  is2v2Mode?: boolean;
   /** 1P のキャラクター名（2P 対戦用） */
   player1CharacterName?: string;
   /** 2P のキャラクター名（2P 対戦用） */
   player2CharacterName?: string;
   /** キャラ選択に戻る（2P 対戦用） */
   onBackToCharacterSelect?: () => void;
+  /** P2 味方キャラ（2v2 立ち絵表示用） */
+  allyCharacter?: Character;
+  /** P4 敵2キャラ（2v2 立ち絵表示用） */
+  enemyCharacter2?: Character;
+  /** チーム設定に戻る（2v2 用） */
+  onBackToTeamSetup?: () => void;
 };
 
 // カウントアップアニメーション用フック
@@ -213,10 +221,12 @@ const UnlockBanner: React.FC<{ characterName: string }> = ({ characterName }) =>
 /** 勝者表示テキストを生成する */
 function getWinnerText(
   is2PMode: boolean | undefined,
+  is2v2Mode: boolean | undefined,
   isWin: boolean,
   player1Name?: string,
   player2Name?: string
 ): string {
+  if (is2v2Mode) return isWin ? 'チーム1 WIN!' : 'チーム2 WIN!';
   if (!is2PMode) return isWin ? 'YOU WIN!' : 'YOU LOSE';
   if (isWin) return player1Name ? `${player1Name} Win!` : '1P Win!';
   return player2Name ? `${player2Name} Win!` : '2P Win!';
@@ -227,9 +237,11 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
   suggestedDifficulty, onAcceptDifficulty,
   onBackToStageSelect, onNextStage,
   cpuCharacter, playerCharacter, newlyUnlockedCharacterName,
-  is2PMode, player1CharacterName, player2CharacterName, onBackToCharacterSelect,
+  is2PMode, is2v2Mode, player1CharacterName, player2CharacterName, onBackToCharacterSelect,
+  allyCharacter, enemyCharacter2, onBackToTeamSetup,
 }) => {
   const isWin = winner === 'player';
+  const isMultiPlayerMode = is2PMode || is2v2Mode;
 
   // カウントアップアニメーション
   const animHits = useCountUp(stats?.playerHits ?? 0);
@@ -250,42 +262,50 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
 
   return (
     <MenuCard style={{ position: 'relative', overflow: 'hidden' }}>
-      {(is2PMode || isWin) && <ConfettiOverlay />}
+      {(isMultiPlayerMode || isWin) && <ConfettiOverlay />}
 
       <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
         <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>
-          {is2PMode ? '🎊' : isWin ? '🎉' : '😢'}
+          {isMultiPlayerMode ? '🎊' : isWin ? '🎉' : '😢'}
         </div>
-        <GameTitle style={{ color: (is2PMode || isWin) ? 'var(--accent-color)' : '#ff4444' }}>
-          {getWinnerText(is2PMode, isWin, player1CharacterName, player2CharacterName)}
+        <GameTitle style={{ color: (isMultiPlayerMode || isWin) ? 'var(--accent-color)' : '#ff4444' }}>
+          {getWinnerText(is2PMode, is2v2Mode, isWin, player1CharacterName, player2CharacterName)}
         </GameTitle>
         <p style={{ fontSize: '2rem', color: 'white', fontWeight: 'bold', marginBottom: '20px' }}>
           {scores.p} - {scores.c}
         </p>
 
         {/* キャラ立ち絵エリア */}
-        {(playerCharacter?.portrait || cpuCharacter?.portrait) && (
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '20px',
-            marginBottom: '1rem',
-            alignItems: 'flex-end',
-          }}>
-            {playerCharacter && (
-              <CharacterPortrait
-                character={playerCharacter}
-                expression={isWin ? 'happy' : 'normal'}
-              />
-            )}
-            {cpuCharacter && (
-              <CharacterPortrait
-                character={cpuCharacter}
-                expression={isWin ? 'normal' : 'happy'}
-              />
-            )}
-          </div>
-        )}
+        {(() => {
+          const portraitContainer = (gap: string) => ({
+            display: 'flex' as const, justifyContent: 'center' as const,
+            gap, marginBottom: '1rem', alignItems: 'flex-end' as const,
+          });
+          if (is2v2Mode && (playerCharacter || allyCharacter || cpuCharacter || enemyCharacter2)) {
+            return (
+              <div style={portraitContainer('24px')}>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {playerCharacter && <CharacterPortrait character={playerCharacter} expression={isWin ? 'happy' : 'normal'} />}
+                  {allyCharacter && <CharacterPortrait character={allyCharacter} expression={isWin ? 'happy' : 'normal'} />}
+                </div>
+                <span data-testid="team-separator" style={{ color: '#666', fontSize: '1.2rem', alignSelf: 'center' }}>⚡</span>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {cpuCharacter && <CharacterPortrait character={cpuCharacter} expression={isWin ? 'normal' : 'happy'} />}
+                  {enemyCharacter2 && <CharacterPortrait character={enemyCharacter2} expression={isWin ? 'normal' : 'happy'} />}
+                </div>
+              </div>
+            );
+          }
+          if (playerCharacter?.portrait || cpuCharacter?.portrait) {
+            return (
+              <div style={portraitContainer('20px')}>
+                {playerCharacter && <CharacterPortrait character={playerCharacter} expression={isWin ? 'happy' : 'normal'} />}
+                {cpuCharacter && <CharacterPortrait character={cpuCharacter} expression={isWin ? 'normal' : 'happy'} />}
+              </div>
+            );
+          }
+          return null;
+        })()}
 
         {/* アンロック通知 */}
         {newlyUnlockedCharacterName && (
@@ -321,8 +341,8 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
           </div>
         )}
 
-        {/* 新規実績（2P 対戦では非表示） */}
-        {!is2PMode && newAchievements && newAchievements.length > 0 && (
+        {/* 新規実績（マルチプレイヤー対戦では非表示） */}
+        {!isMultiPlayerMode && newAchievements && newAchievements.length > 0 && (
           <div style={{ width: '100%', marginBottom: '1rem' }}>
             <p style={{ color: '#ffd700', fontSize: '0.8rem', textAlign: 'center', marginBottom: '8px', fontWeight: 'bold' }}>
               NEW ACHIEVEMENTS!
@@ -390,7 +410,7 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
           {onReplay && (
             <StartButton onClick={onReplay} style={{ background: 'linear-gradient(135deg, #00ff88, #00cc66)', marginTop: 0 }}>
-              REPLAY
+              {is2v2Mode ? '同じ設定でリプレイ' : 'REPLAY'}
             </StartButton>
           )}
           {onNextStage && isWin && (
@@ -406,6 +426,11 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
           {is2PMode && onBackToCharacterSelect && (
             <StartButton onClick={onBackToCharacterSelect} style={{ background: 'linear-gradient(135deg, #e67e22, #d35400)', marginTop: 0 }}>
               キャラ選択に戻る
+            </StartButton>
+          )}
+          {is2v2Mode && onBackToTeamSetup && (
+            <StartButton onClick={onBackToTeamSetup} style={{ background: 'linear-gradient(135deg, #e67e22, #d35400)', marginTop: 0 }}>
+              チーム設定に戻る
             </StartButton>
           )}
           <StartButton onClick={onBackToMenu} style={{ marginTop: 0 }}>BACK TO MENU</StartButton>

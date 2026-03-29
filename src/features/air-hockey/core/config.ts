@@ -75,6 +75,16 @@ export const ITEMS = [
   { id: 'big' as ItemType, name: 'Big', color: '#00FF88', icon: '⬆' },
 ] as const;
 
+/** ペアマッチ（2v2）用ゴールサイズ固定値 */
+export const PAIR_MATCH_GOAL_SIZES: Record<string, number> = {
+  classic: 240,
+  pillars: 240,
+  zigzag: 240,
+  fortress: 240,
+  bastion: 240,
+  wide: 280,
+};
+
 export const DIFFICULTY_OPTIONS = ['easy', 'normal', 'hard'] as const;
 export const DIFFICULTY_LABELS = { easy: 'ルーキー', normal: 'レギュラー', hard: 'エース' };
 export const WIN_SCORE_OPTIONS = [3, 7, 15];

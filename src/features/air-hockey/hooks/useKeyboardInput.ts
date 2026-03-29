@@ -7,6 +7,7 @@ import { CONSTANTS } from '../core/constants';
 import {
   createKeyboardState,
   updateKeyboardState,
+  updateKeyboardStateForPlayer,
   calculateKeyboardMovement,
   KeyboardState,
 } from '../core/keyboard';
@@ -16,7 +17,8 @@ export function useKeyboardInput(
   lastInputRef: React.MutableRefObject<number>,
   screen: string,
   showHelp: boolean,
-  setShowHelp: (v: boolean) => void
+  setShowHelp: (v: boolean) => void,
+  isMultiPlayerMode = false
 ) {
   const keysRef = useRef<KeyboardState>(createKeyboardState());
 
@@ -31,7 +33,10 @@ export function useKeyboardInput(
         return;
       }
 
-      const updated = updateKeyboardState(keysRef.current, e.key, true);
+      // 2v2 時は P1 用キーマップ（矢印のみ）、それ以外は全キー
+      const updated = isMultiPlayerMode
+        ? updateKeyboardStateForPlayer(keysRef.current, e.key, true, 'player1')
+        : updateKeyboardState(keysRef.current, e.key, true);
       if (updated !== keysRef.current) {
         keysRef.current = updated;
         e.preventDefault();
@@ -39,7 +44,9 @@ export function useKeyboardInput(
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
-      const updated = updateKeyboardState(keysRef.current, e.key, false);
+      const updated = isMultiPlayerMode
+        ? updateKeyboardStateForPlayer(keysRef.current, e.key, false, 'player1')
+        : updateKeyboardState(keysRef.current, e.key, false);
       if (updated !== keysRef.current) {
         keysRef.current = updated;
       }
@@ -51,7 +58,7 @@ export function useKeyboardInput(
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [screen, showHelp, setShowHelp]);
+  }, [screen, showHelp, setShowHelp, isMultiPlayerMode]);
 
   // 画面遷移時にキー状態をリセット
   useEffect(() => {

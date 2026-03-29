@@ -1,78 +1,221 @@
 /**
- * ペアマッチ（2v2）チーム確認画面
- * チーム構成を表示して対戦開始
- * Field / Win Score はタイトル画面の設定値をそのまま使用する
+ * ペアマッチ（2v2）チーム設定画面
+ * - P1（固定: アキラ）+ P2/P3/P4 のキャラクター選択
+ * - 難易度選択（かんたん / ふつう / むずかしい）
+ * - フィールド / 勝利スコアはタイトル画面の設定値を使用
  */
-import React from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
+import type { Character } from '../core/types';
+import { ALWAYS_UNLOCKED_IDS } from '../core/characters';
 import { screenLayout } from './screen-layout';
+import { teamSetupStyles as styles } from './team-setup-screen-styles';
+
+/** スロット識別子 */
+type SlotId = 'p2' | 'p3' | 'p4';
+
+/** チームカラー */
+const TEAM1_COLOR = '#3498db';
+const TEAM2_COLOR = '#e74c3c';
+
+/** P2 操作タイプ */
+type AllyControlType = 'cpu' | 'human';
 
 type TeamSetupScreenProps = {
+  allCharacters: Character[];
+  unlockedIds: string[];
+  playerCharacter: Character;
+  allyCharacter: Character;
+  enemyCharacter1: Character;
+  enemyCharacter2: Character;
+  onAllyChange: (c: Character) => void;
+  onEnemy1Change: (c: Character) => void;
+  onEnemy2Change: (c: Character) => void;
+  allyControlType: AllyControlType;
+  onAllyControlTypeChange: (t: AllyControlType) => void;
   onStart: () => void;
   onBack: () => void;
 };
 
-// ── 画面固有スタイル ─────────────────────────────
-const styles = {
-  teamSection: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: '8px',
-    padding: '12px',
-    marginBottom: '12px',
-  },
-  teamTitle: {
-    fontSize: '16px',
-    fontWeight: 'bold' as const,
-    marginBottom: '8px',
-    color: '#e67e22',
-  },
-  memberList: {
-    fontSize: '0.9rem',
-    color: '#ccc',
-    lineHeight: 1.8,
-    paddingLeft: '8px',
-  },
-  startButton: {
-    ...screenLayout.actionButton,
-    background: 'linear-gradient(135deg, #27ae60, #2ecc71)',
-    marginTop: '16px',
-  },
+/** キャラクタースロット表示 */
+const CharacterSlot: React.FC<{
+  label: string;
+  character: Character;
+  slotId: SlotId;
+  isOpen: boolean;
+  onToggle: () => void;
+  allCharacters: Character[];
+  unlockedSet: Set<string>;
+  selectedCharacterId: string;
+  onSelect: (character: Character) => void;
+}> = ({ label, character, slotId, isOpen, onToggle, allCharacters, unlockedSet, selectedCharacterId, onSelect }) => {
+  const isUnlocked = (c: Character) => ALWAYS_UNLOCKED_IDS.has(c.id) || unlockedSet.has(c.id);
+
+  return (
+    <div>
+      <div
+        style={styles.slotRow}
+        data-testid={`slot-${slotId}`}
+        onClick={onToggle}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onToggle(); }}
+      >
+        <img src={character.icon} alt={character.name} style={styles.slotIcon} />
+        <div style={styles.slotInfo}>
+          <span style={styles.slotLabel}>{label}</span>
+          <span style={styles.slotName}>{character.name}</span>
+        </div>
+        <span style={styles.changeHint}>{isOpen ? '▲' : '変更 ▼'}</span>
+      </div>
+      {isOpen && (
+        <div style={styles.gridContainer} data-testid={`character-grid-${slotId}`}>
+          <div style={styles.grid}>
+            {allCharacters.map(c => {
+              const locked = !isUnlocked(c);
+              const isSelected = selectedCharacterId === c.id;
+              return (
+                <button
+                  key={c.id}
+                  data-testid={`char-select-${c.id}`}
+                  style={styles.gridCard(isSelected, locked, c.color)}
+                  onClick={() => { if (!locked) onSelect(c); }}
+                  disabled={locked}
+                >
+                  <img src={c.icon} alt={c.name} style={styles.gridCardIcon(locked)} />
+                  {locked && <span style={styles.lockOverlay}>🔒</span>}
+                  <span style={styles.gridCardName}>{c.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
+  allCharacters,
+  unlockedIds,
+  playerCharacter,
+  allyCharacter,
+  enemyCharacter1,
+  enemyCharacter2,
+  onAllyChange,
+  onEnemy1Change,
+  onEnemy2Change,
+  allyControlType,
+  onAllyControlTypeChange,
   onStart,
   onBack,
-}) => (
-  <div style={screenLayout.container}>
-    {/* ヘッダー */}
-    <div style={screenLayout.header}>
-      <button style={screenLayout.backButton} onClick={onBack}>
-        ← 戻る
+}) => {
+  const [openSlot, setOpenSlot] = useState<SlotId | undefined>(undefined);
+  const unlockedSet = useMemo(() => new Set(unlockedIds), [unlockedIds]);
+
+  const toggleSlot = useCallback((slotId: SlotId) => {
+    setOpenSlot(prev => prev === slotId ? undefined : slotId);
+  }, []);
+
+  // キャラ選択後にパネルを閉じる
+  const handleSelect = useCallback((slotId: SlotId, character: Character) => {
+    if (slotId === 'p2') onAllyChange(character);
+    else if (slotId === 'p3') onEnemy1Change(character);
+    else onEnemy2Change(character);
+    setOpenSlot(undefined);
+  }, [onAllyChange, onEnemy1Change, onEnemy2Change]);
+
+  return (
+    <div style={screenLayout.container}>
+      {/* ヘッダー */}
+      <div style={screenLayout.header}>
+        <button style={screenLayout.backButton} onClick={onBack}>
+          ← 戻る
+        </button>
+        <span style={screenLayout.title}>ペアマッチ設定</span>
+        <div style={screenLayout.spacer} />
+      </div>
+
+      {/* スクロールエリア */}
+      <div style={styles.scrollArea} data-testid="scroll-area">
+        {/* チーム1 */}
+        <div style={styles.teamSection(TEAM1_COLOR)} data-testid="team1-section">
+          <div style={styles.teamTitle(TEAM1_COLOR)}>チーム1（下）</div>
+          {/* P1: 固定 */}
+          <div style={styles.slotRowFixed} data-testid="slot-p1">
+            <img src={playerCharacter.icon} alt={playerCharacter.name} style={styles.slotIcon} />
+            <div style={styles.slotInfo}>
+              <span style={styles.slotLabel}>P1: あなた（矢印キー / マウス）</span>
+              <span style={styles.slotName}>{playerCharacter.name}</span>
+            </div>
+          </div>
+          {/* P2: パートナー（CPU/人間切り替え） */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', marginTop: '4px' }}>
+            <span style={{ fontSize: '12px', color: '#888' }}>P2 操作:</span>
+            <div style={styles.controlToggle}>
+              <button
+                style={styles.controlButton(allyControlType === 'cpu')}
+                onClick={() => onAllyControlTypeChange('cpu')}
+              >
+                CPU
+              </button>
+              <button
+                style={styles.controlButton(allyControlType === 'human')}
+                onClick={() => onAllyControlTypeChange('human')}
+              >
+                人間
+              </button>
+            </div>
+          </div>
+          {allyControlType === 'human' && (
+            <div style={styles.controlHint}>操作: WASD / タッチ（2本目）</div>
+          )}
+          <CharacterSlot
+            label={allyControlType === 'cpu' ? 'P2: パートナー（CPU）' : 'P2: パートナー（人間）'}
+            character={allyCharacter}
+            slotId="p2"
+            isOpen={openSlot === 'p2'}
+            onToggle={() => toggleSlot('p2')}
+            allCharacters={allCharacters}
+            unlockedSet={unlockedSet}
+            selectedCharacterId={allyCharacter.id}
+            onSelect={(c) => handleSelect('p2', c)}
+          />
+        </div>
+
+        {/* チーム2 */}
+        <div style={styles.teamSection(TEAM2_COLOR)} data-testid="team2-section">
+          <div style={styles.teamTitle(TEAM2_COLOR)}>チーム2（上）</div>
+          {/* P3: 敵 CPU 1 */}
+          <CharacterSlot
+            label="P3: 敵1（CPU）"
+            character={enemyCharacter1}
+            slotId="p3"
+            isOpen={openSlot === 'p3'}
+            onToggle={() => toggleSlot('p3')}
+            allCharacters={allCharacters}
+            unlockedSet={unlockedSet}
+            selectedCharacterId={enemyCharacter1.id}
+            onSelect={(c) => handleSelect('p3', c)}
+          />
+          {/* P4: 敵 CPU 2 */}
+          <CharacterSlot
+            label="P4: 敵2（CPU）"
+            character={enemyCharacter2}
+            slotId="p4"
+            isOpen={openSlot === 'p4'}
+            onToggle={() => toggleSlot('p4')}
+            allCharacters={allCharacters}
+            unlockedSet={unlockedSet}
+            selectedCharacterId={enemyCharacter2.id}
+            onSelect={(c) => handleSelect('p4', c)}
+          />
+        </div>
+      </div>
+
+      {/* 対戦開始ボタン */}
+      <button style={styles.startButton} onClick={onStart}>
+        対戦開始！
       </button>
-      <span style={screenLayout.title}>ペアマッチ</span>
-      <div style={screenLayout.spacer} />
     </div>
-
-    {/* チーム1 */}
-    <div style={styles.teamSection}>
-      <div style={styles.teamTitle}>チーム1（下）</div>
-      <div style={styles.memberList}>
-        <div>P1: あなた（マウス/タッチ）</div>
-        <div>P2: パートナー（WASD/タッチ）</div>
-      </div>
-    </div>
-
-    {/* チーム2 */}
-    <div style={styles.teamSection}>
-      <div style={styles.teamTitle}>チーム2（上）</div>
-      <div style={styles.memberList}>
-        <div>P3: CPU（敵1）</div>
-        <div>P4: CPU（敵2）</div>
-      </div>
-    </div>
-
-    {/* 対戦開始ボタン */}
-    <button style={styles.startButton} onClick={onStart}>
-      対戦開始！
-    </button>
-  </div>
-);
+  );
+};

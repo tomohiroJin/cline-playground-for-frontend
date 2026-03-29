@@ -156,6 +156,22 @@ export const buildFreeBattleAiConfig = (
   };
 };
 
+/** 味方 CPU 用 AI 設定を構築する（aggressiveness に上限を設けて守備的に） */
+export const buildAllyAiConfig = (
+  difficulty: Difficulty,
+  characterId?: string
+): AiBehaviorConfig => {
+  const base = buildFreeBattleAiConfig(difficulty, characterId);
+  const ALLY_AGGRESSIVENESS_CAP = 0.5;
+  if (base.playStyle && base.playStyle.aggressiveness > ALLY_AGGRESSIVENESS_CAP) {
+    return {
+      ...base,
+      playStyle: { ...base.playStyle, aggressiveness: ALLY_AGGRESSIVENESS_CAP },
+    };
+  }
+  return base;
+};
+
 /** ステージ ID に対応するバランス設定を取得 */
 export const getStoryStageBalance = (stageId: string): StageBalanceConfig => {
   return STAGE_BALANCE_MAP[stageId] ?? DEFAULT_BALANCE;
