@@ -54,3 +54,5 @@ lint_output.txt
 .gemini/
 .mcp.json
 /AGENTS.md
+/CLAUDE.md
+/GEMINI.md
