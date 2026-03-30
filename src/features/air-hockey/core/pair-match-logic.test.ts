@@ -7,6 +7,7 @@ import { getAllMallets, applyGoalScore, updateExtraMalletAI } from './pair-match
 import { applyItemEffect } from './items';
 import { CpuAI } from './ai';
 import { AI_BEHAVIOR_PRESETS } from './story-balance';
+import { DEFAULT_PLAY_STYLE } from './character-ai-profiles';
 import type { GameState } from './types';
 
 const MR = CONSTANTS.SIZES.MALLET;
@@ -225,31 +226,25 @@ describe('Phase S4-3: ペアマッチゲームロジック', () => {
 describe('updateExtraMalletAI — sidePreference 反転（R-4）', () => {
   it('ally（team=player）で sidePreference が反転されて AI に渡される', () => {
     const state = create2v2State();
-    state.pucks[0].y = 400;
-    state.pucks[0].vy = 5; // 下方向（ally の自陣に向かう）
+    // パックが画面下方（ally 自陣）にいて上方向に移動
+    // Y 反転後: y=1200-900=300, vy=-(-3)=3 → vy < 0 ではないので defenseStyle 分岐
+    // → パックを反転後にパック追跡分岐に入るよう設定
+    // 反転後: y=1200-900=300（< H/2+50=650）, vy=3 → vy < 0 ではない
+    // パック追跡分岐: puck.vy < 0 && puck.y < H/2+50
+    // ally の反転: y → H-y, vy → -vy なので、元の vy=-3 → 反転後 vy=3（追跡しない）
+    // 元の vy=3 → 反転後 vy=-3（追跡する）
+    state.pucks[0].y = 900;    // 反転後: 300
+    state.pucks[0].vy = 3;     // 反転後: -3 → パック追跡分岐に入る
     state.pucks[0].x = CONSTANTS.CANVAS.WIDTH / 2;
+    state.pucks[0].vx = 0;
 
-    // sidePreference=0.5（右寄り）で設定
     const configRight = {
       ...AI_BEHAVIOR_PRESETS.normal,
-      playStyle: {
-        sidePreference: 0.5,
-        lateralOscillation: 0,
-        lateralPeriod: 0,
-        aggressiveness: 0.5,
-        adaptability: 0,
-      },
+      playStyle: { ...DEFAULT_PLAY_STYLE, sidePreference: 0.5 },
     };
-    // sidePreference=0（中央）で設定
     const configCenter = {
       ...AI_BEHAVIOR_PRESETS.normal,
-      playStyle: {
-        sidePreference: 0,
-        lateralOscillation: 0,
-        lateralPeriod: 0,
-        aggressiveness: 0.5,
-        adaptability: 0,
-      },
+      playStyle: { ...DEFAULT_PLAY_STYLE, sidePreference: 0 },
     };
 
     const updateFn = CpuAI.updateWithBehavior.bind(CpuAI);
@@ -263,10 +258,8 @@ describe('updateExtraMalletAI — sidePreference 反転（R-4）', () => {
     );
 
     // ally（player チーム）では sidePreference が反転されるため、
-    // sidePreference=0.5 → -0.5 として AI に渡され、結果的に左寄りになる
+    // configRight の 0.5 → -0.5 として AI に渡され、結果が center と異なる
     if (resultRight && resultCenter) {
-      // 反転により右寄り設定が左寄りの効果を持つことを確認
-      // （AI 内部で -0.5 として処理 → 結果の X 座標が center より小さい or 異なる）
       expect(resultRight.mallet.x).not.toBe(resultCenter.mallet.x);
     }
   });
@@ -279,23 +272,11 @@ describe('updateExtraMalletAI — sidePreference 反転（R-4）', () => {
 
     const configRight = {
       ...AI_BEHAVIOR_PRESETS.normal,
-      playStyle: {
-        sidePreference: 0.5,
-        lateralOscillation: 0,
-        lateralPeriod: 0,
-        aggressiveness: 0.5,
-        adaptability: 0,
-      },
+      playStyle: { ...DEFAULT_PLAY_STYLE, sidePreference: 0.5 },
     };
     const configCenter = {
       ...AI_BEHAVIOR_PRESETS.normal,
-      playStyle: {
-        sidePreference: 0,
-        lateralOscillation: 0,
-        lateralPeriod: 0,
-        aggressiveness: 0.5,
-        adaptability: 0,
-      },
+      playStyle: { ...DEFAULT_PLAY_STYLE, sidePreference: 0 },
     };
 
     const updateFn = CpuAI.updateWithBehavior.bind(CpuAI);

@@ -109,6 +109,36 @@ const calculateAggressiveY = (
   return Math.min(puckY + 20, baseY);
 };
 
+/**
+ * パック相手陣地時の守備ポジションを defenseStyle に基づき計算する
+ * #6: パック相手陣地時のみ適用。パック自陣時は aggressiveness が優先。
+ */
+const applyDefenseStyle = (
+  playStyle: AiPlayStyle,
+  puck: { x: number; y: number } | undefined,
+  W: number,
+  H: number
+): Vector => {
+  const fieldCenter = W / 2;
+  const goalLineY = DEFENSIVE_Y;
+  const midFieldY = H / 4; // CPU 側の中盤ライン
+
+  switch (playStyle.defenseStyle) {
+    case 'wide': {
+      // ゴールラインに近い位置でパックの X を追従
+      const trackX = puck ? puck.x * 0.6 + fieldCenter * 0.4 : fieldCenter;
+      return { x: trackX, y: goalLineY + CONSTANTS.SIZES.MALLET * 2 };
+    }
+    case 'aggressive':
+      // 中盤付近に留まる
+      return { x: puck ? puck.x * 0.3 + fieldCenter * 0.7 : fieldCenter, y: midFieldY };
+    case 'center':
+    default:
+      // ゴール中央に戻る
+      return { x: fieldCenter, y: goalLineY + CONSTANTS.SIZES.MALLET * 2 };
+  }
+};
+
 export const CpuAI = {
   /**
    * AiBehaviorConfig ベースのターゲット計算
@@ -158,15 +188,8 @@ export const CpuAI = {
       return { x: predictedX, y: targetY };
     }
 
-    // パックが来ていない時: 高精度 AI はゴール中央に戻る
-    if (config.predictionFactor >= 10) {
-      return { x: W / 2, y: 60 };
-    }
-
-    if (!cpuTarget || now - cpuTargetTime > 2000) {
-      return { x: randomRange(80, W - 80), y: randomRange(50, 130) };
-    }
-    return game.cpuTarget!;
+    // パックが相手陣地 or 遠い時: defenseStyle に基づく守備ポジション（#6: この場合のみ適用）
+    return applyDefenseStyle(playStyle, puck, W, H);
   },
 
   /**

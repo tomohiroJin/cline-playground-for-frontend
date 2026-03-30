@@ -73,3 +73,79 @@ describe('getCharacterAiProfile', () => {
     expect(profile).toBe(DEFAULT_PLAY_STYLE);
   });
 });
+
+// ── Phase S6-3a: 新フィールド追加テスト ──────────────
+
+describe('S6-3a: AiPlayStyle 新フィールド', () => {
+  it('DEFAULT_PLAY_STYLE に新フィールドのデフォルト値が設定されている', () => {
+    expect(DEFAULT_PLAY_STYLE.defenseStyle).toBe('center');
+    expect(DEFAULT_PLAY_STYLE.deflectionBias).toBe(0);
+    expect(DEFAULT_PLAY_STYLE.reactionDelay).toBe(100);
+    expect(DEFAULT_PLAY_STYLE.teamRole).toBe('balanced');
+  });
+
+  describe('全キャラに新フィールドが定義されている', () => {
+    const expectedCharacters = ['hiro', 'misaki', 'takuma', 'yuu', 'rookie', 'regular', 'ace'];
+
+    it('defenseStyle が有効な値', () => {
+      for (const charId of expectedCharacters) {
+        const profile = CHARACTER_AI_PROFILES[charId];
+        expect(['center', 'wide', 'aggressive']).toContain(profile.defenseStyle);
+      }
+    });
+
+    it('deflectionBias が -1〜1 の範囲', () => {
+      for (const charId of expectedCharacters) {
+        const profile = CHARACTER_AI_PROFILES[charId];
+        expect(profile.deflectionBias).toBeGreaterThanOrEqual(-1);
+        expect(profile.deflectionBias).toBeLessThanOrEqual(1);
+      }
+    });
+
+    it('reactionDelay が 0 以上', () => {
+      for (const charId of expectedCharacters) {
+        const profile = CHARACTER_AI_PROFILES[charId];
+        expect(profile.reactionDelay).toBeGreaterThanOrEqual(0);
+      }
+    });
+
+    it('teamRole が有効な値', () => {
+      for (const charId of expectedCharacters) {
+        const profile = CHARACTER_AI_PROFILES[charId];
+        expect(['attacker', 'defender', 'balanced']).toContain(profile.teamRole);
+      }
+    });
+  });
+
+  describe('キャラ固有の新パラメータ（spec §3.8 準拠）', () => {
+    it('ヒロ: aggressive / ストレート / attacker', () => {
+      const p = CHARACTER_AI_PROFILES['hiro'];
+      expect(p.defenseStyle).toBe('aggressive');
+      expect(p.deflectionBias).toBe(-0.3);
+      expect(p.reactionDelay).toBe(50);
+      expect(p.teamRole).toBe('attacker');
+    });
+
+    it('タクマ: center / ストレート / defender — 鉄壁の守護神', () => {
+      const p = CHARACTER_AI_PROFILES['takuma'];
+      expect(p.defenseStyle).toBe('center');
+      expect(p.deflectionBias).toBe(-0.5);
+      expect(p.reactionDelay).toBe(30);
+      expect(p.teamRole).toBe('defender');
+    });
+
+    it('ミサキ: wide / バウンス / balanced', () => {
+      const p = CHARACTER_AI_PROFILES['misaki'];
+      expect(p.defenseStyle).toBe('wide');
+      expect(p.deflectionBias).toBe(0.5);
+      expect(p.reactionDelay).toBe(80);
+      expect(p.teamRole).toBe('balanced');
+    });
+
+    it('ルーキー: center / 反応遅い（200ms）', () => {
+      const p = CHARACTER_AI_PROFILES['rookie'];
+      expect(p.defenseStyle).toBe('center');
+      expect(p.reactionDelay).toBe(200);
+    });
+  });
+});

@@ -3,6 +3,12 @@
  * AiPlayStyle 型の定義とキャラクター別プロファイルを提供する
  */
 
+/** 守備スタイル: パック相手陣地時のポジショニング */
+export type DefenseStyle = 'center' | 'wide' | 'aggressive';
+
+/** チーム内の役割 */
+export type TeamRole = 'attacker' | 'defender' | 'balanced';
+
 /** CPU AI のプレイスタイル（キャラクター個性）を制御するパラメータ */
 export type AiPlayStyle = {
   /** 横方向のターゲットオフセット傾向（-1.0 左寄せ 〜 0 中央 〜 1.0 右寄せ） */
@@ -15,6 +21,14 @@ export type AiPlayStyle = {
   aggressiveness: number;
   /** スコア差に応じた適応度（0: 適応なし 〜 1: 高適応） */
   adaptability: number;
+  /** 守備パターン: パック相手陣地時のポジション制御 */
+  defenseStyle: DefenseStyle;
+  /** 打ち返し角度バイアス（-1.0 ストレート 〜 1.0 バウンス） */
+  deflectionBias: number;
+  /** パック方向転換後のターゲット再計算遅延（ms） */
+  reactionDelay: number;
+  /** 2v2 でのチーム内役割 */
+  teamRole: TeamRole;
 };
 
 /** デフォルトプレイスタイル（オールラウンダー・無個性） */
@@ -24,71 +38,103 @@ export const DEFAULT_PLAY_STYLE: AiPlayStyle = {
   lateralPeriod: 0,
   aggressiveness: 0.5,
   adaptability: 0,
+  defenseStyle: 'center',
+  deflectionBias: 0,
+  reactionDelay: 100,
+  teamRole: 'balanced',
 };
 
 /** キャラクター ID → AiPlayStyle のマッピング */
 export const CHARACTER_AI_PROFILES: Record<string, AiPlayStyle> = {
-  /** ヒロ — ストレートシューター: 直線的でシンプルな動き */
+  /** ヒロ — ストレートシューター: 攻撃型エース。ストレートで撃ち抜く */
   hiro: {
     sidePreference: 0,
-    lateralOscillation: 0,   // 揺さぶりなし
+    lateralOscillation: 0,
     lateralPeriod: 0,
-    aggressiveness: 0.7,     // 前に出る
-    adaptability: 0.2,       // 低適応
+    aggressiveness: 0.7,
+    adaptability: 0.2,
+    defenseStyle: 'aggressive',
+    deflectionBias: -0.3,
+    reactionDelay: 50,
+    teamRole: 'attacker',
   },
 
-  /** ミサキ — テクニシャン: やや右寄りで角度をつける */
+  /** ミサキ — テクニシャン: 壁バウンスで翻弄する */
   misaki: {
     sidePreference: 0.3,
-    lateralOscillation: 40,  // 大きな揺さぶり
-    lateralPeriod: 2000,     // 2秒周期
-    aggressiveness: 0.5,     // 中間ポジション
-    adaptability: 0.3,       // 中低適応
+    lateralOscillation: 40,
+    lateralPeriod: 2000,
+    aggressiveness: 0.5,
+    adaptability: 0.3,
+    defenseStyle: 'wide',
+    deflectionBias: 0.5,
+    reactionDelay: 80,
+    teamRole: 'balanced',
   },
 
-  /** タクマ — パワーバウンサー: ゴール前に構える守備重視 */
+  /** タクマ — 鉄壁の守護神: ゴール前で素早く反応し直球で返す */
   takuma: {
     sidePreference: 0,
-    lateralOscillation: 0,   // 揺さぶりなし
+    lateralOscillation: 0,
     lateralPeriod: 0,
-    aggressiveness: 0.2,     // 守備的
-    adaptability: 0.1,       // 低適応
+    aggressiveness: 0.2,
+    adaptability: 0.1,
+    defenseStyle: 'center',
+    deflectionBias: -0.5,
+    reactionDelay: 30,
+    teamRole: 'defender',
   },
 
-  /** ユウ — アナライザー: やや左寄りで分析的に対応 */
+  /** ユウ — アナライザー: adaptability で試合展開に適応 */
   yuu: {
     sidePreference: -0.2,
-    lateralOscillation: 20,  // 控えめな揺さぶり
-    lateralPeriod: 3000,     // 3秒周期
-    aggressiveness: 0.4,     // やや守備的
-    adaptability: 0.8,       // 高適応
+    lateralOscillation: 20,
+    lateralPeriod: 3000,
+    aggressiveness: 0.4,
+    adaptability: 0.8,
+    defenseStyle: 'wide',
+    deflectionBias: 0.2,
+    reactionDelay: 40,
+    teamRole: 'balanced',
   },
 
-  /** ルーキー — ビギナー: 動きが遅く反応が鈍い */
+  /** ルーキー — ビギナー: 反応が遅く癖がない素直な動き */
   rookie: {
     sidePreference: 0,
     lateralOscillation: 0,
     lateralPeriod: 0,
-    aggressiveness: 0.3,     // 消極的
-    adaptability: 0,         // 適応なし
+    aggressiveness: 0.3,
+    adaptability: 0,
+    defenseStyle: 'center',
+    deflectionBias: 0,
+    reactionDelay: 200,
+    teamRole: 'balanced',
   },
 
-  /** レギュラー — オールラウンダー: わずかに右寄り */
+  /** レギュラー — 標準レベル: バランスの良い中堅 */
   regular: {
     sidePreference: 0.1,
-    lateralOscillation: 10,  // わずかな揺さぶり
-    lateralPeriod: 4000,     // ゆっくり
-    aggressiveness: 0.5,     // バランス型
-    adaptability: 0.2,       // 低適応
+    lateralOscillation: 10,
+    lateralPeriod: 4000,
+    aggressiveness: 0.5,
+    adaptability: 0.2,
+    defenseStyle: 'wide',
+    deflectionBias: 0.1,
+    reactionDelay: 100,
+    teamRole: 'balanced',
   },
 
-  /** エース — エリート: わずかに左寄りで攻撃的 */
+  /** エース — 上級者: 積極的にバウンスショットを狙う */
   ace: {
     sidePreference: -0.1,
-    lateralOscillation: 15,  // 控えめだが正確な揺さぶり
-    lateralPeriod: 2500,     // 中速
-    aggressiveness: 0.6,     // やや攻撃的
-    adaptability: 0.4,       // 中適応
+    lateralOscillation: 15,
+    lateralPeriod: 2500,
+    aggressiveness: 0.6,
+    adaptability: 0.4,
+    defenseStyle: 'aggressive',
+    deflectionBias: 0.3,
+    reactionDelay: 50,
+    teamRole: 'attacker',
   },
 };
 
