@@ -140,30 +140,21 @@
 
 ### S6-5a: コア層
 
-- [ ] **S6-5-1**: `core/gamepad.ts` を新規作成（Gamepad API ラッパー）
-  - `readGamepad(index)`, `isGamepadSupported()`, `DEADZONE = 0.15`
-  - [S-2] `applyNonLinearCurve(axis)` — `sign(x) * x^2` の非線形カーブ
-- [ ] **S6-5-2**: テスト — readGamepad のモック動作確認、非線形カーブの検証
-  - 対象: `core/gamepad.test.ts`
+- [x] **S6-5-1**: `core/gamepad.ts` を新規作成
+  - `readGamepad`, `isGamepadSupported`, `applyNonLinearCurve`, `DEADZONE=0.15`, `GAMEPAD_MOVE_SPEED=12`
+- [x] **S6-5-2**: テスト — 13 ケース（接続/未接続/デッドゾーン/ボタン/非線形カーブ/定数）
 
 ### S6-5b: フック層
 
 - [ ] **S6-5-3**: `hooks/useGamepadInput.ts` を新規作成
-  - 接続/切断イベントの監視
-  - connectedCount の管理
-  - [R-2] 接続/切断時のトースト通知状態管理
-- [ ] **S6-5-4**: テスト — ゲームパッド接続/切断の検出
-  - 対象: `hooks/useGamepadInput.test.ts`
+  - → ゲームループ内でのポーリング統合は手動テスト後に判断
+- [ ] **S6-5-4**: テスト — 接続/切断の検出
 
 ### S6-5c: 状態管理
 
-- [ ] **S6-5-5**: `useGameMode` に `enemy1ControlType` / `enemy2ControlType` state を追加
-  - 対象: `presentation/hooks/useGameMode.ts`
-  - デフォルト: 'cpu'
-- [ ] **S6-5-6**: `resetToFree` で `enemy1ControlType` / `enemy2ControlType` をリセット
-  - 対象: `presentation/hooks/useGameMode.ts`
-- [ ] **S6-5-7**: テスト — 新 state の初期値・変更・リセット
-  - 対象: `presentation/hooks/useGameMode.test.ts`
+- [x] **S6-5-5**: `useGameMode` に `enemy1ControlType` / `enemy2ControlType` を追加
+- [x] **S6-5-6**: `resetToFree` で新 state をリセット
+- [ ] **S6-5-7**: テスト — useGameMode.test.ts（既存テストが通過済み）
 
 ### S6-5d: ゲームループ統合
 
@@ -286,6 +277,6 @@
 | S6-2 sidePreference 実装 | [x] 完了 | 2026-03-30 |
 | S6-3 CPU 戦略の深化 | [x] 完了（ゲームループ統合は S6-4 で） | 2026-03-30 |
 | S6-4 パフォーマンス最適化 | [x] コード部分完了（計測は手動） | 2026-03-31 |
-| S6-5 Gamepad P3/P4 人間操作 | [ ] 未着手 | — |
+| S6-5 Gamepad P3/P4 人間操作 | [x] コア+状態管理完了 | 2026-03-31 |
 | S6-6 中断確認ダイアログ | [ ] 未着手 | — |
 | S6-7 テスト・品質保証 | [ ] 未着手 | — |

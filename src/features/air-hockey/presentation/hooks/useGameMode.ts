@@ -43,6 +43,10 @@ export type UseGameModeReturn = {
   setPairMatchDifficulty: (d: Difficulty) => void;
   allyControlType: 'cpu' | 'human';
   setAllyControlType: (t: 'cpu' | 'human') => void;
+  enemy1ControlType: 'cpu' | 'human';
+  setEnemy1ControlType: (t: 'cpu' | 'human') => void;
+  enemy2ControlType: 'cpu' | 'human';
+  setEnemy2ControlType: (t: 'cpu' | 'human') => void;
   resetToFree: () => void;
 };
 
@@ -68,6 +72,8 @@ export function useGameMode(): UseGameModeReturn {
   const [enemyCharacter2, setEnemyCharacter2] = useState<Character | undefined>(undefined);
   const [pairMatchDifficulty, setPairMatchDifficulty] = useState<Difficulty>('normal');
   const [allyControlType, setAllyControlType] = useState<'cpu' | 'human'>('cpu');
+  const [enemy1ControlType, setEnemy1ControlType] = useState<'cpu' | 'human'>('cpu');
+  const [enemy2ControlType, setEnemy2ControlType] = useState<'cpu' | 'human'>('cpu');
 
   /** 勝利スコアをバリデーション付きで設定 */
   const setWinScore = useCallback((s: number) => {
@@ -87,6 +93,8 @@ export function useGameMode(): UseGameModeReturn {
     setEnemyCharacter1(undefined);
     setEnemyCharacter2(undefined);
     setAllyControlType('cpu');
+    setEnemy1ControlType('cpu');
+    setEnemy2ControlType('cpu');
   }, []);
 
   return {
@@ -122,6 +130,10 @@ export function useGameMode(): UseGameModeReturn {
     setPairMatchDifficulty,
     allyControlType,
     setAllyControlType,
+    enemy1ControlType,
+    setEnemy1ControlType,
+    enemy2ControlType,
+    setEnemy2ControlType,
     resetToFree,
   };
 }
