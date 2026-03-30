@@ -84,18 +84,21 @@ const TEAM_ROLE_AGGRESSIVENESS: Record<TeamRole, number> = {
 };
 
 /**
- * ally の sidePreference 反転（R-4）と teamRole の aggressiveness 調整（S6-3e）を適用
+ * ally の sidePreference 反転（R-4）、teamRole の aggressiveness 調整（S6-3e）、
+ * スコア差による動的 aggressiveness 調整（S-4, S6-3-15b）を適用
  */
 function applyTeamAndSideAdjustments(
   config: AiBehaviorConfig,
-  isPlayerTeam: boolean
+  isPlayerTeam: boolean,
+  scoreDiff: number = 0
 ): AiBehaviorConfig {
   if (!config.playStyle) return config;
 
   const ps = config.playStyle;
   const sideFlip = isPlayerTeam ? -1 : 1;
   const roleAdj = TEAM_ROLE_AGGRESSIVENESS[ps.teamRole] ?? 0;
-  const adjustedAggressiveness = Math.max(0, Math.min(1, ps.aggressiveness + roleAdj));
+  const scoreAdj = getScoreAdjustment(scoreDiff, ps.adaptability);
+  const adjustedAggressiveness = Math.max(0, Math.min(1, ps.aggressiveness + roleAdj + scoreAdj));
 
   return {
     ...config,
@@ -151,9 +154,8 @@ export function updateExtraMalletAI(
     ? { ...aiState.target, y: flipY(aiState.target.y, H) }
     : aiState.target;
 
-  // R-4: ally の Y 軸反転に伴い sidePreference の左右も反転
-  // S6-3e: teamRole による aggressiveness 調整
-  const effectiveConfig = applyTeamAndSideAdjustments(config, isPlayerTeam);
+  // R-4: sidePreference 反転 + S6-3e: teamRole 調整 + S-4: スコア差動的調整
+  const effectiveConfig = applyTeamAndSideAdjustments(config, isPlayerTeam, scoreDiff);
 
   const tempGame = {
     ...game,

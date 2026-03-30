@@ -326,6 +326,12 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
     // 勝利判定後の遅延遷移タイマー（クリーンアップ用に追跡）
     let resultTimerId: ReturnType<typeof setTimeout> | null = null;
 
+    // R-5: パフォーマンス計測基盤（開発モードのみ）
+    const PERF_ENABLED = process.env.NODE_ENV === 'development';
+    let fpsFrameCount = 0;
+    let fpsLastTime = performance.now();
+    let currentFps = 0;
+
     const gameLoop = () => {
       const game = gameRef.current;
       const ctx = canvasRef.current?.getContext('2d');
@@ -939,6 +945,25 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
             resultTimerId = null;
           }, consts.TIMING.GOAL_EFFECT);
           return;
+        }
+      }
+
+      // R-5: FPS 計測（開発モードのみ）
+      if (PERF_ENABLED) {
+        fpsFrameCount++;
+        const now2 = performance.now();
+        if (now2 - fpsLastTime >= 1000) {
+          currentFps = fpsFrameCount;
+          fpsFrameCount = 0;
+          fpsLastTime = now2;
+        }
+        const ctx2 = canvasRef.current?.getContext('2d');
+        if (ctx2) {
+          ctx2.save();
+          ctx2.fillStyle = '#0f0';
+          ctx2.font = '12px monospace';
+          ctx2.fillText(`FPS: ${currentFps}`, 8, 16);
+          ctx2.restore();
         }
       }
 

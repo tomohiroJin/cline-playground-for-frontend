@@ -20,6 +20,20 @@ export const applyDeflectionBias = (
   return { nx: Math.cos(newAngle), ny: Math.sin(newAngle) };
 };
 
+/**
+ * 衝突判定の早期リターン（S-1: 距離の二乗比較で sqrt を完全回避）
+ * 距離が maxDist を超えている場合に true を返す
+ */
+export const quickReject = (
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+  maxDist: number
+): boolean => {
+  const dx = a.x - b.x;
+  const dy = a.y - b.y;
+  return dx * dx + dy * dy > maxDist * maxDist;
+};
+
 export const Physics = {
   detectCollision(ax: number, ay: number, ar: number, bx: number, by: number, br: number) {
     const dx = ax - bx,
