@@ -949,22 +949,19 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       }
 
       // R-5: FPS 計測（開発モードのみ）
-      if (PERF_ENABLED) {
+      if (PERF_ENABLED && ctx) {
         fpsFrameCount++;
-        const now2 = performance.now();
-        if (now2 - fpsLastTime >= 1000) {
+        const fpsNow = performance.now();
+        if (fpsNow - fpsLastTime >= 1000) {
           currentFps = fpsFrameCount;
           fpsFrameCount = 0;
-          fpsLastTime = now2;
+          fpsLastTime = fpsNow;
         }
-        const ctx2 = canvasRef.current?.getContext('2d');
-        if (ctx2) {
-          ctx2.save();
-          ctx2.fillStyle = '#0f0';
-          ctx2.font = '12px monospace';
-          ctx2.fillText(`FPS: ${currentFps}`, 8, 16);
-          ctx2.restore();
-        }
+        ctx.save();
+        ctx.fillStyle = '#0f0';
+        ctx.font = '12px monospace';
+        ctx.fillText(`FPS: ${currentFps}`, 8, 16);
+        ctx.restore();
       }
 
       animationRef = requestAnimationFrame(gameLoop);

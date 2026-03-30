@@ -1,4 +1,4 @@
-import { Physics } from './physics';
+import { Physics, quickReject } from './physics';
 import { CONSTANTS } from './constants';
 
 describe('Physics Module', () => {
@@ -113,23 +113,14 @@ describe('Physics Module', () => {
 
 describe('quickReject（S-1: 距離の二乗比較）', () => {
   it('遠いペアを除外する（距離 > maxDist）', () => {
-    const { quickReject } = require('./physics');
-    const a = { x: 0, y: 0 };
-    const b = { x: 200, y: 200 };
-    expect(quickReject(a, b, 50)).toBe(true);
+    expect(quickReject({ x: 0, y: 0 }, { x: 200, y: 200 }, 50)).toBe(true);
   });
 
   it('近いペアを通過させる（距離 <= maxDist）', () => {
-    const { quickReject } = require('./physics');
-    const a = { x: 100, y: 100 };
-    const b = { x: 110, y: 110 };
-    expect(quickReject(a, b, 50)).toBe(false);
+    expect(quickReject({ x: 100, y: 100 }, { x: 110, y: 110 }, 50)).toBe(false);
   });
 
   it('ちょうど境界上は通過（距離 == maxDist）', () => {
-    const { quickReject } = require('./physics');
-    const a = { x: 0, y: 0 };
-    const b = { x: 30, y: 40 }; // 距離 = 50
-    expect(quickReject(a, b, 50)).toBe(false);
+    expect(quickReject({ x: 0, y: 0 }, { x: 30, y: 40 }, 50)).toBe(false);
   });
 });
