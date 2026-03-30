@@ -6,9 +6,42 @@
  */
 import React, { useState, useCallback, useMemo } from 'react';
 import type { Character } from '../core/types';
+import type { TeamRole } from '../core/character-ai-profiles';
+import { getCharacterAiProfile } from '../core/character-ai-profiles';
 import { ALWAYS_UNLOCKED_IDS } from '../core/characters';
 import { screenLayout } from './screen-layout';
 import { teamSetupStyles as styles } from './team-setup-screen-styles';
+
+/** teamRole → バッジ表示のマッピング */
+const ROLE_BADGE: Record<TeamRole, { icon: string; color: string }> = {
+  attacker: { icon: '⚔️', color: '#e74c3c' },
+  defender: { icon: '🛡️', color: '#3498db' },
+  balanced: { icon: '⚖️', color: '#f39c12' },
+};
+
+/** キャラ ID からロールバッジを取得 */
+const getRoleBadge = (characterId: string) => {
+  const profile = getCharacterAiProfile(characterId);
+  return ROLE_BADGE[profile.teamRole];
+};
+
+/** ロールバッジコンポーネント */
+const RoleBadge: React.FC<{ characterId: string; size?: number }> = ({ characterId, size = 16 }) => {
+  const badge = getRoleBadge(characterId);
+  return (
+    <span
+      data-testid="role-badge"
+      title={`${badge.icon}`}
+      style={{
+        fontSize: `${size}px`,
+        lineHeight: 1,
+        flexShrink: 0,
+      }}
+    >
+      {badge.icon}
+    </span>
+  );
+};
 
 /** スロット識別子 */
 type SlotId = 'p2' | 'p3' | 'p4';
@@ -63,7 +96,10 @@ const CharacterSlot: React.FC<{
         <img src={character.icon} alt={character.name} style={styles.slotIcon} />
         <div style={styles.slotInfo}>
           <span style={styles.slotLabel}>{label}</span>
-          <span style={styles.slotName}>{character.name}</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span style={styles.slotName}>{character.name}</span>
+            <RoleBadge characterId={character.id} size={14} />
+          </span>
         </div>
         <span style={styles.changeHint}>{isOpen ? '▲' : '変更 ▼'}</span>
       </div>
@@ -81,8 +117,13 @@ const CharacterSlot: React.FC<{
                   onClick={() => { if (!locked) onSelect(c); }}
                   disabled={locked}
                 >
-                  <img src={c.icon} alt={c.name} style={styles.gridCardIcon(locked)} />
-                  {locked && <span style={styles.lockOverlay}>🔒</span>}
+                  <div style={{ position: 'relative', display: 'inline-block' }}>
+                    <img src={c.icon} alt={c.name} style={styles.gridCardIcon(locked)} />
+                    {locked && <span style={styles.lockOverlay}>🔒</span>}
+                    <span style={{ position: 'absolute', bottom: -2, right: -2, fontSize: '12px', lineHeight: 1 }}>
+                      <RoleBadge characterId={c.id} size={12} />
+                    </span>
+                  </div>
                   <span style={styles.gridCardName}>{c.name}</span>
                 </button>
               );
@@ -145,7 +186,10 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
             <img src={playerCharacter.icon} alt={playerCharacter.name} style={styles.slotIcon} />
             <div style={styles.slotInfo}>
               <span style={styles.slotLabel}>P1: あなた（矢印キー / マウス）</span>
-              <span style={styles.slotName}>{playerCharacter.name}</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span style={styles.slotName}>{playerCharacter.name}</span>
+                <RoleBadge characterId={playerCharacter.id} size={14} />
+              </span>
             </div>
           </div>
           {/* P2: パートナー（CPU/人間切り替え） */}
