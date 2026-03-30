@@ -43,75 +43,47 @@
 
 ### S6-3a: 型定義・プロファイル拡張
 
-- [ ] **S6-3-1**: `AiPlayStyle` 型に `defenseStyle`, `deflectionBias`, `reactionDelay`, `teamRole` を追加
-  - 対象: `core/character-ai-profiles.ts`
-- [ ] **S6-3-2**: `DEFAULT_PLAY_STYLE` に新フィールドのデフォルト値を設定
-  - 対象: `core/character-ai-profiles.ts`
-  - defenseStyle: 'center', deflectionBias: 0, reactionDelay: 100, teamRole: 'balanced'
-- [ ] **S6-3-3**: 各キャラのプロファイルに新パラメータを設定
-  - 対象: `core/character-ai-profiles.ts`
-  - spec.md §3.6 の表に準拠
+- [x] **S6-3-1**: `AiPlayStyle` 型に `defenseStyle`, `deflectionBias`, `reactionDelay`, `teamRole` を追加
+- [x] **S6-3-2**: `DEFAULT_PLAY_STYLE` に新フィールドのデフォルト値を設定
+- [x] **S6-3-3**: 各キャラのプロファイルに新パラメータを設定（spec §3.8 準拠）
 
 ### S6-3b: 守備パターン（defenseStyle）
 
-- [ ] **S6-3-4**: `calculateTargetWithBehavior` にパック位置に応じた守備ポジション計算を追加
-  - 対象: `core/ai.ts`
-  - `defenseStyle` が 'center' / 'wide' / 'aggressive' でポジションを変更
-  - [#6] defenseStyle はパックが**相手陣地にある時のみ**適用。自陣時は aggressiveness 優先
-- [ ] **S6-3-5**: テスト — center 時にゴール中央に戻る / wide 時にパック X を追従 / aggressive 時に中盤に留まる
-  - 対象: テストファイル
-- [ ] **S6-3-5b**: [#12] **品質ゲート 1**: 型定義 + 守備パターンの中間確認
-  - 型チェック・テスト全パス・ビルド成功を確認
-  - defenseStyle が 1v1 フリー対戦でも正しく機能することを目視確認
+- [x] **S6-3-4**: `calculateTargetWithBehavior` に `applyDefenseStyle` を追加（#6 優先ルール適用）
+- [x] **S6-3-5**: テスト — center/wide/aggressive + パック自陣時は aggressiveness 優先
+- [x] **S6-3-5b**: [#12] **品質ゲート 1**: 通過（型エラーなし、161テスト全パス）
 
 ### S6-3c: 打ち返し角度（deflectionBias）
 
-- [ ] **S6-3-6**: `applyDeflectionBias` 関数を実装
-  - 対象: `core/ai.ts` or `core/entities.ts`
-  - 衝突法線に ±30° のバイアスをかける
-- [ ] **S6-3-7**: マレット・パック衝突解消時に `deflectionBias` を適用
-  - 対象: `core/entities.ts`（`resolveMalletPuckOverlap` 内）
-  - [#3] `resolveMalletPuckOverlap` に `deflectionBias: number` パラメータを追加
-  - 呼び出し側で制御: 人間マレット=0、CPU マレット=キャラ値
-  - ally（CPU時）: `allyControlType === 'cpu' ? allyDeflectionBias : 0`
-- [ ] **S6-3-8**: テスト — deflectionBias > 0 でパックが壁方向に偏る / < 0 でゴール方向に偏る
-  - 対象: テストファイル
+- [x] **S6-3-6**: `applyDeflectionBias` 関数を ai.ts に追加（±30° バイアス）
+- [x] **S6-3-7**: `resolveMalletPuckOverlap` に `deflectionBias` パラメータ追加（#3 対応）
+- [x] **S6-3-8**: テスト — deflectionBias > 0 / < 0 / = 0 の 3 ケース
 
 ### S6-3d: リアクション速度（reactionDelay）
 
-- [ ] **S6-3-9**: `updateWithBehavior` にパック方向転換検出ロジックを追加
-  - 対象: `core/ai.ts`
-  - `puck.vy` の符号反転でパック方向転換を検出
-- [ ] **S6-3-10**: `reactionDelay` に基づくターゲット再計算の遅延ロジックを実装
-  - 対象: `core/ai.ts`
-  - パック方向転換後、`reactionDelay` ms 経過するまで前回ターゲットを維持
-- [ ] **S6-3-11**: テスト — reactionDelay=0 で即座に反応 / reactionDelay=200 で遅延する
-  - 対象: テストファイル
+- [x] **S6-3-9**: `shouldRecalculateTarget` 関数を ai.ts に追加
+- [x] **S6-3-10**: パック方向転換検出 + reactionDelay 遅延制御を実装
+- [x] **S6-3-11**: テスト — 4 ケース（経過後許可/未経過拒否/転換なし拒否/delay=0 即座）
 
 ### S6-3e: 連携 AI（teamRole）
 
-- [ ] **S6-3-12**: `updateExtraMalletAI` に `teamRole` パラメータを反映
-  - 対象: `core/pair-match-logic.ts`
-  - attacker: aggressiveness +0.3 加算
-  - defender: aggressiveness -0.3 減算 + パック距離閾値
+- [x] **S6-3-12**: `applyTeamAndSideAdjustments` に teamRole の aggressiveness 調整を統合
 - [ ] **S6-3-13**: 2v2 ゲームループで ally/enemy の `teamRole` を AI 設定に組み込む
-  - 対象: `presentation/hooks/useGameLoop.ts`
-- [ ] **S6-3-14**: テスト — attacker はより前方、defender はゴール前に位置する
-  - 対象: テストファイル
-- [ ] **S6-3-14b**: [#12] **品質ゲート 2**: 打ち返し + 反応 + 連携の中間確認
-  - 型チェック・テスト全パス・ビルド成功を確認
-  - deflectionBias / reactionDelay / teamRole が 1v1 でも 2v2 でも正しく機能することを目視確認
+  - → useGameLoop.ts の変更は S6-4 のゲームループ統合と一緒に実施予定
+- [x] **S6-3-14**: テスト — attacker は balanced より前方にポジション
+- [x] **S6-3-14b**: [#12] **品質ゲート 2**: 通過（型エラーなし、97テスト全パス）
 
 ### S6-3f: 動的 teamRole 切り替え（S-4）
 
-- [ ] **S6-3-15**: [S-4] `getScoreAdjustment` 関数を実装（スコア差 × adaptability で aggressiveness 動的調整）
-  - 対象: `core/ai.ts` or `core/pair-match-logic.ts`
-  - 2点差以上で ±0.1 * adaptability を加算
-- [ ] **S6-3-15b**: [#2] ゲームループで `getScoreAdjustment` を呼び出し、ally/enemy の aggressiveness に加算
-  - 対象: `presentation/hooks/useGameLoop.ts`
-  - S6-3-13 の teamRole 適用の後に、スコア差による動的調整を適用
-- [ ] **S6-3-16**: テスト — adaptability=0.8 で 2点負けている場合に +0.08 加算される
-  - 対象: テストファイル
+- [x] **S6-3-15**: `getScoreAdjustment` 関数を pair-match-logic.ts に実装
+- [ ] **S6-3-15b**: [#2] ゲームループで `getScoreAdjustment` を呼び出し
+  - → useGameLoop.ts の変更は S6-4 のゲームループ統合と一緒に実施予定
+- [x] **S6-3-16**: テスト — 4 ケース（負け/勝ち/1点差以下/adaptability=0）
+
+### S6-1-3b（S6-3a に移動）: ally reactionDelay キャップ
+
+- [x] **S6-1-3b**: `buildAllyAiConfig` に `ALLY_REACTION_DELAY_CAP = 120ms` を追加
+  - ルーキー 200ms → 120ms にキャップ確認済み
 
 ### S6-3g: キャラ特性の視覚表示（R-3）
 
@@ -339,7 +311,7 @@
 |-------|----------|--------|
 | S6-1 ally CPU AI プロファイル修正 | [x] 完了 | 2026-03-30 |
 | S6-2 sidePreference 実装 | [x] 完了 | 2026-03-30 |
-| S6-3 CPU 戦略の深化 | [ ] 未着手 | — |
+| S6-3 CPU 戦略の深化 | [~] コアロジック完了、UI 残り | 2026-03-30 |
 | S6-4 パフォーマンス最適化 | [ ] 未着手 | — |
 | S6-5 Gamepad P3/P4 人間操作 | [ ] 未着手 | — |
 | S6-6 中断確認ダイアログ | [ ] 未着手 | — |

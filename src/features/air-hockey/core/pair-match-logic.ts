@@ -61,6 +61,20 @@ export type ExtraMalletAiState = {
   stuckTimer: number;
 };
 
+/**
+ * スコア差に応じて aggressiveness を動的に調整する（S-4）
+ * 負けている→攻撃的、勝っている→守備的
+ * adaptability が高いほど調整幅が大きい
+ */
+export function getScoreAdjustment(
+  scoreDiff: number,
+  adaptability: number
+): number {
+  if (Math.abs(scoreDiff) < 2) return 0;
+  const direction = scoreDiff < 0 ? 1 : -1;
+  return direction * 0.1 * adaptability;
+}
+
 /** teamRole に基づく aggressiveness 調整値 */
 const TEAM_ROLE_AGGRESSIVENESS: Record<string, number> = {
   attacker: 0.3,

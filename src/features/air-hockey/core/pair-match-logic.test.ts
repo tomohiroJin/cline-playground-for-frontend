@@ -3,7 +3,7 @@
  */
 import { EntityFactory, resolveMalletPuckOverlap, resolveMalletMalletOverlaps } from './entities';
 import { CONSTANTS } from './constants';
-import { getAllMallets, applyGoalScore, updateExtraMalletAI } from './pair-match-logic';
+import { getAllMallets, applyGoalScore, updateExtraMalletAI, getScoreAdjustment } from './pair-match-logic';
 import { applyItemEffect } from './items';
 import { CpuAI } from './ai';
 import { AI_BEHAVIOR_PRESETS } from './story-balance';
@@ -326,5 +326,31 @@ describe('updateExtraMalletAI — sidePreference 反転（R-4）', () => {
     if (resultRight && resultCenter) {
       expect(resultRight.mallet.x).toBeGreaterThanOrEqual(resultCenter.mallet.x);
     }
+  });
+});
+
+// ── Phase S6-3f: 動的 teamRole 切り替えテスト ──────
+
+describe('getScoreAdjustment（S-4）', () => {
+  it('2点差以上で負けている場合に正の調整値を返す（攻撃的に）', () => {
+    const adj = getScoreAdjustment(-2, 0.8);
+    expect(adj).toBeGreaterThan(0);
+    expect(adj).toBeCloseTo(0.08);
+  });
+
+  it('2点差以上で勝っている場合に負の調整値を返す（守備的に）', () => {
+    const adj = getScoreAdjustment(2, 0.8);
+    expect(adj).toBeLessThan(0);
+    expect(adj).toBeCloseTo(-0.08);
+  });
+
+  it('1点差以下ではゼロを返す', () => {
+    expect(getScoreAdjustment(-1, 0.8)).toBe(0);
+    expect(getScoreAdjustment(0, 0.5)).toBe(0);
+    expect(getScoreAdjustment(1, 1.0)).toBe(0);
+  });
+
+  it('adaptability=0 では調整なし', () => {
+    expect(getScoreAdjustment(-3, 0)).toBe(0);
   });
 });

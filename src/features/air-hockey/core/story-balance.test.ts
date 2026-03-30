@@ -343,13 +343,19 @@ describe('buildAllyAiConfig', () => {
   });
 
   describe('reactionDelay キャップ（#9: ALLY_REACTION_DELAY_CAP=120ms）', () => {
-    it('reactionDelay が定義済みのキャラで 120ms を超える場合にキャップされる', () => {
-      // reactionDelay は S6-3 で追加されるため、
-      // ここでは buildAllyAiConfig の構造がキャップ対応できることを確認
+    it('ルーキー（reactionDelay=200ms）が 120ms にキャップされる', () => {
+      const config = buildAllyAiConfig('normal', 'rookie');
+      expect(config.playStyle?.reactionDelay).toBe(120);
+    });
+
+    it('ヒロ（reactionDelay=50ms）はキャップ不要でそのまま', () => {
       const config = buildAllyAiConfig('normal', 'hiro');
-      // playStyle が存在し、aggressiveness がキャップされている
-      expect(config.playStyle).toBeDefined();
-      expect(config.playStyle!.aggressiveness).toBeLessThanOrEqual(0.5);
+      expect(config.playStyle?.reactionDelay).toBe(50);
+    });
+
+    it('レギュラー（reactionDelay=100ms）はキャップ不要でそのまま', () => {
+      const config = buildAllyAiConfig('normal', 'regular');
+      expect(config.playStyle?.reactionDelay).toBe(100);
     });
   });
 
