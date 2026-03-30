@@ -526,8 +526,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
           const allyResult = updateExtraMalletAI(
             game, game.ally,
             { target: game.allyTarget ?? null, targetTime: game.allyTargetTime ?? 0, stuckTimer: game.allyStuckTimer ?? 0 },
-            updateFn, allyAiConfig, now, consts, scoreDiff,
-            'player'
+            { updateFn, config: allyAiConfig, now, consts, scoreDiff, team: 'player' }
           );
           if (allyResult) {
             game.ally = allyResult.mallet;
@@ -544,8 +543,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
           const result = updateExtraMalletAI(
             game, game.enemy,
             { target: game.enemyTarget ?? null, targetTime: game.enemyTargetTime ?? 0, stuckTimer: game.enemyStuckTimer ?? 0 },
-            updateFn, enemyAiConfig, now, consts, scoreDiff,
-            'cpu'
+            { updateFn, config: enemyAiConfig, now, consts, scoreDiff, team: 'cpu' }
           );
           if (result) {
             game.enemy = result.mallet;

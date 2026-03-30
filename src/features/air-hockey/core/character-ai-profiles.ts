@@ -44,98 +44,57 @@ export const DEFAULT_PLAY_STYLE: AiPlayStyle = {
   teamRole: 'balanced',
 };
 
+/** DEFAULT_PLAY_STYLE をベースに差分のみ指定してプロファイルを生成 */
+const createProfile = (overrides: Partial<AiPlayStyle>): AiPlayStyle => ({
+  ...DEFAULT_PLAY_STYLE,
+  ...overrides,
+});
+
 /** キャラクター ID → AiPlayStyle のマッピング */
 export const CHARACTER_AI_PROFILES: Record<string, AiPlayStyle> = {
-  /** ヒロ — ストレートシューター: 攻撃型エース。ストレートで撃ち抜く */
-  hiro: {
-    sidePreference: 0,
-    lateralOscillation: 0,
-    lateralPeriod: 0,
-    aggressiveness: 0.7,
-    adaptability: 0.2,
-    defenseStyle: 'aggressive',
-    deflectionBias: -0.3,
-    reactionDelay: 50,
-    teamRole: 'attacker',
-  },
+  /** ヒロ — 攻撃型エース: ストレートで撃ち抜く */
+  hiro: createProfile({
+    aggressiveness: 0.7, adaptability: 0.2,
+    defenseStyle: 'aggressive', deflectionBias: -0.3, reactionDelay: 50, teamRole: 'attacker',
+  }),
 
   /** ミサキ — テクニシャン: 壁バウンスで翻弄する */
-  misaki: {
-    sidePreference: 0.3,
-    lateralOscillation: 40,
-    lateralPeriod: 2000,
-    aggressiveness: 0.5,
-    adaptability: 0.3,
-    defenseStyle: 'wide',
-    deflectionBias: 0.5,
-    reactionDelay: 80,
-    teamRole: 'balanced',
-  },
+  misaki: createProfile({
+    sidePreference: 0.3, lateralOscillation: 40, lateralPeriod: 2000,
+    aggressiveness: 0.5, adaptability: 0.3,
+    defenseStyle: 'wide', deflectionBias: 0.5, reactionDelay: 80,
+  }),
 
   /** タクマ — 鉄壁の守護神: ゴール前で素早く反応し直球で返す */
-  takuma: {
-    sidePreference: 0,
-    lateralOscillation: 0,
-    lateralPeriod: 0,
-    aggressiveness: 0.2,
-    adaptability: 0.1,
-    defenseStyle: 'center',
-    deflectionBias: -0.5,
-    reactionDelay: 30,
-    teamRole: 'defender',
-  },
+  takuma: createProfile({
+    aggressiveness: 0.2, adaptability: 0.1,
+    deflectionBias: -0.5, reactionDelay: 30, teamRole: 'defender',
+  }),
 
   /** ユウ — アナライザー: adaptability で試合展開に適応 */
-  yuu: {
-    sidePreference: -0.2,
-    lateralOscillation: 20,
-    lateralPeriod: 3000,
-    aggressiveness: 0.4,
-    adaptability: 0.8,
-    defenseStyle: 'wide',
-    deflectionBias: 0.2,
-    reactionDelay: 40,
-    teamRole: 'balanced',
-  },
+  yuu: createProfile({
+    sidePreference: -0.2, lateralOscillation: 20, lateralPeriod: 3000,
+    aggressiveness: 0.4, adaptability: 0.8,
+    defenseStyle: 'wide', deflectionBias: 0.2, reactionDelay: 40,
+  }),
 
   /** ルーキー — ビギナー: 反応が遅く癖がない素直な動き */
-  rookie: {
-    sidePreference: 0,
-    lateralOscillation: 0,
-    lateralPeriod: 0,
-    aggressiveness: 0.3,
-    adaptability: 0,
-    defenseStyle: 'center',
-    deflectionBias: 0,
-    reactionDelay: 200,
-    teamRole: 'balanced',
-  },
+  rookie: createProfile({
+    aggressiveness: 0.3, reactionDelay: 200,
+  }),
 
   /** レギュラー — 標準レベル: バランスの良い中堅 */
-  regular: {
-    sidePreference: 0.1,
-    lateralOscillation: 10,
-    lateralPeriod: 4000,
-    aggressiveness: 0.5,
-    adaptability: 0.2,
-    defenseStyle: 'wide',
-    deflectionBias: 0.1,
-    reactionDelay: 100,
-    teamRole: 'balanced',
-  },
+  regular: createProfile({
+    sidePreference: 0.1, lateralOscillation: 10, lateralPeriod: 4000,
+    adaptability: 0.2, defenseStyle: 'wide', deflectionBias: 0.1,
+  }),
 
   /** エース — 上級者: 積極的にバウンスショットを狙う */
-  ace: {
-    sidePreference: -0.1,
-    lateralOscillation: 15,
-    lateralPeriod: 2500,
-    aggressiveness: 0.6,
-    adaptability: 0.4,
-    defenseStyle: 'aggressive',
-    deflectionBias: 0.3,
-    reactionDelay: 50,
-    teamRole: 'attacker',
-  },
+  ace: createProfile({
+    sidePreference: -0.1, lateralOscillation: 15, lateralPeriod: 2500,
+    aggressiveness: 0.6, adaptability: 0.4,
+    defenseStyle: 'aggressive', deflectionBias: 0.3, reactionDelay: 50, teamRole: 'attacker',
+  }),
 };
 
 /**

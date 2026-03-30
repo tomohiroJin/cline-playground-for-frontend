@@ -117,24 +117,28 @@ function flipPucks(pucks: Puck[], H: number): Puck[] {
   return pucks.map(p => ({ ...p, y: flipY(p.y, H), vy: -p.vy }));
 }
 
+/** updateExtraMalletAI の AI 制御パラメータ */
+export type ExtraMalletAIParams = {
+  updateFn: (g: GameState, config: AiBehaviorConfig, now: number, consts: GameConstants, scoreDiff?: number) => CpuUpdateResult | null;
+  config: AiBehaviorConfig;
+  now: number;
+  consts: GameConstants;
+  scoreDiff: number;
+  team?: 'player' | 'cpu';
+};
+
 /**
  * 追加マレット（ally/enemy）の CPU AI を更新する
  * CpuAI.updateWithBehavior は CPU 側（上半分）を前提とするため、
  * ally（player チーム・下半分）の場合は座標を Y 軸反転して渡し、結果を再度反転する
- *
- * @param team - 'player': ally（下半分）, 'cpu': enemy（上半分、反転不要）
  */
 export function updateExtraMalletAI(
   game: GameState,
   mallet: Mallet,
   aiState: ExtraMalletAiState,
-  updateFn: (g: GameState, config: AiBehaviorConfig, now: number, consts: GameConstants, scoreDiff?: number) => CpuUpdateResult | null,
-  config: AiBehaviorConfig,
-  now: number,
-  consts: GameConstants,
-  scoreDiff: number,
-  team: 'player' | 'cpu' = 'cpu'
+  params: ExtraMalletAIParams
 ): { mallet: Mallet; aiState: ExtraMalletAiState } | undefined {
+  const { updateFn, config, now, consts, scoreDiff, team = 'cpu' } = params;
   const H = consts.CANVAS.HEIGHT;
   const isPlayerTeam = team === 'player';
 

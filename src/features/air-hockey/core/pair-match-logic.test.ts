@@ -158,8 +158,7 @@ describe('Phase S4-3: ペアマッチゲームロジック', () => {
       const result = updateExtraMalletAI(
         state, state.ally!,
         { target: null, targetTime: 0, stuckTimer: 0 },
-        updateFn, config, Date.now(), CONSTANTS, 0,
-        'player'
+        { updateFn, config, now: Date.now(), consts: CONSTANTS, scoreDiff: 0, team: 'player' }
       );
 
       expect(result).toBeDefined();
@@ -179,8 +178,7 @@ describe('Phase S4-3: ペアマッチゲームロジック', () => {
       const result = updateExtraMalletAI(
         state, state.enemy!,
         { target: null, targetTime: 0, stuckTimer: 0 },
-        updateFn, config, Date.now(), CONSTANTS, 0,
-        'cpu'
+        { updateFn, config, now: Date.now(), consts: CONSTANTS, scoreDiff: 0, team: 'cpu' }
       );
 
       expect(result).toBeDefined();
@@ -251,10 +249,12 @@ describe('updateExtraMalletAI — sidePreference 反転（R-4）', () => {
     const aiState = { target: null, targetTime: 0, stuckTimer: 0 };
 
     const resultRight = updateExtraMalletAI(
-      state, state.ally!, aiState, updateFn, configRight, 1000, CONSTANTS, 0, 'player'
+      state, state.ally!, aiState,
+      { updateFn, config: configRight, now: 1000, consts: CONSTANTS, scoreDiff: 0, team: 'player' }
     );
     const resultCenter = updateExtraMalletAI(
-      state, state.ally!, aiState, updateFn, configCenter, 1000, CONSTANTS, 0, 'player'
+      state, state.ally!, aiState,
+      { updateFn, config: configCenter, now: 1000, consts: CONSTANTS, scoreDiff: 0, team: 'player' }
     );
 
     // ally（player チーム）では sidePreference が反転されるため、
@@ -285,10 +285,12 @@ describe('updateExtraMalletAI — sidePreference 反転（R-4）', () => {
     const aiState = { target: null, targetTime: 0, stuckTimer: 0 };
 
     const resultAttacker = updateExtraMalletAI(
-      state, state.enemy!, aiState, updateFn, configAttacker, 1000, CONSTANTS, 0, 'cpu'
+      state, state.enemy!, aiState,
+      { updateFn, config: configAttacker, now: 1000, consts: CONSTANTS, scoreDiff: 0, team: 'cpu' }
     );
     const resultBalanced = updateExtraMalletAI(
-      state, state.enemy!, aiState, updateFn, configBalanced, 1000, CONSTANTS, 0, 'cpu'
+      state, state.enemy!, aiState,
+      { updateFn, config: configBalanced, now: 1000, consts: CONSTANTS, scoreDiff: 0, team: 'cpu' }
     );
 
     // attacker は balanced より前方（Y が大きい = ゴールから遠い）にポジションする
@@ -316,10 +318,12 @@ describe('updateExtraMalletAI — sidePreference 反転（R-4）', () => {
     const aiState = { target: null, targetTime: 0, stuckTimer: 0 };
 
     const resultRight = updateExtraMalletAI(
-      state, state.enemy!, aiState, updateFn, configRight, 1000, CONSTANTS, 0, 'cpu'
+      state, state.enemy!, aiState,
+      { updateFn, config: configRight, now: 1000, consts: CONSTANTS, scoreDiff: 0, team: 'cpu' }
     );
     const resultCenter = updateExtraMalletAI(
-      state, state.enemy!, aiState, updateFn, configCenter, 1000, CONSTANTS, 0, 'cpu'
+      state, state.enemy!, aiState,
+      { updateFn, config: configCenter, now: 1000, consts: CONSTANTS, scoreDiff: 0, team: 'cpu' }
     );
 
     // enemy では反転なし → sidePreference=0.5 で右にオフセット
