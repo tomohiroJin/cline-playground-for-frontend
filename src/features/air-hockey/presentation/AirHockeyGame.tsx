@@ -12,6 +12,7 @@
  * ロジックはフックに委譲し、このコンポーネントは薄いラッパーに保つ。
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import { EntityFactory } from '../core/entities';
 import { CONSTANTS } from '../core/constants';
 import { FIELDS, PAIR_MATCH_GOAL_SIZES } from '../core/config';
@@ -253,7 +254,15 @@ const AirHockeyGame: React.FC = () => {
     const sf = mode.currentStage ? (FIELDS.find(f => f.id === mode.currentStage!.fieldId) ?? FIELDS[0]) : mode.field;
     startGame(sf);
   }, [mode.currentStage, mode.field, startGame]);
-  const handleGameMenuClick = useCallback(() => { audio.getSound().bgmStop(); mode.resetToFree(); navigateTo('menu'); }, [audio, mode, navigateTo]);
+  // S6-6: 2v2 モードでの中断確認ダイアログ
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const handleGameMenuClick = useCallback(() => {
+    if (mode.gameMode === '2v2-local') {
+      setShowExitConfirm(true);
+    } else {
+      audio.getSound().bgmStop(); mode.resetToFree(); navigateTo('menu');
+    }
+  }, [audio, mode, navigateTo]);
   const handlePostDialogueComplete = useCallback(() => {
     if (mode.currentStage?.isChapterFinale && winner === 'player') {
       navigateTo('victoryCutIn');
@@ -261,7 +270,18 @@ const AirHockeyGame: React.FC = () => {
       navigateTo('result');
     }
   }, [mode.currentStage, winner, navigateTo]);
-  const handleResultBackToMenu = useCallback(() => { mode.resetToFree(); navigateTo('menu'); }, [mode, navigateTo]);
+  const handleResultBackToMenu = useCallback(() => {
+    if (mode.gameMode === '2v2-local') {
+      setShowExitConfirm(true);
+    } else {
+      mode.resetToFree(); navigateTo('menu');
+    }
+  }, [mode, navigateTo]);
+  const handleExitConfirm = useCallback(() => {
+    setShowExitConfirm(false);
+    audio.getSound().bgmStop(); mode.resetToFree(); navigateTo('menu');
+  }, [audio, mode, navigateTo]);
+  const handleExitCancel = useCallback(() => { setShowExitConfirm(false); }, []);
   // ── 画面遷移（共通） ──
   const handleBackToMenu = useCallback(() => { navigateTo('menu'); }, [navigateTo]);
   // ── 2P 対戦 ──
@@ -542,6 +562,15 @@ const AirHockeyGame: React.FC = () => {
           />
         </Transition>
       )}
+      <ConfirmDialog
+        isOpen={showExitConfirm}
+        title="ゲームを終了しますか？"
+        message="チーム設定がリセットされます"
+        confirmLabel="メニューに戻る"
+        cancelLabel="続ける"
+        onConfirm={handleExitConfirm}
+        onCancel={handleExitCancel}
+      />
     </PageContainer>
   );
 };

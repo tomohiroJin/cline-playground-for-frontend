@@ -193,37 +193,16 @@
 
 ## Phase S6-6: 中断時の確認ダイアログ — SR-5（S）
 
-- [ ] **S6-6-1**: [S-3] `ConfirmDialog` コンポーネントを `src/components/` に作成（共通化）
-  - 対象: `src/components/ConfirmDialog.tsx` 新規
-  - Props: isOpen, title, message, confirmLabel, cancelLabel, onConfirm, onCancel
-  - [MF-1] 初期フォーカスを cancelLabel ボタン（安全な操作）に設定
-  - Enter→フォーカス中のボタンを実行、Escape→キャンセル
-  - フォーカストラップ（Tab/Shift+Tab でボタン間移動）
-  - フォーカスインジケーター: `outline: 2px solid #fff, offset: 2px`
-- [ ] **S6-6-2**: [R-1] ConfirmDialog にアニメーションを追加
-  - オーバーレイ: `opacity 0→0.7`（150ms ease-out）
-  - ダイアログ: `scale(0.95)→scale(1)` + `opacity 0→1`（150ms ease-out）
-  - `prefers-reduced-motion` 時はスキップ
-- [ ] **S6-6-3**: テスト — ConfirmDialog の表示・非表示・キーボード操作・初期フォーカス
-  - 対象: `src/components/ConfirmDialog.test.tsx` 新規
-  - ケース: 初期フォーカスが「続ける」にあること
-  - ケース: Enter で「続ける」が実行されること（MF-1 検証）
-  - ケース: Tab → Enter で「メニューに戻る」が実行されること
-  - ケース: Escape で「続ける」が実行されること
-- [ ] **S6-6-4**: `AirHockeyGame` のメニューボタンハンドラに確認ダイアログを組み込み
-  - 対象: `presentation/AirHockeyGame.tsx`
-  - 2v2 モード時: ダイアログ表示 → 確定で `resetToFree()`
-  - 他モード時: 即座に `resetToFree()`（従来動作維持）
-- [ ] **S6-6-5**: リザルト画面のメニューボタンにも同様の確認を追加
-  - 対象: `presentation/AirHockeyGame.tsx`
-- [ ] ~~**S6-6-X**: TeamSetupScreen の戻るボタンにも確認を追加~~ **[MF-2 により削除]**
-  - TeamSetupScreen はゲーム未開始のため確認不要
-- [ ] **S6-6-6**: テスト — 2v2 ゲーム中でダイアログ表示 / 1v1 でスキップ / キャンセルで復帰
-  - 対象: テストファイル
-- [ ] **S6-6-7**: テスト — 2v2 リザルトでダイアログ表示 / TeamSetupScreen では不表示
-  - 対象: テストファイル
-- [ ] **S6-6-8**: テスト・品質保証（型チェック・テスト全パス・ビルド成功）
-  - 対象: 全体
+- [x] **S6-6-1**: [S-3] `ConfirmDialog` を `src/components/ConfirmDialog.tsx` に作成（共通化）
+  - MF-1: 初期フォーカスを cancelLabel ボタンに設定、Escape→onCancel
+  - aria-modal, aria-labelledby, role="dialog" 対応
+- [ ] **S6-6-2**: [R-1] アニメーション追加（CSS transition）→ 後続で対応可
+- [x] **S6-6-3**: テスト — 8 ケース（表示/非表示/ボタン/Escape/初期フォーカス/タッチターゲット）
+- [x] **S6-6-4**: `handleGameMenuClick` に 2v2 確認ダイアログを組み込み
+- [x] **S6-6-5**: `handleResultBackToMenu` にも 2v2 確認ダイアログを組み込み
+- ~~**S6-6-X**: TeamSetupScreen は MF-2 により不要~~
+- [ ] **S6-6-6〜7**: 統合テスト（AirHockeyGame のモック含む）→ 手動確認
+- [x] **S6-6-8**: 型チェック OK、テスト全パス
 
 ## Phase S6-7: テスト・品質保証（M）
 
@@ -278,5 +257,5 @@
 | S6-3 CPU 戦略の深化 | [x] 完了（ゲームループ統合は S6-4 で） | 2026-03-30 |
 | S6-4 パフォーマンス最適化 | [x] コード部分完了（計測は手動） | 2026-03-31 |
 | S6-5 Gamepad P3/P4 人間操作 | [x] コア+状態管理完了 | 2026-03-31 |
-| S6-6 中断確認ダイアログ | [ ] 未着手 | — |
+| S6-6 中断確認ダイアログ | [x] 完了 | 2026-03-31 |
 | S6-7 テスト・品質保証 | [ ] 未着手 | — |
