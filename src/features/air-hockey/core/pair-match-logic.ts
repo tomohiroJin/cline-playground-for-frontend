@@ -101,6 +101,11 @@ export function updateExtraMalletAI(
     ? { ...aiState.target, y: flipY(aiState.target.y, H) }
     : aiState.target;
 
+  // R-4: ally の Y 軸反転に伴い sidePreference の左右も反転
+  const effectiveConfig = isPlayerTeam && config.playStyle
+    ? { ...config, playStyle: { ...config.playStyle, sidePreference: config.playStyle.sidePreference * -1 } }
+    : config;
+
   const tempGame = {
     ...game,
     pucks: effectivePucks,
@@ -109,7 +114,7 @@ export function updateExtraMalletAI(
     cpuTargetTime: aiState.targetTime,
     cpuStuckTimer: aiState.stuckTimer,
   };
-  const result = updateFn(tempGame, config, now, consts, scoreDiff);
+  const result = updateFn(tempGame, effectiveConfig, now, consts, scoreDiff);
   if (!result) return undefined;
 
   // ally の場合、結果を Y 軸再反転して戻す

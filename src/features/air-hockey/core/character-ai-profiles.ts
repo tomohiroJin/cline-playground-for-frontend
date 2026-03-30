@@ -5,7 +5,6 @@
 
 /** CPU AI のプレイスタイル（キャラクター個性）を制御するパラメータ */
 export type AiPlayStyle = {
-  // TODO(2026-03-25): sidePreference ロジックは将来のキャラ拡張時に実装予定
   /** 横方向のターゲットオフセット傾向（-1.0 左寄せ 〜 0 中央 〜 1.0 右寄せ） */
   sidePreference: number;
   /** ターゲット位置の横ブレの振幅（px）— 揺さぶり */
@@ -38,9 +37,9 @@ export const CHARACTER_AI_PROFILES: Record<string, AiPlayStyle> = {
     adaptability: 0.2,       // 低適応
   },
 
-  /** ミサキ — テクニシャン: サイドへの揺さぶりが多い */
+  /** ミサキ — テクニシャン: やや右寄りで角度をつける */
   misaki: {
-    sidePreference: 0,
+    sidePreference: 0.3,
     lateralOscillation: 40,  // 大きな揺さぶり
     lateralPeriod: 2000,     // 2秒周期
     aggressiveness: 0.5,     // 中間ポジション
@@ -56,9 +55,9 @@ export const CHARACTER_AI_PROFILES: Record<string, AiPlayStyle> = {
     adaptability: 0.1,       // 低適応
   },
 
-  /** ユウ — アナライザー: スコア差に応じて強くなる */
+  /** ユウ — アナライザー: やや左寄りで分析的に対応 */
   yuu: {
-    sidePreference: 0,
+    sidePreference: -0.2,
     lateralOscillation: 20,  // 控えめな揺さぶり
     lateralPeriod: 3000,     // 3秒周期
     aggressiveness: 0.4,     // やや守備的
@@ -74,18 +73,18 @@ export const CHARACTER_AI_PROFILES: Record<string, AiPlayStyle> = {
     adaptability: 0,         // 適応なし
   },
 
-  /** レギュラー — オールラウンダー: バランス型 */
+  /** レギュラー — オールラウンダー: わずかに右寄り */
   regular: {
-    sidePreference: 0,
+    sidePreference: 0.1,
     lateralOscillation: 10,  // わずかな揺さぶり
     lateralPeriod: 4000,     // ゆっくり
     aggressiveness: 0.5,     // バランス型
     adaptability: 0.2,       // 低適応
   },
 
-  /** エース — エリート: 高精度な予測と速い反応 */
+  /** エース — エリート: わずかに左寄りで攻撃的 */
   ace: {
-    sidePreference: 0,
+    sidePreference: -0.1,
     lateralOscillation: 15,  // 控えめだが正確な揺さぶり
     lateralPeriod: 2500,     // 中速
     aggressiveness: 0.6,     // やや攻撃的

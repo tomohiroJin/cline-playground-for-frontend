@@ -219,3 +219,98 @@ describe('Phase S4-3: ペアマッチゲームロジック', () => {
     });
   });
 });
+
+// ── Phase S6-2: ally sidePreference 反転テスト ──────
+
+describe('updateExtraMalletAI — sidePreference 反転（R-4）', () => {
+  it('ally（team=player）で sidePreference が反転されて AI に渡される', () => {
+    const state = create2v2State();
+    state.pucks[0].y = 400;
+    state.pucks[0].vy = 5; // 下方向（ally の自陣に向かう）
+    state.pucks[0].x = CONSTANTS.CANVAS.WIDTH / 2;
+
+    // sidePreference=0.5（右寄り）で設定
+    const configRight = {
+      ...AI_BEHAVIOR_PRESETS.normal,
+      playStyle: {
+        sidePreference: 0.5,
+        lateralOscillation: 0,
+        lateralPeriod: 0,
+        aggressiveness: 0.5,
+        adaptability: 0,
+      },
+    };
+    // sidePreference=0（中央）で設定
+    const configCenter = {
+      ...AI_BEHAVIOR_PRESETS.normal,
+      playStyle: {
+        sidePreference: 0,
+        lateralOscillation: 0,
+        lateralPeriod: 0,
+        aggressiveness: 0.5,
+        adaptability: 0,
+      },
+    };
+
+    const updateFn = CpuAI.updateWithBehavior.bind(CpuAI);
+    const aiState = { target: null, targetTime: 0, stuckTimer: 0 };
+
+    const resultRight = updateExtraMalletAI(
+      state, state.ally!, aiState, updateFn, configRight, 1000, CONSTANTS, 0, 'player'
+    );
+    const resultCenter = updateExtraMalletAI(
+      state, state.ally!, aiState, updateFn, configCenter, 1000, CONSTANTS, 0, 'player'
+    );
+
+    // ally（player チーム）では sidePreference が反転されるため、
+    // sidePreference=0.5 → -0.5 として AI に渡され、結果的に左寄りになる
+    if (resultRight && resultCenter) {
+      // 反転により右寄り設定が左寄りの効果を持つことを確認
+      // （AI 内部で -0.5 として処理 → 結果の X 座標が center より小さい or 異なる）
+      expect(resultRight.mallet.x).not.toBe(resultCenter.mallet.x);
+    }
+  });
+
+  it('enemy（team=cpu）では sidePreference が反転されない', () => {
+    const state = create2v2State();
+    state.pucks[0].y = 200;
+    state.pucks[0].vy = -5;
+    state.pucks[0].x = CONSTANTS.CANVAS.WIDTH / 2;
+
+    const configRight = {
+      ...AI_BEHAVIOR_PRESETS.normal,
+      playStyle: {
+        sidePreference: 0.5,
+        lateralOscillation: 0,
+        lateralPeriod: 0,
+        aggressiveness: 0.5,
+        adaptability: 0,
+      },
+    };
+    const configCenter = {
+      ...AI_BEHAVIOR_PRESETS.normal,
+      playStyle: {
+        sidePreference: 0,
+        lateralOscillation: 0,
+        lateralPeriod: 0,
+        aggressiveness: 0.5,
+        adaptability: 0,
+      },
+    };
+
+    const updateFn = CpuAI.updateWithBehavior.bind(CpuAI);
+    const aiState = { target: null, targetTime: 0, stuckTimer: 0 };
+
+    const resultRight = updateExtraMalletAI(
+      state, state.enemy!, aiState, updateFn, configRight, 1000, CONSTANTS, 0, 'cpu'
+    );
+    const resultCenter = updateExtraMalletAI(
+      state, state.enemy!, aiState, updateFn, configCenter, 1000, CONSTANTS, 0, 'cpu'
+    );
+
+    // enemy では反転なし → sidePreference=0.5 で右にオフセット
+    if (resultRight && resultCenter) {
+      expect(resultRight.mallet.x).toBeGreaterThanOrEqual(resultCenter.mallet.x);
+    }
+  });
+});

@@ -62,6 +62,30 @@ export const applyAdaptability = (config: AiBehaviorConfig, scoreDiff: number): 
   };
 };
 
+// ── sidePreference 定数 ────────────────────────────
+/** sidePreference による最大オフセット（px） フィールド幅600の12.5% */
+const SIDE_OFFSET_MAX = 75;
+
+/**
+ * sidePreference に基づくターゲット X オフセットを適用する
+ * 端に寄りすぎないよう中央からの距離に応じて効果を減衰する
+ */
+const applySidePreference = (
+  targetX: number,
+  sidePreference: number,
+  fieldWidth: number
+): number => {
+  if (sidePreference === 0) return targetX;
+  const malletRadius = CONSTANTS.SIZES.MALLET;
+  const offset = sidePreference * SIDE_OFFSET_MAX;
+  const centerX = fieldWidth / 2;
+  const maxDist = fieldWidth / 2 - malletRadius;
+  const distFromCenter = Math.abs(targetX - centerX);
+  const dampingFactor = 1 - (distFromCenter / maxDist) * 0.5;
+  const adjustedX = targetX + offset * dampingFactor;
+  return clamp(adjustedX, malletRadius, fieldWidth - malletRadius);
+};
+
 /**
  * 揺さぶりオフセットを計算する
  * lateralOscillation と lateralPeriod に基づく正弦波を返す
@@ -122,9 +146,10 @@ export const CpuAI = {
         predictedX = predictedX * (1 - config.centerWeight) + (W / 2) * config.centerWeight;
       }
 
-      // TODO(2026-03-25): sidePreference による X オフセットは将来のキャラ拡張時に実装予定
+      // sidePreference: ホームポジションのオフセット（適用順: side → oscillation → clamp）
+      predictedX = applySidePreference(predictedX, playStyle.sidePreference, W);
 
-      // 揺さぶり: 正弦波によるX方向オフセット
+      // 揺さぶり: 正弦波によるX方向オフセット（sidePreference 適用後に加算）
       predictedX += calculateOscillation(playStyle, now);
 
       // aggressiveness によるY座標制御（守備的〜攻撃的ポジション）

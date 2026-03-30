@@ -33,16 +33,18 @@ describe('CpuAI Module', () => {
     game.pucks[0].vx = 0;
 
     const diff = 'normal';
-    // normal プリセットには regular プロファイル（lateralOscillation=10）が設定されている。
-    // now=0 で sin(0)=0 となり揺さぶりオフセットが 0 になるため、X がパック位置と一致する。
-    // これは意図した動作変更: フリー対戦 normal 難易度でも微小な揺さぶりが加わる仕様。
+    // normal プリセットには regular プロファイル（sidePreference=0.1, lateralOscillation=10）が設定されている。
+    // now=0 で sin(0)=0 → 揺さぶりオフセット 0。
+    // sidePreference=0.1 により、ターゲット X はパック位置から右方向にわずかにオフセットされる。
     const now = 0;
 
     const result = CpuAI.update(game, diff, now);
 
     expect(result).not.toBeNull();
     expect(result?.cpuTarget).not.toBeNull();
-    expect(result?.cpuTarget?.x).toBe(100);
+    // sidePreference=0.1 で右にオフセットされるため、パック x=100 より大きくなる
+    expect(result?.cpuTarget?.x).toBeGreaterThanOrEqual(100);
+    expect(result?.cpuTarget?.x).toBeLessThan(120);
   });
 
   it('should return to home position if out of bounds', () => {
@@ -319,5 +321,83 @@ describe('CpuAI Module', () => {
       expect(result).not.toBeNull();
       expect(result!.cpuStuckTimer).toBe(0);
     });
+  });
+});
+
+// ── Phase S6-2: sidePreference テスト ──────────────
+
+describe('sidePreference', () => {
+  it('sidePreference > 0 でターゲット X が右にオフセットされる', () => {
+    const game = EntityFactory.createGameState();
+    game.pucks[0].y = 200;
+    game.pucks[0].vy = -5;
+    game.pucks[0].x = W / 2;
+    game.pucks[0].vx = 0;
+
+    const configRight = createConfig({
+      playStyle: createPlayStyle({ sidePreference: 0.5 }),
+    });
+    const configCenter = createConfig({
+      playStyle: createPlayStyle({ sidePreference: 0 }),
+    });
+
+    const targetRight = CpuAI.calculateTargetWithBehavior(game, configRight, 0);
+    const targetCenter = CpuAI.calculateTargetWithBehavior(game, configCenter, 0);
+
+    expect(targetRight.x).toBeGreaterThan(targetCenter.x);
+  });
+
+  it('sidePreference < 0 でターゲット X が左にオフセットされる', () => {
+    const game = EntityFactory.createGameState();
+    game.pucks[0].y = 200;
+    game.pucks[0].vy = -5;
+    game.pucks[0].x = W / 2;
+    game.pucks[0].vx = 0;
+
+    const configLeft = createConfig({
+      playStyle: createPlayStyle({ sidePreference: -0.5 }),
+    });
+    const configCenter = createConfig({
+      playStyle: createPlayStyle({ sidePreference: 0 }),
+    });
+
+    const targetLeft = CpuAI.calculateTargetWithBehavior(game, configLeft, 0);
+    const targetCenter = CpuAI.calculateTargetWithBehavior(game, configCenter, 0);
+
+    expect(targetLeft.x).toBeLessThan(targetCenter.x);
+  });
+
+  it('sidePreference = 0 ではオフセットなし', () => {
+    const game = EntityFactory.createGameState();
+    game.pucks[0].y = 200;
+    game.pucks[0].vy = -5;
+    game.pucks[0].x = W / 2;
+    game.pucks[0].vx = 0;
+
+    const config = createConfig({
+      playStyle: createPlayStyle({ sidePreference: 0 }),
+    });
+
+    const target1 = CpuAI.calculateTargetWithBehavior(game, config, 0);
+    const target2 = CpuAI.calculateTargetWithBehavior(game, config, 0);
+
+    expect(target1.x).toBe(target2.x);
+  });
+
+  it('sidePreference のオフセットがフィールド外に出ない', () => {
+    const game = EntityFactory.createGameState();
+    game.pucks[0].y = 200;
+    game.pucks[0].vy = -5;
+    game.pucks[0].x = W - 30;
+    game.pucks[0].vx = 0;
+
+    const config = createConfig({
+      playStyle: createPlayStyle({ sidePreference: 1.0 }),
+    });
+
+    const target = CpuAI.calculateTargetWithBehavior(game, config, 0);
+
+    expect(target.x).toBeLessThanOrEqual(W);
+    expect(target.x).toBeGreaterThanOrEqual(0);
   });
 });
