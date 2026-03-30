@@ -5,6 +5,7 @@
 import type { GameState, Mallet, Vector, EffectTarget, Puck } from './types';
 import type { CpuUpdateResult } from './ai';
 import type { AiBehaviorConfig } from './story-balance';
+import type { TeamRole } from './character-ai-profiles';
 import type { GameConstants } from './constants';
 import { getPlayerZone } from './constants';
 import { clamp } from '../../../utils/math-utils';
@@ -76,7 +77,7 @@ export function getScoreAdjustment(
 }
 
 /** teamRole に基づく aggressiveness 調整値 */
-const TEAM_ROLE_AGGRESSIVENESS: Record<string, number> = {
+const TEAM_ROLE_AGGRESSIVENESS: Record<TeamRole, number> = {
   attacker: 0.3,
   defender: -0.3,
   balanced: 0,

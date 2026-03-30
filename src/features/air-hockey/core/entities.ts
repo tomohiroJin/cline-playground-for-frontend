@@ -1,6 +1,6 @@
 import { CONSTANTS, GameConstants } from './constants';
 import { GameState, Mallet, Puck, Item, ItemType, FieldConfig, ObstacleState, MatchStats, EffectState } from './types';
-import { applyDeflectionBias } from './ai';
+import { applyDeflectionBias } from './physics';
 
 const randomRange = (min: number, max: number) => Math.random() * (max - min) + min;
 

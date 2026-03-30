@@ -113,6 +113,9 @@ const calculateAggressiveY = (
  * パック相手陣地時の守備ポジションを defenseStyle に基づき計算する
  * #6: パック相手陣地時のみ適用。パック自陣時は aggressiveness が優先。
  */
+/** 守備ポジションの自然なうろつき幅（px） */
+const DEFENSE_WANDER = 20;
+
 const applyDefenseStyle = (
   playStyle: AiPlayStyle,
   puck: { x: number; y: number } | undefined,
@@ -121,40 +124,25 @@ const applyDefenseStyle = (
 ): Vector => {
   const fieldCenter = W / 2;
   const goalLineY = DEFENSIVE_Y;
-  const midFieldY = H / 4; // CPU 側の中盤ライン
+  const midFieldY = H / 4;
+  // 自然なうろつきオフセット（機械的な固定ポジションを避ける）
+  const wanderX = randomRange(-DEFENSE_WANDER, DEFENSE_WANDER);
+  const wanderY = randomRange(-DEFENSE_WANDER / 2, DEFENSE_WANDER / 2);
 
   switch (playStyle.defenseStyle) {
     case 'wide': {
-      // ゴールラインに近い位置でパックの X を追従
       const trackX = puck ? puck.x * 0.6 + fieldCenter * 0.4 : fieldCenter;
-      return { x: trackX, y: goalLineY + CONSTANTS.SIZES.MALLET * 2 };
+      return { x: trackX + wanderX, y: goalLineY + CONSTANTS.SIZES.MALLET * 2 + wanderY };
     }
     case 'aggressive':
-      // 中盤付近に留まる
-      return { x: puck ? puck.x * 0.3 + fieldCenter * 0.7 : fieldCenter, y: midFieldY };
+      return {
+        x: (puck ? puck.x * 0.3 + fieldCenter * 0.7 : fieldCenter) + wanderX,
+        y: midFieldY + wanderY,
+      };
     case 'center':
     default:
-      // ゴール中央に戻る
-      return { x: fieldCenter, y: goalLineY + CONSTANTS.SIZES.MALLET * 2 };
+      return { x: fieldCenter + wanderX, y: goalLineY + CONSTANTS.SIZES.MALLET * 2 + wanderY };
   }
-};
-
-/**
- * 打ち返し角度バイアスを衝突法線に適用する
- * bias > 0: 法線を壁方向（水平）に傾ける（バウンスショット）
- * bias < 0: 法線をゴール方向（垂直）に傾ける（ストレートショット）
- * 最大バイアス角度: ±30°
- */
-export const applyDeflectionBias = (
-  normalX: number,
-  normalY: number,
-  deflectionBias: number
-): { nx: number; ny: number } => {
-  if (deflectionBias === 0) return { nx: normalX, ny: normalY };
-  const angle = Math.atan2(normalY, normalX);
-  const biasAngle = deflectionBias * (Math.PI / 6); // 最大 ±30°
-  const newAngle = angle + biasAngle;
-  return { nx: Math.cos(newAngle), ny: Math.sin(newAngle) };
 };
 
 /**
