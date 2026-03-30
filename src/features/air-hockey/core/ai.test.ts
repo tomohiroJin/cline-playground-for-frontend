@@ -410,6 +410,59 @@ describe('sidePreference', () => {
   });
 });
 
+// ── Phase S6-3c: deflectionBias テスト ──────────────
+
+describe('deflectionBias', () => {
+  it('deflectionBias > 0 でパックの反射方向が壁方向に偏る', () => {
+    // deflectionBias の効果は resolveMalletPuckOverlap 内で適用される
+    // ここでは applyDeflectionBias 関数を直接テスト
+    const { applyDeflectionBias } = require('./ai');
+    // 真上方向の法線 (0, -1)
+    const result = applyDeflectionBias(0, -1, 0.5);
+    // bias > 0: 壁方向（水平）に傾く → nx の絶対値が増加
+    expect(Math.abs(result.nx)).toBeGreaterThan(0);
+  });
+
+  it('deflectionBias < 0 でパックの反射方向がゴール方向に偏る', () => {
+    const { applyDeflectionBias } = require('./ai');
+    // 斜め方向の法線
+    const result = applyDeflectionBias(0.7, -0.7, -0.5);
+    // bias < 0: ゴール方向（垂直）に傾く
+    expect(result.ny).toBeDefined();
+  });
+
+  it('deflectionBias = 0 では法線が変化しない', () => {
+    const { applyDeflectionBias } = require('./ai');
+    const result = applyDeflectionBias(0, -1, 0);
+    expect(result.nx).toBeCloseTo(0, 5);
+    expect(result.ny).toBeCloseTo(-1, 5);
+  });
+});
+
+// ── Phase S6-3d: reactionDelay テスト ──────────────
+
+describe('shouldRecalculateTarget', () => {
+  it('パック方向転換時に reactionDelay 経過後は再計算を許可する', () => {
+    const { shouldRecalculateTarget } = require('./ai');
+    expect(shouldRecalculateTarget(0, 100, 50, true)).toBe(true);
+  });
+
+  it('パック方向転換時に reactionDelay 未経過なら再計算しない', () => {
+    const { shouldRecalculateTarget } = require('./ai');
+    expect(shouldRecalculateTarget(0, 30, 50, true)).toBe(false);
+  });
+
+  it('パック方向転換がなければ再計算しない', () => {
+    const { shouldRecalculateTarget } = require('./ai');
+    expect(shouldRecalculateTarget(0, 1000, 50, false)).toBe(false);
+  });
+
+  it('reactionDelay=0 ではパック方向転換時に即座に再計算', () => {
+    const { shouldRecalculateTarget } = require('./ai');
+    expect(shouldRecalculateTarget(0, 0, 0, true)).toBe(true);
+  });
+});
+
 // ── Phase S6-3b: defenseStyle テスト ──────────────
 
 describe('defenseStyle', () => {

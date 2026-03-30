@@ -264,6 +264,39 @@ describe('updateExtraMalletAI — sidePreference 反転（R-4）', () => {
     }
   });
 
+  it('attacker の teamRole で aggressiveness が +0.3 加算される', () => {
+    const state = create2v2State();
+    state.pucks[0].y = 200;
+    state.pucks[0].vy = -5;
+    state.pucks[0].x = CONSTANTS.CANVAS.WIDTH / 2;
+
+    // aggressiveness=0.5 + attacker=+0.3 = 0.8
+    const configAttacker = {
+      ...AI_BEHAVIOR_PRESETS.normal,
+      playStyle: { ...DEFAULT_PLAY_STYLE, teamRole: 'attacker' as const, aggressiveness: 0.5 },
+    };
+    // aggressiveness=0.5 + balanced=0 = 0.5
+    const configBalanced = {
+      ...AI_BEHAVIOR_PRESETS.normal,
+      playStyle: { ...DEFAULT_PLAY_STYLE, teamRole: 'balanced' as const, aggressiveness: 0.5 },
+    };
+
+    const updateFn = CpuAI.updateWithBehavior.bind(CpuAI);
+    const aiState = { target: null, targetTime: 0, stuckTimer: 0 };
+
+    const resultAttacker = updateExtraMalletAI(
+      state, state.enemy!, aiState, updateFn, configAttacker, 1000, CONSTANTS, 0, 'cpu'
+    );
+    const resultBalanced = updateExtraMalletAI(
+      state, state.enemy!, aiState, updateFn, configBalanced, 1000, CONSTANTS, 0, 'cpu'
+    );
+
+    // attacker は balanced より前方（Y が大きい = ゴールから遠い）にポジションする
+    if (resultAttacker && resultBalanced) {
+      expect(resultAttacker.mallet.y).toBeGreaterThanOrEqual(resultBalanced.mallet.y);
+    }
+  });
+
   it('enemy（team=cpu）では sidePreference が反転されない', () => {
     const state = create2v2State();
     state.pucks[0].y = 200;

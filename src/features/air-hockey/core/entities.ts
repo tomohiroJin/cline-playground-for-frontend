@@ -1,5 +1,6 @@
 import { CONSTANTS, GameConstants } from './constants';
 import { GameState, Mallet, Puck, Item, ItemType, FieldConfig, ObstacleState, MatchStats, EffectState } from './types';
+import { applyDeflectionBias } from './ai';
 
 const randomRange = (min: number, max: number) => Math.random() * (max - min) + min;
 
@@ -25,7 +26,8 @@ export function resolveMalletPuckOverlap(
   pucks: Puck[],
   malletRadius: number,
   puckRadius: number,
-  maxPower: number
+  maxPower: number,
+  deflectionBias: number = 0
 ): void {
   for (const puck of pucks) {
     const dx = puck.x - mallet.x;
@@ -53,14 +55,19 @@ export function resolveMalletPuckOverlap(
       pushNy = -1;
     }
 
+    // deflectionBias による法線バイアス適用（CPU マレットのみ非ゼロ値が渡される）
+    const { nx: biasedNx, ny: biasedNy } = deflectionBias !== 0
+      ? applyDeflectionBias(pushNx, pushNy, deflectionBias)
+      : { nx: pushNx, ny: pushNy };
+
     // パックをマレットの移動方向に押し出す
-    puck.x = mallet.x + pushNx * (minDist + 1);
-    puck.y = mallet.y + pushNy * (minDist + 1);
+    puck.x = mallet.x + biasedNx * (minDist + 1);
+    puck.y = mallet.y + biasedNy * (minDist + 1);
 
     // マレット速度に応じた反射力をパックに与える
     const power = Math.min(maxPower, 5 + malletSpeed * 1.2);
-    puck.vx = pushNx * power + mallet.vx * 0.4;
-    puck.vy = pushNy * power + mallet.vy * 0.4;
+    puck.vx = biasedNx * power + mallet.vx * 0.4;
+    puck.vy = biasedNy * power + mallet.vy * 0.4;
   }
 }
 

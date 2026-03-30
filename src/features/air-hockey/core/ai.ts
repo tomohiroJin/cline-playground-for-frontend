@@ -139,6 +139,39 @@ const applyDefenseStyle = (
   }
 };
 
+/**
+ * 打ち返し角度バイアスを衝突法線に適用する
+ * bias > 0: 法線を壁方向（水平）に傾ける（バウンスショット）
+ * bias < 0: 法線をゴール方向（垂直）に傾ける（ストレートショット）
+ * 最大バイアス角度: ±30°
+ */
+export const applyDeflectionBias = (
+  normalX: number,
+  normalY: number,
+  deflectionBias: number
+): { nx: number; ny: number } => {
+  if (deflectionBias === 0) return { nx: normalX, ny: normalY };
+  const angle = Math.atan2(normalY, normalX);
+  const biasAngle = deflectionBias * (Math.PI / 6); // 最大 ±30°
+  const newAngle = angle + biasAngle;
+  return { nx: Math.cos(newAngle), ny: Math.sin(newAngle) };
+};
+
+/**
+ * パック方向転換後のターゲット再計算を遅延判定する（S6-3d）
+ * reactionDelay ms 経過するまで前回ターゲットを維持する
+ */
+export const shouldRecalculateTarget = (
+  lastTargetTime: number,
+  currentTime: number,
+  reactionDelay: number,
+  puckDirectionChanged: boolean
+): boolean => {
+  if (!puckDirectionChanged) return false;
+  const elapsed = currentTime - lastTargetTime;
+  return elapsed >= reactionDelay;
+};
+
 export const CpuAI = {
   /**
    * AiBehaviorConfig ベースのターゲット計算

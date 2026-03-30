@@ -61,6 +61,37 @@ export type ExtraMalletAiState = {
   stuckTimer: number;
 };
 
+/** teamRole に基づく aggressiveness 調整値 */
+const TEAM_ROLE_AGGRESSIVENESS: Record<string, number> = {
+  attacker: 0.3,
+  defender: -0.3,
+  balanced: 0,
+};
+
+/**
+ * ally の sidePreference 反転（R-4）と teamRole の aggressiveness 調整（S6-3e）を適用
+ */
+function applyTeamAndSideAdjustments(
+  config: AiBehaviorConfig,
+  isPlayerTeam: boolean
+): AiBehaviorConfig {
+  if (!config.playStyle) return config;
+
+  const ps = config.playStyle;
+  const sideFlip = isPlayerTeam ? -1 : 1;
+  const roleAdj = TEAM_ROLE_AGGRESSIVENESS[ps.teamRole] ?? 0;
+  const adjustedAggressiveness = Math.max(0, Math.min(1, ps.aggressiveness + roleAdj));
+
+  return {
+    ...config,
+    playStyle: {
+      ...ps,
+      sidePreference: ps.sidePreference * sideFlip,
+      aggressiveness: adjustedAggressiveness,
+    },
+  };
+}
+
 /** Y 軸を反転する（ally 用座標変換） */
 function flipY(y: number, H: number): number {
   return H - y;
@@ -102,9 +133,8 @@ export function updateExtraMalletAI(
     : aiState.target;
 
   // R-4: ally の Y 軸反転に伴い sidePreference の左右も反転
-  const effectiveConfig = isPlayerTeam && config.playStyle
-    ? { ...config, playStyle: { ...config.playStyle, sidePreference: config.playStyle.sidePreference * -1 } }
-    : config;
+  // S6-3e: teamRole による aggressiveness 調整
+  const effectiveConfig = applyTeamAndSideAdjustments(config, isPlayerTeam);
 
   const tempGame = {
     ...game,
