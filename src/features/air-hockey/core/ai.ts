@@ -182,7 +182,7 @@ export const CpuAI = {
     consts: GameConstants = CONSTANTS
   ): Vector {
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
-    const { cpu, pucks, cpuTarget, cpuTargetTime } = game;
+    const { cpu, pucks } = game;
     const puck = pucks[0];
     const playStyle = config.playStyle ?? DEFAULT_PLAY_STYLE;
 
