@@ -10,6 +10,7 @@
 import React, { useEffect } from 'react';
 import { Physics, quickReject } from '../../core/physics';
 import { CpuAI } from '../../core/ai';
+import { readGamepad, applyNonLinearCurve, GAMEPAD_MOVE_SPEED } from '../../core/gamepad';
 import { AI_BEHAVIOR_PRESETS, buildFreeBattleAiConfig, buildAllyAiConfig, type AiBehaviorConfig } from '../../core/story-balance';
 import { EntityFactory, moveMalletTo, resolveMalletPuckOverlap, resolveMalletMalletOverlaps } from '../../core/entities';
 import { getAllMallets, updateExtraMalletAI } from '../../core/pair-match-logic';
@@ -70,6 +71,9 @@ export type GameLoopConfig = {
   allyCharacterId?: string;
   enemyCharacter1Id?: string;
   enemyCharacter2Id?: string;
+  /** P3/P4 の操作タイプ（2v2 + Gamepad 時のみ使用） */
+  enemy1ControlType?: 'cpu' | 'human';
+  enemy2ControlType?: 'cpu' | 'human';
 };
 
 /** Ref グループ（ゲームループが参照・更新する ref） */
@@ -120,7 +124,7 @@ export type UseGameLoopParams = {
  * - callbacks: React state 更新コールバック
  */
 export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGameLoopParams): void {
-  const { difficulty: diff, field, winScore, getSound, bgmEnabled, gameMode, aiConfig, playerMalletColor, cpuMalletColor, allyControlType, allyCharacterId, enemyCharacter1Id, enemyCharacter2Id } = config;
+  const { difficulty: diff, field, winScore, getSound, bgmEnabled, gameMode, aiConfig, playerMalletColor, cpuMalletColor, allyControlType, allyCharacterId, enemyCharacter1Id, enemyCharacter2Id, enemy1ControlType, enemy2ControlType } = config;
   const pColor = playerMalletColor ?? DEFAULT_PLAYER_MALLET_COLOR;
   const cColor = cpuMalletColor ?? DEFAULT_CPU_MALLET_COLOR;
   const {
@@ -514,15 +518,29 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
           }
         }
 
-        // CPU AI: キャラ別 AI プロファイルを使用
+        // CPU（P3）: Gamepad 人間操作 or CPU AI
         const scoreDiff = Math.max(0, scoreRef.current.p - scoreRef.current.c);
         const cpuAiConfig = aiConfig ?? (enemyCharacter1Id ? buildFreeBattleAiConfig(diff, enemyCharacter1Id) : AI_BEHAVIOR_PRESETS[diff]);
-        const cpuUpdate = CpuAI.updateWithBehavior(game, cpuAiConfig, now, consts, scoreDiff);
-        if (cpuUpdate) {
-          game.cpu = cpuUpdate.cpu;
-          game.cpuTarget = cpuUpdate.cpuTarget;
-          game.cpuTargetTime = cpuUpdate.cpuTargetTime;
-          game.cpuStuckTimer = cpuUpdate.cpuStuckTimer;
+        const isEnemy1Human = enemy1ControlType === 'human';
+        if (isEnemy1Human) {
+          // ゲームパッドインデックス 1（2番目のコントローラー）で P3 を制御
+          const gp = readGamepad(1);
+          if (gp) {
+            const zone = getPlayerZone('player3', consts);
+            const dx = applyNonLinearCurve(gp.axisX) * GAMEPAD_MOVE_SPEED;
+            const dy = applyNonLinearCurve(gp.axisY) * GAMEPAD_MOVE_SPEED;
+            const newX = clamp(game.cpu.x + dx, zone.minX, zone.maxX);
+            const newY = clamp(game.cpu.y + dy, zone.minY, zone.maxY);
+            moveMalletTo(game.cpu, newX, newY);
+          }
+        } else {
+          const cpuUpdate = CpuAI.updateWithBehavior(game, cpuAiConfig, now, consts, scoreDiff);
+          if (cpuUpdate) {
+            game.cpu = cpuUpdate.cpu;
+            game.cpuTarget = cpuUpdate.cpuTarget;
+            game.cpuTargetTime = cpuUpdate.cpuTargetTime;
+            game.cpuStuckTimer = cpuUpdate.cpuStuckTimer;
+          }
         }
 
         // ally（P2）: CPU 操作時のみ AI で制御（座標反転で下半分に対応）
@@ -542,20 +560,34 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
           }
         }
 
-        // enemy（P4）: CPU AI で制御（上半分）
+        // enemy（P4）: Gamepad 人間操作 or CPU AI（上半分）
         if (game.enemy) {
-          const updateFn = CpuAI.updateWithBehavior.bind(CpuAI);
-          const enemyAiConfig = enemyCharacter2Id ? buildFreeBattleAiConfig(diff, enemyCharacter2Id) : cpuAiConfig;
-          const result = updateExtraMalletAI(
-            game, game.enemy,
-            { target: game.enemyTarget ?? null, targetTime: game.enemyTargetTime ?? 0, stuckTimer: game.enemyStuckTimer ?? 0 },
-            { updateFn, config: enemyAiConfig, now, consts, scoreDiff, team: 'cpu' }
-          );
-          if (result) {
-            game.enemy = result.mallet;
-            game.enemyTarget = result.aiState.target;
-            game.enemyTargetTime = result.aiState.targetTime;
-            game.enemyStuckTimer = result.aiState.stuckTimer;
+          const isEnemyHuman = enemy2ControlType === 'human';
+          if (isEnemyHuman) {
+            // ゲームパッドインデックス 2（3番目のコントローラー）で P4 を制御
+            const gp = readGamepad(2);
+            if (gp) {
+              const zone = getPlayerZone('player4', consts);
+              const dx = applyNonLinearCurve(gp.axisX) * GAMEPAD_MOVE_SPEED;
+              const dy = applyNonLinearCurve(gp.axisY) * GAMEPAD_MOVE_SPEED;
+              const newX = clamp(game.enemy.x + dx, zone.minX, zone.maxX);
+              const newY = clamp(game.enemy.y + dy, zone.minY, zone.maxY);
+              moveMalletTo(game.enemy, newX, newY);
+            }
+          } else {
+            const updateFn = CpuAI.updateWithBehavior.bind(CpuAI);
+            const enemyAiConfig = enemyCharacter2Id ? buildFreeBattleAiConfig(diff, enemyCharacter2Id) : cpuAiConfig;
+            const result = updateExtraMalletAI(
+              game, game.enemy,
+              { target: game.enemyTarget ?? null, targetTime: game.enemyTargetTime ?? 0, stuckTimer: game.enemyStuckTimer ?? 0 },
+              { updateFn, config: enemyAiConfig, now, consts, scoreDiff, team: 'cpu' }
+            );
+            if (result) {
+              game.enemy = result.mallet;
+              game.enemyTarget = result.aiState.target;
+              game.enemyTargetTime = result.aiState.targetTime;
+              game.enemyStuckTimer = result.aiState.stuckTimer;
+            }
           }
         }
 
@@ -985,5 +1017,5 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       phaseRef, countdownStartRef, shakeRef, setShake, bgmEnabled,
       statsRef, matchStartRef, keysRef,
       is2PMode, is2v2Mode, pColor, cColor, playerTargetRef, player2KeysRef, multiTouchRef, aiConfig,
-      allyControlType, allyCharacterId, enemyCharacter1Id, enemyCharacter2Id]);
+      allyControlType, allyCharacterId, enemyCharacter1Id, enemyCharacter2Id, enemy1ControlType, enemy2ControlType]);
 }

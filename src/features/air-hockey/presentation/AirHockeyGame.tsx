@@ -396,6 +396,8 @@ const AirHockeyGame: React.FC = () => {
       allyCharacterId: is2v2Mode ? pairAlly.id : undefined,
       enemyCharacter1Id: is2v2Mode ? pairEnemy1.id : undefined,
       enemyCharacter2Id: is2v2Mode ? pairEnemy2.id : undefined,
+      enemy1ControlType: is2v2Mode ? mode.enemy1ControlType : undefined,
+      enemy2ControlType: is2v2Mode ? mode.enemy2ControlType : undefined,
     },
     refs: {
       gameRef, canvasRef, lastInputRef, scoreRef, phaseRef, countdownStartRef, shakeRef, statsRef, matchStartRef, keysRef,
