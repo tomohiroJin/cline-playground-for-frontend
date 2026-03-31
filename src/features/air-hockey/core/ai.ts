@@ -145,9 +145,13 @@ const applyDefenseStyle = (
   }
 };
 
+/** 通常時の定期再計算間隔の最低値（ms） */
+const MIN_PERIODIC_INTERVAL = 100;
+
 /**
- * パック方向転換後のターゲット再計算を遅延判定する（S6-3d）
- * reactionDelay ms 経過するまで前回ターゲットを維持する
+ * ターゲット再計算の判定（S6-3d + S6-4-8 統合）
+ * - パック方向転換時: reactionDelay 経過後に再計算
+ * - 通常時: reactionDelay * 3（最低 100ms）経過で定期再計算
  */
 export const shouldRecalculateTarget = (
   lastTargetTime: number,
@@ -155,9 +159,16 @@ export const shouldRecalculateTarget = (
   reactionDelay: number,
   puckDirectionChanged: boolean
 ): boolean => {
-  if (!puckDirectionChanged) return false;
   const elapsed = currentTime - lastTargetTime;
-  return elapsed >= reactionDelay;
+
+  // パック方向転換時: reactionDelay で遅延
+  if (puckDirectionChanged) {
+    return elapsed >= reactionDelay;
+  }
+
+  // 通常時: 定期再計算（reactionDelay * 3、最低 100ms）
+  const periodicInterval = Math.max(reactionDelay * 3, MIN_PERIODIC_INTERVAL);
+  return elapsed >= periodicInterval;
 };
 
 export const CpuAI = {

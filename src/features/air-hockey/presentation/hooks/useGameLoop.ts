@@ -8,7 +8,7 @@
  * ゲームロジックの詳細は将来的に GameLoopUseCase に完全委譲する予定。
  */
 import React, { useEffect } from 'react';
-import { Physics } from '../../core/physics';
+import { Physics, quickReject } from '../../core/physics';
 import { CpuAI } from '../../core/ai';
 import { AI_BEHAVIOR_PRESETS, buildFreeBattleAiConfig, buildAllyAiConfig, type AiBehaviorConfig } from '../../core/story-balance';
 import { EntityFactory, moveMalletTo, resolveMalletPuckOverlap, resolveMalletMalletOverlaps } from '../../core/entities';
@@ -602,9 +602,14 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
 
       // マレット移動後、衝突処理前にパックとの食い込みを解消（パックを弾く）
       // effectiveMR を使い、processCollisions との二重衝突を防止
+      // S6-4-6: quickReject で遠いペアをスキップ
       for (const { mallet, side } of getAllMallets(game)) {
         const mr = MR * getMalletScale(side);
-        resolveMalletPuckOverlap(mallet, game.pucks, mr, BR, consts.PHYSICS.MAX_POWER);
+        const maxDist = mr + BR;
+        const nearPucks = game.pucks.filter(p => !quickReject(mallet, p, maxDist));
+        if (nearPucks.length > 0) {
+          resolveMalletPuckOverlap(mallet, nearPucks, mr, BR, consts.PHYSICS.MAX_POWER);
+        }
       }
 
       // フィーバー判定

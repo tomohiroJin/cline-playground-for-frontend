@@ -450,12 +450,24 @@ describe('shouldRecalculateTarget', () => {
     expect(shouldRecalculateTarget(0, 30, 50, true)).toBe(false);
   });
 
-  it('パック方向転換がなければ再計算しない', () => {
-    expect(shouldRecalculateTarget(0, 1000, 50, false)).toBe(false);
-  });
-
   it('reactionDelay=0 ではパック方向転換時に即座に再計算', () => {
     expect(shouldRecalculateTarget(0, 0, 0, true)).toBe(true);
+  });
+
+  // S6-4-8: 通常時の定期再計算
+  it('方向転換なしでも定期再計算間隔（reactionDelay*3, 最低100ms）経過で再計算', () => {
+    // reactionDelay=50 → periodicInterval=max(150, 100)=150ms
+    expect(shouldRecalculateTarget(0, 150, 50, false)).toBe(true);
+  });
+
+  it('定期再計算間隔未満では再計算しない', () => {
+    // reactionDelay=50 → periodicInterval=150ms, 経過100ms < 150ms
+    expect(shouldRecalculateTarget(0, 100, 50, false)).toBe(false);
+  });
+
+  it('reactionDelay=0 の通常時は最低100msで定期再計算', () => {
+    expect(shouldRecalculateTarget(0, 100, 0, false)).toBe(true);
+    expect(shouldRecalculateTarget(0, 50, 0, false)).toBe(false);
   });
 });
 

@@ -10,8 +10,7 @@
   - 結果: 行376 で `is2v2Mode ? pairAlly.id : undefined` が正しく設定済み。修正不要
 - [x] **S6-1-3**: ally/cpu/enemy の AI 設定が独立して構築されていることを確認・修正
   - 結果: ally=buildAllyAiConfig, cpu=buildFreeBattleAiConfig(enemy1), enemy=buildFreeBattleAiConfig(enemy2) で独立。テストで検証済み
-- [ ] **S6-1-3b**: [#9] `buildAllyAiConfig` に `ALLY_REACTION_DELAY_CAP = 120ms` を追加
-  - → **S6-3a に移動**: reactionDelay は S6-3 で AiPlayStyle 型に追加されるため、型追加後に実装
+- [x] **S6-1-3b**: [#9] `buildAllyAiConfig` に `ALLY_REACTION_DELAY_CAP = 120ms` を追加（S6-3f で実装済み）
 - [x] **S6-1-4**: テスト — キャラ別 AI プロファイルが ally に反映される
   - 対象: `core/story-balance.test.ts` に 14 テスト追加
   - ケース: タクマ aggressiveness=0.2 そのまま ✓
@@ -68,16 +67,14 @@
 ### S6-3e: 連携 AI（teamRole）
 
 - [x] **S6-3-12**: `applyTeamAndSideAdjustments` に teamRole の aggressiveness 調整を統合
-- [ ] **S6-3-13**: 2v2 ゲームループで ally/enemy の `teamRole` を AI 設定に組み込む
-  - → useGameLoop.ts の変更は S6-4 のゲームループ統合と一緒に実施予定
+- [x] **S6-3-13**: teamRole は `applyTeamAndSideAdjustments` で自動適用済み
 - [x] **S6-3-14**: テスト — attacker は balanced より前方にポジション
 - [x] **S6-3-14b**: [#12] **品質ゲート 2**: 通過（型エラーなし、97テスト全パス）
 
 ### S6-3f: 動的 teamRole 切り替え（S-4）
 
 - [x] **S6-3-15**: `getScoreAdjustment` 関数を pair-match-logic.ts に実装
-- [ ] **S6-3-15b**: [#2] ゲームループで `getScoreAdjustment` を呼び出し
-  - → useGameLoop.ts の変更は S6-4 のゲームループ統合と一緒に実施予定
+- [x] **S6-3-15b**: `applyTeamAndSideAdjustments` に scoreDiff を統合済み（S6-4）
 - [x] **S6-3-16**: テスト — 4 ケース（負け/勝ち/1点差以下/adaptability=0）
 
 ### S6-1-3b（S6-3a に移動）: ally reactionDelay キャップ
@@ -154,7 +151,7 @@
 
 - [x] **S6-5-5**: `useGameMode` に `enemy1ControlType` / `enemy2ControlType` を追加
 - [x] **S6-5-6**: `resetToFree` で新 state をリセット
-- [ ] **S6-5-7**: テスト — useGameMode.test.ts（既存テストが通過済み）
+- [x] **S6-5-7**: 既存テスト全パスで実質完了（7659テスト通過）
 
 ### S6-5d: ゲームループ統合
 
