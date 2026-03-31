@@ -144,16 +144,14 @@ const CharacterSlot: React.FC<{
   );
 };
 
-/** 敵プレイヤーの CPU/Gamepad 切り替えトグル（RC-2: 重複解消） */
+/** 敵プレイヤーの CPU/Gamepad 切り替えトグル */
 const EnemyControlToggle: React.FC<{
   label: string;
   controlType?: 'cpu' | 'human';
   onChange?: (t: 'cpu' | 'human') => void;
-  requiredGamepads: number;
-  gamepadConnected: number;
-}> = ({ label, controlType, onChange, requiredGamepads, gamepadConnected }) => {
+  canEnable: boolean;
+}> = ({ label, controlType, onChange, canEnable }) => {
   if (!onChange) return null;
-  const canEnable = gamepadConnected >= requiredGamepads;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', marginTop: '4px' }}>
       <span style={{ fontSize: '12px', color: '#888' }}>{label} 操作:</span>
@@ -268,7 +266,7 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
         {/* チーム2 */}
         <div style={styles.teamSection(TEAM2_COLOR)} data-testid="team2-section">
           <div style={styles.teamTitle(TEAM2_COLOR)}>チーム2（上）</div>
-          <EnemyControlToggle label="P3" controlType={enemy1ControlType} onChange={onEnemy1ControlTypeChange} requiredGamepads={2} gamepadConnected={gamepadConnected} />
+          <EnemyControlToggle label="P3" controlType={enemy1ControlType} onChange={onEnemy1ControlTypeChange} canEnable={gamepadConnected >= 2} />
           {/* P3: 敵 1 */}
           <CharacterSlot
             label={enemy1ControlType === 'human' ? 'P3: 敵1（🎮）' : 'P3: 敵1（CPU）'}
@@ -281,7 +279,7 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
             selectedCharacterId={enemyCharacter1.id}
             onSelect={(c) => handleSelect('p3', c)}
           />
-          <EnemyControlToggle label="P4" controlType={enemy2ControlType} onChange={onEnemy2ControlTypeChange} requiredGamepads={3} gamepadConnected={gamepadConnected} />
+          <EnemyControlToggle label="P4" controlType={enemy2ControlType} onChange={onEnemy2ControlTypeChange} canEnable={gamepadConnected >= 3} />
           {/* P4: 敵 2 */}
           <CharacterSlot
             label={enemy2ControlType === 'human' ? 'P4: 敵2（🎮）' : 'P4: 敵2（CPU）'}

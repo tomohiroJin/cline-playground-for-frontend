@@ -20,14 +20,31 @@ export type UseGamepadInputReturn = {
 /** トースト表示時間（ms） */
 const TOAST_DURATION = 3000;
 
+/** 自動消去付きトースト管理（責務分離） */
+function useAutoExpireToast() {
+  const [toast, setToast] = useState<GamepadToast | undefined>(undefined);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(undefined), TOAST_DURATION);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
+  const showToast = useCallback((message: string) => {
+    setToast({ message, timestamp: Date.now() });
+  }, []);
+  const clearToast = useCallback(() => setToast(undefined), []);
+
+  return { toast, showToast, clearToast };
+}
+
 export function useGamepadInput(): UseGamepadInputReturn {
   const [connectedCount, setConnectedCount] = useState(0);
-  const [toast, setToast] = useState<GamepadToast | undefined>(undefined);
+  const { toast, showToast, clearToast } = useAutoExpireToast();
 
   const updateCount = useCallback(() => {
     if (!isGamepadSupported()) return;
-    const gamepads = navigator.getGamepads();
-    const count = gamepads.filter(gp => gp !== null).length;
+    const count = navigator.getGamepads().filter(gp => gp !== null).length;
     setConnectedCount(count);
   }, []);
 
@@ -37,11 +54,11 @@ export function useGamepadInput(): UseGamepadInputReturn {
 
     const handleConnect = (e: GamepadEvent) => {
       updateCount();
-      setToast({ message: `🎮 コントローラー ${e.gamepad.index + 1} が接続されました`, timestamp: Date.now() });
+      showToast(`🎮 コントローラー ${e.gamepad.index + 1} が接続されました`);
     };
     const handleDisconnect = (e: GamepadEvent) => {
       updateCount();
-      setToast({ message: `🎮 コントローラー ${e.gamepad.index + 1} が切断されました`, timestamp: Date.now() });
+      showToast(`🎮 コントローラー ${e.gamepad.index + 1} が切断されました`);
     };
 
     window.addEventListener('gamepadconnected', handleConnect);
@@ -50,16 +67,7 @@ export function useGamepadInput(): UseGamepadInputReturn {
       window.removeEventListener('gamepadconnected', handleConnect);
       window.removeEventListener('gamepaddisconnected', handleDisconnect);
     };
-  }, [updateCount]);
-
-  // トースト自動消去
-  useEffect(() => {
-    if (!toast) return;
-    const timer = setTimeout(() => setToast(undefined), TOAST_DURATION);
-    return () => clearTimeout(timer);
-  }, [toast]);
-
-  const clearToast = useCallback(() => setToast(undefined), []);
+  }, [updateCount, showToast]);
 
   return { connectedCount, toast, clearToast };
 }
