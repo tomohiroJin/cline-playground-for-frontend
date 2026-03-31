@@ -201,7 +201,11 @@
 - [ ] **S6-7-6**: ストーリーモードの動作確認（手動 — ユーザー確認）
 - [ ] **S6-7-7**: 2P 対戦モードの動作確認（手動 — ユーザー確認）
 - [ ] **S6-7-8**: ペアマッチ 2v2 の動作確認（手動 — ユーザー確認）
-- [ ] **S6-7-9**: ドキュメント更新（README / features / gameplay / architecture）
+- [x] **S6-7-9**: ドキュメント更新
+  - README.md: 未実装機能リスト更新 + AI クイックリファレンス表を S6-3 対応に
+  - features.md: キャラ別 AI プロファイル表を 9 パラメータ対応に更新 + 新パラメータ説明追加
+  - gameplay.md: ペアマッチ操作表に Gamepad 対応を追加 + 確認ダイアログ記載
+  - architecture.md: gamepad.ts / character-ai-profiles.ts / useGamepadInput.ts を追加
 
 ---
 
