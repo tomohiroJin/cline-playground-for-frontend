@@ -13,10 +13,10 @@ import { screenLayout } from './screen-layout';
 import { teamSetupStyles as styles } from './team-setup-screen-styles';
 
 /** teamRole → バッジ表示のマッピング */
-const ROLE_BADGE: Record<TeamRole, { icon: string; color: string }> = {
-  attacker: { icon: '⚔️', color: '#e74c3c' },
-  defender: { icon: '🛡️', color: '#3498db' },
-  balanced: { icon: '⚖️', color: '#f39c12' },
+const ROLE_BADGE: Record<TeamRole, { icon: string; color: string; label: string }> = {
+  attacker: { icon: '⚔️', color: '#e74c3c', label: '攻撃型' },
+  defender: { icon: '🛡️', color: '#3498db', label: '守備型' },
+  balanced: { icon: '⚖️', color: '#f39c12', label: 'バランス型' },
 };
 
 /** キャラ ID からロールバッジを取得 */
@@ -31,11 +31,15 @@ const RoleBadge: React.FC<{ characterId: string; size?: number }> = ({ character
   return (
     <span
       data-testid="role-badge"
-      title={`${badge.icon}`}
+      title={badge.label}
+      aria-label={badge.label}
       style={{
         fontSize: `${size}px`,
         lineHeight: 1,
         flexShrink: 0,
+        background: `${badge.color}22`,
+        borderRadius: '4px',
+        padding: '1px 3px',
       }}
     >
       {badge.icon}

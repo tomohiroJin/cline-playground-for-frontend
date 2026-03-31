@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 
 type ConfirmDialogProps = {
   isOpen: boolean;
@@ -33,6 +33,14 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onCancel]);
 
+  // MF-1: キーボードフォーカス時にリングを表示
+  const handleFocus = useCallback((e: React.FocusEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.outline = '2px solid #fff';
+  }, []);
+  const handleBlur = useCallback((e: React.FocusEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.outline = '2px solid transparent';
+  }, []);
+
   if (!isOpen) return null;
 
   return (
@@ -41,10 +49,10 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         <h3 id="confirm-title" style={titleStyle}>{title}</h3>
         <p style={messageStyle}>{message}</p>
         <div style={buttonContainerStyle}>
-          <button ref={cancelRef} onClick={onCancel} style={cancelButtonStyle}>
+          <button ref={cancelRef} onClick={onCancel} style={cancelButtonStyle} onFocus={handleFocus} onBlur={handleBlur}>
             {cancelLabel}
           </button>
-          <button onClick={onConfirm} style={confirmButtonStyle}>
+          <button onClick={onConfirm} style={confirmButtonStyle} onFocus={handleFocus} onBlur={handleBlur}>
             {confirmLabel}
           </button>
         </div>
@@ -101,17 +109,22 @@ const baseButtonStyle: React.CSSProperties = {
   fontSize: '14px',
   fontWeight: 'bold',
   cursor: 'pointer',
-  outline: 'none',
+  // MF-1: フォーカスリングを有効にする（WCAG 2.4.7 Focus Visible）
+  outline: '2px solid transparent',
+  outlineOffset: '2px',
 };
 
+/** 安全な操作（続ける）— 視覚的に目立たせる */
 const cancelButtonStyle: React.CSSProperties = {
   ...baseButtonStyle,
   background: '#3498db',
   color: '#fff',
 };
 
+/** 破壊的操作（メニューに戻る）— ゴーストスタイルで視覚的重みを下げる */
 const confirmButtonStyle: React.CSSProperties = {
   ...baseButtonStyle,
-  background: '#e74c3c',
-  color: '#fff',
+  background: 'transparent',
+  border: '1px solid #e74c3c',
+  color: '#e74c3c',
 };
