@@ -11,6 +11,13 @@ describe('isGamepadSupported', () => {
 });
 
 describe('readGamepad', () => {
+  afterEach(() => {
+    Object.defineProperty(navigator, 'getGamepads', {
+      value: () => [null, null, null, null],
+      configurable: true,
+    });
+  });
+
   const mockGetGamepads = (gamepads: (Gamepad | null)[]) => {
     Object.defineProperty(navigator, 'getGamepads', {
       value: () => gamepads,

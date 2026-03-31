@@ -64,6 +64,21 @@ describe('ConfirmDialog', () => {
     });
   });
 
+  describe('オーバーレイクリック', () => {
+    it('オーバーレイクリックで onCancel が呼ばれる', () => {
+      render(<ConfirmDialog {...defaultProps} />);
+      fireEvent.click(screen.getByTestId('confirm-dialog-overlay'));
+      expect(defaultProps.onCancel).toHaveBeenCalledTimes(1);
+    });
+
+    it('ダイアログ本体クリックでは onCancel が呼ばれない', () => {
+      render(<ConfirmDialog {...defaultProps} />);
+      const dialog = screen.getByRole('dialog');
+      fireEvent.click(dialog);
+      expect(defaultProps.onCancel).not.toHaveBeenCalled();
+    });
+  });
+
   describe('アクセシビリティ', () => {
     it('ボタンのタッチターゲットが 44px 以上', () => {
       render(<ConfirmDialog {...defaultProps} />);

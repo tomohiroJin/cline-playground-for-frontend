@@ -36,8 +36,8 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div style={overlayStyle} data-testid="confirm-dialog-overlay">
-      <div style={dialogStyle} role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+    <div style={overlayStyle} data-testid="confirm-dialog-overlay" onClick={onCancel}>
+      <div style={dialogStyle} role="dialog" aria-modal="true" aria-labelledby="confirm-title" onClick={(e) => e.stopPropagation()}>
         <h3 id="confirm-title" style={titleStyle}>{title}</h3>
         <p style={messageStyle}>{message}</p>
         <div style={buttonContainerStyle}>
