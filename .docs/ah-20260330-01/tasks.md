@@ -110,14 +110,13 @@
 
 - [x] **S6-4-5**: [S-1] `quickReject` 関数を `physics.ts` に追加（距離の二乗比較方式）
 - [x] **S6-4-7**: テスト — 3 ケース（遠い/近い/境界）
-- [ ] **S6-4-6**: `processCollisions` 内で `quickReject` を衝突判定前に呼び出し
-  - → 計測結果に応じて実施（衝突判定がボトルネックの場合のみ）
+- [x] **S6-4-6**: `processCollisions` 内で `quickReject` を衝突判定前に呼び出し（実装済み）
 
 ### S6-4c: AI 計算の間引き（MF-3 統合）
 
-- [ ] **S6-4-8**: [MF-3/#1] shouldRecalculateTarget の通常時定期再計算拡張
+- [x] **S6-4-8**: [MF-3/#1] shouldRecalculateTarget に通常時定期再計算を追加（実装済み）
   - → 計測結果に応じて実施。現時点では基本ロジック（S6-3-10）のみ
-- [ ] **S6-4-9〜10**: テスト — 計測後に実装判断
+- [x] **S6-4-9〜10**: テスト — 定期再計算の3ケース追加済み
 
 ### S6-3 保留タスクのゲームループ統合
 
@@ -143,9 +142,8 @@
 
 ### S6-5b: フック層
 
-- [ ] **S6-5-3**: `hooks/useGamepadInput.ts` を新規作成
-  - → ゲームループ内でのポーリング統合は手動テスト後に判断
-- [ ] **S6-5-4**: テスト — 接続/切断の検出
+- [x] **S6-5-3**: `hooks/useGamepadInput.ts` を新規作成（接続/切断イベント + トースト通知状態管理）
+- [ ] **S6-5-4**: テスト — useGamepadInput のテスト（ブラウザ API モックが必要）
 
 ### S6-5c: 状態管理
 
@@ -155,22 +153,14 @@
 
 ### S6-5d: ゲームループ統合
 
-- [ ] **S6-5-8**: `useGameLoop` にゲームパッド入力処理を追加
-  - 対象: `presentation/hooks/useGameLoop.ts`
-  - P3/P4 が 'human' の場合、ゲームパッドからマレット位置を更新
-  - CPU の場合は従来の AI 更新
-- [ ] **S6-5-9**: `GameLoopConfig` に `enemy1ControlType` / `enemy2ControlType` を追加
-  - 対象: `presentation/hooks/useGameLoop.ts`
-- [ ] **S6-5-10**: `AirHockeyGame` からゲームループへの伝達
-  - 対象: `presentation/AirHockeyGame.tsx`
+- [x] **S6-5-8**: `useGameLoop` に P3/P4 ゲームパッド入力処理を追加
+- [x] **S6-5-9**: `GameLoopConfig` に `enemy1ControlType` / `enemy2ControlType` を追加
+- [x] **S6-5-10**: `AirHockeyGame` から enemy ControlType を useGameLoop に伝達
 
 ### S6-5e: UI
 
-- [ ] **S6-5-11**: TeamSetupScreen の P3/P4 スロットに CPU/人間切り替えトグルを追加
-  - 対象: `components/TeamSetupScreen.tsx`
-  - ゲームパッド未接続時はグレーアウト + ツールチップ「ゲームパッドを接続してください」
-- [ ] **S6-5-12**: VsScreen で P3/P4 の操作タイプ（CPU / 🎮）をラベル表示
-  - 対象: `components/VsScreen.tsx`
+- [x] **S6-5-11**: TeamSetupScreen P3/P4 に CPU/🎮人間トグル追加（ゲームパッド未接続時グレーアウト）
+- [ ] **S6-5-12**: VsScreen で P3/P4 操作タイプラベル表示（次フェーズで対応可）
 
 ### S6-5f: トースト通知（R-2）
 
