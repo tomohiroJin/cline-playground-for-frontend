@@ -10,12 +10,12 @@
 import React, { useEffect } from 'react';
 import { Physics, quickReject } from '../../core/physics';
 import { CpuAI } from '../../core/ai';
-import { readGamepad, applyNonLinearCurve, GAMEPAD_MOVE_SPEED } from '../../core/gamepad';
+import { readGamepad, applyNonLinearCurve, GAMEPAD_MOVE_SPEED, GAMEPAD_INDEX } from '../../core/gamepad';
 import { AI_BEHAVIOR_PRESETS, buildFreeBattleAiConfig, buildAllyAiConfig, type AiBehaviorConfig } from '../../core/story-balance';
 import { EntityFactory, moveMalletTo, resolveMalletPuckOverlap, resolveMalletMalletOverlaps } from '../../core/entities';
 import { getAllMallets, updateExtraMalletAI } from '../../core/pair-match-logic';
 import { applyItemEffect } from '../../core/items';
-import { CONSTANTS, DEFAULT_PLAYER_MALLET_COLOR, DEFAULT_CPU_MALLET_COLOR, getPlayerZone } from '../../core/constants';
+import { CONSTANTS, DEFAULT_PLAYER_MALLET_COLOR, DEFAULT_CPU_MALLET_COLOR, getPlayerZone, type GameConstants } from '../../core/constants';
 import { ITEMS } from '../../core/config';
 import { magnitude, randomRange, clamp } from '../../../../utils/math-utils';
 import { Renderer } from '../../renderer';
@@ -112,6 +112,21 @@ export type UseGameLoopParams = {
   refs: GameLoopRefs;
   callbacks: GameLoopCallbacks;
 };
+
+/** ゲームパッド入力をマレットに適用するヘルパー（RC-1: 重複コード解消） */
+function applyGamepadToMallet(
+  mallet: { x: number; y: number; vx: number; vy: number },
+  gamepadIndex: number,
+  playerSlot: 'player3' | 'player4',
+  consts: GameConstants
+): void {
+  const gp = readGamepad(gamepadIndex);
+  if (!gp) return;
+  const zone = getPlayerZone(playerSlot, consts);
+  const dx = applyNonLinearCurve(gp.axisX) * GAMEPAD_MOVE_SPEED;
+  const dy = applyNonLinearCurve(gp.axisY) * GAMEPAD_MOVE_SPEED;
+  moveMalletTo(mallet, clamp(mallet.x + dx, zone.minX, zone.maxX), clamp(mallet.y + dy, zone.minY, zone.maxY));
+}
 
 /**
  * ゲームループを管理するカスタムフック（プレゼンテーション層）
@@ -523,16 +538,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         const cpuAiConfig = aiConfig ?? (enemyCharacter1Id ? buildFreeBattleAiConfig(diff, enemyCharacter1Id) : AI_BEHAVIOR_PRESETS[diff]);
         const isEnemy1Human = enemy1ControlType === 'human';
         if (isEnemy1Human) {
-          // ゲームパッドインデックス 1（2番目のコントローラー）で P3 を制御
-          const gp = readGamepad(1);
-          if (gp) {
-            const zone = getPlayerZone('player3', consts);
-            const dx = applyNonLinearCurve(gp.axisX) * GAMEPAD_MOVE_SPEED;
-            const dy = applyNonLinearCurve(gp.axisY) * GAMEPAD_MOVE_SPEED;
-            const newX = clamp(game.cpu.x + dx, zone.minX, zone.maxX);
-            const newY = clamp(game.cpu.y + dy, zone.minY, zone.maxY);
-            moveMalletTo(game.cpu, newX, newY);
-          }
+          applyGamepadToMallet(game.cpu, GAMEPAD_INDEX.P3, 'player3', consts);
         } else {
           const cpuUpdate = CpuAI.updateWithBehavior(game, cpuAiConfig, now, consts, scoreDiff);
           if (cpuUpdate) {
@@ -564,16 +570,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         if (game.enemy) {
           const isEnemyHuman = enemy2ControlType === 'human';
           if (isEnemyHuman) {
-            // ゲームパッドインデックス 2（3番目のコントローラー）で P4 を制御
-            const gp = readGamepad(2);
-            if (gp) {
-              const zone = getPlayerZone('player4', consts);
-              const dx = applyNonLinearCurve(gp.axisX) * GAMEPAD_MOVE_SPEED;
-              const dy = applyNonLinearCurve(gp.axisY) * GAMEPAD_MOVE_SPEED;
-              const newX = clamp(game.enemy.x + dx, zone.minX, zone.maxX);
-              const newY = clamp(game.enemy.y + dy, zone.minY, zone.maxY);
-              moveMalletTo(game.enemy, newX, newY);
-            }
+            applyGamepadToMallet(game.enemy, GAMEPAD_INDEX.P4, 'player4', consts);
           } else {
             const updateFn = CpuAI.updateWithBehavior.bind(CpuAI);
             const enemyAiConfig = enemyCharacter2Id ? buildFreeBattleAiConfig(diff, enemyCharacter2Id) : cpuAiConfig;

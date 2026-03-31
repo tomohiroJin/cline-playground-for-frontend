@@ -144,6 +144,31 @@ const CharacterSlot: React.FC<{
   );
 };
 
+/** 敵プレイヤーの CPU/Gamepad 切り替えトグル（RC-2: 重複解消） */
+const EnemyControlToggle: React.FC<{
+  label: string;
+  controlType?: 'cpu' | 'human';
+  onChange?: (t: 'cpu' | 'human') => void;
+  requiredGamepads: number;
+  gamepadConnected: number;
+}> = ({ label, controlType, onChange, requiredGamepads, gamepadConnected }) => {
+  if (!onChange) return null;
+  const canEnable = gamepadConnected >= requiredGamepads;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', marginTop: '4px' }}>
+      <span style={{ fontSize: '12px', color: '#888' }}>{label} 操作:</span>
+      <div style={styles.controlToggle}>
+        <button style={styles.controlButton(controlType === 'cpu')} onClick={() => onChange('cpu')}>CPU</button>
+        <button
+          style={{ ...styles.controlButton(controlType === 'human'), opacity: canEnable ? 1 : 0.4 }}
+          onClick={() => { if (canEnable) onChange('human'); }}
+          title={!canEnable ? 'ゲームパッドを接続してください' : undefined}
+        >🎮 人間</button>
+      </div>
+    </div>
+  );
+};
+
 export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
   allCharacters,
   unlockedIds,
@@ -243,20 +268,7 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
         {/* チーム2 */}
         <div style={styles.teamSection(TEAM2_COLOR)} data-testid="team2-section">
           <div style={styles.teamTitle(TEAM2_COLOR)}>チーム2（上）</div>
-          {/* P3/P4 ゲームパッドトグル（接続時のみ活性化） */}
-          {onEnemy1ControlTypeChange && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', marginTop: '4px' }}>
-              <span style={{ fontSize: '12px', color: '#888' }}>P3 操作:</span>
-              <div style={styles.controlToggle}>
-                <button style={styles.controlButton(enemy1ControlType === 'cpu')} onClick={() => onEnemy1ControlTypeChange('cpu')}>CPU</button>
-                <button
-                  style={{ ...styles.controlButton(enemy1ControlType === 'human'), opacity: gamepadConnected >= 2 ? 1 : 0.4 }}
-                  onClick={() => { if (gamepadConnected >= 2) onEnemy1ControlTypeChange('human'); }}
-                  title={gamepadConnected < 2 ? 'ゲームパッドを接続してください' : undefined}
-                >🎮 人間</button>
-              </div>
-            </div>
-          )}
+          <EnemyControlToggle label="P3" controlType={enemy1ControlType} onChange={onEnemy1ControlTypeChange} requiredGamepads={2} gamepadConnected={gamepadConnected} />
           {/* P3: 敵 1 */}
           <CharacterSlot
             label={enemy1ControlType === 'human' ? 'P3: 敵1（🎮）' : 'P3: 敵1（CPU）'}
@@ -269,20 +281,7 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
             selectedCharacterId={enemyCharacter1.id}
             onSelect={(c) => handleSelect('p3', c)}
           />
-          {/* P4 ゲームパッドトグル */}
-          {onEnemy2ControlTypeChange && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', marginTop: '4px' }}>
-              <span style={{ fontSize: '12px', color: '#888' }}>P4 操作:</span>
-              <div style={styles.controlToggle}>
-                <button style={styles.controlButton(enemy2ControlType === 'cpu')} onClick={() => onEnemy2ControlTypeChange('cpu')}>CPU</button>
-                <button
-                  style={{ ...styles.controlButton(enemy2ControlType === 'human'), opacity: gamepadConnected >= 3 ? 1 : 0.4 }}
-                  onClick={() => { if (gamepadConnected >= 3) onEnemy2ControlTypeChange('human'); }}
-                  title={gamepadConnected < 3 ? 'ゲームパッドを接続してください' : undefined}
-                >🎮 人間</button>
-              </div>
-            </div>
-          )}
+          <EnemyControlToggle label="P4" controlType={enemy2ControlType} onChange={onEnemy2ControlTypeChange} requiredGamepads={3} gamepadConnected={gamepadConnected} />
           {/* P4: 敵 2 */}
           <CharacterSlot
             label={enemy2ControlType === 'human' ? 'P4: 敵2（🎮）' : 'P4: 敵2（CPU）'}

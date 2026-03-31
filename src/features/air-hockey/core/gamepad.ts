@@ -33,6 +33,9 @@ export function readGamepad(index: number): GamepadState | null {
   };
 }
 
+/** プレイヤースロット → ゲームパッドインデックスのマッピング */
+export const GAMEPAD_INDEX = { P2: 0, P3: 1, P4: 2 } as const;
+
 /** Gamepad API がブラウザでサポートされているか */
 export function isGamepadSupported(): boolean {
   return typeof navigator !== 'undefined' && 'getGamepads' in navigator;
