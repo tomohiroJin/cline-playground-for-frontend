@@ -13,6 +13,7 @@ import {
   StageBalanceConfig,
   createStageConstants,
   buildFreeBattleAiConfig,
+  buildAllyAiConfig,
 } from './story-balance';
 import { DEFAULT_PLAY_STYLE, getCharacterAiProfile } from './character-ai-profiles';
 
@@ -290,5 +291,95 @@ describe('AI_BEHAVIOR_PRESETS のキャラクター AI プロファイル統合'
   it('hard プリセットに playStyle が設定されている（エース）', () => {
     expect(AI_BEHAVIOR_PRESETS.hard.playStyle).toBeDefined();
     expect(AI_BEHAVIOR_PRESETS.hard.playStyle).toEqual(CHARACTER_AI_PROFILES['ace']);
+  });
+});
+
+// ── Phase S6-1: buildAllyAiConfig テスト ──────────────
+
+describe('buildAllyAiConfig', () => {
+  describe('aggressiveness キャップ', () => {
+    it('ヒロ（aggressiveness=0.7）が 0.5 にキャップされる', () => {
+      const config = buildAllyAiConfig('normal', 'hiro');
+      expect(config.playStyle?.aggressiveness).toBe(0.5);
+    });
+
+    it('タクマ（aggressiveness=0.2）はキャップ不要でそのまま', () => {
+      const config = buildAllyAiConfig('normal', 'takuma');
+      expect(config.playStyle?.aggressiveness).toBe(0.2);
+    });
+
+    it('エース（aggressiveness=0.6）が 0.5 にキャップされる', () => {
+      const config = buildAllyAiConfig('normal', 'ace');
+      expect(config.playStyle?.aggressiveness).toBe(0.5);
+    });
+
+    it('ミサキ（aggressiveness=0.5）はキャップ境界でそのまま', () => {
+      const config = buildAllyAiConfig('normal', 'misaki');
+      expect(config.playStyle?.aggressiveness).toBe(0.5);
+    });
+  });
+
+  describe('キャラ別 AI プロファイル反映（S6-1-3 検証）', () => {
+    it('タクマの adaptability=0.1 が反映される', () => {
+      const config = buildAllyAiConfig('normal', 'takuma');
+      expect(config.playStyle?.adaptability).toBe(0.1);
+    });
+
+    it('ユウの adaptability=0.8 が反映される', () => {
+      const config = buildAllyAiConfig('normal', 'yuu');
+      expect(config.playStyle?.adaptability).toBe(0.8);
+    });
+
+    it('ミサキの lateralOscillation=40 が反映される', () => {
+      const config = buildAllyAiConfig('normal', 'misaki');
+      expect(config.playStyle?.lateralOscillation).toBe(40);
+    });
+
+    it('難易度ベースのパラメータは維持される', () => {
+      const config = buildAllyAiConfig('hard', 'hiro');
+      expect(config.maxSpeed).toBe(AI_BEHAVIOR_PRESETS.hard.maxSpeed);
+      expect(config.wallBounce).toBe(AI_BEHAVIOR_PRESETS.hard.wallBounce);
+    });
+  });
+
+  describe('reactionDelay キャップ（#9: ALLY_REACTION_DELAY_CAP=120ms）', () => {
+    it('ルーキー（reactionDelay=200ms）が 120ms にキャップされる', () => {
+      const config = buildAllyAiConfig('normal', 'rookie');
+      expect(config.playStyle?.reactionDelay).toBe(120);
+    });
+
+    it('ヒロ（reactionDelay=50ms）はキャップ不要でそのまま', () => {
+      const config = buildAllyAiConfig('normal', 'hiro');
+      expect(config.playStyle?.reactionDelay).toBe(50);
+    });
+
+    it('レギュラー（reactionDelay=100ms）はキャップ不要でそのまま', () => {
+      const config = buildAllyAiConfig('normal', 'regular');
+      expect(config.playStyle?.reactionDelay).toBe(100);
+    });
+  });
+
+  describe('characterId なしの場合', () => {
+    it('難易度プリセットのみ返す（playStyle はプリセットのまま）', () => {
+      const config = buildAllyAiConfig('normal');
+      expect(config.maxSpeed).toBe(AI_BEHAVIOR_PRESETS.normal.maxSpeed);
+    });
+
+    it('easy プリセットの aggressiveness がキャップされない（0.3 < 0.5）', () => {
+      const config = buildAllyAiConfig('easy');
+      // easy のプリセットには rookie の playStyle（aggressiveness=0.3）が含まれる
+      expect(config.playStyle?.aggressiveness).toBeLessThanOrEqual(0.5);
+    });
+  });
+
+  describe('ally と enemy の AI 設定が独立している（S6-1-3 検証）', () => {
+    it('同じキャラ ID でも ally と enemy で aggressiveness が異なる', () => {
+      const allyConfig = buildAllyAiConfig('normal', 'hiro');
+      const enemyConfig = buildFreeBattleAiConfig('normal', 'hiro');
+      // ヒロ: aggressiveness=0.7
+      // ally: 0.5 にキャップ / enemy: 0.7 のまま
+      expect(allyConfig.playStyle?.aggressiveness).toBe(0.5);
+      expect(enemyConfig.playStyle?.aggressiveness).toBe(0.7);
+    });
   });
 });

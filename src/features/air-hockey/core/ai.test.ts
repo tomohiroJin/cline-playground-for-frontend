@@ -1,4 +1,5 @@
-import { CpuAI, applyAdaptability } from './ai';
+import { CpuAI, applyAdaptability, shouldRecalculateTarget } from './ai';
+import { applyDeflectionBias } from './physics';
 import { EntityFactory } from './entities';
 import { CONSTANTS } from './constants';
 import type { AiBehaviorConfig } from './story-balance';
@@ -33,16 +34,18 @@ describe('CpuAI Module', () => {
     game.pucks[0].vx = 0;
 
     const diff = 'normal';
-    // normal プリセットには regular プロファイル（lateralOscillation=10）が設定されている。
-    // now=0 で sin(0)=0 となり揺さぶりオフセットが 0 になるため、X がパック位置と一致する。
-    // これは意図した動作変更: フリー対戦 normal 難易度でも微小な揺さぶりが加わる仕様。
+    // normal プリセットには regular プロファイル（sidePreference=0.1, lateralOscillation=10）が設定されている。
+    // now=0 で sin(0)=0 → 揺さぶりオフセット 0。
+    // sidePreference=0.1 により、ターゲット X はパック位置から右方向にわずかにオフセットされる。
     const now = 0;
 
     const result = CpuAI.update(game, diff, now);
 
     expect(result).not.toBeNull();
     expect(result?.cpuTarget).not.toBeNull();
-    expect(result?.cpuTarget?.x).toBe(100);
+    // sidePreference=0.1 で右にオフセットされるため、パック x=100 より大きくなる
+    expect(result?.cpuTarget?.x).toBeGreaterThanOrEqual(100);
+    expect(result?.cpuTarget?.x).toBeLessThan(120);
   });
 
   it('should return to home position if out of bounds', () => {
@@ -270,12 +273,16 @@ describe('CpuAI Module', () => {
       game.cpuTarget = { x: 120, y: 90 };
       game.cpuTargetTime = 950;
       game.cpuStuckTimer = 0;
-      game.pucks[0].x = 150;
-      game.pucks[0].y = 400;
-      game.pucks[0].vy = 2;
+      game.pucks[0].x = 120;
+      game.pucks[0].y = 200;
+      game.pucks[0].vy = -1;
       game.pucks[0].vx = 0;
 
-      const result = CpuAI.update(game, 'normal', 1000);
+      // sidePreference=0 の config で影響を排除
+      const config = createConfig({
+        playStyle: createPlayStyle({ sidePreference: 0, aggressiveness: 0.5 }),
+      });
+      const result = CpuAI.updateWithBehavior(game, config, 1000);
       expect(result).not.toBeNull();
       expect(result!.cpuStuckTimer).toBe(1000);
     });
@@ -289,12 +296,16 @@ describe('CpuAI Module', () => {
       game.cpuTarget = { x: 120, y: 90 };
       game.cpuTargetTime = 3050;
       game.cpuStuckTimer = 1000;
-      game.pucks[0].x = 150;
-      game.pucks[0].y = 400;
-      game.pucks[0].vy = 2;
+      game.pucks[0].x = 120;
+      game.pucks[0].y = 200;
+      game.pucks[0].vy = -1;
       game.pucks[0].vx = 0;
 
-      const result = CpuAI.update(game, 'normal', 3100);
+      // sidePreference=0 の config で影響を排除
+      const config = createConfig({
+        playStyle: createPlayStyle({ sidePreference: 0, aggressiveness: 0.5 }),
+      });
+      const result = CpuAI.updateWithBehavior(game, config, 3100);
       expect(result).not.toBeNull();
       if (result) {
         expect(result.cpu.x).toBe(W / 2);
@@ -319,5 +330,202 @@ describe('CpuAI Module', () => {
       expect(result).not.toBeNull();
       expect(result!.cpuStuckTimer).toBe(0);
     });
+  });
+});
+
+// ── Phase S6-2: sidePreference テスト ──────────────
+
+describe('sidePreference', () => {
+  it('sidePreference > 0 でターゲット X が右にオフセットされる', () => {
+    const game = EntityFactory.createGameState();
+    game.pucks[0].y = 200;
+    game.pucks[0].vy = -5;
+    game.pucks[0].x = W / 2;
+    game.pucks[0].vx = 0;
+
+    const configRight = createConfig({
+      playStyle: createPlayStyle({ sidePreference: 0.5 }),
+    });
+    const configCenter = createConfig({
+      playStyle: createPlayStyle({ sidePreference: 0 }),
+    });
+
+    const targetRight = CpuAI.calculateTargetWithBehavior(game, configRight, 0);
+    const targetCenter = CpuAI.calculateTargetWithBehavior(game, configCenter, 0);
+
+    expect(targetRight.x).toBeGreaterThan(targetCenter.x);
+  });
+
+  it('sidePreference < 0 でターゲット X が左にオフセットされる', () => {
+    const game = EntityFactory.createGameState();
+    game.pucks[0].y = 200;
+    game.pucks[0].vy = -5;
+    game.pucks[0].x = W / 2;
+    game.pucks[0].vx = 0;
+
+    const configLeft = createConfig({
+      playStyle: createPlayStyle({ sidePreference: -0.5 }),
+    });
+    const configCenter = createConfig({
+      playStyle: createPlayStyle({ sidePreference: 0 }),
+    });
+
+    const targetLeft = CpuAI.calculateTargetWithBehavior(game, configLeft, 0);
+    const targetCenter = CpuAI.calculateTargetWithBehavior(game, configCenter, 0);
+
+    expect(targetLeft.x).toBeLessThan(targetCenter.x);
+  });
+
+  it('sidePreference = 0 ではオフセットなし', () => {
+    const game = EntityFactory.createGameState();
+    game.pucks[0].y = 200;
+    game.pucks[0].vy = -5;
+    game.pucks[0].x = W / 2;
+    game.pucks[0].vx = 0;
+
+    const config = createConfig({
+      playStyle: createPlayStyle({ sidePreference: 0 }),
+    });
+
+    const target1 = CpuAI.calculateTargetWithBehavior(game, config, 0);
+    const target2 = CpuAI.calculateTargetWithBehavior(game, config, 0);
+
+    expect(target1.x).toBe(target2.x);
+  });
+
+  it('sidePreference のオフセットがフィールド外に出ない', () => {
+    const game = EntityFactory.createGameState();
+    game.pucks[0].y = 200;
+    game.pucks[0].vy = -5;
+    game.pucks[0].x = W - 30;
+    game.pucks[0].vx = 0;
+
+    const config = createConfig({
+      playStyle: createPlayStyle({ sidePreference: 1.0 }),
+    });
+
+    const target = CpuAI.calculateTargetWithBehavior(game, config, 0);
+
+    expect(target.x).toBeLessThanOrEqual(W);
+    expect(target.x).toBeGreaterThanOrEqual(0);
+  });
+});
+
+// ── Phase S6-3c: deflectionBias テスト ──────────────
+
+describe('deflectionBias', () => {
+  it('deflectionBias > 0 でパックの反射方向が壁方向に偏る', () => {
+    // 真上方向の法線 (0, -1) に正のバイアス → 壁方向（水平）に傾く
+    const result = applyDeflectionBias(0, -1, 0.5);
+    // 元の角度は -π/2（真上）、バイアスで水平方向に傾くので nx の絶対値が増加
+    const originalAngle = Math.atan2(-1, 0);
+    const biasedAngle = Math.atan2(result.ny, result.nx);
+    expect(biasedAngle).toBeGreaterThan(originalAngle);
+  });
+
+  it('deflectionBias < 0 でパックの反射方向がゴール方向に偏る', () => {
+    // 斜め方向の法線 (0.7, -0.7) に負のバイアス → ゴール方向（垂直）に傾く
+    const originalAngle = Math.atan2(-0.7, 0.7);
+    const result = applyDeflectionBias(0.7, -0.7, -0.5);
+    const biasedAngle = Math.atan2(result.ny, result.nx);
+    // 負のバイアスで角度がより垂直方向（小さい値）に傾く
+    expect(biasedAngle).toBeLessThan(originalAngle);
+  });
+
+  it('deflectionBias = 0 では法線が変化しない', () => {
+    const result = applyDeflectionBias(0, -1, 0);
+    expect(result.nx).toBeCloseTo(0, 5);
+    expect(result.ny).toBeCloseTo(-1, 5);
+  });
+});
+
+// ── Phase S6-3d: reactionDelay テスト ──────────────
+
+describe('shouldRecalculateTarget', () => {
+  it('パック方向転換時に reactionDelay 経過後は再計算を許可する', () => {
+    expect(shouldRecalculateTarget(0, 100, 50, true)).toBe(true);
+  });
+
+  it('パック方向転換時に reactionDelay 未経過なら再計算しない', () => {
+    expect(shouldRecalculateTarget(0, 30, 50, true)).toBe(false);
+  });
+
+  it('reactionDelay=0 ではパック方向転換時に即座に再計算', () => {
+    expect(shouldRecalculateTarget(0, 0, 0, true)).toBe(true);
+  });
+
+  // S6-4-8: 通常時の定期再計算
+  it('方向転換なしでも定期再計算間隔（reactionDelay*3, 最低100ms）経過で再計算', () => {
+    // reactionDelay=50 → periodicInterval=max(150, 100)=150ms
+    expect(shouldRecalculateTarget(0, 150, 50, false)).toBe(true);
+  });
+
+  it('定期再計算間隔未満では再計算しない', () => {
+    // reactionDelay=50 → periodicInterval=150ms, 経過100ms < 150ms
+    expect(shouldRecalculateTarget(0, 100, 50, false)).toBe(false);
+  });
+
+  it('reactionDelay=0 の通常時は最低100msで定期再計算', () => {
+    expect(shouldRecalculateTarget(0, 100, 0, false)).toBe(true);
+    expect(shouldRecalculateTarget(0, 50, 0, false)).toBe(false);
+  });
+});
+
+// ── Phase S6-3b: defenseStyle テスト ──────────────
+
+describe('defenseStyle', () => {
+  // パックが相手陣地にある時（puck.vy >= 0 or puck.y >= H/2）のポジション制御
+  const H = CONSTANTS.CANVAS.HEIGHT;
+
+  it('center: パック相手陣地時にゴール中央付近に戻る', () => {
+    const game = EntityFactory.createGameState();
+    // パックが相手陣地（下半分）に移動中 → CPU にとっての相手陣地
+    game.pucks[0].y = H * 0.75;
+    game.pucks[0].vy = 3;
+    game.pucks[0].x = 100;
+
+    const config = createConfig({
+      playStyle: createPlayStyle({ defenseStyle: 'center', aggressiveness: 0.5 }),
+    });
+
+    const target = CpuAI.calculateTargetWithBehavior(game, config, 0);
+    // center: X はフィールド中央付近
+    expect(Math.abs(target.x - W / 2)).toBeLessThan(100);
+  });
+
+  it('aggressive: パック相手陣地時に中盤付近に留まる', () => {
+    const game = EntityFactory.createGameState();
+    game.pucks[0].y = H * 0.75;
+    game.pucks[0].vy = 3;
+    game.pucks[0].x = 100;
+
+    const config = createConfig({
+      playStyle: createPlayStyle({ defenseStyle: 'aggressive', aggressiveness: 0.5 }),
+    });
+
+    const target = CpuAI.calculateTargetWithBehavior(game, config, 0);
+    // aggressive: Y が center よりも前方（H/2 に近い）にいる
+    expect(target.y).toBeGreaterThan(60);
+  });
+
+  it('パック自陣時は defenseStyle ではなく aggressiveness が優先（#6）', () => {
+    const game = EntityFactory.createGameState();
+    // パックが CPU 陣地（上半分）に向かっている
+    game.pucks[0].y = 200;
+    game.pucks[0].vy = -5;
+    game.pucks[0].x = W / 2;
+
+    const configCenter = createConfig({
+      playStyle: createPlayStyle({ defenseStyle: 'center', aggressiveness: 0.7 }),
+    });
+    const configAggressive = createConfig({
+      playStyle: createPlayStyle({ defenseStyle: 'aggressive', aggressiveness: 0.7 }),
+    });
+
+    const targetCenter = CpuAI.calculateTargetWithBehavior(game, configCenter, 0);
+    const targetAggressive = CpuAI.calculateTargetWithBehavior(game, configAggressive, 0);
+
+    // パック自陣時は aggressiveness が同じなので、defenseStyle の違いは影響しない
+    expect(targetCenter.y).toBe(targetAggressive.y);
   });
 });

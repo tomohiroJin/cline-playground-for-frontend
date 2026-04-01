@@ -2,6 +2,38 @@ import { CONSTANTS, GameConstants } from './constants';
 import { Entity } from './types';
 import { distance, magnitude } from '../../../utils/math-utils';
 
+/**
+ * 打ち返し角度バイアスを衝突法線に適用する
+ * bias > 0: 法線を壁方向（水平）に傾ける（バウンスショット）
+ * bias < 0: 法線をゴール方向（垂直）に傾ける（ストレートショット）
+ * 最大バイアス角度: ±30°
+ */
+export const applyDeflectionBias = (
+  normalX: number,
+  normalY: number,
+  deflectionBias: number
+): { nx: number; ny: number } => {
+  if (deflectionBias === 0) return { nx: normalX, ny: normalY };
+  const angle = Math.atan2(normalY, normalX);
+  const biasAngle = deflectionBias * (Math.PI / 6);
+  const newAngle = angle + biasAngle;
+  return { nx: Math.cos(newAngle), ny: Math.sin(newAngle) };
+};
+
+/**
+ * 衝突判定の早期リターン（S-1: 距離の二乗比較で sqrt を完全回避）
+ * 距離が maxDist を超えている場合に true を返す
+ */
+export const quickReject = (
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+  maxDist: number
+): boolean => {
+  const dx = a.x - b.x;
+  const dy = a.y - b.y;
+  return dx * dx + dy * dy > maxDist * maxDist;
+};
+
 export const Physics = {
   detectCollision(ax: number, ay: number, ar: number, bx: number, by: number, br: number) {
     const dx = ax - bx,

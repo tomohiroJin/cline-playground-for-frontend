@@ -238,3 +238,24 @@ describe('TeamSetupScreen', () => {
     });
   });
 });
+
+// ── Phase S6-3g: キャラ特性バッジテスト ──────────────
+
+describe('キャラ特性バッジ（R-3）', () => {
+  it('各スロットにキャラ特性バッジが表示される', () => {
+    render(<TeamSetupScreen {...createDefaultProps()} />);
+    // P2: ルーキー = balanced → ⚖️
+    const p2Slot = screen.getByTestId('slot-p2');
+    expect(p2Slot.querySelector('[data-testid="role-badge"]')).toBeTruthy();
+  });
+
+  it('グリッド展開時にキャラ特性バッジが表示される', () => {
+    render(<TeamSetupScreen {...createDefaultProps()} />);
+    // P2 スロットを開く
+    fireEvent.click(screen.getByTestId('slot-p2'));
+    // グリッド内のキャラカードにバッジが付いている
+    const grid = screen.getByTestId('character-grid-p2');
+    const badges = grid.querySelectorAll('[data-testid="role-badge"]');
+    expect(badges.length).toBeGreaterThan(0);
+  });
+});

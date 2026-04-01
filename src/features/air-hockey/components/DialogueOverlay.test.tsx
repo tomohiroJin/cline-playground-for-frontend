@@ -318,4 +318,46 @@ describe('DialogueOverlay', () => {
       expect(textWindow).toBeInTheDocument();
     });
   });
+
+  // ── S6-8c: レイアウト安定化 ─────────────────────────
+  describe('レイアウト安定化（S6-8c）', () => {
+    it('ポートレートなしでも portrait コンテナが存在する', () => {
+      render(<DialogueOverlay {...defaultProps} />);
+      // portrait なしでもコンテナは存在し、スペーサーではなく同一構造
+      const container = screen.getByTestId('portrait-container');
+      expect(container).toBeInTheDocument();
+    });
+
+    it('ポートレートありの場合も portrait コンテナが存在する', () => {
+      render(
+        <DialogueOverlay
+          {...defaultProps}
+          characters={testCharactersWithPortrait}
+        />,
+      );
+      const container = screen.getByTestId('portrait-container');
+      expect(container).toBeInTheDocument();
+    });
+
+    it('テキスト領域に固定高さが設定されている', () => {
+      render(<DialogueOverlay {...defaultProps} />);
+      const textEl = screen.getByTestId('dialogue-text');
+      expect(textEl.style.height).toBeTruthy();
+    });
+
+    it('進行インジケーターが常にスペースを占有する', () => {
+      render(<DialogueOverlay {...defaultProps} />);
+      const indicator = screen.getByTestId('dialogue-indicator');
+      expect(indicator).toBeInTheDocument();
+      // テキスト未完了時は非表示だがスペースは確保
+      expect(indicator.style.visibility).toBe('hidden');
+    });
+
+    it('テキスト全文表示後にインジケーターが表示される', () => {
+      render(<DialogueOverlay {...defaultProps} />);
+      act(() => { jest.advanceTimersByTime(30 * 10); });
+      const indicator = screen.getByTestId('dialogue-indicator');
+      expect(indicator.style.visibility).toBe('visible');
+    });
+  });
 });

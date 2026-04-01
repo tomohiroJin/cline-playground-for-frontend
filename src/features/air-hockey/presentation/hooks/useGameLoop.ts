@@ -8,13 +8,14 @@
  * ゲームロジックの詳細は将来的に GameLoopUseCase に完全委譲する予定。
  */
 import React, { useEffect } from 'react';
-import { Physics } from '../../core/physics';
+import { Physics, quickReject } from '../../core/physics';
 import { CpuAI } from '../../core/ai';
+import { readGamepad, applyNonLinearCurve, GAMEPAD_MOVE_SPEED, GAMEPAD_INDEX } from '../../core/gamepad';
 import { AI_BEHAVIOR_PRESETS, buildFreeBattleAiConfig, buildAllyAiConfig, type AiBehaviorConfig } from '../../core/story-balance';
 import { EntityFactory, moveMalletTo, resolveMalletPuckOverlap, resolveMalletMalletOverlaps } from '../../core/entities';
 import { getAllMallets, updateExtraMalletAI } from '../../core/pair-match-logic';
 import { applyItemEffect } from '../../core/items';
-import { CONSTANTS, DEFAULT_PLAYER_MALLET_COLOR, DEFAULT_CPU_MALLET_COLOR, getPlayerZone } from '../../core/constants';
+import { CONSTANTS, DEFAULT_PLAYER_MALLET_COLOR, DEFAULT_CPU_MALLET_COLOR, getPlayerZone, type GameConstants } from '../../core/constants';
 import { ITEMS } from '../../core/config';
 import { magnitude, randomRange, clamp } from '../../../../utils/math-utils';
 import { Renderer } from '../../renderer';
@@ -70,6 +71,9 @@ export type GameLoopConfig = {
   allyCharacterId?: string;
   enemyCharacter1Id?: string;
   enemyCharacter2Id?: string;
+  /** P3/P4 の操作タイプ（2v2 + Gamepad 時のみ使用） */
+  enemy1ControlType?: 'cpu' | 'human';
+  enemy2ControlType?: 'cpu' | 'human';
 };
 
 /** Ref グループ（ゲームループが参照・更新する ref） */
@@ -109,6 +113,21 @@ export type UseGameLoopParams = {
   callbacks: GameLoopCallbacks;
 };
 
+/** ゲームパッド入力をマレットに適用するヘルパー（RC-1: 重複コード解消） */
+function applyGamepadToMallet(
+  mallet: { x: number; y: number; vx: number; vy: number },
+  gamepadIndex: number,
+  playerSlot: 'player3' | 'player4',
+  consts: GameConstants
+): void {
+  const gp = readGamepad(gamepadIndex);
+  if (!gp) return;
+  const zone = getPlayerZone(playerSlot, consts);
+  const dx = applyNonLinearCurve(gp.axisX) * GAMEPAD_MOVE_SPEED;
+  const dy = applyNonLinearCurve(gp.axisY) * GAMEPAD_MOVE_SPEED;
+  moveMalletTo(mallet, clamp(mallet.x + dx, zone.minX, zone.maxX), clamp(mallet.y + dy, zone.minY, zone.maxY));
+}
+
 /**
  * ゲームループを管理するカスタムフック（プレゼンテーション層）
  *
@@ -120,7 +139,7 @@ export type UseGameLoopParams = {
  * - callbacks: React state 更新コールバック
  */
 export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGameLoopParams): void {
-  const { difficulty: diff, field, winScore, getSound, bgmEnabled, gameMode, aiConfig, playerMalletColor, cpuMalletColor, allyControlType, allyCharacterId, enemyCharacter1Id, enemyCharacter2Id } = config;
+  const { difficulty: diff, field, winScore, getSound, bgmEnabled, gameMode, aiConfig, playerMalletColor, cpuMalletColor, allyControlType, allyCharacterId, enemyCharacter1Id, enemyCharacter2Id, enemy1ControlType, enemy2ControlType } = config;
   const pColor = playerMalletColor ?? DEFAULT_PLAYER_MALLET_COLOR;
   const cColor = cpuMalletColor ?? DEFAULT_CPU_MALLET_COLOR;
   const {
@@ -326,6 +345,12 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
     // 勝利判定後の遅延遷移タイマー（クリーンアップ用に追跡）
     let resultTimerId: ReturnType<typeof setTimeout> | null = null;
 
+    // R-5: パフォーマンス計測基盤（開発モードのみ）
+    const PERF_ENABLED = process.env.NODE_ENV === 'development';
+    let fpsFrameCount = 0;
+    let fpsLastTime = performance.now();
+    let currentFps = 0;
+
     const gameLoop = () => {
       const game = gameRef.current;
       const ctx = canvasRef.current?.getContext('2d');
@@ -508,15 +533,20 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
           }
         }
 
-        // CPU AI: キャラ別 AI プロファイルを使用
+        // CPU（P3）: Gamepad 人間操作 or CPU AI
         const scoreDiff = Math.max(0, scoreRef.current.p - scoreRef.current.c);
         const cpuAiConfig = aiConfig ?? (enemyCharacter1Id ? buildFreeBattleAiConfig(diff, enemyCharacter1Id) : AI_BEHAVIOR_PRESETS[diff]);
-        const cpuUpdate = CpuAI.updateWithBehavior(game, cpuAiConfig, now, consts, scoreDiff);
-        if (cpuUpdate) {
-          game.cpu = cpuUpdate.cpu;
-          game.cpuTarget = cpuUpdate.cpuTarget;
-          game.cpuTargetTime = cpuUpdate.cpuTargetTime;
-          game.cpuStuckTimer = cpuUpdate.cpuStuckTimer;
+        const isEnemy1Human = enemy1ControlType === 'human';
+        if (isEnemy1Human) {
+          applyGamepadToMallet(game.cpu, GAMEPAD_INDEX.P3, 'player3', consts);
+        } else {
+          const cpuUpdate = CpuAI.updateWithBehavior(game, cpuAiConfig, now, consts, scoreDiff);
+          if (cpuUpdate) {
+            game.cpu = cpuUpdate.cpu;
+            game.cpuTarget = cpuUpdate.cpuTarget;
+            game.cpuTargetTime = cpuUpdate.cpuTargetTime;
+            game.cpuStuckTimer = cpuUpdate.cpuStuckTimer;
+          }
         }
 
         // ally（P2）: CPU 操作時のみ AI で制御（座標反転で下半分に対応）
@@ -526,8 +556,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
           const allyResult = updateExtraMalletAI(
             game, game.ally,
             { target: game.allyTarget ?? null, targetTime: game.allyTargetTime ?? 0, stuckTimer: game.allyStuckTimer ?? 0 },
-            updateFn, allyAiConfig, now, consts, scoreDiff,
-            'player'
+            { updateFn, config: allyAiConfig, now, consts, scoreDiff, team: 'player' }
           );
           if (allyResult) {
             game.ally = allyResult.mallet;
@@ -537,21 +566,25 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
           }
         }
 
-        // enemy（P4）: CPU AI で制御（上半分）
+        // enemy（P4）: Gamepad 人間操作 or CPU AI（上半分）
         if (game.enemy) {
-          const updateFn = CpuAI.updateWithBehavior.bind(CpuAI);
-          const enemyAiConfig = enemyCharacter2Id ? buildFreeBattleAiConfig(diff, enemyCharacter2Id) : cpuAiConfig;
-          const result = updateExtraMalletAI(
-            game, game.enemy,
-            { target: game.enemyTarget ?? null, targetTime: game.enemyTargetTime ?? 0, stuckTimer: game.enemyStuckTimer ?? 0 },
-            updateFn, enemyAiConfig, now, consts, scoreDiff,
-            'cpu'
-          );
-          if (result) {
-            game.enemy = result.mallet;
-            game.enemyTarget = result.aiState.target;
-            game.enemyTargetTime = result.aiState.targetTime;
-            game.enemyStuckTimer = result.aiState.stuckTimer;
+          const isEnemyHuman = enemy2ControlType === 'human';
+          if (isEnemyHuman) {
+            applyGamepadToMallet(game.enemy, GAMEPAD_INDEX.P4, 'player4', consts);
+          } else {
+            const updateFn = CpuAI.updateWithBehavior.bind(CpuAI);
+            const enemyAiConfig = enemyCharacter2Id ? buildFreeBattleAiConfig(diff, enemyCharacter2Id) : cpuAiConfig;
+            const result = updateExtraMalletAI(
+              game, game.enemy,
+              { target: game.enemyTarget ?? null, targetTime: game.enemyTargetTime ?? 0, stuckTimer: game.enemyStuckTimer ?? 0 },
+              { updateFn, config: enemyAiConfig, now, consts, scoreDiff, team: 'cpu' }
+            );
+            if (result) {
+              game.enemy = result.mallet;
+              game.enemyTarget = result.aiState.target;
+              game.enemyTargetTime = result.aiState.targetTime;
+              game.enemyStuckTimer = result.aiState.stuckTimer;
+            }
           }
         }
 
@@ -598,9 +631,14 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
 
       // マレット移動後、衝突処理前にパックとの食い込みを解消（パックを弾く）
       // effectiveMR を使い、processCollisions との二重衝突を防止
+      // S6-4-6: quickReject で遠いペアをスキップ
       for (const { mallet, side } of getAllMallets(game)) {
         const mr = MR * getMalletScale(side);
-        resolveMalletPuckOverlap(mallet, game.pucks, mr, BR, consts.PHYSICS.MAX_POWER);
+        const maxDist = mr + BR;
+        const nearPucks = game.pucks.filter(p => !quickReject(mallet, p, maxDist));
+        if (nearPucks.length > 0) {
+          resolveMalletPuckOverlap(mallet, nearPucks, mr, BR, consts.PHYSICS.MAX_POWER);
+        }
       }
 
       // フィーバー判定
@@ -944,6 +982,22 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         }
       }
 
+      // R-5: FPS 計測（開発モードのみ）
+      if (PERF_ENABLED && ctx) {
+        fpsFrameCount++;
+        const fpsNow = performance.now();
+        if (fpsNow - fpsLastTime >= 1000) {
+          currentFps = fpsFrameCount;
+          fpsFrameCount = 0;
+          fpsLastTime = fpsNow;
+        }
+        ctx.save();
+        ctx.fillStyle = '#0f0';
+        ctx.font = '12px monospace';
+        ctx.fillText(`FPS: ${currentFps}`, 8, 16);
+        ctx.restore();
+      }
+
       animationRef = requestAnimationFrame(gameLoop);
     };
 
@@ -960,5 +1014,5 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       phaseRef, countdownStartRef, shakeRef, setShake, bgmEnabled,
       statsRef, matchStartRef, keysRef,
       is2PMode, is2v2Mode, pColor, cColor, playerTargetRef, player2KeysRef, multiTouchRef, aiConfig,
-      allyControlType, allyCharacterId, enemyCharacter1Id, enemyCharacter2Id]);
+      allyControlType, allyCharacterId, enemyCharacter1Id, enemyCharacter2Id, enemy1ControlType, enemy2ControlType]);
 }

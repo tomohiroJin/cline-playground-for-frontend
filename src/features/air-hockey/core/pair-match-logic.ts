@@ -5,6 +5,7 @@
 import type { GameState, Mallet, Vector, EffectTarget, Puck } from './types';
 import type { CpuUpdateResult } from './ai';
 import type { AiBehaviorConfig } from './story-balance';
+import type { TeamRole } from './character-ai-profiles';
 import type { GameConstants } from './constants';
 import { getPlayerZone } from './constants';
 import { clamp } from '../../../utils/math-utils';
@@ -61,6 +62,54 @@ export type ExtraMalletAiState = {
   stuckTimer: number;
 };
 
+/**
+ * スコア差に応じて aggressiveness を動的に調整する（S-4）
+ * 負けている→攻撃的、勝っている→守備的
+ * adaptability が高いほど調整幅が大きい
+ */
+export function getScoreAdjustment(
+  scoreDiff: number,
+  adaptability: number
+): number {
+  if (Math.abs(scoreDiff) < 2) return 0;
+  const direction = scoreDiff < 0 ? 1 : -1;
+  return direction * 0.1 * adaptability;
+}
+
+/** teamRole に基づく aggressiveness 調整値 */
+const TEAM_ROLE_AGGRESSIVENESS: Record<TeamRole, number> = {
+  attacker: 0.3,
+  defender: -0.3,
+  balanced: 0,
+};
+
+/**
+ * ally の sidePreference 反転（R-4）、teamRole の aggressiveness 調整（S6-3e）、
+ * スコア差による動的 aggressiveness 調整（S-4, S6-3-15b）を適用
+ */
+function applyTeamAndSideAdjustments(
+  config: AiBehaviorConfig,
+  isPlayerTeam: boolean,
+  scoreDiff: number = 0
+): AiBehaviorConfig {
+  if (!config.playStyle) return config;
+
+  const ps = config.playStyle;
+  const sideFlip = isPlayerTeam ? -1 : 1;
+  const roleAdj = TEAM_ROLE_AGGRESSIVENESS[ps.teamRole] ?? 0;
+  const scoreAdj = getScoreAdjustment(scoreDiff, ps.adaptability);
+  const adjustedAggressiveness = Math.max(0, Math.min(1, ps.aggressiveness + roleAdj + scoreAdj));
+
+  return {
+    ...config,
+    playStyle: {
+      ...ps,
+      sidePreference: ps.sidePreference * sideFlip,
+      aggressiveness: adjustedAggressiveness,
+    },
+  };
+}
+
 /** Y 軸を反転する（ally 用座標変換） */
 function flipY(y: number, H: number): number {
   return H - y;
@@ -71,24 +120,28 @@ function flipPucks(pucks: Puck[], H: number): Puck[] {
   return pucks.map(p => ({ ...p, y: flipY(p.y, H), vy: -p.vy }));
 }
 
+/** updateExtraMalletAI の AI 制御パラメータ */
+export type ExtraMalletAIParams = {
+  updateFn: (g: GameState, config: AiBehaviorConfig, now: number, consts: GameConstants, scoreDiff?: number) => CpuUpdateResult | null;
+  config: AiBehaviorConfig;
+  now: number;
+  consts: GameConstants;
+  scoreDiff: number;
+  team?: 'player' | 'cpu';
+};
+
 /**
  * 追加マレット（ally/enemy）の CPU AI を更新する
  * CpuAI.updateWithBehavior は CPU 側（上半分）を前提とするため、
  * ally（player チーム・下半分）の場合は座標を Y 軸反転して渡し、結果を再度反転する
- *
- * @param team - 'player': ally（下半分）, 'cpu': enemy（上半分、反転不要）
  */
 export function updateExtraMalletAI(
   game: GameState,
   mallet: Mallet,
   aiState: ExtraMalletAiState,
-  updateFn: (g: GameState, config: AiBehaviorConfig, now: number, consts: GameConstants, scoreDiff?: number) => CpuUpdateResult | null,
-  config: AiBehaviorConfig,
-  now: number,
-  consts: GameConstants,
-  scoreDiff: number,
-  team: 'player' | 'cpu' = 'cpu'
+  params: ExtraMalletAIParams
 ): { mallet: Mallet; aiState: ExtraMalletAiState } | undefined {
+  const { updateFn, config, now, consts, scoreDiff, team = 'cpu' } = params;
   const H = consts.CANVAS.HEIGHT;
   const isPlayerTeam = team === 'player';
 
@@ -101,6 +154,9 @@ export function updateExtraMalletAI(
     ? { ...aiState.target, y: flipY(aiState.target.y, H) }
     : aiState.target;
 
+  // R-4: sidePreference 反転 + S6-3e: teamRole 調整 + S-4: スコア差動的調整
+  const effectiveConfig = applyTeamAndSideAdjustments(config, isPlayerTeam, scoreDiff);
+
   const tempGame = {
     ...game,
     pucks: effectivePucks,
@@ -109,7 +165,7 @@ export function updateExtraMalletAI(
     cpuTargetTime: aiState.targetTime,
     cpuStuckTimer: aiState.stuckTimer,
   };
-  const result = updateFn(tempGame, config, now, consts, scoreDiff);
+  const result = updateFn(tempGame, effectiveConfig, now, consts, scoreDiff);
   if (!result) return undefined;
 
   // ally の場合、結果を Y 軸再反転して戻す

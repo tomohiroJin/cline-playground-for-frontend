@@ -6,9 +6,46 @@
  */
 import React, { useState, useCallback, useMemo } from 'react';
 import type { Character } from '../core/types';
+import type { TeamRole } from '../core/character-ai-profiles';
+import { getCharacterAiProfile } from '../core/character-ai-profiles';
 import { ALWAYS_UNLOCKED_IDS } from '../core/characters';
 import { screenLayout } from './screen-layout';
 import { teamSetupStyles as styles } from './team-setup-screen-styles';
+
+/** teamRole → バッジ表示のマッピング */
+const ROLE_BADGE: Record<TeamRole, { icon: string; color: string; label: string }> = {
+  attacker: { icon: '⚔️', color: '#e74c3c', label: '攻撃型' },
+  defender: { icon: '🛡️', color: '#3498db', label: '守備型' },
+  balanced: { icon: '⚖️', color: '#f39c12', label: 'バランス型' },
+};
+
+/** キャラ ID からロールバッジを取得 */
+const getRoleBadge = (characterId: string) => {
+  const profile = getCharacterAiProfile(characterId);
+  return ROLE_BADGE[profile.teamRole];
+};
+
+/** ロールバッジコンポーネント */
+const RoleBadge: React.FC<{ characterId: string; size?: number }> = ({ characterId, size = 16 }) => {
+  const badge = getRoleBadge(characterId);
+  return (
+    <span
+      data-testid="role-badge"
+      title={badge.label}
+      aria-label={badge.label}
+      style={{
+        fontSize: `${size}px`,
+        lineHeight: 1,
+        flexShrink: 0,
+        background: `${badge.color}22`,
+        borderRadius: '4px',
+        padding: '1px 3px',
+      }}
+    >
+      {badge.icon}
+    </span>
+  );
+};
 
 /** スロット識別子 */
 type SlotId = 'p2' | 'p3' | 'p4';
@@ -32,6 +69,11 @@ type TeamSetupScreenProps = {
   onEnemy2Change: (c: Character) => void;
   allyControlType: AllyControlType;
   onAllyControlTypeChange: (t: AllyControlType) => void;
+  enemy1ControlType?: 'cpu' | 'human';
+  onEnemy1ControlTypeChange?: (t: 'cpu' | 'human') => void;
+  enemy2ControlType?: 'cpu' | 'human';
+  onEnemy2ControlTypeChange?: (t: 'cpu' | 'human') => void;
+  gamepadConnected?: number;
   onStart: () => void;
   onBack: () => void;
 };
@@ -60,10 +102,13 @@ const CharacterSlot: React.FC<{
         tabIndex={0}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onToggle(); }}
       >
-        <img src={character.icon} alt={character.name} style={styles.slotIcon} />
+        <img src={character.icon} alt={character.name} width={36} height={36} style={styles.slotIcon} />
         <div style={styles.slotInfo}>
           <span style={styles.slotLabel}>{label}</span>
-          <span style={styles.slotName}>{character.name}</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span style={styles.slotName}>{character.name}</span>
+            <RoleBadge characterId={character.id} size={14} />
+          </span>
         </div>
         <span style={styles.changeHint}>{isOpen ? '▲' : '変更 ▼'}</span>
       </div>
@@ -81,8 +126,13 @@ const CharacterSlot: React.FC<{
                   onClick={() => { if (!locked) onSelect(c); }}
                   disabled={locked}
                 >
-                  <img src={c.icon} alt={c.name} style={styles.gridCardIcon(locked)} />
-                  {locked && <span style={styles.lockOverlay}>🔒</span>}
+                  <div style={{ position: 'relative', display: 'inline-block' }}>
+                    <img src={c.icon} alt={c.name} width={32} height={32} style={styles.gridCardIcon(locked)} />
+                    {locked && <span style={styles.lockOverlay}>🔒</span>}
+                    <span style={{ position: 'absolute', bottom: -2, right: -2, fontSize: '12px', lineHeight: 1 }}>
+                      <RoleBadge characterId={c.id} size={12} />
+                    </span>
+                  </div>
                   <span style={styles.gridCardName}>{c.name}</span>
                 </button>
               );
@@ -90,6 +140,29 @@ const CharacterSlot: React.FC<{
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+/** 敵プレイヤーの CPU/Gamepad 切り替えトグル */
+const EnemyControlToggle: React.FC<{
+  label: string;
+  controlType?: 'cpu' | 'human';
+  onChange?: (t: 'cpu' | 'human') => void;
+  canEnable: boolean;
+}> = ({ label, controlType, onChange, canEnable }) => {
+  if (!onChange) return null;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', marginTop: '4px' }}>
+      <span style={{ fontSize: '12px', color: '#888' }}>{label} 操作:</span>
+      <div style={styles.controlToggle}>
+        <button style={styles.controlButton(controlType === 'cpu')} onClick={() => onChange('cpu')}>CPU</button>
+        <button
+          style={{ ...styles.controlButton(controlType === 'human'), opacity: canEnable ? 1 : 0.4 }}
+          onClick={() => { if (canEnable) onChange('human'); }}
+          title={!canEnable ? 'ゲームパッドを接続してください' : undefined}
+        >🎮 人間</button>
+      </div>
     </div>
   );
 };
@@ -106,6 +179,11 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
   onEnemy2Change,
   allyControlType,
   onAllyControlTypeChange,
+  enemy1ControlType,
+  onEnemy1ControlTypeChange,
+  enemy2ControlType,
+  onEnemy2ControlTypeChange,
+  gamepadConnected = 0,
   onStart,
   onBack,
 }) => {
@@ -145,7 +223,10 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
             <img src={playerCharacter.icon} alt={playerCharacter.name} style={styles.slotIcon} />
             <div style={styles.slotInfo}>
               <span style={styles.slotLabel}>P1: あなた（矢印キー / マウス）</span>
-              <span style={styles.slotName}>{playerCharacter.name}</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span style={styles.slotName}>{playerCharacter.name}</span>
+                <RoleBadge characterId={playerCharacter.id} size={14} />
+              </span>
             </div>
           </div>
           {/* P2: パートナー（CPU/人間切り替え） */}
@@ -185,9 +266,10 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
         {/* チーム2 */}
         <div style={styles.teamSection(TEAM2_COLOR)} data-testid="team2-section">
           <div style={styles.teamTitle(TEAM2_COLOR)}>チーム2（上）</div>
-          {/* P3: 敵 CPU 1 */}
+          <EnemyControlToggle label="P3" controlType={enemy1ControlType} onChange={onEnemy1ControlTypeChange} canEnable={gamepadConnected >= 2} />
+          {/* P3: 敵 1 */}
           <CharacterSlot
-            label="P3: 敵1（CPU）"
+            label={enemy1ControlType === 'human' ? 'P3: 敵1（🎮）' : 'P3: 敵1（CPU）'}
             character={enemyCharacter1}
             slotId="p3"
             isOpen={openSlot === 'p3'}
@@ -197,9 +279,10 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
             selectedCharacterId={enemyCharacter1.id}
             onSelect={(c) => handleSelect('p3', c)}
           />
-          {/* P4: 敵 CPU 2 */}
+          <EnemyControlToggle label="P4" controlType={enemy2ControlType} onChange={onEnemy2ControlTypeChange} canEnable={gamepadConnected >= 3} />
+          {/* P4: 敵 2 */}
           <CharacterSlot
-            label="P4: 敵2（CPU）"
+            label={enemy2ControlType === 'human' ? 'P4: 敵2（🎮）' : 'P4: 敵2（CPU）'}
             character={enemyCharacter2}
             slotId="p4"
             isOpen={openSlot === 'p4'}

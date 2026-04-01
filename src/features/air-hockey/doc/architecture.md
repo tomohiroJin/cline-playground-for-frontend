@@ -19,8 +19,10 @@ src/features/air-hockey/
     daily-challenge.ts    # デイリーチャレンジ（シード生成・ルール・結果保存）
     dialogue-data.ts      # ストーリーモード第1章ダイアログデータ
     difficulty-adjust.ts  # 難易度オートアジャスト（連勝/連敗判定）
+    gamepad.ts            # Gamepad API ラッパー（readGamepad・非線形カーブ・デッドゾーン）
     keyboard.ts           # キーボード操作（P1/P2 キーマッピング分離・移動計算）
-    pair-match-logic.ts   # 2v2 ペアマッチロジック（マレット配列・ゴール判定・ally AI 座標反転）
+    pair-match-logic.ts   # 2v2 ペアマッチロジック（マレット配列・ゴール判定・ally AI 座標反転・teamRole調整・スコア差動的調整）
+    character-ai-profiles.ts # キャラ別 AI プロファイル（9パラメータ: sidePreference/defenseStyle/deflectionBias/reactionDelay/teamRole 等）
     story.ts              # ストーリー進行管理（保存・読込・リセット・解放判定）
     story-balance.ts      # ステージ別バランス設定・AI プリセット・味方CPU補正（buildAllyAiConfig）
     unlock.ts             # フィールド/アイテムアンロック（条件・状態管理）
@@ -28,13 +30,14 @@ src/features/air-hockey/
     useInput.ts           # マウス/タッチ入力ハンドリング
     useKeyboardInput.ts   # キーボード入力（isMultiPlayerMode でキーマッピング切替）
     useMultiTouchInput.ts # マルチタッチ入力（2P/2v2 用画面分割）
+    useGamepadInput.ts    # ゲームパッド入力管理（接続/切断イベント・トースト通知）
     useCharacterDex.ts    # キャラクター図鑑管理
     useImagePreloader.ts  # 画像プリロード
   presentation/
     AirHockeyGame.tsx     # メインコンポーネント（プレゼンテーション層）
     hooks/
-      useGameLoop.ts      # ゲームループ（フェーズ管理、物理更新、描画、パックスタック検出）
-      useGameMode.ts      # ゲームモード管理（free/story/2p/2v2/daily + キャラ・難易度状態）
+      useGameLoop.ts      # ゲームループ（フェーズ管理、物理更新、描画、Gamepad入力、FPSカウンター）
+      useGameMode.ts      # ゲームモード管理（free/story/2p/2v2/daily + キャラ・難易度・enemy ControlType）
       useScreenNavigation.ts # 画面遷移管理
       useResultProcessing.ts # リザルト処理
       useAudioManager.ts  # 音声管理

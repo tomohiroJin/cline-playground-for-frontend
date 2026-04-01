@@ -156,20 +156,32 @@ export const buildFreeBattleAiConfig = (
   };
 };
 
-/** 味方 CPU 用 AI 設定を構築する（aggressiveness に上限を設けて守備的に） */
+/** 味方 CPU の aggressiveness 上限（守備的に） */
+const ALLY_AGGRESSIVENESS_CAP = 0.5;
+/** 味方 CPU の reactionDelay 上限（最低限の反応速度を保証 #9） */
+const ALLY_REACTION_DELAY_CAP = 120;
+
+/** 味方 CPU 用 AI 設定を構築する（aggressiveness と reactionDelay に上限を設けて味方性能を保証） */
 export const buildAllyAiConfig = (
   difficulty: Difficulty,
   characterId?: string
 ): AiBehaviorConfig => {
   const base = buildFreeBattleAiConfig(difficulty, characterId);
-  const ALLY_AGGRESSIVENESS_CAP = 0.5;
-  if (base.playStyle && base.playStyle.aggressiveness > ALLY_AGGRESSIVENESS_CAP) {
-    return {
-      ...base,
-      playStyle: { ...base.playStyle, aggressiveness: ALLY_AGGRESSIVENESS_CAP },
-    };
-  }
-  return base;
+  if (!base.playStyle) return base;
+
+  const needsCap =
+    base.playStyle.aggressiveness > ALLY_AGGRESSIVENESS_CAP ||
+    base.playStyle.reactionDelay > ALLY_REACTION_DELAY_CAP;
+  if (!needsCap) return base;
+
+  return {
+    ...base,
+    playStyle: {
+      ...base.playStyle,
+      aggressiveness: Math.min(base.playStyle.aggressiveness, ALLY_AGGRESSIVENESS_CAP),
+      reactionDelay: Math.min(base.playStyle.reactionDelay, ALLY_REACTION_DELAY_CAP),
+    },
+  };
 };
 
 /** ステージ ID に対応するバランス設定を取得 */

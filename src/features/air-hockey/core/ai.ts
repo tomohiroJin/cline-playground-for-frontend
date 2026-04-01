@@ -62,6 +62,30 @@ export const applyAdaptability = (config: AiBehaviorConfig, scoreDiff: number): 
   };
 };
 
+// ── sidePreference 定数 ────────────────────────────
+/** sidePreference による最大オフセット（px） フィールド幅600の12.5% */
+const SIDE_OFFSET_MAX = 75;
+
+/**
+ * sidePreference に基づくターゲット X オフセットを適用する
+ * 端に寄りすぎないよう中央からの距離に応じて効果を減衰する
+ */
+const applySidePreference = (
+  targetX: number,
+  sidePreference: number,
+  fieldWidth: number
+): number => {
+  if (sidePreference === 0) return targetX;
+  const malletRadius = CONSTANTS.SIZES.MALLET;
+  const offset = sidePreference * SIDE_OFFSET_MAX;
+  const centerX = fieldWidth / 2;
+  const maxDist = fieldWidth / 2 - malletRadius;
+  const distFromCenter = Math.abs(targetX - centerX);
+  const dampingFactor = 1 - (distFromCenter / maxDist) * 0.5;
+  const adjustedX = targetX + offset * dampingFactor;
+  return clamp(adjustedX, malletRadius, fieldWidth - malletRadius);
+};
+
 /**
  * 揺さぶりオフセットを計算する
  * lateralOscillation と lateralPeriod に基づく正弦波を返す
@@ -85,6 +109,68 @@ const calculateAggressiveY = (
   return Math.min(puckY + 20, baseY);
 };
 
+/**
+ * パック相手陣地時の守備ポジションを defenseStyle に基づき計算する
+ * #6: パック相手陣地時のみ適用。パック自陣時は aggressiveness が優先。
+ */
+/** 守備ポジションの自然なうろつき幅（px） */
+const DEFENSE_WANDER = 20;
+
+const applyDefenseStyle = (
+  playStyle: AiPlayStyle,
+  puck: { x: number; y: number } | undefined,
+  W: number,
+  H: number
+): Vector => {
+  const fieldCenter = W / 2;
+  const goalLineY = DEFENSIVE_Y;
+  const midFieldY = H / 4;
+  // 自然なうろつきオフセット（機械的な固定ポジションを避ける）
+  const wanderX = randomRange(-DEFENSE_WANDER, DEFENSE_WANDER);
+  const wanderY = randomRange(-DEFENSE_WANDER / 2, DEFENSE_WANDER / 2);
+
+  switch (playStyle.defenseStyle) {
+    case 'wide': {
+      const trackX = puck ? puck.x * 0.6 + fieldCenter * 0.4 : fieldCenter;
+      return { x: trackX + wanderX, y: goalLineY + CONSTANTS.SIZES.MALLET * 2 + wanderY };
+    }
+    case 'aggressive':
+      return {
+        x: (puck ? puck.x * 0.3 + fieldCenter * 0.7 : fieldCenter) + wanderX,
+        y: midFieldY + wanderY,
+      };
+    case 'center':
+    default:
+      return { x: fieldCenter + wanderX, y: goalLineY + CONSTANTS.SIZES.MALLET * 2 + wanderY };
+  }
+};
+
+/** 通常時の定期再計算間隔の最低値（ms） */
+const MIN_PERIODIC_INTERVAL = 100;
+
+/**
+ * ターゲット再計算の判定（S6-3d + S6-4-8 統合）
+ * - パック方向転換時: reactionDelay 経過後に再計算
+ * - 通常時: reactionDelay * 3（最低 100ms）経過で定期再計算
+ */
+export const shouldRecalculateTarget = (
+  lastTargetTime: number,
+  currentTime: number,
+  reactionDelay: number,
+  puckDirectionChanged: boolean
+): boolean => {
+  const elapsed = currentTime - lastTargetTime;
+
+  // パック方向転換時: reactionDelay で遅延
+  if (puckDirectionChanged) {
+    return elapsed >= reactionDelay;
+  }
+
+  // 通常時: 定期再計算（reactionDelay * 3、最低 100ms）
+  const periodicInterval = Math.max(reactionDelay * 3, MIN_PERIODIC_INTERVAL);
+  return elapsed >= periodicInterval;
+};
+
 export const CpuAI = {
   /**
    * AiBehaviorConfig ベースのターゲット計算
@@ -96,7 +182,7 @@ export const CpuAI = {
     consts: GameConstants = CONSTANTS
   ): Vector {
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
-    const { cpu, pucks, cpuTarget, cpuTargetTime } = game;
+    const { cpu, pucks } = game;
     const puck = pucks[0];
     const playStyle = config.playStyle ?? DEFAULT_PLAY_STYLE;
 
@@ -122,9 +208,10 @@ export const CpuAI = {
         predictedX = predictedX * (1 - config.centerWeight) + (W / 2) * config.centerWeight;
       }
 
-      // TODO(2026-03-25): sidePreference による X オフセットは将来のキャラ拡張時に実装予定
+      // sidePreference: ホームポジションのオフセット（適用順: side → oscillation → clamp）
+      predictedX = applySidePreference(predictedX, playStyle.sidePreference, W);
 
-      // 揺さぶり: 正弦波によるX方向オフセット
+      // 揺さぶり: 正弦波によるX方向オフセット（sidePreference 適用後に加算）
       predictedX += calculateOscillation(playStyle, now);
 
       // aggressiveness によるY座標制御（守備的〜攻撃的ポジション）
@@ -133,15 +220,8 @@ export const CpuAI = {
       return { x: predictedX, y: targetY };
     }
 
-    // パックが来ていない時: 高精度 AI はゴール中央に戻る
-    if (config.predictionFactor >= 10) {
-      return { x: W / 2, y: 60 };
-    }
-
-    if (!cpuTarget || now - cpuTargetTime > 2000) {
-      return { x: randomRange(80, W - 80), y: randomRange(50, 130) };
-    }
-    return game.cpuTarget!;
+    // パックが相手陣地 or 遠い時: defenseStyle に基づく守備ポジション（#6: この場合のみ適用）
+    return applyDefenseStyle(playStyle, puck, W, H);
   },
 
   /**

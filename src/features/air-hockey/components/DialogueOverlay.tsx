@@ -203,16 +203,19 @@ export const DialogueOverlay: React.FC<DialogueOverlayProps> = ({
         スキップ
       </button>
 
-      {/* 立ち絵エリア */}
-      {portraitUrl ? (
-        <div style={{
+      {/* 立ち絵エリア — 常に同一構造でレイアウトシフトを防止 */}
+      <div
+        data-testid="portrait-container"
+        style={{
           flex: 1,
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'flex-end',
           paddingBottom: '8px',
           overflow: 'hidden',
-        }}>
+        }}
+      >
+        {portraitUrl && (
           <img
             data-testid="dialogue-portrait"
             src={portraitUrl}
@@ -224,11 +227,8 @@ export const DialogueOverlay: React.FC<DialogueOverlayProps> = ({
               transition: portraitTransition,
             }}
           />
-        </div>
-      ) : (
-        // 立ち絵なしのスペーサー
-        <div style={{ flex: 1 }} />
-      )}
+        )}
+      </div>
 
       {/* テキストウィンドウ */}
       <div
@@ -263,29 +263,33 @@ export const DialogueOverlay: React.FC<DialogueOverlayProps> = ({
             </span>
           </div>
 
-          {/* セリフテキスト */}
+          {/* セリフテキスト — 固定高さでレイアウトシフトを防止 */}
           <p
             data-testid="dialogue-text"
             style={{
               color: 'white',
               fontSize: '1rem',
               lineHeight: 1.6,
-              minHeight: '3em',
+              height: '4.8em',
+              overflow: 'hidden',
               margin: 0,
             }}
           >
             {fullText.slice(0, displayedLength)}
           </p>
 
-          {/* 進行インジケーター */}
-          <div style={{
-            textAlign: 'right',
-            marginTop: '8px',
-            color: 'rgba(255, 255, 255, 0.4)',
-            fontSize: '0.75rem',
-          }}>
-            {isFullyDisplayed && currentIndex < dialogues.length - 1 && '▼ タップで次へ'}
-            {isFullyDisplayed && currentIndex === dialogues.length - 1 && '▼ タップで閉じる'}
+          {/* 進行インジケーター — visibility で切り替えてスペースを常に確保 */}
+          <div
+            data-testid="dialogue-indicator"
+            style={{
+              textAlign: 'right',
+              marginTop: '8px',
+              color: 'rgba(255, 255, 255, 0.4)',
+              fontSize: '0.75rem',
+              visibility: isFullyDisplayed ? 'visible' : 'hidden',
+            }}
+          >
+            {currentIndex < dialogues.length - 1 ? '▼ タップで次へ' : '▼ タップで閉じる'}
           </div>
         </div>
       </div>

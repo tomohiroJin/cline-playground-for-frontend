@@ -1,4 +1,4 @@
-import { Physics } from './physics';
+import { Physics, quickReject } from './physics';
 import { CONSTANTS } from './constants';
 
 describe('Physics Module', () => {
@@ -106,5 +106,21 @@ describe('Physics Module', () => {
       Physics.applyFriction(obj);
       expect(obj.vx).toBe(10);
     });
+  });
+});
+
+// ── Phase S6-4: quickReject テスト ──────────────
+
+describe('quickReject（S-1: 距離の二乗比較）', () => {
+  it('遠いペアを除外する（距離 > maxDist）', () => {
+    expect(quickReject({ x: 0, y: 0 }, { x: 200, y: 200 }, 50)).toBe(true);
+  });
+
+  it('近いペアを通過させる（距離 <= maxDist）', () => {
+    expect(quickReject({ x: 100, y: 100 }, { x: 110, y: 110 }, 50)).toBe(false);
+  });
+
+  it('ちょうど境界上は通過（距離 == maxDist）', () => {
+    expect(quickReject({ x: 0, y: 0 }, { x: 30, y: 40 }, 50)).toBe(false);
   });
 });

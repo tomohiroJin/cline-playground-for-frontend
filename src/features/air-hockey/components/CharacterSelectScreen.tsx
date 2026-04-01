@@ -163,6 +163,8 @@ export function CharacterSelectScreen({
           <img
             src={player1.icon}
             alt={player1.name}
+            width={PANEL_ICON_SIZE}
+            height={PANEL_ICON_SIZE}
             style={styles.playerIcon}
           />
           <span style={styles.playerName}>{player1.name}</span>
@@ -180,6 +182,8 @@ export function CharacterSelectScreen({
           <img
             src={player2.icon}
             alt={player2.name}
+            width={PANEL_ICON_SIZE}
+            height={PANEL_ICON_SIZE}
             style={styles.playerIcon}
           />
           <span style={styles.playerName}>{player2.name}</span>
@@ -200,6 +204,8 @@ export function CharacterSelectScreen({
             <img
               src={character.icon}
               alt={character.name}
+              width={CARD_ICON_SIZE}
+              height={CARD_ICON_SIZE}
               style={styles.cardIcon}
             />
             <span style={styles.cardName}>{character.name}</span>

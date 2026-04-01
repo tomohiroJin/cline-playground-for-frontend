@@ -3,9 +3,14 @@
  * AiPlayStyle 型の定義とキャラクター別プロファイルを提供する
  */
 
+/** 守備スタイル: パック相手陣地時のポジショニング */
+export type DefenseStyle = 'center' | 'wide' | 'aggressive';
+
+/** チーム内の役割 */
+export type TeamRole = 'attacker' | 'defender' | 'balanced';
+
 /** CPU AI のプレイスタイル（キャラクター個性）を制御するパラメータ */
 export type AiPlayStyle = {
-  // TODO(2026-03-25): sidePreference ロジックは将来のキャラ拡張時に実装予定
   /** 横方向のターゲットオフセット傾向（-1.0 左寄せ 〜 0 中央 〜 1.0 右寄せ） */
   sidePreference: number;
   /** ターゲット位置の横ブレの振幅（px）— 揺さぶり */
@@ -16,6 +21,14 @@ export type AiPlayStyle = {
   aggressiveness: number;
   /** スコア差に応じた適応度（0: 適応なし 〜 1: 高適応） */
   adaptability: number;
+  /** 守備パターン: パック相手陣地時のポジション制御 */
+  defenseStyle: DefenseStyle;
+  /** 打ち返し角度バイアス（-1.0 ストレート 〜 1.0 バウンス） */
+  deflectionBias: number;
+  /** パック方向転換後のターゲット再計算遅延（ms） */
+  reactionDelay: number;
+  /** 2v2 でのチーム内役割 */
+  teamRole: TeamRole;
 };
 
 /** デフォルトプレイスタイル（オールラウンダー・無個性） */
@@ -25,72 +38,63 @@ export const DEFAULT_PLAY_STYLE: AiPlayStyle = {
   lateralPeriod: 0,
   aggressiveness: 0.5,
   adaptability: 0,
+  defenseStyle: 'center',
+  deflectionBias: 0,
+  reactionDelay: 100,
+  teamRole: 'balanced',
 };
+
+/** DEFAULT_PLAY_STYLE をベースに差分のみ指定してプロファイルを生成 */
+const createProfile = (overrides: Partial<AiPlayStyle>): AiPlayStyle => ({
+  ...DEFAULT_PLAY_STYLE,
+  ...overrides,
+});
 
 /** キャラクター ID → AiPlayStyle のマッピング */
 export const CHARACTER_AI_PROFILES: Record<string, AiPlayStyle> = {
-  /** ヒロ — ストレートシューター: 直線的でシンプルな動き */
-  hiro: {
-    sidePreference: 0,
-    lateralOscillation: 0,   // 揺さぶりなし
-    lateralPeriod: 0,
-    aggressiveness: 0.7,     // 前に出る
-    adaptability: 0.2,       // 低適応
-  },
+  /** ヒロ — 攻撃型エース: ストレートで撃ち抜く */
+  hiro: createProfile({
+    aggressiveness: 0.7, adaptability: 0.2,
+    defenseStyle: 'aggressive', deflectionBias: -0.3, reactionDelay: 50, teamRole: 'attacker',
+  }),
 
-  /** ミサキ — テクニシャン: サイドへの揺さぶりが多い */
-  misaki: {
-    sidePreference: 0,
-    lateralOscillation: 40,  // 大きな揺さぶり
-    lateralPeriod: 2000,     // 2秒周期
-    aggressiveness: 0.5,     // 中間ポジション
-    adaptability: 0.3,       // 中低適応
-  },
+  /** ミサキ — テクニシャン: 壁バウンスで翻弄する */
+  misaki: createProfile({
+    sidePreference: 0.3, lateralOscillation: 40, lateralPeriod: 2000,
+    aggressiveness: 0.5, adaptability: 0.3,
+    defenseStyle: 'wide', deflectionBias: 0.5, reactionDelay: 80,
+  }),
 
-  /** タクマ — パワーバウンサー: ゴール前に構える守備重視 */
-  takuma: {
-    sidePreference: 0,
-    lateralOscillation: 0,   // 揺さぶりなし
-    lateralPeriod: 0,
-    aggressiveness: 0.2,     // 守備的
-    adaptability: 0.1,       // 低適応
-  },
+  /** タクマ — 鉄壁の守護神: ゴール前で素早く反応し直球で返す */
+  takuma: createProfile({
+    aggressiveness: 0.2, adaptability: 0.1,
+    deflectionBias: -0.5, reactionDelay: 30, teamRole: 'defender',
+  }),
 
-  /** ユウ — アナライザー: スコア差に応じて強くなる */
-  yuu: {
-    sidePreference: 0,
-    lateralOscillation: 20,  // 控えめな揺さぶり
-    lateralPeriod: 3000,     // 3秒周期
-    aggressiveness: 0.4,     // やや守備的
-    adaptability: 0.8,       // 高適応
-  },
+  /** ユウ — アナライザー: adaptability で試合展開に適応 */
+  yuu: createProfile({
+    sidePreference: -0.2, lateralOscillation: 20, lateralPeriod: 3000,
+    aggressiveness: 0.4, adaptability: 0.8,
+    defenseStyle: 'wide', deflectionBias: 0.2, reactionDelay: 40,
+  }),
 
-  /** ルーキー — ビギナー: 動きが遅く反応が鈍い */
-  rookie: {
-    sidePreference: 0,
-    lateralOscillation: 0,
-    lateralPeriod: 0,
-    aggressiveness: 0.3,     // 消極的
-    adaptability: 0,         // 適応なし
-  },
+  /** ルーキー — ビギナー: 反応が遅く癖がない素直な動き */
+  rookie: createProfile({
+    aggressiveness: 0.3, reactionDelay: 200,
+  }),
 
-  /** レギュラー — オールラウンダー: バランス型 */
-  regular: {
-    sidePreference: 0,
-    lateralOscillation: 10,  // わずかな揺さぶり
-    lateralPeriod: 4000,     // ゆっくり
-    aggressiveness: 0.5,     // バランス型
-    adaptability: 0.2,       // 低適応
-  },
+  /** レギュラー — 標準レベル: バランスの良い中堅 */
+  regular: createProfile({
+    sidePreference: 0.1, lateralOscillation: 10, lateralPeriod: 4000,
+    adaptability: 0.2, defenseStyle: 'wide', deflectionBias: 0.1,
+  }),
 
-  /** エース — エリート: 高精度な予測と速い反応 */
-  ace: {
-    sidePreference: 0,
-    lateralOscillation: 15,  // 控えめだが正確な揺さぶり
-    lateralPeriod: 2500,     // 中速
-    aggressiveness: 0.6,     // やや攻撃的
-    adaptability: 0.4,       // 中適応
-  },
+  /** エース — 上級者: 積極的にバウンスショットを狙う */
+  ace: createProfile({
+    sidePreference: -0.1, lateralOscillation: 15, lateralPeriod: 2500,
+    aggressiveness: 0.6, adaptability: 0.4,
+    defenseStyle: 'aggressive', deflectionBias: 0.3, reactionDelay: 50, teamRole: 'attacker',
+  }),
 };
 
 /**

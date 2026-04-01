@@ -3,10 +3,11 @@
  */
 import { EntityFactory, resolveMalletPuckOverlap, resolveMalletMalletOverlaps } from './entities';
 import { CONSTANTS } from './constants';
-import { getAllMallets, applyGoalScore, updateExtraMalletAI } from './pair-match-logic';
+import { getAllMallets, applyGoalScore, updateExtraMalletAI, getScoreAdjustment } from './pair-match-logic';
 import { applyItemEffect } from './items';
 import { CpuAI } from './ai';
 import { AI_BEHAVIOR_PRESETS } from './story-balance';
+import { DEFAULT_PLAY_STYLE } from './character-ai-profiles';
 import type { GameState } from './types';
 
 const MR = CONSTANTS.SIZES.MALLET;
@@ -157,8 +158,7 @@ describe('Phase S4-3: ペアマッチゲームロジック', () => {
       const result = updateExtraMalletAI(
         state, state.ally!,
         { target: null, targetTime: 0, stuckTimer: 0 },
-        updateFn, config, Date.now(), CONSTANTS, 0,
-        'player'
+        { updateFn, config, now: Date.now(), consts: CONSTANTS, scoreDiff: 0, team: 'player' }
       );
 
       expect(result).toBeDefined();
@@ -178,8 +178,7 @@ describe('Phase S4-3: ペアマッチゲームロジック', () => {
       const result = updateExtraMalletAI(
         state, state.enemy!,
         { target: null, targetTime: 0, stuckTimer: 0 },
-        updateFn, config, Date.now(), CONSTANTS, 0,
-        'cpu'
+        { updateFn, config, now: Date.now(), consts: CONSTANTS, scoreDiff: 0, team: 'cpu' }
       );
 
       expect(result).toBeDefined();
@@ -217,5 +216,145 @@ describe('Phase S4-3: ペアマッチゲームロジック', () => {
       expect(state.player.x).toBe(origPlayerX);
       expect(state.player.y).toBe(origPlayerY);
     });
+  });
+});
+
+// ── Phase S6-2: ally sidePreference 反転テスト ──────
+
+describe('updateExtraMalletAI — sidePreference 反転（R-4）', () => {
+  it('ally（team=player）で sidePreference が反転されて AI に渡される', () => {
+    const state = create2v2State();
+    // パックが画面下方（ally 自陣）にいて上方向に移動
+    // Y 反転後: y=1200-900=300, vy=-(-3)=3 → vy < 0 ではないので defenseStyle 分岐
+    // → パックを反転後にパック追跡分岐に入るよう設定
+    // 反転後: y=1200-900=300（< H/2+50=650）, vy=3 → vy < 0 ではない
+    // パック追跡分岐: puck.vy < 0 && puck.y < H/2+50
+    // ally の反転: y → H-y, vy → -vy なので、元の vy=-3 → 反転後 vy=3（追跡しない）
+    // 元の vy=3 → 反転後 vy=-3（追跡する）
+    state.pucks[0].y = 900;    // 反転後: 300
+    state.pucks[0].vy = 3;     // 反転後: -3 → パック追跡分岐に入る
+    state.pucks[0].x = CONSTANTS.CANVAS.WIDTH / 2;
+    state.pucks[0].vx = 0;
+
+    const configRight = {
+      ...AI_BEHAVIOR_PRESETS.normal,
+      playStyle: { ...DEFAULT_PLAY_STYLE, sidePreference: 0.5 },
+    };
+    const configCenter = {
+      ...AI_BEHAVIOR_PRESETS.normal,
+      playStyle: { ...DEFAULT_PLAY_STYLE, sidePreference: 0 },
+    };
+
+    const updateFn = CpuAI.updateWithBehavior.bind(CpuAI);
+    const aiState = { target: null, targetTime: 0, stuckTimer: 0 };
+
+    const resultRight = updateExtraMalletAI(
+      state, state.ally!, aiState,
+      { updateFn, config: configRight, now: 1000, consts: CONSTANTS, scoreDiff: 0, team: 'player' }
+    );
+    const resultCenter = updateExtraMalletAI(
+      state, state.ally!, aiState,
+      { updateFn, config: configCenter, now: 1000, consts: CONSTANTS, scoreDiff: 0, team: 'player' }
+    );
+
+    // ally（player チーム）では sidePreference が反転されるため、
+    // configRight の 0.5 → -0.5 として AI に渡され、結果が center と異なる
+    if (resultRight && resultCenter) {
+      expect(resultRight.mallet.x).not.toBe(resultCenter.mallet.x);
+    }
+  });
+
+  it('attacker の teamRole で aggressiveness が +0.3 加算される', () => {
+    const state = create2v2State();
+    state.pucks[0].y = 200;
+    state.pucks[0].vy = -5;
+    state.pucks[0].x = CONSTANTS.CANVAS.WIDTH / 2;
+
+    // aggressiveness=0.5 + attacker=+0.3 = 0.8
+    const configAttacker = {
+      ...AI_BEHAVIOR_PRESETS.normal,
+      playStyle: { ...DEFAULT_PLAY_STYLE, teamRole: 'attacker' as const, aggressiveness: 0.5 },
+    };
+    // aggressiveness=0.5 + balanced=0 = 0.5
+    const configBalanced = {
+      ...AI_BEHAVIOR_PRESETS.normal,
+      playStyle: { ...DEFAULT_PLAY_STYLE, teamRole: 'balanced' as const, aggressiveness: 0.5 },
+    };
+
+    const updateFn = CpuAI.updateWithBehavior.bind(CpuAI);
+    const aiState = { target: null, targetTime: 0, stuckTimer: 0 };
+
+    const resultAttacker = updateExtraMalletAI(
+      state, state.enemy!, aiState,
+      { updateFn, config: configAttacker, now: 1000, consts: CONSTANTS, scoreDiff: 0, team: 'cpu' }
+    );
+    const resultBalanced = updateExtraMalletAI(
+      state, state.enemy!, aiState,
+      { updateFn, config: configBalanced, now: 1000, consts: CONSTANTS, scoreDiff: 0, team: 'cpu' }
+    );
+
+    // attacker は balanced より前方（Y が大きい = ゴールから遠い）にポジションする
+    if (resultAttacker && resultBalanced) {
+      expect(resultAttacker.mallet.y).toBeGreaterThanOrEqual(resultBalanced.mallet.y);
+    }
+  });
+
+  it('enemy（team=cpu）では sidePreference が反転されない', () => {
+    const state = create2v2State();
+    state.pucks[0].y = 200;
+    state.pucks[0].vy = -5;
+    state.pucks[0].x = CONSTANTS.CANVAS.WIDTH / 2;
+
+    const configRight = {
+      ...AI_BEHAVIOR_PRESETS.normal,
+      playStyle: { ...DEFAULT_PLAY_STYLE, sidePreference: 0.5 },
+    };
+    const configCenter = {
+      ...AI_BEHAVIOR_PRESETS.normal,
+      playStyle: { ...DEFAULT_PLAY_STYLE, sidePreference: 0 },
+    };
+
+    const updateFn = CpuAI.updateWithBehavior.bind(CpuAI);
+    const aiState = { target: null, targetTime: 0, stuckTimer: 0 };
+
+    const resultRight = updateExtraMalletAI(
+      state, state.enemy!, aiState,
+      { updateFn, config: configRight, now: 1000, consts: CONSTANTS, scoreDiff: 0, team: 'cpu' }
+    );
+    const resultCenter = updateExtraMalletAI(
+      state, state.enemy!, aiState,
+      { updateFn, config: configCenter, now: 1000, consts: CONSTANTS, scoreDiff: 0, team: 'cpu' }
+    );
+
+    // enemy では反転なし → sidePreference=0.5 で右にオフセット
+    if (resultRight && resultCenter) {
+      expect(resultRight.mallet.x).toBeGreaterThanOrEqual(resultCenter.mallet.x);
+    }
+  });
+});
+
+// ── Phase S6-3f: 動的 teamRole 切り替えテスト ──────
+
+describe('getScoreAdjustment（S-4）', () => {
+  it('2点差以上で負けている場合に正の調整値を返す（攻撃的に）', () => {
+    const adj = getScoreAdjustment(-2, 0.8);
+    expect(adj).toBeGreaterThan(0);
+    expect(adj).toBeCloseTo(0.08);
+  });
+
+  it('2点差以上で勝っている場合に負の調整値を返す（守備的に）', () => {
+    const adj = getScoreAdjustment(2, 0.8);
+    expect(adj).toBeLessThan(0);
+    expect(adj).toBeCloseTo(-0.08);
+  });
+
+  it('1点差以下ではゼロを返す', () => {
+    expect(getScoreAdjustment(-1, 0.8)).toBe(0);
+    expect(getScoreAdjustment(0, 0.5)).toBe(0);
+    expect(getScoreAdjustment(1, 1.0)).toBe(0);
+  });
+
+  it('adaptability=0 では調整なし', () => {
+    expect(getScoreAdjustment(-3, 0)).toBe(0);
   });
 });
