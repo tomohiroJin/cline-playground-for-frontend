@@ -377,6 +377,75 @@ const gamepads = navigator.getGamepads();
 | 打ち返し角度の調整が難しい（ゲームバランス） | 中 | `deflectionBias` の範囲を狭く設定、プレイテストで調整 |
 | AI 間引きと reactionDelay の二重遅延（MF-3） | 高 | reactionDelay にフレームスキップを統合し二重計上を防止 |
 | Enter キー誤操作で設定喪失（MF-1） | 中 | 安全な操作に初期フォーカス、破壊的操作は明示クリック |
+| 確認ダイアログ全モード適用による UX 退行 | 低 | リザルト画面は確認不要のまま維持。モード別メッセージで文脈を提供 |
+
+## Phase S6-8: 手動確認フィードバック修正（2026-04-01）
+
+### 背景
+
+S6-7 の手動確認で以下 3 件のフィードバックが報告された。
+
+| # | 問題 | 影響 |
+|---|------|------|
+| FB-1 | 終了確認ダイアログが 2v2 のみで他モードでは表示されず一貫性がない | 全モードで意図せずメニューに戻るリスク |
+| FB-2 | 画像読み込み時のタイムラグで一瞬レイアウトが崩れる | キャラ選択・TeamSetup で CLS（レイアウトシフト）が発生 |
+| FB-3 | ストーリーモードの会話ウィンドウ表示/非表示時に一瞬ガタつく | DialogueOverlay のポートレート表示・テキスト領域でリフロー発生 |
+
+### Phase S6-8a: 終了確認ダイアログの全モード対応（FB-1）
+
+**問題の詳細**:
+S6-6 で `handleGameMenuClick` / `handleResultBackToMenu` に確認ダイアログを追加したが、
+条件分岐 `mode.gameMode === '2v2-local'` により 2v2 のみ表示される。
+他モード（free / story / 2p-local）では確認なしで即座にメニューに戻る。
+
+**修正方針**:
+1. `handleGameMenuClick` の条件分岐を削除し、**全モードで**確認ダイアログを表示する
+2. ダイアログのメッセージをモードに応じて動的に変更:
+   - 2v2: 「チーム設定がリセットされます」（現行）
+   - ストーリー: 「進行中のステージが中断されます」
+   - フリー/2P: 「対戦が中断されます」
+3. `handleResultBackToMenu`（リザルト画面）は**確認不要のまま**
+   - リザルト画面では試合が完了済みのため、確認なしでメニューに戻って問題ない
+4. ConfirmDialog コンポーネント自体は変更なし（汎用設計済み）
+
+**影響範囲**: `presentation/AirHockeyGame.tsx`（条件分岐の変更のみ）
+
+### Phase S6-8b: 画像プリロードによる CLS 防止（FB-2）
+
+**問題の詳細**:
+- `CharacterAvatar`, `TeamSetupScreen`, `CharacterSelectScreen` で `<img>` タグが画像をオンデマンドで読み込む
+- 画像の読み込み完了前にレイアウトが確定するため、読み込み完了時にサイズが変わり CLS が発生
+- `useImagePreloader` フックは存在するが、ストーリーモードのステージアセットのみに使用
+
+**修正方針**:
+1. `CharacterAvatar` コンポーネントに `width` / `height` 属性を明示的に設定（既に `size` prop があるので活用）
+   - これだけで画像読み込み前でもスペースが確保され CLS を防止
+2. `TeamSetupScreen` のスロット/グリッド内 `<img>` にも固定サイズを設定
+3. `CharacterSelectScreen` のグリッド内 `<img>` にも固定サイズを設定
+4. オプション: 画像ロード中のフォールバック表示（キャラ名イニシャル）を画像ロード完了まで表示
+   - `CharacterAvatar` には既に `onError` フォールバックがあるので、`onLoad` でロード完了を検知する形に拡張
+
+**影響範囲**: `components/CharacterAvatar.tsx`, `components/TeamSetupScreen.tsx`, `components/CharacterSelectScreen.tsx`
+
+### Phase S6-8c: DialogueOverlay のレイアウト安定化（FB-3）
+
+**問題の詳細**:
+DialogueOverlay で以下のタイミングでレイアウトシフトが発生:
+1. ポートレート画像の表示/非表示切り替え（条件レンダリング `portraitUrl ? <img> : <spacer>`）
+2. テキスト表示中の高さ変動（`minHeight: '3em'` だがテキスト量で拡張）
+3. 進行インジケーター（「▼ タップで次へ」）の出現で下部が押し下げられる
+
+**修正方針**:
+1. **ポートレート領域**: 常に `flex: 1` の固定コンテナを維持し、中身だけを切り替える
+   - 条件レンダリング（別要素の差し替え）を避け、`<img>` の `opacity` と `visibility` で制御
+   - `portraitUrl` がない場合も同じコンテナ構造を維持
+2. **テキスト領域**: 固定高さを設定し、`overflow: hidden` で溢れを防止
+   - `minHeight: '3em'` → `height: '4.8em'`（3行分 = 1rem × 1.6 × 3）に変更
+   - テキストが3行を超えないことが前提（超える場合は `overflow: hidden` で切れるが実用上問題なし）
+3. **進行インジケーター**: `visibility: hidden` / `visible` で切り替え（`display` で消さない）
+   - 常にスペースを確保し、表示/非表示でレイアウトに影響しない
+
+**影響範囲**: `components/DialogueOverlay.tsx`
 
 ## 完了チェックリスト
 

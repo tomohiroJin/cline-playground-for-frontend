@@ -207,6 +207,57 @@
   - gameplay.md: ペアマッチ操作表に Gamepad 対応を追加 + 確認ダイアログ記載
   - architecture.md: gamepad.ts / character-ai-profiles.ts / useGamepadInput.ts を追加
 
+## Phase S6-8: 手動確認フィードバック修正（S）
+
+### S6-8a: 終了確認ダイアログの全モード対応（FB-1）
+
+- [x] **S6-8-1**: `handleGameMenuClick` の `mode.gameMode === '2v2-local'` 条件を削除し、全モードで `setShowExitConfirm(true)` を呼ぶ
+  - 対象: `presentation/AirHockeyGame.tsx`
+- [x] **S6-8-2**: ダイアログの `message` をモードに応じて動的に変更
+  - `core/exit-confirm.ts` に `getExitConfirmMessage` ヘルパーを新規作成
+  - 2v2: 「チーム設定がリセットされます」
+  - story: 「進行中のステージが中断されます」
+  - free/2p-local: 「対戦が中断されます」
+- [x] **S6-8-3**: `handleResultBackToMenu` は確認不要 — 2v2 条件分岐を削除し直接遷移に統一
+  - 対象: `presentation/AirHockeyGame.tsx`
+- [x] **S6-8-4**: テスト — 全モードでモード別メッセージの検証（4テスト）
+  - `core/exit-confirm.test.ts` 新規
+
+### S6-8b: 画像プリロードによる CLS 防止（FB-2）
+
+- [x] **S6-8-5**: `CharacterAvatar` に画像ロード前フォールバック表示を追加
+  - `onLoad` で `isImageLoaded` フラグを管理し、ロード前はイニシャル表示
+  - `width`/`height` 属性は既存 `size` prop を活用して明示設定
+  - 対象: `components/CharacterAvatar.tsx`
+- [x] **S6-8-6**: `TeamSetupScreen` のスロット/グリッド内 `<img>` に `width`/`height` 属性追加
+  - 対象: `components/TeamSetupScreen.tsx`
+- [x] **S6-8-7**: `CharacterSelectScreen` の全 `<img>` に `width`/`height` 属性追加
+  - 対象: `components/CharacterSelectScreen.tsx`
+- [x] **S6-8-8**: テスト — 画像ロード前フォールバック/ロード後/エラー時（5テスト）
+  - `components/CharacterAvatar.test.tsx` 新規
+
+### S6-8c: DialogueOverlay のレイアウト安定化（FB-3）
+
+- [x] **S6-8-9**: ポートレート領域の条件レンダリングを廃止し、統一コンテナ構造に変更
+  - `portraitUrl ? <img> : <spacer>` → 常に `portrait-container` div、中身の `<img>` のみ条件付き
+  - 対象: `components/DialogueOverlay.tsx`
+- [x] **S6-8-10**: テキスト領域に固定高さを設定（`minHeight: '3em'` → `height: '4.8em'` + `overflow: hidden`）
+  - 対象: `components/DialogueOverlay.tsx`
+- [x] **S6-8-11**: 進行インジケーターを `visibility: hidden/visible` で切り替え（常にスペース確保）
+  - 対象: `components/DialogueOverlay.tsx`
+- [x] **S6-8-12**: テスト — レイアウト安定化の5テスト追加
+  - `components/DialogueOverlay.test.tsx` に追記
+
+### S6-8d: 品質保証
+
+- [x] **S6-8-13**: 型チェック・テスト全パス・ビルド成功
+  - 604スイート / 7685テスト全パス、型エラーなし、ESLint エラーなし、ビルド成功
+- [x] **S6-8-14**: 全モード動作確認 — E2E 打鍵チェック 4/4 パス
+  - フリー対戦: 確認ダイアログ表示 + 「対戦が中断されます」メッセージ確認
+  - フリー対戦: 「メニューに戻る」でタイトル画面遷移確認
+  - 2P 対戦: 画像 width/height 属性の存在確認
+  - ストーリー: テキスト固定高さ + インジケーター visibility 確認
+
 ---
 
 ## サイズ見積もり
@@ -220,6 +271,7 @@
 | S6-5 | L | 8-9 | 〜500行 | R-2（トースト通知）、S-2（非線形カーブ） |
 | S6-6 | M | 3-4 | 〜180行 | MF-1（安全キーマップ）、MF-2（TeamSetup除外）、R-1（アニメーション）、S-3（共通化） |
 | S6-7 | M | 4-5 | ドキュメント更新 | — |
+| S6-8 | S | 4-5 | 〜80行 | FB-1, FB-2, FB-3（手動確認フィードバック） |
 
 ## 進捗サマリー
 
@@ -232,3 +284,4 @@
 | S6-5 Gamepad P3/P4 人間操作 | [x] コア+状態管理完了 | 2026-03-31 |
 | S6-6 中断確認ダイアログ | [x] 完了 | 2026-03-31 |
 | S6-7 テスト・品質保証 | [x] 自動検証完了（手動確認は別途） | 2026-03-31 |
+| S6-8 手動確認フィードバック修正 | [x] 自動検証完了（手動確認は別途） | 2026-04-01 |

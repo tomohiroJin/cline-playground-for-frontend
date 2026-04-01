@@ -14,6 +14,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import { EntityFactory } from '../core/entities';
+import { getExitConfirmMessage } from '../core/exit-confirm';
 import { CONSTANTS } from '../core/constants';
 import { FIELDS, PAIR_MATCH_GOAL_SIZES } from '../core/config';
 import { getCharacterByDifficulty, findCharacterById, getBattleCharacters, PLAYER_CHARACTER } from '../core/characters';
@@ -254,15 +255,11 @@ const AirHockeyGame: React.FC = () => {
     const sf = mode.currentStage ? (FIELDS.find(f => f.id === mode.currentStage!.fieldId) ?? FIELDS[0]) : mode.field;
     startGame(sf);
   }, [mode.currentStage, mode.field, startGame]);
-  // S6-6: 2v2 モードでの中断確認ダイアログ
+  // S6-8a: 全モードで中断確認ダイアログを表示
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const handleGameMenuClick = useCallback(() => {
-    if (mode.gameMode === '2v2-local') {
-      setShowExitConfirm(true);
-    } else {
-      audio.getSound().bgmStop(); mode.resetToFree(); navigateTo('menu');
-    }
-  }, [audio, mode, navigateTo]);
+    setShowExitConfirm(true);
+  }, []);
   const handlePostDialogueComplete = useCallback(() => {
     if (mode.currentStage?.isChapterFinale && winner === 'player') {
       navigateTo('victoryCutIn');
@@ -271,11 +268,7 @@ const AirHockeyGame: React.FC = () => {
     }
   }, [mode.currentStage, winner, navigateTo]);
   const handleResultBackToMenu = useCallback(() => {
-    if (mode.gameMode === '2v2-local') {
-      setShowExitConfirm(true);
-    } else {
-      mode.resetToFree(); navigateTo('menu');
-    }
+    mode.resetToFree(); navigateTo('menu');
   }, [mode, navigateTo]);
   const handleExitConfirm = useCallback(() => {
     setShowExitConfirm(false);
@@ -567,7 +560,7 @@ const AirHockeyGame: React.FC = () => {
       <ConfirmDialog
         isOpen={showExitConfirm}
         title="ゲームを終了しますか？"
-        message="チーム設定がリセットされます"
+        message={getExitConfirmMessage(mode.gameMode)}
         confirmLabel="メニューに戻る"
         cancelLabel="続ける"
         onConfirm={handleExitConfirm}

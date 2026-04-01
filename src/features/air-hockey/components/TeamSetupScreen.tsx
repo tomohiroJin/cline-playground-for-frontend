@@ -102,7 +102,7 @@ const CharacterSlot: React.FC<{
         tabIndex={0}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onToggle(); }}
       >
-        <img src={character.icon} alt={character.name} style={styles.slotIcon} />
+        <img src={character.icon} alt={character.name} width={36} height={36} style={styles.slotIcon} />
         <div style={styles.slotInfo}>
           <span style={styles.slotLabel}>{label}</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -127,7 +127,7 @@ const CharacterSlot: React.FC<{
                   disabled={locked}
                 >
                   <div style={{ position: 'relative', display: 'inline-block' }}>
-                    <img src={c.icon} alt={c.name} style={styles.gridCardIcon(locked)} />
+                    <img src={c.icon} alt={c.name} width={32} height={32} style={styles.gridCardIcon(locked)} />
                     {locked && <span style={styles.lockOverlay}>🔒</span>}
                     <span style={{ position: 'absolute', bottom: -2, right: -2, fontSize: '12px', lineHeight: 1 }}>
                       <RoleBadge characterId={c.id} size={12} />
