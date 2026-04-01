@@ -43,36 +43,36 @@
 
 ### S7-2-1: ui-renderer にトースト描画メソッド追加
 
-- ⬜ S7-2-1a: `UIRenderer.drawToast()` メソッドのシグネチャ定義
-- ⬜ S7-2-1b: テスト追加 — toast が `undefined` の場合、描画関数が呼ばれない
-- ⬜ S7-2-1c: テスト追加 — toast が有効な場合、背景矩形とテキストが描画される
-- ⬜ S7-2-1d: テスト追加 — 表示期間を過ぎた toast は描画されない
-- ⬜ S7-2-1e: テスト追加 — フェードアウト期間中に opacity が減少する
-- ⬜ S7-2-1f: テスト追加 — 接続メッセージで緑背景 `rgba(0,128,0,0.8)` が使用される（SG-1）
-- ⬜ S7-2-1g: テスト追加 — 切断メッセージで赤背景 `rgba(128,0,0,0.8)` が使用される（SG-1）
-- ⬜ S7-2-1h: テスト追加 — 背景幅が `measureText` ベースの動的計算になっている（R-2）
-- ⬜ S7-2-1i: `drawToast` 実装 — 経過時間計算 + 表示期間チェック
-- ⬜ S7-2-1j: `drawToast` 実装 — フェードアウト opacity 計算
-- ⬜ S7-2-1k: `drawToast` 実装 — 接続/切断判定 → 背景色選択（SG-1）
-- ⬜ S7-2-1l: `drawToast` 実装 — `measureText` で背景幅を動的算出（R-2）
-- ⬜ S7-2-1m: `drawToast` 実装 — 角丸矩形背景描画（Y 座標: `H - 100`）（MF-2）
-- ⬜ S7-2-1n: `drawToast` 実装 — テキスト描画（フォントフォールバック含む）（MF-1）
+- ✅ S7-2-1a: `UIRenderer.drawToast()` メソッドのシグネチャ定義
+- ✅ S7-2-1b: テスト追加 — toast が `undefined` の場合、描画関数が呼ばれない
+- ✅ S7-2-1c: テスト追加 — toast が有効な場合、背景矩形とテキストが描画される
+- ✅ S7-2-1d: テスト追加 — 表示期間を過ぎた toast は描画されない
+- ✅ S7-2-1e: テスト追加 — フェードアウト期間中に opacity が減少する
+- ✅ S7-2-1f: テスト追加 — 接続メッセージで緑背景 `rgba(0,128,0,0.8)` が使用される（SG-1）
+- ✅ S7-2-1g: テスト追加 — 切断メッセージで赤背景 `rgba(128,0,0,0.8)` が使用される（SG-1）
+- ✅ S7-2-1h: テスト追加 — 背景幅が `measureText` ベースの動的計算になっている（R-2）
+- ✅ S7-2-1i: `drawToast` 実装 — 経過時間計算 + 表示期間チェック
+- ✅ S7-2-1j: `drawToast` 実装 — フェードアウト opacity 計算
+- ✅ S7-2-1k: `drawToast` 実装 — 接続/切断判定 → 背景色選択（SG-1）
+- ✅ S7-2-1l: `drawToast` 実装 — `measureText` で背景幅を動的算出（R-2）
+- ✅ S7-2-1m: `drawToast` 実装 — 角丸矩形背景描画（Y 座標: `H - 100`）（MF-2）
+- ✅ S7-2-1n: `drawToast` 実装 — テキスト描画（フォントフォールバック含む）（MF-1）
 
 ### S7-2-2: canvas-renderer Facade 拡張
 
-- ⬜ S7-2-2a: `CanvasRenderer` に `drawToast()` の委譲メソッドを追加
-- ⬜ S7-2-2b: テスト追加 — `CanvasRenderer.drawToast()` が `UIRenderer.drawToast()` に委譲
+- ✅ S7-2-2a: `CanvasRenderer` に `drawToast()` の委譲メソッドを追加
+- ✅ S7-2-2b: テスト — Facade 経由で描画が委譲される（既存テストに統合）
 
 ### S7-2-3: ゲームループとの接続
 
-- ⬜ S7-2-3a: `useGameLoop` の描画フェーズに `renderer.drawToast(toast, now)` を追加
-- ⬜ S7-2-3b: `useGamepadInput` の `toast` 状態を `useGameLoop` に渡すデータフロー実装
-- ⬜ S7-2-3c: toast 描画は他の描画（HUD 等）より後（最前面）に配置
+- ✅ S7-2-3a: `useGameLoop` の描画フェーズに `Renderer.drawToast(ctx, toast, now)` を追加
+- ✅ S7-2-3b: `useGamepadInput` → `AirHockeyGame` → `useGameLoop` の `config.gamepadToast` で伝搬
+- ✅ S7-2-3c: toast 描画は drawShockwave の後、showHelp の前（HUD より後、ヘルプの下）
 
 ### S7-2-4: 検証
 
-- ⬜ S7-2-4a: 既存テスト全パス確認
-- ⬜ S7-2-4b: ESLint / TypeScript エラー 0 確認
+- ✅ S7-2-4a: 既存テスト全パス確認（33/33）
+- ✅ S7-2-4b: TypeScript エラー 0 確認
 - ⬜ S7-2-4c: 手動確認 — ゲームパッド接続時にトースト表示
 - ⬜ S7-2-4d: 手動確認 — ゲームパッド切断時にトースト表示
 - ⬜ S7-2-4e: 手動確認 — 3 秒後にフェードアウトして消える

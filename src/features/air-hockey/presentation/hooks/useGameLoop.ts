@@ -19,6 +19,7 @@ import { CONSTANTS, DEFAULT_PLAYER_MALLET_COLOR, DEFAULT_CPU_MALLET_COLOR, getPl
 import { ITEMS } from '../../core/config';
 import { magnitude, randomRange, clamp } from '../../../../utils/math-utils';
 import { Renderer } from '../../renderer';
+import type { GamepadToast } from '../../hooks/useGamepadInput';
 import type {
   GameState,
   FieldConfig,
@@ -74,6 +75,8 @@ export type GameLoopConfig = {
   /** P3/P4 の操作タイプ（2v2 + Gamepad 時のみ使用） */
   enemy1ControlType?: 'cpu' | 'human';
   enemy2ControlType?: 'cpu' | 'human';
+  /** ゲームパッド接続/切断トースト（Canvas 描画用） */
+  gamepadToast?: GamepadToast;
 };
 
 /** Ref グループ（ゲームループが参照・更新する ref） */
@@ -139,7 +142,7 @@ function applyGamepadToMallet(
  * - callbacks: React state 更新コールバック
  */
 export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGameLoopParams): void {
-  const { difficulty: diff, field, winScore, getSound, bgmEnabled, gameMode, aiConfig, playerMalletColor, cpuMalletColor, allyControlType, allyCharacterId, enemyCharacter1Id, enemyCharacter2Id, enemy1ControlType, enemy2ControlType } = config;
+  const { difficulty: diff, field, winScore, getSound, bgmEnabled, gameMode, aiConfig, playerMalletColor, cpuMalletColor, allyControlType, allyCharacterId, enemyCharacter1Id, enemyCharacter2Id, enemy1ControlType, enemy2ControlType, gamepadToast } = config;
   const pColor = playerMalletColor ?? DEFAULT_PLAYER_MALLET_COLOR;
   const cColor = cpuMalletColor ?? DEFAULT_CPU_MALLET_COLOR;
   const {
@@ -900,6 +903,9 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       }
 
       Renderer.drawShockwave(ctx, hitStop);
+
+      // ゲームパッドトースト通知（最前面、ヘルプの下）
+      Renderer.drawToast(ctx, gamepadToast, now);
 
       if (showHelp) {
         Renderer.drawHelp(ctx, consts, field);

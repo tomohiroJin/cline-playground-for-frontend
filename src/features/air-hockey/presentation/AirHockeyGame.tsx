@@ -37,6 +37,7 @@ import { useMultiTouchInput } from '../hooks/useMultiTouchInput';
 import { useGameLoop } from './hooks/useGameLoop';
 import { useScreenNavigation } from './hooks/useScreenNavigation';
 import { useGameMode } from './hooks/useGameMode';
+import { useGamepadInput } from '../hooks/useGamepadInput';
 import { useResultProcessing } from './hooks/useResultProcessing';
 import { useAudioManager } from './hooks/useAudioManager';
 import { TitleScreen } from '../components/TitleScreen';
@@ -66,6 +67,7 @@ const AirHockeyGame: React.FC = () => {
   const { screen, transitioning, navigateTo, navigateWithTransition } = useScreenNavigation();
   const mode = useGameMode();
   const audio = useAudioManager();
+  const { toast: gamepadToast } = useGamepadInput();
   const dex = useCharacterDex();
 
   // ── ゲームセッション状態 ──
@@ -391,6 +393,7 @@ const AirHockeyGame: React.FC = () => {
       enemyCharacter2Id: is2v2Mode ? pairEnemy2.id : undefined,
       enemy1ControlType: is2v2Mode ? mode.enemy1ControlType : undefined,
       enemy2ControlType: is2v2Mode ? mode.enemy2ControlType : undefined,
+      gamepadToast,
     },
     refs: {
       gameRef, canvasRef, lastInputRef, scoreRef, phaseRef, countdownStartRef, shakeRef, statsRef, matchStartRef, keysRef,
