@@ -97,6 +97,7 @@ export class EffectRenderer {
 
   /** パーティクル描画 */
   drawParticles(particles: Particle[]): void {
+    if (particles.length === 0) return;
     for (const p of particles) {
       const alpha = p.life / p.maxLife;
       this.ctx.beginPath();

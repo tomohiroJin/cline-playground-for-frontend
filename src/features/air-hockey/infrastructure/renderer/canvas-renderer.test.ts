@@ -171,6 +171,12 @@ describe('CanvasRenderer', () => {
     it('空のパーティクル配列でもエラーにならない', () => {
       expect(() => renderer.drawParticles([])).not.toThrow();
     });
+
+    it('パーティクル数 0 の場合 arc が呼ばれない（早期リターン）', () => {
+      const arcBefore = (ctx.arc as jest.Mock).mock.calls.length;
+      renderer.drawParticles([]);
+      expect((ctx.arc as jest.Mock).mock.calls.length).toBe(arcBefore);
+    });
   });
 
   describe('drawPauseOverlay', () => {

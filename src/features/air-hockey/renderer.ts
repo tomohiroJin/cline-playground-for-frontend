@@ -567,6 +567,7 @@ export const Renderer = {
   },
   // ゴールパーティクル描画
   drawParticles(ctx: CanvasRenderingContext2D, particles: Particle[]) {
+    if (particles.length === 0) return;
     for (const p of particles) {
       const alpha = p.life / p.maxLife;
       ctx.beginPath();

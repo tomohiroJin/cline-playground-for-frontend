@@ -248,6 +248,9 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
     ): T => {
       const mallets = getAllMallets(game);
 
+      /** 速度による 1 フレーム移動分のバッファ */
+      const QUICK_REJECT_MARGIN = 2;
+
       for (const { mallet, isPlayer, side } of mallets) {
         const effectState = game.effects[side];
         if (!effectState) continue;
@@ -260,6 +263,10 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         const comebackScale = scoreDiff >= consts.COMEBACK.THRESHOLD ? 1 + consts.COMEBACK.MALLET_BONUS : 1;
 
         const effectiveMR = MR * bigScale * comebackScale;
+
+        // 衝突判定の早期リターン（S7-3a）
+        if (quickReject(obj, mallet, radius + effectiveMR + QUICK_REJECT_MARGIN)) continue;
+
         const col = Physics.detectCollision(obj.x, obj.y, radius, mallet.x, mallet.y, effectiveMR);
         if (col) {
           const speed = magnitude(mallet.vx, mallet.vy);
@@ -1020,5 +1027,5 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       phaseRef, countdownStartRef, shakeRef, setShake, bgmEnabled,
       statsRef, matchStartRef, keysRef,
       is2PMode, is2v2Mode, pColor, cColor, playerTargetRef, player2KeysRef, multiTouchRef, aiConfig,
-      allyControlType, allyCharacterId, enemyCharacter1Id, enemyCharacter2Id, enemy1ControlType, enemy2ControlType]);
+      allyControlType, allyCharacterId, enemyCharacter1Id, enemyCharacter2Id, enemy1ControlType, enemy2ControlType, gamepadToast]);
 }
