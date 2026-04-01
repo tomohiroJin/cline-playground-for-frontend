@@ -47,13 +47,21 @@ const hexToRgba = (hex: string, alpha: number): string => {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
+/** ラベルスタイル定数 */
+const LABEL_FONT_SIZE = '12px';
+const LABEL_COLOR_CPU = '#888';
+const TEAM1_COLOR = '#3498db';
+const TEAM2_COLOR = '#e74c3c';
+
 /** キャラクター立ち絵パネル */
 const CharacterPanel: React.FC<{
   character: Character;
   translateX?: number;
   prefersReducedMotion?: boolean;
   label?: string;
-}> = ({ character, translateX = 0, prefersReducedMotion = false, label }) => {
+  labelColor?: string;
+  labelBold?: boolean;
+}> = ({ character, translateX = 0, prefersReducedMotion = false, label, labelColor, labelBold }) => {
   const hasPortrait = Boolean(character.portrait);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
@@ -84,10 +92,25 @@ const CharacterPanel: React.FC<{
         {character.name}
       </span>
       {label && (
-        <span style={{ fontSize: '10px', color: '#aaa' }}>{label}</span>
+        <span style={{
+          fontSize: LABEL_FONT_SIZE,
+          color: labelColor ?? LABEL_COLOR_CPU,
+          fontWeight: labelBold ? 'bold' : 'normal',
+        }}>{label}</span>
       )}
     </div>
   );
+};
+
+/** 操作タイプからラベルテキスト・色・太字を導出 */
+const resolveControlLabel = (
+  controlType: 'cpu' | 'human' | undefined,
+  humanLabel: string,
+  teamColor: string,
+): { label?: string; labelColor?: string; labelBold?: boolean } => {
+  if (controlType == null) return {};
+  if (controlType === 'cpu') return { label: 'CPU', labelColor: LABEL_COLOR_CPU };
+  return { label: humanLabel, labelColor: teamColor, labelBold: true };
 };
 
 type VsScreenProps = {
@@ -104,6 +127,10 @@ type VsScreenProps = {
   enemyCharacter2?: Character;
   /** P2 の操作タイプ（2v2 時） */
   allyControlType?: 'cpu' | 'human';
+  /** P3 の操作タイプ（2v2 時） */
+  enemy1ControlType?: 'cpu' | 'human';
+  /** P4 の操作タイプ（2v2 時） */
+  enemy2ControlType?: 'cpu' | 'human';
 };
 
 export const VsScreen: React.FC<VsScreenProps> = ({
@@ -116,6 +143,8 @@ export const VsScreen: React.FC<VsScreenProps> = ({
   allyCharacter,
   enemyCharacter2,
   allyControlType,
+  enemy1ControlType,
+  enemy2ControlType,
 }) => {
   const prefersReducedMotion = typeof window !== 'undefined'
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -194,10 +223,10 @@ export const VsScreen: React.FC<VsScreenProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px' }}>
           {/* チーム1 */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-            <span style={{ fontSize: '12px', color: '#3498db', fontWeight: 'bold' }}>チーム1</span>
+            <span style={{ fontSize: '12px', color: TEAM1_COLOR, fontWeight: 'bold' }}>チーム1</span>
             <div style={{ display: 'flex', gap: '12px', transform: `translateX(${teamTranslateX}px)`, transition: prefersReducedMotion ? 'none' : `transform ${CHAR_SLIDE_DURATION_MS}ms ease-out` }}>
               <CharacterPanel character={playerCharacter} prefersReducedMotion={prefersReducedMotion} />
-              <CharacterPanel character={allyCharacter} prefersReducedMotion={prefersReducedMotion} label={allyControlType != null ? (allyControlType === 'human' ? '2P' : 'CPU') : undefined} />
+              <CharacterPanel character={allyCharacter} prefersReducedMotion={prefersReducedMotion} {...resolveControlLabel(allyControlType, '2P', TEAM1_COLOR)} />
             </div>
           </div>
 
@@ -205,10 +234,10 @@ export const VsScreen: React.FC<VsScreenProps> = ({
 
           {/* チーム2 */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-            <span style={{ fontSize: '12px', color: '#e74c3c', fontWeight: 'bold' }}>チーム2</span>
+            <span style={{ fontSize: '12px', color: TEAM2_COLOR, fontWeight: 'bold' }}>チーム2</span>
             <div style={{ display: 'flex', gap: '12px', transform: `translateX(${enemyTranslateX}px)`, transition: prefersReducedMotion ? 'none' : `transform ${CHAR_SLIDE_DURATION_MS}ms ease-out` }}>
-              <CharacterPanel character={cpuCharacter} prefersReducedMotion={prefersReducedMotion} />
-              <CharacterPanel character={enemyCharacter2} prefersReducedMotion={prefersReducedMotion} />
+              <CharacterPanel character={cpuCharacter} prefersReducedMotion={prefersReducedMotion} {...resolveControlLabel(enemy1ControlType, '3P', TEAM2_COLOR)} />
+              <CharacterPanel character={enemyCharacter2} prefersReducedMotion={prefersReducedMotion} {...resolveControlLabel(enemy2ControlType, '4P', TEAM2_COLOR)} />
             </div>
           </div>
         </div>

@@ -510,6 +510,8 @@ const AirHockeyGame: React.FC = () => {
           allyCharacter={pairAlly}
           enemyCharacter2={pairEnemy2}
           allyControlType={mode.allyControlType}
+          enemy1ControlType={mode.enemy1ControlType}
+          enemy2ControlType={mode.enemy2ControlType}
         />
       )}
 

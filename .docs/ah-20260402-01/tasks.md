@@ -8,32 +8,32 @@
 
 ### S7-1-1: VsScreen Props 拡張
 
-- ⬜ S7-1-1a: `VsScreenProps` に `enemy1ControlType` / `enemy2ControlType` を追加（optional）
-- ⬜ S7-1-1b: テスト追加 — `enemy1ControlType='cpu'` で P3 に「CPU」ラベル表示
-- ⬜ S7-1-1c: テスト追加 — `enemy1ControlType='human'` で P3 に「3P」ラベル表示
-- ⬜ S7-1-1d: テスト追加 — `enemy2ControlType='cpu'` で P4 に「CPU」ラベル表示
-- ⬜ S7-1-1e: テスト追加 — `enemy2ControlType='human'` で P4 に「4P」ラベル表示
-- ⬜ S7-1-1f: テスト追加 — controlType が `undefined` の場合ラベル非表示
+- ✅ S7-1-1a: `VsScreenProps` に `enemy1ControlType` / `enemy2ControlType` を追加（optional）
+- ✅ S7-1-1b: テスト追加 — `enemy1ControlType='cpu'` で P3 に「CPU」ラベル表示
+- ✅ S7-1-1c: テスト追加 — `enemy1ControlType='human'` で P3 に「3P」ラベル表示
+- ✅ S7-1-1d: テスト追加 — `enemy2ControlType='cpu'` で P4 に「CPU」ラベル表示
+- ✅ S7-1-1e: テスト追加 — `enemy2ControlType='human'` で P4 に「4P」ラベル表示
+- ✅ S7-1-1f: テスト追加 — controlType が `undefined` の場合ラベル非表示
 
 ### S7-1-2: VsScreen ラベル描画実装
 
-- ⬜ S7-1-2a: 2v2 レイアウトの P3 `CharacterPanel` に `label` prop を接続
-- ⬜ S7-1-2b: 2v2 レイアウトの P4 `CharacterPanel` に `label` prop を接続
-- ⬜ S7-1-2c: ラベル文字列変換ロジック実装（`'cpu'` → `'CPU'`, `'human'` → `'3P'`/`'4P'`）
-- ⬜ S7-1-2d: ラベルスタイル変更 — サイズ `10px` → `12px` に拡大（R-1）
-- ⬜ S7-1-2e: 人間操作ラベルにチームカラー着色（Team1: `#3498db` / Team2: `#e74c3c`）（R-1）
-- ⬜ S7-1-2f: CPU ラベルは `#888` 控えめグレーで統一（R-1）
+- ✅ S7-1-2a: 2v2 レイアウトの P3 `CharacterPanel` に `label` prop を接続
+- ✅ S7-1-2b: 2v2 レイアウトの P4 `CharacterPanel` に `label` prop を接続
+- ✅ S7-1-2c: ラベル文字列変換ロジック実装（`resolveControlLabel` ヘルパー）
+- ✅ S7-1-2d: ラベルスタイル変更 — サイズ `10px` → `12px` に拡大（R-1）
+- ✅ S7-1-2e: 人間操作ラベルにチームカラー着色（Team1: `#3498db` / Team2: `#e74c3c`）（R-1）
+- ✅ S7-1-2f: CPU ラベルは `#888` 控えめグレーで統一（R-1）
 
 ### S7-1-3: データフロー接続
 
-- ⬜ S7-1-3a: `AirHockeyGame.tsx` の VsScreen 呼び出しに `enemy1ControlType` を追加
-- ⬜ S7-1-3b: `AirHockeyGame.tsx` の VsScreen 呼び出しに `enemy2ControlType` を追加
-- ⬜ S7-1-3c: `useGameMode` から取得した値が正しく伝搬されることを確認
+- ✅ S7-1-3a: `AirHockeyGame.tsx` の VsScreen 呼び出しに `enemy1ControlType` を追加
+- ✅ S7-1-3b: `AirHockeyGame.tsx` の VsScreen 呼び出しに `enemy2ControlType` を追加
+- ✅ S7-1-3c: `useGameMode` から取得した値が正しく伝搬されることを確認
 
 ### S7-1-4: 検証
 
-- ⬜ S7-1-4a: 既存 VsScreen テスト全パス確認
-- ⬜ S7-1-4b: ESLint / TypeScript エラー 0 確認
+- ✅ S7-1-4a: 既存 VsScreen テスト全パス確認（38/38）
+- ✅ S7-1-4b: ESLint / TypeScript エラー 0 確認
 - ⬜ S7-1-4c: 手動確認 — フリー対戦 VS 画面でラベル非表示
 - ⬜ S7-1-4d: 手動確認 — 2v2 VS 画面で P3/P4 ラベル正常表示
 
