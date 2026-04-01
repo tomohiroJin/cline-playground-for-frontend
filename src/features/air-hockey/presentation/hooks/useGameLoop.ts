@@ -75,8 +75,6 @@ export type GameLoopConfig = {
   /** P3/P4 の操作タイプ（2v2 + Gamepad 時のみ使用） */
   enemy1ControlType?: 'cpu' | 'human';
   enemy2ControlType?: 'cpu' | 'human';
-  /** ゲームパッド接続/切断トースト（Canvas 描画用） */
-  gamepadToast?: GamepadToast;
 };
 
 /** Ref グループ（ゲームループが参照・更新する ref） */
@@ -96,6 +94,8 @@ export type GameLoopRefs = {
   player2KeysRef?: React.MutableRefObject<KeyboardState>;
   /** マルチタッチ状態の Ref（2P タッチ入力用） */
   multiTouchRef?: React.RefObject<import('../../core/multi-touch').MultiTouchState>;
+  /** ゲームパッドトースト Ref（ゲームループ再構築を防ぐため Ref 経由） */
+  gamepadToastRef?: React.MutableRefObject<GamepadToast | undefined>;
 };
 
 /** React state 更新コールバックグループ */
@@ -115,6 +115,9 @@ export type UseGameLoopParams = {
   refs: GameLoopRefs;
   callbacks: GameLoopCallbacks;
 };
+
+/** 衝突判定早期リターンのマージン（1フレーム移動分バッファ） */
+const QUICK_REJECT_MARGIN = 2;
 
 /** ゲームパッド入力をマレットに適用するヘルパー（RC-1: 重複コード解消） */
 function applyGamepadToMallet(
@@ -142,13 +145,14 @@ function applyGamepadToMallet(
  * - callbacks: React state 更新コールバック
  */
 export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGameLoopParams): void {
-  const { difficulty: diff, field, winScore, getSound, bgmEnabled, gameMode, aiConfig, playerMalletColor, cpuMalletColor, allyControlType, allyCharacterId, enemyCharacter1Id, enemyCharacter2Id, enemy1ControlType, enemy2ControlType, gamepadToast } = config;
+  const { difficulty: diff, field, winScore, getSound, bgmEnabled, gameMode, aiConfig, playerMalletColor, cpuMalletColor, allyControlType, allyCharacterId, enemyCharacter1Id, enemyCharacter2Id, enemy1ControlType, enemy2ControlType } = config;
   const pColor = playerMalletColor ?? DEFAULT_PLAYER_MALLET_COLOR;
   const cColor = cpuMalletColor ?? DEFAULT_CPU_MALLET_COLOR;
   const {
     gameRef, canvasRef, lastInputRef, scoreRef,
     phaseRef, countdownStartRef, shakeRef,
     statsRef, matchStartRef, keysRef, playerTargetRef, player2KeysRef, multiTouchRef,
+    gamepadToastRef,
   } = refs;
   const is2PMode = gameMode === '2p-local';
   const is2v2Mode = gameMode === '2v2-local';
@@ -247,9 +251,6 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       now = Date.now()
     ): T => {
       const mallets = getAllMallets(game);
-
-      /** 速度による 1 フレーム移動分のバッファ */
-      const QUICK_REJECT_MARGIN = 2;
 
       for (const { mallet, isPlayer, side } of mallets) {
         const effectState = game.effects[side];
@@ -912,7 +913,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       Renderer.drawShockwave(ctx, hitStop);
 
       // ゲームパッドトースト通知（最前面、ヘルプの下）
-      Renderer.drawToast(ctx, gamepadToast, now);
+      Renderer.drawToast(ctx, gamepadToastRef?.current, now);
 
       if (showHelp) {
         Renderer.drawHelp(ctx, consts, field);
@@ -1027,5 +1028,5 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       phaseRef, countdownStartRef, shakeRef, setShake, bgmEnabled,
       statsRef, matchStartRef, keysRef,
       is2PMode, is2v2Mode, pColor, cColor, playerTargetRef, player2KeysRef, multiTouchRef, aiConfig,
-      allyControlType, allyCharacterId, enemyCharacter1Id, enemyCharacter2Id, enemy1ControlType, enemy2ControlType, gamepadToast]);
+      allyControlType, allyCharacterId, enemyCharacter1Id, enemyCharacter2Id, enemy1ControlType, enemy2ControlType, gamepadToastRef]);
 }

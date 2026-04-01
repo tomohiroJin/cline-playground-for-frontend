@@ -75,6 +75,7 @@ describe('CanvasRenderer', () => {
   beforeEach(() => {
     ctx = createMockContext();
     trackPropertySets(ctx as unknown as Record<string, unknown>, 'fillStyle');
+    trackPropertySets(ctx as unknown as Record<string, unknown>, 'globalAlpha');
     renderer = new CanvasRenderer(ctx, CONSTANTS);
   });
 
@@ -312,14 +313,20 @@ describe('CanvasRenderer', () => {
       expect((ctx.fillText as jest.Mock).mock.calls.length).toBe(fillTextBefore);
     });
 
-    it('フェードアウト期間中に globalAlpha が 1 未満になる', () => {
-      // フェードアウト開始: 3000 - 500 = 2500ms 経過後
+    it('フェードアウト期間中に正しい opacity が設定される', () => {
+      // elapsed=2800, fadeStart=2500, opacity = 1.0 - 300/500 = 0.4
       const toast: GamepadToast = { message: 'test', timestamp: now - 2800 };
       (renderer as CanvasRenderer).drawToast(toast, now);
-      // フェード中に globalAlpha が変更されるはず。restore で元に戻るので
-      // save/restore の呼び出しと globalAlpha 設定を検証
-      expect(ctx.save).toHaveBeenCalled();
-      expect(ctx.restore).toHaveBeenCalled();
+      const alphaValues = getAllPropertySets(ctx, 'globalAlpha').map(Number);
+      expect(alphaValues.some(a => Math.abs(a - 0.4) < 0.01)).toBe(true);
+    });
+
+    it('フェード開始前は opacity が 1.0 である', () => {
+      // elapsed=1000 < fadeStart=2500 → opacity=1.0
+      const toast: GamepadToast = { message: 'test', timestamp: now - 1000 };
+      (renderer as CanvasRenderer).drawToast(toast, now);
+      const alphaValues = getAllPropertySets(ctx, 'globalAlpha').map(Number);
+      expect(alphaValues.some(a => a === 1.0)).toBe(true);
     });
 
     it('接続メッセージで緑背景が使用される', () => {

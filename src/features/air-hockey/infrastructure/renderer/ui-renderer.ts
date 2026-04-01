@@ -6,23 +6,63 @@ import type { GameEffects, FieldConfig, ComboState } from '../../domain/types';
 import type { GameConstants } from '../../core/constants';
 import type { GamepadToast } from '../../hooks/useGamepadInput';
 
-/** トースト表示時間（ms） */
+/** トースト描画定数 */
 const TOAST_DURATION = 3000;
-/** フェードアウト時間（ms） */
 const FADE_DURATION = 500;
-/** Canvas フォント（絵文字フォールバック含む） */
-const TOAST_FONT = "bold 14px 'Arial', 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif";
-/** トーストのパディング */
+const TOAST_FONT_SIZE = 14;
+const TOAST_FONT = `bold ${TOAST_FONT_SIZE}px 'Arial', 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif`;
 const TOAST_PADDING_X = 20;
 const TOAST_PADDING_Y = 10;
-/** トースト Y 座標オフセット（Canvas 下端からの距離） */
 const TOAST_OFFSET_Y = 100;
-/** 接続時の背景色（緑系） */
 const TOAST_BG_CONNECT = 'rgba(0, 128, 0, 0.8)';
-/** 切断時の背景色（赤系） */
 const TOAST_BG_DISCONNECT = 'rgba(128, 0, 0, 0.8)';
-/** トーストの角丸半径 */
 const TOAST_BORDER_RADIUS = 8;
+
+/**
+ * ゲームパッド接続/切断トースト描画（スタンドアロン関数）
+ * UiRenderer クラスと Renderer モジュールの両方から呼び出される
+ */
+export function drawToastOnCanvas(
+  ctx: CanvasRenderingContext2D,
+  toast: GamepadToast | undefined,
+  now: number,
+  canvasWidth: number,
+  canvasHeight: number,
+): void {
+  if (!toast) return;
+
+  const elapsed = now - toast.timestamp;
+  if (elapsed >= TOAST_DURATION) return;
+
+  const fadeStart = TOAST_DURATION - FADE_DURATION;
+  const opacity = elapsed < fadeStart
+    ? 1.0
+    : 1.0 - (elapsed - fadeStart) / FADE_DURATION;
+
+  ctx.save();
+  ctx.globalAlpha = opacity;
+
+  const isDisconnect = toast.message.includes('切断');
+  ctx.fillStyle = isDisconnect ? TOAST_BG_DISCONNECT : TOAST_BG_CONNECT;
+
+  ctx.font = TOAST_FONT;
+  const textWidth = ctx.measureText(toast.message).width;
+  const bgWidth = textWidth + TOAST_PADDING_X * 2;
+  const bgHeight = TOAST_FONT_SIZE + TOAST_PADDING_Y * 2;
+  const bgX = (canvasWidth - bgWidth) / 2;
+  const bgY = canvasHeight - TOAST_OFFSET_Y - bgHeight / 2;
+
+  ctx.beginPath();
+  ctx.roundRect(bgX, bgY, bgWidth, bgHeight, TOAST_BORDER_RADIUS);
+  ctx.fill();
+
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(toast.message, canvasWidth / 2, bgY + bgHeight / 2);
+
+  ctx.restore();
+}
 
 export class UiRenderer {
   constructor(
@@ -177,46 +217,8 @@ export class UiRenderer {
 
   /** ゲームパッド接続/切断トースト描画 */
   drawToast(toast: GamepadToast | undefined, now: number): void {
-    if (!toast) return;
-
-    const elapsed = now - toast.timestamp;
-    if (elapsed >= TOAST_DURATION) return;
-
-    const { WIDTH: W, HEIGHT: H } = this.consts.CANVAS;
-
-    // フェードアウト計算
-    const fadeStart = TOAST_DURATION - FADE_DURATION;
-    const opacity = elapsed < fadeStart
-      ? 1.0
-      : 1.0 - (elapsed - fadeStart) / FADE_DURATION;
-
-    this.ctx.save();
-    this.ctx.globalAlpha = opacity;
-
-    // 接続/切断で背景色を切り替え
-    const isDisconnect = toast.message.includes('切断');
-    this.ctx.fillStyle = isDisconnect ? TOAST_BG_DISCONNECT : TOAST_BG_CONNECT;
-
-    // テキスト幅を計測して背景サイズを算出
-    this.ctx.font = TOAST_FONT;
-    const textWidth = this.ctx.measureText(toast.message).width;
-    const bgWidth = textWidth + TOAST_PADDING_X * 2;
-    const bgHeight = 14 + TOAST_PADDING_Y * 2;
-    const bgX = (W - bgWidth) / 2;
-    const bgY = H - TOAST_OFFSET_Y - bgHeight / 2;
-
-    // 角丸矩形背景
-    this.ctx.beginPath();
-    this.ctx.roundRect(bgX, bgY, bgWidth, bgHeight, TOAST_BORDER_RADIUS);
-    this.ctx.fill();
-
-    // テキスト描画
-    this.ctx.fillStyle = '#ffffff';
-    this.ctx.textAlign = 'center';
-    this.ctx.textBaseline = 'middle';
-    this.ctx.fillText(toast.message, W / 2, bgY + bgHeight / 2);
-
-    this.ctx.restore();
+    const { WIDTH, HEIGHT } = this.consts.CANVAS;
+    drawToastOnCanvas(this.ctx, toast, now, WIDTH, HEIGHT);
   }
 
   /** コンボ表示描画 */

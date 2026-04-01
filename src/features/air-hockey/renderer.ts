@@ -15,6 +15,7 @@ import {
   HitStopState,
 } from './core/types';
 import type { GamepadToast } from './hooks/useGamepadInput';
+import { drawToastOnCanvas } from './infrastructure/renderer/ui-renderer';
 import { magnitude } from '../../utils/math-utils';
 import {
   lightenColor as _lightenColor,
@@ -783,47 +784,10 @@ export const Renderer = {
     ctx.restore();
   },
 
-  /** ゲームパッド接続/切断トースト描画 */
+  /** ゲームパッド接続/切断トースト描画（drawToastOnCanvas に委譲） */
   drawToast(ctx: CanvasRenderingContext2D, toast: GamepadToast | undefined, now: number, consts: GameConstants = CONSTANTS) {
-    if (!toast) return;
-
-    const TOAST_DURATION = 3000;
-    const FADE_DURATION = 500;
-    const elapsed = now - toast.timestamp;
-    if (elapsed >= TOAST_DURATION) return;
-
-    const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
-
-    const fadeStart = TOAST_DURATION - FADE_DURATION;
-    const opacity = elapsed < fadeStart
-      ? 1.0
-      : 1.0 - (elapsed - fadeStart) / FADE_DURATION;
-
-    ctx.save();
-    ctx.globalAlpha = opacity;
-
-    const isDisconnect = toast.message.includes('切断');
-    ctx.fillStyle = isDisconnect ? 'rgba(128, 0, 0, 0.8)' : 'rgba(0, 128, 0, 0.8)';
-
-    ctx.font = "bold 14px 'Arial', 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif";
-    const textWidth = ctx.measureText(toast.message).width;
-    const padX = 20;
-    const padY = 10;
-    const bgW = textWidth + padX * 2;
-    const bgH = 14 + padY * 2;
-    const bgX = (W - bgW) / 2;
-    const bgY = H - 100 - bgH / 2;
-
-    ctx.beginPath();
-    ctx.roundRect(bgX, bgY, bgW, bgH, 8);
-    ctx.fill();
-
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(toast.message, W / 2, bgY + bgH / 2);
-
-    ctx.restore();
+    const { WIDTH, HEIGHT } = consts.CANVAS;
+    drawToastOnCanvas(ctx, toast, now, WIDTH, HEIGHT);
   },
 
   // 試合統計をリザルト画面用にフォーマット

@@ -68,6 +68,8 @@ const AirHockeyGame: React.FC = () => {
   const mode = useGameMode();
   const audio = useAudioManager();
   const { toast: gamepadToast } = useGamepadInput();
+  const gamepadToastRef = useRef(gamepadToast);
+  gamepadToastRef.current = gamepadToast;
   const dex = useCharacterDex();
 
   // ── ゲームセッション状態 ──
@@ -393,13 +395,13 @@ const AirHockeyGame: React.FC = () => {
       enemyCharacter2Id: is2v2Mode ? pairEnemy2.id : undefined,
       enemy1ControlType: is2v2Mode ? mode.enemy1ControlType : undefined,
       enemy2ControlType: is2v2Mode ? mode.enemy2ControlType : undefined,
-      gamepadToast,
     },
     refs: {
       gameRef, canvasRef, lastInputRef, scoreRef, phaseRef, countdownStartRef, shakeRef, statsRef, matchStartRef, keysRef,
       playerTargetRef,
       player2KeysRef: (is2PMode || is2v2Mode) ? player2KeysRef : undefined,
       multiTouchRef: (is2PMode || is2v2Mode) ? multiTouchRef : undefined,
+      gamepadToastRef,
     },
     callbacks: { setScores, setWinner, setScreen: handleScreenChange, setShowHelp, setShake },
   });
