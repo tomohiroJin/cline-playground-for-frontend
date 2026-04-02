@@ -120,5 +120,5 @@
 
 - ✅ S7-3-7a: 全テストスイート 604 スイート / 7704 テスト全パス
 - ✅ S7-3-7b: ESLint エラー 0 / TypeScript エラー 0
-- ⬜ S7-3-7c: `npm run ci` 全パス確認
+- ✅ S7-3-7c: `npm run ci` 全パス確認（lint:ci + typecheck + test + build）
 - ⬜ S7-3-7d: 手動確認 — 全モードで正常動作（フリー対戦・ストーリー・2P・ペアマッチ）
