@@ -8,56 +8,56 @@
 
 ### S8-1-0: 事前準備
 
-- ⬜ S8-1-0a: リファクタリング前のベースライン確認（`npm run ci` 全パス）
-- ⬜ S8-1-0b: AirHockeyGame.tsx の現在行数を記録（ベースライン: 586 行）
+- ✅ S8-1-0a: リファクタリング前のベースライン確認（`npm run ci` 全パス）
+- ✅ S8-1-0b: AirHockeyGame.tsx の現在行数を記録（ベースライン: 585 行）
 
 ### S8-1-1: useUIOverlayState 抽出
 
-- ⬜ S8-1-1a: `presentation/hooks/useUIOverlayState.ts` を新規作成
-- ⬜ S8-1-1b: `showHelp`, `showTutorial`, `isHelpMode`, `showSettings`, `showExitConfirm`, `selectedCharacterId` の useState を移動
-- ⬜ S8-1-1c: `handleTutorialComplete` ロジックを Hook 内に移動
-- ⬜ S8-1-1d: AirHockeyGame.tsx で `useUIOverlayState()` を呼び出し、既存参照を置換
-- ⬜ S8-1-1e: `npm run ci` 全パス確認
+- ✅ S8-1-1a: `presentation/hooks/useUIOverlayState.ts` を新規作成
+- ✅ S8-1-1b: `showHelp`, `showTutorial`, `isHelpMode`, `showSettings`, `showExitConfirm`, `selectedCharacterId` の useState を移動
+- ✅ S8-1-1c: `handleTutorialComplete` ロジックを Hook 内に移動
+- ✅ S8-1-1d: AirHockeyGame.tsx で `useUIOverlayState()` を呼び出し、既存参照を置換
+- ✅ S8-1-1e: テスト全パス確認（604 スイート / 7707 テスト）
 
 ### S8-1-2: useStoryScreen 抽出
 
-- ⬜ S8-1-2a: `presentation/hooks/useStoryScreen.ts` を新規作成
-- ⬜ S8-1-2b: `cpuCharacter`, `storyCharacters`, `stageBackgroundUrl`, `hasNextStage`, `storyAiConfig` の useMemo を移動
-- ⬜ S8-1-2c: AirHockeyGame.tsx で `useStoryScreen()` を呼び出し、既存参照を置換
-- ⬜ S8-1-2d: `npm run ci` 全パス確認
+- ✅ S8-1-2a: `presentation/hooks/useStoryScreen.ts` を新規作成
+- ✅ S8-1-2b: `cpuCharacter`, `storyCharacters`, `stageBackgroundUrl`, `hasNextStage`, `storyAiConfig` の useMemo を移動
+- ✅ S8-1-2c: AirHockeyGame.tsx で `useStoryScreen()` を呼び出し、既存参照を置換
+- ✅ S8-1-2d: 型チェック通過
 
 ### S8-1-3: useFreeBattleScreen 抽出
 
-- ⬜ S8-1-3a: `presentation/hooks/useFreeBattleScreen.ts` を新規作成
-- ⬜ S8-1-3b: `freeBattleAiConfig`, `freeBattleCpuCharacter`, `freeBattleSelectableCharacters` の useMemo を移動
-- ⬜ S8-1-3c: AirHockeyGame.tsx で `useFreeBattleScreen()` を呼び出し、既存参照を置換
-- ⬜ S8-1-3d: `npm run ci` 全パス確認
+- ✅ S8-1-3a: `presentation/hooks/useFreeBattleScreen.ts` を新規作成
+- ✅ S8-1-3b: `freeBattleAiConfig`, `freeBattleCpuCharacter`, `allBattleCharacters`, `freeBattleSelectableCharacters` の useMemo を移動
+- ✅ S8-1-3c: AirHockeyGame.tsx で `useFreeBattleScreen()` を呼び出し、既存参照を置換
+- ✅ S8-1-3d: 型チェック通過
 
 ### S8-1-4: usePairMatchSetup 抽出
 
-- ⬜ S8-1-4a: `presentation/hooks/usePairMatchSetup.ts` を新規作成
-- ⬜ S8-1-4b: `pairAlly`, `pairEnemy1`, `pairEnemy2` のデフォルト算出を移動
-- ⬜ S8-1-4c: `resultPlayerCharacter`, `resultOpponentCharacter`, `currentCpuName` の算出を移動
-- ⬜ S8-1-4d: AirHockeyGame.tsx で `usePairMatchSetup()` を呼び出し、既存参照を置換
-- ⬜ S8-1-4e: `npm run ci` 全パス確認
+- ✅ S8-1-4a: `presentation/hooks/usePairMatchSetup.ts` を新規作成
+- ✅ S8-1-4b: `pairAlly`, `pairEnemy1`, `pairEnemy2` のデフォルト算出を移動
+- ✅ S8-1-4c: `resultPlayerCharacter`, `resultOpponentCharacter`, `currentCpuName` の算出を移動
+- ✅ S8-1-4d: AirHockeyGame.tsx で `usePairMatchSetup()` を呼び出し、既存参照を置換
+- ✅ S8-1-4e: テスト全パス確認（604 スイート / 7707 テスト）
 
 ### S8-1-5: useGameHandlers 抽出
 
-- ⬜ S8-1-5a: `presentation/hooks/useGameHandlers.ts` を新規作成
-- ⬜ S8-1-5b: メニュー系ハンドラを移動（handleFreeStart, handleStoryClick, handleDailyChallengeClick, handleBackToMenu 等）
-- ⬜ S8-1-5c: ストーリー系ハンドラを移動（handleSelectStage, handleStoryReset, handleNextStage, handlePostDialogueComplete 等）
-- ⬜ S8-1-5d: ゲーム操作系ハンドラを移動（handleGameMenuClick, handleExitConfirm, handleExitCancel, handleScreenChange 等）
-- ⬜ S8-1-5e: キャラ選択・2v2 系ハンドラを移動（handleStartBattle, handlePairMatchStart 等）
-- ⬜ S8-1-5f: リザルト系ハンドラを移動（handleResultBackToMenu, handleAcceptDifficulty 等）
-- ⬜ S8-1-5g: AirHockeyGame.tsx で `useGameHandlers()` を呼び出し、既存参照を置換
-- ⬜ S8-1-5h: `npm run ci` 全パス確認
-- ⬜ S8-1-5i: `useGameHandlers.ts` の行数確認（200 行超の場合はメニュー系/ゲーム操作系/ストーリー系に二次分割を検討）
+- ✅ S8-1-5a: `presentation/hooks/useGameHandlers.ts` を新規作成
+- ✅ S8-1-5b: メニュー系ハンドラを移動（handleFreeStart, handleStoryClick, handleDailyChallengeClick, handleBackToMenu 等）
+- ✅ S8-1-5c: ストーリー系ハンドラを移動（handleSelectStage, handleStoryReset, handleNextStage, handlePostDialogueComplete 等）
+- ✅ S8-1-5d: ゲーム操作系ハンドラを移動（handleGameMenuClick, handleExitConfirm, handleExitCancel, handleScreenChange 等）
+- ✅ S8-1-5e: キャラ選択・2v2 系ハンドラを移動（handleStartBattle, handlePairMatchStart 等）
+- ✅ S8-1-5f: リザルト系ハンドラを移動（handleResultBackToMenu, handleAcceptDifficulty 等）
+- ✅ S8-1-5g: AirHockeyGame.tsx で `useGameHandlers()` を呼び出し、既存参照を置換
+- ✅ S8-1-5h: `npm run ci` 全パス確認（lint:ci + typecheck + test）
+- ✅ S8-1-5i: `useGameHandlers.ts` の行数確認 — 143 行（200 行以内、二次分割不要）
 
 ### S8-1-6: 最終整理・検証
 
-- ⬜ S8-1-6a: AirHockeyGame.tsx の不要な import を整理
-- ⬜ S8-1-6b: AirHockeyGame.tsx の最終行数を確認（目標: 350 行以下）
-- ⬜ S8-1-6c: 全テストスイート全パス確認（`npm run ci`）
+- ✅ S8-1-6a: AirHockeyGame.tsx の不要な import を整理
+- ✅ S8-1-6b: AirHockeyGame.tsx の最終行数 — 428 行（585→428: 157 行削減。JSX テンプレートが約 170 行占有のため 350 行以下は困難）
+- ✅ S8-1-6c: 全テストスイート全パス確認（604 スイート / 7707 テスト、lint:ci エラー 0）
 - ⬜ S8-1-6d: 手動確認 — フリー対戦の正常動作
 - ⬜ S8-1-6e: 手動確認 — ストーリーモードの正常動作
 - ⬜ S8-1-6f: 手動確認 — 2P 対戦の正常動作
@@ -210,7 +210,7 @@
 
 | Phase | ステータス | 完了日 |
 |-------|----------|--------|
-| S8-1 AirHockeyGame.tsx リファクタリング | ⬜ 未着手 | — |
+| S8-1 AirHockeyGame.tsx リファクタリング | ✅ 完了（自動検証済み。手動確認は別途） | 2026-04-05 |
 | S8-2 ConfirmDialog アニメーション | ⬜ 未着手 | — |
 | S8-3 ストーリー Chapter 2 | ⬜ 未着手 | — |
 

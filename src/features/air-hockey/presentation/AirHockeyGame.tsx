@@ -17,19 +17,15 @@ import { EntityFactory } from '../core/entities';
 import { getExitConfirmMessage } from '../core/exit-confirm';
 import { CONSTANTS } from '../core/constants';
 import { FIELDS, PAIR_MATCH_GOAL_SIZES } from '../core/config';
-import { getCharacterByDifficulty, findCharacterById, getBattleCharacters, PLAYER_CHARACTER } from '../core/characters';
-import type { Character, GameState, GamePhase, ShakeState, MatchStats, GameMode } from '../core/types';
-import { loadStoryProgress, resetStoryProgress } from '../core/story';
-import type { StageDefinition } from '../core/story';
+import { findCharacterById, PLAYER_CHARACTER } from '../core/characters';
+import type { GameState, GamePhase, ShakeState, MatchStats, GameMode } from '../core/types';
 import { CHAPTER_1_STAGES } from '../core/dialogue-data';
-import { getStoryStageBalance, buildFreeBattleAiConfig } from '../core/story-balance';
 import { FreeBattleCharacterSelect } from '../components/FreeBattleCharacterSelect';
 import { getDexEntryById } from '../core/dex-data';
 import { useCharacterDex } from '../hooks/useCharacterDex';
 import { CharacterDexScreen } from '../components/CharacterDexScreen';
 import { CharacterProfileCard } from '../components/CharacterProfileCard';
 import { CharacterSelectScreen } from '../components/CharacterSelectScreen';
-import type { TwoPlayerConfig } from '../application/use-cases/two-player-battle';
 import { createKeyboardState, updateKeyboardStateForPlayer } from '../core/keyboard';
 import { useInput } from '../hooks/useInput';
 import { useKeyboardInput } from '../hooks/useKeyboardInput';
@@ -40,6 +36,11 @@ import { useGameMode } from './hooks/useGameMode';
 import { useGamepadInput } from '../hooks/useGamepadInput';
 import { useResultProcessing } from './hooks/useResultProcessing';
 import { useAudioManager } from './hooks/useAudioManager';
+import { useUIOverlayState } from './hooks/useUIOverlayState';
+import { useStoryScreen } from './hooks/useStoryScreen';
+import { useFreeBattleScreen } from './hooks/useFreeBattleScreen';
+import { usePairMatchSetup } from './hooks/usePairMatchSetup';
+import { useGameHandlers } from './hooks/useGameHandlers';
 import { TitleScreen } from '../components/TitleScreen';
 import { TeamSetupScreen } from '../components/TeamSetupScreen';
 import { Scoreboard } from '../components/Scoreboard';
@@ -47,7 +48,7 @@ import { Field } from '../components/Field';
 import { ResultScreen } from '../components/ResultScreen';
 import { AchievementList } from '../components/AchievementList';
 import { Transition } from '../components/Transition';
-import { Tutorial, isTutorialCompleted } from '../components/Tutorial';
+import { Tutorial } from '../components/Tutorial';
 import { SettingsPanel } from '../components/SettingsPanel';
 import { DailyChallengeScreen } from '../components/DailyChallengeScreen';
 import { StageSelectScreen } from '../components/StageSelectScreen';
@@ -55,11 +56,9 @@ import { DialogueOverlay } from '../components/DialogueOverlay';
 import { VsScreen } from '../components/VsScreen';
 import { ChapterTitleCard } from '../components/ChapterTitleCard';
 import { VictoryCutIn } from '../components/VictoryCutIn';
-import { generateDailyChallenge, getDailyChallengeResult } from '../core/daily-challenge';
-import { BACKGROUND_MAP } from '../core/characters';
-import { getStageAssetUrls, getVictoryCutInUrl } from '../core/get-stage-asset-urls';
+import { getDailyChallengeResult } from '../core/daily-challenge';
+import { getVictoryCutInUrl } from '../core/get-stage-asset-urls';
 import { useImagePreloader } from '../hooks/useImagePreloader';
-import { saveStreakRecord } from '../core/difficulty-adjust';
 import { PageContainer } from '../styles';
 
 const AirHockeyGame: React.FC = () => {
@@ -75,12 +74,7 @@ const AirHockeyGame: React.FC = () => {
   // ── ゲームセッション状態 ──
   const [scores, setScores] = useState({ p: 0, c: 0 });
   const [winner, setWinner] = useState<string | null>(null);
-  const [showHelp, setShowHelp] = useState(false);
   const [shake, setShake] = useState<ShakeState | null>(null);
-  const [showTutorial, setShowTutorial] = useState(!isTutorialCompleted());
-  const [isHelpMode, setIsHelpMode] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [selectedCharacterId, setSelectedCharacterId] = useState<string | undefined>(undefined);
   const [preloadUrls, setPreloadUrls] = useState<string[]>([]);
   useImagePreloader(preloadUrls);
 
@@ -90,6 +84,7 @@ const AirHockeyGame: React.FC = () => {
   const lastInputRef = useRef(0);
   const scoreRef = useRef({ p: 0, c: 0 });
   const phaseRef = useRef<GamePhase>('countdown');
+  const ui = useUIOverlayState(screen, phaseRef);
   const countdownStartRef = useRef(0);
   const shakeRef = useRef<ShakeState | null>(null);
   const statsRef = useRef<MatchStats>(EntityFactory.createMatchStats());
@@ -127,7 +122,7 @@ const AirHockeyGame: React.FC = () => {
     scoreRef.current = { p: 0, c: 0 };
     setScores({ p: 0, c: 0 });
     setWinner(null);
-    setShowHelp(false);
+    ui.setShowHelp(false);
     navigateWithTransition('game');
     lastInputRef.current = Date.now();
     phaseRef.current = 'countdown';
@@ -151,78 +146,21 @@ const AirHockeyGame: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [screen, togglePause]);
 
-  // ── ストーリーモード ──
-  const handleSelectStage = useCallback((stage: StageDefinition) => {
-    mode.setCurrentStage(stage);
-    const stageField = FIELDS.find(f => f.id === stage.fieldId) ?? FIELDS[0];
-    mode.setDifficulty(stage.difficulty);
-    mode.setField(stageField);
-    mode.setWinScore(stage.winScore);
-    const chars: Record<string, typeof PLAYER_CHARACTER> = {};
-    const cpuChar = findCharacterById(stage.characterId);
-    if (cpuChar) chars[stage.characterId] = cpuChar;
-    chars['player'] = PLAYER_CHARACTER;
-    setPreloadUrls(getStageAssetUrls(stage, chars));
-    navigateTo(stage.chapterTitle ? 'chapterTitle' : 'preDialogue');
-  }, [mode, navigateTo]);
-
-  const handleScreenChange = useCallback((newScreen: 'menu' | 'game' | 'result') => {
-    if (newScreen === 'result' && mode.gameMode === 'story') {
-      navigateTo('postDialogue');
-    } else {
-      navigateTo(newScreen);
-    }
-  }, [mode.gameMode, navigateTo]);
+  // ── イベントハンドラ ──
+  const handlers = useGameHandlers({
+    mode, nav: { screen, transitioning, navigateTo, navigateWithTransition, goToMenu: () => navigateTo('menu') },
+    ui, audio, winner, startGame, setPreloadUrls,
+  });
 
   // ── 導出値 ──
-  const cpuCharacter = React.useMemo(() => mode.currentStage ? findCharacterById(mode.currentStage.characterId) : undefined, [mode.currentStage]);
-  const storyCharacters = React.useMemo(() => {
-    if (!mode.currentStage) return {};
-    const chars: Record<string, typeof PLAYER_CHARACTER> = {};
-    if (cpuCharacter) chars[mode.currentStage.characterId] = cpuCharacter;
-    chars['player'] = PLAYER_CHARACTER;
-    return chars;
-  }, [mode.currentStage, cpuCharacter]);
-  const stageBackgroundUrl = React.useMemo(() => mode.currentStage?.backgroundId ? BACKGROUND_MAP[mode.currentStage.backgroundId] : undefined, [mode.currentStage]);
-  const hasNextStage = React.useMemo(() => {
-    if (!mode.currentStage) return false;
-    const idx = CHAPTER_1_STAGES.findIndex(s => s.id === mode.currentStage!.id);
-    return idx < CHAPTER_1_STAGES.length - 1;
-  }, [mode.currentStage]);
-  // ストーリーモード時はステージ固有の AI 設定（キャラ個性付き）を使用
-  const storyAiConfig = React.useMemo(
-    () => mode.currentStage ? getStoryStageBalance(mode.currentStage.id).ai : undefined,
-    [mode.currentStage]
-  );
-  // フリー対戦用 AI 設定（メモ化して useEffect の不要な再実行を防止）
-  const freeBattleAiConfig = React.useMemo(
-    () => mode.selectedCpuCharacter
-      ? buildFreeBattleAiConfig(mode.difficulty, mode.selectedCpuCharacter.id)
-      : undefined,
-    [mode.difficulty, mode.selectedCpuCharacter]
-  );
-  const freeBattleCpuCharacter = React.useMemo(
-    () => getCharacterByDifficulty(mode.difficulty),
-    [mode.difficulty]
-  );
-  const currentCpuName = React.useMemo(
-    () => mode.gameMode === 'story' && cpuCharacter
-      ? cpuCharacter.name
-      : (mode.selectedCpuCharacter ?? freeBattleCpuCharacter).name,
-    [mode.gameMode, cpuCharacter, mode.selectedCpuCharacter, freeBattleCpuCharacter]
-  );
-  const selectedDexEntry = React.useMemo(() => selectedCharacterId ? getDexEntryById(selectedCharacterId) : undefined, [selectedCharacterId]);
-  const selectedCharacter = React.useMemo(() => selectedCharacterId ? findCharacterById(selectedCharacterId) : undefined, [selectedCharacterId]);
-  // 基本キャラ + 図鑑解放済みストーリーキャラ（2P 対戦 / フリー対戦共通）
-  const allBattleCharacters = React.useMemo(() => {
-    const base = getBattleCharacters();
-    const baseIds = new Set(base.map(c => c.id));
-    const unlocked = dex.unlockedIds
-      .filter(id => !baseIds.has(id))
-      .map(id => findCharacterById(id))
-      .filter((c): c is NonNullable<typeof c> => c !== undefined);
-    return [...base, ...unlocked];
-  }, [dex.unlockedIds]);
+  const { cpuCharacter, storyCharacters, stageBackgroundUrl, hasNextStage, storyAiConfig } = useStoryScreen(mode.currentStage);
+  const { freeBattleAiConfig, freeBattleCpuCharacter, allBattleCharacters, freeBattleSelectableCharacters } = useFreeBattleScreen({
+    difficulty: mode.difficulty,
+    selectedCpuCharacter: mode.selectedCpuCharacter,
+    unlockedIds: dex.unlockedIds,
+  });
+  const selectedDexEntry = React.useMemo(() => ui.selectedCharacterId ? getDexEntryById(ui.selectedCharacterId) : undefined, [ui.selectedCharacterId]);
+  const selectedCharacter = React.useMemo(() => ui.selectedCharacterId ? findCharacterById(ui.selectedCharacterId) : undefined, [ui.selectedCharacterId]);
   const dexCharacterMap = React.useMemo(() => {
     const map: Record<string, typeof PLAYER_CHARACTER> = {};
     for (const entry of dex.dexEntries) {
@@ -232,93 +170,6 @@ const AirHockeyGame: React.FC = () => {
     return map;
   }, [dex.dexEntries]);
 
-  // ── イベントハンドラ ──
-  const handleTutorialComplete = useCallback(() => {
-    setShowTutorial(false);
-    if (isHelpMode && screen === 'game' && phaseRef.current === 'paused') phaseRef.current = 'playing';
-    setIsHelpMode(false);
-  }, [isHelpMode, screen]);
-
-  const handleFreeStart = useCallback(() => { mode.setGameMode('free'); navigateTo('freeBattleCharacterSelect'); }, [mode, navigateTo]);
-  const handleStoryClick = useCallback(() => { mode.setGameMode('story'); mode.setStoryProgress(loadStoryProgress()); navigateTo('stageSelect'); }, [mode, navigateTo]);
-  const handleDailyChallengeClick = useCallback(() => { mode.setDailyChallenge(generateDailyChallenge(new Date())); navigateTo('daily'); }, [mode, navigateTo]);
-  const handleDailyChallengeStart = useCallback(() => {
-    if (!mode.dailyChallenge) return;
-    const cf = FIELDS.find(f => f.id === mode.dailyChallenge!.fieldId) ?? FIELDS[0];
-    mode.setDifficulty(mode.dailyChallenge.difficulty);
-    mode.setField(cf);
-    mode.setWinScore(mode.dailyChallenge.winScore);
-    mode.setIsDailyMode(true);
-    mode.setGameMode('free');
-    startGame(cf);
-  }, [mode, startGame]);
-  const handleBackFromDex = useCallback(() => { setSelectedCharacterId(undefined); navigateTo('menu'); }, [navigateTo]);
-  const handleBackFromStageSelect = useCallback(() => { mode.resetToFree(); navigateTo('menu'); }, [mode, navigateTo]);
-  const handleStoryReset = useCallback(() => { resetStoryProgress(); mode.setStoryProgress({ clearedStages: [] }); }, [mode]);
-  const handleVsComplete = useCallback(() => {
-    const sf = mode.currentStage ? (FIELDS.find(f => f.id === mode.currentStage!.fieldId) ?? FIELDS[0]) : mode.field;
-    startGame(sf);
-  }, [mode.currentStage, mode.field, startGame]);
-  // S6-8a: 全モードで中断確認ダイアログを表示
-  const [showExitConfirm, setShowExitConfirm] = useState(false);
-  const handleGameMenuClick = useCallback(() => {
-    setShowExitConfirm(true);
-  }, []);
-  const handlePostDialogueComplete = useCallback(() => {
-    if (mode.currentStage?.isChapterFinale && winner === 'player') {
-      navigateTo('victoryCutIn');
-    } else {
-      navigateTo('result');
-    }
-  }, [mode.currentStage, winner, navigateTo]);
-  const handleResultBackToMenu = useCallback(() => {
-    mode.resetToFree(); navigateTo('menu');
-  }, [mode, navigateTo]);
-  const handleExitConfirm = useCallback(() => {
-    setShowExitConfirm(false);
-    audio.getSound().bgmStop(); mode.resetToFree(); navigateTo('menu');
-  }, [audio, mode, navigateTo]);
-  const handleExitCancel = useCallback(() => { setShowExitConfirm(false); }, []);
-  // ── 画面遷移（共通） ──
-  const handleBackToMenu = useCallback(() => { navigateTo('menu'); }, [navigateTo]);
-  // ── 2P 対戦 ──
-  const handleTwoPlayerClick = useCallback(() => { navigateTo('characterSelect'); }, [navigateTo]);
-  // ── ペアマッチ（2v2）──
-  const handlePairMatchClick = useCallback(() => {
-    navigateTo('teamSetup');
-  }, [navigateTo]);
-  const handlePairMatchStart = useCallback(() => {
-    mode.setGameMode('2v2-local');
-    navigateTo('vsScreen');
-  }, [mode, navigateTo]);
-  const handlePairMatchVsComplete = useCallback(() => {
-    startGame(mode.field, '2v2-local');
-  }, [mode.field, startGame]);
-  const handleBackToTeamSetup = useCallback(() => {
-    navigateTo('teamSetup');
-  }, [navigateTo]);
-  const handleStartBattle = useCallback((config: TwoPlayerConfig) => {
-    mode.setGameMode('2p-local');
-    mode.setPlayer1Character(config.player1Character);
-    mode.setPlayer2Character(config.player2Character);
-    startGame(mode.field, '2p-local');
-  }, [mode, startGame]);
-  // ── フリー対戦キャラ選択（自キャラ除外） ──
-  const freeBattleSelectableCharacters = React.useMemo(
-    () => allBattleCharacters.filter(c => c.id !== 'player'),
-    [allBattleCharacters]
-  );
-  const handleFreeBattleCharacterConfirm = useCallback((character: Character) => {
-    mode.setSelectedCpuCharacter(character);
-    navigateTo('vsScreen');
-  }, [mode, navigateTo]);
-  const handleBackToCharacterSelect = useCallback(() => { navigateTo('characterSelect'); }, [navigateTo]);
-  const handleAcceptDifficulty = useCallback((d: typeof mode.difficulty) => { mode.setDifficulty(d); saveStreakRecord({ winStreak: 0, loseStreak: 0 }); }, [mode]);
-  const handleBackToStageSelect = useCallback(() => { mode.setStoryProgress(loadStoryProgress()); navigateTo('stageSelect'); }, [mode, navigateTo]);
-  const handleNextStage = useCallback(() => {
-    const idx = CHAPTER_1_STAGES.findIndex(s => s.id === mode.currentStage?.id);
-    if (CHAPTER_1_STAGES[idx + 1]) handleSelectStage(CHAPTER_1_STAGES[idx + 1]);
-  }, [mode.currentStage, handleSelectStage]);
 
   // ── 2P / 2v2 モード判定（入力フックより前に宣言） ──
   const is2PMode = mode.gameMode === '2p-local';
@@ -326,32 +177,24 @@ const AirHockeyGame: React.FC = () => {
   const isMultiPlayer = is2PMode || is2v2Mode;
 
   // ── 入力・ゲームループ ──
-  const handleInput = useInput(canvasRef, lastInputRef, playerTargetRef, screen, showHelp, setShowHelp);
-  const keysRef = useKeyboardInput(gameRef, lastInputRef, screen, showHelp, setShowHelp, isMultiPlayer);
+  const handleInput = useInput(canvasRef, lastInputRef, playerTargetRef, screen, ui.showHelp, ui.setShowHelp);
+  const keysRef = useKeyboardInput(gameRef, lastInputRef, screen, ui.showHelp, ui.setShowHelp, isMultiPlayer);
   const is2PGame = isMultiPlayer && screen === 'game';
-  // ペアマッチ用キャラクターのデフォルト値（フォールバックを一元管理）
-  const pairAlly = React.useMemo(
-    () => mode.allyCharacter ?? freeBattleSelectableCharacters[0],
-    [mode.allyCharacter, freeBattleSelectableCharacters]
-  );
-  const pairEnemy1 = React.useMemo(
-    () => mode.enemyCharacter1 ?? freeBattleSelectableCharacters[1] ?? freeBattleSelectableCharacters[0],
-    [mode.enemyCharacter1, freeBattleSelectableCharacters]
-  );
-  const pairEnemy2 = React.useMemo(
-    () => mode.enemyCharacter2 ?? freeBattleSelectableCharacters[2] ?? freeBattleSelectableCharacters[0],
-    [mode.enemyCharacter2, freeBattleSelectableCharacters]
-  );
-  // マルチプレイヤー時のスコアボード・リザルト表示名・キャラクター
+  const { pairAlly, pairEnemy1, pairEnemy2, resultPlayerCharacter, resultOpponentCharacter, currentCpuName } = usePairMatchSetup({
+    gameMode: mode.gameMode,
+    allyCharacter: mode.allyCharacter,
+    enemyCharacter1: mode.enemyCharacter1,
+    enemyCharacter2: mode.enemyCharacter2,
+    player1Character: mode.player1Character,
+    player2Character: mode.player2Character,
+    selectedCpuCharacter: mode.selectedCpuCharacter,
+    cpuCharacter,
+    freeBattleCpuCharacter,
+    freeBattleSelectableCharacters,
+  });
+  // マルチプレイヤー時のスコアボード・リザルト表示名
   const multiPlayerName = is2v2Mode ? 'チーム1' : (mode.player1Character?.name ?? '1P');
   const multiOpponentName = is2v2Mode ? 'チーム2' : (mode.player2Character?.name ?? '2P');
-  const resultPlayerCharacter = mode.gameMode === 'story' ? PLAYER_CHARACTER
-    : is2PMode ? mode.player1Character
-    : PLAYER_CHARACTER;
-  const resultOpponentCharacter = mode.gameMode === 'story' ? cpuCharacter
-    : is2PMode ? mode.player2Character
-    : is2v2Mode ? freeBattleCpuCharacter
-    : mode.selectedCpuCharacter ?? freeBattleCpuCharacter;
 
   // 2P 用マルチタッチ入力（画面上下分割）
   const { stateRef: multiTouchRef } = useMultiTouchInput(canvasRef, is2PGame, is2v2Mode);
@@ -382,7 +225,7 @@ const AirHockeyGame: React.FC = () => {
   }, [is2PGame]);
 
   useGameLoop({
-    screen, showHelp,
+    screen, showHelp: ui.showHelp,
     config: {
       difficulty: mode.difficulty, field: mode.field, winScore: mode.winScore,
       getSound: audio.getSound, bgmEnabled: audio.bgmEnabled, gameMode: mode.gameMode,
@@ -403,32 +246,32 @@ const AirHockeyGame: React.FC = () => {
       multiTouchRef: (is2PMode || is2v2Mode) ? multiTouchRef : undefined,
       gamepadToastRef,
     },
-    callbacks: { setScores, setWinner, setScreen: handleScreenChange, setShowHelp, setShake },
+    callbacks: { setScores, setWinner, setScreen: handlers.handleScreenChange, setShowHelp: ui.setShowHelp, setShake },
   });
 
   // ── 描画 ──
   return (
     <PageContainer>
-      {showSettings && (
-        <SettingsPanel bgmEnabled={audio.bgmEnabled} onToggleBgm={audio.toggleBgm} audioSettings={audio.audioSettings} onAudioSettingsChange={audio.setAudioSettings} onClose={() => setShowSettings(false)} />
+      {ui.showSettings && (
+        <SettingsPanel bgmEnabled={audio.bgmEnabled} onToggleBgm={audio.toggleBgm} audioSettings={audio.audioSettings} onAudioSettingsChange={audio.setAudioSettings} onClose={() => ui.setShowSettings(false)} />
       )}
-      {showTutorial && <Tutorial isHelp={isHelpMode} onComplete={handleTutorialComplete} />}
+      {ui.showTutorial && <Tutorial isHelp={ui.isHelpMode} onComplete={ui.handleTutorialComplete} />}
 
       {screen === 'menu' && (
         <Transition isActive={!transitioning} type="fade">
           <TitleScreen
             diff={mode.difficulty} setDiff={mode.setDifficulty} field={mode.field} setField={mode.setField}
             winScore={mode.winScore} setWinScore={mode.setWinScore} highScore={result.highScore}
-            onStart={handleFreeStart} onStoryClick={handleStoryClick}
+            onStart={handlers.handleFreeStart} onStoryClick={handlers.handleStoryClick}
             onShowAchievements={() => navigateTo('achievements')}
-            onHelpClick={() => { setIsHelpMode(true); setShowTutorial(true); }}
-            onSettingsClick={() => setShowSettings(true)}
-            onDailyChallengeClick={handleDailyChallengeClick}
+            onHelpClick={() => { ui.setIsHelpMode(true); ui.setShowTutorial(true); }}
+            onSettingsClick={() => ui.setShowSettings(true)}
+            onDailyChallengeClick={handlers.handleDailyChallengeClick}
             unlockState={result.unlockState}
             onCharacterDexClick={() => navigateTo('characterDex')}
             newUnlockCount={dex.getNewUnlockCount()}
-            onTwoPlayerClick={handleTwoPlayerClick}
-            onPairMatchClick={handlePairMatchClick}
+            onTwoPlayerClick={handlers.handleTwoPlayerClick}
+            onPairMatchClick={handlers.handlePairMatchClick}
           />
         </Transition>
       )}
@@ -438,16 +281,16 @@ const AirHockeyGame: React.FC = () => {
           characters={freeBattleSelectableCharacters}
           unlockedIds={dex.unlockedIds}
           difficulty={mode.difficulty}
-          onConfirm={handleFreeBattleCharacterConfirm}
-          onBack={handleBackToMenu}
+          onConfirm={handlers.handleFreeBattleCharacterConfirm}
+          onBack={handlers.handleBackToMenu}
         />
       )}
 
       {screen === 'characterSelect' && (
         <CharacterSelectScreen
           characters={allBattleCharacters}
-          onStartBattle={handleStartBattle}
-          onBack={handleBackToMenu}
+          onStartBattle={handlers.handleStartBattle}
+          onBack={handlers.handleBackToMenu}
         />
       )}
 
@@ -469,31 +312,31 @@ const AirHockeyGame: React.FC = () => {
           enemy2ControlType={mode.enemy2ControlType}
           onEnemy2ControlTypeChange={mode.setEnemy2ControlType}
           gamepadConnected={gamepadConnectedCount}
-          onStart={handlePairMatchStart}
-          onBack={handleBackToMenu}
+          onStart={handlers.handlePairMatchStart}
+          onBack={handlers.handleBackToMenu}
         />
       )}
 
-      {screen === 'achievements' && <AchievementList onBack={handleBackToMenu} />}
+      {screen === 'achievements' && <AchievementList onBack={handlers.handleBackToMenu} />}
 
       {screen === 'characterDex' && (
         <>
           <CharacterDexScreen
             dexEntries={dex.dexEntries} unlockedIds={dex.unlockedIds} newlyUnlockedIds={dex.newlyUnlockedIds}
             characters={dexCharacterMap} completionRate={dex.completionRate}
-            onSelectCharacter={setSelectedCharacterId} onBack={handleBackFromDex} onMarkViewed={dex.markViewed}
+            onSelectCharacter={ui.setSelectedCharacterId} onBack={handlers.handleBackFromDex} onMarkViewed={dex.markViewed}
           />
-          {selectedDexEntry && selectedCharacter && <CharacterProfileCard entry={selectedDexEntry} character={selectedCharacter} onClose={() => setSelectedCharacterId(undefined)} />}
+          {selectedDexEntry && selectedCharacter && <CharacterProfileCard entry={selectedDexEntry} character={selectedCharacter} onClose={() => ui.setSelectedCharacterId(undefined)} />}
         </>
       )}
 
       {screen === 'daily' && mode.dailyChallenge && (
-        <DailyChallengeScreen challenge={mode.dailyChallenge} result={getDailyChallengeResult(mode.dailyChallenge.date)} onStart={handleDailyChallengeStart} onBack={handleBackToMenu} />
+        <DailyChallengeScreen challenge={mode.dailyChallenge} result={getDailyChallengeResult(mode.dailyChallenge.date)} onStart={handlers.handleDailyChallengeStart} onBack={handlers.handleBackToMenu} />
       )}
 
       {screen === 'stageSelect' && (
         <Transition isActive={true} type="fade">
-          <StageSelectScreen stages={CHAPTER_1_STAGES} progress={mode.storyProgress} onSelectStage={handleSelectStage} onBack={handleBackFromStageSelect} onReset={handleStoryReset} />
+          <StageSelectScreen stages={CHAPTER_1_STAGES} progress={mode.storyProgress} onSelectStage={handlers.handleSelectStage} onBack={handlers.handleBackFromStageSelect} onReset={handlers.handleStoryReset} />
         </Transition>
       )}
 
@@ -504,10 +347,10 @@ const AirHockeyGame: React.FC = () => {
         <DialogueOverlay dialogues={mode.currentStage.preDialogue} characters={storyCharacters} backgroundUrl={stageBackgroundUrl} onComplete={() => navigateTo('vsScreen')} />
       )}
       {screen === 'vsScreen' && mode.gameMode === 'story' && mode.currentStage && cpuCharacter && (
-        <VsScreen playerCharacter={PLAYER_CHARACTER} cpuCharacter={cpuCharacter} stageName={mode.currentStage.name} fieldName={(FIELDS.find(f => f.id === mode.currentStage!.fieldId) ?? FIELDS[0]).name} onComplete={handleVsComplete} />
+        <VsScreen playerCharacter={PLAYER_CHARACTER} cpuCharacter={cpuCharacter} stageName={mode.currentStage.name} fieldName={(FIELDS.find(f => f.id === mode.currentStage!.fieldId) ?? FIELDS[0]).name} onComplete={handlers.handleVsComplete} />
       )}
       {screen === 'vsScreen' && mode.gameMode === 'free' && mode.selectedCpuCharacter && (
-        <VsScreen playerCharacter={PLAYER_CHARACTER} cpuCharacter={mode.selectedCpuCharacter} stageName="フリー対戦" fieldName={mode.field.name} onComplete={handleVsComplete} />
+        <VsScreen playerCharacter={PLAYER_CHARACTER} cpuCharacter={mode.selectedCpuCharacter} stageName="フリー対戦" fieldName={mode.field.name} onComplete={handlers.handleVsComplete} />
       )}
       {screen === 'vsScreen' && mode.gameMode === '2v2-local' && (
         <VsScreen
@@ -515,7 +358,7 @@ const AirHockeyGame: React.FC = () => {
           cpuCharacter={pairEnemy1}
           stageName="ペアマッチ"
           fieldName={mode.field.name}
-          onComplete={handlePairMatchVsComplete}
+          onComplete={handlers.handlePairMatchVsComplete}
           is2v2
           allyCharacter={pairAlly}
           enemyCharacter2={pairEnemy2}
@@ -528,7 +371,7 @@ const AirHockeyGame: React.FC = () => {
       {screen === 'game' && (
         <>
           <Scoreboard
-            scores={scores} onMenuClick={handleGameMenuClick} onPauseClick={togglePause}
+            scores={scores} onMenuClick={handlers.handleGameMenuClick} onPauseClick={togglePause}
             cpuName={isMultiPlayer ? multiOpponentName : currentCpuName}
             playerName={isMultiPlayer ? multiPlayerName : undefined}
             playerColor={is2PMode ? mode.player1Character?.color : undefined}
@@ -539,7 +382,7 @@ const AirHockeyGame: React.FC = () => {
       )}
 
       {screen === 'postDialogue' && mode.currentStage && (
-        <DialogueOverlay dialogues={winner === 'player' ? mode.currentStage.postWinDialogue : mode.currentStage.postLoseDialogue} characters={storyCharacters} backgroundUrl={stageBackgroundUrl} onComplete={handlePostDialogueComplete} />
+        <DialogueOverlay dialogues={winner === 'player' ? mode.currentStage.postWinDialogue : mode.currentStage.postLoseDialogue} characters={storyCharacters} backgroundUrl={stageBackgroundUrl} onComplete={handlers.handlePostDialogueComplete} />
       )}
       {screen === 'victoryCutIn' && mode.currentStage && (
         <VictoryCutIn imageUrl={getVictoryCutInUrl(mode.currentStage.chapter)} onComplete={() => navigateTo('result')} />
@@ -548,13 +391,13 @@ const AirHockeyGame: React.FC = () => {
       {screen === 'result' && (
         <Transition isActive={true} type="fade">
           <ResultScreen
-            winner={winner} scores={scores} onBackToMenu={handleResultBackToMenu}
-            onReplay={mode.gameMode === 'story' ? () => mode.currentStage && handleSelectStage(mode.currentStage) : startGame}
+            winner={winner} scores={scores} onBackToMenu={handlers.handleResultBackToMenu}
+            onReplay={mode.gameMode === 'story' ? () => mode.currentStage && handlers.handleSelectStage(mode.currentStage) : startGame}
             stats={result.matchStats} newAchievements={result.newAchievements}
             suggestedDifficulty={mode.gameMode === 'free' ? result.suggestedDifficulty : undefined}
-            onAcceptDifficulty={handleAcceptDifficulty}
-            onBackToStageSelect={mode.gameMode === 'story' ? handleBackToStageSelect : undefined}
-            onNextStage={mode.gameMode === 'story' && hasNextStage ? handleNextStage : undefined}
+            onAcceptDifficulty={handlers.handleAcceptDifficulty}
+            onBackToStageSelect={mode.gameMode === 'story' ? handlers.handleBackToStageSelect : undefined}
+            onNextStage={mode.gameMode === 'story' && hasNextStage ? handlers.handleNextStage : undefined}
             cpuCharacter={resultOpponentCharacter}
             playerCharacter={resultPlayerCharacter}
             newlyUnlockedCharacterName={result.newlyUnlockedCharacterName}
@@ -564,19 +407,19 @@ const AirHockeyGame: React.FC = () => {
             enemyCharacter2={is2v2Mode ? pairEnemy2 : undefined}
             player1CharacterName={isMultiPlayer ? multiPlayerName : undefined}
             player2CharacterName={isMultiPlayer ? multiOpponentName : undefined}
-            onBackToCharacterSelect={is2PMode ? handleBackToCharacterSelect : undefined}
-            onBackToTeamSetup={is2v2Mode ? handleBackToTeamSetup : undefined}
+            onBackToCharacterSelect={is2PMode ? handlers.handleBackToCharacterSelect : undefined}
+            onBackToTeamSetup={is2v2Mode ? handlers.handleBackToTeamSetup : undefined}
           />
         </Transition>
       )}
       <ConfirmDialog
-        isOpen={showExitConfirm}
+        isOpen={ui.showExitConfirm}
         title="ゲームを終了しますか？"
         message={getExitConfirmMessage(mode.gameMode)}
         confirmLabel="メニューに戻る"
         cancelLabel="続ける"
-        onConfirm={handleExitConfirm}
-        onCancel={handleExitCancel}
+        onConfirm={handlers.handleExitConfirm}
+        onCancel={handlers.handleExitCancel}
       />
     </PageContainer>
   );
