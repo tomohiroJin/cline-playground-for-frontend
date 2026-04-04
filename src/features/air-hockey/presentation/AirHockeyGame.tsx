@@ -37,6 +37,7 @@ import { useMultiTouchInput } from '../hooks/useMultiTouchInput';
 import { useGameLoop } from './hooks/useGameLoop';
 import { useScreenNavigation } from './hooks/useScreenNavigation';
 import { useGameMode } from './hooks/useGameMode';
+import { useGamepadInput } from '../hooks/useGamepadInput';
 import { useResultProcessing } from './hooks/useResultProcessing';
 import { useAudioManager } from './hooks/useAudioManager';
 import { TitleScreen } from '../components/TitleScreen';
@@ -66,6 +67,9 @@ const AirHockeyGame: React.FC = () => {
   const { screen, transitioning, navigateTo, navigateWithTransition } = useScreenNavigation();
   const mode = useGameMode();
   const audio = useAudioManager();
+  const { toast: gamepadToast, connectedCount: gamepadConnectedCount } = useGamepadInput();
+  const gamepadToastRef = useRef(gamepadToast);
+  gamepadToastRef.current = gamepadToast;
   const dex = useCharacterDex();
 
   // ── ゲームセッション状態 ──
@@ -397,6 +401,7 @@ const AirHockeyGame: React.FC = () => {
       playerTargetRef,
       player2KeysRef: (is2PMode || is2v2Mode) ? player2KeysRef : undefined,
       multiTouchRef: (is2PMode || is2v2Mode) ? multiTouchRef : undefined,
+      gamepadToastRef,
     },
     callbacks: { setScores, setWinner, setScreen: handleScreenChange, setShowHelp, setShake },
   });
@@ -459,6 +464,11 @@ const AirHockeyGame: React.FC = () => {
           onEnemy2Change={mode.setEnemyCharacter2}
           allyControlType={mode.allyControlType}
           onAllyControlTypeChange={mode.setAllyControlType}
+          enemy1ControlType={mode.enemy1ControlType}
+          onEnemy1ControlTypeChange={mode.setEnemy1ControlType}
+          enemy2ControlType={mode.enemy2ControlType}
+          onEnemy2ControlTypeChange={mode.setEnemy2ControlType}
+          gamepadConnected={gamepadConnectedCount}
           onStart={handlePairMatchStart}
           onBack={handleBackToMenu}
         />
@@ -510,6 +520,8 @@ const AirHockeyGame: React.FC = () => {
           allyCharacter={pairAlly}
           enemyCharacter2={pairEnemy2}
           allyControlType={mode.allyControlType}
+          enemy1ControlType={mode.enemy1ControlType}
+          enemy2ControlType={mode.enemy2ControlType}
         />
       )}
 

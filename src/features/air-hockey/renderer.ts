@@ -14,6 +14,8 @@ import {
   ComboState,
   HitStopState,
 } from './core/types';
+import type { GamepadToast } from './hooks/useGamepadInput';
+import { drawToastOnCanvas } from './infrastructure/renderer/ui-renderer';
 import { magnitude } from '../../utils/math-utils';
 import {
   lightenColor as _lightenColor,
@@ -566,6 +568,7 @@ export const Renderer = {
   },
   // ゴールパーティクル描画
   drawParticles(ctx: CanvasRenderingContext2D, particles: Particle[]) {
+    if (particles.length === 0) return;
     for (const p of particles) {
       const alpha = p.life / p.maxLife;
       ctx.beginPath();
@@ -779,6 +782,12 @@ export const Renderer = {
     ctx.fillText(text, x, y);
 
     ctx.restore();
+  },
+
+  /** ゲームパッド接続/切断トースト描画（drawToastOnCanvas に委譲） */
+  drawToast(ctx: CanvasRenderingContext2D, toast: GamepadToast | undefined, now: number) {
+    const { WIDTH, HEIGHT } = CONSTANTS.CANVAS;
+    drawToastOnCanvas(ctx, toast, now, WIDTH, HEIGHT);
   },
 
   // 試合統計をリザルト画面用にフォーマット

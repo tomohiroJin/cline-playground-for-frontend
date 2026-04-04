@@ -16,6 +16,7 @@ import type {
   ComboState,
   HitStopState,
 } from '../../domain/types';
+import type { GamepadToast } from '../../hooks/useGamepadInput';
 import type { GameConstants } from '../../core/constants';
 import { FieldRenderer } from './field-renderer';
 import { EntityRenderer } from './entity-renderer';
@@ -118,5 +119,10 @@ export class CanvasRenderer implements GameRendererPort {
 
   drawCombo(combo: ComboState, now: number): void {
     this.uiRenderer.drawCombo(combo, now);
+  }
+
+  // トースト通知（GameRendererPort 外）
+  drawToast(toast: GamepadToast | undefined, now: number): void {
+    this.uiRenderer.drawToast(toast, now);
   }
 }

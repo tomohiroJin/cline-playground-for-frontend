@@ -376,7 +376,7 @@ describe('VsScreen', () => {
     });
   });
 
-  describe('2v2 P2 操作タイプラベル', () => {
+  describe('2v2 操作タイプラベル', () => {
     const allyChar: Character = {
       id: 'rookie', name: 'ルーキー', icon: '/assets/characters/rookie.png', color: '#27ae60',
       reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
@@ -386,18 +386,117 @@ describe('VsScreen', () => {
       reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
     };
 
-    it('allyControlType=cpu 時に「CPU」ラベルが表示される', () => {
-      render(
-        <VsScreen {...defaultProps} is2v2 allyCharacter={allyChar} enemyCharacter2={enemy2Char} allyControlType="cpu" />
-      );
-      expect(screen.getByText('CPU')).toBeInTheDocument();
+    describe('P2 ラベル', () => {
+      it('allyControlType=cpu 時に「CPU」ラベルが表示される', () => {
+        render(
+          <VsScreen {...defaultProps} is2v2 allyCharacter={allyChar} enemyCharacter2={enemy2Char} allyControlType="cpu" />
+        );
+        const cpuLabels = screen.getAllByText('CPU');
+        expect(cpuLabels).toHaveLength(1);
+      });
+
+      it('allyControlType=human 時に「2P」ラベルが表示される', () => {
+        render(
+          <VsScreen {...defaultProps} is2v2 allyCharacter={allyChar} enemyCharacter2={enemy2Char} allyControlType="human" />
+        );
+        expect(screen.getByText('2P')).toBeInTheDocument();
+      });
     });
 
-    it('allyControlType=human 時に「2P」ラベルが表示される', () => {
-      render(
-        <VsScreen {...defaultProps} is2v2 allyCharacter={allyChar} enemyCharacter2={enemy2Char} allyControlType="human" />
-      );
-      expect(screen.getByText('2P')).toBeInTheDocument();
+    describe('P3 ラベル', () => {
+      it('enemy1ControlType=cpu 時に P3 に「CPU」ラベルが表示される', () => {
+        render(
+          <VsScreen {...defaultProps} is2v2 allyCharacter={allyChar} enemyCharacter2={enemy2Char} enemy1ControlType="cpu" />
+        );
+        const cpuLabels = screen.getAllByText('CPU');
+        expect(cpuLabels).toHaveLength(1);
+      });
+
+      it('enemy1ControlType=human 時に P3 に「3P」ラベルが表示される', () => {
+        render(
+          <VsScreen {...defaultProps} is2v2 allyCharacter={allyChar} enemyCharacter2={enemy2Char} enemy1ControlType="human" />
+        );
+        expect(screen.getByText('3P')).toBeInTheDocument();
+      });
+    });
+
+    describe('P4 ラベル', () => {
+      it('enemy2ControlType=cpu 時に P4 に「CPU」ラベルが表示される', () => {
+        render(
+          <VsScreen {...defaultProps} is2v2 allyCharacter={allyChar} enemyCharacter2={enemy2Char} enemy2ControlType="cpu" />
+        );
+        const cpuLabels = screen.getAllByText('CPU');
+        expect(cpuLabels).toHaveLength(1);
+      });
+
+      it('enemy2ControlType=human 時に P4 に「4P」ラベルが表示される', () => {
+        render(
+          <VsScreen {...defaultProps} is2v2 allyCharacter={allyChar} enemyCharacter2={enemy2Char} enemy2ControlType="human" />
+        );
+        expect(screen.getByText('4P')).toBeInTheDocument();
+      });
+    });
+
+    describe('ラベル非表示', () => {
+      it('controlType が undefined の場合ラベルが表示されない', () => {
+        render(
+          <VsScreen {...defaultProps} is2v2 allyCharacter={allyChar} enemyCharacter2={enemy2Char} />
+        );
+        expect(screen.queryByText('CPU')).not.toBeInTheDocument();
+        expect(screen.queryByText('2P')).not.toBeInTheDocument();
+        expect(screen.queryByText('3P')).not.toBeInTheDocument();
+        expect(screen.queryByText('4P')).not.toBeInTheDocument();
+      });
+    });
+
+    describe('ラベルスタイル（R-1）', () => {
+      it('CPU ラベルのフォントサイズが 12px である', () => {
+        render(
+          <VsScreen {...defaultProps} is2v2 allyCharacter={allyChar} enemyCharacter2={enemy2Char} allyControlType="cpu" enemy1ControlType="cpu" enemy2ControlType="cpu" />
+        );
+        const cpuLabels = screen.getAllByText('CPU');
+        cpuLabels.forEach(label => {
+          expect(label.style.fontSize).toBe('12px');
+        });
+      });
+
+      it('CPU ラベルの色が #888 である', () => {
+        render(
+          <VsScreen {...defaultProps} is2v2 allyCharacter={allyChar} enemyCharacter2={enemy2Char} allyControlType="cpu" />
+        );
+        const cpuLabel = screen.getByText('CPU');
+        expect(cpuLabel.style.color).toBe('rgb(136, 136, 136)');
+      });
+
+      it('人間操作ラベル（2P）はチーム1カラーで表示される', () => {
+        render(
+          <VsScreen {...defaultProps} is2v2 allyCharacter={allyChar} enemyCharacter2={enemy2Char} allyControlType="human" />
+        );
+        const label = screen.getByText('2P');
+        // Team1 カラー: #3498db → rgb(52, 152, 219)
+        expect(label.style.color).toBe('rgb(52, 152, 219)');
+        expect(label.style.fontWeight).toBe('bold');
+      });
+
+      it('人間操作ラベル（3P）はチーム2カラーで表示される', () => {
+        render(
+          <VsScreen {...defaultProps} is2v2 allyCharacter={allyChar} enemyCharacter2={enemy2Char} enemy1ControlType="human" />
+        );
+        const label = screen.getByText('3P');
+        // Team2 カラー: #e74c3c → rgb(231, 76, 60)
+        expect(label.style.color).toBe('rgb(231, 76, 60)');
+        expect(label.style.fontWeight).toBe('bold');
+      });
+
+      it('人間操作ラベル（4P）はチーム2カラーで表示される', () => {
+        render(
+          <VsScreen {...defaultProps} is2v2 allyCharacter={allyChar} enemyCharacter2={enemy2Char} enemy2ControlType="human" />
+        );
+        const label = screen.getByText('4P');
+        // Team2 カラー: #e74c3c → rgb(231, 76, 60)
+        expect(label.style.color).toBe('rgb(231, 76, 60)');
+        expect(label.style.fontWeight).toBe('bold');
+      });
     });
   });
 });

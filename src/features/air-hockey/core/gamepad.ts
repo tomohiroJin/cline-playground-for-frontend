@@ -33,8 +33,12 @@ export function readGamepad(index: number): GamepadState | null {
   };
 }
 
-/** プレイヤースロット → ゲームパッドインデックスのマッピング */
-export const GAMEPAD_INDEX = { P2: 0, P3: 1, P4: 2 } as const;
+/**
+ * プレイヤースロット → ゲームパッドインデックスのマッピング
+ * P1 は矢印キー/マウス、P2 は WASD/タッチのため、
+ * ゲームパッドは P3（1台目）と P4（2台目）に割り当てる
+ */
+export const GAMEPAD_INDEX = { P3: 0, P4: 1 } as const;
 
 /** Gamepad API がブラウザでサポートされているか */
 export function isGamepadSupported(): boolean {

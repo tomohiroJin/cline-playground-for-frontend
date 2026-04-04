@@ -4,6 +4,65 @@
  */
 import type { GameEffects, FieldConfig, ComboState } from '../../domain/types';
 import type { GameConstants } from '../../core/constants';
+import type { GamepadToast } from '../../hooks/useGamepadInput';
+
+/** トースト描画定数 */
+const TOAST_DURATION = 3000;
+const FADE_DURATION = 500;
+const TOAST_FONT_SIZE = 14;
+const TOAST_FONT = `bold ${TOAST_FONT_SIZE}px 'Arial', 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif`;
+const TOAST_PADDING_X = 20;
+const TOAST_PADDING_Y = 10;
+const TOAST_OFFSET_Y = 100;
+const TOAST_BG_CONNECT = 'rgba(0, 128, 0, 0.8)';
+const TOAST_BG_DISCONNECT = 'rgba(128, 0, 0, 0.8)';
+const TOAST_BORDER_RADIUS = 8;
+
+/**
+ * ゲームパッド接続/切断トースト描画（スタンドアロン関数）
+ * UiRenderer クラスと Renderer モジュールの両方から呼び出される
+ */
+export function drawToastOnCanvas(
+  ctx: CanvasRenderingContext2D,
+  toast: GamepadToast | undefined,
+  now: number,
+  canvasWidth: number,
+  canvasHeight: number,
+): void {
+  if (!toast) return;
+
+  const elapsed = now - toast.timestamp;
+  if (elapsed >= TOAST_DURATION) return;
+
+  const fadeStart = TOAST_DURATION - FADE_DURATION;
+  const opacity = elapsed < fadeStart
+    ? 1.0
+    : 1.0 - (elapsed - fadeStart) / FADE_DURATION;
+
+  ctx.save();
+  ctx.globalAlpha = opacity;
+
+  const isDisconnect = toast.message.includes('切断');
+  ctx.fillStyle = isDisconnect ? TOAST_BG_DISCONNECT : TOAST_BG_CONNECT;
+
+  ctx.font = TOAST_FONT;
+  const textWidth = ctx.measureText(toast.message).width;
+  const bgWidth = textWidth + TOAST_PADDING_X * 2;
+  const bgHeight = TOAST_FONT_SIZE + TOAST_PADDING_Y * 2;
+  const bgX = (canvasWidth - bgWidth) / 2;
+  const bgY = canvasHeight - TOAST_OFFSET_Y - bgHeight / 2;
+
+  ctx.beginPath();
+  ctx.roundRect(bgX, bgY, bgWidth, bgHeight, TOAST_BORDER_RADIUS);
+  ctx.fill();
+
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(toast.message, canvasWidth / 2, bgY + bgHeight / 2);
+
+  ctx.restore();
+}
 
 export class UiRenderer {
   constructor(
@@ -154,6 +213,12 @@ export class UiRenderer {
     this.ctx.fillText('Press ESC or P to toggle', W / 2, H / 2 + 60);
 
     this.ctx.restore();
+  }
+
+  /** ゲームパッド接続/切断トースト描画 */
+  drawToast(toast: GamepadToast | undefined, now: number): void {
+    const { WIDTH, HEIGHT } = this.consts.CANVAS;
+    drawToastOnCanvas(this.ctx, toast, now, WIDTH, HEIGHT);
   }
 
   /** コンボ表示描画 */

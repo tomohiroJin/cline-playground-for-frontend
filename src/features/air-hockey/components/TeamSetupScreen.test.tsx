@@ -170,11 +170,11 @@ describe('TeamSetupScreen', () => {
     });
   });
 
-  describe('P2 CPU/人間トグル', () => {
-    it('CPU/人間のセグメントコントロールが表示される', () => {
+  describe('操作タイプトグル', () => {
+    it('P2 の CPU/人間切り替えが表示される', () => {
       render(<TeamSetupScreen {...createDefaultProps()} />);
       expect(screen.getByText('CPU')).toBeDefined();
-      expect(screen.getByText('人間')).toBeDefined();
+      expect(screen.getByText(/WASD/)).toBeDefined();
     });
 
     it('allyControlType=cpu のとき CPU ボタンがハイライトされる', () => {
@@ -183,22 +183,57 @@ describe('TeamSetupScreen', () => {
       expect(cpuButton.style.backgroundColor).toBeTruthy();
     });
 
-    it('「人間」をクリックすると onAllyControlTypeChange(human) が呼ばれる', () => {
+    it('P2 の人間ボタンをクリックすると onAllyControlTypeChange(human) が呼ばれる', () => {
       const props = createDefaultProps();
       render(<TeamSetupScreen {...props} />);
-      fireEvent.click(screen.getByText('人間'));
+      fireEvent.click(screen.getByText(/WASD/));
       expect(props.onAllyControlTypeChange).toHaveBeenCalledWith('human');
     });
 
-    it('allyControlType=human のとき操作ヒントが表示される', () => {
-      const props = { ...createDefaultProps(), allyControlType: 'human' as const };
+    it('P3/P4 のトグルが表示される（onChange が渡された場合）', () => {
+      const props = {
+        ...createDefaultProps(),
+        enemy1ControlType: 'cpu' as const,
+        onEnemy1ControlTypeChange: jest.fn(),
+        enemy2ControlType: 'cpu' as const,
+        onEnemy2ControlTypeChange: jest.fn(),
+        gamepadConnected: 2,
+      };
       render(<TeamSetupScreen {...props} />);
-      expect(screen.getByText(/WASD/)).toBeDefined();
+      expect(screen.getByText(/コントローラー 1/)).toBeDefined();
+      expect(screen.getByText(/コントローラー 2/)).toBeDefined();
     });
 
-    it('allyControlType=cpu のとき操作ヒントが表示されない', () => {
-      render(<TeamSetupScreen {...createDefaultProps()} />);
-      expect(screen.queryByText(/WASD/)).toBeNull();
+    it('P3 の人間ボタンをクリックすると onEnemy1ControlTypeChange(human) が呼ばれる', () => {
+      const props = {
+        ...createDefaultProps(),
+        enemy1ControlType: 'cpu' as const,
+        onEnemy1ControlTypeChange: jest.fn(),
+        gamepadConnected: 1,
+      };
+      render(<TeamSetupScreen {...props} />);
+      fireEvent.click(screen.getByText(/コントローラー 1/));
+      expect(props.onEnemy1ControlTypeChange).toHaveBeenCalledWith('human');
+    });
+
+    it('ゲームパッド未接続時は P3 人間ボタンが無効化される', () => {
+      const onChange = jest.fn();
+      const props = {
+        ...createDefaultProps(),
+        enemy1ControlType: 'cpu' as const,
+        onEnemy1ControlTypeChange: onChange,
+        gamepadConnected: 0,
+      };
+      render(<TeamSetupScreen {...props} />);
+      fireEvent.click(screen.getByText(/コントローラー 1/));
+      expect(onChange).not.toHaveBeenCalled();
+    });
+
+    it('allyControlType=human のとき P2 スロットラベルに操作内容が表示される', () => {
+      const props = { ...createDefaultProps(), allyControlType: 'human' as const };
+      render(<TeamSetupScreen {...props} />);
+      const p2Slot = screen.getByTestId('slot-p2');
+      expect(p2Slot.textContent).toContain('WASD');
     });
   });
 

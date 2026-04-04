@@ -144,28 +144,27 @@ const CharacterSlot: React.FC<{
   );
 };
 
-/** 敵プレイヤーの CPU/Gamepad 切り替えトグル */
-const EnemyControlToggle: React.FC<{
+/** CPU/人間 切り替えトグル（全プレイヤー共通） */
+const ControlToggle: React.FC<{
   label: string;
-  controlType?: 'cpu' | 'human';
-  onChange?: (t: 'cpu' | 'human') => void;
-  canEnable: boolean;
-}> = ({ label, controlType, onChange, canEnable }) => {
-  if (!onChange) return null;
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', marginTop: '4px' }}>
-      <span style={{ fontSize: '12px', color: '#888' }}>{label} 操作:</span>
-      <div style={styles.controlToggle}>
-        <button style={styles.controlButton(controlType === 'cpu')} onClick={() => onChange('cpu')}>CPU</button>
-        <button
-          style={{ ...styles.controlButton(controlType === 'human'), opacity: canEnable ? 1 : 0.4 }}
-          onClick={() => { if (canEnable) onChange('human'); }}
-          title={!canEnable ? 'ゲームパッドを接続してください' : undefined}
-        >🎮 人間</button>
-      </div>
+  humanLabel: string;
+  controlType: 'cpu' | 'human';
+  onChange: (t: 'cpu' | 'human') => void;
+  canEnable?: boolean;
+  disabledHint?: string;
+}> = ({ label, humanLabel, controlType, onChange, canEnable = true, disabledHint }) => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', marginTop: '4px' }}>
+    <span style={{ fontSize: '12px', color: '#888' }}>{label} 操作:</span>
+    <div style={styles.controlToggle}>
+      <button style={styles.controlButton(controlType === 'cpu')} onClick={() => onChange('cpu')}>CPU</button>
+      <button
+        style={{ ...styles.controlButton(controlType === 'human'), opacity: canEnable ? 1 : 0.4 }}
+        onClick={() => { if (canEnable) onChange('human'); }}
+        title={!canEnable ? (disabledHint ?? 'ゲームパッドを接続してください') : undefined}
+      >{humanLabel}</button>
     </div>
-  );
-};
+  </div>
+);
 
 export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
   allCharacters,
@@ -222,36 +221,22 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
           <div style={styles.slotRowFixed} data-testid="slot-p1">
             <img src={playerCharacter.icon} alt={playerCharacter.name} style={styles.slotIcon} />
             <div style={styles.slotInfo}>
-              <span style={styles.slotLabel}>P1: あなた（矢印キー / マウス）</span>
+              <span style={styles.slotLabel}>P1: ⌨️ 矢印キー / 🖱️ マウス</span>
               <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <span style={styles.slotName}>{playerCharacter.name}</span>
                 <RoleBadge characterId={playerCharacter.id} size={14} />
               </span>
             </div>
           </div>
-          {/* P2: パートナー（CPU/人間切り替え） */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', marginTop: '4px' }}>
-            <span style={{ fontSize: '12px', color: '#888' }}>P2 操作:</span>
-            <div style={styles.controlToggle}>
-              <button
-                style={styles.controlButton(allyControlType === 'cpu')}
-                onClick={() => onAllyControlTypeChange('cpu')}
-              >
-                CPU
-              </button>
-              <button
-                style={styles.controlButton(allyControlType === 'human')}
-                onClick={() => onAllyControlTypeChange('human')}
-              >
-                人間
-              </button>
-            </div>
-          </div>
-          {allyControlType === 'human' && (
-            <div style={styles.controlHint}>操作: WASD / タッチ（2本目）</div>
-          )}
+          {/* P2: CPU/人間切り替え */}
+          <ControlToggle
+            label="P2"
+            humanLabel="⌨️ WASD / 👆 タッチ"
+            controlType={allyControlType}
+            onChange={onAllyControlTypeChange}
+          />
           <CharacterSlot
-            label={allyControlType === 'cpu' ? 'P2: パートナー（CPU）' : 'P2: パートナー（人間）'}
+            label={allyControlType === 'cpu' ? 'P2: CPU' : 'P2: ⌨️ WASD / 👆 タッチ'}
             character={allyCharacter}
             slotId="p2"
             isOpen={openSlot === 'p2'}
@@ -266,10 +251,18 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
         {/* チーム2 */}
         <div style={styles.teamSection(TEAM2_COLOR)} data-testid="team2-section">
           <div style={styles.teamTitle(TEAM2_COLOR)}>チーム2（上）</div>
-          <EnemyControlToggle label="P3" controlType={enemy1ControlType} onChange={onEnemy1ControlTypeChange} canEnable={gamepadConnected >= 2} />
-          {/* P3: 敵 1 */}
+          {/* P3: CPU/ゲームパッド切り替え */}
+          {onEnemy1ControlTypeChange && (
+            <ControlToggle
+              label="P3"
+              humanLabel="🎮 コントローラー 1"
+              controlType={enemy1ControlType ?? 'cpu'}
+              onChange={onEnemy1ControlTypeChange}
+              canEnable={gamepadConnected >= 1}
+            />
+          )}
           <CharacterSlot
-            label={enemy1ControlType === 'human' ? 'P3: 敵1（🎮）' : 'P3: 敵1（CPU）'}
+            label={enemy1ControlType === 'human' ? 'P3: 🎮 コントローラー 1' : 'P3: CPU'}
             character={enemyCharacter1}
             slotId="p3"
             isOpen={openSlot === 'p3'}
@@ -279,10 +272,18 @@ export const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
             selectedCharacterId={enemyCharacter1.id}
             onSelect={(c) => handleSelect('p3', c)}
           />
-          <EnemyControlToggle label="P4" controlType={enemy2ControlType} onChange={onEnemy2ControlTypeChange} canEnable={gamepadConnected >= 3} />
-          {/* P4: 敵 2 */}
+          {/* P4: CPU/ゲームパッド切り替え */}
+          {onEnemy2ControlTypeChange && (
+            <ControlToggle
+              label="P4"
+              humanLabel="🎮 コントローラー 2"
+              controlType={enemy2ControlType ?? 'cpu'}
+              onChange={onEnemy2ControlTypeChange}
+              canEnable={gamepadConnected >= 2}
+            />
+          )}
           <CharacterSlot
-            label={enemy2ControlType === 'human' ? 'P4: 敵2（🎮）' : 'P4: 敵2（CPU）'}
+            label={enemy2ControlType === 'human' ? 'P4: 🎮 コントローラー 2' : 'P4: CPU'}
             character={enemyCharacter2}
             slotId="p4"
             isOpen={openSlot === 'p4'}

@@ -5,6 +5,7 @@
  */
 import { CanvasRenderer } from './canvas-renderer';
 import type { GameRendererPort } from '../../domain/contracts/renderer';
+import type { GamepadToast } from '../../hooks/useGamepadInput';
 import { CONSTANTS } from '../../core/constants';
 
 /** Canvas 2D コンテキストのモック */
@@ -47,13 +48,37 @@ function createMockContext(): CanvasRenderingContext2D {
   return ctx as unknown as CanvasRenderingContext2D;
 }
 
+/** ctx プロパティへの設定値を記録するヘルパー */
+function getAllPropertySets(ctx: CanvasRenderingContext2D, prop: string): string[] {
+  return (ctx as unknown as Record<string, { sets: string[] }>)[`_${prop}_sets`]?.sets ?? [];
+}
+
+/** fillStyle の設定値を記録するプロキシ付きコンテキストを作成 */
+function trackPropertySets(ctx: Record<string, unknown>, prop: string): void {
+  const key = `_${prop}_sets`;
+  ctx[key] = { sets: [] as string[] };
+  let current = ctx[prop];
+  Object.defineProperty(ctx, prop, {
+    get: () => current,
+    set: (v: unknown) => {
+      current = v;
+      (ctx[key] as { sets: string[] }).sets.push(String(v));
+    },
+    configurable: true,
+  });
+}
+
 describe('CanvasRenderer', () => {
   let ctx: CanvasRenderingContext2D;
   let renderer: GameRendererPort;
+  let canvasRenderer: CanvasRenderer;
 
   beforeEach(() => {
     ctx = createMockContext();
-    renderer = new CanvasRenderer(ctx, CONSTANTS);
+    trackPropertySets(ctx as unknown as Record<string, unknown>, 'fillStyle');
+    trackPropertySets(ctx as unknown as Record<string, unknown>, 'globalAlpha');
+    canvasRenderer = new CanvasRenderer(ctx, CONSTANTS);
+    renderer = canvasRenderer;
   });
 
   it('GameRendererPort インターフェースを満たす', () => {
@@ -148,6 +173,12 @@ describe('CanvasRenderer', () => {
 
     it('空のパーティクル配列でもエラーにならない', () => {
       expect(() => renderer.drawParticles([])).not.toThrow();
+    });
+
+    it('パーティクル数 0 の場合 arc が呼ばれない（早期リターン）', () => {
+      const arcBefore = (ctx.arc as jest.Mock).mock.calls.length;
+      renderer.drawParticles([]);
+      expect((ctx.arc as jest.Mock).mock.calls.length).toBe(arcBefore);
     });
   });
 
@@ -258,6 +289,67 @@ describe('CanvasRenderer', () => {
 
     it('CPU 側のリアクションを描画する', () => {
       expect(() => renderer.drawReaction('Oh no!', 'cpu', 500)).not.toThrow();
+    });
+  });
+
+  describe('drawToast', () => {
+    const now = 5000;
+
+    it('toast が undefined の場合、描画しない', () => {
+      const fillTextBefore = (ctx.fillText as jest.Mock).mock.calls.length;
+      canvasRenderer.drawToast(undefined, now);
+      expect((ctx.fillText as jest.Mock).mock.calls.length).toBe(fillTextBefore);
+    });
+
+    it('有効な toast で背景矩形とテキストが描画される', () => {
+      const toast: GamepadToast = { message: '🎮 コントローラー 1 が接続されました', timestamp: now - 500 };
+      canvasRenderer.drawToast(toast, now);
+      expect(ctx.roundRect).toHaveBeenCalled();
+      expect(ctx.fillText).toHaveBeenCalled();
+    });
+
+    it('表示期間（3000ms）を過ぎた toast は描画されない', () => {
+      const toast: GamepadToast = { message: 'test', timestamp: now - 3100 };
+      const fillTextBefore = (ctx.fillText as jest.Mock).mock.calls.length;
+      canvasRenderer.drawToast(toast, now);
+      expect((ctx.fillText as jest.Mock).mock.calls.length).toBe(fillTextBefore);
+    });
+
+    it('フェードアウト期間中に正しい opacity が設定される', () => {
+      // elapsed=2800, fadeStart=2500, opacity = 1.0 - 300/500 = 0.4
+      const toast: GamepadToast = { message: 'test', timestamp: now - 2800 };
+      canvasRenderer.drawToast(toast, now);
+      const alphaValues = getAllPropertySets(ctx, 'globalAlpha').map(Number);
+      expect(alphaValues.some(a => Math.abs(a - 0.4) < 0.01)).toBe(true);
+    });
+
+    it('フェード開始前は opacity が 1.0 である', () => {
+      // elapsed=1000 < fadeStart=2500 → opacity=1.0
+      const toast: GamepadToast = { message: 'test', timestamp: now - 1000 };
+      canvasRenderer.drawToast(toast, now);
+      const alphaValues = getAllPropertySets(ctx, 'globalAlpha').map(Number);
+      expect(alphaValues.some(a => a === 1.0)).toBe(true);
+    });
+
+    it('接続メッセージで緑背景が使用される', () => {
+      const toast: GamepadToast = { message: '🎮 コントローラー 1 が接続されました', timestamp: now - 100 };
+      canvasRenderer.drawToast(toast, now);
+      // fillStyle の設定履歴をチェック — 接続は緑系
+      const fillStyleSets = getAllPropertySets(ctx, 'fillStyle');
+      expect(fillStyleSets.some((s: string) => s.includes('0, 128, 0'))).toBe(true);
+    });
+
+    it('切断メッセージで赤背景が使用される', () => {
+      const toast: GamepadToast = { message: '🎮 コントローラー 1 が切断されました', timestamp: now - 100 };
+      canvasRenderer.drawToast(toast, now);
+      const fillStyleSets = getAllPropertySets(ctx, 'fillStyle');
+      expect(fillStyleSets.some((s: string) => s.includes('128, 0, 0'))).toBe(true);
+    });
+
+    it('背景幅が measureText ベースの動的計算になっている', () => {
+      const toast: GamepadToast = { message: 'test message', timestamp: now - 100 };
+      canvasRenderer.drawToast(toast, now);
+      expect(ctx.measureText).toHaveBeenCalledWith('test message');
     });
   });
 
