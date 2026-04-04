@@ -30,6 +30,8 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   const confirmRef = useRef<HTMLButtonElement>(null);
   const [phase, setPhase] = useState<AnimationPhase>(isOpen ? 'open' : 'closed');
   const fallbackTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const prefersReducedMotion = typeof window !== 'undefined'
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // isOpen の変化に応じてアニメーションフェーズを更新
   useEffect(() => {
@@ -47,14 +49,16 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   }, [isOpen]);
 
   // closing フェーズのフォールバック timer（onTransitionEnd 未発火対策）
+  // prefers-reduced-motion 時は即座に closed へ遷移（余計な遅延を排除）
   useEffect(() => {
     if (phase === 'closing') {
+      const timeout = prefersReducedMotion ? 0 : FALLBACK_TIMEOUT;
       fallbackTimerRef.current = setTimeout(() => {
         setPhase('closed');
-      }, FALLBACK_TIMEOUT);
+      }, timeout);
       return () => clearTimeout(fallbackTimerRef.current);
     }
-  }, [phase]);
+  }, [phase, prefersReducedMotion]);
 
   // onTransitionEnd で closing → closed（opacity のみで判定し、他プロパティ追加時の二重発火を防止）
   const handleTransitionEnd = useCallback((e: React.TransitionEvent) => {
@@ -108,8 +112,6 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   const isVisible = phase === 'open';
 
   // prefers-reduced-motion 対応: モーション軽減時は transition を無効化
-  const prefersReducedMotion = typeof window !== 'undefined'
-    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const transitionDuration = prefersReducedMotion ? 0 : (isClosing ? CLOSING_DURATION : OPENING_DURATION);
 
   const currentOverlayStyle: React.CSSProperties = {
@@ -161,6 +163,7 @@ const dialogStyle: React.CSSProperties = {
   borderRadius: '12px',
   padding: '24px 32px',
   maxWidth: '400px',
+  margin: '0 16px',
   textAlign: 'center',
 };
 
