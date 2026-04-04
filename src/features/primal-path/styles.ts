@@ -2,6 +2,7 @@
  * 原始進化録 - PRIMAL PATH - スタイル定義
  */
 import styled, { keyframes, css } from 'styled-components';
+import { DESIGN_TOKENS } from './design-tokens';
 
 /* ===== Keyframes ===== */
 
@@ -89,6 +90,14 @@ export const GameContainer = styled.div`
   background: #0a0a12;
   font-family: 'Courier New', monospace;
   image-rendering: pixelated;
+  image-rendering: -webkit-optimize-contrast;
+
+  /* デザイントークン（CSS 変数） */
+  ${DESIGN_TOKENS.generateCssVariables()}
+
+  @media (max-width: 600px) {
+    ${DESIGN_TOKENS.generateMobileCssVariables()}
+  }
 `;
 
 export const GameShell = styled.div`
