@@ -52,7 +52,7 @@ function pxRect(ctx: CanvasRenderingContext2D, s: number, x: number, y: number, 
 }
 
 /** プレイヤーキャラクターをピクセルアートで描画する（覚醒オーラ・シンボル対応） */
-export function drawPlayer(c: HTMLCanvasElement, s = 2, fe?: CivTypeExt | null, awoken?: AwokenRecord[]): void {
+export function drawPlayer(c: HTMLCanvasElement, s = 3, fe?: CivTypeExt | null, awoken?: AwokenRecord[]): void {
   const x = c.getContext('2d')!;
   c.width = 16 * s;
   c.height = 22 * s;
@@ -125,7 +125,7 @@ export function drawPlayer(c: HTMLCanvasElement, s = 2, fe?: CivTypeExt | null, 
 }
 
 /** 味方キャラクターをピクセルアートで描画する */
-export function drawAlly(c: HTMLCanvasElement, t: string, s = 2): void {
+export function drawAlly(c: HTMLCanvasElement, t: string, s = 3): void {
   const x = c.getContext('2d')!;
   c.width = 12 * s;
   c.height = 16 * s;
@@ -139,7 +139,7 @@ export function drawAlly(c: HTMLCanvasElement, t: string, s = 2): void {
 }
 
 /** 敵キャラクターをピクセルアートで描画する（通常/ボスサイズ対応） */
-export function drawEnemy(c: HTMLCanvasElement, nm: string, big: boolean, s = 2): void {
+export function drawEnemy(c: HTMLCanvasElement, nm: string, big: boolean, s = 3): void {
   const sz = big ? 24 : 16;
   c.width = sz * s;
   c.height = sz * s;

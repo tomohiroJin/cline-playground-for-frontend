@@ -42,7 +42,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({ run, popups }) => {
     <GamePanel style={{ position: 'relative' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <canvas ref={psprRef} aria-hidden="true" style={{
-          width: 40, height: 55,
+          width: 54, height: 72,
           border: '1px solid #222', borderRadius: 3, background: '#08080c', flexShrink: 0,
           imageRendering: 'pixelated',
         }} />

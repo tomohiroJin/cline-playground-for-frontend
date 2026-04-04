@@ -71,7 +71,7 @@ export const EventScreen: React.FC<Props> = ({ event, run, onChoose, playSfx }) 
         {/* プレイヤースプライト */}
         <div style={{ textAlign: 'center', marginBottom: 6 }}>
           <canvas ref={canvasRef} aria-hidden="true" style={{
-            width: 32, height: 44,
+            width: 48, height: 66,
             imageRendering: 'pixelated',
           }} />
         </div>
