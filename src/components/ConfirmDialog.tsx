@@ -56,9 +56,9 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     }
   }, [phase]);
 
-  // onTransitionEnd で closing → closed
-  const handleTransitionEnd = useCallback(() => {
-    if (phase === 'closing') {
+  // onTransitionEnd で closing → closed（opacity のみで判定し、他プロパティ追加時の二重発火を防止）
+  const handleTransitionEnd = useCallback((e: React.TransitionEvent) => {
+    if (phase === 'closing' && e.propertyName === 'opacity') {
       clearTimeout(fallbackTimerRef.current);
       setPhase('closed');
     }
@@ -69,7 +69,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     if (phase === 'open') cancelRef.current?.focus();
   }, [phase]);
 
-  // キーボードイベント: Escape + フォーカストラップ
+  // キーボードイベント: Escape + フォーカストラップ（closing/closed では無効）
   useEffect(() => {
     if (phase === 'closed' || phase === 'closing') return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -107,8 +107,10 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   const isClosing = phase === 'closing';
   const isVisible = phase === 'open';
 
-  // prefers-reduced-motion 対応: CSS transition で制御
-  const transitionDuration = isClosing ? CLOSING_DURATION : OPENING_DURATION;
+  // prefers-reduced-motion 対応: モーション軽減時は transition を無効化
+  const prefersReducedMotion = typeof window !== 'undefined'
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const transitionDuration = prefersReducedMotion ? 0 : (isClosing ? CLOSING_DURATION : OPENING_DURATION);
 
   const currentOverlayStyle: React.CSSProperties = {
     ...overlayStyle,
