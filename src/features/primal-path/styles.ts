@@ -98,6 +98,15 @@ export const GameContainer = styled.div`
   @media (max-width: 600px) {
     ${DESIGN_TOKENS.generateMobileCssVariables()}
   }
+
+  /* 減モーション対応: 装飾的アニメーションを無効化 */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 `;
 
 export const GameShell = styled.div`
@@ -215,7 +224,7 @@ export const GameButton = styled.button<{ $off?: boolean }>`
   background: linear-gradient(180deg, #1c1c2c, #141420);
   color: #c0b898;
   border: 1px solid #333;
-  padding: 8px 18px;
+  padding: var(--sp-btn-pad, 10px 22px);
   margin: 3px;
   cursor: pointer;
   font-family: inherit;
@@ -242,7 +251,7 @@ export const GameButton = styled.button<{ $off?: boolean }>`
 export const GamePanel = styled.div`
   background: linear-gradient(180deg, #0e0e16, #0a0a12);
   border: 1px solid #262636;
-  padding: 8px;
+  padding: var(--sp-card-pad, 12px);
   margin: 4px 0;
   width: 100%;
   border-radius: 3px;
@@ -258,7 +267,7 @@ export const StatText = styled.div`
 export const EvoCard = styled.button<{ $rare?: boolean }>`
   background: linear-gradient(180deg, #14141e, #0e0e16);
   border: 2px solid #2a2a3a;
-  padding: 8px 8px 6px;
+  padding: var(--sp-card-pad, 12px);
   width: 100%;
   cursor: pointer;
   text-align: left;
@@ -313,7 +322,7 @@ export const TreeNodeBox = styled.div<{ $bought?: boolean; $locked?: boolean; $c
 export const LogContainer = styled.div`
   font-size: var(--fs-tiny, 11px);
   color: #808068;
-  max-height: 160px;
+  max-height: calc(var(--game-height, 960px) * 0.22);
   overflow-y: auto;
   width: 100%;
   padding: 4px 6px;
@@ -518,7 +527,7 @@ export const skillPulse = keyframes`
 export const BattleFixedBottom = styled.div`
   flex-shrink: 0;
   width: 100%;
-  padding: 6px 0 4px;
+  padding: 10px 0 8px;
   background: linear-gradient(180deg, transparent, #12121e 8px);
 `;
 
@@ -548,13 +557,13 @@ export const SkillBtn = styled.button<{ $off?: boolean }>`
   border: 1px solid #444;
   color: #e0d8c8;
   font-size: var(--fs-panel, 13px);
-  padding: 10px 16px;
+  padding: 8px 14px;
   cursor: pointer;
   border-radius: 4px;
   font-family: inherit;
   transition: all 0.12s;
-  min-width: 96px;
-  min-height: 44px;
+  min-width: 120px;
+  min-height: 52px;
   animation: ${skillPulse} 2s ease-in-out infinite;
 
   &:hover {
@@ -590,17 +599,17 @@ export const BiomeBg = styled.div<{ $biome: string }>`
   pointer-events: none;
 `;
 
-/** 降雪キーフレーム */
+/** 降雪キーフレーム（GameShell 高さ 960px に対応） */
 export const snowfall = keyframes`
   0% { transform: translateY(-10px) translateX(0); opacity: 0; }
   10% { opacity: 0.8; }
   90% { opacity: 0.6; }
-  100% { transform: translateY(720px) translateX(20px); opacity: 0; }
+  100% { transform: translateY(960px) translateX(20px); opacity: 0; }
 `;
 
-/** 火の粉キーフレーム */
+/** 火の粉キーフレーム（GameShell 高さ 960px に対応） */
 export const ember = keyframes`
-  0% { transform: translateY(720px) translateX(0); opacity: 0; }
+  0% { transform: translateY(960px) translateX(0); opacity: 0; }
   10% { opacity: 0.9; }
   80% { opacity: 0.5; }
   100% { transform: translateY(-20px) translateX(-15px); opacity: 0; }
@@ -697,7 +706,7 @@ export const TabBtn = styled.button<{ $active?: boolean }>`
 export const LogReviewContainer = styled.div`
   font-size: var(--fs-tiny, 11px);
   color: #808068;
-  max-height: 200px;
+  max-height: calc(var(--game-height, 960px) * 0.22);
   overflow-y: auto;
   background: rgba(0, 0, 0, 0.5);
   border: 1px solid #555;
