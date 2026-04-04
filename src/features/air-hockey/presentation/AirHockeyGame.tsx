@@ -63,12 +63,11 @@ import { PageContainer } from '../styles';
 
 const AirHockeyGame: React.FC = () => {
   // ── カスタムフック ──
-  const { screen, transitioning, navigateTo, navigateWithTransition } = useScreenNavigation();
+  const nav = useScreenNavigation();
+  const { screen, transitioning, navigateTo, navigateWithTransition } = nav;
   const mode = useGameMode();
   const audio = useAudioManager();
   const { toast: gamepadToast, connectedCount: gamepadConnectedCount } = useGamepadInput();
-  const gamepadToastRef = useRef(gamepadToast);
-  gamepadToastRef.current = gamepadToast;
   const dex = useCharacterDex();
 
   // ── ゲームセッション状態 ──
@@ -84,13 +83,17 @@ const AirHockeyGame: React.FC = () => {
   const lastInputRef = useRef(0);
   const scoreRef = useRef({ p: 0, c: 0 });
   const phaseRef = useRef<GamePhase>('countdown');
-  const ui = useUIOverlayState(screen, phaseRef);
   const countdownStartRef = useRef(0);
   const shakeRef = useRef<ShakeState | null>(null);
   const statsRef = useRef<MatchStats>(EntityFactory.createMatchStats());
   const matchStartRef = useRef(0);
   const player2KeysRef = useRef(createKeyboardState());
   const playerTargetRef = useRef<import('../hooks/useInput').PlayerTargetPosition>(null);
+  const gamepadToastRef = useRef(gamepadToast);
+  gamepadToastRef.current = gamepadToast;
+
+  // ── UI オーバーレイ状態（phaseRef 依存のため Ref 宣言後に配置）──
+  const ui = useUIOverlayState(screen, phaseRef);
 
   // ── リザルト処理 ──
   const result = useResultProcessing({ screen, winner, scoreRef, statsRef, mode, dex });
@@ -129,7 +132,7 @@ const AirHockeyGame: React.FC = () => {
     countdownStartRef.current = Date.now();
     statsRef.current = EntityFactory.createMatchStats();
     matchStartRef.current = Date.now();
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- mode全体を依存に入れるとゲーム開始時に不要な再レンダリングが発生するため、必要な値のみ指定
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- mode全体を依存に入れるとゲーム開始時に不要な再レンダリングが発生するため、必要な値のみ指定。ui.setShowHelp は useState の setter で安定参照のため省略可
   }, [mode.field, mode.gameMode, mode.setField, navigateWithTransition]);
 
   const togglePause = useCallback(() => {
@@ -148,12 +151,11 @@ const AirHockeyGame: React.FC = () => {
 
   // ── イベントハンドラ ──
   const handlers = useGameHandlers({
-    mode, nav: { screen, transitioning, navigateTo, navigateWithTransition, goToMenu: () => navigateTo('menu') },
-    ui, audio, winner, startGame, setPreloadUrls,
+    mode, nav, ui, audio, winner, startGame, setPreloadUrls,
   });
 
   // ── 導出値 ──
-  const { cpuCharacter, storyCharacters, stageBackgroundUrl, hasNextStage, storyAiConfig } = useStoryScreen(mode.currentStage);
+  const { cpuCharacter, storyCharacters, stageBackgroundUrl, hasNextStage, storyAiConfig } = useStoryScreen({ currentStage: mode.currentStage });
   const { freeBattleAiConfig, freeBattleCpuCharacter, allBattleCharacters, freeBattleSelectableCharacters } = useFreeBattleScreen({
     difficulty: mode.difficulty,
     selectedCpuCharacter: mode.selectedCpuCharacter,
@@ -169,7 +171,6 @@ const AirHockeyGame: React.FC = () => {
     }
     return map;
   }, [dex.dexEntries]);
-
 
   // ── 2P / 2v2 モード判定（入力フックより前に宣言） ──
   const is2PMode = mode.gameMode === '2p-local';

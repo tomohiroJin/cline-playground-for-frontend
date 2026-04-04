@@ -60,14 +60,20 @@ export const usePairMatchSetup = ({
     [enemyCharacter2, freeBattleSelectableCharacters]
   );
 
-  const resultPlayerCharacter = gameMode === 'story' ? PLAYER_CHARACTER
-    : is2PMode ? player1Character
-    : PLAYER_CHARACTER;
+  const resultPlayerCharacter = useMemo(
+    () => gameMode === 'story' ? PLAYER_CHARACTER
+      : is2PMode ? player1Character
+      : PLAYER_CHARACTER,
+    [gameMode, is2PMode, player1Character]
+  );
 
-  const resultOpponentCharacter = gameMode === 'story' ? cpuCharacter
-    : is2PMode ? player2Character
-    : is2v2Mode ? freeBattleCpuCharacter
-    : selectedCpuCharacter ?? freeBattleCpuCharacter;
+  const resultOpponentCharacter = useMemo(
+    () => gameMode === 'story' ? cpuCharacter
+      : is2PMode ? player2Character
+      : is2v2Mode ? freeBattleCpuCharacter
+      : selectedCpuCharacter ?? freeBattleCpuCharacter,
+    [gameMode, is2PMode, is2v2Mode, cpuCharacter, player2Character, freeBattleCpuCharacter, selectedCpuCharacter]
+  );
 
   const currentCpuName = useMemo(
     () => gameMode === 'story' && cpuCharacter

@@ -31,9 +31,39 @@ type UseGameHandlersParams = {
   setPreloadUrls: (urls: string[]) => void;
 };
 
+export type UseGameHandlersReturn = {
+  handleSelectStage: (stage: StageDefinition) => void;
+  handleScreenChange: (newScreen: 'menu' | 'game' | 'result') => void;
+  handleFreeStart: () => void;
+  handleStoryClick: () => void;
+  handleDailyChallengeClick: () => void;
+  handleDailyChallengeStart: () => void;
+  handleBackFromDex: () => void;
+  handleBackFromStageSelect: () => void;
+  handleStoryReset: () => void;
+  handleBackToMenu: () => void;
+  handleVsComplete: () => void;
+  handleGameMenuClick: () => void;
+  handlePostDialogueComplete: () => void;
+  handleResultBackToMenu: () => void;
+  handleExitConfirm: () => void;
+  handleExitCancel: () => void;
+  handleTwoPlayerClick: () => void;
+  handleStartBattle: (config: TwoPlayerConfig) => void;
+  handleBackToCharacterSelect: () => void;
+  handlePairMatchClick: () => void;
+  handlePairMatchStart: () => void;
+  handlePairMatchVsComplete: () => void;
+  handleBackToTeamSetup: () => void;
+  handleFreeBattleCharacterConfirm: (character: Character) => void;
+  handleAcceptDifficulty: (d: Difficulty) => void;
+  handleBackToStageSelect: () => void;
+  handleNextStage: () => void;
+};
+
 export const useGameHandlers = ({
   mode, nav, ui, audio, winner, startGame, setPreloadUrls,
-}: UseGameHandlersParams) => {
+}: UseGameHandlersParams): UseGameHandlersReturn => {
   const { navigateTo } = nav;
 
   // ── ストーリーモード ──

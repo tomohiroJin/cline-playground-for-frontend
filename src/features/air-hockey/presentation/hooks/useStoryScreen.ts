@@ -20,7 +20,13 @@ export type UseStoryScreenReturn = {
   storyAiConfig: AiBehaviorConfig | undefined;
 };
 
-export const useStoryScreen = (currentStage: StageDefinition | undefined): UseStoryScreenReturn => {
+type UseStoryScreenParams = {
+  currentStage: StageDefinition | undefined;
+  /** 全ステージ配列（Chapter 2 追加時に拡張可能） */
+  allStages?: readonly StageDefinition[];
+};
+
+export const useStoryScreen = ({ currentStage, allStages = CHAPTER_1_STAGES }: UseStoryScreenParams): UseStoryScreenReturn => {
   const cpuCharacter = useMemo(
     () => currentStage ? findCharacterById(currentStage.characterId) : undefined,
     [currentStage]
@@ -41,9 +47,9 @@ export const useStoryScreen = (currentStage: StageDefinition | undefined): UseSt
 
   const hasNextStage = useMemo(() => {
     if (!currentStage) return false;
-    const idx = CHAPTER_1_STAGES.findIndex(s => s.id === currentStage.id);
-    return idx < CHAPTER_1_STAGES.length - 1;
-  }, [currentStage]);
+    const idx = allStages.findIndex(s => s.id === currentStage.id);
+    return idx < allStages.length - 1;
+  }, [currentStage, allStages]);
 
   const storyAiConfig = useMemo(
     () => currentStage ? getStoryStageBalance(currentStage.id).ai : undefined,
