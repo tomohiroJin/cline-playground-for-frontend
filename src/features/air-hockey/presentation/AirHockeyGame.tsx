@@ -64,7 +64,7 @@ import { PageContainer } from '../styles';
 const AirHockeyGame: React.FC = () => {
   // ── カスタムフック ──
   const nav = useScreenNavigation();
-  const { screen, transitioning, navigateTo, navigateWithTransition } = nav;
+  const { screen, transitioning, navigateWithTransition } = nav;
   const mode = useGameMode();
   const audio = useAudioManager();
   const { toast: gamepadToast, connectedCount: gamepadConnectedCount } = useGamepadInput();
@@ -155,7 +155,7 @@ const AirHockeyGame: React.FC = () => {
   });
 
   // ── 導出値 ──
-  const { cpuCharacter, storyCharacters, stageBackgroundUrl, hasNextStage, storyAiConfig } = useStoryScreen({ currentStage: mode.currentStage });
+  const { cpuCharacter, storyCharacters, stageBackgroundUrl, hasNextStage, storyAiConfig } = useStoryScreen({ currentStage: mode.currentStage, allStages: CHAPTER_1_STAGES });
   const { freeBattleAiConfig, freeBattleCpuCharacter, allBattleCharacters, freeBattleSelectableCharacters } = useFreeBattleScreen({
     difficulty: mode.difficulty,
     selectedCpuCharacter: mode.selectedCpuCharacter,
@@ -264,12 +264,12 @@ const AirHockeyGame: React.FC = () => {
             diff={mode.difficulty} setDiff={mode.setDifficulty} field={mode.field} setField={mode.setField}
             winScore={mode.winScore} setWinScore={mode.setWinScore} highScore={result.highScore}
             onStart={handlers.handleFreeStart} onStoryClick={handlers.handleStoryClick}
-            onShowAchievements={() => navigateTo('achievements')}
+            onShowAchievements={handlers.handleShowAchievements}
             onHelpClick={() => { ui.setIsHelpMode(true); ui.setShowTutorial(true); }}
             onSettingsClick={() => ui.setShowSettings(true)}
             onDailyChallengeClick={handlers.handleDailyChallengeClick}
             unlockState={result.unlockState}
-            onCharacterDexClick={() => navigateTo('characterDex')}
+            onCharacterDexClick={handlers.handleShowCharacterDex}
             newUnlockCount={dex.getNewUnlockCount()}
             onTwoPlayerClick={handlers.handleTwoPlayerClick}
             onPairMatchClick={handlers.handlePairMatchClick}
@@ -342,10 +342,10 @@ const AirHockeyGame: React.FC = () => {
       )}
 
       {screen === 'chapterTitle' && mode.currentStage?.chapterTitle && (
-        <ChapterTitleCard chapter={mode.currentStage.chapter} title={mode.currentStage.chapterTitle} subtitle={mode.currentStage.chapterSubtitle} backgroundUrl={stageBackgroundUrl} onComplete={() => navigateTo('preDialogue')} />
+        <ChapterTitleCard chapter={mode.currentStage.chapter} title={mode.currentStage.chapterTitle} subtitle={mode.currentStage.chapterSubtitle} backgroundUrl={stageBackgroundUrl} onComplete={handlers.handleChapterTitleComplete} />
       )}
       {screen === 'preDialogue' && mode.currentStage && (
-        <DialogueOverlay dialogues={mode.currentStage.preDialogue} characters={storyCharacters} backgroundUrl={stageBackgroundUrl} onComplete={() => navigateTo('vsScreen')} />
+        <DialogueOverlay dialogues={mode.currentStage.preDialogue} characters={storyCharacters} backgroundUrl={stageBackgroundUrl} onComplete={handlers.handlePreDialogueComplete} />
       )}
       {screen === 'vsScreen' && mode.gameMode === 'story' && mode.currentStage && cpuCharacter && (
         <VsScreen playerCharacter={PLAYER_CHARACTER} cpuCharacter={cpuCharacter} stageName={mode.currentStage.name} fieldName={(FIELDS.find(f => f.id === mode.currentStage!.fieldId) ?? FIELDS[0]).name} onComplete={handlers.handleVsComplete} />
@@ -386,7 +386,7 @@ const AirHockeyGame: React.FC = () => {
         <DialogueOverlay dialogues={winner === 'player' ? mode.currentStage.postWinDialogue : mode.currentStage.postLoseDialogue} characters={storyCharacters} backgroundUrl={stageBackgroundUrl} onComplete={handlers.handlePostDialogueComplete} />
       )}
       {screen === 'victoryCutIn' && mode.currentStage && (
-        <VictoryCutIn imageUrl={getVictoryCutInUrl(mode.currentStage.chapter)} onComplete={() => navigateTo('result')} />
+        <VictoryCutIn imageUrl={getVictoryCutInUrl(mode.currentStage.chapter)} onComplete={handlers.handleVictoryCutInComplete} />
       )}
 
       {screen === 'result' && (

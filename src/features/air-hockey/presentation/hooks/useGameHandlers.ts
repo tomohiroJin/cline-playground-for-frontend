@@ -34,6 +34,11 @@ type UseGameHandlersParams = {
 export type UseGameHandlersReturn = {
   handleSelectStage: (stage: StageDefinition) => void;
   handleScreenChange: (newScreen: 'menu' | 'game' | 'result') => void;
+  handleShowAchievements: () => void;
+  handleShowCharacterDex: () => void;
+  handleChapterTitleComplete: () => void;
+  handlePreDialogueComplete: () => void;
+  handleVictoryCutInComplete: () => void;
   handleFreeStart: () => void;
   handleStoryClick: () => void;
   handleDailyChallengeClick: () => void;
@@ -81,6 +86,7 @@ export const useGameHandlers = ({
     navigateTo(stage.chapterTitle ? 'chapterTitle' : 'preDialogue');
   }, [mode, navigateTo, setPreloadUrls]);
 
+  // useGameLoop の setScreen callback 経由で呼ばれる（ゲーム終了時の画面遷移）
   const handleScreenChange = useCallback((newScreen: 'menu' | 'game' | 'result') => {
     if (newScreen === 'result' && mode.gameMode === 'story') {
       navigateTo('postDialogue');
@@ -90,6 +96,8 @@ export const useGameHandlers = ({
   }, [mode.gameMode, navigateTo]);
 
   // ── メニュー系 ──
+  const handleShowAchievements = useCallback(() => { navigateTo('achievements'); }, [navigateTo]);
+  const handleShowCharacterDex = useCallback(() => { navigateTo('characterDex'); }, [navigateTo]);
   const handleFreeStart = useCallback(() => { mode.setGameMode('free'); navigateTo('freeBattleCharacterSelect'); }, [mode, navigateTo]);
   const handleStoryClick = useCallback(() => { mode.setGameMode('story'); mode.setStoryProgress(loadStoryProgress()); navigateTo('stageSelect'); }, [mode, navigateTo]);
   const handleDailyChallengeClick = useCallback(() => { mode.setDailyChallenge(generateDailyChallenge(new Date())); navigateTo('daily'); }, [mode, navigateTo]);
@@ -107,6 +115,11 @@ export const useGameHandlers = ({
   const handleBackFromStageSelect = useCallback(() => { mode.resetToFree(); navigateTo('menu'); }, [mode, navigateTo]);
   const handleStoryReset = useCallback(() => { resetStoryProgress(); mode.setStoryProgress({ clearedStages: [] }); }, [mode]);
   const handleBackToMenu = useCallback(() => { navigateTo('menu'); }, [navigateTo]);
+
+  // ── ストーリーフロー遷移 ──
+  const handleChapterTitleComplete = useCallback(() => { navigateTo('preDialogue'); }, [navigateTo]);
+  const handlePreDialogueComplete = useCallback(() => { navigateTo('vsScreen'); }, [navigateTo]);
+  const handleVictoryCutInComplete = useCallback(() => { navigateTo('result'); }, [navigateTo]);
 
   // ── VS 画面 ──
   const handleVsComplete = useCallback(() => {
@@ -162,6 +175,8 @@ export const useGameHandlers = ({
 
   return {
     handleSelectStage, handleScreenChange,
+    handleShowAchievements, handleShowCharacterDex,
+    handleChapterTitleComplete, handlePreDialogueComplete, handleVictoryCutInComplete,
     handleFreeStart, handleStoryClick, handleDailyChallengeClick, handleDailyChallengeStart,
     handleBackFromDex, handleBackFromStageSelect, handleStoryReset, handleBackToMenu,
     handleVsComplete, handleGameMenuClick, handlePostDialogueComplete,

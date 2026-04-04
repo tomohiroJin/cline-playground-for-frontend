@@ -10,7 +10,6 @@ import type { Character } from '../../core/types';
 import type { StageDefinition } from '../../core/story';
 import type { AiBehaviorConfig } from '../../core/story-balance';
 import { getStoryStageBalance } from '../../core/story-balance';
-import { CHAPTER_1_STAGES } from '../../core/dialogue-data';
 
 export type UseStoryScreenReturn = {
   cpuCharacter: Character | undefined;
@@ -22,11 +21,11 @@ export type UseStoryScreenReturn = {
 
 type UseStoryScreenParams = {
   currentStage: StageDefinition | undefined;
-  /** 全ステージ配列（Chapter 2 追加時に拡張可能） */
-  allStages?: readonly StageDefinition[];
+  /** 全ステージ配列（Chapter 追加時にコンパイルエラーで渡し忘れを検出） */
+  allStages: readonly StageDefinition[];
 };
 
-export const useStoryScreen = ({ currentStage, allStages = CHAPTER_1_STAGES }: UseStoryScreenParams): UseStoryScreenReturn => {
+export const useStoryScreen = ({ currentStage, allStages }: UseStoryScreenParams): UseStoryScreenReturn => {
   const cpuCharacter = useMemo(
     () => currentStage ? findCharacterById(currentStage.characterId) : undefined,
     [currentStage]
