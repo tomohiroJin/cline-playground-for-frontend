@@ -199,8 +199,8 @@ describe('Phase 2: キャラクター基盤', () => {
     it('全キャラクター（主人公 + ストーリー + フリー対戦）を返す', () => {
       const all = getAllCharacters();
 
-      // 主人公 1 + ストーリー 4 + フリー対戦 3 = 8
-      expect(all.length).toBe(8);
+      // 主人公 1 + ストーリー 7 + フリー対戦 3 = 11
+      expect(all.length).toBe(11);
     });
 
     it('主人公（アキラ）が含まれる', () => {

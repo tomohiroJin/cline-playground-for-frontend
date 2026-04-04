@@ -130,6 +130,71 @@ const STAGE_BALANCE_MAP: Record<string, StageBalanceConfig> = {
     comebackMalletBonus: 0.15,
     comebackGoalReduction: 0.15,
   },
+  // ── 第2章: 地区大会編 ──────────────────────────────
+  // ステージ 2-1: 嵐の前の一打（練習試合 vs ソウタ — ウォーミングアップ）
+  '2-1': {
+    ai: {
+      maxSpeed: 1.8,
+      predictionFactor: 1.0,
+      wobble: 35,
+      skipRate: 0.05,
+      centerWeight: 0.7,
+      wallBounce: false,
+      playStyle: CHARACTER_AI_PROFILES['rookie'],
+    },
+    itemSpawnInterval: CONSTANTS.TIMING.ITEM_SPAWN,
+    comebackThreshold: CONSTANTS.COMEBACK.THRESHOLD,
+    comebackMalletBonus: CONSTANTS.COMEBACK.MALLET_BONUS,
+    comebackGoalReduction: CONSTANTS.COMEBACK.GOAL_REDUCTION,
+  },
+  // ステージ 2-2: 堅実なる壁（1回戦 vs ケンジ — 基本の壁）
+  '2-2': {
+    ai: {
+      maxSpeed: 3.5,
+      predictionFactor: 6,
+      wobble: 8,
+      skipRate: 0.01,
+      centerWeight: 0.4,
+      wallBounce: false,
+      playStyle: CHARACTER_AI_PROFILES['regular'],
+    },
+    itemSpawnInterval: CONSTANTS.TIMING.ITEM_SPAWN,
+    comebackThreshold: 3,
+    comebackMalletBonus: CONSTANTS.COMEBACK.MALLET_BONUS,
+    comebackGoalReduction: CONSTANTS.COMEBACK.GOAL_REDUCTION,
+  },
+  // ステージ 2-3: 幻惑の罠（準決勝 vs カナタ — 壁バウンス変則）
+  '2-3': {
+    ai: {
+      maxSpeed: 3.8,
+      predictionFactor: 5,
+      wobble: 20,
+      skipRate: 0,
+      centerWeight: 0.1,
+      wallBounce: true,
+      playStyle: CHARACTER_AI_PROFILES['kanata'],
+    },
+    itemSpawnInterval: 3500,
+    comebackThreshold: 2,
+    comebackMalletBonus: 0.15,
+    comebackGoalReduction: CONSTANTS.COMEBACK.GOAL_REDUCTION,
+  },
+  // ステージ 2-4: 氷の頂へ（決勝 vs レン — 最強の壁）
+  '2-4': {
+    ai: {
+      maxSpeed: 6.5,
+      predictionFactor: 13,
+      wobble: 0,
+      skipRate: 0,
+      centerWeight: 0,
+      wallBounce: true,
+      playStyle: CHARACTER_AI_PROFILES['ace'],
+    },
+    itemSpawnInterval: CONSTANTS.TIMING.ITEM_SPAWN,
+    comebackThreshold: 2,
+    comebackMalletBonus: 0.2,
+    comebackGoalReduction: 0.15,
+  },
 };
 
 /** デフォルトバランス設定（normal プリセットベース） */

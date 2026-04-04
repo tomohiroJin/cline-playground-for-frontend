@@ -19,7 +19,7 @@ import { CONSTANTS } from '../core/constants';
 import { FIELDS, PAIR_MATCH_GOAL_SIZES } from '../core/config';
 import { findCharacterById, PLAYER_CHARACTER } from '../core/characters';
 import type { GameState, GamePhase, ShakeState, MatchStats, GameMode } from '../core/types';
-import { CHAPTER_1_STAGES } from '../core/dialogue-data';
+import { ALL_STAGES } from '../core/dialogue-data';
 import { FreeBattleCharacterSelect } from '../components/FreeBattleCharacterSelect';
 import { getDexEntryById } from '../core/dex-data';
 import { useCharacterDex } from '../hooks/useCharacterDex';
@@ -155,7 +155,7 @@ const AirHockeyGame: React.FC = () => {
   });
 
   // ── 導出値 ──
-  const { cpuCharacter, storyCharacters, stageBackgroundUrl, hasNextStage, storyAiConfig } = useStoryScreen({ currentStage: mode.currentStage, allStages: CHAPTER_1_STAGES });
+  const { cpuCharacter, storyCharacters, stageBackgroundUrl, hasNextStage, storyAiConfig } = useStoryScreen({ currentStage: mode.currentStage, allStages: ALL_STAGES });
   const { freeBattleAiConfig, freeBattleCpuCharacter, allBattleCharacters, freeBattleSelectableCharacters } = useFreeBattleScreen({
     difficulty: mode.difficulty,
     selectedCpuCharacter: mode.selectedCpuCharacter,
@@ -337,7 +337,7 @@ const AirHockeyGame: React.FC = () => {
 
       {screen === 'stageSelect' && (
         <Transition isActive={true} type="fade">
-          <StageSelectScreen stages={CHAPTER_1_STAGES} progress={mode.storyProgress} onSelectStage={handlers.handleSelectStage} onBack={handlers.handleBackFromStageSelect} onReset={handlers.handleStoryReset} />
+          <StageSelectScreen stages={ALL_STAGES} progress={mode.storyProgress} onSelectStage={handlers.handleSelectStage} onBack={handlers.handleBackFromStageSelect} onReset={handlers.handleStoryReset} />
         </Transition>
       )}
 

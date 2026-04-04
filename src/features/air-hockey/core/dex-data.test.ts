@@ -15,7 +15,7 @@ import {
   getVisibleDexEntries,
 } from './dex-data';
 import { findCharacterById } from './characters';
-import { CHAPTER_1_STAGES } from './dialogue-data';
+import { ALL_STAGES } from './dialogue-data';
 
 describe('P2-01: データ層整備', () => {
   // ── 型定義の検証 ──────────────────────────────
@@ -106,8 +106,8 @@ describe('P2-01: データ層整備', () => {
   // ── 図鑑データの検証 ──────────────────────────────
 
   describe('図鑑データ（DEX_ENTRIES）', () => {
-    it('全8キャラクターのエントリが存在する', () => {
-      expect(DEX_ENTRIES).toHaveLength(8);
+    it('全11キャラクターのエントリが存在する', () => {
+      expect(DEX_ENTRIES).toHaveLength(11);
     });
 
     it('characterId が characters.ts の ID と一致する', () => {
@@ -115,11 +115,15 @@ describe('P2-01: データ層整備', () => {
 
       // プレイヤー
       expect(dexIds).toContain('player');
-      // ストーリーキャラクター
+      // ストーリーキャラクター（第1章）
       expect(dexIds).toContain('hiro');
       expect(dexIds).toContain('misaki');
       expect(dexIds).toContain('takuma');
       expect(dexIds).toContain('yuu');
+      // ストーリーキャラクター（第2章）
+      expect(dexIds).toContain('kanata');
+      expect(dexIds).toContain('riku');
+      expect(dexIds).toContain('shion');
       // フリー対戦キャラクター
       expect(dexIds).toContain('rookie');
       expect(dexIds).toContain('regular');
@@ -199,7 +203,7 @@ describe('P2-01: データ層整備', () => {
       });
 
       it('story-clear の stageId が dialogue-data.ts のステージ ID と一致する', () => {
-        const storyStageIds = CHAPTER_1_STAGES.map((s) => s.id);
+        const storyStageIds = ALL_STAGES.map((s) => s.id);
 
         for (const entry of DEX_ENTRIES) {
           if (entry.unlockCondition.type === 'story-clear') {
@@ -324,7 +328,7 @@ describe('P2-01: データ層整備', () => {
   describe('getAllDexEntries()', () => {
     it('全エントリを返す', () => {
       const entries = getAllDexEntries();
-      expect(entries).toHaveLength(8);
+      expect(entries).toHaveLength(11);
     });
 
     it('返される配列はDEX_ENTRIESと同じ内容を持つ', () => {
@@ -348,20 +352,23 @@ describe('P2-01: データ層整備', () => {
     it('default と story-clear タイプのエントリのみ返す', () => {
       const visible = getVisibleDexEntries();
 
-      // player（default） + hiro, misaki, takuma（story-clear）= 4件
-      expect(visible).toHaveLength(4);
+      // player（default） + hiro, misaki, takuma（Ch1 story-clear）+ kanata, riku, shion（Ch2 story-clear）= 7件
+      expect(visible).toHaveLength(7);
       const visibleIds = visible.map((e) => e.profile.characterId);
       expect(visibleIds).toContain('player');
       expect(visibleIds).toContain('hiro');
       expect(visibleIds).toContain('misaki');
       expect(visibleIds).toContain('takuma');
+      expect(visibleIds).toContain('kanata');
+      expect(visibleIds).toContain('riku');
+      expect(visibleIds).toContain('shion');
     });
 
     it('エントリの順序が元の配列と同じ', () => {
       const visible = getVisibleDexEntries();
       const visibleIds = visible.map((e) => e.profile.characterId);
 
-      expect(visibleIds).toEqual(['player', 'hiro', 'misaki', 'takuma']);
+      expect(visibleIds).toEqual(['player', 'hiro', 'misaki', 'takuma', 'kanata', 'riku', 'shion']);
     });
   });
 });

@@ -10,7 +10,7 @@ import { findCharacterById, PLAYER_CHARACTER } from '../../core/characters';
 import type { Character, GameMode, Difficulty } from '../../core/types';
 import { loadStoryProgress, resetStoryProgress } from '../../core/story';
 import type { StageDefinition } from '../../core/story';
-import { CHAPTER_1_STAGES } from '../../core/dialogue-data';
+import { ALL_STAGES } from '../../core/dialogue-data';
 import { generateDailyChallenge } from '../../core/daily-challenge';
 import { getStageAssetUrls } from '../../core/get-stage-asset-urls';
 import { saveStreakRecord } from '../../core/difficulty-adjust';
@@ -169,8 +169,8 @@ export const useGameHandlers = ({
   const handleAcceptDifficulty = useCallback((d: Difficulty) => { mode.setDifficulty(d); saveStreakRecord({ winStreak: 0, loseStreak: 0 }); }, [mode]);
   const handleBackToStageSelect = useCallback(() => { mode.setStoryProgress(loadStoryProgress()); navigateTo('stageSelect'); }, [mode, navigateTo]);
   const handleNextStage = useCallback(() => {
-    const idx = CHAPTER_1_STAGES.findIndex(s => s.id === mode.currentStage?.id);
-    if (CHAPTER_1_STAGES[idx + 1]) handleSelectStage(CHAPTER_1_STAGES[idx + 1]);
+    const idx = ALL_STAGES.findIndex(s => s.id === mode.currentStage?.id);
+    if (ALL_STAGES[idx + 1]) handleSelectStage(ALL_STAGES[idx + 1]);
   }, [mode.currentStage, handleSelectStage]);
 
   return {

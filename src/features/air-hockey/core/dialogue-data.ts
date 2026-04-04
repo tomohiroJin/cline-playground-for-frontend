@@ -1,8 +1,10 @@
 /**
- * ストーリーモード第1章のステージ・ダイアログデータ
+ * ストーリーモード ステージ・ダイアログデータ
  * P1-01: 背景ID・チャプタータイトル・expression を追加
+ * S8-3: Chapter 2 統合 + ALL_STAGES 追加
  */
 import type { StageDefinition } from './story';
+import { CHAPTER_2_STAGES } from './chapter2-dialogue-data';
 
 export const CHAPTER_1_STAGES: StageDefinition[] = [
   {
@@ -85,4 +87,10 @@ export const CHAPTER_1_STAGES: StageDefinition[] = [
       { characterId: 'takuma', text: '鍛え直して、もう一度来い。' },
     ],
   },
+];
+
+/** 全チャプターの全ステージ（ストーリー進行順） */
+export const ALL_STAGES: StageDefinition[] = [
+  ...CHAPTER_1_STAGES,
+  ...CHAPTER_2_STAGES,
 ];
