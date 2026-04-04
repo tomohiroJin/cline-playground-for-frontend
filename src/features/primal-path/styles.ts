@@ -101,18 +101,35 @@ export const GameContainer = styled.div`
 `;
 
 export const GameShell = styled.div`
-  width: 480px;
-  height: 720px;
+  width: 720px;
+  height: 960px;
   background: #12121e;
   position: relative;
   overflow: hidden;
   border: 2px solid #2a2a3e;
-  box-shadow: 0 0 30px #0006;
+  box-shadow: 0 0 40px #0008;
+  border-radius: 8px;
 
-  @media (max-width: 500px) {
+  /* タブレット縦向き */
+  @media (min-width: 601px) and (max-width: 1024px) {
+    width: min(90vw, 700px);
+    height: min(90vh, 960px);
+  }
+
+  /* タブレット横向き */
+  @media (min-width: 601px) and (max-width: 1024px) and (orientation: landscape) {
+    width: min(90vw, 960px);
+    height: min(90vh, 700px);
+  }
+
+  /* モバイル（dvh フォールバック付き） */
+  @media (max-width: 600px) {
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
     border: none;
+    border-radius: 0;
+    box-shadow: none;
   }
 `;
 
@@ -127,8 +144,8 @@ export const Screen = styled.div<{ $center?: boolean; $noScroll?: boolean }>`
   display: flex;
   flex-direction: column;
   align-items: center;
-  color: #e0d8c8;
-  padding: 10px 14px;
+  color: var(--c-text, #e0d8c8);
+  padding: var(--sp-screen-pad, 14px 20px);
   overflow-y: ${p => p.$noScroll ? 'hidden' : 'auto'};
   z-index: 1;
   ${p => p.$center && 'justify-content: center;'}
