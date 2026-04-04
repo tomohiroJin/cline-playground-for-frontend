@@ -14,7 +14,7 @@ export interface SpeedControlProps {
 
 export const SpeedControl: React.FC<SpeedControlProps> = ({ battleSpd, dispatch }) => (
   <>
-    <span style={{ fontSize: 8, color: '#403828' }}>速度</span>
+    <span style={{ fontSize: 11, color: '#403828' }}>速度</span>
     {SPEED_OPTS.map(([label, spd]) => (
       <SpeedBtn key={spd} $active={battleSpd === spd}
         onClick={() => dispatch({ type: 'CHANGE_SPEED', speed: spd })}>

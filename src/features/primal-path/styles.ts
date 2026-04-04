@@ -189,7 +189,7 @@ export const OverlayText = styled.div`
 /* ===== Common Elements ===== */
 
 export const Title = styled.h1`
-  font-size: 22px;
+  font-size: var(--fs-title, 28px);
   color: #f0c040;
   text-shadow: 0 0 12px #f0c04060, 2px 2px #503800;
   letter-spacing: 3px;
@@ -198,7 +198,7 @@ export const Title = styled.h1`
 `;
 
 export const SubTitle = styled.h2`
-  font-size: 14px;
+  font-size: var(--fs-subtitle, 18px);
   color: #f0c040;
   margin: 6px 0;
   animation: ${fadeInUp} 0.4s ease-out;
@@ -219,7 +219,7 @@ export const GameButton = styled.button<{ $off?: boolean }>`
   margin: 3px;
   cursor: pointer;
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--fs-button, 15px);
   min-width: 110px;
   text-align: center;
   border-radius: 2px;
@@ -250,7 +250,7 @@ export const GamePanel = styled.div`
 `;
 
 export const StatText = styled.div`
-  font-size: 10px;
+  font-size: var(--fs-panel, 13px);
   color: #908870;
   margin: 2px 0;
 `;
@@ -286,7 +286,7 @@ export const TreeNodeBox = styled.div<{ $bought?: boolean; $locked?: boolean; $c
   background: linear-gradient(180deg, #14141e, #0e0e16);
   border: 1px solid #262636;
   padding: 5px 6px;
-  font-size: 10px;
+  font-size: var(--fs-panel, 13px);
   text-align: center;
   min-width: 84px;
   border-radius: 3px;
@@ -311,7 +311,7 @@ export const TreeNodeBox = styled.div<{ $bought?: boolean; $locked?: boolean; $c
 `;
 
 export const LogContainer = styled.div`
-  font-size: 9px;
+  font-size: var(--fs-tiny, 11px);
   color: #808068;
   max-height: 160px;
   overflow-y: auto;
@@ -344,7 +344,7 @@ export const SpeedBtn = styled.button<{ $active?: boolean }>`
   background: #0c0c14;
   border: 1px solid #262636;
   color: #605848;
-  font-size: 9px;
+  font-size: var(--fs-tiny, 11px);
   padding: 1px 6px;
   cursor: pointer;
   border-radius: 2px;
@@ -364,7 +364,7 @@ export const SpeedBtn = styled.button<{ $active?: boolean }>`
 `;
 
 export const SurrenderBtn = styled.button`
-  font-size: 8px;
+  font-size: var(--fs-tiny, 11px);
   color: #403828;
   background: none;
   border: 1px solid #262636;
@@ -384,7 +384,7 @@ export const AllyBadge = styled.div<{ $dead?: boolean }>`
   background: #0c0c14;
   border: 1px solid #262636;
   padding: 3px 6px;
-  font-size: 9px;
+  font-size: var(--fs-tiny, 11px);
   text-align: center;
   min-width: 62px;
   border-radius: 3px;
@@ -404,7 +404,7 @@ export const AllyRow = styled.div`
 `;
 
 export const TierHeader = styled.div<{ $locked?: boolean }>`
-  font-size: 10px;
+  font-size: var(--fs-panel, 13px);
   color: ${p => p.$locked ? '#401020' : '#605848'};
   margin: 8px 0 3px;
   padding-bottom: 3px;
@@ -417,7 +417,7 @@ export const TierHeader = styled.div<{ $locked?: boolean }>`
 export const RunStatRow = styled.div`
   display: flex;
   justify-content: space-between;
-  font-size: 10px;
+  font-size: var(--fs-panel, 13px);
   color: #605848;
   padding: 2px 8px;
   width: 100%;
@@ -547,7 +547,7 @@ export const SkillBtn = styled.button<{ $off?: boolean }>`
   background: linear-gradient(180deg, #1a1a28, #12121c);
   border: 1px solid #444;
   color: #e0d8c8;
-  font-size: 14px;
+  font-size: var(--fs-panel, 13px);
   padding: 10px 16px;
   cursor: pointer;
   border-radius: 4px;
@@ -664,7 +664,7 @@ export const WeatherParticles = styled.div<{ $biome: string }>`
 
 /** チャレンジタイマー */
 export const TimerDisplay = styled.div<{ $urgent?: boolean }>`
-  font-size: 12px;
+  font-size: var(--fs-small, 12px);
   color: ${p => p.$urgent ? '#f05050' : '#f0c040'};
   text-shadow: 0 0 6px ${p => p.$urgent ? '#f0505060' : '#f0c04040'};
   font-weight: bold;
@@ -678,7 +678,7 @@ export const TabBtn = styled.button<{ $active?: boolean }>`
   background: #0c0c14;
   border: 1px solid #262636;
   color: #605848;
-  font-size: 10px;
+  font-size: var(--fs-panel, 13px);
   padding: 4px 10px;
   cursor: pointer;
   border-radius: 3px;
@@ -695,7 +695,7 @@ export const TabBtn = styled.button<{ $active?: boolean }>`
 
 /** ゲームオーバー画面用ログ見返しコンテナ */
 export const LogReviewContainer = styled.div`
-  font-size: 9px;
+  font-size: var(--fs-tiny, 11px);
   color: #808068;
   max-height: 200px;
   overflow-y: auto;

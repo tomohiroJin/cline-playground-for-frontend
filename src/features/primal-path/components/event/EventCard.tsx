@@ -20,7 +20,7 @@ const EventTitle = styled.div`
 `;
 
 const EventDesc = styled.div`
-  font-size: 11px;
+  font-size: var(--fs-small, 12px);
   color: #c0b898;
   text-align: center;
   line-height: 1.6;
@@ -28,7 +28,7 @@ const EventDesc = styled.div`
 `;
 
 const SituationText = styled.div`
-  font-size: 13px;
+  font-size: var(--fs-panel, 13px);
   color: #e0d8c8;
   text-align: center;
   font-weight: bold;

@@ -25,7 +25,7 @@ export const AchievementScreen: React.FC<Props> = ({ achievementStates, dispatch
   return (
     <Screen $center>
       <SubTitle>🏆 実績</SubTitle>
-      <div style={{ fontSize: 10, color: '#908870', marginBottom: 4 }}>
+      <div style={{ fontSize: 13, color: '#908870', marginBottom: 4 }}>
         解除: {unlockedCount} / {totalCount}
       </div>
       <Divider />
@@ -48,20 +48,20 @@ export const AchievementScreen: React.FC<Props> = ({ achievementStates, dispatch
                 {ach.icon}
               </span>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 11, color: isUnlocked ? '#f0c040' : '#605848' }}>
+                <div style={{ fontSize: 12, color: isUnlocked ? '#f0c040' : '#605848' }}>
                   {ach.name}
                 </div>
-                <div style={{ fontSize: 9, color: '#605848' }}>
+                <div style={{ fontSize: 11, color: '#605848' }}>
                   {ach.description}
                 </div>
                 {isUnlocked && st?.unlockedDate && (
-                  <div style={{ fontSize: 8, color: '#403828', marginTop: 1 }}>
+                  <div style={{ fontSize: 11, color: '#403828', marginTop: 1 }}>
                     {st.unlockedDate.slice(0, 10)}
                   </div>
                 )}
               </div>
               {isUnlocked && (
-                <span style={{ fontSize: 10, color: '#50e090' }}>✅</span>
+                <span style={{ fontSize: 13, color: '#50e090' }}>✅</span>
               )}
             </div>
           );
