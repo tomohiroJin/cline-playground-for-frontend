@@ -131,12 +131,6 @@ export const teamSetupStyles = {
     minWidth: '44px',
     minHeight: '44px',
   }),
-  controlHint: {
-    fontSize: '11px',
-    color: '#888',
-    padding: '4px 8px',
-    fontStyle: 'italic' as const,
-  },
   // 開始ボタン
   startButton: {
     ...screenLayout.actionButton,

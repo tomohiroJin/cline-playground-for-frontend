@@ -71,12 +71,14 @@ function trackPropertySets(ctx: Record<string, unknown>, prop: string): void {
 describe('CanvasRenderer', () => {
   let ctx: CanvasRenderingContext2D;
   let renderer: GameRendererPort;
+  let canvasRenderer: CanvasRenderer;
 
   beforeEach(() => {
     ctx = createMockContext();
     trackPropertySets(ctx as unknown as Record<string, unknown>, 'fillStyle');
     trackPropertySets(ctx as unknown as Record<string, unknown>, 'globalAlpha');
-    renderer = new CanvasRenderer(ctx, CONSTANTS);
+    canvasRenderer = new CanvasRenderer(ctx, CONSTANTS);
+    renderer = canvasRenderer;
   });
 
   it('GameRendererPort インターフェースを満たす', () => {
@@ -295,13 +297,13 @@ describe('CanvasRenderer', () => {
 
     it('toast が undefined の場合、描画しない', () => {
       const fillTextBefore = (ctx.fillText as jest.Mock).mock.calls.length;
-      (renderer as CanvasRenderer).drawToast(undefined, now);
+      canvasRenderer.drawToast(undefined, now);
       expect((ctx.fillText as jest.Mock).mock.calls.length).toBe(fillTextBefore);
     });
 
     it('有効な toast で背景矩形とテキストが描画される', () => {
       const toast: GamepadToast = { message: '🎮 コントローラー 1 が接続されました', timestamp: now - 500 };
-      (renderer as CanvasRenderer).drawToast(toast, now);
+      canvasRenderer.drawToast(toast, now);
       expect(ctx.roundRect).toHaveBeenCalled();
       expect(ctx.fillText).toHaveBeenCalled();
     });
@@ -309,14 +311,14 @@ describe('CanvasRenderer', () => {
     it('表示期間（3000ms）を過ぎた toast は描画されない', () => {
       const toast: GamepadToast = { message: 'test', timestamp: now - 3100 };
       const fillTextBefore = (ctx.fillText as jest.Mock).mock.calls.length;
-      (renderer as CanvasRenderer).drawToast(toast, now);
+      canvasRenderer.drawToast(toast, now);
       expect((ctx.fillText as jest.Mock).mock.calls.length).toBe(fillTextBefore);
     });
 
     it('フェードアウト期間中に正しい opacity が設定される', () => {
       // elapsed=2800, fadeStart=2500, opacity = 1.0 - 300/500 = 0.4
       const toast: GamepadToast = { message: 'test', timestamp: now - 2800 };
-      (renderer as CanvasRenderer).drawToast(toast, now);
+      canvasRenderer.drawToast(toast, now);
       const alphaValues = getAllPropertySets(ctx, 'globalAlpha').map(Number);
       expect(alphaValues.some(a => Math.abs(a - 0.4) < 0.01)).toBe(true);
     });
@@ -324,14 +326,14 @@ describe('CanvasRenderer', () => {
     it('フェード開始前は opacity が 1.0 である', () => {
       // elapsed=1000 < fadeStart=2500 → opacity=1.0
       const toast: GamepadToast = { message: 'test', timestamp: now - 1000 };
-      (renderer as CanvasRenderer).drawToast(toast, now);
+      canvasRenderer.drawToast(toast, now);
       const alphaValues = getAllPropertySets(ctx, 'globalAlpha').map(Number);
       expect(alphaValues.some(a => a === 1.0)).toBe(true);
     });
 
     it('接続メッセージで緑背景が使用される', () => {
       const toast: GamepadToast = { message: '🎮 コントローラー 1 が接続されました', timestamp: now - 100 };
-      (renderer as CanvasRenderer).drawToast(toast, now);
+      canvasRenderer.drawToast(toast, now);
       // fillStyle の設定履歴をチェック — 接続は緑系
       const fillStyleSets = getAllPropertySets(ctx, 'fillStyle');
       expect(fillStyleSets.some((s: string) => s.includes('0, 128, 0'))).toBe(true);
@@ -339,14 +341,14 @@ describe('CanvasRenderer', () => {
 
     it('切断メッセージで赤背景が使用される', () => {
       const toast: GamepadToast = { message: '🎮 コントローラー 1 が切断されました', timestamp: now - 100 };
-      (renderer as CanvasRenderer).drawToast(toast, now);
+      canvasRenderer.drawToast(toast, now);
       const fillStyleSets = getAllPropertySets(ctx, 'fillStyle');
       expect(fillStyleSets.some((s: string) => s.includes('128, 0, 0'))).toBe(true);
     });
 
     it('背景幅が measureText ベースの動的計算になっている', () => {
       const toast: GamepadToast = { message: 'test message', timestamp: now - 100 };
-      (renderer as CanvasRenderer).drawToast(toast, now);
+      canvasRenderer.drawToast(toast, now);
       expect(ctx.measureText).toHaveBeenCalledWith('test message');
     });
   });

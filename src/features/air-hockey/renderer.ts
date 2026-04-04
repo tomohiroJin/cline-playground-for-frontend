@@ -785,8 +785,8 @@ export const Renderer = {
   },
 
   /** ゲームパッド接続/切断トースト描画（drawToastOnCanvas に委譲） */
-  drawToast(ctx: CanvasRenderingContext2D, toast: GamepadToast | undefined, now: number, consts: GameConstants = CONSTANTS) {
-    const { WIDTH, HEIGHT } = consts.CANVAS;
+  drawToast(ctx: CanvasRenderingContext2D, toast: GamepadToast | undefined, now: number) {
+    const { WIDTH, HEIGHT } = CONSTANTS.CANVAS;
     drawToastOnCanvas(ctx, toast, now, WIDTH, HEIGHT);
   },
 

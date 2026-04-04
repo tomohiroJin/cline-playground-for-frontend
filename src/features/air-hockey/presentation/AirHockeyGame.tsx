@@ -67,7 +67,7 @@ const AirHockeyGame: React.FC = () => {
   const { screen, transitioning, navigateTo, navigateWithTransition } = useScreenNavigation();
   const mode = useGameMode();
   const audio = useAudioManager();
-  const { toast: gamepadToast } = useGamepadInput();
+  const { toast: gamepadToast, connectedCount: gamepadConnectedCount } = useGamepadInput();
   const gamepadToastRef = useRef(gamepadToast);
   gamepadToastRef.current = gamepadToast;
   const dex = useCharacterDex();
@@ -464,6 +464,11 @@ const AirHockeyGame: React.FC = () => {
           onEnemy2Change={mode.setEnemyCharacter2}
           allyControlType={mode.allyControlType}
           onAllyControlTypeChange={mode.setAllyControlType}
+          enemy1ControlType={mode.enemy1ControlType}
+          onEnemy1ControlTypeChange={mode.setEnemy1ControlType}
+          enemy2ControlType={mode.enemy2ControlType}
+          onEnemy2ControlTypeChange={mode.setEnemy2ControlType}
+          gamepadConnected={gamepadConnectedCount}
           onStart={handlePairMatchStart}
           onBack={handleBackToMenu}
         />

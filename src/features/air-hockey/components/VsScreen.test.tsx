@@ -391,7 +391,8 @@ describe('VsScreen', () => {
         render(
           <VsScreen {...defaultProps} is2v2 allyCharacter={allyChar} enemyCharacter2={enemy2Char} allyControlType="cpu" />
         );
-        expect(screen.getByText('CPU')).toBeInTheDocument();
+        const cpuLabels = screen.getAllByText('CPU');
+        expect(cpuLabels).toHaveLength(1);
       });
 
       it('allyControlType=human 時に「2P」ラベルが表示される', () => {
@@ -407,7 +408,8 @@ describe('VsScreen', () => {
         render(
           <VsScreen {...defaultProps} is2v2 allyCharacter={allyChar} enemyCharacter2={enemy2Char} enemy1ControlType="cpu" />
         );
-        expect(screen.getByText('CPU')).toBeInTheDocument();
+        const cpuLabels = screen.getAllByText('CPU');
+        expect(cpuLabels).toHaveLength(1);
       });
 
       it('enemy1ControlType=human 時に P3 に「3P」ラベルが表示される', () => {
@@ -423,7 +425,8 @@ describe('VsScreen', () => {
         render(
           <VsScreen {...defaultProps} is2v2 allyCharacter={allyChar} enemyCharacter2={enemy2Char} enemy2ControlType="cpu" />
         );
-        expect(screen.getByText('CPU')).toBeInTheDocument();
+        const cpuLabels = screen.getAllByText('CPU');
+        expect(cpuLabels).toHaveLength(1);
       });
 
       it('enemy2ControlType=human 時に P4 に「4P」ラベルが表示される', () => {
