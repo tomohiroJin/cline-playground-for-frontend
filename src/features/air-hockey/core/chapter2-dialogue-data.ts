@@ -80,6 +80,7 @@ const STAGE_2_3: StageDefinition = {
   backgroundId: 'bg-tournament',
   preDialogue: [
     { characterId: 'kanata', text: '蒼風館の…アキラ、だっけ？ ケンジに勝ったの、見てたよ' },
+    { characterId: 'player', text: 'うん。…君が準決勝の相手？' },
     { characterId: 'kanata', text: 'ストレートな子だね。でもさ、まっすぐだけじゃ届かない場所もあるよ？', expression: 'normal' },
     { characterId: 'player', text: '…やってみなきゃ分からないでしょ！' },
     { characterId: 'yuu', text: '白波カナタ選手。碧波学院の2年生。データが少ないけど…変則的なプレイスタイルらしい' },
@@ -87,8 +88,8 @@ const STAGE_2_3: StageDefinition = {
   ],
   postWinDialogue: [
     { characterId: 'kanata', text: 'あはは、読まれちゃったか。面白いね、キミ', expression: 'happy' },
-    { characterId: 'kanata', text: '決勝、レン相手だよ？ 頑張ってね——あの人、僕より全然強いから' },
     { characterId: 'player', text: 'ありがとう。…楽しかった！' },
+    { characterId: 'kanata', text: '決勝、レン相手だよ？ 頑張ってね——あの人、僕より全然強いから' },
     { characterId: 'yuu', text: 'アキラ、後半から相手の癖を見抜いてたよ。データにない適応力だ…！', expression: 'happy' },
   ],
   postLoseDialogue: [
@@ -113,8 +114,8 @@ const STAGE_2_4: StageDefinition = {
   isChapterFinale: true,
   preDialogue: [
     { characterId: 'takuma', text: '…決勝の相手は黒鉄高校の氷室レン。去年、俺が負けた相手だ' },
+    { characterId: 'player', text: '…部長が負けた相手…' },
     { characterId: 'takuma', text: 'あいつは強い。だが——お前なら、やれる' },
-    { characterId: 'player', text: '…部長' },
     { characterId: 'hiro', text: 'アキラ、ここまで来たんだ。全力でぶつかってこい！', expression: 'happy' },
     { characterId: 'ace', text: '…蒼風館か。タクマの後輩、か。見せてもらおう' },
   ],
