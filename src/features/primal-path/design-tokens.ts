@@ -28,6 +28,7 @@ const spacing = {
   sectionGap: '14px',
   cardPad: '12px',
   btnPad: '10px 22px',
+  btnMinW: '110px',
 } as const;
 
 const spacingMobile = {
@@ -72,60 +73,75 @@ const gameSize = {
   height: '960px',
 } as const;
 
+/** CSS 変数名とトークン値のペア型 */
+type CssVarEntry = readonly [string, string];
+
+/** エントリ配列から CSS 変数文字列を生成する共通関数 */
+function entriesToCss(entries: readonly CssVarEntry[]): string {
+  return entries.map(([name, value]) => `${name}: ${value}`).join(';\n') + ';';
+}
+
+/** PC デフォルトの CSS 変数エントリ */
+const PC_ENTRIES: readonly CssVarEntry[] = [
+  ['--fs-title', fontSize.title],
+  ['--fs-subtitle', fontSize.subtitle],
+  ['--fs-button', fontSize.button],
+  ['--fs-body', fontSize.body],
+  ['--fs-panel', fontSize.panel],
+  ['--fs-small', fontSize.small],
+  ['--fs-tiny', fontSize.tiny],
+  ['--sp-screen-pad', spacing.screenPad],
+  ['--sp-section-gap', spacing.sectionGap],
+  ['--sp-card-pad', spacing.cardPad],
+  ['--sp-btn-pad', spacing.btnPad],
+  ['--sp-btn-min-w', spacing.btnMinW],
+  ['--c-accent', colors.accent],
+  ['--c-text', colors.text],
+  ['--c-text-muted', colors.textMuted],
+  ['--c-text-dim', colors.textDim],
+  ['--c-bg', colors.bg],
+  ['--c-bg-deep', colors.bgDeep],
+  ['--c-border', colors.border],
+  ['--c-border-inner', colors.borderInner],
+  ['--c-civ-tech', colors.civTech],
+  ['--c-civ-life', colors.civLife],
+  ['--c-civ-rit', colors.civRit],
+  ['--c-civ-bal', colors.civBal],
+  ['--c-cat-atk', colors.catAtk],
+  ['--c-cat-hp', colors.catHp],
+  ['--c-cat-def', colors.catDef],
+  ['--c-cat-crit', colors.catCrit],
+  ['--c-danger', colors.danger],
+  ['--c-safe', colors.safe],
+  ['--c-info', colors.info],
+  ['--c-reward', colors.reward],
+  ['--game-width', gameSize.width],
+  ['--game-height', gameSize.height],
+];
+
+/** モバイル用 CSS 変数エントリ（上書き分のみ） */
+const MOBILE_ENTRIES: readonly CssVarEntry[] = [
+  ['--fs-button', fontSizeMobile.button],
+  ['--fs-body', fontSizeMobile.body],
+  ['--fs-panel', fontSizeMobile.panel],
+  ['--fs-small', fontSizeMobile.small],
+  ['--fs-tiny', fontSizeMobile.tiny],
+  ['--sp-screen-pad', spacingMobile.screenPad],
+  ['--sp-section-gap', spacingMobile.sectionGap],
+  ['--sp-card-pad', spacingMobile.cardPad],
+  ['--sp-btn-pad', spacingMobile.btnPad],
+  ['--game-width', '100vw'],
+  ['--game-height', '100vh'],
+];
+
 /** PC デフォルトの CSS 変数文字列を生成 */
 function generateCssVariables(): string {
-  return [
-    `--fs-title: ${fontSize.title}`,
-    `--fs-subtitle: ${fontSize.subtitle}`,
-    `--fs-button: ${fontSize.button}`,
-    `--fs-body: ${fontSize.body}`,
-    `--fs-panel: ${fontSize.panel}`,
-    `--fs-small: ${fontSize.small}`,
-    `--fs-tiny: ${fontSize.tiny}`,
-    `--sp-screen-pad: ${spacing.screenPad}`,
-    `--sp-section-gap: ${spacing.sectionGap}`,
-    `--sp-card-pad: ${spacing.cardPad}`,
-    `--sp-btn-pad: ${spacing.btnPad}`,
-    `--c-accent: ${colors.accent}`,
-    `--c-text: ${colors.text}`,
-    `--c-text-muted: ${colors.textMuted}`,
-    `--c-text-dim: ${colors.textDim}`,
-    `--c-bg: ${colors.bg}`,
-    `--c-bg-deep: ${colors.bgDeep}`,
-    `--c-border: ${colors.border}`,
-    `--c-border-inner: ${colors.borderInner}`,
-    `--c-civ-tech: ${colors.civTech}`,
-    `--c-civ-life: ${colors.civLife}`,
-    `--c-civ-rit: ${colors.civRit}`,
-    `--c-civ-bal: ${colors.civBal}`,
-    `--c-cat-atk: ${colors.catAtk}`,
-    `--c-cat-hp: ${colors.catHp}`,
-    `--c-cat-def: ${colors.catDef}`,
-    `--c-cat-crit: ${colors.catCrit}`,
-    `--c-danger: ${colors.danger}`,
-    `--c-safe: ${colors.safe}`,
-    `--c-info: ${colors.info}`,
-    `--c-reward: ${colors.reward}`,
-    `--game-width: ${gameSize.width}`,
-    `--game-height: ${gameSize.height}`,
-  ].join(';\n') + ';';
+  return entriesToCss(PC_ENTRIES);
 }
 
 /** モバイル用 CSS 変数文字列を生成（上書き分のみ） */
 function generateMobileCssVariables(): string {
-  return [
-    `--fs-button: ${fontSizeMobile.button}`,
-    `--fs-body: ${fontSizeMobile.body}`,
-    `--fs-panel: ${fontSizeMobile.panel}`,
-    `--fs-small: ${fontSizeMobile.small}`,
-    `--fs-tiny: ${fontSizeMobile.tiny}`,
-    `--sp-screen-pad: ${spacingMobile.screenPad}`,
-    `--sp-section-gap: ${spacingMobile.sectionGap}`,
-    `--sp-card-pad: ${spacingMobile.cardPad}`,
-    `--sp-btn-pad: ${spacingMobile.btnPad}`,
-    `--game-width: 100vw`,
-    `--game-height: 100vh`,
-  ].join(';\n') + ';';
+  return entriesToCss(MOBILE_ENTRIES);
 }
 
 export const DESIGN_TOKENS = {

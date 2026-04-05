@@ -229,7 +229,7 @@ export const GameButton = styled.button<{ $off?: boolean }>`
   cursor: pointer;
   font-family: inherit;
   font-size: var(--fs-button, 15px);
-  min-width: 110px;
+  min-width: var(--sp-btn-min-w, 110px);
   text-align: center;
   border-radius: 2px;
   transition: all 0.12s;

@@ -30,6 +30,7 @@ describe('デザイントークン定義', () => {
       expect(DESIGN_TOKENS.spacing.sectionGap).toBe('14px');
       expect(DESIGN_TOKENS.spacing.cardPad).toBe('12px');
       expect(DESIGN_TOKENS.spacing.btnPad).toBe('10px 22px');
+      expect(DESIGN_TOKENS.spacing.btnMinW).toBe('110px');
     });
   });
 
@@ -69,6 +70,7 @@ describe('デザイントークン定義', () => {
       expect(css).toContain('--fs-title:');
       expect(css).toContain('--fs-tiny:');
       expect(css).toContain('--sp-screen-pad:');
+      expect(css).toContain('--sp-btn-min-w:');
       expect(css).toContain('--c-accent:');
       expect(css).toContain('--game-width:');
       expect(css).toContain('--game-height:');
