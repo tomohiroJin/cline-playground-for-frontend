@@ -52,9 +52,11 @@ export const GameOverScreen: React.FC<Props> = ({ run, won, save, dispatch, play
       <SubTitle style={{ fontSize: 18, color: won ? '#f0c040' : '#f05050' }}>
         {won
           ? '🏆 神話を刻んだ！'
-          : run.isEndless && run.hp > 0
-            ? '♾️ 探索を終えた'
-            : '💀 部族は滅びた…'}
+          : (run as unknown as Record<string, unknown>).surrendered
+            ? '🏳️ 部族は撤退を選んだ…'
+            : run.isEndless && run.hp > 0
+              ? '♾️ 探索を終えた'
+              : '💀 部族は滅びた…'}
       </SubTitle>
       <Divider />
       <GamePanel style={{ textAlign: 'center', padding: 14 }}>
@@ -66,11 +68,11 @@ export const GameOverScreen: React.FC<Props> = ({ run, won, save, dispatch, play
               : '次こそは…'}
         </div>
         <div style={{ fontSize: 14, marginBottom: 8 }}>🦴 <Gc style={{ fontSize: 16 }}>+{boneReward}</Gc></div>
-        <div style={{ fontSize: 11, color: '#908870' }}>所持骨：<Gc>{save.bones}</Gc></div>
+        <div style={{ fontSize: 12, color: '#908870' }}>所持骨：<Gc>{save.bones}</Gc></div>
       </GamePanel>
 
       <GamePanel style={{ padding: '8px 10px' }}>
-        <div style={{ fontSize: 10, color: '#f0c040', marginBottom: 4, textAlign: 'center' }}>── ラン統計 ──</div>
+        <div style={{ fontSize: 13, color: '#f0c040', marginBottom: 4, textAlign: 'center' }}>── ラン統計 ──</div>
         <RunStatRow><span>難易度</span><span>{d.ic} {d.n}</span></RunStatRow>
         <RunStatRow><span>ターン数</span><span>{run.turn}</span></RunStatRow>
         <RunStatRow><span>撃破数</span><span>{run.kills}</span></RunStatRow>
@@ -88,7 +90,7 @@ export const GameOverScreen: React.FC<Props> = ({ run, won, save, dispatch, play
       {/* エンドレスモード結果表示 */}
       {run.isEndless && (
         <GamePanel style={{ padding: '8px 10px' }}>
-          <div style={{ fontSize: 10, color: '#f0c040', marginBottom: 4, textAlign: 'center' }}>── エンドレス結果 ──</div>
+          <div style={{ fontSize: 13, color: '#f0c040', marginBottom: 4, textAlign: 'center' }}>── エンドレス結果 ──</div>
           <RunStatRow><span>到達ウェーブ</span><span><Gc>{run.endlessWave}</Gc></span></RunStatRow>
           <RunStatRow><span>総撃破数</span><span><Gc>{run.kills}</Gc></span></RunStatRow>
         </GamePanel>
@@ -96,12 +98,12 @@ export const GameOverScreen: React.FC<Props> = ({ run, won, save, dispatch, play
 
       {newAchievements.length > 0 && (
         <GamePanel style={{ padding: '8px 10px' }}>
-          <div style={{ fontSize: 10, color: '#f0c040', marginBottom: 4, textAlign: 'center' }}>── 実績解除！ ──</div>
+          <div style={{ fontSize: 13, color: '#f0c040', marginBottom: 4, textAlign: 'center' }}>── 実績解除！ ──</div>
           {newAchievements.map(id => {
             const ach = ACHIEVEMENTS.find(a => a.id === id);
             if (!ach) return null;
             return (
-              <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0', fontSize: 10, color: '#f0c040' }}>
+              <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0', fontSize: 13, color: '#f0c040' }}>
                 <span style={{ fontSize: 16 }}>{ach.icon}</span>
                 <span>{ach.name}</span>
               </div>
@@ -113,7 +115,7 @@ export const GameOverScreen: React.FC<Props> = ({ run, won, save, dispatch, play
       {/* 戦闘ログ見返し */}
       <GamePanel style={{ padding: '8px 10px' }}>
         <GameButton
-          style={{ width: '100%', fontSize: 10, padding: '4px 8px' }}
+          style={{ width: '100%', fontSize: 13, padding: '4px 8px' }}
           onClick={() => { playSfx('click'); setIsLogOpen(prev => !prev); }}
         >
           {isLogOpen ? '▲ 戦闘ログを閉じる' : '▼ 戦闘ログを見る'}
@@ -127,7 +129,7 @@ export const GameOverScreen: React.FC<Props> = ({ run, won, save, dispatch, play
         )}
       </GamePanel>
 
-      <GameButton style={{ marginTop: 8, minWidth: 190, fontSize: 12 }}
+      <GameButton style={{ marginTop: 8, minWidth: 190, fontSize: 15 }}
         onClick={() => { playSfx('click'); dispatch({ type: 'RETURN_TO_TITLE' }); }}>
         タイトルへ
       </GameButton>

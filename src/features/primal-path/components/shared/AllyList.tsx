@@ -27,10 +27,10 @@ export const AllyList: React.FC<AllyListProps> = ({ allies, mode }) => {
                 aria-hidden="true"
                 ref={c => {
                   if (c) {
-                    drawAlly(c, a.t, 2);
+                    drawAlly(c, a.t);
                   }
                 }}
-                style={{ width: 20, height: 26, margin: '0 auto 1px', display: 'block', imageRendering: 'pixelated' }}
+                style={{ width: 36, height: 48, margin: '0 auto 1px', display: 'block', imageRendering: 'pixelated' }}
               />
               <div style={{ color: TC[a.t] }}>{a.n}</div>
               {a.a && (
@@ -38,14 +38,14 @@ export const AllyList: React.FC<AllyListProps> = ({ allies, mode }) => {
                   <div style={{ height: '100%', borderRadius: 2, transition: 'width .2s', width: `${hpPct}%`, background: hpCl }} />
                 </div>
               )}
-              <div style={{ fontSize: 8, color: '#605848' }}>{a.a ? `${a.hp}/${a.mhp}` : '💀'}</div>
+              <div style={{ fontSize: 11, color: '#988070' }}>{a.a ? `${a.hp}/${a.mhp}` : '💀'}</div>
             </AllyBadge>
           );
         }
         return (
           <AllyBadge key={i} $dead={!a.a}>
             <span style={{ color: TC[a.t] }}>{a.n}</span>{' '}
-            <span style={{ fontSize: 8, color: '#605848' }}>{a.a ? `HP${a.hp}` : '💀'}</span>
+            <span style={{ fontSize: 11, color: '#988070' }}>{a.a ? `HP${a.hp}` : '💀'}</span>
           </AllyBadge>
         );
       })}

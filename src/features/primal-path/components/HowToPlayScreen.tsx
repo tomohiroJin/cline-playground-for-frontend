@@ -24,25 +24,25 @@ interface Props {
 
 /** 基本ルールタブ */
 const RulesTab: React.FC = () => (
-  <GamePanel style={{ fontSize: 10, lineHeight: 1.9, padding: '10px 12px' }}>
-    <p style={{ color: '#f0c040', fontSize: 11, marginBottom: 2 }}>🌍 基本ルール</p>
+  <GamePanel style={{ fontSize: 13, lineHeight: 1.9, padding: '10px 12px' }}>
+    <p style={{ color: '#f0c040', fontSize: 12, marginBottom: 2 }}>🌍 基本ルール</p>
     <p>3バイオーム踏破→最終ボス。進化選択→自動戦闘。</p>
     <br />
-    <p style={{ color: '#f0c040', fontSize: 11, marginBottom: 2 }}>⚡ 三大文明</p>
+    <p style={{ color: '#f0c040', fontSize: 12, marginBottom: 2 }}>⚡ 三大文明</p>
     <p><span style={{ color: '#f08050' }}>■技術</span> 攻撃特化 氷河有利</p>
     <p><span style={{ color: '#50e090' }}>■生活</span> 回復安定 草原有利</p>
     <p><span style={{ color: '#d060ff' }}>■儀式</span> 自傷高火力 火山有利</p>
     <br />
-    <p style={{ color: '#f0c040', fontSize: 11, marginBottom: 2 }}>✦ バイオーム相性</p>
+    <p style={{ color: '#f0c040', fontSize: 12, marginBottom: 2 }}>✦ バイオーム相性</p>
     <p>最も高い文明がバイオームと合致すると<span style={{ color: '#50e090' }}>ATK×1.2〜1.3</span>のボーナス！進化・バイオーム選択画面で確認できます。</p>
     <br />
-    <p style={{ color: '#f0c040', fontSize: 11, marginBottom: 2 }}>🔥 覚醒システム</p>
+    <p style={{ color: '#f0c040', fontSize: 12, marginBottom: 2 }}>🔥 覚醒システム</p>
     <p>文明Lv4で<span style={{ color: '#f0c040' }}>小覚醒</span>（各文明固有バフ）</p>
     <p>文明Lv5で<span style={{ color: '#f0c040' }}>大覚醒</span>（最終進化形態）</p>
     <p>全文明Lv3以上で<span style={{ color: '#e0c060' }}>調和・小覚醒</span></p>
     <p>全文明Lv4以上で<span style={{ color: '#e0c060' }}>調和・大覚醒</span></p>
     <br />
-    <p style={{ color: '#f0c040', fontSize: 11, marginBottom: 2 }}>✦ アクティブスキル</p>
+    <p style={{ color: '#f0c040', fontSize: 12, marginBottom: 2 }}>✦ アクティブスキル</p>
     <p>文明Lv3以上でスキルが解放されます。</p>
     <p><span style={{ color: '#f08050' }}>🔥炎の爆発</span>（技術Lv3）敵に固定ダメージ</p>
     <p><span style={{ color: '#50e090' }}>🌿自然の癒し</span>（生活Lv3）HP回復+仲間回復</p>
@@ -50,33 +50,33 @@ const RulesTab: React.FC = () => (
     <p><span style={{ color: '#e0c060' }}>🛡️盾の壁</span>（調和Lv4）被ダメ半減</p>
     <p>バトル中に画面下部のボタンで発動。クールダウンあり。</p>
     <br />
-    <p style={{ color: '#f0c040', fontSize: 11, marginBottom: 2 }}>⏩ 戦闘速度</p>
+    <p style={{ color: '#f0c040', fontSize: 12, marginBottom: 2 }}>⏩ 戦闘速度</p>
     <p>速度ボタン（×1/×2/×4/×8）で自動戦闘のスピードを変更。</p>
     <p>⏸ボタンで一時停止。速度設定はセッション中のラン間で保持されます。</p>
     <br />
-    <p style={{ color: '#f0c040', fontSize: 11, marginBottom: 2 }}>🧬 シナジーシステム</p>
+    <p style={{ color: '#f0c040', fontSize: 12, marginBottom: 2 }}>🧬 シナジーシステム</p>
     <p>進化カードには<span style={{ color: '#f0c040' }}>シナジータグ</span>（🔥火、🧊氷、♻️再生、🛡️盾、🏹狩り、👻霊、🏕️部族、🐾野生）があります。</p>
     <p>同じタグの進化を<span style={{ color: '#50e090' }}>2つ</span>集めるとTier1ボーナスが発動！</p>
     <p><span style={{ color: '#f0c040' }}>3つ</span>以上でさらに強力なTier2ボーナスに進化。</p>
     <p>進化選択画面でタグの取得状況を確認できます。</p>
     <br />
-    <p style={{ color: '#f0c040', fontSize: 11, marginBottom: 2 }}>🗺️ ランダムイベント</p>
+    <p style={{ color: '#f0c040', fontSize: 12, marginBottom: 2 }}>🗺️ ランダムイベント</p>
     <p>バトル後に一定確率でランダムイベントが発生します。</p>
     <p>骨の商人、古代の祠、毒沼など全8種。選択肢によって異なる効果が得られます。</p>
     <p>バイオームごとに出現しやすいイベントがあります。</p>
     <br />
-    <p style={{ color: '#f0c040', fontSize: 11, marginBottom: 2 }}>🏆 実績・チャレンジ</p>
+    <p style={{ color: '#f0c040', fontSize: 12, marginBottom: 2 }}>🏆 実績・チャレンジ</p>
     <p>タイトル画面から<span style={{ color: '#f0c040' }}>実績</span>（15個）と<span style={{ color: '#f0c040' }}>チャレンジ</span>（3種）を確認できます。</p>
     <p>実績: 初クリア、全難易度制覇、シナジーマスターなどの達成目標。</p>
     <p>チャレンジ: HP半減、進化制限、タイムアタックなどの特殊ルール。</p>
     <br />
-    <p style={{ color: '#f0c040', fontSize: 11, marginBottom: 2 }}>⚔ 戦闘のコツ</p>
+    <p style={{ color: '#f0c040', fontSize: 12, marginBottom: 2 }}>⚔ 戦闘のコツ</p>
     <p>降伏すると骨が半減。復活ツリーで死亡時に復活可能。</p>
     <p>仲間は文明Lv2/4/6で加入。盾役はダメージを吸収。</p>
     <p>倒れた仲間はバイオーム踏破時に骨を使って復活可能。</p>
     <p>レア進化「魂呼びの儀」「再誕の祈り」でも蘇生。</p>
     <br />
-    <p style={{ color: '#f0c040', fontSize: 11, marginBottom: 2 }}>🦴 骨と文明ツリー</p>
+    <p style={{ color: '#f0c040', fontSize: 12, marginBottom: 2 }}>🦴 骨と文明ツリー</p>
     <p>死亡/クリアで骨獲得。永続強化。<br />難易度クリアで上位ティアが解放！</p>
   </GamePanel>
 );
@@ -101,9 +101,9 @@ const EvoDexTab: React.FC = () => {
         {filtered.map((ev, i) => {
           const civInfo = CIV_LABELS[ev.t];
           return (
-            <GamePanel key={i} style={{ width: '45%', padding: '6px 8px', fontSize: 9 }}>
+            <GamePanel key={i} style={{ width: '45%', padding: '6px 8px', fontSize: 11 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
-                <span style={{ color: civInfo.color, fontWeight: 'bold', fontSize: 10 }}>{ev.n}</span>
+                <span style={{ color: civInfo.color, fontWeight: 'bold', fontSize: 13 }}>{ev.n}</span>
                 <span style={{ fontSize: 7, color: civInfo.color, border: `1px solid ${civInfo.color}40`, padding: '0 3px', borderRadius: 2 }}>
                   {civInfo.label}
                 </span>
@@ -135,17 +135,17 @@ const SynergyTab: React.FC = () => (
     {SYNERGY_BONUSES.map(sb => {
       const info = SYNERGY_TAG_INFO[sb.tag];
       return (
-        <GamePanel key={sb.tag} style={{ padding: '6px 8px', fontSize: 9 }}>
-          <div style={{ color: info?.cl || '#f0c040', fontSize: 11, marginBottom: 3 }}>
+        <GamePanel key={sb.tag} style={{ padding: '6px 8px', fontSize: 11 }}>
+          <div style={{ color: info?.cl || '#f0c040', fontSize: 12, marginBottom: 3 }}>
             {info?.ic} {info?.nm}
           </div>
           <div style={{ marginBottom: 2 }}>
-            <span style={{ color: '#50e090', fontSize: 8 }}>Tier1（2個）</span>{' '}
+            <span style={{ color: '#50e090', fontSize: 11 }}>Tier1（2個）</span>{' '}
             <span style={{ color: '#f0c040' }}>{sb.tier1.name}</span>
             <div style={{ color: '#808068', marginLeft: 8 }}>{sb.tier1.description}</div>
           </div>
           <div>
-            <span style={{ color: '#f0c040', fontSize: 8 }}>Tier2（3個+）</span>{' '}
+            <span style={{ color: '#f0c040', fontSize: 11 }}>Tier2（3個+）</span>{' '}
             <span style={{ color: '#f0c040' }}>{sb.tier2.name}</span>
             <div style={{ color: '#808068', marginLeft: 8 }}>{sb.tier2.description}</div>
           </div>

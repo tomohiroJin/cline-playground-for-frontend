@@ -71,12 +71,12 @@ export const DifficultyScreen: React.FC<Props> = ({ save, dispatch, playSfx, onS
               <span style={{ color: '#f0c040', fontSize: 12 }}>
                 {d.ic} {d.n}{save.best?.[i] ? ' 🏆' : ''}
               </span>
-              {i > 0 && <span style={{ fontSize: 9, color: '#605848' }}>骨×{d.bm}</span>}
+              {i > 0 && <span style={{ fontSize: 11, color: '#988070' }}>骨×{d.bm}</span>}
             </div>
-            <div style={{ color: '#908070', fontSize: 9, marginTop: 2 }}>
+            <div style={{ color: '#908070', fontSize: 11, marginTop: 2 }}>
               {STAGE_THEMES[i]}
             </div>
-            <div style={{ color: '#605848', fontSize: 10, marginTop: 2 }}>
+            <div style={{ color: '#988070', fontSize: 13, marginTop: 2 }}>
               {d.d}{d.bb > 1 && ` 最終ボス${d.bb}連戦`}{locked && <Xc> (クリア{d.ul}回で解放)</Xc>}
             </div>
           </GameButton>

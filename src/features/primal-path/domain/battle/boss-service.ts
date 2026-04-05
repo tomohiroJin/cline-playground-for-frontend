@@ -10,7 +10,7 @@ import { deepCloneRun } from '../shared/utils';
 
 /** 最高文明からボスキーを決定する（覚醒優先） */
 export function resolveFinalBossKey(r: RunState): string {
-  const map: Record<string, string> = { tech: 'ft', life: 'fl', rit: 'fr' };
+  const map: Record<string, string> = { tech: 'ft', life: 'fl', rit: 'fr', bal: 'fb' };
   if (r.fe && map[r.fe]) return map[r.fe];
   return r.cT >= r.cL && r.cT >= r.cR ? 'ft' : r.cL >= r.cR ? 'fl' : 'fr';
 }

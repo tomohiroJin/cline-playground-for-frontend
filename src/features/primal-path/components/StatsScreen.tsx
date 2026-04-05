@@ -32,7 +32,7 @@ export const StatsScreen: React.FC<Props> = ({ runStats, aggregate, dispatch, pl
       <Divider />
 
       <GamePanel style={{ padding: '8px 10px' }}>
-        <div style={{ fontSize: 10, color: '#f0c040', marginBottom: 4, textAlign: 'center' }}>── 累計統計 ──</div>
+        <div style={{ fontSize: 13, color: '#f0c040', marginBottom: 4, textAlign: 'center' }}>── 累計統計 ──</div>
         <RunStatRow><span>総プレイ回数</span><span>{aggregate.totalRuns}</span></RunStatRow>
         <RunStatRow><span>総クリア回数</span><span><Gc>{aggregate.totalClears}</Gc></span></RunStatRow>
         <RunStatRow><span>クリア率</span><span>{clearRate}%</span></RunStatRow>
@@ -42,9 +42,9 @@ export const StatsScreen: React.FC<Props> = ({ runStats, aggregate, dispatch, pl
       </GamePanel>
 
       <GamePanel style={{ padding: '8px 10px', maxHeight: 280, overflowY: 'auto' }}>
-        <div style={{ fontSize: 10, color: '#f0c040', marginBottom: 4, textAlign: 'center' }}>── 直近のラン ──</div>
+        <div style={{ fontSize: 13, color: '#f0c040', marginBottom: 4, textAlign: 'center' }}>── 直近のラン ──</div>
         {runStats.length === 0 && (
-          <div style={{ fontSize: 10, color: '#605848', textAlign: 'center', padding: 8 }}>
+          <div style={{ fontSize: 13, color: '#988070', textAlign: 'center', padding: 8 }}>
             まだプレイ記録がありません
           </div>
         )}
@@ -53,11 +53,11 @@ export const StatsScreen: React.FC<Props> = ({ runStats, aggregate, dispatch, pl
           const icon = s.result === 'victory' ? '✅' : '❌';
           const awk = s.awakening ? ` / ${s.awakening}` : '';
           return (
-            <div key={s.id} style={{ fontSize: 9, padding: '3px 0', borderBottom: '1px solid #1a1a22', color: '#a89878' }}>
+            <div key={s.id} style={{ fontSize: 11, padding: '3px 0', borderBottom: '1px solid #1a1a22', color: '#a89878' }}>
               <span>{icon} </span>
               <span>{diff?.ic ?? ''} {diff?.n ?? ''}</span>
               <span>{awk}</span>
-              <span style={{ float: 'right', color: '#605848' }}>
+              <span style={{ float: 'right', color: '#988070' }}>
                 {s.biomeCount}面 {s.totalKills}体 {formatTime(s.playtimeSeconds)}
               </span>
             </div>

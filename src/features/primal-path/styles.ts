@@ -2,8 +2,12 @@
  * 原始進化録 - PRIMAL PATH - スタイル定義
  */
 import styled, { keyframes, css } from 'styled-components';
+import { DESIGN_TOKENS } from './design-tokens';
 
-/* ===== Keyframes ===== */
+/* ===== Keyframes =====
+ * 注意: @keyframes 内では CSS 変数が使用不可のため、カラー値はハードコード。
+ * テーマ切替対応時はキーフレームの動的生成が必要。
+ */
 
 export const shake = keyframes`
   0%, 100% { transform: translateX(0); }
@@ -89,21 +93,61 @@ export const GameContainer = styled.div`
   background: #0a0a12;
   font-family: 'Courier New', monospace;
   image-rendering: pixelated;
+  image-rendering: -webkit-optimize-contrast;
+
+  /* デザイントークン（CSS 変数） */
+  ${DESIGN_TOKENS.generateCssVariables()}
+
+  @media (max-width: 600px) {
+    ${DESIGN_TOKENS.generateMobileCssVariables()}
+  }
+
+  /* フォーカスインジケーター: ダーク背景で視認可能なアウトライン */
+  *:focus-visible {
+    outline: 2px solid var(--c-accent, #f0c040);
+    outline-offset: 2px;
+  }
+
+  /* 減モーション対応: 装飾的アニメーションを無効化 */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 `;
 
 export const GameShell = styled.div`
-  width: 480px;
-  height: 720px;
+  width: 720px;
+  height: 960px;
   background: #12121e;
   position: relative;
   overflow: hidden;
   border: 2px solid #2a2a3e;
-  box-shadow: 0 0 30px #0006;
+  box-shadow: 0 0 40px #0008;
+  border-radius: 8px;
 
-  @media (max-width: 500px) {
+  /* タブレット縦向き */
+  @media (min-width: 601px) and (max-width: 1024px) {
+    width: min(90vw, 700px);
+    height: min(90vh, 960px);
+  }
+
+  /* タブレット横向き */
+  @media (min-width: 601px) and (max-width: 1024px) and (orientation: landscape) {
+    width: min(90vw, 960px);
+    height: min(90vh, 700px);
+  }
+
+  /* モバイル（dvh フォールバック付き） */
+  @media (max-width: 600px) {
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
     border: none;
+    border-radius: 0;
+    box-shadow: none;
   }
 `;
 
@@ -118,8 +162,8 @@ export const Screen = styled.div<{ $center?: boolean; $noScroll?: boolean }>`
   display: flex;
   flex-direction: column;
   align-items: center;
-  color: #e0d8c8;
-  padding: 10px 14px;
+  color: var(--c-text, #e0d8c8);
+  padding: var(--sp-screen-pad, 14px 20px);
   overflow-y: ${p => p.$noScroll ? 'hidden' : 'auto'};
   z-index: 1;
   ${p => p.$center && 'justify-content: center;'}
@@ -152,18 +196,18 @@ export const OverlayIcon = styled.div`
 `;
 
 export const OverlayText = styled.div`
-  font-size: 16px;
+  font-size: var(--fs-body, 14px);
   color: #f0c040;
   text-shadow: 0 0 14px #f0c04060;
   text-align: center;
   padding: 0 24px;
-  line-height: 1.6;
+  line-height: var(--lh-relaxed, 1.6);
 `;
 
 /* ===== Common Elements ===== */
 
 export const Title = styled.h1`
-  font-size: 22px;
+  font-size: var(--fs-title, 28px);
   color: #f0c040;
   text-shadow: 0 0 12px #f0c04060, 2px 2px #503800;
   letter-spacing: 3px;
@@ -172,7 +216,7 @@ export const Title = styled.h1`
 `;
 
 export const SubTitle = styled.h2`
-  font-size: 14px;
+  font-size: var(--fs-subtitle, 18px);
   color: #f0c040;
   margin: 6px 0;
   animation: ${fadeInUp} 0.4s ease-out;
@@ -189,12 +233,12 @@ export const GameButton = styled.button<{ $off?: boolean }>`
   background: linear-gradient(180deg, #1c1c2c, #141420);
   color: #c0b898;
   border: 1px solid #333;
-  padding: 8px 18px;
+  padding: var(--sp-btn-pad, 10px 22px);
   margin: 3px;
   cursor: pointer;
   font-family: inherit;
-  font-size: 12px;
-  min-width: 110px;
+  font-size: var(--fs-button, 15px);
+  min-width: var(--sp-btn-min-w, 110px);
   text-align: center;
   border-radius: 2px;
   transition: all 0.12s;
@@ -216,7 +260,7 @@ export const GameButton = styled.button<{ $off?: boolean }>`
 export const GamePanel = styled.div`
   background: linear-gradient(180deg, #0e0e16, #0a0a12);
   border: 1px solid #262636;
-  padding: 8px;
+  padding: var(--sp-card-pad, 12px);
   margin: 4px 0;
   width: 100%;
   border-radius: 3px;
@@ -224,7 +268,7 @@ export const GamePanel = styled.div`
 `;
 
 export const StatText = styled.div`
-  font-size: 10px;
+  font-size: var(--fs-panel, 13px);
   color: #908870;
   margin: 2px 0;
 `;
@@ -232,7 +276,7 @@ export const StatText = styled.div`
 export const EvoCard = styled.button<{ $rare?: boolean }>`
   background: linear-gradient(180deg, #14141e, #0e0e16);
   border: 2px solid #2a2a3a;
-  padding: 8px 8px 6px;
+  padding: var(--sp-card-pad, 12px);
   width: 100%;
   cursor: pointer;
   text-align: left;
@@ -259,8 +303,8 @@ export const EvoCard = styled.button<{ $rare?: boolean }>`
 export const TreeNodeBox = styled.div<{ $bought?: boolean; $locked?: boolean; $canBuy?: boolean }>`
   background: linear-gradient(180deg, #14141e, #0e0e16);
   border: 1px solid #262636;
-  padding: 5px 6px;
-  font-size: 10px;
+  padding: var(--sp-card-pad, 12px) 6px;
+  font-size: var(--fs-panel, 13px);
   text-align: center;
   min-width: 84px;
   border-radius: 3px;
@@ -285,14 +329,14 @@ export const TreeNodeBox = styled.div<{ $bought?: boolean; $locked?: boolean; $c
 `;
 
 export const LogContainer = styled.div`
-  font-size: 9px;
-  color: #808068;
-  max-height: 160px;
+  font-size: var(--fs-tiny, 11px);
+  color: var(--c-text-muted, #808068);
+  max-height: calc(var(--game-height, 960px) * 0.22);
   overflow-y: auto;
   width: 100%;
   padding: 4px 6px;
-  background: #08080c;
-  border: 1px solid #1a1a22;
+  background: var(--c-bg-deep, #08080c);
+  border: 1px solid var(--c-border-inner, #1a1a22);
   border-radius: 3px;
   margin: 3px 0;
 
@@ -304,7 +348,7 @@ export const LogLine = styled.div<{ $color?: string }>`
   margin: 1px 0;
   padding: 2px 0;
   border-bottom: 1px solid #fff1;
-  color: ${p => p.$color || '#808068'};
+  color: ${p => p.$color || 'var(--c-text-muted, #808068)'};
 `;
 
 export const SpeedBar = styled.div`
@@ -317,9 +361,11 @@ export const SpeedBar = styled.div`
 export const SpeedBtn = styled.button<{ $active?: boolean }>`
   background: #0c0c14;
   border: 1px solid #262636;
-  color: #605848;
-  font-size: 9px;
+  color: #988070;
+  font-size: var(--fs-tiny, 11px);
   padding: 1px 6px;
+  min-height: 44px;
+  min-width: 44px;
   cursor: pointer;
   border-radius: 2px;
   transition: all 0.1s;
@@ -338,8 +384,8 @@ export const SpeedBtn = styled.button<{ $active?: boolean }>`
 `;
 
 export const SurrenderBtn = styled.button`
-  font-size: 8px;
-  color: #403828;
+  font-size: var(--fs-tiny, 11px);
+  color: var(--c-text-dim, #988070);
   background: none;
   border: 1px solid #262636;
   padding: 1px 6px;
@@ -358,9 +404,9 @@ export const AllyBadge = styled.div<{ $dead?: boolean }>`
   background: #0c0c14;
   border: 1px solid #262636;
   padding: 3px 6px;
-  font-size: 9px;
+  font-size: var(--fs-tiny, 11px);
   text-align: center;
-  min-width: 62px;
+  min-width: 72px;
   border-radius: 3px;
 
   ${p => p.$dead && css`
@@ -378,8 +424,8 @@ export const AllyRow = styled.div`
 `;
 
 export const TierHeader = styled.div<{ $locked?: boolean }>`
-  font-size: 10px;
-  color: ${p => p.$locked ? '#401020' : '#605848'};
+  font-size: var(--fs-panel, 13px);
+  color: ${p => p.$locked ? '#401020' : '#988070'};
   margin: 8px 0 3px;
   padding-bottom: 3px;
   border-bottom: 1px solid #1a1a22;
@@ -391,22 +437,22 @@ export const TierHeader = styled.div<{ $locked?: boolean }>`
 export const RunStatRow = styled.div`
   display: flex;
   justify-content: space-between;
-  font-size: 10px;
-  color: #605848;
+  font-size: var(--fs-panel, 13px);
+  color: #988070;
   padding: 2px 8px;
   width: 100%;
 `;
 
 /* ===== Color utility classes ===== */
 
-export const Tc = styled.span`color: #f08050;`;
-export const Lc = styled.span`color: #50e090;`;
-export const Rc = styled.span`color: #d060ff;`;
-export const Gc = styled.span`color: #f0c040;`;
-export const Xc = styled.span`color: #f05050;`;
-export const Cc = styled.span`color: #50c8e8;`;
-export const Wc = styled.span`color: #e0d8c8;`;
-export const Bc = styled.span`color: #e0c060;`;
+export const Tc = styled.span`color: var(--c-civ-tech, #f08050);`;
+export const Lc = styled.span`color: var(--c-civ-life, #50e090);`;
+export const Rc = styled.span`color: var(--c-civ-rit, #d060ff);`;
+export const Gc = styled.span`color: var(--c-accent, #f0c040);`;
+export const Xc = styled.span`color: var(--c-danger, #f05050);`;
+export const Cc = styled.span`color: var(--c-info, #50c8e8);`;
+export const Wc = styled.span`color: var(--c-text, #e0d8c8);`;
+export const Bc = styled.span`color: var(--c-civ-bal, #e0c060);`;
 
 export const PausedOverlay = styled.div`
   position: absolute;
@@ -446,6 +492,7 @@ export const EnemySprite = styled.canvas<{ $hit?: boolean; $burn?: boolean }>`
   background: #08080c;
   flex-shrink: 0;
   image-rendering: pixelated;
+  image-rendering: -webkit-optimize-contrast;
   transition: border-color 0.3s;
   ${p => p.$burn && css`box-shadow: 0 0 10px #ff402050, inset 0 0 6px #ff402030;`}
   ${p => p.$hit && css`animation: ${flashHit} 0.4s ease-out, ${shake} 0.3s ease-out;`}
@@ -492,7 +539,7 @@ export const skillPulse = keyframes`
 export const BattleFixedBottom = styled.div`
   flex-shrink: 0;
   width: 100%;
-  padding: 6px 0 4px;
+  padding: 10px 0 8px;
   background: linear-gradient(180deg, transparent, #12121e 8px);
 `;
 
@@ -521,14 +568,14 @@ export const SkillBtn = styled.button<{ $off?: boolean }>`
   background: linear-gradient(180deg, #1a1a28, #12121c);
   border: 1px solid #444;
   color: #e0d8c8;
-  font-size: 14px;
-  padding: 10px 16px;
+  font-size: var(--fs-panel, 13px);
+  padding: 8px 14px;
   cursor: pointer;
   border-radius: 4px;
   font-family: inherit;
   transition: all 0.12s;
-  min-width: 96px;
-  min-height: 44px;
+  min-width: 120px;
+  min-height: 52px;
   animation: ${skillPulse} 2s ease-in-out infinite;
 
   &:hover {
@@ -564,28 +611,28 @@ export const BiomeBg = styled.div<{ $biome: string }>`
   pointer-events: none;
 `;
 
-/** 降雪キーフレーム */
+/** 降雪キーフレーム（GameShell 高さ 960px に対応） */
 export const snowfall = keyframes`
   0% { transform: translateY(-10px) translateX(0); opacity: 0; }
   10% { opacity: 0.8; }
   90% { opacity: 0.6; }
-  100% { transform: translateY(720px) translateX(20px); opacity: 0; }
+  100% { transform: translateY(960px) translateX(20px); opacity: 0; }
 `;
 
-/** 火の粉キーフレーム */
+/** 火の粉キーフレーム（GameShell 高さ 960px に対応） */
 export const ember = keyframes`
-  0% { transform: translateY(720px) translateX(0); opacity: 0; }
+  0% { transform: translateY(960px) translateX(0); opacity: 0; }
   10% { opacity: 0.9; }
   80% { opacity: 0.5; }
   100% { transform: translateY(-20px) translateX(-15px); opacity: 0; }
 `;
 
-/** 草原の胞子キーフレーム */
+/** 草原の胞子キーフレーム（GameShell 高さ 960px に対応） */
 export const spore = keyframes`
   0% { transform: translateY(0) translateX(0); opacity: 0; }
   20% { opacity: 0.4; }
   80% { opacity: 0.3; }
-  100% { transform: translateY(-60px) translateX(30px); opacity: 0; }
+  100% { transform: translateY(-80px) translateX(40px); opacity: 0; }
 `;
 
 /** 天候パーティクル */
@@ -638,7 +685,7 @@ export const WeatherParticles = styled.div<{ $biome: string }>`
 
 /** チャレンジタイマー */
 export const TimerDisplay = styled.div<{ $urgent?: boolean }>`
-  font-size: 12px;
+  font-size: var(--fs-small, 12px);
   color: ${p => p.$urgent ? '#f05050' : '#f0c040'};
   text-shadow: 0 0 6px ${p => p.$urgent ? '#f0505060' : '#f0c04040'};
   font-weight: bold;
@@ -651,9 +698,10 @@ export const TimerDisplay = styled.div<{ $urgent?: boolean }>`
 export const TabBtn = styled.button<{ $active?: boolean }>`
   background: #0c0c14;
   border: 1px solid #262636;
-  color: #605848;
-  font-size: 10px;
+  color: #988070;
+  font-size: var(--fs-panel, 13px);
   padding: 4px 10px;
+  min-height: 44px;
   cursor: pointer;
   border-radius: 3px;
   transition: all 0.15s;
@@ -669,9 +717,9 @@ export const TabBtn = styled.button<{ $active?: boolean }>`
 
 /** ゲームオーバー画面用ログ見返しコンテナ */
 export const LogReviewContainer = styled.div`
-  font-size: 9px;
-  color: #808068;
-  max-height: 200px;
+  font-size: var(--fs-tiny, 11px);
+  color: var(--c-text-muted, #808068);
+  max-height: calc(var(--game-height, 960px) * 0.22);
   overflow-y: auto;
   background: rgba(0, 0, 0, 0.5);
   border: 1px solid #555;

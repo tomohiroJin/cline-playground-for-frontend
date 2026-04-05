@@ -35,19 +35,19 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({ run, popups }) => {
   const activeBuffs = run.sk.bfs;
 
   const feLabel = run.awoken.map(a => (
-    <span key={a.id} style={{ color: a.cl, fontSize: 8 }}>{a.nm} </span>
+    <span key={a.id} style={{ color: a.cl, fontSize: 11 }}>{a.nm} </span>
   ));
 
   return (
     <GamePanel style={{ position: 'relative' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <canvas ref={psprRef} aria-hidden="true" style={{
-          width: 40, height: 55,
+          width: 54, height: 72,
           border: '1px solid #222', borderRadius: 3, background: '#08080c', flexShrink: 0,
           imageRendering: 'pixelated',
         }} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 11, color: '#50e090', marginBottom: 2 }}>
+          <div style={{ fontSize: 12, color: '#50e090', marginBottom: 2 }}>
             部族長 {feLabel}
             <AffinityBadge biome={run.cBT} levels={lvs} />
             {ritActive && (
@@ -61,7 +61,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({ run, popups }) => {
             🦴<Bc>{run.bE}</Bc> <CivLevelsDisplay run={run} />
           </StatText>
           {tbParts.length > 0 && (
-            <div style={{ fontSize: 10, color: '#aaa', marginTop: 1 }}>🌳 {tbParts.join(' ')}</div>
+            <div style={{ fontSize: 13, color: '#aaa', marginTop: 1 }}>🌳 {tbParts.join(' ')}</div>
           )}
         </div>
       </div>
@@ -71,7 +71,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({ run, popups }) => {
           {activeBuffs.map((b, i) => {
             const def = A_SKILLS.find(s => s.id === b.sid);
             return (
-              <span key={i} style={{ fontSize: 8, color: '#f0c040', background: '#f0c04015', border: '1px solid #f0c04025', padding: '1px 4px', borderRadius: 4 }}>
+              <span key={i} style={{ fontSize: 11, color: '#f0c040', background: '#f0c04015', border: '1px solid #f0c04025', padding: '1px 4px', borderRadius: 4 }}>
                 {def?.ic} {b.rT}T
               </span>
             );

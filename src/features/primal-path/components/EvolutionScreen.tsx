@@ -67,7 +67,7 @@ export const EvolutionScreen: React.FC<Props> = ({ run, evoPicks, dispatch, play
       {/* maxEvo 到達時: 進化選択肢の代わりにスキップUIを表示 */}
       {isMaxEvoReached && (
         <GamePanel style={{ textAlign: 'center', padding: 12, marginTop: 6 }}>
-          <div style={{ fontSize: 11, color: '#f08050', marginBottom: 6 }}>
+          <div style={{ fontSize: 12, color: '#f08050', marginBottom: 6 }}>
             進化上限に達しました（{run.evs.length}/{run.maxEvo}）
           </div>
           <GameButton
@@ -86,8 +86,8 @@ export const EvolutionScreen: React.FC<Props> = ({ run, evoPicks, dispatch, play
           <EvoCard key={i} $rare={!!ev.r} onClick={() => handlePick(ev)}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <span style={{ fontSize: 11, color: '#f0c040' }}>{ev.r ? '★ ' : ''}{ev.n}</span>{' '}
-                <span style={{ fontSize: 9, color: '#908870' }}>{ev.d}</span>
+                <span style={{ fontSize: 12, color: '#f0c040' }}>{ev.r ? '★ ' : ''}{ev.n}</span>{' '}
+                <span style={{ fontSize: 11, color: '#908870' }}>{ev.d}</span>
                 <span style={{
                   fontSize: 7, padding: '0 4px', borderRadius: 6, marginLeft: 3,
                   background: TC[ev.t] + '20', color: TC[ev.t], border: `1px solid ${TC[ev.t]}40`,

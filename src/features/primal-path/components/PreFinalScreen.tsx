@@ -59,7 +59,7 @@ export const PreFinalScreen: React.FC<Props> = ({ run, dispatch, playSfx }) => {
       <Divider />
       <GamePanel style={{ textAlign: 'center', padding: 14 }}>
         <div style={{ fontSize: 15, color: '#f0c040', marginBottom: 10, letterSpacing: 1 }}>最終決戦の準備</div>
-        <StatText style={{ fontSize: 11 }}>
+        <StatText style={{ fontSize: 12 }}>
           <StatLine run={run} /> 会心 <Gc>{(run.cr * 100).toFixed(0)}%</Gc>
         </StatText>
         <StatText>🦴 {run.bE} <CivLevelsDisplay run={run} /> 👥 仲間{aliveA}体</StatText>

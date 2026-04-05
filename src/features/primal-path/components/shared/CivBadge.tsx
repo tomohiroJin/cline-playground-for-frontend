@@ -14,7 +14,7 @@ export interface CivBadgeProps {
 export const CivBadge: React.FC<CivBadgeProps> = ({ type, extra }) => (
   <span style={{
     background: TC[type] + '18', color: TC[type], border: `1px solid ${TC[type]}40`,
-    fontSize: 8, padding: '1px 6px', borderRadius: 10, display: 'inline-block',
+    fontSize: 11, padding: '1px 6px', borderRadius: 10, display: 'inline-block',
   }}>
     {extra || ''}{TN[type]}
   </span>

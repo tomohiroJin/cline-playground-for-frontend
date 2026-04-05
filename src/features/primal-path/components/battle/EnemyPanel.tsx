@@ -25,7 +25,7 @@ export const EnemyPanel: React.FC<EnemyPanelProps> = ({ enemy, boss, burn, turn,
   // 敵スプライト描画
   useEffect(() => {
     if (esprRef.current) {
-      drawEnemy(esprRef.current, enemy.n, boss, 2);
+      drawEnemy(esprRef.current, enemy.n, boss);
       if (burn) {
         const ctx = esprRef.current.getContext('2d');
         if (ctx) {
@@ -40,12 +40,12 @@ export const EnemyPanel: React.FC<EnemyPanelProps> = ({ enemy, boss, burn, turn,
     <GamePanel style={{ position: 'relative' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <EnemySprite ref={esprRef} aria-hidden="true" $hit={isHit} $burn={!!burn} style={{
-          width: boss ? 52 : 34, height: boss ? 52 : 34,
+          width: boss ? 76 : 52, height: boss ? 76 : 52,
         }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 12, color: boss ? '#ff6040' : '#f05050', marginBottom: 2 }}>
             {boss ? '👑 ' : ''}{enemy.n}{enemy.hp <= 0 ? ' 💀' : ''}
-            {burn ? <span style={{ marginLeft: 4, fontSize: 10, animation: 'none' }}>🔥</span> : null}
+            {burn ? <span style={{ marginLeft: 4, fontSize: 13, animation: 'none' }}>🔥</span> : null}
           </div>
           <HpBar value={enemy.hp} max={enemy.mhp} variant="eh" showPct />
           <StatText>ATK {enemy.atk} DEF {enemy.def} <span style={{ color: '#c0a040' }}>🦴{enemy.bone}</span></StatText>

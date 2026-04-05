@@ -112,7 +112,7 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
 
         <SpeedBar>
           <SpeedControl battleSpd={battleSpd} dispatch={dispatch} />
-          <span style={{ fontSize: 8, color: '#403828', marginLeft: 4 }}>T{run.turn} DPS:{wDps}</span>
+          <span style={{ fontSize: 11, color: '#403828', marginLeft: 4 }}>T{run.turn} DPS:{wDps}</span>
           <SurrenderBtn onClick={() => {
             if (window.confirm('降伏しますか？骨は半分になります。')) dispatch({ type: 'SURRENDER' });
           }}>降伏</SurrenderBtn>
@@ -120,7 +120,7 @@ export const BattleScreen: React.FC<Props> = ({ run, finalMode, battleSpd, dispa
 
         <EnemyPanel enemy={e} boss={boss} burn={run.burn} turn={run.turn} isHit={isHit} popups={enPopups} />
 
-        <div style={{ fontSize: 10, color: '#302818', margin: '3px 0', letterSpacing: 4, textAlign: 'center' }}>── ⚔ ──</div>
+        <div style={{ fontSize: 13, color: '#302818', margin: '3px 0', letterSpacing: 4, textAlign: 'center' }}>── ⚔ ──</div>
 
         <PlayerPanel run={run} popups={plPopups} />
 

@@ -16,7 +16,7 @@ test.describe('ゲームオーバーフロー', () => {
   async function surrenderFromBattle(game: PrimalPathHelper, page: PrimalPathHelper['page']) {
     await game.startRunAndReachBattle();
     await game.surrender();
-    await expect(page.getByText(/部族は滅びた/)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/部族は撤退/)).toBeVisible({ timeout: 15_000 });
   }
 
   test('降伏後にリザルト画面が表示される', async ({ page }) => {

@@ -16,7 +16,7 @@ test.describe('セーブ/ロード', () => {
     // Arrange: バトル→降伏
     await game.startRunAndReachBattle();
     await game.surrender();
-    await expect(page.getByText(/部族は滅びた/)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/部族は撤退/)).toBeVisible({ timeout: 15_000 });
     await game.returnToTitle();
 
     // Assert
