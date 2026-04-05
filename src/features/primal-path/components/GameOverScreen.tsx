@@ -52,9 +52,11 @@ export const GameOverScreen: React.FC<Props> = ({ run, won, save, dispatch, play
       <SubTitle style={{ fontSize: 18, color: won ? '#f0c040' : '#f05050' }}>
         {won
           ? '🏆 神話を刻んだ！'
-          : run.isEndless && run.hp > 0
-            ? '♾️ 探索を終えた'
-            : '💀 部族は滅びた…'}
+          : (run as unknown as Record<string, unknown>).surrendered
+            ? '🏳️ 部族は撤退を選んだ…'
+            : run.isEndless && run.hp > 0
+              ? '♾️ 探索を終えた'
+              : '💀 部族は滅びた…'}
       </SubTitle>
       <Divider />
       <GamePanel style={{ textAlign: 'center', padding: 14 }}>

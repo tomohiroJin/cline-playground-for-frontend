@@ -62,7 +62,7 @@ export function startRunState(di: number, save: SaveData): RunState {
 
 /* ===== 報酬計算 ===== */
 
-/** 骨報酬を計算する */
+/** 骨報酬を計算する（bE=バトル中収集骨、bb=ボス撃破ボーナス骨） */
 export function calcBoneReward(r: RunState, won: boolean): number {
   let tb = r.bE + r.bb;
   tb = Math.floor(tb * r.dd.bm * (1 + r.tb.bM));

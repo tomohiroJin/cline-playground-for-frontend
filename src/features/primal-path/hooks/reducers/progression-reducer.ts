@@ -40,9 +40,7 @@ export function progressionReducer(state: GameState, action: ProgressionAction):
 
     case 'GO_FINAL_BOSS': {
       if (!state.run) return state;
-      if (state.run.di >= 3 && !state.run.fe) {
-        return { ...state, phase: 'over', gameResult: false };
-      }
+      // fe 未設定でも最高 civ レベルでフォールバック（resolveFinalBossKey が処理）
       const { nextRun } = startFinalBoss(state.run);
       return { ...state, run: nextRun, phase: 'battle', finalMode: true };
     }

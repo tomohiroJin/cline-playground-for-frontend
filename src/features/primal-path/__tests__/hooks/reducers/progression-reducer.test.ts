@@ -84,12 +84,12 @@ describe('progressionReducer', () => {
       expect(next).toEqual(state);
     });
 
-    it('di >= 3 で fe 未設定の場合はゲームオーバー', () => {
-      const run = makeRun({ di: 3, fe: null });
+    it('di >= 3 で fe 未設定でも civ レベルフォールバックで最終ボスに進める', () => {
+      const run = makeRun({ di: 3, fe: null, cT: 5, cL: 3, cR: 2 });
       const state = makeGameState({ run });
       const next = progressionReducer(state, { type: 'GO_FINAL_BOSS' });
-      expect(next.phase).toBe('over');
-      expect(next.gameResult).toBe(false);
+      expect(next.phase).toBe('battle');
+      expect(next.finalMode).toBe(true);
     });
   });
 

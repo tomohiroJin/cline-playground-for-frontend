@@ -44,7 +44,7 @@ export function battleReducer(state: GameState, action: BattleAction): GameState
 
     case 'SURRENDER': {
       if (!state.run) return state;
-      const next = { ...state.run, bE: Math.floor(state.run.bE / 2) };
+      const next = { ...state.run, bE: Math.floor(state.run.bE / 2), surrendered: true };
       const boneReward = calcBoneReward(next, false);
       const save = { ...state.save, bones: state.save.bones + boneReward };
       return { ...state, save, run: next, phase: 'over', gameResult: false, finalMode: false };

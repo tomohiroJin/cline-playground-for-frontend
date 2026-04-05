@@ -107,7 +107,7 @@ describe('rollEvent', () => {
 
   it('バイオームアフィニティのあるイベントが対応バイオームで重み付けされる', () => {
     // Arrange: 火山バイオームでrng→イベント発生確定、選択で beast_den が選ばれやすい
-    const run = makeRun({ btlCount: 5, cBT: 'volcano' });
+    const run = makeRun({ btlCount: 5, cBT: 'volcano', bc: 1 });
     const counts: Record<string, number> = {};
 
     // Act: 複数回試行

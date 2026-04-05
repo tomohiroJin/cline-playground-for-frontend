@@ -8,11 +8,14 @@ import { CIV_TYPES, TN, TC } from '../../constants';
 import { civLvs, civMin } from '../shared/civ-utils';
 import { applyStatFx, getSnap, writeSnapToRun, deepCloneRun } from '../shared/utils';
 
-/** 次に解除可能な覚醒ルールを返す（小→大の順） */
+/** 次に解除可能な覚醒ルールを返す（小→大の順、Tier2 は 1 回のみ） */
 export function checkAwakeningRules(r: RunState): AwakeningRule | null {
   const done = r.awoken.map(a => a.id);
   const lvs = civLvs(r);
   const mn = civMin(r);
+
+  // Tier2 覚醒済みかチェック（fe が設定されていれば Tier2 は完了）
+  const hasTier2 = r.fe !== null && r.fe !== undefined;
 
   const rules: AwakeningRule[] = [
     { id: 'sa_bal', t: 'bal', tier: 1, ok: mn >= 3 },
@@ -20,10 +23,13 @@ export function checkAwakeningRules(r: RunState): AwakeningRule | null {
   CIV_TYPES.forEach(t => {
     rules.push({ id: 'sa_' + t, t, tier: 1, ok: lvs[t] >= r.saReq });
   });
-  rules.push({ id: 'fa_bal', t: 'bal', tier: 2, ok: mn >= 4 && done.indexOf('sa_bal') >= 0 });
-  CIV_TYPES.forEach(t => {
-    rules.push({ id: 'fa_' + t, t, tier: 2, ok: lvs[t] >= r.fReq });
-  });
+  // Tier2 は hasTier2 でなければ候補に入れる
+  if (!hasTier2) {
+    rules.push({ id: 'fa_bal', t: 'bal', tier: 2, ok: mn >= 4 && done.indexOf('sa_bal') >= 0 });
+    CIV_TYPES.forEach(t => {
+      rules.push({ id: 'fa_' + t, t, tier: 2, ok: lvs[t] >= r.fReq });
+    });
+  }
 
   return rules.find(r2 => r2.ok && done.indexOf(r2.id) < 0) || null;
 }

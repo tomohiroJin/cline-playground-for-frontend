@@ -33,6 +33,7 @@ export const BOSS: Readonly<Record<string, EnemyTemplate>> = Object.freeze({
   ft: Object.freeze({ n: '氷の神獣', hp: 320, atk: 30, def: 7, bone: 10 }),
   fl: Object.freeze({ n: '大地の守護者', hp: 400, atk: 24, def: 10, bone: 10 }),
   fr: Object.freeze({ n: '血の魔神', hp: 280, atk: 40, def: 4, bone: 12 }),
+  fb: Object.freeze({ n: '調和の審判者', hp: 360, atk: 28, def: 9, bone: 11 }),
   fa: Object.freeze({ n: '天空の裁定者', hp: 350, atk: 35, def: 8, bone: 11 }),
   fx: Object.freeze({ n: '混沌の始祖龍', hp: 450, atk: 28, def: 12, bone: 12 }),
 });
@@ -45,6 +46,7 @@ export const FINAL_BOSS_ORDER: Readonly<Record<string, readonly string[]>> = Obj
   ft: Object.freeze(['ft', 'fl', 'fr', 'fa', 'fx']),
   fl: Object.freeze(['fl', 'fr', 'ft', 'fa', 'fx']),
   fr: Object.freeze(['fr', 'ft', 'fl', 'fa', 'fx']),
+  fb: Object.freeze(['fb', 'ft', 'fl', 'fr', 'fx']),
 });
 
 /** 速度オプション */
@@ -67,7 +69,7 @@ export const ENEMY_COLORS: Readonly<Record<string, string>> = Object.freeze({
   '火炎蛇': '#e08040', '噴火カメ': '#b06040', '灼熱ワイバーン': '#e04040',
   'サーベルタイガー': '#e0b040', 'マンモス': '#a08060', '火竜': '#e02020',
   '氷の神獣': '#50b0e0', '大地の守護者': '#40a040', '血の魔神': '#c02060',
-  '天空の裁定者': '#e0d050', '混沌の始祖龍': '#8040c0',
+  '調和の審判者': '#c0a060', '天空の裁定者': '#e0d050', '混沌の始祖龍': '#8040c0',
 });
 
 /** 敵詳細パーツ (大型) */
@@ -78,6 +80,7 @@ export const ENEMY_DETAILS: readonly { match: string; parts: readonly (readonly 
   Object.freeze({ match: '神獣', parts: Object.freeze([Object.freeze([8, 0, 2, 3, '#fff'] as const), Object.freeze([14, 0, 2, 3, '#fff'] as const)]) }),
   Object.freeze({ match: '守護者', parts: Object.freeze([Object.freeze([2, 0, 4, 4, '#60c060'] as const), Object.freeze([18, 0, 4, 4, '#60c060'] as const)]) }),
   Object.freeze({ match: 'タイガー', parts: Object.freeze([Object.freeze([6, 10, 2, 4, '#fff'] as const), Object.freeze([16, 10, 2, 4, '#fff'] as const)]) }),
+  Object.freeze({ match: '審判者', parts: Object.freeze([Object.freeze([2, 0, 4, 4, '#e0c060'] as const), Object.freeze([18, 0, 4, 4, '#e0c060'] as const)]) }),
   Object.freeze({ match: '裁定者', parts: Object.freeze([Object.freeze([0, 4, 5, 8, null] as const), Object.freeze([19, 4, 5, 8, null] as const)]) }),
   Object.freeze({ match: '始祖龍', parts: Object.freeze([Object.freeze([0, 4, 5, 8, null] as const), Object.freeze([19, 4, 5, 8, null] as const)]) }),
 ]);

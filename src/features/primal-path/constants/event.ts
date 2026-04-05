@@ -40,6 +40,7 @@ export const RANDOM_EVENTS: readonly RandomEventDef[] = Object.freeze([
     situationText: 'どうする？',
     choices: Object.freeze([
       Object.freeze({ label: '助ける', description: '仲間が加入するがHP-15のダメージを受ける', effect: Object.freeze({ type: 'add_ally' as const, allyTemplate: 'random' }), riskLevel: 'risky' as const, cost: Object.freeze({ type: 'hp_damage' as const, amount: 15 }) }),
+      Object.freeze({ label: '薬草を渡す', description: 'HP-5で仲間を回復させ、DEF+3を得る', effect: Object.freeze({ type: 'stat_change' as const, stat: 'def' as const, value: 3 }), riskLevel: 'safe' as const, cost: Object.freeze({ type: 'hp_damage' as const, amount: 5 }) }),
       Object.freeze({ label: '立ち去る', description: '見捨てた罪悪感…骨を10拾う', effect: Object.freeze({ type: 'bone_change' as const, amount: 10 }), riskLevel: 'safe' as const }),
     ]),
   }),
@@ -51,6 +52,7 @@ export const RANDOM_EVENTS: readonly RandomEventDef[] = Object.freeze([
     choices: Object.freeze([
       Object.freeze({ label: '突っ切る', description: 'HP-20ダメージを受けるがATK+5を得る', effect: Object.freeze({ type: 'stat_change' as const, stat: 'atk' as const, value: 5 }), riskLevel: 'dangerous' as const, cost: Object.freeze({ type: 'hp_damage' as const, amount: 20 }) }),
       Object.freeze({ label: '迂回して薬草を探す', description: 'HPを回復できるかもしれない', effect: Object.freeze({ type: 'heal' as const, amount: 15 }), riskLevel: 'safe' as const }),
+      Object.freeze({ label: '毒を採取する', description: '危険だが骨15を得る', effect: Object.freeze({ type: 'bone_change' as const, amount: 15 }), riskLevel: 'risky' as const, cost: Object.freeze({ type: 'hp_damage' as const, amount: 10 }) }),
     ]),
     biomeAffinity: Object.freeze(['grassland' as const]),
   }),
@@ -62,6 +64,7 @@ export const RANDOM_EVENTS: readonly RandomEventDef[] = Object.freeze([
     choices: Object.freeze([
       Object.freeze({ label: '掘り出す', description: 'DEFが上がるかもしれない', effect: Object.freeze({ type: 'stat_change' as const, stat: 'def' as const, value: 5 }), riskLevel: 'safe' as const }),
       Object.freeze({ label: '骨として持ち帰る', description: '骨を入手する', effect: Object.freeze({ type: 'bone_change' as const, amount: 20 }), riskLevel: 'safe' as const }),
+      Object.freeze({ label: '調べて立ち去る', description: '知見を得て文明レベル+1', effect: Object.freeze({ type: 'civ_level_up' as const, civType: 'dominant' as const }), riskLevel: 'safe' as const }),
     ]),
   }),
   Object.freeze({
@@ -71,9 +74,11 @@ export const RANDOM_EVENTS: readonly RandomEventDef[] = Object.freeze([
     situationText: '危険を冒すか？',
     choices: Object.freeze([
       Object.freeze({ label: '探索する', description: 'HP-20ダメージを受けるがATK+12を得る', effect: Object.freeze({ type: 'stat_change' as const, stat: 'atk' as const, value: 12 }), riskLevel: 'dangerous' as const, cost: Object.freeze({ type: 'hp_damage' as const, amount: 20 }) }),
+      Object.freeze({ label: '罠を仕掛ける', description: '骨を消費して安全にATK+6', effect: Object.freeze({ type: 'stat_change' as const, stat: 'atk' as const, value: 6 }), riskLevel: 'safe' as const, cost: Object.freeze({ type: 'bone' as const, amount: 8 }) }),
       Object.freeze({ label: '見なかったことにする', description: '安全に立ち去り、DEF+2を得る', effect: Object.freeze({ type: 'stat_change' as const, stat: 'def' as const, value: 2 }), riskLevel: 'safe' as const }),
     ]),
     biomeAffinity: Object.freeze(['volcano' as const]),
+    minBiomeCount: 1,
   }),
   Object.freeze({
     id: 'starry_night' as const,
@@ -83,6 +88,7 @@ export const RANDOM_EVENTS: readonly RandomEventDef[] = Object.freeze([
     choices: Object.freeze([
       Object.freeze({ label: '瞑想する', description: 'HPを回復する', effect: Object.freeze({ type: 'heal' as const, amount: 25 }), riskLevel: 'safe' as const }),
       Object.freeze({ label: '星に願いをかける', description: 'ランダムな進化を得る', effect: Object.freeze({ type: 'random_evolution' as const }), riskLevel: 'risky' as const }),
+      Object.freeze({ label: '星を観察する', description: '知恵を得てDEF+3', effect: Object.freeze({ type: 'stat_change' as const, stat: 'def' as const, value: 3 }), riskLevel: 'safe' as const }),
     ]),
   }),
   Object.freeze({

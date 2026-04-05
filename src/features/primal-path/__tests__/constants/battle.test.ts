@@ -40,9 +40,10 @@ describe('constants/battle', () => {
   });
 
   describe('FINAL_BOSS_ORDER（最終ボス出現順）', () => {
-    it('3つの初回ボスキーに対する出現順が定義されている', () => {
-      expect(Object.keys(FINAL_BOSS_ORDER)).toHaveLength(3);
+    it('4つの初回ボスキー（tech/life/rit/bal）に対する出現順が定義されている', () => {
+      expect(Object.keys(FINAL_BOSS_ORDER)).toHaveLength(4);
       expect(FINAL_BOSS_ORDER.ft).toHaveLength(5);
+      expect(FINAL_BOSS_ORDER.fb).toHaveLength(5);
     });
   });
 
