@@ -109,9 +109,11 @@ export class PrimalPathHelper {
     this.page.once('dialog', (dialog) => dialog.accept());
 
     // 降伏ボタンをクリック（確認ダイアログが表示される）
+    // GameShell が 960px のため viewport 外になることがあり、scrollIntoView + force で対応
     const surrenderBtn = this.page.getByText('降伏');
     await surrenderBtn.waitFor({ timeout: 5_000 });
-    await surrenderBtn.click();
+    await surrenderBtn.scrollIntoViewIfNeeded();
+    await surrenderBtn.click({ force: true });
   }
 
   /* ========== 進化画面 ========== */
