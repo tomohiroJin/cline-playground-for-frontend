@@ -41,6 +41,6 @@ test.describe('バトルフロー', () => {
     await game.surrender();
 
     // Assert
-    await expect(page.getByText(/部族は滅びた/)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/部族は撤退/)).toBeVisible({ timeout: 15_000 });
   });
 });

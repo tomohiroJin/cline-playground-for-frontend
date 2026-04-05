@@ -16,7 +16,7 @@ const PHASE_MARKERS = {
   battle: 'Wave',
   evo: '進化を選べ',
   biome: '次のバイオームを選べ',
-  over: '部族は滅びた',
+  over: '部族は',
   victory: '神話を刻んだ',
   tree: '永続文明ツリー',
   challenge: 'チャレンジモード',
@@ -87,7 +87,7 @@ export class PrimalPathHelper {
   async waitForBattleEnd(timeout = 60_000): Promise<'evo' | 'over' | 'event' | 'biome' | 'awakening'> {
     const result = await Promise.race([
       this.page.getByText(PHASE_MARKERS.evo).waitFor({ timeout }).then(() => 'evo' as const),
-      this.page.getByText(/部族は滅びた|神話を刻んだ|探索を終えた/).waitFor({ timeout }).then(() => 'over' as const),
+      this.page.getByText(/部族は滅びた|部族は撤退|神話を刻んだ|探索を終えた/).waitFor({ timeout }).then(() => 'over' as const),
       this.page.getByText(PHASE_MARKERS.event).waitFor({ timeout }).then(() => 'event' as const),
       this.page.getByText(PHASE_MARKERS.biome).waitFor({ timeout }).then(() => 'biome' as const),
       this.page.getByText(/覚醒/).waitFor({ timeout }).then(() => 'awakening' as const),
