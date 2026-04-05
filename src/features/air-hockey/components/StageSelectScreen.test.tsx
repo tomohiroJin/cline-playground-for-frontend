@@ -29,7 +29,12 @@ describe('StageSelectScreen', () => {
   });
 
   describe('表示', () => {
-    it('章タイトルがヘッダーに表示される', () => {
+    it('ストーリーモードタイトルがヘッダーに表示される', () => {
+      render(<StageSelectScreen {...defaultProps} />);
+      expect(screen.getByText('ストーリーモード')).toBeInTheDocument();
+    });
+
+    it('チャプタータイトルがセクションヘッダーに表示される', () => {
       render(<StageSelectScreen {...defaultProps} />);
       expect(screen.getByText(/第1章/)).toBeInTheDocument();
     });
