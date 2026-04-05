@@ -29,6 +29,8 @@ const STAGE_2_1: StageDefinition = {
   postWinDialogue: [
     { characterId: 'rookie', text: 'おー、やっぱ強いね！ 大会でも頑張って！', expression: 'happy' },
     { characterId: 'player', text: 'ありがとう！ 少し自信ついたかも' },
+    { characterId: 'rookie', text: 'あ、そうだ。黒鉄高校にレンってやつがいるんだけど、あいつヤバいらしいよ' },
+    { characterId: 'hiro', text: 'レンか…タクマ先輩と因縁があるって聞いたことあるな' },
     { characterId: 'takuma', text: '…調子は悪くない。だが、本番はここからだ' },
   ],
   postLoseDialogue: [
@@ -123,6 +125,7 @@ const STAGE_2_4: StageDefinition = {
     { characterId: 'ace', text: '…認めよう。お前は、強い' },
     { characterId: 'player', text: '…やった…勝った…！' },
     { characterId: 'takuma', text: 'よくやった。俺の代わりに——いや、お前の力で勝ったんだ', expression: 'happy' },
+    { characterId: 'misaki', text: '…やるじゃない。見直したわ', expression: 'happy' },
     { characterId: 'hiro', text: '地区大会優勝だーーー！！', expression: 'happy' },
     { characterId: 'shion', text: 'ふぅん…面白い選手がいるじゃない', expression: 'normal' },
   ],
