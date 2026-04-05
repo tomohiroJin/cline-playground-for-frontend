@@ -187,7 +187,7 @@ export const OverlayIcon = styled.div`
 `;
 
 export const OverlayText = styled.div`
-  font-size: 16px;
+  font-size: var(--fs-body, 14px);
   color: #f0c040;
   text-shadow: 0 0 14px #f0c04060;
   text-align: center;
@@ -339,7 +339,7 @@ export const LogLine = styled.div<{ $color?: string }>`
   margin: 1px 0;
   padding: 2px 0;
   border-bottom: 1px solid #fff1;
-  color: ${p => p.$color || '#808068'};
+  color: ${p => p.$color || 'var(--c-text-muted, #808068)'};
 `;
 
 export const SpeedBar = styled.div`
@@ -395,7 +395,7 @@ export const AllyBadge = styled.div<{ $dead?: boolean }>`
   padding: 3px 6px;
   font-size: var(--fs-tiny, 11px);
   text-align: center;
-  min-width: 62px;
+  min-width: 72px;
   border-radius: 3px;
 
   ${p => p.$dead && css`
@@ -434,14 +434,14 @@ export const RunStatRow = styled.div`
 
 /* ===== Color utility classes ===== */
 
-export const Tc = styled.span`color: #f08050;`;
-export const Lc = styled.span`color: #50e090;`;
-export const Rc = styled.span`color: #d060ff;`;
-export const Gc = styled.span`color: #f0c040;`;
-export const Xc = styled.span`color: #f05050;`;
-export const Cc = styled.span`color: #50c8e8;`;
-export const Wc = styled.span`color: #e0d8c8;`;
-export const Bc = styled.span`color: #e0c060;`;
+export const Tc = styled.span`color: var(--c-civ-tech, #f08050);`;
+export const Lc = styled.span`color: var(--c-civ-life, #50e090);`;
+export const Rc = styled.span`color: var(--c-civ-rit, #d060ff);`;
+export const Gc = styled.span`color: var(--c-accent, #f0c040);`;
+export const Xc = styled.span`color: var(--c-danger, #f05050);`;
+export const Cc = styled.span`color: var(--c-info, #50c8e8);`;
+export const Wc = styled.span`color: var(--c-text, #e0d8c8);`;
+export const Bc = styled.span`color: var(--c-civ-bal, #e0c060);`;
 
 export const PausedOverlay = styled.div`
   position: absolute;
@@ -481,6 +481,7 @@ export const EnemySprite = styled.canvas<{ $hit?: boolean; $burn?: boolean }>`
   background: #08080c;
   flex-shrink: 0;
   image-rendering: pixelated;
+  image-rendering: -webkit-optimize-contrast;
   transition: border-color 0.3s;
   ${p => p.$burn && css`box-shadow: 0 0 10px #ff402050, inset 0 0 6px #ff402030;`}
   ${p => p.$hit && css`animation: ${flashHit} 0.4s ease-out, ${shake} 0.3s ease-out;`}
@@ -615,12 +616,12 @@ export const ember = keyframes`
   100% { transform: translateY(-20px) translateX(-15px); opacity: 0; }
 `;
 
-/** 草原の胞子キーフレーム */
+/** 草原の胞子キーフレーム（GameShell 高さ 960px に対応） */
 export const spore = keyframes`
   0% { transform: translateY(0) translateX(0); opacity: 0; }
   20% { opacity: 0.4; }
   80% { opacity: 0.3; }
-  100% { transform: translateY(-60px) translateX(30px); opacity: 0; }
+  100% { transform: translateY(-80px) translateX(40px); opacity: 0; }
 `;
 
 /** 天候パーティクル */
