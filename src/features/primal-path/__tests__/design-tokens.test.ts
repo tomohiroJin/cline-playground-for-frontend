@@ -38,6 +38,7 @@ describe('デザイントークン定義', () => {
     it('基本 UI カラーが定義されている', () => {
       expect(DESIGN_TOKENS.colors.accent).toBe('#f0c040');
       expect(DESIGN_TOKENS.colors.text).toBe('#e0d8c8');
+      expect(DESIGN_TOKENS.colors.textDim).toBe('#988070');
       expect(DESIGN_TOKENS.colors.bg).toBe('#12121e');
       expect(DESIGN_TOKENS.colors.bgDeep).toBe('#0a0a12');
     });
@@ -57,6 +58,14 @@ describe('デザイントークン定義', () => {
     });
   });
 
+  describe('行間トークン', () => {
+    it('行間トークンが定義されている', () => {
+      expect(DESIGN_TOKENS.lineHeight.tight).toBe('1.3');
+      expect(DESIGN_TOKENS.lineHeight.normal).toBe('1.5');
+      expect(DESIGN_TOKENS.lineHeight.relaxed).toBe('1.6');
+    });
+  });
+
   describe('ゲームサイズトークン', () => {
     it('PC デフォルトのゲームサイズが定義されている', () => {
       expect(DESIGN_TOKENS.gameSize.width).toBe('720px');
@@ -72,6 +81,8 @@ describe('デザイントークン定義', () => {
       expect(css).toContain('--sp-screen-pad:');
       expect(css).toContain('--sp-btn-min-w:');
       expect(css).toContain('--c-accent:');
+      expect(css).toContain('--lh-tight:');
+      expect(css).toContain('--lh-relaxed:');
       expect(css).toContain('--game-width:');
       expect(css).toContain('--game-height:');
     });

@@ -16,5 +16,5 @@ export const AffinityBadge: React.FC<AffinityBadgeProps> = ({ biome, levels }) =
   const afn = biomeBonus(biome, levels);
   return afn > 1
     ? <span style={{ fontSize: 7, padding: '1px 5px', borderRadius: 6, display: 'inline-block', marginLeft: 3, color: '#50e090', background: '#50e09015', border: '1px solid #50e09030' }}>相性◎ ×{afn}</span>
-    : <span style={{ fontSize: 7, padding: '1px 5px', borderRadius: 6, display: 'inline-block', marginLeft: 3, color: '#605848', background: '#60584810', border: '1px solid #60584820' }}>相性─</span>;
+    : <span style={{ fontSize: 7, padding: '1px 5px', borderRadius: 6, display: 'inline-block', marginLeft: 3, color: '#988070', background: '#98807010', border: '1px solid #98807020' }}>相性─</span>;
 };

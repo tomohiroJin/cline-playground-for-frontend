@@ -44,7 +44,7 @@ export const StatsScreen: React.FC<Props> = ({ runStats, aggregate, dispatch, pl
       <GamePanel style={{ padding: '8px 10px', maxHeight: 280, overflowY: 'auto' }}>
         <div style={{ fontSize: 13, color: '#f0c040', marginBottom: 4, textAlign: 'center' }}>── 直近のラン ──</div>
         {runStats.length === 0 && (
-          <div style={{ fontSize: 13, color: '#605848', textAlign: 'center', padding: 8 }}>
+          <div style={{ fontSize: 13, color: '#988070', textAlign: 'center', padding: 8 }}>
             まだプレイ記録がありません
           </div>
         )}
@@ -57,7 +57,7 @@ export const StatsScreen: React.FC<Props> = ({ runStats, aggregate, dispatch, pl
               <span>{icon} </span>
               <span>{diff?.ic ?? ''} {diff?.n ?? ''}</span>
               <span>{awk}</span>
-              <span style={{ float: 'right', color: '#605848' }}>
+              <span style={{ float: 'right', color: '#988070' }}>
                 {s.biomeCount}面 {s.totalKills}体 {formatTime(s.playtimeSeconds)}
               </span>
             </div>

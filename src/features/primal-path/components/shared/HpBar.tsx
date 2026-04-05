@@ -21,7 +21,7 @@ export const HpBar: React.FC<HpBarProps> = ({ value, max, variant, showPct, low 
         height: '100%', transition: 'width .3s', width: `${pct}%`, background: low ? 'linear-gradient(180deg,#e55,#a22)' : bg,
         ...(low ? { animation: 'barPulse .8s infinite' } : {}),
       }} />
-      <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', textAlign: 'center', fontSize: 11, lineHeight: '14px', color: '#fff', textShadow: '0 1px 2px #000' }}>
+      <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', textAlign: 'center', fontSize: 12, lineHeight: '14px', color: '#fff', textShadow: '0 1px 2px #000' }}>
         {Math.max(0, value)}/{max}{showPct ? ` (${Math.round(pct)}%)` : ''}
       </div>
     </div>

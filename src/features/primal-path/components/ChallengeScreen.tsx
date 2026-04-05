@@ -61,7 +61,7 @@ export const ChallengeScreen: React.FC<Props> = ({ aggregate, save, dispatch, pl
                   </div>
                 </div>
                 {!isUnlocked && (
-                  <div style={{ fontSize: 11, color: '#605848', marginTop: 2 }}>
+                  <div style={{ fontSize: 11, color: '#988070', marginTop: 2 }}>
                     前の難易度をクリアして解放
                   </div>
                 )}
@@ -116,7 +116,7 @@ export const ChallengeScreen: React.FC<Props> = ({ aggregate, save, dispatch, pl
               <div style={{ fontSize: 11, color: '#a89878', lineHeight: 1.5 }}>
                 {ch.description}
               </div>
-              <div style={{ fontSize: 11, color: '#605848', marginTop: 4 }}>
+              <div style={{ fontSize: 11, color: '#988070', marginTop: 4 }}>
                 {ch.modifiers.map((m, i) => {
                   switch (m.type) {
                     case 'hp_multiplier':

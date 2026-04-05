@@ -4,7 +4,10 @@
 import styled, { keyframes, css } from 'styled-components';
 import { DESIGN_TOKENS } from './design-tokens';
 
-/* ===== Keyframes ===== */
+/* ===== Keyframes =====
+ * 注意: @keyframes 内では CSS 変数が使用不可のため、カラー値はハードコード。
+ * テーマ切替対応時はキーフレームの動的生成が必要。
+ */
 
 export const shake = keyframes`
   0%, 100% { transform: translateX(0); }
@@ -97,6 +100,12 @@ export const GameContainer = styled.div`
 
   @media (max-width: 600px) {
     ${DESIGN_TOKENS.generateMobileCssVariables()}
+  }
+
+  /* フォーカスインジケーター: ダーク背景で視認可能なアウトライン */
+  *:focus-visible {
+    outline: 2px solid var(--c-accent, #f0c040);
+    outline-offset: 2px;
   }
 
   /* 減モーション対応: 装飾的アニメーションを無効化 */
@@ -192,7 +201,7 @@ export const OverlayText = styled.div`
   text-shadow: 0 0 14px #f0c04060;
   text-align: center;
   padding: 0 24px;
-  line-height: 1.6;
+  line-height: var(--lh-relaxed, 1.6);
 `;
 
 /* ===== Common Elements ===== */
@@ -294,7 +303,7 @@ export const EvoCard = styled.button<{ $rare?: boolean }>`
 export const TreeNodeBox = styled.div<{ $bought?: boolean; $locked?: boolean; $canBuy?: boolean }>`
   background: linear-gradient(180deg, #14141e, #0e0e16);
   border: 1px solid #262636;
-  padding: 5px 6px;
+  padding: var(--sp-card-pad, 12px) 6px;
   font-size: var(--fs-panel, 13px);
   text-align: center;
   min-width: 84px;
@@ -321,13 +330,13 @@ export const TreeNodeBox = styled.div<{ $bought?: boolean; $locked?: boolean; $c
 
 export const LogContainer = styled.div`
   font-size: var(--fs-tiny, 11px);
-  color: #808068;
+  color: var(--c-text-muted, #808068);
   max-height: calc(var(--game-height, 960px) * 0.22);
   overflow-y: auto;
   width: 100%;
   padding: 4px 6px;
-  background: #08080c;
-  border: 1px solid #1a1a22;
+  background: var(--c-bg-deep, #08080c);
+  border: 1px solid var(--c-border-inner, #1a1a22);
   border-radius: 3px;
   margin: 3px 0;
 
@@ -352,9 +361,11 @@ export const SpeedBar = styled.div`
 export const SpeedBtn = styled.button<{ $active?: boolean }>`
   background: #0c0c14;
   border: 1px solid #262636;
-  color: #605848;
+  color: #988070;
   font-size: var(--fs-tiny, 11px);
   padding: 1px 6px;
+  min-height: 44px;
+  min-width: 44px;
   cursor: pointer;
   border-radius: 2px;
   transition: all 0.1s;
@@ -374,7 +385,7 @@ export const SpeedBtn = styled.button<{ $active?: boolean }>`
 
 export const SurrenderBtn = styled.button`
   font-size: var(--fs-tiny, 11px);
-  color: #403828;
+  color: var(--c-text-dim, #988070);
   background: none;
   border: 1px solid #262636;
   padding: 1px 6px;
@@ -414,7 +425,7 @@ export const AllyRow = styled.div`
 
 export const TierHeader = styled.div<{ $locked?: boolean }>`
   font-size: var(--fs-panel, 13px);
-  color: ${p => p.$locked ? '#401020' : '#605848'};
+  color: ${p => p.$locked ? '#401020' : '#988070'};
   margin: 8px 0 3px;
   padding-bottom: 3px;
   border-bottom: 1px solid #1a1a22;
@@ -427,7 +438,7 @@ export const RunStatRow = styled.div`
   display: flex;
   justify-content: space-between;
   font-size: var(--fs-panel, 13px);
-  color: #605848;
+  color: #988070;
   padding: 2px 8px;
   width: 100%;
 `;
@@ -687,9 +698,10 @@ export const TimerDisplay = styled.div<{ $urgent?: boolean }>`
 export const TabBtn = styled.button<{ $active?: boolean }>`
   background: #0c0c14;
   border: 1px solid #262636;
-  color: #605848;
+  color: #988070;
   font-size: var(--fs-panel, 13px);
   padding: 4px 10px;
+  min-height: 44px;
   cursor: pointer;
   border-radius: 3px;
   transition: all 0.15s;
@@ -706,7 +718,7 @@ export const TabBtn = styled.button<{ $active?: boolean }>`
 /** ゲームオーバー画面用ログ見返しコンテナ */
 export const LogReviewContainer = styled.div`
   font-size: var(--fs-tiny, 11px);
-  color: #808068;
+  color: var(--c-text-muted, #808068);
   max-height: calc(var(--game-height, 960px) * 0.22);
   overflow-y: auto;
   background: rgba(0, 0, 0, 0.5);

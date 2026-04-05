@@ -43,7 +43,7 @@ const colors = {
   accent: '#f0c040',
   text: '#e0d8c8',
   textMuted: '#908870',
-  textDim: '#605848',
+  textDim: '#988070',
   bg: '#12121e',
   bgDeep: '#0a0a12',
   border: '#2a2a3e',
@@ -66,6 +66,12 @@ const colors = {
   safe: '#50e090',
   info: '#50c8e8',
   reward: '#f0c040',
+} as const;
+
+const lineHeight = {
+  tight: '1.3',
+  normal: '1.5',
+  relaxed: '1.6',
 } as const;
 
 const gameSize = {
@@ -115,6 +121,9 @@ const PC_ENTRIES: readonly CssVarEntry[] = [
   ['--c-safe', colors.safe],
   ['--c-info', colors.info],
   ['--c-reward', colors.reward],
+  ['--lh-tight', lineHeight.tight],
+  ['--lh-normal', lineHeight.normal],
+  ['--lh-relaxed', lineHeight.relaxed],
   ['--game-width', gameSize.width],
   ['--game-height', gameSize.height],
 ];
@@ -150,6 +159,7 @@ export const DESIGN_TOKENS = {
   spacing,
   spacingMobile,
   colors,
+  lineHeight,
   gameSize,
   generateCssVariables,
   generateMobileCssVariables,

@@ -48,10 +48,10 @@ export const AchievementScreen: React.FC<Props> = ({ achievementStates, dispatch
                 {ach.icon}
               </span>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 12, color: isUnlocked ? '#f0c040' : '#605848' }}>
+                <div style={{ fontSize: 12, color: isUnlocked ? '#f0c040' : '#988070' }}>
                   {ach.name}
                 </div>
-                <div style={{ fontSize: 11, color: '#605848' }}>
+                <div style={{ fontSize: 11, color: '#988070' }}>
                   {ach.description}
                 </div>
                 {isUnlocked && st?.unlockedDate && (

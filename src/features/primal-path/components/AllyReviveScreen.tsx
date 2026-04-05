@@ -39,7 +39,7 @@ export const AllyReviveScreen: React.FC<Props> = ({ run, dispatch, playSfx, show
         return (
           <GamePanel key={i} style={{ padding: 10, textAlign: 'center', margin: '4px 0' }}>
             <div style={{ fontSize: 12, color: TC[a.t], marginBottom: 4 }}>💀 {a.n}</div>
-            <div style={{ fontSize: 11, color: '#605848', marginBottom: 6 }}>
+            <div style={{ fontSize: 11, color: '#988070', marginBottom: 6 }}>
               HP {a.mhp} / ATK {a.atk}{a.tk ? ' (盾役)' : a.h ? ' (回復役)' : ''}
             </div>
             <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
@@ -58,7 +58,7 @@ export const AllyReviveScreen: React.FC<Props> = ({ run, dispatch, playSfx, show
         );
       })}
 
-      <GameButton style={{ marginTop: 6, color: '#605848' }} onClick={() => { playSfx('click'); dispatch({ type: 'SKIP_REVIVE' }); }}>
+      <GameButton style={{ marginTop: 6, color: '#988070' }} onClick={() => { playSfx('click'); dispatch({ type: 'SKIP_REVIVE' }); }}>
         ▶ スキップ
       </GameButton>
     </Screen>

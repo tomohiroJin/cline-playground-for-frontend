@@ -34,7 +34,7 @@ export const TreeScreen: React.FC<Props> = ({ save, dispatch, playSfx, showOverl
       <div style={{ fontSize: 14, color: '#f0c040', margin: '4px 0' }}>
         所持：<span style={{ fontSize: 16 }}>{save.bones}</span> 骨
       </div>
-      <div style={{ fontSize: 11, color: '#605848', marginBottom: 2 }}>
+      <div style={{ fontSize: 11, color: '#988070', marginBottom: 2 }}>
         取得 {boughtN}/{totalN} ・クリア{save.clears}回
       </div>
       {boughtN > 0 && hasBonus && (
@@ -82,7 +82,7 @@ export const TreeScreen: React.FC<Props> = ({ save, dispatch, playSfx, showOverl
                       onClick={() => { if (canBuy) handleBuy(nd.id, nd.n); }}
                     >
                       <div style={{ color: bought ? '#50a050' : cc, fontSize: 11 }}>{nd.n}</div>
-                      <div style={{ fontSize: 7, color: '#605848', margin: '1px 0' }}>{nd.d}</div>
+                      <div style={{ fontSize: 7, color: '#988070', margin: '1px 0' }}>{nd.d}</div>
                       {req2 && !bought && <div style={{ fontSize: 7, color: '#444' }}>要:{req2.n}</div>}
                       <div style={{ fontSize: 11, color: bought ? '#3a6a3a' : canBuy ? '#f0c040' : '#444' }}>
                         {bought ? '✓' : `🦴${nd.c}`}
