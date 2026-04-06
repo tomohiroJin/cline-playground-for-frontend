@@ -136,26 +136,69 @@ no text, no effects, no decorations
 
 ポートレートと同じく **元画像で先に透過処理 → その後リサイズ** の順で処理する。
 
+### 1:2 縦長で生成された場合（例: 512x1024）
+
 ```bash
 # Step 1: 元画像のまま透過処理
 convert input.png \
   -alpha set -fuzz 10% -fill none \
   -draw "matte 0,0 floodfill" \
-  -draw "matte WIDTH-1,0 floodfill" \
-  -draw "matte 0,HEIGHT-1 floodfill" \
-  -draw "matte WIDTH-1,HEIGHT-1 floodfill" \
-  -draw "matte WIDTH-1,HEIGHT/3 floodfill" \
-  -draw "matte WIDTH-1,HEIGHT*2/3 floodfill" \
-  -draw "matte 0,HEIGHT/3 floodfill" \
-  -draw "matte 0,HEIGHT*2/3 floodfill" \
+  -draw "matte 511,0 floodfill" \
+  -draw "matte 0,1023 floodfill" \
+  -draw "matte 511,1023 floodfill" \
+  -draw "matte 511,300 floodfill" \
+  -draw "matte 511,500 floodfill" \
+  -draw "matte 511,700 floodfill" \
+  -draw "matte 0,300 floodfill" \
+  -draw "matte 0,500 floodfill" \
+  -draw "matte 0,700 floodfill" \
   PNG32:/tmp/_transparent.png
 
-# Step 2: 256x512 にリサイズ（アスペクト比保持 → 上寄せ）
-# 元が 1:2 で生成されていれば単純リサイズでOK
+# Step 2: 256x512 にリサイズ
 convert /tmp/_transparent.png -resize 256x512 PNG32:output.png
 ```
 
 シオンの場合は fuzz を 5% に下げる。
+
+### 正方形で生成された場合のフォールバック（例: 1024x1024）
+
+ポートレートで確立した「元画像で透過 → 中央クロップ」方式で処理する。
+
+```bash
+# Step 1: 元画像（1024x1024）のまま透過処理
+convert input.png \
+  -alpha set -fuzz 10% -fill none \
+  -draw "matte 0,0 floodfill" \
+  -draw "matte 1023,0 floodfill" \
+  -draw "matte 0,1023 floodfill" \
+  -draw "matte 1023,1023 floodfill" \
+  -draw "matte 1023,300 floodfill" \
+  -draw "matte 1023,500 floodfill" \
+  -draw "matte 1023,700 floodfill" \
+  -draw "matte 0,300 floodfill" \
+  -draw "matte 0,500 floodfill" \
+  -draw "matte 0,700 floodfill" \
+  PNG32:/tmp/_transparent.png
+
+# Step 2: 中央から 512x1024 をクロップ
+convert /tmp/_transparent.png \
+  -gravity Center -crop 512x1024+0+0 +repage \
+  PNG32:/tmp/_cropped.png
+
+# Step 3: 256x512 にリサイズ
+convert /tmp/_cropped.png -resize 256x512 PNG32:output.png
+```
+
+---
+
+## 参考画像の活用
+
+AI 画像生成ツールが参考画像（img2img）に対応している場合、既存の VS 画像を入力すると構図の再現精度が上がる。
+
+推奨する参考画像:
+- `public/assets/vs/akira-vs.png` — 標準的なバストアップ構図
+- `public/assets/vs/takuma-vs.png` — 腕組みポーズの参考（シオン用）
+- `public/assets/vs/misaki-vs.png` — 女性キャラの参考（シオン用）
 
 ---
 
@@ -167,4 +210,4 @@ convert /tmp/_transparent.png -resize 256x512 PNG32:output.png
 - [ ] 服装がスポーツウェアである（制服・ブレザーではない）
 - [ ] 背景が単色の白である（グラデーションや装飾なし）
 - [ ] テキスト・エフェクトが含まれていない
-- [ ] 正方形でしか生成できなかった場合は報告する
+- [ ] 正方形でしか生成できた場合 → フォールバック手順で後処理可能
