@@ -145,9 +145,9 @@ describe('AirHockeyGame P2-07 統合テスト', () => {
       render(<AirHockeyGame />);
       fireEvent.click(screen.getByText('キャラクター'));
 
-      // アキラ以外の6キャラ（ヒロ/ミサキ/タクマ/カナタ/リク/シオン）がロック（hidden キャラは非表示）
+      // アキラ以外の7キャラ（ヒロ/ミサキ/タクマ/カナタ/ソウタ/ケンジ/レン）がロック（hidden キャラ: yuu/riku/shion は非表示）
       const questionMarks = screen.getAllByText('???');
-      expect(questionMarks.length).toBe(6);
+      expect(questionMarks.length).toBe(7);
     });
   });
 

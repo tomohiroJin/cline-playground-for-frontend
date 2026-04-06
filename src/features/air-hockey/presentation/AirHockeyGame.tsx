@@ -107,6 +107,15 @@ const AirHockeyGame: React.FC = () => {
     return () => document.removeEventListener('touchmove', handler);
   }, [screen]);
 
+  // 起動時に既存ストーリー進行から図鑑解放を再判定（解放条件変更時の既存プレイヤー補完）
+  useEffect(() => {
+    const progress = mode.storyProgress;
+    if (progress.clearedStages.length > 0) {
+      dex.checkAndUnlock(progress);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 起動時 1 回のみ
+  }, []);
+
   // ── ゲーム制御 ──
   const startGame = useCallback((fieldOverride?: typeof mode.field, gameModeOverride?: GameMode) => {
     const baseField = fieldOverride ?? mode.field;

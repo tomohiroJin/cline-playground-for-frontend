@@ -172,7 +172,7 @@ export const DEX_ENTRIES: DexEntry[] = [
       description:
         '天嶺高校エアホッケー部の2年生。圧倒的なスピードと反射神経で相手を圧倒する。レンに敗れたことで「速さだけじゃダメ」と気づき始めている。',
     },
-    unlockCondition: { type: 'story-clear', stageId: '2-4' },
+    unlockCondition: { type: 'hidden' }, // 第3章で対戦時に解放予定
   },
 
   {
@@ -195,7 +195,7 @@ export const DEX_ENTRIES: DexEntry[] = [
       description:
         '銀嶺学院エアホッケー部の2年生。県大会強豪校のスカウト役。試合を観察し、次の対戦相手を品定めしている。第3章の伏線キャラクター。',
     },
-    unlockCondition: { type: 'story-clear', stageId: '2-4' },
+    unlockCondition: { type: 'hidden' }, // 第3章で対戦時に解放予定
   },
 
   // ── フリー対戦キャラクター ──────────────────────────
@@ -220,7 +220,7 @@ export const DEX_ENTRIES: DexEntry[] = [
       description:
         '風見丘高校エアホッケー同好会の1年生。勝敗にこだわらず楽しむことが最優先。楽しんでるうちにいつの間にか強くなっているタイプ。',
     },
-    unlockCondition: { type: 'hidden' }, // 現時点では解放不可
+    unlockCondition: { type: 'story-clear', stageId: '2-1' },
   },
 
   {
@@ -243,7 +243,7 @@ export const DEX_ENTRIES: DexEntry[] = [
       description:
         '翠嶺学園エアホッケー部の2年生。堅実なプレイスタイルで「基本に忠実」な強さを持つ。落ち着いているが、闘志は秘めている。',
     },
-    unlockCondition: { type: 'hidden' }, // 現時点では解放不可
+    unlockCondition: { type: 'story-clear', stageId: '2-2' },
   },
 
   {
@@ -266,7 +266,7 @@ export const DEX_ENTRIES: DexEntry[] = [
       description:
         '黒鉄高校エアホッケー部のエース。必要最低限の言葉しか発さないが、実力を認めた相手にだけ敬意を示す。地区大会決勝のボスとして立ちはだかる。',
     },
-    unlockCondition: { type: 'hidden' }, // 現時点では解放不可
+    unlockCondition: { type: 'story-clear', stageId: '2-4' },
   },
 ];
 

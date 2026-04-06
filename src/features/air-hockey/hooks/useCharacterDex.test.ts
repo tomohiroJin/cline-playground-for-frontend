@@ -85,10 +85,10 @@ describe('useCharacterDex', () => {
     // Arrange: デフォルトで1キャラ（player）アンロック
     const { result } = renderHook(() => useCharacterDex());
 
-    // Assert: hidden キャラを除外した7件が母数
-    // player(1) / visible(7)
-    expect(result.current.dexEntries).toHaveLength(7);
-    expect(result.current.completionRate).toBe(1 / 7);
+    // Assert: hidden キャラを除外した8件が母数
+    // player(1) / visible(8)
+    expect(result.current.dexEntries).toHaveLength(8);
+    expect(result.current.completionRate).toBe(1 / 8);
   });
 
   it('getNewUnlockCount が未確認数を正しく返す', () => {

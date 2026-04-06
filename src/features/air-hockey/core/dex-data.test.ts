@@ -192,14 +192,22 @@ describe('P2-01: データ層整備', () => {
         });
       });
 
-      it('フリー対戦キャラは隠し（hidden）', () => {
+      it('フリー対戦キャラは Chapter 2 ステージクリアで解放される', () => {
         const rookie = getDexEntryById('rookie');
         const regular = getDexEntryById('regular');
         const ace = getDexEntryById('ace');
 
-        expect(rookie?.unlockCondition.type).toBe('hidden');
-        expect(regular?.unlockCondition.type).toBe('hidden');
-        expect(ace?.unlockCondition.type).toBe('hidden');
+        expect(rookie?.unlockCondition).toEqual({ type: 'story-clear', stageId: '2-1' });
+        expect(regular?.unlockCondition).toEqual({ type: 'story-clear', stageId: '2-2' });
+        expect(ace?.unlockCondition).toEqual({ type: 'story-clear', stageId: '2-4' });
+      });
+
+      it('リク・シオンは隠し（hidden、第3章で対戦時に解放予定）', () => {
+        const riku = getDexEntryById('riku');
+        const shion = getDexEntryById('shion');
+
+        expect(riku?.unlockCondition.type).toBe('hidden');
+        expect(shion?.unlockCondition.type).toBe('hidden');
       });
 
       it('story-clear の stageId が dialogue-data.ts のステージ ID と一致する', () => {
@@ -341,34 +349,34 @@ describe('P2-01: データ層整備', () => {
     it('hidden タイプのエントリを除外する', () => {
       const visible = getVisibleDexEntries();
 
-      // hidden キャラ（yuu, rookie, regular, ace）が含まれない
+      // hidden キャラ（yuu, riku, shion）が含まれない
       const visibleIds = visible.map((e) => e.profile.characterId);
       expect(visibleIds).not.toContain('yuu');
-      expect(visibleIds).not.toContain('rookie');
-      expect(visibleIds).not.toContain('regular');
-      expect(visibleIds).not.toContain('ace');
+      expect(visibleIds).not.toContain('riku');
+      expect(visibleIds).not.toContain('shion');
     });
 
     it('default と story-clear タイプのエントリのみ返す', () => {
       const visible = getVisibleDexEntries();
 
-      // player（default） + hiro, misaki, takuma（Ch1 story-clear）+ kanata, riku, shion（Ch2 story-clear）= 7件
-      expect(visible).toHaveLength(7);
+      // player（default）+ hiro, misaki, takuma（Ch1）+ kanata（Ch2 vs）+ rookie, regular, ace（Ch2 vs）= 8件
+      expect(visible).toHaveLength(8);
       const visibleIds = visible.map((e) => e.profile.characterId);
       expect(visibleIds).toContain('player');
       expect(visibleIds).toContain('hiro');
       expect(visibleIds).toContain('misaki');
       expect(visibleIds).toContain('takuma');
       expect(visibleIds).toContain('kanata');
-      expect(visibleIds).toContain('riku');
-      expect(visibleIds).toContain('shion');
+      expect(visibleIds).toContain('rookie');
+      expect(visibleIds).toContain('regular');
+      expect(visibleIds).toContain('ace');
     });
 
     it('エントリの順序が元の配列と同じ', () => {
       const visible = getVisibleDexEntries();
       const visibleIds = visible.map((e) => e.profile.characterId);
 
-      expect(visibleIds).toEqual(['player', 'hiro', 'misaki', 'takuma', 'kanata', 'riku', 'shion']);
+      expect(visibleIds).toEqual(['player', 'hiro', 'misaki', 'takuma', 'kanata', 'rookie', 'regular', 'ace']);
     });
   });
 });
