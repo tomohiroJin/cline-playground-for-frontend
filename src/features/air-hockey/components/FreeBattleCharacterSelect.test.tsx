@@ -85,6 +85,66 @@ describe('FreeBattleCharacterSelect', () => {
     expect(onBack).toHaveBeenCalled();
   });
 
+  describe('難易度ラベル表示（FB-1 R-1）', () => {
+    it('rookie カードに「Easy」バッジが表示される', () => {
+      render(
+        <FreeBattleCharacterSelect
+          characters={mockCharacters}
+          unlockedIds={['rookie', 'regular', 'ace']}
+          difficulty="normal"
+          onConfirm={jest.fn()}
+          onBack={jest.fn()}
+        />
+      );
+      const rookieCard = screen.getByText('ソウタ').closest('button');
+      expect(rookieCard?.textContent).toContain('Easy');
+    });
+
+    it('regular カードに「Normal」バッジが表示される', () => {
+      render(
+        <FreeBattleCharacterSelect
+          characters={mockCharacters}
+          unlockedIds={['rookie', 'regular', 'ace']}
+          difficulty="easy"
+          onConfirm={jest.fn()}
+          onBack={jest.fn()}
+        />
+      );
+      const regularCard = screen.getByText('ケンジ').closest('button');
+      expect(regularCard?.textContent).toContain('Normal');
+    });
+
+    it('ace カードに「Hard」バッジが表示される', () => {
+      render(
+        <FreeBattleCharacterSelect
+          characters={mockCharacters}
+          unlockedIds={['rookie', 'regular', 'ace']}
+          difficulty="normal"
+          onConfirm={jest.fn()}
+          onBack={jest.fn()}
+        />
+      );
+      const aceCard = screen.getByText('レン').closest('button');
+      expect(aceCard?.textContent).toContain('Hard');
+    });
+
+    it('フリー対戦キャラ以外（hiro 等）には難易度バッジが表示されない', () => {
+      render(
+        <FreeBattleCharacterSelect
+          characters={mockCharacters}
+          unlockedIds={['rookie', 'regular', 'ace', 'hiro']}
+          difficulty="normal"
+          onConfirm={jest.fn()}
+          onBack={jest.fn()}
+        />
+      );
+      const hiroCard = screen.getByText('ヒロ').closest('button');
+      expect(hiroCard?.textContent).not.toContain('Easy');
+      expect(hiroCard?.textContent).not.toContain('Normal');
+      expect(hiroCard?.textContent).not.toContain('Hard');
+    });
+  });
+
   it('難易度に応じたデフォルト選択がされる', () => {
     const onConfirm = jest.fn();
     render(

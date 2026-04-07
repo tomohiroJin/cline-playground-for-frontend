@@ -15,6 +15,13 @@ const DEFAULT_CHARACTER_BY_DIFFICULTY: Record<Difficulty, string> = {
   hard: 'ace',
 };
 
+/** キャラ ID → 難易度ラベル（フリー対戦キャラのみ） */
+const DIFFICULTY_BADGE_BY_CHARACTER_ID: Record<string, string> = {
+  rookie: 'Easy',
+  regular: 'Normal',
+  ace: 'Hard',
+};
+
 type FreeBattleCharacterSelectProps = {
   characters: Character[];
   unlockedIds: string[];
@@ -144,6 +151,18 @@ const styles = {
     right: '4px',
     fontSize: '12px',
   },
+  difficultyBadge: {
+    position: 'absolute' as const,
+    top: '4px',
+    left: '4px',
+    fontSize: '9px',
+    fontWeight: 'bold' as const,
+    color: '#fff',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    padding: '2px 5px',
+    borderRadius: '3px',
+    lineHeight: 1,
+  },
   cardName: {
     fontSize: '10px',
     color: '#ddd',
@@ -237,6 +256,7 @@ export const FreeBattleCharacterSelect: React.FC<FreeBattleCharacterSelectProps>
         {characters.map(character => {
           const locked = !isUnlocked(character);
           const isSelected = selected.id === character.id;
+          const difficultyBadge = DIFFICULTY_BADGE_BY_CHARACTER_ID[character.id];
           return (
             <button
               key={character.id}
@@ -249,6 +269,7 @@ export const FreeBattleCharacterSelect: React.FC<FreeBattleCharacterSelectProps>
                 alt={character.name}
                 style={styles.cardIcon(locked)}
               />
+              {difficultyBadge && <span style={styles.difficultyBadge}>{difficultyBadge}</span>}
               {locked && <span style={styles.lockOverlay}>🔒</span>}
               <span style={styles.cardName}>{character.name}</span>
             </button>

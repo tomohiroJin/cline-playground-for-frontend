@@ -77,9 +77,10 @@ const BackButton = styled.button`
   }
 `;
 
+/** GameTitle と同じ階層（2rem）でデザイン統一。Header 内配置のため margin は 0 */
 const Title = styled.h1`
   text-align: center;
-  font-size: 1.5rem;
+  font-size: 2rem;
   font-weight: 800;
   color: var(--accent-color);
   margin: 0;
