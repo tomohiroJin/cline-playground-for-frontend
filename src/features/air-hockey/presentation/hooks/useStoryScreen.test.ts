@@ -70,4 +70,56 @@ describe('useStoryScreen', () => {
       expect(result.current.hasNextStage).toBe(false);
     });
   });
+
+  describe('storyAiConfig', () => {
+    it('currentStage が undefined のとき undefined を返す', () => {
+      const { result } = renderHook(() =>
+        useStoryScreen({ currentStage: undefined, allStages: ALL_STAGES })
+      );
+      expect(result.current.storyAiConfig).toBeUndefined();
+    });
+
+    it('currentStage がある場合、AI 設定を返す', () => {
+      const stage = ALL_STAGES[0];
+      const { result } = renderHook(() =>
+        useStoryScreen({ currentStage: stage, allStages: ALL_STAGES })
+      );
+      expect(result.current.storyAiConfig).toBeDefined();
+      expect(typeof result.current.storyAiConfig?.maxSpeed).toBe('number');
+    });
+  });
+
+  describe('stageBackgroundUrl', () => {
+    it('currentStage が undefined のとき undefined を返す', () => {
+      const { result } = renderHook(() =>
+        useStoryScreen({ currentStage: undefined, allStages: ALL_STAGES })
+      );
+      expect(result.current.stageBackgroundUrl).toBeUndefined();
+    });
+
+    it('backgroundId がある場合、対応する URL を返す', () => {
+      const stage = CHAPTER_1_STAGES[0]; // backgroundId: 'bg-clubroom'
+      const { result } = renderHook(() =>
+        useStoryScreen({ currentStage: stage, allStages: ALL_STAGES })
+      );
+      expect(result.current.stageBackgroundUrl).toBe('/assets/backgrounds/bg-clubroom.webp');
+    });
+  });
+
+  describe('cpuCharacter', () => {
+    it('currentStage が undefined のとき undefined を返す', () => {
+      const { result } = renderHook(() =>
+        useStoryScreen({ currentStage: undefined, allStages: ALL_STAGES })
+      );
+      expect(result.current.cpuCharacter).toBeUndefined();
+    });
+
+    it('Stage 1-1 の対戦相手は hiro', () => {
+      const stage = CHAPTER_1_STAGES[0];
+      const { result } = renderHook(() =>
+        useStoryScreen({ currentStage: stage, allStages: ALL_STAGES })
+      );
+      expect(result.current.cpuCharacter?.id).toBe('hiro');
+    });
+  });
 });

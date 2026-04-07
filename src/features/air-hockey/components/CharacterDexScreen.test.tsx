@@ -156,6 +156,34 @@ describe('CharacterDexScreen', () => {
     });
   });
 
+  describe('ヘッダーレイアウト（FB-2）', () => {
+    it('タイトルが Header の中央列に配置される（grid-template-columns: 1fr auto 1fr）', () => {
+      render(<CharacterDexScreen {...defaultProps} />);
+
+      const title = screen.getByText('キャラクター図鑑');
+      const header = title.parentElement;
+      expect(header).not.toBeNull();
+      // 3 列 Grid: BackButton / Title / 空セル の 3 つの子要素
+      expect(header?.children.length).toBe(3);
+    });
+
+    it('Header の最初の子は「戻る」ボタンである', () => {
+      render(<CharacterDexScreen {...defaultProps} />);
+
+      const title = screen.getByText('キャラクター図鑑');
+      const header = title.parentElement;
+      expect(header?.children[0].textContent).toBe('← 戻る');
+    });
+
+    it('Header の中央の子はタイトルである', () => {
+      render(<CharacterDexScreen {...defaultProps} />);
+
+      const title = screen.getByText('キャラクター図鑑');
+      const header = title.parentElement;
+      expect(header?.children[1].textContent).toBe('キャラクター図鑑');
+    });
+  });
+
   describe('コンプリート率', () => {
     it('コンプリート率が正しく表示される', () => {
       render(<CharacterDexScreen {...defaultProps} />);

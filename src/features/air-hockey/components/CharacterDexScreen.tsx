@@ -52,8 +52,10 @@ const DexCard = styled(MenuCard)`
   }
 `;
 
+/** 1fr | auto | 1fr の 3 列 Grid で BackButton 幅に依存せずタイトルを真の中央に配置 */
 const Header = styled.div`
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   width: 100%;
   gap: 12px;
@@ -67,19 +69,12 @@ const BackButton = styled.button`
   border-radius: 20px;
   cursor: pointer;
   font-size: 14px;
-  flex-shrink: 0;
+  justify-self: start;
 
   &:hover {
     background: rgba(255, 255, 255, 0.1);
     color: var(--text-primary);
   }
-`;
-
-/** タイトルを真の中央に配置するための不可視 spacer（BackButton と同サイズ） */
-const HeaderSpacer = styled.div`
-  /* BackButton: padding 5px 15px + border 1px + font-size 14px → 約 70px 幅 */
-  width: 72px;
-  flex-shrink: 0;
 `;
 
 const Title = styled.h1`
@@ -88,7 +83,6 @@ const Title = styled.h1`
   font-weight: 800;
   color: var(--accent-color);
   margin: 0;
-  flex: 1;
   text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
 `;
 
@@ -227,8 +221,8 @@ export const CharacterDexScreen: React.FC<CharacterDexScreenProps> = ({
       <Header>
         <BackButton onClick={onBack}>← 戻る</BackButton>
         <Title>キャラクター図鑑</Title>
-        {/* タイトルを真の中央に配置するための不可視 spacer */}
-        <HeaderSpacer aria-hidden="true" />
+        {/* 3 列 Grid の右側 1fr セル（中央配置を維持するため空のままにする） */}
+        <div />
       </Header>
 
       <ProgressSection>
