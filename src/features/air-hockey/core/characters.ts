@@ -37,7 +37,7 @@ export const PLAYER_CHARACTER: Character = {
 export const FREE_BATTLE_CHARACTERS: Record<Difficulty, Character> = {
   easy: {
     id: 'rookie',
-    name: 'ルーキー',
+    name: 'ソウタ',
     icon: ASSET_PATH.character('rookie'),
     color: '#27ae60',
     reactions: {
@@ -54,7 +54,7 @@ export const FREE_BATTLE_CHARACTERS: Record<Difficulty, Character> = {
   },
   normal: {
     id: 'regular',
-    name: 'レギュラー',
+    name: 'ケンジ',
     icon: ASSET_PATH.character('regular'),
     color: '#2c3e50',
     reactions: {
@@ -71,7 +71,7 @@ export const FREE_BATTLE_CHARACTERS: Record<Difficulty, Character> = {
   },
   hard: {
     id: 'ace',
-    name: 'エース',
+    name: 'レン',
     icon: ASSET_PATH.character('ace'),
     color: '#2c3e50',
     reactions: {

@@ -75,6 +75,13 @@ const BackButton = styled.button`
   }
 `;
 
+/** タイトルを真の中央に配置するための不可視 spacer（BackButton と同サイズ） */
+const HeaderSpacer = styled.div`
+  /* BackButton: padding 5px 15px + border 1px + font-size 14px → 約 70px 幅 */
+  width: 72px;
+  flex-shrink: 0;
+`;
+
 const Title = styled.h1`
   text-align: center;
   font-size: 1.5rem;
@@ -220,6 +227,8 @@ export const CharacterDexScreen: React.FC<CharacterDexScreenProps> = ({
       <Header>
         <BackButton onClick={onBack}>← 戻る</BackButton>
         <Title>キャラクター図鑑</Title>
+        {/* タイトルを真の中央に配置するための不可視 spacer */}
+        <HeaderSpacer aria-hidden="true" />
       </Header>
 
       <ProgressSection>

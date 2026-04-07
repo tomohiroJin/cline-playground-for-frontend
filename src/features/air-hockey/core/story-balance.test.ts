@@ -278,17 +278,17 @@ describe('buildFreeBattleAiConfig', () => {
 });
 
 describe('AI_BEHAVIOR_PRESETS のキャラクター AI プロファイル統合', () => {
-  it('easy プリセットに playStyle が設定されている（ルーキー）', () => {
+  it('easy プリセットに playStyle が設定されている（ソウタ）', () => {
     expect(AI_BEHAVIOR_PRESETS.easy.playStyle).toBeDefined();
     expect(AI_BEHAVIOR_PRESETS.easy.playStyle).toEqual(CHARACTER_AI_PROFILES['rookie']);
   });
 
-  it('normal プリセットに playStyle が設定されている（レギュラー）', () => {
+  it('normal プリセットに playStyle が設定されている（ケンジ）', () => {
     expect(AI_BEHAVIOR_PRESETS.normal.playStyle).toBeDefined();
     expect(AI_BEHAVIOR_PRESETS.normal.playStyle).toEqual(CHARACTER_AI_PROFILES['regular']);
   });
 
-  it('hard プリセットに playStyle が設定されている（エース）', () => {
+  it('hard プリセットに playStyle が設定されている（レン）', () => {
     expect(AI_BEHAVIOR_PRESETS.hard.playStyle).toBeDefined();
     expect(AI_BEHAVIOR_PRESETS.hard.playStyle).toEqual(CHARACTER_AI_PROFILES['ace']);
   });
@@ -308,7 +308,7 @@ describe('buildAllyAiConfig', () => {
       expect(config.playStyle?.aggressiveness).toBe(0.2);
     });
 
-    it('エース（aggressiveness=0.6）が 0.5 にキャップされる', () => {
+    it('レン（aggressiveness=0.6）が 0.5 にキャップされる', () => {
       const config = buildAllyAiConfig('normal', 'ace');
       expect(config.playStyle?.aggressiveness).toBe(0.5);
     });
@@ -343,7 +343,7 @@ describe('buildAllyAiConfig', () => {
   });
 
   describe('reactionDelay キャップ（#9: ALLY_REACTION_DELAY_CAP=120ms）', () => {
-    it('ルーキー（reactionDelay=200ms）が 120ms にキャップされる', () => {
+    it('ソウタ（reactionDelay=200ms）が 120ms にキャップされる', () => {
       const config = buildAllyAiConfig('normal', 'rookie');
       expect(config.playStyle?.reactionDelay).toBe(120);
     });
@@ -353,7 +353,7 @@ describe('buildAllyAiConfig', () => {
       expect(config.playStyle?.reactionDelay).toBe(50);
     });
 
-    it('レギュラー（reactionDelay=100ms）はキャップ不要でそのまま', () => {
+    it('ケンジ（reactionDelay=100ms）はキャップ不要でそのまま', () => {
       const config = buildAllyAiConfig('normal', 'regular');
       expect(config.playStyle?.reactionDelay).toBe(100);
     });

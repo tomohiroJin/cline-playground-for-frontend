@@ -7,9 +7,9 @@ import { FreeBattleCharacterSelect } from './FreeBattleCharacterSelect';
 import type { Character } from '../core/types';
 
 const mockCharacters: Character[] = [
-  { id: 'rookie', name: 'ルーキー', icon: '', color: '#27ae60', reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] } },
-  { id: 'regular', name: 'レギュラー', icon: '', color: '#2c3e50', reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] } },
-  { id: 'ace', name: 'エース', icon: '', color: '#c0392b', reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] } },
+  { id: 'rookie', name: 'ソウタ', icon: '', color: '#27ae60', reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] } },
+  { id: 'regular', name: 'ケンジ', icon: '', color: '#2c3e50', reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] } },
+  { id: 'ace', name: 'レン', icon: '', color: '#c0392b', reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] } },
   { id: 'hiro', name: 'ヒロ', icon: '', color: '#e67e22', reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] } },
 ];
 
@@ -26,9 +26,9 @@ describe('FreeBattleCharacterSelect', () => {
     );
 
     // デフォルト選択のキャラはカードと詳細の両方に表示されるため getAllByText
-    expect(screen.getAllByText('ルーキー').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('レギュラー').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('エース').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('ソウタ').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('ケンジ').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('レン').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('ヒロ').length).toBeGreaterThanOrEqual(1);
   });
 
@@ -97,7 +97,7 @@ describe('FreeBattleCharacterSelect', () => {
       />
     );
 
-    // デフォルトでルーキーが選択 → そのまま対戦開始
+    // デフォルトでソウタが選択 → そのまま対戦開始
     fireEvent.click(screen.getByText('対戦開始！'));
     expect(onConfirm).toHaveBeenCalledWith(mockCharacters[0]); // rookie
   });

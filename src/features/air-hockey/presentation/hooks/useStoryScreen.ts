@@ -33,9 +33,21 @@ export const useStoryScreen = ({ currentStage, allStages }: UseStoryScreenParams
 
   const storyCharacters = useMemo(() => {
     if (!currentStage) return {};
-    const chars: Record<string, typeof PLAYER_CHARACTER> = {};
-    if (cpuCharacter) chars[currentStage.characterId] = cpuCharacter;
+    const chars: Record<string, Character> = {};
     chars['player'] = PLAYER_CHARACTER;
+    if (cpuCharacter) chars[currentStage.characterId] = cpuCharacter;
+
+    // ダイアログに登場する全話者を収集（pre/postWin/postLose を統合）
+    const allDialogues = [
+      ...currentStage.preDialogue,
+      ...currentStage.postWinDialogue,
+      ...currentStage.postLoseDialogue,
+    ];
+    for (const dialogue of allDialogues) {
+      if (chars[dialogue.characterId]) continue;
+      const char = findCharacterById(dialogue.characterId);
+      if (char) chars[dialogue.characterId] = char;
+    }
     return chars;
   }, [currentStage, cpuCharacter]);
 

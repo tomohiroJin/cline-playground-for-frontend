@@ -130,19 +130,19 @@ describe('Phase 2: キャラクター基盤', () => {
 
   // ── キャラクター取得ヘルパー ──────────────────────
   describe('getCharacterByDifficulty', () => {
-    it('easy で ルーキー を返す', () => {
+    it('easy で ソウタ を返す', () => {
       const char = getCharacterByDifficulty('easy');
-      expect(char.name).toBe('ルーキー');
+      expect(char.name).toBe('ソウタ');
     });
 
-    it('normal で レギュラー を返す', () => {
+    it('normal で ケンジ を返す', () => {
       const char = getCharacterByDifficulty('normal');
-      expect(char.name).toBe('レギュラー');
+      expect(char.name).toBe('ケンジ');
     });
 
-    it('hard で エース を返す', () => {
+    it('hard で レン を返す', () => {
       const char = getCharacterByDifficulty('hard');
-      expect(char.name).toBe('エース');
+      expect(char.name).toBe('レン');
     });
   });
 
@@ -173,7 +173,7 @@ describe('Phase 2: キャラクター基盤', () => {
     });
 
     it('フリー対戦キャラを ID で検索できる', () => {
-      expect(findCharacterById('rookie')?.name).toBe('ルーキー');
+      expect(findCharacterById('rookie')?.name).toBe('ソウタ');
     });
 
     it('存在しない ID は undefined を返す', () => {
@@ -241,7 +241,7 @@ describe('Phase 2: キャラクター基盤', () => {
       expect(chars[0].id).toBe('player');
     });
 
-    it('フリー対戦キャラ（ルーキー/レギュラー/エース）が含まれる', () => {
+    it('フリー対戦キャラ（ソウタ/ケンジ/レン）が含まれる', () => {
       const chars = getBattleCharacters();
       const ids = chars.map(c => c.id);
       expect(ids).toContain('rookie');
