@@ -134,21 +134,21 @@ export function useResultProcessing({
     // ストーリーモード: クリア処理
     if (mode.gameMode === 'story' && mode.currentStage && isWin) {
       const current = loadStoryProgress();
+      let storyProgress = current;
       if (!current.clearedStages.includes(mode.currentStage.id)) {
-        const updated: StoryProgress = {
+        storyProgress = {
           clearedStages: [...current.clearedStages, mode.currentStage.id],
         };
-        saveStoryProgress(updated);
-        mode.setStoryProgress(updated);
-        const newUnlocks = dex.checkAndUnlock(updated);
-        setNewlyUnlockedCharacterName(
-          newUnlocks.length > 0
-            ? getDexEntryById(newUnlocks[0])?.profile.fullName
-            : undefined
-        );
-      } else {
-        setNewlyUnlockedCharacterName(undefined);
+        saveStoryProgress(storyProgress);
+        mode.setStoryProgress(storyProgress);
       }
+      // 勝利時は常にアンロック判定（既クリアステージの未解放キャラも救済）
+      const newUnlocks = dex.checkAndUnlock(storyProgress);
+      setNewlyUnlockedCharacterName(
+        newUnlocks.length > 0
+          ? getDexEntryById(newUnlocks[0])?.profile.fullName
+          : undefined
+      );
     } else {
       setNewlyUnlockedCharacterName(undefined);
     }
