@@ -151,6 +151,7 @@ const CharIcon = styled.img<{ $isLocked: boolean }>`
   height: ${ICON_SIZE_PX}px;
   border-radius: 50%;
   object-fit: cover;
+  border: 3px solid ${(props) => (props.$isLocked ? 'rgba(255,255,255,0.2)' : 'white')};
   filter: ${(props) => (props.$isLocked ? 'grayscale(1) brightness(0.3)' : 'none')};
 `;
 

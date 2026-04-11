@@ -119,7 +119,7 @@ const STAGE_2_4: StageDefinition = {
   backgroundId: 'bg-tournament',
   isChapterFinale: true,
   preDialogue: [
-    { characterId: 'takuma', text: '…俺は別ブロックの準決勝で銀嶺学院の選手に敗れた。今年もレンと戦う前に終わってしまった' },
+    { characterId: 'takuma', text: '…俺は別ブロックの準決勝で銀嶺学院の選手に敗れた。今年はレンと戦う前に終わってしまった' },
     { characterId: 'player', text: '部長…！' },
     { characterId: 'takuma', text: 'だから、俺の代わりにお前が決勝の舞台に立っている。これは事実だ' },
     { characterId: 'yuu', text: '蒼風館で決勝に残ったのはアキラだけ。みんなの想いを背負ってる' },

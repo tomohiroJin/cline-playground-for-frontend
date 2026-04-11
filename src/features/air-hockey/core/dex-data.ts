@@ -127,78 +127,7 @@ export const DEX_ENTRIES: DexEntry[] = [
     unlockCondition: { type: 'hidden' }, // 隠しキャラ（将来のアップデートで解放予定）
   },
 
-  // ── 第2章キャラクター ──────────────────────────────
-
-  {
-    profile: {
-      characterId: 'kanata',
-      fullName: '白波 カナタ',
-      reading: 'しらなみ かなた',
-      grade: '2年生',
-      age: 16,
-      birthday: '5月9日',
-      height: '170cm',
-      school: '碧波学院',
-      club: 'エアホッケー部',
-      personality: ['飄々', '観察眼', '遊び心'],
-      quote: 'ね、読めなかったでしょ？',
-      playStyle: 'トリックスター',
-      specialMove: 'ミラージュバウンス',
-      specialMoveDesc:
-        '壁反射とフェイントを組み合わせた、軌道予測不能のトリックショット',
-      description:
-        '碧波学院エアホッケー部の2年生。飄々とした態度の裏で鋭い観察眼を持つ。壁バウンスを多用し、相手の予測を裏切るプレイスタイル。「面白い試合」を何より重視する。',
-    },
-    unlockCondition: { type: 'story-clear', stageId: '2-3' },
-  },
-
-  {
-    profile: {
-      characterId: 'riku',
-      fullName: '風早 リク',
-      reading: 'かざはや りく',
-      grade: '2年生',
-      age: 16,
-      birthday: '8月15日',
-      height: '175cm',
-      school: '天嶺高校',
-      club: 'エアホッケー部',
-      personality: ['自信家', '素直', '負けず嫌い'],
-      quote: '速さが勝負だ！',
-      playStyle: 'スピードスター',
-      specialMove: 'ソニックラッシュ',
-      specialMoveDesc:
-        '超高速の初動と反射で相手を圧倒するスピード特化ショット',
-      description:
-        '天嶺高校エアホッケー部の2年生。圧倒的なスピードと反射神経で相手を圧倒する。レンに敗れたことで「速さだけじゃダメ」と気づき始めている。',
-    },
-    unlockCondition: { type: 'hidden' }, // 第3章で対戦時に解放予定
-  },
-
-  {
-    profile: {
-      characterId: 'shion',
-      fullName: '朝霧 シオン',
-      reading: 'あさぎり しおん',
-      grade: '2年生',
-      age: 16,
-      birthday: '1月7日',
-      height: '163cm',
-      school: '銀嶺学院',
-      club: 'エアホッケー部',
-      personality: ['分析的', '冷静', '好奇心'],
-      quote: 'ふぅん…面白い選手がいるじゃない',
-      playStyle: 'アダプター',
-      specialMove: 'ゼロリーディング',
-      specialMoveDesc:
-        '対戦相手のパターンを分析し、試合中盤から精度が飛躍的に上がる適応型スタイル',
-      description:
-        '銀嶺学院エアホッケー部の2年生。県大会強豪校のスカウト役。試合を観察し、次の対戦相手を品定めしている。第3章の伏線キャラクター。',
-    },
-    unlockCondition: { type: 'hidden' }, // 第3章で対戦時に解放予定
-  },
-
-  // ── フリー対戦キャラクター ──────────────────────────
+  // ── 第2章キャラクター（ストーリー登場順）────────────────
 
   {
     profile: {
@@ -248,6 +177,29 @@ export const DEX_ENTRIES: DexEntry[] = [
 
   {
     profile: {
+      characterId: 'kanata',
+      fullName: '白波 カナタ',
+      reading: 'しらなみ かなた',
+      grade: '2年生',
+      age: 16,
+      birthday: '5月9日',
+      height: '170cm',
+      school: '碧波学院',
+      club: 'エアホッケー部',
+      personality: ['飄々', '観察眼', '遊び心'],
+      quote: 'ね、読めなかったでしょ？',
+      playStyle: 'トリックスター',
+      specialMove: 'ミラージュバウンス',
+      specialMoveDesc:
+        '壁反射とフェイントを組み合わせた、軌道予測不能のトリックショット',
+      description:
+        '碧波学院エアホッケー部の2年生。飄々とした態度の裏で鋭い観察眼を持つ。壁バウンスを多用し、相手の予測を裏切るプレイスタイル。「面白い試合」を何より重視する。',
+    },
+    unlockCondition: { type: 'story-clear', stageId: '2-3' },
+  },
+
+  {
+    profile: {
       characterId: 'ace',
       fullName: '氷室 レン',
       reading: 'ひむろ れん',
@@ -267,6 +219,54 @@ export const DEX_ENTRIES: DexEntry[] = [
         '黒鉄高校エアホッケー部のエース。必要最低限の言葉しか発さないが、実力を認めた相手にだけ敬意を示す。地区大会決勝のボスとして立ちはだかる。',
     },
     unlockCondition: { type: 'story-clear', stageId: '2-4' },
+  },
+
+  // ── 隠しキャラクター（将来のアップデートで解放予定）────────
+
+  {
+    profile: {
+      characterId: 'riku',
+      fullName: '風早 リク',
+      reading: 'かざはや りく',
+      grade: '2年生',
+      age: 16,
+      birthday: '8月15日',
+      height: '175cm',
+      school: '天嶺高校',
+      club: 'エアホッケー部',
+      personality: ['自信家', '素直', '負けず嫌い'],
+      quote: '速さが勝負だ！',
+      playStyle: 'スピードスター',
+      specialMove: 'ソニックラッシュ',
+      specialMoveDesc:
+        '超高速の初動と反射で相手を圧倒するスピード特化ショット',
+      description:
+        '天嶺高校エアホッケー部の2年生。圧倒的なスピードと反射神経で相手を圧倒する。レンに敗れたことで「速さだけじゃダメ」と気づき始めている。',
+    },
+    unlockCondition: { type: 'hidden' }, // 第3章で対戦時に解放予定
+  },
+
+  {
+    profile: {
+      characterId: 'shion',
+      fullName: '朝霧 シオン',
+      reading: 'あさぎり しおん',
+      grade: '2年生',
+      age: 16,
+      birthday: '1月7日',
+      height: '163cm',
+      school: '銀嶺学院',
+      club: 'エアホッケー部',
+      personality: ['分析的', '冷静', '好奇心'],
+      quote: 'ふぅん…面白い選手がいるじゃない',
+      playStyle: 'アダプター',
+      specialMove: 'ゼロリーディング',
+      specialMoveDesc:
+        '対戦相手のパターンを分析し、試合中盤から精度が飛躍的に上がる適応型スタイル',
+      description:
+        '銀嶺学院エアホッケー部の2年生。県大会強豪校のスカウト役。試合を観察し、次の対戦相手を品定めしている。第3章の伏線キャラクター。',
+    },
+    unlockCondition: { type: 'hidden' }, // 第3章で対戦時に解放予定
   },
 ];
 

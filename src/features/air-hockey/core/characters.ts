@@ -56,7 +56,7 @@ export const FREE_BATTLE_CHARACTERS: Record<Difficulty, Character> = {
     id: 'regular',
     name: 'ケンジ',
     icon: ASSET_PATH.character('regular'),
-    color: '#2c3e50',
+    color: '#5d8aa8',
     reactions: {
       onScore: ['いい感じ！', 'もらった！'],
       onConcede: ['なかなかやるな', 'ちっ…'],
@@ -73,7 +73,7 @@ export const FREE_BATTLE_CHARACTERS: Record<Difficulty, Character> = {
     id: 'ace',
     name: 'レン',
     icon: ASSET_PATH.character('ace'),
-    color: '#2c3e50',
+    color: '#7eb8da',
     reactions: {
       onScore: ['当然だ', 'フッ…'],
       onConcede: ['…面白い', 'なるほどな'],

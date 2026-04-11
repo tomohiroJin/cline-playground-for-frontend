@@ -376,7 +376,7 @@ describe('P2-01: データ層整備', () => {
       const visible = getVisibleDexEntries();
       const visibleIds = visible.map((e) => e.profile.characterId);
 
-      expect(visibleIds).toEqual(['player', 'hiro', 'misaki', 'takuma', 'kanata', 'rookie', 'regular', 'ace']);
+      expect(visibleIds).toEqual(['player', 'hiro', 'misaki', 'takuma', 'rookie', 'regular', 'kanata', 'ace']);
     });
   });
 });
