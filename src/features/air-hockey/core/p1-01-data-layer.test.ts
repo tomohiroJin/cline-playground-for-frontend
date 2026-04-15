@@ -76,12 +76,12 @@ describe('P1-01: キャラクターデータ更新', () => {
       expect(FREE_BATTLE_CHARACTERS.easy.color).toBe('#27ae60');
     });
 
-    it('regular（ケンジ）のカラーが #2c3e50 である', () => {
-      expect(FREE_BATTLE_CHARACTERS.normal.color).toBe('#2c3e50');
+    it('regular（ケンジ）のカラーが #5d8aa8 である', () => {
+      expect(FREE_BATTLE_CHARACTERS.normal.color).toBe('#5d8aa8');
     });
 
-    it('ace（レン）のカラーが #2c3e50 である', () => {
-      expect(FREE_BATTLE_CHARACTERS.hard.color).toBe('#2c3e50');
+    it('ace（レン）のカラーが #7eb8da である', () => {
+      expect(FREE_BATTLE_CHARACTERS.hard.color).toBe('#7eb8da');
     });
   });
 

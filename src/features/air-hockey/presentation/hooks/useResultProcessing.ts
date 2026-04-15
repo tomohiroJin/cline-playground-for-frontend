@@ -12,7 +12,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { saveScore, getHighScore } from '../../../../utils/score-storage';
 import type { Difficulty, MatchStats } from '../../core/types';
-import type { StoryProgress } from '../../core/story';
+
 import { Achievement, checkAchievements, getUnlockedAchievements, saveUnlockedAchievements } from '../../core/achievements';
 import { getStreakRecord, saveStreakRecord, recordMatchResult, getSuggestedDifficulty } from '../../core/difficulty-adjust';
 import { getUnlockState, saveUnlockState, checkUnlocks, UnlockState } from '../../core/unlock';
