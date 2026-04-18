@@ -37,7 +37,7 @@ describe('loadDexProgress', () => {
     // Assert
     expect(progress).toEqual(DEFAULT_DEX_PROGRESS);
     expect(progress.unlockedCharacterIds).toContain('player');
-    // ユウ・ルーキー・レギュラー・エースは初期ロック
+    // ユウ・ソウタ・ケンジ・レンは初期ロック
     expect(progress.unlockedCharacterIds).not.toContain('yuu');
     expect(progress.unlockedCharacterIds).not.toContain('rookie');
     expect(progress.unlockedCharacterIds).not.toContain('regular');

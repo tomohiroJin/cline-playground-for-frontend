@@ -52,8 +52,10 @@ const DexCard = styled(MenuCard)`
   }
 `;
 
+/** 1fr | auto | 1fr の 3 列 Grid で BackButton 幅に依存せずタイトルを真の中央に配置 */
 const Header = styled.div`
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   width: 100%;
   gap: 12px;
@@ -67,7 +69,7 @@ const BackButton = styled.button`
   border-radius: 20px;
   cursor: pointer;
   font-size: 14px;
-  flex-shrink: 0;
+  justify-self: start;
 
   &:hover {
     background: rgba(255, 255, 255, 0.1);
@@ -75,13 +77,13 @@ const BackButton = styled.button`
   }
 `;
 
+/** GameTitle と同じ階層（2rem）でデザイン統一。Header 内配置のため margin は 0 */
 const Title = styled.h1`
   text-align: center;
-  font-size: 1.5rem;
+  font-size: 2rem;
   font-weight: 800;
   color: var(--accent-color);
   margin: 0;
-  flex: 1;
   text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
 `;
 
@@ -149,6 +151,7 @@ const CharIcon = styled.img<{ $isLocked: boolean }>`
   height: ${ICON_SIZE_PX}px;
   border-radius: 50%;
   object-fit: cover;
+  border: 3px solid ${(props) => (props.$isLocked ? 'rgba(255,255,255,0.2)' : 'white')};
   filter: ${(props) => (props.$isLocked ? 'grayscale(1) brightness(0.3)' : 'none')};
 `;
 
@@ -220,6 +223,8 @@ export const CharacterDexScreen: React.FC<CharacterDexScreenProps> = ({
       <Header>
         <BackButton onClick={onBack}>← 戻る</BackButton>
         <Title>キャラクター図鑑</Title>
+        {/* 3 列 Grid の右側 1fr セル（中央配置を維持するため空のままにする） */}
+        <div />
       </Header>
 
       <ProgressSection>

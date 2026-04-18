@@ -25,6 +25,7 @@ src/features/air-hockey/
     character-ai-profiles.ts # キャラ別 AI プロファイル（9パラメータ: sidePreference/defenseStyle/deflectionBias/reactionDelay/teamRole 等）
     story.ts              # ストーリー進行管理（保存・読込・リセット・解放判定）
     story-balance.ts      # ステージ別バランス設定・AI プリセット・味方CPU補正（buildAllyAiConfig）
+    chapter2-dialogue-data.ts # 第2章ダイアログ・ステージ定義（CHAPTER_2_STAGES）
     unlock.ts             # フィールド/アイテムアンロック（条件・状態管理）
   hooks/
     useInput.ts           # マウス/タッチ入力ハンドリング
@@ -34,13 +35,18 @@ src/features/air-hockey/
     useCharacterDex.ts    # キャラクター図鑑管理
     useImagePreloader.ts  # 画像プリロード
   presentation/
-    AirHockeyGame.tsx     # メインコンポーネント（プレゼンテーション層）
+    AirHockeyGame.tsx     # メインコンポーネント（プレゼンテーション層・Hook に委譲）
     hooks/
       useGameLoop.ts      # ゲームループ（フェーズ管理、物理更新、描画、Gamepad入力、FPSカウンター）
       useGameMode.ts      # ゲームモード管理（free/story/2p/2v2/daily + キャラ・難易度・enemy ControlType）
       useScreenNavigation.ts # 画面遷移管理
       useResultProcessing.ts # リザルト処理
       useAudioManager.ts  # 音声管理
+      useUIOverlayState.ts   # モーダル/オーバーレイ表示状態管理（S8-1）
+      useStoryScreen.ts      # ストーリーモード固有の派生データ（S8-1）
+      useFreeBattleScreen.ts # フリーバトル固有の AI 設定・キャラリスト（S8-1）
+      usePairMatchSetup.ts   # 2v2 ペアマッチのデフォルトキャラ算出（S8-1）
+      useGameHandlers.ts     # 全画面遷移イベントハンドラの集約（S8-1）
   components/
     Field.tsx             # フィールド描画（Canvas、シェイク）
     ResultScreen.tsx       # リザルト画面（1v1/2P/2v2 対応、4体立ち絵、チーム区切り）

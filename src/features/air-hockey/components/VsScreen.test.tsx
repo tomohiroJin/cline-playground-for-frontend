@@ -244,7 +244,7 @@ describe('VsScreen', () => {
   describe('2v2 モード', () => {
     const allyChar: Character = {
       id: 'rookie',
-      name: 'ルーキー',
+      name: 'ソウタ',
       icon: '/assets/characters/rookie.png',
       color: '#27ae60',
       reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
@@ -252,7 +252,7 @@ describe('VsScreen', () => {
 
     const enemy2Char: Character = {
       id: 'ace',
-      name: 'エース',
+      name: 'レン',
       icon: '/assets/characters/ace.png',
       color: '#e74c3c',
       reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
@@ -268,9 +268,9 @@ describe('VsScreen', () => {
         />
       );
       expect(screen.getByText('アキラ')).toBeInTheDocument();
-      expect(screen.getByText('ルーキー')).toBeInTheDocument();
+      expect(screen.getByText('ソウタ')).toBeInTheDocument();
       expect(screen.getByText('ヒロ')).toBeInTheDocument();
-      expect(screen.getByText('エース')).toBeInTheDocument();
+      expect(screen.getByText('レン')).toBeInTheDocument();
     });
 
     it('is2v2=true で VS テキストが表示される', () => {
@@ -318,8 +318,8 @@ describe('VsScreen', () => {
     it('is2v2 未指定時は従来の 2 キャラ表示（後方互換）', () => {
       render(<VsScreen {...defaultProps} />);
       // ally / enemy2 のキャラは表示されない
-      expect(screen.queryByText('ルーキー')).not.toBeInTheDocument();
-      expect(screen.queryByText('エース')).not.toBeInTheDocument();
+      expect(screen.queryByText('ソウタ')).not.toBeInTheDocument();
+      expect(screen.queryByText('レン')).not.toBeInTheDocument();
     });
 
     it('is2v2=true でチームラベル「チーム1」「チーム2」が表示される', () => {
@@ -378,11 +378,11 @@ describe('VsScreen', () => {
 
   describe('2v2 操作タイプラベル', () => {
     const allyChar: Character = {
-      id: 'rookie', name: 'ルーキー', icon: '/assets/characters/rookie.png', color: '#27ae60',
+      id: 'rookie', name: 'ソウタ', icon: '/assets/characters/rookie.png', color: '#27ae60',
       reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
     };
     const enemy2Char: Character = {
-      id: 'ace', name: 'エース', icon: '/assets/characters/ace.png', color: '#e74c3c',
+      id: 'ace', name: 'レン', icon: '/assets/characters/ace.png', color: '#e74c3c',
       reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
     };
 

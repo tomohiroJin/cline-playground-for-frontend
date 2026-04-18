@@ -142,7 +142,7 @@ describe('S6-3a: AiPlayStyle 新フィールド', () => {
       expect(p.teamRole).toBe('balanced');
     });
 
-    it('ルーキー: center / 反応遅い（200ms）', () => {
+    it('ソウタ: center / 反応遅い（200ms）', () => {
       const p = CHARACTER_AI_PROFILES['rookie'];
       expect(p.defenseStyle).toBe('center');
       expect(p.reactionDelay).toBe(200);

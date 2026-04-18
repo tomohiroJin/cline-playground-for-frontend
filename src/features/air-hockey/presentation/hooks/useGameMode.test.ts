@@ -265,9 +265,9 @@ describe('useGameMode', () => {
   });
 
   describe('ペアマッチ（2v2）用の状態管理', () => {
-    const mockAlly = { id: 'rookie', name: 'ルーキー', icon: '', color: '#27ae60', reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] } };
-    const mockEnemy1 = { id: 'regular', name: 'レギュラー', icon: '', color: '#e67e22', reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] } };
-    const mockEnemy2 = { id: 'ace', name: 'エース', icon: '', color: '#e74c3c', reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] } };
+    const mockAlly = { id: 'rookie', name: 'ソウタ', icon: '', color: '#27ae60', reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] } };
+    const mockEnemy1 = { id: 'regular', name: 'ケンジ', icon: '', color: '#e67e22', reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] } };
+    const mockEnemy2 = { id: 'ace', name: 'レン', icon: '', color: '#e74c3c', reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] } };
 
     it('初期の allyCharacter は undefined である', () => {
       const { result } = renderHook(() => useGameMode());

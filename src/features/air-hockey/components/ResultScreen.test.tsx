@@ -67,7 +67,7 @@ const cpuCharacter: Character = {
 
 const cpuCharacterNoPortrait: Character = {
   id: 'rookie',
-  name: 'ルーキー',
+  name: 'ソウタ',
   icon: '/assets/characters/rookie.png',
   color: '#27ae60',
   reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
@@ -139,7 +139,7 @@ describe('ResultScreen', () => {
       // プレイヤーの立ち絵は表示される
       expect(screen.getByAltText('アキラ')).toBeInTheDocument();
       // portrait 未定義のキャラは表示されない
-      expect(screen.queryByAltText('ルーキー')).not.toBeInTheDocument();
+      expect(screen.queryByAltText('ソウタ')).not.toBeInTheDocument();
     });
   });
 
@@ -296,12 +296,12 @@ describe('ResultScreen', () => {
 
     it('2v2 モードで ally と enemy2 の立ち絵が表示される', () => {
       const allyChar: Character = {
-        id: 'rookie', name: 'ルーキー', icon: '/assets/characters/rookie.png', color: '#27ae60',
+        id: 'rookie', name: 'ソウタ', icon: '/assets/characters/rookie.png', color: '#27ae60',
         reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
         portrait: { normal: '/assets/portraits/rookie-normal.png', happy: '/assets/portraits/rookie-happy.png' },
       };
       const enemy2: Character = {
-        id: 'ace', name: 'エース', icon: '/assets/characters/ace.png', color: '#e74c3c',
+        id: 'ace', name: 'レン', icon: '/assets/characters/ace.png', color: '#e74c3c',
         reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
         portrait: { normal: '/assets/portraits/ace-normal.png', happy: '/assets/portraits/ace-happy.png' },
       };
@@ -320,9 +320,9 @@ describe('ResultScreen', () => {
 
       // 4 体のキャラクター立ち絵が表示される
       expect(screen.getByAltText('アキラ')).toBeInTheDocument();
-      expect(screen.getByAltText('ルーキー')).toBeInTheDocument();
+      expect(screen.getByAltText('ソウタ')).toBeInTheDocument();
       expect(screen.getByAltText('ヒロ')).toBeInTheDocument();
-      expect(screen.getByAltText('エース')).toBeInTheDocument();
+      expect(screen.getByAltText('レン')).toBeInTheDocument();
     });
 
     it('2v2 モードで「チーム設定に戻る」ボタンが表示される', () => {
@@ -358,12 +358,12 @@ describe('ResultScreen', () => {
 
     it('2v2 モードで立ち絵にチーム間区切りがある', () => {
       const allyChar: Character = {
-        id: 'rookie', name: 'ルーキー', icon: '/assets/characters/rookie.png', color: '#27ae60',
+        id: 'rookie', name: 'ソウタ', icon: '/assets/characters/rookie.png', color: '#27ae60',
         reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
         portrait: { normal: '/assets/portraits/rookie-normal.png', happy: '/assets/portraits/rookie-happy.png' },
       };
       const enemy2: Character = {
-        id: 'ace', name: 'エース', icon: '/assets/characters/ace.png', color: '#e74c3c',
+        id: 'ace', name: 'レン', icon: '/assets/characters/ace.png', color: '#e74c3c',
         reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
         portrait: { normal: '/assets/portraits/ace-normal.png', happy: '/assets/portraits/ace-happy.png' },
       };

@@ -76,12 +76,12 @@ describe('P1-01: キャラクターデータ更新', () => {
       expect(FREE_BATTLE_CHARACTERS.easy.color).toBe('#27ae60');
     });
 
-    it('regular（ケンジ）のカラーが #2c3e50 である', () => {
-      expect(FREE_BATTLE_CHARACTERS.normal.color).toBe('#2c3e50');
+    it('regular（ケンジ）のカラーが #5d8aa8 である', () => {
+      expect(FREE_BATTLE_CHARACTERS.normal.color).toBe('#5d8aa8');
     });
 
-    it('ace（レン）のカラーが #2c3e50 である', () => {
-      expect(FREE_BATTLE_CHARACTERS.hard.color).toBe('#2c3e50');
+    it('ace（レン）のカラーが #7eb8da である', () => {
+      expect(FREE_BATTLE_CHARACTERS.hard.color).toBe('#7eb8da');
     });
   });
 
@@ -102,7 +102,7 @@ describe('P1-01: キャラクターデータ更新', () => {
       }
     );
 
-    it.each(['hiro', 'misaki', 'takuma', 'yuu'] as const)(
+    it.each(['hiro', 'misaki', 'takuma', 'yuu', 'kanata', 'riku', 'shion'] as const)(
       'ストーリーキャラ %s に portrait がある',
       (charId) => {
         const char = STORY_CHARACTERS[charId];
@@ -151,14 +151,15 @@ describe('P1-01: キャラクターデータ更新', () => {
       expect(BACKGROUND_MAP).toBeDefined();
     });
 
-    it('3つの背景がマッピングされている', () => {
-      expect(Object.keys(BACKGROUND_MAP)).toHaveLength(3);
+    it('4つの背景がマッピングされている', () => {
+      expect(Object.keys(BACKGROUND_MAP)).toHaveLength(4);
     });
 
     it('各背景IDが正しいパスにマッピングされている', () => {
       expect(BACKGROUND_MAP['bg-clubroom']).toBe('/assets/backgrounds/bg-clubroom.webp');
       expect(BACKGROUND_MAP['bg-gym']).toBe('/assets/backgrounds/bg-gym.webp');
       expect(BACKGROUND_MAP['bg-school-gate']).toBe('/assets/backgrounds/bg-school-gate.webp');
+      expect(BACKGROUND_MAP['bg-tournament']).toBe('/assets/backgrounds/bg-tournament.webp');
     });
   });
 

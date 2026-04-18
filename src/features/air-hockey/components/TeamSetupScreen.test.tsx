@@ -12,15 +12,15 @@ const mockPlayerCharacter: Character = {
   reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
 };
 const mockAlly: Character = {
-  id: 'rookie', name: 'ルーキー', icon: '/rookie.png', color: '#27ae60',
+  id: 'rookie', name: 'ソウタ', icon: '/rookie.png', color: '#27ae60',
   reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
 };
 const mockEnemy1: Character = {
-  id: 'regular', name: 'レギュラー', icon: '/regular.png', color: '#e67e22',
+  id: 'regular', name: 'ケンジ', icon: '/regular.png', color: '#e67e22',
   reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
 };
 const mockEnemy2: Character = {
-  id: 'ace', name: 'エース', icon: '/ace.png', color: '#e74c3c',
+  id: 'ace', name: 'レン', icon: '/ace.png', color: '#e74c3c',
   reactions: { onScore: [], onConcede: [], onWin: [], onLose: [] },
 };
 const mockLockedChar: Character = {
@@ -81,17 +81,17 @@ describe('TeamSetupScreen', () => {
 
     it('P2（味方）の選択済みキャラ名が表示される', () => {
       render(<TeamSetupScreen {...createDefaultProps()} />);
-      expect(screen.getByText('ルーキー')).toBeDefined();
+      expect(screen.getByText('ソウタ')).toBeDefined();
     });
 
     it('P3（敵1）の選択済みキャラ名が表示される', () => {
       render(<TeamSetupScreen {...createDefaultProps()} />);
-      expect(screen.getByText('レギュラー')).toBeDefined();
+      expect(screen.getByText('ケンジ')).toBeDefined();
     });
 
     it('P4（敵2）の選択済みキャラ名が表示される', () => {
       render(<TeamSetupScreen {...createDefaultProps()} />);
-      expect(screen.getByText('エース')).toBeDefined();
+      expect(screen.getByText('レン')).toBeDefined();
     });
 
     it('チーム1/チーム2のセクションが表示される', () => {
@@ -114,7 +114,7 @@ describe('TeamSetupScreen', () => {
       const props = createDefaultProps();
       render(<TeamSetupScreen {...props} />);
       fireEvent.click(screen.getByTestId('slot-p2'));
-      // エースを選択
+      // レンを選択
       const aceButton = screen.getByTestId('char-select-ace');
       fireEvent.click(aceButton);
       expect(props.onAllyChange).toHaveBeenCalledWith(mockEnemy2);
@@ -279,7 +279,7 @@ describe('TeamSetupScreen', () => {
 describe('キャラ特性バッジ（R-3）', () => {
   it('各スロットにキャラ特性バッジが表示される', () => {
     render(<TeamSetupScreen {...createDefaultProps()} />);
-    // P2: ルーキー = balanced → ⚖️
+    // P2: ソウタ = balanced → ⚖️
     const p2Slot = screen.getByTestId('slot-p2');
     expect(p2Slot.querySelector('[data-testid="role-badge"]')).toBeTruthy();
   });

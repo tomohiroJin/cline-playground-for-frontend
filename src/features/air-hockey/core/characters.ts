@@ -37,7 +37,7 @@ export const PLAYER_CHARACTER: Character = {
 export const FREE_BATTLE_CHARACTERS: Record<Difficulty, Character> = {
   easy: {
     id: 'rookie',
-    name: 'ルーキー',
+    name: 'ソウタ',
     icon: ASSET_PATH.character('rookie'),
     color: '#27ae60',
     reactions: {
@@ -54,9 +54,9 @@ export const FREE_BATTLE_CHARACTERS: Record<Difficulty, Character> = {
   },
   normal: {
     id: 'regular',
-    name: 'レギュラー',
+    name: 'ケンジ',
     icon: ASSET_PATH.character('regular'),
-    color: '#2c3e50',
+    color: '#5d8aa8',
     reactions: {
       onScore: ['いい感じ！', 'もらった！'],
       onConcede: ['なかなかやるな', 'ちっ…'],
@@ -71,9 +71,9 @@ export const FREE_BATTLE_CHARACTERS: Record<Difficulty, Character> = {
   },
   hard: {
     id: 'ace',
-    name: 'エース',
+    name: 'レン',
     icon: ASSET_PATH.character('ace'),
-    color: '#2c3e50',
+    color: '#7eb8da',
     reactions: {
       onScore: ['当然だ', 'フッ…'],
       onConcede: ['…面白い', 'なるほどな'],
@@ -88,7 +88,7 @@ export const FREE_BATTLE_CHARACTERS: Record<Difficulty, Character> = {
   },
 };
 
-// ── ストーリーモード キャラクター（第1章 + 第2章準備）──
+// ── ストーリーモード キャラクター（第1章 + 第2章）──
 export const STORY_CHARACTERS = {
   hiro: {
     id: 'hiro',
@@ -158,6 +158,58 @@ export const STORY_CHARACTERS = {
     },
     vsImage: ASSET_PATH.vs('yuu'),
   },
+  // ── 第2章キャラクター ──
+  kanata: {
+    id: 'kanata',
+    name: 'カナタ',
+    icon: ASSET_PATH.character('kanata'),
+    color: '#1abc9c',
+    reactions: {
+      onScore: ['あはは、引っかかった♪', 'ね、読めなかったでしょ？'],
+      onConcede: ['お、見抜かれた。やるじゃん', 'へぇ…面白いね'],
+      onWin: ['楽しかったよ。またやろ？'],
+      onLose: ['あはは、読まれちゃったか。キミ、面白いね'],
+    },
+    portrait: {
+      normal: ASSET_PATH.portrait('kanata', 'normal'),
+      happy: ASSET_PATH.portrait('kanata', 'happy'),
+    },
+    vsImage: ASSET_PATH.vs('kanata'),
+  },
+  riku: {
+    id: 'riku',
+    name: 'リク',
+    icon: ASSET_PATH.character('riku'),
+    color: '#f39c12',
+    reactions: {
+      onScore: ['速さが勝負だ！', 'ついてこれるか？'],
+      onConcede: ['く…！', 'まだまだ…！'],
+      onWin: ['スピードが全てだ', '俺の速さ、見えたか？'],
+      onLose: ['速さだけじゃ…ダメなのか', '…次は負けない'],
+    },
+    portrait: {
+      normal: ASSET_PATH.portrait('riku', 'normal'),
+      happy: ASSET_PATH.portrait('riku', 'happy'),
+    },
+    vsImage: ASSET_PATH.vs('riku'),
+  },
+  shion: {
+    id: 'shion',
+    name: 'シオン',
+    icon: ASSET_PATH.character('shion'),
+    color: '#bdc3c7',
+    reactions: {
+      onScore: ['…予定通り', 'データ通りの軌道ね'],
+      onConcede: ['…興味深い', '…想定外の変数ね'],
+      onWin: ['データ通りの結果ね', '分析は正確だった'],
+      onLose: ['…想定外。もっとデータが必要ね', '…面白い。次はもっと精度を上げる'],
+    },
+    portrait: {
+      normal: ASSET_PATH.portrait('shion', 'normal'),
+      happy: ASSET_PATH.portrait('shion', 'happy'),
+    },
+    vsImage: ASSET_PATH.vs('shion'),
+  },
 } as const satisfies Record<string, Character>;
 
 // ── 背景IDからパスへのマッピング ──────────────────
@@ -165,6 +217,7 @@ export const BACKGROUND_MAP: Record<string, string> = {
   'bg-clubroom': ASSET_PATH.background('bg-clubroom'),
   'bg-gym': ASSET_PATH.background('bg-gym'),
   'bg-school-gate': ASSET_PATH.background('bg-school-gate'),
+  'bg-tournament': ASSET_PATH.background('bg-tournament'),
 };
 
 // ── ヘルパー関数 ───────────────────────────────────

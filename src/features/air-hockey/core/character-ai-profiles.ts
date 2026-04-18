@@ -89,6 +89,13 @@ export const CHARACTER_AI_PROFILES: Record<string, AiPlayStyle> = {
     adaptability: 0.2, defenseStyle: 'wide', deflectionBias: 0.1,
   }),
 
+  /** カナタ — トリックスター: 壁バウンスと揺さぶりで翻弄 */
+  kanata: createProfile({
+    aggressiveness: 0.4, adaptability: 0.5,
+    defenseStyle: 'wide', deflectionBias: 0.6, reactionDelay: 100,
+    lateralOscillation: 30, lateralPeriod: 1800,
+  }),
+
   /** エース — 上級者: 積極的にバウンスショットを狙う */
   ace: createProfile({
     sidePreference: -0.1, lateralOscillation: 15, lateralPeriod: 2500,

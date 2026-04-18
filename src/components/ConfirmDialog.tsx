@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 type ConfirmDialogProps = {
   isOpen: boolean;
@@ -12,26 +12,91 @@ type ConfirmDialogProps = {
   onCancel: () => void;
 };
 
-/** 共通確認ダイアログ（S-3: 他ゲームでも再利用可能） */
+/** アニメーション遷移: closed → opening → open → closing → closed */
+type AnimationPhase = 'closed' | 'opening' | 'open' | 'closing';
+
+/** opening → open の遷移時間（ms）。Material Design standard easing 推奨範囲 */
+const OPENING_DURATION = 200;
+/** open → closing → closed の遷移時間（ms）。closing はユーザー意図の結果のため短め */
+const CLOSING_DURATION = 150;
+/** onTransitionEnd 未発火時のフォールバック timer */
+const FALLBACK_TIMEOUT = 300;
+
+/** 共通確認ダイアログ（S-3: 他ゲームでも再利用可能、S8-2: アニメーション対応） */
 export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   isOpen, title, message, confirmLabel, cancelLabel, onConfirm, onCancel,
 }) => {
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const confirmRef = useRef<HTMLButtonElement>(null);
+  const [phase, setPhase] = useState<AnimationPhase>(isOpen ? 'open' : 'closed');
+  const fallbackTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const prefersReducedMotion = typeof window !== 'undefined'
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // isOpen の変化に応じてアニメーションフェーズを更新
+  useEffect(() => {
+    if (isOpen) {
+      setPhase('opening');
+      // 次フレームで opening → open の遷移を開始
+      const raf = requestAnimationFrame(() => {
+        setPhase('open');
+      });
+      return () => cancelAnimationFrame(raf);
+    } else {
+      // closed 状態から false が来た場合は何もしない
+      setPhase(prev => prev === 'closed' ? 'closed' : 'closing');
+    }
+  }, [isOpen]);
+
+  // closing フェーズのフォールバック timer（onTransitionEnd 未発火対策）
+  // prefers-reduced-motion 時は即座に closed へ遷移（余計な遅延を排除）
+  useEffect(() => {
+    if (phase === 'closing') {
+      const timeout = prefersReducedMotion ? 0 : FALLBACK_TIMEOUT;
+      fallbackTimerRef.current = setTimeout(() => {
+        setPhase('closed');
+      }, timeout);
+      return () => clearTimeout(fallbackTimerRef.current);
+    }
+  }, [phase, prefersReducedMotion]);
+
+  // onTransitionEnd で closing → closed（opacity のみで判定し、他プロパティ追加時の二重発火を防止）
+  const handleTransitionEnd = useCallback((e: React.TransitionEvent) => {
+    if (phase === 'closing' && e.propertyName === 'opacity') {
+      clearTimeout(fallbackTimerRef.current);
+      setPhase('closed');
+    }
+  }, [phase]);
 
   // MF-1: 初期フォーカスを「続ける」（安全な操作）に設定
   useEffect(() => {
-    if (isOpen) cancelRef.current?.focus();
-  }, [isOpen]);
+    if (phase === 'open') cancelRef.current?.focus();
+  }, [phase]);
 
-  // Escape キーで onCancel
+  // キーボードイベント: Escape + フォーカストラップ（closing/closed では無効）
   useEffect(() => {
-    if (!isOpen) return;
+    if (phase === 'closed' || phase === 'closing') return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCancel();
+      if (e.key === 'Escape') {
+        onCancel();
+        return;
+      }
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const focusable = [cancelRef.current, confirmRef.current].filter(Boolean) as HTMLElement[];
+        const currentIndex = focusable.indexOf(document.activeElement as HTMLElement);
+        if (e.shiftKey) {
+          const nextIndex = currentIndex <= 0 ? focusable.length - 1 : currentIndex - 1;
+          focusable[nextIndex]?.focus();
+        } else {
+          const nextIndex = currentIndex >= focusable.length - 1 ? 0 : currentIndex + 1;
+          focusable[nextIndex]?.focus();
+        }
+      }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onCancel]);
+  }, [phase, onCancel]);
 
   // MF-1: キーボードフォーカス時にリングを表示
   const handleFocus = useCallback((e: React.FocusEvent<HTMLButtonElement>) => {
@@ -41,18 +106,38 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     e.currentTarget.style.outline = '2px solid transparent';
   }, []);
 
-  if (!isOpen) return null;
+  if (phase === 'closed') return null;
+
+  const isClosing = phase === 'closing';
+  const isVisible = phase === 'open';
+
+  // prefers-reduced-motion 対応: モーション軽減時は transition を無効化
+  const transitionDuration = prefersReducedMotion ? 0 : (isClosing ? CLOSING_DURATION : OPENING_DURATION);
+
+  const currentOverlayStyle: React.CSSProperties = {
+    ...overlayStyle,
+    opacity: isVisible ? 1 : 0,
+    transition: `opacity ${transitionDuration}ms ${isClosing ? 'ease-in' : 'ease-out'}`,
+    pointerEvents: isClosing ? 'none' : 'auto',
+  };
+
+  const currentDialogStyle: React.CSSProperties = {
+    ...dialogStyle,
+    opacity: isVisible ? 1 : 0,
+    transform: isVisible ? 'scale(1)' : 'scale(0.95)',
+    transition: `opacity ${transitionDuration}ms ${isClosing ? 'ease-in' : 'ease-out'}, transform ${transitionDuration}ms ${isClosing ? 'ease-in' : 'ease-out'}`,
+  };
 
   return (
-    <div style={overlayStyle} data-testid="confirm-dialog-overlay" onClick={onCancel}>
-      <div style={dialogStyle} role="dialog" aria-modal="true" aria-labelledby="confirm-title" onClick={(e) => e.stopPropagation()}>
+    <div style={currentOverlayStyle} data-testid="confirm-dialog-overlay" onClick={isClosing ? undefined : onCancel} onTransitionEnd={handleTransitionEnd}>
+      <div style={currentDialogStyle} role="dialog" aria-modal="true" aria-labelledby="confirm-title" onClick={(e) => e.stopPropagation()}>
         <h3 id="confirm-title" style={titleStyle}>{title}</h3>
         <p style={messageStyle}>{message}</p>
         <div style={buttonContainerStyle}>
-          <button ref={cancelRef} onClick={onCancel} style={cancelButtonStyle} onFocus={handleFocus} onBlur={handleBlur}>
+          <button ref={cancelRef} onClick={isClosing ? undefined : onCancel} style={cancelButtonStyle} onFocus={handleFocus} onBlur={handleBlur}>
             {cancelLabel}
           </button>
-          <button onClick={onConfirm} style={confirmButtonStyle} onFocus={handleFocus} onBlur={handleBlur}>
+          <button ref={confirmRef} onClick={isClosing ? undefined : onConfirm} style={confirmButtonStyle} onFocus={handleFocus} onBlur={handleBlur}>
             {confirmLabel}
           </button>
         </div>
@@ -71,7 +156,6 @@ const overlayStyle: React.CSSProperties = {
   justifyContent: 'center',
   alignItems: 'center',
   zIndex: 1000,
-  // R-1: アニメーション（CSS で対応。prefers-reduced-motion は media query で制御）
 };
 
 const dialogStyle: React.CSSProperties = {
@@ -79,6 +163,7 @@ const dialogStyle: React.CSSProperties = {
   borderRadius: '12px',
   padding: '24px 32px',
   maxWidth: '400px',
+  margin: '0 16px',
   textAlign: 'center',
 };
 
@@ -109,7 +194,6 @@ const baseButtonStyle: React.CSSProperties = {
   fontSize: '14px',
   fontWeight: 'bold',
   cursor: 'pointer',
-  // MF-1: フォーカスリングを有効にする（WCAG 2.4.7 Focus Visible）
   outline: '2px solid transparent',
   outlineOffset: '2px',
 };
