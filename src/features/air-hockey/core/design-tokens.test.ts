@@ -5,25 +5,33 @@
  * - 独自定義は minimum（mobileBreakpoint / anim 3 種のみ）であること
  * - animCss ヘルパが正しい CSS 文字列を返すこと
  */
-import { colors, typography, gameUi } from '../../../styles/tokens';
+import { typography, gameUi } from '../../../styles/tokens';
 import { AH_TOKENS, animCss } from './design-tokens';
 
 describe('AH_TOKENS', () => {
   describe('team color', () => {
-    it('teamA / teamB を既存 gameUi トークンから参照している', () => {
-      expect(AH_TOKENS.team.a).toBe(gameUi.teamA);
-      expect(AH_TOKENS.team.b).toBe(gameUi.teamB);
+    it('Canvas 互換の直接値を持つ（Gemini M1: JSDOM 環境でも解決可能）', () => {
+      expect(AH_TOKENS.team.a).toBe('#3498db');
+      expect(AH_TOKENS.team.b).toBe('#e74c3c');
     });
 
-    it('CSS 変数形式である（直接 #rrggbb を含まない）', () => {
-      expect(AH_TOKENS.team.a).toContain('var(');
-      expect(AH_TOKENS.team.b).toContain('var(');
+    it('CSS 変数参照版（aCss / bCss）も並列に提供', () => {
+      expect(AH_TOKENS.team.aCss).toBe(gameUi.teamA);
+      expect(AH_TOKENS.team.bCss).toBe(gameUi.teamB);
+      expect(AH_TOKENS.team.aCss).toContain('var(');
+      expect(AH_TOKENS.team.bCss).toContain('var(');
+    });
+
+    it('直接値と CSS 変数参照値は対応している（同じ色）', () => {
+      // `--game-team-a: #3498DB` と AH_TOKENS.team.a は同じ色（視認性を保証）
+      expect(AH_TOKENS.team.a.toLowerCase()).toBe('#3498db');
+      expect(AH_TOKENS.team.b.toLowerCase()).toBe('#e74c3c');
     });
   });
 
   describe('label color', () => {
-    it('cpu ラベル色は既存 colors.textMuted 参照', () => {
-      expect(AH_TOKENS.label.cpu).toBe(colors.textMuted);
+    it('cpu ラベル色は AA 対応の固定値 #b4b4b4（Canvas 描画互換）', () => {
+      expect(AH_TOKENS.label.cpu).toBe('#b4b4b4');
     });
   });
 

@@ -12,7 +12,11 @@
  *   Phase 7 (3000ms)      : onComplete()
  */
 import React, { useState, useEffect, useMemo } from 'react';
+import styled from 'styled-components';
 import type { Character } from '../core/types';
+import { AH_STRINGS } from '../core/i18n-strings';
+import { AH_TOKENS } from '../core/design-tokens';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 
 /** アニメーションタイミング定数 */
 const CHAR_SLIDE_START_MS = 200;
@@ -47,11 +51,32 @@ const hexToRgba = (hex: string, alpha: number): string => {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
-/** ラベルスタイル定数 */
+/** ラベルスタイル定数（v4: AH_TOKENS を参照、Gemini M1 レビュー高優先度対応） */
 const LABEL_FONT_SIZE = '12px';
-const LABEL_COLOR_CPU = '#b4b4b4';
-const TEAM1_COLOR = '#3498db';
-const TEAM2_COLOR = '#e74c3c';
+const LABEL_COLOR_CPU = AH_TOKENS.label.cpu;
+const TEAM1_COLOR = AH_TOKENS.team.a;
+const TEAM2_COLOR = AH_TOKENS.team.b;
+
+/**
+ * 2v2 チーム対戦レイアウト（S9-A1: モバイルレスポンシブ対応）
+ *
+ * - 600px 以上: 横 1 列 [P1+P2] VS [P3+P4]
+ * - 600px 未満: 縦積み
+ *     [P1+P2]
+ *        VS
+ *     [P3+P4]
+ */
+const VsTeamsLayout = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 24px;
+
+  @media (max-width: ${AH_TOKENS.vs.mobileBreakpoint}) {
+    flex-direction: column;
+    gap: 12px;
+  }
+`;
 
 /** キャラクター立ち絵パネル */
 const CharacterPanel: React.FC<{
@@ -61,7 +86,9 @@ const CharacterPanel: React.FC<{
   label?: string;
   labelColor?: string;
   labelBold?: boolean;
-}> = ({ character, translateX = 0, prefersReducedMotion = false, label, labelColor, labelBold }) => {
+  /** aria-label（スクリーンリーダー向け、ラベルの意味を説明） */
+  labelAriaLabel?: string;
+}> = ({ character, translateX = 0, prefersReducedMotion = false, label, labelColor, labelBold, labelAriaLabel }) => {
   const hasPortrait = Boolean(character.portrait);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
@@ -92,25 +119,52 @@ const CharacterPanel: React.FC<{
         {character.name}
       </span>
       {label && (
-        <span style={{
-          fontSize: LABEL_FONT_SIZE,
-          color: labelColor ?? LABEL_COLOR_CPU,
-          fontWeight: labelBold ? 'bold' : 'normal',
-        }}>{label}</span>
+        <span
+          aria-label={labelAriaLabel}
+          style={{
+            fontSize: LABEL_FONT_SIZE,
+            color: labelColor ?? LABEL_COLOR_CPU,
+            fontWeight: labelBold ? 'bold' : 'normal',
+          }}
+        >
+          {label}
+        </span>
       )}
     </div>
   );
 };
 
-/** 操作タイプからラベルテキスト・色・太字を導出 */
+/** プレイヤースロット ID（内部語彙） */
+type PlayerSlotId = 'p2' | 'p3' | 'p4';
+
+/**
+ * 操作タイプからラベル情報を導出（S9-A3: 内部語彙と表示を分離）
+ *
+ * - 内部語彙: 'p2' / 'p3' / 'p4'
+ * - 表示文字列: `AH_STRINGS.player.*`（'P2' / 'P3' / 'P4'）
+ * - aria-label: `AH_STRINGS.playerAria.*`（詳細な操作説明）
+ */
 const resolveControlLabel = (
   controlType: 'cpu' | 'human' | undefined,
-  humanLabel: string,
+  slotId: PlayerSlotId,
   teamColor: string,
-): { label?: string; labelColor?: string; labelBold?: boolean } => {
+): { label?: string; labelColor?: string; labelBold?: boolean; labelAriaLabel?: string } => {
   if (controlType == null) return {};
-  if (controlType === 'cpu') return { label: 'CPU', labelColor: LABEL_COLOR_CPU };
-  return { label: humanLabel, labelColor: teamColor, labelBold: true };
+  if (controlType === 'cpu') {
+    return {
+      label: AH_STRINGS.common.cpu,
+      labelColor: LABEL_COLOR_CPU,
+      labelAriaLabel: AH_STRINGS.playerAria.cpu,
+    };
+  }
+  const playerKey = slotId === 'p2' ? 'p2' : slotId === 'p3' ? 'p3' : 'p4';
+  const ariaKey = `${playerKey}Human` as 'p2Human' | 'p3Human' | 'p4Human';
+  return {
+    label: AH_STRINGS.player[playerKey],
+    labelColor: teamColor,
+    labelBold: true,
+    labelAriaLabel: AH_STRINGS.playerAria[ariaKey],
+  };
 };
 
 type VsScreenProps = {
@@ -146,8 +200,7 @@ export const VsScreen: React.FC<VsScreenProps> = ({
   enemy1ControlType,
   enemy2ControlType,
 }) => {
-  const prefersReducedMotion = typeof window !== 'undefined'
-    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const prefersReducedMotion = useReducedMotion();
 
   const [bgOpacity, setBgOpacity] = useState(prefersReducedMotion ? 1 : 0);
   const [isSlideComplete, setIsSlideComplete] = useState(prefersReducedMotion);
@@ -219,14 +272,14 @@ export const VsScreen: React.FC<VsScreenProps> = ({
     >
       {/* 対戦表示エリア */}
       {is2v2 && allyCharacter && enemyCharacter2 ? (
-        /* 2v2 レイアウト: チーム1 (P1+P2) VS チーム2 (P3+P4) */
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px' }}>
+        /* 2v2 レイアウト: チーム1 (P1+P2) VS チーム2 (P3+P4)、S9-A1 で styled-components 化 */
+        <VsTeamsLayout data-testid="vs-teams-layout">
           {/* チーム1 */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
             <span style={{ fontSize: '12px', color: TEAM1_COLOR, fontWeight: 'bold' }}>チーム1</span>
             <div style={{ display: 'flex', gap: '12px', transform: `translateX(${teamTranslateX}px)`, transition: prefersReducedMotion ? 'none' : `transform ${CHAR_SLIDE_DURATION_MS}ms ease-out` }}>
               <CharacterPanel character={playerCharacter} prefersReducedMotion={prefersReducedMotion} />
-              <CharacterPanel character={allyCharacter} prefersReducedMotion={prefersReducedMotion} {...resolveControlLabel(allyControlType, '2P', TEAM1_COLOR)} />
+              <CharacterPanel character={allyCharacter} prefersReducedMotion={prefersReducedMotion} {...resolveControlLabel(allyControlType, 'p2', TEAM1_COLOR)} />
             </div>
           </div>
 
@@ -236,11 +289,11 @@ export const VsScreen: React.FC<VsScreenProps> = ({
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
             <span style={{ fontSize: '12px', color: TEAM2_COLOR, fontWeight: 'bold' }}>チーム2</span>
             <div style={{ display: 'flex', gap: '12px', transform: `translateX(${enemyTranslateX}px)`, transition: prefersReducedMotion ? 'none' : `transform ${CHAR_SLIDE_DURATION_MS}ms ease-out` }}>
-              <CharacterPanel character={cpuCharacter} prefersReducedMotion={prefersReducedMotion} {...resolveControlLabel(enemy1ControlType, '3P', TEAM2_COLOR)} />
-              <CharacterPanel character={enemyCharacter2} prefersReducedMotion={prefersReducedMotion} {...resolveControlLabel(enemy2ControlType, '4P', TEAM2_COLOR)} />
+              <CharacterPanel character={cpuCharacter} prefersReducedMotion={prefersReducedMotion} {...resolveControlLabel(enemy1ControlType, 'p3', TEAM2_COLOR)} />
+              <CharacterPanel character={enemyCharacter2} prefersReducedMotion={prefersReducedMotion} {...resolveControlLabel(enemy2ControlType, 'p4', TEAM2_COLOR)} />
             </div>
           </div>
-        </div>
+        </VsTeamsLayout>
       ) : (
         /* 1v1 レイアウト（従来） */
         <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '24px' }}>

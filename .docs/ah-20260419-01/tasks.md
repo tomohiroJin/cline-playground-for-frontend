@@ -124,17 +124,17 @@
 
 ### S9-A1: VsScreen 2v2 モバイルレスポンシブ
 
-- ⬜ S9-A1-1a: `VsScreen.tsx` の 2v2 レイアウトを styled-components + media query に書き換え
-- ⬜ S9-A1-1b: インライン style を排除、`AH_TOKENS` 参照
+- ✅ S9-A1-1a: `VsScreen.tsx` の 2v2 レイアウトを styled-components + media query に書き換え
+- ✅ S9-A1-1b: インライン style を排除、`AH_TOKENS` 参照
 - ⬜ S9-A1-1c: 立ち絵サイズを `clamp()` でレスポンシブ化
 - ⬜ S9-A1-1d: VS テキスト・ステージ名・フィールド名を `clamp()` でレスポンシブ化
-- ⬜ S9-A1-1e: `useReducedMotion` フックを適用（既存のインライン matchMedia 置換）
-- ⬜ S9-A1-1f: 3 秒シーケンスとアニメーションは既存互換を維持
+- ✅ S9-A1-1e: `useReducedMotion` フックを適用（既存のインライン matchMedia 置換）
+- ✅ S9-A1-1f: 3 秒シーケンスとアニメーションは既存互換を維持
 
 **検証（Playwright 主体、Codex P1）**:
 
-- ⬜ S9-A1-2a: `VsScreen.test.tsx` に viewport モックでの 2v2 mobile レイアウト検証
-- ⬜ S9-A1-2b: 既存テスト（3 秒自動遷移・1v1/2v2 描画）全パス
+- ✅ S9-A1-2a: `VsScreen.test.tsx` に viewport モックでの 2v2 mobile レイアウト検証
+- ✅ S9-A1-2b: 既存テスト（3 秒自動遷移・1v1/2v2 描画）全パス
 - ⬜ S9-A1-2c: Playwright スクショ比較: viewport 375×667 で横スクロールなし
 - ⬜ S9-A1-2d: 同上: viewport 393×852 で立ち絵視認可
 - ⬜ S9-A1-2e: 同上: viewport 768×1024 で PC レイアウト維持
@@ -143,19 +143,19 @@
 ### S9-A2: ゲームパッドトースト Canvas 描画（検証・補強）
 
 - ⬜ S9-A2-1a: `canvas-renderer.test.ts` に `drawToastOnCanvas` のアサート追加（undefined / 内側 / フェード）
-- ⬜ S9-A2-1b: トースト発火 → `CanvasLiveRegion` に転送する useEffect を `AirHockeyGame.tsx` に追加
+- ✅ S9-A2-1b: トースト発火 → `CanvasLiveRegion` に転送する useEffect を `AirHockeyGame.tsx` に追加
 - ⬜ S9-A2-1c: 実機確認: ゲームパッド接続 → トースト表示 → 3 秒後フェードアウト
 - ⬜ S9-A2-1d: 実機確認: 切断トーストが赤系背景で表示
 
 ### S9-A3: 操作タイプ表示統一
 
-- ⬜ S9-A3-1a: `VsScreen.tsx` の `resolveControlLabel` を `AH_STRINGS` + `playerAria` 参照に書き換え
-- ⬜ S9-A3-1b: 表示要素に `aria-label` を付与（文字列ラベルのため `role="img"` は不要、Codex P2-5）
-- ⬜ S9-A3-1c: `TeamSetupScreen.tsx` の人間ボタンラベルも統一
-- ⬜ S9-A3-2a: TeamSetupScreen の人間ボタン disabled 条件実装（P2: 1 台、P3: 2 台、P4: 3 台）
-- ⬜ S9-A3-2b: disabled 時のスタイル + title 属性
-- ⬜ S9-A3-3a: VsScreen への props は `controlType` スナップショット（遷移時点で確定）
-- ⬜ S9-A3-3b: 切断時のフォールバックは実ゲームループで CPU 制御（既存挙動確認）
+- ✅ S9-A3-1a: `VsScreen.tsx` の `resolveControlLabel` を `AH_STRINGS` + `playerAria` 参照に書き換え
+- ✅ S9-A3-1b: 表示要素に `aria-label` を付与（文字列ラベルのため `role="img"` は不要、Codex P2-5）
+- ✅ S9-A3-1c: `TeamSetupScreen.tsx` の人間ボタンラベルも統一
+- ✅ S9-A3-2a: TeamSetupScreen の人間ボタン disabled 条件実装（P2: 1 台、P3: 2 台、P4: 3 台）
+- ✅ S9-A3-2b: disabled 時のスタイル + title 属性
+- ✅ S9-A3-3a: VsScreen への props は `controlType` スナップショット（遷移時点で確定）
+- ✅ S9-A3-3b: 切断時のフォールバックは実ゲームループで CPU 制御（既存挙動確認）
 
 ### M2: 検証・ドキュメント
 

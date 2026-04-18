@@ -6,7 +6,7 @@ import type { GameEffects, FieldConfig, ComboState } from '../../domain/types';
 import type { GameConstants } from '../../core/constants';
 import type { GamepadToast } from '../../hooks/useGamepadInput';
 import { AH_STRINGS } from '../../core/i18n-strings';
-import { FONT_STACK_BODY, FONT_STACK_HEADING, CANVAS_FONTS } from '../../core/canvas-fonts';
+import { CANVAS_FONTS } from '../../core/canvas-fonts';
 
 /** トースト描画定数 */
 const TOAST_DURATION = 3000;
@@ -76,7 +76,7 @@ export class UiRenderer {
   drawHUD(effects: GameEffects, now: number): void {
     const { WIDTH: W, HEIGHT: H } = this.consts.CANVAS;
     this.ctx.textAlign = 'center';
-    this.ctx.font = `bold 12px ${FONT_STACK_BODY}`;
+    this.ctx.font = CANVAS_FONTS.hudStatus;
     const playerEff = effects.player;
     if (playerEff.speed && now - playerEff.speed.start < playerEff.speed.duration) {
       const remaining = Math.ceil(
@@ -99,14 +99,14 @@ export class UiRenderer {
     this.ctx.textAlign = 'center';
 
     this.ctx.fillStyle = '#fff';
-    this.ctx.font = `bold 18px ${FONT_STACK_BODY}`;
+    this.ctx.font = CANVAS_FONTS.helpTitle;
     this.ctx.fillText(AH_STRINGS.game.howToPlay, W / 2, 36);
 
-    this.ctx.font = `12px ${FONT_STACK_BODY}`;
+    this.ctx.font = CANVAS_FONTS.helpSubtitle;
     this.ctx.fillStyle = '#ccc';
     this.ctx.fillText('Hit the puck into the opponent\'s goal!', W / 2, 58);
 
-    this.ctx.font = `bold 14px ${FONT_STACK_BODY}`;
+    this.ctx.font = CANVAS_FONTS.helpSectionTitle;
     this.ctx.fillStyle = 'var(--accent-color, #00d4ff)';
     this.ctx.fillText('-- Items --', W / 2, 86);
 
@@ -125,10 +125,10 @@ export class UiRenderer {
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
       const y = startY + i * lineH;
-      this.ctx.font = `bold 13px ${FONT_STACK_BODY}`;
+      this.ctx.font = CANVAS_FONTS.helpItem;
       this.ctx.fillStyle = item.color;
       this.ctx.fillText(`${item.icon} ${item.name}`, 30, y);
-      this.ctx.font = `11px ${FONT_STACK_BODY}`;
+      this.ctx.font = CANVAS_FONTS.helpItemDesc;
       this.ctx.fillStyle = '#b4b4b4';
       this.ctx.fillText(item.desc, 150, y);
     }
@@ -136,11 +136,11 @@ export class UiRenderer {
     if (field) {
       const fieldY = startY + items.length * lineH + 16;
       this.ctx.textAlign = 'center';
-      this.ctx.font = `bold 14px ${FONT_STACK_BODY}`;
+      this.ctx.font = CANVAS_FONTS.helpSectionTitle;
       this.ctx.fillStyle = field.color;
       this.ctx.fillText(`Field: ${field.name}`, W / 2, fieldY);
 
-      this.ctx.font = `11px ${FONT_STACK_BODY}`;
+      this.ctx.font = CANVAS_FONTS.helpItemDesc;
       this.ctx.fillStyle = '#999';
       const traits: string[] = [];
       if (field.obstacles.length > 0) traits.push(`${field.obstacles.length} obstacles`);
@@ -153,7 +153,7 @@ export class UiRenderer {
 
     this.ctx.textAlign = 'center';
     this.ctx.fillStyle = '#b4b4b4';
-    this.ctx.font = `12px ${FONT_STACK_BODY}`;
+    this.ctx.font = CANVAS_FONTS.helpSubtitle;
     this.ctx.fillText(AH_STRINGS.game.tapToResume, W / 2, H - 20);
   }
 
@@ -174,12 +174,12 @@ export class UiRenderer {
     this.ctx.scale(scale, scale);
 
     if (countdownValue > 0) {
-      this.ctx.font = `bold 80px ${FONT_STACK_HEADING}`;
+      this.ctx.font = CANVAS_FONTS.countdownNumber;
       this.ctx.fillStyle = '#ffffff';
       this.ctx.shadowColor = '#00d4ff';
       this.ctx.shadowBlur = 30;
     } else {
-      this.ctx.font = `bold 90px ${FONT_STACK_HEADING}`;
+      this.ctx.font = CANVAS_FONTS.countdownGo;
       this.ctx.fillStyle = '#00ff88';
       this.ctx.shadowColor = '#00ff88';
       this.ctx.shadowBlur = 40;
@@ -200,18 +200,18 @@ export class UiRenderer {
     this.ctx.textAlign = 'center';
     this.ctx.textBaseline = 'middle';
 
-    this.ctx.font = `bold 48px ${FONT_STACK_HEADING}`;
+    this.ctx.font = CANVAS_FONTS.pauseTitle;
     this.ctx.fillStyle = '#ffffff';
     this.ctx.shadowColor = '#00d4ff';
     this.ctx.shadowBlur = 20;
     this.ctx.fillText(AH_STRINGS.game.paused, W / 2, H / 2 - 60);
     this.ctx.shadowBlur = 0;
 
-    this.ctx.font = `bold 20px ${FONT_STACK_BODY}`;
+    this.ctx.font = CANVAS_FONTS.pauseBody;
     this.ctx.fillStyle = '#00d4ff';
     this.ctx.fillText(AH_STRINGS.game.tapToResume, W / 2, H / 2 + 20);
     this.ctx.fillStyle = '#b4b4b4';
-    this.ctx.font = `16px ${FONT_STACK_BODY}`;
+    this.ctx.font = CANVAS_FONTS.pauseHint;
     this.ctx.fillText('Press ESC or P to toggle', W / 2, H / 2 + 60);
 
     this.ctx.restore();

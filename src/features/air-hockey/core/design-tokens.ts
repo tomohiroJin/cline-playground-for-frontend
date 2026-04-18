@@ -12,17 +12,28 @@
  *   - vs.mobileBreakpoint（他トークンに該当値なし）
  *   - anim.enter / exit / emphasis（既存 tokens にアニメーション定義なし）
  */
-import { colors, typography, gameUi } from '../../../styles/tokens';
+import { typography, gameUi } from '../../../styles/tokens';
+
+/**
+ * Canvas 描画・JSDOM 環境の両方で動作する色は直接値を採用。
+ * DOM 側での CSS 変数利用（例: ダークモードで自動切替）は `*Css` サフィックス側を参照する。
+ */
+const LABEL_CPU_FIXED = '#b4b4b4';
+const TEAM_A_FIXED = '#3498db'; // === gameUi.teamA が参照する `--game-team-a`
+const TEAM_B_FIXED = '#e74c3c'; // === gameUi.teamB が参照する `--game-team-b`
 
 export const AH_TOKENS = {
-  /** 対戦チーム色（既存 game-ui.ts の teamA/teamB を参照） */
+  /** 対戦チーム色（Canvas / JSDOM で動作する直接値） */
   team: {
-    a: gameUi.teamA,
-    b: gameUi.teamB,
+    a: TEAM_A_FIXED,
+    b: TEAM_B_FIXED,
+    /** DOM CSS 用の CSS 変数参照（必要に応じて） */
+    aCss: gameUi.teamA,
+    bCss: gameUi.teamB,
   },
   /** ラベル色（CPU / 人間の区別用） */
   label: {
-    cpu: colors.textMuted,
+    cpu: LABEL_CPU_FIXED,
   },
   /** VS 画面の流動タイポグラフィ（typography.ts の既存スケールを再利用） */
   vs: {

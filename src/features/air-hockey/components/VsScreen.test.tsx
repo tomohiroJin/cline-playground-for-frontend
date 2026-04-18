@@ -498,5 +498,53 @@ describe('VsScreen', () => {
         expect(label.style.fontWeight).toBe('bold');
       });
     });
+
+    describe('S9-A1: 2v2 mobile レスポンシブ', () => {
+      it('2v2 時に VsTeamsLayout（data-testid=vs-teams-layout）が表示される', () => {
+        render(
+          <VsScreen {...defaultProps} is2v2 allyCharacter={allyChar} enemyCharacter2={enemy2Char} />
+        );
+        expect(screen.getByTestId('vs-teams-layout')).toBeInTheDocument();
+      });
+
+      it('1v1 時には VsTeamsLayout が存在しない', () => {
+        render(<VsScreen {...defaultProps} />);
+        expect(screen.queryByTestId('vs-teams-layout')).not.toBeInTheDocument();
+      });
+    });
+
+    describe('aria-label（S9-A3: A11y 対応）', () => {
+      it('CPU ラベルに操作説明の aria-label が付く', () => {
+        render(
+          <VsScreen {...defaultProps} is2v2 allyCharacter={allyChar} enemyCharacter2={enemy2Char} allyControlType="cpu" />
+        );
+        const cpuLabel = screen.getByText('CPU');
+        expect(cpuLabel.getAttribute('aria-label')).toBe('CPU 操作');
+      });
+
+      it('2P 人間ラベルに操作説明の aria-label が付く', () => {
+        render(
+          <VsScreen {...defaultProps} is2v2 allyCharacter={allyChar} enemyCharacter2={enemy2Char} allyControlType="human" />
+        );
+        const label = screen.getByText('2P');
+        expect(label.getAttribute('aria-label')).toBe('プレイヤー2（WASD/ゲームパッド1）');
+      });
+
+      it('3P 人間ラベルに操作説明の aria-label が付く', () => {
+        render(
+          <VsScreen {...defaultProps} is2v2 allyCharacter={allyChar} enemyCharacter2={enemy2Char} enemy1ControlType="human" />
+        );
+        const label = screen.getByText('3P');
+        expect(label.getAttribute('aria-label')).toBe('プレイヤー3（ゲームパッド2）');
+      });
+
+      it('4P 人間ラベルに操作説明の aria-label が付く', () => {
+        render(
+          <VsScreen {...defaultProps} is2v2 allyCharacter={allyChar} enemyCharacter2={enemy2Char} enemy2ControlType="human" />
+        );
+        const label = screen.getByText('4P');
+        expect(label.getAttribute('aria-label')).toBe('プレイヤー4（ゲームパッド3）');
+      });
+    });
   });
 });

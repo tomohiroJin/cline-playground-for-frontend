@@ -17,11 +17,12 @@ export const AH_STRINGS = {
     win: '勝利',
     lose: '敗北',
   },
+  /** ゲーム内表示用のプレイヤー番号（日本ゲーム慣習の "数字先" 表記） */
   player: {
-    p1: 'P1',
-    p2: 'P2',
-    p3: 'P3',
-    p4: 'P4',
+    p1: '1P',
+    p2: '2P',
+    p3: '3P',
+    p4: '4P',
   },
   /** aria-label 用のアクセシブルな説明文 */
   playerAria: {
