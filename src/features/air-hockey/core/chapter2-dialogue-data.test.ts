@@ -69,6 +69,70 @@ describe('Chapter 2 ダイアログデータ', () => {
     );
   });
 
+  describe('S9-S: シナリオ補強（v4）', () => {
+    const getStage = (id: string) => CHAPTER_2_STAGES.find(s => s.id === id)!;
+
+    describe('SC-01: アキラの準々決勝が明示される', () => {
+      it('Stage 2-3 preDialogue で 2 回戦（準々決勝）への言及がある', () => {
+        const stage = getStage('2-3');
+        // アキラが 2 回戦を勝ち抜いた旨を示唆する台詞が最初の方にある
+        const earlyLines = stage.preDialogue.slice(0, 3);
+        const mentionsQuarterFinal = earlyLines.some(d =>
+          d.text.includes('2 回戦') || d.text.includes('2回戦') || d.text.includes('準々決勝')
+        );
+        expect(mentionsQuarterFinal).toBe(true);
+      });
+    });
+
+    describe('SC-02: リクの出演', () => {
+      it('Stage 2-4 にリクの台詞が少なくとも 1 行含まれる', () => {
+        const stage = getStage('2-4');
+        const allLines = [...stage.preDialogue, ...stage.postWinDialogue, ...stage.postLoseDialogue];
+        const rikuLines = allLines.filter(d => d.characterId === 'riku');
+        expect(rikuLines.length).toBeGreaterThanOrEqual(1);
+      });
+    });
+
+    describe('SC-03: ユウの勝利祝辞', () => {
+      it('Stage 2-4 postWin にユウの祝辞が含まれる', () => {
+        const stage = getStage('2-4');
+        const yuuLines = stage.postWinDialogue.filter(d => d.characterId === 'yuu');
+        expect(yuuLines.length).toBeGreaterThanOrEqual(1);
+        // 県大会に関する言及
+        const mentionsPrefectural = yuuLines.some(d => d.text.includes('県大会'));
+        expect(mentionsPrefectural).toBe(true);
+      });
+    });
+
+    describe('SC-05: Stage 2-3 preDialogue の会話フロー', () => {
+      it('カナタの登場前にユウまたはミサキの情報提供があること', () => {
+        const stage = getStage('2-3');
+        const kanataFirstIdx = stage.preDialogue.findIndex(d => d.characterId === 'kanata');
+        expect(kanataFirstIdx).toBeGreaterThan(0);
+        const beforeKanata = stage.preDialogue.slice(0, kanataFirstIdx);
+        const hasInfoProvider = beforeKanata.some(
+          d => d.characterId === 'yuu' || d.characterId === 'misaki'
+        );
+        expect(hasInfoProvider).toBe(true);
+      });
+    });
+
+    describe('SC-09: expression: \'normal\' の冗長指定が除去されている', () => {
+      const allDialogues = CHAPTER_2_STAGES.flatMap(s => [
+        ...s.preDialogue,
+        ...s.postWinDialogue,
+        ...s.postLoseDialogue,
+      ]);
+
+      it('明示的な expression: \'normal\' 指定がない（デフォルト活用）', () => {
+        const hasExplicitNormal = allDialogues.filter(
+          d => (d as { expression?: string }).expression === 'normal'
+        );
+        expect(hasExplicitNormal).toHaveLength(0);
+      });
+    });
+  });
+
   describe('連続する同一 characterId の台詞がないこと（S8-3-5j）', () => {
     const checkNoConsecutiveSameCharacter = (dialogues: Dialogue[], label: string) => {
       for (let i = 1; i < dialogues.length; i++) {

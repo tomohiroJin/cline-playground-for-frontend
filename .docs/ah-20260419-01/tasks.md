@@ -213,36 +213,36 @@
 
 **SC-01: アキラの準々決勝補足**（高）:
 
-- ⬜ S9-S-1a: `STAGE_2_3.preDialogue` にアキラの 2 回戦勝利を示す 1 行を追加（推奨: ヒロ「お前は 2 回戦もケロッと勝ち抜いてきたからな…」）
+- ✅ S9-S-1a: `STAGE_2_3.preDialogue` にアキラの 2 回戦勝利を示す 1 行を追加（推奨: ヒロ「お前は 2 回戦もケロッと勝ち抜いてきたからな…」）
 
 **SC-02 + SC-07: リク出演の最小実装**（高）:
 
-- ⬜ S9-S-2a: `STAGE_2_4.preDialogue` に リク の 1 行を追加（推奨: 「俺、準々決勝でレンにやられた。あいつのスピード、マジでヤバい。気をつけろよ」）
-- ⬜ S9-S-2b: リクのポートレート・アイコン画像の存在確認（未存在ならフォールバック表示確認）
-- ⬜ S9-S-2c: `doc/story-mode.md` の「リク | 2-4（ダイアログ出演）」記述と実装が一致することを再確認
+- ✅ S9-S-2a: `STAGE_2_4.preDialogue` に リク の 1 行を追加（推奨: 「俺、準々決勝でレンにやられた。あいつのスピード、マジでヤバい。気をつけろよ」）
+- ✅ S9-S-2b: リクのポートレート・アイコン画像の存在確認（未存在ならフォールバック表示確認）
+- ✅ S9-S-2c: `doc/story-mode.md` の「リク | 2-4（ダイアログ出演）」記述と実装が一致することを再確認
 
 **SC-03: ユウの勝利祝辞**（中）:
 
-- ⬜ S9-S-3a: `STAGE_2_4.postWinDialogue` の ミサキ 〜 ヒロ の間にユウ「県大会…行けるんだね、僕たち。データじゃ計れない戦いを、アキラが見せてくれた」を挿入（`expression: 'happy'`）
+- ✅ S9-S-3a: `STAGE_2_4.postWinDialogue` の ミサキ 〜 ヒロ の間にユウ「県大会…行けるんだね、僕たち。データじゃ計れない戦いを、アキラが見せてくれた」を挿入（`expression: 'happy'`）
 
 **SC-05: 2-3 preDialogue 並び替え**（中）:
 
-- ⬜ S9-S-4a: `STAGE_2_3.preDialogue` の順序を再構成（カナタ対話の前にユウ/ミサキ情報提供を前置）
-- ⬜ S9-S-4b: 並び替え後に試合開始前の緊張感が保たれていることを通し読みで確認
+- ✅ S9-S-4a: `STAGE_2_3.preDialogue` の順序を再構成（カナタ対話の前にユウ/ミサキ情報提供を前置）
+- ✅ S9-S-4b: 並び替え後に試合開始前の緊張感が保たれていることを通し読みで確認
 
 **SC-08: 2-4 postWin の余韻**（低）:
 
-- ⬜ S9-S-5a: ヒロ歓喜 → シオン伏線の間にタクマ「…よくやった。本当に、よくやった」を任意挿入（テンポ次第でスキップ可）
+- ✅ S9-S-5a: ヒロ歓喜 → シオン伏線の間にタクマ「…よくやった。本当に、よくやった」を任意挿入（テンポ次第でスキップ可）
 
 **SC-09: `expression: 'normal'` 冗長指定の削除**（低）:
 
-- ⬜ S9-S-6a: `chapter2-dialogue-data.ts` L26, 58, 86, 90, 93, 102, 142 の `expression: 'normal'` を全削除
-- ⬜ S9-S-6b: `DialogueLine` 型の optional 扱いと `DialogueOverlay.tsx` のデフォルトが normal であることを確認
-- ⬜ S9-S-6c: 既存 `dialogue-data.test.ts` / `chapter2-dialogue-data.test.ts` のアサーションを同期修正
+- ✅ S9-S-6a: `chapter2-dialogue-data.ts` L26, 58, 86, 90, 93, 102, 142 の `expression: 'normal'` を全削除
+- ✅ S9-S-6b: `DialogueLine` 型の optional 扱いと `DialogueOverlay.tsx` のデフォルトが normal であることを確認
+- ✅ S9-S-6c: 既存 `dialogue-data.test.ts` / `chapter2-dialogue-data.test.ts` のアサーションを同期修正
 
 **検証**:
 
-- ⬜ S9-S-Z1: `npm run test` で dialogue 関連テスト全パス
+- ✅ S9-S-Z1: `npm run test` で dialogue 関連テスト全パス
 - ⬜ S9-S-Z2: 手動プレイで Ch2 2-1 〜 2-4 を通し、違和感がないことを確認
 - ⬜ S9-S-Z3: 手動プレイで Ch2 2-3 preDialogue のフロー確認
 - ⬜ S9-S-Z4: 手動プレイで Ch2 2-4 postWin の感情曲線確認

@@ -23,7 +23,7 @@ const STAGE_2_1: StageDefinition = {
   preDialogue: [
     { characterId: 'hiro', text: 'いよいよ来週は地区大会だな！ 気合い入れていこうぜ！' },
     { characterId: 'player', text: 'うん…でも、正直ちょっと緊張してる' },
-    { characterId: 'yuu', text: '大丈夫。今日は風見丘のソウタ君と練習試合だよ。肩慣らしにぴったり', expression: 'normal' },
+    { characterId: 'yuu', text: '大丈夫。今日は風見丘のソウタ君と練習試合だよ。肩慣らしにぴったり' },
     { characterId: 'rookie', text: 'よろしく！ 楽しくやろうよ！', expression: 'happy' },
   ],
   postWinDialogue: [
@@ -55,7 +55,7 @@ const STAGE_2_2: StageDefinition = {
     { characterId: 'hiro', text: '俺は別ブロックの1回戦、なんとか勝ったぜ！ 次が正念場だな', expression: 'happy' },
     { characterId: 'misaki', text: '私も1回戦突破よ。…でも、油断はできない相手ばかりね' },
     { characterId: 'yuu', text: 'アキラの1回戦の相手は翠嶺学園の秋山ケンジ選手。堅実な守備型だよ' },
-    { characterId: 'misaki', text: '正攻法で攻めてくるタイプね。焦らず、隙を見つけて', expression: 'normal' },
+    { characterId: 'misaki', text: '正攻法で攻めてくるタイプね。焦らず、隙を見つけて' },
     { characterId: 'regular', text: 'よろしく。全力でいかせてもらう' },
     { characterId: 'player', text: '…よし、いける！' },
   ],
@@ -83,14 +83,15 @@ const STAGE_2_3: StageDefinition = {
   winScore: 5,
   backgroundId: 'bg-tournament',
   preDialogue: [
-    { characterId: 'hiro', text: '俺とミサキは2回戦敗退…悔しいけど、ここから先はお前に託すぜ！', expression: 'normal' },
+    { characterId: 'hiro', text: '俺とミサキは2回戦敗退…悔しいけど、ここから先はお前に託すぜ！' },
+    { characterId: 'player', text: 'はい、2回戦もなんとか勝ち抜いてきました。先輩たちの分まで戦います' },
     { characterId: 'misaki', text: 'タクマ部長は別ブロックの準決勝に進んでる。あなたと部長、2人とも上に行けるよう祈ってるわ' },
+    { characterId: 'yuu', text: '白波カナタ選手。碧波学院の2年生。データが少ないけど…変則的なプレイスタイルらしい' },
+    { characterId: 'misaki', text: '気をつけて。読みづらい相手は、焦りが一番の敵よ' },
     { characterId: 'kanata', text: '蒼風館の…アキラ、だっけ？ ケンジに勝ったの、見てたよ' },
     { characterId: 'player', text: 'うん。…君が準決勝の相手？' },
-    { characterId: 'kanata', text: 'ストレートな子だね。でもさ、まっすぐだけじゃ届かない場所もあるよ？', expression: 'normal' },
+    { characterId: 'kanata', text: 'ストレートな子だね。でもさ、まっすぐだけじゃ届かない場所もあるよ？' },
     { characterId: 'player', text: '…やってみなきゃ分からないでしょ！' },
-    { characterId: 'yuu', text: '白波カナタ選手。碧波学院の2年生。データが少ないけど…変則的なプレイスタイルらしい' },
-    { characterId: 'misaki', text: '気をつけて。読みづらい相手は、焦りが一番の敵よ', expression: 'normal' },
   ],
   postWinDialogue: [
     { characterId: 'kanata', text: 'あはは、読まれちゃったか。面白いね、キミ', expression: 'happy' },
@@ -99,7 +100,7 @@ const STAGE_2_3: StageDefinition = {
     { characterId: 'yuu', text: 'アキラ、後半から相手の癖を見抜いてたよ。データにない適応力だ…！', expression: 'happy' },
   ],
   postLoseDialogue: [
-    { characterId: 'kanata', text: 'ね？ 予想通りにいかないでしょ？ でもキミ、途中から対応し始めてたよ', expression: 'normal' },
+    { characterId: 'kanata', text: 'ね？ 予想通りにいかないでしょ？ でもキミ、途中から対応し始めてたよ' },
     { characterId: 'player', text: '…変化球に全然対応できなかった。でも、途中で何か掴みかけた気がする' },
     { characterId: 'yuu', text: 'アキラ、相手のパターンはメモしたよ。次は対策できる' },
   ],
@@ -123,6 +124,7 @@ const STAGE_2_4: StageDefinition = {
     { characterId: 'player', text: '部長…！' },
     { characterId: 'takuma', text: 'だから、俺の代わりにお前が決勝の舞台に立っている。これは事実だ' },
     { characterId: 'yuu', text: '蒼風館で決勝に残ったのはアキラだけ。みんなの想いを背負ってる' },
+    { characterId: 'riku', text: '蒼風館の1年…アキラ、だっけ？ 俺、準々決勝でレンにやられた。あいつのスピード、マジでヤバい。気をつけろよ' },
     { characterId: 'takuma', text: '決勝の相手は黒鉄高校の氷室レン。去年、俺が負けた相手だ。あいつは強い。だが——お前なら、やれる' },
     { characterId: 'hiro', text: 'アキラ、ここまで来たんだ。全力でぶつかってこい！', expression: 'happy' },
     { characterId: 'ace', text: '…蒼風館か。タクマの後輩、か。見せてもらおう' },
@@ -132,14 +134,16 @@ const STAGE_2_4: StageDefinition = {
     { characterId: 'player', text: '…やった…勝った…！' },
     { characterId: 'takuma', text: 'よくやった。俺の代わりに——いや、お前の力で勝ったんだ', expression: 'happy' },
     { characterId: 'misaki', text: '…やるじゃない。見直したわ', expression: 'happy' },
+    { characterId: 'yuu', text: '県大会…行けるんだね、僕たち。データじゃ計れない戦いを、アキラが見せてくれた', expression: 'happy' },
     { characterId: 'hiro', text: '地区大会優勝だーーー！！', expression: 'happy' },
-    { characterId: 'shion', text: 'ふぅん…面白い選手がいるじゃない', expression: 'normal' },
+    { characterId: 'takuma', text: '…よくやった。本当に、よくやった', expression: 'happy' },
+    { characterId: 'shion', text: 'ふぅん…面白い選手がいるじゃない' },
   ],
   postLoseDialogue: [
     { characterId: 'ace', text: '…悪くなかった。だが、まだ足りない' },
     { characterId: 'player', text: '…くっ…！ でも、最後まで戦えた。次は——' },
     { characterId: 'takuma', text: '…顔を上げろ。お前はここまで来た。それは事実だ' },
-    { characterId: 'shion', text: '惜しかったね。でも——あの1年、面白い目をしてた', expression: 'normal' },
+    { characterId: 'shion', text: '惜しかったね。でも——あの1年、面白い目をしてた' },
   ],
 };
 
