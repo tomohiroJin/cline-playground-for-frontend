@@ -261,9 +261,9 @@
 
 ### S9-C1: パフォーマンス計測基盤
 
-- ⬜ S9-C1-1a: `src/features/air-hockey/core/perf-probe.ts` を新規作成
-- ⬜ S9-C1-1b: `begin/end/commit/snapshot/reset` を実装
-- ⬜ S9-C1-1c: `PerformanceObserver` で longtask を監視 → TBT 集計
+- ✅ S9-C1-1a: `src/features/air-hockey/core/perf-probe.ts` を新規作成
+- ✅ S9-C1-1b: `begin/end/commit/snapshot/reset` を実装
+- ✅ S9-C1-1c: `PerformanceObserver` で longtask を監視 → TBT 集計
 - ⬜ S9-C1-1d: `performance.memory` （Chrome のみ）の取得と undefined 耐性
 - ⬜ S9-C1-1e: `devicePixelRatio` を snapshot に含める
 - ⬜ S9-C1-1f: `perf-probe.test.ts` を新規作成
