@@ -15,7 +15,10 @@ src/features/air-hockey/
     types.ts              # 型定義
     achievements.ts       # 実績システム（定義・判定・localStorage 管理）
     audio-settings.ts     # 音量設定（localStorage 管理）
+    canvas-fonts.ts       # Canvas 描画用フォントスタック（S9-V-4: DOM と統一した Inter + Noto Sans JP）
     characters.ts         # キャラクター定義（主人公・対戦相手・リアクション・ALWAYS_UNLOCKED_IDS）
+    design-tokens.ts      # air-hockey 固有デザイントークン（S9-D: 既存 styles/tokens/ を参照し AH_TOKENS に集約）
+    i18n-strings.ts       # Canvas / UI 表示文字列の一元管理（S9-V-3: AH_STRINGS、将来の多言語対応準備）
     daily-challenge.ts    # デイリーチャレンジ（シード生成・ルール・結果保存）
     dialogue-data.ts      # ストーリーモード第1章ダイアログデータ
     difficulty-adjust.ts  # 難易度オートアジャスト（連勝/連敗判定）
@@ -29,6 +32,7 @@ src/features/air-hockey/
     unlock.ts             # フィールド/アイテムアンロック（条件・状態管理）
   hooks/
     useInput.ts           # マウス/タッチ入力ハンドリング
+    useReducedMotion.ts   # prefers-reduced-motion の状態を返すフック（S9-D: 各コンポーネントの一元化）
     useKeyboardInput.ts   # キーボード入力（isMultiPlayerMode でキーマッピング切替）
     useMultiTouchInput.ts # マルチタッチ入力（2P/2v2 用画面分割）
     useGamepadInput.ts    # ゲームパッド入力管理（接続/切断イベント・トースト通知）
@@ -48,6 +52,7 @@ src/features/air-hockey/
       usePairMatchSetup.ts   # 2v2 ペアマッチのデフォルトキャラ算出（S8-1）
       useGameHandlers.ts     # 全画面遷移イベントハンドラの集約（S8-1）
   components/
+    CanvasLiveRegion.tsx  # Canvas 内容をスクリーンリーダーに露出（S9-V-2: aria-live DOM 同期）
     Field.tsx             # フィールド描画（Canvas、シェイク）
     ResultScreen.tsx       # リザルト画面（1v1/2P/2v2 対応、4体立ち絵、チーム区切り）
     Scoreboard.tsx         # スコアボード（ポーズボタン）

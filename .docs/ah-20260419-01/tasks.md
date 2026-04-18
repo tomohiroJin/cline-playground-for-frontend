@@ -11,70 +11,70 @@
 
 ### S9-D-0: 事前調査（v3 でトークン棚卸しを強化）
 
-- ⬜ S9-D-0a: 既存 `src/styles/tokens/{colors,game-ui,typography,spacing,radii,shadows}.ts` の内容を全読し、再利用可能トークンをリスト化
-- ⬜ S9-D-0b: `components/` 以下のインラインスタイル出現箇所を grep で洗い出し（色・フォントサイズ・スペーシング Top 20）
+- ✅ S9-D-0a: 既存 `src/styles/tokens/{colors,game-ui,typography,spacing,radii,shadows}.ts` の内容を全読し、再利用可能トークンをリスト化
+- ✅ S9-D-0b: `components/` 以下のインラインスタイル出現箇所を grep で洗い出し（色・フォントサイズ・スペーシング Top 20）
 - ⬜ S9-D-0c: ダークテーマ (`body.premium-theme`) で各画面の基準スクショを取得（VRT 初期化前の確認用）
-- ⬜ S9-D-0d: **MF-1 準備**: 既存 `tokens/game-ui.ts` にチーム色（`--game-team-a`, `--game-team-b`）を追加
-- ⬜ S9-D-0e: `tokens/game-ui.ts` の `gameUi` オブジェクトに `teamA`, `teamB` を追加（TS 側）
+- ✅ S9-D-0d: **MF-1 準備**: 既存 `tokens/game-ui.ts` にチーム色（`--game-team-a`, `--game-team-b`）を追加
+- ✅ S9-D-0e: `tokens/game-ui.ts` の `gameUi` オブジェクトに `teamA`, `teamB` を追加（TS 側）
 
 ### S9-D-1: design-tokens 作成（既存トークン参照版、MF-1/RC-3 反映）
 
-- ⬜ S9-D-1a: `src/features/air-hockey/core/design-tokens.ts` を新規作成
-- ⬜ S9-D-1b: `AH_TOKENS` を以下で構成:
+- ✅ S9-D-1a: `src/features/air-hockey/core/design-tokens.ts` を新規作成
+- ✅ S9-D-1b: `AH_TOKENS` を以下で構成:
   - `team.a/b` → `gameUi.teamA/teamB` 参照（MF-1）
   - `label.cpu` → `colors.textMuted` 参照（MF-4）
   - `vs.textSize/characterNameSize/infoSize/labelSize` → `typography.fontSize3xl/Lg/Base/Xs` 参照（RC-3）
   - `vs.mobileBreakpoint` のみ独自定数
   - `anim.enter/exit/emphasis` は既存トークンに該当なし、独自定義
-- ⬜ S9-D-1c: `animCss()` ヘルパを実装
-- ⬜ S9-D-1d: 単体テスト `design-tokens.test.ts` 作成（値の整合性 + 既存トークン参照整合）
-- ⬜ S9-D-1e: PR 本文に「独自定義は 3 項目（mobileBreakpoint, anim 3 種）のみ。他は既存トークン参照」を明記
+- ✅ S9-D-1c: `animCss()` ヘルパを実装
+- ✅ S9-D-1d: 単体テスト `design-tokens.test.ts` 作成（値の整合性 + 既存トークン参照整合）
+- ✅ S9-D-1e: PR 本文に「独自定義は 3 項目（mobileBreakpoint, anim 3 種）のみ。他は既存トークン参照」を明記
 
 ### S9-D-2: useReducedMotion フック
 
-- ⬜ S9-D-2a: `src/features/air-hockey/hooks/useReducedMotion.ts` を新規作成
-- ⬜ S9-D-2b: matchMedia change イベント購読を実装
-- ⬜ S9-D-2c: `useReducedMotion.test.ts` を作成（matchMedia モック）
-- ⬜ S9-D-2d: **置換は M1 では行わない**（本適用は A1/A3 と同 PR、Codex P0）
+- ✅ S9-D-2a: `src/features/air-hockey/hooks/useReducedMotion.ts` を新規作成
+- ✅ S9-D-2b: matchMedia change イベント購読を実装
+- ✅ S9-D-2c: `useReducedMotion.test.ts` を作成（matchMedia モック）
+- ✅ S9-D-2d: **置換は M1 では行わない**（本適用は A1/A3 と同 PR、Codex P0）
 
 ### S9-D-3: コントラスト修正（v3 で Scoreboard/ResultScreen 追加、MF-2/3 反映）
 
 **ラベル色（軽微置換）**:
 
-- ⬜ S9-D-3a: `renderer.ts` および `ui-renderer.ts` 両方の `#888` / `#888888` を `#b4b4b4` へ置換（ヘルプ文・ポーズ文、Codex P0 追加）
-- ⬜ S9-D-3b: `TitleScreen.tsx` のアンロック注釈 `#888` を `colors.textMuted` へ置換
-- ⬜ S9-D-3c: 変更で既存テストが崩れた箇所を同期修正
+- ✅ S9-D-3a: `renderer.ts` および `ui-renderer.ts` 両方の `#888` / `#888888` を `#b4b4b4` へ置換（ヘルプ文・ポーズ文、Codex P0 追加）
+- ✅ S9-D-3b: `TitleScreen.tsx` のアンロック注釈 `#888` を `colors.textMuted` へ置換
+- ✅ S9-D-3c: 変更で既存テストが崩れた箇所を同期修正
 
 **Scoreboard コントラスト検査（MF-2 新規）**:
 
-- ⬜ S9-D-3d: `.docs/ah-20260419-01/contrast-audit.md` を新規作成、テンプレ配置
-- ⬜ S9-D-3e: 既存 11 キャラ色をリスト化し、WebAIM 相当の関数で背景 `#0d1117` 対比を一括計測
-- ⬜ S9-D-3f: 4.5:1 未満のキャラ色を特定 → 対応方針決定（text-shadow 補強 / 1px ストローク / 派生色追加）
-- ⬜ S9-D-3g: `Scoreboard.tsx` の `ScoreText` に対応を実装
-- ⬜ S9-D-3h: 修正後の比率を contrast-audit.md に記録
+- ✅ S9-D-3d: `.docs/ah-20260419-01/contrast-audit.md` を新規作成、テンプレ配置
+- ✅ S9-D-3e: 既存 11 キャラ色をリスト化し、WebAIM 相当の関数で背景 `#0d1117` 対比を一括計測
+- ✅ S9-D-3f: 4.5:1 未満のキャラ色を特定 → 対応方針決定（text-shadow 補強 / 1px ストローク / 派生色追加）
+- ✅ S9-D-3g: `Scoreboard.tsx` の `ScoreText` に対応を実装
+- ✅ S9-D-3h: 修正後の比率を contrast-audit.md に記録
 
 **ResultScreen コントラスト（MF-3 新規）**:
 
-- ⬜ S9-D-3i: `ResultScreen.tsx:87` StatRow ラベル `#888` を `colors.textMuted` 参照へ
-- ⬜ S9-D-3j: `ResultScreen.tsx:333,337,347,364` の `#aaa`/`#666` を `colors.textSecondary` 参照へ
-- ⬜ S9-D-3k: MVP 金色 `#ffd700` を `gameUi.achievement` 参照へ統一（`:324,363` 他）
-- ⬜ S9-D-3l: 既存テストの文字色アサーションと同期
+- ✅ S9-D-3i: `ResultScreen.tsx:87` StatRow ラベル `#888` を `colors.textMuted` 参照へ
+- ✅ S9-D-3j: `ResultScreen.tsx:333,337,347,364` の `#aaa`/`#666` を `colors.textSecondary` 参照へ
+- ✅ S9-D-3k: MVP 金色 `#ffd700` を `gameUi.achievement` 参照へ統一（`:324,363` 他）
+- ✅ S9-D-3l: 既存テストの文字色アサーションと同期
 
 ### S9-D-4: design-system.md ドキュメント
 
-- ⬜ S9-D-4a: `src/features/air-hockey/doc/design-system.md` を新規作成
-- ⬜ S9-D-4b: カラー・タイポ・アニメーション・原則チェックリストを記載
-- ⬜ S9-D-4c: 「プロジェクト共通トークンへの還元候補」セクション作成（Gemini 低）
-- ⬜ S9-D-4d: `doc/architecture.md` に design-tokens / useReducedMotion の節を追記
+- ✅ S9-D-4a: `src/features/air-hockey/doc/design-system.md` を新規作成
+- ✅ S9-D-4b: カラー・タイポ・アニメーション・原則チェックリストを記載
+- ✅ S9-D-4c: 「プロジェクト共通トークンへの還元候補」セクション作成（Gemini 低）
+- ✅ S9-D-4d: `doc/architecture.md` に design-tokens / useReducedMotion の節を追記
 
 ### S9-V-1: VRT 基盤（v3 で reduced-motion 強制を追加、RC-7 反映）
 
-- ⬜ S9-V-1a: `e2e/air-hockey-visual.spec.ts` を新規作成
-- ⬜ S9-V-1b: VIEWPORTS 定義（375×667 / 393×852 / 768×1024 / 1280×720）
-- ⬜ S9-V-1c: `test.use({ reducedMotion: 'reduce' })` を全 viewport に適用
-- ⬜ S9-V-1d: beforeEach で `FREEZE_ANIMATIONS_CSS`（`animation-duration: 0s`, `transition-duration: 0s` 強制）を `page.addStyleTag` で注入
-- ⬜ S9-V-1e: beforeEach で `await page.evaluate(() => document.fonts.ready)` を入れて WebFont 読込待機
-- ⬜ S9-V-1f: TitleScreen のスクショテストを実装
+- ✅ S9-V-1a: `e2e/air-hockey-visual.spec.ts` を新規作成
+- ✅ S9-V-1b: VIEWPORTS 定義（375×667 / 393×852 / 768×1024 / 1280×720）
+- ✅ S9-V-1c: `test.use({ reducedMotion: 'reduce' })` を全 viewport に適用
+- ✅ S9-V-1d: beforeEach で `FREEZE_ANIMATIONS_CSS`（`animation-duration: 0s`, `transition-duration: 0s` 強制）を `page.addStyleTag` で注入
+- ✅ S9-V-1e: beforeEach で `await page.evaluate(() => document.fonts.ready)` を入れて WebFont 読込待機
+- ✅ S9-V-1f: TitleScreen のスクショテストを実装
 - ⬜ S9-V-1g: VsScreen 1v1 / 2v2 のスクショテストを実装（テスト用初期状態注入で最短到達）
 - ⬜ S9-V-1h: ResultScreen のスクショテストを実装
 - ⬜ S9-V-1i: 初回ベースライン画像を `--update-snapshots` で生成
@@ -84,27 +84,27 @@
 
 ### S9-V-2: Canvas A11y ライブリージョン
 
-- ⬜ S9-V-2a: `components/CanvasLiveRegion.tsx` を新規作成
-- ⬜ S9-V-2b: `CanvasLiveRegion.test.tsx` で `aria-live` + `aria-atomic` の属性確認（role は付けない、Codex P2-5）
+- ✅ S9-V-2a: `components/CanvasLiveRegion.tsx` を新規作成
+- ✅ S9-V-2b: `CanvasLiveRegion.test.tsx` で `aria-live` + `aria-atomic` の属性確認（role は付けない、Codex P2-5）
 - ⬜ S9-V-2c: `AirHockeyGame.tsx` にマウント（`screen === 'game'` 時）
 - ⬜ S9-V-2d: スコア変化を検出して message を更新する useEffect を実装
 - ⬜ S9-V-2e: ゲーム終了時の assertive メッセージを実装
 
 ### S9-V-3: i18n 語彙分離
 
-- ⬜ S9-V-3a: `src/features/air-hockey/core/i18n-strings.ts` を新規作成
-- ⬜ S9-V-3b: `AH_STRINGS` に common / player / playerAria / game を定義
-- ⬜ S9-V-3c: `renderer.ts` および `ui-renderer.ts` 両方のハードコード文字列を置換（`"PAUSED"`, `"Tap to Resume"`, `"GO!"`, `"How to Play"` 等、Codex P0 追加）
-- ⬜ S9-V-3d: 既存テストが文字列比較している箇所を同期修正
-- ⬜ S9-V-3e: `i18n-strings.test.ts` を作成（キーの存在・重複なし）
+- ✅ S9-V-3a: `src/features/air-hockey/core/i18n-strings.ts` を新規作成
+- ✅ S9-V-3b: `AH_STRINGS` に common / player / playerAria / game を定義
+- ✅ S9-V-3c: `renderer.ts` および `ui-renderer.ts` 両方のハードコード文字列を置換（`"PAUSED"`, `"Tap to Resume"`, `"GO!"`, `"How to Play"` 等、Codex P0 追加）
+- ✅ S9-V-3d: 既存テストが文字列比較している箇所を同期修正
+- ✅ S9-V-3e: `i18n-strings.test.ts` を作成（キーの存在・重複なし）
 
 ### S9-V-4: Canvas フォント統一（v3 新規、RC-4 反映）
 
-- ⬜ S9-V-4a: `src/features/air-hockey/core/canvas-fonts.ts` を新規作成
-- ⬜ S9-V-4b: `CANVAS_FONTS` に countdown/pause/help/hud/combo/toast の各スタックを定義
-- ⬜ S9-V-4c: `FONT_STACK_BODY` / `FONT_STACK_HEADING` に `Noto Sans JP`, `Segoe UI Emoji`, `Apple Color Emoji` を含める
-- ⬜ S9-V-4d: `renderer.ts` および `infrastructure/renderer/ui-renderer.ts` 両方の `ctx.font = 'bold Npx Arial'` 形式を全て `CANVAS_FONTS.xxx` へ置換（Codex P0 追加）
-- ⬜ S9-V-4e: 既存 canvas-renderer テストのフォント文字列アサーションを同期修正
+- ✅ S9-V-4a: `src/features/air-hockey/core/canvas-fonts.ts` を新規作成
+- ✅ S9-V-4b: `CANVAS_FONTS` に countdown/pause/help/hud/combo/toast の各スタックを定義
+- ✅ S9-V-4c: `FONT_STACK_BODY` / `FONT_STACK_HEADING` に `Noto Sans JP`, `Segoe UI Emoji`, `Apple Color Emoji` を含める
+- ✅ S9-V-4d: `renderer.ts` および `infrastructure/renderer/ui-renderer.ts` 両方の `ctx.font = 'bold Npx Arial'` 形式を全て `CANVAS_FONTS.xxx` へ置換（Codex P0 追加）
+- ✅ S9-V-4e: 既存 canvas-renderer テストのフォント文字列アサーションを同期修正
 - ⬜ S9-V-4f: WebFont 未読込時のフォールバック挙動を目視確認（初回表示時に日本語がシステムフォントでも崩れないこと）
 - ⬜ S9-V-4g: 初回描画時のフォント切替ちらつき確認 — `document.fonts.ready` await の要否を判定（必要なら `useGameLoop` 初期化に追加）
 

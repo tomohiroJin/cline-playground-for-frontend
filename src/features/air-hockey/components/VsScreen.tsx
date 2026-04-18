@@ -49,7 +49,7 @@ const hexToRgba = (hex: string, alpha: number): string => {
 
 /** ラベルスタイル定数 */
 const LABEL_FONT_SIZE = '12px';
-const LABEL_COLOR_CPU = '#888';
+const LABEL_COLOR_CPU = '#b4b4b4';
 const TEAM1_COLOR = '#3498db';
 const TEAM2_COLOR = '#e74c3c';
 

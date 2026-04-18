@@ -460,12 +460,12 @@ describe('VsScreen', () => {
         });
       });
 
-      it('CPU ラベルの色が #888 である', () => {
+      it('CPU ラベルの色が #b4b4b4 である（S9-D-3: WCAG AA 対応）', () => {
         render(
           <VsScreen {...defaultProps} is2v2 allyCharacter={allyChar} enemyCharacter2={enemy2Char} allyControlType="cpu" />
         );
         const cpuLabel = screen.getByText('CPU');
-        expect(cpuLabel.style.color).toBe('rgb(136, 136, 136)');
+        expect(cpuLabel.style.color).toBe('rgb(180, 180, 180)');
       });
 
       it('人間操作ラベル（2P）はチーム1カラーで表示される', () => {

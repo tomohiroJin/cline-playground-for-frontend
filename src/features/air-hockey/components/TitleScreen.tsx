@@ -140,7 +140,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
       </ButtonGroup>
       {/* ロック中フィールドの解放条件を表示 */}
       {unlockState && FIELDS.some(f => !unlockState.unlockedFields.includes(f.id)) && (
-        <div style={{ fontSize: '0.7rem', color: '#888', marginTop: '4px', textAlign: 'center' }}>
+        <div style={{ fontSize: '0.7rem', color: '#b4b4b4', marginTop: '4px', textAlign: 'center' }}>
           {FIELDS.filter(f => !unlockState.unlockedFields.includes(f.id)).map(f => {
             const cond = UNLOCK_CONDITIONS.find(c => c.type === 'field' && c.targetId === f.id);
             return cond ? `${f.name}: ${cond.description}` : '';
