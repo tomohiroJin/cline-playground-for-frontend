@@ -60,12 +60,11 @@ for (const vp of VIEWPORTS) {
     });
 
     test('フリー対戦キャラ選択画面で横スクロールなし + スクショ', async ({ page }) => {
-      // Transition コンポーネントの遷移タイミングで flaky になりやすいため、
-      // 現状は test.fixme とし、手動または専用テストモードで実行する（次期対応）。
-      test.fixme(true, 'Transition アニメーションと data-testid 到達の flaky 問題のため保留');
-      await page.goto('/air-hockey');
+      // `?e2e=1` で Transition とカウントダウンを短縮（flaky 対策）
+      await page.goto('/air-hockey?e2e=1');
       await stabilize(page);
       await page.getByTestId('btn-free-battle').click();
+      await expect(page.getByTestId('btn-free-battle-confirm')).toBeVisible({ timeout: 5000 });
       await stabilize(page);
       await assertNoHorizontalOverflow(page);
       await expect(page).toHaveScreenshot(`free-char-select-${vp.name}.png`, {
@@ -74,24 +73,28 @@ for (const vp of VIEWPORTS) {
     });
 
     test('ゲーム画面（Canvas + Scoreboard）で横スクロールなし + スクショ', async ({ page }) => {
-      // Canvas + Transition + カウントダウン 3 秒 が絡み、自動到達が flaky。
-      // 手動 E2E または専用テストモード（短縮カウントダウン等）追加で対応予定。
-      test.fixme(true, 'ゲーム画面遷移の flaky 問題のため保留');
-      await page.goto('/air-hockey');
+      // `?e2e=1` でカウントダウン 50ms → スクショ取得可能
+      await page.goto('/air-hockey?e2e=1');
       await stabilize(page);
       await page.getByTestId('btn-free-battle').click();
+      await expect(page.getByTestId('btn-free-battle-confirm')).toBeVisible({ timeout: 5000 });
       await page.getByTestId('btn-free-battle-confirm').click();
       await expect(page.getByTestId('air-hockey-canvas')).toBeVisible({ timeout: 10000 });
+      // カウントダウン完了を待機（e2e モードでは 100ms で終了）
+      await page.waitForTimeout(300);
       await stabilize(page);
       await assertNoHorizontalOverflow(page);
+      // Canvas のコンテンツは毎フレーム変化するため、レイアウト確認中心で許容を緩める
       await expect(page).toHaveScreenshot(`game-${vp.name}.png`, {
-        maxDiffPixelRatio: 0.2,
+        maxDiffPixelRatio: 0.3,
       });
     });
 
     test('ResultScreen 到達確認（試合完了まで約 20 秒）', async ({ page }) => {
-      test.fixme(true, 'ResultScreen の自動到達は時間がかかるため、手動実行 or 専用テストモード追加（将来）');
-      await page.goto('/air-hockey');
+      // ResultScreen の自動到達は実試合の完了が必要で時間コストが高い。
+      // `?e2e=1` + 意図的な失点フローを追加するまで保留
+      test.fixme(true, 'ResultScreen の自動到達は追加の e2e モード拡張が必要');
+      await page.goto('/air-hockey?e2e=1');
       await stabilize(page);
       await assertNoHorizontalOverflow(page);
     });

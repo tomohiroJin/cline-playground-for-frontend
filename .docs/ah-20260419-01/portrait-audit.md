@@ -1,10 +1,22 @@
-# Portrait フリンジ監査結果（S9-B2-1）
+# Portrait フリンジ監査結果（S9-B2）
 
-> 実行日: 2026-04-19
+> 実行日: 2026-04-19（処理前 / 処理後）
 > コマンド: `npm run audit:portrait`
 > スクリプト: `scripts/air-hockey/run-audit-portrait-fringe.ts`
 
-## 判定結果（閾値: 白フリンジ 2% / 黒ずみ 2%）
+## 処理後の最終判定（2026-04-19 処理完了）
+
+`convert -channel A -threshold 50% +channel` で半透明エッジを 2 値化:
+
+| 分類 | ファイル数 | 判定 |
+|---|---|---|
+| 全 22 ファイル | 22 / 22 | ✅ 全 OK（境界ピクセル 0） |
+
+- 処理対象: kanata-happy / kanata-normal / riku-happy / riku-normal / shion-happy / shion-normal の 6 枚
+- 処理前バックアップ: `/tmp/portrait-backup/`（セッション限り）
+- 再検査で境界ピクセル数が 0 になり、白フリンジ率・黒ずみ率ともに 0.00%
+
+## 処理前の判定結果（閾値: 白フリンジ 2% / 黒ずみ 2%）
 
 | ファイル | 境界Px | 白フリンジ% | 黒ずみ% | 判定 |
 |---|---|---|---|---|

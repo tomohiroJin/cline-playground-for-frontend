@@ -44,8 +44,13 @@ import { calculateKeyboardMovement, KEYBOARD_MOVE_SPEED } from '../../core/keybo
 const randomChoice = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
 // カウントダウン定数
-const COUNTDOWN_DURATION = 3000;
-const GO_DISPLAY_DURATION = 500;
+// E2E テスト時は `?e2e=1` で短縮（VRT の flaky 対策）
+const isE2ETestMode = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return new URLSearchParams(window.location.search).has('e2e');
+};
+const COUNTDOWN_DURATION = isE2ETestMode() ? 50 : 3000;
+const GO_DISPLAY_DURATION = isE2ETestMode() ? 50 : 500;
 
 // シェイク定数
 const GOAL_SHAKE_INTENSITY = 8;
