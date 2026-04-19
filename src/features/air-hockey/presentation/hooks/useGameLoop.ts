@@ -173,10 +173,16 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
     const PUCK_STUCK_THRESHOLD = 30; // 約0.5秒
     const puckStuckCounters = puckStuckCountersRef.current;
 
-    // パーティクル生成の定数
-    const OBSTACLE_PARTICLE_COUNT = 12;
-    const SHIELD_PARTICLE_COUNT = 8;
-    const GOAL_PARTICLE_COUNT = 20;
+    // パーティクル生成の定数（S9-C2 候補 3: 2v2 時半減で描画負荷を抑制）
+    // is2v2Mode は既存の bool フラグを再利用（依存配列に含まれ済み）
+    const is2v2 = is2v2Mode;
+    const particleScale = is2v2 ? 0.5 : 1;
+    const OBSTACLE_PARTICLE_COUNT = Math.round(12 * particleScale);
+    const SHIELD_PARTICLE_COUNT = Math.round(8 * particleScale);
+    const GOAL_PARTICLE_COUNT = Math.round(20 * particleScale);
+    // パーティクル配列の上限（フィーバー時のみ 1.5 倍許容）
+    const PARTICLE_LIMIT_DEFAULT = is2v2 ? 80 : 160;
+    const PARTICLE_LIMIT_FEVER = Math.round(PARTICLE_LIMIT_DEFAULT * 1.5);
 
     const sound = getSound();
 
@@ -483,6 +489,11 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         p.vy += 0.1;
         p.life--;
         if (p.life <= 0) game.particles.splice(i, 1);
+      }
+      // S9-C2 候補 3: 上限超過分は寿命の短い古い方から切り捨て（フィーバー時は 1.5 倍許容）
+      const particleLimit = game.fever.active ? PARTICLE_LIMIT_FEVER : PARTICLE_LIMIT_DEFAULT;
+      if (game.particles.length > particleLimit) {
+        game.particles.splice(0, game.particles.length - particleLimit);
       }
 
       // 障害物復活チェック
