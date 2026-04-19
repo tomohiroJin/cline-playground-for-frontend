@@ -15,6 +15,7 @@
     "test:scripts": "jest --config scripts/jest.config.js",
     "test:e2e": "npx playwright test",
     "test:e2e:ui": "npx playwright test --ui",
+    "test:e2e:perf": "npx playwright test e2e/air-hockey-perf.spec.ts",
     "ci": "npm run lint:ci && npm run typecheck && npm test && npm run build"
   },
   "devDependencies": {

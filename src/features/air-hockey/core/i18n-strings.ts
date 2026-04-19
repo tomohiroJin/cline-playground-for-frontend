@@ -16,6 +16,8 @@ export const AH_STRINGS = {
     fever: 'FEVER!',
     win: '勝利',
     lose: '敗北',
+    /** プレイヤー自身を指す定型文（Scoreboard などのデフォルト値、v4: Codex P2 対応） */
+    you: 'YOU',
   },
   /** ゲーム内表示用のプレイヤー番号（日本ゲーム慣習の "数字先" 表記） */
   player: {

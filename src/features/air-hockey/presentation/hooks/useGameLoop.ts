@@ -520,6 +520,8 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         applyKeyboardMovement(game, keysRef, lastInputRef);
       }
 
+      // S9-C1: AI/入力セクション計測開始
+      perfProbe?.begin('ai');
       if (is2v2Mode) {
         // ── 2v2 モード入力 ──
         const isAllyHuman = allyControlType === 'human';
@@ -648,7 +650,10 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
           game.cpuStuckTimer = cpuUpdate.cpuStuckTimer;
         }
       }
+      perfProbe?.end('ai');
 
+      // S9-C1: 物理計算セクション計測開始
+      perfProbe?.begin('physics');
       // マレット移動後、衝突処理前にパックとの食い込みを解消（パックを弾く）
       // effectiveMR を使い、processCollisions との二重衝突を防止
       // S6-4-6: quickReject で遠いペアをスキップ
@@ -892,7 +897,9 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         );
       }
 
-      // 描画
+      // 物理計算終了 → 描画開始（S9-C1）
+      perfProbe?.end('physics');
+      perfProbe?.begin('render');
       Renderer.clear(ctx, consts, now);
       Renderer.drawField(ctx, field, consts, game.obstacleStates, now);
       Renderer.drawEffectZones(ctx, game.effects, now, consts);
@@ -927,6 +934,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       if (showHelp) {
         Renderer.drawHelp(ctx, consts, field);
       }
+      perfProbe?.end('render');
 
       // ゴール判定とスコア更新
       if (scored) {
@@ -1021,12 +1029,15 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         ctx.font = CANVAS_FONTS.debugInfo;
         ctx.fillText(`FPS: ${currentFps}`, 8, 16);
         if (snap && snap.sampleCount > 30) {
-          ctx.fillText(`p50 total: ${snap.p50.total.toFixed(1)}ms`, 8, 30);
-          ctx.fillText(`p99 total: ${snap.p99.total.toFixed(1)}ms`, 8, 44);
-          ctx.fillText(`TBT: ${snap.tbt.toFixed(0)}ms`, 8, 58);
-          ctx.fillText(`DPR: ${snap.devicePixelRatio}`, 8, 72);
+          // S9-C1 仕様準拠: p50/p95/p99 全てと physics/ai/render セクション表示
+          const fmt = (v: number) => v.toFixed(1);
+          ctx.fillText(`p50 total: ${fmt(snap.p50.total)}ms  phy:${fmt(snap.p50.physics)} ai:${fmt(snap.p50.ai)} ren:${fmt(snap.p50.render)}`, 8, 30);
+          ctx.fillText(`p95 total: ${fmt(snap.p95.total)}ms`, 8, 44);
+          ctx.fillText(`p99 total: ${fmt(snap.p99.total)}ms`, 8, 58);
+          ctx.fillText(`TBT: ${snap.tbt.toFixed(0)}ms  LT: ${snap.longTaskCount}`, 8, 72);
+          ctx.fillText(`DPR: ${snap.devicePixelRatio}`, 8, 86);
           if (snap.heapUsed !== undefined) {
-            ctx.fillText(`Heap: ${snap.heapUsed}MB`, 8, 86);
+            ctx.fillText(`Heap: ${snap.heapUsed}MB`, 8, 100);
           }
         }
         ctx.restore();
