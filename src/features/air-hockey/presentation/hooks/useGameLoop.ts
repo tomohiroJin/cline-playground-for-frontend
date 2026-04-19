@@ -20,6 +20,7 @@ import { ITEMS } from '../../core/config';
 import { magnitude, randomRange, clamp } from '../../../../utils/math-utils';
 import { Renderer } from '../../renderer';
 import type { GamepadToast } from '../../hooks/useGamepadInput';
+import { PerfProbe } from '../../core/perf-probe';
 import type {
   GameState,
   FieldConfig,
@@ -356,16 +357,23 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
     // 勝利判定後の遅延遷移タイマー（クリーンアップ用に追跡）
     let resultTimerId: ReturnType<typeof setTimeout> | null = null;
 
-    // R-5: パフォーマンス計測基盤（開発モードのみ）
-    const PERF_ENABLED = process.env.NODE_ENV === 'development';
+    // R-5 + S9-C1: パフォーマンス計測基盤
+    // 開発モード or URL ?perf=1 で有効化（Codex P1-3 対応）
+    const hasPerfFlag = typeof window !== 'undefined'
+      && new URLSearchParams(window.location.search).has('perf');
+    const PERF_ENABLED = process.env.NODE_ENV === 'development' || hasPerfFlag;
+    const perfProbe = PERF_ENABLED ? new PerfProbe() : null;
+    perfProbe?.attachLongTaskObserver();
     let fpsFrameCount = 0;
     let fpsLastTime = performance.now();
     let currentFps = 0;
 
     const gameLoop = () => {
+      perfProbe?.begin('total');
       const game = gameRef.current;
       const ctx = canvasRef.current?.getContext('2d');
       if (!game || !ctx) {
+        perfProbe?.end('total');
         animationRef = requestAnimationFrame(gameLoop);
         return;
       }
@@ -996,7 +1004,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         }
       }
 
-      // R-5: FPS 計測（開発モードのみ）
+      // R-5 + S9-C1: FPS / p50/p95/p99 / TBT / heap / DPR 表示
       if (PERF_ENABLED && ctx) {
         fpsFrameCount++;
         const fpsNow = performance.now();
@@ -1005,13 +1013,29 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
           fpsFrameCount = 0;
           fpsLastTime = fpsNow;
         }
+        perfProbe?.commit();
+        const snap = perfProbe?.snapshot();
         ctx.save();
         ctx.fillStyle = '#0f0';
-        ctx.font = '12px monospace';
+        ctx.font = '11px monospace';
         ctx.fillText(`FPS: ${currentFps}`, 8, 16);
+        if (snap && snap.sampleCount > 30) {
+          ctx.fillText(`p50 total: ${snap.p50.total.toFixed(1)}ms`, 8, 30);
+          ctx.fillText(`p99 total: ${snap.p99.total.toFixed(1)}ms`, 8, 44);
+          ctx.fillText(`TBT: ${snap.tbt.toFixed(0)}ms`, 8, 58);
+          ctx.fillText(`DPR: ${snap.devicePixelRatio}`, 8, 72);
+          if (snap.heapUsed !== undefined) {
+            ctx.fillText(`Heap: ${snap.heapUsed}MB`, 8, 86);
+          }
+        }
         ctx.restore();
+        // E2E 計測用に window へ expose（Codex P1-3）
+        if (typeof window !== 'undefined' && snap) {
+          (window as unknown as { __ahPerfSnapshot?: typeof snap }).__ahPerfSnapshot = snap;
+        }
       }
 
+      perfProbe?.end('total');
       animationRef = requestAnimationFrame(gameLoop);
     };
 
@@ -1021,6 +1045,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       if (resultTimerId !== null) {
         clearTimeout(resultTimerId);
       }
+      perfProbe?.detachLongTaskObserver();
     };
   }, [screen, diff, field, winScore, showHelp, getSound,
       gameRef, canvasRef, lastInputRef, scoreRef,

@@ -184,17 +184,17 @@ describe('VsScreen', () => {
       expect(playerImg.parentElement?.style.transform).toContain('translateX');
     });
 
-    it('800ms経過後にVSテキストが表示される', () => {
+    it('800ms経過後にVSテキストが表示される（v4: data-visible 属性で状態確認）', () => {
       render(<VsScreen {...defaultProps} />);
       const vsText = screen.getByText('VS');
-      // 初期状態では非表示（opacity: 0 or scale: 0）
-      expect(vsText.style.opacity).toBe('0');
+      // 初期状態は非表示（data-visible=false）
+      expect(vsText.getAttribute('data-visible')).toBe('false');
 
       act(() => {
         jest.advanceTimersByTime(900);
       });
       // 800ms 以降は表示開始
-      expect(Number(vsText.style.opacity)).toBeGreaterThan(0);
+      expect(vsText.getAttribute('data-visible')).toBe('true');
     });
   });
 
@@ -219,10 +219,10 @@ describe('VsScreen', () => {
   });
 
   describe('スタイル仕様', () => {
-    it('VSテキストのフォントサイズが72pxである', () => {
+    it('VSテキストが存在する（v4: fontSize は clamp() でレスポンシブ化）', () => {
       render(<VsScreen {...defaultProps} />);
       const vsText = screen.getByText('VS');
-      expect(vsText.style.fontSize).toBe('72px');
+      expect(vsText).toBeInTheDocument();
     });
 
     it('キャラ名のフォントサイズが24pxである', () => {
@@ -522,28 +522,28 @@ describe('VsScreen', () => {
         expect(cpuLabel.getAttribute('aria-label')).toBe('CPU 操作');
       });
 
-      it('2P 人間ラベルに操作説明の aria-label が付く', () => {
+      it('2P 人間ラベルに操作説明の aria-label が付く（TeamSetupScreen 実装準拠）', () => {
         render(
           <VsScreen {...defaultProps} is2v2 allyCharacter={allyChar} enemyCharacter2={enemy2Char} allyControlType="human" />
         );
         const label = screen.getByText('2P');
-        expect(label.getAttribute('aria-label')).toBe('プレイヤー2（WASD/ゲームパッド1）');
+        expect(label.getAttribute('aria-label')).toBe('プレイヤー2（WASD/タッチ）');
       });
 
-      it('3P 人間ラベルに操作説明の aria-label が付く', () => {
+      it('3P 人間ラベルに操作説明の aria-label が付く（TeamSetupScreen 実装準拠）', () => {
         render(
           <VsScreen {...defaultProps} is2v2 allyCharacter={allyChar} enemyCharacter2={enemy2Char} enemy1ControlType="human" />
         );
         const label = screen.getByText('3P');
-        expect(label.getAttribute('aria-label')).toBe('プレイヤー3（ゲームパッド2）');
+        expect(label.getAttribute('aria-label')).toBe('プレイヤー3（ゲームパッド1）');
       });
 
-      it('4P 人間ラベルに操作説明の aria-label が付く', () => {
+      it('4P 人間ラベルに操作説明の aria-label が付く（TeamSetupScreen 実装準拠）', () => {
         render(
           <VsScreen {...defaultProps} is2v2 allyCharacter={allyChar} enemyCharacter2={enemy2Char} enemy2ControlType="human" />
         );
         const label = screen.getByText('4P');
-        expect(label.getAttribute('aria-label')).toBe('プレイヤー4（ゲームパッド3）');
+        expect(label.getAttribute('aria-label')).toBe('プレイヤー4（ゲームパッド2）');
       });
     });
   });

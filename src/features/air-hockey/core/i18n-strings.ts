@@ -24,12 +24,20 @@ export const AH_STRINGS = {
     p3: '3P',
     p4: '4P',
   },
-  /** aria-label 用のアクセシブルな説明文 */
+  /**
+   * aria-label 用のアクセシブルな説明文
+   * TeamSetupScreen の実装に準拠:
+   *   P1: 矢印キー/マウス（固定）
+   *   P2: WASD/タッチ（ゲームパッド不要、常時有効）
+   *   P3: ゲームパッド1（`gamepadConnected >= 1` で有効）
+   *   P4: ゲームパッド2（`gamepadConnected >= 2` で有効）
+   * Codex P1-2 対応: 画面間の表記を統一
+   */
   playerAria: {
-    p1Human: 'プレイヤー1（キーボード/マウス）',
-    p2Human: 'プレイヤー2（WASD/ゲームパッド1）',
-    p3Human: 'プレイヤー3（ゲームパッド2）',
-    p4Human: 'プレイヤー4（ゲームパッド3）',
+    p1Human: 'プレイヤー1（矢印キー/マウス）',
+    p2Human: 'プレイヤー2（WASD/タッチ）',
+    p3Human: 'プレイヤー3（ゲームパッド1）',
+    p4Human: 'プレイヤー4（ゲームパッド2）',
     cpu: 'CPU 操作',
   },
   game: {

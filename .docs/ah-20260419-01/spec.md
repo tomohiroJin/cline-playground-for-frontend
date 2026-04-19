@@ -480,15 +480,18 @@ const controlLabel = (controlType: 'cpu' | 'human', slot: 'p1'|'p2'|'p3'|'p4'):
 </span>
 ```
 
-### A3-3. TeamSetupScreen: 人間ボタン disabled
+### A3-3. TeamSetupScreen: 人間ボタン disabled（v4: Codex P1-2 反映で現実装に合わせて修正）
 
-| ボタン | 必要接続数 | disabled 条件 |
+実際の TeamSetupScreen の実装に合わせる:
+
+| ボタン | 入力デバイス | disabled 条件 |
 |---|---|---|
-| P2 人間 | ≥ 1 | `gamepadConnected < 1` |
-| P3 人間 | ≥ 2 | `gamepadConnected < 2` |
-| P4 人間 | ≥ 3 | `gamepadConnected < 3` |
+| P2 人間 | WASD / タッチ（ゲームパッド不要） | なし（常時有効） |
+| P3 人間 | ゲームパッド 1 | `gamepadConnected < 1` |
+| P4 人間 | ゲームパッド 2 | `gamepadConnected < 2` |
 
-- disabled 時: `opacity: 0.4`, `cursor: not-allowed`, `title="ゲームパッドが必要です（{n} 台以上）"`
+- disabled 時: `opacity: 0.4`, `cursor: not-allowed`, `aria-disabled="true"`, `title="ゲームパッドを接続してください"`
+- `AH_STRINGS.playerAria` も上記に準拠
 
 ---
 

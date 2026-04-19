@@ -76,18 +76,18 @@ describe('PerfProbe', () => {
       expect(snap.p99.physics).toBeGreaterThanOrEqual(98);
     });
 
-    it('fps はサンプル数と時間レンジから算出', () => {
-      const start = now;
+    it('fps は区間開始時刻（最初の begin）を母数に算出される（Codex P2-4 対応）', () => {
+      // 60 フレーム × 16ms = 960ms（約 62.5fps）
       for (let i = 0; i < 60; i++) {
         probe.begin('physics');
-        now += 16; // 60fps 相当（1 フレーム 16.67ms 近似）
+        now += 16;
         probe.end('physics');
         probe.commit();
       }
       const snap = probe.snapshot();
-      // 60 サンプル × 16ms = 960ms 経過 → 約 62.5fps
-      expect(snap.fps).toBeGreaterThanOrEqual(50);
-      expect(snap.fps).toBeLessThanOrEqual(70);
+      // 60 サンプル / 960ms ≒ 62.5fps、境界厳しめ（±3）
+      expect(snap.fps).toBeGreaterThanOrEqual(60);
+      expect(snap.fps).toBeLessThanOrEqual(65);
     });
 
     it('devicePixelRatio を取得する', () => {

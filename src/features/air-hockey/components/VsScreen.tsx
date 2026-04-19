@@ -78,6 +78,31 @@ const VsTeamsLayout = styled.div`
   }
 `;
 
+/**
+ * 立ち絵ラッパー（S9-A1 レスポンシブ対応、Codex P1-1 指摘）
+ *
+ * 仕様: max-width: min(45vw, 240px)。mobile でオーバーフローしない。
+ * `hasPortrait` 時のみ立ち絵比率（1:2）、それ以外は 1:1。
+ */
+const VsImage = styled.img<{ $hasPortrait: boolean }>`
+  max-width: ${p => (p.$hasPortrait ? 'min(45vw, 240px)' : 'min(30vw, 128px)')};
+  width: auto;
+  height: auto;
+  aspect-ratio: ${p => (p.$hasPortrait ? '1 / 2' : '1 / 1')};
+  object-fit: contain;
+`;
+
+/** VS テキスト（S9-A1 レスポンシブ: clamp で流動化） */
+const VsText = styled.span<{ $visible: boolean }>`
+  color: white;
+  font-weight: bold;
+  font-size: ${AH_TOKENS.vs.textSize};
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+  opacity: ${p => (p.$visible ? 1 : 0)};
+  transform: scale(${p => (p.$visible ? 1 : 0.8)});
+  transition: opacity 200ms ease-out, transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+`;
+
 /** キャラクター立ち絵パネル */
 const CharacterPanel: React.FC<{
   character: Character;
@@ -98,14 +123,10 @@ const CharacterPanel: React.FC<{
           transition: prefersReducedMotion ? 'none' : `transform ${CHAR_SLIDE_DURATION_MS}ms ease-out`,
         }}
       >
-        <img
+        <VsImage
           src={getVsImageSrc(character)}
           alt={`${character.name} 立ち絵`}
-          style={{
-            width: hasPortrait ? 256 : 128,
-            height: hasPortrait ? 512 : 128,
-            objectFit: 'contain',
-          }}
+          $hasPortrait={hasPortrait}
         />
       </div>
       <span
@@ -233,21 +254,11 @@ export const VsScreen: React.FC<VsScreenProps> = ({
     [playerCharacter.color, cpuCharacter.color],
   );
 
-  /** VS テキスト */
+  /** VS テキスト（S9-A1 レスポンシブ: clamp() 流動タイポ、Codex P1-1 対応） */
   const vsText = (
-    <span
-      style={{
-        color: 'white',
-        fontWeight: 'bold',
-        fontSize: '72px',
-        textShadow: '0 0 20px rgba(255, 255, 255, 0.5)',
-        opacity: isVsVisible ? 1 : 0,
-        transform: isVsVisible ? 'scale(1)' : 'scale(0.8)',
-        transition: 'opacity 200ms ease-out, transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
-      }}
-    >
-      VS
-    </span>
+    <VsText $visible={isVsVisible} data-visible={isVsVisible ? 'true' : 'false'}>
+      {AH_STRINGS.common.vs}
+    </VsText>
   );
 
   return (

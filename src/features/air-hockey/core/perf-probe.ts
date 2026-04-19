@@ -52,7 +52,13 @@ export class PerfProbe {
   private observer: PerformanceObserver | undefined;
 
   begin(section: PerfSection): void {
-    this.starts[section] = performance.now();
+    const now = performance.now();
+    this.starts[section] = now;
+    // Codex P2-4: FPS 計算の母数となる区間開始時刻を最初の begin で記録
+    // （最初の commit 時刻を使うと 1 フレーム分の経過時間が落ちて fps が過大評価される）
+    if (this.firstSampleAt === null) {
+      this.firstSampleAt = now;
+    }
   }
 
   end(section: PerfSection): void {
@@ -74,9 +80,7 @@ export class PerfProbe {
       ),
     };
     this.samples.push(sample);
-    const now = performance.now();
-    if (this.firstSampleAt === null) this.firstSampleAt = now;
-    this.lastSampleAt = now;
+    this.lastSampleAt = performance.now();
     this.current = {};
   }
 
