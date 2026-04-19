@@ -123,7 +123,7 @@ gameMode !== '2p-local' の場合:
 
 ## テスト
 
-355テスト（全フェーズ合計）:
+プロジェクト全体で 617 スイート / 約 7900+ tests（S9 までの累計）。
 
 | テストファイル | 対象 |
 |--------------|------|
@@ -134,7 +134,7 @@ gameMode !== '2p-local' の場合:
 | `core/AI.test.ts` | AI ロジック |
 | `core/ai-configurable.test.ts` | AI 設定可能インターフェース |
 | `core/Physics.test.ts` | 物理演算 |
-| `core/entities.test.ts` | エンティティ |
+| `core/entities.test.ts` | エンティティ（マレット-マレット衝突の AABB 事前除外を含む） |
 | `core/items.test.ts` | アイテムシステム |
 | `core/characters.test.ts` | キャラクターデータ整合性 |
 | `core/story.test.ts` | ストーリー進行ロジック |
@@ -143,9 +143,30 @@ gameMode !== '2p-local' の場合:
 | `core/story-balance.test.ts` | バランス設定テスト |
 | `core/integration.test.ts` | クロスモジュール統合テスト |
 | `core/visual-effects.test.ts` | ヒットストップ・スローモーション |
+| **`core/design-tokens.test.ts`**（S9-D） | AH_TOKENS と既存グローバルトークン参照の整合性 |
+| **`core/i18n-strings.test.ts`**（S9-V-3） | AH_STRINGS の定数検証 |
+| **`core/canvas-fonts.test.ts`**（S9-V-4） | Inter / Noto Sans JP / 絵文字フォールバックと debugInfo 分離 |
+| **`core/perf-probe.test.ts`**（S9-C1） | FPS / p50/p95/p99 / TBT / DPR 計算 |
+| **`hooks/useReducedMotion.test.ts`**（S9-D） | matchMedia イベント購読 |
+| **`components/CanvasLiveRegion.test.tsx`**（S9-V-2） | aria-live / aria-atomic 属性、role を付けない検証 |
 | `components/StageSelectScreen.test.tsx` | ステージ選択画面 |
 | `components/DialogueOverlay.test.tsx` | ダイアログオーバーレイ |
-| `components/VsScreen.test.tsx` | VS 画面 |
+| `components/VsScreen.test.tsx` | VS 画面（2v2 モバイル + aria-label） |
+| `chapter2-dialogue-data.test.ts` | 第 2 章ダイアログ + S9-S 補強検証 |
+
+### E2E / VRT（S9-V-1 / S9-C1-3）
+
+| ファイル | 対象 |
+|---|---|
+| `e2e/air-hockey-visual.spec.ts` | 4 viewport × 主要画面の VRT スクショ比較 + scrollWidth 検証 |
+| `e2e/air-hockey-perf.spec.ts` | PerfProbe スナップショット取得（`npm run test:e2e:perf`） |
+
+### 補助スクリプト（S9-B2）
+
+| ファイル | 対象 |
+|---|---|
+| `scripts/air-hockey/audit-portrait-fringe.ts` | ポートレート画像の白フリンジ・黒ずみ検出（閾値 2%） |
+| `scripts/__tests__/audit-portrait-fringe.test.ts` | 純粋関数部分の単体テスト |
 
 ## リファクタリング方針（CR-06）
 
