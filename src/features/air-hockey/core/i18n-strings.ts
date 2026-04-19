@@ -47,5 +47,10 @@ export const AH_STRINGS = {
     tapToResume: 'Tap to Resume',
     howToPlay: 'How to Play',
     feverTime: 'FEVER TIME!',
+    lose: 'LOSE...',
+    helpHint: "Hit the puck into the opponent's goal!",
+    itemsHeader: '-- Items --',
+    goalBonus: '🎉 +1 Pt!',
+    goalPenalty: '😢 -1 Pt',
   },
 } as const;

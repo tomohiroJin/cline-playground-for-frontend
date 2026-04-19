@@ -9,6 +9,7 @@ import type { Character } from '../core/types';
 import type { TeamRole } from '../core/character-ai-profiles';
 import { getCharacterAiProfile } from '../core/character-ai-profiles';
 import { ALWAYS_UNLOCKED_IDS } from '../core/characters';
+import { AH_TOKENS } from '../core/design-tokens';
 import { screenLayout } from './screen-layout';
 import { teamSetupStyles as styles } from './team-setup-screen-styles';
 
@@ -51,8 +52,9 @@ const RoleBadge: React.FC<{ characterId: string; size?: number }> = ({ character
 type SlotId = 'p2' | 'p3' | 'p4';
 
 /** チームカラー */
-const TEAM1_COLOR = '#3498db';
-const TEAM2_COLOR = '#e74c3c';
+// v4: Gemini M2-M4 レビュー高優先度反映 — AH_TOKENS へ統合
+const TEAM1_COLOR = AH_TOKENS.team.a;
+const TEAM2_COLOR = AH_TOKENS.team.b;
 
 /** P2 操作タイプ */
 type AllyControlType = 'cpu' | 'human';

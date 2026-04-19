@@ -8,12 +8,16 @@ import { CANVAS_FONTS } from './canvas-fonts';
 
 describe('CANVAS_FONTS', () => {
   const allFontValues = (): string[] => {
+    // debugInfo は PerfProbe 等のデバッグ用にモノスペース固定（Gemini M2-M4 レビュー反映）
+    // 本文・見出しフォントとは別系統なので汎用チェックから除外
+    const exclude = new Set<keyof typeof CANVAS_FONTS>(['debugInfo']);
     const values: string[] = [];
-    for (const v of Object.values(CANVAS_FONTS)) {
+    for (const [k, v] of Object.entries(CANVAS_FONTS) as [keyof typeof CANVAS_FONTS, unknown][]) {
+      if (exclude.has(k)) continue;
       if (typeof v === 'string') {
         values.push(v);
       } else if (typeof v === 'function') {
-        values.push(v(1));
+        values.push((v as (s: number) => string)(1));
       }
     }
     return values;
@@ -61,6 +65,11 @@ describe('CANVAS_FONTS', () => {
       const s2 = CANVAS_FONTS.combo(2);
       expect(s1).toMatch(/\b28px\b/);
       expect(s2).toMatch(/\b56px\b/);
+    });
+
+    it('debugInfo はモノスペース（PerfProbe 用）', () => {
+      expect(CANVAS_FONTS.debugInfo).toContain('monospace');
+      expect(CANVAS_FONTS.debugInfo).toContain('JetBrains Mono');
     });
   });
 });

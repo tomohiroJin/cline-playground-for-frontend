@@ -67,3 +67,13 @@ function ratio(fg, bg) {
 - [x] WebAIM 相当の計測実施
 - [x] 4.5:1 未満の色に対する対応方針決定（text-shadow 補強で継続）
 - [x] 結果を本ドキュメントに記録
+
+## 補足: `colors.textMuted` vs `#b4b4b4` 直指定の使い分け（Gemini M2-M4 レビュー反映）
+
+DOM コンポーネント（`ResultScreen.tsx`, `TitleScreen.tsx`）で `#b4b4b4` を直接指定している箇所があるが、これは **意図的な設計判断**:
+
+- **理由**: CSS 変数 `var(--color-text-muted)` は JSDOM 環境下で解決されず、`.style.color` が空文字になりテストが複雑化する
+- **対応**: `#b4b4b4` は `--color-text-muted` のダークモード値（`rgba(255,255,255,0.5)` 相当）と視覚的に同等（コントラスト比約 7.0:1）
+- **結果**: 直接値 `#b4b4b4` は「JSDOM 互換 + AA クリア」の二重要件を満たす
+
+将来的な改善案: getComputedStyle 前提に移行するか、`AH_TOKENS.label.cpu` のような Canvas/JSDOM 互換の直接値を共有する（v4 で `AH_TOKENS.label.cpu = '#b4b4b4'` として一部対応済み）。

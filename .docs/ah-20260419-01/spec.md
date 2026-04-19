@@ -295,11 +295,12 @@ export const AH_STRINGS = {
     win: '勝利',
     lose: '敗北',
   },
+  /** ゲーム内表示用（日本ゲーム慣習の "数字先" 表記）、v4: Gemini M2-M4 レビュー反映 */
   player: {
-    p1: 'P1',
-    p2: 'P2',
-    p3: 'P3',
-    p4: 'P4',
+    p1: '1P',
+    p2: '2P',
+    p3: '3P',
+    p4: '4P',
   },
   playerAria: {
     p1Human:   'プレイヤー1（キーボード/マウス）',

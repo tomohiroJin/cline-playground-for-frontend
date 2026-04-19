@@ -39,4 +39,6 @@ export const CANVAS_FONTS = {
     `bold ${Math.floor(28 * scale)}px ${FONT_STACK_HEADING}`,
   /** ゲームパッドトースト */
   toast: `bold 14px ${FONT_STACK_BODY}`,
+  /** PerfProbe 等デバッグオーバーレイ（等幅モノスペース） */
+  debugInfo: `11px 'JetBrains Mono', 'Fira Code', monospace`,
 } as const;

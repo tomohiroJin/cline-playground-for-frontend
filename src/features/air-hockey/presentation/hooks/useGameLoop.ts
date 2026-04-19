@@ -21,6 +21,7 @@ import { magnitude, randomRange, clamp } from '../../../../utils/math-utils';
 import { Renderer } from '../../renderer';
 import type { GamepadToast } from '../../hooks/useGamepadInput';
 import { PerfProbe } from '../../core/perf-probe';
+import { CANVAS_FONTS } from '../../core/canvas-fonts';
 import type {
   GameState,
   FieldConfig,
@@ -1017,7 +1018,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         const snap = perfProbe?.snapshot();
         ctx.save();
         ctx.fillStyle = '#0f0';
-        ctx.font = '11px monospace';
+        ctx.font = CANVAS_FONTS.debugInfo;
         ctx.fillText(`FPS: ${currentFps}`, 8, 16);
         if (snap && snap.sampleCount > 30) {
           ctx.fillText(`p50 total: ${snap.p50.total.toFixed(1)}ms`, 8, 30);

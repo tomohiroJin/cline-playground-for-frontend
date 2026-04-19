@@ -104,11 +104,11 @@ export class UiRenderer {
 
     this.ctx.font = CANVAS_FONTS.helpSubtitle;
     this.ctx.fillStyle = '#ccc';
-    this.ctx.fillText('Hit the puck into the opponent\'s goal!', W / 2, 58);
+    this.ctx.fillText(AH_STRINGS.game.helpHint, W / 2, 58);
 
     this.ctx.font = CANVAS_FONTS.helpSectionTitle;
     this.ctx.fillStyle = 'var(--accent-color, #00d4ff)';
-    this.ctx.fillText('-- Items --', W / 2, 86);
+    this.ctx.fillText(AH_STRINGS.game.itemsHeader, W / 2, 86);
 
     const items = [
       { icon: '◆', name: 'Split', color: '#FF6B6B', desc: 'Puck splits into 3' },

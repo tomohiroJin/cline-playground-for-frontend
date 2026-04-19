@@ -473,9 +473,9 @@ export const Renderer = {
     ctx.fillStyle = isPlayerGoal ? '#00ffff' : '#ff4444';
     ctx.shadowColor = isPlayerGoal ? '#00ffff' : '#ff0000';
     ctx.shadowBlur = Math.round(20 * s);
-    ctx.fillText(isPlayerGoal ? 'GOAL!' : 'LOSE...', W / 2, textY);
+    ctx.fillText(isPlayerGoal ? AH_STRINGS.common.goal : AH_STRINGS.game.lose, W / 2, textY);
     ctx.font = `bold ${Math.round(20 * s)}px ${FONT_STACK_BODY}`;
-    ctx.fillText(isPlayerGoal ? '🎉 +1 Pt!' : '😢 -1 Pt', W / 2, textY + Math.round(40 * s));
+    ctx.fillText(isPlayerGoal ? AH_STRINGS.game.goalBonus : AH_STRINGS.game.goalPenalty, W / 2, textY + Math.round(40 * s));
     ctx.shadowBlur = 0;
   },
   drawHelp(ctx: CanvasRenderingContext2D, consts: GameConstants = CONSTANTS, field?: FieldConfig) {
@@ -492,12 +492,12 @@ export const Renderer = {
 
     ctx.font = `${Math.round(12 * s)}px ${FONT_STACK_BODY}`;
     ctx.fillStyle = '#ccc';
-    ctx.fillText('Hit the puck into the opponent\'s goal!', W / 2, Math.round(58 * s));
+    ctx.fillText(AH_STRINGS.game.helpHint, W / 2, Math.round(58 * s));
 
     // アイテム一覧
     ctx.font = `bold ${Math.round(14 * s)}px ${FONT_STACK_BODY}`;
     ctx.fillStyle = 'var(--accent-color, #00d4ff)';
-    ctx.fillText('-- Items --', W / 2, Math.round(86 * s));
+    ctx.fillText(AH_STRINGS.game.itemsHeader, W / 2, Math.round(86 * s));
 
     const items = [
       { icon: '◆', name: 'Split', color: '#FF6B6B', desc: 'Puck splits into 3' },
