@@ -16,6 +16,7 @@
     "test:e2e": "npx playwright test",
     "test:e2e:ui": "npx playwright test --ui",
     "test:e2e:perf": "npx playwright test e2e/air-hockey-perf.spec.ts",
+    "audit:portrait": "ts-node --project scripts/tsconfig.json scripts/air-hockey/run-audit-portrait-fringe.ts",
     "ci": "npm run lint:ci && npm run typecheck && npm test && npm run build"
   },
   "devDependencies": {
@@ -47,6 +48,7 @@
     "jest-environment-jsdom": "^30.2.0",
     "jsdom": "^28.1.0",
     "serve": "^14.2.5",
+    "sharp": "^0.34.5",
     "style-loader": "^4.0.0",
     "ts-jest": "^29.4.6",
     "ts-loader": "^9.5.2",

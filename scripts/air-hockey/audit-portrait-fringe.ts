@@ -1,13 +1,14 @@
 /**
- * Air Hockey ポートレート画像の輪郭近傍フリンジ監査スクリプト（S9-B2-1）
+ * Air Hockey ポートレート画像の輪郭近傍フリンジ監査ライブラリ（S9-B2-1）
  *
- * - public/assets/portraits/*.png を走査
+ * 純粋関数のみをエクスポートするピュアモジュール。
+ * CLI として実行する場合は run-audit-portrait-fringe.ts を使用。
+ *
  * - 境界ピクセル（0 < alpha < 255）の中で白フリンジ（R/G/B >= 240）と
  *   黒ずみ（R+G+B < 60）の割合を計測
  * - 白フリンジ率 / 黒ずみ率のいずれかが 2% を超えると NG 判定
  *
- * 使い方: `npx ts-node scripts/air-hockey/audit-portrait-fringe.ts`
- * テストは scripts/__tests__/audit-portrait-fringe.test.ts（純粋関数のみ）
+ * テスト: scripts/__tests__/audit-portrait-fringe.test.ts
  */
 
 export type Pixel = { r: number; g: number; b: number; a: number };
@@ -60,67 +61,4 @@ export function analyzePixels(pixels: Pixel[]): AuditResult {
     darkenedRatio,
     verdict,
   };
-}
-
-/**
- * CLI エントリポイント（PNG 実ファイルを読み込んで監査）
- *
- * Node.js 実行時のみ動作。Jest テストでは呼ばれない。
- * PNG 読み込みは軽量な画素走査のため、sharp や node-canvas が必要。
- * 実運用では以下のコマンドで実行:
- *   npx ts-node scripts/air-hockey/audit-portrait-fringe.ts
- */
-async function main(): Promise<void> {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const fs = await import('node:fs/promises');
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const path = await import('node:path');
-
-  const portraitsDir = path.resolve(__dirname, '../../public/assets/portraits');
-  let entries: string[];
-  try {
-    entries = (await fs.readdir(portraitsDir)).filter(f => f.endsWith('.png'));
-  } catch (err) {
-    console.error(`portraits ディレクトリが見つかりません: ${portraitsDir}`, err);
-    process.exit(1);
-    return;
-  }
-
-  console.log('| ファイル | 境界Px | 白% | 黒% | 判定 |');
-  console.log('|---|---|---|---|---|');
-
-  for (const file of entries) {
-    const filepath = path.join(portraitsDir, file);
-    try {
-      // sharp が利用可能な場合に使用（未インストールなら警告のみ）
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let sharp: any;
-      try {
-        sharp = (await import('sharp')).default;
-      } catch {
-        console.log(`| ${file} | - | - | - | (sharp 未インストール) |`);
-        continue;
-      }
-      const { data, info } = await sharp(filepath)
-        .ensureAlpha()
-        .raw()
-        .toBuffer({ resolveWithObject: true });
-      const pixels: Pixel[] = [];
-      for (let i = 0; i < data.length; i += info.channels) {
-        pixels.push({ r: data[i], g: data[i + 1], b: data[i + 2], a: data[i + 3] });
-      }
-      const r = analyzePixels(pixels);
-      console.log(`| ${file} | ${r.totalEdgePixels} | ${(r.whiteRatio * 100).toFixed(2)}% | ${(r.darkenedRatio * 100).toFixed(2)}% | ${r.verdict} |`);
-    } catch (err) {
-      console.error(`${file}: 読み込み失敗`, err);
-    }
-  }
-}
-
-// 直接実行時のみ main を呼び出す
-if (require.main === module) {
-  main().catch((err) => {
-    console.error(err);
-    process.exit(1);
-  });
 }
