@@ -59,64 +59,39 @@ for (const vp of VIEWPORTS) {
       });
     });
 
-    test('VsScreen 1v1 全体が視認可能 + 横スクロールなし', async ({ page }) => {
+    test('フリー対戦キャラ選択画面で横スクロールなし + スクショ', async ({ page }) => {
       await page.goto('/air-hockey');
       await stabilize(page);
-      // ストーリーボタンから VS 画面に到達（最短フロー）
-      const storyBtn = page.getByRole('button', { name: /ストーリー/ });
-      if (await storyBtn.count() > 0) {
-        await storyBtn.click();
-        // 最初のステージ選択
-        const firstStage = page.locator('[data-testid^="stage-card"]').first();
-        if (await firstStage.count() > 0) {
-          await firstStage.click();
-          await stabilize(page);
-          await assertNoHorizontalOverflow(page);
-          await expect(page).toHaveScreenshot(`vs-1v1-${vp.name}.png`, {
-            maxDiffPixelRatio: 0.01,
-          });
-        } else {
-          test.skip(true, 'ステージカード到達不能（data-testid 未設定）');
-        }
-      } else {
-        test.skip(true, 'ストーリーボタン未検出');
-      }
+      await page.getByTestId('btn-free-battle').click();
+      await stabilize(page);
+      await assertNoHorizontalOverflow(page);
+      await expect(page).toHaveScreenshot(`free-char-select-${vp.name}.png`, {
+        maxDiffPixelRatio: 0.01,
+      });
     });
 
-    test('VsScreen 2v2 全体が視認可能 + 横スクロールなし', async ({ page }) => {
+    test('ゲーム画面（Canvas + Scoreboard）で横スクロールなし + スクショ', async ({ page }) => {
       await page.goto('/air-hockey');
       await stabilize(page);
-      const pairBtn = page.getByRole('button', { name: /ペアマッチ/ });
-      if (await pairBtn.count() > 0) {
-        await pairBtn.click();
-        await stabilize(page);
-        // TeamSetupScreen → 開始ボタン
-        const startBtn = page.getByRole('button', { name: /開始|スタート/ }).first();
-        if (await startBtn.count() > 0) {
-          await startBtn.click();
-          await stabilize(page);
-          await assertNoHorizontalOverflow(page);
-          await expect(page).toHaveScreenshot(`vs-2v2-${vp.name}.png`, {
-            maxDiffPixelRatio: 0.01,
-          });
-        } else {
-          test.skip(true, '開始ボタン到達不能');
-        }
-      } else {
-        test.skip(true, 'ペアマッチボタン未検出');
-      }
+      await page.getByTestId('btn-free-battle').click();
+      await page.getByTestId('btn-free-battle-confirm').click();
+      await expect(page.getByTestId('air-hockey-canvas')).toBeVisible({ timeout: 10000 });
+      await stabilize(page);
+      await assertNoHorizontalOverflow(page);
+      // Canvas のコンテンツは毎フレーム変化するため VRT は不向き。
+      // レイアウト（Scoreboard 等）の確認のみに留め、maxDiffPixelRatio を緩く設定。
+      await expect(page).toHaveScreenshot(`game-${vp.name}.png`, {
+        maxDiffPixelRatio: 0.2,  // Canvas 動的コンテンツ許容
+      });
     });
 
-    test('ResultScreen のレイアウト確認は手動 E2E で実施', async ({ page }) => {
-      // ResultScreen はゲーム完了後にのみ表示され、自動フローでの到達が困難。
-      // 仕様: 手動で対戦完了後にスクショ取得
+    test('ResultScreen 到達確認（試合完了まで約 20 秒）', async ({ page }) => {
+      // ResultScreen は試合完了（3 点先取）まで実ゲーム進行が必要。
+      // CI 実行時間の観点から test.fixme とし、手動または専用モードで実行。
+      test.fixme(true, 'ResultScreen の自動到達は時間がかかるため、手動実行 or 専用テストモード追加（将来）');
       await page.goto('/air-hockey');
       await stabilize(page);
       await assertNoHorizontalOverflow(page);
-      test.info().annotations.push({
-        type: 'note',
-        description: 'ResultScreen は手動テストで到達。自動化は別 PR で検討',
-      });
     });
   });
 }

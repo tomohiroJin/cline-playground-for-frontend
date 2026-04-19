@@ -160,7 +160,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
       </ButtonGroup>
     </OptionContainer>
 
-    <StartButton onClick={onStart}>フリー対戦</StartButton>
+    <StartButton onClick={onStart} data-testid="btn-free-battle">フリー対戦</StartButton>
 
     {onStoryClick && (
       <StartButton

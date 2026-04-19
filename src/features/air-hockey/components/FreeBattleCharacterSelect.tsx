@@ -278,7 +278,7 @@ export const FreeBattleCharacterSelect: React.FC<FreeBattleCharacterSelectProps>
       </div>
 
       {/* 対戦開始ボタン */}
-      <button style={styles.startButton} onClick={handleConfirm}>
+      <button style={styles.startButton} onClick={handleConfirm} data-testid="btn-free-battle-confirm">
         対戦開始！
       </button>
     </div>

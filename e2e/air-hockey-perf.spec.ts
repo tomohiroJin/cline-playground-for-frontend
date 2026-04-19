@@ -2,7 +2,6 @@
  * Air Hockey パフォーマンス計測 E2E（S9-C1-3）
  *
  * 手動実行: `npm run test:e2e:perf`
- * CI スキップ前提（実機プレイ + 実測が必要）。
  *
  * 仕様: .docs/ah-20260419-01/spec.md S9-C1-4
  * - `?perf=1` で PerfProbe を有効化
@@ -30,8 +29,17 @@ type PerfSnapshot = {
   devicePixelRatio: number;
 };
 
-async function waitForGameLoop(page: Page, durationSec: number): Promise<void> {
-  await page.waitForTimeout(durationSec * 1000);
+/**
+ * フリー対戦フロー経由でゲーム画面に到達（Codex P1-3 対応: 実到達型）
+ */
+async function navigateToGame(page: Page): Promise<void> {
+  await page.goto('/air-hockey?perf=1');
+  // フリー対戦ボタン
+  await page.getByTestId('btn-free-battle').click();
+  // キャラ選択 → 対戦開始
+  await page.getByTestId('btn-free-battle-confirm').click();
+  // Canvas が出現するまで待つ（ゲーム画面到達確認）
+  await expect(page.getByTestId('air-hockey-canvas')).toBeVisible({ timeout: 10000 });
 }
 
 async function getPerfSnapshot(page: Page): Promise<PerfSnapshot | null> {
@@ -44,51 +52,42 @@ async function getPerfSnapshot(page: Page): Promise<PerfSnapshot | null> {
 test.describe.configure({ mode: 'serial' });
 
 test.describe('Air Hockey パフォーマンス計測', () => {
-  test.beforeEach(async ({ page }) => {
-    // perf モードで起動
-    await page.goto('/air-hockey?perf=1');
+  test('フリー対戦で 10 秒走らせて PerfProbe スナップショットを取得', async ({ page }) => {
+    await navigateToGame(page);
+
+    // 10 秒ゲームループを走らせる（カウントダウン 3 秒 + プレイ 7 秒）
+    await page.waitForTimeout(10_000);
+
+    const snap = await getPerfSnapshot(page);
+    expect(snap).not.toBeNull();
+    if (!snap) return;
+
+    // eslint-disable-next-line no-console
+    console.log('perf-free-battle:', JSON.stringify(snap, null, 2));
+    // サンプル数は 60fps × 10 秒 ≒ 600 だが、カウントダウン除外で > 30 を確認
+    expect(snap.sampleCount).toBeGreaterThan(30);
   });
 
-  test('1v1 Original で 10 秒計測（spot-check）', async ({ page }) => {
-    // TitleScreen → フリー対戦フローの最短到達（data-testid 経由推奨）
-    // 実装では計測開始前にゲーム画面に到達する必要がある
-    // ここでは仕様のハーネス骨格のみ提供
-    await waitForGameLoop(page, 10);
+  test('スナップショット形状が仕様通り', async ({ page }) => {
+    await navigateToGame(page);
+    await page.waitForTimeout(5_000);
     const snap = await getPerfSnapshot(page);
-    // Game がまだ起動していない場合は null が返るのでスキップ
-    test.skip(snap === null, 'ゲーム未起動のためスキップ（手動操作で到達必要）');
-    if (snap) {
-      // eslint-disable-next-line no-console
-      console.log('perf-1v1-original', JSON.stringify(snap, null, 2));
-      expect(snap.sampleCount).toBeGreaterThan(30);
-    }
-  });
+    expect(snap).not.toBeNull();
+    if (!snap) return;
 
-  test('2v2 Original で 10 秒計測（spot-check）', async ({ page }) => {
-    await waitForGameLoop(page, 10);
-    const snap = await getPerfSnapshot(page);
-    test.skip(snap === null, 'ゲーム未起動のためスキップ（手動操作で到達必要）');
-    if (snap) {
-      // eslint-disable-next-line no-console
-      console.log('perf-2v2-original', JSON.stringify(snap, null, 2));
-      expect(snap.sampleCount).toBeGreaterThan(30);
-    }
-  });
-
-  test('perf スナップショットが仕様通りの形状で返る', async ({ page }) => {
-    await waitForGameLoop(page, 5);
-    const snap = await getPerfSnapshot(page);
-    test.skip(snap === null, 'ゲーム未起動のためスキップ');
-    if (snap) {
-      expect(snap).toMatchObject({
-        fps: expect.any(Number),
-        p50: expect.objectContaining({ total: expect.any(Number) }),
-        p95: expect.objectContaining({ total: expect.any(Number) }),
-        p99: expect.objectContaining({ total: expect.any(Number) }),
-        tbt: expect.any(Number),
-        longTaskCount: expect.any(Number),
-        devicePixelRatio: expect.any(Number),
-      });
-    }
+    expect(snap).toMatchObject({
+      fps: expect.any(Number),
+      p50: expect.objectContaining({
+        physics: expect.any(Number),
+        ai: expect.any(Number),
+        render: expect.any(Number),
+        total: expect.any(Number),
+      }),
+      p95: expect.objectContaining({ total: expect.any(Number) }),
+      p99: expect.objectContaining({ total: expect.any(Number) }),
+      tbt: expect.any(Number),
+      longTaskCount: expect.any(Number),
+      devicePixelRatio: expect.any(Number),
+    });
   });
 });
