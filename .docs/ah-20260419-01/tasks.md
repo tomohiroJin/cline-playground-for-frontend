@@ -190,9 +190,9 @@
 
 ### S9-B2: 透過アーティファクト除去（輪郭近傍限定）
 
-- ⬜ S9-B2-1a: `scripts/air-hockey/audit-portrait-fringe.ts` を新規作成
-- ⬜ S9-B2-1b: 半透明境界ピクセル抽出ロジック実装（spec.md B2-1）
-- ⬜ S9-B2-1c: 白フリンジ / 黒ずみカウント実装
+- ✅ S9-B2-1a: `scripts/air-hockey/audit-portrait-fringe.ts` を新規作成
+- ✅ S9-B2-1b: 半透明境界ピクセル抽出ロジック実装（spec.md B2-1）
+- ✅ S9-B2-1c: 白フリンジ / 黒ずみカウント実装
 - ⬜ S9-B2-1d: 22 枚走査 → OK/NG/理由テーブルを `.docs/ah-20260419-01/portrait-audit.md` に出力
 
 **処理（NG キャラのみ）**:
@@ -270,9 +270,9 @@
 
 **useGameLoop への組み込み**（実体: `presentation/hooks/useGameLoop.ts`）:
 
-- ⬜ S9-C1-2a: `?perf=1` 時のみ PerfProbe を有効化
-- ⬜ S9-C1-2b: 物理/AI/描画の各セクションで begin/end を挿入
-- ⬜ S9-C1-2c: 既存 FPS 表示を拡張して p50/p95/p99 / TBT / heap / DPR も表示
+- ✅ S9-C1-2a: `?perf=1` 時のみ PerfProbe を有効化
+- ✅ S9-C1-2b: 物理/AI/描画の各セクションで begin/end を挿入
+- ✅ S9-C1-2c: 既存 FPS 表示を拡張して p50/p95/p99 / TBT / heap / DPR も表示
 
 **E2E 計測**:
 
@@ -294,12 +294,12 @@
 
 ### S9-C2: パフォーマンス最適化
 
-- ⬜ S9-C2-1a: 計測結果からボトルネック（physics / ai / render）を特定
+- ✅ S9-C2-1a: 計測結果からボトルネック（physics / ai / render）を特定
 - ⬜ S9-C2-1b: 候補 1〜4 の優先順位を決定（1〜2 施策に限定、Codex P1）
 
 **施策実施（優先度順）**:
 
-- ⬜ S9-C2-2a: 選定した施策 1 つ目を実装
+- ✅ S9-C2-2a: 選定した施策 1 つ目を実装
 - ⬜ S9-C2-2b: 計測再実施 → 改善幅を記録
 - ⬜ S9-C2-2c: 2 つ目が必要なら実装（成功基準達成なら 1 つで止める）
 - ⬜ S9-C2-2d: OffscreenCanvas を使う場合は機能検出フォールバック確認（iOS Safari）
