@@ -31,15 +31,20 @@ type PerfSnapshot = {
 
 /**
  * フリー対戦フロー経由でゲーム画面に到達（Codex P1-3 対応: 実到達型）
+ *
+ * `?e2e=1` は Transition / カウントダウン演出を短縮するためのフラグで、
+ * これが無いと初回 Transition の演出により btn-free-battle 表示が遅延する。
  */
 async function navigateToGame(page: Page): Promise<void> {
-  await page.goto('/air-hockey?perf=1');
+  await page.goto('/air-hockey?e2e=1&perf=1');
   // フリー対戦ボタン
+  await expect(page.getByTestId('btn-free-battle')).toBeVisible({ timeout: 10_000 });
   await page.getByTestId('btn-free-battle').click();
   // キャラ選択 → 対戦開始
+  await expect(page.getByTestId('btn-free-battle-confirm')).toBeVisible({ timeout: 10_000 });
   await page.getByTestId('btn-free-battle-confirm').click();
   // Canvas が出現するまで待つ（ゲーム画面到達確認）
-  await expect(page.getByTestId('air-hockey-canvas')).toBeVisible({ timeout: 10000 });
+  await expect(page.getByTestId('air-hockey-canvas')).toBeVisible({ timeout: 10_000 });
 }
 
 async function getPerfSnapshot(page: Page): Promise<PerfSnapshot | null> {
