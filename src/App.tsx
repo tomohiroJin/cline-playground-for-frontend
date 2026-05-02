@@ -388,6 +388,15 @@ const App: React.FC = () => {
               >
                 Gallery NIKU9 桜花-Click
               </SisterSiteLink>
+              {' ／ '}
+              <span aria-hidden="true">📺</span>{' '}
+              <SisterSiteLink
+                href="https://www.youtube.com/@toukanoemonogatari"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                灯火の絵物語
+              </SisterSiteLink>
             </SisterSiteRow>
             <CopyrightRow>&copy; 2026 niku9.click All Rights Reserved.</CopyrightRow>
           </Footer>
