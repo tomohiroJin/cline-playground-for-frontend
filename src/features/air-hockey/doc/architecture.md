@@ -15,7 +15,10 @@ src/features/air-hockey/
     types.ts              # 型定義
     achievements.ts       # 実績システム（定義・判定・localStorage 管理）
     audio-settings.ts     # 音量設定（localStorage 管理）
+    canvas-fonts.ts       # Canvas 描画用フォントスタック（S9-V-4: DOM と統一した Inter + Noto Sans JP）
     characters.ts         # キャラクター定義（主人公・対戦相手・リアクション・ALWAYS_UNLOCKED_IDS）
+    design-tokens.ts      # air-hockey 固有デザイントークン（S9-D: 既存 styles/tokens/ を参照し AH_TOKENS に集約）
+    i18n-strings.ts       # Canvas / UI 表示文字列の一元管理（S9-V-3: AH_STRINGS、将来の多言語対応準備）
     daily-challenge.ts    # デイリーチャレンジ（シード生成・ルール・結果保存）
     dialogue-data.ts      # ストーリーモード第1章ダイアログデータ
     difficulty-adjust.ts  # 難易度オートアジャスト（連勝/連敗判定）
@@ -29,6 +32,7 @@ src/features/air-hockey/
     unlock.ts             # フィールド/アイテムアンロック（条件・状態管理）
   hooks/
     useInput.ts           # マウス/タッチ入力ハンドリング
+    useReducedMotion.ts   # prefers-reduced-motion の状態を返すフック（S9-D: 各コンポーネントの一元化）
     useKeyboardInput.ts   # キーボード入力（isMultiPlayerMode でキーマッピング切替）
     useMultiTouchInput.ts # マルチタッチ入力（2P/2v2 用画面分割）
     useGamepadInput.ts    # ゲームパッド入力管理（接続/切断イベント・トースト通知）
@@ -48,6 +52,7 @@ src/features/air-hockey/
       usePairMatchSetup.ts   # 2v2 ペアマッチのデフォルトキャラ算出（S8-1）
       useGameHandlers.ts     # 全画面遷移イベントハンドラの集約（S8-1）
   components/
+    CanvasLiveRegion.tsx  # Canvas 内容をスクリーンリーダーに露出（S9-V-2: aria-live DOM 同期）
     Field.tsx             # フィールド描画（Canvas、シェイク）
     ResultScreen.tsx       # リザルト画面（1v1/2P/2v2 対応、4体立ち絵、チーム区切り）
     Scoreboard.tsx         # スコアボード（ポーズボタン）
@@ -118,7 +123,7 @@ gameMode !== '2p-local' の場合:
 
 ## テスト
 
-355テスト（全フェーズ合計）:
+プロジェクト全体で 617 スイート / 約 7900+ tests（S9 までの累計）。
 
 | テストファイル | 対象 |
 |--------------|------|
@@ -129,7 +134,7 @@ gameMode !== '2p-local' の場合:
 | `core/AI.test.ts` | AI ロジック |
 | `core/ai-configurable.test.ts` | AI 設定可能インターフェース |
 | `core/Physics.test.ts` | 物理演算 |
-| `core/entities.test.ts` | エンティティ |
+| `core/entities.test.ts` | エンティティ（マレット-マレット衝突の AABB 事前除外を含む） |
 | `core/items.test.ts` | アイテムシステム |
 | `core/characters.test.ts` | キャラクターデータ整合性 |
 | `core/story.test.ts` | ストーリー進行ロジック |
@@ -138,9 +143,30 @@ gameMode !== '2p-local' の場合:
 | `core/story-balance.test.ts` | バランス設定テスト |
 | `core/integration.test.ts` | クロスモジュール統合テスト |
 | `core/visual-effects.test.ts` | ヒットストップ・スローモーション |
+| **`core/design-tokens.test.ts`**（S9-D） | AH_TOKENS と既存グローバルトークン参照の整合性 |
+| **`core/i18n-strings.test.ts`**（S9-V-3） | AH_STRINGS の定数検証 |
+| **`core/canvas-fonts.test.ts`**（S9-V-4） | Inter / Noto Sans JP / 絵文字フォールバックと debugInfo 分離 |
+| **`core/perf-probe.test.ts`**（S9-C1） | FPS / p50/p95/p99 / TBT / DPR 計算 |
+| **`hooks/useReducedMotion.test.ts`**（S9-D） | matchMedia イベント購読 |
+| **`components/CanvasLiveRegion.test.tsx`**（S9-V-2） | aria-live / aria-atomic 属性、role を付けない検証 |
 | `components/StageSelectScreen.test.tsx` | ステージ選択画面 |
 | `components/DialogueOverlay.test.tsx` | ダイアログオーバーレイ |
-| `components/VsScreen.test.tsx` | VS 画面 |
+| `components/VsScreen.test.tsx` | VS 画面（2v2 モバイル + aria-label） |
+| `chapter2-dialogue-data.test.ts` | 第 2 章ダイアログ + S9-S 補強検証 |
+
+### E2E / VRT（S9-V-1 / S9-C1-3）
+
+| ファイル | 対象 |
+|---|---|
+| `e2e/air-hockey-visual.spec.ts` | 4 viewport × 主要画面の VRT スクショ比較 + scrollWidth 検証 |
+| `e2e/air-hockey-perf.spec.ts` | PerfProbe スナップショット取得（`npm run test:e2e:perf`） |
+
+### 補助スクリプト（S9-B2）
+
+| ファイル | 対象 |
+|---|---|
+| `scripts/air-hockey/audit-portrait-fringe.ts` | ポートレート画像の白フリンジ・黒ずみ検出（閾値 2%） |
+| `scripts/__tests__/audit-portrait-fringe.test.ts` | 純粋関数部分の単体テスト |
 
 ## リファクタリング方針（CR-06）
 

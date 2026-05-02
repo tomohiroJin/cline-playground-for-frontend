@@ -227,3 +227,79 @@
 
 - 強打（パック速度 > 8）時に3フレームのヒットストップ＋衝撃波演出
 - ゴール時に 400ms のスローモーション＋ビネット効果
+
+## S9 で追加された機能（2026-04-19）
+
+### デザイントークン基盤（S9-D）
+
+- `src/features/air-hockey/core/design-tokens.ts` で air-hockey 固有の `AH_TOKENS` を定義
+- 既存グローバルトークン（`src/styles/tokens/`）を参照する方針で重複定義を防止
+- アニメーション原則: `enter` (200ms) / `exit` (150ms) / `emphasis` (300ms) の 3 種のみ
+- `hooks/useReducedMotion.ts` で `prefers-reduced-motion` 対応を一元化
+
+### アクセシビリティ強化（S9-V-2）
+
+- `components/CanvasLiveRegion.tsx` を追加
+- Canvas で描画されるゲーム状態（スコア・ゲームパッドトースト・勝敗）を `aria-live` で DOM に露出
+- スクリーンリーダーでゲーム進行を把握可能
+- スコア変化は `polite`、ゲーム終了は `assertive` で通知
+
+### i18n 準備（S9-V-3）
+
+- `core/i18n-strings.ts` で Canvas 描画される日本語・英語文字列を一元管理
+- `AH_STRINGS.common / player / playerAria / game` の 4 カテゴリ
+- 実翻訳は未実施（将来の Jotai atom 注入に備えた構造のみ）
+
+### Canvas フォント統一（S9-V-4）
+
+- `core/canvas-fonts.ts` で `FONT_STACK_BODY` / `FONT_STACK_HEADING` / `CANVAS_FONTS` を提供
+- DOM と Canvas の書体を統一（Inter + Noto Sans JP + 絵文字フォールバック）
+- `renderer.ts` / `ui-renderer.ts` の Arial ハードコードを全面排除
+
+### VsScreen 2v2 モバイルレスポンシブ（S9-A1）
+
+- styled-components ベースで 600px 以下は縦積みレイアウト
+- 立ち絵サイズは `max-width: min(45vw, 240px)` で動的
+- VS テキストは `clamp()` で流動タイポ
+- `useReducedMotion` フックでアニメーション制御を一元化
+
+### ゲームパッドトースト通知の強化（S9-A2）
+
+- ゲーム画面 Canvas 上にトースト描画（既存実装を `CanvasLiveRegion` と連携）
+- 接続/切断が支援技術にも読み上げられる
+
+### 操作タイプ表示統一（S9-A3）
+
+- 内部語彙: `p2` / `p3` / `p4`（スロット識別）
+- 表示文字列: `2P` / `3P` / `4P`（日本ゲーム慣習）
+- `aria-label`: 「プレイヤー2（WASD/タッチ）」など詳細説明
+- TeamSetupScreen の人間ボタンは `aria-pressed` / `aria-disabled` 付与
+
+### VRT（Visual Regression Testing）基盤（S9-V-1）
+
+- `e2e/air-hockey-visual.spec.ts` で 4 viewport × 主要画面のスクショ比較
+- `reducedMotion: 'reduce'` + アニメーション強制停止で flaky 対策
+- `375x667 / 393x852 / 768x1024 / 1280x720` の 4 解像度
+- `assertNoHorizontalOverflow` ヘルパで `scrollWidth <= innerWidth` 検証
+
+### パフォーマンス計測基盤（S9-C1）
+
+- `core/perf-probe.ts` で `physics` / `ai` / `render` / `total` セクション別計測
+- p50 / p95 / p99 + TBT（Total Blocking Time）+ Heap + DPR 集計
+- `?perf=1` URL パラメータで有効化
+- `window.__ahPerfSnapshot` に snapshot を expose（E2E 用）
+- `e2e/air-hockey-perf.spec.ts` + `npm run test:e2e:perf`
+
+### パフォーマンス最適化（S9-C2 一部）
+
+- パーティクル上限を 2v2 時に半減、フィーバー時は 1.5 倍許容
+- マレット-マレット衝突判定に AABB 事前除外（`Math.sqrt` 呼び出し削減）
+
+### シナリオ補強（S9-S）
+
+第 2 章ストーリーの整合性向上:
+- アキラの準々決勝勝利を Stage 2-3 preDialogue に追加
+- リクの台詞を Stage 2-4 preDialogue に追加（詳細は `story-mode.md`）
+- ユウの勝利祝辞を Stage 2-4 postWin に追加
+- カナタ戦の会話フロー再構成
+- 冗長な `expression: 'normal'` 指定の削除

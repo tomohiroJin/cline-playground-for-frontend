@@ -88,6 +88,8 @@ export function resolveMalletMalletOverlaps(
       const b = mallets[j].mallet;
       const dx = b.x - a.x;
       const dy = b.y - a.y;
+      // S9-C2 候補 4: AABB 事前除外（sqrt コスト回避）
+      if (Math.abs(dx) >= minDist || Math.abs(dy) >= minDist) continue;
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist >= minDist) continue;
 

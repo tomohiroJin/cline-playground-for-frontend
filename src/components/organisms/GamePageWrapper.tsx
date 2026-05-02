@@ -9,6 +9,15 @@ import { useGameStructuredData } from '../../hooks/useGameStructuredData';
 /** localStorage のキー接頭辞 */
 const NOTICE_ACCEPTED_PREFIX = 'game-notice-accepted:';
 
+/**
+ * E2E テストモード判定（`?e2e=1` で初回モーダルをスキップ）
+ * VRT / パフォーマンス計測で実画面到達を安定化するための設定値。
+ */
+const isE2ETestMode = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return new URLSearchParams(window.location.search).has('e2e');
+};
+
 interface GamePageWrapperProps {
   readonly children: React.ReactNode;
 }
@@ -26,6 +35,8 @@ export const GamePageWrapper: React.FC<GamePageWrapperProps> = ({ children }) =>
 
   const [isAccepted, setIsAccepted] = useState(() => {
     if (!notice) return true;
+    // E2E テストモードでは注意書きモーダルをスキップ
+    if (isE2ETestMode()) return true;
     return localStorage.getItem(storageKey) === 'true';
   });
 
@@ -39,6 +50,10 @@ export const GamePageWrapper: React.FC<GamePageWrapperProps> = ({ children }) =>
   // パス変更時に受諾状態をリセット
   useEffect(() => {
     if (!notice) {
+      setIsAccepted(true);
+      return;
+    }
+    if (isE2ETestMode()) {
       setIsAccepted(true);
       return;
     }

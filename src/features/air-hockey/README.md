@@ -21,6 +21,8 @@ CPU対戦型のエアホッケーゲーム。
 | Step 1 | フィールドリサイズ（600x1200） | ✅ 完了 |
 | Step 4 | ペアマッチ（2v2）基盤 | ✅ 完了 |
 | Step 5 | ペアマッチ完成版（S5-1〜S5-12） | ✅ 完了 |
+| S8 | AirHockeyGame リファクタ + 第 2 章実装 | ✅ 完了 |
+| S9 | UI/UX デザイン深化・VRT・A11y・パフォーマンス基盤 | ✅ 実装完了（実機検証残） |
 
 ### Phase 0: 世界観・キャラクター設定整備 ✅
 
@@ -44,12 +46,23 @@ CPU対戦型のエアホッケーゲーム。
 
 ### 未実装の機能
 
-- ストーリー第 2 章（地区大会編・新キャラ 3 名）
+- ~~ストーリー第 2 章（地区大会編・新キャラ 3 名）~~ → **S8-3 で実装済み**
 - ~~CPU 戦略の深い個性化~~ → **S6-3 で実装済み**（defenseStyle / deflectionBias / reactionDelay / teamRole）
-- VsScreen 2v2 レスポンシブ対応（モバイル）
-- ~~パフォーマンス最適化~~ → **S6-4 で一部実装**（quickReject / FPS カウンター / 定期再計算）
-- VsScreen の P3/P4 操作タイプラベル表示
-- ゲームパッド接続/切断トースト通知の Canvas 描画
+- ~~VsScreen 2v2 レスポンシブ対応（モバイル）~~ → **S9-A1 で実装済み**（styled-components + `min(45vw, 240px)` + `clamp()`）
+- ~~パフォーマンス最適化~~ → **S6-4 + S9-C2 で実装**（quickReject 拡張 / PerfProbe 基盤 / パーティクル上限動的化）
+- ~~VsScreen の P3/P4 操作タイプラベル表示~~ → **S9-A3 で実装済み**（内部語彙 + `aria-label` 併用）
+- ~~ゲームパッド接続/切断トースト通知の Canvas 描画~~ → **S9-A2 で実装済み**（`CanvasLiveRegion` で支援技術にも露出）
+
+### S9 で追加された基盤（2026-04-19）
+
+- **デザイントークン**: `core/design-tokens.ts`（既存 `styles/tokens/` への再エクスポート中心）
+- **アクセシビリティ**: `components/CanvasLiveRegion.tsx`（aria-live で Canvas 状態を露出）
+- **i18n 準備**: `core/i18n-strings.ts`（Canvas 描画文字列の一元化）
+- **Canvas フォント統一**: `core/canvas-fonts.ts`（Inter + Noto Sans JP + 絵文字フォールバック）
+- **パフォーマンス計測**: `core/perf-probe.ts`（`?perf=1` で physics/ai/render 別 p50/p95/p99/TBT/DPR 表示）
+- **VRT**: `e2e/air-hockey-visual.spec.ts`（4 viewport、reduced-motion 強制）
+- **perf E2E**: `e2e/air-hockey-perf.spec.ts` + `npm run test:e2e:perf`
+- **portrait 監査**: `scripts/air-hockey/audit-portrait-fringe.ts`（白フリンジ/黒ずみ検出）
 
 ## 既知の問題
 
@@ -60,7 +73,8 @@ CPU対戦型のエアホッケーゲーム。
 - **VS用画像の品質**: 現在は透過済み立ち絵からのトリミングで代用しており、専用イラストではない
 - **勝利カットインが第1章分のみ**: `victory-ch1.png` のみ存在。第2章以降は未作成
 - **透過処理のアーティファクト**: クロマキー方式（グリーンバック/ブルーバック→透過変換）のため、輪郭部分に微細な色残りが発生している箇所がある
-- **ユウのVS用画像が未作成**: `/assets/vs/yuu-vs.png` が存在しない（第2章で登場予定のため未作成）
+  - **S9-B2 で audit スクリプトを追加**: `scripts/air-hockey/audit-portrait-fringe.ts`（実行: `npx ts-node`、閾値 2% で NG キャラを特定可能）
+- ~~**ユウのVS用画像が未作成**~~: `/assets/vs/yuu-vs.png` は実装済（第 2 章投入時に作成）
 
 ## ドキュメント
 
@@ -72,6 +86,7 @@ CPU対戦型のエアホッケーゲーム。
 | [機能詳細](./doc/features.md) | UI演出・実績・デイリーチャレンジ・アンロック等の各機能 |
 | [アーキテクチャ](./doc/architecture.md) | ファイル構成・状態管理・使用技術・テスト |
 | [ストーリーモード](./doc/story-mode.md) | ストーリーモードの仕様・キャラクター・バランス設定 |
+| [デザインシステム](./doc/design-system.md) | S9 デザイントークン・アニメーション原則・チェックリスト |
 
 ### 世界観・設定ドキュメント
 

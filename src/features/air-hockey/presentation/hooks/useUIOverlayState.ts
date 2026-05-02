@@ -8,6 +8,12 @@ import { useState, useCallback } from 'react';
 import { isTutorialCompleted } from '../../components/Tutorial';
 import type { GamePhase } from '../../core/types';
 
+/** E2E テストモード判定（`?e2e=1` でチュートリアルをスキップ） */
+const isE2ETestMode = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return new URLSearchParams(window.location.search).has('e2e');
+};
+
 export type UseUIOverlayStateReturn = {
   showHelp: boolean;
   setShowHelp: (v: boolean) => void;
@@ -29,7 +35,10 @@ export const useUIOverlayState = (
   phaseRef: React.MutableRefObject<GamePhase>,
 ): UseUIOverlayStateReturn => {
   const [showHelp, setShowHelp] = useState(false);
-  const [showTutorial, setShowTutorial] = useState(!isTutorialCompleted());
+  // E2E テストモードではチュートリアルをスキップ
+  const [showTutorial, setShowTutorial] = useState(
+    isE2ETestMode() ? false : !isTutorialCompleted(),
+  );
   const [isHelpMode, setIsHelpMode] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);

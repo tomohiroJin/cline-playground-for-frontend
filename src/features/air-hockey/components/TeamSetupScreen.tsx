@@ -9,6 +9,7 @@ import type { Character } from '../core/types';
 import type { TeamRole } from '../core/character-ai-profiles';
 import { getCharacterAiProfile } from '../core/character-ai-profiles';
 import { ALWAYS_UNLOCKED_IDS } from '../core/characters';
+import { AH_TOKENS } from '../core/design-tokens';
 import { screenLayout } from './screen-layout';
 import { teamSetupStyles as styles } from './team-setup-screen-styles';
 
@@ -51,8 +52,9 @@ const RoleBadge: React.FC<{ characterId: string; size?: number }> = ({ character
 type SlotId = 'p2' | 'p3' | 'p4';
 
 /** チームカラー */
-const TEAM1_COLOR = '#3498db';
-const TEAM2_COLOR = '#e74c3c';
+// v4: Gemini M2-M4 レビュー高優先度反映 — AH_TOKENS へ統合
+const TEAM1_COLOR = AH_TOKENS.team.a;
+const TEAM2_COLOR = AH_TOKENS.team.b;
 
 /** P2 操作タイプ */
 type AllyControlType = 'cpu' | 'human';
@@ -144,7 +146,7 @@ const CharacterSlot: React.FC<{
   );
 };
 
-/** CPU/人間 切り替えトグル（全プレイヤー共通） */
+/** CPU/人間 切り替えトグル（全プレイヤー共通、S9-A3 で aria-label と disabled 強化） */
 const ControlToggle: React.FC<{
   label: string;
   humanLabel: string;
@@ -154,14 +156,25 @@ const ControlToggle: React.FC<{
   disabledHint?: string;
 }> = ({ label, humanLabel, controlType, onChange, canEnable = true, disabledHint }) => (
   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', marginTop: '4px' }}>
-    <span style={{ fontSize: '12px', color: '#888' }}>{label} 操作:</span>
+    <span style={{ fontSize: '12px', color: '#b4b4b4' }}>{label} 操作:</span>
     <div style={styles.controlToggle}>
-      <button style={styles.controlButton(controlType === 'cpu')} onClick={() => onChange('cpu')}>CPU</button>
       <button
-        style={{ ...styles.controlButton(controlType === 'human'), opacity: canEnable ? 1 : 0.4 }}
+        style={styles.controlButton(controlType === 'cpu')}
+        onClick={() => onChange('cpu')}
+        aria-pressed={controlType === 'cpu'}
+      >
+        CPU
+      </button>
+      <button
+        style={{ ...styles.controlButton(controlType === 'human'), opacity: canEnable ? 1 : 0.4, cursor: canEnable ? 'pointer' : 'not-allowed' }}
         onClick={() => { if (canEnable) onChange('human'); }}
+        disabled={!canEnable}
+        aria-pressed={controlType === 'human'}
+        aria-disabled={!canEnable}
         title={!canEnable ? (disabledHint ?? 'ゲームパッドを接続してください') : undefined}
-      >{humanLabel}</button>
+      >
+        {humanLabel}
+      </button>
     </div>
   </div>
 );

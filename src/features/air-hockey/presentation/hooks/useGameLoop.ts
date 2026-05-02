@@ -20,6 +20,8 @@ import { ITEMS } from '../../core/config';
 import { magnitude, randomRange, clamp } from '../../../../utils/math-utils';
 import { Renderer } from '../../renderer';
 import type { GamepadToast } from '../../hooks/useGamepadInput';
+import { PerfProbe } from '../../core/perf-probe';
+import { CANVAS_FONTS } from '../../core/canvas-fonts';
 import type {
   GameState,
   FieldConfig,
@@ -42,8 +44,13 @@ import { calculateKeyboardMovement, KEYBOARD_MOVE_SPEED } from '../../core/keybo
 const randomChoice = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
 // カウントダウン定数
-const COUNTDOWN_DURATION = 3000;
-const GO_DISPLAY_DURATION = 500;
+// E2E テスト時は `?e2e=1` で短縮（VRT の flaky 対策）
+const isE2ETestMode = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return new URLSearchParams(window.location.search).has('e2e');
+};
+const COUNTDOWN_DURATION = isE2ETestMode() ? 50 : 3000;
+const GO_DISPLAY_DURATION = isE2ETestMode() ? 50 : 500;
 
 // シェイク定数
 const GOAL_SHAKE_INTENSITY = 8;
@@ -171,10 +178,16 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
     const PUCK_STUCK_THRESHOLD = 30; // 約0.5秒
     const puckStuckCounters = puckStuckCountersRef.current;
 
-    // パーティクル生成の定数
-    const OBSTACLE_PARTICLE_COUNT = 12;
-    const SHIELD_PARTICLE_COUNT = 8;
-    const GOAL_PARTICLE_COUNT = 20;
+    // パーティクル生成の定数（S9-C2 候補 3: 2v2 時半減で描画負荷を抑制）
+    // is2v2Mode は既存の bool フラグを再利用（依存配列に含まれ済み）
+    const is2v2 = is2v2Mode;
+    const particleScale = is2v2 ? 0.5 : 1;
+    const OBSTACLE_PARTICLE_COUNT = Math.round(12 * particleScale);
+    const SHIELD_PARTICLE_COUNT = Math.round(8 * particleScale);
+    const GOAL_PARTICLE_COUNT = Math.round(20 * particleScale);
+    // パーティクル配列の上限（フィーバー時のみ 1.5 倍許容）
+    const PARTICLE_LIMIT_DEFAULT = is2v2 ? 80 : 160;
+    const PARTICLE_LIMIT_FEVER = Math.round(PARTICLE_LIMIT_DEFAULT * 1.5);
 
     const sound = getSound();
 
@@ -356,16 +369,23 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
     // 勝利判定後の遅延遷移タイマー（クリーンアップ用に追跡）
     let resultTimerId: ReturnType<typeof setTimeout> | null = null;
 
-    // R-5: パフォーマンス計測基盤（開発モードのみ）
-    const PERF_ENABLED = process.env.NODE_ENV === 'development';
+    // R-5 + S9-C1: パフォーマンス計測基盤
+    // 開発モード or URL ?perf=1 で有効化（Codex P1-3 対応）
+    const hasPerfFlag = typeof window !== 'undefined'
+      && new URLSearchParams(window.location.search).has('perf');
+    const PERF_ENABLED = process.env.NODE_ENV === 'development' || hasPerfFlag;
+    const perfProbe = PERF_ENABLED ? new PerfProbe() : null;
+    perfProbe?.attachLongTaskObserver();
     let fpsFrameCount = 0;
     let fpsLastTime = performance.now();
     let currentFps = 0;
 
     const gameLoop = () => {
+      perfProbe?.begin('total');
       const game = gameRef.current;
       const ctx = canvasRef.current?.getContext('2d');
       if (!game || !ctx) {
+        perfProbe?.end('total');
         animationRef = requestAnimationFrame(gameLoop);
         return;
       }
@@ -475,6 +495,11 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         p.life--;
         if (p.life <= 0) game.particles.splice(i, 1);
       }
+      // S9-C2 候補 3: 上限超過分は寿命の短い古い方から切り捨て（フィーバー時は 1.5 倍許容）
+      const particleLimit = game.fever.active ? PARTICLE_LIMIT_FEVER : PARTICLE_LIMIT_DEFAULT;
+      if (game.particles.length > particleLimit) {
+        game.particles.splice(0, game.particles.length - particleLimit);
+      }
 
       // 障害物復活チェック
       const respawnMs = field.obstacleRespawnMs ?? consts.TIMING.OBSTACLE_RESPAWN;
@@ -511,6 +536,8 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         applyKeyboardMovement(game, keysRef, lastInputRef);
       }
 
+      // S9-C1: AI/入力セクション計測開始
+      perfProbe?.begin('ai');
       if (is2v2Mode) {
         // ── 2v2 モード入力 ──
         const isAllyHuman = allyControlType === 'human';
@@ -639,7 +666,10 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
           game.cpuStuckTimer = cpuUpdate.cpuStuckTimer;
         }
       }
+      perfProbe?.end('ai');
 
+      // S9-C1: 物理計算セクション計測開始
+      perfProbe?.begin('physics');
       // マレット移動後、衝突処理前にパックとの食い込みを解消（パックを弾く）
       // effectiveMR を使い、processCollisions との二重衝突を防止
       // S6-4-6: quickReject で遠いペアをスキップ
@@ -883,7 +913,9 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         );
       }
 
-      // 描画
+      // 物理計算終了 → 描画開始（S9-C1）
+      perfProbe?.end('physics');
+      perfProbe?.begin('render');
       Renderer.clear(ctx, consts, now);
       Renderer.drawField(ctx, field, consts, game.obstacleStates, now);
       Renderer.drawEffectZones(ctx, game.effects, now, consts);
@@ -918,6 +950,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       if (showHelp) {
         Renderer.drawHelp(ctx, consts, field);
       }
+      perfProbe?.end('render');
 
       // ゴール判定とスコア更新
       if (scored) {
@@ -996,7 +1029,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
         }
       }
 
-      // R-5: FPS 計測（開発モードのみ）
+      // R-5 + S9-C1: FPS / p50/p95/p99 / TBT / heap / DPR 表示
       if (PERF_ENABLED && ctx) {
         fpsFrameCount++;
         const fpsNow = performance.now();
@@ -1005,13 +1038,32 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
           fpsFrameCount = 0;
           fpsLastTime = fpsNow;
         }
+        perfProbe?.commit();
+        const snap = perfProbe?.snapshot();
         ctx.save();
         ctx.fillStyle = '#0f0';
-        ctx.font = '12px monospace';
+        ctx.font = CANVAS_FONTS.debugInfo;
         ctx.fillText(`FPS: ${currentFps}`, 8, 16);
+        if (snap && snap.sampleCount > 30) {
+          // S9-C1 仕様準拠: p50/p95/p99 全てと physics/ai/render セクション表示
+          const fmt = (v: number) => v.toFixed(1);
+          ctx.fillText(`p50 total: ${fmt(snap.p50.total)}ms  phy:${fmt(snap.p50.physics)} ai:${fmt(snap.p50.ai)} ren:${fmt(snap.p50.render)}`, 8, 30);
+          ctx.fillText(`p95 total: ${fmt(snap.p95.total)}ms`, 8, 44);
+          ctx.fillText(`p99 total: ${fmt(snap.p99.total)}ms`, 8, 58);
+          ctx.fillText(`TBT: ${snap.tbt.toFixed(0)}ms  LT: ${snap.longTaskCount}`, 8, 72);
+          ctx.fillText(`DPR: ${snap.devicePixelRatio}`, 8, 86);
+          if (snap.heapUsed !== undefined) {
+            ctx.fillText(`Heap: ${snap.heapUsed}MB`, 8, 100);
+          }
+        }
         ctx.restore();
+        // E2E 計測用に window へ expose（Codex P1-3）
+        if (typeof window !== 'undefined' && snap) {
+          (window as unknown as { __ahPerfSnapshot?: typeof snap }).__ahPerfSnapshot = snap;
+        }
       }
 
+      perfProbe?.end('total');
       animationRef = requestAnimationFrame(gameLoop);
     };
 
@@ -1021,6 +1073,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       if (resultTimerId !== null) {
         clearTimeout(resultTimerId);
       }
+      perfProbe?.detachLongTaskObserver();
     };
   }, [screen, diff, field, winScore, showHelp, getSound,
       gameRef, canvasRef, lastInputRef, scoreRef,
