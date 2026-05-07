@@ -43,6 +43,7 @@ import { usePairMatchSetup } from './hooks/usePairMatchSetup';
 import { useGameHandlers } from './hooks/useGameHandlers';
 import { TitleScreen } from '../components/TitleScreen';
 import { TeamSetupScreen } from '../components/TeamSetupScreen';
+import { CanvasLiveRegion } from '../components/CanvasLiveRegion';
 import { Scoreboard } from '../components/Scoreboard';
 import { Field } from '../components/Field';
 import { ResultScreen } from '../components/ResultScreen';
@@ -76,6 +77,11 @@ const AirHockeyGame: React.FC = () => {
   const [shake, setShake] = useState<ShakeState | null>(null);
   const [preloadUrls, setPreloadUrls] = useState<string[]>([]);
   useImagePreloader(preloadUrls);
+
+  // ── Canvas A11y ライブリージョン（S9-V-2 / S9-A2）──
+  // スコア変化・ゲームパッドトースト・勝敗を aria-live で露出
+  const [liveMessage, setLiveMessage] = useState<string>('');
+  const [livePoliteness, setLivePoliteness] = useState<'polite' | 'assertive'>('polite');
 
   // ── Ref ──
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -157,6 +163,29 @@ const AirHockeyGame: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [screen, togglePause]);
+
+  // スコア変化を aria-live で通知（S9-V-2）
+  useEffect(() => {
+    if (screen !== 'game') return;
+    if (scores.p === 0 && scores.c === 0) return;
+    setLivePoliteness('polite');
+    setLiveMessage(`スコア プレイヤー ${scores.p} 対 相手 ${scores.c}`);
+  }, [scores.p, scores.c, screen]);
+
+  // ゲームパッドトーストを aria-live に転送（S9-A2）
+  useEffect(() => {
+    if (!gamepadToast) return;
+    setLivePoliteness('polite');
+    setLiveMessage(gamepadToast.message);
+  }, [gamepadToast]);
+
+  // 勝敗確定を assertive で通知（S9-V-2）
+  useEffect(() => {
+    if (!winner) return;
+    setLivePoliteness('assertive');
+    const label = winner === 'player' ? '勝利' : '敗北';
+    setLiveMessage(`ゲーム終了：${label}`);
+  }, [winner]);
 
   // ── イベントハンドラ ──
   const handlers = useGameHandlers({
@@ -388,6 +417,7 @@ const AirHockeyGame: React.FC = () => {
             cpuColor={is2PMode ? mode.player2Character?.color : undefined}
           />
           <Field canvasRef={canvasRef} onInput={handleInput} shake={shake} />
+          <CanvasLiveRegion message={liveMessage} politeness={livePoliteness} />
         </>
       )}
 

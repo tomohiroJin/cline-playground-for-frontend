@@ -36,6 +36,7 @@ export const Field: React.FC<FieldProps> = ({ canvasRef, onInput, shake }) => {
       role="img"
       aria-label="エアホッケーゲーム画面"
       tabIndex={0}
+      data-testid="air-hockey-canvas"
       style={{ transform: getShakeTransform() }}
     />
   );

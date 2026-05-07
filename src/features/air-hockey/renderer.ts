@@ -1,5 +1,7 @@
 import { CONSTANTS, GameConstants } from './core/constants';
 import { ITEMS } from './core/config';
+import { FONT_STACK_BODY, FONT_STACK_HEADING } from './core/canvas-fonts';
+import { AH_STRINGS } from './core/i18n-strings';
 import {
   FieldConfig,
   GameEffects,
@@ -410,7 +412,7 @@ export const Renderer = {
     this.drawCircle(ctx, item.x, item.y, IR * pulse, item.color);
     ctx.fillStyle = '#fff';
     const s2 = getDrawScale(consts);
-    ctx.font = `bold ${Math.round(14 * s2)}px Arial`;
+    ctx.font = `bold ${Math.round(14 * s2)}px ${FONT_STACK_BODY}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(item.icon, item.x, item.y);
@@ -419,7 +421,7 @@ export const Renderer = {
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
     const s = getDrawScale(consts);
     ctx.textAlign = 'center';
-    ctx.font = `bold ${Math.round(12 * s)}px Arial`;
+    ctx.font = `bold ${Math.round(12 * s)}px ${FONT_STACK_BODY}`;
     const playerEff = effects.player;
     if (playerEff.speed && now - playerEff.speed.start < playerEff.speed.duration) {
       const remaining = Math.ceil(
@@ -449,7 +451,7 @@ export const Renderer = {
     const item = ITEMS.find(i => i.id === flash.type);
     if (item) {
       const s = getDrawScale(consts);
-      ctx.font = `bold ${Math.round(18 * s)}px Arial`;
+      ctx.font = `bold ${Math.round(18 * s)}px ${FONT_STACK_BODY}`;
       ctx.textAlign = 'center';
       ctx.fillStyle = `rgba(255,255,255,${alpha})`;
       ctx.fillText(`${item.icon} ${item.name}!`, W / 2, H / 2);
@@ -466,14 +468,14 @@ export const Renderer = {
     ctx.fillRect(0, 0, W, H);
     const s = getDrawScale(consts);
     ctx.textAlign = 'center';
-    ctx.font = `bold ${Math.round(36 * s)}px Arial`;
+    ctx.font = `bold ${Math.round(36 * s)}px ${FONT_STACK_BODY}`;
     const textY = H / 2 + Math.sin(elapsed * 0.01) * Math.round(10 * s);
     ctx.fillStyle = isPlayerGoal ? '#00ffff' : '#ff4444';
     ctx.shadowColor = isPlayerGoal ? '#00ffff' : '#ff0000';
     ctx.shadowBlur = Math.round(20 * s);
-    ctx.fillText(isPlayerGoal ? 'GOAL!' : 'LOSE...', W / 2, textY);
-    ctx.font = `bold ${Math.round(20 * s)}px Arial`;
-    ctx.fillText(isPlayerGoal ? '🎉 +1 Pt!' : '😢 -1 Pt', W / 2, textY + Math.round(40 * s));
+    ctx.fillText(isPlayerGoal ? AH_STRINGS.common.goal : AH_STRINGS.game.lose, W / 2, textY);
+    ctx.font = `bold ${Math.round(20 * s)}px ${FONT_STACK_BODY}`;
+    ctx.fillText(isPlayerGoal ? AH_STRINGS.game.goalBonus : AH_STRINGS.game.goalPenalty, W / 2, textY + Math.round(40 * s));
     ctx.shadowBlur = 0;
   },
   drawHelp(ctx: CanvasRenderingContext2D, consts: GameConstants = CONSTANTS, field?: FieldConfig) {
@@ -485,17 +487,17 @@ export const Renderer = {
 
     // タイトル
     ctx.fillStyle = '#fff';
-    ctx.font = `bold ${Math.round(18 * s)}px Arial`;
-    ctx.fillText('How to Play', W / 2, Math.round(36 * s));
+    ctx.font = `bold ${Math.round(18 * s)}px ${FONT_STACK_BODY}`;
+    ctx.fillText(AH_STRINGS.game.howToPlay, W / 2, Math.round(36 * s));
 
-    ctx.font = `${Math.round(12 * s)}px Arial`;
+    ctx.font = `${Math.round(12 * s)}px ${FONT_STACK_BODY}`;
     ctx.fillStyle = '#ccc';
-    ctx.fillText('Hit the puck into the opponent\'s goal!', W / 2, Math.round(58 * s));
+    ctx.fillText(AH_STRINGS.game.helpHint, W / 2, Math.round(58 * s));
 
     // アイテム一覧
-    ctx.font = `bold ${Math.round(14 * s)}px Arial`;
+    ctx.font = `bold ${Math.round(14 * s)}px ${FONT_STACK_BODY}`;
     ctx.fillStyle = 'var(--accent-color, #00d4ff)';
-    ctx.fillText('-- Items --', W / 2, Math.round(86 * s));
+    ctx.fillText(AH_STRINGS.game.itemsHeader, W / 2, Math.round(86 * s));
 
     const items = [
       { icon: '◆', name: 'Split', color: '#FF6B6B', desc: 'Puck splits into 3' },
@@ -513,12 +515,12 @@ export const Renderer = {
       const item = items[i];
       const y = startY + i * lineH;
       // アイコン + 名前
-      ctx.font = `bold ${Math.round(13 * s)}px Arial`;
+      ctx.font = `bold ${Math.round(13 * s)}px ${FONT_STACK_BODY}`;
       ctx.fillStyle = item.color;
       ctx.fillText(`${item.icon} ${item.name}`, Math.round(30 * s), y);
       // 説明
-      ctx.font = `${Math.round(11 * s)}px Arial`;
-      ctx.fillStyle = '#aaa';
+      ctx.font = `${Math.round(11 * s)}px ${FONT_STACK_BODY}`;
+      ctx.fillStyle = '#b4b4b4';
       ctx.fillText(item.desc, Math.round(150 * s), y);
     }
 
@@ -526,11 +528,11 @@ export const Renderer = {
     if (field) {
       const fieldY = startY + items.length * lineH + Math.round(16 * s);
       ctx.textAlign = 'center';
-      ctx.font = `bold ${Math.round(14 * s)}px Arial`;
+      ctx.font = `bold ${Math.round(14 * s)}px ${FONT_STACK_BODY}`;
       ctx.fillStyle = field.color;
       ctx.fillText(`Field: ${field.name}`, W / 2, fieldY);
 
-      ctx.font = `${Math.round(11 * s)}px Arial`;
+      ctx.font = `${Math.round(11 * s)}px ${FONT_STACK_BODY}`;
       ctx.fillStyle = '#999';
       const traits: string[] = [];
       if (field.obstacles.length > 0) traits.push(`${field.obstacles.length} obstacles`);
@@ -543,9 +545,9 @@ export const Renderer = {
 
     // フッタ
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#888';
-    ctx.font = `${Math.round(12 * s)}px Arial`;
-    ctx.fillText('Tap to Resume', W / 2, H - Math.round(20 * s));
+    ctx.fillStyle = '#b4b4b4';
+    ctx.font = `${Math.round(12 * s)}px ${FONT_STACK_BODY}`;
+    ctx.fillText(AH_STRINGS.game.tapToResume, W / 2, H - Math.round(20 * s));
   },
   drawFeverEffect(ctx: CanvasRenderingContext2D, active: boolean, now: number, consts: GameConstants = CONSTANTS) {
     if (!active) return;
@@ -556,13 +558,13 @@ export const Renderer = {
     const s = getDrawScale(consts);
     ctx.save();
     ctx.textAlign = 'center';
-    ctx.font = `bold ${Math.round(24 * s)}px Arial`;
+    ctx.font = `bold ${Math.round(24 * s)}px ${FONT_STACK_HEADING}`;
     const textHue = (now * 0.2) % 360;
     ctx.fillStyle = `hsl(${textHue}, 100%, 60%)`;
     ctx.shadowColor = `hsl(${textHue}, 100%, 50%)`;
     ctx.shadowBlur = Math.round(15 * s);
     const bounce = Math.sin(now * 0.005) * Math.round(5 * s);
-    ctx.fillText('FEVER TIME!', W / 2, Math.round(30 * s) + bounce);
+    ctx.fillText(AH_STRINGS.game.feverTime, W / 2, Math.round(30 * s) + bounce);
     ctx.shadowBlur = 0;
     ctx.restore();
   },
@@ -580,7 +582,7 @@ export const Renderer = {
   // カウントダウン描画
   drawCountdown(ctx: CanvasRenderingContext2D, countdownValue: number, elapsed: number, consts: GameConstants = CONSTANTS) {
     const { WIDTH: W, HEIGHT: H } = consts.CANVAS;
-    const text = countdownValue > 0 ? String(countdownValue) : 'GO!';
+    const text = countdownValue > 0 ? String(countdownValue) : AH_STRINGS.game.countdown('GO');
     const phaseProgress = (elapsed % 1000) / 1000;
 
     // スケールアニメーション: 拡大→縮小
@@ -597,13 +599,13 @@ export const Renderer = {
     const s = getDrawScale(consts);
     if (countdownValue > 0) {
       // 数字: 白色
-      ctx.font = `bold ${Math.round(80 * s)}px Arial`;
+      ctx.font = `bold ${Math.round(80 * s)}px ${FONT_STACK_HEADING}`;
       ctx.fillStyle = '#ffffff';
       ctx.shadowColor = '#00d4ff';
       ctx.shadowBlur = Math.round(30 * s);
     } else {
       // GO!: ネオンカラー
-      ctx.font = `bold ${Math.round(90 * s)}px Arial`;
+      ctx.font = `bold ${Math.round(90 * s)}px ${FONT_STACK_HEADING}`;
       ctx.fillStyle = '#00ff88';
       ctx.shadowColor = '#00ff88';
       ctx.shadowBlur = Math.round(40 * s);
@@ -626,19 +628,19 @@ export const Renderer = {
 
     // PAUSED テキスト
     const s = getDrawScale(consts);
-    ctx.font = `bold ${Math.round(48 * s)}px Arial`;
+    ctx.font = `bold ${Math.round(48 * s)}px ${FONT_STACK_HEADING}`;
     ctx.fillStyle = '#ffffff';
     ctx.shadowColor = '#00d4ff';
     ctx.shadowBlur = Math.round(20 * s);
-    ctx.fillText('PAUSED', W / 2, H / 2 - Math.round(60 * s));
+    ctx.fillText(AH_STRINGS.game.paused, W / 2, H / 2 - Math.round(60 * s));
     ctx.shadowBlur = 0;
 
     // メニューオプション
-    ctx.font = `bold ${Math.round(20 * s)}px Arial`;
+    ctx.font = `bold ${Math.round(20 * s)}px ${FONT_STACK_BODY}`;
     ctx.fillStyle = '#00d4ff';
-    ctx.fillText('Tap to Resume', W / 2, H / 2 + Math.round(20 * s));
-    ctx.fillStyle = '#888888';
-    ctx.font = `${Math.round(16 * s)}px Arial`;
+    ctx.fillText(AH_STRINGS.game.tapToResume, W / 2, H / 2 + Math.round(20 * s));
+    ctx.fillStyle = '#b4b4b4';
+    ctx.font = `${Math.round(16 * s)}px ${FONT_STACK_BODY}`;
     ctx.fillText('Press ESC or P to toggle', W / 2, H / 2 + Math.round(60 * s));
 
     ctx.restore();
@@ -664,7 +666,7 @@ export const Renderer = {
 
     const s = getDrawScale(consts);
     const scale = 1 + Math.sin(now * 0.01) * 0.1;
-    ctx.font = `bold ${Math.floor(28 * s * scale)}px Arial`;
+    ctx.font = `bold ${Math.floor(28 * s * scale)}px ${FONT_STACK_BODY}`;
     ctx.fillStyle = color;
     ctx.shadowColor = color;
     ctx.shadowBlur = Math.round(15 * s);

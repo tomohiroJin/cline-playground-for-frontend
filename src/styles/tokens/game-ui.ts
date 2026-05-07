@@ -52,6 +52,10 @@ export const gameUiVariables = `
   --game-mystery-hover: #AF72C5;
   --game-mystery-active: #8748A0;
   --game-mystery-disabled: #7A6680;
+
+  /* 対戦チーム（2v2 / 2P モードのチーム色、対戦視認性を優先しダーク/ライト共通） */
+  --game-team-a: #3498DB;
+  --game-team-b: #E74C3C;
 `;
 
 /** styled-components 内でタイポ防止に使う TypeScript 定数 */
@@ -80,4 +84,6 @@ export const gameUi = {
   mysteryHover: 'var(--game-mystery-hover)',
   mysteryActive: 'var(--game-mystery-active)',
   mysteryDisabled: 'var(--game-mystery-disabled)',
+  teamA: 'var(--game-team-a)',
+  teamB: 'var(--game-team-b)',
 } as const;

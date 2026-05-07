@@ -10,6 +10,12 @@ type TransitionProps = {
   children: React.ReactNode;
 };
 
+/** E2E テストモード判定（`?e2e=1` で遷移を即時完了させる） */
+const isE2ETestMode = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return new URLSearchParams(window.location.search).has('e2e');
+};
+
 const getTransitionStyles = (type: TransitionType, phase: 'enter' | 'exit'): React.CSSProperties => {
   const isEnter = phase === 'enter';
   switch (type) {
@@ -25,10 +31,12 @@ const getTransitionStyles = (type: TransitionType, phase: 'enter' | 'exit'): Rea
 export const Transition: React.FC<TransitionProps> = ({
   isActive,
   type,
-  duration = 300,
+  duration: rawDuration = 300,
   onComplete,
   children,
 }) => {
+  // E2E モード時は遷移を即時完了（VRT の flaky 対策）
+  const duration = isE2ETestMode() ? 0 : rawDuration;
   const [visible, setVisible] = useState(isActive);
   const [phase, setPhase] = useState<'enter' | 'exit'>(isActive ? 'enter' : 'exit');
   const onCompleteRef = useRef(onComplete);

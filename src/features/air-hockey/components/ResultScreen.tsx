@@ -84,7 +84,7 @@ const getMvpCategory = (stats: MatchStats): { label: string; value: string } | u
 const StatRow: React.FC<{ label: string; playerValue: string | number; cpuValue: string | number }> = ({ label, playerValue, cpuValue }) => (
   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
     <span style={{ color: '#3498db', fontWeight: 'bold', width: '60px', textAlign: 'right' }}>{playerValue}</span>
-    <span style={{ color: '#888', fontSize: '0.85rem' }}>{label}</span>
+    <span style={{ color: '#b4b4b4', fontSize: '0.85rem' }}>{label}</span>
     <span style={{ color: '#e74c3c', fontWeight: 'bold', width: '60px', textAlign: 'left' }}>{cpuValue}</span>
   </div>
 );
@@ -330,11 +330,11 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
         {/* 統計（カウントアップアニメーション付き） */}
         {stats && (
           <div style={{ width: '100%', marginBottom: '1.5rem', padding: '12px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px' }}>
-            <p style={{ color: '#aaa', fontSize: '0.8rem', textAlign: 'center', marginBottom: '8px', fontWeight: 'bold' }}>MATCH STATS</p>
+            <p style={{ color: '#b4b4b4', fontSize: '0.8rem', textAlign: 'center', marginBottom: '8px', fontWeight: 'bold' }}>MATCH STATS</p>
             <StatRow label="Hits" playerValue={animHits} cpuValue={animCpuHits} />
             <StatRow label="Saves" playerValue={animSaves} cpuValue={animCpuSaves} />
             <StatRow label="Items" playerValue={animPlayerItems} cpuValue={animCpuItems} />
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginTop: '8px', color: '#aaa', fontSize: '0.8rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginTop: '8px', color: '#b4b4b4', fontSize: '0.8rem' }}>
               <span>Max Speed: {stats.maxPuckSpeed.toFixed(1)}</span>
               <span>Time: {formatTime(stats.matchDuration)}</span>
             </div>
@@ -361,7 +361,7 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
                 <span style={{ fontSize: '1.2rem' }}>{a.icon}</span>
                 <div>
                   <span style={{ color: '#ffd700', fontWeight: 'bold', fontSize: '0.85rem' }}>{a.name}</span>
-                  <span style={{ color: '#aaa', fontSize: '0.75rem', marginLeft: '8px' }}>{a.description}</span>
+                  <span style={{ color: '#b4b4b4', fontSize: '0.75rem', marginLeft: '8px' }}>{a.description}</span>
                 </div>
               </div>
             ))}
