@@ -19,15 +19,19 @@
 
 実装計画を最終確定させるための、コードリーディング中心のタスク。
 
-- [ ] 📚 spec.md §12 のチェック項目を順に実施し、結果を `.docs/rg-20260508-01/precheck-notes.md` に追記する
+- [ ] 📚 spec.md §12 のチェック項目を順に実施し、結果を一時ファイル `.docs/rg-20260508-01/precheck-notes.md`（仮称）に追記する
   - [ ] `RaceConfig` の現フィールドを列挙
   - [ ] `GamePhase` Sum 型の定義位置と現メンバ
   - [ ] `race-handler.ts` のラップ完了時 draft トリガ箇所（行番号付き）
   - [ ] `score-repository` の保存キー命名規則
   - [ ] `cardsEnabled` の全参照箇所（grep で網羅）
   - [ ] チェックポイントヒット検出箇所（時間延長フックポイント候補）
-- [ ] 📝 上記調査結果に応じて spec.md を補正（必要なら）
-- [ ] 📝 ステージカタログ（spec.md §2.2）の数値（時間・ボーナス）を **プレイテストなしの初期案** として確定。Phase 2 のチューニングで調整する前提を明文化
+  - [ ] **既存コースの実距離計測**（spec.md §2.2 注釈の `baseTimePerPoint × coursePoints` で `initialTimeSec` を再算出）
+- [ ] 📝 上記調査結果に応じて spec.md を補正
+  - [ ] §2.2 ステージカタログの初期時間・チェックポイント延長を計測値ベースで上書き
+  - [ ] §12 のチェック結果（fact）を spec.md 該当節に取り込む
+- [ ] 📝 ステージカタログ（spec.md §2.2）の数値が Phase 0 の計測で確定する前提を明文化（暫定値は **初期案** と明示済 — §2.2 注釈参照）
+- [ ] 🗑️ Phase 0 完了時、`precheck-notes.md` の **重要な結論を spec.md に取り込んだ上で原本を削除する**（中間生成物の永続化を避ける、#23 対応）
 
 ---
 
@@ -55,11 +59,12 @@
   - [ ] `StageOutcome` 型と `evaluateStage(runtime, hasCrossedFinish)`
   - [ ] 🧪 `stage-progress.test.ts`: cleared / time_up / in_progress の 3 分岐
 - [ ] 🟦 `domain/race/campaign-progress.ts`
-  - [ ] `StageRecord` / `StageRank` / `CampaignProgress` 型
+  - [ ] `StageRecord` / `StageRank` / `CampaignProgress` 型（`completed` フィールドは持たない、§2.3）
   - [ ] `unlockNextStage(progress, clearedId)` 純粋関数
   - [ ] `updateBestRecord(progress, stageId, newRecord)` 純粋関数（ベスト更新条件: `newTime < oldTime`）
-  - [ ] `isCampaignCompleted(progress)`: 全 8 クリア判定
-  - [ ] 🧪 `campaign-progress.test.ts`: アンロック / ベスト更新 / 完了判定
+  - [ ] **派生関数** `isCampaignCompleted(progress)`: 全 8 クリア判定（`highestUnlocked === 8 && records[8].rank !== 'NONE'`）
+  - [ ] **派生関数** `resetProgress()`: 初期進捗を返す（RESET PROGRESS 動作用）
+  - [ ] 🧪 `campaign-progress.test.ts`: アンロック / ベスト更新 / 完了判定 / リセット
 - [ ] 🟦 `domain/race/lives.ts`（軽量）
   - [ ] `decrementLives` / `isGameOver`
   - [ ] 🧪 `lives.test.ts`
@@ -120,6 +125,10 @@
   - [ ] 8 ステージのグリッド表示
   - [ ] アンロック状態 / ベストタイム / ランクアイコン表示
   - [ ] 選択 → ステージ開始
+  - [ ] **画面到達時に lives を 3 にリセット** する処理を実装（spec §2.4）
+  - [ ] **ロックステージのクリック挙動**（`DENIED` SE + トースト 1.5 秒、spec §6.2）
+  - [ ] `[BACK TO MENU]` / `[RESET PROGRESS]` ボタン
+  - [ ] `isCampaignCompleted` のとき `[VIEW ENDING]` ボタンを表示
 - [ ] 🟧 `components/StageHud.tsx`
   - [ ] 残り時間表示（10 秒以下で点滅）
   - [ ] ステージ番号 / 1 ラップ進捗
@@ -128,7 +137,7 @@
 - [ ] 🟧 `components/StageClearOverlay.tsx`
   - [ ] タイム表示 + ランク表示 + Continue ボタン
 - [ ] 🟧 `components/GameOverOverlay.tsx`
-  - [ ] Retry / Stage Select ボタン
+  - [ ] `[STAGE SELECT]` ボタンのみ（Retry は出さない、spec §6.6）
 - [ ] 🟧 `components/EndingScreen.tsx`（簡易版）
   - [ ] "CONGRATULATIONS! YOU CLEARED ALL 8 STAGES." + メニューに戻るボタン
 - [ ] 🟧 `presentation/RacingGameCampaign.tsx`
@@ -166,16 +175,21 @@
 ### 2.3 BGM / SE 統合
 
 - [ ] 🟨 既存 `audio-engine.ts` を拡張、ステージ別 BGM の再生を追加（リソースが揃わない場合は難度別 3 種で開始）
-- [ ] 🟨 警告音: 残り 10 秒以下で 1 秒ごとに「ピッピッ」
+- [ ] 🟨 警告音: 残り 10 秒以下で 1 秒ごとに「ピッ」、CP 通過で 10 秒超に戻ったら **即座に停止**（spec §7.3）
 - [ ] 🟨 クリアファンファーレ / ゲームオーバー音 / エンディング BGM
-- [ ] 🧪 audio-engine の単体テスト（鳴らす Trigger が呼ばれること）
+- [ ] 🟨 `DENIED` SE（ロックステージクリック用、spec §6.2）
+- [ ] 🧪 audio-engine の単体テスト（鳴らす Trigger が呼ばれること、警告音の停止条件）
 
 ### 2.4 エンディング本実装
 
+- [ ] 📚 ドライバーキャラクターシート（spec §6.7.1）に従って独白テキストを執筆
+  - [ ] 各ステージ `Stage.intro` を最終決定（縦糸シンボル「夜明け」関連語を含む、最大全角 56 字）
+  - [ ] エンディング独白 3 画面（spec §6.7.2 のテンプレに準拠、各 60 字以内）
 - [ ] 🟧 `EndingScreen.tsx` を強化
-  - [ ] 黒背景フェードイン → 1 行独白 × 3 → "THANK YOU FOR PLAYING" → クレジットロール
+  - [ ] 黒背景フェードイン → 独白 × 3 → "THANK YOU FOR PLAYING" → クレジットロール
   - [ ] スキップ可能
 - [ ] 🟧 ステージ一覧 + 自分の記録（ベストタイム + ランク）も表示
+- [ ] 🟧 ランク集計表示（GOLD ×N / SILVER ×N / BRONZE ×N、spec §6.7）
 
 ### 2.5 タイマー切れ後の Grace 期間（Rad Racer 模倣）
 
@@ -222,19 +236,21 @@
 
 このタスクリストはチェックリストとしてそのまま使う。完了したら `[ ]` を `[x]` に変更してコミットする。
 
-PR 単位の目安:
+PR 単位の目安と依存関係（#22 対応）:
 
-| PR # | スコープ | 対応タスク |
-|------|---------|----------|
-| PR-1 | Phase 0 + Phase 1.1〜1.2（ドメイン + 主要 Use Case） | TDD で純粋関数 + テスト |
-| PR-2 | Phase 1.3〜1.5（race-handler 分岐 + Phase 拡張 + 永続化） | 既存テスト全件緑を必須 |
-| PR-3 | Phase 1.6〜1.7（UI と受け入れテスト） | プレイ可能な状態に到達 |
-| PR-4 | Phase 2.1〜2.2（ステージ intro + ランク演出） |  |
-| PR-5 | Phase 2.3〜2.4（BGM + エンディング） |  |
-| PR-6 | Phase 2.5（grace 期間） | Rad Racer 風の 5 秒惰性 |
-| PR-7 | Phase 3.1（分岐） |  |
-| PR-8 | Phase 3.2（難易度） |  |
-| PR-9 | Phase 3.3（QA + E2E） |  |
+| PR # | スコープ | 対応タスク | 依存（前提となる PR） |
+|------|---------|----------|--------------------|
+| PR-1 | Phase 0 + Phase 1.1〜1.2（ドメイン + 主要 Use Case） | TDD で純粋関数 + テスト | — |
+| PR-2 | Phase 1.3〜1.5（race-handler 分岐 + Phase 拡張 + 永続化） | 既存テスト全件緑を必須 | PR-1 |
+| PR-3 | Phase 1.6〜1.7（UI と受け入れテスト） | プレイ可能な状態に到達 | PR-2 |
+| PR-4 | Phase 2.1〜2.2（ステージ intro + ランク演出） |  | PR-3 |
+| PR-5 | Phase 2.3〜2.4（BGM + エンディング独白） | キャラクターシート §6.7.1 と独白テンプレ §6.7.2 を厳守 | PR-3 |
+| PR-6 | Phase 2.5（grace 期間） | Rad Racer 風の 5 秒惰性 | PR-2 |
+| PR-7 | Phase 3.1（分岐） |  | PR-1（ドメイン拡張） + PR-3（UI 基盤） |
+| PR-8 | Phase 3.2（難易度） |  | PR-1 + PR-3 |
+| PR-9 | Phase 3.3（QA + E2E） |  | PR-3 以降のすべて |
+
+> 並列着手可能性: PR-4 / PR-5 / PR-6 は PR-3 完了後に **並列着手可能**。PR-7 / PR-8 は PR-1 のドメイン拡張内容に依存するため、PR-1 のレビューが終わるまで設計レビューを保留する。
 
 ---
 
