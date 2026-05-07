@@ -78,6 +78,37 @@ describe('App フッター', () => {
         expect.stringContaining('gallery.niku9.click')
       );
     });
+
+    it('YouTube チャンネル「灯火の絵物語」へのリンクが表示される', () => {
+      const footer = renderFooter();
+      const youtubeLink = within(footer).getByRole('link', {
+        name: /灯火の絵物語/,
+      });
+
+      expect(youtubeLink).toBeInTheDocument();
+    });
+
+    it('YouTube リンクが新しいタブで開く設定になっている', () => {
+      const footer = renderFooter();
+      const youtubeLink = within(footer).getByRole('link', {
+        name: /灯火の絵物語/,
+      });
+
+      expect(youtubeLink).toHaveAttribute('target', '_blank');
+      expect(youtubeLink).toHaveAttribute('rel', 'noopener noreferrer');
+    });
+
+    it('YouTube リンクが youtube.com/@toukanoemonogatari を指す', () => {
+      const footer = renderFooter();
+      const youtubeLink = within(footer).getByRole('link', {
+        name: /灯火の絵物語/,
+      });
+
+      expect(youtubeLink).toHaveAttribute(
+        'href',
+        'https://www.youtube.com/@toukanoemonogatari'
+      );
+    });
   });
 
   describe('下段: コピーライト', () => {
