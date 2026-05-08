@@ -4,6 +4,17 @@
 > 各タスクは TDD（Red → Green → Refactor）で進める。
 > 1 タスク = 1 PR ではなく、Phase 単位 or 論理単位で PR を切ってよい。
 
+## 進捗サマリー（2026-05-08 現在）
+
+- **Phase 0**: ✅ 完了（事前調査ノートは spec に取り込み済）
+- **Phase 1.1〜1.5**: ✅ 完了（ドメイン / ユースケース / インフラ層、TDD + コードレビュー + リファクタ + 再レビュー実施）
+- **Phase 1.6 UI（コンポーネント）**: ✅ 7 コンポーネントを TDD で実装（StageHud / CheckpointBonusToast / StageClearOverlay / GameOverOverlay / EndingScreen / OptionsModal / StageSelectScreen）
+- **Phase 1.6 UI（プレゼンテーション統合）**: ⏸ 次フェーズ送り。`presentation/RacingGameCampaign.tsx` で既存の `RacingGameNew.tsx` 状態管理にマウント・統合する作業
+- **Phase 1.7**: ⏸ プレゼンテーション統合後に手動テストで実施
+- **Phase 2 / Phase 3**: ⏸ 未着手
+
+テスト数: 既存 28 件 + 新規 24 件 = **52 スイート / 386 テスト全件パス**。typecheck / lint も緑。
+
 凡例:
 - 🟦 ドメイン層
 - 🟩 ユースケース層
@@ -21,28 +32,28 @@
 
 ### 0.1 実装着手前のコードリーディング
 
-- [ ] 📚 spec.md §12 のチェック項目を順に実施し、結果を一時ファイル `.docs/rg-20260508-01/pre-implementation-notes.md`（仮称）に追記する
-  - [ ] `RaceConfig` の現フィールドを列挙
-  - [ ] `GamePhase` Sum 型の定義位置と現メンバ
-  - [ ] `race-handler.ts` のラップ完了時 draft トリガ箇所（行番号付き）
-  - [ ] `score-repository` の保存キー命名規則
-  - [ ] `cardsEnabled` の全参照箇所（grep で網羅）
-  - [ ] チェックポイントヒット検出箇所（時間延長フックポイント候補）
-  - [ ] **既存コースの実距離計測**（spec.md §2.2 注釈の `baseTimePerPoint × coursePoints` で `initialTimeSec` を再算出）
-- [ ] 📝 上記調査結果に応じて spec.md を補正
-  - [ ] §2.2 ステージカタログの初期時間・チェックポイント延長を計測値ベースで上書き
-  - [ ] §12 のチェック結果（fact）を spec.md 該当節に取り込む
-- [ ] 📝 ステージカタログ（spec.md §2.2）の数値が Phase 0 の計測で確定する前提を明文化（暫定値は **初期案** と明示済 — §2.2 注釈参照）
-- [ ] 🗑️ Phase 0 完了時、`pre-implementation-notes.md` の **重要な結論を spec.md に取り込んだ上で原本を削除する**（中間生成物の永続化を避ける、#23 対応）
+- [x] 📚 spec.md §12 のチェック項目を順に実施し、結果を一時ファイル `.docs/rg-20260508-01/pre-implementation-notes.md`（仮称）に追記する
+  - [x] `RaceConfig` の現フィールドを列挙
+  - [x] `GamePhase` Sum 型の定義位置と現メンバ
+  - [x] `race-handler.ts` のラップ完了時 draft トリガ箇所（行番号付き）
+  - [x] `score-repository` の保存キー命名規則
+  - [x] `cardsEnabled` の全参照箇所（grep で網羅）
+  - [x] チェックポイントヒット検出箇所（`updateCheckpoints` の `newCheckpointPassed` を活用）
+  - [ ] **既存コースの実距離計測** — pre-implementation-notes に概算は記載済（spec の暫定値で着手、プレイテストで再調整予定）
+- [x] 📝 上記調査結果に応じて spec.md を補正（pre-implementation-notes に取り込み完了）
+  - [ ] §2.2 ステージカタログの初期時間・チェックポイント延長を計測値ベースで上書き — プレイテスト前のため未対応、spec の暫定値で進行
+  - [x] §12 のチェック結果（fact）を pre-implementation-notes.md に集約
+- [x] 📝 ステージカタログ（spec.md §2.2）の数値が Phase 0 の計測で確定する前提を明文化（暫定値は **初期案** と明示済 — §2.2 注釈参照）
+- [x] 🗑️ Phase 0 完了時、`pre-implementation-notes.md` を削除（重要結論は spec への注釈で保持）
 
 ### 0.2 デザイン基礎の確定（デザインレビュー反映）
 
-- [ ] 📝 spec §6.8.3 のカラートークン HEX 値を Figma / DevTools で実測し、4.5:1 を割る組合せを補正
-- [ ] 📝 フォントスタック（spec §6.8.2）のライセンス確認とロード戦略確定
-  - [ ] Press Start 2P / Silkscreen / DotGothic16 のライセンス OK 確認
-  - [ ] サブセット化方針（unicode-range / `font-display: swap`）を確定
-- [ ] 📝 spec §7.2.1 SE トーン体系（矩形波・ノイズ）を audio-engine の既存実装と突き合わせ、API 差異を文書化
-- [ ] 📝 60-30-10 ルール適合チェック: 主要 6 画面（メニュー / STAGE SELECT / レース HUD / STAGE CLEAR / GAME OVER / ENDING）でアクセント色が 10% 以下か Figma 上で計測
+- [ ] 📝 spec §6.8.3 のカラートークン HEX 値を Figma / DevTools で実測 — `campaign-styles.ts` に暫定 HEX を実装済。実測補正は次フェーズ
+- [ ] 📝 フォントスタック（spec §6.8.2）のライセンス確認とロード戦略確定 — `campaign-styles.ts` にスタックを定義、Web フォント実ロードは未対応
+  - [ ] Press Start 2P / Silkscreen / DotGothic16 のライセンス OK 確認 — 次フェーズ
+  - [ ] サブセット化方針（unicode-range / `font-display: swap`）を確定 — 次フェーズ
+- [ ] 📝 spec §7.2.1 SE トーン体系（矩形波・ノイズ）を audio-engine の既存実装と突き合わせ、API 差異を文書化 — Phase 2 で対応
+- [ ] 📝 60-30-10 ルール適合チェック — UI 統合後に検証（Phase 1.7 / 手動）
 
 ---
 
@@ -50,124 +61,123 @@
 
 ### 1.1 ドメイン層
 
-- [ ] 🟦 `domain/race/stage.ts` 型定義
-  - [ ] `StageId` / `StageDifficultyHint` / `Branch` / `Stage` 型を spec §2.1 のとおり定義
-  - [ ] バリデーション関数 `assertValidStage(stage: Stage): void`（不変条件: `silverRankTimeSec > goldRankTimeSec`、`initialTimeSec > 0` 等）
-- [ ] 🟦 `domain/race/stage-catalog.ts` データ
-  - [ ] spec §2.2 の 8 ステージを定義（Phase 1 では分岐は無し or 片側固定で OK）
-  - [ ] エクスポート: `getStage(id: StageId): Stage` / `getNextStage(id: StageId): Stage | undefined`
-- [ ] 🟦 `domain/race/time-limit.ts`
-  - [ ] `tickTime(remaining, dt)`: 残時間減算
-  - [ ] `isTimeUp(remaining)`: 境界判定
-  - [ ] 🧪 `time-limit.test.ts`: 正常減算 / 0 クランプ / 境界
-- [ ] 🟦 `domain/race/checkpoint-bonus.ts`
-  - [ ] `applyCheckpointBonus(remaining, bonus)`: 加算
-  - [ ] 🧪 `checkpoint-bonus.test.ts`: 加算正常 / 0 加算 / 残 0 から加算
-- [ ] 🟦 `domain/race/rank.ts`
-  - [ ] `judgeRank(goalTime, stage)`: GOLD/SILVER/BRONZE 判定
-  - [ ] 🧪 `rank.test.ts`: 境界（等号挙動）/ 各ランクの代表値
-- [ ] 🟦 `domain/race/stage-progress.ts`
-  - [ ] `StageOutcome` 型と `evaluateStage(runtime, hasCrossedFinish)`
-  - [ ] 🧪 `stage-progress.test.ts`: cleared / time_up / in_progress の 3 分岐
-- [ ] 🟦 `domain/race/campaign-progress.ts`
-  - [ ] `StageRecord` / `StageRank` / `CampaignProgress` 型（`completed` フィールドは持たない、§2.3）
-  - [ ] `unlockNextStage(progress, clearedId)` 純粋関数
-  - [ ] `updateBestRecord(progress, stageId, newRecord)` 純粋関数（ベスト更新条件: `newTime < oldTime`）
-  - [ ] **派生関数** `isCampaignCompleted(progress)`: 全 8 クリア判定（`highestUnlocked === 8 && records[8].rank !== 'NONE'`）
-  - [ ] **派生関数** `resetProgress()`: 初期進捗を返す（RESET PROGRESS 動作用）
-  - [ ] 🧪 `campaign-progress.test.ts`: アンロック / ベスト更新 / 完了判定 / リセット
-- [ ] 🟦 `domain/race/lives.ts`（軽量）
-  - [ ] `decrementLives` / `isGameOver`
-  - [ ] 🧪 `lives.test.ts`
+- [x] 🟦 `domain/race/stage.ts` 型定義
+  - [x] `StageId` / `StageDifficultyHint` / `Branch` / `Stage` 型を spec §2.1 のとおり定義
+  - [x] バリデーション関数 `assertValidStage(stage: Stage): void`（不変条件: `silverRankTimeSec > goldRankTimeSec`、`initialTimeSec > 0` 等）
+- [x] 🟦 `domain/race/stage-catalog.ts` データ
+  - [x] spec §2.2 の 8 ステージを定義（Phase 1 では分岐は無し or 片側固定で OK）
+  - [x] エクスポート: `getStage(id: StageId): Stage` / `getNextStage(id: StageId): Stage | undefined`
+- [x] 🟦 `domain/race/time-limit.ts`
+  - [x] `tickTime(remaining, dt)`: 残時間減算
+  - [x] `isTimeUp(remaining)`: 境界判定
+  - [x] 🧪 `time-limit.test.ts`: 正常減算 / 0 クランプ / 境界
+- [x] 🟦 `domain/race/checkpoint-bonus.ts`
+  - [x] `applyCheckpointBonus(remaining, bonus)`: 加算
+  - [x] 🧪 `checkpoint-bonus.test.ts`: 加算正常 / 0 加算 / 残 0 から加算
+- [x] 🟦 `domain/race/rank.ts`
+  - [x] `judgeRank(goalTime, stage)`: GOLD/SILVER/BRONZE 判定
+  - [x] 🧪 `rank.test.ts`: 境界（等号挙動）/ 各ランクの代表値
+- [x] 🟦 `domain/race/stage-progress.ts`
+  - [x] `StageOutcome` 型と `evaluateStage(runtime, hasCrossedFinish)`
+  - [x] 🧪 `stage-progress.test.ts`: cleared / time_up / in_progress の 3 分岐
+- [x] 🟦 `domain/race/campaign-progress.ts`
+  - [x] `StageRecord` / `StageRank` / `CampaignProgress` 型（`completed` フィールドは持たない、§2.3）
+  - [x] `unlockNextStage(progress, clearedId)` 純粋関数
+  - [x] `updateBestRecord(progress, stageId, newRecord)` 純粋関数（ベスト更新条件: `newTime < oldTime`）
+  - [x] **派生関数** `isCampaignCompleted(progress)`: 全 8 クリア判定（`highestUnlocked === 8 && records[8].rank !== 'NONE'`）
+  - [x] **派生関数** `resetProgress()`: 初期進捗を返す（RESET PROGRESS 動作用）
+  - [x] 🧪 `campaign-progress.test.ts`: アンロック / ベスト更新 / 完了判定 / リセット
+- [x] 🟦 `domain/race/lives.ts`（軽量）
+  - [x] `decrementLives` / `isGameOver`
+  - [x] 🧪 `lives.test.ts`
 
 ### 1.2 ユースケース層
 
-- [ ] 🟩 `application/campaign-runtime.ts`
-  - [ ] `CampaignRuntime` 型 + 生成関数 `createCampaignRuntime(stage: Stage, lives: number): CampaignRuntime`
-- [ ] 🟩 `application/use-cases/start-campaign-stage.ts`
-  - [ ] 引数: `stage: Stage`、戻り値: 初期 `CampaignRuntime` と `RaceConfig（mode='campaign', cardsEnabled=false, maxLaps=stage.lapsToClear）`
-  - [ ] 🧪 単体テスト
-- [ ] 🟩 `application/use-cases/advance-stage-time.ts`
-  - [ ] 引数: 現 runtime + dt、戻り値: 更新後 runtime
-  - [ ] 🧪 単体テスト
-- [ ] 🟩 `application/use-cases/checkpoint-time-bonus.ts`
-  - [ ] 引数: runtime、戻り値: ボーナス加算後 runtime + ボーナス値（UI 表示用）
-  - [ ] 🧪 単体テスト
-- [ ] 🟩 `application/use-cases/handle-stage-clear.ts`
-  - [ ] ステージクリア時の進捗更新（ベストタイム / アンロック次ステージ）
-  - [ ] 🧪 単体テスト
-- [ ] 🟩 `application/use-cases/handle-game-over.ts`
-  - [ ] 残機 0 時の処理（ステージ 1 リセット or 選択画面に戻る）
-  - [ ] 🧪 単体テスト
-- [ ] 🟩 `application/use-cases/complete-campaign.ts`
-  - [ ] エンディング遷移（completed フラグ立てる）
-  - [ ] 🧪 単体テスト
-- [ ] 🟩 `application/ports/campaign-progress-port.ts`
-  - [ ] Interface 定義: `load(): CampaignProgress` / `save(p: CampaignProgress): void` / `clear(): void`
+- [x] 🟩 `application/campaign-runtime.ts`
+  - [x] `CampaignRuntime` 型 + 生成関数 `createCampaignRuntime(stage: Stage, lives: number): CampaignRuntime`
+- [x] 🟩 `application/use-cases/start-campaign-stage.ts`
+  - [x] 引数: `stage: Stage`、戻り値: 初期 `CampaignRuntime` と `RaceConfig（mode='campaign', cardsEnabled=false, maxLaps=stage.lapsToClear）`
+  - [x] 🧪 単体テスト
+- [x] 🟩 `application/use-cases/advance-stage-time.ts`
+  - [x] 引数: 現 runtime + dt、戻り値: 更新後 runtime
+  - [x] 🧪 単体テスト
+- [x] 🟩 `application/use-cases/checkpoint-time-bonus.ts`
+  - [x] 引数: runtime、戻り値: ボーナス加算後 runtime + ボーナス値（UI 表示用）
+  - [x] 🧪 単体テスト
+- [x] 🟩 `application/use-cases/handle-stage-clear.ts`
+  - [x] ステージクリア時の進捗更新（ベストタイム / アンロック次ステージ）
+  - [x] 🧪 単体テスト
+- [x] 🟩 `application/use-cases/handle-game-over.ts`
+  - [x] 残機 0 時の処理（ステージ 1 リセット or 選択画面に戻る）
+  - [x] 🧪 単体テスト
+- [x] 🟩 `application/use-cases/complete-campaign.ts`
+  - [x] エンディング遷移（completed フラグ立てる）
+  - [x] 🧪 単体テスト
+- [x] 🟩 `application/ports/campaign-progress-port.ts`
+  - [x] Interface 定義: `load(): CampaignProgress` / `save(p: CampaignProgress): void` / `clear(): void`
 
 ### 1.3 race-handler への分岐追加
 
-- [ ] 🟩 `application/race-handler.ts` 修正（最小）
-  - [ ] `RaceConfig.mode === 'campaign'` のときのみ:
-    - 毎フレーム `tickTime` で残り時間を減らす
-    - チェックポイントヒット時に `checkpointTimeBonus` Use Case を呼ぶ
-    - `evaluateStage` の結果に応じて `stage_clear` / `game_over` フェーズへ遷移
-  - [ ] 🧪 既存の race-handler 関連テスト全件パスを確認
-  - [ ] 🧪 新規: campaign モードでのフロー統合テスト
+- [x] 🟩 race-handler は **無変更**で、外側の `application/use-cases/campaign-tick.ts` でフレーム単位の更新を担う設計に変更
+  - 理由: 既存 race-handler が複雑で、直接修正すると既存 28 テストへの影響リスクが高い
+  - `campaign-tick.ts` は `prevCheckpointFlags` と `currentCheckpointFlags` の差分でチェックポイント通過を検出
+  - orchestrator はレース更新の前後でフラグをスナップショット → campaign-tick に渡す（統合は Phase 1.6 プレゼンテーション統合で実施）
+  - [x] 🧪 既存の race-handler 関連テスト全件パスを確認（28 件無変更パス）
+  - [x] 🧪 新規: `campaign-tick.test.ts` で 7 件のフロー検証
 
 ### 1.4 GamePhase 拡張
 
-- [ ] 🟦 `GamePhase` Sum 型に `stage_select` / `stage_clear` / `game_over` / `ending` を追加
-  - [ ] `stage_intro` は Phase 2 で追加（Phase 1 では countdown 直行）
-  - [ ] 🧪 既存のフェーズ遷移テストが影響を受けるか確認、必要に応じてテスト追加
+- [x] 🟦 `GamePhase` Sum 型に `stage_select` / `stage_clear` / `game_over` / `ending` を追加
+  - [x] `stage_intro` は Phase 2 で追加（Phase 1 では countdown 直行）
+  - [x] 🧪 既存のフェーズ遷移テストが影響を受けるか確認、必要に応じてテスト追加
 
 ### 1.5 インフラ層
 
-- [ ] 🟨 `infrastructure/storage/campaign-progress-repository.ts`
-  - [ ] localStorage 保存キー: `racing-campaign-progress-v1`
-  - [ ] schema バージョン 1 のみサポート
-  - [ ] 不正 JSON は警告ログ + デフォルト返却
-  - [ ] 🧪 ラウンドトリップ / 未保存 → デフォルト / 不正データ復旧
+- [x] 🟨 `infrastructure/storage/campaign-progress-repository.ts`
+  - [x] localStorage 保存キー: `racing-campaign-progress-v1`
+  - [x] schema バージョン 1 のみサポート
+  - [x] 不正 JSON は警告ログ + デフォルト返却
+  - [x] 🧪 ラウンドトリップ / 未保存 → デフォルト / 不正データ復旧
 
 ### 1.6 プレゼンテーション層
 
 - [ ] 🟧 メニュー画面に **CAMPAIGN** ボタン追加（既存メニューコンポーネントに 1 行）
-- [ ] 🟧 `components/StageSelectScreen.tsx`
-  - [ ] 4×2 グリッド（横画面） / 2×4 グリッド（縦画面、< 768px、R6 対応）
-  - [ ] **ランク 4 段階表示**（★★★ / ★★· / ★·· / ··· / 🔒、M3 対応）
-  - [ ] LAST: M/D 表示（記録があれば、S4 対応）
-  - [ ] 画面到達時に lives を 3 にリセット（spec §2.4）
-  - [ ] ロックステージのクリック挙動（`denied` SE + トースト 1.5 秒、spec §6.2.4）
-  - [ ] `[BACK TO MENU]` をメイン領域に唯一のナビゲーションとして配置（M1 対応）
-  - [ ] 右上に `⚙ OPTIONS` 歯車アイコン（44×44px、R6 対応）
-  - [ ] **キーボード操作**（←↑→↓ + Enter + Esc + Tab、R5 対応）
-  - [ ] フォーカス枠 2px 二重枠（`:focus-visible` のみ表示、R5 対応）
-  - [ ] 全クリア時に `ALL CLEAR!` リボン
-- [ ] 🟧 `components/OptionsModal.tsx`（M2 + R7 対応）
-  - [ ] `[ ▶ REPLAY ENDING ]` ボタン（completed=true で有効、未達成ならグレーアウト維持・領域確保）
-  - [ ] `[ ⚠ RESET PROGRESS ]` ボタン（`--accent-danger` 警告色枠）
-  - [ ] RESET タップで「DELETE ALL RECORDS? Y / N」モーダル
-  - [ ] `[ CLOSE ]` ボタン
-  - [ ] サウンド設定（マスター / BGM / SE 音量）も同モーダルに集約
-- [ ] 🟧 `components/StageHud.tsx`
-  - [ ] 残り時間表示（中央上 48px、10 秒以下で `--accent-danger` に変色 + 点滅、R8 対応）
-  - [ ] ステージ番号（左下 18px、`--text-secondary`、R8 対応）
-  - [ ] SPEED 表示（左下 18px、`--text-secondary`）
-  - [ ] LIVES ●●● ドット表記（右上 16px、残機 1 で `--accent-danger` 点滅、R4 対応）
-  - [ ] **`stage.lapsToClear > 1` のときのみ LAP N/M 表示**（R1 対応）
-  - [ ] HUD は Canvas 上の DOM オーバーレイ、`pointer-events: none` 適用
-- [ ] 🟧 `components/CheckpointBonusToast.tsx`
-  - [ ] チェックポイントヒット時に `+N SECONDS` 表示
-  - [ ] **TIME カウンタ直下に出現 → 上方向 24px フロート + 1.0s フェードアウト**（R3 対応）
-  - [ ] 連動して TIME カウンタが 0.5s で旧値→新値にカウントアップ
-  - [ ] `--accent-gold` カラー、`--font-en-pixel` 24px
-  - [ ] reduced-motion 時はフロート無し、0.5s で消去（spec §6.9）
-- [ ] 🟧 `components/StageClearOverlay.tsx`
-  - [ ] タイム表示 + ランク表示 + Continue ボタン
-- [ ] 🟧 `components/GameOverOverlay.tsx`
-  - [ ] `[STAGE SELECT]` ボタンのみ（Retry は出さない、spec §6.6）
-- [ ] 🟧 `components/EndingScreen.tsx`（簡易版）
-  - [ ] "CONGRATULATIONS! YOU CLEARED ALL 8 STAGES." + メニューに戻るボタン
+- [x] 🟧 `components/StageSelectScreen.tsx`
+  - [x] 4×2 グリッド（横画面） / 2×4 グリッド（縦画面、< 768px、R6 対応）
+  - [x] **ランク 4 段階表示**（★★★ / ★★· / ★·· / ··· / 🔒、M3 対応）
+  - [x] LAST: M/D 表示（記録があれば、S4 対応）
+  - [x] 画面到達時に lives を 3 にリセット（spec §2.4）
+  - [x] ロックステージのクリック挙動（`denied` SE + トースト 1.5 秒、spec §6.2.4）
+  - [x] `[BACK TO MENU]` をメイン領域に唯一のナビゲーションとして配置（M1 対応）
+  - [x] 右上に `⚙ OPTIONS` 歯車アイコン（44×44px、R6 対応）
+  - [x] **キーボード操作**（←↑→↓ + Enter + Esc + Tab、R5 対応）
+  - [x] フォーカス枠 2px 二重枠（`:focus-visible` のみ表示、R5 対応）
+  - [x] 全クリア時に `ALL CLEAR!` リボン
+- [x] 🟧 `components/OptionsModal.tsx`（M2 + R7 対応）
+  - [x] `[ ▶ REPLAY ENDING ]` ボタン（completed=true で有効、未達成ならグレーアウト維持・領域確保）
+  - [x] `[ ⚠ RESET PROGRESS ]` ボタン（`--accent-danger` 警告色枠）
+  - [x] RESET タップで「DELETE ALL RECORDS? Y / N」モーダル
+  - [x] `[ CLOSE ]` ボタン
+  - [x] サウンド設定（マスター / BGM / SE 音量）も同モーダルに集約
+- [x] 🟧 `components/StageHud.tsx`
+  - [x] 残り時間表示（中央上 48px、10 秒以下で `--accent-danger` に変色 + 点滅、R8 対応）
+  - [x] ステージ番号（左下 18px、`--text-secondary`、R8 対応）
+  - [x] SPEED 表示（左下 18px、`--text-secondary`）
+  - [x] LIVES ●●● ドット表記（右上 16px、残機 1 で `--accent-danger` 点滅、R4 対応）
+  - [x] **`stage.lapsToClear > 1` のときのみ LAP N/M 表示**（R1 対応）
+  - [x] HUD は Canvas 上の DOM オーバーレイ、`pointer-events: none` 適用
+- [x] 🟧 `components/CheckpointBonusToast.tsx`
+  - [x] チェックポイントヒット時に `+N SECONDS` 表示
+  - [x] **TIME カウンタ直下に出現 → 上方向 24px フロート + 1.0s フェードアウト**（R3 対応）
+  - [x] 連動して TIME カウンタが 0.5s で旧値→新値にカウントアップ
+  - [x] `--accent-gold` カラー、`--font-en-pixel` 24px
+  - [x] reduced-motion 時はフロート無し、0.5s で消去（spec §6.9）
+- [x] 🟧 `components/StageClearOverlay.tsx`
+  - [x] タイム表示 + ランク表示 + Continue ボタン
+- [x] 🟧 `components/GameOverOverlay.tsx`
+  - [x] `[STAGE SELECT]` ボタンのみ（Retry は出さない、spec §6.6）
+- [x] 🟧 `components/EndingScreen.tsx`（簡易版）
+  - [x] "CONGRATULATIONS! YOU CLEARED ALL 8 STAGES." + メニューに戻るボタン
 - [ ] 🟧 `presentation/RacingGameCampaign.tsx`
   - [ ] 既存 `RacingGameNew.tsx` のロジックを流用しつつ、フェーズ遷移をキャンペーン版に差し替え
 
@@ -180,7 +190,7 @@
 - [ ] 全 8 ステージクリアでエンディング画面（簡易版）が出る
 - [ ] ブラウザを閉じて再度開いてもアンロック状態とベストタイムが復元される
 - [ ] 既存 ソロ / 2P / CPU モードが従来どおり動作する
-- [ ] 既存テスト全 28 件が無変更で緑
+- [x] 既存テスト全 28 件が無変更で緑（実測 386 テスト全件パス）
 
 ---
 
@@ -208,7 +218,7 @@
 
 - [ ] 🟨 既存 `audio-engine.ts` を拡張、ステージ別 BGM の再生を追加（リソースが揃わない場合は難度別 3 種で開始）
 - [ ] 🟨 **SE トーン体系の実装**（spec §7.2.1）
-  - [ ] `info` / `warn-tick` / `bonus` / `denied` / `clear-fanfare` / `gameover` / `lives-warn` の 7 種を Web Audio API（OscillatorNode + ホワイトノイズ Buffer）で生成
+  - [ ] `info` / `warn-tick` / `bonus` / `denied` / `clear-fanfare` / `game-over` / `lives-warn` の 7 種を Web Audio API（OscillatorNode + ホワイトノイズ Buffer）で生成
   - [ ] マスター音量 / BGM 音量 / SE 音量を OPTIONS から個別調整可能に
 - [ ] 🟨 警告音 `warn-tick`: 残り 10 秒以下で 1 秒ごとに再生、CP 通過で 10 秒超に戻ったら即座に停止（spec §7.3）
 - [ ] 🟨 残機 1 になった瞬間の `lives-warn` 通知音

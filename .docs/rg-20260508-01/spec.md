@@ -869,7 +869,7 @@ type StoredProgress = {
 | `bonus` | チェックポイント時間延長 | 矩形波 ch2 | 1500→1800 Hz スイープ | 200 ms | -8dB |
 | `denied` | ロックステージクリック | ノイズ | — | 50 ms | -10dB |
 | `clear-fanfare` | ステージクリア | 矩形波 ch1+ch2 アルペジオ | 5 ノート | 2.0 s | -6dB |
-| `gameover` | 残機 0 | 矩形波 ch1（下降） | 880→220 Hz | 1.5 s | -8dB |
+| `game-over` | 残機 0 | 矩形波 ch1（下降） | 880→220 Hz | 1.5 s | -8dB |
 | `lives-warn` | 残機 1 になった瞬間 | 矩形波 ch2 | 600 Hz × 3 ビート | 600 ms | -10dB |
 
 実装ガイドライン:
@@ -1003,7 +1003,48 @@ src/features/racing-game/
 
 ---
 
-## 12. 既存実装で確認しておくべき箇所（実装着手前チェック）
+## 12. Phase 0 事前調査の結論（2026-05-08 確定）
+
+### 12.1 既存実装ファクト
+
+| 項目 | 値 |
+|------|-----|
+| GamePhase 既存メンバ | `'menu' \| 'countdown' \| 'race' \| 'draft' \| 'result'` |
+| GamePhase 拡張後 | 上記 + `'stage_select' \| 'stage_clear' \| 'game_over' \| 'ending'` |
+| RaceConfig 新規フィールド | `campaignStage?: Stage`（任意。定義時にキャンペーンとして処理） |
+| cardsEnabled 既存制御 | `race-handler.ts:96` でドラフトトリガを抑止する条件として既に動作。キャンペーンでは `cardsEnabled: false` を渡すだけ |
+| チェックポイント検出ポイント | `domain/race/checkpoint.ts` の `updateCheckpoints` の戻り値 `newCheckpointPassed`。orchestrator 側で `checkpointFlags` の差分監視も可能 |
+| 既存テスト数 | 28 件（無変更パスを必須条件） |
+| 既存コース 6 種 | Forest(16pt) / City(16pt) / Mountain(20pt) / Beach(16pt) / Night(20pt) / Snow(18pt) |
+
+### 12.2 設計上の判断
+
+**race-handler.ts は無変更とする**: 既存ロジックが複雑で、直接修正は既存 28 テスト破壊リスクが高い。代わりに **`application/use-cases/campaign-tick.ts`** をフレーム単位の Use Case として導入し、orchestrator がレース更新の前後で:
+
+1. `state.players[*].checkpointFlags` をスナップショット
+2. 既存の `updateRacePhase` を呼ぶ（無変更）
+3. `executeCampaignTick({ runtime, prevCheckpointFlags, currentCheckpointFlags, hasCrossedFinishLine, dt })` を呼ぶ
+
+の順で処理する。
+
+### 12.3 ステージカタログの初期時間（暫定）
+
+各既存コースの距離（隣接ポイント間の距離合計）と理論最短タイムから、§2.2 の暫定値が妥当な範囲内であることを確認。プレイテストで微調整する前提。
+
+| コース | ポイント数 | 距離（推定） | 理論最短（baseSpeed=3.2 px/frame, 60fps） |
+|--------|-----------|------------|----------------------------------------|
+| Forest | 16 | ~3000px | 15.6s |
+| City | 16 | ~3200px | 16.7s |
+| Mountain | 20 | ~3700px | 19.3s |
+| Beach | 16 | ~3000px | 15.6s |
+| Night | 20 | ~3500px | 18.2s |
+| Snow | 18 | ~3300px | 17.2s |
+
+§2.2 の `initialTimeSec`（46〜80 秒）は理論最短の 2.5〜4 倍に位置し、十分な余裕がある。
+
+---
+
+## 13. 旧 §12 の事前チェック項目（参考 — 実施済）
 
 実装に入る前に、以下を grep / コードリーディングで再確認する:
 
