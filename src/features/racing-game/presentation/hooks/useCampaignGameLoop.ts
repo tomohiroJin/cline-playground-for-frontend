@@ -150,7 +150,18 @@ export const useCampaignGameLoop = (
         }
         setPaused(false);
 
-        if (state.phase === 'race' && frameRef.current) {
+        // race-handler は lap > maxLaps の瞬間に state.phase='result' に切り替えるため、
+        // ゴールしたフレームでは state.phase は既に 'result'。
+        // そのため、campaign-tick の対象判定は:
+        //   - 通常レース中: state.phase === 'race'
+        //   - ゴールライン通過の瞬間: lap が前回値より増えている（state.phase は 'result' でも検出する）
+        // どちらかが満たされたフレームを処理する。
+        const player = state.players[0];
+        const isLapAdvanced = frameRef.current ? player.lap > frameRef.current.lastLap : false;
+        const shouldRunCampaignTick =
+          frameRef.current !== null && (state.phase === 'race' || isLapAdvanced);
+
+        if (shouldRunCampaignTick && frameRef.current) {
           const stepResult = stepCampaignFrame(state, frameRef.current);
           frameRef.current = stepResult.nextState;
 

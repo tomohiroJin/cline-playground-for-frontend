@@ -15,17 +15,20 @@ import { isCampaignCompleted } from '../../domain/race/campaign-progress';
 import { TOKENS, focusRingStyle, PrimaryButton } from './campaign-styles';
 import { StageCard } from './StageCard';
 
+// CanvasContainer (relative) の中にオーバーレイ表示する。
+// Canvas を覆うが、スクロール可能（縦画面でも全ステージにアクセスできる）。
 const Container = styled.div`
-  position: relative;
-  width: 100%;
-  min-height: 100vh;
+  position: absolute;
+  inset: 0;
   background: ${TOKENS.bgPrimary};
   color: ${TOKENS.textPrimary};
   font-family: ${TOKENS.fontEnPixel};
-  padding: 24px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  overflow-y: auto;
+  z-index: 10;
 `;
 
 const Header = styled.div`
