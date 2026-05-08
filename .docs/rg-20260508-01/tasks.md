@@ -17,9 +17,11 @@
 
 ## Phase 0 — 事前調査・確認（着手前）
 
-実装計画を最終確定させるための、コードリーディング中心のタスク。
+実装計画を最終確定させるための、コードリーディング・デザイン基礎決定タスク。
 
-- [ ] 📚 spec.md §12 のチェック項目を順に実施し、結果を一時ファイル `.docs/rg-20260508-01/precheck-notes.md`（仮称）に追記する
+### 0.1 実装着手前のコードリーディング
+
+- [ ] 📚 spec.md §12 のチェック項目を順に実施し、結果を一時ファイル `.docs/rg-20260508-01/pre-implementation-notes.md`（仮称）に追記する
   - [ ] `RaceConfig` の現フィールドを列挙
   - [ ] `GamePhase` Sum 型の定義位置と現メンバ
   - [ ] `race-handler.ts` のラップ完了時 draft トリガ箇所（行番号付き）
@@ -31,7 +33,16 @@
   - [ ] §2.2 ステージカタログの初期時間・チェックポイント延長を計測値ベースで上書き
   - [ ] §12 のチェック結果（fact）を spec.md 該当節に取り込む
 - [ ] 📝 ステージカタログ（spec.md §2.2）の数値が Phase 0 の計測で確定する前提を明文化（暫定値は **初期案** と明示済 — §2.2 注釈参照）
-- [ ] 🗑️ Phase 0 完了時、`precheck-notes.md` の **重要な結論を spec.md に取り込んだ上で原本を削除する**（中間生成物の永続化を避ける、#23 対応）
+- [ ] 🗑️ Phase 0 完了時、`pre-implementation-notes.md` の **重要な結論を spec.md に取り込んだ上で原本を削除する**（中間生成物の永続化を避ける、#23 対応）
+
+### 0.2 デザイン基礎の確定（デザインレビュー反映）
+
+- [ ] 📝 spec §6.8.3 のカラートークン HEX 値を Figma / DevTools で実測し、4.5:1 を割る組合せを補正
+- [ ] 📝 フォントスタック（spec §6.8.2）のライセンス確認とロード戦略確定
+  - [ ] Press Start 2P / Silkscreen / DotGothic16 のライセンス OK 確認
+  - [ ] サブセット化方針（unicode-range / `font-display: swap`）を確定
+- [ ] 📝 spec §7.2.1 SE トーン体系（矩形波・ノイズ）を audio-engine の既存実装と突き合わせ、API 差異を文書化
+- [ ] 📝 60-30-10 ルール適合チェック: 主要 6 画面（メニュー / STAGE SELECT / レース HUD / STAGE CLEAR / GAME OVER / ENDING）でアクセント色が 10% 以下か Figma 上で計測
 
 ---
 
@@ -122,18 +133,35 @@
 
 - [ ] 🟧 メニュー画面に **CAMPAIGN** ボタン追加（既存メニューコンポーネントに 1 行）
 - [ ] 🟧 `components/StageSelectScreen.tsx`
-  - [ ] 8 ステージのグリッド表示
-  - [ ] アンロック状態 / ベストタイム / ランクアイコン表示
-  - [ ] 選択 → ステージ開始
-  - [ ] **画面到達時に lives を 3 にリセット** する処理を実装（spec §2.4）
-  - [ ] **ロックステージのクリック挙動**（`DENIED` SE + トースト 1.5 秒、spec §6.2）
-  - [ ] `[BACK TO MENU]` / `[RESET PROGRESS]` ボタン
-  - [ ] `isCampaignCompleted` のとき `[VIEW ENDING]` ボタンを表示
+  - [ ] 4×2 グリッド（横画面） / 2×4 グリッド（縦画面、< 768px、R6 対応）
+  - [ ] **ランク 4 段階表示**（★★★ / ★★· / ★·· / ··· / 🔒、M3 対応）
+  - [ ] LAST: M/D 表示（記録があれば、S4 対応）
+  - [ ] 画面到達時に lives を 3 にリセット（spec §2.4）
+  - [ ] ロックステージのクリック挙動（`denied` SE + トースト 1.5 秒、spec §6.2.4）
+  - [ ] `[BACK TO MENU]` をメイン領域に唯一のナビゲーションとして配置（M1 対応）
+  - [ ] 右上に `⚙ OPTIONS` 歯車アイコン（44×44px、R6 対応）
+  - [ ] **キーボード操作**（←↑→↓ + Enter + Esc + Tab、R5 対応）
+  - [ ] フォーカス枠 2px 二重枠（`:focus-visible` のみ表示、R5 対応）
+  - [ ] 全クリア時に `ALL CLEAR!` リボン
+- [ ] 🟧 `components/OptionsModal.tsx`（M2 + R7 対応）
+  - [ ] `[ ▶ REPLAY ENDING ]` ボタン（completed=true で有効、未達成ならグレーアウト維持・領域確保）
+  - [ ] `[ ⚠ RESET PROGRESS ]` ボタン（`--accent-danger` 警告色枠）
+  - [ ] RESET タップで「DELETE ALL RECORDS? Y / N」モーダル
+  - [ ] `[ CLOSE ]` ボタン
+  - [ ] サウンド設定（マスター / BGM / SE 音量）も同モーダルに集約
 - [ ] 🟧 `components/StageHud.tsx`
-  - [ ] 残り時間表示（10 秒以下で点滅）
-  - [ ] ステージ番号 / 1 ラップ進捗
+  - [ ] 残り時間表示（中央上 48px、10 秒以下で `--accent-danger` に変色 + 点滅、R8 対応）
+  - [ ] ステージ番号（左下 18px、`--text-secondary`、R8 対応）
+  - [ ] SPEED 表示（左下 18px、`--text-secondary`）
+  - [ ] LIVES ●●● ドット表記（右上 16px、残機 1 で `--accent-danger` 点滅、R4 対応）
+  - [ ] **`stage.lapsToClear > 1` のときのみ LAP N/M 表示**（R1 対応）
+  - [ ] HUD は Canvas 上の DOM オーバーレイ、`pointer-events: none` 適用
 - [ ] 🟧 `components/CheckpointBonusToast.tsx`
-  - [ ] チェックポイントヒット時に `+12 SECONDS` 表示
+  - [ ] チェックポイントヒット時に `+N SECONDS` 表示
+  - [ ] **TIME カウンタ直下に出現 → 上方向 24px フロート + 1.0s フェードアウト**（R3 対応）
+  - [ ] 連動して TIME カウンタが 0.5s で旧値→新値にカウントアップ
+  - [ ] `--accent-gold` カラー、`--font-en-pixel` 24px
+  - [ ] reduced-motion 時はフロート無し、0.5s で消去（spec §6.9）
 - [ ] 🟧 `components/StageClearOverlay.tsx`
   - [ ] タイム表示 + ランク表示 + Continue ボタン
 - [ ] 🟧 `components/GameOverOverlay.tsx`
@@ -158,12 +186,16 @@
 
 ## Phase 2 — 演出強化（推奨）
 
-### 2.1 ステージ間ナラティブ
+### 2.1 ステージ間ナラティブ（R2 対応）
 
 - [ ] 🟧 `components/StageIntroOverlay.tsx`
   - [ ] ステージ番号 + タイトル + intro テキスト 1〜2 行
-  - [ ] 4 秒で自動進行 / 任意キーで即 countdown
+  - [ ] **未クリアは 4 秒・既クリアは 1.5 秒・OPTIONS で常時スキップも可** で自動進行
+  - [ ] 開始 0.5s 後に右下に `▶ PRESS ANY KEY TO SKIP` を表示（R2 対応）
+  - [ ] 任意キー / タップで即 countdown
+  - [ ] reduced-motion 時は拡大アニメ無し、フェード 0.1s（spec §6.9）
 - [ ] 🟦 `GamePhase` に `stage_intro` を追加し、`stage_select` → `stage_intro` → `countdown` の順序に変更
+- [ ] 🟨 OPTIONS に「INTRO SKIP: ALWAYS」設定を追加（spec §7.1.2）
 - [ ] 🧪 フェーズ遷移テスト追加
 
 ### 2.2 タイムランク表示の演出
@@ -172,32 +204,59 @@
   - [ ] ランク表示時に星アイコンが点滅で出現する 1 秒のアニメーション
   - [ ] BGM のクリアファンファーレと同期
 
-### 2.3 BGM / SE 統合
+### 2.3 BGM / SE 統合（S5 対応）
 
 - [ ] 🟨 既存 `audio-engine.ts` を拡張、ステージ別 BGM の再生を追加（リソースが揃わない場合は難度別 3 種で開始）
-- [ ] 🟨 警告音: 残り 10 秒以下で 1 秒ごとに「ピッ」、CP 通過で 10 秒超に戻ったら **即座に停止**（spec §7.3）
-- [ ] 🟨 クリアファンファーレ / ゲームオーバー音 / エンディング BGM
-- [ ] 🟨 `DENIED` SE（ロックステージクリック用、spec §6.2）
-- [ ] 🧪 audio-engine の単体テスト（鳴らす Trigger が呼ばれること、警告音の停止条件）
+- [ ] 🟨 **SE トーン体系の実装**（spec §7.2.1）
+  - [ ] `info` / `warn-tick` / `bonus` / `denied` / `clear-fanfare` / `gameover` / `lives-warn` の 7 種を Web Audio API（OscillatorNode + ホワイトノイズ Buffer）で生成
+  - [ ] マスター音量 / BGM 音量 / SE 音量を OPTIONS から個別調整可能に
+- [ ] 🟨 警告音 `warn-tick`: 残り 10 秒以下で 1 秒ごとに再生、CP 通過で 10 秒超に戻ったら即座に停止（spec §7.3）
+- [ ] 🟨 残機 1 になった瞬間の `lives-warn` 通知音
+- [ ] 🧪 audio-engine の単体テスト（各 SE の Trigger / 警告音停止条件 / 音量設定）
 
-### 2.4 エンディング本実装
+### 2.4 エンディング本実装（R9 + S6 対応）
 
 - [ ] 📚 ドライバーキャラクターシート（spec §6.7.1）に従って独白テキストを執筆
   - [ ] 各ステージ `Stage.intro` を最終決定（縦糸シンボル「夜明け」関連語を含む、最大全角 56 字）
   - [ ] エンディング独白 3 画面（spec §6.7.2 のテンプレに準拠、各 60 字以内）
 - [ ] 🟧 `EndingScreen.tsx` を強化
   - [ ] 黒背景フェードイン → 独白 × 3 → "THANK YOU FOR PLAYING" → クレジットロール
-  - [ ] スキップ可能
-- [ ] 🟧 ステージ一覧 + 自分の記録（ベストタイム + ランク）も表示
-- [ ] 🟧 ランク集計表示（GOLD ×N / SILVER ×N / BRONZE ×N、spec §6.7）
+  - [ ] **クレジットロール 30〜45 秒、`Esc`/タップで「SKIP?」確認 → スキップ可**（R9 対応）
+  - [ ] **2 回目以降のプレイヤーはデフォルト 4 倍速、`Shift` 押下で通常速**（R9 対応）
+  - [ ] reduced-motion 時はページング表示（スペースで進む）
+- [ ] 🟧 ステージ一覧 + 自分の記録（ベストタイム + ランク）表示
+- [ ] 🟧 ランク集計表示（GOLD ×N / SILVER ×N / BRONZE ×N）
+- [ ] 🟧 `components/SoundTestScreen.tsx`（S6 対応 / 隠し機能）
+  - [ ] エンディング初回視聴後にアンロック
+  - [ ] クレジット最終フレームに 3 秒間 `▶ SOUND TEST` を表示
+  - [ ] BGM 全曲 + SE 一覧の試聴 UI
+  - [ ] 既存 audio-engine の薄いラッパとして実装（新規ドメイン無し）
 
-### 2.5 タイマー切れ後の Grace 期間（Rad Racer 模倣）
+### 2.5 CRT スキャンライン演出（任意・S2 対応）
+
+- [ ] 🟧 全画面 fixed の `::after` 擬似要素で repeating-linear-gradient のスキャンライン
+- [ ] 🟧 OPTIONS で ON/OFF 切替（既定 OFF、spec §6.8.6）
+- [ ] 🟧 `prefers-reduced-motion: reduce` のとき自動 OFF（§6.9）
+- [ ] 🧪 OPTIONS で切替できることの単体テスト
+
+### 2.6 reduced-motion 全体対応（M4 対応）
+
+- [ ] 🟧 グローバル CSS に `@media (prefers-reduced-motion: reduce)` の基本ルールを追加
+- [ ] 🟧 各演出（タイマー点滅 / トーストフロート / クレジットロール / カウントアップ / ホバー浮き上がり）の代替挙動を実装（spec §6.9 表に従う）
+- [ ] 🧪 jsdom + matchMedia モックで reduced-motion 時の挙動を検証
+- [ ] 🧪 E2E（Playwright）の `emulateMedia({ reducedMotion: 'reduce' })` を 1 シナリオで使用
+
+### 2.7 タイマー切れ後の Grace 期間（Rad Racer 模倣）
 
 - [ ] 🟦 `domain/race/grace-period.ts`
   - [ ] 残時間 0 後に約 5 秒の惰性区間を導入。速度を線形に減衰
   - [ ] 🧪 単体テスト
 - [ ] 🟩 `race-handler.ts` の `evaluateStage` を grace 対応に拡張
 - [ ] 🧪 grace 期間中にゴール到達 → cleared、grace 切れ → time_up
+
+### 2.8 PR 順の更新（PR 表に CRT / reduced-motion / Sound Test を追加）
+
+- [ ] 📚 `tasks.md` 末尾の PR 表を最新状態に更新（PR 番号は流動的、必要に応じてリネーム）
 
 ---
 
@@ -240,17 +299,19 @@ PR 単位の目安と依存関係（#22 対応）:
 
 | PR # | スコープ | 対応タスク | 依存（前提となる PR） |
 |------|---------|----------|--------------------|
-| PR-1 | Phase 0 + Phase 1.1〜1.2（ドメイン + 主要 Use Case） | TDD で純粋関数 + テスト | — |
+| PR-1 | Phase 0 + Phase 1.1〜1.2（ドメイン + 主要 Use Case） | TDD で純粋関数 + テスト。デザイン基礎決定（§0.2）を含む | — |
 | PR-2 | Phase 1.3〜1.5（race-handler 分岐 + Phase 拡張 + 永続化） | 既存テスト全件緑を必須 | PR-1 |
-| PR-3 | Phase 1.6〜1.7（UI と受け入れテスト） | プレイ可能な状態に到達 | PR-2 |
+| PR-3 | Phase 1.6〜1.7（UI と受け入れテスト） | プレイ可能な状態に到達。デザイントークン適用済 | PR-2 |
 | PR-4 | Phase 2.1〜2.2（ステージ intro + ランク演出） |  | PR-3 |
-| PR-5 | Phase 2.3〜2.4（BGM + エンディング独白） | キャラクターシート §6.7.1 と独白テンプレ §6.7.2 を厳守 | PR-3 |
-| PR-6 | Phase 2.5（grace 期間） | Rad Racer 風の 5 秒惰性 | PR-2 |
-| PR-7 | Phase 3.1（分岐） |  | PR-1（ドメイン拡張） + PR-3（UI 基盤） |
-| PR-8 | Phase 3.2（難易度） |  | PR-1 + PR-3 |
-| PR-9 | Phase 3.3（QA + E2E） |  | PR-3 以降のすべて |
+| PR-5 | Phase 2.3〜2.4（BGM + SE トーン体系 + エンディング + Sound Test） | キャラシート §6.7.1 / 独白テンプレ §6.7.2 / SE トーン §7.2.1 を厳守 | PR-3 |
+| PR-6 | Phase 2.5（CRT スキャンライン） |  | PR-3 |
+| PR-7 | Phase 2.6（reduced-motion 全体対応） |  | PR-3〜PR-6 のいずれか終了後（演出が出揃ってから） |
+| PR-8 | Phase 2.7（grace 期間） | Rad Racer 風の 5 秒惰性 | PR-2 |
+| PR-9 | Phase 3.1（分岐） |  | PR-1（ドメイン拡張） + PR-3（UI 基盤） |
+| PR-10 | Phase 3.2（難易度） |  | PR-1 + PR-3 |
+| PR-11 | Phase 3.3（QA + E2E） |  | PR-3 以降のすべて |
 
-> 並列着手可能性: PR-4 / PR-5 / PR-6 は PR-3 完了後に **並列着手可能**。PR-7 / PR-8 は PR-1 のドメイン拡張内容に依存するため、PR-1 のレビューが終わるまで設計レビューを保留する。
+> 並列着手可能性: PR-4 / PR-5 / PR-6 / PR-8 は PR-3 完了後に **並列着手可能**。PR-7（reduced-motion）は演出系 PR が出揃った段階で総点検する位置付け。PR-9 / PR-10 は PR-1 のドメイン拡張内容に依存。
 
 ---
 
