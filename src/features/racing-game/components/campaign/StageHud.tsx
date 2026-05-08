@@ -6,6 +6,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { TOKENS, blinkStyle } from './campaign-styles';
+import { formatTimeMS } from '../../domain/race/time-format';
 
 const TIME_WARNING_THRESHOLD_SEC = 10;
 
@@ -75,14 +76,6 @@ export interface StageHudProps {
   readonly maxLaps?: number;
 }
 
-/** 残り時間を `M:SS` 形式に整形（spec §6.3 のモック表記） */
-const formatTime = (seconds: number): string => {
-  const safe = Math.max(0, Math.floor(seconds));
-  const m = Math.floor(safe / 60);
-  const s = safe % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
-};
-
 const renderLives = (current: number, max: number): string => {
   const filled = '●'.repeat(Math.max(0, current));
   const empty = '·'.repeat(Math.max(0, max - current));
@@ -106,7 +99,7 @@ export const StageHud: React.FC<StageHudProps> = ({
   return (
     <Container aria-label="Stage HUD">
       <TimeDisplay $warning={isTimeWarning} aria-label="残り時間">
-        TIME {formatTime(timeRemainingSec)}
+        TIME {formatTimeMS(timeRemainingSec)}
       </TimeDisplay>
       <StatusGroup>
         <div>SPEED {Math.round(speed)}</div>

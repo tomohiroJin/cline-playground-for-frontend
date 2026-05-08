@@ -22,6 +22,10 @@ describe('tickTime', () => {
   it('dt が 0 の場合はそのまま返す', () => {
     expect(tickTime(42, 0)).toBe(42);
   });
+
+  it('負の dt はアサーションで弾く（M1 対応）', () => {
+    expect(() => tickTime(60, -1)).toThrow();
+  });
 });
 
 describe('isTimeUp', () => {

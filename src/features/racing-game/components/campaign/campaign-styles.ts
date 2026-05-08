@@ -3,7 +3,7 @@
 // spec.md §6.8.3 のカラートークン / §6.8.2 のフォントスタック / §6.9 モーション
 // を CSS 変数として実装する。
 
-import styled, { css, keyframes } from 'styled-components';
+import styled, { css, keyframes, createGlobalStyle } from 'styled-components';
 
 /**
  * デザイントークン（spec §6.8.3 / §6.8.2）。
@@ -95,6 +95,22 @@ export const DangerButton = styled(PrimaryButton)`
   &:hover {
     background: ${TOKENS.accentDanger};
     color: ${TOKENS.textPrimary};
+  }
+`;
+
+/**
+ * グローバル reduced-motion ルール（spec §6.9 / S3 対応）。
+ * RacingGameCampaign のマウント時に挿入する。各コンポーネントは個別の
+ * 代替挙動を引き続き定義してよいが、全体としての安全網として機能する。
+ */
+export const ReducedMotionGlobalStyle = createGlobalStyle`
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 `;
 

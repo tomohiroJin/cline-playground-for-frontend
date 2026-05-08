@@ -13,8 +13,9 @@ export type CampaignSeName =
   | 'lives-warn';    // 残機 1 になった瞬間
 
 interface SeSpec {
-  readonly type: 'tone' | 'noise' | 'sweep' | 'arpeggio' | 'descending';
+  readonly type: 'tone' | 'noise' | 'sweep' | 'arpeggio';
   readonly freqHz?: number;
+  /** sweep のみ。freqHz より大きい値 = 上昇スイープ、小さい値 = 下降スイープ */
   readonly freqEndHz?: number;
   readonly durationSec: number;
   readonly volumeDb: number;
@@ -26,7 +27,8 @@ const SE_TABLE: Record<CampaignSeName, SeSpec> = {
   bonus: { type: 'sweep', freqHz: 1500, freqEndHz: 1800, durationSec: 0.2, volumeDb: -8 },
   denied: { type: 'noise', durationSec: 0.05, volumeDb: -10 },
   'clear-fanfare': { type: 'arpeggio', durationSec: 2.0, volumeDb: -6 },
-  'game-over': { type: 'descending', freqHz: 880, freqEndHz: 220, durationSec: 1.5, volumeDb: -8 },
+  // game-over は下降スイープとして表現（DRY: descending を sweep に統合）
+  'game-over': { type: 'sweep', freqHz: 880, freqEndHz: 220, durationSec: 1.5, volumeDb: -8 },
   'lives-warn': { type: 'tone', freqHz: 600, durationSec: 0.6, volumeDb: -10 },
 };
 
@@ -160,9 +162,6 @@ export const createCampaignSeEngine = (): CampaignSeEngine => {
         break;
       case 'arpeggio':
         playArpeggio(spec.durationSec, gain);
-        break;
-      case 'descending':
-        playSweep(spec.freqHz!, spec.freqEndHz!, spec.durationSec, gain);
         break;
     }
   };

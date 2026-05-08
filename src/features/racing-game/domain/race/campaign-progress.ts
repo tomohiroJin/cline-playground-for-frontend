@@ -45,13 +45,23 @@ export const unlockNextStage = (
 };
 
 /**
+ * `updateBestRecord` の入力型。
+ * bestTimeSec / rank は必須、chosenBranch のみ任意。
+ */
+export type NewBestRecord = {
+  readonly bestTimeSec: number;
+  readonly rank: StageRank;
+  readonly chosenBranch?: 'a' | 'b';
+};
+
+/**
  * ベスト記録を更新（より速いタイムのときのみ更新）。
  * 既存記録より遅い、または同タイムは無視する（既存尊重）。
  */
 export const updateBestRecord = (
   progress: CampaignProgress,
   stageId: StageId,
-  newRecord: Required<Pick<StageRecord, 'bestTimeSec' | 'rank'>> & Partial<StageRecord>,
+  newRecord: NewBestRecord,
 ): CampaignProgress => {
   const existing = progress.records[stageId];
   const isFaster =

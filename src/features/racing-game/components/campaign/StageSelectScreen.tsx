@@ -10,10 +10,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import type { Stage, StageId } from '../../domain/race/stage';
-import type { CampaignProgress, StageRecord } from '../../domain/race/campaign-progress';
-import type { StageRank } from '../../domain/race/rank';
+import type { CampaignProgress } from '../../domain/race/campaign-progress';
 import { isCampaignCompleted } from '../../domain/race/campaign-progress';
 import { TOKENS, focusRingStyle, PrimaryButton } from './campaign-styles';
+import { StageCard } from './StageCard';
 
 const Container = styled.div`
   position: relative;
@@ -81,64 +81,6 @@ const Grid = styled.div`
   }
 `;
 
-const Card = styled.button<{ $locked: boolean }>`
-  background: ${TOKENS.bgPanel};
-  color: ${(p) => (p.$locked ? TOKENS.textSecondary : TOKENS.textPrimary)};
-  border: 2px solid ${(p) => (p.$locked ? TOKENS.textSecondary : TOKENS.textPrimary)};
-  font-family: ${TOKENS.fontEnPixel};
-  padding: 16px 8px;
-  cursor: ${(p) => (p.$locked ? 'not-allowed' : 'pointer')};
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  min-height: 120px;
-  filter: ${(p) => (p.$locked ? 'grayscale(0.7)' : 'none')};
-  ${focusRingStyle}
-
-  &:hover {
-    ${(p) =>
-      !p.$locked &&
-      `
-      background: ${TOKENS.textPrimary};
-      color: ${TOKENS.bgPrimary};
-    `}
-  }
-`;
-
-const StageNumber = styled.div`
-  font-size: 14px;
-`;
-
-const RankRow = styled.div<{ $rank: StageRank }>`
-  font-size: 14px;
-  color: ${(p) =>
-    p.$rank === 'GOLD'
-      ? TOKENS.accentGold
-      : p.$rank === 'SILVER'
-        ? TOKENS.accentSilver
-        : p.$rank === 'BRONZE'
-          ? TOKENS.accentBronze
-          : TOKENS.textSecondary};
-`;
-
-const StageTitle = styled.div`
-  font-size: 11px;
-  letter-spacing: 0.5px;
-`;
-
-const TimeLine = styled.div`
-  font-size: 11px;
-  font-family: ${TOKENS.fontMonoNumeric};
-  color: ${TOKENS.textSecondary};
-`;
-
-const LastPlayed = styled.div`
-  font-size: 9px;
-  color: ${TOKENS.textSecondary};
-  opacity: 0.6;
-`;
-
 const ToastBar = styled.div`
   position: fixed;
   bottom: 24px;
@@ -157,20 +99,7 @@ const Footer = styled.div`
   margin-top: 24px;
 `;
 
-const RANK_GLYPH: Record<StageRank, string> = {
-  GOLD: '★★★',
-  SILVER: '★★·',
-  BRONZE: '★··',
-  NONE: '···',
-};
-
 const TOAST_DURATION_MS = 1500;
-
-const formatTimeMSS = (sec: number): string => {
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60);
-  return `${m}:${s.toString().padStart(2, '0')}`;
-};
 
 export interface StageSelectScreenProps {
   readonly stages: readonly Stage[];
@@ -264,28 +193,17 @@ export const StageSelectScreen: React.FC<StageSelectScreenProps> = ({
       <Grid role="grid" aria-label="ステージグリッド">
         {stages.map((stage, idx) => {
           const isLocked = stage.id > progress.highestUnlocked;
-          const record: StageRecord = progress.records[stage.id];
-          const last = lastPlayedById?.[stage.id];
           return (
-            <Card
+            <StageCard
               key={stage.id}
               ref={(el) => { cardRefs.current[idx] = el; }}
-              $locked={isLocked}
-              onClick={() => handleSelectAt(idx)}
+              stage={stage}
+              record={progress.records[stage.id]}
+              isLocked={isLocked}
+              lastPlayed={lastPlayedById?.[stage.id]}
+              onSelect={() => handleSelectAt(idx)}
               onFocus={() => setFocusedIndex(idx)}
-              aria-label={`STAGE ${stage.id} ${stage.title}${isLocked ? ' (locked)' : ''}`}
-              aria-disabled={isLocked}
-            >
-              <StageNumber>[ {stage.id.toString().padStart(2, '0')} ]</StageNumber>
-              <RankRow $rank={isLocked ? 'NONE' : record.rank}>
-                {isLocked ? '🔒' : RANK_GLYPH[record.rank]}
-              </RankRow>
-              <StageTitle>{isLocked ? '?????' : stage.title}</StageTitle>
-              <TimeLine>
-                {record.bestTimeSec !== undefined ? formatTimeMSS(record.bestTimeSec) : '--:--'}
-              </TimeLine>
-              {last && <LastPlayed>LAST: {last}</LastPlayed>}
-            </Card>
+            />
           );
         })}
       </Grid>

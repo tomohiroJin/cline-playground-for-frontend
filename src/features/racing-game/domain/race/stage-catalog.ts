@@ -98,8 +98,13 @@ const STAGES: readonly Stage[] = [
     numberLabel: 'STAGE 7',
     intro: '空の端がわずかに白んだ。決着は、夜が明けるまでに。',
     // Stage 7 は Forest コース（index 0）の高難度バリアント。
-    // 現実装ではコース修飾子は未対応のため Phase 1 では既存 Forest をそのまま使う。
+    // S1 対応: difficultyModifiers で修飾子を宣言。orchestrator 統合は別フェーズ。
     courseIndex: 0,
+    difficultyModifiers: {
+      wallDensityMul: 1.4,
+      decorationDensityMul: 1.2,
+      cpuSpeedMul: 1.1,
+    },
     difficulty: 'extreme',
     initialTimeSec: 50,
     checkpointBonusSec: 7,
@@ -115,6 +120,12 @@ const STAGES: readonly Stage[] = [
     branch: {
       a: { label: '標準ルート', courseIndex: 2 },
       b: { label: 'ショートカット & 障害物多', courseIndex: 4 },  // Night を流用
+    },
+    // Stage 8 は Mountain ベースの最高難度バリアント
+    difficultyModifiers: {
+      wallDensityMul: 1.5,
+      decorationDensityMul: 1.3,
+      cpuSpeedMul: 1.15,
     },
     difficulty: 'extreme',
     initialTimeSec: 46,

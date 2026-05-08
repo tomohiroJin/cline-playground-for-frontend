@@ -40,9 +40,11 @@ const isValidStored = (data: unknown): data is StoredProgress => {
   if (d.version !== SCHEMA_VERSION) return false;
   if (!isValidStageId(d.highestUnlocked)) return false;
   if (typeof d.records !== 'object' || d.records === null) return false;
+  // S4 対応: JSON.parse 後はオブジェクトキーが文字列化されるため、
+  // string | number どちらでも安全にアクセスできる型注釈で明示化。
+  const recordsMap = d.records as Record<string | number, unknown>;
   for (let i = 1; i <= 8; i++) {
-    const rec = (d.records as Record<number, unknown>)[i];
-    if (!isValidRecord(rec)) return false;
+    if (!isValidRecord(recordsMap[i])) return false;
   }
   return true;
 };
@@ -61,8 +63,26 @@ export interface StorageLike {
   removeItem(key: string): void;
 }
 
+/**
+ * SSR 環境（window 未定義）でも例外を出さない、in-memory フォールバック実装。
+ * S5 対応: 本プロジェクトは CSR 前提だが、安全のため。
+ */
+const createMemoryStorage = (): StorageLike => {
+  const data: Record<string, string> = {};
+  return {
+    getItem: (key) => (key in data ? data[key] : null),
+    setItem: (key, value) => { data[key] = value; },
+    removeItem: (key) => { delete data[key]; },
+  };
+};
+
+const getDefaultStorage = (): StorageLike =>
+  typeof window !== 'undefined' && window.localStorage
+    ? window.localStorage
+    : createMemoryStorage();
+
 export const createCampaignProgressRepository = (
-  storage: StorageLike = window.localStorage,
+  storage: StorageLike = getDefaultStorage(),
 ): CampaignProgressPort => ({
   load(): CampaignProgress {
     const raw = storage.getItem(STORAGE_KEY);

@@ -1,8 +1,9 @@
 // キャンペーン用ゲームループフック
 //
-// 既存 useGameLoop と並列に存在する独立フック。
-// orchestrator を内部で起動しつつ、毎フレームで campaign-tick を呼んで
-// 残時間管理 / チェックポイント時間延長 / clear-or-game_over の判定を行う。
+// 設計方針（M2 / R3 / R4 対応）:
+// - runtime の真実は `runtimeRef`。React state には UI 更新に必要な
+//   「秒単位スナップショット」だけ書き出して 60FPS の re-render を回避。
+// - useEffect 内のループ処理を `stepCampaignFrame` 純粋関数に分離。
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { GameOrchestrator, GameOrchestratorConfig } from '../../application/game-orchestrator';
@@ -13,6 +14,7 @@ import { createCampaignRuntime } from '../../application/campaign-runtime';
 import { executeCampaignTick } from '../../application/use-cases/campaign-tick';
 import type { StageOutcome } from '../../domain/race/stage-progress';
 import { decrementLives, isGameOver as isGameOverFn } from '../../domain/race/lives';
+import type { GameOrchestratorState } from '../../application/orchestrator-state';
 
 const FRAME_DT_SEC = 1 / 60;
 
@@ -24,18 +26,77 @@ export type CampaignRacePhase =
   | 'time_up'
   | 'game_over';
 
+/** UI 表示用の秒単位スナップショット */
+export interface CampaignDisplay {
+  readonly timeRemainingSec: number;  // 整数秒
+  readonly elapsedSec: number;        // 0.1 秒精度
+}
+
+export interface BonusEvent {
+  readonly sec: number;
+  readonly key: number;
+}
+
 export interface UseCampaignGameLoopResult {
   readonly phase: CampaignRacePhase;
-  readonly runtime: CampaignRuntime;
+  readonly display: CampaignDisplay;
   readonly outcome: StageOutcome;
-  readonly bonusEvent: { sec: number; key: number } | null;
+  readonly bonusEvent: BonusEvent | null;
   readonly togglePause: () => void;
   readonly paused: boolean;
 }
 
+interface FrameState {
+  runtime: CampaignRuntime;
+  prevFlags: number;
+  lastLap: number;
+  bonusKey: number;
+}
+
+interface FrameResult {
+  readonly nextState: FrameState;
+  readonly outcome: StageOutcome;
+  readonly bonusSec?: number;
+}
+
+/**
+ * 1 フレーム分の純粋ステップ。テストしやすいよう外部状態を持たない。
+ */
+const stepCampaignFrame = (state: GameOrchestratorState, frame: FrameState): FrameResult => {
+  const player = state.players[0];
+  const currentFlags = player.checkpointFlags;
+  const hasCrossedFinishLine = player.lap > frame.lastLap;
+
+  const result = executeCampaignTick({
+    runtime: frame.runtime,
+    prevCheckpointFlags: frame.prevFlags,
+    currentCheckpointFlags: currentFlags,
+    hasCrossedFinishLine,
+    dt: FRAME_DT_SEC,
+  });
+
+  return {
+    nextState: {
+      runtime: result.runtime,
+      prevFlags: currentFlags,
+      lastLap: player.lap,
+      bonusKey: result.appliedBonusSec !== undefined ? frame.bonusKey + 1 : frame.bonusKey,
+    },
+    outcome: result.outcome,
+    bonusSec: result.appliedBonusSec,
+  };
+};
+
+const toDisplay = (runtime: CampaignRuntime): CampaignDisplay => ({
+  timeRemainingSec: Math.ceil(runtime.timeRemainingSec),
+  elapsedSec: Math.floor(runtime.elapsedSec * 10) / 10,
+});
+
+const displaysEqual = (a: CampaignDisplay, b: CampaignDisplay): boolean =>
+  a.timeRemainingSec === b.timeRemainingSec && a.elapsedSec === b.elapsedSec;
+
 /**
  * キャンペーンの 1 ステージを 1 回走らせるフック。
- * stage が変わると orchestrator を再生成して新規セッションを開始する。
  */
 export const useCampaignGameLoop = (
   canvasRef: React.RefObject<HTMLCanvasElement | null>,
@@ -44,17 +105,15 @@ export const useCampaignGameLoop = (
   livesRemaining: number,
 ): UseCampaignGameLoopResult => {
   const orchestratorRef = useRef<GameOrchestrator | null>(null);
-  const runtimeRef = useRef<CampaignRuntime | null>(null);
-  const prevFlagsRef = useRef<number>(0);
-  const lastLapRef = useRef<number>(1);
-  const bonusKeyRef = useRef<number>(0);
+  const frameRef = useRef<FrameState | null>(null);
 
   const [phase, setPhase] = useState<CampaignRacePhase>('countdown');
-  const [runtime, setRuntime] = useState<CampaignRuntime>(() =>
-    stage ? createCampaignRuntime(stage, livesRemaining) : ({} as CampaignRuntime),
-  );
+  const [display, setDisplay] = useState<CampaignDisplay>({
+    timeRemainingSec: 0,
+    elapsedSec: 0,
+  });
   const [outcome, setOutcome] = useState<StageOutcome>({ kind: 'in_progress' });
-  const [bonusEvent, setBonusEvent] = useState<{ sec: number; key: number } | null>(null);
+  const [bonusEvent, setBonusEvent] = useState<BonusEvent | null>(null);
   const [paused, setPaused] = useState(false);
 
   useEffect(() => {
@@ -63,14 +122,20 @@ export const useCampaignGameLoop = (
     const orchestrator = createOrchestrator(config);
     orchestratorRef.current = orchestrator;
     const initialRuntime = createCampaignRuntime(stage, livesRemaining);
-    runtimeRef.current = initialRuntime;
-    setRuntime(initialRuntime);
-    prevFlagsRef.current = 0;
-    lastLapRef.current = 1;
+    frameRef.current = {
+      runtime: initialRuntime,
+      prevFlags: 0,
+      lastLap: 1,
+      bonusKey: 0,
+    };
+    const initialDisplay = toDisplay(initialRuntime);
+    setDisplay(initialDisplay);
     setOutcome({ kind: 'in_progress' });
     setPhase('countdown');
 
     let isRunning = true;
+    let lastDisplay = initialDisplay;
+
     const loop = () => {
       if (!isRunning) return;
       try {
@@ -85,38 +150,36 @@ export const useCampaignGameLoop = (
         }
         setPaused(false);
 
-        if (state.phase === 'race' && runtimeRef.current) {
-          const player = state.players[0];
-          const currentFlags = player.checkpointFlags;
-          const hasCrossedFinishLine = player.lap > lastLapRef.current;
+        if (state.phase === 'race' && frameRef.current) {
+          const stepResult = stepCampaignFrame(state, frameRef.current);
+          frameRef.current = stepResult.nextState;
 
-          const result = executeCampaignTick({
-            runtime: runtimeRef.current,
-            prevCheckpointFlags: prevFlagsRef.current,
-            currentCheckpointFlags: currentFlags,
-            hasCrossedFinishLine,
-            dt: FRAME_DT_SEC,
-          });
+          // UI 更新は秒単位の変化があった場合のみ（M2 対応）
+          const newDisplay = toDisplay(stepResult.nextState.runtime);
+          if (!displaysEqual(newDisplay, lastDisplay)) {
+            lastDisplay = newDisplay;
+            setDisplay(newDisplay);
+          }
 
-          runtimeRef.current = result.runtime;
-          prevFlagsRef.current = currentFlags;
-          lastLapRef.current = player.lap;
-
-          setRuntime(result.runtime);
-          if (result.appliedBonusSec !== undefined) {
-            bonusKeyRef.current += 1;
-            setBonusEvent({ sec: result.appliedBonusSec, key: bonusKeyRef.current });
+          if (stepResult.bonusSec !== undefined) {
+            setBonusEvent({
+              sec: stepResult.bonusSec,
+              key: stepResult.nextState.bonusKey,
+            });
           }
 
           setPhase('race');
-          setOutcome(result.outcome);
+          setOutcome(stepResult.outcome);
 
-          if (result.outcome.kind === 'cleared') {
+          if (stepResult.outcome.kind === 'cleared') {
             setPhase('cleared');
             isRunning = false;
             return;
           }
-          if (result.outcome.kind === 'time_up') {
+          if (stepResult.outcome.kind === 'time_up') {
+            // Q2 対応: ここでは「時間切れ」のみを表す。残機評価は
+            // useCampaignSession 側で1度だけ行うため、game_over に
+            // 直接遷移させない（責務の単一化）。
             const nextLives = decrementLives(livesRemaining);
             setPhase(isGameOverFn(nextLives) ? 'game_over' : 'time_up');
             isRunning = false;
@@ -142,5 +205,5 @@ export const useCampaignGameLoop = (
     orchestratorRef.current?.togglePause();
   }, []);
 
-  return { phase, runtime, outcome, bonusEvent, togglePause, paused };
+  return { phase, display, outcome, bonusEvent, togglePause, paused };
 };

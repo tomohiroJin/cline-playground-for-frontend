@@ -1,7 +1,7 @@
 // rank.ts の単体テスト
 
 import type { Stage } from './stage';
-import { judgeRank } from './rank';
+import { judgeRank, rankGlyph } from './rank';
 
 const stage: Pick<Stage, 'goldRankTimeSec' | 'silverRankTimeSec'> = {
   goldRankTimeSec: 50,
@@ -26,5 +26,20 @@ describe('judgeRank', () => {
   it('silverRankTimeSec 超は BRONZE', () => {
     expect(judgeRank(66, stage)).toBe('BRONZE');
     expect(judgeRank(120, stage)).toBe('BRONZE');
+  });
+});
+
+describe('rankGlyph', () => {
+  it('GOLD は ★★★', () => {
+    expect(rankGlyph('GOLD')).toBe('★★★');
+  });
+  it('SILVER は ★★·', () => {
+    expect(rankGlyph('SILVER')).toBe('★★·');
+  });
+  it('BRONZE は ★··', () => {
+    expect(rankGlyph('BRONZE')).toBe('★··');
+  });
+  it('NONE は ···', () => {
+    expect(rankGlyph('NONE')).toBe('···');
   });
 });

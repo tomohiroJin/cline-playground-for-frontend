@@ -3,12 +3,14 @@
 // 黒背景 → 独白 3 画面 → THANK YOU FOR PLAYING → ステージ記録 + ランク集計
 // → クレジットロール（30〜45 秒、Esc スキップ可、2 回目以降 4× 早送り）
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import styled, { keyframes, css } from 'styled-components';
 import type { Stage } from '../../domain/race/stage';
 import type { CampaignProgress } from '../../domain/race/campaign-progress';
 import type { StageRank } from '../../domain/race/rank';
-import { Overlay, PrimaryButton, TOKENS } from './campaign-styles';
+import { rankGlyph } from '../../domain/race/rank';
+import { formatTimeMS } from '../../domain/race/time-format';
+import { Overlay, TOKENS } from './campaign-styles';
 
 const MONOLOGUE_LINES = [
   '風の温度が、最初のステージとは違っていた。',
@@ -16,7 +18,6 @@ const MONOLOGUE_LINES = [
   'だが、お前と走ったこの道は、確かに東を向いていた。',
 ] as const;
 
-const MONOLOGUE_DURATION_MS = 3000;
 
 const fadeIn = keyframes`
   0% { opacity: 0; }
@@ -92,6 +93,23 @@ const SkipHint = styled.div`
   font-family: ${TOKENS.fontEnPixel};
 `;
 
+/** spec §6.7.5: クレジット最終フレームに小さく表示する SOUND TEST 入口 */
+const SmallSoundTestLink = styled.button`
+  background: transparent;
+  border: none;
+  color: ${TOKENS.textSecondary};
+  font-family: ${TOKENS.fontEnPixel};
+  font-size: 12px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  padding: 4px 8px;
+
+  &:hover, &:focus-visible {
+    color: ${TOKENS.accentGold};
+    outline: none;
+  }
+`;
+
 export type EndingPhase =
   | 'monologue-1'
   | 'monologue-2'
@@ -111,7 +129,19 @@ const PHASE_ORDER: EndingPhase[] = [
   'done',
 ];
 
-const SOUND_TEST_HINT_MS = 3000;
+/**
+ * フェーズごとの自動進行までの時間（ms）。null は「自動進行しない」。
+ * S7 対応: テーブル駆動で switch を排除し可読性向上。
+ */
+const PHASE_DURATIONS_MS: Record<EndingPhase, number | null> = {
+  'monologue-1': 3000,
+  'monologue-2': 3000,
+  'monologue-3': 3000,
+  'thank-you': 2000,
+  credits: 30000,
+  'sound-test-link': 3000,
+  done: null,
+};
 
 export interface EndingScreenFullProps {
   readonly stages: readonly Stage[];
@@ -140,40 +170,31 @@ export const EndingScreenFull: React.FC<EndingScreenFullProps> = ({
     setPhaseIdx((i) => Math.min(i + 1, PHASE_ORDER.length - 1));
   }, []);
 
-  // 自動進行（各画面の duration が経過したら次へ）
+  // 自動進行（テーブル駆動・S7 対応）
   useEffect(() => {
-    if (phase === 'done') {
-      onComplete();
+    const duration = PHASE_DURATIONS_MS[phase];
+    if (duration === null) {
+      if (phase === 'done') onComplete();
       return;
     }
-    if (phase === 'sound-test-link') {
-      const id = window.setTimeout(advance, SOUND_TEST_HINT_MS / speedMul);
-      return () => window.clearTimeout(id);
-    }
-    if (phase === 'monologue-1' || phase === 'monologue-2' || phase === 'monologue-3') {
-      const id = window.setTimeout(advance, MONOLOGUE_DURATION_MS / speedMul);
-      return () => window.clearTimeout(id);
-    }
-    // thank-you と credits は手動 or 長時間
-    if (phase === 'thank-you') {
-      const id = window.setTimeout(advance, 2000 / speedMul);
-      return () => window.clearTimeout(id);
-    }
-    if (phase === 'credits') {
-      const id = window.setTimeout(advance, 30000 / speedMul);
-      return () => window.clearTimeout(id);
-    }
+    const id = window.setTimeout(advance, duration / speedMul);
+    return () => window.clearTimeout(id);
   }, [phase, speedMul, advance, onComplete]);
 
-  // Esc / クリックでスキップ
+  // Esc / クリックでスキップ。リスナーは安定化（R7 対応）。
+  // onComplete は ref 経由で参照することで、毎レンダリングのリスナー再登録を避ける。
+  const onCompleteRef = useRef(onComplete);
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onComplete();
+      if (e.key === 'Escape') onCompleteRef.current();
       else advance();
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [advance, onComplete]);
+  }, [advance]);
 
   const goldCount = countByRank(progress, 'GOLD');
   const silverCount = countByRank(progress, 'SILVER');
@@ -208,9 +229,9 @@ export const EndingScreenFull: React.FC<EndingScreenFullProps> = ({
       <Overlay role="dialog" aria-label="クレジット">
         <Container>
           <RankSummary>
-            <RankSummaryRow $rank="GOLD">★★★ GOLD × {goldCount}</RankSummaryRow>
-            <RankSummaryRow $rank="SILVER">★★· SILVER × {silverCount}</RankSummaryRow>
-            <RankSummaryRow $rank="BRONZE">★·· BRONZE × {bronzeCount}</RankSummaryRow>
+            <RankSummaryRow $rank="GOLD">{rankGlyph('GOLD')} GOLD × {goldCount}</RankSummaryRow>
+            <RankSummaryRow $rank="SILVER">{rankGlyph('SILVER')} SILVER × {silverCount}</RankSummaryRow>
+            <RankSummaryRow $rank="BRONZE">{rankGlyph('BRONZE')} BRONZE × {bronzeCount}</RankSummaryRow>
           </RankSummary>
           <StageList aria-label="ステージ記録">
             {stages.map((s) => {
@@ -219,10 +240,8 @@ export const EndingScreenFull: React.FC<EndingScreenFullProps> = ({
                 <StageRow key={s.id} $rank={r.rank}>
                   <span>{s.numberLabel} {s.title}</span>
                   <span>
-                    {r.bestTimeSec !== undefined
-                      ? `${Math.floor(r.bestTimeSec / 60)}:${(Math.floor(r.bestTimeSec) % 60).toString().padStart(2, '0')}`
-                      : '--:--'}
-                    {' '}{r.rank === 'GOLD' ? '★★★' : r.rank === 'SILVER' ? '★★·' : r.rank === 'BRONZE' ? '★··' : '···'}
+                    {r.bestTimeSec !== undefined ? formatTimeMS(r.bestTimeSec) : '--:--'}
+                    {' '}{rankGlyph(r.rank)}
                   </span>
                 </StageRow>
               );
@@ -235,11 +254,17 @@ export const EndingScreenFull: React.FC<EndingScreenFullProps> = ({
   }
 
   if (phase === 'sound-test-link') {
+    // Q1 対応: spec §6.7.5 の「小さな ▶ SOUND TEST を 3 秒だけ表示」に合わせ、
+    // フルパネルではなく小さなテキストリンクで表示する。
     return (
       <Overlay role="dialog" aria-label="サウンドテスト案内">
-        <Container>
-          <PrimaryButton onClick={() => onSoundTest?.()}>▶ SOUND TEST</PrimaryButton>
-        </Container>
+        <SmallSoundTestLink
+          type="button"
+          onClick={() => onSoundTest?.()}
+          aria-label="SOUND TEST に移動"
+        >
+          ▶ SOUND TEST
+        </SmallSoundTestLink>
       </Overlay>
     );
   }

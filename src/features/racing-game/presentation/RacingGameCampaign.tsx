@@ -19,6 +19,7 @@ import { createCampaignProgressRepository } from '../infrastructure/storage/camp
 import { startCampaignStage } from '../application/use-cases/start-campaign-stage';
 import { getAllStages } from '../domain/race/stage-catalog';
 import type { GameOrchestratorConfig } from '../application/game-orchestrator';
+import { ReducedMotionGlobalStyle } from '../components/campaign/campaign-styles';
 import { StageSelectScreen } from '../components/campaign/StageSelectScreen';
 import { OptionsModal } from '../components/campaign/OptionsModal';
 import { StageHud } from '../components/campaign/StageHud';
@@ -85,14 +86,14 @@ const RacingGameCampaign: React.FC<RacingGameCampaignProps> = ({ onExit }) => {
 
   const loop = useCampaignGameLoop(canvasRef, orchConfig, session.currentStage, session.livesRemaining);
 
-  // ループ結果に応じてセッション状態を進める
+  // ループ結果に応じてセッション状態を進める（Q2 対応: 重複呼び出し排除）
+  // - cleared → handleClear（ベスト記録更新 + 次ステージアンロック）
+  // - time_up / game_over → handleTimeUp（lives 減算 + 残 0 で game_over へ）
+  // どちらの phase でも handleTimeUp は 1 回だけ呼ぶ。
   useEffect(() => {
     if (loop.phase === 'cleared' && loop.outcome.kind === 'cleared') {
       session.handleClear(loop.outcome.goalTimeSec, loop.outcome.rank);
-    } else if (loop.phase === 'time_up') {
-      session.handleTimeUp();
-    } else if (loop.phase === 'game_over') {
-      // useCampaignSession が lives 0 の判定をするのでここでは handleTimeUp 経由で OK
+    } else if (loop.phase === 'time_up' || loop.phase === 'game_over') {
       session.handleTimeUp();
     }
   }, [loop.phase]);  // eslint-disable-line react-hooks/exhaustive-deps
@@ -102,6 +103,7 @@ const RacingGameCampaign: React.FC<RacingGameCampaignProps> = ({ onExit }) => {
 
   return (
     <PageContainer>
+      <ReducedMotionGlobalStyle />
       <GameContainer>
         <div style={{ textAlign: 'center' }}>
           <Title>Racing Game — CAMPAIGN</Title>
@@ -123,7 +125,7 @@ const RacingGameCampaign: React.FC<RacingGameCampaignProps> = ({ onExit }) => {
           {session.phase === 'racing' && (
             <>
               <StageHud
-                timeRemainingSec={loop.runtime?.timeRemainingSec ?? 0}
+                timeRemainingSec={loop.display.timeRemainingSec}
                 stageNumber={stageNumber}
                 totalStages={totalStages}
                 speed={CAMPAIGN_BASE_SPEED * 60}  /* 表示用 */

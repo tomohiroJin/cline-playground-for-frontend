@@ -67,4 +67,36 @@ describe('OptionsModal', () => {
     fireEvent.click(screen.getByText('CLOSE'));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it('volume / onVolumeChange を渡すと音量スライダーが表示される（M3 対応）', () => {
+    const onVolumeChange = jest.fn();
+    render(
+      <OptionsModal
+        {...defaultProps}
+        volume={{ master: 0.5, bgm: 0.6, se: 0.7 }}
+        onVolumeChange={onVolumeChange}
+      />,
+    );
+    expect(screen.getByLabelText('マスター音量')).toBeInTheDocument();
+    expect(screen.getByLabelText('BGM 音量')).toBeInTheDocument();
+    expect(screen.getByLabelText('SE 音量')).toBeInTheDocument();
+  });
+
+  it('音量スライダー変更で onVolumeChange が呼ばれる', () => {
+    const onVolumeChange = jest.fn();
+    render(
+      <OptionsModal
+        {...defaultProps}
+        volume={{ master: 0.5, bgm: 0.6, se: 0.7 }}
+        onVolumeChange={onVolumeChange}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText('マスター音量'), { target: { value: '80' } });
+    expect(onVolumeChange).toHaveBeenCalledWith({ master: 0.8, bgm: 0.6, se: 0.7 });
+  });
+
+  it('volume を渡さない場合は音量スライダーが出ない', () => {
+    render(<OptionsModal {...defaultProps} />);
+    expect(screen.queryByLabelText('マスター音量')).toBeNull();
+  });
 });
