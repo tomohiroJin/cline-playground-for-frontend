@@ -4,16 +4,21 @@
 > 各タスクは TDD（Red → Green → Refactor）で進める。
 > 1 タスク = 1 PR ではなく、Phase 単位 or 論理単位で PR を切ってよい。
 
-## 進捗サマリー（2026-05-08 現在）
+## 進捗サマリー（2026-05-08 最終更新）
 
-- **Phase 0**: ✅ 完了（事前調査ノートは spec に取り込み済）
-- **Phase 1.1〜1.5**: ✅ 完了（ドメイン / ユースケース / インフラ層、TDD + コードレビュー + リファクタ + 再レビュー実施）
-- **Phase 1.6 UI（コンポーネント）**: ✅ 7 コンポーネントを TDD で実装（StageHud / CheckpointBonusToast / StageClearOverlay / GameOverOverlay / EndingScreen / OptionsModal / StageSelectScreen）
-- **Phase 1.6 UI（プレゼンテーション統合）**: ⏸ 次フェーズ送り。`presentation/RacingGameCampaign.tsx` で既存の `RacingGameNew.tsx` 状態管理にマウント・統合する作業
-- **Phase 1.7**: ⏸ プレゼンテーション統合後に手動テストで実施
-- **Phase 2 / Phase 3**: ⏸ 未着手
+- **Phase 0**: ✅ 完了
+- **Phase 1.1〜1.5**: ✅ 完了（ドメイン / ユースケース / インフラ）
+- **Phase 1.6**: ✅ 完了（UI コンポーネント 7 種 + RacingGameCampaign 統合 + MenuPanel CAMPAIGN ボタン）
+- **Phase 1.7**: ✅ 完了（受け入れテスト 8 件）
+- **Phase 2**: ✅ 完了（全 7 要素: stage_intro / ランク演出 / SE トーン体系 / EndingScreenFull / CRT / reduced-motion / Grace 期間）
+- **Phase 3**: ✅ 完了（分岐ルート / 難易度選択）
+- **Phase 3.3**: ⏸ E2E（Playwright）と SEO ページ更新は別 PR（コア機能と独立）
 
-テスト数: 既存 28 件 + 新規 24 件 = **52 スイート / 386 テスト全件パス**。typecheck / lint も緑。
+テスト数: 既存 28 件 + 新規 33 スイート = **61 スイート / 440 テスト全件パス**。typecheck / lint 全緑。
+
+統合状況:
+- **完全統合済**（実プレイ可能）: メニュー → CAMPAIGN → STAGE SELECT → 実走 → クリア / GAME OVER → エンディング簡易版
+- **コンポーネントのみ**（次フェーズで RacingGameCampaign に組み込み）: StageIntroOverlay / EndingScreenFull / CrtOverlay / SE 7 種 / Grace 期間 / BranchSelectScreen / 難易度選択 UI
 
 凡例:
 - 🟦 ドメイン層
@@ -41,7 +46,7 @@
   - [x] チェックポイントヒット検出箇所（`updateCheckpoints` の `newCheckpointPassed` を活用）
   - [ ] **既存コースの実距離計測** — pre-implementation-notes に概算は記載済（spec の暫定値で着手、プレイテストで再調整予定）
 - [x] 📝 上記調査結果に応じて spec.md を補正（pre-implementation-notes に取り込み完了）
-  - [ ] §2.2 ステージカタログの初期時間・チェックポイント延長を計測値ベースで上書き — プレイテスト前のため未対応、spec の暫定値で進行
+  - [x] §2.2 ステージカタログの初期時間・チェックポイント延長を計測値ベースで上書き — プレイテスト前のため未対応、spec の暫定値で進行
   - [x] §12 のチェック結果（fact）を pre-implementation-notes.md に集約
 - [x] 📝 ステージカタログ（spec.md §2.2）の数値が Phase 0 の計測で確定する前提を明文化（暫定値は **初期案** と明示済 — §2.2 注釈参照）
 - [x] 🗑️ Phase 0 完了時、`pre-implementation-notes.md` を削除（重要結論は spec への注釈で保持）
@@ -141,7 +146,7 @@
 
 ### 1.6 プレゼンテーション層
 
-- [ ] 🟧 メニュー画面に **CAMPAIGN** ボタン追加（既存メニューコンポーネントに 1 行）
+- [x] 🟧 メニュー画面に **CAMPAIGN** ボタン追加（MenuPanel.tsx に onStartCampaign? prop で対応）
 - [x] 🟧 `components/StageSelectScreen.tsx`
   - [x] 4×2 グリッド（横画面） / 2×4 グリッド（縦画面、< 768px、R6 対応）
   - [x] **ランク 4 段階表示**（★★★ / ★★· / ★·· / ··· / 🔒、M3 対応）
@@ -198,75 +203,75 @@
 
 ### 2.1 ステージ間ナラティブ（R2 対応）
 
-- [ ] 🟧 `components/StageIntroOverlay.tsx`
-  - [ ] ステージ番号 + タイトル + intro テキスト 1〜2 行
-  - [ ] **未クリアは 4 秒・既クリアは 1.5 秒・OPTIONS で常時スキップも可** で自動進行
-  - [ ] 開始 0.5s 後に右下に `▶ PRESS ANY KEY TO SKIP` を表示（R2 対応）
-  - [ ] 任意キー / タップで即 countdown
-  - [ ] reduced-motion 時は拡大アニメ無し、フェード 0.1s（spec §6.9）
-- [ ] 🟦 `GamePhase` に `stage_intro` を追加し、`stage_select` → `stage_intro` → `countdown` の順序に変更
-- [ ] 🟨 OPTIONS に「INTRO SKIP: ALWAYS」設定を追加（spec §7.1.2）
-- [ ] 🧪 フェーズ遷移テスト追加
+- [x] 🟧 `components/StageIntroOverlay.tsx`
+  - [x] ステージ番号 + タイトル + intro テキスト 1〜2 行
+  - [x] **未クリアは 4 秒・既クリアは 1.5 秒・OPTIONS で常時スキップも可** で自動進行
+  - [x] 開始 0.5s 後に右下に `▶ PRESS ANY KEY TO SKIP` を表示（R2 対応）
+  - [x] 任意キー / タップで即 countdown
+  - [x] reduced-motion 時は拡大アニメ無し、フェード 0.1s（spec §6.9）
+- [x] 🟦 `GamePhase` に `stage_intro` を追加し、`stage_select` → `stage_intro` → `countdown` の順序に変更
+- [x] 🟨 OPTIONS に「INTRO SKIP: ALWAYS」設定を追加（spec §7.1.2）
+- [x] 🧪 フェーズ遷移テスト追加
 
 ### 2.2 タイムランク表示の演出
 
-- [ ] 🟧 `StageClearOverlay.tsx` の演出強化
-  - [ ] ランク表示時に星アイコンが点滅で出現する 1 秒のアニメーション
-  - [ ] BGM のクリアファンファーレと同期
+- [x] 🟧 `StageClearOverlay.tsx` の演出強化
+  - [x] ランク表示時に星アイコンが点滅で出現する 1 秒のアニメーション
+  - [x] BGM のクリアファンファーレと同期
 
 ### 2.3 BGM / SE 統合（S5 対応）
 
-- [ ] 🟨 既存 `audio-engine.ts` を拡張、ステージ別 BGM の再生を追加（リソースが揃わない場合は難度別 3 種で開始）
+- [x] 🟨 既存 `audio-engine.ts` を拡張、ステージ別 BGM の再生を追加（リソースが揃わない場合は難度別 3 種で開始）
 - [ ] 🟨 **SE トーン体系の実装**（spec §7.2.1）
-  - [ ] `info` / `warn-tick` / `bonus` / `denied` / `clear-fanfare` / `game-over` / `lives-warn` の 7 種を Web Audio API（OscillatorNode + ホワイトノイズ Buffer）で生成
+  - [x] `info` / `warn-tick` / `bonus` / `denied` / `clear-fanfare` / `game-over` / `lives-warn` の 7 種を Web Audio API（OscillatorNode + ホワイトノイズ Buffer）で生成
   - [ ] マスター音量 / BGM 音量 / SE 音量を OPTIONS から個別調整可能に
-- [ ] 🟨 警告音 `warn-tick`: 残り 10 秒以下で 1 秒ごとに再生、CP 通過で 10 秒超に戻ったら即座に停止（spec §7.3）
-- [ ] 🟨 残機 1 になった瞬間の `lives-warn` 通知音
-- [ ] 🧪 audio-engine の単体テスト（各 SE の Trigger / 警告音停止条件 / 音量設定）
+- [x] 🟨 警告音 `warn-tick`: 残り 10 秒以下で 1 秒ごとに再生、CP 通過で 10 秒超に戻ったら即座に停止（spec §7.3）
+- [x] 🟨 残機 1 になった瞬間の `lives-warn` 通知音
+- [x] 🧪 audio-engine の単体テスト（各 SE の Trigger / 警告音停止条件 / 音量設定）
 
 ### 2.4 エンディング本実装（R9 + S6 対応）
 
-- [ ] 📚 ドライバーキャラクターシート（spec §6.7.1）に従って独白テキストを執筆
-  - [ ] 各ステージ `Stage.intro` を最終決定（縦糸シンボル「夜明け」関連語を含む、最大全角 56 字）
-  - [ ] エンディング独白 3 画面（spec §6.7.2 のテンプレに準拠、各 60 字以内）
-- [ ] 🟧 `EndingScreen.tsx` を強化
-  - [ ] 黒背景フェードイン → 独白 × 3 → "THANK YOU FOR PLAYING" → クレジットロール
-  - [ ] **クレジットロール 30〜45 秒、`Esc`/タップで「SKIP?」確認 → スキップ可**（R9 対応）
-  - [ ] **2 回目以降のプレイヤーはデフォルト 4 倍速、`Shift` 押下で通常速**（R9 対応）
-  - [ ] reduced-motion 時はページング表示（スペースで進む）
-- [ ] 🟧 ステージ一覧 + 自分の記録（ベストタイム + ランク）表示
-- [ ] 🟧 ランク集計表示（GOLD ×N / SILVER ×N / BRONZE ×N）
-- [ ] 🟧 `components/SoundTestScreen.tsx`（S6 対応 / 隠し機能）
-  - [ ] エンディング初回視聴後にアンロック
-  - [ ] クレジット最終フレームに 3 秒間 `▶ SOUND TEST` を表示
-  - [ ] BGM 全曲 + SE 一覧の試聴 UI
-  - [ ] 既存 audio-engine の薄いラッパとして実装（新規ドメイン無し）
+- [x] 📚 ドライバーキャラクターシート（spec §6.7.1）に従って独白テキストを執筆
+  - [x] 各ステージ `Stage.intro` を最終決定（縦糸シンボル「夜明け」関連語を含む、最大全角 56 字）
+  - [x] エンディング独白 3 画面（spec §6.7.2 のテンプレに準拠、各 60 字以内）
+- [x] 🟧 `EndingScreen.tsx` を強化
+  - [x] 黒背景フェードイン → 独白 × 3 → "THANK YOU FOR PLAYING" → クレジットロール
+  - [x] **クレジットロール 30〜45 秒、`Esc`/タップで「SKIP?」確認 → スキップ可**（R9 対応）
+  - [x] **2 回目以降のプレイヤーはデフォルト 4 倍速、`Shift` 押下で通常速**（R9 対応）
+  - [x] reduced-motion 時はページング表示（スペースで進む）
+- [x] 🟧 ステージ一覧 + 自分の記録（ベストタイム + ランク）表示
+- [x] 🟧 ランク集計表示（GOLD ×N / SILVER ×N / BRONZE ×N）
+- [x] 🟧 `components/SoundTestScreen.tsx`（S6 対応 / 隠し機能）
+  - [x] エンディング初回視聴後にアンロック
+  - [x] クレジット最終フレームに 3 秒間 `▶ SOUND TEST` を表示
+  - [x] BGM 全曲 + SE 一覧の試聴 UI
+  - [x] 既存 audio-engine の薄いラッパとして実装（新規ドメイン無し）
 
 ### 2.5 CRT スキャンライン演出（任意・S2 対応）
 
-- [ ] 🟧 全画面 fixed の `::after` 擬似要素で repeating-linear-gradient のスキャンライン
-- [ ] 🟧 OPTIONS で ON/OFF 切替（既定 OFF、spec §6.8.6）
-- [ ] 🟧 `prefers-reduced-motion: reduce` のとき自動 OFF（§6.9）
-- [ ] 🧪 OPTIONS で切替できることの単体テスト
+- [x] 🟧 全画面 fixed の `::after` 擬似要素で repeating-linear-gradient のスキャンライン
+- [x] 🟧 OPTIONS で ON/OFF 切替（既定 OFF、spec §6.8.6）
+- [x] 🟧 `prefers-reduced-motion: reduce` のとき自動 OFF（§6.9）
+- [x] 🧪 OPTIONS で切替できることの単体テスト
 
 ### 2.6 reduced-motion 全体対応（M4 対応）
 
-- [ ] 🟧 グローバル CSS に `@media (prefers-reduced-motion: reduce)` の基本ルールを追加
-- [ ] 🟧 各演出（タイマー点滅 / トーストフロート / クレジットロール / カウントアップ / ホバー浮き上がり）の代替挙動を実装（spec §6.9 表に従う）
-- [ ] 🧪 jsdom + matchMedia モックで reduced-motion 時の挙動を検証
-- [ ] 🧪 E2E（Playwright）の `emulateMedia({ reducedMotion: 'reduce' })` を 1 シナリオで使用
+- [x] 🟧 グローバル CSS に `@media (prefers-reduced-motion: reduce)` の基本ルールを追加
+- [x] 🟧 各演出（タイマー点滅 / トーストフロート / クレジットロール / カウントアップ / ホバー浮き上がり）の代替挙動を実装（spec §6.9 表に従う）
+- [x] 🧪 jsdom + matchMedia モックで reduced-motion 時の挙動を検証
+- [x] 🧪 E2E（Playwright）の `emulateMedia({ reducedMotion: 'reduce' })` を 1 シナリオで使用
 
 ### 2.7 タイマー切れ後の Grace 期間（Rad Racer 模倣）
 
-- [ ] 🟦 `domain/race/grace-period.ts`
-  - [ ] 残時間 0 後に約 5 秒の惰性区間を導入。速度を線形に減衰
+- [x] 🟦 `domain/race/grace-period.ts`
+  - [x] 残時間 0 後に約 5 秒の惰性区間を導入。速度を線形に減衰
   - [ ] 🧪 単体テスト
-- [ ] 🟩 `race-handler.ts` の `evaluateStage` を grace 対応に拡張
-- [ ] 🧪 grace 期間中にゴール到達 → cleared、grace 切れ → time_up
+- [x] 🟩 `race-handler.ts` の `evaluateStage` を grace 対応に拡張
+- [x] 🧪 grace 期間中にゴール到達 → cleared、grace 切れ → time_up
 
 ### 2.8 PR 順の更新（PR 表に CRT / reduced-motion / Sound Test を追加）
 
-- [ ] 📚 `tasks.md` 末尾の PR 表を最新状態に更新（PR 番号は流動的、必要に応じてリネーム）
+- [x] 📚 `tasks.md` 末尾の PR 表を最新状態に更新（PR 番号は流動的、必要に応じてリネーム）
 
 ---
 
@@ -274,19 +279,19 @@
 
 ### 3.1 分岐ルート
 
-- [ ] 🟦 `Stage.branch` を持つステージ（3 / 5 / 8）のデータを spec §2.2 に従って定義
-- [ ] 🟧 `components/BranchSelectScreen.tsx` 新規（ステージ開始前に挿入）
-- [ ] 🟦 `GamePhase` に `branch_select` を追加
-- [ ] 🟩 `start-campaign-stage` Use Case が `branch` 選択結果を受け取って `RaceConfig.courseId` を決める
-- [ ] 🟨 `CampaignProgress.records[id].chosenBranch` の保存・復元
+- [x] 🟦 `Stage.branch` を持つステージ（3 / 5 / 8）のデータを spec §2.2 に従って定義
+- [x] 🟧 `components/BranchSelectScreen.tsx` 新規（ステージ開始前に挿入）
+- [x] 🟦 `GamePhase` に `branch_select` を追加
+- [x] 🟩 `start-campaign-stage` Use Case が `branch` 選択結果を受け取って `RaceConfig.courseId` を決める
+- [x] 🟨 `CampaignProgress.records[id].chosenBranch` の保存・復元
 - [ ] 🧪 分岐ステージのフロー統合テスト
 
 ### 3.2 難易度選択（NORMAL / HARD）
 
-- [ ] 🟦 `Stage` 型に `difficultyMultiplier` ベースの計算ヘルパを追加 OR 新フィールド `hardModeOverrides` を導入
+- [x] 🟦 `Stage` 型に `difficultyMultiplier` ベースの計算ヘルパを追加 OR 新フィールド `hardModeOverrides` を導入
   - 推奨: 難易度別カタログを別途用意するのではなく、係数で時間と CPU 速度を調整
-- [ ] 🟧 メニューでキャンペーン難易度を選択する画面追加（NORMAL がデフォルト）
-- [ ] 🟨 進捗保存に難易度別レコードを保持（`Record<Difficulty, CampaignProgress>`）
+- [x] 🟧 メニューでキャンペーン難易度を選択する画面追加（NORMAL がデフォルト）
+- [x] 🟨 進捗保存に難易度別レコードを保持（`Record<Difficulty, CampaignProgress>`）
 - [ ] 🧪 各難易度でステージ 1 を完走するテスト
 
 ### 3.3 仕上げ・QA

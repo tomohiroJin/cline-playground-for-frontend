@@ -39,7 +39,10 @@ const STAGES: readonly Stage[] = [
     title: 'NEON STREET',
     numberLabel: 'STAGE 3',
     intro: '街の灯りが滲む。夜明け前のネオンは、いつも少しだけ眩しい。',
-    courseIndex: 1,
+    branch: {
+      a: { label: '大通りルート', courseIndex: 1 },
+      b: { label: '路地裏ショート', courseIndex: 0 },  // Forest を路地裏に流用
+    },
     difficulty: 'normal',
     initialTimeSec: 66,
     checkpointBonusSec: 10,
@@ -65,7 +68,10 @@ const STAGES: readonly Stage[] = [
     title: 'WHITE OUT',
     numberLabel: 'STAGE 5',
     intro: '雪の白が視界を覆う。夜明けの色は、ここではまだ見えない。',
-    courseIndex: 5,
+    branch: {
+      a: { label: '凍結ロング', courseIndex: 5 },
+      b: { label: '雪原ショート', courseIndex: 3 },  // Beach を雪原に流用
+    },
     difficulty: 'hard',
     initialTimeSec: 60,
     checkpointBonusSec: 9,
@@ -106,8 +112,10 @@ const STAGES: readonly Stage[] = [
     title: 'OVERDRIVE',
     numberLabel: 'STAGE 8',
     intro: '夜明けまで、あとひと走りだ。',
-    // Stage 8 は Mountain コース（index 2）の高難度バリアント。
-    courseIndex: 2,
+    branch: {
+      a: { label: '標準ルート', courseIndex: 2 },
+      b: { label: 'ショートカット & 障害物多', courseIndex: 4 },  // Night を流用
+    },
     difficulty: 'extreme',
     initialTimeSec: 46,
     checkpointBonusSec: 6,

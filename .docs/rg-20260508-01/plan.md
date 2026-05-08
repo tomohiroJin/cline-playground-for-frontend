@@ -3,7 +3,22 @@
 - **対象**: `src/features/racing-game/`
 - **着手日**: 2026-05-08
 - **ブランチ**: `feature/racing-famicom-brushup-20260508`
-- **ステータス**: 計画策定中
+- **ステータス**: ✅ Phase 1〜Phase 3 実装完了（実プレイ可能 + 演出 + 分岐 + 難易度のドメイン整備済）
+
+## 実装サマリー（最終）
+
+| Phase | 状況 | 主な成果物 |
+|-------|------|-----------|
+| Phase 0 | ✅ 完了 | 事前調査（spec §12 に統合） |
+| Phase 1.1〜1.5 | ✅ 完了 | ドメイン 9 ファイル / ユースケース 8 ファイル / インフラ 1 ファイル |
+| Phase 1.6 | ✅ 完了 | UI コンポーネント 7 種 + RacingGameCampaign.tsx + MenuPanel CAMPAIGN ボタン |
+| Phase 1.7 | ✅ 完了 | 統合受け入れテスト 8 件 |
+| Phase 2 | ✅ 完了 | StageIntroOverlay / EndingScreenFull / CrtOverlay / SE エンジン 7 種 / Grace 期間 / ランク登場アニメ |
+| Phase 3.1 | ✅ 完了 | 分岐ルート（Stage 3, 5, 8）+ BranchSelectScreen |
+| Phase 3.2 | ✅ 完了 | 難易度（NORMAL / HARD）ドメイン |
+| Phase 3.3 | ⏸ 部分 | E2E（Playwright）と SEO ページ更新は別 PR |
+
+**テスト**: 既存 28 件 + 新規 33 スイート = **61 スイート / 440 件パス**。typecheck / lint も緑。
 
 ---
 
