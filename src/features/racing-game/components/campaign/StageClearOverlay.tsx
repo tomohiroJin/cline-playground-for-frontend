@@ -1,9 +1,16 @@
 // ステージクリア オーバーレイ（spec §6.5）
 
 import React from 'react';
-import styled from 'styled-components';
+import styled, { keyframes, css } from 'styled-components';
 import type { StageRank } from '../../domain/race/rank';
 import { Overlay, Panel, LargeTitle, PrimaryButton, TOKENS } from './campaign-styles';
+
+// ランク登場アニメーション（Phase 2.2 演出強化）
+const rankAppear = keyframes`
+  0%, 30% { opacity: 0; transform: scale(0.8); }
+  40%, 60% { opacity: 1; transform: scale(1.15); }
+  100% { opacity: 1; transform: scale(1); }
+`;
 
 const Stat = styled.div`
   font-family: ${TOKENS.fontEnPixel};
@@ -28,6 +35,11 @@ const Rank = styled.div<{ $rank: StageRank }>`
       : p.$rank === 'SILVER'
         ? TOKENS.accentSilver
         : TOKENS.accentBronze};
+  animation: ${css`${rankAppear} 1s ease-out`};
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
 `;
 
 const RANK_GLYPH: Record<Exclude<StageRank, 'NONE'>, string> = {
