@@ -47,9 +47,11 @@ import type { DraftState } from './draft-ui-logic';
 import { useInput, useIdle } from './hooks';
 import { VolumeCtrl } from './components/VolumeControl';
 import { MenuPanel } from './components/MenuPanel';
+import RacingGameCampaign from './presentation/RacingGameCampaign';
 import { ResultPanel } from './components/ResultPanel';
 
 export default function RacingGame() {
+  const [campaignActive, setCampaignActive] = useState(false);
   const [mode, setMode] = useState('2p');
   const [course, setCourse] = useState(0);
   const [speed, setSpeed] = useState(1);
@@ -681,6 +683,10 @@ export default function RacingGame() {
     ? Utils.formatTime(bests[`c${course}-l${laps}`])
     : '--:--.-';
 
+  if (campaignActive) {
+    return <RacingGameCampaign onExit={() => setCampaignActive(false)} />;
+  }
+
   return (
     <PageContainer>
       <GameContainer>
@@ -706,6 +712,7 @@ export default function RacingGame() {
               c2={c2} setC2={setC2}
               cardsEnabled={cardsEnabled} setCardsEnabled={setCardsEnabled}
               onStart={startGame}
+              onStartCampaign={() => setCampaignActive(true)}
             />
           )}
 

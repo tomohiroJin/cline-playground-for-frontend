@@ -31,17 +31,35 @@ export interface MenuPanelProps {
   cardsEnabled: boolean;
   setCardsEnabled: (e: boolean) => void;
   onStart: () => void;
+  /** キャンペーンモード突入。spec §6.1 に従いメニューの先頭に配置 */
+  onStartCampaign?: () => void;
 }
 
 export const MenuPanel: React.FC<MenuPanelProps> = ({
   mode, setMode, course, setCourse, speed, setSpeed,
   cpu, setCpu, laps, setLaps, c1, setC1, c2, setC2,
-  cardsEnabled, setCardsEnabled, onStart,
+  cardsEnabled, setCardsEnabled, onStart, onStartCampaign,
 }) => (
   <Overlay>
     <ResultTitle style={{ marginBottom: '0.5rem', color: '#fbbf24', fontSize: '1.5rem' }}>
       🏎️ レースゲーム
     </ResultTitle>
+
+    {onStartCampaign && (
+      <ActionButton
+        onClick={onStartCampaign}
+        style={{
+          marginBottom: '0.75rem',
+          padding: '0.5rem 2rem',
+          background: 'linear-gradient(to right, #FFD166, #E63946)',
+          color: '#000',
+          fontSize: '1rem',
+          letterSpacing: '2px',
+        }}
+      >
+        ▶ CAMPAIGN
+      </ActionButton>
+    )}
 
     <ControlGroup style={{ padding: '0.25rem 0.5rem' }}>
       <Label style={{ fontSize: '0.8rem' }}>Mode</Label>
