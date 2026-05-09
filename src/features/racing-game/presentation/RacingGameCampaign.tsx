@@ -27,6 +27,8 @@ import { CheckpointBonusToast } from '../components/campaign/CheckpointBonusToas
 import { StageClearOverlay } from '../components/campaign/StageClearOverlay';
 import { GameOverOverlay } from '../components/campaign/GameOverOverlay';
 import { EndingScreen } from '../components/campaign/EndingScreen';
+import { StageIntroOverlay } from '../components/campaign/StageIntroOverlay';
+import { createCampaignSeEngine } from '../components/campaign/campaign-se-engine';
 
 const CAMPAIGN_BASE_SPEED = 3.2;
 
@@ -37,22 +39,45 @@ export interface RacingGameCampaignProps {
 
 const RacingGameCampaign: React.FC<RacingGameCampaignProps> = ({ onExit }) => {
   const port = useMemo(() => createCampaignProgressRepository(), []);
+  const seEngine = useMemo(() => createCampaignSeEngine(), []);
   const session = useCampaignSession(port);
   const stages = getAllStages();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { keys, touch } = useInput();
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [orchConfig, setOrchConfig] = useState<GameOrchestratorConfig | null>(null);
+  // F3: ステージ intro 表示フラグ。selectStage 直後 → intro 表示 → racing 開始の順
+  const [showingIntro, setShowingIntro] = useState(false);
+  // 直前のベストタイムを記憶し、ステージクリア時に NEW BEST! 判定に使う
+  const prevBestRef = useRef<number | undefined>(undefined);
 
   // セッション初期化（マウント時に STAGE SELECT へ）
   useEffect(() => {
     session.enterStageSelect();
   }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
-  // racing 突入時に orchestrator config を構築
+  // アンマウント時に SE エンジンをクリーンアップ
   useEffect(() => {
-    if (session.phase !== 'racing' || !session.currentStage) {
-      setOrchConfig(null);
+    return () => seEngine.cleanup();
+  }, [seEngine]);
+
+  // F3: ステージ選択 → intro 表示 → racing 突入のフロー
+  useEffect(() => {
+    if (session.phase === 'racing' && session.currentStage) {
+      // 既クリアステージの再挑戦は短縮版 intro
+      const stageId = session.currentStage.id;
+      prevBestRef.current = session.progress.records[stageId]?.bestTimeSec;
+      seEngine.play('info');
+      setShowingIntro(true);
+    } else {
+      setShowingIntro(false);
+    }
+  }, [session.phase, session.currentStage, session.progress, seEngine]);
+
+  // racing 突入時に orchestrator config を構築（intro 表示中は遅延）
+  useEffect(() => {
+    if (session.phase !== 'racing' || !session.currentStage || showingIntro) {
+      if (session.phase !== 'racing') setOrchConfig(null);
       return;
     }
     if (!canvasRef.current) return;
@@ -82,24 +107,33 @@ const RacingGameCampaign: React.FC<RacingGameCampaignProps> = ({ onExit }) => {
       playerColors: [Colors.car[0], Colors.car[1]],
       playerNames: ['P1', '—'],
     });
-  }, [session.phase, session.currentStage, session.livesRemaining, keys, touch]);
+  }, [session.phase, session.currentStage, session.livesRemaining, keys, touch, showingIntro]);
 
   const loop = useCampaignGameLoop(canvasRef, orchConfig, session.currentStage, session.livesRemaining);
 
   // ループ結果に応じてセッション状態を進める（Q2 対応: 重複呼び出し排除）
-  // - cleared → handleClear（ベスト記録更新 + 次ステージアンロック）
-  // - time_up / game_over → handleTimeUp（lives 減算 + 残 0 で game_over へ）
-  // どちらの phase でも handleTimeUp は 1 回だけ呼ぶ。
   useEffect(() => {
     if (loop.phase === 'cleared' && loop.outcome.kind === 'cleared') {
       session.handleClear(loop.outcome.goalTimeSec, loop.outcome.rank);
     } else if (loop.phase === 'time_up' || loop.phase === 'game_over') {
+      seEngine.play(loop.phase === 'game_over' ? 'game-over' : 'lives-warn');
       session.handleTimeUp();
     }
   }, [loop.phase]);  // eslint-disable-line react-hooks/exhaustive-deps
 
+  // F3: チェックポイント時間延長で SE 鳴動
+  useEffect(() => {
+    if (loop.bonusEvent) seEngine.play('bonus');
+  }, [loop.bonusEvent, seEngine]);
+
   const totalStages = stages.length;
   const stageNumber = session.currentStage?.id ?? 1;
+
+  // 現ステージのベスト更新判定（F3: NEW BEST 表示用）
+  const isNewBest =
+    loop.outcome.kind === 'cleared' &&
+    (prevBestRef.current === undefined ||
+      loop.outcome.goalTimeSec < prevBestRef.current);
 
   // S1 対応: stage_select は Canvas と無関係なので CanvasContainer の外、
   // 画面全体を使うレイアウトにする。レース・結果系は Canvas オーバーレイなので
@@ -114,7 +148,9 @@ const RacingGameCampaign: React.FC<RacingGameCampaignProps> = ({ onExit }) => {
           <Title>Racing Game — CAMPAIGN</Title>
         </div>
 
-        {isStageSelect && (
+        {/* F2 対応: stage_select 中は CanvasContainer 自体をアンマウント（display:none ではなく条件レンダリング）
+            メニューに戻った際の Canvas ステートのリーク・サイズ崩れを防ぐ。 */}
+        {isStageSelect ? (
           <StageSelectScreen
             stages={stages}
             progress={session.progress}
@@ -122,12 +158,11 @@ const RacingGameCampaign: React.FC<RacingGameCampaignProps> = ({ onExit }) => {
             onBackToMenu={() => { session.leaveToMenu(); onExit(); }}
             onOpenOptions={() => setOptionsOpen(true)}
           />
-        )}
-
-        <CanvasContainer style={{ display: isStageSelect ? 'none' : 'block' }}>
+        ) : (
+        <CanvasContainer>
           <Canvas ref={canvasRef} role="img" aria-label="レーシングキャンペーン画面" tabIndex={0} />
 
-          {session.phase === 'racing' && (
+          {session.phase === 'racing' && !showingIntro && (
             <>
               <StageHud
                 timeRemainingSec={loop.display.timeRemainingSec}
@@ -144,10 +179,23 @@ const RacingGameCampaign: React.FC<RacingGameCampaignProps> = ({ onExit }) => {
             </>
           )}
 
+          {/* F3: ステージ突入時にナラティブを表示してわくわく感を演出 */}
+          {session.phase === 'racing' && showingIntro && session.currentStage && (
+            <StageIntroOverlay
+              numberLabel={session.currentStage.numberLabel}
+              title={session.currentStage.title}
+              intro={session.currentStage.intro}
+              isReplay={prevBestRef.current !== undefined}
+              onComplete={() => setShowingIntro(false)}
+            />
+          )}
+
           {session.phase === 'stage_clear' && loop.outcome.kind === 'cleared' && (
             <StageClearOverlay
               goalTimeSec={loop.outcome.goalTimeSec}
               rank={loop.outcome.rank}
+              isNewBest={isNewBest}
+              onPlayFanfare={() => seEngine.play('clear-fanfare')}
               onContinue={session.continueAfterClear}
             />
           )}
@@ -164,15 +212,19 @@ const RacingGameCampaign: React.FC<RacingGameCampaignProps> = ({ onExit }) => {
             <EndingScreen onBackToStageSelect={session.returnToStageSelect} />
           )}
 
-          {optionsOpen && (
-            <OptionsModal
-              canReplayEnding={session.canReplayEnding}
-              onReplayEnding={() => { setOptionsOpen(false); session.viewEnding(); }}
-              onResetProgress={() => { setOptionsOpen(false); session.resetAllProgress(); }}
-              onClose={() => setOptionsOpen(false)}
-            />
-          )}
         </CanvasContainer>
+        )}
+
+        {/* OPTIONS は stage_select / racing どちらからも開く可能性があるため
+            CanvasContainer の外で fixed Overlay として常時マウント可能に */}
+        {optionsOpen && (
+          <OptionsModal
+            canReplayEnding={session.canReplayEnding}
+            onReplayEnding={() => { setOptionsOpen(false); session.viewEnding(); }}
+            onResetProgress={() => { setOptionsOpen(false); session.resetAllProgress(); }}
+            onClose={() => setOptionsOpen(false)}
+          />
+        )}
 
         <div style={{ marginTop: '1rem', textAlign: 'center', color: '#9ca3af', fontSize: '0.8rem' }}>
           ←→: ステージ移動 / Enter: 選択 / Esc: メニューへ戻る
