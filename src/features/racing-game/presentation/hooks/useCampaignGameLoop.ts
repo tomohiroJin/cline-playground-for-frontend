@@ -15,8 +15,31 @@ import { executeCampaignTick } from '../../application/use-cases/campaign-tick';
 import type { StageOutcome } from '../../domain/race/stage-progress';
 import { decrementLives, isGameOver as isGameOverFn } from '../../domain/race/lives';
 import type { GameOrchestratorState } from '../../application/orchestrator-state';
+import type { GamePhase } from '../../domain/race/types';
 
 const FRAME_DT_SEC = 1 / 60;
+
+/**
+ * campaign-tick を実行すべきフレームかを判定する純粋関数。
+ *
+ * 判定ルール（spec §1.1 + race-handler の挙動を踏まえた設計）:
+ * - **race フェーズ中**: 毎フレーム実行（残時間管理のため）
+ * - **lap 増加フレーム**: race-handler が `updated.lap > raceConfig.maxLaps` の
+ *   瞬間に `state.phase = 'result'` へ即時切替するため、ゴールしたフレームでは
+ *   既に phase が 'race' でなくなっている。`lap` の増加だけを別軸で検出して
+ *   1 フレームだけ campaign-tick を呼ぶ。
+ *
+ * lap 増加フレーム以降は呼び出し側で `frame.lastLap` を更新するため、
+ * 次フレームでは `currentLap === lastLap` になり result フェーズでの連続呼び出しは発生しない（安全弁）。
+ *
+ * 本判定の正しさが回帰しないよう、必ず `shouldRunCampaignTick.test.ts` の境界
+ * テストを通すこと。
+ */
+export const shouldRunCampaignTick = (
+  phase: GamePhase,
+  currentLap: number,
+  lastLap: number,
+): boolean => phase === 'race' || currentLap > lastLap;
 
 /** キャンペーン走行中のフェーズ */
 export type CampaignRacePhase =
@@ -150,18 +173,15 @@ export const useCampaignGameLoop = (
         }
         setPaused(false);
 
-        // race-handler は lap > maxLaps の瞬間に state.phase='result' に切り替えるため、
-        // ゴールしたフレームでは state.phase は既に 'result'。
-        // そのため、campaign-tick の対象判定は:
-        //   - 通常レース中: state.phase === 'race'
-        //   - ゴールライン通過の瞬間: lap が前回値より増えている（state.phase は 'result' でも検出する）
-        // どちらかが満たされたフレームを処理する。
+        // S2 対応: state.players が空の異常状態をガード
         const player = state.players[0];
-        const isLapAdvanced = frameRef.current ? player.lap > frameRef.current.lastLap : false;
-        const shouldRunCampaignTick =
-          frameRef.current !== null && (state.phase === 'race' || isLapAdvanced);
+        if (!player || !frameRef.current) {
+          requestAnimationFrame(loop);
+          return;
+        }
 
-        if (shouldRunCampaignTick && frameRef.current) {
+        // 純粋関数 shouldRunCampaignTick で判定（テストで境界保証）
+        if (shouldRunCampaignTick(state.phase, player.lap, frameRef.current.lastLap)) {
           const stepResult = stepCampaignFrame(state, frameRef.current);
           frameRef.current = stepResult.nextState;
 

@@ -15,20 +15,22 @@ import { isCampaignCompleted } from '../../domain/race/campaign-progress';
 import { TOKENS, focusRingStyle, PrimaryButton } from './campaign-styles';
 import { StageCard } from './StageCard';
 
-// CanvasContainer (relative) の中にオーバーレイ表示する。
-// Canvas を覆うが、スクロール可能（縦画面でも全ステージにアクセスできる）。
+// S1 対応: CanvasContainer の外（GameContainer 直下）に配置する前提のスタイル。
+// 通常フローで表示し、PC・モバイル双方で十分な領域を確保する。
+// padding は viewport に応じて柔軟に伸縮（S3 対応 — 24px 固定からの変更理由）。
 const Container = styled.div`
-  position: absolute;
-  inset: 0;
+  position: relative;
+  width: 100%;
+  max-width: 900px;
   background: ${TOKENS.bgPrimary};
   color: ${TOKENS.textPrimary};
   font-family: ${TOKENS.fontEnPixel};
-  padding: 16px;
+  padding: clamp(12px, 3vw, 24px);
   display: flex;
   flex-direction: column;
   align-items: center;
-  overflow-y: auto;
-  z-index: 10;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 `;
 
 const Header = styled.div`

@@ -101,6 +101,11 @@ const RacingGameCampaign: React.FC<RacingGameCampaignProps> = ({ onExit }) => {
   const totalStages = stages.length;
   const stageNumber = session.currentStage?.id ?? 1;
 
+  // S1 対応: stage_select は Canvas と無関係なので CanvasContainer の外、
+  // 画面全体を使うレイアウトにする。レース・結果系は Canvas オーバーレイなので
+  // CanvasContainer 内に配置する。
+  const isStageSelect = session.phase === 'stage_select';
+
   return (
     <PageContainer>
       <ReducedMotionGlobalStyle />
@@ -109,18 +114,18 @@ const RacingGameCampaign: React.FC<RacingGameCampaignProps> = ({ onExit }) => {
           <Title>Racing Game — CAMPAIGN</Title>
         </div>
 
-        <CanvasContainer>
-          <Canvas ref={canvasRef} role="img" aria-label="レーシングキャンペーン画面" tabIndex={0} />
+        {isStageSelect && (
+          <StageSelectScreen
+            stages={stages}
+            progress={session.progress}
+            onSelectStage={session.selectStage}
+            onBackToMenu={() => { session.leaveToMenu(); onExit(); }}
+            onOpenOptions={() => setOptionsOpen(true)}
+          />
+        )}
 
-          {session.phase === 'stage_select' && (
-            <StageSelectScreen
-              stages={stages}
-              progress={session.progress}
-              onSelectStage={session.selectStage}
-              onBackToMenu={() => { session.leaveToMenu(); onExit(); }}
-              onOpenOptions={() => setOptionsOpen(true)}
-            />
-          )}
+        <CanvasContainer style={{ display: isStageSelect ? 'none' : 'block' }}>
+          <Canvas ref={canvasRef} role="img" aria-label="レーシングキャンペーン画面" tabIndex={0} />
 
           {session.phase === 'racing' && (
             <>
