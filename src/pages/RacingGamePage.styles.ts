@@ -41,6 +41,11 @@ export const SubTitle = styled.div`
 
 export const CanvasContainer = styled.div`
   position: relative;
+  /* 明示幅を持たせて Canvas の width:100% が親（GameContainer）基準で解決されるようにする。
+     これが無いと Canvas 表示幅が canvas の intrinsic サイズ（width 属性）依存になり、
+     キャンペーンから戻った直後にレイアウト未確定で小さい枠に固定される循環依存が起きる。 */
+  width: 100%;
+  max-width: 900px;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);

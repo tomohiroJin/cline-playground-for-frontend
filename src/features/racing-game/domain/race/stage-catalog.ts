@@ -135,6 +135,8 @@ const STAGES: readonly Stage[] = [
       cpuSpeedMul: 1.15,
     },
     difficulty: 'extreme',
+    // 原設計（1 周時 init=46 / gold=50）から gold > init。ランクは累計 elapsedSec 判定で
+    // 制限時間とは独立し、CP ボーナスで持ち時間が延びるため GOLD は到達可能（意図的）。
     initialTimeSec: 138,  // 46 × 3 周
     checkpointBonusSec: 6,
     goldRankTimeSec: 150,  // 50 × 3 周

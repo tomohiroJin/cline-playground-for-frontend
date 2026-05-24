@@ -45,7 +45,6 @@ import {
 } from './draft-ui-logic';
 import type { DraftState } from './draft-ui-logic';
 import { useInput, useIdle } from './hooks';
-import { useCanvasAutoFit } from './presentation/hooks/useCanvasAutoFit';
 import { VolumeCtrl } from './components/VolumeControl';
 import { MenuPanel } from './components/MenuPanel';
 import RacingGameCampaign from './presentation/RacingGameCampaign';
@@ -89,10 +88,6 @@ export default function RacingGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { keys, touch, setTouch, onKeyDown } = useInput();
   const [demo, setDemo] = useIdle(state === 'menu', Config.timing.idle);
-
-  // キャンペーンから戻った直後に Canvas が小さい枠で固定される問題への対処。
-  // 表示サイズ確定時に内部解像度を再適用する（座標系は不変）。
-  useCanvasAutoFit(canvasRef, Config.canvas.width, Config.canvas.height);
 
   useEffect(() => { pausedRef.current = paused; }, [paused]);
   useEffect(() => { cardsEnabledRef.current = cardsEnabled; }, [cardsEnabled]);
@@ -663,7 +658,10 @@ export default function RacingGame() {
       SoundEngine.cleanup();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, course, speed, cpu, laps, c1, c2, gameKey, demo]);
+    // campaignActive: キャンペーンから戻ると Canvas が再マウントされるため、
+    // この effect を再実行して新ノードに内部解像度を設定しゲームループを張り直す
+    // （これが無いと canvas.width が既定 300 のまま小さい枠で固定される）。
+  }, [mode, course, speed, cpu, laps, c1, c2, gameKey, demo, campaignActive]);
 
   const reset = () => {
     gamePhaseRef.current = 'menu';

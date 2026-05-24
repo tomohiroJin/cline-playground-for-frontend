@@ -26,7 +26,11 @@ export const renderHud = (
   drawHUD(ctx, players as Player[], courseName, maxLaps, raceStart);
 };
 
-/** カウントダウン描画 */
+/**
+ * カウントダウン描画。
+ * 注: 現状この関数は未配線（キャンペーンは canvas-renderer.renderCountdown が実体）。
+ * フェーズ5-1 で RacingGame.tsx の HUD 描画をここへ移行する際に利用する想定。
+ */
 export const renderCountdown = (
   ctx: CanvasRenderingContext2D,
   width: number,
