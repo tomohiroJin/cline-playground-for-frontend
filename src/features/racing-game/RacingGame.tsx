@@ -657,10 +657,10 @@ export default function RacingGame() {
       SoundEngine.stopEngine();
       SoundEngine.cleanup();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     // campaignActive: キャンペーンから戻ると Canvas が再マウントされるため、
     // この effect を再実行して新ノードに内部解像度を設定しゲームループを張り直す
     // （これが無いと canvas.width が既定 300 のまま小さい枠で固定される）。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, course, speed, cpu, laps, c1, c2, gameKey, demo, campaignActive]);
 
   const reset = () => {
