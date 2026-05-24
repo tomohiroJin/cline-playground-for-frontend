@@ -41,6 +41,23 @@ export const shouldRunCampaignTick = (
   lastLap: number,
 ): boolean => phase === 'race' || currentLap > lastLap;
 
+/**
+ * 最終周のゴールラインを通過した（=ステージクリア条件を満たした）かを判定する純粋関数。
+ *
+ * race-handler は `updated.lap > raceConfig.maxLaps` の瞬間に result へ遷移する
+ * （race-handler.ts:85）。campaign のクリア判定もこれに揃え、`player.lap > maxLaps`
+ * を基準にする。
+ *
+ * 旧実装は `player.lap > frame.lastLap`（lastLap 初期値 1）で、1 周目を終えた瞬間
+ * （lap=2）に即クリアしてしまい、`stage.lapsToClear` を 2 以上にしても 1 周で終わる
+ * バグがあった（フィードバック「一周では少なすぎる」の原因）。境界は
+ * `hasCrossedFinalFinishLine.test` で保証する。
+ */
+export const hasCrossedFinalFinishLine = (
+  playerLap: number,
+  maxLaps: number,
+): boolean => playerLap > maxLaps;
+
 /** キャンペーン走行中のフェーズ */
 export type CampaignRacePhase =
   | 'countdown'
@@ -53,6 +70,8 @@ export type CampaignRacePhase =
 export interface CampaignDisplay {
   readonly timeRemainingSec: number;  // 整数秒
   readonly elapsedSec: number;        // 0.1 秒精度
+  /** 現在の周回（1 始まり、maxLaps で上限クランプ）。HUD の LAP 表示に使う */
+  readonly currentLap: number;
 }
 
 export interface BonusEvent {
@@ -85,10 +104,15 @@ interface FrameResult {
 /**
  * 1 フレーム分の純粋ステップ。テストしやすいよう外部状態を持たない。
  */
-const stepCampaignFrame = (state: GameOrchestratorState, frame: FrameState): FrameResult => {
+const stepCampaignFrame = (
+  state: GameOrchestratorState,
+  frame: FrameState,
+  maxLaps: number,
+): FrameResult => {
   const player = state.players[0];
   const currentFlags = player.checkpointFlags;
-  const hasCrossedFinishLine = player.lap > frame.lastLap;
+  // クリア条件は「最終周のゴールを通過した瞬間」。race-handler と同じ maxLaps 基準。
+  const hasCrossedFinishLine = hasCrossedFinalFinishLine(player.lap, maxLaps);
 
   const result = executeCampaignTick({
     runtime: frame.runtime,
@@ -110,13 +134,16 @@ const stepCampaignFrame = (state: GameOrchestratorState, frame: FrameState): Fra
   };
 };
 
-const toDisplay = (runtime: CampaignRuntime): CampaignDisplay => ({
+const toDisplay = (runtime: CampaignRuntime, currentLap: number): CampaignDisplay => ({
   timeRemainingSec: Math.ceil(runtime.timeRemainingSec),
   elapsedSec: Math.floor(runtime.elapsedSec * 10) / 10,
+  currentLap,
 });
 
 const displaysEqual = (a: CampaignDisplay, b: CampaignDisplay): boolean =>
-  a.timeRemainingSec === b.timeRemainingSec && a.elapsedSec === b.elapsedSec;
+  a.timeRemainingSec === b.timeRemainingSec &&
+  a.elapsedSec === b.elapsedSec &&
+  a.currentLap === b.currentLap;
 
 /**
  * キャンペーンの 1 ステージを 1 回走らせるフック。
@@ -134,6 +161,7 @@ export const useCampaignGameLoop = (
   const [display, setDisplay] = useState<CampaignDisplay>({
     timeRemainingSec: 0,
     elapsedSec: 0,
+    currentLap: 1,
   });
   const [outcome, setOutcome] = useState<StageOutcome>({ kind: 'in_progress' });
   const [bonusEvent, setBonusEvent] = useState<BonusEvent | null>(null);
@@ -142,6 +170,7 @@ export const useCampaignGameLoop = (
   useEffect(() => {
     if (!config || !canvasRef.current || !stage) return;
 
+    const maxLaps = config.raceConfig.maxLaps;
     const orchestrator = createOrchestrator(config);
     orchestratorRef.current = orchestrator;
     const initialRuntime = createCampaignRuntime(stage, livesRemaining);
@@ -151,7 +180,7 @@ export const useCampaignGameLoop = (
       lastLap: 1,
       bonusKey: 0,
     };
-    const initialDisplay = toDisplay(initialRuntime);
+    const initialDisplay = toDisplay(initialRuntime, 1);
     setDisplay(initialDisplay);
     setOutcome({ kind: 'in_progress' });
     setPhase('countdown');
@@ -182,11 +211,11 @@ export const useCampaignGameLoop = (
 
         // 純粋関数 shouldRunCampaignTick で判定（テストで境界保証）
         if (shouldRunCampaignTick(state.phase, player.lap, frameRef.current.lastLap)) {
-          const stepResult = stepCampaignFrame(state, frameRef.current);
+          const stepResult = stepCampaignFrame(state, frameRef.current, maxLaps);
           frameRef.current = stepResult.nextState;
 
-          // UI 更新は秒単位の変化があった場合のみ（M2 対応）
-          const newDisplay = toDisplay(stepResult.nextState.runtime);
+          // UI 更新は秒単位 or 周回の変化があった場合のみ（M2 対応）
+          const newDisplay = toDisplay(stepResult.nextState.runtime, Math.min(player.lap, maxLaps));
           if (!displaysEqual(newDisplay, lastDisplay)) {
             lastDisplay = newDisplay;
             setDisplay(newDisplay);

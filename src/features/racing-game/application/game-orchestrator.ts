@@ -19,6 +19,9 @@ import { GAME } from '../domain/race/constants';
 // 型の re-export（既存の利用者向け）
 export type { GameOrchestratorConfig, GameOrchestratorState } from './orchestrator-state';
 
+/** レース開始直後に「GO!」を表示する時間（ms） */
+const GO_DISPLAY_MS = 1000;
+
 /** オーケストレーターインターフェース */
 export interface GameOrchestrator {
   update(now: number): void;
@@ -70,6 +73,14 @@ export const createOrchestrator = (config: GameOrchestratorConfig): GameOrchestr
       state.players.forEach(p => config.renderer.renderKart(p));
       config.renderer.renderEffects(state.particles, state.sparks);
       if (state.phase === 'countdown') {
+        config.renderer.renderCountdown(Date.now() - state.countdownStartTime);
+      } else if (
+        state.phase === 'race' &&
+        state.raceStartTime > 0 &&
+        Date.now() - state.raceStartTime < GO_DISPLAY_MS
+      ) {
+        // レース開始直後の 1 秒間「GO!」を表示（countdownStartTime 基準の経過を渡すと
+        // renderCountdown 側が countdown 終了後 = GO! 表示に分岐する）
         config.renderer.renderCountdown(Date.now() - state.countdownStartTime);
       }
       config.renderer.renderHud(state.players, course.name, raceConfig.maxLaps, state.raceStartTime);

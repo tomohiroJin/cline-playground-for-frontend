@@ -33,7 +33,8 @@ export const renderCountdown = (
   height: number,
   elapsed: number,
 ): void => {
-  drawCountdown(ctx, width, height, elapsed);
+  // drawCountdown のシグネチャは (ctx, elapsed, width, height)。引数順を合わせる。
+  drawCountdown(ctx, elapsed, width, height);
 };
 
 /** CPU カード通知描画 */

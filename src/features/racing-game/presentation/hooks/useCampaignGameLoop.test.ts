@@ -4,7 +4,7 @@
 // 「ゴール瞬間に race-handler が即時 state.phase='result' に切り替えるため、
 //  campaign-tick が呼ばれず stage_clear が出ないバグ」の再発防止。
 
-import { shouldRunCampaignTick } from './useCampaignGameLoop';
+import { shouldRunCampaignTick, hasCrossedFinalFinishLine } from './useCampaignGameLoop';
 
 describe('shouldRunCampaignTick', () => {
   describe('race フェーズ', () => {
@@ -51,6 +51,39 @@ describe('shouldRunCampaignTick', () => {
 
     it('stage_clear フェーズ + lap 据え置きは false', () => {
       expect(shouldRunCampaignTick('stage_clear', 1, 1)).toBe(false);
+    });
+  });
+});
+
+// 「一周では少なすぎる」フィードバックの本丸バグの回帰防止テスト。
+//
+// 旧実装は stepCampaignFrame 内で `player.lap > frame.lastLap`（lastLap 初期値1）を
+// クリア条件にしていたため、1 周目を終えた瞬間（lap=2）に即クリアしてしまい、
+// stage.lapsToClear を増やしても 1 周で終わっていた。
+// race-handler の `updated.lap > maxLaps` と同じ基準（player.lap > maxLaps）に
+// 揃えることで、規定周回を走り切るまでクリアにならないことを保証する。
+describe('hasCrossedFinalFinishLine', () => {
+  describe('maxLaps = 1（単周ステージ）', () => {
+    it('スタート直後（lap=1）はまだクリアしていない', () => {
+      expect(hasCrossedFinalFinishLine(1, 1)).toBe(false);
+    });
+
+    it('1 周終えた瞬間（lap=2）にクリア', () => {
+      expect(hasCrossedFinalFinishLine(2, 1)).toBe(true);
+    });
+  });
+
+  describe('maxLaps = 3（複数周ステージ）', () => {
+    it('1 周目終了（lap=2）ではクリアにならない（**本バグ再発防止の核**）', () => {
+      expect(hasCrossedFinalFinishLine(2, 3)).toBe(false);
+    });
+
+    it('2 周目終了（lap=3）でもクリアにならない', () => {
+      expect(hasCrossedFinalFinishLine(3, 3)).toBe(false);
+    });
+
+    it('最終周（3 周目）をゴールした瞬間（lap=4）に初めてクリア', () => {
+      expect(hasCrossedFinalFinishLine(4, 3)).toBe(true);
     });
   });
 });

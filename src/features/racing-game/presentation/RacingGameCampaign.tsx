@@ -162,7 +162,9 @@ const RacingGameCampaign: React.FC<RacingGameCampaignProps> = ({ onExit }) => {
         <CanvasContainer>
           <Canvas ref={canvasRef} role="img" aria-label="レーシングキャンペーン画面" tabIndex={0} />
 
-          {session.phase === 'racing' && !showingIntro && (
+          {/* F3: カウントダウン中（loop.phase==='countdown'）は HUD を隠し、
+              キャンバスの「3,2,1 → GO!」演出だけを見せる */}
+          {session.phase === 'racing' && !showingIntro && loop.phase !== 'countdown' && (
             <>
               <StageHud
                 timeRemainingSec={loop.display.timeRemainingSec}
@@ -171,6 +173,8 @@ const RacingGameCampaign: React.FC<RacingGameCampaignProps> = ({ onExit }) => {
                 speed={CAMPAIGN_BASE_SPEED * 60}  /* 表示用 */
                 livesRemaining={session.livesRemaining}
                 maxLives={3}
+                currentLap={loop.display.currentLap}
+                maxLaps={orchConfig?.raceConfig.maxLaps}
               />
               <CheckpointBonusToast
                 bonusSec={loop.bonusEvent?.sec}

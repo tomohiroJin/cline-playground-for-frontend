@@ -2,7 +2,14 @@
 //
 // 数値は spec.md §2.2（2026-05-08 暫定）。プレイテストで微調整予定。
 // コース index は domain/track/course.ts の COURSES に対応:
-//   0=Forest, 1=City, 2=Mountain, 3=Beach, 4=Night, 5=Snow
+//   0=Forest, 1=City, 2=Mountain, 3=Beach, 4=Night, 5=Snow, 6=Canyon, 7=Highway
+//
+// 周回数（lapsToClear）は難易度別に段階化:
+//   easy=1 / normal=2 / hard=2 / extreme=3。
+//   複数周ステージは initialTimeSec / goldRankTimeSec / silverRankTimeSec を
+//   周回数ぶん（×lapsToClear）スケールし、1 周あたりの難度を維持する。
+// メイン 8 ステージ（通常ステージの courseIndex、分岐ステージは branch.a）は
+//   全て異なるコースを使う（フィードバック「全く同じコースがつまらない」対応）。
 
 import type { Stage, StageId } from './stage';
 import { assertValidStage } from './stage';
@@ -40,28 +47,28 @@ const STAGES: readonly Stage[] = [
     numberLabel: 'STAGE 3',
     intro: '街の灯りが滲む。夜明け前のネオンは、いつも少しだけ眩しい。',
     branch: {
-      a: { label: '大通りルート', courseIndex: 1 },
-      b: { label: '路地裏ショート', courseIndex: 0 },  // Forest を路地裏に流用
+      a: { label: '大通りルート', courseIndex: 1 },  // City
+      b: { label: '路地裏ショート', courseIndex: 4 },  // Night（夜の路地裏）
     },
     difficulty: 'normal',
-    initialTimeSec: 66,
+    initialTimeSec: 132,  // 66 × 2 周
     checkpointBonusSec: 10,
-    goldRankTimeSec: 44,
-    silverRankTimeSec: 58,
-    lapsToClear: 1,
+    goldRankTimeSec: 88,   // 44 × 2 周
+    silverRankTimeSec: 116, // 58 × 2 周
+    lapsToClear: 2,
   },
   {
     id: 4,
     title: 'MOUNTAIN PASS',
     numberLabel: 'STAGE 4',
     intro: '稜線の影が長く伸びる。光と闇の境界を縫って走る。',
-    courseIndex: 2,
+    courseIndex: 2,  // Mountain
     difficulty: 'normal',
-    initialTimeSec: 70,
+    initialTimeSec: 140,  // 70 × 2 周
     checkpointBonusSec: 10,
-    goldRankTimeSec: 56,
-    silverRankTimeSec: 68,
-    lapsToClear: 1,
+    goldRankTimeSec: 112,  // 56 × 2 周
+    silverRankTimeSec: 136, // 68 × 2 周
+    lapsToClear: 2,
   },
   {
     id: 5,
@@ -69,48 +76,48 @@ const STAGES: readonly Stage[] = [
     numberLabel: 'STAGE 5',
     intro: '雪の白が視界を覆う。夜明けの色は、ここではまだ見えない。',
     branch: {
-      a: { label: '凍結ロング', courseIndex: 5 },
+      a: { label: '凍結ロング', courseIndex: 5 },  // Snow
       b: { label: '雪原ショート', courseIndex: 3 },  // Beach を雪原に流用
     },
     difficulty: 'hard',
-    initialTimeSec: 60,
+    initialTimeSec: 120,  // 60 × 2 周
     checkpointBonusSec: 9,
-    goldRankTimeSec: 50,
-    silverRankTimeSec: 62,
-    lapsToClear: 1,
+    goldRankTimeSec: 100,  // 50 × 2 周
+    silverRankTimeSec: 124, // 62 × 2 周
+    lapsToClear: 2,
   },
   {
     id: 6,
     title: 'MIDNIGHT CHASE',
     numberLabel: 'STAGE 6',
     intro: '星はまだ落ちない。夜の底をエンジンの音だけが切り裂く。',
-    courseIndex: 4,
+    courseIndex: 4,  // Night
     difficulty: 'hard',
-    initialTimeSec: 58,
+    initialTimeSec: 116,  // 58 × 2 周
     checkpointBonusSec: 8,
-    goldRankTimeSec: 52,
-    silverRankTimeSec: 64,
-    lapsToClear: 1,
+    goldRankTimeSec: 104,  // 52 × 2 周
+    silverRankTimeSec: 128, // 64 × 2 周
+    lapsToClear: 2,
   },
   {
     id: 7,
     title: 'GRAND PRIX FINAL',
     numberLabel: 'STAGE 7',
     intro: '空の端がわずかに白んだ。決着は、夜が明けるまでに。',
-    // Stage 7 は Forest コース（index 0）の高難度バリアント。
+    // Stage 7 は専用コース「キャニオン」（index 6）。
     // S1 対応: difficultyModifiers で修飾子を宣言。orchestrator 統合は別フェーズ。
-    courseIndex: 0,
+    courseIndex: 6,  // Canyon（専用）
     difficultyModifiers: {
       wallDensityMul: 1.4,
       decorationDensityMul: 1.2,
       cpuSpeedMul: 1.1,
     },
     difficulty: 'extreme',
-    initialTimeSec: 50,
+    initialTimeSec: 150,  // 50 × 3 周
     checkpointBonusSec: 7,
-    goldRankTimeSec: 38,
-    silverRankTimeSec: 50,
-    lapsToClear: 1,
+    goldRankTimeSec: 114,  // 38 × 3 周
+    silverRankTimeSec: 150, // 50 × 3 周
+    lapsToClear: 3,
   },
   {
     id: 8,
@@ -118,21 +125,21 @@ const STAGES: readonly Stage[] = [
     numberLabel: 'STAGE 8',
     intro: '夜明けまで、あとひと走りだ。',
     branch: {
-      a: { label: '標準ルート', courseIndex: 2 },
-      b: { label: 'ショートカット & 障害物多', courseIndex: 4 },  // Night を流用
+      a: { label: '標準ルート', courseIndex: 7 },  // Highway（専用）
+      b: { label: 'ショートカット & 障害物多', courseIndex: 6 },  // Canyon を流用
     },
-    // Stage 8 は Mountain ベースの最高難度バリアント
+    // Stage 8 は専用コース「ハイウェイ」（index 7）ベースの最高難度バリアント
     difficultyModifiers: {
       wallDensityMul: 1.5,
       decorationDensityMul: 1.3,
       cpuSpeedMul: 1.15,
     },
     difficulty: 'extreme',
-    initialTimeSec: 46,
+    initialTimeSec: 138,  // 46 × 3 周
     checkpointBonusSec: 6,
-    goldRankTimeSec: 50,
-    silverRankTimeSec: 60,
-    lapsToClear: 1,
+    goldRankTimeSec: 150,  // 50 × 3 周
+    silverRankTimeSec: 180, // 60 × 3 周
+    lapsToClear: 3,
   },
 ];
 

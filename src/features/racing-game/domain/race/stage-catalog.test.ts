@@ -50,3 +50,43 @@ describe('getAllStages', () => {
     });
   });
 });
+
+describe('コース割当（フィードバック「全く同じコースがつまらない」対応）', () => {
+  // 通常ステージは courseIndex、分岐ステージは branch.a を「メインコース」とみなす
+  const mainCourseIndex = (stage: ReturnType<typeof getStage>): number =>
+    stage.courseIndex ?? stage.branch!.a.courseIndex;
+
+  it('メイン 8 ステージは全て異なるコースを使う', () => {
+    const indices = getAllStages().map(mainCourseIndex);
+    expect(new Set(indices).size).toBe(indices.length);
+  });
+
+  it('分岐ステージは a/b で異なるコースを使う', () => {
+    getAllStages()
+      .filter((s) => s.branch !== undefined)
+      .forEach((s) => {
+        expect(s.branch!.a.courseIndex).not.toBe(s.branch!.b.courseIndex);
+      });
+  });
+});
+
+describe('周回数の難易度別段階化（フィードバック「一周では少なすぎる」対応）', () => {
+  const expectedLaps: Record<string, number> = {
+    easy: 1,
+    normal: 2,
+    hard: 2,
+    extreme: 3,
+  };
+
+  it('lapsToClear が難易度ヒントに対応している', () => {
+    getAllStages().forEach((s) => {
+      expect({ id: s.id, laps: s.lapsToClear }).toMatchObject({
+        laps: expectedLaps[s.difficulty],
+      });
+    });
+  });
+
+  it('複数周ステージが少なくとも 1 つ存在する（単周のみではない）', () => {
+    expect(getAllStages().some((s) => s.lapsToClear > 1)).toBe(true);
+  });
+});
