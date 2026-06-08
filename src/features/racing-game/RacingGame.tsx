@@ -47,9 +47,11 @@ import type { DraftState } from './draft-ui-logic';
 import { useInput, useIdle } from './hooks';
 import { VolumeCtrl } from './components/VolumeControl';
 import { MenuPanel } from './components/MenuPanel';
+import RacingGameCampaign from './presentation/RacingGameCampaign';
 import { ResultPanel } from './components/ResultPanel';
 
 export default function RacingGame() {
+  const [campaignActive, setCampaignActive] = useState(false);
   const [mode, setMode] = useState('2p');
   const [course, setCourse] = useState(0);
   const [speed, setSpeed] = useState(1);
@@ -655,8 +657,11 @@ export default function RacingGame() {
       SoundEngine.stopEngine();
       SoundEngine.cleanup();
     };
+    // campaignActive: キャンペーンから戻ると Canvas が再マウントされるため、
+    // この effect を再実行して新ノードに内部解像度を設定しゲームループを張り直す
+    // （これが無いと canvas.width が既定 300 のまま小さい枠で固定される）。
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, course, speed, cpu, laps, c1, c2, gameKey, demo]);
+  }, [mode, course, speed, cpu, laps, c1, c2, gameKey, demo, campaignActive]);
 
   const reset = () => {
     gamePhaseRef.current = 'menu';
@@ -680,6 +685,10 @@ export default function RacingGame() {
   const bestTimeStr = bests[`c${course}-l${laps}`]
     ? Utils.formatTime(bests[`c${course}-l${laps}`])
     : '--:--.-';
+
+  if (campaignActive) {
+    return <RacingGameCampaign onExit={() => setCampaignActive(false)} />;
+  }
 
   return (
     <PageContainer>
@@ -706,6 +715,7 @@ export default function RacingGame() {
               c2={c2} setC2={setC2}
               cardsEnabled={cardsEnabled} setCardsEnabled={setCardsEnabled}
               onStart={startGame}
+              onStartCampaign={() => setCampaignActive(true)}
             />
           )}
 

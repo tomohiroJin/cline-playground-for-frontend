@@ -5,11 +5,17 @@ import { assert } from '../shared/assertions';
 
 /** 有効な遷移マップ */
 export const VALID_TRANSITIONS: Record<GamePhase, readonly GamePhase[]> = {
-  menu: ['countdown'],
+  // 既存（自由対戦・2P・CPU 戦のフロー）
+  menu: ['countdown', 'stage_select'],
   countdown: ['race'],
-  race: ['draft', 'result'],
+  race: ['draft', 'result', 'stage_clear', 'game_over'],
   draft: ['race'],
   result: ['menu'],
+  // キャンペーン用（spec §1.1）
+  stage_select: ['countdown', 'menu', 'ending'],
+  stage_clear: ['stage_select', 'countdown', 'ending'],
+  game_over: ['stage_select'],
+  ending: ['stage_select'],
 };
 
 /** フェーズ遷移の妥当性チェック */

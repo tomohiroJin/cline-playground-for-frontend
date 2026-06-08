@@ -10,6 +10,8 @@ import type { HighlightEvent } from '../../domain/highlight/types';
 import type { Particle, Spark, Confetti } from '../../types';
 import { Render } from '../../renderer';
 import { Track } from '../../track';
+import { drawCountdown, drawGo } from '../../game-draw';
+import { Config } from '../../constants';
 
 /** Canvas RendererPort の生成 */
 export const createCanvasRenderer = (
@@ -64,10 +66,15 @@ export const createCanvasRenderer = (
     Render.highlightBanner(ctx, event as HighlightEvent & { displayTime: number }, colors, index);
   },
 
-  renderCountdown(_elapsed: number): void {
-    // カウントダウン描画は RacingGame.tsx でインライン実装されているため、
-    // この RendererPort 経由では呼ばれない。
-    // フェーズ5-1 で hud-renderer.ts に移行する。
+  renderCountdown(elapsed: number): void {
+    // キャンペーンは orchestrator 経由でこの RendererPort を使う。
+    // カウントダウン中は「3,2,1」、終了直後は「GO!」を表示する
+    // （フィードバック「スタート時にカウントダウンが無く突然始まる」対応）。
+    if (elapsed < Config.timing.countdown) {
+      drawCountdown(ctx, elapsed, width, height);
+    } else {
+      drawGo(ctx, width, height);
+    }
   },
 
   renderResult(confetti: readonly Confetti[]): void {

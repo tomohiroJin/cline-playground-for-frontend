@@ -53,7 +53,9 @@ export const drawCountdown = (
   width: number,
   height: number
 ): void => {
-  const count = Math.ceil((Config.timing.countdown - elapsed) / 1000);
+  // COUNTDOWN=3500ms だと開始直後に ceil で「4」が一瞬出るため、3 にクランプして
+  // 「3, 2, 1」に揃える。
+  const count = Math.min(3, Math.ceil((Config.timing.countdown - elapsed) / 1000));
   ctx.fillStyle = 'rgba(0,0,0,0.5)';
   ctx.fillRect(0, 0, width, height);
   ctx.fillStyle = '#fff';
@@ -64,6 +66,19 @@ export const drawCountdown = (
   if (elapsed < Config.timing.countdown) {
     ctx.fillText(String(count), width / 2, height / 2);
   }
+};
+
+/** GO! 表示描画（カウントダウン終了直後の発進合図） */
+export const drawGo = (
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number
+): void => {
+  ctx.fillStyle = '#ffeb3b';
+  ctx.font = 'bold 100px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('GO!', width / 2, height / 2);
 };
 
 /** CPU通知バナー描画。表示終了時にfalseを返す */
