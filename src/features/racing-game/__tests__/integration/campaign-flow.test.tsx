@@ -62,13 +62,14 @@ describe('Racing Game キャンペーン統合フロー', () => {
     expect((screen.getByLabelText('REPLAY ENDING') as HTMLButtonElement).disabled).toBe(true);
   });
 
-  test('OPTIONS に音量スライダー（MASTER/BGM/SE）が配線されている', () => {
+  test('OPTIONS に MASTER 音量スライダーが配線されている（campaign では BGM/SE は非表示）', () => {
     render(<RacingGame />);
     fireEvent.click(screen.getByText(/CAMPAIGN/));
     fireEvent.click(screen.getByLabelText('OPTIONS'));
+    // campaign の SE エンジンは master のみ制御可能なため、効かない BGM/SE スライダーは出さない
     expect(screen.getByLabelText('マスター音量')).toBeInTheDocument();
-    expect(screen.getByLabelText('BGM 音量')).toBeInTheDocument();
-    expect(screen.getByLabelText('SE 音量')).toBeInTheDocument();
+    expect(screen.queryByLabelText('BGM 音量')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('SE 音量')).not.toBeInTheDocument();
   });
 
   test('BACK TO MENU でメニュー画面に戻る', () => {

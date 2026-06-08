@@ -247,6 +247,7 @@ const RacingGameCampaign: React.FC<RacingGameCampaignProps> = ({ onExit }) => {
             onClose={() => setOptionsOpen(false)}
             volume={volume}
             onVolumeChange={setVolume}
+            visibleVolumeChannels={['master']}
           />
         )}
 

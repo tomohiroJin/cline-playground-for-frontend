@@ -72,7 +72,27 @@ export interface OptionsModalProps {
   /** 音量設定（任意。未指定なら音量 UI を出さない） */
   readonly volume?: VolumeSettings;
   readonly onVolumeChange?: (next: VolumeSettings) => void;
+  /**
+   * 表示する音量チャンネル（既定: master/bgm/se の全 3 種）。
+   * 実際に音声へ反映されないチャンネルを隠したい呼び出し側が絞り込む。
+   * 例: campaign は master のみ制御可能なため `['master']` を渡す。
+   */
+  readonly visibleVolumeChannels?: readonly (keyof VolumeSettings)[];
 }
+
+/** 音量チャンネルの表示メタ情報（ラベル・aria・要素 id） */
+const VOLUME_CHANNELS: ReadonlyArray<{
+  readonly key: keyof VolumeSettings;
+  readonly label: string;
+  readonly id: string;
+  readonly ariaLabel: string;
+}> = [
+  { key: 'master', label: 'MASTER', id: 'vol-master', ariaLabel: 'マスター音量' },
+  { key: 'bgm', label: 'BGM', id: 'vol-bgm', ariaLabel: 'BGM 音量' },
+  { key: 'se', label: 'SE', id: 'vol-se', ariaLabel: 'SE 音量' },
+];
+
+const ALL_VOLUME_CHANNEL_KEYS = VOLUME_CHANNELS.map((c) => c.key);
 
 const clamp01 = (n: number): number => Math.max(0, Math.min(1, n));
 const toPercent = (v: number): string => `${Math.round(clamp01(v) * 100)}`;
@@ -84,6 +104,7 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
   onClose,
   volume,
   onVolumeChange,
+  visibleVolumeChannels = ALL_VOLUME_CHANNEL_KEYS,
 }) => {
   const [confirmReset, setConfirmReset] = useState(false);
 
@@ -116,42 +137,20 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
           <>
             {volume && onVolumeChange && (
               <VolumeGroup>
-                <VolumeRow>
-                  <label htmlFor="vol-master">MASTER</label>
-                  <Slider
-                    id="vol-master"
-                    aria-label="マスター音量"
-                    min={0}
-                    max={100}
-                    value={toPercent(volume.master)}
-                    onChange={(e) => updateVolume('master', e.target.value)}
-                  />
-                  <span>{toPercent(volume.master)}</span>
-                </VolumeRow>
-                <VolumeRow>
-                  <label htmlFor="vol-bgm">BGM</label>
-                  <Slider
-                    id="vol-bgm"
-                    aria-label="BGM 音量"
-                    min={0}
-                    max={100}
-                    value={toPercent(volume.bgm)}
-                    onChange={(e) => updateVolume('bgm', e.target.value)}
-                  />
-                  <span>{toPercent(volume.bgm)}</span>
-                </VolumeRow>
-                <VolumeRow>
-                  <label htmlFor="vol-se">SE</label>
-                  <Slider
-                    id="vol-se"
-                    aria-label="SE 音量"
-                    min={0}
-                    max={100}
-                    value={toPercent(volume.se)}
-                    onChange={(e) => updateVolume('se', e.target.value)}
-                  />
-                  <span>{toPercent(volume.se)}</span>
-                </VolumeRow>
+                {VOLUME_CHANNELS.filter((ch) => visibleVolumeChannels.includes(ch.key)).map((ch) => (
+                  <VolumeRow key={ch.key}>
+                    <label htmlFor={ch.id}>{ch.label}</label>
+                    <Slider
+                      id={ch.id}
+                      aria-label={ch.ariaLabel}
+                      min={0}
+                      max={100}
+                      value={toPercent(volume[ch.key])}
+                      onChange={(e) => updateVolume(ch.key, e.target.value)}
+                    />
+                    <span>{toPercent(volume[ch.key])}</span>
+                  </VolumeRow>
+                ))}
               </VolumeGroup>
             )}
             <Stack>

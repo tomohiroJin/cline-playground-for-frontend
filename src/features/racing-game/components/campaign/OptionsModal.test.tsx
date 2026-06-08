@@ -99,4 +99,18 @@ describe('OptionsModal', () => {
     render(<OptionsModal {...defaultProps} />);
     expect(screen.queryByLabelText('マスター音量')).toBeNull();
   });
+
+  it('visibleVolumeChannels で master のみ指定すると BGM/SE スライダーは出ない', () => {
+    render(
+      <OptionsModal
+        {...defaultProps}
+        volume={{ master: 0.5, bgm: 0.6, se: 0.7 }}
+        onVolumeChange={jest.fn()}
+        visibleVolumeChannels={['master']}
+      />,
+    );
+    expect(screen.getByLabelText('マスター音量')).toBeInTheDocument();
+    expect(screen.queryByLabelText('BGM 音量')).toBeNull();
+    expect(screen.queryByLabelText('SE 音量')).toBeNull();
+  });
 });
