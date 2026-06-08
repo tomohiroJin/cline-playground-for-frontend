@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { OptionsModal } from './OptionsModal';
+import { OptionsModal, parseVolumePercent } from './OptionsModal';
 
 const defaultProps = {
   canReplayEnding: false,
@@ -98,6 +98,25 @@ describe('OptionsModal', () => {
   it('volume を渡さない場合は音量スライダーが出ない', () => {
     render(<OptionsModal {...defaultProps} />);
     expect(screen.queryByLabelText('マスター音量')).toBeNull();
+  });
+
+  describe('parseVolumePercent', () => {
+    it('数値文字列（0..100）を 0..1 の音量に変換する', () => {
+      expect(parseVolumePercent('80')).toBe(0.8);
+      expect(parseVolumePercent('0')).toBe(0);
+      expect(parseVolumePercent('100')).toBe(1);
+    });
+
+    it('範囲外は 0..1 にクランプする', () => {
+      expect(parseVolumePercent('150')).toBe(1);
+      expect(parseVolumePercent('-10')).toBe(0);
+    });
+
+    it('非数値・空文字は 0 にフォールバックし NaN を返さない', () => {
+      expect(parseVolumePercent('abc')).toBe(0);
+      expect(parseVolumePercent('')).toBe(0);
+      expect(Number.isNaN(parseVolumePercent('abc'))).toBe(false);
+    });
   });
 
   it('visibleVolumeChannels で master のみ指定すると BGM/SE スライダーは出ない', () => {

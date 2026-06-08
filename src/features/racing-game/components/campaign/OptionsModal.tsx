@@ -97,6 +97,15 @@ const ALL_VOLUME_CHANNEL_KEYS = VOLUME_CHANNELS.map((c) => c.key);
 const clamp01 = (n: number): number => Math.max(0, Math.min(1, n));
 const toPercent = (v: number): string => `${Math.round(clamp01(v) * 100)}`;
 
+/**
+ * スライダー値（0..100 の文字列）を 0..1 の音量に変換する。
+ * 非数値・空文字は 0 にフォールバックし、gain に NaN が渡るのを防ぐ（堅牢化）。
+ */
+export const parseVolumePercent = (raw: string): number => {
+  const parsed = Number(raw);
+  return clamp01(Number.isFinite(parsed) ? parsed / 100 : 0);
+};
+
 export const OptionsModal: React.FC<OptionsModalProps> = ({
   canReplayEnding,
   onReplayEnding,
@@ -117,8 +126,7 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
 
   const updateVolume = (key: keyof VolumeSettings, raw: string) => {
     if (!volume || !onVolumeChange) return;
-    const value = clamp01(Number(raw) / 100);
-    onVolumeChange({ ...volume, [key]: value });
+    onVolumeChange({ ...volume, [key]: parseVolumePercent(raw) });
   };
 
   return (
