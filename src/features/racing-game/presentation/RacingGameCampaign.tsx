@@ -21,11 +21,13 @@ import { getAllStages } from '../domain/race/stage-catalog';
 import type { GameOrchestratorConfig } from '../application/game-orchestrator';
 import { ReducedMotionGlobalStyle } from '../components/campaign/campaign-styles';
 import { StageSelectScreen } from '../components/campaign/StageSelectScreen';
-import { OptionsModal } from '../components/campaign/OptionsModal';
+import { OptionsModal, DEFAULT_VOLUME_SETTINGS } from '../components/campaign/OptionsModal';
+import type { VolumeSettings } from '../components/campaign/OptionsModal';
 import { StageHud } from '../components/campaign/StageHud';
 import { CheckpointBonusToast } from '../components/campaign/CheckpointBonusToast';
 import { StageClearOverlay } from '../components/campaign/StageClearOverlay';
 import { GameOverOverlay } from '../components/campaign/GameOverOverlay';
+import { RetryConfirmOverlay } from '../components/campaign/RetryConfirmOverlay';
 import { EndingScreen } from '../components/campaign/EndingScreen';
 import { StageIntroOverlay } from '../components/campaign/StageIntroOverlay';
 import { createCampaignSeEngine } from '../components/campaign/campaign-se-engine';
@@ -45,6 +47,7 @@ const RacingGameCampaign: React.FC<RacingGameCampaignProps> = ({ onExit }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { keys, touch } = useInput();
   const [optionsOpen, setOptionsOpen] = useState(false);
+  const [volume, setVolume] = useState<VolumeSettings>(DEFAULT_VOLUME_SETTINGS);
   const [orchConfig, setOrchConfig] = useState<GameOrchestratorConfig | null>(null);
   // F3: ステージ intro 表示フラグ。selectStage 直後 → intro 表示 → racing 開始の順
   const [showingIntro, setShowingIntro] = useState(false);
@@ -60,6 +63,11 @@ const RacingGameCampaign: React.FC<RacingGameCampaignProps> = ({ onExit }) => {
   useEffect(() => {
     return () => seEngine.cleanup();
   }, [seEngine]);
+
+  // master 音量を SE エンジンへ反映（マウント時の既定値 + スライダー変更の双方を宣言的に処理）
+  useEffect(() => {
+    seEngine.setMasterVolume(volume.master);
+  }, [seEngine, volume.master]);
 
   // F3: ステージ選択 → intro 表示 → racing 突入のフロー
   useEffect(() => {
@@ -204,6 +212,16 @@ const RacingGameCampaign: React.FC<RacingGameCampaignProps> = ({ onExit }) => {
             />
           )}
 
+          {session.phase === 'retry' && (
+            <RetryConfirmOverlay
+              stageNumber={stageNumber}
+              totalStages={totalStages}
+              livesRemaining={session.livesRemaining}
+              onRetry={session.retryStage}
+              onBackToStageSelect={session.returnToStageSelect}
+            />
+          )}
+
           {session.phase === 'game_over' && (
             <GameOverOverlay
               stageNumber={stageNumber}
@@ -227,6 +245,8 @@ const RacingGameCampaign: React.FC<RacingGameCampaignProps> = ({ onExit }) => {
             onReplayEnding={() => { setOptionsOpen(false); session.viewEnding(); }}
             onResetProgress={() => { setOptionsOpen(false); session.resetAllProgress(); }}
             onClose={() => setOptionsOpen(false)}
+            volume={volume}
+            onVolumeChange={setVolume}
           />
         )}
 

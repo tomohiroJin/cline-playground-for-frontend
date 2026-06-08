@@ -1,7 +1,8 @@
 // start-campaign-stage の単体テスト
 
 import { getStage } from '../../domain/race/stage-catalog';
-import { startCampaignStage, resolveCourseIndex } from './start-campaign-stage';
+import { startCampaignStage } from './start-campaign-stage';
+import { resolveCourseIndex } from './resolve-course-index';
 
 describe('startCampaignStage', () => {
   it('cardsEnabled は常に false', () => {

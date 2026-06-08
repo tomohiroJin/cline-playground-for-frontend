@@ -129,12 +129,28 @@ export const StageSelectScreen: React.FC<StageSelectScreenProps> = ({
   const [toast, setToast] = useState<string | null>(null);
   const [focusedIndex, setFocusedIndex] = useState(0);
   const cardRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  // トースト消去タイマーの ID。連続クリック時に前のタイマーを解除して
+  // 「最後のクリック基準」で 1.5 秒後に消えるようにする。
+  const toastTimerRef = useRef<number | null>(null);
 
   const showLockedToast = (stage: Stage) => {
     setToast(`STAGE LOCKED — CLEAR STAGE ${stage.id - 1} FIRST`);
     onPlayDeniedSe?.();
-    window.setTimeout(() => setToast(null), TOAST_DURATION_MS);
+    if (toastTimerRef.current !== null) {
+      window.clearTimeout(toastTimerRef.current);
+    }
+    toastTimerRef.current = window.setTimeout(() => {
+      setToast(null);
+      toastTimerRef.current = null;
+    }, TOAST_DURATION_MS);
   };
+
+  // アンマウント時に未発火のタイマーを解除（リーク防止）
+  useEffect(() => () => {
+    if (toastTimerRef.current !== null) {
+      window.clearTimeout(toastTimerRef.current);
+    }
+  }, []);
 
   const handleSelectAt = (index: number) => {
     const stage = stages[index];

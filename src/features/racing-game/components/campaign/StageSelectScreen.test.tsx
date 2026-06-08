@@ -76,6 +76,24 @@ describe('StageSelectScreen', () => {
     expect(screen.queryByText(/STAGE LOCKED/)).toBeNull();
   });
 
+  it('ロックを連続クリックすると消去タイマーは最後のクリック基準でリセットされる', () => {
+    render(<StageSelectScreen {...defaultProps} />);
+    fireEvent.click(screen.getByLabelText(/STAGE 5/));
+    act(() => {
+      jest.advanceTimersByTime(1000);  // 1 回目クリックから 1.0 秒
+    });
+    fireEvent.click(screen.getByLabelText(/STAGE 6/));  // 2 回目クリックでタイマー再設定
+    act(() => {
+      jest.advanceTimersByTime(1000);  // 1 回目から 2.0 秒（旧実装ならここで消えてしまう）
+    });
+    // 2 回目クリックから 1.0 秒しか経っていないので、まだトーストは残っているべき
+    expect(screen.queryByText(/STAGE LOCKED/)).not.toBeNull();
+    act(() => {
+      jest.advanceTimersByTime(600);  // 2 回目から 1.6 秒 → 1.5 秒超で消える
+    });
+    expect(screen.queryByText(/STAGE LOCKED/)).toBeNull();
+  });
+
   it('OPTIONS ボタンで onOpenOptions が呼ばれる', () => {
     const onOpen = jest.fn();
     render(<StageSelectScreen {...defaultProps} onOpenOptions={onOpen} />);

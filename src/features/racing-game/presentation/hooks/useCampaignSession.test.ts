@@ -51,13 +51,24 @@ describe('useCampaignSession', () => {
     expect(port.load().records[1].rank).toBe('GOLD');  // 永続化
   });
 
-  it('handleTimeUp で lives 減少。残あれば racing 維持', () => {
+  it('handleTimeUp で lives 減少。残あれば retry（リトライ確認）へ', () => {
     const { result } = renderHook(() => useCampaignSession(createInMemoryPort()));
     act(() => result.current.enterStageSelect());
     act(() => result.current.selectStage(getStage(1)));
     act(() => result.current.handleTimeUp());
     expect(result.current.livesRemaining).toBe(2);
-    expect(result.current.phase).toBe('racing');  // まだ残機あり
+    expect(result.current.phase).toBe('retry');  // spec §2.4: 残機 > 0 はリトライ確認へ
+  });
+
+  it('retry から retryStage で同ステージへ復帰（racing）。lives は維持される', () => {
+    const { result } = renderHook(() => useCampaignSession(createInMemoryPort()));
+    act(() => result.current.enterStageSelect());
+    act(() => result.current.selectStage(getStage(1)));
+    act(() => result.current.handleTimeUp());
+    expect(result.current.phase).toBe('retry');
+    act(() => result.current.retryStage());
+    expect(result.current.phase).toBe('racing');
+    expect(result.current.livesRemaining).toBe(2);  // STAGE SELECT を経由しないのでリセットされない
   });
 
   it('lives 0 で game_over へ', () => {

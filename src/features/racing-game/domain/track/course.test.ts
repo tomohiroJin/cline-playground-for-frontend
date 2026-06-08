@@ -5,7 +5,11 @@
 // 今後コースを追加しても自動的に検証対象になる。
 
 import { COURSES } from './course';
-import { CANVAS } from '../../infrastructure/renderer/constants';
+
+// 描画キャンバスの設計サイズ。infrastructure/renderer/constants.ts の CANVAS と
+// 一致させる。domain 層のテストは外部依存を持たない方針のため（CLAUDE.md
+// 「domain/ → 外部依存なし」）、infrastructure を import せず値をここに保持する。
+const CANVAS = { WIDTH: 900, HEIGHT: 700 } as const;
 
 /** 始点と終点が「閉ループ」とみなせる最大距離（px） */
 const CLOSED_LOOP_MAX_GAP = 200;

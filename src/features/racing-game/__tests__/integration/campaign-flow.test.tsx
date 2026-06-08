@@ -62,6 +62,15 @@ describe('Racing Game キャンペーン統合フロー', () => {
     expect((screen.getByLabelText('REPLAY ENDING') as HTMLButtonElement).disabled).toBe(true);
   });
 
+  test('OPTIONS に音量スライダー（MASTER/BGM/SE）が配線されている', () => {
+    render(<RacingGame />);
+    fireEvent.click(screen.getByText(/CAMPAIGN/));
+    fireEvent.click(screen.getByLabelText('OPTIONS'));
+    expect(screen.getByLabelText('マスター音量')).toBeInTheDocument();
+    expect(screen.getByLabelText('BGM 音量')).toBeInTheDocument();
+    expect(screen.getByLabelText('SE 音量')).toBeInTheDocument();
+  });
+
   test('BACK TO MENU でメニュー画面に戻る', () => {
     render(<RacingGame />);
     fireEvent.click(screen.getByText(/CAMPAIGN/));

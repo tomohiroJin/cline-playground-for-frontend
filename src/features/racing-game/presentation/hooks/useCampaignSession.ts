@@ -20,6 +20,7 @@ export type CampaignUiPhase =
   | 'menu'              // 通常メニュー
   | 'stage_select'      // ステージ選択画面
   | 'racing'            // 実走中
+  | 'retry'             // 残機 > 0 で時間切れ時のリトライ確認画面（spec §2.4）
   | 'stage_clear'       // ステージクリア画面
   | 'game_over'         // GAME OVER 画面
   | 'ending';           // エンディング画面
@@ -112,9 +113,8 @@ export const useCampaignSession = (
   const handleTimeUp = useCallback(() => {
     setLivesRemaining((current) => {
       const next = decrementLives(current);
-      if (next <= 0) {
-        setPhase('game_over');
-      }
+      // spec §2.4: 残機 0 なら GAME OVER、残機 > 0 ならリトライ確認画面へ
+      setPhase(next <= 0 ? 'game_over' : 'retry');
       return next;
     });
   }, []);
