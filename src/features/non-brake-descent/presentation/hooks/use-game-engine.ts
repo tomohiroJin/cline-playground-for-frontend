@@ -277,6 +277,7 @@ export const useGameEngine = (
       setDeath({ type, frame: 0, fast: rank === SpeedRank.HIGH });
       setShake(rank === SpeedRank.HIGH ? 18 : 6);
       addParticles(player.x, player.ramp * RAMP_H - camY + 30, '#ff4444', rank === SpeedRank.HIGH ? 15 : 8);
+      clockRef.current = triggerHitstop(clockRef.current, scaleFrames(Config.juice.hitstop.death, motionScaleRef.current));
       setState(GameState.DYING);
     },
     [speed, score, speedBonus, player, camY, RAMP_H, addParticles, commitScore]
@@ -343,6 +344,13 @@ export const useGameEngine = (
   useEffect(() => {
     if (state !== GameState.DYING) return;
     const iv = window.setInterval(() => {
+      // 死亡時ヒットストップ: 衝撃の一瞬を止める（死亡フレーム進行を凍結）
+      const advance = advanceClock(clockRef.current);
+      clockRef.current = advance.clock;
+      if (!advance.shouldStepSim) {
+        setShake(current => Math.max(0, current * Config.animation.shakeDecay));
+        return;
+      }
       setDeath(current => {
         if (!current) return current;
         if (current.frame >= Config.animation.deathFrames) {
