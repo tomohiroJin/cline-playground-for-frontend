@@ -104,10 +104,9 @@ export const spawnSpeedLines = (
  * 各ラインを中央方向へ移動しつつフェードアウトさせる
  *
  * @param lines - 現在のスピードライン配列
- * @param w - 画面幅（ピクセル）
  * @returns 更新後のスピードライン配列（opacity <= 0 のものは除去済み）
  */
-export const updateSpeedLines = (lines: readonly SpeedLine[], w: number): SpeedLine[] => {
+export const updateSpeedLines = (lines: readonly SpeedLine[]): SpeedLine[] => {
   return lines
     .map((line): SpeedLine => {
       // left は右（中央）方向へ、right は左（中央）方向へ移動

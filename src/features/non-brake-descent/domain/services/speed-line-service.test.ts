@@ -160,7 +160,7 @@ describe('updateSpeedLines', () => {
       ];
 
       // Act
-      const result = updateSpeedLines(lines, 400);
+      const result = updateSpeedLines(lines);
 
       // Assert
       const updated = result.find((l) => l.side === 'left');
@@ -177,7 +177,7 @@ describe('updateSpeedLines', () => {
       ];
 
       // Act
-      const result = updateSpeedLines(lines, 400);
+      const result = updateSpeedLines(lines);
 
       // Assert
       const updated = result.find((l) => l.side === 'right');
@@ -194,7 +194,7 @@ describe('updateSpeedLines', () => {
       ];
 
       // Act
-      const result = updateSpeedLines(lines, 400);
+      const result = updateSpeedLines(lines);
 
       // Assert
       expect(result[0].opacity).toBeLessThan(lines[0].opacity);
@@ -208,7 +208,7 @@ describe('updateSpeedLines', () => {
       ];
 
       // Act
-      const result = updateSpeedLines(lines, 400);
+      const result = updateSpeedLines(lines);
 
       // Assert: opacity <= 0 のラインが除去され、有効なものだけ残る
       expect(result.length).toBe(1);
@@ -217,8 +217,8 @@ describe('updateSpeedLines', () => {
 
     it('空の配列を渡してもエラーにならない', () => {
       // Act & Assert
-      expect(() => updateSpeedLines([], 400)).not.toThrow();
-      expect(updateSpeedLines([], 400)).toEqual([]);
+      expect(() => updateSpeedLines([])).not.toThrow();
+      expect(updateSpeedLines([])).toEqual([]);
     });
   });
 
@@ -230,7 +230,7 @@ describe('updateSpeedLines', () => {
       ];
 
       // Act
-      const result = updateSpeedLines(lines, 400);
+      const result = updateSpeedLines(lines);
 
       // Assert
       expect(result.length).toBe(0);
@@ -244,7 +244,7 @@ describe('updateSpeedLines', () => {
       ];
 
       // Act
-      const result = updateSpeedLines(lines, 400);
+      const result = updateSpeedLines(lines);
 
       // Assert
       expect(result.length).toBe(2);
