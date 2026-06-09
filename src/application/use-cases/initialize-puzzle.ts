@@ -5,7 +5,7 @@
  */
 import { createPuzzleBoard, PuzzleBoardState } from '../../domain/puzzle/aggregates/puzzle-board';
 import { shufflePuzzle } from '../../domain/puzzle/services/shuffle-service';
-import { calculateShuffleMoves } from '../../domain/puzzle/value-objects/division';
+import { calculateShuffleMoves, createDivision } from '../../domain/puzzle/value-objects/division';
 
 /** シャッフル後に完成状態だった場合の最大再試行回数 */
 const MAX_RESHUFFLE_ATTEMPTS = 10;
@@ -23,8 +23,10 @@ export const initializePuzzle = (
   division: number,
   shuffleMovesOverride?: number
 ): PuzzleBoardState => {
-  const board = createPuzzleBoard(division);
-  const moves = shuffleMovesOverride ?? calculateShuffleMoves(division);
+  // 分割数を値オブジェクトのファクトリで検証し、有効な分割数のみ許可する
+  const validDivision = createDivision(division);
+  const board = createPuzzleBoard(validDivision);
+  const moves = shuffleMovesOverride ?? calculateShuffleMoves(validDivision);
 
   for (let attempt = 0; attempt <= MAX_RESHUFFLE_ATTEMPTS; attempt++) {
     // 最終試行ではシャッフル回数を倍にして完成状態を回避

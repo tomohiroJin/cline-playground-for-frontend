@@ -27,7 +27,7 @@ describe('buildRecordScore', () => {
     const storage = createMemoryStorage();
     const recordScore = buildRecordScore(storage);
 
-    const result = recordScore('img', 3, 1000, 'A', 50, 20);
+    const result = recordScore('img', 3, 1000, '★★★', 50, 20);
 
     expect(result.isBestScore).toBe(true);
     const saved = storage.get('img', 3)!;
@@ -42,15 +42,15 @@ describe('buildRecordScore', () => {
     const recordScore = buildRecordScore(storage);
 
     // 1回目: 高スコアだが遅い・手数多い
-    recordScore('img', 3, 1000, 'A', 80, 40);
+    recordScore('img', 3, 1000, '★★★', 80, 40);
     // 2回目: スコアは低いが、より速く・少ない手数でクリア
-    const result = recordScore('img', 3, 500, 'B', 30, 15);
+    const result = recordScore('img', 3, 500, '★★☆', 30, 15);
 
     expect(result.isBestScore).toBe(false);
     const saved = storage.get('img', 3)!;
     // ベストスコアと評価は維持
     expect(saved.bestScore).toBe(1000);
-    expect(saved.bestRank).toBe('A');
+    expect(saved.bestRank).toBe('★★★');
     // time/moves は改善が反映される
     expect(saved.bestTime).toBe(30);
     expect(saved.bestMoves).toBe(15);
@@ -62,8 +62,8 @@ describe('buildRecordScore', () => {
     const storage = createMemoryStorage();
     const recordScore = buildRecordScore(storage);
 
-    recordScore('img', 3, 1000, 'A', 30, 15);
-    recordScore('img', 3, 500, 'B', 90, 50);
+    recordScore('img', 3, 1000, '★★★', 30, 15);
+    recordScore('img', 3, 500, '★★☆', 90, 50);
 
     const saved = storage.get('img', 3)!;
     expect(saved.bestTime).toBe(30);
