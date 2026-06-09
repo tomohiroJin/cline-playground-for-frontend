@@ -15,6 +15,8 @@ export interface AudioPort {
   startBGM(): void;
   /** BGM を停止する */
   stopBGM(): void;
+  /** 速度ランクに応じて BGM のテンポ・音色を切り替える */
+  setSpeedRank(rank: number): void;
   /** オーディオリソースを解放する */
   cleanup(): void;
 }

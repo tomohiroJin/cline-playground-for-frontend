@@ -11,5 +11,6 @@ export const createNullAudioAdapter = (): AudioPort => ({
   playCombo: () => {},
   startBGM: () => {},
   stopBGM: () => {},
+  setSpeedRank: () => {},
   cleanup: () => {},
 });
