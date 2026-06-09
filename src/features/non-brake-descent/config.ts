@@ -20,4 +20,10 @@ export const Config = {
   combat: { enemyKillSlowdown: 2, bounceMultiplier: 0.4, bounceSpeed: 5 },
   camera: { followRate: 0.1, offsetDivisor: 3 },
   animation: { deathFrames: 40, clearPhase1Frames: 60, countdownInterval: 800, titleMelodyDelay: 500, gameOverScreenDelay: 300, shakeDecay: 0.88, deathAnimInterval: 35, clearAnimInterval: 30 },
+  juice: {
+    // ヒットストップ（完全停止）するフレーム数
+    hitstop: { enemyKill: 4, item: 2, death: 3 },
+    // スローモー: frames=持続 real-tick 数, factor=何 tick に1回 sim を進めるか
+    slowMo: { nearMissFrames: 12, nearMissFactor: 3 },
+  },
 } as const;
