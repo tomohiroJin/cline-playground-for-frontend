@@ -34,7 +34,9 @@ import type {
   TouchKeys,
 } from '../../types';
 import type { GameWorld, UIState } from '../../application/game-loop/game-state';
-import { advanceClock, createGameClock, triggerHitstop } from '../../application/game-loop/game-clock';
+import { advanceClock, createGameClock, triggerHitstop, triggerSlowMo } from '../../application/game-loop/game-clock';
+import { resolveMotionScale, scaleFrames } from '../../application/game-loop/motion-scale';
+import { useReducedMotion } from './use-reduced-motion';
 import { useIsMobile } from './use-mobile';
 import { getHighScore, saveScore } from '../../../../utils/score-storage';
 
@@ -175,6 +177,11 @@ export const useGameEngine = (
   const touchKeys = useRef<TouchKeys>({ left: false, right: false, accel: false, jump: false });
   const passedObs = useRef<Set<string>>(new Set());
   const clockRef = useRef(createGameClock());
+  const reducedMotion = useReducedMotion();
+  const motionScaleRef = useRef(1);
+  useEffect(() => {
+    motionScaleRef.current = resolveMotionScale(reducedMotion);
+  }, [reducedMotion]);
 
   const isMobile = useIsMobile();
   const handleCheat = useCheatCode('jinjinjin', () => {
@@ -510,7 +517,7 @@ export const useGameEngine = (
               setScore(current => current + Config.score.item);
               addParticles(ox, prev.ramp * RAMP_H - camY + 25, '#ffdd00', 6);
               addScorePopup(ox, prev.ramp * RAMP_H - camY, `+${Config.score.item}`, '#ffdd00');
-              clockRef.current = triggerHitstop(clockRef.current, Config.juice.hitstop.item);
+              clockRef.current = triggerHitstop(clockRef.current, scaleFrames(Config.juice.hitstop.item, motionScaleRef.current));
             },
             onEffect: type => {
               if (!type) return;
@@ -523,7 +530,7 @@ export const useGameEngine = (
               setSpeed(current => Math.max(MIN_SPD, current - Config.combat.enemyKillSlowdown));
               addParticles(ox, prev.ramp * RAMP_H - camY + 25, '#ff8800', 10);
               addScorePopup(ox, prev.ramp * RAMP_H - camY, `+${Config.score.enemy}`, '#ff8800');
-              clockRef.current = triggerHitstop(clockRef.current, Config.juice.hitstop.enemyKill);
+              clockRef.current = triggerHitstop(clockRef.current, scaleFrames(Config.juice.hitstop.enemyKill, motionScaleRef.current));
             },
             onBounce: vx => {
               Audio.play('hit');
@@ -547,6 +554,11 @@ export const useGameEngine = (
               EntityFactory.createNearMissEffect(ox, prev.ramp * RAMP_H - camY + 25),
             ]);
             addScorePopup(ox, prev.ramp * RAMP_H - camY - 20, `NEAR MISS +${Config.score.nearMiss}`, '#44ffaa');
+            clockRef.current = triggerSlowMo(
+              clockRef.current,
+              scaleFrames(Config.juice.slowMo.nearMissFrames, motionScaleRef.current),
+              Config.juice.slowMo.nearMissFactor,
+            );
           }
           const handler = handlers[obstacle.t];
           if (handler) {
