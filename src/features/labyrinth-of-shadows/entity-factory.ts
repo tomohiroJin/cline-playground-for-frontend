@@ -39,10 +39,8 @@ export const GameStateFactory = {
 
     const playerCell = cells.shift()!;
     const exitCell = cells.pop()!;
-    const farCells = cells.filter(
-      c => manhattan(c.x, c.y, playerCell.x, playerCell.y) >= CONFIG.enemy.minSpawnDist
-    );
 
+    // 先にアイテムを配置済みセルとして cells から取り除く
     const items: Item[] = [
       ...cells.splice(0, cfg.keys).map(c => EntityFactory.createItem(c.x, c.y, 'key')),
       ...cells.splice(0, cfg.traps).map(c => EntityFactory.createItem(c.x, c.y, 'trap')),
@@ -50,6 +48,16 @@ export const GameStateFactory = {
       ...cells.splice(0, cfg.speeds).map(c => EntityFactory.createItem(c.x, c.y, 'speed')),
       ...cells.splice(0, cfg.maps).map(c => EntityFactory.createItem(c.x, c.y, 'map')),
     ];
+
+    // アイテム配置済みを除いた残りセルを「プレイヤーから遠い／近い」に分割（互いに素）。
+    // 敵は遠いセルから優先配置し、不足時のみ近いセルへフォールバックする。
+    // farCells を items 確定後に算出することで、敵とアイテムの座標重複を防ぐ。
+    const farCells: typeof cells = [];
+    const nearCells: typeof cells = [];
+    for (const c of cells) {
+      const isFar = manhattan(c.x, c.y, playerCell.x, playerCell.y) >= CONFIG.enemy.minSpawnDist;
+      (isFar ? farCells : nearCells).push(c);
+    }
 
     // 敵タイプ別に生成
     const enemyTypes: EnemyType[] = [
@@ -59,7 +67,7 @@ export const GameStateFactory = {
     ];
 
     const enemies: Enemy[] = enemyTypes.map((type, i) => {
-      const c = farCells.shift() || cells.shift();
+      const c = farCells.shift() || nearCells.shift();
       return c ? EntityFactory.createEnemy(c.x, c.y, i, type) : null;
     }).filter((e): e is Enemy => e !== null);
 

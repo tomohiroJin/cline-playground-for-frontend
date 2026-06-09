@@ -53,6 +53,8 @@ export function useChallenge(): UseChallengeReturn {
 
   const usedQuestions = useRef<Record<string, Set<number>>>({});
   const startTime = useRef(0);
+  // loadNextQuestion は依存配列が空のため、最新の正解数を ref で参照する
+  const correctCountRef = useRef(0);
 
   /** ランダムカテゴリから問題を取得 */
   const loadNextQuestion = useCallback(() => {
@@ -76,13 +78,15 @@ export function useChallenge(): UseChallengeReturn {
       startTime.current = Date.now();
       return;
     }
-    // 全問題を使い切った場合
+    // 全問題を使い切った場合（全問正解クリア）もハイスコアを保存する
+    challengeRepo.saveHighScore(correctCountRef.current);
     setIsGameOver(true);
   }, []);
 
   /** 初期化 */
   const init = useCallback(() => {
     usedQuestions.current = {};
+    correctCountRef.current = 0;
     setCorrectCount(0);
     setCombo(0);
     setMaxCombo(0);
@@ -102,7 +106,8 @@ export function useChallenge(): UseChallengeReturn {
 
     if (correct) {
       const newCombo = combo + 1;
-      setCorrectCount(prev => prev + 1);
+      correctCountRef.current += 1;
+      setCorrectCount(correctCountRef.current);
       setCombo(newCombo);
       if (newCombo > maxCombo) {
         setMaxCombo(newCombo);
@@ -112,11 +117,11 @@ export function useChallenge(): UseChallengeReturn {
       setCombo(0);
       setIsGameOver(true);
       // ハイスコア保存
-      challengeRepo.saveHighScore(correctCount);
+      challengeRepo.saveHighScore(correctCountRef.current);
     }
 
     return { correct, speed, eventId: 'challenge' };
-  }, [isAnswered, quiz, isGameOver, combo, maxCombo, correctCount]);
+  }, [isAnswered, quiz, isGameOver, combo, maxCombo]);
 
   /** 次の問題へ */
   const next = useCallback(() => {

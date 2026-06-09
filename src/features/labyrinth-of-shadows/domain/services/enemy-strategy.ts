@@ -146,7 +146,8 @@ export class TeleporterStrategy implements EnemyStrategy {
     const d = distance(playerX, playerY, e.x, e.y);
 
     if (e.teleportCooldown <= 0 && !isPlayerHiding) {
-      const emptyCells = MazeService.getEmptyCells(maze);
+      // 注入された randomFn を渡し、テレポート先選定を再現可能にする（Math.random 依存を排除）
+      const emptyCells = MazeService.getEmptyCells(maze, randomFn);
       const candidate = emptyCells.find(
         (c) =>
           distance(c.x + 0.5, c.y + 0.5, playerX, playerY) > TELEPORT_MIN_DISTANCE &&
