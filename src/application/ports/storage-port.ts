@@ -67,6 +67,11 @@ export const buildRecordScore = (
   } else if (existing) {
     storage.save({
       ...existing,
+      // スコアがベストでなくても、time/moves が改善していれば最良値として独立に更新する
+      bestTime: Math.min(existing.bestTime, time),
+      bestMoves: existing.bestMoves !== null && existing.bestMoves !== undefined
+        ? Math.min(existing.bestMoves, moves)
+        : moves,
       clearCount: existing.clearCount + 1,
       lastClearDate: new Date().toISOString(),
     });
@@ -74,11 +79,3 @@ export const buildRecordScore = (
 
   return { isBestScore };
 };
-
-/** クリア履歴ストレージ */
-export interface ClearHistoryStorage {
-  /** クリア履歴を取得する */
-  getAll(): readonly { imageName: string; elapsedTime: number; date: string }[];
-  /** クリア履歴を追加する */
-  add(imageName: string, elapsedTime: number): void;
-}

@@ -51,16 +51,3 @@ export const addClearHistory = (imageName: string, clearTime: number): ClearHist
 export const generateId = (): string => {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
 };
-
-/**
- * 画像URLから画像名を抽出する
- */
-export const extractImageName = (imageUrl: string): string => {
-  if (!imageUrl) return 'Unknown';
-
-  const parts = imageUrl.split('/');
-  const filename = parts[parts.length - 1];
-  const name = filename.split('.')[0];
-
-  return name;
-};

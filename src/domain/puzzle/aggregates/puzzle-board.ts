@@ -8,7 +8,7 @@ import { assert } from '../../../shared/utils/assert';
 import { GridPosition } from '../../../types/geometry';
 import { PuzzlePiece } from '../../../types/puzzle';
 import { createPuzzlePiece, isInCorrectPosition, movePieceTo } from '../entities/puzzle-piece';
-import { isAdjacent } from '../value-objects/grid-position';
+import { isAdjacent, createGridPosition } from '../value-objects/grid-position';
 
 /** パズルボードの状態（不変） */
 export interface PuzzleBoardState {
@@ -36,13 +36,14 @@ export const createPuzzleBoard = (division: number): PuzzleBoardState => {
     for (let col = 0; col < division; col++) {
       const isEmpty = row === emptyRow && col === emptyCol;
       const id = row * division + col;
-      pieces.push(createPuzzlePiece(id, { row, col }, isEmpty));
+      // 値オブジェクトのファクトリ経由で整数・範囲の不変条件を保証する
+      pieces.push(createPuzzlePiece(id, createGridPosition(row, col, division), isEmpty));
     }
   }
 
   return {
     pieces,
-    emptyPosition: { row: emptyRow, col: emptyCol },
+    emptyPosition: createGridPosition(emptyRow, emptyCol, division),
     division,
     moveCount: 0,
     isCompleted: true,

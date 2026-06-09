@@ -13,14 +13,8 @@ export {
 // extractImageName は shared/utils/image-utils.ts に移動済み
 export { extractImageName } from '../shared/utils/image-utils';
 
+// パズル記録・累計クリア数の読み書きは application/ports の Storage 実装へ一本化済み。
+// ここに残るのは旧データ形式からの一度きりのマイグレーションのみ。
 export {
-  getTotalClears,
-  incrementTotalClears,
-} from './storage/totalClears';
-
-export {
-  getPuzzleRecords,
-  savePuzzleRecords,
-  recordScore,
   migrateClearHistory,
 } from './storage/puzzleRecords';

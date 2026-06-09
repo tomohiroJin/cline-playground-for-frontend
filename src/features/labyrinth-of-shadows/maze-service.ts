@@ -60,11 +60,13 @@ export const MazeService = {
     return maze;
   },
 
-  getEmptyCells(maze: number[][]) {
+  // 空きセルを列挙してシャッフルして返す。
+  // randomFn を注入すると再現性のあるシャッフルになる（テレポート先選定などの DI 契約用）。
+  getEmptyCells(maze: number[][], randomFn: () => number = Math.random) {
     const cells = [];
     for (let y = 1; y < maze.length - 1; y++)
       for (let x = 1; x < maze[0].length - 1; x++) if (maze[y][x] === 0) cells.push({ x, y });
-    return cells.sort(() => Math.random() - 0.5);
+    return cells.sort(() => randomFn() - 0.5);
   },
 
   isWalkable(maze: number[][], x: number, y: number) {

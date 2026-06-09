@@ -26,6 +26,7 @@ import { usePersistenceSync } from './hooks/use-persistence-sync';
 import { useVisualFx } from './hooks/use-visual-fx';
 import { useGameActions } from './hooks/use-game-actions';
 import { GameRouter, LoadingScreen } from './components/GameRouter';
+import { ToastContainer } from '../components/GameComponents';
 import { LocalStorageAdapter } from '../infrastructure/storage/local-storage-adapter';
 import type { StorageInterface } from './hooks/use-persistence-sync';
 
@@ -180,6 +181,8 @@ function GameInner() {
 
   return (
     <GameContext.Provider value={contextValue}>
+      {/* アンロック通知トースト（labyrinth-echo-unlock イベントを購読。画面遷移をまたいで常設） */}
+      <ToastContainer />
       <GameRouter
         phase={state.phase}
         game={{

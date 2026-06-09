@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import type { PowerType, Powers, ExplosionData } from '../types';
 import type { UseGameStateReturn } from './use-game-state';
-import { CONFIG } from '../constants';
+import { CONFIG, EFFECT } from '../constants';
 import { Audio } from '../audio';
 import { GameLogic } from '../game-logic';
 import { uid } from '../utils';
@@ -49,7 +49,12 @@ export const usePowerUp = ({
       if (type === 'bomb') {
         if (soundEnabled) Audio.bomb();
         if (onBomb) onBomb();
-        setExplosions(e => [...e, { id: uid(), x, y }]);
+        const explosionId = uid();
+        setExplosions(e => [...e, { id: explosionId, x, y }]);
+        // 爆発アニメーション終了後に配列から除去する（単調増加によるリーク防止）
+        setSafeTimeout(() => {
+          setExplosions(e => e.filter(ex => ex.id !== explosionId));
+        }, EFFECT.explosion.duration);
         // アンマウント安全なタイマーで爆発処理を遅延実行
         setSafeTimeout(() => {
           const st = gameState.stateRef.current;

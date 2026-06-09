@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import type {
   GameState,
   ArtKey,
@@ -137,6 +137,9 @@ export function useGameEngine(store: StoreApi, audio: AudioApi) {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
   }, []);
+
+  // アンマウント時に未発火タイマーを解放（リーク・未マウントへの setState 防止）
+  useEffect(() => clearTimers, [clearTimers]);
 
   // レンダリング状態を部分更新
   const patch = useCallback((partial: Partial<RenderState>) => {

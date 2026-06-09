@@ -2,7 +2,7 @@
  * エフェクトディスパッチフック
  * ゲームティックのエフェクトを音声・表示・フローティングテキストに変換する
  */
-import { useCallback } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
 import {
   GameMap,
   Player,
@@ -53,6 +53,13 @@ export function useEffectDispatcher(
   const { mapRef, playerRef, effectQueueRef, floatingTextManagerRef } = refs;
   const { setCombatState, setMapState, setIsGameOver, setScreen } = setters;
 
+  // 遅延ディスパッチ（GAME_OVER 演出など）の setTimeout を管理し、アンマウント時に解放する
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(() => () => {
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+  }, []);
+
   const dispatchTickEffects = useCallback((effects: GameTickEffect[]) => {
     for (const effect of effects) {
       if (effect.kind === 'sound') {
@@ -62,7 +69,7 @@ export function useEffectDispatcher(
         );
       } else if (effect.kind === 'display') {
         dispatchDisplayEffect(
-          effect, mapRef, setMapState, setIsGameOver, setScreen,
+          effect, mapRef, setMapState, setIsGameOver, setScreen, timersRef,
         );
       }
     }
@@ -202,6 +209,7 @@ function dispatchDisplayEffect(
   setMapState: React.Dispatch<React.SetStateAction<AutoMapState>>,
   setIsGameOver: React.Dispatch<React.SetStateAction<boolean>>,
   setScreen: React.Dispatch<React.SetStateAction<ScreenStateValue>>,
+  timersRef: React.MutableRefObject<ReturnType<typeof setTimeout>[]>,
 ) {
   switch (effect.type) {
     case TickDisplayEffect.MAP_REVEALED: {
@@ -209,14 +217,17 @@ function dispatchDisplayEffect(
       setMapState(prev => ({ ...prev, exploration: fullExploration }));
       break;
     }
-    case TickDisplayEffect.GAME_OVER:
-      // 死亡アニメーション状態に遷移（1.5秒後にゲームオーバー画面へ）
+    case TickDisplayEffect.GAME_OVER: {
+      // 死亡アニメーション状態に遷移（1.5秒後にゲームオーバー画面へ）。
+      // タイマーは ref に登録し、アンマウント時に解放して未マウントへの setState を防ぐ。
       setScreen(ScreenState.DYING);
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         setIsGameOver(true);
         setScreen(ScreenState.GAME_OVER);
       }, 1500);
+      timersRef.current.push(timer);
       break;
+    }
     default:
       break;
   }

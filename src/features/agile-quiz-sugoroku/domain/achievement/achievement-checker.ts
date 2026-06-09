@@ -115,8 +115,8 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
     name: '学習の鬼',
     description: '勉強会モードで累計100問回答',
     rarity: 'Silver',
-    // 勉強会モードのカウントは別途管理するため、ここでは常にfalse
-    // 実際の判定はuseStudy側で行う
+    // 勉強会モードの累計回答数は通常リザルトの ctx に含まれないため、ここでは常に false。
+    // 実際の解除は useStudy が StudyProgressRepository の累計値で判定し saveUnlock する。
     check: () => false,
   },
   {
