@@ -4,6 +4,15 @@
 import { useState, useCallback, useMemo } from 'react';
 import { Question, TagStats, AnswerResultWithDetail } from '../domain/types';
 import { buildStudyPool } from '../domain/quiz';
+import { LocalStorageAdapter } from '../infrastructure/storage/local-storage-adapter';
+import { StudyProgressRepository } from '../infrastructure/storage/study-progress-repository';
+import { AchievementRepository } from '../infrastructure/storage/achievement-repository';
+
+/** 「学習の鬼」実績（勉強会モード累計回答）の到達目標 */
+const STUDY_ACHIEVEMENT_GOAL = 100;
+
+const studyProgressRepo = new StudyProgressRepository(new LocalStorageAdapter());
+const achievementRepo = new AchievementRepository(new LocalStorageAdapter());
 
 export interface UseStudyReturn {
   /** 問題リスト */
@@ -73,6 +82,12 @@ export function useStudy(): UseStudyReturn {
       setSelectedAnswer(optionIndex);
       setAnswered(true);
       setTotalAnswered((prev) => prev + 1);
+
+      // セッションをまたいだ累計回答数を永続化し、目標到達で「学習の鬼」実績を解除する
+      const cumulativeAnswered = studyProgressRepo.incrementAnswered();
+      if (cumulativeAnswered >= STUDY_ACHIEVEMENT_GOAL) {
+        achievementRepo.saveUnlock('study-100', Date.now());
+      }
 
       if (isCorrect) {
         setTotalCorrect((prev) => prev + 1);
