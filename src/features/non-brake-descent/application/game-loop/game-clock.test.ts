@@ -10,6 +10,7 @@ describe('GameClock', () => {
         // Assert
         expect(clock.hitstopFrames).toBe(0);
         expect(clock.slowMoFrames).toBe(0);
+        expect(clock.slowMoFactor).toBe(1);
         expect(clock.tickCounter).toBe(0);
       });
     });
@@ -67,6 +68,30 @@ describe('GameClock', () => {
         // Assert
         expect(result.slowMoFrames).toBe(12);
         expect(result.slowMoFactor).toBe(3);
+      });
+
+      it('factor は後勝ちで上書きされる（既存より小さい値も適用される）', () => {
+        // Arrange
+        const clock = triggerSlowMo(createGameClock(), 12, 5);
+
+        // Act
+        const result = triggerSlowMo(clock, 12, 2);
+
+        // Assert
+        expect(result.slowMoFactor).toBe(2);
+      });
+
+      it('再発動で間引き位相（tickCounter）が初期化される', () => {
+        // Arrange: スローモー中に tickCounter を進める
+        let clock = triggerSlowMo(createGameClock(), 12, 3);
+        clock = advanceClock(clock).clock; // tickCounter=1
+        clock = advanceClock(clock).clock; // tickCounter=2
+
+        // Act: 再発動
+        const result = triggerSlowMo(clock, 12, 3);
+
+        // Assert
+        expect(result.tickCounter).toBe(0);
       });
     });
 

@@ -42,11 +42,18 @@ export const triggerHitstop = (clock: GameClock, frames: number): GameClock => (
   hitstopFrames: Math.max(clock.hitstopFrames, normalizeFrames(frames)),
 });
 
-/** スローモーを発動する（frames tick の間、factor 間引き） */
+/**
+ * スローモーを発動する（frames tick の間、factor 間引き）。
+ * - frames: 既存より長ければ延長（max 合成）
+ * - factor: 後勝ち（最後に指定した値で上書き）
+ * - tickCounter を 0 にリセットし、(再)発動ごとに間引き位相を初期化する
+ *   （ニアミス連発などの再発動時に挙動を決定的に保つため）
+ */
 export const triggerSlowMo = (clock: GameClock, frames: number, factor: number): GameClock => ({
   ...clock,
   slowMoFrames: Math.max(clock.slowMoFrames, normalizeFrames(frames)),
   slowMoFactor: Math.max(1, Math.floor(factor)),
+  tickCounter: 0,
 });
 
 /** 1 real-tick 進め、シミュレーションを進めるべきか返す */
