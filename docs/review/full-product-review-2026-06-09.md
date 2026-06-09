@@ -151,3 +151,34 @@ CLAUDE.md が要求する Clean Architecture 層（`domain/application/infrastru
 3. **【契約・データ】ストレージ系の単一真実源化**: H-1・M-1・M-2・L-2 をまとめて対応（読み取りをポートへ統一 → 旧 utils 削除 → インフラ層テスト追加）。
 4. **【規律】DDD 値オブジェクトを構築経路で使う**: M-4・M-13（`createGridPosition`/`createDivision` を初期化パスに通し不変条件を実効化）。
 5. **【整理】死蔵抽象の削除**: L-1・L-3・L-4・M-5（未発火 DbC）。
+
+---
+
+## 実装対応状況（2026-06-09 / ブランチ `chore/full-product-review-20260609`）
+
+全指摘への対応を 6 バッチで実施。各バッチで「変更 → typecheck → 該当テスト → lint:ci」を確認し、
+最終的に **CI 全パイプライン（lint:ci・typecheck・全 623 スイート / 7,822 テスト・build）グリーン**を確認済み。
+
+### 対応済み
+
+| バッチ | 内容 | 対応指摘 |
+|---|---|---|
+| Batch1 | 具体バグ・リーク修正 | H-3, M-1, M-7, M-9, M-10, M-11, M-12, L-5 |
+| Batch2 | DDD 値オブジェクトの実効化 | M-4, M-13 |
+| Batch3 | 共有コアのストレージ一本化・死蔵削除 | H-1, L-2, M-2, M-3, L-1, L-3 |
+| Batch4 | agile-quiz 死蔵レイヤー削除・実績修正 | H-2, M-5, M-6, L-4, app→infra 逸脱 |
+| Batch5 | 死蔵 Clean Architecture 層の削除 | keys-and-arms domain/, labyrinth-echo/non-brake/deep-sea の孤立コード |
+| Batch6 | 検証未完了の具体バグ修正 | falldown explosions 単調増加, ipne GAME_OVER setTimeout |
+
+- **M-8**（labyrinth-of-shadows の依存逆流）は M-7 の死蔵 maze 重複削除により root `maze-service` が単一の正となり解消。
+
+### 対応見送り（理由を明記）
+
+検証の結果、要約由来の主張が不正確だった、または削除が本番／テスト資産を壊すため見送ったもの:
+
+- **air-hockey の「死蔵 Clean Architecture 層」**: 検証の結果 domain/contracts・domain/types・infrastructure/renderer 等は**本番で多用**されており要約は不正確。死蔵候補（domain/models・item-effect 等）も統合テストハーネス（game-runner/factories）に組み込まれ、本番 domain/services（physics/ai/scoring）の検証にも使われるため削除不可。CLAUDE.md の地雷機能でもあり保留。
+- **air-hockey の音量 NaN ガード・パックスタックカウンタ**: 本番経路の該当箇所を特定できず（要約の精度に疑問）、地雷機能のため保留。
+- **racing-game のエンジン音停止**: 音響系が 2 系統あり、クラシックモードは `SoundEngine.stopEngine()` を呼ぶ。キャンペーン側の持続音の有無が確定できず判定保留。
+- **deep-sea の infra インターフェース shim**: `infrastructure.test.ts` が本番 score-repository と同居して検証しており、テスト分割の手間に対し価値が低いため保留。
+- **non-brake のライブループ setState 副作用・テスト皆無**: 稼働中ゲームループの構造変更は回帰リスクが高く、別タスクでの慎重な対応を推奨。
+- **primal-path のセーブ無検証**: `Storage.load()` は既に try/catch でパースエラーを処理済み（クラッシュ要因は対処済み）。構造スキーマ検証は別途。
