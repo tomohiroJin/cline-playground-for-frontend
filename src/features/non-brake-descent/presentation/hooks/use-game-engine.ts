@@ -219,6 +219,7 @@ export const useGameEngine = (
     setClouds(BackgroundGen.initClouds());
     passedObs.current = new Set();
     frameRef.current = 0;
+    clockRef.current = createGameClock();
   }, [MIN_SPD]);
 
   const startCountdown = useCallback(() => {
