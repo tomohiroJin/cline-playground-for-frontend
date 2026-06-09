@@ -1,71 +1,15 @@
-import { PuzzleScore, PuzzleRecord } from '../../types/puzzle';
-import { readLocalStorage, writeLocalStorage } from './localStorage';
+import { PuzzleRecord } from '../../types/puzzle';
+import { writeLocalStorage } from './localStorage';
 import { getClearHistory } from './clearHistory';
 
 const RECORDS_KEY = 'puzzle_records';
 
 /**
- * パズル記録をローカルストレージから取得する
- */
-export const getPuzzleRecords = (): PuzzleRecord[] => {
-  return readLocalStorage<PuzzleRecord[]>(RECORDS_KEY, []);
-};
-
-/**
- * パズル記録をローカルストレージに保存する
- */
-export const savePuzzleRecords = (records: PuzzleRecord[]): void => {
-  writeLocalStorage(RECORDS_KEY, records);
-};
-
-/**
- * スコアを記録し、ベスト更新があれば true を返す
- */
-export const recordScore = (
-  imageId: string,
-  division: number,
-  score: PuzzleScore
-): { record: PuzzleRecord; isBestScore: boolean } => {
-  const records = getPuzzleRecords();
-  const existing = records.find(
-    r => r.imageId === imageId && r.division === division
-  );
-
-  if (existing) {
-    const isBestScore = score.totalScore > existing.bestScore;
-    const updated: PuzzleRecord = {
-      ...existing,
-      bestScore: Math.max(existing.bestScore, score.totalScore),
-      bestRank: isBestScore ? score.rank : existing.bestRank,
-      bestTime: Math.min(existing.bestTime, score.elapsedTime),
-      bestMoves: existing.bestMoves === null
-        ? score.moveCount
-        : Math.min(existing.bestMoves, score.moveCount),
-      clearCount: existing.clearCount + 1,
-      lastClearDate: new Date().toISOString(),
-    };
-    savePuzzleRecords(records.map(r =>
-      r.imageId === imageId && r.division === division ? updated : r
-    ));
-    return { record: updated, isBestScore };
-  }
-
-  const newRecord: PuzzleRecord = {
-    imageId,
-    division,
-    bestScore: score.totalScore,
-    bestRank: score.rank,
-    bestTime: score.elapsedTime,
-    bestMoves: score.moveCount,
-    clearCount: 1,
-    lastClearDate: new Date().toISOString(),
-  };
-  savePuzzleRecords([...records, newRecord]);
-  return { record: newRecord, isBestScore: true };
-};
-
-/**
  * 旧 ClearHistory から PuzzleRecord へマイグレーションする
+ *
+ * 通常のパズル記録の読み書きは application/ports の PuzzleRecordStorage
+ * （infrastructure/storage の実装）へ一本化済み。本関数は旧データ形式から
+ * PuzzleRecord への一度きりの移行のみを担う。
  */
 export const migrateClearHistory = (): void => {
   const MIGRATION_KEY = 'puzzle_migration_v1';
@@ -101,6 +45,6 @@ export const migrateClearHistory = (): void => {
     });
   }
 
-  savePuzzleRecords(records);
+  writeLocalStorage(RECORDS_KEY, records);
   localStorage.setItem(MIGRATION_KEY, 'done');
 };

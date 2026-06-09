@@ -79,11 +79,3 @@ export const buildRecordScore = (
 
   return { isBestScore };
 };
-
-/** クリア履歴ストレージ */
-export interface ClearHistoryStorage {
-  /** クリア履歴を取得する */
-  getAll(): readonly { imageName: string; elapsedTime: number; date: string }[];
-  /** クリア履歴を追加する */
-  add(imageName: string, elapsedTime: number): void;
-}

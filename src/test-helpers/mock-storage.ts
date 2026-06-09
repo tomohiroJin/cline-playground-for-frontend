@@ -7,7 +7,6 @@ import { PuzzleRecord } from '../types/puzzle';
 import {
   PuzzleRecordStorage,
   TotalClearsStorage,
-  ClearHistoryStorage,
   buildRecordScore,
 } from '../application/ports/storage-port';
 
@@ -47,22 +46,5 @@ export class MockTotalClearsStorage implements TotalClearsStorage {
 
   increment(): number {
     return ++this.count;
-  }
-}
-
-/** クリア履歴のインメモリ実装 */
-export class MockClearHistoryStorage implements ClearHistoryStorage {
-  private history: { imageName: string; elapsedTime: number; date: string }[] = [];
-
-  getAll(): readonly { imageName: string; elapsedTime: number; date: string }[] {
-    return [...this.history];
-  }
-
-  add(imageName: string, elapsedTime: number): void {
-    this.history.push({
-      imageName,
-      elapsedTime,
-      date: new Date().toISOString(),
-    });
   }
 }

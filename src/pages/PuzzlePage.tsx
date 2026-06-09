@@ -6,7 +6,7 @@ import {
   InstructionsList,
 } from './PuzzlePage.styles';
 import ClearHistoryList from '../components/molecules/ClearHistoryList';
-import { getClearHistory, ClearHistory, migrateClearHistory, getPuzzleRecords, getTotalClears } from '../utils/storage-utils';
+import { getClearHistory, ClearHistory, migrateClearHistory } from '../utils/storage-utils';
 import { PuzzleRecord } from '../types/puzzle';
 import { SetupSectionComponent, GameSectionComponent } from '../components/PuzzleSections';
 import { useGameFlow } from '../presentation/hooks/useGameFlow';
@@ -74,12 +74,13 @@ const PuzzlePage: React.FC<PuzzlePageProps> = ({
   }, []);
 
   // ゲームの状態が変わったときにクリア履歴を更新
+  // 記録・累計クリア数の読み取りは書き込みと同じポート経由に統一する（単一の真実源）
   useEffect(() => {
     const history = getClearHistory();
     setClearHistory(history);
-    setPuzzleRecords(getPuzzleRecords());
-    setTotalClears(getTotalClears());
-  }, [gameStarted]);
+    setPuzzleRecords(recordStorage.getAll());
+    setTotalClears(totalClearsStorage.get());
+  }, [gameStarted, recordStorage, totalClearsStorage]);
 
   return (
     <PuzzlePageContainer>
