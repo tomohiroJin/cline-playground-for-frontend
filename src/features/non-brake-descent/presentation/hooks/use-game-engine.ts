@@ -34,6 +34,7 @@ import type {
   TouchKeys,
 } from '../../types';
 import type { GameWorld, UIState } from '../../application/game-loop/game-state';
+import { advanceClock, createGameClock, triggerHitstop } from '../../application/game-loop/game-clock';
 import { useIsMobile } from './use-mobile';
 import { getHighScore, saveScore } from '../../../../utils/score-storage';
 
@@ -173,6 +174,7 @@ export const useGameEngine = (
   const keys = useRef<Record<string, boolean>>({});
   const touchKeys = useRef<TouchKeys>({ left: false, right: false, accel: false, jump: false });
   const passedObs = useRef<Set<string>>(new Set());
+  const clockRef = useRef(createGameClock());
 
   const isMobile = useIsMobile();
   const handleCheat = useCheatCode('jinjinjin', () => {
@@ -410,6 +412,13 @@ export const useGameEngine = (
   useEffect(() => {
     if (state !== GameState.PLAY) return;
     const loop = window.setInterval(() => {
+      // タイムスケールゲート: 停止/間引き tick は sim をスキップ
+      const advance = advanceClock(clockRef.current);
+      clockRef.current = advance.clock;
+      if (!advance.shouldStepSim) {
+        setShake(current => Math.max(0, current * Config.animation.shakeDecay));
+        return;
+      }
       frameRef.current++;
       const keyState = keys.current;
       const touchState = touchKeys.current;
@@ -500,6 +509,7 @@ export const useGameEngine = (
               setScore(current => current + Config.score.item);
               addParticles(ox, prev.ramp * RAMP_H - camY + 25, '#ffdd00', 6);
               addScorePopup(ox, prev.ramp * RAMP_H - camY, `+${Config.score.item}`, '#ffdd00');
+              clockRef.current = triggerHitstop(clockRef.current, Config.juice.hitstop.item);
             },
             onEffect: type => {
               if (!type) return;
@@ -512,6 +522,7 @@ export const useGameEngine = (
               setSpeed(current => Math.max(MIN_SPD, current - Config.combat.enemyKillSlowdown));
               addParticles(ox, prev.ramp * RAMP_H - camY + 25, '#ff8800', 10);
               addScorePopup(ox, prev.ramp * RAMP_H - camY, `+${Config.score.enemy}`, '#ff8800');
+              clockRef.current = triggerHitstop(clockRef.current, Config.juice.hitstop.enemyKill);
             },
             onBounce: vx => {
               Audio.play('hit');
