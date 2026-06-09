@@ -42,13 +42,29 @@ export const triggerHitstop = (clock: GameClock, frames: number): GameClock => (
   hitstopFrames: Math.max(clock.hitstopFrames, normalizeFrames(frames)),
 });
 
+/** スローモーを発動する（frames tick の間、factor 間引き） */
+export const triggerSlowMo = (clock: GameClock, frames: number, factor: number): GameClock => ({
+  ...clock,
+  slowMoFrames: Math.max(clock.slowMoFrames, normalizeFrames(frames)),
+  slowMoFactor: Math.max(1, Math.floor(factor)),
+});
+
 /** 1 real-tick 進め、シミュレーションを進めるべきか返す */
 export const advanceClock = (clock: GameClock): AdvanceResult => {
-  // ヒットストップ中: 完全停止
+  // ヒットストップ中: 完全停止（スローモーより優先）
   if (clock.hitstopFrames > 0) {
     return {
       clock: { ...clock, hitstopFrames: clock.hitstopFrames - 1 },
       shouldStepSim: false,
+    };
+  }
+  // スローモー中: factor tick に1回だけ sim を進める
+  if (clock.slowMoFrames > 0) {
+    const tickCounter = clock.tickCounter + 1;
+    const shouldStepSim = tickCounter % clock.slowMoFactor === 0;
+    return {
+      clock: { ...clock, slowMoFrames: clock.slowMoFrames - 1, tickCounter },
+      shouldStepSim,
     };
   }
   // 通常進行

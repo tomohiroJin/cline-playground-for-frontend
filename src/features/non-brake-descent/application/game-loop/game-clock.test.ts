@@ -1,4 +1,4 @@
-import { advanceClock, createGameClock, triggerHitstop } from './game-clock';
+import { advanceClock, createGameClock, triggerHitstop, triggerSlowMo } from './game-clock';
 
 describe('GameClock', () => {
   describe('createGameClock', () => {
@@ -53,6 +53,69 @@ describe('GameClock', () => {
         const result = triggerHitstop(clock, 0);
         // Assert
         expect(result.hitstopFrames).toBe(0);
+      });
+    });
+  });
+
+  describe('triggerSlowMo', () => {
+    describe('正常系', () => {
+      it('指定フレーム数・factor のスローモーを設定する', () => {
+        // Arrange
+        const clock = createGameClock();
+        // Act
+        const result = triggerSlowMo(clock, 12, 3);
+        // Assert
+        expect(result.slowMoFrames).toBe(12);
+        expect(result.slowMoFactor).toBe(3);
+      });
+    });
+
+    describe('境界値', () => {
+      it('factor は最小1に正規化される', () => {
+        // Arrange
+        const clock = createGameClock();
+        // Act
+        const result = triggerSlowMo(clock, 12, 0);
+        // Assert
+        expect(result.slowMoFactor).toBe(1);
+      });
+    });
+  });
+
+  describe('advanceClock（スローモー）', () => {
+    describe('正常系', () => {
+      it('factor=3 のスローモーでは3 tick に1回だけ sim を進める', () => {
+        // Arrange
+        let clock = triggerSlowMo(createGameClock(), 12, 3);
+        const steps: boolean[] = [];
+        // Act
+        for (let i = 0; i < 3; i++) {
+          const result = advanceClock(clock);
+          clock = result.clock;
+          steps.push(result.shouldStepSim);
+        }
+        // Assert
+        expect(steps).toEqual([false, false, true]);
+      });
+
+      it('スローモー残数を毎 tick 減らす', () => {
+        // Arrange
+        const clock = triggerSlowMo(createGameClock(), 12, 3);
+        // Act
+        const { clock: next } = advanceClock(clock);
+        // Assert
+        expect(next.slowMoFrames).toBe(11);
+      });
+
+      it('ヒットストップはスローモーより優先される', () => {
+        // Arrange
+        const clock = triggerSlowMo(triggerHitstop(createGameClock(), 2), 12, 3);
+        // Act
+        const { shouldStepSim, clock: next } = advanceClock(clock);
+        // Assert
+        expect(shouldStepSim).toBe(false);
+        expect(next.hitstopFrames).toBe(1);
+        expect(next.slowMoFrames).toBe(12);
       });
     });
   });
