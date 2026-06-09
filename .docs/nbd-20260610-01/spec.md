@@ -93,11 +93,13 @@ if (!shouldStepSim) {
 | イベント | 効果 | パラメータ（初期値・調整可） |
 |---------|------|------------------------|
 | 敵撃破（onEnemyKill） | ヒットストップ | 4 frames |
-| プレイヤー死亡（handleDeath 冒頭） | ヒットストップ | 6 frames |
+| プレイヤー死亡（handleDeath） | ヒットストップ | 3 frames |
 | ニアミス（nearMiss 判定） | スローモー | 12 frames / factor 3 |
 | アイテム取得（onScore） | ヒットストップ（任意・弱） | 2 frames |
 
 数値は `Config` に集約し、調整しやすくする（マジックナンバー禁止）。
+
+**死亡ヒットストップが 3 frames である理由**: 敵撃破・アイテム取得は 60fps の PLAY ループ（約16ms/tick）上で消費されるが、死亡ヒットストップは DYING アニメーションループ（`Config.animation.deathAnimInterval = 35ms/tick`）上で消費される。同じ「3 frames」でも実時間は約105ms となり、衝撃の溜めとして十分。6 frames（約210ms）は冗長なため 3 frames を採用する。
 
 ## 3. 演出機能の詳細（5本柱）
 
