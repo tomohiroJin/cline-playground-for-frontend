@@ -55,6 +55,17 @@ describe('GameClock', () => {
         // Assert
         expect(result.hitstopFrames).toBe(0);
       });
+
+      it('負のフレーム指定では停止しない', () => {
+        // Arrange
+        const clock = createGameClock();
+
+        // Act
+        const result = triggerHitstop(clock, -3);
+
+        // Assert
+        expect(result.hitstopFrames).toBe(0);
+      });
     });
   });
 
