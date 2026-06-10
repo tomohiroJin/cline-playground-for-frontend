@@ -167,6 +167,12 @@ export const useGameEngine = (
   const speedLinesRef = useRef<SpeedLine[]>([]);
   /** プレイヤー残像トレイルの ref（processFrame に渡すための最新値を保持） */
   const playerTrailRef = useRef<TrailSample[]>([]);
+  /**
+   * transitionEffect の ref（processFrame に渡すための最新値を保持）
+   * 旧挙動: 毎フレーム 0.1 ずつ減衰 → ランプ通過時に 1 をセット → 約10フレームで減衰。
+   * processFrame に最新値を渡すことで、減衰の持続が旧と一致する。
+   */
+  const transitionEffectRef = useRef<number>(0);
 
   const isMobile = useIsMobile();
   const handleCheat = useCheatCode('jinjinjin', () => {
@@ -213,6 +219,7 @@ export const useGameEngine = (
     setCombo(0);
     comboTimerRef.current = 0;
     setComboTimer(0);
+    transitionEffectRef.current = 0;
     setTransitionEffect(0);
     setDangerLevel(0);
     speedLinesRef.current = [];
@@ -533,7 +540,9 @@ export const useGameEngine = (
         nearMissEffects: [],
         clouds: [],
         shake: 0,
-        transitionEffect: 0,
+        // 修正1: transitionEffectRef.current を渡すことで減衰の持続が旧挙動と一致する。
+        // 旧挙動: 毎フレーム Math.max(0, current - 0.1) で減衰し、ランプ通過時に 1 をセット。
+        transitionEffect: transitionEffectRef.current,
         speedLines: speedLinesRef.current,
         playerTrail: playerTrailRef.current,
       };
@@ -546,10 +555,11 @@ export const useGameEngine = (
       // 既存のパーティクル更新はフック側の setXxx(prev => ...) で継続する。
 
       // --- パーティクル系の既存更新（純粋変換・processFrame 外で継続） ---
+      // 修正3: particles/scorePopups/nearMissEffects は毎フレーム更新する（旧挙動と一致）。
+      // 修正4: 雲の更新は processFrame 後に result.world.speed を使って行う（後述）。
       setParticles(current => ParticleSys.updateAndFilter(current, ParticleSys.updateParticle));
       setScorePopups(current => ParticleSys.updateAndFilter(current, ParticleSys.updatePopup));
       setNearMissEffects(current => ParticleSys.updateAndFilter(current, ParticleSys.updateNearMiss));
-      setClouds(current => ParticleSys.updateClouds(current, speedRef.current));
 
       // --- processFrame を呼び出す ---
       const result = processFrame(inputWorld, inputUI, input, ctx);
@@ -589,8 +599,16 @@ export const useGameEngine = (
         }
       }
 
-      // ゴール・死亡時はここで終了
-      if (result.isGoal || result.isDead) {
+      // ゴール時はここで終了
+      if (result.isGoal) {
+        return;
+      }
+
+      // 修正6: 死亡フレームでも旧挙動に合わせてカメラを更新する。
+      // 旧挙動: 衝突死亡後の else ブロックの外でカメラ更新が実行されていた。
+      if (result.isDead) {
+        camYRef.current = result.world.camY;
+        setCamY(result.world.camY);
         return;
       }
 
@@ -648,15 +666,22 @@ export const useGameEngine = (
       setDangerLevel(w.dangerLevel);
 
       // transitionEffect（processFrame が計算した値で上書き）
+      // 修正1: ref も同期して次フレームの processFrame に最新値を渡す。
+      transitionEffectRef.current = result.ui.transitionEffect;
       setTransitionEffect(result.ui.transitionEffect);
 
       // ジェットパーティクル（processFrame が完全に管理）
-      if (result.ui.jetParticles.length > 0) {
-        setJetParticles(prev => [
-          ...ParticleSys.updateAndFilter(prev, ParticleSys.updateParticle),
-          ...result.ui.jetParticles,
-        ]);
-      }
+      // 修正3: 生成のないフレームでも既存粒子を更新する（length > 0 ガード撤廃）。
+      // 旧挙動: 毎フレーム updateAndFilter を実行してから新規粒子を追加していた。
+      setJetParticles(prev => [
+        ...ParticleSys.updateAndFilter(prev, ParticleSys.updateParticle),
+        ...result.ui.jetParticles,
+      ]);
+
+      // 雲の更新（修正4: result.world.speed を使う）
+      // 旧挙動: setClouds(current => ParticleSys.updateClouds(current, nextSpeed)) で加速後速度を使用。
+      // 新: processFrame 後の result.world.speed を使うことで旧と同値になる。
+      setClouds(current => ParticleSys.updateClouds(current, result.world.speed));
 
       // 速度線（processFrame が管理）
       speedLinesRef.current = result.ui.speedLines as SpeedLine[];

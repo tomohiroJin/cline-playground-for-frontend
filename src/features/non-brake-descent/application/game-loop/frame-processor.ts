@@ -111,6 +111,11 @@ export interface FrameResult {
 /** 衝突コールバック群（副作用を収集するためのインターフェース） */
 type CollisionSideEffects = {
   collisionDied: boolean;
+  /**
+   * 死亡系ハンドラが呼ばれたか（godMode でも true になる）
+   * 旧挙動再現: result=true を返したハンドラが呼ばれたら godMode に関わらず break する。
+   */
+  hitByDeathHandler: boolean;
   deathType: DeathState['type'] | undefined;
   collisionSlowed: boolean;
   newVxFromBounce: number | undefined;
@@ -133,6 +138,7 @@ type CollisionSideEffects = {
 /** CollisionSideEffects の初期値 */
 const createEmptyCollisionSideEffects = (): CollisionSideEffects => ({
   collisionDied: false,
+  hitByDeathHandler: false,
   deathType: undefined,
   collisionSlowed: false,
   newVxFromBounce: undefined,
@@ -174,12 +180,14 @@ const processCollisionLoop = (
   const godMode = ctx.isGodMode;
   const motionScale = ctx.motionScale;
 
-  const die = godMode
-    ? (_type: DeathState['type']) => { /* ゴッドモード時は die を無視する（collisionDied を設定しない） */ }
-    : (type: DeathState['type']) => {
-        fx.collisionDied = true;
-        fx.deathType = type;
-      };
+  const die = (type: DeathState['type']) => {
+    if (!godMode) {
+      fx.collisionDied = true;
+      fx.deathType = type;
+    }
+    // ゴッドモード時も fx.hitByDeathHandler を立てる（ループ break シグナルに使用）
+    fx.hitByDeathHandler = true;
+  };
 
   const bounce = godMode
     ? (_vx: number) => { /* ゴッドモード時はバウンスしない */ }
@@ -280,11 +288,11 @@ const processCollisionLoop = (
     }
 
     if (result === true) {
-      // 旧挙動の再現: die が実際に collisionDied をセットした場合のみ break する。
-      // ゴッドモード時は die が no-op なので collisionDied = false のまま break する。
-      // (die を呼んだ後の result=true は「衝突ループを抜けよ」のシグナルのみ)
-      if (fx.collisionDied) break;
-      // ゴッドモード時: break しない（障害物の当たり判定を無視して進む）
+      // 旧挙動の再現: ハンドラが true を返したら godMode に関わらず break する。
+      // ただし死亡イベント（PLAYER_DIED）は godMode でない時のみ発火する。
+      // 旧コード: `result === true` → `collisionDied = true; break;` という流れで
+      // godMode 時は `die()` が no-op だが、ループ break 自体は起きていた。
+      if (fx.hitByDeathHandler) break;
     }
     if (result === 'slow') {
       fx.collisionSlowed = true;
@@ -471,11 +479,8 @@ export const processFrame = (
   // ゴール時は isGoal=true で即返す
   if (transition.isGoal) {
     // ゴールイベント
+    // 旧挙動: ゴール時は `handleClear(); return;` のみ。didJump は処理されず jump 音なし。
     events.push({ type: 'GOAL_REACHED' });
-    // ジャンプ音（ゴール直前のジャンプはゴール処理前に発火）
-    if (didJump) {
-      events.push({ type: 'AUDIO', sound: 'jump' });
-    }
     // カメラ更新
     const nextCamY = MathUtils.lerp(
       currentCamY,
