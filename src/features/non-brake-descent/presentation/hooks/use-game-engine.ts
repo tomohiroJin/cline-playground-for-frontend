@@ -644,7 +644,8 @@ export const useGameEngine = (
 
         if (transition.player.ramp > currentLastRamp) {
           newLastRamp = transition.player.ramp;
-          const scoreResult = ScoringDomain.calcRampScore(nextSpeed, nextComboTimer > 0 ? currentCombo : 0);
+          // 修正2: コンボ有効判定は tick 適用前の comboTimer 値を参照する（旧挙動と一致）
+          const scoreResult = ScoringDomain.calcRampScore(nextSpeed, currentComboTimer > 0 ? currentCombo : 0);
 
           if (ComboDomain.shouldActivate(nextSpeed)) {
             const comboResult = ComboDomain.increment(currentCombo, nextComboTimer);
@@ -696,6 +697,9 @@ export const useGameEngine = (
       let slowMoFrames = 0;
       let slowMoFactor = 1;
 
+      // ニアミス専用ポップアップ（死亡時にも適用するため popupsFromCollision とは別管理）
+      const nearMissPopupsFromCollision: Array<{ x: number; y: number; text: string; color: string }> = [];
+
       const collisionRamp = currentRamps[afterTransitionPlayer.ramp];
       if (collisionRamp) {
         // 衝突ハンドラのコールバックは副作用を収集するだけ（即時適用しない）
@@ -744,11 +748,13 @@ export const useGameEngine = (
 
           if (CollisionDomain.isDangerous(obstacle.t) && col.nearMiss && !passedObs.current.has(obsId)) {
             passedObs.current.add(obsId);
-            audioEventsFromCollision.push(() => Audio.play('nearMiss'));
+            // ニアミス音は死亡に関わらず即時適用（旧挙動と一致）
+            Audio.play('nearMiss');
             nearMissDeltaCount += 1;
             nearMissScoreDelta += Config.score.nearMiss;
             nearMissFromCollision.push({ x: ox, y: afterTransitionPlayer.ramp * RAMP_H - currentCamY + 25 });
-            popupsFromCollision.push({ x: ox, y: afterTransitionPlayer.ramp * RAMP_H - currentCamY - 20, text: `NEAR MISS +${Config.score.nearMiss}`, color: '#44ffaa' });
+            // ニアミスポップアップは死亡時にも適用するため専用配列へ
+            nearMissPopupsFromCollision.push({ x: ox, y: afterTransitionPlayer.ramp * RAMP_H - currentCamY - 20, text: `NEAR MISS +${Config.score.nearMiss}`, color: '#44ffaa' });
             slowMoFrames = Math.max(slowMoFrames, scaleFrames(Config.juice.slowMo.nearMissFrames, motionScaleRef.current));
             slowMoFactor = Config.juice.slowMo.nearMissFactor;
           }
@@ -816,18 +822,29 @@ export const useGameEngine = (
         }
       }
 
+      // 修正1: ニアミス副作用（スコア・カウント・エフェクト・ポップアップ・スローモー）は
+      // 死亡フラグに関わらず適用する（旧挙動と一致）。
+      // 衝突ループは死亡時に break するため、死亡した障害物より後のニアミスは
+      // 収集されない（= 旧挙動の「障害物を順に処理し、死亡で即ループ終了」と等価）
+      if (nearMissScoreDelta !== 0) {
+        setScore(prev => prev + nearMissScoreDelta);
+        setNearMissCount(prev => prev + nearMissDeltaCount);
+        for (const nm of nearMissFromCollision) {
+          setNearMissEffects(prev => [...prev, EntityFactory.createNearMissEffect(nm.x, nm.y)]);
+        }
+        for (const popup of nearMissPopupsFromCollision) {
+          addScorePopup(popup.x, popup.y, popup.text, popup.color);
+        }
+      }
+      if (slowMoFrames > 0) {
+        clockRef.current = triggerSlowMo(clockRef.current, slowMoFrames, slowMoFactor);
+      }
+
       // 衝突の副作用（死亡はこの中で handleDeath を呼ぶ）
       if (!collisionDied) {
         // 死亡していない場合のみスコア・エフェクト・パーティクルを適用
         if (scoreDeltaFromCollision !== 0) {
           setScore(prev => prev + scoreDeltaFromCollision);
-        }
-        if (nearMissScoreDelta !== 0) {
-          setScore(prev => prev + nearMissScoreDelta);
-          setNearMissCount(prev => prev + nearMissDeltaCount);
-          for (const nm of nearMissFromCollision) {
-            setNearMissEffects(prev => [...prev, EntityFactory.createNearMissEffect(nm.x, nm.y)]);
-          }
         }
         if (speedDeltaFromCollision !== 0) {
           const newSpd = Math.max(MIN_SPD, nextSpeed + speedDeltaFromCollision);
@@ -847,9 +864,6 @@ export const useGameEngine = (
         if (hitstopFrames > 0) {
           clockRef.current = triggerHitstop(clockRef.current, hitstopFrames);
         }
-        if (slowMoFrames > 0) {
-          clockRef.current = triggerSlowMo(clockRef.current, slowMoFrames, slowMoFactor);
-        }
 
         // 確定プレイヤーを ref + state に反映
         playerRef.current = finalPlayer;
@@ -862,9 +876,10 @@ export const useGameEngine = (
       }
 
       // --- カメラ更新 ---
-      // プレイヤーの確定位置を使って camY を lerp する
-      const targetPlayer = collisionDied ? currentPlayer : finalPlayer;
-      const nextCamY = MathUtils.lerp(currentCamY, targetPlayer.ramp * RAMP_H - H / Config.camera.offsetDivisor, Config.camera.followRate);
+      // 修正3: カメラ目標は常に前フレームのプレイヤー ramp を使う（旧挙動と一致）
+      // 旧コードでは setCamY の updater 内で stale closure の player（前フレーム）を参照していた。
+      // 生存時・死亡時ともに currentPlayer（tick 開始時 = 前フレーム確定位置）を使用する。
+      const nextCamY = MathUtils.lerp(currentCamY, currentPlayer.ramp * RAMP_H - H / Config.camera.offsetDivisor, Config.camera.followRate);
       camYRef.current = nextCamY;
       setCamY(nextCamY);
     }, 1000 / 60);
