@@ -545,7 +545,9 @@ export const processFrame = (
       const scoreResult = ScoringDomain.calcRampScore(nextSpeed, currentComboTimer > 0 ? currentCombo : 0);
 
       if (ComboDomain.shouldActivate(nextSpeed)) {
-        const comboResult = ComboDomain.increment(currentCombo, nextComboTimer);
+        // increment の第2引数は tick 前の comboTimer 値を使う（旧挙動と一致）。
+        // calcRampScore のコンボ有効判定も currentComboTimer（tick 前）を参照しており整合する。
+        const comboResult = ComboDomain.increment(currentCombo, currentComboTimer);
         newCombo = comboResult.combo;
         newComboTimer2 = comboResult.timer;
         if (comboResult.combo > 1) {

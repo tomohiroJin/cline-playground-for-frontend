@@ -156,7 +156,7 @@ export const useGameEngine = (
   // 各 setter 呼び出し時に同期更新する。
   const playerRef = useRef<Player>(EntityFactory.createPlayer());
   const speedRef = useRef<number>(MIN_SPD);
-  const ramsRef = useRef<Ramp[]>([]);
+  const rampsRef = useRef<Ramp[]>([]);
   const camYRef = useRef<number>(0);
   const effectRef = useRef<EffectState>({ type: undefined, timer: 0 });
   const comboRef = useRef<number>(0);
@@ -239,7 +239,7 @@ export const useGameEngine = (
   const startCountdown = useCallback(() => {
     Audio.init();
     const generated = RampGen.generate(TOTAL);
-    ramsRef.current = generated;
+    rampsRef.current = generated;
     setRamps(generated);
     resetGameState();
     setCountdown(3);
@@ -453,7 +453,7 @@ export const useGameEngine = (
       // ref から現フレームの動的値を読み取る（stale closure 回避）
       const currentEffect = effectRef.current;
       const currentPlayer = playerRef.current;
-      const currentRamps = ramsRef.current;
+      const currentRamps = rampsRef.current;
       const currentCamY = camYRef.current;
 
       // reverse エフェクト中は左右を入れ替える
@@ -604,24 +604,58 @@ export const useGameEngine = (
         return;
       }
 
-      // 修正6: 死亡フレームでも旧挙動に合わせてカメラを更新する。
-      // 旧挙動: 衝突死亡後の else ブロックの外でカメラ更新が実行されていた。
+      // --- state/ref の更新 ---
+      const w = result.world;
+
+      // 死亡フレームではニアミス副作用・スコア差分・カメラのみを適用し、
+      // プレイヤー位置・速度・コンボ・エフェクト等の world コミットは行わない。
+      // 旧挙動（a9ea5b9）: 衝突死亡時は !collisionDied ブロックをスキップし、
+      // nearMiss 副作用（スコア・カウント・エフェクト・ポップアップ・slowMo）と
+      // カメラ更新だけが実行されていた。
       if (result.isDead) {
-        camYRef.current = result.world.camY;
-        setCamY(result.world.camY);
+        // ニアミス由来スローモー（旧: slowMoFrames > 0 のとき triggerSlowMo 呼び出し）
+        if (result.slowMoFrames > 0) {
+          clockRef.current = triggerSlowMo(clockRef.current, result.slowMoFrames, result.slowMoFactor);
+        }
+
+        // スコア差分（nearMiss 由来 + ランプ遷移由来）
+        if (w.score !== 0) {
+          setScore(prev => prev + w.score);
+        }
+
+        // ニアミスカウント
+        if (w.nearMissCount !== 0) {
+          setNearMissCount(prev => prev + w.nearMissCount);
+        }
+
+        // ニアミスエフェクト追記（nearMiss 由来の新規生成分）
+        if (result.ui.nearMissEffects.length > 0) {
+          setNearMissEffects(prev => [...prev, ...result.ui.nearMissEffects as typeof prev]);
+        }
+
+        // スコアポップアップ追記（nearMiss 由来の新規生成分）
+        if (result.ui.scorePopups.length > 0) {
+          setScorePopups(prev => [...prev, ...result.ui.scorePopups as typeof prev]);
+        }
+
+        // パーティクル追記（着地由来・nearMiss 由来の新規生成分）
+        if (result.ui.particles.length > 0) {
+          setParticles(prev => [...prev, ...result.ui.particles as typeof prev]);
+        }
+
+        // カメラ更新（旧挙動: 衝突死亡後も else ブロック外でカメラ更新が実行されていた）
+        camYRef.current = w.camY;
+        setCamY(w.camY);
         return;
       }
 
-      // --- clockRef 更新 ---
+      // --- clockRef 更新（生存時のみ） ---
       if (result.hitstopFrames > 0) {
         clockRef.current = triggerHitstop(clockRef.current, result.hitstopFrames);
       }
       if (result.slowMoFrames > 0) {
         clockRef.current = triggerSlowMo(clockRef.current, result.slowMoFrames, result.slowMoFactor);
       }
-
-      // --- state/ref の更新 ---
-      const w = result.world;
 
       // 速度
       speedRef.current = w.speed;
@@ -666,21 +700,21 @@ export const useGameEngine = (
       setDangerLevel(w.dangerLevel);
 
       // transitionEffect（processFrame が計算した値で上書き）
-      // 修正1: ref も同期して次フレームの processFrame に最新値を渡す。
+      // ref も同期して次フレームの processFrame に最新値を渡す。
       transitionEffectRef.current = result.ui.transitionEffect;
       setTransitionEffect(result.ui.transitionEffect);
 
       // ジェットパーティクル（processFrame が完全に管理）
-      // 修正3: 生成のないフレームでも既存粒子を更新する（length > 0 ガード撤廃）。
+      // 生成のないフレームでも既存粒子を更新する（length > 0 ガード撤廃）。
       // 旧挙動: 毎フレーム updateAndFilter を実行してから新規粒子を追加していた。
       setJetParticles(prev => [
         ...ParticleSys.updateAndFilter(prev, ParticleSys.updateParticle),
         ...result.ui.jetParticles,
       ]);
 
-      // 雲の更新（修正4: result.world.speed を使う）
+      // 雲の更新（result.world.speed を使う）
       // 旧挙動: setClouds(current => ParticleSys.updateClouds(current, nextSpeed)) で加速後速度を使用。
-      // 新: processFrame 後の result.world.speed を使うことで旧と同値になる。
+      // processFrame 後の result.world.speed を使うことで旧と同値になる。
       setClouds(current => ParticleSys.updateClouds(current, result.world.speed));
 
       // 速度線（processFrame が管理）
