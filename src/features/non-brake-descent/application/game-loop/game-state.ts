@@ -13,6 +13,8 @@ import type {
   Ramp,
   ScorePopup,
 } from '../../types';
+import type { SpeedLine } from '../../domain/services/speed-line-service';
+import type { TrailSample } from '../../domain/services/trail-service';
 
 /** コンボの状態 */
 export interface ComboState {
@@ -44,6 +46,10 @@ export interface UIState {
   readonly clouds: readonly Cloud[];
   readonly shake: number;
   readonly transitionEffect: number;
+  /** 速度線エフェクト（HIGH ランク時に表示） */
+  readonly speedLines: readonly SpeedLine[];
+  /** プレイヤー残像トレイル（高速時に表示） */
+  readonly playerTrail: readonly TrailSample[];
 }
 
 /** useReducer で使用するゲームアクション型 */
@@ -93,4 +99,6 @@ export const createInitialUIState = (clouds: readonly Cloud[] = []): UIState => 
   clouds,
   shake: 0,
   transitionEffect: 0,
+  speedLines: [],
+  playerTrail: [],
 });

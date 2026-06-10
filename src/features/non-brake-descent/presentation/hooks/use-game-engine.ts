@@ -7,29 +7,25 @@
  * B2-S1: setState updater 内の副作用をループ外へ分離。
  * 動的値（player/speed/ramps/camY/effect/combo/comboTimer/lastRamp/godMode）を
  * ref に昇格させ、ゲームループの依存配列を [state] のみに縮小した。
+ *
+ * B2-S2: ゲームループ本体を processFrame 純粋関数に抽出。
+ * フックはその結果を各 state/ref に展開するのみ。
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Audio } from '../../audio';
 import { Config } from '../../config';
-import { EffectType, GameState, ObstacleType, SpeedRank } from '../../constants';
-import { CollisionDomain } from '../../domains/collision-domain';
-import { ComboDomain } from '../../domains/combo-domain';
-import { DangerDomain } from '../../domains/danger-domain';
-import { GeometryDomain } from '../../domains/geometry-domain';
-import { ScoringDomain } from '../../domains/scoring-domain';
+import { GameState, SpeedRank } from '../../constants';
 import { SpeedDomain } from '../../domains/speed-domain';
-import { MathUtils } from '../../domains/math-utils';
+import { ScoringDomain } from '../../domains/scoring-domain';
 import { EntityFactory } from '../../entities';
 import { BackgroundGen, RampGen } from '../../generators';
 import { useCheatCode } from '../../hooks';
 import { ParticleSys } from '../../particles';
-import { Physics } from '../../physics';
 import type {
   ClearAnim,
   DeathState,
   EffectState,
   GameStateValue,
-  InputState,
   NearMissEffect,
   Particle,
   Player,
@@ -39,76 +35,16 @@ import type {
 } from '../../types';
 import type { GameWorld, UIState } from '../../application/game-loop/game-state';
 import { advanceClock, createGameClock, triggerHitstop, triggerSlowMo } from '../../application/game-loop/game-clock';
+import { processFrame } from '../../application/game-loop/frame-processor';
+import type { FrameContext } from '../../application/game-loop/frame-processor';
 import { resolveMotionScale, scaleFrames } from '../../application/game-loop/motion-scale';
 import { useReducedMotion } from './use-reduced-motion';
 import { useIsMobile } from './use-mobile';
 import { getHighScore, saveScore } from '../../../../utils/score-storage';
-import {
-  spawnSpeedLines,
-  updateSpeedLines,
-} from '../../domain/services/speed-line-service';
 import type { SpeedLine } from '../../domain/services/speed-line-service';
-import { sampleTrail } from '../../domain/services/trail-service';
 import type { TrailSample } from '../../domain/services/trail-service';
-import { createDust } from '../../domain/services/dust-service';
 
 const SCORE_KEY = 'non_brake_descent';
-
-/** 残像トレイルの最大サンプル保持数 */
-const MAX_TRAIL_SAMPLES = 10;
-
-/** 着地時の土煙パーティクル数（通常着地） */
-const DUST_PARTICLE_COUNT = 6;
-
-type CollisionHandlerResult = boolean | 'slow';
-
-type CollisionCallbacks = {
-  onDie: (type: DeathState['type']) => void;
-  onScore: (ox: number) => void;
-  onEffect: (type: EffectState['type']) => void;
-  onEnemyKill: (ox: number) => void;
-  onBounce: (vx: number) => void;
-};
-
-/** 衝突ハンドラを生成する */
-const createCollisionHandlers = (
-  rank: typeof SpeedRank[keyof typeof SpeedRank],
-  cb: CollisionCallbacks,
-  godMode: boolean
-): Partial<
-  Record<
-    (typeof ObstacleType)[keyof typeof ObstacleType],
-    (col: ReturnType<typeof CollisionDomain.check>, obs: Ramp['obs'][number], ox: number, px: number) => CollisionHandlerResult
-  >
-> => {
-  const { onDie, onScore, onEffect, onEnemyKill, onBounce } = cb;
-  const die = godMode ? (() => {}) : onDie;
-  const bounce = godMode ? (() => {}) : onBounce;
-  const handleEnemy = (col: ReturnType<typeof CollisionDomain.check>, obs: Ramp['obs'][number], ox: number, px: number) => {
-    if (!col.hit) return false;
-    if (rank === SpeedRank.HIGH) {
-      die('enemy');
-      return true;
-    }
-    if (rank === SpeedRank.MID) {
-      obs.t = ObstacleType.DEAD;
-      onEnemyKill(ox);
-      return 'slow';
-    }
-    bounce(px < ox ? -Config.combat.bounceSpeed : Config.combat.bounceSpeed);
-    return false;
-  };
-  return {
-    [ObstacleType.HOLE_S]: col => (col.ground && rank === SpeedRank.LOW ? (die('fall'), true) : false),
-    [ObstacleType.HOLE_L]: col => (col.ground ? (die('fall'), true) : false),
-    [ObstacleType.ROCK]: col => (col.hit ? (die('rock'), true) : false),
-    [ObstacleType.ENEMY]: handleEnemy,
-    [ObstacleType.ENEMY_V]: handleEnemy,
-    [ObstacleType.SCORE]: (col, obs, ox) => (col.hit ? ((obs.t = ObstacleType.TAKEN), onScore(ox), false) : false),
-    [ObstacleType.REVERSE]: (col, obs) => (col.hit ? ((obs.t = ObstacleType.TAKEN), onEffect('reverse'), false) : false),
-    [ObstacleType.FORCE_JUMP]: (col, obs) => (col.hit ? ((obs.t = ObstacleType.TAKEN), onEffect('forceJ'), false) : false),
-  };
-};
 
 /** ゲームエンジンフックの戻り値 */
 export interface UseGameEngineResult {
@@ -215,7 +151,7 @@ export const useGameEngine = (
     motionScaleRef.current = resolveMotionScale(reducedMotion);
   }, [reducedMotion]);
 
-  // --- B2-S1: stale closure 回避のための ref 群 ---
+  // --- B2-S1/S2: stale closure 回避のための ref 群 ---
   // ゲームループ useEffect の依存配列から動的 state を除外するため、
   // 各 setter 呼び出し時に同期更新する。
   const playerRef = useRef<Player>(EntityFactory.createPlayer());
@@ -227,6 +163,10 @@ export const useGameEngine = (
   const comboTimerRef = useRef<number>(0);
   const lastRampRef = useRef<number>(0);
   const godModeRef = useRef<boolean>(false);
+  /** 速度線の ref（processFrame に渡すための最新値を保持） */
+  const speedLinesRef = useRef<SpeedLine[]>([]);
+  /** プレイヤー残像トレイルの ref（processFrame に渡すための最新値を保持） */
+  const playerTrailRef = useRef<TrailSample[]>([]);
 
   const isMobile = useIsMobile();
   const handleCheat = useCheatCode('jinjinjin', () => {
@@ -243,10 +183,6 @@ export const useGameEngine = (
 
   const addParticles = useCallback((x: number, y: number, color: string, count: number) => {
     setParticles(prev => [...prev, ...EntityFactory.createParticles(x, y, color, count)]);
-  }, []);
-
-  const addScorePopup = useCallback((x: number, y: number, text: string, color: string) => {
-    setScorePopups(prev => [...prev, EntityFactory.createScorePopup(x, y, text, color)]);
   }, []);
 
   const resetGameState = useCallback(() => {
@@ -279,7 +215,9 @@ export const useGameEngine = (
     setComboTimer(0);
     setTransitionEffect(0);
     setDangerLevel(0);
+    speedLinesRef.current = [];
     setSpeedLines([]);
+    playerTrailRef.current = [];
     setPlayerTrail([]);
     setClouds(BackgroundGen.initClouds());
     passedObs.current = new Set();
@@ -489,7 +427,8 @@ export const useGameEngine = (
   }, [state]);
 
   // ゲームループ
-  // B2-S1: 依存配列を [state] のみに縮小。動的値はすべて ref 経由で読む。
+  // B2-S2: ループ本体を processFrame 純粋関数呼び出しに置換。
+  // 依存配列は [state] のみ（動的値はすべて ref 経由）。
   useEffect(() => {
     if (state !== GameState.PLAY) return;
     const loop = window.setInterval(() => {
@@ -506,385 +445,244 @@ export const useGameEngine = (
 
       // ref から現フレームの動的値を読み取る（stale closure 回避）
       const currentEffect = effectRef.current;
-      const currentSpeed = speedRef.current;
       const currentPlayer = playerRef.current;
       const currentRamps = ramsRef.current;
       const currentCamY = camYRef.current;
-      const currentCombo = comboRef.current;
-      const currentComboTimer = comboTimerRef.current;
-      const currentLastRamp = lastRampRef.current;
-      const currentGodMode = godModeRef.current;
 
-      const reverse = currentEffect.type === EffectType.REVERSE;
-      const input: InputState = {
+      // reverse エフェクト中は左右を入れ替える
+      const reverse = currentEffect.type === 'reverse';
+      const input = {
         left: reverse ? keyState.ArrowRight || touchState.right : keyState.ArrowLeft || touchState.left,
         right: reverse ? keyState.ArrowLeft || touchState.left : keyState.ArrowRight || touchState.right,
         accel: keyState.KeyZ || touchState.accel,
         jump: keyState.KeyX || touchState.jump,
       };
 
-      // --- エフェクトタイマー更新 ---
-      const nextEffect: EffectState = currentEffect.timer <= 0
-        ? { type: undefined, timer: 0 }
-        : { ...currentEffect, timer: currentEffect.timer - 1 };
-      effectRef.current = nextEffect;
-      setEffect(nextEffect);
+      // --- processFrame 用の world/ui を現在の各 state から組み立てる ---
+      const currentWorld: GameWorld = {
+        player: currentPlayer,
+        ramps: currentRamps,
+        speed: speedRef.current,
+        camY: currentCamY,
+        score: 0, // processFrame 内でスコア差分を計算するため、フック側の score state を直接使いたい
+        // → ただし純粋関数への score 渡しが必要なため、score は state の値をそのまま使う
+        // ここでは scoreRef が無いため、下記で別途扱う
+        speedBonus: 0,
+        combo: { count: comboRef.current, timer: comboTimerRef.current },
+        effect: currentEffect,
+        lastRamp: lastRampRef.current,
+        nearMissCount: 0,
+        dangerLevel: 0,
+      };
 
-      // --- 速度更新 ---
-      const nextSpeed = SpeedDomain.accelerate(currentSpeed, input.accel);
-      speedRef.current = nextSpeed;
-      setSpeed(nextSpeed);
+      // NOTE: score/speedBonus/nearMissCount/dangerLevel は useState で管理されており
+      // processFrame に渡すためには現在の最新値が必要。
+      // B2-S2 では世界状態をまだ ref に統合していないため（S3 の課題）、
+      // processFrame の world.score は差分加算の起点として使う。
+      // フックではその差分を processFrame の結果から取り出して setScore に適用する形になる。
+      // → 実際の score/speedBonus/nearMissCount は scoreRef が無いため、
+      //    processFrame は world.score=0 を受け取り「このフレームの差分」として返す設計とする。
+      // → この問題は processFrame 内でも score/speedBonus を初期値ゼロから加算する設計で対応可能だが
+      //    dangerLevel/nearMissCount については「現在値」が必要。
+      //
+      // 以上の理由から、B2-S2 ではスコア・パーティクル等の「差分」は processFrame の結果に入れ、
+      // フック側で useState の setXxx を通じて適用する（S3 以降で useReducer に一元化する）。
 
-      // --- パーティクル系更新（副作用なし・純粋変換） ---
+      // --- processFrame 用のコンテキストを組み立てる ---
+      const ctx: FrameContext = {
+        screenWidth: W,
+        screenHeight: H,
+        rampHeight: RAMP_H,
+        minSpeed: MIN_SPD,
+        isGodMode: godModeRef.current,
+        motionScale: motionScaleRef.current,
+        frameIndex: frameRef.current,
+        wasOnGround: prevOnGroundRef.current,
+        prevRank: prevRankRef.current,
+        lastRamp: lastRampRef.current,
+        passedObstacles: passedObs.current,
+      };
+
+      // processFrame には score/speedBonus/nearMissCount/dangerLevel を
+      // 現在の state 値として渡せないため（useState の値が stale になるリスク）、
+      // これらは processFrame から「差分」として返してもらい、フック側で適用する。
+      // 暫定的に world に 0 を渡し、結果の world から差分を計算して適用する。
+      // (S3 以降では useReducer で world 全体を ref で持つことでこの問題を解消する)
+      const inputWorld: GameWorld = {
+        ...currentWorld,
+        // score/speedBonus/nearMissCount/dangerLevel は「差分起点=0」として渡す
+        score: 0,
+        speedBonus: 0,
+        nearMissCount: 0,
+        dangerLevel: 0,
+      };
+
+      // 速度線・トレイル等の UI state も ref がないため現在の state を直接参照できないが、
+      // 各フレームで完全に再計算するため問題なし（updateSpeedLines, sampleTrail 等は前の状態から計算する）。
+      // B2-S2 暫定: UI の速度線・トレイルは processFrame に委任する。
+      // 既存の particles/scorePopups/nearMissEffects/clouds は processFrame が更新する。
+      // フック側の state は使わず、processFrame 結果を直接 setXxx で適用する。
+      const inputUI: UIState = {
+        particles: [], // processFrame は nextParticles（既存更新済み）を使うため、空からスタートではなく
+        // 現在の particles state が必要。しかし stale closure 問題がある。
+        // B2-S2 の暫定措置: processFrame は空配列を受け取り、
+        // dust/ニアミスエフェクト等の「新規生成」分のみ返す。
+        // 既存の更新（updateAndFilter）はフック側で継続する。
+        jetParticles: [],
+        scorePopups: [],
+        nearMissEffects: [],
+        clouds: [],
+        shake: 0,
+        transitionEffect: 0,
+        speedLines: speedLinesRef.current,
+        playerTrail: playerTrailRef.current,
+      };
+
+      // B2-S2 実装上の限界:
+      // particles/scorePopups/nearMissEffects/clouds は useState で管理されており
+      // processFrame に「現在の最新値」を渡せない（stale closure 問題）。
+      // S3/S4 で useReducer に移行するまでの暫定として、
+      // processFrame は「新規生成・追記分のみ」を返し、
+      // 既存のパーティクル更新はフック側の setXxx(prev => ...) で継続する。
+
+      // --- パーティクル系の既存更新（純粋変換・processFrame 外で継続） ---
       setParticles(current => ParticleSys.updateAndFilter(current, ParticleSys.updateParticle));
       setScorePopups(current => ParticleSys.updateAndFilter(current, ParticleSys.updatePopup));
       setNearMissEffects(current => ParticleSys.updateAndFilter(current, ParticleSys.updateNearMiss));
+      setClouds(current => ParticleSys.updateClouds(current, speedRef.current));
 
-      // --- コンボタイマー更新 ---
-      const nextComboTimer = ComboDomain.tick(currentComboTimer);
-      comboTimerRef.current = nextComboTimer;
-      setComboTimer(nextComboTimer);
+      // --- processFrame を呼び出す ---
+      const result = processFrame(inputWorld, inputUI, input, ctx);
 
-      setTransitionEffect(current => Math.max(0, current - 0.1));
-      setClouds(current => ParticleSys.updateClouds(current, nextSpeed));
+      // --- 前フレーム ref の更新 ---
+      prevOnGroundRef.current = result.world.player.onGround;
+      prevRankRef.current = result.newRank;
 
-      // --- ジェットパーティクル更新 ---
-      setJetParticles(prev => {
-        let updated = ParticleSys.updateAndFilter(prev, ParticleSys.updateParticle);
-        if (nextSpeed > Config.particle.jetSpeedThreshold && frameRef.current % 2 === 0) {
-          const ramp = currentRamps[currentPlayer.ramp];
-          if (ramp) {
-            const geo = GeometryDomain.getRampGeometry(ramp, W, RAMP_H);
-            const slopeY = GeometryDomain.getSlopeY(currentPlayer.x, geo, ramp.type);
-            updated = [...updated, EntityFactory.createJetParticle(currentPlayer.x, currentPlayer.ramp * RAMP_H - currentCamY + slopeY, ramp.dir)];
-          }
-        }
-        return updated;
-      });
-
-      // --- 速度線の更新・生成（HIGH ランク時のみ生成） ---
-      const currentRank = SpeedDomain.getRank(nextSpeed);
-      setSpeedLines(prev => {
-        const updated = updateSpeedLines(prev);
-        return motionScaleRef.current > 0
-          ? spawnSpeedLines(updated, currentRank, W, H)
-          : updated;
-      });
-
-      // --- プレイヤー残像トレイルの更新（高速時かつ reduced-motion 無効時のみサンプル追加） ---
-      // 注: jetParticles と同様、当該 tick の setPlayer 更新前のプレイヤー位置（前フレーム相当）でサンプリングする。残像演出としては許容範囲。
-      const trailRamp = currentRamps[currentPlayer.ramp];
-      if (trailRamp) {
-        const trailGeo = GeometryDomain.getRampGeometry(trailRamp, W, RAMP_H);
-        const trailSlopeY = GeometryDomain.getSlopeY(currentPlayer.x, trailGeo, trailRamp.type);
-        const trailY = currentPlayer.ramp * RAMP_H - currentCamY + trailSlopeY;
-        const isHighSpeed = nextSpeed > Config.particle.jetSpeedThreshold;
-        const enableTrail = motionScaleRef.current > 0 && isHighSpeed;
-        setPlayerTrail(prev =>
-          sampleTrail(prev, currentPlayer.x, trailY, enableTrail ? MAX_TRAIL_SAMPLES : 0)
-        );
+      // --- 新規 passedObstacles を追加 ---
+      for (const obsId of result.newPassedObstacles) {
+        passedObs.current.add(obsId);
       }
 
-      // --- 速度ランク変化の検出（BGM プロファイル切替） ---
-      if (currentRank !== prevRankRef.current) {
-        prevRankRef.current = currentRank;
-        Audio.setSpeedRank(currentRank);
-      }
-
-      const currentRampForDanger = currentRamps[currentPlayer.ramp];
-      if (currentRampForDanger) {
-        setDangerLevel(DangerDomain.calcLevel(currentRampForDanger.obs, currentPlayer.x, currentRampForDanger.dir, nextSpeed, W));
-      }
-
-      // --- プレイヤー移動・遷移・衝突計算（副作用をすべて updater 外へ） ---
-      // B2-S1: 2つの setPlayer(prev=>{...}) updater を1パスに統合し、
-      //        副作用（Audio/setState/clockRef 操作）を updater の外で適用する。
-
-      // ── フェーズ1: 移動・ジャンプ・ランプ遷移 ──
-      const rampForMove = currentRamps[currentPlayer.ramp];
-      if (!rampForMove) {
-        // ramp が取れない場合はカメラのみ更新して終了
-        const nextCamY = MathUtils.lerp(currentCamY, currentPlayer.ramp * RAMP_H - H / Config.camera.offsetDivisor, Config.camera.followRate);
-        camYRef.current = nextCamY;
-        setCamY(nextCamY);
-        return;
-      }
-
-      let movedPlayer = Physics.applyMovement(currentPlayer, input, nextSpeed, rampForMove.dir);
-      const jumpResult = Physics.applyJump(movedPlayer, input, nextEffect.type, nextEffect.timer);
-      movedPlayer = jumpResult.player;
-      const didJump = jumpResult.didJump;
-
-      // ゴール／ランプ遷移を解決し、確定プレイヤーを求める
-      const transition = Physics.checkTransition(movedPlayer, currentRamps, W);
-
-      // ゴール時は handleClear を呼んで終了（updater 外で副作用）
-      if (transition.isGoal) {
-        handleClear();
-        return;
-      }
-
-      // 遷移後の副作用を収集するためのローカル変数
-      let afterTransitionPlayer = movedPlayer;
-      let afterTransitionRamp = rampForMove;
-      let didRampChange = false;
-      let newLastRamp = currentLastRamp;
-      let scoreDeltaFromRamp = 0;
-      let newCombo = currentCombo;
-      let newComboTimer2 = nextComboTimer;
-      let shouldPlayCombo = false;
-      let comboCountForAudio = 0;
-      let newSpeedBonusDelta = 0;
-      let comboPopupText = '';
-
-      if (transition.transitioned) {
-        afterTransitionPlayer = transition.player;
-        afterTransitionRamp = currentRamps[transition.player.ramp] ?? rampForMove;
-        didRampChange = true;
-
-        if (transition.player.ramp > currentLastRamp) {
-          newLastRamp = transition.player.ramp;
-          // 修正2: コンボ有効判定は tick 適用前の comboTimer 値を参照する（旧挙動と一致）
-          const scoreResult = ScoringDomain.calcRampScore(nextSpeed, currentComboTimer > 0 ? currentCombo : 0);
-
-          if (ComboDomain.shouldActivate(nextSpeed)) {
-            const comboResult = ComboDomain.increment(currentCombo, nextComboTimer);
-            newCombo = comboResult.combo;
-            newComboTimer2 = comboResult.timer;
-            if (comboResult.combo > 1) {
-              const comboScore = ScoringDomain.calcRampScore(nextSpeed, comboResult.combo);
-              scoreDeltaFromRamp = comboScore.base + comboScore.bonus;
-              shouldPlayCombo = true;
-              comboCountForAudio = comboResult.combo;
-              comboPopupText = `+${comboScore.base + comboScore.bonus} (${comboResult.combo}x)`;
+      // --- events を処理 ---
+      for (const event of result.events) {
+        switch (event.type) {
+          case 'AUDIO':
+            // コンボ音は 'combo:N' 形式
+            if (event.sound.startsWith('combo:')) {
+              const comboCount = parseInt(event.sound.slice(6), 10);
+              Audio.playCombo(comboCount);
             } else {
-              // combo=1 はポップアップなし（ベーススコアのみ加算）
-              scoreDeltaFromRamp = scoreResult.base;
+              Audio.play(event.sound);
             }
-          } else {
-            const reset = ComboDomain.reset();
-            newCombo = reset.combo;
-            newComboTimer2 = reset.timer;
-            scoreDeltaFromRamp = scoreResult.base;
-          }
-          newSpeedBonusDelta = SpeedDomain.getBonus(nextSpeed);
+            break;
+          case 'SPEED_RANK_CHANGED':
+            Audio.setSpeedRank(event.rank);
+            break;
+          case 'GOAL_REACHED':
+            handleClear();
+            break;
+          case 'PLAYER_DIED':
+            handleDeath(event.deathType);
+            break;
+          default:
+            break;
         }
       }
 
-      // 着地検出: 前フレームが空中で確定プレイヤーが接地に変化したとき
-      const wasOnGround = prevOnGroundRef.current;
-      const justLanded = !wasOnGround && afterTransitionPlayer.onGround;
-      prevOnGroundRef.current = afterTransitionPlayer.onGround;
-
-      // ── フェーズ2: 衝突処理 ──
-      // 遷移後のプレイヤー・ランプで衝突判定を行う（移動→遷移→衝突の順序を保持）
-      let finalPlayer = afterTransitionPlayer;
-      let collisionDied = false;
-      let collisionSlowed = false;
-      let newVxFromBounce: number | undefined;
-
-      // 衝突処理中に発生した副作用を収集するローカル変数
-      const audioEventsFromCollision: Array<() => void> = [];
-      let scoreDeltaFromCollision = 0;
-      let speedDeltaFromCollision = 0;
-      const particlesFromCollision: Array<{ x: number; y: number; color: string; count: number }> = [];
-      const popupsFromCollision: Array<{ x: number; y: number; text: string; color: string }> = [];
-      const nearMissFromCollision: Array<{ x: number; y: number }> = [];
-      let nearMissDeltaCount = 0;
-      let nearMissScoreDelta = 0;
-      let newEffectFromCollision: EffectState | undefined;
-      let hitstopFrames = 0;
-      let slowMoFrames = 0;
-      let slowMoFactor = 1;
-
-      // ニアミス専用ポップアップ（死亡時にも適用するため popupsFromCollision とは別管理）
-      const nearMissPopupsFromCollision: Array<{ x: number; y: number; text: string; color: string }> = [];
-
-      const collisionRamp = currentRamps[afterTransitionPlayer.ramp];
-      if (collisionRamp) {
-        // 衝突ハンドラのコールバックは副作用を収集するだけ（即時適用しない）
-        const handlers = createCollisionHandlers(
-          SpeedDomain.getRank(nextSpeed),
-          {
-            onDie: (type) => {
-              collisionDied = true;
-              // handleDeath は updater 外で呼ぶ（後述）
-              // type を記録するためにクロージャに保存
-              audioEventsFromCollision.push(() => handleDeath(type));
-            },
-            onScore: (ox) => {
-              audioEventsFromCollision.push(() => Audio.play('score'));
-              scoreDeltaFromCollision += Config.score.item;
-              particlesFromCollision.push({ x: ox, y: afterTransitionPlayer.ramp * RAMP_H - currentCamY + 25, color: '#ffdd00', count: 6 });
-              popupsFromCollision.push({ x: ox, y: afterTransitionPlayer.ramp * RAMP_H - currentCamY, text: `+${Config.score.item}`, color: '#ffdd00' });
-              hitstopFrames = Math.max(hitstopFrames, scaleFrames(Config.juice.hitstop.item, motionScaleRef.current));
-            },
-            onEffect: (type) => {
-              if (!type) return;
-              audioEventsFromCollision.push(() => Audio.play('hit'));
-              newEffectFromCollision = { type, timer: Config.effect.duration };
-            },
-            onEnemyKill: (ox) => {
-              audioEventsFromCollision.push(() => Audio.play('enemyKill'));
-              scoreDeltaFromCollision += Config.score.enemy;
-              speedDeltaFromCollision -= Config.combat.enemyKillSlowdown;
-              particlesFromCollision.push({ x: ox, y: afterTransitionPlayer.ramp * RAMP_H - currentCamY + 25, color: '#ff8800', count: 10 });
-              popupsFromCollision.push({ x: ox, y: afterTransitionPlayer.ramp * RAMP_H - currentCamY, text: `+${Config.score.enemy}`, color: '#ff8800' });
-              hitstopFrames = Math.max(hitstopFrames, scaleFrames(Config.juice.hitstop.enemyKill, motionScaleRef.current));
-            },
-            onBounce: (vx) => {
-              audioEventsFromCollision.push(() => Audio.play('hit'));
-              newVxFromBounce = vx;
-            },
-          },
-          currentGodMode
-        );
-
-        for (const obstacle of collisionRamp.obs) {
-          if (!CollisionDomain.isActive(obstacle)) continue;
-          const ox = GeometryDomain.getObstacleX(obstacle, collisionRamp, W);
-          const col = CollisionDomain.check(afterTransitionPlayer.x, ox, afterTransitionPlayer.jumping, afterTransitionPlayer.y);
-          const obsId = `${afterTransitionPlayer.ramp}-${obstacle.pos}`;
-
-          if (CollisionDomain.isDangerous(obstacle.t) && col.nearMiss && !passedObs.current.has(obsId)) {
-            passedObs.current.add(obsId);
-            // ニアミス音は死亡に関わらず即時適用（旧挙動と一致）
-            Audio.play('nearMiss');
-            nearMissDeltaCount += 1;
-            nearMissScoreDelta += Config.score.nearMiss;
-            nearMissFromCollision.push({ x: ox, y: afterTransitionPlayer.ramp * RAMP_H - currentCamY + 25 });
-            // ニアミスポップアップは死亡時にも適用するため専用配列へ
-            nearMissPopupsFromCollision.push({ x: ox, y: afterTransitionPlayer.ramp * RAMP_H - currentCamY - 20, text: `NEAR MISS +${Config.score.nearMiss}`, color: '#44ffaa' });
-            slowMoFrames = Math.max(slowMoFrames, scaleFrames(Config.juice.slowMo.nearMissFrames, motionScaleRef.current));
-            slowMoFactor = Config.juice.slowMo.nearMissFactor;
-          }
-
-          const handler = handlers[obstacle.t];
-          if (handler) {
-            const result = handler(col, obstacle, ox, afterTransitionPlayer.x);
-            if (result === true) {
-              collisionDied = true;
-              break;
-            }
-            if (result === 'slow') {
-              collisionSlowed = true;
-              break;
-            }
-          }
-        }
+      // ゴール・死亡時はここで終了
+      if (result.isGoal || result.isDead) {
+        return;
       }
 
-      // 衝突結果をプレイヤーに適用
-      if (collisionSlowed) {
-        finalPlayer = { ...afterTransitionPlayer, vx: -afterTransitionPlayer.vx * Config.combat.bounceMultiplier };
-      } else if (newVxFromBounce !== undefined) {
-        finalPlayer = { ...afterTransitionPlayer, vx: newVxFromBounce };
+      // --- clockRef 更新 ---
+      if (result.hitstopFrames > 0) {
+        clockRef.current = triggerHitstop(clockRef.current, result.hitstopFrames);
+      }
+      if (result.slowMoFrames > 0) {
+        clockRef.current = triggerSlowMo(clockRef.current, result.slowMoFrames, result.slowMoFactor);
       }
 
-      // ── 副作用の適用（updater 外） ──
+      // --- state/ref の更新 ---
+      const w = result.world;
 
-      // ジャンプ音
-      if (didJump) {
-        Audio.play('jump');
+      // 速度
+      speedRef.current = w.speed;
+      setSpeed(w.speed);
+
+      // エフェクト
+      effectRef.current = w.effect;
+      setEffect(w.effect);
+
+      // コンボ
+      comboRef.current = w.combo.count;
+      setCombo(w.combo.count);
+      comboTimerRef.current = w.combo.timer;
+      setComboTimer(w.combo.timer);
+
+      // lastRamp（変化した場合のみ）
+      if (w.lastRamp !== lastRampRef.current) {
+        lastRampRef.current = w.lastRamp;
+        setLastRamp(w.lastRamp);
       }
 
-      // ランプ遷移の副作用
-      if (didRampChange && transition.player.ramp > currentLastRamp) {
-        lastRampRef.current = newLastRamp;
-        setLastRamp(newLastRamp);
-        comboRef.current = newCombo;
-        setCombo(newCombo);
-        comboTimerRef.current = newComboTimer2;
-        setComboTimer(newComboTimer2);
-        setScore(prev => prev + scoreDeltaFromRamp);
-        setSpeedBonus(prev => prev + newSpeedBonusDelta);
-        setTransitionEffect(1);
-        if (shouldPlayCombo) {
-          Audio.playCombo(comboCountForAudio);
-          addScorePopup(W / 2, 120, comboPopupText, '#ffaa00');
-        }
-        Audio.play('rampChange');
+      // プレイヤー
+      playerRef.current = w.player;
+      setPlayer(w.player);
+
+      // カメラ
+      camYRef.current = w.camY;
+      setCamY(w.camY);
+
+      // スコア差分を適用（processFrame は score=0 起点で計算した差分を返す）
+      if (w.score !== 0) {
+        setScore(prev => prev + w.score);
+      }
+      if (w.speedBonus !== 0) {
+        setSpeedBonus(prev => prev + w.speedBonus);
+      }
+      if (w.nearMissCount !== 0) {
+        setNearMissCount(prev => prev + w.nearMissCount);
       }
 
-      // 着地の副作用
-      if (justLanded) {
-        Audio.play('land');
-        if (motionScaleRef.current > 0) {
-          // 着地点の画面 Y 座標を計算して土煙を生成。
-          // camY は jetParticles/トレイルと同様に前フレーム相当だが、土煙は短命バーストのため許容範囲。
-          const dustGeo = GeometryDomain.getRampGeometry(afterTransitionRamp, W, RAMP_H);
-          const dustSlopeY = GeometryDomain.getSlopeY(afterTransitionPlayer.x, dustGeo, afterTransitionRamp.type);
-          const dustScreenY = afterTransitionPlayer.ramp * RAMP_H - currentCamY + dustSlopeY;
-          setParticles(prevParticles => [
-            ...prevParticles,
-            ...createDust(afterTransitionPlayer.x, dustScreenY, DUST_PARTICLE_COUNT),
-          ]);
-        }
+      // 危険レベル
+      setDangerLevel(w.dangerLevel);
+
+      // transitionEffect（processFrame が計算した値で上書き）
+      setTransitionEffect(result.ui.transitionEffect);
+
+      // ジェットパーティクル（processFrame が完全に管理）
+      if (result.ui.jetParticles.length > 0) {
+        setJetParticles(prev => [
+          ...ParticleSys.updateAndFilter(prev, ParticleSys.updateParticle),
+          ...result.ui.jetParticles,
+        ]);
       }
 
-      // 修正1: ニアミス副作用（スコア・カウント・エフェクト・ポップアップ・スローモー）は
-      // 死亡フラグに関わらず適用する（旧挙動と一致）。
-      // 衝突ループは死亡時に break するため、死亡した障害物より後のニアミスは
-      // 収集されない（= 旧挙動の「障害物を順に処理し、死亡で即ループ終了」と等価）
-      if (nearMissScoreDelta !== 0) {
-        setScore(prev => prev + nearMissScoreDelta);
-        setNearMissCount(prev => prev + nearMissDeltaCount);
-        for (const nm of nearMissFromCollision) {
-          setNearMissEffects(prev => [...prev, EntityFactory.createNearMissEffect(nm.x, nm.y)]);
-        }
-        for (const popup of nearMissPopupsFromCollision) {
-          addScorePopup(popup.x, popup.y, popup.text, popup.color);
-        }
-      }
-      if (slowMoFrames > 0) {
-        clockRef.current = triggerSlowMo(clockRef.current, slowMoFrames, slowMoFactor);
+      // 速度線（processFrame が管理）
+      speedLinesRef.current = result.ui.speedLines as SpeedLine[];
+      setSpeedLines(result.ui.speedLines as SpeedLine[]);
+
+      // プレイヤー残像トレイル（processFrame が管理）
+      playerTrailRef.current = result.ui.playerTrail as TrailSample[];
+      setPlayerTrail(result.ui.playerTrail as TrailSample[]);
+
+      // ニアミスエフェクト追記（processFrame から返ってきた新規生成分）
+      if (result.ui.nearMissEffects.length > 0) {
+        setNearMissEffects(prev => [...prev, ...result.ui.nearMissEffects as typeof prev]);
       }
 
-      // 衝突の副作用（死亡はこの中で handleDeath を呼ぶ）
-      if (!collisionDied) {
-        // 死亡していない場合のみスコア・エフェクト・パーティクルを適用
-        if (scoreDeltaFromCollision !== 0) {
-          setScore(prev => prev + scoreDeltaFromCollision);
-        }
-        if (speedDeltaFromCollision !== 0) {
-          const newSpd = Math.max(MIN_SPD, nextSpeed + speedDeltaFromCollision);
-          speedRef.current = newSpd;
-          setSpeed(newSpd);
-        }
-        for (const p of particlesFromCollision) {
-          addParticles(p.x, p.y, p.color, p.count);
-        }
-        for (const popup of popupsFromCollision) {
-          addScorePopup(popup.x, popup.y, popup.text, popup.color);
-        }
-        if (newEffectFromCollision) {
-          effectRef.current = newEffectFromCollision;
-          setEffect(newEffectFromCollision);
-        }
-        if (hitstopFrames > 0) {
-          clockRef.current = triggerHitstop(clockRef.current, hitstopFrames);
-        }
-
-        // 確定プレイヤーを ref + state に反映
-        playerRef.current = finalPlayer;
-        setPlayer(finalPlayer);
-      } else {
-        // 死亡: 副作用（handleDeath 呼び出しなど）を実行
-        for (const fn of audioEventsFromCollision) {
-          fn();
-        }
+      // スコアポップアップ追記（processFrame から返ってきた新規生成分）
+      if (result.ui.scorePopups.length > 0) {
+        setScorePopups(prev => [...prev, ...result.ui.scorePopups as typeof prev]);
       }
 
-      // --- カメラ更新 ---
-      // 修正3: カメラ目標は常に前フレームのプレイヤー ramp を使う（旧挙動と一致）
-      // 旧コードでは setCamY の updater 内で stale closure の player（前フレーム）を参照していた。
-      // 生存時・死亡時ともに currentPlayer（tick 開始時 = 前フレーム確定位置）を使用する。
-      const nextCamY = MathUtils.lerp(currentCamY, currentPlayer.ramp * RAMP_H - H / Config.camera.offsetDivisor, Config.camera.followRate);
-      camYRef.current = nextCamY;
-      setCamY(nextCamY);
+      // パーティクル追記（processFrame から返ってきた新規生成分: dust 等）
+      if (result.ui.particles.length > 0) {
+        setParticles(prev => [...prev, ...result.ui.particles as typeof prev]);
+      }
     }, 1000 / 60);
     return () => window.clearInterval(loop);
-  }, [state, W, H, MIN_SPD, RAMP_H, addParticles, addScorePopup, handleDeath, handleClear]);
+  }, [state, W, H, MIN_SPD, RAMP_H, handleDeath, handleClear]);
 
   // クリーンアップ
   useEffect(() => () => Audio.cleanup(), []);
@@ -912,7 +710,9 @@ export const useGameEngine = (
     clouds,
     shake,
     transitionEffect,
-  }), [particles, jetParticles, scorePopups, nearMissEffects, clouds, shake, transitionEffect]);
+    speedLines,
+    playerTrail,
+  }), [particles, jetParticles, scorePopups, nearMissEffects, clouds, shake, transitionEffect, speedLines, playerTrail]);
 
   return {
     gameState: state,

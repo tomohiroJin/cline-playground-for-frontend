@@ -13,6 +13,8 @@ export type GameEvent =
   | { readonly type: 'PLAYER_BOUNCED'; readonly velocity: number }
   | { readonly type: 'GOAL_REACHED' }
   | { readonly type: 'AUDIO'; readonly sound: string }
+  /** 速度ランク変化時に BGM プロファイルを切り替えるイベント */
+  | { readonly type: 'SPEED_RANK_CHANGED'; readonly rank: number }
   | { readonly type: 'PARTICLE'; readonly x: number; readonly y: number; readonly color: string; readonly count: number }
   | { readonly type: 'SCORE_POPUP'; readonly x: number; readonly y: number; readonly text: string; readonly color: string };
 
