@@ -19,6 +19,14 @@ import {
   ScorePopupsRenderer,
   UIOverlay,
 } from '../../renderers';
+import { SpeedLinesRenderer } from '../../renderers/effects/speed-lines-renderer';
+import { PlayerTrailRenderer } from '../../renderers/effects/player-trail-renderer';
+import { ComboTintRenderer } from '../../renderers/effects/combo-tint-renderer';
+import { cameraZoomForSpeed } from '../../domain/services/camera-zoom-service';
+import { comboTintIntensity } from '../../domain/services/combo-tint-service';
+import { squashStretch } from '../../domain/services/squash-stretch-service';
+import type { SpeedLine } from '../../domain/services/speed-line-service';
+import type { TrailSample } from '../../domain/services/trail-service';
 import type {
   Building,
   Cloud,
@@ -55,6 +63,12 @@ interface PlayScreenProps {
   readonly transitionEffect: number;
   readonly countdown: number;
   readonly frameCount: number;
+  /** 速度線（HIGH ランク時に画面端から流れるエフェクト） */
+  readonly speedLines: readonly SpeedLine[];
+  /** プレイヤー残像トレイル */
+  readonly playerTrail: readonly TrailSample[];
+  /** アクセシビリティ: 動きを抑制するかどうか */
+  readonly reducedMotion: boolean;
 }
 
 /** プレイ画面（SVG 描画 + HUD） */
@@ -81,10 +95,23 @@ export const PlayScreen: React.FC<PlayScreenProps> = ({
   transitionEffect,
   countdown,
   frameCount,
+  speedLines,
+  playerTrail,
+  reducedMotion,
 }) => {
   const { width: W, height: H } = Config.screen;
   const { total: TOTAL, height: RAMP_H } = Config.ramp;
   const currentRamp = ramps[player.ramp] as Ramp | undefined;
+
+  // 速度に応じたカメラズーム率（reduced-motion 時は 1.0 固定）
+  const zoom = reducedMotion ? 1 : cameraZoomForSpeed(speed, Config.speed.min, Config.speed.max);
+  // コンボティント強度（reduced-motion 時は 0 固定）
+  const tint = reducedMotion ? 0 : comboTintIntensity(combo, comboTimer);
+  // プレイヤーのスクワッシュ＆ストレッチ変形スケール
+  const squash = squashStretch(player);
+
+  // 中心基準ズーム transform
+  const zoomTransform = `translate(${W / 2} ${H / 2}) scale(${zoom}) translate(${-W / 2} ${-H / 2})`;
 
   return (
     <>
@@ -97,40 +124,48 @@ export const PlayScreen: React.FC<PlayScreenProps> = ({
             <stop offset="100%" stopColor="#ff4400" stopOpacity="0" />
           </linearGradient>
         </defs>
-        <BuildingRenderer buildings={buildings} camY={camY} />
-        <CloudRenderer clouds={clouds} />
-        {ramps.reduce<React.ReactElement[]>((acc, ramp, index) => {
-          const ry = index * RAMP_H - camY;
-          if (GeometryDomain.isInViewport(ry, RAMP_H, H)) {
-            acc.push(
-              <RampRenderer
-                key={index}
-                ramp={ramp}
-                index={index}
-                camY={camY}
-                frame={frameCount}
-                width={W}
-                height={RAMP_H}
-                transitionEffect={index === player.ramp ? transitionEffect : 0}
-              />
-            );
-          }
-          return acc;
-        }, [])}
-        <PlayerRenderer
-          player={player}
-          ramp={currentRamp}
-          camY={camY}
-          speed={speed}
-          death={death}
-          width={W}
-          height={RAMP_H}
-          jetParticles={jetParticles}
-          dangerLevel={dangerLevel}
-        />
-        <ParticlesRenderer particles={particles} />
-        <ScorePopupsRenderer popups={scorePopups} />
-        <NearMissRenderer effects={nearMissEffects} />
+        {/* ワールド要素をズームグループで包む（中心基準ズーム） */}
+        <g transform={zoomTransform}>
+          <BuildingRenderer buildings={buildings} camY={camY} />
+          <CloudRenderer clouds={clouds} />
+          {ramps.reduce<React.ReactElement[]>((acc, ramp, index) => {
+            const ry = index * RAMP_H - camY;
+            if (GeometryDomain.isInViewport(ry, RAMP_H, H)) {
+              acc.push(
+                <RampRenderer
+                  key={index}
+                  ramp={ramp}
+                  index={index}
+                  camY={camY}
+                  frame={frameCount}
+                  width={W}
+                  height={RAMP_H}
+                  transitionEffect={index === player.ramp ? transitionEffect : 0}
+                />
+              );
+            }
+            return acc;
+          }, [])}
+          {/* PlayerTrailRenderer はプレイヤー背面（直前）に配置 */}
+          <PlayerTrailRenderer trail={playerTrail} />
+          <PlayerRenderer
+            player={player}
+            ramp={currentRamp}
+            camY={camY}
+            speed={speed}
+            death={death}
+            width={W}
+            height={RAMP_H}
+            jetParticles={jetParticles}
+            dangerLevel={dangerLevel}
+            squash={squash}
+          />
+          <ParticlesRenderer particles={particles} />
+          <ScorePopupsRenderer popups={scorePopups} />
+          <NearMissRenderer effects={nearMissEffects} />
+        </g>
+        {/* 速度線はズームグループの外（画面端エフェクトのため screen 座標） */}
+        <SpeedLinesRenderer lines={speedLines} />
       </svg>
       {state === GameState.PLAY ? (
         <>
@@ -146,6 +181,8 @@ export const PlayScreen: React.FC<PlayScreenProps> = ({
             nearMissCount={nearMissCount}
           />
           <DangerVignette level={dangerLevel} />
+          {/* コンボティント（DangerVignette の隣） */}
+          <ComboTintRenderer intensity={tint} />
         </>
       ) : undefined}
     </>

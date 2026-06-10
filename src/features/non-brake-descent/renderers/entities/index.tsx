@@ -4,6 +4,7 @@ import { RampType, ObstacleType } from '../../constants';
 import { CollisionDomain } from '../../domains/collision-domain';
 import { GeometryDomain } from '../../domains/geometry-domain';
 import { SpeedDomain } from '../../domains/speed-domain';
+import type { Squash } from '../../domain/services/squash-stretch-service';
 import {
   DeathState,
   Obstacle,
@@ -217,7 +218,11 @@ export const PlayerRenderer: React.FC<{
   height: number;
   jetParticles: Particle[];
   dangerLevel: number;
-}> = ({ player, ramp, camY, speed, death, width, height, jetParticles, dangerLevel }) => {
+  /** スクワッシュ＆ストレッチ変形スケール（省略時は {scaleX:1, scaleY:1}） */
+  squash?: Squash;
+}> = ({ player, ramp, camY, speed, death, width, height, jetParticles, dangerLevel, squash }) => {
+  // squash が未指定の場合はデフォルト値（変形なし）を使用
+  const { scaleX: sqX, scaleY: sqY } = squash ?? { scaleX: 1, scaleY: 1 };
   if (!ramp) return <></>;
   const { width: PW, height: PH } = Config.player;
   const ry = player.ramp * Config.ramp.height - camY;
@@ -244,7 +249,8 @@ export const PlayerRenderer: React.FC<{
   const jet = SpeedDomain.getNormalized(speed);
   const scared = dangerLevel > 0.7;
   return (
-    <g transform={`translate(${px}, ${py + PH / 2}) rotate(${tilt})`}>
+    // プレイヤー中心基準でスクワッシュ＆ストレッチ変形を適用
+    <g transform={`translate(${px}, ${py + PH / 2}) rotate(${tilt}) scale(${sqX}, ${sqY})`}>
       {speed > 4 ? (
         <>
           <ellipse cx={-ramp.dir * 18} cy={6} rx={8 + jet * 25} ry={3 + jet * 3} fill="url(#jetGrad)" />
