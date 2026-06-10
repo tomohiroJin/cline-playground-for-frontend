@@ -108,8 +108,8 @@ export const PlayScreen: React.FC<PlayScreenProps> = ({
   const zoom = reducedMotion ? 1 : cameraZoomForSpeed(speed, Config.speed.min, Config.speed.max);
   // コンボティント強度（reduced-motion 時は 0 固定）
   const tint = reducedMotion ? 0 : comboTintIntensity(combo, comboTimer);
-  // プレイヤーのスクワッシュ＆ストレッチ変形スケール
-  const squash = squashStretch(player);
+  // プレイヤーのスクワッシュ＆ストレッチ変形スケール（reduced-motion 時は変形なし）
+  const squash = reducedMotion ? { scaleX: 1, scaleY: 1 } : squashStretch(player);
 
   // 中心基準ズーム transform
   const zoomTransform = `translate(${W / 2} ${H / 2}) scale(${zoom}) translate(${-W / 2} ${-H / 2})`;

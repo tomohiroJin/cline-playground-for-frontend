@@ -259,6 +259,8 @@ export const useGameEngine = (
     clockRef.current = createGameClock();
     prevRankRef.current = 0;
     prevOnGroundRef.current = true;
+    // BGM の速度ランクも初期化（前プレイの HIGH テンポが持ち越されないように）
+    Audio.setSpeedRank(0);
   }, [MIN_SPD]);
 
   const startCountdown = useCallback(() => {
@@ -540,29 +542,17 @@ export const useGameEngine = (
         updated = jumpResult.player;
         if (jumpResult.didJump) Audio.play('jump');
 
-        // 着地検出: 前フレームが空中で現フレームが接地
-        const wasOnGround = prevOnGroundRef.current;
-        const isOnGround = updated.onGround;
-        if (!wasOnGround && isOnGround) {
-          Audio.play('land');
-          if (motionScaleRef.current > 0) {
-            // 着地点の画面 Y 座標を計算して土煙を生成
-            const dustGeo = GeometryDomain.getRampGeometry(ramp, W, RAMP_H);
-            const dustSlopeY = GeometryDomain.getSlopeY(updated.x, dustGeo, ramp.type);
-            const dustScreenY = updated.ramp * RAMP_H - camY + dustSlopeY;
-            setParticles(prevParticles => [
-              ...prevParticles,
-              ...createDust(updated.x, dustScreenY, DUST_PARTICLE_COUNT),
-            ]);
-          }
-        }
-        prevOnGroundRef.current = isOnGround;
-
+        // 先にゴール／ランプ遷移を解決し、最終的に確定するプレイヤーを求める。
+        // 着地検出はこの確定プレイヤーで行うことで、遷移時に prevOnGroundRef が
+        // 実際に返すプレイヤーと食い違って誤発火するのを防ぐ。
         const transition = Physics.checkTransition(updated, ramps, W);
         if (transition.isGoal) {
           handleClear();
           return prev;
         }
+
+        let finalPlayer = updated;
+        let finalRamp = ramp;
         if (transition.transitioned) {
           Audio.play('rampChange');
           if (transition.player.ramp > lastRamp) {
@@ -589,9 +579,29 @@ export const useGameEngine = (
             setSpeedBonus(current => current + SpeedDomain.getBonus(speed));
             setTransitionEffect(1);
           }
-          return transition.player;
+          finalPlayer = transition.player;
+          finalRamp = ramps[transition.player.ramp] ?? ramp;
         }
-        return updated;
+
+        // 着地検出: 前フレームが空中で確定プレイヤーが接地に変化したとき
+        const wasOnGround = prevOnGroundRef.current;
+        if (!wasOnGround && finalPlayer.onGround) {
+          Audio.play('land');
+          if (motionScaleRef.current > 0) {
+            // 着地点の画面 Y 座標を計算して土煙を生成。
+            // camY は jetParticles/トレイルと同様に前フレーム相当だが、土煙は短命バーストのため許容範囲。
+            const dustGeo = GeometryDomain.getRampGeometry(finalRamp, W, RAMP_H);
+            const dustSlopeY = GeometryDomain.getSlopeY(finalPlayer.x, dustGeo, finalRamp.type);
+            const dustScreenY = finalPlayer.ramp * RAMP_H - camY + dustSlopeY;
+            setParticles(prevParticles => [
+              ...prevParticles,
+              ...createDust(finalPlayer.x, dustScreenY, DUST_PARTICLE_COUNT),
+            ]);
+          }
+        }
+        prevOnGroundRef.current = finalPlayer.onGround;
+
+        return finalPlayer;
       });
       setPlayer(prev => {
         const ramp = ramps[prev.ramp];

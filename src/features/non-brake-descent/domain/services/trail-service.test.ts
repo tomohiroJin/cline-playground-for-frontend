@@ -87,9 +87,9 @@ describe('trail-service', () => {
     it('先頭サンプルの opacity が最も高く、後ろほど低い（単調減少）', () => {
       // Arrange: 3サンプルを蓄積する
       let trail: TrailSample[] = [];
-      trail = sampleTrail(trail, 0, 0, 5); // [sample0]
-      trail = sampleTrail(trail, 1, 1, 5); // [sample1, sample0_faded]
-      trail = sampleTrail(trail, 2, 2, 5); // [sample2, sample1_faded, sample0_more_faded]
+      trail = sampleTrail(trail, 0, 0, 5); // 1回目: [sample0]
+      trail = sampleTrail(trail, 1, 1, 5); // 2回目: [sample1, sample0(減衰)]
+      trail = sampleTrail(trail, 2, 2, 5); // 3回目: [sample2, sample1(減衰), sample0(さらに減衰)]
       // Act / Assert: index が増えるほど opacity が低い（または同じ）
       for (let i = 0; i < trail.length - 1; i++) {
         expect(trail[i].opacity).toBeGreaterThanOrEqual(trail[i + 1].opacity);

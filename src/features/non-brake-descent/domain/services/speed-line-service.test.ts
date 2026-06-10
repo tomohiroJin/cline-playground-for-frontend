@@ -65,7 +65,7 @@ describe('spawnSpeedLines', () => {
 
     it('left ラインの x は画面左端付近に生成される', () => {
       // Arrange: side が left になるよう side 選択で 0 を返す
-      // randomBool(SPAWN_PROBABILITY) → 0.0 (true) / randomRange (y) → 0.5 / randomBool (side) → 0.0 (left)
+      // randomBool(SPAWN_PROBABILITY) で 0.0 → true（生成）、randomRange(y) → 0.5、randomBool(side) で 0.0 → left
       mockRandom([0.0, 0.5, 0.0]);
       const w = 400;
 
