@@ -87,6 +87,9 @@ export const NonBrakeDescentGame: React.FC<NonBrakeDescentGameProps> = ({ onScor
             nearMissEffects={engine.nearMissEffects} clouds={engine.clouds}
             buildings={engine.buildings} transitionEffect={engine.transitionEffect}
             countdown={engine.countdown} frameCount={engine.frameRef.current}
+            speedLines={engine.speedLines}
+            playerTrail={engine.playerTrail}
+            reducedMotion={engine.reducedMotion}
           />
         )}
       </div>

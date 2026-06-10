@@ -39,8 +39,22 @@ import { resolveMotionScale, scaleFrames } from '../../application/game-loop/mot
 import { useReducedMotion } from './use-reduced-motion';
 import { useIsMobile } from './use-mobile';
 import { getHighScore, saveScore } from '../../../../utils/score-storage';
+import {
+  spawnSpeedLines,
+  updateSpeedLines,
+} from '../../domain/services/speed-line-service';
+import type { SpeedLine } from '../../domain/services/speed-line-service';
+import { sampleTrail } from '../../domain/services/trail-service';
+import type { TrailSample } from '../../domain/services/trail-service';
+import { createDust } from '../../domain/services/dust-service';
 
 const SCORE_KEY = 'non_brake_descent';
+
+/** 残像トレイルの最大サンプル保持数 */
+const MAX_TRAIL_SAMPLES = 10;
+
+/** 着地時の土煙パーティクル数（通常着地） */
+const DUST_PARTICLE_COUNT = 6;
 
 type CollisionHandlerResult = boolean | 'slow';
 
@@ -132,6 +146,12 @@ export interface UseGameEngineResult {
     value: boolean
   ) => (event: React.TouchEvent<HTMLButtonElement> | React.MouseEvent<HTMLButtonElement>) => void;
   readonly handleTap: () => void;
+  /** 速度線（HIGH ランク時に画面端から流れるエフェクト） */
+  readonly speedLines: readonly SpeedLine[];
+  /** プレイヤー残像トレイル */
+  readonly playerTrail: readonly TrailSample[];
+  /** アクセシビリティ: 動きを抑制するかどうか */
+  readonly reducedMotion: boolean;
 }
 
 /** ゲームエンジンフック: 状態管理・ゲームループロジックを統合 */
@@ -171,12 +191,20 @@ export const useGameEngine = (
   const [clouds, setClouds] = useState(BackgroundGen.initClouds());
   const [buildings] = useState(BackgroundGen.initBuildings);
   const [dangerLevel, setDangerLevel] = useState(0);
+  /** 速度線の状態 */
+  const [speedLines, setSpeedLines] = useState<SpeedLine[]>([]);
+  /** プレイヤー残像トレイルの状態 */
+  const [playerTrail, setPlayerTrail] = useState<TrailSample[]>([]);
 
   const frameRef = useRef(0);
   const keys = useRef<Record<string, boolean>>({});
   const touchKeys = useRef<TouchKeys>({ left: false, right: false, accel: false, jump: false });
   const passedObs = useRef<Set<string>>(new Set());
   const clockRef = useRef(createGameClock());
+  /** 前フレームの速度ランク（ランク変化時の BGM 切替検出に使用） */
+  const prevRankRef = useRef(0);
+  /** 前フレームのプレイヤー接地状態（着地検出に使用） */
+  const prevOnGroundRef = useRef(true);
   const reducedMotion = useReducedMotion();
   const motionScaleRef = useRef(1);
   useEffect(() => {
@@ -223,10 +251,14 @@ export const useGameEngine = (
     setComboTimer(0);
     setTransitionEffect(0);
     setDangerLevel(0);
+    setSpeedLines([]);
+    setPlayerTrail([]);
     setClouds(BackgroundGen.initClouds());
     passedObs.current = new Set();
     frameRef.current = 0;
     clockRef.current = createGameClock();
+    prevRankRef.current = 0;
+    prevOnGroundRef.current = true;
   }, [MIN_SPD]);
 
   const startCountdown = useCallback(() => {
@@ -467,6 +499,34 @@ export const useGameEngine = (
         }
         return updated;
       });
+      // 速度線の更新・生成（HIGH ランク時のみ生成）
+      const currentRank = SpeedDomain.getRank(speed);
+      setSpeedLines(prev => {
+        const updated = updateSpeedLines(prev);
+        return motionScaleRef.current > 0
+          ? spawnSpeedLines(updated, currentRank, W, H)
+          : updated;
+      });
+
+      // プレイヤー残像トレイルの更新（高速時かつ reduced-motion 無効時のみサンプル追加）
+      const trailRamp = ramps[player.ramp];
+      if (trailRamp) {
+        const trailGeo = GeometryDomain.getRampGeometry(trailRamp, W, RAMP_H);
+        const trailSlopeY = GeometryDomain.getSlopeY(player.x, trailGeo, trailRamp.type);
+        const trailY = player.ramp * RAMP_H - camY + trailSlopeY;
+        const isHighSpeed = speed > Config.particle.jetSpeedThreshold;
+        const enableTrail = motionScaleRef.current > 0 && isHighSpeed;
+        setPlayerTrail(prev =>
+          sampleTrail(prev, player.x, trailY, enableTrail ? MAX_TRAIL_SAMPLES : 0)
+        );
+      }
+
+      // 速度ランク変化の検出（BGM プロファイル切替）
+      if (currentRank !== prevRankRef.current) {
+        prevRankRef.current = currentRank;
+        Audio.setSpeedRank(currentRank);
+      }
+
       const currentRampInLoop = ramps[player.ramp];
       if (currentRampInLoop) {
         setDangerLevel(DangerDomain.calcLevel(currentRampInLoop.obs, player.x, currentRampInLoop.dir, speed, W));
@@ -478,6 +538,25 @@ export const useGameEngine = (
         const jumpResult = Physics.applyJump(updated, input, effect.type, effect.timer);
         updated = jumpResult.player;
         if (jumpResult.didJump) Audio.play('jump');
+
+        // 着地検出: 前フレームが空中で現フレームが接地
+        const wasOnGround = prevOnGroundRef.current;
+        const isOnGround = updated.onGround;
+        if (!wasOnGround && isOnGround) {
+          Audio.play('land');
+          if (motionScaleRef.current > 0) {
+            // 着地点の画面 Y 座標を計算して土煙を生成
+            const dustGeo = GeometryDomain.getRampGeometry(ramp, W, RAMP_H);
+            const dustSlopeY = GeometryDomain.getSlopeY(updated.x, dustGeo, ramp.type);
+            const dustScreenY = updated.ramp * RAMP_H - camY + dustSlopeY;
+            setParticles(prevParticles => [
+              ...prevParticles,
+              ...createDust(updated.x, dustScreenY, DUST_PARTICLE_COUNT),
+            ]);
+          }
+        }
+        prevOnGroundRef.current = isOnGround;
+
         const transition = Physics.checkTransition(updated, ramps, W);
         if (transition.isGoal) {
           handleClear();
@@ -648,5 +727,8 @@ export const useGameEngine = (
     touchKeys,
     handleTouch,
     handleTap,
+    speedLines,
+    playerTrail,
+    reducedMotion,
   };
 };
