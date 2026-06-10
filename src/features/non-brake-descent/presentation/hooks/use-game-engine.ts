@@ -509,6 +509,7 @@ export const useGameEngine = (
       });
 
       // プレイヤー残像トレイルの更新（高速時かつ reduced-motion 無効時のみサンプル追加）
+      // 注: jetParticles と同様、当該 tick の setPlayer 更新前のプレイヤー位置（前フレーム相当）でサンプリングする。残像演出としては許容範囲。
       const trailRamp = ramps[player.ramp];
       if (trailRamp) {
         const trailGeo = GeometryDomain.getRampGeometry(trailRamp, W, RAMP_H);

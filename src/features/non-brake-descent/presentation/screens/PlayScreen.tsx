@@ -12,6 +12,7 @@ import {
   CloudRenderer,
   CountdownOverlay,
   DangerVignette,
+  EntityFilterDefs,
   NearMissRenderer,
   ParticlesRenderer,
   PlayerRenderer,
@@ -124,6 +125,9 @@ export const PlayScreen: React.FC<PlayScreenProps> = ({
             <stop offset="100%" stopColor="#ff4400" stopOpacity="0" />
           </linearGradient>
         </defs>
+        {/* エンティティ共通フィルタ定義（playerGlow/dangerGlow/itemGlow/enemyGlow）
+            同一 SVG 内の全レンダラーが url(#...) で参照できるよう、ここで1回だけ定義する */}
+        <EntityFilterDefs />
         {/* ワールド要素をズームグループで包む（中心基準ズーム） */}
         <g transform={zoomTransform}>
           <BuildingRenderer buildings={buildings} camY={camY} />

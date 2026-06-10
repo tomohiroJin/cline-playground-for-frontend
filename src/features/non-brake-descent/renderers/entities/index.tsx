@@ -27,8 +27,8 @@ const RAMP_HIGHLIGHT_OPACITY = 0.35;
 
 // ===== SVG filter 定義コンポーネント =====
 
-/** エンティティ共通の SVG filter 定義 */
-const EntityFilterDefs: React.FC = () => (
+/** エンティティ共通の SVG filter 定義（PlayScreen の SVG 直下に1回だけ描画する） */
+export const EntityFilterDefs: React.FC = () => (
   <defs>
     {/* プレイヤーグロー: 淡い発光効果 */}
     <filter id="playerGlow" x="-50%" y="-50%" width="200%" height="200%">
@@ -208,12 +208,8 @@ export const ObstacleRenderer: React.FC<{ obs: Obstacle; ox: number; oy: number;
   if (!CollisionDomain.isActive(obs)) return <></>;
   const Renderer = ObstacleRenderers[obs.t];
   if (!Renderer) return <></>;
-  return (
-    <>
-      <EntityFilterDefs />
-      <Renderer ox={ox} oy={oy} frame={frame} obs={obs} />
-    </>
-  );
+  // フィルタ定義は PlayScreen の SVG 直下で一元管理するため、ここでは描画しない
+  return <Renderer ox={ox} oy={oy} frame={frame} obs={obs} />;
 };
 
 // ===== ランプの描画コンポーネント =====
@@ -359,16 +355,9 @@ export const PlayerRenderer: React.FC<{
   return (
     // プレイヤー中心基準でスクワッシュ＆ストレッチ変形を適用
     <g transform={`translate(${px}, ${py + PH / 2}) rotate(${tilt}) scale(${sqX}, ${sqY})`}>
-      {/* プレイヤーグロー用 filter と ボディグラデーション */}
+      {/* ボディグラデーション（速度色を基準にした立体感: 上が明るく、下が暗い） */}
+      {/* playerGlow フィルタは PlayScreen の SVG 直下の EntityFilterDefs で一元定義 */}
       <defs>
-        <filter id="playerGlow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation={PLAYER_GLOW_BLUR} result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-        {/* 速度色を基準にした立体グラデーション（上が明るく、下が暗い） */}
         <linearGradient id={bodyGradId} x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stopColor="#fff" stopOpacity="0.5" />
           <stop offset="40%" stopColor={color} stopOpacity="0" />
