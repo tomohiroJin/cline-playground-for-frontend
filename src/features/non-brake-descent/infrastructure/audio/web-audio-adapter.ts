@@ -1,4 +1,5 @@
 import { AudioPort } from './audio-port';
+import { selectBgmProfile } from './bgm-profile';
 
 type SoundConfig = {
   freq: number;
@@ -32,6 +33,8 @@ const sounds: Record<string, SoundConfig> = {
   countdown: { freq: 440, type: 'square', dur: 0.15, gain: 0.12 },
   countdownGo: { freq: 880, type: 'square', dur: 0.3, gain: 0.15 },
   nearMiss: { freq: 1200, type: 'sine', dur: 0.08, gain: 0.1 },
+  // 着地音: 短く低めの軽い衝撃感を表現する
+  land: { freq: 280, type: 'sine', dur: 0.08, gain: 0.1 },
 };
 
 /** メロディの定義 */
@@ -107,17 +110,8 @@ const melodies: Record<string, MelodyNote[]> = {
   ],
 };
 
-/** BGM のノートシーケンス */
-const bgm: MelodyNote[] = [
-  [131, 0.12],
-  [0, 0.13],
-  [165, 0.12],
-  [0, 0.13],
-  [196, 0.12],
-  [0, 0.13],
-  [165, 0.12],
-  [0, 0.13],
-];
+/** 速度ランクの初期値（LOW） */
+const INITIAL_SPEED_RANK = 0;
 
 /**
  * Web Audio API を使用したオーディオアダプターを生成する
@@ -126,6 +120,8 @@ const bgm: MelodyNote[] = [
 export const createWebAudioAdapter = (): AudioPort => {
   let ctx: AudioContext | undefined;
   let bgmIv: number | undefined;
+  // 現在の速度ランク。setSpeedRank で更新され startBGM でプロファイル選択に使用する
+  let currentRank = INITIAL_SPEED_RANK;
 
   /** AudioContext を取得または生成する */
   const getCtx = (): AudioContext | undefined => {
@@ -230,16 +226,18 @@ export const createWebAudioAdapter = (): AudioPort => {
         const context = getCtx();
         if (!context) return;
         adapter.stopBGM();
+        // 現在の速度ランクに対応する BGM プロファイルを取得する
+        const profile = selectBgmProfile(currentRank);
         const beat = () => {
           let time = context.currentTime;
-          bgm.forEach(([note, duration]) => {
+          profile.notes.forEach(([note, duration]) => {
             if (note > 0)
               playNote(context, note, 'triangle', duration, 0.05, time);
             time += duration;
           });
         };
         beat();
-        bgmIv = window.setInterval(beat, 1000);
+        bgmIv = window.setInterval(beat, profile.interval);
       } catch {
         return;
       }
@@ -248,6 +246,16 @@ export const createWebAudioAdapter = (): AudioPort => {
       if (bgmIv !== undefined) {
         window.clearInterval(bgmIv);
         bgmIv = undefined;
+      }
+    },
+    setSpeedRank: (rank: number): void => {
+      // ランクが変化していない場合は何もしない
+      if (rank === currentRank) return;
+      currentRank = rank;
+      // BGM 再生中の場合は新プロファイルで再起動する
+      if (bgmIv !== undefined) {
+        adapter.stopBGM();
+        adapter.startBGM();
       }
     },
     cleanup: (): void => {

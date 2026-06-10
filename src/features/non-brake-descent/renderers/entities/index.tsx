@@ -4,6 +4,7 @@ import { RampType, ObstacleType } from '../../constants';
 import { CollisionDomain } from '../../domains/collision-domain';
 import { GeometryDomain } from '../../domains/geometry-domain';
 import { SpeedDomain } from '../../domains/speed-domain';
+import type { Squash } from '../../domain/services/squash-stretch-service';
 import {
   DeathState,
   Obstacle,
@@ -12,11 +13,67 @@ import {
   Ramp,
 } from '../../types';
 
-// 障害物の個別レンダラー
+// ===== 視覚効果定数 =====
+/** プレイヤーグロー: ぼかし半径（px）*/
+const PLAYER_GLOW_BLUR = 4;
+/** 危険障害物（岩・穴）縁取りグローの強さ */
+const DANGER_GLOW_BLUR = 3;
+/** アイテム（スコア・強制ジャンプ）金色グロー強さ */
+const ITEM_GLOW_BLUR = 4;
+/** 敵グロー強さ */
+const ENEMY_GLOW_BLUR = 3;
+/** ランプエッジハイライト透明度 */
+const RAMP_HIGHLIGHT_OPACITY = 0.35;
+
+// ===== SVG filter 定義コンポーネント =====
+
+/** エンティティ共通の SVG filter 定義（PlayScreen の SVG 直下に1回だけ描画する） */
+export const EntityFilterDefs: React.FC = () => (
+  <defs>
+    {/* プレイヤーグロー: 淡い発光効果 */}
+    <filter id="playerGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation={PLAYER_GLOW_BLUR} result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    {/* 危険障害物グロー: 赤い発光 */}
+    <filter id="dangerGlow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation={DANGER_GLOW_BLUR} result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    {/* アイテムグロー: 金色の発光 */}
+    <filter id="itemGlow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation={ITEM_GLOW_BLUR} result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    {/* 敵グロー */}
+    <filter id="enemyGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation={ENEMY_GLOW_BLUR} result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+);
+
+// ===== 障害物の個別レンダラー =====
+
 const ObstacleRenderers: Record<Obstacle['t'], React.FC<{ ox: number; oy: number; frame: number; obs: Obstacle }>> = {
   [ObstacleType.HOLE_S]: ({ ox, oy }) => (
-    <g>
+    // 危険: 赤系の縁取り発光で視認性を高める
+    <g filter="url(#dangerGlow)">
       <ellipse cx={ox} cy={oy + 2} rx="28" ry="8" fill="#000" />
+      {/* グロー用の赤い縁取り層（半透明で重ねる） */}
+      <ellipse cx={ox} cy={oy} rx="28" ry="8" fill="rgba(255,60,60,0.18)" />
       <ellipse
         cx={ox}
         cy={oy}
@@ -30,8 +87,10 @@ const ObstacleRenderers: Record<Obstacle['t'], React.FC<{ ox: number; oy: number
     </g>
   ),
   [ObstacleType.HOLE_L]: ({ ox, oy }) => (
-    <g>
+    // 危険（大）: 強い赤グロー
+    <g filter="url(#dangerGlow)">
       <ellipse cx={ox} cy={oy + 2} rx="50" ry="10" fill="#000" />
+      <ellipse cx={ox} cy={oy} rx="50" ry="10" fill="rgba(255,30,30,0.2)" />
       <ellipse cx={ox} cy={oy} rx="48" ry="9" fill="none" stroke="#ff2222" strokeWidth="3" />
       <text x={ox} y={oy + 4} textAnchor="middle" fill="#ff4444" fontSize="8" fontWeight="bold">
         DANGER
@@ -39,12 +98,19 @@ const ObstacleRenderers: Record<Obstacle['t'], React.FC<{ ox: number; oy: number
     </g>
   ),
   [ObstacleType.ROCK]: ({ ox, oy }) => (
-    <g>
+    // 危険（岩）: 赤い縁取り発光
+    <g filter="url(#dangerGlow)">
+      {/* 岩のグラデーション（上面が明るく、立体感） */}
       <polygon
         points={`${ox},${oy - 22} ${ox + 16},${oy + 4} ${ox - 16},${oy + 4}`}
         fill="#445"
         stroke="#778"
         strokeWidth="2"
+      />
+      {/* 上面ハイライト */}
+      <polygon
+        points={`${ox},${oy - 22} ${ox + 8},${oy - 9} ${ox - 8},${oy - 9}`}
+        fill="rgba(180,190,210,0.22)"
       />
       <line x1={ox - 8} y1={oy - 8} x2={ox + 8} y2={oy + 2} stroke="#ff4444" strokeWidth="2" />
       <line x1={ox + 8} y1={oy - 8} x2={ox - 8} y2={oy + 2} stroke="#ff4444" strokeWidth="2" />
@@ -54,8 +120,11 @@ const ObstacleRenderers: Record<Obstacle['t'], React.FC<{ ox: number; oy: number
     const bounce = Math.sin(frame * 0.15 + (obs.phase ?? 0)) * 2;
     const walk = Math.sin(frame * 0.05 + (obs.walkPos ?? 0)) * 25 * (obs.moveDir ?? 1);
     return (
-      <g transform={`translate(${walk}, ${bounce})`}>
+      // 敵: 赤系グロー（危険の意味づけ）
+      <g transform={`translate(${walk}, ${bounce})`} filter="url(#enemyGlow)">
         <ellipse cx={ox} cy={oy - 8} rx="16" ry="14" fill="#ee4444" stroke="#ffaaaa" strokeWidth="2" />
+        {/* 体上面ハイライト（立体感） */}
+        <ellipse cx={ox} cy={oy - 13} rx="9" ry="5" fill="rgba(255,200,200,0.25)" />
         <circle cx={ox - 5} cy={oy - 11} r="4" fill="#fff" />
         <circle cx={ox + 5} cy={oy - 11} r="4" fill="#fff" />
         <circle cx={ox - 4} cy={oy - 10} r="2" fill="#222" />
@@ -67,8 +136,11 @@ const ObstacleRenderers: Record<Obstacle['t'], React.FC<{ ox: number; oy: number
     const v = Math.sin(frame * (obs.vSpeed ?? 0.1)) * 20;
     const wing = Math.sin(frame * 0.4) * 10;
     return (
-      <g transform={`translate(0, ${v})`}>
+      // 飛行敵: 紫系グロー
+      <g transform={`translate(0, ${v})`} filter="url(#enemyGlow)">
         <ellipse cx={ox} cy={oy - 12} rx="14" ry="12" fill="#8844ee" stroke="#bbaaff" strokeWidth="2" />
+        {/* 胴体ハイライト */}
+        <ellipse cx={ox} cy={oy - 16} rx="7" ry="4" fill="rgba(220,200,255,0.28)" />
         <polygon
           points={`${ox - 20},${oy - 12} ${ox - 8},${oy - 8} ${ox - 8},${oy - 16}`}
           fill="#6622cc"
@@ -87,8 +159,13 @@ const ObstacleRenderers: Record<Obstacle['t'], React.FC<{ ox: number; oy: number
   [ObstacleType.SCORE]: ({ ox, oy, frame }) => {
     const pulse = 1 + Math.sin(frame * 0.2) * 0.12;
     return (
-      <g transform={`translate(${ox}, ${oy - 10}) scale(${pulse})`}>
+      // アイテム: 金色グロー（実績/報酬の意味づけ）
+      <g transform={`translate(${ox}, ${oy - 10}) scale(${pulse})`} filter="url(#itemGlow)">
+        {/* 外側の金色グロー層 */}
+        <circle cx={0} cy={0} r="16" fill="rgba(255,204,0,0.2)" />
         <circle cx={0} cy={0} r="12" fill="#ffcc00" stroke="#fff" strokeWidth="2" />
+        {/* 上面ハイライト */}
+        <ellipse cx={0} cy={-4} rx="6" ry="3" fill="rgba(255,255,180,0.45)" />
         <text x={0} y={5} textAnchor="middle" fill="#885500" fontSize="14" fontWeight="bold">
           $
         </text>
@@ -96,16 +173,22 @@ const ObstacleRenderers: Record<Obstacle['t'], React.FC<{ ox: number; oy: number
     );
   },
   [ObstacleType.REVERSE]: ({ ox, oy }) => (
-    <g>
+    // 特殊アイテム: 紫系グロー（情報の意味づけ）
+    <g filter="url(#itemGlow)">
       <rect x={ox - 11} y={oy - 22} width="22" height="22" fill="#9944ff" stroke="#ddaaff" strokeWidth="2" rx="4" />
+      {/* 上面ハイライト */}
+      <rect x={ox - 9} y={oy - 20} width="18" height="6" fill="rgba(220,200,255,0.3)" rx="2" />
       <text x={ox} y={oy - 7} textAnchor="middle" fill="#fff" fontSize="14">
         ↺
       </text>
     </g>
   ),
   [ObstacleType.FORCE_JUMP]: ({ ox, oy }) => (
-    <g>
+    // 強制ジャンプ: 青系グロー（情報=青の意味づけ）
+    <g filter="url(#itemGlow)">
       <rect x={ox - 11} y={oy - 22} width="22" height="22" fill="#4499ff" stroke="#aaddff" strokeWidth="2" rx="4" />
+      {/* 上面ハイライト */}
+      <rect x={ox - 9} y={oy - 20} width="18" height="6" fill="rgba(180,230,255,0.35)" rx="2" />
       <text x={ox} y={oy - 6} textAnchor="middle" fill="#fff" fontSize="16">
         ⇡
       </text>
@@ -115,7 +198,7 @@ const ObstacleRenderers: Record<Obstacle['t'], React.FC<{ ox: number; oy: number
   [ObstacleType.DEAD]: () => <></>,
 };
 
-// 障害物の描画コンポーネント
+// ===== 障害物の描画コンポーネント =====
 export const ObstacleRenderer: React.FC<{ obs: Obstacle; ox: number; oy: number; frame: number }> = ({
   obs,
   ox,
@@ -125,10 +208,11 @@ export const ObstacleRenderer: React.FC<{ obs: Obstacle; ox: number; oy: number;
   if (!CollisionDomain.isActive(obs)) return <></>;
   const Renderer = ObstacleRenderers[obs.t];
   if (!Renderer) return <></>;
+  // フィルタ定義は PlayScreen の SVG 直下で一元管理するため、ここでは描画しない
   return <Renderer ox={ox} oy={oy} frame={frame} obs={obs} />;
 };
 
-// ランプの描画コンポーネント
+// ===== ランプの描画コンポーネント =====
 export const RampRenderer: React.FC<{
   ramp: Ramp;
   index: number;
@@ -144,6 +228,8 @@ export const RampRenderer: React.FC<{
   const { lx, rx, ty, by, midY } = geo;
   const colors = GeometryDomain.getRampColor(index);
   const gradId = `rg${index}`;
+  // エッジハイライト用グラデーション ID（上端の明るいストライプ）
+  const edgeHighlightId = `reh${index}`;
   const flash = transitionEffect > 0 ? transitionEffect * 0.3 : 0;
   const pts =
     ramp.type === RampType.V_SHAPE
@@ -158,18 +244,35 @@ export const RampRenderer: React.FC<{
   return (
     <g>
       <defs>
+        {/* ランプ面のグラデーション（上から下へ暗くなる） */}
         <linearGradient id={gradId} x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stopColor={ramp.isGoal ? '#22ff88' : colors.base[0]} />
           <stop offset="100%" stopColor={ramp.isGoal ? '#118844' : colors.base[1]} />
         </linearGradient>
+        {/* エッジハイライト用グラデーション（上部に淡い光） */}
+        <linearGradient id={edgeHighlightId} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#fff" stopOpacity={RAMP_HIGHLIGHT_OPACITY} />
+          <stop offset="40%" stopColor="#fff" stopOpacity="0" />
+        </linearGradient>
       </defs>
+      {/* ランプ本体（グラデーション塗り） */}
       <polygon points={pts} fill={`url(#${gradId})`} />
+      {/* エッジハイライト（上端の明るいライン: 奥行き感） */}
+      <polygon points={pts} fill={`url(#${edgeHighlightId})`} />
       {flash > 0 ? <polygon points={pts} fill="#fff" opacity={flash} /> : undefined}
+      {/* 傾斜エッジ（既存ストローク） */}
       <path
         d={line}
         fill="none"
         stroke={ramp.isGoal ? '#88ffbb' : colors.stroke}
         strokeWidth="3"
+      />
+      {/* エッジハイライトライン（ストロークの内側に重ねる薄い白線） */}
+      <path
+        d={line}
+        fill="none"
+        stroke="rgba(255,255,255,0.4)"
+        strokeWidth="1.5"
       />
       {ramp.obs.map((obstacle, obsIndex) => {
         const ox = GeometryDomain.getObstacleX(obstacle, ramp, width);
@@ -206,7 +309,7 @@ export const RampRenderer: React.FC<{
 }>;
 RampRenderer.displayName = 'RampRenderer';
 
-// プレイヤーの描画コンポーネント
+// ===== プレイヤーの描画コンポーネント =====
 export const PlayerRenderer: React.FC<{
   player: Player;
   ramp: Ramp | undefined;
@@ -217,7 +320,11 @@ export const PlayerRenderer: React.FC<{
   height: number;
   jetParticles: Particle[];
   dangerLevel: number;
-}> = ({ player, ramp, camY, speed, death, width, height, jetParticles, dangerLevel }) => {
+  /** スクワッシュ＆ストレッチ変形スケール（省略時は {scaleX:1, scaleY:1}） */
+  squash?: Squash;
+}> = ({ player, ramp, camY, speed, death, width, height, jetParticles, dangerLevel, squash }) => {
+  // squash が未指定の場合はデフォルト値（変形なし）を使用
+  const { scaleX: sqX, scaleY: sqY } = squash ?? { scaleX: 1, scaleY: 1 };
   if (!ramp) return <></>;
   const { width: PW, height: PH } = Config.player;
   const ry = player.ramp * Config.ramp.height - camY;
@@ -226,6 +333,8 @@ export const PlayerRenderer: React.FC<{
   const py = ry + slopeY + player.y - PH;
   const px = player.x;
   const color = SpeedDomain.getColor(speed);
+  // プレイヤー本体グラデーション ID（速度に応じた色を維持しつつ立体感）
+  const bodyGradId = 'playerBodyGrad';
   if (death) {
     const { frame: df, fast, type } = death;
     const dy = type === 'fall' ? df * 10 : -df * 4;
@@ -244,7 +353,16 @@ export const PlayerRenderer: React.FC<{
   const jet = SpeedDomain.getNormalized(speed);
   const scared = dangerLevel > 0.7;
   return (
-    <g transform={`translate(${px}, ${py + PH / 2}) rotate(${tilt})`}>
+    // プレイヤー中心基準でスクワッシュ＆ストレッチ変形を適用
+    <g transform={`translate(${px}, ${py + PH / 2}) rotate(${tilt}) scale(${sqX}, ${sqY})`}>
+      {/* ボディグラデーション（速度色を基準にした立体感: 上が明るく、下が暗い） */}
+      {/* playerGlow フィルタは PlayScreen の SVG 直下の EntityFilterDefs で一元定義 */}
+      <defs>
+        <linearGradient id={bodyGradId} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#fff" stopOpacity="0.5" />
+          <stop offset="40%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
       {speed > 4 ? (
         <>
           <ellipse cx={-ramp.dir * 18} cy={6} rx={8 + jet * 25} ry={3 + jet * 3} fill="url(#jetGrad)" />
@@ -276,25 +394,31 @@ export const PlayerRenderer: React.FC<{
           ))}
         </g>
       ) : undefined}
-      <rect x={-PW / 2} y={-PH / 2} width={PW} height={PH * 0.65} fill={color} stroke="#fff" strokeWidth="1.5" rx="4" />
-      <rect
-        x={-PW / 2 + 3}
-        y={-PH / 2 + 3}
-        width={PW - 6}
-        height={PH * 0.2}
-        fill="rgba(255,255,255,0.35)"
-        rx="2"
-      />
-      <g transform={`scale(${scared ? 1.3 : 1})`}>
-        <circle cx={-4} cy={-PH / 4 + 1} r="3.5" fill="#fff" />
-        <circle cx={5} cy={-PH / 4 + 1} r="3.5" fill="#fff" />
-        <circle cx={scared ? -5 : -3.5} cy={-PH / 4 + 2} r="1.5" fill="#222" />
-        <circle cx={scared ? 3 : 5.5} cy={-PH / 4 + 2} r="1.5" fill="#222" />
+      {/* プレイヤー本体: グロー付き、グラデーション立体塗り */}
+      <g filter="url(#playerGlow)">
+        <rect x={-PW / 2} y={-PH / 2} width={PW} height={PH * 0.65} fill={color} stroke="#fff" strokeWidth="1.5" rx="4" />
+        {/* 立体感グラデーション（本体上に重ねる半透明白→透明） */}
+        <rect x={-PW / 2} y={-PH / 2} width={PW} height={PH * 0.65} fill={`url(#${bodyGradId})`} rx="4" />
+        {/* 既存のウィンドウハイライト */}
+        <rect
+          x={-PW / 2 + 3}
+          y={-PH / 2 + 3}
+          width={PW - 6}
+          height={PH * 0.2}
+          fill="rgba(255,255,255,0.35)"
+          rx="2"
+        />
+        <g transform={`scale(${scared ? 1.3 : 1})`}>
+          <circle cx={-4} cy={-PH / 4 + 1} r="3.5" fill="#fff" />
+          <circle cx={5} cy={-PH / 4 + 1} r="3.5" fill="#fff" />
+          <circle cx={scared ? -5 : -3.5} cy={-PH / 4 + 2} r="1.5" fill="#222" />
+          <circle cx={scared ? 3 : 5.5} cy={-PH / 4 + 2} r="1.5" fill="#222" />
+        </g>
+        {scared ? <ellipse cx={0} cy={-PH / 4 + 8} rx="3" ry="2" fill="#222" /> : undefined}
+        <rect x={-PW / 2 - 2} y={PH * 0.15} width={PW + 4} height="7" fill="#333" rx="2" />
+        <circle cx={-7} cy={PH * 0.25} r="5" fill="#222" stroke="#555" strokeWidth="1.5" />
+        <circle cx={7} cy={PH * 0.25} r="5" fill="#222" stroke="#555" strokeWidth="1.5" />
       </g>
-      {scared ? <ellipse cx={0} cy={-PH / 4 + 8} rx="3" ry="2" fill="#222" /> : undefined}
-      <rect x={-PW / 2 - 2} y={PH * 0.15} width={PW + 4} height="7" fill="#333" rx="2" />
-      <circle cx={-7} cy={PH * 0.25} r="5" fill="#222" stroke="#555" strokeWidth="1.5" />
-      <circle cx={7} cy={PH * 0.25} r="5" fill="#222" stroke="#555" strokeWidth="1.5" />
     </g>
   );
 };
