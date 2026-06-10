@@ -29,14 +29,11 @@ jest.mock('../../../../utils/score-storage', () => ({
   saveScore: jest.fn().mockResolvedValue(undefined),
 }));
 
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { Audio } from '../../audio';
 import { Config } from '../../config';
 import { GameState } from '../../constants';
 import { useGameEngine } from './use-game-engine';
-
-// jest.useFakeTimers() はトップレベルで設定
-jest.useFakeTimers();
 
 // ── matchMedia をモックするヘルパー ──────────────────────────────────────────
 
@@ -62,9 +59,16 @@ const mockMatchMedia = (matches: boolean): void => {
 
 describe('useGameEngine 統合テスト', () => {
   beforeEach(() => {
+    // 各テスト開始前に fake timer に統一する（real timer テストが他へ波及しないよう）
+    jest.useFakeTimers();
     jest.clearAllMocks();
     // デフォルトは reduced-motion 無効
     mockMatchMedia(false);
+  });
+
+  afterEach(() => {
+    // real timer テストがそのまま残った場合に備えて fake timer に戻す
+    jest.useFakeTimers();
   });
 
   // ────────────────────────────────────────────────────────────────────────────
@@ -259,6 +263,69 @@ describe('useGameEngine 統合テスト', () => {
       // Assert: resetGameState 内で setSpeedRank(0) が呼ばれること
       expect(Audio.setSpeedRank).toHaveBeenCalledWith(0);
     });
+
+    it('【real timer】加速キー(KeyZ)を押し続けると速度ランクが上昇し Audio.setSpeedRank(rank>=1) が呼ばれること', async () => {
+      // このテストのみ real timer を使用する。
+      // fake timer では useEffect の再登録 churn（依存配列に speed を含む）と
+      // setInterval のネストが絡み、advanceTimersByTime ではランク変化の
+      // タイミング検出が不安定になるため real timer + waitFor で収束を待つ。
+      //
+      // 速度計算:
+      //   min=3.5, accelRate=0.12, MID 境界=6
+      //   フレーム数: (6 - 3.5) / 0.12 ≈ 21 フレーム（約 350ms）
+      //   余裕を持って waitFor timeout=4000ms に設定
+
+      // ── fake timer を real timer に切り替え ──
+      jest.useRealTimers();
+
+      let unmount: (() => void) | undefined;
+      try {
+        // Arrange: PLAY まで遷移（real timer 下で fake timer 用の act は使えないため
+        //          startCountdown → countdownInterval×3 ms 待機で PLAY に到達する）
+        const rendered = renderHook(() => useGameEngine());
+        unmount = rendered.unmount;
+        const { result } = rendered;
+
+        // getHighScore の Promise を解決するため少し待つ
+        await act(async () => {
+          await new Promise(resolve => setTimeout(resolve, 50));
+        });
+
+        // カウントダウン開始
+        act(() => {
+          result.current.startCountdown();
+        });
+
+        // countdownInterval(800ms) × 3 = 2400ms 待機して PLAY に遷移させる
+        await act(async () => {
+          await new Promise(resolve => setTimeout(resolve, Config.animation.countdownInterval * 3 + 200));
+        });
+
+        expect(result.current.gameState).toBe(GameState.PLAY);
+
+        // setSpeedRank のモック呼び出しをリセット（リセット時の(0)呼び出し分をクリア）
+        (Audio.setSpeedRank as jest.Mock).mockClear();
+
+        // Act: 加速キー KeyZ を押下（ゲームループが input.accel=true を読む）
+        window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyZ' }));
+
+        // Assert: 速度ランクが rank>=1 に到達するまで waitFor で待機
+        // ゲームループ(~16.7ms/frame)が実際に動いて speed が MID 境界(6)を超えると
+        // setSpeedRank(1) が呼ばれる。waitFor が 50ms 間隔で最大 4000ms ポーリングする。
+        await waitFor(
+          () => {
+            const calls = (Audio.setSpeedRank as jest.Mock).mock.calls;
+            const hasRankUp = calls.some((c: unknown[]) => (c[0] as number) >= 1);
+            expect(hasRankUp).toBe(true);
+          },
+          { timeout: 4000, interval: 50 }
+        );
+      } finally {
+        // ── ループを停止してから fake timer に戻す ──
+        unmount?.();
+        jest.useFakeTimers();
+      }
+    }, 10000 /* Jest タイムアウト: real timer で最大 10s 許容 */);
   });
 
   // ────────────────────────────────────────────────────────────────────────────
