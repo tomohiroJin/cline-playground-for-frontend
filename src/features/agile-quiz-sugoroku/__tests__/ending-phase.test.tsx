@@ -21,7 +21,7 @@ jest.mock('tone', () => ({
 
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { StoryScreen } from '../components/StoryScreen';
+import { StoryScreen } from '../presentation/components/screens/StoryScreen';
 import { StoryEntry, EndingEntry } from '../domain/types';
 import { getEndingStories, ENDING_COMMON, ENDING_EPILOGUES } from '../data/ending-data';
 

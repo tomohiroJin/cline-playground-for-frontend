@@ -1,8 +1,7 @@
 /**
  * AudioActions インターフェース + ファクトリ
  *
- * 後方互換用。
- * 新規コードは infrastructure/audio/ を直接使用してください。
+ * sound.ts の関数群をゲームイベント単位のアクションに束ねる。
  */
 import {
   initAudio,

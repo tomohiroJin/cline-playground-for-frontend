@@ -21,8 +21,8 @@ jest.mock('tone', () => ({
   })),
 }));
 
-import { gameReducer, createInitialGameState } from '../hooks/useGameReducer';
-import type { GameState } from '../hooks/useGameReducer';
+import { gameReducer, createInitialGameState } from '../presentation/hooks/useGameReducer';
+import type { GameState } from '../presentation/hooks/useGameReducer';
 import { INITIAL_GAME_STATS } from '../constants';
 
 describe('gameReducer', () => {

@@ -1,7 +1,12 @@
 /**
- * プレゼンテーション層スタイル
+ * Agile Quiz Sugoroku - スタイル re-export
  *
- * デザイントークンと既存スタイルコンポーネントを統合エクスポート
+ * 全スタイルモジュールを集約して再エクスポートする
  */
 export { DESIGN_TOKENS } from './design-tokens';
-export * from '../../components/styles';
+export * from './animations';
+export * from './common';
+export * from './layout';
+export * from './quiz';
+export * from './result';
+export * from './story';

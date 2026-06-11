@@ -18,14 +18,14 @@ jest.mock('tone', () => ({
 
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { TitleScreen } from '../components/TitleScreen';
-import { ParticleEffect } from '../components/ParticleEffect';
-import { BarChart } from '../components/BarChart';
-import { RadarChart } from '../components/RadarChart';
-import { QuizScreen } from '../components/QuizScreen';
-import { SprintStartScreen } from '../components/SprintStartScreen';
-import { RetrospectiveScreen } from '../components/RetrospectiveScreen';
-import { ResultScreen } from '../components/ResultScreen';
+import { TitleScreen } from '../presentation/components/screens/TitleScreen';
+import { ParticleEffect } from '../presentation/components/ParticleEffect';
+import { BarChart } from '../presentation/components/BarChart';
+import { RadarChart } from '../presentation/components/RadarChart';
+import { QuizScreen } from '../presentation/components/screens/QuizScreen';
+import { SprintStartScreen } from '../presentation/components/screens/SprintStartScreen';
+import { RetrospectiveScreen } from '../presentation/components/screens/RetrospectiveScreen';
+import { ResultScreen } from '../presentation/components/screens/ResultScreen';
 import { SprintSummary, GameStats, DerivedStats, GameEvent, Question } from '../domain/types';
 
 // styled-components のアニメーション警告を抑制
@@ -557,7 +557,7 @@ describe('QuizScreen - ユーザー操作フロー', () => {
 
 describe('styles re-export', () => {
   it('animations モジュールからキーフレームがエクスポートされる', async () => {
-    const animations = await import('../components/styles/animations');
+    const animations = await import('../presentation/styles/animations');
     expect(animations.pulse).toBeDefined();
     expect(animations.shake).toBeDefined();
     expect(animations.fadeSlideIn).toBeDefined();
@@ -571,7 +571,7 @@ describe('styles re-export', () => {
   });
 
   it('common モジュールから共通コンポーネントがエクスポートされる', async () => {
-    const common = await import('../components/styles/common');
+    const common = await import('../presentation/styles/common');
     expect(common.PageWrapper).toBeDefined();
     expect(common.Panel).toBeDefined();
     expect(common.Button).toBeDefined();
@@ -582,7 +582,7 @@ describe('styles re-export', () => {
   });
 
   it('layout モジュールからレイアウトコンポーネントがエクスポートされる', async () => {
-    const layout = await import('../components/styles/layout');
+    const layout = await import('../presentation/styles/layout');
     expect(layout.TimelineContainer).toBeDefined();
     expect(layout.TimerContainer).toBeDefined();
     expect(layout.TitleGlow).toBeDefined();
@@ -593,7 +593,7 @@ describe('styles re-export', () => {
   });
 
   it('quiz モジュールからクイズスタイルがエクスポートされる', async () => {
-    const quiz = await import('../components/styles/quiz');
+    const quiz = await import('../presentation/styles/quiz');
     expect(quiz.OptionButton).toBeDefined();
     expect(quiz.OptionLabel).toBeDefined();
     expect(quiz.QuizQuestion).toBeDefined();
@@ -602,7 +602,7 @@ describe('styles re-export', () => {
   });
 
   it('result モジュールからリザルトスタイルがエクスポートされる', async () => {
-    const result = await import('../components/styles/result');
+    const result = await import('../presentation/styles/result');
     expect(result.GradeCircle).toBeDefined();
     expect(result.TypeCard).toBeDefined();
     expect(result.BarChartContainer).toBeDefined();
@@ -613,7 +613,7 @@ describe('styles re-export', () => {
   });
 
   it('index からすべてのエクスポートが利用可能', async () => {
-    const styles = await import('../components/styles');
+    const styles = await import('../presentation/styles');
     // アニメーション
     expect(styles.pulse).toBeDefined();
     // 共通

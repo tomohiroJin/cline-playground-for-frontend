@@ -31,7 +31,7 @@ export { getEndingStories } from './data/ending-data';
 export { createDefaultAudioActions } from './infrastructure/audio/audio-actions';
 
 // フック
-export { useGame, useCountdown, useFade, useStudy, useChallenge } from './hooks';
+export { useGame, useCountdown, useFade, useStudy, useChallenge } from './presentation/hooks';
 
 // インフラストラクチャ(ストレージ)
 export { LocalStorageAdapter } from './infrastructure/storage/local-storage-adapter';
@@ -59,4 +59,4 @@ export {
   ChallengeQuizScreen,
   ChallengeResultScreen,
   DailyQuizScreen,
-} from './components';
+} from './presentation/components';
