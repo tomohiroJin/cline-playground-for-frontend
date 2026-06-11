@@ -2,8 +2,8 @@
  * story-data.ts のユニットテスト
  * ストーリーデータの整合性とマッピング関数を検証
  */
-import { STORY_ENTRIES, getStoriesForSprintCount } from '../story-data';
-import { CHARACTER_PROFILES } from '../character-profiles';
+import { STORY_ENTRIES, getStoriesForSprintCount } from '../data/story-data';
+import { CHARACTER_PROFILES } from '../data/character-profiles';
 
 /** 有効なキャラクターID一覧 */
 const VALID_CHARACTER_IDS = CHARACTER_PROFILES.map((c) => c.id);

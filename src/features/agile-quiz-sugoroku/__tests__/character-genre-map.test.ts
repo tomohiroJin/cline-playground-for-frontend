@@ -6,8 +6,8 @@ import {
   getGenresForCharacters,
   CharacterGenreMapping,
 } from '../character-genre-map';
-import { VALID_TAG_IDS } from '../questions/tag-master';
-import { CHARACTER_PROFILES } from '../character-profiles';
+import { VALID_TAG_IDS } from '../data/questions/tag-master';
+import { CHARACTER_PROFILES } from '../data/character-profiles';
 
 describe('Agile Quiz Sugoroku - キャラクター×ジャンルマッピング', () => {
   // ── マッピング定義 ──────────────────────────────────────

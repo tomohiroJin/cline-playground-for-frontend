@@ -23,7 +23,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { StoryScreen } from '../components/StoryScreen';
 import { StoryEntry, EndingEntry } from '../domain/types';
-import { getEndingStories, ENDING_COMMON, ENDING_EPILOGUES } from '../ending-data';
+import { getEndingStories, ENDING_COMMON, ENDING_EPILOGUES } from '../data/ending-data';
 
 // styled-components のアニメーション警告を抑制
 beforeAll(() => {

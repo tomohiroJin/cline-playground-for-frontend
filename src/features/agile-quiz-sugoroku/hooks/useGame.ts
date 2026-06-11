@@ -18,7 +18,7 @@ import { AudioActions, createDefaultAudioActions } from '../audio/audio-actions'
 import { shuffle, average, percentage, clamp } from '../../../utils/math-utils';
 import { pickQuestion } from '../domain/quiz';
 import { createEvents, createSprintSummary } from '../domain/game';
-import { QUESTIONS } from '../questions';
+import { QUESTIONS } from '../data/questions';
 import { gameReducer, createInitialGameState } from './useGameReducer';
 
 export interface UseGameReturn {

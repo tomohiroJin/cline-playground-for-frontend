@@ -4,7 +4,7 @@
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import { COLORS, FONTS } from '../../../constants';
-import { AQS_IMAGES } from '../../../images';
+import { AQS_IMAGES } from '../../../data/images';
 import {
   GradeCircle,
   GradeLabel,

@@ -21,7 +21,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { StudySelectScreen } from '../components/StudySelectScreen';
 import { CHARACTER_GENRE_MAP } from '../character-genre-map';
-import { TAG_MASTER } from '../questions/tag-master';
+import { TAG_MASTER } from '../data/questions/tag-master';
 
 // styled-components のアニメーション警告を抑制
 beforeAll(() => {

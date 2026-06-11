@@ -6,8 +6,8 @@ import type { DerivedStats, GameStats, TagStats, AnswerResultWithDetail } from '
 import { COLORS, FONTS, getSummaryText } from '../../../constants';
 import { computeTagStatEntries, getWeakGenres } from '../../../domain/quiz';
 import type { TagStatEntry } from '../../../domain/quiz';
-import { TAG_MAP } from '../../../questions/tag-master';
-import { AQS_IMAGES } from '../../../images';
+import { TAG_MAP } from '../../../data/questions/tag-master';
+import { AQS_IMAGES } from '../../../data/images';
 import {
   SectionBox,
   SectionTitle,

@@ -1,9 +1,9 @@
 /**
  * Agile Quiz Sugoroku - キャラクタープロフィールのテスト
  */
-import { CHARACTER_PROFILES, CharacterProfile } from '../character-profiles';
+import { CHARACTER_PROFILES, CharacterProfile } from '../data/character-profiles';
 import { COLORS } from '../constants';
-import { AQS_IMAGES } from '../images';
+import { AQS_IMAGES } from '../data/images';
 
 describe('Agile Quiz Sugoroku - キャラクタープロフィール', () => {
   // ── キャラクター数 ────────────────────────────────────

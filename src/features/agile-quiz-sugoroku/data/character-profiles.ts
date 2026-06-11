@@ -1,7 +1,7 @@
 /**
  * Agile Quiz Sugoroku - キャラクタープロフィール
  */
-import { COLORS } from './constants';
+import { COLORS } from '../constants';
 
 export interface CharacterProfile {
   id: string;

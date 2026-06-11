@@ -4,7 +4,7 @@
  * 旧 tag-stats.ts から移動。
  */
 import { TagStats } from '../types';
-import { TAG_MAP } from '../../questions/tag-master';
+import { TAG_MAP } from '../../data/questions/tag-master';
 import { COLORS } from '../../constants';
 
 export interface TagStatEntry {

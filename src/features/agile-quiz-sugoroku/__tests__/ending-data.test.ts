@@ -2,8 +2,8 @@
  * ending-data.ts のユニットテスト
  * エンディングストーリーデータの整合性と取得関数を検証
  */
-import { getEndingStories, ENDING_COMMON, ENDING_EPILOGUES } from '../ending-data';
-import { CHARACTER_PROFILES } from '../character-profiles';
+import { getEndingStories, ENDING_COMMON, ENDING_EPILOGUES } from '../data/ending-data';
+import { CHARACTER_PROFILES } from '../data/character-profiles';
 import { TEAM_TYPES } from '../team-classifier';
 
 /** 有効なキャラクターID一覧 */

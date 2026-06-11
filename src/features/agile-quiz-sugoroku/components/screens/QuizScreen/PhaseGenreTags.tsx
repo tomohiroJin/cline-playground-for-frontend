@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import { COLORS } from '../../../constants';
-import { TAG_MAP } from '../../../questions/tag-master';
+import { TAG_MAP } from '../../../data/questions/tag-master';
 
 interface PhaseGenreTagsProps {
   /** タグID配列 */

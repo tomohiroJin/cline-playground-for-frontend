@@ -6,7 +6,7 @@ import { useKeys } from '../hooks';
 import { Question } from '../domain/types';
 import { COLORS, OPTION_LABELS } from '../constants';
 import { shuffle } from '../../../utils/math-utils';
-import { TAG_MAP } from '../questions/tag-master';
+import { TAG_MAP } from '../data/questions/tag-master';
 import {
   PageWrapper,
   Panel,

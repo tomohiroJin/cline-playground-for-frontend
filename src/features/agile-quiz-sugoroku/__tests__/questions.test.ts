@@ -1,8 +1,8 @@
 /**
  * Agile Quiz Sugoroku - 問題データの構造検証テスト
  */
-import { QUESTIONS } from '../questions';
-import { VALID_TAG_IDS } from '../questions/tag-master';
+import { QUESTIONS } from '../data/questions';
+import { VALID_TAG_IDS } from '../data/questions/tag-master';
 
 describe('Agile Quiz Sugoroku - 問題データの構造検証', () => {
   const expectedCategories = [
