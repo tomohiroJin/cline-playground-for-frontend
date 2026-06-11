@@ -70,12 +70,15 @@ features/agile-quiz-sugoroku/
 
 ### 個別の判断
 
-- `daily-quiz.ts`: 日付ベースのシード計算ロジックを含むため `data/` ではなく
-  `domain/quiz/daily-quiz.ts` へ
+- `daily-quiz.ts`: シード計算・問題選出(純ロジック)と localStorage 委譲
+  (DailyQuizRepository のラッパー)の混在ファイルのため**分割**する。
+  純ロジックは `domain/quiz/daily-quiz.ts`、ストレージ委譲は
+  `infrastructure/storage/daily-quiz-service.ts` へ(domain → infrastructure
+  参照の禁止ルールを守るため。ファイル移動のみでは違反が発生する)
 - `audio/audio-actions.ts`: コメントに「後方互換用」とあるが Page が使用中のため
   削除せず `infrastructure/audio/` へ統合。インターフェース整理は今回のスコープ外
-- `index.ts` の `../../utils/math-utils` 再エクスポート(`shuffle`, `clamp` 等)は廃止。
-  Page は共通ユーティリティを直接インポートする(公開 API による横流しの解消)
+- `index.ts` の `../../utils/math-utils` 再エクスポート(`shuffle`, `clamp` 等)は
+  外部で未使用のため公開 API から削除する(公開 API による横流しの解消)
 
 ## 3. 実行計画(ファサード先行方式・4 PR)
 
@@ -105,7 +108,8 @@ features/agile-quiz-sugoroku/
   ルートのファイルとシムを削除
 - `character-narrative.ts`, `character-reactions.ts`, `character-genre-map.ts`
   → `domain/narrative/`
-- `daily-quiz.ts` → `domain/quiz/daily-quiz.ts`
+- `daily-quiz.ts` を分割: 純ロジック → `domain/quiz/daily-quiz.ts`、
+  ストレージ委譲 → `infrastructure/storage/daily-quiz-service.ts`
 - `audio/sound.ts`, `audio/audio-actions.ts` → `infrastructure/audio/`、
   ルートの `audio/` を削除
 
