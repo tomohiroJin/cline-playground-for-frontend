@@ -6,7 +6,7 @@
  */
 import React, { useState } from 'react';
 import { AQS_IMAGES } from '../data/images';
-import { ReactionSituation, QUIZ_CHARACTERS } from '../character-reactions';
+import { ReactionSituation, QUIZ_CHARACTERS } from '../domain/narrative/character-reactions';
 import { resolveTimerSituation, useCharacterComment } from './useCharacterComment';
 import {
   Container,

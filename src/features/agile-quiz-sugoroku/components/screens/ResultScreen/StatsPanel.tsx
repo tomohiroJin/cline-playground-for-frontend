@@ -11,7 +11,7 @@ import {
   getColorByThreshold,
   getInverseColorByThreshold,
 } from '../../../constants';
-import { classifyTeamType } from '../../../team-classifier';
+import { classifyTeamType } from '../../../domain/team';
 import { getComboColor } from '../../../domain/quiz';
 import { AQS_IMAGES } from '../../../data/images';
 import { RadarChart } from '../../RadarChart';

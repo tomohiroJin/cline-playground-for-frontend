@@ -27,3 +27,4 @@ export {
   countStudyQuestions,
 } from './study-question-pool';
 export type { BuildStudyPoolOptions } from './study-question-pool';
+export { dateSeed, seededRandom, getDailyQuestions } from './daily-quiz';

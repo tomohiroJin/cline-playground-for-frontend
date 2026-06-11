@@ -5,7 +5,7 @@ import {
   CHARACTER_GENRE_MAP,
   getGenresForCharacters,
   CharacterGenreMapping,
-} from '../character-genre-map';
+} from '../domain/narrative/character-genre-map';
 import { VALID_TAG_IDS } from '../data/questions/tag-master';
 import { CHARACTER_PROFILES } from '../data/character-profiles';
 

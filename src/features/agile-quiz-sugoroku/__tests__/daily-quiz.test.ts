@@ -1,15 +1,13 @@
 /**
  * デイリークイズのテスト
  */
+import { getDailyQuestions, seededRandom, dateSeed } from '../domain/quiz';
 import {
-  getDailyQuestions,
-  seededRandom,
-  dateSeed,
-  getDailyResult,
   saveDailyResult,
+  getDailyResult,
   getDailyStreak,
-  DailyResult,
-} from '../daily-quiz';
+} from '../infrastructure/storage/daily-quiz-service';
+import type { DailyResult } from '../infrastructure/storage/daily-quiz-service';
 
 // localStorage モック
 const localStorageMock = (() => {

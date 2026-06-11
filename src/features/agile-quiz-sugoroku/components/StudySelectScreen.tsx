@@ -6,7 +6,7 @@ import { PHASE_GENRE_MAP, COLORS, FONTS } from '../constants';
 import { countStudyQuestions } from '../domain/quiz';
 import { GameResultRepository } from '../infrastructure/storage/game-repository';
 import { LocalStorageAdapter } from '../infrastructure/storage/local-storage-adapter';
-import { getGenresForCharacters } from '../character-genre-map';
+import { getGenresForCharacters } from '../domain/narrative/character-genre-map';
 import {
   PageWrapper,
   Panel,

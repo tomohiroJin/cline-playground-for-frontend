@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import { COLORS, FONTS } from '../constants';
-import type { DailyResult } from '../daily-quiz';
+import type { DailyResult } from '../infrastructure/storage/daily-quiz-service';
 import { ParticleEffect } from './ParticleEffect';
 import {
   PageWrapper,

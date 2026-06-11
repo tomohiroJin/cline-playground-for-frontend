@@ -20,7 +20,7 @@ import {
   playSfxAchievement,
   playSfxStart,
   playSfxResult,
-} from '../../audio/sound';
+} from './sound';
 
 export class ToneAudioAdapter implements AudioPort {
   initialize(): void { initAudio(); }

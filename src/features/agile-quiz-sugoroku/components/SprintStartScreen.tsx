@@ -13,7 +13,7 @@ import {
 } from '../constants';
 import { getComboColor } from '../domain/quiz';
 import { AQS_IMAGES } from '../data/images';
-import { getNarrativeComment } from '../character-narrative';
+import { getNarrativeComment } from '../domain/narrative/character-narrative';
 import { ParticleEffect } from './ParticleEffect';
 import { NarrativeComment } from './NarrativeComment';
 import {

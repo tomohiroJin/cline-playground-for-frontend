@@ -14,7 +14,7 @@ import type {
   AnswerResultWithDetail,
   SaveState,
 } from '../domain/types';
-import { AudioActions, createDefaultAudioActions } from '../audio/audio-actions';
+import { AudioActions, createDefaultAudioActions } from '../infrastructure/audio/audio-actions';
 import { shuffle, average, percentage, clamp } from '../../../utils/math-utils';
 import { pickQuestion } from '../domain/quiz';
 import { createEvents, createSprintSummary } from '../domain/game';

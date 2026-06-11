@@ -6,14 +6,14 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useKeys } from '../hooks';
 import { Question } from '../domain/types';
+import { getDailyQuestions } from '../domain/quiz';
 import {
-  getDailyQuestions,
   saveDailyResult,
   getDailyResult,
   getDailyStreak,
   formatDateKey,
-  DailyResult,
-} from '../daily-quiz';
+} from '../infrastructure/storage/daily-quiz-service';
+import type { DailyResult } from '../infrastructure/storage/daily-quiz-service';
 import { DailyQuizResult } from './DailyQuizResult';
 import { DailyQuizQuestion } from './DailyQuizQuestion';
 

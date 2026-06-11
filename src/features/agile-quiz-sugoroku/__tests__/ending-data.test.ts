@@ -4,7 +4,7 @@
  */
 import { getEndingStories, ENDING_COMMON, ENDING_EPILOGUES } from '../data/ending-data';
 import { CHARACTER_PROFILES } from '../data/character-profiles';
-import { TEAM_TYPES } from '../team-classifier';
+import { TEAM_TYPES } from '../domain/team';
 
 /** 有効なキャラクターID一覧 */
 const VALID_CHARACTER_IDS = CHARACTER_PROFILES.map((c) => c.id);

@@ -1,7 +1,7 @@
 /**
  * クイズ画面用ヘルパー関数・型定義
  */
-import type { ReactionSituation } from '../../../character-reactions';
+import type { ReactionSituation } from '../../../domain/narrative/character-reactions';
 
 /** フィードバック状態（フラッシュとスコア表示を統合管理） */
 export interface FeedbackState {
