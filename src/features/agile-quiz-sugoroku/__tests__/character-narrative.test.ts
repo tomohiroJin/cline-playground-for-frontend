@@ -5,7 +5,7 @@ import {
   getNarrativeComment,
   NARRATIVE_COMMENTS,
   NarrativeSituation,
-} from '../character-narrative';
+} from '../domain/narrative/character-narrative';
 
 describe('character-narrative', () => {
   describe('NARRATIVE_COMMENTS', () => {

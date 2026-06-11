@@ -1,24 +1,11 @@
 /**
- * Agile Quiz Sugoroku - デイリークイズ
+ * Agile Quiz Sugoroku - デイリークイズ選出ロジック
  *
- * 後方互換用の再エクスポート。
- * ストレージ処理は infrastructure/storage/daily-quiz-repository.ts に移行済み。
- * 問題選出ロジック（getDailyQuestions 等）は本ファイルに残留。
+ * 日付シードに基づき決定論的に 5 問を選出する。
+ * ストレージ処理は infrastructure/storage/daily-quiz-service.ts を参照。
  */
-import { Question } from './domain/types';
-import { QUESTIONS } from './data/questions';
-import { LocalStorageAdapter } from './infrastructure/storage/local-storage-adapter';
-import {
-  DailyQuizRepository,
-  formatDateKey,
-} from './infrastructure/storage/daily-quiz-repository';
-import type { DailyResult } from './infrastructure/storage/daily-quiz-repository';
-
-// 型の再エクスポート
-export type { DailyResult };
-export { formatDateKey };
-
-const repository = new DailyQuizRepository(new LocalStorageAdapter());
+import { Question } from '../types';
+import { QUESTIONS } from '../../data/questions';
 
 // ── シード付きランダム ────────────────────────────────────
 
@@ -66,21 +53,4 @@ export const getDailyQuestions = (date: Date): Question[] => {
   }
 
   return shuffled.slice(0, 5);
-};
-
-// ── ストレージ（後方互換） ────────────────────────────────
-
-/** デイリー結果を保存する */
-export const saveDailyResult = (result: DailyResult): void => {
-  repository.saveResult(result);
-};
-
-/** 指定日のデイリー結果を取得する */
-export const getDailyResult = (dateKey: string): DailyResult | undefined => {
-  return repository.getResult(dateKey);
-};
-
-/** 連続参加日数（ストリーク）を計算する */
-export const getDailyStreak = (today: Date): number => {
-  return repository.getStreak(today);
 };

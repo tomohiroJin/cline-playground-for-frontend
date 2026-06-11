@@ -13,7 +13,7 @@ import {
   getChallengeText,
 } from '../constants';
 import { AQS_IMAGES } from '../data/images';
-import { getNarrativeComment } from '../character-narrative';
+import { getNarrativeComment } from '../domain/narrative/character-narrative';
 import { ParticleEffect } from './ParticleEffect';
 import { BarChart } from './BarChart';
 import { CategoryBar } from './CategoryBar';

@@ -6,7 +6,7 @@ import {
   ReactionSituation,
   getRandomReaction,
   getHintForTags,
-} from '../character-reactions';
+} from '../domain/narrative/character-reactions';
 
 /** idle コメントの切り替え間隔（ms） */
 const IDLE_INTERVAL = 5000;

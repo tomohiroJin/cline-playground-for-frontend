@@ -1,7 +1,7 @@
 /**
  * チームタイプ分類テスト
  */
-import { classifyTeamType, TEAM_TYPES } from '../../../team-classifier';
+import { classifyTeamType, TEAM_TYPES } from '../team-classifier';
 import { createClassifyStats } from '../../testing/test-factories';
 
 describe('classifyTeamType - チームタイプ分類', () => {

@@ -13,7 +13,7 @@ import {
   ReactionSituation,
   CharacterComment,
   QuizCharacter,
-} from '../character-reactions';
+} from '../domain/narrative/character-reactions';
 
 /** すべてのリアクション状況 */
 const ALL_SITUATIONS: ReactionSituation[] = [

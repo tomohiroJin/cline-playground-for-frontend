@@ -34,7 +34,7 @@ import {
   playSfxDrumroll,
   playSfxFanfare,
   playSfxTickUrgent,
-} from '../audio/sound';
+} from '../infrastructure/audio/sound';
 
 describe('サウンド拡張関数', () => {
   // ── 初期化前の呼び出し ────────────────────────────────

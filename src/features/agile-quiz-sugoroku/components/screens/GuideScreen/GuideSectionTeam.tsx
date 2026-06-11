@@ -3,7 +3,7 @@
  */
 import React, { useState } from 'react';
 import { COLORS, FONTS } from '../../../constants';
-import { TEAM_TYPES } from '../../../team-classifier';
+import { TEAM_TYPES } from '../../../domain/team';
 import { AQS_IMAGES } from '../../../data/images';
 import { CHARACTER_PROFILES } from '../../../data/character-profiles';
 import { SectionBox, SectionTitle } from '../../styles';

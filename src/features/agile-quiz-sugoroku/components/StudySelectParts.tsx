@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import { PHASE_GENRE_MAP, COLORS } from '../constants';
-import { CHARACTER_GENRE_MAP } from '../character-genre-map';
+import { CHARACTER_GENRE_MAP } from '../domain/narrative/character-genre-map';
 import { SectionBox, SectionTitle } from './styles';
 
 // ジャンル選択・問題数選択セクションは別ファイルで定義

@@ -21,14 +21,14 @@ export { CONFIG } from './constants';
 // ドメインロジック
 export { getDifficultyConfig, calculateGradeWithDifficulty } from './domain/scoring';
 export { checkAchievements } from './domain/achievement';
-export { classifyTeamType } from './team-classifier';
+export { classifyTeamType } from './domain/team';
 
 // 静的データ
 export { getStoriesForSprintCount } from './data/story-data';
 export { getEndingStories } from './data/ending-data';
 
 // 音声
-export { createDefaultAudioActions } from './audio/audio-actions';
+export { createDefaultAudioActions } from './infrastructure/audio/audio-actions';
 
 // フック
 export { useGame, useCountdown, useFade, useStudy, useChallenge } from './hooks';
