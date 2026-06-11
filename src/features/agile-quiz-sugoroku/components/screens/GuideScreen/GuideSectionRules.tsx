@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import { COLORS, FONTS, GRADES, PHASE_GENRE_MAP } from '../../../constants';
-import { TAG_MAP } from '../../../questions/tag-master';
+import { TAG_MAP } from '../../../data/questions/tag-master';
 import { SectionBox, SectionTitle } from '../../styles';
 
 /** フェーズ表示設定 */

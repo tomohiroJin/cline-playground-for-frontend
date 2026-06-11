@@ -5,7 +5,7 @@
  */
 import { useState, useCallback, useRef } from 'react';
 import { Question, AnswerResult } from '../domain/types';
-import { QUESTIONS } from '../questions';
+import { QUESTIONS } from '../data/questions';
 import { shuffle } from '../../../utils/math-utils';
 import { pickQuestion } from '../domain/quiz';
 import { ChallengeRepository } from '../infrastructure/storage/challenge-repository';

@@ -5,8 +5,8 @@
  */
 import React, { useState, useCallback, useEffect } from 'react';
 import { StoryEntry } from '../domain/types';
-import { CHARACTER_PROFILES } from '../character-profiles';
-import { AQS_IMAGES } from '../images';
+import { CHARACTER_PROFILES } from '../data/character-profiles';
+import { AQS_IMAGES } from '../data/images';
 import {
   StoryWrapper,
   StoryContent,

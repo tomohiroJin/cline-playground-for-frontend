@@ -12,7 +12,7 @@ import {
   getInverseColorByThreshold,
 } from '../constants';
 import { getComboColor } from '../domain/quiz';
-import { AQS_IMAGES } from '../images';
+import { AQS_IMAGES } from '../data/images';
 import { getNarrativeComment } from '../character-narrative';
 import { ParticleEffect } from './ParticleEffect';
 import { NarrativeComment } from './NarrativeComment';

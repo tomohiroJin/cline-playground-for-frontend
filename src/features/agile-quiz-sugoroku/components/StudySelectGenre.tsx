@@ -2,7 +2,7 @@
  * 勉強会モード - ジャンル選択・問題数選択セクション
  */
 import React from 'react';
-import { TAG_MASTER } from '../questions/tag-master';
+import { TAG_MASTER } from '../data/questions/tag-master';
 import { COLORS, FONTS } from '../constants';
 import { SectionBox, SectionTitle } from './styles';
 

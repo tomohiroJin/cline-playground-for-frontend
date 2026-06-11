@@ -5,7 +5,7 @@
 import React, { useState } from 'react';
 import type { Question, GameStats } from '../../../domain/types';
 import { COLORS } from '../../../constants';
-import { AQS_IMAGES } from '../../../images';
+import { AQS_IMAGES } from '../../../data/images';
 import { ScoreFloat } from '../../ScoreFloat';
 import { ComboEffect } from '../../ComboEffect';
 import {

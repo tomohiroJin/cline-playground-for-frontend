@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { useQuizFeedback, useQuizKeys } from '../../../hooks';
 import type { GameEvent, Question, GameStats } from '../../../domain/types';
 import { CONFIG, PHASE_GENRE_MAP, EVENT_BACKGROUND_MAP } from '../../../constants';
-import { AQS_IMAGES } from '../../../images';
+import { AQS_IMAGES } from '../../../data/images';
 import { SugorokuBoard } from '../../SugorokuBoard';
 import { FlashOverlay } from '../../FlashOverlay';
 import { ComboEffect } from '../../ComboEffect';

@@ -24,8 +24,8 @@ export { checkAchievements } from './domain/achievement';
 export { classifyTeamType } from './team-classifier';
 
 // 静的データ
-export { getStoriesForSprintCount } from './story-data';
-export { getEndingStories } from './ending-data';
+export { getStoriesForSprintCount } from './data/story-data';
+export { getEndingStories } from './data/ending-data';
 
 // 音声
 export { createDefaultAudioActions } from './audio/audio-actions';

@@ -4,7 +4,7 @@
 import React, { useState, useMemo } from 'react';
 import { useKeys } from '../hooks';
 import { CONFIG, COLORS, FONTS } from '../constants';
-import { AQS_IMAGES } from '../images';
+import { AQS_IMAGES } from '../data/images';
 import { GameResultRepository } from '../infrastructure/storage/game-repository';
 import { SaveRepository } from '../infrastructure/storage/save-repository';
 import { LocalStorageAdapter } from '../infrastructure/storage/local-storage-adapter';

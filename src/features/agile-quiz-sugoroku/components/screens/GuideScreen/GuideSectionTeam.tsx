@@ -4,8 +4,8 @@
 import React, { useState } from 'react';
 import { COLORS, FONTS } from '../../../constants';
 import { TEAM_TYPES } from '../../../team-classifier';
-import { AQS_IMAGES } from '../../../images';
-import { CHARACTER_PROFILES } from '../../../character-profiles';
+import { AQS_IMAGES } from '../../../data/images';
+import { CHARACTER_PROFILES } from '../../../data/character-profiles';
 import { SectionBox, SectionTitle } from '../../styles';
 import { ImageWithFallback } from './ImageWithFallback';
 

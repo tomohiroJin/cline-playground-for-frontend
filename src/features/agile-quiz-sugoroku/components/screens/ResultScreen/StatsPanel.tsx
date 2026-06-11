@@ -13,7 +13,7 @@ import {
 } from '../../../constants';
 import { classifyTeamType } from '../../../team-classifier';
 import { getComboColor } from '../../../domain/quiz';
-import { AQS_IMAGES } from '../../../images';
+import { AQS_IMAGES } from '../../../data/images';
 import { RadarChart } from '../../RadarChart';
 import { BarChart } from '../../BarChart';
 import {

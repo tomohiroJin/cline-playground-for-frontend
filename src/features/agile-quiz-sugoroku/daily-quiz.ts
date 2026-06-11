@@ -6,7 +6,7 @@
  * 問題選出ロジック（getDailyQuestions 等）は本ファイルに残留。
  */
 import { Question } from './domain/types';
-import { QUESTIONS } from './questions';
+import { QUESTIONS } from './data/questions';
 import { LocalStorageAdapter } from './infrastructure/storage/local-storage-adapter';
 import {
   DailyQuizRepository,

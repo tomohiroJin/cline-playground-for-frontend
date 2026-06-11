@@ -5,7 +5,7 @@
  * 得意分野に応じたヒントも出す。
  */
 import React, { useState } from 'react';
-import { AQS_IMAGES } from '../images';
+import { AQS_IMAGES } from '../data/images';
 import { ReactionSituation, QUIZ_CHARACTERS } from '../character-reactions';
 import { resolveTimerSituation, useCharacterComment } from './useCharacterComment';
 import {
