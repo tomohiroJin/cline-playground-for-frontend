@@ -1,72 +1,62 @@
 /**
- * Agile Quiz Sugoroku - メインエクスポート
+ * Agile Quiz Sugoroku - 公開 API
+ *
+ * 外部(pages 等)はこのファイル経由でのみインポートする。
+ * Feature 内部のモジュール間参照は各モジュールを直接参照する(このファイルを経由しない)。
  */
 
 // 型定義
-export * from './domain/types';
+export type {
+  SprintSummary,
+  SaveState,
+  StoryEntry,
+  EndingEntry,
+  Difficulty,
+  AchievementDefinition,
+} from './domain/types';
 
 // 定数
-export * from './constants';
+export { CONFIG } from './constants';
 
-// クイズデータ
-export { QUESTIONS } from './questions';
+// ドメインロジック
+export { getDifficultyConfig, calculateGradeWithDifficulty } from './domain/scoring';
+export { checkAchievements } from './domain/achievement';
+export { classifyTeamType } from './team-classifier';
 
-// タグマスタ
-export { TAG_MASTER, VALID_TAG_IDS, TAG_MAP } from './questions/tag-master';
-export type { TagDefinition } from './questions/tag-master';
-
-// ゲームロジック
-export { createEvents, createSprintSummary } from './domain/game';
-export { pickQuestion, computeAnswerResult, computeDebtDelta, nextGameStats } from './domain/quiz';
-export type { AnswerInput } from './domain/quiz';
-export { shuffle, clamp, average, percentage } from '../../utils/math-utils';
-export { classifyTeamType, TEAM_TYPES } from './team-classifier';
-export { getComboColor } from './domain/quiz';
-
-// ジャンル別統計
-export { getTagColor, computeTagStatEntries, getWeakGenres, getWeakGenreIds } from './domain/quiz';
-export type { TagStatEntry } from './domain/quiz';
-
-// ゲーム結果保存
-export { GameResultRepository } from './infrastructure/storage/game-repository';
-
-// 履歴
-export { HistoryRepository, MAX_HISTORY_COUNT } from './infrastructure/storage/history-repository';
-
-// 実績
-export { ACHIEVEMENTS, checkAchievements } from './domain/achievement';
-export { AchievementRepository } from './infrastructure/storage/achievement-repository';
-
-// 難易度
-export { DIFFICULTY_CONFIGS, getDifficultyConfig, calculateGradeWithDifficulty } from './domain/scoring';
-
-// チャレンジモード
-export { ChallengeRepository } from './infrastructure/storage/challenge-repository';
-
-// デイリークイズ
-export * from './daily-quiz';
-
-// キャラクターナラティブ
-export * from './character-narrative';
-
-// セーブ/ロード
-export { SaveRepository } from './infrastructure/storage/save-repository';
-
-// ストーリーデータ
-export { STORY_ENTRIES, getStoriesForSprintCount } from './story-data';
-
-// エンディングストーリーデータ
-export { ENDING_COMMON, ENDING_EPILOGUES, getEndingStories } from './ending-data';
-
-// 勉強会モード
-export { buildStudyPool, countStudyQuestions } from './domain/quiz';
+// 静的データ
+export { getStoriesForSprintCount } from './story-data';
+export { getEndingStories } from './ending-data';
 
 // 音声
-export * from './audio/sound';
-export * from './audio/audio-actions';
+export { createDefaultAudioActions } from './audio/audio-actions';
 
 // フック
-export * from './hooks';
+export { useGame, useCountdown, useFade, useStudy, useChallenge } from './hooks';
 
-// コンポーネント
-export * from './components';
+// インフラストラクチャ(ストレージ)
+export { LocalStorageAdapter } from './infrastructure/storage/local-storage-adapter';
+export { GameResultRepository } from './infrastructure/storage/game-repository';
+export { SaveRepository } from './infrastructure/storage/save-repository';
+export { AchievementRepository } from './infrastructure/storage/achievement-repository';
+export { HistoryRepository } from './infrastructure/storage/history-repository';
+export { ChallengeRepository } from './infrastructure/storage/challenge-repository';
+
+// UI コンポーネント
+export {
+  TitleScreen,
+  SprintStartScreen,
+  QuizScreen,
+  RetrospectiveScreen,
+  ResultScreen,
+  StudySelectScreen,
+  StudyScreen,
+  StudyResultScreen,
+  GuideScreen,
+  StoryScreen,
+  AchievementScreen,
+  AchievementToast,
+  HistoryScreen,
+  ChallengeQuizScreen,
+  ChallengeResultScreen,
+  DailyQuizScreen,
+} from './components';
