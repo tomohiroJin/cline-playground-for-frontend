@@ -5,9 +5,9 @@
 DDD（ドメイン駆動設計）+ クリーンアーキテクチャを採用。
 
 ```
-依存方向: presentation → application → domain ← contracts
-                              ↓
-                        infrastructure
+依存方向: presentation → domain / infrastructure / data
+          infrastructure → domain（型のみ）
+          domain → data（静的データのみ。infrastructure・presentation は参照しない）
 ```
 
 ## ファイル構成
