@@ -23,16 +23,16 @@ function getAllSourceFiles(dir: string): string[] {
   return results;
 }
 
-/** ファイル内の import from パスをすべて抽出 */
+/** ファイル内の import/export ... from と動的 import() のパスをすべて抽出 */
 function extractImportPaths(filePath: string): { line: number; importPath: string }[] {
   const content = fs.readFileSync(filePath, 'utf-8');
-  const lines = content.split('\n');
   const imports: { line: number; importPath: string }[] = [];
-  for (let i = 0; i < lines.length; i++) {
-    // import ... from '...' または export ... from '...' にマッチ
-    const match = lines[i].match(/(?:import|export)\s+.*from\s+['"]([^'"]+)['"]/);
-    if (match) {
-      imports.push({ line: i + 1, importPath: match[1] });
+  // 複数行 import に対応するためファイル全体に対してマッチする
+  const patterns = [/from\s+['"]([^'"]+)['"]/g, /import\s*\(\s*['"]([^'"]+)['"]\s*\)/g];
+  for (const regex of patterns) {
+    for (const match of content.matchAll(regex)) {
+      const line = content.slice(0, match.index).split('\n').length;
+      imports.push({ line, importPath: match[1] });
     }
   }
   return imports;
@@ -155,6 +155,84 @@ describe('アーキテクチャ: 依存方向', () => {
         if (importPath === 'react' || importPath.startsWith('react/')) {
           violations.push(`${path.relative(FEATURE_ROOT, file)}:${line}`);
         }
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+});
+
+describe('アーキテクチャ: 構造統一(2026-06 リファクタリング)', () => {
+  it('Feature 直下に index.ts と README.md 以外のファイルが存在しないこと', () => {
+    const ALLOWED_FILES = ['index.ts', 'README.md'];
+    const ALLOWED_DIRS = [
+      '__tests__',
+      'constants',
+      'data',
+      'doc',
+      'domain',
+      'infrastructure',
+      'presentation',
+    ];
+    const violations: string[] = [];
+    for (const entry of fs.readdirSync(FEATURE_ROOT, { withFileTypes: true })) {
+      if (entry.isDirectory()) {
+        if (!ALLOWED_DIRS.includes(entry.name)) violations.push(`${entry.name}/`);
+      } else if (!ALLOWED_FILES.includes(entry.name)) {
+        violations.push(entry.name);
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+
+  it('廃止済みの旧配置パスへのインポートが存在しないこと', () => {
+    // 構造統一前のルート直下モジュール(移設済み)
+    const REMOVED_ROOT_MODULES = [
+      'components',
+      'hooks',
+      'audio',
+      'questions',
+      'story-data',
+      'ending-data',
+      'character-profiles',
+      'character-narrative',
+      'character-reactions',
+      'character-genre-map',
+      'daily-quiz',
+      'team-classifier',
+      'images',
+    ];
+    const removedAbsolute = REMOVED_ROOT_MODULES.map((m) => path.join(FEATURE_ROOT, m));
+    const allFiles = getAllSourceFiles(FEATURE_ROOT)
+      .filter((f) => !f.endsWith('architecture.test.ts'));
+    const violations: string[] = [];
+    for (const file of allFiles) {
+      const imports = extractImportPaths(file);
+      for (const { line, importPath } of imports) {
+        if (!importPath.startsWith('.')) continue;
+        const resolved = path.resolve(path.dirname(file), importPath);
+        if (removedAbsolute.includes(resolved)) {
+          violations.push(`${path.relative(FEATURE_ROOT, file)}:${line} → ${importPath}`);
+        }
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+
+  it('ページから Feature 内部への深いインポートが存在しないこと', () => {
+    const pagePath = path.resolve(FEATURE_ROOT, '../../pages/AgileQuizSugorokuPage.tsx');
+    const violations = extractImportPaths(pagePath)
+      .filter(({ importPath }) => importPath.includes('features/agile-quiz-sugoroku/'))
+      .map(({ line, importPath }) => `${line}: ${importPath}`);
+    expect(violations).toEqual([]);
+  });
+
+  it('presentation/ 直下が components / hooks / styles のみであること', () => {
+    const presentationRoot = path.join(FEATURE_ROOT, 'presentation');
+    const ALLOWED = ['components', 'hooks', 'styles'];
+    const violations: string[] = [];
+    for (const entry of fs.readdirSync(presentationRoot, { withFileTypes: true })) {
+      if (!entry.isDirectory() || !ALLOWED.includes(entry.name)) {
+        violations.push(entry.isDirectory() ? `${entry.name}/` : entry.name);
       }
     }
     expect(violations).toEqual([]);

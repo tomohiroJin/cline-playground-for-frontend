@@ -21,18 +21,18 @@
 
 | カテゴリ | ファイル | 問題数 |
 |----------|---------|--------|
-| プランニング | `questions/planning.json` | 42問 |
-| 実装1 | `questions/impl1.json` | 42問 |
-| テスト1 | `questions/test1.json` | 37問 |
-| リファインメント | `questions/refinement.json` | 37問 |
-| 実装2 | `questions/impl2.json` | 37問 |
-| テスト2 | `questions/test2.json` | 37問 |
-| レビュー | `questions/review.json` | 37問 |
-| 緊急対応 | `questions/emergency.json` | 37問 |
+| プランニング | `data/questions/planning.json` | 42問 |
+| 実装1 | `data/questions/impl1.json` | 42問 |
+| テスト1 | `data/questions/test1.json` | 37問 |
+| リファインメント | `data/questions/refinement.json` | 37問 |
+| 実装2 | `data/questions/impl2.json` | 37問 |
+| テスト2 | `data/questions/test2.json` | 37問 |
+| レビュー | `data/questions/review.json` | 37問 |
+| 緊急対応 | `data/questions/emergency.json` | 37問 |
 
 ## 16ジャンル（タグ）一覧
 
-タグマスタ定義は `questions/tag-master.ts` に格納:
+タグマスタ定義は `data/questions/tag-master.ts` に格納:
 
 1. スクラム
 2. アジャイル

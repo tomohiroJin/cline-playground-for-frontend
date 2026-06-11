@@ -1,16 +1,15 @@
 /**
- * プレゼンテーション層フック（再エクスポート）
- *
- * 実体は ../../hooks/ に配置。
- * presentation/hooks/ からのインポートを可能にする。
+ * Agile Quiz Sugoroku - フックのエクスポート
  */
-export { useGame } from '../../hooks';
-export type { UseGameReturn } from '../../hooks';
-export { gameReducer, createInitialGameState } from '../../hooks';
-export type { GameState, GameAction } from '../../hooks';
-export { useCountdown } from '../../hooks';
-export { useFade } from '../../hooks';
-export { useKeys } from '../../hooks';
-export { useStudy } from '../../hooks';
-export type { UseStudyReturn } from '../../hooks';
-export { useChallenge } from '../../hooks';
+export { useGame } from './useGame';
+export type { UseGameReturn } from './useGame';
+export { gameReducer, createInitialGameState } from './useGameReducer';
+export type { GameState, GameAction } from './useGameReducer';
+export { useCountdown } from './useCountdown';
+export { useFade } from './useFade';
+export { useKeys } from './useKeys';
+export { useStudy } from './useStudy';
+export type { UseStudyReturn } from './useStudy';
+export { useChallenge } from './useChallenge';
+export { useQuizFeedback } from './useQuizFeedback';
+export { useQuizKeys } from './useQuizKeys';

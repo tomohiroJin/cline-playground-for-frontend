@@ -23,7 +23,7 @@ jest.mock('tone', () => ({
 }));
 
 import { renderHook, act } from '@testing-library/react';
-import { useGame } from '../hooks/useGame';
+import { useGame } from '../presentation/hooks/useGame';
 import { INITIAL_GAME_STATS } from '../constants';
 
 describe('useGame', () => {

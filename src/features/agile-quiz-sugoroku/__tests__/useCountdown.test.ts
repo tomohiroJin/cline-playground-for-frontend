@@ -23,7 +23,7 @@ jest.mock('tone', () => ({
 }));
 
 import { renderHook, act } from '@testing-library/react';
-import { useCountdown } from '../hooks/useCountdown';
+import { useCountdown } from '../presentation/hooks/useCountdown';
 
 describe('useCountdown', () => {
   beforeEach(() => {

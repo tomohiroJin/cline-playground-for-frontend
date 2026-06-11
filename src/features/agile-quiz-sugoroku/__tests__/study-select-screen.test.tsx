@@ -19,7 +19,7 @@ jest.mock('tone', () => ({
 
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { StudySelectScreen } from '../components/StudySelectScreen';
+import { StudySelectScreen } from '../presentation/components/screens/StudySelectScreen';
 import { CHARACTER_GENRE_MAP } from '../domain/narrative/character-genre-map';
 import { TAG_MASTER } from '../data/questions/tag-master';
 

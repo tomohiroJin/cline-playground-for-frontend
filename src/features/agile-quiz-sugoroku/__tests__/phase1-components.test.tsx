@@ -39,25 +39,25 @@ import { GameEvent } from '../domain/types';
 
 describe('新規アニメーション定義', () => {
   it('フラッシュアニメーションがエクスポートされる', async () => {
-    const animations = await import('../components/styles/animations');
+    const animations = await import('../presentation/styles/animations');
     expect(animations.greenFlash).toBeDefined();
     expect(animations.redFlash).toBeDefined();
     expect(animations.grayOut).toBeDefined();
   });
 
   it('バウンスとシェイクアニメーションがエクスポートされる', async () => {
-    const animations = await import('../components/styles/animations');
+    const animations = await import('../presentation/styles/animations');
     expect(animations.bounceIn).toBeDefined();
     expect(animations.shakeX).toBeDefined();
   });
 
   it('フロートアップアニメーションがエクスポートされる', async () => {
-    const animations = await import('../components/styles/animations');
+    const animations = await import('../presentation/styles/animations');
     expect(animations.floatUp).toBeDefined();
   });
 
   it('コンボ段階別アニメーションがエクスポートされる', async () => {
-    const animations = await import('../components/styles/animations');
+    const animations = await import('../presentation/styles/animations');
     expect(animations.comboFire).toBeDefined();
     expect(animations.comboLightning).toBeDefined();
     expect(animations.comboRainbow).toBeDefined();
@@ -65,26 +65,26 @@ describe('新規アニメーション定義', () => {
   });
 
   it('ボード関連アニメーションがエクスポートされる', async () => {
-    const animations = await import('../components/styles/animations');
+    const animations = await import('../presentation/styles/animations');
     expect(animations.slideMove).toBeDefined();
     expect(animations.emergencyBlink).toBeDefined();
   });
 
   it('吹き出しアニメーションがエクスポートされる', async () => {
-    const animations = await import('../components/styles/animations');
+    const animations = await import('../presentation/styles/animations');
     expect(animations.bubbleFadeIn).toBeDefined();
     expect(animations.bubbleFadeOut).toBeDefined();
   });
 
   it('タイプライターカーソルがエクスポートされる', async () => {
-    const animations = await import('../components/styles/animations');
+    const animations = await import('../presentation/styles/animations');
     expect(animations.typewriterCursor).toBeDefined();
   });
 });
 
 // ── B. SugorokuBoard コンポーネントテスト ───────────────────
 
-import { SugorokuBoard } from '../components/SugorokuBoard';
+import { SugorokuBoard } from '../presentation/components/SugorokuBoard';
 
 const mockEvents: GameEvent[] = [
   { id: 'planning', name: 'プランニング', icon: '📋', description: '計画', color: '#4d9fff' },
@@ -123,7 +123,7 @@ describe('SugorokuBoard', () => {
 
 // ── C. FlashOverlay コンポーネントテスト ────────────────────
 
-import { FlashOverlay } from '../components/FlashOverlay';
+import { FlashOverlay } from '../presentation/components/FlashOverlay';
 
 describe('FlashOverlay', () => {
   it('typeが"correct"の場合に表示される', () => {
@@ -149,7 +149,7 @@ describe('FlashOverlay', () => {
 
 // ── D. ScoreFloat コンポーネントテスト ──────────────────────
 
-import { ScoreFloat } from '../components/ScoreFloat';
+import { ScoreFloat } from '../presentation/components/ScoreFloat';
 
 describe('ScoreFloat', () => {
   it('スコアテキストが表示される', () => {
@@ -165,7 +165,7 @@ describe('ScoreFloat', () => {
 
 // ── E. ComboEffect コンポーネントテスト ─────────────────────
 
-import { ComboEffect } from '../components/ComboEffect';
+import { ComboEffect } from '../presentation/components/ComboEffect';
 
 describe('ComboEffect', () => {
   it('コンボ2以上でコンボ表示される', () => {
@@ -197,7 +197,7 @@ describe('ComboEffect', () => {
 
 // ── F. CharacterReaction コンポーネントテスト ────────────────
 
-import { CharacterReaction } from '../components/CharacterReaction';
+import { CharacterReaction } from '../presentation/components/CharacterReaction';
 
 describe('CharacterReaction', () => {
   it('situationが指定されると3体のキャラアバターが表示される', () => {

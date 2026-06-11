@@ -4,16 +4,16 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { AchievementScreen } from '../components/AchievementScreen';
-import { HistoryScreen } from '../components/HistoryScreen';
-import { DifficultySelector } from '../components/DifficultySelector';
-import { ChallengeResultScreen } from '../components/ChallengeResultScreen';
-import { LineChart } from '../components/LineChart';
-import { AchievementToast } from '../components/AchievementToast';
+import { AchievementScreen } from '../presentation/components/screens/AchievementScreen';
+import { HistoryScreen } from '../presentation/components/screens/HistoryScreen';
+import { DifficultySelector } from '../presentation/components/DifficultySelector';
+import { ChallengeResultScreen } from '../presentation/components/screens/ChallengeResultScreen';
+import { LineChart } from '../presentation/components/LineChart';
+import { AchievementToast } from '../presentation/components/AchievementToast';
 import { AchievementDefinition } from '../domain/types';
 
 // styled-components 対応のモック
-jest.mock('../components/ParticleEffect', () => ({
+jest.mock('../presentation/components/ParticleEffect', () => ({
   ParticleEffect: () => null,
 }));
 
