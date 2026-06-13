@@ -15,6 +15,9 @@ import type {
   SaveState,
 } from '../../domain/types';
 import { AudioActions, createDefaultAudioActions } from '../../infrastructure/audio/audio-actions';
+import { SettingsRepository } from '../../infrastructure/storage/settings-repository';
+import { LocalStorageAdapter } from '../../infrastructure/storage/local-storage-adapter';
+import { setSoundEnabled } from '../../infrastructure/audio/sound';
 import { shuffle, average, percentage, clamp } from '../../../../utils/math-utils';
 import { pickQuestion } from '../../domain/quiz';
 import { createEvents, createSprintSummary } from '../../domain/game';
@@ -111,6 +114,12 @@ export function useGame(audio?: AudioActions): UseGameReturn {
   useEffect(() => {
     if (audio) sfxRef.current = audio;
   }, [audio]);
+
+  // マウント時に保存済みサウンド設定を音声システムに反映する
+  useEffect(() => {
+    const settings = new SettingsRepository(new LocalStorageAdapter()).load();
+    setSoundEnabled(settings.soundEnabled);
+  }, []);
 
   const [state, dispatch] = useReducer(gameReducer, undefined, createInitialGameState);
 
