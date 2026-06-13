@@ -2,7 +2,7 @@
  * 保存完了トーストコンポーネント
  */
 import React from 'react';
-import { COLORS } from '../../constants';
+import { DESIGN_TOKENS } from '../styles/design-tokens';
 
 interface SaveToastProps {
   visible: boolean;
@@ -15,13 +15,13 @@ export const SaveToast: React.FC<SaveToastProps> = ({ visible }) => {
   return (
     <div style={{
       position: 'fixed',
-      bottom: 24,
+      bottom: DESIGN_TOKENS.spacing.lg,
       left: '50%',
       transform: 'translateX(-50%)',
-      background: COLORS.green,
+      background: DESIGN_TOKENS.colors.secondary,
       color: '#fff',
       padding: '10px 24px',
-      borderRadius: 8,
+      borderRadius: DESIGN_TOKENS.borderRadius.md,
       fontSize: 13,
       fontWeight: 700,
       zIndex: 1000,

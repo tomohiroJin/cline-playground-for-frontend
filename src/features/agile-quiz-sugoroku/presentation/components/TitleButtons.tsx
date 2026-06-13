@@ -3,6 +3,7 @@
  */
 import React from 'react';
 import { COLORS } from '../../constants';
+import { DESIGN_TOKENS } from '../styles/design-tokens';
 import type { SaveState } from '../../domain/types';
 import { Button, HotkeyHint } from '../styles';
 
@@ -29,7 +30,7 @@ export const TitleButtons: React.FC<TitleButtonsProps> = ({
 }) => {
   const { onResume, onStudy, onGuide, onAchievements, onHistory, onChallenge, onDailyQuiz } = navigation;
   return (
-  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, marginTop: 4 }}>
+  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, marginTop: DESIGN_TOKENS.spacing.xs }}>
     {saveState && onResume && (
       <Button
         $color={COLORS.yellow}
@@ -48,7 +49,7 @@ export const TitleButtons: React.FC<TitleButtonsProps> = ({
       ▶ Sprint Start
       <HotkeyHint>[Enter]</HotkeyHint>
     </Button>
-    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+    <div style={{ display: 'flex', gap: DESIGN_TOKENS.spacing.sm, flexWrap: 'wrap', justifyContent: 'center' }}>
       {onChallenge && (
         <Button $color={COLORS.red} onClick={onChallenge} style={{ padding: '10px 32px', fontSize: 12 }}>
           Challenge
@@ -60,7 +61,7 @@ export const TitleButtons: React.FC<TitleButtonsProps> = ({
         </Button>
       )}
     </div>
-    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+    <div style={{ display: 'flex', gap: DESIGN_TOKENS.spacing.sm, flexWrap: 'wrap', justifyContent: 'center' }}>
       {onStudy && (
         <Button $color={COLORS.accent} onClick={onStudy} style={{ padding: '10px 20px', fontSize: 12 }}>
           勉強会モード

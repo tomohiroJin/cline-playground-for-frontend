@@ -68,7 +68,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
   const [difficulty, setDifficulty] = useState<Difficulty>('normal');
   const [showOverwriteConfirm, setShowOverwriteConfirm] = useState(false);
   /** サウンド有効フラグ（保存済み設定から初期化） */
-  const [soundOn, setSoundOn] = useState<boolean>(() => settingsRepo.load().soundEnabled);
+  const [isSoundOn, setIsSoundOn] = useState<boolean>(() => settingsRepo.load().soundEnabled);
 
   const lastResult = useMemo(() => gameResultRepo.load(), []);
   const saveState = useMemo(() => saveRepo.load(), []);
@@ -76,11 +76,11 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
 
   /** サウンドの ON/OFF を切り替えて永続化する */
   const handleToggleSound = useCallback(() => {
-    const next = !soundOn;
-    setSoundOn(next);
+    const next = !isSoundOn;
+    setIsSoundOn(next);
     settingsRepo.setSoundEnabled(next);
     setSoundEnabled(next);
-  }, [soundOn]);
+  }, [isSoundOn]);
 
   const handleResume = () => {
     if (saveState && onResume) {
@@ -189,8 +189,8 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
           <button
             type="button"
             onClick={handleToggleSound}
-            aria-pressed={soundOn}
-            aria-label={`サウンド ${soundOn ? 'オン' : 'オフ'}`}
+            aria-pressed={isSoundOn}
+            aria-label={`サウンド ${isSoundOn ? 'オン' : 'オフ'}`}
             style={{
               background: 'transparent',
               border: `1px solid ${DESIGN_TOKENS.colors.textMuted}`,
@@ -201,7 +201,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
               fontSize: DESIGN_TOKENS.fontSize.sm,
             }}
           >
-            {soundOn ? '🔊 サウンド: オン' : '🔇 サウンド: オフ'}
+            {isSoundOn ? '🔊 サウンド: オン' : '🔇 サウンド: オフ'}
           </button>
         </div>
 

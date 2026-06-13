@@ -3,7 +3,7 @@
  * SprintStartScreen / RetrospectiveScreen で共用
  */
 import React from 'react';
-import { COLORS } from '../../constants';
+import { DESIGN_TOKENS } from '../styles/design-tokens';
 
 interface NarrativeCommentProps {
   /** キャラクター画像の URL */
@@ -22,9 +22,9 @@ export const NarrativeComment: React.FC<NarrativeCommentProps> = ({ characterIma
     gap: 10,
     padding: '10px 14px',
     marginBottom: 14,
-    background: `${COLORS.accent}08`,
-    borderRadius: 8,
-    border: `1px solid ${COLORS.accent}18`,
+    background: `${DESIGN_TOKENS.colors.primary}08`,
+    borderRadius: DESIGN_TOKENS.borderRadius.md,
+    border: `1px solid ${DESIGN_TOKENS.colors.primary}18`,
   }}>
     {characterImage ? (
       <img
@@ -33,7 +33,7 @@ export const NarrativeComment: React.FC<NarrativeCommentProps> = ({ characterIma
         style={{
           width: 40,
           height: 40,
-          borderRadius: '50%',
+          borderRadius: DESIGN_TOKENS.borderRadius.round,
           objectFit: 'cover',
           flexShrink: 0,
         }}
@@ -42,8 +42,8 @@ export const NarrativeComment: React.FC<NarrativeCommentProps> = ({ characterIma
       <div style={{
         width: 40,
         height: 40,
-        borderRadius: '50%',
-        background: `${COLORS.accent}15`,
+        borderRadius: DESIGN_TOKENS.borderRadius.round,
+        background: `${DESIGN_TOKENS.colors.primary}15`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -54,8 +54,8 @@ export const NarrativeComment: React.FC<NarrativeCommentProps> = ({ characterIma
       </div>
     )}
     <div style={{
-      fontSize: 12,
-      color: COLORS.text,
+      fontSize: DESIGN_TOKENS.fontSize.xs,
+      color: DESIGN_TOKENS.colors.textPrimary,
       lineHeight: 1.5,
     }}>
       {text}
