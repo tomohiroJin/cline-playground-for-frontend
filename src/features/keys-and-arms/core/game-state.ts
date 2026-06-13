@@ -59,7 +59,7 @@ export function createInitialGameState(
     cav: {},
     sparks: [], dust: [], feathers: [], smoke: [], stepDust: [], keySpk: [], cavDrips: [],
     grs: {},
-    grsSlash: [], grsDead: [], grsGrass: [], grsDust: [],
+    grsSlash: [], grsDead: [], grsGrass: [],
     grsLaneFlash: [], grsMiss: [],
     bos: {},
     bosParticles: [], bosShieldBreak: [], bosArmTrail: [],

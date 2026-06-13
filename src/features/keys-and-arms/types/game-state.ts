@@ -133,7 +133,6 @@ export interface GameState {
   grsSlash: Array<{ lane: number; life: number; hit: boolean }>;
   grsDead: Particle[];
   grsGrass: GrassParticle[];
-  grsDust: Particle[];
   grsLaneFlash: Array<{ lane: number; life: number }>;
   grsMiss: Array<{ lane: number; life: number }>;
 

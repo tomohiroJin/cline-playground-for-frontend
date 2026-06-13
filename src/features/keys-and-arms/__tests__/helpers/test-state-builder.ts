@@ -241,7 +241,6 @@ export class GameStateBuilder {
       grsSlash: [],
       grsDead: [],
       grsGrass: [],
-      grsDust: [],
       grsLaneFlash: [],
       grsMiss: [],
 
