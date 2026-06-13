@@ -16,6 +16,7 @@ export interface TitleNavigation {
   onHistory?: () => void;
   onChallenge?: () => void;
   onDailyQuiz?: () => void;
+  onReview?: () => void;
 }
 
 interface TitleButtonsProps {
@@ -28,7 +29,7 @@ interface TitleButtonsProps {
 export const TitleButtons: React.FC<TitleButtonsProps> = ({
   saveState, onNewGame, formatSaveDate, navigation,
 }) => {
-  const { onResume, onStudy, onGuide, onAchievements, onHistory, onChallenge, onDailyQuiz } = navigation;
+  const { onResume, onStudy, onGuide, onAchievements, onHistory, onChallenge, onDailyQuiz, onReview } = navigation;
   return (
   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, marginTop: DESIGN_TOKENS.spacing.xs }}>
     {saveState && onResume && (
@@ -65,6 +66,11 @@ export const TitleButtons: React.FC<TitleButtonsProps> = ({
       {onStudy && (
         <Button $color={COLORS.accent} onClick={onStudy} style={{ padding: '10px 20px', fontSize: 12 }}>
           勉強会モード
+        </Button>
+      )}
+      {onReview && (
+        <Button $color={COLORS.accent} onClick={onReview} style={{ padding: '10px 20px', fontSize: 12 }}>
+          復習
         </Button>
       )}
       {onAchievements && (
