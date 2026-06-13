@@ -12,6 +12,7 @@ import {
   OptionText,
   OptionIcon,
 } from '../../../styles';
+import { SR_ONLY_STYLE } from '../../../styles/sr-only';
 
 interface OptionsPanelProps {
   /** 問題データ */
@@ -23,16 +24,6 @@ interface OptionsPanelProps {
   /** 回答時のコールバック */
   onAnswer: (optionIndex: number) => void;
 }
-
-/** aria-live リージョンをビジュアル非表示にするスタイル（スクリーンリーダーには読まれる） */
-const srOnlyStyle: React.CSSProperties = {
-  position: 'absolute',
-  width: 1,
-  height: 1,
-  overflow: 'hidden',
-  clip: 'rect(0 0 0 0)',
-  whiteSpace: 'nowrap',
-};
 
 /**
  * 選択肢パネル
@@ -56,7 +47,7 @@ export const OptionsPanel: React.FC<OptionsPanelProps> = ({
   return (
     <>
       {/* スクリーンリーダー向け回答フィードバック */}
-      <div role="status" aria-live="polite" style={srOnlyStyle}>
+      <div role="status" aria-live="polite" style={SR_ONLY_STYLE}>
         {feedbackMessage}
       </div>
       <OptionsContainer role="radiogroup" aria-label="回答の選択肢">
