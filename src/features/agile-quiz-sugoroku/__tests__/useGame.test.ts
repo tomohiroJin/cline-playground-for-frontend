@@ -25,6 +25,14 @@ jest.mock('tone', () => ({
 import { renderHook, act } from '@testing-library/react';
 import { useGame } from '../presentation/hooks/useGame';
 import { INITIAL_GAME_STATS } from '../constants';
+import { WrongAnswerRepository } from '../infrastructure/storage/wrong-answer-repository';
+import { LocalStorageAdapter } from '../infrastructure/storage/local-storage-adapter';
+import { makeQuestionKey } from '../domain/quiz';
+
+/** 各テスト前に localStorage をクリアして誤答記録が汚染しないようにする */
+beforeEach(() => {
+  localStorage.clear();
+});
 
 describe('useGame', () => {
   // ── init ───────────────────────────────────
@@ -387,6 +395,92 @@ describe('useGame', () => {
 
       expect(result.current.derived.correctRate).toBe(100); // 1/1 = 100%
       expect(result.current.derived.averageSpeed).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  // ── 誤答自動記録 ────────────────────────────────
+
+  describe('誤答自動記録 - WrongAnswerRepository との連携', () => {
+    it('game フェーズで不正解のとき誤答が LocalStorage に記録される', () => {
+      const { result } = renderHook(() => useGame());
+
+      act(() => {
+        result.current.init();
+      });
+
+      // phase を 'game' に設定してからスプリントを開始する
+      act(() => {
+        result.current.setPhase('game');
+      });
+
+      act(() => {
+        result.current.begin(0, result.current.stats, result.current.usedQuestions);
+      });
+
+      const quiz = result.current.quiz!;
+      const wrongAnswer = (quiz.answer + 1) % 4;
+
+      act(() => {
+        result.current.answer(wrongAnswer);
+      });
+
+      const repo = new WrongAnswerRepository(new LocalStorageAdapter());
+      const key = makeQuestionKey(quiz);
+      expect(repo.loadAll().some((e) => e.key === key)).toBe(true);
+    });
+
+    it('game フェーズで正解のとき事前に記録した誤答が LocalStorage から除去される', () => {
+      const { result } = renderHook(() => useGame());
+
+      act(() => {
+        result.current.init();
+      });
+
+      act(() => {
+        result.current.setPhase('game');
+      });
+
+      act(() => {
+        result.current.begin(0, result.current.stats, result.current.usedQuestions);
+      });
+
+      // 1問目を事前に誤答として記録しておく
+      const quiz = result.current.quiz!;
+      const repo = new WrongAnswerRepository(new LocalStorageAdapter());
+      repo.record(quiz, Date.now());
+      const key = makeQuestionKey(quiz);
+      expect(repo.loadAll().some((e) => e.key === key)).toBe(true);
+
+      // 正解で答えると記録が除去される
+      act(() => {
+        result.current.answer(quiz.answer);
+      });
+
+      expect(repo.loadAll().some((e) => e.key === key)).toBe(false);
+    });
+
+    it('title フェーズで回答しても誤答は記録されない', () => {
+      const { result } = renderHook(() => useGame());
+
+      act(() => {
+        result.current.init();
+      });
+
+      // phase は 'title'（init 後のデフォルト）のまま begin する
+      act(() => {
+        result.current.begin(0, result.current.stats, result.current.usedQuestions);
+      });
+
+      const quiz = result.current.quiz!;
+      const wrongAnswer = (quiz.answer + 1) % 4;
+
+      act(() => {
+        result.current.answer(wrongAnswer);
+      });
+
+      const repo = new WrongAnswerRepository(new LocalStorageAdapter());
+      const key = makeQuestionKey(quiz);
+      expect(repo.loadAll().some((e) => e.key === key)).toBe(false);
     });
   });
 });
