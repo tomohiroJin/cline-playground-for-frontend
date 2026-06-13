@@ -84,6 +84,14 @@ export const OptionButton = styled.button<{
     padding: 12px 14px;
     font-size: 14px;
   }
+
+  /* アニメーション軽減設定: ホバー変形・トランジションを無効化 */
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+    &:hover {
+      transform: none;
+    }
+  }
 `;
 
 export const OptionLabel = styled.span<{
@@ -124,6 +132,11 @@ export const OptionIcon = styled.span`
   font-size: 16px;
   flex-shrink: 0;
   animation: ${popIn} 0.3s ease;
+
+  /* アニメーション軽減設定: popIn アニメーションを無効化 */
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
 `;
 
 /* ================================
@@ -182,6 +195,11 @@ export const ResultBanner = styled.div<{ $ok?: boolean }>`
   @media (max-width: ${breakpoints.mobile}) {
     padding: 12px 14px;
     letter-spacing: 0.5px;
+  }
+
+  /* アニメーション軽減設定: fadeSlideIn アニメーションを無効化 */
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
   }
 `;
 
