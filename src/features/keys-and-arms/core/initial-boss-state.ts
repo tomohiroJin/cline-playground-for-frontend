@@ -15,7 +15,7 @@ export function createInitialBossState(): BossState {
     armBaseSpd: 0, armSpdVar: 0,
     armRest: [], armBaseRest: 0, armRestVar: 0,
     armBeat: [], armResting: [], armRestT: [], armWarn: [],
-    shields: 0, hurtCD: 0, moveCD: 0, won: false, wonT: 0, walkT: 0, prevPos: -1,
+    shields: 0, hurtCD: 0, moveCD: 0, won: false, wonT: 0, walkT: 0, prevPos: 0,
     stealAnim: [-1, 0], placeAnim: [-1, 0], shieldAnim: [-1, 0],
     bossAnger: 0, bossPulse: 0, bossBreath: 0,
     counterCD: 0, counterFlash: [-1, 0], rageWave: 0, quake: 0,

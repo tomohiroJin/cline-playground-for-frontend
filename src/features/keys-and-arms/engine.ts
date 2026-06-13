@@ -121,7 +121,7 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
             if (J(k)) { G.cheatBuf += k; if (G.cheatBuf.length > 10) G.cheatBuf = G.cheatBuf.slice(-10); }
           }
           if (J('arrowup')) { G.state = 'help'; G.helpPage = 0; clearJ(); break; }
-          if (jAct() || J('enter')) { audio.S.start(); titleScreen.startGame(); }
+          if (jAct() || J('enter')) { audio.S.start(); nav.startGame(); }
           break;
         case 'help': helpScreen.update(); break;
         case 'over': case 'trueEnd': case 'ending1': break;
