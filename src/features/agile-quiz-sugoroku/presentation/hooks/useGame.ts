@@ -24,6 +24,9 @@ import { createEvents, createSprintSummary } from '../../domain/game';
 import { QUESTIONS } from '../../data/questions';
 import { gameReducer, createInitialGameState } from './useGameReducer';
 
+/** 設定リポジトリ（モジュールスコープシングルトン） */
+const settingsRepo = new SettingsRepository(new LocalStorageAdapter());
+
 export interface UseGameReturn {
   /** 現在のフェーズ */
   phase: GamePhase;
@@ -117,7 +120,7 @@ export function useGame(audio?: AudioActions): UseGameReturn {
 
   // マウント時に保存済みサウンド設定を音声システムに反映する
   useEffect(() => {
-    const settings = new SettingsRepository(new LocalStorageAdapter()).load();
+    const settings = settingsRepo.load();
     setSoundEnabled(settings.soundEnabled);
   }, []);
 

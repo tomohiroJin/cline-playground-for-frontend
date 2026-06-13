@@ -55,9 +55,9 @@
 
 ### サウンド設定
 
-タイトル画面に「サウンド ON/OFF」トグルボタンを追加。設定は `SettingsRepository`（`infrastructure/settings-repository.ts`）が `localStorage` の `aqs_settings` キーに永続化し、起動時に `useGame` フックが読み込んで復元する。
+タイトル画面に「サウンド ON/OFF」トグルボタンを追加。設定は `SettingsRepository`（`infrastructure/storage/settings-repository.ts`）が `localStorage` の `aqs_settings` キーに永続化し、起動時に `useGame` フックが読み込んで復元する。
 
-サウンドの有効/無効は `presentation/sounds/sound.ts` のミュートゲートで制御する。`setSoundEnabled(false)` を呼ぶと内部フラグがオフになり、以降すべての再生関数（SE・BGM）が呼び出しをスキップする。`isSoundEnabled()` で現在の状態を参照できる。
+サウンドの有効/無効は `infrastructure/audio/sound.ts` のミュートゲートで制御する。`setSoundEnabled(false)` を呼ぶと内部フラグがオフになり、以降すべての再生関数（SE・BGM）が呼び出しをスキップする。`isSoundEnabled()` で現在の状態を参照できる。
 
 ### アクセシビリティ（a11y）
 
@@ -66,7 +66,7 @@
 - 選択肢コンテナに `role="radiogroup"`、各選択肢に `role="radio"` + `aria-checked` + `aria-label` を付与
 - 回答後に `aria-live` 領域で正解/不正解フィードバックをスクリーンリーダーに通知
 - タイマー表示に `role="timer"` を設定し、残り 10 秒・5 秒・0 秒の閾値でスクリーンリーダー向けの残り時間通知を行う
-- `Button` コンポーネントに `:focus-visible` フォーカスリングを追加（マウス操作では非表示、キーボード操作時のみ表示）
+- `Button` コンポーネントの `:focus-visible` フォーカスリング（`presentation/styles/common.ts` および `presentation/styles/quiz.ts` に既存定義）を Phase 1 の a11y 強化で活用・検証済み（マウス操作では非表示、キーボード操作時のみ表示）
 - 視覚的に隠しつつスクリーンリーダーには読ませる共通スタイル `SR_ONLY_STYLE` を `presentation/styles/sr-only.ts` に定義。各コンポーネントで再利用する
 
 ### デザイントークン統一
