@@ -55,3 +55,5 @@ export type {
 
 export type { AppSettings } from './app-settings-types';
 export { DEFAULT_APP_SETTINGS } from './app-settings-types';
+
+export type { ReviewEntry } from './review-types';

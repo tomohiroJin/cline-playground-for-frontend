@@ -60,4 +60,7 @@ export const DESIGN_TOKENS = Object.freeze({
 
   /** フォント */
   fonts: Object.freeze({ ...FONTS }),
+
+  /** ブレークポイント */
+  breakpoints: Object.freeze({ mobile: '480px' }),
 });

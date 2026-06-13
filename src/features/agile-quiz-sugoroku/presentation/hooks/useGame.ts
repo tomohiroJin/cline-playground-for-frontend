@@ -17,6 +17,7 @@ import type {
 import { AudioActions, createDefaultAudioActions } from '../../infrastructure/audio/audio-actions';
 import { SettingsRepository } from '../../infrastructure/storage/settings-repository';
 import { LocalStorageAdapter } from '../../infrastructure/storage/local-storage-adapter';
+import { WrongAnswerRepository } from '../../infrastructure/storage/wrong-answer-repository';
 import { setSoundEnabled } from '../../infrastructure/audio/sound';
 import { shuffle, average, percentage, clamp } from '../../../../utils/math-utils';
 import { pickQuestion } from '../../domain/quiz';
@@ -26,6 +27,9 @@ import { gameReducer, createInitialGameState } from './useGameReducer';
 
 /** 設定リポジトリ（モジュールスコープシングルトン） */
 const settingsRepo = new SettingsRepository(new LocalStorageAdapter());
+
+/** 誤答リポジトリ（モジュールスコープシングルトン） */
+const wrongRepo = new WrongAnswerRepository(new LocalStorageAdapter());
 
 export interface UseGameReturn {
   /** 現在のフェーズ */
@@ -195,9 +199,18 @@ export function useGame(audio?: AudioActions): UseGameReturn {
         sfxRef.current.onIncorrectAnswer();
       }
 
+      // 誤答記録：通常ゲームフェーズのみ対象（study/review では循環を避けるため記録しない）
+      if (state.phase === 'game') {
+        if (isCorrect) {
+          wrongRepo.remove(state.quiz);
+        } else {
+          wrongRepo.record(state.quiz, Date.now());
+        }
+      }
+
       return result;
     },
-    [state.quiz, state.events, state.eventIndex],
+    [state.quiz, state.events, state.eventIndex, state.phase],
   );
 
   /** 次のイベントへ進む */

@@ -5,7 +5,7 @@
 import type { AnswerResultWithDetail, TagStats } from './quiz-types';
 
 /** ゲームのフェーズ */
-export type GamePhase = 'title' | 'story' | 'sprint-start' | 'game' | 'retro' | 'ending' | 'result' | 'guide' | 'study-select' | 'study' | 'achievements' | 'history' | 'challenge' | 'challenge-result' | 'daily-quiz';
+export type GamePhase = 'title' | 'story' | 'sprint-start' | 'game' | 'retro' | 'ending' | 'result' | 'guide' | 'study-select' | 'study' | 'achievements' | 'history' | 'challenge' | 'challenge-result' | 'daily-quiz' | 'review-select' | 'review';
 
 /** イベントID */
 export type EventId = 'planning' | 'impl1' | 'test1' | 'refinement' | 'impl2' | 'test2' | 'review' | 'emergency';

@@ -2,12 +2,13 @@
  * Agile Quiz Sugoroku - クイズ関連スタイル
  *
  * クイズ画面の選択肢ボタン、結果バナー、問題テキスト等
+ * モバイル対応: @media (max-width: 480px) ブロックは加算的上書きのみ
  */
 import styled from 'styled-components';
 import { DESIGN_TOKENS } from './design-tokens';
-
-const { colors: COLORS, fonts: FONTS } = DESIGN_TOKENS;
 import { popIn, fadeSlideIn } from './animations';
+
+const { colors: COLORS, fonts: FONTS, breakpoints } = DESIGN_TOKENS;
 
 /* ================================
    選択肢ボタン
@@ -76,6 +77,21 @@ export const OptionButton = styled.button<{
     outline: 2px solid ${COLORS.accent};
     outline-offset: 2px;
   }
+
+  /* モバイル: タップターゲット最小44px・フォントサイズ調整 */
+  @media (max-width: ${breakpoints.mobile}) {
+    min-height: 44px;
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+
+  /* アニメーション軽減設定: ホバー変形・トランジションを無効化 */
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+    &:hover {
+      transform: none;
+    }
+  }
 `;
 
 export const OptionLabel = styled.span<{
@@ -116,6 +132,11 @@ export const OptionIcon = styled.span`
   font-size: 16px;
   flex-shrink: 0;
   animation: ${popIn} 0.3s ease;
+
+  /* アニメーション軽減設定: popIn アニメーションを無効化 */
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
 `;
 
 /* ================================
@@ -138,6 +159,12 @@ export const QuizQuestion = styled.div`
   margin-bottom: 20px;
   color: ${COLORS.text2};
   font-weight: 500;
+
+  /* モバイル: フォントサイズを少し縮小して読みやすくする */
+  @media (max-width: ${breakpoints.mobile}) {
+    font-size: 14px;
+    margin-bottom: 14px;
+  }
 `;
 
 /* ================================
@@ -163,6 +190,17 @@ export const ResultBanner = styled.div<{ $ok?: boolean }>`
   font-family: ${FONTS.mono};
   box-shadow: 0 4px 20px ${({ $ok }) => ($ok ? COLORS.green : COLORS.red)}12;
   animation: ${fadeSlideIn} 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* モバイル: パディングを縮小 */
+  @media (max-width: ${breakpoints.mobile}) {
+    padding: 12px 14px;
+    letter-spacing: 0.5px;
+  }
+
+  /* アニメーション軽減設定: fadeSlideIn アニメーションを無効化 */
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
 `;
 
 export const BannerMessage = styled.div`

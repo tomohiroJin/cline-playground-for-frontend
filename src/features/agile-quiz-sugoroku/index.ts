@@ -23,6 +23,10 @@ export { getDifficultyConfig, calculateGradeWithDifficulty } from './domain/scor
 export { checkAchievements } from './domain/achievement';
 export { classifyTeamType } from './domain/team';
 
+// 復習モード(ドメイン)
+export { buildReviewPool, makeQuestionKey } from './domain/quiz';
+export type { ReviewSource } from './domain/quiz';
+
 // 静的データ
 export { getStoriesForSprintCount } from './data/story-data';
 export { getEndingStories } from './data/ending-data';
@@ -40,6 +44,9 @@ export { SaveRepository } from './infrastructure/storage/save-repository';
 export { AchievementRepository } from './infrastructure/storage/achievement-repository';
 export { HistoryRepository } from './infrastructure/storage/history-repository';
 export { ChallengeRepository } from './infrastructure/storage/challenge-repository';
+export { WrongAnswerRepository } from './infrastructure/storage/wrong-answer-repository';
+export { BookmarkRepository } from './infrastructure/storage/bookmark-repository';
+export { SettingsRepository } from './infrastructure/storage/settings-repository';
 
 // UI コンポーネント
 export {
@@ -59,4 +66,5 @@ export {
   ChallengeQuizScreen,
   ChallengeResultScreen,
   DailyQuizScreen,
+  ReviewSelectScreen,
 } from './presentation/components';

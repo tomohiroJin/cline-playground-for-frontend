@@ -43,6 +43,7 @@ interface TitleScreenProps {
   onHistory?: () => void;
   onChallenge?: () => void;
   onDailyQuiz?: () => void;
+  onReview?: () => void;
 }
 
 /** 機能紹介リスト（スプリント数は動的） */
@@ -62,7 +63,7 @@ function formatSaveDate(timestamp: number): string {
 }
 
 export const TitleScreen: React.FC<TitleScreenProps> = ({
-  onStart, onResume, onStudy, onGuide, onAchievements, onHistory, onChallenge, onDailyQuiz,
+  onStart, onResume, onStudy, onGuide, onAchievements, onHistory, onChallenge, onDailyQuiz, onReview,
 }) => {
   const [sprintCount, setSprintCount] = useState<number>(CONFIG.sprintCount);
   const [difficulty, setDifficulty] = useState<Difficulty>('normal');
@@ -181,6 +182,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             onHistory,
             onChallenge,
             onDailyQuiz,
+            onReview,
           }}
         />
 

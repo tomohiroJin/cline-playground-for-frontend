@@ -1,7 +1,7 @@
 /**
  * Agile Quiz Sugoroku ゲームページ
  */
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 
 import type {
   SprintSummary,
@@ -10,6 +10,7 @@ import type {
   EndingEntry,
   Difficulty,
   AchievementDefinition,
+  ReviewSource,
 } from '../features/agile-quiz-sugoroku';
 import {
   CONFIG,
@@ -31,6 +32,9 @@ import {
   AchievementRepository,
   HistoryRepository,
   ChallengeRepository,
+  WrongAnswerRepository,
+  BookmarkRepository,
+  buildReviewPool,
   TitleScreen,
   SprintStartScreen,
   QuizScreen,
@@ -47,6 +51,7 @@ import {
   ChallengeQuizScreen,
   ChallengeResultScreen,
   DailyQuizScreen,
+  ReviewSelectScreen,
 } from '../features/agile-quiz-sugoroku';
 
 /** 有効な難易度値 */
@@ -64,6 +69,8 @@ const saveRepo = new SaveRepository(storageAdapter);
 const achievementRepo = new AchievementRepository(storageAdapter);
 const historyRepo = new HistoryRepository(storageAdapter);
 const challengeRepo = new ChallengeRepository(storageAdapter);
+const wrongRepo = new WrongAnswerRepository(storageAdapter);
+const bookmarkRepo = new BookmarkRepository(storageAdapter);
 
 /**
  * Agile Quiz Sugoroku ゲームコンポーネント
@@ -71,7 +78,12 @@ const challengeRepo = new ChallengeRepository(storageAdapter);
 const AgileQuizSugorokuPage: React.FC = () => {
   const game = useGame(audio);
   const fade = useFade();
-  const study = useStudy();
+  // 復習モードで正解した問題は誤答リストから除去し「克服の可視化」を成立させる
+  const study = useStudy({
+    onCorrectAnswer: (question) => {
+      if (game.phase === 'review') wrongRepo.remove(question);
+    },
+  });
   const challenge = useChallenge();
 
   // 初回ロード時にマイグレーション実行
@@ -425,6 +437,37 @@ const AgileQuizSugorokuPage: React.FC = () => {
     study.init(studySelectedTags, studyLimit);
   };
 
+  // 復習モードで選択中のソース（もう一度ボタンで再構築するため保持）
+  const [reviewSource, setReviewSource] = useState<ReviewSource | null>(null);
+
+  /**
+   * 復習プールを組み立てて学習フックに渡すヘルパー。
+   * プールが空の場合は遷移せず false を返す（空画面の表示を防ぐ）。
+   */
+  const loadReviewPool = useCallback((source: ReviewSource): boolean => {
+    const pool = buildReviewPool({
+      source,
+      wrong: wrongRepo.loadAll(),
+      bookmarks: bookmarkRepo.loadAll(),
+      allByTag: {}, // タグ別復習は後続タスクで結線
+    });
+    if (pool.length === 0) return false;
+    study.initWithQuestions(pool);
+    return true;
+  }, [study]);
+
+  /** 復習開始（review-select で選択されたソースから出題） */
+  const handleStartReview = useCallback((source: ReviewSource) => {
+    if (!loadReviewPool(source)) return;
+    setReviewSource(source);
+    game.setPhase('review');
+  }, [loadReviewPool, game]);
+
+  /** 復習モードもう一度（同じソースで再構築） */
+  const handleReviewRetry = () => {
+    if (reviewSource) loadReviewPool(reviewSource);
+  };
+
   /** EndingEntry を StoryScreen 用の StoryEntry に変換 */
   const currentEndingAsStory = useMemo((): StoryEntry | undefined => {
     if (game.phase !== 'ending' || endingStories.length === 0) return undefined;
@@ -463,6 +506,7 @@ const AgileQuizSugorokuPage: React.FC = () => {
           onHistory={handleHistory}
           onChallenge={handleChallenge}
           onDailyQuiz={handleDailyQuiz}
+          onReview={() => game.setPhase('review-select')}
         />
       )}
 
@@ -568,6 +612,40 @@ const AgileQuizSugorokuPage: React.FC = () => {
           totalCorrect={study.totalCorrect}
           totalAnswered={study.totalAnswered}
           onRetry={handleStudyRetry}
+          onBack={handleBackToTitle}
+        />
+      )}
+
+      {game.phase === 'review-select' && (
+        <ReviewSelectScreen
+          wrongCount={wrongRepo.loadAll().length}
+          bookmarkCount={bookmarkRepo.loadAll().length}
+          onSelectSource={handleStartReview}
+          onBack={handleBackToTitle}
+        />
+      )}
+
+      {/* 復習モードは勉強会モードの画面を再利用する。終了後はタイトルへ戻る */}
+      {game.phase === 'review' && !study.finished && study.currentQuestion && (
+        <StudyScreen
+          question={study.currentQuestion}
+          currentIndex={study.currentIndex}
+          totalCount={study.questions.length}
+          selectedAnswer={study.selectedAnswer}
+          answered={study.answered}
+          onAnswer={handleStudyAnswer}
+          onNext={handleStudyNext}
+          onFinish={handleStudyFinish}
+        />
+      )}
+
+      {game.phase === 'review' && study.finished && (
+        <StudyResultScreen
+          tagStats={study.tagStats}
+          incorrectQuestions={study.incorrectQuestions}
+          totalCorrect={study.totalCorrect}
+          totalAnswered={study.totalAnswered}
+          onRetry={handleReviewRetry}
           onBack={handleBackToTitle}
         />
       )}

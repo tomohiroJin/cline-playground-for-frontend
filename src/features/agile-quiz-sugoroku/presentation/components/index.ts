@@ -22,4 +22,5 @@ export { DifficultySelector } from './DifficultySelector';
 export { ChallengeQuizScreen } from './screens/ChallengeQuizScreen';
 export { ChallengeResultScreen } from './screens/ChallengeResultScreen';
 export { DailyQuizScreen } from './screens/DailyQuizScreen';
+export { ReviewSelectScreen } from './screens/ReviewSelectScreen';
 export { RelatedTags } from './RelatedTags';

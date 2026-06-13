@@ -2,11 +2,12 @@
  * Agile Quiz Sugoroku - リザルト画面スタイル
  *
  * グレード表示、エンジニアタイプ、チャート、カテゴリ等のリザルト関連コンポーネント
+ * モバイル対応: @media (max-width: 480px) ブロックは加算的上書きのみ
  */
 import styled from 'styled-components';
 import { DESIGN_TOKENS } from './design-tokens';
 
-const { colors: COLORS, fonts: FONTS } = DESIGN_TOKENS;
+const { colors: COLORS, fonts: FONTS, breakpoints } = DESIGN_TOKENS;
 import { gradeReveal, barGrow, radarFill } from './animations';
 
 /* ================================
@@ -51,6 +52,12 @@ export const TypeCard = styled.div<{ $color?: string }>`
   text-align: center;
   border: 1.5px solid ${({ $color }) => $color ?? COLORS.accent}28;
   box-shadow: 0 8px 32px ${({ $color }) => $color ?? COLORS.accent}0a;
+
+  /* モバイル: パディング縮小 */
+  @media (max-width: ${breakpoints.mobile}) {
+    padding: 16px 14px;
+    margin: 10px 0;
+  }
 `;
 
 export const TypeEmoji = styled.div`
@@ -81,6 +88,12 @@ export const TypeDescription = styled.div`
   line-height: 1.8;
   max-width: 340px;
   margin: 0 auto;
+
+  /* モバイル: 最大幅をビューポート幅に合わせる */
+  @media (max-width: ${breakpoints.mobile}) {
+    max-width: 100%;
+    font-size: 12px;
+  }
 `;
 
 /* ================================
@@ -90,6 +103,13 @@ export const TypeDescription = styled.div`
 export const BarChartContainer = styled.div`
   display: flex;
   gap: 10px;
+
+  /* モバイル: ギャップ縮小・横スクロール許容 */
+  @media (max-width: ${breakpoints.mobile}) {
+    gap: 6px;
+    max-width: 100%;
+    overflow-x: auto;
+  }
 `;
 
 export const BarChartItem = styled.div`

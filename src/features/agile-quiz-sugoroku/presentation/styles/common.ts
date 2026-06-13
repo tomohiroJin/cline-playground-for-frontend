@@ -2,11 +2,12 @@
  * Agile Quiz Sugoroku - 共通スタイル
  *
  * 複数の画面で共有されるベースコンポーネント
+ * モバイル対応: @media (max-width: 480px) ブロックは加算的上書きのみ
  */
 import styled, { css } from 'styled-components';
 import { DESIGN_TOKENS } from './design-tokens';
 
-const { colors: COLORS, fonts: FONTS } = DESIGN_TOKENS;
+const { colors: COLORS, fonts: FONTS, breakpoints } = DESIGN_TOKENS;
 import { floatY } from './animations';
 
 /** ページラッパー */
@@ -46,6 +47,12 @@ export const Panel = styled.div<{ $visible?: boolean; $fadeIn?: boolean }>`
     transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
   box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 ${COLORS.glassBorder};
+
+  /* モバイル: パディング縮小でコンテンツが320px幅でも収まるようにする */
+  @media (max-width: ${breakpoints.mobile}) {
+    padding: 20px 16px;
+    border-radius: 14px;
+  }
 `;
 
 /** セクションボックス */
@@ -152,6 +159,21 @@ export const Button = styled.button<{ $color?: string; $disabled?: boolean }>`
   &:focus-visible {
     outline: 2px solid ${COLORS.accent};
     outline-offset: 2px;
+  }
+
+  /* モバイル: タップターゲット最小44px・パディング縮小 */
+  @media (max-width: ${breakpoints.mobile}) {
+    min-height: 44px;
+    padding: 10px 20px;
+    font-size: 12px;
+  }
+
+  /* アニメーション軽減設定: ホバー変形・トランジションを無効化 */
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+    &:hover:not(:disabled) {
+      transform: none;
+    }
   }
 `;
 

@@ -3,12 +3,16 @@
  *
  * スプリント内の各イベントマスを横並びで表示し、
  * 現在位置・完了済み・緊急対応を視覚的に区別する
+ * モバイル対応: @media (max-width: 480px) でセルを縮小
  */
 import React, { useEffect, useRef } from 'react';
 import styled, { css } from 'styled-components';
 import { COLORS, FONTS } from '../../constants';
+import { DESIGN_TOKENS } from '../styles/design-tokens';
 import { GameEvent } from '../../domain/types';
 import { slideMove, emergencyBlink } from '../styles';
+
+const { breakpoints } = DESIGN_TOKENS;
 
 // ── Props 型定義 ─────────────────────────────────────────────
 
@@ -62,6 +66,12 @@ const BoardCell = styled.div<{
   transition: background 0.2s, border-color 0.2s;
   flex-shrink: 0;
 
+  /* モバイル: セルを縮小してボードが画面に収まりやすくする */
+  @media (max-width: ${breakpoints.mobile}) {
+    min-width: 48px;
+    padding: 6px 4px;
+  }
+
   ${({ $done }) =>
     $done &&
     css`
@@ -92,6 +102,11 @@ const BoardCellIcon = styled.div`
   font-size: 20px;
   line-height: 1;
   margin-bottom: 2px;
+
+  /* モバイル: アイコンを縮小 */
+  @media (max-width: ${breakpoints.mobile}) {
+    font-size: 16px;
+  }
 `;
 
 const BoardCellName = styled.div`
@@ -100,6 +115,11 @@ const BoardCellName = styled.div`
   color: ${COLORS.muted};
   white-space: nowrap;
   text-align: center;
+
+  /* モバイル: テキストをさらに縮小 */
+  @media (max-width: ${breakpoints.mobile}) {
+    font-size: 9px;
+  }
 `;
 
 const BoardCheckmark = styled.div`

@@ -1,7 +1,7 @@
 /**
  * 勉強会モード用フック
  */
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { Question, TagStats, AnswerResultWithDetail } from '../../domain/types';
 import { buildStudyPool } from '../../domain/quiz';
 import { LocalStorageAdapter } from '../../infrastructure/storage/local-storage-adapter';
@@ -13,6 +13,15 @@ const STUDY_ACHIEVEMENT_GOAL = 100;
 
 const studyProgressRepo = new StudyProgressRepository(new LocalStorageAdapter());
 const achievementRepo = new AchievementRepository(new LocalStorageAdapter());
+
+/** useStudy のオプション */
+export interface UseStudyOptions {
+  /**
+   * 正解時に呼ばれるコールバック。回答した問題を引数で受け取る。
+   * 復習モードで「克服した誤答を誤答リストから除去する」用途に使う（フェーズ判定は呼び出し側）。
+   */
+  onCorrectAnswer?: (question: Question) => void;
+}
 
 export interface UseStudyReturn {
   /** 問題リスト */
@@ -37,6 +46,8 @@ export interface UseStudyReturn {
   finished: boolean;
   /** 学習を初期化 */
   init: (selectedTags: string[], limit: number) => void;
+  /** 外部の問題配列で学習を初期化（復習モード用） */
+  initWithQuestions: (questions: Question[]) => void;
   /** 回答を処理 */
   answer: (optionIndex: number) => void;
   /** 次の問題へ */
@@ -45,7 +56,11 @@ export interface UseStudyReturn {
   finish: () => void;
 }
 
-export function useStudy(): UseStudyReturn {
+export function useStudy(options: UseStudyOptions = {}): UseStudyReturn {
+  // 最新のコールバックを ref に保持し、answer の useCallback で stale closure を避ける
+  const onCorrectAnswerRef = useRef(options.onCorrectAnswer);
+  onCorrectAnswerRef.current = options.onCorrectAnswer;
+
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
@@ -61,8 +76,8 @@ export function useStudy(): UseStudyReturn {
     return null;
   }, [questions, currentIndex]);
 
-  const init = useCallback((selectedTags: string[], limit: number) => {
-    const pool = buildStudyPool(selectedTags, limit);
+  /** セッション状態を初期化する共通処理。init / initWithQuestions の両者から委譲される（外部非公開）。 */
+  const resetSession = useCallback((pool: Question[]) => {
     setQuestions(pool);
     setCurrentIndex(0);
     setSelectedAnswer(null);
@@ -73,6 +88,15 @@ export function useStudy(): UseStudyReturn {
     setTotalAnswered(0);
     setFinished(false);
   }, []);
+
+  const init = useCallback((selectedTags: string[], limit: number) => {
+    resetSession(buildStudyPool(selectedTags, limit));
+  }, [resetSession]);
+
+  /** 外部の問題配列で学習を初期化する（復習モード用）。buildStudyPool を経由せず渡された配列をそのまま使う。 */
+  const initWithQuestions = useCallback((qs: Question[]) => {
+    resetSession(qs);
+  }, [resetSession]);
 
   const answer = useCallback(
     (optionIndex: number) => {
@@ -91,6 +115,7 @@ export function useStudy(): UseStudyReturn {
 
       if (isCorrect) {
         setTotalCorrect((prev) => prev + 1);
+        onCorrectAnswerRef.current?.(currentQuestion);
       }
 
       // タグ別統計更新
@@ -157,6 +182,7 @@ export function useStudy(): UseStudyReturn {
     totalAnswered,
     finished,
     init,
+    initWithQuestions,
     answer,
     next,
     finish,
