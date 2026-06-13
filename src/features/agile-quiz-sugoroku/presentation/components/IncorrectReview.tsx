@@ -3,9 +3,9 @@
  */
 import React from 'react';
 import { AnswerResultWithDetail } from '../../domain/types';
-import { TAG_MAP } from '../../data/questions/tag-master';
 import { SectionBox, SectionTitle } from '../styles';
 import { DESIGN_TOKENS } from '../styles/design-tokens';
+import { RelatedTags } from './RelatedTags';
 
 interface IncorrectReviewProps {
   questions: AnswerResultWithDetail[];
@@ -43,27 +43,7 @@ export const IncorrectReview: React.FC<IncorrectReviewProps> = ({ questions }) =
                 💡 {q.explanation}
               </div>
             )}
-            {q.tags.length > 0 && (
-              <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
-                {q.tags.map((tagId) => {
-                  const tag = TAG_MAP.get(tagId);
-                  return (
-                    <span
-                      key={tagId}
-                      style={{
-                        fontSize: 9,
-                        padding: '1px 6px',
-                        borderRadius: 3,
-                        background: `${tag?.color ?? DESIGN_TOKENS.colors.primary}15`,
-                        color: tag?.color ?? DESIGN_TOKENS.colors.primary,
-                      }}
-                    >
-                      {tag?.name ?? tagId}
-                    </span>
-                  );
-                })}
-              </div>
-            )}
+            <RelatedTags tags={q.tags} />
           </div>
         ))}
       </div>
