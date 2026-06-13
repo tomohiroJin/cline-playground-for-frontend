@@ -63,8 +63,8 @@ export function useStudy(): UseStudyReturn {
     return null;
   }, [questions, currentIndex]);
 
-  const init = useCallback((selectedTags: string[], limit: number) => {
-    const pool = buildStudyPool(selectedTags, limit);
+  /** セッション状態を初期化する共通処理。init / initWithQuestions の両者から委譲される（外部非公開）。 */
+  const resetSession = useCallback((pool: Question[]) => {
     setQuestions(pool);
     setCurrentIndex(0);
     setSelectedAnswer(null);
@@ -76,18 +76,14 @@ export function useStudy(): UseStudyReturn {
     setFinished(false);
   }, []);
 
+  const init = useCallback((selectedTags: string[], limit: number) => {
+    resetSession(buildStudyPool(selectedTags, limit));
+  }, [resetSession]);
+
   /** 外部の問題配列で学習を初期化する（復習モード用）。buildStudyPool を経由せず渡された配列をそのまま使う。 */
   const initWithQuestions = useCallback((qs: Question[]) => {
-    setQuestions(qs);
-    setCurrentIndex(0);
-    setSelectedAnswer(null);
-    setAnswered(false);
-    setTagStats({});
-    setIncorrectQuestions([]);
-    setTotalCorrect(0);
-    setTotalAnswered(0);
-    setFinished(false);
-  }, []);
+    resetSession(qs);
+  }, [resetSession]);
 
   const answer = useCallback(
     (optionIndex: number) => {

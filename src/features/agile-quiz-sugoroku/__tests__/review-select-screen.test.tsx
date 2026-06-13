@@ -42,6 +42,11 @@ describe('ReviewSelectScreen', () => {
     render(<ReviewSelectScreen wrongCount={0} bookmarkCount={0} onSelectSource={() => undefined} onBack={() => undefined} />);
     expect(screen.getByRole('button', { name: /誤答から復習/ })).toBeDisabled();
   });
+  it('ブックマークが0件のときブックマークボタンのみ無効', () => {
+    render(<ReviewSelectScreen wrongCount={2} bookmarkCount={0} onSelectSource={() => undefined} onBack={() => undefined} />);
+    expect(screen.getByRole('button', { name: /ブックマークから復習/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /誤答から復習/ })).not.toBeDisabled();
+  });
   it('戻るボタンで onBack が呼ばれる', () => {
     const onBack = jest.fn();
     render(<ReviewSelectScreen wrongCount={1} bookmarkCount={0} onSelectSource={() => undefined} onBack={onBack} />);
