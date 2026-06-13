@@ -103,12 +103,12 @@ export const TypeDescription = styled.div`
 export const BarChartContainer = styled.div`
   display: flex;
   gap: 10px;
-  max-width: 100%;
-  overflow-x: auto;
 
-  /* モバイル: ギャップ縮小 */
+  /* モバイル: ギャップ縮小・横スクロール許容 */
   @media (max-width: ${breakpoints.mobile}) {
     gap: 6px;
+    max-width: 100%;
+    overflow-x: auto;
   }
 `;
 
