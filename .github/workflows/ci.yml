@@ -1,8 +1,9 @@
 name: CI
 
 on:
+  # スタック PR（base が main 以外の PR）でも必須チェックが走るよう、
+  # pull_request では base ブランチを限定しない。push は main のみ。
   pull_request:
-    branches: [main]
   push:
     branches: [main]
 
