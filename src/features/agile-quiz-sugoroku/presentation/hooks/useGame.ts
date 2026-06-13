@@ -15,11 +15,17 @@ import type {
   SaveState,
 } from '../../domain/types';
 import { AudioActions, createDefaultAudioActions } from '../../infrastructure/audio/audio-actions';
+import { SettingsRepository } from '../../infrastructure/storage/settings-repository';
+import { LocalStorageAdapter } from '../../infrastructure/storage/local-storage-adapter';
+import { setSoundEnabled } from '../../infrastructure/audio/sound';
 import { shuffle, average, percentage, clamp } from '../../../../utils/math-utils';
 import { pickQuestion } from '../../domain/quiz';
 import { createEvents, createSprintSummary } from '../../domain/game';
 import { QUESTIONS } from '../../data/questions';
 import { gameReducer, createInitialGameState } from './useGameReducer';
+
+/** 設定リポジトリ（モジュールスコープシングルトン） */
+const settingsRepo = new SettingsRepository(new LocalStorageAdapter());
 
 export interface UseGameReturn {
   /** 現在のフェーズ */
@@ -111,6 +117,12 @@ export function useGame(audio?: AudioActions): UseGameReturn {
   useEffect(() => {
     if (audio) sfxRef.current = audio;
   }, [audio]);
+
+  // マウント時に保存済みサウンド設定を音声システムに反映する
+  useEffect(() => {
+    const settings = settingsRepo.load();
+    setSoundEnabled(settings.soundEnabled);
+  }, []);
 
   const [state, dispatch] = useReducer(gameReducer, undefined, createInitialGameState);
 

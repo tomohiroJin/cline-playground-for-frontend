@@ -1,13 +1,16 @@
 /**
  * タイトル画面コンポーネント
  */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useKeys } from '../../hooks';
 import { CONFIG, COLORS, FONTS } from '../../../constants';
 import { AQS_IMAGES } from '../../../data/images';
 import { GameResultRepository } from '../../../infrastructure/storage/game-repository';
 import { SaveRepository } from '../../../infrastructure/storage/save-repository';
+import { SettingsRepository } from '../../../infrastructure/storage/settings-repository';
 import { LocalStorageAdapter } from '../../../infrastructure/storage/local-storage-adapter';
+import { setSoundEnabled } from '../../../infrastructure/audio/sound';
+import { DESIGN_TOKENS } from '../../styles/design-tokens';
 import type { SaveState, Difficulty } from '../../../domain/types';
 import { ParticleEffect } from '../ParticleEffect';
 import { DifficultySelector } from '../DifficultySelector';
@@ -29,6 +32,7 @@ import {
 
 const gameResultRepo = new GameResultRepository(new LocalStorageAdapter());
 const saveRepo = new SaveRepository(new LocalStorageAdapter());
+const settingsRepo = new SettingsRepository(new LocalStorageAdapter());
 
 interface TitleScreenProps {
   onStart: (sprintCount: number, difficulty?: string) => void;
@@ -63,10 +67,20 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
   const [sprintCount, setSprintCount] = useState<number>(CONFIG.sprintCount);
   const [difficulty, setDifficulty] = useState<Difficulty>('normal');
   const [showOverwriteConfirm, setShowOverwriteConfirm] = useState(false);
+  /** サウンド有効フラグ（保存済み設定から初期化） */
+  const [isSoundOn, setIsSoundOn] = useState<boolean>(() => settingsRepo.load().soundEnabled);
 
   const lastResult = useMemo(() => gameResultRepo.load(), []);
   const saveState = useMemo(() => saveRepo.load(), []);
   const features = useMemo(() => makeFeatures(sprintCount), [sprintCount]);
+
+  /** サウンドの ON/OFF を切り替えて永続化する */
+  const handleToggleSound = useCallback(() => {
+    const next = !isSoundOn;
+    setIsSoundOn(next);
+    settingsRepo.setSoundEnabled(next);
+    setSoundEnabled(next);
+  }, [isSoundOn]);
 
   const handleResume = () => {
     if (saveState && onResume) {
@@ -169,6 +183,27 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             onDailyQuiz,
           }}
         />
+
+        {/* サウンド ON/OFF トグル */}
+        <div style={{ textAlign: 'center', marginTop: DESIGN_TOKENS.spacing.md }}>
+          <button
+            type="button"
+            onClick={handleToggleSound}
+            aria-pressed={isSoundOn}
+            aria-label={`サウンド ${isSoundOn ? 'オン' : 'オフ'}`}
+            style={{
+              background: 'transparent',
+              border: `1px solid ${DESIGN_TOKENS.colors.textMuted}`,
+              borderRadius: DESIGN_TOKENS.borderRadius.md,
+              color: DESIGN_TOKENS.colors.textPrimary,
+              padding: `${DESIGN_TOKENS.spacing.xs} ${DESIGN_TOKENS.spacing.md}`,
+              cursor: 'pointer',
+              fontSize: DESIGN_TOKENS.fontSize.sm,
+            }}
+          >
+            {isSoundOn ? '🔊 サウンド: オン' : '🔇 サウンド: オフ'}
+          </button>
+        </div>
 
         {showOverwriteConfirm && (
           <OverwriteConfirmDialog
