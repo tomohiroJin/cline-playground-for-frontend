@@ -78,7 +78,12 @@ const bookmarkRepo = new BookmarkRepository(storageAdapter);
 const AgileQuizSugorokuPage: React.FC = () => {
   const game = useGame(audio);
   const fade = useFade();
-  const study = useStudy();
+  // 復習モードで正解した問題は誤答リストから除去し「克服の可視化」を成立させる
+  const study = useStudy({
+    onCorrectAnswer: (question) => {
+      if (game.phase === 'review') wrongRepo.remove(question);
+    },
+  });
   const challenge = useChallenge();
 
   // 初回ロード時にマイグレーション実行

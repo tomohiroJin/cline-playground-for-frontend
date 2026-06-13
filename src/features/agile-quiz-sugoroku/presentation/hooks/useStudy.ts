@@ -1,7 +1,7 @@
 /**
  * 勉強会モード用フック
  */
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { Question, TagStats, AnswerResultWithDetail } from '../../domain/types';
 import { buildStudyPool } from '../../domain/quiz';
 import { LocalStorageAdapter } from '../../infrastructure/storage/local-storage-adapter';
@@ -13,6 +13,15 @@ const STUDY_ACHIEVEMENT_GOAL = 100;
 
 const studyProgressRepo = new StudyProgressRepository(new LocalStorageAdapter());
 const achievementRepo = new AchievementRepository(new LocalStorageAdapter());
+
+/** useStudy のオプション */
+export interface UseStudyOptions {
+  /**
+   * 正解時に呼ばれるコールバック。回答した問題を引数で受け取る。
+   * 復習モードで「克服した誤答を誤答リストから除去する」用途に使う（フェーズ判定は呼び出し側）。
+   */
+  onCorrectAnswer?: (question: Question) => void;
+}
 
 export interface UseStudyReturn {
   /** 問題リスト */
@@ -47,7 +56,11 @@ export interface UseStudyReturn {
   finish: () => void;
 }
 
-export function useStudy(): UseStudyReturn {
+export function useStudy(options: UseStudyOptions = {}): UseStudyReturn {
+  // 最新のコールバックを ref に保持し、answer の useCallback で stale closure を避ける
+  const onCorrectAnswerRef = useRef(options.onCorrectAnswer);
+  onCorrectAnswerRef.current = options.onCorrectAnswer;
+
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
@@ -102,6 +115,7 @@ export function useStudy(): UseStudyReturn {
 
       if (isCorrect) {
         setTotalCorrect((prev) => prev + 1);
+        onCorrectAnswerRef.current?.(currentQuestion);
       }
 
       // タグ別統計更新
