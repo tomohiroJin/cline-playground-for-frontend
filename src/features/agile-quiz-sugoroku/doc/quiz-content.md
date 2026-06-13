@@ -2,7 +2,7 @@
 
 ## 問題データ概要
 
-- **全306問 + 解説付き**: 各問題に1-2文の簡潔な解説を収録
+- **全445問 + 解説付き**: 各問題に1-2文の簡潔な解説を収録
 - **16ジャンルのタグシステム**: スクラム、テスト、設計原則、CI/CD など幅広い領域をカバー
 - **ジャンル別成績分析**: 結果画面でジャンルごとの正答率を色分け表示、苦手ジャンルを可視化
 
@@ -21,32 +21,37 @@
 
 | カテゴリ | ファイル | 問題数 |
 |----------|---------|--------|
-| プランニング | `data/questions/planning.json` | 42問 |
-| 実装1 | `data/questions/impl1.json` | 42問 |
-| テスト1 | `data/questions/test1.json` | 37問 |
-| リファインメント | `data/questions/refinement.json` | 37問 |
-| 実装2 | `data/questions/impl2.json` | 37問 |
-| テスト2 | `data/questions/test2.json` | 37問 |
-| レビュー | `data/questions/review.json` | 37問 |
-| 緊急対応 | `data/questions/emergency.json` | 37問 |
+| プランニング | `data/questions/planning.json` | 74問 |
+| 実装1 | `data/questions/impl1.json` | 67問 |
+| 実装2 | `data/questions/impl2.json` | 62問 |
+| テスト1 | `data/questions/test1.json` | 52問 |
+| テスト2 | `data/questions/test2.json` | 52問 |
+| リファインメント | `data/questions/refinement.json` | 52問 |
+| レビュー | `data/questions/review.json` | 43問 |
+| 緊急対応 | `data/questions/emergency.json` | 43問 |
+| **合計** | | **445問** |
 
 ## 16ジャンル（タグ）一覧
 
 タグマスタ定義は `data/questions/tag-master.ts` に格納:
 
-1. スクラム
-2. アジャイル
-3. 見積もり
-4. バックログ
-5. 設計原則
-6. デザインパターン
-7. データ構造
-8. プログラミング
-9. テスト
-10. コード品質
-11. CI/CD
-12. リファクタリング
-13. リリース
-14. チーム
-15. インシデント
-16. SRE
+| # | タグ（日本語） | タグキー | 問題数 |
+|---|--------------|---------|--------|
+| 1 | スクラム | `scrum` | 54問 |
+| 2 | アジャイル | `agile` | 25問 |
+| 3 | 見積もり | `estimation` | 24問 |
+| 4 | バックログ | `backlog` | 48問 |
+| 5 | 設計原則 | `design-principles` | 26問 |
+| 6 | デザインパターン | `design-patterns` | 25問 |
+| 7 | データ構造 | `data-structures` | 24問 |
+| 8 | プログラミング | `programming` | 24問 |
+| 9 | テスト | `testing` | 79問 |
+| 10 | コード品質 | `code-quality` | 27問 |
+| 11 | CI/CD | `ci-cd` | 25問 |
+| 12 | リファクタリング | `refactoring` | 24問 |
+| 13 | リリース | `release` | 24問 |
+| 14 | チーム | `team` | 34問 |
+| 15 | インシデント | `incident` | 30問 |
+| 16 | SRE | `sre` | 26問 |
+
+> 各問題は複数タグを持つため、タグ別合計は総問題数（445問）とは一致しません。
