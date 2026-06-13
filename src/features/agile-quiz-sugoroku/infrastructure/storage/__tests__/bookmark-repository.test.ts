@@ -18,4 +18,9 @@ describe('BookmarkRepository', () => {
     repo.toggle(q('問題A'), 1000);
     expect(repo.loadAll()).toHaveLength(1);
   });
+  it('壊れたデータが入っていても空配列を返す', () => {
+    const storage = new InMemoryStorageAdapter();
+    storage.set('aqs_bookmarks', 'not-an-array');
+    expect(new BookmarkRepository(storage).loadAll()).toEqual([]);
+  });
 });

@@ -2,6 +2,7 @@
  * ブックマークリポジトリ
  *
  * 復習モード用に、ブックマークした問題のスナップショットを永続化する。
+ * 件数上限は設けない（ユーザーが能動的に管理するため）。
  */
 import type { Question, ReviewEntry } from '../../domain/types';
 import { makeQuestionKey } from '../../domain/quiz';

@@ -8,5 +8,7 @@ import type { Question } from '../types';
 
 /** 問題から安定した同定キーを生成する */
 export function makeQuestionKey(question: Question): string {
-  return question.question.trim();
+  const trimmed = question.question.trim();
+  // 問題文が空の場合は選択肢を結合してキーにする（同定の衝突を防ぐ）
+  return trimmed !== '' ? trimmed : question.options.join('|');
 }
