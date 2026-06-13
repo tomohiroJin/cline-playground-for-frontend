@@ -62,14 +62,3 @@ export interface GameState {
 
   bos: BossState;
 }
-
-/**
- * 初期化途中のゲーム状態
- * ステージ状態が未設定の状態を表す。
- * 各ステージ init でステージ状態が設定された後、GameState として使用される。
- */
-export type UninitializedGameState = Omit<GameState, 'cav' | 'grs' | 'bos'> & {
-  cav: Partial<CaveState>;
-  grs: Partial<PrairieState>;
-  bos: Partial<BossState>;
-}

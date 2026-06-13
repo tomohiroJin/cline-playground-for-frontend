@@ -57,12 +57,11 @@ export class TestEngine {
     this.storage = createInMemoryStorageRepository(options.initialHighScore ?? 0);
     const audio = createNullAudioService();
 
-    const uninitG = createInitialGameState(
+    this.G = createInitialGameState(
       this.input.kd,
       this.input.jp,
       this.storage.getHighScore(),
     );
-    this.G = uninitG as GameState;
 
     const draw = createRendering(ctx);
     const particles = createParticles(draw);

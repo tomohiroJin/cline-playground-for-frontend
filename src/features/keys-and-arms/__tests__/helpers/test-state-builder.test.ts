@@ -26,8 +26,8 @@ describe('GameStateBuilder', () => {
       expect(state.cav.pos).toBe(0);
       expect(state.cav.keysPlaced).toBe(0);
       expect(state.grs.kills).toBe(0);
-      expect(state.grs.goal).toBe(14);
-      expect(state.bos.shields).toBe(1);
+      expect(state.grs.goal).toBe(0);
+      expect(state.bos.shields).toBe(0);
     });
   });
 

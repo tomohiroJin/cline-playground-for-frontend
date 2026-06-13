@@ -1,6 +1,6 @@
 /** KEYS & ARMS — ゲームエンジン（オーケストレータ） */
 
-import type { EngineContext, GameState, StageNavigator } from './types';
+import type { EngineContext, StageNavigator } from './types';
 import { W, H, BG, TICK_MS } from './constants';
 import { createRendering } from './core/rendering';
 import { createAudio } from './core/audio';
@@ -40,9 +40,7 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
   const input = createInputHandler();
   const { justPressed: J, clearJustPressed: clearJ, isAction: jAct } = input;
   const storage = createLocalStorageRepository();
-  const uninitG = createInitialGameState(input.kd, input.jp, storage.getHighScore());
-  // 遅延バインド完了後に GameState として使用（各ステージ init でステージ状態が設定される）
-  const G = uninitG as GameState;
+  const G = createInitialGameState(input.kd, input.jp, storage.getHighScore());
   const draw = createRendering($);
   const audio = createAudio(G);
   const particles = createParticles(draw);
