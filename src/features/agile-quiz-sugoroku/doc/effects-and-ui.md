@@ -50,3 +50,27 @@
 | total-correct-100 | 百問道場 | 累計100問正解 | Silver |
 | total-correct-500 | 知識の泉 | 累計500問正解 | Gold |
 | improving | 成長の証 | 過去3回の平均より正答率10%以上向上 | Silver |
+
+## Phase 1 追加機能
+
+### サウンド設定
+
+タイトル画面に「サウンド ON/OFF」トグルボタンを追加。設定は `SettingsRepository`（`infrastructure/settings-repository.ts`）が `localStorage` の `aqs_settings` キーに永続化し、起動時に `useGame` フックが読み込んで復元する。
+
+サウンドの有効/無効は `presentation/sounds/sound.ts` のミュートゲートで制御する。`setSoundEnabled(false)` を呼ぶと内部フラグがオフになり、以降すべての再生関数（SE・BGM）が呼び出しをスキップする。`isSoundEnabled()` で現在の状態を参照できる。
+
+### アクセシビリティ（a11y）
+
+クイズ選択肢のセマンティクスを強化した。
+
+- 選択肢コンテナに `role="radiogroup"`、各選択肢に `role="radio"` + `aria-checked` + `aria-label` を付与
+- 回答後に `aria-live` 領域で正解/不正解フィードバックをスクリーンリーダーに通知
+- タイマー表示に `role="timer"` を設定し、残り 10 秒・5 秒・0 秒の閾値でスクリーンリーダー向けの残り時間通知を行う
+- `Button` コンポーネントに `:focus-visible` フォーカスリングを追加（マウス操作では非表示、キーボード操作時のみ表示）
+- 視覚的に隠しつつスクリーンリーダーには読ませる共通スタイル `SR_ONLY_STYLE` を `presentation/styles/sr-only.ts` に定義。各コンポーネントで再利用する
+
+### デザイントークン統一
+
+インライン `style` に散在していた色・余白・角丸・フォントサイズの生値を `DESIGN_TOKENS`（`presentation/styles/design-tokens.ts` の `colors` / `spacing` / `borderRadius` / `fontSize`）へ置き換えた。
+
+置き換えの方針: トークン値と生値が 1:1 で一致するもののみ機械的に置換し、視覚的な変化はゼロに保つ。対応する値がないもの（中間サイズ等）は据え置きとし、段階的に移行する。
