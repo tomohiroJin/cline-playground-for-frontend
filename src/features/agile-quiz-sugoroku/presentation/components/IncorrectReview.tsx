@@ -44,8 +44,6 @@ export const IncorrectReview: React.FC<IncorrectReviewProps> = ({ questions }) =
 
   const [bookmarkedKeys, setBookmarkedKeys] = useState<Set<string>>(initialBookmarked);
 
-  if (questions.length === 0) return null;
-
   /** ブックマークをトグルして state を更新する */
   const handleBookmark = (item: AnswerResultWithDetail): void => {
     const q = toQuestion(item);
@@ -62,12 +60,15 @@ export const IncorrectReview: React.FC<IncorrectReviewProps> = ({ questions }) =
     });
   };
 
+  if (questions.length === 0) return null;
+
   return (
     <SectionBox>
       <SectionTitle>INCORRECT REVIEW ({questions.length})</SectionTitle>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {questions.map((q, i) => {
-          const questionKey = makeQuestionKey(toQuestion(q));
+          const question = toQuestion(q);
+          const questionKey = makeQuestionKey(question);
           const isBookmarked = bookmarkedKeys.has(questionKey);
 
           return (
@@ -99,7 +100,9 @@ export const IncorrectReview: React.FC<IncorrectReviewProps> = ({ questions }) =
                 >
                   {q.questionText}
                 </div>
-                {/* ブックマークトグルボタン */}
+                {/* ブックマークトグルボタン:
+                    StudyResultScreen でも共用するため、学習中の問題も
+                    ブックマーク可能（study/review 両結果画面で意図的に表示） */}
                 <button
                   type="button"
                   aria-pressed={isBookmarked}
