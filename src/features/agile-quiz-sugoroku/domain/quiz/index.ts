@@ -29,3 +29,5 @@ export {
 export type { BuildStudyPoolOptions } from './study-question-pool';
 export { dateSeed, seededRandom, getDailyQuestions } from './daily-quiz';
 export { makeQuestionKey } from './question-key';
+export { buildReviewPool } from './review-question-pool';
+export type { ReviewSource, ReviewPoolInput } from './review-question-pool';
