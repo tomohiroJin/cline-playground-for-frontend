@@ -6,11 +6,9 @@
  */
 import styled from 'styled-components';
 import { DESIGN_TOKENS } from './design-tokens';
-
-const { breakpoints } = DESIGN_TOKENS;
-
-const { colors: COLORS, fonts: FONTS } = DESIGN_TOKENS;
 import { popIn, fadeSlideIn } from './animations';
+
+const { colors: COLORS, fonts: FONTS, breakpoints } = DESIGN_TOKENS;
 
 /* ================================
    選択肢ボタン

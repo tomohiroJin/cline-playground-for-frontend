@@ -167,6 +167,14 @@ export const Button = styled.button<{ $color?: string; $disabled?: boolean }>`
     padding: 10px 20px;
     font-size: 12px;
   }
+
+  /* アニメーション軽減設定: ホバー変形・トランジションを無効化 */
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+    &:hover:not(:disabled) {
+      transform: none;
+    }
+  }
 `;
 
 /** ホットキーヒント */
