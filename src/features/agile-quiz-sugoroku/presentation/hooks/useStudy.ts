@@ -37,6 +37,8 @@ export interface UseStudyReturn {
   finished: boolean;
   /** 学習を初期化 */
   init: (selectedTags: string[], limit: number) => void;
+  /** 外部の問題配列で学習を初期化（復習モード用） */
+  initWithQuestions: (questions: Question[]) => void;
   /** 回答を処理 */
   answer: (optionIndex: number) => void;
   /** 次の問題へ */
@@ -64,6 +66,19 @@ export function useStudy(): UseStudyReturn {
   const init = useCallback((selectedTags: string[], limit: number) => {
     const pool = buildStudyPool(selectedTags, limit);
     setQuestions(pool);
+    setCurrentIndex(0);
+    setSelectedAnswer(null);
+    setAnswered(false);
+    setTagStats({});
+    setIncorrectQuestions([]);
+    setTotalCorrect(0);
+    setTotalAnswered(0);
+    setFinished(false);
+  }, []);
+
+  /** 外部の問題配列で学習を初期化する（復習モード用）。buildStudyPool を経由せず渡された配列をそのまま使う。 */
+  const initWithQuestions = useCallback((qs: Question[]) => {
+    setQuestions(qs);
     setCurrentIndex(0);
     setSelectedAnswer(null);
     setAnswered(false);
@@ -157,6 +172,7 @@ export function useStudy(): UseStudyReturn {
     totalAnswered,
     finished,
     init,
+    initWithQuestions,
     answer,
     next,
     finish,
