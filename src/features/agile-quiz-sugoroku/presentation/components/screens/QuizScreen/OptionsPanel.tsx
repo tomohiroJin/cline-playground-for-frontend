@@ -1,6 +1,6 @@
 /**
  * 選択肢パネルコンポーネント
- * 4つの選択肢ボタンを表示
+ * 4つの選択肢ボタンを表示し、スクリーンリーダー向けの ARIA セマンティクスを提供する
  */
 import React, { useState } from 'react';
 import type { Question } from '../../../../domain/types';
@@ -24,8 +24,19 @@ interface OptionsPanelProps {
   onAnswer: (optionIndex: number) => void;
 }
 
+/** aria-live リージョンをビジュアル非表示にするスタイル（スクリーンリーダーには読まれる） */
+const srOnlyStyle: React.CSSProperties = {
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  overflow: 'hidden',
+  clip: 'rect(0 0 0 0)',
+  whiteSpace: 'nowrap',
+};
+
 /**
  * 選択肢パネル
+ * WCAG 2.1 AA 準拠: radiogroup ロール・radio ロール・aria-live フィードバック
  */
 export const OptionsPanel: React.FC<OptionsPanelProps> = ({
   quiz,
@@ -35,39 +46,55 @@ export const OptionsPanel: React.FC<OptionsPanelProps> = ({
 }) => {
   const [hoveredOption, setHoveredOption] = useState<number | null>(null);
   const answered = selectedAnswer !== null;
+  // 回答後のフィードバックメッセージ（aria-live リージョン用）
+  const feedbackMessage = (() => {
+    if (!answered) return '';
+    const isCorrect = selectedAnswer === quiz.answer;
+    return isCorrect ? '正解です' : '不正解です';
+  })();
 
   return (
-    <OptionsContainer>
-      {options.map((optionIndex, i) => {
-        const isCorrect = optionIndex === quiz.answer;
-        const isSelected = selectedAnswer !== null && selectedAnswer === optionIndex;
-        const hovered = hoveredOption === i;
+    <>
+      {/* スクリーンリーダー向け回答フィードバック */}
+      <div role="status" aria-live="polite" style={srOnlyStyle}>
+        {feedbackMessage}
+      </div>
+      <OptionsContainer role="radiogroup" aria-label="回答の選択肢">
+        {options.map((optionIndex, i) => {
+          const isCorrect = optionIndex === quiz.answer;
+          const isSelected = selectedAnswer !== null && selectedAnswer === optionIndex;
+          const hovered = hoveredOption === i;
+          const optionText = quiz.options[optionIndex];
 
-        return (
-          <OptionButton
-            key={optionIndex}
-            $answered={answered}
-            $isCorrect={isCorrect}
-            $isSelected={isSelected}
-            $hovered={hovered}
-            disabled={answered}
-            onClick={() => onAnswer(optionIndex)}
-            onMouseEnter={() => setHoveredOption(i)}
-            onMouseLeave={() => setHoveredOption(null)}
-          >
-            <OptionLabel
+          return (
+            <OptionButton
+              key={optionIndex}
+              role="radio"
+              aria-checked={isSelected}
+              aria-label={`選択肢 ${OPTION_LABELS[i]}: ${optionText}`}
               $answered={answered}
               $isCorrect={isCorrect}
               $isSelected={isSelected}
+              $hovered={hovered}
+              disabled={answered}
+              onClick={() => onAnswer(optionIndex)}
+              onMouseEnter={() => setHoveredOption(i)}
+              onMouseLeave={() => setHoveredOption(null)}
             >
-              {OPTION_LABELS[i]}
-            </OptionLabel>
-            <OptionText>{quiz.options[optionIndex]}</OptionText>
-            {answered && isCorrect && <OptionIcon>✓</OptionIcon>}
-            {answered && isSelected && !isCorrect && <OptionIcon>✗</OptionIcon>}
-          </OptionButton>
-        );
-      })}
-    </OptionsContainer>
+              <OptionLabel
+                $answered={answered}
+                $isCorrect={isCorrect}
+                $isSelected={isSelected}
+              >
+                {OPTION_LABELS[i]}
+              </OptionLabel>
+              <OptionText>{optionText}</OptionText>
+              {answered && isCorrect && <OptionIcon>✓</OptionIcon>}
+              {answered && isSelected && !isCorrect && <OptionIcon>✗</OptionIcon>}
+            </OptionButton>
+          );
+        })}
+      </OptionsContainer>
+    </>
   );
 };
