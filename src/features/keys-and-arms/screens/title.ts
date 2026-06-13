@@ -11,7 +11,7 @@ import type { EngineContext } from '../types';
  * @param ctx ゲームコンテキスト（状態・描画・音声・パーティクル・HUD）
  */
 export function createTitleScreen(ctx: EngineContext) {
-  const { G, draw, hud } = ctx;
+  const { G, draw, hud, nav } = ctx;
   const { $, circle, onFill, txt, txtC, px, iSlime, iBoss, iGem } = draw;
   const { transTo } = hud;
   // タイトル画面は engine.ts 側で入力を処理するため入力ヘルパー不要
@@ -77,7 +77,7 @@ export function createTitleScreen(ctx: EngineContext) {
   /** ゲーム開始 */
   function startGame() {
     const cheat = G.cheatBuf.endsWith('jin'); G.cheatBuf = '';
-    G.loop = 1; G.score = 0; G.dispScore = 0; G.hp = cheat ? 20 : 3; G.maxHp = cheat ? 20 : 3; G.noDmg = true; G.hurtFlash = 0; G.bgmBeat = 0; transTo('CAVE', G.cavInit, 'FIND 3 KEYS');
+    G.loop = 1; G.score = 0; G.dispScore = 0; G.hp = cheat ? 20 : 3; G.maxHp = cheat ? 20 : 3; G.noDmg = true; G.hurtFlash = 0; G.bgmBeat = 0; transTo('CAVE', nav.cave, 'FIND 3 KEYS');
   }
 
   return { draw: drawTitle, startGame };

@@ -7,6 +7,7 @@ import type { AudioModule } from './audio';
 import type { ParticlesModule } from './particles';
 import type { HUDModule } from './hud';
 import type { GameStorageRepository } from '../infrastructure/storage-repository';
+import type { StageNavigator } from './stage-navigator';
 
 /** エンジンコンテキスト（各モジュールに渡される依存関係の束） */
 export interface EngineContext {
@@ -16,4 +17,6 @@ export interface EngineContext {
   particles: ParticlesModule;
   hud: HUDModule;
   storage: GameStorageRepository;
+  /** ステージ遷移ナビゲータ */
+  nav: StageNavigator;
 }

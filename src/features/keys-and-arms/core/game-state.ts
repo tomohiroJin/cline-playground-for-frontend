@@ -63,11 +63,5 @@ export function createInitialGameState(
     grsLaneFlash: [], grsMiss: [],
     bos: {},
     bosParticles: [], bosShieldBreak: [], bosArmTrail: [],
-
-    // 遅延バインド（engine.ts で設定される）
-    cavInit: undefined,
-    grsInit: undefined,
-    bosInit: undefined,
-    startGame: undefined,
   };
 }

@@ -22,7 +22,7 @@ import type { EngineContext } from '../../types';
  * @returns bosInit, bosUpdate 関数
  */
 export function createBossLogic(ctx: EngineContext) {
-  const { G, audio, particles, hud } = ctx;
+  const { G, audio, particles, hud, nav } = ctx;
   const { S } = audio;
   const { Particles, Popups } = particles;
   const { twoBeatDuration, doHurt, transTo } = hud;
@@ -101,7 +101,7 @@ export function createBossLogic(ctx: EngineContext) {
       if (B.wonT === BOSS_VICTORY_TIMER) {
         if (Difficulty.isTrueEnding(G.loop)) { G.state = 'trueEnd'; G.teT = 0; G.tick = 0; }
         else if (G.loop === 1) { G.state = 'ending1'; G.e1T = 0; G.tick = 0; }
-        else { G.loop++; G.noDmg = true; if (G.hp < G.maxHp) G.hp++; transTo('LOOP ' + G.loop, G.cavInit, 'HARDER!'); }
+        else { G.loop++; G.noDmg = true; if (G.hp < G.maxHp) G.hp++; transTo('LOOP ' + G.loop, nav.cave, 'HARDER!'); }
       }
       return;
     }

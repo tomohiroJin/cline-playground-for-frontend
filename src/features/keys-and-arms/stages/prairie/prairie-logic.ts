@@ -16,7 +16,7 @@ import type { EngineContext, PrairieState } from '../../types';
  * @returns grsInit, grsUpdate 関数
  */
 export function createPrairieLogic(ctx: EngineContext) {
-  const { G, audio, particles, hud } = ctx;
+  const { G, audio, particles, hud, nav } = ctx;
   const { S } = audio;
   const { Particles, Popups } = particles;
   const { BL, twoBeatDuration, doHurt, transTo } = hud;
@@ -99,7 +99,7 @@ export function createPrairieLogic(ctx: EngineContext) {
     if (GS.comboT > 0) GS.comboT--; // 表示タイマーのみ、コンボは時間でリセットしない
     // シールドオーブ浮遊アニメーション
     GS.shieldOrbs = GS.shieldOrbs.filter(o => { o.t++; o.y -= 1.5; o.alpha = Math.max(0, 1 - o.t / 20); return o.t < 20; });
-    if (GS.won) { GS.wonT++; if (GS.wonT === VICTORY_TIMER) transTo('CASTLE', G.bosInit, 'SET 6 GEMS'); return; }
+    if (GS.won) { GS.wonT++; if (GS.wonT === VICTORY_TIMER) transTo('CASTLE', nav.boss, 'SET 6 GEMS'); return; }
     GS.ens.forEach(e => { if (e.dashFlash > 0) e.dashFlash--; if (e.spawnT > 0) e.spawnT--; });
 
     // 攻撃 (↑→↓ = レーン 0,1,2)

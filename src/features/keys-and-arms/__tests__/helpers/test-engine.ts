@@ -9,6 +9,7 @@
 import { TRANSITION_MID } from '../../constants';
 import type { GameState, GameScreen } from '../../types/game-state';
 import type { EngineContext } from '../../types/engine-context';
+import type { StageNavigator } from '../../types/stage-navigator';
 import { createRendering } from '../../core/rendering';
 import { createParticles } from '../../core/particles';
 import { createHUD } from '../../core/hud';
@@ -41,6 +42,8 @@ export class TestEngine {
   readonly input: InputHandler;
   readonly storage: GameStorageRepository;
   readonly G: GameState;
+  /** ステージ遷移ナビゲータ（テストから遷移を直接トリガーするために公開） */
+  readonly nav: StageNavigator;
   private readonly cave: Stage;
   private readonly prairie: Stage;
   private readonly boss: Stage;
@@ -65,6 +68,13 @@ export class TestEngine {
     const particles = createParticles(draw);
     this.hud = createHUD(draw, this.G, audio, this.storage);
 
+    this.nav = {
+      cave: () => {},
+      prairie: () => {},
+      boss: () => {},
+      startGame: () => {},
+    };
+
     const engineCtx: EngineContext = {
       G: this.G,
       draw,
@@ -72,6 +82,7 @@ export class TestEngine {
       particles,
       hud: this.hud,
       storage: this.storage,
+      nav: this.nav,
     };
 
     this.cave = createCaveStage(engineCtx);
@@ -80,11 +91,11 @@ export class TestEngine {
     this.titleScreen = createTitleScreen(engineCtx);
     this.helpScreen = createHelpScreen(engineCtx);
 
-    // 遅延バインド
-    this.G.cavInit = this.cave.init.bind(this.cave);
-    this.G.grsInit = this.prairie.init.bind(this.prairie);
-    this.G.bosInit = this.boss.init.bind(this.boss);
-    this.G.startGame = this.titleScreen.startGame;
+    // 遅延バインド（nav に実体を差し込む）
+    this.nav.cave = this.cave.init.bind(this.cave);
+    this.nav.prairie = this.prairie.init.bind(this.prairie);
+    this.nav.boss = this.boss.init.bind(this.boss);
+    this.nav.startGame = this.titleScreen.startGame;
   }
 
   /** 1 ティック実行（描画スキップ） */

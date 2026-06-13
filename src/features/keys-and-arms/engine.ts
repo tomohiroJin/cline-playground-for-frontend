@@ -1,6 +1,6 @@
 /** KEYS & ARMS — ゲームエンジン（オーケストレータ） */
 
-import type { EngineContext, GameState } from './types';
+import type { EngineContext, GameState, StageNavigator } from './types';
 import { W, H, BG, TICK_MS } from './constants';
 import { createRendering } from './core/rendering';
 import { createAudio } from './core/audio';
@@ -48,7 +48,13 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
   const particles = createParticles(draw);
   const hud = createHUD(draw, G, audio, storage);
   const effects = createRenderEffects($, draw.onFill, draw.txtC);
-  const ctx: EngineContext = { G, draw, audio, particles, hud, storage };
+  const nav: StageNavigator = {
+    cave: () => {},
+    prairie: () => {},
+    boss: () => {},
+    startGame: () => {},
+  };
+  const ctx: EngineContext = { G, draw, audio, particles, hud, storage, nav };
 
   const cave = createCaveStage(ctx);
   const prairie = createPrairieStage(ctx);
@@ -59,9 +65,9 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
   const endingScreen = createEndingScreen(ctx);
   const trueEndScreen = createTrueEndScreen(ctx);
 
-  /* 遅延バインド */
-  G.cavInit = cave.init; G.grsInit = prairie.init;
-  G.bosInit = boss.init; G.startGame = titleScreen.startGame;
+  /* 遅延バインド（nav に実体を差し込む） */
+  nav.cave = cave.init; nav.prairie = prairie.init;
+  nav.boss = boss.init; nav.startGame = titleScreen.startGame;
   const isGameplay = () => G.state !== 'title' && G.state !== 'over' && G.state !== 'trueEnd' && G.state !== 'ending1';
 
   /* GAME TICK — 状態マシン */

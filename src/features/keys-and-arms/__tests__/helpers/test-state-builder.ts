@@ -250,12 +250,6 @@ export class GameStateBuilder {
       bosShieldBreak: [],
       bosArmTrail: [],
 
-      // 遅延バインド
-      cavInit: undefined,
-      grsInit: undefined,
-      bosInit: undefined,
-      startGame: undefined,
-
       // オーバーライドを適用
       ...this.overrides,
     } as GameState;

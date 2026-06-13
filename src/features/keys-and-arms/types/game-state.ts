@@ -141,25 +141,15 @@ export interface GameState {
   bosParticles: Particle[];
   bosShieldBreak: Array<{ idx: number; life: number }>;
   bosArmTrail: Array<{ idx: number; life: number }>;
-
-  // 遅延バインド
-  cavInit: (() => void) | undefined;
-  grsInit: (() => void) | undefined;
-  bosInit: (() => void) | undefined;
-  startGame: (() => void) | undefined;
 }
 
 /**
  * 初期化途中のゲーム状態
- * ステージ状態と遅延バインドが未設定の状態を表す。
- * engine.ts で遅延バインドが完了した後、GameState として使用される。
+ * ステージ状態が未設定の状態を表す。
+ * 各ステージ init でステージ状態が設定された後、GameState として使用される。
  */
-export type UninitializedGameState = Omit<GameState, 'cav' | 'grs' | 'bos' | 'cavInit' | 'grsInit' | 'bosInit' | 'startGame'> & {
+export type UninitializedGameState = Omit<GameState, 'cav' | 'grs' | 'bos'> & {
   cav: Partial<CaveState>;
   grs: Partial<PrairieState>;
   bos: Partial<BossState>;
-  cavInit: (() => void) | undefined;
-  grsInit: (() => void) | undefined;
-  bosInit: (() => void) | undefined;
-  startGame: (() => void) | undefined;
 }

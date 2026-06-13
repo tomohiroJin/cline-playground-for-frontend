@@ -25,7 +25,7 @@ import type { EngineContext } from '../../types';
  * @returns cavInit, cavUpdate 関数
  */
 export function createCaveLogic(ctx: EngineContext) {
-  const { G, audio, particles, hud } = ctx;
+  const { G, audio, particles, hud, nav } = ctx;
   const { S } = audio;
   const { Particles, Popups } = particles;
   const { twoBeatDuration, doHurt, transTo } = hud;
@@ -65,7 +65,7 @@ export function createCaveLogic(ctx: EngineContext) {
   // === 洞窟更新 ===
   function cavUpdate(nb: boolean) {
     const C = G.cav; if (C.hurtCD > 0) C.hurtCD--; if (C.actAnim > 0) C.actAnim--; if (C.batHitAnim > 0) C.batHitAnim--;
-    if (C.mimicShake > 0) C.mimicShake--; if (C.walkAnim > 0) C.walkAnim--; if (C.won) { C.wonT++; if (C.wonT === VICTORY_TIMER) transTo('PRAIRIE', G.grsInit, 'DEFEAT ENEMIES'); return; }
+    if (C.mimicShake > 0) C.mimicShake--; if (C.walkAnim > 0) C.walkAnim--; if (C.won) { C.wonT++; if (C.wonT === VICTORY_TIMER) transTo('PRAIRIE', nav.prairie, 'DEFEAT ENEMIES'); return; }
     if (C.trailAlpha > 0) C.trailAlpha -= .03; if (C.roomNameT > 0) C.roomNameT--;
     C.idleT++;
     // 鍵所持中のきらめき

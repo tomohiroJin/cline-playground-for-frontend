@@ -12,3 +12,4 @@ export type { Screen } from './screen';
 export type { Stage, CaveState, PrairieState, PrairieEnemy, ShieldOrb, BossState } from './stage';
 export type { CaveEnemyType, PrairieEnemyType } from './enemies';
 export type { EngineContext } from './engine-context';
+export type { StageNavigator } from './stage-navigator';
