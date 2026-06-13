@@ -23,7 +23,8 @@ interface WorkflowJob {
 interface Workflow {
   name: string;
   on: {
-    pull_request: { branches: string[] };
+    // base を限定しない場合 YAML 上は null になる
+    pull_request: { branches?: string[] } | null;
     push: { branches: string[] };
   };
   concurrency: {
@@ -56,8 +57,10 @@ describe('CI ワークフロー', () => {
   });
 
   describe('トリガー設定', () => {
-    it('main ブランチへの pull_request でトリガーされること', () => {
-      expect(workflow.on.pull_request.branches).toContain('main');
+    it('全 PR で pull_request トリガーされること（base を限定しない＝スタック PR でも CI が走る）', () => {
+      // pull_request キーが存在し、branches による base 限定がないことを確認
+      expect(Object.prototype.hasOwnProperty.call(workflow.on, 'pull_request')).toBe(true);
+      expect(workflow.on.pull_request?.branches).toBeUndefined();
     });
 
     it('main ブランチへの push でトリガーされること', () => {
