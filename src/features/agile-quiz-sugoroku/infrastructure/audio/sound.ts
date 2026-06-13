@@ -7,6 +7,22 @@ import * as Tone from 'tone';
 /** 音声システムの初期化状態 */
 let isAudioInitialized = false;
 
+/** サウンド全体の有効フラグ。false の間は全再生をスキップする */
+let soundEnabled = true;
+
+/** サウンドの有効/無効を設定する */
+export function setSoundEnabled(enabled: boolean): void {
+  soundEnabled = enabled;
+  if (!enabled) {
+    stopBgm();
+  }
+}
+
+/** サウンドが有効かどうかを返す */
+export function isSoundEnabled(): boolean {
+  return soundEnabled;
+}
+
 /** シンセサイザーインスタンス */
 let bgmSynth: Tone.PolySynth | null = null;
 let sfxSynth: Tone.Synth | null = null;
@@ -76,6 +92,7 @@ const BGM_NOTES: [string, string][] = [
  * BGMを再生開始
  */
 export function playBgm(): void {
+  if (!soundEnabled) return;
   if (!isAudioInitialized) return;
   stopBgm();
 
@@ -109,6 +126,7 @@ export function stopBgm(): void {
  * 正解効果音を再生
  */
 export function playSfxCorrect(): void {
+  if (!soundEnabled) return;
   if (!sfxSynth) return;
   const time = Tone.now();
   sfxSynth.triggerAttackRelease('C5', '16n', time);
@@ -120,6 +138,7 @@ export function playSfxCorrect(): void {
  * 不正解効果音を再生
  */
 export function playSfxIncorrect(): void {
+  if (!soundEnabled) return;
   if (!sfxSynth) return;
   const time = Tone.now();
   sfxSynth.triggerAttackRelease('C3', '8n', time);
@@ -130,6 +149,7 @@ export function playSfxIncorrect(): void {
  * タイマーティック音を再生
  */
 export function playSfxTick(): void {
+  if (!soundEnabled) return;
   if (tickSynth) {
     tickSynth.triggerAttackRelease('A5', '32n', Tone.now());
   }
@@ -139,6 +159,7 @@ export function playSfxTick(): void {
  * ゲーム開始効果音を再生
  */
 export function playSfxStart(): void {
+  if (!soundEnabled) return;
   if (!sfxSynth) return;
   const time = Tone.now();
   sfxSynth.triggerAttackRelease('C4', '16n', time);
@@ -151,6 +172,7 @@ export function playSfxStart(): void {
  * 結果表示効果音を再生
  */
 export function playSfxResult(): void {
+  if (!soundEnabled) return;
   if (!sfxSynth) return;
   const time = Tone.now();
   const notes = ['C4', 'E4', 'G4', 'C5', 'E5', 'G5'];
@@ -161,6 +183,7 @@ export function playSfxResult(): void {
 
 /** 実績獲得効果音 */
 export function playSfxAchievement(): void {
+  if (!soundEnabled) return;
   if (!sfxSynth) return;
   const time = Tone.now();
   const notes = ['E5', 'G5', 'B5', 'E6'];
@@ -173,6 +196,7 @@ export function playSfxAchievement(): void {
  * コンボ効果音を再生
  */
 export function playSfxCombo(): void {
+  if (!soundEnabled) return;
   if (!sfxSynth) return;
   const time = Tone.now();
   sfxSynth.triggerAttackRelease('E5', '16n', time);
@@ -185,6 +209,7 @@ export function playSfxCombo(): void {
  * 下降するトーンでコンボ途切れを演出
  */
 export function playSfxComboBreak(): void {
+  if (!soundEnabled) return;
   if (!sfxSynth) return;
   const time = Tone.now();
   sfxSynth.triggerAttackRelease('E4', '16n', time);
@@ -202,6 +227,7 @@ const DRUMROLL_TICK_COUNT = 8;
  * 連続するティック音で緊張感を演出
  */
 export function playSfxDrumroll(): void {
+  if (!soundEnabled) return;
   if (!sfxSynth) return;
   const time = Tone.now();
   for (let i = 0; i < DRUMROLL_TICK_COUNT; i++) {
@@ -219,6 +245,7 @@ const FANFARE_NOTE_INTERVAL = 0.1;
  * 上昇するアルペジオでSランク演出
  */
 export function playSfxFanfare(): void {
+  if (!soundEnabled) return;
   if (!sfxSynth) return;
   const time = Tone.now();
   FANFARE_NOTES.forEach((note, i) => {
@@ -238,6 +265,7 @@ const URGENT_THRESHOLD = 5;
  * 残り時間が少ないほど高い音になる
  */
 export function playSfxTickUrgent(remaining: number): void {
+  if (!soundEnabled) return;
   if (!tickSynth) return;
   const pitchBoost =
     remaining <= URGENT_THRESHOLD
