@@ -2,11 +2,12 @@
  * Agile Quiz Sugoroku - レイアウトスタイル
  *
  * タイムライン、タイマー、ヘッダー、イベント、特徴リスト等のレイアウト系コンポーネント
+ * モバイル対応: @media (max-width: 480px) ブロックは加算的上書きのみ
  */
 import styled, { css } from 'styled-components';
 import { DESIGN_TOKENS } from './design-tokens';
 
-const { colors: COLORS, fonts: FONTS } = DESIGN_TOKENS;
+const { colors: COLORS, fonts: FONTS, breakpoints } = DESIGN_TOKENS;
 import { pulse, shake, titleGlow, comboGlow } from './animations';
 
 /* ================================
@@ -69,6 +70,12 @@ export const TimerContainer = styled.div`
   align-items: center;
   gap: 12px;
   margin-bottom: 16px;
+
+  /* モバイル: ギャップを縮小してオーバーフロー防止 */
+  @media (max-width: ${breakpoints.mobile}) {
+    gap: 8px;
+    margin-bottom: 10px;
+  }
 `;
 
 export const TimerValue = styled.div<{ $color?: string; $pulse?: boolean; $shake?: boolean }>`
@@ -93,6 +100,12 @@ export const TimerValue = styled.div<{ $color?: string; $pulse?: boolean; $shake
     css`
       animation: ${shake} 0.15s ease-in-out infinite;
     `}
+
+  /* モバイル: タイマー数値を小さくしてレイアウトを維持 */
+  @media (max-width: ${breakpoints.mobile}) {
+    font-size: 26px;
+    min-width: 36px;
+  }
 `;
 
 export const TimerBar = styled.div`
@@ -138,6 +151,11 @@ export const SprintNumber = styled.div`
   line-height: 1;
   font-family: ${FONTS.mono};
   text-shadow: 0 0 40px ${COLORS.accent}28;
+
+  /* モバイル: 大きな数字をコンパクトに */
+  @media (max-width: ${breakpoints.mobile}) {
+    font-size: 48px;
+  }
 `;
 
 /* ================================
@@ -167,6 +185,13 @@ export const EventCard = styled.div<{ $isEmergency?: boolean; $color?: string }>
   border: 1px solid
     ${({ $isEmergency, $color }) =>
       $isEmergency ? `${COLORS.red}28` : `${$color ?? COLORS.accent}20`};
+
+  /* モバイル: パディング縮小、ギャップ縮小 */
+  @media (max-width: ${breakpoints.mobile}) {
+    gap: 8px;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+  }
 `;
 
 export const EventIcon = styled.span`
@@ -248,6 +273,11 @@ export const HeaderInfo = styled.div`
   margin-bottom: 12px;
   font-size: 11px;
   font-family: ${FONTS.mono};
+
+  /* モバイル: フォントサイズを維持しつつ余白縮小 */
+  @media (max-width: ${breakpoints.mobile}) {
+    margin-bottom: 8px;
+  }
 `;
 
 export const SprintLabel = styled.span`

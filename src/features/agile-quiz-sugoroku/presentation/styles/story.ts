@@ -1,10 +1,11 @@
 /**
  * Agile Quiz Sugoroku - ストーリー画面スタイル
+ * モバイル対応: @media (max-width: 480px) ブロックは加算的上書きのみ
  */
 import styled, { keyframes } from 'styled-components';
 import { DESIGN_TOKENS } from './design-tokens';
 
-const { colors: COLORS, fonts: FONTS } = DESIGN_TOKENS;
+const { colors: COLORS, fonts: FONTS, breakpoints } = DESIGN_TOKENS;
 
 /** テキストのフェードインアニメーション */
 const fadeIn = keyframes`
@@ -57,6 +58,12 @@ export const StoryContent = styled.div`
     min-height: 180px;
     padding: 16px 20px;
   }
+
+  /* モバイル: パディング縮小・最大幅をビューポートに合わせる */
+  @media (max-width: ${breakpoints.mobile}) {
+    padding: 14px 16px;
+    border-radius: 14px 14px 10px 10px;
+  }
 `;
 
 /** ストーリーヘッダー */
@@ -84,6 +91,12 @@ export const StoryTitle = styled.h2`
   margin: 0 0 20px 0;
   text-align: center;
   font-family: ${FONTS.jp};
+
+  /* モバイル: フォントサイズ縮小・余白縮小 */
+  @media (max-width: ${breakpoints.mobile}) {
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
 `;
 
 /** スキップボタン */
@@ -103,6 +116,12 @@ export const SkipButton = styled.button`
   &:hover {
     border-color: ${COLORS.accent};
     color: ${COLORS.accent};
+  }
+
+  /* モバイル: タップターゲット最小44px */
+  @media (max-width: ${breakpoints.mobile}) {
+    min-height: 44px;
+    padding: 6px 12px;
   }
 `;
 
