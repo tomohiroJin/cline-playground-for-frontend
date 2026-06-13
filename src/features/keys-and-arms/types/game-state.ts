@@ -3,7 +3,6 @@
  */
 import type { InputState } from './input';
 import type { CaveState, PrairieState, BossState } from './stage';
-import type { Particle } from './particles';
 
 /** ゲーム画面状態 */
 export type GameScreen =
@@ -64,9 +63,6 @@ export interface GameState {
   grs: PrairieState;
 
   bos: BossState;
-  bosParticles: Particle[];
-  bosShieldBreak: Array<{ idx: number; life: number }>;
-  bosArmTrail: Array<{ idx: number; life: number }>;
 }
 
 /**

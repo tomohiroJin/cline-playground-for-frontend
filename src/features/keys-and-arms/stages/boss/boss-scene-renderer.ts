@@ -107,7 +107,7 @@ export function createBossSceneRenderer(ctx: EngineContext) {
     }
 
     // シールドブレイクエフェクト
-    G.bosShieldBreak = G.bosShieldBreak.filter(sb => {
+    B.shieldBreak = B.shieldBreak.filter(sb => {
       sb.life--; if (sb.life <= 0) return false;
       const pp = PED_POS[sb.idx]; const r = 12 + (10 - sb.life) * 2.5;
       $.strokeStyle = ON; $.lineWidth = 2; $.globalAlpha = sb.life / 10 * .3;
@@ -237,7 +237,7 @@ export function createBossSceneRenderer(ctx: EngineContext) {
       $.fillStyle = `rgba(40,10,0,${rfa * .15})`; $.fillRect(0, 0, W, H); $.globalAlpha = 1;
     }
 
-    Particles.updateAndDraw(G.bosParticles);
+    Particles.updateAndDraw(B.particles);
     Popups.updateAndDraw();
 
     // === 勝利演出 ===

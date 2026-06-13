@@ -122,6 +122,10 @@ function defaultBossState(): BossState {
     counterFlash: [0, 0],
     rageWave: 0,
     quake: 0,
+    // パーティクルプール（旧 GameState トップレベルから移動）
+    particles: [],
+    shieldBreak: [],
+    armTrail: [],
   };
 }
 
@@ -245,9 +249,6 @@ export class GameStateBuilder {
       grs: { ...defaultPrairieState(), ...this.grsOverrides },
 
       bos: { ...defaultBossState(), ...this.bosOverrides },
-      bosParticles: [],
-      bosShieldBreak: [],
-      bosArmTrail: [],
 
       // オーバーライドを適用
       ...this.overrides,

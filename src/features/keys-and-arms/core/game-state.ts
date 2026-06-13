@@ -59,6 +59,5 @@ export function createInitialGameState(
     cav: {},
     grs: {},
     bos: {},
-    bosParticles: [], bosShieldBreak: [], bosArmTrail: [],
   };
 }

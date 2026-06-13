@@ -154,4 +154,8 @@ export interface BossState {
   counterFlash: [number, number];
   rageWave: number;
   quake: number;
+  // パーティクルプール（旧 GameState トップレベルから移動）
+  particles: Particle[];
+  shieldBreak: Array<{ idx: number; life: number }>;
+  armTrail: Array<{ idx: number; life: number }>;
 }

@@ -249,7 +249,7 @@ export function createBossArenaRenderer(ctx: EngineContext) {
     }
 
     // 腕のスチールトレイル
-    G.bosArmTrail = G.bosArmTrail.filter(t => {
+    B.armTrail = B.armTrail.filter(t => {
       t.life--; if (t.life <= 0) return false;
       const pp = PED_POS[t.idx];
       $.strokeStyle = ON; $.lineWidth = 3; $.globalAlpha = t.life / 8 * .2;
