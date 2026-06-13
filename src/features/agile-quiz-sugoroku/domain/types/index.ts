@@ -52,3 +52,6 @@ export type {
   DifficultyConfig,
   ChallengeResult,
 } from './scoring-types';
+
+export type { AppSettings } from './app-settings-types';
+export { DEFAULT_APP_SETTINGS } from './app-settings-types';
