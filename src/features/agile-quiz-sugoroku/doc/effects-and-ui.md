@@ -51,6 +51,28 @@
 | total-correct-500 | 知識の泉 | 累計500問正解 | Gold |
 | improving | 成長の証 | 過去3回の平均より正答率10%以上向上 | Silver |
 
+## レスポンシブ対応
+
+`@media (max-width: 480px)`（`DESIGN_TOKENS.breakpoints.mobile`）ブロックによるモバイル上書き。加算的な変更のみを行い、デスクトップスタイルを破壊しない方針。
+
+| 対象 | モバイル対応内容 |
+|------|----------------|
+| `Button` / `OptionButton` | `min-height: 44px`（タップターゲット最小サイズ）、パディング縮小 |
+| `Panel` | パディング縮小（24px → 16px）、`border-radius` 縮小 |
+| `QuizQuestion` | フォントサイズ縮小（15px → 14px）、マージン縮小 |
+| `ResultBanner` | パディング縮小、`letter-spacing` 縮小 |
+| すごろくボード（`SugorokuBoard`） | `overflow-x: scroll` で横スクロール対応 |
+| チャート（成長グラフ等） | `max-width: 100%` で横幅を制限 |
+
+## ブックマーク・復習 UI
+
+結果画面の IncorrectReview コンポーネントに★/☆トグルボタンを表示。
+
+- ★（ブックマーク済み）/ ☆（未登録）の二状態トグル
+- `aria-pressed` 属性でスクリーンリーダーに状態を伝達
+- ブックマーク情報は `localStorage` に永続化（`BookmarkRepository`）
+- タイトル画面から復習モード（ReviewSelectScreen）へのエントリポイントを表示
+
 ## Phase 1 追加機能
 
 ### サウンド設定
