@@ -3,6 +3,7 @@
  */
 import type { InputState } from './input';
 import type { CaveState, PrairieState, BossState } from './stage';
+import type { TransitionState } from './transition';
 
 /** ゲーム画面状態 */
 export type GameScreen =
@@ -44,10 +45,7 @@ export interface GameState {
   kd: InputState;
 
   // トランジション
-  trT: number;
-  trTxt: string;
-  trFn: (() => void) | undefined;
-  trSub: string;
+  transition: TransitionState;
 
   // タイトル画面
   blink: number;

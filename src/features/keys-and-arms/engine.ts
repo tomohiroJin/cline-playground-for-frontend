@@ -109,7 +109,7 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
     if (G.hurtFlash > 0) G.hurtFlash--;
     if (G.shakeT > 0) G.shakeT--;
 
-    if (G.trT > 0) {
+    if (G.transition.t > 0) {
       if (isGameplay()) hud.doBeat();
     } else {
       let nb = false;
@@ -146,7 +146,7 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
     effects.drawDamageFlash(G.hurtFlash);
     effects.drawHitStopFlash(G.hitStop);
 
-    if (G.trT > 0) {
+    if (G.transition.t > 0) {
       switch (G.state) {
         case 'cave': cave.draw(); hud.drawHUD(); break;
         case 'grass': prairie.draw(); hud.drawHUD(); break;

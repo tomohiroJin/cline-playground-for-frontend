@@ -42,10 +42,7 @@ export function createInitialGameState(
     kd,
 
     // トランジション
-    trT: 0,
-    trTxt: '',
-    trFn: undefined,
-    trSub: '',
+    transition: { t: 0, txt: '', fn: undefined, sub: '' },
 
     // タイトル画面
     blink: 0,

@@ -144,11 +144,11 @@ export class TestEngine {
     if (G.hurtFlash > 0) G.hurtFlash--;
     if (G.shakeT > 0) G.shakeT--;
 
-    if (G.trT > 0) {
+    if (G.transition.t > 0) {
       if (isGameplay()) this.hud.doBeat();
       // 描画をスキップするため、トランジション処理をここで実行
-      G.trT--;
-      if (G.trT === TRANSITION_MID && G.trFn) G.trFn();
+      G.transition.t--;
+      if (G.transition.t === TRANSITION_MID && G.transition.fn) G.transition.fn();
     } else {
       let nb = false;
       if (isGameplay()) nb = this.hud.doBeat();
@@ -195,7 +195,7 @@ export class TestEngine {
     this.G.state = 'title';
     this.pressKeyAndTick('z');
     // トランジションをスキップ
-    while (this.G.trT > 0) {
+    while (this.G.transition.t > 0) {
       this.gameTick();
     }
   }

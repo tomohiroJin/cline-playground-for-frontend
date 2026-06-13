@@ -13,3 +13,4 @@ export type { Stage, CaveState, PrairieState, PrairieEnemy, ShieldOrb, BossState
 export type { CaveEnemyType, PrairieEnemyType } from './enemies';
 export type { EngineContext } from './engine-context';
 export type { StageNavigator } from './stage-navigator';
+export type { TransitionState } from './transition';
