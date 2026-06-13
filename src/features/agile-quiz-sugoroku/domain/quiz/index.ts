@@ -28,3 +28,4 @@ export {
 } from './study-question-pool';
 export type { BuildStudyPoolOptions } from './study-question-pool';
 export { dateSeed, seededRandom, getDailyQuestions } from './daily-quiz';
+export { makeQuestionKey } from './question-key';
