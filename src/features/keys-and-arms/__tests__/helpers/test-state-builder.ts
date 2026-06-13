@@ -46,6 +46,13 @@ function defaultCaveState(): CaveState {
     trailAlpha: 0,
     roomNameT: 0,
     roomName: '',
+    sparks: [],
+    dust: [],
+    feathers: [],
+    smoke: [],
+    stepDust: [],
+    keySpk: [],
+    drips: [],
   };
 }
 
@@ -229,13 +236,6 @@ export class GameStateBuilder {
 
       // ステージ状態
       cav: { ...defaultCaveState(), ...this.cavOverrides },
-      sparks: [],
-      dust: [],
-      feathers: [],
-      smoke: [],
-      stepDust: [],
-      keySpk: [],
-      cavDrips: [],
 
       grs: { ...defaultPrairieState(), ...this.grsOverrides },
       grsSlash: [],

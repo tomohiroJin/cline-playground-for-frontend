@@ -2,6 +2,16 @@
  * KEYS & ARMS — ステージ共通インターフェース・ステージ状態型
  */
 
+import type {
+  Particle,
+  SparkParticle,
+  DustParticle,
+  FeatherParticle,
+  SmokeParticle,
+  KeySparkParticle,
+  DripParticle,
+} from './particles';
+
 /** ステージ共通インターフェース */
 export interface Stage {
   init(): void;
@@ -47,6 +57,14 @@ export interface CaveState {
   trailAlpha: number;
   roomNameT: number;
   roomName: string;
+  // パーティクルプール（旧 GameState トップレベルから移動）
+  sparks: SparkParticle[];
+  dust: DustParticle[];
+  feathers: FeatherParticle[];
+  smoke: SmokeParticle[];
+  stepDust: Particle[];
+  keySpk: KeySparkParticle[];
+  drips: DripParticle[];
 }
 
 /** 草原の敵 */

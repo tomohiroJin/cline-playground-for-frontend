@@ -57,7 +57,6 @@ export function createInitialGameState(
 
     // ステージ状態（各ステージ init で完全初期化される）
     cav: {},
-    sparks: [], dust: [], feathers: [], smoke: [], stepDust: [], keySpk: [], cavDrips: [],
     grs: {},
     grsSlash: [], grsDead: [], grsGrass: [],
     grsLaneFlash: [], grsMiss: [],

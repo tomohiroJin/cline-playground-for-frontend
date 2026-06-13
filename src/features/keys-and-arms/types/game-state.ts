@@ -3,7 +3,7 @@
  */
 import type { InputState } from './input';
 import type { CaveState, PrairieState, BossState } from './stage';
-import type { Particle } from './particles';
+import type { Particle, GrassParticle } from './particles';
 
 /** ゲーム画面状態 */
 export type GameScreen =
@@ -15,67 +15,6 @@ export type GameScreen =
   | 'over'
   | 'ending1'
   | 'trueEnd';
-
-/** 浮遊ほこりパーティクル */
-export interface DustParticle {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  s: number;
-  a: number;
-}
-
-/** 松明の煙パーティクル */
-export interface SmokeParticle {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  life: number;
-  s: number;
-}
-
-/** 火花パーティクル */
-export interface SparkParticle {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  life: number;
-}
-
-/** 羽パーティクル */
-export interface FeatherParticle {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  life: number;
-}
-
-/** 鍵きらめきパーティクル */
-export interface KeySparkParticle {
-  x: number;
-  y: number;
-  life: number;
-}
-
-/** 水滴パーティクル */
-export interface DripParticle {
-  x: number;
-  y: number;
-  vy: number;
-  life: number;
-}
-
-/** 草パーティクル */
-export interface GrassParticle {
-  x: number;
-  y: number;
-  h: number;
-  ph: number;
-}
 
 /** ゲーム全体の状態 */
 export interface GameState {
@@ -121,13 +60,6 @@ export interface GameState {
 
   // ステージ状態（各ステージ init で完全初期化される）
   cav: CaveState;
-  sparks: SparkParticle[];
-  dust: DustParticle[];
-  feathers: FeatherParticle[];
-  smoke: SmokeParticle[];
-  stepDust: Particle[];
-  keySpk: KeySparkParticle[];
-  cavDrips: DripParticle[];
 
   grs: PrairieState;
   grsSlash: Array<{ lane: number; life: number; hit: boolean }>;

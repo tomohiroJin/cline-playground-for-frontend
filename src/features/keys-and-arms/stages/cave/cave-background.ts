@@ -127,14 +127,14 @@ export function createCaveBackground(ctx: EngineContext) {
       $.fillStyle = ON; $.fillRect(x, y + 6, 4, 10);
       const fl = G.tick % 18 < 6 ? 0 : G.tick % 18 < 12 ? 1 : 2; $.fillRect(x - 1 + fl, y + 1, 5, 5); $.fillRect(x, y - 1 + (fl === 1 ? 1 : 0), 3, 3);
       $.fillRect(x + fl, y - 2, 2, 2); // 炎先端
-      if (G.tick % 9 === 0) G.sparks.push({ x: x + 1, y: y - 2, vx: rngSpread(.75), vy: -rng(0, 1.5), life: 14 });
-      if (G.tick % 14 === 0) G.sparks.push({ x: x + 2, y: y, vx: rngSpread(.5), vy: -rng(0, 2), life: 10 });
-      if (G.tick % 11 === 0) G.smoke.push({ x: x + 1, y: y - 3, vx: rngSpread(.2), vy: -.3 - rng(0, .3), life: 28, s: rng(2, 4) });
+      if (G.tick % 9 === 0) G.cav.sparks.push({ x: x + 1, y: y - 2, vx: rngSpread(.75), vy: -rng(0, 1.5), life: 14 });
+      if (G.tick % 14 === 0) G.cav.sparks.push({ x: x + 2, y: y, vx: rngSpread(.5), vy: -rng(0, 2), life: 10 });
+      if (G.tick % 11 === 0) G.cav.smoke.push({ x: x + 1, y: y - 3, vx: rngSpread(.2), vy: -.3 - rng(0, .3), life: 28, s: rng(2, 4) });
     };
     torch(100, L1T + 3); torch(355, L1T + 3); torch(100, L2T + 3); torch(355, L2T + 3);
-    $.fillStyle = ON; G.sparks = G.sparks.filter(s => { s.x += s.vx; s.y += s.vy; s.life--; if (s.life > 0) { $.globalAlpha = s.life / 14; $.fillRect(s.x, s.y, 2, 2); $.globalAlpha = 1; return true; } return false; });
+    $.fillStyle = ON; G.cav.sparks = G.cav.sparks.filter(s => { s.x += s.vx; s.y += s.vy; s.life--; if (s.life > 0) { $.globalAlpha = s.life / 14; $.fillRect(s.x, s.y, 2, 2); $.globalAlpha = 1; return true; } return false; });
     // 松明の煙
-    G.smoke = G.smoke.filter(sm => { sm.x += sm.vx; sm.y += sm.vy; sm.s += .03; sm.life--; if (sm.life > 0) { onFill(sm.life / 28 * .08); circle(sm.x, sm.y, sm.s); $.globalAlpha = 1; return true; } return false; });
+    G.cav.smoke = G.cav.smoke.filter(sm => { sm.x += sm.vx; sm.y += sm.vy; sm.s += .03; sm.life--; if (sm.life > 0) { onFill(sm.life / 28 * .08); circle(sm.x, sm.y, sm.s); $.globalAlpha = 1; return true; } return false; });
 
     // 入口看板
     { const sx = 14, sy = L1T - 22; $.fillStyle = ON; $.fillRect(sx, sy, 36, 14); $.fillStyle = BG; $.fillRect(sx + 1, sy + 1, 34, 12);
@@ -186,7 +186,7 @@ export function createCaveBackground(ctx: EngineContext) {
     px(RAT, (180 - ratX % 180) + 140, L2B - 12, 2, true, true);
 
     // ほこり（BG描画。移動は cavDraw で処理）
-    $.fillStyle = ON; G.dust.forEach(d => {
+    $.fillStyle = ON; G.cav.dust.forEach(d => {
       $.globalAlpha = d.a + Math.sin(G.tick * .03 + d.x) * .04; $.fillRect(d.x, d.y, d.s, d.s); }); $.globalAlpha = 1;
     // 水たまり（光沢付き）
     onFill(.18); $.beginPath(); $.ellipse(156, L1B - 1, 8, 2, 0, 0, TAU); $.fill();
@@ -196,14 +196,14 @@ export function createCaveBackground(ctx: EngineContext) {
     $.fillRect(288, L2B - 2, 5, 1); $.fillRect(296, L2B - 2, 4, 1); $.globalAlpha = 1;
 
     // 足跡パーティクル
-    $.fillStyle = ON; G.stepDust = G.stepDust.filter(d => { d.x += d.vx; d.y += d.vy; d.vy -= .02; d.life--;
+    $.fillStyle = ON; G.cav.stepDust = G.cav.stepDust.filter(d => { d.x += d.vx; d.y += d.vy; d.vy -= .02; d.life--;
       if (d.life > 0) { $.globalAlpha = d.life / 12 * .4; circle(d.x, d.y, d.s); $.globalAlpha = 1; return true; } return false; });
 
     // 鍵のきらめき
-    $.fillStyle = ON; G.keySpk = G.keySpk.filter(k => { k.life--; if (k.life > 0) { $.globalAlpha = k.life / 10; $.fillRect(k.x, k.y, 1, 1); $.fillRect(k.x - 1, k.y, 3, 1); $.fillRect(k.x, k.y - 1, 1, 3); $.globalAlpha = 1; return true; } return false; });
+    $.fillStyle = ON; G.cav.keySpk = G.cav.keySpk.filter(k => { k.life--; if (k.life > 0) { $.globalAlpha = k.life / 10; $.fillRect(k.x, k.y, 1, 1); $.fillRect(k.x - 1, k.y, 3, 1); $.fillRect(k.x, k.y - 1, 1, 3); $.globalAlpha = 1; return true; } return false; });
 
     // コウモリヒット時の羽
-    $.fillStyle = ON; G.feathers = G.feathers.filter(f => { f.x += f.vx; f.y += f.vy; f.vy += .05; f.life--;
+    $.fillStyle = ON; G.cav.feathers = G.cav.feathers.filter(f => { f.x += f.vx; f.y += f.vy; f.vy += .05; f.life--;
       if (f.life > 0) { $.globalAlpha = f.life / 20; $.save(); $.translate(f.x, f.y); $.rotate(f.life * .2); $.fillRect(-2, -1, 4, 2); $.fillRect(-1, -2, 2, 4); $.restore(); $.globalAlpha = 1; return true; } return false; });
 
     // スコアポップアップ
