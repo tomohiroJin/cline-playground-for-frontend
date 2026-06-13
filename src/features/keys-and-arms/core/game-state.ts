@@ -58,8 +58,6 @@ export function createInitialGameState(
     // ステージ状態（各ステージ init で完全初期化される）
     cav: {},
     grs: {},
-    grsSlash: [], grsDead: [], grsGrass: [],
-    grsLaneFlash: [], grsMiss: [],
     bos: {},
     bosParticles: [], bosShieldBreak: [], bosArmTrail: [],
   };

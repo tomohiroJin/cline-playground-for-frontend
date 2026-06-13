@@ -79,6 +79,11 @@ function defaultPrairieState(): PrairieState {
     nextShieldAt: 5,
     sweepReady: false,
     sweepFlash: 0,
+    slash: [],
+    dead: [],
+    grass: [],
+    laneFlash: [],
+    miss: [],
   };
 }
 
@@ -238,11 +243,6 @@ export class GameStateBuilder {
       cav: { ...defaultCaveState(), ...this.cavOverrides },
 
       grs: { ...defaultPrairieState(), ...this.grsOverrides },
-      grsSlash: [],
-      grsDead: [],
-      grsGrass: [],
-      grsLaneFlash: [],
-      grsMiss: [],
 
       bos: { ...defaultBossState(), ...this.bosOverrides },
       bosParticles: [],

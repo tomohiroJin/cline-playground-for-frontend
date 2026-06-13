@@ -4,6 +4,7 @@
 
 import type {
   Particle,
+  GrassParticle,
   SparkParticle,
   DustParticle,
   FeatherParticle,
@@ -111,6 +112,12 @@ export interface PrairieState {
   nextShieldAt: number;
   sweepReady: boolean;
   sweepFlash: number;
+  // パーティクルプール（旧 GameState トップレベルから移動）
+  slash: Array<{ lane: number; life: number; hit: boolean }>;
+  dead: Particle[];
+  grass: GrassParticle[];
+  laneFlash: Array<{ lane: number; life: number }>;
+  miss: Array<{ lane: number; life: number }>;
 }
 
 /** ボスステージ状態 */

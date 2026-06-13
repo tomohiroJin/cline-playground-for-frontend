@@ -29,8 +29,8 @@ export function createPrairieLogic(ctx: EngineContext) {
 
   /** 草の初期化 */
   function initGrass() {
-    G.grsGrass = [];
-    for (let i = 0; i < 30; i++) G.grsGrass.push({
+    G.grs.grass = [];
+    for (let i = 0; i < 30; i++) G.grs.grass.push({
       x: rng(0, W), y: GRS_LY[rngInt(0, 2)] + rng(42, 48), h: rng(3, 8), ph: rng(0, TAU)
     });
   }
@@ -38,7 +38,7 @@ export function createPrairieLogic(ctx: EngineContext) {
   /** レーン位置にデスパーティクルを生成 — スウィープ/攻撃/ガードキル共通 */
   function grsDeathParticles(lane: number, n: number, spread: number) {
     const ex = GRS_EX[0] + 70, ey = GRS_LY[lane] + 14;
-    Particles.spawn(G.grsDead, { x: ex, y: ey, n, vxSpread: spread, vySpread: spread * .7, life: 12, s: 3, rot: true });
+    Particles.spawn(G.grs.dead, { x: ex, y: ey, n, vxSpread: spread, vySpread: spread * .7, life: 12, s: 3, rot: true });
   }
 
   /** シールドオーブドロップの確認・付与 — スウィープ/通常キル共通 */
@@ -75,16 +75,19 @@ export function createPrairieLogic(ctx: EngineContext) {
   function grsInit() {
     assert(G.loop >= 1, 'grsInit: loop must be >= 1');
     G.state = 'grass'; G.beatCtr = 0; G.beatNum = 0;
-    G.grsSlash = []; G.grsDead = []; G.grsLaneFlash = []; G.grsMiss = [];
-    Popups.clear(); initGrass();
+    Popups.clear();
     const g = Difficulty.grassGoal(G.loop); G.earnedShields = 0;
     G.grs = {
       ens: [], kills: 0, goal: g, maxSpawn: Math.floor(g * 1.6) + 4, spawned: 0, guards: 3,
       atkAnim: [-1, 0], atkCD: 0, guardAnim: 0, guardFlash: 0, hurtCD: 0,
       combo: 0, comboT: 0, maxCombo: 0, won: false, wonT: 0,
       shieldOrbs: [], nextShieldAt: SHIELD_KILL_INTERVAL,
-      sweepReady: false, sweepFlash: 0
+      sweepReady: false, sweepFlash: 0,
+      // パーティクルプール（旧 GameState トップレベルから移動）
+      slash: [], dead: [], grass: [], laneFlash: [], miss: []
     };
+    // G.grs 代入後に草を生成（代入で grass が空に上書きされるため）
+    initGrass();
   }
 
   // === 草原更新 ===
@@ -119,7 +122,7 @@ export function createPrairieLogic(ctx: EngineContext) {
                 const pts = (200 + GS.combo * 60) * G.loop; G.score += pts; hit = true;
                 addPopup(GRS_EX[0] + 75, GRS_LY[e.lane] + 4, 'SWEEP +' + pts);
                 grsDeathParticles(e.lane, 10, 2);
-                G.grsSlash.push({ lane: e.lane, life: 6, hit: true });
+                GS.slash.push({ lane: e.lane, life: 6, hit: true });
               }
             }
             if (hit) S.combo(8);
@@ -138,8 +141,8 @@ export function createPrairieLogic(ctx: EngineContext) {
                 break;
               }
             }
-            G.grsSlash.push({ lane: l, life: 6, hit });
-            if (!hit) { G.grsMiss.push({ lane: l, life: 5 }); GS.combo = 0; GS.sweepReady = false; }
+            GS.slash.push({ lane: l, life: 6, hit });
+            if (!hit) { GS.miss.push({ lane: l, life: 5 }); GS.combo = 0; GS.sweepReady = false; }
             if (hit) grsCheckShieldDrop(GS, l);
           }
           // コンボ4でスウィープ発動
@@ -179,11 +182,11 @@ export function createPrairieLogic(ctx: EngineContext) {
       if (e.dead || e.spawnT > 0) return;
       if (e.beh === 'dasher') {
         if (e.step === 2 && !e.dashReady) { e.dashReady = true; e.dashFlash = 4; return; }
-        if (e.dashReady) { e.step = 0; e.dashReady = false; e.dashFlash = 3; G.grsLaneFlash.push({ lane: e.lane, life: 4 }); return; }
+        if (e.dashReady) { e.step = 0; e.dashReady = false; e.dashFlash = 3; GS.laneFlash.push({ lane: e.lane, life: 4 }); return; }
       }
       if (e.beh === 'shifter' && e.step === 2 && !e.shifted) {
         e.shifted = true; const nl = e.lane + e.shiftDir;
-        if (nl >= 0 && nl <= 2) { G.grsLaneFlash.push({ lane: e.lane, life: 3 }); e.lane = nl; }
+        if (nl >= 0 && nl <= 2) { GS.laneFlash.push({ lane: e.lane, life: 3 }); e.lane = nl; }
       }
       if (e.wait > 0) { e.wait--; return; }
       e.step--;

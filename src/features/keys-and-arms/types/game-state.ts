@@ -3,7 +3,7 @@
  */
 import type { InputState } from './input';
 import type { CaveState, PrairieState, BossState } from './stage';
-import type { Particle, GrassParticle } from './particles';
+import type { Particle } from './particles';
 
 /** ゲーム画面状態 */
 export type GameScreen =
@@ -62,11 +62,6 @@ export interface GameState {
   cav: CaveState;
 
   grs: PrairieState;
-  grsSlash: Array<{ lane: number; life: number; hit: boolean }>;
-  grsDead: Particle[];
-  grsGrass: GrassParticle[];
-  grsLaneFlash: Array<{ lane: number; life: number }>;
-  grsMiss: Array<{ lane: number; life: number }>;
 
   bos: BossState;
   bosParticles: Particle[];
