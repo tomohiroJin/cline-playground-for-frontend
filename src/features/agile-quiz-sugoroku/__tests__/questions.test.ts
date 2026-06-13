@@ -105,5 +105,28 @@ describe('Agile Quiz Sugoroku - 問題データの構造検証', () => {
         expect(usedTags.has(tagId)).toBe(true);
       });
     });
+
+    it('下位タグが最小問題数を満たす（出題バランス）', () => {
+      const MIN_COUNT: Record<string, number> = {
+        'design-patterns': 25,
+        agile: 25,
+        'ci-cd': 25,
+        'data-structures': 24,
+        estimation: 24,
+        programming: 24,
+        refactoring: 24,
+      };
+      const counts: Record<string, number> = {};
+      expectedCategories.forEach((category) => {
+        QUESTIONS[category].forEach((q) => {
+          q.tags?.forEach((tag) => {
+            counts[tag] = (counts[tag] ?? 0) + 1;
+          });
+        });
+      });
+      Object.entries(MIN_COUNT).forEach(([tag, min]) => {
+        expect(counts[tag] ?? 0).toBeGreaterThanOrEqual(min);
+      });
+    });
   });
 });
