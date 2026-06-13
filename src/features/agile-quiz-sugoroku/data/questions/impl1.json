@@ -629,7 +629,7 @@
       "Decoratorは実行時に動的に機能を追加できる",
       "Decoratorはクラス数が必ず減る",
       "Subclassingは実行時に変更可能",
-      "違いはない"
+      "Subclassingはコンポジションを使い、Decoratorは継承を使う"
     ],
     "answer": 0,
     "tags": ["design-patterns"],
@@ -640,7 +640,7 @@
     "options": [
       "Facadeは複雑なサブシステムを単純化し、Adapterはインターフェースを変換する",
       "Adapterは複数層を隠蔽し、Facadeは変換する",
-      "両者は同じパターン",
+      "Facadeは既存IFを別IFに変換し、Adapterはサブシステムを単純化する",
       "Facadeは生成パターンで、Adapterは振る舞いパターン"
     ],
     "answer": 0,
@@ -712,7 +712,7 @@
     "options": [
       "配列",
       "連結リスト",
-      "どちらも同じ",
+      "連結リストはポインタ経由でO(1)アクセスできる",
       "場合による"
     ],
     "answer": 0,
