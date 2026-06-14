@@ -9,6 +9,18 @@ import { canMove } from '../../services/collisionService';
 import { buildDefaultEnemyAiPolicyRegistry } from './policies';
 import { GAME_BALANCE } from '../../config/gameBalance';
 import { RandomProvider } from '../../ports';
+import {
+  AI_CONFIG,
+  getManhattanDistance,
+  detectPlayer,
+  shouldChase,
+  shouldStopChase,
+  calculateFleeDirection,
+  getDirectPathToPlayer,
+} from './aiGeometry';
+
+// 公開 API（barrel）として再公開
+export { AI_CONFIG, detectPlayer, shouldChase, shouldStopChase, calculateFleeDirection, getDirectPathToPlayer };
 
 /** デフォルトの乱数プロバイダー（Math.random ベース） */
 const defaultRandom: RandomProvider = {
@@ -42,16 +54,6 @@ export function resetRandomProvider(): void {
   _random = defaultRandom;
 }
 
-const AI_CONFIG = {
-  updateInterval: GAME_BALANCE.enemyAi.updateIntervalMs,
-  chaseTimeout: GAME_BALANCE.enemyAi.chaseTimeoutMs,
-  attackCooldown: GAME_BALANCE.enemyAi.attackCooldownMs,
-} as const;
-
-const getManhattanDistance = (a: Position, b: Position): number => {
-  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
-};
-
 /** 敵が攻撃可能かどうか */
 export const canEnemyAttack = (enemy: Enemy, player: Position, currentTime: number): boolean => {
   if (enemy.attackRange <= 0) return false;
@@ -64,27 +66,6 @@ export const canEnemyAttack = (enemy: Enemy, player: Position, currentTime: numb
 export const setEnemyAttackCooldown = (enemy: Enemy, currentTime: number): Enemy => {
   const cooldown = enemy.type === EnemyType.BOSS ? GAME_BALANCE.enemyAi.bossAttackCooldownMs : AI_CONFIG.attackCooldown;
   return { ...enemy, attackCooldownUntil: currentTime + cooldown };
-};
-
-export const detectPlayer = (enemy: Enemy, player: Position): boolean => {
-  const distance = getManhattanDistance(enemy, player);
-  return distance <= enemy.detectionRange;
-};
-
-export const shouldChase = (enemy: Enemy, player: Position): boolean => {
-  if (!detectPlayer(enemy, player)) return false;
-  if (enemy.chaseRange === undefined) return true;
-  return getManhattanDistance(enemy, player) <= enemy.chaseRange;
-};
-
-export const shouldStopChase = (enemy: Enemy, player: Position, currentTime: number): boolean => {
-  if (enemy.chaseRange !== undefined && getManhattanDistance(enemy, player) > enemy.chaseRange) {
-    return true;
-  }
-  if (enemy.lastSeenAt !== undefined && currentTime - enemy.lastSeenAt > AI_CONFIG.chaseTimeout) {
-    return true;
-  }
-  return false;
 };
 
 const stepTowards = (enemy: Enemy, target: Position, map: GameMap): Position => {
@@ -318,38 +299,6 @@ export const updateChargeEnemy = (
   }
 
   return { ...enemy, state: EnemyState.IDLE };
-};
-
-export const getDirectPathToPlayer = (enemy: Enemy, player: Position): Position[] => {
-  const path: Position[] = [];
-  const dx = player.x - enemy.x;
-  const dy = player.y - enemy.y;
-  const stepX = dx === 0 ? 0 : dx > 0 ? 1 : -1;
-  const stepY = dy === 0 ? 0 : dy > 0 ? 1 : -1;
-
-  let currentX = enemy.x;
-  let currentY = enemy.y;
-
-  while (currentX !== player.x) {
-    currentX += stepX;
-    path.push({ x: currentX, y: currentY });
-  }
-
-  while (currentY !== player.y) {
-    currentY += stepY;
-    path.push({ x: currentX, y: currentY });
-  }
-
-  return path;
-};
-
-export const calculateFleeDirection = (enemy: Enemy, player: Position): Position => {
-  const dx = enemy.x - player.x;
-  const dy = enemy.y - player.y;
-  return {
-    x: enemy.x + (dx === 0 ? 0 : dx > 0 ? 1 : -1),
-    y: enemy.y + (dy === 0 ? 0 : dy > 0 ? 1 : -1),
-  };
 };
 
 export const updateFleeEnemy = (
@@ -597,4 +546,3 @@ export const resolveEnemyAttackState = (enemy: Enemy, now: number): Enemy => {
   return { ...enemy, state: EnemyState.IDLE, attackAnimUntil: undefined };
 };
 
-export { AI_CONFIG };
