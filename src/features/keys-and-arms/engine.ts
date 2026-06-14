@@ -7,6 +7,7 @@ import { createAudio } from './core/audio';
 import { createParticles } from './core/particles';
 import { createHUD } from './core/hud';
 import { createInputHandler } from './core/input';
+import { createGameTick } from './core/game-tick';
 import { createInitialGameState } from './core/game-state';
 import { createLocalStorageRepository } from './infrastructure/storage-repository';
 import { createRenderEffects } from './core/render-effects';
@@ -66,69 +67,12 @@ export function createEngine(canvas: HTMLCanvasElement): Engine {
   /* 遅延バインド（nav に実体を差し込む） */
   nav.cave = cave.init; nav.prairie = prairie.init;
   nav.boss = boss.init; nav.startGame = titleScreen.startGame;
-  const isGameplay = () => G.state !== 'title' && G.state !== 'over' && G.state !== 'trueEnd' && G.state !== 'ending1';
 
-  /* GAME TICK — 状態マシン */
-  function gameTick() {
-    G.tick++;
-    if (G.beatPulse > 0) G.beatPulse--;
-
-    // リセット確認
-    if (G.resetConfirm > 0) {
-      G.resetConfirm--;
-      if (jAct()) {
-        G.resetConfirm = 0; G.state = 'title'; G.blink = 0;
-        if (G.score > G.hi) { G.hi = G.score; storage.setHighScore(G.hi); }
-        clearJ(); return;
-      }
-      if (J('escape')) G.resetConfirm = 0;
-      clearJ(); return;
-    }
-
-    // ポーズトグル（ゲームプレイ中のみ）
-    if (J('p') && isGameplay() && G.state !== 'help') {
-      G.paused = !G.paused;
-      clearJ(); return;
-    }
-
-    // ポーズ中はティックスキップ
-    if (G.paused) {
-      if (J('escape')) { G.paused = false; G.resetConfirm = 90; }
-      clearJ(); return;
-    }
-
-    // ESC でリセット確認
-    if (J('escape') && isGameplay()) {
-      G.resetConfirm = 90; clearJ(); return;
-    }
-
-    // ヒットストップ
-    if (G.hitStop > 0) { G.hitStop--; clearJ(); return; }
-    if (G.hurtFlash > 0) G.hurtFlash--;
-    if (G.shakeT > 0) G.shakeT--;
-
-    if (G.transition.t > 0) {
-      if (isGameplay()) hud.doBeat();
-    } else {
-      let nb = false;
-      if (isGameplay()) nb = hud.doBeat();
-      switch (G.state) {
-        case 'cave': cave.update(nb); break;
-        case 'grass': prairie.update(nb); break;
-        case 'boss': boss.update(nb); break;
-        case 'title':
-          for (const k of 'abcdefghijklmnopqrstuvwxyz'.split('')) {
-            if (J(k)) { G.cheatBuf += k; if (G.cheatBuf.length > 10) G.cheatBuf = G.cheatBuf.slice(-10); }
-          }
-          if (J('arrowup')) { G.state = 'help'; G.helpPage = 0; clearJ(); break; }
-          if (jAct() || J('enter')) { audio.S.start(); nav.startGame(); }
-          break;
-        case 'help': helpScreen.update(); break;
-        case 'over': case 'trueEnd': case 'ending1': break;
-      }
-    }
-    clearJ();
-  }
+  /* GAME TICK — 状態マシン（core/game-tick.ts に抽出済み） */
+  const gameTick = createGameTick({
+    G, J, clearJustPressed: clearJ, jAct,
+    hud, audio, nav, cave, prairie, boss, helpScreen, storage,
+  });
 
   /* RENDER — 描画 */
   function render() {
