@@ -156,6 +156,10 @@ export class TestEngine {
         case 'grass': this.prairie.update(nb); break;
         case 'boss': this.boss.update(nb); break;
         case 'title':
+          // 本番 engine.ts と同一: チートバッファ蓄積（a〜z）
+          for (const k of 'abcdefghijklmnopqrstuvwxyz'.split('')) {
+            if (J(k)) { G.cheatBuf += k; if (G.cheatBuf.length > 10) G.cheatBuf = G.cheatBuf.slice(-10); }
+          }
           if (J('arrowup')) { G.state = 'help'; G.helpPage = 0; clearJ(); break; }
           if (jAct() || J('enter')) { this.titleScreen.startGame(); }
           break;
