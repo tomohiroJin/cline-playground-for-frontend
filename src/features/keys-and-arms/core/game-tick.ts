@@ -10,6 +10,7 @@ import type { AudioModule } from '../types/audio';
 import type { StageNavigator } from '../types/stage-navigator';
 import type { Stage } from '../types/stage';
 import type { GameStorageRepository } from '../infrastructure/storage-repository';
+import { isActionKey } from './input';
 
 /** gameTick が必要とする依存の束 */
 export interface GameTickDeps {
@@ -82,6 +83,7 @@ export function createGameTick(deps: GameTickDeps): () => void {
         case 'boss': boss.update(nb); break;
         case 'title':
           for (const k of 'abcdefghijklmnopqrstuvwxyz'.split('')) {
+            if (isActionKey(k)) continue; // 開始キー(z)はチート文字として扱わない
             if (J(k)) { G.cheatBuf += k; if (G.cheatBuf.length > 10) G.cheatBuf = G.cheatBuf.slice(-10); }
           }
           if (J('arrowup')) { G.state = 'help'; G.helpPage = 0; clearJ(); break; }
