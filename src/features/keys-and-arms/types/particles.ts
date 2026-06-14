@@ -18,6 +18,67 @@ export interface Particle {
 /** パーティクルプール */
 export type ParticlePool = Particle[];
 
+/** 浮遊ほこりパーティクル */
+export interface DustParticle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  s: number;
+  a: number;
+}
+
+/** 松明の煙パーティクル */
+export interface SmokeParticle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  life: number;
+  s: number;
+}
+
+/** 火花パーティクル */
+export interface SparkParticle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  life: number;
+}
+
+/** 羽パーティクル */
+export interface FeatherParticle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  life: number;
+}
+
+/** 鍵きらめきパーティクル */
+export interface KeySparkParticle {
+  x: number;
+  y: number;
+  life: number;
+}
+
+/** 水滴パーティクル */
+export interface DripParticle {
+  x: number;
+  y: number;
+  vy: number;
+  life: number;
+}
+
+/** 草パーティクル */
+export interface GrassParticle {
+  x: number;
+  y: number;
+  h: number;
+  ph: number;
+}
+
 /** パーティクル生成パラメータ */
 export interface ParticleSpawnParams {
   readonly x: number;

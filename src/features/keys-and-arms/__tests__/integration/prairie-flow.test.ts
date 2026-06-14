@@ -14,7 +14,7 @@ describe('草原ステージ統合テスト', () => {
     engine.G.cav.keysPlaced = 3;
     engine.G.cav.won = true;
     engine.G.state = 'grass';
-    engine.G.grsInit?.();
+    engine.nav.prairie();
     return engine;
   }
 

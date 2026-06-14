@@ -96,7 +96,7 @@ export function createPrairieBackground(ctx: EngineContext) {
     fl(95, GRS_LY[2] + 40); fl(230, GRS_LY[0] + 40); fl(370, GRS_LY[1] + 42); $.globalAlpha = 1;
 
     // アニメーション付き草（揺れ）
-    G.grsGrass.forEach(g => {
+    G.grs.grass.forEach(g => {
       const sway = Math.sin(G.tick * .08 + g.ph) * 2.5;
       onStroke(.2); $.lineWidth = 1;
       $.beginPath(); $.moveTo(g.x, g.y); $.lineTo(g.x + sway, g.y - g.h); $.stroke();

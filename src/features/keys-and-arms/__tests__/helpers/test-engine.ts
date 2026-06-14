@@ -6,9 +6,11 @@
  *
  * engine.ts と同じ組み立てを行うが、描画は実Canvas不要。
  */
-import { TRANSITION_MID } from '../../constants';
 import type { GameState, GameScreen } from '../../types/game-state';
+import { createGameTick } from '../../core/game-tick';
+import { advanceTransition } from '../../core/transition';
 import type { EngineContext } from '../../types/engine-context';
+import type { StageNavigator } from '../../types/stage-navigator';
 import { createRendering } from '../../core/rendering';
 import { createParticles } from '../../core/particles';
 import { createHUD } from '../../core/hud';
@@ -41,12 +43,15 @@ export class TestEngine {
   readonly input: InputHandler;
   readonly storage: GameStorageRepository;
   readonly G: GameState;
+  /** ステージ遷移ナビゲータ（テストから遷移を直接トリガーするために公開） */
+  readonly nav: StageNavigator;
   private readonly cave: Stage;
   private readonly prairie: Stage;
   private readonly boss: Stage;
   private readonly hud: EngineContext['hud'];
   private readonly helpScreen: { update(): void };
   private readonly titleScreen: { startGame(): void };
+  private readonly runTick: () => void;
 
   constructor(options: TestEngineOptions = {}) {
     const ctx = createMockCanvasContext();
@@ -54,16 +59,22 @@ export class TestEngine {
     this.storage = createInMemoryStorageRepository(options.initialHighScore ?? 0);
     const audio = createNullAudioService();
 
-    const uninitG = createInitialGameState(
+    this.G = createInitialGameState(
       this.input.kd,
       this.input.jp,
       this.storage.getHighScore(),
     );
-    this.G = uninitG as GameState;
 
     const draw = createRendering(ctx);
     const particles = createParticles(draw);
     this.hud = createHUD(draw, this.G, audio, this.storage);
+
+    this.nav = {
+      cave: () => {},
+      prairie: () => {},
+      boss: () => {},
+      startGame: () => {},
+    };
 
     const engineCtx: EngineContext = {
       G: this.G,
@@ -72,6 +83,7 @@ export class TestEngine {
       particles,
       hud: this.hud,
       storage: this.storage,
+      nav: this.nav,
     };
 
     this.cave = createCaveStage(engineCtx);
@@ -80,80 +92,33 @@ export class TestEngine {
     this.titleScreen = createTitleScreen(engineCtx);
     this.helpScreen = createHelpScreen(engineCtx);
 
-    // 遅延バインド
-    this.G.cavInit = this.cave.init.bind(this.cave);
-    this.G.grsInit = this.prairie.init.bind(this.prairie);
-    this.G.bosInit = this.boss.init.bind(this.boss);
-    this.G.startGame = this.titleScreen.startGame;
+    // 遅延バインド（nav に実体を差し込む）
+    this.nav.cave = this.cave.init.bind(this.cave);
+    this.nav.prairie = this.prairie.init.bind(this.prairie);
+    this.nav.boss = this.boss.init.bind(this.boss);
+    this.nav.startGame = this.titleScreen.startGame;
+
+    this.runTick = createGameTick({
+      G: this.G,
+      J: this.input.justPressed,
+      clearJustPressed: this.input.clearJustPressed,
+      jAct: this.input.isAction,
+      hud: this.hud,
+      audio,
+      nav: this.nav,
+      cave: this.cave,
+      prairie: this.prairie,
+      boss: this.boss,
+      helpScreen: this.helpScreen,
+      storage: this.storage,
+    });
   }
 
-  /** 1 ティック実行（描画スキップ） */
+  /** 1 ティック実行（描画スキップ）。本番 engine と同じ更新ロジックを共有する。 */
   gameTick(): void {
-    const G = this.G;
-    const { justPressed: J, clearJustPressed: clearJ, isAction: jAct } = this.input;
-
-    G.tick++;
-    if (G.beatPulse > 0) G.beatPulse--;
-
-    const isGameplay = () =>
-      G.state !== 'title' && G.state !== 'over' &&
-      G.state !== 'trueEnd' && G.state !== 'ending1';
-
-    // リセット確認
-    if (G.resetConfirm > 0) {
-      G.resetConfirm--;
-      if (jAct()) {
-        G.resetConfirm = 0; G.state = 'title'; G.blink = 0;
-        if (G.score > G.hi) { G.hi = G.score; this.storage.setHighScore(G.hi); }
-        clearJ(); return;
-      }
-      if (J('escape')) G.resetConfirm = 0;
-      clearJ(); return;
-    }
-
-    // ポーズトグル
-    if (J('p') && isGameplay() && G.state !== 'help') {
-      G.paused = !G.paused;
-      clearJ(); return;
-    }
-
-    // ポーズ中スキップ
-    if (G.paused) {
-      if (J('escape')) { G.paused = false; G.resetConfirm = 90; }
-      clearJ(); return;
-    }
-
-    // ESC リセット確認
-    if (J('escape') && isGameplay()) {
-      G.resetConfirm = 90; clearJ(); return;
-    }
-
-    // ヒットストップ
-    if (G.hitStop > 0) { G.hitStop--; clearJ(); return; }
-    if (G.hurtFlash > 0) G.hurtFlash--;
-    if (G.shakeT > 0) G.shakeT--;
-
-    if (G.trT > 0) {
-      if (isGameplay()) this.hud.doBeat();
-      // 描画をスキップするため、トランジション処理をここで実行
-      G.trT--;
-      if (G.trT === TRANSITION_MID && G.trFn) G.trFn();
-    } else {
-      let nb = false;
-      if (isGameplay()) nb = this.hud.doBeat();
-      switch (G.state) {
-        case 'cave': this.cave.update(nb); break;
-        case 'grass': this.prairie.update(nb); break;
-        case 'boss': this.boss.update(nb); break;
-        case 'title':
-          if (J('arrowup')) { G.state = 'help'; G.helpPage = 0; clearJ(); break; }
-          if (jAct() || J('enter')) { this.titleScreen.startGame(); }
-          break;
-        case 'help': this.helpScreen.update(); break;
-        case 'over': case 'trueEnd': case 'ending1': break;
-      }
-    }
-    clearJ();
+    this.runTick();
+    // 本番では render(drawTrans) がトランジションを前進させるため、ここで同等処理を行う
+    if (this.G.transition.t > 0) advanceTransition(this.G);
   }
 
   /** 指定ティック数だけゲームを進行 */
@@ -184,7 +149,7 @@ export class TestEngine {
     this.G.state = 'title';
     this.pressKeyAndTick('z');
     // トランジションをスキップ
-    while (this.G.trT > 0) {
+    while (this.G.transition.t > 0) {
       this.gameTick();
     }
   }

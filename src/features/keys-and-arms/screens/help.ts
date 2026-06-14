@@ -16,7 +16,7 @@ export function createHelpScreen(ctx: EngineContext) {
   const { $, onFill, txtC, txt, px } = draw;
 
   // 入力ヘルパー
-  const { J } = createInputHelpers(G.jp);
+  const { J, jAct } = createInputHelpers(G.jp);
 
   // 3ページ構成
   const PAGES = [
@@ -171,8 +171,8 @@ export function createHelpScreen(ctx: EngineContext) {
     if (J('arrowright') && G.helpPage < 2) { G.helpPage++; }
     if (J('arrowleft') && G.helpPage > 0) { G.helpPage--; }
 
-    // Z / ESC でタイトルに戻る
-    if (J('z') || J(' ') || J('escape')) {
+    // アクションキー / ESC でタイトルに戻る
+    if (jAct() || J('escape')) {
       G.state = 'title'; G.blink = 0;
     }
   }

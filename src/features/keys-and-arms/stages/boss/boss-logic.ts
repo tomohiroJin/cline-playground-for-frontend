@@ -22,7 +22,7 @@ import type { EngineContext } from '../../types';
  * @returns bosInit, bosUpdate 関数
  */
 export function createBossLogic(ctx: EngineContext) {
-  const { G, audio, particles, hud } = ctx;
+  const { G, audio, particles, hud, nav } = ctx;
   const { S } = audio;
   const { Particles, Popups } = particles;
   const { twoBeatDuration, doHurt, transTo } = hud;
@@ -48,7 +48,6 @@ export function createBossLogic(ctx: EngineContext) {
   function bosInit() {
     assert(G.loop >= 1, 'bosInit: loop must be >= 1');
     G.state = 'boss'; G.beatCtr = 0; G.beatNum = 0; Popups.clear();
-    G.bosParticles = []; G.bosShieldBreak = []; G.bosArmTrail = [];
     // アームスピード — Difficultyモジュールから
     const baseSpd = Difficulty.bossArmSpeed(G.loop);
     const spdVar = G.loop <= 2 ? 1 : 0;
@@ -78,7 +77,9 @@ export function createBossLogic(ctx: EngineContext) {
       bossAnger: 0, bossPulse: 0, bossBreath: 0,
       counterCD: 0, counterFlash: [-1, 0],
       rageWave: 0,
-      quake: 0
+      quake: 0,
+      // パーティクルプール（旧 GameState トップレベルから移動。各ステージ突入時にリセット）
+      particles: [], shieldBreak: [], armTrail: [],
     };
   }
 
@@ -101,7 +102,7 @@ export function createBossLogic(ctx: EngineContext) {
       if (B.wonT === BOSS_VICTORY_TIMER) {
         if (Difficulty.isTrueEnding(G.loop)) { G.state = 'trueEnd'; G.teT = 0; G.tick = 0; }
         else if (G.loop === 1) { G.state = 'ending1'; G.e1T = 0; G.tick = 0; }
-        else { G.loop++; G.noDmg = true; if (G.hp < G.maxHp) G.hp++; transTo('LOOP ' + G.loop, G.cavInit, 'HARDER!'); }
+        else { G.loop++; G.noDmg = true; if (G.hp < G.maxHp) G.hp++; transTo('LOOP ' + G.loop, nav.cave, 'HARDER!'); }
       }
       return;
     }
@@ -159,7 +160,7 @@ export function createBossLogic(ctx: EngineContext) {
         B.counterFlash = [pi, 8];
         G.score += 300 * G.loop; addPopup(PED_POS[pi].x, PED_POS[pi].y - 20, 'COUNTER!');
         S.kill(); G.hitStop = 3;
-        Particles.spawn(G.bosParticles, { x: PED_POS[pi].x, y: PED_POS[pi].y - 4, ...PARTICLE_COUNTER });
+        Particles.spawn(B.particles, { x: PED_POS[pi].x, y: PED_POS[pi].y - 4, ...PARTICLE_COUNTER });
         B.bossPulse = 5;
       }
     }
@@ -199,13 +200,13 @@ export function createBossLogic(ctx: EngineContext) {
           const pp = PED_POS[i];
           if (B.peds[i] === 1) {
             B.peds[i] = 0; B.stealAnim = [i, 10]; S.steal();
-            Particles.spawn(G.bosParticles, { x: pp.x, y: pp.y - 6, ...PARTICLE_STEAL });
-            G.bosArmTrail.push({ idx: i, life: 8 });
+            Particles.spawn(B.particles, { x: pp.x, y: pp.y - 6, ...PARTICLE_STEAL });
+            B.armTrail.push({ idx: i, life: 8 });
           }
           if (B.peds[i] === 2) {
             B.peds[i] = 1; B.shieldAnim = [i, 8];
-            G.bosShieldBreak.push({ idx: i, life: 10 }); S.shieldBreak();
-            Particles.spawn(G.bosParticles, { x: pp.x, y: pp.y - 6, ...PARTICLE_SHIELD_BREAK });
+            B.shieldBreak.push({ idx: i, life: 10 }); S.shieldBreak();
+            Particles.spawn(B.particles, { x: pp.x, y: pp.y - 6, ...PARTICLE_SHIELD_BREAK });
           }
           if (B.pos === i + 1 && B.hurtCD <= 0) {
             B.hurtCD = twoBeatDuration(); if (B.hasGem) B.hasGem = false; B.pos = 0; doHurt();

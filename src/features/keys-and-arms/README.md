@@ -62,6 +62,30 @@ src/pages/KeysAndArmsPage.tsx  # ページコンポーネント
 - **音声あり**: Web Audio API による効果音・BGM が再生されます
 - **フラッシュ演出あり**: ダメージ時やビートパルスで画面が点滅します
 
+## デバッグ / 隠しコマンド（GOD MODE）
+
+タイトル画面で隠しコマンドを入力すると、HP を増やした状態でゲームを開始できます。
+
+1. **タイトル画面で**キーボードから `j` → `i` → `n`（"jin"）と入力する
+2. 画面に **`— GOD MODE —`** と表示されればチート有効
+3. **任意の開始キー（Z / スペース / Enter）** でゲームを開始すると、HP / 最大HP が `3` → `20` になる
+
+- 判定ロジック: `screens/title.ts`（`cheatBuf.endsWith('jin')` → `hp = cheat ? 20 : 3`）
+- 入力蓄積: `core/game-tick.ts` の title 節（a〜z のキー入力を `G.cheatBuf` に蓄積。アクションキーは除外）
+- 仮想パッドでは a〜z を入力できないため、**物理キーボード必須**
+
+## 既知の問題
+
+### （解消済み）GOD MODE が `z` 開始だと発動しなかった問題
+
+以前は開始キー `z` が cheat 蓄積ループ（a〜z）に混入し、`z` 開始で `G.cheatBuf` が
+`jin` → **`jinz`** になって GOD MODE が発動しないバグがあった。
+`core/game-tick.ts` の cheat 蓄積ループで `isActionKey`（`core/input.ts` の単一定義）により
+アクションキーを除外し、**`z`/`スペース`/`Enter` のいずれの開始でも発動するように修正済み**。
+
+- **検証**: `__tests__/integration/god-mode.test.ts` が z/スペース/Enter での発動を実行可能な形で固定
+- **発生源**: 2026-06 の状態管理リファクタリング以前から存在した既存バグ（当該リファクタとは無関係）
+
 ## 起動URL
 
 - `/keys-and-arms`

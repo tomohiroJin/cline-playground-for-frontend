@@ -54,14 +54,14 @@ export function createPrairieRenderer(ctx: EngineContext, drawPrairieBG: () => v
     }
 
     // レーンフラッシュ
-    G.grsLaneFlash = G.grsLaneFlash.filter(f => {
+    GS.laneFlash = GS.laneFlash.filter(f => {
       f.life--; if (f.life <= 0) return false;
       const ly = GRS_LY[f.lane]; onFill(f.life / 4 * .12);
       $.fillRect(GRS_EX[0] + 58, ly, W - GRS_EX[0] - 80, 48); $.globalAlpha = 1; return true;
     });
 
     // ミスのXマーク
-    G.grsMiss = G.grsMiss.filter(m => {
+    GS.miss = GS.miss.filter(m => {
       m.life--; if (m.life <= 0) return false;
       const ly = GRS_LY[m.lane], mx = GRS_EX[0] + 73;
       $.strokeStyle = ON; $.lineWidth = 2; $.globalAlpha = m.life / 4 * .5;
@@ -120,7 +120,7 @@ export function createPrairieRenderer(ctx: EngineContext, drawPrairieBG: () => v
     });
 
     // スラッシュエフェクト（インパクトアーク）
-    G.grsSlash = G.grsSlash.filter(sl => {
+    GS.slash = GS.slash.filter(sl => {
       sl.life--; if (sl.life <= 0) return false;
       const ly = GRS_LY[sl.lane], sx = GRS_EX[0] + 55; const p = sl.life / 6;
       $.strokeStyle = ON; $.lineWidth = 2 + p; $.globalAlpha = p;
@@ -139,7 +139,7 @@ export function createPrairieRenderer(ctx: EngineContext, drawPrairieBG: () => v
     });
 
     // デスパーティクル（回転付き）
-    $.fillStyle = ON; G.grsDead = G.grsDead.filter(d => {
+    $.fillStyle = ON; GS.dead = GS.dead.filter(d => {
       d.x += d.vx; d.y += d.vy; d.vy += .08; d.life--;
       if (d.life > 0) {
         $.globalAlpha = d.life / 12;

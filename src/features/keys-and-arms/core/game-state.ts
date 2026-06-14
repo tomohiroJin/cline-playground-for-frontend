@@ -6,14 +6,17 @@
  * ハイスコアは StorageRepository 経由で注入される。
  */
 
-import type { UninitializedGameState } from '../types';
+import type { GameState } from '../types';
+import { createInitialCaveState } from './initial-cave-state';
+import { createInitialPrairieState } from './initial-prairie-state';
+import { createInitialBossState } from './initial-boss-state';
 
-/** 初期ゲーム状態を生成（遅延バインド完了後に GameState として使用） */
+/** 初期ゲーム状態を生成（全フィールドが型的に完全な GameState） */
 export function createInitialGameState(
   kd: Record<string, boolean>,
   jp: Record<string, boolean>,
   highScore = 0,
-): UninitializedGameState {
+): GameState {
   return {
     // 全体状態
     state: 'title',
@@ -42,10 +45,7 @@ export function createInitialGameState(
     kd,
 
     // トランジション
-    trT: 0,
-    trTxt: '',
-    trFn: undefined,
-    trSub: '',
+    transition: { t: 0, txt: '', fn: undefined, sub: '' },
 
     // タイトル画面
     blink: 0,
@@ -56,18 +56,8 @@ export function createInitialGameState(
     teT: 0,
 
     // ステージ状態（各ステージ init で完全初期化される）
-    cav: {},
-    sparks: [], dust: [], feathers: [], smoke: [], stepDust: [], keySpk: [], cavDrips: [],
-    grs: {},
-    grsSlash: [], grsDead: [], grsGrass: [], grsDust: [],
-    grsLaneFlash: [], grsMiss: [],
-    bos: {},
-    bosParticles: [], bosShieldBreak: [], bosArmTrail: [],
-
-    // 遅延バインド（engine.ts で設定される）
-    cavInit: undefined,
-    grsInit: undefined,
-    bosInit: undefined,
-    startGame: undefined,
+    cav: createInitialCaveState(),
+    grs: createInitialPrairieState(),
+    bos: createInitialBossState(),
   };
 }

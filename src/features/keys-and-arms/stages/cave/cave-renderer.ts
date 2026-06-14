@@ -155,7 +155,7 @@ export function createCaveRenderer(ctx: EngineContext, drawCaveBG: () => void) {
       $.beginPath(); $.moveTo(2, KY1 + 10); $.lineTo(14, KY1 + 4); $.lineTo(14, KY1 + 16); $.closePath(); $.fill(); $.globalAlpha = 1; }
 
     // 水滴
-    G.cavDrips = G.cavDrips.filter(d => { d.vy += .12; d.y += d.vy; d.life--;
+    C.drips = C.drips.filter(d => { d.vy += .12; d.y += d.vy; d.life--;
       if (d.life > 0 && d.y < L1B) { onFill(.3);
         $.fillRect(d.x, d.y, 2, 3 + d.vy); $.globalAlpha = 1; return true; }
       onFill(.15);
@@ -163,7 +163,7 @@ export function createCaveRenderer(ctx: EngineContext, drawCaveBG: () => void) {
       $.globalAlpha = 1; return false; });
 
     // 浮遊ほこり
-    G.dust.forEach(d => { d.x += d.vx + Math.sin(G.tick * .02 + d.a * 100) * .08; d.y += d.vy;
+    C.dust.forEach(d => { d.x += d.vx + Math.sin(G.tick * .02 + d.a * 100) * .08; d.y += d.vy;
       if (d.x < 0) d.x = W; if (d.x > W) d.x = 0; if (d.y < 30) d.y = H - 60; if (d.y > H - 30) d.y = 30;
       onFill(d.a * (0.7 + Math.sin(G.tick * .04 + d.x) * .3)); $.fillRect(d.x, d.y, d.s, d.s); $.globalAlpha = 1; });
 

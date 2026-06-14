@@ -12,7 +12,7 @@ describe('ボスステージ統合テスト', () => {
     engine.startGame();
     // ボスステージに直接遷移
     engine.G.state = 'boss';
-    engine.G.bosInit?.();
+    engine.nav.boss();
     return engine;
   }
 
@@ -41,7 +41,7 @@ describe('ボスステージ統合テスト', () => {
     engine.startGame();
     engine.G.earnedShields = 2;
     engine.G.state = 'boss';
-    engine.G.bosInit?.();
+    engine.nav.boss();
 
     // Assert — Difficulty.bossShields(2) = min(5, 1 + 2) = 3
     expect(engine.G.bos.shields).toBe(3);

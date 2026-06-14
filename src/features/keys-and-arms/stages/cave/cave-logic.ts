@@ -13,7 +13,7 @@ import {
 } from '../../constants';
 
 import { rng, rngInt, rngSpread } from '../../core/math';
-import { createInputHelpers } from '../../core/input';
+import { createInputHelpers, isActionHeld } from '../../core/input';
 
 import { Difficulty } from '../../difficulty';
 
@@ -25,7 +25,7 @@ import type { EngineContext } from '../../types';
  * @returns cavInit, cavUpdate 関数
  */
 export function createCaveLogic(ctx: EngineContext) {
-  const { G, audio, particles, hud } = ctx;
+  const { G, audio, particles, hud, nav } = ctx;
   const { S } = audio;
   const { Particles, Popups } = particles;
   const { twoBeatDuration, doHurt, transTo } = hud;
@@ -36,20 +36,21 @@ export function createCaveLogic(ctx: EngineContext) {
   // --- ヘルパー ---
   function addPopup(x: number, y: number, t: string) { Popups.add(x, y, t); }
 
+  // 浮遊ほこりを初期パーティクルで満たす（G.cav.dust を直接初期化）
   function initDust() {
-    G.dust = [];
+    G.cav.dust = [];
     for (let i = 0; i < 15; i++)
-      G.dust.push({ x: rng(0, W), y: rng(30, H - 30), vx: rngSpread(.15), vy: rngSpread(.075), s: rng(1, 3), a: rng(.06, .14) });
+      G.cav.dust.push({ x: rng(0, W), y: rng(30, H - 30), vx: rngSpread(.15), vy: rngSpread(.075), s: rng(1, 3), a: rng(.06, .14) });
   }
 
   function addStepDust(x: number, y: number) {
-    Particles.spawn(G.stepDust, { x, y, ...PARTICLE_STEP_DUST });
+    Particles.spawn(G.cav.stepDust, { x, y, ...PARTICLE_STEP_DUST });
   }
 
   // === 洞窟初期化 ===
   function cavInit() {
     assert(G.loop >= 1, 'cavInit: loop must be >= 1');
-    G.state = 'cave'; G.beatCtr = 0; G.beatNum = 0; G.sparks = []; G.feathers = []; G.smoke = []; G.stepDust = []; Popups.clear(); G.keySpk = []; initDust();
+    G.state = 'cave'; G.beatCtr = 0; G.beatNum = 0; Popups.clear();
     G.cav = {
       pos: 0, prevPos: -1, dir: 1, keys: [false, false, false], keysPlaced: 0, carrying: false,
       trapOn: false, trapBeat: 0, trapSparks: [], trapWasDanger: 0,
@@ -58,18 +59,21 @@ export function createCaveLogic(ctx: EngineContext) {
       mimicOpen: false, mimicBeat: 0, pryCount: 0, mimicShake: 0, mimicWasDanger: 0, pryDecayT: 0,
       spiderY: 0, spiderBeat: 0, spiderWasDanger: 0,
       hurtCD: 0, actAnim: 0, actType: '', walkAnim: 0, idleT: 0, won: false, wonT: 0,
-      trailAlpha: 0, roomNameT: 0, roomName: 'ENTRANCE'
+      trailAlpha: 0, roomNameT: 0, roomName: 'ENTRANCE',
+      sparks: [], dust: [], feathers: [], smoke: [], stepDust: [], keySpk: [], drips: [],
     };
+    // dust は初期パーティクルで満たす必要があるため G.cav 設定後に実行
+    initDust();
   }
 
   // === 洞窟更新 ===
   function cavUpdate(nb: boolean) {
     const C = G.cav; if (C.hurtCD > 0) C.hurtCD--; if (C.actAnim > 0) C.actAnim--; if (C.batHitAnim > 0) C.batHitAnim--;
-    if (C.mimicShake > 0) C.mimicShake--; if (C.walkAnim > 0) C.walkAnim--; if (C.won) { C.wonT++; if (C.wonT === VICTORY_TIMER) transTo('PRAIRIE', G.grsInit, 'DEFEAT ENEMIES'); return; }
+    if (C.mimicShake > 0) C.mimicShake--; if (C.walkAnim > 0) C.walkAnim--; if (C.won) { C.wonT++; if (C.wonT === VICTORY_TIMER) transTo('PRAIRIE', nav.prairie, 'DEFEAT ENEMIES'); return; }
     if (C.trailAlpha > 0) C.trailAlpha -= .03; if (C.roomNameT > 0) C.roomNameT--;
     C.idleT++;
     // 鍵所持中のきらめき
-    if (C.carrying && G.tick % 4 === 0) G.keySpk.push({ x: POS[C.pos].x - 4 + rng(0, 12), y: POS[C.pos].y - 6 + rng(0, 6), life: 10 });
+    if (C.carrying && G.tick % 4 === 0) C.keySpk.push({ x: POS[C.pos].x - 4 + rng(0, 12), y: POS[C.pos].y - 6 + rng(0, 6), life: 10 });
     if (C.actAnim <= 0) {
       const n = NAV[C.pos]; let moved = false; const oldPos = C.pos;
       if (J('arrowleft') && n.l !== undefined) { C.pos = n.l; C.dir = -1; moved = true; }
@@ -79,7 +83,7 @@ export function createCaveLogic(ctx: EngineContext) {
       else if (moved) { C.prevPos = oldPos; C.trailAlpha = .3; S.step(); C.walkAnim = 3; C.idleT = 0; addStepDust(POS[C.pos].x, POS[C.pos].y + 20);
         if (ROOM_NAMES[C.pos] !== ROOM_NAMES[oldPos]) { C.roomNameT = 40; C.roomName = ROOM_NAMES[C.pos]; } } }
     // === CAGE HOLD メカニクス（TRAPの鍵、pos 9）===
-    const actHeld = G.kd['z'] || G.kd[' '];
+    const actHeld = isActionHeld(G.kd);
     C.cageHolding = false;
     if (C.pos === 9 && !C.keys[0] && !C.carrying && !C.trapOn && actHeld && C.hurtCD <= 0 && C.actAnim <= 0) {
       C.cageHolding = true; C.idleT = 0; C.cageProgress += 2.5;
@@ -98,7 +102,7 @@ export function createCaveLogic(ctx: EngineContext) {
 
     if (jAct() && C.hurtCD <= 0 && C.actAnim <= 0) { C.idleT = 0;
       if (C.pos === 4 && !C.keys[1] && !C.carrying && C.batPhase === 0) { C.keys[1] = true; C.carrying = true; G.score += 300 * G.loop; S.grab(); C.actAnim = 8; C.actType = 'atk'; C.batHitAnim = 10; C.dir = -1; addPopup(POS[4].x, POS[4].y - 14, '+' + 300 * G.loop);
-        for (let i = 0; i < 8; i++) G.feathers.push({ x: POS[4].x, y: L1T + 10, vx: rngSpread(1.5), vy: -rng(0, 2) - 1, life: 12 }); }
+        for (let i = 0; i < 8; i++) C.feathers.push({ x: POS[4].x, y: L1T + 10, vx: rngSpread(1.5), vy: -rng(0, 2) - 1, life: 12 }); }
       if (C.pos === 5 && !C.keys[2] && !C.carrying && !C.mimicOpen) {
         C.pryCount++; C.pryDecayT = 0; C.actAnim = 3; C.actType = 'pry'; S.pry(); C.mimicShake = 3; C.dir = 1;
         if (C.pryCount >= 5) { C.keys[2] = true; C.carrying = true; G.score += 300 * G.loop; S.grab(); C.actAnim = 8; C.actType = 'reach'; addPopup(POS[5].x, POS[5].y - 14, '+' + 300 * G.loop); } }
@@ -115,9 +119,9 @@ export function createCaveLogic(ctx: EngineContext) {
     C.trapSparks = C.trapSparks.filter(s => { s.x += s.vx; s.y += s.vy; s.l--; return s.l > 0; });
     if (!nb) return;
     // 環境水滴
-    if (G.beatNum % 4 === 0 && G.cavDrips.length < 3) {
+    if (G.beatNum % 4 === 0 && C.drips.length < 3) {
       const dx = [85, 260, 350][rngInt(0, 2)];
-      G.cavDrips.push({ x: dx + rng(-5, 5), y: L1T + 2, vy: 0, life: 40 });
+      C.drips.push({ x: dx + rng(-5, 5), y: L1T + 2, vy: 0, life: 40 });
       if (rng() > .6) S.drip(); }
     // ビート更新（安全インジケータ付き）
     const prevTrap = C.trapOn, prevBat = C.batPhase, prevMim = C.mimicOpen, prevSp = C.spiderY;

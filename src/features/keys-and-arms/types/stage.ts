@@ -2,6 +2,17 @@
  * KEYS & ARMS — ステージ共通インターフェース・ステージ状態型
  */
 
+import type {
+  Particle,
+  GrassParticle,
+  SparkParticle,
+  DustParticle,
+  FeatherParticle,
+  SmokeParticle,
+  KeySparkParticle,
+  DripParticle,
+} from './particles';
+
 /** ステージ共通インターフェース */
 export interface Stage {
   init(): void;
@@ -47,6 +58,14 @@ export interface CaveState {
   trailAlpha: number;
   roomNameT: number;
   roomName: string;
+  // パーティクルプール（旧 GameState トップレベルから移動）
+  sparks: SparkParticle[];
+  dust: DustParticle[];
+  feathers: FeatherParticle[];
+  smoke: SmokeParticle[];
+  stepDust: Particle[];
+  keySpk: KeySparkParticle[];
+  drips: DripParticle[];
 }
 
 /** 草原の敵 */
@@ -93,6 +112,12 @@ export interface PrairieState {
   nextShieldAt: number;
   sweepReady: boolean;
   sweepFlash: number;
+  // パーティクルプール（旧 GameState トップレベルから移動）
+  slash: Array<{ lane: number; life: number; hit: boolean }>;
+  dead: Particle[];
+  grass: GrassParticle[];
+  laneFlash: Array<{ lane: number; life: number }>;
+  miss: Array<{ lane: number; life: number }>;
 }
 
 /** ボスステージ状態 */
@@ -129,4 +154,8 @@ export interface BossState {
   counterFlash: [number, number];
   rageWave: number;
   quake: number;
+  // パーティクルプール（旧 GameState トップレベルから移動）
+  particles: Particle[];
+  shieldBreak: Array<{ idx: number; life: number }>;
+  armTrail: Array<{ idx: number; life: number }>;
 }

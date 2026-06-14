@@ -1,4 +1,4 @@
-import { createInputHandler } from '../../core/input';
+import { ACTION_KEYS, isActionKey, isActionHeld, createInputHandler } from '../../core/input';
 
 describe('InputHandler', () => {
   describe('handleKeyDown', () => {
@@ -117,5 +117,33 @@ describe('InputHandler', () => {
       // Act & Assert
       expect(input.isAction()).toBeFalsy();
     });
+  });
+});
+
+describe('ACTION_KEYS / isActionKey', () => {
+  it('アクションキーは z と space', () => {
+    expect([...ACTION_KEYS]).toEqual(['z', ' ']);
+  });
+
+  it('isActionKey は z / space を true、それ以外を false にする', () => {
+    expect(isActionKey('z')).toBe(true);
+    expect(isActionKey('Z')).toBe(true);
+    expect(isActionKey(' ')).toBe(true);
+    expect(isActionKey('a')).toBe(false);
+    expect(isActionKey('enter')).toBe(false);
+  });
+
+  it('isAction は z または space の justPressed で true', () => {
+    const h = createInputHandler();
+    expect(h.isAction()).toBe(false);
+    h.handleKeyDown('z');
+    expect(h.isAction()).toBe(true);
+  });
+
+  it('isActionHeld は z / space の押下中フラグで true', () => {
+    expect(isActionHeld({})).toBe(false);
+    expect(isActionHeld({ z: true })).toBe(true);
+    expect(isActionHeld({ ' ': true })).toBe(true);
+    expect(isActionHeld({ a: true })).toBe(false);
   });
 });

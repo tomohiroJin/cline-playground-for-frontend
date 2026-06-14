@@ -13,7 +13,7 @@ import type { EngineContext } from '../types';
  * @param ctx ゲームコンテキスト（状態・描画・音声・パーティクル・HUD）
  */
 export function createGameOverScreen(ctx: EngineContext) {
-  const { G, draw } = ctx;
+  const { G, draw, nav } = ctx;
   const { $, txtC, px } = draw;
 
   // --- 入力ヘルパー ---
@@ -72,7 +72,7 @@ export function createGameOverScreen(ctx: EngineContext) {
       const ra = .6 + Math.sin(G.blink * .08) * .3; $.globalAlpha = Math.floor(G.blink / 18) % 2 === 0 ? ra : 0;
       txtC('PRESS Z TO RETRY', W / 2, 260, 7); $.globalAlpha = 1;
     }
-    if (G.blink > 70 && (jAct() || J('enter'))) { G.startGame?.(); }
+    if (G.blink > 70 && (jAct() || J('enter'))) { nav.startGame(); }
   }
 
   return { draw: drawOver };
