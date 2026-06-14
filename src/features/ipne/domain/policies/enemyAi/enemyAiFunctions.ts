@@ -25,24 +25,25 @@ import {
   generatePatrolPath,
   getNextPatrolPoint,
 } from './enemyMovement';
+import {
+  canEnemyAttack,
+  setEnemyAttackCooldown,
+  ENEMY_ATTACK_ANIM_DURATION,
+  markEnemyAttacking,
+  resolveEnemyAttackState,
+  resolveKnockbackState,
+} from './attackState';
 
 // 公開 API（barrel）として再公開
 export { AI_CONFIG, detectPlayer, shouldChase, shouldStopChase, calculateFleeDirection, getDirectPathToPlayer };
 export { setRandomProvider, resetRandomProvider };
 export { moveEnemyTowards, generatePatrolPath, getNextPatrolPoint };
-
-/** 敵が攻撃可能かどうか */
-export const canEnemyAttack = (enemy: Enemy, player: Position, currentTime: number): boolean => {
-  if (enemy.attackRange <= 0) return false;
-  if (currentTime < enemy.attackCooldownUntil) return false;
-  const distance = getManhattanDistance(enemy, player);
-  return distance <= enemy.attackRange;
-};
-
-/** 敵の攻撃クールダウンを設定 */
-export const setEnemyAttackCooldown = (enemy: Enemy, currentTime: number): Enemy => {
-  const cooldown = enemy.type === EnemyType.BOSS ? GAME_BALANCE.enemyAi.bossAttackCooldownMs : AI_CONFIG.attackCooldown;
-  return { ...enemy, attackCooldownUntil: currentTime + cooldown };
+export {
+  canEnemyAttack,
+  setEnemyAttackCooldown,
+  ENEMY_ATTACK_ANIM_DURATION,
+  markEnemyAttacking,
+  resolveEnemyAttackState,
 };
 
 export const updatePatrolEnemy = (
@@ -248,13 +249,6 @@ const enemyAiPolicyRegistry = buildDefaultEnemyAiPolicyRegistry({
   updateFleeEnemy,
 });
 
-const resolveKnockbackState = (enemy: Enemy, currentTime: number): Enemy => {
-  if (enemy.state !== EnemyState.KNOCKBACK) return enemy;
-  if (enemy.knockbackUntil === undefined) return { ...enemy, state: EnemyState.IDLE };
-  if (currentTime < enemy.knockbackUntil) return enemy;
-  return { ...enemy, state: EnemyState.IDLE, knockbackDirection: undefined, knockbackUntil: undefined };
-};
-
 export const updateEnemyAI = (
   enemy: Enemy,
   player: Position,
@@ -358,31 +352,3 @@ export const updateEnemiesWithContact = (
 
   return { enemies: updatedEnemies, contactDamage, contactEnemy, attackDamage, attackingEnemy };
 };
-
-/** 敵攻撃アニメーションの持続時間（ms） */
-export const ENEMY_ATTACK_ANIM_DURATION = GAME_BALANCE.enemyAi.attackAnimDurationMs;
-
-/**
- * 敵を攻撃状態にマークする
- * knockback 状態の敵には適用しない
- */
-export const markEnemyAttacking = (enemy: Enemy, now: number): Enemy => {
-  if (enemy.state === EnemyState.KNOCKBACK) return enemy;
-  return {
-    ...enemy,
-    state: EnemyState.ATTACK,
-    attackAnimUntil: now + ENEMY_ATTACK_ANIM_DURATION,
-  };
-};
-
-/**
- * 敵の攻撃アニメーション状態を解決する
- * 持続時間経過後に IDLE 状態に戻す
- */
-export const resolveEnemyAttackState = (enemy: Enemy, now: number): Enemy => {
-  if (enemy.state !== EnemyState.ATTACK) return enemy;
-  if (enemy.attackAnimUntil === undefined) return { ...enemy, state: EnemyState.IDLE };
-  if (now < enemy.attackAnimUntil) return enemy;
-  return { ...enemy, state: EnemyState.IDLE, attackAnimUntil: undefined };
-};
-
