@@ -5,6 +5,14 @@
  * kd: 押下中フラグ、jp: フレーム中に押されたフラグ（1フレーム有効）
  */
 
+/** アクションキー（拾う・攻撃・設置・開始などに使う）の唯一の定義 */
+export const ACTION_KEYS = ['z', ' '] as const;
+
+/** 指定キーがアクションキーかどうか */
+export function isActionKey(key: string): boolean {
+  return (ACTION_KEYS as readonly string[]).includes(key.toLowerCase());
+}
+
 export interface InputHandler {
   /** 押下中フラグ */
   readonly kd: Record<string, boolean>;
@@ -36,7 +44,7 @@ export function createInputHandler(): InputHandler {
   }
 
   function isAction(): boolean {
-    return justPressed('z') || justPressed(' ');
+    return ACTION_KEYS.some((k) => justPressed(k));
   }
 
   function handleKeyDown(key: string): void {
@@ -60,6 +68,6 @@ export function createInputHelpers(jp: Record<string, boolean>) {
   /** キーが今フレーム押されたか */
   function J(k: string): boolean { return !!jp[k.toLowerCase()]; }
   /** アクションキー（z / スペース）が押されたか */
-  function jAct(): boolean { return J('z') || J(' '); }
+  function jAct(): boolean { return ACTION_KEYS.some((k) => J(k)); }
   return { J, jAct };
 }
