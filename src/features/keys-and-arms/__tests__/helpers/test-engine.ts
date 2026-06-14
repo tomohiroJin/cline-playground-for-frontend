@@ -6,8 +6,9 @@
  *
  * engine.ts と同じ組み立てを行うが、描画は実Canvas不要。
  */
-import { TRANSITION_MID } from '../../constants';
 import type { GameState, GameScreen } from '../../types/game-state';
+import { createGameTick } from '../../core/game-tick';
+import { advanceTransition } from '../../core/transition';
 import type { EngineContext } from '../../types/engine-context';
 import type { StageNavigator } from '../../types/stage-navigator';
 import { createRendering } from '../../core/rendering';
@@ -50,6 +51,7 @@ export class TestEngine {
   private readonly hud: EngineContext['hud'];
   private readonly helpScreen: { update(): void };
   private readonly titleScreen: { startGame(): void };
+  private readonly runTick: () => void;
 
   constructor(options: TestEngineOptions = {}) {
     const ctx = createMockCanvasContext();
@@ -95,79 +97,28 @@ export class TestEngine {
     this.nav.prairie = this.prairie.init.bind(this.prairie);
     this.nav.boss = this.boss.init.bind(this.boss);
     this.nav.startGame = this.titleScreen.startGame;
+
+    this.runTick = createGameTick({
+      G: this.G,
+      J: this.input.justPressed,
+      clearJustPressed: this.input.clearJustPressed,
+      jAct: this.input.isAction,
+      hud: this.hud,
+      audio,
+      nav: this.nav,
+      cave: this.cave,
+      prairie: this.prairie,
+      boss: this.boss,
+      helpScreen: this.helpScreen,
+      storage: this.storage,
+    });
   }
 
-  /** 1 ティック実行（描画スキップ） */
+  /** 1 ティック実行（描画スキップ）。本番 engine と同じ更新ロジックを共有する。 */
   gameTick(): void {
-    const G = this.G;
-    const { justPressed: J, clearJustPressed: clearJ, isAction: jAct } = this.input;
-
-    G.tick++;
-    if (G.beatPulse > 0) G.beatPulse--;
-
-    const isGameplay = () =>
-      G.state !== 'title' && G.state !== 'over' &&
-      G.state !== 'trueEnd' && G.state !== 'ending1';
-
-    // リセット確認
-    if (G.resetConfirm > 0) {
-      G.resetConfirm--;
-      if (jAct()) {
-        G.resetConfirm = 0; G.state = 'title'; G.blink = 0;
-        if (G.score > G.hi) { G.hi = G.score; this.storage.setHighScore(G.hi); }
-        clearJ(); return;
-      }
-      if (J('escape')) G.resetConfirm = 0;
-      clearJ(); return;
-    }
-
-    // ポーズトグル
-    if (J('p') && isGameplay() && G.state !== 'help') {
-      G.paused = !G.paused;
-      clearJ(); return;
-    }
-
-    // ポーズ中スキップ
-    if (G.paused) {
-      if (J('escape')) { G.paused = false; G.resetConfirm = 90; }
-      clearJ(); return;
-    }
-
-    // ESC リセット確認
-    if (J('escape') && isGameplay()) {
-      G.resetConfirm = 90; clearJ(); return;
-    }
-
-    // ヒットストップ
-    if (G.hitStop > 0) { G.hitStop--; clearJ(); return; }
-    if (G.hurtFlash > 0) G.hurtFlash--;
-    if (G.shakeT > 0) G.shakeT--;
-
-    if (G.transition.t > 0) {
-      if (isGameplay()) this.hud.doBeat();
-      // 描画をスキップするため、トランジション処理をここで実行
-      G.transition.t--;
-      if (G.transition.t === TRANSITION_MID && G.transition.fn) G.transition.fn();
-    } else {
-      let nb = false;
-      if (isGameplay()) nb = this.hud.doBeat();
-      switch (G.state) {
-        case 'cave': this.cave.update(nb); break;
-        case 'grass': this.prairie.update(nb); break;
-        case 'boss': this.boss.update(nb); break;
-        case 'title':
-          // 本番 engine.ts と同一: チートバッファ蓄積（a〜z）
-          for (const k of 'abcdefghijklmnopqrstuvwxyz'.split('')) {
-            if (J(k)) { G.cheatBuf += k; if (G.cheatBuf.length > 10) G.cheatBuf = G.cheatBuf.slice(-10); }
-          }
-          if (J('arrowup')) { G.state = 'help'; G.helpPage = 0; clearJ(); break; }
-          if (jAct() || J('enter')) { this.titleScreen.startGame(); }
-          break;
-        case 'help': this.helpScreen.update(); break;
-        case 'over': case 'trueEnd': case 'ending1': break;
-      }
-    }
-    clearJ();
+    this.runTick();
+    // 本番では render(drawTrans) がトランジションを前進させるため、ここで同等処理を行う
+    if (this.G.transition.t > 0) advanceTransition(this.G);
   }
 
   /** 指定ティック数だけゲームを進行 */
