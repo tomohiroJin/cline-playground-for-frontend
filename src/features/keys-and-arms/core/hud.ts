@@ -8,6 +8,7 @@ import type { GameState } from '../types/game-state';
 import type { AudioModule } from '../types/audio';
 import type { HUDModule } from '../types/hud';
 import type { GameStorageRepository } from '../infrastructure/storage-repository';
+import { advanceTransition } from './transition';
 
 /**
  * HUD・トランジションモジュールを生成する
@@ -100,8 +101,7 @@ export function createHUD(draw: DrawingAPI, G: GameState, audio: AudioModule, st
   /** トランジション描画 */
   function drawTrans(): boolean {
     if (G.transition.t <= 0) return false;
-    G.transition.t--;
-    if (G.transition.t === TRANSITION_MID && G.transition.fn) G.transition.fn();
+    advanceTransition(G);
     const p = G.transition.t > TRANSITION_MID ? (TRANSITION_TOTAL - G.transition.t) / TRANSITION_MID : G.transition.t / TRANSITION_MID;
     const wh = Math.floor(H * p);
     $.fillStyle = `rgba(176,188,152,.95)`;
