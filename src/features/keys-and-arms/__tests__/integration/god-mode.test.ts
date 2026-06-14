@@ -1,16 +1,10 @@
 /**
- * KEYS & ARMS — GOD MODE（隠しチート）の挙動ドキュメント兼回帰テスト
+ * KEYS & ARMS — GOD MODE（隠しチート）の挙動テスト
  *
- * タイトル画面で "jin" と入力してからゲームを開始すると、
- * HP が通常の 3 ではなく 20 で始まる隠しコマンド。
+ * タイトル画面で "jin" と入力してからゲームを開始すると、HP が 20 で始まる。
+ * 開始キー（z / space / Enter）はいずれもチート文字として扱われないため、
+ * どのキーで開始しても GOD MODE が発動する。
  * （screens/title.ts: cheatBuf.endsWith('jin') → hp = 20）
- *
- * 【既知の問題】開始キー 'z' は engine.ts の title 節にある
- * チート蓄積ループ（a〜z）に含まれるため、'z' で開始すると同じティックで
- * cheatBuf が 'jin' → 'jinz' になり GOD MODE が発動しない。
- * スペース / Enter で開始すれば発動する。詳細は README.md「既知の問題」を参照。
- *
- * このテストは現状の挙動を実行可能な形で固定し、将来の回帰／修正を検知する。
  */
 import { createTestEngine } from '../helpers/test-engine';
 
@@ -54,16 +48,14 @@ describe('GOD MODE（隠しチート "jin"）', () => {
     expect(engine.G.maxHp).toBe(20);
   });
 
-  it('【既知の問題】"jin" 入力 → z 開始では発動しない（cheatBuf が "jinz" になるため）', () => {
-    // 開始キー 'z' が a〜z 蓄積ループに混入する既存バグの固定。
-    // 修正された場合はこのテストが落ちるので、その時点で期待値を 20 に更新する。
+  it('"jin" 入力 → z 開始でも HP が 20 で始まる（発動する）', () => {
     const engine = createTestEngine();
     typeCheat(engine, 'jin');
 
     startWith(engine, 'z');
 
-    expect(engine.G.hp).toBe(3);
-    expect(engine.G.maxHp).toBe(3);
+    expect(engine.G.hp).toBe(20);
+    expect(engine.G.maxHp).toBe(20);
   });
 
   it('チート未入力で開始すると HP は通常の 3 で始まる', () => {

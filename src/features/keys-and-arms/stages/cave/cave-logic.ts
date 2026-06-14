@@ -13,7 +13,7 @@ import {
 } from '../../constants';
 
 import { rng, rngInt, rngSpread } from '../../core/math';
-import { createInputHelpers } from '../../core/input';
+import { createInputHelpers, isActionHeld } from '../../core/input';
 
 import { Difficulty } from '../../difficulty';
 
@@ -83,7 +83,7 @@ export function createCaveLogic(ctx: EngineContext) {
       else if (moved) { C.prevPos = oldPos; C.trailAlpha = .3; S.step(); C.walkAnim = 3; C.idleT = 0; addStepDust(POS[C.pos].x, POS[C.pos].y + 20);
         if (ROOM_NAMES[C.pos] !== ROOM_NAMES[oldPos]) { C.roomNameT = 40; C.roomName = ROOM_NAMES[C.pos]; } } }
     // === CAGE HOLD メカニクス（TRAPの鍵、pos 9）===
-    const actHeld = G.kd['z'] || G.kd[' '];
+    const actHeld = isActionHeld(G.kd);
     C.cageHolding = false;
     if (C.pos === 9 && !C.keys[0] && !C.carrying && !C.trapOn && actHeld && C.hurtCD <= 0 && C.actAnim <= 0) {
       C.cageHolding = true; C.idleT = 0; C.cageProgress += 2.5;
