@@ -4,12 +4,10 @@
  * 各敵タイプ別のAI更新関数と、敵の一括更新を行うオーケストレーション関数を提供する。
  * Policy パターンによりタイプ別のAI更新が統一的に管理される。
  */
-import { Enemy, EnemyState, GameMap, Position } from '../../types';
+import { Enemy, GameMap, Position } from '../../types';
 import { buildDefaultEnemyAiPolicyRegistry } from './policies';
-import { GAME_BALANCE } from '../../config/gameBalance';
 import {
   AI_CONFIG,
-  getManhattanDistance,
   detectPlayer,
   shouldChase,
   shouldStopChase,
@@ -19,7 +17,6 @@ import {
 import { setRandomProvider, resetRandomProvider } from './aiRandom';
 import {
   moveEnemyTowards,
-  moveEnemyAway,
   generatePatrolPath,
   getNextPatrolPoint,
 } from './enemyMovement';
@@ -33,6 +30,8 @@ import {
 } from './attackState';
 import { updatePatrolEnemy } from './behaviors/patrolBehavior';
 import { updateChargeEnemy } from './behaviors/chargeBehavior';
+import { updateRangedEnemy } from './behaviors/rangedBehavior';
+import { updateFleeEnemy } from './behaviors/fleeBehavior';
 
 // 公開 API（barrel）として再公開
 export { AI_CONFIG, detectPlayer, shouldChase, shouldStopChase, calculateFleeDirection, getDirectPathToPlayer };
@@ -45,107 +44,7 @@ export {
   markEnemyAttacking,
   resolveEnemyAttackState,
 };
-export { updatePatrolEnemy, updateChargeEnemy };
-
-export const updateFleeEnemy = (
-  enemy: Enemy,
-  player: Position,
-  map: GameMap,
-  currentTime: number
-): Enemy => {
-  if (enemy.state === EnemyState.KNOCKBACK) return enemy;
-
-  if (detectPlayer(enemy, player)) {
-    const moved = moveEnemyAway(enemy, player, map);
-    return {
-      ...moved,
-      state: EnemyState.FLEE,
-      lastKnownPlayerPos: player,
-      lastSeenAt: currentTime,
-    };
-  }
-
-  if (enemy.state === EnemyState.FLEE && shouldStopChase(enemy, player, currentTime)) {
-    return { ...enemy, state: EnemyState.IDLE };
-  }
-
-  return { ...enemy, state: EnemyState.IDLE };
-};
-
-/** RANGED敵が維持したい距離 */
-const RANGED_PREFERRED_DISTANCE = GAME_BALANCE.enemyAi.rangedPreferredDistance;
-
-/**
- * RANGED敵のAI更新
- * - プレイヤーを検知したら追跡状態になる
- * - 攻撃射程内で適切な距離を保つ
- * - 近すぎたら後退、遠すぎたら接近
- */
-export const updateRangedEnemy = (
-  enemy: Enemy,
-  player: Position,
-  map: GameMap,
-  currentTime: number
-): Enemy => {
-  if (enemy.state === EnemyState.KNOCKBACK) return enemy;
-
-  const playerDetected = detectPlayer(enemy, player);
-
-  // プレイヤー発見時：追跡開始
-  if (playerDetected) {
-    const distance = getManhattanDistance(enemy, player);
-
-    // 距離が近すぎる場合は後退
-    if (distance < RANGED_PREFERRED_DISTANCE) {
-      const moved = moveEnemyAway(enemy, player, map);
-      return {
-        ...moved,
-        state: EnemyState.CHASE,
-        lastKnownPlayerPos: player,
-        lastSeenAt: currentTime,
-      };
-    }
-
-    // 攻撃射程外の場合は接近
-    if (distance > enemy.attackRange) {
-      const moved = moveEnemyTowards(enemy, player, map);
-      return {
-        ...moved,
-        state: EnemyState.CHASE,
-        lastKnownPlayerPos: player,
-        lastSeenAt: currentTime,
-      };
-    }
-
-    // 適切な距離内：その場で待機（攻撃待ち）
-    return {
-      ...enemy,
-      state: EnemyState.CHASE,
-      lastKnownPlayerPos: player,
-      lastSeenAt: currentTime,
-    };
-  }
-
-  // 追跡中断判定
-  if (enemy.state === EnemyState.CHASE && shouldStopChase(enemy, player, currentTime)) {
-    return { ...enemy, state: EnemyState.RETURN };
-  }
-
-  // 追跡中：最後に見た位置へ
-  if (enemy.state === EnemyState.CHASE && enemy.lastKnownPlayerPos) {
-    return moveEnemyTowards(enemy, enemy.lastKnownPlayerPos, map);
-  }
-
-  // 帰還中：ホームポジションへ
-  if (enemy.state === EnemyState.RETURN) {
-    if (enemy.x === enemy.homePosition.x && enemy.y === enemy.homePosition.y) {
-      return { ...enemy, state: EnemyState.IDLE };
-    }
-    return moveEnemyTowards(enemy, enemy.homePosition, map);
-  }
-
-  return { ...enemy, state: EnemyState.IDLE };
-};
+export { updatePatrolEnemy, updateChargeEnemy, updateRangedEnemy, updateFleeEnemy };
 
 const enemyAiPolicyRegistry = buildDefaultEnemyAiPolicyRegistry({
   updatePatrolEnemy,
