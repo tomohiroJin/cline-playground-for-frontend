@@ -5,7 +5,6 @@
  * Policy パターンによりタイプ別のAI更新が統一的に管理される。
  */
 import { Enemy, EnemyState, EnemyType, GameMap, Position } from '../../types';
-import { canMove } from '../../services/collisionService';
 import { buildDefaultEnemyAiPolicyRegistry } from './policies';
 import { GAME_BALANCE } from '../../config/gameBalance';
 import {
@@ -17,11 +16,20 @@ import {
   calculateFleeDirection,
   getDirectPathToPlayer,
 } from './aiGeometry';
-import { getRandom, setRandomProvider, resetRandomProvider } from './aiRandom';
+import { setRandomProvider, resetRandomProvider } from './aiRandom';
+import {
+  moveEnemyTowards,
+  moveEnemyAway,
+  moveEnemyRandom,
+  attemptLunge,
+  generatePatrolPath,
+  getNextPatrolPoint,
+} from './enemyMovement';
 
 // 公開 API（barrel）として再公開
 export { AI_CONFIG, detectPlayer, shouldChase, shouldStopChase, calculateFleeDirection, getDirectPathToPlayer };
 export { setRandomProvider, resetRandomProvider };
+export { moveEnemyTowards, generatePatrolPath, getNextPatrolPoint };
 
 /** 敵が攻撃可能かどうか */
 export const canEnemyAttack = (enemy: Enemy, player: Position, currentTime: number): boolean => {
@@ -35,143 +43,6 @@ export const canEnemyAttack = (enemy: Enemy, player: Position, currentTime: numb
 export const setEnemyAttackCooldown = (enemy: Enemy, currentTime: number): Enemy => {
   const cooldown = enemy.type === EnemyType.BOSS ? GAME_BALANCE.enemyAi.bossAttackCooldownMs : AI_CONFIG.attackCooldown;
   return { ...enemy, attackCooldownUntil: currentTime + cooldown };
-};
-
-const stepTowards = (enemy: Enemy, target: Position, map: GameMap): Position => {
-  const dx = target.x - enemy.x;
-  const dy = target.y - enemy.y;
-  const stepX = dx === 0 ? 0 : dx > 0 ? 1 : -1;
-  const stepY = dy === 0 ? 0 : dy > 0 ? 1 : -1;
-
-  const tryHorizontal = Math.abs(dx) >= Math.abs(dy);
-
-  const candidates: Position[] = tryHorizontal
-    ? [
-        { x: enemy.x + stepX, y: enemy.y },
-        { x: enemy.x, y: enemy.y + stepY },
-      ]
-    : [
-        { x: enemy.x, y: enemy.y + stepY },
-        { x: enemy.x + stepX, y: enemy.y },
-      ];
-
-  for (const pos of candidates) {
-    if (canMove(map, pos.x, pos.y)) {
-      return pos;
-    }
-  }
-
-  return { x: enemy.x, y: enemy.y };
-};
-
-const stepAway = (enemy: Enemy, player: Position, map: GameMap): Position => {
-  const dx = enemy.x - player.x;
-  const dy = enemy.y - player.y;
-  const stepX = dx === 0 ? 0 : dx > 0 ? 1 : -1;
-  const stepY = dy === 0 ? 0 : dy > 0 ? 1 : -1;
-
-  const candidates: Position[] = [
-    { x: enemy.x + stepX, y: enemy.y },
-    { x: enemy.x, y: enemy.y + stepY },
-    { x: enemy.x - stepX, y: enemy.y },
-    { x: enemy.x, y: enemy.y - stepY },
-  ];
-
-  for (const pos of candidates) {
-    if (canMove(map, pos.x, pos.y)) {
-      return pos;
-    }
-  }
-
-  return { x: enemy.x, y: enemy.y };
-};
-
-const attemptLunge = (
-  enemy: Enemy,
-  target: Position,
-  map: GameMap,
-  maxDistance: number,
-  chance: number
-): Enemy | null => {
-  const distance = getManhattanDistance(enemy, target);
-  if (distance > maxDistance) return null;
-  if (getRandom().random() > chance) return null;
-
-  const dx = target.x - enemy.x;
-  const dy = target.y - enemy.y;
-  const stepX = dx === 0 ? 0 : dx > 0 ? 1 : -1;
-  const stepY = dy === 0 ? 0 : dy > 0 ? 1 : -1;
-  const preferHorizontal = Math.abs(dx) >= Math.abs(dy);
-
-  const firstStep = preferHorizontal
-    ? { x: enemy.x + stepX, y: enemy.y }
-    : { x: enemy.x, y: enemy.y + stepY };
-  const secondStep = preferHorizontal
-    ? { x: enemy.x + stepX * 2, y: enemy.y }
-    : { x: enemy.x, y: enemy.y + stepY * 2 };
-
-  if (!canMove(map, firstStep.x, firstStep.y)) return null;
-  if (!canMove(map, secondStep.x, secondStep.y)) return null;
-
-  return { ...enemy, x: secondStep.x, y: secondStep.y };
-};
-
-/** ランダムな方向に移動 */
-const stepRandom = (enemy: Enemy, map: GameMap): Position => {
-  const directions = [
-    { x: enemy.x + 1, y: enemy.y },
-    { x: enemy.x - 1, y: enemy.y },
-    { x: enemy.x, y: enemy.y + 1 },
-    { x: enemy.x, y: enemy.y - 1 },
-  ];
-
-  // ランダムにシャッフル
-  const shuffled = getRandom().shuffle(directions);
-
-  for (const pos of shuffled) {
-    if (canMove(map, pos.x, pos.y)) {
-      return pos;
-    }
-  }
-
-  return { x: enemy.x, y: enemy.y };
-};
-
-export const moveEnemyTowards = (enemy: Enemy, target: Position, map: GameMap): Enemy => {
-  const next = stepTowards(enemy, target, map);
-  return { ...enemy, x: next.x, y: next.y };
-};
-
-const moveEnemyAway = (enemy: Enemy, player: Position, map: GameMap): Enemy => {
-  const next = stepAway(enemy, player, map);
-  return { ...enemy, x: next.x, y: next.y };
-};
-
-const moveEnemyRandom = (enemy: Enemy, map: GameMap): Enemy => {
-  const next = stepRandom(enemy, map);
-  return { ...enemy, x: next.x, y: next.y };
-};
-
-export const generatePatrolPath = (origin: Position): Position[] => {
-  const length = getRandom().randomInt(4, 9); // 4-8
-  const horizontal = getRandom().random() > 0.5;
-  const path: Position[] = [];
-
-  for (let i = 0; i < length; i++) {
-    path.push({
-      x: origin.x + (horizontal ? i : 0),
-      y: origin.y + (horizontal ? 0 : i),
-    });
-  }
-
-  const back = [...path].reverse().slice(1);
-  return [...path, ...back];
-};
-
-export const getNextPatrolPoint = (enemy: Enemy): Position | undefined => {
-  if (!enemy.patrolPath || enemy.patrolPath.length === 0) return undefined;
-  const index = enemy.patrolIndex ?? 0;
-  return enemy.patrolPath[index];
 };
 
 export const updatePatrolEnemy = (
