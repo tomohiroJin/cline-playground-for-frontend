@@ -12,6 +12,8 @@ import { getRandom } from './aiRandom';
 /** ターゲットへ1歩近づく（横優先/縦優先を距離差で決定、塞がれたら停止） */
 const stepTowards = (enemy: Enemy, target: Position, map: GameMap): Position => {
   const { stepX, stepY } = calculateStep(enemy, target);
+  // calculateStep は符号(stepX/stepY)のみを返すため、横優先/縦優先の判定に必要な
+  // 差分の絶対値はここで別途計算する
   const dx = target.x - enemy.x;
   const dy = target.y - enemy.y;
   const tryHorizontal = Math.abs(dx) >= Math.abs(dy);
@@ -34,6 +36,7 @@ const stepTowards = (enemy: Enemy, target: Position, map: GameMap): Position => 
 
 /** プレイヤーから1歩離れる（4方向を順に試行） */
 const stepAway = (enemy: Enemy, player: Position, map: GameMap): Position => {
+  // 逃走方向（プレイヤーの反対）を得るため、from/to を逆順（player→enemy）で渡す
   const { stepX, stepY } = calculateStep(player, enemy);
   const candidates: Position[] = [
     { x: enemy.x + stepX, y: enemy.y },
