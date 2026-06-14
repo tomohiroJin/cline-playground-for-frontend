@@ -4,7 +4,7 @@
  * 各敵タイプ別のAI更新関数と、敵の一括更新を行うオーケストレーション関数を提供する。
  * Policy パターンによりタイプ別のAI更新が統一的に管理される。
  */
-import { Enemy, EnemyState, EnemyType, GameMap, Position } from '../../types';
+import { Enemy, EnemyState, GameMap, Position } from '../../types';
 import { buildDefaultEnemyAiPolicyRegistry } from './policies';
 import { GAME_BALANCE } from '../../config/gameBalance';
 import {
@@ -20,8 +20,6 @@ import { setRandomProvider, resetRandomProvider } from './aiRandom';
 import {
   moveEnemyTowards,
   moveEnemyAway,
-  moveEnemyRandom,
-  attemptLunge,
   generatePatrolPath,
   getNextPatrolPoint,
 } from './enemyMovement';
@@ -33,6 +31,8 @@ import {
   resolveEnemyAttackState,
   resolveKnockbackState,
 } from './attackState';
+import { updatePatrolEnemy } from './behaviors/patrolBehavior';
+import { updateChargeEnemy } from './behaviors/chargeBehavior';
 
 // 公開 API（barrel）として再公開
 export { AI_CONFIG, detectPlayer, shouldChase, shouldStopChase, calculateFleeDirection, getDirectPathToPlayer };
@@ -45,102 +45,7 @@ export {
   markEnemyAttacking,
   resolveEnemyAttackState,
 };
-
-export const updatePatrolEnemy = (
-  enemy: Enemy,
-  player: Position,
-  map: GameMap,
-  currentTime: number
-): Enemy => {
-  if (enemy.state === EnemyState.KNOCKBACK) return enemy;
-
-  const playerDetected = detectPlayer(enemy, player);
-
-  // プレイヤー発見時：追跡開始
-  if (playerDetected) {
-    const updated = {
-      ...enemy,
-      state: EnemyState.CHASE,
-      lastKnownPlayerPos: player,
-      lastSeenAt: currentTime,
-    };
-    // 追跡中にまれに突進
-    const lunge = attemptLunge(updated, player, map, 2, 0.1);
-    return lunge ?? moveEnemyTowards(updated, player, map);
-  }
-
-  // 追跡中断判定
-  if (enemy.state === EnemyState.CHASE && shouldStopChase(enemy, player, currentTime)) {
-    return { ...enemy, state: EnemyState.RETURN };
-  }
-
-  // 追跡中：プレイヤーに向かって移動
-  if (enemy.state === EnemyState.CHASE) {
-    const lunge = attemptLunge(enemy, player, map, 2, 0.1);
-    const updated = lunge ?? moveEnemyTowards(enemy, player, map);
-    return { ...updated, lastKnownPlayerPos: player, lastSeenAt: currentTime };
-  }
-
-  // 帰還中：ホームポジションに向かって移動
-  if (enemy.state === EnemyState.RETURN) {
-    if (enemy.x === enemy.homePosition.x && enemy.y === enemy.homePosition.y) {
-      return { ...enemy, state: EnemyState.PATROL };
-    }
-    return moveEnemyTowards(enemy, enemy.homePosition, map);
-  }
-
-  // 巡回中：パスがあればその経路、なければランダム移動
-  if (enemy.patrolPath && enemy.patrolPath.length > 0) {
-    const target = getNextPatrolPoint(enemy);
-    if (target) {
-      const moved = moveEnemyTowards(enemy, target, map);
-      if (moved.x === target.x && moved.y === target.y) {
-        const nextIndex = (enemy.patrolIndex ?? 0) + 1;
-        return { ...moved, patrolIndex: nextIndex % enemy.patrolPath.length };
-      }
-      return moved;
-    }
-  }
-
-  return moveEnemyRandom(enemy, map);
-};
-
-export const updateChargeEnemy = (
-  enemy: Enemy,
-  player: Position,
-  map: GameMap,
-  currentTime: number
-): Enemy => {
-  if (enemy.state === EnemyState.KNOCKBACK) return enemy;
-
-  if (shouldChase(enemy, player)) {
-    const moved = moveEnemyTowards(enemy, player, map);
-    return {
-      ...moved,
-      state: EnemyState.CHASE,
-      lastKnownPlayerPos: player,
-      lastSeenAt: currentTime,
-    };
-  }
-
-  if (enemy.state === EnemyState.CHASE && shouldStopChase(enemy, player, currentTime)) {
-    return { ...enemy, state: EnemyState.IDLE };
-  }
-
-  if (enemy.state === EnemyState.CHASE) {
-    if (enemy.type === EnemyType.BOSS) {
-      const distance = getManhattanDistance(enemy, player);
-      const lungeChance = distance <= 2 ? 0.55 : distance <= 4 ? 0.4 : 0.25;
-      const lungeRange = distance <= 2 ? 3 : 4;
-      const lunge = attemptLunge(enemy, player, map, lungeRange, lungeChance);
-      return lunge ?? moveEnemyTowards(enemy, player, map);
-    }
-    const lunge = attemptLunge(enemy, player, map, 2, 0.2);
-    return lunge ?? moveEnemyTowards(enemy, player, map);
-  }
-
-  return { ...enemy, state: EnemyState.IDLE };
-};
+export { updatePatrolEnemy, updateChargeEnemy };
 
 export const updateFleeEnemy = (
   enemy: Enemy,
