@@ -8,7 +8,6 @@ import { Enemy, EnemyState, EnemyType, GameMap, Position } from '../../types';
 import { canMove } from '../../services/collisionService';
 import { buildDefaultEnemyAiPolicyRegistry } from './policies';
 import { GAME_BALANCE } from '../../config/gameBalance';
-import { RandomProvider } from '../../ports';
 import {
   AI_CONFIG,
   getManhattanDistance,
@@ -18,41 +17,11 @@ import {
   calculateFleeDirection,
   getDirectPathToPlayer,
 } from './aiGeometry';
+import { getRandom, setRandomProvider, resetRandomProvider } from './aiRandom';
 
 // 公開 API（barrel）として再公開
 export { AI_CONFIG, detectPlayer, shouldChase, shouldStopChase, calculateFleeDirection, getDirectPathToPlayer };
-
-/** デフォルトの乱数プロバイダー（Math.random ベース） */
-const defaultRandom: RandomProvider = {
-  random: () => Math.random(),
-  randomInt: (min, max) => min + Math.floor(Math.random() * (max - min)),
-  pick: (array) => array[Math.floor(Math.random() * array.length)],
-  shuffle: (array) => {
-    const result = [...array];
-    for (let i = result.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [result[i], result[j]] = [result[j], result[i]];
-    }
-    return result;
-  },
-};
-
-/** モジュールで使用する乱数プロバイダー */
-let _random: RandomProvider = defaultRandom;
-
-/**
- * 乱数プロバイダーを設定する（テスト用）
- */
-export function setRandomProvider(random: RandomProvider): void {
-  _random = random;
-}
-
-/**
- * 乱数プロバイダーをデフォルトにリセットする
- */
-export function resetRandomProvider(): void {
-  _random = defaultRandom;
-}
+export { setRandomProvider, resetRandomProvider };
 
 /** 敵が攻撃可能かどうか */
 export const canEnemyAttack = (enemy: Enemy, player: Position, currentTime: number): boolean => {
@@ -126,7 +95,7 @@ const attemptLunge = (
 ): Enemy | null => {
   const distance = getManhattanDistance(enemy, target);
   if (distance > maxDistance) return null;
-  if (_random.random() > chance) return null;
+  if (getRandom().random() > chance) return null;
 
   const dx = target.x - enemy.x;
   const dy = target.y - enemy.y;
@@ -157,7 +126,7 @@ const stepRandom = (enemy: Enemy, map: GameMap): Position => {
   ];
 
   // ランダムにシャッフル
-  const shuffled = _random.shuffle(directions);
+  const shuffled = getRandom().shuffle(directions);
 
   for (const pos of shuffled) {
     if (canMove(map, pos.x, pos.y)) {
@@ -184,8 +153,8 @@ const moveEnemyRandom = (enemy: Enemy, map: GameMap): Enemy => {
 };
 
 export const generatePatrolPath = (origin: Position): Position[] => {
-  const length = _random.randomInt(4, 9); // 4-8
-  const horizontal = _random.random() > 0.5;
+  const length = getRandom().randomInt(4, 9); // 4-8
+  const horizontal = getRandom().random() > 0.5;
   const path: Position[] = [];
 
   for (let i = 0; i < length; i++) {
