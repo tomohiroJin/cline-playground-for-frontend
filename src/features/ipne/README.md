@@ -103,7 +103,15 @@ src/features/ipne/
       mapService.ts           #   マップ管理
       gimmickPlacement/       #   ギミック配置サービス
     policies/                 # ドメインポリシー（Strategy パターン）
-      enemyAi/                #   敵AIポリシー（patrol, charge, ranged, flee 等）
+      enemyAi/                #   敵AIポリシー（責務別に分割）
+        enemyAiFunctions.ts   #     barrel（後方互換の re-export のみ）
+        aiGeometry.ts         #     幾何計算・検知判定（calculateStep, 距離, detect/chase）
+        aiRandom.ts           #     乱数プロバイダ DI
+        enemyMovement.ts      #     移動エンジン（step/move, 突進, 巡回パス）
+        attackState.ts        #     攻撃可否・攻撃/ノックバック状態解決
+        behaviors/            #     敵タイプ別 AI（patrol/charge/ranged/flee を1ファイルずつ）
+        enemyOrchestrator.ts  #     全敵の一括更新・接触/攻撃ダメージ解決
+        policies.ts / EnemyAiPolicyRegistry.ts  # Strategy レジストリ
     config/                   # ドメイン定数
       stageConfig.ts          #   5ステージ設定データ
       gameBalance.ts          #   全バランス定数（マジックナンバー集約）
