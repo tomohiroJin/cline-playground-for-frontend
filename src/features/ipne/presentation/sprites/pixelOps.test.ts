@@ -56,5 +56,20 @@ describe('pixelOps', () => {
       expect(result).toEqual(base);
       expect(result).not.toBe(base);
     });
+
+    it('複数座標を一度にすべて適用する', () => {
+      const base = [
+        [0, 0],
+        [0, 0],
+      ];
+      const result = applyPixelEdits(base, [
+        { x: 0, y: 0, value: 1 },
+        { x: 1, y: 1, value: 2 },
+      ]);
+      expect(result).toEqual([
+        [1, 0],
+        [0, 2],
+      ]);
+    });
   });
 });
