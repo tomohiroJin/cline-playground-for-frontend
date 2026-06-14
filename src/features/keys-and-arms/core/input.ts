@@ -13,6 +13,11 @@ export function isActionKey(key: string): boolean {
   return (ACTION_KEYS as readonly string[]).includes(key.toLowerCase());
 }
 
+/** アクションキーが押下中（held）かどうか */
+export function isActionHeld(kd: Record<string, boolean>): boolean {
+  return ACTION_KEYS.some((k) => kd[k]);
+}
+
 export interface InputHandler {
   /** 押下中フラグ */
   readonly kd: Record<string, boolean>;

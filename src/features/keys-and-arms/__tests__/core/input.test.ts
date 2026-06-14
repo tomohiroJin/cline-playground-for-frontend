@@ -1,4 +1,4 @@
-import { ACTION_KEYS, isActionKey, createInputHandler } from '../../core/input';
+import { ACTION_KEYS, isActionKey, isActionHeld, createInputHandler } from '../../core/input';
 
 describe('InputHandler', () => {
   describe('handleKeyDown', () => {
@@ -138,5 +138,12 @@ describe('ACTION_KEYS / isActionKey', () => {
     expect(h.isAction()).toBe(false);
     h.handleKeyDown('z');
     expect(h.isAction()).toBe(true);
+  });
+
+  it('isActionHeld は z / space の押下中フラグで true', () => {
+    expect(isActionHeld({})).toBe(false);
+    expect(isActionHeld({ z: true })).toBe(true);
+    expect(isActionHeld({ ' ': true })).toBe(true);
+    expect(isActionHeld({ a: true })).toBe(false);
   });
 });
