@@ -8,6 +8,7 @@
 
 import { SpriteDefinition } from './spriteData';
 import { SpriteSheetDefinition } from './spriteSheet';
+import { clonePixels, applyPixelEdits, type PixelEdit } from './pixelOps';
 
 /** 方向の型 */
 export type Direction = 'down' | 'up' | 'left' | 'right';
@@ -93,12 +94,6 @@ function createSpriteDefinition(
   };
 }
 
-type PixelEdit = Readonly<{
-  x: number;
-  y: number;
-  value: number;
-}>;
-
 type RegionShift = Readonly<{
   left: number;
   top: number;
@@ -107,22 +102,6 @@ type RegionShift = Readonly<{
   dx: number;
   dy: number;
 }>;
-
-function clonePixels(pixels: number[][]): number[][] {
-  return pixels.map((row) => [...row]);
-}
-
-function applyPixelEdits(base: number[][], edits: PixelEdit[]): number[][] {
-  const next = clonePixels(base);
-
-  edits.forEach(({ x, y, value }) => {
-    if (next[y] && next[y][x] !== undefined) {
-      next[y][x] = value;
-    }
-  });
-
-  return next;
-}
 
 function shiftRegion(base: number[][], shift: RegionShift): number[][] {
   const source = clonePixels(base);
