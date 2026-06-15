@@ -70,7 +70,7 @@ import { drawWeaponTrail, getWeaponTier, WeaponTier, drawShockwave } from '../..
 import { drawShieldGlow, drawAfterImage, drawSpinParticles, drawHealParticles } from '../../effects/stageVisual';
 import { getStageIntroPhase, getStageIntroAlpha, getStageIntroTextAlpha, getGameOverTransitionAlpha } from '../../effects/screenTransition';
 import type { RenderContext } from './renderContext';
-import type { Position } from '../../../index';
+import type { Position, Viewport } from '../../../index';
 
 /** 敵の状態に応じた特殊フレームを返す（Phase 3） */
 function getEnemyStateFrame(enemyType: string, enemyState: string): SpriteDefinition | null {
@@ -150,7 +150,7 @@ export function renderGameFrame(rc: RenderContext): void {
   let tileSize: number;
   let offsetX = 0;
   let offsetY = 0;
-  let viewport: import('../../../index').Viewport;
+  let viewport: Viewport;
 
   // CanvasWrapper サイズからタイルサイズを動的に計算
   const wrapper = canvasWrapperRef.current;
