@@ -7,31 +7,12 @@
 
 import { SpriteDefinition } from './spriteData';
 import { SpriteSheetDefinition } from './spriteSheet';
+import { applyPixelEdits, type PixelEdit } from './pixelOps';
 
-type EnemyPixelEdit = Readonly<{
-  x: number;
-  y: number;
-  value: number;
-}>;
-
-function cloneEnemyPixels(pixels: number[][]): number[][] {
-  return pixels.map((row) => [...row]);
-}
-
-function applyEnemyPixelEdits(base: SpriteDefinition, edits: EnemyPixelEdit[]): SpriteDefinition {
-  const pixels = cloneEnemyPixels(base.pixels);
-
-  edits.forEach(({ x, y, value }) => {
-    if (pixels[y] && pixels[y][x] !== undefined) {
-      pixels[y][x] = value;
-    }
-  });
-
-  return {
-    ...base,
-    pixels,
-  };
-}
+const applyEnemyPixelEdits = (base: SpriteDefinition, edits: readonly PixelEdit[]): SpriteDefinition => ({
+  ...base,
+  pixels: applyPixelEdits(base.pixels, edits),
+});
 
 // ============================================================================
 // 1. パトロール敵（スライム） - 32×32, 2フレーム
