@@ -38,6 +38,7 @@ export function renderGameFrame(rc: RenderContext): void {
     canvasWrapperRef,
     map,
     player,
+    goalPos,
     debugState,
     currentStage,
     effectManagerRef,
