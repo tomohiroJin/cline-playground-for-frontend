@@ -80,9 +80,9 @@ export interface FollowUpEffect {
   options?: EffectOptions;
 }
 
-/** ファクトリーの生成結果 */
+/** ファクトリーの生成結果。effect は optional（ENEMY_DEATH の enemyType 未指定時は生成しない） */
 export interface EffectBuildResult {
-  effect: GameEffect;
+  effect?: GameEffect;
   followUps?: FollowUpEffect[];
 }
 
@@ -127,7 +127,8 @@ addEffect(type: EffectTypeValue, x: number, y: number, now: number = Date.now(),
   const factory = EFFECT_FACTORIES[type];
   if (factory) {
     const { effect, followUps } = factory({ id, x, y, now, options });
-    this.effects.push(effect);
+    // ENEMY_DEATH(enemyType 未指定) のように effect を生成しないケースを保存
+    if (effect) this.effects.push(effect);
     // 合成: ATTACK_HIT を push してから追従(SCREEN_SHAKE)を追加（元の順序を維持）
     followUps?.forEach((f) => this.addEffect(f.type, f.x, f.y, now, f.options));
   }
