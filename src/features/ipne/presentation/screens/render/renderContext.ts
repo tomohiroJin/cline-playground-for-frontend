@@ -18,6 +18,7 @@ import type {
   StageNumber,
   Viewport,
   DebugState,
+  MovementState,
 } from '../../../index';
 import type { SpriteRenderer, SpriteDefinition } from '../../sprites';
 import type { EffectManager } from '../../effects/effectManager';
@@ -73,6 +74,8 @@ export interface RenderContext {
   rewardEffects: RewardEffectFlags;
   /** スプライトレンダラー（useMemo 生成） */
   spriteRenderer: SpriteRenderer;
+  /** 移動状態 ref（プレイヤー歩行アニメーション判定用） */
+  movementStateRef: React.MutableRefObject<MovementState>;
   /** エフェクトマネージャー ref */
   effectManagerRef: React.MutableRefObject<EffectManager>;
   /** 死亡エフェクト ref */
