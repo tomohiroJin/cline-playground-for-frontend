@@ -1,5 +1,5 @@
 import { EffectManager, resetEffectIdCounter } from './effectManager';
-import { EffectType } from './effectTypes';
+import { EffectType, EffectTypeValue } from './effectTypes';
 import { EnemyType } from '../../types';
 
 describe('EffectManager', () => {
@@ -215,6 +215,68 @@ describe('EffectManager', () => {
 
       // 上限 200 を超えないようにエフェクトが削減されている
       expect(manager.getTotalParticleCount()).toBeLessThanOrEqual(200);
+    });
+  });
+
+  describe('決定的フィールド検証（Phase C 特性化）', () => {
+    it('ATTACK_HIT は duration 300 で、powerLevel 4 では shockwave/flash/shake を伴う', () => {
+      const m = new EffectManager();
+      m.addEffect(EffectType.ATTACK_HIT, 10, 20, 1000, { powerLevel: 4 });
+      const effects = m.getEffects();
+      const hit = effects.find((e) => e.type === EffectType.ATTACK_HIT);
+      expect(hit?.duration).toBe(300);
+      expect(hit?.ringMaxRadius).toBe(8 + 4 * 4);
+      expect(hit?.flashAlpha).toBe(0.4);
+      // hasShake により SCREEN_SHAKE が追従追加される
+      expect(effects.some((e) => e.type === EffectType.SCREEN_SHAKE)).toBe(true);
+    });
+
+    // stageNumber 未指定でも既定 1 で生成される（STAGE_CLEAR）
+    it.each<[EffectTypeValue, number]>([
+      [EffectType.DAMAGE, 400],
+      [EffectType.TRAP_DAMAGE, 350],
+      [EffectType.TRAP_SLOW, 500],
+      [EffectType.TRAP_TELEPORT, 400],
+      [EffectType.ITEM_PICKUP, 500],
+      [EffectType.LEVEL_UP, 1500],
+      [EffectType.BOSS_KILL, 1200],
+      [EffectType.STAGE_CLEAR, 1500],
+    ])('%s の duration が %d である', (type, duration) => {
+      const m = new EffectManager();
+      m.addEffect(type, 0, 0, 1000);
+      const e = m.getEffects().find((ef) => ef.type === type);
+      expect(e?.duration).toBe(duration);
+    });
+
+    it('TRAP_TELEPORT と LEVEL_UP は ringMaxRadius を持つ', () => {
+      const m = new EffectManager();
+      m.addEffect(EffectType.TRAP_TELEPORT, 0, 0, 1000);
+      m.addEffect(EffectType.LEVEL_UP, 0, 0, 1000);
+      const teleport = m.getEffects().find((e) => e.type === EffectType.TRAP_TELEPORT);
+      const levelUp = m.getEffects().find((e) => e.type === EffectType.LEVEL_UP);
+      expect(teleport?.ringMaxRadius).toBe(30);
+      expect(levelUp?.ringMaxRadius).toBe(40);
+      expect(levelUp?.flashColor).toBe('#fbbf24');
+    });
+
+    it('SCREEN_SHAKE は particles が空で shakeIntensity を持つ', () => {
+      const m = new EffectManager();
+      m.addEffect(EffectType.SCREEN_SHAKE, 0, 0, 1000, { damage: 4 });
+      const e = m.getEffects().find((ef) => ef.type === EffectType.SCREEN_SHAKE);
+      expect(e?.particles.length).toBe(0);
+      expect(e?.shakeIntensity).toBe(2); // damage=4 → Math.min(4, 4*0.5) = 2
+    });
+
+    it('LOW_HP_WARNING は addEffect してもエフェクトを追加しない（未処理を保存）', () => {
+      const m = new EffectManager();
+      m.addEffect(EffectType.LOW_HP_WARNING, 0, 0, 1000);
+      expect(m.getEffectCount()).toBe(0);
+    });
+
+    it('ENEMY_DEATH は enemyType 未指定だとエフェクトを追加しない', () => {
+      const m = new EffectManager();
+      m.addEffect(EffectType.ENEMY_DEATH, 0, 0, 1000);
+      expect(m.getEffectCount()).toBe(0);
     });
   });
 });
