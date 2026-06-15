@@ -270,7 +270,9 @@ const createStageClearEffect: EffectFactory = ({ id, x, y, now, options }) => {
 const createEnemyDeathEffect: EffectFactory = ({ id, x, y, now, options }) => {
   const enemyType = options?.enemyType;
   if (!enemyType) {
-    return {}; // enemyType 未指定時はエフェクトを生成しない（元の挙動を保存）
+    // enemyType が渡されない場合は旧 switch の `if (enemyType)` ガードと同様、
+    // effect を生成せず何も追加しない（effect 省略 = push されない）
+    return {};
   }
   const deathConfig = getEnemyDeathParticleConfig(enemyType);
   const combo = options?.comboMultiplier ?? 1.0;
