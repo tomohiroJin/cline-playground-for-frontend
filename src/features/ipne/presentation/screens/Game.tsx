@@ -3,6 +3,7 @@
  * GameScreen をメインコンポーネントとして、GameHUD, GameControls, GameCanvas, GameModals を統合
  */
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useGameRender } from './useGameRender';
 import {
   GameRegion,
 } from '../../../../pages/IpnePage.styles';
@@ -31,7 +32,6 @@ import {
 import type { BossWarningState } from '../effects';
 import { SpriteRenderer } from '../sprites';
 import { getActiveRewardEffects, AfterImageManager } from '../effects/stageVisual';
-import { renderGameFrame } from './render/renderGameFrame';
 
 // 分割コンポーネントのインポート
 import { GameHUD } from './GameHUD';
@@ -200,24 +200,15 @@ export const GameScreen: React.FC<{
     return () => clearInterval(interval);
   }, []);
 
-  // Canvas描画
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    renderGameFrame({
-      ctx, canvas, canvasWrapperRef, now: renderTime, map, player, enemies, items, traps, walls,
-      mapState, goalPos, debugState, attackEffect, lastDamageAt, isDying, currentStage, maxLevel,
-      rewardEffects, spriteRenderer, movementStateRef, effectManagerRef, deathEffectRef,
-      bossWarningRef, afterImageManagerRef, stageStartTimeRef, dyingStartTimeRef,
-      playerAttackUntilRef, playerDamageUntilRef, lastAttackEffectKeyRef, lastDamageAtRef,
-      floatingTextManagerRef, comboStateRef, effectQueueRef,
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map, player, enemies, items, traps, walls, mapState, goalPos, debugState, renderTime, attackEffect, lastDamageAt, effectQueueRef, floatingTextManagerRef, comboStateRef, spriteRenderer, isDying]);
+  // Canvas描画（useGameRender フックへ委譲）
+  useGameRender({
+    canvasRef, canvasWrapperRef, renderTime, map, player, enemies, items, traps, walls,
+    mapState, goalPos, debugState, attackEffect, lastDamageAt, isDying, currentStage, maxLevel,
+    rewardEffects, spriteRenderer, movementStateRef, effectManagerRef, deathEffectRef,
+    bossWarningRef, afterImageManagerRef, stageStartTimeRef, dyingStartTimeRef,
+    playerAttackUntilRef, playerDamageUntilRef, lastAttackEffectKeyRef, lastDamageAtRef,
+    floatingTextManagerRef, comboStateRef, effectQueueRef,
+  });
 
   const isAttackReady = renderTime >= player.attackCooldownUntil;
 
