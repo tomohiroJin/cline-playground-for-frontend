@@ -17,8 +17,6 @@ import {
 } from '../../../index';
 import { SPRITE_SIZES } from '../../config';
 import {
-  EffectType,
-  calculatePowerLevel,
   shouldTriggerWarning,
   getWarningPhase,
   BOSS_WARNING_DURATION,
@@ -45,6 +43,7 @@ import type { RenderContext, FrameContext } from './renderContext';
 import type { Position, Viewport } from '../../../index';
 import { drawWorld } from './drawWorld';
 import { drawEnemies } from './drawEnemies';
+import { combatEffects } from './combatEffects';
 
 /**
  * ゲームフレームを描画する
@@ -64,8 +63,6 @@ export function renderGameFrame(rc: RenderContext): void {
     mapState,
     goalPos,
     debugState,
-    attackEffect,
-    lastDamageAt,
     isDying,
     currentStage,
     rewardEffects,
@@ -79,11 +76,7 @@ export function renderGameFrame(rc: RenderContext): void {
     dyingStartTimeRef,
     playerAttackUntilRef,
     playerDamageUntilRef,
-    lastAttackEffectKeyRef,
-    lastDamageAtRef,
-    floatingTextManagerRef,
     comboStateRef,
-    effectQueueRef,
   } = rc;
 
   // 空マップの場合は描画しない
@@ -187,55 +180,8 @@ export function renderGameFrame(rc: RenderContext): void {
   // 敵描画（敵スプライト・撃破アニメ・ボスHPオーラ・攻撃エフェクト）
   drawEnemies(frame);
 
-  // パーティクルエフェクトシステム
-  const em = effectManagerRef.current;
-
-  // 攻撃ヒットエフェクトのトリガー（パワーレベルスケーリング）
-  if (attackEffect && now < attackEffect.until) {
-    const key = `${attackEffect.position.x}-${attackEffect.position.y}-${attackEffect.until}`;
-    if (lastAttackEffectKeyRef.current !== key) {
-      lastAttackEffectKeyRef.current = key;
-      playerAttackUntilRef.current = attackEffect.until;
-      const screenPos = toScreenPosition(attackEffect.position);
-      const powerLevel = calculatePowerLevel(player);
-      em.addEffect(EffectType.ATTACK_HIT, screenPos.x, screenPos.y, now, { powerLevel });
-    }
-  }
-
-  // ダメージエフェクトのトリガー
-  if (lastDamageAt > lastDamageAtRef.current) {
-    lastDamageAtRef.current = lastDamageAt;
-    playerDamageUntilRef.current = now + 200; // 被弾フレーム200ms表示
-    const screenPos = toScreenPosition(player);
-    em.addEffect(EffectType.DAMAGE, screenPos.x, screenPos.y, now);
-    // 画面シェイク（Phase 4）
-    em.addEffect(EffectType.SCREEN_SHAKE, 0, 0, now, { damage: 4 });
-  }
-
-  // 外部エフェクトキューの処理
-  if (effectQueueRef && effectQueueRef.current.length > 0) {
-    for (const evt of effectQueueRef.current) {
-      const screenPos = toScreenPosition({ x: evt.x, y: evt.y });
-      em.addEffect(evt.type, screenPos.x, screenPos.y, now, {
-        enemyType: evt.enemyType as import('../../../types').EnemyTypeValue | undefined,
-        comboMultiplier: evt.comboMultiplier,
-        powerLevel: evt.powerLevel,
-        variant: evt.variant as 'melee' | 'ranged' | 'boss' | undefined,
-        itemType: evt.itemType as import('../../../types').ItemTypeValue | undefined,
-      });
-    }
-    effectQueueRef.current = [];
-  }
-
-  // エフェクト更新・描画（100ms 間隔）
-  em.update(0.1, now);
-  em.draw(ctx, canvas.width, canvas.height);
-
-  // フローティングテキスト更新・描画
-  if (floatingTextManagerRef) {
-    floatingTextManagerRef.current.update(now);
-    floatingTextManagerRef.current.draw(ctx, now, (tx, ty) => toScreenPosition({ x: tx, y: ty }));
-  }
+  // 戦闘エフェクト処理（攻撃/被弾トリガー・外部キュー・エフェクト更新描画・フローティングテキスト）
+  combatEffects(frame);
 
   // プレイヤー描画（T-02.4: スプライト描画）
   const deathEff = deathEffectRef.current;
