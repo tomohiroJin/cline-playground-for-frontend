@@ -1,0 +1,2541 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`renderGameFrame 特性化（Phase D-1・完了後削除） デバッグ有効時の描画コマンド列が変化しないこと 1`] = `
+[
+  {
+    "args": [
+      "#000",
+    ],
+    "op": "set:fillStyle",
+  },
+  {
+    "args": [
+      0,
+      0,
+      1020,
+      748,
+    ],
+    "op": "fillRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      0,
+      0,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      0,
+      0,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      68,
+      0,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      68,
+      0,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      136,
+      0,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      136,
+      0,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      204,
+      0,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      204,
+      0,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      272,
+      0,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      272,
+      0,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      340,
+      0,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      340,
+      0,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      408,
+      0,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      408,
+      0,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      0,
+      68,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      0,
+      68,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      68,
+      68,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      68,
+      68,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      136,
+      68,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      136,
+      68,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      204,
+      68,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      204,
+      68,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      272,
+      68,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      272,
+      68,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      340,
+      68,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      340,
+      68,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      408,
+      68,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      408,
+      68,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      0,
+      136,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      0,
+      136,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      68,
+      136,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      68,
+      136,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      136,
+      136,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      136,
+      136,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      204,
+      136,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      204,
+      136,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      272,
+      136,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      272,
+      136,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      340,
+      136,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      340,
+      136,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      408,
+      136,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      408,
+      136,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      0,
+      204,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      0,
+      204,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      68,
+      204,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      68,
+      204,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      136,
+      204,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      136,
+      204,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      204,
+      204,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      204,
+      204,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      272,
+      204,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      272,
+      204,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      340,
+      204,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      340,
+      204,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      408,
+      204,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      408,
+      204,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      0,
+      272,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      0,
+      272,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      68,
+      272,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      68,
+      272,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      136,
+      272,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      136,
+      272,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      204,
+      272,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      204,
+      272,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      272,
+      272,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      272,
+      272,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      340,
+      272,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      340,
+      272,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      408,
+      272,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      408,
+      272,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      0,
+      340,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      0,
+      340,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      68,
+      340,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      68,
+      340,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      136,
+      340,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      136,
+      340,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      204,
+      340,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      204,
+      340,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      272,
+      340,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      272,
+      340,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      5000,
+      340,
+      340,
+      2.125,
+    ],
+    "op": "sprite:drawAnimatedSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      340,
+      340,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      408,
+      340,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      408,
+      340,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      0,
+      408,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      0,
+      408,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      68,
+      408,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      68,
+      408,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      136,
+      408,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      136,
+      408,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      204,
+      408,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      204,
+      408,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      272,
+      408,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      272,
+      408,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      340,
+      408,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      340,
+      408,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      408,
+      408,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      408,
+      408,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      68,
+      68,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(0, 0, 0, 0.8)",
+    ],
+    "op": "set:fillStyle",
+  },
+  {
+    "args": [
+      10,
+      10,
+      200,
+      138,
+    ],
+    "op": "fillRect",
+  },
+  {
+    "args": [
+      "#00ff00",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      1,
+    ],
+    "op": "set:lineWidth",
+  },
+  {
+    "args": [
+      10,
+      10,
+      200,
+      138,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "#00ff00",
+    ],
+    "op": "set:fillStyle",
+  },
+  {
+    "args": [
+      "12px monospace",
+    ],
+    "op": "set:font",
+  },
+  {
+    "args": [
+      "left",
+    ],
+    "op": "set:textAlign",
+  },
+  {
+    "args": [
+      "DEBUG MODE",
+      20,
+      28,
+    ],
+    "op": "fillText",
+  },
+  {
+    "args": [
+      "Player: (1, 1)",
+      20,
+      46,
+    ],
+    "op": "fillText",
+  },
+  {
+    "args": [
+      "Viewport: (0, 0)",
+      20,
+      64,
+    ],
+    "op": "fillText",
+  },
+  {
+    "args": [
+      "Map: 7x7",
+      20,
+      82,
+    ],
+    "op": "fillText",
+  },
+  {
+    "args": [
+      "Shift+: D F C P",
+      20,
+      100,
+    ],
+    "op": "fillText",
+  },
+  {
+    "args": [
+      "D* F C* P",
+      20,
+      118,
+    ],
+    "op": "fillText",
+  },
+  {
+    "args": [
+      "#ffff00",
+    ],
+    "op": "set:fillStyle",
+  },
+  {
+    "args": [
+      "10px monospace",
+    ],
+    "op": "set:font",
+  },
+  {
+    "args": [
+      "center",
+    ],
+    "op": "set:textAlign",
+  },
+  {
+    "args": [
+      "(1,1)",
+      102,
+      82,
+    ],
+    "op": "fillText",
+  },
+]
+`;
+
+exports[`renderGameFrame 特性化（Phase D-1・完了後削除） 通常状態の描画コマンド列が変化しないこと 1`] = `
+[
+  {
+    "args": [
+      "#000",
+    ],
+    "op": "set:fillStyle",
+  },
+  {
+    "args": [
+      0,
+      0,
+      1020,
+      748,
+    ],
+    "op": "fillRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      0,
+      0,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      0,
+      0,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      68,
+      0,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      68,
+      0,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      136,
+      0,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      136,
+      0,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      204,
+      0,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      204,
+      0,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      272,
+      0,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      272,
+      0,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      340,
+      0,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      340,
+      0,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      408,
+      0,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      408,
+      0,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      0,
+      68,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      0,
+      68,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      68,
+      68,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      68,
+      68,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      136,
+      68,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      136,
+      68,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      204,
+      68,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      204,
+      68,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      272,
+      68,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      272,
+      68,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      340,
+      68,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      340,
+      68,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      408,
+      68,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      408,
+      68,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      0,
+      136,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      0,
+      136,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      68,
+      136,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      68,
+      136,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      136,
+      136,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      136,
+      136,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      204,
+      136,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      204,
+      136,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      272,
+      136,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      272,
+      136,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      340,
+      136,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      340,
+      136,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      408,
+      136,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      408,
+      136,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      0,
+      204,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      0,
+      204,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      68,
+      204,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      68,
+      204,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      136,
+      204,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      136,
+      204,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      204,
+      204,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      204,
+      204,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      272,
+      204,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      272,
+      204,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      340,
+      204,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      340,
+      204,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      408,
+      204,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      408,
+      204,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      0,
+      272,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      0,
+      272,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      68,
+      272,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      68,
+      272,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      136,
+      272,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      136,
+      272,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      204,
+      272,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      204,
+      272,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      272,
+      272,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      272,
+      272,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      340,
+      272,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      340,
+      272,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      408,
+      272,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      408,
+      272,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      0,
+      340,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      0,
+      340,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      68,
+      340,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      68,
+      340,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      136,
+      340,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      136,
+      340,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      204,
+      340,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      204,
+      340,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      272,
+      340,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      272,
+      340,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      5000,
+      340,
+      340,
+      2.125,
+    ],
+    "op": "sprite:drawAnimatedSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      340,
+      340,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      408,
+      340,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      408,
+      340,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      0,
+      408,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      0,
+      408,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      68,
+      408,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      68,
+      408,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      136,
+      408,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      136,
+      408,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      204,
+      408,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      204,
+      408,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      272,
+      408,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      272,
+      408,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      340,
+      408,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      340,
+      408,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      408,
+      408,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+  {
+    "args": [
+      "rgba(255, 255, 255, 0.1)",
+    ],
+    "op": "set:strokeStyle",
+  },
+  {
+    "args": [
+      408,
+      408,
+      68,
+      68,
+    ],
+    "op": "strokeRect",
+  },
+  {
+    "args": [
+      "[Object]",
+      68,
+      68,
+      2.125,
+    ],
+    "op": "sprite:drawSprite",
+  },
+]
+`;
