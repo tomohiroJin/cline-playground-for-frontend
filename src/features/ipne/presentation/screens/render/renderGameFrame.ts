@@ -12,10 +12,6 @@ import {
   EnemyState,
   EnemyType,
   drawAutoMap,
-  canSeeTrap,
-  canSeeSpecialWall,
-  getTrapAlpha,
-  getWallAlpha,
   findPath,
   drawDebugPanel,
   drawCoordinateOverlay,
@@ -35,18 +31,12 @@ import {
 import { isComboActive, COMBO_DISPLAY_MIN } from '../../../domain/services/comboService';
 import {
   SpriteDefinition,
-  SpriteSheetDefinition,
   FLOOR_SPRITE,
   WALL_SPRITE,
   getStageFloorSprite,
   getStageWallSprite,
-  GOAL_SPRITE_SHEET,
-  START_SPRITE,
   getPlayerSpriteSheet,
   getEnemySpriteSheet,
-  getItemSprite,
-  getTrapSpriteSheet,
-  getWallSprite,
   ATTACK_SLASH_SPRITE_SHEET,
   WARRIOR_ATTACK_SPRITE_SHEETS,
   THIEF_ATTACK_SPRITE_SHEETS,
@@ -69,8 +59,9 @@ import { drawPlayerAura } from '../../effects/aura';
 import { drawWeaponTrail, getWeaponTier, WeaponTier, drawShockwave } from '../../effects/weaponEffect';
 import { drawShieldGlow, drawAfterImage, drawSpinParticles, drawHealParticles } from '../../effects/stageVisual';
 import { getStageIntroPhase, getStageIntroAlpha, getStageIntroTextAlpha, getGameOverTransitionAlpha } from '../../effects/screenTransition';
-import type { RenderContext } from './renderContext';
+import type { RenderContext, FrameContext } from './renderContext';
 import type { Position, Viewport } from '../../../index';
+import { drawWorld } from './drawWorld';
 
 /** 敵の状態に応じた特殊フレームを返す（Phase 3） */
 function getEnemyStateFrame(enemyType: string, enemyState: string): SpriteDefinition | null {
@@ -110,9 +101,6 @@ export function renderGameFrame(rc: RenderContext): void {
     map,
     player,
     enemies,
-    items,
-    traps,
-    walls,
     mapState,
     goalPos,
     debugState,
@@ -181,17 +169,6 @@ export function renderGameFrame(rc: RenderContext): void {
     canvas.height = canvasSize.height;
   }
 
-  // 背景をクリア
-  ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  // 画面シェイクオフセット適用（Phase 4）
-  const shakeOffset = effectManagerRef.current.getShakeOffset();
-  if (shakeOffset) {
-    ctx.save();
-    ctx.translate(shakeOffset.x, shakeOffset.y);
-  }
-
   // スタート位置を探す（パス描画用）
   let startPos: Position | null = null;
   for (let y = 0; y < mapHeight && !startPos; y++) {
@@ -218,38 +195,6 @@ export function renderGameFrame(rc: RenderContext): void {
   const stageFloor = currentStage ? getStageFloorSprite(currentStage) : FLOOR_SPRITE;
   const stageWall = currentStage ? getStageWallSprite(currentStage) : WALL_SPRITE;
 
-  for (let vy = 0; vy < drawHeight; vy++) {
-    for (let vx = 0; vx < drawWidth; vx++) {
-      const worldX = useFullMap ? vx : viewport.x + vx;
-      const worldY = useFullMap ? vy : viewport.y + vy;
-
-      // マップ範囲外は描画しない
-      if (worldX < 0 || worldX >= mapWidth || worldY < 0 || worldY >= mapHeight) {
-        continue;
-      }
-
-      const tile = map[worldY][worldX];
-      const tileDrawX = offsetX + vx * tileSize;
-      const tileDrawY = offsetY + vy * tileSize;
-
-      if (tile === TileType.WALL) {
-        spriteRenderer.drawSprite(ctx, stageWall, tileDrawX, tileDrawY, spriteScale);
-      } else if (tile === TileType.GOAL) {
-        spriteRenderer.drawAnimatedSprite(ctx, GOAL_SPRITE_SHEET, now, tileDrawX, tileDrawY, spriteScale);
-      } else if (tile === TileType.START) {
-        spriteRenderer.drawSprite(ctx, START_SPRITE, tileDrawX, tileDrawY, spriteScale);
-      } else {
-        spriteRenderer.drawSprite(ctx, stageFloor, tileDrawX, tileDrawY, spriteScale);
-      }
-
-      // グリッド線（全体表示時は省略）
-      if (!useFullMap) {
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-        ctx.strokeRect(tileDrawX, tileDrawY, tileSize, tileSize);
-      }
-    }
-  }
-
   const toScreenPosition = (pos: Position): Position => {
     if (useFullMap) {
       return {
@@ -263,86 +208,21 @@ export function renderGameFrame(rc: RenderContext): void {
     };
   };
 
-  // パス描画（デバッグモードでパス表示が有効な場合）
-  if (debugState.enabled && debugState.showPath && path.length > 1) {
-    ctx.strokeStyle = '#ff00ff';
-    ctx.lineWidth = Math.max(2, tileSize / 4);
-    ctx.beginPath();
+  // プレイヤーのスクリーン座標を先行計算（FrameContext 構築に必要）
+  const playerScreen = toScreenPosition(player);
 
-    for (let i = 0; i < path.length; i++) {
-      const p = path[i];
-      const screenX = useFullMap
-        ? offsetX + p.x * tileSize + tileSize / 2
-        : (p.x - viewport.x) * tileSize + tileSize / 2;
-      const screenY = useFullMap
-        ? offsetY + p.y * tileSize + tileSize / 2
-        : (p.y - viewport.y) * tileSize + tileSize / 2;
+  // シェイクオフセット取得（drawWorld で save/translate、後段で restore するため両側で参照）
+  const shakeOffset = effectManagerRef.current.getShakeOffset();
 
-      if (i === 0) {
-        ctx.moveTo(screenX, screenY);
-      } else {
-        ctx.lineTo(screenX, screenY);
-      }
-    }
-    ctx.stroke();
-  }
+  // FrameContext を構築してワールド描画層へ渡す
+  const frame: FrameContext = {
+    ...rc,
+    viewport, tileSize, offsetX, offsetY, useFullMap, drawWidth, drawHeight,
+    spriteScale, stageFloor, stageWall, startPos, path, playerScreen, toScreenPosition,
+  };
 
-  // MVP3: 罠描画（T-02.6: スプライト描画）
-  for (const trap of traps) {
-    // 職業に応じた可視性判定
-    if (!canSeeTrap(player.playerClass, trap.state)) continue;
-
-    const trapScreen = toScreenPosition(trap);
-    const alpha = getTrapAlpha(player.playerClass, trap.state);
-    const trapSheet = getTrapSpriteSheet(trap.type);
-    const trapDrawSize = SPRITE_SIZES.base * spriteScale;
-    const trapDrawX = trapScreen.x - trapDrawSize / 2;
-    const trapDrawY = trapScreen.y - trapDrawSize / 2;
-
-    ctx.globalAlpha = alpha;
-    spriteRenderer.drawAnimatedSprite(ctx, trapSheet, now, trapDrawX, trapDrawY, spriteScale);
-    ctx.globalAlpha = 1;
-  }
-
-  // MVP3: 特殊壁描画（T-02.7: スプライト描画）
-  for (const wall of walls) {
-    // 職業に応じた可視性判定
-    if (!canSeeSpecialWall(player.playerClass, wall.type, wall.state)) continue;
-
-    const wallScreen = toScreenPosition(wall);
-    const alpha = getWallAlpha(player.playerClass, wall.type, wall.state);
-    const wallSprite = getWallSprite(wall.type, wall.state);
-    const wallDrawSize = SPRITE_SIZES.base * spriteScale;
-    const wallDrawX = wallScreen.x - wallDrawSize / 2;
-    const wallDrawY = wallScreen.y - wallDrawSize / 2;
-
-    ctx.globalAlpha = alpha;
-    spriteRenderer.drawSprite(ctx, wallSprite, wallDrawX, wallDrawY, spriteScale);
-    ctx.globalAlpha = 1;
-  }
-
-  // アイテム描画（T-02.5: スプライト描画）
-  for (const item of items) {
-    const screenPos = toScreenPosition(item);
-    const itemSpriteOrSheet = getItemSprite(item.type);
-    const isSheet = 'sprites' in itemSpriteOrSheet;
-    const spriteWidth = isSheet
-      ? (itemSpriteOrSheet as SpriteSheetDefinition).sprites[0].width
-      : (itemSpriteOrSheet as SpriteDefinition).width;
-    const itemDrawSize = spriteWidth * spriteScale;
-    const itemDrawX = screenPos.x - itemDrawSize / 2;
-    const itemDrawY = screenPos.y - itemDrawSize / 2;
-
-    if (isSheet) {
-      spriteRenderer.drawAnimatedSprite(
-        ctx, itemSpriteOrSheet as SpriteSheetDefinition, now, itemDrawX, itemDrawY, spriteScale
-      );
-    } else {
-      spriteRenderer.drawSprite(
-        ctx, itemSpriteOrSheet as SpriteDefinition, itemDrawX, itemDrawY, spriteScale
-      );
-    }
-  }
+  // ワールド描画（背景・マップ・パス・罠・壁・アイテム）
+  drawWorld(frame, shakeOffset);
 
   // 敵描画（T-02.3: スプライト描画）
   for (const enemy of enemies) {
@@ -501,7 +381,6 @@ export function renderGameFrame(rc: RenderContext): void {
   }
 
   // プレイヤー描画（T-02.4: スプライト描画）
-  const playerScreen = toScreenPosition(player);
   const deathEff = deathEffectRef.current;
   const playerDrawSize = SPRITE_SIZES.base * spriteScale;
 
