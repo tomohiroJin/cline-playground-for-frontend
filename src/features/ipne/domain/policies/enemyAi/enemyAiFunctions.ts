@@ -5,8 +5,6 @@
  * 公開 API（エクスポート名・シグネチャ）は分割前と完全一致を維持する。
  * 設計: docs/superpowers/specs/2026-06-14-ipne-enemyai-refactoring-design.md
  */
-// 乱数プロバイダ DI
-export { setRandomProvider, resetRandomProvider } from './aiRandom';
 // 幾何計算・検知判定（純粋関数）
 export {
   AI_CONFIG,

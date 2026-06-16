@@ -7,7 +7,7 @@
 import { Enemy, GameMap, Position } from '../../types';
 import { canMove } from '../../services/collisionService';
 import { calculateStep, getManhattanDistance } from './aiGeometry';
-import { getRandom } from './aiRandom';
+import { defaultRandom } from './aiRandom';
 
 /** ターゲットへ1歩近づく（横優先/縦優先を距離差で決定、塞がれたら停止） */
 const stepTowards = (enemy: Enemy, target: Position, map: GameMap): Position => {
@@ -60,7 +60,7 @@ export const attemptLunge = (
 ): Enemy | null => {
   const distance = getManhattanDistance(enemy, target);
   if (distance > maxDistance) return null;
-  if (getRandom().random() > chance) return null;
+  if (defaultRandom.random() > chance) return null;
 
   const { stepX, stepY } = calculateStep(enemy, target);
   const dx = target.x - enemy.x;
@@ -87,7 +87,7 @@ const stepRandom = (enemy: Enemy, map: GameMap): Position => {
     { x: enemy.x, y: enemy.y + 1 },
     { x: enemy.x, y: enemy.y - 1 },
   ];
-  const shuffled = getRandom().shuffle(directions);
+  const shuffled = defaultRandom.shuffle(directions);
   for (const pos of shuffled) {
     if (canMove(map, pos.x, pos.y)) return pos;
   }
@@ -111,8 +111,8 @@ export const moveEnemyRandom = (enemy: Enemy, map: GameMap): Enemy => {
 
 /** 巡回パスを生成する（往路＋復路、長さ4-8マス） */
 export const generatePatrolPath = (origin: Position): Position[] => {
-  const length = getRandom().randomInt(4, 9); // 4-8
-  const horizontal = getRandom().random() > 0.5;
+  const length = defaultRandom.randomInt(4, 9); // 4-8
+  const horizontal = defaultRandom.random() > 0.5;
   const path: Position[] = [];
   for (let i = 0; i < length; i++) {
     path.push({
