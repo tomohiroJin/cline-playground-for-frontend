@@ -106,7 +106,7 @@ src/features/ipne/
       enemyAi/                #   敵AIポリシー（責務別に分割）
         enemyAiFunctions.ts   #     barrel（後方互換の re-export のみ）
         aiGeometry.ts         #     幾何計算・検知判定（calculateStep, 距離, detect/chase）
-        aiRandom.ts           #     乱数プロバイダ DI
+        aiRandom.ts           #     乱数プロバイダ（不変・Math.random ベース）
         enemyMovement.ts      #     移動エンジン（step/move, 突進, 巡回パス）
         attackState.ts        #     攻撃可否・攻撃/ノックバック状態解決
         behaviors/            #     敵タイプ別 AI（patrol/charge/ranged/flee を1ファイルずつ）
