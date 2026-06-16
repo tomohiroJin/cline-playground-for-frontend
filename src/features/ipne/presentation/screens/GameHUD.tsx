@@ -26,6 +26,8 @@ import {
   HelpButton,
   KeyRequiredMessage,
   TopRightControls,
+  TopLeftStatus,
+  TopRightStatus,
 } from '../../../../pages/IpnePage.styles';
 import {
   Player,
@@ -80,68 +82,72 @@ export const GameHUD: React.FC<GameHUDProps> = ({
       <DamageOverlay $visible={renderTime - lastDamageAt < 150} />
       <TimerDisplay>{formatTimeShort(currentElapsed)}</TimerDisplay>
       {currentStage && <StageIndicator>STAGE {currentStage}</StageIndicator>}
-      <HPBarContainer>
-        <HPBarFill $ratio={hpRatio} $color={hpColor} />
-        <HPBarText>
-          HP {player.hp}/{player.maxHp}
-        </HPBarText>
-      </HPBarContainer>
-      <LevelBadge>Lv.{player.level}</LevelBadge>
-      <ExperienceBar>
-        <ExperienceBarFill
-          $ratio={
-            player.level >= maxLevel
-              ? 1
-              : (player.killCount - (KILL_COUNT_TABLE[player.level] || 0)) /
-                Math.max(1, getNextKillsRequired(player.level, player.killCount) + (player.killCount - (KILL_COUNT_TABLE[player.level] || 0)))
-          }
-        />
-      </ExperienceBar>
-      <StatsDisplay>
-        <StatRow>
-          <StatLabel>攻撃力</StatLabel>
-          <StatValue>{player.stats.attackPower}</StatValue>
-        </StatRow>
-        <StatRow>
-          <StatLabel>攻撃距離</StatLabel>
-          <StatValue>{player.stats.attackRange}</StatValue>
-        </StatRow>
-        <StatRow>
-          <StatLabel>移動速度</StatLabel>
-          <StatValue>{player.stats.moveSpeed}</StatValue>
-        </StatRow>
-        <StatRow>
-          <StatLabel>攻撃速度</StatLabel>
-          <StatValue>{player.stats.attackSpeed.toFixed(1)}</StatValue>
-        </StatRow>
-        <StatRow>
-          <StatLabel>撃破数</StatLabel>
-          <StatValue>{player.killCount}</StatValue>
-        </StatRow>
-      </StatsDisplay>
-      <TopRightControls>
-        <PendingPointsBadge
-          $hasPoints={pendingLevelPoints > 0}
-          onClick={onOpenLevelUpModal}
-          aria-label={pendingLevelPoints > 0 ? `未割り振りポイント: ${pendingLevelPoints}` : '未割り振りポイントなし'}
-        >
-          <PendingPointsCount $hasPoints={pendingLevelPoints > 0}>
-            ★ {pendingLevelPoints}
-          </PendingPointsCount>
-          <EnhanceButtonText $hasPoints={pendingLevelPoints > 0}>
-            強化
-          </EnhanceButtonText>
-        </PendingPointsBadge>
-        <KeyIndicator $hasKey={player.hasKey} aria-label={player.hasKey ? '鍵を所持' : '鍵未所持'}>
-          <KeyIcon $hasKey={player.hasKey}>🔑</KeyIcon>
-        </KeyIndicator>
-        <HelpButton onClick={onHelpToggle} aria-label="ヘルプ表示">
-          H
-        </HelpButton>
-        <MapToggleButton onClick={onMapToggle} aria-label="マップ表示切替">
-          🗺️
-        </MapToggleButton>
-      </TopRightControls>
+      <TopLeftStatus>
+        <HPBarContainer>
+          <HPBarFill $ratio={hpRatio} $color={hpColor} />
+          <HPBarText>
+            HP {player.hp}/{player.maxHp}
+          </HPBarText>
+        </HPBarContainer>
+        <ExperienceBar>
+          <ExperienceBarFill
+            $ratio={
+              player.level >= maxLevel
+                ? 1
+                : (player.killCount - (KILL_COUNT_TABLE[player.level] || 0)) /
+                  Math.max(1, getNextKillsRequired(player.level, player.killCount) + (player.killCount - (KILL_COUNT_TABLE[player.level] || 0)))
+            }
+          />
+        </ExperienceBar>
+      </TopLeftStatus>
+      <TopRightStatus>
+        <TopRightControls>
+          <PendingPointsBadge
+            $hasPoints={pendingLevelPoints > 0}
+            onClick={onOpenLevelUpModal}
+            aria-label={pendingLevelPoints > 0 ? `未割り振りポイント: ${pendingLevelPoints}` : '未割り振りポイントなし'}
+          >
+            <PendingPointsCount $hasPoints={pendingLevelPoints > 0}>
+              ★ {pendingLevelPoints}
+            </PendingPointsCount>
+            <EnhanceButtonText $hasPoints={pendingLevelPoints > 0}>
+              強化
+            </EnhanceButtonText>
+          </PendingPointsBadge>
+          <KeyIndicator $hasKey={player.hasKey} aria-label={player.hasKey ? '鍵を所持' : '鍵未所持'}>
+            <KeyIcon $hasKey={player.hasKey}>🔑</KeyIcon>
+          </KeyIndicator>
+          <HelpButton onClick={onHelpToggle} aria-label="ヘルプ表示">
+            H
+          </HelpButton>
+          <MapToggleButton onClick={onMapToggle} aria-label="マップ表示切替">
+            🗺️
+          </MapToggleButton>
+        </TopRightControls>
+        <LevelBadge>Lv.{player.level}</LevelBadge>
+        <StatsDisplay>
+          <StatRow>
+            <StatLabel>攻撃力</StatLabel>
+            <StatValue>{player.stats.attackPower}</StatValue>
+          </StatRow>
+          <StatRow>
+            <StatLabel>攻撃距離</StatLabel>
+            <StatValue>{player.stats.attackRange}</StatValue>
+          </StatRow>
+          <StatRow>
+            <StatLabel>移動速度</StatLabel>
+            <StatValue>{player.stats.moveSpeed}</StatValue>
+          </StatRow>
+          <StatRow>
+            <StatLabel>攻撃速度</StatLabel>
+            <StatValue>{player.stats.attackSpeed.toFixed(1)}</StatValue>
+          </StatRow>
+          <StatRow>
+            <StatLabel>撃破数</StatLabel>
+            <StatValue>{player.killCount}</StatValue>
+          </StatRow>
+        </StatsDisplay>
+      </TopRightStatus>
       {showHelp && <HelpOverlayComponent onClose={onHelpToggle} />}
       {showKeyRequiredMessage && <KeyRequiredMessage>🔑 鍵が必要です</KeyRequiredMessage>}
     </>
