@@ -89,7 +89,6 @@ const getTotalMaxItems = (): number => {
   );
 };
 
-
 export const spawnItems = (
   rooms: Room[],
   enemies: Enemy[],
