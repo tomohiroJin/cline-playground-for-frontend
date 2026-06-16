@@ -132,6 +132,49 @@ describe('progression', () => {
     });
   });
 
+  describe('攻撃速度の浮動小数累積誤差（toBe で厳密一致を要求）', () => {
+    const baseStats: PlayerStats = {
+      attackPower: 2,
+      attackRange: 1,
+      moveSpeed: 4,
+      attackSpeed: 1.0,
+      healBonus: 0,
+    };
+
+    const applyAttackSpeed = (stats: PlayerStats, times: number): PlayerStats => {
+      let current = stats;
+      for (let i = 0; i < times; i++) {
+        current = applyLevelUpChoice(current, StatType.ATTACK_SPEED);
+      }
+      return current;
+    };
+
+    test('攻撃速度を3回上げても 0.7 ちょうど（累積誤差なし）', () => {
+      const result = applyAttackSpeed(baseStats, 3);
+      // 修正前は 0.7000000000000001 となり toBe(0.7) で失敗する
+      expect(result.attackSpeed).toBe(0.7);
+    });
+
+    test('攻撃速度を5回上げると下限 0.5 ちょうど', () => {
+      const result = applyAttackSpeed(baseStats, 5);
+      expect(result.attackSpeed).toBe(0.5);
+    });
+
+    test('下限到達後（0.5）は誤差なくこれ以上選べない', () => {
+      const atLimit = applyAttackSpeed(baseStats, 5);
+      expect(atLimit.attackSpeed).toBe(0.5);
+      expect(canChooseStat(atLimit, StatType.ATTACK_SPEED)).toBe(false);
+    });
+
+    test('ステージ報酬の攻撃速度を3回上げても 0.7 ちょうど', () => {
+      let player = aPlayer().withStats({ attackSpeed: 1.0 }).build();
+      for (let i = 0; i < 3; i++) {
+        player = applyStageReward(player, 'attack_speed');
+      }
+      expect(player.stats.attackSpeed).toBe(0.7);
+    });
+  });
+
   describe('canChooseStat', () => {
     test('上限未達の能力は選択可能であること', () => {
       const stats: PlayerStats = {

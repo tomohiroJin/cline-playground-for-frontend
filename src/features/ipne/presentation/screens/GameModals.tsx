@@ -124,6 +124,14 @@ export const ClassSelectScreen: React.FC<{
 };
 
 /**
+ * 能力値の表示用フォーマット（小数第1位に丸める）
+ *
+ * attackSpeed は小数のため、表示時のインライン加算（例: 0.8 + (-0.1) = 0.7000000000000001）で
+ * 浮動小数誤差が出る。丸めて常にクリーンな表示にする。整数の能力値はそのまま整数で表示される。
+ */
+const formatStatValue = (value: number): number => Math.round(value * 10) / 10;
+
+/**
  * レベルアップオーバーレイコンポーネント（MVP3、ポイント制対応）
  */
 export const LevelUpOverlayComponent: React.FC<{
@@ -155,7 +163,7 @@ export const LevelUpOverlayComponent: React.FC<{
             <LevelUpChoiceLabel>{choice.description}</LevelUpChoiceLabel>
             <LevelUpChoiceValue $disabled={!choice.canChoose}>
               {choice.canChoose
-                ? `${choice.currentValue} → ${choice.currentValue + choice.increase}`
+                ? `${formatStatValue(choice.currentValue)} → ${formatStatValue(choice.currentValue + choice.increase)}`
                 : '上限'}
             </LevelUpChoiceValue>
           </LevelUpChoice>

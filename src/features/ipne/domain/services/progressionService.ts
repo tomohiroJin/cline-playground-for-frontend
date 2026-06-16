@@ -107,6 +107,15 @@ export const shouldLevelUp = (currentLevel: number, killCount: number): boolean 
 };
 
 /**
+ * 攻撃速度の浮動小数累積誤差を防ぐため小数第1位に丸める
+ *
+ * attackSpeed は -0.1 を繰り返し加算するため、丸めないと 0.7000000000000001 の
+ * ような値が蓄積し、表示や上限判定（canChooseStat）が汚れる。代入のたびに丸めて
+ * 常にクリーンな1桁小数に保つ。
+ */
+const roundAttackSpeed = (value: number): number => Math.round(value * 10) / 10;
+
+/**
  * レベルアップ選択を適用
  */
 export const applyLevelUpChoice = (
@@ -136,7 +145,7 @@ export const applyLevelUpChoice = (
       break;
     case StatType.ATTACK_SPEED:
       newStats.attackSpeed = Math.max(
-        newStats.attackSpeed + choice.increase,
+        roundAttackSpeed(newStats.attackSpeed + choice.increase),
         STAT_LIMITS[StatType.ATTACK_SPEED] ?? 0
       );
       break;
@@ -217,7 +226,7 @@ export const applyStageReward = (player: Player, rewardType: StageRewardType): P
       break;
     case 'attack_speed':
       newPlayer.stats.attackSpeed = Math.max(
-        newPlayer.stats.attackSpeed - 0.1,
+        roundAttackSpeed(newPlayer.stats.attackSpeed - 0.1),
         STAT_LIMITS[StatType.ATTACK_SPEED] ?? 0
       );
       break;
