@@ -3,6 +3,7 @@
  */
 
 import { Enemy, GameMap, Position, TileType, Wall, WallState, WallType } from '../types';
+import { manhattanDistance } from './geometryService';
 
 /**
  * 指定位置が壁かどうかを判定
@@ -64,6 +65,6 @@ export const getEnemiesInRange = (
   range: number
 ): Enemy[] => {
   return enemies.filter(
-    enemy => Math.abs(enemy.x - position.x) + Math.abs(enemy.y - position.y) <= range
+    enemy => manhattanDistance(enemy, position) <= range
   );
 };

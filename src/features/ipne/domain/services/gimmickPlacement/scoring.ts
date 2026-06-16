@@ -1,5 +1,6 @@
 import { calculateDistances, findPath, isConnected } from '../pathfinderService';
 import { GameMap, Position, TileType } from '../../types';
+import { manhattanDistance } from '../geometryService';
 import { findPenetrationShortcuts } from './candidateDetection';
 import { MultiWallCandidate, ScoredWallCandidate } from './types';
 
@@ -7,7 +8,7 @@ export const getDistanceFromPath = (path: Position[], pos: Position): number => 
   if (path.length === 0) return Infinity;
   let minDist = Infinity;
   for (const p of path) {
-    const dist = Math.abs(p.x - pos.x) + Math.abs(p.y - pos.y);
+    const dist = manhattanDistance(p, pos);
     if (dist < minDist) minDist = dist;
   }
   return minDist;

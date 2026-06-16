@@ -6,6 +6,7 @@
  */
 import { Enemy, Position } from '../../types';
 import { GAME_BALANCE } from '../../config/gameBalance';
+import { manhattanDistance as getManhattanDistance } from '../../services/geometryService';
 
 /** AI の検知・追跡・攻撃に関する時間定数 */
 export const AI_CONFIG = {
@@ -14,9 +15,8 @@ export const AI_CONFIG = {
   attackCooldown: GAME_BALANCE.enemyAi.attackCooldownMs,
 } as const;
 
-/** マンハッタン距離（barrel では非公開。モジュール間共有用） */
-export const getManhattanDistance = (a: Position, b: Position): number =>
-  Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+// 4消費者（attackState/enemyMovement/chargeBehavior/rangedBehavior）が依存するため再公開
+export { getManhattanDistance };
 
 /**
  * 2点間の各軸の単位ステップ（-1 / 0 / +1）を返す。
