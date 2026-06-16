@@ -1,8 +1,7 @@
 /**
- * 敵AIの乱数プロバイダ管理
+ * 敵AIの乱数プロバイダ
  *
- * テスト時に setRandomProvider で決定的な乱数へ差し替えられる。
- * NOTE: モジュールレベルの可変状態は既知の負債（spec §6）。Phase A では現状維持。
+ * Math.random ベースの不変プロバイダを提供する。
  */
 import { RandomProvider } from '../../ports';
 
@@ -20,18 +19,3 @@ export const defaultRandom: RandomProvider = {
     return result;
   },
 };
-
-let _random: RandomProvider = defaultRandom;
-
-/** 現在の乱数プロバイダーを取得する（モジュール間共有用） */
-export const getRandom = (): RandomProvider => _random;
-
-/** 乱数プロバイダーを設定する（テスト用） */
-export function setRandomProvider(random: RandomProvider): void {
-  _random = random;
-}
-
-/** 乱数プロバイダーをデフォルトにリセットする */
-export function resetRandomProvider(): void {
-  _random = defaultRandom;
-}
