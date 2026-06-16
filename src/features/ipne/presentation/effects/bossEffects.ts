@@ -5,6 +5,7 @@
  */
 
 import { Enemy, EnemyType, EnemyTypeValue } from '../../types';
+import { manhattanDistance } from '../../domain/services/geometryService';
 
 // ===== WARNING 演出 =====
 
@@ -55,7 +56,7 @@ export function shouldTriggerWarning(
   if (state.triggeredBossIds.includes(enemy.id)) return false;
 
   // マンハッタン距離でチェック
-  const distance = Math.abs(enemy.x - playerX) + Math.abs(enemy.y - playerY);
+  const distance = manhattanDistance(enemy, { x: playerX, y: playerY });
   return distance <= BOSS_DETECTION_RANGE;
 }
 

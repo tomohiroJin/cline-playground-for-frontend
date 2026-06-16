@@ -4,6 +4,7 @@
 import { Enemy, Item, ItemType, ItemTypeValue, Player, Position, Room } from '../types';
 import { healPlayer, getEffectiveHeal } from './player';
 import { IdGenerator, RandomProvider } from '../ports';
+import { manhattanDistance } from '../services/geometryService';
 
 const ITEM_CONFIGS = {
   [ItemType.HEALTH_SMALL]: { healAmount: 3 },
@@ -88,11 +89,6 @@ const getTotalMaxItems = (): number => {
   );
 };
 
-/** 2点間のマンハッタン距離を計算 */
-const getDistance = (a: Position, b: Position): number => {
-  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
-};
-
 export const spawnItems = (
   rooms: Room[],
   enemies: Enemy[],
@@ -118,7 +114,7 @@ export const spawnItems = (
 
       // 鍵アイテムはゴールから一定距離離れた場所にのみ配置
       if (minDistanceFromGoal && goalPos) {
-        const distance = getDistance(tile, goalPos);
+        const distance = manhattanDistance(tile, goalPos);
         if (distance < minDistanceFromGoal) continue;
       }
 
