@@ -102,9 +102,9 @@ export const updateEnemiesWithContact = (
       candidate = markEnemyAttacking(candidate, currentTime);
     }
 
-    // 接触判定
+    // 接触判定（死亡済み・死亡アニメーション中の敵は接触ダメージを与えない）
     if (candidateKey === playerKey) {
-      if (enemy.damage >= contactDamage) {
+      if (enemy.hp > 0 && !enemy.isDying && enemy.damage >= contactDamage) {
         contactDamage = enemy.damage;
         contactEnemy = enemy;
       }

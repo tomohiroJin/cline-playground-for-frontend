@@ -10,6 +10,10 @@ export const ENEMY_ATTACK_ANIM_DURATION = GAME_BALANCE.enemyAi.attackAnimDuratio
 
 /** 敵が攻撃可能かどうか */
 export const canEnemyAttack = (enemy: Enemy, player: Position, currentTime: number): boolean => {
+  // 死亡済み・死亡アニメーション中の敵は攻撃できない。
+  // 敵は死亡演出のため最大 DEATH_ANIMATION_DURATION の間ゲーム状態に残るが、
+  // その間に攻撃を成立させない（撃破直後の「最後っ屁攻撃」を防止する不変条件）。
+  if (enemy.hp <= 0 || enemy.isDying) return false;
   if (enemy.attackRange <= 0) return false;
   if (currentTime < enemy.attackCooldownUntil) return false;
   return getManhattanDistance(enemy, player) <= enemy.attackRange;

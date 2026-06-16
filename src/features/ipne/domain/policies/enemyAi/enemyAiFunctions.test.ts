@@ -106,6 +106,21 @@ describe('敵AI関数（Policy 統合後）', () => {
       const enemy = createSpecimenEnemy(2, 2, mockIdGen);
       expect(canEnemyAttack(enemy, { x: 2, y: 2 }, 0)).toBe(false);
     });
+
+    it('射程内・クールダウン明けの生存している敵は攻撃できる', () => {
+      const enemy = { ...createRangedEnemy(2, 2, mockIdGen), attackRange: 3, hp: 5, attackCooldownUntil: 0 };
+      expect(canEnemyAttack(enemy, { x: 2, y: 2 }, 1000)).toBe(true);
+    });
+
+    it('HPが0の敵は攻撃できない（最後っ屁攻撃の防止）', () => {
+      const deadEnemy = { ...createRangedEnemy(2, 2, mockIdGen), attackRange: 3, hp: 0, attackCooldownUntil: 0 };
+      expect(canEnemyAttack(deadEnemy, { x: 2, y: 2 }, 1000)).toBe(false);
+    });
+
+    it('死亡アニメーション中（isDying）の敵は攻撃できない', () => {
+      const dyingEnemy = { ...createRangedEnemy(2, 2, mockIdGen), attackRange: 3, hp: 5, isDying: true, attackCooldownUntil: 0 };
+      expect(canEnemyAttack(dyingEnemy, { x: 2, y: 2 }, 1000)).toBe(false);
+    });
   });
 
   describe('markEnemyAttacking', () => {
@@ -161,6 +176,20 @@ describe('敵AI関数（Policy 統合後）', () => {
       expect(result.enemies).toEqual([]);
       expect(result.contactDamage).toBe(0);
       expect(result.attackDamage).toBe(0);
+    });
+
+    it('死亡した敵（isDying）はプレイヤーと同マスでも接触・攻撃ダメージを発生させない', () => {
+      const deadEnemy = {
+        ...createRangedEnemy(2, 2, mockIdGen),
+        attackRange: 3,
+        damage: 5,
+        hp: 0,
+        isDying: true,
+        attackCooldownUntil: 0,
+      };
+      const result = updateEnemiesWithContact([deadEnemy], { x: 2, y: 2 }, testMap, 1000);
+      expect(result.attackDamage).toBe(0);
+      expect(result.contactDamage).toBe(0);
     });
   });
 
