@@ -413,11 +413,24 @@ export const BackToTitleButton = styled.button`
   }
 `;
 
-// マップ切替ボタン
-export const MapToggleButton = styled.button`
+// 右上コントロール群のコンテナ
+// 各ボタンを固定 rem アンカーで個別配置すると内容の伸縮で重なるため、
+// flex + gap でまとめて自動間隔・自動折り返しさせる。
+export const TopRightControls = styled.div`
   position: absolute;
   top: 1rem;
   right: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  max-width: calc(100% - 2rem);
+  z-index: 20;
+`;
+
+// マップ切替ボタン
+export const MapToggleButton = styled.button`
   background: rgba(255, 255, 255, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 0.5rem;
@@ -686,9 +699,6 @@ export const LevelBadge = styled.div`
 // ===== MVP4: ヘルプUI =====
 
 export const HelpButton = styled.button`
-  position: absolute;
-  top: 1rem;
-  right: 5rem;
   background: rgba(255, 255, 255, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 0.5rem;
@@ -1171,9 +1181,6 @@ export const TapToStartMessage = styled.div`
 
 // 鍵インジケータ
 export const KeyIndicator = styled.div<{ $hasKey: boolean }>`
-  position: absolute;
-  top: 1rem;
-  right: 8rem;
   display: flex;
   align-items: center;
   gap: 0.25rem;
@@ -1248,11 +1255,8 @@ const bounce = keyframes`
   50% { transform: translateY(-3px); }
 `;
 
-// 未割り振りポイントバッジ（右上に配置、ヘルプボタンの左）
+// 未割り振りポイントバッジ（右上コントロール群の左端に配置）
 export const PendingPointsBadge = styled.button<{ $hasPoints: boolean }>`
-  position: absolute;
-  top: 1rem;
-  right: 11rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;

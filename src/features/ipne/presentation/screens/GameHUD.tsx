@@ -25,6 +25,7 @@ import {
   MapToggleButton,
   HelpButton,
   KeyRequiredMessage,
+  TopRightControls,
 } from '../../../../pages/IpnePage.styles';
 import {
   Player,
@@ -118,27 +119,29 @@ export const GameHUD: React.FC<GameHUDProps> = ({
           <StatValue>{player.killCount}</StatValue>
         </StatRow>
       </StatsDisplay>
-      <PendingPointsBadge
-        $hasPoints={pendingLevelPoints > 0}
-        onClick={onOpenLevelUpModal}
-        aria-label={pendingLevelPoints > 0 ? `未割り振りポイント: ${pendingLevelPoints}` : '未割り振りポイントなし'}
-      >
-        <PendingPointsCount $hasPoints={pendingLevelPoints > 0}>
-          ★ {pendingLevelPoints}
-        </PendingPointsCount>
-        <EnhanceButtonText $hasPoints={pendingLevelPoints > 0}>
-          強化
-        </EnhanceButtonText>
-      </PendingPointsBadge>
-      <KeyIndicator $hasKey={player.hasKey} aria-label={player.hasKey ? '鍵を所持' : '鍵未所持'}>
-        <KeyIcon $hasKey={player.hasKey}>🔑</KeyIcon>
-      </KeyIndicator>
-      <MapToggleButton onClick={onMapToggle} aria-label="マップ表示切替">
-        🗺️
-      </MapToggleButton>
-      <HelpButton onClick={onHelpToggle} aria-label="ヘルプ表示">
-        H
-      </HelpButton>
+      <TopRightControls>
+        <PendingPointsBadge
+          $hasPoints={pendingLevelPoints > 0}
+          onClick={onOpenLevelUpModal}
+          aria-label={pendingLevelPoints > 0 ? `未割り振りポイント: ${pendingLevelPoints}` : '未割り振りポイントなし'}
+        >
+          <PendingPointsCount $hasPoints={pendingLevelPoints > 0}>
+            ★ {pendingLevelPoints}
+          </PendingPointsCount>
+          <EnhanceButtonText $hasPoints={pendingLevelPoints > 0}>
+            強化
+          </EnhanceButtonText>
+        </PendingPointsBadge>
+        <KeyIndicator $hasKey={player.hasKey} aria-label={player.hasKey ? '鍵を所持' : '鍵未所持'}>
+          <KeyIcon $hasKey={player.hasKey}>🔑</KeyIcon>
+        </KeyIndicator>
+        <HelpButton onClick={onHelpToggle} aria-label="ヘルプ表示">
+          H
+        </HelpButton>
+        <MapToggleButton onClick={onMapToggle} aria-label="マップ表示切替">
+          🗺️
+        </MapToggleButton>
+      </TopRightControls>
       {showHelp && <HelpOverlayComponent onClose={onHelpToggle} />}
       {showKeyRequiredMessage && <KeyRequiredMessage>🔑 鍵が必要です</KeyRequiredMessage>}
     </>
