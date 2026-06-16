@@ -1,7 +1,7 @@
 /**
  * アイテム管理モジュール
  */
-import { Enemy, Item, ItemType, ItemTypeValue, Player, Room } from '../types';
+import { Enemy, Item, ItemType, ItemTypeValue, Player, Position, Room } from '../types';
 import { healPlayer, getEffectiveHeal } from './player';
 import { IdGenerator, RandomProvider } from '../ports';
 import { manhattanDistance } from '../services/geometryService';
