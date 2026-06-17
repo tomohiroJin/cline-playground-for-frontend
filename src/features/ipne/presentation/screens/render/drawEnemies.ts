@@ -29,6 +29,7 @@ import {
   MEGA_BOSS_ATTACK_FRAME,
   MEGA_BOSS_DAMAGE_FRAME,
 } from '../../sprites';
+import { drawGroundShadow } from './groundShadow';
 import type { FrameContext } from './renderContext';
 
 /** 敵の状態に応じた特殊フレームを返す（Phase 3） */
@@ -156,6 +157,9 @@ export function drawEnemies(frame: FrameContext): void {
 
     const blinkOff = enemy.state === EnemyState.KNOCKBACK && Math.floor(now / 100) % 2 === 1;
     if (blinkOff) continue;
+
+    // 接地シャドウ描画（死亡・点滅中には描かない）
+    drawGroundShadow(ctx, enemyScreen.x, enemyScreen.y, enemyDrawSize, 0);
 
     const enemySheet = getEnemySpriteSheet(enemy.type);
 
