@@ -57,6 +57,7 @@ export function applyEdgeShading(image: ImageData): ImageData {
       if (data[o + 3] === 0) continue;
       const dark = isTransparent(x, y + 1) || isTransparent(x + 1, y);
       const light = isTransparent(x, y - 1) || isTransparent(x - 1, y);
+      // 下/右の暗化を優先（孤立ピクセル等で dark/light 同時成立時は暗化のみ適用）
       if (dark) {
         out[o] = data[o] * SHADE_DARK;
         out[o + 1] = data[o + 1] * SHADE_DARK;

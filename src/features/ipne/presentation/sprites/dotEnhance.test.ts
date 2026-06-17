@@ -60,6 +60,12 @@ describe('applyEdgeShading', () => {
     expect(out.data[o]).toBeLessThan(100);
   });
 
+  it('は左上の縁（上・左が透明扱い）を明るくする', () => {
+    const out = applyEdgeShading(grayImage());
+    const o = (0 * 2 + 0) * 4; // 左上ピクセル(0,0): 上・左が範囲外=透明 → 明化
+    expect(out.data[o]).toBeGreaterThan(100);
+  });
+
   it('は入力 ImageData を破壊しない', () => {
     const src = grayImage();
     applyEdgeShading(src);
