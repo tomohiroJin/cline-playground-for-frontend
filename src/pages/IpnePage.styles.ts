@@ -830,8 +830,10 @@ export const HelpHint = styled.p`
 
 export const TimerDisplay = styled.div`
   position: absolute;
-  top: 2.5rem;
-  left: 50%;
+  /* 左寄せにより HP バー(top:3.75rem)の真上に来るため、下端が HP と重ならないよう少し上げる */
+  top: 2.25rem;
+  /* 完全中央(50%)だと狭い画面で右上カラム(強化バッジ)と接触するため、左へ寄せて安全帯に収める */
+  left: calc(50% - 4.5rem);
   transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -1344,7 +1346,8 @@ export const RemainingPointsText = styled.p`
 export const StageIndicator = styled.div`
   position: absolute;
   top: 0.75rem;
-  left: 50%;
+  /* 完全中央(50%)だと狭い画面で右上カラム(強化バッジ)と接触するため、左へ寄せて安全帯に収める */
+  left: calc(50% - 4.5rem);
   transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.6);
   border: 1px solid rgba(251, 191, 36, 0.4);
