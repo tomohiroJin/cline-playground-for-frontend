@@ -25,10 +25,14 @@ import {
   computeAttackTransform,
 } from '../../sprites/motion';
 import { drawGroundShadow } from './groundShadow';
+import type { EnhanceOptions } from '../../sprites';
 import type { FrameContext } from './renderContext';
 
 /** 攻撃アニメーションの継続時間（ms） */
 const ATTACK_DURATION_MS = 300;
+
+/** プレイヤー補正：手描きの陰影を尊重し輪郭線のみ付与 */
+const PLAYER_ENHANCE: EnhanceOptions = { outline: true, shade: false };
 
 /**
  * プレイヤーを描画する
@@ -129,7 +133,7 @@ export function drawPlayer(frame: FrameContext): void {
         ctx.translate(playerScreen.x, playerScreen.y);
         ctx.scale(tf.scale, tf.scale);
         ctx.translate(-playerScreen.x, -playerScreen.y);
-        spriteRenderer.drawSprite(ctx, attackSheet.sprites[attackFrameIndex], playerDrawX, playerDrawY, spriteScale);
+        spriteRenderer.drawSprite(ctx, attackSheet.sprites[attackFrameIndex], playerDrawX, playerDrawY, spriteScale, PLAYER_ENHANCE);
         ctx.restore();
 
         // 武器光跡描画（攻撃アニメーション中のみ）
@@ -144,7 +148,7 @@ export function drawPlayer(frame: FrameContext): void {
       } else if (isDamaged) {
         // 被弾フレーム（200ms表示）
         const damageSprites = pClass === 'warrior' ? WARRIOR_DAMAGE_SPRITES : THIEF_DAMAGE_SPRITES;
-        spriteRenderer.drawSprite(ctx, damageSprites[pDir], playerDrawX, playerDrawY, spriteScale);
+        spriteRenderer.drawSprite(ctx, damageSprites[pDir], playerDrawX, playerDrawY, spriteScale, PLAYER_ENHANCE);
       } else if (isMoving) {
         // 歩行アニメーション（4枚循環 + bob + squash + 接地シャドウ）
         const playerSheet = getPlayerSpriteSheet(pClass, pDir);
@@ -158,7 +162,7 @@ export function drawPlayer(frame: FrameContext): void {
         ctx.translate(playerScreen.x, feetY);
         ctx.scale(1, squash);
         ctx.translate(-playerScreen.x, -feetY);
-        spriteRenderer.drawSprite(ctx, walkFrame, playerDrawX, playerDrawY, spriteScale);
+        spriteRenderer.drawSprite(ctx, walkFrame, playerDrawX, playerDrawY, spriteScale, PLAYER_ENHANCE);
         ctx.restore();
 
         // 残像記録（移動速度強化時）
@@ -171,7 +175,7 @@ export function drawPlayer(frame: FrameContext): void {
         const idleSheets = pClass === 'warrior' ? WARRIOR_IDLE_SPRITE_SHEETS : THIEF_IDLE_SPRITE_SHEETS;
         const idleSheet = idleSheets[pDir];
         const idleFrameIndex = Math.floor(now / idleSheet.frameDuration) % idleSheet.sprites.length;
-        spriteRenderer.drawSprite(ctx, idleSheet.sprites[idleFrameIndex], playerDrawX, playerDrawY, spriteScale);
+        spriteRenderer.drawSprite(ctx, idleSheet.sprites[idleFrameIndex], playerDrawX, playerDrawY, spriteScale, PLAYER_ENHANCE);
       }
 
       // 回転パーティクル描画（攻撃速度強化時、常時微小表示）
