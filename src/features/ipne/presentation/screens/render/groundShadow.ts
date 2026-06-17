@@ -16,6 +16,15 @@ const RADIUS_RATIO = 0.3;
 /** 影の縦横比 */
 const FLATNESS = 0.32;
 
+/**
+ * キャラクター足元に接地シャドウ（楕円）を描画する。
+ *
+ * @param ctx 描画先の 2D コンテキスト
+ * @param screenX キャラ中心の画面 X 座標
+ * @param screenY キャラ中心の画面 Y 座標
+ * @param drawSize スプライトの描画サイズ（px）
+ * @param lift 浮き上がり量（px）。大きいほど影が小さく薄くなる
+ */
 export function drawGroundShadow(
   ctx: CanvasRenderingContext2D,
   screenX: number,

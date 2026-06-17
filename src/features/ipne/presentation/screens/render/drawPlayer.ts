@@ -27,6 +27,9 @@ import {
 import { drawGroundShadow } from './groundShadow';
 import type { FrameContext } from './renderContext';
 
+/** 攻撃アニメーションの継続時間（ms） */
+const ATTACK_DURATION_MS = 300;
+
 /**
  * プレイヤーを描画する
  *
@@ -117,10 +120,9 @@ export function drawPlayer(frame: FrameContext): void {
         const attackSheet = attackSheets[pDir];
         const attackFrameIndex = Math.floor(now / attackSheet.frameDuration) % attackSheet.sprites.length;
 
-        // 攻撃進行度（攻撃は until-300ms から 300ms 継続）
-        const atkDuration = 300;
-        const atkElapsed = now - (playerAttackUntilRef.current - atkDuration);
-        const atkProgress = atkElapsed / atkDuration;
+        // 攻撃進行度（攻撃は until-ATTACK_DURATION_MS から ATTACK_DURATION_MS 継続）
+        const atkElapsed = now - (playerAttackUntilRef.current - ATTACK_DURATION_MS);
+        const atkProgress = atkElapsed / ATTACK_DURATION_MS;
         const tf = computeAttackTransform(atkProgress, pDir);
         ctx.save();
         ctx.translate(tf.dx * spriteScale, tf.dy * spriteScale);
@@ -131,9 +133,8 @@ export function drawPlayer(frame: FrameContext): void {
         ctx.restore();
 
         // 武器光跡描画（攻撃アニメーション中のみ）
-        const attackDuration = playerAttackUntilRef.current - (playerAttackUntilRef.current - 300);
-        const attackElapsed = now - (playerAttackUntilRef.current - 300);
-        const attackProgress = Math.min(1, Math.max(0, attackElapsed / attackDuration));
+        const attackElapsed = now - (playerAttackUntilRef.current - ATTACK_DURATION_MS);
+        const attackProgress = Math.min(1, Math.max(0, attackElapsed / ATTACK_DURATION_MS));
         drawWeaponTrail(ctx, playerScreen.x, playerScreen.y, viewport.tileSize, player.direction, player.stats.attackPower, player.playerClass, attackProgress);
 
         // 衝撃波描画（RADIANT ティアのみ、攻撃ヒット時）
