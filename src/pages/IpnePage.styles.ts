@@ -280,9 +280,7 @@ export const AttackButton = styled.button<{ $ready: boolean }>`
 `;
 
 export const HPBarContainer = styled.div`
-  position: absolute;
-  top: 3rem;
-  left: 1rem;
+  position: relative;
   width: clamp(120px, 20vmin, 200px);
   height: clamp(18px, 3vmin, 24px);
   background: rgba(0, 0, 0, 0.5);
@@ -413,11 +411,46 @@ export const BackToTitleButton = styled.button`
   }
 `;
 
-// マップ切替ボタン
-export const MapToggleButton = styled.button`
+// 左上ステータス群（HP・経験値バー）の縦スタック。
+// グローバルのホームボタン（fixed・左上 約52px四方）と重ならないよう top を下げる。
+export const TopLeftStatus = styled.div`
+  position: absolute;
+  top: 3.75rem;
+  left: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 20;
+`;
+
+// 右上ステータス群（ボタン行・レベル・ステータス）の縦スタック。
+// 各要素を固定オフセットで重ね置きすると内容の伸縮や2桁レベルで重なるため、
+// flex 縦並び + gap で自動間隔にして重なりを構造的に防ぐ。
+export const TopRightStatus = styled.div`
   position: absolute;
   top: 1rem;
   right: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  max-width: calc(100% - 2rem);
+  z-index: 20;
+`;
+
+// 右上コントロール群のボタン行。TopRightStatus 内の flex 行として配置。
+// 各ボタンを固定 rem アンカーで個別配置すると内容の伸縮で重なるため、
+// flex + gap でまとめて自動間隔・自動折り返しさせる。
+export const TopRightControls = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+`;
+
+// マップ切替ボタン
+export const MapToggleButton = styled.button`
   background: rgba(255, 255, 255, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 0.5rem;
@@ -621,9 +654,6 @@ export const LevelUpChoiceValue = styled.span<{ $disabled?: boolean }>`
 // ===== MVP3: ステータス表示 =====
 
 export const StatsDisplay = styled.div`
-  position: absolute;
-  top: clamp(3.5rem, 7vmin, 5rem);
-  right: clamp(0.5rem, 1.5vmin, 1rem);
   display: flex;
   flex-direction: column;
   gap: clamp(0.125rem, 0.5vmin, 0.25rem);
@@ -651,9 +681,7 @@ export const StatValue = styled.span`
 `;
 
 export const ExperienceBar = styled.div`
-  position: absolute;
-  top: 4.75rem;
-  left: 1rem;
+  position: relative;
   width: clamp(120px, 20vmin, 200px);
   height: clamp(5px, 1vmin, 8px);
   background: rgba(0, 0, 0, 0.5);
@@ -671,9 +699,6 @@ export const ExperienceBarFill = styled.div<{ $ratio: number }>`
 `;
 
 export const LevelBadge = styled.div`
-  position: absolute;
-  top: clamp(2.5rem, 5vmin, 3.5rem);
-  right: clamp(0.5rem, 1.5vmin, 1rem);
   background: linear-gradient(to right, #a855f7, #ec4899);
   color: white;
   font-size: clamp(0.6rem, 1.4vmin, 0.75rem);
@@ -686,9 +711,6 @@ export const LevelBadge = styled.div`
 // ===== MVP4: ヘルプUI =====
 
 export const HelpButton = styled.button`
-  position: absolute;
-  top: 1rem;
-  right: 5rem;
   background: rgba(255, 255, 255, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 0.5rem;
@@ -808,8 +830,10 @@ export const HelpHint = styled.p`
 
 export const TimerDisplay = styled.div`
   position: absolute;
-  top: 2.5rem;
-  left: 50%;
+  /* 左寄せにより HP バー(top:3.75rem)の真上に来るため、下端が HP と重ならないよう少し上げる */
+  top: 2.25rem;
+  /* 完全中央(50%)だと狭い画面で右上カラム(強化バッジ)と接触するため、左へ寄せて安全帯に収める */
+  left: calc(50% - 4.5rem);
   transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -1171,9 +1195,6 @@ export const TapToStartMessage = styled.div`
 
 // 鍵インジケータ
 export const KeyIndicator = styled.div<{ $hasKey: boolean }>`
-  position: absolute;
-  top: 1rem;
-  right: 8rem;
   display: flex;
   align-items: center;
   gap: 0.25rem;
@@ -1248,11 +1269,8 @@ const bounce = keyframes`
   50% { transform: translateY(-3px); }
 `;
 
-// 未割り振りポイントバッジ（右上に配置、ヘルプボタンの左）
+// 未割り振りポイントバッジ（右上コントロール群の左端に配置）
 export const PendingPointsBadge = styled.button<{ $hasPoints: boolean }>`
-  position: absolute;
-  top: 1rem;
-  right: 11rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -1328,7 +1346,8 @@ export const RemainingPointsText = styled.p`
 export const StageIndicator = styled.div`
   position: absolute;
   top: 0.75rem;
-  left: 50%;
+  /* 完全中央(50%)だと狭い画面で右上カラム(強化バッジ)と接触するため、左へ寄せて安全帯に収める */
+  left: calc(50% - 4.5rem);
   transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.6);
   border: 1px solid rgba(251, 191, 36, 0.4);
