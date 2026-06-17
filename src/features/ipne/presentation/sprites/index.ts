@@ -14,6 +14,8 @@ export type { SpriteSheetDefinition } from './spriteSheet';
 
 // スプライトレンダラー
 export { SpriteRenderer } from './spriteRenderer';
+export type { EnhanceOptions } from './spriteRenderer';
+export { applyOutline, applyEdgeShading } from './dotEnhance';
 
 // タイルスプライト
 export { FLOOR_SPRITE, WALL_SPRITE, GOAL_SPRITE_SHEET, START_SPRITE, getStageFloorSprite, getStageWallSprite } from './tileSprites';
