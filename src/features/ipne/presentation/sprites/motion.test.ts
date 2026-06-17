@@ -1,4 +1,10 @@
-import { selectWalkFrameIndex } from './motion';
+import {
+  selectWalkFrameIndex,
+  computeWalkBob,
+  computeSquash,
+  computeAttackTransform,
+  WALK_BOB_AMPLITUDE,
+} from './motion';
 
 describe('selectWalkFrameIndex', () => {
   // 4枚循環 [walk1, mid, walk2, mid] = [1, 2, 3, 2] で walk2(=3) を必ず含む
@@ -17,13 +23,6 @@ describe('selectWalkFrameIndex', () => {
     expect(seen).toContain(3);
   });
 });
-
-import {
-  computeWalkBob,
-  computeSquash,
-  computeAttackTransform,
-  WALK_BOB_AMPLITUDE,
-} from './motion';
 
 describe('computeWalkBob', () => {
   const fd = 100;
@@ -45,6 +44,13 @@ describe('computeSquash', () => {
   it('は接地（sin=0）で最も縮み、空中（sin=1）で 1.0', () => {
     expect(computeSquash(0, fd)).toBeLessThan(1);
     expect(computeSquash(50, fd)).toBeCloseTo(1);
+  });
+  it('は常に (1 - SQUASH_DEPTH) 以上 1.0 以下', () => {
+    for (let t = 0; t < 200; t += 7) {
+      const s = computeSquash(t, fd);
+      expect(s).toBeGreaterThanOrEqual(1 - 0.06 - 1e-9);
+      expect(s).toBeLessThanOrEqual(1);
+    }
   });
 });
 

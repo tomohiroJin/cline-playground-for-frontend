@@ -29,6 +29,9 @@ export function selectWalkFrameIndex(now: number, frameDuration: number): number
 
 /**
  * 歩行中の上下バウンス量（px、上方向が正）。
+ *
+ * @param now 現在の経過時間（ms）
+ * @param frameDuration 1フレームの時間（ms）。正の値であること。
  */
 export function computeWalkBob(now: number, frameDuration: number): number {
   const phase = (now / frameDuration) * Math.PI;
@@ -37,6 +40,9 @@ export function computeWalkBob(now: number, frameDuration: number): number {
 
 /**
  * 接地（踏み込み）時の縦スケール。接地の瞬間に最小、空中で 1.0。
+ *
+ * @param now 現在の経過時間（ms）
+ * @param frameDuration 1フレームの時間（ms）。正の値であること。
  */
 export function computeSquash(now: number, frameDuration: number): number {
   const lift = Math.abs(Math.sin((now / frameDuration) * Math.PI));
