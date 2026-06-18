@@ -44,6 +44,12 @@ export interface RunState extends
   _fbk: string;
   _wDmgBase: number;
   tb: TreeBonus;
+  /** 選択中の始祖トーテム */
+  totemId?: import('./totem').TotemId;
+  /** 火傷ダメージ倍率（トーテム/キーストーン由来、既定1.0） */
+  burnDmgMul?: number;
+  /** 仲間ATKボーナス（リクルート時に加算、既定0） */
+  allyAtkBonus?: number;
 }
 
 /** ゲーム全体ステート */

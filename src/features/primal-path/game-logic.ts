@@ -45,6 +45,9 @@ export { startRunState, calcRunStats, calcBoneReward, allyReviveCost } from './d
 // バイオームサービス
 export { pickBiomeAuto, applyBiomeSelection, applyFirstBiome, applyAutoLastBiome, calcEndlessScale, calcEndlessScaleWithAM, applyEndlessLoop } from './domain/progression/biome-service';
 
+// トーテムサービス
+export { applyTotem } from './domain/totem/totem-service';
+
 // ツリーサービス
 export { getTB, tbSummary, bestDiffLabel } from './domain/progression/tree-service';
 
