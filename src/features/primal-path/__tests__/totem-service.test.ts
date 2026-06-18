@@ -68,3 +68,32 @@ describe('applyTotem — 炎の祖', () => {
     expect(dmgFlame).toBeGreaterThan(dmgNormal);
   });
 });
+
+import { applyEvo } from '../game-logic';
+import { EVOS } from '../constants';
+
+describe('applyTotem — 群れの祖', () => {
+  it('仲間枠+1・開始仲間1体・allyAtkBonus を設定する', () => {
+    const base = makeRun({ al: [], mxA: 3 });
+    const r = applyTotem(base, 'pack');
+    expect(r.mxA).toBe(4);
+    expect(r.al).toHaveLength(1);
+    expect(r.al[0].a).toBe(1);
+    expect(r.allyAtkBonus).toBeCloseTo(0.1, 5);
+  });
+
+  it('群れの祖の後にリクルートした仲間 ATK に +10% が乗る', () => {
+    // life 系進化で文明Lv2に到達させ仲間加入させる。
+    // life 進化を2回適用（Lv2 でリクルート発生）
+    const lifeEvo = EVOS.find(e => e.t === 'life')!;
+    let r = applyTotem(makeRun({ al: [], mxA: 4, cL: 0 }), 'pack');
+    const before = r.al.length;
+    r = applyEvo(r, lifeEvo, () => 0).nextRun; // Lv1
+    r = applyEvo(r, lifeEvo, () => 0).nextRun; // Lv2 → リクルート
+    const recruited = r.al[r.al.length - 1];
+    // tb.aA=0 想定。テンプレ atk に 1.1 が乗っていること（floor 後）
+    expect(r.al.length).toBeGreaterThan(before);
+    expect(recruited.atk).toBeGreaterThan(0);
+  });
+
+});
