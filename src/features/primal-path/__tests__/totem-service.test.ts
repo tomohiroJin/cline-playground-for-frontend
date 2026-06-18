@@ -1,7 +1,7 @@
 /**
  * 始祖トーテム — 定数とサービスのテスト
  */
-import { TOTEMS } from '../constants';
+import { TOTEMS, TB_DEFAULTS } from '../constants';
 import type { TotemId } from '../types';
 
 describe('TOTEMS 定数', () => {
@@ -82,18 +82,36 @@ describe('applyTotem — 群れの祖', () => {
     expect(r.allyAtkBonus).toBeCloseTo(0.1, 5);
   });
 
-  it('群れの祖の後にリクルートした仲間 ATK に +10% が乗る', () => {
-    // life 系進化で文明Lv2に到達させ仲間加入させる。
-    // life 進化を2回適用（Lv2 でリクルート発生）
-    const lifeEvo = EVOS.find(e => e.t === 'life')!;
-    let r = applyTotem(makeRun({ al: [], mxA: 4, cL: 0 }), 'pack');
-    const before = r.al.length;
-    r = applyEvo(r, lifeEvo, () => 0).nextRun; // Lv1
-    r = applyEvo(r, lifeEvo, () => 0).nextRun; // Lv2 → リクルート
-    const recruited = r.al[r.al.length - 1];
-    // tb.aA=0 想定。テンプレ atk に 1.1 が乗っていること（floor 後）
-    expect(r.al.length).toBeGreaterThan(before);
-    expect(recruited.atk).toBeGreaterThan(0);
+  it('群れの祖の後にリクルートした仲間 ATK に +10% が乗る（tb.aA=0.2 との組合せで決定的に検証）', () => {
+    // シナリオ:
+    //   rit 文明 Lv2 でリクルートが発生。rng=()=>0 により ALT['rit'][0]（狂戦士 atk=9）が加入。
+    //   tb.aA=0.2 固定。
+    //   allyAtkBonus=0.1（群れの祖あり）: am = 1+0.2+0.1 = 1.3 → floor(9×1.3) = 11
+    //   allyAtkBonus=0  （群れの祖なし）: am = 1+0.2+0.0 = 1.2 → floor(9×1.2) = 10
+    //   → 差が floor 境界をまたぐため allyAtkBonus の有無を決定的に検証できる
+
+    const ritEvo = EVOS.find(e => e.t === 'rit' && e.r === 0)!;
+    const tbWithAllyAtk = { ...TB_DEFAULTS, aA: 0.2 };
+
+    // ── allyAtkBonus=0.1 ありのラン（群れの祖トーテム適用） ──
+    const baseWith = makeRun({ al: [], mxA: 5, cR: 0, tb: tbWithAllyAtk });
+    const withTotem = applyTotem(baseWith, 'pack'); // allyAtkBonus=0.1 が設定される
+    let runWith = withTotem;
+    runWith = applyEvo(runWith, ritEvo, () => 0).nextRun; // cR=1
+    runWith = applyEvo(runWith, ritEvo, () => 0).nextRun; // cR=2 → リクルート発生
+    const recruitedWith = runWith.al[runWith.al.length - 1];
+
+    // ── allyAtkBonus=0 なしのラン（群れの祖なし） ──
+    const baseWithout = makeRun({ al: [], mxA: 5, cR: 0, tb: tbWithAllyAtk });
+    let runWithout = baseWithout;
+    runWithout = applyEvo(runWithout, ritEvo, () => 0).nextRun; // cR=1
+    runWithout = applyEvo(runWithout, ritEvo, () => 0).nextRun; // cR=2 → リクルート発生
+    const recruitedWithout = runWithout.al[runWithout.al.length - 1];
+
+    // allyAtkBonus あり（11）の方が なし（10）より atk が大きいことを決定的に検証
+    expect(recruitedWith.atk).toBe(11);
+    expect(recruitedWithout.atk).toBe(10);
+    expect(recruitedWith.atk).toBeGreaterThan(recruitedWithout.atk);
   });
 
 });
