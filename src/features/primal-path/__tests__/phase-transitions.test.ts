@@ -17,7 +17,7 @@ describe('GamePhase ステートマシン', () => {
       const allPhases: GamePhase[] = [
         'title', 'diff', 'how', 'tree', 'biome', 'evo', 'battle',
         'awakening', 'prefinal', 'endless_checkpoint', 'ally_revive',
-        'event', 'over', 'stats', 'achievements', 'challenge',
+        'event', 'over', 'stats', 'achievements', 'challenge', 'totem',
       ];
 
       // Assert
@@ -65,6 +65,19 @@ describe('GamePhase ステートマシン', () => {
       expect(isValidTransition('title', 'battle')).toBe(false);
       expect(isValidTransition('evo', 'title')).toBe(false);
       expect(isValidTransition('stats', 'battle')).toBe(false);
+    });
+  });
+
+  describe('トーテムフェーズ', () => {
+    it('diff から totem に遷移できる', () => {
+      expect(isValidTransition('diff', 'totem')).toBe(true);
+    });
+    it('challenge から totem に遷移できる', () => {
+      expect(isValidTransition('challenge', 'totem')).toBe(true);
+    });
+    it('totem から biome / evo に遷移できる', () => {
+      expect(isValidTransition('totem', 'biome')).toBe(true);
+      expect(isValidTransition('totem', 'evo')).toBe(true);
     });
   });
 
