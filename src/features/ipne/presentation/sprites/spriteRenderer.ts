@@ -7,6 +7,20 @@
 
 import { SpriteDefinition, createSprite } from './spriteData';
 import { SpriteSheetDefinition, getAnimationFrameIndex } from './spriteSheet';
+import { applyOutline, applyEdgeShading } from './dotEnhance';
+
+/** 自動補正オプション（呼び出し側＝描画層が指定） */
+export interface EnhanceOptions {
+  /** 輪郭線を付与する */
+  outline?: boolean;
+  /** 縁陰影を付与する */
+  shade?: boolean;
+}
+
+/** 補正フラグをキャッシュキー用の文字列に変換する */
+function enhanceKey(enhance?: EnhanceOptions): string {
+  return `${enhance?.outline ? 1 : 0}${enhance?.shade ? 1 : 0}`;
+}
 
 /** キャッシュ用キャンバスを生成する */
 function createCacheCanvas(
@@ -52,19 +66,25 @@ export class SpriteRenderer {
   /**
    * スケール済みスプライトのキャッシュキャンバスを取得する
    * キャッシュが無い場合は生成してキャッシュに保存する
+   * 補正オプションがキャッシュキーに含まれるため、補正有無で別キャッシュが生成される
    */
   private getCachedCanvas(
     sprite: SpriteDefinition,
-    scale: number
+    scale: number,
+    enhance?: EnhanceOptions
   ): HTMLCanvasElement | OffscreenCanvas {
     const id = this.getSpriteId(sprite);
-    const key = `${id}-${scale}`;
+    const key = `${id}-${scale}-${enhanceKey(enhance)}`;
 
     let canvas = this.cache.get(key);
     if (canvas) return canvas;
 
-    // ImageData を生成
-    const imageData = createSprite(sprite.pixels, sprite.palette);
+    // 輪郭線（index 空間）→ ImageData 生成 → 縁陰影（RGB 空間）の順で補正
+    const outlined = enhance?.outline ? applyOutline(sprite) : sprite;
+    let imageData = createSprite(outlined.pixels, outlined.palette);
+    if (enhance?.shade) {
+      imageData = applyEdgeShading(imageData);
+    }
 
     // 元サイズのキャンバスに ImageData を配置
     const srcCanvas = createCacheCanvas(sprite.width, sprite.height);
@@ -95,15 +115,17 @@ export class SpriteRenderer {
    * @param x - 描画先 X 座標
    * @param y - 描画先 Y 座標
    * @param scale - 拡大倍率
+   * @param enhance - 自動補正オプション（省略時は補正なし）
    */
   drawSprite(
     ctx: CanvasRenderingContext2D,
     sprite: SpriteDefinition,
     x: number,
     y: number,
-    scale: number
+    scale: number,
+    enhance?: EnhanceOptions
   ): void {
-    const canvas = this.getCachedCanvas(sprite, scale);
+    const canvas = this.getCachedCanvas(sprite, scale, enhance);
     ctx.drawImage(canvas, x, y);
   }
 
@@ -117,6 +139,7 @@ export class SpriteRenderer {
    * @param x - 描画先 X 座標
    * @param y - 描画先 Y 座標
    * @param scale - 拡大倍率
+   * @param enhance - 自動補正オプション（省略時は補正なし）
    */
   drawAnimatedSprite(
     ctx: CanvasRenderingContext2D,
@@ -124,10 +147,11 @@ export class SpriteRenderer {
     currentTime: number,
     x: number,
     y: number,
-    scale: number
+    scale: number,
+    enhance?: EnhanceOptions
   ): void {
     const frameIndex = getAnimationFrameIndex(sheet, currentTime);
-    this.drawSprite(ctx, sheet.sprites[frameIndex], x, y, scale);
+    this.drawSprite(ctx, sheet.sprites[frameIndex], x, y, scale, enhance);
   }
 
   /**

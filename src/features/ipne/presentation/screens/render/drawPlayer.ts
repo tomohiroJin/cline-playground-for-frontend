@@ -18,7 +18,21 @@ import {
 import { drawPlayerAura } from '../../effects/aura';
 import { drawWeaponTrail, getWeaponTier, WeaponTier, drawShockwave } from '../../effects/weaponEffect';
 import { drawShieldGlow, drawAfterImage, drawSpinParticles, drawHealParticles } from '../../effects/stageVisual';
+import {
+  selectWalkFrameIndex,
+  computeWalkBob,
+  computeSquash,
+  computeAttackTransform,
+} from '../../sprites/motion';
+import { drawGroundShadow } from './groundShadow';
+import type { EnhanceOptions } from '../../sprites';
 import type { FrameContext } from './renderContext';
+
+/** 攻撃アニメーションの継続時間（ms） */
+const ATTACK_DURATION_MS = 300;
+
+/** プレイヤー補正：手描きの陰影を尊重し輪郭線のみ付与 */
+const PLAYER_ENHANCE: EnhanceOptions = { outline: true, shade: false };
 
 /**
  * プレイヤーを描画する
@@ -109,12 +123,22 @@ export function drawPlayer(frame: FrameContext): void {
         const attackSheets = pClass === 'warrior' ? WARRIOR_ATTACK_SPRITE_SHEETS : THIEF_ATTACK_SPRITE_SHEETS;
         const attackSheet = attackSheets[pDir];
         const attackFrameIndex = Math.floor(now / attackSheet.frameDuration) % attackSheet.sprites.length;
-        spriteRenderer.drawSprite(ctx, attackSheet.sprites[attackFrameIndex], playerDrawX, playerDrawY, spriteScale);
+
+        // 攻撃進行度（攻撃は until-ATTACK_DURATION_MS から ATTACK_DURATION_MS 継続）
+        const atkElapsed = now - (playerAttackUntilRef.current - ATTACK_DURATION_MS);
+        const atkProgress = atkElapsed / ATTACK_DURATION_MS;
+        const tf = computeAttackTransform(atkProgress, pDir);
+        ctx.save();
+        ctx.translate(tf.dx * spriteScale, tf.dy * spriteScale);
+        ctx.translate(playerScreen.x, playerScreen.y);
+        ctx.scale(tf.scale, tf.scale);
+        ctx.translate(-playerScreen.x, -playerScreen.y);
+        spriteRenderer.drawSprite(ctx, attackSheet.sprites[attackFrameIndex], playerDrawX, playerDrawY, spriteScale, PLAYER_ENHANCE);
+        ctx.restore();
 
         // 武器光跡描画（攻撃アニメーション中のみ）
-        const attackDuration = playerAttackUntilRef.current - (playerAttackUntilRef.current - 300);
-        const attackElapsed = now - (playerAttackUntilRef.current - 300);
-        const attackProgress = Math.min(1, Math.max(0, attackElapsed / attackDuration));
+        const attackElapsed = now - (playerAttackUntilRef.current - ATTACK_DURATION_MS);
+        const attackProgress = Math.min(1, Math.max(0, attackElapsed / ATTACK_DURATION_MS));
         drawWeaponTrail(ctx, playerScreen.x, playerScreen.y, viewport.tileSize, player.direction, player.stats.attackPower, player.playerClass, attackProgress);
 
         // 衝撃波描画（RADIANT ティアのみ、攻撃ヒット時）
@@ -124,12 +148,22 @@ export function drawPlayer(frame: FrameContext): void {
       } else if (isDamaged) {
         // 被弾フレーム（200ms表示）
         const damageSprites = pClass === 'warrior' ? WARRIOR_DAMAGE_SPRITES : THIEF_DAMAGE_SPRITES;
-        spriteRenderer.drawSprite(ctx, damageSprites[pDir], playerDrawX, playerDrawY, spriteScale);
+        spriteRenderer.drawSprite(ctx, damageSprites[pDir], playerDrawX, playerDrawY, spriteScale, PLAYER_ENHANCE);
       } else if (isMoving) {
-        // 歩行アニメーション
+        // 歩行アニメーション（4枚循環 + bob + squash + 接地シャドウ）
         const playerSheet = getPlayerSpriteSheet(pClass, pDir);
-        const walkFrameIndex = Math.floor(now / playerSheet.frameDuration) % 2;
-        spriteRenderer.drawSprite(ctx, playerSheet.sprites[1 + walkFrameIndex], playerDrawX, playerDrawY, spriteScale);
+        const bob = computeWalkBob(now, playerSheet.frameDuration);
+        const squash = computeSquash(now, playerSheet.frameDuration);
+        const walkFrame = playerSheet.sprites[selectWalkFrameIndex(now, playerSheet.frameDuration)];
+        drawGroundShadow(ctx, playerScreen.x, playerScreen.y, playerDrawSize, bob);
+        const feetY = playerDrawY + playerDrawSize;
+        ctx.save();
+        ctx.translate(0, -bob * spriteScale);
+        ctx.translate(playerScreen.x, feetY);
+        ctx.scale(1, squash);
+        ctx.translate(-playerScreen.x, -feetY);
+        spriteRenderer.drawSprite(ctx, walkFrame, playerDrawX, playerDrawY, spriteScale, PLAYER_ENHANCE);
+        ctx.restore();
 
         // 残像記録（移動速度強化時）
         if (rewardEffects.hasAfterImage) {
@@ -137,10 +171,11 @@ export function drawPlayer(frame: FrameContext): void {
         }
       } else {
         // アイドルブリーズアニメーション
+        drawGroundShadow(ctx, playerScreen.x, playerScreen.y, playerDrawSize, 0);
         const idleSheets = pClass === 'warrior' ? WARRIOR_IDLE_SPRITE_SHEETS : THIEF_IDLE_SPRITE_SHEETS;
         const idleSheet = idleSheets[pDir];
         const idleFrameIndex = Math.floor(now / idleSheet.frameDuration) % idleSheet.sprites.length;
-        spriteRenderer.drawSprite(ctx, idleSheet.sprites[idleFrameIndex], playerDrawX, playerDrawY, spriteScale);
+        spriteRenderer.drawSprite(ctx, idleSheet.sprites[idleFrameIndex], playerDrawX, playerDrawY, spriteScale, PLAYER_ENHANCE);
       }
 
       // 回転パーティクル描画（攻撃速度強化時、常時微小表示）

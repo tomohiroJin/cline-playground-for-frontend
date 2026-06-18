@@ -29,7 +29,12 @@ import {
   MEGA_BOSS_ATTACK_FRAME,
   MEGA_BOSS_DAMAGE_FRAME,
 } from '../../sprites';
+import { drawGroundShadow } from './groundShadow';
+import type { EnhanceOptions } from '../../sprites';
 import type { FrameContext } from './renderContext';
+
+/** 敵補正：輪郭線＋縁陰影 */
+const ENEMY_ENHANCE: EnhanceOptions = { outline: true, shade: true };
 
 /** 敵の状態に応じた特殊フレームを返す（Phase 3） */
 function getEnemyStateFrame(enemyType: string, enemyState: string): SpriteDefinition | null {
@@ -157,14 +162,17 @@ export function drawEnemies(frame: FrameContext): void {
     const blinkOff = enemy.state === EnemyState.KNOCKBACK && Math.floor(now / 100) % 2 === 1;
     if (blinkOff) continue;
 
+    // 接地シャドウ描画（死亡・点滅中には描かない）
+    drawGroundShadow(ctx, enemyScreen.x, enemyScreen.y, enemyDrawSize, 0);
+
     const enemySheet = getEnemySpriteSheet(enemy.type);
 
     // 敵状態別フレーム選択（Phase 3）
     const enemyStateFrame = getEnemyStateFrame(enemy.type, enemy.state);
     if (enemyStateFrame) {
-      spriteRenderer.drawSprite(ctx, enemyStateFrame, enemyDrawX, enemyDrawY, spriteScale);
+      spriteRenderer.drawSprite(ctx, enemyStateFrame, enemyDrawX, enemyDrawY, spriteScale, ENEMY_ENHANCE);
     } else {
-      spriteRenderer.drawAnimatedSprite(ctx, enemySheet, now, enemyDrawX, enemyDrawY, spriteScale);
+      spriteRenderer.drawAnimatedSprite(ctx, enemySheet, now, enemyDrawX, enemyDrawY, spriteScale, ENEMY_ENHANCE);
     }
   }
 
