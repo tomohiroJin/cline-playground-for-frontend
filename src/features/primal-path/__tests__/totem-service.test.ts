@@ -56,6 +56,18 @@ describe('applyTotem — 炎の祖', () => {
 
   it('火傷ダメージが burnDmgMul で増加する', () => {
     // 火傷あり・会心しない固定RNG（rng=0.99）で2ランを比較
+    // 計算根拠:
+    //   atk=100, aM=1, dm=1 → effATK = floor(100*1*1) = 100
+    //   fe=null → 儀式×3 なし
+    //   rng=()=>0.99, cr=0 → 0.99 < 0 = false → 会心なし
+    //   cBT='grassland', cT=0, cL=0, cR=0 → grassland.check(0>0 && 0>0) = false → biomeBonus=1
+    //   pa.dmg = floor(100 * 1) = 100
+    //   通常攻撃ダメージ: dm = max(1, 100 - def=0) = 100
+    //   火傷ダメージ(通常): bd = floor(100 * 0.2 * burnMul=1 * burnDmgMul=1.0) = 20
+    //   火傷ダメージ(炎の祖): bd = floor(100 * 0.2 * burnMul=1 * burnDmgMul=1.25) = floor(25) = 25
+    //   dmgDealt(通常): 100 + 20 = 120
+    //   dmgDealt(炎の祖): 100 + 25 = 125
+    //   差分: 25 - 20 = 5（×1.25倍率を厳密に検証）
     const baseRun = makeRun({
       atk: 100, aM: 1, dm: 1, burn: 1, cr: 0, def: 0,
       en: { n: 'test', hp: 100000, mhp: 100000, atk: 1, def: 0, bone: 0 },
@@ -64,8 +76,10 @@ describe('applyTotem — 炎の祖', () => {
     const flame = tick(applyTotem(baseRun, 'flame'), false, () => 0.99);
     const dmgNormal = normal.nextRun.dmgDealt;
     const dmgFlame = flame.nextRun.dmgDealt;
-    // 火傷分のみ +25%。通常攻撃は同値なので flame 側が大きい
-    expect(dmgFlame).toBeGreaterThan(dmgNormal);
+    // 正確な値を厳密に検証（×1.25倍率の証明）
+    expect(dmgNormal).toBe(120); // 通常攻撃100 + 火傷20
+    expect(dmgFlame).toBe(125);  // 通常攻撃100 + 火傷25（×1.25）
+    expect(dmgFlame - dmgNormal).toBe(5); // 火傷差分 25-20=5 が×1.25倍率を確証
   });
 });
 
