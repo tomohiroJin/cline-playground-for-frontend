@@ -5,7 +5,7 @@
  */
 import type {
   GamePhase, RunState, Evolution, SaveData,
-  BiomeId, ASkillId, EventChoice, RandomEventDef,
+  BiomeId, ASkillId, EventChoice, RandomEventDef, TotemId,
 } from '../types';
 
 /* ===== 戦闘アクション ===== */
@@ -51,8 +51,9 @@ const EVENT_TYPES: ReadonlySet<string> = new Set([
 /* ===== 進行アクション ===== */
 
 export type ProgressionAction =
-  | { type: 'START_RUN'; di: number; loopOverride: number }
-  | { type: 'START_CHALLENGE'; challengeId: string; di: number }
+  | { type: 'START_RUN'; di: number; loopOverride: number; totemId: TotemId }
+  | { type: 'START_CHALLENGE'; challengeId: string; di: number; totemId: TotemId }
+  | { type: 'GO_TOTEM'; di: number; loopOverride: number; challengeId?: string }
   | { type: 'GO_DIFF' }
   | { type: 'GO_HOW' }
   | { type: 'GO_TREE' }
@@ -63,7 +64,7 @@ export type ProgressionAction =
   | { type: 'SET_PHASE'; phase: GamePhase };
 
 const PROGRESSION_TYPES: ReadonlySet<string> = new Set([
-  'START_RUN', 'START_CHALLENGE', 'GO_DIFF', 'GO_HOW', 'GO_TREE',
+  'START_RUN', 'START_CHALLENGE', 'GO_TOTEM', 'GO_DIFF', 'GO_HOW', 'GO_TREE',
   'PREPARE_BIOME_SELECT', 'PICK_BIOME', 'GO_FINAL_BOSS', 'BIOME_CLEARED',
   'SET_PHASE',
 ]);

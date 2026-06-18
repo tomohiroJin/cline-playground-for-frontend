@@ -72,4 +72,6 @@ export interface GameState {
   achievementStates: AchievementState[];
   /** メタ: 新規解除実績ID（ゲームオーバー画面表示用） */
   newAchievements: string[];
+  /** トーテム選択前に保持する開始パラメータ */
+  pendingStart?: { di: number; loopOverride: number; challengeId?: string } | null;
 }

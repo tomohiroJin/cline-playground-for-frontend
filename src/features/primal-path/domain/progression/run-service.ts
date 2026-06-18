@@ -3,10 +3,11 @@
  *
  * ラン開始、統計計算、報酬計算を担当する。
  */
-import type { RunState, SaveData, BiomeId, Difficulty, RunStats } from '../../types';
+import type { RunState, SaveData, BiomeId, Difficulty, RunStats, TotemId } from '../../types';
 import { DIFFS, WAVES_PER_BIOME, LOOP_SCALE_FACTOR } from '../../constants';
 import { getTB } from './tree-service';
 import { calcSynergies } from '../evolution/synergy-service';
+import { applyTotem } from '../totem/totem-service';
 
 /* ===== 定数 ===== */
 
@@ -18,7 +19,7 @@ const RIT_BONE_MULTIPLIER = 1.5;
 /* ===== ラン初期化 ===== */
 
 /** ランの初期ステートを生成する */
-export function startRunState(di: number, save: SaveData): RunState {
+export function startRunState(di: number, save: SaveData, totemId?: TotemId): RunState {
   const d = DIFFS[di];
   const tb = getTB(save.tree);
   /* Fisher-Yates シャッフル */
@@ -36,7 +37,7 @@ export function startRunState(di: number, save: SaveData): RunState {
     am: d.am * loopScale,
   };
 
-  return {
+  const run: RunState = {
     hp: 80 + tb.bH, mhp: 80 + tb.bH, atk: 8 + tb.bA, def: 2 + tb.bD,
     cr: Math.min(0.05 + tb.cr, 1), burn: 0, aM: 1, dm: 1 + tb.dM,
     cT: tb.sC, cL: tb.sC, cR: tb.sC,
@@ -57,7 +58,10 @@ export function startRunState(di: number, save: SaveData): RunState {
     isEndless: false,
     endlessWave: 0,
     _wDmgBase: 0, _fbk: '', _fPhase: 0,
+    burnDmgMul: 1, allyAtkBonus: 0,
   };
+  // トーテムIDが指定されている場合はトーテム効果を適用する
+  return totemId ? applyTotem(run, totemId) : run;
 }
 
 /* ===== 報酬計算 ===== */
