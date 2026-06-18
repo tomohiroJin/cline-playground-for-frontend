@@ -26,7 +26,7 @@ describe('TOTEMS 定数', () => {
   });
 });
 
-import { applyTotem } from '../game-logic';
+import { applyTotem, tick } from '../game-logic';
 import { makeRun } from './test-helpers';
 
 describe('applyTotem — 血の祖', () => {
@@ -45,5 +45,26 @@ describe('applyTotem — 血の祖', () => {
     applyTotem(base, 'blood');
     expect(base.mhp).toBe(100);
     expect(base.atk).toBe(10);
+  });
+});
+
+describe('applyTotem — 炎の祖', () => {
+  it('burnDmgMul を 1.25 に設定する', () => {
+    const r = applyTotem(makeRun({}), 'flame');
+    expect(r.burnDmgMul).toBeCloseTo(1.25, 5);
+  });
+
+  it('火傷ダメージが burnDmgMul で増加する', () => {
+    // 火傷あり・会心しない固定RNG（rng=0.99）で2ランを比較
+    const baseRun = makeRun({
+      atk: 100, aM: 1, dm: 1, burn: 1, cr: 0, def: 0,
+      en: { n: 'test', hp: 100000, mhp: 100000, atk: 1, def: 0, bone: 0 },
+    });
+    const normal = tick(baseRun, false, () => 0.99);
+    const flame = tick(applyTotem(baseRun, 'flame'), false, () => 0.99);
+    const dmgNormal = normal.nextRun.dmgDealt;
+    const dmgFlame = flame.nextRun.dmgDealt;
+    // 火傷分のみ +25%。通常攻撃は同値なので flame 側が大きい
+    expect(dmgFlame).toBeGreaterThan(dmgNormal);
   });
 });
