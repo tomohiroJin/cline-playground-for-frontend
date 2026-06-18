@@ -10,7 +10,7 @@ describe('progressionReducer', () => {
     it('ランを開始して evo フェーズに遷移する', () => {
       const save = makeSave({ runs: 0 });
       const state = makeGameState({ save });
-      const next = progressionReducer(state, { type: 'START_RUN', di: 0, loopOverride: 0 });
+      const next = progressionReducer(state, { type: 'START_RUN', di: 0, loopOverride: 0, totemId: 'blood' });
       expect(next.phase).toBe('evo');
       expect(next.run).not.toBeNull();
       expect(next.save.runs).toBe(1);
@@ -19,7 +19,7 @@ describe('progressionReducer', () => {
     it('loopOverride に応じたスケーリングが適用される', () => {
       const save = makeSave({ loopCount: 3, runs: 0 });
       const state = makeGameState({ save });
-      const next = progressionReducer(state, { type: 'START_RUN', di: 0, loopOverride: 2 });
+      const next = progressionReducer(state, { type: 'START_RUN', di: 0, loopOverride: 2, totemId: 'blood' });
       expect(next.run!.loopCount).toBe(2);
       const expectedHm = DIFFS[0].hm * (1 + 2 * LOOP_SCALE_FACTOR);
       expect(next.run!.dd.hm).toBeCloseTo(expectedHm);
@@ -113,7 +113,7 @@ describe('progressionReducer', () => {
     it('endless チャレンジを開始できる', () => {
       const save = makeSave({ bones: 100, runs: 0 });
       const state = makeGameState({ save });
-      const next = progressionReducer(state, { type: 'START_CHALLENGE', challengeId: 'endless', di: 0 });
+      const next = progressionReducer(state, { type: 'START_CHALLENGE', challengeId: 'endless', di: 0, totemId: 'blood' });
       expect(next.run).not.toBeNull();
       expect(next.run!.isEndless).toBe(true);
       expect(next.run!.challengeId).toBe('endless');
@@ -121,7 +121,7 @@ describe('progressionReducer', () => {
 
     it('存在しないチャレンジIDでは状態が変化しない', () => {
       const state = makeGameState();
-      const next = progressionReducer(state, { type: 'START_CHALLENGE', challengeId: 'nonexistent', di: 0 });
+      const next = progressionReducer(state, { type: 'START_CHALLENGE', challengeId: 'nonexistent', di: 0, totemId: 'blood' });
       expect(next).toEqual(state);
     });
   });

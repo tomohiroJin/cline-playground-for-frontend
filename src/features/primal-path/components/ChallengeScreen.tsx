@@ -13,10 +13,9 @@ interface Props {
   save: SaveData;
   dispatch: React.Dispatch<GameAction>;
   playSfx: (t: SfxType) => void;
-  onStartChallenge: (challengeId: string, di: number) => void;
 }
 
-export const ChallengeScreen: React.FC<Props> = ({ aggregate, save, dispatch, playSfx, onStartChallenge }) => {
+export const ChallengeScreen: React.FC<Props> = ({ aggregate, save, dispatch, playSfx }) => {
   const [selectedChallenge, setSelectedChallenge] = useState<ChallengeDef | undefined>(undefined);
   const [selectedDi, setSelectedDi] = useState(0);
 
@@ -79,7 +78,7 @@ export const ChallengeScreen: React.FC<Props> = ({ aggregate, save, dispatch, pl
           </GameButton>
           <GameButton
             style={{ minWidth: 140, borderColor: '#f0c04060', color: '#f0c040' }}
-            onClick={() => { playSfx('click'); onStartChallenge(selectedChallenge.id, selectedDi); }}
+            onClick={() => { playSfx('click'); dispatch({ type: 'GO_TOTEM', di: selectedDi, loopOverride: 0, challengeId: selectedChallenge.id }); }}
           >
             ⚔️ 開始
           </GameButton>

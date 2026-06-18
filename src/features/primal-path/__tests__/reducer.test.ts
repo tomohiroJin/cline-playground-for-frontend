@@ -344,7 +344,7 @@ describe('FB#4: エンドレスチャレンジ (reducer)', () => {
     const save = makeSave({ bones: 100, runs: 0 });
     const state = makeGameState({ save });
 
-    const next = gameReducer(state, { type: 'START_CHALLENGE', challengeId: 'endless', di: 0 });
+    const next = gameReducer(state, { type: 'START_CHALLENGE', challengeId: 'endless', di: 0, totemId: 'blood' });
 
     expect(next.run).not.toBeNull();
     expect(next.run!.isEndless).toBe(true);
@@ -440,7 +440,7 @@ describe('FB#12: START_RUN loopOverride（周回数選択）', () => {
     const save = makeSave({ loopCount: 3, runs: 0 });
     const state = makeGameState({ save });
 
-    const next = gameReducer(state, { type: 'START_RUN', di: 0, loopOverride: 0 });
+    const next = gameReducer(state, { type: 'START_RUN', di: 0, loopOverride: 0, totemId: 'blood' });
 
     expect(next.run).not.toBeNull();
     // loopOverride=0 なので RunState の loopCount は 0
@@ -454,7 +454,7 @@ describe('FB#12: START_RUN loopOverride（周回数選択）', () => {
     const save = makeSave({ loopCount: 4, runs: 0 });
     const state = makeGameState({ save });
 
-    const next = gameReducer(state, { type: 'START_RUN', di: 0, loopOverride: 2 });
+    const next = gameReducer(state, { type: 'START_RUN', di: 0, loopOverride: 2, totemId: 'blood' });
 
     expect(next.run).not.toBeNull();
     expect(next.run!.loopCount).toBe(2);
@@ -467,7 +467,7 @@ describe('FB#12: START_RUN loopOverride（周回数選択）', () => {
     const save = makeSave({ loopCount: 3, runs: 0 });
     const state = makeGameState({ save });
 
-    const next = gameReducer(state, { type: 'START_RUN', di: 0, loopOverride: 3 });
+    const next = gameReducer(state, { type: 'START_RUN', di: 0, loopOverride: 3, totemId: 'blood' });
 
     expect(next.run).not.toBeNull();
     expect(next.run!.loopCount).toBe(3);

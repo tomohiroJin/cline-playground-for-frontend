@@ -8,7 +8,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useGameState, useBattle, useAudio, useOverlay, usePersistence } from './hooks';
 import type { TickEvent, BiomeId, BgmType } from './types';
 import { ErrorBoundary } from './contracts';
-import { DIFFS } from './constants';
 import { pickBiomeAuto, formatEventResult, computeEventResult } from './game-logic';
 import { MetaStorage } from './storage';
 
@@ -30,6 +29,7 @@ import { EventScreen } from './components/EventScreen';
 import { StatsScreen } from './components/StatsScreen';
 import { AchievementScreen } from './components/AchievementScreen';
 import { ChallengeScreen } from './components/ChallengeScreen';
+import { TotemSelectScreen } from './components/TotemSelectScreen';
 
 function GameInner() {
   const { state, dispatch } = useGameState();
@@ -133,19 +133,6 @@ function GameInner() {
     }
   }, [state.runStats, state.aggregate, state.achievementStates, loaded]);
 
-  const handleStartRun = useCallback(async (di: number, loopOverride: number) => {
-    initAudio();
-    const d = DIFFS[di];
-    await showOverlay(d.ic, d.n + 'モード開始！', 1100);
-    dispatch({ type: 'START_RUN', di, loopOverride });
-  }, [dispatch, showOverlay, initAudio]);
-
-  const handleStartChallenge = useCallback(async (challengeId: string, di: number) => {
-    initAudio();
-    await showOverlay('⚔️', 'チャレンジ開始！', 1100);
-    dispatch({ type: 'START_CHALLENGE', challengeId, di });
-  }, [dispatch, showOverlay, initAudio]);
-
   if (!loaded) return null;
 
   const { phase, run, save, finalMode, battleSpd, evoPicks, pendingAwk, gameResult, currentEvent } = state;
@@ -160,7 +147,16 @@ function GameInner() {
         )}
 
         {phase === 'diff' && (
-          <DifficultyScreen save={save} dispatch={dispatch} playSfx={playSfx} onStart={handleStartRun} />
+          <DifficultyScreen save={save} dispatch={dispatch} playSfx={playSfx} />
+        )}
+
+        {phase === 'totem' && state.pendingStart && (
+          <TotemSelectScreen
+            save={save}
+            pendingStart={state.pendingStart}
+            dispatch={dispatch}
+            playSfx={playSfx}
+          />
         )}
 
         {phase === 'how' && (
@@ -270,7 +266,6 @@ function GameInner() {
             save={save}
             dispatch={dispatch}
             playSfx={playSfx}
-            onStartChallenge={handleStartChallenge}
           />
         )}
       </GameShell>
