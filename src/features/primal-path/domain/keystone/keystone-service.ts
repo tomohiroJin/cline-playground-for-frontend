@@ -1,8 +1,10 @@
 /**
  * キーストーンサービス
  *
- * キーストーン効果を tick-phases の各フックから呼ぶ純粋関数群。
+ * キーストーン効果を tick-phases の各フックから呼ぶ効果関数群。
  * 効果ロジックを戦闘ティックから分離し、テスト容易性を保つ。
+ * 注: applyKeystone は純粋関数。一方、ティック内フック（resetKeystoneBattleState・
+ * onKeystoneKill・keystoneLethalGuard）は deepClone 済みの RunState を破壊的に更新する。
  */
 import type { RunState, KeystoneId } from '../../types';
 import { aliveAllies } from '../battle/combat-calculator';
@@ -72,7 +74,7 @@ export function onKeystoneKill(r: RunState): void {
   // キーストーン未所持なら早期リターン（既存挙動に影響しない）
   if (!r.keystones?.length) return;
   const stacks: Record<string, number> = { ...(r.ksStacks ?? {}) };
-  // 狩人の蓄積: キルごとに ATK スタック +3（battle 終了まで永続）
+  // 狩人の蓄積: キルごとに ATK スタック +3（ksStacks に蓄積、ラン中永続）
   if (hasKeystone(r, 'hunter_stack')) stacks.hunter_stack = (stacks.hunter_stack ?? 0) + 3;
   // 連鎖の業火: 火傷状態（r.burn）でのキルで火傷ダメージ倍率が +0.2（ラン中永続）
   if (hasKeystone(r, 'chain_blaze') && r.burn) stacks.chain_blaze = (stacks.chain_blaze ?? 0) + 0.2;
