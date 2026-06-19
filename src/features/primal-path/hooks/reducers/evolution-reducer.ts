@@ -5,7 +5,7 @@ import type { GameState, CivTypeExt } from '../../types';
 import type { EvolutionAction } from '../actions';
 import {
   applyEvo, startBattle, checkAwakeningRules, rollE,
-  applyAwkFx,
+  applyAwkFx, applyKeystone, rollDraftKeystone,
 } from '../../game-logic';
 import { AWK_SA, AWK_FA } from '../../constants';
 
@@ -41,6 +41,14 @@ export function evolutionReducer(state: GameState, action: EvolutionAction): Gam
       return { ...state, run: battleRun, phase: 'battle' };
     }
 
+    case 'SELECT_DRAFT_KEYSTONE': {
+      if (!state.run) return state;
+      // キーストーンを適用してバトルへ遷移する
+      const run = applyKeystone(state.run, action.id);
+      const battleRun = startBattle(run, state.finalMode);
+      return { ...state, run: battleRun, phase: 'battle', evoKeystone: undefined };
+    }
+
     case 'SKIP_EVO': {
       if (!state.run) return state;
       const battleRun = startBattle(state.run, state.finalMode);
@@ -50,7 +58,7 @@ export function evolutionReducer(state: GameState, action: EvolutionAction): Gam
     case 'SHOW_EVO': {
       if (!state.run) return state;
       const evoPicks = rollE(state.run);
-      return { ...state, phase: 'evo', evoPicks };
+      return { ...state, phase: 'evo', evoPicks, evoKeystone: rollDraftKeystone(state.run) };
     }
 
     case 'PROCEED_AFTER_AWK': {

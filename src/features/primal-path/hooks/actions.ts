@@ -30,11 +30,13 @@ export type EvolutionAction =
   | { type: 'SKIP_EVO' }
   | { type: 'SHOW_EVO' }
   | { type: 'PROCEED_AFTER_AWK' }
-  | { type: 'PROCEED_TO_BATTLE' };
+  | { type: 'PROCEED_TO_BATTLE' }
+  | { type: 'SELECT_DRAFT_KEYSTONE'; id: KeystoneId };
 
 const EVOLUTION_TYPES: ReadonlySet<string> = new Set([
   'SELECT_EVO', 'SKIP_EVO', 'SHOW_EVO',
   'PROCEED_AFTER_AWK', 'PROCEED_TO_BATTLE',
+  'SELECT_DRAFT_KEYSTONE',
 ]);
 
 /* ===== イベントアクション ===== */
