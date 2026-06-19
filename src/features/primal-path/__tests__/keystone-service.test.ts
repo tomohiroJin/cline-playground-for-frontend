@@ -114,3 +114,15 @@ describe('onKeystoneKill', () => {
     expect(r.ksStacks).toEqual({});
   });
 });
+
+import { keystoneReflectDmg } from '../game-logic';
+
+describe('keystoneReflectDmg', () => {
+  it('棘の守護: 被ダメージの30%を反射', () => {
+    const r = makeRun({ keystones: ['thorn_guard'] });
+    expect(keystoneReflectDmg(r, 100)).toBe(30);
+  });
+  it('キーストーン無しは反射0', () => {
+    expect(keystoneReflectDmg(makeRun({ keystones: [] }), 100)).toBe(0);
+  });
+});

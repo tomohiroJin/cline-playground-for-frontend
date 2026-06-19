@@ -48,6 +48,12 @@ export function keystonePlayerAtkMods(r: RunState): { flatAdd: number; mult: num
   return { flatAdd, mult };
 }
 
+/** 被ダメージの反射量を返す（棘の守護） */
+export function keystoneReflectDmg(r: RunState, takenDmg: number): number {
+  if (!hasKeystone(r, 'thorn_guard')) return 0;
+  return Math.floor(takenDmg * 0.3);
+}
+
 /** 敵撃破時のキーストーン処理（破壊的。スタック更新） */
 export function onKeystoneKill(r: RunState): void {
   // キーストーン未所持なら早期リターン（既存挙動に影響しない）

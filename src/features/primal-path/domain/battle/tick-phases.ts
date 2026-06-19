@@ -8,7 +8,7 @@ import type { SynergyBonusResult } from '../evolution/synergy-service';
 import { ENV_DMG } from '../../constants';
 import { calcEnvDmg, calcPlayerAtk, aliveAllies, RIT_LOW_HP_RATIO } from './combat-calculator';
 import { calcSynergies, applySynergyBonuses } from '../evolution/synergy-service';
-import { keystonePlayerAtkMods, onKeystoneKill } from '../keystone/keystone-service';
+import { keystonePlayerAtkMods, onKeystoneKill, keystoneReflectDmg } from '../keystone/keystone-service';
 import { tickBuffs } from '../skill/skill-service';
 import { deepCloneRun } from '../shared/utils';
 import { requireValidPlayer } from '../../contracts/player-contracts';
@@ -133,6 +133,13 @@ export function tickEnemyPhase(next: RunState, e: Enemy, events: TickEvent[], rn
   next.hp -= ed;
   next.dmgTaken += ed;
   next.log.push({ x: '🩸 ' + e.n + ' → ' + ed, c: 'xc' });
+  // 棘の守護: 被ダメージの一部を敵へ反射
+  const reflect = keystoneReflectDmg(next, ed);
+  if (reflect > 0) {
+    e.hp -= reflect;
+    next.dmgDealt += reflect;
+    next.log.push({ x: '  🛡️ 反射 ' + reflect, c: 'gc' });
+  }
   events.push({ type: 'sfx', sfx: 'plDmg' });
   events.push({ type: 'popup', v: ed, crit: false, heal: false, tgt: 'pl' });
 
