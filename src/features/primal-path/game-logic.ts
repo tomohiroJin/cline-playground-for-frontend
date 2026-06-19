@@ -48,6 +48,9 @@ export { pickBiomeAuto, applyBiomeSelection, applyFirstBiome, applyAutoLastBiome
 // トーテムサービス
 export { applyTotem } from './domain/totem/totem-service';
 
+// キーストーンサービス
+export { hasKeystone, applyKeystone, resetKeystoneBattleState } from './domain/keystone/keystone-service';
+
 // ツリーサービス
 export { getTB, tbSummary, bestDiffLabel } from './domain/progression/tree-service';
 

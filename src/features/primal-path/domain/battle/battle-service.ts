@@ -10,6 +10,7 @@ import { decSkillCds } from '../skill/skill-service';
 import { calcEndlessScaleWithAM } from '../progression/biome-service';
 import { deepCloneRun } from '../shared/utils';
 import { requireValidPlayer } from '../../contracts/player-contracts';
+import { resetKeystoneBattleState } from '../keystone/keystone-service';
 
 /** バトル開始処理（敵生成・バトル状態初期化） */
 export function startBattle(r: RunState, _finalMode: boolean): RunState {
@@ -36,6 +37,7 @@ export function startBattle(r: RunState, _finalMode: boolean): RunState {
   next.log = [];
   next.wDmg = 0;
   next.wTurn = 0;
+  resetKeystoneBattleState(next);
   next._wDmgBase = next.dmgDealt;
 
   return next;

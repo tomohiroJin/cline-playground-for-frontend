@@ -28,3 +28,26 @@ describe('KEYSTONES 定数', () => {
     expect(Object.isFrozen(KEYSTONES)).toBe(true);
   });
 });
+
+import { hasKeystone, applyKeystone } from '../game-logic';
+import { makeRun } from './test-helpers';
+
+describe('applyKeystone / hasKeystone', () => {
+  it('applyKeystone は keystones に id を追加し hasKeystone が true を返す', () => {
+    const r = applyKeystone(makeRun({ keystones: [] }), 'madblood');
+    expect(hasKeystone(r, 'madblood')).toBe(true);
+  });
+
+  it('諸刃の進化: DEFを0にし、失ったDEF×3をATKへ変換する', () => {
+    const r = applyKeystone(makeRun({ atk: 10, def: 8, keystones: [] }), 'double_edge');
+    expect(r.def).toBe(0);
+    expect(r.atk).toBe(10 + 8 * 3); // 34
+  });
+
+  it('元の RunState を破壊しない（純粋）', () => {
+    const base = makeRun({ atk: 10, def: 8, keystones: [] });
+    applyKeystone(base, 'double_edge');
+    expect(base.def).toBe(8);
+    expect(base.atk).toBe(10);
+  });
+});
