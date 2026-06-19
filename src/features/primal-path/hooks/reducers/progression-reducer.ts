@@ -14,9 +14,15 @@ export function progressionReducer(state: GameState, action: ProgressionAction):
   switch (action.type) {
     case 'START_RUN': {
       const save = { ...state.save, runs: state.save.runs + 1, loopCount: action.loopOverride };
-      const run = startRunState(action.di, save);
-      return setupInitialRun(state, run, save);
+      const run = startRunState(action.di, save, action.totemId);
+      return { ...setupInitialRun(state, run, save), pendingStart: null };
     }
+
+    case 'GO_TOTEM':
+      return {
+        ...state, phase: 'totem',
+        pendingStart: { di: action.di, loopOverride: action.loopOverride, challengeId: action.challengeId },
+      };
 
     case 'GO_DIFF':
       return { ...state, phase: 'diff' };
@@ -57,14 +63,14 @@ export function progressionReducer(state: GameState, action: ProgressionAction):
       const ch = CHALLENGES.find(c => c.id === action.challengeId);
       if (!ch) return state;
       const save = { ...state.save, runs: state.save.runs + 1 };
-      let run = startRunState(action.di, save);
+      let run = startRunState(action.di, save, action.totemId);
       run = applyChallenge(run, ch);
       run = { ...run, challengeId: ch.id };
       // タイマー付きチャレンジの場合、開始時刻を記録
       if (run.timeLimit) {
         run = { ...run, timerStart: Date.now() };
       }
-      return setupInitialRun(state, run, save, { newAchievements: [] });
+      return { ...setupInitialRun(state, run, save, { newAchievements: [], pendingStart: null }) };
     }
 
     default:

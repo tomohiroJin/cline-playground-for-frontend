@@ -19,15 +19,16 @@ export type GamePhase =
   | 'over'
   | 'stats'
   | 'achievements'
-  | 'challenge';
+  | 'challenge'
+  | 'totem';
 
 /** フェーズ遷移の許可テーブル */
 export const PHASE_TRANSITIONS: Record<GamePhase, readonly GamePhase[]> = {
   title: ['diff', 'how', 'tree', 'challenge'],
-  diff: ['biome', 'title'],
+  diff: ['totem', 'title'],
   how: ['title'],
   tree: ['title'],
-  challenge: ['biome', 'title'],
+  challenge: ['totem', 'title'],
   biome: ['evo'],
   evo: ['battle'],
   battle: ['evo', 'awakening', 'prefinal', 'over', 'event', 'ally_revive', 'endless_checkpoint'],
@@ -39,6 +40,7 @@ export const PHASE_TRANSITIONS: Record<GamePhase, readonly GamePhase[]> = {
   over: ['stats', 'title'],
   stats: ['achievements', 'title'],
   achievements: ['title'],
+  totem: ['biome', 'evo', 'title'],
 };
 
 /** 遷移が許可されているかを判定する */

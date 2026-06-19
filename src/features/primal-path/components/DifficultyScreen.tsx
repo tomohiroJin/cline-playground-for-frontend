@@ -16,10 +16,9 @@ interface Props {
   save: SaveData;
   dispatch: React.Dispatch<GameAction>;
   playSfx: (t: SfxType) => void;
-  onStart: (di: number, loopOverride: number) => void;
 }
 
-export const DifficultyScreen: React.FC<Props> = ({ save, dispatch, playSfx, onStart }) => {
+export const DifficultyScreen: React.FC<Props> = ({ save, dispatch, playSfx }) => {
   const [selectedLoop, setSelectedLoop] = useState(save.loopCount);
 
   return (
@@ -65,7 +64,7 @@ export const DifficultyScreen: React.FC<Props> = ({ save, dispatch, playSfx, onS
             key={i}
             $off={locked}
             style={{ width: '94%', textAlign: 'left', padding: '10px 14px' }}
-            onClick={() => { playSfx('click'); onStart(i, selectedLoop); }}
+            onClick={() => { playSfx('click'); dispatch({ type: 'GO_TOTEM', di: i, loopOverride: selectedLoop }); }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ color: '#f0c040', fontSize: 12 }}>

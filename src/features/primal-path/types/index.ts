@@ -99,6 +99,9 @@ export type { AchievementCondition, AchievementDef, AchievementState } from './a
 // tick
 export type { TickResult, TickEvent, PlayerAttackResult } from './tick';
 
+// トーテム
+export type { TotemId, PowerCurve, TotemEffect, TotemDef } from './totem';
+
 // フェーズ
 export type { GamePhase } from './phase';
 export { PHASE_TRANSITIONS, isValidTransition, assertValidTransition } from './phase';

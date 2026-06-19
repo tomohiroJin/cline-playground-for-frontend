@@ -344,7 +344,7 @@ describe('FB#4: エンドレスチャレンジ (reducer)', () => {
     const save = makeSave({ bones: 100, runs: 0 });
     const state = makeGameState({ save });
 
-    const next = gameReducer(state, { type: 'START_CHALLENGE', challengeId: 'endless', di: 0 });
+    const next = gameReducer(state, { type: 'START_CHALLENGE', challengeId: 'endless', di: 0, totemId: 'blood' });
 
     expect(next.run).not.toBeNull();
     expect(next.run!.isEndless).toBe(true);
@@ -440,7 +440,7 @@ describe('FB#12: START_RUN loopOverride（周回数選択）', () => {
     const save = makeSave({ loopCount: 3, runs: 0 });
     const state = makeGameState({ save });
 
-    const next = gameReducer(state, { type: 'START_RUN', di: 0, loopOverride: 0 });
+    const next = gameReducer(state, { type: 'START_RUN', di: 0, loopOverride: 0, totemId: 'blood' });
 
     expect(next.run).not.toBeNull();
     // loopOverride=0 なので RunState の loopCount は 0
@@ -454,7 +454,7 @@ describe('FB#12: START_RUN loopOverride（周回数選択）', () => {
     const save = makeSave({ loopCount: 4, runs: 0 });
     const state = makeGameState({ save });
 
-    const next = gameReducer(state, { type: 'START_RUN', di: 0, loopOverride: 2 });
+    const next = gameReducer(state, { type: 'START_RUN', di: 0, loopOverride: 2, totemId: 'blood' });
 
     expect(next.run).not.toBeNull();
     expect(next.run!.loopCount).toBe(2);
@@ -467,7 +467,7 @@ describe('FB#12: START_RUN loopOverride（周回数選択）', () => {
     const save = makeSave({ loopCount: 3, runs: 0 });
     const state = makeGameState({ save });
 
-    const next = gameReducer(state, { type: 'START_RUN', di: 0, loopOverride: 3 });
+    const next = gameReducer(state, { type: 'START_RUN', di: 0, loopOverride: 3, totemId: 'blood' });
 
     expect(next.run).not.toBeNull();
     expect(next.run!.loopCount).toBe(3);
@@ -481,6 +481,28 @@ describe('FB#12: START_RUN loopOverride（周回数選択）', () => {
 describe('FB#11: LOOP_SCALE_FACTOR 定数', () => {
   it('LOOP_SCALE_FACTOR が 0.5 である', () => {
     expect(LOOP_SCALE_FACTOR).toBe(0.5);
+  });
+});
+
+/* ===== トーテム開始フロー ===== */
+
+import { initialState } from '../hooks/use-game-state';
+
+describe('トーテム開始フロー', () => {
+  it('GO_TOTEM で phase=totem になり pendingStart が記録される', () => {
+    const s0 = { ...initialState(), phase: 'diff' as const };
+    const s1 = gameReducer(s0, { type: 'GO_TOTEM', di: 1, loopOverride: 0 });
+    expect(s1.phase).toBe('totem');
+    expect(s1.pendingStart).toEqual({ di: 1, loopOverride: 0, challengeId: undefined });
+  });
+
+  it('START_RUN に totemId を渡すと run.totemId が設定される', () => {
+    const s0 = { ...initialState(), phase: 'totem' as const,
+      pendingStart: { di: 0, loopOverride: 0 } };
+    const s1 = gameReducer(s0, { type: 'START_RUN', di: 0, loopOverride: 0, totemId: 'blood' });
+    expect(s1.run).not.toBeNull();
+    expect(s1.run!.totemId).toBe('blood');
+    expect(s1.pendingStart).toBeNull();
   });
 });
 

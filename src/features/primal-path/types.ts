@@ -103,6 +103,12 @@ export type {
   // フェーズ
   GamePhase,
 
+  // トーテム
+  TotemId,
+  PowerCurve,
+  TotemEffect,
+  TotemDef,
+
   // ゲーム全体
   RunState,
   GameState,

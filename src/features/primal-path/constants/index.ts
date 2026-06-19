@@ -9,6 +9,7 @@ export { DIFFS } from './difficulty';
 export { A_SKILLS, SFX_DEFS } from './skill';
 export { RANDOM_EVENTS, EVENT_CHANCE, EVENT_MIN_BATTLES } from './event';
 export { TREE, TIER_UNLOCK, TIER_NAMES } from './tree';
+export { TOTEMS } from './totem';
 export { ACHIEVEMENTS, CHALLENGES } from './achievement';
 export { AWK_SA, AWK_FA } from './awakening';
 export { ALT } from './ally';

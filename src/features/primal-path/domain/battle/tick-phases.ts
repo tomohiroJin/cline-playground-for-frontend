@@ -73,7 +73,8 @@ export function tickPlayerPhase(next: RunState, e: Enemy, events: TickEvent[], r
   events.push({ type: 'popup', v: dm, crit: pa.crit, heal: false, tgt: 'en' });
 
   if (next.burn) {
-    const bd = Math.floor(pa.dmg * 0.2 * sb.burnMul);
+    // burnDmgMul が未設定の場合は 1 として既存挙動を維持
+    const bd = Math.floor(pa.dmg * 0.2 * sb.burnMul * (next.burnDmgMul ?? 1));
     e.hp -= bd;
     next.dmgDealt += bd;
     next.log.push({ x: '  🔥 火傷 ' + bd, c: 'tc' });

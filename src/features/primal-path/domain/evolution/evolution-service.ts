@@ -92,7 +92,8 @@ export function applyEvo(r: RunState, ev: Evolution, rng = Math.random): ApplyEv
     const ts = ALT[ev.t];
     const tpl = ts[rng() * ts.length | 0];
     const hm = 1 + next.tb.aH;
-    const am = 1 + next.tb.aA;
+    // allyAtkBonus は群れの祖トーテム等で設定される仲間ATK加算ボーナス
+    const am = 1 + next.tb.aA + (next.allyAtkBonus ?? 0);
     next.al.push({
       n: tpl.n, hp: Math.floor(tpl.hp * hm), mhp: Math.floor(tpl.hp * hm),
       atk: Math.floor(tpl.atk * am), t: ev.t, a: 1, h: tpl.h, tk: tpl.tk,

@@ -44,6 +44,12 @@ export interface RunState extends
   _fbk: string;
   _wDmgBase: number;
   tb: TreeBonus;
+  /** 選択中の始祖トーテム */
+  totemId?: import('./totem').TotemId;
+  /** 火傷ダメージ倍率（トーテム/キーストーン由来、既定1.0） */
+  burnDmgMul?: number;
+  /** 仲間ATKボーナス（リクルート時に加算、既定0） */
+  allyAtkBonus?: number;
 }
 
 /** ゲーム全体ステート */
@@ -66,4 +72,6 @@ export interface GameState {
   achievementStates: AchievementState[];
   /** メタ: 新規解除実績ID（ゲームオーバー画面表示用） */
   newAchievements: string[];
+  /** トーテム選択前に保持する開始パラメータ */
+  pendingStart?: { di: number; loopOverride: number; challengeId?: string } | null;
 }

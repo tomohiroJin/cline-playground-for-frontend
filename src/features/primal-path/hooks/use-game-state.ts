@@ -27,6 +27,7 @@ export function initialState(): GameState {
     aggregate: MetaStorage.loadAggregate(),
     achievementStates: [],
     newAchievements: [],
+    pendingStart: null,
   };
 }
 
