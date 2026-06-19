@@ -8,7 +8,7 @@ import type { SynergyBonusResult } from '../evolution/synergy-service';
 import { ENV_DMG } from '../../constants';
 import { calcEnvDmg, calcPlayerAtk, aliveAllies, RIT_LOW_HP_RATIO } from './combat-calculator';
 import { calcSynergies, applySynergyBonuses } from '../evolution/synergy-service';
-import { keystonePlayerAtkMods, onKeystoneKill, keystoneReflectDmg } from '../keystone/keystone-service';
+import { keystonePlayerAtkMods, onKeystoneKill, keystoneReflectDmg, isKeystoneFreezeTurn } from '../keystone/keystone-service';
 import { tickBuffs } from '../skill/skill-service';
 import { deepCloneRun } from '../shared/utils';
 import { requireValidPlayer } from '../../contracts/player-contracts';
@@ -116,6 +116,12 @@ export function tickRegenPhase(next: RunState, events: TickEvent[], sb: SynergyB
 
 /** 敵攻撃フェーズ */
 export function tickEnemyPhase(next: RunState, e: Enemy, events: TickEvent[], rng: () => number, sb: SynergyBonusResult): void {
+  // 永久凍結: 周期的に敵の攻撃を無効化する
+  if (isKeystoneFreezeTurn(next)) {
+    next.log.push({ x: '  🧊 永久凍結！敵の攻撃を無効化', c: 'lc' });
+    events.push({ type: 'sfx', sfx: 'envDmg' });
+    return;
+  }
   let ed = Math.max(1, e.atk - (next.def + sb.defBonus));
   // shield バフ適用
   const shieldBuff = next.sk.bfs.find(b => b.fx.t === 'shield');

@@ -126,3 +126,17 @@ describe('keystoneReflectDmg', () => {
     expect(keystoneReflectDmg(makeRun({ keystones: [] }), 100)).toBe(0);
   });
 });
+
+import { isKeystoneFreezeTurn } from '../game-logic';
+
+describe('isKeystoneFreezeTurn', () => {
+  it('永久凍結: wTurn が4の倍数のターンで true', () => {
+    expect(isKeystoneFreezeTurn(makeRun({ wTurn: 4, keystones: ['eternal_freeze'] }))).toBe(true);
+    expect(isKeystoneFreezeTurn(makeRun({ wTurn: 8, keystones: ['eternal_freeze'] }))).toBe(true);
+  });
+  it('4の倍数でないターン・wTurn=0・キーストーン無しは false', () => {
+    expect(isKeystoneFreezeTurn(makeRun({ wTurn: 3, keystones: ['eternal_freeze'] }))).toBe(false);
+    expect(isKeystoneFreezeTurn(makeRun({ wTurn: 0, keystones: ['eternal_freeze'] }))).toBe(false);
+    expect(isKeystoneFreezeTurn(makeRun({ wTurn: 4, keystones: [] }))).toBe(false);
+  });
+});

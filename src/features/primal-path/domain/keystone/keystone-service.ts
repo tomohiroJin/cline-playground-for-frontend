@@ -54,6 +54,11 @@ export function keystoneReflectDmg(r: RunState, takenDmg: number): number {
   return Math.floor(takenDmg * 0.3);
 }
 
+/** このターン敵攻撃を無効化するか（永久凍結） */
+export function isKeystoneFreezeTurn(r: RunState): boolean {
+  return hasKeystone(r, 'eternal_freeze') && r.wTurn > 0 && r.wTurn % 4 === 0;
+}
+
 /** 敵撃破時のキーストーン処理（破壊的。スタック更新） */
 export function onKeystoneKill(r: RunState): void {
   // キーストーン未所持なら早期リターン（既存挙動に影響しない）
