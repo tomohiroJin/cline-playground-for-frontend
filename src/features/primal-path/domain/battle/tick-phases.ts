@@ -8,6 +8,7 @@ import type { SynergyBonusResult } from '../evolution/synergy-service';
 import { ENV_DMG } from '../../constants';
 import { calcEnvDmg, calcPlayerAtk, aliveAllies, RIT_LOW_HP_RATIO } from './combat-calculator';
 import { calcSynergies, applySynergyBonuses } from '../evolution/synergy-service';
+import { keystonePlayerAtkMods } from '../keystone/keystone-service';
 import { tickBuffs } from '../skill/skill-service';
 import { deepCloneRun } from '../shared/utils';
 import { requireValidPlayer } from '../../contracts/player-contracts';
@@ -43,10 +44,11 @@ export function tickPlayerPhase(next: RunState, e: Enemy, events: TickEvent[], r
   const prevAM = next.aM;
   if (atkBuff && atkBuff.fx.t === 'buffAtk') next.aM *= atkBuff.fx.aM;
 
-  // シナジーATK/CRボーナスを一時適用
+  // シナジー＋キーストーンの ATK ボーナスを一時適用
   const prevAtk = next.atk;
   const prevCr = next.cr;
-  next.atk += sb.atkBonus;
+  const ksMods = keystonePlayerAtkMods(next);
+  next.atk = Math.floor((next.atk + sb.atkBonus + ksMods.flatAdd) * ksMods.mult);
   next.cr = Math.min(next.cr + sb.crBonus / 100, 1);
 
   const pa = calcPlayerAtk(next, rng);
