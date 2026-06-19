@@ -8,6 +8,7 @@ import type { SynergyBonusResult } from '../evolution/synergy-service';
 import { ENV_DMG } from '../../constants';
 import { calcEnvDmg, calcPlayerAtk, aliveAllies, RIT_LOW_HP_RATIO } from './combat-calculator';
 import { calcSynergies, applySynergyBonuses } from '../evolution/synergy-service';
+import { keystonePlayerAtkMods, onKeystoneKill, keystoneReflectDmg, isKeystoneFreezeTurn, keystoneLethalGuard } from '../keystone/keystone-service';
 import { tickBuffs } from '../skill/skill-service';
 import { deepCloneRun } from '../shared/utils';
 import { requireValidPlayer } from '../../contracts/player-contracts';
@@ -43,10 +44,11 @@ export function tickPlayerPhase(next: RunState, e: Enemy, events: TickEvent[], r
   const prevAM = next.aM;
   if (atkBuff && atkBuff.fx.t === 'buffAtk') next.aM *= atkBuff.fx.aM;
 
-  // シナジーATK/CRボーナスを一時適用
+  // シナジー＋キーストーンの ATK ボーナスを一時適用
   const prevAtk = next.atk;
   const prevCr = next.cr;
-  next.atk += sb.atkBonus;
+  const ksMods = keystonePlayerAtkMods(next);
+  next.atk = Math.floor((next.atk + sb.atkBonus + ksMods.flatAdd) * ksMods.mult);
   next.cr = Math.min(next.cr + sb.crBonus / 100, 1);
 
   const pa = calcPlayerAtk(next, rng);
@@ -73,8 +75,8 @@ export function tickPlayerPhase(next: RunState, e: Enemy, events: TickEvent[], r
   events.push({ type: 'popup', v: dm, crit: pa.crit, heal: false, tgt: 'en' });
 
   if (next.burn) {
-    // burnDmgMul が未設定の場合は 1 として既存挙動を維持
-    const bd = Math.floor(pa.dmg * 0.2 * sb.burnMul * (next.burnDmgMul ?? 1));
+    // burnDmgMul が未設定の場合は 1 として既存挙動を維持。chain_blaze スタックで倍率を追加積算
+    const bd = Math.floor(pa.dmg * 0.2 * sb.burnMul * (next.burnDmgMul ?? 1) * (1 + (next.ksStacks?.chain_blaze ?? 0)));
     e.hp -= bd;
     next.dmgDealt += bd;
     next.log.push({ x: '  🔥 火傷 ' + bd, c: 'tc' });
@@ -114,6 +116,12 @@ export function tickRegenPhase(next: RunState, events: TickEvent[], sb: SynergyB
 
 /** 敵攻撃フェーズ */
 export function tickEnemyPhase(next: RunState, e: Enemy, events: TickEvent[], rng: () => number, sb: SynergyBonusResult): void {
+  // 永久凍結: 周期的に敵の攻撃を無効化する
+  if (isKeystoneFreezeTurn(next)) {
+    next.log.push({ x: '  🧊 永久凍結！敵の攻撃を無効化', c: 'lc' });
+    events.push({ type: 'sfx', sfx: 'envDmg' });
+    return;
+  }
   let ed = Math.max(1, e.atk - (next.def + sb.defBonus));
   // shield バフ適用
   const shieldBuff = next.sk.bfs.find(b => b.fx.t === 'shield');
@@ -131,6 +139,13 @@ export function tickEnemyPhase(next: RunState, e: Enemy, events: TickEvent[], rn
   next.hp -= ed;
   next.dmgTaken += ed;
   next.log.push({ x: '🩸 ' + e.n + ' → ' + ed, c: 'xc' });
+  // 棘の守護: 被ダメージの一部を敵へ反射
+  const reflect = keystoneReflectDmg(next, ed);
+  if (reflect > 0) {
+    e.hp -= reflect;
+    next.dmgDealt += reflect;
+    next.log.push({ x: '  🛡️ 反射 ' + reflect, c: 'gc' });
+  }
   events.push({ type: 'sfx', sfx: 'plDmg' });
   events.push({ type: 'popup', v: ed, crit: false, heal: false, tgt: 'pl' });
 
@@ -152,6 +167,12 @@ export function tickEnemyPhase(next: RunState, e: Enemy, events: TickEvent[], rn
 /** 死亡判定（復活の儀チェック含む）。死亡した場合trueを返す */
 export function tickDeathCheck(next: RunState, events: TickEvent[]): boolean {
   if (next.hp <= 0) {
+    // 不滅の祈り: 戦闘ごと1回、致死をHP1で耐える
+    if (keystoneLethalGuard(next)) {
+      next.log.push({ x: '  ♻️ 不滅の祈り！HP1で生存', c: 'gc' });
+      events.push({ type: 'sfx', sfx: 'heal' });
+      return false;
+    }
     if (next.tb.rv && !next.rvU) {
       next.rvU = 1;
       next.hp = Math.floor(next.mhp * Math.max(0.3, 0.3 + (next.tb.rP || 0)));
@@ -199,6 +220,8 @@ export function tick(r: RunState, finalMode: boolean, rng = Math.random): TickRe
     e.hp = 0;
     next.bE += e.bone;
     next.kills++;
+    // キーストーンのキル時フック（狩人の蓄積・連鎖の業火のスタック更新）
+    onKeystoneKill(next);
     next.log.push({ x: '━━━ 💀 ' + e.n + ' 撃破！ 🦴+' + e.bone + ' ━━━', c: 'gc' });
     events.push({ type: 'sfx', sfx: 'kill' });
     events.push({ type: 'shake_enemy' });

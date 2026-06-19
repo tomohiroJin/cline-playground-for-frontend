@@ -50,6 +50,12 @@ export interface RunState extends
   burnDmgMul?: number;
   /** 仲間ATKボーナス（リクルート時に加算、既定0） */
   allyAtkBonus?: number;
+  /** 取得済みキーストーン */
+  keystones?: import('./keystone').KeystoneId[];
+  /** キーストーンの累積スタック値（晩成系。例: hunter_stack=累積ATK, chain_blaze=火傷倍率加算） */
+  ksStacks?: Record<string, number>;
+  /** 不滅の祈りの戦闘内使用済みフラグ（startBattle でリセット） */
+  ksGuardUsed?: boolean;
 }
 
 /** ゲーム全体ステート */
