@@ -42,6 +42,9 @@ export const PHASE_TRANSITIONS: Record<GamePhase, readonly GamePhase[]> = {
   stats: ['achievements', 'title'],
   achievements: ['title'],
   totem: ['biome', 'evo', 'title'],
+  // 節目提示は bc<3 のみ（reducer-helpers.transitionAfterBiome）。bc>=3 の
+  // endless_checkpoint には到達しないため意図的に含めない。bc>=3 でも提示する
+  // 変更を入れる場合は endless_checkpoint を追加すること。
   keystone: ['biome', 'evo', 'prefinal', 'title'],
 };
 
