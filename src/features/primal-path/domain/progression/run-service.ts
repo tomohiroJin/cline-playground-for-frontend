@@ -102,6 +102,7 @@ export function calcRunStats(
     totalHealing: run.totalHealing,
     evolutionCount: run.evs.length,
     synergyCount: synergies.length,
+    keystoneCount: run.keystones?.length ?? 0,
     eventCount: run.eventCount,
     skillUsageCount: run.skillUseCount,
     boneEarned,
