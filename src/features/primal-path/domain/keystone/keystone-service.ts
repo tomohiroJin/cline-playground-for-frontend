@@ -47,3 +47,15 @@ export function keystonePlayerAtkMods(r: RunState): { flatAdd: number; mult: num
 
   return { flatAdd, mult };
 }
+
+/** 敵撃破時のキーストーン処理（破壊的。スタック更新） */
+export function onKeystoneKill(r: RunState): void {
+  // キーストーン未所持なら早期リターン（既存挙動に影響しない）
+  if (!r.keystones?.length) return;
+  const stacks: Record<string, number> = { ...(r.ksStacks ?? {}) };
+  // 狩人の蓄積: キルごとに ATK スタック +3（battle 終了まで永続）
+  if (hasKeystone(r, 'hunter_stack')) stacks.hunter_stack = (stacks.hunter_stack ?? 0) + 3;
+  // 連鎖の業火: 火傷状態（r.burn）でのキルで火傷ダメージ倍率が +0.2（ラン中永続）
+  if (hasKeystone(r, 'chain_blaze') && r.burn) stacks.chain_blaze = (stacks.chain_blaze ?? 0) + 0.2;
+  r.ksStacks = stacks;
+}

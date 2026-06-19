@@ -8,7 +8,7 @@ import type { SynergyBonusResult } from '../evolution/synergy-service';
 import { ENV_DMG } from '../../constants';
 import { calcEnvDmg, calcPlayerAtk, aliveAllies, RIT_LOW_HP_RATIO } from './combat-calculator';
 import { calcSynergies, applySynergyBonuses } from '../evolution/synergy-service';
-import { keystonePlayerAtkMods } from '../keystone/keystone-service';
+import { keystonePlayerAtkMods, onKeystoneKill } from '../keystone/keystone-service';
 import { tickBuffs } from '../skill/skill-service';
 import { deepCloneRun } from '../shared/utils';
 import { requireValidPlayer } from '../../contracts/player-contracts';
@@ -75,8 +75,8 @@ export function tickPlayerPhase(next: RunState, e: Enemy, events: TickEvent[], r
   events.push({ type: 'popup', v: dm, crit: pa.crit, heal: false, tgt: 'en' });
 
   if (next.burn) {
-    // burnDmgMul が未設定の場合は 1 として既存挙動を維持
-    const bd = Math.floor(pa.dmg * 0.2 * sb.burnMul * (next.burnDmgMul ?? 1));
+    // burnDmgMul が未設定の場合は 1 として既存挙動を維持。chain_blaze スタックで倍率を追加積算
+    const bd = Math.floor(pa.dmg * 0.2 * sb.burnMul * (next.burnDmgMul ?? 1) * (1 + (next.ksStacks?.chain_blaze ?? 0)));
     e.hp -= bd;
     next.dmgDealt += bd;
     next.log.push({ x: '  🔥 火傷 ' + bd, c: 'tc' });
@@ -201,6 +201,8 @@ export function tick(r: RunState, finalMode: boolean, rng = Math.random): TickRe
     e.hp = 0;
     next.bE += e.bone;
     next.kills++;
+    // キーストーンのキル時フック（狩人の蓄積・連鎖の業火のスタック更新）
+    onKeystoneKill(next);
     next.log.push({ x: '━━━ 💀 ' + e.n + ' 撃破！ 🦴+' + e.bone + ' ━━━', c: 'gc' });
     events.push({ type: 'sfx', sfx: 'kill' });
     events.push({ type: 'shake_enemy' });

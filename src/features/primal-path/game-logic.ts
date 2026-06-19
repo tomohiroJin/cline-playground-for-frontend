@@ -49,7 +49,7 @@ export { pickBiomeAuto, applyBiomeSelection, applyFirstBiome, applyAutoLastBiome
 export { applyTotem } from './domain/totem/totem-service';
 
 // キーストーンサービス
-export { hasKeystone, applyKeystone, resetKeystoneBattleState, keystonePlayerAtkMods } from './domain/keystone/keystone-service';
+export { hasKeystone, applyKeystone, resetKeystoneBattleState, keystonePlayerAtkMods, onKeystoneKill } from './domain/keystone/keystone-service';
 
 // ツリーサービス
 export { getTB, tbSummary, bestDiffLabel } from './domain/progression/tree-service';

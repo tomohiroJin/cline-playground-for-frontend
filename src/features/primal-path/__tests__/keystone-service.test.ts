@@ -29,7 +29,7 @@ describe('KEYSTONES 定数', () => {
   });
 });
 
-import { hasKeystone, applyKeystone, keystonePlayerAtkMods } from '../game-logic';
+import { hasKeystone, applyKeystone, keystonePlayerAtkMods, onKeystoneKill } from '../game-logic';
 import { makeRun } from './test-helpers';
 
 describe('applyKeystone / hasKeystone', () => {
@@ -87,5 +87,30 @@ describe('keystonePlayerAtkMods', () => {
   it('キーストーン無しなら flatAdd=0, mult=1', () => {
     const r = makeRun({ keystones: [] });
     expect(keystonePlayerAtkMods(r)).toEqual({ flatAdd: 0, mult: 1 });
+  });
+});
+
+describe('onKeystoneKill', () => {
+  it('狩人の蓄積: キルで ksStacks.hunter_stack が +3 される', () => {
+    const r = makeRun({ keystones: ['hunter_stack'], ksStacks: {} });
+    onKeystoneKill(r);
+    onKeystoneKill(r);
+    expect(r.ksStacks?.hunter_stack).toBe(6);
+  });
+
+  it('連鎖の業火: 火傷中のキルで chain_blaze が +0.2、非火傷では増えない', () => {
+    const burning = makeRun({ keystones: ['chain_blaze'], burn: 1, ksStacks: {} });
+    onKeystoneKill(burning);
+    expect(burning.ksStacks?.chain_blaze).toBeCloseTo(0.2, 5);
+
+    const notBurning = makeRun({ keystones: ['chain_blaze'], burn: 0, ksStacks: {} });
+    onKeystoneKill(notBurning);
+    expect(notBurning.ksStacks?.chain_blaze ?? 0).toBe(0);
+  });
+
+  it('キーストーン未所持の場合は何もしない', () => {
+    const r = makeRun({ keystones: [], ksStacks: {} });
+    onKeystoneKill(r);
+    expect(r.ksStacks).toEqual({});
   });
 });
