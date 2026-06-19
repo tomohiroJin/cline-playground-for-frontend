@@ -80,4 +80,6 @@ export interface GameState {
   newAchievements: string[];
   /** トーテム選択前に保持する開始パラメータ */
   pendingStart?: { di: number; loopOverride: number; challengeId?: string } | null;
+  /** 節目で提示中のキーストーン3択 */
+  keystonePicks?: import('./keystone').KeystoneDef[];
 }

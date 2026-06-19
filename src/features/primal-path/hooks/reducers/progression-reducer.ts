@@ -6,9 +6,10 @@ import type { ProgressionAction } from '../actions';
 import {
   startRunState, startFinalBoss,
   applyBiomeSelection, applyChallenge,
+  applyKeystone,
 } from '../../game-logic';
 import { CHALLENGES } from '../../constants';
-import { transitionAfterBiome, transitionToEvoPicks, setupInitialRun } from '../reducer-helpers';
+import { transitionAfterBiome, transitionToEvoPicks, setupInitialRun, continueAfterBiome } from '../reducer-helpers';
 
 export function progressionReducer(state: GameState, action: ProgressionAction): GameState {
   switch (action.type) {
@@ -54,6 +55,12 @@ export function progressionReducer(state: GameState, action: ProgressionAction):
     case 'BIOME_CLEARED': {
       if (!state.run) return state;
       return transitionAfterBiome(state, state.run);
+    }
+
+    case 'SELECT_KEYSTONE': {
+      if (!state.run) return state;
+      const run = applyKeystone(state.run, action.id);
+      return continueAfterBiome({ ...state, keystonePicks: [] }, run);
     }
 
     case 'SET_PHASE':

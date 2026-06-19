@@ -30,6 +30,7 @@ import { StatsScreen } from './components/StatsScreen';
 import { AchievementScreen } from './components/AchievementScreen';
 import { ChallengeScreen } from './components/ChallengeScreen';
 import { TotemSelectScreen } from './components/TotemSelectScreen';
+import { KeystoneScreen } from './components/KeystoneScreen';
 
 function GameInner() {
   const { state, dispatch } = useGameState();
@@ -157,6 +158,10 @@ function GameInner() {
             dispatch={dispatch}
             playSfx={playSfx}
           />
+        )}
+
+        {phase === 'keystone' && state.keystonePicks && state.keystonePicks.length > 0 && (
+          <KeystoneScreen picks={state.keystonePicks} dispatch={dispatch} playSfx={playSfx} />
         )}
 
         {phase === 'how' && (

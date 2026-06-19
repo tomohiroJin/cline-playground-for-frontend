@@ -36,6 +36,8 @@ export interface RunStats {
   challengeId: string | undefined;
   /** エンドレスモード到達ウェーブ（非エンドレスなら undefined） */
   endlessWave: number | undefined;
+  /** 取得キーストーン数 */
+  keystoneCount?: number;
 }
 
 /** 累計統計（実績判定に使用） */

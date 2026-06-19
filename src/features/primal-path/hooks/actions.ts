@@ -5,7 +5,7 @@
  */
 import type {
   GamePhase, RunState, Evolution, SaveData,
-  BiomeId, ASkillId, EventChoice, RandomEventDef, TotemId,
+  BiomeId, ASkillId, EventChoice, RandomEventDef, TotemId, KeystoneId,
 } from '../types';
 
 /* ===== 戦闘アクション ===== */
@@ -61,12 +61,13 @@ export type ProgressionAction =
   | { type: 'PICK_BIOME'; biome: BiomeId }
   | { type: 'GO_FINAL_BOSS' }
   | { type: 'BIOME_CLEARED' }
+  | { type: 'SELECT_KEYSTONE'; id: KeystoneId }
   | { type: 'SET_PHASE'; phase: GamePhase };
 
 const PROGRESSION_TYPES: ReadonlySet<string> = new Set([
   'START_RUN', 'START_CHALLENGE', 'GO_TOTEM', 'GO_DIFF', 'GO_HOW', 'GO_TREE',
   'PREPARE_BIOME_SELECT', 'PICK_BIOME', 'GO_FINAL_BOSS', 'BIOME_CLEARED',
-  'SET_PHASE',
+  'SELECT_KEYSTONE', 'SET_PHASE',
 ]);
 
 /* ===== メタアクション ===== */

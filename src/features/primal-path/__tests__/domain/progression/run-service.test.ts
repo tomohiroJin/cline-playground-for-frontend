@@ -169,5 +169,27 @@ describe('domain/progression/run-service', () => {
       expect(stats.eventCount).toBe(3);
       expect(stats.skillUsageCount).toBe(7);
     });
+
+    it('取得済みキーストーン数を記録する', () => {
+      // Arrange
+      const run = makeRun({ keystones: ['madblood', 'thorn_guard'] });
+
+      // Act
+      const stats = calcRunStats(run, 'victory', 10);
+
+      // Assert
+      expect(stats.keystoneCount).toBe(2);
+    });
+
+    it('キーストーン未取得なら0', () => {
+      // Arrange
+      const run = makeRun({ keystones: [] });
+
+      // Act
+      const stats = calcRunStats(run, 'defeat', 1);
+
+      // Assert
+      expect(stats.keystoneCount).toBe(0);
+    });
   });
 });
