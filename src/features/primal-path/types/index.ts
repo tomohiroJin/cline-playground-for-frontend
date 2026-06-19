@@ -102,6 +102,9 @@ export type { TickResult, TickEvent, PlayerAttackResult } from './tick';
 // トーテム
 export type { TotemId, PowerCurve, TotemEffect, TotemDef } from './totem';
 
+// キーストーン
+export type { KeystoneId, KeystoneDef } from './keystone';
+
 // フェーズ
 export type { GamePhase } from './phase';
 export { PHASE_TRANSITIONS, isValidTransition, assertValidTransition } from './phase';

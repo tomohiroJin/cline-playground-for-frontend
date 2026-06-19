@@ -109,6 +109,10 @@ export type {
   TotemEffect,
   TotemDef,
 
+  // キーストーン
+  KeystoneId,
+  KeystoneDef,
+
   // ゲーム全体
   RunState,
   GameState,
