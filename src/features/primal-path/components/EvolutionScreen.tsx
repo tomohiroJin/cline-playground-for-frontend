@@ -1,20 +1,26 @@
 import React, { useMemo } from 'react';
-import type { RunState, Evolution, SfxType } from '../types';
+import type { RunState, Evolution, SfxType, KeystoneDef, KeystoneId, PowerCurve } from '../types';
 import type { GameAction } from '../hooks';
 import { BIO, TC, TN, CIV_TYPES, SYNERGY_TAG_INFO } from '../constants';
 import { effATK, simEvo, civLvs, civLv, awkInfo, calcSynergies } from '../game-logic';
 import { ProgressBar, StatPreview, CivBadge, AwakeningBadges, CivLevelsDisplay, StatLine, AffinityBadge, AllyList, SynergyBadges, SpeedControl, renderParticles } from './shared';
 import { Screen, SubTitle, EvoCard, GamePanel, GameButton, StatText, SpeedBar, Gc, BiomeBg, WeatherParticles } from '../styles';
 
+/** カーブの表示ラベル */
+const CURVE_LABEL: Readonly<Record<PowerCurve, string>> = {
+  front: '⚡ 即効', scaling: '🌱 晩成', combo: '🔗 コンボ', wild: '🃏 ワイルド',
+};
+
 interface Props {
   run: RunState;
   evoPicks: Evolution[];
+  evoKeystone?: KeystoneDef;
   dispatch: React.Dispatch<GameAction>;
   playSfx: (t: SfxType) => void;
   battleSpd: number;
 }
 
-export const EvolutionScreen: React.FC<Props> = ({ run, evoPicks, dispatch, playSfx, battleSpd }) => {
+export const EvolutionScreen: React.FC<Props> = ({ run, evoPicks, evoKeystone, dispatch, playSfx, battleSpd }) => {
   const m = BIO[run.cBT as keyof typeof BIO];
   const lvs = civLvs(run);
   const nxtA = awkInfo(run);
@@ -32,6 +38,11 @@ export const EvolutionScreen: React.FC<Props> = ({ run, evoPicks, dispatch, play
     if (after.length > before.length) playSfx('synergy');
     playSfx('evo');
     dispatch({ type: 'SELECT_EVO', evo: ev });
+  };
+
+  const handlePickKeystone = (id: KeystoneId) => {
+    playSfx('evo');
+    dispatch({ type: 'SELECT_DRAFT_KEYSTONE', id });
   };
 
   return (
@@ -131,6 +142,19 @@ export const EvolutionScreen: React.FC<Props> = ({ run, evoPicks, dispatch, play
           </EvoCard>
         );
       })}
+
+      {!isMaxEvoReached && evoKeystone && (
+        <EvoCard $rare onClick={() => handlePickKeystone(evoKeystone.id)}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <span style={{ fontSize: 12, color: '#f0c040' }}>💠 {evoKeystone.ic} {evoKeystone.nm}</span>{' '}
+              <span style={{ fontSize: 11, color: '#908870' }}>{evoKeystone.desc}</span>
+            </div>
+            <span style={{ fontSize: 8, color: '#988070' }}>{CURVE_LABEL[evoKeystone.curve]}</span>
+          </div>
+          <div style={{ fontSize: 7, color: '#d060ff', marginTop: 2 }}>キーストーン（ルールを変える）</div>
+        </EvoCard>
+      )}
 
       {(() => {
         const hints: React.ReactNode[] = [];
