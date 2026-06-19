@@ -16,3 +16,6 @@ export const KEYSTONES: readonly KeystoneDef[] = Object.freeze([
   Object.freeze({ id: 'undying_prayer' as const, nm: '不滅の祈り', ic: '♻️', tag: 'regen' as const, curve: 'wild' as const, desc: '戦闘ごと1回、致死をHP1で耐える' }),
   Object.freeze({ id: 'double_edge' as const, nm: '諸刃の進化', ic: '⚔️', tag: 'wild' as const, curve: 'wild' as const, desc: 'DEFを0にし、失ったDEF×3をATKへ' }),
 ]);
+
+/** 進化ドラフトにキーストーンが混入する確率（低確率） */
+export const DRAFT_KEYSTONE_RATE = 0.12;
