@@ -46,6 +46,8 @@ export function evolutionReducer(state: GameState, action: EvolutionAction): Gam
       // キーストーンを適用してバトルへ遷移する
       const run = applyKeystone(state.run, action.id);
       const battleRun = startBattle(run, state.finalMode);
+      // evoKeystone は次に evo へ戻る際に必ず再ロールされる（全 evo 入口で rollDraftKeystone）。
+      // ここでの明示クリアは同一 evo 画面での二重描画を防ぐ保険。
       return { ...state, run: battleRun, phase: 'battle', evoKeystone: undefined };
     }
 
