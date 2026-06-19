@@ -158,3 +158,35 @@ describe('keystoneLethalGuard', () => {
     expect(keystoneLethalGuard(makeRun({ hp: 0, keystones: [] }))).toBe(false);
   });
 });
+
+import { unownedKeystones, shouldOfferKeystone, rollKeystones } from '../game-logic';
+
+describe('キーストーン抽選', () => {
+  it('unownedKeystones は取得済みを除外する', () => {
+    const owned = KEYSTONES.slice(0, 2).map(k => k.id);
+    const r = makeRun({ keystones: owned });
+    const un = unownedKeystones(r);
+    expect(un).toHaveLength(KEYSTONES.length - 2);
+    expect(un.some(k => owned.includes(k.id))).toBe(false);
+  });
+
+  it('shouldOfferKeystone は未取得が残れば true、全取得で false', () => {
+    expect(shouldOfferKeystone(makeRun({ keystones: [] }))).toBe(true);
+    expect(shouldOfferKeystone(makeRun({ keystones: KEYSTONES.map(k => k.id) }))).toBe(false);
+  });
+
+  it('rollKeystones は最大3択・distinct・未取得のみ', () => {
+    const r = makeRun({ keystones: [] });
+    const picks = rollKeystones(r, () => 0);
+    expect(picks).toHaveLength(3);
+    const ids = picks.map(p => p.id);
+    expect(new Set(ids).size).toBe(3);
+    expect(picks.every(p => !r.keystones?.includes(p.id))).toBe(true);
+  });
+
+  it('未取得が3未満なら残り全てを返す', () => {
+    const owned = KEYSTONES.slice(0, KEYSTONES.length - 2).map(k => k.id);
+    const picks = rollKeystones(makeRun({ keystones: owned }), () => 0);
+    expect(picks).toHaveLength(2);
+  });
+});

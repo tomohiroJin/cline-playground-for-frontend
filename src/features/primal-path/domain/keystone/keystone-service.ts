@@ -6,7 +6,8 @@
  * 注: applyKeystone は純粋関数。一方、ティック内フック（resetKeystoneBattleState・
  * onKeystoneKill・keystoneLethalGuard）は deepClone 済みの RunState を破壊的に更新する。
  */
-import type { RunState, KeystoneId } from '../../types';
+import type { RunState, KeystoneId, KeystoneDef } from '../../types';
+import { KEYSTONES, TOTEMS } from '../../constants';
 import { aliveAllies } from '../battle/combat-calculator';
 
 /** 指定キーストーンを取得済みか */
@@ -79,4 +80,39 @@ export function onKeystoneKill(r: RunState): void {
   // 連鎖の業火: 火傷状態（r.burn）でのキルで火傷ダメージ倍率が +0.2（ラン中永続）
   if (hasKeystone(r, 'chain_blaze') && r.burn) stacks.chain_blaze = (stacks.chain_blaze ?? 0) + 0.2;
   r.ksStacks = stacks;
+}
+
+/** 未取得のキーストーン一覧を返す */
+export function unownedKeystones(r: RunState): KeystoneDef[] {
+  return KEYSTONES.filter(k => !hasKeystone(r, k.id));
+}
+
+/** 節目でキーストーンを提示すべきか（未取得が残っているか） */
+export function shouldOfferKeystone(r: RunState): boolean {
+  return unownedKeystones(r).length > 0;
+}
+
+/** 節目の3択を抽選する（最大3・distinct・トーテム curve 一致を重み2で優先） */
+export function rollKeystones(r: RunState, rng: () => number = Math.random): KeystoneDef[] {
+  const pool = unownedKeystones(r);
+  // 未取得が3以下なら残り全てを返す
+  if (pool.length <= 3) return pool;
+
+  const totemCurve = TOTEMS.find(t => t.id === r.totemId)?.curve;
+  const avail = [...pool];
+  const result: KeystoneDef[] = [];
+  while (result.length < 3 && avail.length > 0) {
+    // curve 一致を重み2、それ以外を重み1とした重み付き抽選
+    const weights = avail.map(k => (totemCurve && k.curve === totemCurve ? 2 : 1));
+    const total = weights.reduce((a, b) => a + b, 0);
+    let pick = rng() * total;
+    let idx = 0;
+    while (idx < weights.length - 1 && pick >= weights[idx]) {
+      pick -= weights[idx];
+      idx++;
+    }
+    result.push(avail[idx]);
+    avail.splice(idx, 1);
+  }
+  return result;
 }
