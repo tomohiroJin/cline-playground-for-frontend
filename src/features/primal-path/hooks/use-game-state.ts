@@ -28,6 +28,7 @@ export function initialState(): GameState {
     achievementStates: [],
     newAchievements: [],
     pendingStart: null,
+    keystonePicks: [],
   };
 }
 
