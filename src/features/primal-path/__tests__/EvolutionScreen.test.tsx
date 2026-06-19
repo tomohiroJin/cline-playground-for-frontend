@@ -127,6 +127,13 @@ describe('EvolutionScreen', () => {
 describe('EvolutionScreen — ドラフトキーストーン', () => {
   // 既存テストの run/evoPicks 生成ヘルパーに合わせて最小の run を用意すること
   const baseRun = makeRun({ evs: [], cBT: 'grassland', cW: 1, wpb: 5 });
+  const mockDispatch = jest.fn<void, [GameAction]>();
+  const mockPlaySfx = jest.fn<void, [SfxType]>();
+
+  beforeEach(() => {
+    mockDispatch.mockClear();
+    mockPlaySfx.mockClear();
+  });
 
   it('evoKeystone があれば専用カード（名前）を表示する', () => {
     render(
@@ -137,15 +144,15 @@ describe('EvolutionScreen — ドラフトキーストーン', () => {
   });
 
   it('キーストーンカードのクリックで SELECT_DRAFT_KEYSTONE を dispatch する', () => {
-    const dispatch = jest.fn();
     render(
       <EvolutionScreen run={baseRun} evoPicks={[]} evoKeystone={KEYSTONES[0]}
-        dispatch={dispatch} playSfx={jest.fn()} battleSpd={750} />,
+        dispatch={mockDispatch} playSfx={mockPlaySfx} battleSpd={750} />,
     );
     fireEvent.click(screen.getByText(KEYSTONES[0].nm, { exact: false }));
-    expect(dispatch).toHaveBeenCalledWith(
+    expect(mockDispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'SELECT_DRAFT_KEYSTONE', id: KEYSTONES[0].id }),
     );
+    expect(mockPlaySfx).toHaveBeenCalledWith('evo');
   });
 
   it('evoKeystone が undefined ならキーストーンカードを表示しない', () => {
