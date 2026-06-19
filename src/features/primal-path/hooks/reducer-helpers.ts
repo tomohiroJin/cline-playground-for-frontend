@@ -7,14 +7,27 @@ import type { GameState, RunState, SaveData, RunStats, AggregateStats, Achieveme
 import {
   pickBiomeAuto, applyAutoLastBiome, applyFirstBiome, rollE,
   calcSynergies, checkAchievement,
+  shouldOfferKeystone, rollKeystones,
 } from '../game-logic';
 import { ACHIEVEMENTS } from '../constants';
 
 /** 100%復活時のコスト倍率 */
 export const FULL_REVIVE_COST_MULTIPLIER = 1.8;
 
-/** バイオーム遷移後の状態を決定する */
+/** バイオーム踏破後の状態を決定する（節目キーストーン提示を挟む） */
 export function transitionAfterBiome(state: GameState, run: RunState): GameState {
+  // bc >= 3 は prefinal/endless_checkpoint へ直行（節目スキップ）
+  if (run.bc < 3 && shouldOfferKeystone(run)) {
+    const keystonePicks = rollKeystones(run);
+    if (keystonePicks.length > 0) {
+      return { ...state, run, phase: 'keystone', keystonePicks };
+    }
+  }
+  return continueAfterBiome(state, run);
+}
+
+/** キーストーン提示後の遷移先（最終ボス準備/バイオーム選択/進化）を決定する */
+export function continueAfterBiome(state: GameState, run: RunState): GameState {
   if (run.bc >= 3) {
     // エンドレスモード: チェックポイント画面で続行/終了を選択させる
     if (run.isEndless) {

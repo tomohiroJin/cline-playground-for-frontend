@@ -484,9 +484,39 @@ describe('FB#11: LOOP_SCALE_FACTOR 定数', () => {
   });
 });
 
-/* ===== トーテム開始フロー ===== */
+/* ===== キーストーン節目フロー ===== */
 
 import { initialState } from '../hooks/use-game-state';
+import { KEYSTONES } from '../constants';
+
+describe('キーストーン節目フロー', () => {
+  it('バイオーム踏破で未取得があれば keystone フェーズへ遷移し3択を持つ', () => {
+    const run = makeRun({ bc: 1, keystones: [], bms: ['grassland', 'glacier', 'volcano'], cBT: 'grassland' });
+    const s0 = { ...initialState(), phase: 'battle' as const, run };
+    const s1 = gameReducer(s0, { type: 'BIOME_CLEARED' });
+    expect(s1.phase).toBe('keystone');
+    expect(s1.keystonePicks && s1.keystonePicks.length).toBeGreaterThan(0);
+  });
+
+  it('SELECT_KEYSTONE で applyKeystone され、節目フェーズを抜ける', () => {
+    const run = makeRun({ bc: 1, keystones: [], bms: ['grassland', 'glacier', 'volcano'], cBT: 'grassland' });
+    const s0 = { ...initialState(), phase: 'keystone' as const, run,
+      keystonePicks: KEYSTONES.slice(0, 3) };
+    const s1 = gameReducer(s0, { type: 'SELECT_KEYSTONE', id: KEYSTONES[0].id });
+    expect(s1.run?.keystones).toContain(KEYSTONES[0].id);
+    expect(s1.phase).not.toBe('keystone');
+  });
+
+  it('全キーストーン取得済みなら keystone フェーズをスキップして通常遷移', () => {
+    const run = makeRun({ bc: 1, keystones: KEYSTONES.map(k => k.id),
+      bms: ['grassland', 'glacier', 'volcano'], cBT: 'grassland' });
+    const s0 = { ...initialState(), phase: 'battle' as const, run };
+    const s1 = gameReducer(s0, { type: 'BIOME_CLEARED' });
+    expect(s1.phase).not.toBe('keystone');
+  });
+});
+
+/* ===== トーテム開始フロー ===== */
 
 describe('トーテム開始フロー', () => {
   it('GO_TOTEM で phase=totem になり pendingStart が記録される', () => {
