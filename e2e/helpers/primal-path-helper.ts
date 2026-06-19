@@ -13,6 +13,7 @@ const NOTICE_STORAGE_KEY = 'game-notice-accepted:/primal-path';
 const PHASE_MARKERS = {
   title: '原始進化録',
   diff: 'ステージ選択',
+  totem: '始祖トーテムを選べ',
   battle: 'Wave',
   evo: '進化を選べ',
   biome: '次のバイオームを選べ',
@@ -49,13 +50,22 @@ export class PrimalPathHelper {
 
   /* ========== タイトル画面 ========== */
 
-  /** ランを開始する（タイトル→難易度選択→ステージクリック） */
+  /** ランを開始する（タイトル→難易度選択→ステージクリック→始祖トーテム選択） */
   async startRun(difficulty?: string): Promise<void> {
     await this.page.getByRole('button', { name: /はじめる/ }).click();
     await expect(this.page.getByText(PHASE_MARKERS.diff)).toBeVisible({ timeout: 5_000 });
 
     const stageSelector = difficulty ?? '原始';
     await this.page.getByText(stageSelector).first().click();
+
+    // 難易度選択後に始祖トーテム選択画面が挟まるため、トーテムを1つ選んでランを開始する
+    await this.selectTotem();
+  }
+
+  /** 始祖トーテムを選択する（既定: 血の祖） */
+  async selectTotem(totemName = '血の祖'): Promise<void> {
+    await expect(this.page.getByText(PHASE_MARKERS.totem)).toBeVisible({ timeout: 5_000 });
+    await this.page.getByText(totemName).first().click();
   }
 
   /** 文明ツリー画面に遷移する */
