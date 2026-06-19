@@ -8,7 +8,7 @@ import type { SynergyBonusResult } from '../evolution/synergy-service';
 import { ENV_DMG } from '../../constants';
 import { calcEnvDmg, calcPlayerAtk, aliveAllies, RIT_LOW_HP_RATIO } from './combat-calculator';
 import { calcSynergies, applySynergyBonuses } from '../evolution/synergy-service';
-import { keystonePlayerAtkMods, onKeystoneKill, keystoneReflectDmg, isKeystoneFreezeTurn } from '../keystone/keystone-service';
+import { keystonePlayerAtkMods, onKeystoneKill, keystoneReflectDmg, isKeystoneFreezeTurn, keystoneLethalGuard } from '../keystone/keystone-service';
 import { tickBuffs } from '../skill/skill-service';
 import { deepCloneRun } from '../shared/utils';
 import { requireValidPlayer } from '../../contracts/player-contracts';
@@ -167,6 +167,12 @@ export function tickEnemyPhase(next: RunState, e: Enemy, events: TickEvent[], rn
 /** 死亡判定（復活の儀チェック含む）。死亡した場合trueを返す */
 export function tickDeathCheck(next: RunState, events: TickEvent[]): boolean {
   if (next.hp <= 0) {
+    // 不滅の祈り: 戦闘ごと1回、致死をHP1で耐える
+    if (keystoneLethalGuard(next)) {
+      next.log.push({ x: '  ♻️ 不滅の祈り！HP1で生存', c: 'gc' });
+      events.push({ type: 'sfx', sfx: 'heal' });
+      return false;
+    }
     if (next.tb.rv && !next.rvU) {
       next.rvU = 1;
       next.hp = Math.floor(next.mhp * Math.max(0.3, 0.3 + (next.tb.rP || 0)));

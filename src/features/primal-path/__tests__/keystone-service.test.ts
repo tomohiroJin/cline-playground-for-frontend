@@ -140,3 +140,21 @@ describe('isKeystoneFreezeTurn', () => {
     expect(isKeystoneFreezeTurn(makeRun({ wTurn: 4, keystones: [] }))).toBe(false);
   });
 });
+
+import { keystoneLethalGuard } from '../game-logic';
+
+describe('keystoneLethalGuard', () => {
+  it('不滅の祈り: 未使用なら hp=1 で耐え、ksGuardUsed が立つ', () => {
+    const r = makeRun({ hp: 0, keystones: ['undying_prayer'], ksGuardUsed: false });
+    expect(keystoneLethalGuard(r)).toBe(true);
+    expect(r.hp).toBe(1);
+    expect(r.ksGuardUsed).toBe(true);
+  });
+  it('使用済みなら耐えない', () => {
+    const r = makeRun({ hp: 0, keystones: ['undying_prayer'], ksGuardUsed: true });
+    expect(keystoneLethalGuard(r)).toBe(false);
+  });
+  it('キーストーン無しは耐えない', () => {
+    expect(keystoneLethalGuard(makeRun({ hp: 0, keystones: [] }))).toBe(false);
+  });
+});

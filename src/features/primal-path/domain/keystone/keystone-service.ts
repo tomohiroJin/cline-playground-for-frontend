@@ -59,6 +59,14 @@ export function isKeystoneFreezeTurn(r: RunState): boolean {
   return hasKeystone(r, 'eternal_freeze') && r.wTurn > 0 && r.wTurn % 4 === 0;
 }
 
+/** 致死ダメージを HP1 で耐えるか（不滅の祈り）。耐えた場合 true（破壊的） */
+export function keystoneLethalGuard(r: RunState): boolean {
+  if (!hasKeystone(r, 'undying_prayer') || r.ksGuardUsed) return false;
+  r.hp = 1;
+  r.ksGuardUsed = true;
+  return true;
+}
+
 /** 敵撃破時のキーストーン処理（破壊的。スタック更新） */
 export function onKeystoneKill(r: RunState): void {
   // キーストーン未所持なら早期リターン（既存挙動に影響しない）
