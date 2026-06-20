@@ -227,3 +227,21 @@ describe('afterBattle — 種火の踏破フック', () => {
     expect(nextRun.atk).toBe(100);
   });
 });
+
+describe('バランスガードレール — 種火の線形成長', () => {
+  it('bc=5 で base×1.6 になる（線形・非指数）', () => {
+    // emberBase=100 のステを 5 回踏破。各回 +floor(100×0.12)=12 → 100 + 12×5 = 160
+    let r = makeRun({ atk: 100, def: 100, mhp: 100, hp: 100, totemId: 'ember', emberBase: { atk: 100, def: 100, mhp: 100 } });
+    for (let i = 0; i < 5; i++) r = applyEmberBiomeScale(r);
+    expect(r.atk).toBe(160); // base×1.6（指数なら 100×1.12^5≈176 になるはず）
+    expect(r.def).toBe(160);
+    expect(r.mhp).toBe(160);
+  });
+
+  it('上位トーテムのステ倍率が極端でない（atkMul は 0.7〜1.3 の範囲）', () => {
+    const r1 = applyTotem(makeRun({ atk: 100 }), 'ember');
+    expect(r1.atk).toBeGreaterThanOrEqual(70);  // 種火は -30% 始動
+    const r2 = applyTotem(makeRun({ atk: 100 }), 'blood');
+    expect(r2.atk).toBeLessThanOrEqual(130);    // 血の祖でも +30% 以内
+  });
+});
