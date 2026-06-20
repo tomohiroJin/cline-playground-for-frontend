@@ -103,6 +103,7 @@ export function calcRunStats(
     evolutionCount: run.evs.length,
     synergyCount: synergies.length,
     keystoneCount: run.keystones?.length ?? 0,
+    totemId: run.totemId,
     eventCount: run.eventCount,
     skillUsageCount: run.skillUseCount,
     boneEarned,

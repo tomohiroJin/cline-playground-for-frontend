@@ -38,6 +38,8 @@ export interface RunStats {
   endlessWave: number | undefined;
   /** 取得キーストーン数 */
   keystoneCount?: number;
+  /** 選択した始祖トーテム */
+  totemId?: import('./totem').TotemId;
 }
 
 /** 累計統計（実績判定に使用） */

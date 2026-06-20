@@ -4,7 +4,7 @@
 import React from 'react';
 import type { RunStats, AggregateStats, SfxType } from '../types';
 import type { GameAction } from '../hooks';
-import { DIFFS } from '../constants';
+import { DIFFS, TOTEMS } from '../constants';
 import { Screen, SubTitle, Divider, GameButton, GamePanel, RunStatRow, Gc } from '../styles';
 
 interface Props {
@@ -52,11 +52,15 @@ export const StatsScreen: React.FC<Props> = ({ runStats, aggregate, dispatch, pl
           const diff = DIFFS[s.difficulty];
           const icon = s.result === 'victory' ? '✅' : '❌';
           const awk = s.awakening ? ` / ${s.awakening}` : '';
+          const totem = s.totemId ? TOTEMS.find(t => t.id === s.totemId) : undefined;
+          const totemLabel = totem ? ` ${totem.ic}` : '';
+          const ksLabel = s.keystoneCount && s.keystoneCount > 0 ? ` 🔑${s.keystoneCount}` : '';
           return (
             <div key={s.id} style={{ fontSize: 11, padding: '3px 0', borderBottom: '1px solid #1a1a22', color: '#a89878' }}>
               <span>{icon} </span>
               <span>{diff?.ic ?? ''} {diff?.n ?? ''}</span>
               <span>{awk}</span>
+              <span>{totemLabel}{ksLabel}</span>
               <span style={{ float: 'right', color: '#988070' }}>
                 {s.biomeCount}面 {s.totalKills}体 {formatTime(s.playtimeSeconds)}
               </span>
