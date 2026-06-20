@@ -192,6 +192,22 @@ export function tickDeathCheck(next: RunState, events: TickEvent[]): boolean {
 
 /* ===== メインティック ===== */
 
+/** 敵撃破を確定し TickResult を返す（破壊的。通常キルと反射killの両方から呼ぶ） */
+function resolveEnemyDefeat(next: RunState, e: Enemy, events: TickEvent[], finalMode: boolean): TickResult {
+  e.hp = 0;
+  next.bE += e.bone;
+  next.kills++;
+  // キーストーンのキル時フック（狩人の蓄積・連鎖の業火のスタック更新）
+  onKeystoneKill(next);
+  next.log.push({ x: '━━━ 💀 ' + e.n + ' 撃破！ 🦴+' + e.bone + ' ━━━', c: 'gc' });
+  events.push({ type: 'sfx', sfx: 'kill' });
+  events.push({ type: 'shake_enemy' });
+  events.push(finalMode ? { type: 'final_boss_killed' } : { type: 'enemy_killed' });
+  const result = { nextRun: next, events };
+  if (process.env.NODE_ENV !== 'production') ensureTickResult(result);
+  return result;
+}
+
 /** 1ターン分の戦闘処理 */
 export function tick(r: RunState, finalMode: boolean, rng = Math.random): TickResult {
   if (process.env.NODE_ENV !== 'production') {
@@ -215,24 +231,9 @@ export function tick(r: RunState, finalMode: boolean, rng = Math.random): TickRe
   tickAllyPhase(next, e, events, sb);
   tickRegenPhase(next, events, sb);
 
-  // 敵撃破判定
+  // 敵撃破判定（プレイヤー/仲間/再生フェーズ後）
   if (e.hp <= 0) {
-    e.hp = 0;
-    next.bE += e.bone;
-    next.kills++;
-    // キーストーンのキル時フック（狩人の蓄積・連鎖の業火のスタック更新）
-    onKeystoneKill(next);
-    next.log.push({ x: '━━━ 💀 ' + e.n + ' 撃破！ 🦴+' + e.bone + ' ━━━', c: 'gc' });
-    events.push({ type: 'sfx', sfx: 'kill' });
-    events.push({ type: 'shake_enemy' });
-    if (finalMode) {
-      events.push({ type: 'final_boss_killed' });
-    } else {
-      events.push({ type: 'enemy_killed' });
-    }
-    const result = { nextRun: next, events };
-    if (process.env.NODE_ENV !== 'production') ensureTickResult(result);
-    return result;
+    return resolveEnemyDefeat(next, e, events, finalMode);
   }
 
   tickEnemyPhase(next, e, events, rng, sb);
@@ -240,6 +241,11 @@ export function tick(r: RunState, finalMode: boolean, rng = Math.random): TickRe
   if (tickDeathCheck(next, events)) {
     // 死亡時は hp=0 に正規化済み
     return { nextRun: next, events };
+  }
+
+  // 棘の守護などの反射で敵が倒れた場合、同一tick内で撃破を確定する（プレイヤー生存が前提）
+  if (e.hp <= 0) {
+    return resolveEnemyDefeat(next, e, events, finalMode);
   }
 
   // ログトリム
