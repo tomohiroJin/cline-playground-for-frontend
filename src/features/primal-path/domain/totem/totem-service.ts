@@ -63,3 +63,19 @@ export function applyTotem(r: RunState, totemId: TotemId): RunState {
 
   return next;
 }
+
+/**
+ * 種火の祖の踏破スケールを適用する（純粋）。
+ *
+ * emberBase×biomeScale を ATK/DEF/最大HP に加算する線形スケール。
+ * 最大HP増加分は現在HPにも加算する（差分回復）。
+ * 種火の祖でない、または emberBase 未設定なら元の RunState を返す。
+ */
+export function applyEmberBiomeScale(r: RunState): RunState {
+  const scale = TOTEMS.find(t => t.id === r.totemId)?.effect.biomeScale;
+  if (!scale || !r.emberBase) return r;
+  const dAtk = Math.floor(r.emberBase.atk * scale);
+  const dDef = Math.floor(r.emberBase.def * scale);
+  const dMhp = Math.floor(r.emberBase.mhp * scale);
+  return { ...r, atk: r.atk + dAtk, def: r.def + dDef, mhp: r.mhp + dMhp, hp: r.hp + dMhp };
+}

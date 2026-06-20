@@ -11,6 +11,7 @@ import { calcEndlessScaleWithAM } from '../progression/biome-service';
 import { deepCloneRun } from '../shared/utils';
 import { requireValidPlayer } from '../../contracts/player-contracts';
 import { resetKeystoneBattleState } from '../keystone/keystone-service';
+import { applyEmberBiomeScale } from '../totem/totem-service';
 
 /** バトル開始処理（敵生成・バトル状態初期化） */
 export function startBattle(r: RunState, _finalMode: boolean): RunState {
@@ -60,10 +61,12 @@ export function afterBattle(r: RunState): { nextRun: RunState; biomeCleared: boo
   if (boss) {
     // ボス撃破 → 即バイオームクリア
     next.bc++;
-    const rec = Math.floor(next.mhp * 0.2);
-    next.hp = Math.min(next.hp + rec, next.mhp);
-    next.cW = 0;
-    return { nextRun: next, biomeCleared: true };
+    // 種火の祖: 踏破スケールを適用（種火以外は素通り）
+    const scaled = applyEmberBiomeScale(next);
+    scaled.cW = 0;
+    const rec = Math.floor(scaled.mhp * 0.2);
+    scaled.hp = Math.min(scaled.hp + rec, scaled.mhp);
+    return { nextRun: scaled, biomeCleared: true };
   }
   return { nextRun: next, biomeCleared: false };
 }

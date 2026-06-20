@@ -175,3 +175,55 @@ describe('applyTotem — 種火の祖', () => {
     expect(r.emberBase).toEqual({ atk: 70, def: 10, mhp: 200 });
   });
 });
+
+import { applyEmberBiomeScale } from '../game-logic';
+
+describe('applyEmberBiomeScale — 種火の踏破スケール', () => {
+  it('emberBase×0.12 を ATK/DEF/最大HP に加算し、Δmhp を現在HPにも加算する', () => {
+    const base = makeRun({
+      atk: 100, def: 10, mhp: 200, hp: 50,
+      totemId: 'ember', emberBase: { atk: 100, def: 10, mhp: 200 },
+    });
+    const r = applyEmberBiomeScale(base);
+    expect(r.atk).toBe(112); // 100 + floor(100×0.12)=12
+    expect(r.def).toBe(11);  // 10 + floor(10×0.12)=1
+    expect(r.mhp).toBe(224); // 200 + floor(200×0.12)=24
+    expect(r.hp).toBe(74);   // 50 + Δmhp(24)
+  });
+
+  it('種火の祖以外では変化しない', () => {
+    const base = makeRun({ atk: 100, totemId: 'blood' });
+    expect(applyEmberBiomeScale(base)).toBe(base);
+  });
+
+  it('emberBase 未設定なら変化しない', () => {
+    const base = makeRun({ atk: 100, totemId: 'ember' });
+    expect(applyEmberBiomeScale(base)).toBe(base);
+  });
+});
+
+import { afterBattle } from '../game-logic';
+
+describe('afterBattle — 種火の踏破フック', () => {
+  it('ボス撃破でバイオームクリア時、種火スケールが適用される', () => {
+    // cW > wpb でボス撃破扱い → bc++ とスケール適用
+    const base = makeRun({
+      cW: 5, wpb: 4, bc: 0, atk: 100, def: 10, mhp: 200, hp: 100,
+      totemId: 'ember', emberBase: { atk: 100, def: 10, mhp: 200 },
+    });
+    const { nextRun, biomeCleared } = afterBattle(base);
+    expect(biomeCleared).toBe(true);
+    expect(nextRun.bc).toBe(1);
+    expect(nextRun.atk).toBe(112); // 種火スケール +12
+    expect(nextRun.mhp).toBe(224); // 種火スケール +24
+    // hp: ember 100+Δmhp(24)=124 → ボス回復 floor(224×0.2)=44 → min(124+44,224)=168
+    expect(nextRun.hp).toBe(168);
+  });
+
+  it('種火以外ではボス撃破時もステは変化しない（bc のみ増加）', () => {
+    const base = makeRun({ cW: 5, wpb: 4, bc: 0, atk: 100, mhp: 200, hp: 100, totemId: 'blood' });
+    const { nextRun } = afterBattle(base);
+    expect(nextRun.bc).toBe(1);
+    expect(nextRun.atk).toBe(100);
+  });
+});
