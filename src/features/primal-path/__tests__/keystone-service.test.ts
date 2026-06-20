@@ -159,7 +159,7 @@ describe('keystoneLethalGuard', () => {
   });
 });
 
-import { unownedKeystones, shouldOfferKeystone, rollKeystones } from '../game-logic';
+import { unownedKeystones, shouldOfferKeystone, rollKeystones, keystoneRollWeight } from '../game-logic';
 import { rollDraftKeystone } from '../game-logic';
 import { DRAFT_KEYSTONE_RATE } from '../constants';
 
@@ -215,5 +215,31 @@ describe('rollDraftKeystone', () => {
   it('DRAFT_KEYSTONE_RATE は 0〜1 の低確率', () => {
     expect(DRAFT_KEYSTONE_RATE).toBeGreaterThan(0);
     expect(DRAFT_KEYSTONE_RATE).toBeLessThan(0.5);
+  });
+});
+
+describe('keystoneRollWeight — curve+tag 合算', () => {
+  const thorn = KEYSTONES.find(k => k.id === 'thorn_guard')!; // tag=shield, curve=combo
+  const madblood = KEYSTONES.find(k => k.id === 'madblood')!; // tag=wild,  curve=front
+
+  it('curve も tag も一致で重み3', () => {
+    // 岩の祖: curve=combo, tag=shield
+    expect(keystoneRollWeight('combo', 'shield', thorn)).toBe(3);
+  });
+
+  it('curve のみ一致で重み2', () => {
+    expect(keystoneRollWeight('combo', 'fire', thorn)).toBe(2);
+  });
+
+  it('tag のみ一致で重み2', () => {
+    expect(keystoneRollWeight('front', 'shield', thorn)).toBe(2);
+  });
+
+  it('どちらも不一致で重み1', () => {
+    expect(keystoneRollWeight('front', 'wild', thorn)).toBe(1);
+  });
+
+  it('トーテム未選択（undefined）でも重み1', () => {
+    expect(keystoneRollWeight(undefined, undefined, madblood)).toBe(1);
   });
 });

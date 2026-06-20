@@ -2,6 +2,7 @@
  * 始祖トーテム関連の型定義
  */
 import type { AllyTemplate } from './units';
+import type { SynergyTag } from './evolution';
 
 /** トーテム識別子（基本3種＋上位3種） */
 export type TotemId = 'blood' | 'flame' | 'pack' | 'rock' | 'spirit' | 'ember';
@@ -43,6 +44,8 @@ export interface TotemDef {
   readonly nm: string;
   readonly ic: string;
   readonly curve: PowerCurve;
+  /** 推しアーキタイプ（節目のキーストーン提示で tag 一致を優先） */
+  readonly tag?: SynergyTag;
   readonly desc: string;
   /** 解放に必要なクリア回数（基本トーテムは0） */
   readonly unlock: number;
