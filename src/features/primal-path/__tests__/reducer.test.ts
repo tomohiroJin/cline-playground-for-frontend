@@ -536,3 +536,18 @@ describe('トーテム開始フロー', () => {
   });
 });
 
+/* ===== ドラフトキーストーン選択 ===== */
+
+describe('ドラフトキーストーン選択', () => {
+  it('SELECT_DRAFT_KEYSTONE で applyKeystone されバトルへ遷移する', () => {
+    // バトル開始に必要なフィールドを持つランを用意
+    const run = makeRun({ keystones: [], cBT: 'grassland', cW: 0, wpb: 5 });
+    const s0 = { ...initialState(), phase: 'evo' as const, run,
+      evoKeystone: KEYSTONES[0] };
+    const s1 = gameReducer(s0, { type: 'SELECT_DRAFT_KEYSTONE', id: KEYSTONES[0].id });
+    expect(s1.run?.keystones).toContain(KEYSTONES[0].id);
+    expect(s1.phase).toBe('battle');
+    expect(s1.evoKeystone).toBeUndefined();
+  });
+});
+

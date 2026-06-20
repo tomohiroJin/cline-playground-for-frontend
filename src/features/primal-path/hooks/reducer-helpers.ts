@@ -7,7 +7,7 @@ import type { GameState, RunState, SaveData, RunStats, AggregateStats, Achieveme
 import {
   pickBiomeAuto, applyAutoLastBiome, applyFirstBiome, rollE,
   calcSynergies, checkAchievement,
-  shouldOfferKeystone, rollKeystones,
+  shouldOfferKeystone, rollKeystones, rollDraftKeystone,
 } from '../game-logic';
 import { ACHIEVEMENTS } from '../constants';
 
@@ -41,13 +41,13 @@ export function continueAfterBiome(state: GameState, run: RunState): GameState {
   }
   const autoRun = applyAutoLastBiome(run);
   const evoPicks = rollE(autoRun);
-  return { ...state, run: autoRun, phase: 'evo', evoPicks };
+  return { ...state, run: autoRun, phase: 'evo', evoPicks, evoKeystone: rollDraftKeystone(autoRun) };
 }
 
 /** 進化選択フェーズに遷移する（rollE + phase 設定） */
 export function transitionToEvoPicks(state: GameState, run: RunState): GameState {
   const evoPicks = rollE(run);
-  return { ...state, run, phase: 'evo', evoPicks };
+  return { ...state, run, phase: 'evo', evoPicks, evoKeystone: rollDraftKeystone(run) };
 }
 
 /** ラン開始時の初期バイオーム選択と進化セットアップ */
@@ -57,7 +57,7 @@ export function setupInitialRun(state: GameState, run: RunState, save: SaveData,
   const evoPicks = rollE(next);
   return {
     ...state, save, run: next, phase: 'evo', finalMode: false,
-    evoPicks, pendingAwk: null, gameResult: null,
+    evoPicks, evoKeystone: rollDraftKeystone(next), pendingAwk: null, gameResult: null,
     ...extraOverrides,
   };
 }

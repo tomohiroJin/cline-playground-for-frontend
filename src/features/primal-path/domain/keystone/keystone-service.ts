@@ -7,7 +7,7 @@
  * onKeystoneKill・keystoneLethalGuard）は deepClone 済みの RunState を破壊的に更新する。
  */
 import type { RunState, KeystoneId, KeystoneDef } from '../../types';
-import { KEYSTONES, TOTEMS } from '../../constants';
+import { KEYSTONES, TOTEMS, DRAFT_KEYSTONE_RATE } from '../../constants';
 import { aliveAllies } from '../battle/combat-calculator';
 
 /** 指定キーストーンを取得済みか */
@@ -90,6 +90,14 @@ export function unownedKeystones(r: RunState): KeystoneDef[] {
 /** 節目でキーストーンを提示すべきか（未取得が残っているか） */
 export function shouldOfferKeystone(r: RunState): boolean {
   return unownedKeystones(r).length > 0;
+}
+
+/** 進化ドラフトに低確率で混入する未取得キーストーンを1枚返す（外れ/未取得0なら undefined） */
+export function rollDraftKeystone(r: RunState, rng: () => number = Math.random): KeystoneDef | undefined {
+  if (rng() >= DRAFT_KEYSTONE_RATE) return undefined;
+  const pool = unownedKeystones(r);
+  if (pool.length === 0) return undefined;
+  return pool[Math.floor(rng() * pool.length)];
 }
 
 /** 節目の3択を抽選する（最大3・distinct・トーテム curve 一致を重み2で優先） */

@@ -82,4 +82,6 @@ export interface GameState {
   pendingStart?: { di: number; loopOverride: number; challengeId?: string } | null;
   /** 節目で提示中のキーストーン3択 */
   keystonePicks?: import('./keystone').KeystoneDef[];
+  /** 進化ドラフトに混入したキーストーン（無ければ undefined） */
+  evoKeystone?: import('./keystone').KeystoneDef;
 }

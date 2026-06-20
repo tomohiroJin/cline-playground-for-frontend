@@ -160,6 +160,8 @@ describe('keystoneLethalGuard', () => {
 });
 
 import { unownedKeystones, shouldOfferKeystone, rollKeystones } from '../game-logic';
+import { rollDraftKeystone } from '../game-logic';
+import { DRAFT_KEYSTONE_RATE } from '../constants';
 
 describe('キーストーン抽選', () => {
   it('unownedKeystones は取得済みを除外する', () => {
@@ -188,5 +190,30 @@ describe('キーストーン抽選', () => {
     const owned = KEYSTONES.slice(0, KEYSTONES.length - 2).map(k => k.id);
     const picks = rollKeystones(makeRun({ keystones: owned }), () => 0);
     expect(picks).toHaveLength(2);
+  });
+});
+
+describe('rollDraftKeystone', () => {
+  it('確率判定に外れたら undefined', () => {
+    const r = makeRun({ keystones: [] });
+    // rng が rate 以上 → 混入しない
+    expect(rollDraftKeystone(r, () => 0.99)).toBeUndefined();
+  });
+
+  it('確率判定に当たれば未取得キーストーンを1枚返す', () => {
+    const r = makeRun({ keystones: [] });
+    const k = rollDraftKeystone(r, () => 0);
+    expect(k).toBeDefined();
+    expect(r.keystones?.includes(k!.id)).toBe(false);
+  });
+
+  it('未取得が0なら当たっても undefined', () => {
+    const r = makeRun({ keystones: KEYSTONES.map(x => x.id) });
+    expect(rollDraftKeystone(r, () => 0)).toBeUndefined();
+  });
+
+  it('DRAFT_KEYSTONE_RATE は 0〜1 の低確率', () => {
+    expect(DRAFT_KEYSTONE_RATE).toBeGreaterThan(0);
+    expect(DRAFT_KEYSTONE_RATE).toBeLessThan(0.5);
   });
 });
