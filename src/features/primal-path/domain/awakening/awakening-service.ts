@@ -34,10 +34,24 @@ export function checkAwakeningRules(r: RunState): AwakeningRule | null {
   return rules.find(r2 => r2.ok && done.indexOf(r2.id) < 0) || null;
 }
 
+/** 覚醒効果の数値フィールドに倍率を掛ける（霊の祖の awkMul 用） */
+function scaleAwkEffect(fx: EvoEffect, mul: number): EvoEffect {
+  const numericKeys = ['atk', 'def', 'mhp', 'sd', 'burn', 'bb'] as const;
+  const scaled: Record<string, unknown> = { ...(fx as Record<string, unknown>) };
+  for (const k of numericKeys) {
+    const v = (fx as Record<string, unknown>)[k];
+    if (typeof v === 'number') scaled[k] = Math.floor(v * mul);
+  }
+  return scaled as EvoEffect;
+}
+
 /** 覚醒効果を適用する */
 export function applyAwkFx(r: RunState, fx: EvoEffect, id: string, nm: string, cl: string, fe: CivTypeExt | null): RunState {
   const next = deepCloneRun(r);
-  writeSnapToRun(next, applyStatFx(getSnap(next), fx));
+  // 霊の祖: 覚醒効果を (1 + awkMul) 倍してから適用する（awkMul 未設定時は等倍）
+  const mul = 1 + (r.awkMul ?? 0);
+  const scaledFx: EvoEffect = mul === 1 ? fx : scaleAwkEffect(fx, mul);
+  writeSnapToRun(next, applyStatFx(getSnap(next), scaledFx));
   if ((fx as Record<string, unknown>).allyAtkMul) {
     next.al.forEach(a => { if (a.a) a.atk *= (fx as Record<string, number>).allyAtkMul; });
   }
