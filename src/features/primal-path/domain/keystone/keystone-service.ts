@@ -6,7 +6,8 @@
  * 注: applyKeystone は純粋関数。一方、ティック内フック（resetKeystoneBattleState・
  * onKeystoneKill・keystoneLethalGuard）は deepClone 済みの RunState を破壊的に更新する。
  */
-import type { RunState, KeystoneId, KeystoneDef } from '../../types';
+import type { RunState, KeystoneId, KeystoneDef, PowerCurve } from '../../types';
+import type { SynergyTag } from '../../types/evolution';
 import { KEYSTONES, TOTEMS, DRAFT_KEYSTONE_RATE } from '../../constants';
 import { aliveAllies } from '../battle/combat-calculator';
 
@@ -100,18 +101,28 @@ export function rollDraftKeystone(r: RunState, rng: () => number = Math.random):
   return pool[Math.floor(rng() * pool.length)];
 }
 
-/** 節目の3択を抽選する（最大3・distinct・トーテム curve 一致を重み2で優先） */
+/** 節目抽選の重みを返す: 1 + (curve一致?1:0) + (tag一致?1:0)（最小1・最大3） */
+export function keystoneRollWeight(
+  totemCurve: PowerCurve | undefined,
+  totemTag: SynergyTag | undefined,
+  k: KeystoneDef,
+): number {
+  return 1 + (totemCurve && k.curve === totemCurve ? 1 : 0) + (totemTag && k.tag === totemTag ? 1 : 0);
+}
+
+/** 節目の3択を抽選する（最大3・distinct・トーテム curve+tag 一致を重み合算で優先） */
 export function rollKeystones(r: RunState, rng: () => number = Math.random): KeystoneDef[] {
   const pool = unownedKeystones(r);
   // 未取得が3以下なら残り全てを返す
   if (pool.length <= 3) return pool;
 
-  const totemCurve = TOTEMS.find(t => t.id === r.totemId)?.curve;
+  const totem = TOTEMS.find(t => t.id === r.totemId);
+  const totemCurve = totem?.curve;
+  const totemTag = totem?.tag;
   const avail = [...pool];
   const result: KeystoneDef[] = [];
   while (result.length < 3 && avail.length > 0) {
-    // curve 一致を重み2、それ以外を重み1とした重み付き抽選
-    const weights = avail.map(k => (totemCurve && k.curve === totemCurve ? 2 : 1));
+    const weights = avail.map(k => keystoneRollWeight(totemCurve, totemTag, k));
     const total = weights.reduce((a, b) => a + b, 0);
     let pick = rng() * total;
     let idx = 0;

@@ -56,6 +56,10 @@ export interface RunState extends
   ksStacks?: Record<string, number>;
   /** 不滅の祈りの戦闘内使用済みフラグ（startBattle でリセット） */
   ksGuardUsed?: boolean;
+  /** 覚醒効果の増加率（霊の祖。既定0） */
+  awkMul?: number;
+  /** 種火の祖の踏破スケール基準ステ（ラン初期化時に snapshot） */
+  emberBase?: { atk: number; def: number; mhp: number };
 }
 
 /** ゲーム全体ステート */

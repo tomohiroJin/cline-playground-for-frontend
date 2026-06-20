@@ -46,10 +46,10 @@ export { startRunState, calcRunStats, calcBoneReward, allyReviveCost } from './d
 export { pickBiomeAuto, applyBiomeSelection, applyFirstBiome, applyAutoLastBiome, calcEndlessScale, calcEndlessScaleWithAM, applyEndlessLoop } from './domain/progression/biome-service';
 
 // トーテムサービス
-export { applyTotem } from './domain/totem/totem-service';
+export { applyTotem, applyEmberBiomeScale } from './domain/totem/totem-service';
 
 // キーストーンサービス
-export { hasKeystone, applyKeystone, resetKeystoneBattleState, keystonePlayerAtkMods, onKeystoneKill, keystoneReflectDmg, isKeystoneFreezeTurn, keystoneLethalGuard, unownedKeystones, shouldOfferKeystone, rollKeystones, rollDraftKeystone } from './domain/keystone/keystone-service';
+export { hasKeystone, applyKeystone, resetKeystoneBattleState, keystonePlayerAtkMods, onKeystoneKill, keystoneReflectDmg, isKeystoneFreezeTurn, keystoneLethalGuard, unownedKeystones, shouldOfferKeystone, rollKeystones, rollDraftKeystone, keystoneRollWeight } from './domain/keystone/keystone-service';
 
 // ツリーサービス
 export { getTB, tbSummary, bestDiffLabel } from './domain/progression/tree-service';

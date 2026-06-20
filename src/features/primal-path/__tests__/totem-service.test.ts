@@ -24,6 +24,15 @@ describe('TOTEMS 定数', () => {
   it('TOTEMS は凍結されている', () => {
     expect(Object.isFrozen(TOTEMS)).toBe(true);
   });
+
+  it('上位3種（岩/霊/種火）が定義され、解放クリア数が 2/5/10 である', () => {
+    const expected: Array<[TotemId, number]> = [['rock', 2], ['spirit', 5], ['ember', 10]];
+    for (const [id, unlock] of expected) {
+      const t = TOTEMS.find(x => x.id === id);
+      expect(t).toBeDefined();
+      expect(t!.unlock).toBe(unlock);
+    }
+  });
 });
 
 import { applyTotem, tick } from '../game-logic';
@@ -128,4 +137,111 @@ describe('applyTotem — 群れの祖', () => {
     expect(recruitedWith.atk).toBeGreaterThan(recruitedWithout.atk);
   });
 
+});
+
+describe('applyTotem — 岩の祖', () => {
+  it('DEF+4 と環境抵抗（iR/fR）+0.3 を適用する', () => {
+    const base = makeRun({ def: 2 });
+    const r = applyTotem(base, 'rock');
+    expect(r.def).toBe(6);
+    expect(r.tb.iR).toBeCloseTo((makeRun({}).tb.iR ?? 0) + 0.3, 5);
+    expect(r.tb.fR).toBeCloseTo((makeRun({}).tb.fR ?? 0) + 0.3, 5);
+    expect(r.totemId).toBe('rock');
+  });
+});
+
+describe('applyTotem — 霊の祖', () => {
+  it('覚醒要求 saReq/fReq を -1 し、awkMul=0.25 を設定する', () => {
+    const base = makeRun({ saReq: 4, fReq: 5 });
+    const r = applyTotem(base, 'spirit');
+    expect(r.saReq).toBe(3);
+    expect(r.fReq).toBe(4);
+    expect(r.awkMul).toBeCloseTo(0.25, 5);
+  });
+
+  it('覚醒要求は最小1にクランプされる', () => {
+    const base = makeRun({ saReq: 1, fReq: 1 });
+    const r = applyTotem(base, 'spirit');
+    expect(r.saReq).toBe(1);
+    expect(r.fReq).toBe(1);
+  });
+});
+
+describe('applyTotem — 種火の祖', () => {
+  it('開始ATK×0.7 を適用し、適用後ステを emberBase に snapshot する', () => {
+    const base = makeRun({ atk: 100, def: 10, mhp: 200, hp: 200 });
+    const r = applyTotem(base, 'ember');
+    expect(r.atk).toBe(70); // floor(100×0.7)
+    expect(r.emberBase).toEqual({ atk: 70, def: 10, mhp: 200 });
+  });
+});
+
+import { applyEmberBiomeScale } from '../game-logic';
+
+describe('applyEmberBiomeScale — 種火の踏破スケール', () => {
+  it('emberBase×0.12 を ATK/DEF/最大HP に加算し、Δmhp を現在HPにも加算する', () => {
+    const base = makeRun({
+      atk: 100, def: 10, mhp: 200, hp: 50,
+      totemId: 'ember', emberBase: { atk: 100, def: 10, mhp: 200 },
+    });
+    const r = applyEmberBiomeScale(base);
+    expect(r.atk).toBe(112); // 100 + floor(100×0.12)=12
+    expect(r.def).toBe(11);  // 10 + floor(10×0.12)=1
+    expect(r.mhp).toBe(224); // 200 + floor(200×0.12)=24
+    expect(r.hp).toBe(74);   // 50 + Δmhp(24)
+  });
+
+  it('種火の祖以外では変化しない', () => {
+    const base = makeRun({ atk: 100, totemId: 'blood' });
+    expect(applyEmberBiomeScale(base)).toBe(base);
+  });
+
+  it('emberBase 未設定なら変化しない', () => {
+    const base = makeRun({ atk: 100, totemId: 'ember' });
+    expect(applyEmberBiomeScale(base)).toBe(base);
+  });
+});
+
+import { afterBattle } from '../game-logic';
+
+describe('afterBattle — 種火の踏破フック', () => {
+  it('ボス撃破でバイオームクリア時、種火スケールが適用される', () => {
+    // cW > wpb でボス撃破扱い → bc++ とスケール適用
+    const base = makeRun({
+      cW: 5, wpb: 4, bc: 0, atk: 100, def: 10, mhp: 200, hp: 100,
+      totemId: 'ember', emberBase: { atk: 100, def: 10, mhp: 200 },
+    });
+    const { nextRun, biomeCleared } = afterBattle(base);
+    expect(biomeCleared).toBe(true);
+    expect(nextRun.bc).toBe(1);
+    expect(nextRun.atk).toBe(112); // 種火スケール +12
+    expect(nextRun.mhp).toBe(224); // 種火スケール +24
+    // hp: ember 100+Δmhp(24)=124 → ボス回復 floor(224×0.2)=44 → min(124+44,224)=168
+    expect(nextRun.hp).toBe(168);
+  });
+
+  it('種火以外ではボス撃破時もステは変化しない（bc のみ増加）', () => {
+    const base = makeRun({ cW: 5, wpb: 4, bc: 0, atk: 100, mhp: 200, hp: 100, totemId: 'blood' });
+    const { nextRun } = afterBattle(base);
+    expect(nextRun.bc).toBe(1);
+    expect(nextRun.atk).toBe(100);
+  });
+});
+
+describe('バランスガードレール — 種火の線形成長', () => {
+  it('bc=5 で base×1.6 になる（線形・非指数）', () => {
+    // emberBase=100 のステを 5 回踏破。各回 +floor(100×0.12)=12 → 100 + 12×5 = 160
+    let r = makeRun({ atk: 100, def: 100, mhp: 100, hp: 100, totemId: 'ember', emberBase: { atk: 100, def: 100, mhp: 100 } });
+    for (let i = 0; i < 5; i++) r = applyEmberBiomeScale(r);
+    expect(r.atk).toBe(160); // base×1.6（指数なら 100×1.12^5≈176 になるはず）
+    expect(r.def).toBe(160);
+    expect(r.mhp).toBe(160);
+  });
+
+  it('上位トーテムのステ倍率が極端でない（atkMul は 0.7〜1.3 の範囲）', () => {
+    const r1 = applyTotem(makeRun({ atk: 100 }), 'ember');
+    expect(r1.atk).toBeGreaterThanOrEqual(70);  // 種火は -30% 始動
+    const r2 = applyTotem(makeRun({ atk: 100 }), 'blood');
+    expect(r2.atk).toBeLessThanOrEqual(130);    // 血の祖でも +30% 以内
+  });
 });

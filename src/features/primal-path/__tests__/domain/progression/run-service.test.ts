@@ -192,4 +192,19 @@ describe('domain/progression/run-service', () => {
       expect(stats.keystoneCount).toBe(0);
     });
   });
+
+  describe('calcRunStats — totemId 記録', () => {
+    it('選択トーテムIDを RunStats に記録する', () => {
+      const run = makeRun({ totemId: 'ember', keystones: ['hunter_stack'] });
+      const stats = calcRunStats(run, 'victory', 10);
+      expect(stats.totemId).toBe('ember');
+      expect(stats.keystoneCount).toBe(1);
+    });
+
+    it('トーテム未選択なら totemId は undefined', () => {
+      const run = makeRun({});
+      const stats = calcRunStats(run, 'defeat', 0);
+      expect(stats.totemId).toBeUndefined();
+    });
+  });
 });
