@@ -23,4 +23,19 @@ export const TOTEMS: readonly TotemDef[] = Object.freeze([
       startAlly: Object.freeze({ n: '群れの戦士', hp: 30, atk: 6, t: 'life' as const }),
     }),
   }),
+  Object.freeze({
+    id: 'rock' as const, nm: '岩の祖', ic: '🛡️', curve: 'combo' as const,
+    desc: 'DEF+4 環境ダメージ-30%（反射タンク）', unlock: 2,
+    effect: Object.freeze({ defAdd: 4, envDmgR: 0.3 }),
+  }),
+  Object.freeze({
+    id: 'spirit' as const, nm: '霊の祖', ic: '👻', curve: 'scaling' as const,
+    desc: '覚醒要求-1 覚醒効果+25%（覚醒スケール）', unlock: 5,
+    effect: Object.freeze({ awkReqReduce: 1, awkMul: 0.25 }),
+  }),
+  Object.freeze({
+    id: 'ember' as const, nm: '種火の祖', ic: '🌰', curve: 'scaling' as const,
+    desc: '開始ATK-30% 踏破ごと全ステ+12%（極・晩成）', unlock: 10,
+    effect: Object.freeze({ atkMul: 0.7, biomeScale: 0.12 }),
+  }),
 ]);

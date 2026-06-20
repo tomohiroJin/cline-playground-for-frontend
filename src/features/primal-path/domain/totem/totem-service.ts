@@ -24,6 +24,18 @@ export function applyTotem(r: RunState, totemId: TotemId): RunState {
   if (e.crAdd) next.cr = clamp(next.cr + e.crAdd, 0, 1);
   if (e.defAdd) next.def = next.def + e.defAdd;
 
+  // 環境ダメージ軽減（岩の祖）: 既存の環境抵抗 iR/fR に加算し、calcEnvDmg が自然に反映する
+  if (e.envDmgR) {
+    next.tb = { ...next.tb, iR: (next.tb.iR || 0) + e.envDmgR, fR: (next.tb.fR || 0) + e.envDmgR };
+  }
+  // 覚醒要求緩和（霊の祖）: 早期覚醒。最小1にクランプ
+  if (e.awkReqReduce) {
+    next.saReq = Math.max(1, next.saReq - e.awkReqReduce);
+    next.fReq = Math.max(1, next.fReq - e.awkReqReduce);
+  }
+  // 覚醒効果増（霊の祖）: applyAwkFx が参照する倍率を保持
+  if (e.awkMul) next.awkMul = e.awkMul;
+
   // 仲間枠・火傷・仲間ATK
   if (e.mxaAdd) next.mxA = next.mxA + e.mxaAdd;
   if (e.burnDmgMul) next.burnDmgMul = e.burnDmgMul;
@@ -42,6 +54,11 @@ export function applyTotem(r: RunState, totemId: TotemId): RunState {
         t: e.startAlly.t, a: 1, h: e.startAlly.h, tk: e.startAlly.tk,
       },
     ];
+  }
+
+  // 種火の祖: 踏破スケールの基準ステを snapshot（atkMul 適用後の値）
+  if (e.biomeScale) {
+    next.emberBase = { atk: next.atk, def: next.def, mhp: next.mhp };
   }
 
   return next;

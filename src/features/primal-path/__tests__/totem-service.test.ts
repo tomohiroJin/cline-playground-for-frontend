@@ -24,6 +24,15 @@ describe('TOTEMS 定数', () => {
   it('TOTEMS は凍結されている', () => {
     expect(Object.isFrozen(TOTEMS)).toBe(true);
   });
+
+  it('上位3種（岩/霊/種火）が定義され、解放クリア数が 2/5/10 である', () => {
+    const expected: Array<[TotemId, number]> = [['rock', 2], ['spirit', 5], ['ember', 10]];
+    for (const [id, unlock] of expected) {
+      const t = TOTEMS.find(x => x.id === id);
+      expect(t).toBeDefined();
+      expect(t!.unlock).toBe(unlock);
+    }
+  });
 });
 
 import { applyTotem, tick } from '../game-logic';
@@ -128,4 +137,41 @@ describe('applyTotem — 群れの祖', () => {
     expect(recruitedWith.atk).toBeGreaterThan(recruitedWithout.atk);
   });
 
+});
+
+describe('applyTotem — 岩の祖', () => {
+  it('DEF+4 と環境抵抗（iR/fR）+0.3 を適用する', () => {
+    const base = makeRun({ def: 2 });
+    const r = applyTotem(base, 'rock');
+    expect(r.def).toBe(6);
+    expect(r.tb.iR).toBeCloseTo((makeRun({}).tb.iR ?? 0) + 0.3, 5);
+    expect(r.tb.fR).toBeCloseTo((makeRun({}).tb.fR ?? 0) + 0.3, 5);
+    expect(r.totemId).toBe('rock');
+  });
+});
+
+describe('applyTotem — 霊の祖', () => {
+  it('覚醒要求 saReq/fReq を -1 し、awkMul=0.25 を設定する', () => {
+    const base = makeRun({ saReq: 4, fReq: 5 });
+    const r = applyTotem(base, 'spirit');
+    expect(r.saReq).toBe(3);
+    expect(r.fReq).toBe(4);
+    expect(r.awkMul).toBeCloseTo(0.25, 5);
+  });
+
+  it('覚醒要求は最小1にクランプされる', () => {
+    const base = makeRun({ saReq: 1, fReq: 1 });
+    const r = applyTotem(base, 'spirit');
+    expect(r.saReq).toBe(1);
+    expect(r.fReq).toBe(1);
+  });
+});
+
+describe('applyTotem — 種火の祖', () => {
+  it('開始ATK×0.7 を適用し、適用後ステを emberBase に snapshot する', () => {
+    const base = makeRun({ atk: 100, def: 10, mhp: 200, hp: 200 });
+    const r = applyTotem(base, 'ember');
+    expect(r.atk).toBe(70); // floor(100×0.7)
+    expect(r.emberBase).toEqual({ atk: 70, def: 10, mhp: 200 });
+  });
 });

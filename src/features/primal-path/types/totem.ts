@@ -3,8 +3,8 @@
  */
 import type { AllyTemplate } from './units';
 
-/** トーテム識別子（Phase 1 は基本3種） */
-export type TotemId = 'blood' | 'flame' | 'pack';
+/** トーテム識別子（基本3種＋上位3種） */
+export type TotemId = 'blood' | 'flame' | 'pack' | 'rock' | 'spirit' | 'ember';
 
 /** パワーカーブ（縦の多様性：いつ強いか） */
 export type PowerCurve = 'front' | 'scaling' | 'combo' | 'wild';
@@ -27,6 +27,14 @@ export interface TotemEffect {
   readonly allyAtkBonus?: number;
   /** 開始時に加入する仲間 */
   readonly startAlly?: AllyTemplate;
+  /** 環境ダメージ軽減率（0.3 で -30%。tb.iR/fR に加算される） */
+  readonly envDmgR?: number;
+  /** 覚醒要求の減算（1 で saReq/fReq を -1、最小1にクランプ） */
+  readonly awkReqReduce?: number;
+  /** 覚醒効果の増加率（0.25 で覚醒効果 +25%） */
+  readonly awkMul?: number;
+  /** 踏破ごとの全ステ加算率（0.12 で base×0.12 を ATK/DEF/最大HP に踏破ごと加算） */
+  readonly biomeScale?: number;
 }
 
 /** トーテム定義 */
