@@ -84,22 +84,32 @@ describe('domain/battle/tick-phases', () => {
         expect(() => tick(run, false, () => 0.5)).not.toThrow();
       });
 
-      it('復活の儀を保有していれば環境ダメージ致死でも発動し戦闘継続する', () => {
-        // Arrange: tb.rv を有効化。環境ダメージで一度致死になっても復活する
+      it('復活の儀を保有していれば環境フェーズでの致死後に復活し同tickで敵を撃破する', () => {
+        // Arrange:
+        //   - glacier(環境ダメージ3)、hp=2で環境フェーズが致死（hp: 2-3=-1）
+        //   - tb.rv=1 かつ rvU=0 により復活の儀が env フェーズ直後に発動し HP=floor(80*0.3)=24 に回復
+        //   - 敵を hp=1/def=0 の弱設定にし、atk=100 で復活後の攻撃で確実に撃破
+        //   → env直後の tickDeathCheck が除去された旧コードでは、負HPのまま
+        //     敵撃破経路に進み resolveEnemyDefeat の ensureTickResult が例外を投げる
         const run = makeRun({
           cBT: 'glacier',
           hp: 2, mhp: 80,
           tb: { ...TB_DEFAULTS, rv: 1 },
           rvU: 0,
-          en: { n: 'tough', hp: 1000, mhp: 1000, atk: 1, def: 0, bone: 1 },
-          atk: 10, aM: 1, dm: 1,
+          en: { n: 'fragile', hp: 1, mhp: 1, atk: 1, def: 0, bone: 5 },
+          atk: 100, aM: 1, dm: 1,
         });
 
         // Act
         const result = tick(run, false, () => 0.5);
 
-        // Assert: 死亡せず、HPが正に復帰している
+        // Assert:
+        //   - player_dead イベントが発火しない（復活の儀が機能している）
+        //   - enemy_killed イベントが発火する（復活後に敵を撃破できている）
+        //   - nextRun.hp が正（復活後の HP が維持されている）
+        //   - 例外を投げない（ensureTickResult の事後条件を満たしている）
         expect(result.events.some(e => e.type === 'player_dead')).toBe(false);
+        expect(result.events.some(e => e.type === 'enemy_killed')).toBe(true);
         expect(result.nextRun.hp).toBeGreaterThan(0);
       });
 
