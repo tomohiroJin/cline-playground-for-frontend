@@ -81,8 +81,8 @@ describe('コンボ6: 極・晩成（種火の祖＋狩人の蓄積）', () => {
     r = applyTotem(r, 'ember');           // atk×0.7=70, emberBase snapshot
     r = applyKeystone(r, 'hunter_stack');
     r.bc = 1;
-    r = applyEmberBiomeScale(r);          // +floor(70×0.12)=8 → atk 78
-    expect(r.atk).toBe(78);
+    r = applyEmberBiomeScale(r);          // +floor(70×0.45)=31 → atk 101
+    expect(r.atk).toBe(101);
     onKeystoneKill(r);                    // 狩人 +3
     expect(r.ksStacks?.hunter_stack).toBe(3);
     const mods = keystonePlayerAtkMods(r);

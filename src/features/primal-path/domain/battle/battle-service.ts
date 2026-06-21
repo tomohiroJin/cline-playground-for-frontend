@@ -27,7 +27,7 @@ export function startBattle(r: RunState, _finalMode: boolean): RunState {
     ? BOSS[biome]
     : ENM[biome][Math.min(next.cW - 1, ENM[biome].length - 1)];
 
-  const biomeScale = 0.75 + next.cB * 0.25;
+  const biomeScale = 0.75 + next.cB * 0.18;
   // エンドレスモード: ループごとに敵が指数的に強くなる（aM反映）
   const endlessScale = next.isEndless ? calcEndlessScaleWithAM(next.endlessWave, next.aM) : 1;
   next.en = scaleEnemy(src, next.dd.hm, next.dd.am, (biomeScale + next.bc * 0.25) * endlessScale);
