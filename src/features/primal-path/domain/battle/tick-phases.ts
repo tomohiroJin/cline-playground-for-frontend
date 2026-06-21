@@ -203,6 +203,8 @@ function resolveEnemyDefeat(next: RunState, e: Enemy, events: TickEvent[], final
   events.push({ type: 'sfx', sfx: 'kill' });
   events.push({ type: 'shake_enemy' });
   events.push(finalMode ? { type: 'final_boss_killed' } : { type: 'enemy_killed' });
+  // 保険: 将来のリグレッションでも事後条件違反を起こさないよう負HPを0に丸める
+  if (next.hp < 0) next.hp = 0;
   const result = { nextRun: next, events };
   if (process.env.NODE_ENV !== 'production') ensureTickResult(result);
   return result;
@@ -227,6 +229,11 @@ export function tick(r: RunState, finalMode: boolean, rng = Math.random): TickRe
   const sb = applySynergyBonuses(synergies);
 
   tickEnvPhase(next, events);
+  // 環境ダメージが致死量の場合はここで死亡（または復活/不滅）を確定し、
+  // 負HPのまま敵撃破経路へ抜けるのを防ぐ
+  if (tickDeathCheck(next, events)) {
+    return { nextRun: next, events };
+  }
   tickPlayerPhase(next, e, events, rng, sb);
   tickAllyPhase(next, e, events, sb);
   tickRegenPhase(next, events, sb);
