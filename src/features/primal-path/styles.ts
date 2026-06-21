@@ -90,7 +90,11 @@ export const GameContainer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #0a0a12;
+  /* デスクトップの黒余白を意図した額縁に見せ、画面全体の品質感を高めるための装飾背景 */
+  background:
+    radial-gradient(ellipse at center, #14121c 0%, #0a0a12 55%, #060608 100%),
+    repeating-linear-gradient(115deg, #ffffff03 0 2px, transparent 2px 7px);
+  background-color: #0a0a12;
   font-family: 'Courier New', monospace;
   image-rendering: pixelated;
   image-rendering: -webkit-optimize-contrast;
