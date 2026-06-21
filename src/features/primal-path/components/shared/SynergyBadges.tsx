@@ -19,7 +19,7 @@ export const SynergyBadges: React.FC<SynergyBadgesProps> = ({ synergies, showCou
         const info = SYNERGY_TAG_INFO[s.tag];
         return (
           <span key={s.tag} style={{
-            fontSize: 7, color: info.cl, background: info.cl + '15',
+            fontSize: 10, color: info.cl, background: info.cl + '15',
             border: `1px solid ${info.cl}40`, padding: '0 4px', borderRadius: 4,
           }}>
             {info.ic}{showCount ? `×${s.count} ` : ''}{s.bonusName}

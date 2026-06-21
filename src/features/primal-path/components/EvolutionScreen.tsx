@@ -63,7 +63,7 @@ export const EvolutionScreen: React.FC<Props> = ({ run, evoPicks, evoKeystone, d
         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 3 }}>
           {nxtA.map((a, i) => (
             <span key={i} style={{
-              fontSize: 7, color: a.cl, background: a.cl + '10',
+              fontSize: 10, color: a.cl, background: a.cl + '10',
               border: `1px solid ${a.cl}30`, padding: '1px 4px', borderRadius: 6,
             }}>
               {a.nm} {a.need}
@@ -100,7 +100,7 @@ export const EvolutionScreen: React.FC<Props> = ({ run, evoPicks, evoKeystone, d
                 <span style={{ fontSize: 12, color: '#f0c040' }}>{ev.r ? '★ ' : ''}{ev.n}</span>{' '}
                 <span style={{ fontSize: 11, color: '#908870' }}>{ev.d}</span>
                 <span style={{
-                  fontSize: 7, padding: '0 4px', borderRadius: 6, marginLeft: 3,
+                  fontSize: 10, padding: '0 4px', borderRadius: 6, marginLeft: 3,
                   background: TC[ev.t] + '20', color: TC[ev.t], border: `1px solid ${TC[ev.t]}40`,
                 }}>
                   {TN[ev.t]} Lv{lvUp[ev.t]}
@@ -115,9 +115,9 @@ export const EvolutionScreen: React.FC<Props> = ({ run, evoPicks, evoKeystone, d
               {sim.cr !== run.cr && (
                 <StatPreview label="会心" current={Math.round(run.cr * 100)} next={Math.round(sim.cr * 100)} max={Math.max(Math.round(sim.cr * 100), 30)} color="#f0c040" />
               )}
-              {ev.e.aHL && <div style={{ fontSize: 7, color: '#50e090', marginTop: 1 }}>💚 仲間HP+{ev.e.aHL}</div>}
-              {ev.e.bb && <div style={{ fontSize: 7, color: '#e0c060', marginTop: 1 }}>🦴 骨+{ev.e.bb}</div>}
-              {ev.e.revA && <div style={{ fontSize: 7, color: '#d060ff', marginTop: 1 }}>✨ 仲間蘇生 HP{ev.e.revA}%</div>}
+              {ev.e.aHL && <div style={{ fontSize: 10, color: '#50e090', marginTop: 1 }}>💚 仲間HP+{ev.e.aHL}</div>}
+              {ev.e.bb && <div style={{ fontSize: 10, color: '#e0c060', marginTop: 1 }}>🦴 骨+{ev.e.bb}</div>}
+              {ev.e.revA && <div style={{ fontSize: 10, color: '#d060ff', marginTop: 1 }}>✨ 仲間蘇生 HP{ev.e.revA}%</div>}
               {ev.tags && ev.tags.length > 0 && (
                 <div style={{ display: 'flex', gap: 3, marginTop: 2 }}>
                   {ev.tags.map(tag => {
@@ -128,7 +128,7 @@ export const EvolutionScreen: React.FC<Props> = ({ run, evoPicks, evoKeystone, d
                     const isNew = nextCount === 2;
                     return (
                       <span key={tag} style={{
-                        fontSize: 7, color: info.cl, padding: '0 3px', borderRadius: 4,
+                        fontSize: 10, color: info.cl, padding: '0 3px', borderRadius: 4,
                         background: isNew ? info.cl + '30' : info.cl + '10',
                         border: `1px solid ${info.cl}${isNew ? '60' : '25'}`,
                       }}>
@@ -152,7 +152,7 @@ export const EvolutionScreen: React.FC<Props> = ({ run, evoPicks, evoKeystone, d
             </div>
             <span style={{ fontSize: 8, color: '#988070' }}>{CURVE_LABEL[evoKeystone.curve]}</span>
           </div>
-          <div style={{ fontSize: 7, color: '#d060ff', marginTop: 2 }}>キーストーン（ルールを変える）</div>
+          <div style={{ fontSize: 10, color: '#d060ff', marginTop: 2 }}>キーストーン（ルールを変える）</div>
         </EvoCard>
       )}
 
@@ -165,7 +165,7 @@ export const EvolutionScreen: React.FC<Props> = ({ run, evoPicks, evoKeystone, d
             nxtLvs.forEach(nl => {
               if (lv < nl && lv + 1 === nl) {
                 hints.push(
-                  <span key={`${t}-${nl}`} style={{ fontSize: 7, color: TC[t] }}>{TN[t]}Lv{nl}で仲間加入 </span>
+                  <span key={`${t}-${nl}`} style={{ fontSize: 10, color: TC[t] }}>{TN[t]}Lv{nl}で仲間加入 </span>
                 );
               }
             });

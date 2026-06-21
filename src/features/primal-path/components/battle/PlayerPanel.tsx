@@ -51,13 +51,13 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({ run, popups }) => {
             部族長 {feLabel}
             <AffinityBadge biome={run.cBT} levels={lvs} />
             {ritActive && (
-              <span style={{ fontSize: 7, color: '#ff4060', background: '#ff406015', border: '1px solid #ff406030', padding: '1px 5px', borderRadius: 6 }}>⚡ATK×3</span>
+              <span style={{ fontSize: 10, color: '#ff4060', background: '#ff406015', border: '1px solid #ff406030', padding: '1px 5px', borderRadius: 6 }}>⚡ATK×3</span>
             )}
           </div>
           <HpBar value={run.hp} max={run.mhp} variant="hp" low={run.hp < run.mhp * 0.25} showPct />
           <StatText>
-            ATK <Tc>{effATK(run)}</Tc>{synergyBonus.atkBonus > 0 && <span style={{ color: '#f0c040', fontSize: 7 }}>+{synergyBonus.atkBonus}</span>}{' '}
-            DEF <span style={{ color: '#50c8e8' }}>{run.def}</span>{synergyBonus.defBonus > 0 && <span style={{ color: '#50c8e8', fontSize: 7 }}>+{synergyBonus.defBonus}</span>}{' '}
+            ATK <Tc>{effATK(run)}</Tc>{synergyBonus.atkBonus > 0 && <span style={{ color: '#f0c040', fontSize: 10 }}>+{synergyBonus.atkBonus}</span>}{' '}
+            DEF <span style={{ color: '#50c8e8' }}>{run.def}</span>{synergyBonus.defBonus > 0 && <span style={{ color: '#50c8e8', fontSize: 10 }}>+{synergyBonus.defBonus}</span>}{' '}
             🦴<Bc>{run.bE}</Bc> <CivLevelsDisplay run={run} />
           </StatText>
           {tbParts.length > 0 && (
