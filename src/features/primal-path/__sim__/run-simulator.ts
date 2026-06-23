@@ -26,7 +26,7 @@ export const FULL_TREE: Readonly<Record<string, number>> =
 
 /** 進化選択ポリシー */
 export type EvoStrategy =
-  | 'greedy-atk' // 実効 ATK が最も伸びる進化を選ぶ（攻撃特化プレイヤー）
+  | 'greedy-atk' // 実効 ATK(atk×aM×dm) が最も伸びる進化を選ぶ。simEvo が実効値を返すため、血の契約(aM×2)等の乗算系も評価され、最適バースト相当の選択になる
   | 'random' // 一様ランダム（無方針プレイヤー）
   | 'balanced'; // 文明レベルが最も低い系統を伸ばす（覚醒・調和狙い）
 
@@ -240,10 +240,13 @@ function drive(config: SimConfig): SimResult {
       case 'keystone': {
         inBattle = false;
         const picks = s.keystonePicks ?? [];
-        const id = picks[Math.floor(Math.random() * picks.length)].id;
-        s = gameReducer(s, { type: 'SELECT_KEYSTONE', id });
+        // 実プレイの最適選択を近似: ATK バースト系を優先（狂血>原始の咆哮>狩人の蓄積）、無ければ先頭。
+        const PRIORITY = ['madblood', 'primal_roar', 'hunter_stack'];
+        const best = PRIORITY.map(id => picks.find(p => p.id === id)).find(Boolean) ?? picks[0];
+        s = gameReducer(s, { type: 'SELECT_KEYSTONE', id: best.id });
         break;
       }
+
       case 'biome': {
         inBattle = false;
         if (!run) return finish(s, config, powerCurve, battles, ticks);
