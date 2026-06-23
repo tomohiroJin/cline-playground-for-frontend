@@ -23,6 +23,7 @@ export function startFinalBoss(r: RunState): { nextRun: RunState; bossKey: strin
   next._fPhase = 1;
   next.cBT = 'final';
   next.en = scaleEnemy(BOSS[bk], next.dd.hm, next.dd.am, 1);
+  next.en.boss = true; // 最終ボスも一撃不可（被ダメージ上限）
   next.cW = next.wpb + 1;
   next.log = [];
   next.wTurn = 0;
@@ -46,6 +47,7 @@ export function handleFinalBossKill(r: RunState): { nextRun: RunState; gameWon: 
     // BOSS_CHAIN_SCALE でスケーリング
     const chainScale = BOSS_CHAIN_SCALE[Math.min(next._fPhase - 1, BOSS_CHAIN_SCALE.length - 1)];
     next.en = scaleEnemy(BOSS[nextBossKey], next.dd.hm, next.dd.am, chainScale);
+    next.en.boss = true; // 連戦ボスも一撃不可（被ダメージ上限）
     // 戦闘状態リセット
     next.log = [];
     next.wTurn = 0;

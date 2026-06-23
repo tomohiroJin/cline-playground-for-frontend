@@ -16,7 +16,7 @@ import { civLvs } from '../shared/civ-utils';
 /** 儀式の低HP倍率閾値 (HP/MHP比) */
 export const RIT_LOW_HP_RATIO = 0.3;
 /** クリティカル倍率 */
-const CRIT_MULTIPLIER = 1.6;
+const CRIT_MULTIPLIER = 1.4;
 
 /* ===== 実効攻撃力 ===== */
 

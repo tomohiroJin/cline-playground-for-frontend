@@ -42,4 +42,6 @@ export interface Enemy {
   atk: number;
   def: number;
   bone: number;
+  /** ボスか（true のとき1ターンの被ダメージに上限が掛かり一撃で倒せない） */
+  boss?: boolean;
 }

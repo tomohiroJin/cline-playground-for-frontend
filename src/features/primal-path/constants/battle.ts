@@ -41,6 +41,12 @@ export const BOSS: Readonly<Record<string, EnemyTemplate>> = Object.freeze({
 /** ボス連戦スケール倍率 */
 export const BOSS_CHAIN_SCALE: readonly number[] = Object.freeze([1.0, 1.15, 1.3, 1.45, 1.6]);
 
+/**
+ * ボスの1ターン被ダメージ上限（最大HP比）。
+ * 一撃で倒せないようにし、ボス戦を複数ターンのクライマックスにする（雑魚には掛からない）。
+ */
+export const BOSS_HIT_CAP = 0.4;
+
 /** 最終ボス出現順テーブル（初回ボスキーに基づく連戦順） */
 export const FINAL_BOSS_ORDER: Readonly<Record<string, readonly string[]>> = Object.freeze({
   ft: Object.freeze(['ft', 'fl', 'fr', 'fa', 'fx']),

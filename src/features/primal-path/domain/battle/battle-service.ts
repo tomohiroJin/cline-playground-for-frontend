@@ -31,6 +31,8 @@ export function startBattle(r: RunState, _finalMode: boolean): RunState {
   // エンドレスモード: ループごとに敵が指数的に強くなる（aM反映）
   const endlessScale = next.isEndless ? calcEndlessScaleWithAM(next.endlessWave, next.aM) : 1;
   next.en = scaleEnemy(src, next.dd.hm, next.dd.am, (biomeScale + next.bc * 0.25) * endlessScale);
+  // ボスは一撃で倒せないよう被ダメージ上限を掛ける（tick で BOSS_HIT_CAP 適用）
+  if (boss && next.en) next.en.boss = true;
   /* チャレンジ: 敵ATK倍率の適用 */
   if (next.enemyAtkMul && next.enemyAtkMul !== 1 && next.en) {
     next.en.atk = Math.floor(next.en.atk * next.enemyAtkMul);

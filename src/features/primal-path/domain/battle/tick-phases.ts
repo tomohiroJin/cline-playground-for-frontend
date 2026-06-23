@@ -5,7 +5,7 @@
  */
 import type { RunState, Enemy, TickResult, TickEvent } from '../../types';
 import type { SynergyBonusResult } from '../evolution/synergy-service';
-import { ENV_DMG } from '../../constants';
+import { ENV_DMG, BOSS_HIT_CAP } from '../../constants';
 import { calcEnvDmg, calcPlayerAtk, aliveAllies, RIT_LOW_HP_RATIO } from './combat-calculator';
 import { calcSynergies, applySynergyBonuses } from '../evolution/synergy-service';
 import { keystonePlayerAtkMods, onKeystoneKill, keystoneReflectDmg, isKeystoneFreezeTurn, keystoneLethalGuard } from '../keystone/keystone-service';
@@ -223,6 +223,8 @@ export function tick(r: RunState, finalMode: boolean, rng = Math.random): TickRe
   next.turn++;
   next.wTurn++;
   const pHP = next.hp;
+  // ボスの被ダメージ上限算出用に、ターン開始時の敵HPを記録する
+  const eHP0 = e.hp;
 
   // シナジーボーナス計算
   const synergies = calcSynergies(next.evs);
@@ -237,6 +239,12 @@ export function tick(r: RunState, finalMode: boolean, rng = Math.random): TickRe
   tickPlayerPhase(next, e, events, rng, sb);
   tickAllyPhase(next, e, events, sb);
   tickRegenPhase(next, events, sb);
+
+  // ボスは1ターンに最大HPの BOSS_HIT_CAP までしか削れない（一撃で倒せず複数ターンのクライマックスにする）
+  if (e.boss) {
+    const minHp = eHP0 - Math.floor(e.mhp * BOSS_HIT_CAP);
+    if (e.hp < minHp) e.hp = minHp;
+  }
 
   // 敵撃破判定（プレイヤー/仲間/再生フェーズ後）
   if (e.hp <= 0) {

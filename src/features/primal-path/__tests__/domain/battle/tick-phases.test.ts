@@ -131,5 +131,31 @@ describe('domain/battle/tick-phases', () => {
         expect(result.nextRun.hp).toBe(76);
       });
     });
+
+    describe('ボスの被ダメージ上限', () => {
+      it('ボスは1ターンに最大HPの40%までしか削れず一撃で倒せない', () => {
+        // Arrange: 最大HP1000のボス。プレイヤーは過剰火力だが上限で400までしか削れない
+        const run = makeRun({
+          en: { n: 'ボス', hp: 1000, mhp: 1000, atk: 1, def: 0, bone: 5, boss: true },
+          atk: 100000, aM: 1, dm: 1,
+        });
+
+        // Act: rng=0.99 で会心を回避
+        const result = tick(run, false, () => 0.99);
+
+        // Assert: 1000 - floor(1000×0.4)=400 を下回らず、撃破されない
+        expect(result.nextRun.en?.hp).toBe(600);
+        expect(result.events.some(e => e.type === 'enemy_killed')).toBe(false);
+      });
+
+      it('非ボスは上限なしで一撃で倒せる', () => {
+        const run = makeRun({
+          en: { n: '雑魚', hp: 1000, mhp: 1000, atk: 1, def: 0, bone: 5 },
+          atk: 100000, aM: 1, dm: 1,
+        });
+        const result = tick(run, false, () => 0.99);
+        expect(result.events.some(e => e.type === 'enemy_killed')).toBe(true);
+      });
+    });
   });
 });
