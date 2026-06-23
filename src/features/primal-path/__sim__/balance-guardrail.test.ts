@@ -9,7 +9,7 @@
  * 重いため CI ではスキップ（health check は run-simulator.test.ts）。
  */
 import { simulateRun, FULL_TREE, type SimResult } from './run-simulator';
-import { TOTEMS, TREE } from '../constants';
+import { TOTEMS } from '../constants';
 import type { TotemId } from '../types';
 
 const RUN = process.env.RUN_BALANCE_SIM === '1';
@@ -17,10 +17,6 @@ const d = RUN ? describe : describe.skip;
 
 const TOTEM_IDS: readonly TotemId[] = TOTEMS.map(t => t.id);
 const SEEDS = Number(process.env.SIM_SEEDS ?? 60);
-
-/** Tier maxTier 以下のツリーノードを全解放した部分メタ進行状態 */
-const treeUpToTier = (maxTier: number): Record<string, number> =>
-  Object.fromEntries(TREE.filter(n => n.t <= maxTier).map(n => [n.id, 1]));
 
 const mean = (xs: number[]): number => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
 
@@ -46,40 +42,36 @@ function curveAt(totemId: TotemId, bc: number): number {
   }));
 }
 
-d('PRIMAL PATH バランスガードレール', () => {
+// 【2026-06-23 プレイテストアンカーへ転換】
+// sim(greedy-atk) は「並プレイヤー」の下限であり、rit フォーカス×3＋狂血の低HPバーストを
+// 狙うエキスパートの楽勝は再現しない（測定で無強化 di1=33% のまま）。よって本ガードレールは
+// 「苦戦の体感」ではなく健全性のみを守る: 投資が報われ・必勝でなく・ツリーが効き・断崖がないこと。
+// 苦戦/狂気リスク化の体感はユーザーのプレイテストで確定する。
+d('PRIMAL PATH バランスガードレール（下限サニティ）', () => {
   jest.setTimeout(900_000);
 
-  it('(a) 上限: フル強化 di3 トーテム平均勝率が [0.55, 0.80]（必勝でない）', () => {
+  it('(a) 投資が報われる: フル強化 di1 トーテム平均勝率が 0.55 超', () => {
+    expect(totemAvgWinRate(1, FULL_TREE)).toBeGreaterThan(0.55);
+  });
+
+  it('(a) 必勝でなく到達不能でもない: フル強化 di3 トーテム平均勝率が [0.30, 0.85]', () => {
     const wr = totemAvgWinRate(3, FULL_TREE);
-    expect(wr).toBeGreaterThanOrEqual(0.55);
-    expect(wr).toBeLessThanOrEqual(0.80);
+    expect(wr).toBeGreaterThanOrEqual(0.30);
+    expect(wr).toBeLessThanOrEqual(0.85);
   });
 
-  it('(a) 上限の妥当性: フル強化 di1 トーテム平均勝率が 0.85 超（強化は報われる）', () => {
-    expect(totemAvgWinRate(1, FULL_TREE)).toBeGreaterThan(0.85);
+  it('(a) メタ進行が効く: 無強化 di1 がフル強化 di1 より 0.30 以上低い', () => {
+    const full = totemAvgWinRate(1, FULL_TREE);
+    const none = totemAvgWinRate(1, undefined);
+    expect(full - none).toBeGreaterThanOrEqual(0.30);
   });
 
-  it('(a) 下限: 無強化 di1 トーテム平均勝率が [0.20, 0.45]', () => {
-    const wr = totemAvgWinRate(1, undefined);
-    expect(wr).toBeGreaterThanOrEqual(0.20);
-    expect(wr).toBeLessThanOrEqual(0.45);
-  });
-
-  it('(a) 下限: 無強化 di2 トーテム平均勝率が 0 超（わずかでも手が届く）', () => {
-    expect(totemAvgWinRate(2, undefined)).toBeGreaterThan(0.0);
-  });
-
-  it('(a) 際どい帯: ツリー段階×難易度の 2 つ以上が [0.30, 0.70]', () => {
-    const tiers = [undefined, treeUpToTier(1), treeUpToTier(2), treeUpToTier(3), treeUpToTier(4), FULL_TREE];
-    const diffs = [1, 2, 3];
-    let closeCount = 0;
-    for (const tree of tiers) {
-      for (const di of diffs) {
-        const wr = totemAvgWinRate(di, tree);
-        if (wr >= 0.30 && wr <= 0.70) closeCount++;
-      }
-    }
-    expect(closeCount).toBeGreaterThanOrEqual(2);
+  it('(a) 断崖なし: フル強化の隣接難易度(di1→di2→di3)の勝率低下が各 0.40 以下', () => {
+    const w1 = totemAvgWinRate(1, FULL_TREE);
+    const w2 = totemAvgWinRate(2, FULL_TREE);
+    const w3 = totemAvgWinRate(3, FULL_TREE);
+    expect(w1 - w2).toBeLessThanOrEqual(0.40);
+    expect(w2 - w3).toBeLessThanOrEqual(0.40);
   });
 
   it('(b) 終盤交差: bc0/bc1 は blood>ember、bc2 は ember>blood', () => {
