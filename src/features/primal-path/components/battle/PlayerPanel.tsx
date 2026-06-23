@@ -51,7 +51,7 @@ export const PlayerPanel: React.FC<PlayerPanelProps> = ({ run, popups }) => {
             部族長 {feLabel}
             <AffinityBadge biome={run.cBT} levels={lvs} />
             {ritActive && (
-              <span style={{ fontSize: 10, color: '#ff4060', background: '#ff406015', border: '1px solid #ff406030', padding: '1px 5px', borderRadius: 6 }}>⚡ATK×3</span>
+              <span style={{ fontSize: 10, color: '#ff4060', background: '#ff406015', border: '1px solid #ff406030', padding: '1px 5px', borderRadius: 6 }}>⚡ATK×2</span>
             )}
           </div>
           <HpBar value={run.hp} max={run.mhp} variant="hp" low={run.hp < run.mhp * 0.25} showPct />

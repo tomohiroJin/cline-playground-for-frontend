@@ -45,7 +45,7 @@ export function keystonePlayerAtkMods(r: RunState): { flatAdd: number; mult: num
   if (hasKeystone(r, 'hunter_stack')) flatAdd += r.ksStacks?.hunter_stack ?? 0;
 
   // 乗算系（複数キーストーン取得時は順に積算）
-  if (hasKeystone(r, 'madblood') && r.hp < r.mhp * 0.3) mult *= 2;
+  if (hasKeystone(r, 'madblood') && r.hp < r.mhp * 0.3) mult *= 1.6;
   if (hasKeystone(r, 'wolf_pack')) mult *= 1 + 0.1 * aliveAllies(r.al).length;
   if (hasKeystone(r, 'primal_roar')) mult *= 1 + Math.max(0, 0.5 - 0.1 * (r.cW - 1));
 

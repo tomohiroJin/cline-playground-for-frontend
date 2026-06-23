@@ -62,7 +62,7 @@ export function tickPlayerPhase(next: RunState, e: Enemy, events: TickEvent[], r
   if (dm > next.maxHit) next.maxHit = dm;
 
   if (next.fe === 'rit' && next.hp < next.mhp * RIT_LOW_HP_RATIO && next.wTurn === 1) {
-    next.log.push({ x: '  ⚡ 血の力が覚醒！ATK×3', c: 'rc' });
+    next.log.push({ x: '  ⚡ 血の力が覚醒！ATK×2', c: 'rc' });
   }
 
   e.hp -= dm;

@@ -80,7 +80,7 @@ export function scaleEnemy(
 /** プレイヤー攻撃のダメージ計算（儀式低HP×3、クリティカル、バイオームボーナス含む） */
 export function calcPlayerAtk(r: RunState, rng = Math.random): PlayerAttackResult {
   let pa = effATK(r);
-  if (r.fe === 'rit' && r.hp < r.mhp * RIT_LOW_HP_RATIO) pa *= 3;
+  if (r.fe === 'rit' && r.hp < r.mhp * RIT_LOW_HP_RATIO) pa *= 2;
   const crit = rng() < r.cr;
   if (crit) pa = Math.floor(pa * CRIT_MULTIPLIER);
   return { dmg: Math.floor(pa * biomeBonus(r.cBT, civLvs(r))), crit };
