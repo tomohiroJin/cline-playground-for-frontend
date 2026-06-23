@@ -28,7 +28,8 @@ export const FULL_TREE: Readonly<Record<string, number>> =
 export type EvoStrategy =
   | 'greedy-atk' // 実効 ATK(atk×aM×dm) が最も伸びる進化を選ぶ。simEvo が実効値を返すため、血の契約(aM×2)等の乗算系も評価され、最適バースト相当の選択になる
   | 'random' // 一様ランダム（無方針プレイヤー）
-  | 'balanced'; // 文明レベルが最も低い系統を伸ばす（覚醒・調和狙い）
+  | 'balanced' // 文明レベルが最も低い系統を伸ばす（覚醒・調和狙い）
+  | 'rit-burst'; // 儀式(rit)型進化を優先して cR を上げ rit 大覚醒(fe='rit')を狙う実プレイ最強の低HPバースト建造。狂血キーストーン優先(keystone選択)＋HP犠牲rit進化で低HP×2バーストを再現
 
 /** 1 ランのシミュレーション設定 */
 export interface SimConfig {
@@ -120,6 +121,14 @@ function pickEvo(run: RunState, picks: readonly Evolution[], strategy: EvoStrate
   if (strategy === 'greedy-atk') {
     return picks.reduce((best, ev) =>
       simEvo(run, ev).atk > simEvo(run, best).atk ? ev : best);
+  }
+  if (strategy === 'rit-burst') {
+    // 儀式(rit)型を優先して cR を伸ばし rit 大覚醒(fe='rit')を発火させる。
+    // rit 型同士・rit 型が無い場合は実効ATK最大で選ぶ（狂血は keystone 選択側で優先取得済み）。
+    const byEff = (a: Evolution, b: Evolution): Evolution => (simEvo(run, a).atk >= simEvo(run, b).atk ? a : b);
+    const rit = picks.filter(ev => ev.t === 'rit');
+    if (rit.length) return rit.reduce(byEff);
+    return picks.reduce(byEff);
   }
   // balanced: 取得後に最も底上げになる（＝現在レベルが低い系統の）進化を優先。
   // 候補の civ 系統が現状の最小レベル系統に一致するものを優先し、なければ先頭。
