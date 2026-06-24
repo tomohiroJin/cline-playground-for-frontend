@@ -77,7 +77,7 @@ export function scaleEnemy(
 
 /* ===== プレイヤー攻撃 ===== */
 
-/** プレイヤー攻撃のダメージ計算（儀式低HP×3、クリティカル、バイオームボーナス含む） */
+/** プレイヤー攻撃のダメージ計算（儀式低HP×2、クリティカル、バイオームボーナス含む） */
 export function calcPlayerAtk(r: RunState, rng = Math.random): PlayerAttackResult {
   let pa = effATK(r);
   if (r.fe === 'rit' && r.hp < r.mhp * RIT_LOW_HP_RATIO) pa *= 2;

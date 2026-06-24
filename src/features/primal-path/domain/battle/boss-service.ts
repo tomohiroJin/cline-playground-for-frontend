@@ -4,7 +4,7 @@
  * 最終ボスの選出・開始・撃破処理を担当する。
  */
 import type { RunState } from '../../types';
-import { BOSS, FINAL_BOSS_ORDER, BOSS_CHAIN_SCALE, BOSS_ARMOR_RATIO } from '../../constants';
+import { BOSS, FINAL_BOSS_ORDER, BOSS_CHAIN_SCALE, BOSS_ARMOR_RATIO, BOSS_CLEAR_HEAL_RATIO } from '../../constants';
 import { scaleEnemy } from './combat-calculator';
 import { deepCloneRun } from '../shared/utils';
 
@@ -37,8 +37,8 @@ export function handleFinalBossKill(r: RunState): { nextRun: RunState; gameWon: 
   const next = deepCloneRun(r);
   if (next._fPhase < next.dd.bb) {
     next._fPhase++;
-    // アトリション: 連戦間の回復を抑制（+20%→+8%）。連戦が消耗ガントレットになる
-    const rec = Math.floor(next.mhp * 0.08);
+    // アトリション: 連戦間の回復を抑制。連戦が消耗ガントレットになる
+    const rec = Math.floor(next.mhp * BOSS_CLEAR_HEAL_RATIO);
     next.hp = Math.min(next.hp + rec, next.mhp);
     // FINAL_BOSS_ORDER から次のボスを選出
     const order = FINAL_BOSS_ORDER[next._fbk];

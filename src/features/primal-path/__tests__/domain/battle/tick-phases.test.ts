@@ -169,6 +169,33 @@ describe('domain/battle/tick-phases', () => {
         expect(result.events.some(e => e.type === 'enemy_killed')).toBe(false);
       });
 
+      it('棘の守護の反射ダメージも装甲を経由し、装甲未ブレイク中は本体HPを削らない', () => {
+        // Arrange: 装甲1000のボス。敵の攻撃でプレイヤーが被弾→反射が発生する。
+        // プレイヤー火力は極小(1)なので装甲はほぼ削れず、反射が本体HPに通れば不変条件違反になる。
+        const run = makeRun({
+          en: { n: '装甲ボス', hp: 1000, mhp: 1000, atk: 100, def: 0, bone: 5, boss: true, armor: 1000 },
+          hp: 500, mhp: 500, atk: 1, def: 0,
+          keystones: ['thorn_guard'],
+        });
+        const result = tick(run, false, () => 0.99); // 会心・二次攻撃を回避
+
+        // Assert: 反射は装甲に吸収され、本体HPは無傷（装甲未ブレイク中の不変条件）
+        expect(result.nextRun.en?.hp).toBe(1000);
+        expect(result.nextRun.en?.armor).toBeLessThan(1000);
+      });
+
+      it('ボスへの与ダメージ統計(dmgDealt)は per-turn 上限でクランプした実ダメージを計上する', () => {
+        // Arrange: 装甲なし(ブレイク済み相当)のボス。過剰火力でも本体に通るのは上限400
+        const run = makeRun({
+          en: { n: 'ボス', hp: 1000, mhp: 1000, atk: 1, def: 0, bone: 5, boss: true },
+          atk: 100000, aM: 1, dm: 1, dmgDealt: 0,
+        });
+        const result = tick(run, false, () => 0.99);
+
+        // Assert: dmgDealt は生の火力(100000)でなく、上限でクランプした実ダメージ(400)
+        expect(result.nextRun.dmgDealt).toBe(400);
+      });
+
       it('装甲を削り切るとブレイクし、以降は本体HPに通る', () => {
         // Arrange: 装甲を残り300にしておく。上限400 → 装甲300吸収しブレイク、余剰100が本体へ
         const run = makeRun({

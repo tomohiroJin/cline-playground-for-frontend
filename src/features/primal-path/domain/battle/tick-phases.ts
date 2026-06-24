@@ -142,7 +142,18 @@ export function tickEnemyPhase(next: RunState, e: Enemy, events: TickEvent[], rn
   // 棘の守護: 被ダメージの一部を敵へ反射
   const reflect = keystoneReflectDmg(next, ed);
   if (reflect > 0) {
-    e.hp -= reflect;
+    // ボスは反射ダメージも装甲を経由する（装甲を削り切るまで本体HPを削らない不変条件を維持）
+    if (e.boss && e.armor && e.armor > 0) {
+      const absorbed = Math.min(e.armor, reflect);
+      e.armor -= absorbed;
+      const overflow = reflect - absorbed;
+      if (overflow > 0) e.hp -= overflow;
+      if (e.armor === 0) {
+        next.log.push({ x: '  💥 ' + e.n + ' の装甲をブレイク！', c: 'gc' });
+      }
+    } else {
+      e.hp -= reflect;
+    }
     next.dmgDealt += reflect;
     next.log.push({ x: '  🛡️ 反射 ' + reflect, c: 'gc' });
   }
@@ -245,7 +256,10 @@ export function tick(r: RunState, finalMode: boolean, rng = Math.random): TickRe
   if (e.boss) {
     const dealt = eHP0 - e.hp;
     if (dealt > 0) {
-      let remain = Math.min(dealt, Math.floor(e.mhp * BOSS_HIT_CAP)); // per-turn 上限
+      const capped = Math.min(dealt, Math.floor(e.mhp * BOSS_HIT_CAP)); // per-turn 上限
+      // 上限超過分は実際にはボスへ通っていないため、与ダメージ統計から差し引く
+      next.dmgDealt -= dealt - capped;
+      let remain = capped;
       e.hp = eHP0; // いったん戻し、装甲→本体の順で再適用する
       if (e.armor && e.armor > 0) {
         const absorbed = Math.min(e.armor, remain);
