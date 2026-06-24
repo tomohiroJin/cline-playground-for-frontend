@@ -38,7 +38,7 @@ export function startRunState(di: number, save: SaveData, totemId?: TotemId): Ru
   };
 
   const run: RunState = {
-    hp: 80 + tb.bH, mhp: 80 + tb.bH, atk: 8 + tb.bA, def: 2 + tb.bD,
+    hp: 100 + tb.bH, mhp: 100 + tb.bH, atk: 12 + tb.bA, def: 3 + tb.bD,
     cr: Math.min(0.05 + tb.cr, 1), burn: 0, aM: 1, dm: 1 + tb.dM,
     cT: tb.sC, cL: tb.sC, cR: tb.sC,
     al: [], bms,

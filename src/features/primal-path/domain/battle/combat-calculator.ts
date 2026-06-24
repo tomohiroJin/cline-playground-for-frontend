@@ -16,7 +16,7 @@ import { civLvs } from '../shared/civ-utils';
 /** 儀式の低HP倍率閾値 (HP/MHP比) */
 export const RIT_LOW_HP_RATIO = 0.3;
 /** クリティカル倍率 */
-const CRIT_MULTIPLIER = 1.6;
+const CRIT_MULTIPLIER = 1.4;
 
 /* ===== 実効攻撃力 ===== */
 
@@ -77,10 +77,10 @@ export function scaleEnemy(
 
 /* ===== プレイヤー攻撃 ===== */
 
-/** プレイヤー攻撃のダメージ計算（儀式低HP×3、クリティカル、バイオームボーナス含む） */
+/** プレイヤー攻撃のダメージ計算（儀式低HP×2、クリティカル、バイオームボーナス含む） */
 export function calcPlayerAtk(r: RunState, rng = Math.random): PlayerAttackResult {
   let pa = effATK(r);
-  if (r.fe === 'rit' && r.hp < r.mhp * RIT_LOW_HP_RATIO) pa *= 3;
+  if (r.fe === 'rit' && r.hp < r.mhp * RIT_LOW_HP_RATIO) pa *= 2;
   const crit = rng() < r.cr;
   if (crit) pa = Math.floor(pa * CRIT_MULTIPLIER);
   return { dmg: Math.floor(pa * biomeBonus(r.cBT, civLvs(r))), crit };

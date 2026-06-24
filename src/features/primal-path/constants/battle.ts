@@ -41,6 +41,24 @@ export const BOSS: Readonly<Record<string, EnemyTemplate>> = Object.freeze({
 /** ボス連戦スケール倍率 */
 export const BOSS_CHAIN_SCALE: readonly number[] = Object.freeze([1.0, 1.15, 1.3, 1.45, 1.6]);
 
+/**
+ * ボスの1ターン被ダメージ上限（最大HP比）。
+ * 一撃で倒せないようにし、ボス戦を複数ターンのクライマックスにする（雑魚には掛からない）。
+ */
+export const BOSS_HIT_CAP = 0.4;
+
+/**
+ * ボスの装甲量（最大HP比）。装甲を削り切る(ブレイク)まで本体HPを削れない。
+ * per-turn 上限と合わせ、ボス戦を「装甲を剥ぐ長期戦＝危険な複数ターン」にする。
+ */
+export const BOSS_ARMOR_RATIO = 1.0;
+
+/**
+ * ボス撃破/連戦継続時のHP回復率（最大HP比）。アトリションのため低めに抑える。
+ * 削られたHPが回復せず消耗が蓄積する設計。
+ */
+export const BOSS_CLEAR_HEAL_RATIO = 0.08;
+
 /** 最終ボス出現順テーブル（初回ボスキーに基づく連戦順） */
 export const FINAL_BOSS_ORDER: Readonly<Record<string, readonly string[]>> = Object.freeze({
   ft: Object.freeze(['ft', 'fl', 'fr', 'fa', 'fx']),

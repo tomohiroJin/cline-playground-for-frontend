@@ -273,10 +273,10 @@ describe('tick', () => {
 describe('startRunState', () => {
   it('正しい初期ステートを生成する', () => {
     const run = startRunState(0, makeSave());
-    expect(run.hp).toBe(80);
-    expect(run.mhp).toBe(80);
-    expect(run.atk).toBe(8);
-    expect(run.def).toBe(2);
+    expect(run.hp).toBe(100);
+    expect(run.mhp).toBe(100);
+    expect(run.atk).toBe(12);
+    expect(run.def).toBe(3);
     expect(run.di).toBe(0);
     expect(run.bms).toHaveLength(3);
   });
@@ -284,8 +284,8 @@ describe('startRunState', () => {
   it('ツリーボーナスを反映する', () => {
     const save = makeSave({ tree: { atk1: 1, hp1: 1 } });
     const run = startRunState(0, save);
-    expect(run.hp).toBe(90); // 80 + 10
-    expect(run.atk).toBe(9); // 8 + 1
+    expect(run.hp).toBe(110); // 100 + 10
+    expect(run.atk).toBe(13); // 12 + 1
   });
 });
 
@@ -821,7 +821,7 @@ describe('handleFinalBossKill（最終ボス連戦）', () => {
       expect(result.nextRun.en!.n).toBe(BOSS[FINAL_BOSS_ORDER['ft'][1]].n);
     });
 
-    it('連戦継続時にHP20%回復する', () => {
+    it('連戦継続時にHP8%回復する（アトリション）', () => {
       // Arrange
       const run = makeRun({
         di: 1, dd: DIFFS[1], _fPhase: 1, _fbk: 'ft',
@@ -832,8 +832,8 @@ describe('handleFinalBossKill（最終ボス連戦）', () => {
       // Act
       const result = handleFinalBossKill(run);
 
-      // Assert: 60 + 20（100の20%）= 80
-      expect(result.nextRun.hp).toBe(80);
+      // Assert: アトリションで連戦回復は8%。60 + 8（100の8%）= 68
+      expect(result.nextRun.hp).toBe(68);
     });
 
     it('HP回復が最大HPを超えない', () => {

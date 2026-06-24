@@ -42,4 +42,11 @@ export interface Enemy {
   atk: number;
   def: number;
   bone: number;
+  /** ボスか（true のとき1ターンの被ダメージに上限が掛かり一撃で倒せない） */
+  boss?: boolean;
+  /**
+   * ボスの装甲（残量 > 0 の間は本体HPを削れず、ダメージは装甲を削る。0でブレイク）。
+   * 装甲を削り切るターンのみ、装甲を超えた余剰（per-turn 上限内）が本体HPへ通る。
+   */
+  armor?: number;
 }

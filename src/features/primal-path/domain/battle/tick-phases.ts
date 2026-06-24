@@ -5,7 +5,7 @@
  */
 import type { RunState, Enemy, TickResult, TickEvent } from '../../types';
 import type { SynergyBonusResult } from '../evolution/synergy-service';
-import { ENV_DMG } from '../../constants';
+import { ENV_DMG, BOSS_HIT_CAP } from '../../constants';
 import { calcEnvDmg, calcPlayerAtk, aliveAllies, RIT_LOW_HP_RATIO } from './combat-calculator';
 import { calcSynergies, applySynergyBonuses } from '../evolution/synergy-service';
 import { keystonePlayerAtkMods, onKeystoneKill, keystoneReflectDmg, isKeystoneFreezeTurn, keystoneLethalGuard } from '../keystone/keystone-service';
@@ -62,7 +62,7 @@ export function tickPlayerPhase(next: RunState, e: Enemy, events: TickEvent[], r
   if (dm > next.maxHit) next.maxHit = dm;
 
   if (next.fe === 'rit' && next.hp < next.mhp * RIT_LOW_HP_RATIO && next.wTurn === 1) {
-    next.log.push({ x: '  ⚡ 血の力が覚醒！ATK×3', c: 'rc' });
+    next.log.push({ x: '  ⚡ 血の力が覚醒！ATK×2', c: 'rc' });
   }
 
   e.hp -= dm;
@@ -142,7 +142,18 @@ export function tickEnemyPhase(next: RunState, e: Enemy, events: TickEvent[], rn
   // 棘の守護: 被ダメージの一部を敵へ反射
   const reflect = keystoneReflectDmg(next, ed);
   if (reflect > 0) {
-    e.hp -= reflect;
+    // ボスは反射ダメージも装甲を経由する（装甲を削り切るまで本体HPを削らない不変条件を維持）
+    if (e.boss && e.armor && e.armor > 0) {
+      const absorbed = Math.min(e.armor, reflect);
+      e.armor -= absorbed;
+      const overflow = reflect - absorbed;
+      if (overflow > 0) e.hp -= overflow;
+      if (e.armor === 0) {
+        next.log.push({ x: '  💥 ' + e.n + ' の装甲をブレイク！', c: 'gc' });
+      }
+    } else {
+      e.hp -= reflect;
+    }
     next.dmgDealt += reflect;
     next.log.push({ x: '  🛡️ 反射 ' + reflect, c: 'gc' });
   }
@@ -203,6 +214,8 @@ function resolveEnemyDefeat(next: RunState, e: Enemy, events: TickEvent[], final
   events.push({ type: 'sfx', sfx: 'kill' });
   events.push({ type: 'shake_enemy' });
   events.push(finalMode ? { type: 'final_boss_killed' } : { type: 'enemy_killed' });
+  // 保険: 将来のリグレッションでも事後条件違反を起こさないよう負HPを0に丸める
+  if (next.hp < 0) next.hp = 0;
   const result = { nextRun: next, events };
   if (process.env.NODE_ENV !== 'production') ensureTickResult(result);
   return result;
@@ -221,15 +234,44 @@ export function tick(r: RunState, finalMode: boolean, rng = Math.random): TickRe
   next.turn++;
   next.wTurn++;
   const pHP = next.hp;
+  // ボスの被ダメージ上限算出用に、ターン開始時の敵HPを記録する
+  const eHP0 = e.hp;
 
   // シナジーボーナス計算
   const synergies = calcSynergies(next.evs);
   const sb = applySynergyBonuses(synergies);
 
   tickEnvPhase(next, events);
+  // 環境ダメージが致死量の場合はここで死亡（または復活/不滅）を確定し、
+  // 負HPのまま敵撃破経路へ抜けるのを防ぐ
+  if (tickDeathCheck(next, events)) {
+    return { nextRun: next, events };
+  }
   tickPlayerPhase(next, e, events, rng, sb);
   tickAllyPhase(next, e, events, sb);
   tickRegenPhase(next, events, sb);
+
+  // ボス: 1ターンの被ダメージを最大HPの BOSS_HIT_CAP までに制限し、装甲を削り切る(ブレイク)まで
+  // 本体HPを削れない。装甲があるうちはボスが生存して反撃し続けるため、危険な長期戦になる。
+  if (e.boss) {
+    const dealt = eHP0 - e.hp;
+    if (dealt > 0) {
+      const capped = Math.min(dealt, Math.floor(e.mhp * BOSS_HIT_CAP)); // per-turn 上限
+      // 上限超過分は実際にはボスへ通っていないため、与ダメージ統計から差し引く
+      next.dmgDealt -= dealt - capped;
+      let remain = capped;
+      e.hp = eHP0; // いったん戻し、装甲→本体の順で再適用する
+      if (e.armor && e.armor > 0) {
+        const absorbed = Math.min(e.armor, remain);
+        e.armor -= absorbed;
+        remain -= absorbed;
+        if (e.armor === 0) {
+          next.log.push({ x: '  💥 ' + e.n + ' の装甲をブレイク！', c: 'gc' });
+        }
+      }
+      e.hp = eHP0 - remain; // 装甲ブレイク後の余剰のみ本体へ（per-turn 上限内）
+    }
+  }
 
   // 敵撃破判定（プレイヤー/仲間/再生フェーズ後）
   if (e.hp <= 0) {

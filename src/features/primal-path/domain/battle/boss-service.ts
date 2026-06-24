@@ -4,7 +4,7 @@
  * 最終ボスの選出・開始・撃破処理を担当する。
  */
 import type { RunState } from '../../types';
-import { BOSS, FINAL_BOSS_ORDER, BOSS_CHAIN_SCALE } from '../../constants';
+import { BOSS, FINAL_BOSS_ORDER, BOSS_CHAIN_SCALE, BOSS_ARMOR_RATIO, BOSS_CLEAR_HEAL_RATIO } from '../../constants';
 import { scaleEnemy } from './combat-calculator';
 import { deepCloneRun } from '../shared/utils';
 
@@ -23,6 +23,8 @@ export function startFinalBoss(r: RunState): { nextRun: RunState; bossKey: strin
   next._fPhase = 1;
   next.cBT = 'final';
   next.en = scaleEnemy(BOSS[bk], next.dd.hm, next.dd.am, 1);
+  next.en.boss = true; // 最終ボスも一撃不可（被ダメージ上限）
+  next.en.armor = Math.floor(next.en.mhp * BOSS_ARMOR_RATIO); // 装甲を付与
   next.cW = next.wpb + 1;
   next.log = [];
   next.wTurn = 0;
@@ -35,8 +37,8 @@ export function handleFinalBossKill(r: RunState): { nextRun: RunState; gameWon: 
   const next = deepCloneRun(r);
   if (next._fPhase < next.dd.bb) {
     next._fPhase++;
-    // HP を最大HPの20%回復
-    const rec = Math.floor(next.mhp * 0.2);
+    // アトリション: 連戦間の回復を抑制。連戦が消耗ガントレットになる
+    const rec = Math.floor(next.mhp * BOSS_CLEAR_HEAL_RATIO);
     next.hp = Math.min(next.hp + rec, next.mhp);
     // FINAL_BOSS_ORDER から次のボスを選出
     const order = FINAL_BOSS_ORDER[next._fbk];
@@ -46,6 +48,8 @@ export function handleFinalBossKill(r: RunState): { nextRun: RunState; gameWon: 
     // BOSS_CHAIN_SCALE でスケーリング
     const chainScale = BOSS_CHAIN_SCALE[Math.min(next._fPhase - 1, BOSS_CHAIN_SCALE.length - 1)];
     next.en = scaleEnemy(BOSS[nextBossKey], next.dd.hm, next.dd.am, chainScale);
+    next.en.boss = true; // 連戦ボスも一撃不可（被ダメージ上限）
+    next.en.armor = Math.floor(next.en.mhp * BOSS_ARMOR_RATIO); // 装甲を付与
     // 戦闘状態リセット
     next.log = [];
     next.wTurn = 0;

@@ -5,7 +5,7 @@ import type { KeystoneDef } from '../types';
 
 /** キーストーン一覧（10種・アーキタイプ×カーブ網羅） */
 export const KEYSTONES: readonly KeystoneDef[] = Object.freeze([
-  Object.freeze({ id: 'madblood' as const, nm: '狂血の覚醒', ic: '🩸', tag: 'wild' as const, curve: 'front' as const, desc: 'HP30%以下の間 ATK×2' }),
+  Object.freeze({ id: 'madblood' as const, nm: '狂血の覚醒', ic: '🩸', tag: 'wild' as const, curve: 'front' as const, desc: 'HP30%以下の間 ATK×1.6' }),
   Object.freeze({ id: 'primal_roar' as const, nm: '原始の咆哮', ic: '🦁', tag: 'hunt' as const, curve: 'front' as const, desc: '序盤ATK+50%、ウェーブ毎に減衰' }),
   Object.freeze({ id: 'hunter_stack' as const, nm: '狩人の蓄積', ic: '🏹', tag: 'hunt' as const, curve: 'scaling' as const, desc: 'キルごとにATK+3（ラン中恒久）' }),
   Object.freeze({ id: 'wolf_pack' as const, nm: '群狼の戦術', ic: '🐺', tag: 'tribe' as const, curve: 'scaling' as const, desc: '生存仲間1体ごとにATK+10%' }),

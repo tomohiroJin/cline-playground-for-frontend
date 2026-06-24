@@ -7,8 +7,8 @@ import type { TotemDef } from '../types';
 export const TOTEMS: readonly TotemDef[] = Object.freeze([
   Object.freeze({
     id: 'blood' as const, nm: '血の祖', ic: '🩸', curve: 'front' as const, tag: 'wild' as const,
-    desc: '最大HP-20% ATK+20% 会心+5%（序盤バースト）', unlock: 0,
-    effect: Object.freeze({ mhpMul: 0.8, atkMul: 1.2, crAdd: 0.05 }),
+    desc: '最大HP-20% ATK+10% 会心+5%（序盤バースト）', unlock: 0,
+    effect: Object.freeze({ mhpMul: 0.8, atkMul: 1.1, crAdd: 0.05 }),
   }),
   Object.freeze({
     id: 'flame' as const, nm: '炎の祖', ic: '🔥', curve: 'combo' as const, tag: 'fire' as const,
@@ -35,7 +35,7 @@ export const TOTEMS: readonly TotemDef[] = Object.freeze([
   }),
   Object.freeze({
     id: 'ember' as const, nm: '種火の祖', ic: '🌰', curve: 'scaling' as const, tag: 'hunt' as const,
-    desc: '開始ATK-30% 踏破ごと全ステ+12%（極・晩成）', unlock: 10,
-    effect: Object.freeze({ atkMul: 0.7, biomeScale: 0.12 }),
+    desc: '開始ATK-30% 踏破ごと全ステ+45%（極・晩成）', unlock: 10,
+    effect: Object.freeze({ atkMul: 0.7, biomeScale: 0.45 }),
   }),
 ]);

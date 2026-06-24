@@ -39,12 +39,12 @@ import { applyTotem, tick } from '../game-logic';
 import { makeRun } from './test-helpers';
 
 describe('applyTotem — 血の祖', () => {
-  it('最大HP×0.8 ATK×1.2 会心+0.05 を適用し、totemId を記録する', () => {
+  it('最大HP×0.8 ATK×1.1 会心+0.05 を適用し、totemId を記録する', () => {
     const base = makeRun({ mhp: 100, hp: 100, atk: 10, cr: 0.05 });
     const r = applyTotem(base, 'blood');
     expect(r.mhp).toBe(80);
     expect(r.hp).toBe(80); // hp も mhp に追従
-    expect(r.atk).toBe(12);
+    expect(r.atk).toBe(11);
     expect(r.cr).toBeCloseTo(0.10, 5);
     expect(r.totemId).toBe('blood');
   });
@@ -179,16 +179,16 @@ describe('applyTotem — 種火の祖', () => {
 import { applyEmberBiomeScale } from '../game-logic';
 
 describe('applyEmberBiomeScale — 種火の踏破スケール', () => {
-  it('emberBase×0.12 を ATK/DEF/最大HP に加算し、Δmhp を現在HPにも加算する', () => {
+  it('emberBase×0.45 を ATK/DEF/最大HP に加算し、Δmhp を現在HPにも加算する', () => {
     const base = makeRun({
       atk: 100, def: 10, mhp: 200, hp: 50,
       totemId: 'ember', emberBase: { atk: 100, def: 10, mhp: 200 },
     });
     const r = applyEmberBiomeScale(base);
-    expect(r.atk).toBe(112); // 100 + floor(100×0.12)=12
-    expect(r.def).toBe(11);  // 10 + floor(10×0.12)=1
-    expect(r.mhp).toBe(224); // 200 + floor(200×0.12)=24
-    expect(r.hp).toBe(74);   // 50 + Δmhp(24)
+    expect(r.atk).toBe(145); // 100 + floor(100×0.45)=45
+    expect(r.def).toBe(14);  // 10 + floor(10×0.45)=4
+    expect(r.mhp).toBe(290); // 200 + floor(200×0.45)=90
+    expect(r.hp).toBe(140);  // 50 + Δmhp(90)
   });
 
   it('種火の祖以外では変化しない', () => {
@@ -214,10 +214,10 @@ describe('afterBattle — 種火の踏破フック', () => {
     const { nextRun, biomeCleared } = afterBattle(base);
     expect(biomeCleared).toBe(true);
     expect(nextRun.bc).toBe(1);
-    expect(nextRun.atk).toBe(112); // 種火スケール +12
-    expect(nextRun.mhp).toBe(224); // 種火スケール +24
-    // hp: ember 100+Δmhp(24)=124 → ボス回復 floor(224×0.2)=44 → min(124+44,224)=168
-    expect(nextRun.hp).toBe(168);
+    expect(nextRun.atk).toBe(145); // 種火スケール +45
+    expect(nextRun.mhp).toBe(290); // 種火スケール +90
+    // hp: ember 100+Δmhp(90)=190 → ボス回復 floor(290×0.08)=23 → min(190+23,290)=213（アトリション）
+    expect(nextRun.hp).toBe(213);
   });
 
   it('種火以外ではボス撃破時もステは変化しない（bc のみ増加）', () => {
@@ -229,13 +229,13 @@ describe('afterBattle — 種火の踏破フック', () => {
 });
 
 describe('バランスガードレール — 種火の線形成長', () => {
-  it('bc=5 で base×1.6 になる（線形・非指数）', () => {
-    // emberBase=100 のステを 5 回踏破。各回 +floor(100×0.12)=12 → 100 + 12×5 = 160
+  it('bc=5 で base×3.25 になる（線形・非指数）', () => {
+    // emberBase=100 のステを 5 回踏破。各回 +floor(100×0.45)=45 → 100 + 45×5 = 325
     let r = makeRun({ atk: 100, def: 100, mhp: 100, hp: 100, totemId: 'ember', emberBase: { atk: 100, def: 100, mhp: 100 } });
     for (let i = 0; i < 5; i++) r = applyEmberBiomeScale(r);
-    expect(r.atk).toBe(160); // base×1.6（指数なら 100×1.12^5≈176 になるはず）
-    expect(r.def).toBe(160);
-    expect(r.mhp).toBe(160);
+    expect(r.atk).toBe(325); // base×3.25（指数なら 100×1.45^5≈602 になるはず）
+    expect(r.def).toBe(325);
+    expect(r.mhp).toBe(325);
   });
 
   it('上位トーテムのステ倍率が極端でない（atkMul は 0.7〜1.3 の範囲）', () => {

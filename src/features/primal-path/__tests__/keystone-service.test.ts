@@ -53,9 +53,9 @@ describe('applyKeystone / hasKeystone', () => {
 });
 
 describe('keystonePlayerAtkMods', () => {
-  it('狂血の覚醒: HP30%以下で mult ×2', () => {
+  it('狂血の覚醒: HP30%以下で mult ×1.6', () => {
     const low = makeRun({ hp: 20, mhp: 100, keystones: ['madblood'] });
-    expect(keystonePlayerAtkMods(low).mult).toBeCloseTo(2, 5);
+    expect(keystonePlayerAtkMods(low).mult).toBeCloseTo(1.6, 5);
     const high = makeRun({ hp: 80, mhp: 100, keystones: ['madblood'] });
     expect(keystonePlayerAtkMods(high).mult).toBeCloseTo(1, 5);
   });
