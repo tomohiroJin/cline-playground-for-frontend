@@ -156,6 +156,30 @@ describe('domain/battle/tick-phases', () => {
         const result = tick(run, false, () => 0.99);
         expect(result.events.some(e => e.type === 'enemy_killed')).toBe(true);
       });
+
+      it('装甲ボスは装甲がある間は本体HPが減らず（装甲を削る）撃破できない', () => {
+        // Arrange: 装甲1000のボス。過剰火力でも per-turn 上限400まで＝装甲が400吸収し本体HPは不変
+        const run = makeRun({
+          en: { n: '装甲ボス', hp: 1000, mhp: 1000, atk: 1, def: 0, bone: 5, boss: true, armor: 1000 },
+          atk: 100000, aM: 1, dm: 1,
+        });
+        const result = tick(run, false, () => 0.99);
+        expect(result.nextRun.en?.hp).toBe(1000);        // 本体HPは無傷
+        expect(result.nextRun.en?.armor).toBe(600);      // 装甲 1000 - 上限400
+        expect(result.events.some(e => e.type === 'enemy_killed')).toBe(false);
+      });
+
+      it('装甲を削り切るとブレイクし、以降は本体HPに通る', () => {
+        // Arrange: 装甲を残り300にしておく。上限400 → 装甲300吸収しブレイク、余剰100が本体へ
+        const run = makeRun({
+          en: { n: '装甲ボス', hp: 1000, mhp: 1000, atk: 1, def: 0, bone: 5, boss: true, armor: 300 },
+          atk: 100000, aM: 1, dm: 1,
+        });
+        const result = tick(run, false, () => 0.99);
+        expect(result.nextRun.en?.armor).toBe(0);        // 装甲ブレイク
+        expect(result.nextRun.en?.hp).toBe(900);         // 本体 1000 - 余剰100
+        expect(result.nextRun.log.some(l => l.x.includes('ブレイク'))).toBe(true);
+      });
     });
   });
 });

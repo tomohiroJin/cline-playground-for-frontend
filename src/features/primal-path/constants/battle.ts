@@ -47,6 +47,12 @@ export const BOSS_CHAIN_SCALE: readonly number[] = Object.freeze([1.0, 1.15, 1.3
  */
 export const BOSS_HIT_CAP = 0.4;
 
+/**
+ * ボスの装甲量（最大HP比）。装甲を削り切る(ブレイク)まで本体HPを削れない。
+ * per-turn 上限と合わせ、ボス戦を「装甲を剥ぐ長期戦＝危険な複数ターン」にする。
+ */
+export const BOSS_ARMOR_RATIO = 1.0;
+
 /** 最終ボス出現順テーブル（初回ボスキーに基づく連戦順） */
 export const FINAL_BOSS_ORDER: Readonly<Record<string, readonly string[]>> = Object.freeze({
   ft: Object.freeze(['ft', 'fl', 'fr', 'fa', 'fx']),

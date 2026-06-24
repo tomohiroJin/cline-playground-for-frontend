@@ -821,7 +821,7 @@ describe('handleFinalBossKill（最終ボス連戦）', () => {
       expect(result.nextRun.en!.n).toBe(BOSS[FINAL_BOSS_ORDER['ft'][1]].n);
     });
 
-    it('連戦継続時にHP20%回復する', () => {
+    it('連戦継続時にHP8%回復する（アトリション）', () => {
       // Arrange
       const run = makeRun({
         di: 1, dd: DIFFS[1], _fPhase: 1, _fbk: 'ft',
@@ -832,8 +832,8 @@ describe('handleFinalBossKill（最終ボス連戦）', () => {
       // Act
       const result = handleFinalBossKill(run);
 
-      // Assert: 60 + 20（100の20%）= 80
-      expect(result.nextRun.hp).toBe(80);
+      // Assert: アトリションで連戦回復は8%。60 + 8（100の8%）= 68
+      expect(result.nextRun.hp).toBe(68);
     });
 
     it('HP回復が最大HPを超えない', () => {

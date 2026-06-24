@@ -216,8 +216,8 @@ describe('afterBattle — 種火の踏破フック', () => {
     expect(nextRun.bc).toBe(1);
     expect(nextRun.atk).toBe(145); // 種火スケール +45
     expect(nextRun.mhp).toBe(290); // 種火スケール +90
-    // hp: ember 100+Δmhp(90)=190 → ボス回復 floor(290×0.2)=58 → min(190+58,290)=248
-    expect(nextRun.hp).toBe(248);
+    // hp: ember 100+Δmhp(90)=190 → ボス回復 floor(290×0.08)=23 → min(190+23,290)=213（アトリション）
+    expect(nextRun.hp).toBe(213);
   });
 
   it('種火以外ではボス撃破時もステは変化しない（bc のみ増加）', () => {

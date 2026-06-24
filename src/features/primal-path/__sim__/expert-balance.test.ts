@@ -64,9 +64,7 @@ d('PRIMAL PATH エキスパート・バランス（rit-burst）', () => {
       }
       return row;
     });
-    // eslint-disable-next-line no-console
     console.log('\n========== エキスパート(rit-burst) ツリー段階別 勝率 ==========');
-    // eslint-disable-next-line no-console
     console.table(rows);
     expect(rows.length).toBe(tiers.length);
   });
@@ -83,9 +81,7 @@ d('PRIMAL PATH エキスパート・バランス（rit-burst）', () => {
         フル_平均bc: f1(full.bc),
       };
     });
-    // eslint-disable-next-line no-console
     console.log('\n========== エキスパート(rit-burst) 無強化 vs フル 到達度 ==========');
-    // eslint-disable-next-line no-console
     console.table(rows);
     expect(rows.length).toBe(DIFFS_TO_RUN.length);
   });

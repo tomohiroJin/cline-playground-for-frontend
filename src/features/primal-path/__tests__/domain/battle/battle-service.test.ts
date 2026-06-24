@@ -147,8 +147,8 @@ describe('domain/battle/battle-service', () => {
       expect(biomeCleared).toBe(true);
       expect(nextRun.bc).toBe(1);
       expect(nextRun.cW).toBe(0);
-      // HP回復: min(50 + floor(100*0.2), 100) = 70
-      expect(nextRun.hp).toBe(70);
+      // アトリション: ボス撃破回復は +8%。min(50 + floor(100*0.08), 100) = 58
+      expect(nextRun.hp).toBe(58);
     });
 
     it('ボス撃破時のHP回復はmhpを超えない', () => {

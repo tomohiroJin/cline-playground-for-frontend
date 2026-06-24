@@ -240,10 +240,23 @@ export function tick(r: RunState, finalMode: boolean, rng = Math.random): TickRe
   tickAllyPhase(next, e, events, sb);
   tickRegenPhase(next, events, sb);
 
-  // ボスは1ターンに最大HPの BOSS_HIT_CAP までしか削れない（一撃で倒せず複数ターンのクライマックスにする）
+  // ボス: 1ターンの被ダメージを最大HPの BOSS_HIT_CAP までに制限し、装甲を削り切る(ブレイク)まで
+  // 本体HPを削れない。装甲があるうちはボスが生存して反撃し続けるため、危険な長期戦になる。
   if (e.boss) {
-    const minHp = eHP0 - Math.floor(e.mhp * BOSS_HIT_CAP);
-    if (e.hp < minHp) e.hp = minHp;
+    const dealt = eHP0 - e.hp;
+    if (dealt > 0) {
+      let remain = Math.min(dealt, Math.floor(e.mhp * BOSS_HIT_CAP)); // per-turn 上限
+      e.hp = eHP0; // いったん戻し、装甲→本体の順で再適用する
+      if (e.armor && e.armor > 0) {
+        const absorbed = Math.min(e.armor, remain);
+        e.armor -= absorbed;
+        remain -= absorbed;
+        if (e.armor === 0) {
+          next.log.push({ x: '  💥 ' + e.n + ' の装甲をブレイク！', c: 'gc' });
+        }
+      }
+      e.hp = eHP0 - remain; // 装甲ブレイク後の余剰のみ本体へ（per-turn 上限内）
+    }
   }
 
   // 敵撃破判定（プレイヤー/仲間/再生フェーズ後）
