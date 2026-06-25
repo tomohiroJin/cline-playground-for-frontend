@@ -2,8 +2,8 @@
 
 ## 問題データ概要
 
-- **全445問 + 解説付き**: 各問題に1-2文の簡潔な解説を収録
-- **16ジャンルのタグシステム**: スクラム、テスト、設計原則、CI/CD など幅広い領域をカバー
+- **全477問 + 解説付き**: 各問題に1-2文の簡潔な解説を収録
+- **17ジャンルのタグシステム**: スクラム、テスト、設計原則、CI/CD など幅広い領域をカバー
 - **ジャンル別成績分析**: 結果画面でジャンルごとの正答率を色分け表示、苦手ジャンルを可視化
 
 ## スプリント工程とジャンルの対応
@@ -21,17 +21,17 @@
 
 | カテゴリ | ファイル | 問題数 |
 |----------|---------|--------|
-| プランニング | `data/questions/planning.json` | 74問 |
-| 実装1 | `data/questions/impl1.json` | 67問 |
-| 実装2 | `data/questions/impl2.json` | 62問 |
-| テスト1 | `data/questions/test1.json` | 52問 |
-| テスト2 | `data/questions/test2.json` | 52問 |
-| リファインメント | `data/questions/refinement.json` | 52問 |
-| レビュー | `data/questions/review.json` | 43問 |
-| 緊急対応 | `data/questions/emergency.json` | 43問 |
-| **合計** | | **445問** |
+| プランニング | `data/questions/planning.json` | 77問 |
+| 実装1 | `data/questions/impl1.json` | 73問 |
+| 実装2 | `data/questions/impl2.json` | 68問 |
+| テスト1 | `data/questions/test1.json` | 55問 |
+| テスト2 | `data/questions/test2.json` | 55問 |
+| リファインメント | `data/questions/refinement.json` | 55問 |
+| レビュー | `data/questions/review.json` | 47問 |
+| 緊急対応 | `data/questions/emergency.json` | 47問 |
+| **合計** | | **477問** |
 
-## 16ジャンル（タグ）一覧
+## 17ジャンル（タグ）一覧
 
 タグマスタ定義は `data/questions/tag-master.ts` に格納:
 
@@ -53,5 +53,6 @@
 | 14 | チーム | `team` | 34問 |
 | 15 | インシデント | `incident` | 30問 |
 | 16 | SRE | `sre` | 26問 |
+| 17 | AI活用 | `ai` | 32問 |
 
-> 各問題は複数タグを持つため、タグ別合計は総問題数（445問）とは一致しません。
+> 各問題は複数タグを持つため、タグ別合計は総問題数（477問）とは一致しません。
