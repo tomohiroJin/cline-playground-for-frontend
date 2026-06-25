@@ -42,7 +42,7 @@ export const QUIZ_CHARACTERS: QuizCharacter[] = [
 
 /** キャラごとの得意タグID */
 export const CHARACTER_TAG_MAP: Record<string, string[]> = {
-  neko: ['design-principles', 'design-patterns', 'programming', 'code-quality', 'refactoring'],
+  neko: ['design-principles', 'design-patterns', 'programming', 'code-quality', 'refactoring', 'ai'],
   inu: ['scrum', 'agile', 'estimation', 'backlog', 'team'],
   usagi: ['testing', 'ci-cd', 'sre', 'incident', 'release'],
 };
@@ -200,6 +200,11 @@ export const HINT_COMMENTS: Record<string, CharacterComment[]> = {
     { characterId: 'neko', text: '小さく直すにゃ' },
     { characterId: 'neko', text: '安全に変えるにゃ' },
     { characterId: 'neko', text: '負債を減らすにゃ' },
+  ],
+  ai: [
+    { characterId: 'neko', text: 'プロンプトが大事にゃ' },
+    { characterId: 'neko', text: 'モデルの特性を知るにゃ' },
+    { characterId: 'neko', text: 'AIと協働するにゃ' },
   ],
 
   // イヌ（PO系）の得意分野
