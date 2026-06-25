@@ -40,7 +40,7 @@ export const CHARACTER_GENRE_MAP: CharacterGenreMapping[] = [
     characterName: 'ネコ',
     emoji: '🐱',
     role: 'Dev',
-    genres: ['design-principles', 'design-patterns', 'programming', 'data-structures', 'refactoring'],
+    genres: ['design-principles', 'design-patterns', 'programming', 'data-structures', 'refactoring', 'ai'],
   },
   {
     characterId: 'usagi',
