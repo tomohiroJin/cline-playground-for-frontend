@@ -26,6 +26,7 @@ export const TAG_MASTER: TagDefinition[] = [
   { id: 'incident', name: '障害対応', description: 'インシデント対応・PM・RCA', color: '#f06070' },
   { id: 'sre', name: 'SRE・運用', description: 'SLA/SLO・MTTR・監視・カオス', color: '#d84858' },
   { id: 'team', name: 'チーム・改善', description: 'レトロ・FB・心理的安全性', color: '#fb923c' },
+  { id: 'ai', name: 'AI活用', description: 'LLM・生成AI・AIコーディング・プロンプト・AI倫理', color: '#e879f9' },
 ];
 
 export const VALID_TAG_IDS = TAG_MASTER.map((t) => t.id);
