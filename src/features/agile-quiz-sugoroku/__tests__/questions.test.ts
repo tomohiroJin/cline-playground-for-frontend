@@ -115,6 +115,7 @@ describe('Agile Quiz Sugoroku - 問題データの構造検証', () => {
         estimation: 24,
         programming: 24,
         refactoring: 24,
+        ai: 30,
       };
       const counts: Record<string, number> = {};
       expectedCategories.forEach((category) => {
