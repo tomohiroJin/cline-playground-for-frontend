@@ -35,6 +35,8 @@ export const createTestMeta = (overrides: Partial<MetaState> = {}): MetaState =>
   totalDeaths: 0,
   lastRun: null,
   activeTitle: null,
+  echoDepth: 0,
+  fragments: [],
   ...overrides,
 });
 
