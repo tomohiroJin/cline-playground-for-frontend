@@ -24,6 +24,7 @@ export type UIPhase =
   | 'unlocks'
   | 'titles'
   | 'records'
+  | 'archive'
   | 'settings'
   | 'reset_confirm1'
   | 'reset_confirm2';

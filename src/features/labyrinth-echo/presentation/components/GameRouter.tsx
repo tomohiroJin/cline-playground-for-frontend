@@ -20,6 +20,7 @@ import type { UIPhase } from '../hooks/use-game-orchestrator';
 import { TitleScreen } from '../../components/TitleScreen';
 import { DiffSelectScreen } from '../../components/DiffSelectScreen';
 import { UnlocksScreen, TitlesScreen, RecordsScreen } from '../../components/CollectionScreens';
+import { ArchiveScreen } from '../../components/ArchiveScreen';
 import { SettingsScreen, ResetConfirm1Screen, ResetConfirm2Screen } from '../../components/SettingsScreens';
 import { FloorIntroScreen } from '../../components/FloorIntroScreen';
 import { GameOverScreen, VictoryScreen } from '../../components/EndScreens';
@@ -149,6 +150,9 @@ export const GameRouter = (props: GameRouterProps) => {
   }
   if (phase === "records") {
     return <RecordsScreen Particles={Particles} meta={meta} setPhase={setPhase} />;
+  }
+  if (phase === "archive") {
+    return <ArchiveScreen Particles={Particles} meta={meta} setPhase={setPhase} />;
   }
   if (phase === "settings") {
     return <SettingsScreen Particles={Particles} eventCount={eventCount} audioSettings={audioSettings} onChangeAudioSettings={handleAudioSettingsChange} setPhase={setPhase} />;
