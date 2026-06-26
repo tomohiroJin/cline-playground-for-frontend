@@ -265,6 +265,13 @@ const useHandleChoice = (deps: GameActionsDeps, handleGameOver: (cause: string) 
     });
     updateMeta(m => ({ totalEvents: m.totalEvents + 1 }));
 
+    // 残響断片の収集（fl:"frag:<id>"）
+    const FRAG_PREFIX = 'frag:';
+    if (outcome.fl?.startsWith(FRAG_PREFIX)) {
+      const fragId = outcome.fl.slice(FRAG_PREFIX.length);
+      updateMeta(m => ({ fragments: m.fragments.includes(fragId) ? m.fragments : [...m.fragments, fragId] }));
+    }
+
     // 脱出判定
     if (outcome.fl === "escape") {
       handleEscapeOutcome(secondLife.player, state, meta, dispatch, updateMeta, sfx, safeTimeout, audioSfx);
