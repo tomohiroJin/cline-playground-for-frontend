@@ -50,6 +50,9 @@ export interface GameActionsDeps {
   readonly audioSfx: AudioSfxApi;
 }
 
+/** 残響断片フラグのプレフィックス（ログ表示から除外するために参照） */
+const FRAG_PREFIX = 'frag:';
+
 // ── ビジュアル・オーディオフィードバックのヘルパー ──
 
 /** FXトリガー用の依存 */
@@ -268,7 +271,9 @@ const useHandleChoice = (deps: GameActionsDeps, handleGameOver: (cause: string) 
       drainInfo: drain,
       logEntry: {
         fl: state.floor, step: state.step + 1, ch: choice.t,
-        hp: mods.hp, mn: mods.mn, inf: mods.inf, flag: playerFlag ?? undefined,
+        hp: mods.hp, mn: mods.mn, inf: mods.inf,
+        // frag: 始まりの内部IDはログパネルに表示しない
+        flag: playerFlag && !playerFlag.startsWith(FRAG_PREFIX) ? playerFlag : undefined,
       },
       chainNext: chainId,
       usedSecondLife: state.usedSecondLife || secondLife.activated,
@@ -276,7 +281,6 @@ const useHandleChoice = (deps: GameActionsDeps, handleGameOver: (cause: string) 
     updateMeta(m => ({ totalEvents: m.totalEvents + 1 }));
 
     // 残響断片の収集（fl:"frag:<id>"）
-    const FRAG_PREFIX = 'frag:';
     if (outcome.fl?.startsWith(FRAG_PREFIX)) {
       const fragId = outcome.fl.slice(FRAG_PREFIX.length);
       updateMeta(m => ({ fragments: m.fragments.includes(fragId) ? m.fragments : [...m.fragments, fragId] }));
