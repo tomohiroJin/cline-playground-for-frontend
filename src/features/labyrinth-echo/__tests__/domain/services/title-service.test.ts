@@ -50,6 +50,17 @@ describe('TitleService', () => {
     });
   });
 
+  describe('残響圧の称号', () => {
+    it('maxPressureCleared>=3 で「残響に抗う者」が解放', () => {
+      const got = getUnlockedTitles(createMetaState({ maxPressureCleared: 3 }));
+      expect(got.some(t => t.id === 't21')).toBe(true);
+    });
+    it('revenantsDefeated 全5で「亡霊狩り」が解放', () => {
+      const got = getUnlockedTitles(createMetaState({ revenantsDefeated: ['p_lian','p_twins','p_galen','p_elna','p_first'] }));
+      expect(got.some(t => t.id === 't23')).toBe(true);
+    });
+  });
+
   describe('getActiveTitle', () => {
     it('activeTitle未設定時は最も新しい称号が返される', () => {
       // Arrange

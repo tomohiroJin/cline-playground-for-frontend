@@ -48,4 +48,8 @@ export const TITLES: readonly TitleDef[] = Object.freeze([
   { id: "t18", name: "知見の守護者",   icon: "◈",  color: "#60a5fa", cond: (m: MetaState) => m.unlocked.length >= 20, desc: "20個の知見を解放した" },
   { id: "t19", name: "完全なる継承者", icon: "✨", color: "#fbbf24", cond: (m: MetaState) => m.unlocked.length >= UNLOCKS.length, desc: "全ての知見を解放した" },
   { id: "t20", name: "修羅の覇者",     icon: "💀👑", color: "#ff0040", cond: (m: MetaState) => m.endings.includes("abyss_perfect"), desc: "修羅で完全なる帰還を達成した" },
+  // 残響圧（Phase 3）
+  { id: "t21", name: "残響に抗う者",   icon: "🩸", color: "#f43f5e", cond: (m: MetaState) => (m.maxPressureCleared ?? 0) >= 3, desc: "残響圧3以上で生還した" },
+  { id: "t22", name: "残響を統べる者", icon: "👑", color: "#fb7185", cond: (m: MetaState) => (m.maxPressureCleared ?? 0) >= 6, desc: "残響圧6を制覇した" },
+  { id: "t23", name: "亡霊狩り",       icon: "⚔",  color: "#fda4af", cond: (m: MetaState) => (m.revenantsDefeated?.length ?? 0) === 5, desc: "全ての先人の亡霊を鎮めた" },
 ]);

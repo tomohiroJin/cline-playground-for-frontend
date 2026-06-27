@@ -31,6 +31,11 @@ describe('ArchiveScreen', () => {
     expect(screen.getByText(/1\s*\/\s*19/)).toBeInTheDocument();
   });
 
+  it('亡霊撃破済みの先人カードに撃破バッジが出る', () => {
+    render(<ArchiveScreen Particles={null} meta={createMetaState({ echoDepth: 2, fragments: ['f_lian_1'], revenantsDefeated: ['p_lian'] })} setPhase={() => undefined} />);
+    expect(screen.getByText(/亡霊：撃破/)).toBeInTheDocument();
+  });
+
   it('真相レイヤーは echoDepth に応じて開示される', () => {
     setup({ echoDepth: 1, fragments: ['f_lian_1'] });
     expect(screen.getByText('残響の正体')).toBeInTheDocument();

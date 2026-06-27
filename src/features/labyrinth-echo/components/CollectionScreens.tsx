@@ -145,6 +145,7 @@ export const RecordsScreen = ({ Particles, meta, setPhase }: RecordsScreenProps)
             <StatEntry label="累計イベント" color="#c084fc" value={meta.totalEvents} />
             <StatEntry label="知見ポイント" color="#fbbf24" value={`◈ ${meta.kp}pt`} />
             <StatEntry label="継承解放数" color="#60a5fa" value={`${meta.unlocked.length}/${UNLOCKS.length}`} />
+            <StatEntry label="最高残響圧" color="#f43f5e" value={meta.maxPressureCleared ?? 0} />
           </div>
         </Section>
         <Section label="難易度クリア">
