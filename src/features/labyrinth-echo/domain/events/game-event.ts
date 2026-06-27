@@ -59,6 +59,8 @@ export interface GameEvent {
   readonly chainOnly?: boolean;
   /** メタ条件（メタ状態に基づく出現制御） */
   readonly metaCond?: (meta: MetaState) => boolean;
+  /** この残響圧以上で出現可能（亡霊イベント用） */
+  readonly minPressure?: number;
 }
 
 // EventTypeDef は domain/constants/event-type-defs.ts で定義

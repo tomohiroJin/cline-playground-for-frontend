@@ -22,10 +22,12 @@ export const pickEvent = (
   meta: MetaState,
   fx: FxState,
   rng: RandomSource = new DefaultRandomSource(),
+  pressure = 0,
 ): GameEvent | null => {
   const pool = events.filter(e =>
     e.fl.includes(floor) && !usedIds.includes(e.id) && !e.chainOnly
     && (!e.metaCond || e.metaCond(meta))
+    && (!e.minPressure || pressure >= e.minPressure)
   );
   if (pool.length === 0) return null;
 
