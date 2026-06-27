@@ -53,6 +53,9 @@ export interface GameActionsDeps {
 /** 残響断片フラグのプレフィックス（ログ表示から除外するために参照） */
 const FRAG_PREFIX = 'frag:';
 
+/** 残響の亡霊撃破フラグのプレフィックス */
+const REVENANT_PREFIX = 'revenant:';
+
 // ── ビジュアル・オーディオフィードバックのヘルパー ──
 
 /** FXトリガー用の依存 */
@@ -111,7 +114,9 @@ const handleEscapeOutcome = (
         : m.fragments;
       return {
         escapes: m.escapes + 1,
-        kp: m.kp + (state.diff?.rewards.kpOnWin ?? 4) + end.bonusKp,
+        // 基礎KP + エンディングボーナス + 圧ボーナス（圧×基礎KP×0.25） + 撃破亡霊数
+        kp: m.kp + (state.diff?.rewards.kpOnWin ?? 4) + end.bonusKp
+            + Math.round((state.diff?.rewards.kpOnWin ?? 4) * state.pressure * 0.25) + state.revenantsThisRun,
         bestFloor: Math.max(m.bestFloor, state.floor),
         endings: m.endings.includes(end.id) ? m.endings : [...m.endings, end.id],
         clearedDifficulties: !diffId || m.clearedDifficulties.includes(diffId)
@@ -123,6 +128,7 @@ const handleEscapeOutcome = (
         },
         echoDepth: newDepth,
         fragments,
+        maxPressureCleared: Math.max(m.maxPressureCleared, state.pressure),
       };
     });
   }, 2500);
@@ -195,7 +201,7 @@ const resolveBossRetry = (
 
   // ボス再戦前に通常イベントを挟む
   if (bossCount < CFG.MAX_BOSS_RETRIES && postBoss < 2) {
-    const nextEvent = pickEvent({ events, floor: state.floor, usedIds: nextUsedIds, meta, fx, rng: getRandomSource() });
+    const nextEvent = pickEvent({ events, floor: state.floor, usedIds: nextUsedIds, meta, fx, rng: getRandomSource(), pressure: state.pressure });
     if (nextEvent) {
       dispatch({ type: 'ADVANCE_STEP', event: nextEvent, step: nextStep, usedIds: nextUsedIds });
       return;
@@ -260,6 +266,9 @@ const useHandleChoice = (deps: GameActionsDeps, handleGameOver: (cause: string) 
     // ビジュアル・オーディオフィードバック
     applyVisualFeedback(impact, playerFlag, drain, { sfx, audioSfx, doShake, flash, safeTimeout });
 
+    // 残響の亡霊の撃破（fl:"revenant:<predId>"）— dispatch 前に判定
+    const isRevenantDefeat = outcome.fl?.startsWith(REVENANT_PREFIX) ?? false;
+
     // リデューサーに結果を送信
     dispatch({
       type: 'APPLY_CHOICE',
@@ -272,11 +281,12 @@ const useHandleChoice = (deps: GameActionsDeps, handleGameOver: (cause: string) 
       logEntry: {
         fl: state.floor, step: state.step + 1, ch: choice.t,
         hp: mods.hp, mn: mods.mn, inf: mods.inf,
-        // frag: 始まりの内部IDはログパネルに表示しない
+        // frag: / revenant: の内部IDはログパネルに表示しない
         flag: playerFlag && !playerFlag.startsWith(FRAG_PREFIX) ? playerFlag : undefined,
       },
       chainNext: chainId,
       usedSecondLife: state.usedSecondLife || secondLife.activated,
+      revenantDefeated: isRevenantDefeat,
     });
     updateMeta(m => ({ totalEvents: m.totalEvents + 1 }));
 
@@ -284,6 +294,12 @@ const useHandleChoice = (deps: GameActionsDeps, handleGameOver: (cause: string) 
     if (outcome.fl?.startsWith(FRAG_PREFIX)) {
       const fragId = outcome.fl.slice(FRAG_PREFIX.length);
       updateMeta(m => ({ fragments: m.fragments.includes(fragId) ? m.fragments : [...m.fragments, fragId] }));
+    }
+
+    // 亡霊撃破の永続化（fl:"revenant:<predId>"）
+    if (isRevenantDefeat) {
+      const predId = outcome.fl!.slice(REVENANT_PREFIX.length);
+      updateMeta(m => ({ revenantsDefeated: m.revenantsDefeated.includes(predId) ? m.revenantsDefeated : [...m.revenantsDefeated, predId] }));
     }
 
     // 脱出判定
@@ -337,8 +353,8 @@ const useProceed = (deps: GameActionsDeps, handleGameOver: (cause: string) => vo
       return;
     }
 
-    // 通常のイベント選出
-    const nextEvent = pickEvent({ events, floor: state.floor, usedIds: nextUsedIds, meta, fx, rng: getRandomSource() });
+    // 通常のイベント選出（圧を伝播して亡霊ゲートを機能させる）
+    const nextEvent = pickEvent({ events, floor: state.floor, usedIds: nextUsedIds, meta, fx, rng: getRandomSource(), pressure: state.pressure });
     if (nextEvent) {
       dispatch({ type: 'ADVANCE_STEP', event: nextEvent, step: nextStep, usedIds: nextUsedIds });
     } else {

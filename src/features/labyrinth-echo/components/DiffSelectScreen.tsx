@@ -16,7 +16,8 @@ interface DiffSelectScreenProps {
   Particles: ReactNode;
   fx: FxState;
   meta: MetaState;
-  selectDiff: (d: DifficultyDef) => void;
+  /** pressure は Task 7（圧セレクタUI）で選択した値を渡す。現在は 0 固定 */
+  selectDiff: (d: DifficultyDef, pressure: number) => void;
   setPhase: (phase: UIPhase) => void;
 }
 
@@ -31,7 +32,7 @@ export const DiffSelectScreen = ({ Particles, fx, meta, selectDiff, setPhase }: 
           mn={CFG.BASE_MN + fx.mentalBonus + d.modifiers.mnMod}
           inf={CFG.BASE_INF + fx.infoBonus}
           cleared={meta.clearedDifficulties?.includes(d.id)}
-          onSelect={selectDiff} />
+          onSelect={(def) => selectDiff(def, 0)} />
       ))}
       <BackBtn onClick={() => setPhase("title")} />
     </div>
