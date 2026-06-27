@@ -149,7 +149,8 @@ function GameInner() {
     enableAudio();
     resetRandomSourceCache();
     const player = createNewPlayer(d, fx);
-    dispatch({ type: 'SELECT_DIFFICULTY', difficulty: d, player });
+    // TODO: Task 6 で残響圧サービスから圧を取得して渡す
+    dispatch({ type: 'SELECT_DIFFICULTY', difficulty: d, player, pressure: 0 });
     updateMeta(m => ({ runs: m.runs + 1 }));
   }, [fx, enableAudio, dispatch, updateMeta]);
 
