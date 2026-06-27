@@ -14,6 +14,7 @@ import { checkSecondLife } from '../domain/services/combat-service';
 import { determineEnding } from '../domain/services/ending-service';
 import { createNewPlayer } from '../domain/services/unlock-service';
 import { createMetaState } from '../domain/models/meta-state';
+import { applyPressureToDifficulty } from '../domain/services/pressure-service';
 import { CFG } from '../domain/constants/config';
 import type { Player } from '../domain/models/player';
 import type { DifficultyDef } from '../domain/models/difficulty';
@@ -70,6 +71,8 @@ const resolveBossStep = (
   events: readonly GameEvent[],
   fx: FxState,
   rng: RandomSource,
+  pressure: number,
+  meta: MetaState,
 ): { event: GameEvent } | { gameover: true } => {
   const boss = events.find(e => e.id === CFG.BOSS_EVENT_ID);
   if (boss && !usedIds.includes(CFG.BOSS_EVENT_ID)) return { event: boss };
@@ -79,7 +82,7 @@ const resolveBossStep = (
   const postBoss = usedIds.length - lastBossIdx - 1;
 
   if (bossCount < CFG.MAX_BOSS_RETRIES && postBoss < 2) {
-    const ev = pickEvent({ events: [...events], floor, usedIds: [...usedIds], meta: SIM_META, fx, rng });
+    const ev = pickEvent({ events: [...events], floor, usedIds: [...usedIds], meta, fx, rng, pressure });
     if (ev) return { event: ev };
   }
   if (bossCount < CFG.MAX_BOSS_RETRIES && boss) return { event: boss };
@@ -93,8 +96,14 @@ export const simulateRun = (params: {
   rng: RandomSource;
   policy: RunPolicy;
   events: readonly GameEvent[];
+  /** 残響圧（既定0: 圧なし） */
+  pressure?: number;
+  /** メタ状態（既定: 初回相当の SIM_META） */
+  meta?: MetaState;
 }): RunResult => {
-  const { difficulty, fx, rng, policy, events } = params;
+  const { difficulty: baseDifficulty, fx, rng, policy, events, pressure = 0, meta = SIM_META } = params;
+  // 残響圧を難易度に適用（pressure=0 のとき baseDifficulty そのまま）
+  const difficulty = applyPressureToDifficulty(baseDifficulty, pressure);
   // 初期プレイヤー（本番と同じ createNewPlayer を流用＝DRY・定数乖離なし）
   let player: Player = createNewPlayer(difficulty, fx);
   let floor = 1;
@@ -103,7 +112,7 @@ export const simulateRun = (params: {
   let usedSecondLife = false;
   let eventsConsumed = 0;
 
-  let event = pickEvent({ events: [...events], floor, usedIds, meta: SIM_META, fx, rng });
+  let event = pickEvent({ events: [...events], floor, usedIds, meta, fx, rng, pressure });
 
   const fail = (cause: string): RunResult =>
     ({ survived: false, floorReached: floor, endingId: null, cause, events: eventsConsumed });
@@ -145,19 +154,19 @@ export const simulateRun = (params: {
     if (nextFloor > floor && nextFloor <= CFG.MAX_FLOOR) {
       // フロア遷移イベントは本番 CHANGE_FLOOR が usedIds に積まないため除外しない（再出現しうる）
       floor = nextFloor; step = 0;
-      event = pickEvent({ events: [...events], floor, usedIds, meta: SIM_META, fx, rng });
+      event = pickEvent({ events: [...events], floor, usedIds, meta, fx, rng, pressure });
       continue;
     }
     // 同フロア継続・ボス再戦は本番 ADVANCE_STEP が usedIds に積む
     usedIds = [...usedIds, event.id];
     if (nextFloor > CFG.MAX_FLOOR) {
-      const r = resolveBossStep(usedIds, floor, events, fx, rng);
+      const r = resolveBossStep(usedIds, floor, events, fx, rng, pressure, meta);
       if ('gameover' in r) return fail('精神崩壊');
       step = nextStep; event = r.event;
       continue;
     }
     step = nextStep;
-    event = pickEvent({ events: [...events], floor, usedIds, meta: SIM_META, fx, rng });
+    event = pickEvent({ events: [...events], floor, usedIds, meta, fx, rng, pressure });
   }
   // プール枯渇 = 探索続行不能
   return fail('精神崩壊');
