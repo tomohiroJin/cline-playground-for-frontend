@@ -15,6 +15,7 @@ import { ErrorBoundary } from '../contracts';
 import { AudioEngine, loadAudioSettings, saveAudioSettings } from '../audio';
 import type { AudioSettings } from '../audio';
 import { EV } from '../events/event-data';
+import { ECHO_EVENTS } from '../events/echo-events';
 import { computeVignette, validateEvents, pickEvent, findChainEvent } from '../events/event-utils';
 import { getRandomSource, resetRandomSourceCache } from './get-random-source';
 import { useTextReveal } from './hooks/use-text-reveal';
@@ -41,8 +42,8 @@ const Storage: StorageInterface = {
 const computeProgress = (floor: number, step: number): number =>
   Math.min(100, ((floor - 1) * CFG.EVENTS_PER_FLOOR + step) / (CFG.MAX_FLOOR * CFG.EVENTS_PER_FLOOR) * 100);
 
-// イベントデータのバリデーション
-const EVENTS = validateEvents(EV, EVENT_TYPE);
+// イベントデータのバリデーション（通常 + echo イベントを統合）
+const EVENTS = validateEvents([...EV, ...ECHO_EVENTS], EVENT_TYPE);
 
 /** パーティクルアニメーション（静的コンテンツのためコンポーネント外に定義） */
 const Particles = (
@@ -237,7 +238,7 @@ function GameInner() {
           skip,
         }}
         Particles={Particles}
-        eventCount={EVENTS.length}
+        eventCount={EV.length}
       />
     </GameContext.Provider>
   );

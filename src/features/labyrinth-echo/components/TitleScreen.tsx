@@ -39,7 +39,7 @@ export const TitleScreen = ({ meta, Particles, startRun, enableAudio, setPhase, 
 
   const menuActions = [
     startRun,
-    ...(meta.runs > 0 ? [() => { enableAudio(); setPhase("unlocks"); }, () => setPhase("titles"), () => setPhase("records")] : []),
+    ...(meta.runs > 0 ? [() => { enableAudio(); setPhase("unlocks"); }, () => setPhase("titles"), () => setPhase("records"), () => setPhase("archive")] : []),
     () => setPhase("settings")
   ];
   
@@ -127,8 +127,9 @@ export const TitleScreen = ({ meta, Particles, startRun, enableAudio, setPhase, 
         {meta.runs > 0 && <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
           <button className={`btn tc ${selectedIndex === 2 ? 'selected' : ''}`} style={{ flex: 1, minWidth: 80 }} onMouseEnter={() => setSelectedIndex(2)} onClick={() => setPhase("titles")}>称号</button>
           <button className={`btn tc ${selectedIndex === 3 ? 'selected' : ''}`} style={{ flex: 1, minWidth: 80 }} onMouseEnter={() => setSelectedIndex(3)} onClick={() => setPhase("records")}>実績</button>
+          <button className={`btn tc ${selectedIndex === 4 ? 'selected' : ''}`} style={{ flex: 1, minWidth: 80 }} onMouseEnter={() => setSelectedIndex(4)} onClick={() => setPhase("archive")}>残響書庫</button>
         </div>}
-        <button className={`btn tc ${selectedIndex === (meta.runs > 0 ? 4 : 1) ? 'selected' : ''}`} style={{ fontSize: 12, color: "var(--dim)" }} onMouseEnter={() => setSelectedIndex(meta.runs > 0 ? 4 : 1)} onClick={() => setPhase("settings")}>⚙ 設定</button>
+        <button className={`btn tc ${selectedIndex === (meta.runs > 0 ? 5 : 1) ? 'selected' : ''}`} style={{ fontSize: 12, color: "var(--dim)" }} onMouseEnter={() => setSelectedIndex(meta.runs > 0 ? 5 : 1)} onClick={() => setPhase("settings")}>⚙ 設定</button>
         {meta.runs > 0 && <div style={{ marginTop: 20, fontSize: 11, fontFamily: "var(--sans)", display: "flex", justifyContent: "center", gap: 14, flexWrap: "wrap" }}>
           <span style={{ color: "#818cf8" }}>探索 {meta.runs}回</span>
           <span style={{ color: "#4ade80" }}>脱出 {meta.escapes}回</span>

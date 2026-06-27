@@ -1,4 +1,4 @@
-import { migrateMetaState } from '../../../presentation/hooks/use-persistence-sync';
+import { migrateMetaState, mergeWithDefaults } from '../../../presentation/hooks/use-persistence-sync';
 
 describe('migrateMetaState', () => {
   describe('旧フィールド名の変換', () => {
@@ -58,5 +58,21 @@ describe('migrateMetaState', () => {
     it('空オブジェクトはそのまま通過する', () => {
       expect(migrateMetaState({})).toEqual({});
     });
+  });
+});
+
+describe('echoDepth / fragments マイグレーション', () => {
+  it('echoDepth/fragments を持たない旧セーブはデフォルト値で補完される', () => {
+    const oldSave = { runs: 3, escapes: 1, kp: 10 };
+    const merged = mergeWithDefaults(oldSave);
+    expect(merged.echoDepth).toBe(0);
+    expect(merged.fragments).toEqual([]);
+  });
+
+  it('保存済みの echoDepth/fragments は保持される', () => {
+    const save = { runs: 5, echoDepth: 2, fragments: ['f_lian_1'] };
+    const merged = mergeWithDefaults(save);
+    expect(merged.echoDepth).toBe(2);
+    expect(merged.fragments).toEqual(['f_lian_1']);
   });
 });

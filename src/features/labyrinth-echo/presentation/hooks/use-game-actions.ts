@@ -9,6 +9,7 @@ import { useCallback } from 'react';
 import { CFG } from '../../domain/constants/config';
 import { UNLOCKS } from '../../domain/constants/unlock-defs';
 import { determineEnding } from '../../domain/services/ending-service';
+import { incrementEchoDepth, selectSafetyNetFragment } from '../../domain/services/echo-service';
 import { pickEvent, findChainEvent } from '../../events/event-utils';
 import { processChoice as legacyProcessChoice } from '../../events/event-utils';
 import { getRandomSource } from '../get-random-source';
@@ -48,6 +49,9 @@ export interface GameActionsDeps {
   readonly updateMeta: (updater: (m: MetaState) => Partial<MetaState>) => void;
   readonly audioSfx: AudioSfxApi;
 }
+
+/** 残響断片フラグのプレフィックス（ログ表示から除外するために参照） */
+const FRAG_PREFIX = 'frag:';
 
 // ── ビジュアル・オーディオフィードバックのヘルパー ──
 
@@ -99,19 +103,28 @@ const handleEscapeOutcome = (
   safeTimeout(() => sfx(audioSfx.victory), 500);
   safeTimeout(() => {
     dispatch({ type: 'SET_VICTORY', ending: end, isNewEnding: isNew, isNewDiffClear: isNewDiff });
-    updateMeta(m => ({
-      escapes: m.escapes + 1,
-      kp: m.kp + (state.diff?.rewards.kpOnWin ?? 4) + end.bonusKp,
-      bestFloor: Math.max(m.bestFloor, state.floor),
-      endings: m.endings.includes(end.id) ? m.endings : [...m.endings, end.id],
-      clearedDifficulties: !diffId || m.clearedDifficulties.includes(diffId)
-        ? m.clearedDifficulties
-        : [...m.clearedDifficulties, diffId],
-      lastRun: {
-        cause: "escape", floor: state.floor, endingId: end.id,
-        hp: drained.hp, mn: drained.mn, inf: drained.inf,
-      },
-    }));
+    updateMeta(m => {
+      const newDepth = incrementEchoDepth(m.echoDepth);
+      const safety = selectSafetyNetFragment(newDepth, m.fragments);
+      const fragments = safety && !m.fragments.includes(safety.id)
+        ? [...m.fragments, safety.id]
+        : m.fragments;
+      return {
+        escapes: m.escapes + 1,
+        kp: m.kp + (state.diff?.rewards.kpOnWin ?? 4) + end.bonusKp,
+        bestFloor: Math.max(m.bestFloor, state.floor),
+        endings: m.endings.includes(end.id) ? m.endings : [...m.endings, end.id],
+        clearedDifficulties: !diffId || m.clearedDifficulties.includes(diffId)
+          ? m.clearedDifficulties
+          : [...m.clearedDifficulties, diffId],
+        lastRun: {
+          cause: "escape", floor: state.floor, endingId: end.id,
+          hp: drained.hp, mn: drained.mn, inf: drained.inf,
+        },
+        echoDepth: newDepth,
+        fragments,
+      };
+    });
   }, 2500);
 };
 
@@ -258,12 +271,20 @@ const useHandleChoice = (deps: GameActionsDeps, handleGameOver: (cause: string) 
       drainInfo: drain,
       logEntry: {
         fl: state.floor, step: state.step + 1, ch: choice.t,
-        hp: mods.hp, mn: mods.mn, inf: mods.inf, flag: playerFlag ?? undefined,
+        hp: mods.hp, mn: mods.mn, inf: mods.inf,
+        // frag: 始まりの内部IDはログパネルに表示しない
+        flag: playerFlag && !playerFlag.startsWith(FRAG_PREFIX) ? playerFlag : undefined,
       },
       chainNext: chainId,
       usedSecondLife: state.usedSecondLife || secondLife.activated,
     });
     updateMeta(m => ({ totalEvents: m.totalEvents + 1 }));
+
+    // 残響断片の収集（fl:"frag:<id>"）
+    if (outcome.fl?.startsWith(FRAG_PREFIX)) {
+      const fragId = outcome.fl.slice(FRAG_PREFIX.length);
+      updateMeta(m => ({ fragments: m.fragments.includes(fragId) ? m.fragments : [...m.fragments, fragId] }));
+    }
 
     // 脱出判定
     if (outcome.fl === "escape") {

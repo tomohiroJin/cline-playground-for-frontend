@@ -28,6 +28,10 @@ export interface MetaState {
   readonly totalDeaths: number;
   readonly lastRun: LastRunInfo | null;
   readonly activeTitle: string | null;
+  /** 残響深度 — 生還ごとに +1（上限 ECHO_DEPTH_MAX）。物語/解禁のゲート */
+  readonly echoDepth: number;
+  /** 収集済み残響断片ID */
+  readonly fragments: readonly string[];
 }
 
 /** 初期メタ状態の正規形 — 初期化とリセットの単一ソース (DRY) */
@@ -43,6 +47,8 @@ export const FRESH_META: Readonly<MetaState> = Object.freeze({
   totalDeaths: 0,
   lastRun: null,
   activeTitle: null,
+  echoDepth: 0,
+  fragments: [],
 });
 
 /** 初期MetaStateを生成する（FRESH_META をベースに上書き） */
