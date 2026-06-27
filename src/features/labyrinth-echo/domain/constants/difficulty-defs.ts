@@ -14,7 +14,7 @@ export const DIFFICULTY: readonly DifficultyDef[] = Object.freeze([
     color: "#4ade80",
     icon: "🌿",
     description: "体力・精神にゆとりがあり、迷宮の侵蝕も穏やか。物語を楽しみたい方に。",
-    modifiers: { hpMod: 12, mnMod: 8, drainMod: 0, dmgMult: 0.7 },
+    modifiers: { hpMod: 14, mnMod: 9, drainMod: 0, dmgMult: 0.7 },
     rewards: { kpOnDeath: 1, kpOnWin: 2 },
   },
   {
@@ -24,7 +24,7 @@ export const DIFFICULTY: readonly DifficultyDef[] = Object.freeze([
     color: "#818cf8",
     icon: "⚔",
     description: "均衡の取れた難易度。判断力と運の両方が試される。",
-    modifiers: { hpMod: 0, mnMod: 0, drainMod: -1, dmgMult: 1 },
+    modifiers: { hpMod: 0, mnMod: 0, drainMod: -2, dmgMult: 1 },
     rewards: { kpOnDeath: 1, kpOnWin: 3 },
   },
   {
@@ -34,7 +34,7 @@ export const DIFFICULTY: readonly DifficultyDef[] = Object.freeze([
     color: "#f59e0b",
     icon: "🔥",
     description: "初期値が低く侵蝕が激しい。知識と経験を総動員しなければ生還は困難。",
-    modifiers: { hpMod: -15, mnMod: -12, drainMod: -3, dmgMult: 1.35 },
+    modifiers: { hpMod: -14, mnMod: -12, drainMod: -4, dmgMult: 1.4 },
     rewards: { kpOnDeath: 2, kpOnWin: 5 },
   },
   {
@@ -44,7 +44,7 @@ export const DIFFICULTY: readonly DifficultyDef[] = Object.freeze([
     color: "#ef4444",
     icon: "💀",
     description: "全てが致命的。一つの判断ミスが死に直結する。真の強者のみが挑む領域。",
-    modifiers: { hpMod: -25, mnMod: -20, drainMod: -5, dmgMult: 1.8 },
+    modifiers: { hpMod: -24, mnMod: -20, drainMod: -6, dmgMult: 1.9 },
     rewards: { kpOnDeath: 3, kpOnWin: 8 },
   },
 ]);

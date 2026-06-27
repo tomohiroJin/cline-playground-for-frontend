@@ -21,12 +21,12 @@ export const STATUS_META: Readonly<Record<StatusEffectId, StatusEffectDef>> = Ob
   "出血": {
     id: "出血",
     visual: { primaryColor: "#fb7185", bgColor: "rgba(251,113,133,0.08)", borderColor: "rgba(251,113,133,0.18)" },
-    tick: { hpDelta: -5, mnDelta: 0 },
+    tick: { hpDelta: -6, mnDelta: 0 },
   },
   "恐怖": {
     id: "恐怖",
     visual: { primaryColor: "#a78bfa", bgColor: "rgba(167,139,250,0.08)", borderColor: "rgba(167,139,250,0.18)" },
-    tick: { hpDelta: 0, mnDelta: -4 },
+    tick: { hpDelta: 0, mnDelta: -5 },
   },
   "呪い": {
     id: "呪い",

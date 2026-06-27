@@ -11,7 +11,7 @@ import type { MetaState } from '../domain/models/meta-state';
 import type { GameEvent } from './event-utils';
 
 /** 読み解き時の精神コスト（マイナス） */
-const READ_MN_COST = -3;
+const READ_MN_COST = -4;
 /** 読み解き時の情報値ボーナス */
 const READ_INF_BONUS = 5;
 

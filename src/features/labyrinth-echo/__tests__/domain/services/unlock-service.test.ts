@@ -82,10 +82,10 @@ describe('UnlockService', () => {
         const player = createNewPlayer(diff, fx);
 
         // Assert
-        expect(player.hp).toBe(55); // BASE_HP(55) + hpBonus(0) + hpMod(0)
-        expect(player.maxHp).toBe(55);
-        expect(player.mn).toBe(35); // BASE_MN(35) + mentalBonus(0) + mnMod(0)
-        expect(player.maxMn).toBe(35);
+        expect(player.hp).toBe(52); // BASE_HP(52) + hpBonus(0) + hpMod(0)
+        expect(player.maxHp).toBe(52);
+        expect(player.mn).toBe(33); // BASE_MN(33) + mentalBonus(0) + mnMod(0)
+        expect(player.maxMn).toBe(33);
         expect(player.inf).toBe(5); // BASE_INF(5) + infoBonus(0)
         expect(player.statuses).toEqual([]);
       });
@@ -99,8 +99,8 @@ describe('UnlockService', () => {
         const player = createNewPlayer(diff, fx);
 
         // Assert
-        expect(player.hp).toBe(65); // 55 + 10
-        expect(player.mn).toBe(40); // 35 + 5
+        expect(player.hp).toBe(62); // 52 + 10
+        expect(player.mn).toBe(38); // 33 + 5
         expect(player.inf).toBe(8); // 5 + 3
       });
 
@@ -113,8 +113,8 @@ describe('UnlockService', () => {
         const player = createNewPlayer(diff, fx);
 
         // Assert
-        expect(player.hp).toBe(40); // 55 - 15
-        expect(player.mn).toBe(23); // 35 - 12
+        expect(player.hp).toBe(37); // 52 - 15
+        expect(player.mn).toBe(21); // 33 - 12
       });
     });
   });

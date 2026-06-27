@@ -8,8 +8,8 @@
 export const CFG = Object.freeze({
   EVENTS_PER_FLOOR: 3,
   MAX_FLOOR: 5,
-  BASE_HP: 55,
-  BASE_MN: 35,
+  BASE_HP: 52,
+  BASE_MN: 33,
   BASE_INF: 5,
   BOSS_EVENT_ID: "e030",
   MAX_BOSS_RETRIES: 3,

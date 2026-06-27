@@ -38,8 +38,7 @@ export const pickEvent = (
       const hasChain = e.ch.some(c => c.o.some(o => o.fl?.startsWith('chain:')));
       if (hasChain) weighted.push(e);
     }
-    // 安息イベントの出現確率を上げる
-    if (e.tp === 'rest') weighted.push(e);
+
   }
   return shuffleWith(weighted, rng)[0];
 };
