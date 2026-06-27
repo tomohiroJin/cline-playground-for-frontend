@@ -312,7 +312,7 @@ describe('CombatService', () => {
 
         // Assert
         expect(result.drain).not.toBeNull();
-        expect(result.drain!.hp).toBe(-5);
+        expect(result.drain!.hp).toBe(-6);
       });
 
       it('bleedReduceで出血ダメージが半減する', () => {
@@ -324,7 +324,7 @@ describe('CombatService', () => {
         const result = computeDrain(player, fx, null);
 
         // Assert
-        expect(result.drain!.hp).toBe(-2); // Math.round(-5 * 0.5) = -2
+        expect(result.drain!.hp).toBe(-3); // Math.round(-6 * 0.5) = -3
       });
 
       it('無効なステータスが含まれていてもクラッシュしない', () => {
@@ -342,7 +342,7 @@ describe('CombatService', () => {
 
         // Assert: 出血のドレインは正常に適用される
         expect(result.drain).not.toBeNull();
-        expect(result.drain!.hp).toBe(-5);
+        expect(result.drain!.hp).toBe(-6);
       });
 
       it('drainImmuneで精神ドレインが無効化される', () => {

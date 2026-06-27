@@ -165,8 +165,6 @@ export const pickEvent = ({ events, floor, usedIds, meta, fx, rng }: PickEventPa
       const hasChain = e.ch?.some(c => c.o?.some(o => o.fl?.startsWith("chain:")));
       if (hasChain) weighted.push(e);
     }
-    // 安息イベントの出現確率を上げる
-    if (e.tp === "rest") weighted.push(e);
   }
   // 乱数ソースが指定されていればそれを使い、なければ旧来のshuffleを使用
   if (rng) return shuffleWith(weighted, rng)[0];
