@@ -32,6 +32,10 @@ export interface MetaState {
   readonly echoDepth: number;
   /** 収集済み残響断片ID */
   readonly fragments: readonly string[];
+  /** 生還で踏破した最高残響圧 */
+  readonly maxPressureCleared: number;
+  /** 撃破した先人の残響（亡霊）ID */
+  readonly revenantsDefeated: readonly string[];
 }
 
 /** 初期メタ状態の正規形 — 初期化とリセットの単一ソース (DRY) */
@@ -49,6 +53,8 @@ export const FRESH_META: Readonly<MetaState> = Object.freeze({
   activeTitle: null,
   echoDepth: 0,
   fragments: [],
+  maxPressureCleared: 0,
+  revenantsDefeated: [],
 });
 
 /** 初期MetaStateを生成する（FRESH_META をベースに上書き） */
