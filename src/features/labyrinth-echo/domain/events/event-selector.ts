@@ -38,7 +38,6 @@ export const pickEvent = (
       const hasChain = e.ch.some(c => c.o.some(o => o.fl?.startsWith('chain:')));
       if (hasChain) weighted.push(e);
     }
-
   }
   return shuffleWith(weighted, rng)[0];
 };

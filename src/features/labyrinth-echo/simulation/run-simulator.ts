@@ -1,8 +1,9 @@
 /**
  * 迷宮の残響 - ヘッドレス・ランシミュレータ
  *
- * 本番と同じ純粋関数（pickEvent/processChoice/checkSecondLife）を合成し、
+ * 純粋関数（pickEvent/processChoice）と正準の domain `checkSecondLife` を合成し、
  * 1ラン分の探索を決定論的に再現する。バランス契約テスト用。
+ * base sim は secondLife 無効（fx.secondLife=false）のため checkSecondLife は発動せず無影響。
  * フロア/ボス進行ロジックは use-game-actions の useProceed/resolveBossRetry を
  * 純粋関数として再構成したもの（フックは副作用込みで流用不可）。CFG を直接参照し
  * 進行ルールの定数乖離を防ぐ。
@@ -136,17 +137,19 @@ export const simulateRun = (params: {
     }
 
     const nextStep = step + 1;
-    usedIds = [...usedIds, event.id];
     const isShort = res.outcome.fl === 'shortcut';
     const nextFloor = isShort
       ? Math.min(floor + 2, CFG.MAX_FLOOR)
       : (nextStep >= CFG.EVENTS_PER_FLOOR ? floor + 1 : floor);
 
     if (nextFloor > floor && nextFloor <= CFG.MAX_FLOOR) {
+      // フロア遷移イベントは本番 CHANGE_FLOOR が usedIds に積まないため除外しない（再出現しうる）
       floor = nextFloor; step = 0;
       event = pickEvent({ events: [...events], floor, usedIds, meta: SIM_META, fx, rng });
       continue;
     }
+    // 同フロア継続・ボス再戦は本番 ADVANCE_STEP が usedIds に積む
+    usedIds = [...usedIds, event.id];
     if (nextFloor > CFG.MAX_FLOOR) {
       const r = resolveBossStep(usedIds, floor, events, fx, rng);
       if ('gameover' in r) return fail('精神崩壊');

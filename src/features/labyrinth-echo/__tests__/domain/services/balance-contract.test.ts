@@ -25,9 +25,9 @@ describe('難易度テーブル 静的不変量', () => {
     expect(hard.modifiers.drainMod).toBeGreaterThan(abyss.modifiers.drainMod);
   });
 
-  it('dmgMult は easy < normal <= hard < abyss', () => {
+  it('dmgMult は easy < normal < hard < abyss（骨抜き防止：strict）', () => {
     expect(easy.modifiers.dmgMult).toBeLessThan(normal.modifiers.dmgMult);
-    expect(normal.modifiers.dmgMult).toBeLessThanOrEqual(hard.modifiers.dmgMult);
+    expect(normal.modifiers.dmgMult).toBeLessThan(hard.modifiers.dmgMult);
     expect(hard.modifiers.dmgMult).toBeLessThan(abyss.modifiers.dmgMult);
   });
 
