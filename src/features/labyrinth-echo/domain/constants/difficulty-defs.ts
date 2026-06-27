@@ -34,7 +34,7 @@ export const DIFFICULTY: readonly DifficultyDef[] = Object.freeze([
     color: "#f59e0b",
     icon: "🔥",
     description: "初期値が低く侵蝕が激しい。知識と経験を総動員しなければ生還は困難。",
-    modifiers: { hpMod: -6, mnMod: -8, drainMod: -4, dmgMult: 1.1 },
+    modifiers: { hpMod: -14, mnMod: -12, drainMod: -4, dmgMult: 1.4 },
     rewards: { kpOnDeath: 2, kpOnWin: 5 },
   },
   {
