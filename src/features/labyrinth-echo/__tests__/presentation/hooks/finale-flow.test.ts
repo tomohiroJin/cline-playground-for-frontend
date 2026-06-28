@@ -110,6 +110,35 @@ describe('二重コミットガードと2周目リセット', () => {
     expect(commitCount).toBe(2);
   });
 
+  it('state.player が null のとき finaleDecide はガードを立てずコミットしない（後で有効プレイヤーならコミット可能）', () => {
+    // Arrange: コミット数を追跡し、player=null の終章状態を用意する
+    let commitCount = 0;
+    const updateMeta: GameActionsDeps['updateMeta'] = (fn) => {
+      const result = fn(createMetaState({}));
+      if ('escapes' in result) commitCount++;
+    };
+    const nullPlayerDeps: GameActionsDeps = {
+      ...makeFinaleHookDeps(3, updateMeta),
+      state: {
+        ...createInitialState(),
+        phase: 'finale', player: null, finaleStep: 3, pressure: 0, legacyId: null,
+      },
+    };
+    const { result, rerender } = renderHook(
+      (d: GameActionsDeps) => useGameActions(d),
+      { initialProps: nullPlayerDeps },
+    );
+
+    // Act: player=null で決断 → コミットされない
+    act(() => { result.current.finaleDecide('inherit'); });
+    expect(commitCount).toBe(0);
+
+    // Act: 有効プレイヤーで再決断 → ガードが立っていないためコミットできる（ソフトロックしない）
+    rerender(makeFinaleHookDeps(3, updateMeta));
+    act(() => { result.current.finaleDecide('inherit'); });
+    expect(commitCount).toBe(1);
+  });
+
   it('【回帰】1周目 finaleDecide → offer 入口 handleChoice(escape) でガードリセット → 2周目 finaleEscape がコミットできる', () => {
     // Arrange: コミット数と OFFER_TRUE_ROUTE ディスパッチを追跡
     let commitCount = 0;

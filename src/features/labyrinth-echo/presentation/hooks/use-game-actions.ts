@@ -453,7 +453,7 @@ export const useGameActions = (deps: GameActionsDeps): GameActionsResult => {
 
   // 終章の二重コミットを防ぐガード
   // useRef はレンダー間で同一参照を保つため deps に含める必要がない
-  // handleChoice（offer 入口）でリセットするため、useHandleChoice より先に定義する
+  // offer 入口（handleEscapeOutcome）でリセットするため、それを渡す useHandleChoice より先に定義する
   const finaleCommittedRef = useRef(false);
   // offer 入口（handleEscapeOutcome）から呼び出せる安定した参照
   const resetFinaleGuard = useCallback(() => { finaleCommittedRef.current = false; }, []);
@@ -464,10 +464,11 @@ export const useGameActions = (deps: GameActionsDeps): GameActionsResult => {
 
   // 終章オファーで「脱出する」を選択した場合：通常 END を確定してコミット
   const finaleEscape = useCallback(() => {
-    // 二重コミット防止：既にコミット済みなら無視する
+    // 二重コミット防止：既にコミット済みなら無視する。
+    // ガードのセットは player の存在確認後に行い、null で空振りしてソフトロックするのを防ぐ。
     if (finaleCommittedRef.current) return;
-    finaleCommittedRef.current = true;
     if (!state.player) return;
+    finaleCommittedRef.current = true;
     commitVictory(
       determineEnding(state.player, [...state.log], state.diff),
       state.player, state, meta,
@@ -488,10 +489,11 @@ export const useGameActions = (deps: GameActionsDeps): GameActionsResult => {
 
   // 終章最終ビートで決断 → 真 END を確定してコミット
   const finaleDecide = useCallback((decision: FinaleDecision) => {
-    // 二重コミット防止：既にコミット済みなら無視する
+    // 二重コミット防止：既にコミット済みなら無視する。
+    // ガードのセットは player の存在確認後に行い、null で空振りしてソフトロックするのを防ぐ。
     if (finaleCommittedRef.current) return;
-    finaleCommittedRef.current = true;
     if (!state.player) return;
+    finaleCommittedRef.current = true;
     commitVictory(
       determineTrueEnding(decision, state.pressure, state.legacyId),
       state.player, state, meta,
