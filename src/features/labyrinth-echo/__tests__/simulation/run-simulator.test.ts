@@ -4,8 +4,6 @@ import { ECHO_EVENTS } from '../../events/echo-events';
 import { DIFFICULTY } from '../../domain/constants/difficulty-defs';
 import { computeFx } from '../../domain/services/unlock-service';
 import { SeededRandomSource } from '../../domain/events/random';
-// pressure 対応テストで使用
-import { applyPressureToDifficulty } from '../../domain/services/pressure-service';
 
 const EVENTS = [...EV, ...ECHO_EVENTS];
 const normal = DIFFICULTY.find(d => d.id === 'normal')!;
@@ -34,9 +32,6 @@ describe('simulateRun', () => {
     expect(rate(CAREFUL_POLICY)).toBeGreaterThanOrEqual(rate(RANDOM_POLICY));
   });
 });
-
-// applyPressureToDifficulty のインポートは型検証のみ（使用済み警告回避）
-void applyPressureToDifficulty;
 
 describe('simulateRun 圧対応', () => {
   it('pressure 未指定（既定0）は現状と同一結果（回帰）', () => {

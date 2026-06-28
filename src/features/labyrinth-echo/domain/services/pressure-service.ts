@@ -22,10 +22,11 @@ export const escalationFromPressure = (pressure: number): DifficultyModifiers =>
     };
   }
   const halfSteps = Math.floor(p / 2);
+  const drainSteps = Math.floor(p / 3);
   return {
-    hpMod: -halfSteps * 2,
-    mnMod: -halfSteps * 2,
-    drainMod: -halfSteps,
+    hpMod: (-halfSteps * 2) || 0,
+    mnMod: (-halfSteps * 2) || 0,
+    drainMod: (-drainSteps) || 0,
     dmgMult: Number((DMG_MULT_PER_LEVEL * p).toFixed(2)),
   };
 };

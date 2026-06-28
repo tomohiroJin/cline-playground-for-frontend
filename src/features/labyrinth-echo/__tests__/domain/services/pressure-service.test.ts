@@ -15,7 +15,7 @@ describe('pressure-service', () => {
   });
 
   it('圧6の escalation は設計値', () => {
-    expect(escalationFromPressure(6)).toEqual({ hpMod: -6, mnMod: -6, drainMod: -3, dmgMult: 0.48 });
+    expect(escalationFromPressure(6)).toEqual({ hpMod: -6, mnMod: -6, drainMod: -2, dmgMult: 0.30 });
   });
 
   it('escalation は圧で単調に厳しくなる', () => {
@@ -36,8 +36,8 @@ describe('pressure-service', () => {
     const eff = applyPressureToDifficulty(normal, 6);
     expect(eff.id).toBe('normal');
     expect(eff.rewards).toEqual(normal.rewards);
-    expect(eff.modifiers.dmgMult).toBeCloseTo(normal.modifiers.dmgMult + 0.48, 5);
-    expect(eff.modifiers.drainMod).toBe(normal.modifiers.drainMod - 3);
+    expect(eff.modifiers.dmgMult).toBeCloseTo(normal.modifiers.dmgMult + 0.30, 5);
+    expect(eff.modifiers.drainMod).toBe(normal.modifiers.drainMod - 2);
     expect(eff.modifiers.hpMod).toBe(normal.modifiers.hpMod - 6);
   });
 

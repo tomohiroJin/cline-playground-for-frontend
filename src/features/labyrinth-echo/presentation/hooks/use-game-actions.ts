@@ -282,7 +282,7 @@ const useHandleChoice = (deps: GameActionsDeps, handleGameOver: (cause: string) 
         fl: state.floor, step: state.step + 1, ch: choice.t,
         hp: mods.hp, mn: mods.mn, inf: mods.inf,
         // frag: / revenant: の内部IDはログパネルに表示しない
-        flag: playerFlag && !playerFlag.startsWith(FRAG_PREFIX) ? playerFlag : undefined,
+        flag: playerFlag && !playerFlag.startsWith(FRAG_PREFIX) && !playerFlag.startsWith(REVENANT_PREFIX) ? playerFlag : undefined,
       },
       chainNext: chainId,
       usedSecondLife: state.usedSecondLife || secondLife.activated,

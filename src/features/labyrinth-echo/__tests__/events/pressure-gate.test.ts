@@ -25,7 +25,7 @@ describe('pickEvent 圧ゲート', () => {
   it('圧不足では minPressure イベントが選ばれない', () => {
     // floor1 で通常を used にし、圧1 だと guarded(min2) は除外 → null
     const picked = pickEvent({ events: [guarded, normal], floor: 1, usedIds: ['n_test'], meta: META, fx: FX, pressure: 1 });
-    expect(picked?.id).not.toBe('rv_test');
+    expect(picked).toBeNull();
   });
 
   it('圧が閾値以上なら minPressure イベントが選ばれうる', () => {

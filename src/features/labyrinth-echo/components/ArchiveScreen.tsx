@@ -88,13 +88,13 @@ export const ArchiveScreen = ({ Particles, meta, setPhase }: ArchiveScreenProps)
                       {discovered ? p.name : '？？？'}{complete && ' ✦'}
                     </div>
                     <div style={{ fontSize: 10, color: 'var(--dim)', fontFamily: 'var(--sans)' }}>{prog.collected} / {prog.total} 断片</div>
-                    <div style={{ fontSize: 10, color: meta.revenantsDefeated.includes(p.id) ? '#fda4af' : '#505070', fontFamily: 'var(--sans)' }}>
-                      {meta.revenantsDefeated.includes(p.id) ? '亡霊：撃破済' : '亡霊：未遭遇'}
-                    </div>
                   </div>
                 </div>
                 {discovered && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <div style={{ fontSize: 10, color: meta.revenantsDefeated.includes(p.id) ? '#fda4af' : '#505070', fontFamily: 'var(--sans)' }}>
+                      {meta.revenantsDefeated.includes(p.id) ? '亡霊：撃破済' : '亡霊：未遭遇'}
+                    </div>
                     {predecessorFragments(p.id).map(f => {
                       const has = collected.includes(f.id);
                       return (
