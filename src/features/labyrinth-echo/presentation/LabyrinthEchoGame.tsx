@@ -147,7 +147,7 @@ function GameInner() {
 
   // ── ゲームアクション（useGameActions に委譲） ──
   // activeFx を渡すことで processChoice/computeDrain がレガシー反映の fx を使う
-  const { handleChoice, proceed, doUnlock } = useGameActions({
+  const { handleChoice, proceed, doUnlock, finaleEscape, finaleAdvance, finaleDecide } = useGameActions({
     state, dispatch, fx: activeFx, meta, events: EVENTS,
     sfx, safeTimeout, doShake, flash, updateMeta,
     audioSfx: AudioEngine.sfx,
@@ -217,6 +217,7 @@ function GameInner() {
           resChg: state.resChg,
           drainInfo: state.drainInfo,
           legacyId: state.legacyId,
+          finaleStep: state.finaleStep,
         }}
         derived={{
           meta,
@@ -253,6 +254,9 @@ function GameInner() {
           resetMeta,
           handleAudioSettingsChange,
           skip,
+          finaleEscape,
+          finaleAdvance,
+          finaleDecide,
         }}
         Particles={Particles}
         eventCount={EV.length}

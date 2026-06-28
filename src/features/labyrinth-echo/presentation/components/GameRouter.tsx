@@ -29,7 +29,9 @@ import { StatusOverlay } from '../../components/StatusOverlay';
 import { GuidanceOverlay } from '../../components/GameComponents';
 import { EventScreen } from './screens/EventScreen';
 import { ResultScreen } from './screens/ResultScreen';
+import { FinaleScreen } from './screens/FinaleScreen';
 import { Page } from '../../components/Page';
+import type { FinaleDecision } from '../../domain/models/finale';
 
 /** ゲーム状態 */
 export interface GameState {
@@ -49,6 +51,8 @@ export interface GameState {
   drainInfo: { hp: number; mn: number } | null;
   /** 実行中の継承ID（null = 未選択） */
   legacyId: string | null;
+  /** 終章フェーズの進行ステップ（0=オファー, 1..3=ビート） */
+  finaleStep: number;
 }
 
 /** 派生値・メタ情報 */
@@ -90,6 +94,12 @@ export interface GameHandlers {
   resetMeta: () => Promise<void>;
   handleAudioSettingsChange: (next: AudioSettings) => void;
   skip: () => void;
+  /** 終章オファーで脱出を選んだ場合 */
+  finaleEscape: () => void;
+  /** 終章オファーでさらに深く潜る / ビートを前進する */
+  finaleAdvance: () => void;
+  /** 終章ビートで真ENDを決断する */
+  finaleDecide: (decision: FinaleDecision) => void;
 }
 
 /** GameRouter の Props */
@@ -119,7 +129,7 @@ export const GameRouter = (props: GameRouterProps) => {
 
   const {
     player, diff, event, floor, step, ending, isNewEnding, isNewDiffClear,
-    usedSecondLife, chainNext, log, resTxt, resChg, drainInfo, legacyId,
+    usedSecondLife, chainNext, log, resTxt, resChg, drainInfo, legacyId, finaleStep,
   } = game;
 
   const { meta, fx, progressPct, floorMeta, floorColor, vignette, lowMental } = derived;
@@ -132,7 +142,7 @@ export const GameRouter = (props: GameRouterProps) => {
   const {
     startRun, enableAudio, selectDiff, enterFloor, handleChoice, proceed,
     doUnlock, toggleAudio, setShowLog, setPhase, updateMeta, resetMeta,
-    handleAudioSettingsChange, skip,
+    handleAudioSettingsChange, skip, finaleEscape, finaleAdvance, finaleDecide,
   } = handlers;
 
   const audioOn = audioSettings.sfxEnabled;
@@ -214,6 +224,11 @@ export const GameRouter = (props: GameRouterProps) => {
   }
   if (phase === "victory") {
     return <VictoryScreen Particles={Particles} ending={ending} isNewEnding={isNewEnding} isNewDiffClear={isNewDiffClear} diff={diff} player={player} usedSecondLife={usedSecondLife} log={log} meta={meta} floor={floor} startRun={startRun} setPhase={setPhase} />;
+  }
+
+  if (phase === "finale") {
+    return <FinaleScreen Particles={Particles} finaleStep={finaleStep}
+      onEscape={finaleEscape} onAdvance={finaleAdvance} onDecide={finaleDecide} />;
   }
 
   return null;

@@ -10,7 +10,7 @@ const baseProps = (): GameRouterProps => ({
   game: {
     player: null, diff: null, event: null, floor: 1, step: 0, ending: null,
     isNewEnding: false, isNewDiffClear: false, usedSecondLife: false, chainNext: null,
-    log: [], resTxt: '', resChg: null, drainInfo: null, legacyId: null,
+    log: [], resTxt: '', resChg: null, drainInfo: null, legacyId: null, finaleStep: 0,
   },
   derived: {
     meta: createMetaState({ echoDepth: 1, fragments: ['f_lian_1'] }),
@@ -28,6 +28,7 @@ const baseProps = (): GameRouterProps => ({
     doUnlock: () => undefined, toggleAudio: () => undefined, setShowLog: () => undefined,
     setPhase: () => undefined, updateMeta: () => undefined, resetMeta: async () => undefined,
     handleAudioSettingsChange: () => undefined, skip: () => undefined,
+    finaleEscape: () => undefined, finaleAdvance: () => undefined, finaleDecide: () => undefined,
   },
   Particles: null,
   eventCount: 196,

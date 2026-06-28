@@ -34,6 +34,7 @@ const DEFAULT_GAME: GameState = {
   resChg: null,
   drainInfo: null,
   legacyId: null,
+  finaleStep: 0,
 };
 
 /** デフォルトのUI状態 */
@@ -84,6 +85,9 @@ const createDefaultProps = (overrides: {
       resetMeta: jest.fn(),
       handleAudioSettingsChange: jest.fn(),
       skip: jest.fn(),
+      finaleEscape: jest.fn(),
+      finaleAdvance: jest.fn(),
+      finaleDecide: jest.fn(),
     },
     Particles: <div data-testid="particles" />,
     eventCount: 100,
