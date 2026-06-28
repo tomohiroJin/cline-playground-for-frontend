@@ -158,6 +158,8 @@ export const gameReducer = (state: GameReducerState, action: GameAction): GameRe
         drainInfo: null,
         resTxt: '',
         resChg: null,
+        // 前ランの終章フェーズ状態が残らないようリセット
+        finaleStep: 0,
       };
 
     case 'SET_EVENT':

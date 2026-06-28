@@ -1,10 +1,11 @@
 /**
  * 迷宮の残響 - GameRouter 終章フェーズ テスト
  *
- * phase='finale' のとき FinaleScreen が描画されることを検証する。
+ * phase='finale' のとき FinaleScreen が描画され、
+ * ハンドラが正しく配線されていることを検証する。
  */
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { GameRouter } from '../../../presentation/components/GameRouter';
 import type { GameRouterProps, GameState, UIState } from '../../../presentation/components/GameRouter';
 import { createTestMeta, createTestFx } from '../../helpers/factories';
@@ -105,7 +106,7 @@ describe('GameRouter — 終章フェーズ', () => {
       })} />);
 
       // Assert: FinaleScreen の offer テキスト
-      expect(screen.getByText('さらなる深淵')).toBeTruthy();
+      expect(screen.getByText('さらなる深淵')).toBeInTheDocument();
     });
   });
 
@@ -118,7 +119,7 @@ describe('GameRouter — 終章フェーズ', () => {
       })} />);
 
       // Assert: FINALE_BEATS[0].title = '集う残響'
-      expect(screen.getByText('集う残響')).toBeTruthy();
+      expect(screen.getByText('集う残響')).toBeInTheDocument();
     });
   });
 
@@ -131,10 +132,38 @@ describe('GameRouter — 終章フェーズ', () => {
       render(<GameRouter {...props} />);
 
       // Act
-      screen.getByText('ここで脱出する').click();
+      fireEvent.click(screen.getByText('ここで脱出する'));
 
       // Assert
       expect(finaleEscape).toHaveBeenCalledTimes(1);
+    });
+
+    it('「さらに深く潜る」クリックで finaleAdvance ハンドラが呼ばれる', () => {
+      // Arrange
+      const finaleAdvance = jest.fn();
+      const props = createDefaultProps({ phase: 'finale', game: { finaleStep: 0 } });
+      props.handlers.finaleAdvance = finaleAdvance;
+      render(<GameRouter {...props} />);
+
+      // Act: オファー画面の「さらに深く」ボタンをクリック
+      fireEvent.click(screen.getByText(/さらに深く/));
+
+      // Assert
+      expect(finaleAdvance).toHaveBeenCalledTimes(1);
+    });
+
+    it('最終ビートで決断ボタンクリックすると finaleDecide ハンドラが呼ばれる', () => {
+      // Arrange
+      const finaleDecide = jest.fn();
+      const props = createDefaultProps({ phase: 'finale', game: { finaleStep: 3 } });
+      props.handlers.finaleDecide = finaleDecide;
+      render(<GameRouter {...props} />);
+
+      // Act: 「願いを継ぐ」をクリック → 'inherit' で呼ばれる
+      fireEvent.click(screen.getByText('願いを継ぐ'));
+
+      // Assert
+      expect(finaleDecide).toHaveBeenCalledWith('inherit');
     });
   });
 });

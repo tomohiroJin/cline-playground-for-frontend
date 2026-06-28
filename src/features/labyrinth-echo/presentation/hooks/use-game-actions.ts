@@ -5,7 +5,7 @@
  * ゲームアクションのロジックを集約する。
  * 副作用（オーディオ・ビジュアルFX）のトリガーも管理する。
  */
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { CFG } from '../../domain/constants/config';
 import { UNLOCKS } from '../../domain/constants/unlock-defs';
 import { determineEnding } from '../../domain/services/ending-service';
@@ -446,8 +446,15 @@ export const useGameActions = (deps: GameActionsDeps): GameActionsResult => {
   const proceed = useProceed(deps, handleGameOver);
   const doUnlock = useDoUnlock(deps);
 
+  // 終章の二重コミットを防ぐガード（finaleAdvance のステップ0進入時にリセット）
+  // useRef はレンダー間で同一参照を保つため deps に含める必要がない
+  const finaleCommittedRef = useRef(false);
+
   // 終章オファーで「脱出する」を選択した場合：通常 END を確定してコミット
   const finaleEscape = useCallback(() => {
+    // 二重コミット防止：既にコミット済みなら無視する
+    if (finaleCommittedRef.current) return;
+    finaleCommittedRef.current = true;
     if (!state.player) return;
     commitVictory(
       determineEnding(state.player, [...state.log], state.diff),
@@ -459,6 +466,8 @@ export const useGameActions = (deps: GameActionsDeps): GameActionsResult => {
   // 終章オファーで「さらに深く」→ ENTER_FINALE、ビート中は ADVANCE_FINALE
   const finaleAdvance = useCallback(() => {
     if (state.finaleStep === 0) {
+      // 新ラン突入時にガードをリセット（2周目以降の真ENDコミットを可能にする）
+      finaleCommittedRef.current = false;
       dispatch({ type: 'ENTER_FINALE' });
     } else {
       dispatch({ type: 'ADVANCE_FINALE' });
@@ -467,6 +476,9 @@ export const useGameActions = (deps: GameActionsDeps): GameActionsResult => {
 
   // 終章最終ビートで決断 → 真 END を確定してコミット
   const finaleDecide = useCallback((decision: FinaleDecision) => {
+    // 二重コミット防止：既にコミット済みなら無視する
+    if (finaleCommittedRef.current) return;
+    finaleCommittedRef.current = true;
     if (!state.player) return;
     commitVictory(
       determineTrueEnding(decision, state.pressure, state.legacyId),
