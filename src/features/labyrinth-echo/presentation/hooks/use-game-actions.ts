@@ -152,6 +152,7 @@ const commitVictory = (
  * 脱出時の分岐処理
  *
  * 真ルート解禁済みなら OFFER_TRUE_ROUTE を発行してコミットを保留する。
+ * offer 表示の唯一の入口でもあるため、毎周ここでガードをリセットする。
  * 未解禁なら通常通り commitVictory を呼び出す。
  */
 const handleEscapeOutcome = (
@@ -163,9 +164,12 @@ const handleEscapeOutcome = (
   sfx: GameActionsDeps['sfx'],
   safeTimeout: GameActionsDeps['safeTimeout'],
   audioSfx: AudioSfxApi,
+  resetFinaleGuard: () => void,
 ): void => {
   // 真ルート解禁済みなら終章オファーへ（victory コミットを保留）
+  // offer に入る瞬間にガードをリセットして、finaleEscape・finaleDecide の両経路を有効化する
   if (isTrueRouteUnlocked(meta)) {
+    resetFinaleGuard();
     dispatch({ type: 'OFFER_TRUE_ROUTE' });
     return;
   }
@@ -286,7 +290,11 @@ const useHandleGameOver = (deps: GameActionsDeps) => {
 };
 
 /** 選択肢処理 */
-const useHandleChoice = (deps: GameActionsDeps, handleGameOver: (cause: string) => void) => {
+const useHandleChoice = (
+  deps: GameActionsDeps,
+  handleGameOver: (cause: string) => void,
+  resetFinaleGuard: () => void,
+) => {
   const { state, dispatch, fx, sfx, safeTimeout, doShake, flash, updateMeta, meta, audioSfx } = deps;
 
   return useCallback((idx: number) => {
@@ -344,9 +352,9 @@ const useHandleChoice = (deps: GameActionsDeps, handleGameOver: (cause: string) 
       updateMeta(m => ({ revenantsDefeated: m.revenantsDefeated.includes(predId) ? m.revenantsDefeated : [...m.revenantsDefeated, predId] }));
     }
 
-    // 脱出判定
+    // 脱出判定（handleEscapeOutcome 内で真ルート解禁時はガードもリセットされる）
     if (outcome.fl === "escape") {
-      handleEscapeOutcome(secondLife.player, state, meta, dispatch, updateMeta, sfx, safeTimeout, audioSfx);
+      handleEscapeOutcome(secondLife.player, state, meta, dispatch, updateMeta, sfx, safeTimeout, audioSfx, resetFinaleGuard);
       return;
     }
 
@@ -355,7 +363,7 @@ const useHandleChoice = (deps: GameActionsDeps, handleGameOver: (cause: string) 
   }, [
     state, meta, fx, sfx, audioSfx, safeTimeout,
     doShake, flash, dispatch, updateMeta,
-    handleGameOver,
+    handleGameOver, resetFinaleGuard,
   ]);
 };
 
@@ -442,13 +450,17 @@ export interface GameActionsResult {
 export const useGameActions = (deps: GameActionsDeps): GameActionsResult => {
   const { state, meta, dispatch, updateMeta, sfx, safeTimeout, audioSfx } = deps;
   const handleGameOver = useHandleGameOver(deps);
-  const handleChoice = useHandleChoice(deps, handleGameOver);
+
+  // 終章の二重コミットを防ぐガード
+  // useRef はレンダー間で同一参照を保つため deps に含める必要がない
+  // handleChoice（offer 入口）でリセットするため、useHandleChoice より先に定義する
+  const finaleCommittedRef = useRef(false);
+  // offer 入口（handleEscapeOutcome）から呼び出せる安定した参照
+  const resetFinaleGuard = useCallback(() => { finaleCommittedRef.current = false; }, []);
+
+  const handleChoice = useHandleChoice(deps, handleGameOver, resetFinaleGuard);
   const proceed = useProceed(deps, handleGameOver);
   const doUnlock = useDoUnlock(deps);
-
-  // 終章の二重コミットを防ぐガード（finaleAdvance のステップ0進入時にリセット）
-  // useRef はレンダー間で同一参照を保つため deps に含める必要がない
-  const finaleCommittedRef = useRef(false);
 
   // 終章オファーで「脱出する」を選択した場合：通常 END を確定してコミット
   const finaleEscape = useCallback(() => {
@@ -466,7 +478,7 @@ export const useGameActions = (deps: GameActionsDeps): GameActionsResult => {
   // 終章オファーで「さらに深く」→ ENTER_FINALE、ビート中は ADVANCE_FINALE
   const finaleAdvance = useCallback(() => {
     if (state.finaleStep === 0) {
-      // 新ラン突入時にガードをリセット（2周目以降の真ENDコミットを可能にする）
+      // 「さらに深く」経路でも念のためガードをリセット（offer 入口リセットの保険）
       finaleCommittedRef.current = false;
       dispatch({ type: 'ENTER_FINALE' });
     } else {
