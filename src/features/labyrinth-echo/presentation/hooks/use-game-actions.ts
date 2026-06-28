@@ -9,6 +9,7 @@ import { useCallback } from 'react';
 import { CFG } from '../../domain/constants/config';
 import { UNLOCKS } from '../../domain/constants/unlock-defs';
 import { determineEnding } from '../../domain/services/ending-service';
+import { isTrueRouteUnlocked, determineTrueEnding } from '../../domain/services/finale-service';
 import { incrementEchoDepth, selectSafetyNetFragment } from '../../domain/services/echo-service';
 import { pickEvent, findChainEvent } from '../../events/event-utils';
 import { processChoice as legacyProcessChoice } from '../../events/event-utils';
@@ -16,6 +17,8 @@ import { getRandomSource } from '../get-random-source';
 import type { Player } from '../../domain/models/player';
 import type { FxState } from '../../domain/models/unlock';
 import type { MetaState } from '../../domain/models/meta-state';
+import type { EndingDef } from '../../domain/models/ending';
+import type { FinaleDecision } from '../../domain/models/finale';
 import type { GameEvent } from '../../events/event-utils';
 import type { GameReducerState, GameAction } from './use-game-orchestrator';
 
@@ -88,7 +91,69 @@ const applyVisualFeedback = (
   if (drain) safeTimeout(() => sfx(audioSfx.drain), 400);
 };
 
-/** 脱出時のメタ更新とビクトリー演出を処理する */
+/** commitVictory が必要とする副作用依存のサブセット */
+interface VictoryDeps {
+  readonly dispatch: React.Dispatch<GameAction>;
+  readonly updateMeta: GameActionsDeps['updateMeta'];
+  readonly sfx: GameActionsDeps['sfx'];
+  readonly safeTimeout: GameActionsDeps['safeTimeout'];
+  readonly audioSfx: AudioSfxApi;
+}
+
+/**
+ * victory コミット処理（通常脱出・終章共通）
+ *
+ * SET_VICTORY ディスパッチ＋メタ更新を行う。
+ * 通常 END と真 END の両方から呼び出される共通処理。
+ */
+const commitVictory = (
+  ending: EndingDef,
+  drained: Player,
+  state: GameReducerState,
+  meta: MetaState,
+  deps: VictoryDeps,
+): void => {
+  const { dispatch, updateMeta, sfx, safeTimeout, audioSfx } = deps;
+  const isNew = !meta.endings?.includes(ending.id);
+  const diffId = state.diff?.id;
+  const isNewDiff = diffId ? !meta.clearedDifficulties?.includes(diffId) : false;
+  safeTimeout(() => sfx(audioSfx.victory), 500);
+  safeTimeout(() => {
+    dispatch({ type: 'SET_VICTORY', ending, isNewEnding: isNew, isNewDiffClear: isNewDiff });
+    updateMeta(m => {
+      const newDepth = incrementEchoDepth(m.echoDepth);
+      const safety = selectSafetyNetFragment(newDepth, m.fragments);
+      const fragments = safety && !m.fragments.includes(safety.id)
+        ? [...m.fragments, safety.id]
+        : m.fragments;
+      return {
+        escapes: m.escapes + 1,
+        // 基礎KP + エンディングボーナス + 圧ボーナス（圧×基礎KP×0.25） + 撃破亡霊数
+        kp: m.kp + (state.diff?.rewards.kpOnWin ?? 4) + ending.bonusKp
+            + Math.round((state.diff?.rewards.kpOnWin ?? 4) * state.pressure * 0.25) + state.revenantsThisRun,
+        bestFloor: Math.max(m.bestFloor, state.floor),
+        endings: m.endings.includes(ending.id) ? m.endings : [...m.endings, ending.id],
+        clearedDifficulties: !diffId || m.clearedDifficulties.includes(diffId)
+          ? m.clearedDifficulties
+          : [...m.clearedDifficulties, diffId],
+        lastRun: {
+          cause: "escape", floor: state.floor, endingId: ending.id,
+          hp: drained.hp, mn: drained.mn, inf: drained.inf,
+        },
+        echoDepth: newDepth,
+        fragments,
+        maxPressureCleared: Math.max(m.maxPressureCleared, state.pressure),
+      };
+    });
+  }, 2500);
+};
+
+/**
+ * 脱出時の分岐処理
+ *
+ * 真ルート解禁済みなら OFFER_TRUE_ROUTE を発行してコミットを保留する。
+ * 未解禁なら通常通り commitVictory を呼び出す。
+ */
 const handleEscapeOutcome = (
   drained: Player,
   state: GameReducerState,
@@ -99,39 +164,16 @@ const handleEscapeOutcome = (
   safeTimeout: GameActionsDeps['safeTimeout'],
   audioSfx: AudioSfxApi,
 ): void => {
-  const end = determineEnding(drained, [...state.log], state.diff);
-  const isNew = !meta.endings?.includes(end.id);
-  const diffId = state.diff?.id;
-  const isNewDiff = diffId ? !meta.clearedDifficulties?.includes(diffId) : false;
-  safeTimeout(() => sfx(audioSfx.victory), 500);
-  safeTimeout(() => {
-    dispatch({ type: 'SET_VICTORY', ending: end, isNewEnding: isNew, isNewDiffClear: isNewDiff });
-    updateMeta(m => {
-      const newDepth = incrementEchoDepth(m.echoDepth);
-      const safety = selectSafetyNetFragment(newDepth, m.fragments);
-      const fragments = safety && !m.fragments.includes(safety.id)
-        ? [...m.fragments, safety.id]
-        : m.fragments;
-      return {
-        escapes: m.escapes + 1,
-        // 基礎KP + エンディングボーナス + 圧ボーナス（圧×基礎KP×0.25） + 撃破亡霊数
-        kp: m.kp + (state.diff?.rewards.kpOnWin ?? 4) + end.bonusKp
-            + Math.round((state.diff?.rewards.kpOnWin ?? 4) * state.pressure * 0.25) + state.revenantsThisRun,
-        bestFloor: Math.max(m.bestFloor, state.floor),
-        endings: m.endings.includes(end.id) ? m.endings : [...m.endings, end.id],
-        clearedDifficulties: !diffId || m.clearedDifficulties.includes(diffId)
-          ? m.clearedDifficulties
-          : [...m.clearedDifficulties, diffId],
-        lastRun: {
-          cause: "escape", floor: state.floor, endingId: end.id,
-          hp: drained.hp, mn: drained.mn, inf: drained.inf,
-        },
-        echoDepth: newDepth,
-        fragments,
-        maxPressureCleared: Math.max(m.maxPressureCleared, state.pressure),
-      };
-    });
-  }, 2500);
+  // 真ルート解禁済みなら終章オファーへ（victory コミットを保留）
+  if (isTrueRouteUnlocked(meta)) {
+    dispatch({ type: 'OFFER_TRUE_ROUTE' });
+    return;
+  }
+  commitVictory(
+    determineEnding(drained, [...state.log], state.diff),
+    drained, state, meta,
+    { dispatch, updateMeta, sfx, safeTimeout, audioSfx },
+  );
 };
 
 // ── SecondLife 復活判定 ──
@@ -388,14 +430,50 @@ export interface GameActionsResult {
   readonly proceed: () => void;
   readonly handleGameOver: (cause: string) => void;
   readonly doUnlock: (uid: string) => void;
+  /** 終章オファー「脱出する」→ 通常 END でコミット */
+  readonly finaleEscape: () => void;
+  /** 終章オファー「さらに深く」（finaleStep=0）または終章ビート前進（finaleStep>0） */
+  readonly finaleAdvance: () => void;
+  /** 終章最終ビートの決断 → 真 END でコミット */
+  readonly finaleDecide: (decision: FinaleDecision) => void;
 }
 
 /** ゲームアクションフック */
 export const useGameActions = (deps: GameActionsDeps): GameActionsResult => {
+  const { state, meta, dispatch, updateMeta, sfx, safeTimeout, audioSfx } = deps;
   const handleGameOver = useHandleGameOver(deps);
   const handleChoice = useHandleChoice(deps, handleGameOver);
   const proceed = useProceed(deps, handleGameOver);
   const doUnlock = useDoUnlock(deps);
 
-  return { handleChoice, proceed, handleGameOver, doUnlock };
+  // 終章オファーで「脱出する」を選択した場合：通常 END を確定してコミット
+  const finaleEscape = useCallback(() => {
+    if (!state.player) return;
+    commitVictory(
+      determineEnding(state.player, [...state.log], state.diff),
+      state.player, state, meta,
+      { dispatch, updateMeta, sfx, safeTimeout, audioSfx },
+    );
+  }, [state, meta, dispatch, updateMeta, sfx, safeTimeout, audioSfx]);
+
+  // 終章オファーで「さらに深く」→ ENTER_FINALE、ビート中は ADVANCE_FINALE
+  const finaleAdvance = useCallback(() => {
+    if (state.finaleStep === 0) {
+      dispatch({ type: 'ENTER_FINALE' });
+    } else {
+      dispatch({ type: 'ADVANCE_FINALE' });
+    }
+  }, [state.finaleStep, dispatch]);
+
+  // 終章最終ビートで決断 → 真 END を確定してコミット
+  const finaleDecide = useCallback((decision: FinaleDecision) => {
+    if (!state.player) return;
+    commitVictory(
+      determineTrueEnding(decision, state.pressure, state.legacyId),
+      state.player, state, meta,
+      { dispatch, updateMeta, sfx, safeTimeout, audioSfx },
+    );
+  }, [state, meta, dispatch, updateMeta, sfx, safeTimeout, audioSfx]);
+
+  return { handleChoice, proceed, handleGameOver, doUnlock, finaleEscape, finaleAdvance, finaleDecide };
 };
