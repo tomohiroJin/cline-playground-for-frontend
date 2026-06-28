@@ -62,6 +62,8 @@ export interface GameReducerState {
   readonly pressure: number;
   /** このランで撃破した亡霊数 */
   readonly revenantsThisRun: number;
+  /** 選択中の残響継承（レガシー）ID */
+  readonly legacyId: string | null;
 
   // イベント結果
   readonly resTxt: string;
@@ -88,7 +90,7 @@ export type GameAction =
   | { type: 'SET_LAST_BOUGHT'; id: string | null }
 
   // ゲームフロー（事前計算済みの結果を受け取る）
-  | { type: 'SELECT_DIFFICULTY'; difficulty: DifficultyDef; player: Player; pressure: number }
+  | { type: 'SELECT_DIFFICULTY'; difficulty: DifficultyDef; player: Player; pressure: number; legacyId: string | null }
   | { type: 'SET_EVENT'; event: GameEvent }
   | { type: 'APPLY_CHOICE'; player: Player; resTxt: string; resChg: ResChg; drainInfo: DrainInfo | null; logEntry: LogEntry; chainNext: string | null; usedSecondLife: boolean; revenantDefeated?: boolean }
   | { type: 'SET_VICTORY'; ending: EndingDef; isNewEnding: boolean; isNewDiffClear: boolean }
@@ -110,6 +112,7 @@ export const createInitialState = (): GameReducerState => ({
   usedSecondLife: false,
   pressure: 0,
   revenantsThisRun: 0,
+  legacyId: null,
   resTxt: '',
   resChg: null,
   drainInfo: null,
@@ -140,6 +143,7 @@ export const gameReducer = (state: GameReducerState, action: GameAction): GameRe
         usedSecondLife: false,
         pressure: action.pressure,
         revenantsThisRun: 0,
+        legacyId: action.legacyId,
         ending: null,
         isNewEnding: false,
         isNewDiffClear: false,

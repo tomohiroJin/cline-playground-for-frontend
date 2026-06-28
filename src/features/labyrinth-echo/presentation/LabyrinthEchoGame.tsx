@@ -153,7 +153,8 @@ function GameInner() {
     // 残響圧を実効難易度に反映する
     const eff = applyPressureToDifficulty(d, pressure);
     const player = createNewPlayer(eff, fx);
-    dispatch({ type: 'SELECT_DIFFICULTY', difficulty: eff, player, pressure });
+    // TODO: Task 4 で legacyId を実際の選択値に置き換える
+    dispatch({ type: 'SELECT_DIFFICULTY', difficulty: eff, player, pressure, legacyId: null });
     updateMeta(m => ({ runs: m.runs + 1 }));
   }, [fx, enableAudio, dispatch, updateMeta]);
 
