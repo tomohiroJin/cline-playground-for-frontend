@@ -13,6 +13,7 @@ import {
   ECHO_DEPTH_MAX, predecessorFragments, predecessorProgress,
   isPredecessorDiscovered, isPredecessorComplete, unlockedTruthLayers,
 } from '../domain/services/echo-service';
+import { legacyForPredecessor } from '../domain/services/legacy-service';
 import { useTextReveal } from '../presentation/hooks/use-text-reveal';
 import { Page } from './Page';
 import { Section } from './Section';
@@ -107,6 +108,15 @@ export const ArchiveScreen = ({ Particles, meta, setPhase }: ArchiveScreenProps)
                       );
                     })}
                     {complete && <div style={{ fontSize: 11, color: p.color, lineHeight: 1.8, marginTop: 6, fontFamily: 'var(--sans)' }}>{p.summary}</div>}
+                    {complete && (() => {
+                      const lg = legacyForPredecessor(p.id);
+                      return lg ? (
+                        <div style={{ fontSize: 10, color: lg.color, marginTop: 6, fontFamily: 'var(--sans)', lineHeight: 1.6 }}>
+                          継承解禁：{lg.icon} {lg.name}
+                          <div style={{ color: '#707090' }}>＋{lg.upside} ／ −{lg.downside}</div>
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
                 )}
               </div>

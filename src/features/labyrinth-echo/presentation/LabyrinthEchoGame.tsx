@@ -216,6 +216,7 @@ function GameInner() {
           resTxt: state.resTxt,
           resChg: state.resChg,
           drainInfo: state.drainInfo,
+          legacyId: state.legacyId,
         }}
         derived={{
           meta,

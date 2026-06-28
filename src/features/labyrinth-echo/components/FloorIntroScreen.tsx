@@ -10,6 +10,7 @@ import type { Player } from '../domain/models/player';
 import type { DifficultyDef } from '../domain/models/difficulty';
 import type { MetaState } from '../domain/models/meta-state';
 import type { FloorMetaDef } from '../domain/constants/floor-meta';
+import type { EchoLegacy } from '../domain/models/echo';
 
 interface FloorIntroScreenProps {
   Particles: ReactNode;
@@ -22,9 +23,11 @@ interface FloorIntroScreenProps {
   player: Player | null;
   chainNext: string | null;
   enterFloor?: (() => void) | null;
+  /** 実行中の残響継承（選択済みなら表示） */
+  legacy?: EchoLegacy | null;
 }
 
-export const FloorIntroScreen = ({ Particles, floor, floorMeta, floorColor, diff, meta, progressPct, player, chainNext, enterFloor }: FloorIntroScreenProps) => {
+export const FloorIntroScreen = ({ Particles, floor, floorMeta, floorColor, diff, meta, progressPct, player, chainNext, enterFloor, legacy }: FloorIntroScreenProps) => {
   const { selectedIndex } = useKeyboardControl({
     optionsCount: enterFloor ? 1 : 0,
     onSelect: () => { if (enterFloor) enterFloor(); },
@@ -36,6 +39,11 @@ export const FloorIntroScreen = ({ Particles, floor, floorMeta, floorColor, diff
     <div className="card tc" style={{ marginTop: "10vh", animation: "floorReveal .9s ease" }}>
       <div style={{ fontSize: 11, color: floorColor, letterSpacing: 8, marginBottom: 14, fontFamily: "var(--sans)", opacity: .8, fontWeight: 600 }}>FLOOR {floor}</div>
       <h2 style={{ fontSize: 32, color: floorColor, letterSpacing: 6, marginBottom: 10, animation: "glow 3s ease-in-out infinite", lineHeight: 1.5, textShadow: `0 0 30px ${floorColor}40` }}>{floorMeta.name}</h2>
+      {legacy && (
+        <div style={{ fontSize: 11, color: legacy.color, fontFamily: "var(--sans)", marginTop: 4 }}>
+          継承：{legacy.icon} {legacy.name}
+        </div>
+      )}
       <p style={{ fontSize: 12, color: "var(--dim)", lineHeight: 1.8, marginBottom: 20, fontFamily: "var(--sans)" }}>{floorMeta.desc}</p>
       <div style={{
         width: "100%", height: 160, marginBottom: 20, borderRadius: 8, overflow: "hidden", position: "relative",

@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ArchiveScreen } from '../components/ArchiveScreen';
 import { createMetaState } from '../domain/models/meta-state';
+import { ECHO_FRAGMENTS } from '../domain/constants/echo-fragment-defs';
 
 const setup = (overrides = {}) =>
   render(<ArchiveScreen Particles={null} meta={createMetaState(overrides)} setPhase={() => undefined} />);
@@ -40,5 +41,12 @@ describe('ArchiveScreen', () => {
     setup({ echoDepth: 1, fragments: ['f_lian_1'] });
     expect(screen.getByText('残響の正体')).toBeInTheDocument();
     expect(screen.queryByText('迷宮の意図')).toBeNull(); // depthGate3 未満
+  });
+
+  it('全断片収集した先人カードに継承解禁が表示される', () => {
+    const lianFrags = ECHO_FRAGMENTS.filter(f => f.predecessorId === 'p_lian').map(f => f.id);
+    render(<ArchiveScreen Particles={null} meta={createMetaState({ echoDepth: 2, fragments: lianFrags })} setPhase={() => undefined} />);
+    expect(screen.getByText(/継承解禁/)).toBeInTheDocument();
+    expect(screen.getByText(/記録者の継承/)).toBeInTheDocument();
   });
 });
