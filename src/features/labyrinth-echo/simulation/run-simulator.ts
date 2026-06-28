@@ -15,12 +15,14 @@ import { determineEnding } from '../domain/services/ending-service';
 import { createNewPlayer } from '../domain/services/unlock-service';
 import { createMetaState } from '../domain/models/meta-state';
 import { applyPressureToDifficulty } from '../domain/services/pressure-service';
+import { mergeLegacyIntoFx } from '../domain/services/legacy-service';
 import { CFG } from '../domain/constants/config';
 import type { Player } from '../domain/models/player';
 import type { DifficultyDef } from '../domain/models/difficulty';
 import type { FxState } from '../domain/models/unlock';
 import type { RandomSource } from '../domain/events/random';
 import type { MetaState } from '../domain/models/meta-state';
+import type { EchoLegacy } from '../domain/models/echo';
 
 /** 1ランの結果 */
 export interface RunResult {
@@ -100,8 +102,12 @@ export const simulateRun = (params: {
   pressure?: number;
   /** メタ状態（既定: 初回相当の SIM_META） */
   meta?: MetaState;
+  /** 残響継承（既定null: 継承なし） */
+  legacy?: EchoLegacy | null;
 }): RunResult => {
-  const { difficulty: baseDifficulty, fx, rng, policy, events, pressure = 0, meta = SIM_META } = params;
+  const { difficulty: baseDifficulty, fx: baseFx, rng, policy, events, pressure = 0, meta = SIM_META, legacy = null } = params;
+  // 残響継承を基礎 fx にマージ（legacy=null のとき baseFx をそのまま使用）
+  const fx = mergeLegacyIntoFx(baseFx, legacy);
   // 残響圧を難易度に適用（pressure=0 のとき baseDifficulty そのまま）
   const difficulty = applyPressureToDifficulty(baseDifficulty, pressure);
   // 初期プレイヤー（本番と同じ createNewPlayer を流用＝DRY・定数乖離なし）
