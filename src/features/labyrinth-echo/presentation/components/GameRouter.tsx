@@ -75,7 +75,7 @@ export interface UIState {
 export interface GameHandlers {
   startRun: () => void;
   enableAudio: () => void;
-  selectDiff: (d: DifficultyDef, pressure: number) => void;
+  selectDiff: (d: DifficultyDef, pressure: number, legacyId: string | null) => void;
   enterFloor: () => void;
   handleChoice: (idx: number) => void;
   proceed: () => void;

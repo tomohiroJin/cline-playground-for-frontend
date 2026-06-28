@@ -7,6 +7,7 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { CFG } from '../domain/constants/config';
 import { computeFx, createNewPlayer } from '../domain/services/unlock-service';
+import { mergeLegacyIntoFx, getLegacyById } from '../domain/services/legacy-service';
 import { FLOOR_META } from '../domain/constants/floor-meta';
 import { EVENT_TYPE } from '../domain/constants/event-type-defs';
 import { randomInt } from '../../../utils/math-utils';
@@ -82,7 +83,13 @@ function GameInner() {
   const { shake, overlay, flash, doShake } = useVisualFx();
 
   // 派生値
-  const fx = useMemo(() => computeFx(meta.unlocked), [meta.unlocked]);
+  // baseFx: アンロック状態のみ反映した基本fx（レガシー未適用・DiffSelectScreen のプレビューに使用）
+  const baseFx = useMemo(() => computeFx(meta.unlocked), [meta.unlocked]);
+  // activeFx: run 中の legacyId を baseFx に畳み込んだ実効fx（useGameActions/processChoice/computeDrain で使用）
+  const activeFx = useMemo(
+    () => mergeLegacyIntoFx(baseFx, getLegacyById(state.legacyId)),
+    [baseFx, state.legacyId],
+  );
   const progressPct = useMemo(() => computeProgress(state.floor, state.step), [state.floor, state.step]);
   const floorMeta = FLOOR_META[state.floor] ?? FLOOR_META[1];
   const floorColor = floorMeta.color;
@@ -139,24 +146,26 @@ function GameInner() {
   }, [audioSettings, handleAudioSettingsChange]);
 
   // ── ゲームアクション（useGameActions に委譲） ──
+  // activeFx を渡すことで processChoice/computeDrain がレガシー反映の fx を使う
   const { handleChoice, proceed, doUnlock } = useGameActions({
-    state, dispatch, fx, meta, events: EVENTS,
+    state, dispatch, fx: activeFx, meta, events: EVENTS,
     sfx, safeTimeout, doShake, flash, updateMeta,
     audioSfx: AudioEngine.sfx,
   });
 
   const startRun = useCallback(() => { enableAudio(); dispatch({ type: 'START_RUN' }); }, [enableAudio, dispatch]);
 
-  const selectDiff = useCallback((d: DifficultyDef, pressure: number) => {
+  const selectDiff = useCallback((d: DifficultyDef, pressure: number, legacyId: string | null) => {
     enableAudio();
     resetRandomSourceCache();
     // 残響圧を実効難易度に反映する
     const eff = applyPressureToDifficulty(d, pressure);
-    const player = createNewPlayer(eff, fx);
-    // TODO: Task 4 で legacyId を実際の選択値に置き換える
-    dispatch({ type: 'SELECT_DIFFICULTY', difficulty: eff, player, pressure, legacyId: null });
+    // ラン開始時の実効fx: baseFx にレガシーを畳み込んで初期プレイヤーを生成する
+    const runFx = mergeLegacyIntoFx(baseFx, getLegacyById(legacyId));
+    const player = createNewPlayer(eff, runFx);
+    dispatch({ type: 'SELECT_DIFFICULTY', difficulty: eff, player, pressure, legacyId });
     updateMeta(m => ({ runs: m.runs + 1 }));
-  }, [fx, enableAudio, dispatch, updateMeta]);
+  }, [baseFx, enableAudio, dispatch, updateMeta]);
 
   const enterFloor = useCallback(() => {
     sfx(AudioEngine.sfx.floor);
@@ -165,14 +174,15 @@ function GameInner() {
       const chainEvent = findChainEvent(EVENTS, state.chainNext);
       if (chainEvent) { dispatch({ type: 'SET_EVENT', event: chainEvent }); return; }
     }
-    const nextEvent = pickEvent({ events: EVENTS, floor: state.floor, usedIds: [...state.usedIds], meta, fx, rng: getRandomSource(), pressure: state.pressure });
+    // イベントピックはアンロック状態のみ参照する（baseFx）
+    const nextEvent = pickEvent({ events: EVENTS, floor: state.floor, usedIds: [...state.usedIds], meta, fx: baseFx, rng: getRandomSource(), pressure: state.pressure });
     if (nextEvent) dispatch({ type: 'SET_EVENT', event: nextEvent });
     else {
       if (process.env.NODE_ENV !== 'production') {
         console.warn(`[enterFloor] No events for floor ${state.floor}`);
       }
     }
-  }, [state.floor, state.usedIds, state.chainNext, state.pressure, sfx, safeTimeout, meta, fx, dispatch]);
+  }, [state.floor, state.usedIds, state.chainNext, state.pressure, sfx, safeTimeout, meta, baseFx, dispatch]);
 
   const setPhase = useCallback((phase: UIPhase) => {
     if (phase === "title") {
@@ -209,7 +219,8 @@ function GameInner() {
         }}
         derived={{
           meta,
-          fx,
+          // DiffSelectScreen にはレガシー未適用のベースfxを渡す（プレビューは画面内で合成）
+          fx: baseFx,
           progressPct,
           floorMeta,
           floorColor,

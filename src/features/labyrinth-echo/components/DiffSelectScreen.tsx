@@ -18,7 +18,7 @@ interface DiffSelectScreenProps {
   Particles: ReactNode;
   fx: FxState;
   meta: MetaState;
-  selectDiff: (d: DifficultyDef, pressure: number) => void;
+  selectDiff: (d: DifficultyDef, pressure: number, legacyId: string | null) => void;
   setPhase: (phase: UIPhase) => void;
 }
 
@@ -64,7 +64,8 @@ export const DiffSelectScreen = ({ Particles, fx, meta, selectDiff, setPhase }: 
               inf={CFG.BASE_INF + fx.infoBonus}
               cleared={meta.clearedDifficulties?.includes(d.id)}
               // 圧は selectDiff 側で適用されるため、基底難易度 d を渡して二重適用を防ぐ
-              onSelect={() => selectDiff(d, p)} />
+              // legacyId は Task5 の継承セレクタUI実装まで null（継承なし）
+              onSelect={() => selectDiff(d, p, null)} />
           );
         })}
         <BackBtn onClick={() => setPhase("title")} />
