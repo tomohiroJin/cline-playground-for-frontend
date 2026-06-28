@@ -37,6 +37,8 @@ export const createTestMeta = (overrides: Partial<MetaState> = {}): MetaState =>
   activeTitle: null,
   echoDepth: 0,
   fragments: [],
+  maxPressureCleared: 0,
+  revenantsDefeated: [],
   ...overrides,
 });
 

@@ -17,4 +17,5 @@ export const EVENT_TYPE: Readonly<Record<string, EventTypeDef>> = Object.freeze(
   trap:        { label: "罠",    colors: ["#f87171", "rgba(248,113,113,0.08)", "rgba(248,113,113,0.2)"] },
   rest:        { label: "安 息", colors: ["#4ade80", "rgba(74,222,128,0.08)",  "rgba(74,222,128,0.2)"]  },
   echo:        { label: "残 響", colors: ["#c4b5fd", "rgba(196,181,253,0.08)", "rgba(196,181,253,0.2)"] },
+  revenant:    { label: "亡 霊", colors: ["#f43f5e", "rgba(244,63,94,0.10)",   "rgba(244,63,94,0.28)"] },
 });

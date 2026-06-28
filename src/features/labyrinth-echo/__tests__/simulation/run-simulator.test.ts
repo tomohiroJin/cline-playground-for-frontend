@@ -32,3 +32,18 @@ describe('simulateRun', () => {
     expect(rate(CAREFUL_POLICY)).toBeGreaterThanOrEqual(rate(RANDOM_POLICY));
   });
 });
+
+describe('simulateRun 圧対応', () => {
+  it('pressure 未指定（既定0）は現状と同一結果（回帰）', () => {
+    const a = simulateRun({ difficulty: normal, fx, rng: new SeededRandomSource(999), policy: CAREFUL_POLICY, events: EVENTS });
+    const b = simulateRun({ difficulty: normal, fx, rng: new SeededRandomSource(999), policy: CAREFUL_POLICY, events: EVENTS, pressure: 0 });
+    expect(a).toEqual(b);
+  });
+
+  it('高圧ほど careful 生還率が下がる（normal 圧0 >= 圧6、複数シード集計）', () => {
+    const seeds = Array.from({ length: 80 }, (_, i) => i + 1);
+    const rate = (pressure: number) =>
+      seeds.filter(s => simulateRun({ difficulty: normal, fx, rng: new SeededRandomSource(s), policy: CAREFUL_POLICY, events: EVENTS, pressure }).survived).length / seeds.length;
+    expect(rate(0)).toBeGreaterThanOrEqual(rate(6));
+  });
+});

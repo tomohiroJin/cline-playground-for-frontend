@@ -16,7 +16,9 @@ import { AudioEngine, loadAudioSettings, saveAudioSettings } from '../audio';
 import type { AudioSettings } from '../audio';
 import { EV } from '../events/event-data';
 import { ECHO_EVENTS } from '../events/echo-events';
+import { REVENANT_EVENTS } from '../events/revenant-events';
 import { computeVignette, validateEvents, pickEvent, findChainEvent } from '../events/event-utils';
+import { applyPressureToDifficulty } from '../domain/services/pressure-service';
 import { getRandomSource, resetRandomSourceCache } from './get-random-source';
 import { useTextReveal } from './hooks/use-text-reveal';
 import { useImagePreload } from './hooks/use-image-preload';
@@ -42,8 +44,8 @@ const Storage: StorageInterface = {
 const computeProgress = (floor: number, step: number): number =>
   Math.min(100, ((floor - 1) * CFG.EVENTS_PER_FLOOR + step) / (CFG.MAX_FLOOR * CFG.EVENTS_PER_FLOOR) * 100);
 
-// イベントデータのバリデーション（通常 + echo イベントを統合）
-const EVENTS = validateEvents([...EV, ...ECHO_EVENTS], EVENT_TYPE);
+// イベントデータのバリデーション（通常 + echo + 亡霊イベントを統合）
+const EVENTS = validateEvents([...EV, ...ECHO_EVENTS, ...REVENANT_EVENTS], EVENT_TYPE);
 
 /** パーティクルアニメーション（静的コンテンツのためコンポーネント外に定義） */
 const Particles = (
@@ -145,11 +147,13 @@ function GameInner() {
 
   const startRun = useCallback(() => { enableAudio(); dispatch({ type: 'START_RUN' }); }, [enableAudio, dispatch]);
 
-  const selectDiff = useCallback((d: DifficultyDef) => {
+  const selectDiff = useCallback((d: DifficultyDef, pressure: number) => {
     enableAudio();
     resetRandomSourceCache();
-    const player = createNewPlayer(d, fx);
-    dispatch({ type: 'SELECT_DIFFICULTY', difficulty: d, player });
+    // 残響圧を実効難易度に反映する
+    const eff = applyPressureToDifficulty(d, pressure);
+    const player = createNewPlayer(eff, fx);
+    dispatch({ type: 'SELECT_DIFFICULTY', difficulty: eff, player, pressure });
     updateMeta(m => ({ runs: m.runs + 1 }));
   }, [fx, enableAudio, dispatch, updateMeta]);
 
@@ -160,14 +164,14 @@ function GameInner() {
       const chainEvent = findChainEvent(EVENTS, state.chainNext);
       if (chainEvent) { dispatch({ type: 'SET_EVENT', event: chainEvent }); return; }
     }
-    const nextEvent = pickEvent({ events: EVENTS, floor: state.floor, usedIds: [...state.usedIds], meta, fx, rng: getRandomSource() });
+    const nextEvent = pickEvent({ events: EVENTS, floor: state.floor, usedIds: [...state.usedIds], meta, fx, rng: getRandomSource(), pressure: state.pressure });
     if (nextEvent) dispatch({ type: 'SET_EVENT', event: nextEvent });
     else {
       if (process.env.NODE_ENV !== 'production') {
         console.warn(`[enterFloor] No events for floor ${state.floor}`);
       }
     }
-  }, [state.floor, state.usedIds, state.chainNext, sfx, safeTimeout, meta, fx, dispatch]);
+  }, [state.floor, state.usedIds, state.chainNext, state.pressure, sfx, safeTimeout, meta, fx, dispatch]);
 
   const setPhase = useCallback((phase: UIPhase) => {
     if (phase === "title") {

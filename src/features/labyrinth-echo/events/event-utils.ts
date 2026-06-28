@@ -61,6 +61,8 @@ export interface GameEvent {
   ch: Choice[];
   chainOnly?: boolean;
   metaCond?: (meta: MetaState) => boolean;
+  /** この残響圧以上で出現可能（亡霊イベント用） */
+  minPressure?: number;
 }
 
 /** イベント種別定義 */
@@ -142,6 +144,8 @@ export interface PickEventParams {
   readonly meta: MetaState;
   readonly fx: FxState;
   readonly rng?: RandomSource;
+  /** 残響圧（minPressure ゲート用、既定0） */
+  readonly pressure?: number;
 }
 
 /**
@@ -150,10 +154,11 @@ export interface PickEventParams {
  * クロスランイベントは metaCond のチェックが必要。
  * chainBoost: チェイン結果を持つイベントの重みを倍にする。
  */
-export const pickEvent = ({ events, floor, usedIds, meta, fx, rng }: PickEventParams): GameEvent | null => {
+export const pickEvent = ({ events, floor, usedIds, meta, fx, rng, pressure = 0 }: PickEventParams): GameEvent | null => {
   const pool = events.filter(e =>
     e.fl.includes(floor) && !usedIds.includes(e.id) && !e.chainOnly
     && (!e.metaCond || e.metaCond(meta))
+    && (!e.minPressure || pressure >= e.minPressure)
   );
   if (pool.length === 0) return null;
   // 重み付けプールを構築

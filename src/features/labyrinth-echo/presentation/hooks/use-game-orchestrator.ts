@@ -58,6 +58,10 @@ export interface GameReducerState {
   readonly log: readonly LogEntry[];
   readonly chainNext: string | null;
   readonly usedSecondLife: boolean;
+  /** 選択中の残響圧 */
+  readonly pressure: number;
+  /** このランで撃破した亡霊数 */
+  readonly revenantsThisRun: number;
 
   // イベント結果
   readonly resTxt: string;
@@ -84,9 +88,9 @@ export type GameAction =
   | { type: 'SET_LAST_BOUGHT'; id: string | null }
 
   // ゲームフロー（事前計算済みの結果を受け取る）
-  | { type: 'SELECT_DIFFICULTY'; difficulty: DifficultyDef; player: Player }
+  | { type: 'SELECT_DIFFICULTY'; difficulty: DifficultyDef; player: Player; pressure: number }
   | { type: 'SET_EVENT'; event: GameEvent }
-  | { type: 'APPLY_CHOICE'; player: Player; resTxt: string; resChg: ResChg; drainInfo: DrainInfo | null; logEntry: LogEntry; chainNext: string | null; usedSecondLife: boolean }
+  | { type: 'APPLY_CHOICE'; player: Player; resTxt: string; resChg: ResChg; drainInfo: DrainInfo | null; logEntry: LogEntry; chainNext: string | null; usedSecondLife: boolean; revenantDefeated?: boolean }
   | { type: 'SET_VICTORY'; ending: EndingDef; isNewEnding: boolean; isNewDiffClear: boolean }
   | { type: 'SET_GAME_OVER' }
   | { type: 'ADVANCE_STEP'; event: GameEvent; step: number; usedIds: readonly string[] }
@@ -104,6 +108,8 @@ export const createInitialState = (): GameReducerState => ({
   log: [],
   chainNext: null,
   usedSecondLife: false,
+  pressure: 0,
+  revenantsThisRun: 0,
   resTxt: '',
   resChg: null,
   drainInfo: null,
@@ -132,6 +138,8 @@ export const gameReducer = (state: GameReducerState, action: GameAction): GameRe
         log: [],
         chainNext: null,
         usedSecondLife: false,
+        pressure: action.pressure,
+        revenantsThisRun: 0,
         ending: null,
         isNewEnding: false,
         isNewDiffClear: false,
@@ -158,6 +166,7 @@ export const gameReducer = (state: GameReducerState, action: GameAction): GameRe
         log: [...state.log, action.logEntry],
         chainNext: action.chainNext,
         usedSecondLife: action.usedSecondLife,
+        revenantsThisRun: state.revenantsThisRun + (action.revenantDefeated ? 1 : 0),
       };
 
     case 'SET_VICTORY':

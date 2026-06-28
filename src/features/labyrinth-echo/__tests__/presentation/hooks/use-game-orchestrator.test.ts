@@ -71,6 +71,7 @@ describe('gameReducer', () => {
         type: 'SELECT_DIFFICULTY',
         difficulty: diff,
         player,
+        pressure: 0,
       });
 
       // Assert
@@ -439,6 +440,34 @@ describe('gameReducer', () => {
     });
   });
 
+  describe('残響圧 reducer', () => {
+    it('初期状態は pressure 0 / revenantsThisRun 0', () => {
+      const s = createInitialState();
+      expect(s.pressure).toBe(0);
+      expect(s.revenantsThisRun).toBe(0);
+    });
+
+    it('SELECT_DIFFICULTY が pressure を設定し revenantsThisRun を 0 にリセットする', () => {
+      const player = { hp: 50, maxHp: 50, mn: 30, maxMn: 30, inf: 5, statuses: [] };
+      const diff = { id: 'normal' } as never;
+      const dirty = { ...createInitialState(), revenantsThisRun: 3 };
+      const next = gameReducer(dirty, { type: 'SELECT_DIFFICULTY', difficulty: diff, player, pressure: 4 } as never);
+      expect(next.pressure).toBe(4);
+      expect(next.revenantsThisRun).toBe(0);
+    });
+
+    it('APPLY_CHOICE の revenantDefeated:true で revenantsThisRun が増える', () => {
+      const base = createInitialState();
+      const action = {
+        type: 'APPLY_CHOICE', player: base.player, resTxt: '', resChg: { hp: 0, mn: 0, inf: 0 },
+        drainInfo: null, logEntry: { fl: 1, step: 1, ch: 'x', hp: 0, mn: 0, inf: 0 },
+        chainNext: null, usedSecondLife: false, revenantDefeated: true,
+      } as never;
+      const next = gameReducer({ ...base, player: { hp: 1, maxHp: 1, mn: 1, maxMn: 1, inf: 0, statuses: [] } } as never, action);
+      expect(next.revenantsThisRun).toBe(1);
+    });
+  });
+
   describe('フェーズ遷移の整合性', () => {
     it('通常のゲームフロー全体を正しく遷移する', () => {
       // Arrange
@@ -452,7 +481,7 @@ describe('gameReducer', () => {
       expect(state.phase).toBe('diff_select');
 
       // diff_select → floor_intro
-      state = gameReducer(state, { type: 'SELECT_DIFFICULTY', difficulty: diff, player });
+      state = gameReducer(state, { type: 'SELECT_DIFFICULTY', difficulty: diff, player, pressure: 0 });
       expect(state.phase).toBe('floor_intro');
 
       // floor_intro → event

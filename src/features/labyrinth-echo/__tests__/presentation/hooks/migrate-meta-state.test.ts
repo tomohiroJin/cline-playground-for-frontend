@@ -76,3 +76,16 @@ describe('echoDepth / fragments マイグレーション', () => {
     expect(merged.fragments).toEqual(['f_lian_1']);
   });
 });
+
+describe('maxPressureCleared / revenantsDefeated マイグレーション', () => {
+  it('未保持の旧セーブはデフォルト補完される', () => {
+    const merged = mergeWithDefaults({ runs: 2 });
+    expect(merged.maxPressureCleared).toBe(0);
+    expect(merged.revenantsDefeated).toEqual([]);
+  });
+  it('保存済み値は保持される', () => {
+    const merged = mergeWithDefaults({ maxPressureCleared: 4, revenantsDefeated: ['p_lian'] });
+    expect(merged.maxPressureCleared).toBe(4);
+    expect(merged.revenantsDefeated).toEqual(['p_lian']);
+  });
+});
