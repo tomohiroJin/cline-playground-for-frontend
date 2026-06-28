@@ -30,7 +30,9 @@ export const LEGACIES: readonly EchoLegacy[] = Object.freeze([
   },
   {
     id: 'lg_first', predecessorId: 'p_first', name: '起源の継承', icon: '✶', color: '#ff8fa3',
-    upside: '全ステ強化・回復×1.25・侵蝕無効', downside: '全被ダメ+40%（ガラスの大砲）',
-    fx: { hpBonus: 10, mentalBonus: 10, infoBonus: 6, healMult: 1.25, drainImmune: true, hpReduce: 1.4, mnReduce: 1.4 },
+    // 「ガラスの大砲」設計: 下振れが効くようにdrainImmuneを外し被ダメ+65%に強化。
+    // 較正前(drainImmune+healMult1.25+1.4x)は圧3で上振れが支配的だったため見直し。
+    upside: '全ステ強化・情報+6', downside: '全被ダメ+65%（ガラスの大砲）',
+    fx: { hpBonus: 10, mentalBonus: 10, infoBonus: 6, healMult: 1.0, hpReduce: 1.65, mnReduce: 1.65 },
   },
 ]);
