@@ -14,6 +14,7 @@ import {
   isPredecessorDiscovered, isPredecessorComplete, unlockedTruthLayers,
 } from '../domain/services/echo-service';
 import { legacyForPredecessor } from '../domain/services/legacy-service';
+import { hasReachedTrueEnding } from '../domain/services/finale-service';
 import { useTextReveal } from '../presentation/hooks/use-text-reveal';
 import { Page } from './Page';
 import { Section } from './Section';
@@ -71,6 +72,14 @@ export const ArchiveScreen = ({ Particles, meta, setPhase }: ArchiveScreenProps)
                 <p style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.8, marginTop: 4 }}>{t.text}</p>
               </div>
             ))}
+            {/* 真エンディング到達証 — いずれかの真エンディング（te_*）到達済みのとき表示 */}
+            {hasReachedTrueEnding(meta) && (
+              <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 8, textAlign: 'center',
+                background: 'rgba(251,191,36,0.10)', border: '1px solid rgba(251,191,36,0.4)', fontFamily: 'var(--sans)' }}>
+                <div style={{ fontSize: 12, color: '#fde68a', letterSpacing: 2 }}>真相到達 ✦</div>
+                <div style={{ fontSize: 10, color: '#a0a0b8', marginTop: 4 }}>迷宮の最奥で、最後の決断を下した者の証。</div>
+              </div>
+            )}
           </Section>
         )}
 

@@ -52,4 +52,9 @@ export const TITLES: readonly TitleDef[] = Object.freeze([
   { id: "t21", name: "残響に抗う者",   icon: "🩸", color: "#f43f5e", cond: (m: MetaState) => (m.maxPressureCleared ?? 0) >= 3, desc: "残響圧3以上で生還した" },
   { id: "t22", name: "残響を統べる者", icon: "👑", color: "#fb7185", cond: (m: MetaState) => (m.maxPressureCleared ?? 0) >= 6, desc: "残響圧6を制覇した" },
   { id: "t23", name: "亡霊狩り",       icon: "⚔",  color: "#fda4af", cond: (m: MetaState) => (m.revenantsDefeated?.length ?? 0) === 5, desc: "全ての先人の亡霊を鎮めた" },
+  // 真エンディング（Phase 5）
+  { id: "t_te_inheritor",      name: "継承者",     icon: "🕯", color: "#fbbf24", cond: (m: MetaState) => m.endings.includes("te_inheritor"),      desc: "願いを継ぎ、迷宮の記憶の番人となった" },
+  { id: "t_te_liberator",      name: "解放者",     icon: "✶", color: "#7dd3fc", cond: (m: MetaState) => m.endings.includes("te_liberator"),      desc: "願いを断ち、囚われた残響を解き放った" },
+  { id: "t_te_inheritor_true", name: "真・継承者", icon: "☀", color: "#fde68a", cond: (m: MetaState) => m.endings.includes("te_inheritor_true"), desc: "極限を制してなお、すべての記憶を継いだ" },
+  { id: "t_te_liberator_true", name: "真・解放者", icon: "❅", color: "#bae6fd", cond: (m: MetaState) => m.endings.includes("te_liberator_true"), desc: "極限を越え、すべての残響を祝福して送り出した" },
 ]);

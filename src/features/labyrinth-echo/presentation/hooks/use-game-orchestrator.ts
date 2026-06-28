@@ -21,6 +21,7 @@ export type UIPhase =
   | 'result'
   | 'gameover'
   | 'victory'
+  | 'finale'
   | 'unlocks'
   | 'titles'
   | 'records'
@@ -64,6 +65,8 @@ export interface GameReducerState {
   readonly revenantsThisRun: number;
   /** 選択中の残響継承（レガシー）ID */
   readonly legacyId: string | null;
+  /** 終章フェーズのステップ（0=offer提示、1..3=ビート） */
+  readonly finaleStep: number;
 
   // イベント結果
   readonly resTxt: string;
@@ -96,7 +99,11 @@ export type GameAction =
   | { type: 'SET_VICTORY'; ending: EndingDef; isNewEnding: boolean; isNewDiffClear: boolean }
   | { type: 'SET_GAME_OVER' }
   | { type: 'ADVANCE_STEP'; event: GameEvent; step: number; usedIds: readonly string[] }
-  | { type: 'CHANGE_FLOOR'; floor: number };
+  | { type: 'CHANGE_FLOOR'; floor: number }
+  // 終章フェーズ
+  | { type: 'OFFER_TRUE_ROUTE' }
+  | { type: 'ENTER_FINALE' }
+  | { type: 'ADVANCE_FINALE' };
 
 /** 初期状態を生成する */
 export const createInitialState = (): GameReducerState => ({
@@ -113,6 +120,7 @@ export const createInitialState = (): GameReducerState => ({
   pressure: 0,
   revenantsThisRun: 0,
   legacyId: null,
+  finaleStep: 0,
   resTxt: '',
   resChg: null,
   drainInfo: null,
@@ -150,6 +158,8 @@ export const gameReducer = (state: GameReducerState, action: GameAction): GameRe
         drainInfo: null,
         resTxt: '',
         resChg: null,
+        // 前ランの終章フェーズ状態が残らないようリセット
+        finaleStep: 0,
       };
 
     case 'SET_EVENT':
@@ -217,6 +227,14 @@ export const gameReducer = (state: GameReducerState, action: GameAction): GameRe
 
     case 'SET_LAST_BOUGHT':
       return { ...state, lastBought: action.id };
+
+    // 終章フェーズ
+    case 'OFFER_TRUE_ROUTE':
+      return { ...state, phase: 'finale', finaleStep: 0 };
+    case 'ENTER_FINALE':
+      return { ...state, phase: 'finale', finaleStep: 1 };
+    case 'ADVANCE_FINALE':
+      return { ...state, finaleStep: state.finaleStep + 1 };
 
     default:
       return state;

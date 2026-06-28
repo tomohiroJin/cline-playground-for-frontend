@@ -9,6 +9,7 @@ import type { MetaState } from '../domain/models/meta-state';
 import type { UIPhase } from '../presentation/hooks/use-game-orchestrator';
 import { ENDINGS } from '../domain/constants/ending-defs';
 import { getActiveTitle } from '../domain/services/title-service';
+import { hasReachedTrueEnding } from '../domain/services/finale-service';
 import { Page } from './Page';
 import { LE_IMAGES, LE_TITLE_LAYERS } from '../images';
 import { useKeyboardControl } from '../presentation/hooks/use-keyboard-control';
@@ -70,7 +71,22 @@ export const TitleScreen = ({ meta, Particles, startRun, enableAudio, setPhase, 
           99% { transform: translate(-2px, -1px); filter: saturate(3); }
           100% { transform: translate(0); filter: none; }
         }
+        @keyframes trueEndingGlow {
+          0%, 100% { opacity: 0.18; }
+          50% { opacity: 0.32; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .le-true-ending-glow { animation: none !important; }
+        }
       `}</style>
+      {/* 真エンディング到達時の踏破微光レイヤー（CSS グロー・画像不要・最小限装飾） */}
+      {hasReachedTrueEnding(meta) && (
+        <div className="le-true-ending-glow" style={{
+          position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0,
+          background: 'radial-gradient(ellipse 80% 60% at 50% 30%, rgba(251,191,36,0.12) 0%, transparent 70%)',
+          animation: 'trueEndingGlow 6s ease-in-out infinite',
+        }} />
+      )}
       {/* 遠景: 不透明ベース画像。しっかり見える土台 */}
       <div style={{
         position: "fixed", inset: -30, pointerEvents: "none",

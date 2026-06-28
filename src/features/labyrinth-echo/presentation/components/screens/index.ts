@@ -5,6 +5,7 @@
 export { EventScreen } from './EventScreen';
 export { ResultScreen } from './ResultScreen';
 export { StatusPanel } from './StatusPanel';
+export { FinaleScreen } from './FinaleScreen';
 
 // 既存コンポーネント（re-export）
 export { TitleScreen } from '../../../components/TitleScreen';

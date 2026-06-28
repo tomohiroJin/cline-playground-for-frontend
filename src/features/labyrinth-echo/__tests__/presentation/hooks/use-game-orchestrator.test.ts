@@ -481,6 +481,26 @@ describe('gameReducer', () => {
     });
   });
 
+  describe('finale reducer', () => {
+    it('初期 finaleStep は 0', () => {
+      expect(createInitialState().finaleStep).toBe(0);
+    });
+    it('OFFER_TRUE_ROUTE で phase=finale, finaleStep=0', () => {
+      const s = gameReducer(createInitialState(), { type: 'OFFER_TRUE_ROUTE' } as never);
+      expect(s.phase).toBe('finale');
+      expect(s.finaleStep).toBe(0);
+    });
+    it('ENTER_FINALE で finaleStep=1（最初のビート）', () => {
+      const s = gameReducer(createInitialState(), { type: 'ENTER_FINALE' } as never);
+      expect(s.phase).toBe('finale');
+      expect(s.finaleStep).toBe(1);
+    });
+    it('ADVANCE_FINALE で finaleStep+1', () => {
+      const base = gameReducer(createInitialState(), { type: 'ENTER_FINALE' } as never);
+      expect(gameReducer(base, { type: 'ADVANCE_FINALE' } as never).finaleStep).toBe(2);
+    });
+  });
+
   describe('フェーズ遷移の整合性', () => {
     it('通常のゲームフロー全体を正しく遷移する', () => {
       // Arrange
