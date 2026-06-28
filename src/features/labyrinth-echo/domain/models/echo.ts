@@ -1,9 +1,10 @@
 /**
- * 迷宮の残響 - 残響モデル（先人・断片）
+ * 迷宮の残響 - 残響モデル（先人・断片・レガシー）
  *
- * 過去の探索者（先人）とその残響断片を表現する型。
+ * 過去の探索者（先人）とその残響断片、および残響継承（レガシー）を表現する型。
  * 純粋な型定義のみ。外部依存なし。
  */
+import type { FxState } from './unlock';
 
 /** 残響断片 — 先人の物語アークを構成する1片 */
 export interface EchoFragment {
@@ -49,3 +50,20 @@ export const isEchoFragment = (v: unknown): v is EchoFragment => {
     && typeof f.title === 'string'
     && typeof f.body === 'string';
 };
+
+/** 残響継承（先人レガシー）— トレードオフ型のビルド効果 */
+export interface EchoLegacy {
+  /** 一意ID（例 "lg_lian"） */
+  readonly id: string;
+  /** 紐づく先人ID（例 "p_lian"） */
+  readonly predecessorId: string;
+  readonly name: string;
+  readonly icon: string;
+  readonly color: string;
+  /** 上振れの説明 */
+  readonly upside: string;
+  /** 下振れの説明 */
+  readonly downside: string;
+  /** fx デルタ（既存 FxState キーのみ） */
+  readonly fx: Partial<FxState>;
+}
