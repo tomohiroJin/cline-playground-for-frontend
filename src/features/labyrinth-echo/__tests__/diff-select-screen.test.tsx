@@ -130,4 +130,23 @@ describe('DiffSelectScreen 残響圧', () => {
     fireEvent.click(screen.getByText('探索者').closest('button')!);
     expect(selectDiff).toHaveBeenCalledWith(expect.objectContaining({ id: 'easy' }), 0);
   });
+
+  it('圧>0 のとき難易度カードの侵蝕・被ダメが実効値で表示される', () => {
+    render(<DiffSelectScreen {...basePressureProps({ meta: createMetaState({ echoDepth: 3 }) })} />);
+    // 残響圧3を選択（normal 実効: drainMod -2→-3、dmgMult 1→1.15）
+    fireEvent.click(screen.getByText('3'));
+    expect(screen.getByText('被ダメ ×1.15')).toBeInTheDocument();
+    expect(screen.getByText('侵蝕 -3/手')).toBeInTheDocument();
+  });
+
+  it('圧>0 でも selectDiff には基底難易度（圧未適用）と圧が渡る（二重適用しない）', () => {
+    const selectDiff = jest.fn();
+    render(<DiffSelectScreen {...basePressureProps({ selectDiff, meta: createMetaState({ echoDepth: 3 }) })} />);
+    fireEvent.click(screen.getByText('3'));
+    fireEvent.click(screen.getByText('挑戦者').closest('button')!);
+    expect(selectDiff).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'normal', modifiers: expect.objectContaining({ drainMod: -2, dmgMult: 1 }) }),
+      3,
+    );
+  });
 });

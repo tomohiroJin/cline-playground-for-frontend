@@ -54,16 +54,17 @@ export const DiffSelectScreen = ({ Particles, fx, meta, selectDiff, setPhase }: 
           </div>
         )}
 
-        {/* 圧適用後の実効値で各難易度カードを表示 */}
+        {/* 圧適用後の実効値で各難易度カードを表示（侵蝕/被ダメも実効値にするため eff を渡す） */}
         {DIFFICULTY.map(d => {
           const eff = applyPressureToDifficulty(d, p);
           return (
-            <DiffCard key={d.id} d={d}
+            <DiffCard key={d.id} d={eff}
               hp={CFG.BASE_HP + fx.hpBonus + eff.modifiers.hpMod}
               mn={CFG.BASE_MN + fx.mentalBonus + eff.modifiers.mnMod}
               inf={CFG.BASE_INF + fx.infoBonus}
               cleared={meta.clearedDifficulties?.includes(d.id)}
-              onSelect={(picked) => selectDiff(picked, p)} />
+              // 圧は selectDiff 側で適用されるため、基底難易度 d を渡して二重適用を防ぐ
+              onSelect={() => selectDiff(d, p)} />
           );
         })}
         <BackBtn onClick={() => setPhase("title")} />
