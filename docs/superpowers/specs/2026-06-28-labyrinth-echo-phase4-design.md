@@ -77,6 +77,8 @@
 | lg_elna | 守人の継承（エルナ / p_elna） | drainImmune true, bleedReduce true, hpReduce ×0.82, mnReduce ×0.82 | hpBonus -14, mentalBonus -12 | 侵蝕無効＋被ダメ軽減の持久戦型。器が低くミスに弱い |
 | lg_first | 起源の継承（始まりの探索者 / p_first） | hpBonus +10, mentalBonus +10, infoBonus +6, healMult ×1.25, drainImmune true | hpReduce ×1.4, mnReduce ×1.4 | 全ステ強化＋侵蝕無効の最強格。被ダメ激増＝ガラスの大砲。究極の博打（終盤解禁） |
 
+> ※ lg_first は §6 バランス較正により drainImmune 削除・healMult 1.0・被ダメ+65% に最終調整（支配的回避対策）。上表は設計初期値として履歴保存。
+
 すべて既存 FxState キーで表現。数値は実装時にバランス契約（§6）で較正しうる（legacy の fx デルタのみ調整、難易度設計値・escalation は不変）。
 
 ## 5. UI

@@ -172,7 +172,7 @@ describe('バランス契約 残響継承', () => {
     }
   });
 
-  it('下振れが効く: 起源（lg_first, 被ダメ+40%）は圧3で継承なしより生還率が下がる', () => {
-    expect(legacySurvival('normal', 'lg_first', 3)).toBeLessThanOrEqual(legacySurvival('normal', null, 3));
+  it('下振れが効く: 起源（lg_first, 被ダメ+65%）は圧3で継承なしより生還率が下がる', () => {
+    expect(legacySurvival('normal', 'lg_first', 3)).toBeLessThan(legacySurvival('normal', null, 3));
   });
 });

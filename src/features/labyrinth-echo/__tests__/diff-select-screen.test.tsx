@@ -183,4 +183,20 @@ describe('DiffSelectScreen 残響継承', () => {
     fireEvent.click(screen.getByText('探索者').closest('button')!);
     expect(selectDiff).toHaveBeenCalledWith(expect.objectContaining({ id: 'easy' }), 0, null);
   });
+
+  it('lg_twins 継承選択で normal カードの HP・精神プレビューが減少する（hpBonus-10, mentalBonus-8）', () => {
+    // Arrange: 全断片取得済みメタ（全レガシー解禁）・圧0・継承なし状態でレンダリング
+    render(<DiffSelectScreen {...basePressureProps({ meta: createMetaState({ echoDepth: 3, fragments: allFrags }) })} />);
+
+    // 継承なし時: normal HP = BASE_HP(52) + hpBonus(0) + hpMod(0) = 52、精神 33
+    expect(screen.getByText('HP 52')).toBeInTheDocument();
+    expect(screen.getByText('精神 33')).toBeInTheDocument();
+
+    // Act: 絆の継承（lg_twins: hpBonus -10, mentalBonus -8）を選択
+    fireEvent.click(screen.getByText('絆の継承'));
+
+    // Assert: normal HP = 52 - 10 = 42、精神 = 33 - 8 = 25 に追従する
+    expect(screen.getByText('HP 42')).toBeInTheDocument();
+    expect(screen.getByText('精神 25')).toBeInTheDocument();
+  });
 });

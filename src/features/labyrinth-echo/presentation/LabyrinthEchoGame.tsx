@@ -174,15 +174,15 @@ function GameInner() {
       const chainEvent = findChainEvent(EVENTS, state.chainNext);
       if (chainEvent) { dispatch({ type: 'SET_EVENT', event: chainEvent }); return; }
     }
-    // イベントピックはアンロック状態のみ参照する（baseFx）
-    const nextEvent = pickEvent({ events: EVENTS, floor: state.floor, usedIds: [...state.usedIds], meta, fx: baseFx, rng: getRandomSource(), pressure: state.pressure });
+    // イベントピックはレガシー反映後の実効fx（activeFx）を使用する
+    const nextEvent = pickEvent({ events: EVENTS, floor: state.floor, usedIds: [...state.usedIds], meta, fx: activeFx, rng: getRandomSource(), pressure: state.pressure });
     if (nextEvent) dispatch({ type: 'SET_EVENT', event: nextEvent });
     else {
       if (process.env.NODE_ENV !== 'production') {
         console.warn(`[enterFloor] No events for floor ${state.floor}`);
       }
     }
-  }, [state.floor, state.usedIds, state.chainNext, state.pressure, sfx, safeTimeout, meta, baseFx, dispatch]);
+  }, [state.floor, state.usedIds, state.chainNext, state.pressure, sfx, safeTimeout, meta, activeFx, dispatch]);
 
   const setPhase = useCallback((phase: UIPhase) => {
     if (phase === "title") {
