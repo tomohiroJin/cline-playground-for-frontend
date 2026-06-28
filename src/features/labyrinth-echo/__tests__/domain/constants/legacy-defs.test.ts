@@ -29,4 +29,12 @@ describe('LEGACIES 契約', () => {
       ['lg_elna', 'lg_first', 'lg_galen', 'lg_lian', 'lg_twins'],
     );
   });
+  it('lg_elna は HP・精神両軸の被ダメ軽減を「全被ダメ」と明記する', () => {
+    // Arrange
+    const elna = LEGACIES.find(l => l.id === 'lg_elna');
+    // Assert: hpReduce/mnReduce の両方を持つため、片側のみと誤解されないよう「全被ダメ」と明記する
+    expect(elna?.fx.hpReduce).toBe(0.82);
+    expect(elna?.fx.mnReduce).toBe(0.82);
+    expect(elna?.upside).toContain('全被ダメ');
+  });
 });

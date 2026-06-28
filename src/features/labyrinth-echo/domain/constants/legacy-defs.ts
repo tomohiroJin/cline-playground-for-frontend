@@ -25,7 +25,7 @@ export const LEGACIES: readonly EchoLegacy[] = Object.freeze([
   },
   {
     id: 'lg_elna', predecessorId: 'p_elna', name: '守人の継承', icon: '🕯', color: '#fbbf24',
-    upside: '侵蝕無効・出血半減・被ダメ-18%', downside: '初期HP-14・初期精神-12',
+    upside: '侵蝕無効・出血半減・全被ダメ-18%', downside: '初期HP-14・初期精神-12',
     fx: { drainImmune: true, bleedReduce: true, hpReduce: 0.82, mnReduce: 0.82, hpBonus: -14, mentalBonus: -12 },
   },
   {
