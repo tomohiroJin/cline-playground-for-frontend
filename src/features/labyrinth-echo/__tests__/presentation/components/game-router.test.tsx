@@ -33,6 +33,7 @@ const DEFAULT_GAME: GameState = {
   resTxt: '',
   resChg: null,
   drainInfo: null,
+  legacyId: null,
 };
 
 /** デフォルトのUI状態 */

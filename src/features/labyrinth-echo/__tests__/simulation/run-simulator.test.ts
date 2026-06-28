@@ -3,6 +3,7 @@ import { EV } from '../../events/event-data';
 import { ECHO_EVENTS } from '../../events/echo-events';
 import { DIFFICULTY } from '../../domain/constants/difficulty-defs';
 import { computeFx } from '../../domain/services/unlock-service';
+import { getLegacyById } from '../../domain/services/legacy-service';
 import { SeededRandomSource } from '../../domain/events/random';
 
 const EVENTS = [...EV, ...ECHO_EVENTS];
@@ -45,5 +46,23 @@ describe('simulateRun 圧対応', () => {
     const rate = (pressure: number) =>
       seeds.filter(s => simulateRun({ difficulty: normal, fx, rng: new SeededRandomSource(s), policy: CAREFUL_POLICY, events: EVENTS, pressure }).survived).length / seeds.length;
     expect(rate(0)).toBeGreaterThanOrEqual(rate(6));
+  });
+});
+
+describe('simulateRun legacy 対応', () => {
+  it('legacy 未指定（既定null）は現状と同一結果（回帰）', () => {
+    const a = simulateRun({ difficulty: normal, fx, rng: new SeededRandomSource(321), policy: CAREFUL_POLICY, events: EVENTS });
+    const b = simulateRun({ difficulty: normal, fx, rng: new SeededRandomSource(321), policy: CAREFUL_POLICY, events: EVENTS, legacy: null });
+    expect(a).toEqual(b);
+  });
+
+  it('legacy 指定で結果が変化する（lg_first の fx が適用される）', () => {
+    // lg_first（被ダメ+65%・HP/精神+10・情報+6、drainImmune なし）の適用を機能検証する。
+    // Task 8 較正完了: 「ガラスの大砲」設計で圧3では継承なしより生還率が下がる方向を確認。
+    const seeds = Array.from({ length: 80 }, (_, i) => i + 1);
+    const rate = (legacy: ReturnType<typeof getLegacyById>) =>
+      seeds.filter(s => simulateRun({ difficulty: normal, fx, rng: new SeededRandomSource(s), policy: CAREFUL_POLICY, events: EVENTS, pressure: 3, legacy }).survived).length / seeds.length;
+    // 圧3では lg_first の下振れが効き、継承なしより生還率が低い（ガラスの大砲）
+    expect(rate(getLegacyById('lg_first'))).toBeLessThanOrEqual(rate(null));
   });
 });

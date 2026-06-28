@@ -7,6 +7,9 @@ import { DiffSelectScreen } from '../components/DiffSelectScreen';
 import { DIFFICULTY } from '../domain/constants/difficulty-defs';
 import { createTestMeta, createTestFx } from './helpers/factories';
 import { createMetaState } from '../domain/models/meta-state';
+import { ECHO_FRAGMENTS } from '../domain/constants/echo-fragment-defs';
+
+const allFrags = ECHO_FRAGMENTS.map(f => f.id);
 
 const baseMeta = createTestMeta({ runs: 1, kp: 10, bestFloor: 2, totalEvents: 10, totalDeaths: 1 });
 const baseFx = createTestFx();
@@ -85,7 +88,8 @@ describe('DiffSelectScreen', () => {
     expect(props.selectDiff).toHaveBeenCalledTimes(1);
     expect(props.selectDiff).toHaveBeenCalledWith(
       expect.objectContaining({ id: DIFFICULTY[1].id }),
-      0
+      0,
+      null,
     );
   });
 
@@ -128,7 +132,7 @@ describe('DiffSelectScreen 残響圧', () => {
     render(<DiffSelectScreen {...basePressureProps({ selectDiff })} />);
     // 既定圧0で最初の難易度カードを選択
     fireEvent.click(screen.getByText('探索者').closest('button')!);
-    expect(selectDiff).toHaveBeenCalledWith(expect.objectContaining({ id: 'easy' }), 0);
+    expect(selectDiff).toHaveBeenCalledWith(expect.objectContaining({ id: 'easy' }), 0, null);
   });
 
   it('圧>0 のとき難易度カードの侵蝕・被ダメが実効値で表示される', () => {
@@ -147,6 +151,52 @@ describe('DiffSelectScreen 残響圧', () => {
     expect(selectDiff).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'normal', modifiers: expect.objectContaining({ drainMod: -2, dmgMult: 1 }) }),
       3,
+      null,
     );
+  });
+});
+
+describe('DiffSelectScreen 残響継承', () => {
+  it('解禁レガシーが無いとき継承セレクタを出さない', () => {
+    render(<DiffSelectScreen {...basePressureProps({ meta: createMetaState({ echoDepth: 0, fragments: [] }) })} />);
+    expect(screen.queryByText(/継承/)).toBeNull();
+  });
+
+  it('解禁レガシーがあるとき継承セレクタを表示する', () => {
+    render(<DiffSelectScreen {...basePressureProps({ meta: createMetaState({ echoDepth: 3, fragments: allFrags }) })} />);
+    // 「残響継承」ヘッダーが1つだけ存在することで継承セレクタの表示を確認
+    expect(screen.getByText('残響継承')).toBeInTheDocument();
+    expect(screen.getByText('記録者の継承')).toBeInTheDocument();
+  });
+
+  it('継承を選び難易度を選ぶと selectDiff に legacyId が渡る', () => {
+    const selectDiff = jest.fn();
+    render(<DiffSelectScreen {...basePressureProps({ selectDiff, meta: createMetaState({ echoDepth: 3, fragments: allFrags }) })} />);
+    fireEvent.click(screen.getByText('記録者の継承'));
+    fireEvent.click(screen.getByText('挑戦者').closest('button')!);
+    expect(selectDiff).toHaveBeenCalledWith(expect.objectContaining({ id: 'normal' }), 0, 'lg_lian');
+  });
+
+  it('既定（継承なし）では legacyId が null で渡る', () => {
+    const selectDiff = jest.fn();
+    render(<DiffSelectScreen {...basePressureProps({ selectDiff, meta: createMetaState({ echoDepth: 3, fragments: allFrags }) })} />);
+    fireEvent.click(screen.getByText('探索者').closest('button')!);
+    expect(selectDiff).toHaveBeenCalledWith(expect.objectContaining({ id: 'easy' }), 0, null);
+  });
+
+  it('lg_twins 継承選択で normal カードの HP・精神プレビューが減少する（hpBonus-10, mentalBonus-8）', () => {
+    // Arrange: 全断片取得済みメタ（全レガシー解禁）・圧0・継承なし状態でレンダリング
+    render(<DiffSelectScreen {...basePressureProps({ meta: createMetaState({ echoDepth: 3, fragments: allFrags }) })} />);
+
+    // 継承なし時: normal HP = BASE_HP(52) + hpBonus(0) + hpMod(0) = 52、精神 33
+    expect(screen.getByText('HP 52')).toBeInTheDocument();
+    expect(screen.getByText('精神 33')).toBeInTheDocument();
+
+    // Act: 絆の継承（lg_twins: hpBonus -10, mentalBonus -8）を選択
+    fireEvent.click(screen.getByText('絆の継承'));
+
+    // Assert: normal HP = 52 - 10 = 42、精神 = 33 - 8 = 25 に追従する
+    expect(screen.getByText('HP 42')).toBeInTheDocument();
+    expect(screen.getByText('精神 25')).toBeInTheDocument();
   });
 });

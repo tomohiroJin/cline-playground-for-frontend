@@ -72,6 +72,7 @@ describe('gameReducer', () => {
         difficulty: diff,
         player,
         pressure: 0,
+        legacyId: null,
       });
 
       // Assert
@@ -468,6 +469,18 @@ describe('gameReducer', () => {
     });
   });
 
+  describe('残響継承 reducer', () => {
+    it('初期状態は legacyId null', () => {
+      expect(createInitialState().legacyId).toBeNull();
+    });
+    it('SELECT_DIFFICULTY が legacyId を設定する', () => {
+      const player = { hp: 50, maxHp: 50, mn: 30, maxMn: 30, inf: 5, statuses: [] };
+      const diff = { id: 'normal' } as never;
+      const next = gameReducer(createInitialState(), { type: 'SELECT_DIFFICULTY', difficulty: diff, player, pressure: 0, legacyId: 'lg_lian' } as never);
+      expect(next.legacyId).toBe('lg_lian');
+    });
+  });
+
   describe('フェーズ遷移の整合性', () => {
     it('通常のゲームフロー全体を正しく遷移する', () => {
       // Arrange
@@ -481,7 +494,7 @@ describe('gameReducer', () => {
       expect(state.phase).toBe('diff_select');
 
       // diff_select → floor_intro
-      state = gameReducer(state, { type: 'SELECT_DIFFICULTY', difficulty: diff, player, pressure: 0 });
+      state = gameReducer(state, { type: 'SELECT_DIFFICULTY', difficulty: diff, player, pressure: 0, legacyId: null });
       expect(state.phase).toBe('floor_intro');
 
       // floor_intro → event

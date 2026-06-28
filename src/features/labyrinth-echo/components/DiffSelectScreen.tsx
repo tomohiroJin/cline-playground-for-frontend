@@ -1,11 +1,13 @@
 /**
  * 迷宮の残響 - 難易度選択画面
  * echoDepth > 0 のとき残響圧セレクタを表示し、選択された圧を selectDiff に渡す
+ * 解禁済みレガシーが1つ以上あるとき継承セレクタを表示する
  */
 import { useState, type ReactNode } from 'react';
 import { CFG } from '../domain/constants/config';
 import { DIFFICULTY } from '../domain/constants/difficulty-defs';
 import { maxSelectablePressure, applyPressureToDifficulty } from '../domain/services/pressure-service';
+import { unlockedLegacies, mergeLegacyIntoFx, getLegacyById } from '../domain/services/legacy-service';
 import type { FxState } from '../domain/models/unlock';
 import type { DifficultyDef } from '../domain/models/difficulty';
 import type { MetaState } from '../domain/models/meta-state';
@@ -18,7 +20,7 @@ interface DiffSelectScreenProps {
   Particles: ReactNode;
   fx: FxState;
   meta: MetaState;
-  selectDiff: (d: DifficultyDef, pressure: number) => void;
+  selectDiff: (d: DifficultyDef, pressure: number, legacyId: string | null) => void;
   setPhase: (phase: UIPhase) => void;
 }
 
@@ -27,6 +29,13 @@ export const DiffSelectScreen = ({ Particles, fx, meta, selectDiff, setPhase }: 
   const [pressure, setPressure] = useState(0);
   // echoDepth が変化した場合に maxP を超えないよう制限
   const p = Math.min(pressure, maxP);
+
+  // 解禁済みレガシー一覧と継承選択状態
+  const legacies = unlockedLegacies(meta.fragments);
+  const [legacyId, setLegacyId] = useState<string | null>(null);
+  const selectedLegacy = getLegacyById(legacyId);
+  // レガシー反映後の実効 fx（プレビュー用）
+  const previewFx = mergeLegacyIntoFx(fx, selectedLegacy);
 
   return (
     <Page particles={Particles}>
@@ -54,17 +63,51 @@ export const DiffSelectScreen = ({ Particles, fx, meta, selectDiff, setPhase }: 
           </div>
         )}
 
+        {/* 解禁済みレガシーが1つ以上あるとき継承セレクタを表示 */}
+        {legacies.length > 0 && (
+          <div style={{ textAlign: "center", marginBottom: 20, fontFamily: "var(--sans)" }}>
+            <div style={{ fontSize: 12, color: "#fbbf24", letterSpacing: 2, marginBottom: 6 }}>残響継承</div>
+            <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap" }}>
+              <button onClick={() => setLegacyId(null)} style={{
+                padding: "5px 12px", borderRadius: 6, cursor: "pointer", fontSize: 11, fontFamily: "var(--sans)",
+                background: legacyId === null ? "rgba(99,102,241,0.18)" : "rgba(20,20,35,0.4)",
+                border: `1px solid ${legacyId === null ? "rgba(99,102,241,0.6)" : "rgba(60,60,80,0.3)"}`,
+                color: legacyId === null ? "#a5b4fc" : "#505070",
+              }}>継承なし</button>
+              {legacies.map(l => (
+                <button key={l.id} onClick={() => setLegacyId(l.id)} style={{
+                  padding: "5px 12px", borderRadius: 6, cursor: "pointer", fontSize: 11, fontFamily: "var(--sans)",
+                  background: legacyId === l.id ? `${l.color}22` : "rgba(20,20,35,0.4)",
+                  border: `1px solid ${legacyId === l.id ? `${l.color}99` : "rgba(60,60,80,0.3)"}`,
+                  color: legacyId === l.id ? l.color : "#505070",
+                }}>
+                  {/* アイコンを aria-hidden で分離し、名前テキストを独立した span に保持 */}
+                  <span aria-hidden="true">{l.icon} </span>
+                  <span>{l.name}</span>
+                </button>
+              ))}
+            </div>
+            {selectedLegacy && (
+              <div style={{ fontSize: 10, marginTop: 8, lineHeight: 1.7 }}>
+                <span style={{ color: "#4ade80" }}>＋{selectedLegacy.upside}</span>
+                <span style={{ color: "#505070" }}> ／ </span>
+                <span style={{ color: "#f87171" }}>−{selectedLegacy.downside}</span>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* 圧適用後の実効値で各難易度カードを表示（侵蝕/被ダメも実効値にするため eff を渡す） */}
         {DIFFICULTY.map(d => {
           const eff = applyPressureToDifficulty(d, p);
           return (
             <DiffCard key={d.id} d={eff}
-              hp={CFG.BASE_HP + fx.hpBonus + eff.modifiers.hpMod}
-              mn={CFG.BASE_MN + fx.mentalBonus + eff.modifiers.mnMod}
-              inf={CFG.BASE_INF + fx.infoBonus}
+              hp={CFG.BASE_HP + previewFx.hpBonus + eff.modifiers.hpMod}
+              mn={CFG.BASE_MN + previewFx.mentalBonus + eff.modifiers.mnMod}
+              inf={CFG.BASE_INF + previewFx.infoBonus}
               cleared={meta.clearedDifficulties?.includes(d.id)}
               // 圧は selectDiff 側で適用されるため、基底難易度 d を渡して二重適用を防ぐ
-              onSelect={() => selectDiff(d, p)} />
+              onSelect={() => selectDiff(d, p, legacyId)} />
           );
         })}
         <BackBtn onClick={() => setPhase("title")} />

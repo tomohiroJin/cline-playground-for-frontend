@@ -15,6 +15,7 @@ import type { FloorMetaDef } from '../../domain/constants/floor-meta';
 import type { LogEntry } from '../../domain/models/game-state';
 import type { GameEvent } from '../../events/event-utils';
 import type { UIPhase } from '../hooks/use-game-orchestrator';
+import { getLegacyById } from '../../domain/services/legacy-service';
 
 // 画面コンポーネント
 import { TitleScreen } from '../../components/TitleScreen';
@@ -46,6 +47,8 @@ export interface GameState {
   resTxt: string;
   resChg: { hp: number; mn: number; inf: number; fl?: string } | null;
   drainInfo: { hp: number; mn: number } | null;
+  /** 実行中の継承ID（null = 未選択） */
+  legacyId: string | null;
 }
 
 /** 派生値・メタ情報 */
@@ -75,7 +78,7 @@ export interface UIState {
 export interface GameHandlers {
   startRun: () => void;
   enableAudio: () => void;
-  selectDiff: (d: DifficultyDef, pressure: number) => void;
+  selectDiff: (d: DifficultyDef, pressure: number, legacyId: string | null) => void;
   enterFloor: () => void;
   handleChoice: (idx: number) => void;
   proceed: () => void;
@@ -116,7 +119,7 @@ export const GameRouter = (props: GameRouterProps) => {
 
   const {
     player, diff, event, floor, step, ending, isNewEnding, isNewDiffClear,
-    usedSecondLife, chainNext, log, resTxt, resChg, drainInfo,
+    usedSecondLife, chainNext, log, resTxt, resChg, drainInfo, legacyId,
   } = game;
 
   const { meta, fx, progressPct, floorMeta, floorColor, vignette, lowMental } = derived;
@@ -167,7 +170,7 @@ export const GameRouter = (props: GameRouterProps) => {
   if (phase === "floor_intro") {
     return (
       <>
-        <FloorIntroScreen Particles={Particles} floor={floor} floorMeta={floorMeta} floorColor={floorColor} diff={diff} meta={meta} progressPct={progressPct} player={player} chainNext={chainNext} enterFloor={enterFloor} />
+        <FloorIntroScreen Particles={Particles} floor={floor} floorMeta={floorMeta} floorColor={floorColor} diff={diff} meta={meta} progressPct={progressPct} player={player} chainNext={chainNext} enterFloor={enterFloor} legacy={getLegacyById(legacyId)} />
         <GuidanceOverlay show={showGuidance} />
       </>
     );

@@ -10,7 +10,7 @@ const baseProps = (): GameRouterProps => ({
   game: {
     player: null, diff: null, event: null, floor: 1, step: 0, ending: null,
     isNewEnding: false, isNewDiffClear: false, usedSecondLife: false, chainNext: null,
-    log: [], resTxt: '', resChg: null, drainInfo: null,
+    log: [], resTxt: '', resChg: null, drainInfo: null, legacyId: null,
   },
   derived: {
     meta: createMetaState({ echoDepth: 1, fragments: ['f_lian_1'] }),

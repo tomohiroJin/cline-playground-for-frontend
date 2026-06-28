@@ -2,6 +2,7 @@ import { DIFFICULTY } from '../../../domain/constants/difficulty-defs';
 import { CFG } from '../../../domain/constants/config';
 import { simulateRun, CAREFUL_POLICY, RANDOM_POLICY } from '../../../simulation/run-simulator';
 import type { RunPolicy } from '../../../simulation/run-simulator';
+import { LEGACIES } from '../../../domain/constants/legacy-defs';
 import { EV } from '../../../events/event-data';
 import { ECHO_EVENTS } from '../../../events/echo-events';
 import { REVENANT_EVENTS } from '../../../events/revenant-events';
@@ -137,5 +138,41 @@ describe('バランス契約 残響圧', () => {
 
   it('亡霊込み（全先人発見済み）でも単調性が保たれる（normal: 0 >= 6）', () => {
     expect(survivalAtPressure('normal', 0, ALL_DISCOVERED)).toBeGreaterThanOrEqual(survivalAtPressure('normal', 6, ALL_DISCOVERED));
+  });
+});
+
+/** レガシー込みの careful 生還率（0..1）を決定論的に算出 */
+const legacySurvival = (diffId: string, legacyId: string | null, pressure = 0): number => {
+  const difficulty = DIFFICULTY.find(x => x.id === diffId)!;
+  const legacy = legacyId ? LEGACIES.find(l => l.id === legacyId)! : null;
+  const survived = SEEDS.filter(s =>
+    simulateRun({ difficulty, fx: BASE_FX, rng: new SeededRandomSource(s), policy: CAREFUL_POLICY, events: EVENTS_P3, pressure, legacy }).survived,
+  ).length;
+  return survived / N;
+};
+
+describe('バランス契約 残響継承', () => {
+  it('各レガシーで careful Normal 生還率が健全帯 0.40–0.95', () => {
+    for (const l of LEGACIES) {
+      const s = legacySurvival('normal', l.id);
+      expect(s).toBeGreaterThanOrEqual(0.40);
+      expect(s).toBeLessThanOrEqual(0.95);
+    }
+  });
+
+  it('各レガシーで難易度の単調性が保たれる（easy>=normal>=hard>=abyss）', () => {
+    for (const l of LEGACIES) {
+      const e = legacySurvival('easy', l.id);
+      const n = legacySurvival('normal', l.id);
+      const h = legacySurvival('hard', l.id);
+      const a = legacySurvival('abyss', l.id);
+      expect(e).toBeGreaterThanOrEqual(n);
+      expect(n).toBeGreaterThanOrEqual(h);
+      expect(h).toBeGreaterThanOrEqual(a);
+    }
+  });
+
+  it('下振れが効く: 起源（lg_first, 被ダメ+65%）は圧3で継承なしより生還率が下がる', () => {
+    expect(legacySurvival('normal', 'lg_first', 3)).toBeLessThan(legacySurvival('normal', null, 3));
   });
 });
