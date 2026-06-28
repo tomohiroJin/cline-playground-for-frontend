@@ -49,4 +49,14 @@ describe('ArchiveScreen', () => {
     expect(screen.getByText(/継承解禁/)).toBeInTheDocument();
     expect(screen.getByText(/記録者の継承/)).toBeInTheDocument();
   });
+
+  it('真エンディング到達済みのとき書庫に「真相到達」が表示される', () => {
+    render(<ArchiveScreen Particles={null} meta={createMetaState({ echoDepth: 6, endings: ['te_liberator'] })} setPhase={() => undefined} />);
+    expect(screen.getByText(/真相到達/)).toBeInTheDocument();
+  });
+
+  it('真エンディング未到達では「真相到達」を表示しない', () => {
+    render(<ArchiveScreen Particles={null} meta={createMetaState({ echoDepth: 6, endings: [] })} setPhase={() => undefined} />);
+    expect(screen.queryByText(/真相到達/)).toBeNull();
+  });
 });

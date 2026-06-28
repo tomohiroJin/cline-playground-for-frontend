@@ -128,6 +128,11 @@ export const LE_BG_IMAGES: Record<number, {
   3: { far: bg3Far, mid: bg3Mid, near: bg3Near },
   4: { far: bg4Far, mid: bg4Mid, near: bg4Near },
   5: { far: bg5Far, mid: bg5Mid, near: bg5Near },
+  // floor 6（真ルート）は bg5 にフォールバック。
+  // le_bg_6_far/mid/near.webp を assets に追加して import すれば差し替え可能。
+  // 真END画像（le_ending_te_*.webp）は LE_IMAGES.endings に該当キーが無い場合、
+  // 呼び出し側が icon/gradient フォールバックすること（任意フック）。
+  6: { far: bg5Far, mid: bg5Mid, near: bg5Near },
 };
 
 /** イベントシーンイラスト（イベントID → 画像） */
