@@ -171,7 +171,7 @@ function GameInner() {
         console.warn(`[enterFloor] No events for floor ${state.floor}`);
       }
     }
-  }, [state.floor, state.usedIds, state.chainNext, sfx, safeTimeout, meta, fx, dispatch]);
+  }, [state.floor, state.usedIds, state.chainNext, state.pressure, sfx, safeTimeout, meta, fx, dispatch]);
 
   const setPhase = useCallback((phase: UIPhase) => {
     if (phase === "title") {
