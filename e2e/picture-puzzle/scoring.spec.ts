@@ -31,7 +31,8 @@ test.describe('スコア・ランク表示', () => {
     await puzzlePage.completePuzzleForDebug();
 
     // Assert: ランク表示（★）がどこかに含まれる
-    const pageContent = await puzzlePage.page.textContent('body');
-    expect(pageContent).toMatch(/★|クリア/);
+    // ランクはスコア計算後に遅れて描画されるため、待機ベースのアサーションで追従する
+    // （textContent の一度きり読み取りは自動リトライが効かずフレーキーになる。Issue #131）
+    await expect(puzzlePage.page.locator('body')).toContainText(/★|クリア/);
   });
 });
