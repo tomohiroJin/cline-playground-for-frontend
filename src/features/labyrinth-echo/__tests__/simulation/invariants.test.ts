@@ -112,7 +112,10 @@ describe('checkSurvivalMonotonic', () => {
   it('単調減少なら違反なし', () => {
     expect(checkSurvivalMonotonic([{ label: 'easy', rate: 1 }, { label: 'normal', rate: 0.8 }, { label: 'hard', rate: 0.1 }])).toEqual([]);
   });
-  it('途中で増加したら error', () => {
-    expect(checkSurvivalMonotonic([{ label: 'easy', rate: 0.5 }, { label: 'normal', rate: 0.8 }]).some(v => v.rule === 'survival_monotonic')).toBe(true);
+  it('途中で増加したら survival_monotonic 違反を warn で報告する', () => {
+    const violations = checkSurvivalMonotonic([{ label: 'easy', rate: 0.5 }, { label: 'normal', rate: 0.8 }]);
+    // 統計的傾向違反は warn（CIを落とさない）として報告されることを確認
+    expect(violations.some(v => v.rule === 'survival_monotonic')).toBe(true);
+    expect(violations.find(v => v.rule === 'survival_monotonic')?.severity).toBe('warn');
   });
 });
