@@ -48,4 +48,31 @@ describe('simulateCareer', () => {
     expect(r.unlocked).toBe(false);
     expect(r.runsToUnlock).toBe(5);
   });
+
+  it('easy/normal×lorehunter: seeds 1..200 で断片数が常に19以下（run内重複収集バグ回帰）', () => {
+    // lorehunter ポリシーは断片読取を積極的に試みるため、同一 run 内での
+    // 重複エコー出現（複数階に登録された断片イベント）による二重カウントを再現しやすい。
+    // 断片は複数階に登録されており（例: f_lian_2=[1,2], f_twins_2=[2,3]）、
+    // metaCond が run 内でリセットされないため同一 run で2回読まれうる。
+    // これにより readFrags に同一 id が複数入り、meta.fragments が重複を含み19を超過する。
+    // 既知の再現シード: easy×seed=80（run15でcount=20）, easy×seed=87（run15でcount=20）
+    for (const difficulty of [easy, normal]) {
+      for (let seed = 1; seed <= 200; seed++) {
+        const career = simulateCareer({
+          difficulty,
+          fx,
+          policy: LORE_POLICY,
+          events: EVENTS,
+          careerSeed: seed,
+          maxRuns: 120,
+        });
+        // timeline の全ステップで断片数が19を超えないことを確認
+        for (const step of career.timeline) {
+          expect(step.fragmentCount).toBeLessThanOrEqual(19);
+        }
+        // 最終断片数も19以下
+        expect(career.finalFragments).toBeLessThanOrEqual(19);
+      }
+    }
+  });
 });

@@ -72,16 +72,22 @@ export const simulateCareer = (params: {
     if (res.survived) {
       escapes++;
       const newDepth = incrementEchoDepth(meta.echoDepth);
-      // 探索中に読んだ断片（未収集のみ採用）
-      const readFrags = res.fragmentsRead.filter(id => !meta.fragments.includes(id));
-      fragsReadThisRun = readFrags.length;
-      let fragments = readFrags.length ? [...meta.fragments, ...readFrags] : meta.fragments;
+      // Set ベースで断片を管理し、run 内重複を自動除去する
+      // （同一断片が複数階に登録されている場合、metaCond が run 内で更新されないため
+      //   同一 run で2回読まれうる。Set により重複を排除して正確に1カウントとする）
+      const fragmentSet = new Set<string>(meta.fragments);
+      const prevSize = fragmentSet.size;
+      for (const id of res.fragmentsRead) {
+        fragmentSet.add(id);
+      }
+      fragsReadThisRun = fragmentSet.size - prevSize;
       // セーフティネット（脱出ごとに1片保証）
-      const safety = selectSafetyNetFragment(newDepth, fragments);
-      if (safety && !fragments.includes(safety.id)) {
-        fragments = [...fragments, safety.id];
+      const safety = selectSafetyNetFragment(newDepth, [...fragmentSet]);
+      if (safety && !fragmentSet.has(safety.id)) {
+        fragmentSet.add(safety.id);
         safetyNetGranted = true;
       }
+      const fragments = [...fragmentSet];
       meta = { ...meta, echoDepth: newDepth, fragments, escapes: meta.escapes + 1 };
 
       // レガシー解禁検知（新規に完収集された先人）
