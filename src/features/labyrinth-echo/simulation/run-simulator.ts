@@ -42,28 +42,8 @@ export interface RunPolicy {
   choose(event: GameEvent, player: Player, fx: FxState, diff: DifficultyDef, rng: RandomSource): number;
 }
 
-/** 慎重ポリシー: 解決後 hp+mn 最良の選択肢を貪欲選択（脱出を最優先） */
-export const CAREFUL_POLICY: RunPolicy = {
-  choose(event, player, fx, diff) {
-    let bestIdx = 0;
-    let bestScore = -Infinity;
-    for (let i = 0; i < event.ch.length; i++) {
-      const res = processChoice({ event, choiceIdx: i, player, fx, diff });
-      const score = res.outcome.fl === 'escape'
-        ? Number.POSITIVE_INFINITY
-        : res.drained.hp + res.drained.mn;
-      if (score > bestScore) { bestScore = score; bestIdx = i; }
-    }
-    return bestIdx;
-  },
-};
-
-/** 無策ポリシー: 一様ランダム選択 */
-export const RANDOM_POLICY: RunPolicy = {
-  choose(event, _player, _fx, _diff, rng) {
-    return Math.floor(rng.random() * event.ch.length);
-  },
-};
+// ポリシー実体は policies.ts に集約（type-only 依存のため循環参照にならない）
+export { CAREFUL_POLICY, RANDOM_POLICY, LORE_POLICY } from './policies';
 
 /** シミュレータ専用の固定メタ（初回相当: echoDepth0 / 履歴なし） */
 const SIM_META: MetaState = createMetaState();
