@@ -66,6 +66,23 @@ describe('checkCareer 故意の不正を検出', () => {
     };
     expect(checkCareer(bad).some(v => v.rule === 'true_route_condition')).toBe(true);
   });
+
+  it('断片数が減少したら error', () => {
+    const bad: CareerResult = {
+      unlocked: false, runsToUnlock: 2, escapesToUnlock: 2, deathsToUnlock: 0,
+      finalDepth: 3, finalFragments: 2,
+      timeline: [baseStep({ runIndex: 1, fragmentCount: 3 }), baseStep({ runIndex: 2, fragmentCount: 2 })], legacyUnlocks: [],
+    };
+    expect(checkCareer(bad).some(v => v.rule === 'fragment_monotonic')).toBe(true);
+  });
+
+  it('escapes > runs なら error', () => {
+    const bad: CareerResult = {
+      unlocked: false, runsToUnlock: 2, escapesToUnlock: 3, deathsToUnlock: 0,
+      finalDepth: 3, finalFragments: 5, timeline: [baseStep()], legacyUnlocks: [],
+    };
+    expect(checkCareer(bad).some(v => v.rule === 'escapes_le_runs')).toBe(true);
+  });
 });
 
 describe('checkRun', () => {
@@ -84,6 +101,10 @@ describe('checkRun', () => {
   it('未知の断片IDで error', () => {
     const r: RunResult = { survived: true, floorReached: 5, endingId: 'perfect', cause: 'escape', events: 10, fragmentsRead: ['f_bogus'] };
     expect(checkRun(r).some(v => v.rule === 'fragment_valid')).toBe(true);
+  });
+  it('未知の cause で error', () => {
+    const r: RunResult = { survived: false, floorReached: 3, endingId: null, cause: 'unknown_cause', events: 1, fragmentsRead: [] };
+    expect(checkRun(r).some(v => v.rule === 'cause_valid')).toBe(true);
   });
 });
 
