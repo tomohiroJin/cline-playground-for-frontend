@@ -33,6 +33,8 @@ export interface RunResult {
   readonly cause: string;
   /** 消化したイベント数 */
   readonly events: number;
+  /** 探索中に「読み解いた」断片 id 群（キャリアシミュレーション用） */
+  readonly fragmentsRead: readonly string[];
 }
 
 /** 選択方針 */
@@ -117,16 +119,20 @@ export const simulateRun = (params: {
   let usedIds: string[] = [];
   let usedSecondLife = false;
   let eventsConsumed = 0;
+  const fragmentsRead: string[] = [];
 
   let event = pickEvent({ events: [...events], floor, usedIds, meta, fx, rng, pressure });
 
   const fail = (cause: string): RunResult =>
-    ({ survived: false, floorReached: floor, endingId: null, cause, events: eventsConsumed });
+    ({ survived: false, floorReached: floor, endingId: null, cause, events: eventsConsumed, fragmentsRead });
 
   while (event) {
     const choiceIdx = policy.choose(event, player, fx, difficulty, rng);
     const res = processChoice({ event, choiceIdx, player, fx, diff: difficulty });
     eventsConsumed++;
+
+    // 探索中に読み解いた断片を記録（fl:"frag:<id>"）
+    if (res.outcome.fl?.startsWith('frag:')) fragmentsRead.push(res.outcome.fl.slice('frag:'.length));
 
     const sl = checkSecondLife(res.drained, fx, usedSecondLife);
     player = sl.player;
@@ -134,7 +140,7 @@ export const simulateRun = (params: {
 
     if (res.outcome.fl === 'escape') {
       const endingId = determineEnding(player, [], difficulty).id;
-      return { survived: true, floorReached: floor, endingId, cause: 'escape', events: eventsConsumed };
+      return { survived: true, floorReached: floor, endingId, cause: 'escape', events: eventsConsumed, fragmentsRead };
     }
     if (player.hp <= 0 || player.mn <= 0) {
       return fail(player.hp <= 0 ? '体力消耗' : '精神崩壊');
