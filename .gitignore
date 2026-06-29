@@ -56,3 +56,5 @@ lint_output.txt
 /AGENTS.md
 /CLAUDE.md
 /GEMINI.md
+# シミュレーションレポート出力（開発支援ツール）
+reports/
