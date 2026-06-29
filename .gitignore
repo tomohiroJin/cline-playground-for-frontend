@@ -58,3 +58,6 @@ lint_output.txt
 /GEMINI.md
 # シミュレーションレポート出力（開発支援ツール）
 reports/
+
+# SDD（サブエージェント駆動開発）の作業足場（briefs/reports/diffs/progress）。製品リポジトリに含めない
+.superpowers/sdd/
