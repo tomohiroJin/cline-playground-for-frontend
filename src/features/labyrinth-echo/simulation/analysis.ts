@@ -8,7 +8,7 @@
 import { simulateRun } from './run-simulator';
 import { simulateCareer } from './career-simulator';
 import type { CareerResult } from './career-simulator';
-import { CAREFUL_POLICY, RANDOM_POLICY, LORE_POLICY } from './policies';
+import { CAREFUL_POLICY, RANDOM_POLICY, LORE_POLICY, RECKLESS_POLICY } from './policies';
 import type { RunPolicy } from './run-simulator';
 import { checkCareer, checkRun, checkSurvivalMonotonic, checkEndingCoverage } from './invariants';
 import type { Violation } from './invariants';
@@ -249,6 +249,7 @@ const buildEndings = (seeds: number): EndingDistribution => {
 const CENSUS_POLICIES: { name: string; policy: RunPolicy }[] = [
   { name: 'careful', policy: CAREFUL_POLICY },
   { name: 'random', policy: RANDOM_POLICY },
+  { name: 'reckless', policy: RECKLESS_POLICY },
 ];
 const CENSUS_FXS: { name: string; fx: FxState }[] = [
   { name: '無補助', fx: BASE_FX },

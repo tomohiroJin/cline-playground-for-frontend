@@ -112,9 +112,13 @@ const renderEndingCensus = (c: EndingCensus): string => {
     const by = reached ? esc(r.reachedBy) : '<b>未到達（到達不能の疑い）</b>';
     return `<tr${reached ? '' : ' class="ng"'}><td>${esc(r.id)}</td><td>${r.reachCount}</td><td>${by}</td></tr>`;
   }).join('');
-  return `<p class="meta">難易度×圧(0/3/6)×policy(careful/random)×fx(無補助/フル強化)を掃引した到達回数。未到達=赤。
+  return `<p class="meta">難易度×圧(0/3/6)×policy(careful/random/reckless)×fx(無補助/フル強化)を掃引した到達回数。未到達=赤。
     真END（${c.trueEndingIds.map(esc).join(', ')}）は終章専用で単発runには出ない（finale-flow テストが担保）。
-    veteran は log 依存だが、simulator が消化イベント数を log 長として渡すため評価対象。</p>
+    veteran は log 依存だが simulator が消化イベント数を log 長として渡すため評価対象。</p>
+    <p class="meta">⚠ sim 限界による未到達の切り分け:
+    <b>iron / cursed</b> は状態異常依存だが simulator が statuses を未モデル化（常に空）のため構造的に未到達＝実ゲームでは到達可。
+    <b>madness / battered</b> は「stats が0直前での脱出」という極狭の窓で、greedy policy では削ると脱出前に死ぬため踏めない（人間の意図的プレイなら到達可）。
+    statuses 未モデル化は①〜③の生還率を実ゲームより楽観側に振らせている可能性がある（DoT 未反映）。</p>
     <table><tr><th>エンディング</th><th>到達回数</th><th>最初に到達した条件</th></tr>${rows}</table>`;
 };
 

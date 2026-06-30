@@ -1,4 +1,4 @@
-import { LORE_POLICY, CAREFUL_POLICY, RANDOM_POLICY } from '../../simulation/policies';
+import { LORE_POLICY, CAREFUL_POLICY, RANDOM_POLICY, RECKLESS_POLICY } from '../../simulation/policies';
 import type { GameEvent } from '../../events/event-utils';
 import { DIFFICULTY } from '../../domain/constants/difficulty-defs';
 import { computeFx } from '../../domain/services/unlock-service';
@@ -34,6 +34,41 @@ describe('LORE_POLICY', () => {
     const rng = new SeededRandomSource(1);
     expect(LORE_POLICY.choose(plain, player, fx, normal, rng))
       .toBe(CAREFUL_POLICY.choose(plain, player, fx, normal, rng));
+  });
+});
+
+describe('RECKLESS_POLICY', () => {
+  it('脱出できる選択肢があれば脱出を選ぶ（悪状態のまま run を終える）', () => {
+    const ev = {
+      id: 'e', fl: [5], tp: 'x', sit: 's',
+      ch: [
+        { t: '戦う', o: [{ c: 'default', r: 'r', hp: -5, mn: 0, inf: 0 }] },
+        { t: '脱出', o: [{ c: 'default', r: 'r', hp: 0, mn: 0, inf: 0, fl: 'escape' }] },
+      ],
+    } as unknown as GameEvent;
+    expect(RECKLESS_POLICY.choose(ev, player, fx, normal, new SeededRandomSource(1))).toBe(1);
+  });
+
+  it('脱出が無ければ生存可能な中で最もダメージの大きい選択を取る', () => {
+    const ev = {
+      id: 'e', fl: [1], tp: 'x', sit: 's',
+      ch: [
+        { t: '軽傷', o: [{ c: 'default', r: 'r', hp: -1, mn: 0, inf: 0 }] },
+        { t: '重傷', o: [{ c: 'default', r: 'r', hp: -20, mn: 0, inf: 0 }] },
+      ],
+    } as unknown as GameEvent;
+    expect(RECKLESS_POLICY.choose(ev, player, fx, normal, new SeededRandomSource(1))).toBe(1);
+  });
+
+  it('状態異常を負う選択を優先する（同程度のダメージなら異常付与を選ぶ）', () => {
+    const ev = {
+      id: 'e', fl: [1], tp: 'x', sit: 's',
+      ch: [
+        { t: '無傷で進む', o: [{ c: 'default', r: 'r', hp: -2, mn: 0, inf: 0 }] },
+        { t: '呪いを受ける', o: [{ c: 'default', r: 'r', hp: -2, mn: 0, inf: 0, fl: 'add:呪い' }] },
+      ],
+    } as unknown as GameEvent;
+    expect(RECKLESS_POLICY.choose(ev, player, fx, normal, new SeededRandomSource(1))).toBe(1);
   });
 });
 

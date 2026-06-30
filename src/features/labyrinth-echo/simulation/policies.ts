@@ -37,3 +37,29 @@ export const LORE_POLICY: RunPolicy = {
     return CAREFUL_POLICY.choose(event, player, fx, diff, rng);
   },
 };
+
+/**
+ * 無謀ポリシー: 脱出できるなら脱出（悪状態のまま run を終える）。
+ * それ以外は生存できる中で「最も stats を消耗する／状態異常(add:)を負う」選択を取る。
+ * 低stats脱出（madness/battered）や状態異常保持(iron/cursed)エンディングの到達性検証用。
+ */
+export const RECKLESS_POLICY: RunPolicy = {
+  choose(event, player, fx, diff) {
+    let escapeIdx = -1;
+    let worstIdx = 0;
+    let worstScore = Infinity;
+    let anySurvive = false;
+    for (let i = 0; i < event.ch.length; i++) {
+      const res = processChoice({ event, choiceIdx: i, player, fx, diff });
+      if (res.outcome.fl === 'escape') { escapeIdx = i; continue; }
+      if (res.drained.hp <= 0 || res.drained.mn <= 0) continue; // 即死手は避ける（脱出前に死なない）
+      anySurvive = true;
+      // hp+mn が低いほど悪。状態異常付与(add:)はさらに優先（statuses 依存ENDの炙り出し）
+      const seeksStatus = typeof res.outcome.fl === 'string' && res.outcome.fl.startsWith('add:');
+      const score = res.drained.hp + res.drained.mn - (seeksStatus ? 1000 : 0);
+      if (score < worstScore) { worstScore = score; worstIdx = i; }
+    }
+    if (escapeIdx >= 0) return escapeIdx;
+    return anySurvive ? worstIdx : 0;
+  },
+};
