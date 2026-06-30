@@ -90,4 +90,41 @@ describe('aggregateAll', () => {
       }
     });
   });
+
+  describe('フル強化（全アンロック＋ベストレガシー）の生還率行列（fullPowerSurvival）', () => {
+    const VALID_WINNERS = new Set(['none', 'lg_lian', 'lg_twins', 'lg_galen', 'lg_elna', 'lg_first']);
+
+    it('全難易度×全圧（4×7=28）のセルを持つ', () => {
+      expect(result.fullPowerSurvival.cells.length).toBe(28);
+    });
+
+    it('baseline / best は 0..1、delta は常に非負（best>=baseline、構築上保証）', () => {
+      for (const c of result.fullPowerSurvival.cells) {
+        expect(c.baseline).toBeGreaterThanOrEqual(0);
+        expect(c.best).toBeLessThanOrEqual(1);
+        expect(c.delta).toBeGreaterThanOrEqual(0);
+        expect(c.best).toBeCloseTo(c.baseline + c.delta, 10);
+      }
+    });
+
+    it('bestLegacyId は「none」または有効なレガシーID', () => {
+      for (const c of result.fullPowerSurvival.cells) {
+        expect(VALID_WINNERS.has(c.bestLegacyId)).toBe(true);
+      }
+    });
+
+    it('baseline は ① 行列の careful（無補助）と一致する＝Δは素からの総上げ幅', () => {
+      for (const c of result.fullPowerSurvival.cells) {
+        const base = result.survival.cells.find(s => s.difficultyId === c.difficultyId && s.pressure === c.pressure)!;
+        expect(c.baseline).toBeCloseTo(base.careful, 10);
+      }
+    });
+
+    it('フル強化は継承のみ(①-b)以上に底上げする（easy 圧0 で best>=①-b best）', () => {
+      const id = 'easy', p = 0;
+      const full = result.fullPowerSurvival.cells.find(c => c.difficultyId === id && c.pressure === p)!;
+      const powered = result.poweredSurvival.cells.find(c => c.difficultyId === id && c.pressure === p)!;
+      expect(full.best).toBeGreaterThanOrEqual(powered.best);
+    });
+  });
 });

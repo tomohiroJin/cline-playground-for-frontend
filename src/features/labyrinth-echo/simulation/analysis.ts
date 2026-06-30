@@ -14,7 +14,9 @@ import { checkCareer, checkRun, checkSurvivalMonotonic } from './invariants';
 import type { Violation } from './invariants';
 import { DIFFICULTY } from '../domain/constants/difficulty-defs';
 import { LEGACIES } from '../domain/constants/legacy-defs';
+import { UNLOCKS } from '../domain/constants/unlock-defs';
 import { computeFx } from '../domain/services/unlock-service';
+import type { FxState } from '../domain/models/unlock';
 import { SeededRandomSource } from '../domain/events/random';
 import { EV } from '../events/event-data';
 import { ECHO_EVENTS } from '../events/echo-events';
@@ -23,8 +25,10 @@ import type { EchoLegacy } from '../domain/models/echo';
 
 /** 全イベントを結合したマスターリスト */
 const EVENTS = [...EV, ...ECHO_EVENTS, ...REVENANT_EVENTS];
-/** 継承なしのベース fx */
+/** 継承なし・アンロックなしのベース fx */
 const BASE_FX = computeFx([]);
+/** 全アンロック適用後の fx（理論上の最大強化＝veteran 想定。trophy/achieve 含む全40種） */
+const FULL_FX = computeFx(UNLOCKS.map(u => u.id));
 /** 対象難易度 ID（単調性チェックの順序に合わせる） */
 const DIFFICULTY_IDS = ['easy', 'normal', 'hard', 'abyss'];
 /** 残響圧レベル */
@@ -58,11 +62,11 @@ export interface LegacyAnalysis { unlockTimeline: { legacyId: string; runIndex: 
 export interface EndingRow { label: string; counts: Record<string, number>; total: number; }
 export interface EndingDistribution { rows: EndingRow[]; endingIds: string[]; }
 
-/** 指定条件の生還率（0..1）を seeds 件で算出 */
-const survivalRate = (difficultyId: string, pressure: number, policy: RunPolicy, seeds: number, legacy: EchoLegacy | null = null): number => {
+/** 指定条件の生還率（0..1）を seeds 件で算出（fx 既定はアンロックなし） */
+const survivalRate = (difficultyId: string, pressure: number, policy: RunPolicy, seeds: number, legacy: EchoLegacy | null = null, fx: FxState = BASE_FX): number => {
   let survived = 0;
   for (let s = 1; s <= seeds; s++) {
-    const r = simulateRun({ difficulty: d(difficultyId), fx: BASE_FX, rng: new SeededRandomSource(s), policy, events: EVENTS, pressure, legacy });
+    const r = simulateRun({ difficulty: d(difficultyId), fx, rng: new SeededRandomSource(s), policy, events: EVENTS, pressure, legacy });
     if (r.survived) survived++;
   }
   return survived / seeds;
@@ -96,24 +100,32 @@ const buildSurvival = (seeds: number): SurvivalMatrix => {
  * createPlayer の事後条件（mn>0）で throw する＝そのビルドは起動不能。生還率0% として扱う
  * （max 比較で baseline に劣るため best には選ばれない）。本契約違反のみ握り、他例外は再送出。
  */
-const legacySurvivalOrZero = (difficultyId: string, pressure: number, seeds: number, legacy: EchoLegacy): number => {
+const legacySurvivalOrZero = (difficultyId: string, pressure: number, seeds: number, legacy: EchoLegacy, fx: FxState = BASE_FX): number => {
   try {
-    return survivalRate(difficultyId, pressure, CAREFUL_POLICY, seeds, legacy);
+    return survivalRate(difficultyId, pressure, CAREFUL_POLICY, seeds, legacy, fx);
   } catch (e) {
     if (e instanceof Error && /must be positive/.test(e.message)) return 0;
     throw e;
   }
 };
 
-const buildPoweredSurvival = (seeds: number): PoweredSurvivalMatrix => {
+/**
+ * 指定 fx の下で「継承なし＋全5レガシー」の最良セルを構築する共通ロジック。
+ * best は baseline（無補助・①と同じ）を起点に max を取るため delta は構築上常に非負。
+ * @param fx run に渡す基礎 fx（①-b は BASE_FX、①-c は FULL_FX）
+ * @param noLegacyRate 「このfxで継承なし」の生還率（①-b は baseline と同じ、①-c はフル無継承）
+ */
+const buildBestLegacyMatrix = (seeds: number, fx: FxState, noLegacyRate: (id: string, p: number) => number): PoweredSurvivalMatrix => {
   const cells: PoweredSurvivalCell[] = [];
   for (const id of DIFFICULTY_IDS) {
     for (const p of PRESSURES) {
-      const baseline = survivalRate(id, p, CAREFUL_POLICY, seeds);
+      const baseline = survivalRate(id, p, CAREFUL_POLICY, seeds); // 無補助（①）
       let best = baseline;
       let bestLegacyId = 'none';
+      const none = noLegacyRate(id, p);
+      if (none > best) { best = none; bestLegacyId = 'none'; }
       for (const l of LEGACIES) {
-        const rate = legacySurvivalOrZero(id, p, seeds, l);
+        const rate = legacySurvivalOrZero(id, p, seeds, l, fx);
         if (rate > best) { best = rate; bestLegacyId = l.id; }
       }
       cells.push({ difficultyId: id, pressure: p, baseline, best, bestLegacyId, delta: best - baseline });
@@ -121,6 +133,14 @@ const buildPoweredSurvival = (seeds: number): PoweredSurvivalMatrix => {
   }
   return { cells, pressures: PRESSURES, difficultyIds: DIFFICULTY_IDS };
 };
+
+/** ①-b 継承パワーアップ後（アンロックなし＋ベストレガシー）。baseline=無補助、best=max(無補助, 各レガシー) */
+const buildPoweredSurvival = (seeds: number): PoweredSurvivalMatrix =>
+  buildBestLegacyMatrix(seeds, BASE_FX, (id, p) => survivalRate(id, p, CAREFUL_POLICY, seeds));
+
+/** ①-c フル強化（全アンロック＋ベストレガシー）。baseline=無補助(①)、best=max(無補助, フル無継承, フル各レガシー)。Δ=素からの総上げ幅 */
+const buildFullPowerSurvival = (seeds: number): PoweredSurvivalMatrix =>
+  buildBestLegacyMatrix(seeds, FULL_FX, (id, p) => survivalRate(id, p, CAREFUL_POLICY, seeds, null, FULL_FX));
 
 /** キャリア条件定義（難易度×ポリシーの組み合わせ） */
 const CAREER_CONDS: { label: string; difficultyId: string; policyName: string; policy: RunPolicy }[] = [
@@ -224,6 +244,7 @@ const buildEndings = (seeds: number): EndingDistribution => {
 export const aggregateAll = (cfg: { seeds: number; careers: number; maxRuns: number }): {
   survival: SurvivalMatrix;
   poweredSurvival: PoweredSurvivalMatrix;
+  fullPowerSurvival: PoweredSurvivalMatrix;
   careers: CareerSummary[];
   legacies: LegacyAnalysis;
   endings: EndingDistribution;
@@ -231,6 +252,7 @@ export const aggregateAll = (cfg: { seeds: number; careers: number; maxRuns: num
 } => {
   const survival = buildSurvival(cfg.seeds);
   const poweredSurvival = buildPoweredSurvival(cfg.seeds);
+  const fullPowerSurvival = buildFullPowerSurvival(cfg.seeds);
   const { summaries, all } = buildCareers(cfg.careers, cfg.maxRuns);
   const legacies = buildLegacies(cfg.seeds, cfg.maxRuns);
   const endings = buildEndings(cfg.seeds);
@@ -253,5 +275,5 @@ export const aggregateAll = (cfg: { seeds: number; careers: number; maxRuns: num
     });
     violations.push(...checkRun(r));
   }
-  return { survival, poweredSurvival, careers: summaries, legacies, endings, violations };
+  return { survival, poweredSurvival, fullPowerSurvival, careers: summaries, legacies, endings, violations };
 };

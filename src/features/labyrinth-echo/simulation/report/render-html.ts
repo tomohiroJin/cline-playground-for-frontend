@@ -12,6 +12,7 @@ export interface ReportData {
   generatedAt: string;
   survival: SurvivalMatrix;
   poweredSurvival: PoweredSurvivalMatrix;
+  fullPowerSurvival: PoweredSurvivalMatrix;
   careers: CareerSummary[];
   legacies: LegacyAnalysis;
   endings: EndingDistribution;
@@ -43,14 +44,15 @@ const renderSurvival = (m: SurvivalMatrix): string => {
   return `<table class="heat">${head}${rows}</table>`;
 };
 
-const renderPoweredSurvival = (m: PoweredSurvivalMatrix): string => {
+/** best/Δ/勝者を持つ強化後ヒートマップ（①-b 継承のみ・①-c フル強化で共用） */
+const renderPoweredSurvival = (m: PoweredSurvivalMatrix, caption: string): string => {
   const head = `<tr><th>難易度＼圧</th>${m.pressures.map(p => `<th>圧${p}</th>`).join('')}</tr>`;
   const rows = m.difficultyIds.map(id => {
     const tds = m.pressures.map(p => {
       const cell = m.cells.find(c => c.difficultyId === id && c.pressure === p)!;
-      // 継承パワーアップ後（best）の生還率を色相で表現（高=緑, 低=赤）
+      // 強化後（best）の生還率を色相で表現（高=緑, 低=赤）
       const hue = Math.round(cell.best * 120);
-      // 勝者と無補助からの上げ幅（Δ）。継承が役立たないセルは Δ0 / 継承なし
+      // 勝者と無補助からの上げ幅（Δ）。強化が役立たないセルは Δ0 / 継承なし
       const note = cell.delta > 0
         ? `Δ+${(cell.delta * 100).toFixed(1)} ${esc(cell.bestLegacyId)}`
         : 'Δ0 継承なし';
@@ -58,7 +60,7 @@ const renderPoweredSurvival = (m: PoweredSurvivalMatrix): string => {
     }).join('');
     return `<tr><th>${esc(id)}</th>${tds}</tr>`;
   }).join('');
-  return `<p class="meta">各セル = 継承なしと全5レガシーの最良（継承なしも選択肢）。Δ は無補助からの上げ幅。</p>
+  return `<p class="meta">${esc(caption)}</p>
     <table class="heat">${head}${rows}</table>`;
 };
 
@@ -138,7 +140,10 @@ export const renderHtml = (data: ReportData): string => {
   ${renderSurvival(data.survival)}
 
   <h2>①-b 継承パワーアップ後の生還率（ベストレガシー / careful）</h2>
-  ${renderPoweredSurvival(data.poweredSurvival)}
+  ${renderPoweredSurvival(data.poweredSurvival, '各セル = 継承なしと全5レガシーの最良（継承なしも選択肢）。Δ は無補助からの上げ幅。')}
+
+  <h2>①-c フル強化後の生還率（全アンロック＋ベストレガシー / careful）</h2>
+  ${renderPoweredSurvival(data.fullPowerSurvival, '各セル = 全40アンロック適用＋（継承なし/5レガシーの最良）。Δ は無補助(①)からの総上げ幅。理論上の最大強化（veteran想定）。')}
 
   <h2>② 周回（キャリア）進行 — 真ルート解禁まで</h2>
   ${renderCareers(data.careers)}
