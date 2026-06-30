@@ -129,30 +129,35 @@ describe('simulateRun 状態異常モデル化（回帰: Issue #142）', () => {
   const FIRST_CHOICE: RunPolicy = { choose: () => 0 };
 
   /**
-   * 全フロア(1..5)に同一効果のイベントを敷き詰めた合成プールを作る。
-   * 全イベントが同効果なので、pickEvent のシャッフル順に依存せず結果が決まる。
-   * @param flag 各イベントが付与するフラグ（'add:出血' 等）。省略時は無害イベント。
+   * 全フロア(1..5)にイベントを敷き詰めた合成プールを作る。flag を付与するフロアを flagFloors で限定できる。
+   * 同一フロア内のイベントは同効果なので、pickEvent のシャッフル順に依存せず結果が決まる。
+   * @param flag 付与するフラグ（'add:出血' 等）。省略時は全イベント無害。
+   * @param flagFloors flag を付与するフロア（省略時は全フロア）。
    */
-  const buildPool = (flag?: string): GameEvent[] => {
+  const buildPool = (flag?: string, flagFloors?: readonly number[]): GameEvent[] => {
     const events: GameEvent[] = [];
     for (let floor = 1; floor <= 5; floor++) {
+      const applyFlag = flag && (!flagFloors || flagFloors.includes(floor));
       for (let i = 0; i < 8; i++) {
         events.push({
           id: `syn_${floor}_${i}`, fl: [floor], tp: 'normal', sit: '',
-          ch: [{ t: '進む', o: [{ c: 'default', r: '', hp: 0, mn: 0, inf: 0, ...(flag ? { fl: flag } : {}) }] }],
+          ch: [{ t: '進む', o: [{ c: 'default', r: '', hp: 0, mn: 0, inf: 0, ...(applyFlag ? { fl: flag } : {}) }] }],
         });
       }
     }
     return events;
   };
 
-  // 出血 tick=hp-6/step を全イベントで付与するプール / 状態異常なしのプール
-  const bleedPool = buildPool('add:出血');
+  // 出血(tick=hp-6/step)を【フロア1でのみ】付与し、フロア2以降は無害。
+  // 全イベントに付与すると毎フレーム再付与され「伝搬しない実装でも HP が枯渇」してしまい回帰ガードにならない。
+  // フロア1限定なら、フロア2以降の無害ステップで HP が減り続けるのは出血が伝搬している場合だけ ⇒ 真の伝搬テスト。
+  const bleedPool = buildPool('add:出血', [1]);
   const cleanPool = buildPool();
 
-  it('出血(add:出血)を取得したランは DoT で HP が枯渇し「体力消耗」で死ぬ', () => {
-    // normal の素ドレインは MN のみ(-2/step)で HP は減らない。出血 tick(-6/step)が HP を削るのは
-    // statuses が伝搬し computeDrain で tick が適用されている場合のみ ⇒ HP 枯渇死は statuses モデル化の証拠。
+  it('フロア1で得た出血の DoT が後続フロアでも HP を削り続け「体力消耗」で死ぬ（statuses 伝搬の証拠）', () => {
+    // normal の素ドレインは MN のみ(-2/step)で HP は減らない。出血はフロア1でしか付与されないため、
+    // フロア2以降でも HP が減って枯渇死するのは、フロア1で得た出血が次フレームへ伝搬し
+    // computeDrain が tick を適用し続けている場合のみ。伝搬しない実装なら HP は温存され MN 枯渇(精神崩壊)になる。
     const r = simulateRun({ difficulty: normal, fx, rng: new SeededRandomSource(1), policy: FIRST_CHOICE, events: bleedPool });
     expect(r.survived).toBe(false);
     expect(r.cause).toBe(RUN_CAUSE.HP_DEPLETED);
@@ -163,7 +168,7 @@ describe('simulateRun 状態異常モデル化（回帰: Issue #142）', () => {
     expect(r.cause).not.toBe(RUN_CAUSE.HP_DEPLETED);
   });
 
-  it('DoT により出血ランの方が無状態ランより早く終わる（statuses が後続ステップに作用する証拠）', () => {
+  it('フロア1限定の出血でも伝搬する DoT により無状態ランより早く終わる', () => {
     const bleed = simulateRun({ difficulty: normal, fx, rng: new SeededRandomSource(1), policy: FIRST_CHOICE, events: bleedPool });
     const clean = simulateRun({ difficulty: normal, fx, rng: new SeededRandomSource(1), policy: FIRST_CHOICE, events: cleanPool });
     expect(bleed.events).toBeLessThan(clean.events);
