@@ -89,6 +89,19 @@ src/
 
 ## 開発者向け情報
 
+### シミュレーション・レポート基盤（迷宮の残響）
+
+`迷宮の残響` には、本番ロジックをヘッドレスに回してバランス・周回進行・継承・エンディング分布を
+計測し、HTMLレポートとして可視化する開発支援ツールを備えています（ゲーム本体のビルドには非同梱）。
+
+```bash
+npm run sim:labyrinth-echo   # reports/labyrinth-echo-sim-<日付>.html を生成
+```
+
+不変条件チェッカで「変なバグ」を検出し（`error` 違反時は非0終了）、生還率カーブ・真エンディング解禁までの
+周回数・レガシー取得タイミング等を一覧できます。詳細は
+[`src/features/labyrinth-echo/simulation/README.md`](src/features/labyrinth-echo/simulation/README.md) を参照。
+
 ### スタイル注入（styled-components）に関する注意
 
 本番ビルドでは `styled-components` が CSSOM（`insertRule`）でスタイルを注入します。

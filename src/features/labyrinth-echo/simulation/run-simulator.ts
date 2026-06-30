@@ -23,6 +23,7 @@ import type { FxState } from '../domain/models/unlock';
 import type { RandomSource } from '../domain/events/random';
 import type { MetaState } from '../domain/models/meta-state';
 import type { EchoLegacy } from '../domain/models/echo';
+import type { LogEntry } from '../domain/models/game-state';
 
 /** 1ランの結果 */
 export interface RunResult {
@@ -33,6 +34,8 @@ export interface RunResult {
   readonly cause: string;
   /** 消化したイベント数 */
   readonly events: number;
+  /** 探索中に「読み解いた」断片 id 群（キャリアシミュレーション用） */
+  readonly fragmentsRead: readonly string[];
 }
 
 /** 選択方針 */
@@ -40,31 +43,14 @@ export interface RunPolicy {
   choose(event: GameEvent, player: Player, fx: FxState, diff: DifficultyDef, rng: RandomSource): number;
 }
 
-/** 慎重ポリシー: 解決後 hp+mn 最良の選択肢を貪欲選択（脱出を最優先） */
-export const CAREFUL_POLICY: RunPolicy = {
-  choose(event, player, fx, diff) {
-    let bestIdx = 0;
-    let bestScore = -Infinity;
-    for (let i = 0; i < event.ch.length; i++) {
-      const res = processChoice({ event, choiceIdx: i, player, fx, diff });
-      const score = res.outcome.fl === 'escape'
-        ? Number.POSITIVE_INFINITY
-        : res.drained.hp + res.drained.mn;
-      if (score > bestScore) { bestScore = score; bestIdx = i; }
-    }
-    return bestIdx;
-  },
-};
-
-/** 無策ポリシー: 一様ランダム選択 */
-export const RANDOM_POLICY: RunPolicy = {
-  choose(event, _player, _fx, _diff, rng) {
-    return Math.floor(rng.random() * event.ch.length);
-  },
-};
+// ポリシー実体は policies.ts に集約（type-only 依存のため循環参照にならない）
+export { CAREFUL_POLICY, RANDOM_POLICY, LORE_POLICY } from './policies';
 
 /** シミュレータ専用の固定メタ（初回相当: echoDepth0 / 履歴なし） */
 const SIM_META: MetaState = createMetaState();
+
+/** 合成ログ要素（determineEnding は log.length のみ参照するため内容はゼロで足りる） */
+const SYNTHETIC_LOG_ENTRY: LogEntry = { fl: 0, step: 0, ch: '', hp: 0, mn: 0, inf: 0 };
 
 /** ボス再戦の進行判定（resolveBossRetry の純粋版） */
 const resolveBossStep = (
@@ -117,24 +103,31 @@ export const simulateRun = (params: {
   let usedIds: string[] = [];
   let usedSecondLife = false;
   let eventsConsumed = 0;
+  const fragmentsRead: string[] = [];
 
   let event = pickEvent({ events: [...events], floor, usedIds, meta, fx, rng, pressure });
 
   const fail = (cause: string): RunResult =>
-    ({ survived: false, floorReached: floor, endingId: null, cause, events: eventsConsumed });
+    ({ survived: false, floorReached: floor, endingId: null, cause, events: eventsConsumed, fragmentsRead });
 
   while (event) {
     const choiceIdx = policy.choose(event, player, fx, difficulty, rng);
     const res = processChoice({ event, choiceIdx, player, fx, diff: difficulty });
     eventsConsumed++;
 
+    // 探索中に読み解いた断片を記録（fl:"frag:<id>"）
+    if (res.outcome.fl?.startsWith('frag:')) fragmentsRead.push(res.outcome.fl.slice('frag:'.length));
+
     const sl = checkSecondLife(res.drained, fx, usedSecondLife);
     player = sl.player;
     if (sl.activated) usedSecondLife = true;
 
     if (res.outcome.fl === 'escape') {
-      const endingId = determineEnding(player, [], difficulty).id;
-      return { survived: true, floorReached: floor, endingId, cause: 'escape', events: eventsConsumed };
+      // determineEnding は log.length のみ参照する（veteran 判定）。本番のログ件数 ≒ 消化イベント数
+      // なので、消化数長の合成ログを渡して log ベース END（歴戦の探索者）も sim で評価可能にする。
+      const syntheticLog: LogEntry[] = Array.from({ length: eventsConsumed }, () => SYNTHETIC_LOG_ENTRY);
+      const endingId = determineEnding(player, syntheticLog, difficulty).id;
+      return { survived: true, floorReached: floor, endingId, cause: 'escape', events: eventsConsumed, fragmentsRead };
     }
     if (player.hp <= 0 || player.mn <= 0) {
       return fail(player.hp <= 0 ? '体力消耗' : '精神崩壊');

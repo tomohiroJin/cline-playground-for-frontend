@@ -1,10 +1,17 @@
-import { simulateRun, CAREFUL_POLICY, RANDOM_POLICY } from '../../simulation/run-simulator';
+import { simulateRun, CAREFUL_POLICY, RANDOM_POLICY, type RunPolicy } from '../../simulation/run-simulator';
 import { EV } from '../../events/event-data';
 import { ECHO_EVENTS } from '../../events/echo-events';
 import { DIFFICULTY } from '../../domain/constants/difficulty-defs';
 import { computeFx } from '../../domain/services/unlock-service';
 import { getLegacyById } from '../../domain/services/legacy-service';
 import { SeededRandomSource } from '../../domain/events/random';
+import { createMetaState } from '../../domain/models/meta-state';
+import { ECHO_FRAGMENTS } from '../../domain/constants/echo-fragment-defs';
+import type { GameEvent } from '../../events/event-utils';
+import type { Player } from '../../domain/models/player';
+import type { FxState } from '../../domain/models/unlock';
+import type { DifficultyDef } from '../../domain/models/difficulty';
+import type { RandomSource } from '../../domain/events/random';
 
 const EVENTS = [...EV, ...ECHO_EVENTS];
 const normal = DIFFICULTY.find(d => d.id === 'normal')!;
@@ -64,5 +71,43 @@ describe('simulateRun legacy 対応', () => {
       seeds.filter(s => simulateRun({ difficulty: normal, fx, rng: new SeededRandomSource(s), policy: CAREFUL_POLICY, events: EVENTS, pressure: 3, legacy }).survived).length / seeds.length;
     // 圧3では lg_first の下振れが効き、継承なしより生還率が低い（ガラスの大砲）
     expect(rate(getLegacyById('lg_first'))).toBeLessThanOrEqual(rate(null));
+  });
+});
+
+describe('simulateRun fragmentsRead', () => {
+  it('echo を必ず読むポリシーでは fragmentsRead に断片IDが入る', () => {
+    // depth1 + 断片未収集で echo イベントが出現しうる状態
+    const meta = createMetaState({ echoDepth: 6 });
+    const lorePolicy: RunPolicy = {
+      choose(event: GameEvent, player: Player, fx: FxState, diff: DifficultyDef, rng: RandomSource): number {
+        const idx = event.ch.findIndex((c) => c.o?.some((o) => typeof o.fl === 'string' && o.fl.startsWith('frag:')));
+        return idx >= 0 ? idx : CAREFUL_POLICY.choose(event, player, fx, diff, rng);
+      },
+    };
+    // 複数シードを試し、どれかで断片を読めることを確認（echoはレアなため）
+    const anyRead = [1, 2, 3, 4, 5, 6, 7, 8].some(s => {
+      const r = simulateRun({ difficulty: normal, fx, rng: new SeededRandomSource(s), policy: lorePolicy, events: EVENTS, meta });
+      return r.fragmentsRead.length > 0;
+    });
+    expect(anyRead).toBe(true);
+  });
+
+  it('careful ポリシーでは fragmentsRead は空（読み解かない＝MN温存）', () => {
+    const meta = createMetaState({ echoDepth: 6 });
+    const r = simulateRun({ difficulty: normal, fx, rng: new SeededRandomSource(1), policy: CAREFUL_POLICY, events: EVENTS, meta });
+    expect(r.fragmentsRead).toEqual([]);
+  });
+
+  it('読み解いた断片IDはすべて有効な ECHO_FRAGMENTS のID', () => {
+    const meta = createMetaState({ echoDepth: 6 });
+    const lorePolicy: RunPolicy = {
+      choose(event: GameEvent, player: Player, fx: FxState, diff: DifficultyDef, rng: RandomSource): number {
+        const idx = event.ch.findIndex((c) => c.o?.some((o) => typeof o.fl === 'string' && o.fl.startsWith('frag:')));
+        return idx >= 0 ? idx : CAREFUL_POLICY.choose(event, player, fx, diff, rng);
+      },
+    };
+    const validIds = new Set(ECHO_FRAGMENTS.map(f => f.id));
+    const r = simulateRun({ difficulty: normal, fx, rng: new SeededRandomSource(3), policy: lorePolicy, events: EVENTS, meta });
+    for (const id of r.fragmentsRead) expect(validIds.has(id)).toBe(true);
   });
 });
