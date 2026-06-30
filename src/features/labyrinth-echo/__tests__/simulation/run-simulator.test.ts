@@ -1,8 +1,10 @@
 import { simulateRun, CAREFUL_POLICY, RANDOM_POLICY, type RunPolicy } from '../../simulation/run-simulator';
+import { RUN_CAUSE } from '../../simulation/run-cause';
 import { EV } from '../../events/event-data';
 import { ECHO_EVENTS } from '../../events/echo-events';
+import { processChoice } from '../../events/event-utils';
 import { DIFFICULTY } from '../../domain/constants/difficulty-defs';
-import { computeFx } from '../../domain/services/unlock-service';
+import { computeFx, createNewPlayer } from '../../domain/services/unlock-service';
 import { getLegacyById } from '../../domain/services/legacy-service';
 import { SeededRandomSource } from '../../domain/events/random';
 import { createMetaState } from '../../domain/models/meta-state';
@@ -114,5 +116,73 @@ describe('simulateRun fragmentsRead', () => {
     // 前提: 少なくとも1件は読めている（0件だと以降の検証が無意味になるためガード）
     expect(collected.length).toBeGreaterThan(0);
     for (const id of collected) expect(validIds.has(id)).toBe(true);
+  });
+});
+
+describe('simulateRun 状態異常モデル化（回帰: Issue #142）', () => {
+  // sim ループが add: フラグを player.statuses に適用し、状態異常の継続ダメージ(DoT)を後続ステップへ
+  // 反映していることを保証する。かつて「sim は statuses を未モデル化（常に空）」と誤認されたが、
+  // run-simulator は processChoice が返す drained（statuses 適用済み）を次フレームの player に採用しており、
+  // 状態異常は常にモデル化されている。本テストはその誤認の再発を防ぐ回帰ガード。
+
+  /** 常に先頭の選択肢を選ぶ最小ポリシー（合成プールの決定論用） */
+  const FIRST_CHOICE: RunPolicy = { choose: () => 0 };
+
+  /**
+   * 全フロア(1..5)にイベントを敷き詰めた合成プールを作る。flag を付与するフロアを flagFloors で限定できる。
+   * 同一フロア内のイベントは同効果なので、pickEvent のシャッフル順に依存せず結果が決まる。
+   * @param flag 付与するフラグ（'add:出血' 等）。省略時は全イベント無害。
+   * @param flagFloors flag を付与するフロア（省略時は全フロア）。
+   */
+  const buildPool = (flag?: string, flagFloors?: readonly number[]): GameEvent[] => {
+    const events: GameEvent[] = [];
+    for (let floor = 1; floor <= 5; floor++) {
+      const applyFlag = flag && (!flagFloors || flagFloors.includes(floor));
+      for (let i = 0; i < 8; i++) {
+        events.push({
+          id: `syn_${floor}_${i}`, fl: [floor], tp: 'normal', sit: '',
+          ch: [{ t: '進む', o: [{ c: 'default', r: '', hp: 0, mn: 0, inf: 0, ...(applyFlag ? { fl: flag } : {}) }] }],
+        });
+      }
+    }
+    return events;
+  };
+
+  // 出血(tick=hp-6/step)を【フロア1でのみ】付与し、フロア2以降は無害。
+  // 全イベントに付与すると毎フレーム再付与され「伝搬しない実装でも HP が枯渇」してしまい回帰ガードにならない。
+  // フロア1限定なら、フロア2以降の無害ステップで HP が減り続けるのは出血が伝搬している場合だけ ⇒ 真の伝搬テスト。
+  const bleedPool = buildPool('add:出血', [1]);
+  const cleanPool = buildPool();
+
+  it('フロア1で得た出血の DoT が後続フロアでも HP を削り続け「体力消耗」で死ぬ（statuses 伝搬の証拠）', () => {
+    // normal の素ドレインは MN のみ(-2/step)で HP は減らない。出血はフロア1でしか付与されないため、
+    // フロア2以降でも HP が減って枯渇死するのは、フロア1で得た出血が次フレームへ伝搬し
+    // computeDrain が tick を適用し続けている場合のみ。伝搬しない実装なら HP は温存され MN 枯渇(精神崩壊)になる。
+    const r = simulateRun({ difficulty: normal, fx, rng: new SeededRandomSource(1), policy: FIRST_CHOICE, events: bleedPool });
+    expect(r.survived).toBe(false);
+    expect(r.cause).toBe(RUN_CAUSE.HP_DEPLETED);
+  });
+
+  it('状態異常なしのランは HP が減らず（出血の DoT 不在）、HP 枯渇では死なない', () => {
+    const r = simulateRun({ difficulty: normal, fx, rng: new SeededRandomSource(1), policy: FIRST_CHOICE, events: cleanPool });
+    expect(r.cause).not.toBe(RUN_CAUSE.HP_DEPLETED);
+  });
+
+  it('フロア1限定の出血でも伝搬する DoT により無状態ランより早く終わる', () => {
+    const bleed = simulateRun({ difficulty: normal, fx, rng: new SeededRandomSource(1), policy: FIRST_CHOICE, events: bleedPool });
+    const clean = simulateRun({ difficulty: normal, fx, rng: new SeededRandomSource(1), policy: FIRST_CHOICE, events: cleanPool });
+    expect(bleed.events).toBeLessThan(clean.events);
+  });
+
+  it('processChoice は add: フラグを drained.statuses に適用し次フレームへ伝搬する（run-simulator が依存する経路）', () => {
+    const ev: GameEvent = { id: 'x', fl: [1], tp: 'normal', sit: '', ch: [{ t: 'hit', o: [{ c: 'default', r: '', hp: 0, mn: 0, inf: 0, fl: 'add:出血' }] }] };
+    const r1 = processChoice({ event: ev, choiceIdx: 0, player: createNewPlayer(normal, fx), fx, diff: normal });
+    expect(r1.drained.statuses).toContain('出血');
+    // 次フレーム: 無害イベントでも出血 tick で HP が減る（DoT が後続に作用）
+    const hpBefore = r1.drained.hp;
+    const ev2: GameEvent = { id: 'y', fl: [1], tp: 'normal', sit: '', ch: [{ t: 'noop', o: [{ c: 'default', r: '', hp: 0, mn: 0, inf: 0 }] }] };
+    const r2 = processChoice({ event: ev2, choiceIdx: 0, player: r1.drained, fx, diff: normal });
+    expect(r2.drained.statuses).toContain('出血');
+    expect(r2.drained.hp).toBeLessThan(hpBefore);
   });
 });
