@@ -46,6 +46,13 @@ const mean = (xs: number[]): number => (xs.length ? xs.reduce((a, b) => a + b, 0
 
 export interface SurvivalCell { difficultyId: string; pressure: number; careful: number; random: number; }
 export interface SurvivalMatrix { cells: SurvivalCell[]; pressures: number[]; difficultyIds: string[]; }
+/**
+ * 継承パワーアップ後セル: 各 難易度×圧 で「継承なし(baseline)」と全5レガシーを試し、
+ * 最良の選択（継承なしを含む）を best とする。bestLegacyId は勝者（none=継承なし）。
+ * レガシーは排他選択でスタックしないため、best=max(baseline, 各レガシー)。delta は常に非負。
+ */
+export interface PoweredSurvivalCell { difficultyId: string; pressure: number; baseline: number; best: number; bestLegacyId: string; delta: number; }
+export interface PoweredSurvivalMatrix { cells: PoweredSurvivalCell[]; pressures: number[]; difficultyIds: string[]; }
 export interface CareerSummary { label: string; difficultyId: string; policy: string; reachRate: number; runsMedian: number; runsMean: number; escapesMedian: number; deathsMedian: number; sample: CareerResult; }
 export interface LegacyAnalysis { unlockTimeline: { legacyId: string; runIndex: number }[]; effects: { legacyId: string; survivalP0: number; survivalP3: number }[]; baselineP0: number; baselineP3: number; }
 export interface EndingRow { label: string; counts: Record<string, number>; total: number; }
@@ -72,6 +79,44 @@ const buildSurvival = (seeds: number): SurvivalMatrix => {
         careful: survivalRate(id, p, CAREFUL_POLICY, seeds),
         random: survivalRate(id, p, RANDOM_POLICY, seeds),
       });
+    }
+  }
+  return { cells, pressures: PRESSURES, difficultyIds: DIFFICULTY_IDS };
+};
+
+/**
+ * ①-b 継承パワーアップ後の生還率行列（難易度×圧、careful）
+ *
+ * 各セルで「継承なし」と全5レガシーの生還率を測り、最良の選択を best とする
+ * （継承なしも選択肢に含めるため delta=best-baseline は常に非負）。
+ * bestLegacyId は勝者（none=継承なしが最良）。同率なら継承なしを優先（strict >）。
+ */
+/**
+ * レガシー込みの生還率。極限セル（例: abyss×圧6 + MN減少レガシー）では maxMn≤0 となり
+ * createPlayer の事後条件（mn>0）で throw する＝そのビルドは起動不能。生還率0% として扱う
+ * （max 比較で baseline に劣るため best には選ばれない）。本契約違反のみ握り、他例外は再送出。
+ */
+const legacySurvivalOrZero = (difficultyId: string, pressure: number, seeds: number, legacy: EchoLegacy): number => {
+  try {
+    return survivalRate(difficultyId, pressure, CAREFUL_POLICY, seeds, legacy);
+  } catch (e) {
+    if (e instanceof Error && /must be positive/.test(e.message)) return 0;
+    throw e;
+  }
+};
+
+const buildPoweredSurvival = (seeds: number): PoweredSurvivalMatrix => {
+  const cells: PoweredSurvivalCell[] = [];
+  for (const id of DIFFICULTY_IDS) {
+    for (const p of PRESSURES) {
+      const baseline = survivalRate(id, p, CAREFUL_POLICY, seeds);
+      let best = baseline;
+      let bestLegacyId = 'none';
+      for (const l of LEGACIES) {
+        const rate = legacySurvivalOrZero(id, p, seeds, l);
+        if (rate > best) { best = rate; bestLegacyId = l.id; }
+      }
+      cells.push({ difficultyId: id, pressure: p, baseline, best, bestLegacyId, delta: best - baseline });
     }
   }
   return { cells, pressures: PRESSURES, difficultyIds: DIFFICULTY_IDS };
@@ -178,12 +223,14 @@ const buildEndings = (seeds: number): EndingDistribution => {
 /** 全シムを実行し集計と違反を返す */
 export const aggregateAll = (cfg: { seeds: number; careers: number; maxRuns: number }): {
   survival: SurvivalMatrix;
+  poweredSurvival: PoweredSurvivalMatrix;
   careers: CareerSummary[];
   legacies: LegacyAnalysis;
   endings: EndingDistribution;
   violations: Violation[];
 } => {
   const survival = buildSurvival(cfg.seeds);
+  const poweredSurvival = buildPoweredSurvival(cfg.seeds);
   const { summaries, all } = buildCareers(cfg.careers, cfg.maxRuns);
   const legacies = buildLegacies(cfg.seeds, cfg.maxRuns);
   const endings = buildEndings(cfg.seeds);
@@ -206,5 +253,5 @@ export const aggregateAll = (cfg: { seeds: number; careers: number; maxRuns: num
     });
     violations.push(...checkRun(r));
   }
-  return { survival, careers: summaries, legacies, endings, violations };
+  return { survival, poweredSurvival, careers: summaries, legacies, endings, violations };
 };

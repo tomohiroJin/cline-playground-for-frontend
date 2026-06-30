@@ -48,4 +48,46 @@ describe('aggregateAll', () => {
     // warn レベル（統計的傾向の乖離）は CI を落とさない。error のみをガード
     expect(result.violations.filter(v => v.severity === 'error')).toEqual([]);
   });
+
+  describe('継承パワーアップ後の生還率行列（poweredSurvival）', () => {
+    const VALID_WINNERS = new Set(['none', 'lg_lian', 'lg_twins', 'lg_galen', 'lg_elna', 'lg_first']);
+
+    it('全難易度×全圧（4×7=28）のセルを持つ', () => {
+      expect(result.poweredSurvival.cells.length).toBe(28);
+    });
+
+    it('baseline / best は 0..1、delta は常に非負（best>=baseline）', () => {
+      for (const c of result.poweredSurvival.cells) {
+        expect(c.baseline).toBeGreaterThanOrEqual(0);
+        expect(c.baseline).toBeLessThanOrEqual(1);
+        expect(c.best).toBeGreaterThanOrEqual(0);
+        expect(c.best).toBeLessThanOrEqual(1);
+        expect(c.delta).toBeGreaterThanOrEqual(0);
+        expect(c.best).toBeCloseTo(c.baseline + c.delta, 10);
+      }
+    });
+
+    it('bestLegacyId は「none」または有効なレガシーID', () => {
+      for (const c of result.poweredSurvival.cells) {
+        expect(VALID_WINNERS.has(c.bestLegacyId)).toBe(true);
+      }
+    });
+
+    it('勝者が none のセルは delta=0、レガシーが勝つセルは best>baseline', () => {
+      for (const c of result.poweredSurvival.cells) {
+        if (c.bestLegacyId === 'none') {
+          expect(c.delta).toBe(0);
+        } else {
+          expect(c.best).toBeGreaterThan(c.baseline);
+        }
+      }
+    });
+
+    it('baseline は ① 行列の careful と一致する（同一シードの決定論）', () => {
+      for (const c of result.poweredSurvival.cells) {
+        const base = result.survival.cells.find(s => s.difficultyId === c.difficultyId && s.pressure === c.pressure)!;
+        expect(c.baseline).toBeCloseTo(base.careful, 10);
+      }
+    });
+  });
 });

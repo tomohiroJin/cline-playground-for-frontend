@@ -4,13 +4,14 @@
  * ReportData を自己完結HTML文字列に変換する純粋関数。副作用なし（fs/日時に非依存）。
  * チャートは div 幅% / inline SVG で描画し外部依存を持たない。
  */
-import type { SurvivalMatrix, CareerSummary, LegacyAnalysis, EndingDistribution } from '../analysis';
+import type { SurvivalMatrix, PoweredSurvivalMatrix, CareerSummary, LegacyAnalysis, EndingDistribution } from '../analysis';
 import type { Violation } from '../invariants';
 
 /** レポート1枚分のデータ */
 export interface ReportData {
   generatedAt: string;
   survival: SurvivalMatrix;
+  poweredSurvival: PoweredSurvivalMatrix;
   careers: CareerSummary[];
   legacies: LegacyAnalysis;
   endings: EndingDistribution;
@@ -40,6 +41,25 @@ const renderSurvival = (m: SurvivalMatrix): string => {
     return `<tr><th>${esc(id)}</th>${tds}</tr>`;
   }).join('');
   return `<table class="heat">${head}${rows}</table>`;
+};
+
+const renderPoweredSurvival = (m: PoweredSurvivalMatrix): string => {
+  const head = `<tr><th>難易度＼圧</th>${m.pressures.map(p => `<th>圧${p}</th>`).join('')}</tr>`;
+  const rows = m.difficultyIds.map(id => {
+    const tds = m.pressures.map(p => {
+      const cell = m.cells.find(c => c.difficultyId === id && c.pressure === p)!;
+      // 継承パワーアップ後（best）の生還率を色相で表現（高=緑, 低=赤）
+      const hue = Math.round(cell.best * 120);
+      // 勝者と無補助からの上げ幅（Δ）。継承が役立たないセルは Δ0 / 継承なし
+      const note = cell.delta > 0
+        ? `Δ+${(cell.delta * 100).toFixed(1)} ${esc(cell.bestLegacyId)}`
+        : 'Δ0 継承なし';
+      return `<td style="background:hsl(${hue},60%,28%)">${pct(cell.best)}<br><span class="delta">${note}</span></td>`;
+    }).join('');
+    return `<tr><th>${esc(id)}</th>${tds}</tr>`;
+  }).join('');
+  return `<p class="meta">各セル = 継承なしと全5レガシーの最良（継承なしも選択肢）。Δ は無補助からの上げ幅。</p>
+    <table class="heat">${head}${rows}</table>`;
 };
 
 const renderCareers = (cs: CareerSummary[]): string => {
@@ -103,6 +123,7 @@ export const renderHtml = (data: ReportData): string => {
   h3{color:#c4b5fd;margin-top:20px}
   table{border-collapse:collapse;margin:12px 0;font-size:14px} th,td{border:1px solid #312e81;padding:4px 10px;text-align:center}
   th{background:#1e1b4b} .heat td{font-weight:bold;color:#fff}
+  .delta{display:block;font-weight:normal;font-size:11px;color:#d1d5db;margin-top:2px}
   .bar{display:inline-block;width:80px;height:10px;background:#1f2937;border-radius:4px;overflow:hidden;vertical-align:middle}
   .bar-fill{height:100%}
   .badge{padding:2px 10px;border-radius:12px;font-weight:bold} .ok{color:#34d399} .ng{color:#f87171}
@@ -115,6 +136,9 @@ export const renderHtml = (data: ReportData): string => {
 
   <h2>① 単発run 生還率カーブ（難易度×残響圧 / careful）</h2>
   ${renderSurvival(data.survival)}
+
+  <h2>①-b 継承パワーアップ後の生還率（ベストレガシー / careful）</h2>
+  ${renderPoweredSurvival(data.poweredSurvival)}
 
   <h2>② 周回（キャリア）進行 — 真ルート解禁まで</h2>
   ${renderCareers(data.careers)}

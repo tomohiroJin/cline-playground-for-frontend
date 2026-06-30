@@ -4,6 +4,7 @@ import type { ReportData } from '../../simulation/report/render-html';
 const data: ReportData = {
   generatedAt: '2026-06-29T00:00:00.000Z',
   survival: { cells: [{ difficultyId: 'easy', pressure: 0, careful: 1, random: 0.66 }], pressures: [0], difficultyIds: ['easy'] },
+  poweredSurvival: { cells: [{ difficultyId: 'hard', pressure: 3, baseline: 0, best: 0.12, bestLegacyId: 'lg_elna', delta: 0.12 }], pressures: [3], difficultyIds: ['hard'] },
   careers: [{ label: 'easy × careful', difficultyId: 'easy', policy: 'careful', reachRate: 1, runsMedian: 19, runsMean: 19, escapesMedian: 19, deathsMedian: 0, sample: { unlocked: true, runsToUnlock: 19, escapesToUnlock: 19, deathsToUnlock: 0, finalDepth: 6, finalFragments: 19, timeline: [{ runIndex: 1, survived: true, cause: 'escape', floorReached: 5, depth: 1, fragmentCount: 1, fragsReadThisRun: 0, safetyNetGranted: true }], legacyUnlocks: [{ runIndex: 4, legacyId: 'lg_lian' }] } }],
   legacies: { unlockTimeline: [{ legacyId: 'lg_lian', runIndex: 4 }], effects: [{ legacyId: 'lg_lian', survivalP0: 0.87, survivalP3: 0.6 }], baselineP0: 0.81, baselineP3: 0.47 },
   endings: { rows: [{ label: 'easy 圧0', counts: { perfect: 30, scholar: 10 }, total: 40 }], endingIds: ['perfect', 'scholar'] },
@@ -34,5 +35,11 @@ describe('renderHtml', () => {
 
   it('generatedAt が表示される', () => {
     expect(renderHtml(data)).toContain('2026-06-29');
+  });
+
+  it('継承パワーアップ後の生還率セクションを描画する（勝者レガシーと Δ を含む）', () => {
+    const html = renderHtml(data);
+    expect(html).toContain('継承パワーアップ後');
+    expect(html).toContain('lg_elna'); // 勝者レガシー
   });
 });
