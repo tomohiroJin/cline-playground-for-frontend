@@ -117,6 +117,46 @@ describe('UnlockService', () => {
         expect(player.mn).toBe(21); // 33 - 12
       });
     });
+
+    describe('境界値（下限クランプ）', () => {
+      // 再現: abyss(mnMod -20) ＋ 残響圧6(mnMod -6) ＋ lg_elna(mentalBonus -12)
+      // → mn = 33 - 38 = -5 となり、クランプなしでは createPlayer が throw する（Issue #141）
+
+      it('精神力が負になる組み合わせでも throw せず生成できる', () => {
+        // Arrange: BASE_MN(33) を下回る合計修正（mnMod -26 + mentalBonus -12 = -38）
+        const diff = createDomainTestDifficulty({ modifiers: { hpMod: 0, mnMod: -26 } });
+        const fx = createTestFx({ mentalBonus: -12 });
+
+        // Act & Assert
+        expect(() => createNewPlayer(diff, fx)).not.toThrow();
+      });
+
+      it('精神力が負になる場合は mn/maxMn を最小1にクランプする', () => {
+        // Arrange
+        const diff = createDomainTestDifficulty({ modifiers: { hpMod: 0, mnMod: -26 } });
+        const fx = createTestFx({ mentalBonus: -12 });
+
+        // Act
+        const player = createNewPlayer(diff, fx);
+
+        // Assert
+        expect(player.mn).toBe(1);
+        expect(player.maxMn).toBe(1);
+      });
+
+      it('HPが負になる場合は hp/maxHp を最小1にクランプする', () => {
+        // Arrange: BASE_HP(52) を下回る合計修正（hpMod -60）
+        const diff = createDomainTestDifficulty({ modifiers: { hpMod: -60, mnMod: 0 } });
+        const fx = createTestFx();
+
+        // Act
+        const player = createNewPlayer(diff, fx);
+
+        // Assert
+        expect(player.hp).toBe(1);
+        expect(player.maxHp).toBe(1);
+      });
+    });
   });
 
   describe('canPurchaseUnlock', () => {

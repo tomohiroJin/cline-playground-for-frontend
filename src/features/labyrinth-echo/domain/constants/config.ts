@@ -11,6 +11,8 @@ export const CFG = Object.freeze({
   BASE_HP: 52,
   BASE_MN: 33,
   BASE_INF: 5,
+  /** 初期ステータス（HP/精神力）の絶対下限。難易度・残響圧・継承の負値積み上げ時のクランプ用 */
+  MIN_START_STAT: 1,
   BOSS_EVENT_ID: "e030",
   MAX_BOSS_RETRIES: 3,
   /** ステータスフラグ: 追加プレフィックス */
