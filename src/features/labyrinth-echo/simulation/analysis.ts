@@ -94,29 +94,17 @@ const buildSurvival = (seeds: number): SurvivalMatrix => {
 };
 
 /**
- * ①-b 継承パワーアップ後の生還率行列（難易度×圧、careful）
+ * 指定 fx の下で「継承なし＋全5レガシー」の最良セル行列（難易度×圧、careful）を構築する。
  *
  * 各セルで「継承なし」と全5レガシーの生還率を測り、最良の選択を best とする
  * （継承なしも選択肢に含めるため delta=best-baseline は常に非負）。
- * bestLegacyId は勝者（none=継承なしが最良）。同率なら継承なしを優先（strict >）。
- */
-/**
- * レガシー込みの生還率。極限セル（例: abyss×圧6 + MN減少レガシー）では maxMn≤0 となり
- * createPlayer の事後条件（mn>0）で throw する＝そのビルドは起動不能。生還率0% として扱う
- * （max 比較で baseline に劣るため best には選ばれない）。本契約違反のみ握り、他例外は再送出。
- */
-const legacySurvivalOrZero = (difficultyId: string, pressure: number, seeds: number, legacy: EchoLegacy, fx: FxState = BASE_FX): number => {
-  try {
-    return survivalRate(difficultyId, pressure, CAREFUL_POLICY, seeds, legacy, fx);
-  } catch (e) {
-    if (e instanceof Error && /must be positive/.test(e.message)) return 0;
-    throw e;
-  }
-};
-
-/**
- * 指定 fx の下で「継承なし＋全5レガシー」の最良セルを構築する共通ロジック。
  * best は baseline（無補助・①と同じ）を起点に max を取るため delta は構築上常に非負。
+ * bestLegacyId は勝者（none=継承なしが最良）。同率なら継承なしを優先（strict >）。
+ *
+ * 極限セル（例: abyss×圧6 + MN減少レガシー）でも、初期ステータスは createNewPlayer が
+ * 最小1にクランプするため起動可能で、精神力1からの実測生還率（ほぼ0%）が算出される。
+ * かつて maxMn≤0 で throw していた契約違反は Issue #141 の根本修正で解消済み。
+ * 例外を握り潰すと本ツールの目的（バグ検出）に反するため、survivalRate を直接呼ぶ。
  * @param fx run に渡す基礎 fx（①-b は BASE_FX、①-c は FULL_FX）
  * @param noLegacyRate 「このfxで継承なし」の生還率（①-b は baseline と同じ、①-c はフル無継承）
  */
@@ -130,7 +118,7 @@ const buildBestLegacyMatrix = (seeds: number, fx: FxState, noLegacyRate: (id: st
       const none = noLegacyRate(id, p);
       if (none > best) { best = none; bestLegacyId = 'none'; }
       for (const l of LEGACIES) {
-        const rate = legacySurvivalOrZero(id, p, seeds, l, fx);
+        const rate = survivalRate(id, p, CAREFUL_POLICY, seeds, l, fx);
         if (rate > best) { best = rate; bestLegacyId = l.id; }
       }
       cells.push({ difficultyId: id, pressure: p, baseline, best, bestLegacyId, delta: best - baseline });
