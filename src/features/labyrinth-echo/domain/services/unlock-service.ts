@@ -58,11 +58,15 @@ export const computeFx = (unlockIds: readonly string[]): FxState => {
 
 /**
  * プレイヤーの初期ステータスを生成する（Factory パターン）
+ *
+ * 難易度修正（abyss）・残響圧・継承レガシーの負値が積み上がると
+ * BASE 値を下回り 0 以下になりうる（例: abyss + 残響圧6 + lg_elna → mn = -5）。
+ * createPlayer の事後条件 maxHp/maxMn > 0 を満たすため、最小1にクランプする。
  * @post hp > 0 && mn > 0
  */
 export const createNewPlayer = (diff: DifficultyDef, fx: FxState): Player => {
-  const hp = CFG.BASE_HP + fx.hpBonus + diff.modifiers.hpMod;
-  const mn = CFG.BASE_MN + fx.mentalBonus + diff.modifiers.mnMod;
+  const hp = Math.max(CFG.MIN_START_STAT, CFG.BASE_HP + fx.hpBonus + diff.modifiers.hpMod);
+  const mn = Math.max(CFG.MIN_START_STAT, CFG.BASE_MN + fx.mentalBonus + diff.modifiers.mnMod);
   return createPlayer({ hp, maxHp: hp, mn, maxMn: mn, inf: CFG.BASE_INF + fx.infoBonus, statuses: [] });
 };
 
