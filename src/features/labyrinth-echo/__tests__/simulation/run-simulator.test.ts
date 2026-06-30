@@ -107,7 +107,12 @@ describe('simulateRun fragmentsRead', () => {
       },
     };
     const validIds = new Set(ECHO_FRAGMENTS.map(f => f.id));
-    const r = simulateRun({ difficulty: normal, fx, rng: new SeededRandomSource(3), policy: lorePolicy, events: EVENTS, meta });
-    for (const id of r.fragmentsRead) expect(validIds.has(id)).toBe(true);
+    // echo はレアなため複数シードを跨いで断片を集める（単一シードだと未出現で空配列＝検証が素通りしうる）
+    const collected = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].flatMap(s =>
+      simulateRun({ difficulty: normal, fx, rng: new SeededRandomSource(s), policy: lorePolicy, events: EVENTS, meta }).fragmentsRead,
+    );
+    // 前提: 少なくとも1件は読めている（0件だと以降の検証が無意味になるためガード）
+    expect(collected.length).toBeGreaterThan(0);
+    for (const id of collected) expect(validIds.has(id)).toBe(true);
   });
 });

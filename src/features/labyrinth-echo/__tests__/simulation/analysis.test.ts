@@ -32,12 +32,24 @@ describe('aggregateAll', () => {
     }
   });
 
-  it('レガシー分析: effects は5件、baseline を含む', () => {
+  it('レガシー分析: effects は5件、baseline(P0/P3) は 0..1、取得タイムラインは非空', () => {
     expect(result.legacies.effects.length).toBe(5);
-    expect(typeof result.legacies.baselineP0).toBe('number');
+    // baselineP0/P3 は 0..1 の生還率（型だけでなく値域も検証）
+    for (const baseline of [result.legacies.baselineP0, result.legacies.baselineP3]) {
+      expect(baseline).toBeGreaterThanOrEqual(0);
+      expect(baseline).toBeLessThanOrEqual(1);
+    }
+    // easy×lorehunter の代表キャリアではレガシーが解禁されるため非空（空だと③の意味が失われる）
+    expect(result.legacies.unlockTimeline.length).toBeGreaterThan(0);
+    for (const u of result.legacies.unlockTimeline) {
+      expect(u.legacyId.length).toBeGreaterThan(0);
+      expect(u.runIndex).toBeGreaterThanOrEqual(1);
+    }
   });
 
-  it('エンディング分布: 各行の counts 合計が total に一致', () => {
+  it('エンディング分布: endingIds は非空、各行の counts 合計が total に一致', () => {
+    // 脱出が一定数発生するため到達ENDが1種以上ある（空だと④の集計が成立しない）
+    expect(result.endings.endingIds.length).toBeGreaterThan(0);
     for (const row of result.endings.rows) {
       const sum = Object.values(row.counts).reduce((a, b) => a + b, 0);
       expect(sum).toBe(row.total);

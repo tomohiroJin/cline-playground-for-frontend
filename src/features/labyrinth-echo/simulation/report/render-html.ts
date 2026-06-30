@@ -27,9 +27,13 @@ const esc = (s: string): string =>
 
 const pct = (x: number): string => (x * 100).toFixed(1) + '%';
 
-/** 横棒（div幅%）。0..1 を受け取る */
+/**
+ * 横棒（div幅%）。0..1 を受け取る。
+ * color は現状すべて hex リテラルだが、style 属性へ注入するため esc() で安全側に倒す
+ * （将来データ由来の色を渡しても属性ブレイクアウトを防ぐ）。
+ */
 const bar = (ratio: number, color: string): string =>
-  `<div class="bar"><div class="bar-fill" style="width:${Math.round(ratio * 100)}%;background:${color}"></div></div>`;
+  `<div class="bar"><div class="bar-fill" style="width:${Math.round(ratio * 100)}%;background:${esc(color)}"></div></div>`;
 
 const renderSurvival = (m: SurvivalMatrix): string => {
   const head = `<tr><th>難易度＼圧</th>${m.pressures.map(p => `<th>圧${p}</th>`).join('')}</tr>`;
