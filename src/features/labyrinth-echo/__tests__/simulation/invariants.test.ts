@@ -76,12 +76,15 @@ describe('checkCareer 故意の不正を検出', () => {
     expect(checkCareer(bad).some(v => v.rule === 'fragment_monotonic')).toBe(true);
   });
 
-  it('escapes > runs なら error', () => {
+  it('escapes > runs は run_count に統合され error として検出される（escapes_le_runs 廃止: Issue #143）', () => {
     const bad: CareerResult = {
       unlocked: false, runsToUnlock: 2, escapesToUnlock: 3, deathsToUnlock: 0,
       finalDepth: 3, finalFragments: 5, timeline: [baseStep()], legacyUnlocks: [],
     };
-    expect(checkCareer(bad).some(v => v.rule === 'escapes_le_runs')).toBe(true);
+    // escapes(3)+deaths(0) != runs(2) のため run_count が発火する（escapes>runs を含意）
+    expect(checkCareer(bad).some(v => v.rule === 'run_count')).toBe(true);
+    // 廃止したルールはもう存在しない
+    expect(checkCareer(bad).some(v => v.rule === 'escapes_le_runs')).toBe(false);
   });
 });
 
@@ -103,7 +106,8 @@ describe('checkRun', () => {
     expect(checkRun(r).some(v => v.rule === 'fragment_valid')).toBe(true);
   });
   it('未知の cause で error', () => {
-    const r: RunResult = { survived: false, floorReached: 3, endingId: null, cause: 'unknown_cause', events: 1, fragmentsRead: [] };
+    // cause は RunCause 型だが、検出器の動作確認のため意図的に範囲外の値を注入する
+    const r: RunResult = { survived: false, floorReached: 3, endingId: null, cause: 'unknown_cause' as RunResult['cause'], events: 1, fragmentsRead: [] };
     expect(checkRun(r).some(v => v.rule === 'cause_valid')).toBe(true);
   });
 });

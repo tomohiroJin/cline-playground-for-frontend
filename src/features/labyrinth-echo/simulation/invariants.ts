@@ -11,6 +11,7 @@ import { ECHO_FRAGMENTS } from '../domain/constants/echo-fragment-defs';
 import { ENDINGS } from '../domain/constants/ending-defs';
 import { TRUE_ENDINGS } from '../domain/constants/true-ending-defs';
 import { CFG } from '../domain/constants/config';
+import { RUN_CAUSE } from './run-cause';
 
 /** 不変条件違反レコード */
 export interface Violation {
@@ -22,7 +23,7 @@ export interface Violation {
 const FRAGMENT_IDS = new Set(ECHO_FRAGMENTS.map(f => f.id));
 const FRAGMENT_TOTAL = ECHO_FRAGMENTS.length; // 19
 const ENDING_IDS = new Set<string>([...ENDINGS.map(e => e.id), ...TRUE_ENDINGS.map(e => e.id)]);
-const KNOWN_CAUSES = new Set(['escape', '体力消耗', '精神崩壊']);
+const KNOWN_CAUSES = new Set<string>(Object.values(RUN_CAUSE));
 
 /** キャリア結果の不変条件を検査する */
 export const checkCareer = (career: CareerResult): Violation[] => {
@@ -45,11 +46,11 @@ export const checkCareer = (career: CareerResult): Violation[] => {
       v.push({ severity: 'error', rule: 'fragment_monotonic', detail: `run ${timeline[i].runIndex}: 断片 ${timeline[i].fragmentCount} < 前周 ${timeline[i - 1].fragmentCount}` });
     }
   }
+  // escapes + deaths = runs を検査する。deaths >= 0 のため、これは escapes <= runs も含意する
+  // （escapes > runs なら escapes + deaths > runs となり必ず本ルールが発火する）。
+  // かつて別に持っていた escapes_le_runs ルールは独立した信号を増やさないため統合・削除した（Issue #143）。
   if (career.escapesToUnlock + career.deathsToUnlock !== career.runsToUnlock) {
     v.push({ severity: 'error', rule: 'run_count', detail: `escapes(${career.escapesToUnlock}) + deaths(${career.deathsToUnlock}) != runs(${career.runsToUnlock})` });
-  }
-  if (career.escapesToUnlock > career.runsToUnlock) {
-    v.push({ severity: 'error', rule: 'escapes_le_runs', detail: `escapes(${career.escapesToUnlock}) > runs(${career.runsToUnlock})` });
   }
   if (career.unlocked && (career.finalDepth !== ECHO_DEPTH_MAX || career.finalFragments !== FRAGMENT_TOTAL)) {
     v.push({ severity: 'error', rule: 'true_route_condition', detail: `解禁時 depth=${career.finalDepth}(要${ECHO_DEPTH_MAX}) 断片=${career.finalFragments}(要${FRAGMENT_TOTAL})` });

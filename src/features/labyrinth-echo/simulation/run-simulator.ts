@@ -17,6 +17,8 @@ import { createMetaState } from '../domain/models/meta-state';
 import { applyPressureToDifficulty } from '../domain/services/pressure-service';
 import { mergeLegacyIntoFx } from '../domain/services/legacy-service';
 import { CFG } from '../domain/constants/config';
+import { RUN_CAUSE } from './run-cause';
+import type { RunCause } from './run-cause';
 import type { Player } from '../domain/models/player';
 import type { DifficultyDef } from '../domain/models/difficulty';
 import type { FxState } from '../domain/models/unlock';
@@ -30,8 +32,8 @@ export interface RunResult {
   readonly survived: boolean;
   readonly floorReached: number;
   readonly endingId: string | null;
-  /** "escape" | "体力消耗" | "精神崩壊" */
-  readonly cause: string;
+  /** ラン終了原因（RUN_CAUSE のいずれか） */
+  readonly cause: RunCause;
   /** 消化したイベント数 */
   readonly events: number;
   /** 探索中に「読み解いた」断片 id 群（キャリアシミュレーション用） */
@@ -107,7 +109,7 @@ export const simulateRun = (params: {
 
   let event = pickEvent({ events: [...events], floor, usedIds, meta, fx, rng, pressure });
 
-  const fail = (cause: string): RunResult =>
+  const fail = (cause: RunCause): RunResult =>
     ({ survived: false, floorReached: floor, endingId: null, cause, events: eventsConsumed, fragmentsRead });
 
   while (event) {
@@ -127,10 +129,10 @@ export const simulateRun = (params: {
       // なので、消化数長の合成ログを渡して log ベース END（歴戦の探索者）も sim で評価可能にする。
       const syntheticLog: LogEntry[] = Array.from({ length: eventsConsumed }, () => SYNTHETIC_LOG_ENTRY);
       const endingId = determineEnding(player, syntheticLog, difficulty).id;
-      return { survived: true, floorReached: floor, endingId, cause: 'escape', events: eventsConsumed, fragmentsRead };
+      return { survived: true, floorReached: floor, endingId, cause: RUN_CAUSE.ESCAPE, events: eventsConsumed, fragmentsRead };
     }
     if (player.hp <= 0 || player.mn <= 0) {
-      return fail(player.hp <= 0 ? '体力消耗' : '精神崩壊');
+      return fail(player.hp <= 0 ? RUN_CAUSE.HP_DEPLETED : RUN_CAUSE.MN_DEPLETED);
     }
 
     // チェイン優先（step を進めるが floor は進めない: useProceed と同じ）
@@ -160,7 +162,7 @@ export const simulateRun = (params: {
     usedIds = [...usedIds, event.id];
     if (nextFloor > CFG.MAX_FLOOR) {
       const r = resolveBossStep(usedIds, floor, events, fx, rng, pressure, meta);
-      if ('gameover' in r) return fail('精神崩壊');
+      if ('gameover' in r) return fail(RUN_CAUSE.MN_DEPLETED);
       step = nextStep; event = r.event;
       continue;
     }
@@ -168,5 +170,5 @@ export const simulateRun = (params: {
     event = pickEvent({ events: [...events], floor, usedIds, meta, fx, rng, pressure });
   }
   // プール枯渇 = 探索続行不能
-  return fail('精神崩壊');
+  return fail(RUN_CAUSE.MN_DEPLETED);
 };
