@@ -4,7 +4,7 @@
  * ReportData を自己完結HTML文字列に変換する純粋関数。副作用なし（fs/日時に非依存）。
  * チャートは div 幅% / inline SVG で描画し外部依存を持たない。
  */
-import type { SurvivalMatrix, PoweredSurvivalMatrix, CareerSummary, LegacyAnalysis, EndingDistribution } from '../analysis';
+import type { SurvivalMatrix, PoweredSurvivalMatrix, CareerSummary, LegacyAnalysis, EndingDistribution, EndingCensus } from '../analysis';
 import type { Violation } from '../invariants';
 
 /** レポート1枚分のデータ */
@@ -16,6 +16,7 @@ export interface ReportData {
   careers: CareerSummary[];
   legacies: LegacyAnalysis;
   endings: EndingDistribution;
+  endingCensus: EndingCensus;
   violations: Violation[];
   config: { careers: number; seeds: number; maxRuns: number };
 }
@@ -105,6 +106,18 @@ const renderEndings = (e: EndingDistribution): string => {
   return `<table>${head}${rows}</table>`;
 };
 
+const renderEndingCensus = (c: EndingCensus): string => {
+  const rows = c.rows.map(r => {
+    const reached = r.reachCount > 0;
+    const by = reached ? esc(r.reachedBy) : '<b>未到達（到達不能の疑い）</b>';
+    return `<tr${reached ? '' : ' class="ng"'}><td>${esc(r.id)}</td><td>${r.reachCount}</td><td>${by}</td></tr>`;
+  }).join('');
+  return `<p class="meta">難易度×圧(0/3/6)×policy(careful/random)×fx(無補助/フル強化)を掃引した到達回数。未到達=赤。
+    真END（${c.trueEndingIds.map(esc).join(', ')}）は終章専用で単発runには出ない（finale-flow テストが担保）。
+    veteran は log 依存だが、simulator が消化イベント数を log 長として渡すため評価対象。</p>
+    <table><tr><th>エンディング</th><th>到達回数</th><th>最初に到達した条件</th></tr>${rows}</table>`;
+};
+
 const renderViolations = (vs: Violation[]): string => {
   if (!vs.length) return `<p class="ok">✓ 異常なし（不変条件 全クリア）</p>`;
   const rows = vs.map(v => `<tr><td>${esc(v.severity)}</td><td>${esc(v.rule)}</td><td>${esc(v.detail)}</td></tr>`).join('');
@@ -114,9 +127,13 @@ const renderViolations = (vs: Violation[]): string => {
 
 /** ReportData を自己完結HTML文字列に変換する */
 export const renderHtml = (data: ReportData): string => {
-  const summaryBadge = data.violations.length
-    ? `<span class="badge ng">違反 ${data.violations.length}</span>`
-    : `<span class="badge ok">✓ 異常なし</span>`;
+  const errs = data.violations.filter(v => v.severity === 'error').length;
+  const warns = data.violations.filter(v => v.severity === 'warn').length;
+  const summaryBadge = errs
+    ? `<span class="badge ng">違反(error) ${errs}</span>`
+    : warns
+      ? `<span class="badge warn">警告 ${warns}</span>`
+      : `<span class="badge ok">✓ 異常なし</span>`;
   return `<!DOCTYPE html>
 <html lang="ja"><head><meta charset="utf-8"><title>迷宮の残響 シミュレーションレポート</title>
 <style>
@@ -129,7 +146,8 @@ export const renderHtml = (data: ReportData): string => {
   .bar{display:inline-block;width:80px;height:10px;background:#1f2937;border-radius:4px;overflow:hidden;vertical-align:middle}
   .bar-fill{height:100%}
   .badge{padding:2px 10px;border-radius:12px;font-weight:bold} .ok{color:#34d399} .ng{color:#f87171}
-  .badge.ok{background:#064e3b} .badge.ng{background:#7f1d1d;color:#fecaca}
+  .badge.ok{background:#064e3b} .badge.ng{background:#7f1d1d;color:#fecaca} .badge.warn{background:#78350f;color:#fde68a}
+  tr.ng td{color:#fca5a5}
   .meta{color:#9ca3af;font-size:13px}
 </style></head>
 <body>
@@ -153,6 +171,9 @@ export const renderHtml = (data: ReportData): string => {
 
   <h2>④ エンディング到達分布</h2>
   ${renderEndings(data.endings)}
+
+  <h2>④-b エンディング到達性センサス（全END到達可否）</h2>
+  ${renderEndingCensus(data.endingCensus)}
 
   <h2>⚠ 検出した異常</h2>
   ${renderViolations(data.violations)}

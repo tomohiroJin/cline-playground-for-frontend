@@ -127,4 +127,25 @@ describe('aggregateAll', () => {
       expect(full.best).toBeGreaterThanOrEqual(powered.best);
     });
   });
+
+  describe('エンディング到達性センサス（endingCensus）', () => {
+    it('全11ENDの行を持ち reachCount は非負', () => {
+      expect(result.endingCensus.rows.length).toBe(11);
+      for (const r of result.endingCensus.rows) expect(r.reachCount).toBeGreaterThanOrEqual(0);
+    });
+
+    it('少なくとも1つのENDに到達している（標準など）', () => {
+      expect(result.endingCensus.rows.some(r => r.reachCount > 0)).toBe(true);
+    });
+
+    it('真END4種を別枠で保持（単発runでは出ない＝終章専用）', () => {
+      expect(result.endingCensus.trueEndingIds.length).toBe(4);
+    });
+
+    it('到達したENDには reachedBy（条件ラベル）が入る', () => {
+      for (const r of result.endingCensus.rows) {
+        if (r.reachCount > 0) expect(r.reachedBy.length).toBeGreaterThan(0);
+      }
+    });
+  });
 });

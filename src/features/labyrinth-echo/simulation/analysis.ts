@@ -10,11 +10,13 @@ import { simulateCareer } from './career-simulator';
 import type { CareerResult } from './career-simulator';
 import { CAREFUL_POLICY, RANDOM_POLICY, LORE_POLICY } from './policies';
 import type { RunPolicy } from './run-simulator';
-import { checkCareer, checkRun, checkSurvivalMonotonic } from './invariants';
+import { checkCareer, checkRun, checkSurvivalMonotonic, checkEndingCoverage } from './invariants';
 import type { Violation } from './invariants';
 import { DIFFICULTY } from '../domain/constants/difficulty-defs';
 import { LEGACIES } from '../domain/constants/legacy-defs';
 import { UNLOCKS } from '../domain/constants/unlock-defs';
+import { ENDINGS } from '../domain/constants/ending-defs';
+import { TRUE_ENDINGS } from '../domain/constants/true-ending-defs';
 import { computeFx } from '../domain/services/unlock-service';
 import type { FxState } from '../domain/models/unlock';
 import { SeededRandomSource } from '../domain/events/random';
@@ -61,6 +63,9 @@ export interface CareerSummary { label: string; difficultyId: string; policy: st
 export interface LegacyAnalysis { unlockTimeline: { legacyId: string; runIndex: number }[]; effects: { legacyId: string; survivalP0: number; survivalP3: number }[]; baselineP0: number; baselineP3: number; }
 export interface EndingRow { label: string; counts: Record<string, number>; total: number; }
 export interface EndingDistribution { rows: EndingRow[]; endingIds: string[]; }
+/** 各ENDの到達回数と「最初に到達した条件」。reachedBy が空＝未到達 */
+export interface EndingCensusRow { id: string; reachCount: number; reachedBy: string; }
+export interface EndingCensus { rows: EndingCensusRow[]; trueEndingIds: string[]; }
 
 /** 指定条件の生還率（0..1）を seeds 件で算出（fx 既定はアンロックなし） */
 const survivalRate = (difficultyId: string, pressure: number, policy: RunPolicy, seeds: number, legacy: EchoLegacy | null = null, fx: FxState = BASE_FX): number => {
@@ -240,6 +245,45 @@ const buildEndings = (seeds: number): EndingDistribution => {
   return { rows, endingIds: [...idSet].sort() };
 };
 
+/** ④-b エンディング到達性センサスの掃引条件（policy × fx の組合せ） */
+const CENSUS_POLICIES: { name: string; policy: RunPolicy }[] = [
+  { name: 'careful', policy: CAREFUL_POLICY },
+  { name: 'random', policy: RANDOM_POLICY },
+];
+const CENSUS_FXS: { name: string; fx: FxState }[] = [
+  { name: '無補助', fx: BASE_FX },
+  { name: 'フル強化', fx: FULL_FX },
+];
+const CENSUS_PRESSURES = [0, 3, 6];
+
+/**
+ * ④-b エンディング到達性センサス。
+ *
+ * 難易度×圧×policy(careful/random)×fx(無補助/フル強化) を広く掃引し、脱出時の endingId を集計。
+ * 全ENDの到達回数と「最初に到達した条件」を返す。到達0回のENDは到達不能の疑いとして可視化する。
+ * 真END（te_*）は終章専用で単発runでは出ないため別枠で示す（finale-flow テストが担保）。
+ */
+const buildEndingCensus = (seeds: number): EndingCensus => {
+  const counts: Record<string, number> = {};
+  const reachedBy: Record<string, string> = {};
+  for (const id of DIFFICULTY_IDS) {
+    for (const p of CENSUS_PRESSURES) {
+      for (const pol of CENSUS_POLICIES) {
+        for (const fxOpt of CENSUS_FXS) {
+          for (let s = 1; s <= seeds; s++) {
+            const r = simulateRun({ difficulty: d(id), fx: fxOpt.fx, rng: new SeededRandomSource(s), policy: pol.policy, events: EVENTS, pressure: p });
+            if (!r.survived || !r.endingId) continue;
+            counts[r.endingId] = (counts[r.endingId] ?? 0) + 1;
+            if (!reachedBy[r.endingId]) reachedBy[r.endingId] = `${id} 圧${p} ${pol.name} ${fxOpt.name}`;
+          }
+        }
+      }
+    }
+  }
+  const rows: EndingCensusRow[] = ENDINGS.map(e => ({ id: e.id, reachCount: counts[e.id] ?? 0, reachedBy: reachedBy[e.id] ?? '' }));
+  return { rows, trueEndingIds: TRUE_ENDINGS.map(e => e.id) };
+};
+
 /** 全シムを実行し集計と違反を返す */
 export const aggregateAll = (cfg: { seeds: number; careers: number; maxRuns: number }): {
   survival: SurvivalMatrix;
@@ -248,6 +292,7 @@ export const aggregateAll = (cfg: { seeds: number; careers: number; maxRuns: num
   careers: CareerSummary[];
   legacies: LegacyAnalysis;
   endings: EndingDistribution;
+  endingCensus: EndingCensus;
   violations: Violation[];
 } => {
   const survival = buildSurvival(cfg.seeds);
@@ -256,6 +301,7 @@ export const aggregateAll = (cfg: { seeds: number; careers: number; maxRuns: num
   const { summaries, all } = buildCareers(cfg.careers, cfg.maxRuns);
   const legacies = buildLegacies(cfg.seeds, cfg.maxRuns);
   const endings = buildEndings(cfg.seeds);
+  const endingCensus = buildEndingCensus(cfg.seeds);
 
   // 不変条件チェック: 全キャリア + 生還率の難易度単調性（圧0 careful）
   const violations: Violation[] = [];
@@ -275,5 +321,7 @@ export const aggregateAll = (cfg: { seeds: number; careers: number; maxRuns: num
     });
     violations.push(...checkRun(r));
   }
-  return { survival, poweredSurvival, fullPowerSurvival, careers: summaries, legacies, endings, violations };
+  // エンディング到達カバレッジ（未到達ENDを warn 報告）
+  violations.push(...checkEndingCoverage(endingCensus.rows));
+  return { survival, poweredSurvival, fullPowerSurvival, careers: summaries, legacies, endings, endingCensus, violations };
 };

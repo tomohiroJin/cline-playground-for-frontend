@@ -9,6 +9,7 @@ const data: ReportData = {
   careers: [{ label: 'easy × careful', difficultyId: 'easy', policy: 'careful', reachRate: 1, runsMedian: 19, runsMean: 19, escapesMedian: 19, deathsMedian: 0, sample: { unlocked: true, runsToUnlock: 19, escapesToUnlock: 19, deathsToUnlock: 0, finalDepth: 6, finalFragments: 19, timeline: [{ runIndex: 1, survived: true, cause: 'escape', floorReached: 5, depth: 1, fragmentCount: 1, fragsReadThisRun: 0, safetyNetGranted: true }], legacyUnlocks: [{ runIndex: 4, legacyId: 'lg_lian' }] } }],
   legacies: { unlockTimeline: [{ legacyId: 'lg_lian', runIndex: 4 }], effects: [{ legacyId: 'lg_lian', survivalP0: 0.87, survivalP3: 0.6 }], baselineP0: 0.81, baselineP3: 0.47 },
   endings: { rows: [{ label: 'easy 圧0', counts: { perfect: 30, scholar: 10 }, total: 40 }], endingIds: ['perfect', 'scholar'] },
+  endingCensus: { rows: [{ id: 'standard', reachCount: 120, reachedBy: 'easy 圧0 careful 無補助' }, { id: 'veteran', reachCount: 0, reachedBy: '' }], trueEndingIds: ['te_inheritor', 'te_liberator'] },
   violations: [],
   config: { careers: 20, seeds: 40, maxRuns: 60 },
 };
@@ -48,5 +49,12 @@ describe('renderHtml', () => {
     const html = renderHtml(data);
     expect(html).toContain('フル強化');
     expect(html).toContain('42.0%'); // abyss 圧6 のフル強化 best
+  });
+
+  it('エンディング到達性センサスを描画する（未到達ENDを強調）', () => {
+    const html = renderHtml(data);
+    expect(html).toContain('到達性センサス');
+    expect(html).toContain('veteran'); // 未到達として表示
+    expect(html).toContain('未到達'); // 強調ラベル
   });
 });

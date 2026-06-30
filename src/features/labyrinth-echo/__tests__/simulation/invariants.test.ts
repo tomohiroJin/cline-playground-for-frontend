@@ -1,4 +1,4 @@
-import { checkCareer, checkRun, checkSurvivalMonotonic } from '../../simulation/invariants';
+import { checkCareer, checkRun, checkSurvivalMonotonic, checkEndingCoverage } from '../../simulation/invariants';
 import type { CareerResult } from '../../simulation/career-simulator';
 import type { RunResult } from '../../simulation/run-simulator';
 import { simulateCareer } from '../../simulation/career-simulator';
@@ -117,5 +117,20 @@ describe('checkSurvivalMonotonic', () => {
     // 統計的傾向違反は warn（CIを落とさない）として報告されることを確認
     expect(violations.some(v => v.rule === 'survival_monotonic')).toBe(true);
     expect(violations.find(v => v.rule === 'survival_monotonic')?.severity).toBe('warn');
+  });
+});
+
+describe('checkEndingCoverage', () => {
+  it('未到達ENDがあれば warn（ending_unreached）で報告する', () => {
+    const v = checkEndingCoverage([
+      { id: 'standard', reachCount: 50 },
+      { id: 'madness', reachCount: 0 },
+    ]);
+    expect(v.some(x => x.rule === 'ending_unreached' && x.severity === 'warn')).toBe(true);
+    expect(v.find(x => x.rule === 'ending_unreached')?.detail).toContain('madness');
+  });
+
+  it('全ENDが到達済みなら違反なし', () => {
+    expect(checkEndingCoverage([{ id: 'standard', reachCount: 5 }, { id: 'perfect', reachCount: 2 }])).toEqual([]);
   });
 });

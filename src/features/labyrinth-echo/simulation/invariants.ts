@@ -93,3 +93,19 @@ export const checkSurvivalMonotonic = (rates: { label: string; rate: number }[])
   }
   return v;
 };
+
+/**
+ * エンディング到達性: センサスで到達0回のENDを warn 報告する。
+ *
+ * 未到達は「真に到達不能」か「測定範囲が狭い」かの切り分けが要るため warn（CIは落とさない）。
+ * 引数は plain な行配列（analysis への循環参照を避けるため EndingCensus 型に依存しない）。
+ */
+export const checkEndingCoverage = (rows: { id: string; reachCount: number }[]): Violation[] => {
+  const v: Violation[] = [];
+  for (const r of rows) {
+    if (r.reachCount === 0) {
+      v.push({ severity: 'warn', rule: 'ending_unreached', detail: `${r.id} はセンサスで未到達（到達不能の疑い／要確認）` });
+    }
+  }
+  return v;
+};

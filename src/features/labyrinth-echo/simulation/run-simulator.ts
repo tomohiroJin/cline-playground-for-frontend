@@ -23,6 +23,7 @@ import type { FxState } from '../domain/models/unlock';
 import type { RandomSource } from '../domain/events/random';
 import type { MetaState } from '../domain/models/meta-state';
 import type { EchoLegacy } from '../domain/models/echo';
+import type { LogEntry } from '../domain/models/game-state';
 
 /** 1ランの結果 */
 export interface RunResult {
@@ -47,6 +48,9 @@ export { CAREFUL_POLICY, RANDOM_POLICY, LORE_POLICY } from './policies';
 
 /** シミュレータ専用の固定メタ（初回相当: echoDepth0 / 履歴なし） */
 const SIM_META: MetaState = createMetaState();
+
+/** 合成ログ要素（determineEnding は log.length のみ参照するため内容はゼロで足りる） */
+const SYNTHETIC_LOG_ENTRY: LogEntry = { fl: 0, step: 0, ch: '', hp: 0, mn: 0, inf: 0 };
 
 /** ボス再戦の進行判定（resolveBossRetry の純粋版） */
 const resolveBossStep = (
@@ -119,7 +123,10 @@ export const simulateRun = (params: {
     if (sl.activated) usedSecondLife = true;
 
     if (res.outcome.fl === 'escape') {
-      const endingId = determineEnding(player, [], difficulty).id;
+      // determineEnding は log.length のみ参照する（veteran 判定）。本番のログ件数 ≒ 消化イベント数
+      // なので、消化数長の合成ログを渡して log ベース END（歴戦の探索者）も sim で評価可能にする。
+      const syntheticLog: LogEntry[] = Array.from({ length: eventsConsumed }, () => SYNTHETIC_LOG_ENTRY);
+      const endingId = determineEnding(player, syntheticLog, difficulty).id;
       return { survived: true, floorReached: floor, endingId, cause: 'escape', events: eventsConsumed, fragmentsRead };
     }
     if (player.hp <= 0 || player.mn <= 0) {
