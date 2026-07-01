@@ -294,6 +294,7 @@ export const ColorPalette: {
   enemy: Record<EnemyType, string>;
   ui: Record<string, string>;
   particle: Record<string, string>;
+  bullet: { enemyCore: string; enemyGlow: string; enemyEdge: string };
 } = Object.freeze({
   enemy: {
     basic: '#3a8a5a',
@@ -321,4 +322,6 @@ export const ColorPalette: {
     damage: '#ff6666',
     bomb: '#ffff88',
   },
+  // 敵弾の役割色: 白コア＋暖色グロー＋濃い縁で背景・発光に埋もれさせない
+  bullet: { enemyCore: '#ffffff', enemyGlow: '#ff5544', enemyEdge: '#a32020' },
 });

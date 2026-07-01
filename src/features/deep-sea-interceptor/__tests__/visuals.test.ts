@@ -1,5 +1,5 @@
 import { neonGlow, playerHitboxRadius, enemyBulletCoreSize, NEON_FILTER_ID } from '../visuals';
-import { Config } from '../constants';
+import { Config, ColorPalette } from '../constants';
 
 describe('visuals', () => {
   describe('neonGlow', () => {
@@ -41,5 +41,17 @@ describe('visuals', () => {
 
   test('NEON_FILTER_ID は安定した文字列 id', () => {
     expect(NEON_FILTER_ID).toBe('dsiNeonGlow');
+  });
+});
+
+describe('ColorPalette.bullet（敵弾の役割色）', () => {
+  test('敵弾はコア・グロー・縁の3色を持つ', () => {
+    expect(ColorPalette.bullet.enemyCore).toBeDefined();
+    expect(ColorPalette.bullet.enemyGlow).toBeDefined();
+    expect(ColorPalette.bullet.enemyEdge).toBeDefined();
+  });
+
+  test('敵弾コアは高輝度（白系）で視認性を確保する', () => {
+    expect(ColorPalette.bullet.enemyCore.toLowerCase()).toBe('#ffffff');
   });
 });
