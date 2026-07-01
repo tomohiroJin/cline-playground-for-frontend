@@ -101,4 +101,15 @@ export const GameGlobalStyles = createGlobalStyle`
     0%, 100% { opacity: 1; }
     50% { opacity: 0.3; }
   }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.15); opacity: 0.25; }
+  }
+  /* 視差・過剰アニメを避ける設定では装飾アニメを停止（UI/UX ルール準拠） */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+    }
+  }
 `;

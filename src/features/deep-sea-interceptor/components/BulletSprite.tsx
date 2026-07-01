@@ -3,6 +3,7 @@
 // ============================================================================
 
 import React, { memo } from 'react';
+import { neonGlow } from '../visuals';
 import type { Bullet } from '../types';
 
 /** プレイヤー弾のスプライト */
@@ -19,7 +20,7 @@ const BulletSprite = memo(function BulletSprite({ bullet }: { bullet: Bullet }) 
         background: bullet.charged
           ? 'radial-gradient(circle,#fff,#64c8ff,#06c)'
           : 'radial-gradient(circle,#fff,#64c8ff)',
-        boxShadow: bullet.charged ? '0 0 22px #64c8ff' : '0 0 9px #64c8ff',
+        filter: neonGlow('#64c8ff', bullet.charged ? 'strong' : 'soft'),
       }}
     />
   );
