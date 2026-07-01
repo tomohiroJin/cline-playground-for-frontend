@@ -20,6 +20,7 @@ import {
 import PlayerSprite from './components/PlayerSprite';
 import EnemySprite from './components/EnemySprite';
 import BulletSprite from './components/BulletSprite';
+import EnemyBulletSprite from './components/EnemyBulletSprite';
 import HUD from './components/HUD';
 import TouchControls from './components/TouchControls';
 import type { WeaponType, Difficulty } from './types';
@@ -406,19 +407,7 @@ export default function DeepSeaInterceptorGame() {
           <EnemySprite key={e.id} enemy={e} />
         ))}
         {gd.enemyBullets.map(b => (
-          <div
-            key={b.id}
-            style={{
-              position: 'absolute',
-              left: b.x - 8,
-              top: b.y - 8,
-              width: 16,
-              height: 16,
-              borderRadius: '50%',
-              background: 'radial-gradient(circle,#f66,#a33)',
-              boxShadow: '0 0 9px #f33',
-            }}
-          />
+          <EnemyBulletSprite key={b.id} bullet={b} />
         ))}
         {gd.items.map(i => {
           const ic = ItemConfig[i.itemType];
