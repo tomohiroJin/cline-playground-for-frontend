@@ -2,8 +2,11 @@ import {
   EnemyVisual,
   isRegularEnemyType,
   getEnemyVisual,
+  isEnemyTelegraphing,
+  TELEGRAPH_LEAD_MS,
   type RegularEnemyType,
 } from '../enemy-visual';
+import { EntityFactory } from '../entities';
 
 describe('enemy-visual', () => {
   const regulars: RegularEnemyType[] = ['basic', 'fast', 'shooter', 'tank'];
@@ -56,6 +59,40 @@ describe('enemy-visual', () => {
     test('非通常敵は undefined', () => {
       expect(getEnemyVisual('boss1')).toBeUndefined();
       expect(getEnemyVisual('mine')).toBeUndefined();
+    });
+  });
+
+  describe('isEnemyTelegraphing', () => {
+    // shooter は canShoot=true, fireRate=2000。y>0 の位置に配置する。
+    const makeShooter = (lastShotAt: number, y = 100): ReturnType<typeof EntityFactory.enemy> => {
+      const e = EntityFactory.enemy('shooter', 400, y);
+      e.lastShotAt = lastShotAt;
+      return e;
+    };
+
+    test('発射直後（クールダウン開始直後）は予兆なし', () => {
+      const now = 10000;
+      const e = makeShooter(now); // elapsed 0
+      expect(isEnemyTelegraphing(e, now)).toBe(false);
+    });
+
+    test('クールダウン残りが先行時間を切ると予兆あり', () => {
+      const now = 10000;
+      // elapsed = fireRate - TELEGRAPH_LEAD_MS ちょうどで境界成立
+      const e = makeShooter(now - (2000 - TELEGRAPH_LEAD_MS));
+      expect(isEnemyTelegraphing(e, now)).toBe(true);
+    });
+
+    test('撃たない敵（basic, canShoot=false）は常に予兆なし', () => {
+      const e = EntityFactory.enemy('basic', 400, 100);
+      e.lastShotAt = 0;
+      expect(isEnemyTelegraphing(e, 999999)).toBe(false);
+    });
+
+    test('画面外（y<=0）は予兆なし', () => {
+      const now = 10000;
+      const e = makeShooter(now - 2000, 0); // 十分経過だが y=0
+      expect(isEnemyTelegraphing(e, now)).toBe(false);
     });
   });
 });
