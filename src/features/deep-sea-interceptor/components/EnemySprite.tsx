@@ -5,6 +5,8 @@
 import React, { memo } from 'react';
 import { ColorPalette } from '../constants';
 import type { Enemy } from '../types';
+import { getEnemyVisual, isEnemyTelegraphing, type EnemySilhouette } from '../enemy-visual';
+import { neonGlow } from '../visuals';
 
 /** ボスの名称マップ */
 const BossNames: Record<string, string> = {
@@ -290,6 +292,72 @@ function MineSvg({ size, color }: { size: number; color: string }) {
   );
 }
 
+/** 通常敵の型別シルエット（viewBox 0 0 40 40 内に描画） */
+function RegularEnemySilhouette({
+  silhouette,
+  color,
+  telegraphing,
+}: {
+  silhouette: EnemySilhouette;
+  color: string;
+  telegraphing: boolean;
+}) {
+  if (silhouette === 'jellyfish') {
+    // クラゲ: 半透明ドーム＋触手
+    return (
+      <>
+        <ellipse cx="20" cy="15" rx="13" ry="10" fill={color} opacity="0.85" />
+        <ellipse cx="20" cy="13" rx="8" ry="6" fill="rgba(255,255,255,0.25)" />
+        {[10, 15, 20, 25, 30].map(x => (
+          <path key={x} d={`M${x} 23 Q${x + 1} 32 ${x - 1} 38`} stroke={color} strokeWidth="2" fill="none" opacity="0.55" />
+        ))}
+        <circle cx="16" cy="14" r="1.6" fill="#fff" opacity="0.8" />
+        <circle cx="24" cy="14" r="1.6" fill="#fff" opacity="0.8" />
+      </>
+    );
+  }
+  if (silhouette === 'dart') {
+    // 深海ダーツ: 下向きの鋭い矢尻
+    return (
+      <>
+        <path d="M20 37 L11 12 L20 18 L29 12 Z" fill={color} opacity="0.9" />
+        <path d="M20 30 L16 16 L20 19 L24 16 Z" fill="rgba(255,255,255,0.3)" />
+        <circle cx="17" cy="15" r="1.5" fill="#fff" opacity="0.85" />
+        <circle cx="23" cy="15" r="1.5" fill="#fff" opacity="0.85" />
+      </>
+    );
+  }
+  if (silhouette === 'angler') {
+    // 提灯アンコウ: 丸い体＋発光ルアー（予兆時に強く光る）＋口
+    const lureRadius = telegraphing ? 4 : 2.2;
+    return (
+      <>
+        <ellipse cx="20" cy="23" rx="14" ry="12" fill={color} opacity="0.9" />
+        <line x1="20" y1="11" x2="20" y2="5" stroke={color} strokeWidth="2" opacity="0.8" />
+        {telegraphing && (
+          <circle data-testid="enemy-telegraph" cx="20" cy="4" r={lureRadius + 3} fill="#fff3b0" opacity="0.5">
+            <animate attributeName="opacity" values="0.5;0.15;0.5" dur="0.3s" repeatCount="indefinite" />
+          </circle>
+        )}
+        <circle cx="20" cy="4" r={lureRadius} fill="#ffec8a" opacity="0.95" />
+        <path d="M12 27 Q20 33 28 27" stroke="#2a0a1a" strokeWidth="1.5" fill="none" opacity="0.6" />
+        <circle cx="14" cy="20" r="2.4" fill="#fff" opacity="0.85" />
+        <circle cx="26" cy="20" r="2.4" fill="#fff" opacity="0.85" />
+      </>
+    );
+  }
+  // shell: 甲殻ユニット（六角の装甲＋プレート線）
+  return (
+    <>
+      <polygon points="20,6 32,14 32,28 20,36 8,28 8,14" fill={color} opacity="0.9" />
+      <polygon points="20,12 27,16 27,26 20,30 13,26 13,16" fill="rgba(0,0,0,0.25)" />
+      <line x1="8" y1="21" x2="32" y2="21" stroke="rgba(255,255,255,0.25)" strokeWidth="1" />
+      <circle cx="16" cy="18" r="2" fill="#fff" opacity="0.8" />
+      <circle cx="24" cy="18" r="2" fill="#fff" opacity="0.8" />
+    </>
+  );
+}
+
 /** 敵キャラクターのスプライト */
 const EnemySprite = memo(function EnemySprite({ enemy }: { enemy: Enemy }) {
   const color = ColorPalette.enemy[enemy.enemyType] || ColorPalette.enemy.basic;
@@ -311,13 +379,38 @@ const EnemySprite = memo(function EnemySprite({ enemy }: { enemy: Enemy }) {
         <MidbossSvg enemy={enemy} color={color} />
       ) : isMine ? (
         <MineSvg size={enemy.size} color={color} />
-      ) : (
-        <svg width={enemy.size} height={enemy.size} viewBox="0 0 40 40">
-          <ellipse cx="20" cy="20" rx="16" ry="14" fill={color} opacity="0.9" />
-          <circle cx="13" cy="15" r="3" fill="#f66" opacity="0.8" />
-          <circle cx="27" cy="15" r="3" fill="#f66" opacity="0.8" />
-        </svg>
-      )}
+      ) : (() => {
+        const visual = getEnemyVisual(enemy.enemyType);
+        if (!visual) {
+          // 想定外の通常敵: 従来の汎用描画にフォールバック
+          const fallbackColor = ColorPalette.enemy[enemy.enemyType] || ColorPalette.enemy.basic;
+          return (
+            <svg width={enemy.size} height={enemy.size} viewBox="0 0 40 40">
+              <ellipse cx="20" cy="20" rx="16" ry="14" fill={fallbackColor} opacity="0.9" />
+              <circle cx="13" cy="15" r="3" fill="#f66" opacity="0.8" />
+              <circle cx="27" cy="15" r="3" fill="#f66" opacity="0.8" />
+            </svg>
+          );
+        }
+        const telegraphing = isEnemyTelegraphing(enemy, Date.now());
+        const isHighDanger = visual.danger === 'high';
+        return (
+          <svg
+            width={enemy.size}
+            height={enemy.size}
+            viewBox="0 0 40 40"
+            style={{ filter: neonGlow(visual.glowColor, isHighDanger ? 'strong' : 'soft') }}
+            data-testid={`enemy-silhouette-${visual.silhouette}`}
+          >
+            {isHighDanger && (
+              <circle data-testid="enemy-danger-ring" cx="20" cy="20" r="19" fill="none" stroke={visual.glowColor} strokeWidth="1" opacity="0.5">
+                <animate attributeName="opacity" values="0.5;0.15;0.5" dur="0.6s" repeatCount="indefinite" />
+              </circle>
+            )}
+            <RegularEnemySilhouette silhouette={visual.silhouette} color={visual.glowColor} telegraphing={telegraphing} />
+          </svg>
+        );
+      })()}
     </div>
   );
 });
