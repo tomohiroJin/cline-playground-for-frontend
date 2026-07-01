@@ -3,6 +3,7 @@
 // ============================================================================
 
 import React, { memo } from 'react';
+import { playerHitboxRadius, neonGlow } from '../visuals';
 
 interface PlayerSpriteProps {
   x: number;
@@ -10,6 +11,11 @@ interface PlayerSpriteProps {
   opacity: number;
   shield: boolean;
 }
+
+/** 当たり判定コア（中心の高輝度点）の直径（px） */
+const HITBOX_CORE_SIZE = 6;
+/** 当たり判定コアの半径（配置座標のオフセット計算に使用） */
+const HITBOX_CORE_RADIUS = HITBOX_CORE_SIZE / 2;
 
 /** プレイヤー潜水艦のスプライト */
 const PlayerSprite = memo(function PlayerSprite({ x, y, opacity, shield }: PlayerSpriteProps) {
@@ -67,6 +73,36 @@ const PlayerSprite = memo(function PlayerSprite({ x, y, opacity, shield }: Playe
         <path d="M20 18 L22 22 L17 20 Z" fill="#2d5a87" />
         <ellipse cx="12" cy="29" rx="3" ry="1.5" fill="rgba(100,200,255,0.4)" />
       </svg>
+      {/* 実当たり判定の可視化: 薄いリング（真の判定範囲）＋ 中心の高輝度コア */}
+      <div
+        data-testid="hitbox-ring"
+        style={{
+          position: 'absolute',
+          left: x - playerHitboxRadius(),
+          top: y - playerHitboxRadius(),
+          width: playerHitboxRadius() * 2,
+          height: playerHitboxRadius() * 2,
+          borderRadius: '50%',
+          border: '1px solid rgba(120,220,255,0.35)',
+          pointerEvents: 'none',
+          opacity,
+        }}
+      />
+      <div
+        data-testid="hitbox-core"
+        style={{
+          position: 'absolute',
+          left: x - HITBOX_CORE_RADIUS,
+          top: y - HITBOX_CORE_RADIUS,
+          width: HITBOX_CORE_SIZE,
+          height: HITBOX_CORE_SIZE,
+          borderRadius: '50%',
+          background: '#eaffff',
+          filter: neonGlow('#6cf', 'soft'),
+          pointerEvents: 'none',
+          opacity,
+        }}
+      />
     </>
   );
 });
