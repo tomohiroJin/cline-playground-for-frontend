@@ -105,6 +105,10 @@ export const GameGlobalStyles = createGlobalStyle`
     0%, 100% { transform: scale(1); opacity: 0.5; }
     50% { transform: scale(1.15); opacity: 0.25; }
   }
+  @keyframes shockwave {
+    0% { transform: scale(1); opacity: 0.9; }
+    100% { transform: scale(12); opacity: 0; }
+  }
   /* 視差・過剰アニメを避ける設定では装飾アニメを停止（UI/UX ルール準拠） */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {

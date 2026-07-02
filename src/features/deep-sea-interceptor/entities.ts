@@ -94,6 +94,7 @@ export const EntityFactory = {
       canShoot: cfg.canShoot,
       fireRate: cfg.fireRate,
       lastShotAt: 0,
+      lastHitAt: 0,
       movementPattern: baseRandomInt(0, 2),
       angle: 0,
       bossPhase: boss ? 1 : 0,

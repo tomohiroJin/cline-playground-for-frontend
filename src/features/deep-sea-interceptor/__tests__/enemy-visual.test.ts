@@ -4,6 +4,8 @@ import {
   getEnemyVisual,
   isEnemyTelegraphing,
   TELEGRAPH_LEAD_MS,
+  isEnemyHitFlashing,
+  HIT_FLASH_MS,
   type RegularEnemyType,
 } from '../enemy-visual';
 import { EntityFactory } from '../entities';
@@ -93,6 +95,31 @@ describe('enemy-visual', () => {
       const now = 10000;
       const e = makeShooter(now - 2000, 0); // 十分経過だが y=0
       expect(isEnemyTelegraphing(e, now)).toBe(false);
+    });
+  });
+
+  describe('isEnemyHitFlashing', () => {
+    const makeHit = (lastHitAt: number) => {
+      const e = EntityFactory.enemy('tank', 100, 100);
+      e.lastHitAt = lastHitAt;
+      return e;
+    };
+
+    test('被弾直後（経過 < HIT_FLASH_MS）はフラッシュ中', () => {
+      const now = 10000;
+      expect(isEnemyHitFlashing(makeHit(now - (HIT_FLASH_MS - 1)), now)).toBe(true);
+    });
+
+    test('HIT_FLASH_MS 経過後はフラッシュしない', () => {
+      const now = 10000;
+      expect(isEnemyHitFlashing(makeHit(now - HIT_FLASH_MS), now)).toBe(false);
+    });
+
+    test('未被弾（lastHitAt=0/undefined）はフラッシュしない', () => {
+      const now = 10000;
+      expect(isEnemyHitFlashing(makeHit(0), now)).toBe(false);
+      const e = EntityFactory.enemy('tank', 100, 100);
+      expect(isEnemyHitFlashing(e, now)).toBe(false);
     });
   });
 });

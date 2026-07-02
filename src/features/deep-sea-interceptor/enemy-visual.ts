@@ -61,3 +61,16 @@ export const isEnemyTelegraphing = (enemy: Enemy, now: number): boolean => {
   const elapsed = now - enemy.lastShotAt;
   return elapsed >= enemy.fireRate - TELEGRAPH_LEAD_MS;
 };
+
+/** 被弾フラッシュの表示時間（ms） */
+export const HIT_FLASH_MS = 120;
+
+/**
+ * 敵が被弾フラッシュ中かを判定する（純粋関数）。
+ * lastHitAt から HIT_FLASH_MS 以内なら true。未被弾（0/undefined）は false。
+ */
+export const isEnemyHitFlashing = (enemy: Enemy, now: number): boolean => {
+  const lastHitAt = enemy.lastHitAt ?? 0;
+  if (lastHitAt <= 0) return false;
+  return now - lastHitAt < HIT_FLASH_MS;
+};
