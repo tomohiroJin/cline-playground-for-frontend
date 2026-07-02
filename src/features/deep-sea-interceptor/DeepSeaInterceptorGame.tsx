@@ -23,6 +23,7 @@ import BulletSprite from './components/BulletSprite';
 import EnemyBulletSprite from './components/EnemyBulletSprite';
 import HUD from './components/HUD';
 import TouchControls from './components/TouchControls';
+import { neonGlow } from './visuals';
 import type { WeaponType, Difficulty } from './types';
 
 /** 武器情報 */
@@ -447,6 +448,7 @@ export default function DeepSeaInterceptorGame() {
               borderRadius: '50%',
               background: p.color,
               opacity: p.life / p.maxLife,
+              filter: neonGlow(p.color, 'soft'),
             }}
           />
         ))}

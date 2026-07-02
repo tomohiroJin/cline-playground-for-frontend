@@ -5,7 +5,7 @@
 import React, { memo } from 'react';
 import { ColorPalette } from '../constants';
 import type { Enemy } from '../types';
-import { getEnemyVisual, isEnemyTelegraphing, type EnemySilhouette } from '../enemy-visual';
+import { getEnemyVisual, isEnemyTelegraphing, isEnemyHitFlashing, type EnemySilhouette } from '../enemy-visual';
 import { neonGlow } from '../visuals';
 
 /** ボスの名称マップ */
@@ -388,6 +388,9 @@ function RegularEnemySvg({ enemy }: { enemy: Enemy }) {
         </circle>
       )}
       <RegularEnemySilhouette silhouette={visual.silhouette} color={visual.glowColor} telegraphing={telegraphing} />
+      {isEnemyHitFlashing(enemy, Date.now()) && (
+        <ellipse data-testid="enemy-hit-flash" cx="20" cy="20" rx="18" ry="16" fill="#ffffff" opacity="0.65" />
+      )}
     </svg>
   );
 }

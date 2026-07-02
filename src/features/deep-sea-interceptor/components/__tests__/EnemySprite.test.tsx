@@ -43,4 +43,17 @@ describe('EnemySprite（通常敵の型別描画）', () => {
     const { queryByTestId } = render(<EnemySprite enemy={basic} />);
     expect(queryByTestId('enemy-danger-ring')).toBeNull();
   });
+
+  test('被弾直後の敵は被弾フラッシュ要素を表示する', () => {
+    const enemy = EntityFactory.enemy('tank', 200, 200);
+    enemy.lastHitAt = Date.now(); // 直近被弾
+    const { getByTestId } = render(<EnemySprite enemy={enemy} />);
+    expect(getByTestId('enemy-hit-flash')).toBeInTheDocument();
+  });
+
+  test('未被弾の敵は被弾フラッシュ要素を表示しない', () => {
+    const enemy = EntityFactory.enemy('tank', 200, 200);
+    const { queryByTestId } = render(<EnemySprite enemy={enemy} />);
+    expect(queryByTestId('enemy-hit-flash')).toBeNull();
+  });
 });
