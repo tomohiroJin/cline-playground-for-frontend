@@ -39,6 +39,8 @@ import type {
 import { applyKeyboardMovement } from '../../hooks/useKeyboardInput';
 import type { KeyboardState } from '../../core/keyboard';
 import { calculateKeyboardMovement, KEYBOARD_MOVE_SPEED } from '../../core/keyboard';
+import { computeImpact } from '../../core/impact';
+import { vibrate } from '../../core/haptics';
 
 // ランダム選択ヘルパー
 const randomChoice = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
@@ -55,9 +57,6 @@ const GO_DISPLAY_DURATION = isE2ETestMode() ? 50 : 500;
 // シェイク定数
 const GOAL_SHAKE_INTENSITY = 8;
 const GOAL_SHAKE_DURATION = 300;
-const HIT_SHAKE_INTENSITY = 3;
-const HIT_SHAKE_DURATION = 150;
-const STRONG_HIT_SPEED_THRESHOLD = 8;
 
 /** ゲーム設定グループ */
 export type GameLoopConfig = {
@@ -82,6 +81,8 @@ export type GameLoopConfig = {
   /** P3/P4 の操作タイプ（2v2 + Gamepad 時のみ使用） */
   enemy1ControlType?: 'cpu' | 'human';
   enemy2ControlType?: 'cpu' | 'human';
+  /** reduced-motion 有効時は打撃時の shake / hitStop / 振動を抑制する（サウンドは残す） */
+  reducedMotion?: boolean;
 };
 
 /** Ref グループ（ゲームループが参照・更新する ref） */
@@ -152,7 +153,7 @@ function applyGamepadToMallet(
  * - callbacks: React state 更新コールバック
  */
 export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGameLoopParams): void {
-  const { difficulty: diff, field, winScore, getSound, bgmEnabled, gameMode, aiConfig, playerMalletColor, cpuMalletColor, allyControlType, allyCharacterId, enemyCharacter1Id, enemyCharacter2Id, enemy1ControlType, enemy2ControlType } = config;
+  const { difficulty: diff, field, winScore, getSound, bgmEnabled, gameMode, aiConfig, playerMalletColor, cpuMalletColor, allyControlType, allyCharacterId, enemyCharacter1Id, enemyCharacter2Id, enemy1ControlType, enemy2ControlType, reducedMotion = false } = config;
   const pColor = playerMalletColor ?? DEFAULT_PLAYER_MALLET_COLOR;
   const cColor = cpuMalletColor ?? DEFAULT_CPU_MALLET_COLOR;
   const {
@@ -310,16 +311,22 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
             }
           }
 
-          if (isPuck && speed > STRONG_HIT_SPEED_THRESHOLD) {
-            triggerShake(HIT_SHAKE_INTENSITY, HIT_SHAKE_DURATION);
+          // 打撃フィードバックの階調化（US 打撃感）
+          // reduced-motion 時は反応を発火しない（サウンドは上流で再生済み）
+          if (isPuck) {
             const postSpeed = magnitude(obj.vx, obj.vy);
-            if (postSpeed > STRONG_HIT_SPEED_THRESHOLD && !hitStop.active) {
-              hitStop.active = true;
-              hitStop.framesRemaining = 3;
-              hitStop.impactX = obj.x;
-              hitStop.impactY = obj.y;
-              hitStop.shockwaveRadius = 0;
-              hitStop.shockwaveMaxRadius = 80;
+            const impact = reducedMotion ? null : computeImpact(postSpeed);
+            if (impact) {
+              triggerShake(impact.shakeIntensity, impact.shakeDuration);
+              if (impact.hitStopFrames > 0 && !hitStop.active) {
+                hitStop.active = true;
+                hitStop.framesRemaining = impact.hitStopFrames;
+                hitStop.impactX = obj.x;
+                hitStop.impactY = obj.y;
+                hitStop.shockwaveRadius = 0;
+                hitStop.shockwaveMaxRadius = impact.shockwaveMaxRadius;
+              }
+              vibrate(impact.vibrationMs);
             }
           }
         }
@@ -1078,7 +1085,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
   }, [screen, diff, field, winScore, showHelp, getSound,
       gameRef, canvasRef, lastInputRef, scoreRef,
       setScores, setWinner, setScreen, setShowHelp,
-      phaseRef, countdownStartRef, shakeRef, setShake, bgmEnabled,
+      phaseRef, countdownStartRef, shakeRef, setShake, bgmEnabled, reducedMotion,
       statsRef, matchStartRef, keysRef,
       is2PMode, is2v2Mode, pColor, cColor, playerTargetRef, player2KeysRef, multiTouchRef, aiConfig,
       allyControlType, allyCharacterId, enemyCharacter1Id, enemyCharacter2Id, enemy1ControlType, enemy2ControlType, gamepadToastRef]);

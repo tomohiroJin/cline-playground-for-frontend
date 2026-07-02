@@ -23,6 +23,7 @@ CPU対戦型のエアホッケーゲーム。
 | Step 5 | ペアマッチ完成版（S5-1〜S5-12） | ✅ 完了 |
 | S8 | AirHockeyGame リファクタ + 第 2 章実装 | ✅ 完了 |
 | S9 | UI/UX デザイン深化・VRT・A11y・パフォーマンス基盤 | ✅ 実装完了（実機検証残） |
+| 打撃感 | 打撃フィードバックの階調化 + モバイル触覚 + reduced-motion 対応 | ✅ 完了 |
 
 ### Phase 0: 世界観・キャラクター設定整備 ✅
 
@@ -52,6 +53,7 @@ CPU対戦型のエアホッケーゲーム。
 - ~~パフォーマンス最適化~~ → **S6-4 + S9-C2 で実装**（quickReject 拡張 / PerfProbe 基盤 / パーティクル上限動的化）
 - ~~VsScreen の P3/P4 操作タイプラベル表示~~ → **S9-A3 で実装済み**（内部語彙 + `aria-label` 併用）
 - ~~ゲームパッド接続/切断トースト通知の Canvas 描画~~ → **S9-A2 で実装済み**（`CanvasLiveRegion` で支援技術にも露出）
+- ~~打撃時の shake / hitStop / 振動が一律で強弱の差が出ない~~ → **打撃感タスクで実装済み**（`core/impact.ts` による衝突速度ベースの階調化、`core/haptics.ts` によるモバイル触覚、`useGameLoop`/`AirHockeyGame.tsx` の `reducedMotion` 対応で shake/hitStop を抑制しつつサウンドは再生）
 
 ### S9 で追加された基盤（2026-04-19）
 

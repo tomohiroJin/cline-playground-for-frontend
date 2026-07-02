@@ -31,6 +31,7 @@ import { useInput } from '../hooks/useInput';
 import { useKeyboardInput } from '../hooks/useKeyboardInput';
 import { useMultiTouchInput } from '../hooks/useMultiTouchInput';
 import { useGameLoop } from './hooks/useGameLoop';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 import { useScreenNavigation } from './hooks/useScreenNavigation';
 import { useGameMode } from './hooks/useGameMode';
 import { useGamepadInput } from '../hooks/useGamepadInput';
@@ -263,6 +264,8 @@ const AirHockeyGame: React.FC = () => {
     };
   }, [is2PGame]);
 
+  const prefersReducedMotion = useReducedMotion();
+
   useGameLoop({
     screen, showHelp: ui.showHelp,
     config: {
@@ -277,6 +280,7 @@ const AirHockeyGame: React.FC = () => {
       enemyCharacter2Id: is2v2Mode ? pairEnemy2.id : undefined,
       enemy1ControlType: is2v2Mode ? mode.enemy1ControlType : undefined,
       enemy2ControlType: is2v2Mode ? mode.enemy2ControlType : undefined,
+      reducedMotion: prefersReducedMotion,
     },
     refs: {
       gameRef, canvasRef, lastInputRef, scoreRef, phaseRef, countdownStartRef, shakeRef, statsRef, matchStartRef, keysRef,
