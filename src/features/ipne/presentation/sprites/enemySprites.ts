@@ -1806,7 +1806,7 @@ export const PATROL_ATTACK_FRAME = applyEnemyPixelEdits({
  * パトロール敵 被弾フレーム: 体を横につぶし、目を×にした被弾リアクション
  * 上部輪郭を1px下げて左右へ広げ、押しつぶされた質感を強調する
  */
-export const PATROL_DAMAGE_FRAME = applyEnemyPixelEdits(patrolFrame1Base, [
+export const PATROL_DAMAGE_FRAME = applyEnemyPixelEdits(patrolFrame1, [
   { x: 12, y: 3, value: 0 },
   { x: 19, y: 3, value: 0 },
   { x: 9, y: 4, value: 4 },
@@ -1886,7 +1886,7 @@ export const CHARGE_RUSH_FRAME = applyEnemyPixelEdits({
  * 突進獣 被弾フレーム: 頭部をのけぞらせ口を開く被弾リアクション
  * 角が後方へ流れ、口部の暗色が広がって咆哮するような表情になる
  */
-export const CHARGE_DAMAGE_FRAME = applyEnemyPixelEdits(chargeFrame1Base, [
+export const CHARGE_DAMAGE_FRAME = applyEnemyPixelEdits(chargeFrame1, [
   { x: 4, y: 2, value: 0 },
   { x: 5, y: 2, value: 0 },
   { x: 24, y: 2, value: 0 },
@@ -1964,7 +1964,7 @@ export const RANGED_CAST_FRAME = applyEnemyPixelEdits({
  * 射手 被弾フレーム: 杖を下げた防御姿勢＋後傾リアクション
  * 掲げていた腕を引っ込め、頭上の杖先端が後方へ縮む
  */
-export const RANGED_DAMAGE_FRAME = applyEnemyPixelEdits(rangedFrame1Base, [
+export const RANGED_DAMAGE_FRAME = applyEnemyPixelEdits(rangedFrame1, [
   { x: 10, y: 6, value: 0 },
   { x: 11, y: 6, value: 0 },
   { x: 12, y: 6, value: 0 },
@@ -2040,7 +2040,7 @@ export const SPECIMEN_MUTATE_FRAME = applyEnemyPixelEdits({
  * 標本 被弾フレーム: クリスタル表面に亀裂が走る被弾リアクション
  * 明色の斜め線を複数本追加し、ひび割れているように見せる
  */
-export const SPECIMEN_DAMAGE_FRAME = applyEnemyPixelEdits(specimenFrame1Base, [
+export const SPECIMEN_DAMAGE_FRAME = applyEnemyPixelEdits(specimenFrame1, [
   { x: 10, y: 9, value: 4 },
   { x: 11, y: 10, value: 4 },
   { x: 12, y: 11, value: 4 },
