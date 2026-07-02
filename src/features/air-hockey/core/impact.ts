@@ -32,6 +32,8 @@ const VIBRATION_MS_RANGE = { min: 8, max: 40 } as const;
  * @returns 下限未満なら null（＝反応なし）。それ以外は連続スケールした反応量。
  */
 export const computeImpact = (hitSpeed: number): ImpactResponse | null => {
+  // 非有限値（NaN/Infinity）は反応なし扱いにして NaN 伝播を防ぐ
+  if (!Number.isFinite(hitSpeed)) return null;
   if (hitSpeed < IMPACT_MIN_SPEED) return null;
 
   // 下限〜上限を [0, 1] に正規化した補間係数

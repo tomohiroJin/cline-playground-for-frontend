@@ -50,4 +50,14 @@ describe('computeImpact', () => {
     if (!strong) return;
     expect(strong.hitStopFrames).toBeGreaterThanOrEqual(1);
   });
+
+  it('非有限値（NaN/Infinity）は null を返す', () => {
+    expect(computeImpact(NaN)).toBeNull();
+    expect(computeImpact(Infinity)).toBeNull();
+    expect(computeImpact(-Infinity)).toBeNull();
+  });
+
+  it('負の速度は null を返す', () => {
+    expect(computeImpact(-5)).toBeNull();
+  });
 });
