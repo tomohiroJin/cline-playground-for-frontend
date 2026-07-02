@@ -6,11 +6,17 @@ import { computeImpact } from './impact';
 describe('computeImpact', () => {
   it('下限速度未満なら null を返す（軽打では反応なし）', () => {
     expect(computeImpact(0)).toBeNull();
-    expect(computeImpact(3.9)).toBeNull();
+    expect(computeImpact(5.9)).toBeNull();
+  });
+
+  it('基準復元速度（静止マレットの受け身接触 = 5）では反応しない', () => {
+    // resolveCollision の下限 power=5 により、振っていない接触でも postSpeed は 5 になる。
+    // 下限を 5 より上に置くことで、受け身のブロックでは shake/振動を発火させない。
+    expect(computeImpact(5)).toBeNull();
   });
 
   it('下限速度以上なら反応オブジェクトを返す', () => {
-    const r = computeImpact(4);
+    const r = computeImpact(6);
     expect(r).not.toBeNull();
   });
 
@@ -38,7 +44,7 @@ describe('computeImpact', () => {
   });
 
   it('低速の打撃では hitStop フレームが 0 になる', () => {
-    const low = computeImpact(4);
+    const low = computeImpact(6);
     expect(low).not.toBeNull();
     if (!low) return;
     expect(low.hitStopFrames).toBe(0);

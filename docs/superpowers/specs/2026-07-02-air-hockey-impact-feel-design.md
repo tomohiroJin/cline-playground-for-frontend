@@ -85,7 +85,7 @@ export const computeImpact = (hitSpeed: number): ImpactResponse | null
 
 | 定数 | 値 | 備考 |
 |------|-----|------|
-| `IMPACT_MIN_SPEED` | 4 | これ未満は `null`（従来の軽打挙動を維持） |
+| `IMPACT_MIN_SPEED` | 6 | これ未満は `null`。`resolveCollision` の基準復元速度 5（静止マレットの受け身接触でも発生）より上に置き、受け身のブロックで毎回発火しないようにする |
 | `IMPACT_MAX_SPEED` | 16 | `PHYSICS.MAX_POWER` 相当で頭打ち |
 | `shakeIntensity` | lerp(2, 9, t) | 従来固定 3 → 2〜9 の連続値 |
 | `shakeDuration` | lerp(120, 220, t) | ms |
