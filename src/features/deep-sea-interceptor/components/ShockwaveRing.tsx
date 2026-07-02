@@ -1,11 +1,15 @@
 // ============================================================================
-// Deep Sea Interceptor - 衝撃波リング（ボス/ミッドボス撃破演出）
+// Deep Sea Interceptor - 衝撃波リング（ボス撃破演出）
 // ============================================================================
 
 import React, { memo } from 'react';
+import { neonGlow } from '../visuals';
 
 /** 衝撃波リングの初期直径（px） */
 const RING_START_SIZE = 40;
+
+/** 衝撃波アニメーションの持続時間 */
+const RING_ANIMATION_DURATION = '0.6s';
 
 interface ShockwaveRingProps {
   x: number;
@@ -15,7 +19,8 @@ interface ShockwaveRingProps {
 
 /**
  * 撃破位置から拡大しながらフェードする衝撃波リング。
- * CSS keyframe `shockwave`（styles.ts）で拡大・減衰する。
+ * CSS keyframe `shockwave`（styles.ts）で拡大・減衰する。発光は他スプライトと
+ * 同じ neonGlow ヘルパーで統一する。
  * prefers-reduced-motion 環境では既存のグローバルガードでアニメが抑制される。
  */
 const ShockwaveRing = memo(function ShockwaveRing({ x, y, color = '#8ff' }: ShockwaveRingProps) {
@@ -30,9 +35,9 @@ const ShockwaveRing = memo(function ShockwaveRing({ x, y, color = '#8ff' }: Shoc
         height: RING_START_SIZE,
         borderRadius: '50%',
         border: `3px solid ${color}`,
-        boxShadow: `0 0 20px ${color}`,
+        filter: neonGlow(color, 'strong'),
         pointerEvents: 'none',
-        animation: 'shockwave 0.6s ease-out forwards',
+        animation: `shockwave ${RING_ANIMATION_DURATION} ease-out forwards`,
         zIndex: 40,
       }}
     />

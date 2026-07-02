@@ -328,7 +328,7 @@ export function processBulletEnemyCollisions(
   // 敵の HP を一時コピー（ミューテーション回避）
   const enemyHps = enemies.map(e => e.hp);
   // 非致死ヒットで被弾した敵の時刻を記録（被弾フラッシュ用）
-  const hitTimes: (number | null)[] = enemies.map(() => null);
+  const hitTimes: (number | undefined)[] = enemies.map(() => undefined);
 
   const survivingBullets = bullets.filter(b => {
     let hit = false;
@@ -363,6 +363,10 @@ export function processBulletEnemyCollisions(
           } else {
             // 通常敵: 型別カラーの撃破バースト（爽快感）＋従来のアイテムドロップ判定
             const burstColor = getEnemyVisual(e.enemyType)?.glowColor ?? ColorPalette.particle.death;
+            // 注意: createDefeatParticles は乱数を消費する。後段のドロップ抽選より前に
+            // 呼ぶが、Math.random は未シードの独立試行のためドロップ確率は不変（分布中立）。
+            // この順序を「最適化」目的で入れ替えても確率は変わらないが、将来シード付き
+            // リプレイを導入する場合は消費順が再現性に影響する点に注意。
             newParticles.push(
               ...createDefeatParticles(e.x, e.y, REGULAR_DEFEAT_PARTICLE_COUNT, REGULAR_DEFEAT_PARTICLE_SPREAD, [burstColor, '#ffffff', ColorPalette.particle.hit])
             );
