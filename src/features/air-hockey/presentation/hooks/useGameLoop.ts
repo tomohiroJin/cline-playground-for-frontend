@@ -222,8 +222,6 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
 
     const obstacles = field.obstacles;
 
-    // reduced-motion 時は打撃の強い動き（shake / hitStop / 振動）を抑制する
-
     // シェイクをトリガーするヘルパー
     const triggerShake = (intensity: number, duration: number) => {
       const newShake: ShakeState = { intensity, duration, startTime: Date.now() };
