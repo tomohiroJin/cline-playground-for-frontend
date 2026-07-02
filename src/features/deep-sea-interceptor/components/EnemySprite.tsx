@@ -358,6 +358,40 @@ function RegularEnemySilhouette({
   );
 }
 
+/** 通常敵4種の SVG（型別シルエット＋ネオン発光＋危険リング＋発射予兆） */
+function RegularEnemySvg({ enemy }: { enemy: Enemy }) {
+  const visual = getEnemyVisual(enemy.enemyType);
+  if (!visual) {
+    // 想定外の通常敵: 従来の汎用描画にフォールバック
+    const fallbackColor = ColorPalette.enemy[enemy.enemyType] || ColorPalette.enemy.basic;
+    return (
+      <svg width={enemy.size} height={enemy.size} viewBox="0 0 40 40">
+        <ellipse cx="20" cy="20" rx="16" ry="14" fill={fallbackColor} opacity="0.9" />
+        <circle cx="13" cy="15" r="3" fill="#f66" opacity="0.8" />
+        <circle cx="27" cy="15" r="3" fill="#f66" opacity="0.8" />
+      </svg>
+    );
+  }
+  const telegraphing = isEnemyTelegraphing(enemy, Date.now());
+  const isHighDanger = visual.danger === 'high';
+  return (
+    <svg
+      width={enemy.size}
+      height={enemy.size}
+      viewBox="0 0 40 40"
+      style={{ filter: neonGlow(visual.glowColor, isHighDanger ? 'strong' : 'soft') }}
+      data-testid={`enemy-silhouette-${visual.silhouette}`}
+    >
+      {isHighDanger && (
+        <circle data-testid="enemy-danger-ring" cx="20" cy="20" r="19" fill="none" stroke={visual.glowColor} strokeWidth="1" opacity="0.5">
+          <animate attributeName="opacity" values="0.5;0.15;0.5" dur="0.6s" repeatCount="indefinite" />
+        </circle>
+      )}
+      <RegularEnemySilhouette silhouette={visual.silhouette} color={visual.glowColor} telegraphing={telegraphing} />
+    </svg>
+  );
+}
+
 /** 敵キャラクターのスプライト */
 const EnemySprite = memo(function EnemySprite({ enemy }: { enemy: Enemy }) {
   const color = ColorPalette.enemy[enemy.enemyType] || ColorPalette.enemy.basic;
@@ -379,38 +413,9 @@ const EnemySprite = memo(function EnemySprite({ enemy }: { enemy: Enemy }) {
         <MidbossSvg enemy={enemy} color={color} />
       ) : isMine ? (
         <MineSvg size={enemy.size} color={color} />
-      ) : (() => {
-        const visual = getEnemyVisual(enemy.enemyType);
-        if (!visual) {
-          // 想定外の通常敵: 従来の汎用描画にフォールバック
-          const fallbackColor = ColorPalette.enemy[enemy.enemyType] || ColorPalette.enemy.basic;
-          return (
-            <svg width={enemy.size} height={enemy.size} viewBox="0 0 40 40">
-              <ellipse cx="20" cy="20" rx="16" ry="14" fill={fallbackColor} opacity="0.9" />
-              <circle cx="13" cy="15" r="3" fill="#f66" opacity="0.8" />
-              <circle cx="27" cy="15" r="3" fill="#f66" opacity="0.8" />
-            </svg>
-          );
-        }
-        const telegraphing = isEnemyTelegraphing(enemy, Date.now());
-        const isHighDanger = visual.danger === 'high';
-        return (
-          <svg
-            width={enemy.size}
-            height={enemy.size}
-            viewBox="0 0 40 40"
-            style={{ filter: neonGlow(visual.glowColor, isHighDanger ? 'strong' : 'soft') }}
-            data-testid={`enemy-silhouette-${visual.silhouette}`}
-          >
-            {isHighDanger && (
-              <circle data-testid="enemy-danger-ring" cx="20" cy="20" r="19" fill="none" stroke={visual.glowColor} strokeWidth="1" opacity="0.5">
-                <animate attributeName="opacity" values="0.5;0.15;0.5" dur="0.6s" repeatCount="indefinite" />
-              </circle>
-            )}
-            <RegularEnemySilhouette silhouette={visual.silhouette} color={visual.glowColor} telegraphing={telegraphing} />
-          </svg>
-        );
-      })()}
+      ) : (
+        <RegularEnemySvg enemy={enemy} />
+      )}
     </div>
   );
 });
