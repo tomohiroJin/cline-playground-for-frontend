@@ -73,4 +73,12 @@ describe('盗賊スプライト v3 の構造', () => {
       }
     }
   });
+
+  it('被弾フレームは idle と異なる専用フレームである', () => {
+    for (const dir of ['down', 'up', 'left', 'right'] as const) {
+      expect(THIEF_DAMAGE_SPRITES[dir].pixels).not.toEqual(
+        THIEF_IDLE_SPRITE_SHEETS[dir].sprites[0].pixels
+      );
+    }
+  });
 });
