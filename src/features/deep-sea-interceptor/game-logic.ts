@@ -4,7 +4,7 @@
 
 import { clamp as baseClamp, randomRange } from '../../utils/math-utils';
 import {
-  Config, StageConfig, ItemConfig, DifficultyConfig,
+  Config, StageConfig, ItemConfig, DifficultyConfig, ColorPalette,
   COMBO_TIMEOUT_MS, BOSS_DEFEAT_DELAY_MS,
   CURRENT_CHANGE_INTERVAL_MS, CURRENT_FORCE, CURRENT_BULLET_FACTOR,
   MINE_SPAWN_INTERVAL_MS, MINE_MAX_COUNT,
@@ -35,6 +35,12 @@ type EnemyMoveFn = (e: Enemy) => Enemy;
 
 /** clamp のカリー化ラッパー */
 const clamp = (min: number, max: number) => (value: number) => baseClamp(value, min, max);
+
+/** 通常敵撃破時のパーティクル数 */
+const REGULAR_DEFEAT_PARTICLE_COUNT = 6;
+
+/** 通常敵撃破パーティクルの散布半径 */
+const REGULAR_DEFEAT_PARTICLE_SPREAD = 20;
 
 /** 初期ゲーム状態を生成 */
 export const createInitialGameState = (): GameState => ({
@@ -351,8 +357,15 @@ export function processBulletEnemyCollisions(
             const dropItem = Math.random() < 0.5 ? 'life' : 'power';
             newItems.push(EntityFactory.item(e.x, e.y, dropItem as 'life' | 'power'));
             newParticles.push(...createDefeatParticles(e.x, e.y, 10, 40, ['#88f', '#aaf', '#66f']));
-          } else if (Math.random() < Config.spawn.itemChance) {
-            newItems.push(EntityFactory.item(e.x, e.y, randomChoice(Object.keys(ItemConfig) as Array<keyof typeof ItemConfig>)));
+          } else {
+            // 通常敵: 型別カラーの撃破バースト（爽快感）＋従来のアイテムドロップ判定
+            const burstColor = getEnemyVisual(e.enemyType)?.glowColor ?? ColorPalette.particle.death;
+            newParticles.push(
+              ...createDefeatParticles(e.x, e.y, REGULAR_DEFEAT_PARTICLE_COUNT, REGULAR_DEFEAT_PARTICLE_SPREAD, [burstColor, '#ffffff', ColorPalette.particle.hit])
+            );
+            if (Math.random() < Config.spawn.itemChance) {
+              newItems.push(EntityFactory.item(e.x, e.y, randomChoice(Object.keys(ItemConfig) as Array<keyof typeof ItemConfig>)));
+            }
           }
         } else {
           audioEvents.push({ name: 'hit' });

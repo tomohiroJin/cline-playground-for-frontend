@@ -156,6 +156,26 @@ describe('processBulletEnemyCollisions', () => {
     expect(result.items.length).toBeGreaterThan(0);
     expect(result.screenShake).toBe(200);
   });
+
+  test('通常敵を撃破するとパーティクルバーストが発生する', () => {
+    // basic は hp1。damage1 の弾で撃破される
+    const bullet = EntityFactory.bullet(100, 100);
+    const enemy = EntityFactory.enemy('basic', 100, 100);
+    const diffConfig = DifficultyConfig['standard'];
+    const result = processBulletEnemyCollisions([bullet], [enemy], 0, diffConfig);
+    expect(result.enemies).toHaveLength(0); // 撃破された
+    expect(result.particles.length).toBeGreaterThanOrEqual(6); // バースト発生
+  });
+
+  test('撃破に至らないヒットではバーストを出さない', () => {
+    // tank は hp5。damage1 では撃破されない
+    const bullet = EntityFactory.bullet(100, 100);
+    const enemy = EntityFactory.enemy('tank', 100, 100);
+    const diffConfig = DifficultyConfig['standard'];
+    const result = processBulletEnemyCollisions([bullet], [enemy], 0, diffConfig);
+    expect(result.enemies).toHaveLength(1); // 生存
+    expect(result.particles).toHaveLength(0); // バーストなし
+  });
 });
 
 describe('processItemCollection', () => {
