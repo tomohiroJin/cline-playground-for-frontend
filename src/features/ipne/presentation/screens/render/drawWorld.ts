@@ -57,6 +57,7 @@ export function drawWorld(
     stageWall,
     path,
     toScreenPosition,
+    cameraOrigin,
   } = frame;
 
   const mapWidth = map[0]?.length ?? 0;
@@ -84,8 +85,8 @@ export function drawWorld(
       }
 
       const tile = map[worldY][worldX];
-      const tileDrawX = offsetX + vx * tileSize;
-      const tileDrawY = offsetY + vy * tileSize;
+      const tileDrawX = Math.round(offsetX + (worldX - cameraOrigin.x) * tileSize);
+      const tileDrawY = Math.round(offsetY + (worldY - cameraOrigin.y) * tileSize);
 
       if (tile === TileType.WALL) {
         spriteRenderer.drawSprite(ctx, stageWall, tileDrawX, tileDrawY, spriteScale);
@@ -113,12 +114,8 @@ export function drawWorld(
 
     for (let i = 0; i < path.length; i++) {
       const p = path[i];
-      const screenX = useFullMap
-        ? offsetX + p.x * tileSize + tileSize / 2
-        : (p.x - viewport.x) * tileSize + tileSize / 2;
-      const screenY = useFullMap
-        ? offsetY + p.y * tileSize + tileSize / 2
-        : (p.y - viewport.y) * tileSize + tileSize / 2;
+      const screenX = offsetX + (p.x - cameraOrigin.x) * tileSize + tileSize / 2;
+      const screenY = offsetY + (p.y - cameraOrigin.y) * tileSize + tileSize / 2;
 
       if (i === 0) {
         ctx.moveTo(screenX, screenY);

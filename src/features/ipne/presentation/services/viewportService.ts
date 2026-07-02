@@ -153,3 +153,33 @@ export function isPlayerInViewport(player: Position, viewport: Viewport): boolea
     relY < viewport.height
   );
 }
+
+/**
+ * 補間位置（小数タイル座標）を中心とした浮動小数のカメラ原点を計算する
+ *
+ * calculateViewport の実数版。整数タイル位置を渡すと calculateViewport の
+ * x/y と一致する（15/2 の floor=7 と 7.5-0.5 が同値のため）。
+ * マップ端のクランプ挙動も calculateViewport と同一。
+ *
+ * @param center - カメラ中心のタイル座標（補間済み・小数可）
+ * @param mapWidth - マップの幅（タイル数）
+ * @param mapHeight - マップの高さ（タイル数）
+ * @returns ビューポート左上のワールド座標（タイル単位・小数）
+ */
+export function calculateCameraOrigin(
+  center: Position,
+  mapWidth: number,
+  mapHeight: number
+): Position {
+  // タイル中心（+0.5）を画面中央に置くための原点
+  let x = center.x + 0.5 - VIEWPORT_CONFIG.tilesX / 2;
+  let y = center.y + 0.5 - VIEWPORT_CONFIG.tilesY / 2;
+
+  const maxX = Math.max(0, mapWidth - VIEWPORT_CONFIG.tilesX);
+  const maxY = Math.max(0, mapHeight - VIEWPORT_CONFIG.tilesY);
+
+  x = Math.max(0, Math.min(x, maxX));
+  y = Math.max(0, Math.min(y, maxY));
+
+  return { x, y };
+}

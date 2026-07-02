@@ -32,6 +32,8 @@ import {
 import type { BossWarningState } from '../effects';
 import { SpriteRenderer } from '../sprites';
 import { getActiveRewardEffects, AfterImageManager } from '../effects/stageVisual';
+import { HitStopManager } from '../effects/hitStop';
+import { VisualPositionTracker } from './render/visualPosition';
 
 // 分割コンポーネントのインポート
 import { GameHUD } from './GameHUD';
@@ -133,6 +135,10 @@ export const GameScreen: React.FC<{
   const effectManagerRef = useRef(new EffectManager());
   const lastAttackEffectKeyRef = useRef<string | null>(null);
   const lastDamageAtRef = useRef(0);
+  // 視覚位置トラッカー（描画位置補間用）
+  const visualPositionsRef = useRef(new VisualPositionTracker());
+  // ヒットストップマネージャー（打撃の重み演出用）
+  const hitStopRef = useRef(new HitStopManager());
 
   // 死亡エフェクト
   const deathEffectRef = useRef(new DeathEffect());
@@ -192,6 +198,13 @@ export const GameScreen: React.FC<{
     stageStartTimeRef.current = Date.now();
   }, [currentStage]);
 
+  // ステージ遷移時に視覚位置トラッカーとヒットストップを全クリア
+  // （新ステージで前ステージの補間位置や凍結状態を偽って持ち越さないため）
+  useEffect(() => {
+    visualPositionsRef.current.clear();
+    hitStopRef.current.clear();
+  }, [currentStage]);
+
   // 点滅表現用の再描画トリガー
   useEffect(() => {
     const interval = setInterval(() => {
@@ -207,7 +220,7 @@ export const GameScreen: React.FC<{
     rewardEffects, spriteRenderer, movementStateRef, effectManagerRef, deathEffectRef,
     bossWarningRef, afterImageManagerRef, stageStartTimeRef, dyingStartTimeRef,
     playerAttackUntilRef, playerDamageUntilRef, lastAttackEffectKeyRef, lastDamageAtRef,
-    floatingTextManagerRef, comboStateRef, effectQueueRef,
+    floatingTextManagerRef, comboStateRef, effectQueueRef, visualPositionsRef, hitStopRef,
   });
 
   const isAttackReady = renderTime >= player.attackCooldownUntil;

@@ -11,6 +11,7 @@ import {
   drawParticles,
 } from './particleSystem';
 import { EFFECT_FACTORIES } from './effectFactories';
+import { computeShakeOffset } from './shake';
 
 /** パーティクル上限数 */
 const MAX_PARTICLES = 200;
@@ -58,6 +59,23 @@ export class EffectManager {
 
     // 元と同じく factory ブロックの後で常に呼ぶ（未処理タイプでも実行）
     this.enforceParticleLimit();
+  }
+
+  /** 前回 updateAt 呼び出し時のタイムスタンプ（実経過時間の算出用） */
+  private lastUpdateAt?: number;
+
+  /**
+   * タイムスタンプから実経過時間を算出して更新する
+   *
+   * rAF 駆動（可変フレームレート）用。凍結された now が渡された場合は
+   * デルタ 0 となり、パーティクル等が自然に静止する（ヒットストップ対応）。
+   */
+  updateAt(now: number): void {
+    const deltaSec = this.lastUpdateAt === undefined
+      ? 0
+      : Math.min(0.1, Math.max(0, (now - this.lastUpdateAt) / 1000));
+    this.lastUpdateAt = now;
+    this.update(deltaSec, now);
   }
 
   /**
@@ -154,15 +172,13 @@ export class EffectManager {
   /**
    * 現在の画面シェイクオフセットを取得する
    * シェイク中は {x, y} を返し、シェイク終了後は null を返す
+   *
+   * @param now - 現在時刻（ms）。凍結された時刻を渡すとシェイクも静止する
    */
-  getShakeOffset(): { x: number; y: number } | null {
+  getShakeOffset(now: number): { x: number; y: number } | null {
     for (const effect of this.effects) {
       if (effect.type === EffectType.SCREEN_SHAKE && effect.shakeIntensity && effect.shakeIntensity > 0.1) {
-        const intensity = effect.shakeIntensity;
-        return {
-          x: (Math.random() - 0.5) * 2 * intensity,
-          y: (Math.random() - 0.5) * 2 * intensity,
-        };
+        return computeShakeOffset(effect.shakeIntensity, now - effect.startTime, effect.shakeDirection);
       }
     }
     return null;

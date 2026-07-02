@@ -5,6 +5,8 @@
  * effectManagerRef 等の ref を変更する副作用を持つため、呼び出し位置（敵とプレイヤーの間）を厳守する。
  */
 import { EffectType, calculatePowerLevel } from '../../effects';
+import { HIT_STOP_DURATIONS } from '../../effects/hitStop';
+import { DIRECTION_VECTORS } from '../../sprites/motion';
 import type { FrameContext } from './renderContext';
 
 /**
@@ -19,10 +21,12 @@ export function combatEffects(frame: FrameContext): void {
     ctx,
     canvas,
     now,
+    realNow,
     player,
     attackEffect,
     lastDamageAt,
     effectManagerRef,
+    hitStopRef,
     playerAttackUntilRef,
     playerDamageUntilRef,
     lastAttackEffectKeyRef,
@@ -35,7 +39,8 @@ export function combatEffects(frame: FrameContext): void {
   const em = effectManagerRef.current;
 
   // 攻撃ヒットエフェクトのトリガー（パワーレベルスケーリング）
-  if (attackEffect && now < attackEffect.until) {
+  // トリガー検知は realNow（凍結の影響を受けない実時刻）で行う
+  if (attackEffect && realNow < attackEffect.until) {
     const key = `${attackEffect.position.x}-${attackEffect.position.y}-${attackEffect.until}`;
     if (lastAttackEffectKeyRef.current !== key) {
       lastAttackEffectKeyRef.current = key;
@@ -43,17 +48,26 @@ export function combatEffects(frame: FrameContext): void {
       const screenPos = toScreenPosition(attackEffect.position);
       const powerLevel = calculatePowerLevel(player);
       em.addEffect(EffectType.ATTACK_HIT, screenPos.x, screenPos.y, now, { powerLevel });
+      // 攻撃方向への小さな画面キック（打撃感）
+      em.addEffect(EffectType.SCREEN_SHAKE, 0, 0, now, {
+        damage: 2,
+        shakeDirection: DIRECTION_VECTORS[player.direction as keyof typeof DIRECTION_VECTORS],
+      });
+      // ヒットストップ（打撃の重み）
+      hitStopRef.current.trigger(realNow, HIT_STOP_DURATIONS.attackHit);
     }
   }
 
   // ダメージエフェクトのトリガー
   if (lastDamageAt > lastDamageAtRef.current) {
     lastDamageAtRef.current = lastDamageAt;
-    playerDamageUntilRef.current = now + 200; // 被弾フレーム200ms表示
+    playerDamageUntilRef.current = realNow + 200; // 被弾フレーム200ms表示
     const screenPos = toScreenPosition(player);
     em.addEffect(EffectType.DAMAGE, screenPos.x, screenPos.y, now);
     // 画面シェイク（Phase 4）
     em.addEffect(EffectType.SCREEN_SHAKE, 0, 0, now, { damage: 4 });
+    // ヒットストップ（被弾の衝撃）
+    hitStopRef.current.trigger(realNow, HIT_STOP_DURATIONS.playerDamage);
   }
 
   // 外部エフェクトキューの処理
@@ -67,12 +81,15 @@ export function combatEffects(frame: FrameContext): void {
         variant: evt.variant as 'melee' | 'ranged' | 'boss' | undefined,
         itemType: evt.itemType as import('../../../types').ItemTypeValue | undefined,
       });
+      if (evt.type === EffectType.BOSS_KILL) {
+        hitStopRef.current.trigger(realNow, HIT_STOP_DURATIONS.bossKill);
+      }
     }
     effectQueueRef.current = [];
   }
 
-  // エフェクト更新・描画（100ms 間隔）
-  em.update(0.1, now);
+  // エフェクト更新・描画（実経過時間ベース。凍結中はデルタ0で静止）
+  em.updateAt(now);
   em.draw(ctx, canvas.width, canvas.height);
 
   // フローティングテキスト更新・描画

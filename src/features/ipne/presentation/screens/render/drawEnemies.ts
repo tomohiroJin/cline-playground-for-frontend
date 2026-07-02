@@ -76,6 +76,7 @@ export function drawEnemies(frame: FrameContext): void {
     now,
     spriteRenderer,
     attackEffect,
+    visualPositionsRef,
   } = frame;
 
   // 敵描画（T-02.3: スプライト描画）
@@ -89,7 +90,8 @@ export function drawEnemies(frame: FrameContext): void {
       if (!useFullMap) continue;
     }
 
-    const enemyScreen = toScreenPosition(enemy);
+    const enemyVisual = visualPositionsRef.current.resolve(`enemy-${enemy.id}`, enemy, now);
+    const enemyScreen = toScreenPosition(enemyVisual);
     const enemySpriteSize =
       enemy.type === EnemyType.MEGA_BOSS ? SPRITE_SIZES.megaBoss :
       enemy.type === EnemyType.BOSS ? SPRITE_SIZES.boss :

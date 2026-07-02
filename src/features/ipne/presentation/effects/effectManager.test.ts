@@ -139,7 +139,7 @@ describe('EffectManager', () => {
   describe('getShakeOffset', () => {
     it('シェイク中はオフセットを返す', () => {
       manager.addEffect(EffectType.SCREEN_SHAKE, 0, 0, 1000, { damage: 4 });
-      const offset = manager.getShakeOffset();
+      const offset = manager.getShakeOffset(1050);
       expect(offset).not.toBeNull();
       if (offset) {
         expect(typeof offset.x).toBe('number');
@@ -148,7 +148,7 @@ describe('EffectManager', () => {
     });
 
     it('シェイクなしではnullを返す', () => {
-      const offset = manager.getShakeOffset();
+      const offset = manager.getShakeOffset(1000);
       expect(offset).toBeNull();
     });
 
@@ -156,7 +156,7 @@ describe('EffectManager', () => {
       manager.addEffect(EffectType.SCREEN_SHAKE, 0, 0, 1000, { damage: 2 });
       // 200ms超で持続時間終了
       manager.update(0.3, 1300);
-      const offset = manager.getShakeOffset();
+      const offset = manager.getShakeOffset(1300);
       expect(offset).toBeNull();
     });
   });
@@ -277,6 +277,40 @@ describe('EffectManager', () => {
       const m = new EffectManager();
       m.addEffect(EffectType.ENEMY_DEATH, 0, 0, 1000);
       expect(m.getEffectCount()).toBe(0);
+    });
+  });
+
+  describe('updateAt', () => {
+    it('前回時刻からの実経過秒で更新する', () => {
+      const em = new EffectManager();
+      em.addEffect(EffectType.DAMAGE, 100, 100, 1000);
+      em.updateAt(1000); // 初回はデルタ0
+      em.updateAt(1050); // 50ms 経過
+      // 例外なく生存していること（DAMAGE duration=400ms）
+      expect(em.getEffectCount()).toBe(1);
+    });
+
+    it('now が進まない場合（凍結中）はデルタ0で更新する', () => {
+      const em = new EffectManager();
+      em.addEffect(EffectType.DAMAGE, 100, 100, 1000);
+      em.updateAt(1050);
+      const before = em.getEffects()[0].particles.map((p) => ({ x: p.x, y: p.y }));
+      em.updateAt(1050); // 同時刻 → パーティクルは動かない
+      const after = em.getEffects()[0].particles.map((p) => ({ x: p.x, y: p.y }));
+      expect(after).toEqual(before);
+    });
+
+    it('経過時間に比例した実移動量でパーティクルが動く（vx * 秒）', () => {
+      const em = new EffectManager();
+      em.addEffect(EffectType.DAMAGE, 100, 100, 1000);
+      em.updateAt(1000); // 初回はデルタ0で lastUpdateAt を確定
+      const before = em.getEffects()[0].particles.map((p) => ({ x: p.x, vx: p.vx }));
+      em.updateAt(1100); // 100ms = 0.1秒経過
+      const after = em.getEffects()[0].particles.map((p) => ({ x: p.x }));
+      // x は重力の影響を受けないため vx * 0.1 の移動量で検証する
+      before.forEach((p, i) => {
+        expect(after[i].x).toBeCloseTo(p.x + p.vx * 0.1, 5);
+      });
     });
   });
 });
