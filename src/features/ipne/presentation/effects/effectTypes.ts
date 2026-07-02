@@ -71,6 +71,8 @@ export interface GameEffect {
   shakeIntensity?: number;
   /** 画面シェイク減衰率（秒あたり） */
   shakeDecay?: number;
+  /** 画面シェイクの方向（省略時は無方向振動） */
+  shakeDirection?: { x: number; y: number };
   /** 低HP警告パルスの位相 (0.0〜2π) */
   pulsePhase?: number;
   /** 画面フラッシュの色（レベルアップ演出用） */
@@ -93,6 +95,8 @@ export interface EffectOptions {
   comboMultiplier?: number;
   /** アイテム種類（アイテム取得エフェクト用） */
   itemType?: import('../../types').ItemTypeValue;
+  /** 画面シェイクの方向（ヒット方向。省略時は無方向） */
+  shakeDirection?: { x: number; y: number };
 }
 
 /** エフェクト設定 */

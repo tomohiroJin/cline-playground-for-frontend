@@ -139,7 +139,7 @@ describe('EffectManager', () => {
   describe('getShakeOffset', () => {
     it('シェイク中はオフセットを返す', () => {
       manager.addEffect(EffectType.SCREEN_SHAKE, 0, 0, 1000, { damage: 4 });
-      const offset = manager.getShakeOffset();
+      const offset = manager.getShakeOffset(1050);
       expect(offset).not.toBeNull();
       if (offset) {
         expect(typeof offset.x).toBe('number');
@@ -148,7 +148,7 @@ describe('EffectManager', () => {
     });
 
     it('シェイクなしではnullを返す', () => {
-      const offset = manager.getShakeOffset();
+      const offset = manager.getShakeOffset(1000);
       expect(offset).toBeNull();
     });
 
@@ -156,7 +156,7 @@ describe('EffectManager', () => {
       manager.addEffect(EffectType.SCREEN_SHAKE, 0, 0, 1000, { damage: 2 });
       // 200ms超で持続時間終了
       manager.update(0.3, 1300);
-      const offset = manager.getShakeOffset();
+      const offset = manager.getShakeOffset(1300);
       expect(offset).toBeNull();
     });
   });

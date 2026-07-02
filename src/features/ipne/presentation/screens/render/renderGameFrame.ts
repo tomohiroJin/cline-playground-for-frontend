@@ -149,7 +149,7 @@ export function renderGameFrame(rc: RenderContext): void {
   const playerScreen = toScreenPosition(playerVisual);
 
   // シェイクオフセット取得（drawWorld で save/translate、後段で restore するため両側で参照）
-  const shakeOffset = effectManagerRef.current.getShakeOffset();
+  const shakeOffset = effectManagerRef.current.getShakeOffset(visualNow);
 
   // FrameContext を構築してワールド描画層へ渡す
   // now はヒットストップ凍結後の visualNow に差し替える（描画・補間はすべて凍結対象）

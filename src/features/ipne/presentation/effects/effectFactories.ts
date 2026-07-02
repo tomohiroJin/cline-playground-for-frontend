@@ -240,6 +240,7 @@ const createScreenShakeEffect: EffectFactory = ({ id, now, options }) => {
       particles: [],
       shakeIntensity: intensity,
       shakeDecay: intensity / 0.2,
+      shakeDirection: options?.shakeDirection,
     },
   };
 };

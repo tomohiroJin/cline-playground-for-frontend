@@ -6,6 +6,7 @@
  */
 import { EffectType, calculatePowerLevel } from '../../effects';
 import { HIT_STOP_DURATIONS } from '../../effects/hitStop';
+import { DIRECTION_VECTORS } from '../../sprites/motion';
 import type { FrameContext } from './renderContext';
 
 /**
@@ -47,6 +48,11 @@ export function combatEffects(frame: FrameContext): void {
       const screenPos = toScreenPosition(attackEffect.position);
       const powerLevel = calculatePowerLevel(player);
       em.addEffect(EffectType.ATTACK_HIT, screenPos.x, screenPos.y, now, { powerLevel });
+      // 攻撃方向への小さな画面キック（打撃感）
+      em.addEffect(EffectType.SCREEN_SHAKE, 0, 0, now, {
+        damage: 2,
+        shakeDirection: DIRECTION_VECTORS[player.direction as keyof typeof DIRECTION_VECTORS],
+      });
       // ヒットストップ（打撃の重み）
       hitStopRef.current.trigger(realNow, HIT_STOP_DURATIONS.attackHit);
     }

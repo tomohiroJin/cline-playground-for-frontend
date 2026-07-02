@@ -11,6 +11,7 @@ import {
   drawParticles,
 } from './particleSystem';
 import { EFFECT_FACTORIES } from './effectFactories';
+import { computeShakeOffset } from './shake';
 
 /** パーティクル上限数 */
 const MAX_PARTICLES = 200;
@@ -171,15 +172,13 @@ export class EffectManager {
   /**
    * 現在の画面シェイクオフセットを取得する
    * シェイク中は {x, y} を返し、シェイク終了後は null を返す
+   *
+   * @param now - 現在時刻（ms）。凍結された時刻を渡すとシェイクも静止する
    */
-  getShakeOffset(): { x: number; y: number } | null {
+  getShakeOffset(now: number): { x: number; y: number } | null {
     for (const effect of this.effects) {
       if (effect.type === EffectType.SCREEN_SHAKE && effect.shakeIntensity && effect.shakeIntensity > 0.1) {
-        const intensity = effect.shakeIntensity;
-        return {
-          x: (Math.random() - 0.5) * 2 * intensity,
-          y: (Math.random() - 0.5) * 2 * intensity,
-        };
+        return computeShakeOffset(effect.shakeIntensity, now - effect.startTime, effect.shakeDirection);
       }
     }
     return null;
