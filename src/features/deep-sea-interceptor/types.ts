@@ -56,6 +56,8 @@ export interface Enemy extends BaseEntity {
   canShoot: boolean;
   fireRate: number;
   lastShotAt: number;
+  /** 最後に被弾した時刻（被弾フラッシュ演出用）。0 は未被弾 */
+  lastHitAt?: number;
   movementPattern: number;
   angle: number;
   bossPhase: number;

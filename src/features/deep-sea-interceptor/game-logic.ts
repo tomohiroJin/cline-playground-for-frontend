@@ -312,6 +312,7 @@ export function processBulletEnemyCollisions(
   enemies: Enemy[],
   currentCombo: number,
   diffConfig: { scoreMultiplier: number },
+  now: number = Date.now(),
 ): CollisionResult {
   const audioEvents: AudioEvent[] = [];
   const newItems: Item[] = [];
@@ -326,6 +327,8 @@ export function processBulletEnemyCollisions(
 
   // 敵の HP を一時コピー（ミューテーション回避）
   const enemyHps = enemies.map(e => e.hp);
+  // 非致死ヒットで被弾した敵の時刻を記録（被弾フラッシュ用）
+  const hitTimes: (number | null)[] = enemies.map(() => null);
 
   const survivingBullets = bullets.filter(b => {
     let hit = false;
@@ -369,6 +372,7 @@ export function processBulletEnemyCollisions(
           }
         } else {
           audioEvents.push({ name: 'hit' });
+          hitTimes[idx] = now;
         }
       }
     });
@@ -377,7 +381,7 @@ export function processBulletEnemyCollisions(
 
   // HP を反映した敵リスト
   const survivingEnemies = enemies
-    .map((e, idx) => ({ ...e, hp: enemyHps[idx] }))
+    .map((e, idx) => ({ ...e, hp: enemyHps[idx], lastHitAt: hitTimes[idx] ?? e.lastHitAt }))
     .filter(e => e.hp > 0);
 
   return {
@@ -824,7 +828,7 @@ export function updateFrame(
   }
 
   // 衝突判定: 弾 → 敵（サブ関数利用）
-  const collisionResult = processBulletEnemyCollisions(gd.bullets, gd.enemies, gd.combo, diffConfig);
+  const collisionResult = processBulletEnemyCollisions(gd.bullets, gd.enemies, gd.combo, diffConfig, now);
   gd.bullets = collisionResult.bullets;
   gd.enemies = collisionResult.enemies;
   gd.combo = collisionResult.comboState.combo;

@@ -176,6 +176,24 @@ describe('processBulletEnemyCollisions', () => {
     expect(result.enemies).toHaveLength(1); // 生存
     expect(result.particles).toHaveLength(0); // バーストなし
   });
+
+  test('撃破に至らない被弾で生存敵の lastHitAt が now に更新される', () => {
+    const bullet = EntityFactory.bullet(100, 100);
+    const enemy = EntityFactory.enemy('tank', 100, 100); // hp5、damage1 では生存
+    const diffConfig = DifficultyConfig['standard'];
+    const now = 12345;
+    const result = processBulletEnemyCollisions([bullet], [enemy], 0, diffConfig, now);
+    expect(result.enemies).toHaveLength(1);
+    expect(result.enemies[0].lastHitAt).toBe(now);
+  });
+
+  test('被弾していない敵の lastHitAt は据え置き', () => {
+    const bullet = EntityFactory.bullet(9999, 9999); // 遠方でヒットしない
+    const enemy = EntityFactory.enemy('tank', 100, 100);
+    const diffConfig = DifficultyConfig['standard'];
+    const result = processBulletEnemyCollisions([bullet], [enemy], 0, diffConfig, 12345);
+    expect(result.enemies[0].lastHitAt).toBe(0); // ファクトリ初期値
+  });
 });
 
 describe('processItemCollection', () => {
