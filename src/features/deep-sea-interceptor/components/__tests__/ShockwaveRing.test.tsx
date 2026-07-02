@@ -9,11 +9,11 @@ describe('ShockwaveRing', () => {
     expect(ring).toBeInTheDocument();
   });
 
-  test('指定した色が border と発光フィルタに反映される', () => {
+  test('指定した色が border と発光（box-shadow）に反映される', () => {
     const { getByTestId } = render(<ShockwaveRing x={400} y={180} color="#ff8" />);
     const ring = getByTestId('shockwave-ring');
-    // 発光フィルタ（neonGlow）には渡した色がそのまま含まれる
-    expect(ring.style.filter).toContain('#ff8');
+    // 発光（box-shadow）には渡した色がそのまま含まれる
+    expect(ring.style.boxShadow).toContain('#ff8');
     expect(ring.style.borderColor).toBeTruthy();
   });
 });
