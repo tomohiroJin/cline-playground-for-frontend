@@ -153,7 +153,7 @@ function applyGamepadToMallet(
  * - callbacks: React state 更新コールバック
  */
 export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGameLoopParams): void {
-  const { difficulty: diff, field, winScore, getSound, bgmEnabled, gameMode, aiConfig, playerMalletColor, cpuMalletColor, allyControlType, allyCharacterId, enemyCharacter1Id, enemyCharacter2Id, enemy1ControlType, enemy2ControlType } = config;
+  const { difficulty: diff, field, winScore, getSound, bgmEnabled, gameMode, aiConfig, playerMalletColor, cpuMalletColor, allyControlType, allyCharacterId, enemyCharacter1Id, enemyCharacter2Id, enemy1ControlType, enemy2ControlType, reducedMotion = false } = config;
   const pColor = playerMalletColor ?? DEFAULT_PLAYER_MALLET_COLOR;
   const cColor = cpuMalletColor ?? DEFAULT_CPU_MALLET_COLOR;
   const {
@@ -223,7 +223,6 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
     const obstacles = field.obstacles;
 
     // reduced-motion 時は打撃の強い動き（shake / hitStop / 振動）を抑制する
-    const reducedMotion = config.reducedMotion ?? false;
 
     // シェイクをトリガーするヘルパー
     const triggerShake = (intensity: number, duration: number) => {
@@ -1088,7 +1087,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
   }, [screen, diff, field, winScore, showHelp, getSound,
       gameRef, canvasRef, lastInputRef, scoreRef,
       setScores, setWinner, setScreen, setShowHelp,
-      phaseRef, countdownStartRef, shakeRef, setShake, bgmEnabled,
+      phaseRef, countdownStartRef, shakeRef, setShake, bgmEnabled, reducedMotion,
       statsRef, matchStartRef, keysRef,
       is2PMode, is2v2Mode, pColor, cColor, playerTargetRef, player2KeysRef, multiTouchRef, aiConfig,
       allyControlType, allyCharacterId, enemyCharacter1Id, enemyCharacter2Id, enemy1ControlType, enemy2ControlType, gamepadToastRef]);
