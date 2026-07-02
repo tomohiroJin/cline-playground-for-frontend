@@ -20,6 +20,7 @@ import {
 } from '../../sprites';
 import type { RenderContext, FrameContext } from './renderContext';
 import type { Position, Viewport } from '../../../index';
+import { calculateCameraOrigin } from '../../services/viewportService';
 import { drawWorld } from './drawWorld';
 import { drawEnemies } from './drawEnemies';
 import { combatEffects } from './combatEffects';
@@ -38,10 +39,12 @@ export function renderGameFrame(rc: RenderContext): void {
     canvasWrapperRef,
     map,
     player,
+    enemies,
     goalPos,
     debugState,
     currentStage,
     effectManagerRef,
+    visualPositionsRef,
   } = rc;
 
   // 空マップの場合は描画しない
@@ -87,6 +90,24 @@ export function renderGameFrame(rc: RenderContext): void {
     canvas.height = canvasSize.height;
   }
 
+  // 視覚位置の解決（論理タイル座標 → 補間座標）とエントリ掃除
+  const tracker = visualPositionsRef.current;
+  const activeIds = new Set<string>(['player']);
+  for (const enemy of enemies) activeIds.add(`enemy-${enemy.id}`);
+  tracker.prune(activeIds);
+  const playerVisual = tracker.resolve('player', player, rc.now);
+
+  // カメラ原点（通常時は補間位置追従、全体マップ時は原点固定）
+  const cameraOrigin: Position = useFullMap
+    ? { x: 0, y: 0 }
+    : calculateCameraOrigin(playerVisual, mapWidth, mapHeight);
+
+  // ビューポートの整数原点はタイルループの起点に使うため、補間カメラの整数部に合わせる（通常時のみ）
+  if (!useFullMap) {
+    viewport.x = Math.floor(cameraOrigin.x);
+    viewport.y = Math.floor(cameraOrigin.y);
+  }
+
   // スタート位置を探す（パス描画用）
   let startPos: Position | null = null;
   for (let y = 0; y < mapHeight && !startPos; y++) {
@@ -105,29 +126,22 @@ export function renderGameFrame(rc: RenderContext): void {
   }
 
   // マップ描画（T-02.2: スプライト描画）
-  const drawWidth = useFullMap ? mapWidth : viewport.width;
-  const drawHeight = useFullMap ? mapHeight : viewport.height;
+  // カメラの小数部で右端・下端に隙間ができないよう、描画タイルを1つ広げる
+  const drawWidth = useFullMap ? mapWidth : viewport.width + 1;
+  const drawHeight = useFullMap ? mapHeight : viewport.height + 1;
   const spriteScale = tileSize / SPRITE_SIZES.base;
 
   // ステージ別パレットのタイルスプライトを使用
   const stageFloor = currentStage ? getStageFloorSprite(currentStage) : FLOOR_SPRITE;
   const stageWall = currentStage ? getStageWallSprite(currentStage) : WALL_SPRITE;
 
-  const toScreenPosition = (pos: Position): Position => {
-    if (useFullMap) {
-      return {
-        x: offsetX + pos.x * tileSize + tileSize / 2,
-        y: offsetY + pos.y * tileSize + tileSize / 2,
-      };
-    }
-    return {
-      x: (pos.x - viewport.x) * tileSize + tileSize / 2,
-      y: (pos.y - viewport.y) * tileSize + tileSize / 2,
-    };
-  };
+  const toScreenPosition = (pos: Position): Position => ({
+    x: Math.round(offsetX + (pos.x - cameraOrigin.x) * tileSize + tileSize / 2),
+    y: Math.round(offsetY + (pos.y - cameraOrigin.y) * tileSize + tileSize / 2),
+  });
 
-  // プレイヤーのスクリーン座標を先行計算（FrameContext 構築に必要）
-  const playerScreen = toScreenPosition(player);
+  // プレイヤーのスクリーン座標を補間位置で計算（FrameContext 構築に必要）
+  const playerScreen = toScreenPosition(playerVisual);
 
   // シェイクオフセット取得（drawWorld で save/translate、後段で restore するため両側で参照）
   const shakeOffset = effectManagerRef.current.getShakeOffset();
@@ -137,6 +151,7 @@ export function renderGameFrame(rc: RenderContext): void {
     ...rc,
     viewport, tileSize, offsetX, offsetY, useFullMap, drawWidth, drawHeight,
     spriteScale, stageFloor, stageWall, startPos, path, playerScreen, toScreenPosition,
+    cameraOrigin,
   };
 
   // ワールド描画（背景・マップ・パス・罠・壁・アイテム）
