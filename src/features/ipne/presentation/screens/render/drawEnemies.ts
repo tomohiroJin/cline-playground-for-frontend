@@ -22,6 +22,10 @@ import {
   CHARGE_RUSH_FRAME,
   RANGED_CAST_FRAME,
   SPECIMEN_MUTATE_FRAME,
+  PATROL_DAMAGE_FRAME,
+  CHARGE_DAMAGE_FRAME,
+  RANGED_DAMAGE_FRAME,
+  SPECIMEN_DAMAGE_FRAME,
   BOSS_ATTACK_FRAME,
   BOSS_DAMAGE_FRAME,
   MINI_BOSS_ATTACK_FRAME,
@@ -51,6 +55,10 @@ function getEnemyStateFrame(enemyType: string, enemyState: string): SpriteDefini
   }
   if (enemyState === EnemyState.KNOCKBACK) {
     switch (enemyType) {
+      case EnemyType.PATROL: return PATROL_DAMAGE_FRAME;
+      case EnemyType.CHARGE: return CHARGE_DAMAGE_FRAME;
+      case EnemyType.RANGED: return RANGED_DAMAGE_FRAME;
+      case EnemyType.SPECIMEN: return SPECIMEN_DAMAGE_FRAME;
       case EnemyType.BOSS: return BOSS_DAMAGE_FRAME;
       case EnemyType.MINI_BOSS: return MINI_BOSS_DAMAGE_FRAME;
       case EnemyType.MEGA_BOSS: return MEGA_BOSS_DAMAGE_FRAME;

@@ -1803,6 +1803,29 @@ export const PATROL_ATTACK_FRAME = applyEnemyPixelEdits({
 ]);
 
 /**
+ * パトロール敵 被弾フレーム: 体を横につぶし、目を×にした被弾リアクション
+ * 上部輪郭を1px下げて左右へ広げ、押しつぶされた質感を強調する
+ */
+export const PATROL_DAMAGE_FRAME = applyEnemyPixelEdits(patrolFrame1Base, [
+  { x: 12, y: 3, value: 0 },
+  { x: 19, y: 3, value: 0 },
+  { x: 9, y: 4, value: 4 },
+  { x: 22, y: 4, value: 4 },
+  { x: 10, y: 4, value: 3 },
+  { x: 21, y: 4, value: 3 },
+  { x: 8, y: 5, value: 4 },
+  { x: 23, y: 5, value: 4 },
+  { x: 13, y: 12, value: 1 },
+  { x: 18, y: 12, value: 1 },
+  { x: 14, y: 13, value: 1 },
+  { x: 17, y: 13, value: 1 },
+  { x: 14, y: 16, value: 1 },
+  { x: 17, y: 16, value: 1 },
+  { x: 13, y: 17, value: 1 },
+  { x: 18, y: 17, value: 1 },
+]);
+
+/**
  * 突進獣 チャージフレーム: 前傾突進姿勢
  * 角を突き出し、体が前方に大きく傾き、手足が後方に流れるデザイン
  */
@@ -1857,6 +1880,29 @@ export const CHARGE_RUSH_FRAME = applyEnemyPixelEdits({
   { x: 15, y: 15, value: 4 },
   { x: 11, y: 16, value: 1 },
   { x: 14, y: 16, value: 1 },
+]);
+
+/**
+ * 突進獣 被弾フレーム: 頭部をのけぞらせ口を開く被弾リアクション
+ * 角が後方へ流れ、口部の暗色が広がって咆哮するような表情になる
+ */
+export const CHARGE_DAMAGE_FRAME = applyEnemyPixelEdits(chargeFrame1Base, [
+  { x: 4, y: 2, value: 0 },
+  { x: 5, y: 2, value: 0 },
+  { x: 24, y: 2, value: 0 },
+  { x: 25, y: 2, value: 0 },
+  { x: 2, y: 3, value: 4 },
+  { x: 3, y: 3, value: 4 },
+  { x: 26, y: 3, value: 4 },
+  { x: 27, y: 3, value: 4 },
+  { x: 12, y: 16, value: 1 },
+  { x: 13, y: 16, value: 1 },
+  { x: 14, y: 16, value: 1 },
+  { x: 15, y: 16, value: 1 },
+  { x: 16, y: 16, value: 1 },
+  { x: 17, y: 16, value: 1 },
+  { x: 14, y: 18, value: 1 },
+  { x: 15, y: 18, value: 1 },
 ]);
 
 /**
@@ -1915,6 +1961,27 @@ export const RANGED_CAST_FRAME = applyEnemyPixelEdits({
 ]);
 
 /**
+ * 射手 被弾フレーム: 杖を下げた防御姿勢＋後傾リアクション
+ * 掲げていた腕を引っ込め、頭上の杖先端が後方へ縮む
+ */
+export const RANGED_DAMAGE_FRAME = applyEnemyPixelEdits(rangedFrame1Base, [
+  { x: 10, y: 6, value: 0 },
+  { x: 11, y: 6, value: 0 },
+  { x: 12, y: 6, value: 0 },
+  { x: 13, y: 6, value: 0 },
+  { x: 14, y: 6, value: 0 },
+  { x: 15, y: 6, value: 0 },
+  { x: 10, y: 7, value: 0 },
+  { x: 15, y: 7, value: 0 },
+  { x: 8, y: 16, value: 4 },
+  { x: 9, y: 16, value: 4 },
+  { x: 8, y: 17, value: 4 },
+  { x: 9, y: 17, value: 4 },
+  { x: 20, y: 0, value: 0 },
+  { x: 21, y: 0, value: 0 },
+]);
+
+/**
  * 標本 変異フレーム: 不規則なシルエットへの変異
  * クリスタルが歪み、不規則に突起が伸びる異常形態
  */
@@ -1967,6 +2034,27 @@ export const SPECIMEN_MUTATE_FRAME = applyEnemyPixelEdits({
   { x: 16, y: 18, value: 4 },
   { x: 14, y: 19, value: 2 },
   { x: 17, y: 19, value: 2 },
+]);
+
+/**
+ * 標本 被弾フレーム: クリスタル表面に亀裂が走る被弾リアクション
+ * 明色の斜め線を複数本追加し、ひび割れているように見せる
+ */
+export const SPECIMEN_DAMAGE_FRAME = applyEnemyPixelEdits(specimenFrame1Base, [
+  { x: 10, y: 9, value: 4 },
+  { x: 11, y: 10, value: 4 },
+  { x: 12, y: 11, value: 4 },
+  { x: 13, y: 12, value: 4 },
+  { x: 14, y: 13, value: 4 },
+  { x: 15, y: 14, value: 4 },
+  { x: 20, y: 9, value: 4 },
+  { x: 19, y: 10, value: 4 },
+  { x: 18, y: 11, value: 4 },
+  { x: 17, y: 12, value: 4 },
+  { x: 16, y: 13, value: 4 },
+  { x: 9, y: 18, value: 4 },
+  { x: 10, y: 19, value: 4 },
+  { x: 11, y: 20, value: 4 },
 ]);
 
 /**
@@ -2237,6 +2325,15 @@ export const BOSS_DAMAGE_FRAME = applyEnemyPixelEdits(bossDamageFrameBase, [
   { x: 26, y: 26, value: 4 },
   { x: 23, y: 26, value: 6 },
   { x: 24, y: 26, value: 6 },
+  // 被弾強調: 肩・翼付近のひび割れと体勢崩れ
+  { x: 12, y: 10, value: 1 },
+  { x: 13, y: 11, value: 1 },
+  { x: 14, y: 12, value: 1 },
+  { x: 34, y: 12, value: 1 },
+  { x: 33, y: 11, value: 1 },
+  { x: 32, y: 10, value: 1 },
+  { x: 20, y: 30, value: 1 },
+  { x: 27, y: 30, value: 1 },
 ]);
 
 export const MINI_BOSS_ATTACK_FRAME = applyEnemyPixelEdits(miniBossAttackFrameBase, [
@@ -2283,6 +2380,15 @@ export const MINI_BOSS_DAMAGE_FRAME = applyEnemyPixelEdits(miniBossDamageFrameBa
   { x: 20, y: 22, value: 5 },
   { x: 18, y: 24, value: 4 },
   { x: 21, y: 24, value: 4 },
+  // 被弾強調: 胴体のひび割れと体勢崩れ
+  { x: 12, y: 12, value: 1 },
+  { x: 13, y: 13, value: 1 },
+  { x: 26, y: 12, value: 1 },
+  { x: 27, y: 13, value: 1 },
+  { x: 16, y: 26, value: 1 },
+  { x: 17, y: 27, value: 1 },
+  { x: 22, y: 26, value: 1 },
+  { x: 23, y: 27, value: 1 },
 ]);
 
 /**
@@ -2453,6 +2559,15 @@ export const MEGA_BOSS_DAMAGE_FRAME = applyEnemyPixelEdits({
   { x: 31, y: 24, value: 5 },
   { x: 26, y: 26, value: 6 },
   { x: 29, y: 26, value: 6 },
+  // 被弾強調: 翼付け根・胴体のひび割れ
+  { x: 14, y: 14, value: 1 },
+  { x: 15, y: 15, value: 1 },
+  { x: 40, y: 14, value: 1 },
+  { x: 41, y: 15, value: 1 },
+  { x: 20, y: 34, value: 1 },
+  { x: 21, y: 35, value: 1 },
+  { x: 34, y: 34, value: 1 },
+  { x: 35, y: 35, value: 1 },
 ]);
 
 // ============================================================================
