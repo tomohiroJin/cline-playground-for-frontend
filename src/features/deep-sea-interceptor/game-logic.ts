@@ -312,7 +312,7 @@ export function processBulletEnemyCollisions(
   enemies: Enemy[],
   currentCombo: number,
   diffConfig: { scoreMultiplier: number },
-  now: number = Date.now(),
+  now: number,
 ): CollisionResult {
   const audioEvents: AudioEvent[] = [];
   const newItems: Item[] = [];
@@ -345,7 +345,7 @@ export function processBulletEnemyCollisions(
         if (enemyHps[idx] <= 0) {
           audioEvents.push({ name: 'destroy' });
           combo++;
-          comboTimer = Date.now();
+          comboTimer = now;
           maxCombo = Math.max(maxCombo, combo);
           const multiplier = Math.min(MAX_COMBO_MULTIPLIER, 1.0 + combo * COMBO_MULTIPLIER_INCREMENT);
           scoreDelta += Math.floor(e.points * multiplier * diffConfig.scoreMultiplier);
