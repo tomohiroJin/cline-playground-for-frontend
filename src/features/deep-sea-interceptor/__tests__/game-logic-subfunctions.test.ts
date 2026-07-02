@@ -84,16 +84,28 @@ describe('getMovementStrategy', () => {
     expect(getMovementStrategy('midboss3', 2)).toBe(MovementStrategies.boss);
   });
 
-  test('通常敵パターン0にはstraight戦略を返すこと', () => {
-    expect(getMovementStrategy('basic', 0)).toBe(MovementStrategies.straight);
+  test('basic は drift 戦略を返す', () => {
+    expect(getMovementStrategy('basic', 0)).toBe(MovementStrategies.drift);
   });
 
-  test('通常敵パターン1にはsine戦略を返すこと', () => {
-    expect(getMovementStrategy('basic', 1)).toBe(MovementStrategies.sine);
+  test('fast は weave 戦略を返す', () => {
+    expect(getMovementStrategy('fast', 0)).toBe(MovementStrategies.weave);
   });
 
-  test('通常敵パターン2にはdrift戦略を返すこと', () => {
-    expect(getMovementStrategy('basic', 2)).toBe(MovementStrategies.drift);
+  test('shooter は sine 戦略を返す', () => {
+    expect(getMovementStrategy('shooter', 0)).toBe(MovementStrategies.sine);
+  });
+
+  test('tank は straight 戦略を返す', () => {
+    expect(getMovementStrategy('tank', 0)).toBe(MovementStrategies.straight);
+  });
+
+  test('通常敵の動きは movementPattern に依存しない（型で決定）', () => {
+    expect(getMovementStrategy('basic', 0)).toBe(getMovementStrategy('basic', 2));
+  });
+
+  test('EnemyVisual 未定義の通常敵(mine)は movementPattern フォールバック', () => {
+    expect(getMovementStrategy('mine', 1)).toBe(MovementStrategies.sine);
   });
 });
 

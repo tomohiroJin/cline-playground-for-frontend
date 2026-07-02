@@ -93,4 +93,25 @@ describe('MovementStrategies', () => {
       expect(result.opacity).toBeCloseTo(0.297);
     });
   });
+
+  describe('MovementStrategies.weave', () => {
+    test('y は speed 分だけ下方向に進む', () => {
+      const e = { x: 100, y: 200, speed: 4 };
+      expect(MovementStrategies.weave(e).y).toBe(204);
+    });
+
+    test('x は y に応じた蛇行で変化する（振幅は sine より大きい）', () => {
+      const base = { x: 100, y: 200, speed: 4 };
+      const weaved = MovementStrategies.weave(base);
+      const sined = MovementStrategies.sine(base);
+      // weave の x 変位の大きさは sine の x 変位以上（同一入力で振幅が大きい）
+      expect(Math.abs(weaved.x - base.x)).toBeGreaterThanOrEqual(Math.abs(sined.x - base.x));
+    });
+
+    test('元のオブジェクトを破壊しない（純粋）', () => {
+      const e = { x: 100, y: 200, speed: 4 };
+      MovementStrategies.weave(e);
+      expect(e).toEqual({ x: 100, y: 200, speed: 4 });
+    });
+  });
 });

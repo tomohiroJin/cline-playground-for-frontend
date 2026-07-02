@@ -17,6 +17,13 @@ export const MovementStrategies = {
     x: e.x + Math.sin(e.y / 20) * 2,
   }),
 
+  /** 蛇行移動（sine より大きい振幅・短い周期の速い蛇行） */
+  weave: <T extends MovableEntity>(e: T): T => ({
+    ...e,
+    y: e.y + e.speed,
+    x: e.x + Math.sin(e.y / 10) * 4,
+  }),
+
   /** ドリフト移動（中央方向に寄る） */
   drift: <T extends MovableEntity>(e: T): T => ({
     ...e,

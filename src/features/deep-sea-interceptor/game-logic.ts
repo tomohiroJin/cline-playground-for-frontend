@@ -25,6 +25,7 @@ import {
 } from './constants';
 import { EntityFactory, randomChoice, isBoss, isMidboss } from './entities';
 import { MovementStrategies } from './movement';
+import { getEnemyVisual, type EnemyMovementKey } from './enemy-visual';
 import { Collision } from './collision';
 import { EnemyAI } from './enemy-ai';
 import type { GameState, UiState, Difficulty, Enemy, EnemyType, Bullet, EnemyBullet, Item, Position, AudioEvent } from './types';
@@ -238,7 +239,15 @@ export function updatePlayerPosition(
   };
 }
 
-/** 2-3: 敵タイプと移動パターンから移動戦略を取得 */
+/** 動きキー → 移動戦略の対応表 */
+const MOVEMENT_BY_KEY: Record<EnemyMovementKey, EnemyMoveFn> = {
+  straight: MovementStrategies.straight,
+  sine: MovementStrategies.sine,
+  drift: MovementStrategies.drift,
+  weave: MovementStrategies.weave,
+};
+
+/** 2-3: 敵タイプと移動パターンから移動戦略を取得（通常敵は型で決定） */
 export function getMovementStrategy(
   enemyType: EnemyType | string,
   movementPattern: number
@@ -246,6 +255,12 @@ export function getMovementStrategy(
   if (enemyType === 'boss' || enemyType.startsWith('boss') || enemyType.startsWith('midboss')) {
     return MovementStrategies.boss;
   }
+  // 通常敵4種は EnemyVisual の型別割り当てを使う（movementPattern 非依存で決定的）
+  const visual = getEnemyVisual(enemyType);
+  if (visual) {
+    return MOVEMENT_BY_KEY[visual.movement];
+  }
+  // EnemyVisual 未定義（mine 等）は従来の pattern フォールバック
   const strategies: readonly EnemyMoveFn[] = [
     MovementStrategies.straight,
     MovementStrategies.sine,
