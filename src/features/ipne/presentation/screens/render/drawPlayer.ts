@@ -23,6 +23,7 @@ import {
   computeWalkBob,
   computeSquash,
   computeAttackTransform,
+  selectProgressFrameIndex,
 } from '../../sprites/motion';
 import { drawGroundShadow } from './groundShadow';
 import type { EnhanceOptions } from '../../sprites';
@@ -122,11 +123,12 @@ export function drawPlayer(frame: FrameContext): void {
         // 攻撃アニメーション
         const attackSheets = pClass === 'warrior' ? WARRIOR_ATTACK_SPRITE_SHEETS : THIEF_ATTACK_SPRITE_SHEETS;
         const attackSheet = attackSheets[pDir];
-        const attackFrameIndex = Math.floor(now / attackSheet.frameDuration) % attackSheet.sprites.length;
 
         // 攻撃進行度（攻撃は until-ATTACK_DURATION_MS から ATTACK_DURATION_MS 継続）
         const atkElapsed = now - (playerAttackUntilRef.current - ATTACK_DURATION_MS);
         const atkProgress = atkElapsed / ATTACK_DURATION_MS;
+        // computeAttackTransform と時間基準を統一し、進行度ベースでフレームを選択する
+        const attackFrameIndex = selectProgressFrameIndex(atkProgress, attackSheet.sprites.length);
         const tf = computeAttackTransform(atkProgress, pDir);
         ctx.save();
         ctx.translate(tf.dx * spriteScale, tf.dy * spriteScale);

@@ -90,3 +90,15 @@ export function computeAttackTransform(progress: number, direction: Direction): 
   }
   return { dx: v.x * forward, dy: v.y * forward, scale };
 }
+
+/**
+ * 進行度（0..1）からアニメーションフレーム番号を選択する。
+ * free-running modulo と違い、モーションの開始・終了とフレームが同期する。
+ *
+ * @param progress 進行度 0..1（範囲外はクランプ）
+ * @param frameCount フレーム総数（正の整数であること）
+ */
+export function selectProgressFrameIndex(progress: number, frameCount: number): number {
+  const t = progress < 0 ? 0 : progress > 1 ? 1 : progress;
+  return Math.min(frameCount - 1, Math.floor(t * frameCount));
+}

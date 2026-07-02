@@ -63,4 +63,14 @@ describe('盗賊スプライト v3 の構造', () => {
       expect(THIEF_SPRITES[dir].sprites).toHaveLength(4);
     }
   });
+
+  it('攻撃シートは4フレームで、隣接フレームが互いに異なる', () => {
+    for (const dir of DIRECTIONS) {
+      const sheet = THIEF_ATTACK_SPRITE_SHEETS[dir];
+      expect(sheet.sprites).toHaveLength(4);
+      for (let i = 0; i < 3; i++) {
+        expect(sheet.sprites[i].pixels).not.toEqual(sheet.sprites[i + 1].pixels);
+      }
+    }
+  });
 });

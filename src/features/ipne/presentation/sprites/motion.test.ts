@@ -3,6 +3,7 @@ import {
   computeWalkBob,
   computeSquash,
   computeAttackTransform,
+  selectProgressFrameIndex,
   WALK_BOB_AMPLITUDE,
 } from './motion';
 
@@ -74,5 +75,25 @@ describe('computeAttackTransform', () => {
   it('は範囲外 progress をクランプする', () => {
     expect(computeAttackTransform(-5, 'left')).toEqual(computeAttackTransform(0, 'left'));
     expect(computeAttackTransform(5, 'left')).toEqual(computeAttackTransform(1, 'left'));
+  });
+});
+
+describe('selectProgressFrameIndex', () => {
+  it('進行度 0 で最初のフレーム、1 直前で最後のフレームを返す', () => {
+    expect(selectProgressFrameIndex(0, 4)).toBe(0);
+    expect(selectProgressFrameIndex(0.99, 4)).toBe(3);
+  });
+
+  it('進行度に応じて均等にフレームが切り替わる', () => {
+    expect(selectProgressFrameIndex(0.2, 4)).toBe(0);
+    expect(selectProgressFrameIndex(0.3, 4)).toBe(1);
+    expect(selectProgressFrameIndex(0.6, 4)).toBe(2);
+    expect(selectProgressFrameIndex(0.8, 4)).toBe(3);
+  });
+
+  it('範囲外はクランプする（1 以上でも最終フレーム）', () => {
+    expect(selectProgressFrameIndex(-0.5, 4)).toBe(0);
+    expect(selectProgressFrameIndex(1, 4)).toBe(3);
+    expect(selectProgressFrameIndex(1.5, 4)).toBe(3);
   });
 });
