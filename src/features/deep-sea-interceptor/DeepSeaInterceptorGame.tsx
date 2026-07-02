@@ -23,6 +23,7 @@ import BulletSprite from './components/BulletSprite';
 import EnemyBulletSprite from './components/EnemyBulletSprite';
 import HUD from './components/HUD';
 import TouchControls from './components/TouchControls';
+import ShockwaveRing from './components/ShockwaveRing';
 import { neonGlow } from './visuals';
 import type { WeaponType, Difficulty } from './types';
 
@@ -575,6 +576,11 @@ export default function DeepSeaInterceptorGame() {
           >
             BOSS DEFEATED!
           </div>
+        )}
+
+        {/* ボス撃破の衝撃波リング演出 */}
+        {gd.bossDefeated && (
+          <ShockwaveRing x={Config.canvas.width / 2} y={180} color="#ff8" />
         )}
 
         {/* STAGE CLEAR表示 */}
