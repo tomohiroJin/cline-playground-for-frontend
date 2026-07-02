@@ -100,12 +100,16 @@ describe('MovementStrategies', () => {
       expect(MovementStrategies.weave(e).y).toBe(204);
     });
 
-    test('x は y に応じた蛇行で変化する（振幅は sine より大きい）', () => {
-      const base = { x: 100, y: 200, speed: 4 };
-      const weaved = MovementStrategies.weave(base);
-      const sined = MovementStrategies.sine(base);
-      // weave の x 変位の大きさは sine の x 変位以上（同一入力で振幅が大きい）
-      expect(Math.abs(weaved.x - base.x)).toBeGreaterThanOrEqual(Math.abs(sined.x - base.x));
+    test('複数の y で weave の最大振幅は sine の最大振幅より大きい（係数4>2）', () => {
+      const xs = [10, 30, 55, 80, 125, 200];
+      const weaveMax = Math.max(
+        ...xs.map(y => Math.abs(MovementStrategies.weave({ x: 100, y, speed: 4 }).x - 100))
+      );
+      const sineMax = Math.max(
+        ...xs.map(y => Math.abs(MovementStrategies.sine({ x: 100, y, speed: 4 }).x - 100))
+      );
+      // weave 振幅係数 4 > sine 係数 2。十分な y 点を取れば最大振幅は 4 側が上回る
+      expect(weaveMax).toBeGreaterThan(sineMax);
     });
 
     test('元のオブジェクトを破壊しない（純粋）', () => {
