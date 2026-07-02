@@ -279,4 +279,25 @@ describe('EffectManager', () => {
       expect(m.getEffectCount()).toBe(0);
     });
   });
+
+  describe('updateAt', () => {
+    it('前回時刻からの実経過秒で更新する', () => {
+      const em = new EffectManager();
+      em.addEffect(EffectType.DAMAGE, 100, 100, 1000);
+      em.updateAt(1000); // 初回はデルタ0
+      em.updateAt(1050); // 50ms 経過
+      // 例外なく生存していること（DAMAGE duration=400ms）
+      expect(em.getEffectCount()).toBe(1);
+    });
+
+    it('now が進まない場合（凍結中）はデルタ0で更新する', () => {
+      const em = new EffectManager();
+      em.addEffect(EffectType.DAMAGE, 100, 100, 1000);
+      em.updateAt(1050);
+      const before = em.getEffects()[0].particles.map((p) => ({ x: p.x, y: p.y }));
+      em.updateAt(1050); // 同時刻 → パーティクルは動かない
+      const after = em.getEffects()[0].particles.map((p) => ({ x: p.x, y: p.y }));
+      expect(after).toEqual(before);
+    });
+  });
 });

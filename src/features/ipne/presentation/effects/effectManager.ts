@@ -60,6 +60,23 @@ export class EffectManager {
     this.enforceParticleLimit();
   }
 
+  /** 前回 updateAt 呼び出し時のタイムスタンプ（実経過時間の算出用） */
+  private lastUpdateAt?: number;
+
+  /**
+   * タイムスタンプから実経過時間を算出して更新する
+   *
+   * rAF 駆動（可変フレームレート）用。凍結された now が渡された場合は
+   * デルタ 0 となり、パーティクル等が自然に静止する（ヒットストップ対応）。
+   */
+  updateAt(now: number): void {
+    const deltaSec = this.lastUpdateAt === undefined
+      ? 0
+      : Math.min(0.1, Math.max(0, (now - this.lastUpdateAt) / 1000));
+    this.lastUpdateAt = now;
+    this.update(deltaSec, now);
+  }
+
   /**
    * 全エフェクトを更新する
    *

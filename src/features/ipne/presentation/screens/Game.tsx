@@ -32,6 +32,7 @@ import {
 import type { BossWarningState } from '../effects';
 import { SpriteRenderer } from '../sprites';
 import { getActiveRewardEffects, AfterImageManager } from '../effects/stageVisual';
+import { HitStopManager } from '../effects/hitStop';
 import { VisualPositionTracker } from './render/visualPosition';
 
 // 分割コンポーネントのインポート
@@ -136,6 +137,8 @@ export const GameScreen: React.FC<{
   const lastDamageAtRef = useRef(0);
   // 視覚位置トラッカー（描画位置補間用）
   const visualPositionsRef = useRef(new VisualPositionTracker());
+  // ヒットストップマネージャー（打撃の重み演出用）
+  const hitStopRef = useRef(new HitStopManager());
 
   // 死亡エフェクト
   const deathEffectRef = useRef(new DeathEffect());
@@ -210,7 +213,7 @@ export const GameScreen: React.FC<{
     rewardEffects, spriteRenderer, movementStateRef, effectManagerRef, deathEffectRef,
     bossWarningRef, afterImageManagerRef, stageStartTimeRef, dyingStartTimeRef,
     playerAttackUntilRef, playerDamageUntilRef, lastAttackEffectKeyRef, lastDamageAtRef,
-    floatingTextManagerRef, comboStateRef, effectQueueRef, visualPositionsRef,
+    floatingTextManagerRef, comboStateRef, effectQueueRef, visualPositionsRef, hitStopRef,
   });
 
   const isAttackReady = renderTime >= player.attackCooldownUntil;

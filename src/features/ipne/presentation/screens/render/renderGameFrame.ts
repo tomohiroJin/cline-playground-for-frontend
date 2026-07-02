@@ -45,10 +45,15 @@ export function renderGameFrame(rc: RenderContext): void {
     currentStage,
     effectManagerRef,
     visualPositionsRef,
+    hitStopRef,
   } = rc;
 
   // 空マップの場合は描画しない
   if (map.length === 0 || !map[0]) return;
+
+  // ヒットストップ: 描画用タイムスタンプを解決（凍結中は時が止まる）
+  const realNow = rc.now;
+  const visualNow = hitStopRef.current.resolveVisualNow(realNow);
 
   const mapWidth = map[0].length;
   const mapHeight = map.length;
@@ -95,7 +100,7 @@ export function renderGameFrame(rc: RenderContext): void {
   const activeIds = new Set<string>(['player']);
   for (const enemy of enemies) activeIds.add(`enemy-${enemy.id}`);
   tracker.prune(activeIds);
-  const playerVisual = tracker.resolve('player', player, rc.now);
+  const playerVisual = tracker.resolve('player', player, visualNow);
 
   // カメラ原点（通常時は補間位置追従、全体マップ時は原点固定）
   const cameraOrigin: Position = useFullMap
@@ -147,8 +152,11 @@ export function renderGameFrame(rc: RenderContext): void {
   const shakeOffset = effectManagerRef.current.getShakeOffset();
 
   // FrameContext を構築してワールド描画層へ渡す
+  // now はヒットストップ凍結後の visualNow に差し替える（描画・補間はすべて凍結対象）
   const frame: FrameContext = {
     ...rc,
+    now: visualNow,
+    realNow,
     viewport, tileSize, offsetX, offsetY, useFullMap, drawWidth, drawHeight,
     spriteScale, stageFloor, stageWall, startPos, path, playerScreen, toScreenPosition,
     cameraOrigin,

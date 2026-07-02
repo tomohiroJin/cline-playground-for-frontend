@@ -29,6 +29,7 @@ import type { FloatingTextManager } from '../../effects/floatingText';
 import type { ComboState } from '../../../domain/services/comboService';
 import type { EffectEvent } from '../GameModals';
 import type { VisualPositionTracker } from './visualPosition';
+import type { HitStopManager } from '../../effects/hitStop';
 
 /**
  * 描画 effect が closure で参照する値の集合。
@@ -105,6 +106,8 @@ export interface RenderContext {
   effectQueueRef?: React.MutableRefObject<EffectEvent[]>;
   /** 視覚位置トラッカー ref（描画位置補間用） */
   visualPositionsRef: React.MutableRefObject<VisualPositionTracker>;
+  /** ヒットストップマネージャー ref */
+  hitStopRef: React.MutableRefObject<HitStopManager>;
 }
 
 /**
@@ -142,4 +145,6 @@ export interface FrameContext extends RenderContext {
   toScreenPosition: (pos: Position) => Position;
   /** 浮動小数カメラ原点（タイル単位。全体マップ表示時は {x:0, y:0}） */
   cameraOrigin: Position;
+  /** 凍結を適用しない実タイムスタンプ（トリガー検知用） */
+  realNow: number;
 }
