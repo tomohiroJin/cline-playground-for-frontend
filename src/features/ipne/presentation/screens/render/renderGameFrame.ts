@@ -75,8 +75,9 @@ export function renderGameFrame(rc: RenderContext): void {
   if (useFullMap) {
     // 全体マップ表示：マップ全体が収まるようにタイルサイズを計算
     const canvasSize = getCanvasSize(dynamicTileSize);
-    canvas.width = canvasSize.width;
-    canvas.height = canvasSize.height;
+    // 同値でも width/height への代入はキャンバス全消去とコンテキスト状態リセットを引き起こすため、差分がある時のみ代入する
+    if (canvas.width !== canvasSize.width) canvas.width = canvasSize.width;
+    if (canvas.height !== canvasSize.height) canvas.height = canvasSize.height;
     tileSize = Math.min(
       Math.floor(canvasSize.width / mapWidth),
       Math.floor(canvasSize.height / mapHeight)
@@ -91,8 +92,9 @@ export function renderGameFrame(rc: RenderContext): void {
     viewport = calculateViewport(player, mapWidth, mapHeight, dynamicTileSize);
     tileSize = viewport.tileSize;
     const canvasSize = getCanvasSize(tileSize);
-    canvas.width = canvasSize.width;
-    canvas.height = canvasSize.height;
+    // 同値でも width/height への代入はキャンバス全消去とコンテキスト状態リセットを引き起こすため、差分がある時のみ代入する
+    if (canvas.width !== canvasSize.width) canvas.width = canvasSize.width;
+    if (canvas.height !== canvasSize.height) canvas.height = canvasSize.height;
   }
 
   // 視覚位置の解決（論理タイル座標 → 補間座標）とエントリ掃除

@@ -299,5 +299,18 @@ describe('EffectManager', () => {
       const after = em.getEffects()[0].particles.map((p) => ({ x: p.x, y: p.y }));
       expect(after).toEqual(before);
     });
+
+    it('経過時間に比例した実移動量でパーティクルが動く（vx * 秒）', () => {
+      const em = new EffectManager();
+      em.addEffect(EffectType.DAMAGE, 100, 100, 1000);
+      em.updateAt(1000); // 初回はデルタ0で lastUpdateAt を確定
+      const before = em.getEffects()[0].particles.map((p) => ({ x: p.x, vx: p.vx }));
+      em.updateAt(1100); // 100ms = 0.1秒経過
+      const after = em.getEffects()[0].particles.map((p) => ({ x: p.x }));
+      // x は重力の影響を受けないため vx * 0.1 の移動量で検証する
+      before.forEach((p, i) => {
+        expect(after[i].x).toBeCloseTo(p.x + p.vx * 0.1, 5);
+      });
+    });
   });
 });

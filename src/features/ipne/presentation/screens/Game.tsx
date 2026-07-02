@@ -198,6 +198,13 @@ export const GameScreen: React.FC<{
     stageStartTimeRef.current = Date.now();
   }, [currentStage]);
 
+  // ステージ遷移時に視覚位置トラッカーとヒットストップを全クリア
+  // （新ステージで前ステージの補間位置や凍結状態を偽って持ち越さないため）
+  useEffect(() => {
+    visualPositionsRef.current.clear();
+    hitStopRef.current.clear();
+  }, [currentStage]);
+
   // 点滅表現用の再描画トリガー
   useEffect(() => {
     const interval = setInterval(() => {

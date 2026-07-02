@@ -42,7 +42,7 @@ export interface RenderContext {
   canvas: HTMLCanvasElement;
   /** canvas を包む div の ref（サイズ取得用） */
   canvasWrapperRef: React.RefObject<HTMLDivElement | null>;
-  /** 描画タイムスタンプ（renderTime state の値） */
+  /** 描画タイムスタンプ（renderTime state の値）。FrameContext ではヒットストップで凍結した visualNow に上書きされる（凍結されない実時刻は realNow を参照） */
   now: number;
   /** ゲームマップ */
   map: GameMap;
