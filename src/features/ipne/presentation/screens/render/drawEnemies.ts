@@ -113,7 +113,7 @@ const RANGED_CAST_LIGHT_MAX_ALPHA = 0.4;
 /**
  * CHARGE の突進残像を描画する。
  *
- * 直近の位置遷移がワープ（2タイル超の跳躍）であれば、from→to 線分上の
+ * 直近の位置遷移がワープ（1.5タイル超（SNAP_DISTANCE_TILES）の跳躍）であれば、from→to 線分上の
  * 2点に本体スプライトを薄く重ね描きし、経過時間に応じて減衰させる。
  * 本体スプライトより先に呼ぶことで背後に配置する。
  */
@@ -159,7 +159,9 @@ function drawRangedCastLight(
 ): void {
   const radius = enemyDrawSize * 0.5;
   const feetY = screenY + enemyDrawSize / 2;
-  const alpha = RANGED_CAST_LIGHT_MAX_ALPHA * Math.min(1, windupProgress / ENEMY_WINDUP_RATIO);
+  // 負 progress（凍結中の攻撃開始）で globalAlpha に負値が入るのを防ぐ
+  const t = Math.max(0, Math.min(1, windupProgress / ENEMY_WINDUP_RATIO));
+  const alpha = RANGED_CAST_LIGHT_MAX_ALPHA * t;
 
   ctx.save();
   ctx.globalAlpha = alpha;

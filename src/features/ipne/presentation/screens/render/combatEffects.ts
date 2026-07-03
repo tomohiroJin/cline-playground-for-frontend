@@ -6,7 +6,7 @@
  */
 import { EffectType, calculatePowerLevel } from '../../effects';
 import { HIT_STOP_DURATIONS } from '../../effects/hitStop';
-import { DIRECTION_VECTORS } from '../../sprites/motion';
+import { DIRECTION_VECTORS, ATTACK_DURATION_MS } from '../../sprites/motion';
 import type { FrameContext } from './renderContext';
 
 /**
@@ -44,7 +44,11 @@ export function combatEffects(frame: FrameContext): void {
     const key = `${attackEffect.position.x}-${attackEffect.position.y}-${attackEffect.until}`;
     if (lastAttackEffectKeyRef.current !== key) {
       lastAttackEffectKeyRef.current = key;
-      playerAttackUntilRef.current = attackEffect.until;
+      // attackEffect.until（+150ms・斬撃エフェクト用の表示時間）とプレイヤーの
+      // 4段攻撃モーション（300ms）は独立した時間軸のため、until をそのまま流用せず
+      // realNow 起点で ATTACK_DURATION_MS を再計算する（起点ずれで前半フレームが
+      // 表示されない不具合を防ぐ）。
+      playerAttackUntilRef.current = realNow + ATTACK_DURATION_MS;
       const screenPos = toScreenPosition(attackEffect.position);
       const powerLevel = calculatePowerLevel(player);
       em.addEffect(EffectType.ATTACK_HIT, screenPos.x, screenPos.y, now, { powerLevel });

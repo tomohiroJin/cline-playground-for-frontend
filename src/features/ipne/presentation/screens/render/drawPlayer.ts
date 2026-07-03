@@ -24,13 +24,12 @@ import {
   computeSquash,
   computeAttackTransform,
   selectProgressFrameIndex,
+  computeAttackProgress,
+  ATTACK_DURATION_MS,
 } from '../../sprites/motion';
 import { drawGroundShadow } from './groundShadow';
 import type { EnhanceOptions } from '../../sprites';
 import type { FrameContext } from './renderContext';
-
-/** 攻撃アニメーションの継続時間（ms） */
-const ATTACK_DURATION_MS = 300;
 
 /** プレイヤー補正：手描きの陰影を尊重し輪郭線のみ付与 */
 const PLAYER_ENHANCE: EnhanceOptions = { outline: true, shade: false };
@@ -125,8 +124,7 @@ export function drawPlayer(frame: FrameContext): void {
         const attackSheet = attackSheets[pDir];
 
         // 攻撃進行度（攻撃は until-ATTACK_DURATION_MS から ATTACK_DURATION_MS 継続）
-        const atkElapsed = now - (playerAttackUntilRef.current - ATTACK_DURATION_MS);
-        const atkProgress = atkElapsed / ATTACK_DURATION_MS;
+        const atkProgress = computeAttackProgress(now, playerAttackUntilRef.current, ATTACK_DURATION_MS);
         // computeAttackTransform と時間基準を統一し、進行度ベースでフレームを選択する
         const attackFrameIndex = selectProgressFrameIndex(atkProgress, attackSheet.sprites.length);
         const tf = computeAttackTransform(atkProgress, pDir);
@@ -139,9 +137,8 @@ export function drawPlayer(frame: FrameContext): void {
         ctx.restore();
 
         // 武器光跡描画（攻撃アニメーション中のみ）
-        const attackElapsed = now - (playerAttackUntilRef.current - ATTACK_DURATION_MS);
-        const attackProgress = Math.min(1, Math.max(0, attackElapsed / ATTACK_DURATION_MS));
-        drawWeaponTrail(ctx, playerScreen.x, playerScreen.y, viewport.tileSize, player.direction, player.stats.attackPower, player.playerClass, attackProgress);
+        const attackElapsed = atkProgress * ATTACK_DURATION_MS;
+        drawWeaponTrail(ctx, playerScreen.x, playerScreen.y, viewport.tileSize, player.direction, player.stats.attackPower, player.playerClass, atkProgress);
 
         // 衝撃波描画（RADIANT ティアのみ、攻撃ヒット時）
         if (getWeaponTier(player.stats.attackPower) === WeaponTier.RADIANT) {
