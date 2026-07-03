@@ -74,19 +74,8 @@ export function selectEnemyAttackFrame(enemyType: string, progress: number): Spr
   return null;
 }
 
-/** 敵の状態に応じた特殊フレームを返す（Phase 3） */
+/** 敵のノックバック状態に応じたフレームを返す（KNOCKBACK 専用） */
 function getEnemyStateFrame(enemyType: string, enemyState: string): SpriteDefinition | null {
-  if (enemyState === EnemyState.ATTACK) {
-    switch (enemyType) {
-      case EnemyType.PATROL: return PATROL_ATTACK_FRAME;
-      case EnemyType.CHARGE: return CHARGE_RUSH_FRAME;
-      case EnemyType.RANGED: return RANGED_CAST_FRAME;
-      case EnemyType.SPECIMEN: return SPECIMEN_MUTATE_FRAME;
-      case EnemyType.BOSS: return BOSS_ATTACK_FRAME;
-      case EnemyType.MINI_BOSS: return MINI_BOSS_ATTACK_FRAME;
-      case EnemyType.MEGA_BOSS: return MEGA_BOSS_ATTACK_FRAME;
-    }
-  }
   if (enemyState === EnemyState.KNOCKBACK) {
     switch (enemyType) {
       case EnemyType.PATROL: return PATROL_DAMAGE_FRAME;
@@ -302,11 +291,13 @@ export function drawEnemies(frame: FrameContext): void {
 
     // 敵状態別フレーム選択（Phase 3）。攻撃中は attackAnimUntil から進行度を逆算し、
     // 前40%は溜め・後60%は攻撃の2段モーションにする（Phase 3-4）。
-    // attackAnimUntil が未設定の場合は従来の静的攻撃フレームへフォールバックする。
+    // attackAnimUntil が未設定の場合で ATTACK 状態なら、selectEnemyAttackFrame に進行度 1 で統一。
     const enemyStateFrame =
       attackProgress !== undefined
         ? selectEnemyAttackFrame(enemy.type, attackProgress)
-        : getEnemyStateFrame(enemy.type, enemy.state);
+        : enemy.state === EnemyState.ATTACK
+          ? selectEnemyAttackFrame(enemy.type, 1)
+          : getEnemyStateFrame(enemy.type, enemy.state);
 
     const drawSprite = (): void => {
       if (enemyStateFrame) {

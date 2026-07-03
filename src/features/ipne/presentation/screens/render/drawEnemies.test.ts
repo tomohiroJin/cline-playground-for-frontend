@@ -53,4 +53,8 @@ describe('selectEnemyAttackFrame', () => {
   it('未知の敵タイプは null を返す', () => {
     expect(selectEnemyAttackFrame('unknown', 0.5)).toBeNull();
   });
+
+  it('attackAnimUntil 未設定の ATTACK は攻撃フレームにフォールバックする（従来挙動の保存）', () => {
+    expect(selectEnemyAttackFrame(EnemyType.PATROL, 1)).toBe(PATROL_ATTACK_FRAME);
+  });
 });
