@@ -46,7 +46,6 @@ export function useGameLoop(
   phaseRef: React.MutableRefObject<GamePhase>,
   countdownStartRef: React.MutableRefObject<number>,
   shakeRef: React.MutableRefObject<ShakeState | null>,
-  setShake: (s: ShakeState | null) => void,
   bgmEnabled: boolean,
   statsRef: React.MutableRefObject<MatchStats>,
   matchStartRef: React.MutableRefObject<number>,
@@ -79,7 +78,6 @@ export function useGameLoop(
       setWinner,
       setScreen,
       setShowHelp,
-      setShake,
     },
   });
 }

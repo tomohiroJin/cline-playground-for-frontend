@@ -87,13 +87,22 @@ export const computeImpact = (hitSpeed: number): ImpactResponse | null
 |------|-----|------|
 | `IMPACT_MIN_SPEED` | 6 | これ未満は `null`。`resolveCollision` の基準復元速度 5（静止マレットの受け身接触でも発生）より上に置き、受け身のブロックで毎回発火しないようにする |
 | `IMPACT_MAX_SPEED` | 16 | `PHYSICS.MAX_POWER` 相当で頭打ち |
-| `shakeIntensity` | lerp(2, 9, t) | 従来固定 3 → 2〜9 の連続値 |
-| `shakeDuration` | lerp(120, 220, t) | ms |
-| `hitStopFrames` | round(lerp(0, 4, t)) | 低速では 0（hitStop なし）に落ちる |
-| `shockwaveMaxRadius` | lerp(40, 110, t) | 従来固定 80 |
-| `vibrationMs` | round(lerp(8, 40, t)) | 触覚の強弱 |
+| `shakeIntensity` | lerp(5, 14, t) | px。当初 2〜9 は体感できず、はっきり分かる値へ増強 |
+| `shakeDuration` | lerp(160, 320, t) | ms |
+| `hitStopFrames` | round(lerp(0, 6, t)) | 低速では 0（hitStop なし）に落ちる |
+| `shockwaveMaxRadius` | lerp(50, 150, t) | px |
+| `vibrationMs` | round(lerp(12, 55, t)) | 触覚の強弱 |
+| `sparkCount` | round(lerp(3, 14, t)) | 接触点に飛ばすスパーク数（既存パーティクル系を利用） |
 
 > 補間は当面**線形**とする。テストで単調性を固定した上で、実機チューニング時に係数（例: `t` へのイージング適用）を調整できる余地を残す。
+
+### 追補（2026-07-04）: 「体感できない」フィードバックへの対応
+
+初期実装は演出が体感できなかった。原因は **screen shake が React 再描画依存の CSS transform（`Field.tsx`）** で、rAF で canvas 直描画する本ゲームではラリー中に再描画が起きず「1 回ずれるだけ」で揺れて見えなかったこと。以下で作り直した:
+
+- **shake を rAF ループで毎フレーム適用**: `useGameLoop` が `canvas.style.transform` を毎フレーム更新する `applyCanvasShake` を追加。React state 経由の shake 経路（`setShake` / `Field` の transform）は撤去。
+- **演出値の増強**: 上表のとおり体感できる値へ。
+- **接触点スパーク**: 強打ほど多くの白いパーティクルを接触点に発生（`sparkCount`）。デスクトップ（振動なし）でも視覚で分かるように。
 
 ## 5. `core/haptics.ts` の設計
 

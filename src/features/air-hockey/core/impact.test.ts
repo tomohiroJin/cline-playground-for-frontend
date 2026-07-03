@@ -31,6 +31,7 @@ describe('computeImpact', () => {
     expect(high.hitStopFrames).toBeGreaterThanOrEqual(mid.hitStopFrames);
     expect(high.shockwaveMaxRadius).toBeGreaterThanOrEqual(mid.shockwaveMaxRadius);
     expect(high.vibrationMs).toBeGreaterThanOrEqual(mid.vibrationMs);
+    expect(high.sparkCount).toBeGreaterThanOrEqual(mid.sparkCount);
   });
 
   it('最大速度を超えても値がクランプされる（頭打ち）', () => {

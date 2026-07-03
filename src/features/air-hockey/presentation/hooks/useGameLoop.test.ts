@@ -109,7 +109,6 @@ describe('useGameLoop（プレゼンテーション層）', () => {
     setWinner: jest.fn(),
     setScreen: jest.fn(),
     setShowHelp: jest.fn(),
-    setShake: jest.fn(),
   });
 
   beforeEach(() => {

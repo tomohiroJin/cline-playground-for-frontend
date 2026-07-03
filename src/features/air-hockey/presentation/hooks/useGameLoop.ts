@@ -112,7 +112,6 @@ export type GameLoopCallbacks = {
   setWinner: (w: string | null) => void;
   setScreen: (s: 'menu' | 'game' | 'result') => void;
   setShowHelp: (v: boolean) => void;
-  setShake: (s: ShakeState | null) => void;
 };
 
 /** useGameLoop のパラメータ（5 フィールド） */
@@ -164,7 +163,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
   } = refs;
   const is2PMode = gameMode === '2p-local';
   const is2v2Mode = gameMode === '2v2-local';
-  const { setScores, setWinner, setScreen, setShowHelp, setShake } = callbacks;
+  const { setScores, setWinner, setScreen, setShowHelp } = callbacks;
 
   // パックスタック検出用カウンター（useEffect 再実行でもリセットされない）
   const puckStuckCountersRef = React.useRef<number[]>([]);
@@ -226,7 +225,30 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
     const triggerShake = (intensity: number, duration: number) => {
       const newShake: ShakeState = { intensity, duration, startTime: Date.now() };
       shakeRef.current = newShake;
-      setShake(newShake);
+    };
+
+    // シェイクを canvas に「毎フレーム」適用するヘルパー。
+    // 旧実装は React state 経由の CSS transform で、ラリー中は再描画が起きず
+    // 1 回ずれるだけで揺れて見えなかった。rAF ループから毎フレーム transform を
+    // 更新することで、実際に振動する画面シェイクにする。
+    const applyCanvasShake = (now: number) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const s = shakeRef.current;
+      if (!s) {
+        if (canvas.style.transform) canvas.style.transform = '';
+        return;
+      }
+      const elapsed = now - s.startTime;
+      if (elapsed >= s.duration) {
+        shakeRef.current = null;
+        canvas.style.transform = '';
+        return;
+      }
+      const decay = 1 - elapsed / s.duration;
+      const offsetX = (Math.random() - 0.5) * 2 * s.intensity * decay;
+      const offsetY = (Math.random() - 0.5) * 2 * s.intensity * decay;
+      canvas.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
     };
 
     // ヒットストップ状態（US-1.4）
@@ -326,6 +348,21 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
                 hitStop.shockwaveRadius = 0;
                 hitStop.shockwaveMaxRadius = impact.shockwaveMaxRadius;
               }
+              // 接触点に「当たった瞬間」のスパークを飛ばす（強打ほど多い）
+              for (let sp = 0; sp < impact.sparkCount; sp++) {
+                const ang = randomRange(0, Math.PI * 2);
+                const spd = randomRange(1.5, 4.5);
+                game.particles.push({
+                  x: obj.x,
+                  y: obj.y,
+                  vx: Math.cos(ang) * spd,
+                  vy: Math.sin(ang) * spd,
+                  life: 18,
+                  maxLife: 18,
+                  color: '#fff2a8',
+                  size: randomRange(1.5, 3.5),
+                });
+              }
               vibrate(impact.vibrationMs);
             }
           }
@@ -409,6 +446,9 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       };
 
       const now = Date.now();
+
+      // 画面シェイクを毎フレーム適用（全フェーズ共通・early return より前）
+      applyCanvasShake(now);
 
       // カウントダウンフェーズ
       if (phaseRef.current === 'countdown') {
@@ -1085,7 +1125,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
   }, [screen, diff, field, winScore, showHelp, getSound,
       gameRef, canvasRef, lastInputRef, scoreRef,
       setScores, setWinner, setScreen, setShowHelp,
-      phaseRef, countdownStartRef, shakeRef, setShake, bgmEnabled, reducedMotion,
+      phaseRef, countdownStartRef, shakeRef, bgmEnabled, reducedMotion,
       statsRef, matchStartRef, keysRef,
       is2PMode, is2v2Mode, pColor, cColor, playerTargetRef, player2KeysRef, multiTouchRef, aiConfig,
       allyControlType, allyCharacterId, enemyCharacter1Id, enemyCharacter2Id, enemy1ControlType, enemy2ControlType, gamepadToastRef]);

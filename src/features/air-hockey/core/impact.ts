@@ -12,6 +12,8 @@ export type ImpactResponse = {
   shockwaveMaxRadius: number;
   /** モバイル振動時間（ms） */
   vibrationMs: number;
+  /** 接触点に飛ばすスパーク（パーティクル）の数 */
+  sparkCount: number;
 };
 
 /**
@@ -28,11 +30,13 @@ const IMPACT_MIN_SPEED = 6;
 const IMPACT_MAX_SPEED = 16;
 
 // 反応量の下限〜上限（下限 = IMPACT_MIN_SPEED 時、上限 = IMPACT_MAX_SPEED 時）
-const SHAKE_INTENSITY_RANGE = { min: 2, max: 9 } as const;
-const SHAKE_DURATION_RANGE = { min: 120, max: 220 } as const;
-const HIT_STOP_FRAMES_RANGE = { min: 0, max: 4 } as const;
-const SHOCKWAVE_RADIUS_RANGE = { min: 40, max: 110 } as const;
-const VIBRATION_MS_RANGE = { min: 8, max: 40 } as const;
+// 旧値は体感できないほど控えめだったため、はっきり分かるレベルまで強化している。
+const SHAKE_INTENSITY_RANGE = { min: 5, max: 14 } as const;
+const SHAKE_DURATION_RANGE = { min: 160, max: 320 } as const;
+const HIT_STOP_FRAMES_RANGE = { min: 0, max: 6 } as const;
+const SHOCKWAVE_RADIUS_RANGE = { min: 50, max: 150 } as const;
+const VIBRATION_MS_RANGE = { min: 12, max: 55 } as const;
+const SPARK_COUNT_RANGE = { min: 3, max: 14 } as const;
 
 /**
  * 打撃速度から反応量を算出する純粋関数。
@@ -57,5 +61,6 @@ export const computeImpact = (hitSpeed: number): ImpactResponse | null => {
     hitStopFrames: Math.round(lerp(HIT_STOP_FRAMES_RANGE.min, HIT_STOP_FRAMES_RANGE.max, t)),
     shockwaveMaxRadius: lerp(SHOCKWAVE_RADIUS_RANGE.min, SHOCKWAVE_RADIUS_RANGE.max, t),
     vibrationMs: Math.round(lerp(VIBRATION_MS_RANGE.min, VIBRATION_MS_RANGE.max, t)),
+    sparkCount: Math.round(lerp(SPARK_COUNT_RANGE.min, SPARK_COUNT_RANGE.max, t)),
   };
 };

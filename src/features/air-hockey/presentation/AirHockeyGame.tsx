@@ -75,7 +75,6 @@ const AirHockeyGame: React.FC = () => {
   // ── ゲームセッション状態 ──
   const [scores, setScores] = useState({ p: 0, c: 0 });
   const [winner, setWinner] = useState<string | null>(null);
-  const [shake, setShake] = useState<ShakeState | null>(null);
   const [preloadUrls, setPreloadUrls] = useState<string[]>([]);
   useImagePreloader(preloadUrls);
 
@@ -289,7 +288,7 @@ const AirHockeyGame: React.FC = () => {
       multiTouchRef: (is2PMode || is2v2Mode) ? multiTouchRef : undefined,
       gamepadToastRef,
     },
-    callbacks: { setScores, setWinner, setScreen: handlers.handleScreenChange, setShowHelp: ui.setShowHelp, setShake },
+    callbacks: { setScores, setWinner, setScreen: handlers.handleScreenChange, setShowHelp: ui.setShowHelp },
   });
 
   // ── 描画 ──
@@ -420,7 +419,7 @@ const AirHockeyGame: React.FC = () => {
             playerColor={is2PMode ? mode.player1Character?.color : undefined}
             cpuColor={is2PMode ? mode.player2Character?.color : undefined}
           />
-          <Field canvasRef={canvasRef} onInput={handleInput} shake={shake} />
+          <Field canvasRef={canvasRef} onInput={handleInput} />
           <CanvasLiveRegion message={liveMessage} politeness={livePoliteness} />
         </>
       )}
