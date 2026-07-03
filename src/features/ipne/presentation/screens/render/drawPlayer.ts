@@ -3,7 +3,8 @@
  *
  * プレイヤー本体・オーラ・シールド・残像・武器光跡・衝撃波・パーティクルを描画する。
  * afterImageManagerRef の残像描画と残像記録（副作用）の両方を担う。
- * 描画ロジック・順序は元 renderGameFrame.ts と完全に同一（純粋な move）。
+ * renderGameFrame.ts から抽出後、攻撃フレーム選択を進行度同期（computeAttackProgress /
+ * selectProgressFrameIndex による4段モーション）に変更済み。
  */
 import { SPRITE_SIZES } from '../../config';
 import {
