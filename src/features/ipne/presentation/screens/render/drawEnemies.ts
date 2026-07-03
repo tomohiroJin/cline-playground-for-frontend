@@ -44,6 +44,7 @@ import { drawGroundShadow } from './groundShadow';
 import type { EnhanceOptions } from '../../sprites';
 import type { FrameContext } from './renderContext';
 import { ENEMY_ATTACK_ANIM_DURATION } from '../../../domain/policies/enemyAi/attackState';
+import { TRANSITION_MEMORY_MS } from './visualPosition';
 
 /** 敵補正：輪郭線＋縁陰影 */
 const ENEMY_ENHANCE: EnhanceOptions = { outline: true, shade: true };
@@ -97,6 +98,78 @@ function getEnemyStateFrame(enemyType: string, enemyState: string): SpriteDefini
     }
   }
   return null;
+}
+
+/** CHARGE 残像の描画位置（from→to 線分上の到達率）と基準アルファ */
+const CHARGE_AFTERIMAGE_POINTS: ReadonlyArray<{ ratio: number; alpha: number }> = [
+  { ratio: 0.4, alpha: 0.35 },
+  { ratio: 0.7, alpha: 0.18 },
+];
+
+/** RANGED 詠唱光の最大アルファ */
+const RANGED_CAST_LIGHT_MAX_ALPHA = 0.4;
+
+/**
+ * CHARGE の突進残像を描画する。
+ *
+ * 直近の位置遷移がワープ（2タイル超の跳躍）であれば、from→to 線分上の
+ * 2点に本体スプライトを薄く重ね描きし、経過時間に応じて減衰させる。
+ * 本体スプライトより先に呼ぶことで背後に配置する。
+ */
+function drawChargeAfterimage(
+  frame: FrameContext,
+  enemyId: string,
+  sprite: SpriteDefinition,
+  enemyDrawSize: number,
+  spriteScale: number
+): void {
+  const { ctx, now, toScreenPosition, spriteRenderer, visualPositionsRef } = frame;
+  const transition = visualPositionsRef.current.getRecentTransition(`enemy-${enemyId}`, now);
+  if (!transition || !transition.isWarp) return;
+
+  const elapsed = now - transition.startAt;
+  const decay = 1 - elapsed / TRANSITION_MEMORY_MS;
+
+  for (const { ratio, alpha } of CHARGE_AFTERIMAGE_POINTS) {
+    const tileX = transition.from.x + (transition.to.x - transition.from.x) * ratio;
+    const tileY = transition.from.y + (transition.to.y - transition.from.y) * ratio;
+    const screen = toScreenPosition({ x: tileX, y: tileY });
+    ctx.save();
+    ctx.globalAlpha = alpha * decay;
+    spriteRenderer.drawSprite(
+      ctx, sprite,
+      screen.x - enemyDrawSize / 2, screen.y - enemyDrawSize / 2,
+      spriteScale
+    );
+    ctx.restore();
+  }
+}
+
+/**
+ * RANGED の詠唱中に足元へ光るラジアルグラデーション円を描画する。
+ * windup 進行度（0〜ENEMY_WINDUP_RATIO）に応じてアルファを 0→0.4 でランプさせる。
+ */
+function drawRangedCastLight(
+  ctx: CanvasRenderingContext2D,
+  screenX: number,
+  screenY: number,
+  enemyDrawSize: number,
+  windupProgress: number
+): void {
+  const radius = enemyDrawSize * 0.5;
+  const feetY = screenY + enemyDrawSize / 2;
+  const alpha = RANGED_CAST_LIGHT_MAX_ALPHA * Math.min(1, windupProgress / ENEMY_WINDUP_RATIO);
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  const gradient = ctx.createRadialGradient(screenX, feetY, 0, screenX, feetY, radius);
+  gradient.addColorStop(0, 'rgba(251, 146, 60, 0.9)');
+  gradient.addColorStop(1, 'rgba(251, 146, 60, 0)');
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.arc(screenX, feetY, radius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
 }
 
 /**
@@ -209,20 +282,48 @@ export function drawEnemies(frame: FrameContext): void {
 
     const enemySheet = getEnemySpriteSheet(enemy.type);
 
+    // 攻撃進行度（0〜1、クランプなし）。ATTACK 中以外は windup 判定に使わないため undefined
+    const attackProgress =
+      enemy.state === EnemyState.ATTACK && enemy.attackAnimUntil !== undefined
+        ? (now - (enemy.attackAnimUntil - ENEMY_ATTACK_ANIM_DURATION)) / ENEMY_ATTACK_ANIM_DURATION
+        : undefined;
+    const isWindup = attackProgress !== undefined && attackProgress < ENEMY_WINDUP_RATIO;
+
+    // 種別個性エフェクト（Phase 3-5）: 本体スプライトより先に描画し背後に配置する
+    if (enemy.type === EnemyType.CHARGE) {
+      drawChargeAfterimage(frame, enemy.id, enemySheet.sprites[0], enemyDrawSize, spriteScale);
+    }
+    if (enemy.type === EnemyType.RANGED && isWindup && attackProgress !== undefined) {
+      drawRangedCastLight(ctx, enemyScreen.x, enemyScreen.y, enemyDrawSize, attackProgress);
+    }
+
     // 敵状態別フレーム選択（Phase 3）。攻撃中は attackAnimUntil から進行度を逆算し、
     // 前40%は溜め・後60%は攻撃の2段モーションにする（Phase 3-4）。
     // attackAnimUntil が未設定の場合は従来の静的攻撃フレームへフォールバックする。
     const enemyStateFrame =
-      enemy.state === EnemyState.ATTACK && enemy.attackAnimUntil !== undefined
-        ? selectEnemyAttackFrame(
-            enemy.type,
-            (now - (enemy.attackAnimUntil - ENEMY_ATTACK_ANIM_DURATION)) / ENEMY_ATTACK_ANIM_DURATION
-          )
+      attackProgress !== undefined
+        ? selectEnemyAttackFrame(enemy.type, attackProgress)
         : getEnemyStateFrame(enemy.type, enemy.state);
-    if (enemyStateFrame) {
-      spriteRenderer.drawSprite(ctx, enemyStateFrame, enemyDrawX, enemyDrawY, spriteScale, ENEMY_ENHANCE);
+
+    const drawSprite = (): void => {
+      if (enemyStateFrame) {
+        spriteRenderer.drawSprite(ctx, enemyStateFrame, enemyDrawX, enemyDrawY, spriteScale, ENEMY_ENHANCE);
+      } else {
+        spriteRenderer.drawAnimatedSprite(ctx, enemySheet, now, enemyDrawX, enemyDrawY, spriteScale, ENEMY_ENHANCE);
+      }
+    };
+
+    // SPECIMEN 変異の脈動: 溜め中に本体をスケール変形させて描画する（drawPlayer の squash と同じパターン）
+    if (enemy.type === EnemyType.SPECIMEN && isWindup && attackProgress !== undefined) {
+      const pulse = 1 + 0.06 * Math.sin(attackProgress * Math.PI * 4);
+      ctx.save();
+      ctx.translate(enemyScreen.x, enemyScreen.y);
+      ctx.scale(pulse, pulse);
+      ctx.translate(-enemyScreen.x, -enemyScreen.y);
+      drawSprite();
+      ctx.restore();
     } else {
-      spriteRenderer.drawAnimatedSprite(ctx, enemySheet, now, enemyDrawX, enemyDrawY, spriteScale, ENEMY_ENHANCE);
+      drawSprite();
     }
   }
 
