@@ -1,8 +1,8 @@
 /**
  * ワールド描画層（背景・マップ・パス・罠・壁・アイテム）
  *
- * renderGameFrame からワールド描画ブロックを逐語移植したもの。
- * 描画ロジック・順序は元 renderGameFrame と完全に同一（純粋な move）。
+ * renderGameFrame からの抽出。背景・マップ・パス・罠・壁・アイテムの
+ * 描画順序は移植時のまま。
  */
 import {
   TileType,

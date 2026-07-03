@@ -1,7 +1,8 @@
 /**
  * 敵描画層（敵スプライト・撃破アニメ・ボスHPオーラ・HPバー・攻撃エフェクト）
  *
- * renderGameFrame.ts から逐語移植。描画ロジック・順序は元コードと完全に同一。
+ * renderGameFrame.ts から抽出後、視覚位置補間・状態別フレーム選択・種別個性
+ * エフェクトを追加済み。描画位置は VisualPositionTracker の補間座標を使う。
  */
 import {
   EnemyState,

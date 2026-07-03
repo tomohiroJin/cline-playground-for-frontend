@@ -12,9 +12,9 @@ import type { FrameContext } from './renderContext';
 /**
  * 戦闘エフェクトシステムを処理する
  *
- * renderGameFrame の「パーティクルエフェクトシステム」節を逐語移植したもの。
- * 攻撃/被弾トリガー・外部キュー処理・エフェクト更新描画・フローティングテキストの
- * 順序・副作用を完全に保持する。
+ * renderGameFrame の「パーティクルエフェクトシステム」節を逐語移植。
+ * 攻撃/被弾/キュー処理の順序は移植時のまま。ヒットストップ・方向キック・updateAt は
+ * その後の追加機能。
  */
 export function combatEffects(frame: FrameContext): void {
   const {
