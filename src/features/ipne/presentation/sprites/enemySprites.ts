@@ -2661,8 +2661,8 @@ export const MINI_BOSS_WINDUP_FRAME = applyEnemyPixelEdits(miniBossAttackFrameBa
   { x: 24, y: 9, value: 5 },
   { x: 15, y: 4, value: 5 },
   { x: 24, y: 4, value: 5 },
-  { x: 16, y: 12, value: 6 },
-  { x: 23, y: 12, value: 6 },
+  { x: 16, y: 12, value: 5 },
+  { x: 23, y: 12, value: 5 },
   { x: 18, y: 0, value: 5 },
   { x: 21, y: 0, value: 5 },
 ]);

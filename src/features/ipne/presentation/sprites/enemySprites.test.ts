@@ -5,6 +5,13 @@
  * かつピクセル内容が異なる（＝視覚的な差分が加えられている）ことを検証する。
  */
 import {
+  PATROL_ATTACK_FRAME,
+  CHARGE_RUSH_FRAME,
+  RANGED_CAST_FRAME,
+  SPECIMEN_MUTATE_FRAME,
+  BOSS_DAMAGE_FRAME,
+  MINI_BOSS_DAMAGE_FRAME,
+  MEGA_BOSS_DAMAGE_FRAME,
   PATROL_DAMAGE_FRAME,
   CHARGE_DAMAGE_FRAME,
   RANGED_DAMAGE_FRAME,
@@ -119,5 +126,47 @@ describe('ボス系敵の溜め（WINDUP）フレーム', () => {
     const diff = countPixelDiff(windup, attack);
     expect(diff).toBeGreaterThan(0);
     expect(diff).toBeLessThanOrEqual(30);
+  });
+});
+
+describe('状態フレームのパレット index 範囲', () => {
+  // ピクセル編集で範囲外 index を指定すると描画時に診断用マゼンタへフォールバックする。
+  // 既存の不変条件テストはベースフレームとの比較のみで index 自体は見ていないため、
+  // 全状態フレームについて「0 <= v < palette.length」を直接検証して穴を塞ぐ。
+  const stateFrames = [
+    ['PATROL_ATTACK_FRAME', PATROL_ATTACK_FRAME],
+    ['CHARGE_RUSH_FRAME', CHARGE_RUSH_FRAME],
+    ['RANGED_CAST_FRAME', RANGED_CAST_FRAME],
+    ['SPECIMEN_MUTATE_FRAME', SPECIMEN_MUTATE_FRAME],
+    ['BOSS_ATTACK_FRAME', BOSS_ATTACK_FRAME],
+    ['MINI_BOSS_ATTACK_FRAME', MINI_BOSS_ATTACK_FRAME],
+    ['MEGA_BOSS_ATTACK_FRAME', MEGA_BOSS_ATTACK_FRAME],
+    ['PATROL_DAMAGE_FRAME', PATROL_DAMAGE_FRAME],
+    ['CHARGE_DAMAGE_FRAME', CHARGE_DAMAGE_FRAME],
+    ['RANGED_DAMAGE_FRAME', RANGED_DAMAGE_FRAME],
+    ['SPECIMEN_DAMAGE_FRAME', SPECIMEN_DAMAGE_FRAME],
+    ['BOSS_DAMAGE_FRAME', BOSS_DAMAGE_FRAME],
+    ['MINI_BOSS_DAMAGE_FRAME', MINI_BOSS_DAMAGE_FRAME],
+    ['MEGA_BOSS_DAMAGE_FRAME', MEGA_BOSS_DAMAGE_FRAME],
+    ['PATROL_WINDUP_FRAME', PATROL_WINDUP_FRAME],
+    ['CHARGE_WINDUP_FRAME', CHARGE_WINDUP_FRAME],
+    ['RANGED_WINDUP_FRAME', RANGED_WINDUP_FRAME],
+    ['SPECIMEN_WINDUP_FRAME', SPECIMEN_WINDUP_FRAME],
+    ['BOSS_WINDUP_FRAME', BOSS_WINDUP_FRAME],
+    ['MINI_BOSS_WINDUP_FRAME', MINI_BOSS_WINDUP_FRAME],
+    ['MEGA_BOSS_WINDUP_FRAME', MEGA_BOSS_WINDUP_FRAME],
+  ] as const;
+
+  it.each(stateFrames)('%s: 全ピクセル値がパレット範囲内（0 <= v < palette.length）', (_name, frame) => {
+    const outOfRange: string[] = [];
+    for (let y = 0; y < frame.height; y++) {
+      for (let x = 0; x < frame.width; x++) {
+        const v = frame.pixels[y][x];
+        if (v < 0 || v >= frame.palette.length) {
+          outOfRange.push(`(${x},${y})=${v}`);
+        }
+      }
+    }
+    expect(outOfRange).toEqual([]);
   });
 });
