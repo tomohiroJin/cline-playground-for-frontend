@@ -81,9 +81,14 @@ describe('障害物ライフサイクル統合テスト', () => {
       destroyedAt: 0, // フレーム0で破壊
     });
 
-    // Act: リスポーン時間（5000ms = 約312フレーム @16ms）以上実行
-    // 16ms/フレームなので 5000/16 ≈ 313 フレーム
-    runner.runFrames(320);
+    // パックを中央の障害物から遠ざけて静止させる
+    // （復活直後にパックが再衝突して hp が減る非決定的なフレークを防ぐ）
+    runner.setPuckPosition(0, 40, 800);
+    runner.setPuckVelocity(0, 0, 0);
+
+    // Act: リスポーン時間（5000ms = 16ms/フレームで 313 フレーム）を
+    // 1 フレームだけ超えて実行し、復活後の余剰フレームを最小化する
+    runner.runFrames(314);
 
     // Assert: 障害物が復活している
     const newState = runner.getState();
