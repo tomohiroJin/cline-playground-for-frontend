@@ -16,6 +16,7 @@ import {
   FLOOR_SPRITE,
   WALL_SPRITE,
   getStageFloorSprite,
+  getStageFloorVariants,
   getStageWallSprite,
 } from '../../sprites';
 import type { RenderContext, FrameContext } from './renderContext';
@@ -140,6 +141,8 @@ export function renderGameFrame(rc: RenderContext): void {
 
   // ステージ別パレットのタイルスプライトを使用
   const stageFloor = currentStage ? getStageFloorSprite(currentStage) : FLOOR_SPRITE;
+  // 床タイルのバリアント（ベース/装飾A/装飾B）。メモ化済み参照のため draw ループで生成しない
+  const stageFloorVariants = currentStage ? getStageFloorVariants(currentStage) : [stageFloor];
   const stageWall = currentStage ? getStageWallSprite(currentStage) : WALL_SPRITE;
 
   const toScreenPosition = (pos: Position): Position => ({
@@ -160,7 +163,7 @@ export function renderGameFrame(rc: RenderContext): void {
     now: visualNow,
     realNow,
     viewport, tileSize, offsetX, offsetY, useFullMap, drawWidth, drawHeight,
-    spriteScale, stageFloor, stageWall, startPos, path, playerScreen, toScreenPosition,
+    spriteScale, stageFloor, stageFloorVariants, stageWall, startPos, path, playerScreen, toScreenPosition,
     cameraOrigin,
   };
 

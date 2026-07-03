@@ -18,7 +18,15 @@ export type { EnhanceOptions } from './spriteRenderer';
 export { applyOutline, applyEdgeShading } from './dotEnhance';
 
 // タイルスプライト
-export { FLOOR_SPRITE, WALL_SPRITE, GOAL_SPRITE_SHEET, START_SPRITE, getStageFloorSprite, getStageWallSprite } from './tileSprites';
+export {
+  FLOOR_SPRITE,
+  WALL_SPRITE,
+  GOAL_SPRITE_SHEET,
+  START_SPRITE,
+  getStageFloorSprite,
+  getStageWallSprite,
+  getStageFloorVariants,
+} from './tileSprites';
 
 // プレイヤースプライト
 export {

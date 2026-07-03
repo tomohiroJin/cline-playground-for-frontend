@@ -133,6 +133,8 @@ export interface FrameContext extends RenderContext {
   spriteScale: number;
   /** ステージ別フロアスプライト */
   stageFloor: SpriteDefinition;
+  /** ステージ別床タイルバリアント（メモ化済み参照。座標ハッシュで選択） */
+  stageFloorVariants: readonly SpriteDefinition[];
   /** ステージ別壁スプライト */
   stageWall: SpriteDefinition;
   /** スタート位置（デバッグパス描画用、見つからない場合は null） */

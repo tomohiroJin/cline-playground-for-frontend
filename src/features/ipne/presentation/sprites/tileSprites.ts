@@ -8,6 +8,7 @@
 import { SpriteDefinition } from './spriteData';
 import { SpriteSheetDefinition } from './spriteSheet';
 import { StageNumber } from '../../types';
+import { applyPixelEdits, PixelEdit } from './pixelOps';
 
 // ---------------------------------------------------------------------------
 // 床タイル（石畳パターン）
@@ -240,6 +241,116 @@ export function getStageFloorSprite(stage: StageNumber): SpriteDefinition {
     ...FLOOR_SPRITE,
     palette: STAGE_PALETTES[stage].floor,
   };
+}
+
+// ---------------------------------------------------------------------------
+// ステージ別 床タイル装飾バリアント
+// ---------------------------------------------------------------------------
+// 床タイルの単調さを解消するため、石ブロック内部の「目地に干渉しない領域」
+// （左上ブロック x=2..5, y=4..8 / 右上ブロック x=18..21, y=4..8。
+//  いずれも FLOOR_PIXELS 上で常に index=2 のベース石色のみで構成される）
+// に、ステージテーマに応じた控えめな装飾ドットを重ねる。
+// 装飾値は 1（暗色）または 3（明色）のみを使用し、透明(0)や既存の目地(1)
+// パターンを崩さないようにする。
+// ---------------------------------------------------------------------------
+
+/** ステージ別 床タイル装飾: [バリアントA, バリアントB]（各 8〜20 edits） */
+const STAGE_FLOOR_DECOR_EDITS: Record<
+  StageNumber,
+  readonly [readonly PixelEdit[], readonly PixelEdit[]]
+> = {
+  // S1: 小石（明色の点の塊。左上ブロック/右上ブロックにそれぞれ3つの塊）
+  1: [
+    [
+      { x: 2, y: 4, value: 3 }, { x: 3, y: 4, value: 3 }, { x: 4, y: 4, value: 3 },
+      { x: 2, y: 5, value: 3 }, { x: 3, y: 5, value: 3 }, { x: 4, y: 5, value: 3 },
+      { x: 2, y: 6, value: 3 }, { x: 4, y: 6, value: 3 }, { x: 5, y: 6, value: 3 },
+    ],
+    [
+      { x: 18, y: 4, value: 3 }, { x: 19, y: 4, value: 3 }, { x: 20, y: 4, value: 3 },
+      { x: 18, y: 5, value: 3 }, { x: 19, y: 5, value: 3 }, { x: 20, y: 5, value: 3 },
+      { x: 18, y: 6, value: 3 }, { x: 19, y: 6, value: 3 }, { x: 20, y: 6, value: 3 },
+    ],
+  ],
+  // S2: 石畳の欠け（暗色の点を疎らに散らす）
+  2: [
+    [
+      { x: 2, y: 4, value: 1 }, { x: 4, y: 4, value: 1 }, { x: 2, y: 5, value: 1 },
+      { x: 4, y: 5, value: 1 }, { x: 2, y: 6, value: 1 }, { x: 5, y: 6, value: 1 },
+      { x: 2, y: 7, value: 1 }, { x: 4, y: 7, value: 1 }, { x: 3, y: 8, value: 1 },
+      { x: 5, y: 8, value: 1 },
+    ],
+    [
+      { x: 18, y: 4, value: 1 }, { x: 20, y: 4, value: 1 }, { x: 18, y: 5, value: 1 },
+      { x: 20, y: 5, value: 1 }, { x: 18, y: 6, value: 1 }, { x: 21, y: 6, value: 1 },
+      { x: 18, y: 7, value: 1 }, { x: 20, y: 7, value: 1 }, { x: 18, y: 8, value: 1 },
+    ],
+  ],
+  // S3: 水晶片（明色の斜め2連点を複数配置）
+  3: [
+    [
+      { x: 2, y: 4, value: 3 }, { x: 2, y: 5, value: 3 },
+      { x: 4, y: 4, value: 3 }, { x: 4, y: 5, value: 3 },
+      { x: 2, y: 6, value: 3 }, { x: 3, y: 7, value: 3 },
+      { x: 5, y: 6, value: 3 }, { x: 4, y: 7, value: 3 },
+      { x: 2, y: 8, value: 3 }, { x: 5, y: 8, value: 3 },
+    ],
+    [
+      { x: 18, y: 4, value: 3 }, { x: 18, y: 5, value: 3 },
+      { x: 20, y: 4, value: 3 }, { x: 20, y: 5, value: 3 },
+      { x: 18, y: 6, value: 3 }, { x: 19, y: 7, value: 3 },
+      { x: 20, y: 6, value: 3 }, { x: 21, y: 7, value: 3 },
+      { x: 18, y: 8, value: 3 }, { x: 21, y: 8, value: 3 },
+    ],
+  ],
+  // S4: ルーン紋（点対称の4点を複数グループ）
+  4: [
+    [
+      { x: 2, y: 4, value: 1 }, { x: 5, y: 4, value: 1 }, { x: 2, y: 8, value: 1 }, { x: 5, y: 8, value: 1 },
+      { x: 3, y: 4, value: 1 }, { x: 4, y: 4, value: 1 }, { x: 3, y: 8, value: 1 }, { x: 4, y: 8, value: 1 },
+      { x: 2, y: 5, value: 1 }, { x: 5, y: 5, value: 1 }, { x: 2, y: 7, value: 1 }, { x: 5, y: 7, value: 1 },
+    ],
+    [
+      { x: 18, y: 4, value: 1 }, { x: 21, y: 4, value: 1 }, { x: 18, y: 7, value: 1 }, { x: 21, y: 7, value: 1 },
+      { x: 19, y: 4, value: 1 }, { x: 20, y: 4, value: 1 }, { x: 19, y: 7, value: 1 }, { x: 20, y: 7, value: 1 },
+      { x: 18, y: 6, value: 1 }, { x: 20, y: 6, value: 1 }, { x: 18, y: 8, value: 1 }, { x: 21, y: 8, value: 1 },
+    ],
+  ],
+  // S5: 亀裂（斜めの暗色3連点を複数配置）
+  5: [
+    [
+      { x: 2, y: 4, value: 1 }, { x: 3, y: 5, value: 1 }, { x: 4, y: 6, value: 1 },
+      { x: 3, y: 4, value: 1 }, { x: 4, y: 5, value: 1 }, { x: 5, y: 6, value: 1 },
+      { x: 2, y: 6, value: 1 }, { x: 3, y: 7, value: 1 }, { x: 4, y: 8, value: 1 },
+      { x: 5, y: 4, value: 1 }, { x: 2, y: 7, value: 1 }, { x: 5, y: 7, value: 1 },
+    ],
+    [
+      { x: 18, y: 4, value: 1 }, { x: 19, y: 5, value: 1 }, { x: 20, y: 6, value: 1 },
+      { x: 19, y: 4, value: 1 }, { x: 20, y: 5, value: 1 }, { x: 21, y: 6, value: 1 },
+      { x: 18, y: 6, value: 1 }, { x: 19, y: 7, value: 1 }, { x: 20, y: 8, value: 1 },
+      { x: 21, y: 4, value: 1 }, { x: 18, y: 7, value: 1 }, { x: 21, y: 7, value: 1 },
+    ],
+  ],
+};
+
+/** ステージ別床バリアントのキャッシュ（参照固定が描画キャッシュの前提） */
+const floorVariantsCache = new Map<StageNumber, readonly SpriteDefinition[]>();
+
+/**
+ * ステージ別の床タイルバリアント（[ベース, 装飾A, 装飾B]）を返す。
+ * 同じ stage では常に同一参照を返す（spriteRenderer の WeakMap キャッシュを効かせるため）。
+ */
+export function getStageFloorVariants(stage: StageNumber): readonly SpriteDefinition[] {
+  const cached = floorVariantsCache.get(stage);
+  if (cached) return cached;
+  const base = getStageFloorSprite(stage);
+  const variants: readonly SpriteDefinition[] = [
+    base,
+    { ...base, pixels: applyPixelEdits(FLOOR_PIXELS, STAGE_FLOOR_DECOR_EDITS[stage][0]) },
+    { ...base, pixels: applyPixelEdits(FLOOR_PIXELS, STAGE_FLOOR_DECOR_EDITS[stage][1]) },
+  ];
+  floorVariantsCache.set(stage, variants);
+  return variants;
 }
 
 /**
