@@ -32,13 +32,45 @@ import {
   MINI_BOSS_DAMAGE_FRAME,
   MEGA_BOSS_ATTACK_FRAME,
   MEGA_BOSS_DAMAGE_FRAME,
+  PATROL_WINDUP_FRAME,
+  CHARGE_WINDUP_FRAME,
+  RANGED_WINDUP_FRAME,
+  SPECIMEN_WINDUP_FRAME,
+  BOSS_WINDUP_FRAME,
+  MINI_BOSS_WINDUP_FRAME,
+  MEGA_BOSS_WINDUP_FRAME,
 } from '../../sprites';
 import { drawGroundShadow } from './groundShadow';
 import type { EnhanceOptions } from '../../sprites';
 import type { FrameContext } from './renderContext';
+import { ENEMY_ATTACK_ANIM_DURATION } from '../../../domain/policies/enemyAi/attackState';
 
 /** 敵補正：輪郭線＋縁陰影 */
 const ENEMY_ENHANCE: EnhanceOptions = { outline: true, shade: true };
+
+/** 攻撃進行度の溜め→実行の境界（前 40% が溜め） */
+export const ENEMY_WINDUP_RATIO = 0.4;
+
+/**
+ * 攻撃中の敵フレームを進行度（0〜1）で選択する（前40%は溜め、後60%は攻撃）
+ *
+ * @param enemyType - 敵タイプの文字列識別子
+ * @param progress - 攻撃アニメーション開始からの経過割合（0〜1、クランプなし）
+ * @returns 対応するフレーム。未知の敵タイプの場合は null
+ */
+export function selectEnemyAttackFrame(enemyType: string, progress: number): SpriteDefinition | null {
+  const isWindup = progress < ENEMY_WINDUP_RATIO;
+  switch (enemyType) {
+    case EnemyType.PATROL: return isWindup ? PATROL_WINDUP_FRAME : PATROL_ATTACK_FRAME;
+    case EnemyType.CHARGE: return isWindup ? CHARGE_WINDUP_FRAME : CHARGE_RUSH_FRAME;
+    case EnemyType.RANGED: return isWindup ? RANGED_WINDUP_FRAME : RANGED_CAST_FRAME;
+    case EnemyType.SPECIMEN: return isWindup ? SPECIMEN_WINDUP_FRAME : SPECIMEN_MUTATE_FRAME;
+    case EnemyType.BOSS: return isWindup ? BOSS_WINDUP_FRAME : BOSS_ATTACK_FRAME;
+    case EnemyType.MINI_BOSS: return isWindup ? MINI_BOSS_WINDUP_FRAME : MINI_BOSS_ATTACK_FRAME;
+    case EnemyType.MEGA_BOSS: return isWindup ? MEGA_BOSS_WINDUP_FRAME : MEGA_BOSS_ATTACK_FRAME;
+  }
+  return null;
+}
 
 /** 敵の状態に応じた特殊フレームを返す（Phase 3） */
 function getEnemyStateFrame(enemyType: string, enemyState: string): SpriteDefinition | null {
@@ -177,8 +209,16 @@ export function drawEnemies(frame: FrameContext): void {
 
     const enemySheet = getEnemySpriteSheet(enemy.type);
 
-    // 敵状態別フレーム選択（Phase 3）
-    const enemyStateFrame = getEnemyStateFrame(enemy.type, enemy.state);
+    // 敵状態別フレーム選択（Phase 3）。攻撃中は attackAnimUntil から進行度を逆算し、
+    // 前40%は溜め・後60%は攻撃の2段モーションにする（Phase 3-4）。
+    // attackAnimUntil が未設定の場合は従来の静的攻撃フレームへフォールバックする。
+    const enemyStateFrame =
+      enemy.state === EnemyState.ATTACK && enemy.attackAnimUntil !== undefined
+        ? selectEnemyAttackFrame(
+            enemy.type,
+            (now - (enemy.attackAnimUntil - ENEMY_ATTACK_ANIM_DURATION)) / ENEMY_ATTACK_ANIM_DURATION
+          )
+        : getEnemyStateFrame(enemy.type, enemy.state);
     if (enemyStateFrame) {
       spriteRenderer.drawSprite(ctx, enemyStateFrame, enemyDrawX, enemyDrawY, spriteScale, ENEMY_ENHANCE);
     } else {

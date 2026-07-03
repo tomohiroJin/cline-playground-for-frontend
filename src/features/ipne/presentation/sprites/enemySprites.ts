@@ -2392,10 +2392,10 @@ export const MINI_BOSS_DAMAGE_FRAME = applyEnemyPixelEdits(miniBossDamageFrameBa
 ]);
 
 /**
- * メガボス 攻撃フレーム: 暗黒エネルギーを放出する攻撃姿勢
+ * メガボス 攻撃フレームの素体（攻撃・溜めフレーム共通のベース）
  * 翼を大きく広げ、体の前方にエネルギーを集中させるポーズ
  */
-export const MEGA_BOSS_ATTACK_FRAME = applyEnemyPixelEdits({
+const megaBossAttackFrameBase: SpriteDefinition = {
   width: 56,
   height: 56,
   palette: MEGA_BOSS_PALETTE,
@@ -2457,7 +2457,12 @@ export const MEGA_BOSS_ATTACK_FRAME = applyEnemyPixelEdits({
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
   ],
-}, [
+};
+
+/**
+ * メガボス 攻撃フレーム: 暗黒エネルギーを放出する攻撃姿勢
+ */
+export const MEGA_BOSS_ATTACK_FRAME = applyEnemyPixelEdits(megaBossAttackFrameBase, [
   { x: 24, y: 14, value: 6 },
   { x: 31, y: 14, value: 6 },
   { x: 23, y: 16, value: 6 },
@@ -2568,6 +2573,112 @@ export const MEGA_BOSS_DAMAGE_FRAME = applyEnemyPixelEdits({
   { x: 21, y: 35, value: 1 },
   { x: 34, y: 34, value: 1 },
   { x: 35, y: 35, value: 1 },
+]);
+
+// ============================================================================
+// 9. 予備動作（溜め）フレーム（各敵タイプの攻撃前2段モーション用）
+// ============================================================================
+//
+// 攻撃アニメーション（300ms）の前 40%（ENEMY_WINDUP_RATIO）は本フレームを表示し、
+// 発光・膨張などで「溜め」を演出してから攻撃フレームへ切り替える。
+// 非ボス4種は idle の詳細フレーム（sprites[0] と同一オブジェクト）を、
+// ボス系3種は各 *_ATTACK_FRAME と同じ素体（detailed base）を編集元にする。
+// idle 素体（*Frame1Base）を使うとフレーム1のディテール編集が巻き戻るため使用しない。
+
+/**
+ * パトロール敵 溜めフレーム: 輪郭が上方へ膨張し、輝点が増える予備動作
+ */
+export const PATROL_WINDUP_FRAME = applyEnemyPixelEdits(patrolFrame1, [
+  { x: 13, y: 2, value: 4 },
+  { x: 14, y: 2, value: 4 },
+  { x: 17, y: 2, value: 4 },
+  { x: 18, y: 2, value: 4 },
+  { x: 15, y: 7, value: 4 },
+  { x: 16, y: 7, value: 4 },
+  { x: 8, y: 11, value: 4 },
+  { x: 23, y: 11, value: 4 },
+  { x: 11, y: 23, value: 4 },
+  { x: 20, y: 23, value: 4 },
+]);
+
+/**
+ * 突進獣 溜めフレーム: 肩幅が広がり前傾姿勢へ移行する予備動作
+ */
+export const CHARGE_WINDUP_FRAME = applyEnemyPixelEdits(chargeFrame1, [
+  { x: 4, y: 8, value: 3 },
+  { x: 5, y: 8, value: 3 },
+  { x: 26, y: 8, value: 3 },
+  { x: 27, y: 8, value: 3 },
+  { x: 11, y: 16, value: 4 },
+  { x: 20, y: 16, value: 4 },
+  { x: 9, y: 9, value: 4 },
+  { x: 22, y: 9, value: 4 },
+]);
+
+/**
+ * 射手 溜めフレーム: 杖の先端が発光し、肩が引き絞られる予備動作
+ */
+export const RANGED_WINDUP_FRAME = applyEnemyPixelEdits(rangedFrame1, [
+  { x: 12, y: 6, value: 1 },
+  { x: 13, y: 6, value: 1 },
+  { x: 6, y: 16, value: 2 },
+  { x: 23, y: 16, value: 2 },
+  { x: 7, y: 19, value: 1 },
+  { x: 18, y: 19, value: 1 },
+]);
+
+/**
+ * 標本 溜めフレーム: 中心の輝点が増加する予備動作
+ */
+export const SPECIMEN_WINDUP_FRAME = applyEnemyPixelEdits(specimenFrame1, [
+  { x: 14, y: 13, value: 4 },
+  { x: 17, y: 13, value: 4 },
+  { x: 13, y: 18, value: 4 },
+  { x: 18, y: 18, value: 4 },
+  { x: 11, y: 20, value: 4 },
+  { x: 20, y: 20, value: 4 },
+]);
+
+/**
+ * ボス 溜めフレーム: 攻撃フレームと同じ素体で目の発光を強化する予備動作
+ */
+export const BOSS_WINDUP_FRAME = applyEnemyPixelEdits(bossAttackFrameBase, [
+  { x: 17, y: 9, value: 5 },
+  { x: 30, y: 9, value: 5 },
+  { x: 10, y: 12, value: 6 },
+  { x: 37, y: 12, value: 6 },
+  { x: 22, y: 1, value: 5 },
+  { x: 25, y: 1, value: 5 },
+  { x: 16, y: 14, value: 6 },
+  { x: 31, y: 14, value: 6 },
+]);
+
+/**
+ * ミニボス 溜めフレーム: 攻撃フレームと同じ素体で目の発光を強化する予備動作
+ */
+export const MINI_BOSS_WINDUP_FRAME = applyEnemyPixelEdits(miniBossAttackFrameBase, [
+  { x: 14, y: 9, value: 5 },
+  { x: 24, y: 9, value: 5 },
+  { x: 15, y: 4, value: 5 },
+  { x: 24, y: 4, value: 5 },
+  { x: 16, y: 12, value: 6 },
+  { x: 23, y: 12, value: 6 },
+  { x: 18, y: 0, value: 5 },
+  { x: 21, y: 0, value: 5 },
+]);
+
+/**
+ * メガボス 溜めフレーム: 攻撃フレームと同じ素体で目の発光を強化する予備動作
+ */
+export const MEGA_BOSS_WINDUP_FRAME = applyEnemyPixelEdits(megaBossAttackFrameBase, [
+  { x: 14, y: 8, value: 5 },
+  { x: 41, y: 8, value: 5 },
+  { x: 20, y: 2, value: 6 },
+  { x: 35, y: 2, value: 6 },
+  { x: 24, y: 12, value: 6 },
+  { x: 30, y: 12, value: 6 },
+  { x: 12, y: 4, value: 6 },
+  { x: 43, y: 4, value: 6 },
 ]);
 
 // ============================================================================
