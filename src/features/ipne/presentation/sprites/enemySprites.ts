@@ -15,7 +15,7 @@ const applyEnemyPixelEdits = (base: SpriteDefinition, edits: readonly PixelEdit[
 });
 
 // ============================================================================
-// 1. パトロール敵（スライム） - 32×32, 2フレーム
+// 1. パトロール敵（スライム） - 32×32, 4フレーム
 // ============================================================================
 
 /** パトロール敵のカラーパレット（紫系） */
@@ -226,7 +226,7 @@ export const PATROL_SPRITE_SHEET: SpriteSheetDefinition = {
 };
 
 // ============================================================================
-// 2. 突進獣（チャージ敵） - 32×32, 2フレーム
+// 2. 突進獣（チャージ敵） - 32×32, 4フレーム
 // ============================================================================
 
 /** 突進獣のカラーパレット（赤系） */
@@ -493,7 +493,7 @@ export const CHARGE_SPRITE_SHEET: SpriteSheetDefinition = {
 };
 
 // ============================================================================
-// 3. 射手（遠距離敵） - 16×16, 2フレーム
+// 3. 射手（遠距離敵） - 32×32, 4フレーム
 // ============================================================================
 
 /** 射手のカラーパレット（オレンジ系） */
@@ -740,7 +740,7 @@ export const RANGED_SPRITE_SHEET: SpriteSheetDefinition = {
 };
 
 // ============================================================================
-// 4. 標本（クリスタル敵） - 16×16, 2フレーム
+// 4. 標本（クリスタル敵） - 32×32, 4フレーム
 // ============================================================================
 
 /** 標本のカラーパレット（青系） */
@@ -1308,7 +1308,7 @@ export const BOSS_SPRITE_SHEET: SpriteSheetDefinition = {
 };
 
 // ============================================================================
-// 6. ミニボス敵 - 20×20, 2フレーム
+// 6. ミニボス敵 - 40×40, 4フレーム
 // ============================================================================
 
 /** ミニボスのカラーパレット（暗赤紫系） */
@@ -1519,7 +1519,7 @@ export const MINI_BOSS_SPRITE_SHEET: SpriteSheetDefinition = {
 };
 
 // ============================================================================
-// 7. メガボス敵 - 28×28, 2フレーム
+// 7. メガボス敵 - 56×56, 4フレーム
 // ============================================================================
 
 /** メガボスのカラーパレット（深紫系） */
@@ -1803,6 +1803,29 @@ export const PATROL_ATTACK_FRAME = applyEnemyPixelEdits({
 ]);
 
 /**
+ * パトロール敵 被弾フレーム: 体を横につぶし、目を×にした被弾リアクション
+ * 上部輪郭を1px下げて左右へ広げ、押しつぶされた質感を強調する
+ */
+export const PATROL_DAMAGE_FRAME = applyEnemyPixelEdits(patrolFrame1, [
+  { x: 12, y: 3, value: 0 },
+  { x: 19, y: 3, value: 0 },
+  { x: 9, y: 4, value: 4 },
+  { x: 22, y: 4, value: 4 },
+  { x: 10, y: 4, value: 3 },
+  { x: 21, y: 4, value: 3 },
+  { x: 8, y: 5, value: 4 },
+  { x: 23, y: 5, value: 4 },
+  { x: 13, y: 12, value: 1 },
+  { x: 18, y: 12, value: 1 },
+  { x: 14, y: 13, value: 1 },
+  { x: 17, y: 13, value: 1 },
+  { x: 14, y: 16, value: 1 },
+  { x: 17, y: 16, value: 1 },
+  { x: 13, y: 17, value: 1 },
+  { x: 18, y: 17, value: 1 },
+]);
+
+/**
  * 突進獣 チャージフレーム: 前傾突進姿勢
  * 角を突き出し、体が前方に大きく傾き、手足が後方に流れるデザイン
  */
@@ -1857,6 +1880,29 @@ export const CHARGE_RUSH_FRAME = applyEnemyPixelEdits({
   { x: 15, y: 15, value: 4 },
   { x: 11, y: 16, value: 1 },
   { x: 14, y: 16, value: 1 },
+]);
+
+/**
+ * 突進獣 被弾フレーム: 頭部をのけぞらせ口を開く被弾リアクション
+ * 角が後方へ流れ、口部の暗色が広がって咆哮するような表情になる
+ */
+export const CHARGE_DAMAGE_FRAME = applyEnemyPixelEdits(chargeFrame1, [
+  { x: 4, y: 2, value: 0 },
+  { x: 5, y: 2, value: 0 },
+  { x: 24, y: 2, value: 0 },
+  { x: 25, y: 2, value: 0 },
+  { x: 2, y: 3, value: 4 },
+  { x: 3, y: 3, value: 4 },
+  { x: 26, y: 3, value: 4 },
+  { x: 27, y: 3, value: 4 },
+  { x: 12, y: 16, value: 1 },
+  { x: 13, y: 16, value: 1 },
+  { x: 14, y: 16, value: 1 },
+  { x: 15, y: 16, value: 1 },
+  { x: 16, y: 16, value: 1 },
+  { x: 17, y: 16, value: 1 },
+  { x: 14, y: 18, value: 1 },
+  { x: 15, y: 18, value: 1 },
 ]);
 
 /**
@@ -1915,6 +1961,27 @@ export const RANGED_CAST_FRAME = applyEnemyPixelEdits({
 ]);
 
 /**
+ * 射手 被弾フレーム: 杖を下げた防御姿勢＋後傾リアクション
+ * 掲げていた腕を引っ込め、頭上の杖先端が後方へ縮む
+ */
+export const RANGED_DAMAGE_FRAME = applyEnemyPixelEdits(rangedFrame1, [
+  { x: 10, y: 6, value: 0 },
+  { x: 11, y: 6, value: 0 },
+  { x: 12, y: 6, value: 0 },
+  { x: 13, y: 6, value: 0 },
+  { x: 14, y: 6, value: 0 },
+  { x: 15, y: 6, value: 0 },
+  { x: 10, y: 7, value: 0 },
+  { x: 15, y: 7, value: 0 },
+  { x: 8, y: 16, value: 4 },
+  { x: 9, y: 16, value: 4 },
+  { x: 8, y: 17, value: 4 },
+  { x: 9, y: 17, value: 4 },
+  { x: 20, y: 0, value: 0 },
+  { x: 21, y: 0, value: 0 },
+]);
+
+/**
  * 標本 変異フレーム: 不規則なシルエットへの変異
  * クリスタルが歪み、不規則に突起が伸びる異常形態
  */
@@ -1967,6 +2034,27 @@ export const SPECIMEN_MUTATE_FRAME = applyEnemyPixelEdits({
   { x: 16, y: 18, value: 4 },
   { x: 14, y: 19, value: 2 },
   { x: 17, y: 19, value: 2 },
+]);
+
+/**
+ * 標本 被弾フレーム: クリスタル表面に亀裂が走る被弾リアクション
+ * 明色の斜め線を複数本追加し、ひび割れているように見せる
+ */
+export const SPECIMEN_DAMAGE_FRAME = applyEnemyPixelEdits(specimenFrame1, [
+  { x: 10, y: 9, value: 4 },
+  { x: 11, y: 10, value: 4 },
+  { x: 12, y: 11, value: 4 },
+  { x: 13, y: 12, value: 4 },
+  { x: 14, y: 13, value: 4 },
+  { x: 15, y: 14, value: 4 },
+  { x: 20, y: 9, value: 4 },
+  { x: 19, y: 10, value: 4 },
+  { x: 18, y: 11, value: 4 },
+  { x: 17, y: 12, value: 4 },
+  { x: 16, y: 13, value: 4 },
+  { x: 9, y: 18, value: 4 },
+  { x: 10, y: 19, value: 4 },
+  { x: 11, y: 20, value: 4 },
 ]);
 
 /**
@@ -2237,6 +2325,15 @@ export const BOSS_DAMAGE_FRAME = applyEnemyPixelEdits(bossDamageFrameBase, [
   { x: 26, y: 26, value: 4 },
   { x: 23, y: 26, value: 6 },
   { x: 24, y: 26, value: 6 },
+  // 被弾強調: 肩・翼付近のひび割れと体勢崩れ
+  { x: 12, y: 10, value: 1 },
+  { x: 13, y: 11, value: 1 },
+  { x: 14, y: 12, value: 1 },
+  { x: 34, y: 12, value: 1 },
+  { x: 33, y: 11, value: 1 },
+  { x: 32, y: 10, value: 1 },
+  { x: 20, y: 30, value: 1 },
+  { x: 27, y: 30, value: 1 },
 ]);
 
 export const MINI_BOSS_ATTACK_FRAME = applyEnemyPixelEdits(miniBossAttackFrameBase, [
@@ -2283,13 +2380,22 @@ export const MINI_BOSS_DAMAGE_FRAME = applyEnemyPixelEdits(miniBossDamageFrameBa
   { x: 20, y: 22, value: 5 },
   { x: 18, y: 24, value: 4 },
   { x: 21, y: 24, value: 4 },
+  // 被弾強調: 胴体のひび割れと体勢崩れ
+  { x: 12, y: 12, value: 1 },
+  { x: 13, y: 13, value: 1 },
+  { x: 26, y: 12, value: 1 },
+  { x: 27, y: 13, value: 1 },
+  { x: 16, y: 26, value: 1 },
+  { x: 17, y: 27, value: 1 },
+  { x: 22, y: 26, value: 1 },
+  { x: 23, y: 27, value: 1 },
 ]);
 
 /**
- * メガボス 攻撃フレーム: 暗黒エネルギーを放出する攻撃姿勢
+ * メガボス 攻撃フレームの素体（攻撃・溜めフレーム共通のベース）
  * 翼を大きく広げ、体の前方にエネルギーを集中させるポーズ
  */
-export const MEGA_BOSS_ATTACK_FRAME = applyEnemyPixelEdits({
+const megaBossAttackFrameBase: SpriteDefinition = {
   width: 56,
   height: 56,
   palette: MEGA_BOSS_PALETTE,
@@ -2351,7 +2457,12 @@ export const MEGA_BOSS_ATTACK_FRAME = applyEnemyPixelEdits({
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
   ],
-}, [
+};
+
+/**
+ * メガボス 攻撃フレーム: 暗黒エネルギーを放出する攻撃姿勢
+ */
+export const MEGA_BOSS_ATTACK_FRAME = applyEnemyPixelEdits(megaBossAttackFrameBase, [
   { x: 24, y: 14, value: 6 },
   { x: 31, y: 14, value: 6 },
   { x: 23, y: 16, value: 6 },
@@ -2453,6 +2564,121 @@ export const MEGA_BOSS_DAMAGE_FRAME = applyEnemyPixelEdits({
   { x: 31, y: 24, value: 5 },
   { x: 26, y: 26, value: 6 },
   { x: 29, y: 26, value: 6 },
+  // 被弾強調: 翼付け根・胴体のひび割れ
+  { x: 14, y: 14, value: 1 },
+  { x: 15, y: 15, value: 1 },
+  { x: 40, y: 14, value: 1 },
+  { x: 41, y: 15, value: 1 },
+  { x: 20, y: 34, value: 1 },
+  { x: 21, y: 35, value: 1 },
+  { x: 34, y: 34, value: 1 },
+  { x: 35, y: 35, value: 1 },
+]);
+
+// ============================================================================
+// 9. 予備動作（溜め）フレーム（各敵タイプの攻撃前2段モーション用）
+// ============================================================================
+//
+// 攻撃アニメーション（300ms）の前 40%（ENEMY_WINDUP_RATIO）は本フレームを表示し、
+// 発光・膨張などで「溜め」を演出してから攻撃フレームへ切り替える。
+// 非ボス4種は idle の詳細フレーム（sprites[0] と同一オブジェクト）を、
+// ボス系3種は各 *_ATTACK_FRAME と同じ素体（detailed base）を編集元にする。
+// idle 素体（*Frame1Base）を使うとフレーム1のディテール編集が巻き戻るため使用しない。
+
+/**
+ * パトロール敵 溜めフレーム: 輪郭が上方へ膨張し、輝点が増える予備動作
+ */
+export const PATROL_WINDUP_FRAME = applyEnemyPixelEdits(patrolFrame1, [
+  { x: 13, y: 2, value: 4 },
+  { x: 14, y: 2, value: 4 },
+  { x: 17, y: 2, value: 4 },
+  { x: 18, y: 2, value: 4 },
+  { x: 15, y: 7, value: 4 },
+  { x: 16, y: 7, value: 4 },
+  { x: 8, y: 11, value: 4 },
+  { x: 23, y: 11, value: 4 },
+  { x: 11, y: 23, value: 4 },
+  { x: 20, y: 23, value: 4 },
+]);
+
+/**
+ * 突進獣 溜めフレーム: 肩幅が広がり前傾姿勢へ移行する予備動作
+ */
+export const CHARGE_WINDUP_FRAME = applyEnemyPixelEdits(chargeFrame1, [
+  { x: 4, y: 8, value: 3 },
+  { x: 5, y: 8, value: 3 },
+  { x: 26, y: 8, value: 3 },
+  { x: 27, y: 8, value: 3 },
+  { x: 11, y: 16, value: 4 },
+  { x: 20, y: 16, value: 4 },
+  { x: 9, y: 9, value: 4 },
+  { x: 22, y: 9, value: 4 },
+]);
+
+/**
+ * 射手 溜めフレーム: 杖の先端が発光し、肩が引き絞られる予備動作
+ */
+export const RANGED_WINDUP_FRAME = applyEnemyPixelEdits(rangedFrame1, [
+  { x: 12, y: 6, value: 1 },
+  { x: 13, y: 6, value: 1 },
+  { x: 6, y: 16, value: 2 },
+  { x: 23, y: 16, value: 2 },
+  { x: 7, y: 19, value: 1 },
+  { x: 18, y: 19, value: 1 },
+]);
+
+/**
+ * 標本 溜めフレーム: 中心の輝点が増加する予備動作
+ */
+export const SPECIMEN_WINDUP_FRAME = applyEnemyPixelEdits(specimenFrame1, [
+  { x: 14, y: 13, value: 4 },
+  { x: 17, y: 13, value: 4 },
+  { x: 13, y: 18, value: 4 },
+  { x: 18, y: 18, value: 4 },
+  { x: 11, y: 20, value: 4 },
+  { x: 20, y: 20, value: 4 },
+]);
+
+/**
+ * ボス 溜めフレーム: 攻撃フレームと同じ素体で目の発光を強化する予備動作
+ */
+export const BOSS_WINDUP_FRAME = applyEnemyPixelEdits(bossAttackFrameBase, [
+  { x: 17, y: 9, value: 5 },
+  { x: 30, y: 9, value: 5 },
+  { x: 10, y: 12, value: 6 },
+  { x: 37, y: 12, value: 6 },
+  { x: 22, y: 1, value: 5 },
+  { x: 25, y: 1, value: 5 },
+  { x: 16, y: 14, value: 6 },
+  { x: 31, y: 14, value: 6 },
+]);
+
+/**
+ * ミニボス 溜めフレーム: 攻撃フレームと同じ素体で目の発光を強化する予備動作
+ */
+export const MINI_BOSS_WINDUP_FRAME = applyEnemyPixelEdits(miniBossAttackFrameBase, [
+  { x: 14, y: 9, value: 5 },
+  { x: 24, y: 9, value: 5 },
+  { x: 15, y: 4, value: 5 },
+  { x: 24, y: 4, value: 5 },
+  { x: 16, y: 12, value: 5 },
+  { x: 23, y: 12, value: 5 },
+  { x: 18, y: 0, value: 5 },
+  { x: 21, y: 0, value: 5 },
+]);
+
+/**
+ * メガボス 溜めフレーム: 攻撃フレームと同じ素体で目の発光を強化する予備動作
+ */
+export const MEGA_BOSS_WINDUP_FRAME = applyEnemyPixelEdits(megaBossAttackFrameBase, [
+  { x: 14, y: 8, value: 5 },
+  { x: 41, y: 8, value: 5 },
+  { x: 20, y: 2, value: 6 },
+  { x: 35, y: 2, value: 6 },
+  { x: 24, y: 12, value: 6 },
+  { x: 30, y: 12, value: 6 },
+  { x: 12, y: 4, value: 6 },
+  { x: 43, y: 4, value: 6 },
 ]);
 
 // ============================================================================

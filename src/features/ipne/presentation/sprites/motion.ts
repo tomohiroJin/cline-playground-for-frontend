@@ -20,6 +20,13 @@ const ATTACK_LUNGE = 6;
 const ATTACK_SCALE_PEAK = 0.08;
 
 /**
+ * プレイヤー攻撃アニメーションの全長（ms）。
+ * attackEffect.until（+150ms・斬撃エフェクト用の表示時間）とは独立に、
+ * この長さで4段モーション（windup→atk1→atk2→recovery）を再生する。
+ */
+export const ATTACK_DURATION_MS = 300;
+
+/**
  * 歩行アニメのフレーム番号を返す（4枚循環で walk2 を含める）。
  */
 export function selectWalkFrameIndex(now: number, frameDuration: number): number {
@@ -89,4 +96,25 @@ export function computeAttackTransform(progress: number, direction: Direction): 
     scale = 1;
   }
   return { dx: v.x * forward, dy: v.y * forward, scale };
+}
+
+/**
+ * 攻撃進行度を計算する（0..1、範囲外はクランプ）。
+ * until は攻撃アニメ終了時刻、durationMs はアニメ全長。
+ */
+export function computeAttackProgress(now: number, until: number, durationMs: number): number {
+  const t = (now - (until - durationMs)) / durationMs;
+  return t < 0 ? 0 : t > 1 ? 1 : t;
+}
+
+/**
+ * 進行度（0..1）からアニメーションフレーム番号を選択する。
+ * free-running modulo と違い、モーションの開始・終了とフレームが同期する。
+ *
+ * @param progress 進行度 0..1（範囲外はクランプ）
+ * @param frameCount フレーム総数（正の整数であること）
+ */
+export function selectProgressFrameIndex(progress: number, frameCount: number): number {
+  const t = progress < 0 ? 0 : progress > 1 ? 1 : progress;
+  return Math.min(frameCount - 1, Math.floor(t * frameCount));
 }

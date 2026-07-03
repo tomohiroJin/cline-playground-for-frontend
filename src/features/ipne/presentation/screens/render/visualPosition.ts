@@ -13,12 +13,33 @@ export const MOVE_TWEEN_MS = 120;
 /** これを超える移動距離（タイル）は補間せずスナップする（テレポート・ステージ遷移対策） */
 export const SNAP_DISTANCE_TILES = 1.5;
 
+/** getRecentTransition が遷移情報を返す猶予時間（ms）。これを超えると undefined になる */
+export const TRANSITION_MEMORY_MS = 240;
+
 /**
  * ease-out（二次）。序盤に速く動き終端で減速する。範囲外はクランプ。
  */
 export function easeOutQuad(t: number): number {
   const k = t < 0 ? 0 : t > 1 ? 1 : t;
   return k * (2 - k);
+}
+
+/** 直近の位置遷移記録（残像等の演出向け。ワープ時はスナップ前の元位置を保持する） */
+interface LastTransition {
+  fromX: number;
+  fromY: number;
+  toX: number;
+  toY: number;
+  startAt: number;
+  isWarp: boolean;
+}
+
+/** getRecentTransition が返す直近の位置遷移情報 */
+export interface RecentTransition {
+  from: Position;
+  to: Position;
+  startAt: number;
+  isWarp: boolean;
 }
 
 /** 補間エントリ（補間元・目標・開始時刻） */
@@ -28,6 +49,8 @@ interface TweenEntry {
   toX: number;
   toY: number;
   startAt: number;
+  /** 直近の位置遷移（初回登録時は未設定） */
+  lastTransition?: LastTransition;
 }
 
 /** エントリの現在の補間位置を計算する */
@@ -67,6 +90,13 @@ export class VisualPositionTracker {
       const distance = Math.hypot(logical.x - entry.toX, logical.y - entry.toY);
       const current = interpolate(entry, now);
       const isWarp = distance > SNAP_DISTANCE_TILES;
+      // 遷移前の位置（ワープ時はスナップで捨てられる元位置）を残像演出用に保存する
+      entry.lastTransition = {
+        fromX: current.x, fromY: current.y,
+        toX: logical.x, toY: logical.y,
+        startAt: now,
+        isWarp,
+      };
       entry.fromX = isWarp ? logical.x : current.x;
       entry.fromY = isWarp ? logical.y : current.y;
       entry.toX = logical.x;
@@ -75,6 +105,23 @@ export class VisualPositionTracker {
     }
 
     return interpolate(entry, now);
+  }
+
+  /**
+   * 直近の位置遷移を取得する（残像等の演出向け）。
+   * TRANSITION_MEMORY_MS 以内の遷移のみ返し、それ以外・未移動・未登録は undefined。
+   */
+  getRecentTransition(id: string, now: number): RecentTransition | undefined {
+    const transition = this.entries.get(id)?.lastTransition;
+    if (!transition) return undefined;
+    if (now - transition.startAt >= TRANSITION_MEMORY_MS) return undefined;
+
+    return {
+      from: { x: transition.fromX, y: transition.fromY },
+      to: { x: transition.toX, y: transition.toY },
+      startAt: transition.startAt,
+      isWarp: transition.isWarp,
+    };
   }
 
   /** 生存していないエンティティのエントリを削除する（メモリリーク防止） */

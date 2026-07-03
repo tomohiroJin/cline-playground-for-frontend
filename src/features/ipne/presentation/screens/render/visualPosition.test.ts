@@ -5,6 +5,7 @@ import {
   VisualPositionTracker,
   MOVE_TWEEN_MS,
   SNAP_DISTANCE_TILES,
+  TRANSITION_MEMORY_MS,
   easeOutQuad,
 } from './visualPosition';
 
@@ -95,5 +96,29 @@ describe('VisualPositionTracker', () => {
     tracker.resolve('player', { x: 5, y: 3 }, 1000);
     tracker.clear();
     expect(tracker.size()).toBe(0);
+  });
+});
+
+describe('getRecentTransition', () => {
+  it('移動直後は遷移情報を返し、ワープはisWarp=trueで元位置を保持する', () => {
+    const tracker = new VisualPositionTracker();
+    tracker.resolve('e1', { x: 5, y: 3 }, 1000);
+    tracker.resolve('e1', { x: 7, y: 3 }, 1100); // 距離2 > 1.5 → ワープ
+    const t = tracker.getRecentTransition('e1', 1150);
+    expect(t).toEqual({ from: { x: 5, y: 3 }, to: { x: 7, y: 3 }, startAt: 1100, isWarp: true });
+  });
+
+  it('TRANSITION_MEMORY_MS 経過後は undefined を返す', () => {
+    const tracker = new VisualPositionTracker();
+    tracker.resolve('e1', { x: 5, y: 3 }, 1000);
+    tracker.resolve('e1', { x: 6, y: 3 }, 1100);
+    expect(tracker.getRecentTransition('e1', 1100 + TRANSITION_MEMORY_MS)).toBeUndefined();
+  });
+
+  it('未知のIDと移動していないエンティティは undefined', () => {
+    const tracker = new VisualPositionTracker();
+    expect(tracker.getRecentTransition('nobody', 1000)).toBeUndefined();
+    tracker.resolve('e1', { x: 5, y: 3 }, 1000);
+    expect(tracker.getRecentTransition('e1', 1050)).toBeUndefined(); // 初回登録は遷移ではない
   });
 });

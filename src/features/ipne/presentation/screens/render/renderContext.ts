@@ -2,8 +2,8 @@
  * 描画コンテキスト型定義
  *
  * Game.tsx の描画 useEffect が参照する値を RenderContext に集約し、
- * セットアップで計算される共有ローカルを加えた FrameContext を定義する。
- * 後続タスクで描画ロジックをこの型に沿って個別モジュールへ抽出する。
+ * セットアップで計算される共有ローカルを加えた FrameContext を定義。
+ * 描画ロジックは個別モジュール（drawWorld / drawEnemies 等）へ抽出済み。
  */
 import type React from 'react';
 import type {

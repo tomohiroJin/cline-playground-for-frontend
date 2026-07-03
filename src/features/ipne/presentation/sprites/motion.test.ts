@@ -3,6 +3,8 @@ import {
   computeWalkBob,
   computeSquash,
   computeAttackTransform,
+  selectProgressFrameIndex,
+  computeAttackProgress,
   WALK_BOB_AMPLITUDE,
 } from './motion';
 
@@ -74,5 +76,40 @@ describe('computeAttackTransform', () => {
   it('は範囲外 progress をクランプする', () => {
     expect(computeAttackTransform(-5, 'left')).toEqual(computeAttackTransform(0, 'left'));
     expect(computeAttackTransform(5, 'left')).toEqual(computeAttackTransform(1, 'left'));
+  });
+});
+
+describe('computeAttackProgress', () => {
+  it('は攻撃開始の瞬間（now = until - durationMs）に 0 を返す', () => {
+    expect(computeAttackProgress(1000, 1300, 300)).toBeCloseTo(0);
+  });
+  it('は中間地点で 0.5 を返す', () => {
+    expect(computeAttackProgress(1150, 1300, 300)).toBeCloseTo(0.5);
+  });
+  it('は until を過ぎたら 1 を返す', () => {
+    expect(computeAttackProgress(1400, 1300, 300)).toBeCloseTo(1);
+  });
+  it('は開始前（now が開始時刻未満）は 0 にクランプする', () => {
+    expect(computeAttackProgress(900, 1300, 300)).toBe(0);
+  });
+});
+
+describe('selectProgressFrameIndex', () => {
+  it('進行度 0 で最初のフレーム、1 直前で最後のフレームを返す', () => {
+    expect(selectProgressFrameIndex(0, 4)).toBe(0);
+    expect(selectProgressFrameIndex(0.99, 4)).toBe(3);
+  });
+
+  it('進行度に応じて均等にフレームが切り替わる', () => {
+    expect(selectProgressFrameIndex(0.2, 4)).toBe(0);
+    expect(selectProgressFrameIndex(0.3, 4)).toBe(1);
+    expect(selectProgressFrameIndex(0.6, 4)).toBe(2);
+    expect(selectProgressFrameIndex(0.8, 4)).toBe(3);
+  });
+
+  it('範囲外はクランプする（1 以上でも最終フレーム）', () => {
+    expect(selectProgressFrameIndex(-0.5, 4)).toBe(0);
+    expect(selectProgressFrameIndex(1, 4)).toBe(3);
+    expect(selectProgressFrameIndex(1.5, 4)).toBe(3);
   });
 });
