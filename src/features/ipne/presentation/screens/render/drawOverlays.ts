@@ -23,12 +23,14 @@ import {
   getStageIntroTextAlpha,
   getGameOverTransitionAlpha,
 } from '../../effects/screenTransition';
+import { getStageAmbient, drawAmbientOverlay } from '../../effects/ambientLight';
 import type { FrameContext } from './renderContext';
 
 /**
  * オーバーレイ層をまとめて描画する
  *
  * 描画順（元 renderGameFrame の順序を厳守）:
+ *   0. 環境光・ヴィネット・ステージ色調（シェイク変換内。全体マップ表示では非表示）
  *   1. 低HP警告（ビネットパルス）
  *   2. コンボカウンター
  *   3. ボスWARNING演出（副作用: bossWarningRef を更新）
@@ -68,6 +70,15 @@ export function drawOverlays(
 
   const mapWidth = map[0]?.length ?? 0;
   const mapHeight = map.length;
+
+  // 環境光・ヴィネット（ワールド追従＝シェイク変換内。HUD 警告より下層）
+  if (!useFullMap) {
+    drawAmbientOverlay(
+      ctx, canvas.width, canvas.height,
+      playerScreen.x, playerScreen.y,
+      getStageAmbient(currentStage)
+    );
+  }
 
   // 低HP警告描画（Phase 4: HP 25%以下でビネットパルス）
   if (player.hp > 0 && player.hp / player.maxHp <= 0.25) {

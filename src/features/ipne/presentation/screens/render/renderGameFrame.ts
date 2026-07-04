@@ -15,9 +15,10 @@ import { SPRITE_SIZES } from '../../config';
 import {
   FLOOR_SPRITE,
   WALL_SPRITE,
-  getStageFloorSprite,
+  getStageFloorVariants,
   getStageWallSprite,
 } from '../../sprites';
+import type { SpriteDefinition } from '../../sprites';
 import type { RenderContext, FrameContext } from './renderContext';
 import type { Position, Viewport } from '../../../index';
 import { calculateCameraOrigin } from '../../services/viewportService';
@@ -26,6 +27,11 @@ import { drawEnemies } from './drawEnemies';
 import { combatEffects } from './combatEffects';
 import { drawPlayer } from './drawPlayer';
 import { drawOverlays } from './drawOverlays';
+
+/**
+ * currentStage 未定義時のフォールバック床バリアント（参照固定）
+ */
+const FALLBACK_FLOOR_VARIANTS: readonly SpriteDefinition[] = [FLOOR_SPRITE];
 
 /**
  * ゲームフレームを描画する
@@ -138,8 +144,8 @@ export function renderGameFrame(rc: RenderContext): void {
   const drawHeight = useFullMap ? mapHeight : viewport.height + 1;
   const spriteScale = tileSize / SPRITE_SIZES.base;
 
-  // ステージ別パレットのタイルスプライトを使用
-  const stageFloor = currentStage ? getStageFloorSprite(currentStage) : FLOOR_SPRITE;
+  // 床タイルのバリアント（ベース/装飾A/装飾B）。メモ化済み参照のため draw ループで生成しない
+  const stageFloorVariants = currentStage ? getStageFloorVariants(currentStage) : FALLBACK_FLOOR_VARIANTS;
   const stageWall = currentStage ? getStageWallSprite(currentStage) : WALL_SPRITE;
 
   const toScreenPosition = (pos: Position): Position => ({
@@ -160,7 +166,7 @@ export function renderGameFrame(rc: RenderContext): void {
     now: visualNow,
     realNow,
     viewport, tileSize, offsetX, offsetY, useFullMap, drawWidth, drawHeight,
-    spriteScale, stageFloor, stageWall, startPos, path, playerScreen, toScreenPosition,
+    spriteScale, stageFloorVariants, stageWall, startPos, path, playerScreen, toScreenPosition,
     cameraOrigin,
   };
 

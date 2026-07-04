@@ -21,6 +21,7 @@ import {
   getTrapSpriteSheet,
   getWallSprite,
 } from '../../sprites';
+import { selectTileVariantIndex } from '../../sprites/tileVariation';
 import type { FrameContext } from './renderContext';
 
 /**
@@ -53,7 +54,7 @@ export function drawWorld(
     drawWidth,
     drawHeight,
     spriteScale,
-    stageFloor,
+    stageFloorVariants,
     stageWall,
     path,
     toScreenPosition,
@@ -95,12 +96,17 @@ export function drawWorld(
       } else if (tile === TileType.START) {
         spriteRenderer.drawSprite(ctx, START_SPRITE, tileDrawX, tileDrawY, spriteScale);
       } else {
-        spriteRenderer.drawSprite(ctx, stageFloor, tileDrawX, tileDrawY, spriteScale);
+        // 床: 座標ハッシュでバリアントを選択（決定論的・キャッシュ済み参照）
+        const variant = stageFloorVariants[
+          selectTileVariantIndex(worldX, worldY, stageFloorVariants.length)
+        ];
+        spriteRenderer.drawSprite(ctx, variant, tileDrawX, tileDrawY, spriteScale);
       }
 
       // グリッド線（全体表示時は省略）
+      // 目地は床スプライトが担うため、補助線は気配程度に抑える
       if (!useFullMap) {
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
         ctx.strokeRect(tileDrawX, tileDrawY, tileSize, tileSize);
       }
     }
