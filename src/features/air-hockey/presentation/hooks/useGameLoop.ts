@@ -39,6 +39,8 @@ import type {
 import { applyKeyboardMovement } from '../../hooks/useKeyboardInput';
 import type { KeyboardState } from '../../core/keyboard';
 import { calculateKeyboardMovement, KEYBOARD_MOVE_SPEED } from '../../core/keyboard';
+import { computeImpact } from '../../core/impact';
+import { vibrate } from '../../core/haptics';
 
 // ランダム選択ヘルパー
 const randomChoice = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
@@ -55,9 +57,6 @@ const GO_DISPLAY_DURATION = isE2ETestMode() ? 50 : 500;
 // シェイク定数
 const GOAL_SHAKE_INTENSITY = 8;
 const GOAL_SHAKE_DURATION = 300;
-const HIT_SHAKE_INTENSITY = 3;
-const HIT_SHAKE_DURATION = 150;
-const STRONG_HIT_SPEED_THRESHOLD = 8;
 
 /** ゲーム設定グループ */
 export type GameLoopConfig = {
@@ -82,6 +81,8 @@ export type GameLoopConfig = {
   /** P3/P4 の操作タイプ（2v2 + Gamepad 時のみ使用） */
   enemy1ControlType?: 'cpu' | 'human';
   enemy2ControlType?: 'cpu' | 'human';
+  /** reduced-motion 有効時は打撃時の shake / hitStop / 振動を抑制する（サウンドは残す） */
+  reducedMotion?: boolean;
 };
 
 /** Ref グループ（ゲームループが参照・更新する ref） */
@@ -111,7 +112,6 @@ export type GameLoopCallbacks = {
   setWinner: (w: string | null) => void;
   setScreen: (s: 'menu' | 'game' | 'result') => void;
   setShowHelp: (v: boolean) => void;
-  setShake: (s: ShakeState | null) => void;
 };
 
 /** useGameLoop のパラメータ（5 フィールド） */
@@ -152,7 +152,7 @@ function applyGamepadToMallet(
  * - callbacks: React state 更新コールバック
  */
 export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGameLoopParams): void {
-  const { difficulty: diff, field, winScore, getSound, bgmEnabled, gameMode, aiConfig, playerMalletColor, cpuMalletColor, allyControlType, allyCharacterId, enemyCharacter1Id, enemyCharacter2Id, enemy1ControlType, enemy2ControlType } = config;
+  const { difficulty: diff, field, winScore, getSound, bgmEnabled, gameMode, aiConfig, playerMalletColor, cpuMalletColor, allyControlType, allyCharacterId, enemyCharacter1Id, enemyCharacter2Id, enemy1ControlType, enemy2ControlType, reducedMotion = false } = config;
   const pColor = playerMalletColor ?? DEFAULT_PLAYER_MALLET_COLOR;
   const cColor = cpuMalletColor ?? DEFAULT_CPU_MALLET_COLOR;
   const {
@@ -163,7 +163,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
   } = refs;
   const is2PMode = gameMode === '2p-local';
   const is2v2Mode = gameMode === '2v2-local';
-  const { setScores, setWinner, setScreen, setShowHelp, setShake } = callbacks;
+  const { setScores, setWinner, setScreen, setShowHelp } = callbacks;
 
   // パックスタック検出用カウンター（useEffect 再実行でもリセットされない）
   const puckStuckCountersRef = React.useRef<number[]>([]);
@@ -225,7 +225,30 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
     const triggerShake = (intensity: number, duration: number) => {
       const newShake: ShakeState = { intensity, duration, startTime: Date.now() };
       shakeRef.current = newShake;
-      setShake(newShake);
+    };
+
+    // シェイクを canvas に「毎フレーム」適用するヘルパー。
+    // 旧実装は React state 経由の CSS transform で、ラリー中は再描画が起きず
+    // 1 回ずれるだけで揺れて見えなかった。rAF ループから毎フレーム transform を
+    // 更新することで、実際に振動する画面シェイクにする。
+    const applyCanvasShake = (now: number) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const s = shakeRef.current;
+      if (!s) {
+        if (canvas.style.transform) canvas.style.transform = '';
+        return;
+      }
+      const elapsed = now - s.startTime;
+      if (elapsed >= s.duration) {
+        shakeRef.current = null;
+        canvas.style.transform = '';
+        return;
+      }
+      const decay = 1 - elapsed / s.duration;
+      const offsetX = (Math.random() - 0.5) * 2 * s.intensity * decay;
+      const offsetY = (Math.random() - 0.5) * 2 * s.intensity * decay;
+      canvas.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
     };
 
     // ヒットストップ状態（US-1.4）
@@ -310,16 +333,40 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
             }
           }
 
-          if (isPuck && speed > STRONG_HIT_SPEED_THRESHOLD) {
-            triggerShake(HIT_SHAKE_INTENSITY, HIT_SHAKE_DURATION);
+          // 打撃フィードバックの階調化（US 打撃感）
+          // reduced-motion 時は反応を発火しない（サウンドは上流で再生済み）
+          if (isPuck) {
             const postSpeed = magnitude(obj.vx, obj.vy);
-            if (postSpeed > STRONG_HIT_SPEED_THRESHOLD && !hitStop.active) {
-              hitStop.active = true;
-              hitStop.framesRemaining = 3;
-              hitStop.impactX = obj.x;
-              hitStop.impactY = obj.y;
-              hitStop.shockwaveRadius = 0;
-              hitStop.shockwaveMaxRadius = 80;
+            const impact = reducedMotion ? null : computeImpact(postSpeed);
+            if (impact) {
+              // シェイクは強打時のみ（shakeIntensity=0 の弱〜中打では画面を揺らさない）
+              if (impact.shakeIntensity > 0) {
+                triggerShake(impact.shakeIntensity, impact.shakeDuration);
+              }
+              if (impact.hitStopFrames > 0 && !hitStop.active) {
+                hitStop.active = true;
+                hitStop.framesRemaining = impact.hitStopFrames;
+                hitStop.impactX = obj.x;
+                hitStop.impactY = obj.y;
+                hitStop.shockwaveRadius = 0;
+                hitStop.shockwaveMaxRadius = impact.shockwaveMaxRadius;
+              }
+              // 接触点に「当たった瞬間」のスパークを飛ばす（強打ほど多い）
+              for (let sp = 0; sp < impact.sparkCount; sp++) {
+                const ang = randomRange(0, Math.PI * 2);
+                const spd = randomRange(1.5, 4.5);
+                game.particles.push({
+                  x: obj.x,
+                  y: obj.y,
+                  vx: Math.cos(ang) * spd,
+                  vy: Math.sin(ang) * spd,
+                  life: 18,
+                  maxLife: 18,
+                  color: '#fff2a8',
+                  size: randomRange(1.5, 3.5),
+                });
+              }
+              vibrate(impact.vibrationMs);
             }
           }
         }
@@ -402,6 +449,9 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
       };
 
       const now = Date.now();
+
+      // 画面シェイクを毎フレーム適用（全フェーズ共通・early return より前）
+      applyCanvasShake(now);
 
       // カウントダウンフェーズ
       if (phaseRef.current === 'countdown') {
@@ -1078,7 +1128,7 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
   }, [screen, diff, field, winScore, showHelp, getSound,
       gameRef, canvasRef, lastInputRef, scoreRef,
       setScores, setWinner, setScreen, setShowHelp,
-      phaseRef, countdownStartRef, shakeRef, setShake, bgmEnabled,
+      phaseRef, countdownStartRef, shakeRef, bgmEnabled, reducedMotion,
       statsRef, matchStartRef, keysRef,
       is2PMode, is2v2Mode, pColor, cColor, playerTargetRef, player2KeysRef, multiTouchRef, aiConfig,
       allyControlType, allyCharacterId, enemyCharacter1Id, enemyCharacter2Id, enemy1ControlType, enemy2ControlType, gamepadToastRef]);

@@ -31,6 +31,7 @@ import { useInput } from '../hooks/useInput';
 import { useKeyboardInput } from '../hooks/useKeyboardInput';
 import { useMultiTouchInput } from '../hooks/useMultiTouchInput';
 import { useGameLoop } from './hooks/useGameLoop';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 import { useScreenNavigation } from './hooks/useScreenNavigation';
 import { useGameMode } from './hooks/useGameMode';
 import { useGamepadInput } from '../hooks/useGamepadInput';
@@ -74,7 +75,6 @@ const AirHockeyGame: React.FC = () => {
   // ── ゲームセッション状態 ──
   const [scores, setScores] = useState({ p: 0, c: 0 });
   const [winner, setWinner] = useState<string | null>(null);
-  const [shake, setShake] = useState<ShakeState | null>(null);
   const [preloadUrls, setPreloadUrls] = useState<string[]>([]);
   useImagePreloader(preloadUrls);
 
@@ -263,6 +263,8 @@ const AirHockeyGame: React.FC = () => {
     };
   }, [is2PGame]);
 
+  const prefersReducedMotion = useReducedMotion();
+
   useGameLoop({
     screen, showHelp: ui.showHelp,
     config: {
@@ -277,6 +279,7 @@ const AirHockeyGame: React.FC = () => {
       enemyCharacter2Id: is2v2Mode ? pairEnemy2.id : undefined,
       enemy1ControlType: is2v2Mode ? mode.enemy1ControlType : undefined,
       enemy2ControlType: is2v2Mode ? mode.enemy2ControlType : undefined,
+      reducedMotion: prefersReducedMotion,
     },
     refs: {
       gameRef, canvasRef, lastInputRef, scoreRef, phaseRef, countdownStartRef, shakeRef, statsRef, matchStartRef, keysRef,
@@ -285,7 +288,7 @@ const AirHockeyGame: React.FC = () => {
       multiTouchRef: (is2PMode || is2v2Mode) ? multiTouchRef : undefined,
       gamepadToastRef,
     },
-    callbacks: { setScores, setWinner, setScreen: handlers.handleScreenChange, setShowHelp: ui.setShowHelp, setShake },
+    callbacks: { setScores, setWinner, setScreen: handlers.handleScreenChange, setShowHelp: ui.setShowHelp },
   });
 
   // ── 描画 ──
@@ -416,7 +419,7 @@ const AirHockeyGame: React.FC = () => {
             playerColor={is2PMode ? mode.player1Character?.color : undefined}
             cpuColor={is2PMode ? mode.player2Character?.color : undefined}
           />
-          <Field canvasRef={canvasRef} onInput={handleInput} shake={shake} />
+          <Field canvasRef={canvasRef} onInput={handleInput} />
           <CanvasLiveRegion message={liveMessage} politeness={livePoliteness} />
         </>
       )}
