@@ -66,6 +66,7 @@ jest.mock('../sprites', () => ({
   FLOOR_SPRITE: { width: 32, height: 32, palette: [], pixels: [] },
   WALL_SPRITE: { width: 32, height: 32, palette: [], pixels: [] },
   getStageFloorSprite: jest.fn(() => ({ width: 32, height: 32, palette: [], pixels: [] })),
+  getStageFloorVariants: jest.fn(() => [{ width: 32, height: 32, palette: [], pixels: [] }]),
   getStageWallSprite: jest.fn(() => ({ width: 32, height: 32, palette: [], pixels: [] })),
   GOAL_SPRITE_SHEET: { sprites: [{ width: 32, height: 32, palette: [], pixels: [] }], frameDuration: 500 },
   START_SPRITE: { width: 32, height: 32, palette: [], pixels: [] },
