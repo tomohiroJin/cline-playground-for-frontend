@@ -339,7 +339,10 @@ export function useGameLoop({ screen, showHelp, config, refs, callbacks }: UseGa
             const postSpeed = magnitude(obj.vx, obj.vy);
             const impact = reducedMotion ? null : computeImpact(postSpeed);
             if (impact) {
-              triggerShake(impact.shakeIntensity, impact.shakeDuration);
+              // シェイクは強打時のみ（shakeIntensity=0 の弱〜中打では画面を揺らさない）
+              if (impact.shakeIntensity > 0) {
+                triggerShake(impact.shakeIntensity, impact.shakeDuration);
+              }
               if (impact.hitStopFrames > 0 && !hitStop.active) {
                 hitStop.active = true;
                 hitStop.framesRemaining = impact.hitStopFrames;

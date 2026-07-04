@@ -87,8 +87,9 @@ export const computeImpact = (hitSpeed: number): ImpactResponse | null
 |------|-----|------|
 | `IMPACT_MIN_SPEED` | 6 | これ未満は `null`。`resolveCollision` の基準復元速度 5（静止マレットの受け身接触でも発生）より上に置き、受け身のブロックで毎回発火しないようにする |
 | `IMPACT_MAX_SPEED` | 16 | `PHYSICS.MAX_POWER` 相当で頭打ち |
-| `shakeIntensity` | lerp(5, 14, t) | px。当初 2〜9 は体感できず、はっきり分かる値へ増強 |
-| `shakeDuration` | lerp(160, 320, t) | ms |
+| `SHAKE_MIN_SPEED` | 12 | 画面シェイク専用の下限。これ未満は `shakeIntensity=0`（揺らさない）。火花・振動・衝撃波とは分離 |
+| `shakeIntensity` | shakeT 起点で lerp(4, 9) | px。強打時のみ・控えめ。画面全体が動く揺れはプレイを妨げるため限定 |
+| `shakeDuration` | lerp(110, 190, shakeT) | ms。短めのパンチに |
 | `hitStopFrames` | round(lerp(0, 6, t)) | 低速では 0（hitStop なし）に落ちる |
 | `shockwaveMaxRadius` | lerp(50, 150, t) | px |
 | `vibrationMs` | round(lerp(12, 55, t)) | 触覚の強弱 |
@@ -103,6 +104,13 @@ export const computeImpact = (hitSpeed: number): ImpactResponse | null
 - **shake を rAF ループで毎フレーム適用**: `useGameLoop` が `canvas.style.transform` を毎フレーム更新する `applyCanvasShake` を追加。React state 経由の shake 経路（`setShake` / `Field` の transform）は撤去。
 - **演出値の増強**: 上表のとおり体感できる値へ。
 - **接触点スパーク**: 強打ほど多くの白いパーティクルを接触点に発生（`sparkCount`）。デスクトップ（振動なし）でも視覚で分かるように。
+
+### 追補（2026-07-04・2）: シェイクが「プレイのやりにくさ」を生む問題への対応
+
+上記強化で揺れ・火花は体感できたが、**画面シェイクがパック追従を妨げてプレイしづらくなった**。
+そこで**シェイクだけを他の演出から分離**し、専用の高い下限 `SHAKE_MIN_SPEED = 12` を設けて
+「本当に強い打撃のときだけ・控えめ（4〜9px, 110〜190ms）」に限定した。
+火花・振動・衝撃波は従来どおり `IMPACT_MIN_SPEED = 6` から発火し、通常打の手応えを維持する。
 
 ## 5. `core/haptics.ts` の設計
 

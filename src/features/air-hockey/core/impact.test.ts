@@ -20,6 +20,22 @@ describe('computeImpact', () => {
     expect(r).not.toBeNull();
   });
 
+  it('弱〜中打（シェイク下限未満）ではシェイクは 0 だが火花などは出る', () => {
+    // 画面シェイクはプレイを妨げるため、強打時のみに限定している。
+    const mid = computeImpact(8);
+    expect(mid).not.toBeNull();
+    if (!mid) return;
+    expect(mid.shakeIntensity).toBe(0);
+    expect(mid.sparkCount).toBeGreaterThan(0);
+  });
+
+  it('強打（シェイク下限以上）ではシェイクが発生する', () => {
+    const strong = computeImpact(15);
+    expect(strong).not.toBeNull();
+    if (!strong) return;
+    expect(strong.shakeIntensity).toBeGreaterThan(0);
+  });
+
   it('速度が上がるほど各反応量が単調非減少になる', () => {
     const mid = computeImpact(8);
     const high = computeImpact(14);
