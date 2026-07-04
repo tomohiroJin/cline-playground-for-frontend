@@ -111,14 +111,22 @@ src/
     ResultScreen.tsx                      # リザルト画面
     ClearHistoryList.tsx                  # クリア履歴表示
     ShareButton.tsx                       # SNS シェアボタン
-  hooks/
-    useGameState.ts                       # ゲーム状態管理
-    usePuzzle.ts                          # パズルロジック
-    useHintMode.ts                        # ヒントモード
-    useKeyboard.ts                        # キーボード操作
-    useSwipe.ts                           # スワイプ操作
-    useCompletionOverlay.ts              # リザルトオーバーレイ
-    useVideoPlayback.ts                  # 動画再生
+  domain/puzzle/                          # パズルドメイン（DDD）
+    aggregates/puzzle-board.ts            # パズルボード集約
+    entities/puzzle-piece.ts              # ピースエンティティ
+    services/shuffle-service.ts           # シャッフルサービス
+    value-objects/                        # division / grid-position
+  application/use-cases/                  # ユースケース（initialize / move / complete / reset）
+  presentation/
+    hooks/
+      useGameFlow.ts                      # ゲーム進行（フェーズ遷移）管理
+      usePuzzleGame.ts                    # パズル操作（移動・完成判定）
+      useHintMode.ts                      # ヒントモード
+      useKeyboard.ts                      # キーボード操作
+      useSwipe.ts                         # スワイプ操作
+      useCompletionOverlay.ts             # リザルトオーバーレイ
+      useVideoPlayback.ts                 # 動画再生
+    store/                                # Jotai アトム（game / puzzle / ui）
   store/atoms.ts                          # Jotai アトム（状態管理）
   types/puzzle.ts                         # 型定義
   data/themes.ts                          # テーマ・画像データ
@@ -130,9 +138,10 @@ src/
 
 ### 状態管理
 
-- **Jotai** によるアトムベースの状態管理
-- `useGameState` でゲームフェーズ（タイトル → セットアップ → プレイ → クリア）を管理
-- `usePuzzle` でパズルロジック（シャッフル・移動判定・完成判定・タイマー）を管理
+- **Jotai** によるアトムベースの状態管理（`presentation/store/` の game / puzzle / ui アトム）
+- `useGameFlow` でゲームフェーズ（タイトル → セットアップ → プレイ → クリア）を管理
+- `usePuzzleGame` がパズルロジック（`domain/puzzle/` のシャッフル・移動判定・完成判定）と
+  ユースケース（`application/use-cases/`）を仲介
 
 ### 使用技術
 

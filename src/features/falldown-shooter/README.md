@@ -128,4 +128,4 @@ npx jest --testPathPatterns='falldown-shooter' --no-coverage
 npx jest --testPathPatterns='falldown-shooter' --coverage
 ```
 
-**テスト構成**: 18テストスイート / 158テスト
+**テスト構成**: テストは対象と同じ層構成で `__tests__/` 配下（domain / application / components）に配置

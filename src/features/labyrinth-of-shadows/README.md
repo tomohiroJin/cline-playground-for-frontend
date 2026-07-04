@@ -49,6 +49,19 @@ src/features/labyrinth-of-shadows/
   audio.ts              # 効果音・BGM生成
   LabyrinthOfShadowsGame.tsx  # メインゲームコンポーネント
   index.ts              # barrel export
+  domain/               # ドメイン層
+    models/             #   ドメインモデル（item）
+    services/           #   ドメインサービス（collision, enemy-strategy, pathfinding, scoring）
+    types.ts            #   ドメイン型定義
+    constants.ts        #   ドメイン定数
+  application/          # アプリケーション層
+    game-events.ts      #   ゲームイベント定義
+  infrastructure/       # インフラ層
+    audio/              #   オーディオサービス
+    rendering/          #   描画設定・レンガテクスチャ生成
+  presentation/         # プレゼンテーション層
+    hooks/              #   use-game-loop, use-input, use-audio
+    styles/             #   ゲーム画面スタイル
   components/
     Controls.tsx        # 操作UI
     HUD.tsx             # ヘッドアップディスプレイ

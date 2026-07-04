@@ -99,7 +99,7 @@ src/pages/PrimalPathPage.tsx  # ページコンポーネント（薄いラッパ
 
 ### テスト
 
-- 12スイート / 329テスト（Jest + React Testing Library）
+- Jest + React Testing Library（テストは `__tests__/` 配下に対象と同じ構成で配置）
 - TDD Red-Green-Refactor サイクルで実装
 - 純粋関数テスト + コンポーネントテストのハイブリッド構成
 

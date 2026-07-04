@@ -192,7 +192,7 @@ src/pages/IpnePage.styles.ts  # スタイルコンポーネント
 
 ```
 presentation/effects/
-  effectTypes.ts         # エフェクト型定義（12種別）
+  effectTypes.ts         # エフェクト型定義
   effectManager.ts       # エフェクト統合管理（パーティクル上限200個）
   particleSystem.ts      # パーティクル生成・更新・描画基盤
   floatingText.ts        # ダメージ数値等のフローティングテキスト（上限30個）
