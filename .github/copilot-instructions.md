@@ -1,7 +1,7 @@
 # GitHub Copilot 用指示書
 
 React 19 + TypeScript + Jotai の Web ブラウザゲームプラットフォーム（13タイトル）。
-設計原則: Clean Architecture, DDD, TDD, SOLID, DRY, DbC。
+設計原則: Clean Architecture, DDD, TDD, SOLID, DRY, DbC, Clean Code。
 
 ## 言語
 
