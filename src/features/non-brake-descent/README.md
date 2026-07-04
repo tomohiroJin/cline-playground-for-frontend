@@ -31,6 +31,24 @@ src/features/non-brake-descent/
     speed-domain.ts         # 速度管理
     math-utils.ts           # 数学ユーティリティ
     non-brake-descent-domains.test.ts  # ドメインテスト
+  domain/                   # ドメイン層（Clean Architecture 版）
+    entities/               #   エンティティ（player, obstacle, ramp, particle, background）
+    events/                 #   ゲームイベント定義
+    services/               #   ドメインサービス（collision, combo, danger, geometry,
+                            #   physics, scoring, speed + 演出系: combo-tint, dust,
+                            #   speed-line, squash-stretch, trail, camera-zoom）
+    strategies/collision/   #   衝突ハンドラのストラテジー（rock, hole, enemy, item）
+    math-utils.ts           #   数学ユーティリティ
+  application/              # アプリケーション層
+    collision/              #   衝突処理プロセッサ
+    game-loop/              #   ゲームクロック・ゲーム状態・モーションスケール
+    generators/             #   障害物・ランプ・背景の生成
+  infrastructure/           # インフラ層
+    audio/                  #   オーディオポート + Web Audio / Null アダプタ、BGM プロファイル
+    storage/                #   スコアリポジトリ（localStorage）
+  presentation/             # プレゼンテーション層
+    hooks/                  #   use-game-engine, use-input, use-audio, use-mobile, use-reduced-motion
+    screens/                #   タイトル・プレイ・リザルト画面
   renderers/
     index.tsx               # エクスポート集約
     effects/index.tsx       # エフェクト描画
@@ -44,6 +62,8 @@ src/features/non-brake-descent/
   audio.ts                  # 効果音
 src/pages/NonBrakeDescentPage.tsx   # ページコンポーネント（薄いラッパー）
 ```
+
+> 注: 旧来の `domains/`（複数形）と Clean Architecture 版の `domain/`（単数形）が併存している。新規のドメインロジックは `domain/` 側に追加する。
 
 ### 状態管理
 
