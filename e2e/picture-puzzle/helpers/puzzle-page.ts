@@ -37,12 +37,12 @@ export class PuzzlePage {
   async expectTitleScreen(): Promise<void> {
     await expect(this.page.getByText('ピクチャーパズル')).toBeVisible();
     await expect(this.page.getByText('ピースを揃えて絵を完成させよう')).toBeVisible();
-    await expect(this.page.getByText('はじめる')).toBeVisible();
+    await expect(this.page.getByText('入館する')).toBeVisible();
   }
 
-  /** 「はじめる」をクリックしてセットアップ画面に進む */
+  /** 「入館する」をクリックしてセットアップ画面に進む */
   async startFromTitle(): Promise<void> {
-    await this.page.getByText('はじめる').click();
+    await this.page.getByText('入館する').click();
     // セットアップ画面のボタンが表示されるまで待機
     await expect(this.startPuzzleButton).toBeVisible({ timeout: 5_000 });
   }

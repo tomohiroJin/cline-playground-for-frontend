@@ -31,29 +31,27 @@ export const SetupSection = styled.section`
 `;
 
 export const StartButton = styled.button`
-  background: linear-gradient(135deg, var(--accent-color), #3a7bd5);
-  color: white;
-  padding: 14px 32px;
+  background: ${galleryTokens.ink};
+  color: ${galleryTokens.cream};
+  padding: 13px 34px;
   border: none;
-  border-radius: 50px;
+  border-radius: 2px;
   cursor: pointer;
-  font-size: 1.2rem;
-  font-weight: 800;
-  margin-top: 30px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  margin-top: 24px;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 210, 255, 0.4);
-    filter: brightness(1.1);
+    filter: brightness(1.15);
   }
 
   &:disabled {
-    background: #555;
+    background: #b8b0a2;
     cursor: not-allowed;
     transform: none;
-    box-shadow: none;
   }
 `;
 
