@@ -69,9 +69,9 @@ export const GameSection = styled.section`
 export const Instructions = styled.div`
   margin: 40px 0;
   padding: 24px;
-  background: rgba(0, 0, 0, 0.2);
-  border-left: 4px solid var(--accent-color);
-  border-radius: 8px;
+  background: ${galleryTokens.mat};
+  border-left: 4px solid ${galleryTokens.gold};
+  border-radius: 4px;
   width: 100%;
   max-width: 700px;
 `;

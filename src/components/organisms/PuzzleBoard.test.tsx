@@ -94,7 +94,7 @@ describe('PuzzleBoard', () => {
     render(<PuzzleBoard {...props} />);
 
     // リザルト画面が表示されていることを確認
-    expect(screen.getByText('パズル完成！')).toBeInTheDocument();
+    expect(screen.getByText('作品を収蔵しました')).toBeInTheDocument();
     expect(screen.getByText('02:00')).toBeInTheDocument();
     expect(screen.getByText('もう一度')).toBeInTheDocument();
     expect(screen.getByText('7,250')).toBeInTheDocument();
