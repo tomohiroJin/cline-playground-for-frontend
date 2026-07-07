@@ -36,7 +36,7 @@ export class PuzzlePage {
   /** タイトル画面が表示されているか確認する */
   async expectTitleScreen(): Promise<void> {
     await expect(this.page.getByText('ピクチャーパズル')).toBeVisible();
-    await expect(this.page.getByText('ピースを揃えて絵を完成させよう')).toBeVisible();
+    await expect(this.page.getByText('Your Private Gallery')).toBeVisible();
     await expect(this.page.getByText('入館する')).toBeVisible();
   }
 
