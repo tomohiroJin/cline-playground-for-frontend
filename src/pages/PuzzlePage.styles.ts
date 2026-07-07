@@ -61,7 +61,7 @@ export const GameSection = styled.section`
   width: 100%;
   padding: 20px;
   background: var(--glass-bg);
-  backdrop-filter: blur(10px);
+  border: 1px solid ${galleryTokens.frameBorder};
   border-radius: 20px;
   max-width: 900px;
 `;
