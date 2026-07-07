@@ -1,4 +1,5 @@
 import styled from 'styled-components';
+import { galleryTokens } from '../../pages/gallery-theme';
 
 // スタイル付きコンポーネント
 export const SelectorContainer = styled.div`
@@ -11,7 +12,7 @@ export const SelectorContainer = styled.div`
 export const Label = styled.label`
   font-size: 1rem;
   margin-bottom: 10px;
-  color: var(--text-primary);
+  color: ${galleryTokens.ink};
 `;
 
 export const SelectWrapper = styled.div`
@@ -22,22 +23,25 @@ export const SelectWrapper = styled.div`
 export const StyledSelect = styled.select`
   width: 100%;
   padding: 10px;
-  border: 1px solid var(--glass-border);
-  border-radius: 4px;
-  background-color: var(--glass-bg);
-  color: var(--text-primary);
+  /* 額縁のサイズ選択。非選択時は控えめな縁取りのみ */
+  border: 1px solid ${galleryTokens.frameBorder};
+  border-radius: 2px;
+  background-color: ${galleryTokens.cream};
+  color: ${galleryTokens.ink};
   font-size: 1rem;
   appearance: none;
   cursor: pointer;
 
   &:focus {
+    /* 選択操作中は額のサイズを選んでいる状態として強調する */
     outline: none;
-    border-color: var(--accent-color);
+    border: 2px solid ${galleryTokens.ink};
+    background: ${galleryTokens.mat};
   }
 
   option {
-    background-color: #24243e;
-    color: #fff;
+    background-color: ${galleryTokens.cream};
+    color: ${galleryTokens.ink};
   }
 `;
 
@@ -50,13 +54,13 @@ export const SelectArrow = styled.div`
   height: 0;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid var(--text-secondary);
+  border-top: 5px solid ${galleryTokens.sub};
   pointer-events: none;
 `;
 
 export const Description = styled.p`
   font-size: 0.9rem;
-  color: var(--text-secondary);
+  color: ${galleryTokens.sub};
   margin-top: 5px;
   text-align: center;
 `;

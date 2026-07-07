@@ -20,11 +20,10 @@ export const SetupSection = styled.section`
   align-items: center;
   margin-bottom: 30px;
   padding: 30px;
-  background: var(--glass-bg);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--glass-border);
-  border-radius: 20px;
-  box-shadow: var(--glass-shadow);
+  background: ${galleryTokens.mat};
+  border: 1px solid ${galleryTokens.frameBorder};
+  border-radius: 6px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.1);
   width: 100%;
   max-width: 700px;
   color: var(--text-primary);
