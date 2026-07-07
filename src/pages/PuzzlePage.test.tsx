@@ -13,7 +13,7 @@ jest.mock('../components/TitleScreen', () => {
     __esModule: true,
     default: ({ onStart }: { onStart: () => void }) => (
       <div data-testid="title-screen">
-        <button onClick={onStart}>はじめる</button>
+        <button onClick={onStart}>入館する</button>
       </div>
     ),
   };
@@ -69,7 +69,7 @@ describe('PuzzlePage', () => {
     renderWithProvider(<PuzzlePage />);
 
     // タイトル画面を通過
-    fireEvent.click(screen.getByText('はじめる'));
+    fireEvent.click(screen.getByText('入館する'));
 
     // 遊び方の説明が表示されていることを確認
     expect(screen.getByText('遊び方')).toBeInTheDocument();
@@ -80,7 +80,7 @@ describe('PuzzlePage', () => {
     renderWithProvider(<PuzzlePage />);
 
     // タイトル画面を通過
-    fireEvent.click(screen.getByText('はじめる'));
+    fireEvent.click(screen.getByText('入館する'));
 
     // クリア履歴リストが表示されていることを確認
     const historyList = screen.getByTestId('clear-history-list');
@@ -98,7 +98,7 @@ describe('PuzzlePage', () => {
     renderWithProvider(<PuzzlePage />);
 
     // タイトル画面を通過
-    fireEvent.click(screen.getByText('はじめる'));
+    fireEvent.click(screen.getByText('入館する'));
 
     const historyItems = screen.getAllByTestId('history-item');
     expect(historyItems.length).toBe(2);

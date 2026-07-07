@@ -1,4 +1,5 @@
 import styled from 'styled-components';
+import { galleryTokens } from '../../pages/gallery-theme';
 
 export const SelectorContainer = styled.div`
   display: flex;
@@ -11,7 +12,8 @@ export const SelectorContainer = styled.div`
 export const Title = styled.h3`
   margin-bottom: 10px;
   font-size: 1.2rem;
-  color: var(--text-primary);
+  color: ${galleryTokens.ink};
+  letter-spacing: 0.05em;
 `;
 
 export const ThemeTabs = styled.div`
@@ -90,9 +92,14 @@ export const ImagesGrid = styled.div`
 export const ImageItem = styled.div<{ $isSelected: boolean }>`
   position: relative;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: 4px;
   overflow: hidden;
-  border: 3px solid ${props => (props.$isSelected ? 'var(--success-color)' : 'transparent')};
+  background: ${galleryTokens.mat};
+  border: 1px solid ${galleryTokens.frameBorder};
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  /* 選択中は額装カードのように金の縁取りで強調する */
+  outline: ${props => (props.$isSelected ? `2px solid ${galleryTokens.gold}` : 'none')};
+  outline-offset: 2px;
   transition: all 0.2s ease-in-out;
 
   &:hover {

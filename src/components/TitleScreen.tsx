@@ -1,53 +1,46 @@
 import React, { useEffect, useRef } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { SetupSection, StartButton } from '../pages/PuzzlePage.styles';
-
-const titleGlow = keyframes`
-  0%, 100% {
-    text-shadow:
-      0 0 10px rgba(0, 210, 255, 0.4),
-      0 0 20px rgba(0, 210, 255, 0.2);
-  }
-  50% {
-    text-shadow:
-      0 0 20px rgba(0, 210, 255, 0.8),
-      0 0 40px rgba(0, 210, 255, 0.4),
-      0 0 60px rgba(0, 210, 255, 0.2);
-  }
-`;
+import { ArtFrame } from './molecules/ArtFrame';
+import { galleryTokens } from '../pages/gallery-theme';
 
 const fadeIn = keyframes`
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
+const Hero = styled(ArtFrame)`
+  width: 150px;
+  margin: 0 auto 22px;
+  animation: ${fadeIn} 0.8s ease-out;
+`;
+
+/** ヒーロー額の中身（作品を象徴する静かなグラデ面） */
+const HeroArt = styled.div`
+  height: 96px;
+  background: linear-gradient(135deg, ${galleryTokens.sage}, ${galleryTokens.gold});
 `;
 
 const Title = styled.h1`
-  font-size: 2.8rem;
-  letter-spacing: 0.3em;
-  margin-bottom: 8px;
-  animation: ${titleGlow} 3s ease-in-out infinite, ${fadeIn} 0.8s ease-out;
+  font-family: Georgia, 'Times New Roman', 'Yu Mincho', serif;
+  font-size: 2.4rem;
+  letter-spacing: 0.14em;
+  margin: 0 0 8px;
+  color: ${galleryTokens.ink};
+  animation: ${fadeIn} 0.8s ease-out;
 `;
 
-const Subtitle = styled.p`
-  font-size: 1rem;
-  color: var(--text-secondary, #aaa);
-  margin-top: 0;
-  margin-bottom: 16px;
+const Kicker = styled.p`
+  font-size: 0.72rem;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: ${galleryTokens.sub};
+  margin: 0 0 24px;
   animation: ${fadeIn} 0.8s ease-out 0.3s both;
 `;
 
-const GlowStartButton = styled(StartButton)`
+const EnterButton = styled(StartButton)`
   animation: ${fadeIn} 0.8s ease-out 0.6s both;
-
-  &:hover {
-    box-shadow: 0 0 25px rgba(0, 210, 255, 0.6), 0 6px 20px rgba(0, 210, 255, 0.4);
-  }
 `;
 
 type TitleScreenProps = {
@@ -71,9 +64,12 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onStart, onDebugActivate }) =
 
   return (
     <SetupSection>
+      <Hero>
+        <HeroArt />
+      </Hero>
       <Title>ピクチャーパズル</Title>
-      <Subtitle>ピースを揃えて絵を完成させよう</Subtitle>
-      <GlowStartButton onClick={onStart}>はじめる</GlowStartButton>
+      <Kicker>Your Private Gallery</Kicker>
+      <EnterButton onClick={onStart}>入館する</EnterButton>
     </SetupSection>
   );
 };

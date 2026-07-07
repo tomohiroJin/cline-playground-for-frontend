@@ -3,18 +3,16 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import TitleScreen from './TitleScreen';
 
 describe('TitleScreen', () => {
-  it('タイトルとはじめるボタンが表示される', () => {
+  it('タイトルと入館するボタンが表示される', () => {
     render(<TitleScreen onStart={jest.fn()} onDebugActivate={jest.fn()} />);
-
     expect(screen.getByText('ピクチャーパズル')).toBeInTheDocument();
-    expect(screen.getByText('はじめる')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '入館する' })).toBeInTheDocument();
   });
 
-  it('はじめるボタンをクリックするとonStartが呼ばれる', () => {
+  it('入館するボタンをクリックするとonStartが呼ばれる', () => {
     const onStart = jest.fn();
     render(<TitleScreen onStart={onStart} onDebugActivate={jest.fn()} />);
-
-    fireEvent.click(screen.getByText('はじめる'));
+    fireEvent.click(screen.getByRole('button', { name: '入館する' }));
     expect(onStart).toHaveBeenCalledTimes(1);
   });
 

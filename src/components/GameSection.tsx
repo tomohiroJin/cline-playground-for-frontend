@@ -5,6 +5,7 @@ import {
 } from '../pages/PuzzlePage.styles';
 import { PuzzlePiece, PuzzleScore } from '../types/puzzle';
 import PuzzleBoard from '../components/organisms/PuzzleBoard';
+import { ArtFrame } from './molecules/ArtFrame';
 import { ShareButton } from './molecules/ShareButton';
 
 /**
@@ -66,26 +67,28 @@ export const GameSectionComponent: React.FC<GameSectionProps> = ({
   <GameSection>
     {imageUrl && originalImageSize && (
       <>
-        <PuzzleBoard
-          imageUrl={imageUrl}
-          originalWidth={originalImageSize.width}
-          originalHeight={originalImageSize.height}
-          pieces={pieces}
-          division={division}
-          elapsedTime={elapsedTime}
-          completed={completed}
-          hintMode={hintModeEnabled}
-          emptyPosition={emptyPosition}
-          moveCount={moveCount}
-          correctRate={correctRate}
-          score={score}
-          isBestScore={isBestScore}
-          onPieceMove={handlePieceMove}
-          onReset={handleResetGame}
-          onToggleHint={toggleHintMode}
-          onEmptyPanelClick={handleEmptyPanelClick}
-          onEndGame={handleEndGame}
-        />
+        <ArtFrame>
+          <PuzzleBoard
+            imageUrl={imageUrl}
+            originalWidth={originalImageSize.width}
+            originalHeight={originalImageSize.height}
+            pieces={pieces}
+            division={division}
+            elapsedTime={elapsedTime}
+            completed={completed}
+            hintMode={hintModeEnabled}
+            emptyPosition={emptyPosition}
+            moveCount={moveCount}
+            correctRate={correctRate}
+            score={score}
+            isBestScore={isBestScore}
+            onPieceMove={handlePieceMove}
+            onReset={handleResetGame}
+            onToggleHint={toggleHintMode}
+            onEmptyPanelClick={handleEmptyPanelClick}
+            onEndGame={handleEndGame}
+          />
+        </ArtFrame>
         <>
           {completed && (
             <div

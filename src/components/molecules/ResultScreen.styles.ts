@@ -1,4 +1,5 @@
 import styled from 'styled-components';
+import { galleryTokens } from '../../pages/gallery-theme';
 
 export const ResultOverlay = styled.div`
   position: absolute;
@@ -22,6 +23,15 @@ export const ResultOverlay = styled.div`
 export const ResultTitle = styled.h2`
   font-size: 1.4rem;
   margin: 0 0 12px;
+  color: ${galleryTokens.gold};
+`;
+
+export const RankLabel = styled.p`
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: ${galleryTokens.sub};
+  margin: 12px 0 2px;
 `;
 
 export const ResultList = styled.dl`
