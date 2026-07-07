@@ -1,11 +1,17 @@
 import styled from 'styled-components';
+import { galleryThemeVars, galleryTokens } from './gallery-theme';
 
 export const PuzzlePageContainer = styled.div`
+  ${galleryThemeVars}
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 40px 20px;
   width: 100%;
+  min-height: 100vh;
+  /* 美術館の壁。グローバル背景グラデを覆い、配下だけをギャラリー色にする */
+  background: ${galleryTokens.cream};
+  color: var(--text-primary);
 `;
 
 export const SetupSection = styled.section`
