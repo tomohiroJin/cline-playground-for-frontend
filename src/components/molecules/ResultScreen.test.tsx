@@ -26,7 +26,8 @@ describe('ResultScreen', () => {
   it('スコア情報が正しく表示されること', () => {
     render(<ResultScreen {...defaultProps} />);
 
-    expect(screen.getByText('パズル完成！')).toBeInTheDocument();
+    expect(screen.getByText('作品を収蔵しました')).toBeInTheDocument();
+    expect(screen.getByText('鑑定評価')).toBeInTheDocument();
     expect(screen.getByText('snowy_mountain_ukiyoe')).toBeInTheDocument();
     expect(screen.getByText('4×4')).toBeInTheDocument();
     expect(screen.getByText('03:45')).toBeInTheDocument();

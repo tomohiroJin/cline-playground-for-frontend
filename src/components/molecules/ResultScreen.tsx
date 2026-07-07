@@ -8,6 +8,7 @@ import {
   ResultList,
   ResultLabel,
   ResultValue,
+  RankLabel,
   BestScoreBadge,
   ResultButtons,
   ResultButton,
@@ -34,7 +35,7 @@ const ResultScreen: React.FC<ResultScreenProps> = ({
 
   return (
     <ResultOverlay data-testid="result-screen">
-      <ResultTitle>パズル完成！</ResultTitle>
+      <ResultTitle>作品を収蔵しました</ResultTitle>
       <ResultList>
         <ResultLabel>📷</ResultLabel>
         <ResultValue>{imageAlt}</ResultValue>
@@ -46,6 +47,9 @@ const ResultScreen: React.FC<ResultScreenProps> = ({
         <ResultValue>{score.moveCount}手 / 最適 {score.shuffleMoves}</ResultValue>
         <ResultLabel>📊</ResultLabel>
         <ResultValue>{score.totalScore.toLocaleString()}</ResultValue>
+      </ResultList>
+      <RankLabel>鑑定評価</RankLabel>
+      <ResultList>
         <ResultLabel>⭐</ResultLabel>
         <ResultValue>{score.rank}</ResultValue>
       </ResultList>
