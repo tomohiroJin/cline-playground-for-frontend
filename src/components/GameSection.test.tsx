@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { GameSectionComponent } from './GameSection';
 import { PuzzlePiece } from '../types/puzzle';
 
-describe('GameSectionComponent の HUD 解説プレート', () => {
+describe('GameSectionComponent の盤面額装', () => {
   const mockHandlePieceMove = jest.fn();
   const mockHandleResetGame = jest.fn();
   const mockToggleHintMode = jest.fn();
@@ -45,16 +45,13 @@ describe('GameSectionComponent の HUD 解説プレート', () => {
       />
     );
 
-  it('経過時間・手数が「時間」「手数」ラベルの解説プレートとして表示される', () => {
+  it('盤面（PuzzleBoard）が ArtFrame（額装）でラップされている', () => {
     renderGameSection();
 
-    expect(screen.getByText('時間')).toBeInTheDocument();
-    expect(screen.getByText('手数')).toBeInTheDocument();
-  });
-
-  it('盤面が ArtFrame（額装）でラップされている', () => {
-    renderGameSection();
-
-    expect(screen.getByTestId('art-frame')).toBeInTheDocument();
+    // 額縁の存在を検証（ArtFrame が data-testid="art-frame" を出力）
+    const frame = screen.getByTestId('art-frame');
+    expect(frame).toBeInTheDocument();
+    // 額縁が盤面（ボードグリッド）を内包していること
+    expect(frame).toContainElement(screen.getByTitle('ボードグリッド'));
   });
 });

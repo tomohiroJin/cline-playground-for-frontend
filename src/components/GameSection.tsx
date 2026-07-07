@@ -1,46 +1,12 @@
 import React from 'react';
-import styled from 'styled-components';
 import {
   GameSection,
   StartButton,
 } from '../pages/PuzzlePage.styles';
-import { galleryTokens } from '../pages/gallery-theme';
 import { PuzzlePiece, PuzzleScore } from '../types/puzzle';
 import PuzzleBoard from '../components/organisms/PuzzleBoard';
 import { ArtFrame } from './molecules/ArtFrame';
 import { ShareButton } from './molecules/ShareButton';
-import { formatElapsedTime } from '../shared/utils/format';
-
-/**
- * HUD 解説プレート（美術館の作品解説プレート風の情報表示）
- * オールキャップスの小さいラベル＋数値の組み合わせでまとめる
- */
-const HudPlate = styled.div`
-  display: flex;
-  gap: 24px;
-  margin-bottom: 16px;
-`;
-
-const HudPlateItem = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-`;
-
-const HudPlateLabel = styled.span`
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: ${galleryTokens.sub};
-`;
-
-const HudPlateValue = styled.span`
-  font-size: 1rem;
-  font-weight: 600;
-  color: ${galleryTokens.ink};
-`;
 
 /**
  * GameSectionコンポーネントのプロパティの型定義
@@ -101,16 +67,6 @@ export const GameSectionComponent: React.FC<GameSectionProps> = ({
   <GameSection>
     {imageUrl && originalImageSize && (
       <>
-        <HudPlate>
-          <HudPlateItem>
-            <HudPlateLabel>時間</HudPlateLabel>
-            <HudPlateValue>{formatElapsedTime(elapsedTime)}</HudPlateValue>
-          </HudPlateItem>
-          <HudPlateItem>
-            <HudPlateLabel>手数</HudPlateLabel>
-            <HudPlateValue>{moveCount}</HudPlateValue>
-          </HudPlateItem>
-        </HudPlate>
         <ArtFrame>
           <PuzzleBoard
             imageUrl={imageUrl}
