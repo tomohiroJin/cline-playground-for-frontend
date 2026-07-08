@@ -11,9 +11,16 @@ jest.mock('../infrastructure/storage/total-clears-store');
 jest.mock('../components/TitleScreen', () => {
   return {
     __esModule: true,
-    default: ({ onStart }: { onStart: () => void }) => (
+    default: ({
+      onStart,
+      onOpenCollection,
+    }: {
+      onStart: () => void;
+      onOpenCollection: () => void;
+    }) => (
       <div data-testid="title-screen">
         <button onClick={onStart}>入館する</button>
+        <button onClick={onOpenCollection}>収蔵目録を見る</button>
       </div>
     ),
   };
@@ -47,6 +54,20 @@ jest.mock('../components/molecules/ClearHistoryList', () => {
 /** Jotai Provider でラップしてレンダリングする */
 const renderWithProvider = (ui: React.ReactElement) =>
   render(React.createElement(Provider, null, ui));
+
+/** テスト用の記録ストレージスタブ（収蔵目録の描画に必要な最小実装） */
+const mockRecordStorage = {
+  getAll: () => [],
+  get: () => undefined,
+  save: () => {},
+  recordScore: () => ({ isBestScore: false }),
+};
+
+/** テスト用の累計クリア数ストレージスタブ */
+const mockTotalClearsStorage = {
+  get: () => 0,
+  increment: () => 0,
+};
 
 describe('PuzzlePage', () => {
   beforeEach(() => {
@@ -104,5 +125,17 @@ describe('PuzzlePage', () => {
     expect(historyItems.length).toBe(2);
     expect(historyItems[0].textContent).toContain('test_image_1');
     expect(historyItems[1].textContent).toContain('test_image_2');
+  });
+
+  it('タイトルから収蔵目録を開き、戻れる', () => {
+    renderWithProvider(
+      <PuzzlePage recordStorage={mockRecordStorage} totalClearsStorage={mockTotalClearsStorage} />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '収蔵目録を見る' }));
+    expect(screen.getByText('収蔵目録')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '戻る' }));
+    expect(screen.getByRole('button', { name: '入館する' })).toBeInTheDocument();
   });
 });
