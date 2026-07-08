@@ -1,5 +1,5 @@
 import { PuzzleImage, PuzzleRank, PuzzleRecord, Theme, ThemeId } from '../../types/puzzle';
-import { ArtworkStatus, RoomCollection } from './types';
+import { ArtworkStatus, RoomCollection, CuratorGoal, CollectionSummary } from './types';
 import { isThemeUnlocked, UnlockContext } from '../theme/theme-unlock-service';
 
 /** ランクの優劣順序（大きいほど上位） */
@@ -99,4 +99,30 @@ export const buildRoomCollections = (
       artworks,
     };
   });
+};
+
+/** 全展示室の収蔵状況から名誉学芸員の進捗を評価する */
+export const evaluateCuratorGoal = (
+  rooms: readonly RoomCollection[]
+): CuratorGoal => {
+  const artworks = rooms.flatMap(room => room.artworks);
+  const total = artworks.length;
+  const collected = artworks.filter(a => a.isCollected).length;
+  const appraised3star = artworks.filter(a => a.bestRank === '★★★').length;
+  return {
+    collected,
+    appraised3star,
+    total,
+    isHonorary: total > 0 && appraised3star === total,
+  };
+};
+
+/** 収蔵目録ビュー向けの集約全体を構築する */
+export const buildCollectionSummary = (
+  themes: readonly Theme[],
+  records: readonly PuzzleRecord[],
+  totalClears: number
+): CollectionSummary => {
+  const rooms = buildRoomCollections(themes, records, totalClears);
+  return { rooms, goal: evaluateCuratorGoal(rooms) };
 };

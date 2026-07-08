@@ -1,4 +1,4 @@
-import { aggregateByArtwork, compareRank, buildRoomCollections } from './collection-service';
+import { aggregateByArtwork, compareRank, buildRoomCollections, buildCollectionSummary } from './collection-service';
 import { PuzzleImage, PuzzleRecord, Theme } from '../../types/puzzle';
 
 const image: PuzzleImage = {
@@ -116,5 +116,31 @@ describe('buildRoomCollections', () => {
 
     expect(roomB.isUnlocked).toBe(false);
     expect(roomB.unlockHint).toContain('5');
+  });
+});
+
+describe('evaluateCuratorGoal / buildCollectionSummary', () => {
+  it('全作品★★★で名誉学芸員を達成する', () => {
+    const summary = buildCollectionSummary(
+      twoRoomThemes,
+      [
+        { ...clearedRecord('img_a1'), bestRank: '★★★' },
+        { ...clearedRecord('img_a2'), bestRank: '★★★' },
+        { ...clearedRecord('img_b1'), bestRank: '★★★' },
+      ],
+      5
+    );
+    expect(summary.goal.total).toBe(3);
+    expect(summary.goal.collected).toBe(3);
+    expect(summary.goal.appraised3star).toBe(3);
+    expect(summary.goal.isHonorary).toBe(true);
+    expect(summary.rooms).toHaveLength(2);
+  });
+
+  it('一部のみ収蔵なら名誉学芸員は未達', () => {
+    const summary = buildCollectionSummary(twoRoomThemes, [clearedRecord('img_a1')], 1);
+    expect(summary.goal.collected).toBe(1);
+    expect(summary.goal.appraised3star).toBe(0);
+    expect(summary.goal.isHonorary).toBe(false);
   });
 });
