@@ -27,12 +27,19 @@ export const BackButton = styled.button`
   border: 1px solid ${galleryTokens.frameBorder};
   border-radius: 4px;
   padding: 6px 14px;
+  min-height: 44px;
+  box-sizing: border-box;
   color: ${galleryTokens.ink};
   cursor: pointer;
   font-size: 0.8rem;
 
   &:hover {
     background: ${galleryTokens.mat};
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${galleryTokens.ink};
+    outline-offset: 2px;
   }
 `;
 

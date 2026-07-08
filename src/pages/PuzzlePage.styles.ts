@@ -33,6 +33,8 @@ export const StartButton = styled.button`
   background: ${galleryTokens.ink};
   color: ${galleryTokens.cream};
   padding: 13px 34px;
+  min-height: 44px;
+  box-sizing: border-box;
   border: none;
   border-radius: 2px;
   cursor: pointer;
@@ -45,6 +47,11 @@ export const StartButton = styled.button`
   &:hover {
     transform: translateY(-2px);
     filter: brightness(1.15);
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${galleryTokens.ink};
+    outline-offset: 2px;
   }
 
   &:disabled {
