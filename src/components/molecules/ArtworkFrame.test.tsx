@@ -42,8 +42,7 @@ describe('ArtworkFrame', () => {
 
   it('収蔵済みはベストスコア・タイム・手数を表示する', () => {
     render(<ArtworkFrame artwork={collected} />);
-    expect(screen.getByText(new RegExp(collected.bestScore.toLocaleString()))).toBeInTheDocument();
-    expect(screen.getByText(new RegExp(formatElapsedTime(collected.bestTime!)))).toBeInTheDocument();
-    expect(screen.getByText(/40手/)).toBeInTheDocument();
+    const expected = `${collected.bestScore.toLocaleString()}pts ・ ${formatElapsedTime(collected.bestTime!)} ・ ${collected.bestMoves}手`;
+    expect(screen.getByText(expected)).toBeInTheDocument();
   });
 });
