@@ -13,6 +13,8 @@ import { useGameFlow } from '../presentation/hooks/useGameFlow';
 import { LocalPuzzleRecordStorage } from '../infrastructure/storage/puzzle-records-store';
 import { LocalTotalClearsStorage } from '../infrastructure/storage/total-clears-store';
 import TitleScreen from '../components/TitleScreen';
+import CollectionView from '../components/molecules/CollectionView';
+import { themes } from '../data/themes';
 import { PuzzleRecordStorage, TotalClearsStorage } from '../application/ports/storage-port';
 
 /** デフォルトのストレージインスタンス（コンポーネント外で生成してリレンダリングを防ぐ） */
@@ -36,6 +38,8 @@ const PuzzlePage: React.FC<PuzzlePageProps> = ({
   // タイトル画面の状態
   const [showTitle, setShowTitle] = useState(true);
   const [debugMode, setDebugMode] = useState(false);
+  // 収蔵目録（コレクション画面）の表示状態
+  const [showCollection, setShowCollection] = useState(false);
 
   // クリア履歴の状態
   const [clearHistory, setClearHistory] = useState<ClearHistory[]>([]);
@@ -84,10 +88,18 @@ const PuzzlePage: React.FC<PuzzlePageProps> = ({
 
   return (
     <PuzzlePageContainer>
-      {showTitle ? (
+      {showCollection ? (
+        <CollectionView
+          themes={themes}
+          records={puzzleRecords}
+          totalClears={totalClears}
+          onBack={() => setShowCollection(false)}
+        />
+      ) : showTitle ? (
         <TitleScreen
           onStart={() => setShowTitle(false)}
           onDebugActivate={() => setDebugMode(true)}
+          onOpenCollection={() => setShowCollection(true)}
         />
       ) : !gameStarted ? (
         <SetupSectionComponent
@@ -124,7 +136,7 @@ const PuzzlePage: React.FC<PuzzlePageProps> = ({
           debugMode={debugMode}
         />
       )}
-      {!showTitle && (
+      {!showTitle && !showCollection && (
         <>
           <Instructions>
             <InstructionsTitle>遊び方</InstructionsTitle>

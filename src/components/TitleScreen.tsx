@@ -43,12 +43,35 @@ const EnterButton = styled(StartButton)`
   animation: ${fadeIn} 0.8s ease-out 0.6s both;
 `;
 
+/** 収蔵目録（コレクション画面）への導線ボタン */
+const SecondaryButton = styled.button`
+  display: block;
+  margin: 14px auto 0;
+  background: transparent;
+  border: none;
+  color: ${galleryTokens.sub};
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  text-decoration: underline;
+  animation: ${fadeIn} 0.8s ease-out 0.9s both;
+
+  &:hover {
+    color: ${galleryTokens.gold};
+  }
+`;
+
 type TitleScreenProps = {
   onStart: () => void;
   onDebugActivate: () => void;
+  onOpenCollection: () => void;
 };
 
-const TitleScreen: React.FC<TitleScreenProps> = ({ onStart, onDebugActivate }) => {
+const TitleScreen: React.FC<TitleScreenProps> = ({
+  onStart,
+  onDebugActivate,
+  onOpenCollection,
+}) => {
   const bufferRef = useRef('');
 
   useEffect(() => {
@@ -70,6 +93,7 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onStart, onDebugActivate }) =
       <Title>ピクチャーパズル</Title>
       <Kicker>Your Private Gallery</Kicker>
       <EnterButton onClick={onStart}>入館する</EnterButton>
+      <SecondaryButton onClick={onOpenCollection}>収蔵目録を見る</SecondaryButton>
     </SetupSection>
   );
 };
