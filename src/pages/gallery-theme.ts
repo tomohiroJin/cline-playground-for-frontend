@@ -6,8 +6,9 @@
 export const galleryTokens = {
   cream: '#f4f1ea',
   ink: '#2b2620',
-  sub: '#7a7062',
+  sub: '#6b6155',
   gold: '#a8894e',
+  goldText: '#7a5f28',
   sage: '#8a9a7b',
   mat: '#fffdf9',
   frameBorder: '#e3ddd0',
