@@ -57,7 +57,7 @@ const SecondaryButton = styled.button`
   animation: ${fadeIn} 0.8s ease-out 0.9s both;
 
   &:hover {
-    color: ${galleryTokens.gold};
+    color: ${galleryTokens.goldText};
   }
 `;
 
