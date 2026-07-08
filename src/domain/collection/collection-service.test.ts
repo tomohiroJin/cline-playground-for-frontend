@@ -1,5 +1,5 @@
-import { aggregateByArtwork, compareRank } from './collection-service';
-import { PuzzleImage, PuzzleRecord } from '../../types/puzzle';
+import { aggregateByArtwork, compareRank, buildRoomCollections } from './collection-service';
+import { PuzzleImage, PuzzleRecord, Theme } from '../../types/puzzle';
 
 const image: PuzzleImage = {
   id: 'moonlight_dancer',
@@ -65,5 +65,56 @@ describe('aggregateByArtwork', () => {
     const result = aggregateByArtwork(image, [other]);
     expect(result.isCollected).toBe(false);
     expect(result.clearCount).toBe(0);
+  });
+});
+
+const twoRoomThemes: Theme[] = [
+  {
+    id: 'illustration-gallery',
+    name: 'イラストギャラリー',
+    description: 'desc-a',
+    unlockCondition: { type: 'always' },
+    images: [
+      { id: 'img_a1', filename: 'a1.webp', alt: 'A1', themeId: 'illustration-gallery', hasVideo: false },
+      { id: 'img_a2', filename: 'a2.webp', alt: 'A2', themeId: 'illustration-gallery', hasVideo: false },
+    ],
+  },
+  {
+    id: 'sea-and-sky',
+    name: '海と空',
+    description: 'desc-b',
+    unlockCondition: { type: 'clearCount', count: 5 },
+    images: [
+      { id: 'img_b1', filename: 'b1.webp', alt: 'B1', themeId: 'sea-and-sky', hasVideo: false },
+    ],
+  },
+];
+
+const clearedRecord = (imageId: string): PuzzleRecord => ({
+  imageId,
+  division: 4,
+  bestScore: 3000,
+  bestRank: '★★☆',
+  bestTime: 90,
+  bestMoves: 30,
+  clearCount: 1,
+  lastClearDate: '2026-07-06T00:00:00.000Z',
+});
+
+describe('buildRoomCollections', () => {
+  it('開館室は収蔵率を、未開館室は解放条件文言を返す', () => {
+    const rooms = buildRoomCollections(twoRoomThemes, [clearedRecord('img_a1')], 1);
+    const roomA = rooms.find(r => r.themeId === 'illustration-gallery')!;
+    const roomB = rooms.find(r => r.themeId === 'sea-and-sky')!;
+
+    expect(roomA.isUnlocked).toBe(true);
+    expect(roomA.unlockHint).toBeUndefined();
+    expect(roomA.collectedCount).toBe(1);
+    expect(roomA.totalCount).toBe(2);
+    expect(roomA.artworks[0].isCollected).toBe(true);
+    expect(roomA.artworks[1].isCollected).toBe(false);
+
+    expect(roomB.isUnlocked).toBe(false);
+    expect(roomB.unlockHint).toContain('5');
   });
 });
