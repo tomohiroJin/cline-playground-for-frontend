@@ -12,6 +12,19 @@ export const PuzzlePageContainer = styled.div`
   /* 美術館の壁。グローバル背景グラデを覆い、配下だけをギャラリー色にする */
   background: ${galleryTokens.cream};
   color: var(--text-primary);
+
+  /* モーション過敏設定では配下の演出（fadeIn・紙吹雪・ディゾルブ・hover 移動等）を抑制する。
+     配下限定なので他ゲームには波及しない。 */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 `;
 
 export const SetupSection = styled.section`
