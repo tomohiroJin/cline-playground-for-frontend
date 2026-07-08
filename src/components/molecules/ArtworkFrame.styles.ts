@@ -45,3 +45,12 @@ export const Rank = styled.span`
   color: ${galleryTokens.gold};
   letter-spacing: 0.1em;
 `;
+
+/** 収蔵済み作品の実績（スコア・タイム・手数）を表示する行 */
+export const Detail = styled.span`
+  display: block;
+  font-size: 0.66rem;
+  color: ${galleryTokens.sub};
+  letter-spacing: 0.04em;
+  margin-top: 2px;
+`;

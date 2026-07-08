@@ -1,7 +1,8 @@
 import React from 'react';
 import { ArtFrame } from './ArtFrame';
 import { ArtworkStatus } from '../../domain/collection/types';
-import { FrameFigure, Thumb, EmptySlot, Caption, Rank } from './ArtworkFrame.styles';
+import { FrameFigure, Thumb, EmptySlot, Caption, Rank, Detail } from './ArtworkFrame.styles';
+import { formatElapsedTime } from '../../shared/utils/format';
 
 export interface ArtworkFrameProps {
   readonly artwork: ArtworkStatus;
@@ -18,8 +19,15 @@ const ArtworkFrame: React.FC<ArtworkFrameProps> = ({ artwork }) => (
       )}
     </ArtFrame>
     <Caption>
-      {artwork.isCollected && artwork.bestRank ? (
-        <Rank>{artwork.bestRank}</Rank>
+      {artwork.isCollected ? (
+        <>
+          {artwork.bestRank && <Rank>{artwork.bestRank}</Rank>}
+          <Detail>
+            {`${artwork.bestScore.toLocaleString()}pts`}
+            {artwork.bestTime !== undefined && ` ・ ${formatElapsedTime(artwork.bestTime)}`}
+            {artwork.bestMoves !== undefined && ` ・ ${artwork.bestMoves}手`}
+          </Detail>
+        </>
       ) : (
         artwork.title
       )}

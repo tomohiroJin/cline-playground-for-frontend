@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import ArtworkFrame from './ArtworkFrame';
 import { ArtworkStatus } from '../../domain/collection/types';
+import { formatElapsedTime } from '../../shared/utils/format';
 
 const collected: ArtworkStatus = {
   imageId: 'moonlight_dancer',
@@ -37,5 +38,12 @@ describe('ArtworkFrame', () => {
     render(<ArtworkFrame artwork={notCollected} />);
     expect(screen.queryByAltText('未収蔵の作品')).not.toBeInTheDocument();
     expect(screen.getByText('未収蔵')).toBeInTheDocument();
+  });
+
+  it('収蔵済みはベストスコア・タイム・手数を表示する', () => {
+    render(<ArtworkFrame artwork={collected} />);
+    expect(screen.getByText(new RegExp(collected.bestScore.toLocaleString()))).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(formatElapsedTime(collected.bestTime!)))).toBeInTheDocument();
+    expect(screen.getByText(/40手/)).toBeInTheDocument();
   });
 });
