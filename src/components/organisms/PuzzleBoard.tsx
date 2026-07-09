@@ -24,6 +24,7 @@ import { useSwipe } from '../../presentation/hooks/useSwipe';
 import { useKeyboard } from '../../presentation/hooks/useKeyboard';
 import VideoOverlay from './VideoOverlay';
 import ConfettiOverlay from './ConfettiOverlay';
+import { ChallengeMedal } from '../../domain/puzzle/services/challenge-evaluator';
 
 /**
  * パズルボードコンポーネントのプロパティの型定義
@@ -42,6 +43,7 @@ export type PuzzleBoardProps = {
   correctRate: number;
   score: PuzzleScore | null;
   isBestScore: boolean;
+  challengeMedal?: ChallengeMedal;
   onPieceMove: (pieceId: number, row: number, col: number) => void;
   onReset: () => void;
   onToggleHint: () => void;
@@ -75,6 +77,7 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   correctRate,
   score,
   isBestScore,
+  challengeMedal,
   onPieceMove,
   onReset,
   onToggleHint,
@@ -209,6 +212,7 @@ const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
             isBestScore={isBestScore}
             onRetry={onReset}
             onBackToSetup={onEndGame ?? (() => {})}
+            challengeMedal={challengeMedal}
           />
         )}
 

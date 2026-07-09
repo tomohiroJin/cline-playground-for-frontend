@@ -16,6 +16,10 @@ import TitleScreen from '../components/TitleScreen';
 import CollectionView from '../components/molecules/CollectionView';
 import { themes } from '../data/themes';
 import { PuzzleRecordStorage, TotalClearsStorage } from '../application/ports/storage-port';
+import { selectDailyPuzzle } from '../application/use-cases/select-daily-puzzle';
+import { dateStringToSeed } from '../domain/puzzle/value-objects/seed';
+import { getImageSize } from '../utils/puzzle-utils';
+import { evaluateChallenge } from '../domain/puzzle/services/challenge-evaluator';
 
 /** デフォルトのストレージインスタンス（コンポーネント外で生成してリレンダリングを防ぐ） */
 const defaultRecordStorage = new LocalPuzzleRecordStorage();
@@ -40,6 +44,8 @@ const PuzzlePage: React.FC<PuzzlePageProps> = ({
   const [debugMode, setDebugMode] = useState(false);
   // 収蔵目録（コレクション画面）の表示状態
   const [showCollection, setShowCollection] = useState(false);
+  // 現在のモード（通常 / 本日の一枚 / 鑑定チャレンジ）
+  const [mode, setMode] = useState<'normal' | 'daily' | 'challenge'>('normal');
 
   // クリア履歴の状態
   const [clearHistory, setClearHistory] = useState<ClearHistory[]>([]);
@@ -72,6 +78,35 @@ const PuzzlePage: React.FC<PuzzlePageProps> = ({
 
   const gameStarted = gamePhase === 'playing';
 
+  // 今日の日付を YYYYMMDD 文字列へ（presentation 層で副作用を閉じる）
+  const todaySeedString = (): string => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}${m}${d}`;
+  };
+
+  const handleStartDaily = async () => {
+    const seed = dateStringToSeed(todaySeedString());
+    const daily = selectDailyPuzzle(themes, seed);
+    const url = `${window.location.origin}/images/default/${daily.filename}`;
+    try {
+      const { width, height } = await getImageSize(url);
+      handleImageSelect(url, width, height);
+      setMode('daily');
+      setShowTitle(false);
+      handleStartGame({ division: daily.division, seed });
+    } catch (err) {
+      console.error('本日の一枚の読み込みに失敗しました:', err);
+    }
+  };
+
+  const handleStartChallenge = () => {
+    setMode('challenge');
+    setShowTitle(false);
+  };
+
   // 初回マウント時にデータマイグレーション実行
   useEffect(() => {
     migrateClearHistory();
@@ -86,6 +121,16 @@ const PuzzlePage: React.FC<PuzzlePageProps> = ({
     setTotalClears(totalClearsStorage.get());
   }, [gameStarted, recordStorage, totalClearsStorage]);
 
+  // 鑑定チャレンジモードかつスコア確定時のみメダルを算出（永続化せず都度評価）
+  const challengeMedal =
+    mode === 'challenge' && score
+      ? evaluateChallenge({
+          elapsedSeconds: score.elapsedTime,
+          actualMoves: score.moveCount,
+          optimalMoves: score.division * score.division * 2,
+        })
+      : undefined;
+
   return (
     <PuzzlePageContainer>
       {showCollection ? (
@@ -97,9 +142,14 @@ const PuzzlePage: React.FC<PuzzlePageProps> = ({
         />
       ) : showTitle ? (
         <TitleScreen
-          onStart={() => setShowTitle(false)}
+          onStart={() => {
+            setMode('normal');
+            setShowTitle(false);
+          }}
           onDebugActivate={() => setDebugMode(true)}
           onOpenCollection={() => setShowCollection(true)}
+          onStartDaily={handleStartDaily}
+          onStartChallenge={handleStartChallenge}
         />
       ) : !gameStarted ? (
         <SetupSectionComponent
@@ -126,6 +176,7 @@ const PuzzlePage: React.FC<PuzzlePageProps> = ({
           correctRate={correctRate}
           score={score}
           isBestScore={isBestScore}
+          challengeMedal={challengeMedal}
           handlePieceMove={handlePieceMove}
           handleResetGame={handleResetGame}
           toggleHintMode={toggleHintMode}

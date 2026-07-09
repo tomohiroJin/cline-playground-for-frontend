@@ -1,5 +1,6 @@
 import { shufflePuzzle } from './shuffle-service';
 import { createPuzzleBoard, isCompleted } from '../aggregates/puzzle-board';
+import { createSeededRng } from '../value-objects/seed';
 
 describe('ShuffleService', () => {
   describe('shufflePuzzle', () => {
@@ -42,6 +43,22 @@ describe('ShuffleService', () => {
       const shuffled = shufflePuzzle(board, 128);
       expect(shuffled.pieces).toHaveLength(64);
       expect(shuffled.pieces.filter(p => p.isEmpty)).toHaveLength(1);
+    });
+  });
+
+  describe('shufflePuzzle シード対応', () => {
+    it('同一 rng シーケンスは同一の配置を生成する（決定的）', () => {
+      const board = createPuzzleBoard(4);
+      const a = shufflePuzzle(board, 30, createSeededRng(777));
+      const b = shufflePuzzle(board, 30, createSeededRng(777));
+      expect(a.pieces.map(p => p.currentPosition)).toEqual(b.pieces.map(p => p.currentPosition));
+      expect(a.emptyPosition).toEqual(b.emptyPosition);
+    });
+
+    it('rng 省略時は従来どおり動作する（Math.random）', () => {
+      const board = createPuzzleBoard(3);
+      const shuffled = shufflePuzzle(board, 20);
+      expect(shuffled.pieces).toHaveLength(board.pieces.length);
     });
   });
 });

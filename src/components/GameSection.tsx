@@ -7,6 +7,7 @@ import { PuzzlePiece, PuzzleScore } from '../types/puzzle';
 import PuzzleBoard from '../components/organisms/PuzzleBoard';
 import { ArtFrame } from './molecules/ArtFrame';
 import { ShareButton } from './molecules/ShareButton';
+import { ChallengeMedal } from '../domain/puzzle/services/challenge-evaluator';
 
 /**
  * GameSectionコンポーネントのプロパティの型定義
@@ -29,6 +30,7 @@ export type GameSectionProps = {
   correctRate: number;
   score: PuzzleScore | null;
   isBestScore: boolean;
+  challengeMedal?: ChallengeMedal;
   handlePieceMove: (pieceId: number, row: number, col: number) => void;
   handleResetGame: () => void;
   toggleHintMode: () => void;
@@ -55,6 +57,7 @@ export const GameSectionComponent: React.FC<GameSectionProps> = ({
   correctRate,
   score,
   isBestScore,
+  challengeMedal,
   handlePieceMove,
   handleResetGame,
   toggleHintMode,
@@ -82,6 +85,7 @@ export const GameSectionComponent: React.FC<GameSectionProps> = ({
             correctRate={correctRate}
             score={score}
             isBestScore={isBestScore}
+            challengeMedal={challengeMedal}
             onPieceMove={handlePieceMove}
             onReset={handleResetGame}
             onToggleHint={toggleHintMode}

@@ -6,37 +6,56 @@
 import { createPuzzleBoard, PuzzleBoardState } from '../../domain/puzzle/aggregates/puzzle-board';
 import { shufflePuzzle } from '../../domain/puzzle/services/shuffle-service';
 import { calculateShuffleMoves, createDivision } from '../../domain/puzzle/value-objects/division';
+import { createSeededRng } from '../../domain/puzzle/value-objects/seed';
 
 /** シャッフル後に完成状態だった場合の最大再試行回数 */
 const MAX_RESHUFFLE_ATTEMPTS = 10;
 
+/** パズル初期化オプション */
+export interface InitializePuzzleOptions {
+  /** 日付シード等。指定時は決定的シャッフル（同一シード→同一配置） */
+  readonly seed?: number;
+  /** シャッフル回数の上書き（テスト用） */
+  readonly shuffleMovesOverride?: number;
+}
+
 /**
- * パズルを初期化する
+ * パズルを初期化する。
  *
  * シャッフル後に偶然完成状態になった場合は再シャッフルする。
+ * seed 指定時は試行番号を加味した決定的 rng を使い、同一シードで必ず同一配置になる。
  *
  * @param division 分割数
- * @param shuffleMovesOverride シャッフル回数の上書き（テスト用）
+ * @param options seed / shuffleMovesOverride
  * @returns シャッフル済みのパズルボード状態（必ず未完成）
  */
 export const initializePuzzle = (
   division: number,
-  shuffleMovesOverride?: number
+  options?: InitializePuzzleOptions
 ): PuzzleBoardState => {
   // 分割数を値オブジェクトのファクトリで検証し、有効な分割数のみ許可する
   const validDivision = createDivision(division);
   const board = createPuzzleBoard(validDivision);
-  const moves = shuffleMovesOverride ?? calculateShuffleMoves(validDivision);
+  const moves = options?.shuffleMovesOverride ?? calculateShuffleMoves(validDivision);
+  const seed = options?.seed;
 
   for (let attempt = 0; attempt <= MAX_RESHUFFLE_ATTEMPTS; attempt++) {
     // 最終試行ではシャッフル回数を倍にして完成状態を回避
     const shuffleMoves = attempt < MAX_RESHUFFLE_ATTEMPTS ? moves : moves * 2;
-    const shuffled = shufflePuzzle(board, shuffleMoves);
+    // seed 指定時は試行ごとに決定的 rng を派生（再シャッフルも再現可能にする）
+    const rng = seed !== undefined ? createSeededRng(seed + attempt) : Math.random;
+    const shuffled = shufflePuzzle(board, shuffleMoves, rng);
     if (!shuffled.isCompleted) {
       return shuffled;
     }
   }
 
-  // 理論上到達不可能だが型安全のため
-  return shufflePuzzle(board, moves * 2);
+  // 理論上到達不可能だが型安全のため。
+  // seed 指定時のフォールバックは、ループ最終試行（attempt === MAX_RESHUFFLE_ATTEMPTS,
+  // seed + MAX_RESHUFFLE_ATTEMPTS）とは必ず異なる派生シードを使う。
+  // 同一シードだと純粋関数ゆえ最終試行と同一の完成済みボードを再生成してしまい、
+  // 「必ず未完成」の事後条件を破るため（+ 1 で独立した再試行にする）。
+  const finalRng =
+    seed !== undefined ? createSeededRng(seed + MAX_RESHUFFLE_ATTEMPTS + 1) : Math.random;
+  return shufflePuzzle(board, moves * 2, finalRng);
 };

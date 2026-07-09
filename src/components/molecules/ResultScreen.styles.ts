@@ -54,6 +54,22 @@ export const ResultValue = styled.dd`
   font-weight: bold;
 `;
 
+export const MedalLabel = styled.p`
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.75;
+  margin: 12px 0 2px;
+`;
+
+export const Medal = styled.p<{ $medal: 'gold' | 'silver' | 'bronze' }>`
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: ${({ $medal }) =>
+    $medal === 'gold' ? '#ffd54a' : $medal === 'silver' ? '#d0d0d8' : '#cd9b6a'};
+`;
+
 export const BestScoreBadge = styled.div`
   background: linear-gradient(135deg, #ffd700, #ffaa00);
   color: #333;

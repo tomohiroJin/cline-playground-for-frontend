@@ -114,16 +114,23 @@ export const useGameFlow = (options: UseGameFlowOptions) => {
     [setDivision]
   );
 
-  /** ゲームを開始する */
-  const handleStartGame = useCallback(() => {
-    setScore(null);
-    setIsBestScore(false);
-    setEmptyPanelClicks(0);
-    setElapsedTime(0);
-    setStartTime(Date.now());
-    initialize(division);
-    setGamePhase('playing');
-  }, [initialize, division, setGamePhase, setScore, setIsBestScore, setEmptyPanelClicks, setElapsedTime, setStartTime]);
+  /** ゲームを開始する（options で難易度・シードを明示注入可能） */
+  const handleStartGame = useCallback(
+    (options?: { division?: number; seed?: number }) => {
+      const startDivision = options?.division ?? division;
+      setScore(null);
+      setIsBestScore(false);
+      setEmptyPanelClicks(0);
+      setElapsedTime(0);
+      setStartTime(Date.now());
+      if (options?.division !== undefined) {
+        setDivision(options.division);
+      }
+      initialize(startDivision, options?.seed);
+      setGamePhase('playing');
+    },
+    [initialize, division, setDivision, setGamePhase, setScore, setIsBestScore, setEmptyPanelClicks, setElapsedTime, setStartTime]
+  );
 
   /** ピースを移動する */
   const handlePieceMove = useCallback(
