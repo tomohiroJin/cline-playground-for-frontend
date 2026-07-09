@@ -2,6 +2,7 @@ import React from 'react';
 import { PuzzleScore } from '../../types/puzzle';
 import { formatElapsedTime } from '../../shared/utils/format';
 import { ShareButton } from './ShareButton';
+import { ChallengeMedal } from '../../domain/puzzle/services/challenge-evaluator';
 import {
   ResultOverlay,
   ResultTitle,
@@ -9,6 +10,8 @@ import {
   ResultLabel,
   ResultValue,
   RankLabel,
+  MedalLabel,
+  Medal,
   BestScoreBadge,
   ResultButtons,
   ResultButton,
@@ -21,7 +24,11 @@ export interface ResultScreenProps {
   isBestScore: boolean;
   onRetry: () => void;
   onBackToSetup: () => void;
+  challengeMedal?: ChallengeMedal;
 }
+
+/** 鑑定メダルの種別ごとの表示テキスト */
+const MEDAL_TEXT: Record<ChallengeMedal, string> = { gold: '金', silver: '銀', bronze: '銅' };
 
 const ResultScreen: React.FC<ResultScreenProps> = ({
   imageAlt,
@@ -30,6 +37,7 @@ const ResultScreen: React.FC<ResultScreenProps> = ({
   isBestScore,
   onRetry,
   onBackToSetup,
+  challengeMedal,
 }) => {
   const shareText = `パズル「${imageAlt}」(${division}x${division}) をクリア！ スコア: ${score.totalScore.toLocaleString()} ランク: ${score.rank}`;
 
@@ -53,6 +61,12 @@ const ResultScreen: React.FC<ResultScreenProps> = ({
         <ResultLabel>⭐</ResultLabel>
         <ResultValue>{score.rank}</ResultValue>
       </ResultList>
+      {challengeMedal && (
+        <>
+          <MedalLabel>鑑定メダル</MedalLabel>
+          <Medal $medal={challengeMedal}>{MEDAL_TEXT[challengeMedal]}</Medal>
+        </>
+      )}
       {isBestScore && <BestScoreBadge>ベストスコア更新！</BestScoreBadge>}
       <ResultButtons>
         <ShareButton

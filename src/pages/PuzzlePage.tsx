@@ -19,6 +19,7 @@ import { PuzzleRecordStorage, TotalClearsStorage } from '../application/ports/st
 import { selectDailyPuzzle } from '../application/use-cases/select-daily-puzzle';
 import { dateStringToSeed } from '../domain/puzzle/value-objects/seed';
 import { getImageSize } from '../utils/puzzle-utils';
+import { evaluateChallenge } from '../domain/puzzle/services/challenge-evaluator';
 
 /** デフォルトのストレージインスタンス（コンポーネント外で生成してリレンダリングを防ぐ） */
 const defaultRecordStorage = new LocalPuzzleRecordStorage();
@@ -120,6 +121,16 @@ const PuzzlePage: React.FC<PuzzlePageProps> = ({
     setTotalClears(totalClearsStorage.get());
   }, [gameStarted, recordStorage, totalClearsStorage]);
 
+  // 鑑定チャレンジモードかつスコア確定時のみメダルを算出（永続化せず都度評価）
+  const challengeMedal =
+    mode === 'challenge' && score
+      ? evaluateChallenge({
+          elapsedSeconds: score.elapsedTime,
+          actualMoves: score.moveCount,
+          optimalMoves: score.division * score.division * 2,
+        })
+      : undefined;
+
   return (
     <PuzzlePageContainer>
       {showCollection ? (
@@ -165,6 +176,7 @@ const PuzzlePage: React.FC<PuzzlePageProps> = ({
           correctRate={correctRate}
           score={score}
           isBestScore={isBestScore}
+          challengeMedal={challengeMedal}
           handlePieceMove={handlePieceMove}
           handleResetGame={handleResetGame}
           toggleHintMode={toggleHintMode}

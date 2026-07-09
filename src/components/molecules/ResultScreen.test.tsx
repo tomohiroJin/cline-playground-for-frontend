@@ -69,4 +69,17 @@ describe('ResultScreen', () => {
 
     expect(screen.getByLabelText('シェアする')).toBeInTheDocument();
   });
+
+  it('challengeMedal 指定時はメダルを表示する', () => {
+    render(<ResultScreen {...defaultProps} challengeMedal="gold" />);
+
+    expect(screen.getByText(/鑑定メダル/)).toBeInTheDocument();
+    expect(screen.getByText('金')).toBeInTheDocument();
+  });
+
+  it('challengeMedal 未指定時はメダルを表示しない', () => {
+    render(<ResultScreen {...defaultProps} />);
+
+    expect(screen.queryByText(/鑑定メダル/)).not.toBeInTheDocument();
+  });
 });
