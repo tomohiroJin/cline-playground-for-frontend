@@ -22,16 +22,3 @@ declare module '*.mp4' {
   const value: string;
   export default value;
 }
-
-// React Three Fiber JSX declarations
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      instancedMesh: any;
-      mesh: any;
-      boxGeometry: any;
-      planeGeometry: any;
-      meshStandardMaterial: any;
-    }
-  }
-}
