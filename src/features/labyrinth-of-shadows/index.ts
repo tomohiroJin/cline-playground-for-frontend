@@ -33,5 +33,7 @@ export { MazeService } from './maze-service';
 export { AudioService } from './audio';
 export { EntityFactory, GameStateFactory } from './entity-factory';
 export { GameLogic } from './game-logic';
-export { Renderer } from './renderer';
 export { MinimapRenderer } from './minimap-renderer';
+
+// 3Dプレゼンテーション層
+export { LabyrinthScene } from './presentation/three/LabyrinthScene';
