@@ -14,9 +14,14 @@ import { getAdjacentPositions } from '../value-objects/grid-position';
  *
  * @param board 初期状態のボード
  * @param moves シャッフルの移動回数
+ * @param rng 乱数生成器（デフォルト Math.random）
  * @returns シャッフル済みのボード状態
  */
-export const shufflePuzzle = (board: PuzzleBoardState, moves: number): PuzzleBoardState => {
+export const shufflePuzzle = (
+  board: PuzzleBoardState,
+  moves: number,
+  rng: () => number = Math.random
+): PuzzleBoardState => {
   assert(board.pieces.length > 0, 'pieces array must not be empty');
   assert(board.division > 0, 'division must be greater than 0');
 
@@ -38,7 +43,7 @@ export const shufflePuzzle = (board: PuzzleBoardState, moves: number): PuzzleBoa
     const MAX_ATTEMPTS = adjacents.length * 2;
     let moved = false;
     for (let attempt = 0; attempt < MAX_ATTEMPTS && !moved; attempt++) {
-      const randomIdx = Math.floor(Math.random() * adjacents.length);
+      const randomIdx = Math.floor(rng() * adjacents.length);
       const selectedPos = adjacents[randomIdx];
       const selectedPieceIdx = pieceIndexMap.get(`${selectedPos.row},${selectedPos.col}`);
 
