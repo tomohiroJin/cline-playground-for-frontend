@@ -71,12 +71,16 @@ type TitleScreenProps = {
   onStart: () => void;
   onDebugActivate: () => void;
   onOpenCollection: () => void;
+  onStartDaily: () => void;
+  onStartChallenge: () => void;
 };
 
 const TitleScreen: React.FC<TitleScreenProps> = ({
   onStart,
   onDebugActivate,
   onOpenCollection,
+  onStartDaily,
+  onStartChallenge,
 }) => {
   const bufferRef = useRef('');
 
@@ -99,6 +103,8 @@ const TitleScreen: React.FC<TitleScreenProps> = ({
       <Title>ピクチャーパズル</Title>
       <Kicker>Your Private Gallery</Kicker>
       <EnterButton onClick={onStart}>入館する</EnterButton>
+      <SecondaryButton onClick={onStartDaily}>本日の一枚</SecondaryButton>
+      <SecondaryButton onClick={onStartChallenge}>鑑定チャレンジ</SecondaryButton>
       <SecondaryButton onClick={onOpenCollection}>収蔵目録を見る</SecondaryButton>
     </SetupSection>
   );
