@@ -18,10 +18,10 @@ export const usePuzzleGame = () => {
   const [boardState, setBoardState] = useAtom(puzzleBoardStateAtom);
   const [, setHintUsed] = useAtom(hintUsedAtom);
 
-  /** パズルを初期化する */
+  /** パズルを初期化する（seed 指定時は決定的シャッフル） */
   const initialize = useCallback(
-    (division: number) => {
-      const board = initializePuzzle(division);
+    (division: number, seed?: number) => {
+      const board = initializePuzzle(division, seed !== undefined ? { seed } : undefined);
       setBoardState(board);
       setHintUsed(false);
     },
