@@ -20,10 +20,10 @@ export function accumulateLook(current: number, movementX: number): number {
  */
 export function usePointerLook(enabled: boolean): {
   lookRef: React.MutableRefObject<LookRef>;
-  bindTargetRef: React.RefObject<HTMLElement>;
+  bindTargetRef: React.RefObject<HTMLElement | null>;
 } {
   const lookRef = useRef<LookRef>({ dx: 0 });
-  const bindTargetRef = useRef<HTMLElement>(null);
+  const bindTargetRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const target = bindTargetRef.current;
