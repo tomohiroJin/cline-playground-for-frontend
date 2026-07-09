@@ -42,7 +42,7 @@ export const Caption = styled.figcaption`
 `;
 
 export const Rank = styled.span`
-  color: ${galleryTokens.gold};
+  color: ${galleryTokens.goldText};
   letter-spacing: 0.1em;
 `;
 

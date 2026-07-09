@@ -23,6 +23,8 @@ export const SelectWrapper = styled.div`
 export const StyledSelect = styled.select`
   width: 100%;
   padding: 10px;
+  min-height: 44px;
+  box-sizing: border-box;
   /* 額縁のサイズ選択。非選択時は控えめな縁取りのみ */
   border: 1px solid ${galleryTokens.frameBorder};
   border-radius: 2px;
@@ -32,10 +34,11 @@ export const StyledSelect = styled.select`
   appearance: none;
   cursor: pointer;
 
-  &:focus {
-    /* 選択操作中は額のサイズを選んでいる状態として強調する */
-    outline: none;
-    border: 2px solid ${galleryTokens.ink};
+  &:focus-visible {
+    /* キーボード操作時は額のサイズを選んでいる状態としてフォーカスリングで強調する */
+    outline: 2px solid ${galleryTokens.ink};
+    outline-offset: 2px;
+    border-color: ${galleryTokens.ink};
     background: ${galleryTokens.mat};
   }
 

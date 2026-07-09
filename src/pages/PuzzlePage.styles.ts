@@ -12,6 +12,19 @@ export const PuzzlePageContainer = styled.div`
   /* 美術館の壁。グローバル背景グラデを覆い、配下だけをギャラリー色にする */
   background: ${galleryTokens.cream};
   color: var(--text-primary);
+
+  /* モーション過敏設定では配下の演出（fadeIn・紙吹雪・ディゾルブ・hover 移動等）を抑制する。
+     配下限定なので他ゲームには波及しない。 */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 `;
 
 export const SetupSection = styled.section`
@@ -33,6 +46,8 @@ export const StartButton = styled.button`
   background: ${galleryTokens.ink};
   color: ${galleryTokens.cream};
   padding: 13px 34px;
+  min-height: 44px;
+  box-sizing: border-box;
   border: none;
   border-radius: 2px;
   cursor: pointer;
@@ -45,6 +60,11 @@ export const StartButton = styled.button`
   &:hover {
     transform: translateY(-2px);
     filter: brightness(1.15);
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${galleryTokens.ink};
+    outline-offset: 2px;
   }
 
   &:disabled {

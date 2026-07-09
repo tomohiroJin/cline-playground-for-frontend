@@ -57,6 +57,6 @@ export const GoalCount = styled.span`
 export const Honor = styled.p`
   margin: 12px 0 0;
   text-align: center;
-  color: ${galleryTokens.gold};
+  color: ${galleryTokens.goldText};
   font-family: Georgia, 'Times New Roman', 'Yu Mincho', serif;
 `;

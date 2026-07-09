@@ -30,7 +30,7 @@ export const RankLabel = styled.p`
   font-size: 0.62rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: ${galleryTokens.sub};
+  opacity: 0.75;
   margin: 12px 0 2px;
 `;
 

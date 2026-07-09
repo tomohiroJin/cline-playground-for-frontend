@@ -47,6 +47,7 @@ const EnterButton = styled(StartButton)`
 const SecondaryButton = styled.button`
   display: block;
   margin: 14px auto 0;
+  min-height: 44px;
   background: transparent;
   border: none;
   color: ${galleryTokens.sub};
@@ -57,7 +58,12 @@ const SecondaryButton = styled.button`
   animation: ${fadeIn} 0.8s ease-out 0.9s both;
 
   &:hover {
-    color: ${galleryTokens.gold};
+    color: ${galleryTokens.goldText};
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${galleryTokens.ink};
+    outline-offset: 2px;
   }
 `;
 
