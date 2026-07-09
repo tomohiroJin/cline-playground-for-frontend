@@ -18,4 +18,5 @@ import { initializePuzzle } from './initialize-puzzle';
 export const resetPuzzleUseCase = (
   division: number,
   shuffleMovesOverride?: number
-): PuzzleBoardState => initializePuzzle(division, shuffleMovesOverride);
+): PuzzleBoardState =>
+  initializePuzzle(division, shuffleMovesOverride !== undefined ? { shuffleMovesOverride } : undefined);
