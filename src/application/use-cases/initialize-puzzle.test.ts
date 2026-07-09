@@ -45,4 +45,20 @@ describe('initializePuzzle シード対応', () => {
     const board = initializePuzzle(3);
     expect(board.isCompleted).toBe(false);
   });
+
+  // 事後条件「必ず未完成」の回帰テスト。
+  // 再シャッフルのフォールバックがループ最終試行と同一シードだと、
+  // 完成済みボードをそのまま返し得たバグ（seed 対応で混入）への回帰防止。
+  // フォールバック自体は通常引数では到達不可能なため、シード指定パス全体で
+  // 事後条件が守られること（＝完成済みボードを返さないこと）を複数シード×分割数で担保する。
+  it.each([
+    [1, 2],
+    [2, 3],
+    [3, 4],
+    [42, 5],
+    [20260709, 4],
+    [99999999, 3],
+  ])('シード %i・分割数 %i でも完成済みボードは返さない', (seed, division) => {
+    expect(initializePuzzle(division, { seed }).isCompleted).toBe(false);
+  });
 });

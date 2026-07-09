@@ -50,7 +50,12 @@ export const initializePuzzle = (
     }
   }
 
-  // 理論上到達不可能だが型安全のため
-  const finalRng = seed !== undefined ? createSeededRng(seed + MAX_RESHUFFLE_ATTEMPTS) : Math.random;
+  // 理論上到達不可能だが型安全のため。
+  // seed 指定時のフォールバックは、ループ最終試行（attempt === MAX_RESHUFFLE_ATTEMPTS,
+  // seed + MAX_RESHUFFLE_ATTEMPTS）とは必ず異なる派生シードを使う。
+  // 同一シードだと純粋関数ゆえ最終試行と同一の完成済みボードを再生成してしまい、
+  // 「必ず未完成」の事後条件を破るため（+ 1 で独立した再試行にする）。
+  const finalRng =
+    seed !== undefined ? createSeededRng(seed + MAX_RESHUFFLE_ATTEMPTS + 1) : Math.random;
   return shufflePuzzle(board, moves * 2, finalRng);
 };
