@@ -16,7 +16,8 @@ beforeAll(() => {
 const createEnemy = (overrides?: Partial<Enemy>): Enemy => ({
   x: 3.5, y: 3.5, dir: 0, active: true, actTime: 0,
   lastSeenX: -1, lastSeenY: -1, type: 'wanderer',
-  path: [], pathTime: 0, teleportCooldown: 0, ...overrides,
+  path: [], pathTime: 0, teleportCooldown: 0,
+  aiState: 'patrol', searchTimer: 0, loseSightTimer: 0, ...overrides,
 });
 
 const createParams = (overrides?: Partial<EnemyUpdateParams>): EnemyUpdateParams => ({

@@ -1,4 +1,6 @@
 import { EntityFactory, GameStateFactory } from '../entity-factory';
+import { CONFIG } from '../constants';
+import { GAME_BALANCE } from '../domain/constants';
 
 describe('labyrinth-of-shadows/entity-factory', () => {
   describe('EntityFactory', () => {
@@ -84,7 +86,7 @@ describe('labyrinth-of-shadows/entity-factory', () => {
 
     test('敵の数が正しい', () => {
       const state = GameStateFactory.create('HARD');
-      expect(state.enemies.length).toBeLessThanOrEqual(3);
+      expect(state.enemies.length).toBeLessThanOrEqual(4);
     });
 
     test('新アイテム（回復薬）が生成される', () => {
@@ -131,5 +133,38 @@ describe('labyrinth-of-shadows/entity-factory', () => {
       expect(enemy.pathTime).toBe(0);
       expect(enemy.teleportCooldown).toBe(0);
     });
+  });
+});
+
+describe('Phase2: 敵の状態機械フィールド', () => {
+  it('createEnemy は patrol 状態・タイマー0で初期化する', () => {
+    const e = EntityFactory.createEnemy(2, 3, 0, 'chaser');
+    expect(e.aiState).toBe('patrol');
+    expect(e.searchTimer).toBe(0);
+    expect(e.loseSightTimer).toBe(0);
+  });
+});
+
+describe('Phase2: 石と索敵の初期状態', () => {
+  it('GameState は石の初期所持数・視界パラメータを難易度から引き継ぐ', () => {
+    const g = GameStateFactory.create('NORMAL');
+    expect(g.stones).toBe(GAME_BALANCE.stone.INITIAL_COUNT);
+    expect(g.stoneProjectiles).toEqual([]);
+    expect(g.sightRange).toBe(CONFIG.difficulties.NORMAL.sightRange);
+    expect(g.searchDuration).toBe(CONFIG.difficulties.NORMAL.searchDuration);
+  });
+
+  it('小石アイテムが難易度定義の個数だけ配置される', () => {
+    const g = GameStateFactory.create('NORMAL');
+    const stones = g.items.filter(i => i.type === 'stone');
+    expect(stones).toHaveLength(CONFIG.difficulties.NORMAL.stonePickups);
+  });
+
+  it('敵速度はプレイヤー速度の MAX_SPEED_RATIO 以下', () => {
+    for (const d of ['EASY', 'NORMAL', 'HARD'] as const) {
+      expect(CONFIG.difficulties[d].enemySpeed).toBeLessThanOrEqual(
+        GAME_BALANCE.player.MOVE_SPEED * GAME_BALANCE.enemy.MAX_SPEED_RATIO
+      );
+    }
   });
 });

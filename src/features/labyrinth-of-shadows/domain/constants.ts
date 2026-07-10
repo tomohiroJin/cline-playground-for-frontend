@@ -45,8 +45,8 @@ export const GAME_BALANCE = {
     CLOSE_RANGE_THRESHOLD: 4,
     /** 追跡型の近距離加速倍率 */
     CLOSE_RANGE_SPEED_MULTIPLIER: 1.2,
-    /** 徘徊型の速度倍率 */
-    WANDERER_SPEED_MULTIPLIER: 0.6,
+    /** 徘徊型の速度倍率（eSpeed 全体が下がったため、徘徊型の存在感を維持する補正） */
+    WANDERER_SPEED_MULTIPLIER: 1.0,
     /** テレポート型の追跡速度倍率 */
     TELEPORTER_CHASE_SPEED_MULTIPLIER: 0.8,
     /** テレポート型の巡回速度倍率 */
@@ -59,6 +59,16 @@ export const GAME_BALANCE = {
     PATH_NODE_REACH_DISTANCE: 0.3,
     /** 初期最遠敵距離（updateEnemies で使用） */
     INITIAL_CLOSEST_DISTANCE: 99,
+    /** 視野角の全体角（ラジアン、±60°） */
+    FOV_ANGLE: (Math.PI * 2) / 3,
+    /** 追跡中に視線を失ってから捜索へ移るまでの猶予（ms） */
+    LOSE_SIGHT_GRACE: 2000,
+    /** 最終目撃地点への到達判定距離（セル） */
+    LAST_SEEN_REACH_DISTANCE: 0.6,
+    /** 敵速度の対プレイヤー移動速度比の上限（走り勝てないが視線を切れば撒ける） */
+    MAX_SPEED_RATIO: 0.9,
+    /** 捜索中に目撃地点へ引き戻される距離しきい値（セル） */
+    SEARCH_PULL_DISTANCE: 2,
   },
   scoring: {
     /** 鍵取得の基本スコア */
@@ -91,5 +101,17 @@ export const GAME_BALANCE = {
     SPEED_BOOST_MULTIPLIER: 1.3,
     /** 地図公開範囲 */
     MAP_REVEAL_RADIUS: 5,
+  },
+  stone: {
+    /** 初期所持数 */
+    INITIAL_COUNT: 3,
+    /** 最大所持数 */
+    MAX_COUNT: 5,
+    /** 石の飛行速度（セル/ms） */
+    SPEED: 0.012,
+    /** 最大飛距離（セル） */
+    THROW_RANGE: 6,
+    /** 着地音に敵が反応する半径（セル） */
+    NOISE_RADIUS: 5,
   },
 } as const;

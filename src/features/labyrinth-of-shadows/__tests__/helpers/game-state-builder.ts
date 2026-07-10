@@ -54,6 +54,10 @@ export class GameStateBuilder {
       combo: 0,
       lastKeyTime: 0,
       explored: { '1,1': true },
+      stones: 3,
+      stoneProjectiles: [],
+      sightRange: 7,
+      searchDuration: 4000,
     };
   }
 
@@ -82,6 +86,9 @@ export class GameStateBuilder {
       path: [],
       pathTime: 0,
       teleportCooldown: 0,
+      aiState: 'patrol',
+      searchTimer: 0,
+      loseSightTimer: 0,
     };
     this.state.enemies.push({ ...defaultEnemy, ...overrides });
     return this;
