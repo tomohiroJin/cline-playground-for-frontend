@@ -5,9 +5,6 @@
 import { MazeService } from '../../maze-service';
 import { distance, normAngle } from '../../utils';
 
-/** 視線サンプリングの刻み幅（セル単位）。壁厚1セルに対し十分細かい値 */
-const RAY_STEP = 0.1;
-
 /** canSeePlayer のパラメータ */
 export interface CanSeePlayerParams {
   readonly maze: number[][];
@@ -24,24 +21,14 @@ export interface CanSeePlayerParams {
   readonly fovAngle: number;
 }
 
-/** 2点間に壁がないか、線分を等間隔サンプリングして判定する */
+/** 2点間に壁がないか判定する。MazeService の実装に委譲 */
 export const hasLineOfSight = (
   maze: number[][],
   x1: number,
   y1: number,
   x2: number,
   y2: number
-): boolean => {
-  const d = distance(x1, y1, x2, y2);
-  const steps = Math.ceil(d / RAY_STEP);
-  for (let i = 1; i < steps; i++) {
-    const t = i / steps;
-    if (!MazeService.isWalkable(maze, x1 + (x2 - x1) * t, y1 + (y2 - y1) * t)) {
-      return false;
-    }
-  }
-  return true;
-};
+): boolean => MazeService.hasLineOfSight(maze, x1, y1, x2, y2);
 
 /** 対象が視野角コーン内にいるか */
 export const isInFieldOfView = (
