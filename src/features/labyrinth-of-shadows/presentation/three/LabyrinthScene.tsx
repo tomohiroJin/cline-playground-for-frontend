@@ -1,5 +1,5 @@
 /* eslint-disable react/no-unknown-property */
-import React from 'react';
+import React, { useEffect } from 'react';
 import * as THREE from 'three';
 import { Canvas } from '@react-three/fiber';
 import type { GameState, HUDData } from '../../types';
@@ -10,8 +10,10 @@ import { FloorCeiling } from './FloorCeiling';
 import { ItemMeshes } from './ItemMeshes';
 import { ExitMesh } from './ExitMesh';
 import { EnemyMeshes } from './EnemyMeshes';
+import { StoneMeshes } from './StoneMeshes';
 import { GameController } from './GameController';
 import { usePointerLook } from '../hooks/use-pointer-look';
+import type { AlertMarker } from '../../components/EnemyIndicators';
 
 export interface LabyrinthSceneProps {
   gameRef: React.MutableRefObject<GameState | null>;
@@ -22,6 +24,8 @@ export interface LabyrinthSceneProps {
   highScores: Record<string, number>;
   onHudUpdate: (hud: HUDData) => void;
   onGameEnd: (type: keyof typeof CONTENT.stories) => void;
+  throwRef: React.MutableRefObject<boolean>;
+  onAlert: (marker: AlertMarker) => void;
 }
 
 /** 3D迷宮シーンのルート。<Canvas> にフォグ・ライト・全要素を配置 */
@@ -31,6 +35,15 @@ export function LabyrinthScene(props: LabyrinthSceneProps) {
   const size = maze.length;
   // デスクトップのマウスルック（ポーズ中は無効）
   const { lookRef, bindTargetRef } = usePointerLook(!props.paused);
+
+  // ポインタロック中の左クリック = 石を投げる（非ロック時のクリックはロック要求に使われる）
+  useEffect(() => {
+    const onMouseDown = (e: MouseEvent) => {
+      if (e.button === 0 && document.pointerLockElement) props.throwRef.current = true;
+    };
+    document.addEventListener('mousedown', onMouseDown);
+    return () => document.removeEventListener('mousedown', onMouseDown);
+  }, [props.throwRef]);
 
   return (
     <div
@@ -55,6 +68,7 @@ export function LabyrinthScene(props: LabyrinthSceneProps) {
             <ItemMeshes gameRef={gameRef} />
             <ExitMesh gameRef={gameRef} />
             <EnemyMeshes gameRef={gameRef} />
+            <StoneMeshes gameRef={gameRef} />
           </>
         )}
         <GameController {...props} lookRef={lookRef} />

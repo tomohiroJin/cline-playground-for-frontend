@@ -7,6 +7,8 @@ import { CONTENT } from '../../constants';
 import { advanceGame, TickInput } from '../../game-tick';
 import { cameraYaw, EYE_HEIGHT } from './geometry';
 import { MinimapRenderer } from '../../minimap-renderer';
+import { normAngle } from '../../utils';
+import type { AlertMarker } from '../../components/EnemyIndicators';
 
 export interface GameControllerProps {
   gameRef: React.MutableRefObject<GameState | null>;
@@ -18,10 +20,12 @@ export interface GameControllerProps {
   highScores: Record<string, number>;
   onHudUpdate: (hud: HUDData) => void;
   onGameEnd: (type: keyof typeof CONTENT.stories) => void;
+  throwRef: React.MutableRefObject<boolean>;
+  onAlert: (marker: AlertMarker) => void;
 }
 
-/** keysRef からティック入力を生成 */
-function readInput(k: Record<string, boolean>): TickInput {
+/** keysRef からティック入力を生成（投擲は throwStone 引数で合成する） */
+function readInput(k: Record<string, boolean>, throwStone: boolean): TickInput {
   return {
     left: k['a'] || k['arrowleft'] || false,
     right: k['d'] || k['arrowright'] || false,
@@ -29,8 +33,7 @@ function readInput(k: Record<string, boolean>): TickInput {
     backward: k['s'] || k['arrowdown'] || false,
     hide: k[' '] || false,
     sprint: k['shift'] || false,
-    // 投擲入力の配線は Task 7 で行う。現時点では常に false
-    throwStone: false,
+    throwStone,
   };
 }
 
@@ -38,7 +41,8 @@ function readInput(k: Record<string, boolean>): TickInput {
 const hudEqual = (a: HUDData, b: HUDData): boolean =>
   a.keys === b.keys && a.req === b.req && a.time === b.time && a.lives === b.lives &&
   a.maxL === b.maxL && a.hide === b.hide && a.energy === b.energy && a.eNear === b.eNear &&
-  a.score === b.score && a.stamina === b.stamina && a.highScore === b.highScore;
+  a.score === b.score && a.stamina === b.stamina && a.highScore === b.highScore &&
+  a.stones === b.stones;
 
 /**
  * ゲーム進行の心臓部。useFrame（R3FのrAF）で毎フレーム:
@@ -46,11 +50,15 @@ const hudEqual = (a: HUDData, b: HUDData): boolean =>
  * 3) カメラを player に同期 4) トーチ揺らぎ 5) HUD/ミニマップ更新
  */
 export function GameController(props: GameControllerProps) {
-  const { gameRef, keysRef, lookRef, minimapCanvasRef, paused, diff, highScores, onHudUpdate, onGameEnd } = props;
+  const {
+    gameRef, keysRef, lookRef, minimapCanvasRef, paused, diff, highScores,
+    onHudUpdate, onGameEnd, throwRef, onAlert,
+  } = props;
   const { camera } = useThree();
   const torchRef = useRef<THREE.PointLight>(null);
   const prevHudRef = useRef<HUDData | null>(null);
   const endedRef = useRef(false);
+  const alertIdRef = useRef(0);
 
   useFrame(() => {
     const g = gameRef.current;
@@ -67,7 +75,15 @@ export function GameController(props: GameControllerProps) {
       lookRef.current.dx = 0;
     }
 
-    const result = advanceGame(g, dt, readInput(keysRef.current ?? {}));
+    const input = readInput(keysRef.current ?? {}, throwRef.current);
+    throwRef.current = false;
+    const result = advanceGame(g, dt, input);
+
+    // 索敵アラートをプレイヤー相対角に変換して通知（!/? マーカーの元データ）
+    for (const a of result.alerts) {
+      const angle = normAngle(Math.atan2(a.y - g.player.y, a.x - g.player.x) - g.player.angle);
+      onAlert({ id: ++alertIdRef.current, kind: a.kind, angle });
+    }
 
     // カメラ同期（ロジック更新後の最新 player を反映）
     camera.position.set(g.player.x, EYE_HEIGHT, g.player.y);
@@ -103,6 +119,7 @@ export function GameController(props: GameControllerProps) {
       keys: g.keys, req: g.reqKeys, time: Math.ceil(g.time / 1000), lives: g.lives, maxL: g.maxLives,
       hide: g.hiding, energy: Math.round(g.energy), eNear: Math.max(0, 1 - result.closestEnemy / 7),
       score: g.score, stamina: Math.round(g.player.stamina), highScore: highScores[diff] || 0,
+      stones: g.stones,
     };
     if (!prevHudRef.current || !hudEqual(newHud, prevHudRef.current)) {
       prevHudRef.current = newHud;

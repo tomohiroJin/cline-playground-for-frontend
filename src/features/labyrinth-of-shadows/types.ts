@@ -112,4 +112,6 @@ export interface HUDData {
   hide: boolean;
   energy: number;
   highScore: number;
+  /** 石の所持数 */
+  stones: number;
 }
