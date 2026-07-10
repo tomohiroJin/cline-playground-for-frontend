@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { saveScore, getHighScore } from '../../utils/score-storage';
 import { CONFIG, CONTENT } from './constants';
-import type { Difficulty, Item, Enemy, GameState, HUDData } from './types';
+import type { Difficulty, GameState, HUDData } from './types';
 import { GameStateFactory } from './entity-factory';
 import { AudioService } from './audio';
 import { TitleScreen } from './components/TitleScreen';
@@ -11,11 +11,9 @@ import { HUD } from './components/HUD';
 import { Minimap } from './components/Minimap';
 import { Controls } from './components/Controls';
 import { useInput } from './presentation/hooks/use-input';
-import { useGameLoop } from './presentation/hooks/use-game-loop';
-import type { MapData } from './presentation/hooks/use-game-loop';
+import { LabyrinthScene } from './presentation/three/LabyrinthScene';
 import {
   PageContainer,
-  Canvas,
   MessageOverlay,
   Overlay,
   ModalContent,
@@ -41,18 +39,6 @@ export default function LabyrinthOfShadowsGame() {
     stamina: 100,
     highScore: 0,
   });
-  const [_mapData, setMapData] = useState<MapData>({
-    maze: [] as number[][],
-    player: { x: 0, y: 0 },
-    exit: { x: 0, y: 0 },
-    items: [] as Item[],
-    enemies: [] as Enemy[],
-    keys: 0,
-    reqKeys: 0,
-    explored: {} as Record<string, boolean>,
-  });
-
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const minimapCanvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<GameState | null>(null);
   const [highScores, setHighScores] = useState<Record<string, number>>({});
@@ -69,6 +55,9 @@ export default function LabyrinthOfShadowsGame() {
       }
     );
   }, []);
+
+  // アンマウント時に BGM を確実に停止する（プレイ中のルート離脱対策）
+  useEffect(() => () => AudioService.stopBGM(), []);
 
   // ゲーム終了処理
   const endGame = useCallback(
@@ -108,24 +97,6 @@ export default function LabyrinthOfShadowsGame() {
   // 入力管理
   const { keysRef } = useInput(screen, togglePause);
 
-  // ゲームループ
-  const { stopLoop } = useGameLoop({
-    screen,
-    paused,
-    diff,
-    highScores,
-    canvasRef,
-    minimapCanvasRef,
-    gameRef,
-    keysRef,
-    onHudUpdate: setHud,
-    onMapUpdate: setMapData,
-    onGameEnd: (type) => {
-      stopLoop();
-      endGame(type);
-    },
-  });
-
   // ゲーム開始
   const startGame = useCallback((d: Difficulty) => {
     setDiff(d);
@@ -137,6 +108,7 @@ export default function LabyrinthOfShadowsGame() {
   const onStoryDone = useCallback(() => {
     if (storyType === 'intro') {
       gameRef.current = GameStateFactory.create(diff);
+      AudioService.startBGM(); // 従来 useGameLoop が担っていた BGM 開始を移設
       setScreen('playing');
     } else setScreen('title');
   }, [storyType, diff]);
@@ -157,13 +129,15 @@ export default function LabyrinthOfShadowsGame() {
 
   return (
     <PageContainer>
-      <Canvas
-        ref={canvasRef}
-        width={CONFIG.render.width}
-        height={CONFIG.render.height}
-        role="img"
-        aria-label="3D迷宮ホラーゲーム画面"
-        tabIndex={0}
+      <LabyrinthScene
+        gameRef={gameRef}
+        keysRef={keysRef}
+        minimapCanvasRef={minimapCanvasRef}
+        paused={paused}
+        diff={diff}
+        highScores={highScores}
+        onHudUpdate={setHud}
+        onGameEnd={endGame}
       />
       <HUD h={hud} />
       <Controls keysRef={keysRef} hiding={hud.hide} energy={hud.energy} stamina={hud.stamina} />

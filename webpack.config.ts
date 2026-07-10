@@ -68,6 +68,12 @@ const config: Configuration = {
     splitChunks: {
       chunks: 'all',
       cacheGroups: {
+        // three 系は 3D ゲームルートの遅延チャンク専用に分離（メイン初期ロードへの混入防止）
+        three: {
+          test: /[\\/]node_modules[\\/](three|@react-three)[\\/]/,
+          name: 'vendor-three',
+          priority: 30,
+        },
         react: {
           test: /[\\/]node_modules[\\/](react|react-dom|react-router-dom)[\\/]/,
           name: 'vendor-react',

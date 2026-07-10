@@ -60,7 +60,7 @@ src/features/labyrinth-of-shadows/
     audio/              #   オーディオサービス
     rendering/          #   描画設定・レンガテクスチャ生成
   presentation/         # プレゼンテーション層
-    hooks/              #   use-game-loop, use-input, use-audio
+    hooks/              #   use-input, use-audio, use-pointer-look（ゲームループは game-tick.ts に分離）
     styles/             #   ゲーム画面スタイル
   components/
     Controls.tsx        # 操作UI
