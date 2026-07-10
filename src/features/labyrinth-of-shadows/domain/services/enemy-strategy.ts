@@ -123,9 +123,7 @@ const enterChase = (e: Enemy, playerX: number, playerY: number, events: GameEven
   e.loseSightTimer = 0;
   e.path = [];
   e.pathTime = -PATH_RECALC_INTERVAL; // 次フレームで即パス再計算させる
-  // 'alert' という専用サウンドは未定義（SoundName に存在しない）ため、
-  // 既存の警戒音アセット 'enemy' を流用する
-  events.push(createSoundEvent('enemy', 0.35), createEnemyAlertEvent('spotted', e.x, e.y));
+  events.push(createSoundEvent('alert', 0.35), createEnemyAlertEvent('spotted', e.x, e.y));
 };
 
 /** 音源が反応半径内なら捜索状態へ遷移する */
