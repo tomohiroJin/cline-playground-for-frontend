@@ -56,6 +56,9 @@ export default function LabyrinthOfShadowsGame() {
     );
   }, []);
 
+  // アンマウント時に BGM を確実に停止する（プレイ中のルート離脱対策）
+  useEffect(() => () => AudioService.stopBGM(), []);
+
   // ゲーム終了処理
   const endGame = useCallback(
     (type: keyof typeof CONTENT.stories) => {
