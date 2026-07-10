@@ -135,6 +135,8 @@ const respondToNoise = (e: Enemy, params: EnemyUpdateParams): boolean => {
   e.lastSeenX = noise.x;
   e.lastSeenY = noise.y;
   e.searchTimer = searchDuration;
+  e.path = [];
+  e.pathTime = -PATH_RECALC_INTERVAL; // 次フレームで即パス再計算させる（古い chase 経路を持ち越さない）
   return true;
 };
 
@@ -209,6 +211,8 @@ export class ChaserStrategy implements EnemyStrategy {
       if (reached || e.loseSightTimer > LOSE_SIGHT_GRACE) {
         e.aiState = 'search';
         e.searchTimer = searchDuration;
+        e.path = [];
+        e.pathTime = -PATH_RECALC_INTERVAL; // 次フレームで即パス再計算させる（古い chase 経路を持ち越さない）
         events.push(createEnemyAlertEvent('searching', e.x, e.y));
         return { events };
       }
@@ -223,7 +227,7 @@ export class ChaserStrategy implements EnemyStrategy {
   }
 
   private updateSearch(params: EnemyUpdateParams): EnemyUpdateResult {
-    const { enemy: e, playerX, playerY, maze, enemySpeed, dt, randomFn } = params;
+    const { enemy: e, playerX, playerY, maze, enemySpeed, dt, gameTime, randomFn } = params;
     const events: GameEvent[] = [];
 
     if (this.canSee(params)) {
@@ -242,8 +246,13 @@ export class ChaserStrategy implements EnemyStrategy {
 
     // 目撃地点の周辺に留まる: 離れたら引き戻し、近くではうろつく
     if (distance(e.x, e.y, e.lastSeenX, e.lastSeenY) > SEARCH_PULL_DISTANCE) {
-      steerToward(e, e.lastSeenX, e.lastSeenY, 0.05);
-      tryMove(e, maze, enemySpeed * 0.7, dt, randomFn);
+      // 直線の旋回移動だと壁を回り込めず張り付いてしまうため、
+      // chase と同じ BFS 経路追従で目撃地点へ向かう
+      if (gameTime - e.pathTime > PATH_RECALC_INTERVAL) {
+        e.path = bfsPath(maze, e.x, e.y, e.lastSeenX, e.lastSeenY);
+        e.pathTime = gameTime;
+      }
+      followPath(e, maze, e.lastSeenX, e.lastSeenY, enemySpeed * 0.7, dt, randomFn);
     } else {
       wanderMove(e, maze, enemySpeed * 0.7, dt, randomFn);
     }

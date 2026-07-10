@@ -8,6 +8,7 @@ import type { EnemyUpdateParams } from '../services/enemy-strategy';
 import type { Enemy } from '../../types';
 import { OPEN_MAZE_7X7, FIXED_MAZE_9X9 } from '../../__tests__/helpers/fixed-maze';
 import { setupAudioContextMock } from '../../__tests__/helpers/audio-mock';
+import { distance } from '../../utils';
 
 beforeAll(() => {
   setupAudioContextMock();
@@ -257,5 +258,35 @@ describe('ChaserStrategy 状態機械', () => {
     const e = createChaser(1.5, 3.5, Math.PI);
     strategy.update(baseParams(e, { noise: { x: 30, y: 30 } }));
     expect(e.aiState).toBe('patrol');
+  });
+
+  it('search: 壁を回り込んで目撃地点に到達できる（BFS 経路追従）', () => {
+    // 縦通路 (3.5,1.5) の敵が、角を挟んだ横通路 (1.5,3.5) の目撃地点を捜索する。
+    // 直線の旋回移動では角の壁に張り付いて到達できないため、BFS 経路追従が必須。
+    const e = createChaser(3.5, 1.5, 0);
+    e.aiState = 'search';
+    e.lastSeenX = 1.5;
+    e.lastSeenY = 3.5;
+    e.searchTimer = 60000;
+    const params = baseParams(e, {
+      playerX: 100,
+      playerY: 100,
+      isPlayerHiding: true,
+      searchDuration: 60000,
+    });
+    for (let i = 0; i < 3000; i++) {
+      strategy.update({ ...params, gameTime: 1000 + i * 16 });
+    }
+    expect(distance(e.x, e.y, e.lastSeenX, e.lastSeenY)).toBeLessThan(1);
+  });
+
+  it('chase: 視認中は lastSeen 至近でも search に遷移しない', () => {
+    // 敵はプレイヤーに正対しており、プレイヤーは lastSeen とほぼ同じ位置にいる（視認継続中）
+    const e = createChaser(4.5, 3.5, 0); // +x を向く
+    e.aiState = 'chase';
+    e.lastSeenX = 5.5;
+    e.lastSeenY = 3.5;
+    strategy.update(baseParams(e, { playerX: 5.5, playerY: 3.5 }));
+    expect(e.aiState).toBe('chase');
   });
 });
