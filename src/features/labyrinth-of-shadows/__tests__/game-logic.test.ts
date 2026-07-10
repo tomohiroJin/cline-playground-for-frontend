@@ -105,9 +105,10 @@ describe('labyrinth-of-shadows/game-logic', () => {
   });
 
   describe('updateEnemies', () => {
-    test('最も近い敵の距離を返す', () => {
-      const closest = GameLogic.updateEnemies(state, 16);
-      expect(typeof closest).toBe('number');
+    test('最も近い敵の距離・最寄り敵・alerts を含む結果を返す', () => {
+      const result = GameLogic.updateEnemies(state, 16);
+      expect(typeof result.closest).toBe('number');
+      expect(Array.isArray(result.alerts)).toBe(true);
     });
   });
 
@@ -228,7 +229,7 @@ describe('labyrinth-of-shadows/game-logic', () => {
       const wanderer = testState.enemies[0];
 
       // Act
-      GameLogic.updateEnemy(testState, wanderer, 16);
+      GameLogic.updateEnemyWithStrategy(testState, wanderer, 16);
 
       // Assert: lastSeenX は更新されない（追跡しない）
       expect(wanderer.lastSeenX).toBe(-1);
@@ -249,7 +250,7 @@ describe('labyrinth-of-shadows/game-logic', () => {
       const chaser = testState.enemies[0];
 
       // Act
-      GameLogic.updateEnemy(testState, chaser, 16);
+      GameLogic.updateEnemyWithStrategy(testState, chaser, 16);
 
       // Assert: lastSeenX が更新される
       expect(chaser.lastSeenX).toBeGreaterThan(0);
@@ -268,7 +269,7 @@ describe('labyrinth-of-shadows/game-logic', () => {
       const teleporter = testState.enemies[0];
 
       // Act
-      GameLogic.updateEnemy(testState, teleporter, 100);
+      GameLogic.updateEnemyWithStrategy(testState, teleporter, 100);
 
       // Assert
       expect(teleporter.teleportCooldown).toBeLessThan(5000);
@@ -287,7 +288,7 @@ describe('labyrinth-of-shadows/game-logic', () => {
       const wanderer = testState.enemies[0];
 
       // Act
-      const d = GameLogic.updateEnemy(testState, wanderer, 16);
+      const d = GameLogic.updateEnemyWithStrategy(testState, wanderer, 16).distance;
 
       // Assert
       expect(d).toBe(Infinity);
@@ -311,7 +312,7 @@ describe('labyrinth-of-shadows/game-logic', () => {
 
       // Act: 多くのフレームで更新
       for (let i = 0; i < 100; i++) {
-        GameLogic.updateEnemy(testState, wanderer, 16);
+        GameLogic.updateEnemyWithStrategy(testState, wanderer, 16);
       }
 
       // Assert: 100フレーム後、位置が変わっている

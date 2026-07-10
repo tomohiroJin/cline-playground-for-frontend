@@ -1,6 +1,7 @@
 import type { GameState } from './types';
 import { GameLogic } from './game-logic';
 import { AudioService } from './audio';
+import { tryThrowStone, updateStoneProjectiles } from './domain/services/stone';
 
 /** プレイヤー入力（1フレーム分） */
 export interface TickInput {
@@ -10,16 +11,25 @@ export interface TickInput {
   readonly backward: boolean;
   readonly hide: boolean;
   readonly sprint: boolean;
+  readonly throwStone: boolean;
 }
 
 /** ティックの結果状態 */
 export type TickStatus = 'playing' | 'timeout' | 'victory' | 'gameover';
+
+/** 敵の状態変化アラート（索敵UIマーカーの元データ） */
+export interface EnemyAlert {
+  readonly kind: 'spotted' | 'searching';
+  readonly x: number;
+  readonly y: number;
+}
 
 /** ティック結果 */
 export interface TickResult {
   readonly status: TickStatus;
   readonly closestEnemy: number;
   readonly moved: boolean;
+  readonly alerts: readonly EnemyAlert[];
 }
 
 /**
@@ -35,7 +45,7 @@ export function advanceGame(g: GameState, dt: number, input: TickInput): TickRes
   if (g.speedBoost > 0) g.speedBoost -= dt;
 
   if (g.time <= 0) {
-    return { status: 'timeout', closestEnemy: Infinity, moved: false };
+    return { status: 'timeout', closestEnemy: Infinity, moved: false, alerts: [] };
   }
 
   GameLogic.updateHiding(g, input.hide, dt);
@@ -48,18 +58,25 @@ export function advanceGame(g: GameState, dt: number, input: TickInput): TickRes
   GameLogic.updateFootstep(g, moved, dt);
   GameLogic.updateItems(g);
 
+  // 石: 投擲入力 → 飛行更新 → 着地音（音源はこのフレームの敵更新に渡す）
+  if (input.throwStone && tryThrowStone(g)) {
+    AudioService.play('stoneThrow', 0.3);
+  }
+  const noise = updateStoneProjectiles(g, dt);
+  if (noise) AudioService.play('stoneLand', 0.35);
+
   const exitResult = GameLogic.checkExit(g);
   if (exitResult === 'victory') {
-    return { status: 'victory', closestEnemy: Infinity, moved };
+    return { status: 'victory', closestEnemy: Infinity, moved, alerts: [] };
   }
 
-  const closestEnemy = GameLogic.updateEnemies(g, dt);
+  const enemyResult = GameLogic.updateEnemies(g, dt, noise);
   if (g.lives <= 0) {
-    return { status: 'gameover', closestEnemy, moved };
+    return { status: 'gameover', closestEnemy: enemyResult.closest, moved, alerts: enemyResult.alerts };
   }
 
-  GameLogic.updateSounds(g, closestEnemy, dt);
-  AudioService.updateBGM(Math.max(0, 1 - closestEnemy / 8));
+  GameLogic.updateSounds(g, enemyResult.closest, dt, enemyResult.nearest);
+  AudioService.updateBGM(Math.max(0, 1 - enemyResult.closest / 8));
 
-  return { status: 'playing', closestEnemy, moved };
+  return { status: 'playing', closestEnemy: enemyResult.closest, moved, alerts: enemyResult.alerts };
 }

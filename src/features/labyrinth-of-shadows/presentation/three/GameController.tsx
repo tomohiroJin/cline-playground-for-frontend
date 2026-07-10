@@ -29,6 +29,8 @@ function readInput(k: Record<string, boolean>): TickInput {
     backward: k['s'] || k['arrowdown'] || false,
     hide: k[' '] || false,
     sprint: k['shift'] || false,
+    // 投擲入力の配線は Task 7 で行う。現時点では常に false
+    throwStone: false,
   };
 }
 

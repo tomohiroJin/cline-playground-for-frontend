@@ -1,11 +1,14 @@
 import { advanceGame, TickInput } from '../game-tick';
 import { GameStateFactory } from '../entity-factory';
 import type { GameState } from '../types';
+import { capEnemySpeed } from '../game-logic';
+import { GAME_BALANCE } from '../domain/constants';
 
 // AudioService は Web Audio に触れるためモックする
 jest.mock('../audio', () => ({
   AudioService: {
     play: jest.fn(),
+    playSpatial: jest.fn(),
     startBGM: jest.fn(),
     stopBGM: jest.fn(),
     updateBGM: jest.fn(),
@@ -13,7 +16,7 @@ jest.mock('../audio', () => ({
 }));
 
 const NO_INPUT: TickInput = {
-  left: false, right: false, forward: false, backward: false, hide: false, sprint: false,
+  left: false, right: false, forward: false, backward: false, hide: false, sprint: false, throwStone: false,
 };
 
 const setup = (): GameState => GameStateFactory.create('EASY');
@@ -63,5 +66,32 @@ describe('advanceGame', () => {
     const result = advanceGame(g, 16, NO_INPUT);
     expect(result.status).toBe('playing');
     expect(typeof result.closestEnemy).toBe('number');
+  });
+});
+
+describe('Phase2: 石投げと索敵の統合', () => {
+  const idleInput = NO_INPUT;
+
+  it('throwStone 入力で石が減り弾が生成される', () => {
+    const g = GameStateFactory.create('NORMAL');
+    const before = g.stones;
+    advanceGame(g, 16, { ...idleInput, throwStone: true });
+    expect(g.stones).toBe(before - 1);
+    expect(g.stoneProjectiles).toHaveLength(1);
+  });
+
+  it('敵に渡る速度はプレイヤー速度の0.9倍を超えない', () => {
+    // GAME_BALANCE.player.MOVE_SPEED * MAX_SPEED_RATIO を超える eSpeed を強制しても
+    // capEnemySpeed でキャップされることを確認する（capEnemySpeed を export して直接検証）
+    expect(capEnemySpeed(999)).toBeCloseTo(
+      GAME_BALANCE.player.MOVE_SPEED * GAME_BALANCE.enemy.MAX_SPEED_RATIO
+    );
+    expect(capEnemySpeed(0.001)).toBe(0.001);
+  });
+
+  it('TickResult は alerts 配列を返す', () => {
+    const g = GameStateFactory.create('NORMAL');
+    const result = advanceGame(g, 16, idleInput);
+    expect(Array.isArray(result.alerts)).toBe(true);
   });
 });
