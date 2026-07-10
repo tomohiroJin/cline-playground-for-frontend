@@ -25,8 +25,8 @@ function SingleItem({ item }: { item: Item }) {
         <octahedronGeometry args={[0.28, 0]} />
         <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.9} />
       </mesh>
-      {/* アイテムを照らす小さな点光源で存在感を出す */}
-      <pointLight color={color} intensity={1.2} distance={3} decay={2} />
+      {/* アイテムを照らす小さな点光源で存在感を出す（物理ベース照明準拠の強度） */}
+      <pointLight color={color} intensity={3} distance={3} decay={2} />
     </group>
   );
 }

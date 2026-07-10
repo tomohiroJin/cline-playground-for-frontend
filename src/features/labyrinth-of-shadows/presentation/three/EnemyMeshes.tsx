@@ -49,7 +49,8 @@ function SingleEnemy({ enemy }: { enemy: Enemy }) {
           opacity={v.opacity}
         />
       </mesh>
-      <pointLight color={v.color} intensity={1.5} distance={4} decay={2} />
+      {/* 物理ベース照明準拠の強度 */}
+      <pointLight color={v.color} intensity={3.5} distance={4} decay={2} />
     </group>
   );
 }

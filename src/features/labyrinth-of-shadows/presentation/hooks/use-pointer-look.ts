@@ -30,7 +30,11 @@ export function usePointerLook(enabled: boolean): {
     if (!enabled || !target) return;
 
     const requestLock = () => {
-      if (document.pointerLockElement !== target) target.requestPointerLock();
+      if (document.pointerLockElement !== target) {
+        // 未対応環境（ヘッドレス等）では拒否されるため、失敗は無視する
+        const result = target.requestPointerLock() as unknown;
+        if (result instanceof Promise) result.catch(() => undefined);
+      }
     };
     const onMouseMove = (e: MouseEvent) => {
       if (document.pointerLockElement !== target) return;

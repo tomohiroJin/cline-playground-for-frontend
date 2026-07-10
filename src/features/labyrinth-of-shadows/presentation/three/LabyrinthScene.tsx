@@ -1,5 +1,6 @@
 /* eslint-disable react/no-unknown-property */
 import React from 'react';
+import * as THREE from 'three';
 import { Canvas } from '@react-three/fiber';
 import type { GameState, HUDData } from '../../types';
 import { CONFIG, CONTENT } from '../../constants';
@@ -36,15 +37,15 @@ export function LabyrinthScene(props: LabyrinthSceneProps) {
       style={{ width: CONFIG.render.width, height: CONFIG.render.height, maxWidth: '100%' }}
     >
       <Canvas
-        shadows
+        shadows={{ type: THREE.PCFShadowMap }}
         camera={{ fov: 75, near: 0.05, far: CONFIG.render.maxDepth, position: [0, EYE_HEIGHT, 0] }}
         gl={{ antialias: true }}
       >
         {/* 恐怖演出＋描画距離制限を兼ねる指数フォグ */}
         <fogExp2 attach="fog" args={['#05040a', 0.14]} />
         <color attach="background" args={['#05040a']} />
-        {/* 環境光は極小。視界はカメラ追従トーチ（GameController内）で確保 */}
-        <ambientLight intensity={0.12} />
+        {/* 環境光は控えめだが物理ベース照明準拠で床・壁が視認できる強度を確保 */}
+        <ambientLight intensity={0.35} />
 
         {size > 0 && (
           <>

@@ -77,7 +77,8 @@ export function GameController(props: GameControllerProps) {
       const time = g.gTime / 1000;
       const flicker = Math.sin(time * 3.7) * 0.3 + Math.sin(time * 7.1) * 0.15 + Math.sin(time * 11.3) * 0.05 + 0.5;
       torchRef.current.position.set(g.player.x, EYE_HEIGHT, g.player.y);
-      torchRef.current.intensity = 2.2 + flicker * 0.8;
+      // 物理ベース照明準拠の強度（point light は距離減衰が急峻なため高めに設定）
+      torchRef.current.intensity = 9 + flicker * 3;
     }
 
     if (result.status !== 'playing') {
@@ -107,5 +108,5 @@ export function GameController(props: GameControllerProps) {
     }
   });
 
-  return <pointLight ref={torchRef} color="#ffb060" intensity={2.2} distance={8} decay={1.6} castShadow />;
+  return <pointLight ref={torchRef} color="#ffb060" intensity={9} distance={8} decay={1.6} castShadow />;
 }
