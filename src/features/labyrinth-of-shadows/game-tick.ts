@@ -24,7 +24,7 @@ export interface TickResult {
 
 /**
  * 1フレーム分のゲームロジックを進める純粋関数。
- * 描画・React に依存せず、既存 use-game-loop のロジック部と同一挙動を保つ（パリティ）。
+ * 描画・React に依存せず、旧描画ループ実装から抽出したロジック部と同一挙動を保つ（パリティ）。
  * マウスルックによる角度変更は呼び出し側で g.player.angle に適用済みである前提。
  */
 export function advanceGame(g: GameState, dt: number, input: TickInput): TickResult {

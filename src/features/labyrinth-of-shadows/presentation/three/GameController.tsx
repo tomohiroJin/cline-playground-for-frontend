@@ -32,7 +32,7 @@ function readInput(k: Record<string, boolean>): TickInput {
   };
 }
 
-/** HUDData の浅い比較（既存 use-game-loop と同一） */
+/** HUDData の浅い比較（旧描画ループ実装と同一） */
 const hudEqual = (a: HUDData, b: HUDData): boolean =>
   a.keys === b.keys && a.req === b.req && a.time === b.time && a.lives === b.lives &&
   a.maxL === b.maxL && a.hide === b.hide && a.energy === b.energy && a.eNear === b.eNear &&
