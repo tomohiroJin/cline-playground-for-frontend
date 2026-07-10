@@ -81,6 +81,8 @@ export const GameLogic = {
   updateItems(g: GameState) {
     for (const item of g.items) {
       if (item.got || !isPlayerNearItem(g.player.x, g.player.y, item.x, item.y)) continue;
+      // 小石は満杯なら拾わずフィールドに残す
+      if (item.type === 'stone' && g.stones >= GAME_BALANCE.stone.MAX_COUNT) continue;
 
       item.got = true;
       switch (item.type) {
@@ -119,6 +121,11 @@ export const GameLogic = {
           this.revealMap(g, item.x, item.y);
           g.msg = '🗺️ 地図を発見！ 周囲のマップが公開された！';
           AudioService.play('mapReveal', 0.4);
+          break;
+        case 'stone':
+          g.stones++;
+          g.msg = `🪨 小石を拾った (${g.stones}/${GAME_BALANCE.stone.MAX_COUNT})`;
+          AudioService.play('stoneLand', 0.2);
           break;
       }
       g.msgTimer = CONFIG.timing.msgDuration;

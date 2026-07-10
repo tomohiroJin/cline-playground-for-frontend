@@ -1,6 +1,7 @@
 import { GameLogic } from '../game-logic';
 import { GameStateFactory } from '../entity-factory';
 import type { GameState } from '../types';
+import { GAME_BALANCE } from '../domain/constants';
 import { setupAudioContextMock } from './helpers/audio-mock';
 import { GameStateBuilder } from './helpers/game-state-builder';
 
@@ -169,6 +170,38 @@ describe('labyrinth-of-shadows/game-logic', () => {
 
       // Assert: 中心セルが探索済みになる
       expect(testState.explored['3,3']).toBe(true);
+    });
+
+    test('小石を拾うと所持数が増える', () => {
+      // Arrange: 満杯未満の所持数で小石を配置
+      const testState = GameStateBuilder.create()
+        .withStones(3)
+        .withItem('stone', 1, 1)
+        .withPlayer({ x: 1.5, y: 1.5 })
+        .build();
+
+      // Act
+      GameLogic.updateItems(testState);
+
+      // Assert
+      expect(testState.stones).toBe(4);
+      expect(testState.items[0].got).toBe(true);
+    });
+
+    test('所持数が MAX_COUNT のとき小石は拾わない', () => {
+      // Arrange: 所持数を上限にして小石を配置
+      const testState = GameStateBuilder.create()
+        .withStones(GAME_BALANCE.stone.MAX_COUNT)
+        .withItem('stone', 1, 1)
+        .withPlayer({ x: 1.5, y: 1.5 })
+        .build();
+
+      // Act
+      GameLogic.updateItems(testState);
+
+      // Assert: フィールドに残り、所持数も変化しない
+      expect(testState.items[0].got).toBe(false);
+      expect(testState.stones).toBe(GAME_BALANCE.stone.MAX_COUNT);
     });
   });
 

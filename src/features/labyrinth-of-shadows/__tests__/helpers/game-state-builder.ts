@@ -204,6 +204,12 @@ export class GameStateBuilder {
     return this;
   }
 
+  /** 小石の所持数を設定する */
+  withStones(count: number): this {
+    this.state.stones = count;
+    return this;
+  }
+
   /** GameState を構築して返す */
   build(): GameState {
     return { ...this.state };
