@@ -10,7 +10,13 @@ export type GameEvent =
   | { readonly type: 'SOUND_SPATIAL'; readonly sound: SoundName; readonly volume: number; readonly pan: number }
   | { readonly type: 'BGM_UPDATE'; readonly danger: number }
   | { readonly type: 'MESSAGE'; readonly text: string }
-  | { readonly type: 'GAME_END'; readonly reason: 'victory' | 'gameover' | 'timeout' };
+  | { readonly type: 'GAME_END'; readonly reason: 'victory' | 'gameover' | 'timeout' }
+  | {
+      readonly type: 'ENEMY_ALERT';
+      readonly alert: 'spotted' | 'searching';
+      readonly x: number;
+      readonly y: number;
+    };
 
 /** イベントを生成するヘルパー関数 */
 export const createSoundEvent = (sound: SoundName, volume: number): GameEvent => ({
@@ -39,3 +45,10 @@ export const createGameEndEvent = (reason: 'victory' | 'gameover' | 'timeout'): 
   type: 'GAME_END',
   reason,
 });
+
+/** 敵の状態変化アラート（索敵UIのマーカー表示に使う） */
+export const createEnemyAlertEvent = (
+  alert: 'spotted' | 'searching',
+  x: number,
+  y: number
+): GameEvent => ({ type: 'ENEMY_ALERT', alert, x, y });

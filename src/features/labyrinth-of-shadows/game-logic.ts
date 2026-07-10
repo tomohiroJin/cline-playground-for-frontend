@@ -178,6 +178,8 @@ export const GameLogic = {
       dt,
       gameTime: g.gTime,
       randomFn: Math.random,
+      sightRange: g.sightRange,
+      searchDuration: g.searchDuration,
     });
 
     // Strategy から発生したイベントを処理

@@ -4,25 +4,27 @@
  */
 import type { Enemy } from '../../types';
 import type { GameEvent } from '../../application/game-events';
-import { createSoundEvent } from '../../application/game-events';
+import { createSoundEvent, createEnemyAlertEvent } from '../../application/game-events';
 import { distance, normAngle } from '../../utils';
 import { MazeService } from '../../maze-service';
 import { bfsPath } from './pathfinding';
+import { canSeePlayer } from './vision';
 import { GAME_BALANCE } from '../constants';
 
 const {
   PATH_RECALC_INTERVAL,
   TELEPORT_COOLDOWN,
   TELEPORT_CHASE_RANGE,
-  CHASE_RANGE,
-  CLOSE_RANGE_THRESHOLD,
-  CLOSE_RANGE_SPEED_MULTIPLIER,
   WANDERER_SPEED_MULTIPLIER,
   TELEPORTER_CHASE_SPEED_MULTIPLIER,
   TELEPORTER_PATROL_SPEED_MULTIPLIER,
   TELEPORT_MIN_DISTANCE,
   TELEPORT_MAX_DISTANCE,
   PATH_NODE_REACH_DISTANCE,
+  FOV_ANGLE,
+  LOSE_SIGHT_GRACE,
+  LAST_SEEN_REACH_DISTANCE,
+  SEARCH_PULL_DISTANCE,
 } = GAME_BALANCE.enemy;
 
 /** 敵AI更新のパラメータ */
@@ -36,6 +38,12 @@ export interface EnemyUpdateParams {
   readonly dt: number;
   readonly gameTime: number;
   readonly randomFn: () => number;
+  /** 敵の発見可能距離（難易度依存） */
+  readonly sightRange: number;
+  /** 捜索状態の持続時間 ms（難易度依存） */
+  readonly searchDuration: number;
+  /** このフレームに発生した音源（石の着地点）。未発生なら undefined */
+  readonly noise?: { readonly x: number; readonly y: number };
 }
 
 /** 敵AI更新の結果 */
@@ -48,6 +56,90 @@ export interface EnemyStrategy {
   update(params: EnemyUpdateParams): EnemyUpdateResult;
 }
 
+/** dir 方向へ速度分移動する。壁なら方向転換して失敗を返す */
+const tryMove = (
+  e: Enemy,
+  maze: number[][],
+  speed: number,
+  dt: number,
+  randomFn: () => number
+): boolean => {
+  const nx = e.x + Math.cos(e.dir) * speed * dt;
+  const ny = e.y + Math.sin(e.dir) * speed * dt;
+  if (MazeService.isWalkable(maze, nx, ny)) {
+    e.x = nx;
+    e.y = ny;
+    return true;
+  }
+  e.dir += Math.PI * 0.5 + randomFn() * 0.5;
+  return false;
+};
+
+/** ランダムに向きを揺らしながら歩く（巡回・捜索の基本動作） */
+const wanderMove = (
+  e: Enemy,
+  maze: number[][],
+  speed: number,
+  dt: number,
+  randomFn: () => number
+): void => {
+  e.dir += (randomFn() - 0.5) * 0.055;
+  tryMove(e, maze, speed, dt, randomFn);
+};
+
+/** 目標地点の方向へ滑らかに旋回する */
+const steerToward = (e: Enemy, targetX: number, targetY: number, rate: number): void => {
+  e.dir += normAngle(Math.atan2(targetY - e.y, targetX - e.x) - e.dir) * rate;
+};
+
+/** BFS パスに沿って移動する（パスが空なら直接旋回） */
+const followPath = (
+  e: Enemy,
+  maze: number[][],
+  targetX: number,
+  targetY: number,
+  speed: number,
+  dt: number,
+  randomFn: () => number
+): void => {
+  if (e.path.length > 0) {
+    const next = e.path[0];
+    if (distance(e.x, e.y, next.x, next.y) < PATH_NODE_REACH_DISTANCE) e.path.shift();
+    if (e.path.length > 0) {
+      const target = e.path[0];
+      e.dir = Math.atan2(target.y - e.y, target.x - e.x);
+    }
+  } else {
+    steerToward(e, targetX, targetY, 0.045);
+  }
+  tryMove(e, maze, speed, dt, randomFn);
+};
+
+/** 発見時の共通処理: chase へ遷移して警戒音とアラートを発行する */
+const enterChase = (e: Enemy, playerX: number, playerY: number, events: GameEvent[]): void => {
+  e.aiState = 'chase';
+  e.lastSeenX = playerX;
+  e.lastSeenY = playerY;
+  e.loseSightTimer = 0;
+  e.path = [];
+  e.pathTime = -PATH_RECALC_INTERVAL; // 次フレームで即パス再計算させる
+  // 'alert' という専用サウンドは未定義（SoundName に存在しない）ため、
+  // 既存の警戒音アセット 'enemy' を流用する
+  events.push(createSoundEvent('enemy', 0.35), createEnemyAlertEvent('spotted', e.x, e.y));
+};
+
+/** 音源が反応半径内なら捜索状態へ遷移する */
+const respondToNoise = (e: Enemy, params: EnemyUpdateParams): boolean => {
+  const { noise, searchDuration } = params;
+  if (!noise) return false;
+  if (distance(e.x, e.y, noise.x, noise.y) > GAME_BALANCE.stone.NOISE_RADIUS) return false;
+  e.aiState = 'search';
+  e.lastSeenX = noise.x;
+  e.lastSeenY = noise.y;
+  e.searchTimer = searchDuration;
+  return true;
+};
+
 /** 徘徊型AI: ランダムに巡回、プレイヤーを追跡しない */
 export class WandererStrategy implements EnemyStrategy {
   update(params: EnemyUpdateParams): EnemyUpdateResult {
@@ -58,81 +150,106 @@ export class WandererStrategy implements EnemyStrategy {
       e.dir += Math.PI * (0.5 + randomFn() * 0.5);
     }
 
-    const nx = e.x + Math.cos(e.dir) * enemySpeed * WANDERER_SPEED_MULTIPLIER * dt;
-    const ny = e.y + Math.sin(e.dir) * enemySpeed * WANDERER_SPEED_MULTIPLIER * dt;
-    if (MazeService.isWalkable(maze, nx, ny)) {
-      e.x = nx;
-      e.y = ny;
-    } else {
-      e.dir += Math.PI * 0.5 + randomFn() * 0.5;
-    }
+    tryMove(e, maze, enemySpeed * WANDERER_SPEED_MULTIPLIER, dt, randomFn);
 
     return { events: [] };
   }
 }
 
-/** 追跡型AI: BFS パスファインディングで追跡 */
+/** 追跡型AI: 巡回→追跡→捜索の状態機械。視野角＋壁遮蔽で発見する */
 export class ChaserStrategy implements EnemyStrategy {
   update(params: EnemyUpdateParams): EnemyUpdateResult {
-    const { enemy: e, playerX, playerY, isPlayerHiding, maze, enemySpeed, dt, gameTime, randomFn } = params;
-    const d = distance(playerX, playerY, e.x, e.y);
+    switch (params.enemy.aiState) {
+      case 'chase':
+        return this.updateChase(params);
+      case 'search':
+        return this.updateSearch(params);
+      default:
+        return this.updatePatrol(params);
+    }
+  }
 
-    if (!isPlayerHiding && d < CHASE_RANGE) {
+  private canSee(params: EnemyUpdateParams): boolean {
+    const { enemy: e, playerX, playerY, isPlayerHiding, maze, sightRange } = params;
+    return canSeePlayer({
+      maze,
+      enemyX: e.x,
+      enemyY: e.y,
+      enemyDir: e.dir,
+      playerX,
+      playerY,
+      isPlayerHiding,
+      sightRange,
+      fovAngle: FOV_ANGLE,
+    });
+  }
+
+  private updatePatrol(params: EnemyUpdateParams): EnemyUpdateResult {
+    const { enemy: e, playerX, playerY, maze, enemySpeed, dt, randomFn } = params;
+    const events: GameEvent[] = [];
+    if (this.canSee(params)) {
+      enterChase(e, playerX, playerY, events);
+      return { events };
+    }
+    if (respondToNoise(e, params)) return { events };
+    wanderMove(e, maze, enemySpeed * 0.5, dt, randomFn);
+    return { events };
+  }
+
+  private updateChase(params: EnemyUpdateParams): EnemyUpdateResult {
+    const { enemy: e, playerX, playerY, maze, enemySpeed, dt, gameTime, randomFn, searchDuration } =
+      params;
+    const events: GameEvent[] = [];
+
+    if (this.canSee(params)) {
       e.lastSeenX = playerX;
       e.lastSeenY = playerY;
-
-      if (gameTime - e.pathTime > PATH_RECALC_INTERVAL) {
-        e.path = bfsPath(maze, e.x, e.y, playerX, playerY);
-        e.pathTime = gameTime;
-      }
-
-      if (e.path.length > 0) {
-        const next = e.path[0];
-        const distToNext = distance(e.x, e.y, next.x, next.y);
-        if (distToNext < PATH_NODE_REACH_DISTANCE) {
-          e.path.shift();
-        }
-        if (e.path.length > 0) {
-          const target = e.path[0];
-          e.dir = Math.atan2(target.y - e.y, target.x - e.x);
-        }
-      } else {
-        e.dir += normAngle(Math.atan2(playerY - e.y, playerX - e.x) - e.dir) * 0.045;
-      }
-
-      const speedMult = d < CLOSE_RANGE_THRESHOLD ? CLOSE_RANGE_SPEED_MULTIPLIER : 1;
-      const nx = e.x + Math.cos(e.dir) * enemySpeed * speedMult * dt;
-      const ny = e.y + Math.sin(e.dir) * enemySpeed * speedMult * dt;
-      if (MazeService.isWalkable(maze, nx, ny)) {
-        e.x = nx;
-        e.y = ny;
-      } else {
-        e.dir += Math.PI * 0.5 + randomFn() * 0.5;
-      }
-    } else if (e.lastSeenX > 0 && distance(e.x, e.y, e.lastSeenX, e.lastSeenY) > 1) {
-      e.dir += normAngle(Math.atan2(e.lastSeenY - e.y, e.lastSeenX - e.x) - e.dir) * 0.025;
-      const nx = e.x + Math.cos(e.dir) * enemySpeed * dt;
-      const ny = e.y + Math.sin(e.dir) * enemySpeed * dt;
-      if (MazeService.isWalkable(maze, nx, ny)) {
-        e.x = nx;
-        e.y = ny;
-      } else {
-        e.dir += Math.PI * 0.5 + randomFn() * 0.5;
-      }
+      e.loseSightTimer = 0;
     } else {
-      e.dir += (randomFn() - 0.5) * 0.055;
-      e.lastSeenX = -1;
-      const nx = e.x + Math.cos(e.dir) * enemySpeed * 0.5 * dt;
-      const ny = e.y + Math.sin(e.dir) * enemySpeed * 0.5 * dt;
-      if (MazeService.isWalkable(maze, nx, ny)) {
-        e.x = nx;
-        e.y = ny;
-      } else {
-        e.dir += Math.PI * 0.5 + randomFn() * 0.5;
+      e.loseSightTimer += dt;
+      const reached = distance(e.x, e.y, e.lastSeenX, e.lastSeenY) < LAST_SEEN_REACH_DISTANCE;
+      if (reached || e.loseSightTimer > LOSE_SIGHT_GRACE) {
+        e.aiState = 'search';
+        e.searchTimer = searchDuration;
+        events.push(createEnemyAlertEvent('searching', e.x, e.y));
+        return { events };
       }
     }
 
-    return { events: [] };
+    if (gameTime - e.pathTime > PATH_RECALC_INTERVAL) {
+      e.path = bfsPath(maze, e.x, e.y, e.lastSeenX, e.lastSeenY);
+      e.pathTime = gameTime;
+    }
+    followPath(e, maze, e.lastSeenX, e.lastSeenY, enemySpeed, dt, randomFn);
+    return { events };
+  }
+
+  private updateSearch(params: EnemyUpdateParams): EnemyUpdateResult {
+    const { enemy: e, playerX, playerY, maze, enemySpeed, dt, randomFn } = params;
+    const events: GameEvent[] = [];
+
+    if (this.canSee(params)) {
+      enterChase(e, playerX, playerY, events);
+      return { events };
+    }
+    respondToNoise(e, params); // 新しい音で捜索先を更新（search のまま）
+
+    e.searchTimer -= dt;
+    if (e.searchTimer <= 0) {
+      e.aiState = 'patrol';
+      e.lastSeenX = -1;
+      e.lastSeenY = -1;
+      return { events };
+    }
+
+    // 目撃地点の周辺に留まる: 離れたら引き戻し、近くではうろつく
+    if (distance(e.x, e.y, e.lastSeenX, e.lastSeenY) > SEARCH_PULL_DISTANCE) {
+      steerToward(e, e.lastSeenX, e.lastSeenY, 0.05);
+      tryMove(e, maze, enemySpeed * 0.7, dt, randomFn);
+    } else {
+      wanderMove(e, maze, enemySpeed * 0.7, dt, randomFn);
+    }
+    return { events };
   }
 }
 

@@ -31,8 +31,6 @@ export const GAME_BALANCE = {
     ENEMY_KNOCKBACK_DISTANCE: 2.5,
   },
   enemy: {
-    /** 追跡型の追跡開始距離 */
-    CHASE_RANGE: 8,
     /** 敵の最小スポーン距離 */
     MIN_SPAWN_DISTANCE: 5,
     /** BFS パス再計算間隔（ms） */
@@ -41,10 +39,6 @@ export const GAME_BALANCE = {
     TELEPORT_COOLDOWN: 8000,
     /** テレポート型の追跡開始距離 */
     TELEPORT_CHASE_RANGE: 4,
-    /** 追跡型の近距離加速しきい値 */
-    CLOSE_RANGE_THRESHOLD: 4,
-    /** 追跡型の近距離加速倍率 */
-    CLOSE_RANGE_SPEED_MULTIPLIER: 1.2,
     /** 徘徊型の速度倍率（eSpeed 全体が下がったため、徘徊型の存在感を維持する補正） */
     WANDERER_SPEED_MULTIPLIER: 1.0,
     /** テレポート型の追跡速度倍率 */

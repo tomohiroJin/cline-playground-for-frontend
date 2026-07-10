@@ -203,11 +203,13 @@ describe('labyrinth-of-shadows/game-logic', () => {
     });
 
     test('追跡型（chaser）はプレイヤーの方向を記憶する', () => {
-      // Arrange: ビルダーで chaser を確実にプレイヤーの近くに配置
+      // Arrange: ビルダーで chaser を確実にプレイヤーの近くに、かつプレイヤー方向を向けて配置
+      // (状態機械化により発見には視野角内である必要があるため dir をプレイヤー方向に合わせる)
       const testState = GameStateBuilder.create()
         .withEnemy('chaser', {
           x: 3.5,
           y: 1.5,
+          dir: Math.PI, // プレイヤー(1.5,1.5)は -x 方向
           active: true,
         })
         .build();
