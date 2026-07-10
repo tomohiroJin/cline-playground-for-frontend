@@ -8,7 +8,7 @@ import { createSoundEvent, createEnemyAlertEvent } from '../../application/game-
 import { distance, normAngle } from '../../utils';
 import { MazeService } from '../../maze-service';
 import { bfsPath } from './pathfinding';
-import { canSeePlayer } from './vision';
+import { canSeePlayer, hasLineOfSight } from './vision';
 import { GAME_BALANCE } from '../constants';
 
 const {
@@ -276,7 +276,7 @@ export class TeleporterStrategy implements EnemyStrategy {
       }
     }
 
-    if (!isPlayerHiding && d < TELEPORT_CHASE_RANGE) {
+    if (!isPlayerHiding && d < TELEPORT_CHASE_RANGE && hasLineOfSight(maze, e.x, e.y, playerX, playerY)) {
       e.dir = Math.atan2(playerY - e.y, playerX - e.x);
       const nx = e.x + Math.cos(e.dir) * enemySpeed * TELEPORTER_CHASE_SPEED_MULTIPLIER * dt;
       const ny = e.y + Math.sin(e.dir) * enemySpeed * TELEPORTER_CHASE_SPEED_MULTIPLIER * dt;

@@ -130,6 +130,36 @@ const baseParams = (e: Enemy, over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
+describe('TeleporterStrategy 視認ベース追跡', () => {
+  const strategy = new TeleporterStrategy();
+
+  const createTeleporter = (x: number, y: number): Enemy => ({
+    x, y, dir: 0,
+    active: true, actTime: 0,
+    lastSeenX: -1, lastSeenY: -1,
+    type: 'teleporter', path: [], pathTime: 0, teleportCooldown: 5000,
+    aiState: 'patrol', searchTimer: 0, loseSightTimer: 0,
+  });
+
+  it('壁越しのプレイヤーは追跡しない', () => {
+    // 縦通路の敵 (3.5,1.5) と横通路のプレイヤー (1.5,3.5): 距離は近いが直線は壁を通る
+    const e = createTeleporter(3.5, 1.5);
+    const before = { x: e.x, y: e.y };
+    strategy.update(baseParams(e, { playerX: 1.5, playerY: 3.5 }));
+    // 追跡していれば target 方向に直進するはず。巡回（ランダム歩き）の移動距離と方向で判別
+    const movedTowardPlayer =
+      Math.hypot(e.x - 1.5, e.y - 3.5) < Math.hypot(before.x - 1.5, before.y - 3.5) - 0.01;
+    expect(movedTowardPlayer).toBe(false);
+  });
+
+  it('遮蔽のない近距離プレイヤーは追跡する', () => {
+    const e = createTeleporter(3.5, 3.5); // プレイヤー (5.5,3.5) と同一通路・距離2
+    const before = Math.hypot(e.x - 5.5, e.y - 3.5);
+    strategy.update(baseParams(e));
+    expect(Math.hypot(e.x - 5.5, e.y - 3.5)).toBeLessThan(before);
+  });
+});
+
 describe('ChaserStrategy 状態機械', () => {
   const strategy = new ChaserStrategy();
 
