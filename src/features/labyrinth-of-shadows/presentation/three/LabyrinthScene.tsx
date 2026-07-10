@@ -8,6 +8,7 @@ import { EYE_HEIGHT } from './geometry';
 import { MazeWalls } from './MazeWalls';
 import { FloorCeiling } from './FloorCeiling';
 import { ItemMeshes } from './ItemMeshes';
+import { ExitMesh } from './ExitMesh';
 import { EnemyMeshes } from './EnemyMeshes';
 import { GameController } from './GameController';
 import { usePointerLook } from '../hooks/use-pointer-look';
@@ -52,6 +53,7 @@ export function LabyrinthScene(props: LabyrinthSceneProps) {
             <MazeWalls maze={maze} />
             <FloorCeiling width={maze[0].length} depth={size} />
             <ItemMeshes gameRef={gameRef} />
+            <ExitMesh gameRef={gameRef} />
             <EnemyMeshes gameRef={gameRef} />
           </>
         )}
