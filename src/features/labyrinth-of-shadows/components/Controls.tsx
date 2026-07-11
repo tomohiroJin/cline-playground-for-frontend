@@ -20,15 +20,15 @@ export const Controls: React.FC<ControlsProps> = ({
       $variant="dpad"
       onPointerDown={e => {
         e.preventDefault();
-        keysRef.current['a'] = true;
+        keysRef.current['arrowleft'] = true;
       }}
       onPointerUp={e => {
         e.preventDefault();
-        keysRef.current['a'] = false;
+        keysRef.current['arrowleft'] = false;
       }}
       onPointerLeave={e => {
         e.preventDefault();
-        keysRef.current['a'] = false;
+        keysRef.current['arrowleft'] = false;
       }}
     >
       ◀
@@ -73,15 +73,15 @@ export const Controls: React.FC<ControlsProps> = ({
       $variant="dpad"
       onPointerDown={e => {
         e.preventDefault();
-        keysRef.current['d'] = true;
+        keysRef.current['arrowright'] = true;
       }}
       onPointerUp={e => {
         e.preventDefault();
-        keysRef.current['d'] = false;
+        keysRef.current['arrowright'] = false;
       }}
       onPointerLeave={e => {
         e.preventDefault();
-        keysRef.current['d'] = false;
+        keysRef.current['arrowright'] = false;
       }}
     >
       ▶

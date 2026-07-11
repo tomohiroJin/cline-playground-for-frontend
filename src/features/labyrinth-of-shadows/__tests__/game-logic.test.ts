@@ -85,6 +85,47 @@ describe('labyrinth-of-shadows/game-logic', () => {
       const dy = state.player.y - initialY;
       expect(dx !== 0 || dy !== 0).toBe(true);
     });
+
+    test('ストレイフ右で進行方向の右（角度+90°）へ横移動し、向きは変わらない', () => {
+      state.player.angle = 0; // +x を向く → 右は +y 方向
+      const initialAngle = state.player.angle;
+      const initialY = state.player.y;
+      const moved = GameLogic.updatePlayer(
+        state,
+        { left: false, right: false, forward: false, backward: false, strafeRight: true },
+        16
+      );
+      expect(moved).toBe(true);
+      expect(state.player.y).toBeGreaterThan(initialY);
+      expect(state.player.angle).toBe(initialAngle);
+    });
+
+    test('ストレイフ左で進行方向の左（角度-90°）へ横移動する', () => {
+      state.player.angle = 0; // +x を向く → 左は -y 方向
+      const initialY = state.player.y;
+      GameLogic.updatePlayer(
+        state,
+        { left: false, right: false, forward: false, backward: false, strafeLeft: true },
+        16
+      );
+      expect(state.player.y).toBeLessThan(initialY);
+    });
+
+    test('ストレイフ左右同時押しは相殺されて移動しない', () => {
+      state.player.angle = 0;
+      const initialX = state.player.x;
+      const initialY = state.player.y;
+      GameLogic.updatePlayer(
+        state,
+        {
+          left: false, right: false, forward: false, backward: false,
+          strafeLeft: true, strafeRight: true,
+        },
+        16
+      );
+      expect(state.player.x).toBe(initialX);
+      expect(state.player.y).toBe(initialY);
+    });
   });
 
   describe('updateExplored', () => {
@@ -109,6 +150,37 @@ describe('labyrinth-of-shadows/game-logic', () => {
       const result = GameLogic.updateEnemies(state, 16);
       expect(typeof result.closest).toBe('number');
       expect(Array.isArray(result.alerts)).toBe(true);
+    });
+  });
+
+  describe('updateItems（罠の回避）', () => {
+    test('罠は壁に寄れば（中心から0.3ずれれば）踏まずに通過できる', () => {
+      // Arrange: 罠をプレイヤーの現在セルに配置し、プレイヤーはセル中心から 0.3 ずらす
+      const px = Math.floor(state.player.x);
+      const py = Math.floor(state.player.y);
+      state.items = [{ x: px, y: py, type: 'trap', got: false }];
+      state.player.x = px + 0.5 + 0.3;
+      state.player.y = py + 0.5;
+      const initialTime = state.time;
+
+      // Act
+      GameLogic.updateItems(state);
+
+      // Assert: 罠は発動しない
+      expect(state.items[0].got).toBe(false);
+      expect(state.time).toBe(initialTime);
+    });
+
+    test('鍵は壁に寄っていても（中心から0.3ずれても）取得できる', () => {
+      const px = Math.floor(state.player.x);
+      const py = Math.floor(state.player.y);
+      state.items = [{ x: px, y: py, type: 'key', got: false }];
+      state.player.x = px + 0.5 + 0.3;
+      state.player.y = py + 0.5;
+
+      GameLogic.updateItems(state);
+
+      expect(state.items[0].got).toBe(true);
     });
   });
 

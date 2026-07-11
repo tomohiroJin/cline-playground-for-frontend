@@ -24,13 +24,18 @@ export interface GameControllerProps {
   onAlert: (marker: AlertMarker) => void;
 }
 
-/** keysRef からティック入力を生成（投擲は throwStone 引数で合成する） */
+/**
+ * keysRef からティック入力を生成（投擲は throwStone 引数で合成する）。
+ * FPS 標準: A/D はストレイフ、旋回はマウスルックと矢印キーのみ
+ */
 function readInput(k: Record<string, boolean>, throwStone: boolean): TickInput {
   return {
-    left: k['a'] || k['arrowleft'] || false,
-    right: k['d'] || k['arrowright'] || false,
+    left: k['arrowleft'] || false,
+    right: k['arrowright'] || false,
     forward: k['w'] || k['arrowup'] || false,
     backward: k['s'] || k['arrowdown'] || false,
+    strafeLeft: k['a'] || false,
+    strafeRight: k['d'] || false,
     hide: k[' '] || false,
     sprint: k['shift'] || false,
     throwStone,
@@ -85,10 +90,12 @@ export function GameController(props: GameControllerProps) {
       onAlert({ id: ++alertIdRef.current, kind: a.kind, angle });
     }
 
-    // カメラ同期（ロジック更新後の最新 player を反映）
+    // カメラ同期（ロジック更新後の最新 player を反映）。
+    // R3F は camera オプションに rotation が無いと初期化時に lookAt(0,0,0) を実行し
+    // 真下向きのピッチが混入するため、yaw だけでなく姿勢全体を毎フレーム上書きする
     camera.position.set(g.player.x, EYE_HEIGHT, g.player.y);
     camera.rotation.order = 'YXZ';
-    camera.rotation.y = cameraYaw(g.player.angle);
+    camera.rotation.set(0, cameraYaw(g.player.angle), 0);
 
     // トーチ点光源をカメラ位置へ。既存 renderer の複数周波数フリッカを流用
     if (torchRef.current) {

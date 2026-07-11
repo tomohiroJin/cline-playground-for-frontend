@@ -34,7 +34,14 @@ export const GameLogic = {
 
   updatePlayer(
     g: GameState,
-    input: { left: boolean; right: boolean; forward: boolean; backward: boolean },
+    input: {
+      left: boolean;
+      right: boolean;
+      forward: boolean;
+      backward: boolean;
+      strafeLeft?: boolean;
+      strafeRight?: boolean;
+    },
     dt: number
   ) {
     if (g.hiding) return false;
@@ -58,6 +65,14 @@ export const GameLogic = {
     if (input.backward) {
       dx = -Math.cos(g.player.angle) * speed * dt * 0.5;
       dy = -Math.sin(g.player.angle) * speed * dt * 0.5;
+      moved = true;
+    }
+    // ストレイフ（進行方向に対する横移動）: 右 = angle+90° 方向。左右同時押しは相殺
+    const side = (input.strafeRight ? 1 : 0) - (input.strafeLeft ? 1 : 0);
+    if (side !== 0) {
+      const strafeSpeed = speed * GAME_BALANCE.player.STRAFE_SPEED_MULTIPLIER * side;
+      dx += Math.cos(g.player.angle + Math.PI / 2) * strafeSpeed * dt;
+      dy += Math.sin(g.player.angle + Math.PI / 2) * strafeSpeed * dt;
       moved = true;
     }
 
@@ -85,7 +100,12 @@ export const GameLogic = {
 
   updateItems(g: GameState) {
     for (const item of g.items) {
-      if (item.got || !isPlayerNearItem(g.player.x, g.player.y, item.x, item.y)) continue;
+      // 罠だけ狭い発動半径にして、壁に寄れば（横移動で）踏まずに通過できるようにする
+      const radius =
+        item.type === 'trap'
+          ? GAME_BALANCE.collision.TRAP_PICKUP_DISTANCE
+          : GAME_BALANCE.collision.ITEM_PICKUP_DISTANCE;
+      if (item.got || !isPlayerNearItem(g.player.x, g.player.y, item.x, item.y, radius)) continue;
       // 小石は満杯なら拾わずフィールドに残す
       if (item.type === 'stone' && g.stones >= GAME_BALANCE.stone.MAX_COUNT) continue;
 

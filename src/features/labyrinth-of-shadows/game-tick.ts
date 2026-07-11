@@ -12,6 +12,9 @@ export interface TickInput {
   readonly hide: boolean;
   readonly sprint: boolean;
   readonly throwStone: boolean;
+  /** 横移動（省略時は false。left/right はマウス・矢印キーによる旋回専用） */
+  readonly strafeLeft?: boolean;
+  readonly strafeRight?: boolean;
 }
 
 /** ティックの結果状態 */
@@ -52,7 +55,14 @@ export function advanceGame(g: GameState, dt: number, input: TickInput): TickRes
   GameLogic.updateSprinting(g, input.sprint, dt);
   const moved = GameLogic.updatePlayer(
     g,
-    { left: input.left, right: input.right, forward: input.forward, backward: input.backward },
+    {
+      left: input.left,
+      right: input.right,
+      forward: input.forward,
+      backward: input.backward,
+      strafeLeft: input.strafeLeft,
+      strafeRight: input.strafeRight,
+    },
     dt
   );
   GameLogic.updateFootstep(g, moved, dt);

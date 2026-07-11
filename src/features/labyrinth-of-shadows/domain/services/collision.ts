@@ -7,14 +7,18 @@ import { GAME_BALANCE } from '../constants';
 
 const { ITEM_PICKUP_DISTANCE, EXIT_DISTANCE, ENEMY_COLLISION_DISTANCE } = GAME_BALANCE.collision;
 
-/** プレイヤーがアイテム取得範囲内にいるか判定する */
+/**
+ * プレイヤーがアイテム取得範囲内にいるか判定する。
+ * radius 省略時は既定の取得距離。罠は回避可能にするため狭い半径を渡す
+ */
 export const isPlayerNearItem = (
   playerX: number,
   playerY: number,
   itemX: number,
-  itemY: number
+  itemY: number,
+  radius: number = ITEM_PICKUP_DISTANCE
 ): boolean => {
-  return distance(playerX, playerY, itemX + 0.5, itemY + 0.5) < ITEM_PICKUP_DISTANCE;
+  return distance(playerX, playerY, itemX + 0.5, itemY + 0.5) < radius;
 };
 
 /** プレイヤーが出口到達範囲内にいるか判定する */

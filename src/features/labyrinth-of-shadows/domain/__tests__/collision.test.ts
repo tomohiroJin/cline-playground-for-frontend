@@ -21,6 +21,13 @@ describe('domain/services/collision', () => {
       // (3.01, 3.5) → アイテム中心 (3.5, 3.5) との距離 = 0.49
       expect(isPlayerNearItem(3.01, 3.5, 3, 3)).toBe(true);
     });
+
+    test('半径を指定すると既定より狭い範囲で判定される（罠の回避用）', () => {
+      // Arrange: 距離 0.3（壁寄り最大オフセット）
+      // Act & Assert: 半径 0.28 なら範囲外、既定(0.5)なら範囲内
+      expect(isPlayerNearItem(3.2, 3.5, 3, 3, 0.28)).toBe(false);
+      expect(isPlayerNearItem(3.2, 3.5, 3, 3)).toBe(true);
+    });
   });
 
   describe('isPlayerNearExit', () => {

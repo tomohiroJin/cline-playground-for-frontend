@@ -52,11 +52,19 @@ export function LabyrinthScene(props: LabyrinthSceneProps) {
     >
       <Canvas
         shadows={{ type: THREE.PCFShadowMap }}
-        camera={{ fov: 75, near: 0.05, far: CONFIG.render.maxDepth, position: [0, EYE_HEIGHT, 0] }}
+        camera={{
+          fov: 75,
+          near: 0.05,
+          far: CONFIG.render.maxDepth,
+          position: [0, EYE_HEIGHT, 0],
+          // rotation 未指定だと R3F が初期化時に lookAt(0,0,0) を実行し真下向きになるため明示する
+          rotation: [0, 0, 0],
+        }}
         gl={{ antialias: true }}
       >
-        {/* 恐怖演出＋描画距離制限を兼ねる指数フォグ */}
-        <fogExp2 attach="fog" args={['#05040a', 0.14]} />
+        {/* 恐怖演出＋描画距離制限を兼ねる指数フォグ。
+            敵の索敵距離（5〜9セル）でプレイヤー側も敵を視認できるよう 0.14→0.11 に緩和 */}
+        <fogExp2 attach="fog" args={['#05040a', 0.11]} />
         <color attach="background" args={['#05040a']} />
         {/* 環境光は控えめだが物理ベース照明準拠で床・壁が視認できる強度を確保 */}
         <ambientLight intensity={0.35} />

@@ -10,6 +10,8 @@ export const GAME_BALANCE = {
     MOVE_SPEED: 0.0024,
     COLLISION_RADIUS: 0.2,
     SPRINT_MULTIPLIER: 1.5,
+    /** ストレイフ（横移動）の前進速度に対する倍率 */
+    STRAFE_SPEED_MULTIPLIER: 0.8,
   },
   hiding: {
     ENERGY_DRAIN_RATE: 0.02,
@@ -23,6 +25,11 @@ export const GAME_BALANCE = {
   collision: {
     /** アイテム取得距離 */
     ITEM_PICKUP_DISTANCE: 0.5,
+    /**
+     * 罠の発動距離。壁寄り時の中心オフセット上限
+     * (通路半幅0.5 − プレイヤー半径0.2 = 0.3) より小さくし、横移動での回避を可能にする
+     */
+    TRAP_PICKUP_DISTANCE: 0.28,
     /** 出口到達判定距離 */
     EXIT_DISTANCE: 0.55,
     /** 敵との衝突判定距離 */
