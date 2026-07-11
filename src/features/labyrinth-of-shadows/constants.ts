@@ -5,7 +5,7 @@ export const CONFIG = {
   hiding: { drainRate: 0.02, rechargeRate: 0.016, minEnergy: 5 },
   stamina: { drainRate: 0.022, rechargeRate: 0.014 },
   enemy: { chaseRange: 8, minSpawnDist: 10 },  // 迷路2倍拡大に合わせてセル基準の距離も2倍
-  timing: { invinceDuration: 2500, msgDuration: 2000, trapPenalty: 12000 },
+  timing: { invinceDuration: 2500, msgDuration: 2000 },
   score: { keyBase: 100, victoryBonus: 500, damagePenalty: 50 },
   items: {
     speedBoostDuration: 10000,

@@ -44,14 +44,9 @@ describe('domain/models/item', () => {
     });
 
     describe('罠アイテム', () => {
-      test('罠で時間がペナルティされる', () => {
+      test('罠は時間を減らさずコンボのみリセットする', () => {
         const result = processItemPickup('trap', 1, 1, baseContext);
-        expect(result.stateChanges.time).toBe(-12000);
-      });
-
-      test('罠でコンボがリセットされる', () => {
-        const comboContext = { ...baseContext, combo: 3 };
-        const result = processItemPickup('trap', 1, 1, comboContext);
+        expect(result.stateChanges.time).toBeUndefined();
         expect(result.stateChanges.combo).toBe(0);
       });
     });

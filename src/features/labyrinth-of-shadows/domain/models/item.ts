@@ -7,7 +7,7 @@ import { calculateCombo, calculateKeyScore } from '../services/scoring';
 import type { GameEvent } from '../../application/game-events';
 import { createSoundEvent } from '../../application/game-events';
 
-const { TRAP_TIME_PENALTY, SPEED_BOOST_DURATION, MESSAGE_DURATION } = GAME_BALANCE.timing;
+const { SPEED_BOOST_DURATION, MESSAGE_DURATION } = GAME_BALANCE.timing;
 const { HEAL_FULL_BONUS } = GAME_BALANCE.scoring;
 const { MAP_REVEAL_RADIUS } = GAME_BALANCE.items;
 
@@ -68,11 +68,10 @@ export const processItemPickup = (
     case 'trap':
       return {
         stateChanges: {
-          time: -TRAP_TIME_PENALTY,
           combo: 0,
         },
-        events: [createSoundEvent('trap', 0.45)],
-        message: '📦 罠だ！時間 -12秒！',
+        events: [createSoundEvent('trap', 0.6)],
+        message: '📦 罠だ！大きな音が鳴り響く…！',
       };
     case 'heal': {
       if (context.lives < context.maxLives) {

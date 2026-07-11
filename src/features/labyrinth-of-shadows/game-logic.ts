@@ -99,7 +99,8 @@ export const GameLogic = {
       for (let oy = -r; oy <= r; oy++) g.explored[`${cx + ox},${cy + oy}`] = true;
   },
 
-  updateItems(g: GameState) {
+  updateItems(g: GameState): NoiseSource | undefined {
+    let trapNoise: NoiseSource | undefined;
     for (const item of g.items) {
       // 罠だけ狭い発動半径にして、壁に寄れば（横移動で）踏まずに通過できるようにする
       const radius =
@@ -123,10 +124,15 @@ export const GameLogic = {
           break;
         }
         case 'trap':
-          g.time -= CONFIG.timing.trapPenalty;
           g.combo = 0;
-          g.msg = '📦 罠だ！時間 -12秒！';
-          AudioService.play('trap', 0.45);
+          // アイテム座標はセル整数なので中心 (+0.5) を音源にする
+          trapNoise = {
+            x: item.x + 0.5,
+            y: item.y + 0.5,
+            radius: GAME_BALANCE.trap.NOISE_RADIUS,
+          };
+          g.msg = '📦 罠だ！大きな音が鳴り響く…！';
+          AudioService.play('trap', 0.6);
           break;
         case 'heal':
           if (g.lives < g.maxLives) {
@@ -156,6 +162,7 @@ export const GameLogic = {
       }
       g.msgTimer = CONFIG.timing.msgDuration;
     }
+    return trapNoise;
   },
 
   checkExit(g: GameState): keyof typeof CONTENT.stories | null {

@@ -278,6 +278,41 @@ describe('labyrinth-of-shadows/game-logic', () => {
     });
   });
 
+  describe('updateItems（罠=騒音罠）', () => {
+    test('罠を踏んでも時間は減らない（騒音罠化）', () => {
+      const testState = GameStateBuilder.create()
+        .withItem('trap', 1, 1)
+        .withPlayer({ x: 1.5, y: 1.5 })
+        .build();
+      const before = testState.time;
+
+      GameLogic.updateItems(testState);
+
+      expect(testState.time).toBe(before);
+      expect(testState.combo).toBe(0); // コンボリセットは維持
+    });
+
+    test('罠を踏むと半径8の騒音源を返す', () => {
+      const testState = GameStateBuilder.create()
+        .withItem('trap', 1, 1)
+        .withPlayer({ x: 1.5, y: 1.5 })
+        .build();
+
+      const noise = GameLogic.updateItems(testState);
+
+      expect(noise).toEqual({ x: 1.5, y: 1.5, radius: 8 });
+    });
+
+    test('罠以外のアイテムでは騒音源を返さない', () => {
+      const testState = GameStateBuilder.create()
+        .withItem('key', 1, 1)
+        .withPlayer({ x: 1.5, y: 1.5 })
+        .build();
+
+      expect(GameLogic.updateItems(testState)).toBeUndefined();
+    });
+  });
+
   describe('revealMap', () => {
     test('指定半径内のセルを探索済みにする', () => {
       state.explored = {};

@@ -88,8 +88,6 @@ export const GAME_BALANCE = {
     INVINCIBILITY_DURATION: 2500,
     /** メッセージ表示時間（ms） */
     MESSAGE_DURATION: 2000,
-    /** 罠の時間ペナルティ（ms） */
-    TRAP_TIME_PENALTY: 12000,
     /** 加速ブースト持続時間（ms） */
     SPEED_BOOST_DURATION: 10000,
     /** ロック中メッセージ表示間隔（ms） */
@@ -114,5 +112,9 @@ export const GAME_BALANCE = {
     THROW_RANGE: 6,
     /** 着地音に敵が反応する半径（セル） */
     NOISE_RADIUS: 5,
+  },
+  trap: {
+    /** 罠作動音に敵が反応する半径（セル）。小石(5)より大きい＝罠の音の方が大きい */
+    NOISE_RADIUS: 8,
   },
 } as const;

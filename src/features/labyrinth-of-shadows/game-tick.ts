@@ -66,14 +66,16 @@ export function advanceGame(g: GameState, dt: number, input: TickInput): TickRes
     dt
   );
   GameLogic.updateFootstep(g, moved, dt);
-  GameLogic.updateItems(g);
+  const trapNoise = GameLogic.updateItems(g);
 
   // 石: 投擲入力 → 飛行更新 → 着地音（音源はこのフレームの敵更新に渡す）
   if (input.throwStone && tryThrowStone(g)) {
     AudioService.play('stoneThrow', 0.3);
   }
-  const noise = updateStoneProjectiles(g, dt);
-  if (noise) AudioService.play('stoneLand', 0.35);
+  const stoneNoise = updateStoneProjectiles(g, dt);
+  if (stoneNoise) AudioService.play('stoneLand', 0.35);
+  // 同一フレームに両方発生したら音の大きい罠を優先する
+  const noise = trapNoise ?? stoneNoise;
 
   const exitResult = GameLogic.checkExit(g);
   if (exitResult === 'victory') {
