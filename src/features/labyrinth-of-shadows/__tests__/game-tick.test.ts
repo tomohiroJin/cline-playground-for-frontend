@@ -107,4 +107,12 @@ describe('Phase2: 石投げと索敵の統合', () => {
     expect(g.enemies[0].aiState).toBe('search');
     expect(g.enemies[0].lastSeenX).toBeCloseTo(1.5);
   });
+
+  it('useSpeed 入力でチャージが消費され加速が発動する', () => {
+    const g = GameStateBuilder.create('EASY').build();
+    g.speedCharges = 1;
+    advanceGame(g, 16, { ...idleInput, useSpeed: true });
+    expect(g.speedCharges).toBe(0);
+    expect(g.speedBoost).toBeGreaterThan(0);
+  });
 });

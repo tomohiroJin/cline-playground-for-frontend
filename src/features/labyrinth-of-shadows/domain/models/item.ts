@@ -7,7 +7,7 @@ import { calculateCombo, calculateKeyScore } from '../services/scoring';
 import type { GameEvent } from '../../application/game-events';
 import { createSoundEvent } from '../../application/game-events';
 
-const { SPEED_BOOST_DURATION, MESSAGE_DURATION } = GAME_BALANCE.timing;
+const { MESSAGE_DURATION } = GAME_BALANCE.timing;
 const { HEAL_FULL_BONUS } = GAME_BALANCE.scoring;
 const { MAP_REVEAL_RADIUS } = GAME_BALANCE.items;
 
@@ -33,6 +33,7 @@ export interface ItemPickupResult {
     readonly keys?: number;
     readonly time?: number;
     readonly speedBoost?: number;
+    readonly speedCharges?: number;
   };
   /** 発生するイベント */
   readonly events: readonly GameEvent[];
@@ -89,9 +90,9 @@ export const processItemPickup = (
     }
     case 'speed':
       return {
-        stateChanges: { speedBoost: SPEED_BOOST_DURATION },
-        events: [createSoundEvent('speed', 0.4)],
-        message: '⚡ 加速！ 10秒間スピードアップ！',
+        stateChanges: { speedCharges: 1 },
+        events: [createSoundEvent('speed', 0.3)],
+        message: '⚡ 加速チャージを拾った',
       };
     case 'map':
       return {

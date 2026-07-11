@@ -117,4 +117,8 @@ export const GAME_BALANCE = {
     /** 罠作動音に敵が反応する半径（セル）。小石(5)より大きい＝罠の音の方が大きい */
     NOISE_RADIUS: 8,
   },
+  speedCharge: {
+    /** 加速チャージの最大ストック数 */
+    MAX_COUNT: 2,
+  },
 } as const;

@@ -92,6 +92,8 @@ export interface GameState {
   explored: Record<string, boolean>;
   /** 石の所持数 */
   stones: number;
+  /** 加速チャージの所持数（Eキー/ボタンで発動） */
+  speedCharges: number;
   /** 飛行中の石 */
   stoneProjectiles: StoneProjectile[];
   /** 敵の発見可能距離（難易度依存） */

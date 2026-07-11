@@ -216,7 +216,7 @@ describe('labyrinth-of-shadows/game-logic', () => {
       expect(testState.score).toBe(50);
     });
 
-    test('加速アイテムでspeedBoostが設定される', () => {
+    test('加速アイテムはストックに加算され即時発動しない', () => {
       // Arrange: 加速アイテムを確実に配置
       const testState = GameStateBuilder.create()
         .withItem('speed', 1, 1)
@@ -227,7 +227,25 @@ describe('labyrinth-of-shadows/game-logic', () => {
       GameLogic.updateItems(testState);
 
       // Assert
-      expect(testState.speedBoost).toBeGreaterThan(0);
+      expect(testState.speedCharges).toBe(1);
+      expect(testState.speedBoost).toBe(0);
+      expect(testState.items[0].got).toBe(true);
+    });
+
+    test('ストック満杯（2個）なら加速アイテムはフィールドに残る', () => {
+      // Arrange: 加速アイテムを確実に配置し、ストックを満杯にしておく
+      const testState = GameStateBuilder.create()
+        .withItem('speed', 1, 1)
+        .withPlayer({ x: 1.5, y: 1.5 })
+        .build();
+      testState.speedCharges = 2;
+
+      // Act
+      GameLogic.updateItems(testState);
+
+      // Assert
+      expect(testState.speedCharges).toBe(2);
+      expect(testState.items[0].got).toBe(false);
     });
 
     test('地図アイテムで周囲が探索済みになる', () => {

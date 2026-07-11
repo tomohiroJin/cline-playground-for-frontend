@@ -66,9 +66,10 @@ describe('domain/models/item', () => {
     });
 
     describe('加速アイテム', () => {
-      test('加速ブーストが設定される', () => {
+      test('加速はチャージ+1で即時発動しない', () => {
         const result = processItemPickup('speed', 1, 1, baseContext);
-        expect(result.stateChanges.speedBoost).toBe(10000);
+        expect(result.stateChanges.speedBoost).toBeUndefined();
+        expect(result.stateChanges.speedCharges).toBe(1);
       });
     });
 

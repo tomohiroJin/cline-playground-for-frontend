@@ -107,6 +107,7 @@ export const GameStateFactory = {
       lastKeyTime: 0,
       explored: { [`${playerCell.x},${playerCell.y}`]: true },
       stones: GAME_BALANCE.stone.INITIAL_COUNT,
+      speedCharges: 0,
       stoneProjectiles: [],
       sightRange: cfg.sightRange,
       searchDuration: cfg.searchDuration,

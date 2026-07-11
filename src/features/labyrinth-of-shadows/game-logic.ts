@@ -110,6 +110,8 @@ export const GameLogic = {
       if (item.got || !isPlayerNearItem(g.player.x, g.player.y, item.x, item.y, radius)) continue;
       // 小石は満杯なら拾わずフィールドに残す
       if (item.type === 'stone' && g.stones >= GAME_BALANCE.stone.MAX_COUNT) continue;
+      // 加速チャージは満杯なら拾わずフィールドに残す
+      if (item.type === 'speed' && g.speedCharges >= GAME_BALANCE.speedCharge.MAX_COUNT) continue;
 
       item.got = true;
       switch (item.type) {
@@ -145,9 +147,9 @@ export const GameLogic = {
           AudioService.play('heal', 0.4);
           break;
         case 'speed':
-          g.speedBoost = CONFIG.items.speedBoostDuration;
-          g.msg = '⚡ 加速！ 10秒間スピードアップ！';
-          AudioService.play('speed', 0.4);
+          g.speedCharges++;
+          g.msg = `⚡ 加速チャージを拾った (${g.speedCharges}/${GAME_BALANCE.speedCharge.MAX_COUNT})`;
+          AudioService.play('speed', 0.3);
           break;
         case 'map':
           this.revealMap(g, item.x, item.y);

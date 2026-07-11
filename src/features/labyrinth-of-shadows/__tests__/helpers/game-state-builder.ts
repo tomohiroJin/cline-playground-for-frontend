@@ -55,6 +55,7 @@ export class GameStateBuilder {
       lastKeyTime: 0,
       explored: { '1,1': true },
       stones: 3,
+      speedCharges: 0,
       stoneProjectiles: [],
       sightRange: 7,
       searchDuration: 4000,

@@ -2,6 +2,8 @@ import type { GameState } from './types';
 import { GameLogic } from './game-logic';
 import { AudioService } from './audio';
 import { tryThrowStone, updateStoneProjectiles } from './domain/services/stone';
+import { tryUseSpeedCharge } from './domain/services/speed';
+import { GAME_BALANCE } from './domain/constants';
 
 /** プレイヤー入力（1フレーム分） */
 export interface TickInput {
@@ -15,6 +17,8 @@ export interface TickInput {
   /** 横移動（省略時は false。left/right はマウス・矢印キーによる旋回専用） */
   readonly strafeLeft?: boolean;
   readonly strafeRight?: boolean;
+  /** 加速チャージの発動入力（Eキー/タッチボタン。省略時は false） */
+  readonly useSpeed?: boolean;
 }
 
 /** ティックの結果状態 */
@@ -76,6 +80,13 @@ export function advanceGame(g: GameState, dt: number, input: TickInput): TickRes
   if (stoneNoise) AudioService.play('stoneLand', 0.35);
   // 同一フレームに両方発生したら音の大きい罠を優先する
   const noise = trapNoise ?? stoneNoise;
+
+  // 加速チャージ: 発動は任意タイミング（chase 中でも使える切り札）
+  if (input.useSpeed && tryUseSpeedCharge(g)) {
+    g.msg = '⚡ 加速発動！ 10秒間スピードアップ！';
+    g.msgTimer = GAME_BALANCE.timing.MESSAGE_DURATION;
+    AudioService.play('speed', 0.4);
+  }
 
   const exitResult = GameLogic.checkExit(g);
   if (exitResult === 'victory') {
