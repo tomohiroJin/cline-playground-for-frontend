@@ -7,6 +7,7 @@ import { GAME_BALANCE } from './domain/constants';
 import { isPlayerNearItem, isPlayerNearExit, isPlayerCollidingEnemy } from './domain/services/collision';
 import { calculateKeyScore, calculateVictoryScore, calculateCombo } from './domain/services/scoring';
 import { getEnemyStrategy } from './domain/services/enemy-strategy';
+import type { NoiseSource } from './domain/services/enemy-strategy';
 import type { GameEvent } from './application/game-events';
 import type { EnemyAlert } from './game-tick';
 
@@ -177,7 +178,7 @@ export const GameLogic = {
     g: GameState,
     e: Enemy,
     dt: number,
-    noise?: { readonly x: number; readonly y: number }
+    noise?: NoiseSource
   ): { distance: number; events: readonly GameEvent[] } {
     if (!e.active) {
       if (g.gTime >= e.actTime) e.active = true;
@@ -233,7 +234,7 @@ export const GameLogic = {
   updateEnemies(
     g: GameState,
     dt: number,
-    noise?: { readonly x: number; readonly y: number }
+    noise?: NoiseSource
   ): { closest: number; nearest: Enemy | undefined; alerts: EnemyAlert[] } {
     let closest: number = GAME_BALANCE.enemy.INITIAL_CLOSEST_DISTANCE;
     let nearest: Enemy | undefined;

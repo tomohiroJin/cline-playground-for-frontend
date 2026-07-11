@@ -27,6 +27,13 @@ const {
   SEARCH_PULL_DISTANCE,
 } = GAME_BALANCE.enemy;
 
+/** 半径付きの音源。radius 内の敵が捜索状態で反応する */
+export interface NoiseSource {
+  readonly x: number;
+  readonly y: number;
+  readonly radius: number;
+}
+
 /** 敵AI更新のパラメータ */
 export interface EnemyUpdateParams {
   readonly enemy: Enemy;
@@ -42,8 +49,8 @@ export interface EnemyUpdateParams {
   readonly sightRange: number;
   /** 捜索状態の持続時間 ms（難易度依存） */
   readonly searchDuration: number;
-  /** このフレームに発生した音源（石の着地点）。未発生なら undefined */
-  readonly noise?: { readonly x: number; readonly y: number };
+  /** このフレームに発生した音源（石の着地・罠の作動）。未発生なら undefined */
+  readonly noise?: NoiseSource;
 }
 
 /** 敵AI更新の結果 */
@@ -130,7 +137,7 @@ const enterChase = (e: Enemy, playerX: number, playerY: number, events: GameEven
 const respondToNoise = (e: Enemy, params: EnemyUpdateParams): boolean => {
   const { noise, searchDuration } = params;
   if (!noise) return false;
-  if (distance(e.x, e.y, noise.x, noise.y) > GAME_BALANCE.stone.NOISE_RADIUS) return false;
+  if (distance(e.x, e.y, noise.x, noise.y) > noise.radius) return false;
   e.aiState = 'search';
   e.lastSeenX = noise.x;
   e.lastSeenY = noise.y;
