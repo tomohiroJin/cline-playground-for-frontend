@@ -57,6 +57,15 @@ export const HUD: React.FC<HUDProps> = ({ h }) => (
           <span style={{ color: '#d6d3d1', fontWeight: 'bold' }}>{h.stones}</span>
         </div>
       </HUDPanel>
+      <HUDPanel
+        $borderColor="#b45309"
+        $bg={h.boostActive ? 'rgba(180, 83, 9, 0.4)' : undefined}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{ fontSize: '1.25rem' }}>⚡</span>
+          <span style={{ color: '#fbbf24', fontWeight: 'bold' }}>{h.speedCharges}</span>
+        </div>
+      </HUDPanel>
     </HUDGroup>
 
     <HUDGroup $align="right">

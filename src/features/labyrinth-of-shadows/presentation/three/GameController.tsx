@@ -41,6 +41,7 @@ function readInput(k: Record<string, boolean>, throwStone: boolean): TickInput {
     hide: k[' '] || false,
     sprint: k['shift'] || false,
     throwStone,
+    useSpeed: k['e'] || false,
   };
 }
 
@@ -49,7 +50,8 @@ const hudEqual = (a: HUDData, b: HUDData): boolean =>
   a.keys === b.keys && a.req === b.req && a.time === b.time && a.lives === b.lives &&
   a.maxL === b.maxL && a.hide === b.hide && a.energy === b.energy && a.eNear === b.eNear &&
   a.score === b.score && a.stamina === b.stamina && a.highScore === b.highScore &&
-  a.stones === b.stones && a.sprinting === b.sprinting;
+  a.stones === b.stones && a.sprinting === b.sprinting &&
+  a.speedCharges === b.speedCharges && a.boostActive === b.boostActive;
 
 /**
  * ゲーム進行の心臓部。useFrame（R3FのrAF）で毎フレーム:
@@ -135,8 +137,7 @@ export function GameController(props: GameControllerProps) {
       MinimapRenderer.render(minimapCtx, {
         maze: g.maze, player: g.player, exit: g.exit, items: g.items, enemies: g.enemies,
         keys: g.keys, reqKeys: g.reqKeys, explored: g.explored, time: g.gTime / 1000,
-        // TODO(Task5): g.enemyRevealTimer > 0 に差し替えて地図効果中の全敵表示を配線する
-        enemyReveal: false,
+        enemyReveal: g.enemyRevealTimer > 0,
       });
     }
 
@@ -146,6 +147,7 @@ export function GameController(props: GameControllerProps) {
       hide: g.hiding, energy: Math.round(g.energy), eNear: Math.max(0, 1 - result.closestEnemy / 7),
       score: g.score, stamina: Math.round(g.player.stamina), highScore: highScores[diff] || 0,
       stones: g.stones, sprinting: g.sprinting,
+      speedCharges: g.speedCharges, boostActive: g.speedBoost > 0,
     };
     if (!prevHudRef.current || !hudEqual(newHud, prevHudRef.current)) {
       prevHudRef.current = newHud;

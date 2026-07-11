@@ -119,4 +119,8 @@ export interface HUDData {
   /** 石の所持数 */
   stones: number;
   sprinting: boolean;
+  /** 加速チャージの所持数 */
+  speedCharges: number;
+  /** 加速効果中か（ボタン点灯表示に使う） */
+  boostActive: boolean;
 }
