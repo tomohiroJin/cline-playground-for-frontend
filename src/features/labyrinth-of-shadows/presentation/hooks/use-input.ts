@@ -38,11 +38,29 @@ export const useInput = (
     const onKeyUp = (e: KeyboardEvent) => {
       keysRef.current[e.key.toLowerCase()] = false;
     };
+    // フォーカス喪失・タブ非表示・ポインタロック解除時に keyup を取り逃すと
+    // 押しっぱなし扱いになり「勝手に移動し続ける」ため、全キー状態をクリアする
+    const clearKeys = () => {
+      keysRef.current = {};
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') clearKeys();
+    };
+    const onPointerLockChange = () => {
+      // ロック解除時のみクリア（取得時にクリアすると押下中の移動が途切れる）
+      if (!document.pointerLockElement) clearKeys();
+    };
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', clearKeys);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    document.addEventListener('pointerlockchange', onPointerLockChange);
     return () => {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', clearKeys);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      document.removeEventListener('pointerlockchange', onPointerLockChange);
     };
   }, [screen, onEscape]);
 

@@ -114,4 +114,5 @@ export interface HUDData {
   highScore: number;
   /** 石の所持数 */
   stones: number;
+  sprinting: boolean;
 }

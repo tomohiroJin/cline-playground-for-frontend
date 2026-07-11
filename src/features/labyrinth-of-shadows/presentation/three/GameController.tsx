@@ -27,16 +27,17 @@ export interface GameControllerProps {
 
 /**
  * keysRef からティック入力を生成（投擲は throwStone 引数で合成する）。
- * FPS 標準: A/D はストレイフ、旋回はマウスルックと矢印キーのみ
+ * キーボードは移動専用（矢印←→も横移動）。旋回はマウスルックと
+ * タッチ◀▶ボタン（turnleft/turnright 仮想キー）のみ
  */
 function readInput(k: Record<string, boolean>, throwStone: boolean): TickInput {
   return {
-    left: k['arrowleft'] || false,
-    right: k['arrowright'] || false,
+    left: k['turnleft'] || false,
+    right: k['turnright'] || false,
     forward: k['w'] || k['arrowup'] || false,
     backward: k['s'] || k['arrowdown'] || false,
-    strafeLeft: k['a'] || false,
-    strafeRight: k['d'] || false,
+    strafeLeft: k['a'] || k['arrowleft'] || false,
+    strafeRight: k['d'] || k['arrowright'] || false,
     hide: k[' '] || false,
     sprint: k['shift'] || false,
     throwStone,
@@ -48,7 +49,7 @@ const hudEqual = (a: HUDData, b: HUDData): boolean =>
   a.keys === b.keys && a.req === b.req && a.time === b.time && a.lives === b.lives &&
   a.maxL === b.maxL && a.hide === b.hide && a.energy === b.energy && a.eNear === b.eNear &&
   a.score === b.score && a.stamina === b.stamina && a.highScore === b.highScore &&
-  a.stones === b.stones;
+  a.stones === b.stones && a.sprinting === b.sprinting;
 
 /**
  * ゲーム進行の心臓部。useFrame（R3FのrAF）で毎フレーム:
@@ -104,6 +105,15 @@ export function GameController(props: GameControllerProps) {
     camera.rotation.order = 'YXZ';
     camera.rotation.set(pitchRef.current, cameraYaw(g.player.angle), 0);
 
+    // スプリント中は視野を広げて加速感を出す（走るが効いている体感フィードバック）
+    if (camera instanceof THREE.PerspectiveCamera) {
+      const targetFov = g.sprinting ? 84 : 75;
+      if (Math.abs(camera.fov - targetFov) > 0.1) {
+        camera.fov += (targetFov - camera.fov) * Math.min(1, dt / 120);
+        camera.updateProjectionMatrix();
+      }
+    }
+
     // トーチ点光源をカメラ位置へ。既存 renderer の複数周波数フリッカを流用
     if (torchRef.current) {
       const time = g.gTime / 1000;
@@ -133,7 +143,7 @@ export function GameController(props: GameControllerProps) {
       keys: g.keys, req: g.reqKeys, time: Math.ceil(g.time / 1000), lives: g.lives, maxL: g.maxLives,
       hide: g.hiding, energy: Math.round(g.energy), eNear: Math.max(0, 1 - result.closestEnemy / 7),
       score: g.score, stamina: Math.round(g.player.stamina), highScore: highScores[diff] || 0,
-      stones: g.stones,
+      stones: g.stones, sprinting: g.sprinting,
     };
     if (!prevHudRef.current || !hudEqual(newHud, prevHudRef.current)) {
       prevHudRef.current = newHud;
