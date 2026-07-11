@@ -281,10 +281,11 @@ describe('ChaserStrategy 状態機械', () => {
   });
 
   it('chase: 視認中は lastSeen 至近でも search に遷移しない', () => {
-    // 敵はプレイヤーに正対しており、プレイヤーは lastSeen とほぼ同じ位置にいる（視認継続中）
+    // 敵はプレイヤーに正対しており、lastSeen は到達判定距離(0.6)以内の至近（距離0.5）。
+    // 視認継続中なら reached でも search に落ちないことを検証する
     const e = createChaser(4.5, 3.5, 0); // +x を向く
     e.aiState = 'chase';
-    e.lastSeenX = 5.5;
+    e.lastSeenX = 5.0;
     e.lastSeenY = 3.5;
     strategy.update(baseParams(e, { playerX: 5.5, playerY: 3.5 }));
     expect(e.aiState).toBe('chase');
