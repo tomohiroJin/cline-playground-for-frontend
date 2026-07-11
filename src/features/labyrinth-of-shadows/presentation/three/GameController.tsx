@@ -30,7 +30,7 @@ export interface GameControllerProps {
  * キーボードは移動専用（矢印←→も横移動）。旋回はマウスルックと
  * タッチ◀▶ボタン（turnleft/turnright 仮想キー）のみ
  */
-function readInput(k: Record<string, boolean>, throwStone: boolean): TickInput {
+function readInput(k: Record<string, boolean>, throwStone: boolean, useSpeed: boolean): TickInput {
   return {
     left: k['turnleft'] || false,
     right: k['turnright'] || false,
@@ -41,7 +41,7 @@ function readInput(k: Record<string, boolean>, throwStone: boolean): TickInput {
     hide: k[' '] || false,
     sprint: k['shift'] || false,
     throwStone,
-    useSpeed: k['e'] || false,
+    useSpeed,
   };
 }
 
@@ -70,6 +70,8 @@ export function GameController(props: GameControllerProps) {
   const alertIdRef = useRef(0);
   // 上下視点（ピッチ）。演出のみでゲームロジック（angle）には影響させない
   const pitchRef = useRef(0);
+  // 加速キー(E)の前フレーム押下状態。長押しでの連続消費を防ぐエッジ検出用
+  const prevSpeedKeyRef = useRef(false);
 
   useFrame(() => {
     const g = gameRef.current;
@@ -90,7 +92,10 @@ export function GameController(props: GameControllerProps) {
       lookRef.current.dy = 0;
     }
 
-    const input = readInput(keysRef.current ?? {}, throwRef.current);
+    // 加速発動はエッジトリガー化：押した瞬間のみ発動し、長押しで効果切れ直後に連続消費しない
+    const speedKeyHeld = (keysRef.current ?? {})['e'] || false;
+    const input = readInput(keysRef.current ?? {}, throwRef.current, speedKeyHeld && !prevSpeedKeyRef.current);
+    prevSpeedKeyRef.current = speedKeyHeld;
     throwRef.current = false;
     const result = advanceGame(g, dt, input);
 

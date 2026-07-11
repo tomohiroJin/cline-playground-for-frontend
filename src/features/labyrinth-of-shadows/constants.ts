@@ -8,7 +8,6 @@ export const CONFIG = {
   timing: { invinceDuration: 2500, msgDuration: 2000 },
   score: { keyBase: 100, victoryBonus: 500, damagePenalty: 50 },
   items: {
-    speedBoostDuration: 10000,
     speedBoostMult: 1.3,
     mapRevealRadius: 10,  // 迷路2倍拡大に合わせて2倍
   },

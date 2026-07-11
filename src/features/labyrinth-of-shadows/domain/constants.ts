@@ -96,8 +96,6 @@ export const GAME_BALANCE = {
     DAMAGE_MESSAGE_DURATION: 1500,
   },
   items: {
-    /** 加速ブースト倍率 */
-    SPEED_BOOST_MULTIPLIER: 1.3,
     /** 地図公開範囲 */
     MAP_REVEAL_RADIUS: 10,
     /** 地図取得後に敵位置をミニマップへ表示する時間（ms） */
