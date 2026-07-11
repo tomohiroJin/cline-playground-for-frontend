@@ -10,6 +10,7 @@ import { ResultScreen } from './components/ResultScreen';
 import { HUD } from './components/HUD';
 import { Minimap } from './components/Minimap';
 import { Controls } from './components/Controls';
+import type { AlertMarker } from './components/EnemyIndicators';
 import { useInput } from './presentation/hooks/use-input';
 import { LabyrinthScene } from './presentation/three/LabyrinthScene';
 import {
@@ -38,10 +39,34 @@ export default function LabyrinthOfShadowsGame() {
     score: 0,
     stamina: 100,
     highScore: 0,
+    stones: 3,
+    sprinting: false,
   });
   const minimapCanvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<GameState | null>(null);
   const [highScores, setHighScores] = useState<Record<string, number>>({});
+  const throwRef = useRef(false);
+  const [alertMarkers, setAlertMarkers] = useState<AlertMarker[]>([]);
+  // 発行済みタイマーIDを保持し、アンマウント時に確実にクリアする（Task 7 指摘対応）
+  const alertTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+
+  // マーカーは3.5秒で自動消滅。アンマウント時に未消化タイマーを全クリアしてリークを防ぐ
+  const onAlert = useCallback((marker: AlertMarker) => {
+    setAlertMarkers(prev => [...prev, marker]);
+    const timer = setTimeout(() => {
+      alertTimersRef.current.delete(timer);
+      setAlertMarkers(prev => prev.filter(m => m.id !== marker.id));
+    }, 3500);
+    alertTimersRef.current.add(timer);
+  }, []);
+
+  useEffect(
+    () => () => {
+      alertTimersRef.current.forEach(timer => clearTimeout(timer));
+      alertTimersRef.current.clear();
+    },
+    []
+  );
 
   // ハイスコアの読み込み
   useEffect(() => {
@@ -138,9 +163,12 @@ export default function LabyrinthOfShadowsGame() {
         highScores={highScores}
         onHudUpdate={setHud}
         onGameEnd={endGame}
+        alertMarkers={alertMarkers}
+        throwRef={throwRef}
+        onAlert={onAlert}
       />
       <HUD h={hud} />
-      <Controls keysRef={keysRef} hiding={hud.hide} energy={hud.energy} stamina={hud.stamina} />
+      <Controls keysRef={keysRef} hiding={hud.hide} energy={hud.energy} stamina={hud.stamina} sprinting={hud.sprinting} />
       {mazeSize > 0 && (
         <Minimap
           canvasRef={minimapCanvasRef}

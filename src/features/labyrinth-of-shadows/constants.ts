@@ -4,13 +4,13 @@ export const CONFIG = {
   player: { rotSpeed: 0.003, moveSpeed: 0.0024, radius: 0.2, sprintMult: 1.5 },
   hiding: { drainRate: 0.02, rechargeRate: 0.016, minEnergy: 5 },
   stamina: { drainRate: 0.022, rechargeRate: 0.014 },
-  enemy: { chaseRange: 8, minSpawnDist: 5 },
+  enemy: { chaseRange: 8, minSpawnDist: 10 },  // 迷路2倍拡大に合わせてセル基準の距離も2倍
   timing: { invinceDuration: 2500, msgDuration: 2000, trapPenalty: 12000 },
   score: { keyBase: 100, victoryBonus: 500, damagePenalty: 50 },
   items: {
     speedBoostDuration: 10000,
     speedBoostMult: 1.3,
-    mapRevealRadius: 5,
+    mapRevealRadius: 10,  // 迷路2倍拡大に合わせて2倍
   },
   difficulties: {
     EASY: {
@@ -21,7 +21,7 @@ export const CONFIG = {
       speeds: 1,
       maps: 1,
       time: 200,
-      enemySpeed: 0.006,
+      enemySpeed: 0.0014,
       enemyCount: 1,
       wanderers: 1,
       chasers: 0,
@@ -29,6 +29,9 @@ export const CONFIG = {
       lives: 5,
       label: '初級',
       gradient: 'easy',
+      sightRange: 5,
+      searchDuration: 2500,
+      stonePickups: 2,
     },
     NORMAL: {
       size: 11,
@@ -38,7 +41,7 @@ export const CONFIG = {
       speeds: 1,
       maps: 1,
       time: 170,
-      enemySpeed: 0.009,
+      enemySpeed: 0.0018,
       enemyCount: 2,
       wanderers: 1,
       chasers: 1,
@@ -46,6 +49,9 @@ export const CONFIG = {
       lives: 3,
       label: '中級',
       gradient: 'normal',
+      sightRange: 7,
+      searchDuration: 4000,
+      stonePickups: 2,
     },
     HARD: {
       size: 14,
@@ -55,14 +61,17 @@ export const CONFIG = {
       speeds: 1,
       maps: 0,
       time: 140,
-      enemySpeed: 0.012,
-      enemyCount: 3,
+      enemySpeed: 0.00216,
+      enemyCount: 4,
       wanderers: 1,
-      chasers: 1,
+      chasers: 2,
       teleporters: 1,
       lives: 2,
       label: '上級',
       gradient: 'hard',
+      sightRange: 9,
+      searchDuration: 6000,
+      stonePickups: 3,
     },
   },
 } as const;
@@ -108,6 +117,7 @@ export const CONTENT = {
     enemy: { emoji: '👹', name: '敵', color: '#ff0044', bgColor: '#4a0020' },
     wanderer: { emoji: '👻', name: '亡霊', color: '#aa88ff', bgColor: '#2a0050' },
     teleporter: { emoji: '🌀', name: '歪み', color: '#ff44ff', bgColor: '#4a004a' },
+    stone: { emoji: '🪨', name: '小石', color: '#c0b8a8', bgColor: '#3a362f' },
   },
   sounds: {
     footstep: [90, 'triangle', 0.06],
@@ -122,6 +132,9 @@ export const CONTENT = {
     speed: [440, 'square', 0.2],
     mapReveal: [550, 'triangle', 0.3],
     teleport: [200, 'sawtooth', 0.3],
+    alert: [1150, 'square', 0.25],
+    stoneThrow: [320, 'triangle', 0.12],
+    stoneLand: [170, 'square', 0.3],
   },
   demo: [
     {
@@ -141,8 +154,13 @@ export const CONTENT = {
     },
     {
       title: '🙈 隠れる',
-      items: ['Spaceで隠れる', '敵に見つからない', '動けずゲージ消費'],
+      items: ['Spaceで隠れる', '見られる前に隠れろ', '動けずゲージ消費'],
       icon: '👁️',
+    },
+    {
+      title: '🪨 小石',
+      items: ['クリックで投げる', '音で敵を誘き寄せる', '追跡中の敵には効かない'],
+      icon: '🎯',
     },
     {
       title: '🏃 ダッシュ',

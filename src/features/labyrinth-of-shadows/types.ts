@@ -5,6 +5,17 @@ export type Difficulty = keyof typeof CONFIG.difficulties;
 export type EntityType = keyof typeof CONTENT.items;
 export type SoundName = keyof typeof CONTENT.sounds;
 export type EnemyType = 'wanderer' | 'chaser' | 'teleporter';
+export type EnemyAIState = 'patrol' | 'chase' | 'search';
+
+/** 投擲中の石 */
+export interface StoneProjectile {
+  x: number;
+  y: number;
+  dirX: number;
+  dirY: number;
+  /** 飛行距離の累計（最大飛距離の判定に使う） */
+  traveled: number;
+}
 
 export interface Entity {
   x: number;
@@ -26,6 +37,12 @@ export interface Enemy extends Entity {
   path: { x: number; y: number }[];
   pathTime: number;
   teleportCooldown: number;
+  /** AI 状態機械の現在状態 */
+  aiState: EnemyAIState;
+  /** 捜索状態の残り時間（ms） */
+  searchTimer: number;
+  /** 追跡中に視線を失ってからの経過時間（ms） */
+  loseSightTimer: number;
 }
 
 export interface Item extends Entity {
@@ -73,6 +90,14 @@ export interface GameState {
   combo: number;
   lastKeyTime: number;
   explored: Record<string, boolean>;
+  /** 石の所持数 */
+  stones: number;
+  /** 飛行中の石 */
+  stoneProjectiles: StoneProjectile[];
+  /** 敵の発見可能距離（難易度依存） */
+  sightRange: number;
+  /** 敵の捜索持続時間 ms（難易度依存） */
+  searchDuration: number;
 }
 
 export interface HUDData {
@@ -87,4 +112,7 @@ export interface HUDData {
   hide: boolean;
   energy: number;
   highScore: number;
+  /** 石の所持数 */
+  stones: number;
+  sprinting: boolean;
 }

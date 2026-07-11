@@ -54,6 +54,10 @@ export class GameStateBuilder {
       combo: 0,
       lastKeyTime: 0,
       explored: { '1,1': true },
+      stones: 3,
+      stoneProjectiles: [],
+      sightRange: 7,
+      searchDuration: 4000,
     };
   }
 
@@ -82,6 +86,9 @@ export class GameStateBuilder {
       path: [],
       pathTime: 0,
       teleportCooldown: 0,
+      aiState: 'patrol',
+      searchTimer: 0,
+      loseSightTimer: 0,
     };
     this.state.enemies.push({ ...defaultEnemy, ...overrides });
     return this;
@@ -194,6 +201,12 @@ export class GameStateBuilder {
   /** 探索済み領域をリセットする */
   withEmptyExplored(): this {
     this.state.explored = {};
+    return this;
+  }
+
+  /** 小石の所持数を設定する */
+  withStones(count: number): this {
+    this.state.stones = count;
     return this;
   }
 

@@ -51,6 +51,12 @@ export const HUD: React.FC<HUDProps> = ({ h }) => (
           </BarContainer>
         </div>
       </HUDPanel>
+      <HUDPanel $borderColor="#78716c">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{ fontSize: '1.25rem' }}>🪨</span>
+          <span style={{ color: '#d6d3d1', fontWeight: 'bold' }}>{h.stones}</span>
+        </div>
+      </HUDPanel>
     </HUDGroup>
 
     <HUDGroup $align="right">

@@ -121,4 +121,57 @@ describe('labyrinth-of-shadows/maze-service', () => {
       }
     });
   });
+
+  describe('expand（通路2セル幅化）', () => {
+    test('各セルが factor×factor に拡大される', () => {
+      // Arrange
+      const maze = [
+        [1, 1, 1],
+        [1, 0, 1],
+        [1, 1, 1],
+      ];
+
+      // Act
+      const expanded = MazeService.expand(maze, 2);
+
+      // Assert: 6x6 になり、中央の通路は 2x2 の空間になる
+      expect(expanded).toHaveLength(6);
+      expect(expanded[0]).toHaveLength(6);
+      expect(expanded[2][2]).toBe(0);
+      expect(expanded[2][3]).toBe(0);
+      expect(expanded[3][2]).toBe(0);
+      expect(expanded[3][3]).toBe(0);
+      expect(expanded[0][0]).toBe(1);
+      expect(expanded[1][1]).toBe(1);
+    });
+
+    test('拡大後も迷路の連結性が保たれる（元の通路間のパスが存在する）', () => {
+      // Arrange: 生成迷路を拡大
+      const maze = MazeService.expand(MazeService.create(9), 2);
+      const cells = MazeService.getEmptyCells(maze);
+
+      // Act: 最初と最後の通路セル間の BFS パス
+      const start = cells[0];
+      const end = cells[cells.length - 1];
+      const path = MazeService.bfsPath(maze, start.x + 0.5, start.y + 0.5, end.x + 0.5, end.y + 0.5);
+
+      // Assert: 到達可能（開始と終了が同一セルでなければパスがある）
+      expect(path.length).toBeGreaterThan(0);
+    });
+
+    test('拡大後の通路はすべて2セル幅（直交方向に隣接する通路セルを持つ）', () => {
+      // Arrange
+      const maze = MazeService.expand(MazeService.create(9), 2);
+
+      // Act & Assert: すべての通路セルは横か縦に隣接する通路セルを持つ
+      for (let y = 0; y < maze.length; y++) {
+        for (let x = 0; x < maze[y].length; x++) {
+          if (maze[y][x] !== 0) continue;
+          const hasHorizontalPair = maze[y][x - 1] === 0 || maze[y][x + 1] === 0;
+          const hasVerticalPair = maze[y - 1]?.[x] === 0 || maze[y + 1]?.[x] === 0;
+          expect(hasHorizontalPair && hasVerticalPair).toBe(true);
+        }
+      }
+    });
+  });
 });

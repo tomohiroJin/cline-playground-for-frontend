@@ -2,6 +2,7 @@ import { CONFIG } from './constants';
 import type { Difficulty, EntityType, EnemyType, Player, Enemy, Item, Entity, GameState } from './types';
 import { manhattan } from './utils';
 import { MazeService } from './maze-service';
+import { GAME_BALANCE } from './domain/constants';
 
 // ==================== ENTITY FACTORY ====================
 export const EntityFactory = {
@@ -23,6 +24,9 @@ export const EntityFactory = {
     path: [],
     pathTime: 0,
     teleportCooldown: 0,
+    aiState: 'patrol',
+    searchTimer: 0,
+    loseSightTimer: 0,
   }),
   createItem: (x: number, y: number, type: EntityType): Item => ({ x, y, type, got: false }),
   createExit: (x: number, y: number): Entity => ({ x: x + 0.5, y: y + 0.5 }),
@@ -32,9 +36,12 @@ export const EntityFactory = {
 export const GameStateFactory = {
   create(difficulty: Difficulty): GameState {
     const cfg = CONFIG.difficulties[difficulty];
-    const maze = difficulty === 'HARD' && Math.random() < 0.5
+    // 通路を2セル幅にする（1セル幅では敵・罠の回避が構造的に不可能なため）。
+    // 論理迷路を生成してから均一2倍拡大することで連結性と各種処理の互換を保つ
+    const baseMaze = difficulty === 'HARD' && Math.random() < 0.5
       ? MazeService.createPrim(cfg.size)
       : MazeService.create(cfg.size);
+    const maze = MazeService.expand(baseMaze, 2);
     const cells = MazeService.getEmptyCells(maze);
 
     const playerCell = cells.shift()!;
@@ -47,6 +54,7 @@ export const GameStateFactory = {
       ...cells.splice(0, cfg.heals).map(c => EntityFactory.createItem(c.x, c.y, 'heal')),
       ...cells.splice(0, cfg.speeds).map(c => EntityFactory.createItem(c.x, c.y, 'speed')),
       ...cells.splice(0, cfg.maps).map(c => EntityFactory.createItem(c.x, c.y, 'map')),
+      ...cells.splice(0, cfg.stonePickups).map(c => EntityFactory.createItem(c.x, c.y, 'stone')),
     ];
 
     // アイテム配置済みを除いた残りセルを「プレイヤーから遠い／近い」に分割（互いに素）。
@@ -98,6 +106,10 @@ export const GameStateFactory = {
       combo: 0,
       lastKeyTime: 0,
       explored: { [`${playerCell.x},${playerCell.y}`]: true },
+      stones: GAME_BALANCE.stone.INITIAL_COUNT,
+      stoneProjectiles: [],
+      sightRange: cfg.sightRange,
+      searchDuration: cfg.searchDuration,
     };
   },
 };

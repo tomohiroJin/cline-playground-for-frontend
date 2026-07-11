@@ -1,5 +1,5 @@
 /* eslint-disable react/no-unknown-property */
-import React from 'react';
+import React, { useEffect } from 'react';
 import * as THREE from 'three';
 import { Canvas } from '@react-three/fiber';
 import type { GameState, HUDData } from '../../types';
@@ -10,8 +10,10 @@ import { FloorCeiling } from './FloorCeiling';
 import { ItemMeshes } from './ItemMeshes';
 import { ExitMesh } from './ExitMesh';
 import { EnemyMeshes } from './EnemyMeshes';
+import { StoneMeshes } from './StoneMeshes';
 import { GameController } from './GameController';
 import { usePointerLook } from '../hooks/use-pointer-look';
+import { EnemyIndicators, type AlertMarker } from '../../components/EnemyIndicators';
 
 export interface LabyrinthSceneProps {
   gameRef: React.MutableRefObject<GameState | null>;
@@ -22,6 +24,9 @@ export interface LabyrinthSceneProps {
   highScores: Record<string, number>;
   onHudUpdate: (hud: HUDData) => void;
   onGameEnd: (type: keyof typeof CONTENT.stories) => void;
+  throwRef: React.MutableRefObject<boolean>;
+  onAlert: (marker: AlertMarker) => void;
+  alertMarkers: readonly AlertMarker[];
 }
 
 /** 3D迷宮シーンのルート。<Canvas> にフォグ・ライト・全要素を配置 */
@@ -32,18 +37,35 @@ export function LabyrinthScene(props: LabyrinthSceneProps) {
   // デスクトップのマウスルック（ポーズ中は無効）
   const { lookRef, bindTargetRef } = usePointerLook(!props.paused);
 
+  // ポインタロック中の左クリック = 石を投げる（非ロック時のクリックはロック要求に使われる）
+  useEffect(() => {
+    const onMouseDown = (e: MouseEvent) => {
+      if (e.button === 0 && document.pointerLockElement) props.throwRef.current = true;
+    };
+    document.addEventListener('mousedown', onMouseDown);
+    return () => document.removeEventListener('mousedown', onMouseDown);
+  }, [props.throwRef]);
+
   return (
     <div
       ref={bindTargetRef as React.RefObject<HTMLDivElement | null>}
-      style={{ width: CONFIG.render.width, height: CONFIG.render.height, maxWidth: '100%' }}
+      style={{ width: CONFIG.render.width, height: CONFIG.render.height, maxWidth: '100%', position: 'relative' }}
     >
       <Canvas
         shadows={{ type: THREE.PCFShadowMap }}
-        camera={{ fov: 75, near: 0.05, far: CONFIG.render.maxDepth, position: [0, EYE_HEIGHT, 0] }}
+        camera={{
+          fov: 75,
+          near: 0.05,
+          far: CONFIG.render.maxDepth,
+          position: [0, EYE_HEIGHT, 0],
+          // rotation 未指定だと R3F が初期化時に lookAt(0,0,0) を実行し真下向きになるため明示する
+          rotation: [0, 0, 0],
+        }}
         gl={{ antialias: true }}
       >
-        {/* 恐怖演出＋描画距離制限を兼ねる指数フォグ */}
-        <fogExp2 attach="fog" args={['#05040a', 0.14]} />
+        {/* 恐怖演出＋描画距離制限を兼ねる指数フォグ。
+            敵の索敵距離（5〜9セル）でプレイヤー側も敵を視認できるよう 0.14→0.11 に緩和 */}
+        <fogExp2 attach="fog" args={['#05040a', 0.11]} />
         <color attach="background" args={['#05040a']} />
         {/* 環境光は控えめだが物理ベース照明準拠で床・壁が視認できる強度を確保 */}
         <ambientLight intensity={0.35} />
@@ -55,10 +77,13 @@ export function LabyrinthScene(props: LabyrinthSceneProps) {
             <ItemMeshes gameRef={gameRef} />
             <ExitMesh gameRef={gameRef} />
             <EnemyMeshes gameRef={gameRef} />
+            <StoneMeshes gameRef={gameRef} />
           </>
         )}
         <GameController {...props} lookRef={lookRef} />
       </Canvas>
+      {/* 索敵マーカーはゲーム画面内に重ねる（ページ端では気づけないという実機FB対応） */}
+      <EnemyIndicators markers={props.alertMarkers} />
     </div>
   );
 }

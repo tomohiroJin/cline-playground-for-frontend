@@ -1,6 +1,7 @@
 import { GameLogic } from '../game-logic';
 import { GameStateFactory } from '../entity-factory';
 import type { GameState } from '../types';
+import { GAME_BALANCE } from '../domain/constants';
 import { setupAudioContextMock } from './helpers/audio-mock';
 import { GameStateBuilder } from './helpers/game-state-builder';
 
@@ -84,6 +85,47 @@ describe('labyrinth-of-shadows/game-logic', () => {
       const dy = state.player.y - initialY;
       expect(dx !== 0 || dy !== 0).toBe(true);
     });
+
+    test('ストレイフ右で進行方向の右（角度+90°）へ横移動し、向きは変わらない', () => {
+      state.player.angle = 0; // +x を向く → 右は +y 方向
+      const initialAngle = state.player.angle;
+      const initialY = state.player.y;
+      const moved = GameLogic.updatePlayer(
+        state,
+        { left: false, right: false, forward: false, backward: false, strafeRight: true },
+        16
+      );
+      expect(moved).toBe(true);
+      expect(state.player.y).toBeGreaterThan(initialY);
+      expect(state.player.angle).toBe(initialAngle);
+    });
+
+    test('ストレイフ左で進行方向の左（角度-90°）へ横移動する', () => {
+      state.player.angle = 0; // +x を向く → 左は -y 方向
+      const initialY = state.player.y;
+      GameLogic.updatePlayer(
+        state,
+        { left: false, right: false, forward: false, backward: false, strafeLeft: true },
+        16
+      );
+      expect(state.player.y).toBeLessThan(initialY);
+    });
+
+    test('ストレイフ左右同時押しは相殺されて移動しない', () => {
+      state.player.angle = 0;
+      const initialX = state.player.x;
+      const initialY = state.player.y;
+      GameLogic.updatePlayer(
+        state,
+        {
+          left: false, right: false, forward: false, backward: false,
+          strafeLeft: true, strafeRight: true,
+        },
+        16
+      );
+      expect(state.player.x).toBe(initialX);
+      expect(state.player.y).toBe(initialY);
+    });
   });
 
   describe('updateExplored', () => {
@@ -104,9 +146,41 @@ describe('labyrinth-of-shadows/game-logic', () => {
   });
 
   describe('updateEnemies', () => {
-    test('最も近い敵の距離を返す', () => {
-      const closest = GameLogic.updateEnemies(state, 16);
-      expect(typeof closest).toBe('number');
+    test('最も近い敵の距離・最寄り敵・alerts を含む結果を返す', () => {
+      const result = GameLogic.updateEnemies(state, 16);
+      expect(typeof result.closest).toBe('number');
+      expect(Array.isArray(result.alerts)).toBe(true);
+    });
+  });
+
+  describe('updateItems（罠の回避）', () => {
+    test('罠は壁に寄れば（中心から0.3ずれれば）踏まずに通過できる', () => {
+      // Arrange: 罠をプレイヤーの現在セルに配置し、プレイヤーはセル中心から 0.3 ずらす
+      const px = Math.floor(state.player.x);
+      const py = Math.floor(state.player.y);
+      state.items = [{ x: px, y: py, type: 'trap', got: false }];
+      state.player.x = px + 0.5 + 0.3;
+      state.player.y = py + 0.5;
+      const initialTime = state.time;
+
+      // Act
+      GameLogic.updateItems(state);
+
+      // Assert: 罠は発動しない
+      expect(state.items[0].got).toBe(false);
+      expect(state.time).toBe(initialTime);
+    });
+
+    test('鍵は壁に寄っていても（中心から0.3ずれても）取得できる', () => {
+      const px = Math.floor(state.player.x);
+      const py = Math.floor(state.player.y);
+      state.items = [{ x: px, y: py, type: 'key', got: false }];
+      state.player.x = px + 0.5 + 0.3;
+      state.player.y = py + 0.5;
+
+      GameLogic.updateItems(state);
+
+      expect(state.items[0].got).toBe(true);
     });
   });
 
@@ -170,6 +244,38 @@ describe('labyrinth-of-shadows/game-logic', () => {
       // Assert: 中心セルが探索済みになる
       expect(testState.explored['3,3']).toBe(true);
     });
+
+    test('小石を拾うと所持数が増える', () => {
+      // Arrange: 満杯未満の所持数で小石を配置
+      const testState = GameStateBuilder.create()
+        .withStones(3)
+        .withItem('stone', 1, 1)
+        .withPlayer({ x: 1.5, y: 1.5 })
+        .build();
+
+      // Act
+      GameLogic.updateItems(testState);
+
+      // Assert
+      expect(testState.stones).toBe(4);
+      expect(testState.items[0].got).toBe(true);
+    });
+
+    test('所持数が MAX_COUNT のとき小石は拾わない', () => {
+      // Arrange: 所持数を上限にして小石を配置
+      const testState = GameStateBuilder.create()
+        .withStones(GAME_BALANCE.stone.MAX_COUNT)
+        .withItem('stone', 1, 1)
+        .withPlayer({ x: 1.5, y: 1.5 })
+        .build();
+
+      // Act
+      GameLogic.updateItems(testState);
+
+      // Assert: フィールドに残り、所持数も変化しない
+      expect(testState.items[0].got).toBe(false);
+      expect(testState.stones).toBe(GAME_BALANCE.stone.MAX_COUNT);
+    });
   });
 
   describe('revealMap', () => {
@@ -195,7 +301,7 @@ describe('labyrinth-of-shadows/game-logic', () => {
       const wanderer = testState.enemies[0];
 
       // Act
-      GameLogic.updateEnemy(testState, wanderer, 16);
+      GameLogic.updateEnemyWithStrategy(testState, wanderer, 16);
 
       // Assert: lastSeenX は更新されない（追跡しない）
       expect(wanderer.lastSeenX).toBe(-1);
@@ -203,18 +309,20 @@ describe('labyrinth-of-shadows/game-logic', () => {
     });
 
     test('追跡型（chaser）はプレイヤーの方向を記憶する', () => {
-      // Arrange: ビルダーで chaser を確実にプレイヤーの近くに配置
+      // Arrange: ビルダーで chaser を確実にプレイヤーの近くに、かつプレイヤー方向を向けて配置
+      // (状態機械化により発見には視野角内である必要があるため dir をプレイヤー方向に合わせる)
       const testState = GameStateBuilder.create()
         .withEnemy('chaser', {
           x: 3.5,
           y: 1.5,
+          dir: Math.PI, // プレイヤー(1.5,1.5)は -x 方向
           active: true,
         })
         .build();
       const chaser = testState.enemies[0];
 
       // Act
-      GameLogic.updateEnemy(testState, chaser, 16);
+      GameLogic.updateEnemyWithStrategy(testState, chaser, 16);
 
       // Assert: lastSeenX が更新される
       expect(chaser.lastSeenX).toBeGreaterThan(0);
@@ -233,7 +341,7 @@ describe('labyrinth-of-shadows/game-logic', () => {
       const teleporter = testState.enemies[0];
 
       // Act
-      GameLogic.updateEnemy(testState, teleporter, 100);
+      GameLogic.updateEnemyWithStrategy(testState, teleporter, 100);
 
       // Assert
       expect(teleporter.teleportCooldown).toBeLessThan(5000);
@@ -252,7 +360,7 @@ describe('labyrinth-of-shadows/game-logic', () => {
       const wanderer = testState.enemies[0];
 
       // Act
-      const d = GameLogic.updateEnemy(testState, wanderer, 16);
+      const d = GameLogic.updateEnemyWithStrategy(testState, wanderer, 16).distance;
 
       // Assert
       expect(d).toBe(Infinity);
@@ -276,7 +384,7 @@ describe('labyrinth-of-shadows/game-logic', () => {
 
       // Act: 多くのフレームで更新
       for (let i = 0; i < 100; i++) {
-        GameLogic.updateEnemy(testState, wanderer, 16);
+        GameLogic.updateEnemyWithStrategy(testState, wanderer, 16);
       }
 
       // Assert: 100フレーム後、位置が変わっている

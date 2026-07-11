@@ -6,6 +6,8 @@ interface ControlsProps {
   hiding: boolean;
   energy: number;
   stamina: number;
+  /** スプリント中か（走るボタンの点灯表示に使う） */
+  sprinting: boolean;
 }
 
 export const Controls: React.FC<ControlsProps> = ({
@@ -14,21 +16,22 @@ export const Controls: React.FC<ControlsProps> = ({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   energy,
   stamina,
+  sprinting,
 }) => (
   <ControlsContainer>
     <ControlBtn
       $variant="dpad"
       onPointerDown={e => {
         e.preventDefault();
-        keysRef.current['a'] = true;
+        keysRef.current['turnleft'] = true;
       }}
       onPointerUp={e => {
         e.preventDefault();
-        keysRef.current['a'] = false;
+        keysRef.current['turnleft'] = false;
       }}
       onPointerLeave={e => {
         e.preventDefault();
-        keysRef.current['a'] = false;
+        keysRef.current['turnleft'] = false;
       }}
     >
       ◀
@@ -73,15 +76,15 @@ export const Controls: React.FC<ControlsProps> = ({
       $variant="dpad"
       onPointerDown={e => {
         e.preventDefault();
-        keysRef.current['d'] = true;
+        keysRef.current['turnright'] = true;
       }}
       onPointerUp={e => {
         e.preventDefault();
-        keysRef.current['d'] = false;
+        keysRef.current['turnright'] = false;
       }}
       onPointerLeave={e => {
         e.preventDefault();
-        keysRef.current['d'] = false;
+        keysRef.current['turnright'] = false;
       }}
     >
       ▶
@@ -102,9 +105,12 @@ export const Controls: React.FC<ControlsProps> = ({
           e.preventDefault();
           keysRef.current['shift'] = false;
         }}
-        style={{ backgroundColor: stamina > 10 ? 'rgba(21, 128, 61, 0.9)' : undefined }}
+        style={{
+          backgroundColor: sprinting ? '#16a34a' : stamina > 10 ? 'rgba(21, 128, 61, 0.9)' : undefined,
+          boxShadow: sprinting ? '0 0 12px #4ade80' : undefined,
+        }}
       >
-        🏃 走る
+        {sprinting ? '💨 走行中!' : '🏃 走る'}
       </ControlBtn>
       <ControlBtn
         $variant="action"

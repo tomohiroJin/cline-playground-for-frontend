@@ -1,6 +1,6 @@
 import { CONFIG, CONTENT } from './constants';
 import type { GameState, Enemy } from './types';
-import { clamp, distance } from './utils';
+import { clamp, distance, normAngle } from './utils';
 import { MazeService } from './maze-service';
 import { AudioService } from './audio';
 import { GAME_BALANCE } from './domain/constants';
@@ -8,6 +8,11 @@ import { isPlayerNearItem, isPlayerNearExit, isPlayerCollidingEnemy } from './do
 import { calculateKeyScore, calculateVictoryScore, calculateCombo } from './domain/services/scoring';
 import { getEnemyStrategy } from './domain/services/enemy-strategy';
 import type { GameEvent } from './application/game-events';
+import type { EnemyAlert } from './game-tick';
+
+/** 敵速度をプレイヤー速度の MAX_SPEED_RATIO 倍でキャップする（逃走成立の保証） */
+export const capEnemySpeed = (eSpeed: number): number =>
+  Math.min(eSpeed, GAME_BALANCE.player.MOVE_SPEED * GAME_BALANCE.enemy.MAX_SPEED_RATIO);
 
 // ==================== GAME LOGIC ====================
 export const GameLogic = {
@@ -29,7 +34,14 @@ export const GameLogic = {
 
   updatePlayer(
     g: GameState,
-    input: { left: boolean; right: boolean; forward: boolean; backward: boolean },
+    input: {
+      left: boolean;
+      right: boolean;
+      forward: boolean;
+      backward: boolean;
+      strafeLeft?: boolean;
+      strafeRight?: boolean;
+    },
     dt: number
   ) {
     if (g.hiding) return false;
@@ -53,6 +65,14 @@ export const GameLogic = {
     if (input.backward) {
       dx = -Math.cos(g.player.angle) * speed * dt * 0.5;
       dy = -Math.sin(g.player.angle) * speed * dt * 0.5;
+      moved = true;
+    }
+    // ストレイフ（進行方向に対する横移動）: 右 = angle+90° 方向。左右同時押しは相殺
+    const side = (input.strafeRight ? 1 : 0) - (input.strafeLeft ? 1 : 0);
+    if (side !== 0) {
+      const strafeSpeed = speed * GAME_BALANCE.player.STRAFE_SPEED_MULTIPLIER * side;
+      dx += Math.cos(g.player.angle + Math.PI / 2) * strafeSpeed * dt;
+      dy += Math.sin(g.player.angle + Math.PI / 2) * strafeSpeed * dt;
       moved = true;
     }
 
@@ -80,7 +100,14 @@ export const GameLogic = {
 
   updateItems(g: GameState) {
     for (const item of g.items) {
-      if (item.got || !isPlayerNearItem(g.player.x, g.player.y, item.x, item.y)) continue;
+      // 罠だけ狭い発動半径にして、壁に寄れば（横移動で）踏まずに通過できるようにする
+      const radius =
+        item.type === 'trap'
+          ? GAME_BALANCE.collision.TRAP_PICKUP_DISTANCE
+          : GAME_BALANCE.collision.ITEM_PICKUP_DISTANCE;
+      if (item.got || !isPlayerNearItem(g.player.x, g.player.y, item.x, item.y, radius)) continue;
+      // 小石は満杯なら拾わずフィールドに残す
+      if (item.type === 'stone' && g.stones >= GAME_BALANCE.stone.MAX_COUNT) continue;
 
       item.got = true;
       switch (item.type) {
@@ -120,6 +147,11 @@ export const GameLogic = {
           g.msg = '🗺️ 地図を発見！ 周囲のマップが公開された！';
           AudioService.play('mapReveal', 0.4);
           break;
+        case 'stone':
+          g.stones++;
+          g.msg = `🪨 小石を拾った (${g.stones}/${GAME_BALANCE.stone.MAX_COUNT})`;
+          AudioService.play('stoneLand', 0.2);
+          break;
       }
       g.msgTimer = CONFIG.timing.msgDuration;
     }
@@ -141,7 +173,12 @@ export const GameLogic = {
   },
 
   /** Strategy パターンで敵 AI を更新する */
-  updateEnemyWithStrategy(g: GameState, e: Enemy, dt: number): { distance: number; events: readonly GameEvent[] } {
+  updateEnemyWithStrategy(
+    g: GameState,
+    e: Enemy,
+    dt: number,
+    noise?: { readonly x: number; readonly y: number }
+  ): { distance: number; events: readonly GameEvent[] } {
     if (!e.active) {
       if (g.gTime >= e.actTime) e.active = true;
       return { distance: Infinity, events: [] };
@@ -174,10 +211,13 @@ export const GameLogic = {
       playerY: g.player.y,
       isPlayerHiding: g.hiding,
       maze: g.maze,
-      enemySpeed: g.eSpeed,
+      enemySpeed: capEnemySpeed(g.eSpeed),
       dt,
       gameTime: g.gTime,
       randomFn: Math.random,
+      sightRange: g.sightRange,
+      searchDuration: g.searchDuration,
+      noise,
     });
 
     // Strategy から発生したイベントを処理
@@ -190,25 +230,37 @@ export const GameLogic = {
     return { distance: d, events: result.events };
   },
 
-  updateEnemy(g: GameState, e: Enemy, dt: number) {
-    return this.updateEnemyWithStrategy(g, e, dt).distance;
-  },
-
-  updateEnemies(g: GameState, dt: number) {
+  updateEnemies(
+    g: GameState,
+    dt: number,
+    noise?: { readonly x: number; readonly y: number }
+  ): { closest: number; nearest: Enemy | undefined; alerts: EnemyAlert[] } {
     let closest: number = GAME_BALANCE.enemy.INITIAL_CLOSEST_DISTANCE;
+    let nearest: Enemy | undefined;
+    const alerts: EnemyAlert[] = [];
     for (const e of g.enemies) {
-      const d = this.updateEnemy(g, e, dt);
-      if (d < closest) closest = d;
+      const r = this.updateEnemyWithStrategy(g, e, dt, noise);
+      if (r.distance < closest) {
+        closest = r.distance;
+        nearest = e;
+      }
+      for (const ev of r.events) {
+        if (ev.type === 'ENEMY_ALERT') alerts.push({ kind: ev.alert, x: ev.x, y: ev.y });
+      }
     }
-    return closest;
+    return { closest, nearest, alerts };
   },
 
-  updateSounds(g: GameState, closestEnemy: number, dt: number) {
+  updateSounds(g: GameState, closestEnemy: number, dt: number, nearest?: Enemy) {
     g.timers.enemySound -= dt;
     g.timers.heartbeat -= dt;
 
     if (closestEnemy < 10 && g.timers.enemySound <= 0) {
-      AudioService.play('enemy', Math.max(0.05, 0.45 * (1 - closestEnemy / 10)));
+      // 最寄り敵の相対方位を -1(左)〜1(右) のパンに変換して定位させる
+      const pan = nearest
+        ? Math.sin(normAngle(Math.atan2(nearest.y - g.player.y, nearest.x - g.player.x) - g.player.angle))
+        : 0;
+      AudioService.playSpatial('enemy', Math.max(0.05, 0.45 * (1 - closestEnemy / 10)), pan);
       g.timers.enemySound = 400;
     }
     if (closestEnemy < 6 && g.timers.heartbeat <= 0) {

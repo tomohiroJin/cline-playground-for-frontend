@@ -19,6 +19,7 @@ export type EnemyType = 'wanderer' | 'chaser' | 'teleporter';
 export type ItemType = 'key' | 'trap' | 'heal' | 'speed' | 'map';
 
 /** サウンド名 */
+// constants.ts の CONTENT.sounds と同期させること（二重管理のため追加漏れに注意）
 export type SoundName =
   | 'footstep'
   | 'sprint'
@@ -31,7 +32,10 @@ export type SoundName =
   | 'heal'
   | 'speed'
   | 'mapReveal'
-  | 'teleport';
+  | 'teleport'
+  | 'alert'
+  | 'stoneThrow'
+  | 'stoneLand';
 
 /** ゲームイベント（副作用のトリガー） */
 export type GameEvent =
