@@ -49,7 +49,7 @@ describe('labyrinth-of-shadows/entity-factory', () => {
       expect(state.reqKeys).toBe(2);
       expect(state.lives).toBe(5);
       expect(state.maxLives).toBe(5);
-      expect(state.maze.length).toBe(9);
+      expect(state.maze.length).toBe(18); // 2セル幅化で 9×2
       expect(state.keys).toBe(0);
       expect(state.hiding).toBe(false);
       expect(state.energy).toBe(100);
@@ -61,7 +61,7 @@ describe('labyrinth-of-shadows/entity-factory', () => {
       expect(state.difficulty).toBe('NORMAL');
       expect(state.reqKeys).toBe(3);
       expect(state.lives).toBe(3);
-      expect(state.maze.length).toBe(11);
+      expect(state.maze.length).toBe(22); // 2セル幅化で 11×2
     });
 
     test('HARDモードでゲーム状態を正しく初期化する', () => {
@@ -69,7 +69,7 @@ describe('labyrinth-of-shadows/entity-factory', () => {
       expect(state.difficulty).toBe('HARD');
       expect(state.reqKeys).toBe(4);
       expect(state.lives).toBe(2);
-      expect(state.maze.length).toBe(14);
+      expect(state.maze.length).toBe(28); // 2セル幅化で 14×2
     });
 
     test('鍵アイテムの数が正しい', () => {
@@ -142,6 +142,21 @@ describe('Phase2: 敵の状態機械フィールド', () => {
     expect(e.aiState).toBe('patrol');
     expect(e.searchTimer).toBe(0);
     expect(e.loseSightTimer).toBe(0);
+  });
+});
+
+describe('通路2セル幅化', () => {
+  it('生成される迷路はグリッドが難易度サイズの2倍（各セル2x2拡大）', () => {
+    const g = GameStateFactory.create('NORMAL');
+    expect(g.maze).toHaveLength(CONFIG.difficulties.NORMAL.size * 2);
+    expect(g.maze[0]).toHaveLength(CONFIG.difficulties.NORMAL.size * 2);
+  });
+
+  it('プレイヤーの初期位置は通路上にある', () => {
+    const g = GameStateFactory.create('NORMAL');
+    const cx = Math.floor(g.player.x);
+    const cy = Math.floor(g.player.y);
+    expect(g.maze[cy][cx]).toBe(0);
   });
 });
 

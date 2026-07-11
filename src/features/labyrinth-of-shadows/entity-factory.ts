@@ -36,9 +36,12 @@ export const EntityFactory = {
 export const GameStateFactory = {
   create(difficulty: Difficulty): GameState {
     const cfg = CONFIG.difficulties[difficulty];
-    const maze = difficulty === 'HARD' && Math.random() < 0.5
+    // 通路を2セル幅にする（1セル幅では敵・罠の回避が構造的に不可能なため）。
+    // 論理迷路を生成してから均一2倍拡大することで連結性と各種処理の互換を保つ
+    const baseMaze = difficulty === 'HARD' && Math.random() < 0.5
       ? MazeService.createPrim(cfg.size)
       : MazeService.create(cfg.size);
+    const maze = MazeService.expand(baseMaze, 2);
     const cells = MazeService.getEmptyCells(maze);
 
     const playerCell = cells.shift()!;

@@ -9,11 +9,12 @@ import { cameraYaw, EYE_HEIGHT } from './geometry';
 import { MinimapRenderer } from '../../minimap-renderer';
 import { normAngle } from '../../utils';
 import type { AlertMarker } from '../../components/EnemyIndicators';
+import { clampPitch, type LookRef } from '../hooks/use-pointer-look';
 
 export interface GameControllerProps {
   gameRef: React.MutableRefObject<GameState | null>;
   keysRef: React.RefObject<Record<string, boolean>>;
-  lookRef: React.MutableRefObject<{ dx: number }>;
+  lookRef: React.MutableRefObject<LookRef>;
   minimapCanvasRef: React.RefObject<HTMLCanvasElement | null>;
   paused: boolean;
   diff: string;
@@ -64,6 +65,8 @@ export function GameController(props: GameControllerProps) {
   const prevHudRef = useRef<HUDData | null>(null);
   const endedRef = useRef(false);
   const alertIdRef = useRef(0);
+  // 上下視点（ピッチ）。演出のみでゲームロジック（angle）には影響させない
+  const pitchRef = useRef(0);
 
   useFrame(() => {
     const g = gameRef.current;
@@ -74,10 +77,14 @@ export function GameController(props: GameControllerProps) {
     g.lastT = now;
     if (paused) return;
 
-    // マウスルック: 蓄積分を角度へ反映して消費
+    // マウスルック: 蓄積分を角度へ反映して消費（dy は上下視点、可動域内にクランプ）
     if (lookRef.current.dx !== 0) {
       g.player.angle += lookRef.current.dx;
       lookRef.current.dx = 0;
+    }
+    if (lookRef.current.dy !== 0) {
+      pitchRef.current = clampPitch(pitchRef.current + lookRef.current.dy);
+      lookRef.current.dy = 0;
     }
 
     const input = readInput(keysRef.current ?? {}, throwRef.current);
@@ -95,7 +102,7 @@ export function GameController(props: GameControllerProps) {
     // 真下向きのピッチが混入するため、yaw だけでなく姿勢全体を毎フレーム上書きする
     camera.position.set(g.player.x, EYE_HEIGHT, g.player.y);
     camera.rotation.order = 'YXZ';
-    camera.rotation.set(0, cameraYaw(g.player.angle), 0);
+    camera.rotation.set(pitchRef.current, cameraYaw(g.player.angle), 0);
 
     // トーチ点光源をカメラ位置へ。既存 renderer の複数周波数フリッカを流用
     if (torchRef.current) {

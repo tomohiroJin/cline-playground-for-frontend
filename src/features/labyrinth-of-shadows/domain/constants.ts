@@ -39,7 +39,7 @@ export const GAME_BALANCE = {
   },
   enemy: {
     /** 敵の最小スポーン距離 */
-    MIN_SPAWN_DISTANCE: 5,
+    MIN_SPAWN_DISTANCE: 10,
     /** BFS パス再計算間隔（ms） */
     PATH_RECALC_INTERVAL: 500,
     /** テレポートクールダウン（ms） */
@@ -101,7 +101,7 @@ export const GAME_BALANCE = {
     /** 加速ブースト倍率 */
     SPEED_BOOST_MULTIPLIER: 1.3,
     /** 地図公開範囲 */
-    MAP_REVEAL_RADIUS: 5,
+    MAP_REVEAL_RADIUS: 10,
   },
   stone: {
     /** 初期所持数 */

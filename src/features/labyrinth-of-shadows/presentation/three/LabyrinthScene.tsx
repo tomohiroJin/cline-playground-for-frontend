@@ -13,7 +13,7 @@ import { EnemyMeshes } from './EnemyMeshes';
 import { StoneMeshes } from './StoneMeshes';
 import { GameController } from './GameController';
 import { usePointerLook } from '../hooks/use-pointer-look';
-import type { AlertMarker } from '../../components/EnemyIndicators';
+import { EnemyIndicators, type AlertMarker } from '../../components/EnemyIndicators';
 
 export interface LabyrinthSceneProps {
   gameRef: React.MutableRefObject<GameState | null>;
@@ -26,6 +26,7 @@ export interface LabyrinthSceneProps {
   onGameEnd: (type: keyof typeof CONTENT.stories) => void;
   throwRef: React.MutableRefObject<boolean>;
   onAlert: (marker: AlertMarker) => void;
+  alertMarkers: readonly AlertMarker[];
 }
 
 /** 3D迷宮シーンのルート。<Canvas> にフォグ・ライト・全要素を配置 */
@@ -48,7 +49,7 @@ export function LabyrinthScene(props: LabyrinthSceneProps) {
   return (
     <div
       ref={bindTargetRef as React.RefObject<HTMLDivElement | null>}
-      style={{ width: CONFIG.render.width, height: CONFIG.render.height, maxWidth: '100%' }}
+      style={{ width: CONFIG.render.width, height: CONFIG.render.height, maxWidth: '100%', position: 'relative' }}
     >
       <Canvas
         shadows={{ type: THREE.PCFShadowMap }}
@@ -81,6 +82,8 @@ export function LabyrinthScene(props: LabyrinthSceneProps) {
         )}
         <GameController {...props} lookRef={lookRef} />
       </Canvas>
+      {/* 索敵マーカーはゲーム画面内に重ねる（ページ端では気づけないという実機FB対応） */}
+      <EnemyIndicators markers={props.alertMarkers} />
     </div>
   );
 }

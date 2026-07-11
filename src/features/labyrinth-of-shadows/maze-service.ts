@@ -27,6 +27,20 @@ export const MazeService = {
     return maze;
   },
 
+  /**
+   * 迷路を factor 倍に均一拡大する（通路の複数セル幅化）。
+   * 各セルを factor×factor のブロックに置き換えるだけなので、
+   * トポロジー（連結性）と BFS・衝突・描画の互換性が保たれる
+   */
+  expand(maze: number[][], factor: number): number[][] {
+    const size = maze.length;
+    return Array.from({ length: size * factor }, (_, y) =>
+      Array.from({ length: maze[0].length * factor }, (_, x) =>
+        maze[Math.floor(y / factor)][Math.floor(x / factor)]
+      )
+    );
+  },
+
   // Prim法による迷路生成（より広い通路が特徴）
   createPrim(size: number) {
     const maze = Array.from({ length: size }, () => Array(size).fill(1));

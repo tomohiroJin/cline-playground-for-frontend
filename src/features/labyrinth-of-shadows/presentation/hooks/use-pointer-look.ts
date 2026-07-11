@@ -3,14 +3,23 @@ import { useEffect, useRef } from 'react';
 /** マウス感度（1px あたりのラジアン。既存 CONFIG.player.rotSpeed に近い値） */
 export const LOOK_SENSITIVITY = 0.0022;
 
-/** 未消費のマウス水平移動量（ラジアン換算）を保持する */
+/** 上下視点の可動域（±ラジアン、約26°）。演出のみでゲームロジックには影響しない */
+export const MAX_PITCH = 0.45;
+
+/** 未消費のマウス移動量（ラジアン換算）を保持する。dy は上下視点用 */
 export interface LookRef {
   dx: number;
+  dy: number;
 }
 
 /** 現在の蓄積量にマウス移動量(px)を感度換算して加算する（純粋関数） */
 export function accumulateLook(current: number, movementX: number): number {
   return current + movementX * LOOK_SENSITIVITY;
+}
+
+/** ピッチ角を可動域 ±MAX_PITCH に収める（純粋関数） */
+export function clampPitch(pitch: number): number {
+  return Math.max(-MAX_PITCH, Math.min(MAX_PITCH, pitch));
 }
 
 /**
@@ -22,7 +31,7 @@ export function usePointerLook(enabled: boolean): {
   lookRef: React.MutableRefObject<LookRef>;
   bindTargetRef: React.RefObject<HTMLElement | null>;
 } {
-  const lookRef = useRef<LookRef>({ dx: 0 });
+  const lookRef = useRef<LookRef>({ dx: 0, dy: 0 });
   const bindTargetRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -39,6 +48,8 @@ export function usePointerLook(enabled: boolean): {
     const onMouseMove = (e: MouseEvent) => {
       if (document.pointerLockElement !== target) return;
       lookRef.current.dx = accumulateLook(lookRef.current.dx, e.movementX);
+      // マウス下移動(movementY正)で視線を下げるため符号を反転して蓄積する
+      lookRef.current.dy = accumulateLook(lookRef.current.dy, -e.movementY);
     };
 
     target.addEventListener('click', requestLock);

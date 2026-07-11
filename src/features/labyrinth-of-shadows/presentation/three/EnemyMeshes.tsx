@@ -23,6 +23,8 @@ function SingleEnemy({ enemy }: { enemy: Enemy }) {
     g.visible = enemy.active;
     // enemy.x/y は game-logic が毎フレーム書き換える live な値
     g.position.set(enemy.x, 1.0, enemy.y);
+    // 目が進行方向を向くように回転（local +Z を (cos dir, sin dir) に合わせる）
+    g.rotation.y = Math.PI / 2 - enemy.dir;
     // 微動（浮遊感）とテレポート型の脈動
     const t = state.clock.elapsedTime;
     g.position.y = 1.0 + Math.sin(t * 3 + enemy.x) * 0.08;
@@ -48,6 +50,16 @@ function SingleEnemy({ enemy }: { enemy: Enemy }) {
           transparent={v.opacity < 1}
           opacity={v.opacity}
         />
+      </mesh>
+      {/* 「敵」と一目で分かるよう、進行方向を向く一対の目を付ける
+          （アイテムも発光体のため、形状・光だけでは区別できないという実機FBへの対応） */}
+      <mesh position={[-0.14, 0.18, 0.38]}>
+        <sphereGeometry args={[0.07, 8, 8]} />
+        <meshStandardMaterial color="#ffffff" emissive="#ffdddd" emissiveIntensity={2.5} />
+      </mesh>
+      <mesh position={[0.14, 0.18, 0.38]}>
+        <sphereGeometry args={[0.07, 8, 8]} />
+        <meshStandardMaterial color="#ffffff" emissive="#ffdddd" emissiveIntensity={2.5} />
       </mesh>
       {/* 物理ベース照明準拠の強度 */}
       <pointLight color={v.color} intensity={3.5} distance={4} decay={2} />

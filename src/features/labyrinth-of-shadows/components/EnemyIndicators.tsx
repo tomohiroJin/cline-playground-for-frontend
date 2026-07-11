@@ -24,10 +24,10 @@ export const EnemyIndicators: React.FC<EnemyIndicatorsProps> = ({ markers }) => 
           key={m.id}
           style={{
             position: 'absolute',
-            top: '16%',
+            top: '12%',
             left: `${50 + ratio * 44}%`,
             transform: 'translateX(-50%)',
-            fontSize: '2.2rem',
+            fontSize: '3rem',
             fontWeight: 'bold',
             color: isSpotted ? '#ef4444' : '#facc15',
             textShadow: '0 0 8px rgba(0,0,0,0.9), 0 0 16px currentColor',
