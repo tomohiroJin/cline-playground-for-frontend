@@ -94,6 +94,8 @@ export interface GameState {
   stones: number;
   /** 加速チャージの所持数（Eキー/ボタンで発動） */
   speedCharges: number;
+  /** 敵位置表示の残り時間 ms（地図取得でセット、>0 の間ミニマップに全敵表示） */
+  enemyRevealTimer: number;
   /** 飛行中の石 */
   stoneProjectiles: StoneProjectile[];
   /** 敵の発見可能距離（難易度依存） */

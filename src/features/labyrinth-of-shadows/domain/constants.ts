@@ -100,6 +100,8 @@ export const GAME_BALANCE = {
     SPEED_BOOST_MULTIPLIER: 1.3,
     /** 地図公開範囲 */
     MAP_REVEAL_RADIUS: 10,
+    /** 地図取得後に敵位置をミニマップへ表示する時間（ms） */
+    ENEMY_REVEAL_DURATION: 5000,
   },
   stone: {
     /** 初期所持数 */

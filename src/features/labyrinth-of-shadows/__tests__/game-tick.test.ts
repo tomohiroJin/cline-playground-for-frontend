@@ -68,6 +68,13 @@ describe('advanceGame', () => {
     expect(result.status).toBe('playing');
     expect(typeof result.closestEnemy).toBe('number');
   });
+
+  test('敵表示タイマーは時間経過で減衰する', () => {
+    const g = GameStateBuilder.create().build();
+    g.enemyRevealTimer = 100;
+    advanceGame(g, 16, NO_INPUT);
+    expect(g.enemyRevealTimer).toBe(84);
+  });
 });
 
 describe('Phase2: 石投げと索敵の統合', () => {

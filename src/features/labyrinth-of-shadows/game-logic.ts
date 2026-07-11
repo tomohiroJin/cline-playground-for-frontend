@@ -153,7 +153,8 @@ export const GameLogic = {
           break;
         case 'map':
           this.revealMap(g, item.x, item.y);
-          g.msg = '🗺️ 地図を発見！ 周囲のマップが公開された！';
+          g.enemyRevealTimer = GAME_BALANCE.items.ENEMY_REVEAL_DURATION;
+          g.msg = '🗺️ 地図を発見！ 周囲の地形と敵の位置が見える！';
           AudioService.play('mapReveal', 0.4);
           break;
         case 'stone':

@@ -135,6 +135,8 @@ export function GameController(props: GameControllerProps) {
       MinimapRenderer.render(minimapCtx, {
         maze: g.maze, player: g.player, exit: g.exit, items: g.items, enemies: g.enemies,
         keys: g.keys, reqKeys: g.reqKeys, explored: g.explored, time: g.gTime / 1000,
+        // TODO(Task5): g.enemyRevealTimer > 0 に差し替えて地図効果中の全敵表示を配線する
+        enemyReveal: false,
       });
     }
 

@@ -108,6 +108,7 @@ export const GameStateFactory = {
       explored: { [`${playerCell.x},${playerCell.y}`]: true },
       stones: GAME_BALANCE.stone.INITIAL_COUNT,
       speedCharges: 0,
+      enemyRevealTimer: 0,
       stoneProjectiles: [],
       sightRange: cfg.sightRange,
       searchDuration: cfg.searchDuration,

@@ -263,6 +263,20 @@ describe('labyrinth-of-shadows/game-logic', () => {
       expect(testState.explored['3,3']).toBe(true);
     });
 
+    test('地図取得で敵表示タイマーが5秒セットされる', () => {
+      // Arrange: プレイヤーの目の前に地図アイテムを配置
+      const testState = GameStateBuilder.create()
+        .withPlayer({ x: 1.5, y: 1.5 })
+        .withItem('map', 1, 1)
+        .build();
+
+      // Act
+      GameLogic.updateItems(testState);
+
+      // Assert: 敵表示タイマーが5秒（5000ms）でセットされる
+      expect(testState.enemyRevealTimer).toBe(5000);
+    });
+
     test('小石を拾うと所持数が増える', () => {
       // Arrange: 満杯未満の所持数で小石を配置
       const testState = GameStateBuilder.create()

@@ -11,6 +11,8 @@ export interface MinimapData {
   reqKeys: number;
   explored: Record<string, boolean>;
   time: number;
+  /** 地図効果中か（true の間は未探索セルの敵も表示する） */
+  enemyReveal: boolean;
 }
 
 const CELL = 4;
@@ -50,10 +52,13 @@ export const MinimapRenderer = {
     ctx.fillStyle = keys >= reqKeys ? '#44ff88' : '#666';
     ctx.fillRect(exit.x * CELL - CELL / 2, exit.y * CELL - CELL / 2, CELL + 2, CELL + 2);
 
-    // 敵描画（パルスアニメーション付き）
+    // 敵描画（パルスアニメーション付き）。
+    // 索敵の主役は !/? マーカーと立体音響のため、通常時は探索済みセルにいる敵のみ表示。
+    // 地図効果中（enemyReveal）は全敵を表示して索敵ツールとして機能させる
     const pulse = 0.5 + Math.sin(time * 6) * 0.5;
     for (const e of enemies) {
       if (!e.active) continue;
+      if (!data.enemyReveal && !explored[`${Math.floor(e.x)},${Math.floor(e.y)}`]) continue;
       ctx.beginPath();
       ctx.arc(e.x * CELL, e.y * CELL, CELL / 2 + pulse, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(255, 0, 68, ${0.7 + pulse * 0.3})`;

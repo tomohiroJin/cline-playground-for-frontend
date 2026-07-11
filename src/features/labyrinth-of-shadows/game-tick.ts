@@ -50,6 +50,7 @@ export function advanceGame(g: GameState, dt: number, input: TickInput): TickRes
   if (g.invince > 0) g.invince -= dt;
   if (g.msgTimer > 0) g.msgTimer -= dt;
   if (g.speedBoost > 0) g.speedBoost -= dt;
+  if (g.enemyRevealTimer > 0) g.enemyRevealTimer -= dt;
 
   if (g.time <= 0) {
     return { status: 'timeout', closestEnemy: Infinity, moved: false, alerts: [] };
