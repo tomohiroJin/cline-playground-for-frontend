@@ -14,13 +14,17 @@ describe('lighting-config', () => {
     expect(MOOD.fogDensity).toBeGreaterThan(0);
   });
 
-  it('torchFlicker は決定論的で概ね 0〜1 の範囲に収まる', () => {
-    for (let t = 0; t < 10; t += 0.37) {
+  // 代表的な時刻サンプルで値域を確認（テスト本体にループを持ち込まないため it.each を使用）
+  it.each([0, 0.37, 1, 2, 3.14, 5, 7.5, 9.63])(
+    'torchFlicker(%f) は概ね 0〜1 の範囲に収まる',
+    (t) => {
       const v = torchFlicker(t);
       expect(v).toBeGreaterThanOrEqual(-0.2);
       expect(v).toBeLessThanOrEqual(1.2);
-    }
-    // 同一入力→同一出力
+    },
+  );
+
+  it('torchFlicker は決定論的（同一入力→同一出力）', () => {
     expect(torchFlicker(3.14)).toBe(torchFlicker(3.14));
   });
 

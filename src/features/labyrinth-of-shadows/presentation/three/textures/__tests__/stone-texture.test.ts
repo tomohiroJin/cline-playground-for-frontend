@@ -1,5 +1,20 @@
 import { generateStoneTexture } from '../stone-texture';
 
+// テスト本体にループを持ち込まないための集計ヘルパー（バッファ検証用）
+/** RGBA バッファ全チャンネルの最小・最大値 */
+const channelExtent = (buf: Uint8Array): { min: number; max: number } => ({
+  min: buf.reduce((m, v) => Math.min(m, v), 255),
+  max: buf.reduce((m, v) => Math.max(m, v), 0),
+});
+
+/** 指定オフセット（0=R,1=G,2=B,3=A）のチャンネルだけを抜き出す */
+const channel = (buf: Uint8Array, offset: number): Uint8Array =>
+  buf.filter((_, i) => i % 4 === offset);
+
+/** 指定オフセットのチャンネル値の合計 */
+const channelSum = (buf: Uint8Array, offset: number): number =>
+  channel(buf, offset).reduce((a, b) => a + b, 0);
+
 describe('stone-texture', () => {
   const opts = { size: 32, seed: 7, kind: 'wall' as const };
 
@@ -24,26 +39,20 @@ describe('stone-texture', () => {
     expect(Array.from(a.color)).not.toEqual(Array.from(b.color));
   });
 
-  it('全チャンネルが 0〜255 の値域に収まりアルファは 255', () => {
-    const tex = generateStoneTexture(opts);
-    for (let i = 0; i < tex.color.length; i++) {
-      expect(tex.color[i]).toBeGreaterThanOrEqual(0);
-      expect(tex.color[i]).toBeLessThanOrEqual(255);
-    }
-    for (let i = 3; i < tex.color.length; i += 4) {
-      expect(tex.color[i]).toBe(255); // アルファ
-    }
+  it('全チャンネルが 0〜255 の値域に収まる', () => {
+    const { min, max } = channelExtent(generateStoneTexture(opts).color);
+    expect(min).toBeGreaterThanOrEqual(0);
+    expect(max).toBeLessThanOrEqual(255);
   });
 
-  it('normal マップの中央値は概ね (128,128,255) 付近（平坦面が上向き）', () => {
+  it('アルファチャンネルは全て 255', () => {
+    const alpha = channelExtent(channel(generateStoneTexture(opts).color, 3));
+    expect(alpha).toEqual({ min: 255, max: 255 });
+  });
+
+  it('normal マップは青チャンネル（法線Z）が赤チャンネルより強い（平坦面が上向き）', () => {
     const tex = generateStoneTexture(opts);
-    // 青チャンネル（法線Z）が最も強いことを平均で確認
-    let sumR = 0, sumB = 0;
-    for (let i = 0; i < tex.normal.length; i += 4) {
-      sumR += tex.normal[i];
-      sumB += tex.normal[i + 2];
-    }
-    expect(sumB).toBeGreaterThan(sumR);
+    expect(channelSum(tex.normal, 2)).toBeGreaterThan(channelSum(tex.normal, 0));
   });
 
   it('kind により基調色が変わる（wall と floor）', () => {
