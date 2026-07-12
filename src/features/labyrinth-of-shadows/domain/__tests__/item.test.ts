@@ -83,6 +83,11 @@ describe('domain/models/item', () => {
         const result = processItemPickup('map', 1, 1, baseContext);
         expect(result.events[0]).toEqual({ type: 'SOUND_PLAY', sound: 'mapReveal', volume: 0.4 });
       });
+
+      test('敵表示タイマーが5秒セットされる（索敵ツール化）', () => {
+        const result = processItemPickup('map', 1, 1, baseContext);
+        expect(result.stateChanges.enemyRevealTimer).toBe(5000);
+      });
     });
   });
 });

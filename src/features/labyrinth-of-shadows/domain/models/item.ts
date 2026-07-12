@@ -9,7 +9,7 @@ import { createSoundEvent } from '../../application/game-events';
 
 const { MESSAGE_DURATION } = GAME_BALANCE.timing;
 const { HEAL_FULL_BONUS } = GAME_BALANCE.scoring;
-const { MAP_REVEAL_RADIUS } = GAME_BALANCE.items;
+const { MAP_REVEAL_RADIUS, ENEMY_REVEAL_DURATION } = GAME_BALANCE.items;
 
 /** アイテムピックアップのコンテキスト（必要な GameState の部分） */
 export interface ItemPickupContext {
@@ -34,6 +34,7 @@ export interface ItemPickupResult {
     readonly time?: number;
     readonly speedBoost?: number;
     readonly speedCharges?: number;
+    readonly enemyRevealTimer?: number;
   };
   /** 発生するイベント */
   readonly events: readonly GameEvent[];
@@ -96,9 +97,9 @@ export const processItemPickup = (
       };
     case 'map':
       return {
-        stateChanges: {},
+        stateChanges: { enemyRevealTimer: ENEMY_REVEAL_DURATION },
         events: [createSoundEvent('mapReveal', 0.4)],
-        message: '🗺️ 地図を発見！ 周囲のマップが公開された！',
+        message: '🗺️ 地図を発見！ 周囲の地形と敵の位置が見える！',
         mapRevealCenter: { x: itemX, y: itemY },
       };
     default:
