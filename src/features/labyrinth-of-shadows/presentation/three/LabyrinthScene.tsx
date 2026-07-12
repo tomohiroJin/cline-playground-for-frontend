@@ -13,6 +13,8 @@ import { EnemyMeshes } from './EnemyMeshes';
 import { StoneMeshes } from './StoneMeshes';
 import { GameController } from './GameController';
 import { PostFx } from './PostFx';
+import { MOOD } from './lighting-config';
+import { TorchFlame } from './TorchFlame';
 import { usePointerLook } from '../hooks/use-pointer-look';
 import { EnemyIndicators, type AlertMarker } from '../../components/EnemyIndicators';
 
@@ -70,10 +72,10 @@ export function LabyrinthScene(props: LabyrinthSceneProps) {
       >
         {/* 恐怖演出＋描画距離制限を兼ねる指数フォグ。
             敵の索敵距離（5〜9セル）でプレイヤー側も敵を視認できるよう 0.14→0.11 に緩和 */}
-        <fogExp2 attach="fog" args={['#05040a', 0.11]} />
-        <color attach="background" args={['#05040a']} />
+        <fogExp2 attach="fog" args={[MOOD.fog, MOOD.fogDensity]} />
+        <color attach="background" args={[MOOD.fog]} />
         {/* 環境光は控えめだが物理ベース照明準拠で床・壁が視認できる強度を確保 */}
-        <ambientLight intensity={0.35} />
+        <ambientLight color={MOOD.ambient} intensity={MOOD.ambientIntensity} />
 
         {size > 0 && (
           <>
@@ -85,7 +87,8 @@ export function LabyrinthScene(props: LabyrinthSceneProps) {
             <StoneMeshes gameRef={gameRef} />
           </>
         )}
-        <GameController {...props} lookRef={lookRef} />
+        <GameController {...props} lookRef={lookRef} reducedMotion={reducedMotion} />
+        <TorchFlame reducedMotion={reducedMotion} />
         <PostFx reducedMotion={reducedMotion} />
       </Canvas>
       {/* 索敵マーカーはゲーム画面内に重ねる（ページ端では気づけないという実機FB対応） */}

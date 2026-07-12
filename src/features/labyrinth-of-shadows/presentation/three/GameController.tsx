@@ -10,6 +10,7 @@ import { MinimapRenderer } from '../../minimap-renderer';
 import { normAngle } from '../../utils';
 import type { AlertMarker } from '../../components/EnemyIndicators';
 import { clampPitch, type LookRef } from '../hooks/use-pointer-look';
+import { MOOD, torchFlicker, torchIntensity } from './lighting-config';
 
 export interface GameControllerProps {
   gameRef: React.MutableRefObject<GameState | null>;
@@ -23,6 +24,7 @@ export interface GameControllerProps {
   onGameEnd: (type: keyof typeof CONTENT.stories) => void;
   throwRef: React.MutableRefObject<boolean>;
   onAlert: (marker: AlertMarker) => void;
+  reducedMotion: boolean;
 }
 
 /**
@@ -121,13 +123,11 @@ export function GameController(props: GameControllerProps) {
       }
     }
 
-    // トーチ点光源をカメラ位置へ。既存 renderer の複数周波数フリッカを流用
+    // トーチ点光源をカメラ位置へ。フリッカ・強度は lighting-config に委譲
     if (torchRef.current) {
-      const time = g.gTime / 1000;
-      const flicker = Math.sin(time * 3.7) * 0.3 + Math.sin(time * 7.1) * 0.15 + Math.sin(time * 11.3) * 0.05 + 0.5;
+      const flicker = torchFlicker(g.gTime / 1000);
       torchRef.current.position.set(g.player.x, EYE_HEIGHT, g.player.y);
-      // 物理ベース照明準拠の強度（point light は距離減衰が急峻なため高めに設定）
-      torchRef.current.intensity = 9 + flicker * 3;
+      torchRef.current.intensity = torchIntensity(flicker, props.reducedMotion);
     }
 
     if (result.status !== 'playing') {
@@ -160,5 +160,5 @@ export function GameController(props: GameControllerProps) {
     }
   });
 
-  return <pointLight ref={torchRef} color="#ffb060" intensity={9} distance={8} decay={1.6} castShadow />;
+  return <pointLight ref={torchRef} color={MOOD.torch} intensity={9} distance={8} decay={1.6} castShadow />;
 }
