@@ -28,6 +28,7 @@ module.exports = {
     '\\.(css|less|scss|sass)$': '<rootDir>/__mocks__/styleMock.js',
     '\\.(jpg|jpeg|png|gif|webp|svg)$': '<rootDir>/__mocks__/fileMock.js',
     '\\.(mp4|webm|ogg|mp3|wav)$': '<rootDir>/__mocks__/fileMock.js',
+    '^@react-three/postprocessing$': '<rootDir>/__mocks__/reactThreePostprocessing.js',
   },
   transform: {
     '^.+\\.(ts|tsx)$': swcTransform,
