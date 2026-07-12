@@ -12,6 +12,7 @@ import { ExitMesh } from './ExitMesh';
 import { EnemyMeshes } from './EnemyMeshes';
 import { StoneMeshes } from './StoneMeshes';
 import { GameController } from './GameController';
+import { PostFx } from './PostFx';
 import { usePointerLook } from '../hooks/use-pointer-look';
 import { EnemyIndicators, type AlertMarker } from '../../components/EnemyIndicators';
 
@@ -36,6 +37,10 @@ export function LabyrinthScene(props: LabyrinthSceneProps) {
   const size = maze.length;
   // デスクトップのマウスルック（ポーズ中は無効）
   const { lookRef, bindTargetRef } = usePointerLook(!props.paused);
+  // prefers-reduced-motion 時は Bloom 強度を抑制する（SSR/jsdom では window/matchMedia が無いためガード）
+  const reducedMotion =
+    typeof window !== 'undefined' &&
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
 
   // ポインタロック中の左クリック = 石を投げる（非ロック時のクリックはロック要求に使われる）
   useEffect(() => {
@@ -81,6 +86,7 @@ export function LabyrinthScene(props: LabyrinthSceneProps) {
           </>
         )}
         <GameController {...props} lookRef={lookRef} />
+        <PostFx reducedMotion={reducedMotion} />
       </Canvas>
       {/* 索敵マーカーはゲーム画面内に重ねる（ページ端では気づけないという実機FB対応） */}
       <EnemyIndicators markers={props.alertMarkers} />
