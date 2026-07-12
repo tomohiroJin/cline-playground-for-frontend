@@ -44,14 +44,9 @@ describe('domain/models/item', () => {
     });
 
     describe('罠アイテム', () => {
-      test('罠で時間がペナルティされる', () => {
+      test('罠は時間を減らさずコンボのみリセットする', () => {
         const result = processItemPickup('trap', 1, 1, baseContext);
-        expect(result.stateChanges.time).toBe(-12000);
-      });
-
-      test('罠でコンボがリセットされる', () => {
-        const comboContext = { ...baseContext, combo: 3 };
-        const result = processItemPickup('trap', 1, 1, comboContext);
+        expect(result.stateChanges.time).toBeUndefined();
         expect(result.stateChanges.combo).toBe(0);
       });
     });
@@ -71,9 +66,10 @@ describe('domain/models/item', () => {
     });
 
     describe('加速アイテム', () => {
-      test('加速ブーストが設定される', () => {
+      test('加速はチャージ+1で即時発動しない', () => {
         const result = processItemPickup('speed', 1, 1, baseContext);
-        expect(result.stateChanges.speedBoost).toBe(10000);
+        expect(result.stateChanges.speedBoost).toBeUndefined();
+        expect(result.stateChanges.speedCharges).toBe(1);
       });
     });
 
@@ -86,6 +82,11 @@ describe('domain/models/item', () => {
       test('地図のサウンドイベントが発生する', () => {
         const result = processItemPickup('map', 1, 1, baseContext);
         expect(result.events[0]).toEqual({ type: 'SOUND_PLAY', sound: 'mapReveal', volume: 0.4 });
+      });
+
+      test('敵表示タイマーが5秒セットされる（索敵ツール化）', () => {
+        const result = processItemPickup('map', 1, 1, baseContext);
+        expect(result.stateChanges.enemyRevealTimer).toBe(5000);
       });
     });
   });

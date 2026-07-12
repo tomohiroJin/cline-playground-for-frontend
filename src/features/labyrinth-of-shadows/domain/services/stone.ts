@@ -5,8 +5,9 @@
 import type { GameState } from '../../types';
 import { MazeService } from '../../maze-service';
 import { GAME_BALANCE } from '../constants';
+import type { NoiseSource } from './enemy-strategy';
 
-const { SPEED, THROW_RANGE } = GAME_BALANCE.stone;
+const { SPEED, THROW_RANGE, NOISE_RADIUS } = GAME_BALANCE.stone;
 
 /** 石を投げる。所持数がない・隠れ中は投げられない */
 export const tryThrowStone = (g: GameState): boolean => {
@@ -29,15 +30,15 @@ export const tryThrowStone = (g: GameState): boolean => {
 export const updateStoneProjectiles = (
   g: GameState,
   dt: number
-): { x: number; y: number } | undefined => {
-  let noise: { x: number; y: number } | undefined;
+): NoiseSource | undefined => {
+  let noise: NoiseSource | undefined;
   g.stoneProjectiles = g.stoneProjectiles.filter(p => {
     const step = SPEED * dt;
     const nx = p.x + p.dirX * step;
     const ny = p.y + p.dirY * step;
     p.traveled += step;
     if (!MazeService.isWalkable(g.maze, nx, ny) || p.traveled >= THROW_RANGE) {
-      noise = { x: p.x, y: p.y }; // 壁にめり込まず手前で着地
+      noise = { x: p.x, y: p.y, radius: NOISE_RADIUS }; // 壁にめり込まず手前で着地
       return false;
     }
     p.x = nx;

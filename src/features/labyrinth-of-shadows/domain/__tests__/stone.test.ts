@@ -1,6 +1,7 @@
 import { tryThrowStone, updateStoneProjectiles } from '../services/stone';
 import { GAME_BALANCE } from '../constants';
 import type { GameState } from '../../types';
+import type { NoiseSource } from '../services/enemy-strategy';
 
 // 横一直線の通路（y=1）
 const maze = [
@@ -54,7 +55,7 @@ describe('updateStoneProjectiles', () => {
     const g = createState();
     tryThrowStone(g);
     // 通路長より十分大きい時間で必ず壁到達（x=9 が壁）
-    let noise: { x: number; y: number } | undefined;
+    let noise: NoiseSource | undefined;
     for (let i = 0; i < 100 && !noise; i++) noise = updateStoneProjectiles(g, 16);
     expect(noise).toBeDefined();
     expect(noise!.x).toBeLessThan(9);
@@ -70,7 +71,7 @@ describe('updateStoneProjectiles', () => {
     ];
     const g = createState({ maze: longMaze });
     tryThrowStone(g);
-    let noise: { x: number; y: number } | undefined;
+    let noise: NoiseSource | undefined;
     for (let i = 0; i < 200 && !noise; i++) noise = updateStoneProjectiles(g, 16);
     expect(noise).toBeDefined();
     expect(noise!.x - 1.5).toBeLessThanOrEqual(GAME_BALANCE.stone.THROW_RANGE + 0.3);

@@ -92,6 +92,10 @@ export interface GameState {
   explored: Record<string, boolean>;
   /** 石の所持数 */
   stones: number;
+  /** 加速チャージの所持数（Eキー/ボタンで発動） */
+  speedCharges: number;
+  /** 敵位置表示の残り時間 ms（地図取得でセット、>0 の間ミニマップに全敵表示） */
+  enemyRevealTimer: number;
   /** 飛行中の石 */
   stoneProjectiles: StoneProjectile[];
   /** 敵の発見可能距離（難易度依存） */
@@ -115,4 +119,8 @@ export interface HUDData {
   /** 石の所持数 */
   stones: number;
   sprinting: boolean;
+  /** 加速チャージの所持数 */
+  speedCharges: number;
+  /** 加速効果中か（ボタン点灯表示に使う） */
+  boostActive: boolean;
 }

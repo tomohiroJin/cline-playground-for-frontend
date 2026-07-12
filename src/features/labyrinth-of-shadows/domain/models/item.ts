@@ -7,9 +7,9 @@ import { calculateCombo, calculateKeyScore } from '../services/scoring';
 import type { GameEvent } from '../../application/game-events';
 import { createSoundEvent } from '../../application/game-events';
 
-const { TRAP_TIME_PENALTY, SPEED_BOOST_DURATION, MESSAGE_DURATION } = GAME_BALANCE.timing;
+const { MESSAGE_DURATION } = GAME_BALANCE.timing;
 const { HEAL_FULL_BONUS } = GAME_BALANCE.scoring;
-const { MAP_REVEAL_RADIUS } = GAME_BALANCE.items;
+const { MAP_REVEAL_RADIUS, ENEMY_REVEAL_DURATION } = GAME_BALANCE.items;
 
 /** アイテムピックアップのコンテキスト（必要な GameState の部分） */
 export interface ItemPickupContext {
@@ -33,6 +33,8 @@ export interface ItemPickupResult {
     readonly keys?: number;
     readonly time?: number;
     readonly speedBoost?: number;
+    readonly speedCharges?: number;
+    readonly enemyRevealTimer?: number;
   };
   /** 発生するイベント */
   readonly events: readonly GameEvent[];
@@ -68,11 +70,10 @@ export const processItemPickup = (
     case 'trap':
       return {
         stateChanges: {
-          time: -TRAP_TIME_PENALTY,
           combo: 0,
         },
-        events: [createSoundEvent('trap', 0.45)],
-        message: '📦 罠だ！時間 -12秒！',
+        events: [createSoundEvent('trap', 0.6)],
+        message: '📦 罠だ！大きな音が鳴り響く…！',
       };
     case 'heal': {
       if (context.lives < context.maxLives) {
@@ -90,15 +91,15 @@ export const processItemPickup = (
     }
     case 'speed':
       return {
-        stateChanges: { speedBoost: SPEED_BOOST_DURATION },
-        events: [createSoundEvent('speed', 0.4)],
-        message: '⚡ 加速！ 10秒間スピードアップ！',
+        stateChanges: { speedCharges: 1 },
+        events: [createSoundEvent('speed', 0.3)],
+        message: '⚡ 加速チャージを拾った',
       };
     case 'map':
       return {
-        stateChanges: {},
+        stateChanges: { enemyRevealTimer: ENEMY_REVEAL_DURATION },
         events: [createSoundEvent('mapReveal', 0.4)],
-        message: '🗺️ 地図を発見！ 周囲のマップが公開された！',
+        message: '🗺️ 地図を発見！ 周囲の地形と敵の位置が見える！',
         mapRevealCenter: { x: itemX, y: itemY },
       };
     default:

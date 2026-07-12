@@ -216,7 +216,7 @@ describe('labyrinth-of-shadows/game-logic', () => {
       expect(testState.score).toBe(50);
     });
 
-    test('加速アイテムでspeedBoostが設定される', () => {
+    test('加速アイテムはストックに加算され即時発動しない', () => {
       // Arrange: 加速アイテムを確実に配置
       const testState = GameStateBuilder.create()
         .withItem('speed', 1, 1)
@@ -227,7 +227,25 @@ describe('labyrinth-of-shadows/game-logic', () => {
       GameLogic.updateItems(testState);
 
       // Assert
-      expect(testState.speedBoost).toBeGreaterThan(0);
+      expect(testState.speedCharges).toBe(1);
+      expect(testState.speedBoost).toBe(0);
+      expect(testState.items[0].got).toBe(true);
+    });
+
+    test('ストック満杯（2個）なら加速アイテムはフィールドに残る', () => {
+      // Arrange: 加速アイテムを確実に配置し、ストックを満杯にしておく
+      const testState = GameStateBuilder.create()
+        .withItem('speed', 1, 1)
+        .withPlayer({ x: 1.5, y: 1.5 })
+        .build();
+      testState.speedCharges = 2;
+
+      // Act
+      GameLogic.updateItems(testState);
+
+      // Assert
+      expect(testState.speedCharges).toBe(2);
+      expect(testState.items[0].got).toBe(false);
     });
 
     test('地図アイテムで周囲が探索済みになる', () => {
@@ -243,6 +261,20 @@ describe('labyrinth-of-shadows/game-logic', () => {
 
       // Assert: 中心セルが探索済みになる
       expect(testState.explored['3,3']).toBe(true);
+    });
+
+    test('地図取得で敵表示タイマーが5秒セットされる', () => {
+      // Arrange: プレイヤーの目の前に地図アイテムを配置
+      const testState = GameStateBuilder.create()
+        .withPlayer({ x: 1.5, y: 1.5 })
+        .withItem('map', 1, 1)
+        .build();
+
+      // Act
+      GameLogic.updateItems(testState);
+
+      // Assert: 敵表示タイマーが5秒（5000ms）でセットされる
+      expect(testState.enemyRevealTimer).toBe(5000);
     });
 
     test('小石を拾うと所持数が増える', () => {
@@ -275,6 +307,41 @@ describe('labyrinth-of-shadows/game-logic', () => {
       // Assert: フィールドに残り、所持数も変化しない
       expect(testState.items[0].got).toBe(false);
       expect(testState.stones).toBe(GAME_BALANCE.stone.MAX_COUNT);
+    });
+  });
+
+  describe('updateItems（罠=騒音罠）', () => {
+    test('罠を踏んでも時間は減らない（騒音罠化）', () => {
+      const testState = GameStateBuilder.create()
+        .withItem('trap', 1, 1)
+        .withPlayer({ x: 1.5, y: 1.5 })
+        .build();
+      const before = testState.time;
+
+      GameLogic.updateItems(testState);
+
+      expect(testState.time).toBe(before);
+      expect(testState.combo).toBe(0); // コンボリセットは維持
+    });
+
+    test('罠を踏むと半径8の騒音源を返す', () => {
+      const testState = GameStateBuilder.create()
+        .withItem('trap', 1, 1)
+        .withPlayer({ x: 1.5, y: 1.5 })
+        .build();
+
+      const noise = GameLogic.updateItems(testState);
+
+      expect(noise).toEqual({ x: 1.5, y: 1.5, radius: 8 });
+    });
+
+    test('罠以外のアイテムでは騒音源を返さない', () => {
+      const testState = GameStateBuilder.create()
+        .withItem('key', 1, 1)
+        .withPlayer({ x: 1.5, y: 1.5 })
+        .build();
+
+      expect(GameLogic.updateItems(testState)).toBeUndefined();
     });
   });
 

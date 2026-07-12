@@ -240,7 +240,7 @@ describe('ChaserStrategy 状態機械', () => {
 
   it('patrol: 音（石の着地）に反応して search に遷移する', () => {
     const e = createChaser(1.5, 3.5, Math.PI);
-    strategy.update(baseParams(e, { noise: { x: 3.5, y: 3.5 } }));
+    strategy.update(baseParams(e, { noise: { x: 3.5, y: 3.5, radius: 5 } }));
     expect(e.aiState).toBe('search');
     expect(e.lastSeenX).toBe(3.5);
     expect(e.searchTimer).toBe(4000);
@@ -249,15 +249,27 @@ describe('ChaserStrategy 状態機械', () => {
   it('chase: 音には反応しない（追跡を優先する）', () => {
     const e = createChaser(1.5, 3.5, 0);
     e.aiState = 'chase'; e.lastSeenX = 5.5; e.lastSeenY = 3.5;
-    strategy.update(baseParams(e, { noise: { x: 3.5, y: 5.5 } }));
+    strategy.update(baseParams(e, { noise: { x: 3.5, y: 5.5, radius: 5 } }));
     expect(e.aiState).toBe('chase');
     expect(e.lastSeenX).toBe(5.5); // 音で上書きされない
   });
 
-  it('patrol: 遠すぎる音（NOISE_RADIUS 外）には反応しない', () => {
+  it('patrol: 遠すぎる音（半径外）には反応しない', () => {
     const e = createChaser(1.5, 3.5, Math.PI);
-    strategy.update(baseParams(e, { noise: { x: 30, y: 30 } }));
+    strategy.update(baseParams(e, { noise: { x: 30, y: 30, radius: 5 } }));
     expect(e.aiState).toBe('patrol');
+  });
+
+  // 半径は音源側が持つ: radius 外の敵は反応しない、radius 内は search へ遷移する
+  it('騒音は音源の radius に従う（半径外は不反応・半径内は search 遷移）', () => {
+    // 敵と音源の距離 = 6 セル
+    const far = createChaser(1.5, 3.5, Math.PI);
+    strategy.update(baseParams(far, { noise: { x: 7.5, y: 3.5, radius: 5 } }));
+    expect(far.aiState).toBe('patrol'); // 半径5 < 距離6 → 反応しない
+
+    const near = createChaser(1.5, 3.5, Math.PI);
+    strategy.update(baseParams(near, { noise: { x: 7.5, y: 3.5, radius: 8 } }));
+    expect(near.aiState).toBe('search'); // 半径8 ≥ 距離6 → search 遷移
   });
 
   it('search: 壁を回り込んで目撃地点に到達できる（BFS 経路追従）', () => {

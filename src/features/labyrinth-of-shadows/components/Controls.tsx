@@ -8,6 +8,10 @@ interface ControlsProps {
   stamina: number;
   /** スプリント中か（走るボタンの点灯表示に使う） */
   sprinting: boolean;
+  /** 加速チャージの所持数（ボタンのラベル・活性表示に使う） */
+  speedCharges: number;
+  /** 加速効果中か（ボタン点灯表示に使う） */
+  boostActive: boolean;
 }
 
 export const Controls: React.FC<ControlsProps> = ({
@@ -17,6 +21,8 @@ export const Controls: React.FC<ControlsProps> = ({
   energy,
   stamina,
   sprinting,
+  speedCharges,
+  boostActive,
 }) => (
   <ControlsContainer>
     <ControlBtn
@@ -130,6 +136,28 @@ export const Controls: React.FC<ControlsProps> = ({
       >
         <div style={{ fontSize: '1.25rem' }}>{hiding ? '🙈' : '👁️'}</div>
         <div style={{ fontSize: '0.75rem' }}>{hiding ? '隠れ中' : '隠れる'}</div>
+      </ControlBtn>
+      <ControlBtn
+        $variant="action"
+        onPointerDown={e => {
+          e.preventDefault();
+          keysRef.current['e'] = true;
+        }}
+        onPointerUp={e => {
+          e.preventDefault();
+          keysRef.current['e'] = false;
+        }}
+        onPointerLeave={e => {
+          e.preventDefault();
+          keysRef.current['e'] = false;
+        }}
+        style={{
+          backgroundColor: boostActive ? '#b45309' : speedCharges > 0 ? 'rgba(180, 83, 9, 0.9)' : undefined,
+          boxShadow: boostActive ? '0 0 12px #fbbf24' : undefined,
+        }}
+      >
+        <div style={{ fontSize: '1.25rem' }}>⚡</div>
+        <div style={{ fontSize: '0.75rem' }}>{boostActive ? '加速中!' : `加速 x${speedCharges}`}</div>
       </ControlBtn>
     </div>
   </ControlsContainer>

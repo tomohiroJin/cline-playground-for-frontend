@@ -30,7 +30,7 @@ export interface GameControllerProps {
  * キーボードは移動専用（矢印←→も横移動）。旋回はマウスルックと
  * タッチ◀▶ボタン（turnleft/turnright 仮想キー）のみ
  */
-function readInput(k: Record<string, boolean>, throwStone: boolean): TickInput {
+function readInput(k: Record<string, boolean>, throwStone: boolean, useSpeed: boolean): TickInput {
   return {
     left: k['turnleft'] || false,
     right: k['turnright'] || false,
@@ -41,6 +41,7 @@ function readInput(k: Record<string, boolean>, throwStone: boolean): TickInput {
     hide: k[' '] || false,
     sprint: k['shift'] || false,
     throwStone,
+    useSpeed,
   };
 }
 
@@ -49,7 +50,8 @@ const hudEqual = (a: HUDData, b: HUDData): boolean =>
   a.keys === b.keys && a.req === b.req && a.time === b.time && a.lives === b.lives &&
   a.maxL === b.maxL && a.hide === b.hide && a.energy === b.energy && a.eNear === b.eNear &&
   a.score === b.score && a.stamina === b.stamina && a.highScore === b.highScore &&
-  a.stones === b.stones && a.sprinting === b.sprinting;
+  a.stones === b.stones && a.sprinting === b.sprinting &&
+  a.speedCharges === b.speedCharges && a.boostActive === b.boostActive;
 
 /**
  * ゲーム進行の心臓部。useFrame（R3FのrAF）で毎フレーム:
@@ -68,6 +70,8 @@ export function GameController(props: GameControllerProps) {
   const alertIdRef = useRef(0);
   // 上下視点（ピッチ）。演出のみでゲームロジック（angle）には影響させない
   const pitchRef = useRef(0);
+  // 加速キー(E)の前フレーム押下状態。長押しでの連続消費を防ぐエッジ検出用
+  const prevSpeedKeyRef = useRef(false);
 
   useFrame(() => {
     const g = gameRef.current;
@@ -88,7 +92,10 @@ export function GameController(props: GameControllerProps) {
       lookRef.current.dy = 0;
     }
 
-    const input = readInput(keysRef.current ?? {}, throwRef.current);
+    // 加速発動はエッジトリガー化：押した瞬間のみ発動し、長押しで効果切れ直後に連続消費しない
+    const speedKeyHeld = (keysRef.current ?? {})['e'] || false;
+    const input = readInput(keysRef.current ?? {}, throwRef.current, speedKeyHeld && !prevSpeedKeyRef.current);
+    prevSpeedKeyRef.current = speedKeyHeld;
     throwRef.current = false;
     const result = advanceGame(g, dt, input);
 
@@ -135,6 +142,7 @@ export function GameController(props: GameControllerProps) {
       MinimapRenderer.render(minimapCtx, {
         maze: g.maze, player: g.player, exit: g.exit, items: g.items, enemies: g.enemies,
         keys: g.keys, reqKeys: g.reqKeys, explored: g.explored, time: g.gTime / 1000,
+        enemyReveal: g.enemyRevealTimer > 0,
       });
     }
 
@@ -144,6 +152,7 @@ export function GameController(props: GameControllerProps) {
       hide: g.hiding, energy: Math.round(g.energy), eNear: Math.max(0, 1 - result.closestEnemy / 7),
       score: g.score, stamina: Math.round(g.player.stamina), highScore: highScores[diff] || 0,
       stones: g.stones, sprinting: g.sprinting,
+      speedCharges: g.speedCharges, boostActive: g.speedBoost > 0,
     };
     if (!prevHudRef.current || !hudEqual(newHud, prevHudRef.current)) {
       prevHudRef.current = newHud;

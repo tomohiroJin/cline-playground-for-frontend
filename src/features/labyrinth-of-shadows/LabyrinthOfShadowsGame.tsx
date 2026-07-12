@@ -41,6 +41,8 @@ export default function LabyrinthOfShadowsGame() {
     highScore: 0,
     stones: 3,
     sprinting: false,
+    speedCharges: 0,
+    boostActive: false,
   });
   const minimapCanvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<GameState | null>(null);
@@ -168,7 +170,8 @@ export default function LabyrinthOfShadowsGame() {
         onAlert={onAlert}
       />
       <HUD h={hud} />
-      <Controls keysRef={keysRef} hiding={hud.hide} energy={hud.energy} stamina={hud.stamina} sprinting={hud.sprinting} />
+      <Controls keysRef={keysRef} hiding={hud.hide} energy={hud.energy} stamina={hud.stamina}
+        sprinting={hud.sprinting} speedCharges={hud.speedCharges} boostActive={hud.boostActive} />
       {mazeSize > 0 && (
         <Minimap
           canvasRef={minimapCanvasRef}

@@ -7,6 +7,7 @@ import { GAME_BALANCE } from './domain/constants';
 import { isPlayerNearItem, isPlayerNearExit, isPlayerCollidingEnemy } from './domain/services/collision';
 import { calculateKeyScore, calculateVictoryScore, calculateCombo } from './domain/services/scoring';
 import { getEnemyStrategy } from './domain/services/enemy-strategy';
+import type { NoiseSource } from './domain/services/enemy-strategy';
 import type { GameEvent } from './application/game-events';
 import type { EnemyAlert } from './game-tick';
 
@@ -98,7 +99,8 @@ export const GameLogic = {
       for (let oy = -r; oy <= r; oy++) g.explored[`${cx + ox},${cy + oy}`] = true;
   },
 
-  updateItems(g: GameState) {
+  updateItems(g: GameState): NoiseSource | undefined {
+    let trapNoise: NoiseSource | undefined;
     for (const item of g.items) {
       // 罠だけ狭い発動半径にして、壁に寄れば（横移動で）踏まずに通過できるようにする
       const radius =
@@ -108,6 +110,8 @@ export const GameLogic = {
       if (item.got || !isPlayerNearItem(g.player.x, g.player.y, item.x, item.y, radius)) continue;
       // 小石は満杯なら拾わずフィールドに残す
       if (item.type === 'stone' && g.stones >= GAME_BALANCE.stone.MAX_COUNT) continue;
+      // 加速チャージは満杯なら拾わずフィールドに残す
+      if (item.type === 'speed' && g.speedCharges >= GAME_BALANCE.speedCharge.MAX_COUNT) continue;
 
       item.got = true;
       switch (item.type) {
@@ -122,10 +126,15 @@ export const GameLogic = {
           break;
         }
         case 'trap':
-          g.time -= CONFIG.timing.trapPenalty;
           g.combo = 0;
-          g.msg = '📦 罠だ！時間 -12秒！';
-          AudioService.play('trap', 0.45);
+          // アイテム座標はセル整数なので中心 (+0.5) を音源にする
+          trapNoise = {
+            x: item.x + 0.5,
+            y: item.y + 0.5,
+            radius: GAME_BALANCE.trap.NOISE_RADIUS,
+          };
+          g.msg = '📦 罠だ！大きな音が鳴り響く…！';
+          AudioService.play('trap', 0.6);
           break;
         case 'heal':
           if (g.lives < g.maxLives) {
@@ -138,13 +147,14 @@ export const GameLogic = {
           AudioService.play('heal', 0.4);
           break;
         case 'speed':
-          g.speedBoost = CONFIG.items.speedBoostDuration;
-          g.msg = '⚡ 加速！ 10秒間スピードアップ！';
-          AudioService.play('speed', 0.4);
+          g.speedCharges++;
+          g.msg = `⚡ 加速チャージを拾った (${g.speedCharges}/${GAME_BALANCE.speedCharge.MAX_COUNT})`;
+          AudioService.play('speed', 0.3);
           break;
         case 'map':
           this.revealMap(g, item.x, item.y);
-          g.msg = '🗺️ 地図を発見！ 周囲のマップが公開された！';
+          g.enemyRevealTimer = GAME_BALANCE.items.ENEMY_REVEAL_DURATION;
+          g.msg = '🗺️ 地図を発見！ 周囲の地形と敵の位置が見える！';
           AudioService.play('mapReveal', 0.4);
           break;
         case 'stone':
@@ -155,6 +165,7 @@ export const GameLogic = {
       }
       g.msgTimer = CONFIG.timing.msgDuration;
     }
+    return trapNoise;
   },
 
   checkExit(g: GameState): keyof typeof CONTENT.stories | null {
@@ -177,7 +188,7 @@ export const GameLogic = {
     g: GameState,
     e: Enemy,
     dt: number,
-    noise?: { readonly x: number; readonly y: number }
+    noise?: NoiseSource
   ): { distance: number; events: readonly GameEvent[] } {
     if (!e.active) {
       if (g.gTime >= e.actTime) e.active = true;
@@ -233,7 +244,7 @@ export const GameLogic = {
   updateEnemies(
     g: GameState,
     dt: number,
-    noise?: { readonly x: number; readonly y: number }
+    noise?: NoiseSource
   ): { closest: number; nearest: Enemy | undefined; alerts: EnemyAlert[] } {
     let closest: number = GAME_BALANCE.enemy.INITIAL_CLOSEST_DISTANCE;
     let nearest: Enemy | undefined;
