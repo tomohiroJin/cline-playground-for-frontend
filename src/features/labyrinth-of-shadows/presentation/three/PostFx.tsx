@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unknown-property */
 import React from 'react';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import { BLOOM_CONFIG, VIGNETTE_CONFIG, bloomIntensity } from './lighting-config';
