@@ -3,12 +3,18 @@ import React, { useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import '@react-three/fiber';
 import { collectWallCells, WALL_HEIGHT, CELL_SIZE } from './geometry';
+import { useStoneMaps } from './textures/use-stone-texture';
 
 /** 迷路の壁を InstancedMesh（1ドローコール）で描画する */
 export function MazeWalls({ maze }: { maze: number[][] }) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   // 壁セルは対局中に変化しないため maze 参照が変わったときのみ再計算
   const cells = useMemo(() => collectWallCells(maze), [maze]);
+  const { map, roughnessMap, normalMap } = useStoneMaps('wall');
+  // 壁1セルあたり縦2回繰り返して石のスケール感を出す。
+  // テクスチャは useStoneMaps 内で安定参照として生成済みのため、
+  // ここでは repeat プロパティの設定のみ（副作用を伴う useMemo は避ける）。
+  [map, roughnessMap, normalMap].forEach((t) => t.repeat.set(1, WALL_HEIGHT / CELL_SIZE));
 
   useLayoutEffect(() => {
     const mesh = meshRef.current;
@@ -31,8 +37,14 @@ export function MazeWalls({ maze }: { maze: number[][] }) {
       receiveShadow
     >
       <boxGeometry args={[CELL_SIZE, WALL_HEIGHT, CELL_SIZE]} />
-      {/* 石壁風。トーチ点光源で陰影が付く */}
-      <meshStandardMaterial color="#3a3630" roughness={0.9} metalness={0.05} />
+      {/* 石積みテクスチャ。トーチ点光源で目地・凹凸の陰影が付く */}
+      <meshStandardMaterial
+        map={map}
+        roughnessMap={roughnessMap}
+        normalMap={normalMap}
+        roughness={0.9}
+        metalness={0.05}
+      />
     </instancedMesh>
   );
 }
