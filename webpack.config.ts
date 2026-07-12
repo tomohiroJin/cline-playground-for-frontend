@@ -70,7 +70,7 @@ const config: Configuration = {
       cacheGroups: {
         // three 系は 3D ゲームルートの遅延チャンク専用に分離（メイン初期ロードへの混入防止）
         three: {
-          test: /[\\/]node_modules[\\/](three|@react-three)[\\/]/,
+          test: /[\\/]node_modules[\\/](three|@react-three|postprocessing)[\\/]/,
           name: 'vendor-three',
           priority: 30,
         },
