@@ -4,6 +4,10 @@ import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import { MOOD, torchFlicker } from './lighting-config';
 
+// 毎フレームの Vector3 生成を避けるための使い回し用インスタンス
+// （.set(...) で毎回上書きしてから使うため、単一コンポーネントインスタンス内での共有は安全）
+const OFFSET = new THREE.Vector3();
+
 /**
  * 一人称の手元に見える小さな炎メッシュ。カメラ手前下にオフセット配置し、
  * 発光マテリアルで bloom の対象になる。reducedMotion 時は揺らぎを止める。
@@ -18,8 +22,8 @@ export function TorchFlame({ reducedMotion }: { reducedMotion: boolean }) {
     const mat = matRef.current;
     if (!mesh || !mat) return;
     // カメラ手前やや下・右にオフセット（手に持つ松明のイメージ）
-    const offset = new THREE.Vector3(0.35, -0.45, -0.9).applyQuaternion(camera.quaternion);
-    mesh.position.copy(camera.position).add(offset);
+    OFFSET.set(0.35, -0.45, -0.9).applyQuaternion(camera.quaternion);
+    mesh.position.copy(camera.position).add(OFFSET);
     mesh.quaternion.copy(camera.quaternion);
     const flick = reducedMotion ? 0.5 : torchFlicker(state.clock.elapsedTime);
     mat.opacity = 0.7 + flick * 0.3;

@@ -8,6 +8,11 @@ function toDataTexture(pixels: Uint8Array, size: number, srgb: boolean): THREE.D
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.RepeatWrapping;
   tex.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+  // 反復テクスチャのチラつき/ブロック状を防ぐため linear+mipmap にする
+  // （床/天井/壁で何度も繰り返し表示されるため、Nearest だと遠景でシマー、近景でブロック状に見える）
+  tex.magFilter = THREE.LinearFilter;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.generateMipmaps = true;
   tex.needsUpdate = true;
   return tex;
 }
