@@ -24,8 +24,6 @@ export { GAME_BALANCE } from './domain/constants';
 // インフラ層
 export type { IAudioService } from './infrastructure/audio/audio-service';
 export { WebAudioService, NullAudioService } from './infrastructure/audio/audio-service';
-export { getBrickColor } from './infrastructure/rendering/brick-texture';
-export { RENDER_CONFIG } from './infrastructure/rendering/render-config';
 
 // レガシーエクスポート（後方互換性のため維持）
 export { CONFIG, CONTENT } from './constants';
