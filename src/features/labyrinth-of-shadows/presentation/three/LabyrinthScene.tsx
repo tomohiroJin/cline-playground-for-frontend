@@ -14,7 +14,6 @@ import { StoneMeshes } from './StoneMeshes';
 import { GameController } from './GameController';
 import { PostFx } from './PostFx';
 import { MOOD } from './lighting-config';
-import { TorchFlame } from './TorchFlame';
 import { usePointerLook } from '../hooks/use-pointer-look';
 import { EnemyIndicators, type AlertMarker } from '../../components/EnemyIndicators';
 
@@ -60,6 +59,9 @@ export function LabyrinthScene(props: LabyrinthSceneProps) {
     >
       <Canvas
         shadows={{ type: THREE.PCFShadowMap }}
+        // hiDPI 画面での過剰なフラグメント負荷（bloom/法線マップ/シャドウに倍率が乗る）を抑え、
+        // フレーム時間が予算を超えて起きる間欠的なガタつきを防ぐため描画解像度を上限 1.5x に制限
+        dpr={[1, 1.5]}
         camera={{
           fov: 75,
           near: 0.05,
@@ -68,7 +70,9 @@ export function LabyrinthScene(props: LabyrinthSceneProps) {
           // rotation 未指定だと R3F が初期化時に lookAt(0,0,0) を実行し真下向きになるため明示する
           rotation: [0, 0, 0],
         }}
-        gl={{ antialias: true }}
+        // EffectComposer が最終描画を引き取り Canvas の MSAA はバイパスされるため、
+        // ハードウェア antialias は無効化して無駄な MSAA バッファのコストを省く
+        gl={{ antialias: false }}
       >
         {/* 恐怖演出＋描画距離制限を兼ねる指数フォグ。
             敵の索敵距離（5〜9セル）でプレイヤー側も敵を視認できるよう 0.14→0.11 に緩和 */}
@@ -88,7 +92,6 @@ export function LabyrinthScene(props: LabyrinthSceneProps) {
           </>
         )}
         <GameController {...props} lookRef={lookRef} reducedMotion={reducedMotion} />
-        <TorchFlame reducedMotion={reducedMotion} />
         <PostFx reducedMotion={reducedMotion} />
       </Canvas>
       {/* 索敵マーカーはゲーム画面内に重ねる（ページ端では気づけないという実機FB対応） */}

@@ -160,5 +160,8 @@ export function GameController(props: GameControllerProps) {
     }
   });
 
-  return <pointLight ref={torchRef} color={MOOD.torch} intensity={9} distance={8} decay={1.6} castShadow />;
+  // トーチは毎フレーム移動するため castShadow だと点光源の6面キューブシャドウを毎フレーム再生成し
+  // 最重量の負荷になる。濃霧の暗い迷路ではキャストシャドウはほぼ視認できず、壁の凹凸は法線マップが
+  // 担うため、キャストシャドウを外してフレーム予算を確保する（ガタつき対策）
+  return <pointLight ref={torchRef} color={MOOD.torch} intensity={9} distance={8} decay={1.6} />;
 }
