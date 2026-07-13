@@ -12,15 +12,27 @@ const ENEMY_VISUAL: Record<EnemyType, { color: string; opacity: number; emissive
   teleporter: { color: CONTENT.items.teleporter.color, opacity: 0.75, emissive: 1.1 }, // 歪む渦
 };
 
+/** 敵の点光源強度（有効時） */
+const ENEMY_LIGHT_INTENSITY = 3.5;
+
 /** 敵1体。active な間だけ表示し、live な座標(gameRef経由)を毎フレーム反映 */
 function SingleEnemy({ enemy }: { enemy: Enemy }) {
   const groupRef = useRef<THREE.Group>(null);
+  const visualRef = useRef<THREE.Group>(null);
+  const lightRef = useRef<THREE.PointLight>(null);
   const v = ENEMY_VISUAL[enemy.type];
 
   useFrame((state) => {
     const g = groupRef.current;
-    if (!g) return;
-    g.visible = enemy.active;
+    const visual = visualRef.current;
+    const light = lightRef.current;
+    if (!g || !visual || !light) return;
+    // 有効ライト数を一定に保つため group/light の visible は切り替えない。
+    // 未出現の敵は見た目メッシュを隠しライト強度を0にする（敵が湧いてライト数が変わると
+    // three.js が全被照明マテリアルのシェーダを同期再コンパイルしカクつくため）
+    visual.visible = enemy.active;
+    light.intensity = enemy.active ? ENEMY_LIGHT_INTENSITY : 0;
+    if (!enemy.active) return;
     // enemy.x/y は game-logic が毎フレーム書き換える live な値
     g.position.set(enemy.x, 1.0, enemy.y);
     // 目が進行方向を向くように回転（local +Z を (cos dir, sin dir) に合わせる）
@@ -34,6 +46,7 @@ function SingleEnemy({ enemy }: { enemy: Enemy }) {
 
   return (
     <group ref={groupRef}>
+      <group ref={visualRef}>
       <mesh castShadow>
         {/* タイプで形状を分ける: 追跡=球塊 / 徘徊=縦長 / テレポート=八面体 */}
         {enemy.type === 'teleporter' ? (
@@ -61,8 +74,9 @@ function SingleEnemy({ enemy }: { enemy: Enemy }) {
         <sphereGeometry args={[0.07, 8, 8]} />
         <meshStandardMaterial color="#ffffff" emissive="#ffdddd" emissiveIntensity={2.5} />
       </mesh>
-      {/* 物理ベース照明準拠の強度 */}
-      <pointLight color={v.color} intensity={3.5} distance={4} decay={2} />
+      </group>
+      {/* 点光源は未出現時も mount したまま intensity=0 にしてライト数を一定に保つ（物理ベース照明準拠の強度） */}
+      <pointLight ref={lightRef} color={v.color} intensity={ENEMY_LIGHT_INTENSITY} distance={4} decay={2} />
     </group>
   );
 }
