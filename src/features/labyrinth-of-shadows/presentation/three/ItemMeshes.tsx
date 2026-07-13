@@ -25,29 +25,39 @@ function ItemGeometry({ type }: { type: Item['type'] }) {
   }
 }
 
+/** 未取得アイテムの点光源強度 */
+const ITEM_LIGHT_INTENSITY = 3;
+
 /** アイテム1個。取得済みなら非表示、未取得なら上下にbobしつつゆっくり回転 */
 function SingleItem({ item }: { item: Item }) {
-  const groupRef = useRef<THREE.Group>(null);
+  const meshRef = useRef<THREE.Mesh>(null);
+  const lightRef = useRef<THREE.PointLight>(null);
   const color = CONTENT.items[item.type].color;
   const baseY = 0.6;
 
   useFrame((state) => {
-    const g = groupRef.current;
-    if (!g) return;
-    g.visible = !item.got;
-    // ふわふわと上下（既存 renderer の bob 相当）＋回転で形状を見せる
-    g.position.y = baseY + Math.sin(state.clock.elapsedTime * 4) * 0.12;
-    g.rotation.y = state.clock.elapsedTime * 1.2;
+    const mesh = meshRef.current;
+    const light = lightRef.current;
+    if (!mesh || !light) return;
+    // 有効ライト数を一定に保つためグループ/ライトの visible は切り替えない。
+    // 取得済みはメッシュを隠しライト強度を0にする（ライト数が変わると three.js が
+    // 全被照明マテリアルのシェーダを同期再コンパイルし、取得の瞬間にカクつくため）
+    mesh.visible = !item.got;
+    light.intensity = item.got ? 0 : ITEM_LIGHT_INTENSITY;
+    if (item.got) return;
+    // ふわふわと上下（既存 renderer の bob 相当）＋回転で形状を見せる（グループ基準の相対bob）
+    mesh.position.y = Math.sin(state.clock.elapsedTime * 4) * 0.12;
+    mesh.rotation.y = state.clock.elapsedTime * 1.2;
   });
 
   return (
-    <group ref={groupRef} position={[item.x + 0.5, baseY, item.y + 0.5]}>
-      <mesh castShadow>
+    <group position={[item.x + 0.5, baseY, item.y + 0.5]}>
+      <mesh ref={meshRef} castShadow>
         <ItemGeometry type={item.type} />
         <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.9} />
       </mesh>
-      {/* アイテムを照らす小さな点光源で存在感を出す（物理ベース照明準拠の強度） */}
-      <pointLight color={color} intensity={3} distance={3} decay={2} />
+      {/* アイテムを照らす小さな点光源。取得後も mount したまま intensity=0 にしてライト数を一定に保つ */}
+      <pointLight ref={lightRef} color={color} intensity={ITEM_LIGHT_INTENSITY} distance={3} decay={2} />
     </group>
   );
 }
