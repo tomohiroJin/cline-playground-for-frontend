@@ -59,5 +59,8 @@ lint_output.txt
 # シミュレーションレポート出力（開発支援ツール）
 reports/
 
-# SDD（サブエージェント駆動開発）の作業足場（briefs/reports/diffs/progress）。製品リポジトリに含めない
-.superpowers/sdd/
+# AI CLI ツールの作業足場（SDD の briefs/reports/diffs/progress、ブレスト companion の HTML/state 等）。
+# 製品リポジトリに含めない（過去に git add -A でブレスト scratch が誤混入した事故の再発防止）
+.superpowers/
+# Playwright MCP のスクリーンショット等の作業出力
+.playwright-mcp/
