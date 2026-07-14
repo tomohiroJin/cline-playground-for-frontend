@@ -55,4 +55,24 @@ export const Grid = {
     }
     return { grid: newGrid, score };
   },
+
+  /** 各列の非 null セルを順序を保ったまま下端へ詰める（列独立の重力） */
+  applyColumnGravity: (grid: (string | null)[][]): (string | null)[][] => {
+    const height = grid.length;
+    const width = grid[0].length;
+    const newGrid = Grid.create(width, height);
+
+    for (let x = 0; x < width; x++) {
+      const stacked: (string | null)[] = [];
+      for (let y = 0; y < height; y++) {
+        if (grid[y][x] !== null) stacked.push(grid[y][x]);
+      }
+      // stacked を列の下端から順に配置（上下の順序を維持）
+      for (let i = 0; i < stacked.length; i++) {
+        newGrid[height - stacked.length + i][x] = stacked[i];
+      }
+    }
+
+    return newGrid;
+  },
 };

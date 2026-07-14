@@ -96,4 +96,40 @@ describe('Grid', () => {
       expect(result.score).toBe(30); // 3 * CONFIG.score.block(10)
     });
   });
+
+  describe('applyColumnGravity', () => {
+    test('浮いたセルが列の下端まで落ちること', () => {
+      const grid = Grid.create(2, 3); // 幅2 高さ3
+      grid[0][0] = 'red'; // 最上段に浮いたセル
+      const result = Grid.applyColumnGravity(grid);
+      expect(result[2][0]).toBe('red'); // 最下段に落ちる
+      expect(result[0][0]).toBeNull();
+    });
+
+    test('列内の積み順を保って詰めること', () => {
+      const grid = Grid.create(1, 4);
+      grid[0][0] = 'a'; // 上
+      grid[2][0] = 'b'; // 下（間に穴）
+      const result = Grid.applyColumnGravity(grid);
+      expect(result[2][0]).toBe('a'); // 上にあった a が上のまま
+      expect(result[3][0]).toBe('b'); // 下にあった b が最下段
+      expect(result[0][0]).toBeNull();
+      expect(result[1][0]).toBeNull();
+    });
+
+    test('列は独立して落下すること（他列に影響しない）', () => {
+      const grid = Grid.create(2, 2);
+      grid[0][0] = 'x'; // 左列だけ浮いている
+      const result = Grid.applyColumnGravity(grid);
+      expect(result[1][0]).toBe('x');
+      expect(result[1][1]).toBeNull();
+    });
+
+    test('元のグリッドを破壊しないこと', () => {
+      const grid = Grid.create(1, 2);
+      grid[0][0] = 'red';
+      Grid.applyColumnGravity(grid);
+      expect(grid[0][0]).toBe('red'); // 元は不変
+    });
+  });
 });
