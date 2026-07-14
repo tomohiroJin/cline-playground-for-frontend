@@ -75,4 +75,19 @@ export const Grid = {
 
     return newGrid;
   },
+
+  /** 全セルが非 null の行インデックスを昇順で返す */
+  findFullRows: (grid: (string | null)[][]): number[] => {
+    const rows: number[] = [];
+    grid.forEach((row, y) => {
+      if (row.every(c => c !== null)) rows.push(y);
+    });
+    return rows;
+  },
+
+  /** 指定行を全 null にした新グリッドを返す（行シフトはしない） */
+  nullifyRows: (grid: (string | null)[][], rows: number[]): (string | null)[][] => {
+    const rowSet = new Set(rows);
+    return grid.map((row, y) => (rowSet.has(y) ? Array(row.length).fill(null) : [...row]));
+  },
 };

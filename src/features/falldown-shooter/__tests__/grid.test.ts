@@ -132,4 +132,33 @@ describe('Grid', () => {
       expect(grid[0][0]).toBe('red'); // 元は不変
     });
   });
+
+  describe('findFullRows', () => {
+    test('全セルが埋まった行のインデックスを返すこと', () => {
+      const grid = Grid.create(2, 3);
+      grid[2][0] = 'a';
+      grid[2][1] = 'b'; // 最下段が full
+      grid[1][0] = 'c'; // 1行目は穴あき
+      expect(Grid.findFullRows(grid)).toEqual([2]);
+    });
+
+    test('full 行がなければ空配列を返すこと', () => {
+      const grid = Grid.create(2, 2);
+      grid[1][0] = 'a';
+      expect(Grid.findFullRows(grid)).toEqual([]);
+    });
+  });
+
+  describe('nullifyRows', () => {
+    test('指定行を全 null にし、他行を変えないこと', () => {
+      const grid = Grid.create(2, 2);
+      grid[0][0] = 'top';
+      grid[1][0] = 'a';
+      grid[1][1] = 'b';
+      const result = Grid.nullifyRows(grid, [1]);
+      expect(result[1][0]).toBeNull();
+      expect(result[1][1]).toBeNull();
+      expect(result[0][0]).toBe('top'); // シフトしない
+    });
+  });
 });
