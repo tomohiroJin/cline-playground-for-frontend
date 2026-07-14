@@ -162,3 +162,6 @@ export const DEMO_SLIDES: DemoSlide[] = [
     ],
   },
 ];
+
+// 連鎖の同色グループ消去に必要な最小連結数（ぷよ式・調整可）
+export const CHAIN_MATCH_SIZE = 4;

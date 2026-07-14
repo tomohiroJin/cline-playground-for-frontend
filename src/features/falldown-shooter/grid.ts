@@ -1,6 +1,7 @@
 // 落ち物シューティング グリッド管理モジュール
 
 import { CONFIG } from './constants';
+import type { Cell } from './types';
 
 export const Grid = {
   create: (w: number, h: number): (string | null)[][] =>
@@ -89,5 +90,59 @@ export const Grid = {
   nullifyRows: (grid: (string | null)[][], rows: number[]): (string | null)[][] => {
     const rowSet = new Set(rows);
     return grid.map((row, y) => (rowSet.has(y) ? Array(row.length).fill(null) : [...row]));
+  },
+
+  /** 4近傍で連結した同色グループのうち size 以上のものに属する全セルを返す（純粋） */
+  findColorGroups: (grid: (string | null)[][], minSize: number): Cell[] => {
+    const height = grid.length;
+    const width = grid[0].length;
+    const visited = Array.from({ length: height }, () => Array<boolean>(width).fill(false));
+    const result: Cell[] = [];
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const color = grid[y][x];
+        if (color === null || visited[y][x]) continue;
+
+        // 同色を 4 近傍で塗りつぶし探索（スタックベース）
+        const group: Cell[] = [];
+        const stack: Cell[] = [{ x, y }];
+        visited[y][x] = true;
+
+        while (stack.length > 0) {
+          const cell = stack.pop() as Cell;
+          group.push(cell);
+          const neighbors: Cell[] = [
+            { x: cell.x + 1, y: cell.y },
+            { x: cell.x - 1, y: cell.y },
+            { x: cell.x, y: cell.y + 1 },
+            { x: cell.x, y: cell.y - 1 },
+          ];
+          for (const n of neighbors) {
+            if (n.x < 0 || n.x >= width || n.y < 0 || n.y >= height) continue;
+            if (visited[n.y][n.x]) continue;
+            if (grid[n.y][n.x] === color) {
+              visited[n.y][n.x] = true;
+              stack.push(n);
+            }
+          }
+        }
+
+        if (group.length >= minSize) result.push(...group);
+      }
+    }
+
+    return result;
+  },
+
+  /** 指定セルを null にした新グリッドを返す（純粋・元不変） */
+  removeCells: (grid: (string | null)[][], cells: Cell[]): (string | null)[][] => {
+    const newGrid = Grid.clone(grid);
+    for (const { x, y } of cells) {
+      if (y >= 0 && y < newGrid.length && x >= 0 && x < newGrid[0].length) {
+        newGrid[y][x] = null;
+      }
+    }
+    return newGrid;
   },
 };

@@ -161,4 +161,58 @@ describe('Grid', () => {
       expect(result[0][0]).toBe('top'); // シフトしない
     });
   });
+
+  describe('findColorGroups', () => {
+    test('size 以上の同色連結グループのセルを返すこと', () => {
+      const grid = Grid.create(3, 2);
+      grid[0][0] = 'r';
+      grid[0][1] = 'r';
+      grid[1][0] = 'r'; // L字に連結した赤3個
+      grid[1][2] = 'b'; // 孤立した青1個
+      const cells = Grid.findColorGroups(grid, 3);
+      // 赤3個が返り、青は size 未満で含まれない
+      expect(cells).toHaveLength(3);
+      expect(cells).toEqual(
+        expect.arrayContaining([
+          { x: 0, y: 0 },
+          { x: 1, y: 0 },
+          { x: 0, y: 1 },
+        ])
+      );
+      expect(cells).not.toContainEqual({ x: 2, y: 1 });
+    });
+
+    test('連結していない同色は別グループとして数えること', () => {
+      const grid = Grid.create(3, 1);
+      grid[0][0] = 'r';
+      grid[0][2] = 'r'; // 間が空いた赤2個（連結していない）
+      const cells = Grid.findColorGroups(grid, 2);
+      expect(cells).toHaveLength(0); // どちらのグループも size 1 で閾値未満
+    });
+
+    test('該当グループがなければ空配列を返すこと', () => {
+      const grid = Grid.create(2, 2);
+      grid[0][0] = 'r';
+      expect(Grid.findColorGroups(grid, 2)).toEqual([]);
+    });
+  });
+
+  describe('removeCells', () => {
+    test('指定セルを null にし、他セルを変えないこと', () => {
+      const grid = Grid.create(2, 2);
+      grid[0][0] = 'a';
+      grid[1][1] = 'b';
+      const result = Grid.removeCells(grid, [{ x: 0, y: 0 }]);
+      expect(result[0][0]).toBeNull();
+      expect(result[1][1]).toBe('b');
+      expect(grid[0][0]).toBe('a'); // 元は不変
+    });
+
+    test('空配列なら内容は変わらないこと', () => {
+      const grid = Grid.create(2, 2);
+      grid[0][0] = 'a';
+      const result = Grid.removeCells(grid, []);
+      expect(result[0][0]).toBe('a');
+    });
+  });
 });
