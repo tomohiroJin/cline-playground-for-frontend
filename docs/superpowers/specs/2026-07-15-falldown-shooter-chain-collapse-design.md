@@ -157,3 +157,39 @@ lineScore =
 - 土壇場デンジャー・クリア（別案 C）。
 - `domain/` 層（死蔵構造）の整理・統合。
 - 難易度パラメータの先回りチューニング（実測後に別途）。
+
+---
+
+## 改訂（2026-07-15）: ハイブリッド連鎖への方針転換
+
+### 問題の発見
+
+実装中（Task 4）に判明: **「列重力＋完全行消去」の組み合わせでは多段連鎖が数学的に発生しない**。
+
+証明: 列重力は各列を最下段へ詰めるため、完全行は常に最下段から連続した `min(各列のセル数)` 行ぶん。これを消すと全列から同数のセルが減り、消去後の `min` は必ず 0 → 新たな完全行はゼロ。したがって**連鎖数は常に1**（複数行の同時消しは起きるが、段階連鎖にはならない）。連鎖倍率テーブルも演出の段階増幅もほぼ出番がなくなる。
+
+### 解決: ハイブリッド消去（同色グループ ∪ 完全行）
+
+落ちゲーで連鎖が生まれるのは**同色連結グループ消去**（ぷよぷよ方式）。中段に穴が空き、上が落ちて新たな塊ができるため。これを既存の行消去と併用する。
+
+`resolveBoard` の消去ステップを次のように拡張:
+
+```
+loop:
+  g = applyColumnGravity(g)
+  clearCells = findColorGroups(g, CHAIN_MATCH_SIZE) ∪ (findFullRows(g) の全セル)
+  if clearCells 空 → break
+  chain += 1
+  g = applyColumnGravity(removeCells(g, clearCells))
+```
+
+これにより、同色グループの消去が生む「穴→落下→新グループ」で本物の多段連鎖が成立する。射撃＋ライン消去という核は維持しつつ、大連鎖の山場を実現する。
+
+### 変更点
+
+- **新規**: `Grid.findColorGroups(grid, minSize): Cell[]`（4近傍連結の同色グループで size≥minSize のセル群）、`Grid.removeCells(grid, cells)`、定数 `CHAIN_MATCH_SIZE`（初期値4・調整可）。
+- **型**: `ChainStep` に `clearedCells: Cell[]` を追加（`clearedRows` は完全行のライン得点用に残す）。
+- **resolveBoard**: `resolveBoard(grid, minGroupSize = CHAIN_MATCH_SIZE)` に。ハイブリッド消去。
+- **スコア**: `calcResolveScore` は「消えたセル数 × block点」＋「完全行 × line点 × 同時消しボーナス」を各ステップで積み、× stage × scoreMult × chainMult(最大連鎖) × comboMult。
+- **ステージ進行**: `totalLines`（完全行のみ）で従来どおり。同色グループ消去はスコア・連鎖に寄与するがステージ進行には数えない（バランスは Task 15 で実測）。
+- **対外インターフェース不変**: `resolveBoard(grid) → ResolveResult` の形は維持。下流の統合（Task 5・7・8・9・11-16）は基本据え置き（Task 6 スコアのみ改訂）。
