@@ -1,6 +1,6 @@
 // 落ち物シューティング ゲームロジックモジュール
 
-import type { BlockData, BulletData, BulletProcessResult, PowerType } from './types';
+import type { BlockData, BulletData, BulletProcessResult, PowerType, ChainStep, ResolveResult } from './types';
 import { CONFIG } from './constants';
 import { calcTiming } from './utils';
 import { Grid } from './grid';
@@ -135,6 +135,32 @@ export const GameLogic = {
     }
     const score = grid[bottomRow].filter(c => c !== null).length * CONFIG.score.block;
     return { grid: Grid.clearRow(grid, bottomRow), score, cleared: true };
+  },
+
+  /**
+   * 盤面を解決する: 列重力で settle → full 行消去 → 再 settle を、
+   * full 行が出なくなるまで繰り返す。1ループ=1連鎖。
+   */
+  resolveBoard: (grid: (string | null)[][]): ResolveResult => {
+    const width = grid[0].length;
+    const chainSteps: ChainStep[] = [];
+    let current = Grid.applyColumnGravity(grid); // 初回 settle
+    let chain = 0;
+
+    for (;;) {
+      const fullRows = Grid.findFullRows(current);
+      if (fullRows.length === 0) break;
+
+      chain += 1;
+      const cellsCleared = fullRows.length * width;
+      // 消去してから再度重力で settle（連鎖検出の起点になる安定盤面）
+      current = Grid.applyColumnGravity(Grid.nullifyRows(current, fullRows));
+      chainSteps.push({ chain, clearedRows: fullRows, grid: current, cellsCleared });
+    }
+
+    const totalLines = chainSteps.reduce((s, step) => s + step.clearedRows.length, 0);
+    const totalCells = chainSteps.reduce((s, step) => s + step.cellsCleared, 0);
+    return { grid: current, chainSteps, totalLines, totalCells };
   },
 
   processBlockFalling: (blocks: BlockData[], grid: (string | null)[][], height: number) => {
