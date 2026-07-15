@@ -1,7 +1,7 @@
 // 落ち物シューティング ゲームロジックモジュール
 
 import type { BlockData, BulletData, BulletProcessResult, PowerType, Cell, ChainStep, ResolveResult } from './types';
-import { CONFIG, CHAIN_MATCH_SIZE } from './constants';
+import { CONFIG, CHAIN_MATCH_SIZE, CHAIN_BONUS, SIMULTANEOUS_LINE_BONUS } from './constants';
 import { calcTiming } from './utils';
 import { Grid } from './grid';
 import { Block } from './block';
@@ -223,4 +223,36 @@ export const GameLogic = {
     calcTiming(CONFIG.timing.spawn, time, stage) * spawnMultiplier,
   getFallSpeed: (time: number, stage: number, slow: boolean, fallMultiplier = 1.0): number =>
     calcTiming(CONFIG.timing.fall, time, stage) * (slow ? 2 : 1) * fallMultiplier,
+
+  /** 連鎖数に対応するスコア倍率を返す（0/1連鎖は1.0、6以上は上限8.0） */
+  getChainMultiplier: (maxChain: number): number => {
+    let multiplier = 1.0;
+    for (const entry of CHAIN_BONUS) {
+      if (maxChain >= entry.minChain) multiplier = entry.multiplier;
+    }
+    return multiplier;
+  },
+
+  /**
+   * 連鎖解決のスコアを算出する（純粋・ハイブリッド）。
+   * base = Σ(各ステップ: 消えたセル数 × block点 ＋ 完全行数 × line点 × 同時消しボーナス)
+   * score = round(base × stage × scoreMult × chainMult(最大連鎖) × comboMult)
+   * comboMult は呼び出し側で「連鎖開始時点のコンボ倍率」を固定して渡すこと（自己増幅防止）。
+   */
+  calcResolveScore: (
+    chainSteps: ChainStep[],
+    ctx: { stage: number; scoreMultiplier: number; comboMult: number }
+  ): number => {
+    if (chainSteps.length === 0) return 0;
+    const base = chainSteps.reduce((sum, step) => {
+      const rows = step.clearedRows.length;
+      const simBonus = SIMULTANEOUS_LINE_BONUS[rows] ?? 1.0;
+      const cellScore = step.cellsCleared * CONFIG.score.block;
+      const lineScore = rows * CONFIG.score.line * simBonus;
+      return sum + cellScore + lineScore;
+    }, 0);
+    const maxChain = chainSteps[chainSteps.length - 1].chain;
+    const chainMult = GameLogic.getChainMultiplier(maxChain);
+    return Math.round(base * ctx.stage * ctx.scoreMultiplier * chainMult * ctx.comboMult);
+  },
 };

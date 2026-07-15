@@ -84,6 +84,16 @@ export const SIMULTANEOUS_LINE_BONUS: Record<number, number> = {
   4: 3.0,
 };
 
+// 連鎖数 → スコア倍率（6連鎖以上は 8.0 上限）
+export const CHAIN_BONUS: { minChain: number; multiplier: number }[] = [
+  { minChain: 1, multiplier: 1.0 },
+  { minChain: 2, multiplier: 1.5 },
+  { minChain: 3, multiplier: 2.5 },
+  { minChain: 4, multiplier: 4.0 },
+  { minChain: 5, multiplier: 6.0 },
+  { minChain: 6, multiplier: 8.0 },
+];
+
 // コンボシステム定数
 export const COMBO_CONFIG: ComboConfig = {
   windowMs: 2000,
