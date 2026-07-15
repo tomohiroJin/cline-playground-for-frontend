@@ -175,3 +175,11 @@ export const DEMO_SLIDES: DemoSlide[] = [
 
 // 連鎖の同色グループ消去に必要な最小連結数（ぷよ式・調整可）
 export const CHAIN_MATCH_SIZE = 4;
+
+// 連鎖演出（連鎖数に応じた色とシェイク強度）
+export const CHAIN_EFFECT = {
+  // index=連鎖数-2（2連鎖以上で表示）。上限超えは末尾色。
+  colorByChain: ['#FFFFFF', '#FFEAA7', '#FF8C42', '#FF4500', '#FF00FF'],
+  /** 連鎖数に比例したシェイク強度（上限あり） */
+  shakeIntensity: (chain: number): number => Math.min(2 + chain, 8),
+} as const;
