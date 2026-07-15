@@ -100,14 +100,18 @@ export const useGameLoop = ({
         nextGrid = resolved.grid;
         clearedByChain = resolved.totalLines;
         onChainResolved?.(resolved.chainSteps);
-        if (clearedByChain > 0) {
-          if (soundEnabled) Audio.line();
-          if (onLineClear) onLineClear(clearedByChain);
+        // スコアは同色グループのセル点も含めて算出する（完全行の有無に依らず加点）
+        if (resolved.chainSteps.length > 0) {
           addedLineScore = GameLogic.calcResolveScore(resolved.chainSteps, {
             stage: state.stage,
             scoreMultiplier,
             comboMult,
           });
+        }
+        // ライン消し音・コンボ登録は完全行が消えたときだけ
+        if (clearedByChain > 0) {
+          if (soundEnabled) Audio.line();
+          if (onLineClear) onLineClear(clearedByChain);
         }
       }
 
