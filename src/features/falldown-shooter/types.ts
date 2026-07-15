@@ -172,7 +172,9 @@ export interface DifficultyConfig {
 export interface ChainStep {
   /** 連鎖番号（1始まり） */
   chain: number;
-  /** このステップで消えた行インデックス（消去前・重力適用後の盤面基準） */
+  /** このステップで消えた全セル（同色グループ ∪ 完全行、重複なし） */
+  clearedCells: Cell[];
+  /** このステップで消えた完全行インデックス（ライン得点用） */
   clearedRows: number[];
   /** このステップ適用後（重力＋消去＋再重力で安定した）盤面 */
   grid: (string | null)[][];

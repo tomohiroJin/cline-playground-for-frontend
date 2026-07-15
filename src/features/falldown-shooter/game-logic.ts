@@ -1,7 +1,7 @@
 // 落ち物シューティング ゲームロジックモジュール
 
-import type { BlockData, BulletData, BulletProcessResult, PowerType, ChainStep, ResolveResult } from './types';
-import { CONFIG } from './constants';
+import type { BlockData, BulletData, BulletProcessResult, PowerType, Cell, ChainStep, ResolveResult } from './types';
+import { CONFIG, CHAIN_MATCH_SIZE } from './constants';
 import { calcTiming } from './utils';
 import { Grid } from './grid';
 import { Block } from './block';
@@ -138,24 +138,43 @@ export const GameLogic = {
   },
 
   /**
-   * 盤面を解決する: 列重力で settle → full 行消去 → 再 settle を、
-   * full 行が出なくなるまで繰り返す。1ループ=1連鎖。
+   * 盤面を解決する（ハイブリッド）: 列重力で settle → 「同色グループ(size≥minGroupSize) ∪ 完全行」を消去 → 再 settle を、
+   * 消すものが無くなるまで繰り返す。1ループ=1連鎖。同色グループが多段連鎖を生む。
    */
-  resolveBoard: (grid: (string | null)[][]): ResolveResult => {
+  resolveBoard: (
+    grid: (string | null)[][],
+    minGroupSize: number = CHAIN_MATCH_SIZE
+  ): ResolveResult => {
     const width = grid[0].length;
     const chainSteps: ChainStep[] = [];
     let current = Grid.applyColumnGravity(grid); // 初回 settle
     let chain = 0;
 
     for (;;) {
+      const groupCells = Grid.findColorGroups(current, minGroupSize);
       const fullRows = Grid.findFullRows(current);
-      if (fullRows.length === 0) break;
+      if (groupCells.length === 0 && fullRows.length === 0) break;
 
       chain += 1;
-      const cellsCleared = fullRows.length * width;
-      // 消去してから再度重力で settle（連鎖検出の起点になる安定盤面）
-      current = Grid.applyColumnGravity(Grid.nullifyRows(current, fullRows));
-      chainSteps.push({ chain, clearedRows: fullRows, grid: current, cellsCleared });
+      // 同色グループのセルと完全行の全セルを重複なく統合
+      const cellKeys = new Set<string>(groupCells.map(c => `${c.x},${c.y}`));
+      for (const y of fullRows) {
+        for (let x = 0; x < width; x++) cellKeys.add(`${x},${y}`);
+      }
+      const clearedCells: Cell[] = [...cellKeys].map(key => {
+        const [x, y] = key.split(',').map(Number);
+        return { x, y };
+      });
+
+      // 消去してから再度重力で settle（次の連鎖検出の起点になる安定盤面）
+      current = Grid.applyColumnGravity(Grid.removeCells(current, clearedCells));
+      chainSteps.push({
+        chain,
+        clearedCells,
+        clearedRows: fullRows,
+        grid: current,
+        cellsCleared: clearedCells.length,
+      });
     }
 
     const totalLines = chainSteps.reduce((s, step) => s + step.clearedRows.length, 0);
