@@ -72,7 +72,18 @@ export const FalldownShooterGame: React.FC = () => {
   const gameState = useGameState();
   const { state } = gameState;
 
-  const powerUp = usePowerUp({ gameState, soundEnabled, onBomb: shake.bombShake });
+  // handleLineClear は skill に依存して後で定義されるため、循環参照を避けて ref 経由で最新版を呼び出す
+  const onLineClearRef = useRef<(lines: number) => void>(() => {});
+  const stableOnLineClear = useCallback((lines: number) => onLineClearRef.current(lines), []);
+
+  const powerUp = usePowerUp({
+    gameState,
+    soundEnabled,
+    onBomb: shake.bombShake,
+    scoreMultiplier: DIFFICULTIES[difficulty].scoreMultiplier,
+    comboMultiplier: combo.comboState.multiplier,
+    onLineClear: stableOnLineClear,
+  });
   const { powers, explosions, handlePowerUp } = powerUp;
 
   const controls = useGameControls({ gameState, powers, soundEnabled });
@@ -85,6 +96,9 @@ export const FalldownShooterGame: React.FC = () => {
     soundEnabled,
     skillChargeMultiplier: DIFFICULTIES[difficulty].skillChargeMultiplier,
     onBlast: shake.blastShake,
+    scoreMultiplier: DIFFICULTIES[difficulty].scoreMultiplier,
+    comboMultiplier: combo.comboState.multiplier,
+    onLineClear: stableOnLineClear,
   });
 
   const flow = useGameFlow({
@@ -124,6 +138,11 @@ export const FalldownShooterGame: React.FC = () => {
     const fy = Math.round(boardHeight * yOffsetRatio + Math.random() * boardHeight * yRangeRatio);
     floatingScores.addScore(fx, fy, clearedLines * CONFIG.score.line, simultaneousBonus * combo.comboState.multiplier);
   }, [combo, skill, floatingScores, SZ]);
+
+  // スキル・爆弾からも最新の handleLineClear を呼び出せるように ref を同期する
+  useEffect(() => {
+    onLineClearRef.current = handleLineClear;
+  }, [handleLineClear]);
 
   // ハイスコア更新検知
   const highScoreNotifiedRef = useRef(false);

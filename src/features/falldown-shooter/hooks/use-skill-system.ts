@@ -7,6 +7,7 @@ import { CONFIG } from '../constants';
 import { Audio } from '../audio';
 import { GameLogic } from '../game-logic';
 import { useSafeTimeout } from './use-safe-timeout';
+import { applyChain } from './apply-chain';
 
 export interface UseSkillSystemParams {
   gameState: UseGameStateReturn;
@@ -15,6 +16,9 @@ export interface UseSkillSystemParams {
   soundEnabled: boolean;
   skillChargeMultiplier: number;
   onBlast?: () => void;
+  scoreMultiplier?: number;
+  comboMultiplier?: number;
+  onLineClear?: (lines: number) => void;
 }
 
 export interface UseSkillSystemReturn {
@@ -34,6 +38,9 @@ export const useSkillSystem = ({
   soundEnabled,
   skillChargeMultiplier,
   onBlast,
+  scoreMultiplier,
+  comboMultiplier,
+  onLineClear,
 }: UseSkillSystemParams): UseSkillSystemReturn => {
   const [skillCharge, setSkillCharge] = useState<number>(0);
   const [laserX, setLaserX] = useState<number | null>(null);
@@ -65,16 +72,24 @@ export const useSkillSystem = ({
       setSkillCharge(0);
 
       const st = gameState.stateRef.current;
+      const chainCtx = {
+        scoreMultiplier: scoreMultiplier ?? 1,
+        comboMult: comboMultiplier ?? 1,
+        onLineClear,
+      };
 
       switch (skillType) {
         case 'laser': {
           setLaserX(playerX);
           setSafeTimeout(() => setLaserX(null), 300);
           const result = GameLogic.applyLaserColumn(playerX, st.blocks, st.grid);
+          // レーザーでグリッドのセルが消えるため連鎖を適用する
+          const chain = applyChain(result.grid, { stage: st.stage }, chainCtx);
           gameState.updateState({
             blocks: result.blocks,
-            grid: result.grid,
-            score: st.score + result.score,
+            grid: chain.grid,
+            score: st.score + result.score + chain.addedScore,
+            lines: st.lines + chain.addedLines,
           });
           break;
         }
@@ -92,10 +107,13 @@ export const useSkillSystem = ({
         case 'clear': {
           const result = GameLogic.applyClearBottom(st.grid);
           if (result.cleared) {
-            const newPlayerY = GameLogic.calculatePlayerY(result.grid);
+            // 最下段消去でグリッドのセルが消えるため連鎖を適用する
+            const chain = applyChain(result.grid, { stage: st.stage }, chainCtx);
+            const newPlayerY = GameLogic.calculatePlayerY(chain.grid);
             gameState.updateState({
-              grid: result.grid,
-              score: st.score + result.score,
+              grid: chain.grid,
+              score: st.score + result.score + chain.addedScore,
+              lines: st.lines + chain.addedLines,
               playerY: newPlayerY,
             });
           }
@@ -103,7 +121,7 @@ export const useSkillSystem = ({
         }
       }
     },
-    [skillCharge, playerX, soundEnabled, gameState, onBlast, setSafeTimeout]
+    [skillCharge, playerX, soundEnabled, gameState, onBlast, setSafeTimeout, scoreMultiplier, comboMultiplier, onLineClear]
   );
 
   return {

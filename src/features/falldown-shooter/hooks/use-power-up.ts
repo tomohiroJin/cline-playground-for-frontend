@@ -8,6 +8,7 @@ import { Audio } from '../audio';
 import { GameLogic } from '../game-logic';
 import { uid } from '../utils';
 import { useSafeTimeout } from './use-safe-timeout';
+import { applyChain } from './apply-chain';
 
 const { width: W, height: H } = CONFIG.grid;
 
@@ -15,6 +16,9 @@ export interface UsePowerUpParams {
   gameState: UseGameStateReturn;
   soundEnabled: boolean;
   onBomb?: () => void;
+  scoreMultiplier?: number;
+  comboMultiplier?: number;
+  onLineClear?: (lines: number) => void;
 }
 
 export interface UsePowerUpReturn {
@@ -30,6 +34,9 @@ export const usePowerUp = ({
   gameState,
   soundEnabled,
   onBomb,
+  scoreMultiplier,
+  comboMultiplier,
+  onLineClear,
 }: UsePowerUpParams): UsePowerUpReturn => {
   const [powers, setPowers] = useState<Powers>({
     triple: false,
@@ -59,10 +66,17 @@ export const usePowerUp = ({
         setSafeTimeout(() => {
           const st = gameState.stateRef.current;
           const result = GameLogic.applyExplosion(x, y, st.blocks, st.grid, W, H);
+          // 爆弾でグリッドのセルが消えるため連鎖を適用する
+          const chain = applyChain(result.grid, { stage: st.stage }, {
+            scoreMultiplier: scoreMultiplier ?? 1,
+            comboMult: comboMultiplier ?? 1,
+            onLineClear,
+          });
           gameState.updateState({
             blocks: result.blocks,
-            grid: result.grid,
-            score: st.score + result.score,
+            grid: chain.grid,
+            score: st.score + result.score + chain.addedScore,
+            lines: st.lines + chain.addedLines,
           });
         }, 0);
       } else {
@@ -71,7 +85,7 @@ export const usePowerUp = ({
         setSafeTimeout(() => handlePowerExpire(type), CONFIG.powerUp.duration[type]);
       }
     },
-    [soundEnabled, gameState, handlePowerExpire, onBomb, setSafeTimeout]
+    [soundEnabled, gameState, handlePowerExpire, onBomb, setSafeTimeout, scoreMultiplier, comboMultiplier, onLineClear]
   );
 
   return {
