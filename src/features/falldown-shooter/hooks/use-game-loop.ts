@@ -7,7 +7,6 @@ import { CONFIG, SIMULTANEOUS_LINE_BONUS } from '../constants';
 import { DIFFICULTIES } from '../difficulty';
 import { Audio } from '../audio';
 import { Block } from '../block';
-import { Grid } from '../grid';
 import { GameLogic } from '../game-logic';
 import { Stage } from '../stage';
 import { useInterval } from '../hooks';
@@ -117,7 +116,8 @@ export const useGameLoop = ({
       if (soundEnabled) Audio.land();
 
       const gridWithLanded = Block.placeOnGrid(landing, state.grid);
-      const { grid: clearedGrid, cleared } = Grid.clearFullLines(gridWithLanded);
+      const resolved = GameLogic.resolveBoard(gridWithLanded);
+      const cleared = resolved.totalLines;
 
       if (cleared > 0) {
         if (soundEnabled) Audio.line();
@@ -125,14 +125,14 @@ export const useGameLoop = ({
       }
 
       const newLines = state.lines + cleared;
-      const newPlayerY = GameLogic.calculatePlayerY(clearedGrid);
+      const newPlayerY = GameLogic.calculatePlayerY(resolved.grid);
       const simultaneousBonus = SIMULTANEOUS_LINE_BONUS[cleared] ?? 1.0;
       const lineScore = Math.round(cleared * CONFIG.score.line * simultaneousBonus * state.stage * scoreMultiplier * comboMult);
       const finalScore = state.score + lineScore;
 
       gameState.updateState({
         blocks: falling,
-        grid: clearedGrid,
+        grid: resolved.grid,
         playerY: newPlayerY,
         score: finalScore,
         lines: newLines,
@@ -146,7 +146,7 @@ export const useGameLoop = ({
         return;
       }
 
-      if (GameLogic.isGameOver(clearedGrid)) {
+      if (GameLogic.isGameOver(resolved.grid)) {
         if (soundEnabled) Audio.over();
         saveScore('falling-shooter', finalScore, difficulty)
           .then(() => loadHighScore())
