@@ -1,7 +1,7 @@
 // スキルシステム管理フック
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import type { SkillType } from '../types';
+import type { SkillType, ChainStep } from '../types';
 import type { UseGameStateReturn } from './use-game-state';
 import { CONFIG } from '../constants';
 import { Audio } from '../audio';
@@ -19,6 +19,7 @@ export interface UseSkillSystemParams {
   scoreMultiplier?: number;
   comboMultiplier?: number;
   onLineClear?: (lines: number) => void;
+  onChainResolved?: (chainSteps: ChainStep[]) => void;
 }
 
 export interface UseSkillSystemReturn {
@@ -41,6 +42,7 @@ export const useSkillSystem = ({
   scoreMultiplier,
   comboMultiplier,
   onLineClear,
+  onChainResolved,
 }: UseSkillSystemParams): UseSkillSystemReturn => {
   const [skillCharge, setSkillCharge] = useState<number>(0);
   const [laserX, setLaserX] = useState<number | null>(null);
@@ -85,6 +87,7 @@ export const useSkillSystem = ({
           const result = GameLogic.applyLaserColumn(playerX, st.blocks, st.grid);
           // レーザーでグリッドのセルが消えるため連鎖を適用する
           const chain = applyChain(result.grid, { stage: st.stage }, chainCtx);
+          onChainResolved?.(chain.chainSteps);
           gameState.updateState({
             blocks: result.blocks,
             grid: chain.grid,
@@ -109,6 +112,7 @@ export const useSkillSystem = ({
           if (result.cleared) {
             // 最下段消去でグリッドのセルが消えるため連鎖を適用する
             const chain = applyChain(result.grid, { stage: st.stage }, chainCtx);
+            onChainResolved?.(chain.chainSteps);
             const newPlayerY = GameLogic.calculatePlayerY(chain.grid);
             gameState.updateState({
               grid: chain.grid,
@@ -121,7 +125,7 @@ export const useSkillSystem = ({
         }
       }
     },
-    [skillCharge, playerX, soundEnabled, gameState, onBlast, setSafeTimeout, scoreMultiplier, comboMultiplier, onLineClear]
+    [skillCharge, playerX, soundEnabled, gameState, onBlast, setSafeTimeout, scoreMultiplier, comboMultiplier, onLineClear, onChainResolved]
   );
 
   return {

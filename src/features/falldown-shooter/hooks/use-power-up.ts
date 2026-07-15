@@ -1,7 +1,7 @@
 // パワーアップ管理フック
 
 import { useState, useCallback } from 'react';
-import type { PowerType, Powers, ExplosionData } from '../types';
+import type { PowerType, Powers, ExplosionData, ChainStep } from '../types';
 import type { UseGameStateReturn } from './use-game-state';
 import { CONFIG, EFFECT } from '../constants';
 import { Audio } from '../audio';
@@ -19,6 +19,7 @@ export interface UsePowerUpParams {
   scoreMultiplier?: number;
   comboMultiplier?: number;
   onLineClear?: (lines: number) => void;
+  onChainResolved?: (chainSteps: ChainStep[]) => void;
 }
 
 export interface UsePowerUpReturn {
@@ -37,6 +38,7 @@ export const usePowerUp = ({
   scoreMultiplier,
   comboMultiplier,
   onLineClear,
+  onChainResolved,
 }: UsePowerUpParams): UsePowerUpReturn => {
   const [powers, setPowers] = useState<Powers>({
     triple: false,
@@ -72,6 +74,7 @@ export const usePowerUp = ({
             comboMult: comboMultiplier ?? 1,
             onLineClear,
           });
+          onChainResolved?.(chain.chainSteps);
           gameState.updateState({
             blocks: result.blocks,
             grid: chain.grid,
@@ -85,7 +88,7 @@ export const usePowerUp = ({
         setSafeTimeout(() => handlePowerExpire(type), CONFIG.powerUp.duration[type]);
       }
     },
-    [soundEnabled, gameState, handlePowerExpire, onBomb, setSafeTimeout, scoreMultiplier, comboMultiplier, onLineClear]
+    [soundEnabled, gameState, handlePowerExpire, onBomb, setSafeTimeout, scoreMultiplier, comboMultiplier, onLineClear, onChainResolved]
   );
 
   return {

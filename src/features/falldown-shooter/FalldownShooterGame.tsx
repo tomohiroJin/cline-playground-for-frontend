@@ -15,6 +15,7 @@ import { useGameLoop } from './hooks/use-game-loop';
 import { useResponsiveSize } from './hooks/use-responsive-size';
 import { useComboSystem } from './hooks/use-combo-system';
 import { useScreenShake } from './hooks/use-screen-shake';
+import { useChainFeedback } from './hooks/use-chain-feedback';
 import { useTestMode } from './hooks/use-test-mode';
 import { useTestModeActions } from './hooks/use-test-mode-actions';
 import { useSafeTimeout } from './hooks/use-safe-timeout';
@@ -28,6 +29,7 @@ import { GameBoard } from './components/GameBoard';
 import { RankingOverlay } from './components/RankingOverlay';
 import { GameController } from './components/GameController';
 import { ComboDisplay } from './components/ComboDisplay';
+import { ChainDisplay } from './components/ChainDisplay';
 import { FloatingScore } from './components/FloatingScore';
 import { HighScoreEffect } from './components/HighScoreEffect';
 import { TestModeIndicator } from './components/TestModeIndicator';
@@ -64,6 +66,7 @@ export const FalldownShooterGame: React.FC = () => {
   // エフェクトフック
   const combo = useComboSystem();
   const shake = useScreenShake();
+  const chainFeedback = useChainFeedback({ soundEnabled, triggerShake: shake.triggerShake });
   const floatingScores = useFloatingScores();
   const [showHighScoreEffect, setShowHighScoreEffect] = useState(false);
   const { setSafeTimeout } = useSafeTimeout();
@@ -83,6 +86,7 @@ export const FalldownShooterGame: React.FC = () => {
     scoreMultiplier: DIFFICULTIES[difficulty].scoreMultiplier,
     comboMultiplier: combo.comboState.multiplier,
     onLineClear: stableOnLineClear,
+    onChainResolved: chainFeedback.celebrate,
   });
   const { powers, explosions, handlePowerUp } = powerUp;
 
@@ -99,6 +103,7 @@ export const FalldownShooterGame: React.FC = () => {
     scoreMultiplier: DIFFICULTIES[difficulty].scoreMultiplier,
     comboMultiplier: combo.comboState.multiplier,
     onLineClear: stableOnLineClear,
+    onChainResolved: chainFeedback.celebrate,
   });
 
   const flow = useGameFlow({
@@ -188,6 +193,7 @@ export const FalldownShooterGame: React.FC = () => {
     difficulty,
     onLineClear: handleLineClear,
     comboMultiplier: combo.comboState.multiplier,
+    onChainResolved: chainFeedback.celebrate,
   });
 
   // キーボード操作（プレイ中またはポーズ中）
@@ -232,6 +238,7 @@ export const FalldownShooterGame: React.FC = () => {
   const gameBoardContent = (
     <div style={{ position: 'relative', ...shake.shakeStyle }}>
       <ComboDisplay comboState={combo.comboState} />
+      <ChainDisplay chain={chainFeedback.currentChain} />
       <FloatingScore items={floatingScores.items} />
       <HighScoreEffect show={showHighScoreEffect} />
       <GameOverlays

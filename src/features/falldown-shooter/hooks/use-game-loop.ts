@@ -1,7 +1,7 @@
 // ゲームループ管理フック
 
 import { useRef } from 'react';
-import type { Difficulty, GameStatus, PowerType } from '../types';
+import type { Difficulty, GameStatus, PowerType, ChainStep } from '../types';
 import type { UseGameStateReturn } from './use-game-state';
 import { CONFIG } from '../constants';
 import { DIFFICULTIES } from '../difficulty';
@@ -25,6 +25,7 @@ export interface UseGameLoopParams {
   difficulty: Difficulty;
   onLineClear?: (clearedLines: number) => void;
   comboMultiplier?: number;
+  onChainResolved?: (chainSteps: ChainStep[]) => void;
 }
 
 export const useGameLoop = ({
@@ -38,6 +39,7 @@ export const useGameLoop = ({
   difficulty,
   onLineClear,
   comboMultiplier,
+  onChainResolved,
 }: UseGameLoopParams): void => {
   const { spawnMultiplier, fallMultiplier, scoreMultiplier, powerUpChance } = DIFFICULTIES[difficulty];
   const comboMult = comboMultiplier ?? 1.0;
@@ -97,6 +99,7 @@ export const useGameLoop = ({
         const resolved = GameLogic.resolveBoard(result.grid);
         nextGrid = resolved.grid;
         clearedByChain = resolved.totalLines;
+        onChainResolved?.(resolved.chainSteps);
         if (clearedByChain > 0) {
           if (soundEnabled) Audio.line();
           if (onLineClear) onLineClear(clearedByChain);
@@ -152,6 +155,7 @@ export const useGameLoop = ({
       const gridWithLanded = Block.placeOnGrid(landing, state.grid);
       const resolved = GameLogic.resolveBoard(gridWithLanded);
       const cleared = resolved.totalLines;
+      onChainResolved?.(resolved.chainSteps);
 
       if (cleared > 0) {
         if (soundEnabled) Audio.line();
