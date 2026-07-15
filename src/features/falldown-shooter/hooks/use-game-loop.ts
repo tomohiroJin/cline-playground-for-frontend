@@ -3,7 +3,7 @@
 import { useRef } from 'react';
 import type { Difficulty, GameStatus, PowerType } from '../types';
 import type { UseGameStateReturn } from './use-game-state';
-import { CONFIG, SIMULTANEOUS_LINE_BONUS } from '../constants';
+import { CONFIG } from '../constants';
 import { DIFFICULTIES } from '../difficulty';
 import { Audio } from '../audio';
 import { Block } from '../block';
@@ -126,8 +126,12 @@ export const useGameLoop = ({
 
       const newLines = state.lines + cleared;
       const newPlayerY = GameLogic.calculatePlayerY(resolved.grid);
-      const simultaneousBonus = SIMULTANEOUS_LINE_BONUS[cleared] ?? 1.0;
-      const lineScore = Math.round(cleared * CONFIG.score.line * simultaneousBonus * state.stage * scoreMultiplier * comboMult);
+      // 連鎖倍率込みのライン得点（comboMult はこの着地時点の値で固定）
+      const lineScore = GameLogic.calcResolveScore(resolved.chainSteps, {
+        stage: state.stage,
+        scoreMultiplier,
+        comboMult,
+      });
       const finalScore = state.score + lineScore;
 
       gameState.updateState({
