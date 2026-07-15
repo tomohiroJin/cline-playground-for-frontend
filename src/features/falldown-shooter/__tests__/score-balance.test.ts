@@ -3,6 +3,8 @@
 
 import { SIMULTANEOUS_LINE_BONUS } from '../constants';
 import { CONFIG } from '../constants';
+import { GameLogic } from '../game-logic';
+import type { ChainStep } from '../types';
 
 describe('SIMULTANEOUS_LINE_BONUS', () => {
   describe('定数定義', () => {
@@ -90,5 +92,58 @@ describe('スコア計算式', () => {
       const score = calculateLineScore(2, 2, 1.0, 1.5);
       expect(score).toBe(900);
     });
+  });
+});
+
+/** テスト用 ChainStep 生成（cellsCleared 個のセル・rows 個の完全行） */
+const createChainStep = (chain: number, cellsCleared: number, rows: number): ChainStep => ({
+  chain,
+  clearedCells: Array.from({ length: cellsCleared }, (_, i) => ({ x: i, y: 0 })),
+  clearedRows: Array.from({ length: rows }, (_, i) => i),
+  grid: [],
+  cellsCleared,
+});
+
+describe('連鎖スコアの回帰固定（ハイブリッド）', () => {
+  it('normal・stage1・combo1 の「1連鎖・完全行1本(幅12)」= 220点', () => {
+    // base = 12*10(セル) + 1*100*1.0(行) = 220。× stage1 × 1.0 × chain1(1.0) × combo1 = 220
+    const score = GameLogic.calcResolveScore([createChainStep(1, 12, 1)], {
+      stage: 1,
+      scoreMultiplier: 1.0,
+      comboMult: 1.0,
+    });
+    expect(score).toBe(220);
+  });
+
+  it('コンボ最大5×連鎖最大級でも上限内に収まる（青天井にならない）', () => {
+    // 5連鎖・各「完全行1本(幅12)」, stage4, hard(1.5), combo5.0
+    // base = 5 * (12*10 + 1*100*1.0) = 5 * 220 = 1100
+    // × stage4 × 1.5 × chainMult(5)=6.0 × combo5.0 = 1100 * 180 = 198000
+    const score = GameLogic.calcResolveScore(
+      [
+        createChainStep(1, 12, 1),
+        createChainStep(2, 12, 1),
+        createChainStep(3, 12, 1),
+        createChainStep(4, 12, 1),
+        createChainStep(5, 12, 1),
+      ],
+      { stage: 4, scoreMultiplier: 1.5, comboMult: 5.0 }
+    );
+    expect(score).toBe(198000);
+    expect(score).toBeLessThan(500000); // 事故的インフレの検知
+  });
+
+  it('同色グループのみの多段連鎖（行ゼロ）でもセル点で加点されること', () => {
+    // 3連鎖・各4セル・行なし。base = 3 * (4*10) = 120。chainMult(3)=2.5
+    // × stage1 × 1.0 × 2.5 × combo1 = 300
+    const score = GameLogic.calcResolveScore(
+      [createChainStep(1, 4, 0), createChainStep(2, 4, 0), createChainStep(3, 4, 0)],
+      {
+        stage: 1,
+        scoreMultiplier: 1.0,
+        comboMult: 1.0,
+      }
+    );
+    expect(score).toBe(300);
   });
 });
