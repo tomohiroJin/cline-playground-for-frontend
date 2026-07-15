@@ -86,12 +86,6 @@ export const Grid = {
     return rows;
   },
 
-  /** 指定行を全 null にした新グリッドを返す（行シフトはしない） */
-  nullifyRows: (grid: (string | null)[][], rows: number[]): (string | null)[][] => {
-    const rowSet = new Set(rows);
-    return grid.map((row, y) => (rowSet.has(y) ? Array(row.length).fill(null) : [...row]));
-  },
-
   /** 4近傍で連結した同色グループのうち size 以上のものに属する全セルを返す（純粋） */
   findColorGroups: (grid: (string | null)[][], minSize: number): Cell[] => {
     const height = grid.length;

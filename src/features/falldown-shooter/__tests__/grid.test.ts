@@ -149,19 +149,6 @@ describe('Grid', () => {
     });
   });
 
-  describe('nullifyRows', () => {
-    test('指定行を全 null にし、他行を変えないこと', () => {
-      const grid = Grid.create(2, 2);
-      grid[0][0] = 'top';
-      grid[1][0] = 'a';
-      grid[1][1] = 'b';
-      const result = Grid.nullifyRows(grid, [1]);
-      expect(result[1][0]).toBeNull();
-      expect(result[1][1]).toBeNull();
-      expect(result[0][0]).toBe('top'); // シフトしない
-    });
-  });
-
   describe('findColorGroups', () => {
     test('size 以上の同色連結グループのセルを返すこと', () => {
       const grid = Grid.create(3, 2);
