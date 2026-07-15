@@ -35,7 +35,9 @@ export const useChainFeedback = ({
   }, []);
 
   // アンマウント時にタイマーを掃除
-  useEffect(() => clearTimers, [clearTimers]);
+  useEffect(() => {
+    return () => clearTimers();
+  }, [clearTimers]);
 
   const celebrate = useCallback(
     (chainSteps: ChainStep[]) => {
