@@ -154,4 +154,13 @@ describe('Audio', () => {
     // Assert
     expect(mockAudioContext.resume).toHaveBeenCalled();
   });
+
+  test('chain(level) は例外を投げないこと（未対応環境でも安全）', async () => {
+    // Arrange
+    const { Audio } = await import('../audio');
+
+    // Act & Assert
+    expect(() => Audio.chain(1)).not.toThrow();
+    expect(() => Audio.chain(5)).not.toThrow();
+  });
 });

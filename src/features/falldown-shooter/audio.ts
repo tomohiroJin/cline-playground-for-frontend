@@ -74,5 +74,11 @@ export const Audio = (() => {
     win: () => sequence([523, 659, 784, 1047], 80),
     skill: () => sequence([880, 1100, 1320, 1760], 40, 'sine', 0.3),
     charge: () => playTone(660, 0.15, 'sine', 0.15),
+    // 連鎖レベルに応じてピッチを半音ずつ上げる（ぷよ的な上昇音）
+    chain: (level: number): void => {
+      const base = 523; // C5
+      const freq = base * Math.pow(2, Math.max(0, level - 1) / 12);
+      playTone(freq, 0.1, 'sine', 0.25);
+    },
   };
 })();
