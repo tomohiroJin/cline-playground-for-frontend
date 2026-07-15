@@ -7,6 +7,7 @@ import { GAME_BALANCE } from './domain/constants';
 import { isPlayerNearItem, isPlayerNearExit, isPlayerCollidingEnemy } from './domain/services/collision';
 import { calculateKeyScore, calculateVictoryScore, calculateCombo } from './domain/services/scoring';
 import { getEnemyStrategy } from './domain/services/enemy-strategy';
+import { chooseDropCell } from './domain/services/key-drop';
 import type { NoiseSource } from './domain/services/enemy-strategy';
 import type { GameEvent } from './application/game-events';
 import type { EnemyAlert } from './game-tick';
@@ -203,7 +204,17 @@ export const GameLogic = {
       g.invince = CONFIG.timing.invinceDuration;
       g.score = Math.max(0, g.score - CONFIG.score.damagePenalty);
       g.combo = 0;
-      g.msg = '💔 ダメージ！';
+
+      // 鍵を持っていれば1個ドロップし、捕縛を「事件」にする。
+      // 着地は敵と反対方向の歩けるセル（chooseDropCell がデススパイラルを抑制）。
+      if (g.keys > 0) {
+        const cell = chooseDropCell(g.maze, g.player.x, g.player.y, e.x, e.y);
+        g.keys--;
+        g.items.push({ x: cell.x, y: cell.y, type: 'key', got: false, dropped: true });
+        g.msg = '🔑 鍵を落とした！';
+      } else {
+        g.msg = '💔 ダメージ！';
+      }
       g.msgTimer = GAME_BALANCE.timing.DAMAGE_MESSAGE_DURATION;
       AudioService.play('hurt', 0.5);
 

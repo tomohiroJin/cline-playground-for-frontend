@@ -496,4 +496,54 @@ describe('labyrinth-of-shadows/game-logic', () => {
       expect(movedBoosted).toBeGreaterThan(movedNormal);
     });
   });
+
+  describe('捕縛時の鍵ドロップ', () => {
+    test('鍵を持って接触すると鍵を1個落とす', () => {
+      const s = GameStateBuilder.create()
+        .withPlayer({ x: 1.5, y: 1.5 })
+        .withEnemy('chaser', { x: 1.5, y: 1.8, active: true })
+        .withKeys(2, 3)
+        .build();
+      const enemy = s.enemies[0];
+
+      GameLogic.updateEnemyWithStrategy(s, enemy, 16);
+
+      expect(s.keys).toBe(1);
+      const dropped = s.items.filter((i) => i.type === 'key' && i.dropped);
+      expect(dropped).toHaveLength(1);
+      // 着地セルは歩ける
+      expect(s.maze[dropped[0].y][dropped[0].x]).toBe(0);
+      expect(s.msg).toBe('🔑 鍵を落とした！');
+    });
+
+    test('鍵0で接触してもドロップせず keys は負にならない', () => {
+      const s = GameStateBuilder.create()
+        .withPlayer({ x: 1.5, y: 1.5 })
+        .withEnemy('chaser', { x: 1.5, y: 1.8, active: true })
+        .withKeys(0, 3)
+        .build();
+      const enemy = s.enemies[0];
+
+      GameLogic.updateEnemyWithStrategy(s, enemy, 16);
+
+      expect(s.keys).toBe(0);
+      expect(s.items.some((i) => i.dropped)).toBe(false);
+      expect(s.msg).toBe('💔 ダメージ！');
+    });
+
+    test('無敵中は接触してもドロップしない（1接触=最大1ドロップ）', () => {
+      const s = GameStateBuilder.create()
+        .withPlayer({ x: 1.5, y: 1.5 })
+        .withEnemy('chaser', { x: 1.5, y: 1.8, active: true })
+        .withKeys(2, 3)
+        .withInvincibility(1000)
+        .build();
+      const enemy = s.enemies[0];
+
+      GameLogic.updateEnemyWithStrategy(s, enemy, 16);
+
+      expect(s.keys).toBe(2);
+      expect(s.items.some((i) => i.dropped)).toBe(false);
+    });
+  });
 });
