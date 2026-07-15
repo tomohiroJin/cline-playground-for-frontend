@@ -546,4 +546,37 @@ describe('labyrinth-of-shadows/game-logic', () => {
       expect(s.items.some((i) => i.dropped)).toBe(false);
     });
   });
+
+  describe('落とした鍵の再回収', () => {
+    test('落とした鍵を拾い直すと keys は戻るがスコア/コンボは増えない', () => {
+      const s = GameStateBuilder.create()
+        .withPlayer({ x: 2.5, y: 1.5 })
+        .withScore(500)
+        .withCombo(3, 1000)
+        .build();
+      s.keys = 1;
+      s.items = [{ x: 2, y: 1, type: 'key', got: false, dropped: true }];
+
+      GameLogic.updateItems(s);
+
+      expect(s.keys).toBe(2);
+      expect(s.score).toBe(500);
+      expect(s.combo).toBe(3);
+      expect(s.items[0].got).toBe(true);
+    });
+
+    test('通常の鍵は従来通りスコアが加算される（リグレッション防止）', () => {
+      const s = GameStateBuilder.create()
+        .withPlayer({ x: 2.5, y: 1.5 })
+        .withScore(500)
+        .build();
+      s.keys = 0;
+      s.items = [{ x: 2, y: 1, type: 'key', got: false }];
+
+      GameLogic.updateItems(s);
+
+      expect(s.keys).toBe(1);
+      expect(s.score).toBeGreaterThan(500);
+    });
+  });
 });

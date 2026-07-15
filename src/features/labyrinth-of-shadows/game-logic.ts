@@ -117,6 +117,14 @@ export const GameLogic = {
       item.got = true;
       switch (item.type) {
         case 'key': {
+          if (item.dropped) {
+            // 落とした鍵の拾い直し: 進行だけ戻し、スコア/コンボは与えない
+            // （被弾→再回収での純増・コンボ稼ぎを防ぐ）
+            g.keys++;
+            g.msg = `🔑 落とした鍵を拾い直した (${g.keys}/${g.reqKeys})`;
+            AudioService.play('key', 0.45);
+            break;
+          }
           g.combo = calculateCombo(g.combo, g.gTime, g.lastKeyTime);
           g.lastKeyTime = g.gTime;
           const bonus = calculateKeyScore(g.combo);
