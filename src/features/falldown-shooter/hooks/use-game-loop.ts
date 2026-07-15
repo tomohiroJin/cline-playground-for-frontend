@@ -129,6 +129,8 @@ export const useGameLoop = ({
           .then(() => loadHighScore())
           .catch(err => console.error(err));
         setStatus(Stage.isFinal(state.stage) ? 'ending' : 'clear');
+        // クリア画面へ遷移する場合は、後続の爆弾処理（grid/score変更・演出）をスキップする
+        return;
       }
 
       result.pendingBombs.forEach(({ x, y }) => handlePowerUp('bomb', x, y));
