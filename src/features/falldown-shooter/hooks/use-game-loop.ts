@@ -87,12 +87,46 @@ export const useGameLoop = ({
 
       if (result.hitCount > 0 && soundEnabled) Audio.hit();
 
+      // 弾で盤面セルを消した場合は連鎖解決（撃って引き金を引く連鎖）
+      const bulletScore = Math.round(result.score * scoreMultiplier);
+      let nextGrid = result.grid;
+      let addedLineScore = 0;
+      let clearedByChain = 0;
+
+      if (result.hitCount > 0) {
+        const resolved = GameLogic.resolveBoard(result.grid);
+        nextGrid = resolved.grid;
+        clearedByChain = resolved.totalLines;
+        if (clearedByChain > 0) {
+          if (soundEnabled) Audio.line();
+          if (onLineClear) onLineClear(clearedByChain);
+          addedLineScore = GameLogic.calcResolveScore(resolved.chainSteps, {
+            stage: state.stage,
+            scoreMultiplier,
+            comboMult,
+          });
+        }
+      }
+
+      const newScore = state.score + bulletScore + addedLineScore;
+      const newLines = state.lines + clearedByChain;
+
       gameState.updateState({
         bullets: result.bullets,
         blocks: result.blocks,
-        grid: result.grid,
-        score: state.score + Math.round(result.score * scoreMultiplier),
+        grid: nextGrid,
+        score: newScore,
+        lines: newLines,
+        playerY: GameLogic.calculatePlayerY(nextGrid),
       });
+
+      // 弾連鎖でステージクリアに到達した場合の判定
+      if (clearedByChain > 0 && newLines >= state.linesNeeded) {
+        saveScore('falling-shooter', newScore, difficulty)
+          .then(() => loadHighScore())
+          .catch(err => console.error(err));
+        setStatus(Stage.isFinal(state.stage) ? 'ending' : 'clear');
+      }
 
       result.pendingBombs.forEach(({ x, y }) => handlePowerUp('bomb', x, y));
     },
