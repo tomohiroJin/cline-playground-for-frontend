@@ -2,6 +2,7 @@ import { GameLogic } from '../game-logic';
 import { GameStateFactory } from '../entity-factory';
 import type { GameState } from '../types';
 import { GAME_BALANCE } from '../domain/constants';
+import { MazeService } from '../maze-service';
 import { setupAudioContextMock } from './helpers/audio-mock';
 import { GameStateBuilder } from './helpers/game-state-builder';
 
@@ -557,6 +558,21 @@ describe('labyrinth-of-shadows/game-logic', () => {
 
       expect(s.keys).toBe(2);
       expect(s.items.some((i) => i.dropped)).toBe(false);
+    });
+
+    test('壁際で捕まっても敵は壁にめり込まず歩けるセルに留まる', () => {
+      // 敵を上端の壁(y=0)の近くに置き、北向きへ押し戻される状況を作る。
+      // 押し戻し先を検査しないと敵が壁に埋まって動けなくなる回帰を防ぐ。
+      const s = GameStateBuilder.create()
+        .withPlayer({ x: 1.5, y: 1.5 })
+        .withEnemy('chaser', { x: 1.5, y: 1.4, active: true })
+        .withKeys(0, 3)
+        .build();
+      const enemy = s.enemies[0];
+
+      GameLogic.updateEnemyWithStrategy(s, enemy, 16);
+
+      expect(MazeService.isWalkable(s.maze, enemy.x, enemy.y)).toBe(true);
     });
   });
 

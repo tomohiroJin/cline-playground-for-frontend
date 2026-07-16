@@ -8,6 +8,7 @@ import { isPlayerNearItem, isPlayerNearExit, isPlayerCollidingEnemy } from './do
 import { calculateKeyScore, calculateVictoryScore, calculateCombo } from './domain/services/scoring';
 import { getEnemyStrategy } from './domain/services/enemy-strategy';
 import { chooseDropCell } from './domain/services/key-drop';
+import { resolveKnockback } from './domain/services/knockback';
 import type { NoiseSource } from './domain/services/enemy-strategy';
 import type { GameEvent } from './application/game-events';
 import type { EnemyAlert } from './game-tick';
@@ -234,10 +235,18 @@ export const GameLogic = {
       g.msgTimer = GAME_BALANCE.timing.DAMAGE_MESSAGE_DURATION;
       AudioService.play('hurt', 0.5);
 
-      const edx = g.player.x - e.x;
-      const edy = g.player.y - e.y;
-      e.x -= (edx / d) * GAME_BALANCE.collision.ENEMY_KNOCKBACK_DISTANCE;
-      e.y -= (edy / d) * GAME_BALANCE.collision.ENEMY_KNOCKBACK_DISTANCE;
+      // プレイヤーから離れる向きへ押し戻す。壁にめり込むと敵が動けなくなるため、
+      // resolveKnockback で歩けるセルの範囲に留める（通常移動と同じ不変条件）。
+      const knockback = resolveKnockback(
+        g.maze,
+        e.x,
+        e.y,
+        g.player.x,
+        g.player.y,
+        GAME_BALANCE.collision.ENEMY_KNOCKBACK_DISTANCE
+      );
+      e.x = knockback.x;
+      e.y = knockback.y;
       e.dir += Math.PI;
     }
 
