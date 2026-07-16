@@ -498,20 +498,29 @@ describe('labyrinth-of-shadows/game-logic', () => {
   });
 
   describe('捕縛時の鍵ドロップ', () => {
-    test('鍵を持って接触すると鍵を1個落とす', () => {
+    test('鍵を持って接触すると取得済みの鍵スロットを復活させて落とす（配列長は不変）', () => {
       const s = GameStateBuilder.create()
         .withPlayer({ x: 1.5, y: 1.5 })
         .withEnemy('chaser', { x: 1.5, y: 1.8, active: true })
         .withKeys(2, 3)
         .build();
+      // 実プレイでは鍵は開始時に配置され、取得すると got=true になる。
+      // 取得済み鍵スロット2つを用意（keys=2 と整合）。
+      s.items = [
+        { x: 5, y: 5, type: 'key', got: true },
+        { x: 6, y: 6, type: 'key', got: true },
+      ];
+      const beforeLen = s.items.length;
       const enemy = s.enemies[0];
 
       GameLogic.updateEnemyWithStrategy(s, enemy, 16);
 
       expect(s.keys).toBe(1);
-      const dropped = s.items.filter((i) => i.type === 'key' && i.dropped);
+      // 新規 push しない＝配列長（＝ライト数）は不変
+      expect(s.items).toHaveLength(beforeLen);
+      // 取得済みスロットの1つが未取得の落とし鍵として歩けるセルに復活
+      const dropped = s.items.filter((i) => i.type === 'key' && i.dropped && !i.got);
       expect(dropped).toHaveLength(1);
-      // 着地セルは歩ける
       expect(s.maze[dropped[0].y][dropped[0].x]).toBe(0);
       expect(s.msg).toBe('🔑 鍵を落とした！');
     });
@@ -538,6 +547,10 @@ describe('labyrinth-of-shadows/game-logic', () => {
         .withKeys(2, 3)
         .withInvincibility(1000)
         .build();
+      s.items = [
+        { x: 5, y: 5, type: 'key', got: true },
+        { x: 6, y: 6, type: 'key', got: true },
+      ];
       const enemy = s.enemies[0];
 
       GameLogic.updateEnemyWithStrategy(s, enemy, 16);

@@ -1,4 +1,5 @@
 import { MazeService } from '../../maze-service';
+import type { Item } from '../../types';
 
 /** 4近傍（上下左右）のオフセット */
 const NEIGHBORS: ReadonlyArray<readonly [number, number]> = [
@@ -12,6 +13,8 @@ const NEIGHBORS: ReadonlyArray<readonly [number, number]> = [
  * 落とした鍵の着地セルを選ぶ。
  * プレイヤー隣接の歩けるセルのうち「敵から最も遠い」ものを返し、
  * 取りに戻る動線が即・敵側へ向かわないようにする（デススパイラル対策）。
+ * 未取得アイテムが載るセルは避ける（落とした鍵が罠等と重なる理不尽を防ぐ。
+ * 開始時のスポーンが座標重複を避けるのと同じ方針）。
  * 歩ける隣接が無ければプレイヤー自身のセルを返す（そこは必ず歩ける）。
  */
 export const chooseDropCell = (
@@ -19,10 +22,14 @@ export const chooseDropCell = (
   playerX: number,
   playerY: number,
   enemyX: number,
-  enemyY: number
+  enemyY: number,
+  items: readonly Item[]
 ): { x: number; y: number } => {
   const pcx = Math.floor(playerX);
   const pcy = Math.floor(playerY);
+  // 未取得アイテムが占有するセルか（取得済みは非表示なので重なってよい）
+  const isOccupied = (x: number, y: number): boolean =>
+    items.some((it) => !it.got && it.x === x && it.y === y);
 
   let best: { x: number; y: number } | undefined;
   let bestDist = -Infinity;
@@ -30,6 +37,7 @@ export const chooseDropCell = (
     const nx = pcx + dx;
     const ny = pcy + dy;
     if (!MazeService.isWalkable(maze, nx, ny)) continue;
+    if (isOccupied(nx, ny)) continue;
     // セル中心 (nx+0.5, ny+0.5) と敵の距離が最大＝最も敵から遠い方向
     const cx = nx + 0.5;
     const cy = ny + 0.5;

@@ -215,10 +215,18 @@ export const GameLogic = {
 
       // 鍵を持っていれば1個ドロップし、捕縛を「事件」にする。
       // 着地は敵と反対方向の歩けるセル（chooseDropCell がデススパイラルを抑制）。
-      if (g.keys > 0) {
-        const cell = chooseDropCell(g.maze, g.player.x, g.player.y, e.x, e.y);
+      // 新規 push はしない：ItemMeshes は1アイテム=1点光源で有効ライト数を一定に保つ設計
+      // （数が変わると three.js が全被照明マテリアルのシェーダを同期再コンパイルしカクつく）。
+      // 取得済みの鍵スロット（got=true・ライトは intensity=0 で常駐）を1つ復活させ、
+      // 落下セルへ移す＝配列長＝ライト数は不変のままドロップを表現する。
+      const droppedSlot = g.keys > 0 ? g.items.find((it) => it.type === 'key' && it.got) : undefined;
+      if (droppedSlot) {
+        const cell = chooseDropCell(g.maze, g.player.x, g.player.y, e.x, e.y, g.items);
+        droppedSlot.x = cell.x;
+        droppedSlot.y = cell.y;
+        droppedSlot.got = false;
+        droppedSlot.dropped = true;
         g.keys--;
-        g.items.push({ x: cell.x, y: cell.y, type: 'key', got: false, dropped: true });
         g.msg = '🔑 鍵を落とした！';
       } else {
         g.msg = '💔 ダメージ！';
