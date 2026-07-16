@@ -7,6 +7,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import type { BoardState } from '../domain/board/board-state';
+import { canPlaceTower, canPlaceTrap } from '../domain/board/board-state';
 import type { CellPos } from '../domain/board/stage-map';
 import type { EnemySnapshot } from '../domain/combat/simulate-wave';
 import { getCardDefinition } from '../domain/cards/card-pool';
@@ -83,9 +84,10 @@ export const BoardGrid: React.FC<Props> = ({
       const isSlot = buildSlots.some((s) => s.x === x && s.y === y);
       const tower = board.towers.find((t) => t.pos.x === x && t.pos.y === y);
       const trap = board.traps.find((t) => t.pos.x === x && t.pos.y === y);
+      const pos = { x, y };
       const placeable =
-        (placingType === 'tower' && isSlot && !tower) ||
-        (placingType === 'trap' && isPath && !trap);
+        (placingType === 'tower' && canPlaceTower(board, pos)) ||
+        (placingType === 'trap' && canPlaceTrap(board, pos));
       const icon = tower
         ? getCardDefinition(tower.cardId).tower?.splashRadius
           ? '💣'
