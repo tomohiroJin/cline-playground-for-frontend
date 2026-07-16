@@ -14,7 +14,7 @@ export const SITE_BASE_URL = 'https://play.niku9.click';
 /** サイト名 */
 export const SITE_NAME = 'Game Platform';
 
-/** 全13ゲームのSEO情報 */
+/** 全14ゲームのSEO情報 */
 export const GAME_SEO_DATA: Readonly<Record<string, GameSeoData>> = {
   '/puzzle': {
     name: 'Picture Puzzle',
@@ -94,6 +94,12 @@ export const GAME_SEO_DATA: Readonly<Record<string, GameSeoData>> = {
       '三大文明を育て進化を重ねる自動戦闘ローグライト。シナジービルドで毎回異なる冒険が待つ。無料でブラウザからすぐにプレイ可能。',
     path: '/primal-path',
   },
+  '/ashen-rampart': {
+    name: '灰燼の城壁 - ASHEN RAMPART',
+    description:
+      'デッキ構築×タワーディフェンスのローグライト。手札のカードでタワーや罠を配置し、押し寄せる魔物から砦を守れ。無料でブラウザからすぐにプレイ可能。',
+    path: '/ashen-rampart',
+  },
 };
 
 /** FAQ アイテムの型定義 */
@@ -134,17 +140,17 @@ export const ABOUT_FAQ_ITEMS: ReadonlyArray<FaqItem> = [
   {
     question: '何種類のゲームがありますか？',
     answer:
-      '現在 13 種類のゲームを提供しています。パズル、シューティング、RPG、レース、ホラー、ストラテジーなど多彩なジャンルを取り揃えています。',
+      '現在 14 種類のゲームを提供しています。パズル、シューティング、RPG、レース、ホラー、ストラテジーなど多彩なジャンルを取り揃えています。',
   },
 ];
 
 /** ページごとのmeta description マッピング（ゲーム以外を含む） */
 export const META_DESCRIPTIONS: Readonly<Record<string, string>> = {
-  '/': '13種類の無料ブラウザゲームが楽しめるゲームプラットフォーム。パズル、シューティング、RPG、レース、ホラーなど多彩なジャンルを収録。',
+  '/': '14種類の無料ブラウザゲームが楽しめるゲームプラットフォーム。パズル、シューティング、RPG、レース、ホラーなど多彩なジャンルを収録。',
   ...Object.fromEntries(
     Object.entries(GAME_SEO_DATA).map(([path, data]) => [path, data.description])
   ),
-  '/about': 'Game Platform（niku9.click）のサイト概要。13種類の無料ブラウザゲームを提供するゲームプラットフォームです。',
+  '/about': 'Game Platform（niku9.click）のサイト概要。14種類の無料ブラウザゲームを提供するゲームプラットフォームです。',
   '/privacy-policy': 'Game Platform（niku9.click）のプライバシーポリシー。個人情報の取り扱いについて説明します。',
   '/terms': 'Game Platform（niku9.click）の利用規約。サービスの利用条件について説明します。',
   '/contact': 'Game Platform（niku9.click）へのお問い合わせ。ご質問やご要望はこちらからお寄せください。',

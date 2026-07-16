@@ -45,7 +45,7 @@ describe('useItemListSchema', () => {
     expect(parsed.name).toBe('Game Platform ゲーム一覧');
   });
 
-  it('13 ゲームが全て含まれること', () => {
+  it('14 ゲームが全て含まれること', () => {
     renderHook(() => useItemListSchema(), {
       wrapper: createWrapper('/'),
     });

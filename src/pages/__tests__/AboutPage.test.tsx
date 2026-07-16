@@ -37,7 +37,7 @@ describe('AboutPage', () => {
     it('Game Platform の概要説明が表示されること', () => {
       renderAboutPage();
       expect(
-        screen.getByText(/13 種類の無料ブラウザゲームが楽しめるプラットフォーム/)
+        screen.getByText(/14 種類の無料ブラウザゲームが楽しめるプラットフォーム/)
       ).toBeInTheDocument();
     });
 
@@ -58,7 +58,7 @@ describe('AboutPage', () => {
 
     it('各カードのタイトルが表示されること', () => {
       renderAboutPage();
-      expect(screen.getByText('13種類のゲーム')).toBeInTheDocument();
+      expect(screen.getByText('14種類のゲーム')).toBeInTheDocument();
       expect(screen.getByText('完全無料')).toBeInTheDocument();
       expect(screen.getByText('登録不要')).toBeInTheDocument();
     });

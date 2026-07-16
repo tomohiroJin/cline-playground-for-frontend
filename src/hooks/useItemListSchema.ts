@@ -22,7 +22,7 @@ export const useItemListSchema = (): void => {
       '@type': 'ItemList',
       '@id': `${SITE_BASE_URL}/#gamelist`,
       name: 'Game Platform ゲーム一覧',
-      description: '13種類の無料ブラウザゲーム',
+      description: '14種類の無料ブラウザゲーム',
       numberOfItems: gameEntries.length,
       itemListElement: gameEntries.map((game, index) => ({
         '@type': 'ListItem',
