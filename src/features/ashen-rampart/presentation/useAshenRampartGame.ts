@@ -30,6 +30,9 @@ export const useAshenRampartGame = (rng?: RandomPort) => {
    *
    * setState の updater 内で setError を呼ぶと StrictMode の二重実行時に
    * 副作用が二重に走るため、updater は使わずクロージャの run から次状態を計算する。
+   *
+   * 不変条件: クロージャの run を読むため、1つのハンドラ/エフェクト内で
+   * dispatch を2回以上呼ぶと2回目が古い状態を見る。呼び出しは1回までにすること。
    */
   const dispatch = useCallback(
     (update: (state: RunState) => RunState) => {
