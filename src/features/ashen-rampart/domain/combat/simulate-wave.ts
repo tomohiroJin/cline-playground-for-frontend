@@ -204,7 +204,10 @@ export const simulateWave = (
         v.hp -= damage;
         if (v.hp <= 0 && v.alive) kill(v, events);
       }
-      tower.cooldown = tower.spec.cooldownTicks;
+      // 発射周期をちょうど cooldownTicks tick にするため -1 する
+      // （次tick以降の `cooldown > 0` decrement 判定と合わせて、
+      // ちょうど cooldownTicks tick後に再発射できる）
+      tower.cooldown = tower.spec.cooldownTicks - 1;
     });
 
     // ⑤ スナップショット

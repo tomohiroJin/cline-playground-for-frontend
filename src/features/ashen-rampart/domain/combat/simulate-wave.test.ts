@@ -85,4 +85,51 @@ describe('simulateWave', () => {
       }
     }
   });
+
+  it('タワーの発射周期はちょうど cooldownTicks tick になる', () => {
+    // 重装（速度0.06）は射程内に長く留まるため、複数回の発射間隔を観測できる
+    const board = placeTower(
+      createBoard(PLAINS_MAP),
+      'arrow-tower',
+      PLAINS_MAP.buildSlots[1]
+    );
+    const wave: WaveDefinition = {
+      entries: [{ enemyId: 'brute', count: 1, spawnIntervalTicks: 0 }],
+    };
+    const result = simulateWave(board, wave);
+    const shotTicks = result.ticks
+      .filter((t) => t.events.some((e) => e.kind === 'shot'))
+      .map((t) => t.tick);
+
+    // 十分な回数の発射が観測できていること（射程通過が速すぎない前提の確認）
+    expect(shotTicks.length).toBeGreaterThanOrEqual(3);
+    for (let i = 1; i < shotTicks.length; i++) {
+      expect(shotTicks[i] - shotTicks[i - 1]).toBe(8);
+    }
+  });
+
+  it('splashRadius を持つタワーは範囲内の複数の敵に同時ダメージを与える', () => {
+    // 火砲台（splashRadius:1, damage:12）を1基設置し、密集した雑兵の群れを通過させる
+    const board = placeTower(
+      createBoard(PLAINS_MAP),
+      'cannon-tower',
+      PLAINS_MAP.buildSlots[1]
+    );
+    const wave: WaveDefinition = {
+      entries: [{ enemyId: 'grunt', count: 3, spawnIntervalTicks: 1 }],
+    };
+    const result = simulateWave(board, wave);
+
+    const firstShotTick = result.ticks.find((t) =>
+      t.events.some((e) => e.kind === 'shot')
+    );
+    expect(firstShotTick).toBeDefined();
+
+    // 1回の発射（同一tick）で複数の敵のHPが最大値未満まで減っていれば
+    // 単体ではなく範囲ダメージが適用されたと判断できる
+    const damagedEnemies = firstShotTick!.enemies.filter(
+      (e) => e.hp < e.maxHp
+    );
+    expect(damagedEnemies.length).toBeGreaterThanOrEqual(2);
+  });
 });
