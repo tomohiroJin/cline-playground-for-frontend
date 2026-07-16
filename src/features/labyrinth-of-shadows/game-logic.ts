@@ -223,12 +223,21 @@ export const GameLogic = {
       const droppedSlot = g.keys > 0 ? g.items.find((it) => it.type === 'key' && it.got) : undefined;
       if (droppedSlot) {
         const cell = chooseDropCell(g.maze, g.player.x, g.player.y, e.x, e.y, g.items);
-        droppedSlot.x = cell.x;
-        droppedSlot.y = cell.y;
-        droppedSlot.got = false;
-        droppedSlot.dropped = true;
-        g.keys--;
-        g.msg = '🔑 鍵を落とした！';
+        // chooseDropCell は安全な隣接が無いとプレイヤー自身のセルへフォールバックする。
+        // 隣接候補（pcx±1/pcy±1）が自セルになることはないので、戻り値が自セル＝詰み。
+        // 自セルへ落とすと次tickで即再回収され（dropped鍵は加点なし）ペナルティが消えるので落とさない。
+        const onPlayerCell =
+          cell.x === Math.floor(g.player.x) && cell.y === Math.floor(g.player.y);
+        if (onPlayerCell) {
+          g.msg = '💔 ダメージ！';
+        } else {
+          droppedSlot.x = cell.x;
+          droppedSlot.y = cell.y;
+          droppedSlot.got = false;
+          droppedSlot.dropped = true;
+          g.keys--;
+          g.msg = '🔑 鍵を落とした！';
+        }
       } else {
         g.msg = '💔 ダメージ！';
       }

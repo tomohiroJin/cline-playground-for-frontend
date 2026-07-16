@@ -560,6 +560,33 @@ describe('labyrinth-of-shadows/game-logic', () => {
       expect(s.items.some((i) => i.dropped)).toBe(false);
     });
 
+    test('落下先が自セルしかない詰み位置では鍵を落とさない（即再回収での無効化を防ぐ）', () => {
+      // 中央だけ通路・四方が壁の 3x3。落下先候補が無く chooseDropCell は自セルへ
+      // フォールバックする。そこに落とすと即再回収でペナルティが消えるため落とさない。
+      const boxed = [
+        [1, 1, 1],
+        [1, 0, 1],
+        [1, 1, 1],
+      ];
+      const s = GameStateBuilder.create()
+        .withMaze(boxed)
+        .withPlayer({ x: 1.5, y: 1.5 })
+        .withEnemy('chaser', { x: 1.5, y: 1.6, active: true })
+        .withKeys(2, 3)
+        .build();
+      s.items = [
+        { x: 5, y: 5, type: 'key', got: true },
+        { x: 6, y: 6, type: 'key', got: true },
+      ];
+      const enemy = s.enemies[0];
+
+      GameLogic.updateEnemyWithStrategy(s, enemy, 16);
+
+      expect(s.keys).toBe(2);
+      expect(s.items.some((i) => i.dropped)).toBe(false);
+      expect(s.msg).toBe('💔 ダメージ！');
+    });
+
     test('壁際で捕まっても敵は壁にめり込まず歩けるセルに留まる', () => {
       // 敵を上端の壁(y=0)の近くに置き、北向きへ押し戻される状況を作る。
       // 押し戻し先を検査しないと敵が壁に埋まって動けなくなる回帰を防ぐ。
