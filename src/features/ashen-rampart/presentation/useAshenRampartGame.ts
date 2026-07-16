@@ -25,18 +25,24 @@ export const useAshenRampartGame = (rng?: RandomPort) => {
   const [replayTick, setReplayTick] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  /** ユースケース呼び出しを共通のエラーハンドリングで包む */
-  const dispatch = useCallback((update: (state: RunState) => RunState) => {
-    setRun((current) => {
+  /**
+   * ユースケース呼び出しを共通のエラーハンドリングで包む
+   *
+   * setState の updater 内で setError を呼ぶと StrictMode の二重実行時に
+   * 副作用が二重に走るため、updater は使わずクロージャの run から次状態を計算する。
+   */
+  const dispatch = useCallback(
+    (update: (state: RunState) => RunState) => {
       try {
+        const next = update(run);
         setError(null);
-        return update(current);
+        setRun(next);
       } catch (e) {
         setError(e instanceof Error ? e.message : '不明なエラーが発生しました');
-        return current;
       }
-    });
-  }, []);
+    },
+    [run]
+  );
 
   const selectCard = useCallback(
     (handIndex: number) => {
