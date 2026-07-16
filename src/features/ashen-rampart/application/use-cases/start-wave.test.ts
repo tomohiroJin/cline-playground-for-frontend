@@ -74,6 +74,56 @@ describe('finishWave', () => {
     expect(next.phase).toBe('result');
     expect(next.status).toBe('won');
   });
+
+  it('使い切った罠は盤面から除去される', () => {
+    // 落とし穴（uses:1）を経路マスに配置、最初の敵が踏んで使い切る
+    const base = startRun(rng());
+    const stateWithTrap: RunState = {
+      ...base,
+      board: {
+        ...base.board,
+        traps: [
+          {
+            cardId: 'pitfall',
+            pos: PLAINS_MAP.path[5],
+            usesLeft: 1,
+          },
+        ],
+      },
+    };
+    const combat = startWave(stateWithTrap);
+    const next = finishWave(combat, rng());
+    // 落とし穴は1体を葬り、残る5体が漏れる
+    expect(combat.lastResult?.leaked).toBe(5);
+    // usesLeft が 0 になった罠は除去される
+    expect(next.board.traps).toHaveLength(0);
+  });
+
+  it('使い残した罠は usesLeft を減らして盤面に残る', () => {
+    // 棘罠を usesLeft:10 で配置（手動オーバーライド）、6体全員が踏んで usesLeft:4 で残る
+    const base = startRun(rng());
+    const stateWithTrap: RunState = {
+      ...base,
+      board: {
+        ...base.board,
+        traps: [
+          {
+            cardId: 'spike-trap',
+            pos: PLAINS_MAP.path[5],
+            usesLeft: 10,
+          },
+        ],
+      },
+    };
+    const combat = startWave(stateWithTrap);
+    const next = finishWave(combat, rng());
+    // 棘罠は 5 ダメージで雑兵は 20hp なので生き残る。全員漏れる
+    expect(combat.lastResult?.leaked).toBe(6);
+    // usesLeft は 10 - 6 = 4 になる
+    expect(next.board.traps).toHaveLength(1);
+    expect(next.board.traps[0].cardId).toBe('spike-trap');
+    expect(next.board.traps[0].usesLeft).toBe(4);
+  });
 });
 
 describe('chooseReward', () => {
