@@ -2,6 +2,7 @@ import { GameLogic } from '../game-logic';
 import { GameStateFactory } from '../entity-factory';
 import type { GameState } from '../types';
 import { GAME_BALANCE } from '../domain/constants';
+import { MazeService } from '../maze-service';
 import { setupAudioContextMock } from './helpers/audio-mock';
 import { GameStateBuilder } from './helpers/game-state-builder';
 
@@ -494,6 +495,144 @@ describe('labyrinth-of-shadows/game-logic', () => {
 
       expect(movedNormal).toBeGreaterThan(0);
       expect(movedBoosted).toBeGreaterThan(movedNormal);
+    });
+  });
+
+  describe('捕縛時の鍵ドロップ', () => {
+    test('鍵を持って接触すると取得済みの鍵スロットを復活させて落とす（配列長は不変）', () => {
+      const s = GameStateBuilder.create()
+        .withPlayer({ x: 1.5, y: 1.5 })
+        .withEnemy('chaser', { x: 1.5, y: 1.8, active: true })
+        .withKeys(2, 3)
+        .build();
+      // 実プレイでは鍵は開始時に配置され、取得すると got=true になる。
+      // 取得済み鍵スロット2つを用意（keys=2 と整合）。
+      s.items = [
+        { x: 5, y: 5, type: 'key', got: true },
+        { x: 6, y: 6, type: 'key', got: true },
+      ];
+      const beforeLen = s.items.length;
+      const enemy = s.enemies[0];
+
+      GameLogic.updateEnemyWithStrategy(s, enemy, 16);
+
+      expect(s.keys).toBe(1);
+      // 新規 push しない＝配列長（＝ライト数）は不変
+      expect(s.items).toHaveLength(beforeLen);
+      // 取得済みスロットの1つが未取得の落とし鍵として歩けるセルに復活
+      const dropped = s.items.filter((i) => i.type === 'key' && i.dropped && !i.got);
+      expect(dropped).toHaveLength(1);
+      expect(s.maze[dropped[0].y][dropped[0].x]).toBe(0);
+      expect(s.msg).toBe('🔑 鍵を落とした！');
+    });
+
+    test('鍵0で接触してもドロップせず keys は負にならない', () => {
+      const s = GameStateBuilder.create()
+        .withPlayer({ x: 1.5, y: 1.5 })
+        .withEnemy('chaser', { x: 1.5, y: 1.8, active: true })
+        .withKeys(0, 3)
+        .build();
+      const enemy = s.enemies[0];
+
+      GameLogic.updateEnemyWithStrategy(s, enemy, 16);
+
+      expect(s.keys).toBe(0);
+      expect(s.items.some((i) => i.dropped)).toBe(false);
+      expect(s.msg).toBe('💔 ダメージ！');
+    });
+
+    test('無敵中は接触してもドロップしない（1接触=最大1ドロップ）', () => {
+      const s = GameStateBuilder.create()
+        .withPlayer({ x: 1.5, y: 1.5 })
+        .withEnemy('chaser', { x: 1.5, y: 1.8, active: true })
+        .withKeys(2, 3)
+        .withInvincibility(1000)
+        .build();
+      s.items = [
+        { x: 5, y: 5, type: 'key', got: true },
+        { x: 6, y: 6, type: 'key', got: true },
+      ];
+      const enemy = s.enemies[0];
+
+      GameLogic.updateEnemyWithStrategy(s, enemy, 16);
+
+      expect(s.keys).toBe(2);
+      expect(s.items.some((i) => i.dropped)).toBe(false);
+    });
+
+    test('落下先が自セルしかない詰み位置では鍵を落とさない（即再回収での無効化を防ぐ）', () => {
+      // 中央だけ通路・四方が壁の 3x3。落下先候補が無く chooseDropCell は自セルへ
+      // フォールバックする。そこに落とすと即再回収でペナルティが消えるため落とさない。
+      const boxed = [
+        [1, 1, 1],
+        [1, 0, 1],
+        [1, 1, 1],
+      ];
+      const s = GameStateBuilder.create()
+        .withMaze(boxed)
+        .withPlayer({ x: 1.5, y: 1.5 })
+        .withEnemy('chaser', { x: 1.5, y: 1.6, active: true })
+        .withKeys(2, 3)
+        .build();
+      s.items = [
+        { x: 5, y: 5, type: 'key', got: true },
+        { x: 6, y: 6, type: 'key', got: true },
+      ];
+      const enemy = s.enemies[0];
+
+      GameLogic.updateEnemyWithStrategy(s, enemy, 16);
+
+      expect(s.keys).toBe(2);
+      expect(s.items.some((i) => i.dropped)).toBe(false);
+      expect(s.msg).toBe('💔 ダメージ！');
+    });
+
+    test('壁際で捕まっても敵は壁にめり込まず歩けるセルに留まる', () => {
+      // 敵を上端の壁(y=0)の近くに置き、北向きへ押し戻される状況を作る。
+      // 押し戻し先を検査しないと敵が壁に埋まって動けなくなる回帰を防ぐ。
+      const s = GameStateBuilder.create()
+        .withPlayer({ x: 1.5, y: 1.5 })
+        .withEnemy('chaser', { x: 1.5, y: 1.4, active: true })
+        .withKeys(0, 3)
+        .build();
+      const enemy = s.enemies[0];
+
+      GameLogic.updateEnemyWithStrategy(s, enemy, 16);
+
+      expect(MazeService.isWalkable(s.maze, enemy.x, enemy.y)).toBe(true);
+    });
+  });
+
+  describe('落とした鍵の再回収', () => {
+    test('落とした鍵を拾い直すと keys は戻るがスコア/コンボは増えない', () => {
+      const s = GameStateBuilder.create()
+        .withPlayer({ x: 2.5, y: 1.5 })
+        .withScore(500)
+        .withCombo(3, 1000)
+        .build();
+      s.keys = 1;
+      s.items = [{ x: 2, y: 1, type: 'key', got: false, dropped: true }];
+
+      GameLogic.updateItems(s);
+
+      expect(s.keys).toBe(2);
+      expect(s.score).toBe(500);
+      expect(s.combo).toBe(3);
+      expect(s.items[0].got).toBe(true);
+    });
+
+    test('通常の鍵は従来通りスコアが加算される（リグレッション防止）', () => {
+      const s = GameStateBuilder.create()
+        .withPlayer({ x: 2.5, y: 1.5 })
+        .withScore(500)
+        .build();
+      s.keys = 0;
+      s.items = [{ x: 2, y: 1, type: 'key', got: false }];
+
+      GameLogic.updateItems(s);
+
+      expect(s.keys).toBe(1);
+      expect(s.score).toBeGreaterThan(500);
     });
   });
 });

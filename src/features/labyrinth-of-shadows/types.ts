@@ -48,6 +48,8 @@ export interface Enemy extends Entity {
 export interface Item extends Entity {
   type: EntityType;
   got: boolean;
+  /** 捕縛時に落とした鍵は true（再回収時にスコア/コンボを与えない目印） */
+  dropped?: boolean;
 }
 
 export interface Sprite extends Entity {

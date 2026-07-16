@@ -7,6 +7,8 @@ import { GAME_BALANCE } from './domain/constants';
 import { isPlayerNearItem, isPlayerNearExit, isPlayerCollidingEnemy } from './domain/services/collision';
 import { calculateKeyScore, calculateVictoryScore, calculateCombo } from './domain/services/scoring';
 import { getEnemyStrategy } from './domain/services/enemy-strategy';
+import { chooseDropCell } from './domain/services/key-drop';
+import { resolveKnockback } from './domain/services/knockback';
 import type { NoiseSource } from './domain/services/enemy-strategy';
 import type { GameEvent } from './application/game-events';
 import type { EnemyAlert } from './game-tick';
@@ -116,6 +118,14 @@ export const GameLogic = {
       item.got = true;
       switch (item.type) {
         case 'key': {
+          if (item.dropped) {
+            // 落とした鍵の拾い直し: 進行だけ戻し、スコア/コンボは与えない
+            // （被弾→再回収での純増・コンボ稼ぎを防ぐ）
+            g.keys++;
+            g.msg = `🔑 落とした鍵を拾い直した (${g.keys}/${g.reqKeys})`;
+            AudioService.play('key', 0.45);
+            break;
+          }
           g.combo = calculateCombo(g.combo, g.gTime, g.lastKeyTime);
           g.lastKeyTime = g.gTime;
           const bonus = calculateKeyScore(g.combo);
@@ -203,14 +213,49 @@ export const GameLogic = {
       g.invince = CONFIG.timing.invinceDuration;
       g.score = Math.max(0, g.score - CONFIG.score.damagePenalty);
       g.combo = 0;
-      g.msg = '💔 ダメージ！';
+
+      // 鍵を持っていれば1個ドロップし、捕縛を「事件」にする。
+      // 着地は敵と反対方向の歩けるセル（chooseDropCell がデススパイラルを抑制）。
+      // 新規 push はしない：ItemMeshes は1アイテム=1点光源で有効ライト数を一定に保つ設計
+      // （数が変わると three.js が全被照明マテリアルのシェーダを同期再コンパイルしカクつく）。
+      // 取得済みの鍵スロット（got=true・ライトは intensity=0 で常駐）を1つ復活させ、
+      // 落下セルへ移す＝配列長＝ライト数は不変のままドロップを表現する。
+      const droppedSlot = g.keys > 0 ? g.items.find((it) => it.type === 'key' && it.got) : undefined;
+      if (droppedSlot) {
+        const cell = chooseDropCell(g.maze, g.player.x, g.player.y, e.x, e.y, g.items);
+        // chooseDropCell は安全な隣接が無いとプレイヤー自身のセルへフォールバックする。
+        // 隣接候補（pcx±1/pcy±1）が自セルになることはないので、戻り値が自セル＝詰み。
+        // 自セルへ落とすと次tickで即再回収され（dropped鍵は加点なし）ペナルティが消えるので落とさない。
+        const onPlayerCell =
+          cell.x === Math.floor(g.player.x) && cell.y === Math.floor(g.player.y);
+        if (onPlayerCell) {
+          g.msg = '💔 ダメージ！';
+        } else {
+          droppedSlot.x = cell.x;
+          droppedSlot.y = cell.y;
+          droppedSlot.got = false;
+          droppedSlot.dropped = true;
+          g.keys--;
+          g.msg = '🔑 鍵を落とした！';
+        }
+      } else {
+        g.msg = '💔 ダメージ！';
+      }
       g.msgTimer = GAME_BALANCE.timing.DAMAGE_MESSAGE_DURATION;
       AudioService.play('hurt', 0.5);
 
-      const edx = g.player.x - e.x;
-      const edy = g.player.y - e.y;
-      e.x -= (edx / d) * GAME_BALANCE.collision.ENEMY_KNOCKBACK_DISTANCE;
-      e.y -= (edy / d) * GAME_BALANCE.collision.ENEMY_KNOCKBACK_DISTANCE;
+      // プレイヤーから離れる向きへ押し戻す。壁にめり込むと敵が動けなくなるため、
+      // resolveKnockback で歩けるセルの範囲に留める（通常移動と同じ不変条件）。
+      const knockback = resolveKnockback(
+        g.maze,
+        e.x,
+        e.y,
+        g.player.x,
+        g.player.y,
+        GAME_BALANCE.collision.ENEMY_KNOCKBACK_DISTANCE
+      );
+      e.x = knockback.x;
+      e.y = knockback.y;
       e.dir += Math.PI;
     }
 

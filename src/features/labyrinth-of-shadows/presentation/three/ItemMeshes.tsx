@@ -30,15 +30,21 @@ const ITEM_LIGHT_INTENSITY = 3;
 
 /** アイテム1個。取得済みなら非表示、未取得なら上下にbobしつつゆっくり回転 */
 function SingleItem({ item }: { item: Item }) {
+  const groupRef = useRef<THREE.Group>(null);
   const meshRef = useRef<THREE.Mesh>(null);
   const lightRef = useRef<THREE.PointLight>(null);
   const color = CONTENT.items[item.type].color;
   const baseY = 0.6;
 
   useFrame((state) => {
+    const group = groupRef.current;
     const mesh = meshRef.current;
     const light = lightRef.current;
-    if (!mesh || !light) return;
+    if (!group || !mesh || !light) return;
+    // item.x/y は捕縛時の鍵ドロップ（スロット復活）で書き換わる live な値。
+    // EnemyMeshes と同じく位置を毎フレーム反映しないと、落とした鍵が元の位置に
+    // 残って見える（描画と拾得ロジックの乖離）。
+    group.position.set(item.x + 0.5, baseY, item.y + 0.5);
     // 有効ライト数を一定に保つためグループ/ライトの visible は切り替えない。
     // 取得済みはメッシュを隠しライト強度を0にする（ライト数が変わると three.js が
     // 全被照明マテリアルのシェーダを同期再コンパイルし、取得の瞬間にカクつくため）
@@ -51,7 +57,7 @@ function SingleItem({ item }: { item: Item }) {
   });
 
   return (
-    <group position={[item.x + 0.5, baseY, item.y + 0.5]}>
+    <group ref={groupRef} position={[item.x + 0.5, baseY, item.y + 0.5]}>
       <mesh ref={meshRef} castShadow>
         <ItemGeometry type={item.type} />
         <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.9} />
