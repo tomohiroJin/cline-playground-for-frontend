@@ -165,6 +165,17 @@ const GAME_CARDS: GameCardData[] = [
     imageAriaLabel: '原始進化録 - PRIMAL PATHのゲーム画面プレビュー',
     importImage: () => import(/* webpackChunkName: "img-primal-path" */ '../assets/images/primal_path_card_bg.webp'),
   },
+  {
+    id: 'ashen-rampart',
+    path: '/ashen-rampart',
+    title: '灰燼の城壁 - ASHEN RAMPART',
+    description:
+      'カードで砦を築くデッキ構築×タワーディフェンス。手札からタワーと罠を配置し、魔物のウェーブを凌ぎ切れ。報酬でデッキを育てるローグライト。',
+    ariaLabel: '灰燼の城壁 - ASHEN RAMPART ゲームをプレイする',
+    imageAriaLabel: '灰燼の城壁 - ASHEN RAMPARTのゲーム画面プレビュー',
+    importImage: () =>
+      import(/* webpackChunkName: "img-ashen-rampart" */ '../assets/images/ashen_rampart_card_bg.webp'),
+  },
 ];
 
 /** 個別ゲームカードコンポーネント */
@@ -232,7 +243,7 @@ const GameListPage: React.FC = () => {
             />
           </HeroSubtitle>
           <GameCounter>
-            <CountUp end={13} duration={1500} suffix=" Games" />
+            <CountUp end={14} duration={1500} suffix=" Games" />
           </GameCounter>
         </HeroSection>
 

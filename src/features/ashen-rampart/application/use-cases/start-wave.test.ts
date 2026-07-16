@@ -1,5 +1,4 @@
 import { startRun } from './start-run';
-import { playCard } from './play-card';
 import { startWave, finishWave } from './start-wave';
 import { chooseReward } from './choose-reward';
 import { SeededRandom } from '../../infrastructure/random/seeded-random';

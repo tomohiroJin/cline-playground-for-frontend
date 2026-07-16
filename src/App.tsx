@@ -41,6 +41,9 @@ const KeysAndArmsPage = lazy(
 const PrimalPathPage = lazy(
   () => import(/* webpackChunkName: "PrimalPathPage" */ './pages/PrimalPathPage')
 );
+const AshenRampartPage = lazy(
+  () => import(/* webpackChunkName: "AshenRampartPage" */ './pages/AshenRampartPage')
+);
 const AboutPage = lazy(() => import('./pages/AboutPage'));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
@@ -361,6 +364,7 @@ const App: React.FC = () => {
                 <Route path="/risk-lcd" element={<GamePageWrapper><RiskLcdPage /></GamePageWrapper>} />
                 <Route path="/keys-and-arms" element={<GamePageWrapper><KeysAndArmsPage /></GamePageWrapper>} />
                 <Route path="/primal-path" element={<GamePageWrapper><PrimalPathPage /></GamePageWrapper>} />
+                <Route path="/ashen-rampart" element={<GamePageWrapper><AshenRampartPage /></GamePageWrapper>} />
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
                 <Route path="/terms" element={<TermsPage />} />
