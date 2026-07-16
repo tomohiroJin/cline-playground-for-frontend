@@ -62,4 +62,16 @@ describe('board-state', () => {
     placeTower(board, 'arrow-tower', slot);
     expect(board.towers).toHaveLength(0);
   });
+
+  it('placeTower はタワーカード以外の cardId を渡すと throw する', () => {
+    expect(() => placeTower(board, 'spike-trap', slot)).toThrow(
+      'タワーカードではありません: spike-trap'
+    );
+  });
+
+  it('placeTrap は罠カード以外の cardId を渡すと throw する', () => {
+    expect(() => placeTrap(board, 'arrow-tower', pathCell)).toThrow(
+      '罠カードではありません: arrow-tower'
+    );
+  });
 });

@@ -54,6 +54,10 @@ export const placeTower = (
   if (!canPlaceTower(board, pos)) {
     throw new Error(`タワーを設置できないマスです: (${pos.x}, ${pos.y})`);
   }
+  const towerSpec = getCardDefinition(cardId).tower;
+  if (!towerSpec) {
+    throw new Error(`タワーカードではありません: ${cardId}`);
+  }
   return { ...board, towers: [...board.towers, { cardId, pos }] };
 };
 
