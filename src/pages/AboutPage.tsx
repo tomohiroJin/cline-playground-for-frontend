@@ -78,7 +78,7 @@ const GAME_GENRES = [
 
 /** フィーチャーカードデータ */
 const FEATURE_CARDS = [
-  { icon: '🎮', title: '13種類のゲーム', description: '多彩なジャンル' },
+  { icon: '🎮', title: '14種類のゲーム', description: '多彩なジャンル' },
   { icon: '💰', title: '完全無料', description: '課金要素なし' },
   { icon: '👤', title: '登録不要', description: 'すぐにプレイ' },
 ] as const;
@@ -105,7 +105,7 @@ const AboutPage: React.FC = () => {
       <section>
         <h3>Game Platform とは</h3>
         <p>
-          Game Platform は 13 種類の無料ブラウザゲームが楽しめるプラットフォームです。
+          Game Platform は 14 種類の無料ブラウザゲームが楽しめるプラットフォームです。
         </p>
         <FeatureGrid>
           {FEATURE_CARDS.map((card) => (

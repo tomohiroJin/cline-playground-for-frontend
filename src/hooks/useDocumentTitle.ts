@@ -17,6 +17,7 @@ const TITLE_MAP: Record<string, string> = {
   '/risk-lcd': 'RISK LCD | Game Platform',
   '/keys-and-arms': 'KEYS & ARMS | Game Platform',
   '/primal-path': '原始進化録 - PRIMAL PATH | Game Platform',
+  '/ashen-rampart': '灰燼の城壁 - ASHEN RAMPART | Game Platform',
   '/about': 'サイトについて | Game Platform',
   '/privacy-policy': 'プライバシーポリシー | Game Platform',
   '/terms': '利用規約 | Game Platform',

@@ -90,4 +90,10 @@ export const GAME_NOTICES: Readonly<Record<string, GameNoticeInfo>> = {
     hasFlashing: false,
     recommendedDevice: 'both',
   },
+  '/ashen-rampart': {
+    name: '灰燼の城壁 - ASHEN RAMPART',
+    hasAudio: false,
+    hasFlashing: false,
+    recommendedDevice: 'both',
+  },
 };

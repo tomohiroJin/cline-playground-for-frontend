@@ -11,7 +11,7 @@ jest.mock('react-router-dom', () => ({
 describe('useMetaDescription', () => {
   /** テスト前の元の description */
   const originalDescription =
-    '13種類の無料ブラウザゲームが楽しめるゲームプラットフォーム。パズル、シューティング、RPG、レース、ホラーなど多彩なジャンルを収録。';
+    '14種類の無料ブラウザゲームが楽しめるゲームプラットフォーム。パズル、シューティング、RPG、レース、ホラーなど多彩なジャンルを収録。';
 
   /** meta description 要素を取得 */
   const getMetaDescription = (): string | null => {

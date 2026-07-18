@@ -46,6 +46,7 @@ jest.mock('../assets/images/labyrinth_echo_card_bg.webp', () => 'labyrinth_echo_
 jest.mock('../assets/images/risk_lcd_card_bg.webp', () => 'risk_lcd_card_bg.webp');
 jest.mock('../assets/images/keys_and_arms_card_bg.webp', () => 'keys_and_arms_card_bg.webp');
 jest.mock('../assets/images/primal_path_card_bg.webp', () => 'primal_path_card_bg.webp');
+jest.mock('../assets/images/ashen_rampart_card_bg.webp', () => 'ashen_rampart_card_bg.webp');
 
 describe('GameListPage', () => {
   it('ゲームリストページが正しくレンダリングされること', () => {
@@ -60,8 +61,8 @@ describe('GameListPage', () => {
     // TypeWriter コンポーネント経由で表示されるため data-testid で確認
     expect(screen.getByTestId('typewriter')).toBeInTheDocument();
 
-    // プレイボタンが表示されていることを確認 (13ゲーム)
-    expect(screen.getAllByText(/Play Now/)).toHaveLength(13);
+    // プレイボタンが表示されていることを確認 (14ゲーム)
+    expect(screen.getAllByText(/Play Now/)).toHaveLength(14);
   });
 
   it('迷宮の残響カードが表示されること', () => {
