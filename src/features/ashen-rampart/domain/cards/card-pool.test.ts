@@ -30,4 +30,15 @@ describe('card-pool', () => {
   it('未知のカードIDは例外を投げる', () => {
     expect(() => getCardDefinition('unknown-card')).toThrow();
   });
+
+  it('初期デッキは10枚で、かがり火と火砲台を含む', () => {
+    expect(INITIAL_DECK).toHaveLength(10);
+    expect(INITIAL_DECK).toContain('beacon');
+    expect(INITIAL_DECK).toContain('cannon-tower');
+  });
+
+  it('初期デッキの弓兵の塔は4枚に抑えられている', () => {
+    const arrows = INITIAL_DECK.filter((id) => id === 'arrow-tower');
+    expect(arrows).toHaveLength(4);
+  });
 });

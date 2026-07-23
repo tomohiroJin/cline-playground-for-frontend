@@ -106,14 +106,14 @@ export const getCardDefinition = (id: string): CardDefinition => {
   return card;
 };
 
-/** 初期デッキ10枚: 基本タワー×6、基本スペル×3、罠×1 */
+/** 初期デッキ10枚: 弓兵×4・火砲台×1・かがり火×1・業火×2・補給×1・棘罠×1 */
 export const INITIAL_DECK: readonly string[] = [
   'arrow-tower',
   'arrow-tower',
   'arrow-tower',
   'arrow-tower',
-  'arrow-tower',
-  'arrow-tower',
+  'cannon-tower',
+  'beacon',
   'fire-blast',
   'fire-blast',
   'supply',
@@ -123,6 +123,7 @@ export const INITIAL_DECK: readonly string[] = [
 /** ウェーブクリア報酬の抽選プール */
 export const REWARD_POOL: readonly string[] = [
   'cannon-tower',
+  'beacon',
   'pitfall',
   'mud-time',
   'smith-blessing',
