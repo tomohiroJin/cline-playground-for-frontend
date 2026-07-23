@@ -177,4 +177,41 @@ describe('simulateWave', () => {
     );
     expect(damagedEnemies.length).toBeGreaterThanOrEqual(2);
   });
+
+  it('高台に置いた弓兵は通常スロットより早く敵を撃破する', () => {
+    const line = {
+      id: 'test-hg',
+      name: 'テスト高台',
+      width: 6,
+      height: 3,
+      path: [
+        { x: 0, y: 1 },
+        { x: 1, y: 1 },
+        { x: 2, y: 1 },
+        { x: 3, y: 1 },
+        { x: 4, y: 1 },
+        { x: 5, y: 1 },
+      ],
+      buildSlots: [{ x: 2, y: 0 }],
+    };
+    // 雑兵（HP20）を対象にする: 重装（HP60）だと現行の射程1.6/威力6では
+    // 高台補正込みでも射程内の滞在時間中に撃破しきれず両者とも取り漏らしてしまい
+    // 「高台の方が早く倒す」という比較が成立しないため
+    const wave: WaveDefinition = {
+      entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0 }],
+    };
+    const normalBoard = placeTower(createBoard(line), 'arrow-tower', { x: 2, y: 0 });
+    const highBoard = placeTower(
+      createBoard({ ...line, highGround: [{ x: 2, y: 0 }] }),
+      'arrow-tower',
+      { x: 2, y: 0 }
+    );
+    const defeatTick = (r: ReturnType<typeof simulateWave>) =>
+      r.ticks.find((t) => t.events.some((e) => e.kind === 'defeat'))?.tick;
+    const normalTick = defeatTick(simulateWave(normalBoard, wave));
+    const highTick = defeatTick(simulateWave(highBoard, wave));
+    expect(normalTick).toBeDefined();
+    expect(highTick).toBeDefined();
+    expect(highTick!).toBeLessThan(normalTick!);
+  });
 });
