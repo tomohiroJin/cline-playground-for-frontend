@@ -18,6 +18,8 @@ export interface TowerSpec {
   cooldownTicks: number;
   /** 範囲ダメージ半径（0 = 単体攻撃） */
   splashRadius: number;
+  /** オーラ効果（定義されていれば攻撃せず、隣接タワーを強化する） */
+  aura?: { towerDamageBonus: number };
 }
 
 /** 罠性能（経路マスに設置、踏んだ敵に発動） */

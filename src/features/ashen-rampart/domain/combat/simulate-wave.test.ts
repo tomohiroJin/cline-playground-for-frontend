@@ -214,4 +214,56 @@ describe('simulateWave', () => {
     expect(highTick).toBeDefined();
     expect(highTick!).toBeLessThan(normalTick!);
   });
+
+  it('かがり火は自身では攻撃しない', () => {
+    const board = placeTower(
+      createBoard(PLAINS_MAP),
+      'beacon',
+      PLAINS_MAP.buildSlots[1]
+    );
+    const wave: WaveDefinition = {
+      entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0 }],
+    };
+    const result = simulateWave(board, wave);
+    expect(result.defeated).toBe(0);
+    expect(result.leaked).toBe(1);
+  });
+
+  it('かがり火に隣接する弓兵は火力が上がり早く撃破する', () => {
+    const line = {
+      id: 'test-beacon',
+      name: 'テスト篝火',
+      width: 6,
+      height: 3,
+      path: [
+        { x: 0, y: 1 },
+        { x: 1, y: 1 },
+        { x: 2, y: 1 },
+        { x: 3, y: 1 },
+        { x: 4, y: 1 },
+        { x: 5, y: 1 },
+      ],
+      // (2,0) と (3,0) は隣接（Chebyshev=1）
+      buildSlots: [{ x: 2, y: 0 }, { x: 3, y: 0 }],
+    };
+    // 雑兵（HP20）を対象にする: 重装（HP60）だと現行の射程1.6/威力6では
+    // 隣接強化込みでも射程内の滞在時間中に撃破しきれず両者とも取り漏らしてしまい
+    // 「隣接強化の方が早く倒す」という比較が成立しないため（高台テストと同じ理由）
+    const wave: WaveDefinition = {
+      entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0 }],
+    };
+    const soloBoard = placeTower(createBoard(line), 'arrow-tower', { x: 2, y: 0 });
+    const buffedBoard = placeTower(
+      placeTower(createBoard(line), 'arrow-tower', { x: 2, y: 0 }),
+      'beacon',
+      { x: 3, y: 0 }
+    );
+    const defeatTick = (r: ReturnType<typeof simulateWave>) =>
+      r.ticks.find((t) => t.events.some((e) => e.kind === 'defeat'))?.tick;
+    const soloTick = defeatTick(simulateWave(soloBoard, wave));
+    const buffedTick = defeatTick(simulateWave(buffedBoard, wave));
+    expect(soloTick).toBeDefined();
+    expect(buffedTick).toBeDefined();
+    expect(buffedTick!).toBeLessThan(soloTick!);
+  });
 });

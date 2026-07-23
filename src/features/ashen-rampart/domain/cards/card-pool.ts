@@ -68,6 +68,21 @@ const CARDS: readonly CardDefinition[] = [
     spell: { gainMana: 2 },
   },
   {
+    id: 'beacon',
+    name: 'かがり火',
+    type: 'tower',
+    cost: 2,
+    rarity: 'rare',
+    description: '攻撃はしないが、隣接する味方タワーの攻撃力を+25%する篝火。',
+    tower: {
+      range: 0,
+      damage: 0,
+      cooldownTicks: 0,
+      splashRadius: 0,
+      aura: { towerDamageBonus: 0.25 },
+    },
+  },
+  {
     id: 'smith-blessing',
     name: '鍛冶の加護',
     type: 'tactic',

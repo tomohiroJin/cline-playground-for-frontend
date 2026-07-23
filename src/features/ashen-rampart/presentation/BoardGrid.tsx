@@ -88,10 +88,13 @@ export const BoardGrid: React.FC<Props> = ({
       const placeable =
         (placingType === 'tower' && canPlaceTower(board, pos)) ||
         (placingType === 'trap' && canPlaceTrap(board, pos));
-      const icon = tower
-        ? getCardDefinition(tower.cardId).tower?.splashRadius
-          ? '💣'
-          : '🏹'
+      const towerSpec = tower ? getCardDefinition(tower.cardId).tower : undefined;
+      const icon = towerSpec
+        ? towerSpec.aura
+          ? '🔥'
+          : towerSpec.splashRadius
+            ? '💣'
+            : '🏹'
         : trap
           ? '🕳'
           : '';

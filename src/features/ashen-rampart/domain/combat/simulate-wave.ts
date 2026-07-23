@@ -112,25 +112,48 @@ export const simulateWave = (
     spawnOffset += entry.count * entry.spawnIntervalTicks;
   }
 
+  // 8近傍判定（対角含む）。同一セルは除く
+  const areAdjacent = (a: CellPos, b: CellPos): boolean =>
+    Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y)) === 1;
+
+  // オーラ源（かがり火など）。攻撃タワーの実効値算出に使う
+  const auraSources = board.towers.filter(
+    (t) => getCardDefinition(t.cardId).tower?.aura
+  );
+
   // タワー実効値を戦闘開始時に一括算出（placement は1ウェーブ中不変）
-  const towers = board.towers.map((t) => {
-    const spec = getCardDefinition(t.cardId).tower;
-    if (!spec) {
-      throw new Error(`タワーカードではありません: ${t.cardId}`);
-    }
-    const highGroundMult = isHighGround(board.map, t.pos) ? HIGH_GROUND_DAMAGE_MULT : 1;
-    const effectiveDamage = Math.round(
-      spec.damage * highGroundMult * board.towerAttackMultiplier
-    );
-    return {
-      pos: t.pos,
-      range: spec.range,
-      splashRadius: spec.splashRadius,
-      cooldownTicks: spec.cooldownTicks,
-      effectiveDamage,
-      cooldown: 0,
-    };
-  });
+  const towers = board.towers
+    .map((t) => {
+      const spec = getCardDefinition(t.cardId).tower;
+      if (!spec) {
+        throw new Error(`タワーカードではありません: ${t.cardId}`);
+      }
+      return { pos: t.pos, spec };
+    })
+    // オーラ塔は攻撃しない
+    .filter((t) => !t.spec.aura)
+    .map((t) => {
+      const beaconBonus = auraSources
+        .filter((b) => areAdjacent(b.pos, t.pos))
+        .reduce(
+          (sum, b) => sum + getCardDefinition(b.cardId).tower!.aura!.towerDamageBonus,
+          0
+        );
+      const highGroundMult = isHighGround(board.map, t.pos)
+        ? HIGH_GROUND_DAMAGE_MULT
+        : 1;
+      const effectiveDamage = Math.round(
+        t.spec.damage * highGroundMult * board.towerAttackMultiplier * (1 + beaconBonus)
+      );
+      return {
+        pos: t.pos,
+        range: t.spec.range,
+        splashRadius: t.spec.splashRadius,
+        cooldownTicks: t.spec.cooldownTicks,
+        effectiveDamage,
+        cooldown: 0,
+      };
+    });
   const trapUsesLeft = board.traps.map((t) => t.usesLeft);
 
   const ticks: CombatTick[] = [];
