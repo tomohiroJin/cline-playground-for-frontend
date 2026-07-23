@@ -1,5 +1,5 @@
 /**
- * 灰燼の城壁 - P1 カードプール（8種）
+ * 灰燼の城壁 - P1 カードプール（9種）
  */
 import type { CardDefinition } from './card-definition';
 
