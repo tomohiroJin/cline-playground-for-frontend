@@ -11,7 +11,7 @@ const CARDS: readonly CardDefinition[] = [
     cost: 2,
     rarity: 'common',
     description: '単体を速射する基本タワー。',
-    tower: { range: 2.5, damage: 6, cooldownTicks: 8, splashRadius: 0 },
+    tower: { range: 1.6, damage: 6, cooldownTicks: 8, splashRadius: 0 },
   },
   {
     id: 'cannon-tower',
@@ -20,7 +20,7 @@ const CARDS: readonly CardDefinition[] = [
     cost: 3,
     rarity: 'rare',
     description: '着弾点の周囲にもダメージを与える重砲。攻撃間隔は長い。',
-    tower: { range: 2, damage: 12, cooldownTicks: 18, splashRadius: 1 },
+    tower: { range: 1.5, damage: 12, cooldownTicks: 18, splashRadius: 1 },
   },
   {
     id: 'spike-trap',

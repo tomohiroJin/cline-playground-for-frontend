@@ -108,6 +108,21 @@ describe('simulateWave', () => {
     }
   });
 
+  it('射程を希少化した弓兵1基では重装1体を仕留めきれず漏らす', () => {
+    // 射程1.6では覆える経路が局所化し、万能ではなくなる（空間パズルの前提）
+    const board = placeTower(
+      createBoard(PLAINS_MAP),
+      'arrow-tower',
+      PLAINS_MAP.buildSlots[1] // (2,2)
+    );
+    const wave: WaveDefinition = {
+      entries: [{ enemyId: 'brute', count: 1, spawnIntervalTicks: 0 }],
+    };
+    const result = simulateWave(board, wave);
+    expect(result.leaked).toBe(1);
+    expect(result.defeated).toBe(0);
+  });
+
   it('splashRadius を持つタワーは範囲内の複数の敵に同時ダメージを与える', () => {
     // 火砲台（splashRadius:1, damage:12）を1基設置し、密集した雑兵の群れを通過させる
     const board = placeTower(
