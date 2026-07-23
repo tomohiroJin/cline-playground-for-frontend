@@ -316,38 +316,51 @@ describe('simulateWave', () => {
     expect(targetSnapshot!.hp).toBe(20 - expectedDamage);
   });
 
-  it('かがり火2基が同一タワーに隣接すると加算合成で1基のときより実効ダメージが高くなる', () => {
-    // かがり火1基(+0.25)と2基(+0.25+0.25=+0.5)を比較し、
-    // 1発目のダメージが round(6*1.25)=8 → round(6*1.5)=9 と Σ加算合成になることを確認する
+  it('複数のかがり火が同一タワーに隣接するとΣ加算合成される', () => {
+    // かがり火1基(+0.25)と3基(+0.25×3=+0.75)を比較する。
+    // Σ加算合成なら round(6×1.75)=11、
+    // もし誤って乗算合成 Π(1+b) になっていた場合は round(6×1.25³)=round(11.719)=12 となり、
+    // 丸め後の値が 11 ≠ 12 で必ず乖離する入力を選ぶことで、
+    // 「加算合成であり乗算合成ではない」ことを実測ダメージの厳密一致で判別する
+    // （2基版は round(6×1.5)=9 と round(6×1.25²)=round(9.375)=9 が丸め後に一致してしまい判別不能だった）。
     const line = {
       id: 'test-beacon-multi',
       name: 'テスト篝火複数',
       width: 6,
-      height: 3,
+      height: 4,
       path: [
-        { x: 0, y: 1 },
-        { x: 1, y: 1 },
-        { x: 2, y: 1 },
-        { x: 3, y: 1 },
-        { x: 4, y: 1 },
-        { x: 5, y: 1 },
+        { x: 0, y: 2 },
+        { x: 1, y: 2 },
+        { x: 2, y: 2 },
+        { x: 3, y: 2 },
+        { x: 4, y: 2 },
+        { x: 5, y: 2 },
       ],
-      // (2,0) の弓兵に対して (1,0)・(3,0) はいずれも隣接（Chebyshev=1）
-      buildSlots: [{ x: 1, y: 0 }, { x: 2, y: 0 }, { x: 3, y: 0 }],
+      // (2,1) の弓兵に対して (1,0)・(2,0)・(3,0) はいずれも隣接（Chebyshev=1）
+      buildSlots: [
+        { x: 2, y: 1 },
+        { x: 1, y: 0 },
+        { x: 2, y: 0 },
+        { x: 3, y: 0 },
+      ],
     };
     const wave: WaveDefinition = {
       entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0 }],
     };
     const singleBeaconBoard = placeTower(
-      placeTower(createBoard(line), 'arrow-tower', { x: 2, y: 0 }),
+      placeTower(createBoard(line), 'arrow-tower', { x: 2, y: 1 }),
       'beacon',
-      { x: 3, y: 0 }
+      { x: 2, y: 0 }
     );
-    const doubleBeaconBoard = placeTower(
+    const tripleBeaconBoard = placeTower(
       placeTower(
-        placeTower(createBoard(line), 'arrow-tower', { x: 2, y: 0 }),
+        placeTower(
+          placeTower(createBoard(line), 'arrow-tower', { x: 2, y: 1 }),
+          'beacon',
+          { x: 1, y: 0 }
+        ),
         'beacon',
-        { x: 1, y: 0 }
+        { x: 2, y: 0 }
       ),
       'beacon',
       { x: 3, y: 0 }
@@ -367,9 +380,10 @@ describe('simulateWave', () => {
     };
 
     const singleDamage = firstShotDamage(simulateWave(singleBeaconBoard, wave));
-    const doubleDamage = firstShotDamage(simulateWave(doubleBeaconBoard, wave));
+    const tripleDamage = firstShotDamage(simulateWave(tripleBeaconBoard, wave));
     expect(singleDamage).toBe(Math.round(6 * 1.25));
-    expect(doubleDamage).toBe(Math.round(6 * 1.5));
-    expect(doubleDamage).toBeGreaterThan(singleDamage);
+    // Σ加算合成の厳密値（11）をアサート。乗算合成なら12になり、ここで必ず失敗する
+    expect(tripleDamage).toBe(11);
+    expect(tripleDamage).toBeGreaterThan(singleDamage);
   });
 });
