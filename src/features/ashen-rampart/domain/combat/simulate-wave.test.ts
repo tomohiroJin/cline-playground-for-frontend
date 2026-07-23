@@ -1,6 +1,10 @@
 import { PLAINS_MAP } from '../board/stage-map';
 import { createBoard, placeTower, placeTrap } from '../board/board-state';
-import { simulateWave, NO_MODIFIERS } from './simulate-wave';
+import {
+  simulateWave,
+  NO_MODIFIERS,
+  HIGH_GROUND_DAMAGE_MULT,
+} from './simulate-wave';
 import type { WaveDefinition } from './waves';
 
 const SMALL_WAVE: WaveDefinition = {
@@ -265,5 +269,107 @@ describe('simulateWave', () => {
     expect(soloTick).toBeDefined();
     expect(buffedTick).toBeDefined();
     expect(buffedTick!).toBeLessThan(soloTick!);
+  });
+
+  it('towerAttackMultiplier は高台補正と二重適用されず式通りに合成される', () => {
+    // 高台(x1.3) × towerAttackMultiplier(x1.5、鍛冶の加護相当) の複合。
+    // 二重適用になっていなければ、1発目の与ダメージは
+    // round(damage × 1.3 × 1.5 × (1+0)) と厳密に一致するはず
+    const line = {
+      id: 'test-mult',
+      name: 'テスト倍率合成',
+      width: 6,
+      height: 3,
+      path: [
+        { x: 0, y: 1 },
+        { x: 1, y: 1 },
+        { x: 2, y: 1 },
+        { x: 3, y: 1 },
+        { x: 4, y: 1 },
+        { x: 5, y: 1 },
+      ],
+      buildSlots: [{ x: 2, y: 0 }],
+      highGround: [{ x: 2, y: 0 }],
+    };
+    const wave: WaveDefinition = {
+      entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0 }],
+    };
+    const baseBoard = placeTower(createBoard(line), 'arrow-tower', { x: 2, y: 0 });
+    // createBoard 後にオブジェクトをスプレッドして towerAttackMultiplier を直接上書きする
+    const board = { ...baseBoard, towerAttackMultiplier: 1.5 };
+
+    const result = simulateWave(board, wave);
+    const firstShotTick = result.ticks.find((t) =>
+      t.events.some((e) => e.kind === 'shot')
+    );
+    expect(firstShotTick).toBeDefined();
+    const shotEvent = firstShotTick!.events.find((e) => e.kind === 'shot');
+    expect(shotEvent).toBeDefined();
+    const targetIndex = (shotEvent as { targetIndex: number }).targetIndex;
+    const targetSnapshot = firstShotTick!.enemies.find(
+      (e) => e.index === targetIndex
+    );
+    expect(targetSnapshot).toBeDefined();
+
+    // 雑兵の HP は 20。式通りなら 20 - round(6 * 1.3 * 1.5) = 8 になる
+    const expectedDamage = Math.round(6 * HIGH_GROUND_DAMAGE_MULT * 1.5);
+    expect(targetSnapshot!.hp).toBe(20 - expectedDamage);
+  });
+
+  it('かがり火2基が同一タワーに隣接すると加算合成で1基のときより実効ダメージが高くなる', () => {
+    // かがり火1基(+0.25)と2基(+0.25+0.25=+0.5)を比較し、
+    // 1発目のダメージが round(6*1.25)=8 → round(6*1.5)=9 と Σ加算合成になることを確認する
+    const line = {
+      id: 'test-beacon-multi',
+      name: 'テスト篝火複数',
+      width: 6,
+      height: 3,
+      path: [
+        { x: 0, y: 1 },
+        { x: 1, y: 1 },
+        { x: 2, y: 1 },
+        { x: 3, y: 1 },
+        { x: 4, y: 1 },
+        { x: 5, y: 1 },
+      ],
+      // (2,0) の弓兵に対して (1,0)・(3,0) はいずれも隣接（Chebyshev=1）
+      buildSlots: [{ x: 1, y: 0 }, { x: 2, y: 0 }, { x: 3, y: 0 }],
+    };
+    const wave: WaveDefinition = {
+      entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0 }],
+    };
+    const singleBeaconBoard = placeTower(
+      placeTower(createBoard(line), 'arrow-tower', { x: 2, y: 0 }),
+      'beacon',
+      { x: 3, y: 0 }
+    );
+    const doubleBeaconBoard = placeTower(
+      placeTower(
+        placeTower(createBoard(line), 'arrow-tower', { x: 2, y: 0 }),
+        'beacon',
+        { x: 1, y: 0 }
+      ),
+      'beacon',
+      { x: 3, y: 0 }
+    );
+
+    const firstShotDamage = (r: ReturnType<typeof simulateWave>): number => {
+      const firstShotTick = r.ticks.find((t) =>
+        t.events.some((e) => e.kind === 'shot')
+      );
+      const shotEvent = firstShotTick?.events.find((e) => e.kind === 'shot');
+      const targetIndex = (shotEvent as { targetIndex: number }).targetIndex;
+      const targetSnapshot = firstShotTick?.enemies.find(
+        (e) => e.index === targetIndex
+      );
+      // 雑兵の HP は 20。撃破していれば消滅しているのでその場合はダメージ量=20扱い
+      return targetSnapshot ? 20 - targetSnapshot.hp : 20;
+    };
+
+    const singleDamage = firstShotDamage(simulateWave(singleBeaconBoard, wave));
+    const doubleDamage = firstShotDamage(simulateWave(doubleBeaconBoard, wave));
+    expect(singleDamage).toBe(Math.round(6 * 1.25));
+    expect(doubleDamage).toBe(Math.round(6 * 1.5));
+    expect(doubleDamage).toBeGreaterThan(singleDamage);
   });
 });

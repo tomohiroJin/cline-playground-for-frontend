@@ -9,6 +9,7 @@ import type { BoardState } from '../board/board-state';
 import type { CellPos } from '../board/stage-map';
 import { isSlowCell, isHighGround } from '../board/stage-map';
 import { getCardDefinition } from '../cards/card-pool';
+import type { TowerSpec } from '../cards/card-definition';
 import { getEnemySpec, type EnemySpec } from './enemies';
 import type { WaveDefinition } from './waves';
 
@@ -116,44 +117,48 @@ export const simulateWave = (
   const areAdjacent = (a: CellPos, b: CellPos): boolean =>
     Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y)) === 1;
 
-  // オーラ源（かがり火など）。攻撃タワーの実効値算出に使う
-  const auraSources = board.towers.filter(
-    (t) => getCardDefinition(t.cardId).tower?.aura
+  // aura が定義された TowerSpec への絞り込み（型述語で `!` 非null断定を排除）
+  const hasAura = (
+    spec: TowerSpec
+  ): spec is TowerSpec & { aura: { towerDamageBonus: number } } =>
+    spec.aura !== undefined;
+
+  // オーラ源（かがり火など）。攻撃タワーの実効値算出に使う正規化済みリスト
+  const auraSources: { pos: CellPos; bonus: number }[] = board.towers.flatMap(
+    (t) => {
+      const spec = getCardDefinition(t.cardId).tower;
+      if (!spec || !hasAura(spec)) return [];
+      return [{ pos: t.pos, bonus: spec.aura.towerDamageBonus }];
+    }
   );
 
-  // タワー実効値を戦闘開始時に一括算出（placement は1ウェーブ中不変）
-  const towers = board.towers
-    .map((t) => {
-      const spec = getCardDefinition(t.cardId).tower;
-      if (!spec) {
-        throw new Error(`タワーカードではありません: ${t.cardId}`);
-      }
-      return { pos: t.pos, spec };
-    })
-    // オーラ塔は攻撃しない
-    .filter((t) => !t.spec.aura)
-    .map((t) => {
-      const beaconBonus = auraSources
-        .filter((b) => areAdjacent(b.pos, t.pos))
-        .reduce(
-          (sum, b) => sum + getCardDefinition(b.cardId).tower!.aura!.towerDamageBonus,
-          0
-        );
-      const highGroundMult = isHighGround(board.map, t.pos)
-        ? HIGH_GROUND_DAMAGE_MULT
-        : 1;
-      const effectiveDamage = Math.round(
-        t.spec.damage * highGroundMult * board.towerAttackMultiplier * (1 + beaconBonus)
-      );
-      return {
-        pos: t.pos,
-        range: t.spec.range,
-        splashRadius: t.spec.splashRadius,
-        cooldownTicks: t.spec.cooldownTicks,
-        effectiveDamage,
-        cooldown: 0,
-      };
-    });
+  // タワー実効値を戦闘開始時に一括算出（placement は1ウェーブ中不変）。
+  // board.towers と1:1・同順・同長を維持し、shot イベントの towerIndex が
+  // board.towers のインデックスと一致するようにする（オーラ塔はフィルタせず isAura でスキップ）
+  const towers = board.towers.map((t) => {
+    const spec = getCardDefinition(t.cardId).tower;
+    if (!spec) {
+      throw new Error(`タワーカードではありません: ${t.cardId}`);
+    }
+    const beaconBonus = auraSources
+      .filter((b) => areAdjacent(b.pos, t.pos))
+      .reduce((sum, b) => sum + b.bonus, 0);
+    const highGroundMult = isHighGround(board.map, t.pos)
+      ? HIGH_GROUND_DAMAGE_MULT
+      : 1;
+    const effectiveDamage = Math.round(
+      spec.damage * highGroundMult * board.towerAttackMultiplier * (1 + beaconBonus)
+    );
+    return {
+      pos: t.pos,
+      range: spec.range,
+      splashRadius: spec.splashRadius,
+      cooldownTicks: spec.cooldownTicks,
+      effectiveDamage,
+      cooldown: 0,
+      isAura: hasAura(spec),
+    };
+  });
   const trapUsesLeft = board.traps.map((t) => t.usesLeft);
 
   const ticks: CombatTick[] = [];
@@ -216,6 +221,8 @@ export const simulateWave = (
 
     // ④ タワー攻撃（射程内で最も進んだ敵を狙う）
     towers.forEach((tower, towerIndex) => {
+      // オーラ塔（かがり火等）は隣接タワーを強化するだけで自身は発射しない
+      if (tower.isAura) return;
       if (tower.cooldown > 0) {
         tower.cooldown--;
         return;
