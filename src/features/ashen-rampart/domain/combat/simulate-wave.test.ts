@@ -123,6 +123,36 @@ describe('simulateWave', () => {
     expect(result.defeated).toBe(0);
   });
 
+  it('滞留セルを通る敵は到達に多くの tick を要する', () => {
+    // 中央3セルを滞留にした直線マップで、有り/無しの突破 tick を比較
+    const base = {
+      id: 'test-line',
+      name: 'テスト直線',
+      width: 8,
+      height: 1,
+      path: [
+        { x: 0, y: 0 },
+        { x: 1, y: 0 },
+        { x: 2, y: 0 },
+        { x: 3, y: 0 },
+        { x: 4, y: 0 },
+        { x: 5, y: 0 },
+        { x: 6, y: 0 },
+        { x: 7, y: 0 },
+      ],
+      buildSlots: [],
+    };
+    const wave: WaveDefinition = {
+      entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0 }],
+    };
+    const normal = simulateWave(createBoard(base), wave);
+    const slowed = simulateWave(
+      createBoard({ ...base, slowCells: [{ x: 3, y: 0 }, { x: 4, y: 0 }] }),
+      wave
+    );
+    expect(slowed.ticks.length).toBeGreaterThan(normal.ticks.length);
+  });
+
   it('splashRadius を持つタワーは範囲内の複数の敵に同時ダメージを与える', () => {
     // 火砲台（splashRadius:1, damage:12）を1基設置し、密集した雑兵の群れを通過させる
     const board = placeTower(

@@ -7,6 +7,7 @@
  */
 import type { BoardState } from '../board/board-state';
 import type { CellPos } from '../board/stage-map';
+import { isSlowCell } from '../board/stage-map';
 import { getCardDefinition } from '../cards/card-pool';
 import { getEnemySpec, type EnemySpec } from './enemies';
 import type { WaveDefinition } from './waves';
@@ -57,6 +58,9 @@ export interface CombatResult {
 
 /** 無限ループ防止の安全弁 */
 export const MAX_TICKS = 2000;
+
+/** 滞留セル上の敵の移動量倍率 */
+export const SLOW_TERRAIN_MULT = 0.6;
 
 interface RuntimeEnemy {
   index: number;
@@ -140,10 +144,12 @@ export const simulateWave = (
       }
     }
 
-    // ② 移動と漏れ判定
+    // ② 移動と漏れ判定（滞留セル上は減速）
     for (const e of enemies) {
       if (!e.alive) continue;
-      e.progress += e.spec.speed * modifiers.speedMultiplier;
+      const cell = path[Math.min(Math.floor(e.progress), path.length - 1)];
+      const terrainMult = isSlowCell(board.map, cell) ? SLOW_TERRAIN_MULT : 1;
+      e.progress += e.spec.speed * modifiers.speedMultiplier * terrainMult;
       if (e.progress >= path.length - 1) {
         e.alive = false;
         e.leaked = true;
