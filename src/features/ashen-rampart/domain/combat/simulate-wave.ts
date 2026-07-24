@@ -7,7 +7,9 @@
  */
 import type { BoardState } from '../board/board-state';
 import type { CellPos } from '../board/stage-map';
+import { isSlowCell, isHighGround } from '../board/stage-map';
 import { getCardDefinition } from '../cards/card-pool';
+import type { TowerSpec } from '../cards/card-definition';
 import { getEnemySpec, type EnemySpec } from './enemies';
 import type { WaveDefinition } from './waves';
 
@@ -58,6 +60,12 @@ export interface CombatResult {
 /** 無限ループ防止の安全弁 */
 export const MAX_TICKS = 2000;
 
+/** 滞留セル上の敵の移動量倍率 */
+export const SLOW_TERRAIN_MULT = 0.6;
+
+/** 高台に設置したタワーの火力倍率 */
+export const HIGH_GROUND_DAMAGE_MULT = 1.3;
+
 interface RuntimeEnemy {
   index: number;
   spec: EnemySpec;
@@ -105,12 +113,51 @@ export const simulateWave = (
     spawnOffset += entry.count * entry.spawnIntervalTicks;
   }
 
+  // 8近傍判定（対角含む）。同一セルは除く
+  const areAdjacent = (a: CellPos, b: CellPos): boolean =>
+    Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y)) === 1;
+
+  // aura が定義された TowerSpec への絞り込み（型述語で `!` 非null断定を排除）
+  const hasAura = (
+    spec: TowerSpec
+  ): spec is TowerSpec & { aura: { towerDamageBonus: number } } =>
+    spec.aura !== undefined;
+
+  // オーラ源（かがり火など）。攻撃タワーの実効値算出に使う正規化済みリスト
+  const auraSources: { pos: CellPos; bonus: number }[] = board.towers.flatMap(
+    (t) => {
+      const spec = getCardDefinition(t.cardId).tower;
+      if (!spec || !hasAura(spec)) return [];
+      return [{ pos: t.pos, bonus: spec.aura.towerDamageBonus }];
+    }
+  );
+
+  // タワー実効値を戦闘開始時に一括算出（placement は1ウェーブ中不変）。
+  // board.towers と1:1・同順・同長を維持し、shot イベントの towerIndex が
+  // board.towers のインデックスと一致するようにする（オーラ塔はフィルタせず isAura でスキップ）
   const towers = board.towers.map((t) => {
     const spec = getCardDefinition(t.cardId).tower;
     if (!spec) {
       throw new Error(`タワーカードではありません: ${t.cardId}`);
     }
-    return { pos: t.pos, spec, cooldown: 0 };
+    const beaconBonus = auraSources
+      .filter((b) => areAdjacent(b.pos, t.pos))
+      .reduce((sum, b) => sum + b.bonus, 0);
+    const highGroundMult = isHighGround(board.map, t.pos)
+      ? HIGH_GROUND_DAMAGE_MULT
+      : 1;
+    const effectiveDamage = Math.round(
+      spec.damage * highGroundMult * board.towerAttackMultiplier * (1 + beaconBonus)
+    );
+    return {
+      pos: t.pos,
+      range: spec.range,
+      splashRadius: spec.splashRadius,
+      cooldownTicks: spec.cooldownTicks,
+      effectiveDamage,
+      cooldown: 0,
+      isAura: hasAura(spec),
+    };
   });
   const trapUsesLeft = board.traps.map((t) => t.usesLeft);
 
@@ -140,10 +187,12 @@ export const simulateWave = (
       }
     }
 
-    // ② 移動と漏れ判定
+    // ② 移動と漏れ判定（滞留セル上は減速）
     for (const e of enemies) {
       if (!e.alive) continue;
-      e.progress += e.spec.speed * modifiers.speedMultiplier;
+      const cell = path[Math.min(Math.floor(e.progress), path.length - 1)];
+      const terrainMult = isSlowCell(board.map, cell) ? SLOW_TERRAIN_MULT : 1;
+      e.progress += e.spec.speed * modifiers.speedMultiplier * terrainMult;
       if (e.progress >= path.length - 1) {
         e.alive = false;
         e.leaked = true;
@@ -172,6 +221,8 @@ export const simulateWave = (
 
     // ④ タワー攻撃（射程内で最も進んだ敵を狙う）
     towers.forEach((tower, towerIndex) => {
+      // オーラ塔（かがり火等）は隣接タワーを強化するだけで自身は発射しない
+      if (tower.isAura) return;
       if (tower.cooldown > 0) {
         tower.cooldown--;
         return;
@@ -181,21 +232,21 @@ export const simulateWave = (
         if (!e.alive) continue;
         const p = positionOf(e.progress, path);
         const dist = Math.hypot(p.x - tower.pos.x, p.y - tower.pos.y);
-        if (dist <= tower.spec.range && (!target || e.progress > target.progress)) {
+        if (dist <= tower.range && (!target || e.progress > target.progress)) {
           target = e;
         }
       }
       if (!target) return;
-      const damage = Math.round(tower.spec.damage * board.towerAttackMultiplier);
+      const damage = tower.effectiveDamage;
       const targetPos = positionOf(target.progress, path);
       const victims =
-        tower.spec.splashRadius > 0
+        tower.splashRadius > 0
           ? enemies.filter((e) => {
               if (!e.alive) return false;
               const p = positionOf(e.progress, path);
               return (
                 Math.hypot(p.x - targetPos.x, p.y - targetPos.y) <=
-                tower.spec.splashRadius
+                tower.splashRadius
               );
             })
           : [target];
@@ -207,7 +258,7 @@ export const simulateWave = (
       // 発射周期をちょうど cooldownTicks tick にするため -1 する
       // （次tick以降の `cooldown > 0` decrement 判定と合わせて、
       // ちょうど cooldownTicks tick後に再発射できる）
-      tower.cooldown = tower.spec.cooldownTicks - 1;
+      tower.cooldown = tower.cooldownTicks - 1;
     });
 
     // ⑤ スナップショット

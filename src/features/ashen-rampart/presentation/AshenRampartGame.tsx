@@ -74,6 +74,13 @@ export const AshenRampartGame: React.FC<Props> = ({ seed }) => {
     return type === 'tower' || type === 'trap' ? type : null;
   }, [selectedHandIndex, run.deck.hand]);
 
+  const placingRange = useMemo(() => {
+    if (selectedHandIndex === null) return undefined;
+    const cardId = run.deck.hand[selectedHandIndex];
+    if (cardId === undefined) return undefined;
+    return getCardDefinition(cardId).tower?.range;
+  }, [selectedHandIndex, run.deck.hand]);
+
   return (
     <Container>
       <Title>灰燼の城壁</Title>
@@ -87,6 +94,7 @@ export const AshenRampartGame: React.FC<Props> = ({ seed }) => {
             board={run.board}
             enemies={enemies}
             placingType={placingType}
+            placingRange={placingRange}
             onCellClick={game.placeAt}
           />
           {run.phase === 'preparation' && (

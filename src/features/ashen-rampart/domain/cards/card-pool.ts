@@ -1,5 +1,5 @@
 /**
- * 灰燼の城壁 - P1 カードプール（8種）
+ * 灰燼の城壁 - P1 カードプール（9種）
  */
 import type { CardDefinition } from './card-definition';
 
@@ -11,7 +11,7 @@ const CARDS: readonly CardDefinition[] = [
     cost: 2,
     rarity: 'common',
     description: '単体を速射する基本タワー。',
-    tower: { range: 2.5, damage: 6, cooldownTicks: 8, splashRadius: 0 },
+    tower: { range: 1.6, damage: 6, cooldownTicks: 8, splashRadius: 0 },
   },
   {
     id: 'cannon-tower',
@@ -20,7 +20,7 @@ const CARDS: readonly CardDefinition[] = [
     cost: 3,
     rarity: 'rare',
     description: '着弾点の周囲にもダメージを与える重砲。攻撃間隔は長い。',
-    tower: { range: 2, damage: 12, cooldownTicks: 18, splashRadius: 1 },
+    tower: { range: 1.5, damage: 12, cooldownTicks: 18, splashRadius: 1 },
   },
   {
     id: 'spike-trap',
@@ -68,6 +68,21 @@ const CARDS: readonly CardDefinition[] = [
     spell: { gainMana: 2 },
   },
   {
+    id: 'beacon',
+    name: 'かがり火',
+    type: 'tower',
+    cost: 2,
+    rarity: 'rare',
+    description: '攻撃はしないが、隣接する味方タワーの攻撃力を+25%する篝火。',
+    tower: {
+      range: 0,
+      damage: 0,
+      cooldownTicks: 0,
+      splashRadius: 0,
+      aura: { towerDamageBonus: 0.25 },
+    },
+  },
+  {
     id: 'smith-blessing',
     name: '鍛冶の加護',
     type: 'tactic',
@@ -91,14 +106,14 @@ export const getCardDefinition = (id: string): CardDefinition => {
   return card;
 };
 
-/** 初期デッキ10枚: 基本タワー×6、基本スペル×3、罠×1 */
+/** 初期デッキ10枚: 弓兵×4・火砲台×1・かがり火×1・業火×2・補給×1・棘罠×1 */
 export const INITIAL_DECK: readonly string[] = [
   'arrow-tower',
   'arrow-tower',
   'arrow-tower',
   'arrow-tower',
-  'arrow-tower',
-  'arrow-tower',
+  'cannon-tower',
+  'beacon',
   'fire-blast',
   'fire-blast',
   'supply',
@@ -108,6 +123,7 @@ export const INITIAL_DECK: readonly string[] = [
 /** ウェーブクリア報酬の抽選プール */
 export const REWARD_POOL: readonly string[] = [
   'cannon-tower',
+  'beacon',
   'pitfall',
   'mud-time',
   'smith-blessing',
