@@ -68,6 +68,20 @@ describe('BoardGrid 経路と目的地の可読性', () => {
     ).toBeInTheDocument();
   });
 
+  it('ラベルを持つ経路セルでも進行方向の矢印が描画される', () => {
+    renderBoard();
+
+    // 滞留セル (4,3) は経路が右→上へ折れる区間。方向表示が最も必要な場所
+    const slowCell = screen.getByRole('button', { name: /マス \(4, 3\)/ });
+    expect(slowCell).toHaveTextContent('滞留');
+    expect(slowCell).toHaveTextContent('↑');
+
+    // 入口セル (0,3) も同様にラベルと矢印を併せ持つ
+    const entrance = screen.getByRole('button', { name: /マス \(0, 3\)/ });
+    expect(entrance).toHaveTextContent('入口');
+    expect(entrance).toHaveTextContent('→');
+  });
+
   it('経路セルと設置スロットが aria-label で区別できる', () => {
     renderBoard();
 

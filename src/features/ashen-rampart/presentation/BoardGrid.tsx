@@ -93,12 +93,27 @@ const CellLabel = styled.span`
   pointer-events: none;
 `;
 
-/** 経路の進行方向 */
-const CellArrow = styled.span`
-  font-size: 16px;
-  color: #e4d2b8;
-  opacity: 0.85;
+/**
+ * 経路の進行方向
+ *
+ * ラベル（滞留・砦・入口）やタワーのアイコンと排他にしない。
+ * 滞留セルは経路が折れる区間にあり、方向表示が最も必要な場所であるため、
+ * ラベルがあっても矢印を消してはならない。
+ * アイコンがあるセルでは中央を譲り、右下の隅に小さく描く。
+ */
+const CellArrow = styled.span<{ $corner: boolean }>`
+  font-size: ${({ $corner }) => ($corner ? '11px' : '16px')};
+  color: #f5ead8;
+  text-shadow: 0 1px 2px #000;
   pointer-events: none;
+  ${({ $corner }) =>
+    $corner
+      ? `
+    position: absolute;
+    right: 2px;
+    bottom: 0;
+  `
+      : ''}
 `;
 
 const CellIcon = styled.span`
@@ -159,12 +174,10 @@ export const BoardGrid: React.FC<Props> = ({
           onMouseLeave={() => setHovered(null)}
           aria-label={cell.ariaLabel}
         >
-          {cell.icon ? (
-            <CellIcon>{cell.icon}</CellIcon>
-          ) : cell.label ? (
-            <CellLabel>{cell.label}</CellLabel>
-          ) : (
-            <CellArrow>{cell.arrow}</CellArrow>
+          {cell.label && <CellLabel>{cell.label}</CellLabel>}
+          {cell.icon && <CellIcon>{cell.icon}</CellIcon>}
+          {cell.arrow && (
+            <CellArrow $corner={cell.icon !== ''}>{cell.arrow}</CellArrow>
           )}
         </Cell>
       );
