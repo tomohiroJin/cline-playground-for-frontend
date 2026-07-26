@@ -1,8 +1,8 @@
 /**
- * 灰燼の城壁 - 盤面グリッド（P1 プレースホルダ描画）
+ * 灰燼の城壁 - 盤面グリッド
  *
- * 敵は tick スナップショットの補間座標を % 配置し、
- * CSS transition で滑らかに見せる。ロジックは持たない。
+ * 敵の通り道・向かう先・置ける場所が一目で読めることを最優先にする。
+ * セルの意味づけは cell-descriptor（純粋）に切り出し、ここは描画に徹する。
  */
 import React, { useState } from 'react';
 import styled from 'styled-components';
@@ -10,12 +10,12 @@ import type { BoardState } from '../domain/board/board-state';
 import { canPlaceTower, canPlaceTrap } from '../domain/board/board-state';
 import type { CellPos } from '../domain/board/stage-map';
 import {
-  isHighGround,
-  isSlowCell,
   coveredPathCells,
+  remainingPathCells,
 } from '../domain/board/stage-map';
 import type { EnemySnapshot } from '../domain/combat/simulate-wave';
-import { getCardDefinition } from '../domain/cards/card-pool';
+import { describeCell, type CellDescriptor } from './cell-descriptor';
+import { EnemyMarker } from './EnemyMarker';
 
 const Wrapper = styled.div`
   position: relative;
@@ -35,51 +35,64 @@ const Grid = styled.div<{ $cols: number; $rows: number }>`
   border-radius: 8px;
 `;
 
+/** セル背景。経路は明るい土色、設置スロットは寒色で明確に系統を分ける */
+const backgroundOf = (cell: CellDescriptor): string => {
+  if (cell.terrain === 'highground') return '#4a6b2c';
+  if (cell.terrain === 'slow') return '#3d5a7a';
+  if (cell.kind === 'path') return '#7a5f4a';
+  if (cell.kind === 'slot') return '#243450';
+  return '#171215';
+};
+
 const Cell = styled.button<{
-  $kind: 'path' | 'slot' | 'empty';
+  $bg: string;
+  $slot: boolean;
   $placeable: boolean;
-  $terrain: 'highground' | 'slow' | 'none';
   $covered: boolean;
+  $fortress: boolean;
+  $hasTower: boolean;
 }>`
-  border: none;
   border-radius: 4px;
-  font-size: 16px;
   padding: 0;
   position: relative;
-  background: ${({ $kind, $terrain }) =>
-    $terrain === 'highground'
-      ? '#3a4a2a'
-      : $terrain === 'slow'
-        ? '#2a3348'
-        : $kind === 'path'
-          ? '#3d3230'
-          : $kind === 'slot'
-            ? '#222b3a'
-            : '#1a1418'};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: ${({ $bg }) => $bg};
+  border: ${({ $slot, $fortress, $hasTower }) =>
+    $fortress
+      ? '2px solid #e8b04b'
+      : $hasTower
+        ? '2px solid #7fb069'
+        : $slot
+          ? '2px dashed #5b7099'
+          : '2px solid transparent'};
   outline: ${({ $placeable, $covered }) =>
     $placeable ? '2px solid #7fb069' : $covered ? '2px solid #e8b04b' : 'none'};
   cursor: ${({ $placeable }) => ($placeable ? 'pointer' : 'default')};
 `;
 
-const EnemyDot = styled.div<{ $x: number; $y: number }>`
-  position: absolute;
-  width: 5%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: #c0392b;
-  left: ${({ $x }) => $x}%;
-  top: ${({ $y }) => $y}%;
-  transition: left 0.1s linear, top 0.1s linear;
+/** 地形・砦・入口の名前。記号は誤読されるためテキストで示す */
+const CellLabel = styled.span`
+  font-size: 10px;
+  line-height: 1.1;
+  color: #f4ece0;
+  text-shadow: 0 1px 2px #000;
   pointer-events: none;
 `;
 
-const HpBar = styled.div<{ $ratio: number }>`
-  position: absolute;
-  top: -4px;
-  left: 0;
-  height: 3px;
-  width: ${({ $ratio }) => Math.max(0, $ratio * 100)}%;
-  background: #7fb069;
+/** 経路の進行方向 */
+const CellArrow = styled.span`
+  font-size: 16px;
+  color: #e4d2b8;
+  opacity: 0.85;
+  pointer-events: none;
+`;
+
+const CellIcon = styled.span`
+  font-size: 18px;
+  pointer-events: none;
 `;
 
 interface Props {
@@ -89,6 +102,8 @@ interface Props {
   placingType: 'tower' | 'trap' | null;
   /** 選択中タワーカードの射程（オーバーレイ用）。未選択/非タワーは undefined */
   placingRange?: number;
+  /** 砦の残ライフ。砦セルに表示する */
+  life?: number;
   onCellClick: (pos: CellPos) => void;
 }
 
@@ -97,9 +112,10 @@ export const BoardGrid: React.FC<Props> = ({
   enemies,
   placingType,
   placingRange,
+  life,
   onCellClick,
 }) => {
-  const { width, height, path, buildSlots } = board.map;
+  const { width, height } = board.map;
   const [hovered, setHovered] = useState<CellPos | null>(null);
 
   // 選択中タワーをホバーセルに置いた場合に覆う経路セル
@@ -113,63 +129,50 @@ export const BoardGrid: React.FC<Props> = ({
   const cells: React.ReactElement[] = [];
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      const isPath = path.some((p) => p.x === x && p.y === y);
-      const isSlot = buildSlots.some((s) => s.x === x && s.y === y);
-      const tower = board.towers.find((t) => t.pos.x === x && t.pos.y === y);
-      const trap = board.traps.find((t) => t.pos.x === x && t.pos.y === y);
       const pos = { x, y };
+      const cell = describeCell(board, pos, life);
       const placeable =
         (placingType === 'tower' && canPlaceTower(board, pos)) ||
         (placingType === 'trap' && canPlaceTrap(board, pos));
-      const towerSpec = tower ? getCardDefinition(tower.cardId).tower : undefined;
-      const icon = towerSpec
-        ? towerSpec.aura
-          ? '🔥'
-          : towerSpec.splashRadius
-            ? '💣'
-            : '🏹'
-        : trap
-          ? '🕳'
-          : '';
-      const terrain: 'highground' | 'slow' | 'none' = isHighGround(board.map, pos)
-        ? 'highground'
-        : isSlowCell(board.map, pos)
-          ? 'slow'
-          : 'none';
-      const terrainLabel =
-        terrain === 'highground' ? '・高台' : terrain === 'slow' ? '・滞留' : '';
-      const marker = terrain === 'highground' ? '⛰' : terrain === 'slow' ? '🌫' : '';
-      const covered = coveredKeys.has(`${x}-${y}`);
       cells.push(
         <Cell
           key={`${x}-${y}`}
-          $kind={isPath ? 'path' : isSlot ? 'slot' : 'empty'}
+          $bg={backgroundOf(cell)}
+          $slot={cell.kind === 'slot'}
           $placeable={placeable}
-          $terrain={terrain}
-          $covered={covered}
-          onClick={() => onCellClick({ x, y })}
-          onMouseEnter={() => setHovered({ x, y })}
+          $covered={coveredKeys.has(`${x}-${y}`)}
+          $fortress={cell.isFortress}
+          $hasTower={cell.icon !== ''}
+          onClick={() => onCellClick(pos)}
+          onMouseEnter={() => setHovered(pos)}
           onMouseLeave={() => setHovered(null)}
-          aria-label={`マス (${x}, ${y})${terrainLabel}`}
+          aria-label={cell.ariaLabel}
         >
-          {icon || marker}
+          {cell.icon ? (
+            <CellIcon>{cell.icon}</CellIcon>
+          ) : cell.label ? (
+            <CellLabel>{cell.label}</CellLabel>
+          ) : (
+            <CellArrow>{cell.arrow}</CellArrow>
+          )}
         </Cell>
       );
     }
   }
+
   return (
     <Wrapper>
       <Grid $cols={width} $rows={height}>
         {cells}
       </Grid>
       {enemies.map((e) => (
-        <EnemyDot
+        <EnemyMarker
           key={e.index}
-          $x={((e.x + 0.5) / width) * 100}
-          $y={((e.y + 0.5) / height) * 100}
-        >
-          <HpBar $ratio={e.hp / e.maxHp} />
-        </EnemyDot>
+          enemy={e}
+          boardWidth={width}
+          boardHeight={height}
+          cellsToFortress={remainingPathCells(board.map, e)}
+        />
       ))}
     </Wrapper>
   );

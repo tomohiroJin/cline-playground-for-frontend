@@ -11,6 +11,7 @@ import { HandArea } from './HandArea';
 import { StatusBar } from './StatusBar';
 import { RewardPanel } from './RewardPanel';
 import { ResultPanel } from './ResultPanel';
+import { WavePreview } from './WavePreview';
 import { SeededRandom, DefaultRandom } from '../infrastructure/random/seeded-random';
 import { getCardDefinition } from '../domain/cards/card-pool';
 
@@ -90,11 +91,13 @@ export const AshenRampartGame: React.FC<Props> = ({ seed }) => {
         <ResultPanel run={run} onRestart={game.restart} />
       ) : (
         <>
+          {run.phase === 'preparation' && <WavePreview waveIndex={run.waveIndex} />}
           <BoardGrid
             board={run.board}
             enemies={enemies}
             placingType={placingType}
             placingRange={placingRange}
+            life={run.life}
             onCellClick={game.placeAt}
           />
           {run.phase === 'preparation' && (

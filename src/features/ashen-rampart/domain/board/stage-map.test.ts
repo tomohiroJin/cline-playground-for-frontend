@@ -3,6 +3,10 @@ import {
   isHighGround,
   isSlowCell,
   coveredPathCells,
+  entranceCell,
+  fortressCell,
+  pathDirectionAt,
+  remainingPathCells,
 } from './stage-map';
 
 describe('stage-map 地形述語', () => {
@@ -40,5 +44,63 @@ describe('coveredPathCells', () => {
 
   it('射程0ならどの経路セルも覆わない', () => {
     expect(coveredPathCells(PLAINS_MAP, { x: 3, y: 2 }, 0)).toEqual([]);
+  });
+});
+
+describe('入口と砦', () => {
+  it('入口は経路の始端を返す', () => {
+    expect(entranceCell(PLAINS_MAP)).toEqual({ x: 0, y: 3 });
+  });
+
+  it('砦は経路の終端を返す', () => {
+    expect(fortressCell(PLAINS_MAP)).toEqual({ x: 8, y: 1 });
+  });
+
+  it('経路が空なら入口も砦も undefined を返す', () => {
+    const emptyMap = { ...PLAINS_MAP, path: [] };
+    expect(entranceCell(emptyMap)).toBeUndefined();
+    expect(fortressCell(emptyMap)).toBeUndefined();
+  });
+});
+
+describe('pathDirectionAt', () => {
+  it('横に進む経路セルは right を返す', () => {
+    // (0,3) → (1,3)
+    expect(pathDirectionAt(PLAINS_MAP, { x: 0, y: 3 })).toBe('right');
+  });
+
+  it('上に折れる経路セルは up を返す', () => {
+    // (4,3) → (4,2)
+    expect(pathDirectionAt(PLAINS_MAP, { x: 4, y: 3 })).toBe('up');
+  });
+
+  it('終端セルは進行方向を持たない', () => {
+    expect(pathDirectionAt(PLAINS_MAP, { x: 8, y: 1 })).toBeUndefined();
+  });
+
+  it('経路外のセルは undefined を返す', () => {
+    expect(pathDirectionAt(PLAINS_MAP, { x: 0, y: 0 })).toBeUndefined();
+  });
+});
+
+describe('remainingPathCells', () => {
+  it('入口にいる敵は経路長-1 の残りセル数を持つ', () => {
+    // 経路は11セルなので入口からは残り10
+    expect(remainingPathCells(PLAINS_MAP, { x: 0, y: 3 })).toBe(10);
+  });
+
+  it('砦に到達した敵は残り0になる', () => {
+    expect(remainingPathCells(PLAINS_MAP, { x: 8, y: 1 })).toBe(0);
+  });
+
+  it('セル間の補間座標でも最も近い経路セルから概算する', () => {
+    // (1.4, 3) は経路セル (1,3)（index 1）に最も近い → 残り9
+    expect(remainingPathCells(PLAINS_MAP, { x: 1.4, y: 3 })).toBe(9);
+  });
+
+  it('経路が空なら0を返す', () => {
+    expect(remainingPathCells({ ...PLAINS_MAP, path: [] }, { x: 0, y: 0 })).toBe(
+      0
+    );
   });
 });
