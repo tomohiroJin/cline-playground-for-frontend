@@ -73,12 +73,23 @@ const Cell = styled.button<{
   cursor: ${({ $placeable }) => ($placeable ? 'pointer' : 'default')};
 `;
 
-/** 地形・砦・入口の名前。記号は誤読されるためテキストで示す */
+/**
+ * 地形・砦・入口の名前。記号は誤読されるためテキストで示す
+ *
+ * 敵マーカーと HP バーはセル中央付近に描かれるため、
+ * ラベルは左上に寄せて重なりを避ける（1周目の観察で「入口」が
+ * 敵に隠れて「入」までしか読めない事例が出た）。
+ */
 const CellLabel = styled.span`
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  padding: 0 2px;
   font-size: 10px;
-  line-height: 1.1;
+  line-height: 1.3;
   color: #f4ece0;
-  text-shadow: 0 1px 2px #000;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 2px;
   pointer-events: none;
 `;
 

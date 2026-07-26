@@ -50,11 +50,31 @@ export const getEnemyVisual = (enemyId: string): EnemyVisual => {
   return { ...visual, name: getEnemySpec(enemyId).name };
 };
 
-/** HP 残量比から HP バーの色を得る（緑→黄→赤） */
-export const getHpBarColor = (ratio: number): string => {
-  if (ratio > 0.6) return '#6ab04c';
-  if (ratio > 0.3) return '#f0c419';
-  return '#e74c3c';
+/**
+ * HP バーの色は単色にする
+ *
+ * 残量で色を変える（緑→黄→赤）と、観察者がその色を**敵の種別**と誤読した。
+ * 種別は形・サイズ・本体色で示すため、バーの色は情報を持たせない。
+ */
+export const HP_BAR_COLOR = '#7fb069';
+
+/** 盤面に登場する敵の最大 HP。バーを絶対スケールで描くための基準 */
+export const MAX_ENEMY_HP = 60;
+
+/** バー幅の下限と上限（盤面幅に対する％） */
+const BAR_MIN_PCT = 2.5;
+const BAR_MAX_PCT = 8;
+
+/**
+ * 最大 HP から HP バーの幅（盤面幅に対する％）を得る
+ *
+ * 残量比だけを描くと、満タンの雑兵(HP20)と満タンの重装(HP60)が同じ見え方になり、
+ * **個体間の強さの差が原理的に読めない**。バー全長を最大HPの絶対スケールにすることで、
+ * 「硬い敵ほどバーが長い」を成立させる。
+ */
+export const getHpBarWidthPct = (maxHp: number): number => {
+  const ratio = Math.max(0, Math.min(1, maxHp / MAX_ENEMY_HP));
+  return BAR_MIN_PCT + (BAR_MAX_PCT - BAR_MIN_PCT) * ratio;
 };
 
 /** CSS clip-path の値。円は border-radius で描くため clip-path を使わない */

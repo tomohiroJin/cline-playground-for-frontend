@@ -1,8 +1,9 @@
 import {
   getEnemyVisual,
-  getHpBarColor,
+  getHpBarWidthPct,
   getShapeClipPath,
 } from './enemy-visual';
+import { getEnemySpec } from '../domain/combat/enemies';
 
 describe('getEnemyVisual', () => {
   describe('正常系', () => {
@@ -42,17 +43,25 @@ describe('getEnemyVisual', () => {
   });
 });
 
-describe('getHpBarColor', () => {
-  it('残量が多いときは緑を返す', () => {
-    expect(getHpBarColor(1)).toBe('#6ab04c');
+describe('getHpBarWidthPct', () => {
+  it('最大HPが大きい敵ほどバーが長くなる（強さの差を絶対スケールで示す）', () => {
+    const grunt = getHpBarWidthPct(getEnemySpec('grunt').hp);
+    const runner = getHpBarWidthPct(getEnemySpec('runner').hp);
+    const brute = getHpBarWidthPct(getEnemySpec('brute').hp);
+
+    expect(brute).toBeGreaterThan(grunt);
+    expect(grunt).toBeGreaterThan(runner);
   });
 
-  it('残量が中程度のときは黄を返す', () => {
-    expect(getHpBarColor(0.5)).toBe('#f0c419');
+  it('重装のバーは俊足のバーより明確に長い（2倍以上）', () => {
+    const runner = getHpBarWidthPct(getEnemySpec('runner').hp);
+    const brute = getHpBarWidthPct(getEnemySpec('brute').hp);
+
+    expect(brute / runner).toBeGreaterThanOrEqual(2);
   });
 
-  it('残量が少ないときは赤を返す', () => {
-    expect(getHpBarColor(0.1)).toBe('#e74c3c');
+  it('最大HPが基準を超えても上限で頭打ちになる', () => {
+    expect(getHpBarWidthPct(1000)).toBe(getHpBarWidthPct(60));
   });
 });
 

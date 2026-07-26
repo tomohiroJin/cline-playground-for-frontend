@@ -9,8 +9,9 @@ import styled from 'styled-components';
 import type { EnemySnapshot } from '../domain/combat/simulate-wave';
 import {
   getEnemyVisual,
-  getHpBarColor,
+  getHpBarWidthPct,
   getShapeClipPath,
+  HP_BAR_COLOR,
 } from './enemy-visual';
 
 const Wrapper = styled.div<{ $x: number; $y: number; $size: number }>`
@@ -42,11 +43,18 @@ const Body = styled.div<{ $color: string; $clip?: string; $inset: string }>`
   border-radius: ${({ $clip }) => ($clip ? '0' : '50%')};
 `;
 
-const HpTrack = styled.div`
+/**
+ * HP バー
+ *
+ * 全長は最大HPの絶対スケール（硬い敵ほど長い）。マーカーに密着させて、
+ * セルのテキストラベルを覆う面積を最小化する。
+ */
+const HpTrack = styled.div<{ $widthPct: number }>`
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 108%;
+  left: 50%;
+  bottom: 100%;
+  transform: translateX(-50%);
+  width: ${({ $widthPct }) => $widthPct}%;
   height: 4px;
   background: #14100f;
   border: 1px solid #6b5f57;
@@ -54,10 +62,10 @@ const HpTrack = styled.div`
   overflow: hidden;
 `;
 
-const HpFill = styled.div<{ $ratio: number; $color: string }>`
+const HpFill = styled.div<{ $ratio: number }>`
   height: 100%;
   width: ${({ $ratio }) => Math.max(0, Math.min(1, $ratio)) * 100}%;
-  background: ${({ $color }) => $color};
+  background: ${HP_BAR_COLOR};
 `;
 
 interface Props {
@@ -89,8 +97,8 @@ export const EnemyMarker: React.FC<Props> = ({
       $y={((enemy.y + 0.5) / boardHeight) * 100}
       $size={visual.sizePct}
     >
-      <HpTrack>
-        <HpFill $ratio={ratio} $color={getHpBarColor(ratio)} />
+      <HpTrack $widthPct={(getHpBarWidthPct(enemy.maxHp) / visual.sizePct) * 100}>
+        <HpFill $ratio={ratio} />
       </HpTrack>
       {visual.ringColor && <Ring $color={visual.ringColor} $clip={clip} />}
       <Body

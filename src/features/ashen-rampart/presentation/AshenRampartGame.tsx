@@ -12,6 +12,7 @@ import { StatusBar } from './StatusBar';
 import { RewardPanel } from './RewardPanel';
 import { ResultPanel } from './ResultPanel';
 import { WavePreview } from './WavePreview';
+import { EnemyLegend } from './EnemyLegend';
 import { SeededRandom, DefaultRandom } from '../infrastructure/random/seeded-random';
 import { getCardDefinition } from '../domain/cards/card-pool';
 
@@ -100,6 +101,7 @@ export const AshenRampartGame: React.FC<Props> = ({ seed }) => {
             life={run.life}
             onCellClick={game.placeAt}
           />
+          <EnemyLegend />
           {run.phase === 'preparation' && (
             <>
               <HandArea
