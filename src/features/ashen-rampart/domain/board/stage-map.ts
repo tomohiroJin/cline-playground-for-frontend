@@ -76,6 +76,61 @@ export const isHighGround = (map: StageMap, pos: CellPos): boolean =>
 export const isSlowCell = (map: StageMap, pos: CellPos): boolean =>
   (map.slowCells ?? []).some((c) => samePos(c, pos));
 
+/** 敵が出現する経路の始端（入口） */
+export const entranceCell = (map: StageMap): CellPos | undefined => map.path[0];
+
+/** 敵が到達したら漏れとなる経路の終端（砦） */
+export const fortressCell = (map: StageMap): CellPos | undefined =>
+  map.path[map.path.length - 1];
+
+/** 経路上の進行方向 */
+export type PathDirection = 'right' | 'left' | 'up' | 'down';
+
+/**
+ * 経路セルにおける進行方向を返す（終端セルは undefined）
+ *
+ * 盤面に方向を描くための情報。経路の並び順から算出するため、
+ * マップ定義に方向を持たせる必要がない。
+ */
+export const pathDirectionAt = (
+  map: StageMap,
+  pos: CellPos
+): PathDirection | undefined => {
+  const index = map.path.findIndex((c) => samePos(c, pos));
+  if (index < 0) return undefined;
+  const next = map.path[index + 1];
+  const current = map.path[index];
+  if (!next || !current) return undefined;
+  if (next.x > current.x) return 'right';
+  if (next.x < current.x) return 'left';
+  if (next.y > current.y) return 'down';
+  if (next.y < current.y) return 'up';
+  return undefined;
+};
+
+/**
+ * 指定位置から砦までの残り経路セル数
+ *
+ * 敵はセル間を補間した座標を持つため、最も近い経路セルを現在地とみなす。
+ * 「あとどれだけで砦に届くか」を盤面に出すための概算。
+ */
+export const remainingPathCells = (
+  map: StageMap,
+  pos: { x: number; y: number }
+): number => {
+  if (map.path.length === 0) return 0;
+  let nearestIndex = 0;
+  let nearestDistance = Infinity;
+  map.path.forEach((cell, index) => {
+    const distance = Math.hypot(cell.x - pos.x, cell.y - pos.y);
+    if (distance < nearestDistance) {
+      nearestDistance = distance;
+      nearestIndex = index;
+    }
+  });
+  return map.path.length - 1 - nearestIndex;
+};
+
 /** from からユークリッド距離 range 以内の経路セルを返す（射程オーバーレイ用） */
 export const coveredPathCells = (
   map: StageMap,
