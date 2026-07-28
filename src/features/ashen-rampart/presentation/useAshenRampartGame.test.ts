@@ -3,6 +3,8 @@ import { useAshenRampartGame, TICK_INTERVAL_MS } from './useAshenRampartGame';
 import { SeededRandom } from '../infrastructure/random/seeded-random';
 import { PLAINS_MAP } from '../domain/board/stage-map';
 import { getCardDefinition } from '../domain/cards/card-pool';
+import { MAX_TICKS } from '../domain/combat/simulate-wave';
+import type { PlayLogEventBody, PlayLogPort } from '../application/ports/play-log-port';
 
 describe('useAshenRampartGame', () => {
   beforeEach(() => jest.useFakeTimers());
@@ -57,5 +59,59 @@ describe('useAshenRampartGame', () => {
     act(() => result.current.restart());
     expect(result.current.run.phase).toBe('preparation');
     expect(result.current.run.waveIndex).toBe(0);
+  });
+});
+
+/** 記録イベントを配列に貯めるだけのモックポート */
+const createMockPlayLog = (): PlayLogPort & { events: PlayLogEventBody[] } => {
+  const events: PlayLogEventBody[] = [];
+  return {
+    events,
+    record: (e) => {
+      events.push(e);
+    },
+    exportAll: () => ({ version: 1, events: events.map((e) => ({ ...e, at: 0 })) }),
+  };
+};
+
+describe('行動ログ記録', () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  it('マウント時に run_started が1回だけ記録される', () => {
+    const log = createMockPlayLog();
+    renderHook(() => useAshenRampartGame(new SeededRandom(1), log));
+    expect(log.events.filter((e) => e.kind === 'run_started')).toHaveLength(1);
+  });
+
+  it('ウェーブ開始で wave_started が記録される', () => {
+    const log = createMockPlayLog();
+    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(1), log));
+    act(() => result.current.beginWave());
+    const started = log.events.filter((e) => e.kind === 'wave_started');
+    expect(started).toHaveLength(1);
+    expect(started[0]).toMatchObject({ wave: 0 });
+  });
+
+  it('リプレイ完走で wave_ended が記録される', () => {
+    const log = createMockPlayLog();
+    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(1), log));
+    act(() => result.current.beginWave());
+    // リプレイを完走させる（tick 数 × 間隔ぶん進める）
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS * (MAX_TICKS + 1));
+    });
+    expect(log.events.filter((e) => e.kind === 'wave_ended')).toHaveLength(1);
+  });
+
+  it('restart で新しい runId の run_started が記録される', () => {
+    const log = createMockPlayLog();
+    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(1), log));
+    act(() => result.current.restart());
+    const started = log.events.filter(
+      (e): e is Extract<PlayLogEventBody, { kind: 'run_started' }> => e.kind === 'run_started'
+    );
+    expect(started).toHaveLength(2);
+    expect(started[0].runId).not.toBe(started[1].runId);
   });
 });
