@@ -90,7 +90,12 @@ export const AshenRampartGame: React.FC<Props> = ({ seed }) => {
       <StatusBar run={run} />
       {error && <ErrorText role="alert">{error}</ErrorText>}
       {run.phase === 'result' ? (
-        <ResultPanel run={run} onRestart={game.restart} />
+        <ResultPanel
+          run={run}
+          onRestart={game.restart}
+          onNote={game.noteRun}
+          exportLogJson={game.exportLogJson}
+        />
       ) : (
         <>
           {run.phase === 'preparation' && <WavePreview waveIndex={run.waveIndex} />}

@@ -212,6 +212,14 @@ export const useAshenRampartGame = (rng?: RandomPort, playLog?: PlayLogPort) => 
     []
   );
 
+  /** 勝敗理由の記録（判定項目3）。run_note が無いランは未記入と解釈する */
+  const noteRun = useCallback(
+    (text: string) => {
+      record({ kind: 'run_note', runId, text });
+    },
+    [runId, record]
+  );
+
   return {
     run,
     selectedHandIndex,
@@ -224,6 +232,7 @@ export const useAshenRampartGame = (rng?: RandomPort, playLog?: PlayLogPort) => 
     restart,
     runId,
     exportLogJson,
+    noteRun,
     speed,
     changeSpeed,
     skipBattle,
