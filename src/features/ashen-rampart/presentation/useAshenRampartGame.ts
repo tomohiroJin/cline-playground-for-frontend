@@ -14,7 +14,7 @@ import { chooseReward } from '../application/use-cases/choose-reward';
 import { getCardDefinition } from '../domain/cards/card-pool';
 import type { CellPos } from '../domain/board/stage-map';
 import type { RunPhase, RunState } from '../domain/run/run-state';
-import type { PlayLogEventBody, PlayLogPort } from '../application/ports/play-log-port';
+import type { BattleSpeed, PlayLogEventBody, PlayLogPort } from '../application/ports/play-log-port';
 import { createRunId } from '../application/ports/play-log-port';
 import { LocalStoragePlayLog } from '../infrastructure/play-log/local-storage-play-log';
 
@@ -27,6 +27,8 @@ export const useAshenRampartGame = (rng?: RandomPort, playLog?: PlayLogPort) => 
   const [run, setRun] = useState<RunState>(() => startRun(rngRef.current));
   const [selectedHandIndex, setSelectedHandIndex] = useState<number | null>(null);
   const [replayTick, setReplayTick] = useState(0);
+  /** 戦闘リプレイの再生速度（ウェーブをまたいで維持する） */
+  const [speed, setSpeed] = useState<BattleSpeed>(1);
   const [error, setError] = useState<string | null>(null);
   const [runId, setRunId] = useState<string>(() => createRunId());
   const runStartedAtRef = useRef<number>(Date.now());
@@ -164,14 +166,29 @@ export const useAshenRampartGame = (rng?: RandomPort, playLog?: PlayLogPort) => 
     setRunId(createRunId());
   }, []);
 
-  // 戦闘リプレイ: combat フェーズ中は tick を進める
+  const changeSpeed = useCallback(
+    (next: BattleSpeed) => {
+      setSpeed(next);
+      record({ kind: 'battle_speed', runId, wave: run.waveIndex, speed: next });
+    },
+    [runId, run.waveIndex, record]
+  );
+
+  const skipBattle = useCallback(() => {
+    if (run.phase !== 'combat' || !run.lastResult) return;
+    record({ kind: 'battle_speed', runId, wave: run.waveIndex, speed: 'skip' });
+    // 末尾 tick へ飛ばすと完走エフェクトが wave_ended → finishWave を実行する
+    setReplayTick(run.lastResult.ticks.length);
+  }, [run.phase, run.lastResult, run.waveIndex, runId, record]);
+
+  // 戦闘リプレイ: combat フェーズ中は tick を進める（間隔は速度で割る）
   useEffect(() => {
     if (run.phase !== 'combat' || !run.lastResult) return undefined;
     const timer = setInterval(() => {
       setReplayTick((t) => t + 1);
-    }, TICK_INTERVAL_MS);
+    }, TICK_INTERVAL_MS / speed);
     return () => clearInterval(timer);
-  }, [run.phase, run.lastResult]);
+  }, [run.phase, run.lastResult, speed]);
 
   // リプレイ完走で結果を適用
   useEffect(() => {
@@ -207,5 +224,8 @@ export const useAshenRampartGame = (rng?: RandomPort, playLog?: PlayLogPort) => 
     restart,
     runId,
     exportLogJson,
+    speed,
+    changeSpeed,
+    skipBattle,
   };
 };

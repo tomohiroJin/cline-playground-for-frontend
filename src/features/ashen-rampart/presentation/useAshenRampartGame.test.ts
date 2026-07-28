@@ -148,3 +148,40 @@ describe('行動ログ記録', () => {
     expect(log.events.some((e) => e.kind === 'prep_action')).toBe(true);
   });
 });
+
+describe('再生速度とスキップ', () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  it('changeSpeed で速度が変わり battle_speed が記録される', () => {
+    const log = createMockPlayLog();
+    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(1), log));
+    act(() => result.current.beginWave());
+    act(() => result.current.changeSpeed(4));
+    expect(result.current.speed).toBe(4);
+    expect(log.events.filter((e) => e.kind === 'battle_speed')).toHaveLength(1);
+  });
+
+  it('4x は 1x の 1/4 の時間でリプレイが進む', () => {
+    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(1)));
+    act(() => result.current.beginWave());
+    act(() => result.current.changeSpeed(4));
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS); // 1x の1tick分の時間
+    });
+    expect(result.current.replayTick).toBe(4);
+  });
+
+  it('skipBattle でリプレイが即完走しウェーブが終了する', () => {
+    const log = createMockPlayLog();
+    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(1), log));
+    act(() => result.current.beginWave());
+    act(() => result.current.skipBattle());
+    // combat フェーズを抜けている（reward または result）
+    expect(result.current.run.phase).not.toBe('combat');
+    expect(
+      log.events.filter((e) => e.kind === 'battle_speed' && e.speed === 'skip')
+    ).toHaveLength(1);
+    expect(log.events.filter((e) => e.kind === 'wave_ended')).toHaveLength(1);
+  });
+});
