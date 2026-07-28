@@ -5,6 +5,7 @@ import { PLAINS_MAP } from '../domain/board/stage-map';
 import { getCardDefinition } from '../domain/cards/card-pool';
 import { MAX_TICKS } from '../domain/combat/simulate-wave';
 import type { PlayLogEventBody, PlayLogPort } from '../application/ports/play-log-port';
+import { CURRENT_ITERATION } from '../application/ports/play-log-port';
 
 describe('useAshenRampartGame', () => {
   beforeEach(() => jest.useFakeTimers());
@@ -84,6 +85,15 @@ describe('行動ログ記録', () => {
     expect(log.events.filter((e) => e.kind === 'run_started')).toHaveLength(1);
   });
 
+  it('run_started の iteration は CURRENT_ITERATION 定数を参照する（反復1以降との混在を防ぐ）', () => {
+    const log = createMockPlayLog();
+    renderHook(() => useAshenRampartGame(new SeededRandom(1), log));
+    const started = log.events.filter(
+      (e): e is Extract<PlayLogEventBody, { kind: 'run_started' }> => e.kind === 'run_started'
+    );
+    expect(started[0].iteration).toBe(CURRENT_ITERATION);
+  });
+
   it('ウェーブ開始で wave_started が記録される', () => {
     const log = createMockPlayLog();
     const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(1), log));
@@ -102,6 +112,49 @@ describe('行動ログ記録', () => {
       jest.advanceTimersByTime(TICK_INTERVAL_MS * (MAX_TICKS + 1));
     });
     expect(log.events.filter((e) => e.kind === 'wave_ended')).toHaveLength(1);
+  });
+
+  it('wave_ended には lifeBefore/lifeAfter が実値で記録される（勝利ウェーブ）', () => {
+    const log = createMockPlayLog();
+    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(1), log));
+    act(() => result.current.beginWave());
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS * (MAX_TICKS + 1));
+    });
+    const ended = log.events.filter(
+      (e): e is Extract<PlayLogEventBody, { kind: 'wave_ended' }> => e.kind === 'wave_ended'
+    );
+    expect(ended).toHaveLength(1);
+    // タワーなし・ウェーブ1(雑兵6体)で全漏れ: 10 - 6 = 4
+    expect(ended[0].lifeBefore).toBe(10);
+    expect(ended[0].lifeAfter).toBe(10 - ended[0].leaks);
+    expect('lifeDelta' in ended[0]).toBe(false);
+  });
+
+  it('敗北ウェーブでは lifeAfter が finishWave のクランプ規則どおり 0 になる', () => {
+    const log = createMockPlayLog();
+    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(1), log));
+    // ウェーブ1をタワーなしで完走（life 10 -> 4、報酬フェーズへ）
+    act(() => result.current.beginWave());
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS * (MAX_TICKS + 1));
+    });
+    expect(result.current.run.phase).toBe('reward');
+    act(() => result.current.pickReward(null));
+    // ウェーブ2をタワーなしで完走（雑兵6+俊足4=10体漏れ > 残ライフ4 で敗北）
+    act(() => result.current.beginWave());
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS * (MAX_TICKS + 1));
+    });
+    const ended = log.events.filter(
+      (e): e is Extract<PlayLogEventBody, { kind: 'wave_ended' }> => e.kind === 'wave_ended'
+    );
+    expect(ended).toHaveLength(2);
+    const lastWave = ended[1];
+    expect(lastWave.lifeBefore).toBeGreaterThan(0);
+    expect(lastWave.leaks).toBeGreaterThan(lastWave.lifeBefore);
+    expect(lastWave.lifeAfter).toBe(0);
+    expect(result.current.run.status).toBe('lost');
   });
 
   it('restart で新しい runId の run_started が記録される', () => {
@@ -159,7 +212,43 @@ describe('再生速度とスキップ', () => {
     act(() => result.current.beginWave());
     act(() => result.current.changeSpeed(4));
     expect(result.current.speed).toBe(4);
-    expect(log.events.filter((e) => e.kind === 'battle_speed')).toHaveLength(1);
+    // ウェーブ開始時（速度1）と changeSpeed(4) の2件が記録される
+    const speeds = log.events.filter((e) => e.kind === 'battle_speed');
+    expect(speeds).toHaveLength(2);
+    expect(speeds[speeds.length - 1]).toMatchObject({ speed: 4 });
+  });
+
+  it('ウェーブ開始のたびに現在の実効速度が battle_speed として記録される（非スキップ率の復元用）', () => {
+    const log = createMockPlayLog();
+    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(1), log));
+    act(() => result.current.beginWave());
+    const speeds = log.events.filter((e) => e.kind === 'battle_speed');
+    expect(speeds).toHaveLength(1);
+    expect(speeds[0]).toMatchObject({ wave: 0, speed: 1 });
+  });
+
+  it('戦闘中に速度を変更しても wave_started は二重記録されない', () => {
+    const log = createMockPlayLog();
+    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(1), log));
+    act(() => result.current.beginWave());
+    act(() => result.current.changeSpeed(2));
+    act(() => result.current.changeSpeed(4));
+    const started = log.events.filter((e) => e.kind === 'wave_started');
+    expect(started).toHaveLength(1);
+  });
+
+  it('速度変更後に restart しても sticky な速度が新しいランのウェーブ開始時に記録される', () => {
+    const log = createMockPlayLog();
+    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(1), log));
+    act(() => result.current.beginWave());
+    act(() => result.current.changeSpeed(4));
+    act(() => result.current.restart());
+    act(() => result.current.beginWave());
+    expect(result.current.speed).toBe(4); // 速度は restart でリセットされない（sticky）
+    const speeds = log.events.filter((e) => e.kind === 'battle_speed');
+    // run1: wave_started時(1x) + changeSpeed(4x) / run2: wave_started時(4x) の計3件
+    expect(speeds).toHaveLength(3);
+    expect(speeds[2]).toMatchObject({ wave: 0, speed: 4 });
   });
 
   it('4x は 1x の 1/4 の時間でリプレイが進む', () => {

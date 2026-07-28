@@ -9,6 +9,12 @@
 /** 戦闘リプレイの再生速度（1x/2x/4x） */
 export type BattleSpeed = 1 | 2 | 4;
 
+/**
+ * 現在の反復番号。反復を進めるたびに必ず更新する
+ * （ログの反復間比較の基準。ハードコードで散らすとログが反復0〜3で混在してしまう）
+ */
+export const CURRENT_ITERATION = 0;
+
 /** 準備フェーズの操作種別（現状のゲームに撤去操作は存在しない） */
 export type PrepActionKind = 'place-tower' | 'place-trap' | 'use-spell' | 'use-tactic';
 
@@ -34,7 +40,10 @@ export type PlayLogEventBody =
       /** 実際に観戦していた実時間（秒）。早送り・スキップで短くなる */
       durationSec: number;
       leaks: number;
-      lifeDelta: number;
+      /** ウェーブ開始時点のライフ（実値） */
+      lifeBefore: number;
+      /** ウェーブ終了後のライフ（実値。0未満にはクランプされる） */
+      lifeAfter: number;
     }
   | { kind: 'run_ended'; runId: string; outcome: 'won' | 'lost'; totalSec: number }
   | { kind: 'run_note'; runId: string; text: string };

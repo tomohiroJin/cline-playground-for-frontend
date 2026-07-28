@@ -44,6 +44,14 @@ describe('LocalStoragePlayLog', () => {
     expect(consoleSpy).toHaveBeenCalled();
   });
 
+  it('version が数値でない場合は空ログにフォールバックする', () => {
+    localStorage.setItem(
+      PLAY_LOG_STORAGE_KEY,
+      JSON.stringify({ version: '1', events: [runStarted] })
+    );
+    expect(new LocalStoragePlayLog().exportAll()).toEqual({ version: 1, events: [] });
+  });
+
   it('書き込みに失敗してもエラーを投げない', () => {
     jest.spyOn(console, 'error').mockImplementation();
     jest.spyOn(Storage.prototype, 'setItem').mockImplementationOnce(() => {

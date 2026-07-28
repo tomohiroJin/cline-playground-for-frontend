@@ -20,6 +20,7 @@ const isPlayLogExport = (value: unknown): value is PlayLogExport =>
   typeof value === 'object' &&
   value !== null &&
   'version' in value &&
+  typeof (value as { version: unknown }).version === 'number' &&
   'events' in value &&
   Array.isArray((value as { events: unknown }).events);
 
