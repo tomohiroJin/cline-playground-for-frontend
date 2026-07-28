@@ -13,17 +13,70 @@ import { startWave, finishWave } from '../application/use-cases/start-wave';
 import { chooseReward } from '../application/use-cases/choose-reward';
 import { getCardDefinition } from '../domain/cards/card-pool';
 import type { CellPos } from '../domain/board/stage-map';
-import type { RunState } from '../domain/run/run-state';
+import type { RunPhase, RunState } from '../domain/run/run-state';
+import type { BattleSpeed, PlayLogEventBody, PlayLogPort } from '../application/ports/play-log-port';
+import { CURRENT_ITERATION, createRunId } from '../application/ports/play-log-port';
+import { LocalStoragePlayLog } from '../infrastructure/play-log/local-storage-play-log';
 
 /** 戦闘リプレイの tick 間隔（ms） */
 export const TICK_INTERVAL_MS = 100;
 
-export const useAshenRampartGame = (rng?: RandomPort) => {
+export const useAshenRampartGame = (rng?: RandomPort, playLog?: PlayLogPort) => {
   const rngRef = useRef<RandomPort>(rng ?? new DefaultRandom());
+  const playLogRef = useRef<PlayLogPort>(playLog ?? new LocalStoragePlayLog());
   const [run, setRun] = useState<RunState>(() => startRun(rngRef.current));
   const [selectedHandIndex, setSelectedHandIndex] = useState<number | null>(null);
   const [replayTick, setReplayTick] = useState(0);
+  /** 戦闘リプレイの再生速度（ウェーブをまたいで維持する） */
+  const [speed, setSpeed] = useState<BattleSpeed>(1);
   const [error, setError] = useState<string | null>(null);
+  const [runId, setRunId] = useState<string>(() => createRunId());
+  const runStartedAtRef = useRef<number>(Date.now());
+  const prepStartedAtRef = useRef<number>(Date.now());
+  const battleStartedAtRef = useRef<number>(0);
+  /** StrictMode のマウント2重実行で run_started が重複しないためのガード */
+  const loggedRunIdsRef = useRef<Set<string>>(new Set());
+
+  const record = useCallback((event: PlayLogEventBody) => {
+    playLogRef.current.record(event);
+  }, []);
+
+  // ラン開始の記録（runId が変わるたびに1回だけ）
+  useEffect(() => {
+    if (loggedRunIdsRef.current.has(runId)) return;
+    loggedRunIdsRef.current.add(runId);
+    record({ kind: 'run_started', runId, iteration: CURRENT_ITERATION });
+  }, [runId, record]);
+
+  // フェーズ遷移の記録（準備開始時刻の更新・wave_started・run_ended）
+  const prevPhaseRef = useRef<RunPhase>('preparation');
+  useEffect(() => {
+    const prev = prevPhaseRef.current;
+    if (prev === run.phase) return;
+    prevPhaseRef.current = run.phase;
+    if (run.phase === 'preparation') prepStartedAtRef.current = Date.now();
+    if (run.phase === 'combat') {
+      battleStartedAtRef.current = Date.now();
+      record({
+        kind: 'wave_started',
+        runId,
+        wave: run.waveIndex,
+        towerCount: run.board.towers.length,
+      });
+      // 速度は sticky（ウェーブ・restart をまたいで維持）なため、変更時だけでなく
+      // 毎ウェーブ開始時にも実効速度を記録する。これにより carry-forward の解釈なしに
+      // 各ウェーブの実効速度がログから直接読める（判定項目②：非スキップ率）
+      record({ kind: 'battle_speed', runId, wave: run.waveIndex, speed });
+    }
+    if (run.phase === 'result') {
+      record({
+        kind: 'run_ended',
+        runId,
+        outcome: run.status === 'won' ? 'won' : 'lost',
+        totalSec: (Date.now() - runStartedAtRef.current) / 1000,
+      });
+    }
+  }, [run.phase, run.waveIndex, run.board.towers.length, run.status, runId, record, speed]);
 
   /**
    * ユースケース呼び出しを共通のエラーハンドリングで包む
@@ -53,7 +106,15 @@ export const useAshenRampartGame = (rng?: RandomPort) => {
       if (cardId === undefined) return;
       const card = getCardDefinition(cardId);
       if (card.type === 'spell' || card.type === 'tactic') {
-        // 対象指定不要のカードは即時使用
+        // 対象指定不要のカードは即時使用（成功・失敗を問わず試行として記録）
+        record({
+          kind: 'prep_action',
+          runId,
+          wave: run.waveIndex,
+          action: card.type === 'spell' ? 'use-spell' : 'use-tactic',
+          target: cardId,
+          elapsedSec: (Date.now() - prepStartedAtRef.current) / 1000,
+        });
         dispatch((s) => playCard(s, handIndex));
         setSelectedHandIndex(null);
         return;
@@ -61,16 +122,29 @@ export const useAshenRampartGame = (rng?: RandomPort) => {
       // タワー/罠は選択トグル（同じカード再クリックで解除）
       setSelectedHandIndex((cur) => (cur === handIndex ? null : handIndex));
     },
-    [run.deck.hand, dispatch]
+    [run.deck.hand, run.waveIndex, runId, dispatch, record]
   );
 
   const placeAt = useCallback(
     (pos: CellPos) => {
       if (selectedHandIndex === null) return;
+      const cardId = run.deck.hand[selectedHandIndex];
+      // 選択中の手札インデックスが指すカードが存在しない場合（通常フローでは選択直後に
+      // hand が変化しないため到達しないはずだが、防御的に record と dispatch を対称にスキップする）
+      if (cardId === undefined) return;
+      const type = getCardDefinition(cardId).type;
+      record({
+        kind: 'prep_action',
+        runId,
+        wave: run.waveIndex,
+        action: type === 'trap' ? 'place-trap' : 'place-tower',
+        target: `${cardId}@${pos.x},${pos.y}`,
+        elapsedSec: (Date.now() - prepStartedAtRef.current) / 1000,
+      });
       dispatch((s) => playCard(s, selectedHandIndex, pos));
       setSelectedHandIndex(null);
     },
-    [selectedHandIndex, dispatch]
+    [selectedHandIndex, run.deck.hand, run.waveIndex, runId, dispatch, record]
   );
 
   const beginWave = useCallback(() => {
@@ -91,25 +165,69 @@ export const useAshenRampartGame = (rng?: RandomPort) => {
     setReplayTick(0);
     setError(null);
     setRun(startRun(rngRef.current));
+    runStartedAtRef.current = Date.now();
+    prepStartedAtRef.current = Date.now();
+    setRunId(createRunId());
   }, []);
 
-  // 戦闘リプレイ: combat フェーズ中は tick を進める
+  const changeSpeed = useCallback(
+    (next: BattleSpeed) => {
+      setSpeed(next);
+      record({ kind: 'battle_speed', runId, wave: run.waveIndex, speed: next });
+    },
+    [runId, run.waveIndex, record]
+  );
+
+  const skipBattle = useCallback(() => {
+    if (run.phase !== 'combat' || !run.lastResult) return;
+    record({ kind: 'battle_speed', runId, wave: run.waveIndex, speed: 'skip' });
+    // 末尾 tick へ飛ばすと完走エフェクトが wave_ended → finishWave を実行する
+    setReplayTick(run.lastResult.ticks.length);
+  }, [run.phase, run.lastResult, run.waveIndex, runId, record]);
+
+  // 戦闘リプレイ: combat フェーズ中は tick を進める（間隔は速度で割る）
   useEffect(() => {
     if (run.phase !== 'combat' || !run.lastResult) return undefined;
     const timer = setInterval(() => {
       setReplayTick((t) => t + 1);
-    }, TICK_INTERVAL_MS);
+    }, TICK_INTERVAL_MS / speed);
     return () => clearInterval(timer);
-  }, [run.phase, run.lastResult]);
+  }, [run.phase, run.lastResult, speed]);
 
   // リプレイ完走で結果を適用
   useEffect(() => {
     if (run.phase !== 'combat' || !run.lastResult) return;
     if (replayTick >= run.lastResult.ticks.length) {
+      // finishWave 内のクランプ規則（life = Math.max(0, life - leaked)）と同じ計算で
+      // dispatch 前に lifeAfter を求める。実際に適用される値と必ず一致する
+      // （両者とも同じ run.life・run.lastResult.leaked を入力にしているため）。
+      const lifeAfter = Math.max(0, run.life - run.lastResult.leaked);
+      record({
+        kind: 'wave_ended',
+        runId,
+        wave: run.waveIndex,
+        durationSec: (Date.now() - battleStartedAtRef.current) / 1000,
+        leaks: run.lastResult.leaked,
+        lifeBefore: run.life,
+        lifeAfter,
+      });
       dispatch((s) => finishWave(s, rngRef.current));
       setReplayTick(0);
     }
-  }, [replayTick, run.phase, run.lastResult, dispatch]);
+  }, [replayTick, run.phase, run.lastResult, run.waveIndex, run.life, runId, dispatch, record]);
+
+  const exportLogJson = useCallback(
+    () => JSON.stringify(playLogRef.current.exportAll(), null, 2),
+    []
+  );
+
+  /** 勝敗理由の記録（判定項目3）。run_note が無いランは未記入と解釈する */
+  const noteRun = useCallback(
+    (text: string) => {
+      record({ kind: 'run_note', runId, text });
+    },
+    [runId, record]
+  );
 
   return {
     run,
@@ -121,5 +239,11 @@ export const useAshenRampartGame = (rng?: RandomPort) => {
     beginWave,
     pickReward,
     restart,
+    runId,
+    exportLogJson,
+    noteRun,
+    speed,
+    changeSpeed,
+    skipBattle,
   };
 };

@@ -7,6 +7,7 @@ import React, { useMemo } from 'react';
 import styled from 'styled-components';
 import { useAshenRampartGame } from './useAshenRampartGame';
 import { BoardGrid } from './BoardGrid';
+import { BattleControls } from './BattleControls';
 import { HandArea } from './HandArea';
 import { StatusBar } from './StatusBar';
 import { RewardPanel } from './RewardPanel';
@@ -89,7 +90,12 @@ export const AshenRampartGame: React.FC<Props> = ({ seed }) => {
       <StatusBar run={run} />
       {error && <ErrorText role="alert">{error}</ErrorText>}
       {run.phase === 'result' ? (
-        <ResultPanel run={run} onRestart={game.restart} />
+        <ResultPanel
+          run={run}
+          onRestart={game.restart}
+          onNote={game.noteRun}
+          exportLogJson={game.exportLogJson}
+        />
       ) : (
         <>
           {run.phase === 'preparation' && <WavePreview waveIndex={run.waveIndex} />}
@@ -113,7 +119,16 @@ export const AshenRampartGame: React.FC<Props> = ({ seed }) => {
               <WaveButton onClick={game.beginWave}>ウェーブ開始</WaveButton>
             </>
           )}
-          {run.phase === 'combat' && <ErrorText as="p">⚔️ 戦闘中…</ErrorText>}
+          {run.phase === 'combat' && (
+            <>
+              <ErrorText as="p">⚔️ 戦闘中…</ErrorText>
+              <BattleControls
+                speed={game.speed}
+                onChangeSpeed={game.changeSpeed}
+                onSkip={game.skipBattle}
+              />
+            </>
+          )}
           {run.phase === 'reward' && (
             <RewardPanel choices={run.rewardChoices} onPick={game.pickReward} />
           )}
