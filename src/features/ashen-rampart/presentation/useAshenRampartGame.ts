@@ -123,17 +123,18 @@ export const useAshenRampartGame = (rng?: RandomPort, playLog?: PlayLogPort) => 
     (pos: CellPos) => {
       if (selectedHandIndex === null) return;
       const cardId = run.deck.hand[selectedHandIndex];
-      if (cardId !== undefined) {
-        const type = getCardDefinition(cardId).type;
-        record({
-          kind: 'prep_action',
-          runId,
-          wave: run.waveIndex,
-          action: type === 'trap' ? 'place-trap' : 'place-tower',
-          target: `${cardId}@${pos.x},${pos.y}`,
-          elapsedSec: (Date.now() - prepStartedAtRef.current) / 1000,
-        });
-      }
+      // 選択中の手札インデックスが指すカードが存在しない場合（通常フローでは選択直後に
+      // hand が変化しないため到達しないはずだが、防御的に record と dispatch を対称にスキップする）
+      if (cardId === undefined) return;
+      const type = getCardDefinition(cardId).type;
+      record({
+        kind: 'prep_action',
+        runId,
+        wave: run.waveIndex,
+        action: type === 'trap' ? 'place-trap' : 'place-tower',
+        target: `${cardId}@${pos.x},${pos.y}`,
+        elapsedSec: (Date.now() - prepStartedAtRef.current) / 1000,
+      });
       dispatch((s) => playCard(s, selectedHandIndex, pos));
       setSelectedHandIndex(null);
     },
