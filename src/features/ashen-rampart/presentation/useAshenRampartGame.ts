@@ -100,7 +100,15 @@ export const useAshenRampartGame = (rng?: RandomPort, playLog?: PlayLogPort) => 
       if (cardId === undefined) return;
       const card = getCardDefinition(cardId);
       if (card.type === 'spell' || card.type === 'tactic') {
-        // 対象指定不要のカードは即時使用
+        // 対象指定不要のカードは即時使用（成功・失敗を問わず試行として記録）
+        record({
+          kind: 'prep_action',
+          runId,
+          wave: run.waveIndex,
+          action: card.type === 'spell' ? 'use-spell' : 'use-tactic',
+          target: cardId,
+          elapsedSec: (Date.now() - prepStartedAtRef.current) / 1000,
+        });
         dispatch((s) => playCard(s, handIndex));
         setSelectedHandIndex(null);
         return;
@@ -108,16 +116,28 @@ export const useAshenRampartGame = (rng?: RandomPort, playLog?: PlayLogPort) => 
       // タワー/罠は選択トグル（同じカード再クリックで解除）
       setSelectedHandIndex((cur) => (cur === handIndex ? null : handIndex));
     },
-    [run.deck.hand, dispatch]
+    [run.deck.hand, run.waveIndex, runId, dispatch, record]
   );
 
   const placeAt = useCallback(
     (pos: CellPos) => {
       if (selectedHandIndex === null) return;
+      const cardId = run.deck.hand[selectedHandIndex];
+      if (cardId !== undefined) {
+        const type = getCardDefinition(cardId).type;
+        record({
+          kind: 'prep_action',
+          runId,
+          wave: run.waveIndex,
+          action: type === 'trap' ? 'place-trap' : 'place-tower',
+          target: `${cardId}@${pos.x},${pos.y}`,
+          elapsedSec: (Date.now() - prepStartedAtRef.current) / 1000,
+        });
+      }
       dispatch((s) => playCard(s, selectedHandIndex, pos));
       setSelectedHandIndex(null);
     },
-    [selectedHandIndex, dispatch]
+    [selectedHandIndex, run.deck.hand, run.waveIndex, runId, dispatch, record]
   );
 
   const beginWave = useCallback(() => {

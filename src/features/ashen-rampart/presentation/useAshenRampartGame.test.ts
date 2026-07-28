@@ -114,4 +114,37 @@ describe('行動ログ記録', () => {
     expect(started).toHaveLength(2);
     expect(started[0].runId).not.toBe(started[1].runId);
   });
+
+  it('塔カードの配置で prep_action が記録される', () => {
+    const log = createMockPlayLog();
+    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(1), log));
+    // 手札から塔カードを探して選択→設置スロットに配置
+    const towerIndex = result.current.run.deck.hand.findIndex(
+      (id) => getCardDefinition(id).type === 'tower'
+    );
+    expect(towerIndex).toBeGreaterThanOrEqual(0);
+    const slot = result.current.run.board.map.buildSlots[0];
+    act(() => result.current.selectCard(towerIndex));
+    act(() => result.current.placeAt(slot));
+    const actions = log.events.filter(
+      (e): e is Extract<PlayLogEventBody, { kind: 'prep_action' }> => e.kind === 'prep_action'
+    );
+    expect(actions).toHaveLength(1);
+    expect(actions[0].action).toBe('place-tower');
+    expect(actions[0].target).toContain('@');
+    expect(actions[0].wave).toBe(0);
+  });
+
+  it('スペルカードの即時使用で prep_action が記録される', () => {
+    const log = createMockPlayLog();
+    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(1), log));
+    // シード1の初期手札にはスペルが含まれる（seed-check で確認済み）ため無条件に検証する
+    const spellIndex = result.current.run.deck.hand.findIndex((id) => {
+      const t = getCardDefinition(id).type;
+      return t === 'spell' || t === 'tactic';
+    });
+    expect(spellIndex).toBeGreaterThanOrEqual(0);
+    act(() => result.current.selectCard(spellIndex));
+    expect(log.events.some((e) => e.kind === 'prep_action')).toBe(true);
+  });
 });
