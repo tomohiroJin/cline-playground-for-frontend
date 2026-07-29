@@ -25,6 +25,9 @@ const Frame = styled.div<{ $columns: number; $rows: number }>`
   margin: 0 auto;
   background: ${COLORS.dominant};
   border: 1px solid ${COLORS.grid};
+  /* EnemyMarker が cqw 単位で盤面幅に追従できるようにコンテナ化する
+     （設計書 §9.7 最小対応幅 360px でも敵の形・サイズ比率が崩れない） */
+  container-type: inline-size;
 `;
 
 const Cell = styled.button<{ $kind: string; $highlighted: boolean }>`
@@ -120,13 +123,7 @@ export const BoardGrid: React.FC<Props> = ({ map, state, placeableCells, onCellC
         );
       })}
       {stacks.map((stack) => (
-        <EnemyMarker
-          key={stack.id}
-          stack={stack}
-          columns={map.width}
-          rows={map.height}
-          boardWidth={720}
-        />
+        <EnemyMarker key={stack.id} stack={stack} columns={map.width} rows={map.height} />
       ))}
     </Frame>
   );

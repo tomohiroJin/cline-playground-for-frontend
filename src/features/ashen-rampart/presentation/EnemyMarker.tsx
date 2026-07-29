@@ -27,17 +27,24 @@ const Wrapper = styled.div<{ $left: number; $top: number }>`
   pointer-events: none;
 `;
 
-const Body = styled.div<{ $size: number; $color: string; $clip?: string; $ring?: string }>`
-  width: ${({ $size }) => $size}px;
-  height: ${({ $size }) => $size}px;
+/**
+ * sizePct / HPバー幅は「盤面幅に対する割合（%）」として定義されている。
+ * Frame 側で container-type: inline-size を宣言しているため、cqw
+ * （コンテナのインライン方向サイズの1%）を使えば px 換算なしにそのまま
+ * 盤面幅に追従するサイズになる。盤面が 360px まで縮んでも符号の比率が
+ * 崩れない（設計書 §9.7 最小対応幅 360px）。
+ */
+const Body = styled.div<{ $sizePct: number; $color: string; $clip?: string; $ring?: string }>`
+  width: ${({ $sizePct }) => $sizePct}cqw;
+  height: ${({ $sizePct }) => $sizePct}cqw;
   background: ${({ $color }) => $color};
   clip-path: ${({ $clip }) => $clip ?? 'none'};
   border-radius: ${({ $clip }) => ($clip ? '0' : '50%')};
   box-shadow: ${({ $ring }) => ($ring ? `0 0 0 2px ${$ring}` : 'none')};
 `;
 
-const BarTrack = styled.div<{ $width: number }>`
-  width: ${({ $width }) => $width}px;
+const BarTrack = styled.div<{ $widthPct: number }>`
+  width: ${({ $widthPct }) => $widthPct}cqw;
   height: 3px;
   background: ${COLORS.grid};
 `;
@@ -61,14 +68,11 @@ interface Props {
   /** 盤面のセル数 */
   columns: number;
   rows: number;
-  /** 盤面の実寸（px） */
-  boardWidth: number;
 }
 
-export const EnemyMarker: React.FC<Props> = ({ stack, columns, rows, boardWidth }) => {
+export const EnemyMarker: React.FC<Props> = ({ stack, columns, rows }) => {
   const visual = getEnemyVisual(stack.enemyId);
-  const size = (visual.sizePct / 100) * boardWidth;
-  const barWidth = (getHpBarWidthPct(stack.maxHp) / 100) * boardWidth;
+  const barWidthPct = getHpBarWidthPct(stack.maxHp);
   const label =
     stack.count > 1 ? `${visual.name} ${stack.count}体` : visual.name;
   return (
@@ -79,12 +83,12 @@ export const EnemyMarker: React.FC<Props> = ({ stack, columns, rows, boardWidth 
       aria-label={label}
     >
       <Body
-        $size={size}
+        $sizePct={visual.sizePct}
         $color={visual.color}
         $clip={getShapeClipPath(visual.shape)}
         $ring={visual.ringColor}
       />
-      <BarTrack $width={barWidth}>
+      <BarTrack $widthPct={barWidthPct}>
         <BarFill $ratio={stack.maxHp === 0 ? 0 : stack.hp / stack.maxHp} />
       </BarTrack>
       {stack.count > 1 && <Badge>×{stack.count}</Badge>}
