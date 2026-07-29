@@ -19,7 +19,7 @@ export interface EnemyVisual {
 }
 
 const VISUALS: Readonly<Record<string, Omit<EnemyVisual, 'name'>>> = {
-  // 雑兵: 基準となる中サイズの円。全52体中21体・全4ウェーブに登場する最頻出の敵のため、
+  // 雑兵: 基準となる中サイズの円。全52体中29体・全4ウェーブに登場する最頻出の敵のため、
   // 危険色 #8b2635 と色相の近い赤系は使わない（青灰にして「赤=本当の危険」を守る、指摘7）
   grunt: { shape: 'circle', color: '#8a95a5', sizePct: 5.5 },
   // 俊足: 小さく鋭い菱形。速さを形で示す

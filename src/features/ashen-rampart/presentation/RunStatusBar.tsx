@@ -22,7 +22,7 @@ const Bar = styled.div`
 `;
 
 const Life = styled.span<{ $danger: boolean }>`
-  color: ${({ $danger }) => ($danger ? COLORS.danger : COLORS.secondary)};
+  color: ${({ $danger }) => ($danger ? COLORS.dangerText : COLORS.secondary)};
   font-weight: 700;
 `;
 

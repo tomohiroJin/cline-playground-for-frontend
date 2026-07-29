@@ -39,11 +39,33 @@ describe('塔の射撃', () => {
   });
 
   it('攻撃間隔を守る（8tickに1発）', () => {
-    const state = withTower(createCombatState(emptyDeck, waveOf('brute')), 'arrow-tower', 1, 2);
-    const after = advance(state, 17);
-    const shots = after.enemies[0] ? (60 - after.enemies[0].hp) / 6 : 0;
-    expect(shots).toBeLessThanOrEqual(3);
-    expect(shots).toBeGreaterThanOrEqual(1);
+    // 累計ダメージ量では 8tick周期でも 9tick周期でも通過してしまい
+    // オフバイワン回帰を検出できない（過去に実際再発した）ため、
+    // 発射イベントが起きた tick そのものを集めて間隔を直接検証する。
+    let state = withTower(createCombatState(emptyDeck, waveOf('brute')), 'arrow-tower', 1, 2);
+    const shotTicks: number[] = [];
+    for (let tick = 1; tick <= 40; tick++) {
+      state = stepTick(state, [], PLAINS_MAP);
+      if (state.events.some((e) => e.kind === 'shot')) shotTicks.push(tick);
+    }
+    expect(shotTicks.length).toBeGreaterThanOrEqual(3);
+    for (let i = 1; i < shotTicks.length; i++) {
+      expect(shotTicks[i] - shotTicks[i - 1]).toBe(8);
+    }
+  });
+
+  it('発射周期はちょうど cooldownTicks tick になる（弩砲でも検証）', () => {
+    // 弩砲（cooldownTicks:12）は重装より射程内滞在が長く、複数回の発射間隔を観測できる
+    let state = withTower(createCombatState(emptyDeck, waveOf('brute')), 'ballista', 1, 2);
+    const shotTicks: number[] = [];
+    for (let tick = 1; tick <= 60; tick++) {
+      state = stepTick(state, [], PLAINS_MAP);
+      if (state.events.some((e) => e.kind === 'shot')) shotTicks.push(tick);
+    }
+    expect(shotTicks.length).toBeGreaterThanOrEqual(3);
+    for (let i = 1; i < shotTicks.length; i++) {
+      expect(shotTicks[i] - shotTicks[i - 1]).toBe(12);
+    }
   });
 
   it('HPが0になると撃破され defeat イベントが出る', () => {

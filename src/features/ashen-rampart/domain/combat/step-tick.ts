@@ -443,7 +443,13 @@ const applyTowerShots = (
     if (spec.splashRadius > 0) {
       applySplashDamage(target, damage, spec, moved, map, hpById);
     }
-    return { ...tower, cooldownLeft: spec.cooldownTicks };
+    // 発射周期をちょうど cooldownTicks tick にするため -1 する
+    // （次tick以降の `cooldownLeft > 0` decrement 判定と合わせて、
+    // ちょうど cooldownTicks tick後に再発射できる）。
+    // Math.max で下限0にガード: 現行カードに cooldownTicks:0 の通常塔は存在しない
+    // （aura塔の beacon のみ0だが、aura塔は関数冒頭で早期returnし本行に到達しない）が、
+    // 将来のカード追加で0や不正値が来ても負のcooldownLeftを作らないための契約保証。
+    return { ...tower, cooldownLeft: Math.max(0, spec.cooldownTicks - 1) };
   });
 };
 
