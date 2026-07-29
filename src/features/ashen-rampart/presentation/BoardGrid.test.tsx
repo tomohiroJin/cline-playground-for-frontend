@@ -1,136 +1,84 @@
+/**
+ * 盤面のテスト
+ *
+ * 「情報が存在する」ではなく「レンダリングされ操作できる」ことを確認する
+ * （S1 の教訓: aria-label だけを見るテストは描画の潰れを検出できなかった）。
+ */
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { BoardGrid } from './BoardGrid';
-import { createBoard } from '../domain/board/board-state';
 import { PLAINS_MAP } from '../domain/board/stage-map';
+import { createCombatState } from '../domain/combat/combat-state';
+import { PLAINS_WAVES } from '../domain/combat/waves';
 
-describe('BoardGrid 地形タイル', () => {
-  const board = createBoard(PLAINS_MAP);
+const emptyState = createCombatState({ drawPile: [], hand: [], graveyard: [] }, PLAINS_WAVES);
 
-  it('高台セルは aria-label に「高台」を含む', () => {
+describe('BoardGrid', () => {
+  it('経路と設置スロットが読み取れるラベルを持つ', () => {
+    render(
+      <BoardGrid map={PLAINS_MAP} state={emptyState} placeableCells={[]} onCellClick={jest.fn()} />
+    );
+    expect(screen.getByRole('button', { name: /0,3 経路/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /1,2 設置可/ })).toBeInTheDocument();
+  });
+
+  it('高台と滞留が示される', () => {
+    render(
+      <BoardGrid map={PLAINS_MAP} state={emptyState} placeableCells={[]} onCellClick={jest.fn()} />
+    );
+    expect(screen.getByRole('button', { name: /3,4 設置可 高台/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /4,3 経路 滞留/ })).toBeInTheDocument();
+  });
+
+  it('配置可能なマスだけが「ここに置ける」と示される', () => {
     render(
       <BoardGrid
-        board={board}
-        enemies={[]}
-        placingType={null}
-        onCellClick={() => undefined}
+        map={PLAINS_MAP}
+        state={emptyState}
+        placeableCells={[{ x: 1, y: 2 }]}
+        onCellClick={jest.fn()}
       />
     );
-    // 高台は (3,4)
-    expect(
-      screen.getByRole('button', { name: /マス \(3, 4\).*高台/ })
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /1,2 設置可 ここに置ける/ })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /2,2 設置可 ここに置ける/ })).toBeNull();
   });
 
-  it('滞留セルは aria-label に「滞留」を含む', () => {
+  it('セルをクリックすると座標が渡る', () => {
+    const onCellClick = jest.fn();
     render(
       <BoardGrid
-        board={board}
-        enemies={[]}
-        placingType={null}
-        onCellClick={() => undefined}
+        map={PLAINS_MAP}
+        state={emptyState}
+        placeableCells={[{ x: 1, y: 2 }]}
+        onCellClick={onCellClick}
       />
     );
-    // 滞留は (4,2)
-    expect(
-      screen.getByRole('button', { name: /マス \(4, 2\).*滞留/ })
-    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /1,2 設置可 ここに置ける/ }));
+    expect(onCellClick).toHaveBeenCalledWith({ x: 1, y: 2 });
   });
-});
 
-describe('BoardGrid 経路と目的地の可読性', () => {
-  const board = createBoard(PLAINS_MAP);
-
-  const renderBoard = (life?: number) =>
+  it('設置物がセルに描画される', () => {
+    const withTower = {
+      ...emptyState,
+      towers: [{ cardId: 'arrow-tower', pos: { x: 1, y: 2 }, cooldownLeft: 0 }],
+    };
     render(
-      <BoardGrid
-        board={board}
-        enemies={[]}
-        placingType={null}
-        life={life}
-        onCellClick={() => undefined}
-      />
+      <BoardGrid map={PLAINS_MAP} state={withTower} placeableCells={[]} onCellClick={jest.fn()} />
     );
-
-  it('砦セルは残ライフとともに示される', () => {
-    renderBoard(4);
-
-    expect(
-      screen.getByRole('button', { name: /マス \(8, 1\).*砦・残りライフ4/ })
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /1,2 設置可 塔/ })).toBeInTheDocument();
   });
 
-  it('入口セルは敵の出現地点として示される', () => {
-    renderBoard();
-
-    expect(
-      screen.getByRole('button', { name: /マス \(0, 3\).*敵の入口/ })
-    ).toBeInTheDocument();
-  });
-
-  it('ラベルを持つ経路セルでも進行方向の矢印が描画される', () => {
-    renderBoard();
-
-    // 滞留セル (4,3) は経路が右→上へ折れる区間。方向表示が最も必要な場所
-    const slowCell = screen.getByRole('button', { name: /マス \(4, 3\)/ });
-    expect(slowCell).toHaveTextContent('滞留');
-    expect(slowCell).toHaveTextContent('↑');
-
-    // 入口セル (0,3) も同様にラベルと矢印を併せ持つ
-    const entrance = screen.getByRole('button', { name: /マス \(0, 3\)/ });
-    expect(entrance).toHaveTextContent('入口');
-    expect(entrance).toHaveTextContent('→');
-  });
-
-  it('経路セルと設置スロットが aria-label で区別できる', () => {
-    renderBoard();
-
-    expect(
-      screen.getByRole('button', { name: /マス \(1, 3\).*経路/ })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: /マス \(1, 2\).*設置可能/ })
-    ).toBeInTheDocument();
-  });
-});
-
-describe('BoardGrid 敵の描き分け', () => {
-  const board = createBoard(PLAINS_MAP);
-
-  const enemies = [
-    { index: 0, enemyId: 'grunt', hp: 20, maxHp: 20, x: 1, y: 3 },
-    { index: 1, enemyId: 'runner', hp: 6, maxHp: 12, x: 2, y: 3 },
-    { index: 2, enemyId: 'brute', hp: 60, maxHp: 60, x: 3, y: 3 },
-  ];
-
-  it('敵種ごとに名前と HP を読み取れる', () => {
+  it('敵は種別と体数が読めるマーカーとして描画される', () => {
+    const withEnemies = {
+      ...emptyState,
+      enemies: [
+        { id: 1, enemyId: 'swarm', hp: 8, maxHp: 8, progress: 1, spawnTick: 0, spawnPathIndex: 0, alive: true, leaked: false },
+        { id: 2, enemyId: 'swarm', hp: 8, maxHp: 8, progress: 1.2, spawnTick: 0, spawnPathIndex: 0, alive: true, leaked: false },
+      ],
+    };
     render(
-      <BoardGrid
-        board={board}
-        enemies={enemies}
-        placingType={null}
-        onCellClick={() => undefined}
-      />
+      <BoardGrid map={PLAINS_MAP} state={withEnemies} placeableCells={[]} onCellClick={jest.fn()} />
     );
-
-    expect(screen.getByRole('img', { name: /雑兵 HP 20\/20/ })).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: /俊足 HP 6\/12/ })).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: /重装 HP 60\/60/ })).toBeInTheDocument();
-  });
-
-  it('敵は砦までの残りマス数を持つ', () => {
-    render(
-      <BoardGrid
-        board={board}
-        enemies={enemies}
-        placingType={null}
-        onCellClick={() => undefined}
-      />
-    );
-
-    // (1,3) は経路の index 1。全11セルなので残り9
-    expect(
-      screen.getByRole('img', { name: /雑兵.*砦まで残り9マス/ })
-    ).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: '群れ 2体' })).toBeInTheDocument();
   });
 });

@@ -1,249 +1,267 @@
 /**
- * 灰燼の城壁 - ゲームフック
+ * 灰燼の城壁 - ゲームループ
  *
- * ラン状態の保持・ユースケース呼び出し・戦闘リプレイの進行を担う。
- * ゲームルールは一切持たない（すべて application/use-cases 経由）。
+ * 時間を進めるのは setInterval だけで、ロジックは一切持たない（設計書 §8.2）。
+ * 一時停止はループ制御であり、ドメインの状態ではない（§8.6）。
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { RandomPort } from '../application/ports/random-port';
-import { DefaultRandom } from '../infrastructure/random/seeded-random';
-import { startRun } from '../application/use-cases/start-run';
-import { playCard } from '../application/use-cases/play-card';
-import { startWave, finishWave } from '../application/use-cases/start-wave';
-import { chooseReward } from '../application/use-cases/choose-reward';
-import { getCardDefinition } from '../domain/cards/card-pool';
 import type { CellPos } from '../domain/board/stage-map';
-import type { RunPhase, RunState } from '../domain/run/run-state';
-import type { BattleSpeed, PlayLogEventBody, PlayLogPort } from '../application/ports/play-log-port';
-import { CURRENT_ITERATION, createRunId } from '../application/ports/play-log-port';
+import { PLAINS_MAP } from '../domain/board/stage-map';
+import { getCardDefinition } from '../domain/cards/card-pool';
+import { placementKindOf } from '../domain/cards/card-definition';
+import type { CombatState } from '../domain/combat/combat-state';
+import { stepTick, canPlaceAt, type PlayerAction } from '../domain/combat/step-tick';
+import { nextWavePreview } from './wave-preview';
+import { startRun } from '../application/use-cases/start-run';
+import { SeededRandom } from '../infrastructure/random/seeded-random';
 import { LocalStoragePlayLog } from '../infrastructure/play-log/local-storage-play-log';
+import {
+  createRunId,
+  CURRENT_ITERATION,
+  type PlayLogPort,
+} from '../application/ports/play-log-port';
 
-/** 戦闘リプレイの tick 間隔（ms） */
 export const TICK_INTERVAL_MS = 100;
 
-export const useAshenRampartGame = (rng?: RandomPort, playLog?: PlayLogPort) => {
-  const rngRef = useRef<RandomPort>(rng ?? new DefaultRandom());
-  const playLogRef = useRef<PlayLogPort>(playLog ?? new LocalStoragePlayLog());
-  const [run, setRun] = useState<RunState>(() => startRun(rngRef.current));
-  const [selectedHandIndex, setSelectedHandIndex] = useState<number | null>(null);
-  const [replayTick, setReplayTick] = useState(0);
-  /** 戦闘リプレイの再生速度（ウェーブをまたいで維持する） */
-  const [speed, setSpeed] = useState<BattleSpeed>(1);
-  const [error, setError] = useState<string | null>(null);
-  const [runId, setRunId] = useState<string>(() => createRunId());
-  const runStartedAtRef = useRef<number>(Date.now());
-  const prepStartedAtRef = useRef<number>(Date.now());
-  const battleStartedAtRef = useRef<number>(0);
-  /** StrictMode のマウント2重実行で run_started が重複しないためのガード */
+/** 溢れ通知を表示し続ける tick 数（0.6秒） */
+const OVERFLOW_NOTICE_TICKS = 6;
+
+const DEFAULT_PRESET_ID = 'swift';
+
+export const useAshenRampartGame = (seed = 1, playLog?: PlayLogPort) => {
+  const logRef = useRef<PlayLogPort>(playLog ?? new LocalStoragePlayLog());
+  const [runId, setRunId] = useState(() => createRunId());
+  const [runSeed, setRunSeed] = useState(seed);
+  const [presetId, setPresetId] = useState(DEFAULT_PRESET_ID);
+  const [state, setState] = useState<CombatState>(() =>
+    startRun(DEFAULT_PRESET_ID, new SeededRandom(seed))
+  );
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
+  const [overflowNotice, setOverflowNotice] = useState<string | undefined>(undefined);
+  const noticeUntilRef = useRef(0);
+  const pendingRef = useRef<PlayerAction[]>([]);
   const loggedRunIdsRef = useRef<Set<string>>(new Set());
+  /** 直前に記録した予告の内容。切り替わった tick でだけ記録するためのガード */
+  const lastPreviewRef = useRef<string | undefined>(undefined);
 
-  const record = useCallback((event: PlayLogEventBody) => {
-    playLogRef.current.record(event);
-  }, []);
-
-  // ラン開始の記録（runId が変わるたびに1回だけ）
+  // ラン開始の記録（StrictMode の二重マウントでも1回）
   useEffect(() => {
     if (loggedRunIdsRef.current.has(runId)) return;
     loggedRunIdsRef.current.add(runId);
-    record({ kind: 'run_started', runId, iteration: CURRENT_ITERATION });
-  }, [runId, record]);
+    logRef.current.record({
+      kind: 'run_started',
+      runId,
+      iteration: CURRENT_ITERATION,
+      seed: runSeed,
+      presetId,
+    });
+  }, [runId, runSeed, presetId]);
 
-  // フェーズ遷移の記録（準備開始時刻の更新・wave_started・run_ended）
-  const prevPhaseRef = useRef<RunPhase>('preparation');
+  // ゲームループ。一時停止中と決着後は進めない
   useEffect(() => {
-    const prev = prevPhaseRef.current;
-    if (prev === run.phase) return;
-    prevPhaseRef.current = run.phase;
-    if (run.phase === 'preparation') prepStartedAtRef.current = Date.now();
-    if (run.phase === 'combat') {
-      battleStartedAtRef.current = Date.now();
-      record({
-        kind: 'wave_started',
-        runId,
-        wave: run.waveIndex,
-        towerCount: run.board.towers.length,
-      });
-      // 速度は sticky（ウェーブ・restart をまたいで維持）なため、変更時だけでなく
-      // 毎ウェーブ開始時にも実効速度を記録する。これにより carry-forward の解釈なしに
-      // 各ウェーブの実効速度がログから直接読める（判定項目②：非スキップ率）
-      record({ kind: 'battle_speed', runId, wave: run.waveIndex, speed });
-    }
-    if (run.phase === 'result') {
-      record({
-        kind: 'run_ended',
-        runId,
-        outcome: run.status === 'won' ? 'won' : 'lost',
-        totalSec: (Date.now() - runStartedAtRef.current) / 1000,
-      });
-    }
-  }, [run.phase, run.waveIndex, run.board.towers.length, run.status, runId, record, speed]);
+    if (isPaused || state.outcome !== 'playing') return undefined;
+    const timer = setInterval(() => {
+      // StrictMode は useState の関数型 updater を二重に呼び出すことがあるため、
+      // ref の読み取り・クリアは updater の外（副作用なし）で行う（togglePause と同じ対策）
+      const actions = pendingRef.current;
+      pendingRef.current = [];
+      setState((current) => stepTick(current, actions, PLAINS_MAP));
+    }, TICK_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, [isPaused, state.outcome]);
 
-  /**
-   * ユースケース呼び出しを共通のエラーハンドリングで包む
-   *
-   * setState の updater 内で setError を呼ぶと StrictMode の二重実行時に
-   * 副作用が二重に走るため、updater は使わずクロージャの run から次状態を計算する。
-   *
-   * 不変条件: クロージャの run を読むため、1つのハンドラ/エフェクト内で
-   * dispatch を2回以上呼ぶと2回目が古い状態を見る。呼び出しは1回までにすること。
-   */
-  const dispatch = useCallback(
-    (update: (state: RunState) => RunState) => {
-      try {
-        const next = update(run);
-        setError(null);
-        setRun(next);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : '不明なエラーが発生しました');
+  // tick イベントをログと通知へ流す
+  useEffect(() => {
+    state.events.forEach((event) => {
+      if (event.kind === 'draw') {
+        logRef.current.record({ kind: 'card_drawn', runId, cardId: event.cardId, tick: state.tick });
       }
-    },
-    [run]
-  );
+      if (event.kind === 'overflow') {
+        logRef.current.record({
+          kind: 'card_discarded_overflow',
+          runId,
+          cardId: event.cardId,
+          tick: state.tick,
+        });
+        setOverflowNotice(getCardDefinition(event.cardId).name);
+        noticeUntilRef.current = state.tick + OVERFLOW_NOTICE_TICKS;
+      }
+      if (event.kind === 'played') {
+        logRef.current.record({
+          kind: 'card_played',
+          runId,
+          cardId: event.cardId,
+          tick: state.tick,
+          mana: state.mana,
+          x: event.pos?.x,
+          y: event.pos?.y,
+        });
+      }
+      if (event.kind === 'ember') {
+        logRef.current.record({ kind: 'reactivated', runId, tick: state.tick });
+      }
+    });
+    if (state.tick >= noticeUntilRef.current) setOverflowNotice(undefined);
+  }, [state.events, state.tick, state.mana, runId]);
+
+  // 次ウェーブ予告の記録（内容が切り替わった tick でだけ記録する。判定項目3
+  // 「予告を見た後に配置を変えたか」の起点になるため、毎 tick 記録してはいけない）
+  useEffect(() => {
+    const preview = nextWavePreview(state);
+    if (lastPreviewRef.current === preview) return;
+    lastPreviewRef.current = preview;
+    logRef.current.record({
+      kind: 'wave_preview_shown',
+      runId,
+      tick: state.tick,
+      content: preview,
+    });
+  }, [state, runId]);
+
+  // 決着の記録
+  useEffect(() => {
+    if (state.outcome === 'playing') return;
+    logRef.current.record({
+      kind: 'run_ended',
+      runId,
+      outcome: state.outcome,
+      tick: state.tick,
+      handRemaining: state.deck.hand,
+    });
+  }, [state.outcome, state.tick, state.deck.hand, runId]);
+
+  const placeableCells: CellPos[] = (() => {
+    if (selectedIndex === null || isPaused) return [];
+    const cardId = state.deck.hand[selectedIndex];
+    if (cardId === undefined) return [];
+    const card = getCardDefinition(cardId);
+    const kind = placementKindOf(card);
+    if (kind === 'none') return [];
+    const candidates = kind === 'path' ? PLAINS_MAP.path : PLAINS_MAP.buildSlots;
+    return candidates.filter((pos) => canPlaceAt(state, card, pos, PLAINS_MAP));
+  })();
 
   const selectCard = useCallback(
     (handIndex: number) => {
-      const cardId = run.deck.hand[handIndex];
+      if (isPaused) return;
+      const cardId = state.deck.hand[handIndex];
       if (cardId === undefined) return;
       const card = getCardDefinition(cardId);
-      if (card.type === 'spell' || card.type === 'tactic') {
-        // 対象指定不要のカードは即時使用（成功・失敗を問わず試行として記録）
-        record({
-          kind: 'prep_action',
-          runId,
-          wave: run.waveIndex,
-          action: card.type === 'spell' ? 'use-spell' : 'use-tactic',
-          target: cardId,
-          elapsedSec: (Date.now() - prepStartedAtRef.current) / 1000,
-        });
-        dispatch((s) => playCard(s, handIndex));
-        setSelectedHandIndex(null);
+      if (placementKindOf(card) === 'none') {
+        pendingRef.current.push({ kind: 'play-card', handIndex });
+        setSelectedIndex(null);
         return;
       }
-      // タワー/罠は選択トグル（同じカード再クリックで解除）
-      setSelectedHandIndex((cur) => (cur === handIndex ? null : handIndex));
+      setSelectedIndex((current) => (current === handIndex ? null : handIndex));
     },
-    [run.deck.hand, run.waveIndex, runId, dispatch, record]
+    [isPaused, state.deck.hand]
   );
 
-  const placeAt = useCallback(
+  const clickCell = useCallback(
     (pos: CellPos) => {
-      if (selectedHandIndex === null) return;
-      const cardId = run.deck.hand[selectedHandIndex];
-      // 選択中の手札インデックスが指すカードが存在しない場合（通常フローでは選択直後に
-      // hand が変化しないため到達しないはずだが、防御的に record と dispatch を対称にスキップする）
-      if (cardId === undefined) return;
-      const type = getCardDefinition(cardId).type;
-      record({
-        kind: 'prep_action',
-        runId,
-        wave: run.waveIndex,
-        action: type === 'trap' ? 'place-trap' : 'place-tower',
-        target: `${cardId}@${pos.x},${pos.y}`,
-        elapsedSec: (Date.now() - prepStartedAtRef.current) / 1000,
-      });
-      dispatch((s) => playCard(s, selectedHandIndex, pos));
-      setSelectedHandIndex(null);
+      if (isPaused || selectedIndex === null) return;
+      pendingRef.current.push({ kind: 'play-card', handIndex: selectedIndex, pos });
+      setSelectedIndex(null);
     },
-    [selectedHandIndex, run.deck.hand, run.waveIndex, runId, dispatch, record]
+    [isPaused, selectedIndex]
   );
 
-  const beginWave = useCallback(() => {
-    setSelectedHandIndex(null);
-    setReplayTick(0);
-    dispatch((s) => startWave(s));
-  }, [dispatch]);
-
-  const pickReward = useCallback(
-    (choiceIndex: number | null) => {
-      dispatch((s) => chooseReward(s, choiceIndex, rngRef.current));
+  const reactivate = useCallback(
+    (emberIndex: number) => {
+      if (isPaused) return;
+      pendingRef.current.push({ kind: 'reactivate', emberIndex });
     },
-    [dispatch]
+    [isPaused]
   );
 
-  const restart = useCallback(() => {
-    setSelectedHandIndex(null);
-    setReplayTick(0);
-    setError(null);
-    setRun(startRun(rngRef.current));
-    runStartedAtRef.current = Date.now();
-    prepStartedAtRef.current = Date.now();
-    setRunId(createRunId());
-  }, []);
-
-  const changeSpeed = useCallback(
-    (next: BattleSpeed) => {
-      setSpeed(next);
-      record({ kind: 'battle_speed', runId, wave: run.waveIndex, speed: next });
+  /**
+   * 盤面セルへの唯一の入口（UI はこれだけを呼ぶ）
+   *
+   * カード選択中は配置を優先する（選択済みという明示的な意図を尊重するため）。
+   * 選択していないときに限り、そのセルに再点火可能な燠火（cooldownLeft === 0）が
+   * あれば再点火する。これが無いと「終盤に手札もマナも尽きても燠火だけは
+   * 操作対象として残る」という設計（設計書 §4）が UI から到達できない。
+   */
+  const interactCell = useCallback(
+    (pos: CellPos) => {
+      if (isPaused) return;
+      if (selectedIndex !== null) {
+        clickCell(pos);
+        return;
+      }
+      const emberIndex = state.embers.findIndex(
+        (ember) => ember.pos.x === pos.x && ember.pos.y === pos.y && ember.cooldownLeft === 0
+      );
+      if (emberIndex === -1) return;
+      reactivate(emberIndex);
     },
-    [runId, run.waveIndex, record]
+    [isPaused, selectedIndex, state.embers, clickCell, reactivate]
   );
 
-  const skipBattle = useCallback(() => {
-    if (run.phase !== 'combat' || !run.lastResult) return;
-    record({ kind: 'battle_speed', runId, wave: run.waveIndex, speed: 'skip' });
-    // 末尾 tick へ飛ばすと完走エフェクトが wave_ended → finishWave を実行する
-    setReplayTick(run.lastResult.ticks.length);
-  }, [run.phase, run.lastResult, run.waveIndex, runId, record]);
+  // StrictMode は useState の関数型 updater を二重に呼び出すことがあるため、
+  // ログ記録は updater の外（レンダー時点の isPaused を使うコールバック本体）で行う
+  const togglePause = useCallback(() => {
+    logRef.current.record({
+      kind: isPaused ? 'resumed' : 'paused',
+      runId,
+      tick: state.tick,
+    });
+    setIsPaused((current) => !current);
+    setSelectedIndex(null);
+  }, [isPaused, runId, state.tick]);
 
-  // 戦闘リプレイ: combat フェーズ中は tick を進める（間隔は速度で割る）
-  useEffect(() => {
-    if (run.phase !== 'combat' || !run.lastResult) return undefined;
-    const timer = setInterval(() => {
-      setReplayTick((t) => t + 1);
-    }, TICK_INTERVAL_MS / speed);
-    return () => clearInterval(timer);
-  }, [run.phase, run.lastResult, speed]);
+  /**
+   * ランを再開始する
+   *
+   * 引数を省略すると直前と同じシード・プリセットで再現する。設計書 §11 の
+   * 実施手順（同一シード2ラン＋別シード1ラン）を UI から実行可能にするため、
+   * 呼び出し側は決着画面のシード入力・プリセット選択の値を渡す（指摘6）。
+   */
+  const restart = useCallback(
+    (nextSeed?: number, nextPresetId?: string) => {
+      const seedToUse = nextSeed ?? runSeed;
+      const presetToUse = nextPresetId ?? presetId;
+      pendingRef.current = [];
+      setSelectedIndex(null);
+      setIsPaused(false);
+      setOverflowNotice(undefined);
+      lastPreviewRef.current = undefined;
+      setRunSeed(seedToUse);
+      setPresetId(presetToUse);
+      setState(startRun(presetToUse, new SeededRandom(seedToUse)));
+      setRunId(createRunId());
+    },
+    [runSeed, presetId]
+  );
 
-  // リプレイ完走で結果を適用
-  useEffect(() => {
-    if (run.phase !== 'combat' || !run.lastResult) return;
-    if (replayTick >= run.lastResult.ticks.length) {
-      // finishWave 内のクランプ規則（life = Math.max(0, life - leaked)）と同じ計算で
-      // dispatch 前に lifeAfter を求める。実際に適用される値と必ず一致する
-      // （両者とも同じ run.life・run.lastResult.leaked を入力にしているため）。
-      const lifeAfter = Math.max(0, run.life - run.lastResult.leaked);
-      record({
-        kind: 'wave_ended',
-        runId,
-        wave: run.waveIndex,
-        durationSec: (Date.now() - battleStartedAtRef.current) / 1000,
-        leaks: run.lastResult.leaked,
-        lifeBefore: run.life,
-        lifeAfter,
-      });
-      dispatch((s) => finishWave(s, rngRef.current));
-      setReplayTick(0);
-    }
-  }, [replayTick, run.phase, run.lastResult, run.waveIndex, run.life, runId, dispatch, record]);
+  const noteRun = useCallback(
+    (text: string) => {
+      logRef.current.record({ kind: 'run_note', runId, text });
+    },
+    [runId]
+  );
 
   const exportLogJson = useCallback(
-    () => JSON.stringify(playLogRef.current.exportAll(), null, 2),
+    () => JSON.stringify(logRef.current.exportAll(), null, 2),
     []
   );
 
-  /** 勝敗理由の記録（判定項目3）。run_note が無いランは未記入と解釈する */
-  const noteRun = useCallback(
-    (text: string) => {
-      record({ kind: 'run_note', runId, text });
-    },
-    [runId, record]
-  );
-
   return {
-    run,
-    selectedHandIndex,
-    replayTick,
-    error,
+    state,
+    runSeed,
+    presetId,
+    selectedIndex,
+    placeableCells,
+    isPaused,
+    overflowNotice,
     selectCard,
-    placeAt,
-    beginWave,
-    pickReward,
+    clickCell,
+    reactivate,
+    interactCell,
+    togglePause,
     restart,
-    runId,
-    exportLogJson,
     noteRun,
-    speed,
-    changeSpeed,
-    skipBattle,
+    exportLogJson,
   };
 };

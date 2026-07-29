@@ -1,44 +1,77 @@
 /**
- * 灰燼の城壁 - カードプールテスト
+ * カードプールのテスト
+ *
+ * 設計書の数値がそのままデータになっていること、プリセットデッキが
+ * デッキ規則（20枚・同名3枚まで）を満たすことを検証する。
  */
-import { getCardDefinition, INITIAL_DECK, REWARD_POOL } from './card-pool';
+import {
+  getCardDefinition,
+  CARD_IDS,
+  PRESET_DECKS,
+  DECK_SIZE,
+  MAX_COPIES,
+} from './card-pool';
+import { placementKindOf } from './card-definition';
 
-describe('card-pool', () => {
-  it('初期デッキは10枚（タワー6・スペル3・罠1）', () => {
-    expect(INITIAL_DECK).toHaveLength(10);
-    const types = INITIAL_DECK.map((id) => getCardDefinition(id).type);
-    expect(types.filter((t) => t === 'tower')).toHaveLength(6);
-    expect(types.filter((t) => t === 'spell')).toHaveLength(3);
-    expect(types.filter((t) => t === 'trap')).toHaveLength(1);
+describe('カードプール', () => {
+  it('カードは8種ある', () => {
+    expect(CARD_IDS).toHaveLength(8);
   });
 
-  it('報酬プールの全カードが定義済みでコストが1以上', () => {
-    expect(REWARD_POOL.length).toBeGreaterThanOrEqual(6);
-    for (const id of REWARD_POOL) {
-      const card = getCardDefinition(id);
-      expect(card.cost).toBeGreaterThanOrEqual(1);
-    }
+  it('弓兵の塔は地上のみで DPS 0.75 になる数値を持つ', () => {
+    const card = getCardDefinition('arrow-tower');
+    expect(card.cost).toBe(2);
+    expect(card.tower?.damage).toBe(6);
+    expect(card.tower?.cooldownTicks).toBe(8);
+    expect(card.tower?.hitsFlying).toBe(false);
   });
 
-  it('タワーカードは tower スペックを持つ', () => {
-    const arrow = getCardDefinition('arrow-tower');
-    expect(arrow.type).toBe('tower');
-    expect(arrow.tower).toBeDefined();
-    expect(arrow.tower?.range).toBeGreaterThan(0);
+  it('弩砲だけが飛行に当たる', () => {
+    const flying = CARD_IDS.filter((id) => getCardDefinition(id).tower?.hitsFlying === true);
+    expect(flying).toEqual(['ballista']);
   });
 
-  it('未知のカードIDは例外を投げる', () => {
-    expect(() => getCardDefinition('unknown-card')).toThrow();
+  it('魔力炉はコスト0で60tickごとに1マナ生む', () => {
+    const card = getCardDefinition('reactor');
+    expect(card.cost).toBe(0);
+    expect(card.reactor?.intervalTicks).toBe(60);
+    expect(card.reactor?.manaPerTick).toBe(1);
   });
 
-  it('初期デッキは10枚で、かがり火と火砲台を含む', () => {
-    expect(INITIAL_DECK).toHaveLength(10);
-    expect(INITIAL_DECK).toContain('beacon');
-    expect(INITIAL_DECK).toContain('cannon-tower');
+  it('業火は半径2・8ダメージ・再起動300tick', () => {
+    const card = getCardDefinition('ember-blast');
+    expect(card.ember).toEqual({ radius: 2, damage: 8, cooldownTicks: 300 });
   });
 
-  it('初期デッキの弓兵の塔は4枚に抑えられている', () => {
-    const arrows = INITIAL_DECK.filter((id) => id === 'arrow-tower');
-    expect(arrows).toHaveLength(4);
+  it('未知のカードIDは契約違反として例外', () => {
+    expect(() => getCardDefinition('unknown')).toThrow('未知のカードIDです: unknown');
+  });
+
+  it('配置先の種別はカード種別から決まる', () => {
+    expect(placementKindOf(getCardDefinition('arrow-tower'))).toBe('slot');
+    expect(placementKindOf(getCardDefinition('reactor'))).toBe('slot');
+    expect(placementKindOf(getCardDefinition('ember-blast'))).toBe('slot');
+    expect(placementKindOf(getCardDefinition('spike-trap'))).toBe('path');
+    expect(placementKindOf(getCardDefinition('mud-time'))).toBe('none');
+  });
+});
+
+describe('プリセットデッキ', () => {
+  it('2種類ある', () => {
+    expect(Object.keys(PRESET_DECKS)).toEqual(['swift', 'heavy']);
+  });
+
+  it.each(Object.entries(PRESET_DECKS))('%s は20枚ちょうど', (_id, deck) => {
+    expect(deck.cards).toHaveLength(DECK_SIZE);
+  });
+
+  it.each(Object.entries(PRESET_DECKS))('%s は同名3枚以内', (_id, deck) => {
+    const counts = new Map<string, number>();
+    deck.cards.forEach((id) => counts.set(id, (counts.get(id) ?? 0) + 1));
+    counts.forEach((count) => expect(count).toBeLessThanOrEqual(MAX_COPIES));
+  });
+
+  it.each(Object.entries(PRESET_DECKS))('%s は既知のカードだけで構成される', (_id, deck) => {
+    deck.cards.forEach((id) => expect(() => getCardDefinition(id)).not.toThrow());
   });
 });

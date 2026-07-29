@@ -1,34 +1,20 @@
 /**
- * 灰燼の城壁 - ユースケース: ラン開始
+ * 灰燼の城壁 - ラン開始
+ *
+ * 乱数を使うのはここだけ。以後 stepTick は決定的に進むため、
+ * シードを記録すればランを完全に再現できる。
  */
 import type { RandomPort } from '../ports/random-port';
-import { INITIAL_DECK } from '../../domain/cards/card-pool';
-import { drawHand, shuffle } from '../../domain/cards/deck';
-import { createBoard } from '../../domain/board/board-state';
-import { PLAINS_MAP } from '../../domain/board/stage-map';
-import { NO_MODIFIERS } from '../../domain/combat/simulate-wave';
-import {
-  INITIAL_LIFE,
-  INITIAL_MANA_MAX,
-  type RunState,
-} from '../../domain/run/run-state';
+import { PRESET_DECKS } from '../../domain/cards/card-pool';
+import { createDeck } from '../../domain/cards/deck';
+import { createCombatState, type CombatState } from '../../domain/combat/combat-state';
+import { PLAINS_WAVES } from '../../domain/combat/waves';
 
-export const startRun = (rng: RandomPort): RunState => {
-  const random = () => rng.random();
-  const drawPile = shuffle(INITIAL_DECK, random);
-  const deck = drawHand({ drawPile, hand: [], discardPile: [] }, random);
-  return {
-    phase: 'preparation',
-    status: 'playing',
-    life: INITIAL_LIFE,
-    mana: INITIAL_MANA_MAX,
-    manaMax: INITIAL_MANA_MAX,
-    deck,
-    board: createBoard(PLAINS_MAP),
-    waveIndex: 0,
-    pendingModifiers: { ...NO_MODIFIERS },
-    rewardChoices: [],
-    score: 0,
-    lastResult: null,
-  };
+export const startRun = (presetId: string, random: RandomPort): CombatState => {
+  const preset = PRESET_DECKS[presetId];
+  if (!preset) {
+    throw new Error(`未知のプリセットデッキです: ${presetId}`);
+  }
+  const deck = createDeck(preset.cards, () => random.random());
+  return createCombatState(deck, PLAINS_WAVES);
 };

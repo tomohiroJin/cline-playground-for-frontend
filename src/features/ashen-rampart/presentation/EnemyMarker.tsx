@@ -1,111 +1,97 @@
 /**
  * 灰燼の城壁 - 敵マーカー
  *
- * 敵種を形・サイズ・色で描き分け、HP を背景トラック付きバーで示す。
- * トラックが無いと「満タンかどうか」しか読めないため、必ず土台を敷く。
+ * 形・サイズ・色の3重符号で敵種を示し、HPバーは最大HPの絶対スケールで描く。
+ * 束ねた場合は体数バッジを添える（設計書 §9.3）。
  */
 import React from 'react';
 import styled from 'styled-components';
-import type { EnemySnapshot } from '../domain/combat/simulate-wave';
+import type { EnemyStack } from './enemy-stack';
 import {
   getEnemyVisual,
   getHpBarWidthPct,
   getShapeClipPath,
   HP_BAR_COLOR,
 } from './enemy-visual';
+import { COLORS } from './theme';
 
-const Wrapper = styled.div<{ $x: number; $y: number; $size: number }>`
+const Wrapper = styled.div<{ $left: number; $top: number }>`
   position: absolute;
-  width: ${({ $size }) => $size}%;
-  aspect-ratio: 1;
-  left: ${({ $x }) => $x}%;
-  top: ${({ $y }) => $y}%;
+  left: ${({ $left }) => $left}%;
+  top: ${({ $top }) => $top}%;
   transform: translate(-50%, -50%);
-  transition:
-    left 0.1s linear,
-    top 0.1s linear;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
   pointer-events: none;
 `;
 
-const Ring = styled.div<{ $color: string; $clip?: string }>`
-  position: absolute;
-  inset: 0;
-  background: ${({ $color }) => $color};
-  clip-path: ${({ $clip }) => $clip ?? 'none'};
-  border-radius: ${({ $clip }) => ($clip ? '0' : '50%')};
-`;
-
-const Body = styled.div<{ $color: string; $clip?: string; $inset: string }>`
-  position: absolute;
-  inset: ${({ $inset }) => $inset};
-  background: ${({ $color }) => $color};
-  clip-path: ${({ $clip }) => $clip ?? 'none'};
-  border-radius: ${({ $clip }) => ($clip ? '0' : '50%')};
-`;
-
 /**
- * HP バー
- *
- * 全長は最大HPの絶対スケール（硬い敵ほど長い）。マーカーに密着させて、
- * セルのテキストラベルを覆う面積を最小化する。
+ * sizePct / HPバー幅は「盤面幅に対する割合（%）」として定義されている。
+ * Frame 側で container-type: inline-size を宣言しているため、cqw
+ * （コンテナのインライン方向サイズの1%）を使えば px 換算なしにそのまま
+ * 盤面幅に追従するサイズになる。盤面が 360px まで縮んでも符号の比率が
+ * 崩れない（設計書 §9.7 最小対応幅 360px）。
  */
-const HpTrack = styled.div<{ $widthPct: number }>`
-  position: absolute;
-  left: 50%;
-  bottom: 100%;
-  transform: translateX(-50%);
-  width: ${({ $widthPct }) => $widthPct}%;
-  height: 4px;
-  background: #14100f;
-  border: 1px solid #6b5f57;
-  border-radius: 2px;
-  overflow: hidden;
+const Body = styled.div<{ $sizePct: number; $color: string; $clip?: string; $ring?: string }>`
+  width: ${({ $sizePct }) => $sizePct}cqw;
+  height: ${({ $sizePct }) => $sizePct}cqw;
+  background: ${({ $color }) => $color};
+  clip-path: ${({ $clip }) => $clip ?? 'none'};
+  border-radius: ${({ $clip }) => ($clip ? '0' : '50%')};
+  box-shadow: ${({ $ring }) => ($ring ? `0 0 0 2px ${$ring}` : 'none')};
 `;
 
-const HpFill = styled.div<{ $ratio: number }>`
-  height: 100%;
+const BarTrack = styled.div<{ $widthPct: number }>`
+  width: ${({ $widthPct }) => $widthPct}cqw;
+  height: 3px;
+  background: ${COLORS.grid};
+`;
+
+const BarFill = styled.div<{ $ratio: number }>`
   width: ${({ $ratio }) => Math.max(0, Math.min(1, $ratio)) * 100}%;
+  height: 100%;
   background: ${HP_BAR_COLOR};
 `;
 
+const Badge = styled.span`
+  font-size: 10px;
+  color: ${COLORS.secondary};
+  background: ${COLORS.dominant};
+  padding: 0 3px;
+  border-radius: 3px;
+`;
+
 interface Props {
-  enemy: EnemySnapshot;
-  /** 盤面の列数・行数（セル座標を % に変換するため） */
-  boardWidth: number;
-  boardHeight: number;
-  /** 砦までの残りセル数。読み取れない場合は undefined */
-  cellsToFortress?: number;
+  stack: EnemyStack;
+  /** 盤面のセル数 */
+  columns: number;
+  rows: number;
 }
 
-export const EnemyMarker: React.FC<Props> = ({
-  enemy,
-  boardWidth,
-  boardHeight,
-  cellsToFortress,
-}) => {
-  const visual = getEnemyVisual(enemy.enemyId);
-  const clip = getShapeClipPath(visual.shape);
-  const ratio = enemy.maxHp > 0 ? enemy.hp / enemy.maxHp : 0;
-  const distanceText =
-    cellsToFortress === undefined ? '' : `・砦まで残り${cellsToFortress}マス`;
-
+export const EnemyMarker: React.FC<Props> = ({ stack, columns, rows }) => {
+  const visual = getEnemyVisual(stack.enemyId);
+  const barWidthPct = getHpBarWidthPct(stack.maxHp);
+  const label =
+    stack.count > 1 ? `${visual.name} ${stack.count}体` : visual.name;
   return (
     <Wrapper
+      $left={((stack.pos.x + 0.5) / columns) * 100}
+      $top={((stack.pos.y + 0.5) / rows) * 100}
       role="img"
-      aria-label={`敵: ${visual.name} HP ${Math.max(0, Math.round(enemy.hp))}/${enemy.maxHp}${distanceText}`}
-      $x={((enemy.x + 0.5) / boardWidth) * 100}
-      $y={((enemy.y + 0.5) / boardHeight) * 100}
-      $size={visual.sizePct}
+      aria-label={label}
     >
-      <HpTrack $widthPct={(getHpBarWidthPct(enemy.maxHp) / visual.sizePct) * 100}>
-        <HpFill $ratio={ratio} />
-      </HpTrack>
-      {visual.ringColor && <Ring $color={visual.ringColor} $clip={clip} />}
       <Body
+        $sizePct={visual.sizePct}
         $color={visual.color}
-        $clip={clip}
-        $inset={visual.ringColor ? '18%' : '0'}
+        $clip={getShapeClipPath(visual.shape)}
+        $ring={visual.ringColor}
       />
+      <BarTrack $widthPct={barWidthPct}>
+        <BarFill $ratio={stack.maxHp === 0 ? 0 : stack.hp / stack.maxHp} />
+      </BarTrack>
+      {stack.count > 1 && <Badge>×{stack.count}</Badge>}
     </Wrapper>
   );
 };

@@ -1,69 +1,15 @@
+/**
+ * ゲームループのテスト
+ *
+ * 時間を進めるのは setInterval だけで、ロジックは domain にある。
+ * このフックが持つのは「入力の受け取り」「タイマー」「ログ」だけ。
+ */
+import React, { StrictMode } from 'react';
 import { renderHook, act } from '@testing-library/react';
 import { useAshenRampartGame, TICK_INTERVAL_MS } from './useAshenRampartGame';
-import { SeededRandom } from '../infrastructure/random/seeded-random';
-import { PLAINS_MAP } from '../domain/board/stage-map';
 import { getCardDefinition } from '../domain/cards/card-pool';
-import { MAX_TICKS } from '../domain/combat/simulate-wave';
 import type { PlayLogEventBody, PlayLogPort } from '../application/ports/play-log-port';
-import { CURRENT_ITERATION } from '../application/ports/play-log-port';
 
-describe('useAshenRampartGame', () => {
-  beforeEach(() => jest.useFakeTimers());
-  afterEach(() => jest.useRealTimers());
-
-  it('準備フェーズ・手札5枚で開始する', () => {
-    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(42)));
-    expect(result.current.run.phase).toBe('preparation');
-    expect(result.current.run.deck.hand).toHaveLength(5);
-  });
-
-  it('タワーカードを選択して設置マスに置ける', () => {
-    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(42)));
-    const idx = result.current.run.deck.hand.findIndex(
-      (id) => getCardDefinition(id).type === 'tower'
-    );
-    // シード42の初期手札にタワーがあることを前提（無ければシードを変更）
-    expect(idx).toBeGreaterThanOrEqual(0);
-    act(() => result.current.selectCard(idx));
-    expect(result.current.selectedHandIndex).toBe(idx);
-    act(() => result.current.placeAt(PLAINS_MAP.buildSlots[0]));
-    expect(result.current.run.board.towers).toHaveLength(1);
-    expect(result.current.selectedHandIndex).toBeNull();
-  });
-
-  it('不正配置は error に格納されクラッシュしない', () => {
-    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(42)));
-    const idx = result.current.run.deck.hand.findIndex(
-      (id) => getCardDefinition(id).type === 'tower'
-    );
-    act(() => result.current.selectCard(idx));
-    act(() => result.current.placeAt(PLAINS_MAP.path[0]));
-    expect(result.current.error).not.toBeNull();
-    expect(result.current.run.board.towers).toHaveLength(0);
-  });
-
-  it('ウェーブ開始→リプレイ完走→自動で次フェーズへ進む', () => {
-    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(42)));
-    act(() => result.current.beginWave());
-    expect(result.current.run.phase).toBe('combat');
-    const totalTicks = result.current.run.lastResult?.ticks.length ?? 0;
-    act(() => {
-      jest.advanceTimersByTime((totalTicks + 2) * TICK_INTERVAL_MS);
-    });
-    // タワーなし全漏れでもライフ10>漏れ数なので報酬フェーズへ
-    expect(['reward', 'result']).toContain(result.current.run.phase);
-  });
-
-  it('restart で新しいランが始まる', () => {
-    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(42)));
-    act(() => result.current.beginWave());
-    act(() => result.current.restart());
-    expect(result.current.run.phase).toBe('preparation');
-    expect(result.current.run.waveIndex).toBe(0);
-  });
-});
-
-/** 記録イベントを配列に貯めるだけのモックポート */
 const createMockPlayLog = (): PlayLogPort & { events: PlayLogEventBody[] } => {
   const events: PlayLogEventBody[] = [];
   return {
@@ -71,206 +17,212 @@ const createMockPlayLog = (): PlayLogPort & { events: PlayLogEventBody[] } => {
     record: (e) => {
       events.push(e);
     },
-    exportAll: () => ({ version: 1, events: events.map((e) => ({ ...e, at: 0 })) }),
+    exportAll: () => ({ version: 2, events: events.map((e) => ({ ...e, at: 0 })) }),
   };
 };
 
-describe('行動ログ記録', () => {
+describe('useAshenRampartGame', () => {
   beforeEach(() => jest.useFakeTimers());
   afterEach(() => jest.useRealTimers());
 
-  it('マウント時に run_started が1回だけ記録される', () => {
+  it('マウント時に run_started がシードとプリセット付きで1回記録される', () => {
     const log = createMockPlayLog();
-    renderHook(() => useAshenRampartGame(new SeededRandom(1), log));
-    expect(log.events.filter((e) => e.kind === 'run_started')).toHaveLength(1);
-  });
-
-  it('run_started の iteration は CURRENT_ITERATION 定数を参照する（反復1以降との混在を防ぐ）', () => {
-    const log = createMockPlayLog();
-    renderHook(() => useAshenRampartGame(new SeededRandom(1), log));
-    const started = log.events.filter(
-      (e): e is Extract<PlayLogEventBody, { kind: 'run_started' }> => e.kind === 'run_started'
-    );
-    expect(started[0].iteration).toBe(CURRENT_ITERATION);
-  });
-
-  it('ウェーブ開始で wave_started が記録される', () => {
-    const log = createMockPlayLog();
-    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(1), log));
-    act(() => result.current.beginWave());
-    const started = log.events.filter((e) => e.kind === 'wave_started');
+    renderHook(() => useAshenRampartGame(1, log));
+    const started = log.events.filter((e) => e.kind === 'run_started');
     expect(started).toHaveLength(1);
-    expect(started[0]).toMatchObject({ wave: 0 });
+    expect(started[0]).toMatchObject({ seed: 1, iteration: 0 });
   });
 
-  it('リプレイ完走で wave_ended が記録される', () => {
-    const log = createMockPlayLog();
-    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(1), log));
-    act(() => result.current.beginWave());
-    // リプレイを完走させる（tick 数 × 間隔ぶん進める）
-    act(() => {
-      jest.advanceTimersByTime(TICK_INTERVAL_MS * (MAX_TICKS + 1));
+  it('StrictMode 下でもカードを1枚配置できる（指摘1の回帰: updater 内の副作用で操作が握り潰されていた）', () => {
+    const { result } = renderHook(() => useAshenRampartGame(1), {
+      wrapper: ({ children }) => React.createElement(StrictMode, null, children),
     });
-    expect(log.events.filter((e) => e.kind === 'wave_ended')).toHaveLength(1);
-  });
-
-  it('wave_ended には lifeBefore/lifeAfter が実値で記録される（勝利ウェーブ）', () => {
-    const log = createMockPlayLog();
-    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(1), log));
-    act(() => result.current.beginWave());
-    act(() => {
-      jest.advanceTimersByTime(TICK_INTERVAL_MS * (MAX_TICKS + 1));
-    });
-    const ended = log.events.filter(
-      (e): e is Extract<PlayLogEventBody, { kind: 'wave_ended' }> => e.kind === 'wave_ended'
-    );
-    expect(ended).toHaveLength(1);
-    // タワーなし・ウェーブ1(雑兵6体)で全漏れ: 10 - 6 = 4
-    expect(ended[0].lifeBefore).toBe(10);
-    expect(ended[0].lifeAfter).toBe(10 - ended[0].leaks);
-    expect('lifeDelta' in ended[0]).toBe(false);
-  });
-
-  it('敗北ウェーブでは lifeAfter が finishWave のクランプ規則どおり 0 になる', () => {
-    const log = createMockPlayLog();
-    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(1), log));
-    // ウェーブ1をタワーなしで完走（life 10 -> 4、報酬フェーズへ）
-    act(() => result.current.beginWave());
-    act(() => {
-      jest.advanceTimersByTime(TICK_INTERVAL_MS * (MAX_TICKS + 1));
-    });
-    expect(result.current.run.phase).toBe('reward');
-    act(() => result.current.pickReward(null));
-    // ウェーブ2をタワーなしで完走（雑兵6+俊足4=10体漏れ > 残ライフ4 で敗北）
-    act(() => result.current.beginWave());
-    act(() => {
-      jest.advanceTimersByTime(TICK_INTERVAL_MS * (MAX_TICKS + 1));
-    });
-    const ended = log.events.filter(
-      (e): e is Extract<PlayLogEventBody, { kind: 'wave_ended' }> => e.kind === 'wave_ended'
-    );
-    expect(ended).toHaveLength(2);
-    const lastWave = ended[1];
-    expect(lastWave.lifeBefore).toBeGreaterThan(0);
-    expect(lastWave.leaks).toBeGreaterThan(lastWave.lifeBefore);
-    expect(lastWave.lifeAfter).toBe(0);
-    expect(result.current.run.status).toBe('lost');
-  });
-
-  it('restart で新しい runId の run_started が記録される', () => {
-    const log = createMockPlayLog();
-    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(1), log));
-    act(() => result.current.restart());
-    const started = log.events.filter(
-      (e): e is Extract<PlayLogEventBody, { kind: 'run_started' }> => e.kind === 'run_started'
-    );
-    expect(started).toHaveLength(2);
-    expect(started[0].runId).not.toBe(started[1].runId);
-  });
-
-  it('塔カードの配置で prep_action が記録される', () => {
-    const log = createMockPlayLog();
-    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(1), log));
-    // 手札から塔カードを探して選択→設置スロットに配置
-    const towerIndex = result.current.run.deck.hand.findIndex(
-      (id) => getCardDefinition(id).type === 'tower'
-    );
+    const towerIndex = result.current.state.deck.hand.findIndex((id) => id !== 'mud-time');
     expect(towerIndex).toBeGreaterThanOrEqual(0);
-    const slot = result.current.run.board.map.buildSlots[0];
     act(() => result.current.selectCard(towerIndex));
-    act(() => result.current.placeAt(slot));
-    const actions = log.events.filter(
-      (e): e is Extract<PlayLogEventBody, { kind: 'prep_action' }> => e.kind === 'prep_action'
-    );
-    expect(actions).toHaveLength(1);
-    expect(actions[0].action).toBe('place-tower');
-    expect(actions[0].target).toContain('@');
-    expect(actions[0].wave).toBe(0);
-  });
-
-  it('スペルカードの即時使用で prep_action が記録される', () => {
-    const log = createMockPlayLog();
-    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(1), log));
-    // シード1の初期手札にはスペルが含まれる（seed-check で確認済み）ため無条件に検証する
-    const spellIndex = result.current.run.deck.hand.findIndex((id) => {
-      const t = getCardDefinition(id).type;
-      return t === 'spell' || t === 'tactic';
-    });
-    expect(spellIndex).toBeGreaterThanOrEqual(0);
-    act(() => result.current.selectCard(spellIndex));
-    expect(log.events.some((e) => e.kind === 'prep_action')).toBe(true);
-  });
-});
-
-describe('再生速度とスキップ', () => {
-  beforeEach(() => jest.useFakeTimers());
-  afterEach(() => jest.useRealTimers());
-
-  it('changeSpeed で速度が変わり battle_speed が記録される', () => {
-    const log = createMockPlayLog();
-    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(1), log));
-    act(() => result.current.beginWave());
-    act(() => result.current.changeSpeed(4));
-    expect(result.current.speed).toBe(4);
-    // ウェーブ開始時（速度1）と changeSpeed(4) の2件が記録される
-    const speeds = log.events.filter((e) => e.kind === 'battle_speed');
-    expect(speeds).toHaveLength(2);
-    expect(speeds[speeds.length - 1]).toMatchObject({ speed: 4 });
-  });
-
-  it('ウェーブ開始のたびに現在の実効速度が battle_speed として記録される（非スキップ率の復元用）', () => {
-    const log = createMockPlayLog();
-    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(1), log));
-    act(() => result.current.beginWave());
-    const speeds = log.events.filter((e) => e.kind === 'battle_speed');
-    expect(speeds).toHaveLength(1);
-    expect(speeds[0]).toMatchObject({ wave: 0, speed: 1 });
-  });
-
-  it('戦闘中に速度を変更しても wave_started は二重記録されない', () => {
-    const log = createMockPlayLog();
-    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(1), log));
-    act(() => result.current.beginWave());
-    act(() => result.current.changeSpeed(2));
-    act(() => result.current.changeSpeed(4));
-    const started = log.events.filter((e) => e.kind === 'wave_started');
-    expect(started).toHaveLength(1);
-  });
-
-  it('速度変更後に restart しても sticky な速度が新しいランのウェーブ開始時に記録される', () => {
-    const log = createMockPlayLog();
-    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(1), log));
-    act(() => result.current.beginWave());
-    act(() => result.current.changeSpeed(4));
-    act(() => result.current.restart());
-    act(() => result.current.beginWave());
-    expect(result.current.speed).toBe(4); // 速度は restart でリセットされない（sticky）
-    const speeds = log.events.filter((e) => e.kind === 'battle_speed');
-    // run1: wave_started時(1x) + changeSpeed(4x) / run2: wave_started時(4x) の計3件
-    expect(speeds).toHaveLength(3);
-    expect(speeds[2]).toMatchObject({ wave: 0, speed: 4 });
-  });
-
-  it('4x は 1x の 1/4 の時間でリプレイが進む', () => {
-    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(1)));
-    act(() => result.current.beginWave());
-    act(() => result.current.changeSpeed(4));
+    const pos = result.current.placeableCells[0];
+    expect(pos).toBeDefined();
+    act(() => result.current.clickCell(pos!));
     act(() => {
-      jest.advanceTimersByTime(TICK_INTERVAL_MS); // 1x の1tick分の時間
+      jest.advanceTimersByTime(TICK_INTERVAL_MS);
     });
-    expect(result.current.replayTick).toBe(4);
+    const totalPlaced =
+      result.current.state.towers.length +
+      result.current.state.reactors.length +
+      result.current.state.traps.length +
+      result.current.state.embers.length;
+    // StrictMode の二重呼び出しで pendingRef が空のまま消費されると、この配置は握り潰されて0になる
+    expect(totalPlaced).toBe(1);
   });
 
-  it('skipBattle でリプレイが即完走しウェーブが終了する', () => {
+  it('時間経過で tick が進む', () => {
+    const { result } = renderHook(() => useAshenRampartGame(1));
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS * 10);
+    });
+    expect(result.current.state.tick).toBe(10);
+  });
+
+  it('一時停止すると tick が進まず paused が記録される', () => {
     const log = createMockPlayLog();
-    const { result } = renderHook(() => useAshenRampartGame(new SeededRandom(1), log));
-    act(() => result.current.beginWave());
-    act(() => result.current.skipBattle());
-    // combat フェーズを抜けている（reward または result）
-    expect(result.current.run.phase).not.toBe('combat');
-    expect(
-      log.events.filter((e) => e.kind === 'battle_speed' && e.speed === 'skip')
-    ).toHaveLength(1);
-    expect(log.events.filter((e) => e.kind === 'wave_ended')).toHaveLength(1);
+    const { result } = renderHook(() => useAshenRampartGame(1, log));
+    act(() => result.current.togglePause());
+    const before = result.current.state.tick;
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS * 10);
+    });
+    expect(result.current.state.tick).toBe(before);
+    expect(log.events.filter((e) => e.kind === 'paused')).toHaveLength(1);
+  });
+
+  it('再開すると resumed が記録され tick が再び進む', () => {
+    const log = createMockPlayLog();
+    const { result } = renderHook(() => useAshenRampartGame(1, log));
+    act(() => result.current.togglePause());
+    act(() => result.current.togglePause());
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS * 5);
+    });
+    expect(log.events.filter((e) => e.kind === 'resumed')).toHaveLength(1);
+    expect(result.current.state.tick).toBe(5);
+  });
+
+  it('カードを選ぶと置けるマスだけが返る', () => {
+    const { result } = renderHook(() => useAshenRampartGame(1));
+    const towerIndex = result.current.state.deck.hand.findIndex((id) => id !== 'mud-time');
+    act(() => result.current.selectCard(towerIndex));
+    expect(result.current.placeableCells.length).toBeGreaterThan(0);
+    expect(result.current.placeableCells.length).toBeLessThanOrEqual(12);
+  });
+
+  it('選択せずにセルを押しても何も起きない', () => {
+    const { result } = renderHook(() => useAshenRampartGame(1));
+    act(() => result.current.clickCell({ x: 1, y: 2 }));
+    expect(result.current.state.towers).toHaveLength(0);
+  });
+
+  it('一時停止中は配置できない（戦術的優位を与えない）', () => {
+    const { result } = renderHook(() => useAshenRampartGame(1));
+    act(() => result.current.togglePause());
+    // 手札の中身に依存させない: 一時停止中は選択しても置ける場所が無く、
+    // セルを押しても設置物が増えないことを検証する
+    act(() => result.current.selectCard(0));
+    expect(result.current.placeableCells).toEqual([]);
+    act(() => result.current.clickCell({ x: 1, y: 2 }));
+    expect(result.current.state.towers).toHaveLength(0);
+    expect(result.current.state.reactors).toHaveLength(0);
+    expect(result.current.state.embers).toHaveLength(0);
+    expect(result.current.state.traps).toHaveLength(0);
+  });
+
+  it('手札が溢れると失った札名が通知される', () => {
+    const { result } = renderHook(() => useAshenRampartGame(1));
+    // 初期手札3枚・上限5枚・一度も出さないので、3回目のドロー（120 tick）で必ず溢れる
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS * 120);
+    });
+    expect(result.current.state.deck.hand).toHaveLength(5);
+    expect(result.current.state.deck.graveyard).toHaveLength(1);
+    const lost = result.current.state.deck.graveyard[0];
+    expect(typeof lost).toBe('string');
+    expect(result.current.overflowNotice).toBe(getCardDefinition(lost as string).name);
+  });
+
+  it('予告が切り替わったときにだけ wave_preview_shown が記録される', () => {
+    const log = createMockPlayLog();
+    const { result } = renderHook(() => useAshenRampartGame(1, log));
+    const previewsAtMount = log.events.filter((e) => e.kind === 'wave_preview_shown');
+    // マウント時点で最初の予告（雑兵8 俊足5）が1回だけ記録される
+    expect(previewsAtMount).toHaveLength(1);
+    expect(previewsAtMount[0]).toMatchObject({ tick: 0, content: '雑兵8 俊足5' });
+
+    // 次ウェーブ開始 tick（250）に到達するまでは予告が変わらないため追加記録は無い
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS * 249);
+    });
+    expect(log.events.filter((e) => e.kind === 'wave_preview_shown')).toHaveLength(1);
+
+    // tick 250 で予告が切り替わり、そのときだけ1件追加される
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS);
+    });
+    const previewsAfterSwitch = log.events.filter((e) => e.kind === 'wave_preview_shown');
+    expect(previewsAfterSwitch).toHaveLength(2);
+    expect(previewsAfterSwitch[1]).toMatchObject({ tick: 250, content: '群れ12 雑兵5' });
+    expect(result.current.state.tick).toBe(250);
+  });
+
+  it('interactCell: 再点火可能な燠火のあるセルを選択なしでクリックすると reactivated が記録される（クールダウン中は記録されない）', () => {
+    const log = createMockPlayLog();
+    // シード3は初期手札に業火（ember-blast）を2枚含む（他シードは1枚以下か0枚のため選定）
+    const { result } = renderHook(() => useAshenRampartGame(3, log));
+    const emberHandIndex = result.current.state.deck.hand.findIndex((id) => id === 'ember-blast');
+    expect(emberHandIndex).toBeGreaterThanOrEqual(0);
+
+    // 業火を選択し、設置可能マスの先頭に置く
+    act(() => result.current.selectCard(emberHandIndex));
+    const placePos = result.current.placeableCells[0];
+    expect(placePos).toBeDefined();
+    act(() => result.current.interactCell(placePos!));
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS);
+    });
+    expect(result.current.state.embers).toHaveLength(1);
+    const emberPos = result.current.state.embers[0]!.pos;
+    expect(result.current.state.embers[0]!.cooldownLeft).toBeGreaterThan(0);
+
+    // クールダウン中に選択なしで同じセルをクリックしても再点火されない
+    act(() => result.current.interactCell(emberPos));
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS);
+    });
+    expect(log.events.filter((e) => e.kind === 'reactivated')).toHaveLength(0);
+
+    // クールダウンが明けるまで進める（業火の再点火間隔は300 tick）
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS * 300);
+    });
+    expect(result.current.state.embers[0]!.cooldownLeft).toBe(0);
+
+    // 選択なしでクリックすると今度は再点火され、reactivated が記録される
+    act(() => result.current.interactCell(emberPos));
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS);
+    });
+    expect(log.events.filter((e) => e.kind === 'reactivated')).toHaveLength(1);
+    expect(result.current.state.embers[0]!.cooldownLeft).toBeGreaterThan(0);
+  });
+
+  it('restart で新しいランが始まる', () => {
+    const log = createMockPlayLog();
+    const { result } = renderHook(() => useAshenRampartGame(1, log));
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS * 20);
+    });
+    act(() => result.current.restart());
+    expect(result.current.state.tick).toBe(0);
+    expect(log.events.filter((e) => e.kind === 'run_started')).toHaveLength(2);
+  });
+
+  it('restart にシードとプリセットを渡すと run_started に正しく反映される（指摘6: 別シードでの再現手順をUIから実行可能にする）', () => {
+    const log = createMockPlayLog();
+    const { result } = renderHook(() => useAshenRampartGame(1, log));
+    act(() => result.current.restart(42, 'heavy'));
+    expect(result.current.runSeed).toBe(42);
+    expect(result.current.presetId).toBe('heavy');
+    const started = log.events.filter((e) => e.kind === 'run_started');
+    expect(started).toHaveLength(2);
+    expect(started[1]).toMatchObject({ seed: 42, presetId: 'heavy' });
+  });
+
+  it('restart を引数なしで呼ぶと直前のシード・プリセットを維持する', () => {
+    const log = createMockPlayLog();
+    const { result } = renderHook(() => useAshenRampartGame(1, log));
+    act(() => result.current.restart(7, 'heavy'));
+    act(() => result.current.restart());
+    expect(result.current.runSeed).toBe(7);
+    expect(result.current.presetId).toBe('heavy');
+    const started = log.events.filter((e) => e.kind === 'run_started');
+    expect(started[2]).toMatchObject({ seed: 7, presetId: 'heavy' });
   });
 });
