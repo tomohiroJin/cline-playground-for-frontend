@@ -80,6 +80,10 @@ const isSlotOccupied = (state: CombatState, pos: CellPos): boolean =>
  *
  * UI はこれを使って「置けるマスだけをハイライト」する（設計書 §9.7）。
  * 選択空間 60通りを数個に落とすための判定であり、ドメインが唯一の真実を持つ。
+ *
+ * 引数 `state` は tick 開始時点（今 tick に処理済みの配置操作を含まない）のものを渡す前提。
+ * `stepTick` は配置クールダウンにより1 tick に1回しか配置を確定しないため、
+ * 同一 tick 内で2回目の判定が必要になるケースは存在しない。
  */
 export const canPlaceAt = (
   state: CombatState,

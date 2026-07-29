@@ -5,8 +5,8 @@
  * 仮説の必要条件そのものであり、ここが緩むと配分が発生しない（設計書 §4.1）。
  */
 import { createCombatState, PLACE_COOLDOWN_TICKS, MANA_INITIAL } from './combat-state';
-import type { CombatState } from './combat-state';
-import { stepTick, canPlaceAt } from './step-tick';
+import type { CombatState, PlacedTower } from './combat-state';
+import { stepTick, canPlaceAt, effectiveDamage } from './step-tick';
 import type { WaveDefinition } from './waves';
 import { PLAINS_MAP } from '../board/stage-map';
 import { getCardDefinition } from '../cards/card-pool';
@@ -111,6 +111,36 @@ describe('カード配置', () => {
     const after = stepTick(state, [{ kind: 'play-card', handIndex: 0, pos: { x: 1, y: 2 } }], PLAINS_MAP);
     expect(after.embers).toHaveLength(1);
     expect(after.enemies[0]?.hp).toBe(12); // 20 - 8
+  });
+
+  it('同tickに配置した塔が、その tick に射程内の敵へダメージを与える', () => {
+    // 敵は入口の次のセル (1,3) に出現させ、塔 (1,2) から距離1で射程1.6内に収める
+    const wave: WaveDefinition[] = [
+      { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, spawnPathIndex: 1 }] },
+    ];
+    const state = createCombatState({ drawPile: [], hand: ['arrow-tower'], graveyard: [] }, wave);
+    const after = play(state, 0, { x: 1, y: 2 });
+    const enemy = after.enemies[0];
+    expect(enemy).toBeDefined();
+    expect(enemy?.hp).toBe(14); // 20 - 6（配置と同じ tick で射撃が発生する）
+  });
+
+  it('同tickに配置した篝火のオーラが既存の隣接塔に同tickで乗り、二重計上しない', () => {
+    const wave: WaveDefinition[] = [
+      { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, spawnPathIndex: 1 }] },
+    ];
+    const existingTower: PlacedTower = { cardId: 'arrow-tower', pos: { x: 1, y: 2 }, cooldownLeft: 0 };
+    const state: CombatState = {
+      ...createCombatState({ drawPile: [], hand: ['beacon'], graveyard: [] }, wave),
+      towers: [existingTower],
+    };
+    const after = play(state, 0, { x: 2, y: 2 }); // 篝火を隣接スロットに配置
+    expect(after.towers).toHaveLength(2);
+    const enemy = after.enemies[0];
+    expect(enemy).toBeDefined();
+    // round(6 × 1.25) = 8 を同 tick で受ける（二重計上なら round(6×1.25×1.25)=9 になるはず）
+    expect(enemy?.hp).toBe(12); // 20 - 8
+    expect(effectiveDamage(after, 0, PLAINS_MAP)).toBe(8);
   });
 });
 
