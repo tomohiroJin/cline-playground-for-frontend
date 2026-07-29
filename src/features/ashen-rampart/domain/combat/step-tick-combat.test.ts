@@ -90,6 +90,29 @@ describe('範囲攻撃', () => {
     const damaged = after.enemies.filter((e) => e.hp < e.maxHp || !e.alive);
     expect(damaged.length).toBeGreaterThanOrEqual(2);
   });
+
+  it('火砲台の範囲攻撃は飛行を巻き込まない', () => {
+    // 地上の雑兵と鴉を同じ経路 index 5 から同時に出現させ、
+    // 火砲台の splash 範囲に両方が入りうる状況を作る
+    const mixed: WaveDefinition[] = [
+      {
+        startTick: 0,
+        entries: [
+          { enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, spawnPathIndex: 5 },
+          { enemyId: 'raven', count: 1, spawnIntervalTicks: 0, spawnPathIndex: 5 },
+        ],
+      },
+    ];
+    const state = withTower(createCombatState(emptyDeck, mixed), 'cannon-tower', 5, 2);
+    const after = advance(state, 20);
+    const grunt = after.enemies.find((e) => e.enemyId === 'grunt');
+    const raven = after.enemies.find((e) => e.enemyId === 'raven');
+    // 前提: 実際に地上敵へ攻撃が発生していること（撃っていないから鴉も無傷、という偽の緑を防ぐ）
+    expect(grunt).toBeDefined();
+    expect(grunt && grunt.hp < grunt.maxHp).toBe(true);
+    // 検証: 同じ範囲にいた鴉は splash に巻き込まれず無傷のまま
+    expect(raven?.hp).toBe(raven?.maxHp);
+  });
 });
 
 describe('篝火のオーラ', () => {
