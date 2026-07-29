@@ -15,10 +15,17 @@ import { simulateRun, greedyStrategy } from './run-simulation';
 const SEEDS = [1, 2, 3, 4, 5];
 
 describe('支配戦略が存在しないこと', () => {
-  it('弓兵だけのデッキでは勝てない（飛行に触れないため）', () => {
-    const deck = createDeck(Array.from({ length: 20 }, () => 'arrow-tower'), () => 0.5);
+  // 弓兵20枚・業火20枚は初期マナ2・コスト2に対し魔力炉が0枚のため、1基置いた時点で
+  // マナが永久に0になり「2枚目以降が一生出せない」まま自明に負ける。これでは
+  // 「飛行に触れない」という本来の敗因を検証したことにならない（指摘2）。
+  // 魔力炉を混ぜてマナ枯渇を排除し、それでも負けることを確認する。
+  it('弓兵に偏ったデッキ（魔力炉3＋弓兵17）では勝てない（飛行に触れないため）', () => {
+    const cards = [...Array(3).fill('reactor'), ...Array(17).fill('arrow-tower')];
+    const deck = createDeck(cards, () => 0.5);
     const result = simulateRun(createCombatState(deck, PLAINS_WAVES), greedyStrategy, PLAINS_MAP);
     expect(result.outcome).toBe('lost');
+    // 前提: マナ枯渇で自明に負けたのではないこと
+    expect(result.cardsPlayed).toBeGreaterThan(5);
   });
 
   it('魔力炉だけのデッキでは勝てない（火力が無いため）', () => {
@@ -27,10 +34,13 @@ describe('支配戦略が存在しないこと', () => {
     expect(result.outcome).toBe('lost');
   });
 
-  it('業火だけのデッキでは勝てない（飛行に触れないため）', () => {
-    const deck = createDeck(Array.from({ length: 20 }, () => 'ember-blast'), () => 0.5);
+  it('業火に偏ったデッキ（魔力炉3＋業火17）では勝てない（飛行に触れないため）', () => {
+    const cards = [...Array(3).fill('reactor'), ...Array(17).fill('ember-blast')];
+    const deck = createDeck(cards, () => 0.5);
     const result = simulateRun(createCombatState(deck, PLAINS_WAVES), greedyStrategy, PLAINS_MAP);
     expect(result.outcome).toBe('lost');
+    // 前提: マナ枯渇で自明に負けたのではないこと
+    expect(result.cardsPlayed).toBeGreaterThan(5);
   });
 });
 

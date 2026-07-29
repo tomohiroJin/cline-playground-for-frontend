@@ -170,6 +170,7 @@ interface ActionsDraft {
   deck: DeckState;
   placeCooldown: number;
   slowUntilTick: number;
+  slowMultiplier: number;
   towers: PlacedTower[];
   traps: PlacedTrap[];
   reactors: PlacedReactor[];
@@ -214,6 +215,7 @@ const applyCardEffect = (
     draft.blasts.push({ pos, radius: card.ember.radius, damage: card.ember.damage });
   } else if (card.type === 'spell' && card.spell) {
     draft.slowUntilTick = tick + card.spell.durationTicks;
+    draft.slowMultiplier = card.spell.speedMultiplier;
   }
 };
 
@@ -269,6 +271,7 @@ const applyActions = (
     deck: state.deck,
     placeCooldown: Math.max(0, state.placeCooldown - 1),
     slowUntilTick: state.slowUntilTick,
+    slowMultiplier: state.slowMultiplier,
     towers: [...state.towers],
     traps: [...state.traps],
     reactors: [...state.reactors],
@@ -303,7 +306,7 @@ const runReactors = (
   const next = reactors.map((r) => {
     const remaining = r.ticksToMana - 1;
     if (remaining > 0) return { ...r, ticksToMana: remaining };
-    nextMana += 1;
+    nextMana += getCardDefinition('reactor').reactor?.manaPerTick ?? 1;
     events.push({ kind: 'mana', amount: 1 });
     return { ...r, ticksToMana: getCardDefinition('reactor').reactor?.intervalTicks ?? remaining };
   });
@@ -361,10 +364,11 @@ const moveEnemies = (
   spawned: readonly ActiveEnemy[],
   tick: number,
   slowUntilTick: number,
+  slowMultiplier: number,
   map: StageMap,
   goal: number
 ): ActiveEnemy[] => {
-  const slowMult = tick <= slowUntilTick ? 0.6 : 1;
+  const slowMult = tick <= slowUntilTick ? slowMultiplier : 1;
   return [...existing, ...spawned].map((enemy) => {
     if (!enemy.alive) return enemy;
     if (enemy.spawnTick === tick) return enemy;
@@ -573,7 +577,15 @@ export const stepTick = (
   const spawned = spawnAt(state, tick, nextId);
 
   // --- 移動（時泥の効果中は敵の足が遅くなる） ---
-  const moved = moveEnemies(state.enemies, spawned, tick, afterActions.slowUntilTick, map, goal);
+  const moved = moveEnemies(
+    state.enemies,
+    spawned,
+    tick,
+    afterActions.slowUntilTick,
+    afterActions.slowMultiplier,
+    map,
+    goal
+  );
 
   // --- 罠 → 射撃 → 業火・燠火の順で hpById に下書きし、最後にまとめて反映する ---
   const hpById = new Map<number, number>();
@@ -600,6 +612,7 @@ export const stepTick = (
     enemies: settled,
     placeCooldown: afterActions.placeCooldown,
     slowUntilTick: afterActions.slowUntilTick,
+    slowMultiplier: afterActions.slowMultiplier,
     events,
     outcome: 'playing',
   };

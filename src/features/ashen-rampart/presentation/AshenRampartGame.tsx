@@ -7,6 +7,7 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { PLAINS_MAP } from '../domain/board/stage-map';
+import { PRESET_DECKS } from '../domain/cards/card-pool';
 import { useAshenRampartGame } from './useAshenRampartGame';
 import { RunStatusBar } from './RunStatusBar';
 import { BoardGrid } from './BoardGrid';
@@ -66,6 +67,33 @@ const NoteInput = styled.textarea`
   border-radius: 4px;
 `;
 
+const NextRunForm = styled.div`
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+`;
+
+const SeedInput = styled.input`
+  width: 100px;
+  min-height: 44px;
+  padding: 0 8px;
+  background: ${COLORS.dominant};
+  color: ${COLORS.secondary};
+  border: 1px solid ${COLORS.secondary};
+  border-radius: 4px;
+`;
+
+const PresetSelect = styled.select`
+  min-height: 44px;
+  padding: 0 8px;
+  background: ${COLORS.dominant};
+  color: ${COLORS.secondary};
+  border: 1px solid ${COLORS.secondary};
+  border-radius: 4px;
+`;
+
 const ActionButton = styled.button`
   min-height: 44px;
   padding: 0 16px;
@@ -106,10 +134,22 @@ export const AshenRampartGame: React.FC = () => {
   const [noteText, setNoteText] = useState('');
   const [noteSaved, setNoteSaved] = useState(false);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
+  // 次ランのシード・プリセット選択（設計書 §11: 同一プリセットで3ラン、うち1ランは別シード）
+  const [nextSeedText, setNextSeedText] = useState(String(game.runSeed));
+  const [nextPresetId, setNextPresetId] = useState(game.presetId);
 
   // スペースキーで一時停止（設計書 §9.6）
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      // 入力要素にフォーカスがある間はスペースを奪わない。決着画面の勝敗理由
+      // テキストエリアに入力中、打つたびに一時停止がトグルしてしまう不具合の修正
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT' || target.isContentEditable)
+      ) {
+        return;
+      }
       if (event.code !== 'Space') return;
       event.preventDefault();
       game.togglePause();
@@ -118,13 +158,15 @@ export const AshenRampartGame: React.FC = () => {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [game]);
 
-  // 新しいランが始まったら決着入力の状態をリセットする
+  // 新しいランが始まったら決着入力の状態をリセットし、次ラン設定欄も実際の値に合わせる
   useEffect(() => {
     if (game.state.outcome !== 'playing') return;
     setNoteText('');
     setNoteSaved(false);
     setCopyStatus('idle');
-  }, [game.state.outcome]);
+    setNextSeedText(String(game.runSeed));
+    setNextPresetId(game.presetId);
+  }, [game.state.outcome, game.runSeed, game.presetId]);
 
   const handleNoteSubmit = (event: React.FormEvent): void => {
     event.preventDefault();
@@ -132,6 +174,12 @@ export const AshenRampartGame: React.FC = () => {
     if (trimmed.length === 0) return;
     game.noteRun(trimmed);
     setNoteSaved(true);
+  };
+
+  const handleRestart = (): void => {
+    const parsedSeed = Number(nextSeedText);
+    const seedToUse = Number.isFinite(parsedSeed) ? parsedSeed : game.runSeed;
+    game.restart(seedToUse, nextPresetId);
   };
 
   const handleCopyLog = (): void => {
@@ -158,8 +206,29 @@ export const AshenRampartGame: React.FC = () => {
         {game.state.outcome !== 'playing' && (
           <Result>
             <p>{game.state.outcome === 'won' ? '砦は守られた' : '城壁は灰燼に帰した'}</p>
+            <NextRunForm>
+              <label htmlFor="ashen-rampart-next-seed">次のランのシード</label>
+              <SeedInput
+                id="ashen-rampart-next-seed"
+                type="number"
+                value={nextSeedText}
+                onChange={(event) => setNextSeedText(event.target.value)}
+              />
+              <label htmlFor="ashen-rampart-next-preset">次のランのプリセット</label>
+              <PresetSelect
+                id="ashen-rampart-next-preset"
+                value={nextPresetId}
+                onChange={(event) => setNextPresetId(event.target.value)}
+              >
+                {Object.values(PRESET_DECKS).map((preset) => (
+                  <option key={preset.id} value={preset.id}>
+                    {preset.name}
+                  </option>
+                ))}
+              </PresetSelect>
+            </NextRunForm>
             <ActionRow>
-              <ActionButton type="button" onClick={game.restart}>
+              <ActionButton type="button" onClick={handleRestart}>
                 もう一度挑む
               </ActionButton>
               <ActionButton type="button" onClick={handleCopyLog}>

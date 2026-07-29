@@ -63,6 +63,8 @@ describe('飛行への当たり判定（カウンター要求の中核）', () =
     const state = withTower(createCombatState(emptyDeck, ravens), 'arrow-tower', 5, 2);
     const after = advance(state, 20);
     const enemy = after.enemies[0];
+    // 前提: 鴉自身が盤面に実在すること（未 spawn だと無検証になる）
+    expect(enemy).toBeDefined();
     expect(enemy?.hp).toBe(enemy?.maxHp);
   });
 
@@ -135,6 +137,8 @@ describe('篝火のオーラ', () => {
     const state = withTower(createCombatState(emptyDeck, waveOf('grunt')), 'beacon', 1, 2);
     const after = advance(state, 20);
     const enemy = after.enemies[0];
+    // 前提: 雑兵が実際に盤面に存在すること（未 spawn だと無検証になる）
+    expect(enemy).toBeDefined();
     expect(enemy?.hp).toBe(enemy?.maxHp);
   });
 });

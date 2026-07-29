@@ -4,6 +4,7 @@
  * 時間を進めるのは setInterval だけで、ロジックは domain にある。
  * このフックが持つのは「入力の受け取り」「タイマー」「ログ」だけ。
  */
+import React, { StrictMode } from 'react';
 import { renderHook, act } from '@testing-library/react';
 import { useAshenRampartGame, TICK_INTERVAL_MS } from './useAshenRampartGame';
 import { getCardDefinition } from '../domain/cards/card-pool';
@@ -30,6 +31,28 @@ describe('useAshenRampartGame', () => {
     const started = log.events.filter((e) => e.kind === 'run_started');
     expect(started).toHaveLength(1);
     expect(started[0]).toMatchObject({ seed: 1, iteration: 0 });
+  });
+
+  it('StrictMode 下でもカードを1枚配置できる（指摘1の回帰: updater 内の副作用で操作が握り潰されていた）', () => {
+    const { result } = renderHook(() => useAshenRampartGame(1), {
+      wrapper: ({ children }) => React.createElement(StrictMode, null, children),
+    });
+    const towerIndex = result.current.state.deck.hand.findIndex((id) => id !== 'mud-time');
+    expect(towerIndex).toBeGreaterThanOrEqual(0);
+    act(() => result.current.selectCard(towerIndex));
+    const pos = result.current.placeableCells[0];
+    expect(pos).toBeDefined();
+    act(() => result.current.clickCell(pos!));
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS);
+    });
+    const totalPlaced =
+      result.current.state.towers.length +
+      result.current.state.reactors.length +
+      result.current.state.traps.length +
+      result.current.state.embers.length;
+    // StrictMode の二重呼び出しで pendingRef が空のまま消費されると、この配置は握り潰されて0になる
+    expect(totalPlaced).toBe(1);
   });
 
   it('時間経過で tick が進む', () => {
@@ -179,5 +202,27 @@ describe('useAshenRampartGame', () => {
     act(() => result.current.restart());
     expect(result.current.state.tick).toBe(0);
     expect(log.events.filter((e) => e.kind === 'run_started')).toHaveLength(2);
+  });
+
+  it('restart にシードとプリセットを渡すと run_started に正しく反映される（指摘6: 別シードでの再現手順をUIから実行可能にする）', () => {
+    const log = createMockPlayLog();
+    const { result } = renderHook(() => useAshenRampartGame(1, log));
+    act(() => result.current.restart(42, 'heavy'));
+    expect(result.current.runSeed).toBe(42);
+    expect(result.current.presetId).toBe('heavy');
+    const started = log.events.filter((e) => e.kind === 'run_started');
+    expect(started).toHaveLength(2);
+    expect(started[1]).toMatchObject({ seed: 42, presetId: 'heavy' });
+  });
+
+  it('restart を引数なしで呼ぶと直前のシード・プリセットを維持する', () => {
+    const log = createMockPlayLog();
+    const { result } = renderHook(() => useAshenRampartGame(1, log));
+    act(() => result.current.restart(7, 'heavy'));
+    act(() => result.current.restart());
+    expect(result.current.runSeed).toBe(7);
+    expect(result.current.presetId).toBe('heavy');
+    const started = log.events.filter((e) => e.kind === 'run_started');
+    expect(started[2]).toMatchObject({ seed: 7, presetId: 'heavy' });
   });
 });

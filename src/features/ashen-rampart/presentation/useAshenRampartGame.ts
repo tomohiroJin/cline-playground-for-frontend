@@ -26,12 +26,16 @@ export const TICK_INTERVAL_MS = 100;
 /** 溢れ通知を表示し続ける tick 数（0.6秒） */
 const OVERFLOW_NOTICE_TICKS = 6;
 
-const PRESET_ID = 'swift';
+const DEFAULT_PRESET_ID = 'swift';
 
 export const useAshenRampartGame = (seed = 1, playLog?: PlayLogPort) => {
   const logRef = useRef<PlayLogPort>(playLog ?? new LocalStoragePlayLog());
   const [runId, setRunId] = useState(() => createRunId());
-  const [state, setState] = useState<CombatState>(() => startRun(PRESET_ID, new SeededRandom(seed)));
+  const [runSeed, setRunSeed] = useState(seed);
+  const [presetId, setPresetId] = useState(DEFAULT_PRESET_ID);
+  const [state, setState] = useState<CombatState>(() =>
+    startRun(DEFAULT_PRESET_ID, new SeededRandom(seed))
+  );
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [overflowNotice, setOverflowNotice] = useState<string | undefined>(undefined);
@@ -49,20 +53,20 @@ export const useAshenRampartGame = (seed = 1, playLog?: PlayLogPort) => {
       kind: 'run_started',
       runId,
       iteration: CURRENT_ITERATION,
-      seed,
-      presetId: PRESET_ID,
+      seed: runSeed,
+      presetId,
     });
-  }, [runId, seed]);
+  }, [runId, runSeed, presetId]);
 
   // ゲームループ。一時停止中と決着後は進めない
   useEffect(() => {
     if (isPaused || state.outcome !== 'playing') return undefined;
     const timer = setInterval(() => {
-      setState((current) => {
-        const actions = pendingRef.current;
-        pendingRef.current = [];
-        return stepTick(current, actions, PLAINS_MAP);
-      });
+      // StrictMode は useState の関数型 updater を二重に呼び出すことがあるため、
+      // ref の読み取り・クリアは updater の外（副作用なし）で行う（togglePause と同じ対策）
+      const actions = pendingRef.current;
+      pendingRef.current = [];
+      setState((current) => stepTick(current, actions, PLAINS_MAP));
     }, TICK_INTERVAL_MS);
     return () => clearInterval(timer);
   }, [isPaused, state.outcome]);
@@ -207,15 +211,29 @@ export const useAshenRampartGame = (seed = 1, playLog?: PlayLogPort) => {
     setSelectedIndex(null);
   }, [isPaused, runId, state.tick]);
 
-  const restart = useCallback(() => {
-    pendingRef.current = [];
-    setSelectedIndex(null);
-    setIsPaused(false);
-    setOverflowNotice(undefined);
-    lastPreviewRef.current = undefined;
-    setState(startRun(PRESET_ID, new SeededRandom(seed)));
-    setRunId(createRunId());
-  }, [seed]);
+  /**
+   * ランを再開始する
+   *
+   * 引数を省略すると直前と同じシード・プリセットで再現する。設計書 §11 の
+   * 実施手順（同一シード2ラン＋別シード1ラン）を UI から実行可能にするため、
+   * 呼び出し側は決着画面のシード入力・プリセット選択の値を渡す（指摘6）。
+   */
+  const restart = useCallback(
+    (nextSeed?: number, nextPresetId?: string) => {
+      const seedToUse = nextSeed ?? runSeed;
+      const presetToUse = nextPresetId ?? presetId;
+      pendingRef.current = [];
+      setSelectedIndex(null);
+      setIsPaused(false);
+      setOverflowNotice(undefined);
+      lastPreviewRef.current = undefined;
+      setRunSeed(seedToUse);
+      setPresetId(presetToUse);
+      setState(startRun(presetToUse, new SeededRandom(seedToUse)));
+      setRunId(createRunId());
+    },
+    [runSeed, presetId]
+  );
 
   const noteRun = useCallback(
     (text: string) => {
@@ -231,6 +249,8 @@ export const useAshenRampartGame = (seed = 1, playLog?: PlayLogPort) => {
 
   return {
     state,
+    runSeed,
+    presetId,
     selectedIndex,
     placeableCells,
     isPaused,

@@ -6,6 +6,30 @@
  */
 import { getEnemyVisual, getHpBarWidthPct, getShapeClipPath, MAX_ENEMY_HP } from './enemy-visual';
 import { ENEMY_IDS } from '../domain/combat/enemies';
+import { COLORS } from './theme';
+
+/** #rrggbb を 0-360 の色相（Hue）に変換する（テスト専用の簡易実装） */
+const hexToHue = (hex: string): number => {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const delta = max - min;
+  if (delta === 0) return 0;
+  let hue = 0;
+  if (max === r) hue = ((g - b) / delta) % 6;
+  else if (max === g) hue = (b - r) / delta + 2;
+  else hue = (r - g) / delta + 4;
+  hue *= 60;
+  return hue < 0 ? hue + 360 : hue;
+};
+
+/** 円環上の色相の距離（0〜180） */
+const hueDistance = (a: number, b: number): number => {
+  const diff = Math.abs(a - b) % 360;
+  return diff > 180 ? 360 - diff : diff;
+};
 
 describe('getEnemyVisual', () => {
   it('敵5種すべてに視覚表現がある', () => {
@@ -26,6 +50,15 @@ describe('getEnemyVisual', () => {
 
   it('未知のIDは契約違反として例外', () => {
     expect(() => getEnemyVisual('unknown')).toThrow('視覚表現が未定義の敵IDです: unknown');
+  });
+
+  it('雑兵を含むどの敵色も危険色 #8b2635 と色相が近すぎない（指摘7の回帰: 赤は危険専用）', () => {
+    const dangerHue = hexToHue(COLORS.danger);
+    ENEMY_IDS.forEach((id) => {
+      const { color } = getEnemyVisual(id);
+      const distance = hueDistance(hexToHue(color), dangerHue);
+      expect(distance).toBeGreaterThan(30);
+    });
   });
 });
 

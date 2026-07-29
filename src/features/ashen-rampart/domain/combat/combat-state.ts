@@ -84,6 +84,8 @@ export interface CombatState {
   enemies: ActiveEnemy[];
   /** 時泥の効果が切れる tick（0 = 効果なし） */
   slowUntilTick: number;
+  /** 時泥の効果中に適用する速度倍率（カード定義の speedMultiplier を反映） */
+  slowMultiplier: number;
   waves: readonly WaveDefinition[];
   /** 直前の tick に起きたこと。描画とログが読む */
   events: TickEvent[];
@@ -112,6 +114,7 @@ export const createCombatState = (
   embers: [],
   enemies: [],
   slowUntilTick: 0,
+  slowMultiplier: 1,
   waves,
   events: [],
   outcome: 'playing',

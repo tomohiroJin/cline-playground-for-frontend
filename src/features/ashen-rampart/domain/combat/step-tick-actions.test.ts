@@ -10,6 +10,7 @@ import { stepTick, canPlaceAt, effectiveDamage } from './step-tick';
 import type { WaveDefinition } from './waves';
 import { PLAINS_MAP } from '../board/stage-map';
 import { getCardDefinition } from '../cards/card-pool';
+import { getEnemySpec } from './enemies';
 
 const noWave: WaveDefinition[] = [{ startTick: 9999, entries: [] }];
 
@@ -87,6 +88,21 @@ describe('カード配置', () => {
     expect(after.reactors).toHaveLength(1);
   });
 
+  it('魔力炉が生むマナ量はカード定義の manaPerTick を実際に読む（指摘5の回帰: 以前は +1 固定だった）', () => {
+    const reactorSpec = getCardDefinition('reactor').reactor;
+    const intervalTicks = reactorSpec?.intervalTicks ?? 60;
+    const manaPerTick = reactorSpec?.manaPerTick ?? 1;
+    let state: CombatState = {
+      ...stateWithHand([]),
+      reactors: [{ pos: { x: 1, y: 2 }, ticksToMana: intervalTicks }],
+    };
+    const manaBefore = state.mana;
+    for (let i = 0; i < intervalTicks; i++) {
+      state = stepTick(state, [], PLAINS_MAP);
+    }
+    expect(state.mana).toBe(manaBefore + manaPerTick);
+  });
+
   it('置けない場所を指定すると拒否される', () => {
     const state = stateWithHand(['arrow-tower']);
     const after = play(state, 0, { x: 0, y: 0 });
@@ -99,7 +115,27 @@ describe('カード配置', () => {
     const after = play(state, 0);
     expect(after.towers).toHaveLength(0);
     expect(after.slowUntilTick).toBe(after.tick + 200);
+    // 前提: card-pool.ts の mud-time.spell.speedMultiplier がそのまま反映されること
+    // （指摘5: 以前はここが読まれず 0.6 がハードコードされていた）
+    expect(after.slowMultiplier).toBe(0.6);
     expect(after.deck.graveyard).toEqual(['mud-time']);
+  });
+
+  it('時泥の減速倍率が実際の敵移動に適用される（指摘5の回帰: 以前は 0.6 固定で card-pool を読んでいなかった）', () => {
+    const wave: WaveDefinition[] = [
+      { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, spawnPathIndex: 0 }] },
+    ];
+    let state = createCombatState({ drawPile: [], hand: ['mud-time'], graveyard: [] }, wave);
+    state = stepTick(state, [], PLAINS_MAP); // tick1: 出現（出現した tick は移動しない）
+    state = stepTick(state, [], PLAINS_MAP); // tick2: 通常速度で1 tick 移動
+    const speed = getEnemySpec('grunt').speed;
+    const baseline = state.enemies[0]?.progress ?? 0;
+    expect(baseline).toBeCloseTo(speed, 5);
+
+    state = play(state, 0); // tick3: 時泥を発動。同じ tick から減速が適用される
+    const slowMultiplier = getCardDefinition('mud-time').spell?.speedMultiplier ?? 1;
+    const expected = baseline + speed * slowMultiplier;
+    expect(state.enemies[0]?.progress).toBeCloseTo(expected, 5);
   });
 
   it('業火は即座にダメージを与え燠火として残る', () => {

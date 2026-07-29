@@ -84,6 +84,23 @@ describe('AshenRampartGame', () => {
     await screen.findByText('計測ログをコピーしました');
   });
 
+  it('決着画面でシードとプリセットを変更して「もう一度挑む」を押すと、その値で新しいランが始まる（指摘6の回帰）', () => {
+    render(<AshenRampartGame />);
+    advanceUntilRunEnds();
+
+    const seedInput = screen.getByLabelText('次のランのシード') as HTMLInputElement;
+    fireEvent.change(seedInput, { target: { value: '99' } });
+    const presetSelect = screen.getByLabelText('次のランのプリセット') as HTMLSelectElement;
+    fireEvent.change(presetSelect, { target: { value: 'heavy' } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'もう一度挑む' }));
+
+    const exported = readExportedLog();
+    const runStarted = exported.events.filter((e) => e.kind === 'run_started');
+    expect(runStarted).toHaveLength(2);
+    expect(runStarted[1]).toMatchObject({ seed: 99, presetId: 'heavy' });
+  });
+
   it('クリップボード API が使えない環境ではコンソールへ出力してエラーを漏らさない', async () => {
     Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true });
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
