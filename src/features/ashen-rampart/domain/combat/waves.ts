@@ -27,31 +27,31 @@ export const PLAINS_WAVES: readonly WaveDefinition[] = [
   // ウェーブ1: 雑兵の小隊
   {
     startTick: 0,
-    entries: [{ enemyId: 'grunt', count: 12, spawnIntervalTicks: 8, spawnPathIndex: 0 }],
+    entries: [{ enemyId: 'grunt', count: 8, spawnIntervalTicks: 8, spawnPathIndex: 0 }],
   },
   // ウェーブ2: 雑兵＋俊足（テンポ要求）
   {
     startTick: 250,
     entries: [
-      { enemyId: 'grunt', count: 12, spawnIntervalTicks: 8, spawnPathIndex: 0 },
-      { enemyId: 'runner', count: 8, spawnIntervalTicks: 6, spawnPathIndex: 0 },
+      { enemyId: 'grunt', count: 8, spawnIntervalTicks: 8, spawnPathIndex: 0 },
+      { enemyId: 'runner', count: 5, spawnIntervalTicks: 6, spawnPathIndex: 0 },
     ],
   },
   // ウェーブ3: 群れの大量投入（範囲要求）
   {
     startTick: 500,
     entries: [
-      { enemyId: 'swarm', count: 20, spawnIntervalTicks: 3, spawnPathIndex: 0 },
-      { enemyId: 'grunt', count: 8, spawnIntervalTicks: 8, spawnPathIndex: 0 },
+      { enemyId: 'swarm', count: 12, spawnIntervalTicks: 3, spawnPathIndex: 0 },
+      { enemyId: 'grunt', count: 5, spawnIntervalTicks: 8, spawnPathIndex: 0 },
     ],
   },
   // ウェーブ4: 重装＋鴉（属性・位置要求）
   {
     startTick: 750,
     entries: [
-      { enemyId: 'brute', count: 4, spawnIntervalTicks: 15, spawnPathIndex: 0 },
-      { enemyId: 'raven', count: 6, spawnIntervalTicks: 10, spawnPathIndex: 5 },
-      { enemyId: 'grunt', count: 12, spawnIntervalTicks: 8, spawnPathIndex: 0 },
+      { enemyId: 'brute', count: 3, spawnIntervalTicks: 15, spawnPathIndex: 0 },
+      { enemyId: 'raven', count: 3, spawnIntervalTicks: 10, spawnPathIndex: 5 },
+      { enemyId: 'grunt', count: 8, spawnIntervalTicks: 8, spawnPathIndex: 0 },
     ],
   },
 ];
