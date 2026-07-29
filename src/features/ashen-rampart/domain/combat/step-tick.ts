@@ -7,15 +7,28 @@
  *
  * 1 tick の処理順:
  *   操作 → マナ生成 → ドロー → 出現 → 移動 → 罠 → 射撃 → 漏れ → 勝敗
+ *
+ * `stepTick` 本体は上記の順で各段階のヘルパー関数を呼ぶだけの薄い関数にし、
+ * 各段階の実装は module-private なヘルパーに切り出している（Task 7.5）。
+ * 分割は振る舞いを1ミリも変えないことを最優先し、処理順序・計算式は元のまま。
  */
 import type { CellPos, StageMap } from '../board/stage-map';
 import { isSlowCell, isHighGround } from '../board/stage-map';
 import { drawOne, discardFromHand } from '../cards/deck';
+import type { DeckState } from '../cards/deck';
 import { getCardDefinition } from '../cards/card-pool';
 import { placementKindOf, type CardDefinition } from '../cards/card-definition';
 import { getEnemySpec } from './enemies';
 import { DRAW_INTERVAL_TICKS, PLACE_COOLDOWN_TICKS } from './combat-state';
-import type { CombatState, ActiveEnemy, TickEvent } from './combat-state';
+import type {
+  CombatState,
+  ActiveEnemy,
+  TickEvent,
+  PlacedTower,
+  PlacedTrap,
+  PlacedReactor,
+  PlacedEmber,
+} from './combat-state';
 
 /** プレイヤーがその tick に行った操作 */
 export type PlayerAction =
@@ -106,6 +119,7 @@ const spawnAt = (state: CombatState, tick: number, nextId: number): ActiveEnemy[
   state.waves.forEach((wave) => {
     wave.entries.forEach((entry) => {
       for (let c = 0; c < entry.count; c++) {
+        // 出現判定は新 tick ではなく tick - 1 基準（呼び出し側で tick = state.tick + 1 を渡すため）
         if (wave.startTick + c * entry.spawnIntervalTicks !== tick - 1) continue;
         const spec = getEnemySpec(entry.enemyId);
         spawned.push({
@@ -134,127 +148,224 @@ const isCleared = (state: CombatState, tick: number): boolean => {
     );
     return Math.max(max, waveMax);
   }, 0);
+  // 境界は <=（< だと最後の敵が出る前に勝利判定が出てしまう）
   if (tick <= lastSpawnTick) return false;
   return state.enemies.every((e) => !e.alive);
 };
 
-export const stepTick = (
+/** 業火・燠火の即時ダメージ予約（罠・射撃より先に確定し、後段でまとめて反映する） */
+interface PendingBlast {
+  pos: CellPos;
+  radius: number;
+  damage: number;
+}
+
+/**
+ * 「プレイヤー操作」段階の作業用下書き。1 tick 分の操作をすべて畳み込む間だけ存在し、
+ * 各操作ハンドラがこれを直接書き換える（tick 内部の一時作業状態であり外部状態ではない）。
+ */
+interface ActionsDraft {
+  events: TickEvent[];
+  mana: number;
+  deck: DeckState;
+  placeCooldown: number;
+  slowUntilTick: number;
+  towers: PlacedTower[];
+  traps: PlacedTrap[];
+  reactors: PlacedReactor[];
+  embers: PlacedEmber[];
+  blasts: PendingBlast[];
+  /** この tick に配置・再点火した燠火の index（クールダウン減算の対象外にする） */
+  freshEmberIndices: Set<number>;
+}
+
+/** 燠火の再点火操作を適用する（クールダウン中なら何もしない） */
+const applyReactivate = (
+  draft: ActionsDraft,
+  action: Extract<PlayerAction, { kind: 'reactivate' }>
+): void => {
+  const ember = draft.embers[action.emberIndex];
+  if (!ember || ember.cooldownLeft > 0) return;
+  const spec = getCardDefinition('ember-blast').ember;
+  if (!spec) return;
+  draft.embers[action.emberIndex] = { ...ember, cooldownLeft: spec.cooldownTicks };
+  draft.freshEmberIndices.add(action.emberIndex);
+  draft.blasts.push({ pos: ember.pos, radius: spec.radius, damage: spec.damage });
+  draft.events.push({ kind: 'ember', emberIndex: action.emberIndex });
+};
+
+/** カード使用の効果を種別ごとに盤面へ反映する（コスト・クールダウン確定後） */
+const applyCardEffect = (
+  draft: ActionsDraft,
+  card: CardDefinition,
+  cardId: string,
+  pos: CellPos | undefined,
+  tick: number
+): void => {
+  if (card.type === 'tower' && pos) {
+    draft.towers.push({ cardId, pos, cooldownLeft: 0 });
+  } else if (card.type === 'trap' && pos && card.trap) {
+    draft.traps.push({ cardId, pos, usesLeft: card.trap.uses, hitEnemyIds: [] });
+  } else if (card.type === 'reactor' && pos && card.reactor) {
+    draft.reactors.push({ pos, ticksToMana: card.reactor.intervalTicks });
+  } else if (card.type === 'ember' && pos && card.ember) {
+    draft.embers.push({ pos, cooldownLeft: card.ember.cooldownTicks });
+    draft.freshEmberIndices.add(draft.embers.length - 1);
+    draft.blasts.push({ pos, radius: card.ember.radius, damage: card.ember.damage });
+  } else if (card.type === 'spell' && card.spell) {
+    draft.slowUntilTick = tick + card.spell.durationTicks;
+  }
+};
+
+/** カード使用操作を適用する（クールダウン・手札・マナ・設置可否を順に検査） */
+const applyPlayCard = (
+  draft: ActionsDraft,
+  state: CombatState,
+  map: StageMap,
+  tick: number,
+  action: Extract<PlayerAction, { kind: 'play-card' }>
+): void => {
+  if (draft.placeCooldown > 0) {
+    draft.events.push({ kind: 'rejected', reason: 'cooldown' });
+    return;
+  }
+  const cardId = draft.deck.hand[action.handIndex];
+  if (cardId === undefined) {
+    draft.events.push({ kind: 'rejected', reason: 'target' });
+    return;
+  }
+  const card = getCardDefinition(cardId);
+  if (card.cost > draft.mana) {
+    draft.events.push({ kind: 'rejected', reason: 'mana' });
+    return;
+  }
+  if (placementKindOf(card) !== 'none' && (!action.pos || !canPlaceAt(state, card, action.pos, map))) {
+    draft.events.push({ kind: 'rejected', reason: 'target' });
+    return;
+  }
+  // ここから確定
+  draft.mana -= card.cost;
+  draft.deck = discardFromHand(draft.deck, action.handIndex);
+  draft.placeCooldown = PLACE_COOLDOWN_TICKS;
+  draft.events.push({ kind: 'played', cardId, pos: action.pos });
+  applyCardEffect(draft, card, cardId, action.pos, tick);
+};
+
+/**
+ * プレイヤー操作を適用する（1 tick の最初の段階）
+ *
+ * 後続の全段階（マナ生成〜勝敗判定）はこの結果を土台にするため、最初に確定させる。
+ * カード使用・燠火再点火の受理／却下判定・カード効果の反映をここに集約する。
+ */
+const applyActions = (
   state: CombatState,
   actions: readonly PlayerAction[],
-  map: StageMap
-): CombatState => {
-  if (state.outcome !== 'playing') return state;
-
-  const events: TickEvent[] = [];
-  const tick = state.tick + 1;
-  let life = state.life;
-  const goal = map.path.length - 1;
-
-  // --- プレイヤー操作 ---
-  let deckAfterActions = state.deck;
-  let manaAfterActions = state.mana;
-  let placeCooldown = Math.max(0, state.placeCooldown - 1);
-  let slowUntilTick = state.slowUntilTick;
-  const towersDraft = [...state.towers];
-  const trapsDraft = [...state.traps];
-  const reactorsDraft = [...state.reactors];
-  const embersDraft = [...state.embers];
-  /** 業火・燠火が与える即時ダメージ。敵の HP 反映時に適用する */
-  const blasts: { pos: CellPos; radius: number; damage: number }[] = [];
-  /** この tick に配置・再点火した燠火の index。今 tick は経過減算の対象から外す */
-  const freshEmberIndices = new Set<number>();
+  map: StageMap,
+  tick: number
+): ActionsDraft => {
+  const draft: ActionsDraft = {
+    events: [],
+    mana: state.mana,
+    deck: state.deck,
+    placeCooldown: Math.max(0, state.placeCooldown - 1),
+    slowUntilTick: state.slowUntilTick,
+    towers: [...state.towers],
+    traps: [...state.traps],
+    reactors: [...state.reactors],
+    embers: [...state.embers],
+    blasts: [],
+    freshEmberIndices: new Set<number>(),
+  };
 
   actions.forEach((action) => {
     if (action.kind === 'reactivate') {
-      const ember = embersDraft[action.emberIndex];
-      if (!ember || ember.cooldownLeft > 0) return;
-      const spec = getCardDefinition('ember-blast').ember;
-      if (!spec) return;
-      embersDraft[action.emberIndex] = { ...ember, cooldownLeft: spec.cooldownTicks };
-      freshEmberIndices.add(action.emberIndex);
-      blasts.push({ pos: ember.pos, radius: spec.radius, damage: spec.damage });
-      events.push({ kind: 'ember', emberIndex: action.emberIndex });
-      return;
-    }
-    if (placeCooldown > 0) {
-      events.push({ kind: 'rejected', reason: 'cooldown' });
-      return;
-    }
-    const cardId = deckAfterActions.hand[action.handIndex];
-    if (cardId === undefined) {
-      events.push({ kind: 'rejected', reason: 'target' });
-      return;
-    }
-    const card = getCardDefinition(cardId);
-    if (card.cost > manaAfterActions) {
-      events.push({ kind: 'rejected', reason: 'mana' });
-      return;
-    }
-    const kind = placementKindOf(card);
-    if (kind !== 'none') {
-      if (!action.pos || !canPlaceAt(state, card, action.pos, map)) {
-        events.push({ kind: 'rejected', reason: 'target' });
-        return;
-      }
-    }
-    // ここから確定
-    manaAfterActions -= card.cost;
-    deckAfterActions = discardFromHand(deckAfterActions, action.handIndex);
-    placeCooldown = PLACE_COOLDOWN_TICKS;
-    events.push({ kind: 'played', cardId, pos: action.pos });
-
-    if (card.type === 'tower' && action.pos) {
-      towersDraft.push({ cardId, pos: action.pos, cooldownLeft: 0 });
-    } else if (card.type === 'trap' && action.pos && card.trap) {
-      trapsDraft.push({ cardId, pos: action.pos, usesLeft: card.trap.uses, hitEnemyIds: [] });
-    } else if (card.type === 'reactor' && action.pos && card.reactor) {
-      reactorsDraft.push({ pos: action.pos, ticksToMana: card.reactor.intervalTicks });
-    } else if (card.type === 'ember' && action.pos && card.ember) {
-      embersDraft.push({ pos: action.pos, cooldownLeft: card.ember.cooldownTicks });
-      freshEmberIndices.add(embersDraft.length - 1);
-      blasts.push({ pos: action.pos, radius: card.ember.radius, damage: card.ember.damage });
-    } else if (card.type === 'spell' && card.spell) {
-      slowUntilTick = tick + card.spell.durationTicks;
+      applyReactivate(draft, action);
+    } else {
+      applyPlayCard(draft, state, map, tick, action);
     }
   });
 
-  // マナ生成
-  const reactors = reactorsDraft.map((r) => {
-    const next = r.ticksToMana - 1;
-    if (next > 0) return { ...r, ticksToMana: next };
-    manaAfterActions += 1;
+  return draft;
+};
+
+/**
+ * 魔力炉のマナ生成
+ *
+ * 操作適用の直後に処理する（設計書の tick 順序どおり）。生成できたら
+ * イベントを積み、間隔をリセットする。まだなら残り tick を1減らすだけ。
+ */
+const runReactors = (
+  reactors: readonly PlacedReactor[],
+  mana: number,
+  events: TickEvent[]
+): { reactors: PlacedReactor[]; mana: number } => {
+  let nextMana = mana;
+  const next = reactors.map((r) => {
+    const remaining = r.ticksToMana - 1;
+    if (remaining > 0) return { ...r, ticksToMana: remaining };
+    nextMana += 1;
     events.push({ kind: 'mana', amount: 1 });
-    return { ...r, ticksToMana: getCardDefinition('reactor').reactor?.intervalTicks ?? next };
+    return { ...r, ticksToMana: getCardDefinition('reactor').reactor?.intervalTicks ?? remaining };
   });
+  return { reactors: next, mana: nextMana };
+};
 
-  // 燠火のクールダウンを毎 tick 1 減らす（0 で止める）。
-  // 今 tick に配置・再点火したものは、まだ経過していないので減らさない
-  const embers = embersDraft.map((e, i) =>
+/**
+ * 燠火のクールダウンを毎 tick 1 減らす（0 で止める）
+ *
+ * 今 tick に配置・再点火したもの（freshEmberIndices）はまだ経過していないため
+ * 減らさない。マナ生成の直後、ドローより前に処理して他段階との依存はない。
+ */
+const decayEmbers = (
+  embers: readonly PlacedEmber[],
+  freshEmberIndices: ReadonlySet<number>
+): PlacedEmber[] =>
+  embers.map((e, i) =>
     freshEmberIndices.has(i) ? e : { ...e, cooldownLeft: Math.max(0, e.cooldownLeft - 1) }
   );
 
-  // ドロー
-  let ticksToDraw = state.ticksToDraw - 1;
-  if (ticksToDraw <= 0) {
-    ticksToDraw = DRAW_INTERVAL_TICKS;
-    const outcome = drawOne(deckAfterActions);
-    deckAfterActions = outcome.deck;
-    if (outcome.drawn !== undefined) {
-      events.push(
-        outcome.overflowed
-          ? { kind: 'overflow', cardId: outcome.drawn }
-          : { kind: 'draw', cardId: outcome.drawn }
-      );
-    }
+/**
+ * 手札のドロー
+ *
+ * マナ生成・燠火のクールダウン処理の後、出現より前に行う（tick 順序どおり）。
+ * 間隔に達していなければ残り tick を減らすだけで何もしない。
+ */
+const runDraw = (
+  deck: DeckState,
+  ticksToDraw: number,
+  events: TickEvent[]
+): { deck: DeckState; ticksToDraw: number } => {
+  let remaining = ticksToDraw - 1;
+  if (remaining > 0) return { deck, ticksToDraw: remaining };
+  remaining = DRAW_INTERVAL_TICKS;
+  const outcome = drawOne(deck);
+  if (outcome.drawn !== undefined) {
+    events.push(
+      outcome.overflowed
+        ? { kind: 'overflow', cardId: outcome.drawn }
+        : { kind: 'draw', cardId: outcome.drawn }
+    );
   }
+  return { deck: outcome.deck, ticksToDraw: remaining };
+};
 
-  // 出現
-  const nextId = state.enemies.reduce((max, e) => Math.max(max, e.id + 1), 0);
-  const spawned = spawnAt(state, tick, nextId);
-
-  // 移動（時泥の効果中は敵の足が遅くなる）
+/**
+ * 敵の移動
+ *
+ * 出現直後の敵（spawnTick === tick）はまだ動かさない。時泥の効果中は
+ * 全体の移動量が下がり、滞留セルではさらに移動量が落ちる（乗算）。
+ * 罠・射撃の判定はこの後の座標を前提にするため、必ず先に確定させる。
+ */
+const moveEnemies = (
+  existing: readonly ActiveEnemy[],
+  spawned: readonly ActiveEnemy[],
+  tick: number,
+  slowUntilTick: number,
+  map: StageMap,
+  goal: number
+): ActiveEnemy[] => {
   const slowMult = tick <= slowUntilTick ? 0.6 : 1;
-  const moved = [...state.enemies, ...spawned].map((enemy) => {
+  return [...existing, ...spawned].map((enemy) => {
     if (!enemy.alive) return enemy;
     if (enemy.spawnTick === tick) return enemy;
     const spec = getEnemySpec(enemy.enemyId);
@@ -262,11 +373,24 @@ export const stepTick = (
     const terrain = cell && isSlowCell(map, cell) ? SLOW_TERRAIN_MULT : 1;
     return { ...enemy, progress: enemy.progress + spec.speed * terrain * slowMult };
   });
+};
 
-  // 罠（地上敵のみ・同じ敵は同じ罠で一度だけ）
-  const hpById = new Map<number, number>();
-  moved.forEach((e) => hpById.set(e.id, e.hp));
-  const traps = trapsDraft.map((trap, trapIndex) => {
+/**
+ * 罠の判定（地上敵のみ・同じ敵は同じ罠で一度だけ）
+ *
+ * 移動確定後の座標で判定する。ダメージは hpById に反映するが、生死の確定は
+ * まだしない（射撃・業火と合算してから resolveDamage でまとめて行う）。
+ * hpById は罠・射撃・業火の3段階で共有する下書きなので、この関数はそれを
+ * 直接書き換える（呼び出し側の1 tick 分の作業用 Map であり外部状態ではない）。
+ */
+const applyTraps = (
+  traps: readonly PlacedTrap[],
+  moved: readonly ActiveEnemy[],
+  map: StageMap,
+  hpById: Map<number, number>,
+  events: TickEvent[]
+): PlacedTrap[] =>
+  traps.map((trap, trapIndex) => {
     if (trap.usesLeft <= 0) return trap;
     let usesLeft = trap.usesLeft;
     const hitEnemyIds = [...trap.hitEnemyIds];
@@ -286,41 +410,89 @@ export const stepTick = (
     return { ...trap, usesLeft, hitEnemyIds };
   });
 
-  // 射撃（クールダウンを消化し、射程内の先頭の敵を狙う）
-  // オーラ計算に今 tick 配置した塔（篝火含む）も含めるため towersDraft を渡す
-  const stateForDamage: CombatState = { ...state, towers: towersDraft };
-  const towers = towersDraft.map((tower, towerIndex) => {
+/**
+ * 塔の射撃（クールダウンを消化し、射程内の先頭の敵を狙う）
+ *
+ * 罠の判定の後に行う（hpById に罠のダメージが反映済みの状態で対象の生死を見る）。
+ * オーラ計算に今 tick 配置した塔（篝火含む）も含めるため、towers（towersDraft）を
+ * 反映した stateForDamage を effectiveDamage に渡す。素の state を渡すと
+ * 今 tick に置いた塔のダメージが0になるため、ここは順序も引数も変えてはいけない。
+ */
+const applyTowerShots = (
+  state: CombatState,
+  towers: readonly PlacedTower[],
+  moved: readonly ActiveEnemy[],
+  map: StageMap,
+  hpById: Map<number, number>,
+  events: TickEvent[]
+): PlacedTower[] => {
+  const stateForDamage: CombatState = { ...state, towers: [...towers] };
+  return towers.map((tower, towerIndex) => {
     const spec = getCardDefinition(tower.cardId).tower;
     if (!spec || spec.aura) return tower;
     if (tower.cooldownLeft > 0) return { ...tower, cooldownLeft: tower.cooldownLeft - 1 };
     const damage = effectiveDamage(stateForDamage, towerIndex, map);
-    // 砦に近い敵を優先（progress 降順）
-    const target = [...moved]
-      .filter((e) => e.alive && (hpById.get(e.id) ?? 0) > 0)
-      .filter((e) => spec.hitsFlying || !getEnemySpec(e.enemyId).flying)
-      .filter((e) => {
-        const pos = positionOf(e.progress, map.path);
-        return Math.hypot(pos.x - tower.pos.x, pos.y - tower.pos.y) <= spec.range;
-      })
-      .sort((a, b) => b.progress - a.progress)[0];
+    const target = selectTowerTarget(tower, spec, moved, map, hpById);
     if (!target) return tower;
     hpById.set(target.id, (hpById.get(target.id) ?? 0) - damage);
     events.push({ kind: 'shot', towerIndex, targetId: target.id });
     if (spec.splashRadius > 0) {
-      const center = positionOf(target.progress, map.path);
-      moved.forEach((other) => {
-        if (other.id === target.id || !other.alive) return;
-        if (!spec.hitsFlying && getEnemySpec(other.enemyId).flying) return;
-        const pos = positionOf(other.progress, map.path);
-        if (Math.hypot(pos.x - center.x, pos.y - center.y) <= spec.splashRadius) {
-          hpById.set(other.id, (hpById.get(other.id) ?? 0) - damage);
-        }
-      });
+      applySplashDamage(target, damage, spec, moved, map, hpById);
     }
     return { ...tower, cooldownLeft: spec.cooldownTicks };
   });
+};
 
-  // 業火・燠火の即時ダメージ（地上敵のみ）
+/** 射程内・命中対象種別を満たす敵のうち、砦に一番近い（progress 降順）ものを狙う */
+const selectTowerTarget = (
+  tower: PlacedTower,
+  spec: NonNullable<CardDefinition['tower']>,
+  moved: readonly ActiveEnemy[],
+  map: StageMap,
+  hpById: ReadonlyMap<number, number>
+): ActiveEnemy | undefined =>
+  [...moved]
+    .filter((e) => e.alive && (hpById.get(e.id) ?? 0) > 0)
+    .filter((e) => spec.hitsFlying || !getEnemySpec(e.enemyId).flying)
+    .filter((e) => {
+      const pos = positionOf(e.progress, map.path);
+      return Math.hypot(pos.x - tower.pos.x, pos.y - tower.pos.y) <= spec.range;
+    })
+    .sort((a, b) => b.progress - a.progress)[0];
+
+/** 着弾点から splashRadius 以内の他の敵にも同じダメージを与える */
+const applySplashDamage = (
+  target: ActiveEnemy,
+  damage: number,
+  spec: NonNullable<CardDefinition['tower']>,
+  moved: readonly ActiveEnemy[],
+  map: StageMap,
+  hpById: Map<number, number>
+): void => {
+  const center = positionOf(target.progress, map.path);
+  moved.forEach((other) => {
+    if (other.id === target.id || !other.alive) return;
+    if (!spec.hitsFlying && getEnemySpec(other.enemyId).flying) return;
+    const pos = positionOf(other.progress, map.path);
+    if (Math.hypot(pos.x - center.x, pos.y - center.y) <= spec.splashRadius) {
+      hpById.set(other.id, (hpById.get(other.id) ?? 0) - damage);
+    }
+  });
+};
+
+/**
+ * 業火・燠火の即時ダメージ（地上敵のみ）
+ *
+ * 罠・射撃の後に反映する（tick 順序どおり）。プレイヤー操作段階で予約した
+ * blasts をここでまとめて hpById に反映する。hpById は罠・射撃と共有する
+ * 下書きのため、この関数もそれを直接書き換える。
+ */
+const applyBlasts = (
+  blasts: readonly PendingBlast[],
+  moved: readonly ActiveEnemy[],
+  map: StageMap,
+  hpById: Map<number, number>
+): void => {
   blasts.forEach((blast) => {
     moved.forEach((enemy) => {
       if (!enemy.alive || getEnemySpec(enemy.enemyId).flying) return;
@@ -330,9 +502,20 @@ export const stepTick = (
       }
     });
   });
+};
 
-  // ダメージを反映し、撃破を確定する
-  const damaged = moved.map((enemy) => {
+/**
+ * ダメージを反映し、撃破を確定する
+ *
+ * 罠・射撃・業火の3段階すべてが hpById に書き終わった後、最後にまとめて
+ * 敵の hp・生死を確定する。ここで初めて hp <= 0 の敵が alive: false になる。
+ */
+const resolveDamage = (
+  moved: readonly ActiveEnemy[],
+  hpById: ReadonlyMap<number, number>,
+  events: TickEvent[]
+): ActiveEnemy[] =>
+  moved.map((enemy) => {
     if (!enemy.alive) return enemy;
     const hp = hpById.get(enemy.id) ?? enemy.hp;
     if (hp > 0) return { ...enemy, hp };
@@ -340,28 +523,83 @@ export const stepTick = (
     return { ...enemy, hp: 0, alive: false };
   });
 
-  // 漏れ
+/**
+ * 漏れ（砦到達）の確定とライフ減算
+ *
+ * ダメージ確定の最後、勝敗判定の直前に行う。撃破と漏れは両立しない
+ * （resolveDamage で alive: false になった敵はここでは弾かれる）。
+ */
+const resolveLeaks = (
+  damaged: readonly ActiveEnemy[],
+  goal: number,
+  life: number,
+  events: TickEvent[]
+): { settled: ActiveEnemy[]; life: number } => {
+  let nextLife = life;
   const settled = damaged.map((enemy) => {
     if (!enemy.alive || enemy.progress < goal) return enemy;
-    life -= 1;
+    nextLife -= 1;
     events.push({ kind: 'leak', enemyId: enemy.id });
     return { ...enemy, alive: false, leaked: true };
   });
+  return { settled, life: nextLife };
+};
+
+export const stepTick = (
+  state: CombatState,
+  actions: readonly PlayerAction[],
+  map: StageMap
+): CombatState => {
+  if (state.outcome !== 'playing') return state;
+
+  const tick = state.tick + 1;
+  const goal = map.path.length - 1;
+
+  // --- プレイヤー操作 ---
+  const afterActions = applyActions(state, actions, map, tick);
+  const { events } = afterActions;
+
+  // --- マナ生成 ---
+  const { reactors, mana } = runReactors(afterActions.reactors, afterActions.mana, events);
+
+  // --- 燠火のクールダウン消化 ---
+  const embers = decayEmbers(afterActions.embers, afterActions.freshEmberIndices);
+
+  // --- ドロー ---
+  const { deck, ticksToDraw } = runDraw(afterActions.deck, state.ticksToDraw, events);
+
+  // --- 出現 ---
+  const nextId = state.enemies.reduce((max, e) => Math.max(max, e.id + 1), 0);
+  const spawned = spawnAt(state, tick, nextId);
+
+  // --- 移動（時泥の効果中は敵の足が遅くなる） ---
+  const moved = moveEnemies(state.enemies, spawned, tick, afterActions.slowUntilTick, map, goal);
+
+  // --- 罠 → 射撃 → 業火・燠火の順で hpById に下書きし、最後にまとめて反映する ---
+  const hpById = new Map<number, number>();
+  moved.forEach((e) => hpById.set(e.id, e.hp));
+  const traps = applyTraps(afterActions.traps, moved, map, hpById, events);
+  const towers = applyTowerShots(state, afterActions.towers, moved, map, hpById, events);
+  applyBlasts(afterActions.blasts, moved, map, hpById);
+
+  // --- ダメージ反映 → 漏れ ---
+  const damaged = resolveDamage(moved, hpById, events);
+  const { settled, life } = resolveLeaks(damaged, goal, state.life, events);
 
   const next: CombatState = {
     ...state,
     tick,
     life,
-    mana: manaAfterActions,
-    deck: deckAfterActions,
+    mana,
+    deck,
     reactors,
     towers,
     traps,
     embers,
     ticksToDraw,
     enemies: settled,
-    placeCooldown,
-    slowUntilTick,
+    placeCooldown: afterActions.placeCooldown,
+    slowUntilTick: afterActions.slowUntilTick,
     events,
     outcome: 'playing',
   };
