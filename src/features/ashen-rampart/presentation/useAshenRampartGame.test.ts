@@ -129,6 +129,47 @@ describe('useAshenRampartGame', () => {
     expect(result.current.state.tick).toBe(250);
   });
 
+  it('interactCell: 再点火可能な燠火のあるセルを選択なしでクリックすると reactivated が記録される（クールダウン中は記録されない）', () => {
+    const log = createMockPlayLog();
+    // シード3は初期手札に業火（ember-blast）を2枚含む（他シードは1枚以下か0枚のため選定）
+    const { result } = renderHook(() => useAshenRampartGame(3, log));
+    const emberHandIndex = result.current.state.deck.hand.findIndex((id) => id === 'ember-blast');
+    expect(emberHandIndex).toBeGreaterThanOrEqual(0);
+
+    // 業火を選択し、設置可能マスの先頭に置く
+    act(() => result.current.selectCard(emberHandIndex));
+    const placePos = result.current.placeableCells[0];
+    expect(placePos).toBeDefined();
+    act(() => result.current.interactCell(placePos!));
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS);
+    });
+    expect(result.current.state.embers).toHaveLength(1);
+    const emberPos = result.current.state.embers[0]!.pos;
+    expect(result.current.state.embers[0]!.cooldownLeft).toBeGreaterThan(0);
+
+    // クールダウン中に選択なしで同じセルをクリックしても再点火されない
+    act(() => result.current.interactCell(emberPos));
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS);
+    });
+    expect(log.events.filter((e) => e.kind === 'reactivated')).toHaveLength(0);
+
+    // クールダウンが明けるまで進める（業火の再点火間隔は300 tick）
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS * 300);
+    });
+    expect(result.current.state.embers[0]!.cooldownLeft).toBe(0);
+
+    // 選択なしでクリックすると今度は再点火され、reactivated が記録される
+    act(() => result.current.interactCell(emberPos));
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS);
+    });
+    expect(log.events.filter((e) => e.kind === 'reactivated')).toHaveLength(1);
+    expect(result.current.state.embers[0]!.cooldownLeft).toBeGreaterThan(0);
+  });
+
   it('restart で新しいランが始まる', () => {
     const log = createMockPlayLog();
     const { result } = renderHook(() => useAshenRampartGame(1, log));

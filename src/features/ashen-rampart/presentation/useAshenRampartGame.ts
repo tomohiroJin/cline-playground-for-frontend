@@ -171,6 +171,30 @@ export const useAshenRampartGame = (seed = 1, playLog?: PlayLogPort) => {
     [isPaused]
   );
 
+  /**
+   * 盤面セルへの唯一の入口（UI はこれだけを呼ぶ）
+   *
+   * カード選択中は配置を優先する（選択済みという明示的な意図を尊重するため）。
+   * 選択していないときに限り、そのセルに再点火可能な燠火（cooldownLeft === 0）が
+   * あれば再点火する。これが無いと「終盤に手札もマナも尽きても燠火だけは
+   * 操作対象として残る」という設計（設計書 §4）が UI から到達できない。
+   */
+  const interactCell = useCallback(
+    (pos: CellPos) => {
+      if (isPaused) return;
+      if (selectedIndex !== null) {
+        clickCell(pos);
+        return;
+      }
+      const emberIndex = state.embers.findIndex(
+        (ember) => ember.pos.x === pos.x && ember.pos.y === pos.y && ember.cooldownLeft === 0
+      );
+      if (emberIndex === -1) return;
+      reactivate(emberIndex);
+    },
+    [isPaused, selectedIndex, state.embers, clickCell, reactivate]
+  );
+
   // StrictMode は useState の関数型 updater を二重に呼び出すことがあるため、
   // ログ記録は updater の外（レンダー時点の isPaused を使うコールバック本体）で行う
   const togglePause = useCallback(() => {
@@ -214,6 +238,7 @@ export const useAshenRampartGame = (seed = 1, playLog?: PlayLogPort) => {
     selectCard,
     clickCell,
     reactivate,
+    interactCell,
     togglePause,
     restart,
     noteRun,
