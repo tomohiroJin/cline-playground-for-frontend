@@ -110,6 +110,8 @@ describe('範囲攻撃', () => {
     // 前提: 実際に地上敵へ攻撃が発生していること（撃っていないから鴉も無傷、という偽の緑を防ぐ）
     expect(grunt).toBeDefined();
     expect(grunt && grunt.hp < grunt.maxHp).toBe(true);
+    // 前提: 鴉自身が盤面に実在すること（未 spawn だと無検証になる）
+    expect(raven).toBeDefined();
     // 検証: 同じ範囲にいた鴉は splash に巻き込まれず無傷のまま
     expect(raven?.hp).toBe(raven?.maxHp);
   });
