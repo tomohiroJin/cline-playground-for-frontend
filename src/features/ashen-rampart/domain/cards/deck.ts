@@ -6,6 +6,7 @@
  * stepTick は乱数を必要とせず完全に決定的になる（設計書 §8.1）。
  */
 import type { RandomFn } from '../shared/random';
+import { getCardDefinition } from './card-pool';
 
 export interface DeckState {
   drawPile: string[];
@@ -57,13 +58,19 @@ export interface DrawOutcome {
  *
  * 手札が上限なら、引いた札はそのまま墓地へ落ちる。
  * 「出さないと引けない」という圧力がこの仕様から生まれる（設計書 §4.1）。
+ *
+ * 例外: コスト0の札（魔力炉）は手札上限を超えても手札に入る。
+ * コスト0札は唯一のマナ源であり、これが墓地へ落ちるとマナが二度と増えず
+ * 詰む（Task 9 のバランス較正で発見）。上限超過を1枚許容してでも
+ * 経済を回復不能にしないことを優先する。
  */
 export const drawOne = (deck: DeckState): DrawOutcome => {
   const [drawn, ...rest] = deck.drawPile;
   if (drawn === undefined) {
     return { deck, overflowed: false };
   }
-  if (deck.hand.length >= HAND_LIMIT) {
+  const isFreeManaSource = getCardDefinition(drawn).cost === 0;
+  if (deck.hand.length >= HAND_LIMIT && !isFreeManaSource) {
     return {
       deck: { ...deck, drawPile: rest, graveyard: [...deck.graveyard, drawn] },
       drawn,

@@ -42,7 +42,7 @@ describe('ウェーブ構成', () => {
     expect(PLAINS_WAVES.map((w) => w.startTick)).toEqual([0, 250, 500, 750]);
   });
 
-  it('敵の総HPは設計書の較正値 964 と一致する（Task 9 で 1472 から較正）', () => {
+  it('敵の総HPは設計書の較正値 964 と一致する（Task 9 較正: 詰み修正後に 1472 から再調整）', () => {
     expect(totalEnemyHp(PLAINS_WAVES)).toBe(964);
   });
 

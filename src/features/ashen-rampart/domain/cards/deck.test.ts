@@ -47,27 +47,42 @@ describe('createDeck', () => {
 });
 
 describe('drawOne', () => {
+  // 手札上限の判定にはカードのコストを見るため、実在するカードIDを使う
+  // （'arrow-tower' 等はコスト0ではない＝有料札、'reactor' はコスト0＝魔力炉）
   it('山札の先頭を手札に加える', () => {
-    const deck = { drawPile: ['x', 'y'], hand: ['a'], graveyard: [] };
+    const deck = { drawPile: ['arrow-tower', 'ballista'], hand: ['spike-trap'], graveyard: [] };
     const result = drawOne(deck);
-    expect(result.drawn).toBe('x');
+    expect(result.drawn).toBe('arrow-tower');
     expect(result.overflowed).toBe(false);
-    expect(result.deck.hand).toEqual(['a', 'x']);
-    expect(result.deck.drawPile).toEqual(['y']);
+    expect(result.deck.hand).toEqual(['spike-trap', 'arrow-tower']);
+    expect(result.deck.drawPile).toEqual(['ballista']);
   });
 
-  it('手札が上限なら引いた札は墓地へ直行する', () => {
-    const full = Array.from({ length: HAND_LIMIT }, (_, i) => `h${i}`);
-    const deck = { drawPile: ['x'], hand: full, graveyard: [] };
+  it('手札が上限なら引いた有料札は墓地へ直行する', () => {
+    const full = ['arrow-tower', 'ballista', 'cannon-tower', 'beacon', 'spike-trap'];
+    expect(full).toHaveLength(HAND_LIMIT);
+    const deck = { drawPile: ['mud-time'], hand: full, graveyard: [] };
     const result = drawOne(deck);
-    expect(result.drawn).toBe('x');
+    expect(result.drawn).toBe('mud-time');
     expect(result.overflowed).toBe(true);
     expect(result.deck.hand).toEqual(full);
-    expect(result.deck.graveyard).toEqual(['x']);
+    expect(result.deck.graveyard).toEqual(['mud-time']);
+  });
+
+  it('手札が上限でもコスト0の魔力炉は手札に入り、上限を1枚超える（マナ経済の唯一の源のため）', () => {
+    const full = ['arrow-tower', 'ballista', 'cannon-tower', 'beacon', 'spike-trap'];
+    expect(full).toHaveLength(HAND_LIMIT);
+    const deck = { drawPile: ['reactor'], hand: full, graveyard: [] };
+    const result = drawOne(deck);
+    expect(result.drawn).toBe('reactor');
+    expect(result.overflowed).toBe(false);
+    expect(result.deck.hand).toEqual([...full, 'reactor']);
+    expect(result.deck.hand).toHaveLength(HAND_LIMIT + 1);
+    expect(result.deck.graveyard).toEqual([]);
   });
 
   it('山札が空なら何も起きない', () => {
-    const deck = { drawPile: [], hand: ['a'], graveyard: [] };
+    const deck = { drawPile: [], hand: ['arrow-tower'], graveyard: [] };
     const result = drawOne(deck);
     expect(result.drawn).toBeUndefined();
     expect(result.overflowed).toBe(false);
@@ -75,10 +90,10 @@ describe('drawOne', () => {
   });
 
   it('元の状態を変更しない', () => {
-    const deck = { drawPile: ['x'], hand: ['a'], graveyard: [] };
+    const deck = { drawPile: ['arrow-tower'], hand: ['spike-trap'], graveyard: [] };
     drawOne(deck);
-    expect(deck.drawPile).toEqual(['x']);
-    expect(deck.hand).toEqual(['a']);
+    expect(deck.drawPile).toEqual(['arrow-tower']);
+    expect(deck.hand).toEqual(['spike-trap']);
   });
 });
 
