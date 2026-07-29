@@ -59,10 +59,12 @@ export interface DrawOutcome {
  * 手札が上限なら、引いた札はそのまま墓地へ落ちる。
  * 「出さないと引けない」という圧力がこの仕様から生まれる（設計書 §4.1）。
  *
- * 例外: コスト0の札（魔力炉）は手札上限を超えても手札に入る。
- * コスト0札は唯一のマナ源であり、これが墓地へ落ちるとマナが二度と増えず
- * 詰む（Task 9 のバランス較正で発見）。上限超過を1枚許容してでも
- * 経済を回復不能にしないことを優先する。
+ * 例外: 手札にコスト0の札（魔力炉）が1枚も無いときに限り、コスト0の札は
+ * 手札上限を超えても手札に入る（上限は `HAND_LIMIT + 1` で頭打ち）。
+ * コスト0札は唯一のマナ源であり、これが墓地へ落ちてマナ源が手札から
+ * 完全に枯れると、マナが二度と増えず詰む（Task 9 のバランス較正で発見）。
+ * 「手札に既に1枚あるなら、追加の1枚は従来どおり墓地直行」とすることで、
+ * マナ源を切らさない最小限の保護に留め、手札枚数の際限ない増加を防ぐ。
  */
 export const drawOne = (deck: DeckState): DrawOutcome => {
   const [drawn, ...rest] = deck.drawPile;
@@ -70,7 +72,9 @@ export const drawOne = (deck: DeckState): DrawOutcome => {
     return { deck, overflowed: false };
   }
   const isFreeManaSource = getCardDefinition(drawn).cost === 0;
-  if (deck.hand.length >= HAND_LIMIT && !isFreeManaSource) {
+  const handHasFreeManaSource = deck.hand.some((cardId) => getCardDefinition(cardId).cost === 0);
+  const protectedFromOverflow = isFreeManaSource && !handHasFreeManaSource;
+  if (deck.hand.length >= HAND_LIMIT && !protectedFromOverflow) {
     return {
       deck: { ...deck, drawPile: rest, graveyard: [...deck.graveyard, drawn] },
       drawn,

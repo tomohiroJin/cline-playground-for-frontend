@@ -69,7 +69,7 @@ describe('drawOne', () => {
     expect(result.deck.graveyard).toEqual(['mud-time']);
   });
 
-  it('手札が上限でもコスト0の魔力炉は手札に入り、上限を1枚超える（マナ経済の唯一の源のため）', () => {
+  it('手札が上限でも、手札に魔力炉が無ければ引いた魔力炉は手札に入り、上限を1枚超える（マナ経済の唯一の源のため）', () => {
     const full = ['arrow-tower', 'ballista', 'cannon-tower', 'beacon', 'spike-trap'];
     expect(full).toHaveLength(HAND_LIMIT);
     const deck = { drawPile: ['reactor'], hand: full, graveyard: [] };
@@ -79,6 +79,26 @@ describe('drawOne', () => {
     expect(result.deck.hand).toEqual([...full, 'reactor']);
     expect(result.deck.hand).toHaveLength(HAND_LIMIT + 1);
     expect(result.deck.graveyard).toEqual([]);
+  });
+
+  it('手札に魔力炉が既に1枚あるなら、追加で引いた魔力炉は上限超過を許さず墓地へ直行する（際限のない増加を防ぐ）', () => {
+    // 前のテストで手札に入った魔力炉がそのまま残っている状態（6枚・うち魔力炉1枚）を想定
+    const handWithOneReactor = [
+      'arrow-tower',
+      'ballista',
+      'cannon-tower',
+      'beacon',
+      'spike-trap',
+      'reactor',
+    ];
+    expect(handWithOneReactor).toHaveLength(HAND_LIMIT + 1);
+    const deck = { drawPile: ['reactor'], hand: handWithOneReactor, graveyard: [] };
+    const result = drawOne(deck);
+    expect(result.drawn).toBe('reactor');
+    expect(result.overflowed).toBe(true);
+    expect(result.deck.hand).toEqual(handWithOneReactor);
+    expect(result.deck.hand).toHaveLength(HAND_LIMIT + 1);
+    expect(result.deck.graveyard).toEqual(['reactor']);
   });
 
   it('山札が空なら何も起きない', () => {

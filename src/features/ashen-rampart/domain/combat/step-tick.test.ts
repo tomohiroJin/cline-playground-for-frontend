@@ -133,7 +133,8 @@ describe('ドロー', () => {
   });
 
   it('手札が上限なら溢れイベントが出る', () => {
-    const full = ['a', 'b', 'c', 'd', 'e'];
+    // 手札溢れの判定はカードのコストを見るため、実在する（コスト0ではない）カードIDを使う
+    const full = ['arrow-tower', 'ballista', 'cannon-tower', 'beacon', 'spike-trap'];
     const deck = { drawPile: ['arrow-tower'], hand: full, graveyard: [] };
     const after = advance(createCombatState(deck, oneGrunt), DRAW_INTERVAL_TICKS);
     expect(after.deck.graveyard).toEqual(['arrow-tower']);
