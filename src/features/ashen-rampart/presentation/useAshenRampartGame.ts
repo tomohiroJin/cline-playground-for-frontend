@@ -11,6 +11,7 @@ import { getCardDefinition } from '../domain/cards/card-pool';
 import { placementKindOf } from '../domain/cards/card-definition';
 import type { CombatState } from '../domain/combat/combat-state';
 import { stepTick, canPlaceAt, type PlayerAction } from '../domain/combat/step-tick';
+import { nextWavePreview } from './wave-preview';
 import { startRun } from '../application/use-cases/start-run';
 import { SeededRandom } from '../infrastructure/random/seeded-random';
 import { LocalStoragePlayLog } from '../infrastructure/play-log/local-storage-play-log';
@@ -37,6 +38,8 @@ export const useAshenRampartGame = (seed = 1, playLog?: PlayLogPort) => {
   const noticeUntilRef = useRef(0);
   const pendingRef = useRef<PlayerAction[]>([]);
   const loggedRunIdsRef = useRef<Set<string>>(new Set());
+  /** 直前に記録した予告の内容。切り替わった tick でだけ記録するためのガード */
+  const lastPreviewRef = useRef<string | undefined>(undefined);
 
   // ラン開始の記録（StrictMode の二重マウントでも1回）
   useEffect(() => {
@@ -97,6 +100,20 @@ export const useAshenRampartGame = (seed = 1, playLog?: PlayLogPort) => {
     });
     if (state.tick >= noticeUntilRef.current) setOverflowNotice(undefined);
   }, [state.events, state.tick, state.mana, runId]);
+
+  // 次ウェーブ予告の記録（内容が切り替わった tick でだけ記録する。判定項目3
+  // 「予告を見た後に配置を変えたか」の起点になるため、毎 tick 記録してはいけない）
+  useEffect(() => {
+    const preview = nextWavePreview(state);
+    if (lastPreviewRef.current === preview) return;
+    lastPreviewRef.current = preview;
+    logRef.current.record({
+      kind: 'wave_preview_shown',
+      runId,
+      tick: state.tick,
+      content: preview,
+    });
+  }, [state, runId]);
 
   // 決着の記録
   useEffect(() => {
@@ -171,6 +188,7 @@ export const useAshenRampartGame = (seed = 1, playLog?: PlayLogPort) => {
     setSelectedIndex(null);
     setIsPaused(false);
     setOverflowNotice(undefined);
+    lastPreviewRef.current = undefined;
     setState(startRun(PRESET_ID, new SeededRandom(seed)));
     setRunId(createRunId());
   }, [seed]);

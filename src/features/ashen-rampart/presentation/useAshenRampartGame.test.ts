@@ -105,6 +105,30 @@ describe('useAshenRampartGame', () => {
     expect(result.current.overflowNotice).toBe(getCardDefinition(lost as string).name);
   });
 
+  it('予告が切り替わったときにだけ wave_preview_shown が記録される', () => {
+    const log = createMockPlayLog();
+    const { result } = renderHook(() => useAshenRampartGame(1, log));
+    const previewsAtMount = log.events.filter((e) => e.kind === 'wave_preview_shown');
+    // マウント時点で最初の予告（雑兵8 俊足5）が1回だけ記録される
+    expect(previewsAtMount).toHaveLength(1);
+    expect(previewsAtMount[0]).toMatchObject({ tick: 0, content: '雑兵8 俊足5' });
+
+    // 次ウェーブ開始 tick（250）に到達するまでは予告が変わらないため追加記録は無い
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS * 249);
+    });
+    expect(log.events.filter((e) => e.kind === 'wave_preview_shown')).toHaveLength(1);
+
+    // tick 250 で予告が切り替わり、そのときだけ1件追加される
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS);
+    });
+    const previewsAfterSwitch = log.events.filter((e) => e.kind === 'wave_preview_shown');
+    expect(previewsAfterSwitch).toHaveLength(2);
+    expect(previewsAfterSwitch[1]).toMatchObject({ tick: 250, content: '群れ12 雑兵5' });
+    expect(result.current.state.tick).toBe(250);
+  });
+
   it('restart で新しいランが始まる', () => {
     const log = createMockPlayLog();
     const { result } = renderHook(() => useAshenRampartGame(1, log));

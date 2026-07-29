@@ -7,7 +7,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import type { CombatState } from '../domain/combat/combat-state';
-import { getEnemySpec } from '../domain/combat/enemies';
+import { nextWavePreview } from './wave-preview';
 import { COLORS } from './theme';
 
 const Bar = styled.div`
@@ -47,12 +47,7 @@ interface Props {
 }
 
 export const RunStatusBar: React.FC<Props> = ({ state, isPaused, onTogglePause }) => {
-  const nextWave = state.waves.find((w) => w.startTick > state.tick);
-  const preview = nextWave
-    ? nextWave.entries
-        .map((e) => `${getEnemySpec(e.enemyId).name}${e.count}`)
-        .join(' ')
-    : 'これが最後の波';
+  const preview = nextWavePreview(state);
   const danger = state.life <= DANGER_LIFE;
 
   return (
