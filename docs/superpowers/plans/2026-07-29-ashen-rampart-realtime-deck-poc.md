@@ -3684,6 +3684,7 @@ export const createRunId = (): string =>
  */
 import { renderHook, act } from '@testing-library/react';
 import { useAshenRampartGame, TICK_INTERVAL_MS } from './useAshenRampartGame';
+import { getCardDefinition } from '../domain/cards/card-pool';
 import type { PlayLogEventBody, PlayLogPort } from '../application/ports/play-log-port';
 
 const createMockPlayLog = (): PlayLogPort & { events: PlayLogEventBody[] } => {
@@ -3758,20 +3759,28 @@ describe('useAshenRampartGame', () => {
   it('一時停止中は配置できない（戦術的優位を与えない）', () => {
     const { result } = renderHook(() => useAshenRampartGame(1));
     act(() => result.current.togglePause());
-    const index = result.current.state.deck.hand.findIndex((id) => id === 'reactor');
-    if (index < 0) return;
-    act(() => result.current.selectCard(index));
+    // 手札の中身に依存させない: 一時停止中は選択しても置ける場所が無く、
+    // セルを押しても設置物が増えないことを検証する
+    act(() => result.current.selectCard(0));
+    expect(result.current.placeableCells).toEqual([]);
     act(() => result.current.clickCell({ x: 1, y: 2 }));
+    expect(result.current.state.towers).toHaveLength(0);
     expect(result.current.state.reactors).toHaveLength(0);
+    expect(result.current.state.embers).toHaveLength(0);
+    expect(result.current.state.traps).toHaveLength(0);
   });
 
-  it('溢れた札は通知として保持される', () => {
+  it('手札が溢れると失った札名が通知される', () => {
     const { result } = renderHook(() => useAshenRampartGame(1));
+    // 初期手札3枚・上限5枚・一度も出さないので、3回目のドロー（120 tick）で必ず溢れる
     act(() => {
-      jest.advanceTimersByTime(TICK_INTERVAL_MS * 400);
+      jest.advanceTimersByTime(TICK_INTERVAL_MS * 120);
     });
-    // 400 tick のあいだにドローが10回起きる。手札上限を超えれば通知が立つ
-    expect(typeof result.current.overflowNotice === 'string' || result.current.overflowNotice === undefined).toBe(true);
+    expect(result.current.state.deck.hand).toHaveLength(5);
+    expect(result.current.state.deck.graveyard).toHaveLength(1);
+    const lost = result.current.state.deck.graveyard[0];
+    expect(typeof lost).toBe('string');
+    expect(result.current.overflowNotice).toBe(getCardDefinition(lost as string).name);
   });
 
   it('restart で新しいランが始まる', () => {
