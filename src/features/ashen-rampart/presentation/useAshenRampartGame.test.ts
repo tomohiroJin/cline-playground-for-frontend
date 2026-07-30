@@ -7,7 +7,7 @@
 import React, { StrictMode } from 'react';
 import { renderHook, act } from '@testing-library/react';
 import { useAshenRampartGame, TICK_INTERVAL_MS } from './useAshenRampartGame';
-import { getCardDefinition } from '../domain/cards/card-pool';
+import { getCardDefinition, PRESET_DECKS } from '../domain/cards/card-pool';
 import { COUNTDOWN_TICKS } from '../domain/combat/combat-state';
 import type { PlayLogEventBody, PlayLogPort } from '../application/ports/play-log-port';
 
@@ -22,20 +22,22 @@ const createMockPlayLog = (): PlayLogPort & { events: PlayLogEventBody[] } => {
   };
 };
 
+const swiftCards = (): string[] => [...PRESET_DECKS.swift!.cards];
+
 describe('useAshenRampartGame', () => {
   beforeEach(() => jest.useFakeTimers());
   afterEach(() => jest.useRealTimers());
 
-  it('マウント時に run_started がシードとプリセット付きで1回記録される', () => {
+  it('マウント時に run_started がシードとデッキ構成付きで1回記録される', () => {
     const log = createMockPlayLog();
-    renderHook(() => useAshenRampartGame(1, log));
+    renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log }));
     const started = log.events.filter((e) => e.kind === 'run_started');
     expect(started).toHaveLength(1);
-    expect(started[0]).toMatchObject({ seed: 1, iteration: 0 });
+    expect(started[0]).toMatchObject({ seed: 1, iteration: 1 });
   });
 
   it('StrictMode 下でもカードを1枚配置できる（指摘1の回帰: updater 内の副作用で操作が握り潰されていた）', () => {
-    const { result } = renderHook(() => useAshenRampartGame(1), {
+    const { result } = renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1 }), {
       wrapper: ({ children }) => React.createElement(StrictMode, null, children),
     });
     const towerIndex = result.current.state.deck.hand.findIndex((id) => id !== 'mud-time');
@@ -57,7 +59,7 @@ describe('useAshenRampartGame', () => {
   });
 
   it('時間経過で tick が進む', () => {
-    const { result } = renderHook(() => useAshenRampartGame(1));
+    const { result } = renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1 }));
     act(() => {
       jest.advanceTimersByTime(TICK_INTERVAL_MS * 10);
     });
@@ -66,7 +68,9 @@ describe('useAshenRampartGame', () => {
 
   it('一時停止すると tick が進まず paused が記録される', () => {
     const log = createMockPlayLog();
-    const { result } = renderHook(() => useAshenRampartGame(1, log));
+    const { result } = renderHook(() =>
+      useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log })
+    );
     act(() => result.current.togglePause());
     const before = result.current.state.tick;
     act(() => {
@@ -78,7 +82,9 @@ describe('useAshenRampartGame', () => {
 
   it('再開すると resumed が記録され tick が再び進む', () => {
     const log = createMockPlayLog();
-    const { result } = renderHook(() => useAshenRampartGame(1, log));
+    const { result } = renderHook(() =>
+      useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log })
+    );
     act(() => result.current.togglePause());
     act(() => result.current.togglePause());
     act(() => {
@@ -89,7 +95,7 @@ describe('useAshenRampartGame', () => {
   });
 
   it('カードを選ぶと置けるマスだけが返る', () => {
-    const { result } = renderHook(() => useAshenRampartGame(1));
+    const { result } = renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1 }));
     const towerIndex = result.current.state.deck.hand.findIndex((id) => id !== 'mud-time');
     act(() => result.current.selectCard(towerIndex));
     expect(result.current.placeableCells.length).toBeGreaterThan(0);
@@ -97,13 +103,13 @@ describe('useAshenRampartGame', () => {
   });
 
   it('選択せずにセルを押しても何も起きない', () => {
-    const { result } = renderHook(() => useAshenRampartGame(1));
+    const { result } = renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1 }));
     act(() => result.current.clickCell({ x: 1, y: 2 }));
     expect(result.current.state.towers).toHaveLength(0);
   });
 
   it('一時停止中は配置できない（戦術的優位を与えない）', () => {
-    const { result } = renderHook(() => useAshenRampartGame(1));
+    const { result } = renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1 }));
     act(() => result.current.togglePause());
     // 手札の中身に依存させない: 一時停止中は選択しても置ける場所が無く、
     // セルを押しても設置物が増えないことを検証する
@@ -117,7 +123,7 @@ describe('useAshenRampartGame', () => {
   });
 
   it('手札が溢れると失った札名が通知される', () => {
-    const { result } = renderHook(() => useAshenRampartGame(1));
+    const { result } = renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1 }));
     // 初期手札3枚・上限5枚・一度も出さないので、3回目のドロー（120 tick）で必ず溢れる
     act(() => {
       jest.advanceTimersByTime(TICK_INTERVAL_MS * 120);
@@ -131,7 +137,9 @@ describe('useAshenRampartGame', () => {
 
   it('予告が切り替わったときにだけ wave_preview_shown が記録される', () => {
     const log = createMockPlayLog();
-    const { result } = renderHook(() => useAshenRampartGame(1, log));
+    const { result } = renderHook(() =>
+      useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log })
+    );
     const previewsAtMount = log.events.filter((e) => e.kind === 'wave_preview_shown');
     // 実際のウェーブ startTick は COUNTDOWN_TICKS ぶん後ろにずれる（開始カウントダウン、Task 7）。
     // マウント時点（tick 0）ではウェーブ1（雑兵3）もまだ始まっていないため、
@@ -159,7 +167,9 @@ describe('useAshenRampartGame', () => {
   it('interactCell: 再点火可能な燠火のあるセルを選択なしでクリックすると reactivated が記録される（クールダウン中は記録されない）', () => {
     const log = createMockPlayLog();
     // シード3は初期手札に業火（ember-blast）を2枚含む（他シードは1枚以下か0枚のため選定）
-    const { result } = renderHook(() => useAshenRampartGame(3, log));
+    const { result } = renderHook(() =>
+      useAshenRampartGame({ cards: swiftCards(), seed: 3, playLog: log })
+    );
     const emberHandIndex = result.current.state.deck.hand.findIndex((id) => id === 'ember-blast');
     expect(emberHandIndex).toBeGreaterThanOrEqual(0);
 
@@ -199,7 +209,9 @@ describe('useAshenRampartGame', () => {
 
   it('restart で新しいランが始まる', () => {
     const log = createMockPlayLog();
-    const { result } = renderHook(() => useAshenRampartGame(1, log));
+    const { result } = renderHook(() =>
+      useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log })
+    );
     act(() => {
       jest.advanceTimersByTime(TICK_INTERVAL_MS * 20);
     });
@@ -208,25 +220,86 @@ describe('useAshenRampartGame', () => {
     expect(log.events.filter((e) => e.kind === 'run_started')).toHaveLength(2);
   });
 
-  it('restart にシードとプリセットを渡すと run_started に正しく反映される（指摘6: 別シードでの再現手順をUIから実行可能にする）', () => {
+  it('restart にシードを渡すと run_started に正しく反映される（指摘6: 別シードでの再現手順をUIから実行可能にする）', () => {
     const log = createMockPlayLog();
-    const { result } = renderHook(() => useAshenRampartGame(1, log));
-    act(() => result.current.restart(42, 'heavy'));
+    const { result } = renderHook(() =>
+      useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log })
+    );
+    act(() => result.current.restart(42));
     expect(result.current.runSeed).toBe(42);
-    expect(result.current.presetId).toBe('heavy');
     const started = log.events.filter((e) => e.kind === 'run_started');
     expect(started).toHaveLength(2);
-    expect(started[1]).toMatchObject({ seed: 42, presetId: 'heavy' });
+    expect(started[1]).toMatchObject({ seed: 42 });
   });
 
-  it('restart を引数なしで呼ぶと直前のシード・プリセットを維持する', () => {
+  it('restart を引数なしで呼ぶと毎回新しいシードになる（固定しない）', () => {
     const log = createMockPlayLog();
-    const { result } = renderHook(() => useAshenRampartGame(1, log));
-    act(() => result.current.restart(7, 'heavy'));
+    const { result } = renderHook(() =>
+      useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log })
+    );
     act(() => result.current.restart());
-    expect(result.current.runSeed).toBe(7);
-    expect(result.current.presetId).toBe('heavy');
-    const started = log.events.filter((e) => e.kind === 'run_started');
-    expect(started[2]).toMatchObject({ seed: 7, presetId: 'heavy' });
+    const firstRestartSeed = result.current.runSeed;
+    act(() => result.current.restart());
+    const secondRestartSeed = result.current.runSeed;
+    expect(firstRestartSeed).not.toBe(secondRestartSeed);
+  });
+
+  describe('反復1: デッキ・シード・徴発', () => {
+    it('渡したデッキでランが始まり、ログにデッキ構成が残る', () => {
+      const log = createMockPlayLog();
+      const cards = swiftCards();
+      renderHook(() => useAshenRampartGame({ cards, seed: 5, playLog: log }));
+      const started = log.events.filter(
+        (e): e is Extract<PlayLogEventBody, { kind: 'run_started' }> => e.kind === 'run_started'
+      );
+      expect(started).toHaveLength(1);
+      expect(started[0]?.seed).toBe(5);
+      expect(started[0]?.deckCards).toHaveLength(20);
+    });
+
+    it('シードを明示すると2ランで同じ山札になる（再現性）', () => {
+      const cards = swiftCards();
+      const a = renderHook(() => useAshenRampartGame({ cards, seed: 99 }));
+      const b = renderHook(() => useAshenRampartGame({ cards, seed: 99 }));
+      expect(a.result.current.runSeed).toBe(99);
+      expect(b.result.current.runSeed).toBe(99);
+      expect(a.result.current.state.deck.drawPile).toEqual(b.result.current.state.deck.drawPile);
+    });
+
+    it('シードを省略すると2ランで異なるシードになる（毎ラン可変）', () => {
+      const cards = swiftCards();
+      const a = renderHook(() => useAshenRampartGame({ cards }));
+      const b = renderHook(() => useAshenRampartGame({ cards }));
+      // createSeed はカウンタを混ぜるため同一ミリ秒でも衝突しない
+      expect(a.result.current.runSeed).not.toBe(b.result.current.runSeed);
+      expect(a.result.current.runSeed).toBeGreaterThan(0);
+    });
+
+    it('徴発を出すと候補が出て、選ぶと手札に入る', () => {
+      const cards = swiftCards();
+      const { result } = renderHook(() => useAshenRampartGame({ cards, seed: 1 }));
+      // 徴発が手札に来るまで進める（40tick ごとにドロー）
+      for (let i = 0; i < 20; i++) {
+        const index = result.current.state.deck.hand.indexOf('levy');
+        if (index >= 0) {
+          act(() => result.current.selectCard(index));
+          act(() => {
+            jest.advanceTimersByTime(TICK_INTERVAL_MS);
+          });
+          break;
+        }
+        act(() => {
+          jest.advanceTimersByTime(TICK_INTERVAL_MS * 40);
+        });
+      }
+      expect(result.current.levyOptions.length).toBeGreaterThan(0);
+      const handBefore = result.current.state.deck.hand.length;
+      act(() => result.current.chooseLevy(0));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+      expect(result.current.levyOptions).toEqual([]);
+      expect(result.current.state.deck.hand.length).toBe(handBefore + 1);
+    });
   });
 });

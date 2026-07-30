@@ -12,7 +12,7 @@ import { placementKindOf } from '../domain/cards/card-definition';
 import type { CombatState } from '../domain/combat/combat-state';
 import { stepTick, canPlaceAt, type PlayerAction } from '../domain/combat/step-tick';
 import { nextWavePreview } from './wave-preview';
-import { startRun } from '../application/use-cases/start-run';
+import { startRunWithDeck, createSeed } from '../application/use-cases/start-run';
 import { SeededRandom } from '../infrastructure/random/seeded-random';
 import { LocalStoragePlayLog } from '../infrastructure/play-log/local-storage-play-log';
 import {
@@ -26,15 +26,22 @@ export const TICK_INTERVAL_MS = 100;
 /** 溢れ通知を表示し続ける tick 数（0.6秒） */
 const OVERFLOW_NOTICE_TICKS = 6;
 
-const DEFAULT_PRESET_ID = 'swift';
+export interface UseAshenRampartGameOptions {
+  /** 使用するデッキ。構築 UI から渡す */
+  cards: readonly string[];
+  /** 固定シード。省略すると毎ラン新しいシードになる */
+  seed?: number;
+  playLog?: PlayLogPort;
+}
 
-export const useAshenRampartGame = (seed = 1, playLog?: PlayLogPort) => {
+export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGameOptions) => {
   const logRef = useRef<PlayLogPort>(playLog ?? new LocalStoragePlayLog());
   const [runId, setRunId] = useState(() => createRunId());
-  const [runSeed, setRunSeed] = useState(seed);
-  const [presetId, setPresetId] = useState(DEFAULT_PRESET_ID);
+  // runSeed は初回レンダー内で解決した値を使う。同じレンダーの中で先に確定させることで、
+  // 直後の state 初期化（startRunWithDeck）に同じシードを渡せる（seed ?? createSeed() の二重呼び出しを避ける）。
+  const [runSeed, setRunSeed] = useState<number>(() => seed ?? createSeed());
   const [state, setState] = useState<CombatState>(() =>
-    startRun(DEFAULT_PRESET_ID, new SeededRandom(seed))
+    startRunWithDeck(cards, new SeededRandom(runSeed))
   );
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isPaused, setIsPaused] = useState(false);
@@ -54,9 +61,9 @@ export const useAshenRampartGame = (seed = 1, playLog?: PlayLogPort) => {
       runId,
       iteration: CURRENT_ITERATION,
       seed: runSeed,
-      presetId,
+      deckCards: [...cards],
     });
-  }, [runId, runSeed, presetId]);
+  }, [runId, runSeed, cards]);
 
   // ゲームループ。一時停止中と決着後は進めない
   useEffect(() => {
@@ -175,6 +182,15 @@ export const useAshenRampartGame = (seed = 1, playLog?: PlayLogPort) => {
     [isPaused]
   );
 
+  /** 徴発の候補から1枚選ぶ。UI から到達する唯一の入口（DeckBuilder の validateDeck と同様、判定はドメイン側） */
+  const chooseLevy = useCallback(
+    (index: number) => {
+      if (isPaused) return;
+      pendingRef.current.push({ kind: 'choose-levy', optionIndex: index });
+    },
+    [isPaused]
+  );
+
   /**
    * 盤面セルへの唯一の入口（UI はこれだけを呼ぶ）
    *
@@ -212,27 +228,24 @@ export const useAshenRampartGame = (seed = 1, playLog?: PlayLogPort) => {
   }, [isPaused, runId, state.tick]);
 
   /**
-   * ランを再開始する
+   * ランを再開始する（同じデッキで、シードだけ変える）
    *
-   * 引数を省略すると直前と同じシード・プリセットで再現する。設計書 §11 の
-   * 実施手順（同一シード2ラン＋別シード1ラン）を UI から実行可能にするため、
-   * 呼び出し側は決着画面のシード入力・プリセット選択の値を渡す（指摘6）。
+   * デッキを組み直したい場合は呼び出し側（AshenRampartGame）が構築画面に戻すため、
+   * ここでは扱わない。引数を省略すると毎回新しいシードになる（`createSeed`）。
    */
   const restart = useCallback(
-    (nextSeed?: number, nextPresetId?: string) => {
-      const seedToUse = nextSeed ?? runSeed;
-      const presetToUse = nextPresetId ?? presetId;
+    (nextSeed?: number) => {
+      const seedToUse = nextSeed ?? createSeed();
       pendingRef.current = [];
       setSelectedIndex(null);
       setIsPaused(false);
       setOverflowNotice(undefined);
       lastPreviewRef.current = undefined;
       setRunSeed(seedToUse);
-      setPresetId(presetToUse);
-      setState(startRun(presetToUse, new SeededRandom(seedToUse)));
+      setState(startRunWithDeck(cards, new SeededRandom(seedToUse)));
       setRunId(createRunId());
     },
-    [runSeed, presetId]
+    [cards]
   );
 
   const noteRun = useCallback(
@@ -250,7 +263,7 @@ export const useAshenRampartGame = (seed = 1, playLog?: PlayLogPort) => {
   return {
     state,
     runSeed,
-    presetId,
+    levyOptions: state.levyOptions,
     selectedIndex,
     placeableCells,
     isPaused,
@@ -258,6 +271,7 @@ export const useAshenRampartGame = (seed = 1, playLog?: PlayLogPort) => {
     selectCard,
     clickCell,
     reactivate,
+    chooseLevy,
     interactCell,
     togglePause,
     restart,
