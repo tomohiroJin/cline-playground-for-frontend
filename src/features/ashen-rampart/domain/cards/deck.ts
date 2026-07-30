@@ -108,9 +108,13 @@ export const peekTop = (deck: DeckState, n: number): PeekResult => ({
 /**
  * 候補から1枚を手札に加え、残りを墓地へ送る
  *
- * 徴発を出した時点で徴発自身が手札から抜けているため、
- * 手札には必ず空きがあり上限で溢れない。
- * 範囲外のインデックスなら全部を墓地へ送る（選択せず捨てた扱い）。
+ * 徴発を出した直後は徴発自身が手札から抜けているため空きがあるが、
+ * 「選択中もゲームは止まらない」設計（設計書 §3.5）により選択を放置している間に
+ * 通常ドロー（`drawOne`）が挟まって手札が再び埋まることがある。そのため
+ * ここでも `drawOne` と同じ `HAND_LIMIT` 判定を行い、選択時点で手札が上限なら
+ * 選んだ札もそのまま墓地へ送る（責務はこの関数が持つ＝呼び出し側は判定不要）。
+ * 「出さないと引けない」という既存の圧力と一貫させ、選択の先延ばしを損にする。
+ * 範囲外のインデックスなら（手札の空き有無に関わらず）全部を墓地へ送る（選択せず捨てた扱い）。
  */
 export const takeFromPeek = (
   deck: DeckState,
@@ -119,10 +123,15 @@ export const takeFromPeek = (
 ): DeckState => {
   const chosen = options[index];
   const rest = options.filter((_, i) => i !== index);
+  const handIsFull = deck.hand.length >= HAND_LIMIT;
+  const entersHand = chosen !== undefined && !handIsFull;
   return {
     ...deck,
-    hand: chosen === undefined ? deck.hand : [...deck.hand, chosen],
-    graveyard: [...deck.graveyard, ...rest],
+    hand: entersHand ? [...deck.hand, chosen] : deck.hand,
+    graveyard:
+      chosen !== undefined && !entersHand
+        ? [...deck.graveyard, chosen, ...rest]
+        : [...deck.graveyard, ...rest],
   };
 };
 

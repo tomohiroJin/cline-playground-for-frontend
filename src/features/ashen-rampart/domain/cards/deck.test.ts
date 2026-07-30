@@ -172,4 +172,14 @@ describe('peekTop / takeFromPeek（徴発）', () => {
     expect(next.hand).toEqual(['x']);
     expect(next.graveyard).toEqual(['a', 'b']);
   });
+
+  it('手札が上限のときは選んだ札も墓地へ送る（手札は増えない）', () => {
+    const full = ['1', '2', '3', '4', '5'];
+    expect(full).toHaveLength(HAND_LIMIT);
+    const deck = { drawPile: [], hand: full, graveyard: ['z'] };
+    const next = takeFromPeek(deck, ['a', 'b', 'c'], 1);
+    expect(next.hand).toEqual(full);
+    expect(next.hand).toHaveLength(HAND_LIMIT);
+    expect(next.graveyard).toEqual(['z', 'b', 'a', 'c']);
+  });
 });

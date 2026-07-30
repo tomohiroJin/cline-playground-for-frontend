@@ -90,4 +90,71 @@ describe('徴発の選択', () => {
     expect(after.deck.hand).toEqual([]);
     expect(after.deck.graveyard).toEqual([]);
   });
+
+  it('選択待ち中でも塔・罠など徴発以外のカードは通常どおり配置できる（回帰）', () => {
+    const state = stateWith(
+      ['levy', 'reactor'],
+      ['arrow-tower', 'ballista', 'reactor']
+    );
+    const opened = play(state, 0);
+    expect(opened.levyOptions).toHaveLength(3);
+    // levy を discard した後、hand[0] が reactor になる。配置クールダウンは
+    // levy 自身の配置で消費済みのため、この検証と無関係な cooldown 拒否を避けて 0 に戻す
+    const readyToPlace: CombatState = { ...opened, placeCooldown: 0 };
+    const after = stepTick(
+      readyToPlace,
+      [{ kind: 'play-card', handIndex: 0, pos: { x: 1, y: 2 } }],
+      PLAINS_MAP
+    );
+    expect(after.events).toContainEqual({ kind: 'played', cardId: 'reactor', pos: { x: 1, y: 2 } });
+    expect(after.reactors).toHaveLength(1);
+    // 選択待ちは引き続き残る（levy 実装が選択待ち以外のカードを巻き込んでいないことの確認）
+    expect(after.levyOptions).toHaveLength(3);
+  });
+
+  it('手札が上限のときに選んだ札を選んでも手札は増えず、候補すべてが墓地へ行く', () => {
+    const state = stateWith(
+      ['levy', 'ballista', 'ballista', 'ballista', 'ballista'],
+      ['arrow-tower', 'ballista', 'reactor']
+    );
+    const opened = play(state, 0);
+    expect(opened.deck.hand).toHaveLength(4);
+    // 手札を上限(5)まで人為的に埋める（通常ドロー等で埋まった状況を模す）
+    const handFull: CombatState = {
+      ...opened,
+      deck: { ...opened.deck, hand: [...opened.deck.hand, 'ballista'] },
+    };
+    expect(handFull.deck.hand).toHaveLength(5);
+    const after = stepTick(handFull, [{ kind: 'choose-levy', optionIndex: 0 }], PLAINS_MAP);
+    expect(after.deck.hand).toEqual(handFull.deck.hand);
+    expect(after.deck.hand).toHaveLength(5);
+    expect(after.deck.graveyard).toEqual(['levy', 'arrow-tower', 'ballista', 'reactor']);
+    expect(after.levyOptions).toEqual([]);
+  });
+
+  it('選択を保留したまま通常ドローが挟まり手札が上限まで戻っても、選択後に手札が上限を超えない', () => {
+    // 徴発を出す→手札4枚。以後、選択せず放置しても tick は進み続け（設計どおり）、
+    // 40tick 後に通常ドローが1回発生して手札が上限5枚まで戻る。
+    // ここで choose-levy しても手札が6枚に溢れないことを確認する（レビュー指摘の欠陥そのもの）。
+    const state = stateWith(
+      ['levy', 'ballista', 'ballista', 'ballista', 'ballista'],
+      ['arrow-tower', 'ballista', 'reactor', 'ballista']
+    );
+    const opened = play(state, 0); // tick=1。ticksToDraw は 40 → 39 に減るのみ（まだ引かない）
+    expect(opened.deck.hand).toHaveLength(4);
+    expect(opened.levyOptions).toHaveLength(3);
+
+    // 選択せずに放置し、通常ドローが発生するまで tick を進める（合計 tick=40 で発火）
+    let after = opened;
+    for (let i = 0; i < 39; i++) {
+      after = stepTick(after, [], PLAINS_MAP);
+    }
+    expect(after.tick).toBe(40);
+    expect(after.deck.hand).toHaveLength(5); // 通常ドローで上限まで戻った
+    expect(after.levyOptions).toHaveLength(3); // 選択は放置されたまま（ゲームは止まっていない）
+
+    const chosen = stepTick(after, [{ kind: 'choose-levy', optionIndex: 0 }], PLAINS_MAP);
+    expect(chosen.deck.hand).toHaveLength(5); // 6枚に溢れない
+    expect(chosen.levyOptions).toEqual([]);
+  });
 });
