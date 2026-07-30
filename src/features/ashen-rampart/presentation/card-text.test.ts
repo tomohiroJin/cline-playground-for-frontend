@@ -4,7 +4,7 @@
  * 全カードに文言があることが要件。1つでも欠けると構築画面で
  * 「何のために積むか」の手がかりが失われる。
  */
-import { weaknessTextOf } from './card-text';
+import { weaknessTextOf, MISSING_WEAKNESS_IDS } from './card-text';
 import { CARD_IDS } from '../domain/cards/card-pool';
 
 describe('weaknessTextOf', () => {
@@ -14,16 +14,26 @@ describe('weaknessTextOf', () => {
     });
   });
 
+  it('欠落カードが無い（開発時の取り漏れ検出）', () => {
+    expect(MISSING_WEAKNESS_IDS).toEqual([]);
+  });
+
   it('弓兵は飛行に当たらないことを示す', () => {
     expect(weaknessTextOf('arrow-tower')).toContain('飛行');
   });
 
-  it('弩砲は効率の低さを示す（効かない相手が無い代わり）', () => {
-    expect(weaknessTextOf('ballista')).toContain('効率');
+  it('弩砲は効かない相手がないことと制約を示す', () => {
+    expect(weaknessTextOf('ballista')).toContain('効かない相手はない');
+    expect(weaknessTextOf('ballista')).toContain('コスト');
   });
 
   it('徹甲弩は低HPへの非効率を示す', () => {
     expect(weaknessTextOf('piercer')).toContain('HP');
+  });
+
+  it('篝火と錬造所は常に0ダメージを示す', () => {
+    expect(weaknessTextOf('beacon')).toContain('0ダメージ');
+    expect(weaknessTextOf('forge')).toContain('0ダメージ');
   });
 
   it('落網はダメージを与えないことを示す', () => {
