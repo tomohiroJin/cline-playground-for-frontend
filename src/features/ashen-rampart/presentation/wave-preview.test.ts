@@ -14,7 +14,7 @@ describe('nextWavePreview', () => {
   });
 
   it('次ウェーブ開始 tick に到達すると、その次のウェーブへ予告が切り替わる', () => {
-    expect(nextWavePreview({ waves: PLAINS_WAVES, tick: 250 })).toBe('群れ8 雑兵4');
+    expect(nextWavePreview({ waves: PLAINS_WAVES, tick: 250 })).toBe('群れ22 雑兵4');
   });
 
   it('最終ウェーブ開始後は固定文言になる', () => {
