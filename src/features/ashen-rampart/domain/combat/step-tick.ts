@@ -45,13 +45,15 @@ export const HIGH_GROUND_DAMAGE_MULT = 1.3;
 /**
  * 塔の実効ダメージ
  *
- * round(基礎 × 高台倍率 × (1 + Σ隣接オーラ))。倍率の二重適用を避けるため
- * この関数だけがダメージ算出の責務を持つ。
+ * round(基礎 × 重装特効 × 高台倍率 × (1 + Σ隣接オーラ))。
+ * 特効は対象の**最大HP**で判定する（現在HPだと削るほど弱くなり直感に反する）。
+ * 倍率の二重適用を避けるため、この関数だけがダメージ算出の責務を持つ。
  */
 export const effectiveDamage = (
   state: CombatState,
   towerIndex: number,
-  map: StageMap
+  map: StageMap,
+  target: ActiveEnemy
 ): number => {
   const tower = state.towers[towerIndex];
   if (!tower) return 0;
@@ -59,13 +61,17 @@ export const effectiveDamage = (
   if (!spec || spec.aura) return 0;
   const auraBonus = state.towers.reduce((sum, other) => {
     const otherSpec = getCardDefinition(other.cardId).tower;
-    if (!otherSpec?.aura) return sum;
+    const damageBonus = otherSpec?.aura?.towerDamageBonus;
+    if (damageBonus === undefined) return sum;
     const adjacent =
       Math.abs(other.pos.x - tower.pos.x) <= 1 && Math.abs(other.pos.y - tower.pos.y) <= 1;
-    return adjacent ? sum + (otherSpec.aura.towerDamageBonus ?? 0) : sum;
+    return adjacent ? sum + damageBonus : sum;
   }, 0);
   const highGround = isHighGround(map, tower.pos) ? HIGH_GROUND_DAMAGE_MULT : 1;
-  return Math.round(spec.damage * highGround * (1 + auraBonus));
+  const threshold = spec.heavyBonusThreshold;
+  const heavy =
+    threshold !== undefined && target.maxHp >= threshold ? (spec.heavyBonusMultiplier ?? 1) : 1;
+  return Math.round(spec.damage * heavy * highGround * (1 + auraBonus));
 };
 
 /**
@@ -497,14 +503,14 @@ const applyTowerShots = (
     const spec = getCardDefinition(tower.cardId).tower;
     if (!spec || spec.aura) return tower;
     if (tower.cooldownLeft > 0) return { ...tower, cooldownLeft: tower.cooldownLeft - 1 };
-    const damage = effectiveDamage(stateForDamage, towerIndex, map);
     const range = effectiveRange(stateForDamage, towerIndex, map);
     const target = selectTowerTarget(tower, spec, range, moved, map, hpById, tick);
     if (!target) return tower;
+    const damage = effectiveDamage(stateForDamage, towerIndex, map, target);
     hpById.set(target.id, (hpById.get(target.id) ?? 0) - damage);
     events.push({ kind: 'shot', towerIndex, targetId: target.id });
     if (spec.splashRadius > 0) {
-      applySplashDamage(target, damage, spec, moved, map, hpById, tick);
+      applySplashDamage(target, spec, moved, map, hpById, tick, stateForDamage, towerIndex);
     }
     // 発射周期をちょうど cooldownTicks tick にするため -1 する
     // （次tick以降の `cooldownLeft > 0` decrement 判定と合わせて、
@@ -535,15 +541,21 @@ const selectTowerTarget = (
     })
     .sort((a, b) => b.progress - a.progress)[0];
 
-/** 着弾点から splashRadius 以内の他の敵にも同じダメージを与える */
+/**
+ * 着弾点から splashRadius 以内の他の敵にも巻き込みダメージを与える
+ *
+ * 特効は敵ごとに判定されるべきなので、中心の敵のダメージ値を流用せず
+ * 巻き込む敵ごとに effectiveDamage を呼び直す（重装だけが特効で2倍を受ける）。
+ */
 const applySplashDamage = (
   target: ActiveEnemy,
-  damage: number,
   spec: NonNullable<CardDefinition['tower']>,
   moved: readonly ActiveEnemy[],
   map: StageMap,
   hpById: Map<number, number>,
-  tick: number
+  tick: number,
+  stateForDamage: CombatState,
+  towerIndex: number
 ): void => {
   const center = positionOf(target.progress, map.path);
   moved.forEach((other) => {
@@ -551,6 +563,7 @@ const applySplashDamage = (
     if (!spec.hitsFlying && isEnemyFlying(other, tick)) return;
     const pos = positionOf(other.progress, map.path);
     if (Math.hypot(pos.x - center.x, pos.y - center.y) <= spec.splashRadius) {
+      const damage = effectiveDamage(stateForDamage, towerIndex, map, other);
       hpById.set(other.id, (hpById.get(other.id) ?? 0) - damage);
     }
   });

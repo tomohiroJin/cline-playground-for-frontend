@@ -5,12 +5,27 @@
  * 実装として成立していることを、飛行敵への当たり判定で検証する。
  */
 import { createCombatState } from './combat-state';
-import type { CombatState } from './combat-state';
+import type { CombatState, ActiveEnemy } from './combat-state';
 import { stepTick, effectiveDamage } from './step-tick';
 import type { WaveDefinition } from './waves';
 import { PLAINS_MAP } from '../board/stage-map';
 
 const emptyDeck = { drawPile: [], hand: [], graveyard: [] };
+
+/** effectiveDamage の対象引数用ダミー（特効を持たない塔のテストでは値は結果に影響しない） */
+const dummyTarget: ActiveEnemy = {
+  id: 0,
+  enemyId: 'grunt',
+  hp: 20,
+  maxHp: 20,
+  progress: 0,
+  spawnTick: 0,
+  spawnPathIndex: 0,
+  alive: true,
+  leaked: false,
+  groundedUntilTick: 0,
+  stunnedUntilTick: 0,
+};
 
 const waveOf = (enemyId: string, count = 1): WaveDefinition[] => [
   { startTick: 0, entries: [{ enemyId, count, spawnIntervalTicks: 2, spawnPathIndex: 0 }] },
@@ -144,15 +159,15 @@ describe('範囲攻撃', () => {
 describe('篝火のオーラ', () => {
   it('隣接する塔の攻撃力を +25% する', () => {
     const base = withTower(createCombatState(emptyDeck, waveOf('grunt')), 'arrow-tower', 1, 2);
-    expect(effectiveDamage(base, 0, PLAINS_MAP)).toBe(6);
+    expect(effectiveDamage(base, 0, PLAINS_MAP, dummyTarget)).toBe(6);
     const withBeacon = withTower(base, 'beacon', 2, 2);
-    expect(effectiveDamage(withBeacon, 0, PLAINS_MAP)).toBe(8); // round(6 * 1.25)
+    expect(effectiveDamage(withBeacon, 0, PLAINS_MAP, dummyTarget)).toBe(8); // round(6 * 1.25)
   });
 
   it('高台の塔は火力が +30% される', () => {
     // (3,4) は高台
     const high = withTower(createCombatState(emptyDeck, waveOf('grunt')), 'arrow-tower', 3, 4);
-    expect(effectiveDamage(high, 0, PLAINS_MAP)).toBe(8); // round(6 * 1.3)
+    expect(effectiveDamage(high, 0, PLAINS_MAP, dummyTarget)).toBe(8); // round(6 * 1.3)
   });
 
   it('篝火自身は攻撃しない', () => {

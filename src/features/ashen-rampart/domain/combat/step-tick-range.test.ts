@@ -5,12 +5,27 @@
  * 加算の二重適用を防ぐために算出責務を1箇所に閉じる。
  */
 import { createCombatState } from './combat-state';
-import type { CombatState } from './combat-state';
+import type { CombatState, ActiveEnemy } from './combat-state';
 import { effectiveRange } from './step-tick';
 import { PLAINS_WAVES } from './waves';
 import { PLAINS_MAP } from '../board/stage-map';
 
 const emptyDeck = { drawPile: [], hand: [], graveyard: [] };
+
+/** effectiveDamage の対象引数用ダミー（特効を持たない塔のテストでは値は結果に影響しない） */
+const dummyTarget: ActiveEnemy = {
+  id: 0,
+  enemyId: 'grunt',
+  hp: 20,
+  maxHp: 20,
+  progress: 0,
+  spawnTick: 0,
+  spawnPathIndex: 0,
+  alive: true,
+  leaked: false,
+  groundedUntilTick: 0,
+  stunnedUntilTick: 0,
+};
 
 const withTowers = (towers: { cardId: string; x: number; y: number }[]): CombatState => ({
   ...createCombatState(emptyDeck, PLAINS_WAVES),
@@ -62,7 +77,7 @@ describe('effectiveRange', () => {
       { cardId: 'arrow-tower', x: 1, y: 2 },
       { cardId: 'forge', x: 2, y: 2 },
     ]);
-    expect(effectiveDamage(state, 0, PLAINS_MAP)).toBe(6);
+    expect(effectiveDamage(state, 0, PLAINS_MAP, dummyTarget)).toBe(6);
   });
 
   it('オーラ塔自身の実効射程は 0', () => {
