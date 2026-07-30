@@ -117,11 +117,15 @@ const CurveList = styled.ul`
 
 interface Props {
   onStart: (cards: string[], seed?: number) => void;
+  /** 直前に組んだデッキ（再挑戦時に空から組み直させない。指摘4） */
+  initialCards?: readonly string[];
+  /** 直前に入力したシード文字列 */
+  initialSeedText?: string;
 }
 
-export const DeckBuilder: React.FC<Props> = ({ onStart }) => {
-  const [cards, setCards] = useState<string[]>([]);
-  const [seedText, setSeedText] = useState('');
+export const DeckBuilder: React.FC<Props> = ({ onStart, initialCards, initialSeedText }) => {
+  const [cards, setCards] = useState<string[]>(() => (initialCards ? [...initialCards] : []));
+  const [seedText, setSeedText] = useState(initialSeedText ?? '');
 
   const counts = countByCard(cards);
   const validation = validateDeck(cards);

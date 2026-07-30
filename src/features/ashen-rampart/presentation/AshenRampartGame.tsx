@@ -179,6 +179,16 @@ const RunView: React.FC<RunViewProps> = ({ cards, seed, onRebuild }) => {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [game]);
 
+  // 決着後に再挑戦（同デッキ別シード・構築画面へ戻る）したとき、決着入力の状態を
+  // リセットする。RunView はランをまたいで再マウントされない（同デッキ別シードは
+  // this コンポーネント内で state を差し替えるだけ）ため、outcome の変化を見て検知する
+  useEffect(() => {
+    if (game.state.outcome !== 'playing') return;
+    setNoteText('');
+    setNoteSaved(false);
+    setCopyStatus('idle');
+  }, [game.state.outcome]);
+
   const handleNoteSubmit = (event: React.FormEvent): void => {
     event.preventDefault();
     const trimmed = noteText.trim();
@@ -193,13 +203,16 @@ const RunView: React.FC<RunViewProps> = ({ cards, seed, onRebuild }) => {
     });
   };
 
+  const isLevyBlocked = game.isPaused || game.state.outcome !== 'playing';
+
   return (
     <Layout>
-      <LevyChoice options={game.levyOptions} onChoose={game.chooseLevy} />
+      <LevyChoice options={game.levyOptions} onChoose={game.chooseLevy} disabled={isLevyBlocked} />
       <RunStatusBar
         state={game.state}
         isPaused={game.isPaused}
         onTogglePause={game.togglePause}
+        runSeed={game.runSeed}
       />
       <Center>
         <BoardWrapper>
@@ -216,6 +229,9 @@ const RunView: React.FC<RunViewProps> = ({ cards, seed, onRebuild }) => {
           <Result>
             <p>{game.state.outcome === 'won' ? '砦は守られた' : '城壁は灰燼に帰した'}</p>
             <ActionRow>
+              <ActionButton type="button" onClick={() => game.restart()}>
+                同じデッキで別のシードに挑む
+              </ActionButton>
               <ActionButton type="button" onClick={onRebuild}>
                 もう一度挑む
               </ActionButton>
@@ -276,7 +292,14 @@ export const AshenRampartGame: React.FC = () => {
   };
 
   if (phase === 'building') {
-    return <DeckBuilder onStart={handleBuilderStart} />;
+    // 指摘4: 直前に組んだデッキ・シードを引き継ぐ（20枚を毎回組み直させない）
+    return (
+      <DeckBuilder
+        onStart={handleBuilderStart}
+        initialCards={cards}
+        initialSeedText={seed !== undefined ? String(seed) : ''}
+      />
+    );
   }
   if (phase === 'briefing') {
     return <StartOverlay preview={FIRST_WAVE_PREVIEW} onStart={handleBriefingStart} />;

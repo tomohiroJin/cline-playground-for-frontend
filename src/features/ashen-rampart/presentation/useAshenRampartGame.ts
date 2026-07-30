@@ -182,13 +182,17 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
     [isPaused]
   );
 
-  /** 徴発の候補から1枚選ぶ。UI から到達する唯一の入口（DeckBuilder の validateDeck と同様、判定はドメイン側） */
+  /**
+   * 徴発の候補から1枚選ぶ。UI から到達する唯一の入口（DeckBuilder の validateDeck と同様、判定はドメイン側）
+   *
+   * 一時停止中・決着後は選んでも無反応にする（LevyChoice 側の disabled 表示と合わせた二重の防御。指摘B）
+   */
   const chooseLevy = useCallback(
     (index: number) => {
-      if (isPaused) return;
+      if (isPaused || state.outcome !== 'playing') return;
       pendingRef.current.push({ kind: 'choose-levy', optionIndex: index });
     },
-    [isPaused]
+    [isPaused, state.outcome]
   );
 
   /**

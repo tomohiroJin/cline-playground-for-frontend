@@ -106,4 +106,26 @@ describe('DeckBuilder', () => {
     fireEvent.click(screen.getByRole('button', { name: /速攻型 を読み込む/ }));
     expect(screen.getByRole('list', { name: 'コスト曲線' })).toBeInTheDocument();
   });
+
+  it('initialCards を渡すと、そのデッキ枚数から始まる（指摘4: 再挑戦のたびに組み直させない）', () => {
+    render(<DeckBuilder onStart={jest.fn()} initialCards={PRESET_DECKS.heavy!.cards} />);
+    expect(screen.getByText(`${DECK_SIZE} / ${DECK_SIZE}`)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'この構成で始める' })).toBeEnabled();
+  });
+
+  it('initialSeedText を渡すと、シード欄がその値で始まる', () => {
+    const onStart = jest.fn();
+    render(
+      <DeckBuilder
+        onStart={onStart}
+        initialCards={PRESET_DECKS.swift!.cards}
+        initialSeedText="777"
+      />
+    );
+    const seedInput = screen.getByLabelText('シード（空欄なら毎回ランダム）') as HTMLInputElement;
+    expect(seedInput.value).toBe('777');
+    fireEvent.click(screen.getByRole('button', { name: 'この構成で始める' }));
+    const [, seed] = onStart.mock.calls[0] as [string[], number | undefined];
+    expect(seed).toBe(777);
+  });
 });

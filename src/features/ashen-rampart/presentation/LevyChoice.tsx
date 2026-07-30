@@ -33,6 +33,10 @@ const Option = styled.button`
   border: 1px solid ${COLORS.opportunity};
   border-radius: 4px;
   cursor: pointer;
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 `;
 
 const Note = styled.span`
@@ -42,12 +46,17 @@ const Note = styled.span`
 interface Props {
   options: readonly string[];
   onChoose: (index: number) => void;
+  /**
+   * 一時停止中・決着後は選んでも反映されない（フック側でも早期returnするが、
+   * 押しても無反応に見える状態を残さないため見た目でも無効化する。指摘B）
+   */
+  disabled?: boolean;
 }
 
-export const LevyChoice: React.FC<Props> = ({ options, onChoose }) => {
+export const LevyChoice: React.FC<Props> = ({ options, onChoose, disabled = false }) => {
   if (options.length === 0) return null;
   return (
-    <Bar>
+    <Bar role="group" aria-label="徴発の候補">
       <strong>徴発: 1枚選ぶ</strong>
       {options.map((id, index) => {
         const card = getCardDefinition(id);
@@ -58,6 +67,7 @@ export const LevyChoice: React.FC<Props> = ({ options, onChoose }) => {
             key={`${id}-${index}`}
             type="button"
             aria-label={`${card.name} コスト${card.cost}`}
+            disabled={disabled}
             onClick={() => onChoose(index)}
           >
             {card.name}（{card.cost}）
