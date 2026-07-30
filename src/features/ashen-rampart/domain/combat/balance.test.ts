@@ -149,6 +149,50 @@ describe('鴉の直接検証（対空要求が拘束していることの証明�
   });
 });
 
+/**
+ * 全要求を満たした合法デッキは勝てること（検証の残り半分）
+ *
+ * ここまでの検証は「要求を無視したデッキは負ける」だけを見ていた。それだけでは
+ * 「どう組んでも勝てない」状態（較正の行き過ぎ）と区別できず、実プレイの判定が
+ * 「難しすぎる」という別の理由で濁る。対空・範囲・マナ源のすべてを満たした
+ * 合法デッキが、少なくとも一部のシードで勝てることを対の不変条件として固定する。
+ *
+ * 敵数を削る較正を行うときは、上の3つの「無視したら負ける」テストとこのテストの
+ * 両方が同時に成立する範囲を探すこと。片方だけを見て動かすと必ずどちらかが壊れる。
+ */
+describe('全要求を満たしたデッキは勝てること', () => {
+  /** 対空3種・範囲3種・マナ源をすべて含む20枚（同名3枚以内） */
+  const FULL_ANSWER_DECK: readonly string[] = [
+    ...repeat('reactor', 3),
+    ...repeat('ballista', 3),
+    ...repeat('piercer', 3),
+    ...repeat('cannon-tower', 3),
+    ...repeat('catapult', 2),
+    ...repeat('ember-blast', 2),
+    ...repeat('snare-net', 2),
+    ...repeat('levy', 2),
+  ];
+
+  it('デッキが構築規則を満たし、対空・範囲・マナ源をすべて備えている', () => {
+    const cards = [...FULL_ANSWER_DECK];
+    expect(cards).toHaveLength(DECK_SIZE);
+    expect(validateDeck(cards).errors).toEqual([]);
+    // 「全要求を満たしている」ことをスペックから判定する（IDの並びを目視で信じない）
+    expect(cards.some(hasAntiAir)).toBe(true);
+    expect(cards.some(hasAreaDamage)).toBe(true);
+    expect(cards).toContain('reactor');
+  });
+
+  it('素直な戦略でも少なくとも1シードで勝てる', () => {
+    const outcomes = SEEDS.map((seed) => {
+      const random = new SeededRandom(seed);
+      const deck = createDeck(FULL_ANSWER_DECK, () => random.random());
+      return simulateRun(createCombatState(deck, PLAINS_WAVES), greedyStrategy, PLAINS_MAP);
+    });
+    expect(outcomes.filter((r) => r.outcome === 'won').length).toBeGreaterThan(0);
+  });
+});
+
 describe('難度の較正', () => {
   it('素直な戦略では過半数のランで勝てない（配分の余地が残っている）', () => {
     const wins = SEEDS.filter(

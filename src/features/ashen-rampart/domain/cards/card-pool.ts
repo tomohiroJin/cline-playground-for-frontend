@@ -204,13 +204,16 @@ export const PRESET_DECKS: Readonly<Record<string, PresetDeck>> = {
     name: '重厚型',
     description: '射程と特効で固める。対空は落網と徹甲弩、群れは投石機。',
     cards: [
+      // Task 9 再較正: 群れ22体・間隔1tick への強化で 5シード中0勝に落ちていた（実測）。
+      // 「全要求を満たしたデッキは勝てる」テストで勝ち筋のあるデッキは投石機・業火を厚く
+      // 積んでいたため、その方向へ寄せた（弓兵2枚を抜き、投石機2→3・業火2→3）。
+      // 火砲台は swift の群れ対策なので、プリセット間の差を保つため入れていない。
       ...repeat('reactor', 3),
       ...repeat('piercer', 3),
-      ...repeat('catapult', 2),
+      ...repeat('catapult', 3),
       ...repeat('snare-net', 2),
       ...repeat('forge', 2),
-      ...repeat('arrow-tower', 2),
-      ...repeat('ember-blast', 2),
+      ...repeat('ember-blast', 3),
       ...repeat('beacon', 2),
       ...repeat('levy', 2),
     ],
