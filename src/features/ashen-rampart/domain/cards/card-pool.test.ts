@@ -12,6 +12,7 @@ import {
   MAX_COPIES,
 } from './card-pool';
 import { placementKindOf } from './card-definition';
+import { validateDeck } from './deck-builder';
 
 describe('カードプール', () => {
   it('カードは14種ある', () => {
@@ -142,5 +143,9 @@ describe('プリセットデッキ', () => {
 
   it.each(Object.entries(PRESET_DECKS))('%s は既知のカードだけで構成される', (_id, deck) => {
     deck.cards.forEach((id) => expect(() => getCardDefinition(id)).not.toThrow());
+  });
+
+  it.each(Object.entries(PRESET_DECKS))('%s は構築規則を満たす', (_id, deck) => {
+    expect(validateDeck(deck.cards).errors).toEqual([]);
   });
 });
