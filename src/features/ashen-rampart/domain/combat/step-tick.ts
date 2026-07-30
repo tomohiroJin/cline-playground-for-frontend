@@ -14,7 +14,7 @@
  */
 import type { CellPos, StageMap } from '../board/stage-map';
 import { isSlowCell, isHighGround } from '../board/stage-map';
-import { drawOne, discardFromHand } from '../cards/deck';
+import { drawOne, discardFromHand, peekTop, takeFromPeek } from '../cards/deck';
 import type { DeckState } from '../cards/deck';
 import { getCardDefinition } from '../cards/card-pool';
 import { placementKindOf, type CardDefinition } from '../cards/card-definition';
@@ -34,7 +34,8 @@ import type {
 /** プレイヤーがその tick に行った操作 */
 export type PlayerAction =
   | { kind: 'play-card'; handIndex: number; pos?: CellPos }
-  | { kind: 'reactivate'; emberIndex: number };
+  | { kind: 'reactivate'; emberIndex: number }
+  | { kind: 'choose-levy'; optionIndex: number };
 
 /** 滞留セル上の移動量倍率 */
 export const SLOW_TERRAIN_MULT = 0.6;
@@ -214,6 +215,8 @@ interface ActionsDraft {
   blasts: PendingBlast[];
   /** この tick に配置・再点火した燠火の index（クールダウン減算の対象外にする） */
   freshEmberIndices: Set<number>;
+  /** 徴発で提示中の候補。空配列なら選択待ちなし */
+  levyOptions: string[];
 }
 
 /** 燠火の再点火操作を適用する（クールダウン中なら何もしない） */
@@ -252,6 +255,10 @@ const applyCardEffect = (
   } else if (card.type === 'spell' && card.spell) {
     draft.slowUntilTick = tick + card.spell.durationTicks;
     draft.slowMultiplier = card.spell.speedMultiplier;
+  } else if (card.type === 'levy' && card.levy) {
+    const peeked = peekTop(draft.deck, card.levy.peekCount);
+    draft.deck = peeked.deck;
+    draft.levyOptions = peeked.options;
   }
 };
 
@@ -273,6 +280,10 @@ const applyPlayCard = (
     return;
   }
   const card = getCardDefinition(cardId);
+  if (card.type === 'levy' && draft.levyOptions.length > 0) {
+    draft.events.push({ kind: 'rejected', reason: 'pending' });
+    return;
+  }
   if (card.cost > draft.mana) {
     draft.events.push({ kind: 'rejected', reason: 'mana' });
     return;
@@ -314,11 +325,16 @@ const applyActions = (
     embers: [...state.embers],
     blasts: [],
     freshEmberIndices: new Set<number>(),
+    levyOptions: state.levyOptions,
   };
 
   actions.forEach((action) => {
     if (action.kind === 'reactivate') {
       applyReactivate(draft, action);
+    } else if (action.kind === 'choose-levy') {
+      if (draft.levyOptions.length === 0) return;
+      draft.deck = takeFromPeek(draft.deck, draft.levyOptions, action.optionIndex);
+      draft.levyOptions = [];
     } else {
       applyPlayCard(draft, state, map, tick, action);
     }
@@ -714,6 +730,7 @@ export const stepTick = (
     slowMultiplier: afterActions.slowMultiplier,
     events,
     outcome: 'playing',
+    levyOptions: afterActions.levyOptions,
   };
 
   if (life <= 0) return { ...next, life: 0, outcome: 'lost' };

@@ -68,7 +68,7 @@ export type TickEvent =
   | { kind: 'draw'; cardId: string }
   | { kind: 'overflow'; cardId: string }
   | { kind: 'played'; cardId: string; pos?: CellPos }
-  | { kind: 'rejected'; reason: 'cooldown' | 'mana' | 'target' | 'occupied' };
+  | { kind: 'rejected'; reason: 'cooldown' | 'mana' | 'target' | 'occupied' | 'pending' };
 
 export type RunOutcome = 'playing' | 'won' | 'lost';
 
@@ -94,6 +94,8 @@ export interface CombatState {
   /** 直前の tick に起きたこと。描画とログが読む */
   events: TickEvent[];
   outcome: RunOutcome;
+  /** 徴発で提示中の候補。空配列なら選択待ちなし */
+  levyOptions: string[];
 }
 
 export const LIFE_INITIAL = 10;
@@ -122,4 +124,5 @@ export const createCombatState = (
   waves,
   events: [],
   outcome: 'playing',
+  levyOptions: [],
 });

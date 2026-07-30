@@ -10,6 +10,8 @@ import {
   drawOne,
   discardFromHand,
   shuffle,
+  peekTop,
+  takeFromPeek,
   HAND_LIMIT,
   INITIAL_HAND_SIZE,
 } from './deck';
@@ -128,5 +130,46 @@ describe('discardFromHand', () => {
   it('範囲外のインデックスは何もしない', () => {
     const deck = { drawPile: [], hand: ['a'], graveyard: [] };
     expect(discardFromHand(deck, 5)).toEqual(deck);
+  });
+});
+
+describe('peekTop / takeFromPeek（徴発）', () => {
+  it('山札の上から n 枚を取り出し、山札から除く', () => {
+    const deck = { drawPile: ['a', 'b', 'c', 'd'], hand: [], graveyard: [] };
+    const { options, deck: next } = peekTop(deck, 3);
+    expect(options).toEqual(['a', 'b', 'c']);
+    expect(next.drawPile).toEqual(['d']);
+  });
+
+  it('山札が n 枚未満なら残り全部を取り出す', () => {
+    const deck = { drawPile: ['a'], hand: [], graveyard: [] };
+    const { options, deck: next } = peekTop(deck, 3);
+    expect(options).toEqual(['a']);
+    expect(next.drawPile).toEqual([]);
+  });
+
+  it('山札が空なら候補は空', () => {
+    const deck = { drawPile: [], hand: [], graveyard: [] };
+    expect(peekTop(deck, 3).options).toEqual([]);
+  });
+
+  it('元の状態を変更しない', () => {
+    const deck = { drawPile: ['a', 'b'], hand: [], graveyard: [] };
+    peekTop(deck, 2);
+    expect(deck.drawPile).toEqual(['a', 'b']);
+  });
+
+  it('選んだ札は手札へ、残りは墓地へ', () => {
+    const deck = { drawPile: [], hand: ['x'], graveyard: ['z'] };
+    const next = takeFromPeek(deck, ['a', 'b', 'c'], 1);
+    expect(next.hand).toEqual(['x', 'b']);
+    expect(next.graveyard).toEqual(['z', 'a', 'c']);
+  });
+
+  it('範囲外のインデックスなら候補すべてを墓地へ送る', () => {
+    const deck = { drawPile: [], hand: ['x'], graveyard: [] };
+    const next = takeFromPeek(deck, ['a', 'b'], 9);
+    expect(next.hand).toEqual(['x']);
+    expect(next.graveyard).toEqual(['a', 'b']);
   });
 });

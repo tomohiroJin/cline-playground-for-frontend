@@ -88,6 +88,44 @@ export const drawOne = (deck: DeckState): DrawOutcome => {
   };
 };
 
+export interface PeekResult {
+  /** 提示する候補（山札から除かれている） */
+  options: string[];
+  deck: DeckState;
+}
+
+/**
+ * 山札の上から n 枚を取り出して候補にする（徴発）
+ *
+ * 取り出した札は山札から除く。選択が終わるまでどこにも属さない
+ * 中間状態になるため、CombatState.levyOptions が保持する。
+ */
+export const peekTop = (deck: DeckState, n: number): PeekResult => ({
+  options: deck.drawPile.slice(0, n),
+  deck: { ...deck, drawPile: deck.drawPile.slice(n) },
+});
+
+/**
+ * 候補から1枚を手札に加え、残りを墓地へ送る
+ *
+ * 徴発を出した時点で徴発自身が手札から抜けているため、
+ * 手札には必ず空きがあり上限で溢れない。
+ * 範囲外のインデックスなら全部を墓地へ送る（選択せず捨てた扱い）。
+ */
+export const takeFromPeek = (
+  deck: DeckState,
+  options: readonly string[],
+  index: number
+): DeckState => {
+  const chosen = options[index];
+  const rest = options.filter((_, i) => i !== index);
+  return {
+    ...deck,
+    hand: chosen === undefined ? deck.hand : [...deck.hand, chosen],
+    graveyard: [...deck.graveyard, ...rest],
+  };
+};
+
 /** 手札の1枚を墓地へ移す（カードを使ったとき） */
 export const discardFromHand = (deck: DeckState, handIndex: number): DeckState => {
   const card = deck.hand[handIndex];
