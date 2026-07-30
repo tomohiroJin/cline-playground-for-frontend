@@ -3,6 +3,11 @@
  *
  * 選択中もゲームは止まらない（止めると一時停止でマナを稼げる抜け道になる）。
  * したがって盤面を覆い隠さず、上部に横並びで出す。
+ *
+ * `weaknessTextOf`（`card-text.ts`）はここでは使わない。徴発は戦闘中のリアルタイム
+ * 判断で、候補3枚それぞれに弱点の一文まで出すと読む量が多すぎて選べなくなる。
+ * 弱点文言はデッキ構築画面（時間制限のない場面）で読ませるのが役割であり、
+ * ここで使わないのは意図的な設計判断である。
  */
 import React from 'react';
 import styled from 'styled-components';
@@ -47,6 +52,8 @@ export const LevyChoice: React.FC<Props> = ({ options, onChoose }) => {
       {options.map((id, index) => {
         const card = getCardDefinition(id);
         return (
+          // levyOptions は山札の上から peekCount 枚なので同じカードIDが重複しうる。
+          // id 単体では key が衝突するため index を併用する（正当な用途）。
           <Option
             key={`${id}-${index}`}
             type="button"
