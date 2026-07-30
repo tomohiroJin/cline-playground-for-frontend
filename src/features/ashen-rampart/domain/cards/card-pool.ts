@@ -1,5 +1,5 @@
 /**
- * 灰燼の城壁 - カードプール（8種）とプリセットデッキ
+ * 灰燼の城壁 - カードプール（14種）とプリセットデッキ
  *
  * 数値は設計書 §5 の値をそのまま持つ。DPS/マナは
  * 弓兵 0.375 > 弩砲 0.277 > 火砲台 0.223 で弓兵が最効率だが、
@@ -94,6 +94,54 @@ const CARDS: readonly CardDefinition[] = [
     description: '200tick のあいだ、すべての敵の足を 40% 遅くする。',
     spell: { speedMultiplier: 0.6, durationTicks: 200 },
   },
+  {
+    id: 'snare-net',
+    name: '落網',
+    type: 'trap',
+    cost: 2,
+    description: '経路に張る網。踏んだ飛行の敵を120tick 地に落とす。ダメージはない。',
+    trap: { damage: 0, uses: 3, groundedTicks: 120 },
+  },
+  {
+    id: 'stone-wall',
+    name: '石壁',
+    type: 'trap',
+    cost: 1,
+    description: '経路を塞ぐ石。踏んだ地上の敵を40tick 足止めする。ダメージはない。',
+    trap: { damage: 0, uses: 3, stunTicks: 40 },
+  },
+  {
+    id: 'catapult',
+    name: '投石機',
+    type: 'tower',
+    cost: 3,
+    description: '遠くまで届き広く砕くが、間隔は長い。飛行には当たらない。',
+    tower: { range: 3.0, damage: 8, cooldownTicks: 24, splashRadius: 2, hitsFlying: false },
+  },
+  {
+    id: 'piercer',
+    name: '徹甲弩',
+    type: 'tower',
+    cost: 3,
+    description: '硬い敵を貫く。最大HP40以上の敵には2倍。飛行も撃てるが雑兵相手は非効率。',
+    tower: {
+      range: 1.8,
+      damage: 7,
+      cooldownTicks: 10,
+      splashRadius: 0,
+      hitsFlying: true,
+      heavyBonusThreshold: 40,
+      heavyBonusMultiplier: 2,
+    },
+  },
+  {
+    id: 'levy',
+    name: '徴発',
+    type: 'levy',
+    cost: 1,
+    description: '山札の上から3枚を見て1枚を手札に加える。残りは墓地へ。',
+    levy: { peekCount: 3 },
+  },
 ];
 
 const CARD_MAP: ReadonlyMap<string, CardDefinition> = new Map(CARDS.map((c) => [c.id, c]));
@@ -127,38 +175,41 @@ const repeat = (id: string, count: number): string[] => Array.from({ length: cou
 /**
  * プリセットデッキ2種
  *
- * カード8種 × 同名3枚 = 24枚が上限のため、20枚デッキの差は
- * 魔力炉の数とコスト曲線に限られる（設計書 §5.1 の既知の限界）。
+ * 2つのプリセットで対空の答えが違う（弩砲 / 落網＋徹甲弩）ことが要点である。
+ * PoC ではどちらも弩砲を積むしかなかった。
  */
 export const PRESET_DECKS: Readonly<Record<string, PresetDeck>> = {
   swift: {
     id: 'swift',
     name: '速攻型',
-    description: '安い札を多く回す。魔力炉は2枚。',
+    description: '安い札を多く回す。対空は弩砲、群れは火砲台。',
     cards: [
       ...repeat('reactor', 2),
       ...repeat('arrow-tower', 3),
       ...repeat('ballista', 2),
       ...repeat('cannon-tower', 2),
-      ...repeat('spike-trap', 3),
-      ...repeat('mud-time', 3),
-      ...repeat('ember-blast', 3),
-      ...repeat('beacon', 2),
+      ...repeat('spike-trap', 2),
+      ...repeat('stone-wall', 2),
+      ...repeat('mud-time', 2),
+      ...repeat('ember-blast', 2),
+      ...repeat('levy', 2),
+      'beacon',
     ],
   },
   heavy: {
     id: 'heavy',
     name: '重厚型',
-    description: '高コスト札を支えるため魔力炉を3枚積む。',
+    description: '射程と特効で固める。対空は落網と徹甲弩、群れは投石機。',
     cards: [
       ...repeat('reactor', 3),
+      ...repeat('piercer', 3),
+      ...repeat('catapult', 2),
+      ...repeat('snare-net', 2),
+      ...repeat('forge', 2),
       ...repeat('arrow-tower', 2),
-      ...repeat('ballista', 3),
-      ...repeat('cannon-tower', 3),
-      ...repeat('spike-trap', 2),
-      ...repeat('mud-time', 2),
-      ...repeat('ember-blast', 3),
+      ...repeat('ember-blast', 2),
       ...repeat('beacon', 2),
+      ...repeat('levy', 2),
     ],
   },
 };

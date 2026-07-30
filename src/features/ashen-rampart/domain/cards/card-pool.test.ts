@@ -14,8 +14,8 @@ import {
 import { placementKindOf } from './card-definition';
 
 describe('カードプール', () => {
-  it('カードは9種ある', () => {
-    expect(CARD_IDS).toHaveLength(9);
+  it('カードは14種ある', () => {
+    expect(CARD_IDS).toHaveLength(14);
   });
 
   it('弓兵の塔は地上のみで DPS 0.75 になる数値を持つ', () => {
@@ -24,11 +24,6 @@ describe('カードプール', () => {
     expect(card.tower?.damage).toBe(6);
     expect(card.tower?.cooldownTicks).toBe(8);
     expect(card.tower?.hitsFlying).toBe(false);
-  });
-
-  it('弩砲だけが飛行に当たる', () => {
-    const flying = CARD_IDS.filter((id) => getCardDefinition(id).tower?.hitsFlying === true);
-    expect(flying).toEqual(['ballista']);
   });
 
   it('魔力炉はコスト0で60tickごとに1マナ生む', () => {
@@ -53,6 +48,80 @@ describe('カードプール', () => {
     expect(placementKindOf(getCardDefinition('ember-blast'))).toBe('slot');
     expect(placementKindOf(getCardDefinition('spike-trap'))).toBe('path');
     expect(placementKindOf(getCardDefinition('mud-time'))).toBe('none');
+  });
+});
+
+describe('反復1で追加したカード', () => {
+  it('カードは14種ある', () => {
+    expect(CARD_IDS).toHaveLength(14);
+  });
+
+  it('落網は飛行を地上化する罠（ダメージなし）', () => {
+    const card = getCardDefinition('snare-net');
+    expect(card.cost).toBe(2);
+    expect(card.type).toBe('trap');
+    expect(card.trap?.damage).toBe(0);
+    expect(card.trap?.uses).toBe(3);
+    expect(card.trap?.groundedTicks).toBe(120);
+    expect(card.trap?.stunTicks).toBeUndefined();
+  });
+
+  it('石壁は地上を足止めする罠（ダメージなし）', () => {
+    const card = getCardDefinition('stone-wall');
+    expect(card.cost).toBe(1);
+    expect(card.trap?.damage).toBe(0);
+    expect(card.trap?.uses).toBe(3);
+    expect(card.trap?.stunTicks).toBe(40);
+    expect(card.trap?.groundedTicks).toBeUndefined();
+  });
+
+  it('投石機は射程3.0の範囲2で、地上のみ', () => {
+    const card = getCardDefinition('catapult');
+    expect(card.cost).toBe(3);
+    expect(card.tower).toMatchObject({
+      range: 3.0,
+      damage: 8,
+      cooldownTicks: 24,
+      splashRadius: 2,
+      hitsFlying: false,
+    });
+  });
+
+  it('徹甲弩は飛行可で、HP40以上に2倍', () => {
+    const card = getCardDefinition('piercer');
+    expect(card.cost).toBe(3);
+    expect(card.tower).toMatchObject({
+      range: 1.8,
+      damage: 7,
+      cooldownTicks: 10,
+      splashRadius: 0,
+      hitsFlying: true,
+      heavyBonusThreshold: 40,
+      heavyBonusMultiplier: 2,
+    });
+  });
+
+  it('徴発は山札の上から3枚を見る即時カード', () => {
+    const card = getCardDefinition('levy');
+    expect(card.cost).toBe(1);
+    expect(card.type).toBe('levy');
+    expect(card.levy?.peekCount).toBe(3);
+  });
+
+  it('飛行に当たる塔は弩砲と徹甲弩の2種になった（必須枠の解消）', () => {
+    const flying = CARD_IDS.filter((id) => getCardDefinition(id).tower?.hitsFlying === true);
+    expect(flying.sort()).toEqual(['ballista', 'piercer']);
+  });
+
+  it('範囲攻撃を持つ塔は火砲台と投石機の2種になった', () => {
+    const splash = CARD_IDS.filter((id) => (getCardDefinition(id).tower?.splashRadius ?? 0) > 0);
+    expect(splash.sort()).toEqual(['catapult', 'cannon-tower'].sort());
+  });
+
+  it('全14種が既知の配置先種別を持つ', () => {
+    CARD_IDS.forEach((id) => {
+      expect(['slot', 'path', 'none']).toContain(placementKindOf(getCardDefinition(id)));
+    });
   });
 });
 
