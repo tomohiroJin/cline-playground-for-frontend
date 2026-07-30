@@ -8,6 +8,7 @@ import React, { StrictMode } from 'react';
 import { renderHook, act } from '@testing-library/react';
 import { useAshenRampartGame, TICK_INTERVAL_MS } from './useAshenRampartGame';
 import { getCardDefinition, PRESET_DECKS } from '../domain/cards/card-pool';
+import { placementKindOf } from '../domain/cards/card-definition';
 import { COUNTDOWN_TICKS } from '../domain/combat/combat-state';
 import type { PlayLogEventBody, PlayLogPort } from '../application/ports/play-log-port';
 
@@ -40,7 +41,12 @@ describe('useAshenRampartGame', () => {
     const { result } = renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1 }), {
       wrapper: ({ children }) => React.createElement(StrictMode, null, children),
     });
-    const towerIndex = result.current.state.deck.hand.findIndex((id) => id !== 'mud-time');
+    // 「盤面に置けて、いま払える」札を手札から探す。カード名の決め打ちだと
+    // プリセット構成を変えたときに、置けない札や払えない札を選んで偽の赤になる
+    const towerIndex = result.current.state.deck.hand.findIndex((id) => {
+      const card = getCardDefinition(id);
+      return placementKindOf(card) !== 'none' && card.cost <= result.current.state.mana;
+    });
     expect(towerIndex).toBeGreaterThanOrEqual(0);
     act(() => result.current.selectCard(towerIndex));
     const pos = result.current.placeableCells[0];
@@ -166,9 +172,10 @@ describe('useAshenRampartGame', () => {
 
   it('interactCell: 再点火可能な燠火のあるセルを選択なしでクリックすると reactivated が記録される（クールダウン中は記録されない）', () => {
     const log = createMockPlayLog();
-    // シード3は初期手札に業火（ember-blast）を2枚含む（他シードは1枚以下か0枚のため選定）
+    // シード2は速攻型プリセットの初期手札に業火（ember-blast）を2枚含む。
+    // プリセット構成を変えると該当シードも変わるため、シード番号は決め打ちの前提として扱う
     const { result } = renderHook(() =>
-      useAshenRampartGame({ cards: swiftCards(), seed: 3, playLog: log })
+      useAshenRampartGame({ cards: swiftCards(), seed: 2, playLog: log })
     );
     const emberHandIndex = result.current.state.deck.hand.findIndex((id) => id === 'ember-blast');
     expect(emberHandIndex).toBeGreaterThanOrEqual(0);

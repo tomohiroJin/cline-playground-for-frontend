@@ -31,7 +31,7 @@ describe('weaknessTextOf', () => {
     expect(weaknessTextOf('piercer')).toContain('HP');
   });
 
-  it('篝火と錬造所は常に0ダメージを示す', () => {
+  it('篝火と鍛冶場は常に0ダメージを示す', () => {
     expect(weaknessTextOf('beacon')).toContain('0ダメージ');
     expect(weaknessTextOf('forge')).toContain('0ダメージ');
   });

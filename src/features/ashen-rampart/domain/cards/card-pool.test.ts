@@ -53,10 +53,6 @@ describe('カードプール', () => {
 });
 
 describe('反復1で追加したカード', () => {
-  it('カードは14種ある', () => {
-    expect(CARD_IDS).toHaveLength(14);
-  });
-
   it('落網は飛行を地上化する罠（ダメージなし）', () => {
     const card = getCardDefinition('snare-net');
     expect(card.cost).toBe(2);

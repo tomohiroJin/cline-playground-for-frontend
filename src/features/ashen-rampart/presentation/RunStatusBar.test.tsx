@@ -33,7 +33,7 @@ describe('RunStatusBar', () => {
   });
 
   it('次ウェーブの構成が予告される', () => {
-    // Task 9 の再較正（PLAINS_WAVES 総HP 964→668・総体数 52→37、LIFE_INITIAL 10→12）により、
+    // Task 9 の再較正（PLAINS_WAVES 総HP 728・総体数 51、LIFE_INITIAL 10→12）により、
     // tick:100 時点の次ウェーブ（startTick:250）は 雑兵3 俊足2 が正しい現物値。
     render(
       <RunStatusBar
