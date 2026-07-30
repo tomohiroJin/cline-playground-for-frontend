@@ -19,6 +19,7 @@ import type { DeckState } from '../cards/deck';
 import { getCardDefinition } from '../cards/card-pool';
 import { placementKindOf, type CardDefinition } from '../cards/card-definition';
 import { getEnemySpec } from './enemies';
+import { isEnemyFlying, isEnemyStunned } from './enemy-status';
 import { DRAW_INTERVAL_TICKS, PLACE_COOLDOWN_TICKS } from './combat-state';
 import type {
   CombatState,
@@ -132,6 +133,8 @@ const spawnAt = (state: CombatState, tick: number, nextId: number): ActiveEnemy[
           spawnPathIndex: entry.spawnPathIndex,
           alive: true,
           leaked: false,
+          groundedUntilTick: 0,
+          stunnedUntilTick: 0,
         });
       }
     });
@@ -372,6 +375,7 @@ const moveEnemies = (
   return [...existing, ...spawned].map((enemy) => {
     if (!enemy.alive) return enemy;
     if (enemy.spawnTick === tick) return enemy;
+    if (isEnemyStunned(enemy, tick)) return enemy;
     const spec = getEnemySpec(enemy.enemyId);
     const cell = map.path[Math.min(Math.floor(enemy.progress), goal)];
     const terrain = cell && isSlowCell(map, cell) ? SLOW_TERRAIN_MULT : 1;
@@ -392,7 +396,8 @@ const applyTraps = (
   moved: readonly ActiveEnemy[],
   map: StageMap,
   hpById: Map<number, number>,
-  events: TickEvent[]
+  events: TickEvent[],
+  tick: number
 ): PlacedTrap[] =>
   traps.map((trap, trapIndex) => {
     if (trap.usesLeft <= 0) return trap;
@@ -402,7 +407,7 @@ const applyTraps = (
     if (!spec) return trap;
     moved.forEach((enemy) => {
       if (!enemy.alive || usesLeft <= 0) return;
-      if (getEnemySpec(enemy.enemyId).flying) return;
+      if (isEnemyFlying(enemy, tick)) return;
       if (hitEnemyIds.includes(enemy.id)) return;
       const pos = positionOf(enemy.progress, map.path);
       if (Math.hypot(pos.x - trap.pos.x, pos.y - trap.pos.y) > 0.5) return;
@@ -428,7 +433,8 @@ const applyTowerShots = (
   moved: readonly ActiveEnemy[],
   map: StageMap,
   hpById: Map<number, number>,
-  events: TickEvent[]
+  events: TickEvent[],
+  tick: number
 ): PlacedTower[] => {
   const stateForDamage: CombatState = { ...state, towers: [...towers] };
   return towers.map((tower, towerIndex) => {
@@ -436,12 +442,12 @@ const applyTowerShots = (
     if (!spec || spec.aura) return tower;
     if (tower.cooldownLeft > 0) return { ...tower, cooldownLeft: tower.cooldownLeft - 1 };
     const damage = effectiveDamage(stateForDamage, towerIndex, map);
-    const target = selectTowerTarget(tower, spec, moved, map, hpById);
+    const target = selectTowerTarget(tower, spec, moved, map, hpById, tick);
     if (!target) return tower;
     hpById.set(target.id, (hpById.get(target.id) ?? 0) - damage);
     events.push({ kind: 'shot', towerIndex, targetId: target.id });
     if (spec.splashRadius > 0) {
-      applySplashDamage(target, damage, spec, moved, map, hpById);
+      applySplashDamage(target, damage, spec, moved, map, hpById, tick);
     }
     // 発射周期をちょうど cooldownTicks tick にするため -1 する
     // （次tick以降の `cooldownLeft > 0` decrement 判定と合わせて、
@@ -459,11 +465,12 @@ const selectTowerTarget = (
   spec: NonNullable<CardDefinition['tower']>,
   moved: readonly ActiveEnemy[],
   map: StageMap,
-  hpById: ReadonlyMap<number, number>
+  hpById: ReadonlyMap<number, number>,
+  tick: number
 ): ActiveEnemy | undefined =>
   [...moved]
     .filter((e) => e.alive && (hpById.get(e.id) ?? 0) > 0)
-    .filter((e) => spec.hitsFlying || !getEnemySpec(e.enemyId).flying)
+    .filter((e) => spec.hitsFlying || !isEnemyFlying(e, tick))
     .filter((e) => {
       const pos = positionOf(e.progress, map.path);
       return Math.hypot(pos.x - tower.pos.x, pos.y - tower.pos.y) <= spec.range;
@@ -477,12 +484,13 @@ const applySplashDamage = (
   spec: NonNullable<CardDefinition['tower']>,
   moved: readonly ActiveEnemy[],
   map: StageMap,
-  hpById: Map<number, number>
+  hpById: Map<number, number>,
+  tick: number
 ): void => {
   const center = positionOf(target.progress, map.path);
   moved.forEach((other) => {
     if (other.id === target.id || !other.alive) return;
-    if (!spec.hitsFlying && getEnemySpec(other.enemyId).flying) return;
+    if (!spec.hitsFlying && isEnemyFlying(other, tick)) return;
     const pos = positionOf(other.progress, map.path);
     if (Math.hypot(pos.x - center.x, pos.y - center.y) <= spec.splashRadius) {
       hpById.set(other.id, (hpById.get(other.id) ?? 0) - damage);
@@ -501,11 +509,12 @@ const applyBlasts = (
   blasts: readonly PendingBlast[],
   moved: readonly ActiveEnemy[],
   map: StageMap,
-  hpById: Map<number, number>
+  hpById: Map<number, number>,
+  tick: number
 ): void => {
   blasts.forEach((blast) => {
     moved.forEach((enemy) => {
-      if (!enemy.alive || getEnemySpec(enemy.enemyId).flying) return;
+      if (!enemy.alive || isEnemyFlying(enemy, tick)) return;
       const pos = positionOf(enemy.progress, map.path);
       if (Math.hypot(pos.x - blast.pos.x, pos.y - blast.pos.y) <= blast.radius) {
         hpById.set(enemy.id, (hpById.get(enemy.id) ?? 0) - blast.damage);
@@ -596,9 +605,9 @@ export const stepTick = (
   // --- 罠 → 射撃 → 業火・燠火の順で hpById に下書きし、最後にまとめて反映する ---
   const hpById = new Map<number, number>();
   moved.forEach((e) => hpById.set(e.id, e.hp));
-  const traps = applyTraps(afterActions.traps, moved, map, hpById, events);
-  const towers = applyTowerShots(state, afterActions.towers, moved, map, hpById, events);
-  applyBlasts(afterActions.blasts, moved, map, hpById);
+  const traps = applyTraps(afterActions.traps, moved, map, hpById, events, tick);
+  const towers = applyTowerShots(state, afterActions.towers, moved, map, hpById, events, tick);
+  applyBlasts(afterActions.blasts, moved, map, hpById, tick);
 
   // --- ダメージ反映 → 漏れ ---
   const damaged = resolveDamage(moved, hpById, events);

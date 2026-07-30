@@ -52,6 +52,10 @@ export interface ActiveEnemy {
   spawnPathIndex: number;
   alive: boolean;
   leaked: boolean;
+  /** 地上化が切れる tick。この tick までは飛行敵も地上として扱う（落網） */
+  groundedUntilTick: number;
+  /** 足止めが切れる tick。この tick までは移動しない（石壁） */
+  stunnedUntilTick: number;
 }
 
 export type TickEvent =
