@@ -173,40 +173,44 @@ export interface PresetDeck {
 const repeat = (id: string, count: number): string[] => Array.from({ length: count }, () => id);
 
 /**
- * プリセットデッキ2種
+ * プリセットデッキ2種（14種前提の再構成。設計書 §5.1／Task 9）
  *
- * カード8種 × 同名3枚 = 24枚が上限のため、20枚デッキの差は
- * 魔力炉の数とコスト曲線に限られる（設計書 §5.1 の既知の限界）。
+ * 2つのプリセットで対空の答えが違う（速攻型＝弩砲 / 重厚型＝落網＋徹甲弩）ことが要点。
+ * PoC ではどちらも弩砲を積むしかなかった。飛行への答えを3つ、群れへの答えを2つに
+ * 増やしたことで、プリセット間の差が魔力炉の数だけにならないようにしている。
  */
 export const PRESET_DECKS: Readonly<Record<string, PresetDeck>> = {
   swift: {
     id: 'swift',
     name: '速攻型',
-    description: '安い札を多く回す。魔力炉は2枚。',
+    description: '安い札を多く回す。対空は弩砲、群れは火砲台。',
     cards: [
       ...repeat('reactor', 2),
       ...repeat('arrow-tower', 3),
       ...repeat('ballista', 2),
       ...repeat('cannon-tower', 2),
-      ...repeat('spike-trap', 3),
-      ...repeat('mud-time', 3),
-      ...repeat('ember-blast', 3),
-      ...repeat('beacon', 2),
+      ...repeat('spike-trap', 2),
+      ...repeat('stone-wall', 2),
+      ...repeat('mud-time', 2),
+      ...repeat('ember-blast', 2),
+      ...repeat('levy', 2),
+      'beacon',
     ],
   },
   heavy: {
     id: 'heavy',
     name: '重厚型',
-    description: '高コスト札を支えるため魔力炉を3枚積む。',
+    description: '射程と特効で固める。対空は落網と徹甲弩、群れは投石機。',
     cards: [
       ...repeat('reactor', 3),
+      ...repeat('piercer', 3),
+      ...repeat('catapult', 2),
+      ...repeat('snare-net', 2),
+      ...repeat('forge', 2),
       ...repeat('arrow-tower', 2),
-      ...repeat('ballista', 3),
-      ...repeat('cannon-tower', 3),
-      ...repeat('spike-trap', 2),
-      ...repeat('mud-time', 2),
-      ...repeat('ember-blast', 3),
+      ...repeat('ember-blast', 2),
       ...repeat('beacon', 2),
+      ...repeat('levy', 2),
     ],
   },
 };

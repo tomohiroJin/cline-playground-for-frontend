@@ -42,12 +42,12 @@ describe('ウェーブ構成', () => {
     expect(PLAINS_WAVES.map((w) => w.startTick)).toEqual([0, 250, 500, 750]);
   });
 
-  it('敵の総HPは設計書の較正値 964 と一致する（Task 9 較正: 詰み修正後に 1472 から再調整）', () => {
-    expect(totalEnemyHp(PLAINS_WAVES)).toBe(964);
+  it('敵の総HPは設計書の較正値 668 と一致する（Task 9 再較正: カウントダウン追加後の全滅を解消）', () => {
+    expect(totalEnemyHp(PLAINS_WAVES)).toBe(668);
   });
 
-  it('総体数は 52 体', () => {
-    expect(totalEnemyCount(PLAINS_WAVES)).toBe(52);
+  it('総体数は 37 体', () => {
+    expect(totalEnemyCount(PLAINS_WAVES)).toBe(37);
   });
 
   it('鴉だけが経路の中盤から出現する（位置のカウンター要求）', () => {

@@ -98,7 +98,8 @@ export interface CombatState {
   levyOptions: string[];
 }
 
-export const LIFE_INITIAL = 10;
+/** 初期ライフ。Task 9 の再較正で 10→12（カウントダウン追加後の全滅を解消） */
+export const LIFE_INITIAL = 12;
 export const MANA_INITIAL = 2;
 export const DRAW_INTERVAL_TICKS = 40;
 export const PLACE_COOLDOWN_TICKS = 60;
