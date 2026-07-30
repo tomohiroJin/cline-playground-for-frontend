@@ -19,11 +19,33 @@ const readExportedLog = (): PlayLogExport => {
   return JSON.parse(raw as string) as PlayLogExport;
 };
 
-/** 何も配置せずに tick を進め、決着（この preset・シードでは敗北）まで到達させる */
+/**
+ * 何も配置せずに tick を進め、決着（この preset・シードでは敗北）まで到達させる
+ *
+ * 固定 tick 数で待つと、開始カウントダウン（COUNTDOWN_TICKS）の追加やウェーブの
+ * 較正（敵数変更）でラン長が変わるたびに壊れる。決着画面の文言が現れるまで
+ * 少しずつ進めることで「何 tick で決着するか」に依存しないようにする。
+ * 上限（MAX_ADVANCE_TICKS）は現状のラン長（無配置・swift・seed1で700tick）に
+ * 十分な余裕を持たせた値。到達しなければテスト自体を失敗させる。
+ */
+const MAX_ADVANCE_TICKS = 1200;
+const ADVANCE_STEP_TICKS = 50;
+
+const isRunOver = (): boolean =>
+  screen.queryByText('砦は守られた') !== null || screen.queryByText('城壁は灰燼に帰した') !== null;
+
 const advanceUntilRunEnds = (): void => {
-  act(() => {
-    jest.advanceTimersByTime(TICK_INTERVAL_MS * 400);
-  });
+  for (let advanced = 0; advanced < MAX_ADVANCE_TICKS; advanced += ADVANCE_STEP_TICKS) {
+    if (isRunOver()) return;
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS * ADVANCE_STEP_TICKS);
+    });
+  }
+  if (!isRunOver()) {
+    throw new Error(
+      `ランが ${MAX_ADVANCE_TICKS} tick 進めても決着しませんでした（ラン長の較正を確認すること）`
+    );
+  }
 };
 
 describe('AshenRampartGame', () => {

@@ -8,6 +8,7 @@ import React, { StrictMode } from 'react';
 import { renderHook, act } from '@testing-library/react';
 import { useAshenRampartGame, TICK_INTERVAL_MS } from './useAshenRampartGame';
 import { getCardDefinition } from '../domain/cards/card-pool';
+import { COUNTDOWN_TICKS } from '../domain/combat/combat-state';
 import type { PlayLogEventBody, PlayLogPort } from '../application/ports/play-log-port';
 
 const createMockPlayLog = (): PlayLogPort & { events: PlayLogEventBody[] } => {
@@ -132,24 +133,27 @@ describe('useAshenRampartGame', () => {
     const log = createMockPlayLog();
     const { result } = renderHook(() => useAshenRampartGame(1, log));
     const previewsAtMount = log.events.filter((e) => e.kind === 'wave_preview_shown');
-    // マウント時点で最初の予告（雑兵8 俊足5）が1回だけ記録される
+    // 実際のウェーブ startTick は COUNTDOWN_TICKS ぶん後ろにずれる（開始カウントダウン、Task 7）。
+    // マウント時点（tick 0）ではウェーブ1（雑兵3）もまだ始まっていないため、
+    // 「次」の予告はウェーブ1そのものになる。
     expect(previewsAtMount).toHaveLength(1);
-    expect(previewsAtMount[0]).toMatchObject({ tick: 0, content: '雑兵8 俊足5' });
+    expect(previewsAtMount[0]).toMatchObject({ tick: 0, content: '雑兵3' });
 
-    // 次ウェーブ開始 tick（250）に到達するまでは予告が変わらないため追加記録は無い
+    // ウェーブ1開始 tick（COUNTDOWN_TICKS）に到達するまでは予告が変わらないため追加記録は無い
     act(() => {
-      jest.advanceTimersByTime(TICK_INTERVAL_MS * 249);
+      jest.advanceTimersByTime(TICK_INTERVAL_MS * (COUNTDOWN_TICKS - 1));
     });
     expect(log.events.filter((e) => e.kind === 'wave_preview_shown')).toHaveLength(1);
 
-    // tick 250 で予告が切り替わり、そのときだけ1件追加される
+    // tick が COUNTDOWN_TICKS に達すると予告がウェーブ2（雑兵3 俊足2）へ切り替わり、
+    // そのときだけ1件追加される
     act(() => {
       jest.advanceTimersByTime(TICK_INTERVAL_MS);
     });
     const previewsAfterSwitch = log.events.filter((e) => e.kind === 'wave_preview_shown');
     expect(previewsAfterSwitch).toHaveLength(2);
-    expect(previewsAfterSwitch[1]).toMatchObject({ tick: 250, content: '群れ12 雑兵5' });
-    expect(result.current.state.tick).toBe(250);
+    expect(previewsAfterSwitch[1]).toMatchObject({ tick: COUNTDOWN_TICKS, content: '雑兵3 俊足2' });
+    expect(result.current.state.tick).toBe(COUNTDOWN_TICKS);
   });
 
   it('interactCell: 再点火可能な燠火のあるセルを選択なしでクリックすると reactivated が記録される（クールダウン中は記録されない）', () => {

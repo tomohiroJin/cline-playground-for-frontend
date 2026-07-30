@@ -185,12 +185,14 @@ export const PRESET_DECKS: Readonly<Record<string, PresetDeck>> = {
     name: '速攻型',
     description: '安い札を多く回す。対空は弩砲、群れは火砲台。',
     cards: [
-      ...repeat('reactor', 2),
+      // Task 9 再較正: 魔力炉2枚では序盤の経済ペースに対しウェーブが過大で
+      // 5シード中0勝だった（実測）。heavy と同じ3枚に増やし、石壁を1枚減らして帳尻を合わせた。
+      ...repeat('reactor', 3),
       ...repeat('arrow-tower', 3),
       ...repeat('ballista', 2),
       ...repeat('cannon-tower', 2),
       ...repeat('spike-trap', 2),
-      ...repeat('stone-wall', 2),
+      ...repeat('stone-wall', 1),
       ...repeat('mud-time', 2),
       ...repeat('ember-blast', 2),
       ...repeat('levy', 2),

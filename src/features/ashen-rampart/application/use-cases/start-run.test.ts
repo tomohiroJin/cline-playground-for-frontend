@@ -44,7 +44,8 @@ describe('startRun', () => {
     const heavy = startRun('heavy', new SeededRandom(1));
     const countReactor = (cards: string[]) => cards.filter((c) => c === 'reactor').length;
     const all = (s: typeof swift) => [...s.deck.hand, ...s.deck.drawPile];
-    expect(countReactor(all(swift))).toBe(2);
+    // Task 9 再較正: swift の魔力炉を2→3枚に増やした（実測で5シード中0勝だったため）
+    expect(countReactor(all(swift))).toBe(3);
     expect(countReactor(all(heavy))).toBe(3);
   });
 
