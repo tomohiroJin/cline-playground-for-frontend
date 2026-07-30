@@ -56,6 +56,21 @@ const CARDS: readonly CardDefinition[] = [
     },
   },
   {
+    id: 'forge',
+    name: '鍛冶場',
+    type: 'tower',
+    cost: 2,
+    description: '攻撃しないが、隣接する塔の射程を +0.6 する。',
+    tower: {
+      range: 0,
+      damage: 0,
+      cooldownTicks: 0,
+      splashRadius: 0,
+      hitsFlying: false,
+      aura: { towerRangeBonus: 0.6 },
+    },
+  },
+  {
     id: 'spike-trap',
     name: '棘罠',
     type: 'trap',

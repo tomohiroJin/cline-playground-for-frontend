@@ -62,10 +62,37 @@ export const effectiveDamage = (
     if (!otherSpec?.aura) return sum;
     const adjacent =
       Math.abs(other.pos.x - tower.pos.x) <= 1 && Math.abs(other.pos.y - tower.pos.y) <= 1;
-    return adjacent ? sum + otherSpec.aura.towerDamageBonus : sum;
+    return adjacent ? sum + (otherSpec.aura.towerDamageBonus ?? 0) : sum;
   }, 0);
   const highGround = isHighGround(map, tower.pos) ? HIGH_GROUND_DAMAGE_MULT : 1;
   return Math.round(spec.damage * highGround * (1 + auraBonus));
+};
+
+/**
+ * 塔の実効射程
+ *
+ * 基礎射程 + Σ隣接オーラの射程加算。effectiveDamage と同じく、
+ * 算出責務をこの関数だけに持たせて加算の二重適用を防ぐ。
+ * オーラ塔自身は攻撃しないため 0 を返す。
+ */
+export const effectiveRange = (
+  state: CombatState,
+  towerIndex: number,
+  _map: StageMap
+): number => {
+  const tower = state.towers[towerIndex];
+  if (!tower) return 0;
+  const spec = getCardDefinition(tower.cardId).tower;
+  if (!spec || spec.aura) return 0;
+  const bonus = state.towers.reduce((sum, other) => {
+    const otherSpec = getCardDefinition(other.cardId).tower;
+    const rangeBonus = otherSpec?.aura?.towerRangeBonus;
+    if (rangeBonus === undefined) return sum;
+    const adjacent =
+      Math.abs(other.pos.x - tower.pos.x) <= 1 && Math.abs(other.pos.y - tower.pos.y) <= 1;
+    return adjacent ? sum + rangeBonus : sum;
+  }, 0);
+  return spec.range + bonus;
 };
 
 /** 進行度から補間済みの盤面座標を求める */
@@ -442,7 +469,8 @@ const applyTowerShots = (
     if (!spec || spec.aura) return tower;
     if (tower.cooldownLeft > 0) return { ...tower, cooldownLeft: tower.cooldownLeft - 1 };
     const damage = effectiveDamage(stateForDamage, towerIndex, map);
-    const target = selectTowerTarget(tower, spec, moved, map, hpById, tick);
+    const range = effectiveRange(stateForDamage, towerIndex, map);
+    const target = selectTowerTarget(tower, spec, range, moved, map, hpById, tick);
     if (!target) return tower;
     hpById.set(target.id, (hpById.get(target.id) ?? 0) - damage);
     events.push({ kind: 'shot', towerIndex, targetId: target.id });
@@ -463,6 +491,7 @@ const applyTowerShots = (
 const selectTowerTarget = (
   tower: PlacedTower,
   spec: NonNullable<CardDefinition['tower']>,
+  range: number,
   moved: readonly ActiveEnemy[],
   map: StageMap,
   hpById: ReadonlyMap<number, number>,
@@ -473,7 +502,7 @@ const selectTowerTarget = (
     .filter((e) => spec.hitsFlying || !isEnemyFlying(e, tick))
     .filter((e) => {
       const pos = positionOf(e.progress, map.path);
-      return Math.hypot(pos.x - tower.pos.x, pos.y - tower.pos.y) <= spec.range;
+      return Math.hypot(pos.x - tower.pos.x, pos.y - tower.pos.y) <= range;
     })
     .sort((a, b) => b.progress - a.progress)[0];
 

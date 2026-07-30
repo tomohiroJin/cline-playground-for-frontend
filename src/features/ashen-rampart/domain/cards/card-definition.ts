@@ -22,8 +22,13 @@ export interface TowerSpec {
   splashRadius: number;
   /** 飛行敵を攻撃できるか */
   hitsFlying: boolean;
-  /** オーラ効果（定義されていれば攻撃せず、隣接タワーを強化する） */
-  aura?: { towerDamageBonus: number };
+  /**
+   * オーラ効果（定義されていれば攻撃せず、隣接タワーを強化する）
+   *
+   * 篝火は火力、鍛冶場は射程を上げる。両方を持つカードは想定していないが、
+   * 型としては共存できる（加算されるだけで矛盾しない）。
+   */
+  aura?: { towerDamageBonus?: number; towerRangeBonus?: number };
 }
 
 /** 罠性能（経路マスに設置、踏んだ地上敵に発動） */

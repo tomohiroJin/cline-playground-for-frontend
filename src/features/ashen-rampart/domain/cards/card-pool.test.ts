@@ -14,8 +14,8 @@ import {
 import { placementKindOf } from './card-definition';
 
 describe('カードプール', () => {
-  it('カードは8種ある', () => {
-    expect(CARD_IDS).toHaveLength(8);
+  it('カードは9種ある', () => {
+    expect(CARD_IDS).toHaveLength(9);
   });
 
   it('弓兵の塔は地上のみで DPS 0.75 になる数値を持つ', () => {
