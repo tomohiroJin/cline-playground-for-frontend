@@ -4,7 +4,7 @@
  * 徹甲弩は「効率の順位が敵によって入れ替わる」ことを作るカード。
  * 雑兵（HP20）には弓兵に劣り、重装（HP60）には勝つ。
  */
-import { createCombatState } from './combat-state';
+import { createCombatState, COUNTDOWN_TICKS } from './combat-state';
 import type { CombatState, ActiveEnemy } from './combat-state';
 import { stepTick, effectiveDamage } from './step-tick';
 import { PLAINS_WAVES } from './waves';
@@ -85,7 +85,7 @@ describe('投石機', () => {
       towers: [{ cardId: 'catapult', pos: { x: 2, y: 1 }, cooldownLeft: 0 }],
     };
     let s = state;
-    for (let i = 0; i < 30; i++) s = stepTick(s, [], PLAINS_MAP);
+    for (let i = 0; i < COUNTDOWN_TICKS + 30; i++) s = stepTick(s, [], PLAINS_MAP);
     const grunt = s.enemies[0];
     expect(grunt).toBeDefined();
     expect(grunt && grunt.hp < grunt.maxHp).toBe(true);
@@ -100,7 +100,7 @@ describe('投石機', () => {
       towers: [{ cardId: 'catapult', pos: { x: 2, y: 2 }, cooldownLeft: 0 }],
     };
     let s = state;
-    for (let i = 0; i < 40; i++) s = stepTick(s, [], PLAINS_MAP);
+    for (let i = 0; i < COUNTDOWN_TICKS + 40; i++) s = stepTick(s, [], PLAINS_MAP);
     const affected = s.enemies.filter((e) => e.hp < e.maxHp || !e.alive);
     expect(affected.length).toBeGreaterThanOrEqual(3);
   });
@@ -114,7 +114,7 @@ describe('投石機', () => {
       towers: [{ cardId: 'catapult', pos: { x: 5, y: 2 }, cooldownLeft: 0 }],
     };
     let s = state;
-    for (let i = 0; i < 30; i++) s = stepTick(s, [], PLAINS_MAP);
+    for (let i = 0; i < COUNTDOWN_TICKS + 30; i++) s = stepTick(s, [], PLAINS_MAP);
     const raven = s.enemies[0];
     expect(raven).toBeDefined();
     expect(raven?.hp).toBe(raven?.maxHp);

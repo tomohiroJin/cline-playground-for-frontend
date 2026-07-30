@@ -4,7 +4,7 @@
  * 落網は飛行にのみ発動し、石壁は地上にのみ発動する。
  * 既存の棘罠（地上にダメージ）と合わせて、罠の対象判定が3種類になる。
  */
-import { createCombatState } from './combat-state';
+import { createCombatState, COUNTDOWN_TICKS } from './combat-state';
 import type { CombatState, PlacedTrap } from './combat-state';
 import { stepTick } from './step-tick';
 import { isEnemyFlying, isEnemyStunned } from './enemy-status';
@@ -37,7 +37,7 @@ describe('落網（飛行を地上化）', () => {
       ...createCombatState(emptyDeck, waveOf('raven', 5)),
       traps: [trap('snare-net', 4, 2)],
     };
-    const after = advance(state, 5);
+    const after = advance(state, COUNTDOWN_TICKS + 5);
     const raven = after.enemies[0];
     expect(raven).toBeDefined();
     expect(after.traps[0]?.usesLeft).toBe(2);
@@ -50,10 +50,11 @@ describe('落網（飛行を地上化）', () => {
       traps: [trap('snare-net', 4, 2)],
     };
     // 鴉は経路 index 5 = (4,2) にスポーンし、罠 snare-net もその位置に置くため、
-    // 出現した最初の tick（tick=1）で即座に罠へ接触する。よって捕獲 tick は
-    // 常に 1 tick 目であり、caught.tick と一致させるには advance を1回に留める
-    // （3回進めてしまうと caught.tick が捕獲 tick とずれ、式の意味が崩れる）。
-    const caught = advance(state, 1);
+    // 出現した最初の tick（ウェーブの startTick が COUNTDOWN_TICKS ぶんずれた後の
+    // tick = COUNTDOWN_TICKS + 1）で即座に罠へ接触する。よって捕獲 tick は
+    // 常にその 1 tick 目であり、caught.tick と一致させるには advance をその回数に留める
+    // （それ以上進めてしまうと caught.tick が捕獲 tick とずれ、式の意味が崩れる）。
+    const caught = advance(state, COUNTDOWN_TICKS + 1);
     const raven = caught.enemies[0];
     expect(raven).toBeDefined();
     expect(raven?.groundedUntilTick).toBe(caught.tick + 120 - 1);
@@ -64,7 +65,7 @@ describe('落網（飛行を地上化）', () => {
       ...createCombatState(emptyDeck, waveOf('grunt', 0)),
       traps: [trap('snare-net', 1, 3)],
     };
-    const after = advance(state, 30);
+    const after = advance(state, COUNTDOWN_TICKS + 30);
     expect(after.traps[0]?.usesLeft).toBe(3);
   });
 
@@ -73,7 +74,7 @@ describe('落網（飛行を地上化）', () => {
       ...createCombatState(emptyDeck, waveOf('raven', 5)),
       traps: [trap('snare-net', 4, 2)],
     };
-    const after = advance(state, 5);
+    const after = advance(state, COUNTDOWN_TICKS + 5);
     const raven = after.enemies[0];
     expect(raven).toBeDefined();
     expect(raven?.hp).toBe(raven?.maxHp);
@@ -86,7 +87,7 @@ describe('石壁（地上を足止め）', () => {
       ...createCombatState(emptyDeck, waveOf('grunt', 0)),
       traps: [trap('stone-wall', 1, 3)],
     };
-    const after = advance(state, 15);
+    const after = advance(state, COUNTDOWN_TICKS + 15);
     const grunt = after.enemies[0];
     expect(grunt).toBeDefined();
     expect(after.traps[0]?.usesLeft).toBe(2);
@@ -98,7 +99,7 @@ describe('石壁（地上を足止め）', () => {
       ...createCombatState(emptyDeck, waveOf('grunt', 0)),
       traps: [trap('stone-wall', 1, 3)],
     };
-    const caught = advance(state, 15);
+    const caught = advance(state, COUNTDOWN_TICKS + 15);
     const progressWhenCaught = caught.enemies[0]?.progress;
     expect(progressWhenCaught).toBeDefined();
     const after = advance(caught, 20);
@@ -110,7 +111,7 @@ describe('石壁（地上を足止め）', () => {
       ...createCombatState(emptyDeck, waveOf('raven', 5)),
       traps: [trap('stone-wall', 4, 2)],
     };
-    const after = advance(state, 10);
+    const after = advance(state, COUNTDOWN_TICKS + 10);
     expect(after.traps[0]?.usesLeft).toBe(3);
   });
 
@@ -119,7 +120,7 @@ describe('石壁（地上を足止め）', () => {
       ...createCombatState(emptyDeck, waveOf('grunt', 0)),
       traps: [trap('stone-wall', 1, 3)],
     };
-    const after = advance(state, 15);
+    const after = advance(state, COUNTDOWN_TICKS + 15);
     const grunt = after.enemies[0];
     expect(grunt).toBeDefined();
     expect(grunt?.hp).toBe(grunt?.maxHp);
@@ -132,7 +133,7 @@ describe('棘罠（既存の回帰）', () => {
       ...createCombatState(emptyDeck, waveOf('grunt', 0)),
       traps: [trap('spike-trap', 1, 3)],
     };
-    const afterGround = advance(ground, 15);
+    const afterGround = advance(ground, COUNTDOWN_TICKS + 15);
     const grunt = afterGround.enemies[0];
     expect(grunt).toBeDefined();
     expect(grunt && grunt.hp < grunt.maxHp).toBe(true);
@@ -141,7 +142,7 @@ describe('棘罠（既存の回帰）', () => {
       ...createCombatState(emptyDeck, waveOf('raven', 5)),
       traps: [trap('spike-trap', 4, 2)],
     };
-    const afterAir = advance(air, 10);
+    const afterAir = advance(air, COUNTDOWN_TICKS + 10);
     expect(afterAir.traps[0]?.usesLeft).toBe(3);
   });
 });

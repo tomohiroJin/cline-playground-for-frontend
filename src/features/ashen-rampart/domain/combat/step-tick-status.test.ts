@@ -4,7 +4,7 @@
  * 飛行判定は4経路（射撃・範囲・罠・業火）から呼ばれる。
  * 1箇所でも漏れると矛盾が起きるため、経路ごとに個別に検証する。
  */
-import { createCombatState } from './combat-state';
+import { createCombatState, COUNTDOWN_TICKS } from './combat-state';
 import type { CombatState } from './combat-state';
 import { stepTick } from './step-tick';
 import type { WaveDefinition } from './waves';
@@ -25,7 +25,8 @@ const advance = (state: CombatState, n: number): CombatState => {
 
 /** 鴉を出現させたうえで地上化を掛けた状態を作る */
 const groundedRaven = (until: number): CombatState => {
-  const spawned = advance(createCombatState(emptyDeck, ravenWave), 1);
+  // ウェーブの startTick は COUNTDOWN_TICKS ぶんずれているため、出現まで進める tick 数もずらす
+  const spawned = advance(createCombatState(emptyDeck, ravenWave), COUNTDOWN_TICKS + 1);
   const raven = spawned.enemies[0];
   expect(raven).toBeDefined();
   return {
@@ -47,7 +48,7 @@ describe('地上化した飛行敵に地上専用の攻撃が当たる', () => {
   });
 
   it('罠: 棘罠（地上のみ）が地上化した鴉に発動する', () => {
-    const spawned = advance(createCombatState(emptyDeck, ravenWave), 1);
+    const spawned = advance(createCombatState(emptyDeck, ravenWave), COUNTDOWN_TICKS + 1);
     const state: CombatState = {
       ...spawned,
       enemies: spawned.enemies.map((e) => ({ ...e, groundedUntilTick: 400 })),
@@ -59,8 +60,9 @@ describe('地上化した飛行敵に地上専用の攻撃が当たる', () => {
   });
 
   it('地上化が切れると弓兵は当てられなくなる', () => {
+    // 出現 tick が COUNTDOWN_TICKS ぶんずれたため、猶予も同じぶん後ろにずらす
     const state: CombatState = {
-      ...groundedRaven(3),
+      ...groundedRaven(COUNTDOWN_TICKS + 3),
       towers: [{ cardId: 'arrow-tower', pos: { x: 5, y: 2 }, cooldownLeft: 0 }],
     };
     // 地上化が切れた後の HP を基準に、さらに進めても減らないことを見る
@@ -77,10 +79,11 @@ describe('足止め', () => {
     const gruntWave: WaveDefinition[] = [
       { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, spawnPathIndex: 0 }] },
     ];
-    const spawned = advance(createCombatState(emptyDeck, gruntWave), 1);
+    const spawned = advance(createCombatState(emptyDeck, gruntWave), COUNTDOWN_TICKS + 1);
     const stunned: CombatState = {
       ...spawned,
-      enemies: spawned.enemies.map((e) => ({ ...e, stunnedUntilTick: 100 })),
+      // 出現 tick が COUNTDOWN_TICKS ぶんずれたため、足止め猶予も同じぶん後ろにずらす
+      enemies: spawned.enemies.map((e) => ({ ...e, stunnedUntilTick: COUNTDOWN_TICKS + 100 })),
     };
     const before = stunned.enemies[0]?.progress;
     expect(before).toBeDefined();
@@ -92,10 +95,11 @@ describe('足止め', () => {
     const gruntWave: WaveDefinition[] = [
       { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, spawnPathIndex: 0 }] },
     ];
-    const spawned = advance(createCombatState(emptyDeck, gruntWave), 1);
+    const spawned = advance(createCombatState(emptyDeck, gruntWave), COUNTDOWN_TICKS + 1);
     const stunned: CombatState = {
       ...spawned,
-      enemies: spawned.enemies.map((e) => ({ ...e, stunnedUntilTick: 5 })),
+      // 出現 tick が COUNTDOWN_TICKS ぶんずれたため、足止め猶予も同じぶん後ろにずらす
+      enemies: spawned.enemies.map((e) => ({ ...e, stunnedUntilTick: COUNTDOWN_TICKS + 5 })),
     };
     const atEnd = advance(stunned, 5);
     const progressAtEnd = atEnd.enemies[0]?.progress;

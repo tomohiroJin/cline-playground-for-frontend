@@ -103,6 +103,20 @@ export const MANA_INITIAL = 2;
 export const DRAW_INTERVAL_TICKS = 40;
 export const PLACE_COOLDOWN_TICKS = 60;
 
+/**
+ * 開始カウントダウンの長さ（tick）
+ *
+ * 3 → 2 → 1 を各 30 tick で表示する。この間、敵は出現しないが
+ * マナ生成・ドロー・配置は動く（初手を置く猶予にするため）。
+ * 実装は「ウェーブの startTick をこのぶんずらす」ことで行い、
+ * spawnAt / isCleared の tick 計算には一切手を入れない。
+ */
+export const COUNTDOWN_TICKS = 90;
+
+/** その tick 時点でカウントダウンの残り（0 なら開始済み） */
+export const countdownLeftAt = (tick: number): number =>
+  Math.max(0, COUNTDOWN_TICKS - tick);
+
 /** ラン開始時の戦闘状態を作る */
 export const createCombatState = (
   deck: DeckState,
@@ -121,7 +135,9 @@ export const createCombatState = (
   enemies: [],
   slowUntilTick: 0,
   slowMultiplier: 1,
-  waves,
+  // カウントダウンぶんウェーブ全体を後ろにずらす。
+  // これにより出現も勝利判定も自然に止まる（fencepost 論理は不変）。
+  waves: waves.map((w) => ({ ...w, startTick: w.startTick + COUNTDOWN_TICKS })),
   events: [],
   outcome: 'playing',
   levyOptions: [],
