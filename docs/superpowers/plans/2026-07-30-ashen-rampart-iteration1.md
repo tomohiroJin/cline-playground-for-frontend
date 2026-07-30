@@ -2138,10 +2138,9 @@ describe('startRun（既存署名の維持）', () => {
 });
 
 describe('createSeed', () => {
-  it('呼ぶたびに異なる値を返す', () => {
-    const seeds = new Set(Array.from({ length: 20 }, () => createSeed()));
-    // 20回のうち少なくとも大半が異なる（同一ミリ秒の衝突を許容）
-    expect(seeds.size).toBeGreaterThan(10);
+  it('連続で呼んでも必ず異なる値を返す（同一ミリ秒でも衝突しない）', () => {
+    const seeds = Array.from({ length: 50 }, () => createSeed());
+    expect(new Set(seeds).size).toBe(50);
   });
 
   it('正の整数を返す（SeededRandom に渡せる形）', () => {
@@ -2181,7 +2180,15 @@ import { PLAINS_WAVES } from '../../domain/combat/waves';
  * 毎ラン同じドロー順になっていた（計測のための仕様が遊びを壊していた）。
  * 判定が終わったので既定を可変にする。固定はデバッグと反証条件の検証用に残す。
  */
-export const createSeed = (): number => Date.now() % 2147483647 || 1;
+let seedCounter = 0;
+
+export const createSeed = (): number => {
+  // 同一ミリ秒での連続呼び出しでも衝突しないようカウンタを混ぜる。
+  // Date.now() だけだとタイトなループで同じ値が返り、
+  // 「毎ラン新しいシード」が成立しない。
+  seedCounter = (seedCounter + 1) % 100000;
+  return ((Date.now() % 2147483647) * 100000 + seedCounter) % 2147483647 || 1;
+};
 
 /** 任意のカード配列からランを開始する。構築規則を満たさないデッキは契約違反 */
 export const startRunWithDeck = (
@@ -3122,18 +3129,22 @@ describe('反復1: デッキ・シード・徴発', () => {
     expect(started[0]?.deckCards).toHaveLength(20);
   });
 
-  it('シードを省略すると毎回異なるシードで始まる', () => {
+  it('シードを明示すると2ランで同じ山札になる（再現性）', () => {
+    const cards = [...PRESET_DECKS.swift!.cards];
+    const a = renderHook(() => useAshenRampartGame({ cards, seed: 99 }));
+    const b = renderHook(() => useAshenRampartGame({ cards, seed: 99 }));
+    expect(a.result.current.runSeed).toBe(99);
+    expect(b.result.current.runSeed).toBe(99);
+    expect(a.result.current.state.deck.drawPile).toEqual(b.result.current.state.deck.drawPile);
+  });
+
+  it('シードを省略すると2ランで異なるシードになる（毎ラン可変）', () => {
     const cards = [...PRESET_DECKS.swift!.cards];
     const a = renderHook(() => useAshenRampartGame({ cards }));
     const b = renderHook(() => useAshenRampartGame({ cards }));
-    // 同一ミリ秒の衝突はありうるが、山札の並びが常に同一ではないことを見る
-    const same = JSON.stringify(a.result.current.state.deck.drawPile) ===
-      JSON.stringify(b.result.current.state.deck.drawPile);
-    expect(typeof a.result.current.runSeed).toBe('number');
-    expect(typeof b.result.current.runSeed).toBe('number');
-    // シード値そのものが取得できることを保証する（並びの一致は許容）
+    // createSeed はカウンタを混ぜるため同一ミリ秒でも衝突しない
+    expect(a.result.current.runSeed).not.toBe(b.result.current.runSeed);
     expect(a.result.current.runSeed).toBeGreaterThan(0);
-    expect(same || a.result.current.runSeed !== b.result.current.runSeed).toBe(true);
   });
 
   it('徴発を出すと候補が出て、選ぶと手札に入る', () => {
