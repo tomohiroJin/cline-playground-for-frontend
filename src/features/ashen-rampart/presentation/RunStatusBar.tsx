@@ -37,6 +37,16 @@ const PauseButton = styled.button`
   cursor: pointer;
 `;
 
+const SeedField = styled.input`
+  min-height: 32px;
+  width: 90px;
+  padding: 0 6px;
+  background: transparent;
+  color: ${COLORS.secondary};
+  border: 1px solid ${COLORS.secondary};
+  border-radius: 4px;
+`;
+
 /** ライフがこの値以下で危険表示に切り替える */
 const DANGER_LIFE = 3;
 
@@ -44,9 +54,11 @@ interface Props {
   state: CombatState;
   isPaused: boolean;
   onTogglePause: () => void;
+  /** 現在のランのシード。設計書 §4「常時表示・再現できることが分かる形で」に対応 */
+  runSeed: number;
 }
 
-export const RunStatusBar: React.FC<Props> = ({ state, isPaused, onTogglePause }) => {
+export const RunStatusBar: React.FC<Props> = ({ state, isPaused, onTogglePause, runSeed }) => {
   const preview = nextWavePreview(state);
   const danger = state.life <= DANGER_LIFE;
 
@@ -57,6 +69,16 @@ export const RunStatusBar: React.FC<Props> = ({ state, isPaused, onTogglePause }
       </span>
       {danger && <span>危険</span>}
       <span>次: {preview}</span>
+      <span>
+        <label htmlFor="ashen-rampart-run-seed">シード</label>
+        <SeedField
+          id="ashen-rampart-run-seed"
+          type="text"
+          readOnly
+          value={String(runSeed)}
+          onFocus={(event) => event.currentTarget.select()}
+        />
+      </span>
       <PauseButton type="button" onClick={onTogglePause}>
         {isPaused ? '再開' : '一時停止'}
       </PauseButton>

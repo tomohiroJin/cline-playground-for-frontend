@@ -55,6 +55,11 @@ export const greedyStrategy: Strategy = (state, map) => {
   state.embers.forEach((ember, emberIndex) => {
     if (ember.cooldownLeft === 0) actions.push({ kind: 'reactivate', emberIndex });
   });
+  // 徴発の候補を放置すると山札が減り続けて実質デッキが痩せるため、
+  // 常に先頭を選ぶ。候補を評価して選ぶ賢い戦略にはしない（下限を測る道具のため）。
+  if (state.levyOptions.length > 0) {
+    actions.push({ kind: 'choose-levy', optionIndex: 0 });
+  }
   if (state.placeCooldown > 0) return actions;
 
   for (let handIndex = 0; handIndex < state.deck.hand.length; handIndex++) {

@@ -6,10 +6,17 @@
  */
 
 /** 現在の反復番号。反復を進めるたびに必ず更新する */
-export const CURRENT_ITERATION = 0;
+export const CURRENT_ITERATION = 1;
 
 export type PlayLogEventBody =
-  | { kind: 'run_started'; runId: string; iteration: number; seed: number; presetId: string }
+  | {
+      kind: 'run_started';
+      runId: string;
+      iteration: number;
+      seed: number;
+      /** 使用したデッキのカードID列（判定項目2「使われなかったカード種」の分母） */
+      deckCards: string[];
+    }
   | { kind: 'card_drawn'; runId: string; cardId: string; tick: number }
   | { kind: 'card_played'; runId: string; cardId: string; tick: number; mana: number; x?: number; y?: number }
   | { kind: 'card_discarded_overflow'; runId: string; cardId: string; tick: number }

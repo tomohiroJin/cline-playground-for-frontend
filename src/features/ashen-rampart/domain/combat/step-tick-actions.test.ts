@@ -4,8 +4,8 @@
  * 「排他的な選択」（配置クールダウン）と「代償」（マナ・スロット消費）は
  * 仮説の必要条件そのものであり、ここが緩むと配分が発生しない（設計書 §4.1）。
  */
-import { createCombatState, PLACE_COOLDOWN_TICKS, MANA_INITIAL } from './combat-state';
-import type { CombatState, PlacedTower } from './combat-state';
+import { createCombatState, PLACE_COOLDOWN_TICKS, MANA_INITIAL, COUNTDOWN_TICKS } from './combat-state';
+import type { CombatState, PlacedTower, ActiveEnemy } from './combat-state';
 import { stepTick, canPlaceAt, effectiveDamage } from './step-tick';
 import type { WaveDefinition } from './waves';
 import { PLAINS_MAP } from '../board/stage-map';
@@ -13,6 +13,21 @@ import { getCardDefinition } from '../cards/card-pool';
 import { getEnemySpec } from './enemies';
 
 const noWave: WaveDefinition[] = [{ startTick: 9999, entries: [] }];
+
+/** effectiveDamage の対象引数用ダミー（特効を持たない塔のテストでは値は結果に影響しない） */
+const dummyTarget: ActiveEnemy = {
+  id: 0,
+  enemyId: 'grunt',
+  hp: 20,
+  maxHp: 20,
+  progress: 0,
+  spawnTick: 0,
+  spawnPathIndex: 0,
+  alive: true,
+  leaked: false,
+  groundedUntilTick: 0,
+  stunnedUntilTick: 0,
+};
 
 const stateWithHand = (hand: string[]): CombatState =>
   createCombatState({ drawPile: [], hand, graveyard: [] }, noWave);
@@ -126,13 +141,15 @@ describe('カード配置', () => {
       { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, spawnPathIndex: 0 }] },
     ];
     let state = createCombatState({ drawPile: [], hand: ['mud-time'], graveyard: [] }, wave);
-    state = stepTick(state, [], PLAINS_MAP); // tick1: 出現（出現した tick は移動しない）
-    state = stepTick(state, [], PLAINS_MAP); // tick2: 通常速度で1 tick 移動
+    // ウェーブの startTick が COUNTDOWN_TICKS ぶんずれるため、出現まで空 tick を進める
+    for (let i = 0; i < COUNTDOWN_TICKS; i++) state = stepTick(state, [], PLAINS_MAP);
+    state = stepTick(state, [], PLAINS_MAP); // tick=COUNTDOWN_TICKS+1: 出現（出現した tick は移動しない）
+    state = stepTick(state, [], PLAINS_MAP); // 通常速度で1 tick 移動
     const speed = getEnemySpec('grunt').speed;
     const baseline = state.enemies[0]?.progress ?? 0;
     expect(baseline).toBeCloseTo(speed, 5);
 
-    state = play(state, 0); // tick3: 時泥を発動。同じ tick から減速が適用される
+    state = play(state, 0); // 時泥を発動。同じ tick から減速が適用される
     const slowMultiplier = getCardDefinition('mud-time').spell?.speedMultiplier ?? 1;
     const expected = baseline + speed * slowMultiplier;
     expect(state.enemies[0]?.progress).toBeCloseTo(expected, 5);
@@ -143,7 +160,8 @@ describe('カード配置', () => {
       { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, spawnPathIndex: 0 }] },
     ];
     let state = createCombatState({ drawPile: [], hand: ['ember-blast'], graveyard: [] }, wave);
-    state = stepTick(state, [], PLAINS_MAP); // 敵を出現させる
+    // ウェーブの startTick が COUNTDOWN_TICKS ぶんずれるため、出現まで進める
+    for (let i = 0; i < COUNTDOWN_TICKS + 1; i++) state = stepTick(state, [], PLAINS_MAP); // 敵を出現させる
     const after = stepTick(state, [{ kind: 'play-card', handIndex: 0, pos: { x: 1, y: 2 } }], PLAINS_MAP);
     expect(after.embers).toHaveLength(1);
     expect(after.enemies[0]?.hp).toBe(12); // 20 - 8
@@ -154,7 +172,9 @@ describe('カード配置', () => {
     const wave: WaveDefinition[] = [
       { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, spawnPathIndex: 1 }] },
     ];
-    const state = createCombatState({ drawPile: [], hand: ['arrow-tower'], graveyard: [] }, wave);
+    let state = createCombatState({ drawPile: [], hand: ['arrow-tower'], graveyard: [] }, wave);
+    // ウェーブの startTick が COUNTDOWN_TICKS ぶんずれるため、出現 tick と play tick を合わせる
+    for (let i = 0; i < COUNTDOWN_TICKS; i++) state = stepTick(state, [], PLAINS_MAP);
     const after = play(state, 0, { x: 1, y: 2 });
     const enemy = after.enemies[0];
     expect(enemy).toBeDefined();
@@ -166,17 +186,19 @@ describe('カード配置', () => {
       { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, spawnPathIndex: 1 }] },
     ];
     const existingTower: PlacedTower = { cardId: 'arrow-tower', pos: { x: 1, y: 2 }, cooldownLeft: 0 };
-    const state: CombatState = {
+    let state: CombatState = {
       ...createCombatState({ drawPile: [], hand: ['beacon'], graveyard: [] }, wave),
       towers: [existingTower],
     };
+    // ウェーブの startTick が COUNTDOWN_TICKS ぶんずれるため、出現 tick と play tick を合わせる
+    for (let i = 0; i < COUNTDOWN_TICKS; i++) state = stepTick(state, [], PLAINS_MAP);
     const after = play(state, 0, { x: 2, y: 2 }); // 篝火を隣接スロットに配置
     expect(after.towers).toHaveLength(2);
     const enemy = after.enemies[0];
     expect(enemy).toBeDefined();
     // round(6 × 1.25) = 8 を同 tick で受ける（二重計上なら round(6×1.25×1.25)=9 になるはず）
     expect(enemy?.hp).toBe(12); // 20 - 8
-    expect(effectiveDamage(after, 0, PLAINS_MAP)).toBe(8);
+    expect(effectiveDamage(after, 0, PLAINS_MAP, dummyTarget)).toBe(8);
   });
 });
 

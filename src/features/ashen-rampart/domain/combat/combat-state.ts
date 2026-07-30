@@ -52,6 +52,10 @@ export interface ActiveEnemy {
   spawnPathIndex: number;
   alive: boolean;
   leaked: boolean;
+  /** 地上化が切れる tick。この tick までは飛行敵も地上として扱う（落網） */
+  groundedUntilTick: number;
+  /** 足止めが切れる tick。この tick までは移動しない（石壁） */
+  stunnedUntilTick: number;
 }
 
 export type TickEvent =
@@ -64,7 +68,7 @@ export type TickEvent =
   | { kind: 'draw'; cardId: string }
   | { kind: 'overflow'; cardId: string }
   | { kind: 'played'; cardId: string; pos?: CellPos }
-  | { kind: 'rejected'; reason: 'cooldown' | 'mana' | 'target' | 'occupied' };
+  | { kind: 'rejected'; reason: 'cooldown' | 'mana' | 'target' | 'occupied' | 'pending' };
 
 export type RunOutcome = 'playing' | 'won' | 'lost';
 
@@ -90,12 +94,29 @@ export interface CombatState {
   /** 直前の tick に起きたこと。描画とログが読む */
   events: TickEvent[];
   outcome: RunOutcome;
+  /** 徴発で提示中の候補。空配列なら選択待ちなし */
+  levyOptions: string[];
 }
 
-export const LIFE_INITIAL = 10;
+/** 初期ライフ。Task 9 の再較正で 10→12（カウントダウン追加後の全滅を解消） */
+export const LIFE_INITIAL = 12;
 export const MANA_INITIAL = 2;
 export const DRAW_INTERVAL_TICKS = 40;
 export const PLACE_COOLDOWN_TICKS = 60;
+
+/**
+ * 開始カウントダウンの長さ（tick）
+ *
+ * 3 → 2 → 1 を各 30 tick で表示する。この間、敵は出現しないが
+ * マナ生成・ドロー・配置は動く（初手を置く猶予にするため）。
+ * 実装は「ウェーブの startTick をこのぶんずらす」ことで行い、
+ * spawnAt / isCleared の tick 計算には一切手を入れない。
+ */
+export const COUNTDOWN_TICKS = 90;
+
+/** その tick 時点でカウントダウンの残り（0 なら開始済み） */
+export const countdownLeftAt = (tick: number): number =>
+  Math.max(0, COUNTDOWN_TICKS - tick);
 
 /** ラン開始時の戦闘状態を作る */
 export const createCombatState = (
@@ -115,7 +136,10 @@ export const createCombatState = (
   enemies: [],
   slowUntilTick: 0,
   slowMultiplier: 1,
-  waves,
+  // カウントダウンぶんウェーブ全体を後ろにずらす。
+  // これにより出現も勝利判定も自然に止まる（fencepost 論理は不変）。
+  waves: waves.map((w) => ({ ...w, startTick: w.startTick + COUNTDOWN_TICKS })),
   events: [],
   outcome: 'playing',
+  levyOptions: [],
 });

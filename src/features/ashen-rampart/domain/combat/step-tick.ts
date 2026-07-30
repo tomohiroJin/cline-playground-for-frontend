@@ -14,11 +14,12 @@
  */
 import type { CellPos, StageMap } from '../board/stage-map';
 import { isSlowCell, isHighGround } from '../board/stage-map';
-import { drawOne, discardFromHand } from '../cards/deck';
+import { drawOne, discardFromHand, peekTop, takeFromPeek } from '../cards/deck';
 import type { DeckState } from '../cards/deck';
 import { getCardDefinition } from '../cards/card-pool';
 import { placementKindOf, type CardDefinition } from '../cards/card-definition';
 import { getEnemySpec } from './enemies';
+import { isEnemyFlying, isEnemyStunned } from './enemy-status';
 import { DRAW_INTERVAL_TICKS, PLACE_COOLDOWN_TICKS } from './combat-state';
 import type {
   CombatState,
@@ -33,7 +34,8 @@ import type {
 /** プレイヤーがその tick に行った操作 */
 export type PlayerAction =
   | { kind: 'play-card'; handIndex: number; pos?: CellPos }
-  | { kind: 'reactivate'; emberIndex: number };
+  | { kind: 'reactivate'; emberIndex: number }
+  | { kind: 'choose-levy'; optionIndex: number };
 
 /** 滞留セル上の移動量倍率 */
 export const SLOW_TERRAIN_MULT = 0.6;
@@ -44,13 +46,15 @@ export const HIGH_GROUND_DAMAGE_MULT = 1.3;
 /**
  * 塔の実効ダメージ
  *
- * round(基礎 × 高台倍率 × (1 + Σ隣接オーラ))。倍率の二重適用を避けるため
- * この関数だけがダメージ算出の責務を持つ。
+ * round(基礎 × 重装特効 × 高台倍率 × (1 + Σ隣接オーラ))。
+ * 特効は対象の**最大HP**で判定する（現在HPだと削るほど弱くなり直感に反する）。
+ * 倍率の二重適用を避けるため、この関数だけがダメージ算出の責務を持つ。
  */
 export const effectiveDamage = (
   state: CombatState,
   towerIndex: number,
-  map: StageMap
+  map: StageMap,
+  target: ActiveEnemy
 ): number => {
   const tower = state.towers[towerIndex];
   if (!tower) return 0;
@@ -58,13 +62,44 @@ export const effectiveDamage = (
   if (!spec || spec.aura) return 0;
   const auraBonus = state.towers.reduce((sum, other) => {
     const otherSpec = getCardDefinition(other.cardId).tower;
-    if (!otherSpec?.aura) return sum;
+    const damageBonus = otherSpec?.aura?.towerDamageBonus;
+    if (damageBonus === undefined) return sum;
     const adjacent =
       Math.abs(other.pos.x - tower.pos.x) <= 1 && Math.abs(other.pos.y - tower.pos.y) <= 1;
-    return adjacent ? sum + otherSpec.aura.towerDamageBonus : sum;
+    return adjacent ? sum + damageBonus : sum;
   }, 0);
   const highGround = isHighGround(map, tower.pos) ? HIGH_GROUND_DAMAGE_MULT : 1;
-  return Math.round(spec.damage * highGround * (1 + auraBonus));
+  const threshold = spec.heavyBonusThreshold;
+  const heavy =
+    threshold !== undefined && target.maxHp >= threshold ? (spec.heavyBonusMultiplier ?? 1) : 1;
+  return Math.round(spec.damage * heavy * highGround * (1 + auraBonus));
+};
+
+/**
+ * 塔の実効射程
+ *
+ * 基礎射程 + Σ隣接オーラの射程加算。effectiveDamage と同じく、
+ * 算出責務をこの関数だけに持たせて加算の二重適用を防ぐ。
+ * オーラ塔自身は攻撃しないため 0 を返す。
+ */
+export const effectiveRange = (
+  state: CombatState,
+  towerIndex: number,
+  _map: StageMap
+): number => {
+  const tower = state.towers[towerIndex];
+  if (!tower) return 0;
+  const spec = getCardDefinition(tower.cardId).tower;
+  if (!spec || spec.aura) return 0;
+  const bonus = state.towers.reduce((sum, other) => {
+    const otherSpec = getCardDefinition(other.cardId).tower;
+    const rangeBonus = otherSpec?.aura?.towerRangeBonus;
+    if (rangeBonus === undefined) return sum;
+    const adjacent =
+      Math.abs(other.pos.x - tower.pos.x) <= 1 && Math.abs(other.pos.y - tower.pos.y) <= 1;
+    return adjacent ? sum + rangeBonus : sum;
+  }, 0);
+  return spec.range + bonus;
 };
 
 /** 進行度から補間済みの盤面座標を求める */
@@ -132,6 +167,8 @@ const spawnAt = (state: CombatState, tick: number, nextId: number): ActiveEnemy[
           spawnPathIndex: entry.spawnPathIndex,
           alive: true,
           leaked: false,
+          groundedUntilTick: 0,
+          stunnedUntilTick: 0,
         });
       }
     });
@@ -178,6 +215,8 @@ interface ActionsDraft {
   blasts: PendingBlast[];
   /** この tick に配置・再点火した燠火の index（クールダウン減算の対象外にする） */
   freshEmberIndices: Set<number>;
+  /** 徴発で提示中の候補。空配列なら選択待ちなし */
+  levyOptions: string[];
 }
 
 /** 燠火の再点火操作を適用する（クールダウン中なら何もしない） */
@@ -216,6 +255,10 @@ const applyCardEffect = (
   } else if (card.type === 'spell' && card.spell) {
     draft.slowUntilTick = tick + card.spell.durationTicks;
     draft.slowMultiplier = card.spell.speedMultiplier;
+  } else if (card.type === 'levy' && card.levy) {
+    const peeked = peekTop(draft.deck, card.levy.peekCount);
+    draft.deck = peeked.deck;
+    draft.levyOptions = peeked.options;
   }
 };
 
@@ -237,6 +280,10 @@ const applyPlayCard = (
     return;
   }
   const card = getCardDefinition(cardId);
+  if (card.type === 'levy' && draft.levyOptions.length > 0) {
+    draft.events.push({ kind: 'rejected', reason: 'pending' });
+    return;
+  }
   if (card.cost > draft.mana) {
     draft.events.push({ kind: 'rejected', reason: 'mana' });
     return;
@@ -278,11 +325,16 @@ const applyActions = (
     embers: [...state.embers],
     blasts: [],
     freshEmberIndices: new Set<number>(),
+    levyOptions: state.levyOptions,
   };
 
   actions.forEach((action) => {
     if (action.kind === 'reactivate') {
       applyReactivate(draft, action);
+    } else if (action.kind === 'choose-levy') {
+      if (draft.levyOptions.length === 0) return;
+      draft.deck = takeFromPeek(draft.deck, draft.levyOptions, action.optionIndex);
+      draft.levyOptions = [];
     } else {
       applyPlayCard(draft, state, map, tick, action);
     }
@@ -372,6 +424,7 @@ const moveEnemies = (
   return [...existing, ...spawned].map((enemy) => {
     if (!enemy.alive) return enemy;
     if (enemy.spawnTick === tick) return enemy;
+    if (isEnemyStunned(enemy, tick)) return enemy;
     const spec = getEnemySpec(enemy.enemyId);
     const cell = map.path[Math.min(Math.floor(enemy.progress), goal)];
     const terrain = cell && isSlowCell(map, cell) ? SLOW_TERRAIN_MULT : 1;
@@ -379,34 +432,64 @@ const moveEnemies = (
   });
 };
 
+/** 罠が発動する距離（セル）。表示側の STACK_DISTANCE とは無関係 */
+export const TRAP_TRIGGER_DISTANCE = 0.5;
+
+/** 敵の状態変更の下書き（地上化・足止め） */
+type EnemyStatusDraft = { groundedUntilTick?: number; stunnedUntilTick?: number };
+
 /**
- * 罠の判定（地上敵のみ・同じ敵は同じ罠で一度だけ）
+ * 罠の発動
  *
- * 移動確定後の座標で判定する。ダメージは hpById に反映するが、生死の確定は
- * まだしない（射撃・業火と合算してから resolveDamage でまとめて行う）。
- * hpById は罠・射撃・業火の3段階で共有する下書きなので、この関数はそれを
- * 直接書き換える（呼び出し側の1 tick 分の作業用 Map であり外部状態ではない）。
+ * 罠は3種類の対象判定を持つ:
+ *   棘罠   … 地上にダメージ
+ *   落網   … 飛行を地上化（ダメージなし）
+ *   石壁   … 地上を足止め（ダメージなし）
+ * 発動条件が逆のカードがあるため、対象判定は罠ごとに決める。
+ *
+ * 移動確定後の座標で判定する。ダメージは hpById に、状態変更は statusById に
+ * 反映するが、生死・状態の確定はまだしない（射撃・業火と合算してから
+ * resolveDamage でまとめて行う）。いずれも罠・射撃・業火の3段階で共有する
+ * 下書きなので、この関数はそれらを直接書き換える（1 tick 分の作業用 Map で
+ * あり外部状態ではない）。
  */
 const applyTraps = (
   traps: readonly PlacedTrap[],
   moved: readonly ActiveEnemy[],
-  map: StageMap,
   hpById: Map<number, number>,
+  statusById: Map<number, EnemyStatusDraft>,
+  tick: number,
+  map: StageMap,
   events: TickEvent[]
 ): PlacedTrap[] =>
   traps.map((trap, trapIndex) => {
     if (trap.usesLeft <= 0) return trap;
-    let usesLeft = trap.usesLeft;
-    const hitEnemyIds = [...trap.hitEnemyIds];
     const spec = getCardDefinition(trap.cardId).trap;
     if (!spec) return trap;
+    let usesLeft = trap.usesLeft;
+    const hitEnemyIds = [...trap.hitEnemyIds];
     moved.forEach((enemy) => {
       if (!enemy.alive || usesLeft <= 0) return;
-      if (getEnemySpec(enemy.enemyId).flying) return;
       if (hitEnemyIds.includes(enemy.id)) return;
+      const flying = isEnemyFlying(enemy, tick);
+      // 落網は飛行のみ、それ以外の罠は地上のみに発動する
+      const targetsFlying = spec.groundedTicks !== undefined;
+      if (targetsFlying !== flying) return;
       const pos = positionOf(enemy.progress, map.path);
-      if (Math.hypot(pos.x - trap.pos.x, pos.y - trap.pos.y) > 0.5) return;
-      hpById.set(enemy.id, (hpById.get(enemy.id) ?? 0) - spec.damage);
+      if (Math.hypot(pos.x - trap.pos.x, pos.y - trap.pos.y) > TRAP_TRIGGER_DISTANCE) return;
+
+      if (spec.damage > 0) {
+        hpById.set(enemy.id, (hpById.get(enemy.id) ?? 0) - spec.damage);
+      }
+      const status = statusById.get(enemy.id) ?? {};
+      if (spec.groundedTicks !== undefined) {
+        status.groundedUntilTick = tick + spec.groundedTicks - 1;
+      }
+      if (spec.stunTicks !== undefined) {
+        status.stunnedUntilTick = tick + spec.stunTicks - 1;
+      }
+      statusById.set(enemy.id, status);
+
       hitEnemyIds.push(enemy.id);
       usesLeft -= 1;
       events.push({ kind: 'trap', trapIndex, targetId: enemy.id });
@@ -428,20 +511,22 @@ const applyTowerShots = (
   moved: readonly ActiveEnemy[],
   map: StageMap,
   hpById: Map<number, number>,
-  events: TickEvent[]
+  events: TickEvent[],
+  tick: number
 ): PlacedTower[] => {
   const stateForDamage: CombatState = { ...state, towers: [...towers] };
   return towers.map((tower, towerIndex) => {
     const spec = getCardDefinition(tower.cardId).tower;
     if (!spec || spec.aura) return tower;
     if (tower.cooldownLeft > 0) return { ...tower, cooldownLeft: tower.cooldownLeft - 1 };
-    const damage = effectiveDamage(stateForDamage, towerIndex, map);
-    const target = selectTowerTarget(tower, spec, moved, map, hpById);
+    const range = effectiveRange(stateForDamage, towerIndex, map);
+    const target = selectTowerTarget(tower, spec, range, moved, map, hpById, tick);
     if (!target) return tower;
+    const damage = effectiveDamage(stateForDamage, towerIndex, map, target);
     hpById.set(target.id, (hpById.get(target.id) ?? 0) - damage);
     events.push({ kind: 'shot', towerIndex, targetId: target.id });
     if (spec.splashRadius > 0) {
-      applySplashDamage(target, damage, spec, moved, map, hpById);
+      applySplashDamage(target, spec, moved, map, hpById, tick, stateForDamage, towerIndex);
     }
     // 発射周期をちょうど cooldownTicks tick にするため -1 する
     // （次tick以降の `cooldownLeft > 0` decrement 判定と合わせて、
@@ -457,34 +542,44 @@ const applyTowerShots = (
 const selectTowerTarget = (
   tower: PlacedTower,
   spec: NonNullable<CardDefinition['tower']>,
+  range: number,
   moved: readonly ActiveEnemy[],
   map: StageMap,
-  hpById: ReadonlyMap<number, number>
+  hpById: ReadonlyMap<number, number>,
+  tick: number
 ): ActiveEnemy | undefined =>
   [...moved]
     .filter((e) => e.alive && (hpById.get(e.id) ?? 0) > 0)
-    .filter((e) => spec.hitsFlying || !getEnemySpec(e.enemyId).flying)
+    .filter((e) => spec.hitsFlying || !isEnemyFlying(e, tick))
     .filter((e) => {
       const pos = positionOf(e.progress, map.path);
-      return Math.hypot(pos.x - tower.pos.x, pos.y - tower.pos.y) <= spec.range;
+      return Math.hypot(pos.x - tower.pos.x, pos.y - tower.pos.y) <= range;
     })
     .sort((a, b) => b.progress - a.progress)[0];
 
-/** 着弾点から splashRadius 以内の他の敵にも同じダメージを与える */
+/**
+ * 着弾点から splashRadius 以内の他の敵にも巻き込みダメージを与える
+ *
+ * 特効は敵ごとに判定されるべきなので、中心の敵のダメージ値を流用せず
+ * 巻き込む敵ごとに effectiveDamage を呼び直す（重装だけが特効で2倍を受ける）。
+ */
 const applySplashDamage = (
   target: ActiveEnemy,
-  damage: number,
   spec: NonNullable<CardDefinition['tower']>,
   moved: readonly ActiveEnemy[],
   map: StageMap,
-  hpById: Map<number, number>
+  hpById: Map<number, number>,
+  tick: number,
+  stateForDamage: CombatState,
+  towerIndex: number
 ): void => {
   const center = positionOf(target.progress, map.path);
   moved.forEach((other) => {
     if (other.id === target.id || !other.alive) return;
-    if (!spec.hitsFlying && getEnemySpec(other.enemyId).flying) return;
+    if (!spec.hitsFlying && isEnemyFlying(other, tick)) return;
     const pos = positionOf(other.progress, map.path);
     if (Math.hypot(pos.x - center.x, pos.y - center.y) <= spec.splashRadius) {
+      const damage = effectiveDamage(stateForDamage, towerIndex, map, other);
       hpById.set(other.id, (hpById.get(other.id) ?? 0) - damage);
     }
   });
@@ -501,11 +596,12 @@ const applyBlasts = (
   blasts: readonly PendingBlast[],
   moved: readonly ActiveEnemy[],
   map: StageMap,
-  hpById: Map<number, number>
+  hpById: Map<number, number>,
+  tick: number
 ): void => {
   blasts.forEach((blast) => {
     moved.forEach((enemy) => {
-      if (!enemy.alive || getEnemySpec(enemy.enemyId).flying) return;
+      if (!enemy.alive || isEnemyFlying(enemy, tick)) return;
       const pos = positionOf(enemy.progress, map.path);
       if (Math.hypot(pos.x - blast.pos.x, pos.y - blast.pos.y) <= blast.radius) {
         hpById.set(enemy.id, (hpById.get(enemy.id) ?? 0) - blast.damage);
@@ -515,22 +611,34 @@ const applyBlasts = (
 };
 
 /**
- * ダメージを反映し、撃破を確定する
+ * ダメージ・状態変更を反映し、撃破を確定する
  *
- * 罠・射撃・業火の3段階すべてが hpById に書き終わった後、最後にまとめて
- * 敵の hp・生死を確定する。ここで初めて hp <= 0 の敵が alive: false になる。
+ * 罠・射撃・業火の3段階すべてが hpById / statusById に書き終わった後、
+ * 最後にまとめて敵の hp・状態・生死を確定する。ここで初めて hp <= 0 の敵が
+ * alive: false になる。状態（地上化・足止め）は statusById に値がある敵にのみ
+ * 上書きし、ない場合は既存の状態を保つ。
  */
 const resolveDamage = (
   moved: readonly ActiveEnemy[],
   hpById: ReadonlyMap<number, number>,
+  statusById: ReadonlyMap<number, EnemyStatusDraft>,
   events: TickEvent[]
 ): ActiveEnemy[] =>
   moved.map((enemy) => {
     if (!enemy.alive) return enemy;
-    const hp = hpById.get(enemy.id) ?? enemy.hp;
-    if (hp > 0) return { ...enemy, hp };
+    const status = statusById.get(enemy.id);
+    const withStatus =
+      status === undefined
+        ? enemy
+        : {
+            ...enemy,
+            groundedUntilTick: status.groundedUntilTick ?? enemy.groundedUntilTick,
+            stunnedUntilTick: status.stunnedUntilTick ?? enemy.stunnedUntilTick,
+          };
+    const hp = hpById.get(enemy.id) ?? withStatus.hp;
+    if (hp > 0) return { ...withStatus, hp };
     events.push({ kind: 'defeat', enemyId: enemy.id });
-    return { ...enemy, hp: 0, alive: false };
+    return { ...withStatus, hp: 0, alive: false };
   });
 
 /**
@@ -596,12 +704,13 @@ export const stepTick = (
   // --- 罠 → 射撃 → 業火・燠火の順で hpById に下書きし、最後にまとめて反映する ---
   const hpById = new Map<number, number>();
   moved.forEach((e) => hpById.set(e.id, e.hp));
-  const traps = applyTraps(afterActions.traps, moved, map, hpById, events);
-  const towers = applyTowerShots(state, afterActions.towers, moved, map, hpById, events);
-  applyBlasts(afterActions.blasts, moved, map, hpById);
+  const statusById = new Map<number, EnemyStatusDraft>();
+  const traps = applyTraps(afterActions.traps, moved, hpById, statusById, tick, map, events);
+  const towers = applyTowerShots(state, afterActions.towers, moved, map, hpById, events, tick);
+  applyBlasts(afterActions.blasts, moved, map, hpById, tick);
 
-  // --- ダメージ反映 → 漏れ ---
-  const damaged = resolveDamage(moved, hpById, events);
+  // --- ダメージ・状態反映 → 漏れ ---
+  const damaged = resolveDamage(moved, hpById, statusById, events);
   const { settled, life } = resolveLeaks(damaged, goal, state.life, events);
 
   const next: CombatState = {
@@ -621,6 +730,7 @@ export const stepTick = (
     slowMultiplier: afterActions.slowMultiplier,
     events,
     outcome: 'playing',
+    levyOptions: afterActions.levyOptions,
   };
 
   if (life <= 0) return { ...next, life: 0, outcome: 'lost' };

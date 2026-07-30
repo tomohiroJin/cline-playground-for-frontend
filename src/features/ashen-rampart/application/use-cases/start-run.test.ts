@@ -4,9 +4,9 @@
  * 乱数はここでのシャッフル1回だけに閉じ込める。同じシードからは
  * 同じドロー順になり、事故と判断を事後に切り分けられる（設計書 §12.4）。
  */
-import { startRun } from './start-run';
+import { startRun, startRunWithDeck, createSeed } from './start-run';
 import { SeededRandom } from '../../infrastructure/random/seeded-random';
-import { DECK_SIZE } from '../../domain/cards/card-pool';
+import { DECK_SIZE, PRESET_DECKS } from '../../domain/cards/card-pool';
 import { INITIAL_HAND_SIZE } from '../../domain/cards/deck';
 import { LIFE_INITIAL, MANA_INITIAL } from '../../domain/combat/combat-state';
 
@@ -44,7 +44,8 @@ describe('startRun', () => {
     const heavy = startRun('heavy', new SeededRandom(1));
     const countReactor = (cards: string[]) => cards.filter((c) => c === 'reactor').length;
     const all = (s: typeof swift) => [...s.deck.hand, ...s.deck.drawPile];
-    expect(countReactor(all(swift))).toBe(2);
+    // Task 9 再較正: swift の魔力炉を2→3枚に増やした（実測で5シード中0勝だったため）
+    expect(countReactor(all(swift))).toBe(3);
     expect(countReactor(all(heavy))).toBe(3);
   });
 
@@ -52,5 +53,53 @@ describe('startRun', () => {
     expect(() => startRun('unknown', new SeededRandom(1))).toThrow(
       '未知のプリセットデッキです: unknown'
     );
+  });
+});
+
+describe('startRunWithDeck', () => {
+  const cards = [...PRESET_DECKS.swift!.cards];
+
+  it('任意のカード配列からランを開始できる', () => {
+    const state = startRunWithDeck(cards, new SeededRandom(1));
+    expect(state.deck.hand).toHaveLength(INITIAL_HAND_SIZE);
+    expect(state.deck.drawPile).toHaveLength(cards.length - INITIAL_HAND_SIZE);
+  });
+
+  it('同じシードからは同じ手札になる', () => {
+    const a = startRunWithDeck(cards, new SeededRandom(7));
+    const b = startRunWithDeck(cards, new SeededRandom(7));
+    expect(a.deck.hand).toEqual(b.deck.hand);
+    expect(a.deck.drawPile).toEqual(b.deck.drawPile);
+  });
+
+  it('構築規則を満たさないデッキは契約違反として例外', () => {
+    expect(() => startRunWithDeck(cards.slice(0, 19), new SeededRandom(1))).toThrow(
+      'デッキが構築規則を満たしていません'
+    );
+  });
+
+  it('例外メッセージに違反理由が含まれる', () => {
+    expect(() => startRunWithDeck(cards.slice(0, 19), new SeededRandom(1))).toThrow(/20/);
+  });
+});
+
+describe('startRun（既存署名の維持）', () => {
+  it('プリセットIDから開始でき、startRunWithDeck と同じ結果になる', () => {
+    const viaPreset = startRun('swift', new SeededRandom(3));
+    const viaCards = startRunWithDeck([...PRESET_DECKS.swift!.cards], new SeededRandom(3));
+    expect(viaPreset.deck.hand).toEqual(viaCards.deck.hand);
+  });
+});
+
+describe('createSeed', () => {
+  it('連続で呼んでも必ず異なる値を返す（同一ミリ秒でも衝突しない）', () => {
+    const seeds = Array.from({ length: 50 }, () => createSeed());
+    expect(new Set(seeds).size).toBe(50);
+  });
+
+  it('正の整数を返す（SeededRandom に渡せる形）', () => {
+    const seed = createSeed();
+    expect(Number.isInteger(seed)).toBe(true);
+    expect(seed).toBeGreaterThan(0);
   });
 });

@@ -9,9 +9,9 @@ import type { PlayLogEventBody } from '../../application/ports/play-log-port';
 const runStarted: PlayLogEventBody = {
   kind: 'run_started',
   runId: 'r1',
-  iteration: 0,
+  iteration: 1,
   seed: 1,
-  presetId: 'swift',
+  deckCards: ['arrow-tower'],
 };
 
 describe('LocalStoragePlayLog', () => {

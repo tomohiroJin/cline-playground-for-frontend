@@ -4,7 +4,7 @@
  * stepTick は乱数を取らない純粋関数であり、同じ入力からは常に同じ結果になる。
  * この決定性がリプレイと事故の事後判別を支えている。
  */
-import { createCombatState, LIFE_INITIAL, DRAW_INTERVAL_TICKS } from './combat-state';
+import { createCombatState, LIFE_INITIAL, DRAW_INTERVAL_TICKS, COUNTDOWN_TICKS } from './combat-state';
 import { stepTick } from './step-tick';
 import type { WaveDefinition } from './waves';
 import { PLAINS_MAP } from '../board/stage-map';
@@ -46,13 +46,14 @@ describe('stepTick の時間進行', () => {
 describe('敵の出現と移動', () => {
   it('開始 tick に達すると敵が出現する', () => {
     const state = createCombatState(emptyDeck, oneGrunt);
-    const after = advance(state, 1);
+    // カウントダウンぶん startTick が後ろにずれるため、その分進める
+    const after = advance(state, COUNTDOWN_TICKS + 1);
     expect(after.enemies.filter((e) => e.alive)).toHaveLength(1);
   });
 
   it('速度ぶんだけ経路を進む', () => {
     const state = createCombatState(emptyDeck, oneGrunt);
-    const after = advance(state, 11);
+    const after = advance(state, COUNTDOWN_TICKS + 11);
     const enemy = after.enemies[0];
     // 出現後10tick × 速度0.1 = 進行度1.0
     expect(enemy?.progress).toBeCloseTo(1.0, 5);
@@ -60,8 +61,8 @@ describe('敵の出現と移動', () => {
 
   it('滞留セルでは移動が遅くなる', () => {
     const state = createCombatState(emptyDeck, oneGrunt);
-    // 経路 index 4 (4,3) が滞留セル。到達までに 40tick 強かかる
-    const before = advance(state, 41);
+    // 経路 index 4 (4,3) が滞留セル。到達までに 40tick 強かかる（カウントダウンぶん加算）
+    const before = advance(state, COUNTDOWN_TICKS + 41);
     const after = stepTick(before, [], PLAINS_MAP);
     const delta = (after.enemies[0]?.progress ?? 0) - (before.enemies[0]?.progress ?? 0);
     expect(delta).toBeCloseTo(0.06, 5);
@@ -72,15 +73,16 @@ describe('敵の出現と移動', () => {
       { startTick: 100, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, spawnPathIndex: 0 }] },
     ];
     const state = createCombatState(emptyDeck, late);
-    expect(advance(state, 50).enemies.filter((e) => e.alive)).toHaveLength(0);
-    expect(advance(state, 101).enemies.filter((e) => e.alive)).toHaveLength(1);
+    // startTick も COUNTDOWN_TICKS ぶんずれるため、境界を +COUNTDOWN_TICKS する
+    expect(advance(state, 50 + COUNTDOWN_TICKS).enemies.filter((e) => e.alive)).toHaveLength(0);
+    expect(advance(state, 101 + COUNTDOWN_TICKS).enemies.filter((e) => e.alive)).toHaveLength(1);
   });
 
   it('鴉は経路中盤から出現する', () => {
     const ravens: WaveDefinition[] = [
       { startTick: 0, entries: [{ enemyId: 'raven', count: 1, spawnIntervalTicks: 0, spawnPathIndex: 5 }] },
     ];
-    const after = advance(createCombatState(emptyDeck, ravens), 1);
+    const after = advance(createCombatState(emptyDeck, ravens), COUNTDOWN_TICKS + 1);
     expect(after.enemies[0]?.progress).toBe(5);
   });
 });
@@ -88,14 +90,14 @@ describe('敵の出現と移動', () => {
 describe('漏れと勝敗', () => {
   it('砦に到達するとライフが1減り leak イベントが出る', () => {
     const state = createCombatState(emptyDeck, oneGrunt);
-    // 経路11セル。滞留3セルぶん遅いので余裕を持って進める
-    const after = advance(state, 200);
+    // 経路11セル。滞留3セルぶん遅いので余裕を持って進める（カウントダウンぶん加算）
+    const after = advance(state, 200 + COUNTDOWN_TICKS);
     expect(after.life).toBe(LIFE_INITIAL - 1);
     expect(after.enemies[0]?.leaked).toBe(true);
   });
 
   it('漏れた敵は二重にライフを減らさない', () => {
-    const after = advance(createCombatState(emptyDeck, oneGrunt), 300);
+    const after = advance(createCombatState(emptyDeck, oneGrunt), 300 + COUNTDOWN_TICKS);
     expect(after.life).toBe(LIFE_INITIAL - 1);
   });
 
@@ -103,20 +105,20 @@ describe('漏れと勝敗', () => {
     const many: WaveDefinition[] = [
       { startTick: 0, entries: [{ enemyId: 'grunt', count: LIFE_INITIAL, spawnIntervalTicks: 1, spawnPathIndex: 0 }] },
     ];
-    const after = advance(createCombatState(emptyDeck, many), 400);
+    const after = advance(createCombatState(emptyDeck, many), 400 + COUNTDOWN_TICKS);
     expect(after.life).toBe(0);
     expect(after.outcome).toBe('lost');
   });
 
   it('全ての敵を処理し終えると勝利する', () => {
-    // 敵0体のウェーブは即座に勝利条件を満たす
+    // 敵0体のウェーブは即座に勝利条件を満たす（startTick が COUNTDOWN_TICKS ぶんずれた後）
     const none: WaveDefinition[] = [{ startTick: 0, entries: [] }];
-    expect(advance(createCombatState(emptyDeck, none), 2).outcome).toBe('won');
+    expect(advance(createCombatState(emptyDeck, none), COUNTDOWN_TICKS + 1).outcome).toBe('won');
   });
 
   it('決着後は状態が変化しない', () => {
     const none: WaveDefinition[] = [{ startTick: 0, entries: [] }];
-    const won = advance(createCombatState(emptyDeck, none), 5);
+    const won = advance(createCombatState(emptyDeck, none), COUNTDOWN_TICKS + 1);
     expect(stepTick(won, [], PLAINS_MAP)).toEqual(won);
   });
 });

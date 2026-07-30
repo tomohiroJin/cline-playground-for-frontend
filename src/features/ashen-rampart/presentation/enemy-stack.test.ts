@@ -19,6 +19,8 @@ const enemy = (id: number, enemyId: string, progress: number, hp = 8): ActiveEne
   spawnPathIndex: 0,
   alive: true,
   leaked: false,
+  groundedUntilTick: 0,
+  stunnedUntilTick: 0,
 });
 
 describe('stackEnemies', () => {

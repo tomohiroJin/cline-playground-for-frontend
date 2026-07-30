@@ -113,7 +113,7 @@ export const HandArea: React.FC<Props> = ({
       </Row>
       {overflowNotice && <Notice>{overflowNotice} を手札に持てず失いました</Notice>}
       {maxShortage > 0 && <p>マナが{maxShortage}足りません</p>}
-      <Cards>
+      <Cards role="group" aria-label="手札">
         {state.deck.hand.map((cardId, index) => {
           const card = getCardDefinition(cardId);
           const affordable = card.cost <= state.mana;
