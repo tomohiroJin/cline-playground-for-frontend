@@ -410,35 +410,64 @@ const moveEnemies = (
   });
 };
 
+/** 罠が発動する距離（セル）。表示側の STACK_DISTANCE とは無関係 */
+export const TRAP_TRIGGER_DISTANCE = 0.5;
+
+/** 敵の状態変更の下書き（地上化・足止め） */
+type EnemyStatusDraft = { groundedUntilTick?: number; stunnedUntilTick?: number };
+
 /**
- * 罠の判定（地上敵のみ・同じ敵は同じ罠で一度だけ）
+ * 罠の発動
  *
- * 移動確定後の座標で判定する。ダメージは hpById に反映するが、生死の確定は
- * まだしない（射撃・業火と合算してから resolveDamage でまとめて行う）。
- * hpById は罠・射撃・業火の3段階で共有する下書きなので、この関数はそれを
- * 直接書き換える（呼び出し側の1 tick 分の作業用 Map であり外部状態ではない）。
+ * 罠は3種類の対象判定を持つ:
+ *   棘罠   … 地上にダメージ
+ *   落網   … 飛行を地上化（ダメージなし）
+ *   石壁   … 地上を足止め（ダメージなし）
+ * 発動条件が逆のカードがあるため、対象判定は罠ごとに決める。
+ *
+ * 移動確定後の座標で判定する。ダメージは hpById に、状態変更は statusById に
+ * 反映するが、生死・状態の確定はまだしない（射撃・業火と合算してから
+ * resolveDamage でまとめて行う）。いずれも罠・射撃・業火の3段階で共有する
+ * 下書きなので、この関数はそれらを直接書き換える（1 tick 分の作業用 Map で
+ * あり外部状態ではない）。
  */
 const applyTraps = (
   traps: readonly PlacedTrap[],
   moved: readonly ActiveEnemy[],
-  map: StageMap,
   hpById: Map<number, number>,
-  events: TickEvent[],
-  tick: number
+  statusById: Map<number, EnemyStatusDraft>,
+  tick: number,
+  map: StageMap,
+  events: TickEvent[]
 ): PlacedTrap[] =>
   traps.map((trap, trapIndex) => {
     if (trap.usesLeft <= 0) return trap;
-    let usesLeft = trap.usesLeft;
-    const hitEnemyIds = [...trap.hitEnemyIds];
     const spec = getCardDefinition(trap.cardId).trap;
     if (!spec) return trap;
+    let usesLeft = trap.usesLeft;
+    const hitEnemyIds = [...trap.hitEnemyIds];
     moved.forEach((enemy) => {
       if (!enemy.alive || usesLeft <= 0) return;
-      if (isEnemyFlying(enemy, tick)) return;
       if (hitEnemyIds.includes(enemy.id)) return;
+      const flying = isEnemyFlying(enemy, tick);
+      // 落網は飛行のみ、それ以外の罠は地上のみに発動する
+      const targetsFlying = spec.groundedTicks !== undefined;
+      if (targetsFlying !== flying) return;
       const pos = positionOf(enemy.progress, map.path);
-      if (Math.hypot(pos.x - trap.pos.x, pos.y - trap.pos.y) > 0.5) return;
-      hpById.set(enemy.id, (hpById.get(enemy.id) ?? 0) - spec.damage);
+      if (Math.hypot(pos.x - trap.pos.x, pos.y - trap.pos.y) > TRAP_TRIGGER_DISTANCE) return;
+
+      if (spec.damage > 0) {
+        hpById.set(enemy.id, (hpById.get(enemy.id) ?? 0) - spec.damage);
+      }
+      const status = statusById.get(enemy.id) ?? {};
+      if (spec.groundedTicks !== undefined) {
+        status.groundedUntilTick = tick + spec.groundedTicks - 1;
+      }
+      if (spec.stunTicks !== undefined) {
+        status.stunnedUntilTick = tick + spec.stunTicks - 1;
+      }
+      statusById.set(enemy.id, status);
+
       hitEnemyIds.push(enemy.id);
       usesLeft -= 1;
       events.push({ kind: 'trap', trapIndex, targetId: enemy.id });
@@ -553,22 +582,34 @@ const applyBlasts = (
 };
 
 /**
- * ダメージを反映し、撃破を確定する
+ * ダメージ・状態変更を反映し、撃破を確定する
  *
- * 罠・射撃・業火の3段階すべてが hpById に書き終わった後、最後にまとめて
- * 敵の hp・生死を確定する。ここで初めて hp <= 0 の敵が alive: false になる。
+ * 罠・射撃・業火の3段階すべてが hpById / statusById に書き終わった後、
+ * 最後にまとめて敵の hp・状態・生死を確定する。ここで初めて hp <= 0 の敵が
+ * alive: false になる。状態（地上化・足止め）は statusById に値がある敵にのみ
+ * 上書きし、ない場合は既存の状態を保つ。
  */
 const resolveDamage = (
   moved: readonly ActiveEnemy[],
   hpById: ReadonlyMap<number, number>,
+  statusById: ReadonlyMap<number, EnemyStatusDraft>,
   events: TickEvent[]
 ): ActiveEnemy[] =>
   moved.map((enemy) => {
     if (!enemy.alive) return enemy;
-    const hp = hpById.get(enemy.id) ?? enemy.hp;
-    if (hp > 0) return { ...enemy, hp };
+    const status = statusById.get(enemy.id);
+    const withStatus =
+      status === undefined
+        ? enemy
+        : {
+            ...enemy,
+            groundedUntilTick: status.groundedUntilTick ?? enemy.groundedUntilTick,
+            stunnedUntilTick: status.stunnedUntilTick ?? enemy.stunnedUntilTick,
+          };
+    const hp = hpById.get(enemy.id) ?? withStatus.hp;
+    if (hp > 0) return { ...withStatus, hp };
     events.push({ kind: 'defeat', enemyId: enemy.id });
-    return { ...enemy, hp: 0, alive: false };
+    return { ...withStatus, hp: 0, alive: false };
   });
 
 /**
@@ -634,12 +675,13 @@ export const stepTick = (
   // --- 罠 → 射撃 → 業火・燠火の順で hpById に下書きし、最後にまとめて反映する ---
   const hpById = new Map<number, number>();
   moved.forEach((e) => hpById.set(e.id, e.hp));
-  const traps = applyTraps(afterActions.traps, moved, map, hpById, events, tick);
+  const statusById = new Map<number, EnemyStatusDraft>();
+  const traps = applyTraps(afterActions.traps, moved, hpById, statusById, tick, map, events);
   const towers = applyTowerShots(state, afterActions.towers, moved, map, hpById, events, tick);
   applyBlasts(afterActions.blasts, moved, map, hpById, tick);
 
-  // --- ダメージ反映 → 漏れ ---
-  const damaged = resolveDamage(moved, hpById, events);
+  // --- ダメージ・状態反映 → 漏れ ---
+  const damaged = resolveDamage(moved, hpById, statusById, events);
   const { settled, life } = resolveLeaks(damaged, goal, state.life, events);
 
   const next: CombatState = {
