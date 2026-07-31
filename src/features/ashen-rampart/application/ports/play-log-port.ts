@@ -6,7 +6,7 @@
  */
 
 /** 現在の反復番号。反復を進めるたびに必ず更新する */
-export const CURRENT_ITERATION = 1;
+export const CURRENT_ITERATION = 2;
 
 export type PlayLogEventBody =
   | {

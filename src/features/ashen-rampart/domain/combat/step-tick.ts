@@ -29,6 +29,7 @@ import type {
   PlacedTrap,
   PlacedReactor,
   PlacedEmber,
+  DefeatSource,
 } from './combat-state';
 
 /** プレイヤーがその tick に行った操作 */
@@ -195,7 +196,17 @@ interface PendingBlast {
   pos: CellPos;
   radius: number;
   damage: number;
+  /** 発生源の燠火 index。撃破の帰属に使う */
+  emberIndex: number;
 }
+
+/**
+ * 敵ごとの「最後に削った者」
+ *
+ * hpById と対で更新する。hpById.set と sourceById.set は必ず同じ箇所で行う
+ * （片方だけ更新すると帰属が前の tick の値のまま残る）。
+ */
+type SourceById = Map<number, DefeatSource>;
 
 /**
  * 「プレイヤー操作」段階の作業用下書き。1 tick 分の操作をすべて畳み込む間だけ存在し、
@@ -230,7 +241,12 @@ const applyReactivate = (
   if (!spec) return;
   draft.embers[action.emberIndex] = { ...ember, cooldownLeft: spec.cooldownTicks };
   draft.freshEmberIndices.add(action.emberIndex);
-  draft.blasts.push({ pos: ember.pos, radius: spec.radius, damage: spec.damage });
+  draft.blasts.push({
+    pos: ember.pos,
+    radius: spec.radius,
+    damage: spec.damage,
+    emberIndex: action.emberIndex,
+  });
   draft.events.push({ kind: 'ember', emberIndex: action.emberIndex });
 };
 
@@ -251,7 +267,12 @@ const applyCardEffect = (
   } else if (card.type === 'ember' && pos && card.ember) {
     draft.embers.push({ pos, cooldownLeft: card.ember.cooldownTicks });
     draft.freshEmberIndices.add(draft.embers.length - 1);
-    draft.blasts.push({ pos, radius: card.ember.radius, damage: card.ember.damage });
+    draft.blasts.push({
+      pos,
+      radius: card.ember.radius,
+      damage: card.ember.damage,
+      emberIndex: draft.embers.length - 1,
+    });
   } else if (card.type === 'spell' && card.spell) {
     draft.slowUntilTick = tick + card.spell.durationTicks;
     draft.slowMultiplier = card.spell.speedMultiplier;
@@ -457,6 +478,7 @@ const applyTraps = (
   traps: readonly PlacedTrap[],
   moved: readonly ActiveEnemy[],
   hpById: Map<number, number>,
+  sourceById: SourceById,
   statusById: Map<number, EnemyStatusDraft>,
   tick: number,
   map: StageMap,
@@ -480,6 +502,7 @@ const applyTraps = (
 
       if (spec.damage > 0) {
         hpById.set(enemy.id, (hpById.get(enemy.id) ?? 0) - spec.damage);
+        sourceById.set(enemy.id, { kind: 'trap', index: trapIndex });
       }
       const status = statusById.get(enemy.id) ?? {};
       if (spec.groundedTicks !== undefined) {
@@ -511,6 +534,7 @@ const applyTowerShots = (
   moved: readonly ActiveEnemy[],
   map: StageMap,
   hpById: Map<number, number>,
+  sourceById: SourceById,
   events: TickEvent[],
   tick: number
 ): PlacedTower[] => {
@@ -524,9 +548,20 @@ const applyTowerShots = (
     if (!target) return tower;
     const damage = effectiveDamage(stateForDamage, towerIndex, map, target);
     hpById.set(target.id, (hpById.get(target.id) ?? 0) - damage);
+    sourceById.set(target.id, { kind: 'tower', index: towerIndex });
     events.push({ kind: 'shot', towerIndex, targetId: target.id });
     if (spec.splashRadius > 0) {
-      applySplashDamage(target, spec, moved, map, hpById, tick, stateForDamage, towerIndex);
+      applySplashDamage(
+        target,
+        spec,
+        moved,
+        map,
+        hpById,
+        sourceById,
+        tick,
+        stateForDamage,
+        towerIndex
+      );
     }
     // 発射周期をちょうど cooldownTicks tick にするため -1 する
     // （次tick以降の `cooldownLeft > 0` decrement 判定と合わせて、
@@ -569,6 +604,7 @@ const applySplashDamage = (
   moved: readonly ActiveEnemy[],
   map: StageMap,
   hpById: Map<number, number>,
+  sourceById: SourceById,
   tick: number,
   stateForDamage: CombatState,
   towerIndex: number
@@ -581,6 +617,7 @@ const applySplashDamage = (
     if (Math.hypot(pos.x - center.x, pos.y - center.y) <= spec.splashRadius) {
       const damage = effectiveDamage(stateForDamage, towerIndex, map, other);
       hpById.set(other.id, (hpById.get(other.id) ?? 0) - damage);
+      sourceById.set(other.id, { kind: 'tower', index: towerIndex });
     }
   });
 };
@@ -597,6 +634,7 @@ const applyBlasts = (
   moved: readonly ActiveEnemy[],
   map: StageMap,
   hpById: Map<number, number>,
+  sourceById: SourceById,
   tick: number
 ): void => {
   blasts.forEach((blast) => {
@@ -605,6 +643,7 @@ const applyBlasts = (
       const pos = positionOf(enemy.progress, map.path);
       if (Math.hypot(pos.x - blast.pos.x, pos.y - blast.pos.y) <= blast.radius) {
         hpById.set(enemy.id, (hpById.get(enemy.id) ?? 0) - blast.damage);
+        sourceById.set(enemy.id, { kind: 'ember', index: blast.emberIndex });
       }
     });
   });
@@ -621,6 +660,7 @@ const applyBlasts = (
 const resolveDamage = (
   moved: readonly ActiveEnemy[],
   hpById: ReadonlyMap<number, number>,
+  sourceById: ReadonlyMap<number, DefeatSource>,
   statusById: ReadonlyMap<number, EnemyStatusDraft>,
   events: TickEvent[]
 ): ActiveEnemy[] =>
@@ -637,7 +677,13 @@ const resolveDamage = (
           };
     const hp = hpById.get(enemy.id) ?? withStatus.hp;
     if (hp > 0) return { ...withStatus, hp };
-    events.push({ kind: 'defeat', enemyId: enemy.id });
+    const source = sourceById.get(enemy.id);
+    // 撃破源が無い hp<=0 は論理的に起こり得ない（誰かが削った結果でしか 0 にならない）。
+    // 万一起きた場合に defeat を握り潰すと集計が静かに壊れるため、契約違反として落とす。
+    if (!source) {
+      throw new Error(`撃破源が記録されていません: enemyId=${enemy.id}`);
+    }
+    events.push({ kind: 'defeat', enemyId: enemy.id, source });
     return { ...withStatus, hp: 0, alive: false };
   });
 
@@ -703,14 +749,19 @@ export const stepTick = (
 
   // --- 罠 → 射撃 → 業火・燠火の順で hpById に下書きし、最後にまとめて反映する ---
   const hpById = new Map<number, number>();
+  const sourceById: SourceById = new Map();
   moved.forEach((e) => hpById.set(e.id, e.hp));
   const statusById = new Map<number, EnemyStatusDraft>();
-  const traps = applyTraps(afterActions.traps, moved, hpById, statusById, tick, map, events);
-  const towers = applyTowerShots(state, afterActions.towers, moved, map, hpById, events, tick);
-  applyBlasts(afterActions.blasts, moved, map, hpById, tick);
+  const traps = applyTraps(
+    afterActions.traps, moved, hpById, sourceById, statusById, tick, map, events
+  );
+  const towers = applyTowerShots(
+    state, afterActions.towers, moved, map, hpById, sourceById, events, tick
+  );
+  applyBlasts(afterActions.blasts, moved, map, hpById, sourceById, tick);
 
   // --- ダメージ・状態反映 → 漏れ ---
-  const damaged = resolveDamage(moved, hpById, statusById, events);
+  const damaged = resolveDamage(moved, hpById, sourceById, statusById, events);
   const { settled, life } = resolveLeaks(damaged, goal, state.life, events);
 
   const next: CombatState = {

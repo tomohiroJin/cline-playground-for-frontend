@@ -34,7 +34,7 @@ describe('useAshenRampartGame', () => {
     renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log }));
     const started = log.events.filter((e) => e.kind === 'run_started');
     expect(started).toHaveLength(1);
-    expect(started[0]).toMatchObject({ seed: 1, iteration: 1 });
+    expect(started[0]).toMatchObject({ seed: 1, iteration: 2 });
   });
 
   it('StrictMode 下でもカードを1枚配置できる（指摘1の回帰: updater 内の副作用で操作が握り潰されていた）', () => {
