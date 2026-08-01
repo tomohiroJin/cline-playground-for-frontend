@@ -260,26 +260,34 @@ describe('useAshenRampartGame', () => {
      * 「選択中より前」「選択中そのもの」「選択中より後ろ」の3ケースすべてを
      * 検証する。1つでも欠けると、詰めの向きが逆でも気づけない。
      *
-     * seed:1・swift プリセットは、初期手札3枚＋1回目のドロー（40 tick）で
-     * 必ず ['ballista', 'cannon-tower', 'ember-blast', 'arrow-tower'] になる
-     * （4枚とも設置系カードなので selectCard で選択状態を作れる）。
+     * seed:10・swift プリセットは、初期手札3枚＋1回目のドロー（40 tick）で
+     * 必ず ['spike-trap', 'ballista', 'reactor', 'arrow-tower'] になる。
+     * 4枚とも設置系カードなので selectCard で選択状態を作れる。
+     *
+     * **4枚がすべて異なる札であることが要点。** 反復2 で魔力炉が8枚になった結果、
+     * seed:1 では手札が ['reactor','reactor','spike-trap','spike-trap'] となり、
+     * 「捨てた後も選択カードIDが変わらない」という主張が、インデックス追従が
+     * 壊れていても通ってしまう空虚なテストになっていた（レビュー指摘4）。
+     * 同名札が並ばないシードを選び、手札配列そのものを比較して検証する。
      */
     const handToFourCards = () => {
       const cards = swiftCards();
-      const rendered = renderHook(() => useAshenRampartGame({ cards, seed: 1 }));
+      const rendered = renderHook(() => useAshenRampartGame({ cards, seed: 10 }));
       act(() => {
         jest.advanceTimersByTime(TICK_INTERVAL_MS * 40);
       });
-      expect(rendered.result.current.state.deck.hand).toHaveLength(4);
+      const hand = rendered.result.current.state.deck.hand;
+      expect(hand).toHaveLength(4);
+      // 前提の明示: 同名札が並ぶと以下の検証が空虚になる
+      expect(new Set(hand).size).toBe(4);
       return rendered;
     };
 
     it('選択中より前の札を捨てると selectedIndex が1つ減り、選択カードIDは変わらない', () => {
       const { result } = handToFourCards();
-      // 位置で指定する。indexOf で引き直すと、同名札（魔力炉8枚）が手札に並んだときに
-      // 先頭の重複を拾って別の位置を指してしまう（反復2 の魔力炉増量で顕在化）
+      const handBefore = [...result.current.state.deck.hand];
       const index = 1;
-      const selectedCardId = result.current.state.deck.hand[index];
+      const selectedCardId = handBefore[index];
 
       act(() => result.current.selectCard(index));
       expect(result.current.selectedIndex).toBe(index);
@@ -289,6 +297,8 @@ describe('useAshenRampartGame', () => {
         jest.advanceTimersByTime(TICK_INTERVAL_MS);
       });
 
+      // 手札配列ごと比較する（捨てた1枚だけが消えていること）
+      expect(result.current.state.deck.hand).toEqual(handBefore.slice(1));
       expect(result.current.selectedIndex).toBe(index - 1);
       expect(result.current.state.deck.hand[result.current.selectedIndex as number]).toBe(
         selectedCardId
@@ -311,10 +321,9 @@ describe('useAshenRampartGame', () => {
 
     it('選択中より後ろの札を捨てても selectedIndex は変わらず、選択カードIDも変わらない', () => {
       const { result } = handToFourCards();
-      // 位置で指定する。indexOf で引き直すと、同名札（魔力炉8枚）が手札に並んだときに
-      // 先頭の重複を拾って別の位置を指してしまう（反復2 の魔力炉増量で顕在化）
+      const handBefore = [...result.current.state.deck.hand];
       const index = 1;
-      const selectedCardId = result.current.state.deck.hand[index];
+      const selectedCardId = handBefore[index];
 
       act(() => result.current.selectCard(index));
       expect(result.current.selectedIndex).toBe(index);
@@ -324,6 +333,11 @@ describe('useAshenRampartGame', () => {
         jest.advanceTimersByTime(TICK_INTERVAL_MS);
       });
 
+      // 手札配列ごと比較する（捨てた1枚だけが消えていること）
+      expect(result.current.state.deck.hand).toEqual([
+        ...handBefore.slice(0, index + 1),
+        ...handBefore.slice(index + 2),
+      ]);
       expect(result.current.selectedIndex).toBe(index);
       expect(result.current.state.deck.hand[result.current.selectedIndex as number]).toBe(
         selectedCardId
