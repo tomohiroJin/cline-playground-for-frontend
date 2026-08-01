@@ -5,7 +5,10 @@
  * セル座標をそのまま x1/y1/x2/y2 に書ける（px 換算が不要）。
  * Frame は aspect-ratio 固定のため歪みは出ない。
  *
- * 色は既存5色のみを使う。味方の攻撃は secondary、脅威は danger。
+ * 色は既存5色のみを使う。味方の行動（射撃・罠・燠火）は secondary、
+ * 脅威の実害（漏れ）は danger。danger は leak 専用とする
+ * （罠はプレイヤーの資産であり、漏れと同じ色にすると「効いた」と
+ * 「漏れた」が区別できず意味が二重になるため）。
  * opportunity は BoardGrid が「再点火可能」の意味で使っているため使わない。
  */
 import React from 'react';
@@ -104,7 +107,7 @@ export const BoardEffectLayer: React.FC<Props> = ({ effects, map }) => (
             width={0.9}
             height={0.9}
             fill="none"
-            stroke={COLORS.danger}
+            stroke={COLORS.secondary}
             strokeWidth={3}
           />
         );

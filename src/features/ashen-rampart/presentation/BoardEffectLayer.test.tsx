@@ -11,6 +11,7 @@ import { render } from '@testing-library/react';
 import { PLAINS_MAP } from '../domain/board/stage-map';
 import { BoardEffectLayer } from './BoardEffectLayer';
 import type { Effect } from './combat-effects';
+import { COLORS } from './theme';
 
 const shot = (id: string): Effect => ({
   kind: 'shot',
@@ -47,5 +48,17 @@ describe('BoardEffectLayer', () => {
   it('エフェクトが無いときも SVG 自体は存在する', () => {
     const { container } = render(<BoardEffectLayer effects={[]} map={PLAINS_MAP} />);
     expect(container.querySelector('svg')).not.toBeNull();
+  });
+
+  it('danger 色を使うのは漏れだけである', () => {
+    const effects: Effect[] = [
+      { kind: 'trap', id: 't', at: { x: 0, y: 3 }, untilTick: 10 },
+      { kind: 'leak', id: 'l', at: { x: 8, y: 1 }, untilTick: 10 },
+    ];
+    const { container } = render(<BoardEffectLayer effects={effects} map={PLAINS_MAP} />);
+    const trap = container.querySelector('[data-effect="trap"]');
+    const leak = container.querySelector('[data-effect="leak"]');
+    expect(trap?.getAttribute('stroke')).toBe(COLORS.secondary);
+    expect(leak?.getAttribute('fill')).toBe(COLORS.danger);
   });
 });
