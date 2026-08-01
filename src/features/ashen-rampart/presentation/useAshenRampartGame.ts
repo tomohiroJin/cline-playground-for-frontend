@@ -239,6 +239,20 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
   );
 
   /**
+   * 手札から1枚捨てる（UI から到達する唯一の入口）
+   *
+   * 一時停止中・決着後は無反応にする（他の操作と同じ防御）。
+   */
+  const discardCard = useCallback(
+    (handIndex: number) => {
+      if (isPaused || state.outcome !== 'playing') return;
+      pendingRef.current.push({ kind: 'discard', handIndex });
+      setSelectedIndex((current) => (current === handIndex ? null : current));
+    },
+    [isPaused, state.outcome]
+  );
+
+  /**
    * 徴発の候補から1枚選ぶ。UI から到達する唯一の入口（DeckBuilder の validateDeck と同様、判定はドメイン側）
    *
    * 一時停止中・決着後は選んでも無反応にする（LevyChoice 側の disabled 表示と合わせた二重の防御。指摘B）
@@ -339,6 +353,7 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
     selectCard,
     clickCell,
     reactivate,
+    discardCard,
     chooseLevy,
     interactCell,
     togglePause,

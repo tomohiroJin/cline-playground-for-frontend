@@ -36,7 +36,8 @@ import type {
 export type PlayerAction =
   | { kind: 'play-card'; handIndex: number; pos?: CellPos }
   | { kind: 'reactivate'; emberIndex: number }
-  | { kind: 'choose-levy'; optionIndex: number };
+  | { kind: 'choose-levy'; optionIndex: number }
+  | { kind: 'discard'; handIndex: number };
 
 /** 滞留セル上の移動量倍率 */
 export const SLOW_TERRAIN_MULT = 0.6;
@@ -299,6 +300,22 @@ const applyCardEffect = (
 };
 
 /**
+ * 手札から1枚を能動的に捨てる
+ *
+ * コストもクールダウンも消費しない。**ドローは早まらない**
+ * （ドローは DRAW_INTERVAL_TICKS の時間駆動）ため、「捨てて回す」戦術は
+ * 成立せず、効果は手札の枠を空けることに限定される。有限デッキという
+ * 前提を緩めないための意図的な設計（設計書 §5.3）。
+ */
+const applyDiscard = (
+  draft: ActionsDraft,
+  action: Extract<PlayerAction, { kind: 'discard' }>
+): void => {
+  if (draft.deck.hand[action.handIndex] === undefined) return;
+  draft.deck = discardFromHand(draft.deck, action.handIndex);
+};
+
+/**
  * カード使用操作を適用する（手札・カード種別・マナ・設置可否を順に検査）
  *
  * **配置クールダウンは「盤面に何かを置く札」だけに課す。**
@@ -379,6 +396,8 @@ const applyActions = (
       if (draft.levyOptions.length === 0) return;
       draft.deck = takeFromPeek(draft.deck, draft.levyOptions, action.optionIndex);
       draft.levyOptions = [];
+    } else if (action.kind === 'discard') {
+      applyDiscard(draft, action);
     } else {
       applyPlayCard(draft, state, map, tick, action);
     }

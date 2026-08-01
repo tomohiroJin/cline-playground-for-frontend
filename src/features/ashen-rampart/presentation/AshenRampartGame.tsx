@@ -290,6 +290,7 @@ const RunView: React.FC<RunViewProps> = ({ cards, seed, onRebuild }) => {
         state={game.state}
         selectedIndex={game.selectedIndex}
         onSelect={game.selectCard}
+        onDiscard={game.discardCard}
         overflowNotice={game.overflowNotice}
       />
     </Layout>

@@ -67,6 +67,29 @@ const Card = styled.button<{ $selected: boolean }>`
   }
 `;
 
+const CardSlot = styled.div`
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+`;
+
+/**
+ * 捨札ボタン
+ *
+ * Card は disabled={!affordable} のため、内側に置くと払えない札を捨てられない。
+ * 兄弟要素にする（ボタンの入れ子は HTML としても不正）。
+ */
+const DiscardButton = styled.button`
+  min-width: 28px;
+  min-height: 44px;
+  padding: 0;
+  background: transparent;
+  color: ${COLORS.secondary};
+  border: 1px solid ${COLORS.grid};
+  border-radius: 4px;
+  cursor: pointer;
+`;
+
 const Notice = styled.p`
   margin: 0;
   color: ${COLORS.opportunity};
@@ -78,6 +101,8 @@ interface Props {
   state: CombatState;
   selectedIndex: number | null;
   onSelect: (handIndex: number) => void;
+  /** 手札から1枚捨てる。マナが足りない札にも到達できる唯一の手段 */
+  onDiscard: (handIndex: number) => void;
   /** 溢れて失った札の名前。表示は呼び出し側が一定時間で消す */
   overflowNotice?: string;
 }
@@ -86,6 +111,7 @@ export const HandArea: React.FC<Props> = ({
   state,
   selectedIndex,
   onSelect,
+  onDiscard,
   overflowNotice,
 }) => {
   const shortage = state.deck.hand
@@ -118,19 +144,27 @@ export const HandArea: React.FC<Props> = ({
           const card = getCardDefinition(cardId);
           const affordable = card.cost <= state.mana;
           return (
-            <Card
-              key={`${cardId}-${index}`}
-              type="button"
-              $selected={selectedIndex === index}
-              aria-pressed={selectedIndex === index}
-              aria-label={`${card.name} コスト${card.cost}`}
-              disabled={!affordable}
-              onClick={() => onSelect(index)}
-            >
-              {card.name}
-              <br />
-              コスト{card.cost}
-            </Card>
+            <CardSlot key={`${cardId}-${index}`}>
+              <Card
+                type="button"
+                $selected={selectedIndex === index}
+                aria-pressed={selectedIndex === index}
+                aria-label={`${card.name} コスト${card.cost}`}
+                disabled={!affordable}
+                onClick={() => onSelect(index)}
+              >
+                {card.name}
+                <br />
+                コスト{card.cost}
+              </Card>
+              <DiscardButton
+                type="button"
+                aria-label={`${card.name}を捨てる`}
+                onClick={() => onDiscard(index)}
+              >
+                ×
+              </DiscardButton>
+            </CardSlot>
           );
         })}
       </Cards>

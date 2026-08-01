@@ -225,6 +225,27 @@ describe('AshenRampartGame', () => {
     consoleLogSpy.mockRestore();
   });
 
+  it('捨札ボタンを押すと手札が1枚減る', async () => {
+    render(<AshenRampartGame />);
+    startRunning();
+
+    const hand = screen.getByRole('group', { name: '手札' });
+    const before = within(hand).getAllByRole('button', { name: /を捨てる$/ }).length;
+    fireEvent.click(within(hand).getAllByRole('button', { name: /を捨てる$/ })[0]);
+
+    // discardCard は pendingRef に積むだけで、実際の反映は次 tick の stepTick で確定する
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS);
+    });
+
+    await waitFor(() => {
+      const after = within(screen.getByRole('group', { name: '手札' })).getAllByRole('button', {
+        name: /を捨てる$/,
+      }).length;
+      expect(after).toBe(before - 1);
+    });
+  });
+
   describe('画面遷移', () => {
     it('最初はデッキ構築が表示される', () => {
       render(<AshenRampartGame />);
@@ -285,8 +306,11 @@ describe('AshenRampartGame', () => {
       playLevyCardWhenDrawn();
       expect(screen.getByText('徴発: 1枚選ぶ')).toBeInTheDocument();
 
+      // 手札の枚数は「カードボタン」だけを数える（各カードには捨札ボタンも
+      // 並ぶため、単純な button 総数だと1枚増減の差分が2になってしまう）
       const handBefore = within(screen.getByRole('group', { name: '手札' })).getAllByRole(
-        'button'
+        'button',
+        { name: /コスト/ }
       ).length;
       const levyOption = within(screen.getByRole('group', { name: '徴発の候補' })).getAllByRole(
         'button'
@@ -300,7 +324,8 @@ describe('AshenRampartGame', () => {
 
       expect(screen.queryByText('徴発: 1枚選ぶ')).not.toBeInTheDocument();
       const handAfter = within(screen.getByRole('group', { name: '手札' })).getAllByRole(
-        'button'
+        'button',
+        { name: /コスト/ }
       ).length;
       expect(handAfter).toBe(handBefore + 1);
     });
@@ -336,7 +361,7 @@ describe('AshenRampartGame', () => {
     const hand = screen.getByRole('group', { name: '手札' });
     let reactorCard: HTMLElement | null = null;
     for (let advanced = 0; advanced < 300 && !reactorCard; advanced += 1) {
-      reactorCard = within(hand).queryByRole('button', { name: /^魔力炉/ });
+      reactorCard = within(hand).queryByRole('button', { name: /^魔力炉 コスト/ });
       if (reactorCard) break;
       act(() => {
         jest.advanceTimersByTime(TICK_INTERVAL_MS);
