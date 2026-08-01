@@ -355,8 +355,12 @@ describe('AshenRampartGame', () => {
     expect(notice).toBeVisible();
 
     // 拒否は「不便」であって砦が削られる「危険」ではないため、危険専用の色(danger系)を
-    // 使ってはいけない（レビュー指摘: この色が danger 系に戻されたら落ちる回帰テスト）
+    // 使ってはいけない。data-tone は AshenRampartGame.tsx の REJECTION_NOTICE_TONE
+    // 定数から色（color）と同時に導出されているため、この属性が 'opportunity' から
+    // 'dangerText'/'danger' 系のトークン名に変わったときは、実際の色も同時に
+    // danger 系へ変わっている（色だけを変えることは構造的にできない）。
     expect(notice).toHaveAttribute('data-tone', 'opportunity');
     expect(notice.getAttribute('data-tone')).not.toBe('danger');
+    expect(notice.getAttribute('data-tone')).not.toBe('dangerText');
   });
 });

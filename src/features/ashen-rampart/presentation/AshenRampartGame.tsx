@@ -43,20 +43,24 @@ const BoardWrapper = styled.div`
   position: relative;
 `;
 
-/** 拒否理由に使う色トークン名（回帰テストが参照する） */
-const REJECTION_NOTICE_TONE = 'opportunity';
-
 /**
- * 拒否理由。盤面直下に置く（原因は盤面クリックなので視線が盤面にあるため）
+ * 拒否理由の色トーン
  *
- * 色は danger ではなく opportunity を使う。拒否は「不便（次に何をすべきか）」
- * であって、砦が削られる「本当の危険」ではない。赤は危険専用に予約されており
- * （theme.ts）、ここで使うと本当の危険と見分けがつかなくなる。手札溢れ通知
- * （HandArea.tsx の Notice）も同じ理由で opportunity を使っており、それと揃えた。
+ * 拒否は「不便」であって砦が削られる「本当の危険」ではないため、赤は使わない。
+ * 赤（danger / dangerText）はライフが削られる場面に予約されている
+ * （theme.ts）。手札溢れ通知（HandArea.tsx の Notice）も同じ理由で opportunity
+ * を使っており、それと揃えた。
+ *
+ * この定数から色（RejectionNotice の color）と data-tone 属性の両方を導出する。
+ * 片方だけを変更できてしまうと「テストは緑だが検証している中身が違う」欠陥に
+ * なるため、出どころを1つに絞っている。
  */
+const REJECTION_NOTICE_TONE = 'opportunity' as const;
+
+/** 拒否理由。盤面直下に置く（原因は盤面クリックなので視線が盤面にあるため） */
 const RejectionNotice = styled.p`
   margin: 4px 0 0;
-  color: ${COLORS.opportunity};
+  color: ${COLORS[REJECTION_NOTICE_TONE]};
   text-align: center;
 `;
 
