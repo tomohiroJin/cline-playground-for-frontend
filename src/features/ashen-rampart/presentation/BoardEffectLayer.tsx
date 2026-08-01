@@ -14,7 +14,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import type { StageMap } from '../domain/board/stage-map';
-import type { Effect } from './combat-effects';
+import { EFFECT_DASH_PATTERN, EFFECT_STROKE_WIDTH, type Effect } from './combat-effects';
 import { COLORS } from './theme';
 
 /** セルの中心へ寄せる補正（セル座標は左上基準のため） */
@@ -61,8 +61,8 @@ export const BoardEffectLayer: React.FC<Props> = ({ effects, map }) => (
             x2={effect.to.x + CENTER}
             y2={effect.to.y + CENTER}
             stroke={COLORS.secondary}
-            strokeWidth={effect.wide ? 3 : 1}
-            strokeDasharray={effect.dashed ? '4 3' : undefined}
+            strokeWidth={effect.wide ? EFFECT_STROKE_WIDTH.shotWide : EFFECT_STROKE_WIDTH.shot}
+            strokeDasharray={effect.dashed ? EFFECT_DASH_PATTERN : undefined}
             opacity={0.8}
           />
         );
@@ -77,10 +77,14 @@ export const BoardEffectLayer: React.FC<Props> = ({ effects, map }) => (
               x2={effect.to.x + CENTER}
               y2={effect.to.y + CENTER}
               stroke={COLORS.secondary}
-              strokeWidth={4}
+              strokeWidth={EFFECT_STROKE_WIDTH.defeat}
             />
             {/* 終端の ✕。色だけでなく形でも撃破と分かるようにする */}
-            <g data-effect="defeat-mark" stroke={COLORS.secondary} strokeWidth={3}>
+            <g
+              data-effect="defeat-mark"
+              stroke={COLORS.secondary}
+              strokeWidth={EFFECT_STROKE_WIDTH.defeatMark}
+            >
               <line
                 x1={effect.to.x + 0.25}
                 y1={effect.to.y + 0.25}
@@ -108,7 +112,7 @@ export const BoardEffectLayer: React.FC<Props> = ({ effects, map }) => (
             height={0.9}
             fill="none"
             stroke={COLORS.secondary}
-            strokeWidth={3}
+            strokeWidth={EFFECT_STROKE_WIDTH.trap}
           />
         );
       }
@@ -122,7 +126,7 @@ export const BoardEffectLayer: React.FC<Props> = ({ effects, map }) => (
             r={effect.radius}
             fill="none"
             stroke={COLORS.secondary}
-            strokeWidth={2}
+            strokeWidth={EFFECT_STROKE_WIDTH.ember}
             opacity={0.7}
           />
         );

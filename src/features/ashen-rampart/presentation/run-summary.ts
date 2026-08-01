@@ -56,6 +56,11 @@ const sourceCardId = (
 ): string | undefined => {
   if (source.kind === 'tower') return state.towers[source.index]?.cardId;
   if (source.kind === 'trap') return state.traps[source.index]?.cardId;
+  // PlacedEmber はカード種別を持たない（ドメインの制約）ため、ember 由来の撃破は
+  // 固定文字列で代表させている。これは「燠火カードが常に1種類（ember-blast）」
+  // という現状のカードプールの前提の上でのみ正しい。燠火カードが2種類目に
+  // 増えた瞬間、この固定値は静かに誤帰属する（どちらの燠火が倒したか区別できない）。
+  // そのときは PlacedEmber に cardId を持たせるドメイン変更とセットで直すこと。
   return 'ember-blast';
 };
 

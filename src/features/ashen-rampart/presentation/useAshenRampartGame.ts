@@ -12,6 +12,7 @@ import { placementKindOf } from '../domain/cards/card-definition';
 import type { CombatState } from '../domain/combat/combat-state';
 import { stepTick, canPlaceAt, type PlayerAction } from '../domain/combat/step-tick';
 import { nextWavePreview } from './wave-preview';
+import { decideBattleAnnouncement } from './battle-announcement';
 import { advanceEffects, type Effect } from './combat-effects';
 import { rejectionText } from './rejection-text';
 import { accumulateTick, emptyTally, summarize, type RunTally } from './run-summary';
@@ -74,6 +75,8 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
   const loggedRunIdsRef = useRef<Set<string>>(new Set());
   /** 直前に記録した予告の内容。切り替わった tick でだけ記録するためのガード */
   const lastPreviewRef = useRef<string | undefined>(undefined);
+  /** 直前に読み上げたウェーブ番号。切り替わった tick でだけ読み上げるためのガード */
+  const lastAnnouncedWaveRef = useRef(0);
 
   // ラン開始の記録（StrictMode の二重マウントでも1回）
   useEffect(() => {
@@ -134,16 +137,18 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
     if (state.tick >= rejectionUntilRef.current) setRejectionNotice(undefined);
   }, [state]);
 
-  // 支援技術への通知。頻度が低く取り返しがつかない出来事だけを流す
+  // 支援技術への通知。頻度が低く取り返しがつかない出来事（漏れ・ウェーブ境界）だけを流す。
+  // 両方が同じ tick に起きたら漏れを優先する（decideBattleAnnouncement 参照）
   useEffect(() => {
-    const leaks = state.events.filter((e) => e.kind === 'leak').length;
-    if (leaks > 0) {
-      setAnnouncement(`${leaks}体が砦に到達。残りライフ ${state.life}`);
+    const decision = decideBattleAnnouncement(state, lastAnnouncedWaveRef.current);
+    if (decision) {
+      lastAnnouncedWaveRef.current = decision.wave;
+      setAnnouncement(decision.text);
       announceUntilRef.current = state.tick + ANNOUNCE_TICKS;
       return;
     }
     if (state.tick >= announceUntilRef.current) setAnnouncement(undefined);
-  }, [state.events, state.tick, state.life]);
+  }, [state]);
 
   // tick イベントをログと通知へ流す
   useEffect(() => {
@@ -339,6 +344,7 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       setRejectionNotice(undefined);
       rejectionUntilRef.current = 0;
       lastPreviewRef.current = undefined;
+      lastAnnouncedWaveRef.current = 0;
       setTally(emptyTally());
       setRunSeed(seedToUse);
       const nextState = startRunWithDeck(cards, new SeededRandom(seedToUse));

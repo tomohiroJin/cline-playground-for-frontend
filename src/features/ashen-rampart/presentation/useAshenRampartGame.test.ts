@@ -172,6 +172,16 @@ describe('useAshenRampartGame', () => {
     expect(result.current.state.tick).toBe(COUNTDOWN_TICKS);
   });
 
+  it('ウェーブ境界（COUNTDOWN_TICKS）に到達すると announcement に読み上げが出る', () => {
+    const { result } = renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1 }));
+    expect(result.current.announcement).toBeUndefined();
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS * COUNTDOWN_TICKS);
+    });
+    expect(result.current.state.tick).toBe(COUNTDOWN_TICKS);
+    expect(result.current.announcement).toBe('第1波が始まった');
+  });
+
   it('interactCell: 再点火可能な燠火のあるセルを選択なしでクリックすると reactivated が記録される（クールダウン中は記録されない）', () => {
     const log = createMockPlayLog();
     // 反復2 で速攻型から業火が抜けたため、業火を持つ重厚型プリセットへ差し替えた。

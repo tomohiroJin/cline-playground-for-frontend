@@ -1,10 +1,11 @@
 /**
  * 灰燼の城壁 - エフェクトの寿命管理（純粋）
  *
- * state.events は毎 tick 丸ごと置き換わり、shot は towerIndex、defeat は
- * enemyId という参照しか持たない。撃破された敵は次の tick に enemies から
- * 消えるため、**受け取ったその tick のうちに座標へ解決してスナップショット
- * しないと二度と描けない**。この関数だけがその責務を持つ。
+ * 敵は撃破後も `alive: false` のまま `enemies` に残るが、**`state.events` は
+ * 毎 tick 丸ごと置き換わる**。しかも `shot` は `towerIndex`、`defeat` は
+ * `enemyId` という参照しか持たない。イベントを受け取ったその tick のうちに
+ * 座標へ解決してスナップショットしておくのが、参照の解決先が将来変わっても
+ * 壊れない形である。この関数だけがその責務を持つ。
  *
  * 座標はセル座標系のまま保持する（SVG の viewBox をセル座標に一致させるため）。
  */
@@ -54,6 +55,32 @@ const EFFECT_PRIORITY = {
  * 最長に揃えて数を減らし、1つずつ確実に見せる方向へ倒す。
  */
 export const REDUCED_MOTION_LIFETIME = EFFECT_LIFETIME.defeat;
+
+/**
+ * エフェクトの線幅・破線パターン
+ *
+ * 設計書 §4.5 は「MAX_CONCURRENT_EFFECTS・各イベントの寿命・線幅」を
+ * 1ファイルに集約すると定める。反証条件「情報量が過大」に当たったとき、
+ * 太さ側で調整すべき値がここに揃っていることが目的（BoardEffectLayer.tsx は
+ * この定数を参照するだけにし、リテラルを持たない）。
+ */
+export const EFFECT_STROKE_WIDTH = {
+  /** 通常の射撃線 */
+  shot: 1,
+  /** 範囲攻撃の射撃線（太線） */
+  shotWide: 3,
+  /** 撃破の主線 */
+  defeat: 4,
+  /** 撃破終端の ✕ マーク */
+  defeatMark: 3,
+  /** 罠の枠 */
+  trap: 3,
+  /** 燠火の輪 */
+  ember: 2,
+} as const;
+
+/** 貫通の塔の射撃線に使う破線パターン */
+export const EFFECT_DASH_PATTERN = '4 3';
 
 export interface AdvanceOptions {
   /** prefers-reduced-motion: reduce のとき true */
