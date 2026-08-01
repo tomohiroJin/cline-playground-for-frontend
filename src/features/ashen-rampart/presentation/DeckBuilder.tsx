@@ -20,12 +20,14 @@ import {
 import { countByCard, costCurve, validateDeck } from '../domain/cards/deck-builder';
 import { weaknessTextOf } from './card-text';
 import { COLORS } from './theme';
+import { HEADER_CLEARANCE } from './layout-constants';
 
 const Layout = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
   padding: 16px;
+  padding-top: ${HEADER_CLEARANCE};
   background: ${COLORS.dominant};
   color: ${COLORS.secondary};
   min-height: 70vh;
@@ -144,7 +146,7 @@ export const DeckBuilder: React.FC<Props> = ({ onStart, initialCards, initialSee
   };
 
   return (
-    <Layout>
+    <Layout data-testid="ashen-rampart-deckbuilder-layout" data-header-clearance={HEADER_CLEARANCE}>
       <h2>デッキを組む</h2>
       <Controls>
         {Object.values(PRESET_DECKS).map((preset) => (

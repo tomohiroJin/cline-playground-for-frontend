@@ -7,6 +7,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { COLORS } from './theme';
+import { HEADER_CLEARANCE } from './layout-constants';
 
 const Panel = styled.div`
   display: flex;
@@ -14,6 +15,7 @@ const Panel = styled.div`
   gap: 12px;
   align-items: flex-start;
   padding: 24px;
+  padding-top: ${HEADER_CLEARANCE};
   background: ${COLORS.dominant};
   color: ${COLORS.secondary};
   min-height: 60vh;
@@ -43,7 +45,7 @@ interface Props {
 }
 
 export const StartOverlay: React.FC<Props> = ({ preview, onStart }) => (
-  <Panel>
+  <Panel data-testid="ashen-rampart-start-overlay" data-header-clearance={HEADER_CLEARANCE}>
     <h2>砦を守る</h2>
     <p>敵を通すとライフが減ります。0 になると敗北です。</p>
     <List>

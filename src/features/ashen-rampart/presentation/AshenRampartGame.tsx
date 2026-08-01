@@ -26,11 +26,15 @@ import { BattleAnnouncer } from './BattleAnnouncer';
 import { nextWavePreview } from './wave-preview';
 import { RunSummary } from './RunSummary';
 import { COLORS } from './theme';
+import { HEADER_CLEARANCE } from './layout-constants';
+
+export { HEADER_CLEARANCE };
 
 const Layout = styled.div`
   display: flex;
   flex-direction: column;
   min-height: 70vh;
+  padding-top: ${HEADER_CLEARANCE};
   background: ${COLORS.dominant};
   color: ${COLORS.secondary};
 `;
@@ -235,7 +239,7 @@ const RunView: React.FC<RunViewProps> = ({ cards, seed, onRebuild }) => {
   const isLevyBlocked = game.isPaused || game.state.outcome !== 'playing';
 
   return (
-    <Layout>
+    <Layout data-testid="ashen-rampart-layout" data-header-clearance={HEADER_CLEARANCE}>
       <LevyChoice options={game.levyOptions} onChoose={game.chooseLevy} disabled={isLevyBlocked} />
       <RunStatusBar
         state={game.state}

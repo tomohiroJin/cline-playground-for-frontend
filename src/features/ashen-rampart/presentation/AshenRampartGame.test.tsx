@@ -15,7 +15,7 @@
  */
 import React from 'react';
 import { render, screen, fireEvent, act, waitFor, within } from '@testing-library/react';
-import { AshenRampartGame } from './AshenRampartGame';
+import { AshenRampartGame, HEADER_CLEARANCE } from './AshenRampartGame';
 import { PLAY_LOG_STORAGE_KEY } from '../infrastructure/play-log/local-storage-play-log';
 import type { PlayLogExport } from '../application/ports/play-log-port';
 import { TICK_INTERVAL_MS } from './useAshenRampartGame';
@@ -123,6 +123,17 @@ describe('AshenRampartGame', () => {
 
   afterEach(() => {
     jest.useRealTimers();
+  });
+
+  it('ラン画面の上端にフローティングホームボタンぶんの余白がある', () => {
+    render(<AshenRampartGame />);
+    startRunning();
+    // フローティングホームボタン（App.tsx, position: fixed）は常に画面左上に
+    // 重なるため、共通側を変更せずこちら側で余白を確保して吸収する
+    expect(screen.getByTestId('ashen-rampart-layout')).toHaveAttribute(
+      'data-header-clearance',
+      HEADER_CLEARANCE
+    );
   });
 
   it('決着後に勝敗理由を入力して記録すると run_note が保存される', () => {
