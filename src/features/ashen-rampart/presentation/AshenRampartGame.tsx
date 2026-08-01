@@ -43,10 +43,20 @@ const BoardWrapper = styled.div`
   position: relative;
 `;
 
-/** 拒否理由。盤面直下に置く（原因は盤面クリックなので視線が盤面にあるため） */
+/** 拒否理由に使う色トークン名（回帰テストが参照する） */
+const REJECTION_NOTICE_TONE = 'opportunity';
+
+/**
+ * 拒否理由。盤面直下に置く（原因は盤面クリックなので視線が盤面にあるため）
+ *
+ * 色は danger ではなく opportunity を使う。拒否は「不便（次に何をすべきか）」
+ * であって、砦が削られる「本当の危険」ではない。赤は危険専用に予約されており
+ * （theme.ts）、ここで使うと本当の危険と見分けがつかなくなる。手札溢れ通知
+ * （HandArea.tsx の Notice）も同じ理由で opportunity を使っており、それと揃えた。
+ */
 const RejectionNotice = styled.p`
   margin: 4px 0 0;
-  color: ${COLORS.dangerText};
+  color: ${COLORS.opportunity};
   text-align: center;
 `;
 
@@ -234,7 +244,9 @@ const RunView: React.FC<RunViewProps> = ({ cards, seed, onRebuild }) => {
           />
           <CountdownDisplay tick={game.state.tick} />
         </BoardWrapper>
-        {game.rejectionNotice && <RejectionNotice>{game.rejectionNotice}</RejectionNotice>}
+        {game.rejectionNotice && (
+          <RejectionNotice data-tone={REJECTION_NOTICE_TONE}>{game.rejectionNotice}</RejectionNotice>
+        )}
         <EnemyLegend />
         {game.state.outcome !== 'playing' && (
           <Result>

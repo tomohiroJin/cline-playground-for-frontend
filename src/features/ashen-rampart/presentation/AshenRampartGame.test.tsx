@@ -351,6 +351,12 @@ describe('AshenRampartGame', () => {
       jest.advanceTimersByTime(TICK_INTERVAL_MS);
     });
 
-    expect(await screen.findByText(/そこには置けない|次の設置まで|マナが足りない/)).toBeVisible();
+    const notice = await screen.findByText(/そこには置けない|次の設置まで|マナが足りない/);
+    expect(notice).toBeVisible();
+
+    // 拒否は「不便」であって砦が削られる「危険」ではないため、危険専用の色(danger系)を
+    // 使ってはいけない（レビュー指摘: この色が danger 系に戻されたら落ちる回帰テスト）
+    expect(notice).toHaveAttribute('data-tone', 'opportunity');
+    expect(notice.getAttribute('data-tone')).not.toBe('danger');
   });
 });
