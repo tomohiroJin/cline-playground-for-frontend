@@ -190,8 +190,8 @@ describe('支配戦略が存在しないこと', () => {
 /**
  * 範囲攻撃の要求は「必ず負ける」ではなく「勝率が著しく落ちる」
  *
- * 実測（シード1〜20・greedyStrategy）:
- * - 範囲攻撃を持たない合法デッキ（攻撃札を上限まで積んだもの）… 6/20
+ * 実測（シード1〜20・greedyStrategy。反復2 の設置マス22枚時点）:
+ * - 範囲攻撃を持たない合法デッキ（攻撃札を上限まで積んだもの）… 4/20
  * - 全要求を満たしたデッキ ………………………………………………… 14/20
  *
  * 単体塔だけでも群れ22体を捌き切れるシードが実在するため、「範囲攻撃なしでは負ける」は
@@ -289,7 +289,7 @@ describe('全要求を満たしたデッキは勝てること', () => {
  * プリセットは構築画面の「たたき台として読み込む」導線から使われるため、ここが弱いと
  * 引き運ではなくプリセットの弱さで連敗し、設計書 §7 の反証条件を誤って踏む。
  * 逆に強すぎると「配分の判断」という仮説そのものが検証できない。
- * 実測（シード1〜20・greedyStrategy）は swift 10/20・heavy 10/20。
+ * 実測（シード1〜20・greedyStrategy）は swift 10/20・heavy 13/20（反復2 の魔力炉8枚構成）。
  *
  * 上限・下限・偏りを別々のテストに分け、それぞれ2プリセットを独立にアサートする。
  * 論理和（どちらかが満たせば緑）にすると、片方が壊れても検出できない。
@@ -307,6 +307,69 @@ describe('プリセットの難度較正', () => {
 
   it('プリセット2種の勝率が極端に偏らない', () => {
     expect(Math.abs(presetWinsOf('swift') - presetWinsOf('heavy'))).toBeLessThanOrEqual(5);
+  });
+});
+
+/**
+ * 較正の不変条件（反復2）
+ *
+ * 設置マス12→22・魔力炉のデッキ内上限撤廃を受けて、両側から数値で拘束する。
+ * 片側だけでは較正が厳しすぎても緩すぎても検出できない（反復1 で4回繰り返した欠陥）。
+ */
+describe('較正の不変条件（反復2）', () => {
+  /**
+   * 範囲攻撃（splashRadius > 0）を持たない合法デッキ
+   *
+   * ID のハードコードではなくスペック述語で機械的に除外する。反復1 で
+   * 「範囲攻撃なし」デッキに業火（ember 型の範囲攻撃）が混ざっていた事故の再発防止。
+   * オーラ札（0ダメージ）も除いて、単体攻撃塔だけを上限まで積む。
+   */
+  const noSplashDeck = (): string[] => {
+    const singleTargetTowers = CARD_IDS.filter((id) => {
+      const card = getCardDefinition(id);
+      return (
+        card.type === 'tower' &&
+        card.tower !== undefined &&
+        card.tower.splashRadius === 0 &&
+        card.tower.aura === undefined
+      );
+    });
+    const picks = singleTargetTowers.flatMap((id) => repeat(id, MAX_COPIES));
+    return [...repeat('reactor', DECK_SIZE - picks.length), ...picks].slice(0, DECK_SIZE);
+  };
+
+  it('範囲攻撃なしデッキの構成が、スペック述語で正しく作られている', () => {
+    const deck = noSplashDeck();
+    expect(deck).toHaveLength(DECK_SIZE);
+    expect(validateDeck(deck).errors).toEqual([]);
+    // 単体攻撃塔は 弓兵・弩砲・徹甲弩 の3種（各3枚=9枚）＋魔力炉11枚
+    expect(deck.filter(hasAreaDamage)).toHaveLength(0);
+    expect(deck.filter((id) => id !== 'reactor')).toHaveLength(9);
+  });
+
+  // it.failing は「現状は落ちる」ことを検証する。満たせるようになると赤になり、
+  // .failing を外し忘れたまま緑で見過ごされることがない
+  it.failing('範囲攻撃を含まないデッキの勝率は 4/20 未満である', () => {
+    // **未達**。実測 10/20（魔力炉11枚の単体塔デッキ）。
+    // 閾値を「通るように」緩めていない。it.failing で未達のまま記録し、
+    // 較正（BUILD_SLOT_MAX_DISTANCE の見直し等）で満たせたら .failing を外す。
+    // 敵側の数値は動かさない方針のため、このタスクでは是正していない。
+    expect(winsOf(noSplashDeck())).toBeLessThan(4);
+  });
+
+  it('全要求充足デッキの勝率は 12/20 以上である', () => {
+    // 対空・貫通・範囲の3軸をすべて満たし、マナ基盤も 8枚に揃えた構成。実測 19/20
+    const deck = [
+      ...repeat('reactor', 8),
+      ...repeat('ballista', 3),
+      ...repeat('cannon-tower', 3),
+      ...repeat('piercer', 3),
+      ...repeat('snare-net', 2),
+      ...repeat('levy', 1),
+    ];
+    expect(deck).toHaveLength(DECK_SIZE);
+    expect(validateDeck(deck).errors).toEqual([]);
+    expect(winsOf(deck)).toBeGreaterThanOrEqual(12);
   });
 });
 
@@ -328,6 +391,12 @@ describe('較正の基準値', () => {
   // さらに続くレビューで、群れ22体でも「範囲攻撃なしでは必ず負ける」までは達していないと
   // 判明した（範囲なし合法デッキが 6/20 で勝つ）。実プレイ判定の直前に敵側の較正を
   // 動かすリスクを避け、数値は据え置いて主張を「勝率が著しく落ちる」に改めてある。
+  //
+  // 反復2（設置マス12→22・魔力炉の上限撤廃）で再測定した結果、この緩さはむしろ広がった。
+  // 魔力炉3枚の範囲なしデッキは 4/20 まで落ちたが、魔力炉を11枚積んだ単体塔デッキは
+  // 10/20 で勝つ（上の「較正の不変条件（反復2）」の it.failing を参照）。
+  // 範囲要求を拘束させるには BUILD_SLOT_MAX_DISTANCE の見直しが要るが、
+  // 敵側の数値を動かさない方針とあわせて反復2 では手を付けていない。
   it('敵の総HPが 728 から変わっていない', () => {
     // 敵数を変えたら §9.3 の描画密度（スタック表示）を再計算すること
     expect(totalEnemyHp(PLAINS_WAVES)).toBe(728);

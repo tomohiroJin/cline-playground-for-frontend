@@ -2,14 +2,14 @@
  * カードプールのテスト
  *
  * 設計書の数値がそのままデータになっていること、プリセットデッキが
- * デッキ規則（20枚・同名3枚まで）を満たすことを検証する。
+ * デッキ規則（20枚・同名上限はカードごと。魔力炉のみ無制限）を満たすことを検証する。
  */
 import {
   getCardDefinition,
   CARD_IDS,
   PRESET_DECKS,
   DECK_SIZE,
-  MAX_COPIES,
+  maxCopiesOf,
 } from './card-pool';
 import { placementKindOf } from './card-definition';
 import { validateDeck } from './deck-builder';
@@ -131,10 +131,12 @@ describe('プリセットデッキ', () => {
     expect(deck.cards).toHaveLength(DECK_SIZE);
   });
 
-  it.each(Object.entries(PRESET_DECKS))('%s は同名3枚以内', (_id, deck) => {
+  // 反復2: 魔力炉だけ上限が別（maxCopiesOf）になったため、MAX_COPIES 直参照から
+  // カード別の上限参照へ改めた。緩めたのではなく、上限の定義元が変わったことへの追随
+  it.each(Object.entries(PRESET_DECKS))('%s はカードごとの同名上限を超えない', (_id, deck) => {
     const counts = new Map<string, number>();
     deck.cards.forEach((id) => counts.set(id, (counts.get(id) ?? 0) + 1));
-    counts.forEach((count) => expect(count).toBeLessThanOrEqual(MAX_COPIES));
+    counts.forEach((count, id) => expect(count).toBeLessThanOrEqual(maxCopiesOf(id)));
   });
 
   it.each(Object.entries(PRESET_DECKS))('%s は既知のカードだけで構成される', (_id, deck) => {

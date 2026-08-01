@@ -317,7 +317,9 @@ describe('AshenRampartGame', () => {
 
     it('徴発の候補は盤面（LevyChoice）から実際に選べ、選ぶと手札が1枚増える（結線の到達確認）', () => {
       render(<AshenRampartGame />);
-      startRunning(/速攻型 を読み込む/, '1');
+      // 手札が上限に達するとドローが止まるため、待つだけでは徴発が来ない。
+      // シード7は速攻型の初期手札に徴発を含む（反復2 で徴発が2→1枚になった影響）
+      startRunning(/速攻型 を読み込む/, '7');
 
       // 徴発カードが手札に来るまで進めてプレイする（山札を1枚peekして候補を出す）
       playLevyCardWhenDrawn();
@@ -349,7 +351,9 @@ describe('AshenRampartGame', () => {
 
     it('一時停止中は徴発の候補ボタンが無効化され、押しても反応しない（指摘B）', () => {
       render(<AshenRampartGame />);
-      startRunning(/速攻型 を読み込む/, '1');
+      // 手札が上限に達するとドローが止まるため、待つだけでは徴発が来ない。
+      // シード7は速攻型の初期手札に徴発を含む（反復2 で徴発が2→1枚になった影響）
+      startRunning(/速攻型 を読み込む/, '7');
 
       playLevyCardWhenDrawn();
       expect(screen.getByText('徴発: 1枚選ぶ')).toBeInTheDocument();
@@ -417,7 +421,8 @@ describe('AshenRampartGame', () => {
     const hand = screen.getByRole('group', { name: '手札' });
     let reactorCard: HTMLElement | null = null;
     for (let advanced = 0; advanced < 300 && !reactorCard; advanced += 1) {
-      reactorCard = within(hand).queryByRole('button', { name: /^魔力炉 コスト/ });
+      // 反復2 で魔力炉が8枚になり、手札に同時に複数枚並ぶため先頭を取る
+      reactorCard = within(hand).queryAllByRole('button', { name: /^魔力炉 コスト/ })[0] ?? null;
       if (reactorCard) break;
       act(() => {
         jest.advanceTimersByTime(TICK_INTERVAL_MS);
