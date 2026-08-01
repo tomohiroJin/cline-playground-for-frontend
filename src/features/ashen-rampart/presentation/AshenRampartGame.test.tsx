@@ -326,4 +326,31 @@ describe('AshenRampartGame', () => {
 
   // 指摘C（対応不要・記録のみ）: ブリーフィング（StartOverlay）を再表示する手段が
   // UI に無い（既読フラグは localStorage を消さない限り解除されない）。次の反復で扱う。
+
+  it('置けないセルをクリックすると理由が盤面直下に出る', async () => {
+    render(<AshenRampartGame />);
+    startRunning(/速攻型 を読み込む/, '1');
+
+    // 速攻型・seed:1 の初期手札3枚はいずれもコスト2以上（マナ2では払えない）か
+    // 即時発動の術で盤面クリックを伴わないため、コスト0の魔力炉が手札に来るまで進める
+    const hand = screen.getByRole('group', { name: '手札' });
+    let reactorCard: HTMLElement | null = null;
+    for (let advanced = 0; advanced < 300 && !reactorCard; advanced += 1) {
+      reactorCard = within(hand).queryByRole('button', { name: /^魔力炉/ });
+      if (reactorCard) break;
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+    }
+    expect(reactorCard).not.toBeNull();
+
+    fireEvent.click(reactorCard!);
+    // 経路セル（魔力炉は設置スロットにしか置けない）をクリックする
+    fireEvent.click(screen.getByLabelText(/^0,3 経路/));
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS);
+    });
+
+    expect(await screen.findByText(/そこには置けない|次の設置まで|マナが足りない/)).toBeVisible();
+  });
 });

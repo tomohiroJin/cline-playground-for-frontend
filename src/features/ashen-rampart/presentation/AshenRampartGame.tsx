@@ -43,6 +43,13 @@ const BoardWrapper = styled.div`
   position: relative;
 `;
 
+/** 拒否理由。盤面直下に置く（原因は盤面クリックなので視線が盤面にあるため） */
+const RejectionNotice = styled.p`
+  margin: 4px 0 0;
+  color: ${COLORS.dangerText};
+  text-align: center;
+`;
+
 const Result = styled.div`
   display: flex;
   flex-direction: column;
@@ -227,6 +234,7 @@ const RunView: React.FC<RunViewProps> = ({ cards, seed, onRebuild }) => {
           />
           <CountdownDisplay tick={game.state.tick} />
         </BoardWrapper>
+        {game.rejectionNotice && <RejectionNotice>{game.rejectionNotice}</RejectionNotice>}
         <EnemyLegend />
         {game.state.outcome !== 'playing' && (
           <Result>
