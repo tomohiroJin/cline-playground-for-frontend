@@ -22,39 +22,63 @@ export interface StageMap {
   slowCells?: CellPos[];
 }
 
+/**
+ * 設置スロットを経路からの距離で決める上限
+ *
+ * 塔の射程は 火砲台1.5 / 弓兵1.6 / 徹甲弩1.8 / 弩砲2.2 / 投石機3.0。
+ * 主力の下限が1.5 なので、この距離までなら**どのマスからも主力2種が届く**。
+ * 距離2.0（33マス）にすると弓兵・火砲台が届かないマスが生まれ、
+ * 死にマスを別の形で再生産してしまう（設計書 §6.1）。
+ */
+export const BUILD_SLOT_MAX_DISTANCE = 1.5;
+
+/** 経路から maxDistance 以内にある非経路セルを列挙する（左上から行優先） */
+export const buildSlotsNearPath = (
+  width: number,
+  height: number,
+  path: readonly CellPos[],
+  maxDistance: number
+): CellPos[] => {
+  const slots: CellPos[] = [];
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (path.some((c) => c.x === x && c.y === y)) continue;
+      if (path.some((c) => Math.hypot(c.x - x, c.y - y) <= maxDistance)) slots.push({ x, y });
+    }
+  }
+  return slots;
+};
+
+const PLAINS_WIDTH = 9;
+const PLAINS_HEIGHT = 7;
+
+const PLAINS_PATH: CellPos[] = [
+  { x: 0, y: 3 },
+  { x: 1, y: 3 },
+  { x: 2, y: 3 },
+  { x: 3, y: 3 },
+  { x: 4, y: 3 },
+  { x: 4, y: 2 },
+  { x: 4, y: 1 },
+  { x: 5, y: 1 },
+  { x: 6, y: 1 },
+  { x: 7, y: 1 },
+  { x: 8, y: 1 },
+];
+
 /** P1 ステージ: 平原（9×7、S字経路） */
 export const PLAINS_MAP: StageMap = {
   id: 'plains',
   name: '平原',
-  width: 9,
-  height: 7,
-  path: [
-    { x: 0, y: 3 },
-    { x: 1, y: 3 },
-    { x: 2, y: 3 },
-    { x: 3, y: 3 },
-    { x: 4, y: 3 },
-    { x: 4, y: 2 },
-    { x: 4, y: 1 },
-    { x: 5, y: 1 },
-    { x: 6, y: 1 },
-    { x: 7, y: 1 },
-    { x: 8, y: 1 },
-  ],
-  buildSlots: [
-    { x: 1, y: 2 },
-    { x: 2, y: 2 },
-    { x: 3, y: 2 },
-    { x: 1, y: 4 },
-    { x: 2, y: 4 },
-    { x: 3, y: 4 },
-    { x: 5, y: 2 },
-    { x: 6, y: 2 },
-    { x: 7, y: 2 },
-    { x: 5, y: 0 },
-    { x: 6, y: 0 },
-    { x: 7, y: 0 },
-  ],
+  width: PLAINS_WIDTH,
+  height: PLAINS_HEIGHT,
+  path: PLAINS_PATH,
+  buildSlots: buildSlotsNearPath(
+    PLAINS_WIDTH,
+    PLAINS_HEIGHT,
+    PLAINS_PATH,
+    BUILD_SLOT_MAX_DISTANCE
+  ),
   highGround: [
     { x: 3, y: 4 },
     { x: 7, y: 2 },

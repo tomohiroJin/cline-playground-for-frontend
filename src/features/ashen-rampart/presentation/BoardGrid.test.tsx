@@ -132,4 +132,18 @@ describe('BoardGrid', () => {
     );
     expect(container.querySelectorAll('[data-effect="shot"]')).toHaveLength(1);
   });
+
+  it('設置できないマスは「城壁の外」と読める', () => {
+    render(
+      <BoardGrid
+        map={PLAINS_MAP}
+        state={createCombatState(createDeck(['reactor'], () => 0), PLAINS_WAVES)}
+        placeableCells={[]}
+        effects={[]}
+        onCellClick={() => undefined}
+      />
+    );
+    // (0,0) は経路からも設置スロットからも遠い
+    expect(screen.getByLabelText(/^0,0 城壁の外/)).toBeInTheDocument();
+  });
 });

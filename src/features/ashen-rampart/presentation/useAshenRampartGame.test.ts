@@ -105,7 +105,8 @@ describe('useAshenRampartGame', () => {
     const towerIndex = result.current.state.deck.hand.findIndex((id) => id !== 'mud-time');
     act(() => result.current.selectCard(towerIndex));
     expect(result.current.placeableCells.length).toBeGreaterThan(0);
-    expect(result.current.placeableCells.length).toBeLessThanOrEqual(12);
+    // 設置スロットは規則生成で22マスに拡張された（stage-map.ts 参照）
+    expect(result.current.placeableCells.length).toBeLessThanOrEqual(22);
   });
 
   it('選択せずにセルを押しても何も起きない', () => {
