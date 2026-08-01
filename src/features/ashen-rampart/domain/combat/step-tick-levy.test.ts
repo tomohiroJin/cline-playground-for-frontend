@@ -9,6 +9,7 @@ import type { CombatState } from './combat-state';
 import { stepTick } from './step-tick';
 import type { WaveDefinition } from './waves';
 import { PLAINS_MAP } from '../board/stage-map';
+import { createDeck } from '../cards/deck';
 
 const noWave: WaveDefinition[] = [{ startTick: 99999, entries: [] }];
 
@@ -33,10 +34,13 @@ describe('徴発の発動', () => {
     expect(after.mana).toBe(1); // 初期2 - コスト1
   });
 
-  it('配置クールダウンを消費する（他の札と同じ扱い）', () => {
+  it('配置クールダウンは消費しない（盤面を占有しないため）', () => {
+    // Task 6: 徴発は盤面に何も置かないため、配置の間合いに縛られない。
+    // 反復1 時点ではここでクールダウンを消費しており、それ自体が
+    // 「クールダウン中は徴発も使えない」バグの原因だった。
     const state = stateWith(['levy'], ['arrow-tower', 'ballista', 'reactor']);
     const after = play(state, 0);
-    expect(after.placeCooldown).toBeGreaterThan(0);
+    expect(after.placeCooldown).toBe(0);
   });
 
   it('山札が空なら候補は空で、効果なしで墓地へ', () => {
@@ -156,5 +160,50 @@ describe('徴発の選択', () => {
     const chosen = stepTick(after, [{ kind: 'choose-levy', optionIndex: 0 }], PLAINS_MAP);
     expect(chosen.deck.hand).toHaveLength(5); // 6枚に溢れない
     expect(chosen.levyOptions).toEqual([]);
+  });
+});
+
+describe('配置クールダウンの適用範囲', () => {
+  // 注: createDeck の Fisher-Yates シャッフルは rng=>0 のとき先頭要素を末尾方向へ
+  // 送る挙動になるため、対象カードを配列の2番目に置いて確実に初期手札(先頭3枚)へ入るようにする。
+  it('クールダウン中でも徴発は使える', () => {
+    const state: CombatState = {
+      ...createCombatState(createDeck(['reactor', 'levy', 'reactor', 'reactor'], () => 0), noWave),
+      placeCooldown: 30,
+      mana: 5,
+    };
+    const levyIndex = state.deck.hand.indexOf('levy');
+    expect(levyIndex).toBeGreaterThanOrEqual(0);
+
+    const next = stepTick(state, [{ kind: 'play-card', handIndex: levyIndex }], PLAINS_MAP);
+
+    expect(next.events.some((e) => e.kind === 'rejected')).toBe(false);
+    expect(next.levyOptions.length).toBeGreaterThan(0);
+  });
+
+  it('徴発を使ってもクールダウンは消費されない', () => {
+    const state: CombatState = {
+      ...createCombatState(createDeck(['reactor', 'levy', 'reactor', 'reactor'], () => 0), noWave),
+      placeCooldown: 0,
+      mana: 5,
+    };
+    const levyIndex = state.deck.hand.indexOf('levy');
+    const next = stepTick(state, [{ kind: 'play-card', handIndex: levyIndex }], PLAINS_MAP);
+    expect(next.placeCooldown).toBe(0);
+  });
+
+  it('盤面に置く札はクールダウン中に拒否される', () => {
+    const state: CombatState = {
+      ...createCombatState(createDeck(['reactor', 'arrow-tower', 'reactor', 'reactor'], () => 0), noWave),
+      placeCooldown: 30,
+      mana: 5,
+    };
+    const towerIndex = state.deck.hand.indexOf('arrow-tower');
+    const next = stepTick(
+      state,
+      [{ kind: 'play-card', handIndex: towerIndex, pos: { x: 1, y: 2 } }],
+      PLAINS_MAP
+    );
+    expect(next.events).toContainEqual({ kind: 'rejected', reason: 'cooldown' });
   });
 });

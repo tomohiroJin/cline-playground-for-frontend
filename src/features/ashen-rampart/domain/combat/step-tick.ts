@@ -298,7 +298,14 @@ const applyCardEffect = (
   }
 };
 
-/** カード使用操作を適用する（クールダウン・手札・マナ・設置可否を順に検査） */
+/**
+ * カード使用操作を適用する（手札・カード種別・マナ・設置可否を順に検査）
+ *
+ * **配置クールダウンは「盤面に何かを置く札」だけに課す。**
+ * 徴発・時泥のような即時札は盤面を占有しないため、配置の間合いに縛る理由がない。
+ * 反復1 で徴発が機能しなかったのは、カードを特定する前にクールダウンを
+ * 見ていたためであり、バグというより層の取り違えだった。
+ */
 const applyPlayCard = (
   draft: ActionsDraft,
   state: CombatState,
@@ -306,16 +313,17 @@ const applyPlayCard = (
   tick: number,
   action: Extract<PlayerAction, { kind: 'play-card' }>
 ): void => {
-  if (draft.placeCooldown > 0) {
-    draft.events.push({ kind: 'rejected', reason: 'cooldown' });
-    return;
-  }
   const cardId = draft.deck.hand[action.handIndex];
   if (cardId === undefined) {
     draft.events.push({ kind: 'rejected', reason: 'target' });
     return;
   }
   const card = getCardDefinition(cardId);
+  const needsPlacement = placementKindOf(card) !== 'none';
+  if (needsPlacement && draft.placeCooldown > 0) {
+    draft.events.push({ kind: 'rejected', reason: 'cooldown' });
+    return;
+  }
   if (card.type === 'levy' && draft.levyOptions.length > 0) {
     draft.events.push({ kind: 'rejected', reason: 'pending' });
     return;
@@ -324,14 +332,14 @@ const applyPlayCard = (
     draft.events.push({ kind: 'rejected', reason: 'mana' });
     return;
   }
-  if (placementKindOf(card) !== 'none' && (!action.pos || !canPlaceAt(state, card, action.pos, map))) {
+  if (needsPlacement && (!action.pos || !canPlaceAt(state, card, action.pos, map))) {
     draft.events.push({ kind: 'rejected', reason: 'target' });
     return;
   }
   // ここから確定
   draft.mana -= card.cost;
   draft.deck = discardFromHand(draft.deck, action.handIndex);
-  draft.placeCooldown = PLACE_COOLDOWN_TICKS;
+  if (needsPlacement) draft.placeCooldown = PLACE_COOLDOWN_TICKS;
   draft.events.push({ kind: 'played', cardId, pos: action.pos });
   applyCardEffect(draft, card, cardId, action.pos, tick);
 };
