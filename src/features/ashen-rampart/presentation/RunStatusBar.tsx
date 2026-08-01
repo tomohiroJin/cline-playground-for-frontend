@@ -56,16 +56,28 @@ interface Props {
   onTogglePause: () => void;
   /** 現在のランのシード。設計書 §4「常時表示・再現できることが分かる形で」に対応 */
   runSeed: number;
+  /**
+   * 直近に漏れ（敵の砦到達）が起きている最中か。
+   * 共通運命の法則: 砦セルが脈動するのに HUD のライフが無音で減ると、
+   * 同じ出来事が2つの別の出来事に見えてしまうため、ライフ表示を連動させる。
+   */
+  isLeaking?: boolean;
 }
 
-export const RunStatusBar: React.FC<Props> = ({ state, isPaused, onTogglePause, runSeed }) => {
+export const RunStatusBar: React.FC<Props> = ({
+  state,
+  isPaused,
+  onTogglePause,
+  runSeed,
+  isLeaking = false,
+}) => {
   const preview = nextWavePreview(state);
-  const danger = state.life <= DANGER_LIFE;
+  const danger = state.life <= DANGER_LIFE || isLeaking;
 
   return (
     <Bar>
       <span>
-        砦 <Life $danger={danger}>残り {state.life}</Life>
+        砦 <Life $danger={danger} data-leaking={isLeaking}>残り {state.life}</Life>
       </span>
       {danger && <span>危険</span>}
       <span>次: {preview}</span>

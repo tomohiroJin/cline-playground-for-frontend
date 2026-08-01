@@ -72,6 +72,17 @@ const advanceUntilRunEnds = (): void => {
   }
 };
 
+/**
+ * 決着画面で勝敗の理由を記録する（Task 12: 集計・再挑戦・ログコピーは記録後にだけ開くため、
+ * それらのボタンへ到達する既存テストはすべて先にこれを呼ぶ必要がある）
+ */
+const submitRunNote = (text = 'テスト用の記録'): void => {
+  fireEvent.change(screen.getByLabelText(/勝敗の理由を記録する/), {
+    target: { value: text },
+  });
+  fireEvent.click(screen.getByRole('button', { name: '記録する' }));
+};
+
 /** 手札グループ内で「徴発」のカードボタンを探す（HandArea に role="group" aria-label="手札" を追加済み） */
 const findLevyHandButton = (): HTMLElement | null =>
   within(screen.getByRole('group', { name: '手札' })).queryByRole('button', {
@@ -119,7 +130,7 @@ describe('AshenRampartGame', () => {
     startRunning();
     advanceUntilRunEnds();
 
-    const textarea = screen.getByLabelText('勝敗の理由を記録する');
+    const textarea = screen.getByLabelText(/勝敗の理由を記録する/);
     fireEvent.change(textarea, { target: { value: '弓兵に頼りすぎて鴉に抜けられた' } });
     fireEvent.click(screen.getByRole('button', { name: '記録する' }));
 
@@ -135,7 +146,7 @@ describe('AshenRampartGame', () => {
     startRunning();
     advanceUntilRunEnds();
 
-    const textarea = screen.getByLabelText('勝敗の理由を記録する');
+    const textarea = screen.getByLabelText(/勝敗の理由を記録する/);
     fireEvent.change(textarea, { target: { value: '   ' } });
     fireEvent.click(screen.getByRole('button', { name: '記録する' }));
 
@@ -154,6 +165,7 @@ describe('AshenRampartGame', () => {
     render(<AshenRampartGame />);
     startRunning();
     advanceUntilRunEnds();
+    submitRunNote();
 
     fireEvent.click(screen.getByRole('button', { name: '計測ログをコピー' }));
 
@@ -169,6 +181,7 @@ describe('AshenRampartGame', () => {
     render(<AshenRampartGame />);
     startRunning();
     advanceUntilRunEnds();
+    submitRunNote();
 
     fireEvent.click(screen.getByRole('button', { name: 'もう一度挑む' }));
 
@@ -191,6 +204,7 @@ describe('AshenRampartGame', () => {
     render(<AshenRampartGame />);
     startRunning();
     advanceUntilRunEnds();
+    submitRunNote();
 
     const seedBefore = (screen.getByLabelText('シード') as HTMLInputElement).value;
 
@@ -215,6 +229,7 @@ describe('AshenRampartGame', () => {
     render(<AshenRampartGame />);
     startRunning();
     advanceUntilRunEnds();
+    submitRunNote();
 
     fireEvent.click(screen.getByRole('button', { name: '計測ログをコピー' }));
 
@@ -275,6 +290,7 @@ describe('AshenRampartGame', () => {
       render(<AshenRampartGame />);
       startRunning();
       advanceUntilRunEnds();
+      submitRunNote();
       fireEvent.click(screen.getByRole('button', { name: 'もう一度挑む' }));
 
       fireEvent.click(screen.getByRole('button', { name: /速攻型 を読み込む/ }));
@@ -287,6 +303,7 @@ describe('AshenRampartGame', () => {
       render(<AshenRampartGame />);
       startRunning(/速攻型 を読み込む/, '321');
       advanceUntilRunEnds();
+      submitRunNote();
 
       fireEvent.click(screen.getByRole('button', { name: 'もう一度挑む' }));
 
@@ -347,6 +364,45 @@ describe('AshenRampartGame', () => {
       fireEvent.click(levyOption!);
       expect(screen.getByText('徴発: 1枚選ぶ')).toBeInTheDocument();
     });
+  });
+
+  it('勝敗の理由を記録するまで集計は表示されない（Task 12: 判定汚染防止のための表示順序）', async () => {
+    render(<AshenRampartGame />);
+    startRunning();
+    advanceUntilRunEnds();
+
+    // 決着直後は「記録する」欄だけで、集計・再挑戦・ログコピーはまだ出ない
+    expect(screen.queryByText(/置くときに選べたマス/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'もう一度挑む' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '同じデッキで別のシードに挑む' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '計測ログをコピー' })).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/勝敗の理由を記録する/), {
+      target: { value: '鴉を落とせなかった' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '記録する' }));
+
+    // 記録した後にだけ集計・各ボタンが開く
+    expect(await screen.findByText(/置くときに選べたマス/)).toBeVisible();
+    expect(screen.getByRole('button', { name: 'もう一度挑む' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '同じデッキで別のシードに挑む' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '計測ログをコピー' })).toBeInTheDocument();
+  });
+
+  it('restart（同じデッキで別のシードに挑む）すると集計の鍵と記録欄が次のランへ持ち越されない', async () => {
+    render(<AshenRampartGame />);
+    startRunning();
+    advanceUntilRunEnds();
+    submitRunNote('1回目の記録');
+    expect(await screen.findByText(/置くときに選べたマス/)).toBeVisible();
+
+    fireEvent.click(screen.getByRole('button', { name: '同じデッキで別のシードに挑む' }));
+
+    // 盤面に留まったまま新しいランが始まり、記録前の状態（集計非表示・欄が空）に戻っている
+    expect(screen.getByRole('button', { name: '一時停止' })).toBeInTheDocument();
+    advanceUntilRunEnds();
+    expect(screen.queryByText(/置くときに選べたマス/)).not.toBeInTheDocument();
+    expect((screen.getByLabelText(/勝敗の理由を記録する/) as HTMLTextAreaElement).value).toBe('');
   });
 
   // 指摘C（対応不要・記録のみ）: ブリーフィング（StartOverlay）を再表示する手段が

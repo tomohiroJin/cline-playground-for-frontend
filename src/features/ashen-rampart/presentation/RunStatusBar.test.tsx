@@ -8,6 +8,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { RunStatusBar } from './RunStatusBar';
 import { createCombatState } from '../domain/combat/combat-state';
 import { PLAINS_WAVES } from '../domain/combat/waves';
+import { createDeck } from '../domain/cards/deck';
 
 const state = createCombatState({ drawPile: [], hand: [], graveyard: [] }, PLAINS_WAVES);
 
@@ -72,6 +73,19 @@ describe('RunStatusBar', () => {
     const seedField = screen.getByLabelText('シード') as HTMLInputElement;
     expect(seedField.value).toBe('4242');
     expect(seedField.readOnly).toBe(true);
+  });
+
+  it('漏れの最中はライフが危険色になる', () => {
+    const { container } = render(
+      <RunStatusBar
+        state={createCombatState(createDeck(['reactor'], () => 0), PLAINS_WAVES)}
+        isPaused={false}
+        onTogglePause={() => undefined}
+        runSeed={1}
+        isLeaking
+      />
+    );
+    expect(container.querySelector('[data-leaking="true"]')).not.toBeNull();
   });
 
   it('シードが変わると表示も更新される', () => {

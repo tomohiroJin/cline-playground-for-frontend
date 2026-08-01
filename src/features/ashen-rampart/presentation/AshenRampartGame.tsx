@@ -24,6 +24,7 @@ import { CountdownDisplay } from './CountdownDisplay';
 import { LevyChoice } from './LevyChoice';
 import { BattleAnnouncer } from './BattleAnnouncer';
 import { nextWavePreview } from './wave-preview';
+import { RunSummary } from './RunSummary';
 import { COLORS } from './theme';
 
 const Layout = styled.div`
@@ -180,6 +181,10 @@ const RunView: React.FC<RunViewProps> = ({ cards, seed, onRebuild }) => {
   const [noteText, setNoteText] = useState('');
   const [noteSaved, setNoteSaved] = useState(false);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
+  // 集計は「勝敗の理由」を記録した後にだけ出す。
+  // 判定項目1 の問いは「戦闘中に読めたか」であり、集計を先に見せると
+  // 盤面で読めなかった場合でもリザルトが答えを教えてしまう（設計書 §8.2）
+  const [summaryUnlocked, setSummaryUnlocked] = useState(false);
 
   // スペースキーで一時停止（設計書 §9.6）
   useEffect(() => {
@@ -209,6 +214,7 @@ const RunView: React.FC<RunViewProps> = ({ cards, seed, onRebuild }) => {
     setNoteText('');
     setNoteSaved(false);
     setCopyStatus('idle');
+    setSummaryUnlocked(false);
   }, [game.state.outcome]);
 
   const handleNoteSubmit = (event: React.FormEvent): void => {
@@ -217,6 +223,7 @@ const RunView: React.FC<RunViewProps> = ({ cards, seed, onRebuild }) => {
     if (trimmed.length === 0) return;
     game.noteRun(trimmed);
     setNoteSaved(true);
+    setSummaryUnlocked(true);
   };
 
   const handleCopyLog = (): void => {
@@ -235,6 +242,7 @@ const RunView: React.FC<RunViewProps> = ({ cards, seed, onRebuild }) => {
         isPaused={game.isPaused}
         onTogglePause={game.togglePause}
         runSeed={game.runSeed}
+        isLeaking={game.effects.some((e) => e.kind === 'leak')}
       />
       <Center>
         <BattleAnnouncer message={game.announcement} />
@@ -255,23 +263,10 @@ const RunView: React.FC<RunViewProps> = ({ cards, seed, onRebuild }) => {
         {game.state.outcome !== 'playing' && (
           <Result>
             <p>{game.state.outcome === 'won' ? '砦は守られた' : '城壁は灰燼に帰した'}</p>
-            <ActionRow>
-              <ActionButton type="button" onClick={() => game.restart()}>
-                同じデッキで別のシードに挑む
-              </ActionButton>
-              <ActionButton type="button" onClick={onRebuild}>
-                もう一度挑む
-              </ActionButton>
-              <ActionButton type="button" onClick={handleCopyLog}>
-                計測ログをコピー
-              </ActionButton>
-            </ActionRow>
-            {copyStatus === 'copied' && <Feedback>計測ログをコピーしました</Feedback>}
-            {copyStatus === 'failed' && (
-              <Feedback>コピーに失敗しました。コンソールに出力しています</Feedback>
-            )}
             <NoteForm onSubmit={handleNoteSubmit}>
-              <NoteLabel htmlFor="ashen-rampart-run-note">勝敗の理由を記録する</NoteLabel>
+              <NoteLabel htmlFor="ashen-rampart-run-note">
+                勝敗の理由を記録する（記録すると集計が開きます）
+              </NoteLabel>
               <NoteInput
                 id="ashen-rampart-run-note"
                 value={noteText}
@@ -283,6 +278,27 @@ const RunView: React.FC<RunViewProps> = ({ cards, seed, onRebuild }) => {
               <ActionButton type="submit">記録する</ActionButton>
               {noteSaved && <Feedback>記録しました</Feedback>}
             </NoteForm>
+
+            {summaryUnlocked && (
+              <>
+                <RunSummary view={game.summary} />
+                <ActionRow>
+                  <ActionButton type="button" onClick={() => game.restart()}>
+                    同じデッキで別のシードに挑む
+                  </ActionButton>
+                  <ActionButton type="button" onClick={onRebuild}>
+                    もう一度挑む
+                  </ActionButton>
+                  <ActionButton type="button" onClick={handleCopyLog}>
+                    計測ログをコピー
+                  </ActionButton>
+                </ActionRow>
+                {copyStatus === 'copied' && <Feedback>計測ログをコピーしました</Feedback>}
+                {copyStatus === 'failed' && (
+                  <Feedback>コピーに失敗しました。コンソールに出力しています</Feedback>
+                )}
+              </>
+            )}
           </Result>
         )}
       </Center>
