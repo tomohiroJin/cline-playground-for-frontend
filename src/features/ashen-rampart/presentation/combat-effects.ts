@@ -1,0 +1,152 @@
+/**
+ * 灰燼の城壁 - エフェクトの寿命管理（純粋）
+ *
+ * state.events は毎 tick 丸ごと置き換わり、shot は towerIndex、defeat は
+ * enemyId という参照しか持たない。撃破された敵は次の tick に enemies から
+ * 消えるため、**受け取ったその tick のうちに座標へ解決してスナップショット
+ * しないと二度と描けない**。この関数だけがその責務を持つ。
+ *
+ * 座標はセル座標系のまま保持する（SVG の viewBox をセル座標に一致させるため）。
+ */
+import type { CellPos, StageMap } from '../domain/board/stage-map';
+import { fortressCell } from '../domain/board/stage-map';
+import type { CombatState, TickEvent } from '../domain/combat/combat-state';
+import { positionOf } from '../domain/combat/step-tick';
+import { getCardDefinition } from '../domain/cards/card-pool';
+
+/**
+ * 同時に描くエフェクトの上限
+ *
+ * 塔6基 × クールダウン8 tick では常時1〜3本の線が明滅し、群れ22体と
+ * 重なる局面がある。反証条件「情報量そのものが過大」に当たったときは
+ * まずこの値を下げる（設計書 §8.4）。
+ */
+export const MAX_CONCURRENT_EFFECTS = 12;
+
+/** 各エフェクトの寿命（tick）。1 tick = 100ms */
+export const EFFECT_LIFETIME = {
+  shot: 3,
+  trap: 3,
+  ember: 5,
+  defeat: 8,
+  leak: 8,
+} as const;
+
+/**
+ * 破棄の優先度（大きいほど残す）
+ *
+ * 寿命は shot 3 tick に対し leak 8 tick で、leak は常に「古い」側になる。
+ * 古い順に落とすと最も重要な情報が最初に捨てられるため、優先度順にする。
+ */
+const EFFECT_PRIORITY = {
+  leak: 4,
+  defeat: 3,
+  trap: 2,
+  ember: 2,
+  shot: 1,
+} as const;
+
+export type Effect =
+  | {
+      kind: 'shot';
+      id: string;
+      from: CellPos;
+      to: CellPos;
+      untilTick: number;
+      /** 範囲攻撃の塔は太線で描く */
+      wide: boolean;
+      /** 貫通の塔は破線で描く */
+      dashed: boolean;
+    }
+  | { kind: 'defeat'; id: string; from: CellPos; to: CellPos; untilTick: number }
+  | { kind: 'trap'; id: string; at: CellPos; untilTick: number }
+  | { kind: 'ember'; id: string; at: CellPos; radius: number; untilTick: number }
+  | { kind: 'leak'; id: string; at: CellPos; untilTick: number };
+
+/** 敵の現在位置。既に消えた敵は undefined */
+const enemyPos = (state: CombatState, enemyId: number, map: StageMap): CellPos | undefined => {
+  const enemy = state.enemies.find((e) => e.id === enemyId);
+  if (!enemy) return undefined;
+  return positionOf(enemy.progress, map.path);
+};
+
+/** 撃破源の座標。既に消えた設置物は undefined */
+const sourcePos = (state: CombatState, source: Extract<TickEvent, { kind: 'defeat' }>['source']): CellPos | undefined => {
+  if (source.kind === 'tower') return state.towers[source.index]?.pos;
+  if (source.kind === 'trap') return state.traps[source.index]?.pos;
+  return state.embers[source.index]?.pos;
+};
+
+/** 1件の TickEvent をエフェクトへ変換する。描かないイベントは undefined */
+const toEffect = (
+  event: TickEvent,
+  state: CombatState,
+  map: StageMap,
+  index: number
+): Effect | undefined => {
+  const tick = state.tick;
+  const id = `${tick}-${index}`;
+  if (event.kind === 'shot') {
+    const from = state.towers[event.towerIndex]?.pos;
+    const to = enemyPos(state, event.targetId, map);
+    if (!from || !to) return undefined;
+    const spec = getCardDefinition(state.towers[event.towerIndex]?.cardId ?? '').tower;
+    return {
+      kind: 'shot',
+      id,
+      from,
+      to,
+      untilTick: tick + EFFECT_LIFETIME.shot,
+      wide: (spec?.splashRadius ?? 0) > 0,
+      dashed: spec?.heavyBonusThreshold !== undefined,
+    };
+  }
+  if (event.kind === 'defeat') {
+    const from = sourcePos(state, event.source);
+    const to = enemyPos(state, event.enemyId, map);
+    if (!from || !to) return undefined;
+    return { kind: 'defeat', id, from, to, untilTick: tick + EFFECT_LIFETIME.defeat };
+  }
+  if (event.kind === 'trap') {
+    const at = state.traps[event.trapIndex]?.pos;
+    if (!at) return undefined;
+    return { kind: 'trap', id, at, untilTick: tick + EFFECT_LIFETIME.trap };
+  }
+  if (event.kind === 'ember') {
+    const at = state.embers[event.emberIndex]?.pos;
+    if (!at) return undefined;
+    const radius = getCardDefinition('ember-blast').ember?.radius ?? 1;
+    return { kind: 'ember', id, at, radius, untilTick: tick + EFFECT_LIFETIME.ember };
+  }
+  if (event.kind === 'leak') {
+    const at = fortressCell(map);
+    if (!at) return undefined;
+    return { kind: 'leak', id, at, untilTick: tick + EFFECT_LIFETIME.leak };
+  }
+  return undefined;
+};
+
+/**
+ * 前 tick までのエフェクトを進め、この tick のイベントを足す
+ *
+ * 上限を超えた場合は**優先度の低いものから**落とす。同一優先度の中でのみ
+ * 古い順（untilTick が小さい順）に落とす。
+ */
+export const advanceEffects = (
+  prev: readonly Effect[],
+  state: CombatState,
+  map: StageMap
+): Effect[] => {
+  const alive = prev.filter((e) => e.untilTick > state.tick);
+  const born = state.events
+    .map((event, index) => toEffect(event, state, map, index))
+    .filter((e): e is Effect => e !== undefined);
+  const all = [...alive, ...born];
+  if (all.length <= MAX_CONCURRENT_EFFECTS) return all;
+  return [...all]
+    .sort((a, b) => {
+      const priority = EFFECT_PRIORITY[b.kind] - EFFECT_PRIORITY[a.kind];
+      return priority !== 0 ? priority : b.untilTick - a.untilTick;
+    })
+    .slice(0, MAX_CONCURRENT_EFFECTS);
+};
