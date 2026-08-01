@@ -43,7 +43,12 @@ describe('RunSummary', () => {
   });
 
   it('篝火の貢献があるときは与ダメージ増加分を出す', () => {
+    // dt/dd を分けたまま検証するため data-testid で値セルを直接取得する（方法A）。
+    // Testing Library の getByText は要素をまたいだテキストを拾えない
+    // （各要素の直接の子テキストノードだけを見る仕様）ため、ラベル(dt)と値(dd)を
+    // 1つの正規表現でまたいで検証することはできない。dl の構造（dt→dd の並び）を
+    // 崩さずに済むこちらを選んだ。
     render(<RunSummary view={view({ beaconBonusDamage: 34 })} />);
-    expect(screen.getByText(/篝火.*34/)).toBeInTheDocument();
+    expect(screen.getByTestId('summary-beacon')).toHaveTextContent('与ダメージ +34');
   });
 });

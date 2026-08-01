@@ -27,18 +27,6 @@ const Detail = styled.dd`
   margin: 0;
 `;
 
-/**
- * 篝火・鍛冶場の貢献行専用。ラベルと値を同じ要素の直接の子テキストにまとめる。
- * dt/dd を分けると Testing Library の getByText は要素をまたいだテキストを
- * 拾えず（各要素の直接の子テキストノードだけを見る仕様）、「ラベルと値が
- * 同じ行にある」ことをテストで検証できなくなるため、1つの dd に集約する。
- */
-const FullRow = styled.dd`
-  grid-column: 1 / -1;
-  margin: 0;
-  opacity: 0.9;
-`;
-
 /** tick を秒へ（1 tick = 100ms） */
 const toSeconds = (ticks: number): string => (ticks / 10).toFixed(1);
 
@@ -56,11 +44,17 @@ export const RunSummary: React.FC<Props> = ({ view }) => (
     </Detail>
 
     {view.beaconBonusDamage > 0 && (
-      <FullRow>篝火の貢献: 与ダメージ +{view.beaconBonusDamage}</FullRow>
+      <>
+        <Term>篝火の貢献</Term>
+        <Detail data-testid="summary-beacon">与ダメージ +{view.beaconBonusDamage}</Detail>
+      </>
     )}
 
     {view.forgeExtendedShots > 0 && (
-      <FullRow>鍛冶場の貢献: 射程延長で {view.forgeExtendedShots} 射</FullRow>
+      <>
+        <Term>鍛冶場の貢献</Term>
+        <Detail data-testid="summary-forge">射程延長で {view.forgeExtendedShots} 射</Detail>
+      </>
     )}
 
     <Term>通らなかった操作</Term>
