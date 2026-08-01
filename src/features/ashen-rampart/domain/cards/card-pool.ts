@@ -10,6 +10,9 @@
  */
 import type { CardDefinition } from './card-definition';
 
+/** デッキの枚数 */
+export const DECK_SIZE = 20;
+
 const CARDS: readonly CardDefinition[] = [
   {
     id: 'reactor',
@@ -18,6 +21,10 @@ const CARDS: readonly CardDefinition[] = [
     cost: 0,
     description: '60tick ごとにマナを1得る。設置スロットを1つ使う。',
     reactor: { intervalTicks: 60, manaPerTick: 1 },
+    // 盤面では3〜4基で消費レート（3マナ/60tick）を飽和させるため、
+    // 並べるほど強くはならない。上限を外すのは「確実に引くため」である。
+    // 20枚中3枚(15%)ではマナ基盤が確立する前にランが進んでしまっていた。
+    maxCopies: DECK_SIZE,
   },
   {
     id: 'arrow-tower',
@@ -165,11 +172,12 @@ export const getCardDefinition = (id: string): CardDefinition => {
   return card;
 };
 
-/** デッキの枚数 */
-export const DECK_SIZE = 20;
-
 /** 同名カードの上限。弓兵スパムを構造的に封じる（設計書 §7） */
 export const MAX_COPIES = 3;
+
+/** カードごとの同名上限。定義が無ければ MAX_COPIES */
+export const maxCopiesOf = (id: string): number =>
+  getCardDefinition(id).maxCopies ?? MAX_COPIES;
 
 export interface PresetDeck {
   id: string;

@@ -46,6 +46,13 @@ describe('DeckBuilder', () => {
     expect(add).toBeDisabled();
   });
 
+  it('魔力炉は4枚以上でも追加できる', () => {
+    render(<DeckBuilder onStart={jest.fn()} />);
+    const addReactor = screen.getByRole('button', { name: '魔力炉 を1枚増やす' });
+    for (let i = 0; i < 6; i++) fireEvent.click(addReactor);
+    expect(addReactor).not.toBeDisabled();
+  });
+
   it('減らすボタンで枚数が減り、0枚では無効', () => {
     render(<DeckBuilder onStart={jest.fn()} />);
     const remove = screen.getByRole('button', { name: '弓兵の塔 を1枚減らす' });

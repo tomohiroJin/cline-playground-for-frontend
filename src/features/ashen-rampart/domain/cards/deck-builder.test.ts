@@ -5,7 +5,7 @@
  * UI で組めないデッキ（またはその逆）が生まれる。唯一の真実をここに置く。
  */
 import { validateDeck, countByCard, costCurve } from './deck-builder';
-import { DECK_SIZE, MAX_COPIES } from './card-pool';
+import { DECK_SIZE, MAX_COPIES, maxCopiesOf } from './card-pool';
 
 const repeat = (id: string, n: number): string[] => Array.from({ length: n }, () => id);
 
@@ -87,5 +87,38 @@ describe('costCurve', () => {
 
   it('未知のカードは無視する（検証は validateDeck の責務）', () => {
     expect(costCurve(['unknown']).size).toBe(0);
+  });
+});
+
+describe('カード別の同名上限', () => {
+  it('魔力炉は3枚を超えても有効になる', () => {
+    const cards = [
+      ...Array.from({ length: 8 }, () => 'reactor'),
+      ...Array.from({ length: 3 }, () => 'arrow-tower'),
+      ...Array.from({ length: 3 }, () => 'cannon-tower'),
+      ...Array.from({ length: 3 }, () => 'spike-trap'),
+      ...Array.from({ length: 3 }, () => 'ballista'),
+    ];
+    expect(cards).toHaveLength(20);
+    expect(validateDeck(cards).isValid).toBe(true);
+  });
+
+  it('魔力炉以外は従来どおり3枚までに制限される', () => {
+    const cards = [
+      ...Array.from({ length: 4 }, () => 'arrow-tower'),
+      ...Array.from({ length: 8 }, () => 'reactor'),
+      ...Array.from({ length: 3 }, () => 'cannon-tower'),
+      ...Array.from({ length: 3 }, () => 'spike-trap'),
+      ...Array.from({ length: 2 }, () => 'ballista'),
+    ];
+    expect(cards).toHaveLength(20);
+    const result = validateDeck(cards);
+    expect(result.isValid).toBe(false);
+    expect(result.errors.some((e) => e.includes('弓兵の塔'))).toBe(true);
+  });
+
+  it('maxCopiesOf は魔力炉にデッキ枚数、それ以外に MAX_COPIES を返す', () => {
+    expect(maxCopiesOf('reactor')).toBe(DECK_SIZE);
+    expect(maxCopiesOf('arrow-tower')).toBe(MAX_COPIES);
   });
 });

@@ -4,7 +4,7 @@
  * UI（構築画面）と CI（バランステスト）の両方がここを使う。
  * UI 側でだけ検証すると「テストは通るが UI で組めないデッキ」が生まれる。
  */
-import { CARD_IDS, DECK_SIZE, MAX_COPIES, getCardDefinition } from './card-pool';
+import { CARD_IDS, DECK_SIZE, maxCopiesOf, getCardDefinition } from './card-pool';
 
 export interface DeckValidation {
   isValid: boolean;
@@ -44,9 +44,11 @@ export const validateDeck = (cards: readonly string[]): DeckValidation => {
   });
 
   countByCard(cards).forEach((count, id) => {
-    if (count <= MAX_COPIES) return;
-    const name = CARD_IDS.includes(id) ? getCardDefinition(id).name : id;
-    errors.push(`${name}が${count}枚あります（同名は${MAX_COPIES}枚まで）`);
+    if (!CARD_IDS.includes(id)) return;
+    const limit = maxCopiesOf(id);
+    if (count <= limit) return;
+    const name = getCardDefinition(id).name;
+    errors.push(`${name}が${count}枚あります（同名は${limit}枚まで）`);
   });
 
   return { isValid: errors.length === 0, errors };

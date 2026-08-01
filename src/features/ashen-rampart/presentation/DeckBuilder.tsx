@@ -13,9 +13,9 @@ import styled from 'styled-components';
 import {
   CARD_IDS,
   DECK_SIZE,
-  MAX_COPIES,
   PRESET_DECKS,
   getCardDefinition,
+  maxCopiesOf,
 } from '../domain/cards/card-pool';
 import { countByCard, costCurve, validateDeck } from '../domain/cards/deck-builder';
 import { weaknessTextOf } from './card-text';
@@ -178,7 +178,7 @@ export const DeckBuilder: React.FC<Props> = ({ onStart, initialCards, initialSee
                 <StepButton
                   type="button"
                   aria-label={`${card.name} を1枚増やす`}
-                  disabled={count >= MAX_COPIES}
+                  disabled={count >= maxCopiesOf(id)}
                   onClick={() => add(id)}
                 >
                   ＋
