@@ -14,6 +14,7 @@ import { stepTick, canPlaceAt, type PlayerAction } from '../domain/combat/step-t
 import { nextWavePreview } from './wave-preview';
 import { advanceEffects, type Effect } from './combat-effects';
 import { rejectionText } from './rejection-text';
+import { accumulateTick, emptyTally, summarize, type RunTally } from './run-summary';
 import { startRunWithDeck, createSeed } from '../application/use-cases/start-run';
 import { SeededRandom } from '../infrastructure/random/seeded-random';
 import { LocalStoragePlayLog } from '../infrastructure/play-log/local-storage-play-log';
@@ -59,6 +60,8 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
   const announceUntilRef = useRef(0);
   const [rejectionNotice, setRejectionNotice] = useState<string | undefined>(undefined);
   const rejectionUntilRef = useRef(0);
+  const [tally, setTally] = useState<RunTally>(() => emptyTally());
+  const prevStateRef = useRef<CombatState>(state);
   // レンダーごとに matchMedia を読まないよう、初期化関数で1度だけ解決する
   const [prefersReducedMotion] = useState<boolean>(
     () =>
@@ -105,6 +108,14 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       advanceEffects(current, state, PLAINS_MAP, { reducedMotion: prefersReducedMotion })
     );
   }, [state, prefersReducedMotion]);
+
+  // 判定用の集計を累積する。events は毎 tick 消えるため tick ごとに足す
+  useEffect(() => {
+    const prev = prevStateRef.current;
+    prevStateRef.current = state;
+    if (prev === state) return;
+    setTally((current) => accumulateTick(current, prev, state, PLAINS_MAP));
+  }, [state]);
 
   // 拒否理由の通知。同一 tick に複数出た場合は最初の1件だけを出し、
   // 同じ理由が続いた場合は件数を添える（表示欄は1つしかないため）
@@ -328,8 +339,11 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       setRejectionNotice(undefined);
       rejectionUntilRef.current = 0;
       lastPreviewRef.current = undefined;
+      setTally(emptyTally());
       setRunSeed(seedToUse);
-      setState(startRunWithDeck(cards, new SeededRandom(seedToUse)));
+      const nextState = startRunWithDeck(cards, new SeededRandom(seedToUse));
+      setState(nextState);
+      prevStateRef.current = nextState;
       setRunId(createRunId());
     },
     [cards]
@@ -368,5 +382,6 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
     restart,
     noteRun,
     exportLogJson,
+    summary: summarize(tally, cards),
   };
 };
