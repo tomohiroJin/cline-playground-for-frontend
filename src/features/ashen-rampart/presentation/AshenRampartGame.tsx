@@ -220,6 +220,7 @@ const RunView: React.FC<RunViewProps> = ({ cards, seed, onRebuild }) => {
             map={PLAINS_MAP}
             state={game.state}
             placeableCells={game.placeableCells}
+            effects={game.effects}
             onCellClick={game.interactCell}
           />
           <CountdownDisplay tick={game.state.tick} />

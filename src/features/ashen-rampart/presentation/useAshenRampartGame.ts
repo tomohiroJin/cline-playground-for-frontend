@@ -12,6 +12,7 @@ import { placementKindOf } from '../domain/cards/card-definition';
 import type { CombatState } from '../domain/combat/combat-state';
 import { stepTick, canPlaceAt, type PlayerAction } from '../domain/combat/step-tick';
 import { nextWavePreview } from './wave-preview';
+import { advanceEffects, type Effect } from './combat-effects';
 import { startRunWithDeck, createSeed } from '../application/use-cases/start-run';
 import { SeededRandom } from '../infrastructure/random/seeded-random';
 import { LocalStoragePlayLog } from '../infrastructure/play-log/local-storage-play-log';
@@ -46,6 +47,7 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [overflowNotice, setOverflowNotice] = useState<string | undefined>(undefined);
+  const [effects, setEffects] = useState<readonly Effect[]>([]);
   const noticeUntilRef = useRef(0);
   const pendingRef = useRef<PlayerAction[]>([]);
   const loggedRunIdsRef = useRef<Set<string>>(new Set());
@@ -77,6 +79,12 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
     }, TICK_INTERVAL_MS);
     return () => clearInterval(timer);
   }, [isPaused, state.outcome]);
+
+  // tick イベントを寿命付きエフェクトへ変換する。
+  // events は毎 tick 置き換わるため、この tick のうちに座標へ解決する
+  useEffect(() => {
+    setEffects((current) => advanceEffects(current, state, PLAINS_MAP));
+  }, [state]);
 
   // tick イベントをログと通知へ流す
   useEffect(() => {
@@ -244,6 +252,7 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       setSelectedIndex(null);
       setIsPaused(false);
       setOverflowNotice(undefined);
+      setEffects([]);
       lastPreviewRef.current = undefined;
       setRunSeed(seedToUse);
       setState(startRunWithDeck(cards, new SeededRandom(seedToUse)));
@@ -272,6 +281,7 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
     placeableCells,
     isPaused,
     overflowNotice,
+    effects,
     selectCard,
     clickCell,
     reactivate,

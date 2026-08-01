@@ -12,6 +12,8 @@ import { isHighGround, isSlowCell } from '../domain/board/stage-map';
 import type { CombatState } from '../domain/combat/combat-state';
 import { stackEnemies } from './enemy-stack';
 import { EnemyMarker } from './EnemyMarker';
+import { BoardEffectLayer } from './BoardEffectLayer';
+import type { Effect } from './combat-effects';
 import { COLORS } from './theme';
 
 const Frame = styled.div<{ $columns: number; $rows: number }>`
@@ -68,12 +70,19 @@ interface Props {
   state: CombatState;
   /** 配置可能なマス（カード選択中のみ非空） */
   placeableCells: readonly CellPos[];
+  effects: readonly Effect[];
   onCellClick: (pos: CellPos) => void;
 }
 
 const samePos = (a: CellPos, b: CellPos): boolean => a.x === b.x && a.y === b.y;
 
-export const BoardGrid: React.FC<Props> = ({ map, state, placeableCells, onCellClick }) => {
+export const BoardGrid: React.FC<Props> = ({
+  map,
+  state,
+  placeableCells,
+  effects,
+  onCellClick,
+}) => {
   const cells: CellPos[] = [];
   for (let y = 0; y < map.height; y++) {
     for (let x = 0; x < map.width; x++) cells.push({ x, y });
@@ -122,6 +131,7 @@ export const BoardGrid: React.FC<Props> = ({ map, state, placeableCells, onCellC
           </Cell>
         );
       })}
+      <BoardEffectLayer effects={effects} map={map} />
       {stacks.map((stack) => (
         <EnemyMarker key={stack.id} stack={stack} columns={map.width} rows={map.height} />
       ))}

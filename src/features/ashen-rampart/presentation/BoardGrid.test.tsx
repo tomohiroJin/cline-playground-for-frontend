@@ -10,13 +10,20 @@ import { BoardGrid } from './BoardGrid';
 import { PLAINS_MAP } from '../domain/board/stage-map';
 import { createCombatState } from '../domain/combat/combat-state';
 import { PLAINS_WAVES } from '../domain/combat/waves';
+import { createDeck } from '../domain/cards/deck';
 
 const emptyState = createCombatState({ drawPile: [], hand: [], graveyard: [] }, PLAINS_WAVES);
 
 describe('BoardGrid', () => {
   it('経路と設置スロットが読み取れるラベルを持つ', () => {
     render(
-      <BoardGrid map={PLAINS_MAP} state={emptyState} placeableCells={[]} onCellClick={jest.fn()} />
+      <BoardGrid
+        map={PLAINS_MAP}
+        state={emptyState}
+        placeableCells={[]}
+        effects={[]}
+        onCellClick={jest.fn()}
+      />
     );
     expect(screen.getByRole('button', { name: /0,3 経路/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /1,2 設置可/ })).toBeInTheDocument();
@@ -24,7 +31,13 @@ describe('BoardGrid', () => {
 
   it('高台と滞留が示される', () => {
     render(
-      <BoardGrid map={PLAINS_MAP} state={emptyState} placeableCells={[]} onCellClick={jest.fn()} />
+      <BoardGrid
+        map={PLAINS_MAP}
+        state={emptyState}
+        placeableCells={[]}
+        effects={[]}
+        onCellClick={jest.fn()}
+      />
     );
     expect(screen.getByRole('button', { name: /3,4 設置可 高台/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /4,3 経路 滞留/ })).toBeInTheDocument();
@@ -36,6 +49,7 @@ describe('BoardGrid', () => {
         map={PLAINS_MAP}
         state={emptyState}
         placeableCells={[{ x: 1, y: 2 }]}
+        effects={[]}
         onCellClick={jest.fn()}
       />
     );
@@ -50,6 +64,7 @@ describe('BoardGrid', () => {
         map={PLAINS_MAP}
         state={emptyState}
         placeableCells={[{ x: 1, y: 2 }]}
+        effects={[]}
         onCellClick={onCellClick}
       />
     );
@@ -63,7 +78,13 @@ describe('BoardGrid', () => {
       towers: [{ cardId: 'arrow-tower', pos: { x: 1, y: 2 }, cooldownLeft: 0 }],
     };
     render(
-      <BoardGrid map={PLAINS_MAP} state={withTower} placeableCells={[]} onCellClick={jest.fn()} />
+      <BoardGrid
+        map={PLAINS_MAP}
+        state={withTower}
+        placeableCells={[]}
+        effects={[]}
+        onCellClick={jest.fn()}
+      />
     );
     expect(screen.getByRole('button', { name: /1,2 設置可 塔/ })).toBeInTheDocument();
   });
@@ -77,8 +98,38 @@ describe('BoardGrid', () => {
       ],
     };
     render(
-      <BoardGrid map={PLAINS_MAP} state={withEnemies} placeableCells={[]} onCellClick={jest.fn()} />
+      <BoardGrid
+        map={PLAINS_MAP}
+        state={withEnemies}
+        placeableCells={[]}
+        effects={[]}
+        onCellClick={jest.fn()}
+      />
     );
     expect(screen.getByRole('img', { name: '群れ 2体' })).toBeInTheDocument();
+  });
+
+  it('エフェクトが盤面に描画される', () => {
+    const effects = [
+      {
+        kind: 'shot' as const,
+        id: 'a',
+        from: { x: 1, y: 2 },
+        to: { x: 1, y: 3 },
+        untilTick: 10,
+        wide: false,
+        dashed: false,
+      },
+    ];
+    const { container } = render(
+      <BoardGrid
+        map={PLAINS_MAP}
+        state={createCombatState(createDeck(['reactor'], () => 0), PLAINS_WAVES)}
+        placeableCells={[]}
+        effects={effects}
+        onCellClick={() => undefined}
+      />
+    );
+    expect(container.querySelectorAll('[data-effect="shot"]')).toHaveLength(1);
   });
 });
