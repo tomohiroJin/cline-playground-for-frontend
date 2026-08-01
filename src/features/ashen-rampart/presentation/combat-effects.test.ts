@@ -13,6 +13,7 @@ import {
   advanceEffects,
   EFFECT_LIFETIME,
   MAX_CONCURRENT_EFFECTS,
+  REDUCED_MOTION_LIFETIME,
   type Effect,
 } from './combat-effects';
 
@@ -112,5 +113,54 @@ describe('advanceEffects', () => {
     const effects = advanceEffects(shots, state, PLAINS_MAP);
     expect(effects).toHaveLength(MAX_CONCURRENT_EFFECTS);
     expect(effects.some((e) => e.kind === 'leak')).toBe(true);
+  });
+});
+
+describe('advanceEffects（reduced-motion）', () => {
+  const shotEvent = {
+    kind: 'shot' as const,
+    towerIndex: 0,
+    targetId: 1,
+    auraDamageBonus: 0,
+    beyondBaseRange: false,
+  };
+
+  const stateWithTower = (tick: number, events: CombatState['events']) =>
+    stateWith(tick, events, {
+      towers: [{ cardId: 'arrow-tower', pos: { x: 1, y: 2 }, cooldownLeft: 0 }],
+      enemies: [enemyAt(1, 1)],
+    });
+
+  it('寿命が一律になる', () => {
+    const state = stateWithTower(10, [shotEvent]);
+    const normal = advanceEffects([], state, PLAINS_MAP);
+    const reduced = advanceEffects([], state, PLAINS_MAP, { reducedMotion: true });
+
+    expect(normal[0]?.untilTick).toBe(10 + EFFECT_LIFETIME.shot);
+    expect(reduced[0]?.untilTick).toBe(10 + REDUCED_MOTION_LIFETIME);
+  });
+
+  it('同時表示の上限が半分になる', () => {
+    const existing: Effect[] = Array.from({ length: MAX_CONCURRENT_EFFECTS }, (_, i) => ({
+      kind: 'shot',
+      id: `s${i}`,
+      from: { x: 1, y: 2 },
+      to: { x: 1, y: 3 },
+      untilTick: 999,
+      wide: false,
+      dashed: false,
+    }));
+    const reduced = advanceEffects(existing, stateWith(1, []), PLAINS_MAP, {
+      reducedMotion: true,
+    });
+    expect(reduced).toHaveLength(Math.floor(MAX_CONCURRENT_EFFECTS / 2));
+  });
+
+  it('reduced-motion でもエフェクトは消えない（0件にならない）', () => {
+    const reduced = advanceEffects([], stateWithTower(10, [shotEvent]), PLAINS_MAP, {
+      reducedMotion: true,
+    });
+    // 消すと reduced-motion のユーザーだけ判定項目1 が達成不能になる
+    expect(reduced.length).toBeGreaterThan(0);
   });
 });

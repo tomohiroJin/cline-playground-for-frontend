@@ -27,6 +27,9 @@ export const TICK_INTERVAL_MS = 100;
 /** 溢れ通知を表示し続ける tick 数（0.6秒） */
 const OVERFLOW_NOTICE_TICKS = 6;
 
+/** 読み上げを保持する tick 数 */
+const ANNOUNCE_TICKS = 20;
+
 export interface UseAshenRampartGameOptions {
   /** 使用するデッキ。構築 UI から渡す */
   cards: readonly string[];
@@ -48,6 +51,15 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
   const [isPaused, setIsPaused] = useState(false);
   const [overflowNotice, setOverflowNotice] = useState<string | undefined>(undefined);
   const [effects, setEffects] = useState<readonly Effect[]>([]);
+  const [announcement, setAnnouncement] = useState<string | undefined>(undefined);
+  const announceUntilRef = useRef(0);
+  // レンダーごとに matchMedia を読まないよう、初期化関数で1度だけ解決する
+  const [prefersReducedMotion] = useState<boolean>(
+    () =>
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
   const noticeUntilRef = useRef(0);
   const pendingRef = useRef<PlayerAction[]>([]);
   const loggedRunIdsRef = useRef<Set<string>>(new Set());
@@ -83,8 +95,21 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
   // tick イベントを寿命付きエフェクトへ変換する。
   // events は毎 tick 置き換わるため、この tick のうちに座標へ解決する
   useEffect(() => {
-    setEffects((current) => advanceEffects(current, state, PLAINS_MAP));
-  }, [state]);
+    setEffects((current) =>
+      advanceEffects(current, state, PLAINS_MAP, { reducedMotion: prefersReducedMotion })
+    );
+  }, [state, prefersReducedMotion]);
+
+  // 支援技術への通知。頻度が低く取り返しがつかない出来事だけを流す
+  useEffect(() => {
+    const leaks = state.events.filter((e) => e.kind === 'leak').length;
+    if (leaks > 0) {
+      setAnnouncement(`${leaks}体が砦に到達。残りライフ ${state.life}`);
+      announceUntilRef.current = state.tick + ANNOUNCE_TICKS;
+      return;
+    }
+    if (state.tick >= announceUntilRef.current) setAnnouncement(undefined);
+  }, [state.events, state.tick, state.life]);
 
   // tick イベントをログと通知へ流す
   useEffect(() => {
@@ -253,6 +278,8 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       setIsPaused(false);
       setOverflowNotice(undefined);
       setEffects([]);
+      setAnnouncement(undefined);
+      announceUntilRef.current = 0;
       lastPreviewRef.current = undefined;
       setRunSeed(seedToUse);
       setState(startRunWithDeck(cards, new SeededRandom(seedToUse)));
@@ -282,6 +309,7 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
     isPaused,
     overflowNotice,
     effects,
+    announcement,
     selectCard,
     clickCell,
     reactivate,

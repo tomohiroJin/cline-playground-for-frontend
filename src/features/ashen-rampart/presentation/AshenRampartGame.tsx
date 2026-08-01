@@ -22,6 +22,7 @@ import { DeckBuilder } from './DeckBuilder';
 import { StartOverlay } from './StartOverlay';
 import { CountdownDisplay } from './CountdownDisplay';
 import { LevyChoice } from './LevyChoice';
+import { BattleAnnouncer } from './BattleAnnouncer';
 import { nextWavePreview } from './wave-preview';
 import { COLORS } from './theme';
 
@@ -215,6 +216,7 @@ const RunView: React.FC<RunViewProps> = ({ cards, seed, onRebuild }) => {
         runSeed={game.runSeed}
       />
       <Center>
+        <BattleAnnouncer message={game.announcement} />
         <BoardWrapper>
           <BoardGrid
             map={PLAINS_MAP}

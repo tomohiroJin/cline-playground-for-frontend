@@ -46,6 +46,20 @@ const EFFECT_PRIORITY = {
   shot: 1,
 } as const;
 
+/**
+ * reduced-motion 時の一律の寿命（tick）
+ *
+ * 寿命 3/5/8 tick のものが同時に静止すると、動きで区別していた手がかりが
+ * 消え、罠の縁と漏れの塗り（どちらも danger）が位置以外で弁別できなくなる。
+ * 最長に揃えて数を減らし、1つずつ確実に見せる方向へ倒す。
+ */
+export const REDUCED_MOTION_LIFETIME = EFFECT_LIFETIME.defeat;
+
+export interface AdvanceOptions {
+  /** prefers-reduced-motion: reduce のとき true */
+  reducedMotion?: boolean;
+}
+
 export type Effect =
   | {
       kind: 'shot';
@@ -77,12 +91,17 @@ const sourcePos = (state: CombatState, source: Extract<TickEvent, { kind: 'defea
   return state.embers[source.index]?.pos;
 };
 
+/** そのイベントに与える寿命。reduced-motion では一律にする */
+const lifetimeOf = (kind: Effect['kind'], reducedMotion: boolean): number =>
+  reducedMotion ? REDUCED_MOTION_LIFETIME : EFFECT_LIFETIME[kind];
+
 /** 1件の TickEvent をエフェクトへ変換する。描かないイベントは undefined */
 const toEffect = (
   event: TickEvent,
   state: CombatState,
   map: StageMap,
-  index: number
+  index: number,
+  reducedMotion: boolean
 ): Effect | undefined => {
   const tick = state.tick;
   const id = `${tick}-${index}`;
@@ -96,7 +115,7 @@ const toEffect = (
       id,
       from,
       to,
-      untilTick: tick + EFFECT_LIFETIME.shot,
+      untilTick: tick + lifetimeOf('shot', reducedMotion),
       wide: (spec?.splashRadius ?? 0) > 0,
       dashed: spec?.heavyBonusThreshold !== undefined,
     };
@@ -105,23 +124,23 @@ const toEffect = (
     const from = sourcePos(state, event.source);
     const to = enemyPos(state, event.enemyId, map);
     if (!from || !to) return undefined;
-    return { kind: 'defeat', id, from, to, untilTick: tick + EFFECT_LIFETIME.defeat };
+    return { kind: 'defeat', id, from, to, untilTick: tick + lifetimeOf('defeat', reducedMotion) };
   }
   if (event.kind === 'trap') {
     const at = state.traps[event.trapIndex]?.pos;
     if (!at) return undefined;
-    return { kind: 'trap', id, at, untilTick: tick + EFFECT_LIFETIME.trap };
+    return { kind: 'trap', id, at, untilTick: tick + lifetimeOf('trap', reducedMotion) };
   }
   if (event.kind === 'ember') {
     const at = state.embers[event.emberIndex]?.pos;
     if (!at) return undefined;
     const radius = getCardDefinition('ember-blast').ember?.radius ?? 1;
-    return { kind: 'ember', id, at, radius, untilTick: tick + EFFECT_LIFETIME.ember };
+    return { kind: 'ember', id, at, radius, untilTick: tick + lifetimeOf('ember', reducedMotion) };
   }
   if (event.kind === 'leak') {
     const at = fortressCell(map);
     if (!at) return undefined;
-    return { kind: 'leak', id, at, untilTick: tick + EFFECT_LIFETIME.leak };
+    return { kind: 'leak', id, at, untilTick: tick + lifetimeOf('leak', reducedMotion) };
   }
   return undefined;
 };
@@ -131,22 +150,30 @@ const toEffect = (
  *
  * 上限を超えた場合は**優先度の低いものから**落とす。同一優先度の中でのみ
  * 古い順（untilTick が小さい順）に落とす。
+ *
+ * **寿命の統一と上限の半減は生成時に行う。** 生成後に untilTick を書き換える
+ * 関数にすると、毎 tick 呼ばれて寿命が延び続けエフェクトが二度と消えない。
  */
 export const advanceEffects = (
   prev: readonly Effect[],
   state: CombatState,
-  map: StageMap
+  map: StageMap,
+  options: AdvanceOptions = {}
 ): Effect[] => {
+  const reducedMotion = options.reducedMotion ?? false;
+  const limit = reducedMotion
+    ? Math.floor(MAX_CONCURRENT_EFFECTS / 2)
+    : MAX_CONCURRENT_EFFECTS;
   const alive = prev.filter((e) => e.untilTick > state.tick);
   const born = state.events
-    .map((event, index) => toEffect(event, state, map, index))
+    .map((event, index) => toEffect(event, state, map, index, reducedMotion))
     .filter((e): e is Effect => e !== undefined);
   const all = [...alive, ...born];
-  if (all.length <= MAX_CONCURRENT_EFFECTS) return all;
+  if (all.length <= limit) return all;
   return [...all]
     .sort((a, b) => {
       const priority = EFFECT_PRIORITY[b.kind] - EFFECT_PRIORITY[a.kind];
       return priority !== 0 ? priority : b.untilTick - a.untilTick;
     })
-    .slice(0, MAX_CONCURRENT_EFFECTS);
+    .slice(0, limit);
 };
