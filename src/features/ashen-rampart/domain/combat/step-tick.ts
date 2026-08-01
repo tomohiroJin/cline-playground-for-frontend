@@ -45,22 +45,23 @@ export const SLOW_TERRAIN_MULT = 0.6;
 export const HIGH_GROUND_DAMAGE_MULT = 1.3;
 
 /**
- * 塔の実効ダメージ
+ * 塔の実効ダメージの内訳
  *
- * round(基礎 × 重装特効 × 高台倍率 × (1 + Σ隣接オーラ))。
+ * 篝火の貢献を測るため、オーラ抜きのダメージと実効ダメージを両方返す。
+ * 丸めはそれぞれに適用する（合計してから丸めると差分がずれる）。
  * 特効は対象の**最大HP**で判定する（現在HPだと削るほど弱くなり直感に反する）。
  * 倍率の二重適用を避けるため、この関数だけがダメージ算出の責務を持つ。
  */
-export const effectiveDamage = (
+export const damageBreakdown = (
   state: CombatState,
   towerIndex: number,
   map: StageMap,
   target: ActiveEnemy
-): number => {
+): { total: number; auraBonus: number } => {
   const tower = state.towers[towerIndex];
-  if (!tower) return 0;
+  if (!tower) return { total: 0, auraBonus: 0 };
   const spec = getCardDefinition(tower.cardId).tower;
-  if (!spec || spec.aura) return 0;
+  if (!spec || spec.aura) return { total: 0, auraBonus: 0 };
   const auraBonus = state.towers.reduce((sum, other) => {
     const otherSpec = getCardDefinition(other.cardId).tower;
     const damageBonus = otherSpec?.aura?.towerDamageBonus;
@@ -73,8 +74,22 @@ export const effectiveDamage = (
   const threshold = spec.heavyBonusThreshold;
   const heavy =
     threshold !== undefined && target.maxHp >= threshold ? (spec.heavyBonusMultiplier ?? 1) : 1;
-  return Math.round(spec.damage * heavy * highGround * (1 + auraBonus));
+  const base = Math.round(spec.damage * heavy * highGround);
+  const total = Math.round(spec.damage * heavy * highGround * (1 + auraBonus));
+  return { total, auraBonus: total - base };
 };
+
+/**
+ * 塔の実効ダメージ
+ *
+ * 倍率の二重適用を避けるため、damageBreakdown だけがダメージ算出の責務を持つ。
+ */
+export const effectiveDamage = (
+  state: CombatState,
+  towerIndex: number,
+  map: StageMap,
+  target: ActiveEnemy
+): number => damageBreakdown(state, towerIndex, map, target).total;
 
 /**
  * 塔の実効射程
@@ -546,10 +561,19 @@ const applyTowerShots = (
     const range = effectiveRange(stateForDamage, towerIndex, map);
     const target = selectTowerTarget(tower, spec, range, moved, map, hpById, tick);
     if (!target) return tower;
-    const damage = effectiveDamage(stateForDamage, towerIndex, map, target);
+    const { total: damage, auraBonus } = damageBreakdown(stateForDamage, towerIndex, map, target);
     hpById.set(target.id, (hpById.get(target.id) ?? 0) - damage);
     sourceById.set(target.id, { kind: 'tower', index: towerIndex });
-    events.push({ kind: 'shot', towerIndex, targetId: target.id });
+    const targetPos = positionOf(target.progress, map.path);
+    const distance = Math.hypot(targetPos.x - tower.pos.x, targetPos.y - tower.pos.y);
+    events.push({
+      kind: 'shot',
+      towerIndex,
+      targetId: target.id,
+      auraDamageBonus: auraBonus,
+      // 素の射程を超えている＝鍛冶場のオーラで初めて届いた射撃
+      beyondBaseRange: distance > spec.range,
+    });
     if (spec.splashRadius > 0) {
       applySplashDamage(
         target,

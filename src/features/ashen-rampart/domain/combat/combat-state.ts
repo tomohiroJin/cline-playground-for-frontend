@@ -71,7 +71,15 @@ export type DefeatSource =
   | { kind: 'ember'; index: number };
 
 export type TickEvent =
-  | { kind: 'shot'; towerIndex: number; targetId: number }
+  | {
+      kind: 'shot';
+      towerIndex: number;
+      targetId: number;
+      /** 隣接オーラ（篝火）によって増えたダメージ量。オーラが無ければ 0 */
+      auraDamageBonus: number;
+      /** 素の射程では届かず、オーラ（鍛冶場）で初めて届いた射撃か */
+      beyondBaseRange: boolean;
+    }
   | { kind: 'trap'; trapIndex: number; targetId: number }
   | { kind: 'ember'; emberIndex: number }
   | { kind: 'defeat'; enemyId: number; source: DefeatSource }
