@@ -251,6 +251,81 @@ describe('useAshenRampartGame', () => {
     expect(firstRestartSeed).not.toBe(secondRestartSeed);
   });
 
+  describe('discardCard: 選択中の札との位置関係による selectedIndex 補正', () => {
+    /**
+     * 手札は配列で、捨てると後続の札が前へ詰まる。この3テストは
+     * 「選択中より前」「選択中そのもの」「選択中より後ろ」の3ケースすべてを
+     * 検証する。1つでも欠けると、詰めの向きが逆でも気づけない。
+     *
+     * seed:1・swift プリセットは、初期手札3枚＋1回目のドロー（40 tick）で
+     * 必ず ['ballista', 'cannon-tower', 'ember-blast', 'arrow-tower'] になる
+     * （4枚とも設置系カードなので selectCard で選択状態を作れる）。
+     */
+    const handToFourCards = () => {
+      const cards = swiftCards();
+      const rendered = renderHook(() => useAshenRampartGame({ cards, seed: 1 }));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS * 40);
+      });
+      expect(rendered.result.current.state.deck.hand).toHaveLength(4);
+      return rendered;
+    };
+
+    it('選択中より前の札を捨てると selectedIndex が1つ減り、選択カードIDは変わらない', () => {
+      const { result } = handToFourCards();
+      const selectedCardId = result.current.state.deck.hand[1];
+      const index = result.current.state.deck.hand.indexOf(selectedCardId as string);
+      expect(index).toBeGreaterThanOrEqual(0);
+
+      act(() => result.current.selectCard(index));
+      expect(result.current.selectedIndex).toBe(index);
+
+      act(() => result.current.discardCard(0));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+
+      expect(result.current.selectedIndex).toBe(index - 1);
+      expect(result.current.state.deck.hand[result.current.selectedIndex as number]).toBe(
+        selectedCardId
+      );
+    });
+
+    it('選択中の札そのものを捨てると selectedIndex が null になる', () => {
+      const { result } = handToFourCards();
+      const index = 1;
+      act(() => result.current.selectCard(index));
+      expect(result.current.selectedIndex).toBe(index);
+
+      act(() => result.current.discardCard(index));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+
+      expect(result.current.selectedIndex).toBeNull();
+    });
+
+    it('選択中より後ろの札を捨てても selectedIndex は変わらず、選択カードIDも変わらない', () => {
+      const { result } = handToFourCards();
+      const selectedCardId = result.current.state.deck.hand[1];
+      const index = result.current.state.deck.hand.indexOf(selectedCardId as string);
+      expect(index).toBeGreaterThanOrEqual(0);
+
+      act(() => result.current.selectCard(index));
+      expect(result.current.selectedIndex).toBe(index);
+
+      act(() => result.current.discardCard(index + 1));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+
+      expect(result.current.selectedIndex).toBe(index);
+      expect(result.current.state.deck.hand[result.current.selectedIndex as number]).toBe(
+        selectedCardId
+      );
+    });
+  });
+
   describe('反復1: デッキ・シード・徴発', () => {
     it('渡したデッキでランが始まり、ログにデッキ構成が残る', () => {
       const log = createMockPlayLog();

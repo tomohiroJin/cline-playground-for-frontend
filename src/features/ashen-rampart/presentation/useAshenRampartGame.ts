@@ -247,7 +247,15 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
     (handIndex: number) => {
       if (isPaused || state.outcome !== 'playing') return;
       pendingRef.current.push({ kind: 'discard', handIndex });
-      setSelectedIndex((current) => (current === handIndex ? null : current));
+      // 手札は配列で、捨てると後続の札が前へ詰まる。選択中の札そのものを
+      // 捨てたら選択解除、選択中より前を捨てたら選択位置も1つ前へずらさないと、
+      // selectedIndex が別の実在カードを指したままになり、盤面クリックで
+      // ユーザーが選んだつもりのないカードが置かれてしまう。
+      setSelectedIndex((current) => {
+        if (current === null) return null;
+        if (current === handIndex) return null;
+        return current > handIndex ? current - 1 : current;
+      });
     },
     [isPaused, state.outcome]
   );

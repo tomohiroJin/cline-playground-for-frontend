@@ -80,7 +80,7 @@ const CardSlot = styled.div`
  * 兄弟要素にする（ボタンの入れ子は HTML としても不正）。
  */
 const DiscardButton = styled.button`
-  min-width: 28px;
+  min-width: 44px;
   min-height: 44px;
   padding: 0;
   background: transparent;
