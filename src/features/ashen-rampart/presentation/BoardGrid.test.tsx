@@ -133,7 +133,7 @@ describe('BoardGrid', () => {
     expect(container.querySelectorAll('[data-effect="shot"]')).toHaveLength(1);
   });
 
-  it('設置できないマスは「城壁の外」と読める', () => {
+  it('経路外のマスはすべて設置可と読める（設置スロットの制約は反復3で廃止）', () => {
     render(
       <BoardGrid
         map={PLAINS_MAP}
@@ -143,7 +143,8 @@ describe('BoardGrid', () => {
         onCellClick={() => undefined}
       />
     );
-    // (0,0) は経路からも設置スロットからも遠い
-    expect(screen.getByLabelText(/^0,0 城壁の外/)).toBeInTheDocument();
+    // (0,0) はかつて設置スロットの制約（経路から距離1.5以内）で「城壁の外」だったが、
+    // buildSlots 廃止により経路外は一律「設置可」になった
+    expect(screen.getByLabelText(/^0,0 設置可/)).toBeInTheDocument();
   });
 });

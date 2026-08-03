@@ -120,8 +120,10 @@ describe('カード配置', () => {
   });
 
   it('置けない場所を指定すると拒否される', () => {
+    // 反復3 で設置スロットの規則（buildSlots）を廃止し「経路外なら置ける」に変えたため、
+    // 経路外の (0,0) はもう拒否されない。塔（slot 種別）が拒否されるのは経路セルのみ
     const state = stateWithHand(['arrow-tower']);
-    const after = play(state, 0, { x: 0, y: 0 });
+    const after = play(state, 0, { x: 0, y: 3 });
     expect(after.towers).toHaveLength(0);
     expect(after.events).toContainEqual({ kind: 'rejected', reason: 'target' });
   });

@@ -5,6 +5,7 @@
  * 支配戦略の検出を自動テストとして常設できる（設計書 §7）。
  */
 import type { StageMap } from '../board/stage-map';
+import { allPathCells, offPathCells } from '../board/stage-map';
 import type { CombatState } from './combat-state';
 import { stepTick, canPlaceAt, type PlayerAction } from './step-tick';
 import { getCardDefinition } from '../cards/card-pool';
@@ -72,7 +73,7 @@ export const greedyStrategy: Strategy = (state, map) => {
       actions.push({ kind: 'play-card', handIndex });
       return actions;
     }
-    const candidates = kind === 'path' ? map.path : map.buildSlots;
+    const candidates = kind === 'path' ? allPathCells(map) : offPathCells(map);
     const pos = candidates.find((c) => canPlaceAt(state, card, c, map));
     if (pos) {
       actions.push({ kind: 'play-card', handIndex, pos });

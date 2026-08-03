@@ -1,8 +1,9 @@
 /**
  * 灰燼の城壁 - ステージマップ定義
  *
- * path: 敵の進軍経路（入口→砦の順、隣接セルの連結列）
- * buildSlots: タワー設置可能マス（経路とは重ならない）
+ * lanes: 敵の進軍経路（各レーンは入口→砦の順に並んだ隣接セル列）。
+ * 終端（砦）は全レーンで共通。設置マスという概念は持たず、配置可否は
+ * 経路セルか否かで判定する（反復3 で自由配置へ移行、設計書 §3.2）。
  */
 export interface CellPos {
   x: number;
@@ -14,39 +15,59 @@ export interface StageMap {
   name: string;
   width: number;
   height: number;
-  path: CellPos[];
-  buildSlots: CellPos[];
-  /** 高台: 火力ボーナスを得る設置スロット（buildSlots の部分集合） */
+  /** 敵の進軍路。各レーンは入口→砦の順に並んだ隣接セル列。終端（砦）は全レーンで共通 */
+  lanes: CellPos[][];
+  /** 高台: 火力ボーナスを得るセル（経路外） */
   highGround?: CellPos[];
-  /** 滞留セル: 敵の移動が遅くなる経路セル（path の部分集合） */
+  /** 滞留セル: 敵の移動が遅くなる経路セル */
   slowCells?: CellPos[];
 }
 
-/**
- * 設置スロットを経路からの距離で決める上限
- *
- * 塔の射程は 火砲台1.5 / 弓兵1.6 / 徹甲弩1.8 / 弩砲2.2 / 投石機3.0。
- * 主力の下限が1.5 なので、この距離までなら**どのマスからも主力2種が届く**。
- * 距離2.0（33マス）にすると弓兵・火砲台が届かないマスが生まれ、
- * 死にマスを別の形で再生産してしまう（設計書 §6.1）。
- */
-export const BUILD_SLOT_MAX_DISTANCE = 1.5;
+const samePos = (a: CellPos, b: CellPos): boolean => a.x === b.x && a.y === b.y;
 
-/** 経路から maxDistance 以内にある非経路セルを列挙する（左上から行優先） */
-export const buildSlotsNearPath = (
-  width: number,
-  height: number,
-  path: readonly CellPos[],
-  maxDistance: number
-): CellPos[] => {
-  const slots: CellPos[] = [];
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      if (path.some((c) => c.x === x && c.y === y)) continue;
-      if (path.some((c) => Math.hypot(c.x - x, c.y - y) <= maxDistance)) slots.push({ x, y });
+/** 指定レーンのセル列。未知の index は空配列（呼び出し側で分岐させないため） */
+export const laneOf = (map: StageMap, laneIndex: number): readonly CellPos[] =>
+  map.lanes[laneIndex] ?? [];
+
+/** 全レーンの経路セルを重複なく返す */
+export const allPathCells = (map: StageMap): CellPos[] => {
+  const seen = new Set<string>();
+  const cells: CellPos[] = [];
+  map.lanes.forEach((lane) =>
+    lane.forEach((c) => {
+      const key = `${c.x},${c.y}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      cells.push(c);
+    })
+  );
+  return cells;
+};
+
+/** 指定セルがいずれかのレーン上にあるか */
+export const isPathCell = (map: StageMap, pos: CellPos): boolean =>
+  map.lanes.some((lane) => lane.some((c) => samePos(c, pos)));
+
+/** 敵が到達したら漏れとなる終端（砦）。全レーンで共通である前提 */
+export const fortressCell = (map: StageMap): CellPos | undefined => {
+  const first = map.lanes[0];
+  return first?.[first.length - 1];
+};
+
+/** 指定レーンの入口 */
+export const entranceCell = (map: StageMap, laneIndex: number): CellPos | undefined =>
+  laneOf(map, laneIndex)[0];
+
+/** 経路外の全セル（左上から行優先） */
+export const offPathCells = (map: StageMap): CellPos[] => {
+  const cells: CellPos[] = [];
+  for (let y = 0; y < map.height; y++) {
+    for (let x = 0; x < map.width; x++) {
+      const pos = { x, y };
+      if (!isPathCell(map, pos)) cells.push(pos);
     }
   }
-  return slots;
+  return cells;
 };
 
 const PLAINS_WIDTH = 9;
@@ -66,19 +87,18 @@ const PLAINS_PATH: CellPos[] = [
   { x: 8, y: 1 },
 ];
 
-/** P1 ステージ: 平原（9×7、S字経路） */
+/**
+ * P1 ステージ: 平原（9×7、S字経路）
+ *
+ * この時点（反復3 Task 1）ではレーン構造への形の移行のみが目的のため、
+ * 単一レーン（lanes = [PLAINS_PATH]）のままにする。2レーン化は Task 2 で行う。
+ */
 export const PLAINS_MAP: StageMap = {
   id: 'plains',
   name: '平原',
   width: PLAINS_WIDTH,
   height: PLAINS_HEIGHT,
-  path: PLAINS_PATH,
-  buildSlots: buildSlotsNearPath(
-    PLAINS_WIDTH,
-    PLAINS_HEIGHT,
-    PLAINS_PATH,
-    BUILD_SLOT_MAX_DISTANCE
-  ),
+  lanes: [PLAINS_PATH],
   highGround: [
     { x: 3, y: 4 },
     { x: 7, y: 2 },
@@ -90,8 +110,6 @@ export const PLAINS_MAP: StageMap = {
   ],
 };
 
-const samePos = (a: CellPos, b: CellPos): boolean => a.x === b.x && a.y === b.y;
-
 /** 指定セルが高台か */
 export const isHighGround = (map: StageMap, pos: CellPos): boolean =>
   (map.highGround ?? []).some((c) => samePos(c, pos));
@@ -100,13 +118,6 @@ export const isHighGround = (map: StageMap, pos: CellPos): boolean =>
 export const isSlowCell = (map: StageMap, pos: CellPos): boolean =>
   (map.slowCells ?? []).some((c) => samePos(c, pos));
 
-/** 敵が出現する経路の始端（入口） */
-export const entranceCell = (map: StageMap): CellPos | undefined => map.path[0];
-
-/** 敵が到達したら漏れとなる経路の終端（砦） */
-export const fortressCell = (map: StageMap): CellPos | undefined =>
-  map.path[map.path.length - 1];
-
 /** 経路上の進行方向 */
 export type PathDirection = 'right' | 'left' | 'up' | 'down';
 
@@ -114,16 +125,17 @@ export type PathDirection = 'right' | 'left' | 'up' | 'down';
  * 経路セルにおける進行方向を返す（終端セルは undefined）
  *
  * 盤面に方向を描くための情報。経路の並び順から算出するため、
- * マップ定義に方向を持たせる必要がない。
+ * マップ定義に方向を持たせる必要がない。敵はレーンに所属するため、
+ * 引数はマップ全体ではなく対象レーンのセル列を受け取る。
  */
 export const pathDirectionAt = (
-  map: StageMap,
+  lane: readonly CellPos[],
   pos: CellPos
 ): PathDirection | undefined => {
-  const index = map.path.findIndex((c) => samePos(c, pos));
+  const index = lane.findIndex((c) => samePos(c, pos));
   if (index < 0) return undefined;
-  const next = map.path[index + 1];
-  const current = map.path[index];
+  const next = lane[index + 1];
+  const current = lane[index];
   if (!next || !current) return undefined;
   if (next.x > current.x) return 'right';
   if (next.x < current.x) return 'left';
@@ -136,29 +148,30 @@ export const pathDirectionAt = (
  * 指定位置から砦までの残り経路セル数
  *
  * 敵はセル間を補間した座標を持つため、最も近い経路セルを現在地とみなす。
- * 「あとどれだけで砦に届くか」を盤面に出すための概算。
+ * 「あとどれだけで砦に届くか」を盤面に出すための概算。敵は所属レーンを
+ * 持つため、引数はマップ全体ではなく対象レーンのセル列を受け取る。
  */
 export const remainingPathCells = (
-  map: StageMap,
+  lane: readonly CellPos[],
   pos: { x: number; y: number }
 ): number => {
-  if (map.path.length === 0) return 0;
+  if (lane.length === 0) return 0;
   let nearestIndex = 0;
   let nearestDistance = Infinity;
-  map.path.forEach((cell, index) => {
+  lane.forEach((cell, index) => {
     const distance = Math.hypot(cell.x - pos.x, cell.y - pos.y);
     if (distance < nearestDistance) {
       nearestDistance = distance;
       nearestIndex = index;
     }
   });
-  return map.path.length - 1 - nearestIndex;
+  return lane.length - 1 - nearestIndex;
 };
 
-/** from からユークリッド距離 range 以内の経路セルを返す（射程オーバーレイ用） */
+/** from からユークリッド距離 range 以内の経路セル（全レーン）を返す（射程オーバーレイ用） */
 export const coveredPathCells = (
   map: StageMap,
   from: CellPos,
   range: number
 ): CellPos[] =>
-  map.path.filter((c) => Math.hypot(c.x - from.x, c.y - from.y) <= range);
+  allPathCells(map).filter((c) => Math.hypot(c.x - from.x, c.y - from.y) <= range);

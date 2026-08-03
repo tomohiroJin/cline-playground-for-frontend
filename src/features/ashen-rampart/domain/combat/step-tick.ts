@@ -13,7 +13,7 @@
  * 分割は振る舞いを1ミリも変えないことを最優先し、処理順序・計算式は元のまま。
  */
 import type { CellPos, StageMap } from '../board/stage-map';
-import { isSlowCell, isHighGround } from '../board/stage-map';
+import { isSlowCell, isHighGround, laneOf, isPathCell } from '../board/stage-map';
 import { drawOne, discardFromHand, peekTop, takeFromPeek } from '../cards/deck';
 import type { DeckState } from '../cards/deck';
 import { getCardDefinition } from '../cards/card-pool';
@@ -140,6 +140,10 @@ const isSlotOccupied = (state: CombatState, pos: CellPos): boolean =>
   state.reactors.some((r) => samePos(r.pos, pos)) ||
   state.embers.some((e) => samePos(e.pos, pos));
 
+/** 盤面の範囲内か */
+const isInsideBoard = (map: StageMap, pos: CellPos): boolean =>
+  pos.x >= 0 && pos.x < map.width && pos.y >= 0 && pos.y < map.height;
+
 /**
  * そのカードをその位置に置けるか
  *
@@ -149,6 +153,10 @@ const isSlotOccupied = (state: CombatState, pos: CellPos): boolean =>
  * 引数 `state` は tick 開始時点（今 tick に処理済みの配置操作を含まない）のものを渡す前提。
  * `stepTick` は配置クールダウンにより1 tick に1回しか配置を確定しないため、
  * 同一 tick 内で2回目の判定が必要になるケースは存在しない。
+ *
+ * **暫定版（Task 8 で本格的に書き直す）**: 設置スロットという概念を廃止した
+ * 反面、自由配置の細かい規則（隣接制約など）はまだ決まっていない。ここでは
+ * 「経路外なら置ける」で最小限に留める。
  */
 export const canPlaceAt = (
   state: CombatState,
@@ -158,10 +166,11 @@ export const canPlaceAt = (
 ): boolean => {
   const kind = placementKindOf(card);
   if (kind === 'none') return false;
+  if (!isInsideBoard(map, pos)) return false;
   if (kind === 'path') {
-    return map.path.some((c) => samePos(c, pos)) && !state.traps.some((t) => samePos(t.pos, pos));
+    return isPathCell(map, pos) && !state.traps.some((t) => samePos(t.pos, pos));
   }
-  return map.buildSlots.some((c) => samePos(c, pos)) && !isSlotOccupied(state, pos);
+  return !isPathCell(map, pos) && !isSlotOccupied(state, pos);
 };
 
 /** そのウェーブ定義から、この tick に出現すべき敵を作る */
@@ -489,7 +498,7 @@ const moveEnemies = (
     if (enemy.spawnTick === tick) return enemy;
     if (isEnemyStunned(enemy, tick)) return enemy;
     const spec = getEnemySpec(enemy.enemyId);
-    const cell = map.path[Math.min(Math.floor(enemy.progress), goal)];
+    const cell = laneOf(map, 0)[Math.min(Math.floor(enemy.progress), goal)];
     const terrain = cell && isSlowCell(map, cell) ? SLOW_TERRAIN_MULT : 1;
     return { ...enemy, progress: enemy.progress + spec.speed * terrain * slowMult };
   });
@@ -539,7 +548,7 @@ const applyTraps = (
       // 落網は飛行のみ、それ以外の罠は地上のみに発動する
       const targetsFlying = spec.groundedTicks !== undefined;
       if (targetsFlying !== flying) return;
-      const pos = positionOf(enemy.progress, map.path);
+      const pos = positionOf(enemy.progress, laneOf(map, 0));
       if (Math.hypot(pos.x - trap.pos.x, pos.y - trap.pos.y) > TRAP_TRIGGER_DISTANCE) return;
 
       if (spec.damage > 0) {
@@ -591,7 +600,7 @@ const applyTowerShots = (
     const { total: damage, auraBonus } = damageBreakdown(stateForDamage, towerIndex, map, target);
     hpById.set(target.id, (hpById.get(target.id) ?? 0) - damage);
     sourceById.set(target.id, { kind: 'tower', index: towerIndex });
-    const targetPos = positionOf(target.progress, map.path);
+    const targetPos = positionOf(target.progress, laneOf(map, 0));
     const distance = Math.hypot(targetPos.x - tower.pos.x, targetPos.y - tower.pos.y);
     events.push({
       kind: 'shot',
@@ -638,7 +647,7 @@ const selectTowerTarget = (
     .filter((e) => e.alive && (hpById.get(e.id) ?? 0) > 0)
     .filter((e) => spec.hitsFlying || !isEnemyFlying(e, tick))
     .filter((e) => {
-      const pos = positionOf(e.progress, map.path);
+      const pos = positionOf(e.progress, laneOf(map, 0));
       return Math.hypot(pos.x - tower.pos.x, pos.y - tower.pos.y) <= range;
     })
     .sort((a, b) => b.progress - a.progress)[0];
@@ -660,11 +669,11 @@ const applySplashDamage = (
   stateForDamage: CombatState,
   towerIndex: number
 ): void => {
-  const center = positionOf(target.progress, map.path);
+  const center = positionOf(target.progress, laneOf(map, 0));
   moved.forEach((other) => {
     if (other.id === target.id || !other.alive) return;
     if (!spec.hitsFlying && isEnemyFlying(other, tick)) return;
-    const pos = positionOf(other.progress, map.path);
+    const pos = positionOf(other.progress, laneOf(map, 0));
     if (Math.hypot(pos.x - center.x, pos.y - center.y) <= spec.splashRadius) {
       const damage = effectiveDamage(stateForDamage, towerIndex, map, other);
       hpById.set(other.id, (hpById.get(other.id) ?? 0) - damage);
@@ -691,7 +700,7 @@ const applyBlasts = (
   blasts.forEach((blast) => {
     moved.forEach((enemy) => {
       if (!enemy.alive || isEnemyFlying(enemy, tick)) return;
-      const pos = positionOf(enemy.progress, map.path);
+      const pos = positionOf(enemy.progress, laneOf(map, 0));
       if (Math.hypot(pos.x - blast.pos.x, pos.y - blast.pos.y) <= blast.radius) {
         hpById.set(enemy.id, (hpById.get(enemy.id) ?? 0) - blast.damage);
         sourceById.set(enemy.id, { kind: 'ember', index: blast.emberIndex });
@@ -768,7 +777,7 @@ export const stepTick = (
   if (state.outcome !== 'playing') return state;
 
   const tick = state.tick + 1;
-  const goal = map.path.length - 1;
+  const goal = laneOf(map, 0).length - 1;
 
   // --- プレイヤー操作 ---
   const afterActions = applyActions(state, actions, map, tick);

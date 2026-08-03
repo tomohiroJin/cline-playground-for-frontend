@@ -73,8 +73,9 @@ describe('accumulateTick', () => {
       events: [{ kind: 'played', cardId: 'arrow-tower', pos: { x: 1, y: 2 } }],
     });
     const tally = accumulateTick(emptyTally(), prev, state, PLAINS_MAP);
-    // 盤面に何も無い状態なら 22 マスすべてが候補
-    expect(tally.placeableCounts).toEqual([22]);
+    // 反復3 で設置スロットの規則（buildSlots）を廃止し「経路外なら置ける」に変えたため、
+    // 候補は経路11マスを除く全マス（9×7=63 - 11 = 52）になる
+    expect(tally.placeableCounts).toEqual([52]);
   });
 
   it('魔力炉の初号機が置かれた tick を記録する', () => {

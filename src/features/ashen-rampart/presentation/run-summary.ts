@@ -6,6 +6,7 @@
  * ここは集計の計算だけを持ち、表示は RunSummary.tsx が持つ。
  */
 import type { CellPos, StageMap } from '../domain/board/stage-map';
+import { allPathCells, offPathCells } from '../domain/board/stage-map';
 import { getCardDefinition } from '../domain/cards/card-pool';
 import { placementKindOf } from '../domain/cards/card-definition';
 import type { CombatState, TickEvent } from '../domain/combat/combat-state';
@@ -80,7 +81,7 @@ const placeableCountFor = (
   if (kind === 'none') return 0;
   // useAshenRampartGame の placeableCells と同じ判定を使う。
   // 独自に card.type で分けると、盤面に置く札の判定が2箇所に分かれて食い違う
-  const candidates: readonly CellPos[] = kind === 'path' ? map.path : map.buildSlots;
+  const candidates: readonly CellPos[] = kind === 'path' ? allPathCells(map) : offPathCells(map);
   return candidates.filter((pos) => canPlaceAt(state, card, pos, map)).length;
 };
 

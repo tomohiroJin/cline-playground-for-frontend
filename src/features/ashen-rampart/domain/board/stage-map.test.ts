@@ -7,6 +7,9 @@ import {
   fortressCell,
   pathDirectionAt,
   remainingPathCells,
+  laneOf,
+  allPathCells,
+  isPathCell,
 } from './stage-map';
 
 describe('stage-map 地形述語', () => {
@@ -49,7 +52,7 @@ describe('coveredPathCells', () => {
 
 describe('入口と砦', () => {
   it('入口は経路の始端を返す', () => {
-    expect(entranceCell(PLAINS_MAP)).toEqual({ x: 0, y: 3 });
+    expect(entranceCell(PLAINS_MAP, 0)).toEqual({ x: 0, y: 3 });
   });
 
   it('砦は経路の終端を返す', () => {
@@ -57,91 +60,80 @@ describe('入口と砦', () => {
   });
 
   it('経路が空なら入口も砦も undefined を返す', () => {
-    const emptyMap = { ...PLAINS_MAP, path: [] };
-    expect(entranceCell(emptyMap)).toBeUndefined();
+    const emptyMap = { ...PLAINS_MAP, lanes: [] };
+    expect(entranceCell(emptyMap, 0)).toBeUndefined();
     expect(fortressCell(emptyMap)).toBeUndefined();
   });
 });
 
 describe('pathDirectionAt', () => {
+  const lane = laneOf(PLAINS_MAP, 0);
+
   it('横に進む経路セルは right を返す', () => {
     // (0,3) → (1,3)
-    expect(pathDirectionAt(PLAINS_MAP, { x: 0, y: 3 })).toBe('right');
+    expect(pathDirectionAt(lane, { x: 0, y: 3 })).toBe('right');
   });
 
   it('上に折れる経路セルは up を返す', () => {
     // (4,3) → (4,2)
-    expect(pathDirectionAt(PLAINS_MAP, { x: 4, y: 3 })).toBe('up');
+    expect(pathDirectionAt(lane, { x: 4, y: 3 })).toBe('up');
   });
 
   it('終端セルは進行方向を持たない', () => {
-    expect(pathDirectionAt(PLAINS_MAP, { x: 8, y: 1 })).toBeUndefined();
+    expect(pathDirectionAt(lane, { x: 8, y: 1 })).toBeUndefined();
   });
 
   it('経路外のセルは undefined を返す', () => {
-    expect(pathDirectionAt(PLAINS_MAP, { x: 0, y: 0 })).toBeUndefined();
-  });
-});
-
-describe('設置スロットの規則化', () => {
-  const LEGACY_SLOTS = [
-    { x: 1, y: 2 }, { x: 2, y: 2 }, { x: 3, y: 2 },
-    { x: 1, y: 4 }, { x: 2, y: 4 }, { x: 3, y: 4 },
-    { x: 5, y: 2 }, { x: 6, y: 2 }, { x: 7, y: 2 },
-    { x: 5, y: 0 }, { x: 6, y: 0 }, { x: 7, y: 0 },
-  ];
-
-  it('経路から距離1.5以内の非経路セルが22マスになる', () => {
-    expect(PLAINS_MAP.buildSlots).toHaveLength(22);
-  });
-
-  it('従来の12マスはすべて含まれる（配置が不可能になるマスを作らない）', () => {
-    LEGACY_SLOTS.forEach((slot) => {
-      expect(PLAINS_MAP.buildSlots).toContainEqual(slot);
-    });
-  });
-
-  it('高台2マスは設置スロットに含まれる', () => {
-    (PLAINS_MAP.highGround ?? []).forEach((cell) => {
-      expect(PLAINS_MAP.buildSlots).toContainEqual(cell);
-    });
-  });
-
-  it('経路セルは設置スロットに含まれない', () => {
-    PLAINS_MAP.path.forEach((cell) => {
-      expect(PLAINS_MAP.buildSlots).not.toContainEqual(cell);
-    });
-  });
-
-  it('すべての設置スロットから主力2種（射程1.5/1.6）が経路に届く', () => {
-    // 「増やしたのに置いても無駄だった」という新種の不満を作らないための不変条件
-    PLAINS_MAP.buildSlots.forEach((slot) => {
-      const reachable = PLAINS_MAP.path.some(
-        (c) => Math.hypot(c.x - slot.x, c.y - slot.y) <= 1.5
-      );
-      expect(reachable).toBe(true);
-    });
+    expect(pathDirectionAt(lane, { x: 0, y: 0 })).toBeUndefined();
   });
 });
 
 describe('remainingPathCells', () => {
+  const lane = laneOf(PLAINS_MAP, 0);
+
   it('入口にいる敵は経路長-1 の残りセル数を持つ', () => {
     // 経路は11セルなので入口からは残り10
-    expect(remainingPathCells(PLAINS_MAP, { x: 0, y: 3 })).toBe(10);
+    expect(remainingPathCells(lane, { x: 0, y: 3 })).toBe(10);
   });
 
   it('砦に到達した敵は残り0になる', () => {
-    expect(remainingPathCells(PLAINS_MAP, { x: 8, y: 1 })).toBe(0);
+    expect(remainingPathCells(lane, { x: 8, y: 1 })).toBe(0);
   });
 
   it('セル間の補間座標でも最も近い経路セルから概算する', () => {
     // (1.4, 3) は経路セル (1,3)（index 1）に最も近い → 残り9
-    expect(remainingPathCells(PLAINS_MAP, { x: 1.4, y: 3 })).toBe(9);
+    expect(remainingPathCells(lane, { x: 1.4, y: 3 })).toBe(9);
   });
 
   it('経路が空なら0を返す', () => {
-    expect(remainingPathCells({ ...PLAINS_MAP, path: [] }, { x: 0, y: 0 })).toBe(
-      0
-    );
+    expect(remainingPathCells([], { x: 0, y: 0 })).toBe(0);
+  });
+});
+
+describe('レーン構造', () => {
+  it('lanes は1本以上のレーンを持ち、laneOf でセル列を取得できる', () => {
+    expect(PLAINS_MAP.lanes.length).toBeGreaterThanOrEqual(1);
+    expect(laneOf(PLAINS_MAP, 0).length).toBeGreaterThan(0);
+  });
+
+  it('allPathCells は全レーンのセルを重複なく返す', () => {
+    const cells = allPathCells(PLAINS_MAP);
+    const keys = cells.map((c) => `${c.x},${c.y}`);
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  it('isPathCell は経路セルにだけ true を返す', () => {
+    const first = laneOf(PLAINS_MAP, 0)[0];
+    expect(first).toBeDefined();
+    expect(isPathCell(PLAINS_MAP, first!)).toBe(true);
+    expect(isPathCell(PLAINS_MAP, { x: 0, y: 0 })).toBe(false);
+  });
+
+  it('fortressCell は全レーンで共通の終端セルを返す', () => {
+    const fortress = fortressCell(PLAINS_MAP);
+    expect(fortress).toBeDefined();
+    PLAINS_MAP.lanes.forEach((lane) => {
+      expect(lane[lane.length - 1]).toEqual(fortress);
+    });
   });
 });

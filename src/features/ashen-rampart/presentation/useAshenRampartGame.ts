@@ -6,7 +6,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CellPos } from '../domain/board/stage-map';
-import { PLAINS_MAP } from '../domain/board/stage-map';
+import { PLAINS_MAP, allPathCells, offPathCells } from '../domain/board/stage-map';
 import { getCardDefinition } from '../domain/cards/card-pool';
 import { placementKindOf } from '../domain/cards/card-definition';
 import type { CombatState } from '../domain/combat/combat-state';
@@ -217,7 +217,7 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
     const card = getCardDefinition(cardId);
     const kind = placementKindOf(card);
     if (kind === 'none') return [];
-    const candidates = kind === 'path' ? PLAINS_MAP.path : PLAINS_MAP.buildSlots;
+    const candidates = kind === 'path' ? allPathCells(PLAINS_MAP) : offPathCells(PLAINS_MAP);
     return candidates.filter((pos) => canPlaceAt(state, card, pos, PLAINS_MAP));
   })();
 

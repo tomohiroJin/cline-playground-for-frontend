@@ -35,7 +35,7 @@ describe('useAshenRampartGame', () => {
     renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log }));
     const started = log.events.filter((e) => e.kind === 'run_started');
     expect(started).toHaveLength(1);
-    expect(started[0]).toMatchObject({ seed: 1, iteration: 2 });
+    expect(started[0]).toMatchObject({ seed: 1, iteration: 3 });
   });
 
   it('StrictMode 下でもカードを1枚配置できる（指摘1の回帰: updater 内の副作用で操作が握り潰されていた）', () => {
@@ -106,8 +106,9 @@ describe('useAshenRampartGame', () => {
     const towerIndex = result.current.state.deck.hand.findIndex((id) => id !== 'mud-time');
     act(() => result.current.selectCard(towerIndex));
     expect(result.current.placeableCells.length).toBeGreaterThan(0);
-    // 設置スロットは規則生成で22マスに拡張された（stage-map.ts 参照）
-    expect(result.current.placeableCells.length).toBeLessThanOrEqual(22);
+    // 反復3 で設置スロットの規則（buildSlots）を廃止したため、候補は経路外の全マス
+    // （9×7=63 - 経路11 = 52）が上限になる（stage-map.ts 参照）
+    expect(result.current.placeableCells.length).toBeLessThanOrEqual(52);
   });
 
   it('選択せずにセルを押しても何も起きない', () => {

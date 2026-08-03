@@ -10,7 +10,7 @@
  * 座標はセル座標系のまま保持する（SVG の viewBox をセル座標に一致させるため）。
  */
 import type { CellPos, StageMap } from '../domain/board/stage-map';
-import { fortressCell } from '../domain/board/stage-map';
+import { fortressCell, laneOf } from '../domain/board/stage-map';
 import type { CombatState, TickEvent } from '../domain/combat/combat-state';
 import { positionOf } from '../domain/combat/step-tick';
 import { getCardDefinition } from '../domain/cards/card-pool';
@@ -108,7 +108,7 @@ export type Effect =
 const enemyPos = (state: CombatState, enemyId: number, map: StageMap): CellPos | undefined => {
   const enemy = state.enemies.find((e) => e.id === enemyId);
   if (!enemy) return undefined;
-  return positionOf(enemy.progress, map.path);
+  return positionOf(enemy.progress, laneOf(map, 0));
 };
 
 /** 撃破源の座標。既に消えた設置物は undefined */
