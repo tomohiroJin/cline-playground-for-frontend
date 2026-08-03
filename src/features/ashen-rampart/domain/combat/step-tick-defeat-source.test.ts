@@ -31,7 +31,6 @@ const withDyingEnemy = (state: CombatState, progress: number): CombatState => ({
       alive: true,
       leaked: false,
       groundedUntilTick: 0,
-      stunnedUntilTick: 0,
     },
   ],
 });

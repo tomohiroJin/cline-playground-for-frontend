@@ -63,16 +63,15 @@ describe('反復1で追加したカード', () => {
     expect(card.trap?.damage).toBe(0);
     expect(card.trap?.uses).toBe(3);
     expect(card.trap?.groundedTicks).toBe(120);
-    expect(card.trap?.stunTicks).toBeUndefined();
   });
 
-  it('石壁は地上を足止めする罠（ダメージなし）', () => {
+  it('石壁は攻撃しないHP60の守り手', () => {
     const card = getCardDefinition('stone-wall');
     expect(card.cost).toBe(1);
-    expect(card.trap?.damage).toBe(0);
-    expect(card.trap?.uses).toBe(3);
-    expect(card.trap?.stunTicks).toBe(40);
-    expect(card.trap?.groundedTicks).toBeUndefined();
+    expect(card.type).toBe('tower');
+    expect(card.tower?.hp).toBe(60);
+    expect(card.tower?.damage).toBe(0);
+    expect(card.trap).toBeUndefined();
   });
 
   it('投石機は射程3.0の範囲2で、地上のみ', () => {
@@ -87,7 +86,7 @@ describe('反復1で追加したカード', () => {
     });
   });
 
-  it('徹甲弩は飛行可で、HP40以上に2倍', () => {
+  it('徹甲弩は飛行可で、貫通する', () => {
     const card = getCardDefinition('piercer');
     expect(card.cost).toBe(4);
     expect(card.tower).toMatchObject({
@@ -96,8 +95,7 @@ describe('反復1で追加したカード', () => {
       cooldownTicks: 12,
       splashRadius: 0,
       hitsFlying: true,
-      heavyBonusThreshold: 40,
-      heavyBonusMultiplier: 2,
+      piercing: true,
     });
   });
 
@@ -142,19 +140,15 @@ describe('カードの軸（設計書 §7）', () => {
     byCost.forEach((count) => expect(count).toBeLessThan(4));
   });
 
-  it('HPと攻撃力が逆相関している（最大HPの守り手と最大攻撃力の守り手は別カード）', () => {
-    // 設計書 §7.2 の並び「石壁60/0 → 火砲台16/12 → …」は、石壁が type: 'trap' から
-    // 守り手（type: 'tower'）へ変わる Task 10 で完成する。Task 9 の時点では
-    // 石壁がこのフィルタに入らないため、最大HPの守り手（火砲台 hp16）は
-    // 攻撃力0ではない。よって「最大HP＝攻撃力0」という強い形ではなく、
-    // 「最大HPの守り手と最大攻撃力の守り手が一致しない（単一支配カードがない）」
-    // という、Task 10 後も成り立つ弱い形で検証する。
+  it('HPと攻撃力が逆相関している（硬いものほど攻撃力が低い）', () => {
     const units = CARD_IDS
       .map((id) => getCardDefinition(id))
       .filter((c) => c.tower !== undefined && c.type === 'tower');
     const hardest = units.reduce((a, b) => (a.tower!.hp >= b.tower!.hp ? a : b));
     const strongest = units.reduce((a, b) => (a.tower!.damage >= b.tower!.damage ? a : b));
-    expect(hardest.id).not.toBe(strongest.id);
+    // 最も硬い守り手（石壁 HP60）は攻撃しない
+    expect(hardest.tower!.damage).toBe(0);
+    // 最も火力の高い守り手（投石機）は最も硬い守り手より脆い
     expect(strongest.tower!.hp).toBeLessThan(hardest.tower!.hp);
   });
 

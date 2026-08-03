@@ -17,7 +17,3 @@ import { getEnemySpec } from './enemies';
  */
 export const isEnemyFlying = (enemy: ActiveEnemy, tick: number): boolean =>
   getEnemySpec(enemy.enemyId).flying && tick > enemy.groundedUntilTick;
-
-/** その tick 時点で敵が足止めされているか（移動しない） */
-export const isEnemyStunned = (enemy: ActiveEnemy, tick: number): boolean =>
-  tick <= enemy.stunnedUntilTick;

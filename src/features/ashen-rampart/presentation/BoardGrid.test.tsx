@@ -93,8 +93,8 @@ describe('BoardGrid', () => {
     const withEnemies = {
       ...emptyState,
       enemies: [
-        { id: 1, enemyId: 'swarm', hp: 8, maxHp: 8, progress: 1, spawnTick: 0, laneIndex: 0, alive: true, leaked: false, groundedUntilTick: 0, stunnedUntilTick: 0 },
-        { id: 2, enemyId: 'swarm', hp: 8, maxHp: 8, progress: 1.2, spawnTick: 0, laneIndex: 0, alive: true, leaked: false, groundedUntilTick: 0, stunnedUntilTick: 0 },
+        { id: 1, enemyId: 'swarm', hp: 8, maxHp: 8, progress: 1, spawnTick: 0, laneIndex: 0, alive: true, leaked: false, groundedUntilTick: 0 },
+        { id: 2, enemyId: 'swarm', hp: 8, maxHp: 8, progress: 1.2, spawnTick: 0, laneIndex: 0, alive: true, leaked: false, groundedUntilTick: 0 },
       ],
     };
     render(

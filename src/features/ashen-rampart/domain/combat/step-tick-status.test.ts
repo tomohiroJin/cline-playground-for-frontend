@@ -74,38 +74,3 @@ describe('地上化した飛行敵に地上専用の攻撃が当たる', () => {
     expect(later.enemies[0]?.hp).toBe(hpAtEnd);
   });
 });
-
-describe('足止め', () => {
-  it('足止め中は進行度が変わらない', () => {
-    const gruntWave: WaveDefinition[] = [
-      { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, laneIndex: 0 }] },
-    ];
-    const spawned = advance(createCombatState(emptyDeck, gruntWave), COUNTDOWN_TICKS + 1);
-    const stunned: CombatState = {
-      ...spawned,
-      // 出現 tick が COUNTDOWN_TICKS ぶんずれたため、足止め猶予も同じぶん後ろにずらす
-      enemies: spawned.enemies.map((e) => ({ ...e, stunnedUntilTick: COUNTDOWN_TICKS + 100 })),
-    };
-    const before = stunned.enemies[0]?.progress;
-    expect(before).toBeDefined();
-    const after = advance(stunned, 20);
-    expect(after.enemies[0]?.progress).toBe(before);
-  });
-
-  it('足止めが切れると再び進む', () => {
-    const gruntWave: WaveDefinition[] = [
-      { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, laneIndex: 0 }] },
-    ];
-    const spawned = advance(createCombatState(emptyDeck, gruntWave), COUNTDOWN_TICKS + 1);
-    const stunned: CombatState = {
-      ...spawned,
-      // 出現 tick が COUNTDOWN_TICKS ぶんずれたため、足止め猶予も同じぶん後ろにずらす
-      enemies: spawned.enemies.map((e) => ({ ...e, stunnedUntilTick: COUNTDOWN_TICKS + 5 })),
-    };
-    const atEnd = advance(stunned, 5);
-    const progressAtEnd = atEnd.enemies[0]?.progress;
-    expect(progressAtEnd).toBeDefined();
-    const later = advance(atEnd, 10);
-    expect(later.enemies[0]?.progress).toBeGreaterThan(progressAtEnd ?? 0);
-  });
-});

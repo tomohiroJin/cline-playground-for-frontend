@@ -5,7 +5,7 @@ import type { ActiveEnemy, PlacedUnit } from './combat-state';
 const enemyAt = (progress: number, overrides: Partial<ActiveEnemy> = {}): ActiveEnemy => ({
   id: 1, enemyId: 'grunt', hp: 20, maxHp: 20, progress, spawnTick: 0,
   laneIndex: 0, alive: true, leaked: false,
-  groundedUntilTick: 0, stunnedUntilTick: 0, ...overrides,
+  groundedUntilTick: 0, ...overrides,
 });
 
 const unitAt = (x: number, y: number): PlacedUnit => ({

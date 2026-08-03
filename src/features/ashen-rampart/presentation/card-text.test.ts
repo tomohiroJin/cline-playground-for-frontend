@@ -27,8 +27,8 @@ describe('weaknessTextOf', () => {
     expect(weaknessTextOf('ballista')).toContain('コスト');
   });
 
-  it('徹甲弩は低HPへの非効率を示す', () => {
-    expect(weaknessTextOf('piercer')).toContain('HP');
+  it('徹甲弩は一直線に並んでいないと恩恵がないことを示す', () => {
+    expect(weaknessTextOf('piercer')).toContain('一直線');
   });
 
   it('篝火と鍛冶場は常に0ダメージを示す', () => {

@@ -27,7 +27,6 @@ const dummyTarget: ActiveEnemy = {
   alive: true,
   leaked: false,
   groundedUntilTick: 0,
-  stunnedUntilTick: 0,
 };
 
 const stateWithHand = (hand: string[]): CombatState =>

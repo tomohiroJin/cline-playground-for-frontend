@@ -1,13 +1,14 @@
 /**
- * 罠の新効果のテスト
+ * 罠の効果のテスト
  *
- * 落網は飛行にのみ発動し、石壁は地上にのみ発動する。
- * 既存の棘罠（地上にダメージ）と合わせて、罠の対象判定が3種類になる。
+ * 落網は飛行にのみ発動する（地上化・ダメージなし）。
+ * 既存の棘罠（地上にダメージ）と合わせて、罠の対象判定は2種類になる。
+ * 石壁は Task 10 で罠から守り手（type: 'tower', HP60・攻撃0）へ移った。
  */
 import { createCombatState, COUNTDOWN_TICKS } from './combat-state';
 import type { CombatState, PlacedTrap } from './combat-state';
 import { stepTick } from './step-tick';
-import { isEnemyFlying, isEnemyStunned } from './enemy-status';
+import { isEnemyFlying } from './enemy-status';
 import type { WaveDefinition } from './waves';
 import { PLAINS_MAP } from '../board/stage-map';
 
@@ -79,52 +80,6 @@ describe('落網（飛行を地上化）', () => {
     const raven = after.enemies[0];
     expect(raven).toBeDefined();
     expect(raven?.hp).toBe(raven?.maxHp);
-  });
-});
-
-describe('石壁（地上を足止め）', () => {
-  it('地上敵を踏ませると足止めし、回数を消費する', () => {
-    const state: CombatState = {
-      ...createCombatState(emptyDeck, waveOf('grunt')),
-      traps: [trap('stone-wall', 1, 2)],
-    };
-    const after = advance(state, COUNTDOWN_TICKS + 15);
-    const grunt = after.enemies[0];
-    expect(grunt).toBeDefined();
-    expect(after.traps[0]?.usesLeft).toBe(2);
-    expect(grunt && isEnemyStunned(grunt, after.tick)).toBe(true);
-  });
-
-  it('足止め中は進行度が変わらない', () => {
-    const state: CombatState = {
-      ...createCombatState(emptyDeck, waveOf('grunt')),
-      traps: [trap('stone-wall', 1, 2)],
-    };
-    const caught = advance(state, COUNTDOWN_TICKS + 15);
-    const progressWhenCaught = caught.enemies[0]?.progress;
-    expect(progressWhenCaught).toBeDefined();
-    const after = advance(caught, 20);
-    expect(after.enemies[0]?.progress).toBe(progressWhenCaught);
-  });
-
-  it('飛行敵には発動しない（回数を消費しない）', () => {
-    const state: CombatState = {
-      ...createCombatState(emptyDeck, waveOf('raven')),
-      traps: [trap('stone-wall', 1, 2)],
-    };
-    const after = advance(state, COUNTDOWN_TICKS + 10);
-    expect(after.traps[0]?.usesLeft).toBe(3);
-  });
-
-  it('ダメージを与えない', () => {
-    const state: CombatState = {
-      ...createCombatState(emptyDeck, waveOf('grunt')),
-      traps: [trap('stone-wall', 1, 2)],
-    };
-    const after = advance(state, COUNTDOWN_TICKS + 15);
-    const grunt = after.enemies[0];
-    expect(grunt).toBeDefined();
-    expect(grunt?.hp).toBe(grunt?.maxHp);
   });
 });
 

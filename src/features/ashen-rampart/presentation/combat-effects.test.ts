@@ -37,7 +37,6 @@ const enemyAt = (id: number, progress: number, laneIndex = 0) => ({
   alive: true,
   leaked: false,
   groundedUntilTick: 0,
-  stunnedUntilTick: 0,
 });
 
 describe('advanceEffects', () => {

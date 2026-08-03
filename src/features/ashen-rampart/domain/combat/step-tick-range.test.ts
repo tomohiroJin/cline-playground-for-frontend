@@ -24,7 +24,6 @@ const dummyTarget: ActiveEnemy = {
   alive: true,
   leaked: false,
   groundedUntilTick: 0,
-  stunnedUntilTick: 0,
 };
 
 const withUnits = (units: { cardId: string; x: number; y: number }[]): CombatState => ({

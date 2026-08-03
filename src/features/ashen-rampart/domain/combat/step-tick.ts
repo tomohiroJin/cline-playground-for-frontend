@@ -19,7 +19,7 @@ import type { DeckState } from '../cards/deck';
 import { getCardDefinition } from '../cards/card-pool';
 import { placementKindOf, type CardDefinition } from '../cards/card-definition';
 import { getEnemySpec } from './enemies';
-import { isEnemyFlying, isEnemyStunned } from './enemy-status';
+import { isEnemyFlying } from './enemy-status';
 import { isBlocked, attackersFor } from './blocking';
 import type { BlockContext } from './blocking';
 import { DRAW_INTERVAL_TICKS, PLACE_COOLDOWN_TICKS } from './combat-state';
@@ -52,14 +52,13 @@ export const HIGH_GROUND_DAMAGE_MULT = 1.3;
  *
  * 篝火の貢献を測るため、オーラ抜きのダメージと実効ダメージを両方返す。
  * 丸めはそれぞれに適用する（合計してから丸めると差分がずれる）。
- * 特効は対象の**最大HP**で判定する（現在HPだと削るほど弱くなり直感に反する）。
  * 倍率の二重適用を避けるため、この関数だけがダメージ算出の責務を持つ。
  */
 export const damageBreakdown = (
   state: CombatState,
   unitIndex: number,
   map: StageMap,
-  target: ActiveEnemy
+  _target: ActiveEnemy
 ): { total: number; auraBonus: number } => {
   const unit = state.units[unitIndex];
   if (!unit) return { total: 0, auraBonus: 0 };
@@ -74,11 +73,8 @@ export const damageBreakdown = (
     return adjacent ? sum + damageBonus : sum;
   }, 0);
   const highGround = isHighGround(map, unit.pos) ? HIGH_GROUND_DAMAGE_MULT : 1;
-  const threshold = spec.heavyBonusThreshold;
-  const heavy =
-    threshold !== undefined && target.maxHp >= threshold ? (spec.heavyBonusMultiplier ?? 1) : 1;
-  const base = Math.round(spec.damage * heavy * highGround);
-  const total = Math.round(spec.damage * heavy * highGround * (1 + auraBonus));
+  const base = Math.round(spec.damage * highGround);
+  const total = Math.round(spec.damage * highGround * (1 + auraBonus));
   return { total, auraBonus: total - base };
 };
 
@@ -227,7 +223,6 @@ const spawnAt = (state: CombatState, tick: number, nextId: number): ActiveEnemy[
           alive: true,
           leaked: false,
           groundedUntilTick: 0,
-          stunnedUntilTick: 0,
         });
       }
     });
@@ -538,7 +533,6 @@ const moveEnemies = (
   return [...existing, ...spawned].map((enemy) => {
     if (!enemy.alive) return enemy;
     if (enemy.spawnTick === ctx.tick) return enemy;
-    if (isEnemyStunned(enemy, ctx.tick)) return enemy;
     if (isBlocked({ units, map, tick: ctx.tick }, enemy)) return enemy;
     const spec = getEnemySpec(enemy.enemyId);
     const lane = laneFor(map, enemy);
@@ -592,16 +586,15 @@ const applyEnemyAttacks = (
 /** 罠が発動する距離（セル）。表示側の STACK_DISTANCE とは無関係 */
 export const TRAP_TRIGGER_DISTANCE = 0.5;
 
-/** 敵の状態変更の下書き（地上化・足止め） */
-type EnemyStatusDraft = { groundedUntilTick?: number; stunnedUntilTick?: number };
+/** 敵の状態変更の下書き（地上化） */
+type EnemyStatusDraft = { groundedUntilTick?: number };
 
 /**
  * 罠の発動
  *
- * 罠は3種類の対象判定を持つ:
+ * 罠は2種類の対象判定を持つ:
  *   棘罠   … 地上にダメージ
  *   落網   … 飛行を地上化（ダメージなし）
- *   石壁   … 地上を足止め（ダメージなし）
  * 発動条件が逆のカードがあるため、対象判定は罠ごとに決める。
  *
  * 移動確定後の座標で判定する。ダメージは hpById に、状態変更は statusById に
@@ -640,14 +633,9 @@ const applyTraps = (
         hpById.set(enemy.id, (hpById.get(enemy.id) ?? 0) - spec.damage);
         sourceById.set(enemy.id, { kind: 'trap', index: trapIndex });
       }
-      const status = statusById.get(enemy.id) ?? {};
       if (spec.groundedTicks !== undefined) {
-        status.groundedUntilTick = tick + spec.groundedTicks - 1;
+        statusById.set(enemy.id, { groundedUntilTick: tick + spec.groundedTicks - 1 });
       }
-      if (spec.stunTicks !== undefined) {
-        status.stunnedUntilTick = tick + spec.stunTicks - 1;
-      }
-      statusById.set(enemy.id, status);
 
       hitEnemyIds.push(enemy.id);
       usesLeft -= 1;
@@ -683,8 +671,6 @@ const applyUnitShots = (
     const target = selectUnitTarget(unit, spec, range, moved, map, hpById, tick);
     if (!target) return unit;
     const { total: damage, auraBonus } = damageBreakdown(stateForDamage, unitIndex, map, target);
-    hpById.set(target.id, (hpById.get(target.id) ?? 0) - damage);
-    sourceById.set(target.id, { kind: 'unit', index: unitIndex });
     const targetPos = enemyPosition(map, target);
     const distance = Math.hypot(targetPos.x - unit.pos.x, targetPos.y - unit.pos.y);
     events.push({
@@ -695,18 +681,35 @@ const applyUnitShots = (
       // 素の射程を超えている＝鍛冶場のオーラで初めて届いた射撃
       beyondBaseRange: distance > spec.range,
     });
-    if (spec.splashRadius > 0) {
-      applySplashDamage(
-        target,
-        spec,
+    // 貫通・範囲・単体は互いに排他な3つの当たり方（設計書 §7 の3軸）。
+    // 貫通は標的自身も直線上の1点として applyPiercingDamage が拾うため、
+    // ここで別途 hpById.set しない（二重にダメージが乗ってしまう）。
+    if (spec.piercing) {
+      applyPiercingDamage(
+        { from: unit.pos, toward: targetPos, range },
         moved,
         map,
+        damage,
         hpById,
         sourceById,
-        tick,
-        stateForDamage,
-        unitIndex
+        { kind: 'unit', index: unitIndex }
       );
+    } else {
+      hpById.set(target.id, (hpById.get(target.id) ?? 0) - damage);
+      sourceById.set(target.id, { kind: 'unit', index: unitIndex });
+      if (spec.splashRadius > 0) {
+        applySplashDamage(
+          target,
+          spec,
+          moved,
+          map,
+          hpById,
+          sourceById,
+          tick,
+          stateForDamage,
+          unitIndex
+        );
+      }
     }
     // 発射周期をちょうど cooldownTicks tick にするため -1 する
     // （次tick以降の `cooldownLeft > 0` decrement 判定と合わせて、
@@ -740,8 +743,9 @@ const selectUnitTarget = (
 /**
  * 着弾点から splashRadius 以内の他の敵にも巻き込みダメージを与える
  *
- * 特効は敵ごとに判定されるべきなので、中心の敵のダメージ値を流用せず
- * 巻き込む敵ごとに effectiveDamage を呼び直す（重装だけが特効で2倍を受ける）。
+ * ダメージは敵によらず一定だが、中心の敵のダメージ値を流用せず
+ * 巻き込む敵ごとに effectiveDamage を呼び直す（damageBreakdown がダメージ算出の
+ * 唯一の責務を持つという契約を、この呼び出し側でも崩さないため）。
  */
 const applySplashDamage = (
   target: ActiveEnemy,
@@ -764,6 +768,58 @@ const applySplashDamage = (
       hpById.set(other.id, (hpById.get(other.id) ?? 0) - damage);
       sourceById.set(other.id, { kind: 'unit', index: unitIndex });
     }
+  });
+};
+
+/** 点 p と線分 ab の距離（貫通の判定に使う） */
+const distanceToSegment = (
+  p: { x: number; y: number },
+  a: CellPos,
+  b: { x: number; y: number }
+): number => {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const lengthSq = dx * dx + dy * dy;
+  if (lengthSq === 0) return Math.hypot(p.x - a.x, p.y - a.y);
+  const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / lengthSq));
+  return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
+};
+
+/** 貫通の当たり幅（セル）。この距離まで直線に近い敵に当たる */
+export const PIERCING_WIDTH = 0.5;
+
+/**
+ * 貫通ダメージ
+ *
+ * 守り手から標的へ引いた直線上にいる敵すべてに、同じダメージを与える。
+ * 標的より奥の敵にも当たるよう、線分は標的の先まで射程いっぱいに伸ばす。
+ * 貫通する守り手（徹甲弩）は hitsFlying が常に true のため、飛行判定による
+ * 絞り込みは行わない（applySplashDamage と異なり tick を引数に取らない）。
+ */
+const applyPiercingDamage = (
+  ctx: { from: CellPos; toward: { x: number; y: number }; range: number },
+  moved: readonly ActiveEnemy[],
+  map: StageMap,
+  damage: number,
+  hpById: Map<number, number>,
+  sourceById: SourceById,
+  source: DefeatSource
+): void => {
+  const dx = ctx.toward.x - ctx.from.x;
+  const dy = ctx.toward.y - ctx.from.y;
+  const length = Math.hypot(dx, dy) || 1;
+  const end = {
+    x: ctx.from.x + (dx / length) * ctx.range,
+    y: ctx.from.y + (dy / length) * ctx.range,
+  };
+  moved.forEach((enemy) => {
+    if (!enemy.alive) return;
+    const current = hpById.get(enemy.id) ?? enemy.hp;
+    if (current <= 0) return;
+    const pos = enemyPosition(map, enemy);
+    if (distanceToSegment(pos, ctx.from, end) > PIERCING_WIDTH) return;
+    hpById.set(enemy.id, current - damage);
+    sourceById.set(enemy.id, source);
   });
 };
 
@@ -815,11 +871,7 @@ const resolveDamage = (
     const withStatus =
       status === undefined
         ? enemy
-        : {
-            ...enemy,
-            groundedUntilTick: status.groundedUntilTick ?? enemy.groundedUntilTick,
-            stunnedUntilTick: status.stunnedUntilTick ?? enemy.stunnedUntilTick,
-          };
+        : { ...enemy, groundedUntilTick: status.groundedUntilTick ?? enemy.groundedUntilTick };
     const hp = hpById.get(enemy.id) ?? withStatus.hp;
     if (hp > 0) return { ...withStatus, hp };
     const source = sourceById.get(enemy.id);

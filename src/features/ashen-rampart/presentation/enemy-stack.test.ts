@@ -26,7 +26,6 @@ const enemy = (
   alive: true,
   leaked: false,
   groundedUntilTick: 0,
-  stunnedUntilTick: 0,
 });
 
 describe('stackEnemies', () => {

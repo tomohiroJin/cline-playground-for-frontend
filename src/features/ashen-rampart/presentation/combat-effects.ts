@@ -150,7 +150,7 @@ const toEffect = (
       to,
       untilTick: tick + lifetimeOf('shot', reducedMotion),
       wide: (spec?.splashRadius ?? 0) > 0,
-      dashed: spec?.heavyBonusThreshold !== undefined,
+      dashed: spec?.piercing === true,
     };
   }
   if (event.kind === 'defeat') {

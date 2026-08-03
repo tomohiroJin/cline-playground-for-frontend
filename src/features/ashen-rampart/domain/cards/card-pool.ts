@@ -4,15 +4,16 @@
  * 数値は設計書 §7 の表（コスト帯0〜5・HPと攻撃力の逆相関）の値をそのまま持つ。
  * 攻撃塔5種の DPS/マナ（基礎値）は
  * 弓兵 0.500 > 弩砲 0.375 > 徹甲弩 0.292 > 火砲台 0.222 > 投石機 0.120。
- * 弓兵が単体効率で最高だが飛行に当たらず、徹甲弩は最大HP40以上の敵に限り
- * 0.583 と弓兵を上回る。つまり効率の順位が敵によって入れ替わるため、
- * 同名3枚上限と併せて単一の支配戦略が成立しない（設計書 §7）。
+ * 弓兵が単体効率で最高だが飛行に当たらない。徹甲弩は単体効率こそ中位だが、
+ * 守り手から標的へ引いた直線上の敵すべてを貫くため、単体・範囲攻撃のどちらとも
+ * 重ならない3つ目の軸を持つ（一直線に並ばない限り恩恵がない代わりに、
+ * 並んだ相手には他のどの塔より効率が跳ね上がる）。効率の性格が敵の並び方で
+ * 入れ替わるため、同名3枚上限と併せて単一の支配戦略が成立しない（設計書 §7）。
  * 篝火・鍛冶場は攻撃せず（0ダメージ）、隣接する守り手を強化するだけのオーラ札。
  *
- * 徹甲弩の「最大HP40以上に2倍」を貫通（一直線上の敵すべてに命中）へ置き換えるのと、
- * 石壁を type: 'trap' から守り手（type: 'tower'）へ変えるのは Task 10 の担当。
- * ここでは両カードともコスト・HP等の数値面（石壁は現状維持、徹甲弩はコスト4・HP14）
- * だけを扱い、メカニクス自体には触れない（設計書 §7.4 / §7.6）。
+ * 石壁は type: 'trap'（40tick足止め）から守り手（type: 'tower', HP60・攻撃0）へ
+ * 変わった（Task 10）。本モデルでは「HP60の壁」のほうが素直であり、
+ * 足止めと石壁という2つの「止める」概念の重複も消える。
  */
 import type { CardDefinition } from './card-definition';
 
@@ -114,8 +115,7 @@ const CARDS: readonly CardDefinition[] = [
   },
   // 実効値の注記: 罠の判定（applyTraps）は移動（moveEnemies）の後に走るため、
   // 発動 tick T では敵が既に移動済みで、実際に止まるのは T+1〜T+groundedTicks。
-  // つまり体感の地上化時間は 120 ではなく実効 119 tick になる。
-  // 振る舞いは石壁と一貫しており実害がないため実装は変えず、注記だけ残す。
+  // つまり体感の地上化時間は 120 ではなく実効 119 tick になる。実装は変えず、注記だけ残す。
   {
     id: 'snare-net',
     name: '落網',
@@ -124,14 +124,13 @@ const CARDS: readonly CardDefinition[] = [
     description: '経路に張る網。踏んだ飛行の敵を120tick 地に落とす。ダメージはない。',
     trap: { damage: 0, uses: 3, groundedTicks: 120 },
   },
-  // 実効値の注記: 落網と同じ理由で、足止めは 40 ではなく実効 39 tick（T+1〜T+39）。
   {
     id: 'stone-wall',
     name: '石壁',
-    type: 'trap',
+    type: 'tower',
     cost: 1,
-    description: '経路を塞ぐ石。踏んだ地上の敵を40tick 足止めする。ダメージはない。',
-    trap: { damage: 0, uses: 3, stunTicks: 40 },
+    description: '攻撃しないが非常に硬い。経路に置いて敵を食い止める。',
+    tower: { hp: 60, range: 0, damage: 0, cooldownTicks: 0, splashRadius: 0, hitsFlying: false },
   },
   {
     id: 'catapult',
@@ -146,10 +145,8 @@ const CARDS: readonly CardDefinition[] = [
     name: '徹甲弩',
     type: 'tower',
     // コスト帯を0〜5に広げる際、設計書 §7 の表で唯一コスト4を占めるのが徹甲弩。
-    // 「最大HP40以上に2倍」の貫通メカニクスへの置き換えは Task 10 の担当のため、
-    // heavyBonusThreshold / heavyBonusMultiplier と説明文はここでは変更しない。
     cost: 4,
-    description: '硬い敵を貫く。最大HP40以上の敵には2倍。飛行も撃てるが雑兵相手は非効率。',
+    description: '一直線上の敵をまとめて貫く。飛行も撃てる。',
     tower: {
       hp: 14,
       range: 1.8,
@@ -157,8 +154,7 @@ const CARDS: readonly CardDefinition[] = [
       cooldownTicks: 12,
       splashRadius: 0,
       hitsFlying: true,
-      heavyBonusThreshold: 40,
-      heavyBonusMultiplier: 2,
+      piercing: true,
     },
   },
   {
