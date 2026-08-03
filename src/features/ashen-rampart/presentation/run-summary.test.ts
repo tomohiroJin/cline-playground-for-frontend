@@ -73,10 +73,10 @@ describe('accumulateTick', () => {
       events: [{ kind: 'played', cardId: 'arrow-tower', pos: { x: 1, y: 2 } }],
     });
     const tally = accumulateTick(emptyTally(), prev, state, PLAINS_MAP);
-    // 反復3 で設置スロットの規則（buildSlots）を廃止し「経路外なら置ける」に変えたため、
-    // 候補は経路セルを除く全マスになる。2レーン化（Task 2）で経路セルは
-    // 北10＋南12－共有の砦1＝21マスになったため、9×7=63 - 21 = 42
-    expect(tally.placeableCounts).toEqual([42]);
+    // 反復3 Task 8 で設置マスの規則を廃止し、守り手（arrow-tower は unit 種別）は
+    // 砦セル以外のどこにでも置けるようになった。盤面は9×7=63マス、唯一置けないのは
+    // 砦1マスのみ（prev は何も置かれていない空の盤面）なので 63-1=62
+    expect(tally.placeableCounts).toEqual([62]);
   });
 
   it('魔力炉の初号機が置かれた tick を記録する', () => {

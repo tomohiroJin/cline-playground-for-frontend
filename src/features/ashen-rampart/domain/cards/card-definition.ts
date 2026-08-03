@@ -106,16 +106,18 @@ export interface CardDefinition {
 }
 
 /** カードを出すときに指定する対象の種別 */
-export type PlacementKind = 'slot' | 'path' | 'none';
+export type PlacementKind = 'unit' | 'reactor' | 'path' | 'none';
 
 /**
  * カードの配置先種別を返す
  *
- * UI はこれを見て「置けるマスだけをハイライトする」（設計書 §9.7）。
- * 選択空間 60通りを数個に落とすための情報。
+ * 設置マスの概念が消えたため、守り手は砦以外のどこにでも置ける。
+ * 魔力炉だけは経路外に限る——コスト0・デッキ上限なしのため、
+ * 経路に置けると無限の無料ブロッカーになる（設計書 §7.5）。
  */
 export const placementKindOf = (card: CardDefinition): PlacementKind => {
-  if (card.type === 'trap') return 'path';
+  if (card.type === 'trap' || card.type === 'ember') return 'path';
   if (card.type === 'spell' || card.type === 'levy') return 'none';
-  return 'slot';
+  if (card.type === 'reactor') return 'reactor';
+  return 'unit';
 };

@@ -8,7 +8,7 @@ import { createCombatState, PLACE_COOLDOWN_TICKS, MANA_INITIAL, COUNTDOWN_TICKS 
 import type { CombatState, PlacedUnit, ActiveEnemy } from './combat-state';
 import { stepTick, canPlaceAt, effectiveDamage } from './step-tick';
 import type { WaveDefinition } from './waves';
-import { PLAINS_MAP, offPathCells } from '../board/stage-map';
+import { PLAINS_MAP, offPathCells, fortressCell, laneOf } from '../board/stage-map';
 import { getCardDefinition } from '../cards/card-pool';
 import { getEnemySpec } from './enemies';
 import { createDeck } from '../cards/deck';
@@ -37,11 +37,13 @@ const play = (state: CombatState, handIndex: number, pos?: { x: number; y: numbe
   stepTick(state, [{ kind: 'play-card', handIndex, pos }], PLAINS_MAP);
 
 describe('canPlaceAt', () => {
-  it('守り手は設置スロットにだけ置ける', () => {
+  // 反復3 Task 8 で設置マスの規則を廃止した。守り手（unit 種別）は砦以外の
+  // どこにでも置けるため、経路上か経路外かは canPlaceAt の判定を左右しない。
+  it('守り手は経路にも経路外にも置ける', () => {
     const card = getCardDefinition('arrow-tower');
     const empty = stateWithHand([]);
     expect(canPlaceAt(empty, card, { x: 1, y: 1 }, PLAINS_MAP)).toBe(true); // 経路外
-    expect(canPlaceAt(empty, card, { x: 1, y: 2 }, PLAINS_MAP)).toBe(false); // 経路上
+    expect(canPlaceAt(empty, card, { x: 1, y: 2 }, PLAINS_MAP)).toBe(true); // 経路上
   });
 
   it('罠は経路にだけ置ける', () => {
@@ -51,7 +53,7 @@ describe('canPlaceAt', () => {
     expect(canPlaceAt(empty, card, { x: 1, y: 1 }, PLAINS_MAP)).toBe(false); // 経路外
   });
 
-  it('埋まっているスロットには置けない', () => {
+  it('既に何か置かれているマスには置けない', () => {
     const card = getCardDefinition('arrow-tower');
     const occupied: CombatState = {
       ...stateWithHand([]),
@@ -60,15 +62,62 @@ describe('canPlaceAt', () => {
     expect(canPlaceAt(occupied, card, { x: 1, y: 1 }, PLAINS_MAP)).toBe(false);
   });
 
-  it('魔力炉も燠火もスロットを消費する', () => {
+  // 反復3 Task 8 で魔力炉は経路外専用、燠火は経路専用に分離されたため、
+  // 同じマスを奪い合うことはもう無い。それぞれが自分の配置先でだけ占有をブロックされる
+  it('魔力炉は経路外専用、燠火は経路専用で、それぞれ既存の同種と競合する', () => {
     const empty = stateWithHand([]);
-    const occupied: CombatState = {
+    const reactorOccupied: CombatState = {
       ...empty,
       reactors: [{ pos: { x: 1, y: 1 }, ticksToMana: 60 }],
     };
-    expect(canPlaceAt(occupied, getCardDefinition('ember-blast'), { x: 1, y: 1 }, PLAINS_MAP)).toBe(
-      false
-    );
+    // 既に魔力炉がある経路外セルには別の魔力炉を置けない
+    expect(
+      canPlaceAt(reactorOccupied, getCardDefinition('reactor'), { x: 1, y: 1 }, PLAINS_MAP)
+    ).toBe(false);
+    // 燠火はそもそも経路外に置けない（占有以前に配置先種別で弾かれる）
+    expect(
+      canPlaceAt(reactorOccupied, getCardDefinition('ember-blast'), { x: 1, y: 1 }, PLAINS_MAP)
+    ).toBe(false);
+  });
+});
+
+describe('配置先の規則', () => {
+  const emptyState = () => createCombatState(createDeck(['arrow-tower'], () => 0), []);
+
+  it('守り手は経路上にも経路外にも置ける', () => {
+    const state = emptyState();
+    const card = getCardDefinition('arrow-tower');
+    expect(canPlaceAt(state, card, laneOf(PLAINS_MAP, 0)[3]!, PLAINS_MAP)).toBe(true);
+    expect(canPlaceAt(state, card, offPathCells(PLAINS_MAP)[0]!, PLAINS_MAP)).toBe(true);
+  });
+
+  it('砦セルには何も置けない（2レーンの合流点を1体で塞げてしまうため）', () => {
+    const state = emptyState();
+    const fortress = fortressCell(PLAINS_MAP)!;
+    expect(canPlaceAt(state, getCardDefinition('arrow-tower'), fortress, PLAINS_MAP)).toBe(false);
+    expect(canPlaceAt(state, getCardDefinition('spike-trap'), fortress, PLAINS_MAP)).toBe(false);
+  });
+
+  it('魔力炉は経路外にしか置けない（コスト0・上限なしの壁になるため）', () => {
+    const state = emptyState();
+    const card = getCardDefinition('reactor');
+    expect(canPlaceAt(state, card, laneOf(PLAINS_MAP, 0)[3]!, PLAINS_MAP)).toBe(false);
+    expect(canPlaceAt(state, card, offPathCells(PLAINS_MAP)[0]!, PLAINS_MAP)).toBe(true);
+  });
+
+  it('罠は経路上にしか置けない', () => {
+    const state = emptyState();
+    const card = getCardDefinition('spike-trap');
+    expect(canPlaceAt(state, card, laneOf(PLAINS_MAP, 0)[3]!, PLAINS_MAP)).toBe(true);
+    expect(canPlaceAt(state, card, offPathCells(PLAINS_MAP)[0]!, PLAINS_MAP)).toBe(false);
+  });
+
+  it('1セルに置けるのは守り手1体か罠1つのどちらか', () => {
+    const deck = createDeck(['arrow-tower', 'spike-trap'], () => 0);
+    let state = { ...createCombatState(deck, []), mana: 10 };
+    const cell = laneOf(PLAINS_MAP, 0)[3]!;
+    state = stepTick(state, [{ kind: 'play-card', handIndex: 0, pos: cell }], PLAINS_MAP);
+    expect(canPlaceAt(state, getCardDefinition('spike-trap'), cell, PLAINS_MAP)).toBe(false);
   });
 });
 
@@ -121,12 +170,12 @@ describe('カード配置', () => {
     expect(state.mana).toBe(manaBefore + manaPerTick);
   });
 
-  it('置けない場所を指定すると拒否される', () => {
-    // 反復3 で設置スロットの規則（buildSlots）を廃止し「経路外なら置ける」に変えたため、
-    // 経路外はもう拒否されない。守り手（slot 種別）が拒否されるのは経路セルのみ。
-    // (0,2) は北レーンの入口（経路セル）
+  it('置けない場所を指定すると拒否される（砦セルは両レーンの合流点のため唯一の例外）', () => {
+    // 反復3 Task 8 で設置マスの規則を廃止し、守り手は砦以外のどこにでも置けるように
+    // なった。砦だけは置くと1体で両レーンを同時に塞げてしまうため禁止のまま残る。
     const state = stateWithHand(['arrow-tower']);
-    const after = play(state, 0, { x: 0, y: 2 });
+    const fortress = fortressCell(PLAINS_MAP)!;
+    const after = play(state, 0, fortress);
     expect(after.units).toHaveLength(0);
     expect(after.events).toContainEqual({ kind: 'rejected', reason: 'target' });
   });
@@ -168,8 +217,10 @@ describe('カード配置', () => {
     let state = createCombatState({ drawPile: [], hand: ['ember-blast'], graveyard: [] }, wave);
     // ウェーブの startTick が COUNTDOWN_TICKS ぶんずれるため、出現まで進める
     for (let i = 0; i < COUNTDOWN_TICKS + 1; i++) state = stepTick(state, [], PLAINS_MAP); // 敵を出現させる
-    // 業火は設置スロット（経路外）にしか置けないため (1,1) に配置する
-    const after = stepTick(state, [{ kind: 'play-card', handIndex: 0, pos: { x: 1, y: 1 } }], PLAINS_MAP);
+    // 反復3 Task 8: 業火の配置先は path（経路上）に是正された。北レーンの入口
+    // （敵の出現地点）に置けば、半径2の範囲に確実に入る
+    const entrance = laneOf(PLAINS_MAP, 0)[0]!;
+    const after = stepTick(state, [{ kind: 'play-card', handIndex: 0, pos: entrance }], PLAINS_MAP);
     expect(after.embers).toHaveLength(1);
     expect(after.enemies[0]?.hp).toBe(12); // 20 - 8
   });

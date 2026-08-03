@@ -44,9 +44,12 @@ describe('カードプール', () => {
   });
 
   it('配置先の種別はカード種別から決まる', () => {
-    expect(placementKindOf(getCardDefinition('arrow-tower'))).toBe('slot');
-    expect(placementKindOf(getCardDefinition('reactor'))).toBe('slot');
-    expect(placementKindOf(getCardDefinition('ember-blast'))).toBe('slot');
+    // 反復3 Task 8: 設置マスの規則を廃止し、配置先種別を4種に分けた。
+    // 業火（ember）は経路に範囲ダメージを落とすカードのため path、魔力炉は
+    // コスト0・上限なしで経路に置けると無限の壁になるため reactor（経路外専用）に分離した。
+    expect(placementKindOf(getCardDefinition('arrow-tower'))).toBe('unit');
+    expect(placementKindOf(getCardDefinition('reactor'))).toBe('reactor');
+    expect(placementKindOf(getCardDefinition('ember-blast'))).toBe('path');
     expect(placementKindOf(getCardDefinition('spike-trap'))).toBe('path');
     expect(placementKindOf(getCardDefinition('mud-time'))).toBe('none');
   });
@@ -117,7 +120,7 @@ describe('反復1で追加したカード', () => {
 
   it('全14種が既知の配置先種別を持つ', () => {
     CARD_IDS.forEach((id) => {
-      expect(['slot', 'path', 'none']).toContain(placementKindOf(getCardDefinition(id)));
+      expect(['unit', 'reactor', 'path', 'none']).toContain(placementKindOf(getCardDefinition(id)));
     });
   });
 });

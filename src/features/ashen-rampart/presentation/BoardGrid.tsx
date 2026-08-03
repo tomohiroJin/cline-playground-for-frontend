@@ -8,7 +8,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import type { CellPos, StageMap } from '../domain/board/stage-map';
-import { isHighGround, isSlowCell, isPathCell, offPathCells } from '../domain/board/stage-map';
+import { isHighGround, isSlowCell, isPathCell } from '../domain/board/stage-map';
 import type { CombatState } from '../domain/combat/combat-state';
 import { stackEnemies } from './enemy-stack';
 import { EnemyMarker } from './EnemyMarker';
@@ -34,11 +34,7 @@ const Frame = styled.div<{ $columns: number; $rows: number }>`
 
 const Cell = styled.button<{ $kind: string; $highlighted: boolean }>`
   border: 1px solid ${COLORS.grid};
-  background: ${({ $kind }) =>
-    $kind === 'path' ? '#2a2320' : $kind === 'slot' ? '#211c19' : 'transparent'};
-  /* 城壁の外（置けないマス）は境界を落とし、盤面から後退させる。
-     「置けそうに見えるのに置けない」ことが窮屈さの一因だったため */
-  ${({ $kind }) => ($kind === 'empty' ? `border-color: transparent; opacity: 0.35;` : '')}
+  background: ${({ $kind }) => ($kind === 'path' ? '#2a2320' : '#211c19')};
   outline: ${({ $highlighted }) =>
     $highlighted ? `2px solid ${COLORS.opportunity}` : 'none'};
   outline-offset: -2px;
@@ -92,8 +88,6 @@ export const BoardGrid: React.FC<Props> = ({
   }
   // 敵は自身の laneIndex を持つため、map をそのまま渡してレーンごとに座標を解決させる
   const stacks = stackEnemies(state.enemies, map);
-  // 設置スロットの概念は反復3で廃止し、経路外なら置ける（暫定版。Task 8 で本格化）
-  const slots = offPathCells(map);
 
   const occupantLabel = (pos: CellPos): { text: string; ready: boolean } | undefined => {
     const unit = state.units.find((u) => samePos(u.pos, pos));
@@ -111,13 +105,12 @@ export const BoardGrid: React.FC<Props> = ({
     <Frame $columns={map.width} $rows={map.height}>
       {cells.map((pos) => {
         const isPath = isPathCell(map, pos);
-        const isSlot = slots.some((c) => samePos(c, pos));
         const highlighted = placeableCells.some((c) => samePos(c, pos));
         const occupant = occupantLabel(pos);
         const terrain = isHighGround(map, pos) ? '高台' : isSlowCell(map, pos) ? '滞留' : '';
         const label = [
           `${pos.x},${pos.y}`,
-          isPath ? '経路' : isSlot ? '設置可' : '城壁の外',
+          isPath ? '経路' : '設置可',
           terrain,
           occupant?.text,
           highlighted ? 'ここに置ける' : '',
@@ -128,7 +121,7 @@ export const BoardGrid: React.FC<Props> = ({
           <Cell
             key={`${pos.x},${pos.y}`}
             type="button"
-            $kind={isPath ? 'path' : isSlot ? 'slot' : 'empty'}
+            $kind={isPath ? 'path' : 'slot'}
             $highlighted={highlighted}
             aria-label={label}
             onClick={() => onCellClick(pos)}

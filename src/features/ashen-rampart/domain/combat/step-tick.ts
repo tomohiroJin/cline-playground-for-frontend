@@ -13,7 +13,7 @@
  * 分割は振る舞いを1ミリも変えないことを最優先し、処理順序・計算式は元のまま。
  */
 import type { CellPos, StageMap } from '../board/stage-map';
-import { isSlowCell, isHighGround, laneOf, isPathCell } from '../board/stage-map';
+import { isSlowCell, isHighGround, laneOf, isPathCell, fortressCell } from '../board/stage-map';
 import { drawOne, discardFromHand, peekTop, takeFromPeek } from '../cards/deck';
 import type { DeckState } from '../cards/deck';
 import { getCardDefinition } from '../cards/card-pool';
@@ -148,29 +148,27 @@ export const enemyPosition = (map: StageMap, enemy: ActiveEnemy): CellPos =>
 
 const samePos = (a: CellPos, b: CellPos): boolean => a.x === b.x && a.y === b.y;
 
-/** そのスロットが既に何かで埋まっているか */
-const isSlotOccupied = (state: CombatState, pos: CellPos): boolean =>
+/** そのセルに既に守り手・魔力炉・燠火・罠のいずれかがあるか */
+const isCellOccupied = (state: CombatState, pos: CellPos): boolean =>
   state.units.some((u) => samePos(u.pos, pos)) ||
   state.reactors.some((r) => samePos(r.pos, pos)) ||
-  state.embers.some((e) => samePos(e.pos, pos));
-
-/** 盤面の範囲内か */
-const isInsideBoard = (map: StageMap, pos: CellPos): boolean =>
-  pos.x >= 0 && pos.x < map.width && pos.y >= 0 && pos.y < map.height;
+  state.embers.some((e) => samePos(e.pos, pos)) ||
+  state.traps.some((t) => samePos(t.pos, pos));
 
 /**
  * そのカードをその位置に置けるか
  *
  * UI はこれを使って「置けるマスだけをハイライト」する（設計書 §9.7）。
- * 選択空間 60通りを数個に落とすための判定であり、ドメインが唯一の真実を持つ。
+ * ドメインが唯一の真実を持つ。
  *
  * 引数 `state` は tick 開始時点（今 tick に処理済みの配置操作を含まない）のものを渡す前提。
  * `stepTick` は配置クールダウンにより1 tick に1回しか配置を確定しないため、
  * 同一 tick 内で2回目の判定が必要になるケースは存在しない。
  *
- * **暫定版（Task 8 で本格的に書き直す）**: 設置スロットという概念を廃止した
- * 反面、自由配置の細かい規則（隣接制約など）はまだ決まっていない。ここでは
- * 「経路外なら置ける」で最小限に留める。
+ * 設置マスの概念を廃止し、砦セル以外なら守り手はどこにでも置ける（Task 8）。
+ * 砦は全レーンの合流点で、置けると1体で両レーンを同時に塞げてしまうため
+ * 唯一の例外として禁止する。魔力炉はコスト0・デッキ上限なしのため、
+ * 経路に置けると無限の無料ブロッカーになる——経路外限定はその防止策。
  */
 export const canPlaceAt = (
   state: CombatState,
@@ -180,11 +178,31 @@ export const canPlaceAt = (
 ): boolean => {
   const kind = placementKindOf(card);
   if (kind === 'none') return false;
-  if (!isInsideBoard(map, pos)) return false;
-  if (kind === 'path') {
-    return isPathCell(map, pos) && !state.traps.some((t) => samePos(t.pos, pos));
+  if (pos.x < 0 || pos.x >= map.width || pos.y < 0 || pos.y >= map.height) return false;
+  // 砦セルは全レーンの合流点。ここに置けると1体で両レーンを塞げてしまう
+  const fortress = fortressCell(map);
+  if (fortress && samePos(fortress, pos)) return false;
+  if (isCellOccupied(state, pos)) return false;
+  const onPath = isPathCell(map, pos);
+  if (kind === 'path') return onPath;
+  if (kind === 'reactor') return !onPath;
+  return true;
+};
+
+/** そのカードを今置けるセルの一覧（UI のハイライトと集計が使う） */
+export const placeableCells = (
+  state: CombatState,
+  card: CardDefinition,
+  map: StageMap
+): CellPos[] => {
+  const cells: CellPos[] = [];
+  for (let y = 0; y < map.height; y++) {
+    for (let x = 0; x < map.width; x++) {
+      const pos = { x, y };
+      if (canPlaceAt(state, card, pos, map)) cells.push(pos);
+    }
   }
-  return !isPathCell(map, pos) && !isSlotOccupied(state, pos);
+  return cells;
 };
 
 /** そのウェーブ定義から、この tick に出現すべき敵を作る */

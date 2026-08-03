@@ -6,11 +6,11 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CellPos } from '../domain/board/stage-map';
-import { PLAINS_MAP, allPathCells, offPathCells } from '../domain/board/stage-map';
+import { PLAINS_MAP } from '../domain/board/stage-map';
 import { getCardDefinition } from '../domain/cards/card-pool';
 import { placementKindOf } from '../domain/cards/card-definition';
 import type { CombatState } from '../domain/combat/combat-state';
-import { stepTick, canPlaceAt, type PlayerAction } from '../domain/combat/step-tick';
+import { stepTick, placeableCells as computePlaceableCells, type PlayerAction } from '../domain/combat/step-tick';
 import { nextWavePreview } from './wave-preview';
 import { decideBattleAnnouncement } from './battle-announcement';
 import { advanceEffects, type Effect } from './combat-effects';
@@ -215,10 +215,10 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
     const cardId = state.deck.hand[selectedIndex];
     if (cardId === undefined) return [];
     const card = getCardDefinition(cardId);
-    const kind = placementKindOf(card);
-    if (kind === 'none') return [];
-    const candidates = kind === 'path' ? allPathCells(PLAINS_MAP) : offPathCells(PLAINS_MAP);
-    return candidates.filter((pos) => canPlaceAt(state, card, pos, PLAINS_MAP));
+    if (placementKindOf(card) === 'none') return [];
+    // 設置マスの規則が消え、カード種別ごとに置ける範囲が変わる（砦禁止・魔力炉は経路外限定等）。
+    // 判定はドメイン（step-tick の placeableCells）に一元化し、ここでは呼ぶだけにする
+    return computePlaceableCells(state, card, PLAINS_MAP);
   })();
 
   const selectCard = useCallback(
