@@ -58,11 +58,31 @@ export interface ActiveEnemy {
   stunnedUntilTick: number;
 }
 
+/**
+ * 撃破に至らせた主体
+ *
+ * 契約: **最後に削った者に帰属する**（オーバーキル分は問わない）。
+ * 罠・射撃・業火は同じ tick 内で順に hpById を削るため、
+ * 最後の書き込み者を記録する。
+ */
+export type DefeatSource =
+  | { kind: 'tower'; index: number }
+  | { kind: 'trap'; index: number }
+  | { kind: 'ember'; index: number };
+
 export type TickEvent =
-  | { kind: 'shot'; towerIndex: number; targetId: number }
+  | {
+      kind: 'shot';
+      towerIndex: number;
+      targetId: number;
+      /** 隣接オーラ（篝火）によって増えたダメージ量。オーラが無ければ 0 */
+      auraDamageBonus: number;
+      /** 素の射程では届かず、オーラ（鍛冶場）で初めて届いた射撃か */
+      beyondBaseRange: boolean;
+    }
   | { kind: 'trap'; trapIndex: number; targetId: number }
   | { kind: 'ember'; emberIndex: number }
-  | { kind: 'defeat'; enemyId: number }
+  | { kind: 'defeat'; enemyId: number; source: DefeatSource }
   | { kind: 'leak'; enemyId: number }
   | { kind: 'mana'; amount: number }
   | { kind: 'draw'; cardId: string }

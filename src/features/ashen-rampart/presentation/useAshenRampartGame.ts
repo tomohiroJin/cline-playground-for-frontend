@@ -12,6 +12,10 @@ import { placementKindOf } from '../domain/cards/card-definition';
 import type { CombatState } from '../domain/combat/combat-state';
 import { stepTick, canPlaceAt, type PlayerAction } from '../domain/combat/step-tick';
 import { nextWavePreview } from './wave-preview';
+import { decideBattleAnnouncement } from './battle-announcement';
+import { advanceEffects, type Effect } from './combat-effects';
+import { rejectionText } from './rejection-text';
+import { accumulateTick, emptyTally, summarize, type RunTally } from './run-summary';
 import { startRunWithDeck, createSeed } from '../application/use-cases/start-run';
 import { SeededRandom } from '../infrastructure/random/seeded-random';
 import { LocalStoragePlayLog } from '../infrastructure/play-log/local-storage-play-log';
@@ -25,6 +29,12 @@ export const TICK_INTERVAL_MS = 100;
 
 /** 溢れ通知を表示し続ける tick 数（0.6秒） */
 const OVERFLOW_NOTICE_TICKS = 6;
+
+/** 読み上げを保持する tick 数 */
+const ANNOUNCE_TICKS = 20;
+
+/** 拒否通知を表示し続ける tick 数（0.6秒） */
+const REJECTION_NOTICE_TICKS = 6;
 
 export interface UseAshenRampartGameOptions {
   /** 使用するデッキ。構築 UI から渡す */
@@ -46,11 +56,27 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [overflowNotice, setOverflowNotice] = useState<string | undefined>(undefined);
+  const [effects, setEffects] = useState<readonly Effect[]>([]);
+  const [announcement, setAnnouncement] = useState<string | undefined>(undefined);
+  const announceUntilRef = useRef(0);
+  const [rejectionNotice, setRejectionNotice] = useState<string | undefined>(undefined);
+  const rejectionUntilRef = useRef(0);
+  const [tally, setTally] = useState<RunTally>(() => emptyTally());
+  const prevStateRef = useRef<CombatState>(state);
+  // レンダーごとに matchMedia を読まないよう、初期化関数で1度だけ解決する
+  const [prefersReducedMotion] = useState<boolean>(
+    () =>
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
   const noticeUntilRef = useRef(0);
   const pendingRef = useRef<PlayerAction[]>([]);
   const loggedRunIdsRef = useRef<Set<string>>(new Set());
   /** 直前に記録した予告の内容。切り替わった tick でだけ記録するためのガード */
   const lastPreviewRef = useRef<string | undefined>(undefined);
+  /** 直前に読み上げたウェーブ番号。切り替わった tick でだけ読み上げるためのガード */
+  const lastAnnouncedWaveRef = useRef(0);
 
   // ラン開始の記録（StrictMode の二重マウントでも1回）
   useEffect(() => {
@@ -77,6 +103,52 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
     }, TICK_INTERVAL_MS);
     return () => clearInterval(timer);
   }, [isPaused, state.outcome]);
+
+  // tick イベントを寿命付きエフェクトへ変換する。
+  // events は毎 tick 置き換わるため、この tick のうちに座標へ解決する
+  useEffect(() => {
+    setEffects((current) =>
+      advanceEffects(current, state, PLAINS_MAP, { reducedMotion: prefersReducedMotion })
+    );
+  }, [state, prefersReducedMotion]);
+
+  // 判定用の集計を累積する。events は毎 tick 消えるため tick ごとに足す
+  useEffect(() => {
+    const prev = prevStateRef.current;
+    prevStateRef.current = state;
+    if (prev === state) return;
+    setTally((current) => accumulateTick(current, prev, state, PLAINS_MAP));
+  }, [state]);
+
+  // 拒否理由の通知。同一 tick に複数出た場合は最初の1件だけを出し、
+  // 同じ理由が続いた場合は件数を添える（表示欄は1つしかないため）
+  useEffect(() => {
+    const rejections = state.events.filter(
+      (e): e is Extract<typeof e, { kind: 'rejected' }> => e.kind === 'rejected'
+    );
+    const first = rejections[0];
+    if (first) {
+      const sameReason = rejections.filter((e) => e.reason === first.reason).length;
+      const text = rejectionText(first.reason, state);
+      setRejectionNotice(sameReason > 1 ? `${text} ×${sameReason}` : text);
+      rejectionUntilRef.current = state.tick + REJECTION_NOTICE_TICKS;
+      return;
+    }
+    if (state.tick >= rejectionUntilRef.current) setRejectionNotice(undefined);
+  }, [state]);
+
+  // 支援技術への通知。頻度が低く取り返しがつかない出来事（漏れ・ウェーブ境界）だけを流す。
+  // 両方が同じ tick に起きたら漏れを優先する（decideBattleAnnouncement 参照）
+  useEffect(() => {
+    const decision = decideBattleAnnouncement(state, lastAnnouncedWaveRef.current);
+    if (decision) {
+      lastAnnouncedWaveRef.current = decision.wave;
+      setAnnouncement(decision.text);
+      announceUntilRef.current = state.tick + ANNOUNCE_TICKS;
+      return;
+    }
+    if (state.tick >= announceUntilRef.current) setAnnouncement(undefined);
+  }, [state]);
 
   // tick イベントをログと通知へ流す
   useEffect(() => {
@@ -183,6 +255,28 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
   );
 
   /**
+   * 手札から1枚捨てる（UI から到達する唯一の入口）
+   *
+   * 一時停止中・決着後は無反応にする（他の操作と同じ防御）。
+   */
+  const discardCard = useCallback(
+    (handIndex: number) => {
+      if (isPaused || state.outcome !== 'playing') return;
+      pendingRef.current.push({ kind: 'discard', handIndex });
+      // 手札は配列で、捨てると後続の札が前へ詰まる。選択中の札そのものを
+      // 捨てたら選択解除、選択中より前を捨てたら選択位置も1つ前へずらさないと、
+      // selectedIndex が別の実在カードを指したままになり、盤面クリックで
+      // ユーザーが選んだつもりのないカードが置かれてしまう。
+      setSelectedIndex((current) => {
+        if (current === null) return null;
+        if (current === handIndex) return null;
+        return current > handIndex ? current - 1 : current;
+      });
+    },
+    [isPaused, state.outcome]
+  );
+
+  /**
    * 徴発の候補から1枚選ぶ。UI から到達する唯一の入口（DeckBuilder の validateDeck と同様、判定はドメイン側）
    *
    * 一時停止中・決着後は選んでも無反応にする（LevyChoice 側の disabled 表示と合わせた二重の防御。指摘B）
@@ -244,9 +338,18 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       setSelectedIndex(null);
       setIsPaused(false);
       setOverflowNotice(undefined);
+      setEffects([]);
+      setAnnouncement(undefined);
+      announceUntilRef.current = 0;
+      setRejectionNotice(undefined);
+      rejectionUntilRef.current = 0;
       lastPreviewRef.current = undefined;
+      lastAnnouncedWaveRef.current = 0;
+      setTally(emptyTally());
       setRunSeed(seedToUse);
-      setState(startRunWithDeck(cards, new SeededRandom(seedToUse)));
+      const nextState = startRunWithDeck(cards, new SeededRandom(seedToUse));
+      setState(nextState);
+      prevStateRef.current = nextState;
       setRunId(createRunId());
     },
     [cards]
@@ -272,14 +375,19 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
     placeableCells,
     isPaused,
     overflowNotice,
+    effects,
+    announcement,
+    rejectionNotice,
     selectCard,
     clickCell,
     reactivate,
+    discardCard,
     chooseLevy,
     interactCell,
     togglePause,
     restart,
     noteRun,
     exportLogJson,
+    summary: summarize(tally, cards),
   };
 };

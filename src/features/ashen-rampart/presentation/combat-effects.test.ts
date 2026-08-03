@@ -1,0 +1,166 @@
+/**
+ * 灰燼の城壁 - エフェクトの寿命管理
+ *
+ * state.events は毎 tick 置き換わり、撃破された敵は次の tick に enemies から
+ * 消える。受け取った tick のうちに座標へ解決してスナップショットしないと
+ * 二度と描けない。この関数はその変換と寿命管理だけを担う。
+ */
+import { PLAINS_MAP } from '../domain/board/stage-map';
+import { createDeck } from '../domain/cards/deck';
+import { createCombatState, type CombatState } from '../domain/combat/combat-state';
+import type { WaveDefinition } from '../domain/combat/waves';
+import {
+  advanceEffects,
+  EFFECT_LIFETIME,
+  MAX_CONCURRENT_EFFECTS,
+  REDUCED_MOTION_LIFETIME,
+  type Effect,
+} from './combat-effects';
+
+const noWave: WaveDefinition[] = [{ startTick: 9999, entries: [] }];
+
+const stateWith = (tick: number, events: CombatState['events'], extra: Partial<CombatState> = {}): CombatState => ({
+  ...createCombatState(createDeck(['reactor'], () => 0), noWave),
+  tick,
+  events,
+  ...extra,
+});
+
+const enemyAt = (id: number, progress: number) => ({
+  id,
+  enemyId: 'grunt',
+  hp: 10,
+  maxHp: 20,
+  progress,
+  spawnTick: 0,
+  spawnPathIndex: 0,
+  alive: true,
+  leaked: false,
+  groundedUntilTick: 0,
+  stunnedUntilTick: 0,
+});
+
+describe('advanceEffects', () => {
+  it('shot イベントを塔から敵への線に変換する', () => {
+    const state = stateWith(
+      10,
+      [{ kind: 'shot', towerIndex: 0, targetId: 1, auraDamageBonus: 0, beyondBaseRange: false }],
+      {
+        towers: [{ cardId: 'arrow-tower', pos: { x: 1, y: 2 }, cooldownLeft: 0 }],
+        enemies: [enemyAt(1, 1)],
+      }
+    );
+    const effects = advanceEffects([], state, PLAINS_MAP);
+    expect(effects).toHaveLength(1);
+    expect(effects[0]).toMatchObject({
+      kind: 'shot',
+      from: { x: 1, y: 2 },
+      to: { x: 1, y: 3 },
+      untilTick: 10 + EFFECT_LIFETIME.shot,
+    });
+  });
+
+  it('寿命が切れた tick でエフェクトが消える', () => {
+    const born = stateWith(
+      10,
+      [{ kind: 'shot', towerIndex: 0, targetId: 1, auraDamageBonus: 0, beyondBaseRange: false }],
+      {
+        towers: [{ cardId: 'arrow-tower', pos: { x: 1, y: 2 }, cooldownLeft: 0 }],
+        enemies: [enemyAt(1, 1)],
+      }
+    );
+    const effects = advanceEffects([], born, PLAINS_MAP);
+
+    // 寿命の最後の tick では残る
+    const alive = advanceEffects(effects, stateWith(10 + EFFECT_LIFETIME.shot - 1, []), PLAINS_MAP);
+    expect(alive).toHaveLength(1);
+
+    // 寿命の tick に達したら消える
+    const gone = advanceEffects(effects, stateWith(10 + EFFECT_LIFETIME.shot, []), PLAINS_MAP);
+    expect(gone).toHaveLength(0);
+  });
+
+  it('defeat を撃破源から撃破位置への線に変換する', () => {
+    const state = stateWith(
+      5,
+      [{ kind: 'defeat', enemyId: 1, source: { kind: 'tower', index: 0 } }],
+      {
+        towers: [{ cardId: 'arrow-tower', pos: { x: 1, y: 2 }, cooldownLeft: 0 }],
+        enemies: [enemyAt(1, 2)],
+      }
+    );
+    const effects = advanceEffects([], state, PLAINS_MAP);
+    expect(effects[0]).toMatchObject({
+      kind: 'defeat',
+      from: { x: 1, y: 2 },
+      to: { x: 2, y: 3 },
+    });
+  });
+
+  it('上限を超えたら優先度の低いものから落とす（leak は残る）', () => {
+    const shots: Effect[] = Array.from({ length: MAX_CONCURRENT_EFFECTS }, (_, i) => ({
+      kind: 'shot',
+      from: { x: 1, y: 2 },
+      to: { x: 1, y: 3 },
+      untilTick: 100,
+      id: `shot-${i}`,
+      wide: false,
+      dashed: false,
+    }));
+    const state = stateWith(1, [{ kind: 'leak', enemyId: 9 }], {
+      enemies: [enemyAt(9, 10)],
+    });
+    const effects = advanceEffects(shots, state, PLAINS_MAP);
+    expect(effects).toHaveLength(MAX_CONCURRENT_EFFECTS);
+    expect(effects.some((e) => e.kind === 'leak')).toBe(true);
+  });
+});
+
+describe('advanceEffects（reduced-motion）', () => {
+  const shotEvent = {
+    kind: 'shot' as const,
+    towerIndex: 0,
+    targetId: 1,
+    auraDamageBonus: 0,
+    beyondBaseRange: false,
+  };
+
+  const stateWithTower = (tick: number, events: CombatState['events']) =>
+    stateWith(tick, events, {
+      towers: [{ cardId: 'arrow-tower', pos: { x: 1, y: 2 }, cooldownLeft: 0 }],
+      enemies: [enemyAt(1, 1)],
+    });
+
+  it('寿命が一律になる', () => {
+    const state = stateWithTower(10, [shotEvent]);
+    const normal = advanceEffects([], state, PLAINS_MAP);
+    const reduced = advanceEffects([], state, PLAINS_MAP, { reducedMotion: true });
+
+    expect(normal[0]?.untilTick).toBe(10 + EFFECT_LIFETIME.shot);
+    expect(reduced[0]?.untilTick).toBe(10 + REDUCED_MOTION_LIFETIME);
+  });
+
+  it('同時表示の上限が半分になる', () => {
+    const existing: Effect[] = Array.from({ length: MAX_CONCURRENT_EFFECTS }, (_, i) => ({
+      kind: 'shot',
+      id: `s${i}`,
+      from: { x: 1, y: 2 },
+      to: { x: 1, y: 3 },
+      untilTick: 999,
+      wide: false,
+      dashed: false,
+    }));
+    const reduced = advanceEffects(existing, stateWith(1, []), PLAINS_MAP, {
+      reducedMotion: true,
+    });
+    expect(reduced).toHaveLength(Math.floor(MAX_CONCURRENT_EFFECTS / 2));
+  });
+
+  it('reduced-motion でもエフェクトは消えない（0件にならない）', () => {
+    const reduced = advanceEffects([], stateWithTower(10, [shotEvent]), PLAINS_MAP, {
+      reducedMotion: true,
+    });
+    // 消すと reduced-motion のユーザーだけ判定項目1 が達成不能になる
+    expect(reduced.length).toBeGreaterThan(0);
+  });
+});

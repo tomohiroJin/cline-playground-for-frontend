@@ -25,6 +25,8 @@ const Wrapper = styled.div<{ $left: number; $top: number }>`
   align-items: center;
   gap: 2px;
   pointer-events: none;
+  /* z 順序: セル(0) < エフェクト(1) < 敵マーカー(2)。HPバーをエフェクトが覆わない */
+  z-index: 2;
 `;
 
 /**

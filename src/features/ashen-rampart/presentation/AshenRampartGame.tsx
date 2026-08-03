@@ -22,13 +22,19 @@ import { DeckBuilder } from './DeckBuilder';
 import { StartOverlay } from './StartOverlay';
 import { CountdownDisplay } from './CountdownDisplay';
 import { LevyChoice } from './LevyChoice';
+import { BattleAnnouncer } from './BattleAnnouncer';
 import { nextWavePreview } from './wave-preview';
+import { RunSummary } from './RunSummary';
 import { COLORS } from './theme';
+import { HEADER_CLEARANCE } from './layout-constants';
+
+export { HEADER_CLEARANCE };
 
 const Layout = styled.div`
   display: flex;
   flex-direction: column;
   min-height: 70vh;
+  padding-top: ${HEADER_CLEARANCE};
   background: ${COLORS.dominant};
   color: ${COLORS.secondary};
 `;
@@ -40,6 +46,27 @@ const Center = styled.div`
 
 const BoardWrapper = styled.div`
   position: relative;
+`;
+
+/**
+ * 拒否理由の色トーン
+ *
+ * 拒否は「不便」であって砦が削られる「本当の危険」ではないため、赤は使わない。
+ * 赤（danger / dangerText）はライフが削られる場面に予約されている
+ * （theme.ts）。手札溢れ通知（HandArea.tsx の Notice）も同じ理由で opportunity
+ * を使っており、それと揃えた。
+ *
+ * この定数から色（RejectionNotice の color）と data-tone 属性の両方を導出する。
+ * 片方だけを変更できてしまうと「テストは緑だが検証している中身が違う」欠陥に
+ * なるため、出どころを1つに絞っている。
+ */
+const REJECTION_NOTICE_TONE = 'opportunity' as const;
+
+/** 拒否理由。盤面直下に置く（原因は盤面クリックなので視線が盤面にあるため） */
+const RejectionNotice = styled.p`
+  margin: 4px 0 0;
+  color: ${COLORS[REJECTION_NOTICE_TONE]};
+  text-align: center;
 `;
 
 const Result = styled.div`
@@ -158,6 +185,10 @@ const RunView: React.FC<RunViewProps> = ({ cards, seed, onRebuild }) => {
   const [noteText, setNoteText] = useState('');
   const [noteSaved, setNoteSaved] = useState(false);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
+  // 集計は「勝敗の理由」を記録した後にだけ出す。
+  // 判定項目1 の問いは「戦闘中に読めたか」であり、集計を先に見せると
+  // 盤面で読めなかった場合でもリザルトが答えを教えてしまう（設計書 §8.2）
+  const [summaryUnlocked, setSummaryUnlocked] = useState(false);
 
   // スペースキーで一時停止（設計書 §9.6）
   useEffect(() => {
@@ -187,6 +218,7 @@ const RunView: React.FC<RunViewProps> = ({ cards, seed, onRebuild }) => {
     setNoteText('');
     setNoteSaved(false);
     setCopyStatus('idle');
+    setSummaryUnlocked(false);
   }, [game.state.outcome]);
 
   const handleNoteSubmit = (event: React.FormEvent): void => {
@@ -195,6 +227,7 @@ const RunView: React.FC<RunViewProps> = ({ cards, seed, onRebuild }) => {
     if (trimmed.length === 0) return;
     game.noteRun(trimmed);
     setNoteSaved(true);
+    setSummaryUnlocked(true);
   };
 
   const handleCopyLog = (): void => {
@@ -206,45 +239,38 @@ const RunView: React.FC<RunViewProps> = ({ cards, seed, onRebuild }) => {
   const isLevyBlocked = game.isPaused || game.state.outcome !== 'playing';
 
   return (
-    <Layout>
+    <Layout data-testid="ashen-rampart-layout" data-header-clearance={HEADER_CLEARANCE}>
       <LevyChoice options={game.levyOptions} onChoose={game.chooseLevy} disabled={isLevyBlocked} />
       <RunStatusBar
         state={game.state}
         isPaused={game.isPaused}
         onTogglePause={game.togglePause}
         runSeed={game.runSeed}
+        isLeaking={game.effects.some((e) => e.kind === 'leak')}
       />
       <Center>
+        <BattleAnnouncer message={game.announcement} />
         <BoardWrapper>
           <BoardGrid
             map={PLAINS_MAP}
             state={game.state}
             placeableCells={game.placeableCells}
+            effects={game.effects}
             onCellClick={game.interactCell}
           />
           <CountdownDisplay tick={game.state.tick} />
         </BoardWrapper>
+        {game.rejectionNotice && (
+          <RejectionNotice data-tone={REJECTION_NOTICE_TONE}>{game.rejectionNotice}</RejectionNotice>
+        )}
         <EnemyLegend />
         {game.state.outcome !== 'playing' && (
           <Result>
             <p>{game.state.outcome === 'won' ? '砦は守られた' : '城壁は灰燼に帰した'}</p>
-            <ActionRow>
-              <ActionButton type="button" onClick={() => game.restart()}>
-                同じデッキで別のシードに挑む
-              </ActionButton>
-              <ActionButton type="button" onClick={onRebuild}>
-                もう一度挑む
-              </ActionButton>
-              <ActionButton type="button" onClick={handleCopyLog}>
-                計測ログをコピー
-              </ActionButton>
-            </ActionRow>
-            {copyStatus === 'copied' && <Feedback>計測ログをコピーしました</Feedback>}
-            {copyStatus === 'failed' && (
-              <Feedback>コピーに失敗しました。コンソールに出力しています</Feedback>
-            )}
             <NoteForm onSubmit={handleNoteSubmit}>
-              <NoteLabel htmlFor="ashen-rampart-run-note">勝敗の理由を記録する</NoteLabel>
+              <NoteLabel htmlFor="ashen-rampart-run-note">
+                勝敗の理由を記録する（記録すると集計が開きます）
+              </NoteLabel>
               <NoteInput
                 id="ashen-rampart-run-note"
                 value={noteText}
@@ -256,6 +282,27 @@ const RunView: React.FC<RunViewProps> = ({ cards, seed, onRebuild }) => {
               <ActionButton type="submit">記録する</ActionButton>
               {noteSaved && <Feedback>記録しました</Feedback>}
             </NoteForm>
+
+            {summaryUnlocked && (
+              <>
+                <RunSummary view={game.summary} />
+                <ActionRow>
+                  <ActionButton type="button" onClick={() => game.restart()}>
+                    同じデッキで別のシードに挑む
+                  </ActionButton>
+                  <ActionButton type="button" onClick={onRebuild}>
+                    もう一度挑む
+                  </ActionButton>
+                  <ActionButton type="button" onClick={handleCopyLog}>
+                    計測ログをコピー
+                  </ActionButton>
+                </ActionRow>
+                {copyStatus === 'copied' && <Feedback>計測ログをコピーしました</Feedback>}
+                {copyStatus === 'failed' && (
+                  <Feedback>コピーに失敗しました。コンソールに出力しています</Feedback>
+                )}
+              </>
+            )}
           </Result>
         )}
       </Center>
@@ -263,6 +310,7 @@ const RunView: React.FC<RunViewProps> = ({ cards, seed, onRebuild }) => {
         state={game.state}
         selectedIndex={game.selectedIndex}
         onSelect={game.selectCard}
+        onDiscard={game.discardCard}
         overflowNotice={game.overflowNotice}
       />
     </Layout>

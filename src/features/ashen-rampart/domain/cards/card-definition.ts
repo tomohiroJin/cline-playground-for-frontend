@@ -94,6 +94,13 @@ export interface CardDefinition {
   ember?: EmberSpec;
   spell?: SpellSpec;
   levy?: LevySpec;
+  /**
+   * デッキに入れられる同名の上限。省略時は MAX_COPIES（3枚）
+   *
+   * マナ源だけを別扱いにするための逃がし口。MAX_COPIES の目的は
+   * 弓兵スパムの防止であって、マナ源を絞ることではなかった。
+   */
+  maxCopies?: number;
 }
 
 /** カードを出すときに指定する対象の種別 */

@@ -9,8 +9,19 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { DeckBuilder } from './DeckBuilder';
 import { CARD_IDS, DECK_SIZE, PRESET_DECKS, getCardDefinition } from '../domain/cards/card-pool';
+import { HEADER_CLEARANCE } from './layout-constants';
 
 describe('DeckBuilder', () => {
+  it('画面上端にフローティングホームボタンぶんの余白がある', () => {
+    render(<DeckBuilder onStart={jest.fn()} />);
+    // フローティングホームボタン（App.tsx, position: fixed）は常に画面左上に
+    // 重なるため、共通側を変更せずこちら側で余白を確保して吸収する
+    expect(screen.getByTestId('ashen-rampart-deckbuilder-layout')).toHaveAttribute(
+      'data-header-clearance',
+      HEADER_CLEARANCE
+    );
+  });
+
   it('14種すべてが名前とコスト付きで並ぶ', () => {
     render(<DeckBuilder onStart={jest.fn()} />);
     CARD_IDS.forEach((id) => {
@@ -44,6 +55,13 @@ describe('DeckBuilder', () => {
     fireEvent.click(add);
     fireEvent.click(add);
     expect(add).toBeDisabled();
+  });
+
+  it('魔力炉は4枚以上でも追加できる', () => {
+    render(<DeckBuilder onStart={jest.fn()} />);
+    const addReactor = screen.getByRole('button', { name: '魔力炉 を1枚増やす' });
+    for (let i = 0; i < 6; i++) fireEvent.click(addReactor);
+    expect(addReactor).not.toBeDisabled();
   });
 
   it('減らすボタンで枚数が減り、0枚では無効', () => {

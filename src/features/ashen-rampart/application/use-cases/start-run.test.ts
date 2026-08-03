@@ -44,9 +44,10 @@ describe('startRun', () => {
     const heavy = startRun('heavy', new SeededRandom(1));
     const countReactor = (cards: string[]) => cards.filter((c) => c === 'reactor').length;
     const all = (s: typeof swift) => [...s.deck.hand, ...s.deck.drawPile];
-    // Task 9 再較正: swift の魔力炉を2→3枚に増やした（実測で5シード中0勝だったため）
-    expect(countReactor(all(swift))).toBe(3);
-    expect(countReactor(all(heavy))).toBe(3);
+    // Task 13 再較正: 魔力炉のデッキ内上限を撤廃し、両プリセットとも 3→8枚（20枚中40%）へ。
+    // MTG の土地比率（42.5%）に寄せた「確実に引くための」マナ基盤である
+    expect(countReactor(all(swift))).toBe(8);
+    expect(countReactor(all(heavy))).toBe(8);
   });
 
   it('未知のプリセットIDは契約違反として例外', () => {

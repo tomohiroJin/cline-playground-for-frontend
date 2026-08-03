@@ -83,6 +83,47 @@ describe('pathDirectionAt', () => {
   });
 });
 
+describe('設置スロットの規則化', () => {
+  const LEGACY_SLOTS = [
+    { x: 1, y: 2 }, { x: 2, y: 2 }, { x: 3, y: 2 },
+    { x: 1, y: 4 }, { x: 2, y: 4 }, { x: 3, y: 4 },
+    { x: 5, y: 2 }, { x: 6, y: 2 }, { x: 7, y: 2 },
+    { x: 5, y: 0 }, { x: 6, y: 0 }, { x: 7, y: 0 },
+  ];
+
+  it('経路から距離1.5以内の非経路セルが22マスになる', () => {
+    expect(PLAINS_MAP.buildSlots).toHaveLength(22);
+  });
+
+  it('従来の12マスはすべて含まれる（配置が不可能になるマスを作らない）', () => {
+    LEGACY_SLOTS.forEach((slot) => {
+      expect(PLAINS_MAP.buildSlots).toContainEqual(slot);
+    });
+  });
+
+  it('高台2マスは設置スロットに含まれる', () => {
+    (PLAINS_MAP.highGround ?? []).forEach((cell) => {
+      expect(PLAINS_MAP.buildSlots).toContainEqual(cell);
+    });
+  });
+
+  it('経路セルは設置スロットに含まれない', () => {
+    PLAINS_MAP.path.forEach((cell) => {
+      expect(PLAINS_MAP.buildSlots).not.toContainEqual(cell);
+    });
+  });
+
+  it('すべての設置スロットから主力2種（射程1.5/1.6）が経路に届く', () => {
+    // 「増やしたのに置いても無駄だった」という新種の不満を作らないための不変条件
+    PLAINS_MAP.buildSlots.forEach((slot) => {
+      const reachable = PLAINS_MAP.path.some(
+        (c) => Math.hypot(c.x - slot.x, c.y - slot.y) <= 1.5
+      );
+      expect(reachable).toBe(true);
+    });
+  });
+});
+
 describe('remainingPathCells', () => {
   it('入口にいる敵は経路長-1 の残りセル数を持つ', () => {
     // 経路は11セルなので入口からは残り10

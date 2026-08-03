@@ -11,6 +11,7 @@ import type { WaveDefinition } from './waves';
 import { PLAINS_MAP } from '../board/stage-map';
 import { getCardDefinition } from '../cards/card-pool';
 import { getEnemySpec } from './enemies';
+import { createDeck } from '../cards/deck';
 
 const noWave: WaveDefinition[] = [{ startTick: 9999, entries: [] }];
 
@@ -232,5 +233,36 @@ describe('燠火の再点火', () => {
     };
     for (let i = 0; i < 10; i++) state = stepTick(state, [], PLAINS_MAP);
     expect(state.embers[0]?.cooldownLeft).toBe(0);
+  });
+});
+
+describe('能動的な捨て札', () => {
+  it('指定した札が手札から墓地へ移る', () => {
+    const state = createCombatState(
+      createDeck(['arrow-tower', 'reactor', 'reactor', 'reactor'], () => 0),
+      noWave
+    );
+    const before = state.deck.hand.length;
+    const next = stepTick(state, [{ kind: 'discard', handIndex: 0 }], PLAINS_MAP);
+
+    expect(next.deck.hand).toHaveLength(before - 1);
+    expect(next.deck.graveyard).toContain(state.deck.hand[0]);
+  });
+
+  it('捨て札はマナも配置クールダウンも消費しない', () => {
+    const state = {
+      ...createCombatState(createDeck(['arrow-tower', 'reactor', 'reactor', 'reactor'], () => 0), noWave),
+      mana: 3,
+    };
+    const next = stepTick(state, [{ kind: 'discard', handIndex: 0 }], PLAINS_MAP);
+
+    expect(next.mana).toBe(3);
+    expect(next.placeCooldown).toBe(0);
+  });
+
+  it('存在しない index は何も起こさない', () => {
+    const state = createCombatState(createDeck(['reactor'], () => 0), noWave);
+    const next = stepTick(state, [{ kind: 'discard', handIndex: 99 }], PLAINS_MAP);
+    expect(next.deck.hand).toEqual(state.deck.hand);
   });
 });

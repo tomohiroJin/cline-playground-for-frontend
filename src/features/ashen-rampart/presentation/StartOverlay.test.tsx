@@ -7,8 +7,19 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { StartOverlay } from './StartOverlay';
+import { HEADER_CLEARANCE } from './layout-constants';
 
 describe('StartOverlay', () => {
+  it('画面上端にフローティングホームボタンぶんの余白がある', () => {
+    render(<StartOverlay preview="雑兵8" onStart={jest.fn()} />);
+    // フローティングホームボタン（App.tsx, position: fixed）は常に画面左上に
+    // 重なるため、共通側を変更せずこちら側で余白を確保して吸収する
+    expect(screen.getByTestId('ashen-rampart-start-overlay')).toHaveAttribute(
+      'data-header-clearance',
+      HEADER_CLEARANCE
+    );
+  });
+
   it('目的が示される', () => {
     render(<StartOverlay preview="雑兵8" onStart={jest.fn()} />);
     expect(screen.getByText(/砦を守/)).toBeInTheDocument();

@@ -15,7 +15,7 @@
  */
 import React from 'react';
 import { render, screen, fireEvent, act, waitFor, within } from '@testing-library/react';
-import { AshenRampartGame } from './AshenRampartGame';
+import { AshenRampartGame, HEADER_CLEARANCE } from './AshenRampartGame';
 import { PLAY_LOG_STORAGE_KEY } from '../infrastructure/play-log/local-storage-play-log';
 import type { PlayLogExport } from '../application/ports/play-log-port';
 import { TICK_INTERVAL_MS } from './useAshenRampartGame';
@@ -72,6 +72,17 @@ const advanceUntilRunEnds = (): void => {
   }
 };
 
+/**
+ * 決着画面で勝敗の理由を記録する（Task 12: 集計・再挑戦・ログコピーは記録後にだけ開くため、
+ * それらのボタンへ到達する既存テストはすべて先にこれを呼ぶ必要がある）
+ */
+const submitRunNote = (text = 'テスト用の記録'): void => {
+  fireEvent.change(screen.getByLabelText(/勝敗の理由を記録する/), {
+    target: { value: text },
+  });
+  fireEvent.click(screen.getByRole('button', { name: '記録する' }));
+};
+
 /** 手札グループ内で「徴発」のカードボタンを探す（HandArea に role="group" aria-label="手札" を追加済み） */
 const findLevyHandButton = (): HTMLElement | null =>
   within(screen.getByRole('group', { name: '手札' })).queryByRole('button', {
@@ -114,12 +125,23 @@ describe('AshenRampartGame', () => {
     jest.useRealTimers();
   });
 
+  it('ラン画面の上端にフローティングホームボタンぶんの余白がある', () => {
+    render(<AshenRampartGame />);
+    startRunning();
+    // フローティングホームボタン（App.tsx, position: fixed）は常に画面左上に
+    // 重なるため、共通側を変更せずこちら側で余白を確保して吸収する
+    expect(screen.getByTestId('ashen-rampart-layout')).toHaveAttribute(
+      'data-header-clearance',
+      HEADER_CLEARANCE
+    );
+  });
+
   it('決着後に勝敗理由を入力して記録すると run_note が保存される', () => {
     render(<AshenRampartGame />);
     startRunning();
     advanceUntilRunEnds();
 
-    const textarea = screen.getByLabelText('勝敗の理由を記録する');
+    const textarea = screen.getByLabelText(/勝敗の理由を記録する/);
     fireEvent.change(textarea, { target: { value: '弓兵に頼りすぎて鴉に抜けられた' } });
     fireEvent.click(screen.getByRole('button', { name: '記録する' }));
 
@@ -135,7 +157,7 @@ describe('AshenRampartGame', () => {
     startRunning();
     advanceUntilRunEnds();
 
-    const textarea = screen.getByLabelText('勝敗の理由を記録する');
+    const textarea = screen.getByLabelText(/勝敗の理由を記録する/);
     fireEvent.change(textarea, { target: { value: '   ' } });
     fireEvent.click(screen.getByRole('button', { name: '記録する' }));
 
@@ -154,6 +176,7 @@ describe('AshenRampartGame', () => {
     render(<AshenRampartGame />);
     startRunning();
     advanceUntilRunEnds();
+    submitRunNote();
 
     fireEvent.click(screen.getByRole('button', { name: '計測ログをコピー' }));
 
@@ -169,6 +192,7 @@ describe('AshenRampartGame', () => {
     render(<AshenRampartGame />);
     startRunning();
     advanceUntilRunEnds();
+    submitRunNote();
 
     fireEvent.click(screen.getByRole('button', { name: 'もう一度挑む' }));
 
@@ -191,6 +215,7 @@ describe('AshenRampartGame', () => {
     render(<AshenRampartGame />);
     startRunning();
     advanceUntilRunEnds();
+    submitRunNote();
 
     const seedBefore = (screen.getByLabelText('シード') as HTMLInputElement).value;
 
@@ -215,6 +240,7 @@ describe('AshenRampartGame', () => {
     render(<AshenRampartGame />);
     startRunning();
     advanceUntilRunEnds();
+    submitRunNote();
 
     fireEvent.click(screen.getByRole('button', { name: '計測ログをコピー' }));
 
@@ -223,6 +249,27 @@ describe('AshenRampartGame', () => {
     expect(consoleLogSpy).toHaveBeenCalled();
     consoleErrorSpy.mockRestore();
     consoleLogSpy.mockRestore();
+  });
+
+  it('捨札ボタンを押すと手札が1枚減る', async () => {
+    render(<AshenRampartGame />);
+    startRunning();
+
+    const hand = screen.getByRole('group', { name: '手札' });
+    const before = within(hand).getAllByRole('button', { name: /を捨てる$/ }).length;
+    fireEvent.click(within(hand).getAllByRole('button', { name: /を捨てる$/ })[0]);
+
+    // discardCard は pendingRef に積むだけで、実際の反映は次 tick の stepTick で確定する
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS);
+    });
+
+    await waitFor(() => {
+      const after = within(screen.getByRole('group', { name: '手札' })).getAllByRole('button', {
+        name: /を捨てる$/,
+      }).length;
+      expect(after).toBe(before - 1);
+    });
   });
 
   describe('画面遷移', () => {
@@ -254,6 +301,7 @@ describe('AshenRampartGame', () => {
       render(<AshenRampartGame />);
       startRunning();
       advanceUntilRunEnds();
+      submitRunNote();
       fireEvent.click(screen.getByRole('button', { name: 'もう一度挑む' }));
 
       fireEvent.click(screen.getByRole('button', { name: /速攻型 を読み込む/ }));
@@ -266,6 +314,7 @@ describe('AshenRampartGame', () => {
       render(<AshenRampartGame />);
       startRunning(/速攻型 を読み込む/, '321');
       advanceUntilRunEnds();
+      submitRunNote();
 
       fireEvent.click(screen.getByRole('button', { name: 'もう一度挑む' }));
 
@@ -279,14 +328,19 @@ describe('AshenRampartGame', () => {
 
     it('徴発の候補は盤面（LevyChoice）から実際に選べ、選ぶと手札が1枚増える（結線の到達確認）', () => {
       render(<AshenRampartGame />);
-      startRunning(/速攻型 を読み込む/, '1');
+      // 手札が上限に達するとドローが止まるため、待つだけでは徴発が来ない。
+      // シード7は速攻型の初期手札に徴発を含む（反復2 で徴発が2→1枚になった影響）
+      startRunning(/速攻型 を読み込む/, '7');
 
       // 徴発カードが手札に来るまで進めてプレイする（山札を1枚peekして候補を出す）
       playLevyCardWhenDrawn();
       expect(screen.getByText('徴発: 1枚選ぶ')).toBeInTheDocument();
 
+      // 手札の枚数は「カードボタン」だけを数える（各カードには捨札ボタンも
+      // 並ぶため、単純な button 総数だと1枚増減の差分が2になってしまう）
       const handBefore = within(screen.getByRole('group', { name: '手札' })).getAllByRole(
-        'button'
+        'button',
+        { name: /コスト/ }
       ).length;
       const levyOption = within(screen.getByRole('group', { name: '徴発の候補' })).getAllByRole(
         'button'
@@ -300,14 +354,17 @@ describe('AshenRampartGame', () => {
 
       expect(screen.queryByText('徴発: 1枚選ぶ')).not.toBeInTheDocument();
       const handAfter = within(screen.getByRole('group', { name: '手札' })).getAllByRole(
-        'button'
+        'button',
+        { name: /コスト/ }
       ).length;
       expect(handAfter).toBe(handBefore + 1);
     });
 
     it('一時停止中は徴発の候補ボタンが無効化され、押しても反応しない（指摘B）', () => {
       render(<AshenRampartGame />);
-      startRunning(/速攻型 を読み込む/, '1');
+      // 手札が上限に達するとドローが止まるため、待つだけでは徴発が来ない。
+      // シード7は速攻型の初期手札に徴発を含む（反復2 で徴発が2→1枚になった影響）
+      startRunning(/速攻型 を読み込む/, '7');
 
       playLevyCardWhenDrawn();
       expect(screen.getByText('徴発: 1枚選ぶ')).toBeInTheDocument();
@@ -324,6 +381,83 @@ describe('AshenRampartGame', () => {
     });
   });
 
+  it('勝敗の理由を記録するまで集計は表示されない（Task 12: 判定汚染防止のための表示順序）', async () => {
+    render(<AshenRampartGame />);
+    startRunning();
+    advanceUntilRunEnds();
+
+    // 決着直後は「記録する」欄だけで、集計・再挑戦・ログコピーはまだ出ない
+    expect(screen.queryByText(/置くときに選べたマス/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'もう一度挑む' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '同じデッキで別のシードに挑む' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '計測ログをコピー' })).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/勝敗の理由を記録する/), {
+      target: { value: '鴉を落とせなかった' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '記録する' }));
+
+    // 記録した後にだけ集計・各ボタンが開く
+    expect(await screen.findByText(/置くときに選べたマス/)).toBeVisible();
+    expect(screen.getByRole('button', { name: 'もう一度挑む' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '同じデッキで別のシードに挑む' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '計測ログをコピー' })).toBeInTheDocument();
+  });
+
+  it('restart（同じデッキで別のシードに挑む）すると集計の鍵と記録欄が次のランへ持ち越されない', async () => {
+    render(<AshenRampartGame />);
+    startRunning();
+    advanceUntilRunEnds();
+    submitRunNote('1回目の記録');
+    expect(await screen.findByText(/置くときに選べたマス/)).toBeVisible();
+
+    fireEvent.click(screen.getByRole('button', { name: '同じデッキで別のシードに挑む' }));
+
+    // 盤面に留まったまま新しいランが始まり、記録前の状態（集計非表示・欄が空）に戻っている
+    expect(screen.getByRole('button', { name: '一時停止' })).toBeInTheDocument();
+    advanceUntilRunEnds();
+    expect(screen.queryByText(/置くときに選べたマス/)).not.toBeInTheDocument();
+    expect((screen.getByLabelText(/勝敗の理由を記録する/) as HTMLTextAreaElement).value).toBe('');
+  });
+
   // 指摘C（対応不要・記録のみ）: ブリーフィング（StartOverlay）を再表示する手段が
   // UI に無い（既読フラグは localStorage を消さない限り解除されない）。次の反復で扱う。
+
+  it('置けないセルをクリックすると理由が盤面直下に出る', async () => {
+    render(<AshenRampartGame />);
+    startRunning(/速攻型 を読み込む/, '1');
+
+    // 速攻型・seed:1 の初期手札3枚はいずれもコスト2以上（マナ2では払えない）か
+    // 即時発動の術で盤面クリックを伴わないため、コスト0の魔力炉が手札に来るまで進める
+    const hand = screen.getByRole('group', { name: '手札' });
+    let reactorCard: HTMLElement | null = null;
+    for (let advanced = 0; advanced < 300 && !reactorCard; advanced += 1) {
+      // 反復2 で魔力炉が8枚になり、手札に同時に複数枚並ぶため先頭を取る
+      reactorCard = within(hand).queryAllByRole('button', { name: /^魔力炉 コスト/ })[0] ?? null;
+      if (reactorCard) break;
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+    }
+    expect(reactorCard).not.toBeNull();
+
+    fireEvent.click(reactorCard!);
+    // 経路セル（魔力炉は設置スロットにしか置けない）をクリックする
+    fireEvent.click(screen.getByLabelText(/^0,3 経路/));
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS);
+    });
+
+    const notice = await screen.findByText(/そこには置けない|次の設置まで|マナが足りない/);
+    expect(notice).toBeVisible();
+
+    // 拒否は「不便」であって砦が削られる「危険」ではないため、危険専用の色(danger系)を
+    // 使ってはいけない。data-tone は AshenRampartGame.tsx の REJECTION_NOTICE_TONE
+    // 定数から色（color）と同時に導出されているため、この属性が 'opportunity' から
+    // 'dangerText'/'danger' 系のトークン名に変わったときは、実際の色も同時に
+    // danger 系へ変わっている（色だけを変えることは構造的にできない）。
+    expect(notice).toHaveAttribute('data-tone', 'opportunity');
+    expect(notice.getAttribute('data-tone')).not.toBe('danger');
+    expect(notice.getAttribute('data-tone')).not.toBe('dangerText');
+  });
 });

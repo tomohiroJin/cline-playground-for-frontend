@@ -12,6 +12,8 @@ import { isHighGround, isSlowCell } from '../domain/board/stage-map';
 import type { CombatState } from '../domain/combat/combat-state';
 import { stackEnemies } from './enemy-stack';
 import { EnemyMarker } from './EnemyMarker';
+import { BoardEffectLayer } from './BoardEffectLayer';
+import type { Effect } from './combat-effects';
 import { COLORS } from './theme';
 
 const Frame = styled.div<{ $columns: number; $rows: number }>`
@@ -34,6 +36,9 @@ const Cell = styled.button<{ $kind: string; $highlighted: boolean }>`
   border: 1px solid ${COLORS.grid};
   background: ${({ $kind }) =>
     $kind === 'path' ? '#2a2320' : $kind === 'slot' ? '#211c19' : 'transparent'};
+  /* 城壁の外（置けないマス）は境界を落とし、盤面から後退させる。
+     「置けそうに見えるのに置けない」ことが窮屈さの一因だったため */
+  ${({ $kind }) => ($kind === 'empty' ? `border-color: transparent; opacity: 0.35;` : '')}
   outline: ${({ $highlighted }) =>
     $highlighted ? `2px solid ${COLORS.opportunity}` : 'none'};
   outline-offset: -2px;
@@ -68,12 +73,19 @@ interface Props {
   state: CombatState;
   /** 配置可能なマス（カード選択中のみ非空） */
   placeableCells: readonly CellPos[];
+  effects: readonly Effect[];
   onCellClick: (pos: CellPos) => void;
 }
 
 const samePos = (a: CellPos, b: CellPos): boolean => a.x === b.x && a.y === b.y;
 
-export const BoardGrid: React.FC<Props> = ({ map, state, placeableCells, onCellClick }) => {
+export const BoardGrid: React.FC<Props> = ({
+  map,
+  state,
+  placeableCells,
+  effects,
+  onCellClick,
+}) => {
   const cells: CellPos[] = [];
   for (let y = 0; y < map.height; y++) {
     for (let x = 0; x < map.width; x++) cells.push({ x, y });
@@ -102,7 +114,7 @@ export const BoardGrid: React.FC<Props> = ({ map, state, placeableCells, onCellC
         const terrain = isHighGround(map, pos) ? '高台' : isSlowCell(map, pos) ? '滞留' : '';
         const label = [
           `${pos.x},${pos.y}`,
-          isPath ? '経路' : isSlot ? '設置可' : '',
+          isPath ? '経路' : isSlot ? '設置可' : '城壁の外',
           terrain,
           occupant?.text,
           highlighted ? 'ここに置ける' : '',
@@ -122,6 +134,7 @@ export const BoardGrid: React.FC<Props> = ({ map, state, placeableCells, onCellC
           </Cell>
         );
       })}
+      <BoardEffectLayer effects={effects} map={map} />
       {stacks.map((stack) => (
         <EnemyMarker key={stack.id} stack={stack} columns={map.width} rows={map.height} />
       ))}

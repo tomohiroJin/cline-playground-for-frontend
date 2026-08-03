@@ -29,13 +29,15 @@ import type {
   PlacedTrap,
   PlacedReactor,
   PlacedEmber,
+  DefeatSource,
 } from './combat-state';
 
 /** プレイヤーがその tick に行った操作 */
 export type PlayerAction =
   | { kind: 'play-card'; handIndex: number; pos?: CellPos }
   | { kind: 'reactivate'; emberIndex: number }
-  | { kind: 'choose-levy'; optionIndex: number };
+  | { kind: 'choose-levy'; optionIndex: number }
+  | { kind: 'discard'; handIndex: number };
 
 /** 滞留セル上の移動量倍率 */
 export const SLOW_TERRAIN_MULT = 0.6;
@@ -44,22 +46,23 @@ export const SLOW_TERRAIN_MULT = 0.6;
 export const HIGH_GROUND_DAMAGE_MULT = 1.3;
 
 /**
- * 塔の実効ダメージ
+ * 塔の実効ダメージの内訳
  *
- * round(基礎 × 重装特効 × 高台倍率 × (1 + Σ隣接オーラ))。
+ * 篝火の貢献を測るため、オーラ抜きのダメージと実効ダメージを両方返す。
+ * 丸めはそれぞれに適用する（合計してから丸めると差分がずれる）。
  * 特効は対象の**最大HP**で判定する（現在HPだと削るほど弱くなり直感に反する）。
  * 倍率の二重適用を避けるため、この関数だけがダメージ算出の責務を持つ。
  */
-export const effectiveDamage = (
+export const damageBreakdown = (
   state: CombatState,
   towerIndex: number,
   map: StageMap,
   target: ActiveEnemy
-): number => {
+): { total: number; auraBonus: number } => {
   const tower = state.towers[towerIndex];
-  if (!tower) return 0;
+  if (!tower) return { total: 0, auraBonus: 0 };
   const spec = getCardDefinition(tower.cardId).tower;
-  if (!spec || spec.aura) return 0;
+  if (!spec || spec.aura) return { total: 0, auraBonus: 0 };
   const auraBonus = state.towers.reduce((sum, other) => {
     const otherSpec = getCardDefinition(other.cardId).tower;
     const damageBonus = otherSpec?.aura?.towerDamageBonus;
@@ -72,8 +75,22 @@ export const effectiveDamage = (
   const threshold = spec.heavyBonusThreshold;
   const heavy =
     threshold !== undefined && target.maxHp >= threshold ? (spec.heavyBonusMultiplier ?? 1) : 1;
-  return Math.round(spec.damage * heavy * highGround * (1 + auraBonus));
+  const base = Math.round(spec.damage * heavy * highGround);
+  const total = Math.round(spec.damage * heavy * highGround * (1 + auraBonus));
+  return { total, auraBonus: total - base };
 };
+
+/**
+ * 塔の実効ダメージ
+ *
+ * 倍率の二重適用を避けるため、damageBreakdown だけがダメージ算出の責務を持つ。
+ */
+export const effectiveDamage = (
+  state: CombatState,
+  towerIndex: number,
+  map: StageMap,
+  target: ActiveEnemy
+): number => damageBreakdown(state, towerIndex, map, target).total;
 
 /**
  * 塔の実効射程
@@ -195,7 +212,17 @@ interface PendingBlast {
   pos: CellPos;
   radius: number;
   damage: number;
+  /** 発生源の燠火 index。撃破の帰属に使う */
+  emberIndex: number;
 }
+
+/**
+ * 敵ごとの「最後に削った者」
+ *
+ * hpById と対で更新する。hpById.set と sourceById.set は必ず同じ箇所で行う
+ * （片方だけ更新すると帰属が前の tick の値のまま残る）。
+ */
+type SourceById = Map<number, DefeatSource>;
 
 /**
  * 「プレイヤー操作」段階の作業用下書き。1 tick 分の操作をすべて畳み込む間だけ存在し、
@@ -230,7 +257,12 @@ const applyReactivate = (
   if (!spec) return;
   draft.embers[action.emberIndex] = { ...ember, cooldownLeft: spec.cooldownTicks };
   draft.freshEmberIndices.add(action.emberIndex);
-  draft.blasts.push({ pos: ember.pos, radius: spec.radius, damage: spec.damage });
+  draft.blasts.push({
+    pos: ember.pos,
+    radius: spec.radius,
+    damage: spec.damage,
+    emberIndex: action.emberIndex,
+  });
   draft.events.push({ kind: 'ember', emberIndex: action.emberIndex });
 };
 
@@ -251,7 +283,12 @@ const applyCardEffect = (
   } else if (card.type === 'ember' && pos && card.ember) {
     draft.embers.push({ pos, cooldownLeft: card.ember.cooldownTicks });
     draft.freshEmberIndices.add(draft.embers.length - 1);
-    draft.blasts.push({ pos, radius: card.ember.radius, damage: card.ember.damage });
+    draft.blasts.push({
+      pos,
+      radius: card.ember.radius,
+      damage: card.ember.damage,
+      emberIndex: draft.embers.length - 1,
+    });
   } else if (card.type === 'spell' && card.spell) {
     draft.slowUntilTick = tick + card.spell.durationTicks;
     draft.slowMultiplier = card.spell.speedMultiplier;
@@ -262,7 +299,30 @@ const applyCardEffect = (
   }
 };
 
-/** カード使用操作を適用する（クールダウン・手札・マナ・設置可否を順に検査） */
+/**
+ * 手札から1枚を能動的に捨てる
+ *
+ * コストもクールダウンも消費しない。**ドローは早まらない**
+ * （ドローは DRAW_INTERVAL_TICKS の時間駆動）ため、「捨てて回す」戦術は
+ * 成立せず、効果は手札の枠を空けることに限定される。有限デッキという
+ * 前提を緩めないための意図的な設計（設計書 §5.3）。
+ */
+const applyDiscard = (
+  draft: ActionsDraft,
+  action: Extract<PlayerAction, { kind: 'discard' }>
+): void => {
+  if (draft.deck.hand[action.handIndex] === undefined) return;
+  draft.deck = discardFromHand(draft.deck, action.handIndex);
+};
+
+/**
+ * カード使用操作を適用する（手札・カード種別・マナ・設置可否を順に検査）
+ *
+ * **配置クールダウンは「盤面に何かを置く札」だけに課す。**
+ * 徴発・時泥のような即時札は盤面を占有しないため、配置の間合いに縛る理由がない。
+ * 反復1 で徴発が機能しなかったのは、カードを特定する前にクールダウンを
+ * 見ていたためであり、バグというより層の取り違えだった。
+ */
 const applyPlayCard = (
   draft: ActionsDraft,
   state: CombatState,
@@ -270,16 +330,17 @@ const applyPlayCard = (
   tick: number,
   action: Extract<PlayerAction, { kind: 'play-card' }>
 ): void => {
-  if (draft.placeCooldown > 0) {
-    draft.events.push({ kind: 'rejected', reason: 'cooldown' });
-    return;
-  }
   const cardId = draft.deck.hand[action.handIndex];
   if (cardId === undefined) {
     draft.events.push({ kind: 'rejected', reason: 'target' });
     return;
   }
   const card = getCardDefinition(cardId);
+  const needsPlacement = placementKindOf(card) !== 'none';
+  if (needsPlacement && draft.placeCooldown > 0) {
+    draft.events.push({ kind: 'rejected', reason: 'cooldown' });
+    return;
+  }
   if (card.type === 'levy' && draft.levyOptions.length > 0) {
     draft.events.push({ kind: 'rejected', reason: 'pending' });
     return;
@@ -288,14 +349,14 @@ const applyPlayCard = (
     draft.events.push({ kind: 'rejected', reason: 'mana' });
     return;
   }
-  if (placementKindOf(card) !== 'none' && (!action.pos || !canPlaceAt(state, card, action.pos, map))) {
+  if (needsPlacement && (!action.pos || !canPlaceAt(state, card, action.pos, map))) {
     draft.events.push({ kind: 'rejected', reason: 'target' });
     return;
   }
   // ここから確定
   draft.mana -= card.cost;
   draft.deck = discardFromHand(draft.deck, action.handIndex);
-  draft.placeCooldown = PLACE_COOLDOWN_TICKS;
+  if (needsPlacement) draft.placeCooldown = PLACE_COOLDOWN_TICKS;
   draft.events.push({ kind: 'played', cardId, pos: action.pos });
   applyCardEffect(draft, card, cardId, action.pos, tick);
 };
@@ -335,6 +396,8 @@ const applyActions = (
       if (draft.levyOptions.length === 0) return;
       draft.deck = takeFromPeek(draft.deck, draft.levyOptions, action.optionIndex);
       draft.levyOptions = [];
+    } else if (action.kind === 'discard') {
+      applyDiscard(draft, action);
     } else {
       applyPlayCard(draft, state, map, tick, action);
     }
@@ -457,6 +520,7 @@ const applyTraps = (
   traps: readonly PlacedTrap[],
   moved: readonly ActiveEnemy[],
   hpById: Map<number, number>,
+  sourceById: SourceById,
   statusById: Map<number, EnemyStatusDraft>,
   tick: number,
   map: StageMap,
@@ -480,6 +544,7 @@ const applyTraps = (
 
       if (spec.damage > 0) {
         hpById.set(enemy.id, (hpById.get(enemy.id) ?? 0) - spec.damage);
+        sourceById.set(enemy.id, { kind: 'trap', index: trapIndex });
       }
       const status = statusById.get(enemy.id) ?? {};
       if (spec.groundedTicks !== undefined) {
@@ -511,6 +576,7 @@ const applyTowerShots = (
   moved: readonly ActiveEnemy[],
   map: StageMap,
   hpById: Map<number, number>,
+  sourceById: SourceById,
   events: TickEvent[],
   tick: number
 ): PlacedTower[] => {
@@ -522,11 +588,31 @@ const applyTowerShots = (
     const range = effectiveRange(stateForDamage, towerIndex, map);
     const target = selectTowerTarget(tower, spec, range, moved, map, hpById, tick);
     if (!target) return tower;
-    const damage = effectiveDamage(stateForDamage, towerIndex, map, target);
+    const { total: damage, auraBonus } = damageBreakdown(stateForDamage, towerIndex, map, target);
     hpById.set(target.id, (hpById.get(target.id) ?? 0) - damage);
-    events.push({ kind: 'shot', towerIndex, targetId: target.id });
+    sourceById.set(target.id, { kind: 'tower', index: towerIndex });
+    const targetPos = positionOf(target.progress, map.path);
+    const distance = Math.hypot(targetPos.x - tower.pos.x, targetPos.y - tower.pos.y);
+    events.push({
+      kind: 'shot',
+      towerIndex,
+      targetId: target.id,
+      auraDamageBonus: auraBonus,
+      // 素の射程を超えている＝鍛冶場のオーラで初めて届いた射撃
+      beyondBaseRange: distance > spec.range,
+    });
     if (spec.splashRadius > 0) {
-      applySplashDamage(target, spec, moved, map, hpById, tick, stateForDamage, towerIndex);
+      applySplashDamage(
+        target,
+        spec,
+        moved,
+        map,
+        hpById,
+        sourceById,
+        tick,
+        stateForDamage,
+        towerIndex
+      );
     }
     // 発射周期をちょうど cooldownTicks tick にするため -1 する
     // （次tick以降の `cooldownLeft > 0` decrement 判定と合わせて、
@@ -569,6 +655,7 @@ const applySplashDamage = (
   moved: readonly ActiveEnemy[],
   map: StageMap,
   hpById: Map<number, number>,
+  sourceById: SourceById,
   tick: number,
   stateForDamage: CombatState,
   towerIndex: number
@@ -581,6 +668,7 @@ const applySplashDamage = (
     if (Math.hypot(pos.x - center.x, pos.y - center.y) <= spec.splashRadius) {
       const damage = effectiveDamage(stateForDamage, towerIndex, map, other);
       hpById.set(other.id, (hpById.get(other.id) ?? 0) - damage);
+      sourceById.set(other.id, { kind: 'tower', index: towerIndex });
     }
   });
 };
@@ -597,6 +685,7 @@ const applyBlasts = (
   moved: readonly ActiveEnemy[],
   map: StageMap,
   hpById: Map<number, number>,
+  sourceById: SourceById,
   tick: number
 ): void => {
   blasts.forEach((blast) => {
@@ -605,6 +694,7 @@ const applyBlasts = (
       const pos = positionOf(enemy.progress, map.path);
       if (Math.hypot(pos.x - blast.pos.x, pos.y - blast.pos.y) <= blast.radius) {
         hpById.set(enemy.id, (hpById.get(enemy.id) ?? 0) - blast.damage);
+        sourceById.set(enemy.id, { kind: 'ember', index: blast.emberIndex });
       }
     });
   });
@@ -621,6 +711,7 @@ const applyBlasts = (
 const resolveDamage = (
   moved: readonly ActiveEnemy[],
   hpById: ReadonlyMap<number, number>,
+  sourceById: ReadonlyMap<number, DefeatSource>,
   statusById: ReadonlyMap<number, EnemyStatusDraft>,
   events: TickEvent[]
 ): ActiveEnemy[] =>
@@ -637,7 +728,13 @@ const resolveDamage = (
           };
     const hp = hpById.get(enemy.id) ?? withStatus.hp;
     if (hp > 0) return { ...withStatus, hp };
-    events.push({ kind: 'defeat', enemyId: enemy.id });
+    const source = sourceById.get(enemy.id);
+    // 撃破源が無い hp<=0 は論理的に起こり得ない（誰かが削った結果でしか 0 にならない）。
+    // 万一起きた場合に defeat を握り潰すと集計が静かに壊れるため、契約違反として落とす。
+    if (!source) {
+      throw new Error(`撃破源が記録されていません: enemyId=${enemy.id}`);
+    }
+    events.push({ kind: 'defeat', enemyId: enemy.id, source });
     return { ...withStatus, hp: 0, alive: false };
   });
 
@@ -703,14 +800,19 @@ export const stepTick = (
 
   // --- 罠 → 射撃 → 業火・燠火の順で hpById に下書きし、最後にまとめて反映する ---
   const hpById = new Map<number, number>();
+  const sourceById: SourceById = new Map();
   moved.forEach((e) => hpById.set(e.id, e.hp));
   const statusById = new Map<number, EnemyStatusDraft>();
-  const traps = applyTraps(afterActions.traps, moved, hpById, statusById, tick, map, events);
-  const towers = applyTowerShots(state, afterActions.towers, moved, map, hpById, events, tick);
-  applyBlasts(afterActions.blasts, moved, map, hpById, tick);
+  const traps = applyTraps(
+    afterActions.traps, moved, hpById, sourceById, statusById, tick, map, events
+  );
+  const towers = applyTowerShots(
+    state, afterActions.towers, moved, map, hpById, sourceById, events, tick
+  );
+  applyBlasts(afterActions.blasts, moved, map, hpById, sourceById, tick);
 
   // --- ダメージ・状態反映 → 漏れ ---
-  const damaged = resolveDamage(moved, hpById, statusById, events);
+  const damaged = resolveDamage(moved, hpById, sourceById, statusById, events);
   const { settled, life } = resolveLeaks(damaged, goal, state.life, events);
 
   const next: CombatState = {

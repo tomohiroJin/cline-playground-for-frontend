@@ -24,6 +24,7 @@ const createMockPlayLog = (): PlayLogPort & { events: PlayLogEventBody[] } => {
 };
 
 const swiftCards = (): string[] => [...PRESET_DECKS.swift!.cards];
+const heavyCards = (): string[] => [...PRESET_DECKS.heavy!.cards];
 
 describe('useAshenRampartGame', () => {
   beforeEach(() => jest.useFakeTimers());
@@ -34,7 +35,7 @@ describe('useAshenRampartGame', () => {
     renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log }));
     const started = log.events.filter((e) => e.kind === 'run_started');
     expect(started).toHaveLength(1);
-    expect(started[0]).toMatchObject({ seed: 1, iteration: 1 });
+    expect(started[0]).toMatchObject({ seed: 1, iteration: 2 });
   });
 
   it('StrictMode 下でもカードを1枚配置できる（指摘1の回帰: updater 内の副作用で操作が握り潰されていた）', () => {
@@ -105,7 +106,8 @@ describe('useAshenRampartGame', () => {
     const towerIndex = result.current.state.deck.hand.findIndex((id) => id !== 'mud-time');
     act(() => result.current.selectCard(towerIndex));
     expect(result.current.placeableCells.length).toBeGreaterThan(0);
-    expect(result.current.placeableCells.length).toBeLessThanOrEqual(12);
+    // 設置スロットは規則生成で22マスに拡張された（stage-map.ts 参照）
+    expect(result.current.placeableCells.length).toBeLessThanOrEqual(22);
   });
 
   it('選択せずにセルを押しても何も起きない', () => {
@@ -170,12 +172,23 @@ describe('useAshenRampartGame', () => {
     expect(result.current.state.tick).toBe(COUNTDOWN_TICKS);
   });
 
+  it('ウェーブ境界（COUNTDOWN_TICKS）に到達すると announcement に読み上げが出る', () => {
+    const { result } = renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1 }));
+    expect(result.current.announcement).toBeUndefined();
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS * COUNTDOWN_TICKS);
+    });
+    expect(result.current.state.tick).toBe(COUNTDOWN_TICKS);
+    expect(result.current.announcement).toBe('第1波が始まった');
+  });
+
   it('interactCell: 再点火可能な燠火のあるセルを選択なしでクリックすると reactivated が記録される（クールダウン中は記録されない）', () => {
     const log = createMockPlayLog();
-    // シード2は速攻型プリセットの初期手札に業火（ember-blast）を2枚含む。
+    // 反復2 で速攻型から業火が抜けたため、業火を持つ重厚型プリセットへ差し替えた。
+    // シード3は重厚型の初期手札に業火（ember-blast）を含む。
     // プリセット構成を変えると該当シードも変わるため、シード番号は決め打ちの前提として扱う
     const { result } = renderHook(() =>
-      useAshenRampartGame({ cards: swiftCards(), seed: 2, playLog: log })
+      useAshenRampartGame({ cards: heavyCards(), seed: 3, playLog: log })
     );
     const emberHandIndex = result.current.state.deck.hand.findIndex((id) => id === 'ember-blast');
     expect(emberHandIndex).toBeGreaterThanOrEqual(0);
@@ -251,6 +264,97 @@ describe('useAshenRampartGame', () => {
     expect(firstRestartSeed).not.toBe(secondRestartSeed);
   });
 
+  describe('discardCard: 選択中の札との位置関係による selectedIndex 補正', () => {
+    /**
+     * 手札は配列で、捨てると後続の札が前へ詰まる。この3テストは
+     * 「選択中より前」「選択中そのもの」「選択中より後ろ」の3ケースすべてを
+     * 検証する。1つでも欠けると、詰めの向きが逆でも気づけない。
+     *
+     * seed:10・swift プリセットは、初期手札3枚＋1回目のドロー（40 tick）で
+     * 必ず ['spike-trap', 'ballista', 'reactor', 'arrow-tower'] になる。
+     * 4枚とも設置系カードなので selectCard で選択状態を作れる。
+     *
+     * **4枚がすべて異なる札であることが要点。** 反復2 で魔力炉が8枚になった結果、
+     * seed:1 では手札が ['reactor','reactor','spike-trap','spike-trap'] となり、
+     * 「捨てた後も選択カードIDが変わらない」という主張が、インデックス追従が
+     * 壊れていても通ってしまう空虚なテストになっていた（レビュー指摘4）。
+     * 同名札が並ばないシードを選び、手札配列そのものを比較して検証する。
+     */
+    const handToFourCards = () => {
+      const cards = swiftCards();
+      const rendered = renderHook(() => useAshenRampartGame({ cards, seed: 10 }));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS * 40);
+      });
+      const hand = rendered.result.current.state.deck.hand;
+      expect(hand).toHaveLength(4);
+      // 前提の明示: 同名札が並ぶと以下の検証が空虚になる
+      expect(new Set(hand).size).toBe(4);
+      return rendered;
+    };
+
+    it('選択中より前の札を捨てると selectedIndex が1つ減り、選択カードIDは変わらない', () => {
+      const { result } = handToFourCards();
+      const handBefore = [...result.current.state.deck.hand];
+      const index = 1;
+      const selectedCardId = handBefore[index];
+
+      act(() => result.current.selectCard(index));
+      expect(result.current.selectedIndex).toBe(index);
+
+      act(() => result.current.discardCard(0));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+
+      // 手札配列ごと比較する（捨てた1枚だけが消えていること）
+      expect(result.current.state.deck.hand).toEqual(handBefore.slice(1));
+      expect(result.current.selectedIndex).toBe(index - 1);
+      expect(result.current.state.deck.hand[result.current.selectedIndex as number]).toBe(
+        selectedCardId
+      );
+    });
+
+    it('選択中の札そのものを捨てると selectedIndex が null になる', () => {
+      const { result } = handToFourCards();
+      const index = 1;
+      act(() => result.current.selectCard(index));
+      expect(result.current.selectedIndex).toBe(index);
+
+      act(() => result.current.discardCard(index));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+
+      expect(result.current.selectedIndex).toBeNull();
+    });
+
+    it('選択中より後ろの札を捨てても selectedIndex は変わらず、選択カードIDも変わらない', () => {
+      const { result } = handToFourCards();
+      const handBefore = [...result.current.state.deck.hand];
+      const index = 1;
+      const selectedCardId = handBefore[index];
+
+      act(() => result.current.selectCard(index));
+      expect(result.current.selectedIndex).toBe(index);
+
+      act(() => result.current.discardCard(index + 1));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+
+      // 手札配列ごと比較する（捨てた1枚だけが消えていること）
+      expect(result.current.state.deck.hand).toEqual([
+        ...handBefore.slice(0, index + 1),
+        ...handBefore.slice(index + 2),
+      ]);
+      expect(result.current.selectedIndex).toBe(index);
+      expect(result.current.state.deck.hand[result.current.selectedIndex as number]).toBe(
+        selectedCardId
+      );
+    });
+  });
+
   describe('反復1: デッキ・シード・徴発', () => {
     it('渡したデッキでランが始まり、ログにデッキ構成が残る', () => {
       const log = createMockPlayLog();
@@ -284,7 +388,9 @@ describe('useAshenRampartGame', () => {
 
     it('徴発を出すと候補が出て、選ぶと手札に入る', () => {
       const cards = swiftCards();
-      const { result } = renderHook(() => useAshenRampartGame({ cards, seed: 1 }));
+      // 手札が上限に達するとドローが止まるため、札を出さずに待つだけでは徴発が来ない。
+      // シード7は速攻型の初期手札に徴発を含む（反復2 で徴発が2→1枚になった影響）
+      const { result } = renderHook(() => useAshenRampartGame({ cards, seed: 7 }));
       // 徴発が手札に来るまで進める（40tick ごとにドロー）
       for (let i = 0; i < 20; i++) {
         const index = result.current.state.deck.hand.indexOf('levy');
