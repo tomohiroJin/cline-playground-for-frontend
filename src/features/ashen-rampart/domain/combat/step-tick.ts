@@ -20,6 +20,7 @@ import { getCardDefinition } from '../cards/card-pool';
 import { placementKindOf, type CardDefinition } from '../cards/card-definition';
 import { getEnemySpec } from './enemies';
 import { isEnemyFlying, isEnemyStunned } from './enemy-status';
+import { isBlocked } from './blocking';
 import { DRAW_INTERVAL_TICKS, PLACE_COOLDOWN_TICKS } from './combat-state';
 import type {
   CombatState,
@@ -489,26 +490,36 @@ const runDraw = (
   return { deck: outcome.deck, ticksToDraw: remaining };
 };
 
+/** moveEnemies の時間・速度に関する文脈をまとめたもの（パラメータ3個超過を避けるため） */
+interface MoveContext {
+  tick: number;
+  slowUntilTick: number;
+  slowMultiplier: number;
+}
+
 /**
  * 敵の移動
  *
  * 出現直後の敵（spawnTick === tick）はまだ動かさない。時泥の効果中は
  * 全体の移動量が下がり、滞留セルではさらに移動量が落ちる（乗算）。
  * 罠・射撃の判定はこの後の座標を前提にするため、必ず先に確定させる。
+ *
+ * 経路上に守り手がいる地上の敵はここで止める（ブロック判定）。飛行は
+ * ブロックを無視する。ただし地上化中は通常の地上敵として扱う（Task 6）。
  */
 const moveEnemies = (
   existing: readonly ActiveEnemy[],
   spawned: readonly ActiveEnemy[],
-  tick: number,
-  slowUntilTick: number,
-  slowMultiplier: number,
-  map: StageMap
+  ctx: MoveContext,
+  map: StageMap,
+  units: readonly PlacedUnit[]
 ): ActiveEnemy[] => {
-  const slowMult = tick <= slowUntilTick ? slowMultiplier : 1;
+  const slowMult = ctx.tick <= ctx.slowUntilTick ? ctx.slowMultiplier : 1;
   return [...existing, ...spawned].map((enemy) => {
     if (!enemy.alive) return enemy;
-    if (enemy.spawnTick === tick) return enemy;
-    if (isEnemyStunned(enemy, tick)) return enemy;
+    if (enemy.spawnTick === ctx.tick) return enemy;
+    if (isEnemyStunned(enemy, ctx.tick)) return enemy;
+    if (isBlocked({ units, map, tick: ctx.tick }, enemy)) return enemy;
     const spec = getEnemySpec(enemy.enemyId);
     const lane = laneFor(map, enemy);
     const cell = lane[Math.min(Math.floor(enemy.progress), goalFor(map, enemy))];
@@ -808,14 +819,14 @@ export const stepTick = (
   const nextId = state.enemies.reduce((max, e) => Math.max(max, e.id + 1), 0);
   const spawned = spawnAt(state, tick, nextId);
 
-  // --- 移動（時泥の効果中は敵の足が遅くなる） ---
+  // --- 移動（時泥の効果中は敵の足が遅くなる。プレイヤー操作の後に行うため、
+  //     この tick に置いた守り手が即座にブロックへ効く） ---
   const moved = moveEnemies(
     state.enemies,
     spawned,
-    tick,
-    afterActions.slowUntilTick,
-    afterActions.slowMultiplier,
-    map
+    { tick, slowUntilTick: afterActions.slowUntilTick, slowMultiplier: afterActions.slowMultiplier },
+    map,
+    afterActions.units
   );
 
   // --- 罠 → 射撃 → 業火・燠火の順で hpById に下書きし、最後にまとめて反映する ---
