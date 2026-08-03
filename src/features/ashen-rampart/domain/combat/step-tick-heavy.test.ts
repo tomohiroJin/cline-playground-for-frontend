@@ -20,7 +20,7 @@ const enemyOf = (enemyId: string, maxHp: number): ActiveEnemy => ({
   maxHp,
   progress: 1,
   spawnTick: 0,
-  spawnPathIndex: 0,
+  laneIndex: 0,
   alive: true,
   leaked: false,
   groundedUntilTick: 0,
@@ -61,12 +61,12 @@ describe('徹甲弩の重装特効', () => {
   });
 
   it('特効と篝火オーラと高台が二重適用されない', () => {
-    // (3,4) は高台。隣接 (2,4) に篝火
+    // (2,3) は高台。隣接 (1,3) に篝火
     const state: CombatState = {
       ...createCombatState(emptyDeck, PLAINS_WAVES),
       towers: [
-        { cardId: 'piercer', pos: { x: 3, y: 4 }, cooldownLeft: 0 },
-        { cardId: 'beacon', pos: { x: 2, y: 4 }, cooldownLeft: 0 },
+        { cardId: 'piercer', pos: { x: 2, y: 3 }, cooldownLeft: 0 },
+        { cardId: 'beacon', pos: { x: 1, y: 3 }, cooldownLeft: 0 },
       ],
     };
     // round(7 * 1.3 * 1.25 * 2) = round(22.75) = 23
@@ -77,9 +77,9 @@ describe('徹甲弩の重装特効', () => {
 describe('投石機', () => {
   it('射程3.0で遠くの敵に届く', () => {
     const wave: WaveDefinition[] = [
-      { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, spawnPathIndex: 0 }] },
+      { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, laneIndex: 0 }] },
     ];
-    // 経路始端 (0,3) に対し (2,1) は距離 hypot(2,2)=2.83 < 3.0
+    // 経路始端（北レーン入口 (0,2)）に対し (2,1) は距離 hypot(2,1)=2.24 < 3.0
     const state: CombatState = {
       ...createCombatState(emptyDeck, wave),
       towers: [{ cardId: 'catapult', pos: { x: 2, y: 1 }, cooldownLeft: 0 }],
@@ -93,7 +93,7 @@ describe('投石機', () => {
 
   it('範囲2で複数体を巻き込む', () => {
     const wave: WaveDefinition[] = [
-      { startTick: 0, entries: [{ enemyId: 'swarm', count: 4, spawnIntervalTicks: 3, spawnPathIndex: 0 }] },
+      { startTick: 0, entries: [{ enemyId: 'swarm', count: 4, spawnIntervalTicks: 3, laneIndex: 0 }] },
     ];
     const state: CombatState = {
       ...createCombatState(emptyDeck, wave),
@@ -107,7 +107,7 @@ describe('投石機', () => {
 
   it('飛行には当たらない', () => {
     const wave: WaveDefinition[] = [
-      { startTick: 0, entries: [{ enemyId: 'raven', count: 1, spawnIntervalTicks: 0, spawnPathIndex: 5 }] },
+      { startTick: 0, entries: [{ enemyId: 'raven', count: 1, spawnIntervalTicks: 0, laneIndex: 0 }] },
     ];
     const state: CombatState = {
       ...createCombatState(emptyDeck, wave),

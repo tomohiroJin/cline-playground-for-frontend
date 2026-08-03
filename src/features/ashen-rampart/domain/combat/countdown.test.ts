@@ -87,7 +87,7 @@ describe('カウントダウン中の振る舞い', () => {
       { drawPile: [], hand: ['reactor'], graveyard: [] },
       PLAINS_WAVES
     );
-    const after = stepTick(state, [{ kind: 'play-card', handIndex: 0, pos: { x: 1, y: 2 } }], PLAINS_MAP);
+    const after = stepTick(state, [{ kind: 'play-card', handIndex: 0, pos: { x: 1, y: 1 } }], PLAINS_MAP);
     expect(after.reactors).toHaveLength(1);
   });
 });

@@ -50,14 +50,10 @@ describe('ウェーブ構成', () => {
     expect(totalEnemyCount(PLAINS_WAVES)).toBe(51);
   });
 
-  it('鴉だけが経路の中盤から出現する（位置のカウンター要求）', () => {
+  it('全エントリーはレーン0（北）に乗る（本格的な再構成は Task 14 の較正やり直しで行う）', () => {
     const entries = PLAINS_WAVES.flatMap((w) => w.entries);
     entries.forEach((entry) => {
-      if (entry.enemyId === 'raven') {
-        expect(entry.spawnPathIndex).toBe(5);
-      } else {
-        expect(entry.spawnPathIndex).toBe(0);
-      }
+      expect(entry.laneIndex).toBe(0);
     });
   });
 

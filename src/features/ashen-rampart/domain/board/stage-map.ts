@@ -73,41 +73,42 @@ export const offPathCells = (map: StageMap): CellPos[] => {
 const PLAINS_WIDTH = 9;
 const PLAINS_HEIGHT = 7;
 
-const PLAINS_PATH: CellPos[] = [
-  { x: 0, y: 3 },
-  { x: 1, y: 3 },
-  { x: 2, y: 3 },
-  { x: 3, y: 3 },
-  { x: 4, y: 3 },
-  { x: 4, y: 2 },
-  { x: 4, y: 1 },
-  { x: 5, y: 1 },
-  { x: 6, y: 1 },
-  { x: 7, y: 1 },
-  { x: 8, y: 1 },
+/** 砦。全レーンの終端であり、ここには何も置けない（設計書 §4.1） */
+const PLAINS_FORTRESS: CellPos = { x: 8, y: 3 };
+
+/** 北レーン: 10セル。短く、滞留がない。処理が間に合わないと早く届く */
+const PLAINS_LANE_NORTH: CellPos[] = [
+  { x: 0, y: 2 }, { x: 1, y: 2 }, { x: 2, y: 2 }, { x: 3, y: 2 },
+  { x: 4, y: 2 }, { x: 5, y: 2 }, { x: 6, y: 2 }, { x: 7, y: 2 },
+  { x: 8, y: 2 }, PLAINS_FORTRESS,
+];
+
+/** 南レーン: 12セル。迂回して長く、滞留セルを2つ持つ */
+const PLAINS_LANE_SOUTH: CellPos[] = [
+  { x: 0, y: 4 }, { x: 1, y: 4 }, { x: 2, y: 4 }, { x: 3, y: 4 },
+  { x: 3, y: 5 }, { x: 4, y: 5 }, { x: 5, y: 5 }, { x: 6, y: 5 },
+  { x: 6, y: 4 }, { x: 7, y: 4 }, { x: 8, y: 4 }, PLAINS_FORTRESS,
 ];
 
 /**
- * P1 ステージ: 平原（9×7、S字経路）
+ * P1 ステージ: 平原（9×7、2レーン）
  *
- * この時点（反復3 Task 1）ではレーン構造への形の移行のみが目的のため、
- * 単一レーン（lanes = [PLAINS_PATH]）のままにする。2レーン化は Task 2 で行う。
+ * 砦セル以外を共有しない。分岐点を1つ作るだけでは、その共有セルに壁を
+ * 置けば両レーンが止まってしまうため（設計書 §5.1 / §15 ①）。
+ *
+ * 中央列 y=3 は経路外のまま両レーンの射程内に入る。中央に射手を集めれば
+ * 両方を撃てるが、経路外なのでブロックはできない。壁は各レーンに別々に要る。
  */
 export const PLAINS_MAP: StageMap = {
   id: 'plains',
   name: '平原',
   width: PLAINS_WIDTH,
   height: PLAINS_HEIGHT,
-  lanes: [PLAINS_PATH],
-  highGround: [
-    { x: 3, y: 4 },
-    { x: 7, y: 2 },
-  ],
-  slowCells: [
-    { x: 4, y: 3 },
-    { x: 4, y: 2 },
-    { x: 4, y: 1 },
-  ],
+  lanes: [PLAINS_LANE_NORTH, PLAINS_LANE_SOUTH],
+  // 高台は中央列。両レーンに届く希少枠として奪い合いになる
+  highGround: [{ x: 2, y: 3 }, { x: 6, y: 3 }],
+  // 滞留は南レーンのみ。レーンの非対称性の中身
+  slowCells: [{ x: 4, y: 5 }, { x: 5, y: 5 }],
 };
 
 /** 指定セルが高台か */

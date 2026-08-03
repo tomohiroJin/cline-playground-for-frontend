@@ -132,6 +132,18 @@ export const positionOf = (progress: number, path: readonly CellPos[]): CellPos 
   return { x: a.x + (b.x - a.x) * frac, y: a.y + (b.y - a.y) * frac };
 };
 
+/** その敵の所属レーン */
+const laneFor = (map: StageMap, enemy: ActiveEnemy): readonly CellPos[] =>
+  laneOf(map, enemy.laneIndex);
+
+/** その敵が砦に到達したとみなす進行度 */
+const goalFor = (map: StageMap, enemy: ActiveEnemy): number =>
+  Math.max(0, laneFor(map, enemy).length - 1);
+
+/** その敵の現在の盤面座標 */
+export const enemyPosition = (map: StageMap, enemy: ActiveEnemy): CellPos =>
+  positionOf(enemy.progress, laneFor(map, enemy));
+
 const samePos = (a: CellPos, b: CellPos): boolean => a.x === b.x && a.y === b.y;
 
 /** そのスロットが既に何かで埋まっているか */
@@ -188,9 +200,10 @@ const spawnAt = (state: CombatState, tick: number, nextId: number): ActiveEnemy[
           enemyId: entry.enemyId,
           hp: spec.hp,
           maxHp: spec.hp,
-          progress: entry.spawnPathIndex,
+          // 全ての敵は所属レーンの入口（0）から進軍する（フィードバック#4）
+          progress: 0,
           spawnTick: tick,
-          spawnPathIndex: entry.spawnPathIndex,
+          laneIndex: entry.laneIndex,
           alive: true,
           leaked: false,
           groundedUntilTick: 0,
@@ -489,8 +502,7 @@ const moveEnemies = (
   tick: number,
   slowUntilTick: number,
   slowMultiplier: number,
-  map: StageMap,
-  goal: number
+  map: StageMap
 ): ActiveEnemy[] => {
   const slowMult = tick <= slowUntilTick ? slowMultiplier : 1;
   return [...existing, ...spawned].map((enemy) => {
@@ -498,7 +510,8 @@ const moveEnemies = (
     if (enemy.spawnTick === tick) return enemy;
     if (isEnemyStunned(enemy, tick)) return enemy;
     const spec = getEnemySpec(enemy.enemyId);
-    const cell = laneOf(map, 0)[Math.min(Math.floor(enemy.progress), goal)];
+    const lane = laneFor(map, enemy);
+    const cell = lane[Math.min(Math.floor(enemy.progress), goalFor(map, enemy))];
     const terrain = cell && isSlowCell(map, cell) ? SLOW_TERRAIN_MULT : 1;
     return { ...enemy, progress: enemy.progress + spec.speed * terrain * slowMult };
   });
@@ -548,7 +561,7 @@ const applyTraps = (
       // 落網は飛行のみ、それ以外の罠は地上のみに発動する
       const targetsFlying = spec.groundedTicks !== undefined;
       if (targetsFlying !== flying) return;
-      const pos = positionOf(enemy.progress, laneOf(map, 0));
+      const pos = enemyPosition(map, enemy);
       if (Math.hypot(pos.x - trap.pos.x, pos.y - trap.pos.y) > TRAP_TRIGGER_DISTANCE) return;
 
       if (spec.damage > 0) {
@@ -600,7 +613,7 @@ const applyTowerShots = (
     const { total: damage, auraBonus } = damageBreakdown(stateForDamage, towerIndex, map, target);
     hpById.set(target.id, (hpById.get(target.id) ?? 0) - damage);
     sourceById.set(target.id, { kind: 'tower', index: towerIndex });
-    const targetPos = positionOf(target.progress, laneOf(map, 0));
+    const targetPos = enemyPosition(map, target);
     const distance = Math.hypot(targetPos.x - tower.pos.x, targetPos.y - tower.pos.y);
     events.push({
       kind: 'shot',
@@ -647,7 +660,7 @@ const selectTowerTarget = (
     .filter((e) => e.alive && (hpById.get(e.id) ?? 0) > 0)
     .filter((e) => spec.hitsFlying || !isEnemyFlying(e, tick))
     .filter((e) => {
-      const pos = positionOf(e.progress, laneOf(map, 0));
+      const pos = enemyPosition(map, e);
       return Math.hypot(pos.x - tower.pos.x, pos.y - tower.pos.y) <= range;
     })
     .sort((a, b) => b.progress - a.progress)[0];
@@ -669,11 +682,11 @@ const applySplashDamage = (
   stateForDamage: CombatState,
   towerIndex: number
 ): void => {
-  const center = positionOf(target.progress, laneOf(map, 0));
+  const center = enemyPosition(map, target);
   moved.forEach((other) => {
     if (other.id === target.id || !other.alive) return;
     if (!spec.hitsFlying && isEnemyFlying(other, tick)) return;
-    const pos = positionOf(other.progress, laneOf(map, 0));
+    const pos = enemyPosition(map, other);
     if (Math.hypot(pos.x - center.x, pos.y - center.y) <= spec.splashRadius) {
       const damage = effectiveDamage(stateForDamage, towerIndex, map, other);
       hpById.set(other.id, (hpById.get(other.id) ?? 0) - damage);
@@ -700,7 +713,7 @@ const applyBlasts = (
   blasts.forEach((blast) => {
     moved.forEach((enemy) => {
       if (!enemy.alive || isEnemyFlying(enemy, tick)) return;
-      const pos = positionOf(enemy.progress, laneOf(map, 0));
+      const pos = enemyPosition(map, enemy);
       if (Math.hypot(pos.x - blast.pos.x, pos.y - blast.pos.y) <= blast.radius) {
         hpById.set(enemy.id, (hpById.get(enemy.id) ?? 0) - blast.damage);
         sourceById.set(enemy.id, { kind: 'ember', index: blast.emberIndex });
@@ -755,13 +768,13 @@ const resolveDamage = (
  */
 const resolveLeaks = (
   damaged: readonly ActiveEnemy[],
-  goal: number,
+  map: StageMap,
   life: number,
   events: TickEvent[]
 ): { settled: ActiveEnemy[]; life: number } => {
   let nextLife = life;
   const settled = damaged.map((enemy) => {
-    if (!enemy.alive || enemy.progress < goal) return enemy;
+    if (!enemy.alive || enemy.progress < goalFor(map, enemy)) return enemy;
     nextLife -= 1;
     events.push({ kind: 'leak', enemyId: enemy.id });
     return { ...enemy, alive: false, leaked: true };
@@ -777,7 +790,6 @@ export const stepTick = (
   if (state.outcome !== 'playing') return state;
 
   const tick = state.tick + 1;
-  const goal = laneOf(map, 0).length - 1;
 
   // --- プレイヤー操作 ---
   const afterActions = applyActions(state, actions, map, tick);
@@ -803,8 +815,7 @@ export const stepTick = (
     tick,
     afterActions.slowUntilTick,
     afterActions.slowMultiplier,
-    map,
-    goal
+    map
   );
 
   // --- 罠 → 射撃 → 業火・燠火の順で hpById に下書きし、最後にまとめて反映する ---
@@ -822,7 +833,7 @@ export const stepTick = (
 
   // --- ダメージ・状態反映 → 漏れ ---
   const damaged = resolveDamage(moved, hpById, sourceById, statusById, events);
-  const { settled, life } = resolveLeaks(damaged, goal, state.life, events);
+  const { settled, life } = resolveLeaks(damaged, map, state.life, events);
 
   const next: CombatState = {
     ...state,

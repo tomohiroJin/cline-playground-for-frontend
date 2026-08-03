@@ -33,7 +33,7 @@ const enemyAt = (id: number, progress: number) => ({
   maxHp: 20,
   progress,
   spawnTick: 0,
-  spawnPathIndex: 0,
+  laneIndex: 0,
   alive: true,
   leaked: false,
   groundedUntilTick: 0,
@@ -55,7 +55,7 @@ describe('advanceEffects', () => {
     expect(effects[0]).toMatchObject({
       kind: 'shot',
       from: { x: 1, y: 2 },
-      to: { x: 1, y: 3 },
+      to: { x: 1, y: 2 },
       untilTick: 10 + EFFECT_LIFETIME.shot,
     });
   });
@@ -93,7 +93,7 @@ describe('advanceEffects', () => {
     expect(effects[0]).toMatchObject({
       kind: 'defeat',
       from: { x: 1, y: 2 },
-      to: { x: 2, y: 3 },
+      to: { x: 2, y: 2 },
     });
   });
 

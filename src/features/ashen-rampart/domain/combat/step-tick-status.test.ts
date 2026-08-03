@@ -12,9 +12,9 @@ import { PLAINS_MAP } from '../board/stage-map';
 
 const emptyDeck = { drawPile: [], hand: [], graveyard: [] };
 
-/** 鴉1体だけを経路 index 5 に出す */
+/** 鴉1体だけを入口（レーン0）に出す */
 const ravenWave: WaveDefinition[] = [
-  { startTick: 0, entries: [{ enemyId: 'raven', count: 1, spawnIntervalTicks: 0, spawnPathIndex: 5 }] },
+  { startTick: 0, entries: [{ enemyId: 'raven', count: 1, spawnIntervalTicks: 0, laneIndex: 0 }] },
 ];
 
 const advance = (state: CombatState, n: number): CombatState => {
@@ -37,9 +37,10 @@ const groundedRaven = (until: number): CombatState => {
 
 describe('地上化した飛行敵に地上専用の攻撃が当たる', () => {
   it('射撃: 弓兵（地上のみ）が地上化した鴉を撃てる', () => {
+    // 鴉は入口 (0,2) から出る。塔 (1,1) なら出現直後から射程1.6内
     const state: CombatState = {
       ...groundedRaven(200),
-      towers: [{ cardId: 'arrow-tower', pos: { x: 5, y: 2 }, cooldownLeft: 0 }],
+      towers: [{ cardId: 'arrow-tower', pos: { x: 1, y: 1 }, cooldownLeft: 0 }],
     };
     const after = advance(state, 20);
     const raven = after.enemies[0];
@@ -52,8 +53,8 @@ describe('地上化した飛行敵に地上専用の攻撃が当たる', () => {
     const state: CombatState = {
       ...spawned,
       enemies: spawned.enemies.map((e) => ({ ...e, groundedUntilTick: 400 })),
-      // 経路 index 5 は (4,2)。そこに罠を置く
-      traps: [{ cardId: 'spike-trap', pos: { x: 4, y: 2 }, usesLeft: 3, hitEnemyIds: [] }],
+      // 鴉は入口 (0,2) から出る。隣の経路セル (1,2) に罠を置く
+      traps: [{ cardId: 'spike-trap', pos: { x: 1, y: 2 }, usesLeft: 3, hitEnemyIds: [] }],
     };
     const after = advance(state, 5);
     expect(after.traps[0]?.usesLeft).toBeLessThan(3);
@@ -63,7 +64,7 @@ describe('地上化した飛行敵に地上専用の攻撃が当たる', () => {
     // 出現 tick が COUNTDOWN_TICKS ぶんずれたため、猶予も同じぶん後ろにずらす
     const state: CombatState = {
       ...groundedRaven(COUNTDOWN_TICKS + 3),
-      towers: [{ cardId: 'arrow-tower', pos: { x: 5, y: 2 }, cooldownLeft: 0 }],
+      towers: [{ cardId: 'arrow-tower', pos: { x: 1, y: 1 }, cooldownLeft: 0 }],
     };
     // 地上化が切れた後の HP を基準に、さらに進めても減らないことを見る
     const afterGrounded = advance(state, 5);
@@ -77,7 +78,7 @@ describe('地上化した飛行敵に地上専用の攻撃が当たる', () => {
 describe('足止め', () => {
   it('足止め中は進行度が変わらない', () => {
     const gruntWave: WaveDefinition[] = [
-      { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, spawnPathIndex: 0 }] },
+      { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, laneIndex: 0 }] },
     ];
     const spawned = advance(createCombatState(emptyDeck, gruntWave), COUNTDOWN_TICKS + 1);
     const stunned: CombatState = {
@@ -93,7 +94,7 @@ describe('足止め', () => {
 
   it('足止めが切れると再び進む', () => {
     const gruntWave: WaveDefinition[] = [
-      { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, spawnPathIndex: 0 }] },
+      { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, laneIndex: 0 }] },
     ];
     const spawned = advance(createCombatState(emptyDeck, gruntWave), COUNTDOWN_TICKS + 1);
     const stunned: CombatState = {

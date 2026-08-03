@@ -45,11 +45,11 @@ export interface ActiveEnemy {
   enemyId: string;
   hp: number;
   maxHp: number;
-  /** 経路上の進行度（0 = 入口、path.length - 1 = 砦） */
+  /** 所属レーン上の進行度（0 = 入口、lane.length - 1 = 砦） */
   progress: number;
   spawnTick: number;
-  /** 出現する経路 index */
-  spawnPathIndex: number;
+  /** どのレーンを進むか */
+  laneIndex: number;
   alive: boolean;
   leaked: boolean;
   /** 地上化が切れる tick。この tick までは飛行敵も地上として扱う（落網） */

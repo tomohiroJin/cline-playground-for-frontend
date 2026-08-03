@@ -15,7 +15,7 @@ const enemy = (enemyId: string, overrides: Partial<ActiveEnemy> = {}): ActiveEne
   maxHp: 10,
   progress: 0,
   spawnTick: 0,
-  spawnPathIndex: 0,
+  laneIndex: 0,
   alive: true,
   leaked: false,
   groundedUntilTick: 0,

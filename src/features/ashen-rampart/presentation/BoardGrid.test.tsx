@@ -25,8 +25,8 @@ describe('BoardGrid', () => {
         onCellClick={jest.fn()}
       />
     );
-    expect(screen.getByRole('button', { name: /0,3 経路/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /1,2 設置可/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /0,2 経路/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /1,1 設置可/ })).toBeInTheDocument();
   });
 
   it('高台と滞留が示される', () => {
@@ -39,8 +39,8 @@ describe('BoardGrid', () => {
         onCellClick={jest.fn()}
       />
     );
-    expect(screen.getByRole('button', { name: /3,4 設置可 高台/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /4,3 経路 滞留/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /2,3 設置可 高台/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /4,5 経路 滞留/ })).toBeInTheDocument();
   });
 
   it('配置可能なマスだけが「ここに置ける」と示される', () => {
@@ -48,13 +48,13 @@ describe('BoardGrid', () => {
       <BoardGrid
         map={PLAINS_MAP}
         state={emptyState}
-        placeableCells={[{ x: 1, y: 2 }]}
+        placeableCells={[{ x: 1, y: 1 }]}
         effects={[]}
         onCellClick={jest.fn()}
       />
     );
-    expect(screen.getByRole('button', { name: /1,2 設置可 ここに置ける/ })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /2,2 設置可 ここに置ける/ })).toBeNull();
+    expect(screen.getByRole('button', { name: /1,1 設置可 ここに置ける/ })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /2,1 設置可 ここに置ける/ })).toBeNull();
   });
 
   it('セルをクリックすると座標が渡る', () => {
@@ -63,19 +63,19 @@ describe('BoardGrid', () => {
       <BoardGrid
         map={PLAINS_MAP}
         state={emptyState}
-        placeableCells={[{ x: 1, y: 2 }]}
+        placeableCells={[{ x: 1, y: 1 }]}
         effects={[]}
         onCellClick={onCellClick}
       />
     );
-    fireEvent.click(screen.getByRole('button', { name: /1,2 設置可 ここに置ける/ }));
-    expect(onCellClick).toHaveBeenCalledWith({ x: 1, y: 2 });
+    fireEvent.click(screen.getByRole('button', { name: /1,1 設置可 ここに置ける/ }));
+    expect(onCellClick).toHaveBeenCalledWith({ x: 1, y: 1 });
   });
 
   it('設置物がセルに描画される', () => {
     const withTower = {
       ...emptyState,
-      towers: [{ cardId: 'arrow-tower', pos: { x: 1, y: 2 }, cooldownLeft: 0 }],
+      towers: [{ cardId: 'arrow-tower', pos: { x: 1, y: 1 }, cooldownLeft: 0 }],
     };
     render(
       <BoardGrid
@@ -86,15 +86,15 @@ describe('BoardGrid', () => {
         onCellClick={jest.fn()}
       />
     );
-    expect(screen.getByRole('button', { name: /1,2 設置可 塔/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /1,1 設置可 塔/ })).toBeInTheDocument();
   });
 
   it('敵は種別と体数が読めるマーカーとして描画される', () => {
     const withEnemies = {
       ...emptyState,
       enemies: [
-        { id: 1, enemyId: 'swarm', hp: 8, maxHp: 8, progress: 1, spawnTick: 0, spawnPathIndex: 0, alive: true, leaked: false, groundedUntilTick: 0, stunnedUntilTick: 0 },
-        { id: 2, enemyId: 'swarm', hp: 8, maxHp: 8, progress: 1.2, spawnTick: 0, spawnPathIndex: 0, alive: true, leaked: false, groundedUntilTick: 0, stunnedUntilTick: 0 },
+        { id: 1, enemyId: 'swarm', hp: 8, maxHp: 8, progress: 1, spawnTick: 0, laneIndex: 0, alive: true, leaked: false, groundedUntilTick: 0, stunnedUntilTick: 0 },
+        { id: 2, enemyId: 'swarm', hp: 8, maxHp: 8, progress: 1.2, spawnTick: 0, laneIndex: 0, alive: true, leaked: false, groundedUntilTick: 0, stunnedUntilTick: 0 },
       ],
     };
     render(

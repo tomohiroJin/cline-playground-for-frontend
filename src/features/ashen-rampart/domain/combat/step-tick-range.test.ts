@@ -20,7 +20,7 @@ const dummyTarget: ActiveEnemy = {
   maxHp: 20,
   progress: 0,
   spawnTick: 0,
-  spawnPathIndex: 0,
+  laneIndex: 0,
   alive: true,
   leaked: false,
   groundedUntilTick: 0,

@@ -20,8 +20,8 @@ export interface WaveEntry {
   count: number;
   /** 同一エントリ内のスポーン間隔（tick） */
   spawnIntervalTicks: number;
-  /** 出現する経路 index。0 = 入口、5 = 中盤（鴉のみ） */
-  spawnPathIndex: number;
+  /** どのレーンに出すか。0 = 北（短い）、1 = 南（長い） */
+  laneIndex: number;
 }
 
 export interface WaveDefinition {
@@ -34,14 +34,14 @@ export const PLAINS_WAVES: readonly WaveDefinition[] = [
   // ウェーブ1: 雑兵の小隊
   {
     startTick: 0,
-    entries: [{ enemyId: 'grunt', count: 3, spawnIntervalTicks: 8, spawnPathIndex: 0 }],
+    entries: [{ enemyId: 'grunt', count: 3, spawnIntervalTicks: 8, laneIndex: 0 }],
   },
   // ウェーブ2: 雑兵＋俊足（テンポ要求）
   {
     startTick: 250,
     entries: [
-      { enemyId: 'grunt', count: 3, spawnIntervalTicks: 8, spawnPathIndex: 0 },
-      { enemyId: 'runner', count: 2, spawnIntervalTicks: 6, spawnPathIndex: 0 },
+      { enemyId: 'grunt', count: 3, spawnIntervalTicks: 8, laneIndex: 0 },
+      { enemyId: 'runner', count: 2, spawnIntervalTicks: 6, laneIndex: 0 },
     ],
   },
   // ウェーブ3: 群れの大量投入（範囲要求）
@@ -53,22 +53,26 @@ export const PLAINS_WAVES: readonly WaveDefinition[] = [
       // いずれ倒し切れてしまうため（8体・間隔3では life9残しで楽勝できていた＝範囲要求が
       // 実質何も拘束していなかった）。22体・間隔1でも「必ず負ける」までは達しておらず、
       // 範囲なしの合法デッキは 6/20 で勝つ（対して全要求充足デッキは 14/20）。難度較正では動かさない。
-      { enemyId: 'swarm', count: 22, spawnIntervalTicks: 1, spawnPathIndex: 0 },
-      { enemyId: 'grunt', count: 4, spawnIntervalTicks: 8, spawnPathIndex: 0 },
+      { enemyId: 'swarm', count: 22, spawnIntervalTicks: 1, laneIndex: 0 },
+      { enemyId: 'grunt', count: 4, spawnIntervalTicks: 8, laneIndex: 0 },
     ],
   },
-  // ウェーブ4: 重装＋鴉（属性・位置要求）
+  // ウェーブ4: 重装＋鴉（属性要求。位置要求は Task 2 でスポーン位置を入口へ戻したため消滅）
   {
     startTick: 750,
     entries: [
-      { enemyId: 'brute', count: 1, spawnIntervalTicks: 15, spawnPathIndex: 0 },
+      { enemyId: 'brute', count: 1, spawnIntervalTicks: 15, laneIndex: 0 },
       // 鴉は「対空を無視すると必ず負ける」を数学的に保証する数（3→10→13、Task 9 レビュー是正）。
       // LIFE_INITIAL(12) を上回る13体なので、全数漏らすと -13 ライフとなり必ず0を下回る。
       // 「本当に鴉の漏れが敗因になっているか」は balance.test.ts の鴉単体ウェーブによる
       // 直接検証で別途確認している（このコメントの数値だけでは間接的な保証に留まるため）。
       // 難度較正では動かさない。
-      { enemyId: 'raven', count: 13, spawnIntervalTicks: 10, spawnPathIndex: 5 },
-      { enemyId: 'grunt', count: 3, spawnIntervalTicks: 8, spawnPathIndex: 0 },
+      // ウェーブ4 の鴉。laneIndex を持つ形になり、経路中盤からの出現は無くなる
+      // （フィードバック#4: 中盤スポーンは1マス幅の経路で守り手1体が全レーンを
+      // 塞げてしまう問題とは別に、そもそも「経路のどこからともなく敵が湧く」
+      // という不自然さの温床だった。以後は全ての敵が入口から進軍する）。
+      { enemyId: 'raven', count: 13, spawnIntervalTicks: 10, laneIndex: 0 },
+      { enemyId: 'grunt', count: 3, spawnIntervalTicks: 8, laneIndex: 0 },
     ],
   },
 ];

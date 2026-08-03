@@ -26,7 +26,7 @@ const withEnemyAt = (state: CombatState, progress: number): CombatState => ({
       maxHp: 60,
       progress,
       spawnTick: 0,
-      spawnPathIndex: 0,
+      laneIndex: 0,
       alive: true,
       leaked: false,
       groundedUntilTick: 0,
@@ -38,7 +38,7 @@ const withEnemyAt = (state: CombatState, progress: number): CombatState => ({
 describe('支援塔の貢献計測', () => {
   it('篝火が隣接していないとき auraDamageBonus は 0 になる', () => {
     const state = withEnemyAt(
-      { ...baseState(), towers: [{ cardId: 'arrow-tower', pos: { x: 1, y: 2 }, cooldownLeft: 0 }] },
+      { ...baseState(), towers: [{ cardId: 'arrow-tower', pos: { x: 1, y: 1 }, cooldownLeft: 0 }] },
       1
     );
     const shot = stepTick(state, [], PLAINS_MAP).events.find((e) => e.kind === 'shot');
@@ -51,8 +51,8 @@ describe('支援塔の貢献計測', () => {
       {
         ...baseState(),
         towers: [
-          { cardId: 'arrow-tower', pos: { x: 1, y: 2 }, cooldownLeft: 0 },
-          { cardId: 'beacon', pos: { x: 2, y: 2 }, cooldownLeft: 0 },
+          { cardId: 'arrow-tower', pos: { x: 1, y: 1 }, cooldownLeft: 0 },
+          { cardId: 'beacon', pos: { x: 2, y: 1 }, cooldownLeft: 0 },
         ],
       },
       1
@@ -63,15 +63,15 @@ describe('支援塔の貢献計測', () => {
 
   it('鍛冶場が無ければ届かない距離の射撃は beyondBaseRange が true になる', () => {
     // 弓兵の素の射程は 1.6。鍛冶場 +0.6 で 2.2 になる。
-    // 塔 (1,2) から経路 (3,3) までの距離は hypot(2,1)=2.236 > 2.2 なので、
-    // 距離 1.887 になる (3,3) 手前の位置を狙わせる（progress 2.6 → x=2.6, y=3、
+    // 塔 (1,1) から経路 (3,2) までの距離は hypot(2,1)=2.236 > 2.2 なので、
+    // 距離 1.887 になる (3,2) 手前の位置を狙わせる（progress 2.6 → x=2.6, y=2、
     // 塔からの距離は hypot(1.6, 1)=1.887）。1.6 < 1.887 < 2.2 を満たす。
     const state = withEnemyAt(
       {
         ...baseState(),
         towers: [
-          { cardId: 'arrow-tower', pos: { x: 1, y: 2 }, cooldownLeft: 0 },
-          { cardId: 'forge', pos: { x: 2, y: 2 }, cooldownLeft: 0 },
+          { cardId: 'arrow-tower', pos: { x: 1, y: 1 }, cooldownLeft: 0 },
+          { cardId: 'forge', pos: { x: 2, y: 1 }, cooldownLeft: 0 },
         ],
       },
       2.6
@@ -85,8 +85,8 @@ describe('支援塔の貢献計測', () => {
       {
         ...baseState(),
         towers: [
-          { cardId: 'arrow-tower', pos: { x: 1, y: 2 }, cooldownLeft: 0 },
-          { cardId: 'forge', pos: { x: 2, y: 2 }, cooldownLeft: 0 },
+          { cardId: 'arrow-tower', pos: { x: 1, y: 1 }, cooldownLeft: 0 },
+          { cardId: 'forge', pos: { x: 2, y: 1 }, cooldownLeft: 0 },
         ],
       },
       1

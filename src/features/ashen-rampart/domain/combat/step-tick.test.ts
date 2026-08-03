@@ -13,7 +13,7 @@ const emptyDeck = { drawPile: [], hand: [], graveyard: [] };
 
 /** 雑兵1体だけの最小ウェーブ */
 const oneGrunt: WaveDefinition[] = [
-  { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, spawnPathIndex: 0 }] },
+  { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, laneIndex: 0 }] },
 ];
 
 /** n tick 進める */
@@ -59,10 +59,15 @@ describe('敵の出現と移動', () => {
     expect(enemy?.progress).toBeCloseTo(1.0, 5);
   });
 
-  it('滞留セルでは移動が遅くなる', () => {
-    const state = createCombatState(emptyDeck, oneGrunt);
-    // 経路 index 4 (4,3) が滞留セル。到達までに 40tick 強かかる（カウントダウンぶん加算）
-    const before = advance(state, COUNTDOWN_TICKS + 41);
+  it('滞留セルでは移動が遅くなる（南レーンの滞留セル）', () => {
+    // 滞留セルは南レーン専用（2レーン化・設計書 §5.2）。北レーンでは検証できない
+    const southGrunt: WaveDefinition[] = [
+      { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, laneIndex: 1 }] },
+    ];
+    const state = createCombatState(emptyDeck, southGrunt);
+    // 南レーンの滞留セルは index 5,6。境界ちょうど（progress=5.0）は浮動小数の丸めで
+    // floor が前後にぶれうるため、余裕を持って index 5 の内側（progress≈5.5）まで進める
+    const before = advance(state, COUNTDOWN_TICKS + 56);
     const after = stepTick(before, [], PLAINS_MAP);
     const delta = (after.enemies[0]?.progress ?? 0) - (before.enemies[0]?.progress ?? 0);
     expect(delta).toBeCloseTo(0.06, 5);
@@ -70,7 +75,7 @@ describe('敵の出現と移動', () => {
 
   it('ウェーブの開始 tick まで敵は出ない', () => {
     const late: WaveDefinition[] = [
-      { startTick: 100, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, spawnPathIndex: 0 }] },
+      { startTick: 100, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, laneIndex: 0 }] },
     ];
     const state = createCombatState(emptyDeck, late);
     // startTick も COUNTDOWN_TICKS ぶんずれるため、境界を +COUNTDOWN_TICKS する
@@ -78,19 +83,19 @@ describe('敵の出現と移動', () => {
     expect(advance(state, 101 + COUNTDOWN_TICKS).enemies.filter((e) => e.alive)).toHaveLength(1);
   });
 
-  it('鴉は経路中盤から出現する', () => {
+  it('鴉も入口から出現する（フィードバック#4: 経路中盤スポーンを廃止）', () => {
     const ravens: WaveDefinition[] = [
-      { startTick: 0, entries: [{ enemyId: 'raven', count: 1, spawnIntervalTicks: 0, spawnPathIndex: 5 }] },
+      { startTick: 0, entries: [{ enemyId: 'raven', count: 1, spawnIntervalTicks: 0, laneIndex: 0 }] },
     ];
     const after = advance(createCombatState(emptyDeck, ravens), COUNTDOWN_TICKS + 1);
-    expect(after.enemies[0]?.progress).toBe(5);
+    expect(after.enemies[0]?.progress).toBe(0);
   });
 });
 
 describe('漏れと勝敗', () => {
   it('砦に到達するとライフが1減り leak イベントが出る', () => {
     const state = createCombatState(emptyDeck, oneGrunt);
-    // 経路11セル。滞留3セルぶん遅いので余裕を持って進める（カウントダウンぶん加算）
+    // 北レーンは経路10セル・滞留なし。余裕を持って進める（カウントダウンぶん加算）
     const after = advance(state, 200 + COUNTDOWN_TICKS);
     expect(after.life).toBe(LIFE_INITIAL - 1);
     expect(after.enemies[0]?.leaked).toBe(true);
@@ -103,7 +108,7 @@ describe('漏れと勝敗', () => {
 
   it('ライフが0になると敗北で止まる', () => {
     const many: WaveDefinition[] = [
-      { startTick: 0, entries: [{ enemyId: 'grunt', count: LIFE_INITIAL, spawnIntervalTicks: 1, spawnPathIndex: 0 }] },
+      { startTick: 0, entries: [{ enemyId: 'grunt', count: LIFE_INITIAL, spawnIntervalTicks: 1, laneIndex: 0 }] },
     ];
     const after = advance(createCombatState(emptyDeck, many), 400 + COUNTDOWN_TICKS);
     expect(after.life).toBe(0);

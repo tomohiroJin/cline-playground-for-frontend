@@ -27,7 +27,7 @@ const withDyingEnemy = (state: CombatState, progress: number): CombatState => ({
       maxHp: 20,
       progress,
       spawnTick: 0,
-      spawnPathIndex: 0,
+      laneIndex: 0,
       alive: true,
       leaked: false,
       groundedUntilTick: 0,
@@ -54,7 +54,7 @@ describe('撃破源の帰属', () => {
     const state = withDyingEnemy(
       {
         ...baseState(),
-        traps: [{ cardId: 'spike-trap', pos: { x: 2, y: 3 }, usesLeft: 1, hitEnemyIds: [] }],
+        traps: [{ cardId: 'spike-trap', pos: { x: 2, y: 2 }, usesLeft: 1, hitEnemyIds: [] }],
       },
       1.9
     );

@@ -107,10 +107,10 @@ describe('徴発の選択', () => {
     const readyToPlace: CombatState = { ...opened, placeCooldown: 0 };
     const after = stepTick(
       readyToPlace,
-      [{ kind: 'play-card', handIndex: 0, pos: { x: 1, y: 2 } }],
+      [{ kind: 'play-card', handIndex: 0, pos: { x: 1, y: 1 } }],
       PLAINS_MAP
     );
-    expect(after.events).toContainEqual({ kind: 'played', cardId: 'reactor', pos: { x: 1, y: 2 } });
+    expect(after.events).toContainEqual({ kind: 'played', cardId: 'reactor', pos: { x: 1, y: 1 } });
     expect(after.reactors).toHaveLength(1);
     // 選択待ちは引き続き残る（levy 実装が選択待ち以外のカードを巻き込んでいないことの確認）
     expect(after.levyOptions).toHaveLength(3);

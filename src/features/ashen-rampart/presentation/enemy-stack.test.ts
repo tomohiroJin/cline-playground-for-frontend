@@ -18,7 +18,7 @@ const enemy = (id: number, enemyId: string, progress: number, hp = 8): ActiveEne
   maxHp: hp,
   progress,
   spawnTick: 0,
-  spawnPathIndex: 0,
+  laneIndex: 0,
   alive: true,
   leaked: false,
   groundedUntilTick: 0,

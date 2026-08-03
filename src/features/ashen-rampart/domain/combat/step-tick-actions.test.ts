@@ -23,7 +23,7 @@ const dummyTarget: ActiveEnemy = {
   maxHp: 20,
   progress: 0,
   spawnTick: 0,
-  spawnPathIndex: 0,
+  laneIndex: 0,
   alive: true,
   leaked: false,
   groundedUntilTick: 0,
@@ -40,33 +40,33 @@ describe('canPlaceAt', () => {
   it('塔は設置スロットにだけ置ける', () => {
     const card = getCardDefinition('arrow-tower');
     const empty = stateWithHand([]);
-    expect(canPlaceAt(empty, card, { x: 1, y: 2 }, PLAINS_MAP)).toBe(true);
-    expect(canPlaceAt(empty, card, { x: 1, y: 3 }, PLAINS_MAP)).toBe(false);
+    expect(canPlaceAt(empty, card, { x: 1, y: 1 }, PLAINS_MAP)).toBe(true); // 経路外
+    expect(canPlaceAt(empty, card, { x: 1, y: 2 }, PLAINS_MAP)).toBe(false); // 経路上
   });
 
   it('罠は経路にだけ置ける', () => {
     const card = getCardDefinition('spike-trap');
     const empty = stateWithHand([]);
-    expect(canPlaceAt(empty, card, { x: 1, y: 3 }, PLAINS_MAP)).toBe(true);
-    expect(canPlaceAt(empty, card, { x: 1, y: 2 }, PLAINS_MAP)).toBe(false);
+    expect(canPlaceAt(empty, card, { x: 1, y: 2 }, PLAINS_MAP)).toBe(true); // 経路上
+    expect(canPlaceAt(empty, card, { x: 1, y: 1 }, PLAINS_MAP)).toBe(false); // 経路外
   });
 
   it('埋まっているスロットには置けない', () => {
     const card = getCardDefinition('arrow-tower');
     const occupied: CombatState = {
       ...stateWithHand([]),
-      towers: [{ cardId: 'arrow-tower', pos: { x: 1, y: 2 }, cooldownLeft: 0 }],
+      towers: [{ cardId: 'arrow-tower', pos: { x: 1, y: 1 }, cooldownLeft: 0 }],
     };
-    expect(canPlaceAt(occupied, card, { x: 1, y: 2 }, PLAINS_MAP)).toBe(false);
+    expect(canPlaceAt(occupied, card, { x: 1, y: 1 }, PLAINS_MAP)).toBe(false);
   });
 
   it('魔力炉も燠火もスロットを消費する', () => {
     const empty = stateWithHand([]);
     const occupied: CombatState = {
       ...empty,
-      reactors: [{ pos: { x: 1, y: 2 }, ticksToMana: 60 }],
+      reactors: [{ pos: { x: 1, y: 1 }, ticksToMana: 60 }],
     };
-    expect(canPlaceAt(occupied, getCardDefinition('ember-blast'), { x: 1, y: 2 }, PLAINS_MAP)).toBe(
+    expect(canPlaceAt(occupied, getCardDefinition('ember-blast'), { x: 1, y: 1 }, PLAINS_MAP)).toBe(
       false
     );
   });
@@ -75,7 +75,7 @@ describe('canPlaceAt', () => {
 describe('カード配置', () => {
   it('塔を置くとマナが減り手札から墓地へ移る', () => {
     const state = stateWithHand(['arrow-tower']);
-    const after = play(state, 0, { x: 1, y: 2 });
+    const after = play(state, 0, { x: 1, y: 1 });
     expect(after.towers).toHaveLength(1);
     expect(after.mana).toBe(MANA_INITIAL - 2);
     expect(after.deck.hand).toEqual([]);
@@ -84,23 +84,23 @@ describe('カード配置', () => {
 
   it('配置クールダウンが立ち、次の tick では置けない', () => {
     const state = stateWithHand(['arrow-tower', 'spike-trap']);
-    const first = play(state, 0, { x: 1, y: 2 });
+    const first = play(state, 0, { x: 1, y: 1 });
     expect(first.placeCooldown).toBe(PLACE_COOLDOWN_TICKS);
-    const second = play(first, 0, { x: 1, y: 3 });
+    const second = play(first, 0, { x: 1, y: 2 });
     expect(second.traps).toHaveLength(0);
     expect(second.events).toContainEqual({ kind: 'rejected', reason: 'cooldown' });
   });
 
   it('マナが足りなければ置けない', () => {
     const state = stateWithHand(['ballista']); // コスト3、初期マナ2
-    const after = play(state, 0, { x: 1, y: 2 });
+    const after = play(state, 0, { x: 1, y: 1 });
     expect(after.towers).toHaveLength(0);
     expect(after.events).toContainEqual({ kind: 'rejected', reason: 'mana' });
   });
 
   it('魔力炉はコスト0なのでマナ0でも置ける', () => {
     const state: CombatState = { ...stateWithHand(['reactor']), mana: 0 };
-    const after = play(state, 0, { x: 1, y: 2 });
+    const after = play(state, 0, { x: 1, y: 1 });
     expect(after.reactors).toHaveLength(1);
   });
 
@@ -110,7 +110,7 @@ describe('カード配置', () => {
     const manaPerTick = reactorSpec?.manaPerTick ?? 1;
     let state: CombatState = {
       ...stateWithHand([]),
-      reactors: [{ pos: { x: 1, y: 2 }, ticksToMana: intervalTicks }],
+      reactors: [{ pos: { x: 1, y: 1 }, ticksToMana: intervalTicks }],
     };
     const manaBefore = state.mana;
     for (let i = 0; i < intervalTicks; i++) {
@@ -121,9 +121,10 @@ describe('カード配置', () => {
 
   it('置けない場所を指定すると拒否される', () => {
     // 反復3 で設置スロットの規則（buildSlots）を廃止し「経路外なら置ける」に変えたため、
-    // 経路外の (0,0) はもう拒否されない。塔（slot 種別）が拒否されるのは経路セルのみ
+    // 経路外はもう拒否されない。塔（slot 種別）が拒否されるのは経路セルのみ。
+    // (0,2) は北レーンの入口（経路セル）
     const state = stateWithHand(['arrow-tower']);
-    const after = play(state, 0, { x: 0, y: 3 });
+    const after = play(state, 0, { x: 0, y: 2 });
     expect(after.towers).toHaveLength(0);
     expect(after.events).toContainEqual({ kind: 'rejected', reason: 'target' });
   });
@@ -141,7 +142,7 @@ describe('カード配置', () => {
 
   it('時泥の減速倍率が実際の敵移動に適用される（指摘5の回帰: 以前は 0.6 固定で card-pool を読んでいなかった）', () => {
     const wave: WaveDefinition[] = [
-      { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, spawnPathIndex: 0 }] },
+      { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, laneIndex: 0 }] },
     ];
     let state = createCombatState({ drawPile: [], hand: ['mud-time'], graveyard: [] }, wave);
     // ウェーブの startTick が COUNTDOWN_TICKS ぶんずれるため、出現まで空 tick を進める
@@ -160,25 +161,26 @@ describe('カード配置', () => {
 
   it('業火は即座にダメージを与え燠火として残る', () => {
     const wave: WaveDefinition[] = [
-      { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, spawnPathIndex: 0 }] },
+      { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, laneIndex: 0 }] },
     ];
     let state = createCombatState({ drawPile: [], hand: ['ember-blast'], graveyard: [] }, wave);
     // ウェーブの startTick が COUNTDOWN_TICKS ぶんずれるため、出現まで進める
     for (let i = 0; i < COUNTDOWN_TICKS + 1; i++) state = stepTick(state, [], PLAINS_MAP); // 敵を出現させる
-    const after = stepTick(state, [{ kind: 'play-card', handIndex: 0, pos: { x: 1, y: 2 } }], PLAINS_MAP);
+    // 業火は設置スロット（経路外）にしか置けないため (1,1) に配置する
+    const after = stepTick(state, [{ kind: 'play-card', handIndex: 0, pos: { x: 1, y: 1 } }], PLAINS_MAP);
     expect(after.embers).toHaveLength(1);
     expect(after.enemies[0]?.hp).toBe(12); // 20 - 8
   });
 
   it('同tickに配置した塔が、その tick に射程内の敵へダメージを与える', () => {
-    // 敵は入口の次のセル (1,3) に出現させ、塔 (1,2) から距離1で射程1.6内に収める
+    // 敵は入口 (0,2) に出現する。塔 (0,1) から距離1で射程1.6内に収める
     const wave: WaveDefinition[] = [
-      { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, spawnPathIndex: 1 }] },
+      { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, laneIndex: 0 }] },
     ];
     let state = createCombatState({ drawPile: [], hand: ['arrow-tower'], graveyard: [] }, wave);
     // ウェーブの startTick が COUNTDOWN_TICKS ぶんずれるため、出現 tick と play tick を合わせる
     for (let i = 0; i < COUNTDOWN_TICKS; i++) state = stepTick(state, [], PLAINS_MAP);
-    const after = play(state, 0, { x: 1, y: 2 });
+    const after = play(state, 0, { x: 0, y: 1 });
     const enemy = after.enemies[0];
     expect(enemy).toBeDefined();
     expect(enemy?.hp).toBe(14); // 20 - 6（配置と同じ tick で射撃が発生する）
@@ -186,16 +188,16 @@ describe('カード配置', () => {
 
   it('同tickに配置した篝火のオーラが既存の隣接塔に同tickで乗り、二重計上しない', () => {
     const wave: WaveDefinition[] = [
-      { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, spawnPathIndex: 1 }] },
+      { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, laneIndex: 0 }] },
     ];
-    const existingTower: PlacedTower = { cardId: 'arrow-tower', pos: { x: 1, y: 2 }, cooldownLeft: 0 };
+    const existingTower: PlacedTower = { cardId: 'arrow-tower', pos: { x: 0, y: 1 }, cooldownLeft: 0 };
     let state: CombatState = {
       ...createCombatState({ drawPile: [], hand: ['beacon'], graveyard: [] }, wave),
       towers: [existingTower],
     };
     // ウェーブの startTick が COUNTDOWN_TICKS ぶんずれるため、出現 tick と play tick を合わせる
     for (let i = 0; i < COUNTDOWN_TICKS; i++) state = stepTick(state, [], PLAINS_MAP);
-    const after = play(state, 0, { x: 2, y: 2 }); // 篝火を隣接スロットに配置
+    const after = play(state, 0, { x: 1, y: 1 }); // 篝火を隣接スロットに配置
     expect(after.towers).toHaveLength(2);
     const enemy = after.enemies[0];
     expect(enemy).toBeDefined();
@@ -217,7 +219,7 @@ describe('燠火の再点火', () => {
 
   it('クールダウン0なら点火でき、マナも配置クールダウンも消費しない', () => {
     const wave: WaveDefinition[] = [
-      { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, spawnPathIndex: 0 }] },
+      { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, laneIndex: 0 }] },
     ];
     let state = createCombatState({ drawPile: [], hand: [], graveyard: [] }, wave);
     state = { ...stepTick(state, [], PLAINS_MAP), embers: [{ pos: { x: 1, y: 2 }, cooldownLeft: 0 }] };

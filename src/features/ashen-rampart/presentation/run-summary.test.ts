@@ -74,8 +74,9 @@ describe('accumulateTick', () => {
     });
     const tally = accumulateTick(emptyTally(), prev, state, PLAINS_MAP);
     // 反復3 で設置スロットの規則（buildSlots）を廃止し「経路外なら置ける」に変えたため、
-    // 候補は経路11マスを除く全マス（9×7=63 - 11 = 52）になる
-    expect(tally.placeableCounts).toEqual([52]);
+    // 候補は経路セルを除く全マスになる。2レーン化（Task 2）で経路セルは
+    // 北10＋南12－共有の砦1＝21マスになったため、9×7=63 - 21 = 42
+    expect(tally.placeableCounts).toEqual([42]);
   });
 
   it('魔力炉の初号機が置かれた tick を記録する', () => {
