@@ -10,14 +10,14 @@ import { LevyChoice } from './LevyChoice';
 describe('LevyChoice', () => {
   it('候補が名前とコスト付きで並ぶ', () => {
     render(<LevyChoice options={['arrow-tower', 'ballista']} onChoose={jest.fn()} />);
-    expect(screen.getByRole('button', { name: /弓兵の塔 コスト2/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /弩砲 コスト3/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /弓兵 コスト1/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /弩砲 コスト2/ })).toBeInTheDocument();
   });
 
   it('選ぶと index が渡る', () => {
     const onChoose = jest.fn();
     render(<LevyChoice options={['arrow-tower', 'ballista']} onChoose={onChoose} />);
-    fireEvent.click(screen.getByRole('button', { name: /弩砲 コスト3/ }));
+    fireEvent.click(screen.getByRole('button', { name: /弩砲 コスト2/ }));
     expect(onChoose).toHaveBeenCalledWith(1);
   });
 

@@ -49,7 +49,7 @@ describe('支援守り手の貢献計測', () => {
   });
 
   it('篝火が隣接するとき auraDamageBonus に増加分が入る', () => {
-    // 弓兵 damage 6 / 篝火 +25% → 実効 round(6 * 1.25) = 8。増加分は 2
+    // 弓兵 damage 4 / 篝火 +25% → 実効 round(4 * 1.25) = 5。増加分は 1
     const state = withEnemyAt(
       {
         ...baseState(),
@@ -61,7 +61,7 @@ describe('支援守り手の貢献計測', () => {
       1
     );
     const shot = stepTick(state, [], PLAINS_MAP).events.find((e) => e.kind === 'shot');
-    expect(shot).toMatchObject({ auraDamageBonus: 2 });
+    expect(shot).toMatchObject({ auraDamageBonus: 1 });
   });
 
   it('鍛冶場が無ければ届かない距離の射撃は beyondBaseRange が true になる', () => {

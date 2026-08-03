@@ -1,12 +1,18 @@
 /**
  * 灰燼の城壁 - カードプール（14種）とプリセットデッキ
  *
- * 数値は設計書 §3.4 / §5 の値をそのまま持つ。攻撃塔5種の DPS/マナ（基礎値）は
- * 弓兵 0.375 > 弩砲 0.278 > 徹甲弩 0.233 > 火砲台 0.222 > 投石機 0.111。
+ * 数値は設計書 §7 の表（コスト帯0〜5・HPと攻撃力の逆相関）の値をそのまま持つ。
+ * 攻撃塔5種の DPS/マナ（基礎値）は
+ * 弓兵 0.500 > 弩砲 0.375 > 徹甲弩 0.292 > 火砲台 0.222 > 投石機 0.120。
  * 弓兵が単体効率で最高だが飛行に当たらず、徹甲弩は最大HP40以上の敵に限り
- * 0.467 と弓兵を上回る。つまり効率の順位が敵によって入れ替わるため、
- * 同名3枚上限と併せて単一の支配戦略が成立しない（設計書 §3.4 / §7）。
- * 篝火・鍛冶場は攻撃せず（0ダメージ）、隣接塔を強化するだけのオーラ札。
+ * 0.583 と弓兵を上回る。つまり効率の順位が敵によって入れ替わるため、
+ * 同名3枚上限と併せて単一の支配戦略が成立しない（設計書 §7）。
+ * 篝火・鍛冶場は攻撃せず（0ダメージ）、隣接する守り手を強化するだけのオーラ札。
+ *
+ * 徹甲弩の「最大HP40以上に2倍」を貫通（一直線上の敵すべてに命中）へ置き換えるのと、
+ * 石壁を type: 'trap' から守り手（type: 'tower'）へ変えるのは Task 10 の担当。
+ * ここでは両カードともコスト・HP等の数値面（石壁は現状維持、徹甲弩はコスト4・HP14）
+ * だけを扱い、メカニクス自体には触れない（設計書 §7.4 / §7.6）。
  */
 import type { CardDefinition } from './card-definition';
 
@@ -28,21 +34,19 @@ const CARDS: readonly CardDefinition[] = [
   },
   {
     id: 'arrow-tower',
-    name: '弓兵の塔',
+    name: '弓兵',
     type: 'tower',
-    cost: 2,
-    description: '単体を速射する。飛行には当たらない。',
-    // 暫定値。Task 9 で設計書 §7 の表に置き換える
-    tower: { hp: 10, range: 1.6, damage: 6, cooldownTicks: 8, splashRadius: 0, hitsFlying: false },
+    cost: 1,
+    description: '単体を速射する。安く、数で押す。飛行には当たらない。',
+    tower: { hp: 8, range: 1.6, damage: 4, cooldownTicks: 8, splashRadius: 0, hitsFlying: false },
   },
   {
     id: 'ballista',
     name: '弩砲',
     type: 'tower',
-    cost: 3,
-    description: '射程が長く、唯一飛行を撃ち落とせる。効率は低い。',
-    // 暫定値。Task 9 で設計書 §7 の表に置き換える
-    tower: { hp: 10, range: 2.2, damage: 10, cooldownTicks: 12, splashRadius: 0, hitsFlying: true },
+    cost: 2,
+    description: '射程が長く、飛行を撃ち落とせる。対空の標準解。',
+    tower: { hp: 12, range: 2.4, damage: 9, cooldownTicks: 12, splashRadius: 0, hitsFlying: true },
   },
   {
     id: 'cannon-tower',
@@ -50,18 +54,16 @@ const CARDS: readonly CardDefinition[] = [
     type: 'tower',
     cost: 3,
     description: '着弾点の周囲にもダメージ。群れに強い。飛行には当たらない。',
-    // 暫定値。Task 9 で設計書 §7 の表に置き換える
-    tower: { hp: 10, range: 1.5, damage: 12, cooldownTicks: 18, splashRadius: 1, hitsFlying: false },
+    tower: { hp: 16, range: 1.5, damage: 12, cooldownTicks: 18, splashRadius: 1, hitsFlying: false },
   },
   {
     id: 'beacon',
     name: '篝火',
     type: 'tower',
     cost: 2,
-    description: '攻撃しないが、隣接する塔の攻撃力を +25% する。',
-    // 暫定値。Task 9 で設計書 §7 の表に置き換える
+    description: '攻撃しないが、隣接する守り手の攻撃力を +25% する。',
     tower: {
-      hp: 10,
+      hp: 8,
       range: 0,
       damage: 0,
       cooldownTicks: 0,
@@ -74,11 +76,10 @@ const CARDS: readonly CardDefinition[] = [
     id: 'forge',
     name: '鍛冶場',
     type: 'tower',
-    cost: 2,
-    description: '攻撃しないが、隣接する塔の射程を +0.6 する。',
-    // 暫定値。Task 9 で設計書 §7 の表に置き換える
+    cost: 1,
+    description: '攻撃しないが、隣接する守り手の射程を +0.6 する。',
     tower: {
-      hp: 10,
+      hp: 8,
       range: 0,
       damage: 0,
       cooldownTicks: 0,
@@ -136,23 +137,24 @@ const CARDS: readonly CardDefinition[] = [
     id: 'catapult',
     name: '投石機',
     type: 'tower',
-    cost: 3,
+    cost: 5,
     description: '遠くまで届き広く砕くが、間隔は長い。飛行には当たらない。',
-    // 暫定値。Task 9 で設計書 §7 の表に置き換える
-    tower: { hp: 10, range: 3.0, damage: 8, cooldownTicks: 24, splashRadius: 2, hitsFlying: false },
+    tower: { hp: 10, range: 3.0, damage: 18, cooldownTicks: 30, splashRadius: 2, hitsFlying: false },
   },
   {
     id: 'piercer',
     name: '徹甲弩',
     type: 'tower',
-    cost: 3,
+    // コスト帯を0〜5に広げる際、設計書 §7 の表で唯一コスト4を占めるのが徹甲弩。
+    // 「最大HP40以上に2倍」の貫通メカニクスへの置き換えは Task 10 の担当のため、
+    // heavyBonusThreshold / heavyBonusMultiplier と説明文はここでは変更しない。
+    cost: 4,
     description: '硬い敵を貫く。最大HP40以上の敵には2倍。飛行も撃てるが雑兵相手は非効率。',
-    // 暫定値。Task 9 で設計書 §7 の表に置き換える
     tower: {
-      hp: 10,
+      hp: 14,
       range: 1.8,
-      damage: 7,
-      cooldownTicks: 10,
+      damage: 14,
+      cooldownTicks: 12,
       splashRadius: 0,
       hitsFlying: true,
       heavyBonusThreshold: 40,

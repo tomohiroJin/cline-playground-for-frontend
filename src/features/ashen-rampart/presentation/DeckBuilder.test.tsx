@@ -44,13 +44,13 @@ describe('DeckBuilder', () => {
 
   it('カードを足すと枚数が増える', () => {
     render(<DeckBuilder onStart={jest.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: '弓兵の塔 を1枚増やす' }));
+    fireEvent.click(screen.getByRole('button', { name: '弓兵 を1枚増やす' }));
     expect(screen.getByText(`1 / ${DECK_SIZE}`)).toBeInTheDocument();
   });
 
   it('同名の上限に達すると増やすボタンが無効になる', () => {
     render(<DeckBuilder onStart={jest.fn()} />);
-    const add = screen.getByRole('button', { name: '弓兵の塔 を1枚増やす' });
+    const add = screen.getByRole('button', { name: '弓兵 を1枚増やす' });
     fireEvent.click(add);
     fireEvent.click(add);
     fireEvent.click(add);
@@ -66,9 +66,9 @@ describe('DeckBuilder', () => {
 
   it('減らすボタンで枚数が減り、0枚では無効', () => {
     render(<DeckBuilder onStart={jest.fn()} />);
-    const remove = screen.getByRole('button', { name: '弓兵の塔 を1枚減らす' });
+    const remove = screen.getByRole('button', { name: '弓兵 を1枚減らす' });
     expect(remove).toBeDisabled();
-    fireEvent.click(screen.getByRole('button', { name: '弓兵の塔 を1枚増やす' }));
+    fireEvent.click(screen.getByRole('button', { name: '弓兵 を1枚増やす' }));
     expect(remove).toBeEnabled();
     fireEvent.click(remove);
     expect(screen.getByText(`0 / ${DECK_SIZE}`)).toBeInTheDocument();
@@ -115,7 +115,7 @@ describe('DeckBuilder', () => {
 
   it('20枚に足りないと理由が表示される', () => {
     render(<DeckBuilder onStart={jest.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: '弓兵の塔 を1枚増やす' }));
+    fireEvent.click(screen.getByRole('button', { name: '弓兵 を1枚増やす' }));
     expect(screen.getByText(/20枚ちょうどにしてください/)).toBeInTheDocument();
   });
 

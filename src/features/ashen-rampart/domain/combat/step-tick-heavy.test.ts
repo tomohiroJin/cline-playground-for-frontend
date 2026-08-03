@@ -35,29 +35,29 @@ const withUnit = (cardId: string, x: number, y: number): CombatState => ({
 describe('徹甲弩の重装特効', () => {
   it('HP40未満の敵には基礎ダメージ', () => {
     const state = withUnit('piercer', 1, 2);
-    expect(effectiveDamage(state, 0, PLAINS_MAP, enemyOf('grunt', 20))).toBe(7);
+    expect(effectiveDamage(state, 0, PLAINS_MAP, enemyOf('grunt', 20))).toBe(14);
   });
 
   it('HP40以上の敵には2倍', () => {
     const state = withUnit('piercer', 1, 2);
-    expect(effectiveDamage(state, 0, PLAINS_MAP, enemyOf('brute', 60))).toBe(14);
+    expect(effectiveDamage(state, 0, PLAINS_MAP, enemyOf('brute', 60))).toBe(28);
   });
 
   it('しきい値ちょうど（40）でも特効が乗る', () => {
     const state = withUnit('piercer', 1, 2);
-    expect(effectiveDamage(state, 0, PLAINS_MAP, enemyOf('grunt', 40))).toBe(14);
+    expect(effectiveDamage(state, 0, PLAINS_MAP, enemyOf('grunt', 40))).toBe(28);
   });
 
   it('現在HPではなく最大HPで判定する（削れても特効は乗り続ける）', () => {
     const state = withUnit('piercer', 1, 2);
     const damaged = { ...enemyOf('brute', 60), hp: 5 };
-    expect(effectiveDamage(state, 0, PLAINS_MAP, damaged)).toBe(14);
+    expect(effectiveDamage(state, 0, PLAINS_MAP, damaged)).toBe(28);
   });
 
   it('特効を持たない守り手は敵のHPで変わらない', () => {
     const state = withUnit('arrow-tower', 1, 2);
-    expect(effectiveDamage(state, 0, PLAINS_MAP, enemyOf('grunt', 20))).toBe(6);
-    expect(effectiveDamage(state, 0, PLAINS_MAP, enemyOf('brute', 60))).toBe(6);
+    expect(effectiveDamage(state, 0, PLAINS_MAP, enemyOf('grunt', 20))).toBe(4);
+    expect(effectiveDamage(state, 0, PLAINS_MAP, enemyOf('brute', 60))).toBe(4);
   });
 
   it('特効と篝火オーラと高台が二重適用されない', () => {
@@ -69,8 +69,8 @@ describe('徹甲弩の重装特効', () => {
         { cardId: 'beacon', pos: { x: 1, y: 3 }, hp: 10, maxHp: 10, cooldownLeft: 0 },
       ],
     };
-    // round(7 * 1.3 * 1.25 * 2) = round(22.75) = 23
-    expect(effectiveDamage(state, 0, PLAINS_MAP, enemyOf('brute', 60))).toBe(23);
+    // round(14 * 1.3 * 1.25 * 2) = round(45.5) = 46
+    expect(effectiveDamage(state, 0, PLAINS_MAP, enemyOf('brute', 60))).toBe(46);
   });
 });
 

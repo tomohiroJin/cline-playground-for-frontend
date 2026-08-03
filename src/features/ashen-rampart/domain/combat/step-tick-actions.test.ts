@@ -126,7 +126,7 @@ describe('カード配置', () => {
     const state = stateWithHand(['arrow-tower']);
     const after = play(state, 0, { x: 1, y: 1 });
     expect(after.units).toHaveLength(1);
-    expect(after.mana).toBe(MANA_INITIAL - 2);
+    expect(after.mana).toBe(MANA_INITIAL - 1);
     expect(after.deck.hand).toEqual([]);
     expect(after.deck.graveyard).toEqual(['arrow-tower']);
   });
@@ -143,7 +143,9 @@ describe('カード配置', () => {
   });
 
   it('マナが足りなければ置けない', () => {
-    const state = stateWithHand(['ballista']); // コスト3、初期マナ2
+    // 弩砲は反復3でコスト2になり初期マナ2ちょうどで置けてしまうため、
+    // コスト3のまま変わらない火砲台に差し替える
+    const state = stateWithHand(['cannon-tower']); // コスト3、初期マナ2
     const after = play(state, 0, { x: 1, y: 1 });
     expect(after.units).toHaveLength(0);
     expect(after.events).toContainEqual({ kind: 'rejected', reason: 'mana' });
@@ -236,7 +238,7 @@ describe('カード配置', () => {
     const after = play(state, 0, { x: 0, y: 1 });
     const enemy = after.enemies[0];
     expect(enemy).toBeDefined();
-    expect(enemy?.hp).toBe(14); // 20 - 6（配置と同じ tick で射撃が発生する）
+    expect(enemy?.hp).toBe(16); // 20 - 4（配置と同じ tick で射撃が発生する）
   });
 
   it('同tickに配置した篝火のオーラが既存の隣接守り手に同tickで乗り、二重計上しない', () => {
@@ -254,9 +256,9 @@ describe('カード配置', () => {
     expect(after.units).toHaveLength(2);
     const enemy = after.enemies[0];
     expect(enemy).toBeDefined();
-    // round(6 × 1.25) = 8 を同 tick で受ける（二重計上なら round(6×1.25×1.25)=9 になるはず）
-    expect(enemy?.hp).toBe(12); // 20 - 8
-    expect(effectiveDamage(after, 0, PLAINS_MAP, dummyTarget)).toBe(8);
+    // round(4 × 1.25) = 5 を同 tick で受ける（二重計上なら round(4×1.25×1.25)=6 になるはず）
+    expect(enemy?.hp).toBe(15); // 20 - 5
+    expect(effectiveDamage(after, 0, PLAINS_MAP, dummyTarget)).toBe(5);
   });
 });
 

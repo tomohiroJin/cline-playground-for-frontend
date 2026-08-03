@@ -19,10 +19,10 @@ describe('カードプール', () => {
     expect(CARD_IDS).toHaveLength(14);
   });
 
-  it('弓兵の塔は地上のみで DPS 0.75 になる数値を持つ', () => {
+  it('弓兵は地上のみで DPS 0.5 になる数値を持つ', () => {
     const card = getCardDefinition('arrow-tower');
-    expect(card.cost).toBe(2);
-    expect(card.tower?.damage).toBe(6);
+    expect(card.cost).toBe(1);
+    expect(card.tower?.damage).toBe(4);
     expect(card.tower?.cooldownTicks).toBe(8);
     expect(card.tower?.hitsFlying).toBe(false);
   });
@@ -77,11 +77,11 @@ describe('反復1で追加したカード', () => {
 
   it('投石機は射程3.0の範囲2で、地上のみ', () => {
     const card = getCardDefinition('catapult');
-    expect(card.cost).toBe(3);
+    expect(card.cost).toBe(5);
     expect(card.tower).toMatchObject({
       range: 3.0,
-      damage: 8,
-      cooldownTicks: 24,
+      damage: 18,
+      cooldownTicks: 30,
       splashRadius: 2,
       hitsFlying: false,
     });
@@ -89,11 +89,11 @@ describe('反復1で追加したカード', () => {
 
   it('徹甲弩は飛行可で、HP40以上に2倍', () => {
     const card = getCardDefinition('piercer');
-    expect(card.cost).toBe(3);
+    expect(card.cost).toBe(4);
     expect(card.tower).toMatchObject({
       range: 1.8,
-      damage: 7,
-      cooldownTicks: 10,
+      damage: 14,
+      cooldownTicks: 12,
       splashRadius: 0,
       hitsFlying: true,
       heavyBonusThreshold: 40,
@@ -122,6 +122,65 @@ describe('反復1で追加したカード', () => {
     CARD_IDS.forEach((id) => {
       expect(['unit', 'reactor', 'path', 'none']).toContain(placementKindOf(getCardDefinition(id)));
     });
+  });
+});
+
+describe('カードの軸（設計書 §7）', () => {
+  const towerOf = (id: string) => getCardDefinition(id).tower;
+
+  it('コスト帯が 0〜5 に広がっている', () => {
+    const costs = new Set(CARD_IDS.map((id) => getCardDefinition(id).cost));
+    [0, 1, 2, 3, 4, 5].forEach((c) => expect(costs.has(c)).toBe(true));
+  });
+
+  it('攻撃する守り手が同じコストに4種以上固まっていない', () => {
+    const attackers = CARD_IDS
+      .map((id) => getCardDefinition(id))
+      .filter((c) => c.tower && c.tower.damage > 0);
+    const byCost = new Map<number, number>();
+    attackers.forEach((c) => byCost.set(c.cost, (byCost.get(c.cost) ?? 0) + 1));
+    byCost.forEach((count) => expect(count).toBeLessThan(4));
+  });
+
+  it('HPと攻撃力が逆相関している（最大HPの守り手と最大攻撃力の守り手は別カード）', () => {
+    // 設計書 §7.2 の並び「石壁60/0 → 火砲台16/12 → …」は、石壁が type: 'trap' から
+    // 守り手（type: 'tower'）へ変わる Task 10 で完成する。Task 9 の時点では
+    // 石壁がこのフィルタに入らないため、最大HPの守り手（火砲台 hp16）は
+    // 攻撃力0ではない。よって「最大HP＝攻撃力0」という強い形ではなく、
+    // 「最大HPの守り手と最大攻撃力の守り手が一致しない（単一支配カードがない）」
+    // という、Task 10 後も成り立つ弱い形で検証する。
+    const units = CARD_IDS
+      .map((id) => getCardDefinition(id))
+      .filter((c) => c.tower !== undefined && c.type === 'tower');
+    const hardest = units.reduce((a, b) => (a.tower!.hp >= b.tower!.hp ? a : b));
+    const strongest = units.reduce((a, b) => (a.tower!.damage >= b.tower!.damage ? a : b));
+    expect(hardest.id).not.toBe(strongest.id);
+    expect(strongest.tower!.hp).toBeLessThan(hardest.tower!.hp);
+  });
+
+  it('対空の税は1マナである（同型の単体守り手で対空の有無だけが違う）', () => {
+    const ground = getCardDefinition('arrow-tower');
+    const air = getCardDefinition('ballista');
+    expect(ground.tower!.hitsFlying).toBe(false);
+    expect(air.tower!.hitsFlying).toBe(true);
+    expect(air.cost - ground.cost).toBe(1);
+  });
+
+  it('すべての守り手がHPを持つ', () => {
+    CARD_IDS.forEach((id) => {
+      const spec = towerOf(id);
+      if (!spec) return;
+      expect(spec.hp).toBeGreaterThan(0);
+    });
+  });
+
+  it('石壁の同名上限は3枚のまま（壁の希少性が本反復の中核）', () => {
+    expect(getCardDefinition('stone-wall').maxCopies ?? 3).toBe(3);
+  });
+
+  it('魔力炉だけが同名上限を持たない', () => {
+    const unlimited = CARD_IDS.filter((id) => (getCardDefinition(id).maxCopies ?? 3) > 3);
+    expect(unlimited).toEqual(['reactor']);
   });
 });
 

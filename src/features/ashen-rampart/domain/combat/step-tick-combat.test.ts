@@ -161,15 +161,15 @@ describe('範囲攻撃', () => {
 describe('篝火のオーラ', () => {
   it('隣接する守り手の攻撃力を +25% する', () => {
     const base = withUnit(createCombatState(emptyDeck, waveOf('grunt')), 'arrow-tower', 1, 1);
-    expect(effectiveDamage(base, 0, PLAINS_MAP, dummyTarget)).toBe(6);
+    expect(effectiveDamage(base, 0, PLAINS_MAP, dummyTarget)).toBe(4);
     const withBeacon = withUnit(base, 'beacon', 2, 1);
-    expect(effectiveDamage(withBeacon, 0, PLAINS_MAP, dummyTarget)).toBe(8); // round(6 * 1.25)
+    expect(effectiveDamage(withBeacon, 0, PLAINS_MAP, dummyTarget)).toBe(5); // round(4 * 1.25)
   });
 
   it('高台の守り手は火力が +30% される', () => {
     // (2,3) は高台
     const high = withUnit(createCombatState(emptyDeck, waveOf('grunt')), 'arrow-tower', 2, 3);
-    expect(effectiveDamage(high, 0, PLAINS_MAP, dummyTarget)).toBe(8); // round(6 * 1.3)
+    expect(effectiveDamage(high, 0, PLAINS_MAP, dummyTarget)).toBe(5); // round(4 * 1.3)
   });
 
   it('篝火自身は攻撃しない', () => {

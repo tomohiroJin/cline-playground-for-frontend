@@ -77,7 +77,7 @@ describe('effectiveRange', () => {
       { cardId: 'arrow-tower', x: 1, y: 2 },
       { cardId: 'forge', x: 2, y: 2 },
     ]);
-    expect(effectiveDamage(state, 0, PLAINS_MAP, dummyTarget)).toBe(6);
+    expect(effectiveDamage(state, 0, PLAINS_MAP, dummyTarget)).toBe(4);
   });
 
   it('オーラの守り手自身の実効射程は 0', () => {

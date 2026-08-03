@@ -9,7 +9,7 @@ import { RunSummary } from './RunSummary';
 import type { RunSummaryView } from './run-summary';
 
 const view = (over: Partial<RunSummaryView> = {}): RunSummaryView => ({
-  defeats: [{ name: '弓兵の塔', count: 12 }],
+  defeats: [{ name: '弓兵', count: 12 }],
   beaconBonusDamage: 0,
   forgeExtendedShots: 0,
   rejectionTotal: 0,
@@ -27,7 +27,7 @@ const view = (over: Partial<RunSummaryView> = {}): RunSummaryView => ({
 describe('RunSummary', () => {
   it('塔別の撃破数を出す', () => {
     render(<RunSummary view={view()} />);
-    expect(screen.getByText(/弓兵の塔/)).toBeInTheDocument();
+    expect(screen.getByText(/弓兵/)).toBeInTheDocument();
     expect(screen.getByText(/12/)).toBeInTheDocument();
   });
 
