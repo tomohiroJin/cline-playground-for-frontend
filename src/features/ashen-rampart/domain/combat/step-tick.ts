@@ -342,10 +342,10 @@ const applyDiscard = (
 /**
  * カード使用操作を適用する（手札・カード種別・マナ・設置可否を順に検査）
  *
- * **配置クールダウンは「盤面に何かを置く札」だけに課す。**
- * 徴発・時泥のような即時札は盤面を占有しないため、配置の間合いに縛る理由がない。
- * 反復1 で徴発が機能しなかったのは、カードを特定する前にクールダウンを
- * 見ていたためであり、バグというより層の取り違えだった。
+ * **配置クールダウンは魔力炉だけに課す。**
+ * 他の札はマナが唯一の律速になる。「マナがあるのに置けない」ことが、
+ * 溜めて一気に置くか少しずつ置くかという戦略の選択を消していたため（反復2 #1）。
+ * 徴発・時泥のような即時札はもともと盤面を占有しないため対象外だった。
  */
 const applyPlayCard = (
   draft: ActionsDraft,
@@ -361,7 +361,8 @@ const applyPlayCard = (
   }
   const card = getCardDefinition(cardId);
   const needsPlacement = placementKindOf(card) !== 'none';
-  if (needsPlacement && draft.placeCooldown > 0) {
+  const usesCooldown = card.type === 'reactor';
+  if (usesCooldown && draft.placeCooldown > 0) {
     draft.events.push({ kind: 'rejected', reason: 'cooldown' });
     return;
   }
@@ -380,7 +381,7 @@ const applyPlayCard = (
   // ここから確定
   draft.mana -= card.cost;
   draft.deck = discardFromHand(draft.deck, action.handIndex);
-  if (needsPlacement) draft.placeCooldown = PLACE_COOLDOWN_TICKS;
+  if (usesCooldown) draft.placeCooldown = PLACE_COOLDOWN_TICKS;
   draft.events.push({ kind: 'played', cardId, pos: action.pos });
   applyCardEffect(draft, card, cardId, action.pos, tick);
 };

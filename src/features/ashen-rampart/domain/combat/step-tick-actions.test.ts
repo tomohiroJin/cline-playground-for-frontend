@@ -8,7 +8,7 @@ import { createCombatState, PLACE_COOLDOWN_TICKS, MANA_INITIAL, COUNTDOWN_TICKS 
 import type { CombatState, PlacedUnit, ActiveEnemy } from './combat-state';
 import { stepTick, canPlaceAt, effectiveDamage } from './step-tick';
 import type { WaveDefinition } from './waves';
-import { PLAINS_MAP } from '../board/stage-map';
+import { PLAINS_MAP, offPathCells } from '../board/stage-map';
 import { getCardDefinition } from '../cards/card-pool';
 import { getEnemySpec } from './enemies';
 import { createDeck } from '../cards/deck';
@@ -82,12 +82,14 @@ describe('カード配置', () => {
     expect(after.deck.graveyard).toEqual(['arrow-tower']);
   });
 
-  it('配置クールダウンが立ち、次の tick では置けない', () => {
-    const state = stateWithHand(['arrow-tower', 'spike-trap']);
+  it('魔力炉の配置クールダウンが立ち、次の tick では別の魔力炉を置けない', () => {
+    // 反復3: 配置クールダウンは魔力炉だけに課す（他の札はマナが唯一の律速）。
+    // このテストはクールダウンそのものの検証なので、対象を魔力炉に絞る。
+    const state = stateWithHand(['reactor', 'reactor']);
     const first = play(state, 0, { x: 1, y: 1 });
     expect(first.placeCooldown).toBe(PLACE_COOLDOWN_TICKS);
     const second = play(first, 0, { x: 1, y: 2 });
-    expect(second.traps).toHaveLength(0);
+    expect(second.reactors).toHaveLength(1);
     expect(second.events).toContainEqual({ kind: 'rejected', reason: 'cooldown' });
   });
 
@@ -204,6 +206,33 @@ describe('カード配置', () => {
     // round(6 × 1.25) = 8 を同 tick で受ける（二重計上なら round(6×1.25×1.25)=9 になるはず）
     expect(enemy?.hp).toBe(12); // 20 - 8
     expect(effectiveDamage(after, 0, PLAINS_MAP, dummyTarget)).toBe(8);
+  });
+});
+
+describe('配置クールダウンは魔力炉のみ', () => {
+  // ブリーフ原文は createCombatState(deck, []) だが、waves を空配列にすると
+  // isCleared が tick=1 で真になり outcome が 'won' に変わってしまい、
+  // 2回目の stepTick が「outcome !== 'playing' なら何もしない」の早期 return で
+  // 無視される（このファイルの他のテストが軒並み noWave を使っているのはこのため）。
+  // クールダウンの検証とは無関係な副作用なので、noWave に差し替える。
+  it('守り手は同じ tick に複数置ける（マナがある限り）', () => {
+    const deck = createDeck(['arrow-tower', 'arrow-tower'], () => 0);
+    let state = { ...createCombatState(deck, noWave), mana: 10 };
+    const [a, b] = offPathCells(PLAINS_MAP);
+    state = stepTick(state, [{ kind: 'play-card', handIndex: 0, pos: a! }], PLAINS_MAP);
+    state = stepTick(state, [{ kind: 'play-card', handIndex: 0, pos: b! }], PLAINS_MAP);
+    expect(state.units).toHaveLength(2);
+  });
+
+  it('魔力炉には引き続きクールダウンが課される', () => {
+    const deck = createDeck(['reactor', 'reactor'], () => 0);
+    let state = { ...createCombatState(deck, noWave), mana: 10 };
+    const [a, b] = offPathCells(PLAINS_MAP);
+    state = stepTick(state, [{ kind: 'play-card', handIndex: 0, pos: a! }], PLAINS_MAP);
+    expect(state.placeCooldown).toBeGreaterThan(0);
+    state = stepTick(state, [{ kind: 'play-card', handIndex: 0, pos: b! }], PLAINS_MAP);
+    expect(state.reactors).toHaveLength(1);
+    expect(state.events.some((e) => e.kind === 'rejected' && e.reason === 'cooldown')).toBe(true);
   });
 });
 

@@ -61,13 +61,13 @@ export const greedyStrategy: Strategy = (state, map) => {
   if (state.levyOptions.length > 0) {
     actions.push({ kind: 'choose-levy', optionIndex: 0 });
   }
-  if (state.placeCooldown > 0) return actions;
-
   for (let handIndex = 0; handIndex < state.deck.hand.length; handIndex++) {
     const cardId = state.deck.hand[handIndex];
     if (cardId === undefined) continue;
     const card = getCardDefinition(cardId);
     if (card.cost > state.mana) continue;
+    // 魔力炉はクールダウン中なら飛ばす。他の札はマナが唯一の律速で妨げられない
+    if (card.type === 'reactor' && state.placeCooldown > 0) continue;
     const kind = placementKindOf(card);
     if (kind === 'none') {
       actions.push({ kind: 'play-card', handIndex });
