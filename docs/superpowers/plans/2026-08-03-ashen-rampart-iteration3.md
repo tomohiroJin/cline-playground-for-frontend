@@ -1952,15 +1952,42 @@ const applyPiercingDamage = (
 
 **`stunnedUntilTick` を消す。** `isEnemyStunned` と `enemy-status.test.ts` の該当テストも消す。
 
-- [ ] **Step 6: テストが通ることを確認する**
+- [ ] **Step 6: 軸テストの逆相関アサーションを強い形に戻す**
+
+**Task 9 で弱められたテストを、ここで元の強さに戻す。**
+
+Task 9 の時点では石壁がまだ `type: 'trap'` だったため、「最も硬い守り手の攻撃力は0」というアサーションが数学的に成立せず、「最大HPの守り手と最大攻撃力の守り手が別のカードである」という弱い形に書き直されていた。**これは「単一支配カードが存在しない」という別の性質のテストであって、HPと攻撃力の逆相関を検証していない。**
+
+石壁が守り手（HP60・攻撃0）になった今、強い形が成立する。`card-pool.test.ts` の該当テストを差し戻す。
+
+```ts
+  it('HPと攻撃力が逆相関している（硬いものほど攻撃力が低い）', () => {
+    const units = CARD_IDS
+      .map((id) => getCardDefinition(id))
+      .filter((c) => c.tower !== undefined && c.type === 'tower');
+    const hardest = units.reduce((a, b) => (a.tower!.hp >= b.tower!.hp ? a : b));
+    const strongest = units.reduce((a, b) => (a.tower!.damage >= b.tower!.damage ? a : b));
+    // 最も硬い守り手（石壁 HP60）は攻撃しない
+    expect(hardest.tower!.damage).toBe(0);
+    // 最も火力の高い守り手（投石機）は最も硬い守り手より脆い
+    expect(strongest.tower!.hp).toBeLessThan(hardest.tower!.hp);
+  });
+```
+
+Task 9 が残した「弱い形である理由」のコメントも削除する。**残すと、なぜ弱いのかを説明したまま強い形になっている矛盾したコメントになる。**
+
+- [ ] **Step 7: テストが通ることを確認する**
 
 Run: `npx jest src/features/ashen-rampart/domain/combat/step-tick-piercing.test.ts`
 Expected: PASS（2件）
 
+Run: `npx jest src/features/ashen-rampart/domain/cards/card-pool.test.ts -t "HPと攻撃力"`
+Expected: PASS（強い形で通ること）
+
 Run: `npx jest src/features/ashen-rampart`
 Expected: `balance.test.ts`（skip 中）以外は全緑
 
-- [ ] **Step 7: コミット**
+- [ ] **Step 8: コミット**
 
 ```bash
 git add -A src/features/ashen-rampart
