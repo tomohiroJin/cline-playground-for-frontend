@@ -5,7 +5,7 @@
  * 消える。受け取った tick のうちに座標へ解決してスナップショットしないと
  * 二度と描けない。この関数はその変換と寿命管理だけを担う。
  */
-import { PLAINS_MAP } from '../domain/board/stage-map';
+import { PLAINS_MAP, laneOf } from '../domain/board/stage-map';
 import { createDeck } from '../domain/cards/deck';
 import { createCombatState, type CombatState } from '../domain/combat/combat-state';
 import type { WaveDefinition } from '../domain/combat/waves';
@@ -26,14 +26,14 @@ const stateWith = (tick: number, events: CombatState['events'], extra: Partial<C
   ...extra,
 });
 
-const enemyAt = (id: number, progress: number) => ({
+const enemyAt = (id: number, progress: number, laneIndex = 0) => ({
   id,
   enemyId: 'grunt',
   hp: 10,
   maxHp: 20,
   progress,
   spawnTick: 0,
-  laneIndex: 0,
+  laneIndex,
   alive: true,
   leaked: false,
   groundedUntilTick: 0,
@@ -58,6 +58,21 @@ describe('advanceEffects', () => {
       to: { x: 1, y: 2 },
       untilTick: 10 + EFFECT_LIFETIME.shot,
     });
+  });
+
+  it('南レーンの敵への shot は南レーンの座標に変換する（レビュー指摘: 北レーン固定で解決していた回帰）', () => {
+    const southCell = laneOf(PLAINS_MAP, 1)[1];
+    expect(southCell).toBeDefined();
+    const state = stateWith(
+      10,
+      [{ kind: 'shot', towerIndex: 0, targetId: 1, auraDamageBonus: 0, beyondBaseRange: false }],
+      {
+        towers: [{ cardId: 'arrow-tower', pos: { x: 1, y: 2 }, cooldownLeft: 0 }],
+        enemies: [enemyAt(1, 1, 1)],
+      }
+    );
+    const effects = advanceEffects([], state, PLAINS_MAP);
+    expect(effects[0]).toMatchObject({ kind: 'shot', to: southCell });
   });
 
   it('寿命が切れた tick でエフェクトが消える', () => {

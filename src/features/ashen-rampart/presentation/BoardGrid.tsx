@@ -8,7 +8,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import type { CellPos, StageMap } from '../domain/board/stage-map';
-import { isHighGround, isSlowCell, laneOf, isPathCell, offPathCells } from '../domain/board/stage-map';
+import { isHighGround, isSlowCell, isPathCell, offPathCells } from '../domain/board/stage-map';
 import type { CombatState } from '../domain/combat/combat-state';
 import { stackEnemies } from './enemy-stack';
 import { EnemyMarker } from './EnemyMarker';
@@ -90,7 +90,8 @@ export const BoardGrid: React.FC<Props> = ({
   for (let y = 0; y < map.height; y++) {
     for (let x = 0; x < map.width; x++) cells.push({ x, y });
   }
-  const stacks = stackEnemies(state.enemies, laneOf(map, 0));
+  // 敵は自身の laneIndex を持つため、map をそのまま渡してレーンごとに座標を解決させる
+  const stacks = stackEnemies(state.enemies, map);
   // 設置スロットの概念は反復3で廃止し、経路外なら置ける（暫定版。Task 8 で本格化）
   const slots = offPathCells(map);
 

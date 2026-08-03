@@ -10,9 +10,9 @@
  * 座標はセル座標系のまま保持する（SVG の viewBox をセル座標に一致させるため）。
  */
 import type { CellPos, StageMap } from '../domain/board/stage-map';
-import { fortressCell, laneOf } from '../domain/board/stage-map';
+import { fortressCell } from '../domain/board/stage-map';
 import type { CombatState, TickEvent } from '../domain/combat/combat-state';
-import { positionOf } from '../domain/combat/step-tick';
+import { enemyPosition } from '../domain/combat/step-tick';
 import { getCardDefinition } from '../domain/cards/card-pool';
 
 /**
@@ -104,11 +104,17 @@ export type Effect =
   | { kind: 'ember'; id: string; at: CellPos; radius: number; untilTick: number }
   | { kind: 'leak'; id: string; at: CellPos; untilTick: number };
 
-/** 敵の現在位置。既に消えた敵は undefined */
+/**
+ * 敵の現在位置。既に消えた敵は undefined
+ *
+ * 敵は自身の laneIndex を持つため、所属レーンで座標を解決する
+ * （北レーン固定で解決すると、南レーンの敵の射撃線・撃破エフェクトが
+ * 誤った座標に描かれる）。
+ */
 const enemyPos = (state: CombatState, enemyId: number, map: StageMap): CellPos | undefined => {
   const enemy = state.enemies.find((e) => e.id === enemyId);
   if (!enemy) return undefined;
-  return positionOf(enemy.progress, laneOf(map, 0));
+  return enemyPosition(map, enemy);
 };
 
 /** 撃破源の座標。既に消えた設置物は undefined */
