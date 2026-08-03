@@ -15,6 +15,7 @@
  * 早く起こしたいテストでは HP の低い 'arrow-tower'（弓兵、hp:10）を使う。
  */
 import { createCombatState } from './combat-state';
+import { createDeck } from '../cards/deck';
 import { stepTick } from './step-tick';
 import { PLAINS_MAP, laneOf } from '../board/stage-map';
 import type { CombatState, PlacedUnit } from './combat-state';
@@ -133,5 +134,71 @@ describe('敵の攻撃（stepTick 経由）', () => {
     state = runTicks(state, 400);
     // 南レーンの敵は止められていないので漏れる
     expect(state.life).toBeLessThan(12);
+  });
+});
+
+/**
+ * 飛行（鴉）とブロックの関係（Task 6）
+ *
+ * 「ブロッカーの無い盤面で飛行が届く」だけでは何も検証したことにならない
+ * （ブロックしない飛行にとって当たり前の結果のため）。必ずブロッカーを
+ * 置いた状態で確認し、置けていること自体もアサートする。
+ *
+ * tick の目安は実測に基づく（このマップ・敵速度での経験値）:
+ *   - 落網（netCell = lane[2]）は tick 102 前後で発動し、地上化は120tick 続く
+ *   - 地上化中の鴉は blockCell = lane[4] の手前（progress 3.08 付近）で止まる
+ *   - 攻撃間隔20tick ごとに守り手を殴るため、150tick 進めれば削れているのがわかる
+ */
+describe('飛行とブロック', () => {
+  const ravenWave = [{
+    startTick: 0,
+    entries: [{ enemyId: 'raven', count: 1, spawnIntervalTicks: 1, laneIndex: 0 }],
+  }];
+
+  it('飛行はブロッカーを無視して通過する', () => {
+    const blockCell = laneOf(PLAINS_MAP, 0)[3]!;
+    let state = createCombatState(emptyDeck, ravenWave);
+    state = withBlockerOn(state, blockCell);
+    // ブロッカーは確かに置かれている（無い盤面で通っても何も検証していない）
+    expect(state.units).toHaveLength(1);
+    state = runTicks(state, 200);
+    // 飛行は素通りして砦に届く
+    expect(state.life).toBeLessThan(12);
+  });
+
+  it('地上化している間はブロックされる', () => {
+    const lane = laneOf(PLAINS_MAP, 0);
+    // 落網を手前に、石壁をその先に置く
+    const netCell = lane[2]!;
+    const blockCell = lane[4]!;
+    const deck = createDeck(['snare-net'], () => 0);
+    let state = createCombatState(deck, ravenWave);
+    state = stepTick(state, [{ kind: 'play-card', handIndex: 0, pos: netCell }], PLAINS_MAP);
+    state = withBlockerOn(state, blockCell);
+    expect(state.units).toHaveLength(1);
+    state = runTicks(state, 150);
+    const enemy = state.enemies[0];
+    expect(enemy).toBeDefined();
+    expect(enemy!.alive).toBe(true);
+    // 地上化中なので石壁の手前で止まっている
+    expect(enemy!.progress).toBeLessThan(4);
+  });
+
+  it('地上化している飛行は守り手を殴る（膠着しない）', () => {
+    const lane = laneOf(PLAINS_MAP, 0);
+    const netCell = lane[2]!;
+    const blockCell = lane[4]!;
+    const deck = createDeck(['snare-net'], () => 0);
+    let state = createCombatState(deck, ravenWave);
+    state = stepTick(state, [{ kind: 'play-card', handIndex: 0, pos: netCell }], PLAINS_MAP);
+    // 非攻撃の石壁（withBlockerOn の既定）を置く。守り手側の攻撃と
+    // 混同せず「殴られる」だけを見る
+    state = withBlockerOn(state, blockCell);
+    expect(state.units).toHaveLength(1);
+    const maxHp = state.units[0]!.maxHp;
+    state = runTicks(state, 150);
+    const unit = state.units[0];
+    // 消滅している場合も「殴った」証拠なので、どちらでもよい
+    expect(unit === undefined || unit.hp < maxHp).toBe(true);
   });
 });
