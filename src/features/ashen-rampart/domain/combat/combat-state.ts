@@ -87,6 +87,8 @@ export type TickEvent =
   | { kind: 'ember'; emberIndex: number }
   | { kind: 'defeat'; enemyId: number; source: DefeatSource }
   | { kind: 'leak'; enemyId: number }
+  | { kind: 'unit-damaged'; unitIndex: number; pos: CellPos; enemyId: number; amount: number }
+  | { kind: 'unit-lost'; unitIndex: number; cardId: string; pos: CellPos }
   | { kind: 'mana'; amount: number }
   | { kind: 'draw'; cardId: string }
   | { kind: 'overflow'; cardId: string }

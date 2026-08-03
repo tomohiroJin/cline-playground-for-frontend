@@ -49,3 +49,24 @@ export const blockerIndexFor = (
 /** その敵が止められているか */
 export const isBlocked = (ctx: BlockContext, enemy: ActiveEnemy): boolean =>
   blockerIndexFor(ctx, enemy) !== undefined;
+
+/**
+ * 1体のブロッカーを同時に殴れる敵の数
+ *
+ * 群れ22体が同時に殴ると、石壁HP60 は 41tick で溶ける
+ * （22 × 1ダメージ / 15tick = 1.47 dps）。上限3 で約300tick 保つ。
+ *
+ * 副次的に、待たされた敵が経路上に詰まるため範囲攻撃が刺さるようになる。
+ */
+export const MAX_ATTACKERS_PER_BLOCKER = 3;
+
+/** その守り手を殴っている敵（進行度の高い順に上限まで） */
+export const attackersFor = (
+  ctx: BlockContext,
+  enemies: readonly ActiveEnemy[],
+  unitIndex: number
+): ActiveEnemy[] =>
+  enemies
+    .filter((e) => blockerIndexFor(ctx, e) === unitIndex)
+    .sort((a, b) => b.progress - a.progress)
+    .slice(0, MAX_ATTACKERS_PER_BLOCKER);

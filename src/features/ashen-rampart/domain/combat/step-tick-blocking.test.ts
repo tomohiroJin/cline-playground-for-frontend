@@ -1,19 +1,24 @@
 /**
  * stepTick 経由のブロック判定テスト
  *
- * 「止まる」だけを単独で検証する（設計書 §12）。「削れる」「消滅して再開する」は
- * Task 5 で別々に書く。1つのテストで全部を通そうとすると、どれかがゼロのまま緑になる。
+ * 「止まる」「削れる」「消滅して再開する」を別々に検証する（設計書 §12）。
+ * 1つのテストで全部を通そうとすると、どれかがゼロのまま緑になる。
  *
  * 守り手は play-card 経由ではなく state.units への直接注入で置く。
  * 現時点の canPlaceAt は「経路外なら置ける（塔）」「経路上なら置ける（罠）」の
  * どちらか一方であり、経路上に PlacedUnit を置く配置ルールはまだ無い（Task 8 で
  * 配置先種別を刷新するまでの暫定）。stepTick 内の combat 系テストが既に使っている
  * withUnit 相当のパターン（state を直接組み立てる）に倣う。
+ *
+ * cardId には 'stone-wall' を使うことが多い。getCardDefinition('stone-wall').tower
+ * が undefined のため攻撃しない＝「殴られる側」の観察に適している。逆に消滅を
+ * 早く起こしたいテストでは HP の低い 'arrow-tower'（弓兵、hp:10）を使う。
  */
 import { createCombatState } from './combat-state';
 import { stepTick } from './step-tick';
 import { PLAINS_MAP, laneOf } from '../board/stage-map';
-import type { CombatState } from './combat-state';
+import type { CombatState, PlacedUnit } from './combat-state';
+import type { CellPos } from '../board/stage-map';
 
 const emptyDeck = { drawPile: [], hand: [], graveyard: [] };
 
@@ -23,10 +28,17 @@ const runTicks = (state: CombatState, count: number): CombatState => {
   return s;
 };
 
-/** 経路セル上に守り手を1基置いた状態を作る */
-const withBlockerOn = (state: CombatState, x: number, y: number): CombatState => ({
+/** 経路セル上に守り手を1基置いた状態を作る。省略時は非攻撃の石壁（HP60） */
+const withBlockerOn = (
+  state: CombatState,
+  pos: CellPos,
+  overrides: Partial<PlacedUnit> = {}
+): CombatState => ({
   ...state,
-  units: [...state.units, { cardId: 'stone-wall', pos: { x, y }, hp: 60, maxHp: 60, cooldownLeft: 0 }],
+  units: [
+    ...state.units,
+    { cardId: 'stone-wall', pos, hp: 60, maxHp: 60, cooldownLeft: 0, ...overrides },
+  ],
 });
 
 describe('ブロック判定（stepTick 経由）', () => {
@@ -38,7 +50,7 @@ describe('ブロック判定（stepTick 経由）', () => {
     const lane = laneOf(PLAINS_MAP, 0);
     const blockCell = lane[3]!;
     let state = createCombatState(emptyDeck, wave);
-    state = withBlockerOn(state, blockCell.x, blockCell.y);
+    state = withBlockerOn(state, blockCell);
     state = runTicks(state, 200);
 
     const enemy = state.enemies[0];
@@ -55,6 +67,71 @@ describe('ブロック判定（stepTick 経由）', () => {
     }];
     let state = createCombatState(emptyDeck, wave);
     state = runTicks(state, 200);
+    expect(state.life).toBeLessThan(12);
+  });
+});
+
+describe('敵の攻撃（stepTick 経由）', () => {
+  const singleGrunt = [{
+    startTick: 0,
+    entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 1, laneIndex: 0 }],
+  }];
+  const singleBrute = [{
+    startTick: 0,
+    entries: [{ enemyId: 'brute', count: 1, spawnIntervalTicks: 1, laneIndex: 0 }],
+  }];
+
+  it('止められた敵は守り手のHPを削る', () => {
+    const lane = laneOf(PLAINS_MAP, 0);
+    const blockCell = lane[3]!;
+    let state = createCombatState(emptyDeck, singleGrunt);
+    // 非攻撃の石壁を置く。守り手側の攻撃と混同せず「削れる」だけを見る
+    state = withBlockerOn(state, blockCell);
+    const maxHp = state.units[0]!.maxHp;
+    state = runTicks(state, 200);
+    const unit = state.units[0];
+    expect(unit).toBeDefined();
+    expect(unit!.hp).toBeLessThan(maxHp);
+  });
+
+  it('HPが0になると守り手は消滅し、敵の前進が再開する', () => {
+    const lane = laneOf(PLAINS_MAP, 0);
+    const blockCell = lane[3]!;
+    // 重装（攻撃10 / 30tick）でHP10の弓兵を確実に壊す
+    let state = createCombatState(emptyDeck, singleBrute);
+    state = withBlockerOn(state, blockCell, { cardId: 'arrow-tower', hp: 10, maxHp: 10 });
+    state = runTicks(state, 400);
+    expect(state.units).toHaveLength(0);
+    // 守り手が消えたので、セル3 より先へ進んでいる
+    expect(state.enemies[0]!.progress).toBeGreaterThan(3);
+  });
+
+  it('守り手の消滅は unit-lost イベントとして発行される', () => {
+    const lane = laneOf(PLAINS_MAP, 0);
+    const blockCell = lane[3]!;
+    let state = createCombatState(emptyDeck, singleBrute);
+    state = withBlockerOn(state, blockCell, { cardId: 'arrow-tower', hp: 10, maxHp: 10 });
+    let sawLost = false;
+    for (let i = 0; i < 400; i++) {
+      state = stepTick(state, [], PLAINS_MAP);
+      if (state.events.some((e) => e.kind === 'unit-lost')) sawLost = true;
+    }
+    expect(sawLost).toBe(true);
+  });
+
+  it('レーンは独立している（片方を塞いでも、もう片方は砦に届く）', () => {
+    const wave = [{
+      startTick: 0,
+      entries: [
+        { enemyId: 'grunt', count: 1, spawnIntervalTicks: 1, laneIndex: 0 },
+        { enemyId: 'grunt', count: 1, spawnIntervalTicks: 1, laneIndex: 1 },
+      ],
+    }];
+    const northCell = laneOf(PLAINS_MAP, 0)[3]!;
+    let state = createCombatState(emptyDeck, wave);
+    state = withBlockerOn(state, northCell);
+    state = runTicks(state, 400);
+    // 南レーンの敵は止められていないので漏れる
     expect(state.life).toBeLessThan(12);
   });
 });

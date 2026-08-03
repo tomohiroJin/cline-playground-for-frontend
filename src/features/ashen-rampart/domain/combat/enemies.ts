@@ -13,14 +13,20 @@ export interface EnemySpec {
   speed: number;
   /** 飛行するか。true の敵には hitsFlying の塔と罠が当たらない */
   flying: boolean;
+  /** 止められたときに守り手へ与えるダメージ */
+  attack: number;
+  /** 攻撃間隔（tick） */
+  attackIntervalTicks: number;
 }
 
 const ENEMIES: readonly EnemySpec[] = [
-  { id: 'grunt', name: '雑兵', hp: 20, speed: 0.1, flying: false },
-  { id: 'runner', name: '俊足', hp: 12, speed: 0.18, flying: false },
-  { id: 'swarm', name: '群れ', hp: 8, speed: 0.12, flying: false },
-  { id: 'brute', name: '重装', hp: 60, speed: 0.06, flying: false },
-  { id: 'raven', name: '鴉', hp: 16, speed: 0.14, flying: true },
+  { id: 'grunt', name: '雑兵', hp: 20, speed: 0.1, flying: false, attack: 3, attackIntervalTicks: 20 },
+  { id: 'runner', name: '俊足', hp: 12, speed: 0.18, flying: false, attack: 2, attackIntervalTicks: 12 },
+  { id: 'swarm', name: '群れ', hp: 8, speed: 0.12, flying: false, attack: 1, attackIntervalTicks: 15 },
+  { id: 'brute', name: '重装', hp: 60, speed: 0.06, flying: false, attack: 10, attackIntervalTicks: 30 },
+  // 鴉の攻撃は地上化中のみ使う。0 にすると落網で落とした鴉が壁の前で
+  // 何もできず 120tick 膠着し、落網が「足止め」になってしまう（設計書 §8.2）
+  { id: 'raven', name: '鴉', hp: 16, speed: 0.14, flying: true, attack: 2, attackIntervalTicks: 20 },
 ];
 
 const ENEMY_MAP: ReadonlyMap<string, EnemySpec> = new Map(ENEMIES.map((e) => [e.id, e]));

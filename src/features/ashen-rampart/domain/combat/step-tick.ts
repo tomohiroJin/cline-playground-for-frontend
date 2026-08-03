@@ -20,7 +20,8 @@ import { getCardDefinition } from '../cards/card-pool';
 import { placementKindOf, type CardDefinition } from '../cards/card-definition';
 import { getEnemySpec } from './enemies';
 import { isEnemyFlying, isEnemyStunned } from './enemy-status';
-import { isBlocked } from './blocking';
+import { isBlocked, attackersFor } from './blocking';
+import type { BlockContext } from './blocking';
 import { DRAW_INTERVAL_TICKS, PLACE_COOLDOWN_TICKS } from './combat-state';
 import type {
   CombatState,
@@ -528,6 +529,47 @@ const moveEnemies = (
   });
 };
 
+/**
+ * 敵の攻撃と守り手の消滅
+ *
+ * 移動確定後に呼ぶ。止められている敵が attackIntervalTicks ごとに
+ * ブロッカーのHPを削り、0 になった守り手を取り除く。
+ *
+ * 攻撃タイミングは敵ごとの内部カウンタではなく
+ * `tick % attackIntervalTicks === 0` で決める。敵に状態を増やさずに済み、
+ * 同じ敵が同じ tick に二度殴ることもない。
+ *
+ * 契約: `unitIndex` は消滅前（この関数の入力である ctx.units）の配列の index。
+ * unit-lost の後に返り値の配列が縮むため、同一 tick 内の shot イベントの
+ * unitIndex とはずれる。描画側は unit-damaged / unit-lost が持つ pos で
+ * 座標から解決する（Task 11）。
+ */
+const applyEnemyAttacks = (
+  ctx: BlockContext,
+  moved: readonly ActiveEnemy[],
+  events: TickEvent[]
+): PlacedUnit[] => {
+  const { units, tick } = ctx;
+  const damaged = units.map((unit, unitIndex) => {
+    const attackers = attackersFor(ctx, moved, unitIndex);
+    const total = attackers.reduce((sum, enemy) => {
+      const spec = getEnemySpec(enemy.enemyId);
+      if (spec.attackIntervalTicks <= 0) return sum;
+      if (tick % spec.attackIntervalTicks !== 0) return sum;
+      events.push({
+        kind: 'unit-damaged', unitIndex, pos: unit.pos, enemyId: enemy.id, amount: spec.attack,
+      });
+      return sum + spec.attack;
+    }, 0);
+    return total === 0 ? unit : { ...unit, hp: unit.hp - total };
+  });
+  damaged.forEach((unit, unitIndex) => {
+    if (unit.hp > 0) return;
+    events.push({ kind: 'unit-lost', unitIndex, cardId: unit.cardId, pos: unit.pos });
+  });
+  return damaged.filter((unit) => unit.hp > 0);
+};
+
 /** 罠が発動する距離（セル）。表示側の STACK_DISTANCE とは無関係 */
 export const TRAP_TRIGGER_DISTANCE = 0.5;
 
@@ -829,6 +871,10 @@ export const stepTick = (
     afterActions.units
   );
 
+  // --- 敵の攻撃（移動確定後・罠より前。移動後の座標でブロック関係が決まるため） ---
+  const blockCtx: BlockContext = { units: afterActions.units, map, tick };
+  const survivingUnits = applyEnemyAttacks(blockCtx, moved, events);
+
   // --- 罠 → 射撃 → 業火・燠火の順で hpById に下書きし、最後にまとめて反映する ---
   const hpById = new Map<number, number>();
   const sourceById: SourceById = new Map();
@@ -838,7 +884,7 @@ export const stepTick = (
     afterActions.traps, moved, hpById, sourceById, statusById, tick, map, events
   );
   const units = applyUnitShots(
-    state, afterActions.units, moved, map, hpById, sourceById, events, tick
+    state, survivingUnits, moved, map, hpById, sourceById, events, tick
   );
   applyBlasts(afterActions.blasts, moved, map, hpById, sourceById, tick);
 

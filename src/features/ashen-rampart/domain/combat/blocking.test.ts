@@ -1,4 +1,4 @@
-import { blockerIndexFor } from './blocking';
+import { blockerIndexFor, MAX_ATTACKERS_PER_BLOCKER, attackersFor } from './blocking';
 import { PLAINS_MAP, laneOf } from '../board/stage-map';
 import type { ActiveEnemy, PlacedUnit } from './combat-state';
 
@@ -40,5 +40,34 @@ describe('blockerIndexFor', () => {
     const next = laneOf(PLAINS_MAP, 0)[3]!;
     const units = [unitAt(next.x, next.y)];
     expect(blockerIndexFor(ctxWith(units), enemyAt(2, { alive: false }))).toBeUndefined();
+  });
+});
+
+describe('MAX_ATTACKERS_PER_BLOCKER', () => {
+  const lane = laneOf(PLAINS_MAP, 0);
+  const blockCell = lane[3]!;
+  const units = [unitAt(blockCell.x, blockCell.y)];
+  // 同じブロッカーの手前に 10 体を並べる
+  const many = Array.from({ length: 10 }, (_, i) => enemyAt(2.9 - i * 0.01, { id: i }));
+
+  it('上限は3である', () => {
+    expect(MAX_ATTACKERS_PER_BLOCKER).toBe(3);
+  });
+
+  it('同一ブロッカーを殴れるのは先頭3体までである', () => {
+    const attackers = attackersFor(ctxWith(units), many, 0);
+    expect(attackers).toHaveLength(MAX_ATTACKERS_PER_BLOCKER);
+  });
+
+  it('選ばれるのは進行度が高い順（先頭）である', () => {
+    const attackers = attackersFor(ctxWith(units), many, 0);
+    const progresses = attackers.map((e) => e.progress);
+    expect(progresses).toEqual([...progresses].sort((a, b) => b - a));
+    expect(progresses[0]).toBe(Math.max(...many.map((e) => e.progress)));
+  });
+
+  it('上限より少ない敵しかいなければ全員が殴る', () => {
+    const few = many.slice(0, 2);
+    expect(attackersFor(ctxWith(units), few, 0)).toHaveLength(2);
   });
 });
