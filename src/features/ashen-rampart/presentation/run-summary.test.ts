@@ -18,16 +18,16 @@ const base = (over: Partial<CombatState> = {}): CombatState => ({
 });
 
 describe('accumulateTick', () => {
-  it('塔別の撃破数を数える', () => {
+  it('守り手別の撃破数を数える', () => {
     const prev = base();
     const state = base({
       tick: 5,
       events: [
-        { kind: 'defeat', enemyId: 1, source: { kind: 'tower', index: 0 } },
-        { kind: 'defeat', enemyId: 2, source: { kind: 'tower', index: 0 } },
+        { kind: 'defeat', enemyId: 1, source: { kind: 'unit', index: 0 } },
+        { kind: 'defeat', enemyId: 2, source: { kind: 'unit', index: 0 } },
         { kind: 'defeat', enemyId: 3, source: { kind: 'trap', index: 1 } },
       ],
-      towers: [{ cardId: 'arrow-tower', pos: { x: 1, y: 2 }, cooldownLeft: 0 }],
+      units: [{ cardId: 'arrow-tower', pos: { x: 1, y: 2 }, hp: 10, maxHp: 10, cooldownLeft: 0 }],
       traps: [
         { cardId: 'spike-trap', pos: { x: 0, y: 3 }, usesLeft: 1, hitEnemyIds: [] },
         { cardId: 'spike-trap', pos: { x: 1, y: 3 }, usesLeft: 1, hitEnemyIds: [] },
@@ -38,12 +38,12 @@ describe('accumulateTick', () => {
     expect(tally.defeatsByCard['spike-trap']).toBe(1);
   });
 
-  it('支援塔の貢献を2つの単位で数える', () => {
+  it('支援守り手の貢献を2つの単位で数える', () => {
     const state = base({
       tick: 5,
       events: [
-        { kind: 'shot', towerIndex: 0, targetId: 1, auraDamageBonus: 2, beyondBaseRange: false },
-        { kind: 'shot', towerIndex: 0, targetId: 1, auraDamageBonus: 3, beyondBaseRange: true },
+        { kind: 'shot', unitIndex: 0, targetId: 1, auraDamageBonus: 2, beyondBaseRange: false },
+        { kind: 'shot', unitIndex: 0, targetId: 1, auraDamageBonus: 3, beyondBaseRange: true },
       ],
     });
     const tally = accumulateTick(emptyTally(), base(), state, PLAINS_MAP);

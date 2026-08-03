@@ -55,7 +55,7 @@ const sourceCardId = (
   state: CombatState,
   source: Extract<TickEvent, { kind: 'defeat' }>['source']
 ): string | undefined => {
-  if (source.kind === 'tower') return state.towers[source.index]?.cardId;
+  if (source.kind === 'unit') return state.units[source.index]?.cardId;
   if (source.kind === 'trap') return state.traps[source.index]?.cardId;
   // PlacedEmber はカード種別を持たない（ドメインの制約）ため、ember 由来の撃破は
   // 固定文字列で代表させている。これは「燠火カードが常に1種類（ember-blast）」

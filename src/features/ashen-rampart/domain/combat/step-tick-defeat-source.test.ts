@@ -1,7 +1,7 @@
 /**
  * 灰燼の城壁 - 撃破源の帰属
  *
- * 塔・罠・燠火の3経路それぞれが単独で撃破を成立させることを検証する。
+ * 守り手・罠・燠火の3経路それぞれが単独で撃破を成立させることを検証する。
  * 1経路だけ緑で通る形を避けるため、経路ごとに独立したテストにする。
  */
 import { PLAINS_MAP } from '../board/stage-map';
@@ -37,17 +37,17 @@ const withDyingEnemy = (state: CombatState, progress: number): CombatState => ({
 });
 
 describe('撃破源の帰属', () => {
-  it('塔が倒したとき source は tower とその index になる', () => {
+  it('守り手が倒したとき source は unit とその index になる', () => {
     const state = withDyingEnemy(
       {
         ...baseState(),
-        towers: [{ cardId: 'arrow-tower', pos: { x: 1, y: 2 }, cooldownLeft: 0 }],
+        units: [{ cardId: 'arrow-tower', pos: { x: 1, y: 2 }, hp: 10, maxHp: 10, cooldownLeft: 0 }],
       },
       1
     );
     const next = stepTick(state, [], PLAINS_MAP);
     const defeat = next.events.find((e) => e.kind === 'defeat');
-    expect(defeat).toEqual({ kind: 'defeat', enemyId: 1, source: { kind: 'tower', index: 0 } });
+    expect(defeat).toEqual({ kind: 'defeat', enemyId: 1, source: { kind: 'unit', index: 0 } });
   });
 
   it('罠が倒したとき source は trap とその index になる', () => {

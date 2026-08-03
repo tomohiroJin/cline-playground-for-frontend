@@ -96,8 +96,8 @@ export const BoardGrid: React.FC<Props> = ({
   const slots = offPathCells(map);
 
   const occupantLabel = (pos: CellPos): { text: string; ready: boolean } | undefined => {
-    const tower = state.towers.find((t) => samePos(t.pos, pos));
-    if (tower) return { text: tower.cardId === 'beacon' ? '篝' : '塔', ready: false };
+    const unit = state.units.find((u) => samePos(u.pos, pos));
+    if (unit) return { text: unit.cardId === 'beacon' ? '篝' : '塔', ready: false };
     const reactor = state.reactors.find((r) => samePos(r.pos, pos));
     if (reactor) return { text: '炉', ready: false };
     const ember = state.embers.find((e) => samePos(e.pos, pos));

@@ -37,10 +37,10 @@ const groundedRaven = (until: number): CombatState => {
 
 describe('地上化した飛行敵に地上専用の攻撃が当たる', () => {
   it('射撃: 弓兵（地上のみ）が地上化した鴉を撃てる', () => {
-    // 鴉は入口 (0,2) から出る。塔 (1,1) なら出現直後から射程1.6内
+    // 鴉は入口 (0,2) から出る。守り手 (1,1) なら出現直後から射程1.6内
     const state: CombatState = {
       ...groundedRaven(200),
-      towers: [{ cardId: 'arrow-tower', pos: { x: 1, y: 1 }, cooldownLeft: 0 }],
+      units: [{ cardId: 'arrow-tower', pos: { x: 1, y: 1 }, hp: 10, maxHp: 10, cooldownLeft: 0 }],
     };
     const after = advance(state, 20);
     const raven = after.enemies[0];
@@ -64,7 +64,7 @@ describe('地上化した飛行敵に地上専用の攻撃が当たる', () => {
     // 出現 tick が COUNTDOWN_TICKS ぶんずれたため、猶予も同じぶん後ろにずらす
     const state: CombatState = {
       ...groundedRaven(COUNTDOWN_TICKS + 3),
-      towers: [{ cardId: 'arrow-tower', pos: { x: 1, y: 1 }, cooldownLeft: 0 }],
+      units: [{ cardId: 'arrow-tower', pos: { x: 1, y: 1 }, hp: 10, maxHp: 10, cooldownLeft: 0 }],
     };
     // 地上化が切れた後の HP を基準に、さらに進めても減らないことを見る
     const afterGrounded = advance(state, 5);

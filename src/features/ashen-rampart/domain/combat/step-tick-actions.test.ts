@@ -5,7 +5,7 @@
  * 仮説の必要条件そのものであり、ここが緩むと配分が発生しない（設計書 §4.1）。
  */
 import { createCombatState, PLACE_COOLDOWN_TICKS, MANA_INITIAL, COUNTDOWN_TICKS } from './combat-state';
-import type { CombatState, PlacedTower, ActiveEnemy } from './combat-state';
+import type { CombatState, PlacedUnit, ActiveEnemy } from './combat-state';
 import { stepTick, canPlaceAt, effectiveDamage } from './step-tick';
 import type { WaveDefinition } from './waves';
 import { PLAINS_MAP } from '../board/stage-map';
@@ -15,7 +15,7 @@ import { createDeck } from '../cards/deck';
 
 const noWave: WaveDefinition[] = [{ startTick: 9999, entries: [] }];
 
-/** effectiveDamage の対象引数用ダミー（特効を持たない塔のテストでは値は結果に影響しない） */
+/** effectiveDamage の対象引数用ダミー（特効を持たない守り手のテストでは値は結果に影響しない） */
 const dummyTarget: ActiveEnemy = {
   id: 0,
   enemyId: 'grunt',
@@ -37,7 +37,7 @@ const play = (state: CombatState, handIndex: number, pos?: { x: number; y: numbe
   stepTick(state, [{ kind: 'play-card', handIndex, pos }], PLAINS_MAP);
 
 describe('canPlaceAt', () => {
-  it('塔は設置スロットにだけ置ける', () => {
+  it('守り手は設置スロットにだけ置ける', () => {
     const card = getCardDefinition('arrow-tower');
     const empty = stateWithHand([]);
     expect(canPlaceAt(empty, card, { x: 1, y: 1 }, PLAINS_MAP)).toBe(true); // 経路外
@@ -55,7 +55,7 @@ describe('canPlaceAt', () => {
     const card = getCardDefinition('arrow-tower');
     const occupied: CombatState = {
       ...stateWithHand([]),
-      towers: [{ cardId: 'arrow-tower', pos: { x: 1, y: 1 }, cooldownLeft: 0 }],
+      units: [{ cardId: 'arrow-tower', pos: { x: 1, y: 1 }, hp: 10, maxHp: 10, cooldownLeft: 0 }],
     };
     expect(canPlaceAt(occupied, card, { x: 1, y: 1 }, PLAINS_MAP)).toBe(false);
   });
@@ -73,10 +73,10 @@ describe('canPlaceAt', () => {
 });
 
 describe('カード配置', () => {
-  it('塔を置くとマナが減り手札から墓地へ移る', () => {
+  it('守り手を置くとマナが減り手札から墓地へ移る', () => {
     const state = stateWithHand(['arrow-tower']);
     const after = play(state, 0, { x: 1, y: 1 });
-    expect(after.towers).toHaveLength(1);
+    expect(after.units).toHaveLength(1);
     expect(after.mana).toBe(MANA_INITIAL - 2);
     expect(after.deck.hand).toEqual([]);
     expect(after.deck.graveyard).toEqual(['arrow-tower']);
@@ -94,7 +94,7 @@ describe('カード配置', () => {
   it('マナが足りなければ置けない', () => {
     const state = stateWithHand(['ballista']); // コスト3、初期マナ2
     const after = play(state, 0, { x: 1, y: 1 });
-    expect(after.towers).toHaveLength(0);
+    expect(after.units).toHaveLength(0);
     expect(after.events).toContainEqual({ kind: 'rejected', reason: 'mana' });
   });
 
@@ -121,18 +121,18 @@ describe('カード配置', () => {
 
   it('置けない場所を指定すると拒否される', () => {
     // 反復3 で設置スロットの規則（buildSlots）を廃止し「経路外なら置ける」に変えたため、
-    // 経路外はもう拒否されない。塔（slot 種別）が拒否されるのは経路セルのみ。
+    // 経路外はもう拒否されない。守り手（slot 種別）が拒否されるのは経路セルのみ。
     // (0,2) は北レーンの入口（経路セル）
     const state = stateWithHand(['arrow-tower']);
     const after = play(state, 0, { x: 0, y: 2 });
-    expect(after.towers).toHaveLength(0);
+    expect(after.units).toHaveLength(0);
     expect(after.events).toContainEqual({ kind: 'rejected', reason: 'target' });
   });
 
   it('時泥は対象を取らず盤面に残らない', () => {
     const state = stateWithHand(['mud-time']);
     const after = play(state, 0);
-    expect(after.towers).toHaveLength(0);
+    expect(after.units).toHaveLength(0);
     expect(after.slowUntilTick).toBe(after.tick + 200);
     // 前提: card-pool.ts の mud-time.spell.speedMultiplier がそのまま反映されること
     // （指摘5: 以前はここが読まれず 0.6 がハードコードされていた）
@@ -172,8 +172,8 @@ describe('カード配置', () => {
     expect(after.enemies[0]?.hp).toBe(12); // 20 - 8
   });
 
-  it('同tickに配置した塔が、その tick に射程内の敵へダメージを与える', () => {
-    // 敵は入口 (0,2) に出現する。塔 (0,1) から距離1で射程1.6内に収める
+  it('同tickに配置した守り手が、その tick に射程内の敵へダメージを与える', () => {
+    // 敵は入口 (0,2) に出現する。守り手 (0,1) から距離1で射程1.6内に収める
     const wave: WaveDefinition[] = [
       { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, laneIndex: 0 }] },
     ];
@@ -186,19 +186,19 @@ describe('カード配置', () => {
     expect(enemy?.hp).toBe(14); // 20 - 6（配置と同じ tick で射撃が発生する）
   });
 
-  it('同tickに配置した篝火のオーラが既存の隣接塔に同tickで乗り、二重計上しない', () => {
+  it('同tickに配置した篝火のオーラが既存の隣接守り手に同tickで乗り、二重計上しない', () => {
     const wave: WaveDefinition[] = [
       { startTick: 0, entries: [{ enemyId: 'grunt', count: 1, spawnIntervalTicks: 0, laneIndex: 0 }] },
     ];
-    const existingTower: PlacedTower = { cardId: 'arrow-tower', pos: { x: 0, y: 1 }, cooldownLeft: 0 };
+    const existingUnit: PlacedUnit = { cardId: 'arrow-tower', pos: { x: 0, y: 1 }, hp: 10, maxHp: 10, cooldownLeft: 0 };
     let state: CombatState = {
       ...createCombatState({ drawPile: [], hand: ['beacon'], graveyard: [] }, wave),
-      towers: [existingTower],
+      units: [existingUnit],
     };
     // ウェーブの startTick が COUNTDOWN_TICKS ぶんずれるため、出現 tick と play tick を合わせる
     for (let i = 0; i < COUNTDOWN_TICKS; i++) state = stepTick(state, [], PLAINS_MAP);
     const after = play(state, 0, { x: 1, y: 1 }); // 篝火を隣接スロットに配置
-    expect(after.towers).toHaveLength(2);
+    expect(after.units).toHaveLength(2);
     const enemy = after.enemies[0];
     expect(enemy).toBeDefined();
     // round(6 × 1.25) = 8 を同 tick で受ける（二重計上なら round(6×1.25×1.25)=9 になるはず）

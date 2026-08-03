@@ -7,7 +7,9 @@
 import { createCombatState, LIFE_INITIAL, DRAW_INTERVAL_TICKS, COUNTDOWN_TICKS } from './combat-state';
 import { stepTick } from './step-tick';
 import type { WaveDefinition } from './waves';
-import { PLAINS_MAP } from '../board/stage-map';
+import { PLAINS_MAP, offPathCells } from '../board/stage-map';
+import { createDeck } from '../cards/deck';
+import { getCardDefinition } from '../cards/card-pool';
 
 const emptyDeck = { drawPile: [], hand: [], graveyard: [] };
 
@@ -146,5 +148,18 @@ describe('ドロー', () => {
     const after = advance(createCombatState(deck, oneGrunt), DRAW_INTERVAL_TICKS);
     expect(after.deck.graveyard).toEqual(['arrow-tower']);
     expect(after.events).toContainEqual({ kind: 'overflow', cardId: 'arrow-tower' });
+  });
+});
+
+describe('守り手のHP', () => {
+  it('置いた守り手はカード定義の hp を maxHp として持つ', () => {
+    const deck = createDeck(['arrow-tower'], () => 0);
+    const state = createCombatState(deck, []);
+    const pos = offPathCells(PLAINS_MAP)[0]!;
+    const next = stepTick(state, [{ kind: 'play-card', handIndex: 0, pos }], PLAINS_MAP);
+    const unit = next.units[0];
+    expect(unit).toBeDefined();
+    expect(unit!.maxHp).toBe(getCardDefinition('arrow-tower').tower!.hp);
+    expect(unit!.hp).toBe(unit!.maxHp);
   });
 });

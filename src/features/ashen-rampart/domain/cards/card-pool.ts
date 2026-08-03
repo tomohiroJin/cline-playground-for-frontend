@@ -32,7 +32,8 @@ const CARDS: readonly CardDefinition[] = [
     type: 'tower',
     cost: 2,
     description: '単体を速射する。飛行には当たらない。',
-    tower: { range: 1.6, damage: 6, cooldownTicks: 8, splashRadius: 0, hitsFlying: false },
+    // 暫定値。Task 9 で設計書 §7 の表に置き換える
+    tower: { hp: 10, range: 1.6, damage: 6, cooldownTicks: 8, splashRadius: 0, hitsFlying: false },
   },
   {
     id: 'ballista',
@@ -40,7 +41,8 @@ const CARDS: readonly CardDefinition[] = [
     type: 'tower',
     cost: 3,
     description: '射程が長く、唯一飛行を撃ち落とせる。効率は低い。',
-    tower: { range: 2.2, damage: 10, cooldownTicks: 12, splashRadius: 0, hitsFlying: true },
+    // 暫定値。Task 9 で設計書 §7 の表に置き換える
+    tower: { hp: 10, range: 2.2, damage: 10, cooldownTicks: 12, splashRadius: 0, hitsFlying: true },
   },
   {
     id: 'cannon-tower',
@@ -48,7 +50,8 @@ const CARDS: readonly CardDefinition[] = [
     type: 'tower',
     cost: 3,
     description: '着弾点の周囲にもダメージ。群れに強い。飛行には当たらない。',
-    tower: { range: 1.5, damage: 12, cooldownTicks: 18, splashRadius: 1, hitsFlying: false },
+    // 暫定値。Task 9 で設計書 §7 の表に置き換える
+    tower: { hp: 10, range: 1.5, damage: 12, cooldownTicks: 18, splashRadius: 1, hitsFlying: false },
   },
   {
     id: 'beacon',
@@ -56,7 +59,9 @@ const CARDS: readonly CardDefinition[] = [
     type: 'tower',
     cost: 2,
     description: '攻撃しないが、隣接する塔の攻撃力を +25% する。',
+    // 暫定値。Task 9 で設計書 §7 の表に置き換える
     tower: {
+      hp: 10,
       range: 0,
       damage: 0,
       cooldownTicks: 0,
@@ -71,7 +76,9 @@ const CARDS: readonly CardDefinition[] = [
     type: 'tower',
     cost: 2,
     description: '攻撃しないが、隣接する塔の射程を +0.6 する。',
+    // 暫定値。Task 9 で設計書 §7 の表に置き換える
     tower: {
+      hp: 10,
       range: 0,
       damage: 0,
       cooldownTicks: 0,
@@ -131,7 +138,8 @@ const CARDS: readonly CardDefinition[] = [
     type: 'tower',
     cost: 3,
     description: '遠くまで届き広く砕くが、間隔は長い。飛行には当たらない。',
-    tower: { range: 3.0, damage: 8, cooldownTicks: 24, splashRadius: 2, hitsFlying: false },
+    // 暫定値。Task 9 で設計書 §7 の表に置き換える
+    tower: { hp: 10, range: 3.0, damage: 8, cooldownTicks: 24, splashRadius: 2, hitsFlying: false },
   },
   {
     id: 'piercer',
@@ -139,7 +147,9 @@ const CARDS: readonly CardDefinition[] = [
     type: 'tower',
     cost: 3,
     description: '硬い敵を貫く。最大HP40以上の敵には2倍。飛行も撃てるが雑兵相手は非効率。',
+    // 暫定値。Task 9 で設計書 §7 の表に置き換える
     tower: {
+      hp: 10,
       range: 1.8,
       damage: 7,
       cooldownTicks: 10,

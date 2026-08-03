@@ -2,7 +2,7 @@
  * 灰燼の城壁 - エフェクトの寿命管理（純粋）
  *
  * 敵は撃破後も `alive: false` のまま `enemies` に残るが、**`state.events` は
- * 毎 tick 丸ごと置き換わる**。しかも `shot` は `towerIndex`、`defeat` は
+ * 毎 tick 丸ごと置き換わる**。しかも `shot` は `unitIndex`、`defeat` は
  * `enemyId` という参照しか持たない。イベントを受け取ったその tick のうちに
  * 座標へ解決してスナップショットしておくのが、参照の解決先が将来変わっても
  * 壊れない形である。この関数だけがその責務を持つ。
@@ -18,7 +18,7 @@ import { getCardDefinition } from '../domain/cards/card-pool';
 /**
  * 同時に描くエフェクトの上限
  *
- * 塔6基 × クールダウン8 tick では常時1〜3本の線が明滅し、群れ22体と
+ * 守り手6基 × クールダウン8 tick では常時1〜3本の線が明滅し、群れ22体と
  * 重なる局面がある。反証条件「情報量そのものが過大」に当たったときは
  * まずこの値を下げる（設計書 §8.4）。
  */
@@ -79,7 +79,7 @@ export const EFFECT_STROKE_WIDTH = {
   ember: 2,
 } as const;
 
-/** 貫通の塔の射撃線に使う破線パターン */
+/** 貫通の守り手の射撃線に使う破線パターン */
 export const EFFECT_DASH_PATTERN = '4 3';
 
 export interface AdvanceOptions {
@@ -94,9 +94,9 @@ export type Effect =
       from: CellPos;
       to: CellPos;
       untilTick: number;
-      /** 範囲攻撃の塔は太線で描く */
+      /** 範囲攻撃の守り手は太線で描く */
       wide: boolean;
-      /** 貫通の塔は破線で描く */
+      /** 貫通の守り手は破線で描く */
       dashed: boolean;
     }
   | { kind: 'defeat'; id: string; from: CellPos; to: CellPos; untilTick: number }
@@ -119,7 +119,7 @@ const enemyPos = (state: CombatState, enemyId: number, map: StageMap): CellPos |
 
 /** 撃破源の座標。既に消えた設置物は undefined */
 const sourcePos = (state: CombatState, source: Extract<TickEvent, { kind: 'defeat' }>['source']): CellPos | undefined => {
-  if (source.kind === 'tower') return state.towers[source.index]?.pos;
+  if (source.kind === 'unit') return state.units[source.index]?.pos;
   if (source.kind === 'trap') return state.traps[source.index]?.pos;
   return state.embers[source.index]?.pos;
 };
@@ -139,10 +139,10 @@ const toEffect = (
   const tick = state.tick;
   const id = `${tick}-${index}`;
   if (event.kind === 'shot') {
-    const from = state.towers[event.towerIndex]?.pos;
+    const from = state.units[event.unitIndex]?.pos;
     const to = enemyPos(state, event.targetId, map);
     if (!from || !to) return undefined;
-    const spec = getCardDefinition(state.towers[event.towerIndex]?.cardId ?? '').tower;
+    const spec = getCardDefinition(state.units[event.unitIndex]?.cardId ?? '').tower;
     return {
       kind: 'shot',
       id,

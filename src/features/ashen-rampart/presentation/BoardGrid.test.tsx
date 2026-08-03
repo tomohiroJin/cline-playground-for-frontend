@@ -73,14 +73,14 @@ describe('BoardGrid', () => {
   });
 
   it('設置物がセルに描画される', () => {
-    const withTower = {
+    const withUnit = {
       ...emptyState,
-      towers: [{ cardId: 'arrow-tower', pos: { x: 1, y: 1 }, cooldownLeft: 0 }],
+      units: [{ cardId: 'arrow-tower', pos: { x: 1, y: 1 }, hp: 10, maxHp: 10, cooldownLeft: 0 }],
     };
     render(
       <BoardGrid
         map={PLAINS_MAP}
-        state={withTower}
+        state={withUnit}
         placeableCells={[]}
         effects={[]}
         onCellClick={jest.fn()}

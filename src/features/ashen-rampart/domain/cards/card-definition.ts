@@ -12,6 +12,8 @@ export type CardType = 'tower' | 'trap' | 'spell' | 'reactor' | 'ember' | 'levy'
 
 /** タワー性能 */
 export interface TowerSpec {
+  /** 守り手のHP。敵に殴られて 0 になると消滅する */
+  hp: number;
   /** 射程（セル距離・ユークリッド） */
   range: number;
   /** 1発のダメージ */

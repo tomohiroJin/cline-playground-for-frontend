@@ -41,12 +41,12 @@ const enemyAt = (id: number, progress: number, laneIndex = 0) => ({
 });
 
 describe('advanceEffects', () => {
-  it('shot イベントを塔から敵への線に変換する', () => {
+  it('shot イベントを守り手から敵への線に変換する', () => {
     const state = stateWith(
       10,
-      [{ kind: 'shot', towerIndex: 0, targetId: 1, auraDamageBonus: 0, beyondBaseRange: false }],
+      [{ kind: 'shot', unitIndex: 0, targetId: 1, auraDamageBonus: 0, beyondBaseRange: false }],
       {
-        towers: [{ cardId: 'arrow-tower', pos: { x: 1, y: 2 }, cooldownLeft: 0 }],
+        units: [{ cardId: 'arrow-tower', pos: { x: 1, y: 2 }, hp: 10, maxHp: 10, cooldownLeft: 0 }],
         enemies: [enemyAt(1, 1)],
       }
     );
@@ -65,9 +65,9 @@ describe('advanceEffects', () => {
     expect(southCell).toBeDefined();
     const state = stateWith(
       10,
-      [{ kind: 'shot', towerIndex: 0, targetId: 1, auraDamageBonus: 0, beyondBaseRange: false }],
+      [{ kind: 'shot', unitIndex: 0, targetId: 1, auraDamageBonus: 0, beyondBaseRange: false }],
       {
-        towers: [{ cardId: 'arrow-tower', pos: { x: 1, y: 2 }, cooldownLeft: 0 }],
+        units: [{ cardId: 'arrow-tower', pos: { x: 1, y: 2 }, hp: 10, maxHp: 10, cooldownLeft: 0 }],
         enemies: [enemyAt(1, 1, 1)],
       }
     );
@@ -78,9 +78,9 @@ describe('advanceEffects', () => {
   it('寿命が切れた tick でエフェクトが消える', () => {
     const born = stateWith(
       10,
-      [{ kind: 'shot', towerIndex: 0, targetId: 1, auraDamageBonus: 0, beyondBaseRange: false }],
+      [{ kind: 'shot', unitIndex: 0, targetId: 1, auraDamageBonus: 0, beyondBaseRange: false }],
       {
-        towers: [{ cardId: 'arrow-tower', pos: { x: 1, y: 2 }, cooldownLeft: 0 }],
+        units: [{ cardId: 'arrow-tower', pos: { x: 1, y: 2 }, hp: 10, maxHp: 10, cooldownLeft: 0 }],
         enemies: [enemyAt(1, 1)],
       }
     );
@@ -98,9 +98,9 @@ describe('advanceEffects', () => {
   it('defeat を撃破源から撃破位置への線に変換する', () => {
     const state = stateWith(
       5,
-      [{ kind: 'defeat', enemyId: 1, source: { kind: 'tower', index: 0 } }],
+      [{ kind: 'defeat', enemyId: 1, source: { kind: 'unit', index: 0 } }],
       {
-        towers: [{ cardId: 'arrow-tower', pos: { x: 1, y: 2 }, cooldownLeft: 0 }],
+        units: [{ cardId: 'arrow-tower', pos: { x: 1, y: 2 }, hp: 10, maxHp: 10, cooldownLeft: 0 }],
         enemies: [enemyAt(1, 2)],
       }
     );
@@ -134,20 +134,20 @@ describe('advanceEffects', () => {
 describe('advanceEffects（reduced-motion）', () => {
   const shotEvent = {
     kind: 'shot' as const,
-    towerIndex: 0,
+    unitIndex: 0,
     targetId: 1,
     auraDamageBonus: 0,
     beyondBaseRange: false,
   };
 
-  const stateWithTower = (tick: number, events: CombatState['events']) =>
+  const stateWithUnit = (tick: number, events: CombatState['events']) =>
     stateWith(tick, events, {
-      towers: [{ cardId: 'arrow-tower', pos: { x: 1, y: 2 }, cooldownLeft: 0 }],
+      units: [{ cardId: 'arrow-tower', pos: { x: 1, y: 2 }, hp: 10, maxHp: 10, cooldownLeft: 0 }],
       enemies: [enemyAt(1, 1)],
     });
 
   it('寿命が一律になる', () => {
-    const state = stateWithTower(10, [shotEvent]);
+    const state = stateWithUnit(10, [shotEvent]);
     const normal = advanceEffects([], state, PLAINS_MAP);
     const reduced = advanceEffects([], state, PLAINS_MAP, { reducedMotion: true });
 
@@ -172,7 +172,7 @@ describe('advanceEffects（reduced-motion）', () => {
   });
 
   it('reduced-motion でもエフェクトは消えない（0件にならない）', () => {
-    const reduced = advanceEffects([], stateWithTower(10, [shotEvent]), PLAINS_MAP, {
+    const reduced = advanceEffects([], stateWithUnit(10, [shotEvent]), PLAINS_MAP, {
       reducedMotion: true,
     });
     // 消すと reduced-motion のユーザーだけ判定項目1 が達成不能になる

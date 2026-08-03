@@ -8,10 +8,13 @@ import type { CellPos } from '../board/stage-map';
 import type { DeckState } from '../cards/deck';
 import type { WaveDefinition } from './waves';
 
-/** 設置済みの塔（篝火を含む） */
-export interface PlacedTower {
+/** 設置済みの守り手（攻撃しない石壁・篝火・鍛冶場を含む） */
+export interface PlacedUnit {
   cardId: string;
   pos: CellPos;
+  /** 現在のHP。0 で消滅する */
+  hp: number;
+  maxHp: number;
   /** 次に撃てるまでの残り tick */
   cooldownLeft: number;
 }
@@ -66,14 +69,14 @@ export interface ActiveEnemy {
  * 最後の書き込み者を記録する。
  */
 export type DefeatSource =
-  | { kind: 'tower'; index: number }
+  | { kind: 'unit'; index: number }
   | { kind: 'trap'; index: number }
   | { kind: 'ember'; index: number };
 
 export type TickEvent =
   | {
       kind: 'shot';
-      towerIndex: number;
+      unitIndex: number;
       targetId: number;
       /** 隣接オーラ（篝火）によって増えたダメージ量。オーラが無ければ 0 */
       auraDamageBonus: number;
@@ -101,7 +104,7 @@ export interface CombatState {
   /** 次のドローまでの残り tick */
   ticksToDraw: number;
   deck: DeckState;
-  towers: PlacedTower[];
+  units: PlacedUnit[];
   traps: PlacedTrap[];
   reactors: PlacedReactor[];
   embers: PlacedEmber[];
@@ -149,7 +152,7 @@ export const createCombatState = (
   placeCooldown: 0,
   ticksToDraw: DRAW_INTERVAL_TICKS,
   deck,
-  towers: [],
+  units: [],
   traps: [],
   reactors: [],
   embers: [],

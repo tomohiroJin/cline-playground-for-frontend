@@ -57,7 +57,7 @@ describe('useAshenRampartGame', () => {
       jest.advanceTimersByTime(TICK_INTERVAL_MS);
     });
     const totalPlaced =
-      result.current.state.towers.length +
+      result.current.state.units.length +
       result.current.state.reactors.length +
       result.current.state.traps.length +
       result.current.state.embers.length;
@@ -114,7 +114,7 @@ describe('useAshenRampartGame', () => {
   it('選択せずにセルを押しても何も起きない', () => {
     const { result } = renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1 }));
     act(() => result.current.clickCell({ x: 1, y: 2 }));
-    expect(result.current.state.towers).toHaveLength(0);
+    expect(result.current.state.units).toHaveLength(0);
   });
 
   it('一時停止中は配置できない（戦術的優位を与えない）', () => {
@@ -125,7 +125,7 @@ describe('useAshenRampartGame', () => {
     act(() => result.current.selectCard(0));
     expect(result.current.placeableCells).toEqual([]);
     act(() => result.current.clickCell({ x: 1, y: 2 }));
-    expect(result.current.state.towers).toHaveLength(0);
+    expect(result.current.state.units).toHaveLength(0);
     expect(result.current.state.reactors).toHaveLength(0);
     expect(result.current.state.embers).toHaveLength(0);
     expect(result.current.state.traps).toHaveLength(0);

@@ -27,35 +27,35 @@ const enemyOf = (enemyId: string, maxHp: number): ActiveEnemy => ({
   stunnedUntilTick: 0,
 });
 
-const withTower = (cardId: string, x: number, y: number): CombatState => ({
+const withUnit = (cardId: string, x: number, y: number): CombatState => ({
   ...createCombatState(emptyDeck, PLAINS_WAVES),
-  towers: [{ cardId, pos: { x, y }, cooldownLeft: 0 }],
+  units: [{ cardId, pos: { x, y }, hp: 10, maxHp: 10, cooldownLeft: 0 }],
 });
 
 describe('徹甲弩の重装特効', () => {
   it('HP40未満の敵には基礎ダメージ', () => {
-    const state = withTower('piercer', 1, 2);
+    const state = withUnit('piercer', 1, 2);
     expect(effectiveDamage(state, 0, PLAINS_MAP, enemyOf('grunt', 20))).toBe(7);
   });
 
   it('HP40以上の敵には2倍', () => {
-    const state = withTower('piercer', 1, 2);
+    const state = withUnit('piercer', 1, 2);
     expect(effectiveDamage(state, 0, PLAINS_MAP, enemyOf('brute', 60))).toBe(14);
   });
 
   it('しきい値ちょうど（40）でも特効が乗る', () => {
-    const state = withTower('piercer', 1, 2);
+    const state = withUnit('piercer', 1, 2);
     expect(effectiveDamage(state, 0, PLAINS_MAP, enemyOf('grunt', 40))).toBe(14);
   });
 
   it('現在HPではなく最大HPで判定する（削れても特効は乗り続ける）', () => {
-    const state = withTower('piercer', 1, 2);
+    const state = withUnit('piercer', 1, 2);
     const damaged = { ...enemyOf('brute', 60), hp: 5 };
     expect(effectiveDamage(state, 0, PLAINS_MAP, damaged)).toBe(14);
   });
 
-  it('特効を持たない塔は敵のHPで変わらない', () => {
-    const state = withTower('arrow-tower', 1, 2);
+  it('特効を持たない守り手は敵のHPで変わらない', () => {
+    const state = withUnit('arrow-tower', 1, 2);
     expect(effectiveDamage(state, 0, PLAINS_MAP, enemyOf('grunt', 20))).toBe(6);
     expect(effectiveDamage(state, 0, PLAINS_MAP, enemyOf('brute', 60))).toBe(6);
   });
@@ -64,9 +64,9 @@ describe('徹甲弩の重装特効', () => {
     // (2,3) は高台。隣接 (1,3) に篝火
     const state: CombatState = {
       ...createCombatState(emptyDeck, PLAINS_WAVES),
-      towers: [
-        { cardId: 'piercer', pos: { x: 2, y: 3 }, cooldownLeft: 0 },
-        { cardId: 'beacon', pos: { x: 1, y: 3 }, cooldownLeft: 0 },
+      units: [
+        { cardId: 'piercer', pos: { x: 2, y: 3 }, hp: 10, maxHp: 10, cooldownLeft: 0 },
+        { cardId: 'beacon', pos: { x: 1, y: 3 }, hp: 10, maxHp: 10, cooldownLeft: 0 },
       ],
     };
     // round(7 * 1.3 * 1.25 * 2) = round(22.75) = 23
@@ -82,7 +82,7 @@ describe('投石機', () => {
     // 経路始端（北レーン入口 (0,2)）に対し (2,1) は距離 hypot(2,1)=2.24 < 3.0
     const state: CombatState = {
       ...createCombatState(emptyDeck, wave),
-      towers: [{ cardId: 'catapult', pos: { x: 2, y: 1 }, cooldownLeft: 0 }],
+      units: [{ cardId: 'catapult', pos: { x: 2, y: 1 }, hp: 10, maxHp: 10, cooldownLeft: 0 }],
     };
     let s = state;
     for (let i = 0; i < COUNTDOWN_TICKS + 30; i++) s = stepTick(s, [], PLAINS_MAP);
@@ -97,7 +97,7 @@ describe('投石機', () => {
     ];
     const state: CombatState = {
       ...createCombatState(emptyDeck, wave),
-      towers: [{ cardId: 'catapult', pos: { x: 2, y: 2 }, cooldownLeft: 0 }],
+      units: [{ cardId: 'catapult', pos: { x: 2, y: 2 }, hp: 10, maxHp: 10, cooldownLeft: 0 }],
     };
     let s = state;
     for (let i = 0; i < COUNTDOWN_TICKS + 40; i++) s = stepTick(s, [], PLAINS_MAP);
@@ -111,7 +111,7 @@ describe('投石機', () => {
     ];
     const state: CombatState = {
       ...createCombatState(emptyDeck, wave),
-      towers: [{ cardId: 'catapult', pos: { x: 5, y: 2 }, cooldownLeft: 0 }],
+      units: [{ cardId: 'catapult', pos: { x: 5, y: 2 }, hp: 10, maxHp: 10, cooldownLeft: 0 }],
     };
     let s = state;
     for (let i = 0; i < COUNTDOWN_TICKS + 30; i++) s = stepTick(s, [], PLAINS_MAP);

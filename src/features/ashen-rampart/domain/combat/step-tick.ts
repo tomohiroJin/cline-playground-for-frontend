@@ -25,7 +25,7 @@ import type {
   CombatState,
   ActiveEnemy,
   TickEvent,
-  PlacedTower,
+  PlacedUnit,
   PlacedTrap,
   PlacedReactor,
   PlacedEmber,
@@ -42,11 +42,11 @@ export type PlayerAction =
 /** 滞留セル上の移動量倍率 */
 export const SLOW_TERRAIN_MULT = 0.6;
 
-/** 高台に設置した塔の火力倍率 */
+/** 高台に設置した守り手の火力倍率 */
 export const HIGH_GROUND_DAMAGE_MULT = 1.3;
 
 /**
- * 塔の実効ダメージの内訳
+ * 守り手の実効ダメージの内訳
  *
  * 篝火の貢献を測るため、オーラ抜きのダメージと実効ダメージを両方返す。
  * 丸めはそれぞれに適用する（合計してから丸めると差分がずれる）。
@@ -55,23 +55,23 @@ export const HIGH_GROUND_DAMAGE_MULT = 1.3;
  */
 export const damageBreakdown = (
   state: CombatState,
-  towerIndex: number,
+  unitIndex: number,
   map: StageMap,
   target: ActiveEnemy
 ): { total: number; auraBonus: number } => {
-  const tower = state.towers[towerIndex];
-  if (!tower) return { total: 0, auraBonus: 0 };
-  const spec = getCardDefinition(tower.cardId).tower;
+  const unit = state.units[unitIndex];
+  if (!unit) return { total: 0, auraBonus: 0 };
+  const spec = getCardDefinition(unit.cardId).tower;
   if (!spec || spec.aura) return { total: 0, auraBonus: 0 };
-  const auraBonus = state.towers.reduce((sum, other) => {
+  const auraBonus = state.units.reduce((sum, other) => {
     const otherSpec = getCardDefinition(other.cardId).tower;
     const damageBonus = otherSpec?.aura?.towerDamageBonus;
     if (damageBonus === undefined) return sum;
     const adjacent =
-      Math.abs(other.pos.x - tower.pos.x) <= 1 && Math.abs(other.pos.y - tower.pos.y) <= 1;
+      Math.abs(other.pos.x - unit.pos.x) <= 1 && Math.abs(other.pos.y - unit.pos.y) <= 1;
     return adjacent ? sum + damageBonus : sum;
   }, 0);
-  const highGround = isHighGround(map, tower.pos) ? HIGH_GROUND_DAMAGE_MULT : 1;
+  const highGround = isHighGround(map, unit.pos) ? HIGH_GROUND_DAMAGE_MULT : 1;
   const threshold = spec.heavyBonusThreshold;
   const heavy =
     threshold !== undefined && target.maxHp >= threshold ? (spec.heavyBonusMultiplier ?? 1) : 1;
@@ -81,39 +81,39 @@ export const damageBreakdown = (
 };
 
 /**
- * 塔の実効ダメージ
+ * 守り手の実効ダメージ
  *
  * 倍率の二重適用を避けるため、damageBreakdown だけがダメージ算出の責務を持つ。
  */
 export const effectiveDamage = (
   state: CombatState,
-  towerIndex: number,
+  unitIndex: number,
   map: StageMap,
   target: ActiveEnemy
-): number => damageBreakdown(state, towerIndex, map, target).total;
+): number => damageBreakdown(state, unitIndex, map, target).total;
 
 /**
- * 塔の実効射程
+ * 守り手の実効射程
  *
  * 基礎射程 + Σ隣接オーラの射程加算。effectiveDamage と同じく、
  * 算出責務をこの関数だけに持たせて加算の二重適用を防ぐ。
- * オーラ塔自身は攻撃しないため 0 を返す。
+ * オーラの守り手自身は攻撃しないため 0 を返す。
  */
 export const effectiveRange = (
   state: CombatState,
-  towerIndex: number,
+  unitIndex: number,
   _map: StageMap
 ): number => {
-  const tower = state.towers[towerIndex];
-  if (!tower) return 0;
-  const spec = getCardDefinition(tower.cardId).tower;
+  const unit = state.units[unitIndex];
+  if (!unit) return 0;
+  const spec = getCardDefinition(unit.cardId).tower;
   if (!spec || spec.aura) return 0;
-  const bonus = state.towers.reduce((sum, other) => {
+  const bonus = state.units.reduce((sum, other) => {
     const otherSpec = getCardDefinition(other.cardId).tower;
     const rangeBonus = otherSpec?.aura?.towerRangeBonus;
     if (rangeBonus === undefined) return sum;
     const adjacent =
-      Math.abs(other.pos.x - tower.pos.x) <= 1 && Math.abs(other.pos.y - tower.pos.y) <= 1;
+      Math.abs(other.pos.x - unit.pos.x) <= 1 && Math.abs(other.pos.y - unit.pos.y) <= 1;
     return adjacent ? sum + rangeBonus : sum;
   }, 0);
   return spec.range + bonus;
@@ -148,7 +148,7 @@ const samePos = (a: CellPos, b: CellPos): boolean => a.x === b.x && a.y === b.y;
 
 /** そのスロットが既に何かで埋まっているか */
 const isSlotOccupied = (state: CombatState, pos: CellPos): boolean =>
-  state.towers.some((t) => samePos(t.pos, pos)) ||
+  state.units.some((u) => samePos(u.pos, pos)) ||
   state.reactors.some((r) => samePos(r.pos, pos)) ||
   state.embers.some((e) => samePos(e.pos, pos));
 
@@ -257,7 +257,7 @@ interface ActionsDraft {
   placeCooldown: number;
   slowUntilTick: number;
   slowMultiplier: number;
-  towers: PlacedTower[];
+  units: PlacedUnit[];
   traps: PlacedTrap[];
   reactors: PlacedReactor[];
   embers: PlacedEmber[];
@@ -296,8 +296,8 @@ const applyCardEffect = (
   pos: CellPos | undefined,
   tick: number
 ): void => {
-  if (card.type === 'tower' && pos) {
-    draft.towers.push({ cardId, pos, cooldownLeft: 0 });
+  if (card.type === 'tower' && pos && card.tower) {
+    draft.units.push({ cardId, pos, hp: card.tower.hp, maxHp: card.tower.hp, cooldownLeft: 0 });
   } else if (card.type === 'trap' && pos && card.trap) {
     draft.traps.push({ cardId, pos, usesLeft: card.trap.uses, hitEnemyIds: [] });
   } else if (card.type === 'reactor' && pos && card.reactor) {
@@ -402,7 +402,7 @@ const applyActions = (
     placeCooldown: Math.max(0, state.placeCooldown - 1),
     slowUntilTick: state.slowUntilTick,
     slowMultiplier: state.slowMultiplier,
-    towers: [...state.towers],
+    units: [...state.units],
     traps: [...state.traps],
     reactors: [...state.reactors],
     embers: [...state.embers],
@@ -585,39 +585,39 @@ const applyTraps = (
   });
 
 /**
- * 塔の射撃（クールダウンを消化し、射程内の先頭の敵を狙う）
+ * 守り手の射撃（クールダウンを消化し、射程内の先頭の敵を狙う）
  *
  * 罠の判定の後に行う（hpById に罠のダメージが反映済みの状態で対象の生死を見る）。
- * オーラ計算に今 tick 配置した塔（篝火含む）も含めるため、towers（towersDraft）を
+ * オーラ計算に今 tick 配置した守り手（篝火含む）も含めるため、units（unitsDraft）を
  * 反映した stateForDamage を effectiveDamage に渡す。素の state を渡すと
- * 今 tick に置いた塔のダメージが0になるため、ここは順序も引数も変えてはいけない。
+ * 今 tick に置いた守り手のダメージが0になるため、ここは順序も引数も変えてはいけない。
  */
-const applyTowerShots = (
+const applyUnitShots = (
   state: CombatState,
-  towers: readonly PlacedTower[],
+  units: readonly PlacedUnit[],
   moved: readonly ActiveEnemy[],
   map: StageMap,
   hpById: Map<number, number>,
   sourceById: SourceById,
   events: TickEvent[],
   tick: number
-): PlacedTower[] => {
-  const stateForDamage: CombatState = { ...state, towers: [...towers] };
-  return towers.map((tower, towerIndex) => {
-    const spec = getCardDefinition(tower.cardId).tower;
-    if (!spec || spec.aura) return tower;
-    if (tower.cooldownLeft > 0) return { ...tower, cooldownLeft: tower.cooldownLeft - 1 };
-    const range = effectiveRange(stateForDamage, towerIndex, map);
-    const target = selectTowerTarget(tower, spec, range, moved, map, hpById, tick);
-    if (!target) return tower;
-    const { total: damage, auraBonus } = damageBreakdown(stateForDamage, towerIndex, map, target);
+): PlacedUnit[] => {
+  const stateForDamage: CombatState = { ...state, units: [...units] };
+  return units.map((unit, unitIndex) => {
+    const spec = getCardDefinition(unit.cardId).tower;
+    if (!spec || spec.aura) return unit;
+    if (unit.cooldownLeft > 0) return { ...unit, cooldownLeft: unit.cooldownLeft - 1 };
+    const range = effectiveRange(stateForDamage, unitIndex, map);
+    const target = selectUnitTarget(unit, spec, range, moved, map, hpById, tick);
+    if (!target) return unit;
+    const { total: damage, auraBonus } = damageBreakdown(stateForDamage, unitIndex, map, target);
     hpById.set(target.id, (hpById.get(target.id) ?? 0) - damage);
-    sourceById.set(target.id, { kind: 'tower', index: towerIndex });
+    sourceById.set(target.id, { kind: 'unit', index: unitIndex });
     const targetPos = enemyPosition(map, target);
-    const distance = Math.hypot(targetPos.x - tower.pos.x, targetPos.y - tower.pos.y);
+    const distance = Math.hypot(targetPos.x - unit.pos.x, targetPos.y - unit.pos.y);
     events.push({
       kind: 'shot',
-      towerIndex,
+      unitIndex,
       targetId: target.id,
       auraDamageBonus: auraBonus,
       // 素の射程を超えている＝鍛冶場のオーラで初めて届いた射撃
@@ -633,22 +633,22 @@ const applyTowerShots = (
         sourceById,
         tick,
         stateForDamage,
-        towerIndex
+        unitIndex
       );
     }
     // 発射周期をちょうど cooldownTicks tick にするため -1 する
     // （次tick以降の `cooldownLeft > 0` decrement 判定と合わせて、
     // ちょうど cooldownTicks tick後に再発射できる）。
-    // Math.max で下限0にガード: 現行カードに cooldownTicks:0 の通常塔は存在しない
-    // （aura塔の beacon のみ0だが、aura塔は関数冒頭で早期returnし本行に到達しない）が、
+    // Math.max で下限0にガード: 現行カードに cooldownTicks:0 の通常の守り手は存在しない
+    // （aura守り手の beacon のみ0だが、aura守り手は関数冒頭で早期returnし本行に到達しない）が、
     // 将来のカード追加で0や不正値が来ても負のcooldownLeftを作らないための契約保証。
-    return { ...tower, cooldownLeft: Math.max(0, spec.cooldownTicks - 1) };
+    return { ...unit, cooldownLeft: Math.max(0, spec.cooldownTicks - 1) };
   });
 };
 
 /** 射程内・命中対象種別を満たす敵のうち、砦に一番近い（progress 降順）ものを狙う */
-const selectTowerTarget = (
-  tower: PlacedTower,
+const selectUnitTarget = (
+  unit: PlacedUnit,
   spec: NonNullable<CardDefinition['tower']>,
   range: number,
   moved: readonly ActiveEnemy[],
@@ -661,7 +661,7 @@ const selectTowerTarget = (
     .filter((e) => spec.hitsFlying || !isEnemyFlying(e, tick))
     .filter((e) => {
       const pos = enemyPosition(map, e);
-      return Math.hypot(pos.x - tower.pos.x, pos.y - tower.pos.y) <= range;
+      return Math.hypot(pos.x - unit.pos.x, pos.y - unit.pos.y) <= range;
     })
     .sort((a, b) => b.progress - a.progress)[0];
 
@@ -680,7 +680,7 @@ const applySplashDamage = (
   sourceById: SourceById,
   tick: number,
   stateForDamage: CombatState,
-  towerIndex: number
+  unitIndex: number
 ): void => {
   const center = enemyPosition(map, target);
   moved.forEach((other) => {
@@ -688,9 +688,9 @@ const applySplashDamage = (
     if (!spec.hitsFlying && isEnemyFlying(other, tick)) return;
     const pos = enemyPosition(map, other);
     if (Math.hypot(pos.x - center.x, pos.y - center.y) <= spec.splashRadius) {
-      const damage = effectiveDamage(stateForDamage, towerIndex, map, other);
+      const damage = effectiveDamage(stateForDamage, unitIndex, map, other);
       hpById.set(other.id, (hpById.get(other.id) ?? 0) - damage);
-      sourceById.set(other.id, { kind: 'tower', index: towerIndex });
+      sourceById.set(other.id, { kind: 'unit', index: unitIndex });
     }
   });
 };
@@ -826,8 +826,8 @@ export const stepTick = (
   const traps = applyTraps(
     afterActions.traps, moved, hpById, sourceById, statusById, tick, map, events
   );
-  const towers = applyTowerShots(
-    state, afterActions.towers, moved, map, hpById, sourceById, events, tick
+  const units = applyUnitShots(
+    state, afterActions.units, moved, map, hpById, sourceById, events, tick
   );
   applyBlasts(afterActions.blasts, moved, map, hpById, sourceById, tick);
 
@@ -842,7 +842,7 @@ export const stepTick = (
     mana,
     deck,
     reactors,
-    towers,
+    units,
     traps,
     embers,
     ticksToDraw,
