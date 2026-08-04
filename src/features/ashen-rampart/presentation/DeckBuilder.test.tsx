@@ -171,24 +171,30 @@ describe('DeckBuilder', () => {
   it('14種すべてのカードに役割名が出る', () => {
     render(<DeckBuilder onStart={jest.fn()} />);
     CARD_IDS.forEach((id) => {
+      const card = getCardDefinition(id);
+      // eslint-disable-next-line security/detect-non-literal-regexp
+      const cardRow = screen.getByRole('group', { name: new RegExp(card.name) });
       const roleLabel = roleLabelOf(getUnitVisual(id).role);
-      expect(screen.getAllByText(roleLabel).length).toBeGreaterThan(0);
+      // その行の中だけで役割名を検証。複数カードが同じ役割を持っても、
+      // 1枚のカードの役割名が消えれば、その行では見つからない
+      // 役割名とカード名が同じ場合もあるため（魔力炉など）、getAllByText を使用
+      expect(within(cardRow).getAllByText(roleLabel).length).toBeGreaterThan(0);
     });
   });
 
   it('属性バッジを持つカードにバッジが出る', () => {
     render(<DeckBuilder onStart={jest.fn()} />);
-    // 各カードのバッジが画面に出ていることを確認
-    // getAllByText を使って複数ヒットに対応
-    const collectedBadges = new Set<string>();
     CARD_IDS.forEach((id) => {
+      const card = getCardDefinition(id);
       const badges = cardBadgesOf(id);
+      if (badges.length === 0) return; // このカードはバッジがない
+      // eslint-disable-next-line security/detect-non-literal-regexp
+      const cardRow = screen.getByRole('group', { name: new RegExp(card.name) });
+      // その行の中だけでバッジを検証。複数カードが同じバッジを持っても、
+      // 1枚のカードのバッジが消えれば、その行では見つからない
       badges.forEach((badge) => {
-        collectedBadges.add(badge);
+        expect(within(cardRow).getAllByText(badge).length).toBeGreaterThan(0);
       });
-    });
-    collectedBadges.forEach((badge) => {
-      expect(screen.getAllByText(badge).length).toBeGreaterThan(0);
     });
   });
 });
