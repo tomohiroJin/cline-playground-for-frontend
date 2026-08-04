@@ -78,6 +78,18 @@ describe('cardStatsOf', () => {
     expect(cardStatsOf('levy')).toHaveLength(1);
   });
 
+  it('魔力炉はマナ生成量と間隔秒を出す（tick→秒の丸め: Math.ceil(60/10)=6）', () => {
+    expect(cardStatsOf('reactor')).toEqual(['マナ+1', '6秒']);
+  });
+
+  it('燠火はダメージと効果半径を出す', () => {
+    expect(cardStatsOf('ember-blast')).toEqual(['ダメージ8', '半径2']);
+  });
+
+  it('呪文は速度倍率と持続秒を出す（tick→秒の丸め: Math.ceil(200/10)=20）', () => {
+    expect(cardStatsOf('mud-time')).toEqual(['速度x0.6', '20秒']);
+  });
+
   it('全14種が数値を持ち、2つを超えない', () => {
     CARD_IDS.forEach((id) => {
       const stats = cardStatsOf(id);
@@ -98,6 +110,14 @@ describe('cardBadgesOf', () => {
 
   it('弓兵はバッジなし', () => {
     expect(cardBadgesOf('arrow-tower')).toEqual([]);
+  });
+
+  it('弩砲は対空のみ（貫通も範囲もなし）', () => {
+    expect(cardBadgesOf('ballista')).toEqual(['対空']);
+  });
+
+  it('投石機は範囲のみ（対空なし、単体攻撃ではない）', () => {
+    expect(cardBadgesOf('catapult')).toEqual(['範囲']);
   });
 
   it('塔でないカードはバッジなし', () => {
