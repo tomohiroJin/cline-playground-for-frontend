@@ -25,8 +25,10 @@ const Wrapper = styled.div<{ $left: number; $top: number }>`
   align-items: center;
   gap: 2px;
   pointer-events: none;
-  /* z 順序: セル(0) < エフェクト(1) < 敵マーカー(2)。HPバーをエフェクトが覆わない */
-  z-index: 2;
+  /* z 順序: セル(0) < エフェクト(1) < 守り手のHPバー(2) < 敵マーカー(3)。
+     反復3 で守り手のHPバーが z-index:2 に入ったため、敵マーカーは
+     さらに上の 3 に押し上げる（エフェクト・守り手HPのどちらにも埋もれない） */
+  z-index: 3;
 `;
 
 /**

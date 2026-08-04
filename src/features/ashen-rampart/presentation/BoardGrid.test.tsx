@@ -7,12 +7,20 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { BoardGrid } from './BoardGrid';
-import { PLAINS_MAP } from '../domain/board/stage-map';
+import { PLAINS_MAP, allPathCells, laneOf } from '../domain/board/stage-map';
 import { createCombatState } from '../domain/combat/combat-state';
 import { PLAINS_WAVES } from '../domain/combat/waves';
 import { createDeck } from '../domain/cards/deck';
 
 const emptyState = createCombatState({ drawPile: [], hand: [], graveyard: [] }, PLAINS_WAVES);
+
+const defaultProps = {
+  map: PLAINS_MAP,
+  state: emptyState,
+  placeableCells: [],
+  effects: [],
+  onCellClick: jest.fn(),
+};
 
 describe('BoardGrid', () => {
   it('経路と設置スロットが読み取れるラベルを持つ', () => {
@@ -146,5 +154,37 @@ describe('BoardGrid', () => {
     // (0,0) はかつて設置スロットの制約（経路から距離1.5以内）で「城壁の外」だったが、
     // buildSlots 廃止により経路外は一律「設置可」になった
     expect(screen.getByLabelText(/^0,0 設置可/)).toBeInTheDocument();
+  });
+});
+
+describe('2レーンの盤面', () => {
+  it('両レーンの経路セルが経路として描かれる', () => {
+    render(<BoardGrid {...defaultProps} />);
+    allPathCells(PLAINS_MAP).forEach((c) => {
+      expect(screen.getByTestId(`cell-${c.x}-${c.y}`)).toHaveAttribute('data-path', 'true');
+    });
+  });
+
+  it('中央列は経路として描かれない（射手を置く場所）', () => {
+    render(<BoardGrid {...defaultProps} />);
+    expect(screen.getByTestId('cell-4-3')).toHaveAttribute('data-path', 'false');
+  });
+
+  it('レーンごとに区別できる属性を持つ（色だけに依存しない）', () => {
+    render(<BoardGrid {...defaultProps} />);
+    const north = laneOf(PLAINS_MAP, 0)[1]!;
+    const south = laneOf(PLAINS_MAP, 1)[1]!;
+    const northCell = screen.getByTestId(`cell-${north.x}-${north.y}`);
+    const southCell = screen.getByTestId(`cell-${south.x}-${south.y}`);
+    expect(northCell.getAttribute('data-lane')).not.toBe(southCell.getAttribute('data-lane'));
+  });
+
+  it('守り手のHPバーが表示される', () => {
+    const units = [{ cardId: 'stone-wall', pos: { x: 3, y: 2 }, hp: 30, maxHp: 60, cooldownLeft: 0 }];
+    render(<BoardGrid {...defaultProps} state={{ ...emptyState, units }} />);
+    const bar = screen.getByTestId('unit-hp-3-2');
+    expect(bar).toHaveAttribute('role', 'progressbar');
+    expect(bar).toHaveAttribute('aria-valuenow', '30');
+    expect(bar).toHaveAttribute('aria-valuemax', '60');
   });
 });
