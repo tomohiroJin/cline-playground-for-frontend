@@ -10,6 +10,9 @@ import { getCardDefinition } from '../domain/cards/card-pool';
 import type { CombatState } from '../domain/combat/combat-state';
 import { DRAW_INTERVAL_TICKS, PLACE_COOLDOWN_TICKS } from '../domain/combat/combat-state';
 import { COLORS } from './theme';
+import { CardGlyph } from './CardGlyph';
+import { cardBadgesOf, cardStatsOf, toSeconds } from './card-text';
+import { getUnitVisual, roleLabelOf } from './unit-visual';
 
 const Bar = styled.div`
   display: flex;
@@ -52,7 +55,10 @@ const Cards = styled.div`
 `;
 
 const Card = styled.button<{ $selected: boolean }>`
-  min-width: 92px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 112px;
   min-height: 44px;
   padding: 6px 8px;
   text-align: left;
@@ -65,6 +71,27 @@ const Card = styled.button<{ $selected: boolean }>`
     opacity: 0.45;
     cursor: not-allowed;
   }
+`;
+
+const CardHead = styled.span`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+`;
+
+const StatRow = styled.span`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 11px;
+  opacity: 0.85;
+`;
+
+const Badge = styled.span`
+  padding: 0 3px;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  font-size: 10px;
 `;
 
 const CardSlot = styled.div`
@@ -119,8 +146,6 @@ const Notice = styled.p`
   color: ${COLORS.opportunity};
 `;
 
-const toSeconds = (ticks: number): number => Math.ceil(ticks / 10);
-
 interface Props {
   state: CombatState;
   selectedIndex: number | null;
@@ -168,13 +193,23 @@ export const HandArea: React.FC<Props> = ({
                 type="button"
                 $selected={selectedIndex === index}
                 aria-pressed={selectedIndex === index}
-                aria-label={`${card.name} コスト${card.cost}`}
+                aria-label={`${roleLabelOf(getUnitVisual(cardId).role)} ${card.name} コスト${card.cost}`}
                 disabled={!affordable}
                 onClick={() => onSelect(index)}
               >
-                {card.name}
-                <br />
-                コスト{card.cost}
+                <CardHead>
+                  <CardGlyph cardId={cardId} />
+                  {card.name}
+                </CardHead>
+                <StatRow>
+                  <span>コスト{card.cost}</span>
+                  {cardStatsOf(cardId).map((stat) => (
+                    <span key={stat}>{stat}</span>
+                  ))}
+                  {cardBadgesOf(cardId).map((badge) => (
+                    <Badge key={badge}>{badge}</Badge>
+                  ))}
+                </StatRow>
               </Card>
               <DiscardButton
                 type="button"

@@ -107,10 +107,15 @@ const submitRunNote = (text = 'テスト用の記録'): void => {
   fireEvent.click(screen.getByRole('button', { name: '記録する' }));
 };
 
-/** 手札グループ内で「徴発」のカードボタンを探す（HandArea に role="group" aria-label="手札" を追加済み） */
+/**
+ * 手札グループ内で「徴発」のカードボタンを探す（HandArea に role="group" aria-label="手札" を追加済み）
+ *
+ * Task 7 で aria-label が「役割 カード名 コスト…」になった（例: 「徴発 徴発 コスト1」）。
+ * 先頭アンカーを外し部分一致にすることで、役割ラベルの追加に依存しない。
+ */
 const findLevyHandButton = (): HTMLElement | null =>
   within(screen.getByRole('group', { name: '手札' })).queryByRole('button', {
-    name: /^徴発 コスト/,
+    name: /徴発 コスト/,
   });
 
 /**
@@ -300,7 +305,8 @@ describe('AshenRampartGame', () => {
     render(<AshenRampartGame />);
     startRunningWithStoneWallDeck();
 
-    fireEvent.click(screen.getByRole('button', { name: /^石壁 コスト/ }));
+    // aria-label は Task 7 で「役割 カード名 コスト…」（例: 「壁 石壁 コスト1」）になったため部分一致にする
+    fireEvent.click(screen.getByRole('button', { name: /石壁 コスト/ }));
     const pathCell = laneOf(PLAINS_MAP, 0)[3]!;
     fireEvent.click(screen.getByTestId(`cell-${pathCell.x}-${pathCell.y}`));
     // 配置操作は pendingRef に積まれるだけで、次 tick の stepTick で確定する
@@ -475,7 +481,8 @@ describe('AshenRampartGame', () => {
     let reactorCard: HTMLElement | null = null;
     for (let advanced = 0; advanced < 300 && !reactorCard; advanced += 1) {
       // 反復2 で魔力炉が8枚になり、手札に同時に複数枚並ぶため先頭を取る
-      reactorCard = within(hand).queryAllByRole('button', { name: /^魔力炉 コスト/ })[0] ?? null;
+      // aria-label は Task 7 で「役割 カード名 コスト…」になったため部分一致にする
+      reactorCard = within(hand).queryAllByRole('button', { name: /魔力炉 コスト/ })[0] ?? null;
       if (reactorCard) break;
       act(() => {
         jest.advanceTimersByTime(TICK_INTERVAL_MS);

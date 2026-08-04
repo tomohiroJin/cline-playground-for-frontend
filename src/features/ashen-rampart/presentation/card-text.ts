@@ -56,7 +56,14 @@ export const towerStatsTextOf = (cardId: string): string | undefined => {
 /** 1秒あたりの tick 数。表示用に秒へ丸めるときだけ使う */
 const TICKS_PER_SECOND = 10;
 
-const toSeconds = (ticks: number): number => Math.ceil(ticks / TICKS_PER_SECOND);
+/**
+ * tick を表示用の秒へ丸める（切り上げ）
+ *
+ * カード文言（このファイル）と手札の残り時間表示（HandArea.tsx）の両方で
+ * 使うため、責務が「表示文言」であるここに置いて export する。
+ * ここ以外に同じ丸めのコピーを作らないこと。
+ */
+export const toSeconds = (ticks: number): number => Math.ceil(ticks / TICKS_PER_SECOND);
 
 /**
  * 手札とデッキ構築に出す主要数値（最大2つ）
