@@ -947,16 +947,12 @@ export const PlacedStatusBar: React.FC<Props> = ({ plate, columns, rows }) => {
 Run: `npx jest src/features/ashen-rampart/presentation/PlacedStatusBar.test.tsx`
 Expected: PASS
 
-- [ ] **Step 5: 旧 `UnitHpBar` を削除する**
+- [ ] **Step 5: 型チェックと lint**
 
-`UnitHpBar` の参照元は `BoardGrid.tsx` のみ。Task 5 で差し替えるため、ここでは削除だけ行い、`BoardGrid.tsx` は次のタスクで直す。
+Run: `npm run typecheck && npx eslint src/features/ashen-rampart/presentation/PlacedStatusBar.tsx src/features/ashen-rampart/presentation/PlacedStatusBar.test.tsx`
+Expected: エラーなし
 
-```bash
-git rm src/features/ashen-rampart/presentation/UnitHpBar.tsx
-ls src/features/ashen-rampart/presentation/UnitHpBar.test.tsx 2>/dev/null && git rm src/features/ashen-rampart/presentation/UnitHpBar.test.tsx
-```
-
-この時点で `npm run typecheck` は `BoardGrid.tsx` の import エラーで失敗する。**Task 5 で解消する。**
+**旧 `UnitHpBar.tsx` はこのタスクでは削除しない。** `BoardGrid.tsx` がまだ参照しているため、削除すると型チェックが赤くなる。削除は参照が消える Task 5 で行う。**このタスクは緑で終わること。**
 
 - [ ] **Step 6: コミット**
 
@@ -980,6 +976,7 @@ git commit -m "feat(ashen-rampart): 状態バーを4種の設置物へ汎用化�
 **Files:**
 - Modify: `src/features/ashen-rampart/presentation/BoardGrid.tsx`
 - Modify: `src/features/ashen-rampart/presentation/BoardGrid.test.tsx`
+- Delete: `src/features/ashen-rampart/presentation/UnitHpBar.tsx`（および同名のテストがあれば併せて削除）
 
 **Interfaces:**
 - Consumes: `buildPlates` / `plateKeyOf`（Task 2）、`UnitPlate`（Task 3）、`PlacedStatusBar`（Task 4）、`roleLabelOf`（Task 1）
@@ -1144,15 +1141,24 @@ export const BoardGrid: React.FC<Props> = ({ map, state, placeableCells, effects
 Run: `npx jest src/features/ashen-rampart/presentation/BoardGrid.test.tsx`
 Expected: PASS
 
-- [ ] **Step 5: 全テストと型チェック**
+- [ ] **Step 5: 旧 `UnitHpBar` を削除する**
+
+`BoardGrid.tsx` が参照をやめた今、`UnitHpBar` の参照元は無い。Task 4 で作った `PlacedStatusBar` が完全に置き換えている。
+
+```bash
+grep -rn "UnitHpBar" src/ && echo "参照が残っている。削除前に解消すること" || git rm src/features/ashen-rampart/presentation/UnitHpBar.tsx
+ls src/features/ashen-rampart/presentation/UnitHpBar.test.tsx 2>/dev/null && git rm src/features/ashen-rampart/presentation/UnitHpBar.test.tsx
+```
+
+- [ ] **Step 6: 全テストと型チェック**
 
 Run: `npm run typecheck && npx jest src/features/ashen-rampart`
 Expected: すべて PASS（`UnitHpBar` への参照が残っていないこと）
 
-- [ ] **Step 6: コミット**
+- [ ] **Step 7: コミット**
 
 ```bash
-git add src/features/ashen-rampart/presentation/BoardGrid.tsx src/features/ashen-rampart/presentation/BoardGrid.test.tsx
+git add -A src/features/ashen-rampart/presentation/BoardGrid.tsx src/features/ashen-rampart/presentation/BoardGrid.test.tsx src/features/ashen-rampart/presentation/UnitHpBar.tsx
 git commit -m "feat(ashen-rampart): 盤面の占有表示を台座レイヤへ差し替える
 
 5種類の攻撃塔がすべて「塔」の1文字だった状態を解消し、
@@ -1642,6 +1648,7 @@ git commit -m "feat(ashen-rampart): デッキ構築にも形アイコンと役�
 - Modify: `src/features/ashen-rampart/presentation/useAshenRampartGame.test.ts`
 - Modify: `src/features/ashen-rampart/presentation/BoardGrid.tsx`
 - Modify: `src/features/ashen-rampart/presentation/AshenRampartGame.tsx`
+- Modify: `src/features/ashen-rampart/application/ports/play-log-port.ts`（`inspect_opened` の型のみ）
 
 **Interfaces:**
 - Consumes: `PlateModel` / `buildPlates` / `plateKeyOf`（Task 2）、`roleLabelOf`（Task 1）
@@ -1703,7 +1710,17 @@ git commit -m "feat(ashen-rampart): デッキ構築にも形アイコンと役�
 Run: `npx jest src/features/ashen-rampart/presentation/useAshenRampartGame.test.ts`
 Expected: FAIL — `inspectedPlate` が undefined のまま／`inspect_opened` が記録されない
 
-- [ ] **Step 3: フックを実装する**
+- [ ] **Step 3: `inspect_opened` の型を先に足す**
+
+このタスクが記録するイベントなので、型もここで足す。**残る2種（`card_discarded_manual` / `run_tally`）とスキーマのバージョン上げは Task 11 で行う。** タスクごとに型チェックが緑で終わるようにするための分割である。
+
+`src/features/ashen-rampart/application/ports/play-log-port.ts` の `PlayLogEventBody` の union へ追加する。
+
+```ts
+  | { kind: 'inspect_opened'; runId: string; cardId: string; tick: number }
+```
+
+- [ ] **Step 4: フックを実装する**
 
 `useAshenRampartGame.ts`:
 
@@ -1793,14 +1810,14 @@ const [inspectedKey, setInspectedKey] = useState<string | null>(null);
 
 `discardCard` の先頭で `manualDiscardsRef.current += 1;` を加える。`restart` で両方を 0 に戻す。
 
-- [ ] **Step 4: フックのテストが通ることを確認**
+- [ ] **Step 5: フックのテストが通ることを確認**
 
 Run: `npx jest src/features/ashen-rampart/presentation/useAshenRampartGame.test.ts`
 Expected: PASS
 
 > `inspect_opened` イベントは Task 11 で `play-log-port.ts` に型を追加する。**このタスクの時点では型エラーになる**ため、Task 11 を先に実施してもよい。順序を入れ替える場合はこの依存だけ注意する。
 
-- [ ] **Step 5: `RangeOverlay.tsx` を実装する**
+- [ ] **Step 6: `RangeOverlay.tsx` を実装する**
 
 ```tsx
 /**
@@ -1905,7 +1922,7 @@ describe('RangeOverlay', () => {
 });
 ```
 
-- [ ] **Step 6: `InspectPanel.tsx` を実装する**
+- [ ] **Step 7: `InspectPanel.tsx` を実装する**
 
 ```tsx
 /**
@@ -2029,7 +2046,7 @@ describe('InspectPanel', () => {
 });
 ```
 
-- [ ] **Step 7: `BoardGrid.tsx` と `AshenRampartGame.tsx` を繋ぐ**
+- [ ] **Step 8: `BoardGrid.tsx` と `AshenRampartGame.tsx` を繋ぐ**
 
 `BoardGrid.tsx` に props を1つ足す。
 
@@ -2069,12 +2086,12 @@ import { InspectPanel } from './InspectPanel';
         <EnemyLegend />
 ```
 
-- [ ] **Step 8: 全テストと型チェック**
+- [ ] **Step 9: 全テストと型チェック**
 
 Run: `npm run typecheck && npx jest src/features/ashen-rampart`
-Expected: すべて PASS（`inspect_opened` の型は Task 11 で追加するため、順序によっては先に Task 11 を済ませる）
+Expected: すべて PASS（`inspect_opened` の型は Step 3 で追加済み）
 
-- [ ] **Step 9: コミット**
+- [ ] **Step 10: コミット**
 
 ```bash
 git add src/features/ashen-rampart/presentation/RangeOverlay.tsx src/features/ashen-rampart/presentation/RangeOverlay.test.tsx src/features/ashen-rampart/presentation/InspectPanel.tsx src/features/ashen-rampart/presentation/InspectPanel.test.tsx src/features/ashen-rampart/presentation/useAshenRampartGame.ts src/features/ashen-rampart/presentation/useAshenRampartGame.test.ts src/features/ashen-rampart/presentation/BoardGrid.tsx src/features/ashen-rampart/presentation/AshenRampartGame.tsx
@@ -2176,7 +2193,7 @@ git commit -m "feat(ashen-rampart): 台座に配置時のポップインを足�
 - Modify: `src/features/ashen-rampart/presentation/AshenRampartGame.test.tsx`
 
 **Interfaces:**
-- Produces: `PlayLogEventBody` に3種追加、`CURRENT_ITERATION = 4`、`PLAY_LOG_STORAGE_KEY = 'ashen-rampart:play-log-v3'`
+- Produces: `PlayLogEventBody` に2種追加（`inspect_opened` は Task 9 済み）、`CURRENT_ITERATION = 4`、`PLAY_LOG_STORAGE_KEY = 'ashen-rampart:play-log-v3'`
 
 - [ ] **Step 1: 失敗するテストを書く**
 
@@ -2226,11 +2243,10 @@ Expected: FAIL
 export const CURRENT_ITERATION = 4;
 ```
 
-`PlayLogEventBody` の union に3種を追加する。
+`PlayLogEventBody` の union に2種を追加する（`inspect_opened` は Task 9 で追加済み）。
 
 ```ts
   | { kind: 'card_discarded_manual'; runId: string; cardId: string; tick: number }
-  | { kind: 'inspect_opened'; runId: string; cardId: string; tick: number }
   | {
       /**
        * 決着時の集計スナップショット（反復4で追加）
