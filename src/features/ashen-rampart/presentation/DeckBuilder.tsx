@@ -18,7 +18,9 @@ import {
   maxCopiesOf,
 } from '../domain/cards/card-pool';
 import { countByCard, costCurve, validateDeck } from '../domain/cards/deck-builder';
-import { weaknessTextOf, towerStatsTextOf } from './card-text';
+import { cardBadgesOf, weaknessTextOf, towerStatsTextOf } from './card-text';
+import { CardGlyph } from './CardGlyph';
+import { getUnitVisual, roleLabelOf } from './unit-visual';
 import { COLORS } from './theme';
 import { HEADER_CLEARANCE } from './layout-constants';
 
@@ -46,6 +48,24 @@ const CardRow = styled.div`
   padding: 8px;
   border: 1px solid ${COLORS.grid};
   border-radius: 4px;
+`;
+
+const RowHead = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+`;
+
+const RoleTag = styled.span`
+  font-size: 11px;
+  opacity: 0.75;
+`;
+
+const Badge = styled.span`
+  padding: 0 3px;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  font-size: 10px;
 `;
 
 const Controls = styled.div`
@@ -177,9 +197,14 @@ export const DeckBuilder: React.FC<Props> = ({ onStart, initialCards, initialSee
           const count = counts.get(id) ?? 0;
           return (
             <CardRow key={id} role="group" aria-label={`${card.name} コスト${card.cost}`}>
-              <strong>
-                {card.name}（コスト{card.cost}）
-              </strong>
+              <RowHead>
+                <CardGlyph cardId={id} />
+                <strong>{card.name}</strong>
+                <RoleTag>{roleLabelOf(getUnitVisual(id).role)}</RoleTag>
+                {cardBadgesOf(id).map((badge) => (
+                  <Badge key={badge}>{badge}</Badge>
+                ))}
+              </RowHead>
               <span>{card.description}</span>
               {towerStatsTextOf(id) && <Stats>{towerStatsTextOf(id)}</Stats>}
               <Weakness>{weaknessTextOf(id)}</Weakness>

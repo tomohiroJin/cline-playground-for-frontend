@@ -158,4 +158,15 @@ describe('DeckBuilder', () => {
     const [, seed] = onStart.mock.calls[0] as [string[], number | undefined];
     expect(seed).toBe(777);
   });
+
+  it('各カードに形アイコンと役割名が出る', () => {
+    render(<DeckBuilder onStart={jest.fn()} />);
+    expect(screen.getByTestId('card-glyph-arrow-tower')).toBeInTheDocument();
+    expect(screen.getAllByText('攻撃塔').length).toBeGreaterThan(0);
+  });
+
+  it('属性バッジが出る', () => {
+    render(<DeckBuilder onStart={jest.fn()} />);
+    expect(screen.getAllByText('貫通').length).toBeGreaterThan(0);
+  });
 });
