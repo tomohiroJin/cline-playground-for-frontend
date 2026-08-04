@@ -427,7 +427,7 @@ describe('AshenRampartGame', () => {
     advanceUntilRunEnds();
 
     // 決着直後は「記録する」欄だけで、集計・再挑戦・ログコピーはまだ出ない
-    expect(screen.queryByText(/置くときに選べたマス/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/レーンへの配分/)).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'もう一度挑む' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '同じデッキで別のシードに挑む' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '計測ログをコピー' })).not.toBeInTheDocument();
@@ -438,7 +438,7 @@ describe('AshenRampartGame', () => {
     fireEvent.click(screen.getByRole('button', { name: '記録する' }));
 
     // 記録した後にだけ集計・各ボタンが開く
-    expect(await screen.findByText(/置くときに選べたマス/)).toBeVisible();
+    expect(await screen.findByText(/レーンへの配分/)).toBeVisible();
     expect(screen.getByRole('button', { name: 'もう一度挑む' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '同じデッキで別のシードに挑む' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '計測ログをコピー' })).toBeInTheDocument();
@@ -449,14 +449,14 @@ describe('AshenRampartGame', () => {
     startRunning();
     advanceUntilRunEnds();
     submitRunNote('1回目の記録');
-    expect(await screen.findByText(/置くときに選べたマス/)).toBeVisible();
+    expect(await screen.findByText(/レーンへの配分/)).toBeVisible();
 
     fireEvent.click(screen.getByRole('button', { name: '同じデッキで別のシードに挑む' }));
 
     // 盤面に留まったまま新しいランが始まり、記録前の状態（集計非表示・欄が空）に戻っている
     expect(screen.getByRole('button', { name: '一時停止' })).toBeInTheDocument();
     advanceUntilRunEnds();
-    expect(screen.queryByText(/置くときに選べたマス/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/レーンへの配分/)).not.toBeInTheDocument();
     expect((screen.getByLabelText(/勝敗の理由を記録する/) as HTMLTextAreaElement).value).toBe('');
   });
 
