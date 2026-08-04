@@ -31,6 +31,8 @@ export const EFFECT_LIFETIME = {
   ember: 5,
   defeat: 8,
   leak: 8,
+  'unit-damaged': 3,
+  'unit-lost': 8,
 } as const;
 
 /**
@@ -38,14 +40,23 @@ export const EFFECT_LIFETIME = {
  *
  * 寿命は shot 3 tick に対し leak 8 tick で、leak は常に「古い」側になる。
  * 古い順に落とすと最も重要な情報が最初に捨てられるため、優先度順にする。
+ *
+ * unit-lost は守り手が消滅する取り返しのつかない出来事なので、leak の次に
+ * 重い。unit-damaged は守り手の攻撃間隔ごとに出る高頻度の出来事であり、
+ * shot と同じ理由（高頻度＝個々の重要度は低い）で同格に軽い。
+ *
+ * `Record<Effect['kind'], number>` にすることで、Effect の種類が増えたのに
+ * ここへの追記を忘れるとコンパイルエラーになる（漏れの防止）。
  */
-const EFFECT_PRIORITY = {
-  leak: 4,
+const EFFECT_PRIORITY: Record<Effect['kind'], number> = {
+  leak: 5,
+  'unit-lost': 4,
   defeat: 3,
   trap: 2,
   ember: 2,
   shot: 1,
-} as const;
+  'unit-damaged': 1,
+};
 
 /**
  * reduced-motion 時の一律の寿命（tick）
@@ -77,6 +88,10 @@ export const EFFECT_STROKE_WIDTH = {
   trap: 3,
   /** 燠火の輪 */
   ember: 2,
+  /** 被弾の縁取り。攻撃間隔ごとに出る高頻度の出来事なので細く */
+  unitDamaged: 1,
+  /** 消滅の ✕ マーク */
+  unitLost: 3,
 } as const;
 
 /** 貫通の守り手の射撃線に使う破線パターン */
@@ -102,7 +117,9 @@ export type Effect =
   | { kind: 'defeat'; id: string; from: CellPos; to: CellPos; untilTick: number }
   | { kind: 'trap'; id: string; at: CellPos; untilTick: number }
   | { kind: 'ember'; id: string; at: CellPos; radius: number; untilTick: number }
-  | { kind: 'leak'; id: string; at: CellPos; untilTick: number };
+  | { kind: 'leak'; id: string; at: CellPos; untilTick: number }
+  | { kind: 'unit-damaged'; id: string; pos: CellPos; untilTick: number }
+  | { kind: 'unit-lost'; id: string; pos: CellPos; untilTick: number };
 
 /**
  * 敵の現在位置。既に消えた敵は undefined
@@ -174,6 +191,25 @@ const toEffect = (
     const at = fortressCell(map);
     if (!at) return undefined;
     return { kind: 'leak', id, at, untilTick: tick + lifetimeOf('leak', reducedMotion) };
+  }
+  if (event.kind === 'unit-damaged') {
+    // unitIndex は同一 tick 内の守り手消滅で units 配列が縮むと
+    // ずれるため信用できない（Task 5 の既知課題）。イベント自身が持つ
+    // 座標をそのまま使うことで、配列インデックスの解決を経由しない。
+    return {
+      kind: 'unit-damaged',
+      id,
+      pos: event.pos,
+      untilTick: tick + lifetimeOf('unit-damaged', reducedMotion),
+    };
+  }
+  if (event.kind === 'unit-lost') {
+    return {
+      kind: 'unit-lost',
+      id,
+      pos: event.pos,
+      untilTick: tick + lifetimeOf('unit-lost', reducedMotion),
+    };
   }
   return undefined;
 };

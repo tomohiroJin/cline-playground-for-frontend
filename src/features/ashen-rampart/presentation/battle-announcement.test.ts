@@ -53,4 +53,30 @@ describe('decideBattleAnnouncement', () => {
     const decision = decideBattleAnnouncement(stateAt(200, leaks, 8), 1);
     expect(decision).toEqual({ text: '2体が砦に到達。残りライフ 8', wave: 1 });
   });
+
+  it('守り手が消滅した tick で名前付きの読み上げが出る', () => {
+    const event: TickEvent = { kind: 'unit-lost', unitIndex: 0, cardId: 'stone-wall', pos: { x: 1, y: 1 } };
+    const decision = decideBattleAnnouncement(stateAt(100, [event]), 1);
+    expect(decision).toEqual({ text: '石壁が破壊されました', wave: 1 });
+  });
+
+  it('被弾（unit-damaged）は高頻度なので読み上げない（除外の基準は要素名ではなく頻度）', () => {
+    const event: TickEvent = { kind: 'unit-damaged', unitIndex: 0, pos: { x: 1, y: 1 }, enemyId: 1, amount: 2 };
+    expect(decideBattleAnnouncement(stateAt(100, [event]), 1)).toBeUndefined();
+  });
+
+  it('同じ tick に漏れと守り手の消滅が重なれば漏れが優先される', () => {
+    const events: TickEvent[] = [
+      { kind: 'leak', enemyId: 1 },
+      { kind: 'unit-lost', unitIndex: 0, cardId: 'stone-wall', pos: { x: 1, y: 1 } },
+    ];
+    const decision = decideBattleAnnouncement(stateAt(90, events, 9), 0);
+    expect(decision).toEqual({ text: '1体が砦に到達。残りライフ 9', wave: 1 });
+  });
+
+  it('同じ tick に守り手の消滅とウェーブ境界が重なれば守り手の消滅が優先される', () => {
+    const event: TickEvent = { kind: 'unit-lost', unitIndex: 0, cardId: 'stone-wall', pos: { x: 1, y: 1 } };
+    const decision = decideBattleAnnouncement(stateAt(90, [event]), 0);
+    expect(decision).toEqual({ text: '石壁が破壊されました', wave: 1 });
+  });
 });
