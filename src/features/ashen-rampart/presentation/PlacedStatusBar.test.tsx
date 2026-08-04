@@ -9,10 +9,35 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { PlacedStatusBar } from './PlacedStatusBar';
 import { buildPlates } from './board-plates';
-import type { CombatState } from '../domain/combat/combat-state';
+import type { CombatState, PlacedUnit, PlacedTrap, PlacedReactor, PlacedEmber } from '../domain/combat/combat-state';
+import { createCombatState } from '../domain/combat/combat-state';
+import type { DeckState } from '../domain/cards/deck';
 
-const stateWith = (partial: Partial<CombatState>): CombatState =>
-  ({ units: [], traps: [], reactors: [], embers: [], events: [], ...partial }) as CombatState;
+/**
+ * テスト用に必要な部分だけ持つ CombatState を組む
+ *
+ * 最小限の有効な DeckState で createCombatState を初期化し、
+ * spread で overrides を適用する。これにより TypeScript は完全な
+ * CombatState を保証し、as キャストを避けられる。
+ */
+const stateWith = (overrides: {
+  units?: PlacedUnit[];
+  traps?: PlacedTrap[];
+  reactors?: PlacedReactor[];
+  embers?: PlacedEmber[];
+  events?: CombatState['events'];
+}): CombatState => {
+  const emptyDeck: DeckState = { drawPile: [], hand: [], graveyard: [] };
+  const base = createCombatState(emptyDeck, []);
+  return {
+    ...base,
+    units: overrides.units ?? [],
+    traps: overrides.traps ?? [],
+    reactors: overrides.reactors ?? [],
+    embers: overrides.embers ?? [],
+    events: overrides.events ?? [],
+  };
+};
 
 describe('PlacedStatusBar', () => {
   it('守り手は残HPを progressbar として出す', () => {
