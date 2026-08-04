@@ -17,9 +17,10 @@ import { isHighGround, isSlowCell, isPathCell, laneOf, pathDirectionAt } from '.
 import type { CombatState } from '../domain/combat/combat-state';
 import { stackEnemies } from './enemy-stack';
 import { EnemyMarker } from './EnemyMarker';
-import { buildPlates, plateKeyOf } from './board-plates';
+import { buildPlates, plateKeyOf, type PlateModel } from './board-plates';
 import { UnitPlate } from './UnitPlate';
 import { PlacedStatusBar } from './PlacedStatusBar';
+import { RangeOverlay } from './RangeOverlay';
 import { roleLabelOf } from './unit-visual';
 import { BoardEffectLayer } from './BoardEffectLayer';
 import type { Effect } from './combat-effects';
@@ -120,6 +121,8 @@ interface Props {
   placeableCells: readonly CellPos[];
   effects: readonly Effect[];
   onCellClick: (pos: CellPos) => void;
+  /** 能力表示の対象（未選択なら undefined） */
+  inspectedPlate?: PlateModel;
 }
 
 const samePos = (a: CellPos, b: CellPos): boolean => a.x === b.x && a.y === b.y;
@@ -142,6 +145,7 @@ export const BoardGrid: React.FC<Props> = ({
   placeableCells,
   effects,
   onCellClick,
+  inspectedPlate,
 }) => {
   const cells: CellPos[] = [];
   for (let y = 0; y < map.height; y++) {
@@ -205,6 +209,9 @@ export const BoardGrid: React.FC<Props> = ({
       {plates.map((plate) => (
         <PlacedStatusBar key={plate.key} plate={plate} columns={map.width} rows={map.height} />
       ))}
+      {inspectedPlate && (
+        <RangeOverlay plate={inspectedPlate} columns={map.width} rows={map.height} />
+      )}
       {stacks.map((stack) => (
         <EnemyMarker key={stack.id} stack={stack} columns={map.width} rows={map.height} />
       ))}

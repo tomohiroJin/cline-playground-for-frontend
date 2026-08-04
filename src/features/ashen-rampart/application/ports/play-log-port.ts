@@ -25,7 +25,8 @@ export type PlayLogEventBody =
   | { kind: 'paused'; runId: string; tick: number }
   | { kind: 'resumed'; runId: string; tick: number }
   | { kind: 'run_ended'; runId: string; outcome: 'won' | 'lost'; tick: number; handRemaining: string[] }
-  | { kind: 'run_note'; runId: string; text: string };
+  | { kind: 'run_note'; runId: string; text: string }
+  | { kind: 'inspect_opened'; runId: string; cardId: string; tick: number };
 
 export type PlayLogEvent = PlayLogEventBody & { at: number };
 
