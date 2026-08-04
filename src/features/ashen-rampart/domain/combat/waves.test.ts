@@ -6,6 +6,7 @@
  */
 import { getEnemySpec, ENEMY_IDS } from './enemies';
 import { PLAINS_WAVES, totalEnemyCount, totalEnemyHp } from './waves';
+import { LIFE_INITIAL } from './combat-state';
 
 describe('敵定義', () => {
   it('敵は5種ある', () => {
@@ -38,23 +39,38 @@ describe('ウェーブ構成', () => {
     expect(PLAINS_WAVES).toHaveLength(4);
   });
 
-  it('開始 tick は 0/250/500/750 で単調増加する', () => {
-    expect(PLAINS_WAVES.map((w) => w.startTick)).toEqual([0, 250, 500, 750]);
+  it('開始 tick は 0/260/540/820 で単調増加する', () => {
+    expect(PLAINS_WAVES.map((w) => w.startTick)).toEqual([0, 260, 540, 820]);
   });
 
-  it('敵の総HPは設計書の較正値 728 と一致する（Task 9 レビュー是正: 鴉13体＋群れ22体に強化）', () => {
-    expect(totalEnemyHp(PLAINS_WAVES)).toBe(728);
+  it('敵の総HPは反復3 の較正値 648 と一致する（2レーン化に伴う再較正）', () => {
+    expect(totalEnemyHp(PLAINS_WAVES)).toBe(648);
   });
 
-  it('総体数は 51 体', () => {
-    expect(totalEnemyCount(PLAINS_WAVES)).toBe(51);
+  it('総体数は 45 体', () => {
+    expect(totalEnemyCount(PLAINS_WAVES)).toBe(45);
   });
 
-  it('全エントリーはレーン0（北）に乗る（本格的な再構成は Task 14 の較正やり直しで行う）', () => {
-    const entries = PLAINS_WAVES.flatMap((w) => w.entries);
-    entries.forEach((entry) => {
-      expect(entry.laneIndex).toBe(0);
-    });
+  it('両レーンが使われている（2レーンにした意味が構成に現れている）', () => {
+    const lanes = new Set(PLAINS_WAVES.flatMap((w) => w.entries).map((e) => e.laneIndex));
+    expect([...lanes].sort()).toEqual([0, 1]);
+  });
+
+  it('ウェーブ1は片側だけ、ウェーブ2以降は両レーンに敵が現れる', () => {
+    // 導入は1レーンだけを見ればよく、2ウェーブ目で初めて配分の判断が要る、という段階付け
+    const lanesOf = (index: number): number[] => [
+      ...new Set((PLAINS_WAVES[index]?.entries ?? []).map((e) => e.laneIndex)),
+    ];
+    expect(lanesOf(0)).toEqual([0]);
+    const laterLanes = new Set([...lanesOf(1), ...lanesOf(2), ...lanesOf(3)]);
+    expect([...laterLanes].sort()).toEqual([0, 1]);
+  });
+
+  it('飛行の総体数が初期ライフを上回る（対空なしでは漏れだけで敗北する形式）', () => {
+    const flying = PLAINS_WAVES.flatMap((w) => w.entries)
+      .filter((e) => getEnemySpec(e.enemyId).flying)
+      .reduce((sum, e) => sum + e.count, 0);
+    expect(flying).toBeGreaterThan(LIFE_INITIAL);
   });
 
   it('全ウェーブが既知の敵だけで構成される', () => {

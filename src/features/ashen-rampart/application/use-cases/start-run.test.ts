@@ -44,10 +44,11 @@ describe('startRun', () => {
     const heavy = startRun('heavy', new SeededRandom(1));
     const countReactor = (cards: string[]) => cards.filter((c) => c === 'reactor').length;
     const all = (s: typeof swift) => [...s.deck.hand, ...s.deck.drawPile];
-    // Task 13 再較正: 魔力炉のデッキ内上限を撤廃し、両プリセットとも 3→8枚（20枚中40%）へ。
-    // MTG の土地比率（42.5%）に寄せた「確実に引くための」マナ基盤である
-    expect(countReactor(all(swift))).toBe(8);
-    expect(countReactor(all(heavy))).toBe(8);
+    // Task 14 再較正: 配置クールダウンが魔力炉だけになりマナが唯一の律速になったため、
+    // 8枚は過剰になった（盤面3〜4基で消費レートが飽和する）。速攻型4枚・重厚型5枚へ減らし、
+    // 空いた枠は石壁に充てている。枚数が違うこと自体がプリセットの性格差でもある
+    expect(countReactor(all(swift))).toBe(4);
+    expect(countReactor(all(heavy))).toBe(5);
   });
 
   it('未知のプリセットIDは契約違反として例外', () => {

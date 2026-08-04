@@ -24,7 +24,22 @@ const createMockPlayLog = (): PlayLogPort & { events: PlayLogEventBody[] } => {
 };
 
 const swiftCards = (): string[] => [...PRESET_DECKS.swift!.cards];
-const heavyCards = (): string[] => [...PRESET_DECKS.heavy!.cards];
+
+/**
+ * 燠火の再点火を検証するための専用デッキ（構築規則を満たす20枚）
+ *
+ * プリセットに業火が入っているかは較正のたびに変わる。検証したいのは
+ * 「燠火のあるセルをクリックすると再点火される」というフックの振る舞いなので、
+ * プリセットに依存させない。
+ */
+const emberDeckCards = (): string[] => [
+  ...Array.from({ length: 8 }, () => 'reactor'),
+  ...Array.from({ length: 3 }, () => 'ember-blast'),
+  ...Array.from({ length: 3 }, () => 'arrow-tower'),
+  ...Array.from({ length: 3 }, () => 'ballista'),
+  ...Array.from({ length: 2 }, () => 'stone-wall'),
+  'levy',
+];
 
 describe('useAshenRampartGame', () => {
   beforeEach(() => jest.useFakeTimers());
@@ -151,10 +166,10 @@ describe('useAshenRampartGame', () => {
     );
     const previewsAtMount = log.events.filter((e) => e.kind === 'wave_preview_shown');
     // 実際のウェーブ startTick は COUNTDOWN_TICKS ぶん後ろにずれる（開始カウントダウン、Task 7）。
-    // マウント時点（tick 0）ではウェーブ1（雑兵3）もまだ始まっていないため、
+    // マウント時点（tick 0）ではウェーブ1（雑兵2）もまだ始まっていないため、
     // 「次」の予告はウェーブ1そのものになる。
     expect(previewsAtMount).toHaveLength(1);
-    expect(previewsAtMount[0]).toMatchObject({ tick: 0, content: '雑兵3' });
+    expect(previewsAtMount[0]).toMatchObject({ tick: 0, content: '雑兵2' });
 
     // ウェーブ1開始 tick（COUNTDOWN_TICKS）に到達するまでは予告が変わらないため追加記録は無い
     act(() => {
@@ -162,14 +177,14 @@ describe('useAshenRampartGame', () => {
     });
     expect(log.events.filter((e) => e.kind === 'wave_preview_shown')).toHaveLength(1);
 
-    // tick が COUNTDOWN_TICKS に達すると予告がウェーブ2（雑兵3 俊足2）へ切り替わり、
+    // tick が COUNTDOWN_TICKS に達すると予告がウェーブ2（雑兵2 俊足2）へ切り替わり、
     // そのときだけ1件追加される
     act(() => {
       jest.advanceTimersByTime(TICK_INTERVAL_MS);
     });
     const previewsAfterSwitch = log.events.filter((e) => e.kind === 'wave_preview_shown');
     expect(previewsAfterSwitch).toHaveLength(2);
-    expect(previewsAfterSwitch[1]).toMatchObject({ tick: COUNTDOWN_TICKS, content: '雑兵3 俊足2' });
+    expect(previewsAfterSwitch[1]).toMatchObject({ tick: COUNTDOWN_TICKS, content: '雑兵2 俊足2' });
     expect(result.current.state.tick).toBe(COUNTDOWN_TICKS);
   });
 
@@ -185,11 +200,11 @@ describe('useAshenRampartGame', () => {
 
   it('interactCell: 再点火可能な燠火のあるセルを選択なしでクリックすると reactivated が記録される（クールダウン中は記録されない）', () => {
     const log = createMockPlayLog();
-    // 反復2 で速攻型から業火が抜けたため、業火を持つ重厚型プリセットへ差し替えた。
-    // シード3は重厚型の初期手札に業火（ember-blast）を含む。
-    // プリセット構成を変えると該当シードも変わるため、シード番号は決め打ちの前提として扱う
+    // 反復3 のプリセット再構成で両プリセットから業火が抜けた。プリセット構成が変わるたびに
+    // 「業火を初期手札に含むシード」を探し直すのは較正に引きずられて脆いため、
+    // この検証専用の合法デッキ（業火3枚）を直に渡す。シード3でこの並びの初期手札に業火が入る
     const { result } = renderHook(() =>
-      useAshenRampartGame({ cards: heavyCards(), seed: 3, playLog: log })
+      useAshenRampartGame({ cards: emberDeckCards(), seed: 3, playLog: log })
     );
     const emberHandIndex = result.current.state.deck.hand.findIndex((id) => id === 'ember-blast');
     expect(emberHandIndex).toBeGreaterThanOrEqual(0);

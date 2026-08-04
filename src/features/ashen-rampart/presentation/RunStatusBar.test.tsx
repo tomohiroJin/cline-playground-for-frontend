@@ -34,8 +34,8 @@ describe('RunStatusBar', () => {
   });
 
   it('次ウェーブの構成が予告される', () => {
-    // Task 9 の再較正（PLAINS_WAVES 総HP 728・総体数 51、LIFE_INITIAL 10→12）により、
-    // tick:100 時点の次ウェーブ（startTick:250）は 雑兵3 俊足2 が正しい現物値。
+    // Task 14 の再較正（2レーン化。PLAINS_WAVES 総HP 648・総体数 45）により、
+    // tick:100 時点の次ウェーブ（startTick:260＋カウントダウン90＝350）は 雑兵2 俊足2 が正しい現物値。
     render(
       <RunStatusBar
         state={{ ...state, tick: 100 }}
@@ -44,7 +44,7 @@ describe('RunStatusBar', () => {
         runSeed={1}
       />
     );
-    expect(screen.getByText(/次: 雑兵3 俊足2/)).toBeInTheDocument();
+    expect(screen.getByText(/次: 雑兵2 俊足2/)).toBeInTheDocument();
   });
 
   it('一時停止ボタンで onTogglePause が呼ばれる', () => {
