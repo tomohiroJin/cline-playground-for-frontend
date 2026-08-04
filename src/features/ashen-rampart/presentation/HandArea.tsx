@@ -9,6 +9,7 @@ import styled from 'styled-components';
 import { getCardDefinition } from '../domain/cards/card-pool';
 import type { CombatState } from '../domain/combat/combat-state';
 import { DRAW_INTERVAL_TICKS, PLACE_COOLDOWN_TICKS } from '../domain/combat/combat-state';
+import { CardBadge } from './CardBadge';
 import { COLORS } from './theme';
 import { CardGlyph } from './CardGlyph';
 import { cardBadgesOf, cardStatsOf, toSeconds } from './card-text';
@@ -85,13 +86,6 @@ const StatRow = styled.span`
   gap: 4px;
   font-size: 11px;
   opacity: 0.85;
-`;
-
-const Badge = styled.span`
-  padding: 0 3px;
-  border: 1px solid currentColor;
-  border-radius: 2px;
-  font-size: 10px;
 `;
 
 const CardSlot = styled.div`
@@ -211,7 +205,7 @@ export const HandArea: React.FC<Props> = ({
                     <span key={stat}>{stat}</span>
                   ))}
                   {cardBadgesOf(cardId).map((badge) => (
-                    <Badge key={badge}>{badge}</Badge>
+                    <CardBadge key={badge}>{badge}</CardBadge>
                   ))}
                 </StatRow>
               </Card>

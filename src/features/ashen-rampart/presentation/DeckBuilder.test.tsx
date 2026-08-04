@@ -8,6 +8,8 @@
 import React from 'react';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { DeckBuilder } from './DeckBuilder';
+import { cardBadgesOf } from './card-text';
+import { getUnitVisual, roleLabelOf } from './unit-visual';
 import { CARD_IDS, DECK_SIZE, PRESET_DECKS, getCardDefinition } from '../domain/cards/card-pool';
 import { HEADER_CLEARANCE } from './layout-constants';
 
@@ -159,14 +161,34 @@ describe('DeckBuilder', () => {
     expect(seed).toBe(777);
   });
 
-  it('各カードに形アイコンと役割名が出る', () => {
+  it('14種すべてのカードに形アイコンが出る', () => {
     render(<DeckBuilder onStart={jest.fn()} />);
-    expect(screen.getByTestId('card-glyph-arrow-tower')).toBeInTheDocument();
-    expect(screen.getAllByText('攻撃塔').length).toBeGreaterThan(0);
+    CARD_IDS.forEach((id) => {
+      expect(screen.getByTestId(`card-glyph-${id}`)).toBeInTheDocument();
+    });
   });
 
-  it('属性バッジが出る', () => {
+  it('14種すべてのカードに役割名が出る', () => {
     render(<DeckBuilder onStart={jest.fn()} />);
-    expect(screen.getAllByText('貫通').length).toBeGreaterThan(0);
+    CARD_IDS.forEach((id) => {
+      const roleLabel = roleLabelOf(getUnitVisual(id).role);
+      expect(screen.getAllByText(roleLabel).length).toBeGreaterThan(0);
+    });
+  });
+
+  it('属性バッジを持つカードにバッジが出る', () => {
+    render(<DeckBuilder onStart={jest.fn()} />);
+    // 各カードのバッジが画面に出ていることを確認
+    // getAllByText を使って複数ヒットに対応
+    const collectedBadges = new Set<string>();
+    CARD_IDS.forEach((id) => {
+      const badges = cardBadgesOf(id);
+      badges.forEach((badge) => {
+        collectedBadges.add(badge);
+      });
+    });
+    collectedBadges.forEach((badge) => {
+      expect(screen.getAllByText(badge).length).toBeGreaterThan(0);
+    });
   });
 });
