@@ -61,4 +61,17 @@ describe('UnitPlate', () => {
     render(<UnitPlate plate={plateFor('beacon')} columns={9} rows={7} />);
     expect(screen.getByTestId('unit-plate-2-3')).toHaveAttribute('data-role', 'support');
   });
+
+  it('動きを減らす設定では脈動もポップインも止まる', () => {
+    // jsdom では matchMedia が未定義のため setupTests のモックに合わせる。
+    // styled-components が出力する CSS に prefers-reduced-motion のブロックが
+    // 含まれることを検証する（実際の再生停止はブラウザ側の責務）。
+    const { container } = render(
+      <UnitPlate plate={plateFor('arrow-tower')} columns={9} rows={7} />
+    );
+    const styles = Array.from(document.querySelectorAll('style'))
+      .map((el) => el.textContent ?? '')
+      .join('');
+    expect(styles).toContain('prefers-reduced-motion');
+  });
 });

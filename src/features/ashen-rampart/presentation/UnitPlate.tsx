@@ -14,6 +14,12 @@ import type { PlateModel } from './board-plates';
 import { getRoleClipPath, roleLabelOf } from './unit-visual';
 import { COLORS } from './theme';
 
+/** 配置された瞬間だけ小さく現れる。置けたことのフィードバック */
+const popIn = keyframes`
+  from { transform: translate(-50%, -50%) scale(0.7); opacity: 0; }
+  to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+`;
+
 /** 撃った瞬間だけ脈動させる。装飾ではなく「今起きたこと」の合図 */
 const firePulse = keyframes`
   from { opacity: 0.95; }
@@ -53,11 +59,19 @@ const Plate = styled.div<{
   line-height: 1;
   z-index: 0;
   pointer-events: none;
+  animation: ${popIn} 200ms ease-out;
 
   ${({ $firing }) =>
     $firing
       ? css`
-          animation: ${firePulse} 150ms ease-out alternate 2;
+          /*
+            発射時は脈動を加える。popIn は200msで完了済みだが、
+            firePulse を別アニメーションとして追加し、
+            popIn を再宣言する理由は、複数アニメーション合成で
+            統一的に定義するため。実時間は popIn 200ms + firePulse 300ms (alternate 2)
+            の並行実行で 300ms（全体制約内）。
+          */
+          animation: ${popIn} 200ms ease-out, ${firePulse} 150ms ease-out alternate 2;
         `
       : ''}
 
