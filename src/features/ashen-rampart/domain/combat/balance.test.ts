@@ -115,6 +115,9 @@ const hasAreaDamage = (id: string): boolean => {
   return (card.tower?.splashRadius ?? 0) > 0 || (card.ember?.radius ?? 0) > 0;
 };
 
+/** 貫通するか（直線上の敵をまとめて貫く） */
+const hasPiercing = (id: string): boolean => getCardDefinition(id).tower?.piercing === true;
+
 /**
  * 群れをまとめて削る手段を持つか（範囲攻撃 または 貫通）
  *
@@ -124,8 +127,7 @@ const hasAreaDamage = (id: string): boolean => {
  * デッキは 10/20 勝ち、拘束として成立しない。拘束が成立するのは
  * 「群れをまとめて削る手段が1つも無い」ときで、その形で不変条件を置く。
  */
-const hasMassAnswer = (id: string): boolean =>
-  hasAreaDamage(id) || getCardDefinition(id).tower?.piercing === true;
+const hasMassAnswer = (id: string): boolean => hasAreaDamage(id) || hasPiercing(id);
 
 /** 自力でダメージを出すか（篝火・鍛冶場・落網・石壁・時泥・徴発・魔力炉は満たさない） */
 const hasDamage = (id: string): boolean => {
@@ -292,10 +294,14 @@ describe('対照条件はマナ枯渇や手札詰まりではなく力負けし�
  * したがって拘束は「範囲攻撃」ではなく「群れをまとめて削る手段」に掛かっており、
  * 上の不変条件はその形で置いてある。
  *
- * ここでは相対差だけをラチェットとして固定する。範囲攻撃が完全に無意味化する
- * （差が消える）方向への悪化は検出したい。
+ * ここでは相対差だけをラチェットとして固定する。片方が完全に無意味化する
+ * （差が消える）方向への悪化を検出したい。
+ *
+ * **範囲側と貫通側の両方に置くこと。** 片方だけだと、無力化した側の回帰が
+ * 上の「範囲も貫通も無し < 4/20」と残った側の寄与テストの両方をすり抜ける
+ * （どちらも「もう一方が効いている」だけで緑になれてしまう）。
  */
-describe('範囲攻撃の寄与', () => {
+describe('範囲攻撃と貫通のそれぞれの寄与', () => {
   it('範囲攻撃を抜くと勝率は落ちるが、貫通が代替するため決定打にはならない', () => {
     const full = winsOf(FULL_DECK);
     const noArea = winsOf(deckWithout(hasAreaDamage));
@@ -304,6 +310,15 @@ describe('範囲攻撃の寄与', () => {
     // が、単独では拘束にならない（実測 10/20）。この事実を数値で残す
     expect(noArea).toBeGreaterThanOrEqual(6);
     expect(noArea).toBeLessThanOrEqual(12);
+  });
+
+  it('貫通を抜いても勝率が落ちる（範囲だけでは代替しきれない）', () => {
+    const full = winsOf(FULL_DECK);
+    const noPiercing = winsOf(deckWithout(hasPiercing));
+    // 実測 14/20 → 8/20。範囲側（寄与3以上）と同じ形でラチェットを掛ける。
+    // 現状の寄与は範囲(4)より貫通(6)のほうが大きい——3軸が実態として
+    // 貫通>範囲 に崩れている件は実プレイ判定への申し送りとし、ここでは調整しない
+    expect(full - noPiercing).toBeGreaterThanOrEqual(3);
   });
 });
 
