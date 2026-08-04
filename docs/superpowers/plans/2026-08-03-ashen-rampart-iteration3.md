@@ -2863,10 +2863,10 @@ Expected: lint:ci → typecheck → test:coverage → build がすべて成功
 
 ```
 実プレイの前に、ブラウザの開発者ツールで以下を実行してください。
-localStorage.removeItem('ashen-rampart-play-log')
+localStorage.removeItem('ashen-rampart:play-log-v2')
 ```
 
-**キー名は `infrastructure/play-log/local-storage-play-log.ts` の実際の定数に合わせる。** 推測で書かない。
+キー名は `infrastructure/play-log/local-storage-play-log.ts` の `PLAY_LOG_STORAGE_KEY` で確認済み。
 
 - [ ] **Step 6: コミット**
 

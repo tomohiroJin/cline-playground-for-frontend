@@ -532,7 +532,7 @@ leak > unit-lost > defeat > trap / ember > shot / unit-damaged
 2. **反復2の判定記録を書く**（`2026-08-03-ashen-rampart-iteration2-result.md`）。本設計書 §1 が素材になる。未集計の項目5・6 は集計値をいただけたら追記する
 3. 本設計書をもとに実装計画を作る
 4. 実装 → `npm run ci` 全緑
-5. 実プレイ前に localStorage の旧ログをクリアする（`localStorage.removeItem('ashen-rampart-play-log')`。キー名は `local-storage-play-log.ts` の定数に合わせる）
+5. 実プレイ前に localStorage の旧ログをクリアする（`localStorage.removeItem('ashen-rampart:play-log-v2')`。キー名は `local-storage-play-log.ts` の `PLAY_LOG_STORAGE_KEY` から確認済み）
 6. 3ラン実プレイ → 判定7項目を記録
 
 **実装完了は判定ではない。** DoD（`npm run ci` 緑）と CoS（実プレイ7項目の記録）は別物である。
