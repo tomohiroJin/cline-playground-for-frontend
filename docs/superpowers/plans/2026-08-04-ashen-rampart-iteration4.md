@@ -409,29 +409,35 @@ describe('buildPlates', () => {
     expect(plates[0].statusLabel).toBe('魔力炉 のマナ生成');
   });
 
-  it('撃った直後の攻撃塔は isFiring になる', () => {
-    // 弓兵の cooldownTicks は 8。撃った tick に cooldownLeft が最大へ戻る
-    const fired = buildPlates(
-      stateWith({
-        units: [{ cardId: 'arrow-tower', pos: { x: 1, y: 1 }, hp: 8, maxHp: 8, cooldownLeft: 8 }],
-      })
-    );
-    const idle = buildPlates(
-      stateWith({
-        units: [{ cardId: 'arrow-tower', pos: { x: 1, y: 1 }, hp: 8, maxHp: 8, cooldownLeft: 2 }],
-      })
-    );
+  it('この tick に撃った攻撃塔は isFiring になる', () => {
+    const unit = { cardId: 'arrow-tower', pos: { x: 1, y: 1 }, hp: 8, maxHp: 8, cooldownLeft: 3 };
+    const shot = {
+      kind: 'shot' as const,
+      unitIndex: 0,
+      targetId: 1,
+      auraDamageBonus: 0,
+      beyondBaseRange: false,
+    };
+    const fired = buildPlates(stateWith({ units: [unit], events: [shot] }));
+    const idle = buildPlates(stateWith({ units: [unit], events: [] }));
     expect(fired[0].isFiring).toBe(true);
     expect(idle[0].isFiring).toBe(false);
   });
 
-  it('攻撃しない守り手は isFiring にならない（cooldownTicks が 0 のため）', () => {
+  it('別の守り手が撃っても自分は isFiring にならない（index で対応づける）', () => {
     const plates = buildPlates(
       stateWith({
-        units: [{ cardId: 'stone-wall', pos: { x: 1, y: 1 }, hp: 60, maxHp: 60, cooldownLeft: 0 }],
+        units: [
+          { cardId: 'stone-wall', pos: { x: 1, y: 1 }, hp: 60, maxHp: 60, cooldownLeft: 0 },
+          { cardId: 'arrow-tower', pos: { x: 2, y: 1 }, hp: 8, maxHp: 8, cooldownLeft: 3 },
+        ],
+        events: [
+          { kind: 'shot', unitIndex: 1, targetId: 1, auraDamageBonus: 0, beyondBaseRange: false },
+        ],
       })
     );
     expect(plates[0].isFiring).toBe(false);
+    expect(plates[1].isFiring).toBe(true);
   });
 
   it('4種の設置物が同時にあってもすべて台座になる', () => {
@@ -491,7 +497,7 @@ export interface PlateModel {
   statusMax: number;
   /** 状態バーの意味（aria-label に使う） */
   statusLabel: string;
-  /** この tick に撃ったか（台座を脈動させる） */
+  /** この tick に撃ったか（台座を脈動させる）。`shot` イベントから引く */
   isFiring: boolean;
 }
 
@@ -517,21 +523,35 @@ const plateOf = (
 };
 
 /**
- * 設置物すべてを台座モデルへ変換する
+ * この tick に撃った守り手の index を集める
  *
- * 攻撃直後の判定は cooldownLeft が最大に戻ったことで見る。stepTick は
- * 撃った tick に cooldownLeft を cooldownTicks へ戻すため、エフェクト層を
- * 参照せずに「今撃った」が分かる。
+ * cooldownLeft からの逆算はしない。stepTick は発射時に
+ * `Math.max(0, cooldownTicks - 1)` を入れるため「cooldownTicks と等しい」は
+ * 決して成り立たず、さらに内部実装が変われば静かに壊れる。`shot` イベントは
+ * 発射そのものを表す一次情報であり、設計書 §5.3 の「shot エフェクトに同期」
+ * とも一致する。
  */
+const firingUnitIndicesOf = (state: CombatState): Set<number> => {
+  const indices = new Set<number>();
+  state.events.forEach((event) => {
+    if (event.kind === 'shot') indices.add(event.unitIndex);
+  });
+  return indices;
+};
+
+/** 設置物すべてを台座モデルへ変換する */
 export const buildPlates = (state: CombatState): PlateModel[] => {
   const plates: PlateModel[] = [];
+  const firingIndices = firingUnitIndicesOf(state);
 
-  state.units.forEach((unit) => {
-    const tower = getCardDefinition(unit.cardId).tower;
-    const cooldownTicks = tower?.cooldownTicks ?? 0;
-    const isFiring = cooldownTicks > 0 && unit.cooldownLeft >= cooldownTicks;
+  state.units.forEach((unit, index) => {
     plates.push(
-      plateOf(unit.cardId, unit.pos, { now: unit.hp, max: unit.maxHp, suffix: 'の耐久' }, isFiring)
+      plateOf(
+        unit.cardId,
+        unit.pos,
+        { now: unit.hp, max: unit.maxHp, suffix: 'の耐久' },
+        firingIndices.has(index)
+      )
     );
   });
 
