@@ -50,7 +50,7 @@ export interface TrapSpec {
   groundedTicks?: number;
 }
 
-/** 魔力炉性能（マナ源。スロットを消費する） */
+/** 魔力炉性能（マナ源。経路上には置けない。§7.5） */
 export interface ReactorSpec {
   /** マナを生む間隔（tick） */
   intervalTicks: number;

@@ -6,7 +6,7 @@
  * 「UI が検証結果を正しく反映するか」を見る。
  */
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { DeckBuilder } from './DeckBuilder';
 import { CARD_IDS, DECK_SIZE, PRESET_DECKS, getCardDefinition } from '../domain/cards/card-pool';
 import { HEADER_CLEARANCE } from './layout-constants';
@@ -34,6 +34,18 @@ describe('DeckBuilder', () => {
   it('各カードに「効かない相手」が表示される', () => {
     render(<DeckBuilder onStart={jest.fn()} />);
     expect(screen.getByText('飛行に当たらない')).toBeInTheDocument();
+  });
+
+  it('指摘5: 守り手にはHPと攻撃力が表示される（石壁60/0と弓兵8/4の逆相関が読める）', () => {
+    render(<DeckBuilder onStart={jest.fn()} />);
+    expect(screen.getByText('HP60 / 攻撃0')).toBeInTheDocument();
+    expect(screen.getByText('HP8 / 攻撃4')).toBeInTheDocument();
+  });
+
+  it('指摘5: 守り手でないカード（魔力炉）にはHP表示が無い', () => {
+    render(<DeckBuilder onStart={jest.fn()} />);
+    const reactorRow = screen.getByRole('group', { name: /魔力炉/ });
+    expect(within(reactorRow).queryByText(/^HP/)).not.toBeInTheDocument();
   });
 
   it('初期状態では0枚で、開始できない', () => {

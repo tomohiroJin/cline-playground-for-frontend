@@ -26,7 +26,7 @@ const CARDS: readonly CardDefinition[] = [
     name: '魔力炉',
     type: 'reactor',
     cost: 0,
-    description: '60tick ごとにマナを1得る。設置スロットを1つ使う。',
+    description: '60tick ごとにマナを1得る。経路上には置けない。',
     reactor: { intervalTicks: 60, manaPerTick: 1 },
     // 盤面では3〜4基で消費レート（3マナ/60tick）を飽和させるため、
     // 並べるほど強くはならない。上限を外すのは「確実に引くため」である。

@@ -29,7 +29,7 @@ import {
   simulateRun,
   greedyStrategy,
   offPathOnlyStrategy,
-  wallAndAirOnlyStrategy,
+  noPureGroundAttackStrategy,
   type RunSimulationResult,
   type Strategy,
 } from './run-simulation';
@@ -231,7 +231,7 @@ describe('対照条件の作り方', () => {
  *
  * 実測（greedyStrategy・シード1〜20）:
  *   全要求充足 14/20 ／ 対空なし 0/20 ／ 範囲も貫通も無し 0/20
- *   経路外のみ 0/20 ／ 壁と対空のみ 6/20
+ *   経路外のみ 0/20 ／ 地上専用の攻撃札なし（noPureGroundAttackStrategy） 6/20
  */
 describe('較正の不変条件（反復3）', () => {
   it('全要求充足デッキは 12/20 以上・18/20 以下で勝つ', () => {
@@ -256,9 +256,9 @@ describe('較正の不変条件（反復3）', () => {
     expect(winsOf(FULL_DECK, offPathOnlyStrategy, 'offPath')).toBeLessThan(4);
   });
 
-  it('壁と対空だけを置く戦略は 10/20 未満しか勝てない（ブロックが強すぎないか）', () => {
+  it('地上専用の攻撃札を持たない戦略は 10/20 未満しか勝てない（ブロックが強すぎないか）', () => {
     // 上の対と必ずセットで見る。片側だけでは較正のズレを検出できない
-    expect(winsOf(FULL_DECK, wallAndAirOnlyStrategy, 'wallAir')).toBeLessThan(10);
+    expect(winsOf(FULL_DECK, noPureGroundAttackStrategy, 'wallAir')).toBeLessThan(10);
   });
 });
 
@@ -275,7 +275,7 @@ describe('対照条件はマナ枯渇や手札詰まりではなく力負けし�
     ['対空なし', deckWithout(hasAntiAir), greedyStrategy, 'greedy'],
     ['範囲も貫通も無し', deckWithout(hasMassAnswer), greedyStrategy, 'greedy'],
     ['経路外のみ', [...FULL_DECK], offPathOnlyStrategy, 'offPath'],
-    ['壁と対空のみ', [...FULL_DECK], wallAndAirOnlyStrategy, 'wallAir'],
+    ['地上専用の攻撃札なし', [...FULL_DECK], noPureGroundAttackStrategy, 'wallAir'],
   ])('%s は、最も出せなかったランでも10枚以上を盤面に出している', (_name, deck, strategy, key) => {
     expect(minCardsPlayedOf(deck, strategy, key)).toBeGreaterThanOrEqual(10);
   });

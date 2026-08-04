@@ -116,14 +116,33 @@ describe('useAshenRampartGame', () => {
     expect(result.current.state.tick).toBe(5);
   });
 
-  it('カードを選ぶと置けるマスだけが返る', () => {
+  it('カードを選ぶと置けるマスだけが返る（上限はカード種別で決まる）', () => {
     const { result } = renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1 }));
-    const towerIndex = result.current.state.deck.hand.findIndex((id) => id !== 'mud-time');
+    // 反復3 で設置マスの規則を廃止したため、置ける上限はカード種別ごとに決まった
+    // 定数になる（9×7=63マス・経路21マス・砦1マスの前提から導く。stage-map.ts 参照）:
+    //   守り手（'unit'）  … 63 - 砦1               = 62
+    //   魔力炉（'reactor'）… 63 - 経路21             = 42
+    //   罠・燠火（'path'）… 経路21 - 砦1             = 20
+    // 選ばれる先頭札はデッキのシャッフル順に依存するため、実際に選んだ札の種別に
+    // 対応する上限を都度引く（特定の札が先頭に来ることを前提にしない）。
+    const EXPECTED_MAX_BY_KIND: Record<'unit' | 'reactor' | 'path', number> = {
+      unit: 62,
+      reactor: 42,
+      path: 20,
+    };
+    const towerIndex = result.current.state.deck.hand.findIndex(
+      (id) => placementKindOf(getCardDefinition(id)) !== 'none'
+    );
+    expect(towerIndex).toBeGreaterThanOrEqual(0);
+    const selectedCard = getCardDefinition(result.current.state.deck.hand[towerIndex]!);
+    const kind = placementKindOf(selectedCard);
+    expect(kind).not.toBe('none');
+
     act(() => result.current.selectCard(towerIndex));
     expect(result.current.placeableCells.length).toBeGreaterThan(0);
-    // 反復3 で設置スロットの規則（buildSlots）を廃止したため、候補は経路外の全マス
-    // （9×7=63 - 経路11 = 52）が上限になる（stage-map.ts 参照）
-    expect(result.current.placeableCells.length).toBeLessThanOrEqual(52);
+    expect(result.current.placeableCells.length).toBe(
+      EXPECTED_MAX_BY_KIND[kind as 'unit' | 'reactor' | 'path']
+    );
   });
 
   it('選択せずにセルを押しても何も起きない', () => {
@@ -169,7 +188,8 @@ describe('useAshenRampartGame', () => {
     // マウント時点（tick 0）ではウェーブ1（雑兵2）もまだ始まっていないため、
     // 「次」の予告はウェーブ1そのものになる。
     expect(previewsAtMount).toHaveLength(1);
-    expect(previewsAtMount[0]).toMatchObject({ tick: 0, content: '雑兵2' });
+    // ウェーブ1は北レーンだけの構成なので「北 雑兵2」（レーン表記込み）
+    expect(previewsAtMount[0]).toMatchObject({ tick: 0, content: '北 雑兵2' });
 
     // ウェーブ1開始 tick（COUNTDOWN_TICKS）に到達するまでは予告が変わらないため追加記録は無い
     act(() => {
@@ -177,14 +197,17 @@ describe('useAshenRampartGame', () => {
     });
     expect(log.events.filter((e) => e.kind === 'wave_preview_shown')).toHaveLength(1);
 
-    // tick が COUNTDOWN_TICKS に達すると予告がウェーブ2（雑兵2 俊足2）へ切り替わり、
+    // tick が COUNTDOWN_TICKS に達すると予告がウェーブ2（北 雑兵2 / 南 俊足2）へ切り替わり、
     // そのときだけ1件追加される
     act(() => {
       jest.advanceTimersByTime(TICK_INTERVAL_MS);
     });
     const previewsAfterSwitch = log.events.filter((e) => e.kind === 'wave_preview_shown');
     expect(previewsAfterSwitch).toHaveLength(2);
-    expect(previewsAfterSwitch[1]).toMatchObject({ tick: COUNTDOWN_TICKS, content: '雑兵2 俊足2' });
+    expect(previewsAfterSwitch[1]).toMatchObject({
+      tick: COUNTDOWN_TICKS,
+      content: '北 雑兵2 / 南 俊足2',
+    });
     expect(result.current.state.tick).toBe(COUNTDOWN_TICKS);
   });
 

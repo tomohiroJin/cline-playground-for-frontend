@@ -482,7 +482,7 @@ describe('AshenRampartGame', () => {
     expect(reactorCard).not.toBeNull();
 
     fireEvent.click(reactorCard!);
-    // 経路セル（魔力炉は設置スロットにしか置けない）をクリックする。(0,2) は北レーンの入口
+    // 経路セル（魔力炉は経路外にしか置けない。§7.5）をクリックする。(0,2) は北レーンの入口
     fireEvent.click(screen.getByLabelText(/^0,2 経路/));
     act(() => {
       jest.advanceTimersByTime(TICK_INTERVAL_MS);

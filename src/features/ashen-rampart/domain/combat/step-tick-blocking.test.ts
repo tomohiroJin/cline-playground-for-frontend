@@ -4,15 +4,19 @@
  * 「止まる」「削れる」「消滅して再開する」を別々に検証する（設計書 §12）。
  * 1つのテストで全部を通そうとすると、どれかがゼロのまま緑になる。
  *
- * 守り手は play-card 経由ではなく state.units への直接注入で置く。
- * 現時点の canPlaceAt は「経路外なら置ける（塔）」「経路上なら置ける（罠）」の
- * どちらか一方であり、経路上に PlacedUnit を置く配置ルールはまだ無い（Task 8 で
- * 配置先種別を刷新するまでの暫定）。stepTick 内の combat 系テストが既に使っている
- * withUnit 相当のパターン（state を直接組み立てる）に倣う。
+ * 守り手は play-card 経由ではなく state.units への直接注入で置く。canPlaceAt は
+ * 砦セルを除く全マスに守り手（塔）を置くことを許可しており、経路上への配置も
+ * play-card 経由で到達できる（AshenRampartGame.test.tsx で確認済み）。このファイルが
+ * 直接注入を使うのは、手札・マナ・配置クールダウンの成立を気にせず「その位置に
+ * 守り手がいる」状態だけを直接組み立てたいためであり、経路上に置く手段が無いから
+ * ではない。stepTick 内の combat 系テストが既に使っているパターン（state を
+ * 直接組み立てる）に倣う。
  *
- * cardId には 'stone-wall' を使うことが多い。getCardDefinition('stone-wall').tower
- * が undefined のため攻撃しない＝「殴られる側」の観察に適している。逆に消滅を
- * 早く起こしたいテストでは HP の低い 'arrow-tower'（弓兵、hp:10）を使う。
+ * cardId には 'stone-wall' を使うことが多い。石壁は攻撃しない守り手
+ * （getCardDefinition('stone-wall').tower.damage === 0）のため、守り手側の攻撃と
+ * 混同せず「殴られる側」の観察に適している。逆に消滅を早く起こしたいテストでは、
+ * カード定義上は hp:8 の 'arrow-tower'（弓兵）を使い、hp をこのテストの中で
+ * 明示的に10へ上書きしている（下記 withBlockerOn の呼び出し箇所を参照）。
  */
 import { createCombatState } from './combat-state';
 import { createDeck } from '../cards/deck';

@@ -262,8 +262,16 @@ export const greedyStrategy: Strategy = (state, map) => restrictedGreedy(state, 
 export const offPathOnlyStrategy: Strategy = (state, map) =>
   restrictedGreedy(state, map, (_card, pos) => !isPathCell(map, pos));
 
-/** 壁（攻撃しない守り手）か対空の答えか */
-const isWallOrAntiAir = (card: CardDefinition): boolean => {
+/**
+ * この戦略が許可する札か（＝「地上専用の攻撃札」でないか）
+ *
+ * **名前に反して「壁と対空」のリストではない。** 弩砲・徹甲弩は対空の答えを
+ * 持ちながら地上へも十分な火力（9・14ダメージ）を出す塔であり、この述語は
+ * それらを許可する。したがって noPureGroundAttackStrategy が締め出すのは
+ * 「地上にしか当たらず、かつ実際にダメージを持つ攻撃札」（弓兵・火砲台・投石機・
+ * 棘罠・業火）だけで、対空を持つ攻撃的な塔は禁止していない。
+ */
+const isNotPureGroundOnlyAttacker = (card: CardDefinition): boolean => {
   // 魔力炉はマナ源であって戦力ではない。止めるとマナ不足で自明に負け、
   // 「ブロックが強すぎないか」ではなく「マナが足りるか」を測ってしまう
   if (card.type === 'reactor') return true;
@@ -277,11 +285,22 @@ const isWallOrAntiAir = (card: CardDefinition): boolean => {
 };
 
 /**
- * 壁と対空だけを置く戦略（対照条件・ブロックが強すぎないか）
+ * 地上専用の攻撃札を締め出した戦略（対照条件・ブロックが強すぎないか）
  *
- * 経路外にしか置かない戦略と対で置く。片側だけでは較正が厳しすぎても
- * 緩すぎても検出できない。壁で止めて対空だけ処理する戦略が勝ちすぎるなら、
- * 地上に火力を積む意味が消えている。
+ * **旧名 `wallAndAirOnlyStrategy` は実体と食い違っていた。** 「壁と対空だけ」と
+ * 読めるが、isNotPureGroundOnlyAttacker は対空を持つ塔（弩砲・徹甲弩）の
+ * 地上火力までは締め出さない。実体は「地上にしか当たらない攻撃札を持たない
+ * 戦略」であり、対空の答えを持つ塔なら主力として使ってよい。
+ *
+ * 経路外にしか置かない戦略（offPathOnlyStrategy）と対で置く。片側だけでは
+ * 較正が厳しすぎても緩すぎても検出できない。この戦略が勝ちすぎるなら、
+ * 地上専用の火力（弓兵・火砲台・投石機等）を積む意味が消えている。
+ *
+ * **この対照条件は、「対空札の地上火力を見落として較正が甘くなる」という
+ * 同じ欠陥を過去4回繰り返した経験に対する唯一の防具である**（.superpowers の
+ * 進捗レジャー Task 14 参照）。実測 6/20（この戦略）vs 14/20（greedyStrategy）は
+ * 有意差であり、名前・コメントを直す際も balance.test.ts の閾値・実測値は
+ * 変更しないこと。
  */
-export const wallAndAirOnlyStrategy: Strategy = (state, map) =>
-  restrictedGreedy(state, map, isWallOrAntiAir);
+export const noPureGroundAttackStrategy: Strategy = (state, map) =>
+  restrictedGreedy(state, map, isNotPureGroundOnlyAttacker);

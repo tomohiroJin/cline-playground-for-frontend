@@ -5,16 +5,21 @@ import { nextWavePreview } from './wave-preview';
 import { PLAINS_WAVES } from '../domain/combat/waves';
 
 describe('nextWavePreview', () => {
-  it('tick 0 では最初の次ウェーブ（雑兵2 俊足2）が予告される', () => {
-    expect(nextWavePreview({ waves: PLAINS_WAVES, tick: 0 })).toBe('雑兵2 俊足2');
+  it('tick 0 では最初の次ウェーブ（北 雑兵2 / 南 俊足2）がレーン付きで予告される', () => {
+    expect(nextWavePreview({ waves: PLAINS_WAVES, tick: 0 })).toBe('北 雑兵2 / 南 俊足2');
   });
 
   it('tick が進んでも次ウェーブ開始 tick を超えなければ予告は変わらない', () => {
-    expect(nextWavePreview({ waves: PLAINS_WAVES, tick: 259 })).toBe('雑兵2 俊足2');
+    expect(nextWavePreview({ waves: PLAINS_WAVES, tick: 259 })).toBe('北 雑兵2 / 南 俊足2');
   });
 
-  it('次ウェーブ開始 tick に到達すると、その次のウェーブへ予告が切り替わる', () => {
-    expect(nextWavePreview({ waves: PLAINS_WAVES, tick: 260 })).toBe('群れ22');
+  it('次ウェーブ開始 tick に到達すると、その次のウェーブへ予告が切り替わる（南レーンのみなら南だけ出す）', () => {
+    expect(nextWavePreview({ waves: PLAINS_WAVES, tick: 260 })).toBe('南 群れ22');
+  });
+
+  it('同じレーンに複数エントリがあるウェーブは1つのレーン表記へ合流する', () => {
+    // ウェーブ4: 北=重装+雑兵、南=鴉。北の2エントリが「北 重装2 雑兵2」に合流することを確認する
+    expect(nextWavePreview({ waves: PLAINS_WAVES, tick: 540 })).toBe('北 重装2 雑兵2 / 南 鴉13');
   });
 
   it('最終ウェーブ開始後は固定文言になる', () => {
