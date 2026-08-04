@@ -52,3 +52,46 @@ export const towerStatsTextOf = (cardId: string): string | undefined => {
   if (!tower) return undefined;
   return `HP${tower.hp} / 攻撃${tower.damage}`;
 };
+
+/** 1秒あたりの tick 数。表示用に秒へ丸めるときだけ使う */
+const TICKS_PER_SECOND = 10;
+
+const toSeconds = (ticks: number): number => Math.ceil(ticks / TICKS_PER_SECOND);
+
+/**
+ * 手札とデッキ構築に出す主要数値（最大2つ）
+ *
+ * 面積が限られるため、そのカードの働きを最も端的に表す2つに絞る。
+ * 3つ目以降は能力表示（盤面）とデッキ構築の「効かない相手」に譲る。
+ */
+export const cardStatsOf = (cardId: string): string[] => {
+  const card = getCardDefinition(cardId);
+  if (card.tower) return [`HP${card.tower.hp}`, `攻撃${card.tower.damage}`];
+  if (card.trap) return [`ダメージ${card.trap.damage}`, `${card.trap.uses}回`];
+  if (card.reactor)
+    return [`マナ+${card.reactor.manaPerTick}`, `${toSeconds(card.reactor.intervalTicks)}秒`];
+  if (card.ember) return [`ダメージ${card.ember.damage}`, `半径${card.ember.radius}`];
+  if (card.spell)
+    return [`速度x${card.spell.speedMultiplier}`, `${toSeconds(card.spell.durationTicks)}秒`];
+  if (card.levy) return [`${card.levy.peekCount}枚から選ぶ`];
+  throw new Error(`性能が未定義のカードIDです: ${cardId}`);
+};
+
+/** 属性バッジの上限。増やすと手札が読めなくなる（設計書 §6） */
+export const MAX_CARD_BADGES = 2;
+
+/**
+ * 手札とデッキ構築に出す属性バッジ（最大2つ）
+ *
+ * 貫通と範囲は排他に扱う。徹甲弩は splashRadius 0 の貫通、火砲台と
+ * 投石機は splashRadius > 0 の範囲であり、両方を持つカードは存在しない。
+ */
+export const cardBadgesOf = (cardId: string): string[] => {
+  const tower = getCardDefinition(cardId).tower;
+  if (!tower) return [];
+  const badges: string[] = [];
+  if (tower.hitsFlying) badges.push('対空');
+  if (tower.piercing) badges.push('貫通');
+  else if (tower.splashRadius > 0) badges.push('範囲');
+  return badges.slice(0, MAX_CARD_BADGES);
+};

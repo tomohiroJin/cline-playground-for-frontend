@@ -4,7 +4,7 @@
  * 全カードに文言があることが要件。1つでも欠けると構築画面で
  * 「何のために積むか」の手がかりが失われる。
  */
-import { weaknessTextOf, MISSING_WEAKNESS_IDS, towerStatsTextOf } from './card-text';
+import { weaknessTextOf, MISSING_WEAKNESS_IDS, towerStatsTextOf, cardStatsOf, cardBadgesOf, MAX_CARD_BADGES } from './card-text';
 import { CARD_IDS, getCardDefinition } from '../domain/cards/card-pool';
 
 describe('weaknessTextOf', () => {
@@ -61,6 +61,52 @@ describe('towerStatsTextOf', () => {
   it('全種の守り手（tower spec を持つカード）に対して値を返す', () => {
     CARD_IDS.filter((id) => getCardDefinition(id).tower !== undefined).forEach((id) => {
       expect(towerStatsTextOf(id)).toMatch(/^HP\d+ \/ 攻撃\d+$/);
+    });
+  });
+});
+
+describe('cardStatsOf', () => {
+  it('塔はHPと攻撃力を出す', () => {
+    expect(cardStatsOf('arrow-tower')).toEqual(['HP8', '攻撃4']);
+  });
+
+  it('罠はダメージと回数を出す', () => {
+    expect(cardStatsOf('spike-trap')).toEqual(['ダメージ5', '3回']);
+  });
+
+  it('徴発は数値が1つだけ', () => {
+    expect(cardStatsOf('levy')).toHaveLength(1);
+  });
+
+  it('全14種が数値を持ち、2つを超えない', () => {
+    CARD_IDS.forEach((id) => {
+      const stats = cardStatsOf(id);
+      expect(stats.length).toBeGreaterThan(0);
+      expect(stats.length).toBeLessThanOrEqual(2);
+    });
+  });
+});
+
+describe('cardBadgesOf', () => {
+  it('徹甲弩は対空と貫通の2つ', () => {
+    expect(cardBadgesOf('piercer')).toEqual(['対空', '貫通']);
+  });
+
+  it('火砲台は範囲のみ（飛行に当たらない）', () => {
+    expect(cardBadgesOf('cannon-tower')).toEqual(['範囲']);
+  });
+
+  it('弓兵はバッジなし', () => {
+    expect(cardBadgesOf('arrow-tower')).toEqual([]);
+  });
+
+  it('塔でないカードはバッジなし', () => {
+    expect(cardBadgesOf('mud-time')).toEqual([]);
+  });
+
+  it('どのカードもバッジは上限を超えない', () => {
+    CARD_IDS.forEach((id) => {
+      expect(cardBadgesOf(id).length).toBeLessThanOrEqual(MAX_CARD_BADGES);
     });
   });
 });
