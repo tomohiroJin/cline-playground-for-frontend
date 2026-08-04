@@ -309,7 +309,9 @@ describe('AshenRampartGame', () => {
       jest.advanceTimersByTime(TICK_INTERVAL_MS);
     });
 
-    expect(screen.getByTestId(`unit-hp-${pathCell.x}-${pathCell.y}`)).toBeInTheDocument();
+    // 旧 UnitHpBar（unit-hp-x-y）は台座レイヤの UnitPlate（unit-plate-x-y）に
+    // 置き換わった（Task 5）
+    expect(screen.getByTestId(`unit-plate-${pathCell.x}-${pathCell.y}`)).toBeInTheDocument();
   });
 
   describe('画面遷移', () => {
