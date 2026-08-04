@@ -652,7 +652,17 @@ describe('useAshenRampartGame', () => {
       }
     };
 
-    it('決着すると run_tally が1件だけ記録される', () => {
+    it('決着すると run_tally が1件だけ記録される（talliedRunIdRef ガードの実効性）', () => {
+      // これは自明な単発呼び出しの確認ではない。outcome が決着した tick では
+      // 必ず2回のレンダーが連続する: ①stepTick が state を更新して outcome が
+      // 決着に変わるレンダー（この時点では tally はまだ前 tick の参照のまま）、
+      // ②直後に「判定用の集計を累積する」effect（124行目付近、[state] 依存）が
+      // accumulateTick で必ず新しい tally オブジェクトを作って setTally する
+      // ことで起きる2回目のレンダー（outcome・runId は同じだが tally の参照だけ
+      // 変わる）。run_tally effect は [state.outcome, runId, tally, cards] に
+      // 依存するため、②でも依存配列が変化し実際に再実行される。
+      // talliedRunIdRef のガードを外すとこのテストは実際に2件検知して失敗する
+      // ことを確認済み（同一 runId・同一 tick 内で2回書き込まれるため）。
       const log = createMockPlayLog();
       const { result } = renderHook(() =>
         useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log })
@@ -663,13 +673,31 @@ describe('useAshenRampartGame', () => {
       expect(tallies[0]).toMatchObject({ iteration: 4 });
     });
 
-    it('StrictMode の二重実行でも run_tally は1件だけ記録される（再レンダーで重複しない）', () => {
+    it('決着後に外部からの再レンダーで run_tally effect が再実行されても2件目は記録されない', () => {
+      // 上のテストは「tally の参照が変わる」という run-summary.ts 側の実装詳細
+      // （accumulateTick が毎回新しいオブジェクトを返すこと）に依存した二重発火で
+      // ガードを検証している。実装が変わってその二重発火が起きなくなっても
+      // ガードの正しさ自体は揺るがないため、ここでは全く別の経路
+      // （cards の参照だけを変えた明示的な再レンダー）で二重発火させ、
+      // 同じ結論（2件目は書き込まれない）を確認する。
+      // run_tally effect の依存配列 [state.outcome, runId, tally, cards] のうち
+      // cards の参照が変わるため、React は Object.is 比較の結果 effect を
+      // 実際に再実行する（内容が同じでも別配列なら再実行対象になる）。
+      // runId と outcome は変わらないため、talliedRunIdRef が効いていれば
+      // 2件目は記録されないはずである。
       const log = createMockPlayLog();
-      const { result } = renderHook(
-        () => useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log }),
-        { wrapper: ({ children }) => React.createElement(StrictMode, null, children) }
+      const initialCards = swiftCards();
+      const { result, rerender } = renderHook(
+        (props: { cards: string[] }) =>
+          useAshenRampartGame({ cards: props.cards, seed: 1, playLog: log }),
+        { initialProps: { cards: initialCards } }
       );
       advanceUntilOutcome(result);
+      expect(log.events.filter((e) => e.kind === 'run_tally')).toHaveLength(1);
+
+      // 内容は同じだが参照は別の配列を渡し、effect の依存配列を変化させる
+      rerender({ cards: [...initialCards] });
+
       expect(log.events.filter((e) => e.kind === 'run_tally')).toHaveLength(1);
     });
 
