@@ -290,17 +290,17 @@ const RunView: React.FC<RunViewProps> = ({ cards, seed, onRebuild }) => {
               <>
                 <RunSummary view={game.summary} />
                 <ActionRow>
+                  <ActionButton type="button" onClick={handleCopyLog}>
+                    判定用の記録をコピー（3ラン分まとまっています）
+                  </ActionButton>
                   <ActionButton type="button" onClick={() => game.restart()}>
                     同じデッキで別のシードに挑む
                   </ActionButton>
                   <ActionButton type="button" onClick={onRebuild}>
                     もう一度挑む
                   </ActionButton>
-                  <ActionButton type="button" onClick={handleCopyLog}>
-                    計測ログをコピー
-                  </ActionButton>
                 </ActionRow>
-                {copyStatus === 'copied' && <Feedback>計測ログをコピーしました</Feedback>}
+                {copyStatus === 'copied' && <Feedback>判定用の記録をコピーしました</Feedback>}
                 {copyStatus === 'failed' && (
                   <Feedback>コピーに失敗しました。コンソールに出力しています</Feedback>
                 )}

@@ -21,6 +21,9 @@ import type { PlayLogExport } from '../application/ports/play-log-port';
 import { TICK_INTERVAL_MS } from './useAshenRampartGame';
 import { PLAINS_MAP, laneOf } from '../domain/board/stage-map';
 
+/** 判定用ログのコピー操作ボタン名。文言が長いため定数に切り出す（反復4で文言変更） */
+const COPY_BUTTON_NAME = '判定用の記録をコピー（3ラン分まとまっています）';
+
 const readExportedLog = (): PlayLogExport => {
   const raw = localStorage.getItem(PLAY_LOG_STORAGE_KEY);
   expect(raw).not.toBeNull();
@@ -207,7 +210,7 @@ describe('AshenRampartGame', () => {
     expect(exported.events.filter((e) => e.kind === 'run_note')).toHaveLength(0);
   });
 
-  it('「計測ログをコピー」でクリップボードに exportLogJson の内容が渡る', async () => {
+  it(`「${COPY_BUTTON_NAME}」でクリップボードに exportLogJson の内容が渡る`, async () => {
     const writeText = jest.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', {
       value: { writeText },
@@ -219,14 +222,14 @@ describe('AshenRampartGame', () => {
     advanceUntilRunEnds();
     submitRunNote();
 
-    fireEvent.click(screen.getByRole('button', { name: '計測ログをコピー' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY_BUTTON_NAME }));
 
     await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
     const copiedJson = writeText.mock.calls[0][0] as string;
     const parsed = JSON.parse(copiedJson) as PlayLogExport;
-    expect(parsed.version).toBe(2);
+    expect(parsed.version).toBe(3);
     expect(parsed.events.some((e) => e.kind === 'run_started')).toBe(true);
-    await screen.findByText('計測ログをコピーしました');
+    await screen.findByText('判定用の記録をコピーしました');
   });
 
   it('決着画面で「もう一度挑む」を押すと構築画面に戻り、新しいデッキで再度ランを始められる', () => {
@@ -283,7 +286,7 @@ describe('AshenRampartGame', () => {
     advanceUntilRunEnds();
     submitRunNote();
 
-    fireEvent.click(screen.getByRole('button', { name: '計測ログをコピー' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY_BUTTON_NAME }));
 
     await screen.findByText('コピーに失敗しました。コンソールに出力しています');
     expect(consoleErrorSpy).toHaveBeenCalled();
@@ -451,7 +454,7 @@ describe('AshenRampartGame', () => {
     expect(screen.queryByText(/レーンへの配分/)).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'もう一度挑む' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '同じデッキで別のシードに挑む' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: '計測ログをコピー' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: COPY_BUTTON_NAME })).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText(/勝敗の理由を記録する/), {
       target: { value: '鴉を落とせなかった' },
@@ -462,7 +465,7 @@ describe('AshenRampartGame', () => {
     expect(await screen.findByText(/レーンへの配分/)).toBeVisible();
     expect(screen.getByRole('button', { name: 'もう一度挑む' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '同じデッキで別のシードに挑む' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '計測ログをコピー' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: COPY_BUTTON_NAME })).toBeInTheDocument();
   });
 
   it('restart（同じデッキで別のシードに挑む）すると集計の鍵と記録欄が次のランへ持ち越されない', async () => {

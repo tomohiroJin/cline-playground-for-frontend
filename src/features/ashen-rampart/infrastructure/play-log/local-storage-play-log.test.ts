@@ -24,7 +24,7 @@ describe('LocalStoragePlayLog', () => {
     const log = new LocalStoragePlayLog();
     log.record(runStarted);
     const exported = log.exportAll();
-    expect(exported.version).toBe(2);
+    expect(exported.version).toBe(3);
     expect(exported.events).toHaveLength(1);
     expect(exported.events[0]).toMatchObject(runStarted);
     expect(typeof exported.events[0].at).toBe('number');
@@ -46,7 +46,7 @@ describe('LocalStoragePlayLog', () => {
   it('破損データが保存されている場合は空ログにフォールバックする', () => {
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
     localStorage.setItem(PLAY_LOG_STORAGE_KEY, 'broken-json');
-    expect(new LocalStoragePlayLog().exportAll()).toEqual({ version: 2, events: [] });
+    expect(new LocalStoragePlayLog().exportAll()).toEqual({ version: 3, events: [] });
     expect(consoleSpy).toHaveBeenCalled();
   });
 
@@ -55,7 +55,7 @@ describe('LocalStoragePlayLog', () => {
       PLAY_LOG_STORAGE_KEY,
       JSON.stringify({ version: '1', events: [runStarted] })
     );
-    expect(new LocalStoragePlayLog().exportAll()).toEqual({ version: 2, events: [] });
+    expect(new LocalStoragePlayLog().exportAll()).toEqual({ version: 3, events: [] });
   });
 
   it('書き込みに失敗してもエラーを投げない', () => {
@@ -64,5 +64,12 @@ describe('LocalStoragePlayLog', () => {
       throw new Error('quota exceeded');
     });
     expect(() => new LocalStoragePlayLog().record(runStarted)).not.toThrow();
+  });
+
+  it('スキーマは v3 で、キーも v3 になる', () => {
+    const log = new LocalStoragePlayLog();
+    log.record({ kind: 'run_note', runId: 'r1', text: 'テスト' });
+    expect(PLAY_LOG_STORAGE_KEY).toBe('ashen-rampart:play-log-v3');
+    expect(log.exportAll().version).toBe(3);
   });
 });

@@ -66,7 +66,7 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
   // 能力表示の対象。座標ではなく plateKeyOf の文字列で持つ。設置物が壊れて
   // 消えたときに、次の描画で自動的に対象が失われる（別途クリアする処理が要らない）
   const [inspectedKey, setInspectedKey] = useState<string | null>(null);
-  // Task 11 の run_tally で使う集計用 ref（今回は記録するだけ）
+  // 決着時に run_tally へ載せる集計用 ref（判定項目2・3）
   const inspectOpensRef = useRef(0);
   const manualDiscardsRef = useRef(0);
   const prevStateRef = useRef<CombatState>(state);
@@ -80,6 +80,8 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
   const noticeUntilRef = useRef(0);
   const pendingRef = useRef<PlayerAction[]>([]);
   const loggedRunIdsRef = useRef<Set<string>>(new Set());
+  /** run_tally を記録済みの runId。1ランにつき1件だけに抑えるためのガード */
+  const talliedRunIdRef = useRef<string | null>(null);
   /** 直前に記録した予告の内容。切り替わった tick でだけ記録するためのガード */
   const lastPreviewRef = useRef<string | undefined>(undefined);
   /** 直前に読み上げたウェーブ番号。切り替わった tick でだけ読み上げるためのガード */
@@ -220,6 +222,39 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
     });
   }, [state.outcome, state.tick, state.deck.hand, runId]);
 
+  /**
+   * 決着したランの集計をログへ書き出す
+   *
+   * 画面にしか出ていなかった数値を、コピー1回で判定者へ渡せるようにする。
+   * runId ごとに1回だけ記録する（再レンダーで重複しない）。
+   * rejectedTarget は表示用ラベル（RunSummaryView.rejectionDetail の
+   * label 文字列）と突き合わせず、tally.rejectionCounts.target という
+   * 型のついた生の値を直接使う。表示文言を変えただけで判定項目が
+   * 静かに 0 になる事故を避けるため。
+   */
+  useEffect(() => {
+    if (state.outcome === 'playing') return;
+    if (talliedRunIdRef.current === runId) return;
+    talliedRunIdRef.current = runId;
+    const view = summarize(tally, cards);
+    logRef.current.record({
+      kind: 'run_tally',
+      runId,
+      iteration: CURRENT_ITERATION,
+      unusedCardIds: view.unusedCardIds,
+      manualDiscards: manualDiscardsRef.current,
+      inspectOpens: inspectOpensRef.current,
+      rejectedTarget: tally.rejectionCounts.target,
+      laneAllocation: view.laneAllocation,
+      placedOnPath: view.placedOnPath,
+      placedOffPath: view.placedOffPath,
+      unitsLost: view.unitsLost,
+      ravenDefeatAverage: view.ravenDefeatAverage,
+      ravenDefeatCount: view.ravenDefeatCount,
+      costHistogram: view.costHistogram,
+    });
+  }, [state.outcome, runId, tally, cards]);
+
   const placeableCells: CellPos[] = (() => {
     if (selectedIndex === null || isPaused) return [];
     const cardId = state.deck.hand[selectedIndex];
@@ -274,7 +309,13 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
   const discardCard = useCallback(
     (handIndex: number) => {
       if (isPaused || state.outcome !== 'playing') return;
-      // Task 11 の run_tally で使う（今回は数えるだけ）
+      // 手動捨札を記録する（判定項目2「手動で捨てた回数」。run_tally にまとめて載る）
+      logRef.current.record({
+        kind: 'card_discarded_manual',
+        runId,
+        cardId: state.deck.hand[handIndex],
+        tick: state.tick,
+      });
       manualDiscardsRef.current += 1;
       pendingRef.current.push({ kind: 'discard', handIndex });
       // 手札は配列で、捨てると後続の札が前へ詰まる。選択中の札そのものを
@@ -287,7 +328,7 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
         return current > handIndex ? current - 1 : current;
       });
     },
-    [isPaused, state.outcome]
+    [isPaused, runId, state]
   );
 
   /**

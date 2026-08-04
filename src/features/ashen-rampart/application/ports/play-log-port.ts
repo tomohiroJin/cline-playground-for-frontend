@@ -1,12 +1,12 @@
 /**
- * 灰燼の城壁 - 行動ログポート（スキーマ v2）
+ * 灰燼の城壁 - 行動ログポート（スキーマ v3）
  *
  * 反復0の教訓により、記録する項目はすべて判定に使う。
  * 判定に使わない項目は記録しない（設計書 §11 ログスキーマ v2）。
  */
 
 /** 現在の反復番号。反復を進めるたびに必ず更新する */
-export const CURRENT_ITERATION = 3;
+export const CURRENT_ITERATION = 4;
 
 export type PlayLogEventBody =
   | {
@@ -26,7 +26,36 @@ export type PlayLogEventBody =
   | { kind: 'resumed'; runId: string; tick: number }
   | { kind: 'run_ended'; runId: string; outcome: 'won' | 'lost'; tick: number; handRemaining: string[] }
   | { kind: 'run_note'; runId: string; text: string }
-  | { kind: 'inspect_opened'; runId: string; cardId: string; tick: number };
+  | { kind: 'inspect_opened'; runId: string; cardId: string; tick: number }
+  | { kind: 'card_discarded_manual'; runId: string; cardId: string; tick: number }
+  | {
+      /**
+       * 決着時の集計スナップショット（反復4で追加）
+       *
+       * 反復1〜3 は集計が判定者へ届かなかった。生イベント列だけを渡しても
+       * 判定者が自分で集計し直す必要があったためである。判定に使う数値を
+       * ここへ入れ、コピー1回で6項目が揃うようにする（設計書 §9）。
+       */
+      kind: 'run_tally';
+      runId: string;
+      iteration: number;
+      /** 判定項目1: 一度も出さなかった札 */
+      unusedCardIds: string[];
+      /** 判定項目2: 手動で捨てた回数 */
+      manualDiscards: number;
+      /** 判定項目3: 能力表示を開いた回数 */
+      inspectOpens: number;
+      /** 判定項目4: 置けない場所をタップした回数 */
+      rejectedTarget: number;
+      /** 反復3から継続観察する項目 */
+      laneAllocation: number[];
+      placedOnPath: number;
+      placedOffPath: number;
+      unitsLost: Record<string, number>;
+      ravenDefeatAverage: number;
+      ravenDefeatCount: number;
+      costHistogram: number[];
+    };
 
 export type PlayLogEvent = PlayLogEventBody & { at: number };
 

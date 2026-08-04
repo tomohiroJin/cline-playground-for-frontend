@@ -19,7 +19,7 @@ const createMockPlayLog = (): PlayLogPort & { events: PlayLogEventBody[] } => {
     record: (e) => {
       events.push(e);
     },
-    exportAll: () => ({ version: 2, events: events.map((e) => ({ ...e, at: 0 })) }),
+    exportAll: () => ({ version: 3, events: events.map((e) => ({ ...e, at: 0 })) }),
   };
 };
 
@@ -50,7 +50,7 @@ describe('useAshenRampartGame', () => {
     renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log }));
     const started = log.events.filter((e) => e.kind === 'run_started');
     expect(started).toHaveLength(1);
-    expect(started[0]).toMatchObject({ seed: 1, iteration: 3 });
+    expect(started[0]).toMatchObject({ seed: 1, iteration: 4 });
   });
 
   it('StrictMode 下でもカードを1枚配置できる（指摘1の回帰: updater 内の副作用で操作が握り潰されていた）', () => {
@@ -624,6 +624,63 @@ describe('useAshenRampartGame', () => {
       });
       expect(result.current.levyOptions).toEqual([]);
       expect(result.current.state.deck.hand.length).toBe(handBefore + 1);
+    });
+  });
+
+  describe('反復4: run_tally と card_discarded_manual', () => {
+    /**
+     * 何も配置せずに tick を進め、決着まで到達させる。
+     * swift・seed1・無配置は約700 tick で決着する（AshenRampartGame.test.tsx の
+     * advanceUntilRunEnds のコメントを参照）ため、十分な余裕を持たせた上限で進める。
+     */
+    const MAX_ADVANCE_TICKS = 1200;
+    const ADVANCE_STEP_TICKS = 50;
+
+    const advanceUntilOutcome = (
+      result: { current: ReturnType<typeof useAshenRampartGame> }
+    ): void => {
+      for (let advanced = 0; advanced < MAX_ADVANCE_TICKS; advanced += ADVANCE_STEP_TICKS) {
+        if (result.current.state.outcome !== 'playing') return;
+        act(() => {
+          jest.advanceTimersByTime(TICK_INTERVAL_MS * ADVANCE_STEP_TICKS);
+        });
+      }
+      if (result.current.state.outcome === 'playing') {
+        throw new Error(
+          `ランが ${MAX_ADVANCE_TICKS} tick 進めても決着しませんでした（ラン長の較正を確認すること）`
+        );
+      }
+    };
+
+    it('決着すると run_tally が1件だけ記録される', () => {
+      const log = createMockPlayLog();
+      const { result } = renderHook(() =>
+        useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log })
+      );
+      advanceUntilOutcome(result);
+      const tallies = log.events.filter((e) => e.kind === 'run_tally');
+      expect(tallies).toHaveLength(1);
+      expect(tallies[0]).toMatchObject({ iteration: 4 });
+    });
+
+    it('StrictMode の二重実行でも run_tally は1件だけ記録される（再レンダーで重複しない）', () => {
+      const log = createMockPlayLog();
+      const { result } = renderHook(
+        () => useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log }),
+        { wrapper: ({ children }) => React.createElement(StrictMode, null, children) }
+      );
+      advanceUntilOutcome(result);
+      expect(log.events.filter((e) => e.kind === 'run_tally')).toHaveLength(1);
+    });
+
+    it('手動で捨てると card_discarded_manual が記録される', () => {
+      const log = createMockPlayLog();
+      const { result } = renderHook(() =>
+        useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log })
+      );
+      act(() => result.current.discardCard(0));
+      const events = log.events.filter((e) => e.kind === 'card_discarded_manual');
+      expect(events).toHaveLength(1);
     });
   });
 });
