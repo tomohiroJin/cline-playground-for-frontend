@@ -81,18 +81,23 @@ export const UnitPlate: React.FC<Props> = ({ plate, columns, rows }) => {
   const cellCqw = 100 / columns;
   const widthCqw = ((visual.isWide ? WIDE_WIDTH_PCT : visual.sizePct) / 100) * cellCqw;
   const heightCqw = ((visual.isWide ? WIDE_HEIGHT_PCT : visual.sizePct) / 100) * cellCqw;
+  // CardGlyph（手札）と同じ値を data-clip-path に出す。$clipPath と別々に計算すると
+  // 「盤面と手札で同じ形か」を DOM 突き合わせで検証するテストが意味を失うため、
+  // 必ずこの1つの変数から両方を出す。
+  const clipPath = getRoleClipPath(visual.role);
   return (
     <Plate
       data-testid={`unit-plate-${pos.x}-${pos.y}`}
       data-role={visual.role}
       data-wide={visual.isWide ? 'true' : 'false'}
+      data-clip-path={clipPath ?? 'none'}
       aria-label={`${roleLabelOf(visual.role)} ${visual.name}`}
       $left={((pos.x + 0.5) / columns) * 100}
       $top={((pos.y + 0.44) / rows) * 100}
       $widthCqw={widthCqw}
       $heightCqw={heightCqw}
       $wide={visual.isWide}
-      $clipPath={getRoleClipPath(visual.role)}
+      $clipPath={clipPath}
       $firing={plate.isFiring}
     >
       {visual.glyph}

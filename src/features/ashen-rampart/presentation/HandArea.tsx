@@ -187,13 +187,17 @@ export const HandArea: React.FC<Props> = ({
         {state.deck.hand.map((cardId, index) => {
           const card = getCardDefinition(cardId);
           const affordable = card.cost <= state.mana;
+          const roleLabel = roleLabelOf(getUnitVisual(cardId).role);
+          // 魔力炉・徴発は役割名とカード名が同じ文字列になる（例:「魔力炉」）。
+          // その場合まで前置すると「魔力炉 魔力炉」と同じ語を2回読み上げてしまうため省く。
+          const cardLabel = roleLabel === card.name ? card.name : `${roleLabel} ${card.name}`;
           return (
             <CardSlot key={`${cardId}-${index}`}>
               <Card
                 type="button"
                 $selected={selectedIndex === index}
                 aria-pressed={selectedIndex === index}
-                aria-label={`${roleLabelOf(getUnitVisual(cardId).role)} ${card.name} コスト${card.cost}`}
+                aria-label={`${cardLabel} コスト${card.cost}`}
                 disabled={!affordable}
                 onClick={() => onSelect(index)}
               >

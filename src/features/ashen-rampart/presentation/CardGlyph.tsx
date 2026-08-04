@@ -35,11 +35,15 @@ interface Props {
 export const CardGlyph: React.FC<Props> = ({ cardId }) => {
   const visual = getUnitVisual(cardId);
   const clipPath = getRoleClipPath(visual.role);
+  // UnitPlate（盤面）と同じ3属性を同じ変数から出す。$wide と data-wide が
+  // 別々の計算だと、盤面との形の一致を DOM 突き合わせで検証するテストが
+  // 意味を失うため、必ずこの visual.isWide 1つから両方を出す。
   return (
     <Glyph
       data-testid={`card-glyph-${cardId}`}
       data-role={visual.role}
       data-clip-path={clipPath ?? 'none'}
+      data-wide={visual.isWide ? 'true' : 'false'}
       aria-hidden="true"
       $clipPath={clipPath}
       $wide={visual.isWide}

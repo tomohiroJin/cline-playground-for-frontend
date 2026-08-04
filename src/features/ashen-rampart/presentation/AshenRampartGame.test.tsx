@@ -108,14 +108,26 @@ const submitRunNote = (text = 'テスト用の記録'): void => {
 };
 
 /**
- * 手札グループ内で「徴発」のカードボタンを探す（HandArea に role="group" aria-label="手札" を追加済み）
+ * 「カード名 コスト」の手札ボタンを判定するマッチャーを組み立てる
  *
- * Task 7 で aria-label が「役割 カード名 コスト…」になった（例: 「徴発 徴発 コスト1」）。
- * 先頭アンカーを外し部分一致にすることで、役割ラベルの追加に依存しない。
+ * Task 7 で aria-label が「[役割 ]カード名 コスト…」になった（役割名とカード名が
+ * 一致するとき役割は前置されない。例: 「徴発 コスト1」「壁 石壁 コスト1」）。
+ * カード名を主語にし、直前が先頭か空白であることを要求することで、将来
+ * 他カードの役割ラベルが今回のカード名を部分文字列として含んでいても
+ * 誤って一致しないようにする（役割名の一致に依存した部分一致は避ける）。
+ * カード名は常にこのファイル内のリテラルから渡すため、動的な RegExp 構築
+ * （security/detect-non-literal-regexp）を避けて文字列操作で判定する。
  */
+const isHandButtonNameFor =
+  (cardName: string) =>
+  (accessibleName: string): boolean =>
+    accessibleName.startsWith(`${cardName} コスト`) ||
+    accessibleName.includes(` ${cardName} コスト`);
+
+/** 手札グループ内で「徴発」のカードボタンを探す（HandArea に role="group" aria-label="手札" を追加済み） */
 const findLevyHandButton = (): HTMLElement | null =>
   within(screen.getByRole('group', { name: '手札' })).queryByRole('button', {
-    name: /徴発 コスト/,
+    name: isHandButtonNameFor('徴発'),
   });
 
 /**
@@ -305,8 +317,9 @@ describe('AshenRampartGame', () => {
     render(<AshenRampartGame />);
     startRunningWithStoneWallDeck();
 
-    // aria-label は Task 7 で「役割 カード名 コスト…」（例: 「壁 石壁 コスト1」）になったため部分一致にする
-    fireEvent.click(screen.getByRole('button', { name: /石壁 コスト/ }));
+    // aria-label は Task 7 で「[役割 ]カード名 コスト…」（例: 「壁 石壁 コスト1」）になったため
+    // カード名を主語にした isHandButtonNameFor で探す
+    fireEvent.click(screen.getByRole('button', { name: isHandButtonNameFor('石壁') }));
     const pathCell = laneOf(PLAINS_MAP, 0)[3]!;
     fireEvent.click(screen.getByTestId(`cell-${pathCell.x}-${pathCell.y}`));
     // 配置操作は pendingRef に積まれるだけで、次 tick の stepTick で確定する
@@ -481,8 +494,8 @@ describe('AshenRampartGame', () => {
     let reactorCard: HTMLElement | null = null;
     for (let advanced = 0; advanced < 300 && !reactorCard; advanced += 1) {
       // 反復2 で魔力炉が8枚になり、手札に同時に複数枚並ぶため先頭を取る
-      // aria-label は Task 7 で「役割 カード名 コスト…」になったため部分一致にする
-      reactorCard = within(hand).queryAllByRole('button', { name: /魔力炉 コスト/ })[0] ?? null;
+      // aria-label は Task 7 で「[役割 ]カード名 コスト…」になったため isHandButtonNameFor で探す
+      reactorCard = within(hand).queryAllByRole('button', { name: isHandButtonNameFor('魔力炉') })[0] ?? null;
       if (reactorCard) break;
       act(() => {
         jest.advanceTimersByTime(TICK_INTERVAL_MS);
