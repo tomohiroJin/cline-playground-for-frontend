@@ -1020,17 +1020,26 @@ git commit -m "feat(ashen-rampart): 状態バーを4種の設置物へ汎用化�
   });
 
   it('設置済みセルに常時描く印は MAX_CELL_MARKS 以下である', () => {
-    // 台座・文字・状態バーの3つ。文字は台座の子なので要素数は台座1 + バー1
-    const plates = screen.getAllByTestId(/^unit-plate-/);
-    plates.forEach((plate) => {
+    // 1マスあたりの印を実際に数える:
+    //   台座（文字はその子なので1つと数える）+ 状態バー + セル内に残った data-mark
+    // レーン印と矢印の抑制が外れると 2 + 2 = 4 になり、この検証が落ちる。
+    screen.getAllByTestId(/^unit-plate-/).forEach((plate) => {
       const pos = plate.getAttribute('data-testid')!.replace('unit-plate-', '');
-      const marks = [
-        plate,
-        screen.queryByTestId(`unit-status-${pos}`),
-        plate.textContent ? plate : null,
-      ].filter(Boolean);
-      expect(marks.length).toBeLessThanOrEqual(MAX_CELL_MARKS);
+      const [x, y] = pos.split('-');
+      const cell = screen.getByTestId(`cell-${x}-${y}`);
+      const markCount =
+        1 +
+        (screen.queryByTestId(`unit-status-${pos}`) ? 1 : 0) +
+        cell.querySelectorAll('[data-mark]').length;
+      expect(markCount).toBeLessThanOrEqual(MAX_CELL_MARKS);
     });
+  });
+
+  it('設置物のないセルではレーン印と矢印が残る（抑制は設置済みセル限定）', () => {
+    // 上の検証が「常に data-mark が0」で通ってしまわないことの担保。
+    // 経路上で設置物のないセルを選ぶこと。
+    const emptyPathCell = screen.getByTestId('cell-2-1');
+    expect(emptyPathCell.querySelectorAll('[data-mark]').length).toBeGreaterThan(0);
   });
 ```
 
