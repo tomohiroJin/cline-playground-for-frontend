@@ -31,7 +31,7 @@ export interface PlateModel {
   statusMax: number;
   /** 状態バーの意味（aria-label に使う） */
   statusLabel: string;
-  /** この tick に撃ったか（台座を脈動させる） */
+  /** この tick に撃ったか（台座を脈動させる）。`shot` イベントから引く */
   isFiring: boolean;
 }
 
@@ -57,21 +57,35 @@ const plateOf = (
 };
 
 /**
- * 設置物すべてを台座モデルへ変換する
+ * この tick に撃った守り手の index を集める
  *
- * 攻撃直後の判定は cooldownLeft が最大に戻ったことで見る。stepTick は
- * 撃った tick に cooldownLeft を cooldownTicks へ戻すため、エフェクト層を
- * 参照せずに「今撃った」が分かる。
+ * cooldownLeft からの逆算はしない。stepTick は発射時に
+ * `Math.max(0, cooldownTicks - 1)` を入れるため「cooldownTicks と等しい」は
+ * 決して成り立たず、さらに内部実装が変われば静かに壊れる。`shot` イベントは
+ * 発射そのものを表す一次情報であり、設計書 §5.3 の「shot エフェクトに同期」
+ * とも一致する。
  */
+const firingUnitIndicesOf = (state: CombatState): Set<number> => {
+  const indices = new Set<number>();
+  state.events.forEach((event) => {
+    if (event.kind === 'shot') indices.add(event.unitIndex);
+  });
+  return indices;
+};
+
+/** 設置物すべてを台座モデルへ変換する */
 export const buildPlates = (state: CombatState): PlateModel[] => {
   const plates: PlateModel[] = [];
+  const firingIndices = firingUnitIndicesOf(state);
 
-  state.units.forEach((unit) => {
-    const tower = getCardDefinition(unit.cardId).tower;
-    const cooldownTicks = tower?.cooldownTicks ?? 0;
-    const isFiring = cooldownTicks > 0 && unit.cooldownLeft >= cooldownTicks;
+  state.units.forEach((unit, index) => {
     plates.push(
-      plateOf(unit.cardId, unit.pos, { now: unit.hp, max: unit.maxHp, suffix: 'の耐久' }, isFiring)
+      plateOf(
+        unit.cardId,
+        unit.pos,
+        { now: unit.hp, max: unit.maxHp, suffix: 'の耐久' },
+        firingIndices.has(index)
+      )
     );
   });
 

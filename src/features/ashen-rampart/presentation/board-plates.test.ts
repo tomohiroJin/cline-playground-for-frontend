@@ -21,6 +21,7 @@ const stateWith = (overrides: {
   traps?: PlacedTrap[];
   reactors?: PlacedReactor[];
   embers?: PlacedEmber[];
+  events?: CombatState['events'];
 }): CombatState => {
   const emptyDeck: DeckState = { drawPile: [], hand: [], graveyard: [] };
   const base = createCombatState(emptyDeck, []);
@@ -30,6 +31,7 @@ const stateWith = (overrides: {
     traps: overrides.traps ?? [],
     reactors: overrides.reactors ?? [],
     embers: overrides.embers ?? [],
+    events: overrides.events ?? [],
   };
 };
 
@@ -77,29 +79,35 @@ describe('buildPlates', () => {
     expect(plates[0].statusLabel).toBe('魔力炉 のマナ生成');
   });
 
-  it('撃った直後の攻撃塔は isFiring になる', () => {
-    // 弓兵の cooldownTicks は 8。撃った tick に cooldownLeft が最大へ戻る
-    const fired = buildPlates(
-      stateWith({
-        units: [{ cardId: 'arrow-tower', pos: { x: 1, y: 1 }, hp: 8, maxHp: 8, cooldownLeft: 8 }],
-      })
-    );
-    const idle = buildPlates(
-      stateWith({
-        units: [{ cardId: 'arrow-tower', pos: { x: 1, y: 1 }, hp: 8, maxHp: 8, cooldownLeft: 2 }],
-      })
-    );
+  it('この tick に撃った攻撃塔は isFiring になる', () => {
+    const unit = { cardId: 'arrow-tower', pos: { x: 1, y: 1 }, hp: 8, maxHp: 8, cooldownLeft: 3 };
+    const shot = {
+      kind: 'shot' as const,
+      unitIndex: 0,
+      targetId: 1,
+      auraDamageBonus: 0,
+      beyondBaseRange: false,
+    };
+    const fired = buildPlates(stateWith({ units: [unit], events: [shot] }));
+    const idle = buildPlates(stateWith({ units: [unit], events: [] }));
     expect(fired[0].isFiring).toBe(true);
     expect(idle[0].isFiring).toBe(false);
   });
 
-  it('攻撃しない守り手は isFiring にならない（cooldownTicks が 0 のため）', () => {
+  it('別の守り手が撃っても自分は isFiring にならない（index で対応づける）', () => {
     const plates = buildPlates(
       stateWith({
-        units: [{ cardId: 'stone-wall', pos: { x: 1, y: 1 }, hp: 60, maxHp: 60, cooldownLeft: 0 }],
+        units: [
+          { cardId: 'stone-wall', pos: { x: 1, y: 1 }, hp: 60, maxHp: 60, cooldownLeft: 0 },
+          { cardId: 'arrow-tower', pos: { x: 2, y: 1 }, hp: 8, maxHp: 8, cooldownLeft: 3 },
+        ],
+        events: [
+          { kind: 'shot', unitIndex: 1, targetId: 1, auraDamageBonus: 0, beyondBaseRange: false },
+        ],
       })
     );
     expect(plates[0].isFiring).toBe(false);
+    expect(plates[1].isFiring).toBe(true);
   });
 
   it('4種の設置物が同時にあってもすべて台座になる', () => {
