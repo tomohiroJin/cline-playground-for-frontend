@@ -62,11 +62,23 @@ describe('UnitPlate', () => {
     expect(screen.getByTestId('unit-plate-2-3')).toHaveAttribute('data-role', 'support');
   });
 
+  it('配置時にポップインアニメーションが出力される', () => {
+    // popIn キーフレームには scale(0.7) と scale(1) の状態遷移が含まれる。
+    // これは Task 10 で追加されたもので、Task 10 以前には存在しない。
+    // styled-components が出力する CSS に popIn の固有値が含まれることで、
+    // ポップインアニメーション実装の有無を検証する。
+    render(<UnitPlate plate={plateFor('arrow-tower')} columns={9} rows={7} />);
+    const styles = Array.from(document.querySelectorAll('style'))
+      .map((el) => el.textContent ?? '')
+      .join('');
+    expect(styles).toContain('scale(0.7)');
+  });
+
   it('動きを減らす設定では脈動もポップインも止まる', () => {
     // jsdom では matchMedia が未定義のため setupTests のモックに合わせる。
     // styled-components が出力する CSS に prefers-reduced-motion のブロックが
     // 含まれることを検証する（実際の再生停止はブラウザ側の責務）。
-    const { container } = render(
+    render(
       <UnitPlate plate={plateFor('arrow-tower')} columns={9} rows={7} />
     );
     const styles = Array.from(document.querySelectorAll('style'))

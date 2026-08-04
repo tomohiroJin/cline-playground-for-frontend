@@ -65,10 +65,21 @@ const Plate = styled.div<{
     $firing
       ? css`
           /*
-            発射時は脈動を加える。popIn は200msで完了済みだが、
-            firePulse を別アニメーションとして追加し、
-            popIn を再宣言する理由は、複数アニメーション合成で
-            統一的に定義するため。実時間は popIn 200ms + firePulse 300ms (alternate 2)
+            発射時は脈動を加える。
+
+            【重要】popIn は $firing の両分岐で animation-name のリストに含め続けること。
+            CSS Animations 仕様では、animation-name 計算値が変わるとき、
+            名前が一度リストから消えて再登場すると「新たに追加された」扱いになり、
+            アニメーションが再生し直される。
+
+            もし $firing 分岐から popIn を外すと、$firing が false に戻ったとき
+            popIn が再度リストに現れ、敵に当たるたびに台座が拡大縮小して
+            現れ直す（ポップインが何度もリピート）という欠陥が発生する。
+
+            これを防ぐには、animation-name がリストから一度も消えないよう、
+            両分岐に popIn を含める（= 名前の継続性を保つ）。
+
+            実時間: popIn 200ms + firePulse 300ms (150ms × alternate 2)
             の並行実行で 300ms（全体制約内）。
           */
           animation: ${popIn} 200ms ease-out, ${firePulse} 150ms ease-out alternate 2;
