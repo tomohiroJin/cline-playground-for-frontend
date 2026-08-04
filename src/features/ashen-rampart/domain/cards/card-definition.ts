@@ -12,6 +12,8 @@ export type CardType = 'tower' | 'trap' | 'spell' | 'reactor' | 'ember' | 'levy'
 
 /** タワー性能 */
 export interface TowerSpec {
+  /** 守り手のHP。敵に殴られて 0 になると消滅する */
+  hp: number;
   /** 射程（セル距離・ユークリッド） */
   range: number;
   /** 1発のダメージ */
@@ -30,14 +32,13 @@ export interface TowerSpec {
    */
   aura?: { towerDamageBonus?: number; towerRangeBonus?: number };
   /**
-   * 重装特効のしきい値（最大HP）。これ以上の敵に heavyBonusMultiplier を掛ける
+   * 貫通。守り手から標的へ引いた直線上にいる敵すべてに当たる
    *
-   * 徹甲弩は低HP敵に非効率・高HP敵に強いという形で、
-   * 「効率の順位が敵によって入れ替わる」状態を作るための仕組み。
+   * 単体・範囲のどちらとも重ならない3つ目の軸。反復2 のエフェクト設計は
+   * 「範囲=太実線 / 単体=細実線 / 貫通=破線」と線種を定義済みだが、
+   * 貫通する守り手が存在しなかったため破線は一度も描かれていない。
    */
-  heavyBonusThreshold?: number;
-  /** 重装特効の倍率 */
-  heavyBonusMultiplier?: number;
+  piercing?: boolean;
 }
 
 /** 罠性能（経路マスに設置、踏んだ敵に発動） */
@@ -47,11 +48,9 @@ export interface TrapSpec {
   uses: number;
   /** 飛行敵を地上化する tick 数（落網）。持たない罠は undefined */
   groundedTicks?: number;
-  /** 地上敵を足止めする tick 数（石壁）。持たない罠は undefined */
-  stunTicks?: number;
 }
 
-/** 魔力炉性能（マナ源。スロットを消費する） */
+/** 魔力炉性能（マナ源。経路上には置けない。§7.5） */
 export interface ReactorSpec {
   /** マナを生む間隔（tick） */
   intervalTicks: number;
@@ -104,16 +103,18 @@ export interface CardDefinition {
 }
 
 /** カードを出すときに指定する対象の種別 */
-export type PlacementKind = 'slot' | 'path' | 'none';
+export type PlacementKind = 'unit' | 'reactor' | 'path' | 'none';
 
 /**
  * カードの配置先種別を返す
  *
- * UI はこれを見て「置けるマスだけをハイライトする」（設計書 §9.7）。
- * 選択空間 60通りを数個に落とすための情報。
+ * 設置マスの概念が消えたため、守り手は砦以外のどこにでも置ける。
+ * 魔力炉だけは経路外に限る——コスト0・デッキ上限なしのため、
+ * 経路に置けると無限の無料ブロッカーになる（設計書 §7.5）。
  */
 export const placementKindOf = (card: CardDefinition): PlacementKind => {
-  if (card.type === 'trap') return 'path';
+  if (card.type === 'trap' || card.type === 'ember') return 'path';
   if (card.type === 'spell' || card.type === 'levy') return 'none';
-  return 'slot';
+  if (card.type === 'reactor') return 'reactor';
+  return 'unit';
 };

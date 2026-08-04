@@ -2,7 +2,7 @@
  * 灰燼の城壁 - エフェクトの寿命管理（純粋）
  *
  * 敵は撃破後も `alive: false` のまま `enemies` に残るが、**`state.events` は
- * 毎 tick 丸ごと置き換わる**。しかも `shot` は `towerIndex`、`defeat` は
+ * 毎 tick 丸ごと置き換わる**。しかも `shot` は `unitIndex`、`defeat` は
  * `enemyId` という参照しか持たない。イベントを受け取ったその tick のうちに
  * 座標へ解決してスナップショットしておくのが、参照の解決先が将来変わっても
  * 壊れない形である。この関数だけがその責務を持つ。
@@ -12,13 +12,13 @@
 import type { CellPos, StageMap } from '../domain/board/stage-map';
 import { fortressCell } from '../domain/board/stage-map';
 import type { CombatState, TickEvent } from '../domain/combat/combat-state';
-import { positionOf } from '../domain/combat/step-tick';
+import { enemyPosition } from '../domain/combat/step-tick';
 import { getCardDefinition } from '../domain/cards/card-pool';
 
 /**
  * 同時に描くエフェクトの上限
  *
- * 塔6基 × クールダウン8 tick では常時1〜3本の線が明滅し、群れ22体と
+ * 守り手6基 × クールダウン8 tick では常時1〜3本の線が明滅し、群れ22体と
  * 重なる局面がある。反証条件「情報量そのものが過大」に当たったときは
  * まずこの値を下げる（設計書 §8.4）。
  */
@@ -31,6 +31,8 @@ export const EFFECT_LIFETIME = {
   ember: 5,
   defeat: 8,
   leak: 8,
+  'unit-damaged': 3,
+  'unit-lost': 8,
 } as const;
 
 /**
@@ -38,14 +40,23 @@ export const EFFECT_LIFETIME = {
  *
  * 寿命は shot 3 tick に対し leak 8 tick で、leak は常に「古い」側になる。
  * 古い順に落とすと最も重要な情報が最初に捨てられるため、優先度順にする。
+ *
+ * unit-lost は守り手が消滅する取り返しのつかない出来事なので、leak の次に
+ * 重い。unit-damaged は守り手の攻撃間隔ごとに出る高頻度の出来事であり、
+ * shot と同じ理由（高頻度＝個々の重要度は低い）で同格に軽い。
+ *
+ * `Record<Effect['kind'], number>` にすることで、Effect の種類が増えたのに
+ * ここへの追記を忘れるとコンパイルエラーになる（漏れの防止）。
  */
-const EFFECT_PRIORITY = {
-  leak: 4,
+const EFFECT_PRIORITY: Record<Effect['kind'], number> = {
+  leak: 5,
+  'unit-lost': 4,
   defeat: 3,
   trap: 2,
   ember: 2,
   shot: 1,
-} as const;
+  'unit-damaged': 1,
+};
 
 /**
  * reduced-motion 時の一律の寿命（tick）
@@ -77,9 +88,13 @@ export const EFFECT_STROKE_WIDTH = {
   trap: 3,
   /** 燠火の輪 */
   ember: 2,
+  /** 被弾の縁取り。攻撃間隔ごとに出る高頻度の出来事なので細く */
+  unitDamaged: 1,
+  /** 消滅の ✕ マーク */
+  unitLost: 3,
 } as const;
 
-/** 貫通の塔の射撃線に使う破線パターン */
+/** 貫通の守り手の射撃線に使う破線パターン */
 export const EFFECT_DASH_PATTERN = '4 3';
 
 export interface AdvanceOptions {
@@ -94,26 +109,34 @@ export type Effect =
       from: CellPos;
       to: CellPos;
       untilTick: number;
-      /** 範囲攻撃の塔は太線で描く */
+      /** 範囲攻撃の守り手は太線で描く */
       wide: boolean;
-      /** 貫通の塔は破線で描く */
+      /** 貫通の守り手は破線で描く */
       dashed: boolean;
     }
   | { kind: 'defeat'; id: string; from: CellPos; to: CellPos; untilTick: number }
   | { kind: 'trap'; id: string; at: CellPos; untilTick: number }
   | { kind: 'ember'; id: string; at: CellPos; radius: number; untilTick: number }
-  | { kind: 'leak'; id: string; at: CellPos; untilTick: number };
+  | { kind: 'leak'; id: string; at: CellPos; untilTick: number }
+  | { kind: 'unit-damaged'; id: string; pos: CellPos; untilTick: number }
+  | { kind: 'unit-lost'; id: string; pos: CellPos; untilTick: number };
 
-/** 敵の現在位置。既に消えた敵は undefined */
+/**
+ * 敵の現在位置。既に消えた敵は undefined
+ *
+ * 敵は自身の laneIndex を持つため、所属レーンで座標を解決する
+ * （北レーン固定で解決すると、南レーンの敵の射撃線・撃破エフェクトが
+ * 誤った座標に描かれる）。
+ */
 const enemyPos = (state: CombatState, enemyId: number, map: StageMap): CellPos | undefined => {
   const enemy = state.enemies.find((e) => e.id === enemyId);
   if (!enemy) return undefined;
-  return positionOf(enemy.progress, map.path);
+  return enemyPosition(map, enemy);
 };
 
 /** 撃破源の座標。既に消えた設置物は undefined */
 const sourcePos = (state: CombatState, source: Extract<TickEvent, { kind: 'defeat' }>['source']): CellPos | undefined => {
-  if (source.kind === 'tower') return state.towers[source.index]?.pos;
+  if (source.kind === 'unit') return state.units[source.index]?.pos;
   if (source.kind === 'trap') return state.traps[source.index]?.pos;
   return state.embers[source.index]?.pos;
 };
@@ -133,10 +156,10 @@ const toEffect = (
   const tick = state.tick;
   const id = `${tick}-${index}`;
   if (event.kind === 'shot') {
-    const from = state.towers[event.towerIndex]?.pos;
+    const from = state.units[event.unitIndex]?.pos;
     const to = enemyPos(state, event.targetId, map);
     if (!from || !to) return undefined;
-    const spec = getCardDefinition(state.towers[event.towerIndex]?.cardId ?? '').tower;
+    const spec = getCardDefinition(state.units[event.unitIndex]?.cardId ?? '').tower;
     return {
       kind: 'shot',
       id,
@@ -144,7 +167,7 @@ const toEffect = (
       to,
       untilTick: tick + lifetimeOf('shot', reducedMotion),
       wide: (spec?.splashRadius ?? 0) > 0,
-      dashed: spec?.heavyBonusThreshold !== undefined,
+      dashed: spec?.piercing === true,
     };
   }
   if (event.kind === 'defeat') {
@@ -168,6 +191,25 @@ const toEffect = (
     const at = fortressCell(map);
     if (!at) return undefined;
     return { kind: 'leak', id, at, untilTick: tick + lifetimeOf('leak', reducedMotion) };
+  }
+  if (event.kind === 'unit-damaged') {
+    // unitIndex は同一 tick 内の守り手消滅で units 配列が縮むと
+    // ずれるため信用できない（Task 5 の既知課題）。イベント自身が持つ
+    // 座標をそのまま使うことで、配列インデックスの解決を経由しない。
+    return {
+      kind: 'unit-damaged',
+      id,
+      pos: event.pos,
+      untilTick: tick + lifetimeOf('unit-damaged', reducedMotion),
+    };
+  }
+  if (event.kind === 'unit-lost') {
+    return {
+      kind: 'unit-lost',
+      id,
+      pos: event.pos,
+      untilTick: tick + lifetimeOf('unit-lost', reducedMotion),
+    };
   }
   return undefined;
 };

@@ -33,9 +33,10 @@ describe('RunStatusBar', () => {
     expect(screen.getByText('危険')).toBeInTheDocument();
   });
 
-  it('次ウェーブの構成が予告される', () => {
-    // Task 9 の再較正（PLAINS_WAVES 総HP 728・総体数 51、LIFE_INITIAL 10→12）により、
-    // tick:100 時点の次ウェーブ（startTick:250）は 雑兵3 俊足2 が正しい現物値。
+  it('次ウェーブの構成がレーン付きで予告される（指摘1: 種類と数だけでは配分を事前に決められない）', () => {
+    // Task 14 の再較正（2レーン化。PLAINS_WAVES 総HP 648・総体数 45）により、
+    // tick:100 時点の次ウェーブ（startTick:260＋カウントダウン90＝350）は
+    // 北=雑兵2・南=俊足2 が正しい現物値。レーンが分かる形（北/南）で出ることを確認する
     render(
       <RunStatusBar
         state={{ ...state, tick: 100 }}
@@ -44,7 +45,7 @@ describe('RunStatusBar', () => {
         runSeed={1}
       />
     );
-    expect(screen.getByText(/次: 雑兵3 俊足2/)).toBeInTheDocument();
+    expect(screen.getByText(/次: 北 雑兵2 \/ 南 俊足2/)).toBeInTheDocument();
   });
 
   it('一時停止ボタンで onTogglePause が呼ばれる', () => {

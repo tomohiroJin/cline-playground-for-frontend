@@ -1,77 +1,135 @@
 /**
- * バランスの回帰テスト
+ * バランスの回帰テスト（反復3 の再較正）
  *
  * 前作は支配戦略の検算をせずに実装し、3回の実プレイを費やして初めて
  * 欠陥を知った。同じことを繰り返さないため、CI で常時検証する。
  *
- * このファイルの鉄則: **テスト名で主張することだけを検証し、検証できないことは主張しない。**
- * 実際に「範囲攻撃なしのデッキは負ける」というテスト名が、0ダメージのオーラ札で
- * 埋めたデッキの敗北を根拠にしていた（レビュー是正）。以後、勝敗が確定しない要求に
- * ついては「勝率が落ちる」を複数シードで測る形にしてある。
+ * このファイルの鉄則:
+ * 1. **テスト名で主張することだけを検証し、検証できないことは主張しない。**
+ * 2. **不変条件は両方向に置く。** 「弱い組み方が勝てない」だけでは較正が
+ *    厳しすぎる方向を検出できず、「強い組み方が勝てる」だけでは緩すぎる方向を
+ *    検出できない。反復1 では片側だけの不変条件で同じ欠陥を4回繰り返した。
+ * 3. **緑になった理由まで確かめる。** 対照条件が「マナ枯渇」「手札詰まり」で
+ *    負けていては、測りたいものを測っていない。各対照条件について
+ *    「札は出せた上で押し切られた」ことを cardsPlayed で確認する。
+ *
+ * 反復2 までの較正（総HP728・全エントリがレーン0・魔力炉8枚）は2レーン化で
+ * 前提ごと失われたため、閾値・対照条件をすべて測り直してある。
  */
 import { startRun } from '../../application/use-cases/start-run';
 import { SeededRandom } from '../../infrastructure/random/seeded-random';
 import { PLAINS_MAP } from '../board/stage-map';
 import { PLAINS_WAVES, totalEnemyHp, type WaveDefinition } from './waves';
+import { getEnemySpec } from './enemies';
 import { createCombatState, LIFE_INITIAL } from './combat-state';
 import { createDeck } from '../cards/deck';
 import { validateDeck } from '../cards/deck-builder';
-import { CARD_IDS, maxCopiesOf, DECK_SIZE, getCardDefinition } from '../cards/card-pool';
-import { simulateRun, greedyStrategy, type RunSimulationResult } from './run-simulation';
+import { DECK_SIZE, maxCopiesOf, getCardDefinition } from '../cards/card-pool';
+import {
+  simulateRun,
+  greedyStrategy,
+  offPathOnlyStrategy,
+  noPureGroundAttackStrategy,
+  type RunSimulationResult,
+  type Strategy,
+} from './run-simulation';
 
-/** 勝率を測るためのシード群。1ラン ≒ 数ミリ秒なので20シードでも十分速い */
+// 1ランは約1000tick。20シード×十数条件を回すため、既定の5秒では足りない
+jest.setTimeout(120_000);
+
+/** 勝率を測るためのシード群 */
 const SEEDS = Array.from({ length: 20 }, (_, index) => index + 1);
 
 const repeat = (id: string, count: number): string[] => Array.from({ length: count }, () => id);
 
+/**
+ * 同じ条件を測り直さないための記憶
+ *
+ * 「全要求充足 − 範囲なし」のような比較は同じ掃引を何度も要求する。
+ * 素朴に回すとテスト1件あたり数秒かかり、閾値ではなく実行時間で落ちる。
+ */
+const sweepCache = new Map<string, RunSimulationResult[]>();
+
 /** 指定デッキを全シードで回す。乱数はシードごとに新しく作るので互いに独立 */
-const runAllSeeds = (cards: readonly string[]): RunSimulationResult[] =>
-  SEEDS.map((seed) => {
+const runAllSeeds = (
+  cards: readonly string[],
+  strategy: Strategy,
+  strategyName: string
+): RunSimulationResult[] => {
+  const key = `${strategyName}|${cards.join(',')}`;
+  const cached = sweepCache.get(key);
+  if (cached) return cached;
+  const results = SEEDS.map((seed) => {
     const random = new SeededRandom(seed);
     const deck = createDeck(cards, () => random.random());
-    return simulateRun(createCombatState(deck, PLAINS_WAVES), greedyStrategy, PLAINS_MAP);
+    return simulateRun(createCombatState(deck, PLAINS_WAVES), strategy, PLAINS_MAP);
   });
+  sweepCache.set(key, results);
+  return results;
+};
 
-/** 勝利数（20シード中）。lifeLeft や outcome==='playing' は勝利に数えない */
-const winsOf = (cards: readonly string[]): number =>
-  runAllSeeds(cards).filter((r) => r.outcome === 'won').length;
+const winsOf = (
+  cards: readonly string[],
+  strategy: Strategy = greedyStrategy,
+  strategyName = 'greedy'
+): number => runAllSeeds(cards, strategy, strategyName).filter((r) => r.outcome === 'won').length;
 
-/** プリセットの勝利数（20シード中）。startRun 経由でプリセット定義そのものを検証する */
-const presetWinsOf = (presetId: string): number =>
-  SEEDS.filter(
+/** 全シード中で最も札を出せなかったランの枚数（力負けかマナ枯渇かの判別に使う） */
+const minCardsPlayedOf = (
+  cards: readonly string[],
+  strategy: Strategy = greedyStrategy,
+  strategyName = 'greedy'
+): number => Math.min(...runAllSeeds(cards, strategy, strategyName).map((r) => r.cardsPlayed));
+
+const presetWinsCache = new Map<string, number>();
+
+/** プリセットの勝利数。startRun 経由でプリセット定義そのものを検証する */
+const presetWinsOf = (
+  presetId: string,
+  strategy: Strategy = greedyStrategy,
+  strategyName = 'greedy'
+): number => {
+  const key = `${strategyName}|${presetId}`;
+  const cached = presetWinsCache.get(key);
+  if (cached !== undefined) return cached;
+  const wins = SEEDS.filter(
     (seed) =>
-      simulateRun(startRun(presetId, new SeededRandom(seed)), greedyStrategy, PLAINS_MAP)
-        .outcome === 'won'
+      simulateRun(startRun(presetId, new SeededRandom(seed)), strategy, PLAINS_MAP).outcome ===
+      'won'
   ).length;
+  presetWinsCache.set(key, wins);
+  return wins;
+};
 
-/**
- * カードが対空の答えを持つか（スペックから判定。IDのハードコードは将来カードが
- * 増えたときに漏れるため避ける）
- *
- * 塔が飛行に当たる（hitsFlying）か、罠が飛行を地上化する（groundedTicks）かの
- * どちらかを対空の答えとみなす。
- */
+// --- カードの性質を判定する述語（IDのハードコードは将来カードが増えたときに漏れる） ---
+
+/** 対空の答えを持つか（飛行に当たる守り手か、飛行を地上化する罠か） */
 const hasAntiAir = (id: string): boolean => {
   const card = getCardDefinition(id);
   return card.tower?.hitsFlying === true || card.trap?.groundedTicks !== undefined;
 };
 
-/**
- * カードが範囲攻撃を持つか（スペックから判定）
- *
- * 塔の splashRadius と燠火の radius のどちらも「同時に複数体を巻き込む」効果のため、
- * 片方だけを見ると業火のような ember 型の範囲攻撃を見落とす（Task 9 レビューで発覚）。
- */
+/** 範囲攻撃を持つか（塔の splashRadius と燠火の radius の両方を見る） */
 const hasAreaDamage = (id: string): boolean => {
   const card = getCardDefinition(id);
   return (card.tower?.splashRadius ?? 0) > 0 || (card.ember?.radius ?? 0) > 0;
 };
 
+/** 貫通するか（直線上の敵をまとめて貫く） */
+const hasPiercing = (id: string): boolean => getCardDefinition(id).tower?.piercing === true;
+
 /**
- * カードが自力でダメージを出すか（スペックから判定）
+ * 群れをまとめて削る手段を持つか（範囲攻撃 または 貫通）
  *
- * 篝火・鍛冶場・落網・石壁・時泥・徴発・魔力炉はこれを満たさない。
+ * 設計書 §7 は 単体／範囲／貫通 を3つの軸として置いている。1マス幅のレーンで
+ * 群れが縦に詰まると、範囲（半径内の全員）と貫通（直線上の全員）は同じ集団を
+ * まとめて捉えるため、**互いの代替になる**。実測でも範囲だけを抜いた
+ * デッキは 10/20 勝ち、拘束として成立しない。拘束が成立するのは
+ * 「群れをまとめて削る手段が1つも無い」ときで、その形で不変条件を置く。
  */
+const hasMassAnswer = (id: string): boolean => hasAreaDamage(id) || hasPiercing(id);
+
+/** 自力でダメージを出すか（篝火・鍛冶場・落網・石壁・時泥・徴発・魔力炉は満たさない） */
 const hasDamage = (id: string): boolean => {
   const card = getCardDefinition(id);
   return (
@@ -80,366 +138,285 @@ const hasDamage = (id: string): boolean => {
 };
 
 /**
- * 魔力炉3枚 + 指定した条件を満たさないカードで残り17枚を埋めた合法20枚デッキを作る
+ * 全要求充足デッキ（壁・射手・対空・範囲・貫通・支援を含む20枚）
  *
- * **攻撃札を先に上限まで積む**のが要点。以前は CARD_IDS の並び順で巡回していたため、
- * 篝火2＋鍛冶場2（常に0ダメージのオーラ札）が混ざり、「除外したから負けた」のか
- * 「埋め札が弱いから負けた」のかを区別できなかった（レビュー是正）。
- * 除外条件を満たさない範囲で合法かつ最も攻撃的なデッキを作ることで、
- * 「その要求を無視すると何が起きるか」だけを見られるようにしている。
- *
- * 攻撃札だけでは20枚に届かない場合（対空除外時は攻撃札が5種=15枚しかない）に限り、
- * 残りを非攻撃札で埋める。埋め札の枚数は attackCardCountOf で検査できる。
+ * 較正の基準となる1本。ここから述語で札を抜いたものが対照条件になる。
+ * 対照条件を「別に組んだデッキ」にすると、抜いた性質以外も同時に変わって
+ * しまうため、必ずこの1本の近傍として作る。
  */
-const buildLegalDeckExcluding = (isExcluded: (id: string) => boolean): string[] => {
-  const eligible = CARD_IDS.filter((id) => id !== 'reactor' && !isExcluded(id));
-  const ordered = [...eligible.filter(hasDamage), ...eligible.filter((id) => !hasDamage(id))];
-  const cards = repeat('reactor', 3);
-  ordered.forEach((id) => {
-    while (cards.length < DECK_SIZE && cards.filter((c) => c === id).length < maxCopiesOf(id)) {
-      cards.push(id);
+const FULL_DECK: readonly string[] = [
+  ...repeat('reactor', 4),
+  ...repeat('stone-wall', 3),
+  ...repeat('arrow-tower', 3),
+  ...repeat('ballista', 3),
+  ...repeat('cannon-tower', 2),
+  ...repeat('spike-trap', 2),
+  'piercer',
+  'beacon',
+  'levy',
+];
+
+/**
+ * 抜いた枚数を埋めて20枚に戻す
+ *
+ * 対照条件は「特定の性質を持つ札が無い」ことだけを変えたい。枚数まで減ると
+ * 「デッキが薄いから負けた」という別の理由が混ざる。
+ *
+ * **埋め札は元のデッキに既にある攻撃札を同名上限まで優先する。** 0ダメージの札や
+ * 魔力炉で埋めると「除外したから負けた」のか「埋め札が弱いから負けた」のかを
+ * 区別できなくなる（反復1 のレビュー是正）。実際、魔力炉だけで埋めた版では
+ * 範囲攻撃なしデッキが 5/20、攻撃札で埋めた版では 10/20 と結論が反転した。
+ * 攻撃札の上限を使い切ってなお足りないぶんだけ魔力炉で埋める（同名3枚上限が
+ * ある以上、これは避けられない——そしてそれ自体が設計書 §7 の意図した拘束）。
+ */
+const padToDeckSize = (cards: readonly string[]): string[] => {
+  const padded = [...cards];
+  [...new Set(cards)].filter(hasDamage).forEach((id) => {
+    while (padded.length < DECK_SIZE && padded.filter((c) => c === id).length < maxCopiesOf(id)) {
+      padded.push(id);
     }
   });
-  if (cards.length !== DECK_SIZE) {
-    throw new Error(`除外条件が厳しすぎて${DECK_SIZE}枚を作れません（${cards.length}枚）`);
-  }
-  return cards;
+  while (padded.length < DECK_SIZE) padded.push('reactor');
+  return padded.slice(0, DECK_SIZE);
 };
 
-/** デッキに含まれる攻撃札の枚数 */
-const attackCardCountOf = (cards: readonly string[]): number => cards.filter(hasDamage).length;
-
-/** 対空3種・範囲3種・マナ源をすべて含む20枚（同名3枚以内）。比較の基準になる良デッキ */
-const FULL_ANSWER_DECK: readonly string[] = [
-  ...repeat('reactor', 3),
-  ...repeat('ballista', 3),
-  ...repeat('piercer', 3),
-  ...repeat('cannon-tower', 3),
-  ...repeat('catapult', 2),
-  ...repeat('ember-blast', 2),
-  ...repeat('snare-net', 2),
-  ...repeat('levy', 2),
-];
+/** FULL_DECK から述語を満たす札を抜き、20枚に戻した対照条件デッキ */
+const deckWithout = (isExcluded: (id: string) => boolean): string[] =>
+  padToDeckSize(FULL_DECK.filter((id) => !isExcluded(id)));
 
 /**
- * 対空・貫通・範囲の3軸をすべて満たし、マナ基盤を反復2 の標準（8枚＝40%）に揃えた20枚
+ * 対照条件の作り方が結論を作っていないこと
  *
- * 反復2 の較正はこの構成を対照群として使う。上の FULL_ANSWER_DECK（魔力炉3枚）は
- * 反復1 の測定文脈のまま残してあり、両者を混ぜて比較しないこと。
- */
-const FULL_ANSWER_DECK_8: readonly string[] = [
-  ...repeat('reactor', 8),
-  ...repeat('ballista', 3),
-  ...repeat('cannon-tower', 3),
-  ...repeat('piercer', 3),
-  ...repeat('snare-net', 2),
-  ...repeat('levy', 1),
-];
-
-/**
- * 埋め札が結論を作っていないこと
- *
- * このファイルの結論は buildLegalDeckExcluding が作るデッキの強さに全面的に依存する。
- * 埋め札に0ダメージ札を並べれば、どんな除外条件でも「負ける」が出てしまう。
+ * このファイルの結論は FULL_DECK と deckWithout が作るデッキに全面的に依存する。
  * 生成器そのものを先に検査しておく。
  */
-describe('反例デッキの生成器', () => {
-  it('範囲攻撃を除外したデッキは、攻撃札を上限まで積んでいる', () => {
-    const cards = buildLegalDeckExcluding(hasAreaDamage);
-    expect(validateDeck(cards).errors).toEqual([]);
-    // 範囲なしで残る攻撃札は 弓兵・弩砲・棘罠・徹甲弩 の4種（各3枚=12枚）
-    expect(attackCardCountOf(cards)).toBe(12);
-    expect(cards.some(hasAreaDamage)).toBe(false);
+describe('対照条件の作り方', () => {
+  it('全要求充足デッキは構築規則を満たし、対空・範囲・貫通・壁・マナ源を備えている', () => {
+    expect(FULL_DECK).toHaveLength(DECK_SIZE);
+    expect(validateDeck(FULL_DECK).errors).toEqual([]);
+    // 「全要求を満たしている」ことをスペックから判定する（IDの並びを目視で信じない）
+    expect(FULL_DECK.some(hasAntiAir)).toBe(true);
+    expect(FULL_DECK.some(hasAreaDamage)).toBe(true);
+    expect(FULL_DECK.some((id) => getCardDefinition(id).tower?.piercing === true)).toBe(true);
+    expect(FULL_DECK).toContain('stone-wall');
+    expect(FULL_DECK).toContain('reactor');
   });
 
-  it('対空を除外したデッキは、攻撃札を上限まで積んでいる', () => {
-    const cards = buildLegalDeckExcluding(hasAntiAir);
-    expect(validateDeck(cards).errors).toEqual([]);
-    // 対空なしで残る攻撃札は 弓兵・火砲台・棘罠・業火・投石機 の5種（各3枚=15枚）
-    expect(attackCardCountOf(cards)).toBe(15);
-    expect(cards.some(hasAntiAir)).toBe(false);
-  });
-});
-
-/**
- * カウンター要求を無視した合法デッキが不利になること
- *
- * 前コンセプトを殺したのは「最効率カードに効かない相手がいない」ことだった。
- * 同名上限3枚・14種という構築規則のもとでは「単一カードへの偏り」自体が
- * 構築不能（20枚には必ず7種以上が入る）なため、意味のある問いは
- * 「合法デッキで、ある要求（対空/範囲/マナ源）を無視したらどれだけ不利になるか」である。
- *
- * 要求ごとに拘束の強さが違うので、主張も分けてある:
- * - 対空・マナ源 … 全シードで敗北（「必ず負ける」を主張できる）
- * - 範囲 …… 勝率が著しく落ちる（「必ず負ける」は成立しないので主張しない）
- */
-describe('支配戦略が存在しないこと', () => {
-  it('対空の答えを一枚も入れないデッキは、全シードで負ける', () => {
-    const cards = buildLegalDeckExcluding(hasAntiAir);
-    const results = runAllSeeds(cards);
-    expect(results.filter((r) => r.outcome === 'won')).toHaveLength(0);
-    expect(results.every((r) => r.outcome === 'lost')).toBe(true);
-    // 前提: マナ枯渇で自明に負けたのではないこと。最も出せなかったシードでも
-    // 5枚は盤面に出ている（＝札が出せずに負けたのではなく、出した上で押し切られた）
-    expect(Math.min(...results.map((r) => r.cardsPlayed))).toBeGreaterThanOrEqual(5);
+  it.each([
+    ['対空', hasAntiAir],
+    ['群れをまとめて削る手段', hasMassAnswer],
+    ['範囲攻撃', hasAreaDamage],
+  ])('%s を抜いたデッキも 20枚の合法デッキで、その性質を1枚も持たない', (_name, isExcluded) => {
+    const deck = deckWithout(isExcluded);
+    expect(deck).toHaveLength(DECK_SIZE);
+    expect(validateDeck(deck).errors).toEqual([]);
+    expect(deck.filter(isExcluded)).toHaveLength(0);
   });
 
-  it('魔力炉を入れないデッキは、全シードで負ける（マナ源なしでは何も出せない）', () => {
-    const cards = [
-      ...repeat('arrow-tower', 3),
-      ...repeat('ballista', 3),
-      ...repeat('cannon-tower', 3),
-      ...repeat('catapult', 3),
-      ...repeat('piercer', 3),
-      ...repeat('beacon', 2),
-      ...repeat('forge', 1),
-      ...repeat('spike-trap', 1),
-      ...repeat('levy', 1),
-    ];
-    expect(validateDeck(cards).errors).toEqual([]);
-    const results = runAllSeeds(cards);
-    expect(results.filter((r) => r.outcome === 'won')).toHaveLength(0);
+  it('埋め札に使える攻撃札を使い切っている（0ダメージ札で弱くしていない）', () => {
+    // 攻撃札が上限に達していないのに魔力炉で埋めていたら、埋め札の弱さが結論を作る
+    const deck = deckWithout(hasMassAnswer);
+    const attackers = [...new Set(deck)].filter(hasDamage);
+    attackers.forEach((id) => {
+      expect(deck.filter((c) => c === id)).toHaveLength(maxCopiesOf(id));
+    });
   });
 });
 
 /**
- * 範囲攻撃の要求は「必ず負ける」ではなく「勝率が著しく落ちる」
+ * 較正の不変条件（反復3）— 本ファイルの中核
  *
- * 実測（シード1〜20・greedyStrategy。反復2 の設置マス22枚時点）:
- * - 範囲攻撃を持たない合法デッキ（攻撃札を上限まで積んだもの）… 4/20
- * - 全要求を満たしたデッキ ………………………………………………… 14/20
+ * 5本を両方向に置く。上限（勝ちすぎない）と下限（勝てなくはない）の両方を
+ * 同時に課さないと、較正が厳しすぎても緩すぎても検出できない。
  *
- * 単体塔だけでも群れ22体を捌き切れるシードが実在するため、「範囲攻撃なしでは負ける」は
- * 偽である。群れをさらに増やせば真にできるが、実プレイ判定の直前に敵側の較正を動かす
- * リスクを避け、数値は据え置いて主張の側を実態に合わせた（設計書 §3.2 の注記も参照）。
- *
- * 下限・上限の両方を絶対値で固定してあるのは、片方だけだと「どちらも弱くなった」
- * 「どちらも強くなった」という較正のズレを検出できないため。
+ * 実測（greedyStrategy・シード1〜20）:
+ *   全要求充足 14/20 ／ 対空なし 0/20 ／ 範囲も貫通も無し 0/20
+ *   経路外のみ 0/20 ／ 地上専用の攻撃札なし（noPureGroundAttackStrategy） 6/20
  */
-describe('範囲攻撃を無視すると勝率が著しく落ちること', () => {
-  it('範囲攻撃を持たない合法デッキの勝率は半数を大きく下回る', () => {
-    const wins = winsOf(buildLegalDeckExcluding(hasAreaDamage));
-    expect(wins).toBeLessThanOrEqual(8);
+describe('較正の不変条件（反復3）', () => {
+  it('全要求充足デッキは 12/20 以上・18/20 以下で勝つ', () => {
+    const wins = winsOf(FULL_DECK);
+    // 下限: どう組んでも勝てない（較正の行き過ぎ）状態を検出する
+    expect(wins).toBeGreaterThanOrEqual(12);
+    // 上限: 「良いデッキを組めば自動で勝てる」方向への悪化を検出する
+    expect(wins).toBeLessThanOrEqual(18);
   });
 
-  it('全要求を満たしたデッキの勝率は半数を上回る', () => {
-    expect(winsOf(FULL_ANSWER_DECK)).toBeGreaterThanOrEqual(12);
+  it('対空を含まないデッキは 4/20 未満しか勝てない', () => {
+    expect(winsOf(deckWithout(hasAntiAir))).toBeLessThan(4);
   });
 
-  it('範囲攻撃なしのデッキは、全要求を満たしたデッキより明確に勝率が低い', () => {
-    const noAreaWins = winsOf(buildLegalDeckExcluding(hasAreaDamage));
-    const fullAnswerWins = winsOf(FULL_ANSWER_DECK);
-    // 5シード分（25ポイント）以上の差。誤差ではないと言える幅を要求する。
-    // **この相対差こそが範囲要求の主軸の不変条件である。** 絶対値はマナ基盤の比率や
-    // 設置マス数といった測定条件が変わると丸ごとずれるが、同一条件下の差分は耐える
-    expect(fullAnswerWins - noAreaWins).toBeGreaterThanOrEqual(5);
+  it('群れをまとめて削る手段（範囲・貫通）を含まないデッキは 4/20 未満しか勝てない', () => {
+    expect(winsOf(deckWithout(hasMassAnswer))).toBeLessThan(4);
   });
 
-  it('範囲攻撃なしのデッキも、マナ枯渇ではなく力負けしている', () => {
-    const results = runAllSeeds(buildLegalDeckExcluding(hasAreaDamage));
-    expect(Math.min(...results.map((r) => r.cardsPlayed))).toBeGreaterThanOrEqual(5);
+  it('経路上に一切置かない戦略は 4/20 未満しか勝てない（ブロックが必要か）', () => {
+    // デッキ構成では検査できない不変条件。すべての守り手がブロックできる以上、
+    // 石壁を抜いたデッキでも弓兵を経路上に置けば成立してしまう。行為のほうを絞る
+    expect(winsOf(FULL_DECK, offPathOnlyStrategy, 'offPath')).toBeLessThan(4);
+  });
+
+  it('地上専用の攻撃札を持たない戦略は 10/20 未満しか勝てない（ブロックが強すぎないか）', () => {
+    // 上の対と必ずセットで見る。片側だけでは較正のズレを検出できない
+    expect(winsOf(FULL_DECK, noPureGroundAttackStrategy, 'wallAir')).toBeLessThan(10);
   });
 });
 
 /**
- * 「対空を無視すると必ず負ける」を、鴉以外の要因を排除して直接検証する
+ * 対照条件が「力負け」であること（緑の理由の検査）
  *
- * PLAINS_WAVES（4ウェーブ）を使った上のテストは、雑兵・俊足・重装の漏れも
- * 同時に起こりうるため、「鴉の漏れそのものが敗因か」は間接的にしか示せない
- * （Task 9 レビュー指摘）。鴉だけの単一ウェーブに対して対空なしデッキを走らせ、
- * 他の敵の影響を排除した上で敗北することを確認する。
+ * 対照条件が負けても、それが「マナが無くて何も出せなかった」「置かない札で
+ * 手札が詰まって以後の札が全部墓地へ落ちた」ためなら、測りたいものを
+ * 測っていない。実際 offPathOnlyStrategy は当初この手札詰まりで負けており、
+ * 置けない札を捨てる処理を入れて初めて正しい理由で負けるようになった。
  */
-describe('鴉の直接検証（対空要求が拘束していることの証明）', () => {
+describe('対照条件はマナ枯渇や手札詰まりではなく力負けしていること', () => {
+  it.each([
+    ['対空なし', deckWithout(hasAntiAir), greedyStrategy, 'greedy'],
+    ['範囲も貫通も無し', deckWithout(hasMassAnswer), greedyStrategy, 'greedy'],
+    ['経路外のみ', [...FULL_DECK], offPathOnlyStrategy, 'offPath'],
+    ['地上専用の攻撃札なし', [...FULL_DECK], noPureGroundAttackStrategy, 'wallAir'],
+  ])('%s は、最も出せなかったランでも10枚以上を盤面に出している', (_name, deck, strategy, key) => {
+    expect(minCardsPlayedOf(deck, strategy, key)).toBeGreaterThanOrEqual(10);
+  });
+});
+
+/**
+ * 範囲攻撃「だけ」を抜いても決定打にならないこと（測定結果の明示）
+ *
+ * ブリーフの目標は「範囲攻撃を含まないデッキは 6/20 未満」だったが**未達**。
+ * 実測 10/20 で、閾値を通すための調整は行っていない。原因は数値ではなく構造で、
+ * 群れの投入数を 22→30 に増やしても、南北へ分けても 8〜11/20 から動かなかった。
+ *
+ * 1マス幅のレーンでは、ブロックされた群れが縦にほぼ同一座標へ積み上がる。
+ * 半径1の範囲攻撃も直線の貫通も同じ塊をまとめて捉えるため、徹甲弩が火砲台の
+ * 完全な代替になる（貫通は §7 の「並んだ相手には効率が跳ね上がる」性質そのもの）。
+ * したがって拘束は「範囲攻撃」ではなく「群れをまとめて削る手段」に掛かっており、
+ * 上の不変条件はその形で置いてある。
+ *
+ * ここでは相対差だけをラチェットとして固定する。片方が完全に無意味化する
+ * （差が消える）方向への悪化を検出したい。
+ *
+ * **範囲側と貫通側の両方に置くこと。** 片方だけだと、無力化した側の回帰が
+ * 上の「範囲も貫通も無し < 4/20」と残った側の寄与テストの両方をすり抜ける
+ * （どちらも「もう一方が効いている」だけで緑になれてしまう）。
+ */
+describe('範囲攻撃と貫通のそれぞれの寄与', () => {
+  it('範囲攻撃を抜くと勝率は落ちるが、貫通が代替するため決定打にはならない', () => {
+    const full = winsOf(FULL_DECK);
+    const noArea = winsOf(deckWithout(hasAreaDamage));
+    // 寄与はある（実測 14/20 → 10/20）
+    expect(full - noArea).toBeGreaterThanOrEqual(3);
+    // が、単独では拘束にならない（実測 10/20）。この事実を数値で残す
+    expect(noArea).toBeGreaterThanOrEqual(6);
+    expect(noArea).toBeLessThanOrEqual(12);
+  });
+
+  it('貫通を抜いても勝率が落ちる（範囲だけでは代替しきれない）', () => {
+    const full = winsOf(FULL_DECK);
+    const noPiercing = winsOf(deckWithout(hasPiercing));
+    // 実測 14/20 → 8/20。範囲側（寄与3以上）と同じ形でラチェットを掛ける。
+    // 現状の寄与は範囲(4)より貫通(6)のほうが大きい——3軸が実態として
+    // 貫通>範囲 に崩れている件は実プレイ判定への申し送りとし、ここでは調整しない
+    expect(full - noPiercing).toBeGreaterThanOrEqual(3);
+  });
+});
+
+/**
+ * 対空要求の形式的な保証（設計書 §6）
+ *
+ * 「対空を無視すると必ず負ける」を勝率ではなく**体数の不等式**で保証する。
+ * 飛行はブロックを無視するため、この保証はレーン構成やブロックの有無に依存しない。
+ */
+describe('対空要求の形式的な保証', () => {
+  it('飛行の体数が LIFE_INITIAL を上回る（漏れだけでライフが0を下回る）', () => {
+    const flyingCount = PLAINS_WAVES.flatMap((w) => w.entries)
+      .filter((entry) => getEnemySpec(entry.enemyId).flying)
+      .reduce((sum, entry) => sum + entry.count, 0);
+    expect(flyingCount).toBeGreaterThan(LIFE_INITIAL);
+  });
+
   it('対空を持たないデッキは、鴉だけの波にも必ず負ける', () => {
-    const cards = buildLegalDeckExcluding(hasAntiAir);
-    expect(validateDeck(cards).errors).toEqual([]);
-    const deck = createDeck(cards, () => 0.5);
-    // LIFE_INITIAL を上回る数を漏らせば、対空が無い限り出血だけで確実に敗北する
+    // PLAINS_WAVES を使ったテストは他の敵の漏れも同時に起こりうるため、
+    // 「鴉の漏れそのものが敗因か」は間接的にしか示せない。鴉だけの波で直接示す
+    const cards = deckWithout(hasAntiAir);
     const ravenOnlyWaves: readonly WaveDefinition[] = [
       {
         startTick: 0,
         entries: [
-          {
-            enemyId: 'raven',
-            count: LIFE_INITIAL + 1,
-            spawnIntervalTicks: 10,
-            spawnPathIndex: 5,
-          },
+          { enemyId: 'raven', count: LIFE_INITIAL + 1, spawnIntervalTicks: 10, laneIndex: 0 },
         ],
       },
     ];
-    const result = simulateRun(createCombatState(deck, ravenOnlyWaves), greedyStrategy, PLAINS_MAP);
+    const deck = createDeck(cards, () => 0.5);
+    const result = simulateRun(
+      createCombatState(deck, ravenOnlyWaves),
+      greedyStrategy,
+      PLAINS_MAP
+    );
     expect(result.outcome).toBe('lost');
   });
 });
 
 /**
- * 全要求を満たした合法デッキは勝てること（検証の残り半分）
+ * 支配戦略が存在しないこと
  *
- * ここまでの検証は「要求を無視したデッキは不利になる」だけを見ていた。それだけでは
- * 「どう組んでも勝てない」状態（較正の行き過ぎ）と区別できず、実プレイの判定が
- * 「難しすぎる」という別の理由で濁る。対空・範囲・マナ源のすべてを満たした
- * 合法デッキが十分な勝率を持つことを対の不変条件として固定する。
- *
- * 敵数を削る較正を行うときは、上の「無視したら不利になる」テスト群とこのテストの
- * 両方が同時に成立する範囲を探すこと。片方だけを見て動かすと必ずどちらかが壊れる。
+ * 前コンセプトを殺したのは「最効率カードに効かない相手がいない」ことだった。
+ * 同名上限3枚・14種という構築規則のもとでは「単一カードへの偏り」自体が
+ * 構築不能（20枚には必ず7種以上が入る）なため、意味のある問いは
+ * 「合法デッキで、ある要求を無視したらどれだけ不利になるか」である。
  */
-describe('全要求を満たしたデッキは勝てること', () => {
-  it('デッキが構築規則を満たし、対空・範囲・マナ源をすべて備えている', () => {
-    const cards = [...FULL_ANSWER_DECK];
-    expect(cards).toHaveLength(DECK_SIZE);
+describe('支配戦略が存在しないこと', () => {
+  it('魔力炉を入れないデッキは全シードで負ける（マナ源なしでは何も出せない）', () => {
+    const cards = [
+      ...repeat('stone-wall', 3),
+      ...repeat('arrow-tower', 3),
+      ...repeat('ballista', 3),
+      ...repeat('cannon-tower', 3),
+      ...repeat('catapult', 3),
+      ...repeat('piercer', 3),
+      ...repeat('spike-trap', 1),
+      ...repeat('levy', 1),
+    ];
     expect(validateDeck(cards).errors).toEqual([]);
-    // 「全要求を満たしている」ことをスペックから判定する（IDの並びを目視で信じない）
-    expect(cards.some(hasAntiAir)).toBe(true);
-    expect(cards.some(hasAreaDamage)).toBe(true);
-    expect(cards).toContain('reactor');
-  });
-
-  it('素直な戦略でも過半数のシードで勝てる', () => {
-    expect(winsOf(FULL_ANSWER_DECK)).toBeGreaterThan(SEEDS.length / 2);
+    expect(winsOf(cards)).toBe(0);
   });
 });
 
 /**
  * プリセットの難度較正
  *
- * プリセットは構築画面の「たたき台として読み込む」導線から使われるため、ここが弱いと
- * 引き運ではなくプリセットの弱さで連敗し、設計書 §7 の反証条件を誤って踏む。
+ * プリセットは構築画面の「たたき台として読み込む」導線から使われるため、ここが
+ * 弱いと引き運ではなくプリセットの弱さで連敗し、設計書 §7 の反証条件を誤って踏む。
  * 逆に強すぎると「配分の判断」という仮説そのものが検証できない。
- * 実測（シード1〜20・greedyStrategy）は swift 10/20・heavy 13/20（反復2 の魔力炉8枚構成）。
+ * 実測（greedyStrategy・シード1〜20）は 速攻型 8/20・重厚型 7/20。
  *
  * 上限・下限・偏りを別々のテストに分け、それぞれ2プリセットを独立にアサートする。
  * 論理和（どちらかが満たせば緑）にすると、片方が壊れても検出できない。
  */
 describe('プリセットの難度較正', () => {
-  it('素直な戦略では全勝しない（配分の余地が残っている）', () => {
-    expect(presetWinsOf('swift')).toBeLessThanOrEqual(14);
-    expect(presetWinsOf('heavy')).toBeLessThanOrEqual(14);
+  it.each(['swift', 'heavy'])('%s は素直な戦略では全勝しない（配分の余地が残っている）', (id) => {
+    expect(presetWinsOf(id)).toBeLessThanOrEqual(14);
   });
 
-  it('素直な戦略でも十分に勝てる（理不尽ではない）', () => {
-    expect(presetWinsOf('swift')).toBeGreaterThanOrEqual(6);
-    expect(presetWinsOf('heavy')).toBeGreaterThanOrEqual(6);
+  it.each(['swift', 'heavy'])('%s は素直な戦略でも十分に勝てる（理不尽ではない）', (id) => {
+    expect(presetWinsOf(id)).toBeGreaterThanOrEqual(6);
   });
 
   it('プリセット2種の勝率が極端に偏らない', () => {
     expect(Math.abs(presetWinsOf('swift') - presetWinsOf('heavy'))).toBeLessThanOrEqual(5);
   });
-});
 
-/**
- * 較正の不変条件（反復2）
- *
- * 設置マス12→22・魔力炉のデッキ内上限撤廃を受けて、両側から数値で拘束する。
- * 片側だけでは較正が厳しすぎても緩すぎても検出できない（反復1 で4回繰り返した欠陥）。
- */
-describe('較正の不変条件（反復2）', () => {
-  /** 全要求充足デッキ・プリセットと揃えたマナ基盤の枚数（20枚中8枚＝40%） */
-  const REACTOR_COUNT = 8;
-
-  /**
-   * 範囲攻撃を持たない合法デッキ（**マナ基盤は8枚に固定**）
-   *
-   * ID のハードコードではなくスペック述語で機械的に除外する。反復1 で
-   * 「範囲攻撃なし」デッキに業火（ember 型の範囲攻撃）が混ざっていた事故の再発防止。
-   *
-   * **対照条件を揃えるため魔力炉は8枚に固定する。** 初版は残り全部を魔力炉で埋めており
-   * 11枚（55%）になっていた。それでは「範囲攻撃を抜く」ことと「マナ基盤を厚くする」ことが
-   * 同時に起き、範囲攻撃の欠如だけを単離した実験になっていなかった（レビュー指摘1）。
-   * 残り12枚は攻撃札を優先して上限まで積む（埋め札の弱さが結論を作らないようにする）。
-   */
-  const noSplashDeck = (): string[] => {
-    const eligible = CARD_IDS.filter((id) => id !== 'reactor' && !hasAreaDamage(id));
-    const ordered = [...eligible.filter(hasDamage), ...eligible.filter((id) => !hasDamage(id))];
-    const cards = repeat('reactor', REACTOR_COUNT);
-    ordered.forEach((id) => {
-      while (cards.length < DECK_SIZE && cards.filter((c) => c === id).length < maxCopiesOf(id)) {
-        cards.push(id);
-      }
-    });
-    if (cards.length !== DECK_SIZE) {
-      throw new Error(`範囲攻撃なしデッキを${DECK_SIZE}枚で作れません（${cards.length}枚）`);
-    }
-    return cards;
-  };
-
-  it('範囲攻撃なしデッキが、全要求充足デッキと同じマナ基盤で作られている', () => {
-    const deck = noSplashDeck();
-    expect(deck).toHaveLength(DECK_SIZE);
-    expect(validateDeck(deck).errors).toEqual([]);
-    // 対照条件: マナ基盤は8枚（40%）で全要求充足デッキと同じ
-    expect(deck.filter((id) => id === 'reactor')).toHaveLength(REACTOR_COUNT);
-    // 範囲攻撃は1枚も含まない（塔の splashRadius・燠火の radius の両方で判定）
-    expect(deck.filter(hasAreaDamage)).toHaveLength(0);
-    // 残り12枚はすべて攻撃札（0ダメージのオーラ札で埋めて弱くしていない）
-    expect(deck.filter(hasDamage)).toHaveLength(DECK_SIZE - REACTOR_COUNT);
-  });
-
-  /**
-   * 目標は「4/20 未満」だったが未達。実測 7/20 でラチェットを掛けてある。
-   *
-   * 4/20 という絶対値は魔力炉3枚（マナ基盤15%）時代の測定文脈で決めた数字であり、
-   * 40%マナ基盤という新しい構築前提へそのまま持ち込むのはカテゴリエラーだった。
-   * 対照条件を揃えて測り直した 7/20 を現在値として固定し、悪化を検出できるようにする。
-   * 数値を通すためのバランス調整は行っていない（敵側の数値も動かしていない）。
-   *
-   * **主軸の不変条件はこれではなく、下の「全要求 − 範囲なし ≥ 5」という相対差である。**
-   * 絶対値はマナ基盤や設置マス数といった測定条件の変化で丸ごとずれるが、
-   * 同一条件下の差分は条件変化に耐える。実際、魔力炉8枚に揃えた再測定では
-   * 全要求 19/20・範囲なし 7/20（差12）、魔力炉3枚では 14/20・4/20（差10）で、
-   * 「範囲攻撃というカウンター要求は崩壊していない」ことを示している。
-   * なお魔力炉を残り全部（11枚）にした初版の測定は 10/20 だった。3枚分のマナ基盤の
-   * 差が3勝分を生んでおり、交絡が結論を歪めていたことがここからも分かる。
-   */
-  it('範囲攻撃を含まないデッキの勝率は 7/20 以下である（目標 4/20 未満は未達）', () => {
-    expect(winsOf(noSplashDeck())).toBeLessThanOrEqual(7);
-  });
-
-  it('範囲攻撃なしと全要求充足の差は、マナ基盤を揃えても 5シード分以上ある', () => {
-    // 主軸の不変条件。絶対水準が上下しても、範囲攻撃の有無が生む差だけを見る
-    expect(winsOf(FULL_ANSWER_DECK_8) - winsOf(noSplashDeck())).toBeGreaterThanOrEqual(5);
-  });
-
-  it('全要求充足デッキの勝率は 12/20 以上 19/20 以下である', () => {
-    // 下限: どう組んでも勝てない（較正の行き過ぎ）状態を検出する
-    // 上限: 実測 19/20 でのラチェット。「良いデッキを組めば自動で勝てる」方向への
-    //       悪化を検出するためだけに置いている。19 を下げるためのバランス調整は
-    //       実プレイ判定に持ち込む論点なのでここでは行わない
-    expect(FULL_ANSWER_DECK_8).toHaveLength(DECK_SIZE);
-    expect(validateDeck(FULL_ANSWER_DECK_8).errors).toEqual([]);
-    const wins = winsOf(FULL_ANSWER_DECK_8);
-    expect(wins).toBeGreaterThanOrEqual(12);
-    expect(wins).toBeLessThanOrEqual(19);
+  it.each(['swift', 'heavy'])('%s も経路上に置かなければ 4/20 未満しか勝てない', (id) => {
+    // 不変条件をプリセットでも確かめる。FULL_DECK でだけ成立する性質ではないこと
+    expect(presetWinsOf(id, offPathOnlyStrategy, 'offPath')).toBeLessThan(4);
   });
 });
 
 describe('較正の基準値', () => {
-  // 728 は Task 9（14種対応）の再較正値。COUNTDOWN_TICKS(90) 追加後、
-  // 「素直な戦略でも全敗ではない」が全滅（survived=0）だったため、雑兵・俊足の早期ウェーブを
-  // 段階的に削減（8→7→6→5→3 等）し、LIFE_INITIAL を 10→12 に上げて再較正した。
-  //
-  // その後のレビューで2つの是正を行った（いずれも「テストは緑だが不変条件を保証していない」
-  // という指摘）:
-  // - 鴉を 10→13（LIFE_INITIAL(12) を上回る数）に増やし、「対空を無視すると必ず負ける」を
-  //   数学的に保証した。10のままでは全数漏らしても life=2残り、負けを強制できていなかった。
-  // - 群れを 8→22・spawnIntervalTicks 3→1（密な同時侵入）に強化した。旧8体では
-  //   範囲攻撃を一切持たない合法デッキ（単体攻撃のみ）でも life9残しで楽勝できており、
-  //   「範囲要求」が実質何も拘束していなかった。
-  // これに伴い brute を 2→1、ウェーブ4の雑兵を 5→3 に減らして帳尻を合わせた
-  // （鴉・群れは難度較正の対象から除外し、他の敵で総難度を調整する方針）。
-  //
-  // さらに続くレビューで、群れ22体でも「範囲攻撃なしでは必ず負ける」までは達していないと
-  // 判明した（範囲なし合法デッキが 6/20 で勝つ）。実プレイ判定の直前に敵側の較正を
-  // 動かすリスクを避け、数値は据え置いて主張を「勝率が著しく落ちる」に改めてある。
-  //
-  // 反復2（設置マス12→22・魔力炉の上限撤廃）で、マナ基盤8枚に揃えて測り直した。
-  // 魔力炉3枚の範囲なしデッキは 4/20、魔力炉8枚では 7/20 で、絶対水準は底上げされたが
-  // 全要求充足との差は 10 → 12 とむしろ広がっている（範囲要求は崩壊していない）。
-  // 「範囲攻撃なしでは必ず負ける」まで拘束するには BUILD_SLOT_MAX_DISTANCE の
-  // 見直しが要るが、敵側の数値を動かさない方針とあわせて反復2 では手を付けていない。
-  it('敵の総HPが 728 から変わっていない', () => {
+  it('敵の総HPが 648 から変わっていない', () => {
+    // 2レーン化に伴う再較正値（反復2 は単一レーンで728）。
     // 敵数を変えたら §9.3 の描画密度（スタック表示）を再計算すること
-    expect(totalEnemyHp(PLAINS_WAVES)).toBe(728);
+    expect(totalEnemyHp(PLAINS_WAVES)).toBe(648);
   });
 });
-

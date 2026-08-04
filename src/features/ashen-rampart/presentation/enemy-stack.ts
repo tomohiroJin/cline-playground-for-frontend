@@ -5,9 +5,9 @@
  * HPバーが読めない（設計書 §9.3）。表示上だけ束ねる措置であり、
  * ドメインの敵は個体のまま扱う。
  */
-import type { CellPos } from '../domain/board/stage-map';
+import type { CellPos, StageMap } from '../domain/board/stage-map';
 import type { ActiveEnemy } from '../domain/combat/combat-state';
-import { positionOf } from '../domain/combat/step-tick';
+import { enemyPosition } from '../domain/combat/step-tick';
 
 /** 同一マーカーに束ねる距離のしきい値（セル） */
 const STACK_DISTANCE = 0.5;
@@ -23,15 +23,20 @@ export interface EnemyStack {
   pos: CellPos;
 }
 
+/**
+ * 敵は自身の laneIndex を持つため、レーンごとに座標を解決する
+ * （単一レーンの配列を共有して渡すと、南レーンの敵が北レーンの座標に
+ * 束ねられてしまう）。
+ */
 export const stackEnemies = (
   enemies: readonly ActiveEnemy[],
-  path: readonly CellPos[]
+  map: StageMap
 ): EnemyStack[] => {
   const stacks: EnemyStack[] = [];
   enemies
     .filter((e) => e.alive)
     .forEach((enemy) => {
-      const pos = positionOf(enemy.progress, path);
+      const pos = enemyPosition(map, enemy);
       const target = stacks.find(
         (s) =>
           s.enemyId === enemy.enemyId &&

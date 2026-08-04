@@ -68,9 +68,33 @@ const Card = styled.button<{ $selected: boolean }>`
 `;
 
 const CardSlot = styled.div`
+  position: relative;
   display: flex;
   align-items: stretch;
   gap: 2px;
+`;
+
+/**
+ * 魔力炉専用のクールダウンゲージ
+ *
+ * クールダウンは魔力炉だけに課されるため、ゲージも魔力炉の札にだけ出す。
+ * 他の札は常に置けるので、ゲージを出すとかえって誤解を招く。
+ */
+const CooldownBar = styled.div<{ $ratio: number }>`
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 3px;
+  background: ${COLORS.grid};
+
+  &::after {
+    content: '';
+    display: block;
+    height: 100%;
+    width: ${({ $ratio }) => Math.max(0, Math.min(1, $ratio)) * 100}%;
+    background: ${COLORS.opportunity};
+  }
 `;
 
 /**
@@ -126,11 +150,6 @@ export const HandArea: React.FC<Props> = ({
         <span>墓地 {state.deck.graveyard.length}</span>
         <Track>
           <Marker
-            $ratio={1 - state.placeCooldown / PLACE_COOLDOWN_TICKS}
-            $color={COLORS.opportunity}
-            aria-label={`次に置けるまで ${toSeconds(state.placeCooldown)}秒`}
-          />
-          <Marker
             $ratio={1 - state.ticksToDraw / DRAW_INTERVAL_TICKS}
             $color={COLORS.secondary}
             aria-label={`次のドローまで ${toSeconds(state.ticksToDraw)}秒`}
@@ -164,6 +183,12 @@ export const HandArea: React.FC<Props> = ({
               >
                 ×
               </DiscardButton>
+              {card.type === 'reactor' && (
+                <CooldownBar
+                  $ratio={1 - state.placeCooldown / PLACE_COOLDOWN_TICKS}
+                  aria-label={`次に置けるまで ${toSeconds(state.placeCooldown)}秒`}
+                />
+              )}
             </CardSlot>
           );
         })}

@@ -19,6 +19,7 @@ import { AshenRampartGame, HEADER_CLEARANCE } from './AshenRampartGame';
 import { PLAY_LOG_STORAGE_KEY } from '../infrastructure/play-log/local-storage-play-log';
 import type { PlayLogExport } from '../application/ports/play-log-port';
 import { TICK_INTERVAL_MS } from './useAshenRampartGame';
+import { PLAINS_MAP, laneOf } from '../domain/board/stage-map';
 
 const readExportedLog = (): PlayLogExport => {
   const raw = localStorage.getItem(PLAY_LOG_STORAGE_KEY);
@@ -70,6 +71,29 @@ const advanceUntilRunEnds = (): void => {
       `ランが ${MAX_ADVANCE_TICKS} tick 進めても決着しませんでした（ラン長の較正を確認すること）`
     );
   }
+};
+
+/**
+ * 「石壁」3枚＋「魔力炉」17枚のカスタムデッキで盤面まで進める
+ *
+ * 既存プリセット（速攻型・重厚型）はどちらも石壁を含まないため、経路セルへの
+ * 守り手配置を検証するにはデッキ構築画面でカードを直接組む必要がある。
+ * この枚数構成・シード3の組み合わせでは、シャッフル結果として石壁が
+ * 初期手札3枚のうちの1枚に入ることを事前に確認済み（Fisher-Yates + mulberry32
+ * を模したスクリプトで検証）。ドローを待つ必要がない。
+ */
+const STONE_WALL_DECK_SEED = '3';
+
+const startRunningWithStoneWallDeck = (): void => {
+  const addReactor = screen.getByRole('button', { name: '魔力炉 を1枚増やす' });
+  for (let i = 0; i < 17; i++) fireEvent.click(addReactor);
+  const addStoneWall = screen.getByRole('button', { name: '石壁 を1枚増やす' });
+  for (let i = 0; i < 3; i++) fireEvent.click(addStoneWall);
+  fireEvent.change(screen.getByLabelText('シード（空欄なら毎回ランダム）'), {
+    target: { value: STONE_WALL_DECK_SEED },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'この構成で始める' }));
+  fireEvent.click(screen.getByRole('button', { name: '開始' }));
 };
 
 /**
@@ -272,6 +296,22 @@ describe('AshenRampartGame', () => {
     });
   });
 
+  it('手札の守り手を選んで経路セルをクリックすると、そこに置かれる（結線の到達確認）', () => {
+    render(<AshenRampartGame />);
+    startRunningWithStoneWallDeck();
+
+    fireEvent.click(screen.getByRole('button', { name: /^石壁 コスト/ }));
+    const pathCell = laneOf(PLAINS_MAP, 0)[3]!;
+    fireEvent.click(screen.getByTestId(`cell-${pathCell.x}-${pathCell.y}`));
+    // 配置操作は pendingRef に積まれるだけで、次 tick の stepTick で確定する
+    // （捨札と同じ非同期反映。「置ける」に見えて実際は置かれない欠陥を防ぐ）
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS);
+    });
+
+    expect(screen.getByTestId(`unit-hp-${pathCell.x}-${pathCell.y}`)).toBeInTheDocument();
+  });
+
   describe('画面遷移', () => {
     it('最初はデッキ構築が表示される', () => {
       render(<AshenRampartGame />);
@@ -387,7 +427,7 @@ describe('AshenRampartGame', () => {
     advanceUntilRunEnds();
 
     // 決着直後は「記録する」欄だけで、集計・再挑戦・ログコピーはまだ出ない
-    expect(screen.queryByText(/置くときに選べたマス/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/レーンへの配分/)).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'もう一度挑む' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '同じデッキで別のシードに挑む' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '計測ログをコピー' })).not.toBeInTheDocument();
@@ -398,7 +438,7 @@ describe('AshenRampartGame', () => {
     fireEvent.click(screen.getByRole('button', { name: '記録する' }));
 
     // 記録した後にだけ集計・各ボタンが開く
-    expect(await screen.findByText(/置くときに選べたマス/)).toBeVisible();
+    expect(await screen.findByText(/レーンへの配分/)).toBeVisible();
     expect(screen.getByRole('button', { name: 'もう一度挑む' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '同じデッキで別のシードに挑む' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '計測ログをコピー' })).toBeInTheDocument();
@@ -409,14 +449,14 @@ describe('AshenRampartGame', () => {
     startRunning();
     advanceUntilRunEnds();
     submitRunNote('1回目の記録');
-    expect(await screen.findByText(/置くときに選べたマス/)).toBeVisible();
+    expect(await screen.findByText(/レーンへの配分/)).toBeVisible();
 
     fireEvent.click(screen.getByRole('button', { name: '同じデッキで別のシードに挑む' }));
 
     // 盤面に留まったまま新しいランが始まり、記録前の状態（集計非表示・欄が空）に戻っている
     expect(screen.getByRole('button', { name: '一時停止' })).toBeInTheDocument();
     advanceUntilRunEnds();
-    expect(screen.queryByText(/置くときに選べたマス/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/レーンへの配分/)).not.toBeInTheDocument();
     expect((screen.getByLabelText(/勝敗の理由を記録する/) as HTMLTextAreaElement).value).toBe('');
   });
 
@@ -442,8 +482,8 @@ describe('AshenRampartGame', () => {
     expect(reactorCard).not.toBeNull();
 
     fireEvent.click(reactorCard!);
-    // 経路セル（魔力炉は設置スロットにしか置けない）をクリックする
-    fireEvent.click(screen.getByLabelText(/^0,3 経路/));
+    // 経路セル（魔力炉は経路外にしか置けない。§7.5）をクリックする。(0,2) は北レーンの入口
+    fireEvent.click(screen.getByLabelText(/^0,2 経路/));
     act(() => {
       jest.advanceTimersByTime(TICK_INTERVAL_MS);
     });

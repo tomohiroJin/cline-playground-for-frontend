@@ -21,8 +21,8 @@ describe('HandArea', () => {
     render(
       <HandArea state={stateWith(['arrow-tower'])} selectedIndex={null} onSelect={jest.fn()} onDiscard={jest.fn()} />
     );
-    expect(screen.getByRole('button', { name: /弓兵の塔 コスト/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /コスト2/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /弓兵 コスト/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /コスト1/ })).toBeInTheDocument();
   });
 
   it('カードを押すと index が渡る', () => {
@@ -43,7 +43,7 @@ describe('HandArea', () => {
     render(
       <HandArea state={stateWith(['arrow-tower'])} selectedIndex={0} onSelect={jest.fn()} onDiscard={jest.fn()} />
     );
-    expect(screen.getByRole('button', { name: /弓兵の塔 コスト/ })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: /弓兵 コスト/ })).toHaveAttribute(
       'aria-pressed',
       'true'
     );
@@ -55,7 +55,7 @@ describe('HandArea', () => {
     );
     const card = screen.getByRole('button', { name: /弩砲 コスト/ });
     expect(card).toBeDisabled();
-    expect(screen.getByText('マナが2足りません')).toBeInTheDocument();
+    expect(screen.getByText('マナが1足りません')).toBeInTheDocument();
   });
 
   it('現在のマナと墓地の枚数が表示される', () => {
@@ -81,11 +81,23 @@ describe('HandArea', () => {
     expect(screen.getByText('火砲台 を手札に持てず失いました')).toBeInTheDocument();
   });
 
-  it('配置とドローの残りが両方読める', () => {
+  it('ドローの残りが読める', () => {
     const state = { ...stateWith(['arrow-tower']), placeCooldown: 30, ticksToDraw: 10 };
     render(<HandArea state={state} selectedIndex={null} onSelect={jest.fn()} onDiscard={jest.fn()} />);
-    expect(screen.getByLabelText('次に置けるまで 3秒')).toBeInTheDocument();
     expect(screen.getByLabelText('次のドローまで 1秒')).toBeInTheDocument();
+  });
+
+  it('魔力炉には配置クールダウンのゲージが出る', () => {
+    // 反復3: クールダウンは魔力炉だけに課すため、ゲージも魔力炉の札にだけ出す
+    const state = { ...stateWith(['reactor']), placeCooldown: 30 };
+    render(<HandArea state={state} selectedIndex={null} onSelect={jest.fn()} onDiscard={jest.fn()} />);
+    expect(screen.getByLabelText('次に置けるまで 3秒')).toBeInTheDocument();
+  });
+
+  it('魔力炉以外の札には配置クールダウンのゲージが出ない（マナが唯一の律速のため）', () => {
+    const state = { ...stateWith(['arrow-tower']), placeCooldown: 30 };
+    render(<HandArea state={state} selectedIndex={null} onSelect={jest.fn()} onDiscard={jest.fn()} />);
+    expect(screen.queryByLabelText(/次に置けるまで/)).not.toBeInTheDocument();
   });
 
   it('マナが足りない札でも捨てられる', () => {

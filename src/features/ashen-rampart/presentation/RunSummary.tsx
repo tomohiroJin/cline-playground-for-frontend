@@ -1,11 +1,13 @@
 /**
  * 灰燼の城壁 - リザルト集計の表示
  *
- * 判定7項目に1対1で対応させる。**判定に使わない数値は出さない**。
- * 支援塔を入れなかったランでは該当行を出さない（情報量の抑制）。
+ * 判定7項目（設計書 §9.1）に1対1で対応させる。**判定に使わない数値は出さない**。
+ * 支援2種（篝火・鍛冶場）の貢献と守り手別の撃破は反復2 から引き継ぐ。
+ * 支援塔をデッキに入れなかったランでは行ごと出さない（情報量の抑制）。
  */
 import React from 'react';
 import styled from 'styled-components';
+import { getCardDefinition } from '../domain/cards/card-pool';
 import type { RunSummaryView } from './run-summary';
 import { COLORS } from './theme';
 
@@ -27,8 +29,29 @@ const Detail = styled.dd`
   margin: 0;
 `;
 
-/** tick を秒へ（1 tick = 100ms） */
-const toSeconds = (ticks: number): string => (ticks / 10).toFixed(1);
+/** レーン index → 表示名。平原マップは北・南の2レーン固定（設計書 §5.2） */
+const LANE_LABELS = ['北', '南'] as const;
+const laneLabel = (laneIndex: number): string => LANE_LABELS[laneIndex] ?? `レーン${laneIndex + 1}`;
+
+const nameOf = (cardId: string): string => getCardDefinition(cardId).name;
+
+/** 項目2: 前線を敷いた位置を「北3・南2」のように列挙する */
+const formatBlockerPositions = (positions: RunSummaryView['blockerPositions']): string =>
+  positions.length === 0
+    ? 'なし'
+    : positions.map((p) => `${laneLabel(p.laneIndex)}${p.index}`).join('・');
+
+/** 項目3: 失った守り手をカード名ごとに列挙する */
+const formatUnitsLost = (unitsLost: RunSummaryView['unitsLost']): string => {
+  const entries = Object.entries(unitsLost);
+  return entries.length === 0
+    ? 'なし'
+    : entries.map(([id, count]) => `${nameOf(id)} ${count}体`).join(' / ');
+};
+
+/** 項目6: コスト帯（index = コスト）の分布を「0:2 / 1:5 / …」のように出す */
+const formatCostHistogram = (histogram: RunSummaryView['costHistogram']): string =>
+  histogram.map((count, cost) => `${cost}:${count}`).join(' / ');
 
 interface Props {
   view: RunSummaryView;
@@ -64,27 +87,35 @@ export const RunSummary: React.FC<Props> = ({ view }) => (
         `（${view.rejectionDetail.map((r) => `${r.label}${r.count}`).join('・')}）`}
     </Detail>
 
-    <Term>徴発</Term>
+    <Term>レーンへの配分</Term>
     <Detail>
-      {view.levyPlayed}回使用 / 選択成立 {view.levyResolved}回
+      北 {view.laneAllocation[0] ?? 0} / 南 {view.laneAllocation[1] ?? 0}
     </Detail>
 
-    <Term>マナ基盤</Term>
+    <Term>前線を敷いた位置</Term>
+    <Detail>{formatBlockerPositions(view.blockerPositions)}</Detail>
+
+    <Term>失った守り手</Term>
+    <Detail>{formatUnitsLost(view.unitsLost)}</Detail>
+
+    <Term>経路上／経路外</Term>
     <Detail>
-      {view.firstReactorTick === undefined
-        ? '魔力炉を置けなかった'
-        : `初号機 ${toSeconds(view.firstReactorTick)}秒`}
-      {' / '}マナ待ち {toSeconds(view.manaStarvedTicks)}秒
+      {view.placedOnPath} / {view.placedOffPath}（経路上 {Math.round(view.onPathRatio * 100)}%）
     </Detail>
 
-    <Term>置くときに選べたマス</Term>
+    <Term>鴉を落とした位置</Term>
     <Detail>
-      平均 {view.placeableAverage.toFixed(1)} / 最小 {view.placeableMin}
+      {view.ravenDefeatCount === 0
+        ? '撃破なし'
+        : `平均 ${Math.round(view.ravenDefeatAverage * 100)}%（0% = 入口、100% = 砦）`}
     </Detail>
 
     <Term>使わなかった札</Term>
     <Detail>
-      {view.unusedCardNames.length === 0 ? 'なし' : view.unusedCardNames.join('・')}
+      {view.unusedCardIds.length === 0 ? 'なし' : view.unusedCardIds.map(nameOf).join('・')}
     </Detail>
+
+    <Term>コスト帯の分布</Term>
+    <Detail>{formatCostHistogram(view.costHistogram)}</Detail>
   </List>
 );

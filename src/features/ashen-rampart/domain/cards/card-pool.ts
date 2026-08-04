@@ -1,12 +1,19 @@
 /**
  * 灰燼の城壁 - カードプール（14種）とプリセットデッキ
  *
- * 数値は設計書 §3.4 / §5 の値をそのまま持つ。攻撃塔5種の DPS/マナ（基礎値）は
- * 弓兵 0.375 > 弩砲 0.278 > 徹甲弩 0.233 > 火砲台 0.222 > 投石機 0.111。
- * 弓兵が単体効率で最高だが飛行に当たらず、徹甲弩は最大HP40以上の敵に限り
- * 0.467 と弓兵を上回る。つまり効率の順位が敵によって入れ替わるため、
- * 同名3枚上限と併せて単一の支配戦略が成立しない（設計書 §3.4 / §7）。
- * 篝火・鍛冶場は攻撃せず（0ダメージ）、隣接塔を強化するだけのオーラ札。
+ * 数値は設計書 §7 の表（コスト帯0〜5・HPと攻撃力の逆相関）の値をそのまま持つ。
+ * 攻撃塔5種の DPS/マナ（基礎値）は
+ * 弓兵 0.500 > 弩砲 0.375 > 徹甲弩 0.292 > 火砲台 0.222 > 投石機 0.120。
+ * 弓兵が単体効率で最高だが飛行に当たらない。徹甲弩は単体効率こそ中位だが、
+ * 守り手から標的へ引いた直線上の敵すべてを貫くため、単体・範囲攻撃のどちらとも
+ * 重ならない3つ目の軸を持つ（一直線に並ばない限り恩恵がない代わりに、
+ * 並んだ相手には他のどの塔より効率が跳ね上がる）。効率の性格が敵の並び方で
+ * 入れ替わるため、同名3枚上限と併せて単一の支配戦略が成立しない（設計書 §7）。
+ * 篝火・鍛冶場は攻撃せず（0ダメージ）、隣接する守り手を強化するだけのオーラ札。
+ *
+ * 石壁は type: 'trap'（40tick足止め）から守り手（type: 'tower', HP60・攻撃0）へ
+ * 変わった（Task 10）。本モデルでは「HP60の壁」のほうが素直であり、
+ * 足止めと石壁という2つの「止める」概念の重複も消える。
  */
 import type { CardDefinition } from './card-definition';
 
@@ -19,7 +26,7 @@ const CARDS: readonly CardDefinition[] = [
     name: '魔力炉',
     type: 'reactor',
     cost: 0,
-    description: '60tick ごとにマナを1得る。設置スロットを1つ使う。',
+    description: '60tick ごとにマナを1得る。経路上には置けない。',
     reactor: { intervalTicks: 60, manaPerTick: 1 },
     // 盤面では3〜4基で消費レート（3マナ/60tick）を飽和させるため、
     // 並べるほど強くはならない。上限を外すのは「確実に引くため」である。
@@ -28,19 +35,19 @@ const CARDS: readonly CardDefinition[] = [
   },
   {
     id: 'arrow-tower',
-    name: '弓兵の塔',
+    name: '弓兵',
     type: 'tower',
-    cost: 2,
-    description: '単体を速射する。飛行には当たらない。',
-    tower: { range: 1.6, damage: 6, cooldownTicks: 8, splashRadius: 0, hitsFlying: false },
+    cost: 1,
+    description: '単体を速射する。安く、数で押す。飛行には当たらない。',
+    tower: { hp: 8, range: 1.6, damage: 4, cooldownTicks: 8, splashRadius: 0, hitsFlying: false },
   },
   {
     id: 'ballista',
     name: '弩砲',
     type: 'tower',
-    cost: 3,
-    description: '射程が長く、唯一飛行を撃ち落とせる。効率は低い。',
-    tower: { range: 2.2, damage: 10, cooldownTicks: 12, splashRadius: 0, hitsFlying: true },
+    cost: 2,
+    description: '射程が長く、飛行を撃ち落とせる。対空の標準解。',
+    tower: { hp: 12, range: 2.4, damage: 9, cooldownTicks: 12, splashRadius: 0, hitsFlying: true },
   },
   {
     id: 'cannon-tower',
@@ -48,15 +55,16 @@ const CARDS: readonly CardDefinition[] = [
     type: 'tower',
     cost: 3,
     description: '着弾点の周囲にもダメージ。群れに強い。飛行には当たらない。',
-    tower: { range: 1.5, damage: 12, cooldownTicks: 18, splashRadius: 1, hitsFlying: false },
+    tower: { hp: 16, range: 1.5, damage: 12, cooldownTicks: 18, splashRadius: 1, hitsFlying: false },
   },
   {
     id: 'beacon',
     name: '篝火',
     type: 'tower',
     cost: 2,
-    description: '攻撃しないが、隣接する塔の攻撃力を +25% する。',
+    description: '攻撃しないが、隣接する守り手の攻撃力を +25% する。',
     tower: {
+      hp: 8,
       range: 0,
       damage: 0,
       cooldownTicks: 0,
@@ -69,9 +77,10 @@ const CARDS: readonly CardDefinition[] = [
     id: 'forge',
     name: '鍛冶場',
     type: 'tower',
-    cost: 2,
-    description: '攻撃しないが、隣接する塔の射程を +0.6 する。',
+    cost: 1,
+    description: '攻撃しないが、隣接する守り手の射程を +0.6 する。',
     tower: {
+      hp: 8,
       range: 0,
       damage: 0,
       cooldownTicks: 0,
@@ -106,8 +115,7 @@ const CARDS: readonly CardDefinition[] = [
   },
   // 実効値の注記: 罠の判定（applyTraps）は移動（moveEnemies）の後に走るため、
   // 発動 tick T では敵が既に移動済みで、実際に止まるのは T+1〜T+groundedTicks。
-  // つまり体感の地上化時間は 120 ではなく実効 119 tick になる。
-  // 振る舞いは石壁と一貫しており実害がないため実装は変えず、注記だけ残す。
+  // つまり体感の地上化時間は 120 ではなく実効 119 tick になる。実装は変えず、注記だけ残す。
   {
     id: 'snare-net',
     name: '落網',
@@ -116,37 +124,37 @@ const CARDS: readonly CardDefinition[] = [
     description: '経路に張る網。踏んだ飛行の敵を120tick 地に落とす。ダメージはない。',
     trap: { damage: 0, uses: 3, groundedTicks: 120 },
   },
-  // 実効値の注記: 落網と同じ理由で、足止めは 40 ではなく実効 39 tick（T+1〜T+39）。
   {
     id: 'stone-wall',
     name: '石壁',
-    type: 'trap',
+    type: 'tower',
     cost: 1,
-    description: '経路を塞ぐ石。踏んだ地上の敵を40tick 足止めする。ダメージはない。',
-    trap: { damage: 0, uses: 3, stunTicks: 40 },
+    description: '攻撃しないが非常に硬い。経路に置いて敵を食い止める。',
+    tower: { hp: 60, range: 0, damage: 0, cooldownTicks: 0, splashRadius: 0, hitsFlying: false },
   },
   {
     id: 'catapult',
     name: '投石機',
     type: 'tower',
-    cost: 3,
+    cost: 5,
     description: '遠くまで届き広く砕くが、間隔は長い。飛行には当たらない。',
-    tower: { range: 3.0, damage: 8, cooldownTicks: 24, splashRadius: 2, hitsFlying: false },
+    tower: { hp: 10, range: 3.0, damage: 18, cooldownTicks: 30, splashRadius: 2, hitsFlying: false },
   },
   {
     id: 'piercer',
     name: '徹甲弩',
     type: 'tower',
-    cost: 3,
-    description: '硬い敵を貫く。最大HP40以上の敵には2倍。飛行も撃てるが雑兵相手は非効率。',
+    // コスト帯を0〜5に広げる際、設計書 §7 の表で唯一コスト4を占めるのが徹甲弩。
+    cost: 4,
+    description: '一直線上の敵をまとめて貫く。飛行も撃てる。',
     tower: {
+      hp: 14,
       range: 1.8,
-      damage: 7,
-      cooldownTicks: 10,
+      damage: 14,
+      cooldownTicks: 12,
       splashRadius: 0,
       hitsFlying: true,
-      heavyBonusThreshold: 40,
-      heavyBonusMultiplier: 2,
+      piercing: true,
     },
   },
   {
@@ -189,29 +197,28 @@ export interface PresetDeck {
 const repeat = (id: string, count: number): string[] => Array.from({ length: count }, () => id);
 
 /**
- * プリセットデッキ2種（反復2 の再構成）
+ * プリセットデッキ2種（反復3 の再構成）
  *
  * プリセットは構築画面の「たたき台として読み込む」導線から使われる。ここが弱いと、
  * 素直に始めた人が引き運ではなくプリセットの弱さで連敗し、設計書 §7 の反証条件
  * （クリア不可の引きが3ラン中2ラン以上）に誤って当たってしまう。
  *
- * 魔力炉のデッキ内上限を外したため、MTG の土地比率（40枚中17枚＝42.5%）に
- * 近い **20枚中8枚（40%）** へ組み直した。盤面では3〜4基で消費レートを
- * 飽和させるため並べ得にはならず、増やす目的は「確実に引く」ことにある。
- * 敵側の数値は一切動かしていない（実プレイ判定の直前に難度を動かさない方針）。
+ * **魔力炉を8枚から4〜5枚へ減らした。** 8枚は配置クールダウンが全札に掛かって
+ * いた時代の構成で、「置きたいのに置けない」時間をマナ源で埋める意味があった。
+ * クールダウンが魔力炉だけになった今はマナが唯一の律速であり、盤面では3〜4基で
+ * 消費レートを飽和させる。それ以上はマナが余って本命の札の枚数を削るだけになる。
+ * 空いた枠は**石壁3枚**に充てた。経路上でブロックするという行為が反復3 の中核で、
+ * たたき台がそれを1枚も持たないのは導線として成立しない。
  *
  * greedyStrategy（素直な戦略）・シード1〜20 での実測勝率は
- * **速攻型 10/20・重厚型 13/20**（魔力炉3枚構成では どちらも 8/20 だった）。
- *
- * 机上案（速攻=弩砲2＋時泥1／重厚=徹甲弩3・投石機2・落網2）は実測で 4/20・19/20 と
- * 極端に割れたため、内訳だけを調整した:
- * - 速攻型: 弩砲2→3・時泥1を削除（対空が弩砲2枚しかなく鴉13体で崩れていた）。4→10/20
- * - 重厚型: 徹甲弩3→2・落網2→3（対空が過剰で全ウェーブを抜けてしまっていた）。19→13/20
+ * **速攻型 8/20・重厚型 7/20**（対照条件は 経路外のみ 0/20 ／ 壁と対空のみ
+ * 速攻型 1/20・重厚型 5/20）。反復2 の 10/20・13/20 とは敵側の構成が違うため
+ * 直接比較できない（2レーン化で総HP 728→648・レーン配分が変わっている）。
  *
  * 2種の性格の違いは残してある:
- * - 速攻型 = 手数寄り。安い弓兵・棘罠で数を捌き、群れは火砲台で潰す
+ * - 速攻型 = 手数寄り。安い弓兵・棘罠で数を捌き、群れは火砲台で潰す。対空は弩砲
  * - 重厚型 = 火力寄り。徹甲弩・投石機で硬い敵を抜き、飛行は落網で落として叩く
- * 共有しているのは魔力炉・弩砲・徴発だけで、主戦力の塔は重なっていない。
+ * 共有しているのは魔力炉・石壁・弩砲・徴発だけで、主戦力の塔は重なっていない。
  *
  * **注意: 配列の並び順にも意味がある。** createDeck のシャッフルは入力配列の順序に依存し、
  * 枚数構成が同一でも並べ替えるだけで実測勝率が動く（反復1 では 6/20〜11/20 の幅が出た）。
@@ -222,27 +229,30 @@ export const PRESET_DECKS: Readonly<Record<string, PresetDeck>> = {
   swift: {
     id: 'swift',
     name: '速攻型',
-    description: '安い弓兵と棘罠で手数を稼ぎ、群れは火砲台で潰す。対空は弩砲。',
+    description: '石壁で受けつつ、安い弓兵と棘罠で手数を稼ぐ。群れは火砲台、対空は弩砲。',
     cards: [
-      ...repeat('reactor', 8),
+      ...repeat('reactor', 4),
+      ...repeat('stone-wall', 3),
       ...repeat('arrow-tower', 3),
-      ...repeat('spike-trap', 3),
       ...repeat('ballista', 3),
       ...repeat('cannon-tower', 2),
+      ...repeat('spike-trap', 3),
+      ...repeat('forge', 1),
       ...repeat('levy', 1),
     ],
   },
   heavy: {
     id: 'heavy',
     name: '重厚型',
-    description: '徹甲弩と投石機で火力を通し、飛行は落網で落として叩く。',
+    description: '石壁で足を止め、徹甲弩と投石機で火力を通す。飛行は落網で落として叩く。',
     cards: [
-      ...repeat('reactor', 8),
+      ...repeat('reactor', 5),
+      ...repeat('stone-wall', 3),
       ...repeat('piercer', 2),
       ...repeat('catapult', 2),
       ...repeat('ballista', 2),
       ...repeat('snare-net', 3),
-      ...repeat('ember-blast', 2),
+      ...repeat('beacon', 2),
       ...repeat('levy', 1),
     ],
   },

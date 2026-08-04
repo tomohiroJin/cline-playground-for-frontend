@@ -6,7 +6,7 @@
  * 「UI が検証結果を正しく反映するか」を見る。
  */
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { DeckBuilder } from './DeckBuilder';
 import { CARD_IDS, DECK_SIZE, PRESET_DECKS, getCardDefinition } from '../domain/cards/card-pool';
 import { HEADER_CLEARANCE } from './layout-constants';
@@ -36,6 +36,18 @@ describe('DeckBuilder', () => {
     expect(screen.getByText('飛行に当たらない')).toBeInTheDocument();
   });
 
+  it('指摘5: 守り手にはHPと攻撃力が表示される（石壁60/0と弓兵8/4の逆相関が読める）', () => {
+    render(<DeckBuilder onStart={jest.fn()} />);
+    expect(screen.getByText('HP60 / 攻撃0')).toBeInTheDocument();
+    expect(screen.getByText('HP8 / 攻撃4')).toBeInTheDocument();
+  });
+
+  it('指摘5: 守り手でないカード（魔力炉）にはHP表示が無い', () => {
+    render(<DeckBuilder onStart={jest.fn()} />);
+    const reactorRow = screen.getByRole('group', { name: /魔力炉/ });
+    expect(within(reactorRow).queryByText(/^HP/)).not.toBeInTheDocument();
+  });
+
   it('初期状態では0枚で、開始できない', () => {
     render(<DeckBuilder onStart={jest.fn()} />);
     expect(screen.getByText(`0 / ${DECK_SIZE}`)).toBeInTheDocument();
@@ -44,13 +56,13 @@ describe('DeckBuilder', () => {
 
   it('カードを足すと枚数が増える', () => {
     render(<DeckBuilder onStart={jest.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: '弓兵の塔 を1枚増やす' }));
+    fireEvent.click(screen.getByRole('button', { name: '弓兵 を1枚増やす' }));
     expect(screen.getByText(`1 / ${DECK_SIZE}`)).toBeInTheDocument();
   });
 
   it('同名の上限に達すると増やすボタンが無効になる', () => {
     render(<DeckBuilder onStart={jest.fn()} />);
-    const add = screen.getByRole('button', { name: '弓兵の塔 を1枚増やす' });
+    const add = screen.getByRole('button', { name: '弓兵 を1枚増やす' });
     fireEvent.click(add);
     fireEvent.click(add);
     fireEvent.click(add);
@@ -66,9 +78,9 @@ describe('DeckBuilder', () => {
 
   it('減らすボタンで枚数が減り、0枚では無効', () => {
     render(<DeckBuilder onStart={jest.fn()} />);
-    const remove = screen.getByRole('button', { name: '弓兵の塔 を1枚減らす' });
+    const remove = screen.getByRole('button', { name: '弓兵 を1枚減らす' });
     expect(remove).toBeDisabled();
-    fireEvent.click(screen.getByRole('button', { name: '弓兵の塔 を1枚増やす' }));
+    fireEvent.click(screen.getByRole('button', { name: '弓兵 を1枚増やす' }));
     expect(remove).toBeEnabled();
     fireEvent.click(remove);
     expect(screen.getByText(`0 / ${DECK_SIZE}`)).toBeInTheDocument();
@@ -115,7 +127,7 @@ describe('DeckBuilder', () => {
 
   it('20枚に足りないと理由が表示される', () => {
     render(<DeckBuilder onStart={jest.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: '弓兵の塔 を1枚増やす' }));
+    fireEvent.click(screen.getByRole('button', { name: '弓兵 を1枚増やす' }));
     expect(screen.getByText(/20枚ちょうどにしてください/)).toBeInTheDocument();
   });
 

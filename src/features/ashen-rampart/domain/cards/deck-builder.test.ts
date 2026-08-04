@@ -44,7 +44,7 @@ describe('validateDeck', () => {
     expect(tooMany).toHaveLength(DECK_SIZE);
     const result = validateDeck(tooMany);
     expect(result.isValid).toBe(false);
-    expect(result.errors.join()).toContain('弓兵の塔');
+    expect(result.errors.join()).toContain('弓兵');
   });
 
   it('未知のカードIDが含まれると不正', () => {
@@ -78,11 +78,11 @@ describe('countByCard', () => {
 
 describe('costCurve', () => {
   it('コストごとの枚数を数える', () => {
-    // reactor=0, arrow-tower=2, ballista=3
+    // reactor=0, arrow-tower=1, ballista=2
     const curve = costCurve(['reactor', 'arrow-tower', 'arrow-tower', 'ballista']);
     expect(curve.get(0)).toBe(1);
-    expect(curve.get(2)).toBe(2);
-    expect(curve.get(3)).toBe(1);
+    expect(curve.get(1)).toBe(2);
+    expect(curve.get(2)).toBe(1);
   });
 
   it('未知のカードは無視する（検証は validateDeck の責務）', () => {
@@ -114,7 +114,7 @@ describe('カード別の同名上限', () => {
     expect(cards).toHaveLength(20);
     const result = validateDeck(cards);
     expect(result.isValid).toBe(false);
-    expect(result.errors.some((e) => e.includes('弓兵の塔'))).toBe(true);
+    expect(result.errors.some((e) => e.includes('弓兵'))).toBe(true);
   });
 
   it('maxCopiesOf は魔力炉にデッキ枚数、それ以外に MAX_COPIES を返す', () => {

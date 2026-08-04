@@ -19,10 +19,10 @@ describe('カードプール', () => {
     expect(CARD_IDS).toHaveLength(14);
   });
 
-  it('弓兵の塔は地上のみで DPS 0.75 になる数値を持つ', () => {
+  it('弓兵は地上のみで DPS 0.5 になる数値を持つ', () => {
     const card = getCardDefinition('arrow-tower');
-    expect(card.cost).toBe(2);
-    expect(card.tower?.damage).toBe(6);
+    expect(card.cost).toBe(1);
+    expect(card.tower?.damage).toBe(4);
     expect(card.tower?.cooldownTicks).toBe(8);
     expect(card.tower?.hitsFlying).toBe(false);
   });
@@ -44,9 +44,12 @@ describe('カードプール', () => {
   });
 
   it('配置先の種別はカード種別から決まる', () => {
-    expect(placementKindOf(getCardDefinition('arrow-tower'))).toBe('slot');
-    expect(placementKindOf(getCardDefinition('reactor'))).toBe('slot');
-    expect(placementKindOf(getCardDefinition('ember-blast'))).toBe('slot');
+    // 反復3 Task 8: 設置マスの規則を廃止し、配置先種別を4種に分けた。
+    // 業火（ember）は経路に範囲ダメージを落とすカードのため path、魔力炉は
+    // コスト0・上限なしで経路に置けると無限の壁になるため reactor（経路外専用）に分離した。
+    expect(placementKindOf(getCardDefinition('arrow-tower'))).toBe('unit');
+    expect(placementKindOf(getCardDefinition('reactor'))).toBe('reactor');
+    expect(placementKindOf(getCardDefinition('ember-blast'))).toBe('path');
     expect(placementKindOf(getCardDefinition('spike-trap'))).toBe('path');
     expect(placementKindOf(getCardDefinition('mud-time'))).toBe('none');
   });
@@ -60,41 +63,39 @@ describe('反復1で追加したカード', () => {
     expect(card.trap?.damage).toBe(0);
     expect(card.trap?.uses).toBe(3);
     expect(card.trap?.groundedTicks).toBe(120);
-    expect(card.trap?.stunTicks).toBeUndefined();
   });
 
-  it('石壁は地上を足止めする罠（ダメージなし）', () => {
+  it('石壁は攻撃しないHP60の守り手', () => {
     const card = getCardDefinition('stone-wall');
     expect(card.cost).toBe(1);
-    expect(card.trap?.damage).toBe(0);
-    expect(card.trap?.uses).toBe(3);
-    expect(card.trap?.stunTicks).toBe(40);
-    expect(card.trap?.groundedTicks).toBeUndefined();
+    expect(card.type).toBe('tower');
+    expect(card.tower?.hp).toBe(60);
+    expect(card.tower?.damage).toBe(0);
+    expect(card.trap).toBeUndefined();
   });
 
   it('投石機は射程3.0の範囲2で、地上のみ', () => {
     const card = getCardDefinition('catapult');
-    expect(card.cost).toBe(3);
+    expect(card.cost).toBe(5);
     expect(card.tower).toMatchObject({
       range: 3.0,
-      damage: 8,
-      cooldownTicks: 24,
+      damage: 18,
+      cooldownTicks: 30,
       splashRadius: 2,
       hitsFlying: false,
     });
   });
 
-  it('徹甲弩は飛行可で、HP40以上に2倍', () => {
+  it('徹甲弩は飛行可で、貫通する', () => {
     const card = getCardDefinition('piercer');
-    expect(card.cost).toBe(3);
+    expect(card.cost).toBe(4);
     expect(card.tower).toMatchObject({
       range: 1.8,
-      damage: 7,
-      cooldownTicks: 10,
+      damage: 14,
+      cooldownTicks: 12,
       splashRadius: 0,
       hitsFlying: true,
-      heavyBonusThreshold: 40,
-      heavyBonusMultiplier: 2,
+      piercing: true,
     });
   });
 
@@ -117,8 +118,63 @@ describe('反復1で追加したカード', () => {
 
   it('全14種が既知の配置先種別を持つ', () => {
     CARD_IDS.forEach((id) => {
-      expect(['slot', 'path', 'none']).toContain(placementKindOf(getCardDefinition(id)));
+      expect(['unit', 'reactor', 'path', 'none']).toContain(placementKindOf(getCardDefinition(id)));
     });
+  });
+});
+
+describe('カードの軸（設計書 §7）', () => {
+  const towerOf = (id: string) => getCardDefinition(id).tower;
+
+  it('コスト帯が 0〜5 に広がっている', () => {
+    const costs = new Set(CARD_IDS.map((id) => getCardDefinition(id).cost));
+    [0, 1, 2, 3, 4, 5].forEach((c) => expect(costs.has(c)).toBe(true));
+  });
+
+  it('攻撃する守り手が同じコストに4種以上固まっていない', () => {
+    const attackers = CARD_IDS
+      .map((id) => getCardDefinition(id))
+      .filter((c) => c.tower && c.tower.damage > 0);
+    const byCost = new Map<number, number>();
+    attackers.forEach((c) => byCost.set(c.cost, (byCost.get(c.cost) ?? 0) + 1));
+    byCost.forEach((count) => expect(count).toBeLessThan(4));
+  });
+
+  it('HPと攻撃力が逆相関している（硬いものほど攻撃力が低い）', () => {
+    const units = CARD_IDS
+      .map((id) => getCardDefinition(id))
+      .filter((c) => c.tower !== undefined && c.type === 'tower');
+    const hardest = units.reduce((a, b) => (a.tower!.hp >= b.tower!.hp ? a : b));
+    const strongest = units.reduce((a, b) => (a.tower!.damage >= b.tower!.damage ? a : b));
+    // 最も硬い守り手（石壁 HP60）は攻撃しない
+    expect(hardest.tower!.damage).toBe(0);
+    // 最も火力の高い守り手（投石機）は最も硬い守り手より脆い
+    expect(strongest.tower!.hp).toBeLessThan(hardest.tower!.hp);
+  });
+
+  it('対空の税は1マナである（同型の単体守り手で対空の有無だけが違う）', () => {
+    const ground = getCardDefinition('arrow-tower');
+    const air = getCardDefinition('ballista');
+    expect(ground.tower!.hitsFlying).toBe(false);
+    expect(air.tower!.hitsFlying).toBe(true);
+    expect(air.cost - ground.cost).toBe(1);
+  });
+
+  it('すべての守り手がHPを持つ', () => {
+    CARD_IDS.forEach((id) => {
+      const spec = towerOf(id);
+      if (!spec) return;
+      expect(spec.hp).toBeGreaterThan(0);
+    });
+  });
+
+  it('石壁の同名上限は3枚のまま（壁の希少性が本反復の中核）', () => {
+    expect(getCardDefinition('stone-wall').maxCopies ?? 3).toBe(3);
+  });
+
+  it('魔力炉だけが同名上限を持たない', () => {
+    const unlimited = CARD_IDS.filter((id) => (getCardDefinition(id).maxCopies ?? 3) > 3);
+    expect(unlimited).toEqual(['reactor']);
   });
 });
 

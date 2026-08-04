@@ -107,10 +107,10 @@ describe('徴発の選択', () => {
     const readyToPlace: CombatState = { ...opened, placeCooldown: 0 };
     const after = stepTick(
       readyToPlace,
-      [{ kind: 'play-card', handIndex: 0, pos: { x: 1, y: 2 } }],
+      [{ kind: 'play-card', handIndex: 0, pos: { x: 1, y: 1 } }],
       PLAINS_MAP
     );
-    expect(after.events).toContainEqual({ kind: 'played', cardId: 'reactor', pos: { x: 1, y: 2 } });
+    expect(after.events).toContainEqual({ kind: 'played', cardId: 'reactor', pos: { x: 1, y: 1 } });
     expect(after.reactors).toHaveLength(1);
     // 選択待ちは引き続き残る（levy 実装が選択待ち以外のカードを巻き込んでいないことの確認）
     expect(after.levyOptions).toHaveLength(3);
@@ -192,7 +192,9 @@ describe('配置クールダウンの適用範囲', () => {
     expect(next.placeCooldown).toBe(0);
   });
 
-  it('盤面に置く札はクールダウン中に拒否される', () => {
+  it('魔力炉以外の設置札はクールダウン中でも拒否されない（反復3: 律速はマナのみ）', () => {
+    // 反復2までは「盤面に置く札」全般がクールダウン対象だったが、
+    // 「マナがあるのに置けない」ことが戦略の選択を消していたため魔力炉限定に変えた。
     const state: CombatState = {
       ...createCombatState(createDeck(['reactor', 'arrow-tower', 'reactor', 'reactor'], () => 0), noWave),
       placeCooldown: 30,
@@ -201,7 +203,23 @@ describe('配置クールダウンの適用範囲', () => {
     const towerIndex = state.deck.hand.indexOf('arrow-tower');
     const next = stepTick(
       state,
-      [{ kind: 'play-card', handIndex: towerIndex, pos: { x: 1, y: 2 } }],
+      [{ kind: 'play-card', handIndex: towerIndex, pos: { x: 1, y: 1 } }],
+      PLAINS_MAP
+    );
+    expect(next.units).toHaveLength(1);
+    expect(next.events).not.toContainEqual({ kind: 'rejected', reason: 'cooldown' });
+  });
+
+  it('魔力炉はクールダウン中に拒否される', () => {
+    const state: CombatState = {
+      ...createCombatState(createDeck(['reactor', 'reactor', 'reactor', 'reactor'], () => 0), noWave),
+      placeCooldown: 30,
+      mana: 5,
+    };
+    const reactorIndex = state.deck.hand.indexOf('reactor');
+    const next = stepTick(
+      state,
+      [{ kind: 'play-card', handIndex: reactorIndex, pos: { x: 1, y: 1 } }],
       PLAINS_MAP
     );
     expect(next.events).toContainEqual({ kind: 'rejected', reason: 'cooldown' });

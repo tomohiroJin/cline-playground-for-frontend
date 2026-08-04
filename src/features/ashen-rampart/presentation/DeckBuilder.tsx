@@ -18,7 +18,7 @@ import {
   maxCopiesOf,
 } from '../domain/cards/card-pool';
 import { countByCard, costCurve, validateDeck } from '../domain/cards/deck-builder';
-import { weaknessTextOf } from './card-text';
+import { weaknessTextOf, towerStatsTextOf } from './card-text';
 import { COLORS } from './theme';
 import { HEADER_CLEARANCE } from './layout-constants';
 
@@ -72,6 +72,21 @@ const Weakness = styled.p`
   margin: 0;
   font-size: 12px;
   color: ${COLORS.opportunity};
+`;
+
+/**
+ * 守り手のHP・攻撃力の表示（指摘5）
+ *
+ * HPと攻撃力の逆相関（石壁60/0 → 弓兵8/4）は本反復で「カードが似ている」を
+ * 解く唯一の新しい軸だが、盤面のHPバーでしか読めなかった。守り手でないカード
+ * （魔力炉・罠・呪文・徴発）には表示しないため、Weakness と同じ色にはせず
+ * 控えめな secondary + 低opacityで縁の下の情報として置く。
+ */
+const Stats = styled.p`
+  margin: 0;
+  font-size: 12px;
+  color: ${COLORS.secondary};
+  opacity: 0.75;
 `;
 
 const Footer = styled.div`
@@ -166,6 +181,7 @@ export const DeckBuilder: React.FC<Props> = ({ onStart, initialCards, initialSee
                 {card.name}（コスト{card.cost}）
               </strong>
               <span>{card.description}</span>
+              {towerStatsTextOf(id) && <Stats>{towerStatsTextOf(id)}</Stats>}
               <Weakness>{weaknessTextOf(id)}</Weakness>
               <Controls>
                 <StepButton

@@ -10,7 +10,7 @@ import { PLAINS_MAP } from '../domain/board/stage-map';
 import { getCardDefinition } from '../domain/cards/card-pool';
 import { placementKindOf } from '../domain/cards/card-definition';
 import type { CombatState } from '../domain/combat/combat-state';
-import { stepTick, canPlaceAt, type PlayerAction } from '../domain/combat/step-tick';
+import { stepTick, placeableCells as computePlaceableCells, type PlayerAction } from '../domain/combat/step-tick';
 import { nextWavePreview } from './wave-preview';
 import { decideBattleAnnouncement } from './battle-announcement';
 import { advanceEffects, type Effect } from './combat-effects';
@@ -112,12 +112,15 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
     );
   }, [state, prefersReducedMotion]);
 
-  // 判定用の集計を累積する。events は毎 tick 消えるため tick ごとに足す
+  // 判定用の集計を累積する。events は毎 tick 消えるため tick ごとに足す。
+  // accumulateTick は state.events / state.enemies だけを見るため prevState は渡さない
+  // （反復3 で配置時に選べたマス数の集計を廃止し、prevState が不要になった）。
+  // ただし StrictMode の二重実行を弾くガードとしては prevStateRef を引き続き使う。
   useEffect(() => {
     const prev = prevStateRef.current;
     prevStateRef.current = state;
     if (prev === state) return;
-    setTally((current) => accumulateTick(current, prev, state, PLAINS_MAP));
+    setTally((current) => accumulateTick(current, state, PLAINS_MAP));
   }, [state]);
 
   // 拒否理由の通知。同一 tick に複数出た場合は最初の1件だけを出し、
@@ -215,10 +218,10 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
     const cardId = state.deck.hand[selectedIndex];
     if (cardId === undefined) return [];
     const card = getCardDefinition(cardId);
-    const kind = placementKindOf(card);
-    if (kind === 'none') return [];
-    const candidates = kind === 'path' ? PLAINS_MAP.path : PLAINS_MAP.buildSlots;
-    return candidates.filter((pos) => canPlaceAt(state, card, pos, PLAINS_MAP));
+    if (placementKindOf(card) === 'none') return [];
+    // 設置マスの規則が消え、カード種別ごとに置ける範囲が変わる（砦禁止・魔力炉は経路外限定等）。
+    // 判定はドメイン（step-tick の placeableCells）に一元化し、ここでは呼ぶだけにする
+    return computePlaceableCells(state, card, PLAINS_MAP);
   })();
 
   const selectCard = useCallback(
