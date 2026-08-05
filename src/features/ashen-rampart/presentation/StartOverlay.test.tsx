@@ -25,10 +25,11 @@ describe('StartOverlay', () => {
     expect(screen.getByText(/砦を守/)).toBeInTheDocument();
   });
 
-  it('操作が示される（カード配置・燠火・一時停止）', () => {
+  it('操作が示される（カード配置・燠火・能力表示・一時停止）', () => {
     render(<StartOverlay preview="雑兵8" onStart={jest.fn()} />);
     expect(screen.getByText(/カードを選/)).toBeInTheDocument();
     expect(screen.getByText(/燠火/)).toBeInTheDocument();
+    expect(screen.getByText(/カード未選択時/)).toBeInTheDocument();
     expect(screen.getByText(/スペース/)).toBeInTheDocument();
   });
 
