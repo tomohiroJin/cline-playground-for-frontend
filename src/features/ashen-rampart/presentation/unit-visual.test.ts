@@ -59,12 +59,25 @@ describe('sizePctOf', () => {
 });
 
 describe('符号の一意性（グレースケール要件）', () => {
-  it('(役割, サイズ, 横長) の組が14種で重複しない', () => {
+  it('(実際に描かれる形, サイズ) の組が14種で重複しない', () => {
+    // 役割名で数えると、別々の役割に**同じ clip-path** を割り当てても
+    // 検出できない（棘罠と徴発はどちらも 53% なので、形が同じになれば
+    // 盤面と手札で見分けがつかなくなる。最終レビュー指摘I-2）。
+    // 「文字に依存せず識別できる」という主張を守るため、形そのもので数える。
     const keys = CARD_IDS.map((id) => {
       const v = getUnitVisual(id);
-      return `${v.role}:${v.sizePct}:${v.isWide}`;
+      const shape = getRoleClipPath(v.role) ?? (v.isWide ? 'rounded-rect' : 'circle');
+      return `${shape}:${v.sizePct}`;
     });
     expect(new Set(keys).size).toBe(CARD_IDS.length);
+  });
+
+  it('形（clip-path）は役割ごとに異なる（同じ形を2つの役割へ割り当てない）', () => {
+    const roles = CARD_IDS.map((id) => getUnitVisual(id).role);
+    const clipPaths = [...new Set(roles)]
+      .map((role) => getRoleClipPath(role))
+      .filter((value): value is string => value !== undefined);
+    expect(new Set(clipPaths).size).toBe(clipPaths.length);
   });
 
   it('文字も14種で重複しない', () => {
