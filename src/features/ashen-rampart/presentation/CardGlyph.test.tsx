@@ -7,6 +7,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { CardGlyph } from './CardGlyph';
+import { appliedLengthOf, appliedValueOf } from './applied-css';
 import { UnitPlate } from './UnitPlate';
 import { plateKeyOf, type PlateModel } from './board-plates';
 import { getUnitVisual } from './unit-visual';
@@ -36,6 +37,22 @@ const plateFor = (cardId: string): PlateModel => ({
   isFiring: false,
 });
 
+/**
+ * 実際に適用された CSS から「どの形か」を読み取る
+ *
+ * clip-path があればその値そのものが形。無ければ角丸 50%（円）か
+ * それ以外（角丸長方形）かで分かれる。
+ */
+const shapeClassOf = (element: Element): string => {
+  const clipPath = appliedValueOf(element, 'clip-path');
+  if (clipPath !== undefined) return `clip:${clipPath}`;
+  return appliedValueOf(element, 'border-radius') === '50%' ? 'circle' : 'rounded-rect';
+};
+
+/** 実際に適用された幅と高さから「正方形か横長か」を読み取る（単位に依存しない） */
+const aspectClassOf = (element: Element): string =>
+  appliedLengthOf(element, 'width') === appliedLengthOf(element, 'height') ? 'square' : 'wide';
+
 describe('CardGlyph', () => {
   it('個体の文字を描く', () => {
     render(<CardGlyph cardId="ballista" />);
@@ -48,22 +65,26 @@ describe('CardGlyph', () => {
   });
 
   it('全14種で、盤面の台座（UnitPlate）と手札の形アイコン（CardGlyph）が同じ形になる', () => {
-    // getUnitVisual/getRoleClipPath を仲介させず、UnitPlate と CardGlyph を
-    // 両方実際にレンダリングして DOM 属性を突き合わせる。UnitPlate が将来
-    // clip-path をハードコードに変えるなど、CardGlyph と実装が分岐したら
-    // このテストが落ちる。
+    // **実際に適用された CSS** を突き合わせる。以前はテストのためだけに置いた
+    // data-clip-path / data-wide を比べていたため、形を決める transient prop
+    // （$clipPath）だけを undefined に変えると、手札のアイコンが全部円になるのに
+    // 3つのアサーションは通ってしまった（最終レビュー指摘H-5）。
     CARD_IDS.forEach((id) => {
       const { unmount: unmountPlate } = render(
         <UnitPlate plate={plateFor(id)} columns={TEST_COLUMNS} rows={TEST_ROWS} />
       );
       const plateEl = screen.getByTestId(`unit-plate-${TEST_POS.x}-${TEST_POS.y}`);
+      const shapeEl = screen.getByTestId(`unit-shape-${TEST_POS.x}-${TEST_POS.y}`);
 
       const { unmount: unmountGlyph } = render(<CardGlyph cardId={id} />);
       const glyphEl = screen.getByTestId(`card-glyph-${id}`);
 
       expect(glyphEl.getAttribute('data-role')).toBe(plateEl.getAttribute('data-role'));
-      expect(glyphEl.getAttribute('data-clip-path')).toBe(plateEl.getAttribute('data-clip-path'));
-      expect(glyphEl.getAttribute('data-wide')).toBe(plateEl.getAttribute('data-wide'));
+      // 形（多角形か、円か、角丸長方形か）
+      expect(shapeClassOf(glyphEl)).toBe(shapeClassOf(shapeEl));
+      // 縦横比の種別（横長は石壁だけ）。盤面は cqw、手札は px と単位が違うため
+      // 絶対値ではなく「正方形か横長か」を比べる
+      expect(aspectClassOf(glyphEl)).toBe(aspectClassOf(plateEl));
 
       unmountPlate();
       unmountGlyph();

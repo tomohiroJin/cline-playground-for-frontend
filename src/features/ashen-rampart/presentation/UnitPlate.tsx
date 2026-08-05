@@ -7,6 +7,12 @@
  *
  * z 順序: 台座(0) < エフェクト(1) < 状態バー(2) < 敵マーカー(3)。
  * 台座はセルの地であり、攻撃エフェクトを隠してはならない。
+ *
+ * **形（Shape）と文字（Glyph）を別の要素に分ける。** clip-path は子孫まで切るため、
+ * 形と文字を同じ要素に載せると、最小幅360px（セル約37px）では下向き三角の
+ * ベースライン付近や四芒星の上端で文字が大きく欠ける。設計 Risk 1 の退避策は
+ * 「読めなければ文字を主・形を従に降格する」であり、その退避先である文字自体が
+ * 劣化してはならない（最終レビュー指摘G）。
  */
 import React from 'react';
 import styled, { css, keyframes } from 'styled-components';
@@ -32,13 +38,16 @@ const PLATE_BACKGROUND = 'rgba(232, 222, 210, 0.14)';
 const WIDE_WIDTH_PCT = 90;
 const WIDE_HEIGHT_PCT = 45;
 
+/**
+ * 台座の枠。位置・大きさ・動きだけを持ち、clip-path は持たない
+ *
+ * 動きをここに置くのは、形と文字が一体で現れ・脈動するようにするため。
+ */
 const Plate = styled.div<{
   $left: number;
   $top: number;
   $widthCqw: number;
   $heightCqw: number;
-  $wide: boolean;
-  $clipPath?: string;
   $firing: boolean;
 }>`
   position: absolute;
@@ -50,12 +59,7 @@ const Plate = styled.div<{
   display: flex;
   align-items: center;
   justify-content: center;
-  background: ${PLATE_BACKGROUND};
-  border: 1px solid ${COLORS.secondary};
-  border-radius: ${({ $wide, $clipPath }) => ($wide ? '4px' : $clipPath ? '0' : '50%')};
-  ${({ $clipPath }) => ($clipPath ? css`clip-path: ${$clipPath};` : '')}
   color: ${COLORS.secondary};
-  font-size: 12px;
   line-height: 1;
   z-index: 0;
   pointer-events: none;
@@ -91,6 +95,26 @@ const Plate = styled.div<{
   }
 `;
 
+/** 役割を表す形。clip-path はこの要素だけに掛け、文字には掛けない */
+const Shape = styled.div<{ $wide: boolean; $clipPath?: string }>`
+  position: absolute;
+  inset: 0;
+  background: ${PLATE_BACKGROUND};
+  border: 1px solid ${COLORS.secondary};
+  border-radius: ${({ $wide, $clipPath }) => ($wide ? '4px' : $clipPath ? '0' : '50%')};
+  ${({ $clipPath }) => ($clipPath ? css`clip-path: ${$clipPath};` : '')}
+`;
+
+/**
+ * 個体を表す文字。Shape の外側（兄弟）なので clip-path に切られない
+ *
+ * position: relative で Shape より前面に出す。
+ */
+const Glyph = styled.span`
+  position: relative;
+  font-size: 12px;
+`;
+
 interface Props {
   plate: PlateModel;
   /** 盤面のセル数 */
@@ -106,26 +130,26 @@ export const UnitPlate: React.FC<Props> = ({ plate, columns, rows }) => {
   const cellCqw = 100 / columns;
   const widthCqw = ((visual.isWide ? WIDE_WIDTH_PCT : visual.sizePct) / 100) * cellCqw;
   const heightCqw = ((visual.isWide ? WIDE_HEIGHT_PCT : visual.sizePct) / 100) * cellCqw;
-  // CardGlyph（手札）と同じ値を data-clip-path に出す。$clipPath と別々に計算すると
-  // 「盤面と手札で同じ形か」を DOM 突き合わせで検証するテストが意味を失うため、
-  // 必ずこの1つの変数から両方を出す。
   const clipPath = getRoleClipPath(visual.role);
   return (
     <Plate
       data-testid={`unit-plate-${pos.x}-${pos.y}`}
       data-role={visual.role}
-      data-wide={visual.isWide ? 'true' : 'false'}
-      data-clip-path={clipPath ?? 'none'}
       aria-label={`${roleLabelOf(visual.role)} ${visual.name}`}
       $left={((pos.x + 0.5) / columns) * 100}
       $top={((pos.y + 0.44) / rows) * 100}
       $widthCqw={widthCqw}
       $heightCqw={heightCqw}
-      $wide={visual.isWide}
-      $clipPath={clipPath}
       $firing={plate.isFiring}
     >
-      {visual.glyph}
+      <Shape
+        data-testid={`unit-shape-${pos.x}-${pos.y}`}
+        data-mark="shape"
+        aria-hidden="true"
+        $wide={visual.isWide}
+        $clipPath={clipPath}
+      />
+      <Glyph data-mark="glyph">{visual.glyph}</Glyph>
     </Plate>
   );
 };

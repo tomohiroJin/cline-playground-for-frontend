@@ -4,10 +4,14 @@
  * 台座は「形（役割）× サイズ（コスト）× 文字（個体）」を担う。
  * 敵マーカーと混同しないよう pointer-events を持たず、セルのボタンが
  * クリックを受ける（UnitHpBar と同じ方針）。
+ *
+ * 見た目の検証は data 属性ではなく**実際に適用された CSS** で行う。
+ * transient prop（`$...`）だけを差し替えた退行を検出するため。
  */
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { UnitPlate } from './UnitPlate';
+import { appliedCssUnderReducedMotionOf, appliedLengthOf, appliedValueOf } from './applied-css';
 import { buildPlates } from './board-plates';
 import type { CombatState, PlacedUnit } from '../domain/combat/combat-state';
 import { createCombatState } from '../domain/combat/combat-state';
@@ -22,9 +26,7 @@ import type { DeckState } from '../domain/cards/deck';
  */
 const stateWith = (overrides: {
   units?: PlacedUnit[];
-  traps?: never[];
-  reactors?: never[];
-  embers?: never[];
+  events?: CombatState['events'];
 }): CombatState => {
   const emptyDeck: DeckState = { drawPile: [], hand: [], graveyard: [] };
   const base = createCombatState(emptyDeck, []);
@@ -34,12 +36,22 @@ const stateWith = (overrides: {
     traps: [],
     reactors: [],
     embers: [],
-    events: [],
+    events: overrides.events ?? [],
   };
 };
 
-const plateFor = (cardId: string) =>
-  buildPlates(stateWith({ units: [{ cardId, pos: { x: 2, y: 3 }, hp: 8, maxHp: 8, cooldownLeft: 0 }] }))[0];
+const plateFor = (cardId: string, events: CombatState['events'] = []) =>
+  buildPlates(
+    stateWith({
+      units: [{ cardId, pos: { x: 2, y: 3 }, hp: 8, maxHp: 8, cooldownLeft: 0 }],
+      events,
+    })
+  )[0];
+
+/** この tick に0番の守り手が撃ったことにするイベント */
+const shotEvent: CombatState['events'] = [
+  { kind: 'shot', unitIndex: 0, targetId: 1, auraDamageBonus: 0, beyondBaseRange: false },
+];
 
 describe('UnitPlate', () => {
   it('個体を表す文字を描く', () => {
@@ -52,9 +64,14 @@ describe('UnitPlate', () => {
     expect(screen.getByLabelText('攻撃塔 弓兵')).toBeInTheDocument();
   });
 
-  it('石壁は横長プレートになる', () => {
+  it('石壁は横長プレートになる（実際に適用された幅と高さが異なる）', () => {
     render(<UnitPlate plate={plateFor('stone-wall')} columns={9} rows={7} />);
-    expect(screen.getByTestId('unit-plate-2-3')).toHaveAttribute('data-wide', 'true');
+    const plate = screen.getByTestId('unit-plate-2-3');
+    const width = appliedLengthOf(plate, 'width');
+    const height = appliedLengthOf(plate, 'height');
+    expect(width).toBeDefined();
+    expect(height).toBeDefined();
+    expect(width!).toBeGreaterThan(height!);
   });
 
   it('攻撃塔以外は data-role で区別できる', () => {
@@ -62,9 +79,27 @@ describe('UnitPlate', () => {
     expect(screen.getByTestId('unit-plate-2-3')).toHaveAttribute('data-role', 'support');
   });
 
+  it('文字は clip-path の外に置かれ、形に切られない（設計 Risk 1 の退避先を守る）', () => {
+    // clip-path は子孫まで切る。形と文字を同じ要素に載せていた頃は、最小幅
+    // 360px（セル約37px）で下向き三角のベースライン付近の実効幅が 4px 程度になり、
+    // 「棘」「網」の下半分が消えていた（最終レビュー指摘G）。
+    render(<UnitPlate plate={plateFor('spike-trap')} columns={9} rows={7} />);
+    const shape = screen.getByTestId('unit-shape-2-3');
+    const plate = screen.getByTestId('unit-plate-2-3');
+    const glyph = screen.getByText('棘');
+
+    // 形は確かに clip-path で描かれている（この前提が崩れると検証が空になる）
+    expect(appliedValueOf(shape, 'clip-path')).toContain('polygon');
+    // その要素は文字を含まない（＝文字は切られない）
+    expect(shape).toBeEmptyDOMElement();
+    expect(shape.contains(glyph)).toBe(false);
+    // 文字自身にも、その祖先である台座にも clip-path は掛かっていない
+    expect(appliedValueOf(glyph, 'clip-path')).toBeUndefined();
+    expect(appliedValueOf(plate, 'clip-path')).toBeUndefined();
+  });
+
   it('配置時にポップインアニメーションが出力される', () => {
     // popIn キーフレームには scale(0.7) と scale(1) の状態遷移が含まれる。
-    // これは Task 10 で追加されたもので、Task 10 以前には存在しない。
     // styled-components が出力する CSS に popIn の固有値が含まれることで、
     // ポップインアニメーション実装の有無を検証する。
     render(<UnitPlate plate={plateFor('arrow-tower')} columns={9} rows={7} />);
@@ -72,18 +107,36 @@ describe('UnitPlate', () => {
       .map((el) => el.textContent ?? '')
       .join('');
     expect(styles).toContain('scale(0.7)');
+    expect(appliedValueOf(screen.getByTestId('unit-plate-2-3'), 'animation')).toBeDefined();
+  });
+
+  it('撃った tick の台座には脈動が足され、ポップインの名前は消えない', () => {
+    // UnitPlate.tsx の【重要】コメントが守っている不変条件。$firing 分岐から
+    // popIn を外すと animation-name がリストから一度消えるため、$firing が
+    // false へ戻るたびにポップインが再生し直される（撃つたびに現れ直す）。
+    // モデル側（board-plates）は検証済みだが、DOM に届いていることは
+    // 誰も見ていなかった（最終レビュー指摘H-4）。
+    const { unmount } = render(<UnitPlate plate={plateFor('arrow-tower')} columns={9} rows={7} />);
+    const idleAnimation = appliedValueOf(screen.getByTestId('unit-plate-2-3'), 'animation');
+    expect(idleAnimation).toBeDefined();
+    const popInName = idleAnimation!.trim().split(' ')[0]!;
+    unmount();
+
+    render(<UnitPlate plate={plateFor('arrow-tower', shotEvent)} columns={9} rows={7} />);
+    const firingAnimation = appliedValueOf(screen.getByTestId('unit-plate-2-3'), 'animation');
+    expect(firingAnimation).toBeDefined();
+    // 脈動が足されている（何も変わらないなら検証の意味が無い）
+    expect(firingAnimation).not.toBe(idleAnimation);
+    // かつ popIn の名前はリストの先頭に残り続けている
+    expect(firingAnimation!.trim().startsWith(popInName)).toBe(true);
   });
 
   it('動きを減らす設定では脈動もポップインも止まる', () => {
-    // jsdom では matchMedia が未定義のため setupTests のモックに合わせる。
-    // styled-components が出力する CSS に prefers-reduced-motion のブロックが
-    // 含まれることを検証する（実際の再生停止はブラウザ側の責務）。
-    render(
-      <UnitPlate plate={plateFor('arrow-tower')} columns={9} rows={7} />
-    );
-    const styles = Array.from(document.querySelectorAll('style'))
-      .map((el) => el.textContent ?? '')
-      .join('');
-    expect(styles).toContain('prefers-reduced-motion');
+    // 「CSS に prefers-reduced-motion という文字列がある」だけでは、
+    // ブロックの中身を animation-play-state: running; に変えても通ってしまう
+    // （最終レビュー指摘H-3）。台座のクラスに対して何が指定されているかを見る。
+    render(<UnitPlate plate={plateFor('arrow-tower', shotEvent)} columns={9} rows={7} />);
+    const reduced = appliedCssUnderReducedMotionOf(screen.getByTestId('unit-plate-2-3'));
+    expect(reduced).toContain('animation:none');
   });
 });

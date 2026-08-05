@@ -117,17 +117,20 @@ describe('BoardGrid', () => {
       units: [{ cardId: 'arrow-tower', pos: { x: 1, y: 2 }, hp: 8, maxHp: 8, cooldownLeft: 0 }],
     };
     render(<BoardGrid {...defaultProps} state={withUnit} />);
-    // 1マスあたりの印を実際に数える:
-    //   台座（文字はその子なので1つと数える）+ 状態バー + セル内に残った data-mark
-    // レーン印と矢印の抑制が外れると 2 + 2 = 4 になり、この検証が落ちる。
+    // 1マスあたりの印を、設計の数え方（形 + 文字 + バー = 3）と同じ粒度で数える。
+    // 台座は形（data-mark="shape"）と文字（data-mark="glyph"）の2ノードなので、
+    // 通過値はちょうど 3 になり緩みが無い（最終レビュー指摘I-4）。
+    // レーン印と矢印の抑制が外れると 3 + 2 = 5 になり、この検証が落ちる。
     screen.getAllByTestId(/^unit-plate-/).forEach((plate) => {
       const pos = plate.getAttribute('data-testid')!.replace('unit-plate-', '');
       const [x, y] = pos.split('-');
       const cell = screen.getByTestId(`cell-${x}-${y}`);
       const markCount =
-        1 +
+        plate.querySelectorAll('[data-mark]').length +
         (screen.queryByTestId(`unit-status-${pos}`) ? 1 : 0) +
         cell.querySelectorAll('[data-mark]').length;
+      // 上限ちょうどを使い切っていることも確認する（数え漏らしで緩く通らないように）
+      expect(markCount).toBe(MAX_CELL_MARKS);
       expect(markCount).toBeLessThanOrEqual(MAX_CELL_MARKS);
     });
   });
