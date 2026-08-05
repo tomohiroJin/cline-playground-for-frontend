@@ -8,6 +8,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { PlacedStatusBar } from './PlacedStatusBar';
+import { appliedLengthOf } from './applied-css';
 import { buildPlates } from './board-plates';
 import type { CombatState, PlacedUnit, PlacedTrap, PlacedReactor, PlacedEmber } from '../domain/combat/combat-state';
 import { createCombatState } from '../domain/combat/combat-state';
@@ -63,6 +64,32 @@ describe('PlacedStatusBar', () => {
       'aria-valuenow',
       '1'
     );
+  });
+
+  it('塗りの幅が残量の比率になる（見た目が満タンのまま固定されない）', () => {
+    // aria-valuenow だけを見ていると、Fill の $ratio を 1 固定にしても
+    // 全テストが通り、盤面のバーは常に満タンで描かれる（最終レビュー指摘H-1）。
+    // 実際に適用された width を読んで、目に見える塗りの長さを検証する。
+    const plate = buildPlates(
+      stateWith({
+        units: [{ cardId: 'ballista', pos: { x: 1, y: 2 }, hp: 3, maxHp: 12, cooldownLeft: 0 }],
+      })
+    )[0];
+    render(<PlacedStatusBar plate={plate} columns={9} rows={7} />);
+    const fill = screen.getByTestId('unit-status-1-2').firstElementChild;
+    expect(fill).not.toBeNull();
+    expect(appliedLengthOf(fill!, 'width')).toBeCloseTo(25, 5);
+  });
+
+  it('残量が0でも負でも塗りは0%に収まる（下限のクランプ）', () => {
+    const plate = buildPlates(
+      stateWith({
+        units: [{ cardId: 'ballista', pos: { x: 1, y: 2 }, hp: 0, maxHp: 12, cooldownLeft: 0 }],
+      })
+    )[0];
+    render(<PlacedStatusBar plate={plate} columns={9} rows={7} />);
+    const fill = screen.getByTestId('unit-status-1-2').firstElementChild;
+    expect(appliedLengthOf(fill!, 'width')).toBe(0);
   });
 
   it('最大値が0のときはバーを描かない（0除算を避ける）', () => {

@@ -5,6 +5,7 @@
  * 守り手=残HP、罠=残り回数、燠=再点火の進捗、炉=マナ生成の進捗。
  */
 import { buildPlates } from './board-plates';
+import { CARD_IDS, getCardDefinition } from '../domain/cards/card-pool';
 import type { CombatState, PlacedUnit, PlacedTrap, PlacedReactor, PlacedEmber } from '../domain/combat/combat-state';
 import { createCombatState } from '../domain/combat/combat-state';
 import type { DeckState } from '../domain/cards/deck';
@@ -71,12 +72,45 @@ describe('buildPlates', () => {
     expect(plates[0].visual.glyph).toBe('燠');
   });
 
+  it('燠火のバーは途中の値でも「経過」を表す（満タンの不動点だけで通らない）', () => {
+    // 満タン（cooldownLeft 0）だけを与えると、`now: cooldown - cooldownLeft` を
+    // `now: cooldown` に変えても両方のアサーションが成立してしまう
+    // （board-plates.ts 唯一の算術が無防備。最終レビュー指摘H-2）。
+    const cooldownLeft = 7;
+    const plates = buildPlates(stateWith({ embers: [{ pos: { x: 3, y: 3 }, cooldownLeft }] }));
+    const cooldown = getCardDefinition('ember-blast').ember!.cooldownTicks;
+    expect(plates[0].statusMax).toBe(cooldown);
+    expect(plates[0].statusNow).toBe(cooldown - cooldownLeft);
+    // 残りを直接出しているのではなく、経過を出していること
+    expect(plates[0].statusNow).not.toBe(cooldownLeft);
+  });
+
   it('魔力炉のバーは次のマナ生成までの進捗を表す', () => {
     const plates = buildPlates(
       stateWith({ reactors: [{ pos: { x: 4, y: 4 }, ticksToMana: 0 }] })
     );
     expect(plates[0].statusNow).toBe(plates[0].statusMax);
     expect(plates[0].statusLabel).toBe('魔力炉 のマナ生成');
+  });
+
+  it('魔力炉のバーは途中の値でも「経過」を表す（満タンの不動点だけで通らない）', () => {
+    const ticksToMana = 9;
+    const plates = buildPlates(stateWith({ reactors: [{ pos: { x: 4, y: 4 }, ticksToMana }] }));
+    const interval = getCardDefinition('reactor').reactor!.intervalTicks;
+    expect(plates[0].statusMax).toBe(interval);
+    expect(plates[0].statusNow).toBe(interval - ticksToMana);
+    expect(plates[0].statusNow).not.toBe(ticksToMana);
+  });
+
+  it('炉と燠は「カードプールに各1種」を前提に台座を作る（2種類目が入ったら気づく）', () => {
+    // PlacedReactor / PlacedEmber は cardId を持たない（combat-state.ts）ため、
+    // board-plates.ts は炉カード1種・燠カード1種という前提の上でだけ正しい。
+    // 2種類目が増えると静かに誤表示するので、その前提をここで固定する
+    // （最終レビュー指摘I-3。破れたらドメインに cardId を持たせる変更とセットで直す）。
+    expect(CARD_IDS.filter((id) => getCardDefinition(id).type === 'reactor')).toEqual(['reactor']);
+    expect(CARD_IDS.filter((id) => getCardDefinition(id).type === 'ember')).toEqual([
+      'ember-blast',
+    ]);
   });
 
   it('この tick に撃った攻撃塔は isFiring になる', () => {
