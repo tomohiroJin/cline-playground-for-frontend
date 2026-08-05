@@ -100,6 +100,28 @@ const startRunningWithStoneWallDeck = (): void => {
 };
 
 /**
+ * 「弓兵」3枚＋「魔力炉」17枚のカスタムデッキで盤面まで進める
+ *
+ * 能力表示（射程リング）を実画面で確かめるには射程を持つ攻撃塔が要る。
+ * 石壁（射程0・オーラなし）ではリングが描かれず検証にならない。
+ * この枚数構成・シード3の組み合わせでは弓兵が初期手札に入り、初期マナ2で
+ * コスト1を払えることを事前に確認済み（ドローを待つ必要がない）。
+ */
+const ARROW_TOWER_DECK_SEED = '3';
+
+const startRunningWithArrowTowerDeck = (): void => {
+  const addReactor = screen.getByRole('button', { name: '魔力炉 を1枚増やす' });
+  for (let i = 0; i < 17; i++) fireEvent.click(addReactor);
+  const addArrowTower = screen.getByRole('button', { name: '弓兵 を1枚増やす' });
+  for (let i = 0; i < 3; i++) fireEvent.click(addArrowTower);
+  fireEvent.change(screen.getByLabelText('シード（空欄なら毎回ランダム）'), {
+    target: { value: ARROW_TOWER_DECK_SEED },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'この構成で始める' }));
+  fireEvent.click(screen.getByRole('button', { name: '開始' }));
+};
+
+/**
  * 決着画面で勝敗の理由を記録する（Task 12: 集計・再挑戦・ログコピーは記録後にだけ開くため、
  * それらのボタンへ到達する既存テストはすべて先にこれを呼ぶ必要がある）
  */
@@ -334,6 +356,40 @@ describe('AshenRampartGame', () => {
     // 旧 UnitHpBar（unit-hp-x-y）は台座レイヤの UnitPlate（unit-plate-x-y）に
     // 置き換わった（Task 5）
     expect(screen.getByTestId(`unit-plate-${pathCell.x}-${pathCell.y}`)).toBeInTheDocument();
+  });
+
+  it('設置物をカード未選択でタップすると、射程リングと能力チップが実画面に出て再タップで消える（結線の到達確認）', () => {
+    // フック側テストは inspectedPlate が「返る」ことしか見ていない。
+    // AshenRampartGame から `inspectedPlate={game.inspectedPlate}` を外しても、
+    // あるいは `{game.inspectedPlate && <InspectPanel .../>}` を消しても、
+    // prop が optional なので型は通りテストも落ちなかった（最終レビュー指摘F）。
+    // ここは実物のツリーを描いて、その2本の結線を同時に守る。
+    render(<AshenRampartGame />);
+    startRunningWithArrowTowerDeck();
+
+    fireEvent.click(screen.getByRole('button', { name: isHandButtonNameFor('弓兵') }));
+    const pathCell = laneOf(PLAINS_MAP, 0)[3]!;
+    const cellTestId = `cell-${pathCell.x}-${pathCell.y}`;
+    fireEvent.click(screen.getByTestId(cellTestId));
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS);
+    });
+    expect(screen.getByTestId(`unit-plate-${pathCell.x}-${pathCell.y}`)).toBeInTheDocument();
+
+    // 置いた直後は選択が解除されているので、同じマスのタップは能力表示になる
+    fireEvent.click(screen.getByTestId(cellTestId));
+    expect(
+      screen.getByTestId(`range-overlay-${pathCell.x}-${pathCell.y}`)
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('inspect-panel')).toBeInTheDocument();
+    expect(within(screen.getByTestId('inspect-panel')).getByText('攻撃塔 弓兵')).toBeInTheDocument();
+
+    // 同じマスの再タップで閉じる
+    fireEvent.click(screen.getByTestId(cellTestId));
+    expect(
+      screen.queryByTestId(`range-overlay-${pathCell.x}-${pathCell.y}`)
+    ).not.toBeInTheDocument();
+    expect(screen.queryByTestId('inspect-panel')).not.toBeInTheDocument();
   });
 
   describe('画面遷移', () => {
