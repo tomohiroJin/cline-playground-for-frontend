@@ -33,6 +33,16 @@ export interface PlateModel {
   statusLabel: string;
   /** この tick に撃ったか（台座を脈動させる）。`shot` イベントから引く */
   isFiring: boolean;
+  /**
+   * プレイヤーの操作を今すぐ待っているか（合図の対象は燠火のみ）。
+   *
+   * 炉のバーも100%まで満ちるが、それは「マナが生まれる」合図であって
+   * 「操作しろ」という合図ではない。isReady を「バーが満タンか」という
+   * 汎用判定にすると炉まで光ってしまい、本当に押してほしい燠の合図が
+   * ノイズに埋もれる。だからこの値は種別ごとに個別に立てる
+   * （バーの充填率からの逆算はしない）。
+   */
+  isReady: boolean;
 }
 
 export const plateKeyOf = (pos: CellPos): string => `${pos.x},${pos.y}`;
@@ -41,7 +51,7 @@ const plateOf = (
   cardId: string,
   pos: CellPos,
   status: { now: number; max: number; suffix: string },
-  isFiring = false
+  flags: { isFiring?: boolean; isReady?: boolean } = {}
 ): PlateModel => {
   const visual = getUnitVisual(cardId);
   return {
@@ -52,7 +62,8 @@ const plateOf = (
     statusNow: status.now,
     statusMax: status.max,
     statusLabel: `${visual.name} ${status.suffix}`,
-    isFiring,
+    isFiring: flags.isFiring ?? false,
+    isReady: flags.isReady ?? false,
   };
 };
 
@@ -84,7 +95,7 @@ export const buildPlates = (state: CombatState): PlateModel[] => {
         unit.cardId,
         unit.pos,
         { now: unit.hp, max: unit.maxHp, suffix: 'の耐久' },
-        firingIndices.has(index)
+        { isFiring: firingIndices.has(index) }
       )
     );
   });
@@ -110,11 +121,18 @@ export const buildPlates = (state: CombatState): PlateModel[] => {
   state.embers.forEach((ember) => {
     const cooldown = getCardDefinition(EMBER_CARD_ID).ember?.cooldownTicks ?? 0;
     plates.push(
-      plateOf(EMBER_CARD_ID, ember.pos, {
-        now: cooldown - ember.cooldownLeft,
-        max: cooldown,
-        suffix: 'の再点火',
-      })
+      plateOf(
+        EMBER_CARD_ID,
+        ember.pos,
+        {
+          now: cooldown - ember.cooldownLeft,
+          max: cooldown,
+          suffix: 'の再点火',
+        },
+        // useAshenRampartGame.ts の interactCell と同じ条件（cooldownLeft === 0）。
+        // ここがずれると「今押せる」という合図が嘘をつく。
+        { isReady: ember.cooldownLeft === 0 }
+      )
     );
   });
 

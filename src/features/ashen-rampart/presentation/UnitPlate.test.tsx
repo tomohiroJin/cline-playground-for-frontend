@@ -13,9 +13,11 @@ import { render, screen } from '@testing-library/react';
 import { UnitPlate } from './UnitPlate';
 import { appliedCssUnderReducedMotionOf, appliedLengthOf, appliedValueOf } from './applied-css';
 import { buildPlates } from './board-plates';
-import type { CombatState, PlacedUnit } from '../domain/combat/combat-state';
+import type { PlateModel } from './board-plates';
+import type { CombatState, PlacedEmber, PlacedUnit } from '../domain/combat/combat-state';
 import { createCombatState } from '../domain/combat/combat-state';
 import type { DeckState } from '../domain/cards/deck';
+import { COLORS } from './theme';
 
 /**
  * テスト用に必要な部分だけ持つ CombatState を組む
@@ -26,6 +28,7 @@ import type { DeckState } from '../domain/cards/deck';
  */
 const stateWith = (overrides: {
   units?: PlacedUnit[];
+  embers?: PlacedEmber[];
   events?: CombatState['events'];
 }): CombatState => {
   const emptyDeck: DeckState = { drawPile: [], hand: [], graveyard: [] };
@@ -35,7 +38,7 @@ const stateWith = (overrides: {
     units: overrides.units ?? [],
     traps: [],
     reactors: [],
-    embers: [],
+    embers: overrides.embers ?? [],
     events: overrides.events ?? [],
   };
 };
@@ -47,6 +50,10 @@ const plateFor = (cardId: string, events: CombatState['events'] = []) =>
       events,
     })
   )[0];
+
+/** 燠火の台座モデルを cooldownLeft から作る（再点火の合図テスト用） */
+const emberPlateFor = (cooldownLeft: number): PlateModel =>
+  buildPlates(stateWith({ embers: [{ pos: { x: 3, y: 3 }, cooldownLeft }] }))[0];
 
 /** この tick に0番の守り手が撃ったことにするイベント */
 const shotEvent: CombatState['events'] = [
@@ -138,5 +145,36 @@ describe('UnitPlate', () => {
     render(<UnitPlate plate={plateFor('arrow-tower', shotEvent)} columns={9} rows={7} />);
     const reduced = appliedCssUnderReducedMotionOf(screen.getByTestId('unit-plate-2-3'));
     expect(reduced).toContain('animation:none');
+  });
+
+  describe('再点火可能な合図（isReady）', () => {
+    // 手札もマナも尽きた終盤、プレイヤーがまだ操作できる唯一のものが燠火。
+    // 見落とすとランを失うため、色だけに頼らない合図がここで壊れていないかを
+    // 実際に適用された CSS で検証する（data-* での抜け道は使わない）。
+
+    it('再点火可能な燠は好機色になる', () => {
+      // これを壊す一行変更の例: UnitPlate.tsx で `$ready` を参照する条件式を
+      // `plate.isReady` から常に false（または常に true）へ変えること。
+      render(<UnitPlate plate={emberPlateFor(0)} columns={9} rows={7} />);
+      const glyph = screen.getByText('燠');
+      expect(appliedValueOf(glyph, 'color')).toBe(COLORS.opportunity);
+    });
+
+    it('再点火可能な燠は色だけでなく太さも変わる（色のみに依存しない）', () => {
+      // これを壊す一行変更の例: 好機色の分岐から font-weight の宣言を消すこと。
+      // 消すと、上のテストは通ったままここだけが落ちる＝色だけに頼った実装を検知できる。
+      render(<UnitPlate plate={emberPlateFor(0)} columns={9} rows={7} />);
+      const glyph = screen.getByText('燠');
+      expect(appliedValueOf(glyph, 'font-weight')).toBe('700');
+    });
+
+    it('再点火待ちの燠は好機色にも太字にもならない', () => {
+      // これを壊す一行変更の例: $ready の判定を isFiring 等の無関係な値にすり替える、
+      // または常に true にすること（どちらもこのテストが false 側で検知する）。
+      render(<UnitPlate plate={emberPlateFor(5)} columns={9} rows={7} />);
+      const glyph = screen.getByText('燠');
+      expect(appliedValueOf(glyph, 'color')).not.toBe(COLORS.opportunity);
+      expect(appliedValueOf(glyph, 'font-weight')).not.toBe('700');
+    });
   });
 });

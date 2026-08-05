@@ -85,6 +85,29 @@ describe('buildPlates', () => {
     expect(plates[0].statusNow).not.toBe(cooldownLeft);
   });
 
+  it('再点火可能な燠火（cooldownLeft === 0）は isReady になる', () => {
+    // useAshenRampartGame.ts の interactCell がタップで再点火する条件と
+    // 一字一句同じ（`ember.cooldownLeft === 0`）。ここがずれると、
+    // 「今操作できる」という合図が嘘をつくことになる。
+    const plates = buildPlates(stateWith({ embers: [{ pos: { x: 3, y: 3 }, cooldownLeft: 0 }] }));
+    expect(plates[0].isReady).toBe(true);
+  });
+
+  it('再点火待ちの燠火（cooldownLeft > 0）は isReady にならない', () => {
+    const plates = buildPlates(stateWith({ embers: [{ pos: { x: 3, y: 3 }, cooldownLeft: 5 }] }));
+    expect(plates[0].isReady).toBe(false);
+  });
+
+  it('魔力炉はバーが満タン（ticksToMana === 0）でも isReady にならない', () => {
+    // 炉のバーも100%まで満ちるが、それはマナが生まれる合図であって
+    // プレイヤーの操作を待つ合図ではない。isReady を「バーが満タンか」で
+    // 汎用的に判定すると、炉まで光ってしまい燠の合図がノイズに埋もれる
+    // （このテストはその実装を捕まえるためにある）。
+    const plates = buildPlates(stateWith({ reactors: [{ pos: { x: 4, y: 4 }, ticksToMana: 0 }] }));
+    expect(plates[0].statusNow).toBe(plates[0].statusMax);
+    expect(plates[0].isReady).toBe(false);
+  });
+
   it('魔力炉のバーは次のマナ生成までの進捗を表す', () => {
     const plates = buildPlates(
       stateWith({ reactors: [{ pos: { x: 4, y: 4 }, ticksToMana: 0 }] })

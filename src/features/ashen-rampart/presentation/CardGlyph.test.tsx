@@ -35,6 +35,7 @@ const plateFor = (cardId: string): PlateModel => ({
   statusMax: 0,
   statusLabel: '',
   isFiring: false,
+  isReady: false,
 });
 
 /**

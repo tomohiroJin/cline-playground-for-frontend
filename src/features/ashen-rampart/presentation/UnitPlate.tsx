@@ -13,6 +13,11 @@
  * ベースライン付近や四芒星の上端で文字が大きく欠ける。設計 Risk 1 の退避策は
  * 「読めなければ文字を主・形を従に降格する」であり、その退避先である文字自体が
  * 劣化してはならない（最終レビュー指摘G）。
+ *
+ * **再点火可能な燠火（isReady）は文字に好機色 + 太字を足す。** 状態バーが
+ * 100%になるだけでは合図として弱く、手札もマナも尽きた終盤に唯一操作できる
+ * 燠火の押し逃しがランを失わせる（実プレイ判定で判明した回帰）。バーの充填率と
+ * 違い、この合図はプレイヤーが今まさに押せることそのものを示す。
  */
 import React from 'react';
 import styled, { css, keyframes } from 'styled-components';
@@ -106,13 +111,28 @@ const Shape = styled.div<{ $wide: boolean; $clipPath?: string }>`
 `;
 
 /**
+ * プレイヤーの操作を今すぐ待っているときだけ文字に足す合図（好機色 + 太字）
+ *
+ * 「色だけに頼らない」（本プロジェクトの標準原則。enemy-visual.ts 参照）ため、
+ * 好機色（COLORS.opportunity）に font-weight を必ず添える。太さはストローク幅の
+ * 変化であり色相を持たないため、グレースケール変換・色弱シミュレーションの
+ * どちらでも消えない。旧実装（1文字描画時代）の「amber かつ bold」を、
+ * 形と文字を分離した後も同じ形で引き継ぐ。
+ */
+const readyGlyphCss = css`
+  color: ${COLORS.opportunity};
+  font-weight: 700;
+`;
+
+/**
  * 個体を表す文字。Shape の外側（兄弟）なので clip-path に切られない
  *
  * position: relative で Shape より前面に出す。
  */
-const Glyph = styled.span`
+const Glyph = styled.span<{ $ready: boolean }>`
   position: relative;
   font-size: 12px;
+  ${({ $ready }) => ($ready ? readyGlyphCss : '')}
 `;
 
 interface Props {
@@ -149,7 +169,9 @@ export const UnitPlate: React.FC<Props> = ({ plate, columns, rows }) => {
         $wide={visual.isWide}
         $clipPath={clipPath}
       />
-      <Glyph data-mark="glyph">{visual.glyph}</Glyph>
+      <Glyph data-mark="glyph" $ready={plate.isReady}>
+        {visual.glyph}
+      </Glyph>
     </Plate>
   );
 };
