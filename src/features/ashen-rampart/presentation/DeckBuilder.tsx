@@ -62,6 +62,19 @@ const RoleTag = styled.span`
   opacity: 0.75;
 `;
 
+/**
+ * 札の値段（設計書 §6.1「形アイコン・名前・コストは削らない。」）
+ *
+ * 下部の「コスト曲線」は既にデッキへ入れた札の分布であり、
+ * いま検討している札の値段は読めない。行そのものに出す必要がある。
+ * 読み上げラベル（CardRow の aria-label）にしか無い状態は、目で読む
+ * プレイヤーにとって「消えている」のと同じ。
+ */
+const Cost = styled.span`
+  font-size: 12px;
+  opacity: 0.9;
+`;
+
 const Controls = styled.div`
   display: flex;
   align-items: center;
@@ -194,6 +207,7 @@ export const DeckBuilder: React.FC<Props> = ({ onStart, initialCards, initialSee
               <RowHead>
                 <CardGlyph cardId={id} />
                 <strong>{card.name}</strong>
+                <Cost>コスト{card.cost}</Cost>
                 <RoleTag>{roleLabelOf(getUnitVisual(id).role)}</RoleTag>
                 {cardBadgesOf(id).map((badge) => (
                   <CardBadge key={badge}>{badge}</CardBadge>

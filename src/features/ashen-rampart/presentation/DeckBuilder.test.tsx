@@ -33,6 +33,18 @@ describe('DeckBuilder', () => {
     });
   });
 
+  it('14種すべてでコストが「目に見える文字」として出る（読み上げラベルだけに残さない）', () => {
+    // 行の aria-label には元からコストが入っているため、可視表示を消しても
+    // 名前でのクエリは通ってしまう（最終レビュー指摘D の退行が見逃された理由）。
+    // getByText は aria-label を見ないので、可視テキストの有無だけを問える。
+    render(<DeckBuilder onStart={jest.fn()} />);
+    CARD_IDS.forEach((id) => {
+      const card = getCardDefinition(id);
+      const row = screen.getByRole('group', { name: `${card.name} コスト${card.cost}` });
+      expect(within(row).getByText(`コスト${card.cost}`)).toBeInTheDocument();
+    });
+  });
+
   it('各カードに「効かない相手」が表示される', () => {
     render(<DeckBuilder onStart={jest.fn()} />);
     expect(screen.getByText('飛行に当たらない')).toBeInTheDocument();
