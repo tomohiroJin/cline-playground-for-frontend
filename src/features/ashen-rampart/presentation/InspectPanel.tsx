@@ -9,6 +9,7 @@ import styled from 'styled-components';
 import type { PlateModel } from './board-plates';
 import { getCardDefinition } from '../domain/cards/card-pool';
 import { roleLabelOf } from './unit-visual';
+import { toSeconds } from './card-text';
 import { COLORS } from './theme';
 
 const Panel = styled.div`
@@ -27,8 +28,13 @@ const Chip = styled.span`
   opacity: 0.9;
 `;
 
-const TICKS_PER_SECOND = 10;
-const toSeconds = (ticks: number): number => Math.ceil(ticks / TICKS_PER_SECOND);
+/**
+ * 支援塔のオーラが届くマス数（チェビシェフ距離1の 3×3 から自分のセルを除く）
+ *
+ * 盤面には RangeOverlay が同じ範囲を枠で描く。数字と枠が食い違わないよう
+ * 「隣接8マス」という同じ意味をここでも明示する。
+ */
+const AURA_CELL_COUNT = 8;
 
 /** 役割ごとに出す能力を組み立てる（盤面に出さない詳細はすべてここへ集める） */
 const chipsOf = (plate: PlateModel): string[] => {
@@ -36,10 +42,12 @@ const chipsOf = (plate: PlateModel): string[] => {
   if (card.tower) {
     const t = card.tower;
     if (t.aura) {
+      // 設計書 §5.2 の表は支援塔に「強化内容 / 効果範囲」を求めている。
+      // HP は支援塔の判断材料にならない（攻撃されにくい後方に置く札のため）
       const parts: string[] = [];
       if (t.aura.towerDamageBonus) parts.push(`隣接の攻撃力 +${t.aura.towerDamageBonus * 100}%`);
       if (t.aura.towerRangeBonus) parts.push(`隣接の射程 +${t.aura.towerRangeBonus}`);
-      return [...parts, `HP${t.hp}`];
+      return [...parts, `効果範囲 隣接${AURA_CELL_COUNT}マス`];
     }
     if (t.damage === 0) return [`HP${t.hp}`, '攻撃しない'];
     return [
@@ -61,7 +69,18 @@ const chipsOf = (plate: PlateModel): string[] => {
     return [`マナ+${card.reactor.manaPerTick}`, `${toSeconds(card.reactor.intervalTicks)}秒ごと`];
   }
   if (card.ember) {
-    return [`ダメージ${card.ember.damage}`, `半径${card.ember.radius}`, 'クリックで再点火'];
+    // 状態バーの分子分母（board-plates.ts）から残りクールダウンを戻す。
+    // PlacedEmber そのものは PlateModel に載らないため、ここが唯一の経路。
+    const cooldownLeftTicks = plate.statusMax - plate.statusNow;
+    return [
+      `ダメージ${card.ember.damage}`,
+      `半径${card.ember.radius}`,
+      `クールダウン${toSeconds(card.ember.cooldownTicks)}秒`,
+      // 設計書 §5.2 の優先順位により、再点火できる燠火はタップが再点火に
+      // 横取りされてこのパネルが開かない。つまり「クリックで再点火」を
+      // 固定で出すと、**それができない時にしか表示されない**嘘になる。
+      cooldownLeftTicks > 0 ? `再点火まで${toSeconds(cooldownLeftTicks)}秒` : 'クリックで再点火',
+    ];
   }
   return [];
 };
