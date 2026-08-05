@@ -11,6 +11,7 @@ import { getCardDefinition } from '../domain/cards/card-pool';
 import { placementKindOf } from '../domain/cards/card-definition';
 import type { CombatState } from '../domain/combat/combat-state';
 import { stepTick, placeableCells as computePlaceableCells, type PlayerAction } from '../domain/combat/step-tick';
+import { buildPlates, plateKeyOf, type PlateModel } from './board-plates';
 import { nextWavePreview } from './wave-preview';
 import { decideBattleAnnouncement } from './battle-announcement';
 import { advanceEffects, type Effect } from './combat-effects';
@@ -62,6 +63,25 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
   const [rejectionNotice, setRejectionNotice] = useState<string | undefined>(undefined);
   const rejectionUntilRef = useRef(0);
   const [tally, setTally] = useState<RunTally>(() => emptyTally());
+  /**
+   * 集計の真値。`run_tally` の書き出しはこの ref を読む
+   *
+   * `setTally` はスケジュールされるだけで、決着した tick の**同じコミットでは
+   * まだ反映されない**。`run_tally` の effect は同じコミット内で走るため、
+   * state だけに頼ると「決着を決めた tick」が丸ごと落ちる。勝ったランの
+   * 最終 tick には必ず撃破（`defeat`）が含まれる（`isCleared` の成立条件）ため、
+   * この取りこぼしは偶発ではなく systematic だった。
+   *
+   * 累積の真値を ref に持ち、`setTally` は描画用のミラーに徹させることで、
+   * ログの数値と画面の `RunSummary` が必ず一致する。
+   */
+  const tallyRef = useRef<RunTally>(tally);
+  // 能力表示の対象。座標ではなく plateKeyOf の文字列で持つ。設置物が壊れて
+  // 消えたときに、次の描画で自動的に対象が失われる（別途クリアする処理が要らない）
+  const [inspectedKey, setInspectedKey] = useState<string | null>(null);
+  // 決着時に run_tally へ載せる集計用 ref（判定項目2・3）
+  const inspectOpensRef = useRef(0);
+  const manualDiscardsRef = useRef(0);
   const prevStateRef = useRef<CombatState>(state);
   // レンダーごとに matchMedia を読まないよう、初期化関数で1度だけ解決する
   const [prefersReducedMotion] = useState<boolean>(
@@ -73,6 +93,8 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
   const noticeUntilRef = useRef(0);
   const pendingRef = useRef<PlayerAction[]>([]);
   const loggedRunIdsRef = useRef<Set<string>>(new Set());
+  /** run_tally を記録済みの runId。1ランにつき1件だけに抑えるためのガード */
+  const talliedRunIdRef = useRef<string | null>(null);
   /** 直前に記録した予告の内容。切り替わった tick でだけ記録するためのガード */
   const lastPreviewRef = useRef<string | undefined>(undefined);
   /** 直前に読み上げたウェーブ番号。切り替わった tick でだけ読み上げるためのガード */
@@ -120,7 +142,11 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
     const prev = prevStateRef.current;
     prevStateRef.current = state;
     if (prev === state) return;
-    setTally((current) => accumulateTick(current, state, PLAINS_MAP));
+    // ref を先に確定させる。この effect は run_tally の effect より前に定義されて
+    // いるため、同じコミット内で必ず先に走る（React は effect を定義順に実行する）。
+    // 二重計上は上の prevStateRef のガードが防ぐ。
+    tallyRef.current = accumulateTick(tallyRef.current, state, PLAINS_MAP);
+    setTally(tallyRef.current);
   }, [state]);
 
   // 拒否理由の通知。同一 tick に複数出た場合は最初の1件だけを出し、
@@ -213,6 +239,44 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
     });
   }, [state.outcome, state.tick, state.deck.hand, runId]);
 
+  /**
+   * 決着したランの集計をログへ書き出す
+   *
+   * 画面にしか出ていなかった数値を、コピー1回で判定者へ渡せるようにする。
+   * runId ごとに1回だけ記録する（再レンダーで重複しない）。
+   * rejectedTarget は表示用ラベル（RunSummaryView.rejectionDetail の
+   * label 文字列）と突き合わせず、tally.rejectionCounts.target という
+   * 型のついた生の値を直接使う。表示文言を変えただけで判定項目が
+   * 静かに 0 になる事故を避けるため。
+   *
+   * 読むのは state の `tally` ではなく `tallyRef.current`。決着したコミットでは
+   * `setTally` がまだ反映されておらず、state 側は1 tick 古いため
+   * （tallyRef の宣言のコメントを参照）。
+   */
+  useEffect(() => {
+    if (state.outcome === 'playing') return;
+    if (talliedRunIdRef.current === runId) return;
+    talliedRunIdRef.current = runId;
+    const settled = tallyRef.current;
+    const view = summarize(settled, cards);
+    logRef.current.record({
+      kind: 'run_tally',
+      runId,
+      iteration: CURRENT_ITERATION,
+      unusedCardIds: view.unusedCardIds,
+      manualDiscards: manualDiscardsRef.current,
+      inspectOpens: inspectOpensRef.current,
+      rejectedTarget: settled.rejectionCounts.target,
+      laneAllocation: view.laneAllocation,
+      placedOnPath: view.placedOnPath,
+      placedOffPath: view.placedOffPath,
+      unitsLost: view.unitsLost,
+      ravenDefeatAverage: view.ravenDefeatAverage,
+      ravenDefeatCount: view.ravenDefeatCount,
+      costHistogram: view.costHistogram,
+    });
+  }, [state.outcome, runId, cards]);
+
   const placeableCells: CellPos[] = (() => {
     if (selectedIndex === null || isPaused) return [];
     const cardId = state.deck.hand[selectedIndex];
@@ -230,6 +294,8 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       const cardId = state.deck.hand[handIndex];
       if (cardId === undefined) return;
       const card = getCardDefinition(cardId);
+      // カードを選んだのに前の能力表示が残っていると誤読するため閉じる
+      setInspectedKey(null);
       if (placementKindOf(card) === 'none') {
         pendingRef.current.push({ kind: 'play-card', handIndex });
         setSelectedIndex(null);
@@ -265,6 +331,14 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
   const discardCard = useCallback(
     (handIndex: number) => {
       if (isPaused || state.outcome !== 'playing') return;
+      // 手動捨札を記録する（判定項目2「手動で捨てた回数」。run_tally にまとめて載る）
+      logRef.current.record({
+        kind: 'card_discarded_manual',
+        runId,
+        cardId: state.deck.hand[handIndex],
+        tick: state.tick,
+      });
+      manualDiscardsRef.current += 1;
       pendingRef.current.push({ kind: 'discard', handIndex });
       // 手札は配列で、捨てると後続の札が前へ詰まる。選択中の札そのものを
       // 捨てたら選択解除、選択中より前を捨てたら選択位置も1つ前へずらさないと、
@@ -276,7 +350,7 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
         return current > handIndex ? current - 1 : current;
       });
     },
-    [isPaused, state.outcome]
+    [isPaused, runId, state]
   );
 
   /**
@@ -295,10 +369,13 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
   /**
    * 盤面セルへの唯一の入口（UI はこれだけを呼ぶ）
    *
-   * カード選択中は配置を優先する（選択済みという明示的な意図を尊重するため）。
-   * 選択していないときに限り、そのセルに再点火可能な燠火（cooldownLeft === 0）が
-   * あれば再点火する。これが無いと「終盤に手札もマナも尽きても燠火だけは
-   * 操作対象として残る」という設計（設計書 §4）が UI から到達できない。
+   * 優先順位: 配置 > 再点火 > 能力表示（設計書 §5.2）。既存の2つを先に評価するため、
+   * 能力表示を足しても従来の操作は1つも変わらない。カード選択中は配置を優先する
+   * （選択済みという明示的な意図を尊重するため）。選択していないときに限り、
+   * そのセルに再点火可能な燠火（cooldownLeft === 0）があれば再点火する。これが無いと
+   * 「終盤に手札もマナも尽きても燠火だけは操作対象として残る」という設計（設計書 §4）
+   * が UI から到達できない。再点火可能な燠火だけは能力表示を開けないが、
+   * クールダウン中の燠火（再点火できない）は他の設置物と同じく能力表示を開ける。
    */
   const interactCell = useCallback(
     (pos: CellPos) => {
@@ -310,10 +387,32 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       const emberIndex = state.embers.findIndex(
         (ember) => ember.pos.x === pos.x && ember.pos.y === pos.y && ember.cooldownLeft === 0
       );
-      if (emberIndex === -1) return;
-      reactivate(emberIndex);
+      if (emberIndex !== -1) {
+        reactivate(emberIndex);
+        return;
+      }
+      const key = plateKeyOf(pos);
+      const plate = buildPlates(state).find((candidate) => candidate.key === key);
+      if (!plate) {
+        setInspectedKey(null);
+        return;
+      }
+      if (inspectedKey === key) {
+        setInspectedKey(null);
+        return;
+      }
+      // StrictMode は useState の関数型 updater を二重に呼ぶことがあるため、
+      // 記録は updater の外で行う（togglePause と同じ理由）
+      logRef.current.record({
+        kind: 'inspect_opened',
+        runId,
+        cardId: plate.cardId,
+        tick: state.tick,
+      });
+      inspectOpensRef.current += 1;
+      setInspectedKey(key);
     },
-    [isPaused, selectedIndex, state.embers, clickCell, reactivate]
+    [isPaused, selectedIndex, state, clickCell, reactivate, inspectedKey, runId]
   );
 
   // StrictMode は useState の関数型 updater を二重に呼び出すことがあるため、
@@ -326,6 +425,7 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
     });
     setIsPaused((current) => !current);
     setSelectedIndex(null);
+    setInspectedKey(null);
   }, [isPaused, runId, state.tick]);
 
   /**
@@ -339,6 +439,7 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       const seedToUse = nextSeed ?? createSeed();
       pendingRef.current = [];
       setSelectedIndex(null);
+      setInspectedKey(null);
       setIsPaused(false);
       setOverflowNotice(undefined);
       setEffects([]);
@@ -348,7 +449,10 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       rejectionUntilRef.current = 0;
       lastPreviewRef.current = undefined;
       lastAnnouncedWaveRef.current = 0;
-      setTally(emptyTally());
+      tallyRef.current = emptyTally();
+      setTally(tallyRef.current);
+      inspectOpensRef.current = 0;
+      manualDiscardsRef.current = 0;
       setRunSeed(seedToUse);
       const nextState = startRunWithDeck(cards, new SeededRandom(seedToUse));
       setState(nextState);
@@ -369,6 +473,13 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
     () => JSON.stringify(logRef.current.exportAll(), null, 2),
     []
   );
+
+  // 座標ではなく key で持つため、設置物が壊れて消えれば buildPlates の結果に
+  // 現れなくなり自動的に undefined へ戻る
+  const inspectedPlate: PlateModel | undefined =
+    inspectedKey === null
+      ? undefined
+      : buildPlates(state).find((plate) => plate.key === inspectedKey);
 
   return {
     state,
@@ -392,5 +503,6 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
     noteRun,
     exportLogJson,
     summary: summarize(tally, cards),
+    inspectedPlate,
   };
 };

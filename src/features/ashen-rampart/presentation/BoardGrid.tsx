@@ -5,9 +5,10 @@
  * カード選択中は「置けるマスだけ」を琥珀でハイライトし、選択空間を
  * 60通りから数個に落とす（設計書 §9.7）。
  *
- * z 順序: セル(0・非配置) < エフェクト(1) < 守り手のHPバー(2) < 敵マーカー(3)。
- * 敵マーカーの HP バーをエフェクトが覆ってはならない（反復2）のと同じ理由で、
- * 守り手の HP バーもエフェクトの下に隠れてはならない（反復3）。
+ * z 順序: セル(0) < 台座(0) < エフェクト(1) < 状態バー(2) < 敵マーカー(3)。
+ * 台座は BoardEffectLayer より前に置き、攻撃エフェクトが台座の上に乗る
+ * ようにする。状態バーは反復2・3 と同じ理由で BoardEffectLayer より後に置き、
+ * エフェクトが状態バーを覆わないようにする。
  */
 import React from 'react';
 import styled from 'styled-components';
@@ -16,10 +17,22 @@ import { isHighGround, isSlowCell, isPathCell, laneOf, pathDirectionAt } from '.
 import type { CombatState } from '../domain/combat/combat-state';
 import { stackEnemies } from './enemy-stack';
 import { EnemyMarker } from './EnemyMarker';
-import { UnitHpBar } from './UnitHpBar';
+import { buildPlates, plateKeyOf, type PlateModel } from './board-plates';
+import { UnitPlate } from './UnitPlate';
+import { PlacedStatusBar } from './PlacedStatusBar';
+import { RangeOverlay } from './RangeOverlay';
+import { roleLabelOf } from './unit-visual';
 import { BoardEffectLayer } from './BoardEffectLayer';
 import type { Effect } from './combat-effects';
 import { COLORS } from './theme';
+
+/**
+ * 設置済みセルに常時描く印の上限（台座・文字・状態バー）
+ *
+ * 反復2 の MAX_CONCURRENT_EFFECTS と同じ考え方。情報を足すほど盤面は
+ * 読めなくなるため、上限を定数で持ち、テストで機械的に守る（設計書 §4.6）。
+ */
+export const MAX_CELL_MARKS = 3;
 
 const Frame = styled.div<{ $columns: number; $rows: number }>`
   position: relative;
@@ -32,7 +45,7 @@ const Frame = styled.div<{ $columns: number; $rows: number }>`
   margin: 0 auto;
   background: ${COLORS.dominant};
   border: 1px solid ${COLORS.grid};
-  /* EnemyMarker・守り手HPバーが cqw 単位で盤面幅に追従できるようにコンテナ化する
+  /* EnemyMarker・台座・状態バーが cqw 単位で盤面幅に追従できるようにコンテナ化する
      （設計書 §9.7 最小対応幅 360px でも符号の比率が崩れない） */
   container-type: inline-size;
 `;
@@ -62,11 +75,6 @@ const Cell = styled.button<{ $kind: string; $highlighted: boolean }>`
     }
   `
       : ''}
-`;
-
-const Occupant = styled.span<{ $ready: boolean }>`
-  color: ${({ $ready }) => ($ready ? COLORS.opportunity : COLORS.secondary)};
-  font-weight: ${({ $ready }) => ($ready ? 700 : 400)};
 `;
 
 /**
@@ -113,6 +121,8 @@ interface Props {
   placeableCells: readonly CellPos[];
   effects: readonly Effect[];
   onCellClick: (pos: CellPos) => void;
+  /** 能力表示の対象（未選択なら undefined） */
+  inspectedPlate?: PlateModel;
 }
 
 const samePos = (a: CellPos, b: CellPos): boolean => a.x === b.x && a.y === b.y;
@@ -122,7 +132,7 @@ const buildLaneIndexByCell = (map: StageMap): Map<string, number> => {
   const result = new Map<string, number>();
   map.lanes.forEach((lane, laneIndex) => {
     lane.forEach((c) => {
-      const key = `${c.x},${c.y}`;
+      const key = plateKeyOf(c);
       if (!result.has(key)) result.set(key, laneIndex);
     });
   });
@@ -135,6 +145,7 @@ export const BoardGrid: React.FC<Props> = ({
   placeableCells,
   effects,
   onCellClick,
+  inspectedPlate,
 }) => {
   const cells: CellPos[] = [];
   for (let y = 0; y < map.height; y++) {
@@ -143,41 +154,34 @@ export const BoardGrid: React.FC<Props> = ({
   // 敵は自身の laneIndex を持つため、map をそのまま渡してレーンごとに座標を解決させる
   const stacks = stackEnemies(state.enemies, map);
   const laneIndexByCell = buildLaneIndexByCell(map);
-
-  const occupantLabel = (pos: CellPos): { text: string; ready: boolean } | undefined => {
-    const unit = state.units.find((u) => samePos(u.pos, pos));
-    if (unit) return { text: unit.cardId === 'beacon' ? '篝' : '塔', ready: false };
-    const reactor = state.reactors.find((r) => samePos(r.pos, pos));
-    if (reactor) return { text: '炉', ready: false };
-    const ember = state.embers.find((e) => samePos(e.pos, pos));
-    if (ember) return { text: '燠', ready: ember.cooldownLeft === 0 };
-    const trap = state.traps.find((t) => samePos(t.pos, pos));
-    if (trap) return { text: '罠', ready: false };
-    return undefined;
-  };
+  const plates = buildPlates(state);
+  const plateByCell = new Map(plates.map((plate) => [plate.key, plate]));
 
   return (
     <Frame $columns={map.width} $rows={map.height}>
       {cells.map((pos) => {
         const isPath = isPathCell(map, pos);
-        const laneIndex = laneIndexByCell.get(`${pos.x},${pos.y}`);
+        const laneIndex = laneIndexByCell.get(plateKeyOf(pos));
         const direction =
           laneIndex !== undefined ? pathDirectionAt(laneOf(map, laneIndex), pos) : undefined;
         const highlighted = placeableCells.some((c) => samePos(c, pos));
-        const occupant = occupantLabel(pos);
+        const plate = plateByCell.get(plateKeyOf(pos));
         const terrain = isHighGround(map, pos) ? '高台' : isSlowCell(map, pos) ? '滞留' : '';
+        const occupantText = plate
+          ? `${roleLabelOf(plate.visual.role)} ${plate.visual.name}`
+          : undefined;
         const label = [
           `${pos.x},${pos.y}`,
           isPath ? '経路' : '設置可',
           terrain,
-          occupant?.text,
+          occupantText,
           highlighted ? 'ここに置ける' : '',
         ]
           .filter(Boolean)
           .join(' ');
         return (
           <Cell
-            key={`${pos.x},${pos.y}`}
+            key={plateKeyOf(pos)}
             type="button"
             data-testid={`cell-${pos.x}-${pos.y}`}
             data-path={isPath ? 'true' : 'false'}
@@ -187,23 +191,27 @@ export const BoardGrid: React.FC<Props> = ({
             aria-label={label}
             onClick={() => onCellClick(pos)}
           >
-            {occupant && <Occupant $ready={occupant.ready}>{occupant.text}</Occupant>}
-            {laneIndex !== undefined && (
-              <LaneMark aria-hidden="true" $shape={laneIndex % 2 === 0 ? 'circle' : 'square'} />
+            {/* 設置物が乗ったマスではレーン印と矢印を隠す。配置時点で判断済みの
+                情報であり、上限3を守るために優先度が最も低い（設計書 §4.6） */}
+            {!plate && laneIndex !== undefined && (
+              <LaneMark data-mark="lane" aria-hidden="true" $shape={laneIndex % 2 === 0 ? 'circle' : 'square'} />
             )}
-            {direction && <CellArrow aria-hidden="true">{ARROW_GLYPH[direction]}</CellArrow>}
+            {!plate && direction && (
+              <CellArrow data-mark="arrow" aria-hidden="true">{ARROW_GLYPH[direction]}</CellArrow>
+            )}
           </Cell>
         );
       })}
-      <BoardEffectLayer effects={effects} map={map} />
-      {state.units.map((unit) => (
-        <UnitHpBar
-          key={`${unit.pos.x},${unit.pos.y}`}
-          unit={unit}
-          columns={map.width}
-          rows={map.height}
-        />
+      {plates.map((plate) => (
+        <UnitPlate key={plate.key} plate={plate} columns={map.width} rows={map.height} />
       ))}
+      <BoardEffectLayer effects={effects} map={map} />
+      {plates.map((plate) => (
+        <PlacedStatusBar key={plate.key} plate={plate} columns={map.width} rows={map.height} />
+      ))}
+      {inspectedPlate && (
+        <RangeOverlay plate={inspectedPlate} columns={map.width} rows={map.height} />
+      )}
       {stacks.map((stack) => (
         <EnemyMarker key={stack.id} stack={stack} columns={map.width} rows={map.height} />
       ))}

@@ -10,10 +10,12 @@ import type {
   PlayLogPort,
 } from '../../application/ports/play-log-port';
 
-// スキーマ v2（v1 のデータと混ざらないようキーを変更している）
-export const PLAY_LOG_STORAGE_KEY = 'ashen-rampart:play-log-v2';
+// スキーマ v3（v2 のデータと混ざらないようキーを変更している）。
+// 副次的に、実プレイ前に v2 の localStorage を消す作業が不要になる
+// （キーが別なので古いデータを読みに行かず、混在もしない）。
+export const PLAY_LOG_STORAGE_KEY = 'ashen-rampart:play-log-v3';
 
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 
 const emptyExport = (): PlayLogExport => ({ version: SCHEMA_VERSION, events: [] });
 

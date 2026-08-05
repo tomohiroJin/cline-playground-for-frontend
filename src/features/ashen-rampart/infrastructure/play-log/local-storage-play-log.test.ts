@@ -24,7 +24,7 @@ describe('LocalStoragePlayLog', () => {
     const log = new LocalStoragePlayLog();
     log.record(runStarted);
     const exported = log.exportAll();
-    expect(exported.version).toBe(2);
+    expect(exported.version).toBe(3);
     expect(exported.events).toHaveLength(1);
     expect(exported.events[0]).toMatchObject(runStarted);
     expect(typeof exported.events[0].at).toBe('number');
@@ -46,7 +46,7 @@ describe('LocalStoragePlayLog', () => {
   it('破損データが保存されている場合は空ログにフォールバックする', () => {
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
     localStorage.setItem(PLAY_LOG_STORAGE_KEY, 'broken-json');
-    expect(new LocalStoragePlayLog().exportAll()).toEqual({ version: 2, events: [] });
+    expect(new LocalStoragePlayLog().exportAll()).toEqual({ version: 3, events: [] });
     expect(consoleSpy).toHaveBeenCalled();
   });
 
@@ -55,7 +55,7 @@ describe('LocalStoragePlayLog', () => {
       PLAY_LOG_STORAGE_KEY,
       JSON.stringify({ version: '1', events: [runStarted] })
     );
-    expect(new LocalStoragePlayLog().exportAll()).toEqual({ version: 2, events: [] });
+    expect(new LocalStoragePlayLog().exportAll()).toEqual({ version: 3, events: [] });
   });
 
   it('書き込みに失敗してもエラーを投げない', () => {
@@ -64,5 +64,25 @@ describe('LocalStoragePlayLog', () => {
       throw new Error('quota exceeded');
     });
     expect(() => new LocalStoragePlayLog().record(runStarted)).not.toThrow();
+  });
+
+  it('スキーマは v3 で、キーも v3 になる', () => {
+    const log = new LocalStoragePlayLog();
+    log.record({ kind: 'run_note', runId: 'r1', text: 'テスト' });
+    expect(PLAY_LOG_STORAGE_KEY).toBe('ashen-rampart:play-log-v3');
+    expect(log.exportAll().version).toBe(3);
+  });
+
+  it('v2 のキーに残っていた旧データは読みに行かず、v3 は空から始まって壊れない', () => {
+    // v2 時代のキー名を直書きする（PLAY_LOG_STORAGE_KEY は既に v3 を指すため、
+    // 旧データを再現するには文字列で直接書く必要がある）
+    localStorage.setItem('ashen-rampart:play-log-v2', JSON.stringify({ version: 2, events: [runStarted] }));
+    const log = new LocalStoragePlayLog();
+    // v3 キーには何もないため、v2 の内容とは無関係に空ログから始まる
+    expect(log.exportAll()).toEqual({ version: 3, events: [] });
+    log.record(runStarted);
+    expect(log.exportAll().events).toHaveLength(1);
+    // v2 のキーは触れられず、そのまま残っている（移行処理は無いため）
+    expect(localStorage.getItem('ashen-rampart:play-log-v2')).not.toBeNull();
   });
 });

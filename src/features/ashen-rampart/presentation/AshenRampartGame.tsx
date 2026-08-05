@@ -17,6 +17,7 @@ import { useAshenRampartGame } from './useAshenRampartGame';
 import { RunStatusBar } from './RunStatusBar';
 import { BoardGrid } from './BoardGrid';
 import { HandArea } from './HandArea';
+import { InspectPanel } from './InspectPanel';
 import { EnemyLegend } from './EnemyLegend';
 import { DeckBuilder } from './DeckBuilder';
 import { StartOverlay } from './StartOverlay';
@@ -257,12 +258,14 @@ const RunView: React.FC<RunViewProps> = ({ cards, seed, onRebuild }) => {
             placeableCells={game.placeableCells}
             effects={game.effects}
             onCellClick={game.interactCell}
+            inspectedPlate={game.inspectedPlate}
           />
           <CountdownDisplay tick={game.state.tick} />
         </BoardWrapper>
         {game.rejectionNotice && (
           <RejectionNotice data-tone={REJECTION_NOTICE_TONE}>{game.rejectionNotice}</RejectionNotice>
         )}
+        {game.inspectedPlate && <InspectPanel plate={game.inspectedPlate} />}
         <EnemyLegend />
         {game.state.outcome !== 'playing' && (
           <Result>
@@ -287,17 +290,17 @@ const RunView: React.FC<RunViewProps> = ({ cards, seed, onRebuild }) => {
               <>
                 <RunSummary view={game.summary} />
                 <ActionRow>
+                  <ActionButton type="button" onClick={handleCopyLog}>
+                    判定用の記録をコピー（3ラン分まとまっています）
+                  </ActionButton>
                   <ActionButton type="button" onClick={() => game.restart()}>
                     同じデッキで別のシードに挑む
                   </ActionButton>
                   <ActionButton type="button" onClick={onRebuild}>
                     もう一度挑む
                   </ActionButton>
-                  <ActionButton type="button" onClick={handleCopyLog}>
-                    計測ログをコピー
-                  </ActionButton>
                 </ActionRow>
-                {copyStatus === 'copied' && <Feedback>計測ログをコピーしました</Feedback>}
+                {copyStatus === 'copied' && <Feedback>判定用の記録をコピーしました</Feedback>}
                 {copyStatus === 'failed' && (
                   <Feedback>コピーに失敗しました。コンソールに出力しています</Feedback>
                 )}

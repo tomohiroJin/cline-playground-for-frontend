@@ -121,4 +121,24 @@ describe('HandArea', () => {
     fireEvent.click(discardButtons[0]);
     expect(onDiscard).toHaveBeenCalledWith(0);
   });
+
+  it('手札のカードに形アイコン・数値・バッジが出る', () => {
+    // 手札に徹甲弩がある状態で描画する（既存のセットアップ流儀に合わせること）
+    render(
+      <HandArea state={stateWith(['piercer'])} selectedIndex={null} onSelect={jest.fn()} onDiscard={jest.fn()} />
+    );
+    expect(screen.getByTestId('card-glyph-piercer')).toBeInTheDocument();
+    expect(screen.getByText('HP14')).toBeInTheDocument();
+    expect(screen.getByText('対空')).toBeInTheDocument();
+    expect(screen.getByText('貫通')).toBeInTheDocument();
+  });
+
+  it('カードの aria-label に役割が入る', () => {
+    render(
+      <HandArea state={stateWith(['piercer'])} selectedIndex={null} onSelect={jest.fn()} onDiscard={jest.fn()} />
+    );
+    expect(
+      screen.getByRole('button', { name: '攻撃塔 徹甲弩 コスト4' })
+    ).toBeInTheDocument();
+  });
 });

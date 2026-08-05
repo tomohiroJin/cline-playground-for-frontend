@@ -18,7 +18,10 @@ import {
   maxCopiesOf,
 } from '../domain/cards/card-pool';
 import { countByCard, costCurve, validateDeck } from '../domain/cards/deck-builder';
-import { weaknessTextOf, towerStatsTextOf } from './card-text';
+import { cardBadgesOf, weaknessTextOf, towerStatsTextOf } from './card-text';
+import { CardBadge } from './CardBadge';
+import { CardGlyph } from './CardGlyph';
+import { getUnitVisual, roleLabelOf } from './unit-visual';
 import { COLORS } from './theme';
 import { HEADER_CLEARANCE } from './layout-constants';
 
@@ -46,6 +49,30 @@ const CardRow = styled.div`
   padding: 8px;
   border: 1px solid ${COLORS.grid};
   border-radius: 4px;
+`;
+
+const RowHead = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+`;
+
+const RoleTag = styled.span`
+  font-size: 11px;
+  opacity: 0.75;
+`;
+
+/**
+ * 札の値段（設計書 §6.1「形アイコン・名前・コストは削らない。」）
+ *
+ * 下部の「コスト曲線」は既にデッキへ入れた札の分布であり、
+ * いま検討している札の値段は読めない。行そのものに出す必要がある。
+ * 読み上げラベル（CardRow の aria-label）にしか無い状態は、目で読む
+ * プレイヤーにとって「消えている」のと同じ。
+ */
+const Cost = styled.span`
+  font-size: 12px;
+  opacity: 0.9;
 `;
 
 const Controls = styled.div`
@@ -177,9 +204,15 @@ export const DeckBuilder: React.FC<Props> = ({ onStart, initialCards, initialSee
           const count = counts.get(id) ?? 0;
           return (
             <CardRow key={id} role="group" aria-label={`${card.name} コスト${card.cost}`}>
-              <strong>
-                {card.name}（コスト{card.cost}）
-              </strong>
+              <RowHead>
+                <CardGlyph cardId={id} />
+                <strong>{card.name}</strong>
+                <Cost>コスト{card.cost}</Cost>
+                <RoleTag>{roleLabelOf(getUnitVisual(id).role)}</RoleTag>
+                {cardBadgesOf(id).map((badge) => (
+                  <CardBadge key={badge}>{badge}</CardBadge>
+                ))}
+              </RowHead>
               <span>{card.description}</span>
               {towerStatsTextOf(id) && <Stats>{towerStatsTextOf(id)}</Stats>}
               <Weakness>{weaknessTextOf(id)}</Weakness>

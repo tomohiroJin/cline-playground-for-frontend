@@ -6,7 +6,7 @@
  */
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { BoardGrid } from './BoardGrid';
+import { BoardGrid, MAX_CELL_MARKS } from './BoardGrid';
 import { PLAINS_MAP, allPathCells, laneOf } from '../domain/board/stage-map';
 import { createCombatState } from '../domain/combat/combat-state';
 import { PLAINS_WAVES } from '../domain/combat/waves';
@@ -80,10 +80,10 @@ describe('BoardGrid', () => {
     expect(onCellClick).toHaveBeenCalledWith({ x: 1, y: 1 });
   });
 
-  it('設置物がセルに描画される', () => {
+  it('設置済みのマスは役割と個体名を aria-label に持つ', () => {
     const withUnit = {
       ...emptyState,
-      units: [{ cardId: 'arrow-tower', pos: { x: 1, y: 1 }, hp: 10, maxHp: 10, cooldownLeft: 0 }],
+      units: [{ cardId: 'arrow-tower', pos: { x: 1, y: 1 }, hp: 8, maxHp: 8, cooldownLeft: 0 }],
     };
     render(
       <BoardGrid
@@ -94,7 +94,54 @@ describe('BoardGrid', () => {
         onCellClick={jest.fn()}
       />
     );
-    expect(screen.getByRole('button', { name: /1,1 設置可 塔/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /1,1 設置可 攻撃塔 弓兵/ })).toBeInTheDocument();
+  });
+
+  it('設置済みのセルではレーン印と進行方向の矢印を隠す（情報量の上限）', () => {
+    // レーン印・矢印はどちらも経路セル限定の表示。(1,1) は PLAINS_MAP では
+    // 経路外（y=1 に経路は無い）のため検証にならず、実際に北レーンが通る
+    // (1,2) に守り手を置いて確かめる。
+    const withUnit = {
+      ...emptyState,
+      units: [{ cardId: 'arrow-tower', pos: { x: 1, y: 2 }, hp: 8, maxHp: 8, cooldownLeft: 0 }],
+    };
+    render(<BoardGrid {...defaultProps} state={withUnit} />);
+    const cell = screen.getByTestId('cell-1-2');
+    expect(cell.querySelectorAll('[data-mark="lane"]')).toHaveLength(0);
+    expect(cell.querySelectorAll('[data-mark="arrow"]')).toHaveLength(0);
+  });
+
+  it('設置済みセルに常時描く印は MAX_CELL_MARKS 以下である', () => {
+    const withUnit = {
+      ...emptyState,
+      units: [{ cardId: 'arrow-tower', pos: { x: 1, y: 2 }, hp: 8, maxHp: 8, cooldownLeft: 0 }],
+    };
+    render(<BoardGrid {...defaultProps} state={withUnit} />);
+    // 1マスあたりの印を、設計の数え方（形 + 文字 + バー = 3）と同じ粒度で数える。
+    // 台座は形（data-mark="shape"）と文字（data-mark="glyph"）の2ノードなので、
+    // 通過値はちょうど 3 になり緩みが無い（最終レビュー指摘I-4）。
+    // レーン印と矢印の抑制が外れると 3 + 2 = 5 になり、この検証が落ちる。
+    screen.getAllByTestId(/^unit-plate-/).forEach((plate) => {
+      const pos = plate.getAttribute('data-testid')!.replace('unit-plate-', '');
+      const [x, y] = pos.split('-');
+      const cell = screen.getByTestId(`cell-${x}-${y}`);
+      const markCount =
+        plate.querySelectorAll('[data-mark]').length +
+        (screen.queryByTestId(`unit-status-${pos}`) ? 1 : 0) +
+        cell.querySelectorAll('[data-mark]').length;
+      // 上限ちょうどを使い切っていることも確認する（数え漏らしで緩く通らないように）
+      expect(markCount).toBe(MAX_CELL_MARKS);
+      expect(markCount).toBeLessThanOrEqual(MAX_CELL_MARKS);
+    });
+  });
+
+  it('設置物のないセルではレーン印と矢印が残る（抑制は設置済みセル限定）', () => {
+    // 上の検証が「常に data-mark が0」で通ってしまわないことの担保。
+    // ブリーフは cell-2-1 を想定していたが、(2,1) も経路外のため印が出ない。
+    // 経路上で設置物のない (2,2) を選ぶ。
+    render(<BoardGrid {...defaultProps} />);
+    const emptyPathCell = screen.getByTestId('cell-2-2');
+    expect(emptyPathCell.querySelectorAll('[data-mark]').length).toBeGreaterThan(0);
   });
 
   it('敵は種別と体数が読めるマーカーとして描画される', () => {
@@ -179,10 +226,12 @@ describe('2レーンの盤面', () => {
     expect(northCell.getAttribute('data-lane')).not.toBe(southCell.getAttribute('data-lane'));
   });
 
-  it('守り手のHPバーが表示される', () => {
+  it('守り手の状態バーが表示される', () => {
+    // 旧 UnitHpBar（unit-hp-x-y）は台座レイヤの PlacedStatusBar（unit-status-x-y）に
+    // 置き換わった（Task 4・5）
     const units = [{ cardId: 'stone-wall', pos: { x: 3, y: 2 }, hp: 30, maxHp: 60, cooldownLeft: 0 }];
     render(<BoardGrid {...defaultProps} state={{ ...emptyState, units }} />);
-    const bar = screen.getByTestId('unit-hp-3-2');
+    const bar = screen.getByTestId('unit-status-3-2');
     expect(bar).toHaveAttribute('role', 'progressbar');
     expect(bar).toHaveAttribute('aria-valuenow', '30');
     expect(bar).toHaveAttribute('aria-valuemax', '60');
