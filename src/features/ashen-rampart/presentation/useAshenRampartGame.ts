@@ -63,6 +63,19 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
   const [rejectionNotice, setRejectionNotice] = useState<string | undefined>(undefined);
   const rejectionUntilRef = useRef(0);
   const [tally, setTally] = useState<RunTally>(() => emptyTally());
+  /**
+   * 集計の真値。`run_tally` の書き出しはこの ref を読む
+   *
+   * `setTally` はスケジュールされるだけで、決着した tick の**同じコミットでは
+   * まだ反映されない**。`run_tally` の effect は同じコミット内で走るため、
+   * state だけに頼ると「決着を決めた tick」が丸ごと落ちる。勝ったランの
+   * 最終 tick には必ず撃破（`defeat`）が含まれる（`isCleared` の成立条件）ため、
+   * この取りこぼしは偶発ではなく systematic だった。
+   *
+   * 累積の真値を ref に持ち、`setTally` は描画用のミラーに徹させることで、
+   * ログの数値と画面の `RunSummary` が必ず一致する。
+   */
+  const tallyRef = useRef<RunTally>(tally);
   // 能力表示の対象。座標ではなく plateKeyOf の文字列で持つ。設置物が壊れて
   // 消えたときに、次の描画で自動的に対象が失われる（別途クリアする処理が要らない）
   const [inspectedKey, setInspectedKey] = useState<string | null>(null);
@@ -129,7 +142,11 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
     const prev = prevStateRef.current;
     prevStateRef.current = state;
     if (prev === state) return;
-    setTally((current) => accumulateTick(current, state, PLAINS_MAP));
+    // ref を先に確定させる。この effect は run_tally の effect より前に定義されて
+    // いるため、同じコミット内で必ず先に走る（React は effect を定義順に実行する）。
+    // 二重計上は上の prevStateRef のガードが防ぐ。
+    tallyRef.current = accumulateTick(tallyRef.current, state, PLAINS_MAP);
+    setTally(tallyRef.current);
   }, [state]);
 
   // 拒否理由の通知。同一 tick に複数出た場合は最初の1件だけを出し、
@@ -231,12 +248,17 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
    * label 文字列）と突き合わせず、tally.rejectionCounts.target という
    * 型のついた生の値を直接使う。表示文言を変えただけで判定項目が
    * 静かに 0 になる事故を避けるため。
+   *
+   * 読むのは state の `tally` ではなく `tallyRef.current`。決着したコミットでは
+   * `setTally` がまだ反映されておらず、state 側は1 tick 古いため
+   * （tallyRef の宣言のコメントを参照）。
    */
   useEffect(() => {
     if (state.outcome === 'playing') return;
     if (talliedRunIdRef.current === runId) return;
     talliedRunIdRef.current = runId;
-    const view = summarize(tally, cards);
+    const settled = tallyRef.current;
+    const view = summarize(settled, cards);
     logRef.current.record({
       kind: 'run_tally',
       runId,
@@ -244,7 +266,7 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       unusedCardIds: view.unusedCardIds,
       manualDiscards: manualDiscardsRef.current,
       inspectOpens: inspectOpensRef.current,
-      rejectedTarget: tally.rejectionCounts.target,
+      rejectedTarget: settled.rejectionCounts.target,
       laneAllocation: view.laneAllocation,
       placedOnPath: view.placedOnPath,
       placedOffPath: view.placedOffPath,
@@ -253,7 +275,7 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       ravenDefeatCount: view.ravenDefeatCount,
       costHistogram: view.costHistogram,
     });
-  }, [state.outcome, runId, tally, cards]);
+  }, [state.outcome, runId, cards]);
 
   const placeableCells: CellPos[] = (() => {
     if (selectedIndex === null || isPaused) return [];
@@ -427,7 +449,8 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       rejectionUntilRef.current = 0;
       lastPreviewRef.current = undefined;
       lastAnnouncedWaveRef.current = 0;
-      setTally(emptyTally());
+      tallyRef.current = emptyTally();
+      setTally(tallyRef.current);
       inspectOpensRef.current = 0;
       manualDiscardsRef.current = 0;
       setRunSeed(seedToUse);

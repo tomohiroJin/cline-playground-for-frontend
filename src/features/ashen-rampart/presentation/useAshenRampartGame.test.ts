@@ -7,6 +7,8 @@
 import React, { StrictMode } from 'react';
 import { renderHook, act } from '@testing-library/react';
 import { useAshenRampartGame, TICK_INTERVAL_MS } from './useAshenRampartGame';
+import type { CellPos } from '../domain/board/stage-map';
+import { PLAINS_MAP } from '../domain/board/stage-map';
 import { getCardDefinition, PRESET_DECKS } from '../domain/cards/card-pool';
 import { placementKindOf } from '../domain/cards/card-definition';
 import { COUNTDOWN_TICKS } from '../domain/combat/combat-state';
@@ -652,17 +654,52 @@ describe('useAshenRampartGame', () => {
       }
     };
 
+    /** 決着の何 tick 前から1 tick ずつ進めるか（決着した tick に必ず出来事を載せるため） */
+    const ENDGAME_TICKS = 5;
+
+    /** 盤面の全マス。「置けない場所」を選ぶために使う */
+    const allCells = (): CellPos[] => {
+      const cells: CellPos[] = [];
+      for (let y = 0; y < PLAINS_MAP.height; y++) {
+        for (let x = 0; x < PLAINS_MAP.width; x++) cells.push({ x, y });
+      }
+      return cells;
+    };
+
+    /**
+     * 「置けない場所」を1回叩いて rejected(target) を出す
+     *
+     * 決着した tick にも判定対象の出来事を載せるための仕掛け。拒否は
+     * イベントを1件積むだけで盤面を変えないため、ランの長さは変わらない。
+     */
+    const tapUnplaceableCell = (
+      result: { current: ReturnType<typeof useAshenRampartGame> }
+    ): void => {
+      const handIndex = result.current.state.deck.hand.findIndex((id) => {
+        const card = getCardDefinition(id);
+        // 魔力炉は設置間隔で cooldown 拒否になるため除く（欲しいのは target 拒否）
+        return (
+          placementKindOf(card) !== 'none' &&
+          card.type !== 'reactor' &&
+          card.cost <= result.current.state.mana
+        );
+      });
+      if (handIndex < 0) {
+        throw new Error('置ける札が手札に無く、拒否を発生させられませんでした（較正を確認すること）');
+      }
+      act(() => result.current.selectCard(handIndex));
+      const placeable = result.current.placeableCells;
+      const target = allCells().find(
+        (cell) => !placeable.some((p) => p.x === cell.x && p.y === cell.y)
+      );
+      if (!target) throw new Error('置けないマスが1つもありませんでした（較正を確認すること）');
+      act(() => result.current.clickCell(target));
+    };
+
     it('決着すると run_tally が1件だけ記録される（talliedRunIdRef ガードの実効性）', () => {
-      // これは自明な単発呼び出しの確認ではない。outcome が決着した tick では
-      // 必ず2回のレンダーが連続する: ①stepTick が state を更新して outcome が
-      // 決着に変わるレンダー（この時点では tally はまだ前 tick の参照のまま）、
-      // ②直後に「判定用の集計を累積する」effect（124行目付近、[state] 依存）が
-      // accumulateTick で必ず新しい tally オブジェクトを作って setTally する
-      // ことで起きる2回目のレンダー（outcome・runId は同じだが tally の参照だけ
-      // 変わる）。run_tally effect は [state.outcome, runId, tally, cards] に
-      // 依存するため、②でも依存配列が変化し実際に再実行される。
-      // talliedRunIdRef のガードを外すとこのテストは実際に2件検知して失敗する
-      // ことを確認済み（同一 runId・同一 tick 内で2回書き込まれるため）。
+      // run_tally effect の依存配列は [state.outcome, runId, cards]。決着後も
+      // 親からの再レンダーで cards の参照が変われば再実行されうる（次のテストで
+      // その経路を明示的に踏む）。ここでは通常の決着で2件書かれないことを見る。
       const log = createMockPlayLog();
       const { result } = renderHook(() =>
         useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log })
@@ -674,13 +711,9 @@ describe('useAshenRampartGame', () => {
     });
 
     it('決着後に外部からの再レンダーで run_tally effect が再実行されても2件目は記録されない', () => {
-      // 上のテストは「tally の参照が変わる」という run-summary.ts 側の実装詳細
-      // （accumulateTick が毎回新しいオブジェクトを返すこと）に依存した二重発火で
-      // ガードを検証している。実装が変わってその二重発火が起きなくなっても
-      // ガードの正しさ自体は揺るがないため、ここでは全く別の経路
-      // （cards の参照だけを変えた明示的な再レンダー）で二重発火させ、
-      // 同じ結論（2件目は書き込まれない）を確認する。
-      // run_tally effect の依存配列 [state.outcome, runId, tally, cards] のうち
+      // 上のテストは「決着で1件だけ書かれる」ことしか見ない。ガードそのものは
+      // effect が2回走らないと検証できないため、ここでは明示的に二重発火させる。
+      // run_tally effect の依存配列 [state.outcome, runId, cards] のうち
       // cards の参照が変わるため、React は Object.is 比較の結果 effect を
       // 実際に再実行する（内容が同じでも別配列なら再実行対象になる）。
       // runId と outcome は変わらないため、talliedRunIdRef が効いていれば
@@ -701,14 +734,161 @@ describe('useAshenRampartGame', () => {
       expect(log.events.filter((e) => e.kind === 'run_tally')).toHaveLength(1);
     });
 
-    it('手動で捨てると card_discarded_manual が記録される', () => {
+    it('run_tally の数値が画面の集計（RunSummary）と一致する', () => {
+      // 判定者は画面の集計と、貼り付けた JSON の両方を見る。両者が食い違うと
+      // 同じランに対して2つの数値が存在することになり、判定が成立しない。
+      // 決着した tick に必ず出来事（rejected）が載るよう、最後の数 tick は
+      // 1 tick ずつ進めながら「置けない場所」を叩く。書き出しが1 tick 古い
+      // 集計（setTally がまだ反映されていない state 側の tally）を読むと、
+      // rejectedTarget が画面より1少なくなってこのテストが落ちる。
+      const decidedTick = (() => {
+        const probe = renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1 }));
+        advanceUntilOutcome(probe.result);
+        const tick = probe.result.current.state.tick;
+        probe.unmount();
+        return tick;
+      })();
+      expect(decidedTick).toBeGreaterThan(ENDGAME_TICKS);
+
       const log = createMockPlayLog();
       const { result } = renderHook(() =>
         useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log })
       );
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS * (decidedTick - ENDGAME_TICKS));
+      });
+      expect(result.current.state.outcome).toBe('playing');
+      // 決着するまで、毎 tick 拒否を1件ずつ積む（決着 tick にも必ず1件載る）
+      for (let i = 0; i <= ENDGAME_TICKS && result.current.state.outcome === 'playing'; i++) {
+        tapUnplaceableCell(result);
+        act(() => {
+          jest.advanceTimersByTime(TICK_INTERVAL_MS);
+        });
+      }
+      expect(result.current.state.outcome).not.toBe('playing');
+
+      const view = result.current.summary;
+      // 画面側が「拒否を数えている」ことを先に確かめる（0 同士の一致で通らないように）
+      expect(view.rejectionDetail.find((d) => d.label === '置けない場所')?.count).toBeGreaterThan(0);
+
+      const tally = log.events.find((e) => e.kind === 'run_tally');
+      expect(tally).toMatchObject({
+        unusedCardIds: view.unusedCardIds,
+        rejectedTarget: view.rejectionDetail.find((d) => d.label === '置けない場所')?.count,
+        laneAllocation: view.laneAllocation,
+        placedOnPath: view.placedOnPath,
+        placedOffPath: view.placedOffPath,
+        unitsLost: view.unitsLost,
+        ravenDefeatAverage: view.ravenDefeatAverage,
+        ravenDefeatCount: view.ravenDefeatCount,
+        costHistogram: view.costHistogram,
+      });
+    });
+
+    it('run_tally に判定項目1〜4 の実測値が載る', () => {
+      // 「1行で壊せる」を塞ぐ。inspectOpens を 0 固定にする / manualDiscards を
+      // 0 固定にする / rejectedTarget を 0 固定にすると、それぞれここで落ちる。
+      const log = createMockPlayLog();
+      const cards = swiftCards();
+      const { result } = renderHook(() =>
+        useAshenRampartGame({ cards, seed: 1, playLog: log })
+      );
+
+      // 項目4: 置けない場所を1回叩く
+      tapUnplaceableCell(result);
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+
+      // 1枚実際に置く（項目3 の能力表示を開く対象を作るため）。
+      // 燠火は再点火がタップを横取りするため対象から外す（設計書 §5.2 の優先順位）
+      const handIndex = result.current.state.deck.hand.findIndex((id) => {
+        const card = getCardDefinition(id);
+        return (
+          placementKindOf(card) !== 'none' &&
+          card.type !== 'ember' &&
+          card.cost <= result.current.state.mana
+        );
+      });
+      expect(handIndex).toBeGreaterThanOrEqual(0);
+      const placedCardId = result.current.state.deck.hand[handIndex];
+      act(() => result.current.selectCard(handIndex));
+      const placedAt = result.current.placeableCells[0];
+      expect(placedAt).toBeDefined();
+      act(() => result.current.clickCell(placedAt!));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+
+      // 項目3: 能力表示を2回開く（間に閉じる）
+      act(() => result.current.interactCell(placedAt!));
+      act(() => result.current.interactCell(placedAt!));
+      act(() => result.current.interactCell(placedAt!));
+
+      // 項目2: 手動で2回捨てる
+      act(() => result.current.discardCard(0));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+      act(() => result.current.discardCard(0));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+
+      advanceUntilOutcome(result);
+
+      const tally = log.events.find((e) => e.kind === 'run_tally');
+      expect(tally).toMatchObject({
+        iteration: 4,
+        manualDiscards: 2,
+        inspectOpens: 2,
+        rejectedTarget: 1,
+      });
+      // 項目1: 一度も出さなかった札。1枚は出しているので全種にはならない
+      const unused = (tally as { unusedCardIds: string[] }).unusedCardIds;
+      expect(unused).not.toContain(placedCardId);
+      expect(unused.length).toBeLessThan(new Set(cards).size);
+    });
+
+    it('手動で捨てると card_discarded_manual に捨てた札の id が入る', () => {
+      const log = createMockPlayLog();
+      const { result } = renderHook(() =>
+        useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log })
+      );
+      const discarded = result.current.state.deck.hand[0];
+      expect(discarded).toBeDefined();
       act(() => result.current.discardCard(0));
       const events = log.events.filter((e) => e.kind === 'card_discarded_manual');
       expect(events).toHaveLength(1);
+      expect(events[0]).toMatchObject({ cardId: discarded });
+    });
+
+    it('inspect_opened には開いた設置物の cardId が入る', () => {
+      const log = createMockPlayLog();
+      const { result } = renderHook(() =>
+        useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log })
+      );
+      const handIndex = result.current.state.deck.hand.findIndex((id) => {
+        const card = getCardDefinition(id);
+        return (
+          placementKindOf(card) !== 'none' &&
+          card.type !== 'ember' &&
+          card.cost <= result.current.state.mana
+        );
+      });
+      expect(handIndex).toBeGreaterThanOrEqual(0);
+      const placedCardId = result.current.state.deck.hand[handIndex];
+      act(() => result.current.selectCard(handIndex));
+      const pos = result.current.placeableCells[0];
+      expect(pos).toBeDefined();
+      act(() => result.current.clickCell(pos!));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+      act(() => result.current.interactCell(pos!));
+      const opened = log.events.filter((e) => e.kind === 'inspect_opened');
+      expect(opened).toHaveLength(1);
+      expect(opened[0]).toMatchObject({ cardId: placedCardId });
     });
   });
 });
