@@ -13,7 +13,7 @@
  * 分割は振る舞いを1ミリも変えないことを最優先し、処理順序・計算式は元のまま。
  */
 import type { CellPos, StageMap } from '../board/stage-map';
-import { isSlowCell, isHighGround, laneOf, isPathCell, fortressCell } from '../board/stage-map';
+import { isSlowCell, isHighGround, isPathCell, fortressCell } from '../board/stage-map';
 import { drawOne, discardFromHand, peekTop, takeFromPeek } from '../cards/deck';
 import type { DeckState } from '../cards/deck';
 import { getCardDefinition } from '../cards/card-pool';
@@ -33,7 +33,7 @@ import type {
   PlacedEmber,
   DefeatSource,
 } from './combat-state';
-import { positionOf, laneFor, goalFor, enemyPosition } from './enemy-position';
+import { laneFor, goalFor, enemyPosition } from './enemy-position';
 
 // 既存の import 元（step-tick）を変えずに済ませるため再エクスポートする。
 // 反復1〜4 のテストが step-tick から positionOf / enemyPosition を取っている。
@@ -121,7 +121,6 @@ export const effectiveRange = (
   }, 0);
   return spec.range + bonus;
 };
-
 
 const samePos = (a: CellPos, b: CellPos): boolean => a.x === b.x && a.y === b.y;
 
