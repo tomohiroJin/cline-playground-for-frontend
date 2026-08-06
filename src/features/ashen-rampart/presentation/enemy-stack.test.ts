@@ -2,8 +2,9 @@
  * 敵スタック集約のテスト
  *
  * ウェーブ3は群れ20体が経路7.2セル分を埋めるため、個別描画では
- * マーカーが重なって読めない（設計書 §9.3）。同種で近接する敵を
- * 1マーカーに束ねる。
+ * マーカーが重なって読めない
+ * （PoC 設計書 2026-07-29-ashen-rampart-realtime-deck-poc-design.md §9.3）。
+ * 同種で近接する敵を1マーカーに束ねる（**異種は束ねない**）。
  */
 import { stackEnemies } from './enemy-stack';
 import type { ActiveEnemy } from '../domain/combat/combat-state';
