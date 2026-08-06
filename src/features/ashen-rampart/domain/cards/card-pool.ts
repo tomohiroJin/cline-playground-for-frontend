@@ -234,7 +234,8 @@ export const PRESET_DECKS: Readonly<Record<string, PresetDeck>> = {
   swift: {
     id: 'swift',
     name: '速攻型',
-    description: '石壁で受けつつ、安い弓兵と棘罠で手数を稼ぐ。群れは火砲台、対空は弩砲。',
+    description:
+      '石壁で受けつつ、安い弓兵と棘罠で手数を稼ぐ。群れは火砲台、対空は弩砲、仕上げに徹甲弩を2枚添える。',
     cards: [
       ...repeat('reactor', 4),
       ...repeat('stone-wall', 3),
