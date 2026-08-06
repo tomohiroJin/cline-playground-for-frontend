@@ -6,11 +6,17 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { RunStatusBar } from './RunStatusBar';
-import { createCombatState } from '../domain/combat/combat-state';
+import { createCombatState, type CombatState } from '../domain/combat/combat-state';
 import { PLAINS_WAVES } from '../domain/combat/waves';
 import { createDeck } from '../domain/cards/deck';
 
 const state = createCombatState({ drawPile: [], hand: [], graveyard: [] }, PLAINS_WAVES);
+
+/** 直前 tick に指定のイベントが起きた状態を作る（反復5: ライフ内訳表示のテスト用） */
+const stateWithEvents = (events: CombatState['events']): CombatState => ({
+  ...state,
+  events,
+});
 
 describe('RunStatusBar', () => {
   it('ライフが数値で示される', () => {
@@ -98,5 +104,44 @@ describe('RunStatusBar', () => {
       <RunStatusBar state={state} isPaused={false} onTogglePause={jest.fn()} runSeed={999} />
     );
     expect((screen.getByLabelText('シード') as HTMLInputElement).value).toBe('999');
+  });
+
+  describe('ライフが減った理由の表示（反復5）', () => {
+    it('溢れでライフが減った tick は、手札が原因だと分かる文言が出る', () => {
+      render(
+        <RunStatusBar
+          state={stateWithEvents([{ kind: 'overflow', cardId: 'ballista' }])}
+          isPaused={false}
+          onTogglePause={jest.fn()}
+          runSeed={1}
+        />
+      );
+      expect(screen.getByText(/手札があふれ/)).toBeInTheDocument();
+    });
+
+    it('漏れでライフが減った tick は、敵が原因だと分かる文言が出る', () => {
+      render(
+        <RunStatusBar
+          state={stateWithEvents([{ kind: 'leak', enemyId: 1 }])}
+          isPaused={false}
+          onTogglePause={jest.fn()}
+          runSeed={1}
+        />
+      );
+      expect(screen.getByText(/砦に到達/)).toBeInTheDocument();
+    });
+
+    it('どちらも起きていない tick では理由を出さない', () => {
+      render(
+        <RunStatusBar
+          state={stateWithEvents([])}
+          isPaused={false}
+          onTogglePause={jest.fn()}
+          runSeed={1}
+        />
+      );
+      expect(screen.queryByText(/手札があふれ/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/砦に到達/)).not.toBeInTheDocument();
+    });
   });
 });

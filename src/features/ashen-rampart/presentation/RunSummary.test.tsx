@@ -116,4 +116,10 @@ describe('RunSummary', () => {
     render(<RunSummary view={view({ costHistogram: [1, 2, 0, 0, 0, 0] })} />);
     expect(screen.getByText('0:1 / 1:2 / 2:0 / 3:0 / 4:0 / 5:0')).toBeInTheDocument();
   });
+
+  it('ライフの内訳（漏れ／溢れ）をリザルトに出す', () => {
+    render(<RunSummary view={view({ lifeLostToLeak: 2, lifeLostToOverflow: 3 })} />);
+    expect(screen.getByText(/砦への到達 2/)).toBeInTheDocument();
+    expect(screen.getByText(/手札のあふれ 3/)).toBeInTheDocument();
+  });
 });
