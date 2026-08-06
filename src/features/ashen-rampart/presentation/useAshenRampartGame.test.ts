@@ -654,9 +654,6 @@ describe('useAshenRampartGame', () => {
       }
     };
 
-    /** 決着の何 tick 前から1 tick ずつ進めるか（決着した tick に必ず出来事を載せるため） */
-    const ENDGAME_TICKS = 5;
-
     /** 盤面の全マス。「置けない場所」を選ぶために使う */
     const allCells = (): CellPos[] => {
       const cells: CellPos[] = [];
@@ -734,42 +731,73 @@ describe('useAshenRampartGame', () => {
       expect(log.events.filter((e) => e.kind === 'run_tally')).toHaveLength(1);
     });
 
+    /**
+     * jest.advanceTimersByTime に大きな値を渡すと、複数 tick 分の setState が
+     * 1つの React コミットへまとめられ、間の tick で起きた events（overflow・
+     * played 等）が一度も描画されずに失われる（tallyRef の更新は「判定用の
+     * 集計を累積する」effect 経由なので、コミットされない tick には触れない）。
+     * 実ブラウザでは setInterval の発火が毎回別タスクになるため起きないが、
+     * テストで overflowCount 等を確実に非ゼロへ育てるには 1 tick ずつ進める
+     * 必要がある（advanceUntilOutcome の 50 tick ジャンプはこの理由により、
+     * 決着の有無だけを見るテストにしか使えない）。
+     */
+    const advanceOneTick = (): void => {
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+    };
+
     it('run_tally の数値が画面の集計（RunSummary）と一致する', () => {
       // 判定者は画面の集計と、貼り付けた JSON の両方を見る。両者が食い違うと
       // 同じランに対して2つの数値が存在することになり、判定が成立しない。
-      // 決着した tick に必ず出来事（rejected）が載るよう、最後の数 tick は
-      // 1 tick ずつ進めながら「置けない場所」を叩く。書き出しが1 tick 古い
-      // 集計（setTally がまだ反映されていない state 側の tally）を読むと、
-      // rejectedTarget が画面より1少なくなってこのテストが落ちる。
-      const decidedTick = (() => {
-        const probe = renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1 }));
-        advanceUntilOutcome(probe.result);
-        const tick = probe.result.current.state.tick;
-        probe.unmount();
-        return tick;
-      })();
-      expect(decidedTick).toBeGreaterThan(ENDGAME_TICKS);
-
+      // このテストは「1 tick ずれ」の再発防止が目的なので、突き合わせる項目は
+      // すべて非ゼロに育ててから比較する（0 と 0 の一致は何も守らない）。
       const log = createMockPlayLog();
+      const cards = swiftCards();
       const { result } = renderHook(() =>
-        useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log })
+        useAshenRampartGame({ cards, seed: 1, playLog: log })
       );
-      act(() => {
-        jest.advanceTimersByTime(TICK_INTERVAL_MS * (decidedTick - ENDGAME_TICKS));
-      });
-      expect(result.current.state.outcome).toBe('playing');
-      // 決着するまで、毎 tick 拒否を1件ずつ積む（決着 tick にも必ず1件載る）
-      for (let i = 0; i <= ENDGAME_TICKS && result.current.state.outcome === 'playing'; i++) {
-        tapUnplaceableCell(result);
-        act(() => {
-          jest.advanceTimersByTime(TICK_INTERVAL_MS);
-        });
+      advanceOneTick();
+
+      // 判定項目6: 開始直後に魔力炉を1枚置く（lastPlayTick を非ゼロにする）。
+      // 魔力炉はコスト0・経路外専用で、前線の守り手ではないため敵の経路取りや
+      // 決着タイミングに影響しない（run-summary.ts の applyPlayedEvent も
+      // placementKind === 'unit' のときしか placedOnPath/placedOffPath を
+      // 増やさないため、ブロッカー集計にも影響しない）。
+      const reactorIndex = result.current.state.deck.hand.findIndex(
+        (id) => getCardDefinition(id).type === 'reactor'
+      );
+      expect(reactorIndex).toBeGreaterThanOrEqual(0);
+      act(() => result.current.selectCard(reactorIndex));
+      const reactorAt = result.current.placeableCells[0];
+      expect(reactorAt).toBeDefined();
+      act(() => result.current.clickCell(reactorAt!));
+      advanceOneTick();
+
+      // 決着するまで、毎 tick「置けない場所」を叩き続ける。決着がいつかを
+      // 事前に知らなくても、拒否は毎 tick 積むため決着 tick にも必ず載る。
+      // 手札上限で手札が埋まって draw に失敗すると tapUnplaceableCell が
+      // 選べる札を見つけられずに例外を投げるため、そのときはこの tick の
+      // 拒否だけを諦めて進める（rejectedTarget が画面より少なくなることはない。
+      // 画面側の view も同じ tallyRef から計算するため、突き合わせは崩れない）。
+      const MAX_TICKS = 1500;
+      for (let i = 0; i < MAX_TICKS && result.current.state.outcome === 'playing'; i++) {
+        try {
+          tapUnplaceableCell(result);
+        } catch {
+          // 置ける札が無い tick はスキップする（上のコメント参照）
+        }
+        advanceOneTick();
       }
       expect(result.current.state.outcome).not.toBe('playing');
 
       const view = result.current.summary;
-      // 画面側が「拒否を数えている」ことを先に確かめる（0 同士の一致で通らないように）
+      // 各項目が「非ゼロで」画面とログで一致することを先に確かめる
+      // （0 同士の一致では 1 tick ずれの再発を検知できない）
       expect(view.rejectionDetail.find((d) => d.label === '置けない場所')?.count).toBeGreaterThan(0);
+      expect(view.overflowCount).toBeGreaterThan(0);
+      expect(view.lifeLostToOverflow).toBeGreaterThan(0);
+      expect(view.lastPlayTick).toBeGreaterThan(0);
 
       const tally = log.events.find((e) => e.kind === 'run_tally');
       expect(tally).toMatchObject({
@@ -786,7 +814,24 @@ describe('useAshenRampartGame', () => {
         lifeLostToOverflow: view.lifeLostToOverflow,
         lifeLostToLeak: view.lifeLostToLeak,
         lastPlayTick: view.lastPlayTick,
-        drawPileExhaustedTick: view.drawPileExhaustedTick,
+        // drawPileExhaustedTick はここでは意図的に対象から外している。
+        // 非ゼロへ育てるには山札（drawPile）を使い切る必要があるが、
+        // `startRunWithDeck` は `validateDeck` でデッキがちょうど20枚である
+        // ことを強制する（実際に5枚のデッキで試したところ
+        // 「デッキが構築規則を満たしていません」で即エラーになることを確認済み）。
+        // 20枚なら drawPile は必ず 17 枚（20 − INITIAL_HAND_SIZE）残り、
+        // DRAW_INTERVAL_TICKS=40 のため尽きるまで最短でも 680 tick かかる。
+        // このテストの無防備な swift デッキ（守り手をほぼ置かない）は
+        // tick 440 前後で決着する（実測。魔力炉を1枚置くだけでは前線が
+        // 保たない）ため、drawPile が尽きる前に必ず決着してしまい、
+        // この統合テストの中では「非ゼロで一致」を作れない。
+        // 山札を使い切るところまで生き延びさせるには実際に前線を組んで
+        // 20シード規模の勝率検証（balance.test.ts の greedyStrategy 相当）が
+        // 要る対応で、この統合テストの目的（1 tick ずれの再発検知）に対して
+        // 不釣り合いに重い。drawPileExhaustedTick の正しさ（最初に空になった
+        // tick だけを覚える／以後は上書きしない）は run-summary.test.ts の
+        // 単体テスト（「山札が尽きた tick を、最初に空になった時点で覚える」）
+        // が直接・決定的に保証しており、変異テストでも確認済み。
       });
       // endTick は RunTally 経由ではなく決着 tick を直接使うため、画面側の
       // state.tick と突き合わせる（view には endTick 相当のフィールドが無い）
