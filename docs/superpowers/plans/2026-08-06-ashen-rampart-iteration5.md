@@ -296,14 +296,19 @@ describe('attackTargetIndexFor（反復5: 射程内の守り手を撃つ）', ()
       map: PLAINS_MAP,
       tick: 100,
     };
-    // index 1 = ブロッカー。index 0 のほうが敵に近いが、ブロッカーが勝つ
+    // 2体は敵から等距離。距離だけで選ぶ実装なら同距離の先頭（index 0）が返るが、
+    // ブロッカー優先が効いていれば index 1（ブロッカー）が返る
     expect(attackTargetIndexFor(ctx, enemyAt(3, 'brute'))).toBe(1);
   });
 
   it('ブロッカーがいなければ、射程内で最も近い守り手を選ぶ', () => {
-    const near = { x: cellAt(3).x, y: cellAt(3).y + 1 };
-    const far = { x: cellAt(3).x, y: cellAt(3).y + 2 };
-    const ctx = { units: [unitAt(far), unitAt(near)], map: PLAINS_MAP, tick: 100 };
+    // **両方とも射程1.5 の内側に置くこと。** 片方を射程外に置くと、この
+    // テストは「射程外は選ばない」テストと同じことしか確かめられず、
+    // 最近接の比較分岐が一度も通らない（実装を反転させても緑のまま通る）
+    const near = { x: cellAt(3).x, y: cellAt(3).y + 1 };        // 距離 1.0
+    const mid = { x: cellAt(3).x + 1, y: cellAt(3).y + 1 };     // 距離 √2 ≒ 1.414
+    // 遠いほうを配列の先頭に。配列順で選ぶ実装なら index 0 が返る
+    const ctx = { units: [unitAt(mid), unitAt(near)], map: PLAINS_MAP, tick: 100 };
     expect(attackTargetIndexFor(ctx, enemyAt(3, 'brute'))).toBe(1);
   });
 
