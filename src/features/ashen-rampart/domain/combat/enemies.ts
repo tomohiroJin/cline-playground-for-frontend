@@ -26,16 +26,25 @@ export interface EnemySpec {
   attack: number;
   /** 攻撃間隔（tick） */
   attackIntervalTicks: number;
+  /**
+   * 経路外の守り手にも届く攻撃の射程（セル）
+   *
+   * 0 なら、自分をブロックしている守り手しか殴らない（反復4 までの挙動）。
+   * 0 より大きいと、進みながら射程内の守り手を削る（反復5・設計書 §4）。
+   * **持たせるのは北レーン専属の2種だけ。** 南（俊足・群れ・鴉）に持たせると、
+   * 群れ22体が同時に削るため上限3 でも盤面が溶ける（設計書 §4.3）。
+   */
+  attackRange: number;
 }
 
 const ENEMIES: readonly EnemySpec[] = [
-  { id: 'grunt', name: '雑兵', hp: 20, speed: 0.1, flying: false, attack: 3, attackIntervalTicks: 20 },
-  { id: 'runner', name: '俊足', hp: 12, speed: 0.18, flying: false, attack: 2, attackIntervalTicks: 12 },
-  { id: 'swarm', name: '群れ', hp: 8, speed: 0.12, flying: false, attack: 1, attackIntervalTicks: 15 },
-  { id: 'brute', name: '重装', hp: 60, speed: 0.06, flying: false, attack: 10, attackIntervalTicks: 30 },
+  { id: 'grunt', name: '雑兵', hp: 20, speed: 0.1, flying: false, attack: 3, attackIntervalTicks: 20, attackRange: 0 },
+  { id: 'runner', name: '俊足', hp: 12, speed: 0.18, flying: false, attack: 2, attackIntervalTicks: 12, attackRange: 0 },
+  { id: 'swarm', name: '群れ', hp: 8, speed: 0.12, flying: false, attack: 1, attackIntervalTicks: 15, attackRange: 0 },
+  { id: 'brute', name: '重装', hp: 60, speed: 0.06, flying: false, attack: 10, attackIntervalTicks: 30, attackRange: 1.5 },
   // 鴉の攻撃は地上化中のみ使う。0 にすると落網で落とした鴉が壁の前で
   // 何もできず 120tick 膠着し、落網が「足止め」になってしまう（設計書 §8.2）
-  { id: 'raven', name: '鴉', hp: 16, speed: 0.14, flying: true, attack: 2, attackIntervalTicks: 20 },
+  { id: 'raven', name: '鴉', hp: 16, speed: 0.14, flying: true, attack: 2, attackIntervalTicks: 20, attackRange: 0 },
 ];
 
 const ENEMY_MAP: ReadonlyMap<string, EnemySpec> = new Map(ENEMIES.map((e) => [e.id, e]));

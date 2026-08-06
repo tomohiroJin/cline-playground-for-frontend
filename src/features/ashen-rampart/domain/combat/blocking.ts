@@ -11,6 +11,8 @@ import type { CellPos, StageMap } from '../board/stage-map';
 import { laneOf } from '../board/stage-map';
 import type { ActiveEnemy, PlacedUnit } from './combat-state';
 import { isEnemyFlying } from './enemy-status';
+import { getEnemySpec } from './enemies';
+import { enemyPosition } from './enemy-position';
 
 const samePos = (a: CellPos, b: CellPos): boolean => a.x === b.x && a.y === b.y;
 
@@ -54,6 +56,47 @@ export const blockerIndexFor = (
 /** その敵が止められているか */
 export const isBlocked = (ctx: BlockContext, enemy: ActiveEnemy): boolean =>
   blockerIndexFor(ctx, enemy) !== undefined;
+
+/**
+ * その敵が今 tick に攻撃する守り手の index
+ *
+ * 契約（設計書 §4.1）:
+ * 1. 自分をブロックしている守り手がいれば、それを攻撃する
+ * 2. いなければ、射程内で最も近い守り手を攻撃する。同距離なら units の配列順
+ *
+ * **順序を逆にしてはいけない。** 壁を無視して奥の塔を撃つようになると石壁が
+ * 機能を失い、反復3 で作った「経路上でブロックする」という中核が壊れる。
+ *
+ * 距離は敵の補間済み座標から守り手のセルまでのユークリッド距離で測り、
+ * `<= attackRange` を射程内とする。守り手側の射程判定（hypot(...) <= range）と
+ * 同じ式にそろえてある——反復4 では判定と描画が半セルずれる欠陥が出ている。
+ *
+ * 1体の敵が殴る守り手は1つだけ（範囲攻撃ではない）。
+ */
+export const attackTargetIndexFor = (
+  ctx: BlockContext,
+  enemy: ActiveEnemy
+): number | undefined => {
+  const blocker = blockerIndexFor(ctx, enemy);
+  if (blocker !== undefined) return blocker;
+  if (!enemy.alive) return undefined;
+  // 飛行はブロックも射程攻撃もしない。地上化中は地上の敵と同じ扱い
+  if (isEnemyFlying(enemy, ctx.tick)) return undefined;
+  const range = getEnemySpec(enemy.enemyId).attackRange;
+  if (range <= 0) return undefined;
+  const pos = enemyPosition(ctx.map, enemy);
+  const found = ctx.units.reduce<{ index: number; distance: number } | undefined>(
+    (best, unit, index) => {
+      const distance = Math.hypot(pos.x - unit.pos.x, pos.y - unit.pos.y);
+      if (distance > range) return best;
+      // 同距離は配列順で決定的に選ぶ（> ではなく >= にすると後勝ちになる）
+      if (best !== undefined && best.distance <= distance) return best;
+      return { index, distance };
+    },
+    undefined
+  );
+  return found?.index;
+};
 
 /**
  * 1体のブロッカーを同時に殴れる敵の数
