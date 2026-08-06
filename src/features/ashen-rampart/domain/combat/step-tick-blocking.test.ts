@@ -22,7 +22,7 @@ import { createCombatState } from './combat-state';
 import { createDeck } from '../cards/deck';
 import { stepTick } from './step-tick';
 import { PLAINS_MAP, laneOf } from '../board/stage-map';
-import type { CombatState, PlacedUnit } from './combat-state';
+import type { CombatState, PlacedUnit, ActiveEnemy } from './combat-state';
 import type { CellPos } from '../board/stage-map';
 
 const emptyDeck = { drawPile: [], hand: [], graveyard: [] };
@@ -204,5 +204,101 @@ describe('飛行とブロック', () => {
     const unit = state.units[0];
     // 消滅している場合も「殴った」証拠なので、どちらでもよい
     expect(unit === undefined || unit.hp < maxHp).toBe(true);
+  });
+});
+
+describe('敵の射程攻撃（反復5）', () => {
+  const lane0 = laneOf(PLAINS_MAP, 0);
+  const cellAt = (index: number): CellPos => {
+    const cell = lane0[index];
+    if (!cell) throw new Error(`レーン0 に index ${index} のセルがありません`);
+    return cell;
+  };
+
+  const bruteAt = (progress: number, id = 1): ActiveEnemy => ({
+    id, enemyId: 'brute', hp: 60, maxHp: 60, progress,
+    spawnTick: 0, laneIndex: 0, alive: true, leaked: false, groundedUntilTick: 0,
+  });
+
+  it('経路外に置いた守り手が、隣を通る重装に削られる', () => {
+    const beside = { x: cellAt(3).x, y: cellAt(3).y + 1 };
+    const base = createCombatState(createDeck([], () => 0), []);
+    // 重装の攻撃間隔は30。tick 30 に殴られるよう tick 29 から進める
+    const state: CombatState = {
+      ...base,
+      tick: 29,
+      units: [{ cardId: 'arrow-tower', pos: beside, hp: 8, maxHp: 8, cooldownLeft: 0 }],
+      enemies: [bruteAt(3)],
+    };
+    const next = stepTick(state, [], PLAINS_MAP);
+    // 弓兵 HP8 に重装の攻撃10 → 消滅する。イベントだけでなく units が減ることまで見る
+    expect(next.events).toContainEqual(
+      expect.objectContaining({ kind: 'unit-lost', cardId: 'arrow-tower' })
+    );
+    expect(next.units).toHaveLength(0);
+  });
+
+  it('射程外の守り手は削られない', () => {
+    const farAway = { x: cellAt(3).x, y: cellAt(3).y + 5 };
+    const base = createCombatState(createDeck([], () => 0), []);
+    const state: CombatState = {
+      ...base,
+      tick: 29,
+      units: [{ cardId: 'arrow-tower', pos: farAway, hp: 8, maxHp: 8, cooldownLeft: 0 }],
+      enemies: [bruteAt(3)],
+    };
+    const next = stepTick(state, [], PLAINS_MAP);
+    expect(next.units[0]?.hp).toBe(8);
+  });
+
+  it('射程攻撃をしても敵は止まらない', () => {
+    const beside = { x: cellAt(3).x, y: cellAt(3).y + 1 };
+    const base = createCombatState(createDeck([], () => 0), []);
+    const state: CombatState = {
+      ...base,
+      tick: 29,
+      // 硬い壁を経路外に置く（消滅して条件が変わらないように）
+      units: [{ cardId: 'stone-wall', pos: beside, hp: 60, maxHp: 60, cooldownLeft: 0 }],
+      enemies: [bruteAt(3)],
+    };
+    const next = stepTick(state, [], PLAINS_MAP);
+    // 進んだことだけを見る。0.06 という実数で比べると、そのセルが滞留セルかどうか
+    // （SLOW_TERRAIN_MULT 0.6 が掛かるか）に依存してしまい、地図を触ると壊れる。
+    // 主張は「射程攻撃をしても止まらない」であって速度の値ではない
+    expect(next.enemies[0]?.progress).toBeGreaterThan(3);
+    expect(next.units[0]?.hp).toBeLessThan(60);
+  });
+
+  it('魔力炉・罠・燠火は射程内でも攻撃されない', () => {
+    const beside = { x: cellAt(3).x, y: cellAt(3).y + 1 };
+    const base = createCombatState(createDeck([], () => 0), []);
+    const state: CombatState = {
+      ...base,
+      tick: 29,
+      units: [],
+      reactors: [{ pos: beside, ticksToMana: 60 }],
+      traps: [{ cardId: 'spike-trap', pos: beside, usesLeft: 3, hitEnemyIds: [] }],
+      embers: [{ pos: beside, cooldownLeft: 300 }],
+      enemies: [bruteAt(3)],
+    };
+    const next = stepTick(state, [], PLAINS_MAP);
+    // マナ源が壊れると詰みへ戻る（設計書 §4.2）。数が減っていないことを確かめる
+    expect(next.reactors).toHaveLength(1);
+    expect(next.traps).toHaveLength(1);
+    expect(next.embers).toHaveLength(1);
+  });
+
+  it('1つの守り手を同時に殴れる敵は3体まで', () => {
+    const beside = { x: cellAt(3).x, y: cellAt(3).y + 1 };
+    const base = createCombatState(createDeck([], () => 0), []);
+    const state: CombatState = {
+      ...base,
+      tick: 29,
+      units: [{ cardId: 'stone-wall', pos: beside, hp: 60, maxHp: 60, cooldownLeft: 0 }],
+      enemies: [bruteAt(3, 1), bruteAt(3, 2), bruteAt(3, 3), bruteAt(3, 4), bruteAt(3, 5)],
+    };
+    const next = stepTick(state, [], PLAINS_MAP);
+    // 5体いても3体分（10 × 3 = 30）しか通らない
+    expect(next.units[0]?.hp).toBe(30);
   });
 });
