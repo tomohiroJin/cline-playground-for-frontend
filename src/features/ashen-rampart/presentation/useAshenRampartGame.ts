@@ -105,9 +105,9 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
   // 能力表示の対象。座標ではなく plateKeyOf の文字列で持つ。設置物が壊れて
   // 消えたときに、次の描画で自動的に対象が失われる（別途クリアする処理が要らない）
   const [inspectedKey, setInspectedKey] = useState<string | null>(null);
-  // 決着時に run_tally へ載せる集計用 ref（判定項目2・3）
+  // 決着時に run_tally へ載せる集計用 ref（判定項目3）。
+  // 手動の捨札は ref ではなく tally（ドメインの discarded イベント）から取る
   const inspectOpensRef = useRef(0);
-  const manualDiscardsRef = useRef(0);
   const prevStateRef = useRef<CombatState>(state);
   // レンダーごとに matchMedia を読まないよう、初期化関数で1度だけ解決する
   const [prefersReducedMotion] = useState<boolean>(
@@ -255,6 +255,32 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       if (event.kind === 'ember') {
         logRef.current.record({ kind: 'reactivated', runId, tick: state.tick });
       }
+      // 判定項目5（unitsLost）と ライフ内訳（lifeLostToLeak）を、判定者が
+      // run_tally の集計値から独立に数え直せるようにする生ログ（最終レビュー指摘1）。
+      // 集計値が唯一の情報源だと、間違っていても確かめる手段が無い。
+      if (event.kind === 'unit-lost') {
+        logRef.current.record({
+          kind: 'unit_lost',
+          runId,
+          cardId: event.cardId,
+          tick: state.tick,
+          x: event.pos.x,
+          y: event.pos.y,
+        });
+      }
+      if (event.kind === 'leak') {
+        logRef.current.record({ kind: 'enemy_leaked', runId, tick: state.tick });
+      }
+      // 手動の捨札は「押した回数」ではなくドメインが成立を認めた回数で残す
+      // （最終レビュー指摘3）。run_tally.manualDiscards も同じイベントを数える。
+      if (event.kind === 'discarded') {
+        logRef.current.record({
+          kind: 'card_discarded_manual',
+          runId,
+          cardId: event.cardId,
+          tick: state.tick,
+        });
+      }
     });
     if (state.tick >= noticeUntilRef.current) setOverflowNotice(undefined);
   }, [state.events, state.tick, state.mana, runId]);
@@ -310,7 +336,7 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       runId,
       iteration: CURRENT_ITERATION,
       unusedCardIds: view.unusedCardIds,
-      manualDiscards: manualDiscardsRef.current,
+      manualDiscards: view.manualDiscards,
       inspectOpens: inspectOpensRef.current,
       rejectedTarget: settled.rejectionCounts.target,
       laneAllocation: view.laneAllocation,
@@ -382,18 +408,14 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
    * 手札から1枚捨てる（UI から到達する唯一の入口）
    *
    * 一時停止中・決着後は無反応にする（他の操作と同じ防御）。
+   *
+   * **ここでは記録しない。** 捨札が成立したかを知っているのはドメインだけで、
+   * ここで数えると「押したが捨てられなかった」ぶんまで数えてしまう
+   * （最終レビュー指摘3）。記録はドメインの `discarded` イベントを受けて行う。
    */
   const discardCard = useCallback(
     (handIndex: number) => {
       if (isPaused || state.outcome !== 'playing') return;
-      // 手動捨札を記録する（判定項目2「手動で捨てた回数」。run_tally にまとめて載る）
-      logRef.current.record({
-        kind: 'card_discarded_manual',
-        runId,
-        cardId: state.deck.hand[handIndex],
-        tick: state.tick,
-      });
-      manualDiscardsRef.current += 1;
       pendingRef.current.push({ kind: 'discard', handIndex });
       // 手札は配列で、捨てると後続の札が前へ詰まる。選択中の札そのものを
       // 捨てたら選択解除、選択中より前を捨てたら選択位置も1つ前へずらさないと、
@@ -405,7 +427,7 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
         return current > handIndex ? current - 1 : current;
       });
     },
-    [isPaused, runId, state]
+    [isPaused, state.outcome]
   );
 
   /**
@@ -509,7 +531,6 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       tallyRef.current = emptyTally();
       setTally(tallyRef.current);
       inspectOpensRef.current = 0;
-      manualDiscardsRef.current = 0;
       setRunSeed(seedToUse);
       const nextState = startRunWithDeck(cards, new SeededRandom(seedToUse));
       setState(nextState);

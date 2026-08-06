@@ -67,6 +67,15 @@ export interface RunTally {
   lastPlayTick: number;
   /** 山札が空になった最初の tick。0 なら最後まで尽きなかった（反復5） */
   drawPileExhaustedTick: number;
+  /**
+   * 判定項目1: 手動で捨てた回数（反復5・最終レビュー指摘3）
+   *
+   * ドメインの `discarded` イベント（＝実際に成立した捨札）だけを数える。
+   * 捨札ボタンの押下回数を presentation 側で数えていたころは、
+   * 押した直後の tick で決着した場合や手札 index がずれた場合に
+   * 上振れしていた。
+   */
+  manualDiscards: number;
 }
 
 export const emptyTally = (): RunTally => ({
@@ -87,6 +96,7 @@ export const emptyTally = (): RunTally => ({
   lifeLostToLeak: 0,
   lastPlayTick: 0,
   drawPileExhaustedTick: 0,
+  manualDiscards: 0,
 });
 
 /** 撃破源に対応するカード id */
@@ -211,11 +221,20 @@ export const accumulateTick = (tally: RunTally, state: CombatState, map: StageMa
 
   // 反復5: 溢れの回数とライフ内訳。ドローの溢れと徴発の溢れは両方とも
   // { kind: 'overflow' } を積むため、この1本の集計で両方を拾える。
+  //
+  // **内訳の合計は、実際に減ったライフ量を上回ることがある**（設計書 §5.4）。
+  // stepTick は敗北時に life を 0 でクランプするため、残ライフ1 の tick に
+  // 漏れ2件＋溢れ1件が同時に起きると内訳の合計は3、実際の減少は1 になる。
+  // ここではクランプしない——イベントの記録としてはこれが正しく、
+  // 「何回起きたか」を潰すと判定者が原因別の頻度を読めなくなるため。
   const overflows = state.events.filter((e) => e.kind === 'overflow').length;
   const leaks = state.events.filter((e) => e.kind === 'leak').length;
   next.overflowCount += overflows;
   next.lifeLostToOverflow += overflows * OVERFLOW_LIFE_COST;
   next.lifeLostToLeak += leaks;
+
+  // 判定項目1: 実際に成立した手動の捨札だけを数える（最終レビュー指摘3）
+  next.manualDiscards += state.events.filter((e) => e.kind === 'discarded').length;
 
   // 判定項目6: 最後に出した tick。出していない tick で上書きすると
   // 「最後に出した tick ÷ 決着 tick」が常に 1.0 になり指標が死ぬため、
@@ -259,14 +278,21 @@ export interface RunSummaryView {
   unusedCardIds: string[];
   /** 判定項目2: 手札上限で墓地へ落ちた札の枚数（反復5） */
   overflowCount: number;
-  /** ライフ内訳: 溢れで失った点数（反復5・設計書 §5.4） */
+  /**
+   * ライフ内訳: 溢れ／漏れで失った点数（反復5・設計書 §5.4）
+   *
+   * **敗北ランでは合計が「初期ライフ − 最終ライフ」を上回りうる。**
+   * 最後の tick が同時に複数の減少を起こしても、ライフ自体は 0 でクランプ
+   * されるためである。原因別の頻度としては正しい値。
+   */
   lifeLostToOverflow: number;
-  /** ライフ内訳: 漏れで失った点数（反復5・設計書 §5.4） */
   lifeLostToLeak: number;
   /** 判定項目6: 最後にカードを出した tick。0 なら一度も出していない（反復5） */
   lastPlayTick: number;
   /** 山札が空になった最初の tick。0 なら最後まで尽きなかった（反復5） */
   drawPileExhaustedTick: number;
+  /** 判定項目1: 実際に成立した手動の捨札の回数（反復5・最終レビュー指摘3） */
+  manualDiscards: number;
 }
 
 const REJECTION_LABEL: Record<RejectionReason, string> = {
@@ -309,5 +335,6 @@ export const summarize = (tally: RunTally, deckCards: readonly string[]): RunSum
     lifeLostToLeak: tally.lifeLostToLeak,
     lastPlayTick: tally.lastPlayTick,
     drawPileExhaustedTick: tally.drawPileExhaustedTick,
+    manualDiscards: tally.manualDiscards,
   };
 };

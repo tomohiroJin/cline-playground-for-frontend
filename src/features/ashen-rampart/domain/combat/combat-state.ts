@@ -90,6 +90,17 @@ export type TickEvent =
   | { kind: 'mana'; amount: number }
   | { kind: 'draw'; cardId: string }
   | { kind: 'overflow'; cardId: string }
+  /**
+   * 手動の捨札が**実際に成立した**ことを表す（反復5・最終レビュー指摘3）
+   *
+   * 判定項目1（手動で捨てた回数）は出口条件（設計書 §8.6）の一部である。
+   * これが無かったころ、集計は presentation 側で「捨札ボタンを押した回数」を
+   * 数えていた。押した直後の tick で決着してアクションが消費されなかった場合や、
+   * 短時間に2回押して手札 index がずれた場合、実際には捨てていないのに
+   * カウントだけが増える（上振れ方向にしか誤らない）。
+   * 成立を知っているのはドメインだけなので、ここでイベントとして名乗る。
+   */
+  | { kind: 'discarded'; cardId: string }
   | { kind: 'played'; cardId: string; pos?: CellPos }
   | { kind: 'rejected'; reason: 'cooldown' | 'mana' | 'target' | 'occupied' | 'pending' };
 

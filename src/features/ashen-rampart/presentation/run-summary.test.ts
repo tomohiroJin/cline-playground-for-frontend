@@ -216,6 +216,18 @@ describe('反復5 の集計項目', () => {
     expect(second.lastPlayTick).toBe(100);
   });
 
+  it('手動の捨札は discarded イベントの件数で数える（押した回数ではない）', () => {
+    const first = accumulateTick(
+      emptyTally(),
+      stateWithEvents([{ kind: 'discarded', cardId: 'ballista' }]),
+      PLAINS_MAP
+    );
+    // 捨札の起きなかった tick では増えない
+    const second = accumulateTick(first, stateWithEvents([]), PLAINS_MAP);
+    expect(second.manualDiscards).toBe(1);
+    expect(summarize(second, ['ballista']).manualDiscards).toBe(1);
+  });
+
   it('山札が尽きた tick を、最初に空になった時点で覚える', () => {
     const emptied = accumulateTick(
       emptyTally(),

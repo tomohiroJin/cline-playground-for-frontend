@@ -889,6 +889,115 @@ describe('useAshenRampartGame', () => {
       expect((tally as { endTick: number }).endTick).toBe(result.current.state.tick);
     });
 
+    /**
+     * 北レーンの経路セル。ここに守り手を置くと雑兵にブロックされ、摩耗で実際に壊れる
+     *
+     * 経路外に置いても壊れない（設計書 §2.1。反復4 まではそれがラチェットだった）ため、
+     * `unitsLost` を非ゼロに育てるには経路上でなければならない。
+     */
+    const NORTH_PATH_CELL: CellPos = { x: 3, y: 2 };
+
+    /** 手札の中で、いま置ける守り手（罠・魔力炉・即時札を除く）の index */
+    const affordableUnitIndex = (
+      result: { current: ReturnType<typeof useAshenRampartGame> }
+    ): number =>
+      result.current.state.deck.hand.findIndex((id) => {
+        const card = getCardDefinition(id);
+        return placementKindOf(card) === 'unit' && card.cost <= result.current.state.mana;
+      });
+
+    it('unitsLost が非ゼロのランでも run_tally と画面の集計が一致し、生ログから数え直せる', () => {
+      // この反復の看板指標（判定項目5）を 0 対 0 で比べても、1 tick ずれの再発は
+      // 検知できない。守り手を経路上に置いて実際に壊させ、非ゼロで突き合わせる。
+      // 併せて、集計値が生イベント（unit_lost / enemy_leaked）から数え直せることも見る。
+      // 集計値だけが情報源だと、間違っていても判定者に確かめる手段が無いため。
+      const log = createMockPlayLog();
+      const cards = swiftCards();
+      const { result } = renderHook(() =>
+        useAshenRampartGame({ cards, seed: 1, playLog: log })
+      );
+
+      // 置ける守り手が手札に来てマナが足りるまで待ってから、北レーンへ1枚置く
+      const MAX_WAIT_TICKS = 300;
+      let placed = false;
+      for (let i = 0; i < MAX_WAIT_TICKS && !placed; i++) {
+        const handIndex = affordableUnitIndex(result);
+        if (handIndex >= 0) {
+          act(() => result.current.selectCard(handIndex));
+          placed = result.current.placeableCells.some(
+            (c) => c.x === NORTH_PATH_CELL.x && c.y === NORTH_PATH_CELL.y
+          );
+          if (placed) act(() => result.current.clickCell(NORTH_PATH_CELL));
+          else act(() => result.current.selectCard(handIndex));
+        }
+        advanceOneTick();
+      }
+      expect(placed).toBe(true);
+
+      const MAX_TICKS = 1500;
+      for (let i = 0; i < MAX_TICKS && result.current.state.outcome === 'playing'; i++) {
+        advanceOneTick();
+      }
+      expect(result.current.state.outcome).not.toBe('playing');
+
+      const view = result.current.summary;
+      const lostTotal = Object.values(view.unitsLost).reduce((sum, n) => sum + n, 0);
+      expect(lostTotal).toBeGreaterThan(0);
+
+      const tally = log.events.find((e) => e.kind === 'run_tally');
+      expect(tally).toMatchObject({
+        unitsLost: view.unitsLost,
+        lifeLostToLeak: view.lifeLostToLeak,
+      });
+
+      // 生ログから数え直せること（判定者が集計値を検算する手順そのもの）
+      expect(log.events.filter((e) => e.kind === 'unit_lost')).toHaveLength(lostTotal);
+      expect(log.events.filter((e) => e.kind === 'enemy_leaked')).toHaveLength(
+        view.lifeLostToLeak
+      );
+    });
+
+    it('unit_lost には壊れた守り手の cardId と盤面座標が入る', () => {
+      const log = createMockPlayLog();
+      const { result } = renderHook(() =>
+        useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log })
+      );
+
+      const MAX_WAIT_TICKS = 300;
+      let placedCardId: string | undefined;
+      for (let i = 0; i < MAX_WAIT_TICKS && placedCardId === undefined; i++) {
+        const handIndex = affordableUnitIndex(result);
+        if (handIndex >= 0) {
+          const candidate = result.current.state.deck.hand[handIndex];
+          act(() => result.current.selectCard(handIndex));
+          const canPlace = result.current.placeableCells.some(
+            (c) => c.x === NORTH_PATH_CELL.x && c.y === NORTH_PATH_CELL.y
+          );
+          if (canPlace) {
+            act(() => result.current.clickCell(NORTH_PATH_CELL));
+            placedCardId = candidate;
+          } else {
+            act(() => result.current.selectCard(handIndex));
+          }
+        }
+        advanceOneTick();
+      }
+      expect(placedCardId).toBeDefined();
+
+      const MAX_TICKS = 1500;
+      for (let i = 0; i < MAX_TICKS && result.current.state.outcome === 'playing'; i++) {
+        advanceOneTick();
+      }
+
+      const lost = log.events.filter((e) => e.kind === 'unit_lost');
+      expect(lost.length).toBeGreaterThan(0);
+      expect(lost[0]).toMatchObject({
+        cardId: placedCardId,
+        x: NORTH_PATH_CELL.x,
+        y: NORTH_PATH_CELL.y,
+      });
+    });
+
     it('run_tally に判定項目1〜4 の実測値が載る', () => {
       // 「1行で壊せる」を塞ぐ。inspectOpens を 0 固定にする / manualDiscards を
       // 0 固定にする / rejectedTarget を 0 固定にすると、それぞれここで落ちる。
@@ -954,7 +1063,7 @@ describe('useAshenRampartGame', () => {
       expect(unused.length).toBeLessThan(new Set(cards).size);
     });
 
-    it('手動で捨てると card_discarded_manual に捨てた札の id が入る', () => {
+    it('手動で捨てると card_discarded_manual に捨てた札の id が入る（捨札が成立した tick に記録される）', () => {
       const log = createMockPlayLog();
       const { result } = renderHook(() =>
         useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log })
@@ -962,9 +1071,27 @@ describe('useAshenRampartGame', () => {
       const discarded = result.current.state.deck.hand[0];
       expect(discarded).toBeDefined();
       act(() => result.current.discardCard(0));
+      // 押した時点ではまだ記録されない。捨札が成立したかを知っているのはドメインだけ
+      expect(log.events.filter((e) => e.kind === 'card_discarded_manual')).toHaveLength(0);
+      advanceOneTick();
       const events = log.events.filter((e) => e.kind === 'card_discarded_manual');
       expect(events).toHaveLength(1);
       expect(events[0]).toMatchObject({ cardId: discarded });
+    });
+
+    it('捨札のアクションが消費されずにランが終わった場合、manualDiscards は増えない（押した回数ではない）', () => {
+      // 決着した tick より後に押しても stepTick は走らない（outcome !== 'playing' で
+      // 即 return する）。ボタンの押下回数を数えていたころは、ここで集計だけが増えた。
+      const log = createMockPlayLog();
+      const { result } = renderHook(() =>
+        useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log })
+      );
+      advanceUntilOutcome(result);
+      expect(result.current.state.outcome).not.toBe('playing');
+      act(() => result.current.discardCard(0));
+      advanceOneTick();
+      expect(log.events.filter((e) => e.kind === 'card_discarded_manual')).toHaveLength(0);
+      expect(result.current.summary.manualDiscards).toBe(0);
     });
 
     it('inspect_opened には開いた設置物の cardId が入る', () => {

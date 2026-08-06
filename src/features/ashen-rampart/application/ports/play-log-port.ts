@@ -28,6 +28,19 @@ export type PlayLogEventBody =
   | { kind: 'run_note'; runId: string; text: string }
   | { kind: 'inspect_opened'; runId: string; cardId: string; tick: number }
   | { kind: 'card_discarded_manual'; runId: string; cardId: string; tick: number }
+  /**
+   * 守り手が壊されて盤面から消えた（反復5・最終レビュー指摘1）
+   *
+   * 判定項目5（`unitsLost`）はこの反復の看板指標であり、設計書 §8.5 の
+   * 反証条件2本（3ラン合計0 なら No／1ランあたり10体以上なら No）の直接の入力である。
+   * それが `run_tally` の集計値だけにしか無いと、**間違っていても判定者に
+   * 確かめる手段が無い**（前反復で「画面は正しいのに貼り付けた JSON だけが
+   * 間違っている」が出荷寸前まで行っている）。生イベントを残し、
+   * 判定者が集計値を数え直せるようにする。
+   */
+  | { kind: 'unit_lost'; runId: string; cardId: string; tick: number; x: number; y: number }
+  /** 敵が砦に到達した（漏れ）。`run_tally.lifeLostToLeak` を数え直すための生イベント */
+  | { kind: 'enemy_leaked'; runId: string; tick: number }
   | {
       /**
        * 決着時の集計スナップショット（反復4で追加、反復5でスキーマ v4 へ拡張）
@@ -41,7 +54,13 @@ export type PlayLogEventBody =
       iteration: number;
       /** 判定項目1: 一度も出さなかった札 */
       unusedCardIds: string[];
-      /** 判定項目2: 手動で捨てた回数 */
+      /**
+       * 判定項目2: 手動で捨てた回数
+       *
+       * 数えているのは**実際に捨てられた回数**（ドメインの `discarded` イベント）であり、
+       * 捨札ボタンを押した回数ではない。生ログの `card_discarded_manual` は同じ
+       * イベントから出るため、件数は必ず一致する（反復5・最終レビュー指摘3）。
+       */
       manualDiscards: number;
       /** 判定項目3: 能力表示を開いた回数 */
       inspectOpens: number;

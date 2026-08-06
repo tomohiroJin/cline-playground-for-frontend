@@ -323,13 +323,19 @@ const applyCardEffect = (
  * （ドローは DRAW_INTERVAL_TICKS の時間駆動）ため、「捨てて回す」戦術は
  * 成立せず、効果は手札の枠を空けることに限定される。有限デッキという
  * 前提を緩めないための意図的な設計（設計書 §5.3）。
+ *
+ * 成立したときだけ `discarded` イベントを積む。捨札の挙動自体は変わらない
+ * （イベントを足しただけ）。判定項目1 を「押した回数」ではなく
+ * 「実際に捨てた回数」で数えるための唯一の根拠になる。
  */
 const applyDiscard = (
   draft: ActionsDraft,
   action: Extract<PlayerAction, { kind: 'discard' }>
 ): void => {
-  if (draft.deck.hand[action.handIndex] === undefined) return;
+  const cardId = draft.deck.hand[action.handIndex];
+  if (cardId === undefined) return;
   draft.deck = discardFromHand(draft.deck, action.handIndex);
+  draft.events.push({ kind: 'discarded', cardId });
 };
 
 /**

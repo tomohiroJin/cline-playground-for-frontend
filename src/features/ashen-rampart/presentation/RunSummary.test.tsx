@@ -30,6 +30,7 @@ const view = (over: Partial<RunSummaryView> = {}): RunSummaryView => ({
   lifeLostToLeak: 0,
   lastPlayTick: 0,
   drawPileExhaustedTick: 0,
+  manualDiscards: 0,
   ...over,
 });
 
