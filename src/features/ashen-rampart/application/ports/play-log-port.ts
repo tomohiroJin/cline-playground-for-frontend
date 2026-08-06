@@ -6,7 +6,7 @@
  */
 
 /** 現在の反復番号。反復を進めるたびに必ず更新する */
-export const CURRENT_ITERATION = 4;
+export const CURRENT_ITERATION = 5;
 
 export type PlayLogEventBody =
   | {
@@ -30,11 +30,11 @@ export type PlayLogEventBody =
   | { kind: 'card_discarded_manual'; runId: string; cardId: string; tick: number }
   | {
       /**
-       * 決着時の集計スナップショット（反復4で追加）
+       * 決着時の集計スナップショット（反復4で追加、反復5でスキーマ v4 へ拡張）
        *
        * 反復1〜3 は集計が判定者へ届かなかった。生イベント列だけを渡しても
        * 判定者が自分で集計し直す必要があったためである。判定に使う数値を
-       * ここへ入れ、コピー1回で6項目が揃うようにする（設計書 §9）。
+       * ここへ入れ、コピー1回で判定項目が揃うようにする（設計書 §9）。
        */
       kind: 'run_tally';
       runId: string;
@@ -55,6 +55,16 @@ export type PlayLogEventBody =
       ravenDefeatAverage: number;
       ravenDefeatCount: number;
       costHistogram: number[];
+      /** 判定項目2: 手札上限で墓地へ落ちた枚数（反復5） */
+      overflowCount: number;
+      /** ライフ内訳（反復5・設計書 §5.4） */
+      lifeLostToOverflow: number;
+      lifeLostToLeak: number;
+      /** 判定項目6: 最後にカードを出した tick と決着 tick（反復5） */
+      lastPlayTick: number;
+      endTick: number;
+      /** 山札が尽きた tick。0 なら尽きなかった（反復5） */
+      drawPileExhaustedTick: number;
     };
 
 export type PlayLogEvent = PlayLogEventBody & { at: number };

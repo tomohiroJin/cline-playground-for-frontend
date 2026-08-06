@@ -76,6 +76,16 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
    * ログの数値と画面の `RunSummary` が必ず一致する。
    */
   const tallyRef = useRef<RunTally>(tally);
+  /**
+   * `run_tally` の `endTick` に使う tick 値（反復5）
+   *
+   * `run_tally` の effect は `[state.outcome, runId, cards]` だけを依存配列に
+   * 持つ（`state.tick` を入れると毎 tick 発火してしまう）。そのため effect 内で
+   * `state.tick` を直接読むと react-hooks/exhaustive-deps に引っかかる。
+   * tallyRef と同じ理由・同じ更新タイミングで ref を経由させることで、
+   * 依存配列を汚さずに「決着したコミットの tick」を安全に読める。
+   */
+  const endTickRef = useRef<number>(state.tick);
   // 能力表示の対象。座標ではなく plateKeyOf の文字列で持つ。設置物が壊れて
   // 消えたときに、次の描画で自動的に対象が失われる（別途クリアする処理が要らない）
   const [inspectedKey, setInspectedKey] = useState<string | null>(null);
@@ -146,6 +156,7 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
     // いるため、同じコミット内で必ず先に走る（React は effect を定義順に実行する）。
     // 二重計上は上の prevStateRef のガードが防ぐ。
     tallyRef.current = accumulateTick(tallyRef.current, state, PLAINS_MAP);
+    endTickRef.current = state.tick;
     setTally(tallyRef.current);
   }, [state]);
 
@@ -274,6 +285,15 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       ravenDefeatAverage: view.ravenDefeatAverage,
       ravenDefeatCount: view.ravenDefeatCount,
       costHistogram: view.costHistogram,
+      overflowCount: view.overflowCount,
+      lifeLostToOverflow: view.lifeLostToOverflow,
+      lifeLostToLeak: view.lifeLostToLeak,
+      lastPlayTick: view.lastPlayTick,
+      // endTick は RunTally に持たず、決着した tick から直接入れる。
+      // endTickRef は tallyRef と同じコミットで更新されるため、settled と
+      // 必ず同じ tick を指す（endTickRef 宣言のコメントを参照）。
+      endTick: endTickRef.current,
+      drawPileExhaustedTick: view.drawPileExhaustedTick,
     });
   }, [state.outcome, runId, cards]);
 

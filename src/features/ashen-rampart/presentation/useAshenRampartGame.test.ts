@@ -52,7 +52,7 @@ describe('useAshenRampartGame', () => {
     renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log }));
     const started = log.events.filter((e) => e.kind === 'run_started');
     expect(started).toHaveLength(1);
-    expect(started[0]).toMatchObject({ seed: 1, iteration: 4 });
+    expect(started[0]).toMatchObject({ seed: 1, iteration: 5 });
   });
 
   it('StrictMode 下でもカードを1枚配置できる（指摘1の回帰: updater 内の副作用で操作が握り潰されていた）', () => {
@@ -707,7 +707,7 @@ describe('useAshenRampartGame', () => {
       advanceUntilOutcome(result);
       const tallies = log.events.filter((e) => e.kind === 'run_tally');
       expect(tallies).toHaveLength(1);
-      expect(tallies[0]).toMatchObject({ iteration: 4 });
+      expect(tallies[0]).toMatchObject({ iteration: 5 });
     });
 
     it('決着後に外部からの再レンダーで run_tally effect が再実行されても2件目は記録されない', () => {
@@ -782,7 +782,15 @@ describe('useAshenRampartGame', () => {
         ravenDefeatAverage: view.ravenDefeatAverage,
         ravenDefeatCount: view.ravenDefeatCount,
         costHistogram: view.costHistogram,
+        overflowCount: view.overflowCount,
+        lifeLostToOverflow: view.lifeLostToOverflow,
+        lifeLostToLeak: view.lifeLostToLeak,
+        lastPlayTick: view.lastPlayTick,
+        drawPileExhaustedTick: view.drawPileExhaustedTick,
       });
+      // endTick は RunTally 経由ではなく決着 tick を直接使うため、画面側の
+      // state.tick と突き合わせる（view には endTick 相当のフィールドが無い）
+      expect((tally as { endTick: number }).endTick).toBe(result.current.state.tick);
     });
 
     it('run_tally に判定項目1〜4 の実測値が載る', () => {
@@ -839,7 +847,7 @@ describe('useAshenRampartGame', () => {
 
       const tally = log.events.find((e) => e.kind === 'run_tally');
       expect(tally).toMatchObject({
-        iteration: 4,
+        iteration: 5,
         manualDiscards: 2,
         inspectOpens: 2,
         rejectedTarget: 1,

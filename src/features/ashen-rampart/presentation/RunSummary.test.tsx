@@ -25,6 +25,11 @@ const view = (over: Partial<RunSummaryView> = {}): RunSummaryView => ({
   ravenDefeatCount: 1,
   costHistogram: [0, 1, 0, 0, 0, 0],
   unusedCardIds: [],
+  overflowCount: 0,
+  lifeLostToOverflow: 0,
+  lifeLostToLeak: 0,
+  lastPlayTick: 0,
+  drawPileExhaustedTick: 0,
   ...over,
 });
 

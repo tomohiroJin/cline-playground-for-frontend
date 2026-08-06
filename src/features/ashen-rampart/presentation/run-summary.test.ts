@@ -22,6 +22,10 @@ const base = (over: Partial<CombatState> = {}): CombatState => ({
 /** イベントだけを差し替えた状態を作る。集計は events（と defeat の敵参照）しか見ないため */
 const stateWithEvents = (events: TickEvent[]): CombatState => base({ tick: 5, events });
 
+/** 山札が尽きた状態を作る（反復5: drawPileExhaustedTick の集計用） */
+const stateWithEmptyDrawPile = (): CombatState =>
+  base({ tick: 5, deck: { hand: [], drawPile: [], graveyard: [] }, events: [] });
+
 const stateWithPlayed = (cardId: string, pos: { x: number; y: number }): CombatState =>
   stateWithEvents([{ kind: 'played', cardId, pos }]);
 
@@ -172,5 +176,53 @@ describe('summarize', () => {
     const tally = { ...emptyTally(), playedCardIds: new Set(['arrow-tower']) };
     const view = summarize(tally, ['arrow-tower', 'stone-wall', 'forge', 'forge']);
     expect(view.unusedCardIds).toEqual(['stone-wall', 'forge']);
+  });
+});
+
+describe('反復5 の集計項目', () => {
+  it('溢れの回数と、それによって失ったライフを数える', () => {
+    // overflow イベントを2件持つ tick を1回通す
+    const state = stateWithEvents([
+      { kind: 'overflow', cardId: 'ballista' },
+      { kind: 'overflow', cardId: 'forge' },
+    ]);
+    const tally = accumulateTick(emptyTally(), state, PLAINS_MAP);
+    expect(tally.overflowCount).toBe(2);
+    expect(tally.lifeLostToOverflow).toBe(2);
+  });
+
+  it('漏れで失ったライフを、溢れと分けて数える', () => {
+    const state = stateWithEvents([
+      { kind: 'leak', enemyId: 1 },
+      { kind: 'overflow', cardId: 'forge' },
+    ]);
+    const tally = accumulateTick(emptyTally(), state, PLAINS_MAP);
+    expect(tally.lifeLostToLeak).toBe(1);
+    expect(tally.lifeLostToOverflow).toBe(1);
+  });
+
+  it('最後にカードを出した tick を覚える', () => {
+    const first = accumulateTick(
+      emptyTally(),
+      { ...stateWithEvents([{ kind: 'played', cardId: 'arrow-tower' }]), tick: 100 },
+      PLAINS_MAP
+    );
+    const second = accumulateTick(
+      first,
+      { ...stateWithEvents([]), tick: 200 },
+      PLAINS_MAP
+    );
+    // 出していない tick では更新されない
+    expect(second.lastPlayTick).toBe(100);
+  });
+
+  it('山札が尽きた tick を、最初に空になった時点で覚える', () => {
+    const emptied = accumulateTick(
+      emptyTally(),
+      { ...stateWithEmptyDrawPile(), tick: 680 },
+      PLAINS_MAP
+    );
+    const later = accumulateTick(emptied, { ...stateWithEmptyDrawPile(), tick: 700 }, PLAINS_MAP);
+    expect(later.drawPileExhaustedTick).toBe(680);
   });
 });
