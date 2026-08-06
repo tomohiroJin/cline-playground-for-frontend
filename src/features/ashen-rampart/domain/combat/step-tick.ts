@@ -22,7 +22,7 @@ import { getEnemySpec } from './enemies';
 import { isEnemyFlying } from './enemy-status';
 import { isBlocked, attackersFor } from './blocking';
 import type { BlockContext } from './blocking';
-import { DRAW_INTERVAL_TICKS, PLACE_COOLDOWN_TICKS } from './combat-state';
+import { DRAW_INTERVAL_TICKS, PLACE_COOLDOWN_TICKS, OVERFLOW_LIFE_COST } from './combat-state';
 import type {
   CombatState,
   ActiveEnemy,
@@ -412,7 +412,15 @@ const applyActions = (
       applyReactivate(draft, action);
     } else if (action.kind === 'choose-levy') {
       if (draft.levyOptions.length === 0) return;
+      const chosen = draft.levyOptions[action.optionIndex];
+      const handSizeBefore = draft.deck.hand.length;
       draft.deck = takeFromPeek(draft.deck, draft.levyOptions, action.optionIndex);
+      // 手札が増えていなければ、選んだ札は上限のため墓地へ落ちている。
+      // 引いた札が入らないという点で通常のドローの溢れと同じ事象なので、同じ対価を払う
+      // （設計書 §5.0）。選ばなかった残りは徴発そのものの代償なので対価はない。
+      if (chosen !== undefined && draft.deck.hand.length === handSizeBefore) {
+        draft.events.push({ kind: 'overflow', cardId: chosen });
+      }
       draft.levyOptions = [];
     } else if (action.kind === 'discard') {
       applyDiscard(draft, action);
@@ -944,10 +952,16 @@ export const stepTick = (
   const damaged = resolveDamage(moved, hpById, sourceById, statusById, events);
   const { settled, life } = resolveLeaks(damaged, map, state.life, events);
 
+  // --- 溢れの対価（反復5・設計書 §5）---
+  // ドローと徴発の両方が overflow イベントを積むため、ここで一括して数える。
+  // 漏れ（resolveLeaks）と同じライフを引くが、イベントの種類で内訳を区別できる
+  const overflowCount = events.filter((e) => e.kind === 'overflow').length;
+  const lifeAfterOverflow = life - overflowCount * OVERFLOW_LIFE_COST;
+
   const next: CombatState = {
     ...state,
     tick,
-    life,
+    life: lifeAfterOverflow,
     mana,
     deck,
     reactors,
@@ -964,7 +978,7 @@ export const stepTick = (
     levyOptions: afterActions.levyOptions,
   };
 
-  if (life <= 0) return { ...next, life: 0, outcome: 'lost' };
+  if (lifeAfterOverflow <= 0) return { ...next, life: 0, outcome: 'lost' };
   if (isCleared(next, tick)) return { ...next, outcome: 'won' };
   return next;
 };
