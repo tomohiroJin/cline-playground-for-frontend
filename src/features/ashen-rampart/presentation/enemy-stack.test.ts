@@ -71,4 +71,41 @@ describe('stackEnemies', () => {
     const northCell = laneOf(PLAINS_MAP, 0)[2];
     expect(stacks[0]?.pos).not.toEqual(northCell);
   });
+
+  /**
+   * 反復5 Task 12: 重装（brute）と雑兵（grunt）が同一位置に来た場合の静的検証。
+   *
+   * 北レーンの体数が反復5で倍増し（重装2→4・雑兵2→4、waves.ts 参照）、
+   * 雑兵(speed 0.1)は重装(speed 0.06)を必ず追い抜くため交差が起こる。
+   * 実機で8回フルランしても重なる瞬間を目視できなかったため、動的観測ではなく
+   * stackEnemies と enemyPosition の計算だけで座標の一致・不一致を決定的に確かめる。
+   */
+  describe('重装と雑兵が同一位置に来た場合（静的検証）', () => {
+    it('種別が違うので束ねられず、2つのスタックが返る', () => {
+      const stacks = stackEnemies([enemy(1, 'brute', 3.0), enemy(2, 'grunt', 3.0)], PLAINS_MAP);
+      expect(stacks).toHaveLength(2);
+    });
+
+    /**
+     * これは「重なることが正しい仕様である」ことを固定するテストではない。
+     * enemyPosition は laneIndex と progress だけから座標を決め、enemyId を
+     * 一切見ない（domain/combat/enemy-position.ts 参照）。そのため同じ
+     * laneIndex・同じ progress の異種の敵は必ず同じ pos を持つ。
+     * EnemyMarker はセル座標を絶対配置に変換するだけでオフセットを持たないため
+     * （EnemyMarker.tsx 参照）、pos が一致する2つのスタックは画面上で完全に重なり
+     * HPバーが判読できなくなる。これは現状の制約の記録であり、
+     * オフセット付与などの対処が入ったらこのテストの assertion を
+     * 「pos が一致しないこと」に書き換える。
+     */
+    it('重装と雑兵の盤面座標は一致する（＝画面上で完全に重なる。対処されたら書き換える）', () => {
+      const stacks = stackEnemies([enemy(1, 'brute', 3.0), enemy(2, 'grunt', 3.0)], PLAINS_MAP);
+      const [first, second] = stacks;
+      expect(first?.pos).toBeDefined();
+      expect(first?.pos).toEqual(second?.pos);
+    });
+
+    // 対処（オフセット付与など）が入ったら、EnemyMarker が異種スタックを
+    // 区別して描画できることを確かめるテストをここに実装する
+    it.todo('異種の敵が同一セルにいてもマーカーが区別できる');
+  });
 });
