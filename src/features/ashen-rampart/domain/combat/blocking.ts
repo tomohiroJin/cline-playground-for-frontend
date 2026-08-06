@@ -89,7 +89,7 @@ export const attackTargetIndexFor = (
     (best, unit, index) => {
       const distance = Math.hypot(pos.x - unit.pos.x, pos.y - unit.pos.y);
       if (distance > range) return best;
-      // 同距離は配列順で決定的に選ぶ（> ではなく >= にすると後勝ちになる）
+      // 同距離は配列順（先勝ち）で決定的に選ぶ（<= ではなく < にすると同距離のとき後勝ちになる）
       if (best !== undefined && best.distance <= distance) return best;
       return { index, distance };
     },
