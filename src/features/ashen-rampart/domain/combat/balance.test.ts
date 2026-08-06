@@ -31,9 +31,11 @@ import {
   offPathOnlyStrategy,
   noPureGroundAttackStrategy,
   deployThenIdleStrategy,
+  DEPLOY_ONLY_UNTIL_TICK,
   type RunSimulationResult,
   type Strategy,
 } from './run-simulation';
+import { stepTick } from './step-tick';
 
 // 1ランは約1000tick。20シード×十数条件を回すため、既定の5秒では足りない
 jest.setTimeout(120_000);
@@ -245,6 +247,26 @@ describe('【反復5 の診断】配備が終わると判断が消える', () =>
     // 絶対値の閾値を置くと、後の較正で素直な戦略の勝率が動いたときに、この閾値の意味も
     // 黙って変わってしまう。greedy の掃引は runAllSeeds のキャッシュに載るので実行コストは増えない
     expect(greedy - idle).toBeLessThanOrEqual(4);
+  });
+
+  it('DEPLOY_ONLY_UNTIL_TICK までに、素直な戦略で進めると山札が尽きている', () => {
+    // DEPLOY_ONLY_UNTIL_TICK は式から導出せず実数で置いている（意図的）。
+    // その実数が「山札を尽きさせるのに十分な tick」だという根拠は、このテストだけが持つ。
+    // DECK_SIZE や DRAW_INTERVAL_TICKS が将来変わったとき、この診断が黙って
+    // 無関係な tick を測るようになることを防ぐ。
+    //
+    // 「ちょうどこの tick で尽きる」とまでは主張しない。FULL_DECK は徴発（levy）を
+    // 1枚含み、これを打つと山札の上から3枚が一度に取り除かれる（drawOne による
+    // 40tick 周期のドローとは別経路）。そのため実際に尽きる tick は徴発をいつ
+    // 打てたかに左右され、680 より前に尽きることがある（実測: シード1で560）。
+    // DEPLOY_ONLY_UNTIL_TICK が保証するのは「この tick には尽きている」ことだけ。
+    const random = new SeededRandom(1);
+    const deck = createDeck(FULL_DECK, () => random.random());
+    let state = createCombatState(deck, PLAINS_WAVES);
+    for (let i = 0; i < DEPLOY_ONLY_UNTIL_TICK; i++) {
+      state = stepTick(state, greedyStrategy(state, PLAINS_MAP), PLAINS_MAP);
+    }
+    expect(state.deck.drawPile).toHaveLength(0);
   });
 });
 
