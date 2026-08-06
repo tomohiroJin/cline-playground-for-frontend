@@ -33,6 +33,11 @@ import type {
   PlacedEmber,
   DefeatSource,
 } from './combat-state';
+import { positionOf, laneFor, goalFor, enemyPosition } from './enemy-position';
+
+// 既存の import 元（step-tick）を変えずに済ませるため再エクスポートする。
+// 反復1〜4 のテストが step-tick から positionOf / enemyPosition を取っている。
+export { positionOf, enemyPosition } from './enemy-position';
 
 /** プレイヤーがその tick に行った操作 */
 export type PlayerAction =
@@ -117,30 +122,6 @@ export const effectiveRange = (
   return spec.range + bonus;
 };
 
-/** 進行度から補間済みの盤面座標を求める */
-export const positionOf = (progress: number, path: readonly CellPos[]): CellPos => {
-  if (path.length === 0) return { x: 0, y: 0 };
-  const last = path.length - 1;
-  const clamped = Math.max(0, Math.min(progress, last));
-  const i = Math.min(Math.floor(clamped), Math.max(0, last - 1));
-  const a = path[i];
-  const b = path[i + 1] ?? a;
-  if (!a || !b) return { x: 0, y: 0 };
-  const frac = clamped - i;
-  return { x: a.x + (b.x - a.x) * frac, y: a.y + (b.y - a.y) * frac };
-};
-
-/** その敵の所属レーン */
-const laneFor = (map: StageMap, enemy: ActiveEnemy): readonly CellPos[] =>
-  laneOf(map, enemy.laneIndex);
-
-/** その敵が砦に到達したとみなす進行度 */
-const goalFor = (map: StageMap, enemy: ActiveEnemy): number =>
-  Math.max(0, laneFor(map, enemy).length - 1);
-
-/** その敵の現在の盤面座標 */
-export const enemyPosition = (map: StageMap, enemy: ActiveEnemy): CellPos =>
-  positionOf(enemy.progress, laneFor(map, enemy));
 
 const samePos = (a: CellPos, b: CellPos): boolean => a.x === b.x && a.y === b.y;
 
