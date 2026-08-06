@@ -220,6 +220,11 @@ const repeat = (id: string, count: number): string[] => Array.from({ length: cou
  * - 重厚型 = 火力寄り。徹甲弩・投石機で硬い敵を抜き、飛行は落網で落として叩く
  * 共有しているのは魔力炉・石壁・弩砲・徴発だけで、主戦力の塔は重なっていない。
  *
+ * **反復5 で速攻型にも重い帯を入れた。** それまで速攻型は最大コスト3 で、
+ * これを選んだ人には「マナを貯めて重い札を出す」という反復5 の判断が
+ * 一度も発生しなかった（設計書 §2.4）。手数寄りという性格は残すため、
+ * 入れたのは徹甲弩2枚だけで、投石機（コスト5）は重厚型の専売のままにする。
+ *
  * **注意: 配列の並び順にも意味がある。** createDeck のシャッフルは入力配列の順序に依存し、
  * 枚数構成が同一でも並べ替えるだけで実測勝率が動く（反復1 では 6/20〜11/20 の幅が出た）。
  * 較正の測定は下記の宣言順そのままで行った。「見やすさのために並べ替える」だけの
@@ -233,10 +238,11 @@ export const PRESET_DECKS: Readonly<Record<string, PresetDeck>> = {
     cards: [
       ...repeat('reactor', 4),
       ...repeat('stone-wall', 3),
-      ...repeat('arrow-tower', 3),
+      ...repeat('arrow-tower', 2),
       ...repeat('ballista', 3),
       ...repeat('cannon-tower', 2),
-      ...repeat('spike-trap', 3),
+      ...repeat('spike-trap', 2),
+      ...repeat('piercer', 2),
       ...repeat('forge', 1),
       ...repeat('levy', 1),
     ],
