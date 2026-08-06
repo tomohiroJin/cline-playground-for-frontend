@@ -44,7 +44,7 @@
 
 山札は20枚から初期手札3枚を引いた**17枚**。ドローは `DRAW_INTERVAL_TICKS = 40` の時間駆動なので、**最後のドローは tick 680** に確定している。
 
-一方ウェーブ4の開始は `startTick 820` に `COUNTDOWN_TICKS 90` を足した **tick 910**。決着はおよそ tick 1100〜1150（**この数字だけは推定である**。鴉13体の出現完了 tick 1030 に移動時間を足した見積もりで、実測はしていない。v4 の `endTick` で確定する）。
+一方ウェーブ4の開始は `startTick 820` に `COUNTDOWN_TICKS 90` を足した **tick 910**。決着はおよそ tick 1200〜1250（**この数字だけは推定である**。較正後の鴉13体の出現完了 tick `910 + 12×18 = 1126`（§8.2 と同じ計算。鴉の出現間隔は較正で 10→18 に変わっている）に移動時間を足した見積もりで、実測はしていない。v4 の `endTick` で確定する）。
 
 **ランの後半4割、しかも最終ウェーブがまるごと無補給である。** `handRemaining` が空になるのは、そうなるように設計されている。
 
@@ -358,7 +358,15 @@
 | `lastPlayTick` / `endTick` | 判定項目6 |
 | `drawPileExhaustedTick` | 供給が終盤まで持ったかの観察 |
 
-`CURRENT_ITERATION` を 5 に、localStorage のキーを `ashen-rampart:play-log-v4` に上げる。反復4の baseline と混ざらないようにするためであり、**判定前に localStorage を消す必要はない**。
+`CURRENT_ITERATION` を 5 に、localStorage のキーを `ashen-rampart:play-log-v4` に上げる。反復4の baseline（v3）と混ざらないようにするための措置である。
+
+**判定の前に localStorage の `ashen-rampart:play-log-v4` を消すこと。** 反復4 の記録（v3）とは混ざらないが、**このブランチの開発途中で `unit_lost` / `enemy_leaked` という生ログイベントを後から追加した**ため、**このブランチの開発途中で記録された v4 のログには `unit_lost` / `enemy_leaked` が入っていない**。開発中の実機確認（8回フルラン）の記録がブラウザの localStorage に残っている可能性があり、古いログが混ざると、§9.0.1 の数え直しが**エラーにならず静かに0件**になる。
+
+消し方（DevTools のコンソールで実行できる1行）:
+
+```js
+localStorage.removeItem('ashen-rampart:play-log-v4');
+```
 
 ### 9.0 集計値には必ず生イベントを添える
 
@@ -379,24 +387,33 @@
 
 エクスポートした JSON（`{ version, events }`）に対して、判定するランの `runId` で絞ってから数える。
 
+**§8.1.1 のとおり判定は3ラン分ある。`find` で1件目の `runId` だけを取り出すと、ラン2・3 が一度も検算されない。全ランぶんの `runId` を `filter` で取り出し、ループで数える。**
+
 ```js
 const log = JSON.parse(pasted);
-const runId = log.events.find((e) => e.kind === 'run_tally').runId;
-const of = (kind) => log.events.filter((e) => e.kind === kind && e.runId === runId);
+// 3ラン分の run_tally をすべて取り出す（find だと1件目しか拾えない）
+const runIds = log.events.filter((e) => e.kind === 'run_tally').map((e) => e.runId);
+const of = (kind, runId) => log.events.filter((e) => e.kind === kind && e.runId === runId);
 
-// 判定項目5: 失った守り手の総数。run_tally.unitsLost の値の合計と一致する
-of('unit_lost').length;
-// カード種別ごとの内訳（run_tally.unitsLost のキーと値そのもの）
-of('unit_lost').reduce((acc, e) => ({ ...acc, [e.cardId]: (acc[e.cardId] ?? 0) + 1 }), {});
+for (const runId of runIds) {
+  console.log('--- runId:', runId, '---');
 
-// ライフ内訳（漏れ）: run_tally.lifeLostToLeak と一致する
-of('enemy_leaked').length;
+  // 判定項目5: 失った守り手の総数。run_tally.unitsLost の値の合計と一致する
+  console.log('unit_lost:', of('unit_lost', runId).length);
+  // カード種別ごとの内訳（run_tally.unitsLost のキーと値そのもの）
+  console.log(
+    of('unit_lost', runId).reduce((acc, e) => ({ ...acc, [e.cardId]: (acc[e.cardId] ?? 0) + 1 }), {})
+  );
 
-// ライフ内訳（溢れ）: run_tally.lifeLostToOverflow / overflowCount と一致する
-of('card_discarded_overflow').length;
+  // ライフ内訳（漏れ）: run_tally.lifeLostToLeak と一致する
+  console.log('enemy_leaked:', of('enemy_leaked', runId).length);
 
-// 判定項目1: run_tally.manualDiscards と一致する
-of('card_discarded_manual').length;
+  // ライフ内訳（溢れ）: run_tally.lifeLostToOverflow / overflowCount と一致する
+  console.log('card_discarded_overflow:', of('card_discarded_overflow', runId).length);
+
+  // 判定項目1: run_tally.manualDiscards と一致する
+  console.log('card_discarded_manual:', of('card_discarded_manual', runId).length);
+}
 ```
 
 - **`unit_lost` は `cardId` と盤面座標（`x` / `y`）と `tick` を持つ。** 「どこに置いたものが」「いつ」壊れたかまで追える（経路上か経路外かの検算にも使える）
