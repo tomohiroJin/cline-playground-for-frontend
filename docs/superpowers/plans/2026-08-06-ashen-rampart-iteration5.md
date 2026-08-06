@@ -20,7 +20,7 @@
 - **マナ源（魔力炉）に触らない。** ドロー間隔（`DRAW_INTERVAL_TICKS = 40`）、山札の枚数（`DECK_SIZE = 20`）、`HAND_LIMIT = 5`、魔力炉の生成間隔・生成量は**この反復では変更しない**（§5.1）
 - **魔力炉・罠・燠火は敵の攻撃対象にしない。** 攻撃対象は `units`（守り手）だけ（§4.2）
 - コミットメッセージは Conventional Commits（`feat:` / `fix:` / `test:` / `refactor:` / `docs:`）。本文は日本語
-- 各タスクの最後は `npx jest src/features/ashen-rampart` が緑であること
+- **各タスクの完了判定には3つすべてが要る。** `npm run lint:ci`（警告ゼロを強制）/ `npm run typecheck` / `npx jest src/features/ashen-rampart`。**jest だけでは足りない**——移動やリファクタで残った未使用 import は型チェックもテストも素通りし、lint:ci でだけ落ちる（Task 2 で実際に発生した）
 - **テストは「名乗った保証」を守ること。** 同じ関数を自分自身と比べる、変更前から真だった条件を確かめる、イベントが出たことだけ見て結果を見ない——反復4で9件見つかったこれらのパターンを作らない
 - **本計画のテストコードは import 文を省略している。** 追記先の既存テストファイルを読み、不足する import（`PLAINS_MAP` / `laneOf` / `createCombatState` / `createDeck` / `CellPos` / `ActiveEnemy` / `PlacedUnit` / `TickEvent` 等）を足すこと。既存ファイルにヘルパーが既にあれば、重複定義せずそれを使う
 - **座標をテストにハードコードしない。** `laneOf(PLAINS_MAP, 0)` から取る。地図が変わってもテストの主張が保たれる
