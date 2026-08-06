@@ -7,6 +7,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { getCardDefinition } from '../domain/cards/card-pool';
+import { HAND_LIMIT } from '../domain/cards/deck';
 import type { CombatState } from '../domain/combat/combat-state';
 import { DRAW_INTERVAL_TICKS, PLACE_COOLDOWN_TICKS } from '../domain/combat/combat-state';
 import { CardBadge } from './CardBadge';
@@ -40,13 +41,25 @@ const Track = styled.div`
   background: ${COLORS.grid};
 `;
 
-const Marker = styled.div<{ $ratio: number; $color: string }>`
+const Marker = styled.div<{ $ratio: number; $color: string; $warning?: boolean }>`
   position: absolute;
   top: -2px;
   left: ${({ $ratio }) => Math.max(0, Math.min(1, $ratio)) * 100}%;
-  width: 3px;
+  width: ${({ $warning }) => ($warning ? '6px' : '3px')};
   height: 10px;
-  background: ${({ $color }) => $color};
+  background: ${({ $warning, $color }) => ($warning ? COLORS.danger : $color)};
+`;
+
+/**
+ * 手札が上限のときの警告文言
+ *
+ * 色（Marker の危険色）だけに頼らず、文言でも「あふれる」と伝える
+ * （.claude/rules/design-ui-ux-principles.md「色だけに依存しない情報伝達」）。
+ */
+const OverflowWarning = styled.span`
+  /* COLORS.danger は背景とのコントラスト比が低くテキストに使えない（theme.ts 参照）。
+     文字色には dangerText を使う */
+  color: ${COLORS.dangerText};
 `;
 
 const Cards = styled.div`
@@ -161,6 +174,17 @@ export const HandArea: React.FC<Props> = ({
     .map((id) => getCardDefinition(id).cost - state.mana)
     .filter((diff) => diff > 0);
   const maxShortage = shortage.length > 0 ? Math.max(...shortage) : 0;
+  /**
+   * 「このままだと溢れる」と言えるのは、まだ引く札が残っているときだけ
+   *
+   * `runDraw`（step-tick.ts）は山札が空でもドローのタイマーを回し続けるため、
+   * 手札の枚数だけを見ると**山札が尽きた後（ランの後半4割・設計書 §2.3）は
+   * 決して起きない溢れについて警告が鳴り続ける**。
+   * 終盤に札を抱えることは判定項目3（決着時に手札が1枚以上残る）が
+   * 誘発したい行動そのものなので、それを常時の警告状態として提示してはいけない。
+   */
+  const isHandFull = state.deck.hand.length >= HAND_LIMIT;
+  const willOverflow = isHandFull && state.deck.drawPile.length > 0;
 
   return (
     <Bar>
@@ -171,9 +195,15 @@ export const HandArea: React.FC<Props> = ({
           <Marker
             $ratio={1 - state.ticksToDraw / DRAW_INTERVAL_TICKS}
             $color={COLORS.secondary}
-            aria-label={`次のドローまで ${toSeconds(state.ticksToDraw)}秒`}
+            $warning={willOverflow}
+            aria-label={
+              willOverflow
+                ? `手札がいっぱいです。次のドローまで ${toSeconds(state.ticksToDraw)}秒。このままだとあふれてライフを1失います`
+                : `次のドローまで ${toSeconds(state.ticksToDraw)}秒`
+            }
           />
         </Track>
+        {willOverflow && <OverflowWarning>手札がいっぱいです。このままだとあふれてライフを失います</OverflowWarning>}
       </Row>
       {overflowNotice && <Notice>{overflowNotice} を手札に持てず失いました</Notice>}
       {maxShortage > 0 && <p>マナが{maxShortage}足りません</p>}

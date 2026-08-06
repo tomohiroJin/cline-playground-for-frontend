@@ -26,16 +26,35 @@ export interface EnemySpec {
   attack: number;
   /** 攻撃間隔（tick） */
   attackIntervalTicks: number;
+  /**
+   * 経路外の守り手にも届く攻撃の射程（セル）
+   *
+   * 0 なら、自分をブロックしている守り手しか殴らない（反復4 までの挙動）。
+   * 0 より大きいと、進みながら射程内の守り手を削る（反復5・設計書 §4）。
+   * **持たせるのは北レーン専属の2種だけ。** 南（俊足・群れ・鴉）に持たせると、
+   * 群れ22体が同時に削るため上限3 でも盤面が溶ける（設計書 §4.3）。
+   *
+   * **この値で難度は較正できない（反復5 の実測）。** 較正の測定器である
+   * greedyStrategy は攻撃札を shootingCellFor で置くため経路セルを優先し、
+   * ほとんど経路外に置かない。1.5/1.2 → 2.5/2.0 → 3.5/3.0 と上げても20シードの
+   * 勝率は1本も動かなかった。摩耗が効いていないのではなく、測定器が拾わない
+   * （経路外にしか置かない対照条件では20シード中8シードで弓兵が壊れる）。
+   * 難度を動かしたいときは waves.ts の数・タイミングを使うこと。
+   */
+  attackRange: number;
 }
 
 const ENEMIES: readonly EnemySpec[] = [
-  { id: 'grunt', name: '雑兵', hp: 20, speed: 0.1, flying: false, attack: 3, attackIntervalTicks: 20 },
-  { id: 'runner', name: '俊足', hp: 12, speed: 0.18, flying: false, attack: 2, attackIntervalTicks: 12 },
-  { id: 'swarm', name: '群れ', hp: 8, speed: 0.12, flying: false, attack: 1, attackIntervalTicks: 15 },
-  { id: 'brute', name: '重装', hp: 60, speed: 0.06, flying: false, attack: 10, attackIntervalTicks: 30 },
-  // 鴉の攻撃は地上化中のみ使う。0 にすると落網で落とした鴉が壁の前で
-  // 何もできず 120tick 膠着し、落網が「足止め」になってしまう（設計書 §8.2）
-  { id: 'raven', name: '鴉', hp: 16, speed: 0.14, flying: true, attack: 2, attackIntervalTicks: 20 },
+  { id: 'grunt', name: '雑兵', hp: 20, speed: 0.1, flying: false, attack: 3, attackIntervalTicks: 20, attackRange: 1.2 },
+  { id: 'runner', name: '俊足', hp: 12, speed: 0.18, flying: false, attack: 2, attackIntervalTicks: 12, attackRange: 0 },
+  { id: 'swarm', name: '群れ', hp: 8, speed: 0.12, flying: false, attack: 1, attackIntervalTicks: 15, attackRange: 0 },
+  { id: 'brute', name: '重装', hp: 60, speed: 0.06, flying: false, attack: 10, attackIntervalTicks: 30, attackRange: 1.5 },
+  // **以下は attack（ブロック時の与ダメージ）についての注意であり、attackRange の話ではない。**
+  // 鴉の attack は地上化中のみ使う。attack を 0 にすると落網で落とした鴉が壁の前で
+  // 何もできず 120tick 膠着し、落網が「足止め」になってしまう（設計書 §8.2）。
+  // 一方 attackRange: 0 は意図した設定である——南レーン（俊足・群れ・鴉）に射程を
+  // 持たせると群れ22体が上限3 でも盤面を溶かすため（設計書 §4.3）。ここを 0 以外にしないこと。
+  { id: 'raven', name: '鴉', hp: 16, speed: 0.14, flying: true, attack: 2, attackIntervalTicks: 20, attackRange: 0 },
 ];
 
 const ENEMY_MAP: ReadonlyMap<string, EnemySpec> = new Map(ENEMIES.map((e) => [e.id, e]));

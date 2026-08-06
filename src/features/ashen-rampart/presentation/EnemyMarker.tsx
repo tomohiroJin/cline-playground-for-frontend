@@ -2,7 +2,11 @@
  * 灰燼の城壁 - 敵マーカー
  *
  * 形・サイズ・色の3重符号で敵種を示し、HPバーは最大HPの絶対スケールで描く。
- * 束ねた場合は体数バッジを添える（設計書 §9.3）。
+ * 束ねた場合は体数バッジを添える
+ * （PoC 設計書 2026-07-29-ashen-rampart-realtime-deck-poc-design.md §9.3）。
+ *
+ * **セル座標を絶対配置するだけで、重なりを避けるオフセットは持たない。**
+ * 同種は enemy-stack.ts が束ねるが、異種が同一位置に来ると完全に重なる。
  */
 import React from 'react';
 import styled from 'styled-components';

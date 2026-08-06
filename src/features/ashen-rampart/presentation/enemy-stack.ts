@@ -2,8 +2,15 @@
  * 灰燼の城壁 - 敵マーカーのスタック集約（純粋）
  *
  * 群れ20体は経路の7.2セル分を埋めるため、個別に描くとマーカーが重なり
- * HPバーが読めない（設計書 §9.3）。表示上だけ束ねる措置であり、
+ * HPバーが読めない（PoC 設計書 2026-07-29-ashen-rampart-realtime-deck-poc-design.md §9.3。
+ * 反復5 の設計書には §9.3 が無い）。表示上だけ束ねる措置であり、
  * ドメインの敵は個体のまま扱う。
+ *
+ * **束ねるのは同種だけである（下の条件式）。** 異なる敵種が同一位置に来た場合の
+ * マーカーの重なりは、この集約では原理的に救えない（EnemyMarker はオフセットを
+ * 持たないため完全に重なる）。反復5 で北レーンの体数が倍増し、速い雑兵が
+ * 遅い重装を追い抜く機会が増えているので、ウェーブ4 開始直後は目視確認が要る
+ * （waves.ts の docstring 参照）。
  */
 import type { CellPos, StageMap } from '../domain/board/stage-map';
 import type { ActiveEnemy } from '../domain/combat/combat-state';

@@ -16,6 +16,7 @@ import { nextWavePreview } from './wave-preview';
 import { decideBattleAnnouncement } from './battle-announcement';
 import { advanceEffects, type Effect } from './combat-effects';
 import { rejectionText } from './rejection-text';
+import { lifeLossReason as deriveLifeLossReason } from './life-loss-reason';
 import { accumulateTick, emptyTally, summarize, type RunTally } from './run-summary';
 import { startRunWithDeck, createSeed } from '../application/use-cases/start-run';
 import { SeededRandom } from '../infrastructure/random/seeded-random';
@@ -36,6 +37,19 @@ const ANNOUNCE_TICKS = 20;
 
 /** 拒否通知を表示し続ける tick 数（0.6秒） */
 const REJECTION_NOTICE_TICKS = 6;
+
+/**
+ * ライフが減った理由の表示を保持する tick 数（0.8秒・反復5・設計書 §5.4）
+ *
+ * 漏れの危険色エフェクト（`isLeaking` の元になる `leak` エフェクト）は
+ * `combat-effects.ts` の `EFFECT_LIFETIME.leak` で最大8 tick 持続する。
+ * 理由テキストがそれより短いと、危険色がまだ点灯している間に
+ * 「なぜ危険なのか」の文言だけ先に消えてしまう。8 tick に揃えることで、
+ * 少なくとも危険表示と同じだけの時間は理由も読める状態にする
+ * （溢れ単独の通知 `OVERFLOW_NOTICE_TICKS` は6 tickだが、こちらは
+ * 漏れとの整合を優先し、溢れ側の理由もこの長さで保持する）。
+ */
+const LIFE_LOSS_REASON_TICKS = 8;
 
 export interface UseAshenRampartGameOptions {
   /** 使用するデッキ。構築 UI から渡す */
@@ -62,6 +76,8 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
   const announceUntilRef = useRef(0);
   const [rejectionNotice, setRejectionNotice] = useState<string | undefined>(undefined);
   const rejectionUntilRef = useRef(0);
+  const [lifeLossReason, setLifeLossReason] = useState<string | undefined>(undefined);
+  const lifeLossReasonUntilRef = useRef(0);
   const [tally, setTally] = useState<RunTally>(() => emptyTally());
   /**
    * 集計の真値。`run_tally` の書き出しはこの ref を読む
@@ -76,12 +92,22 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
    * ログの数値と画面の `RunSummary` が必ず一致する。
    */
   const tallyRef = useRef<RunTally>(tally);
+  /**
+   * `run_tally` の `endTick` に使う tick 値（反復5）
+   *
+   * `run_tally` の effect は `[state.outcome, runId, cards]` だけを依存配列に
+   * 持つ（`state.tick` を入れると毎 tick 発火してしまう）。そのため effect 内で
+   * `state.tick` を直接読むと react-hooks/exhaustive-deps に引っかかる。
+   * tallyRef と同じ理由・同じ更新タイミングで ref を経由させることで、
+   * 依存配列を汚さずに「決着したコミットの tick」を安全に読める。
+   */
+  const endTickRef = useRef<number>(state.tick);
   // 能力表示の対象。座標ではなく plateKeyOf の文字列で持つ。設置物が壊れて
   // 消えたときに、次の描画で自動的に対象が失われる（別途クリアする処理が要らない）
   const [inspectedKey, setInspectedKey] = useState<string | null>(null);
-  // 決着時に run_tally へ載せる集計用 ref（判定項目2・3）
+  // 決着時に run_tally へ載せる集計用 ref（判定項目3）。
+  // 手動の捨札は ref ではなく tally（ドメインの discarded イベント）から取る
   const inspectOpensRef = useRef(0);
-  const manualDiscardsRef = useRef(0);
   const prevStateRef = useRef<CombatState>(state);
   // レンダーごとに matchMedia を読まないよう、初期化関数で1度だけ解決する
   const [prefersReducedMotion] = useState<boolean>(
@@ -146,6 +172,7 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
     // いるため、同じコミット内で必ず先に走る（React は effect を定義順に実行する）。
     // 二重計上は上の prevStateRef のガードが防ぐ。
     tallyRef.current = accumulateTick(tallyRef.current, state, PLAINS_MAP);
+    endTickRef.current = state.tick;
     setTally(tallyRef.current);
   }, [state]);
 
@@ -164,6 +191,25 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       return;
     }
     if (state.tick >= rejectionUntilRef.current) setRejectionNotice(undefined);
+  }, [state]);
+
+  // ライフが減った理由の通知（反復5・設計書 §5.4）。overflowNotice と同じパターンで
+  // 複数 tick 保持する。state.events は毎 tick 置き換わり1 tick（100ms）しか残らず、
+  // RunStatusBar 側でそのまま描くと人が読む前に消える（実プレイで確認された反証）。
+  // 新しい理由が発生したら、古い理由がまだ表示中でも即座に上書きする（保持中かどうかで
+  // 分岐せず、毎回 deriveLifeLossReason の結果をそのまま使うため自然にそうなる）。
+  // prefers-reduced-motion でも短縮しない: combat-effects.ts の他のエフェクトは
+  // 装飾（線・輪の明滅）を減らす目的で reduced motion 時に寿命を統一するが、
+  // これは装飾ではなく「なぜライフが減ったか」という情報そのものなので、
+  // 短くするとむしろ読み取れる機会を減らしてしまう。
+  useEffect(() => {
+    const reason = deriveLifeLossReason(state.events);
+    if (reason) {
+      setLifeLossReason(reason);
+      lifeLossReasonUntilRef.current = state.tick + LIFE_LOSS_REASON_TICKS;
+      return;
+    }
+    if (state.tick >= lifeLossReasonUntilRef.current) setLifeLossReason(undefined);
   }, [state]);
 
   // 支援技術への通知。頻度が低く取り返しがつかない出来事（漏れ・ウェーブ境界）だけを流す。
@@ -208,6 +254,32 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       }
       if (event.kind === 'ember') {
         logRef.current.record({ kind: 'reactivated', runId, tick: state.tick });
+      }
+      // 判定項目5（unitsLost）と ライフ内訳（lifeLostToLeak）を、判定者が
+      // run_tally の集計値から独立に数え直せるようにする生ログ（最終レビュー指摘1）。
+      // 集計値が唯一の情報源だと、間違っていても確かめる手段が無い。
+      if (event.kind === 'unit-lost') {
+        logRef.current.record({
+          kind: 'unit_lost',
+          runId,
+          cardId: event.cardId,
+          tick: state.tick,
+          x: event.pos.x,
+          y: event.pos.y,
+        });
+      }
+      if (event.kind === 'leak') {
+        logRef.current.record({ kind: 'enemy_leaked', runId, tick: state.tick });
+      }
+      // 手動の捨札は「押した回数」ではなくドメインが成立を認めた回数で残す
+      // （最終レビュー指摘3）。run_tally.manualDiscards も同じイベントを数える。
+      if (event.kind === 'discarded') {
+        logRef.current.record({
+          kind: 'card_discarded_manual',
+          runId,
+          cardId: event.cardId,
+          tick: state.tick,
+        });
       }
     });
     if (state.tick >= noticeUntilRef.current) setOverflowNotice(undefined);
@@ -264,7 +336,7 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       runId,
       iteration: CURRENT_ITERATION,
       unusedCardIds: view.unusedCardIds,
-      manualDiscards: manualDiscardsRef.current,
+      manualDiscards: view.manualDiscards,
       inspectOpens: inspectOpensRef.current,
       rejectedTarget: settled.rejectionCounts.target,
       laneAllocation: view.laneAllocation,
@@ -274,6 +346,15 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       ravenDefeatAverage: view.ravenDefeatAverage,
       ravenDefeatCount: view.ravenDefeatCount,
       costHistogram: view.costHistogram,
+      overflowCount: view.overflowCount,
+      lifeLostToOverflow: view.lifeLostToOverflow,
+      lifeLostToLeak: view.lifeLostToLeak,
+      lastPlayTick: view.lastPlayTick,
+      // endTick は RunTally に持たず、決着した tick から直接入れる。
+      // endTickRef は tallyRef と同じコミットで更新されるため、settled と
+      // 必ず同じ tick を指す（endTickRef 宣言のコメントを参照）。
+      endTick: endTickRef.current,
+      drawPileExhaustedTick: view.drawPileExhaustedTick,
     });
   }, [state.outcome, runId, cards]);
 
@@ -327,18 +408,14 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
    * 手札から1枚捨てる（UI から到達する唯一の入口）
    *
    * 一時停止中・決着後は無反応にする（他の操作と同じ防御）。
+   *
+   * **ここでは記録しない。** 捨札が成立したかを知っているのはドメインだけで、
+   * ここで数えると「押したが捨てられなかった」ぶんまで数えてしまう
+   * （最終レビュー指摘3）。記録はドメインの `discarded` イベントを受けて行う。
    */
   const discardCard = useCallback(
     (handIndex: number) => {
       if (isPaused || state.outcome !== 'playing') return;
-      // 手動捨札を記録する（判定項目2「手動で捨てた回数」。run_tally にまとめて載る）
-      logRef.current.record({
-        kind: 'card_discarded_manual',
-        runId,
-        cardId: state.deck.hand[handIndex],
-        tick: state.tick,
-      });
-      manualDiscardsRef.current += 1;
       pendingRef.current.push({ kind: 'discard', handIndex });
       // 手札は配列で、捨てると後続の札が前へ詰まる。選択中の札そのものを
       // 捨てたら選択解除、選択中より前を捨てたら選択位置も1つ前へずらさないと、
@@ -350,7 +427,7 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
         return current > handIndex ? current - 1 : current;
       });
     },
-    [isPaused, runId, state]
+    [isPaused, state.outcome]
   );
 
   /**
@@ -447,12 +524,13 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       announceUntilRef.current = 0;
       setRejectionNotice(undefined);
       rejectionUntilRef.current = 0;
+      setLifeLossReason(undefined);
+      lifeLossReasonUntilRef.current = 0;
       lastPreviewRef.current = undefined;
       lastAnnouncedWaveRef.current = 0;
       tallyRef.current = emptyTally();
       setTally(tallyRef.current);
       inspectOpensRef.current = 0;
-      manualDiscardsRef.current = 0;
       setRunSeed(seedToUse);
       const nextState = startRunWithDeck(cards, new SeededRandom(seedToUse));
       setState(nextState);
@@ -492,6 +570,7 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
     effects,
     announcement,
     rejectionNotice,
+    lifeLossReason,
     selectCard,
     clickCell,
     reactivate,

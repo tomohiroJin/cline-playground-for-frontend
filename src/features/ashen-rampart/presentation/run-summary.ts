@@ -15,7 +15,9 @@ import type { CellPos, StageMap } from '../domain/board/stage-map';
 import { isPathCell, laneOf } from '../domain/board/stage-map';
 import { getCardDefinition } from '../domain/cards/card-pool';
 import { placementKindOf } from '../domain/cards/card-definition';
-import type { CombatState, TickEvent } from '../domain/combat/combat-state';
+// OVERFLOW_LIFE_COST は純粋な定数。副作用を持たないため presentation 層から
+// 直接 import してよい（依存方向の制約は「副作用の呼び出し」に対するもの）。
+import { OVERFLOW_LIFE_COST, type CombatState, type TickEvent } from '../domain/combat/combat-state';
 
 type RejectionReason = Extract<TickEvent, { kind: 'rejected' }>['reason'];
 
@@ -55,6 +57,25 @@ export interface RunTally {
   beaconBonusDamage: number;
   /** 鍛冶場の射程延長で初めて届いた射撃の回数（反復2 から引き継ぐ） */
   forgeExtendedShots: number;
+  /** 判定項目2: 手札上限で墓地へ落ちた札の枚数（反復5） */
+  overflowCount: number;
+  /** ライフ内訳: 溢れで失った点数（反復5・設計書 §5.4） */
+  lifeLostToOverflow: number;
+  /** ライフ内訳: 漏れで失った点数（反復5・設計書 §5.4） */
+  lifeLostToLeak: number;
+  /** 判定項目6: 最後にカードを出した tick。0 なら一度も出していない（反復5） */
+  lastPlayTick: number;
+  /** 山札が空になった最初の tick。0 なら最後まで尽きなかった（反復5） */
+  drawPileExhaustedTick: number;
+  /**
+   * 判定項目1: 手動で捨てた回数（反復5・最終レビュー指摘3）
+   *
+   * ドメインの `discarded` イベント（＝実際に成立した捨札）だけを数える。
+   * 捨札ボタンの押下回数を presentation 側で数えていたころは、
+   * 押した直後の tick で決着した場合や手札 index がずれた場合に
+   * 上振れしていた。
+   */
+  manualDiscards: number;
 }
 
 export const emptyTally = (): RunTally => ({
@@ -70,6 +91,12 @@ export const emptyTally = (): RunTally => ({
   defeatsByUnit: {},
   beaconBonusDamage: 0,
   forgeExtendedShots: 0,
+  overflowCount: 0,
+  lifeLostToOverflow: 0,
+  lifeLostToLeak: 0,
+  lastPlayTick: 0,
+  drawPileExhaustedTick: 0,
+  manualDiscards: 0,
 });
 
 /** 撃破源に対応するカード id */
@@ -192,6 +219,36 @@ export const accumulateTick = (tally: RunTally, state: CombatState, map: StageMa
     else if (event.kind === 'played') applyPlayedEvent(next, event, map);
   });
 
+  // 反復5: 溢れの回数とライフ内訳。ドローの溢れと徴発の溢れは両方とも
+  // { kind: 'overflow' } を積むため、この1本の集計で両方を拾える。
+  //
+  // **内訳の合計は、実際に減ったライフ量を上回ることがある**（設計書 §5.4）。
+  // stepTick は敗北時に life を 0 でクランプするため、残ライフ1 の tick に
+  // 漏れ2件＋溢れ1件が同時に起きると内訳の合計は3、実際の減少は1 になる。
+  // ここではクランプしない——イベントの記録としてはこれが正しく、
+  // 「何回起きたか」を潰すと判定者が原因別の頻度を読めなくなるため。
+  const overflows = state.events.filter((e) => e.kind === 'overflow').length;
+  const leaks = state.events.filter((e) => e.kind === 'leak').length;
+  next.overflowCount += overflows;
+  next.lifeLostToOverflow += overflows * OVERFLOW_LIFE_COST;
+  next.lifeLostToLeak += leaks;
+
+  // 判定項目1: 実際に成立した手動の捨札だけを数える（最終レビュー指摘3）
+  next.manualDiscards += state.events.filter((e) => e.kind === 'discarded').length;
+
+  // 判定項目6: 最後に出した tick。出していない tick で上書きすると
+  // 「最後に出した tick ÷ 決着 tick」が常に 1.0 になり指標が死ぬため、
+  // 出した tick でだけ更新する。
+  if (state.events.some((e) => e.kind === 'played')) {
+    next.lastPlayTick = state.tick;
+  }
+
+  // 山札が尽きた tick。0 は「まだ尽きていない」を意味するため、
+  // 最初に空になった時点だけを覚える（毎 tick 上書きすると最後の tick になる）。
+  if (next.drawPileExhaustedTick === 0 && state.deck.drawPile.length === 0) {
+    next.drawPileExhaustedTick = state.tick;
+  }
+
   return next;
 };
 
@@ -219,6 +276,23 @@ export interface RunSummaryView {
   /** 項目6: 使ったカードのコスト別回数 / 一度も出さなかった札 */
   costHistogram: number[];
   unusedCardIds: string[];
+  /** 判定項目2: 手札上限で墓地へ落ちた札の枚数（反復5） */
+  overflowCount: number;
+  /**
+   * ライフ内訳: 溢れ／漏れで失った点数（反復5・設計書 §5.4）
+   *
+   * **敗北ランでは合計が「初期ライフ − 最終ライフ」を上回りうる。**
+   * 最後の tick が同時に複数の減少を起こしても、ライフ自体は 0 でクランプ
+   * されるためである。原因別の頻度としては正しい値。
+   */
+  lifeLostToOverflow: number;
+  lifeLostToLeak: number;
+  /** 判定項目6: 最後にカードを出した tick。0 なら一度も出していない（反復5） */
+  lastPlayTick: number;
+  /** 山札が空になった最初の tick。0 なら最後まで尽きなかった（反復5） */
+  drawPileExhaustedTick: number;
+  /** 判定項目1: 実際に成立した手動の捨札の回数（反復5・最終レビュー指摘3） */
+  manualDiscards: number;
 }
 
 const REJECTION_LABEL: Record<RejectionReason, string> = {
@@ -256,5 +330,11 @@ export const summarize = (tally: RunTally, deckCards: readonly string[]): RunSum
     ravenDefeatCount: tally.ravenDefeatProgress.length,
     costHistogram: tally.costHistogram,
     unusedCardIds: [...new Set(deckCards)].filter((id) => !tally.playedCardIds.has(id)),
+    overflowCount: tally.overflowCount,
+    lifeLostToOverflow: tally.lifeLostToOverflow,
+    lifeLostToLeak: tally.lifeLostToLeak,
+    lastPlayTick: tally.lastPlayTick,
+    drawPileExhaustedTick: tally.drawPileExhaustedTick,
+    manualDiscards: tally.manualDiscards,
   };
 };

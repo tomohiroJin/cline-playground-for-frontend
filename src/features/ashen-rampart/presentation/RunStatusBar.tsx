@@ -62,6 +62,15 @@ interface Props {
    * 同じ出来事が2つの別の出来事に見えてしまうため、ライフ表示を連動させる。
    */
   isLeaking?: boolean;
+  /**
+   * 直近にライフが減った理由（反復5・設計書 §5.4）。無ければ何も出さない。
+   *
+   * `state.events` は毎 tick 置き換わり1 tick（100ms）しか残らないため、
+   * このコンポーネントが自前で導出すると人が読める前に消える。
+   * 複数 tick 保持する責務は `useAshenRampartGame`（`overflowNotice` と同じパターン）
+   * に持たせ、ここは受け取って描画するだけの純粋な表示に留める。
+   */
+  lifeLossReason?: string;
 }
 
 export const RunStatusBar: React.FC<Props> = ({
@@ -70,6 +79,7 @@ export const RunStatusBar: React.FC<Props> = ({
   onTogglePause,
   runSeed,
   isLeaking = false,
+  lifeLossReason,
 }) => {
   const preview = nextWavePreview(state);
   const danger = state.life <= DANGER_LIFE || isLeaking;
@@ -80,6 +90,7 @@ export const RunStatusBar: React.FC<Props> = ({
         砦 <Life $danger={danger} data-leaking={isLeaking}>残り {state.life}</Life>
       </span>
       {danger && <span>危険</span>}
+      {lifeLossReason && <span>{lifeLossReason}</span>}
       <span>次: {preview}</span>
       <span>
         <label htmlFor="ashen-rampart-run-seed">シード</label>
