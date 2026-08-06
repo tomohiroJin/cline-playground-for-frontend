@@ -16,6 +16,7 @@ import { nextWavePreview } from './wave-preview';
 import { decideBattleAnnouncement } from './battle-announcement';
 import { advanceEffects, type Effect } from './combat-effects';
 import { rejectionText } from './rejection-text';
+import { lifeLossReason as deriveLifeLossReason } from './life-loss-reason';
 import { accumulateTick, emptyTally, summarize, type RunTally } from './run-summary';
 import { startRunWithDeck, createSeed } from '../application/use-cases/start-run';
 import { SeededRandom } from '../infrastructure/random/seeded-random';
@@ -36,6 +37,19 @@ const ANNOUNCE_TICKS = 20;
 
 /** 拒否通知を表示し続ける tick 数（0.6秒） */
 const REJECTION_NOTICE_TICKS = 6;
+
+/**
+ * ライフが減った理由の表示を保持する tick 数（0.8秒・反復5・設計書 §5.4）
+ *
+ * 漏れの危険色エフェクト（`isLeaking` の元になる `leak` エフェクト）は
+ * `combat-effects.ts` の `EFFECT_LIFETIME.leak` で最大8 tick 持続する。
+ * 理由テキストがそれより短いと、危険色がまだ点灯している間に
+ * 「なぜ危険なのか」の文言だけ先に消えてしまう。8 tick に揃えることで、
+ * 少なくとも危険表示と同じだけの時間は理由も読める状態にする
+ * （溢れ単独の通知 `OVERFLOW_NOTICE_TICKS` は6 tickだが、こちらは
+ * 漏れとの整合を優先し、溢れ側の理由もこの長さで保持する）。
+ */
+const LIFE_LOSS_REASON_TICKS = 8;
 
 export interface UseAshenRampartGameOptions {
   /** 使用するデッキ。構築 UI から渡す */
@@ -62,6 +76,8 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
   const announceUntilRef = useRef(0);
   const [rejectionNotice, setRejectionNotice] = useState<string | undefined>(undefined);
   const rejectionUntilRef = useRef(0);
+  const [lifeLossReason, setLifeLossReason] = useState<string | undefined>(undefined);
+  const lifeLossReasonUntilRef = useRef(0);
   const [tally, setTally] = useState<RunTally>(() => emptyTally());
   /**
    * 集計の真値。`run_tally` の書き出しはこの ref を読む
@@ -175,6 +191,25 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       return;
     }
     if (state.tick >= rejectionUntilRef.current) setRejectionNotice(undefined);
+  }, [state]);
+
+  // ライフが減った理由の通知（反復5・設計書 §5.4）。overflowNotice と同じパターンで
+  // 複数 tick 保持する。state.events は毎 tick 置き換わり1 tick（100ms）しか残らず、
+  // RunStatusBar 側でそのまま描くと人が読む前に消える（実プレイで確認された反証）。
+  // 新しい理由が発生したら、古い理由がまだ表示中でも即座に上書きする（保持中かどうかで
+  // 分岐せず、毎回 deriveLifeLossReason の結果をそのまま使うため自然にそうなる）。
+  // prefers-reduced-motion でも短縮しない: combat-effects.ts の他のエフェクトは
+  // 装飾（線・輪の明滅）を減らす目的で reduced motion 時に寿命を統一するが、
+  // これは装飾ではなく「なぜライフが減ったか」という情報そのものなので、
+  // 短くするとむしろ読み取れる機会を減らしてしまう。
+  useEffect(() => {
+    const reason = deriveLifeLossReason(state.events);
+    if (reason) {
+      setLifeLossReason(reason);
+      lifeLossReasonUntilRef.current = state.tick + LIFE_LOSS_REASON_TICKS;
+      return;
+    }
+    if (state.tick >= lifeLossReasonUntilRef.current) setLifeLossReason(undefined);
   }, [state]);
 
   // 支援技術への通知。頻度が低く取り返しがつかない出来事（漏れ・ウェーブ境界）だけを流す。
@@ -467,6 +502,8 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       announceUntilRef.current = 0;
       setRejectionNotice(undefined);
       rejectionUntilRef.current = 0;
+      setLifeLossReason(undefined);
+      lifeLossReasonUntilRef.current = 0;
       lastPreviewRef.current = undefined;
       lastAnnouncedWaveRef.current = 0;
       tallyRef.current = emptyTally();
@@ -512,6 +549,7 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
     effects,
     announcement,
     rejectionNotice,
+    lifeLossReason,
     selectCard,
     clickCell,
     reactivate,

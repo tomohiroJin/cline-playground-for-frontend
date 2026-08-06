@@ -248,6 +248,7 @@ const RunView: React.FC<RunViewProps> = ({ cards, seed, onRebuild }) => {
         onTogglePause={game.togglePause}
         runSeed={game.runSeed}
         isLeaking={game.effects.some((e) => e.kind === 'leak')}
+        lifeLossReason={game.lifeLossReason}
       />
       <Center>
         <BattleAnnouncer message={game.announcement} />

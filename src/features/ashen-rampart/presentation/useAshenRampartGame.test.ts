@@ -180,6 +180,57 @@ describe('useAshenRampartGame', () => {
     expect(result.current.overflowNotice).toBe(getCardDefinition(lost as string).name);
   });
 
+  describe('lifeLossReason: ライフが減った理由の持続表示（反復5・修正ラウンド1）', () => {
+    // state.events は毎 tick 置き換わるため、RunStatusBar が直接描くと発生した
+    // 1 tick（100ms）しか見えない（実プレイで読めないという反証で発覚）。
+    // useAshenRampartGame が複数 tick 保持することを検証する。
+    it('溢れが起きた tick で理由が立つ', () => {
+      const { result } = renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1 }));
+      // 初期手札3枚・上限5枚・一度も出さないので、3回目のドロー（120 tick）で必ず溢れる
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS * 120);
+      });
+      expect(result.current.lifeLossReason).toBe('手札があふれました');
+    });
+
+    it('発生した tick を過ぎても、保持 tick 数のうちは理由が消えない（1 tick しか出ない、の再発防止）', () => {
+      const { result } = renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1 }));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS * 120);
+      });
+      expect(result.current.lifeLossReason).toBe('手札があふれました');
+      // 次のドロー（160 tick）より前なので、この間に新たな溢れは起きない
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS * 5);
+      });
+      expect(result.current.lifeLossReason).toBe('手札があふれました');
+    });
+
+    it('保持 tick 数を過ぎると理由が消える', () => {
+      const { result } = renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1 }));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS * 120);
+      });
+      expect(result.current.lifeLossReason).toBeDefined();
+      // LIFE_LOSS_REASON_TICKS(8) ぶん進める。次のドロー（160 tick）より前なので、
+      // 「消えた」ことだけを検証できる（新しい理由による再設定と区別できる）
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS * 8);
+      });
+      expect(result.current.lifeLossReason).toBeUndefined();
+    });
+
+    it('restart するとライフが減った理由の表示がクリアされる', () => {
+      const { result } = renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1 }));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS * 120);
+      });
+      expect(result.current.lifeLossReason).toBeDefined();
+      act(() => result.current.restart());
+      expect(result.current.lifeLossReason).toBeUndefined();
+    });
+  });
+
   it('予告が切り替わったときにだけ wave_preview_shown が記録される', () => {
     const log = createMockPlayLog();
     const { result } = renderHook(() =>

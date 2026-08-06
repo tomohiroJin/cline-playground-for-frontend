@@ -6,7 +6,7 @@
  */
 import React from 'react';
 import styled from 'styled-components';
-import type { CombatState, TickEvent } from '../domain/combat/combat-state';
+import type { CombatState } from '../domain/combat/combat-state';
 import { nextWavePreview } from './wave-preview';
 import { COLORS } from './theme';
 
@@ -50,23 +50,6 @@ const SeedField = styled.input`
 /** ライフがこの値以下で危険表示に切り替える */
 const DANGER_LIFE = 3;
 
-/**
- * その tick にライフが減った理由（反復5・設計書 §5.4）
- *
- * ライフは漏れ（敵の砦到達）と溢れ（手札の上限超過）の両方で減るようになったため、
- * 内訳が読めないと「何をしたら減ったのか」が分からなくなる。
- * 新しい状態を持たせると描画と実体がずれる余地が生まれるため、
- * state を増やさず直前 tick の events から導く。
- */
-const lifeLossReason = (events: readonly TickEvent[]): string | undefined => {
-  const overflowed = events.some((e) => e.kind === 'overflow');
-  const leaked = events.some((e) => e.kind === 'leak');
-  if (overflowed && leaked) return '手札があふれ、敵が砦に到達しました';
-  if (overflowed) return '手札があふれました';
-  if (leaked) return '敵が砦に到達しました';
-  return undefined;
-};
-
 interface Props {
   state: CombatState;
   isPaused: boolean;
@@ -79,6 +62,15 @@ interface Props {
    * 同じ出来事が2つの別の出来事に見えてしまうため、ライフ表示を連動させる。
    */
   isLeaking?: boolean;
+  /**
+   * 直近にライフが減った理由（反復5・設計書 §5.4）。無ければ何も出さない。
+   *
+   * `state.events` は毎 tick 置き換わり1 tick（100ms）しか残らないため、
+   * このコンポーネントが自前で導出すると人が読める前に消える。
+   * 複数 tick 保持する責務は `useAshenRampartGame`（`overflowNotice` と同じパターン）
+   * に持たせ、ここは受け取って描画するだけの純粋な表示に留める。
+   */
+  lifeLossReason?: string;
 }
 
 export const RunStatusBar: React.FC<Props> = ({
@@ -87,10 +79,10 @@ export const RunStatusBar: React.FC<Props> = ({
   onTogglePause,
   runSeed,
   isLeaking = false,
+  lifeLossReason,
 }) => {
   const preview = nextWavePreview(state);
   const danger = state.life <= DANGER_LIFE || isLeaking;
-  const reason = lifeLossReason(state.events);
 
   return (
     <Bar>
@@ -98,7 +90,7 @@ export const RunStatusBar: React.FC<Props> = ({
         砦 <Life $danger={danger} data-leaking={isLeaking}>残り {state.life}</Life>
       </span>
       {danger && <span>危険</span>}
-      {reason && <span>{reason}</span>}
+      {lifeLossReason && <span>{lifeLossReason}</span>}
       <span>次: {preview}</span>
       <span>
         <label htmlFor="ashen-rampart-run-seed">シード</label>

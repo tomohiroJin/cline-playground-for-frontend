@@ -6,17 +6,11 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { RunStatusBar } from './RunStatusBar';
-import { createCombatState, type CombatState } from '../domain/combat/combat-state';
+import { createCombatState } from '../domain/combat/combat-state';
 import { PLAINS_WAVES } from '../domain/combat/waves';
 import { createDeck } from '../domain/cards/deck';
 
 const state = createCombatState({ drawPile: [], hand: [], graveyard: [] }, PLAINS_WAVES);
-
-/** 直前 tick に指定のイベントが起きた状態を作る（反復5: ライフ内訳表示のテスト用） */
-const stateWithEvents = (events: CombatState['events']): CombatState => ({
-  ...state,
-  events,
-});
 
 describe('RunStatusBar', () => {
   it('ライフが数値で示される', () => {
@@ -107,38 +101,28 @@ describe('RunStatusBar', () => {
   });
 
   describe('ライフが減った理由の表示（反復5）', () => {
-    it('溢れでライフが減った tick は、手札が原因だと分かる文言が出る', () => {
+    // 理由の導出（溢れ／漏れ／両方同時／どちらも無し）は `lifeLossReason`
+    // （life-loss-reason.test.ts）で検証済み。このコンポーネントは複数 tick
+    // 保持された結果を props で受け取って描画するだけなので、ここでは
+    // 「渡されたら出す」「渡されなければ出さない」の受け渡しだけを見る
+    // （state.events からの自前導出は修正ラウンド1 で useAshenRampartGame へ移した。
+    // 1 tick=100ms しか残らない events から直接描くと、実プレイで読めないため）。
+    it('lifeLossReason が渡されると表示される', () => {
       render(
         <RunStatusBar
-          state={stateWithEvents([{ kind: 'overflow', cardId: 'ballista' }])}
+          state={state}
           isPaused={false}
           onTogglePause={jest.fn()}
           runSeed={1}
+          lifeLossReason="手札があふれました"
         />
       );
-      expect(screen.getByText(/手札があふれ/)).toBeInTheDocument();
+      expect(screen.getByText('手札があふれました')).toBeInTheDocument();
     });
 
-    it('漏れでライフが減った tick は、敵が原因だと分かる文言が出る', () => {
+    it('lifeLossReason が無いときは理由を出さない', () => {
       render(
-        <RunStatusBar
-          state={stateWithEvents([{ kind: 'leak', enemyId: 1 }])}
-          isPaused={false}
-          onTogglePause={jest.fn()}
-          runSeed={1}
-        />
-      );
-      expect(screen.getByText(/砦に到達/)).toBeInTheDocument();
-    });
-
-    it('どちらも起きていない tick では理由を出さない', () => {
-      render(
-        <RunStatusBar
-          state={stateWithEvents([])}
-          isPaused={false}
-          onTogglePause={jest.fn()}
-          runSeed={1}
-        />
+        <RunStatusBar state={state} isPaused={false} onTogglePause={jest.fn()} runSeed={1} />
       );
       expect(screen.queryByText(/手札があふれ/)).not.toBeInTheDocument();
       expect(screen.queryByText(/砦に到達/)).not.toBeInTheDocument();
