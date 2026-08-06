@@ -8,6 +8,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { COLORS } from './theme';
 import { HEADER_CLEARANCE } from './layout-constants';
+import { HAND_LIMIT } from '../domain/cards/deck';
 
 const Panel = styled.div`
   display: flex;
@@ -53,6 +54,9 @@ export const StartOverlay: React.FC<Props> = ({ preview, onStart }) => (
       <li>燠火はクリックで再点火できます（マナも配置の間隔も消費しません）</li>
       <li>カード未選択時、盤面の設置物をクリックで範囲と能力が表示されます</li>
       <li>スペースキーで一時停止できます。盤面と手札は見られますが、置くことはできません</li>
+      <li>手札は{HAND_LIMIT}枚まで。いっぱいのまま引くと札があふれ、ライフを1失います</li>
+      <li>いらない札は札の横の「×」で捨てられます（マナは戻りません）</li>
+      <li>北から来る敵は、経路の脇に置いた守り手も射程内なら壊します</li>
     </List>
     <p>最初の波: {preview}</p>
     <StartButton type="button" onClick={onStart}>

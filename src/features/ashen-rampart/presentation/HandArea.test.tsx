@@ -9,12 +9,15 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { HandArea } from './HandArea';
 import { createCombatState } from '../domain/combat/combat-state';
 import { PLAINS_WAVES } from '../domain/combat/waves';
-import { createDeck } from '../domain/cards/deck';
+import { createDeck, HAND_LIMIT } from '../domain/cards/deck';
 
 const stateWith = (hand: string[], mana = 5) => ({
   ...createCombatState({ drawPile: ['a'], hand, graveyard: [] }, PLAINS_WAVES),
   mana,
 });
+
+/** 手札の枚数だけを指定する。中身は arrow-tower を積むだけで良い（枚数が本質） */
+const stateWithHandSize = (size: number) => stateWith(Array(size).fill('arrow-tower'));
 
 describe('HandArea', () => {
   it('手札のカード名とコストが表示される', () => {
@@ -140,5 +143,31 @@ describe('HandArea', () => {
     expect(
       screen.getByRole('button', { name: '攻撃塔 徹甲弩 コスト4' })
     ).toBeInTheDocument();
+  });
+
+  describe('手札上限の警告（反復5）', () => {
+    it('手札が上限のとき、次のドローでライフを失うと分かる警告が出る', () => {
+      render(
+        <HandArea
+          state={stateWithHandSize(HAND_LIMIT)}
+          selectedIndex={null}
+          onSelect={jest.fn()}
+          onDiscard={jest.fn()}
+        />
+      );
+      expect(screen.getByText(/あふれ/)).toBeInTheDocument();
+    });
+
+    it('手札に空きがあるときは警告を出さない', () => {
+      render(
+        <HandArea
+          state={stateWithHandSize(HAND_LIMIT - 1)}
+          selectedIndex={null}
+          onSelect={jest.fn()}
+          onDiscard={jest.fn()}
+        />
+      );
+      expect(screen.queryByText(/あふれ/)).not.toBeInTheDocument();
+    });
   });
 });
