@@ -174,7 +174,17 @@ export const HandArea: React.FC<Props> = ({
     .map((id) => getCardDefinition(id).cost - state.mana)
     .filter((diff) => diff > 0);
   const maxShortage = shortage.length > 0 ? Math.max(...shortage) : 0;
+  /**
+   * 「このままだと溢れる」と言えるのは、まだ引く札が残っているときだけ
+   *
+   * `runDraw`（step-tick.ts）は山札が空でもドローのタイマーを回し続けるため、
+   * 手札の枚数だけを見ると**山札が尽きた後（ランの後半4割・設計書 §2.3）は
+   * 決して起きない溢れについて警告が鳴り続ける**。
+   * 終盤に札を抱えることは判定項目3（決着時に手札が1枚以上残る）が
+   * 誘発したい行動そのものなので、それを常時の警告状態として提示してはいけない。
+   */
   const isHandFull = state.deck.hand.length >= HAND_LIMIT;
+  const willOverflow = isHandFull && state.deck.drawPile.length > 0;
 
   return (
     <Bar>
@@ -185,15 +195,15 @@ export const HandArea: React.FC<Props> = ({
           <Marker
             $ratio={1 - state.ticksToDraw / DRAW_INTERVAL_TICKS}
             $color={COLORS.secondary}
-            $warning={isHandFull}
+            $warning={willOverflow}
             aria-label={
-              isHandFull
+              willOverflow
                 ? `手札がいっぱいです。次のドローまで ${toSeconds(state.ticksToDraw)}秒。このままだとあふれてライフを1失います`
                 : `次のドローまで ${toSeconds(state.ticksToDraw)}秒`
             }
           />
         </Track>
-        {isHandFull && <OverflowWarning>手札がいっぱいです。このままだとあふれてライフを失います</OverflowWarning>}
+        {willOverflow && <OverflowWarning>手札がいっぱいです。このままだとあふれてライフを失います</OverflowWarning>}
       </Row>
       {overflowNotice && <Notice>{overflowNotice} を手札に持てず失いました</Notice>}
       {maxShortage > 0 && <p>マナが{maxShortage}足りません</p>}

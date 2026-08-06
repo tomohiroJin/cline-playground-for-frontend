@@ -169,5 +169,22 @@ describe('HandArea', () => {
       );
       expect(screen.queryByText(/あふれ/)).not.toBeInTheDocument();
     });
+
+    it('山札が尽きていれば、手札が上限でも警告を出さない（起きない溢れの誤警報を防ぐ）', () => {
+      // runDraw は山札が空でもドローのタイマーを回し続けるため、手札の枚数だけを
+      // 見ると終盤（山札が尽きた後）ずっと誤警報になる。終盤に札を抱えることは
+      // 判定項目3 が誘発したい行動そのものであり、常時の警告にしてはいけない。
+      const state = {
+        ...stateWithHandSize(HAND_LIMIT),
+        deck: { drawPile: [], hand: Array(HAND_LIMIT).fill('arrow-tower') as string[], graveyard: [] },
+      };
+      render(
+        <HandArea state={state} selectedIndex={null} onSelect={jest.fn()} onDiscard={jest.fn()} />
+      );
+      expect(screen.queryByText(/あふれ/)).not.toBeInTheDocument();
+      // 読み上げラベルも同じ条件に従う（画面の文言だけ直して aria が残る事故を防ぐ）
+      expect(screen.getByLabelText(/次のドローまで/)).toBeInTheDocument();
+      expect(screen.queryByLabelText(/手札がいっぱいです/)).not.toBeInTheDocument();
+    });
   });
 });
