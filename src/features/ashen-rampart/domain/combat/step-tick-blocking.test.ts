@@ -238,17 +238,39 @@ describe('敵の射程攻撃（反復5）', () => {
     expect(next.units).toHaveLength(0);
   });
 
-  it('射程外の守り手は削られない', () => {
-    const farAway = { x: cellAt(3).x, y: cellAt(3).y + 5 };
+  // 重装の射程は1.5。整数セルでは距離ちょうど1.5 は作れないため、実際に作れる
+  // 最も狭いブラケット（内側 √2 ≒ 1.414 / 外側 2.0）で境界の両隣を検証する。
+  // 距離5.0 のような境界から遠い1点だけでは `<` と `<=` の取り違えを検出できない。
+  // 内側・外側を同時に置くと標的が1体に絞られ「外側が無傷なのは射程外だからか、
+  // 標的を取られたからか」が区別できなくなるため、別々のテストに分ける。
+  it('射程の境界の内側（distance√2）に置いた守り手は削られる', () => {
+    // {4,3}: 北レーン（y=2）にも南レーン（y=4/5）にも高台にも属さない経路外セル。
+    // 石壁（HP60）を使うのは、消滅して next.units[0] が undefined になると
+    // 「削れたから消えた」のか「そもそも判定していない」のか区別できなくなるため
+    const inside = { x: cellAt(3).x + 1, y: cellAt(3).y + 1 };
     const base = createCombatState(createDeck([], () => 0), []);
     const state: CombatState = {
       ...base,
       tick: 29,
-      units: [{ cardId: 'arrow-tower', pos: farAway, hp: 8, maxHp: 8, cooldownLeft: 0 }],
+      units: [{ cardId: 'stone-wall', pos: inside, hp: 60, maxHp: 60, cooldownLeft: 0 }],
       enemies: [bruteAt(3)],
     };
     const next = stepTick(state, [], PLAINS_MAP);
-    expect(next.units[0]?.hp).toBe(8);
+    expect(next.units[0]?.hp).toBeLessThan(60);
+  });
+
+  it('射程の境界の外側（distance2.0）に置いた守り手は削られない', () => {
+    // {3,0}: 北レーン・南レーンいずれの経路セルでもなく、盤内（height7 = y0-6）に収まる
+    const outside = { x: cellAt(3).x, y: cellAt(3).y - 2 };
+    const base = createCombatState(createDeck([], () => 0), []);
+    const state: CombatState = {
+      ...base,
+      tick: 29,
+      units: [{ cardId: 'stone-wall', pos: outside, hp: 60, maxHp: 60, cooldownLeft: 0 }],
+      enemies: [bruteAt(3)],
+    };
+    const next = stepTick(state, [], PLAINS_MAP);
+    expect(next.units[0]?.hp).toBe(60);
   });
 
   it('射程攻撃をしても敵は止まらない', () => {
@@ -269,22 +291,29 @@ describe('敵の射程攻撃（反復5）', () => {
     expect(next.units[0]?.hp).toBeLessThan(60);
   });
 
-  it('魔力炉・罠・燠火は射程内でも攻撃されない', () => {
+  it('射程内に守り手と魔力炉・罠・燠火が同居していても、削られるのは守り手だけ', () => {
     const beside = { x: cellAt(3).x, y: cellAt(3).y + 1 };
     const base = createCombatState(createDeck([], () => 0), []);
     const state: CombatState = {
       ...base,
       tick: 29,
-      units: [],
+      // 石壁を置く。攻撃が実際に発動していることを HP の減りで示すための「対照」。
+      // units: [] のままだと標的選択のループが候補を持たず、射程ロジックが
+      // 壊れていても「数が減らない」が成立してしまう（Task 4 丸ごと revert しても緑）
+      units: [{ cardId: 'stone-wall', pos: beside, hp: 60, maxHp: 60, cooldownLeft: 0 }],
       reactors: [{ pos: beside, ticksToMana: 60 }],
       traps: [{ cardId: 'spike-trap', pos: beside, usesLeft: 3, hitEnemyIds: [] }],
       embers: [{ pos: beside, cooldownLeft: 300 }],
       enemies: [bruteAt(3)],
     };
     const next = stepTick(state, [], PLAINS_MAP);
-    // マナ源が壊れると詰みへ戻る（設計書 §4.2）。数が減っていないことを確かめる
+    // まず射程攻撃が本当に起きていることを確かめる。これが無いと以下の3行は
+    // 「攻撃が起きていないから無傷」でも通ってしまう
+    expect(next.units[0]?.hp).toBeLessThan(60);
+    // そのうえで、マナ源をはじめ守り手以外は無傷であること（設計書 §4.2）。
+    // マナ源が壊れると詰みへ戻るため、とりわけ reactors は絶対に対象にしてはいけない
     expect(next.reactors).toHaveLength(1);
-    expect(next.traps).toHaveLength(1);
+    expect(next.traps[0]?.usesLeft).toBe(3);
     expect(next.embers).toHaveLength(1);
   });
 
