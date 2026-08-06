@@ -49,8 +49,11 @@ const ENEMIES: readonly EnemySpec[] = [
   { id: 'runner', name: '俊足', hp: 12, speed: 0.18, flying: false, attack: 2, attackIntervalTicks: 12, attackRange: 0 },
   { id: 'swarm', name: '群れ', hp: 8, speed: 0.12, flying: false, attack: 1, attackIntervalTicks: 15, attackRange: 0 },
   { id: 'brute', name: '重装', hp: 60, speed: 0.06, flying: false, attack: 10, attackIntervalTicks: 30, attackRange: 1.5 },
-  // 鴉の攻撃は地上化中のみ使う。0 にすると落網で落とした鴉が壁の前で
-  // 何もできず 120tick 膠着し、落網が「足止め」になってしまう（設計書 §8.2）
+  // **以下は attack（ブロック時の与ダメージ）についての注意であり、attackRange の話ではない。**
+  // 鴉の attack は地上化中のみ使う。attack を 0 にすると落網で落とした鴉が壁の前で
+  // 何もできず 120tick 膠着し、落網が「足止め」になってしまう（設計書 §8.2）。
+  // 一方 attackRange: 0 は意図した設定である——南レーン（俊足・群れ・鴉）に射程を
+  // 持たせると群れ22体が上限3 でも盤面を溶かすため（設計書 §4.3）。ここを 0 以外にしないこと。
   { id: 'raven', name: '鴉', hp: 16, speed: 0.14, flying: true, attack: 2, attackIntervalTicks: 20, attackRange: 0 },
 ];
 
