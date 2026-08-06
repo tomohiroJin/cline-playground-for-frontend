@@ -304,3 +304,22 @@ const isNotPureGroundOnlyAttacker = (card: CardDefinition): boolean => {
  */
 export const noPureGroundAttackStrategy: Strategy = (state, map) =>
   restrictedGreedy(state, map, isNotPureGroundOnlyAttacker);
+
+/**
+ * 山札が尽きる tick（DRAW_INTERVAL_TICKS 40 × 17枚 = 680）
+ *
+ * 初期手札3枚を除いた山札17枚を40tickに1枚ずつ引くので、この tick で供給が終わる。
+ * 定数から導出せず実数で置くのは、この値が「供給の終わり」という
+ * 判定上の意味を持つ tick であり、式の変更で静かに動いてほしくないため。
+ */
+export const DEPLOY_ONLY_UNTIL_TICK = 680;
+
+/**
+ * 配備が終わったら何もしない戦略（反復5 の診断・対照条件）
+ *
+ * 供給が尽きる tick までは素直に打ち、以降は一切操作しない。
+ * 盤面が一方向のラチェット（置いたものが減らない）である限り、この戦略は勝ててしまう。
+ * **反復5 は、この戦略が負けるようにするための反復である**（設計書 §10.1）。
+ */
+export const deployThenIdleStrategy: Strategy = (state, map) =>
+  state.tick >= DEPLOY_ONLY_UNTIL_TICK ? [] : greedyStrategy(state, map);

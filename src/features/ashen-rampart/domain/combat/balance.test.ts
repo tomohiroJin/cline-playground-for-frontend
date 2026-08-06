@@ -30,6 +30,7 @@ import {
   greedyStrategy,
   offPathOnlyStrategy,
   noPureGroundAttackStrategy,
+  deployThenIdleStrategy,
   type RunSimulationResult,
   type Strategy,
 } from './run-simulation';
@@ -233,6 +234,20 @@ describe('対照条件の作り方', () => {
  *   全要求充足 14/20 ／ 対空なし 0/20 ／ 範囲も貫通も無し 0/20
  *   経路外のみ 0/20 ／ 地上専用の攻撃札なし（noPureGroundAttackStrategy） 6/20
  */
+describe('【反復5 の診断】配備が終わると判断が消える', () => {
+  // このテストは Task 9 で「負けること」へ反転させる。
+  // ここで緑になることが、設計書 §2.1 の診断（経路外の守り手は仕様として無敵）の証拠になる。
+  it('配備後に何もしない戦略が、素直な戦略とほとんど変わらない勝率を出す（Task 9 で反転させる）', () => {
+    const idle = winsOf(FULL_DECK, deployThenIdleStrategy, 'deployThenIdle');
+    const greedy = winsOf(FULL_DECK);
+    // **絶対値ではなく差で見る。** 「ランの後半4割で操作を完全に止めても、素直に打ち続けた
+    // 場合と4本差以内にしか落ちない」＝配備が終わった後の操作が勝敗にほとんど寄与していない。
+    // 絶対値の閾値を置くと、後の較正で素直な戦略の勝率が動いたときに、この閾値の意味も
+    // 黙って変わってしまう。greedy の掃引は runAllSeeds のキャッシュに載るので実行コストは増えない
+    expect(greedy - idle).toBeLessThanOrEqual(4);
+  });
+});
+
 describe('較正の不変条件（反復3）', () => {
   it('全要求充足デッキは 12/20 以上・18/20 以下で勝つ', () => {
     const wins = winsOf(FULL_DECK);
