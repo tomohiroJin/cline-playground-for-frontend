@@ -147,7 +147,7 @@ describe('ドロー', () => {
     const deck = { drawPile: ['arrow-tower'], hand: full, graveyard: [] };
     const after = advance(createCombatState(deck, oneGrunt), DRAW_INTERVAL_TICKS);
     expect(after.deck.graveyard).toEqual(['arrow-tower']);
-    expect(after.events).toContainEqual({ kind: 'overflow', cardId: 'arrow-tower' });
+    expect(after.events).toContainEqual({ kind: 'overflow', cardId: 'arrow-tower', origin: 'draw' });
   });
 });
 

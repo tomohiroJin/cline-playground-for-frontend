@@ -10,7 +10,7 @@ import type { TickEvent } from '../domain/combat/combat-state';
 
 describe('lifeLossReason', () => {
   it('溢れイベントのみのとき、手札が原因だと分かる文言を返す', () => {
-    const events: TickEvent[] = [{ kind: 'overflow', cardId: 'ballista' }];
+    const events: TickEvent[] = [{ kind: 'overflow', cardId: 'ballista', origin: 'draw' }];
     expect(lifeLossReason(events)).toBe('手札があふれました');
   });
 
@@ -21,7 +21,7 @@ describe('lifeLossReason', () => {
 
   it('溢れと漏れが同じ tick に同時発生したとき、両方を伝える結合文言を返す', () => {
     const events: TickEvent[] = [
-      { kind: 'overflow', cardId: 'ballista' },
+      { kind: 'overflow', cardId: 'ballista', origin: 'draw' },
       { kind: 'leak', enemyId: 1 },
     ];
     expect(lifeLossReason(events)).toBe('手札があふれ、敵が砦に到達しました');

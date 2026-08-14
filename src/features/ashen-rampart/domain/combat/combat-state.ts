@@ -71,6 +71,9 @@ export type DefeatSource =
   | { kind: 'trap'; index: number }
   | { kind: 'ember'; index: number };
 
+/** 溢れの由来。ドローで引いた札か、徴発で選んだ札か */
+export type OverflowOrigin = 'draw' | 'levy';
+
 export type TickEvent =
   | {
       kind: 'shot';
@@ -89,7 +92,17 @@ export type TickEvent =
   | { kind: 'unit-lost'; unitIndex: number; cardId: string; pos: CellPos }
   | { kind: 'mana'; amount: number }
   | { kind: 'draw'; cardId: string }
-  | { kind: 'overflow'; cardId: string }
+  /**
+   * 手札上限で墓地へ落ちた（反復5）
+   *
+   * `origin` は反復5 の敵対的検証で追加した。ドロー由来と徴発由来の2箇所が
+   * 同じイベントを積んでおり、**ログ上で原理的に区別できなかった**。
+   * 反復5 の判定では「tick 680 の溢れ＝最後の1枚を引いた瞬間」という読みを
+   * したが、それがドロー由来だと確かめる手段が無かった（徴発が未使用だった
+   * ため結果的に成立していただけ）。溢れに依存する指標を今後も使うなら
+   * 由来の区別が要る。
+   */
+  | { kind: 'overflow'; cardId: string; origin: OverflowOrigin }
   /**
    * 手動の捨札が**実際に成立した**ことを表す（反復5・最終レビュー指摘3）
    *

@@ -237,6 +237,7 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
           runId,
           cardId: event.cardId,
           tick: state.tick,
+          origin: event.origin,
         });
         setOverflowNotice(getCardDefinition(event.cardId).name);
         noticeUntilRef.current = state.tick + OVERFLOW_NOTICE_TICKS;

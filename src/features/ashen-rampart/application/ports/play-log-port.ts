@@ -5,6 +5,8 @@
  * 判定に使わない項目は記録しない（設計書 §11 ログスキーマ v2）。
  */
 
+import type { OverflowOrigin } from '../../domain/combat/combat-state';
+
 /** 現在の反復番号。反復を進めるたびに必ず更新する */
 export const CURRENT_ITERATION = 5;
 
@@ -19,7 +21,22 @@ export type PlayLogEventBody =
     }
   | { kind: 'card_drawn'; runId: string; cardId: string; tick: number }
   | { kind: 'card_played'; runId: string; cardId: string; tick: number; mana: number; x?: number; y?: number }
-  | { kind: 'card_discarded_overflow'; runId: string; cardId: string; tick: number }
+  /**
+   * 手札上限で墓地へ落ちた（`run_tally.overflowCount` を数え直すための生イベント）
+   *
+   * `origin` は反復5 の判定後の敵対的検証で追加した。それまでドロー由来と
+   * 徴発由来が同じイベントに潰れており、**ログから区別できなかった**。
+   * 反復5 は「tick 680 の溢れ＝最後の1枚を引いた瞬間」を判定の根拠に使ったが、
+   * 由来を確かめる手段が無く、徴発が偶然未使用だったために成立していただけである
+   * （判定記録 2026-08-14 §3.3・§5.4）。
+   */
+  | {
+      kind: 'card_discarded_overflow';
+      runId: string;
+      cardId: string;
+      tick: number;
+      origin: OverflowOrigin;
+    }
   | { kind: 'wave_preview_shown'; runId: string; tick: number; content: string }
   | { kind: 'reactivated'; runId: string; tick: number }
   | { kind: 'paused'; runId: string; tick: number }

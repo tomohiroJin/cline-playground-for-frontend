@@ -425,7 +425,7 @@ const applyActions = (
       // 引いた札が入らないという点で通常のドローの溢れと同じ事象なので、同じ対価を払う
       // （設計書 §5.0）。選ばなかった残りは徴発そのものの代償なので対価はない。
       if (chosen !== undefined && draft.deck.hand.length === handSizeBefore) {
-        draft.events.push({ kind: 'overflow', cardId: chosen });
+        draft.events.push({ kind: 'overflow', cardId: chosen, origin: 'levy' });
       }
       draft.levyOptions = [];
     } else if (action.kind === 'discard') {
@@ -492,7 +492,7 @@ const runDraw = (
   if (outcome.drawn !== undefined) {
     events.push(
       outcome.overflowed
-        ? { kind: 'overflow', cardId: outcome.drawn }
+        ? { kind: 'overflow', cardId: outcome.drawn, origin: 'draw' }
         : { kind: 'draw', cardId: outcome.drawn }
     );
   }
