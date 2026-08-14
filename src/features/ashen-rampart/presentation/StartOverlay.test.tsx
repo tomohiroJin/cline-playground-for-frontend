@@ -44,4 +44,22 @@ describe('StartOverlay', () => {
     fireEvent.click(screen.getByRole('button', { name: '開始' }));
     expect(onStart).toHaveBeenCalledTimes(1);
   });
+
+  describe('反復5 で追加した操作の案内', () => {
+    it('手札を捨てられることが操作説明に書いてある', () => {
+      render(<StartOverlay preview="雑兵8" onStart={jest.fn()} />);
+      expect(screen.getByText(/捨て/)).toBeInTheDocument();
+    });
+
+    it('手札があふれるとライフを失うことが書いてある', () => {
+      render(<StartOverlay preview="雑兵8" onStart={jest.fn()} />);
+      expect(screen.getByText(/あふれ/)).toBeInTheDocument();
+    });
+
+    it('経路の脇に置いた守り手も壊れることが書いてある', () => {
+      render(<StartOverlay preview="雑兵8" onStart={jest.fn()} />);
+      // 「守り手」だけで探すと他の行にも当たりうる。この案内に固有の語で掴む
+      expect(screen.getByText(/経路の脇/)).toBeInTheDocument();
+    });
+  });
 });

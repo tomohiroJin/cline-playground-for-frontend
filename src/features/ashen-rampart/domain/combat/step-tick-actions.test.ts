@@ -350,4 +350,25 @@ describe('能動的な捨て札', () => {
     const next = stepTick(state, [{ kind: 'discard', handIndex: 99 }], PLAINS_MAP);
     expect(next.deck.hand).toEqual(state.deck.hand);
   });
+
+  // 判定項目1（手動で捨てた回数）は出口条件（設計書 §8.6）の一部である。
+  // 成立したかを知っているのはドメインだけなので、ここでイベントとして名乗る。
+  it('捨札が成立すると discarded イベントに捨てた札の id が載る', () => {
+    const state = createCombatState(
+      createDeck(['arrow-tower', 'reactor', 'reactor', 'reactor'], () => 0),
+      noWave
+    );
+    const discarded = state.deck.hand[0];
+    const next = stepTick(state, [{ kind: 'discard', handIndex: 0 }], PLAINS_MAP);
+
+    expect(next.events.filter((e) => e.kind === 'discarded')).toEqual([
+      { kind: 'discarded', cardId: discarded },
+    ]);
+  });
+
+  it('存在しない index では discarded イベントが出ない（押した回数ではなく捨てた回数）', () => {
+    const state = createCombatState(createDeck(['reactor'], () => 0), noWave);
+    const next = stepTick(state, [{ kind: 'discard', handIndex: 99 }], PLAINS_MAP);
+    expect(next.events.filter((e) => e.kind === 'discarded')).toEqual([]);
+  });
 });

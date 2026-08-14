@@ -90,6 +90,17 @@ export type TickEvent =
   | { kind: 'mana'; amount: number }
   | { kind: 'draw'; cardId: string }
   | { kind: 'overflow'; cardId: string }
+  /**
+   * 手動の捨札が**実際に成立した**ことを表す（反復5・最終レビュー指摘3）
+   *
+   * 判定項目1（手動で捨てた回数）は出口条件（設計書 §8.6）の一部である。
+   * これが無かったころ、集計は presentation 側で「捨札ボタンを押した回数」を
+   * 数えていた。押した直後の tick で決着してアクションが消費されなかった場合や、
+   * 短時間に2回押して手札 index がずれた場合、実際には捨てていないのに
+   * カウントだけが増える（上振れ方向にしか誤らない）。
+   * 成立を知っているのはドメインだけなので、ここでイベントとして名乗る。
+   */
+  | { kind: 'discarded'; cardId: string }
   | { kind: 'played'; cardId: string; pos?: CellPos }
   | { kind: 'rejected'; reason: 'cooldown' | 'mana' | 'target' | 'occupied' | 'pending' };
 
@@ -123,6 +134,20 @@ export interface CombatState {
 
 /** 初期ライフ。Task 9 の再較正で 10→12（カウントダウン追加後の全滅を解消） */
 export const LIFE_INITIAL = 12;
+
+/**
+ * 溢れ1枚あたりのライフの対価（反復5・設計書 §5）
+ *
+ * 手札が上限のときに引いた札は墓地へ落ちるが、そこに値段が付いていなかったため
+ * 「捨てているのはプレイヤーではなくゲームで、しかも無料」だった（反復4 の実測で
+ * 溢れ23回 対 手動の捨札1回）。山札は抱えようが出そうが同じ速さで減るので、
+ * **札を終盤へ運ぶ方法は手札に留めること以外に無く、留めれば溢れる。**
+ * つまりこの値が、序盤の余剰と終盤の飢餓を交換するレートになる。
+ *
+ * ライフを選んだのは、現状ライフがほぼ余っているため（初期12 に対し反復4 の漏れは
+ * 5ラン通して0〜3体）。マナを対価にすると、溢れが集中する序盤に詰みへ押す。
+ */
+export const OVERFLOW_LIFE_COST = 1;
 export const MANA_INITIAL = 2;
 export const DRAW_INTERVAL_TICKS = 40;
 export const PLACE_COOLDOWN_TICKS = 60;

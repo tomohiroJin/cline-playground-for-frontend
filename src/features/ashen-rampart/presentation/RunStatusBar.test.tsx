@@ -34,7 +34,7 @@ describe('RunStatusBar', () => {
   });
 
   it('次ウェーブの構成がレーン付きで予告される（指摘1: 種類と数だけでは配分を事前に決められない）', () => {
-    // Task 14 の再較正（2レーン化。PLAINS_WAVES 総HP 648・総体数 45）により、
+    // 再較正後（2レーン化。反復5 時点の PLAINS_WAVES は 総HP 808・総体数 49）でも、
     // tick:100 時点の次ウェーブ（startTick:260＋カウントダウン90＝350）は
     // 北=雑兵2・南=俊足2 が正しい現物値。レーンが分かる形（北/南）で出ることを確認する
     render(
@@ -98,5 +98,34 @@ describe('RunStatusBar', () => {
       <RunStatusBar state={state} isPaused={false} onTogglePause={jest.fn()} runSeed={999} />
     );
     expect((screen.getByLabelText('シード') as HTMLInputElement).value).toBe('999');
+  });
+
+  describe('ライフが減った理由の表示（反復5）', () => {
+    // 理由の導出（溢れ／漏れ／両方同時／どちらも無し）は `lifeLossReason`
+    // （life-loss-reason.test.ts）で検証済み。このコンポーネントは複数 tick
+    // 保持された結果を props で受け取って描画するだけなので、ここでは
+    // 「渡されたら出す」「渡されなければ出さない」の受け渡しだけを見る
+    // （state.events からの自前導出は修正ラウンド1 で useAshenRampartGame へ移した。
+    // 1 tick=100ms しか残らない events から直接描くと、実プレイで読めないため）。
+    it('lifeLossReason が渡されると表示される', () => {
+      render(
+        <RunStatusBar
+          state={state}
+          isPaused={false}
+          onTogglePause={jest.fn()}
+          runSeed={1}
+          lifeLossReason="手札があふれました"
+        />
+      );
+      expect(screen.getByText('手札があふれました')).toBeInTheDocument();
+    });
+
+    it('lifeLossReason が無いときは理由を出さない', () => {
+      render(
+        <RunStatusBar state={state} isPaused={false} onTogglePause={jest.fn()} runSeed={1} />
+      );
+      expect(screen.queryByText(/手札があふれ/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/砦に到達/)).not.toBeInTheDocument();
+    });
   });
 });

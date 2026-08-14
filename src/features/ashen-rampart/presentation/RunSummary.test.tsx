@@ -25,6 +25,12 @@ const view = (over: Partial<RunSummaryView> = {}): RunSummaryView => ({
   ravenDefeatCount: 1,
   costHistogram: [0, 1, 0, 0, 0, 0],
   unusedCardIds: [],
+  overflowCount: 0,
+  lifeLostToOverflow: 0,
+  lifeLostToLeak: 0,
+  lastPlayTick: 0,
+  drawPileExhaustedTick: 0,
+  manualDiscards: 0,
   ...over,
 });
 
@@ -110,5 +116,11 @@ describe('RunSummary', () => {
   it('項目6: コスト帯の分布を出す', () => {
     render(<RunSummary view={view({ costHistogram: [1, 2, 0, 0, 0, 0] })} />);
     expect(screen.getByText('0:1 / 1:2 / 2:0 / 3:0 / 4:0 / 5:0')).toBeInTheDocument();
+  });
+
+  it('ライフの内訳（漏れ／溢れ）をリザルトに出す', () => {
+    render(<RunSummary view={view({ lifeLostToLeak: 2, lifeLostToOverflow: 3 })} />);
+    expect(screen.getByText(/砦への到達 2/)).toBeInTheDocument();
+    expect(screen.getByText(/手札のあふれ 3/)).toBeInTheDocument();
   });
 });

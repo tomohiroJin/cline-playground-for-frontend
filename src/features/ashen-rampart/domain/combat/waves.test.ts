@@ -43,12 +43,14 @@ describe('ウェーブ構成', () => {
     expect(PLAINS_WAVES.map((w) => w.startTick)).toEqual([0, 260, 540, 820]);
   });
 
-  it('敵の総HPは反復3 の較正値 648 と一致する（2レーン化に伴う再較正）', () => {
-    expect(totalEnemyHp(PLAINS_WAVES)).toBe(648);
+  it('敵の総HPは反復5 の較正値 808 と一致する', () => {
+    // 反復3（2レーン化）で 648。反復5 の再較正でウェーブ4 北の重装2体・雑兵2体を
+    // 足して 808（+160）。鴉の出現間隔を緩めたぶんの難度を地上へ戻したもの
+    expect(totalEnemyHp(PLAINS_WAVES)).toBe(808);
   });
 
-  it('総体数は 45 体', () => {
-    expect(totalEnemyCount(PLAINS_WAVES)).toBe(45);
+  it('総体数は 49 体（反復3 の45体＋北の重装2・雑兵2）', () => {
+    expect(totalEnemyCount(PLAINS_WAVES)).toBe(49);
   });
 
   it('両レーンが使われている（2レーンにした意味が構成に現れている）', () => {

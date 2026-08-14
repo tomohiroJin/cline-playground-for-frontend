@@ -18,8 +18,9 @@ describe('nextWavePreview', () => {
   });
 
   it('同じレーンに複数エントリがあるウェーブは1つのレーン表記へ合流する', () => {
-    // ウェーブ4: 北=重装+雑兵、南=鴉。北の2エントリが「北 重装2 雑兵2」に合流することを確認する
-    expect(nextWavePreview({ waves: PLAINS_WAVES, tick: 540 })).toBe('北 重装2 雑兵2 / 南 鴉13');
+    // ウェーブ4: 北=重装+雑兵、南=鴉。北の2エントリが「北 重装4 雑兵4」に合流することを確認する
+    // （体数は反復5 の較正で 2/2 → 4/4。waves.ts の docstring 参照）
+    expect(nextWavePreview({ waves: PLAINS_WAVES, tick: 540 })).toBe('北 重装4 雑兵4 / 南 鴉13');
   });
 
   it('最終ウェーブ開始後は固定文言になる', () => {

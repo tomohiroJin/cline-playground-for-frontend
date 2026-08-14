@@ -52,7 +52,7 @@ describe('useAshenRampartGame', () => {
     renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log }));
     const started = log.events.filter((e) => e.kind === 'run_started');
     expect(started).toHaveLength(1);
-    expect(started[0]).toMatchObject({ seed: 1, iteration: 4 });
+    expect(started[0]).toMatchObject({ seed: 1, iteration: 5 });
   });
 
   it('StrictMode 下でもカードを1枚配置できる（指摘1の回帰: updater 内の副作用で操作が握り潰されていた）', () => {
@@ -178,6 +178,57 @@ describe('useAshenRampartGame', () => {
     const lost = result.current.state.deck.graveyard[0];
     expect(typeof lost).toBe('string');
     expect(result.current.overflowNotice).toBe(getCardDefinition(lost as string).name);
+  });
+
+  describe('lifeLossReason: ライフが減った理由の持続表示（反復5・修正ラウンド1）', () => {
+    // state.events は毎 tick 置き換わるため、RunStatusBar が直接描くと発生した
+    // 1 tick（100ms）しか見えない（実プレイで読めないという反証で発覚）。
+    // useAshenRampartGame が複数 tick 保持することを検証する。
+    it('溢れが起きた tick で理由が立つ', () => {
+      const { result } = renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1 }));
+      // 初期手札3枚・上限5枚・一度も出さないので、3回目のドロー（120 tick）で必ず溢れる
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS * 120);
+      });
+      expect(result.current.lifeLossReason).toBe('手札があふれました');
+    });
+
+    it('発生した tick を過ぎても、保持 tick 数のうちは理由が消えない（1 tick しか出ない、の再発防止）', () => {
+      const { result } = renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1 }));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS * 120);
+      });
+      expect(result.current.lifeLossReason).toBe('手札があふれました');
+      // 次のドロー（160 tick）より前なので、この間に新たな溢れは起きない
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS * 5);
+      });
+      expect(result.current.lifeLossReason).toBe('手札があふれました');
+    });
+
+    it('保持 tick 数を過ぎると理由が消える', () => {
+      const { result } = renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1 }));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS * 120);
+      });
+      expect(result.current.lifeLossReason).toBeDefined();
+      // LIFE_LOSS_REASON_TICKS(8) ぶん進める。次のドロー（160 tick）より前なので、
+      // 「消えた」ことだけを検証できる（新しい理由による再設定と区別できる）
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS * 8);
+      });
+      expect(result.current.lifeLossReason).toBeUndefined();
+    });
+
+    it('restart するとライフが減った理由の表示がクリアされる', () => {
+      const { result } = renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1 }));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS * 120);
+      });
+      expect(result.current.lifeLossReason).toBeDefined();
+      act(() => result.current.restart());
+      expect(result.current.lifeLossReason).toBeUndefined();
+    });
   });
 
   it('予告が切り替わったときにだけ wave_preview_shown が記録される', () => {
@@ -654,9 +705,6 @@ describe('useAshenRampartGame', () => {
       }
     };
 
-    /** 決着の何 tick 前から1 tick ずつ進めるか（決着した tick に必ず出来事を載せるため） */
-    const ENDGAME_TICKS = 5;
-
     /** 盤面の全マス。「置けない場所」を選ぶために使う */
     const allCells = (): CellPos[] => {
       const cells: CellPos[] = [];
@@ -707,7 +755,7 @@ describe('useAshenRampartGame', () => {
       advanceUntilOutcome(result);
       const tallies = log.events.filter((e) => e.kind === 'run_tally');
       expect(tallies).toHaveLength(1);
-      expect(tallies[0]).toMatchObject({ iteration: 4 });
+      expect(tallies[0]).toMatchObject({ iteration: 5 });
     });
 
     it('決着後に外部からの再レンダーで run_tally effect が再実行されても2件目は記録されない', () => {
@@ -734,42 +782,73 @@ describe('useAshenRampartGame', () => {
       expect(log.events.filter((e) => e.kind === 'run_tally')).toHaveLength(1);
     });
 
+    /**
+     * jest.advanceTimersByTime に大きな値を渡すと、複数 tick 分の setState が
+     * 1つの React コミットへまとめられ、間の tick で起きた events（overflow・
+     * played 等）が一度も描画されずに失われる（tallyRef の更新は「判定用の
+     * 集計を累積する」effect 経由なので、コミットされない tick には触れない）。
+     * 実ブラウザでは setInterval の発火が毎回別タスクになるため起きないが、
+     * テストで overflowCount 等を確実に非ゼロへ育てるには 1 tick ずつ進める
+     * 必要がある（advanceUntilOutcome の 50 tick ジャンプはこの理由により、
+     * 決着の有無だけを見るテストにしか使えない）。
+     */
+    const advanceOneTick = (): void => {
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+    };
+
     it('run_tally の数値が画面の集計（RunSummary）と一致する', () => {
       // 判定者は画面の集計と、貼り付けた JSON の両方を見る。両者が食い違うと
       // 同じランに対して2つの数値が存在することになり、判定が成立しない。
-      // 決着した tick に必ず出来事（rejected）が載るよう、最後の数 tick は
-      // 1 tick ずつ進めながら「置けない場所」を叩く。書き出しが1 tick 古い
-      // 集計（setTally がまだ反映されていない state 側の tally）を読むと、
-      // rejectedTarget が画面より1少なくなってこのテストが落ちる。
-      const decidedTick = (() => {
-        const probe = renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1 }));
-        advanceUntilOutcome(probe.result);
-        const tick = probe.result.current.state.tick;
-        probe.unmount();
-        return tick;
-      })();
-      expect(decidedTick).toBeGreaterThan(ENDGAME_TICKS);
-
+      // このテストは「1 tick ずれ」の再発防止が目的なので、突き合わせる項目は
+      // すべて非ゼロに育ててから比較する（0 と 0 の一致は何も守らない）。
       const log = createMockPlayLog();
+      const cards = swiftCards();
       const { result } = renderHook(() =>
-        useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log })
+        useAshenRampartGame({ cards, seed: 1, playLog: log })
       );
-      act(() => {
-        jest.advanceTimersByTime(TICK_INTERVAL_MS * (decidedTick - ENDGAME_TICKS));
-      });
-      expect(result.current.state.outcome).toBe('playing');
-      // 決着するまで、毎 tick 拒否を1件ずつ積む（決着 tick にも必ず1件載る）
-      for (let i = 0; i <= ENDGAME_TICKS && result.current.state.outcome === 'playing'; i++) {
-        tapUnplaceableCell(result);
-        act(() => {
-          jest.advanceTimersByTime(TICK_INTERVAL_MS);
-        });
+      advanceOneTick();
+
+      // 判定項目6: 開始直後に魔力炉を1枚置く（lastPlayTick を非ゼロにする）。
+      // 魔力炉はコスト0・経路外専用で、前線の守り手ではないため敵の経路取りや
+      // 決着タイミングに影響しない（run-summary.ts の applyPlayedEvent も
+      // placementKind === 'unit' のときしか placedOnPath/placedOffPath を
+      // 増やさないため、ブロッカー集計にも影響しない）。
+      const reactorIndex = result.current.state.deck.hand.findIndex(
+        (id) => getCardDefinition(id).type === 'reactor'
+      );
+      expect(reactorIndex).toBeGreaterThanOrEqual(0);
+      act(() => result.current.selectCard(reactorIndex));
+      const reactorAt = result.current.placeableCells[0];
+      expect(reactorAt).toBeDefined();
+      act(() => result.current.clickCell(reactorAt!));
+      advanceOneTick();
+
+      // 決着するまで、毎 tick「置けない場所」を叩き続ける。決着がいつかを
+      // 事前に知らなくても、拒否は毎 tick 積むため決着 tick にも必ず載る。
+      // 手札上限で手札が埋まって draw に失敗すると tapUnplaceableCell が
+      // 選べる札を見つけられずに例外を投げるため、そのときはこの tick の
+      // 拒否だけを諦めて進める（rejectedTarget が画面より少なくなることはない。
+      // 画面側の view も同じ tallyRef から計算するため、突き合わせは崩れない）。
+      const MAX_TICKS = 1500;
+      for (let i = 0; i < MAX_TICKS && result.current.state.outcome === 'playing'; i++) {
+        try {
+          tapUnplaceableCell(result);
+        } catch {
+          // 置ける札が無い tick はスキップする（上のコメント参照）
+        }
+        advanceOneTick();
       }
       expect(result.current.state.outcome).not.toBe('playing');
 
       const view = result.current.summary;
-      // 画面側が「拒否を数えている」ことを先に確かめる（0 同士の一致で通らないように）
+      // 各項目が「非ゼロで」画面とログで一致することを先に確かめる
+      // （0 同士の一致では 1 tick ずれの再発を検知できない）
       expect(view.rejectionDetail.find((d) => d.label === '置けない場所')?.count).toBeGreaterThan(0);
+      expect(view.overflowCount).toBeGreaterThan(0);
+      expect(view.lifeLostToOverflow).toBeGreaterThan(0);
+      expect(view.lastPlayTick).toBeGreaterThan(0);
 
       const tally = log.events.find((e) => e.kind === 'run_tally');
       expect(tally).toMatchObject({
@@ -782,6 +861,140 @@ describe('useAshenRampartGame', () => {
         ravenDefeatAverage: view.ravenDefeatAverage,
         ravenDefeatCount: view.ravenDefeatCount,
         costHistogram: view.costHistogram,
+        overflowCount: view.overflowCount,
+        lifeLostToOverflow: view.lifeLostToOverflow,
+        lifeLostToLeak: view.lifeLostToLeak,
+        lastPlayTick: view.lastPlayTick,
+        // drawPileExhaustedTick はここでは意図的に対象から外している。
+        // 非ゼロへ育てるには山札（drawPile）を使い切る必要があるが、
+        // `startRunWithDeck` は `validateDeck` でデッキがちょうど20枚である
+        // ことを強制する（実際に5枚のデッキで試したところ
+        // 「デッキが構築規則を満たしていません」で即エラーになることを確認済み）。
+        // 20枚なら drawPile は必ず 17 枚（20 − INITIAL_HAND_SIZE）残り、
+        // DRAW_INTERVAL_TICKS=40 のため尽きるまで最短でも 680 tick かかる。
+        // このテストの無防備な swift デッキ（守り手をほぼ置かない）は
+        // tick 440 前後で決着する（実測。魔力炉を1枚置くだけでは前線が
+        // 保たない）ため、drawPile が尽きる前に必ず決着してしまい、
+        // この統合テストの中では「非ゼロで一致」を作れない。
+        // 山札を使い切るところまで生き延びさせるには実際に前線を組んで
+        // 20シード規模の勝率検証（balance.test.ts の greedyStrategy 相当）が
+        // 要る対応で、この統合テストの目的（1 tick ずれの再発検知）に対して
+        // 不釣り合いに重い。drawPileExhaustedTick の正しさ（最初に空になった
+        // tick だけを覚える／以後は上書きしない）は run-summary.test.ts の
+        // 単体テスト（「山札が尽きた tick を、最初に空になった時点で覚える」）
+        // が直接・決定的に保証しており、変異テストでも確認済み。
+      });
+      // endTick は RunTally 経由ではなく決着 tick を直接使うため、画面側の
+      // state.tick と突き合わせる（view には endTick 相当のフィールドが無い）
+      expect((tally as { endTick: number }).endTick).toBe(result.current.state.tick);
+    });
+
+    /**
+     * 北レーンの経路セル。ここに守り手を置くと雑兵にブロックされ、摩耗で実際に壊れる
+     *
+     * 経路外に置いても壊れない（設計書 §2.1。反復4 まではそれがラチェットだった）ため、
+     * `unitsLost` を非ゼロに育てるには経路上でなければならない。
+     */
+    const NORTH_PATH_CELL: CellPos = { x: 3, y: 2 };
+
+    /** 手札の中で、いま置ける守り手（罠・魔力炉・即時札を除く）の index */
+    const affordableUnitIndex = (
+      result: { current: ReturnType<typeof useAshenRampartGame> }
+    ): number =>
+      result.current.state.deck.hand.findIndex((id) => {
+        const card = getCardDefinition(id);
+        return placementKindOf(card) === 'unit' && card.cost <= result.current.state.mana;
+      });
+
+    it('unitsLost が非ゼロのランでも run_tally と画面の集計が一致し、生ログから数え直せる', () => {
+      // この反復の看板指標（判定項目5）を 0 対 0 で比べても、1 tick ずれの再発は
+      // 検知できない。守り手を経路上に置いて実際に壊させ、非ゼロで突き合わせる。
+      // 併せて、集計値が生イベント（unit_lost / enemy_leaked）から数え直せることも見る。
+      // 集計値だけが情報源だと、間違っていても判定者に確かめる手段が無いため。
+      const log = createMockPlayLog();
+      const cards = swiftCards();
+      const { result } = renderHook(() =>
+        useAshenRampartGame({ cards, seed: 1, playLog: log })
+      );
+
+      // 置ける守り手が手札に来てマナが足りるまで待ってから、北レーンへ1枚置く
+      const MAX_WAIT_TICKS = 300;
+      let placed = false;
+      for (let i = 0; i < MAX_WAIT_TICKS && !placed; i++) {
+        const handIndex = affordableUnitIndex(result);
+        if (handIndex >= 0) {
+          act(() => result.current.selectCard(handIndex));
+          placed = result.current.placeableCells.some(
+            (c) => c.x === NORTH_PATH_CELL.x && c.y === NORTH_PATH_CELL.y
+          );
+          if (placed) act(() => result.current.clickCell(NORTH_PATH_CELL));
+          else act(() => result.current.selectCard(handIndex));
+        }
+        advanceOneTick();
+      }
+      expect(placed).toBe(true);
+
+      const MAX_TICKS = 1500;
+      for (let i = 0; i < MAX_TICKS && result.current.state.outcome === 'playing'; i++) {
+        advanceOneTick();
+      }
+      expect(result.current.state.outcome).not.toBe('playing');
+
+      const view = result.current.summary;
+      const lostTotal = Object.values(view.unitsLost).reduce((sum, n) => sum + n, 0);
+      expect(lostTotal).toBeGreaterThan(0);
+
+      const tally = log.events.find((e) => e.kind === 'run_tally');
+      expect(tally).toMatchObject({
+        unitsLost: view.unitsLost,
+        lifeLostToLeak: view.lifeLostToLeak,
+      });
+
+      // 生ログから数え直せること（判定者が集計値を検算する手順そのもの）
+      expect(log.events.filter((e) => e.kind === 'unit_lost')).toHaveLength(lostTotal);
+      expect(log.events.filter((e) => e.kind === 'enemy_leaked')).toHaveLength(
+        view.lifeLostToLeak
+      );
+    });
+
+    it('unit_lost には壊れた守り手の cardId と盤面座標が入る', () => {
+      const log = createMockPlayLog();
+      const { result } = renderHook(() =>
+        useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log })
+      );
+
+      const MAX_WAIT_TICKS = 300;
+      let placedCardId: string | undefined;
+      for (let i = 0; i < MAX_WAIT_TICKS && placedCardId === undefined; i++) {
+        const handIndex = affordableUnitIndex(result);
+        if (handIndex >= 0) {
+          const candidate = result.current.state.deck.hand[handIndex];
+          act(() => result.current.selectCard(handIndex));
+          const canPlace = result.current.placeableCells.some(
+            (c) => c.x === NORTH_PATH_CELL.x && c.y === NORTH_PATH_CELL.y
+          );
+          if (canPlace) {
+            act(() => result.current.clickCell(NORTH_PATH_CELL));
+            placedCardId = candidate;
+          } else {
+            act(() => result.current.selectCard(handIndex));
+          }
+        }
+        advanceOneTick();
+      }
+      expect(placedCardId).toBeDefined();
+
+      const MAX_TICKS = 1500;
+      for (let i = 0; i < MAX_TICKS && result.current.state.outcome === 'playing'; i++) {
+        advanceOneTick();
+      }
+
+      const lost = log.events.filter((e) => e.kind === 'unit_lost');
+      expect(lost.length).toBeGreaterThan(0);
+      expect(lost[0]).toMatchObject({
+        cardId: placedCardId,
+        x: NORTH_PATH_CELL.x,
+        y: NORTH_PATH_CELL.y,
       });
     });
 
@@ -839,7 +1052,7 @@ describe('useAshenRampartGame', () => {
 
       const tally = log.events.find((e) => e.kind === 'run_tally');
       expect(tally).toMatchObject({
-        iteration: 4,
+        iteration: 5,
         manualDiscards: 2,
         inspectOpens: 2,
         rejectedTarget: 1,
@@ -850,7 +1063,7 @@ describe('useAshenRampartGame', () => {
       expect(unused.length).toBeLessThan(new Set(cards).size);
     });
 
-    it('手動で捨てると card_discarded_manual に捨てた札の id が入る', () => {
+    it('手動で捨てると card_discarded_manual に捨てた札の id が入る（捨札が成立した tick に記録される）', () => {
       const log = createMockPlayLog();
       const { result } = renderHook(() =>
         useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log })
@@ -858,9 +1071,27 @@ describe('useAshenRampartGame', () => {
       const discarded = result.current.state.deck.hand[0];
       expect(discarded).toBeDefined();
       act(() => result.current.discardCard(0));
+      // 押した時点ではまだ記録されない。捨札が成立したかを知っているのはドメインだけ
+      expect(log.events.filter((e) => e.kind === 'card_discarded_manual')).toHaveLength(0);
+      advanceOneTick();
       const events = log.events.filter((e) => e.kind === 'card_discarded_manual');
       expect(events).toHaveLength(1);
       expect(events[0]).toMatchObject({ cardId: discarded });
+    });
+
+    it('捨札のアクションが消費されずにランが終わった場合、manualDiscards は増えない（押した回数ではない）', () => {
+      // 決着した tick より後に押しても stepTick は走らない（outcome !== 'playing' で
+      // 即 return する）。ボタンの押下回数を数えていたころは、ここで集計だけが増えた。
+      const log = createMockPlayLog();
+      const { result } = renderHook(() =>
+        useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log })
+      );
+      advanceUntilOutcome(result);
+      expect(result.current.state.outcome).not.toBe('playing');
+      act(() => result.current.discardCard(0));
+      advanceOneTick();
+      expect(log.events.filter((e) => e.kind === 'card_discarded_manual')).toHaveLength(0);
+      expect(result.current.summary.manualDiscards).toBe(0);
     });
 
     it('inspect_opened には開いた設置物の cardId が入る', () => {

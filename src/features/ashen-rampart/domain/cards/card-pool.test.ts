@@ -203,3 +203,28 @@ describe('プリセットデッキ', () => {
     expect(validateDeck(deck.cards).errors).toEqual([]);
   });
 });
+
+describe('プリセットの重コスト帯（反復5）', () => {
+  it('どのプリセットもコスト4以上を2枚以上持つ', () => {
+    // 速攻型は最大コスト3 で、選んだ人に重い札の判断が発生しなかった（設計書 §2.4）
+    Object.values(PRESET_DECKS).forEach((preset) => {
+      const heavy = preset.cards.filter((id) => getCardDefinition(id).cost >= 4);
+      expect(heavy.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  it('プリセットは構築規則を満たしたまま', () => {
+    Object.values(PRESET_DECKS).forEach((preset) => {
+      expect(validateDeck(preset.cards)).toEqual({ isValid: true, errors: [] });
+    });
+  });
+
+  it('速攻型と重厚型の性格の違いが残っている（平均コストで重厚型が上）', () => {
+    const averageCost = (cards: readonly string[]): number =>
+      cards.reduce((sum, id) => sum + getCardDefinition(id).cost, 0) / cards.length;
+    const swift = PRESET_DECKS.swift;
+    const heavy = PRESET_DECKS.heavy;
+    if (!swift || !heavy) throw new Error('プリセットが見つかりません');
+    expect(averageCost(heavy.cards)).toBeGreaterThan(averageCost(swift.cards));
+  });
+});

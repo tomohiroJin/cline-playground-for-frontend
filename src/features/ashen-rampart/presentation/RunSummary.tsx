@@ -4,6 +4,8 @@
  * 判定7項目（設計書 §9.1）に1対1で対応させる。**判定に使わない数値は出さない**。
  * 支援2種（篝火・鍛冶場）の貢献と守り手別の撃破は反復2 から引き継ぐ。
  * 支援塔をデッキに入れなかったランでは行ごと出さない（情報量の抑制）。
+ * ライフの内訳（漏れ／溢れ）は反復5 でライフが2つの理由で減るようになったため追加した
+ * （設計書 §5.4。反証条件「ライフが何で減ったか分からない」への対応）。
  */
 import React from 'react';
 import styled from 'styled-components';
@@ -79,6 +81,11 @@ export const RunSummary: React.FC<Props> = ({ view }) => (
         <Detail data-testid="summary-forge">射程延長で {view.forgeExtendedShots} 射</Detail>
       </>
     )}
+
+    <Term>ライフの内訳</Term>
+    <Detail>
+      砦への到達 {view.lifeLostToLeak} / 手札のあふれ {view.lifeLostToOverflow}
+    </Detail>
 
     <Term>通らなかった操作</Term>
     <Detail>

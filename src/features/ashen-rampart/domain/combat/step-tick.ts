@@ -13,7 +13,7 @@
  * 分割は振る舞いを1ミリも変えないことを最優先し、処理順序・計算式は元のまま。
  */
 import type { CellPos, StageMap } from '../board/stage-map';
-import { isSlowCell, isHighGround, laneOf, isPathCell, fortressCell } from '../board/stage-map';
+import { isSlowCell, isHighGround, isPathCell, fortressCell } from '../board/stage-map';
 import { drawOne, discardFromHand, peekTop, takeFromPeek } from '../cards/deck';
 import type { DeckState } from '../cards/deck';
 import { getCardDefinition } from '../cards/card-pool';
@@ -22,7 +22,7 @@ import { getEnemySpec } from './enemies';
 import { isEnemyFlying } from './enemy-status';
 import { isBlocked, attackersFor } from './blocking';
 import type { BlockContext } from './blocking';
-import { DRAW_INTERVAL_TICKS, PLACE_COOLDOWN_TICKS } from './combat-state';
+import { DRAW_INTERVAL_TICKS, PLACE_COOLDOWN_TICKS, OVERFLOW_LIFE_COST } from './combat-state';
 import type {
   CombatState,
   ActiveEnemy,
@@ -33,6 +33,11 @@ import type {
   PlacedEmber,
   DefeatSource,
 } from './combat-state';
+import { laneFor, goalFor, enemyPosition } from './enemy-position';
+
+// 既存の import 元（step-tick）を変えずに済ませるため再エクスポートする。
+// 反復1〜4 のテストが step-tick から positionOf / enemyPosition を取っている。
+export { positionOf, enemyPosition } from './enemy-position';
 
 /** プレイヤーがその tick に行った操作 */
 export type PlayerAction =
@@ -116,31 +121,6 @@ export const effectiveRange = (
   }, 0);
   return spec.range + bonus;
 };
-
-/** 進行度から補間済みの盤面座標を求める */
-export const positionOf = (progress: number, path: readonly CellPos[]): CellPos => {
-  if (path.length === 0) return { x: 0, y: 0 };
-  const last = path.length - 1;
-  const clamped = Math.max(0, Math.min(progress, last));
-  const i = Math.min(Math.floor(clamped), Math.max(0, last - 1));
-  const a = path[i];
-  const b = path[i + 1] ?? a;
-  if (!a || !b) return { x: 0, y: 0 };
-  const frac = clamped - i;
-  return { x: a.x + (b.x - a.x) * frac, y: a.y + (b.y - a.y) * frac };
-};
-
-/** その敵の所属レーン */
-const laneFor = (map: StageMap, enemy: ActiveEnemy): readonly CellPos[] =>
-  laneOf(map, enemy.laneIndex);
-
-/** その敵が砦に到達したとみなす進行度 */
-const goalFor = (map: StageMap, enemy: ActiveEnemy): number =>
-  Math.max(0, laneFor(map, enemy).length - 1);
-
-/** その敵の現在の盤面座標 */
-export const enemyPosition = (map: StageMap, enemy: ActiveEnemy): CellPos =>
-  positionOf(enemy.progress, laneFor(map, enemy));
 
 const samePos = (a: CellPos, b: CellPos): boolean => a.x === b.x && a.y === b.y;
 
@@ -343,13 +323,19 @@ const applyCardEffect = (
  * （ドローは DRAW_INTERVAL_TICKS の時間駆動）ため、「捨てて回す」戦術は
  * 成立せず、効果は手札の枠を空けることに限定される。有限デッキという
  * 前提を緩めないための意図的な設計（設計書 §5.3）。
+ *
+ * 成立したときだけ `discarded` イベントを積む。捨札の挙動自体は変わらない
+ * （イベントを足しただけ）。判定項目1 を「押した回数」ではなく
+ * 「実際に捨てた回数」で数えるための唯一の根拠になる。
  */
 const applyDiscard = (
   draft: ActionsDraft,
   action: Extract<PlayerAction, { kind: 'discard' }>
 ): void => {
-  if (draft.deck.hand[action.handIndex] === undefined) return;
+  const cardId = draft.deck.hand[action.handIndex];
+  if (cardId === undefined) return;
   draft.deck = discardFromHand(draft.deck, action.handIndex);
+  draft.events.push({ kind: 'discarded', cardId });
 };
 
 /**
@@ -432,7 +418,15 @@ const applyActions = (
       applyReactivate(draft, action);
     } else if (action.kind === 'choose-levy') {
       if (draft.levyOptions.length === 0) return;
+      const chosen = draft.levyOptions[action.optionIndex];
+      const handSizeBefore = draft.deck.hand.length;
       draft.deck = takeFromPeek(draft.deck, draft.levyOptions, action.optionIndex);
+      // 手札が増えていなければ、選んだ札は上限のため墓地へ落ちている。
+      // 引いた札が入らないという点で通常のドローの溢れと同じ事象なので、同じ対価を払う
+      // （設計書 §5.0）。選ばなかった残りは徴発そのものの代償なので対価はない。
+      if (chosen !== undefined && draft.deck.hand.length === handSizeBefore) {
+        draft.events.push({ kind: 'overflow', cardId: chosen });
+      }
       draft.levyOptions = [];
     } else if (action.kind === 'discard') {
       applyDiscard(draft, action);
@@ -545,8 +539,9 @@ const moveEnemies = (
 /**
  * 敵の攻撃と守り手の消滅
  *
- * 移動確定後に呼ぶ。止められている敵が attackIntervalTicks ごとに
- * ブロッカーのHPを削り、0 になった守り手を取り除く。
+ * 移動確定後に呼ぶ。**自分をブロックしている守り手か、射程内の最も近い守り手**を
+ * attackIntervalTicks ごとに削り、0 になった守り手を取り除く（反復5・設計書 §4）。
+ * 標的の決定は attackTargetIndexFor が持ち、この関数は「誰が誰を殴るか」を知らない。
  *
  * 攻撃タイミングは敵ごとの内部カウンタではなく
  * `tick % attackIntervalTicks === 0` で決める。敵に状態を増やさずに済み、
@@ -963,10 +958,16 @@ export const stepTick = (
   const damaged = resolveDamage(moved, hpById, sourceById, statusById, events);
   const { settled, life } = resolveLeaks(damaged, map, state.life, events);
 
+  // --- 溢れの対価（反復5・設計書 §5）---
+  // ドローと徴発の両方が overflow イベントを積むため、ここで一括して数える。
+  // 漏れ（resolveLeaks）と同じライフを引くが、イベントの種類で内訳を区別できる
+  const overflowCount = events.filter((e) => e.kind === 'overflow').length;
+  const lifeAfterOverflow = life - overflowCount * OVERFLOW_LIFE_COST;
+
   const next: CombatState = {
     ...state,
     tick,
-    life,
+    life: lifeAfterOverflow,
     mana,
     deck,
     reactors,
@@ -983,7 +984,7 @@ export const stepTick = (
     levyOptions: afterActions.levyOptions,
   };
 
-  if (life <= 0) return { ...next, life: 0, outcome: 'lost' };
+  if (lifeAfterOverflow <= 0) return { ...next, life: 0, outcome: 'lost' };
   if (isCleared(next, tick)) return { ...next, outcome: 'won' };
   return next;
 };
