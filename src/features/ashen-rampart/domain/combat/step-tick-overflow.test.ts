@@ -26,7 +26,7 @@ const stateWithFullHand = (drawPile: readonly string[]): CombatState => {
 describe('溢れのライフ対価', () => {
   it('溢れ1枚につきライフを1点失う', () => {
     const next = stepTick(stateWithFullHand(['ballista']), [], PLAINS_MAP);
-    expect(next.events).toContainEqual({ kind: 'overflow', cardId: 'ballista' });
+    expect(next.events).toContainEqual({ kind: 'overflow', cardId: 'ballista', origin: 'draw' });
     expect(next.life).toBe(LIFE_INITIAL - 1);
   });
 
@@ -75,7 +75,7 @@ describe('溢れのライフ対価', () => {
       },
     };
     const next = stepTick(state, [{ kind: 'choose-levy', optionIndex: 0 }], PLAINS_MAP);
-    expect(next.events).toContainEqual({ kind: 'overflow', cardId: 'catapult' });
+    expect(next.events).toContainEqual({ kind: 'overflow', cardId: 'catapult', origin: 'levy' });
     // 選ばなかった2枚は徴発そのものの代償であって溢れではない。1点だけ
     expect(next.life).toBe(LIFE_INITIAL - 1);
   });

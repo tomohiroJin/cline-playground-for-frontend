@@ -181,10 +181,13 @@ describe('summarize', () => {
 
 describe('反復5 の集計項目', () => {
   it('溢れの回数と、それによって失ったライフを数える', () => {
-    // overflow イベントを2件持つ tick を1回通す
+    // overflow イベントを2件持つ tick を1回通す。
+    // **由来をドローと徴発で分けている**——集計が両方を拾うという
+    // run-summary.ts の主張を、実際に検査するため（反復5 の敵対的検証で
+    // origin を追加するまで、この主張は検査できなかった）。
     const state = stateWithEvents([
-      { kind: 'overflow', cardId: 'ballista' },
-      { kind: 'overflow', cardId: 'forge' },
+      { kind: 'overflow', cardId: 'ballista', origin: 'draw' },
+      { kind: 'overflow', cardId: 'forge', origin: 'levy' },
     ]);
     const tally = accumulateTick(emptyTally(), state, PLAINS_MAP);
     expect(tally.overflowCount).toBe(2);
@@ -194,7 +197,7 @@ describe('反復5 の集計項目', () => {
   it('漏れで失ったライフを、溢れと分けて数える', () => {
     const state = stateWithEvents([
       { kind: 'leak', enemyId: 1 },
-      { kind: 'overflow', cardId: 'forge' },
+      { kind: 'overflow', cardId: 'forge', origin: 'draw' },
     ]);
     const tally = accumulateTick(emptyTally(), state, PLAINS_MAP);
     expect(tally.lifeLostToLeak).toBe(1);
