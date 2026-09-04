@@ -2325,13 +2325,21 @@ domain の chooseAcquisition を呼ぶだけで application 層に足す判断�
 - Modify: `src/features/ashen-rampart/presentation/useAshenRampartGame.test.ts`
 
 **Interfaces:**
-- Produces: `CURRENT_ITERATION = 6`、`PlayLogEventBody` に `levy_chosen` を追加、`reactivated` に `emberIndex`、`card_discarded_manual` に `handIndex`、`draw_pile_exhausted` を追加
+- Produces: `CURRENT_ITERATION = 6`、`reactivated` に `emberIndex`、`card_discarded_manual` に `handIndex`、`draw_pile_exhausted` を追加
 
 **⚠️ 設計書 §12 段階A は「ログ v5」と書いているが、このタスクは
 `expedition_*` イベントを含めない。** 段階A には UI が無く、
 **それらのイベントを出す者がいない。** 出す者のいないイベント型を先に定義しても
 「使われない型」が増えるだけで、検査もできない。
 `expedition_*` は**産出者と一緒に段階C で入れる。**
+
+**⚠️ `levy_chosen` も入れない（Task 5 実施後に判明）。**
+Task 5 で徴発を `retired` にし、`validateDeck` が構築で選べない札を弾くようにした結果、
+**`startRunWithDeck` を通る経路では徴発がデッキに入らない。**
+`chooseLevy` は呼ばれようがなく、`levy_chosen` には産出者がいない。
+`expedition_*` と同じ理由で見送る。**徴発を12枚経済へ戻す反復7 で、
+そのとき同時に入れる**（`domain` の徴発ロジックと `step-tick-levy.test.ts` は生きているので、
+機構そのものは失われていない）。
 
 **このタスクで入れるのは、今日すでに産出者が存在する3件だけである。**
 いずれも設計書 §4.4 が「これが無いと遠征を完全再生できない」と特定したもので、
@@ -2362,6 +2370,10 @@ describe('スキーマ v5（反復6）', () => {
 ```
 
 **あわせて `useAshenRampartGame.test.ts:56` の `iteration: 5` を `iteration: 6` に直す。**
+
+**⚠️ 徴発のテストは書かない。** Task 5 の実施で徴発は `startRunWithDeck` 経由では
+デッキに入らなくなった（`validateDeck` が弾く）。テストを書こうとして
+`validateDeck` を緩めないこと——それは Task 5 の決定を覆すことになる。
 Task 5 では触らないと決めてある（定数を上げるのはこのタスクなので、
 先に期待値だけ変えると赤くなる）。
 
@@ -2369,23 +2381,6 @@ Task 5 では触らないと決めてある（定数を上げるのはこのタ�
 
 ```ts
 describe('再生に必要なログ（反復6・設計書 §4.4）', () => {
-  it('徴発の選択が levy_chosen として記録される', () => {
-    // 徴発を1枚含む12枚デッキで起動し、徴発を打ってから chooseLevy(0) を呼ぶ。
-    // levy は retired だが定義は残っており、startRunWithDeck の検証は
-    // 入手経路を見ないのでテスト用デッキには入れられる。
-    //
-    // **起動と操作は既存テストのやり方をそのまま使うこと。**
-    // このファイルには業火を打つテストが既にあり、renderHook の呼び方・
-    // act の包み方・ログの取り出し方がそこに書かれている。新しい流儀を持ち込まない。
-    // デッキ例:
-    //   ['levy', 'reactor','reactor','reactor', 'arrow-tower','arrow-tower','arrow-tower',
-    //    'stone-wall','stone-wall','stone-wall', 'ballista', 'cannon-tower']
-    const events = log.exportAll().events.filter((e) => e.kind === 'levy_chosen');
-    expect(events).toHaveLength(1);
-    expect(events[0]).toMatchObject({ optionIndex: 0 });
-    expect((events[0] as { offered: string[] }).offered).toHaveLength(3);
-  });
-
   it('燠火の再点火が emberIndex 付きで記録される', () => {
     const events = log.exportAll().events.filter((e) => e.kind === 'reactivated');
     expect(events[0]).toMatchObject({ emberIndex: 0 });
@@ -2451,17 +2446,6 @@ export const CURRENT_ITERATION = 6;
 
 ```ts
   /**
-   * 徴発の選択（反復6 で新設）
-   *
-   * `chooseLevy` はこれまで何もログを残しておらず、**徴発を使った瞬間に
-   * ランが再生不能になっていた**（設計書 §4.4）。反復5 で再生が成立したのは
-   * 判定3ランで徴発が実質使われなかった偶然である。
-   *
-   * 徴発は反復6 で構築・獲得の両プールから外したが（§4.6）、カード定義は
-   * 残っているのでこのイベントも残す。
-   */
-  | { kind: 'levy_chosen'; runId: string; tick: number; optionIndex: number; offered: string[] }
-  /**
    * 山札が尽きた瞬間（反復6 で新設）
    *
    * 反復5 の申し送り「山札枯渇時の手札の中身とマナ余剰」は、
@@ -2482,8 +2466,6 @@ const SCHEMA_VERSION = 5;
 `version` が 4 のまま出る）。
 
 `useAshenRampartGame.ts`:
-- `chooseLevy` の中で `levy_chosen` を記録する（`optionIndex` と、選択前の
-  `levyOptions` を `offered` に入れる）
 - `reactivate` の記録に `emberIndex` を渡す
 - 手動の捨札の記録に `handIndex` を渡す
 - `state.deck.drawPile.length` が 0 になった最初の tick で `draw_pile_exhausted` を
@@ -2496,8 +2478,8 @@ Expected: PASS
 
 - [ ] **Step 5: 変異で実効性を確認する**
 
-`chooseLevy` の `levy_chosen` の記録を削除する。
-Expected: **FAIL**（「徴発の選択が levy_chosen として記録される」が落ちる）
+`reactivate` の記録から `emberIndex` を落とす。
+Expected: **FAIL**（「燠火の再点火が emberIndex 付きで記録される」が落ちる）
 
 戻したあと、`SCHEMA_VERSION` だけ 4 に戻す。
 Expected: **FAIL**（「保存キーとスキーマ版が両方 v5」が落ちる）——
@@ -2516,7 +2498,9 @@ git commit -m "feat(ashen-rampart): ログスキーマを v5 へ（再生に必�
 反復5 で再生が成立したのは、判定3ランで徴発も燠火も実質使われなかった
 偶然である。
 
-- levy_chosen を新設（chooseLevy はこれまで何も記録していなかった）
+- levy_chosen は入れない。Task 5 で徴発が retired になり validateDeck が
+  弾くため、startRunWithDeck 経由ではデッキに入らず産出者がいない。
+  徴発を12枚経済へ戻す反復7 で同時に入れる
 - reactivated に emberIndex（燠火2基以上で再生が分岐する）
 - card_discarded_manual に handIndex（同名札で手札配列が再現できない）
 - draw_pile_exhausted を新設（§7.12 の観察項目に記録経路が無かった）
@@ -3130,6 +3114,7 @@ describe('遠征の完全再生', () => {
     }
   });
 
+  // 注: 徴発は Task 5 で到達不能になったため、操作列に choose-levy は含めない。
   it('獲得の選択を記録しておけば、その選択列から遠征を再生できる', () => {
     const seed = 7;
     // 1回目: 戦略に選ばせ、選択列を記録する
