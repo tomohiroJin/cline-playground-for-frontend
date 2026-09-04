@@ -34,7 +34,8 @@ import { PLAINS_WAVES, totalEnemyHp, type WaveDefinition } from './waves';
 import { getEnemySpec } from './enemies';
 import { createCombatState, LIFE_INITIAL } from './combat-state';
 import { createDeck } from '../cards/deck';
-import { MAX_COPIES, maxCopiesOf, getCardDefinition } from '../cards/card-pool';
+import { MAX_COPIES, getCardDefinition } from '../cards/card-pool';
+import { countByCard } from '../cards/deck-builder';
 import {
   simulateRun,
   greedyStrategy,
@@ -317,15 +318,28 @@ describe('対照条件の作り方', () => {
     const deck = deckWithout(hasMassAnswer);
     const attackers = [...new Set(deck)].filter(hasDamage);
     attackers.forEach((id) => {
-      expect(deck.filter((c) => c === id)).toHaveLength(maxCopiesOf(id));
+      expect(deck.filter((c) => c === id)).toHaveLength(legacyMaxCopiesOf(id));
     });
   });
 
+  /**
+   * padToDeckSize が入力を黙って切り捨てていないこと
+   *
+   * **敵対的検証で見つかった静かな失敗経路**: `padToDeckSize` は最後に
+   * `.slice(0, LEGACY_DECK_SIZE)` するため、入力が上限を超えていると黙って
+   * 末尾を落とし、対照条件は緑のまま意味だけが変わる。実際に生成器
+   * （`padToDeckSize`）を呼び、入力側にあった枚数が出力側でも維持されている
+   * ことを確かめる。「入力が20枚以下」を確認するだけ（生成器を一度も呼ばない）
+   * では `padToDeckSize` の中身をどう壊しても検出できない。
+   */
   it('padToDeckSize は入力を切り捨てていない', () => {
     const predicates = [hasAntiAir, hasMassAnswer, hasAreaDamage, hasPiercing];
     predicates.forEach((isExcluded) => {
       const kept = FULL_DECK.filter((id) => !isExcluded(id));
-      expect(kept.length).toBeLessThanOrEqual(LEGACY_DECK_SIZE);
+      const deck = padToDeckSize(kept);
+      countByCard(kept).forEach((n, id) =>
+        expect(deck.filter((c) => c === id).length).toBeGreaterThanOrEqual(n)
+      );
     });
   });
 });

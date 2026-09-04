@@ -1,8 +1,11 @@
 /**
  * 灰燼の城壁 - ゲーム画面の統合テスト
  *
- * フックの戻り値（noteRun / exportLogJson / chooseLevy / restart 等）が実際に UI から
+ * フックの戻り値（noteRun / exportLogJson / restart 等）が実際に UI から
  * 到達できることを、ここでは実物のコンポーネントツリーを描画して検証する。
+ * （`chooseLevy` は反復6 で徴発が構築規則違反になり到達不能になったため、
+ * このファイルの対象から外れた。理由は下の「徴発を加えると開始ボタンが
+ * 無効になり…」テストの直前のコメントを参照）
  * 前バージョンで「事前登録した記録項目を実際には収集できなかった」失敗があったため、
  * 「値を返すだけで配線されていない」状態を作らないことがこのテストの目的。
  *
@@ -425,10 +428,17 @@ describe('AshenRampartGame', () => {
     // 候補ボタンが無効になる」という旧テストは、両プリセットから徴発が抜けた
     // ことでいずれも到達できないシナリオを検査していたため、この構築規則の
     // 結線（DeckBuilder → validateDeck → StartButton）を確かめるテストへ
-    // 置き換える。徴発が実際に発動する挙動（山札の上3枚を見て1枚選ぶ）と、
-    // その選択UI・一時停止中の無効化は、それぞれ
-    // domain/combat/step-tick-levy.test.ts と presentation/LevyChoice.test.tsx が
-    // 直接検証しており、こちらの置き換えによる影響を受けない。
+    // 置き換える。
+    //
+    // **この置き換えで守備範囲が縮んだ。低下が無いのではなく、承知のうえで
+    // 受け入れた。** 徴発が到達不能になったため、次の3点は反復7 で徴発を
+    // 12枚経済へ戻すまで無防備である:
+    // - `useAshenRampartGame` の `chooseLevy` / `levyOptions`
+    //   （presentation 層のテストから参照ゼロ。domain/combat/step-tick-levy.test.ts
+    //   は `CombatState` を直に組む domain テストで、フックのブリッジは通らない）
+    // - `AshenRampartGame.tsx` の `<LevyChoice options onChoose disabled />` の結線一式
+    // - `LevyChoice` の `disabled` 挙動（presentation/LevyChoice.test.tsx にも
+    //   `disabled` を検査するテストは無い）
     it('徴発を加えると開始ボタンが無効になり、理由が表示される（入手経路チェック・反復6・結線の到達確認）', () => {
       render(<AshenRampartGame />);
       fireEvent.click(screen.getByRole('button', { name: /速攻型 を読み込む/ }));
