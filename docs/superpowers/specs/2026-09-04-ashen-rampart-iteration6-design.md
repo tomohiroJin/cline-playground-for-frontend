@@ -1215,8 +1215,14 @@ applyDamage(hpById, sourceById, enemy, rawDamage, source)
 `deckWithout(...)` は**先頭12枚を返し、徹甲弩・篝火などを黙って落とす。**
 対照条件は緑のまま、**「全要求充足」の意味だけが変わる。**
 
-**`describe('対照条件の作り方')` に
-「`padToDeckSize` は入力を切り捨てていない（`cards.length <= DECK_SIZE`）」の assertion を追加する。**
+**`describe('対照条件の作り方')` に、`padToDeckSize` を実際に通して
+「入力に含まれていた札が1枚も減っていない」ことを検査する assertion を追加する。**
+
+**⚠️ 初版はこれを `cards.length <= DECK_SIZE` と書いていたが、それは恒真式である**
+（`kept ⊆ FULL_DECK` かつ `FULL_DECK.length === DECK_SIZE`）。**しかも `padToDeckSize` を
+一度も呼ばない。** 段階A の実装時にレビューが検出した——検出したかった当の欠陥
+（`slice` が黙って札を落とす）を、その検査は原理的に捉えられなかった。
+生成器を実際に通し、入力の各札の枚数が出力で減っていないことを確かめること。
 
 ### 10.5 新敵・新カードの符号の一意性
 
