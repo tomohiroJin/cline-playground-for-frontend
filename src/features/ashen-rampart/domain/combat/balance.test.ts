@@ -28,7 +28,6 @@
  *
  * 遠征の較正は段階D で expedition-balance.test.ts として別に作る。
  */
-import { startRun } from '../../application/use-cases/start-run';
 import { SeededRandom } from '../../infrastructure/random/seeded-random';
 import { PLAINS_MAP } from '../board/stage-map';
 import { PLAINS_WAVES, totalEnemyHp, type WaveDefinition } from './waves';
@@ -121,24 +120,61 @@ const minCardsPlayedOf = (
   strategyName = 'greedy'
 ): number => Math.min(...runAllSeeds(cards, strategy, strategyName).map((r) => r.cardsPlayed));
 
-const presetWinsCache = new Map<string, number>();
+/**
+ * 反復5 時点（20枚デッキ時代）のプリセット
+ *
+ * 本番の PRESET_DECKS は反復6 で12枚版に作り直された。このファイルが
+ * 記録しているのは20枚時代の較正なので、本番を参照すると
+ * 「12枚デッキを1160tick の単一ランで回す」というどこにも存在しない構成を
+ * 測ることになる（実測 swift 2/20）。
+ *
+ * **並び順も当時のまま。** createDeck のシャッフルは入力配列の順序に依存し、
+ * 枚数構成が同一でも並べ替えるだけで実測勝率が動く。
+ *
+ * 12枚版プリセットの較正は段階D で expedition-balance.test.ts が行う。
+ */
+const LEGACY_PRESET_DECKS: Readonly<Record<string, readonly string[]>> = {
+  swift: [
+    ...repeat('reactor', 4),
+    ...repeat('stone-wall', 3),
+    ...repeat('arrow-tower', 2),
+    ...repeat('ballista', 3),
+    ...repeat('cannon-tower', 2),
+    ...repeat('spike-trap', 2),
+    ...repeat('piercer', 2),
+    'forge',
+    'levy',
+  ],
+  heavy: [
+    ...repeat('reactor', 5),
+    ...repeat('stone-wall', 3),
+    ...repeat('piercer', 2),
+    ...repeat('catapult', 2),
+    ...repeat('ballista', 2),
+    ...repeat('snare-net', 3),
+    ...repeat('beacon', 2),
+    'levy',
+  ],
+};
 
-/** プリセットの勝利数。startRun 経由でプリセット定義そのものを検証する */
+/**
+ * プリセットの勝利数。反復5 時点の20枚版プリセット（LEGACY_PRESET_DECKS）を
+ * 直接デッキ化して検証する。
+ *
+ * **本番の `startRun`（`PRESET_DECKS` 経由）は使えない。** 反復6 で本番の
+ * プリセットは12枚版に作り直され、かつ徴発（levy）が retired になったため、
+ * `startRun` → `startRunWithDeck` → `validateDeck` が20枚版プリセット
+ * （徴発を含む）を「構築規則を満たさない」で例外にする。`winsOf` と同じく
+ * `createDeck` + `createCombatState` を直接使うことでこれを回避する。
+ */
 const presetWinsOf = (
   presetId: string,
   strategy: Strategy = greedyStrategy,
   strategyName = 'greedy'
 ): number => {
-  const key = `${strategyName}|${presetId}`;
-  const cached = presetWinsCache.get(key);
-  if (cached !== undefined) return cached;
-  const wins = SEEDS.filter(
-    (seed) =>
-      simulateRun(startRun(presetId, new SeededRandom(seed)), strategy, PLAINS_MAP).outcome ===
-      'won'
-  ).length;
-  presetWinsCache.set(key, wins);
-  return wins;
+  const cards = LEGACY_PRESET_DECKS[presetId];
+  if (!cards) throw new Error(`未知のプリセットです: ${presetId}`);
+  return winsOf(cards, strategy, strategyName);
 };
 
 // --- カードの性質を判定する述語（IDのハードコードは将来カードが増えたときに漏れる） ---
@@ -589,30 +625,22 @@ describe('支配戦略が存在しないこと', () => {
  *
  * 上限・下限・偏りを別々のテストに分け、それぞれ2プリセットを独立にアサートする。
  * 論理和（どちらかが満たせば緑）にすると、片方が壊れても検出できない。
+ *
+ * **⚠️ 反復6 で本番の PRESET_DECKS は12枚版に作り直された。** ここで較正して
+ * いるのは反復5 時点（20枚デッキ時代）のプリセットであり、`LEGACY_PRESET_DECKS`
+ * （このファイルにローカルで凍結）を使う。本番の PRESET_DECKS をそのまま使うと
+ * 「12枚デッキを1160tick の単一ランで回す」というどこにも存在しない構成を測る
+ * ことになり（実測 swift 2/20）、通っている `it` の大半が「両方ほぼ勝てないので
+ * 自明に通る」空虚な assertion になってしまう。12枚版プリセットの較正は段階D で
+ * `expedition-balance.test.ts` が行う。
  */
 describe('プリセットの難度較正', () => {
   it.each(['swift', 'heavy'])('%s は素直な戦略では全勝しない（配分の余地が残っている）', (id) => {
     expect(presetWinsOf(id)).toBeLessThanOrEqual(14);
   });
 
-  it('heavy は素直な戦略でも十分に勝てる（理不尽ではない）', () => {
-    expect(presetWinsOf('heavy')).toBeGreaterThanOrEqual(6);
-  });
-
-  /**
-   * **反復6 で12枚デッキに縮めたことで、この単一ラン・PLAINS_WAVES（808HP・
-   * 反復5 台本）による較正では速攻型が理不尽な難度まで落ちた（実測 2/20）。**
-   *
-   * task-5-brief.md 末尾のコミットメッセージが「中間状態」として明記している
-   * とおり、この較正の前提（1ランで808HPの敵を最後まで捌く）自体が段階D で
-   * 遠征仕様（1ステージ 420〜560 tick）に置き換わる予定のため、ここでは
-   * 閾値（6/20 以上）を動かさず「本来立てたい」目標として残しつつ
-   * it.failing で明示する（このファイルの OFF_PATH_DOMINANT_DECK と同じ扱い）。
-   * **⚠️ 段階D の較正で解消したら通常の it に戻すこと。それまでは
-   * 「直った」と誤読しないこと。**
-   */
-  it.failing('swift は素直な戦略でも十分に勝てる（理不尽ではない）', () => {
-    expect(presetWinsOf('swift')).toBeGreaterThanOrEqual(6);
+  it.each(['swift', 'heavy'])('%s は素直な戦略でも十分に勝てる（理不尽ではない）', (id) => {
+    expect(presetWinsOf(id)).toBeGreaterThanOrEqual(6);
   });
 
   it('プリセット2種の勝率が極端に偏らない', () => {
