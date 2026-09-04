@@ -21,7 +21,7 @@
  * 変わった（Task 10）。本モデルでは「HP60の壁」のほうが素直であり、
  * 足止めと石壁という2つの「止める」概念の重複も消える。
  */
-import type { CardDefinition } from './card-definition';
+import type { CardAvailability, CardDefinition } from './card-definition';
 
 /** デッキの枚数 */
 export const DECK_SIZE = 20;
@@ -192,6 +192,20 @@ export const MAX_COPIES = 3;
 /** カードごとの同名上限。定義が無ければ MAX_COPIES */
 export const maxCopiesOf = (id: string): number =>
   getCardDefinition(id).maxCopies ?? MAX_COPIES;
+
+/** カードの入手経路。定義が無ければ 'buildable' */
+export const availabilityOf = (id: string): CardAvailability =>
+  getCardDefinition(id).availability ?? 'buildable';
+
+/** 構築画面で選べる札 */
+export const BUILDABLE_CARD_IDS: readonly string[] = CARD_IDS.filter(
+  (id) => availabilityOf(id) === 'buildable'
+);
+
+/** 獲得の3択に出る札（buildable ＋ acquire-only） */
+export const ACQUIRABLE_CARD_IDS: readonly string[] = CARD_IDS.filter(
+  (id) => availabilityOf(id) !== 'retired'
+);
 
 export interface PresetDeck {
   id: string;

@@ -10,6 +10,9 @@ import {
   PRESET_DECKS,
   DECK_SIZE,
   maxCopiesOf,
+  availabilityOf,
+  BUILDABLE_CARD_IDS,
+  ACQUIRABLE_CARD_IDS,
 } from './card-pool';
 import { placementKindOf } from './card-definition';
 import { validateDeck } from './deck-builder';
@@ -226,5 +229,30 @@ describe('プリセットの重コスト帯（反復5）', () => {
     const heavy = PRESET_DECKS.heavy;
     if (!swift || !heavy) throw new Error('プリセットが見つかりません');
     expect(averageCost(heavy.cards)).toBeGreaterThan(averageCost(swift.cards));
+  });
+});
+
+describe('カードの入手経路（反復6）', () => {
+  it('既定は buildable', () => {
+    expect(availabilityOf('arrow-tower')).toBe('buildable');
+  });
+
+  it('BUILDABLE_CARD_IDS は buildable のみを含む', () => {
+    BUILDABLE_CARD_IDS.forEach((id) => {
+      expect(availabilityOf(id)).toBe('buildable');
+    });
+  });
+
+  it('ACQUIRABLE_CARD_IDS は retired を含まず、buildable をすべて含む', () => {
+    ACQUIRABLE_CARD_IDS.forEach((id) => {
+      expect(availabilityOf(id)).not.toBe('retired');
+    });
+    BUILDABLE_CARD_IDS.forEach((id) => {
+      expect(ACQUIRABLE_CARD_IDS).toContain(id);
+    });
+  });
+
+  it('未知のカードIDは例外', () => {
+    expect(() => availabilityOf('no-such-card')).toThrow('未知のカードIDです');
   });
 });

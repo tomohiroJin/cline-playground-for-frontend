@@ -10,6 +10,16 @@
 
 export type CardType = 'tower' | 'trap' | 'spell' | 'reactor' | 'ember' | 'levy';
 
+/**
+ * カードの入手経路（反復6・設計書 §4.6 / §5.5）
+ *
+ * - `buildable`   : 構築画面で選べ、獲得の3択にも出る（既定）
+ * - `acquire-only`: 構築では選べず、遠征中の獲得でのみ手に入る。
+ *                   **獲得が「見たことのない札」で自己紹介するための仕掛け**
+ * - `retired`     : 構築にも獲得にも出ないが、定義は残す。徴発がこれ
+ */
+export type CardAvailability = 'buildable' | 'acquire-only' | 'retired';
+
 /** タワー性能 */
 export interface TowerSpec {
   /** 守り手のHP。敵に殴られて 0 になると消滅する */
@@ -100,6 +110,13 @@ export interface CardDefinition {
    * 弓兵スパムの防止であって、マナ源を絞ることではなかった。
    */
   maxCopies?: number;
+  /**
+   * カードの入手経路。省略時は 'buildable'
+   *
+   * 設計書 §4.6・§5.5 の獲得専用カード（構築では選べず獲得でのみ出る）と、
+   * 定義は残すが構築にも獲得にも出さない札（徴発）を表す。
+   */
+  availability?: CardAvailability;
 }
 
 /** カードを出すときに指定する対象の種別 */
