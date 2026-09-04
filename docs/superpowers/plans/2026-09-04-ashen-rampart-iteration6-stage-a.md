@@ -2531,7 +2531,8 @@ expedition_* イベントは含めない。段階A には産出者がおらず�
   - `type AcquireStrategy = (offer: readonly string[], nextDemands: readonly DemandAxis[], deck: readonly string[]) => string | undefined`
   - `noAcquire` / `randomAcquireOf(rng)` / `cheapestAcquire` / `demandAwareAcquire`
   - `interface ExpeditionSimulationResult { outcome; stagesCleared; reachedTier3; lifeLeft; acquired; stageOutcomes }`
-  - `simulateExpedition(initialDeck, seed, strategy, acquire): ExpeditionSimulationResult`
+  - `interface ExpeditionSimulationInput { initialDeck; seed; strategy; acquire }`
+  - `simulateExpedition(input: ExpeditionSimulationInput): ExpeditionSimulationResult`
 - `declineOffer(exp: ExpeditionState): ExpeditionState`（提示を断る。`noAcquire` の腕に要る）
 
 **⚠️ 置き場所は `application/simulation/` である。** 2つの制約が同時に効く。
@@ -2634,14 +2635,14 @@ describe('simulateExpedition', () => {
   const preset = PRESET_DECKS.swift.cards;
 
   it('遠征を最後まで回して結果を返す', () => {
-    const result = simulateExpedition(preset, 1, greedyStrategy, demandAwareAcquire);
+    const result = simulateExpedition({ initialDeck: preset, seed: 1, strategy: greedyStrategy, acquire: demandAwareAcquire });
     expect(['cleared', 'failed']).toContain(result.outcome);
     expect(result.stageOutcomes.length).toBeGreaterThan(0);
     expect(result.stagesCleared).toBeLessThanOrEqual(3);
   });
 
   it('踏破したら stagesCleared が 3 で reachedTier3 が true', () => {
-    const result = simulateExpedition(preset, 1, greedyStrategy, demandAwareAcquire);
+    const result = simulateExpedition({ initialDeck: preset, seed: 1, strategy: greedyStrategy, acquire: demandAwareAcquire });
     if (result.outcome === 'cleared') {
       expect(result.stagesCleared).toBe(3);
       expect(result.reachedTier3).toBe(true);
@@ -2649,18 +2650,19 @@ describe('simulateExpedition', () => {
   });
 
   it('同じ入力からは同じ結果（決定的）', () => {
-    const a = simulateExpedition(preset, 5, greedyStrategy, demandAwareAcquire);
-    const b = simulateExpedition(preset, 5, greedyStrategy, demandAwareAcquire);
+    const args = { initialDeck: preset, seed: 5, strategy: greedyStrategy, acquire: demandAwareAcquire };
+    const a = simulateExpedition(args);
+    const b = simulateExpedition(args);
     expect(a).toEqual(b);
   });
 
   it('noAcquire ではデッキが増えない', () => {
-    const result = simulateExpedition(preset, 5, greedyStrategy, noAcquire);
+    const result = simulateExpedition({ initialDeck: preset, seed: 5, strategy: greedyStrategy, acquire: noAcquire });
     expect(result.acquired).toEqual([]);
   });
 
   it('demandAwareAcquire では、層2 に到達すれば1枚以上獲得している', () => {
-    const result = simulateExpedition(preset, 5, greedyStrategy, demandAwareAcquire);
+    const result = simulateExpedition({ initialDeck: preset, seed: 5, strategy: greedyStrategy, acquire: demandAwareAcquire });
     if (result.stagesCleared >= 1) {
       expect(result.acquired.length).toBeGreaterThanOrEqual(1);
     }
@@ -2745,13 +2747,29 @@ export interface ExpeditionSimulationResult {
   stageOutcomes: readonly StageOutcome[];
 }
 
+/**
+ * `simulateExpedition` の入力
+ *
+ * 位置引数4つはコーディング規約（パラメータは3個以内、超える場合はオブジェクトに
+ * まとめる）に反するうえ、`strategy` と `acquire` はどちらも関数で
+ * 取り違えても型が通ってしまう。名前付きにして取り違えを構造的に防ぐ。
+ */
+export interface ExpeditionSimulationInput {
+  initialDeck: readonly string[];
+  seed: number;
+  /** 盤面の戦略（どこに何を置くか） */
+  strategy: Strategy;
+  /** 獲得の戦略（3択から何を選ぶか） */
+  acquire: AcquireStrategy;
+}
+
 /** 遠征を最後まで回す */
-export const simulateExpedition = (
-  initialDeck: readonly string[],
-  seed: number,
-  strategy: Strategy,
-  acquire: AcquireStrategy
-): ExpeditionSimulationResult => {
+export const simulateExpedition = ({
+  initialDeck,
+  seed,
+  strategy,
+  acquire,
+}: ExpeditionSimulationInput): ExpeditionSimulationResult => {
   let exp: ExpeditionState = startExpedition(initialDeck, seed);
   const stageOutcomes: StageOutcome[] = [];
   let reachedTier3 = false;
@@ -2874,7 +2892,7 @@ const seeds = Array.from({ length: SEEDS }, (_, i) => i + 1);
 const measure = (label: string, acquire: AcquireStrategy) => {
   const results = seeds.flatMap((seed) =>
     Object.values(PRESET_DECKS).map((preset) =>
-      simulateExpedition(preset.cards, seed, greedyStrategy, acquire)
+      simulateExpedition({ initialDeck: preset.cards, seed, strategy: greedyStrategy, acquire })
     )
   );
   const total = results.length;
@@ -2926,8 +2944,9 @@ describe('G1: 獲得の測定可能性ゲート', () => {
     let differing = 0;
     let comparable = 0;
     seeds.forEach((seed) => {
-      const a = simulateExpedition(PRESET_DECKS.swift.cards, seed, greedyStrategy, demandAwareAcquire);
-      const b = simulateExpedition(PRESET_DECKS.swift.cards, seed, greedyStrategy, randomArm);
+      const base = { initialDeck: PRESET_DECKS.swift.cards, seed, strategy: greedyStrategy };
+      const a = simulateExpedition({ ...base, acquire: demandAwareAcquire });
+      const b = simulateExpedition({ ...base, acquire: randomArm });
       if (a.acquired.length === 0 && b.acquired.length === 0) return;
       comparable++;
       if (a.acquired.join('|') !== b.acquired.join('|')) differing++;
@@ -3095,16 +3114,15 @@ const preset = PRESET_DECKS.swift.cards;
 describe('遠征の完全再生', () => {
   it('同じシード・同じ戦略なら、決着tick・勝敗・残ライフまで完全に一致する', () => {
     for (let seed = 1; seed <= 20; seed++) {
-      const a = simulateExpedition(preset, seed, greedyStrategy, demandAwareAcquire);
-      const b = simulateExpedition(preset, seed, greedyStrategy, demandAwareAcquire);
-      expect(b).toEqual(a);
+      const args = { initialDeck: preset, seed, strategy: greedyStrategy, acquire: demandAwareAcquire };
+      expect(simulateExpedition(args)).toEqual(simulateExpedition(args));
     }
   });
 
   it('獲得の選択を記録しておけば、その選択列から遠征を再生できる', () => {
     const seed = 7;
     // 1回目: 戦略に選ばせ、選択列を記録する
-    const original = simulateExpedition(preset, seed, greedyStrategy, demandAwareAcquire);
+    const original = simulateExpedition({ initialDeck: preset, seed, strategy: greedyStrategy, acquire: demandAwareAcquire });
 
     // 2回目: 記録した選択列をそのまま再生する（戦略ではなく記録から選ぶ）
     let index = 0;
@@ -3112,7 +3130,7 @@ describe('遠征の完全再生', () => {
       const picked = original.acquired[index++];
       return picked !== undefined && offer.includes(picked) ? picked : undefined;
     };
-    const replayed = simulateExpedition(preset, seed, greedyStrategy, replayAcquire);
+    const replayed = simulateExpedition({ initialDeck: preset, seed, strategy: greedyStrategy, acquire: replayAcquire });
 
     expect(replayed.acquired).toEqual(original.acquired);
     expect(replayed.stageOutcomes).toEqual(original.stageOutcomes);
@@ -3139,8 +3157,9 @@ describe('遠征の完全再生', () => {
     // 獲得を変えると結果が動くシードが存在することを先に示す。
     let differing = 0;
     for (let seed = 1; seed <= 20; seed++) {
-      const withDemand = simulateExpedition(preset, seed, greedyStrategy, demandAwareAcquire);
-      const withNone = simulateExpedition(preset, seed, greedyStrategy, () => undefined);
+      const base = { initialDeck: preset, seed, strategy: greedyStrategy };
+      const withDemand = simulateExpedition({ ...base, acquire: demandAwareAcquire });
+      const withNone = simulateExpedition({ ...base, acquire: () => undefined });
       if (
         withDemand.outcome !== withNone.outcome ||
         withDemand.stagesCleared !== withNone.stagesCleared ||
