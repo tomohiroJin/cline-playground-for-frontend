@@ -23,8 +23,8 @@
  */
 import type { CardAvailability, CardDefinition } from './card-definition';
 
-/** デッキの枚数 */
-export const DECK_SIZE = 20;
+/** デッキの枚数（反復6 で 20 → 12。設計書 §4.6） */
+export const DECK_SIZE = 12;
 
 const CARDS: readonly CardDefinition[] = [
   {
@@ -34,10 +34,13 @@ const CARDS: readonly CardDefinition[] = [
     cost: 0,
     description: '60tick ごとにマナを1得る。経路上には置けない。',
     reactor: { intervalTicks: 60, manaPerTick: 1 },
-    // 盤面では3〜4基で消費レート（3マナ/60tick）を飽和させるため、
-    // 並べるほど強くはならない。上限を外すのは「確実に引くため」である。
-    // 20枚中3枚(15%)ではマナ基盤が確立する前にランが進んでしまっていた。
-    maxCopies: DECK_SIZE,
+    // 盤面では3〜4基で消費レート（3マナ/60tick）を飽和させるため、並べるほど強くはならない。
+    //
+    // **反復6 で同名上限の例外を外した。** 20枚中3枚(15%)ではマナ基盤が
+    // 確立する前にランが進んでいたため上限を外していたが、12枚中3枚は25%で
+    // 確実に引ける。例外の理由が消えた。
+    // **支配デッキ対策ではない**（設計書 §4.5——魔力炉3＋攻撃塔3種×3 の
+    // 塔だけ12枚は依然として合法である。初版はここを論証の誤りで塞いだつもりでいた）
   },
   {
     id: 'arrow-tower',
@@ -170,6 +173,13 @@ const CARDS: readonly CardDefinition[] = [
     cost: 1,
     description: '山札の上から3枚を見て1枚を手札に加える。残りは墓地へ。',
     levy: { peekCount: 3 },
+    // **反復6 で構築・獲得の両プールから外した（設計書 §4.6）。**
+    // 山札の上から3枚を一括で焼くため、12枚デッキでは山札の33%が一度に消える。
+    // 実測で枯渇 tick 360→276、出せた枚数 11.3→10.1、無操作の尾 9.9%→20.8%。
+    // 「獲得した札は次のステージで必ず引かれる」という構造的保証を壊す。
+    // さらに「3枚見て1枚選ぶ」は獲得とまったく同じ動詞である。
+    // 定義は残す（較正で20枚時代を再現するのに要る）。反復7 で12枚経済へ再設計する。
+    availability: 'retired',
   },
 ];
 
@@ -263,23 +273,23 @@ const repeat = (id: string, count: number): string[] => Array.from({ length: cou
  * 枚数構成が同一でも並べ替えるだけで実測勝率が動く（反復1 では 6/20〜11/20 の幅が出た）。
  * 較正の測定は下記の宣言順そのままで行った。「見やすさのために並べ替える」だけの
  * リファクタリングが較正を揺らすので、順序を変えたら balance.test.ts を必ず再実行すること。
+ *
+ * **⚠️ 反復6 で12枚版に作り直した。上の実測値は20枚時代のものである。**
+ * 12枚版の較正は段階D で行う。それまでこの表の数値を根拠に使わないこと。
  */
 export const PRESET_DECKS: Readonly<Record<string, PresetDeck>> = {
   swift: {
     id: 'swift',
     name: '速攻型',
-    description:
-      '石壁で受けつつ、安い弓兵と棘罠で手数を稼ぐ。群れは火砲台、対空は弩砲、仕上げに徹甲弩を2枚添える。',
+    description: '石壁で受けつつ、安い弓兵と棘罠で手数を稼ぐ。群れは火砲台、対空は弩砲、仕上げに徹甲弩。',
     cards: [
-      ...repeat('reactor', 4),
-      ...repeat('stone-wall', 3),
+      ...repeat('reactor', 3),
+      ...repeat('stone-wall', 2),
       ...repeat('arrow-tower', 2),
-      ...repeat('ballista', 3),
-      ...repeat('cannon-tower', 2),
-      ...repeat('spike-trap', 2),
-      ...repeat('piercer', 2),
-      ...repeat('forge', 1),
-      ...repeat('levy', 1),
+      ...repeat('ballista', 2),
+      'cannon-tower',
+      'spike-trap',
+      'piercer',
     ],
   },
   heavy: {
@@ -287,14 +297,13 @@ export const PRESET_DECKS: Readonly<Record<string, PresetDeck>> = {
     name: '重厚型',
     description: '石壁で足を止め、徹甲弩と投石機で火力を通す。飛行は落網で落として叩く。',
     cards: [
-      ...repeat('reactor', 5),
-      ...repeat('stone-wall', 3),
+      ...repeat('reactor', 3),
+      ...repeat('stone-wall', 2),
       ...repeat('piercer', 2),
-      ...repeat('catapult', 2),
-      ...repeat('ballista', 2),
-      ...repeat('snare-net', 3),
-      ...repeat('beacon', 2),
-      ...repeat('levy', 1),
+      ...repeat('snare-net', 2),
+      'catapult',
+      'ballista',
+      'beacon',
     ],
   },
 };

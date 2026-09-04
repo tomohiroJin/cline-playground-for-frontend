@@ -28,19 +28,25 @@ const createMockPlayLog = (): PlayLogPort & { events: PlayLogEventBody[] } => {
 const swiftCards = (): string[] => [...PRESET_DECKS.swift!.cards];
 
 /**
- * 燠火の再点火を検証するための専用デッキ（構築規則を満たす20枚）
+ * 燠火の再点火を検証するための専用デッキ（構築規則を満たす DECK_SIZE 枚）
  *
  * プリセットに業火が入っているかは較正のたびに変わる。検証したいのは
  * 「燠火のあるセルをクリックすると再点火される」というフックの振る舞いなので、
  * プリセットに依存させない。
  */
 const emberDeckCards = (): string[] => [
-  ...Array.from({ length: 8 }, () => 'reactor'),
-  ...Array.from({ length: 3 }, () => 'ember-blast'),
-  ...Array.from({ length: 3 }, () => 'arrow-tower'),
-  ...Array.from({ length: 3 }, () => 'ballista'),
-  ...Array.from({ length: 2 }, () => 'stone-wall'),
-  'levy',
+  'ember-blast',
+  'reactor',
+  'reactor',
+  'reactor',
+  'arrow-tower',
+  'arrow-tower',
+  'arrow-tower',
+  'stone-wall',
+  'stone-wall',
+  'stone-wall',
+  'ballista',
+  'cannon-tower',
 ];
 
 describe('useAshenRampartGame', () => {
@@ -278,9 +284,11 @@ describe('useAshenRampartGame', () => {
     const log = createMockPlayLog();
     // 反復3 のプリセット再構成で両プリセットから業火が抜けた。プリセット構成が変わるたびに
     // 「業火を初期手札に含むシード」を探し直すのは較正に引きずられて脆いため、
-    // この検証専用の合法デッキ（業火3枚）を直に渡す。シード3でこの並びの初期手札に業火が入る
+    // この検証専用の合法デッキ（業火1枚）を直に渡す。
+    // 反復6 で12枚デッキに縮めた際、旧シード3 は初期手札に業火を含まなくなったため
+    // シード59 に差し替えた（この並びの初期手札は ['ballista','stone-wall','ember-blast']）
     const { result } = renderHook(() =>
-      useAshenRampartGame({ cards: emberDeckCards(), seed: 3, playLog: log })
+      useAshenRampartGame({ cards: emberDeckCards(), seed: 59, playLog: log })
     );
     const emberHandIndex = result.current.state.deck.hand.findIndex((id) => id === 'ember-blast');
     expect(emberHandIndex).toBeGreaterThanOrEqual(0);
@@ -321,20 +329,18 @@ describe('useAshenRampartGame', () => {
 
   describe('反復4: 能力表示（射程リングと能力チップ）', () => {
     /**
-     * emberDeckCards・シード3 の初期手札は ['ember-blast','stone-wall','ballista']
-     * になる（224行目のテストと同じ組み合わせ）。守り手を1つ置ければよいだけなので、
+     * emberDeckCards・シード59 の初期手札は ['ballista','stone-wall','ember-blast']
+     * になる（上のテストと同じ組み合わせ）。守り手を1つ置ければよいだけなので、
      * 初期手札に確実に含まれる 'ballista' を使う。
      *
-     * brief は 'arrow-tower' を例示しているが、このデッキ・シードの組み合わせでは
-     * arrow-tower は山札20枚中7番目に位置し、手札上限5枚に達するまで引かれない
-     * （実測で確認済み）。224行目のテストの前半部分（カードを選び→セルをクリックして
-     * 配置し→tick を進める）を複製し、カードIDだけ実際に手札へ来る 'ballista' に
-     * 差し替えた。座標 (1,1) は経路外・砦(8,3)でもないため、守り手カードなら
+     * 反復6 で12枚デッキに縮めた際、旧シード3 では初期手札に 'ballista' も
+     * 'ember-blast' も含まれなくなったため、両方を含むシード59 に差し替えた。
+     * 座標 (1,1) は経路外・砦(8,3)でもないため、守り手カードなら
      * 常に置ける（domain/combat/step-tick.ts の canPlaceAt を確認済み）。
      */
     const placeTowerAt1_1 = (log: PlayLogPort & { events: PlayLogEventBody[] }) => {
       const { result } = renderHook(() =>
-        useAshenRampartGame({ cards: emberDeckCards(), seed: 3, playLog: log })
+        useAshenRampartGame({ cards: emberDeckCards(), seed: 59, playLog: log })
       );
       const towerHandIndex = result.current.state.deck.hand.findIndex((id) => id === 'ballista');
       expect(towerHandIndex).toBeGreaterThanOrEqual(0);
@@ -387,7 +393,7 @@ describe('useAshenRampartGame', () => {
     it('再点火可能な燠火は能力表示より再点火が優先される。クールダウン中は能力表示が開く（優先順位3・4）', () => {
       const log = createMockPlayLog();
       const { result } = renderHook(() =>
-        useAshenRampartGame({ cards: emberDeckCards(), seed: 3, playLog: log })
+        useAshenRampartGame({ cards: emberDeckCards(), seed: 59, playLog: log })
       );
       const emberHandIndex = result.current.state.deck.hand.findIndex((id) => id === 'ember-blast');
       expect(emberHandIndex).toBeGreaterThanOrEqual(0);
@@ -629,7 +635,7 @@ describe('useAshenRampartGame', () => {
       );
       expect(started).toHaveLength(1);
       expect(started[0]?.seed).toBe(5);
-      expect(started[0]?.deckCards).toHaveLength(20);
+      expect(started[0]?.deckCards).toHaveLength(cards.length);
     });
 
     it('シードを明示すると2ランで同じ山札になる（再現性）', () => {
@@ -650,33 +656,25 @@ describe('useAshenRampartGame', () => {
       expect(a.result.current.runSeed).toBeGreaterThan(0);
     });
 
-    it('徴発を出すと候補が出て、選ぶと手札に入る', () => {
-      const cards = swiftCards();
-      // 手札が上限に達するとドローが止まるため、札を出さずに待つだけでは徴発が来ない。
-      // シード7は速攻型の初期手札に徴発を含む（反復2 で徴発が2→1枚になった影響）
-      const { result } = renderHook(() => useAshenRampartGame({ cards, seed: 7 }));
-      // 徴発が手札に来るまで進める（40tick ごとにドロー）
-      for (let i = 0; i < 20; i++) {
-        const index = result.current.state.deck.hand.indexOf('levy');
-        if (index >= 0) {
-          act(() => result.current.selectCard(index));
-          act(() => {
-            jest.advanceTimersByTime(TICK_INTERVAL_MS);
-          });
-          break;
-        }
-        act(() => {
-          jest.advanceTimersByTime(TICK_INTERVAL_MS * 40);
-        });
-      }
-      expect(result.current.levyOptions.length).toBeGreaterThan(0);
-      const handBefore = result.current.state.deck.hand.length;
-      act(() => result.current.chooseLevy(0));
-      act(() => {
-        jest.advanceTimersByTime(TICK_INTERVAL_MS);
-      });
-      expect(result.current.levyOptions).toEqual([]);
-      expect(result.current.state.deck.hand.length).toBe(handBefore + 1);
+    // 反復6 で徴発（levy）を構築・獲得の両プールから retired にした（card-pool.ts）。
+    // それに伴い validateDeck が入手経路も検査するようになったため（deck-builder.ts）、
+    // 徴発を含むデッキは startRunWithDeck（このフックの唯一の入口）に渡した瞬間に
+    // 弾かれる。「徴発を出すと候補が出て、選ぶと手札に入る」という旧テストは
+    // もはや到達できないシナリオを検査していたため、契約が変わったことを検査する
+    // テストへ置き換える。徴発の発動そのもの（山札の上3枚を見て1枚選ぶ）は
+    // domain/combat/step-tick-levy.test.ts が CombatState を直接組み立てて
+    // 検証しており、こちらは影響を受けない。
+    it('徴発を含むデッキは構築規則違反としてランを開始できない（反復6・設計書 §4.6）', () => {
+      const cards = [
+        'levy',
+        ...Array.from({ length: 3 }, () => 'reactor'),
+        ...Array.from({ length: 3 }, () => 'arrow-tower'),
+        ...Array.from({ length: 3 }, () => 'ballista'),
+        ...Array.from({ length: 2 }, () => 'cannon-tower'),
+      ];
+      expect(() => renderHook(() => useAshenRampartGame({ cards, seed: 7 }))).toThrow(
+        '徴発は現在デッキに入れられません'
+      );
     });
   });
 
@@ -867,11 +865,12 @@ describe('useAshenRampartGame', () => {
         lastPlayTick: view.lastPlayTick,
         // drawPileExhaustedTick はここでは意図的に対象から外している。
         // 非ゼロへ育てるには山札（drawPile）を使い切る必要があるが、
-        // `startRunWithDeck` は `validateDeck` でデッキがちょうど20枚である
+        // `startRunWithDeck` は `validateDeck` でデッキがちょうど DECK_SIZE 枚である
         // ことを強制する（実際に5枚のデッキで試したところ
         // 「デッキが構築規則を満たしていません」で即エラーになることを確認済み）。
-        // 20枚なら drawPile は必ず 17 枚（20 − INITIAL_HAND_SIZE）残り、
-        // DRAW_INTERVAL_TICKS=40 のため尽きるまで最短でも 680 tick かかる。
+        // 反復6 で DECK_SIZE=12 になったため drawPile は必ず 9 枚
+        // （12 − INITIAL_HAND_SIZE）残り、DRAW_INTERVAL_TICKS=40 のため
+        // 尽きるまで最短でも 360 tick かかる。
         // このテストの無防備な swift デッキ（守り手をほぼ置かない）は
         // tick 440 前後で決着する（実測。魔力炉を1枚置くだけでは前線が
         // 保たない）ため、drawPile が尽きる前に必ず決着してしまい、

@@ -4,7 +4,7 @@
  * UI（構築画面）と CI（バランステスト）の両方がここを使う。
  * UI 側でだけ検証すると「テストは通るが UI で組めないデッキ」が生まれる。
  */
-import { CARD_IDS, DECK_SIZE, maxCopiesOf, getCardDefinition } from './card-pool';
+import { CARD_IDS, DECK_SIZE, maxCopiesOf, getCardDefinition, availabilityOf } from './card-pool';
 
 export interface DeckValidation {
   isValid: boolean;
@@ -49,6 +49,22 @@ export const validateDeck = (cards: readonly string[]): DeckValidation => {
     if (count <= limit) return;
     const name = getCardDefinition(id).name;
     errors.push(`${name}が${count}枚あります（同名は${limit}枚まで）`);
+  });
+
+  // 構築で選べない札が混ざっていないか（反復6・設計書 §5.5）
+  //
+  // UI で隠すだけでは startRunWithDeck に獲得専用札のデッキを渡せてしまう。
+  // 「テストは通るが UI で組めないデッキ」を作らないため、ここで弾く。
+  [...new Set(cards)].forEach((id) => {
+    if (!CARD_IDS.includes(id)) return;
+    const availability = availabilityOf(id);
+    if (availability === 'buildable') return;
+    const name = getCardDefinition(id).name;
+    errors.push(
+      availability === 'acquire-only'
+        ? `${name}は遠征中の獲得でしか手に入りません`
+        : `${name}は現在デッキに入れられません`
+    );
   });
 
   return { isValid: errors.length === 0, errors };

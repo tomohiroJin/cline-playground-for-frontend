@@ -83,11 +83,13 @@ describe('DeckBuilder', () => {
     expect(add).toBeDisabled();
   });
 
-  it('魔力炉は4枚以上でも追加できる', () => {
+  it('魔力炉も同名上限に達すると増やすボタンが無効になる（反復6 で例外を外した）', () => {
     render(<DeckBuilder onStart={jest.fn()} />);
     const addReactor = screen.getByRole('button', { name: '魔力炉 を1枚増やす' });
-    for (let i = 0; i < 6; i++) fireEvent.click(addReactor);
-    expect(addReactor).not.toBeDisabled();
+    fireEvent.click(addReactor);
+    fireEvent.click(addReactor);
+    fireEvent.click(addReactor);
+    expect(addReactor).toBeDisabled();
   });
 
   it('減らすボタンで枚数が減り、0枚では無効', () => {
@@ -142,7 +144,11 @@ describe('DeckBuilder', () => {
   it('20枚に足りないと理由が表示される', () => {
     render(<DeckBuilder onStart={jest.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: '弓兵 を1枚増やす' }));
-    expect(screen.getByText(/20枚ちょうどにしてください/)).toBeInTheDocument();
+    // security/detect-non-literal-regexp を避けるため、動的な RegExp ではなく
+    // 部分一致の文字列判定関数で探す
+    expect(
+      screen.getByText((content) => content.includes(`${DECK_SIZE}枚ちょうどにしてください`))
+    ).toBeInTheDocument();
   });
 
   it('コスト曲線が表示される', () => {

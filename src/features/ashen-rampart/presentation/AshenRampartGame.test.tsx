@@ -20,6 +20,7 @@ import { PLAY_LOG_STORAGE_KEY } from '../infrastructure/play-log/local-storage-p
 import type { PlayLogExport } from '../application/ports/play-log-port';
 import { TICK_INTERVAL_MS } from './useAshenRampartGame';
 import { PLAINS_MAP, laneOf } from '../domain/board/stage-map';
+import { DECK_SIZE } from '../domain/cards/card-pool';
 
 /** 判定用ログのコピー操作ボタン名。文言が長いため定数に切り出す（反復4で文言変更） */
 const COPY_BUTTON_NAME = '判定用の記録をコピー（3ラン分まとまっています）';
@@ -77,49 +78,48 @@ const advanceUntilRunEnds = (): void => {
 };
 
 /**
- * 「石壁」3枚＋「魔力炉」17枚のカスタムデッキで盤面まで進める
+ * 「魔力炉」3枚＋「石壁」3枚＋「弓兵」3枚＋「弩砲」3枚のカスタムデッキで盤面まで進める
  *
  * 既存プリセット（速攻型・重厚型）はどちらも石壁を含まないため、経路セルへの
- * 守り手配置を検証するにはデッキ構築画面でカードを直接組む必要がある。
- * この枚数構成・シード3の組み合わせでは、シャッフル結果として石壁が
- * 初期手札3枚のうちの1枚に入ることを事前に確認済み（Fisher-Yates + mulberry32
- * を模したスクリプトで検証）。ドローを待つ必要がない。
+ * 守り手配置や射程リングの表示を検証するにはデッキ構築画面でカードを直接組む
+ * 必要がある。反復6 で魔力炉の同名上限の例外が外れたため（もう17枚は積めない）、
+ * 4種を3枚ずつの DECK_SIZE 枚に組み直した。この枚数構成・並び順・シード2の
+ * 組み合わせでは、シャッフル結果として石壁と弓兵の両方が初期手札3枚のうちに
+ * 入ることを事前に確認済み（createDeck を直接呼ぶスクリプトで検証）。
+ * ドローを待つ必要がない。
  */
-const STONE_WALL_DECK_SEED = '3';
+const CUSTOM_DECK_SEED = '2';
 
-const startRunningWithStoneWallDeck = (): void => {
-  const addReactor = screen.getByRole('button', { name: '魔力炉 を1枚増やす' });
-  for (let i = 0; i < 17; i++) fireEvent.click(addReactor);
-  const addStoneWall = screen.getByRole('button', { name: '石壁 を1枚増やす' });
-  for (let i = 0; i < 3; i++) fireEvent.click(addStoneWall);
+const buildCustomDeck = (): void => {
+  fireEvent.click(screen.getByRole('button', { name: '魔力炉 を1枚増やす' }));
+  fireEvent.click(screen.getByRole('button', { name: '魔力炉 を1枚増やす' }));
+  fireEvent.click(screen.getByRole('button', { name: '魔力炉 を1枚増やす' }));
+  fireEvent.click(screen.getByRole('button', { name: '石壁 を1枚増やす' }));
+  fireEvent.click(screen.getByRole('button', { name: '石壁 を1枚増やす' }));
+  fireEvent.click(screen.getByRole('button', { name: '石壁 を1枚増やす' }));
+  fireEvent.click(screen.getByRole('button', { name: '弓兵 を1枚増やす' }));
+  fireEvent.click(screen.getByRole('button', { name: '弓兵 を1枚増やす' }));
+  fireEvent.click(screen.getByRole('button', { name: '弓兵 を1枚増やす' }));
+  fireEvent.click(screen.getByRole('button', { name: '弩砲 を1枚増やす' }));
+  fireEvent.click(screen.getByRole('button', { name: '弩砲 を1枚増やす' }));
+  fireEvent.click(screen.getByRole('button', { name: '弩砲 を1枚増やす' }));
   fireEvent.change(screen.getByLabelText('シード（空欄なら毎回ランダム）'), {
-    target: { value: STONE_WALL_DECK_SEED },
+    target: { value: CUSTOM_DECK_SEED },
   });
   fireEvent.click(screen.getByRole('button', { name: 'この構成で始める' }));
   fireEvent.click(screen.getByRole('button', { name: '開始' }));
 };
+
+/** 経路セルへの守り手配置を検証する（石壁が初期手札にある） */
+const startRunningWithStoneWallDeck = buildCustomDeck;
 
 /**
- * 「弓兵」3枚＋「魔力炉」17枚のカスタムデッキで盤面まで進める
+ * 能力表示（射程リング）を実画面で確かめる（弓兵が初期手札にある）
  *
- * 能力表示（射程リング）を実画面で確かめるには射程を持つ攻撃塔が要る。
- * 石壁（射程0・オーラなし）ではリングが描かれず検証にならない。
- * この枚数構成・シード3の組み合わせでは弓兵が初期手札に入り、初期マナ2で
- * コスト1を払えることを事前に確認済み（ドローを待つ必要がない）。
+ * 石壁（射程0・オーラなし）ではリングが描かれず検証にならないため、
+ * 射程を持つ弓兵を使う。
  */
-const ARROW_TOWER_DECK_SEED = '3';
-
-const startRunningWithArrowTowerDeck = (): void => {
-  const addReactor = screen.getByRole('button', { name: '魔力炉 を1枚増やす' });
-  for (let i = 0; i < 17; i++) fireEvent.click(addReactor);
-  const addArrowTower = screen.getByRole('button', { name: '弓兵 を1枚増やす' });
-  for (let i = 0; i < 3; i++) fireEvent.click(addArrowTower);
-  fireEvent.change(screen.getByLabelText('シード（空欄なら毎回ランダム）'), {
-    target: { value: ARROW_TOWER_DECK_SEED },
-  });
-  fireEvent.click(screen.getByRole('button', { name: 'この構成で始める' }));
-  fireEvent.click(screen.getByRole('button', { name: '開始' }));
-};
+const startRunningWithArrowTowerDeck = buildCustomDeck;
 
 /**
  * 決着画面で勝敗の理由を記録する（Task 12: 集計・再挑戦・ログコピーは記録後にだけ開くため、
@@ -149,37 +149,9 @@ const isHandButtonNameFor =
     accessibleName.startsWith(`${cardName} コスト`) ||
     accessibleName.includes(` ${cardName} コスト`);
 
-/** 手札グループ内で「徴発」のカードボタンを探す（HandArea に role="group" aria-label="手札" を追加済み） */
-const findLevyHandButton = (): HTMLElement | null =>
-  within(screen.getByRole('group', { name: '手札' })).queryByRole('button', {
-    name: isHandButtonNameFor('徴発'),
-  });
-
-/**
- * 徴発カードが手札に来て(かつマナで支払えて)プレイできるまで tick を進め、プレイする
- *
- * seed:1・swift プリセットでの到達順序はフック側テスト（useAshenRampartGame.test.ts の
- * 「徴発を出すと候補が出て、選ぶと手札に入る」）で確認済みのため、上限に大きな余裕を持たせている。
- */
-const MAX_LEVY_SEARCH_TICKS = 2000;
-const LEVY_SEARCH_STEP_TICKS = 40;
-
-const playLevyCardWhenDrawn = (): void => {
-  for (let advanced = 0; advanced < MAX_LEVY_SEARCH_TICKS; advanced += LEVY_SEARCH_STEP_TICKS) {
-    const levyButton = findLevyHandButton();
-    if (levyButton && !(levyButton as HTMLButtonElement).disabled) {
-      fireEvent.click(levyButton);
-      act(() => {
-        jest.advanceTimersByTime(TICK_INTERVAL_MS);
-      });
-      return;
-    }
-    act(() => {
-      jest.advanceTimersByTime(TICK_INTERVAL_MS * LEVY_SEARCH_STEP_TICKS);
-    });
-  }
-  throw new Error(`徴発カードが ${MAX_LEVY_SEARCH_TICKS} tick 進めても手札に来ませんでした`);
-};
+// 反復6 で徴発（levy）が構築規則違反になり、ランに持ち込めなくなったため
+// （下の「徴発を加えると開始ボタンが無効になり…」テストを参照）、徴発を
+// 手札に引くまで tick を進めてプレイする旧ヘルパーは使い道がなくなった。
 
 describe('AshenRampartGame', () => {
   beforeEach(() => {
@@ -438,66 +410,34 @@ describe('AshenRampartGame', () => {
 
       fireEvent.click(screen.getByRole('button', { name: 'もう一度挑む' }));
 
-      // カードを1枚も選び直さなくても既に20枚組まれており、開始できる
-      expect(screen.getByText('20 / 20')).toBeInTheDocument();
+      // カードを1枚も選び直さなくても既に DECK_SIZE 枚組まれており、開始できる
+      expect(screen.getByText(`${DECK_SIZE} / ${DECK_SIZE}`)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'この構成で始める' })).toBeEnabled();
       expect(
         (screen.getByLabelText('シード（空欄なら毎回ランダム）') as HTMLInputElement).value
       ).toBe('321');
     });
 
-    it('徴発の候補は盤面（LevyChoice）から実際に選べ、選ぶと手札が1枚増える（結線の到達確認）', () => {
+    // 反復6 で徴発（levy）は構築・獲得の両プールから retired にした
+    // （card-pool.ts・設計書 §4.6）。validateDeck が入手経路も検査するように
+    // なったため（deck-builder.ts）、徴発を含むデッキは開始ボタンが無効化され、
+    // もうランに持ち込めない。「徴発の候補を盤面から選べる」「一時停止中は
+    // 候補ボタンが無効になる」という旧テストは、両プリセットから徴発が抜けた
+    // ことでいずれも到達できないシナリオを検査していたため、この構築規則の
+    // 結線（DeckBuilder → validateDeck → StartButton）を確かめるテストへ
+    // 置き換える。徴発が実際に発動する挙動（山札の上3枚を見て1枚選ぶ）と、
+    // その選択UI・一時停止中の無効化は、それぞれ
+    // domain/combat/step-tick-levy.test.ts と presentation/LevyChoice.test.tsx が
+    // 直接検証しており、こちらの置き換えによる影響を受けない。
+    it('徴発を加えると開始ボタンが無効になり、理由が表示される（入手経路チェック・反復6・結線の到達確認）', () => {
       render(<AshenRampartGame />);
-      // 手札が上限に達するとドローが止まるため、待つだけでは徴発が来ない。
-      // シード7は速攻型の初期手札に徴発を含む（反復2 で徴発が2→1枚になった影響）
-      startRunning(/速攻型 を読み込む/, '7');
+      fireEvent.click(screen.getByRole('button', { name: /速攻型 を読み込む/ }));
+      expect(screen.getByRole('button', { name: 'この構成で始める' })).toBeEnabled();
 
-      // 徴発カードが手札に来るまで進めてプレイする（山札を1枚peekして候補を出す）
-      playLevyCardWhenDrawn();
-      expect(screen.getByText('徴発: 1枚選ぶ')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: '徴発 を1枚増やす' }));
 
-      // 手札の枚数は「カードボタン」だけを数える（各カードには捨札ボタンも
-      // 並ぶため、単純な button 総数だと1枚増減の差分が2になってしまう）
-      const handBefore = within(screen.getByRole('group', { name: '手札' })).getAllByRole(
-        'button',
-        { name: /コスト/ }
-      ).length;
-      const levyOption = within(screen.getByRole('group', { name: '徴発の候補' })).getAllByRole(
-        'button'
-      )[0];
-      expect(levyOption).toBeDefined();
-
-      fireEvent.click(levyOption!);
-      act(() => {
-        jest.advanceTimersByTime(TICK_INTERVAL_MS);
-      });
-
-      expect(screen.queryByText('徴発: 1枚選ぶ')).not.toBeInTheDocument();
-      const handAfter = within(screen.getByRole('group', { name: '手札' })).getAllByRole(
-        'button',
-        { name: /コスト/ }
-      ).length;
-      expect(handAfter).toBe(handBefore + 1);
-    });
-
-    it('一時停止中は徴発の候補ボタンが無効化され、押しても反応しない（指摘B）', () => {
-      render(<AshenRampartGame />);
-      // 手札が上限に達するとドローが止まるため、待つだけでは徴発が来ない。
-      // シード7は速攻型の初期手札に徴発を含む（反復2 で徴発が2→1枚になった影響）
-      startRunning(/速攻型 を読み込む/, '7');
-
-      playLevyCardWhenDrawn();
-      expect(screen.getByText('徴発: 1枚選ぶ')).toBeInTheDocument();
-
-      fireEvent.click(screen.getByRole('button', { name: '一時停止' }));
-      const levyOption = within(screen.getByRole('group', { name: '徴発の候補' })).getAllByRole(
-        'button'
-      )[0];
-      expect(levyOption).toBeDisabled();
-
-      // 無効化されたボタンをクリックしても候補は消えない（無反応であることの確認）
-      fireEvent.click(levyOption!);
-      expect(screen.getByText('徴発: 1枚選ぶ')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'この構成で始める' })).toBeDisabled();
+      expect(screen.getByText(/徴発は現在デッキに入れられません/)).toBeInTheDocument();
     });
   });
 

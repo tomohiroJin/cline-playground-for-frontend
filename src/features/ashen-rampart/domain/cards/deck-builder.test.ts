@@ -9,19 +9,16 @@ import { DECK_SIZE, MAX_COPIES, maxCopiesOf } from './card-pool';
 
 const repeat = (id: string, n: number): string[] => Array.from({ length: n }, () => id);
 
-/** 20枚ちょうど・同名3枚以内の妥当なデッキ */
+/** DECK_SIZE 枚ちょうど・同名3枚以内の妥当なデッキ */
 const validCards = [
   ...repeat('reactor', 3),
   ...repeat('arrow-tower', 3),
   ...repeat('ballista', 3),
   ...repeat('cannon-tower', 3),
-  ...repeat('spike-trap', 3),
-  ...repeat('mud-time', 3),
-  ...repeat('beacon', 2),
 ];
 
 describe('validateDeck', () => {
-  it('20枚ちょうど・同名3枚以内なら妥当', () => {
+  it('DECK_SIZE 枚ちょうど・同名3枚以内なら妥当', () => {
     expect(validCards).toHaveLength(DECK_SIZE);
     const result = validateDeck(validCards);
     expect(result.isValid).toBe(true);
@@ -29,9 +26,9 @@ describe('validateDeck', () => {
   });
 
   it('枚数が足りないと不正で、必要枚数がエラーに出る', () => {
-    const result = validateDeck(validCards.slice(0, 19));
+    const result = validateDeck(validCards.slice(0, DECK_SIZE - 1));
     expect(result.isValid).toBe(false);
-    expect(result.errors.join()).toContain('20');
+    expect(result.errors.join()).toContain(String(DECK_SIZE));
   });
 
   it('枚数が多いと不正', () => {
@@ -40,7 +37,12 @@ describe('validateDeck', () => {
   });
 
   it('同名が上限を超えると不正で、カード名がエラーに出る', () => {
-    const tooMany = [...repeat('arrow-tower', MAX_COPIES + 1), ...repeat('reactor', 3), ...repeat('ballista', 3), ...repeat('cannon-tower', 3), ...repeat('spike-trap', 3), ...repeat('mud-time', 3), 'beacon'];
+    const tooMany = [
+      ...repeat('arrow-tower', MAX_COPIES + 1),
+      ...repeat('reactor', 3),
+      ...repeat('ballista', 3),
+      ...repeat('cannon-tower', 2),
+    ];
     expect(tooMany).toHaveLength(DECK_SIZE);
     const result = validateDeck(tooMany);
     expect(result.isValid).toBe(false);
@@ -48,7 +50,7 @@ describe('validateDeck', () => {
   });
 
   it('未知のカードIDが含まれると不正', () => {
-    const result = validateDeck([...validCards.slice(0, 19), 'unknown-card']);
+    const result = validateDeck([...validCards.slice(0, DECK_SIZE - 1), 'unknown-card']);
     expect(result.isValid).toBe(false);
     expect(result.errors.join()).toContain('unknown-card');
   });
@@ -91,34 +93,60 @@ describe('costCurve', () => {
 });
 
 describe('カード別の同名上限', () => {
-  it('魔力炉は3枚を超えても有効になる', () => {
+  // 反復6 で魔力炉の同名上限の例外を外した（card-pool.test.ts の
+  // 「同名上限に例外を持つカードは無い」も参照）。以下の2本はそれぞれの
+  // 向きを個別に検査する: 魔力炉自身が上限を超えると不正になること、
+  // 魔力炉以外は従来どおり上限に縛られること。
+  it('魔力炉も MAX_COPIES を超えると不正になる（反復6 で例外を外した）', () => {
     const cards = [
-      ...Array.from({ length: 8 }, () => 'reactor'),
-      ...Array.from({ length: 3 }, () => 'arrow-tower'),
-      ...Array.from({ length: 3 }, () => 'cannon-tower'),
-      ...Array.from({ length: 3 }, () => 'spike-trap'),
-      ...Array.from({ length: 3 }, () => 'ballista'),
+      ...repeat('reactor', MAX_COPIES + 1),
+      ...repeat('arrow-tower', 3),
+      ...repeat('cannon-tower', 3),
+      ...repeat('spike-trap', 2),
     ];
-    expect(cards).toHaveLength(20);
-    expect(validateDeck(cards).isValid).toBe(true);
+    expect(cards).toHaveLength(DECK_SIZE);
+    const result = validateDeck(cards);
+    expect(result.isValid).toBe(false);
+    expect(result.errors.some((e) => e.includes('魔力炉'))).toBe(true);
   });
 
   it('魔力炉以外は従来どおり3枚までに制限される', () => {
     const cards = [
-      ...Array.from({ length: 4 }, () => 'arrow-tower'),
-      ...Array.from({ length: 8 }, () => 'reactor'),
-      ...Array.from({ length: 3 }, () => 'cannon-tower'),
-      ...Array.from({ length: 3 }, () => 'spike-trap'),
-      ...Array.from({ length: 2 }, () => 'ballista'),
+      ...repeat('arrow-tower', 4),
+      ...repeat('reactor', 3),
+      ...repeat('cannon-tower', 3),
+      ...repeat('spike-trap', 2),
     ];
-    expect(cards).toHaveLength(20);
+    expect(cards).toHaveLength(DECK_SIZE);
     const result = validateDeck(cards);
     expect(result.isValid).toBe(false);
     expect(result.errors.some((e) => e.includes('弓兵'))).toBe(true);
   });
 
-  it('maxCopiesOf は魔力炉にデッキ枚数、それ以外に MAX_COPIES を返す', () => {
-    expect(maxCopiesOf('reactor')).toBe(DECK_SIZE);
+  it('maxCopiesOf はどのカードも MAX_COPIES を返す（反復6 で魔力炉の例外を外した）', () => {
+    expect(maxCopiesOf('reactor')).toBe(MAX_COPIES);
     expect(maxCopiesOf('arrow-tower')).toBe(MAX_COPIES);
+  });
+});
+
+describe('入手経路の検査（反復6・設計書 §5.5）', () => {
+  it('retired なカード（徴発）が混ざると不正で、理由がエラーに出る', () => {
+    const cards = [
+      'levy',
+      ...repeat('reactor', 3),
+      ...repeat('arrow-tower', 3),
+      ...repeat('ballista', 3),
+      ...repeat('cannon-tower', 2),
+    ];
+    expect(cards).toHaveLength(DECK_SIZE);
+    const result = validateDeck(cards);
+    expect(result.isValid).toBe(false);
+    expect(result.errors.some((e) => e.includes('徴発') && e.includes('入れられません'))).toBe(
+      true
+    );
+  });
+
+  it('buildable なカードだけのデッキは入手経路のエラーを出さない', () => {
+    expect(validateDeck(validCards).errors).toEqual([]);
   });
 });

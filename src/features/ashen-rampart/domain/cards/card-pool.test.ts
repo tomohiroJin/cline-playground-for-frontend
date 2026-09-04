@@ -175,9 +175,9 @@ describe('カードの軸（設計書 §7）', () => {
     expect(getCardDefinition('stone-wall').maxCopies ?? 3).toBe(3);
   });
 
-  it('魔力炉だけが同名上限を持たない', () => {
+  it('同名上限に例外を持つカードは無い', () => {
     const unlimited = CARD_IDS.filter((id) => (getCardDefinition(id).maxCopies ?? 3) > 3);
-    expect(unlimited).toEqual(['reactor']);
+    expect(unlimited).toEqual([]);
   });
 });
 
@@ -186,7 +186,7 @@ describe('プリセットデッキ', () => {
     expect(Object.keys(PRESET_DECKS)).toEqual(['swift', 'heavy']);
   });
 
-  it.each(Object.entries(PRESET_DECKS))('%s は20枚ちょうど', (_id, deck) => {
+  it.each(Object.entries(PRESET_DECKS))('%s は DECK_SIZE 枚ちょうど', (_id, deck) => {
     expect(deck.cards).toHaveLength(DECK_SIZE);
   });
 
@@ -208,11 +208,16 @@ describe('プリセットデッキ', () => {
 });
 
 describe('プリセットの重コスト帯（反復5）', () => {
-  it('どのプリセットもコスト4以上を2枚以上持つ', () => {
-    // 速攻型は最大コスト3 で、選んだ人に重い札の判断が発生しなかった（設計書 §2.4）
+  it('どのプリセットもコスト4以上を1枚以上持つ', () => {
+    // 速攻型は最大コスト3 で、選んだ人に重い札の判断が発生しなかった（設計書 §2.4）。
+    // 反復5 の閾値は2枚以上だったが、反復6 で12枚デッキに縮めたことで
+    // 1枚が占める割合そのものが20枚時代より大きくなった（8.3% vs 5%）。
+    // 12枚版の正確な閾値較正は段階D で行う（card-pool.ts の PRESET_DECKS docstring
+    // 参照）。ここでは「重い判断が一度も発生しない」という反復5 の欠陥へ
+    // 逆戻りしていないことだけを確かめる。
     Object.values(PRESET_DECKS).forEach((preset) => {
       const heavy = preset.cards.filter((id) => getCardDefinition(id).cost >= 4);
-      expect(heavy.length).toBeGreaterThanOrEqual(2);
+      expect(heavy.length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -254,5 +259,12 @@ describe('カードの入手経路（反復6）', () => {
 
   it('未知のカードIDは例外', () => {
     expect(() => availabilityOf('no-such-card')).toThrow('未知のカードIDです');
+  });
+
+  it('徴発は構築にも獲得にも出ないが、定義は残っている（反復6 §4.6）', () => {
+    expect(availabilityOf('levy')).toBe('retired');
+    expect(BUILDABLE_CARD_IDS).not.toContain('levy');
+    expect(ACQUIRABLE_CARD_IDS).not.toContain('levy');
+    expect(CARD_IDS).toContain('levy');
   });
 });
