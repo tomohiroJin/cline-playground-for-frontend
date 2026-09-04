@@ -149,6 +149,15 @@ export interface CombatState {
 export const LIFE_INITIAL = 12;
 
 /**
+ * ステージクリア時のライフ回復（反復6・設計書 §4.1）
+ *
+ * 遠征はライフを3ステージに持ち越すため、回復が無いと層1 の失点が
+ * そのまま層3 の敗北を決める。**較正対象**（段階D）だが、
+ * 「回復する」という符号自体は設計の一部なので 0 や負にはしない。
+ */
+export const STAGE_CLEAR_HEAL = 3;
+
+/**
  * 溢れ1枚あたりのライフの対価（反復5・設計書 §5）
  *
  * 手札が上限のときに引いた札は墓地へ落ちるが、そこに値段が付いていなかったため
@@ -179,13 +188,19 @@ export const COUNTDOWN_TICKS = 90;
 export const countdownLeftAt = (tick: number): number =>
   Math.max(0, COUNTDOWN_TICKS - tick);
 
-/** ラン開始時の戦闘状態を作る */
+/**
+ * ラン開始時の戦闘状態を作る
+ *
+ * `initialLife` は遠征がステージ間でライフを持ち越すために使う（反復6）。
+ * 省略時は `LIFE_INITIAL`——**既存の呼び出し110箇所を無変更で通すため。**
+ */
 export const createCombatState = (
   deck: DeckState,
-  waves: readonly WaveDefinition[]
+  waves: readonly WaveDefinition[],
+  initialLife: number = LIFE_INITIAL
 ): CombatState => ({
   tick: 0,
-  life: LIFE_INITIAL,
+  life: initialLife,
   mana: MANA_INITIAL,
   placeCooldown: 0,
   ticksToDraw: DRAW_INTERVAL_TICKS,
