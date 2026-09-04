@@ -1565,6 +1565,17 @@ describe('buildOffer', () => {
     const b = buildOffer([], rngOf([0.2, 0.6, 0.8]));
     expect(a).toEqual(b);
   });
+
+  it('rng が 1 を返しても提示が壊れない（丸めのガード）', () => {
+    // RandomFn の契約は 0 以上 1 未満だが、テスト用スタブや将来の実装が 1 を
+    // 返しても添字が範囲外にならないこと。clamp が無いと splice が空を返し、
+    // 提示が OFFER_SIZE に満たなくなる。
+    // **Task 8 のレビューで、同じ形の clamp がどのテストでも突かれておらず
+    // 外しても全テストが緑のままだったことが判明したため、ここでは先に検査する。**
+    const offer = buildOffer([], rngOf([1]));
+    expect(offer).toHaveLength(OFFER_SIZE);
+    offer.forEach((id) => expect(id).toBeDefined());
+  });
 });
 
 describe('applyAcquisition', () => {
@@ -2617,6 +2628,13 @@ describe('獲得戦略', () => {
   it('randomAcquireOf は提示の中から選ぶ', () => {
     const pick = randomAcquireOf(() => 0.99)(['a1', 'a2', 'a3'], [], []);
     expect(['a1', 'a2', 'a3']).toContain(pick);
+  });
+
+  it('randomAcquireOf は rng が 1 を返しても undefined を返さない（丸めのガード）', () => {
+    // Task 8 のレビューで、同じ形の clamp がどのテストでも突かれていないことが
+    // 判明したため、ここでは先に検査する。clamp が無いと添字が範囲外になり
+    // undefined が返り、「取らない」と区別できなくなる。
+    expect(randomAcquireOf(() => 1)(['a1', 'a2', 'a3'], [], [])).toBe('a3');
   });
 
   it('提示が空なら（候補が尽きていたら）どの戦略も undefined', () => {
