@@ -814,6 +814,7 @@ export const DECK_SIZE = 12;
 | `deck-builder.test.ts:120-122` | `expect(maxCopiesOf('reactor')).toBe(DECK_SIZE)` → `.toBe(MAX_COPIES)`。テスト名も直す |
 | `DeckBuilder.test.tsx:145` | `/20枚ちょうどにしてください/` → `` new RegExp(`${DECK_SIZE}枚ちょうどにしてください`) `` |
 | `useAshenRampartGame.test.ts:37-44` | `emberDeckCards()` の20枚リテラルを12枚へ。**業火を含めること**（このテストの主題）。例: `['ember-blast', 'reactor','reactor','reactor', 'arrow-tower','arrow-tower','arrow-tower', 'stone-wall','stone-wall','stone-wall', 'ballista', 'cannon-tower']` |
+| `useAshenRampartGame.test.ts:56` | **触らない。** `iteration: 5` の期待値は `CURRENT_ITERATION` を上げる Task 12 で直す。ここで先に 6 にすると、定数がまだ 5 のままなので赤くなる |
 | `start-run.test.ts:17` | `DECK_SIZE - INITIAL_HAND_SIZE` は定数経由なので**変更不要**。実行して確認する |
 
 - [ ] **Step 7: 全テストを実行して緑を確認する**
@@ -2348,6 +2349,10 @@ describe('スキーマ v5（反復6）', () => {
   });
 });
 ```
+
+**あわせて `useAshenRampartGame.test.ts:56` の `iteration: 5` を `iteration: 6` に直す。**
+Task 5 では触らないと決めてある（定数を上げるのはこのタスクなので、
+先に期待値だけ変えると赤くなる）。
 
 `useAshenRampartGame.test.ts` に追記する。
 
