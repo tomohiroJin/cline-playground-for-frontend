@@ -428,6 +428,13 @@ DECK_SIZE の切り替えと同時（それ以前に付けるとプリセット�
 
 ## Task 4: 実行時のデッキ検証（`validateRuntimeDeck`）
 
+> **⚠️ 実行順の変更: このタスクは Task 5 の後に実行する。**
+> このタスクのテストヘルパ `base(n)` は `maxCopiesOf` を見て n 枚を組むが、
+> Task 5 より前は `DECK_SIZE = 20` かつ魔力炉が無制限なので、
+> `base(20)` が「魔力炉20枚」になり、「同名上限は実行時も守る」テストが
+> 上限違反を作れずに落ちる。**Task 5 で `DECK_SIZE = 12`・魔力炉の上限3 に
+> なってから実行すること**（そのとき 6種×3＝18枚 のプールで必要な最大15枚に届く）。
+
 **Files:**
 - Modify: `src/features/ashen-rampart/domain/cards/deck-builder.ts`
 - Modify: `src/features/ashen-rampart/domain/cards/deck-builder.test.ts`
@@ -586,6 +593,10 @@ validateDeck は枚数ちょうどを要求するため、獲得で 12→13→14
 ---
 
 ## Task 5: `DECK_SIZE` を12へ切り替える
+
+> **⚠️ 実行順の変更: このタスクを Task 4 より先に実行する**（理由は Task 4 の冒頭）。
+> したがってこの時点で `validateRuntimeDeck` はまだ存在しない。
+> このタスクは `validateRuntimeDeck` を一切参照しない。
 
 **Files:**
 - Modify: `src/features/ashen-rampart/domain/cards/card-pool.ts`
@@ -809,7 +820,7 @@ export const DECK_SIZE = 12;
 |---|---|
 | `card-pool.test.ts:175-178` | `expect(unlimited).toEqual(['reactor'])` → `expect(unlimited).toEqual([])`。テスト名を「同名上限に例外を持つカードは無い」に直す |
 | `card-pool.test.ts:186-188` | プリセットの `toHaveLength(20)` → `toHaveLength(DECK_SIZE)` |
-| `deck-builder.test.ts:12-21,43-44,108-118` | 20枚リテラルを Task 4 の `base(DECK_SIZE)` と同じ作り方で組み直す |
+| `deck-builder.test.ts:12-21,43-44,108-118` | 20枚リテラルを12枚に組み直す。**同名上限を守りながら組むこと**（例: `[...repeat('reactor',3), ...repeat('arrow-tower',3), ...repeat('ballista',3), ...repeat('stone-wall',3)]` の12枚）。上限超過を作りたいテストでは、そこへさらに1枚足す |
 | `deck-builder.test.ts:25,33` | `toContain('20')` → `toContain(String(DECK_SIZE))` |
 | `deck-builder.test.ts:120-122` | `expect(maxCopiesOf('reactor')).toBe(DECK_SIZE)` → `.toBe(MAX_COPIES)`。テスト名も直す |
 | `DeckBuilder.test.tsx:145` | `/20枚ちょうどにしてください/` → `` new RegExp(`${DECK_SIZE}枚ちょうどにしてください`) `` |
