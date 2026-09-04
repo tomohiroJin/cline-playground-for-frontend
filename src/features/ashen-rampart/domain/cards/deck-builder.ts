@@ -69,3 +69,44 @@ export const validateDeck = (cards: readonly string[]): DeckValidation => {
 
   return { isValid: errors.length === 0, errors };
 };
+
+/**
+ * 遠征中に許されるデッキの最大枚数（反復6・設計書 §4.3）
+ *
+ * 獲得は2回なので DECK_SIZE + 2 が上限。
+ */
+export const RUNTIME_DECK_MAX = DECK_SIZE + 2;
+
+/**
+ * ステージ開始時のデッキ検証（反復6・設計書 §4.3）
+ *
+ * `validateDeck` は**構築時**の規則で、枚数が `DECK_SIZE` ちょうどであることを要求する。
+ * 遠征では獲得でデッキが 12 → 13 → 14 と育つため、
+ * **ステージ開始でこれを呼ぶと層2 で必ず例外になる**（初版の設計はここで落ちた）。
+ *
+ * 実行時に守るべきなのは「既知の札」「同名上限」「枚数が範囲内」だけである。
+ * **入手経路は検査しない**——獲得専用の札は正当にデッキへ入るため。
+ */
+export const validateRuntimeDeck = (cards: readonly string[]): DeckValidation => {
+  const errors: string[] = [];
+
+  if (cards.length < DECK_SIZE || cards.length > RUNTIME_DECK_MAX) {
+    errors.push(
+      `遠征中のデッキは${DECK_SIZE}〜${RUNTIME_DECK_MAX}枚です（現在${cards.length}枚）`
+    );
+  }
+
+  const unknown = cards.filter((id) => !CARD_IDS.includes(id));
+  [...new Set(unknown)].forEach((id) => {
+    errors.push(`未知のカードが含まれています: ${id}`);
+  });
+
+  countByCard(cards).forEach((count, id) => {
+    if (!CARD_IDS.includes(id)) return;
+    const limit = maxCopiesOf(id);
+    if (count <= limit) return;
+    errors.push(`${getCardDefinition(id).name}は${limit}枚までです（現在${count}枚）`);
+  });
+
+  return { isValid: errors.length === 0, errors };
+};

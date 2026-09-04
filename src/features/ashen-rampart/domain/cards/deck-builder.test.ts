@@ -4,7 +4,7 @@
  * 検証をドメインに置く理由: UI 側でだけ検証すると、テストが通るのに
  * UI で組めないデッキ（またはその逆）が生まれる。唯一の真実をここに置く。
  */
-import { validateDeck, countByCard, costCurve } from './deck-builder';
+import { validateDeck, countByCard, costCurve, validateRuntimeDeck, RUNTIME_DECK_MAX } from './deck-builder';
 import { DECK_SIZE, MAX_COPIES, maxCopiesOf } from './card-pool';
 
 const repeat = (id: string, n: number): string[] => Array.from({ length: n }, () => id);
@@ -148,5 +148,57 @@ describe('入手経路の検査（反復6・設計書 §5.5）', () => {
 
   it('buildable なカードだけのデッキは入手経路のエラーを出さない', () => {
     expect(validateDeck(validCards).errors).toEqual([]);
+  });
+});
+
+describe('validateRuntimeDeck（反復6・遠征中のデッキ）', () => {
+  /** 同名上限を守りながら n 枚のデッキを作る */
+  const base = (n: number): string[] => {
+    const pool = ['reactor', 'arrow-tower', 'ballista', 'stone-wall', 'cannon-tower', 'beacon'];
+    const cards: string[] = [];
+    pool.forEach((id) => {
+      while (cards.length < n && cards.filter((c) => c === id).length < maxCopiesOf(id)) {
+        cards.push(id);
+      }
+    });
+    return cards;
+  };
+
+  it('組み立てヘルパが要求どおりの枚数を返す（テスト自身の前提）', () => {
+    expect(base(DECK_SIZE)).toHaveLength(DECK_SIZE);
+    expect(base(RUNTIME_DECK_MAX + 1)).toHaveLength(RUNTIME_DECK_MAX + 1);
+  });
+
+  it('DECK_SIZE ちょうどは通る', () => {
+    expect(validateRuntimeDeck(base(DECK_SIZE)).isValid).toBe(true);
+  });
+
+  it('獲得で増えた DECK_SIZE + 1 と RUNTIME_DECK_MAX も通る', () => {
+    expect(validateRuntimeDeck(base(DECK_SIZE + 1)).isValid).toBe(true);
+    expect(validateRuntimeDeck(base(RUNTIME_DECK_MAX)).isValid).toBe(true);
+  });
+
+  it('RUNTIME_DECK_MAX を1枚超えたら弾く（境界）', () => {
+    expect(validateRuntimeDeck(base(RUNTIME_DECK_MAX + 1)).isValid).toBe(false);
+  });
+
+  it('DECK_SIZE を1枚下回ったら弾く（境界）', () => {
+    expect(validateRuntimeDeck(base(DECK_SIZE - 1)).isValid).toBe(false);
+  });
+
+  it('同名上限は実行時も守る', () => {
+    const over = [...base(DECK_SIZE), 'arrow-tower'];
+    expect(over.filter((c) => c === 'arrow-tower').length).toBeGreaterThan(
+      maxCopiesOf('arrow-tower')
+    );
+    expect(validateRuntimeDeck(over).isValid).toBe(false);
+  });
+
+  it('未知のカードは弾く', () => {
+    expect(validateRuntimeDeck([...base(DECK_SIZE - 1), 'no-such-card']).isValid).toBe(false);
+  });
+
+  it('RUNTIME_DECK_MAX は DECK_SIZE + 2（獲得2回ぶん）', () => {
+    expect(RUNTIME_DECK_MAX).toBe(DECK_SIZE + 2);
   });
 });
