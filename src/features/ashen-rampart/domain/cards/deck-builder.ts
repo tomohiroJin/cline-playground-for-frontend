@@ -30,6 +30,38 @@ export const costCurve = (cards: readonly string[]): Map<number, number> => {
   return curve;
 };
 
+/**
+ * 未知のカードが含まれていれば errors に追加する（非公開ヘルパ）
+ *
+ * validateDeck と validateRuntimeDeck で共有。
+ */
+const pushUnknownCardErrors = (cards: readonly string[], errors: string[]): void => {
+  const unknown = cards.filter((id) => !CARD_IDS.includes(id));
+  [...new Set(unknown)].forEach((id) => {
+    errors.push(`未知のカードが含まれています: ${id}`);
+  });
+};
+
+/**
+ * 同名上限を超えたカードがあれば errors に追加する（非公開ヘルパ）
+ *
+ * validateDeck と validateRuntimeDeck で共有。
+ * エラー文言は呼び出し側が異なるため、formatError で指定させる。
+ */
+const pushCopyLimitErrors = (
+  cards: readonly string[],
+  errors: string[],
+  formatError: (name: string, count: number, limit: number) => string
+): void => {
+  countByCard(cards).forEach((count, id) => {
+    if (!CARD_IDS.includes(id)) return;
+    const limit = maxCopiesOf(id);
+    if (count <= limit) return;
+    const name = getCardDefinition(id).name;
+    errors.push(formatError(name, count, limit));
+  });
+};
+
 /** デッキが構築規則を満たすか。満たさない場合は理由をすべて返す */
 export const validateDeck = (cards: readonly string[]): DeckValidation => {
   const errors: string[] = [];
@@ -38,18 +70,12 @@ export const validateDeck = (cards: readonly string[]): DeckValidation => {
     errors.push(`デッキは${DECK_SIZE}枚ちょうどにしてください（現在${cards.length}枚）`);
   }
 
-  const unknown = cards.filter((id) => !CARD_IDS.includes(id));
-  [...new Set(unknown)].forEach((id) => {
-    errors.push(`未知のカードが含まれています: ${id}`);
-  });
-
-  countByCard(cards).forEach((count, id) => {
-    if (!CARD_IDS.includes(id)) return;
-    const limit = maxCopiesOf(id);
-    if (count <= limit) return;
-    const name = getCardDefinition(id).name;
-    errors.push(`${name}が${count}枚あります（同名は${limit}枚まで）`);
-  });
+  pushUnknownCardErrors(cards, errors);
+  pushCopyLimitErrors(
+    cards,
+    errors,
+    (name, count, limit) => `${name}が${count}枚あります（同名は${limit}枚まで）`
+  );
 
   // 構築で選べない札が混ざっていないか（反復6・設計書 §5.5）
   //
@@ -96,17 +122,12 @@ export const validateRuntimeDeck = (cards: readonly string[]): DeckValidation =>
     );
   }
 
-  const unknown = cards.filter((id) => !CARD_IDS.includes(id));
-  [...new Set(unknown)].forEach((id) => {
-    errors.push(`未知のカードが含まれています: ${id}`);
-  });
-
-  countByCard(cards).forEach((count, id) => {
-    if (!CARD_IDS.includes(id)) return;
-    const limit = maxCopiesOf(id);
-    if (count <= limit) return;
-    errors.push(`${getCardDefinition(id).name}は${limit}枚までです（現在${count}枚）`);
-  });
+  pushUnknownCardErrors(cards, errors);
+  pushCopyLimitErrors(
+    cards,
+    errors,
+    (name, count, limit) => `${name}は${limit}枚までです（現在${count}枚）`
+  );
 
   return { isValid: errors.length === 0, errors };
 };
