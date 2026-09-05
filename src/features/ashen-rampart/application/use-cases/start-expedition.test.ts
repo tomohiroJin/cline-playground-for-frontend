@@ -1,7 +1,7 @@
 import { startExpedition, startStage } from './start-expedition';
 import { PRESET_DECKS, DECK_SIZE } from '../../domain/cards/card-pool';
 import { INITIAL_HAND_SIZE } from '../../domain/cards/deck';
-import { LIFE_INITIAL } from '../../domain/combat/combat-state';
+import { COUNTDOWN_TICKS, LIFE_INITIAL } from '../../domain/combat/combat-state';
 import { currentStage, completeStage } from '../../domain/expedition/expedition-state';
 import { ACQUIRED_INSERT_OFFSET } from './start-expedition';
 
@@ -36,7 +36,16 @@ describe('startStage', () => {
   it('現在のステージの台本で戦闘状態を作る', () => {
     const exp = startExpedition(preset, 42);
     const combat = startStage(exp);
-    expect(combat.waves).toHaveLength(currentStage(exp)!.waves.length);
+    // 長さだけの比較だと「常に stages[0].waves を渡す」変異が生き残るため、
+    // 内容そのものを比較する（レビュー指摘 M4）。
+    // `createCombatState` が startTick を COUNTDOWN_TICKS ぶんずらすのは
+    // 意図した変換（開始カウントダウンの間は敵を出現させないため）なので、
+    // 期待値側にも同じ変換をかけたうえで比較する。
+    const expectedWaves = currentStage(exp)!.waves.map((w) => ({
+      ...w,
+      startTick: w.startTick + COUNTDOWN_TICKS,
+    }));
+    expect(combat.waves).toEqual(expectedWaves);
   });
 
   it('遠征のライフで始まる（持ち越し）', () => {
@@ -79,6 +88,40 @@ describe('startStage', () => {
       i !== arr.length - 1 - ACQUIRED_INSERT_OFFSET
     );
     expect(withoutAcquired).toEqual(startStage(base).deck.drawPile);
+  });
+
+  it('獲得札は設計値どおり「末尾から3枚目」に入る（定数を経由せず直接検査する）', () => {
+    // レビュー指摘 M1: 上の「末尾から ACQUIRED_INSERT_OFFSET の位置にある」テストは
+    // 実装から ACQUIRED_INSERT_OFFSET を import して期待値を組み立てているため、
+    // 定数自体を書き換える変異（例: 0 にする）を検出できない。
+    //
+    // 実際に `> pile.length / 2` という「後半に入る」検査も試したが、
+    // OFFSET を 0 にすると獲得札は山札の**最後尾**（末尾から0枚目）に挿さり、
+    // 最後尾は当然「後半」の範囲内にも入るため、この検査もすり抜けた
+    // （0 と 3 のどちらでも `indexOf > length/2` は真になる。実測で確認済み）。
+    // 後半かどうかではなく、設計値 3 そのものを定数を介さず埋め込んで検査する。
+    const DESIGNED_OFFSET = 3;
+    const base = startExpedition(preset, 42);
+    const withCard = { ...base, deckCards: [...base.deckCards, 'beacon'], acquired: ['beacon'] };
+    const pile = startStage(withCard).deck.drawPile;
+    expect(pile[pile.length - 1 - DESIGNED_OFFSET]).toBe('beacon');
+  });
+
+  it('複数獲得でも両方が山札に入り、位置が決定的である', () => {
+    // acquired が1枚だけだと insertAcquired の `i` の項（2枚目以降のずらし）と
+    // `Math.max(0, ...)` の下限 clamp が一度も通らない（レビュー指摘 M2）。
+    // Task 15 の完全再生テストは獲得2回を回すため、ここで先に検査しておく。
+    const base = startExpedition(preset, 42);
+    const withCards = {
+      ...base,
+      deckCards: [...base.deckCards, 'beacon', 'forge'],
+      acquired: ['beacon', 'forge'],
+    };
+    const pileA = startStage(withCards).deck.drawPile;
+    const pileB = startStage(withCards).deck.drawPile;
+    expect(pileA).toContain('beacon');
+    expect(pileA).toContain('forge');
+    expect(pileA).toEqual(pileB);
   });
 
   it('ステージが違えばシャッフルも違う', () => {
