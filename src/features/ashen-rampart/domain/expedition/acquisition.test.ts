@@ -12,11 +12,15 @@ describe('buildOffer', () => {
   });
 
   it('3枚を提示する', () => {
-    expect(buildOffer([], rngOf([0.1, 0.5, 0.9]))).toHaveLength(OFFER_SIZE);
+    expect(buildOffer([], rngOf([0.5, 0.5, 0.5]))).toHaveLength(OFFER_SIZE);
   });
 
   it('提示の3枚は互いに異なる', () => {
-    const offer = buildOffer([], rngOf([0.1, 0.5, 0.9]));
+    // **rng を定数にしているのは意図的。** 候補配列が縮まらない実装（splice を
+    // 参照読みに変えた版）だと、同じ割合から毎回同じ絶対添字が出て重複する。
+    // floor(0.5×13)=6 → 削除後 floor(0.5×12)=6 → 削除後 floor(0.5×11)=5 で
+    // 3枚とも別位置を指す。変異版で重複が出現する（削除なしだと6,6,6になる）。
+    const offer = buildOffer([], rngOf([0.5, 0.5, 0.5]));
     expect(new Set(offer).size).toBe(OFFER_SIZE);
   });
 
