@@ -64,9 +64,16 @@ describe('simulateExpedition', () => {
 
   it('踏破したら stagesCleared が 3 で reachedTier3 が true', () => {
     const result = simulateExpedition({ initialDeck: preset, seed: 1, strategy: greedyStrategy, acquire: demandAwareAcquire });
+    // 案A（else も検査する）を選ぶ。段階B・D でステージプールやバランスを変えると
+    // このシードの決着が cleared から failed へ変わりうる。else を持たない if だけの
+    // assertion は、その変化が起きた瞬間に「テストは緑のまま何も検査しない」状態に
+    // 静かに堕ちる（レビュー指摘）。
     if (result.outcome === 'cleared') {
       expect(result.stagesCleared).toBe(3);
       expect(result.reachedTier3).toBe(true);
+    } else {
+      // 敗北なら踏破していないはず。
+      expect(result.stagesCleared).toBeLessThan(3);
     }
   });
 
@@ -84,8 +91,12 @@ describe('simulateExpedition', () => {
 
   it('demandAwareAcquire では、層2 に到達すれば1枚以上獲得している', () => {
     const result = simulateExpedition({ initialDeck: preset, seed: 5, strategy: greedyStrategy, acquire: demandAwareAcquire });
+    // 案A（else も検査する）を選ぶ。理由は上の「踏破したら...」と同じ。
     if (result.stagesCleared >= 1) {
       expect(result.acquired.length).toBeGreaterThanOrEqual(1);
+    } else {
+      // 1ステージも勝てなければ獲得の機会が無い。
+      expect(result.acquired).toEqual([]);
     }
   });
 });
