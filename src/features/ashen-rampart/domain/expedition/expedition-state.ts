@@ -80,8 +80,10 @@ export const currentStage = (exp: ExpeditionState): StageDefinition | undefined 
  * 負け: 遠征終了。
  */
 export const completeStage = (exp: ExpeditionState, result: StageResult): ExpeditionState => {
-  if (exp.phase === 'ended') {
-    throw new Error('遠征は既に終了しています');
+  if (exp.phase !== 'stage') {
+    throw new Error(
+      exp.phase === 'ended' ? '遠征は既に終了しています' : '獲得の選択が終わっていません'
+    );
   }
   if (!result.won) {
     return { ...exp, life: result.lifeLeft, phase: 'ended', outcome: 'failed' };
@@ -94,11 +96,23 @@ export const completeStage = (exp: ExpeditionState, result: StageResult): Expedi
   return { ...exp, life: healed, stageIndex: nextIndex, phase: 'offer' };
 };
 
-/** 抽選された3択を載せる（抽選そのものは application が行う） */
+/**
+ * 抽選された3択を載せる（抽選そのものは application が行う）
+ *
+ * `phase` は変更しない——`completeStage` が非最終ステージの勝利で
+ * 既に `'offer'` にしているため、ここでの役目は3択を載せることだけである。
+ * `'offer'` フェーズ以外（`'ended'` を含む）からの呼び出しは契約違反とし、
+ * 終了した遠征を提示フェーズへ復活させることを防ぐ。
+ */
 export const presentOffer = (
   exp: ExpeditionState,
   offer: readonly string[]
-): ExpeditionState => ({ ...exp, offer: [...offer], phase: 'offer' });
+): ExpeditionState => {
+  if (exp.phase !== 'offer') {
+    throw new Error('獲得の提示中ではありません');
+  }
+  return { ...exp, offer: [...offer] };
+};
 
 /** 3択から1枚を選ぶ */
 export const chooseAcquisition = (exp: ExpeditionState, cardId: string): ExpeditionState => {

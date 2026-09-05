@@ -72,6 +72,16 @@ describe('ステージの決着', () => {
     const ended = completeStage(start(), { won: false, lifeLeft: 0 });
     expect(() => completeStage(ended, { won: true, lifeLeft: 5 })).toThrow('遠征は既に終了しています');
   });
+
+  it('終了した遠征に提示しようとすると契約違反（復活させない）', () => {
+    const ended = completeStage(start(), { won: false, lifeLeft: 0 });
+    expect(() => presentOffer(ended, ['beacon'])).toThrow('獲得の提示中ではありません');
+  });
+
+  it('獲得の選択待ちの最中にステージを決着させようとすると契約違反', () => {
+    const offered = presentOffer(completeStage(start(), { won: true, lifeLeft: 8 }), ['beacon']);
+    expect(() => completeStage(offered, { won: true, lifeLeft: 6 })).toThrow();
+  });
 });
 
 describe('獲得', () => {
