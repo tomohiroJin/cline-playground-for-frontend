@@ -58,7 +58,7 @@ describe('useAshenRampartGame', () => {
     renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log }));
     const started = log.events.filter((e) => e.kind === 'run_started');
     expect(started).toHaveLength(1);
-    expect(started[0]).toMatchObject({ seed: 1, iteration: 5 });
+    expect(started[0]).toMatchObject({ seed: 1, iteration: 6 });
   });
 
   it('StrictMode 下でもカードを1枚配置できる（指摘1の回帰: updater 内の副作用で操作が握り潰されていた）', () => {
@@ -753,7 +753,7 @@ describe('useAshenRampartGame', () => {
       advanceUntilOutcome(result);
       const tallies = log.events.filter((e) => e.kind === 'run_tally');
       expect(tallies).toHaveLength(1);
-      expect(tallies[0]).toMatchObject({ iteration: 5 });
+      expect(tallies[0]).toMatchObject({ iteration: 6 });
     });
 
     it('決着後に外部からの再レンダーで run_tally effect が再実行されても2件目は記録されない', () => {
@@ -1051,7 +1051,7 @@ describe('useAshenRampartGame', () => {
 
       const tally = log.events.find((e) => e.kind === 'run_tally');
       expect(tally).toMatchObject({
-        iteration: 5,
+        iteration: 6,
         manualDiscards: 2,
         inspectOpens: 2,
         rejectedTarget: 1,
@@ -1119,6 +1119,84 @@ describe('useAshenRampartGame', () => {
       const opened = log.events.filter((e) => e.kind === 'inspect_opened');
       expect(opened).toHaveLength(1);
       expect(opened[0]).toMatchObject({ cardId: placedCardId });
+    });
+  });
+
+  describe('再生に必要なログ（反復6・設計書 §4.4）', () => {
+    it('燠火の再点火が emberIndex 付きで記録される', () => {
+      const log = createMockPlayLog();
+      const { result } = renderHook(() =>
+        useAshenRampartGame({ cards: emberDeckCards(), seed: 59, playLog: log })
+      );
+      const emberHandIndex = result.current.state.deck.hand.findIndex(
+        (id) => id === 'ember-blast'
+      );
+      expect(emberHandIndex).toBeGreaterThanOrEqual(0);
+
+      // 業火を選択し、設置可能マスの先頭に置く
+      act(() => result.current.selectCard(emberHandIndex));
+      const placePos = result.current.placeableCells[0];
+      expect(placePos).toBeDefined();
+      act(() => result.current.interactCell(placePos!));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+      expect(result.current.state.embers).toHaveLength(1);
+      const emberPos = result.current.state.embers[0]!.pos;
+
+      // クールダウンが明けるまで進める（業火の再点火間隔は300 tick）
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS * 300);
+      });
+      expect(result.current.state.embers[0]!.cooldownLeft).toBe(0);
+
+      // 選択なしでクリックすると再点火され、reactivated が emberIndex 付きで記録される
+      act(() => result.current.interactCell(emberPos));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+      const events = log.events.filter((e) => e.kind === 'reactivated');
+      expect(events[0]).toMatchObject({ emberIndex: 0 });
+    });
+
+    it('手動の捨札が handIndex 付きで記録される', () => {
+      const log = createMockPlayLog();
+      const { result } = renderHook(() =>
+        useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log })
+      );
+      act(() => result.current.discardCard(0));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+      const events = log.events.filter((e) => e.kind === 'card_discarded_manual');
+      expect(events[0]).toHaveProperty('handIndex');
+      expect(events[0]).toMatchObject({ handIndex: 0 });
+    });
+
+    it('山札が尽きた瞬間が手札とマナ付きで1度だけ記録される', () => {
+      // swift・seed1 は12枚デッキ（初期手札3枚・山札9枚）で、ドロー間隔は40 tick。
+      // 決着（約700 tick）より十分手前で山札が尽きる。
+      const MAX_DRAW_PILE_ADVANCE_TICKS = 500;
+      const DRAW_PILE_ADVANCE_STEP_TICKS = 10;
+      const log = createMockPlayLog();
+      const { result } = renderHook(() =>
+        useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log })
+      );
+      for (
+        let advanced = 0;
+        advanced < MAX_DRAW_PILE_ADVANCE_TICKS && result.current.state.deck.drawPile.length > 0;
+        advanced += DRAW_PILE_ADVANCE_STEP_TICKS
+      ) {
+        act(() => {
+          jest.advanceTimersByTime(TICK_INTERVAL_MS * DRAW_PILE_ADVANCE_STEP_TICKS);
+        });
+      }
+      expect(result.current.state.deck.drawPile.length).toBe(0);
+
+      const events = log.events.filter((e) => e.kind === 'draw_pile_exhausted');
+      expect(events).toHaveLength(1);
+      expect(events[0]).toHaveProperty('hand');
+      expect(events[0]).toHaveProperty('mana');
     });
   });
 });

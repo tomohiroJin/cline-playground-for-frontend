@@ -51,6 +51,14 @@ const REJECTION_NOTICE_TICKS = 6;
  */
 const LIFE_LOSS_REASON_TICKS = 8;
 
+/**
+ * discardHandIndexQueueRef が空のときのフォールバック値（反復6）
+ *
+ * discardCard 以外から `discard` アクションは積まれないため、通常は
+ * 到達しない。到達した場合でも `handIndex` を欠番にせず記録は続ける。
+ */
+const UNKNOWN_DISCARD_HAND_INDEX = -1;
+
 export interface UseAshenRampartGameOptions {
   /** 使用するデッキ。構築 UI から渡す */
   cards: readonly string[];
@@ -125,6 +133,17 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
   const lastPreviewRef = useRef<string | undefined>(undefined);
   /** 直前に読み上げたウェーブ番号。切り替わった tick でだけ読み上げるためのガード */
   const lastAnnouncedWaveRef = useRef(0);
+  /**
+   * discardCard が押された順に手札添字を控えるキュー（反復6・設計書 §4.4）
+   *
+   * ドメインの `discarded` イベントは cardId しか持たない。`discardFromHand` は
+   * 添字で消すため、同名札が手札に複数あると cardId だけでは手札配列を
+   * 再現できない。discardCard はこのフックにおける唯一の入口で、捨札は
+   * 押された順に成立するため、先入れ先出しで対応付けられる。
+   */
+  const discardHandIndexQueueRef = useRef<number[]>([]);
+  /** 山札が尽きたことを記録済みかどうか。1度だけ記録するためのガード（反復6） */
+  const drawPileExhaustedLoggedRef = useRef(false);
 
   // ラン開始の記録（StrictMode の二重マウントでも1回）
   useEffect(() => {
@@ -254,7 +273,12 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
         });
       }
       if (event.kind === 'ember') {
-        logRef.current.record({ kind: 'reactivated', runId, tick: state.tick });
+        logRef.current.record({
+          kind: 'reactivated',
+          runId,
+          tick: state.tick,
+          emberIndex: event.emberIndex,
+        });
       }
       // 判定項目5（unitsLost）と ライフ内訳（lifeLostToLeak）を、判定者が
       // run_tally の集計値から独立に数え直せるようにする生ログ（最終レビュー指摘1）。
@@ -275,16 +299,40 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       // 手動の捨札は「押した回数」ではなくドメインが成立を認めた回数で残す
       // （最終レビュー指摘3）。run_tally.manualDiscards も同じイベントを数える。
       if (event.kind === 'discarded') {
+        const handIndex =
+          discardHandIndexQueueRef.current.shift() ?? UNKNOWN_DISCARD_HAND_INDEX;
         logRef.current.record({
           kind: 'card_discarded_manual',
           runId,
           cardId: event.cardId,
           tick: state.tick,
+          handIndex,
         });
       }
     });
     if (state.tick >= noticeUntilRef.current) setOverflowNotice(undefined);
   }, [state.events, state.tick, state.mana, runId]);
+
+  /**
+   * 山札が尽きた最初の tick を1度だけ記録する（反復6・設計書 §4.4 / §7.12）
+   *
+   * 反復5 の申し送り「山札枯渇時の手札の中身とマナ余剰」に記録経路が無かった。
+   * 枚数だけでは再生に足りないため、手札とマナ余剰を併せて残す。
+   * drawPile.length は0になった後も0のまま保たれるため、ガードは
+   * useRef のフラグだけで足りる（毎 tick 記録しない）。
+   */
+  useEffect(() => {
+    if (drawPileExhaustedLoggedRef.current) return;
+    if (state.deck.drawPile.length > 0) return;
+    drawPileExhaustedLoggedRef.current = true;
+    logRef.current.record({
+      kind: 'draw_pile_exhausted',
+      runId,
+      tick: state.tick,
+      hand: [...state.deck.hand],
+      mana: state.mana,
+    });
+  }, [state.deck.drawPile.length, state.deck.hand, state.mana, state.tick, runId]);
 
   // 次ウェーブ予告の記録（内容が切り替わった tick でだけ記録する。判定項目3
   // 「予告を見た後に配置を変えたか」の起点になるため、毎 tick 記録してはいけない）
@@ -413,11 +461,14 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
    * **ここでは記録しない。** 捨札が成立したかを知っているのはドメインだけで、
    * ここで数えると「押したが捨てられなかった」ぶんまで数えてしまう
    * （最終レビュー指摘3）。記録はドメインの `discarded` イベントを受けて行う。
+   * `handIndex` はドメインの `discarded` イベントに載らないため、押された順に
+   * discardHandIndexQueueRef へ控え、記録時に先入れ先出しで対応付ける（反復6）。
    */
   const discardCard = useCallback(
     (handIndex: number) => {
       if (isPaused || state.outcome !== 'playing') return;
       pendingRef.current.push({ kind: 'discard', handIndex });
+      discardHandIndexQueueRef.current.push(handIndex);
       // 手札は配列で、捨てると後続の札が前へ詰まる。選択中の札そのものを
       // 捨てたら選択解除、選択中より前を捨てたら選択位置も1つ前へずらさないと、
       // selectedIndex が別の実在カードを指したままになり、盤面クリックで
@@ -532,6 +583,8 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       tallyRef.current = emptyTally();
       setTally(tallyRef.current);
       inspectOpensRef.current = 0;
+      discardHandIndexQueueRef.current = [];
+      drawPileExhaustedLoggedRef.current = false;
       setRunSeed(seedToUse);
       const nextState = startRunWithDeck(cards, new SeededRandom(seedToUse));
       setState(nextState);

@@ -224,7 +224,7 @@ describe('AshenRampartGame', () => {
     await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
     const copiedJson = writeText.mock.calls[0][0] as string;
     const parsed = JSON.parse(copiedJson) as PlayLogExport;
-    expect(parsed.version).toBe(4);
+    expect(parsed.version).toBe(5);
     expect(parsed.events.some((e) => e.kind === 'run_started')).toBe(true);
     await screen.findByText('判定用の記録をコピーしました');
   });
