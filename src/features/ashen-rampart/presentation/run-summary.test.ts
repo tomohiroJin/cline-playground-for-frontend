@@ -222,7 +222,7 @@ describe('反復5 の集計項目', () => {
   it('手動の捨札は discarded イベントの件数で数える（押した回数ではない）', () => {
     const first = accumulateTick(
       emptyTally(),
-      stateWithEvents([{ kind: 'discarded', cardId: 'ballista' }]),
+      stateWithEvents([{ kind: 'discarded', cardId: 'ballista', handIndex: 0 }]),
       PLAINS_MAP
     );
     // 捨札の起きなかった tick では増えない

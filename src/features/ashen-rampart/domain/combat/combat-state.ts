@@ -112,8 +112,15 @@ export type TickEvent =
    * 短時間に2回押して手札 index がずれた場合、実際には捨てていないのに
    * カウントだけが増える（上振れ方向にしか誤らない）。
    * 成立を知っているのはドメインだけなので、ここでイベントとして名乗る。
+   *
+   * `handIndex`（反復6・設計書 §4.4）: 成立したときに実際に消えた添字。
+   * `discardFromHand` は添字で消すため、同名札が手札に複数あると cardId
+   * だけでは手札配列を再現できない。呼び出し側（presentation）はアクションを
+   * 積んだ時点の添字しか知らず、同一 tick に複数の捨札要求が来て一部が
+   * 不成立になった場合はその添字と成立結果がずれる。成立した添字を
+   * 知っているのはドメインだけなので、cardId と同様にここで名乗る。
    */
-  | { kind: 'discarded'; cardId: string }
+  | { kind: 'discarded'; cardId: string; handIndex: number }
   | { kind: 'played'; cardId: string; pos?: CellPos }
   | { kind: 'rejected'; reason: 'cooldown' | 'mana' | 'target' | 'occupied' | 'pending' };
 

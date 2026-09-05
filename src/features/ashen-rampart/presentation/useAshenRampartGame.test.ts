@@ -1123,6 +1123,30 @@ describe('useAshenRampartGame', () => {
   });
 
   describe('再生に必要なログ（反復6・設計書 §4.4）', () => {
+    /**
+     * 山札枯渇後も決着まで進めるための較正値。
+     * swift・seed1 は無配置で約700 tick 決着する
+     * （反復4 の advanceUntilOutcome と同じ較正）。
+     */
+    const MAX_ADVANCE_TICKS = 1200;
+    const ADVANCE_STEP_TICKS = 50;
+
+    const advanceUntilOutcome = (
+      result: { current: ReturnType<typeof useAshenRampartGame> }
+    ): void => {
+      for (let advanced = 0; advanced < MAX_ADVANCE_TICKS; advanced += ADVANCE_STEP_TICKS) {
+        if (result.current.state.outcome !== 'playing') return;
+        act(() => {
+          jest.advanceTimersByTime(TICK_INTERVAL_MS * ADVANCE_STEP_TICKS);
+        });
+      }
+      if (result.current.state.outcome === 'playing') {
+        throw new Error(
+          `ランが ${MAX_ADVANCE_TICKS} tick 進めても決着しませんでした（ラン長の較正を確認すること）`
+        );
+      }
+    };
+
     it('燠火の再点火が emberIndex 付きで記録される', () => {
       const log = createMockPlayLog();
       const { result } = renderHook(() =>
@@ -1173,6 +1197,34 @@ describe('useAshenRampartGame', () => {
       expect(events[0]).toMatchObject({ handIndex: 0 });
     });
 
+    /**
+     * 反復6 最終レビュー指摘1 の再発防止テスト。
+     *
+     * 同一 tick 内（tick を進める前）に添字0・添字2 の捨札を続けて要求する。
+     * 添字0 の捨札が先に処理されて手札が3枚→2枚に詰まるため、添字2 は
+     * 処理時点で範囲外になり黙って不成立になる（ドメインの `applyDiscard`）。
+     * `handIndex` をドメインの `discarded` イベントから直接取るようになった
+     * ため、成立しなかった添字2 が誤って記録に紛れ込まないことを確認する。
+     */
+    it('同一 tick に複数回 discardCard を呼んでも、成立した1件だけが成立時の handIndex で記録される', () => {
+      const log = createMockPlayLog();
+      const { result } = renderHook(() =>
+        useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log })
+      );
+      expect(result.current.state.deck.hand.length).toBe(3);
+
+      // tick を進めずに連続で要求する（どちらも同じ tick で処理される）
+      act(() => result.current.discardCard(0));
+      act(() => result.current.discardCard(2));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+
+      const events = log.events.filter((e) => e.kind === 'card_discarded_manual');
+      expect(events).toHaveLength(1);
+      expect(events[0]).toMatchObject({ handIndex: 0 });
+    });
+
     it('山札が尽きた瞬間が手札とマナ付きで1度だけ記録される', () => {
       // swift・seed1 は12枚デッキ（初期手札3枚・山札9枚）で、ドロー間隔は40 tick。
       // 決着（約700 tick）より十分手前で山札が尽きる。
@@ -1191,6 +1243,14 @@ describe('useAshenRampartGame', () => {
           jest.advanceTimersByTime(TICK_INTERVAL_MS * DRAW_PILE_ADVANCE_STEP_TICKS);
         });
       }
+      expect(result.current.state.deck.drawPile.length).toBe(0);
+
+      // 尽きた直後の1コミットで止まると、drawPileExhaustedLoggedRef のガードを
+      // 消しても本テストは落ちない（尽きた条件を満たすコミットが1回しか
+      // 起きていないため）。ガードの実効性を見るには、尽きた後も
+      // drawPile.length === 0 のまま複数コミットさせる必要がある
+      // （反復6 最終レビュー指摘3）。決着まで進めて何度も条件を満たさせる。
+      advanceUntilOutcome(result);
       expect(result.current.state.deck.drawPile.length).toBe(0);
 
       const events = log.events.filter((e) => e.kind === 'draw_pile_exhausted');

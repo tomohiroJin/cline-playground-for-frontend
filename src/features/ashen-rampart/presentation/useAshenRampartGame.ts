@@ -51,14 +51,6 @@ const REJECTION_NOTICE_TICKS = 6;
  */
 const LIFE_LOSS_REASON_TICKS = 8;
 
-/**
- * discardHandIndexQueueRef が空のときのフォールバック値（反復6）
- *
- * discardCard 以外から `discard` アクションは積まれないため、通常は
- * 到達しない。到達した場合でも `handIndex` を欠番にせず記録は続ける。
- */
-const UNKNOWN_DISCARD_HAND_INDEX = -1;
-
 export interface UseAshenRampartGameOptions {
   /** 使用するデッキ。構築 UI から渡す */
   cards: readonly string[];
@@ -133,15 +125,6 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
   const lastPreviewRef = useRef<string | undefined>(undefined);
   /** 直前に読み上げたウェーブ番号。切り替わった tick でだけ読み上げるためのガード */
   const lastAnnouncedWaveRef = useRef(0);
-  /**
-   * discardCard が押された順に手札添字を控えるキュー（反復6・設計書 §4.4）
-   *
-   * ドメインの `discarded` イベントは cardId しか持たない。`discardFromHand` は
-   * 添字で消すため、同名札が手札に複数あると cardId だけでは手札配列を
-   * 再現できない。discardCard はこのフックにおける唯一の入口で、捨札は
-   * 押された順に成立するため、先入れ先出しで対応付けられる。
-   */
-  const discardHandIndexQueueRef = useRef<number[]>([]);
   /** 山札が尽きたことを記録済みかどうか。1度だけ記録するためのガード（反復6） */
   const drawPileExhaustedLoggedRef = useRef(false);
 
@@ -298,15 +281,18 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       }
       // 手動の捨札は「押した回数」ではなくドメインが成立を認めた回数で残す
       // （最終レビュー指摘3）。run_tally.manualDiscards も同じイベントを数える。
+      // handIndex も event.handIndex（ドメインが成立時に名乗った添字）を
+      // そのまま使う（反復6・最終レビュー指摘1）。呼び出し時の添字を
+      // presentation 側で控えて対応付けると、同一 tick に複数の捨札要求が
+      // 来て一部が不成立になった場合にずれる（discardFromHand は添字で
+      // 手札を詰めるため、先に成立した捨札が後続の添字を無効化しうる）。
       if (event.kind === 'discarded') {
-        const handIndex =
-          discardHandIndexQueueRef.current.shift() ?? UNKNOWN_DISCARD_HAND_INDEX;
         logRef.current.record({
           kind: 'card_discarded_manual',
           runId,
           cardId: event.cardId,
           tick: state.tick,
-          handIndex,
+          handIndex: event.handIndex,
         });
       }
     });
@@ -461,14 +447,16 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
    * **ここでは記録しない。** 捨札が成立したかを知っているのはドメインだけで、
    * ここで数えると「押したが捨てられなかった」ぶんまで数えてしまう
    * （最終レビュー指摘3）。記録はドメインの `discarded` イベントを受けて行う。
-   * `handIndex` はドメインの `discarded` イベントに載らないため、押された順に
-   * discardHandIndexQueueRef へ控え、記録時に先入れ先出しで対応付ける（反復6）。
+   * `handIndex` も event 側（`event.handIndex`）から取る（反復6）。ここで
+   * 押された添字を控えて後で対応付ける方式は、同一 tick に複数の捨札要求が
+   * 積まれ一部が不成立になった場合にずれるため採らない
+   * （反復6 最終レビュー指摘1・`combat-state.ts` の `discarded` イベントの
+   * docstring を参照）。
    */
   const discardCard = useCallback(
     (handIndex: number) => {
       if (isPaused || state.outcome !== 'playing') return;
       pendingRef.current.push({ kind: 'discard', handIndex });
-      discardHandIndexQueueRef.current.push(handIndex);
       // 手札は配列で、捨てると後続の札が前へ詰まる。選択中の札そのものを
       // 捨てたら選択解除、選択中より前を捨てたら選択位置も1つ前へずらさないと、
       // selectedIndex が別の実在カードを指したままになり、盤面クリックで
@@ -583,7 +571,6 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       tallyRef.current = emptyTally();
       setTally(tallyRef.current);
       inspectOpensRef.current = 0;
-      discardHandIndexQueueRef.current = [];
       drawPileExhaustedLoggedRef.current = false;
       setRunSeed(seedToUse);
       const nextState = startRunWithDeck(cards, new SeededRandom(seedToUse));
