@@ -1,5 +1,5 @@
 import {
-  createExpedition, currentStage, completeStage, presentOffer, chooseAcquisition,
+  createExpedition, currentStage, completeStage, presentOffer, chooseAcquisition, declineOffer,
 } from './expedition-state';
 import { PROVISIONAL_STAGES } from './stage-pool';
 import { LIFE_INITIAL, STAGE_CLEAR_HEAL } from '../combat/combat-state';
@@ -108,5 +108,20 @@ describe('獲得', () => {
   it('提示に無い札を選ぶと契約違反', () => {
     const exp = presentOffer(completeStage(start(), { won: true, lifeLeft: 8 }), ['beacon']);
     expect(() => chooseAcquisition(exp, 'catapult')).toThrow('提示されていないカードです');
+  });
+});
+
+describe('提示を断る（較正の noAcquire 用）', () => {
+  it('デッキが増えずに stage フェーズへ戻る', () => {
+    const offered = presentOffer(completeStage(start(), { won: true, lifeLeft: 8 }), ['beacon']);
+    const after = declineOffer(offered);
+    expect(after.deckCards).toHaveLength(deck12.length);
+    expect(after.acquired).toEqual([]);
+    expect(after.phase).toBe('stage');
+    expect(after.offer).toEqual([]);
+  });
+
+  it('stage フェーズで断ろうとすると契約違反', () => {
+    expect(() => declineOffer(start())).toThrow('獲得の提示中ではありません');
   });
 });

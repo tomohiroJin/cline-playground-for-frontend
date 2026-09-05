@@ -114,6 +114,20 @@ export const presentOffer = (
   return { ...exp, offer: [...offer] };
 };
 
+/**
+ * 3択を断る
+ *
+ * **UI には出さない。** 較正で「獲得しない腕」を回すために要る
+ * （設計書 §8.2 の `noAcquire`）。獲得しない選択を人間に見せると
+ * 判定項目2b の分母が壊れる。
+ */
+export const declineOffer = (exp: ExpeditionState): ExpeditionState => {
+  if (exp.phase !== 'offer') {
+    throw new Error('獲得の提示中ではありません');
+  }
+  return { ...exp, offer: [], phase: 'stage' };
+};
+
 /** 3択から1枚を選ぶ */
 export const chooseAcquisition = (exp: ExpeditionState, cardId: string): ExpeditionState => {
   if (exp.phase !== 'offer') {
