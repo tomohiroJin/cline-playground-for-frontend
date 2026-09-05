@@ -54,4 +54,14 @@ describe('drawStages', () => {
     );
     expect(combos.size).toBe(8);
   });
+
+  it('rng が 1 を返しても添字が範囲外にならない（丸めのガード）', () => {
+    // RandomFn の契約は 0 以上 1 未満だが、テスト用スタブや将来の実装が
+    // 1 を返しても壊れないようにする。clamp が無いと添字が候補数と等しくなり
+    // undefined になって「層Nのステージが定義されていません」で落ちる。
+    const stages = drawStages(scriptedRng([1]));
+    expect(stages).toHaveLength(3);
+    stages.forEach((stage) => expect(stage).toBeDefined());
+    expect(stages[0]?.id).toBe(stagesOfTier(1)[1]?.id);
+  });
 });
