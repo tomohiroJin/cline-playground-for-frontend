@@ -1378,7 +1378,6 @@ applyDamage(hpById, sourceById, enemy, rawDamage, source)
 | `card_played` | ＋ `expeditionId` / `stageIndex`（既存の `mana` `x` `y` を維持） | **`I2b` `I3` `I6`** |
 | `card_offered` | `offered[3]` / **`nextStageDemands[]`** | **`I1`** |
 | `card_acquired` | `cardId` ＋ **`offered[3]`（選ばなかった2枚）** ＋ `nextStageDemands[]` | **`I2b`** |
-| **`levy_chosen`** | `optionIndex` / `offered[]` | **完全再生（§4.4）** |
 | `reactivated` | ＋ **`emberIndex`** | 完全再生 |
 | `card_discarded_manual` | ＋ **`handIndex`** | 完全再生 |
 | `card_discarded_overflow` | `origin`（PR #208 で追加済み） | §9.3 |
@@ -1394,14 +1393,21 @@ applyDamage(hpById, sourceById, enemy, rawDamage, source)
 **初版はこれを正しく書きながら、その情報を使う判定項目を1つも持っていなかった。**
 `I2b`（§7.3.2）が初めてこれを使う。
 
-### 9.2 完全再生に必要な3件（§4.4）
+### 9.2 完全再生に必要な2件（§4.4）
 
-`levy_chosen` の新設、`reactivated` への `emberIndex`、`card_discarded_manual` への `handIndex`。
-**§10.2 の完全再生テストは、`choose-levy` と `reactivate` を含む操作列で書く**
+`reactivated` への `emberIndex`、`card_discarded_manual` への `handIndex`。
+**§10.2 の完全再生テストは、`reactivate` を含む操作列で書く**
 （含めなければテストが空虚になる）。
 
-なお §4.6 で徴発をデッキプールから外したが、**カード定義としては残す**ので
-`levy_chosen` は必要である（較正で20枚時代のデッキを再現するときに使う）。
+**⚠️ `levy_chosen` は入れない。** 初版は §4.6 で徴発をデッキプールから外した後も
+「カード定義としては残すので、較正で20枚時代のデッキを再現するときに使う」という
+理由で `levy_chosen` を表に残していたが、この理由は誤りだった。`levy_chosen` は
+**プレイログ**イベントで、産出者は UI（`useAshenRampartGame` の `chooseLevy`）だけ
+である。一方 `balance.test.ts` の較正ハーネスはプレイログを1件も出さない
+（`domain/combat/run-simulation.ts` で完結する純粋な `CombatState` シミュレーション）。
+「較正で使う」という経路はそもそも存在しない。産出者がいないイベントを表に残す
+意味はなく、**徴発を12枚経済へ戻す反復7 で、そのとき同時に入れる**
+（§6「徴発の12枚経済への再設計」の持ち越し参照）。
 
 ### 9.3 溢れとライフ持ち越しの相互作用（初版が見落としていた）
 
@@ -1435,8 +1441,9 @@ applyDamage(hpById, sourceById, enemy, rawDamage, source)
   ——`alive: false` を使うテストだけでは tick 内蘇生を検出できない（§5.4.2）
 - **守り手の回復**: 「その tick に壊れる守り手が、修復槌で救われる」（処理順が正しいときだけ通る）
 - **`hitPattern` 共用体**: `hasMassAnswer` が `scatter` を拾うこと（§5.5.1）
-- **遠征の完全再生テスト**: 同一シード＋同一の獲得選択＋**`choose-levy` と `reactivate` を含む**
+- **遠征の完全再生テスト**: 同一シード＋同一の獲得選択＋**`reactivate` を含む**
   同一操作列で、3ステージの決着 tick・勝敗・`unit_lost` の座標まで一致すること
+  （`choose-levy` は徴発が retired のため含めない）
 - **抽選の一様性**（1000シード。§7.3.1）
 
 ### 10.3 既存テストの移行（`DECK_SIZE` 20→12・魔力炉の上限）
