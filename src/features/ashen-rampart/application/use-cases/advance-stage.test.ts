@@ -2,7 +2,7 @@ import { advanceStage } from './advance-stage';
 import { startExpedition } from './start-expedition';
 import { PRESET_DECKS } from '../../domain/cards/card-pool';
 import { OFFER_SIZE } from '../../domain/expedition/acquisition';
-import { chooseAcquisition } from '../../domain/expedition/expedition-state';
+import { chooseAcquisition, declineOffer } from '../../domain/expedition/expedition-state';
 
 const preset = PRESET_DECKS.swift.cards;
 
@@ -45,6 +45,17 @@ describe('advanceStage', () => {
     const first = exp.offer;
     // chooseAcquisition を通すと acquired が伸び、次の offerIndex が進む。
     exp = chooseAcquisition(exp, first[0]!);
+    const second = advanceStage(exp, { won: true, lifeLeft: 7 }).offer;
+    expect(second).not.toEqual(first);
+  });
+
+  it('獲得しない腕でも、1回目と2回目の提示は別（添字が獲得回数ではない）', () => {
+    // 獲得の回数を添字にすると、獲得しない腕（較正の noAcquire）は添字が
+    // 0 のまま進まず、同じ3択が2回出る。腕によって提示が変わると
+    // G1（設計書 §8.2）の比較が成立しない（Task 15 が実測で発見した交絡）。
+    let exp = advanceStage(startExpedition(preset, 7), { won: true, lifeLeft: 9 });
+    const first = exp.offer;
+    exp = declineOffer(exp); // 獲得せずに次のステージへ
     const second = advanceStage(exp, { won: true, lifeLeft: 7 }).offer;
     expect(second).not.toEqual(first);
   });
