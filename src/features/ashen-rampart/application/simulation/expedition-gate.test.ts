@@ -13,6 +13,15 @@
  *
  * **このファイルは判断を下さない。** 数値を測って出力するだけであり、
  * 通過・不通過の判断とその設計書への追記は人間（コントローラ）が行う。
+ *
+ * **この測定は撤回済みである（設計書 §8.2.4）。**
+ *
+ * 事前登録した反実仮想を実行しておらず、4戦略の勝率を比べただけだった。
+ * n=40 の検出力は 8.1% で、差があるともないとも言えなかった。
+ * やり直しは `expedition-gate-redo.manual.test.ts` で行う。
+ *
+ * 記録として残すが CI には常駐させない（31秒かかる。§8.3 の較正予算は60秒）。
+ * 実行するには: ASHEN_RAMPART_GATE_LEGACY=1 npx jest expedition-gate
  */
 import { greedyStrategy } from '../../domain/combat/run-simulation';
 import { PRESET_DECKS } from '../../domain/cards/card-pool';
@@ -23,6 +32,7 @@ import {
 import { createSeededRandom } from '../../infrastructure/random/seeded-random';
 import type { SeededRandomFactory } from '../ports/random-port';
 
+const isLegacyEnabled = process.env.ASHEN_RAMPART_GATE_LEGACY === '1';
 const randomFactory: SeededRandomFactory = createSeededRandom;
 
 // 4腕 × 20シード × 2プリセット × 3ステージ ≒ 480遠征を回すため、既定の5秒では足りない
@@ -48,7 +58,7 @@ const measure = (label: string, acquire: AcquireStrategy) => {
   };
 };
 
-describe('G1: 獲得の測定可能性ゲート', () => {
+(isLegacyEnabled ? describe : describe.skip)('G1: 獲得の測定可能性ゲート', () => {
   it('4つの腕を測って表に出す', () => {
     let seedCounter = 0;
     const rng = () => {
