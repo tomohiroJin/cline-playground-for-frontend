@@ -8,7 +8,12 @@
  *
  * 帰無仮説は「不一致ペアは対称」。`X ~ Binomial(b + c, 0.5)` の両側正確 p 値を返す。
  *
- * `2^n` を直接扱わない。`b + c` は500 に達しうるので対数空間で足す。
+ * **`2^n` と `n!` を直接扱わない。** `b + c` は500 に達しうるので、
+ * 二項係数は対数（`logGamma`）で計算し、`2^-n` も対数のまま足し込んでから
+ * `Math.exp` で1項ずつ戻す。**総和そのものは通常の線形加算である**
+ * （log-sum-exp は使っていない）。各項は 1 以下なので、この加算で桁あふれは起きない。
+ * 素朴に `n! / (k!(n-k)!)` を計算すると n=500 で `Infinity/Infinity` となり NaN になる
+ * ——`mcnemar.test.ts` の「不一致数が大きくても桁あふれしない（b+c = 500）」がそれを守る。
  */
 
 /** 対数ガンマ関数（Lanczos 近似）。二項係数を対数で扱うために使う */
@@ -48,7 +53,8 @@ export const mcnemarExactP = (b: number, c: number): number => {
   const n = b + c;
   if (n === 0) return 1;
 
-  // 小さいほうの裾を対数空間で足す
+  // 小さいほうの裾を足す。各項は対数で組み立ててから `Math.exp` で戻す
+  // （総和は線形加算。上の docstring を参照）
   const lower = Math.min(b, c);
   const logHalfPowN = -n * Math.LN2;
   let tail = 0;
