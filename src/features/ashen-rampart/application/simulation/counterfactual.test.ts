@@ -112,6 +112,16 @@ describe('runCounterfactual（最後の獲得だけを差し替えた再生）',
         ...base, initialDeck: heavy, seed,
       });
       expect(pair.lastTaken).toBeDefined();
+      // **発火要因を要因B（!noExtraOffers）に固定する。**
+      // stagesCleared < 2 は「実ランがステージ2 までに敗北した」ことを意味し、
+      // そのとき提示は1回しか起きていないので lastOfferIndex 0 は最後の提示であり、
+      // `isLastOffer` は必ず true。したがって isClean=false の原因は
+      // `noExtraOffers` 以外にありえない。
+      //
+      // **この2行が無いと、将来この組の発火要因が要因A（!isLastOffer）へ移ったとき、**
+      // **テストは緑のまま `noExtraOffers` 節が無防備に戻る**（レビュー指摘 R1）。
+      expect(pair.lastOfferIndex).toBe(0);
+      expect(pair.actual.stagesCleared).toBeLessThan(2);
       expect(pair.isClean).toBe(false);
     });
   });
