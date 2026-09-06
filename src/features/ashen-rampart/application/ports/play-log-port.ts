@@ -1,5 +1,5 @@
 /**
- * 灰燼の城壁 - 行動ログポート（スキーマ v4）
+ * 灰燼の城壁 - 行動ログポート（スキーマ v5）
  *
  * 反復0の教訓により、記録する項目はすべて判定に使う。
  * 判定に使わない項目は記録しない（設計書 §11 ログスキーマ v2）。
@@ -8,7 +8,7 @@
 import type { OverflowOrigin } from '../../domain/combat/combat-state';
 
 /** 現在の反復番号。反復を進めるたびに必ず更新する */
-export const CURRENT_ITERATION = 5;
+export const CURRENT_ITERATION = 6;
 
 export type PlayLogEventBody =
   | {
@@ -38,13 +38,25 @@ export type PlayLogEventBody =
       origin: OverflowOrigin;
     }
   | { kind: 'wave_preview_shown'; runId: string; tick: number; content: string }
-  | { kind: 'reactivated'; runId: string; tick: number }
+  /**
+   * 燠火の再点火（反復6 で `emberIndex` を追加）
+   *
+   * tick だけでは、燠火が2基以上あるときにどちらを点けたか分からず、
+   * **操作列からランを再生できない**（設計書 §4.4）。
+   */
+  | { kind: 'reactivated'; runId: string; tick: number; emberIndex: number }
   | { kind: 'paused'; runId: string; tick: number }
   | { kind: 'resumed'; runId: string; tick: number }
   | { kind: 'run_ended'; runId: string; outcome: 'won' | 'lost'; tick: number; handRemaining: string[] }
   | { kind: 'run_note'; runId: string; text: string }
   | { kind: 'inspect_opened'; runId: string; cardId: string; tick: number }
-  | { kind: 'card_discarded_manual'; runId: string; cardId: string; tick: number }
+  /**
+   * 手動の捨札（反復6 で `handIndex` を追加）
+   *
+   * `discardFromHand` は添字で消すため、同名札が手札に複数あると
+   * cardId だけでは手札配列を再現できず、以後の添字解釈が全部ずれる。
+   */
+  | { kind: 'card_discarded_manual'; runId: string; cardId: string; tick: number; handIndex: number }
   /**
    * 守り手が壊されて盤面から消えた（反復5・最終レビュー指摘1）
    *
@@ -58,6 +70,14 @@ export type PlayLogEventBody =
   | { kind: 'unit_lost'; runId: string; cardId: string; tick: number; x: number; y: number }
   /** 敵が砦に到達した（漏れ）。`run_tally.lifeLostToLeak` を数え直すための生イベント */
   | { kind: 'enemy_leaked'; runId: string; tick: number }
+  /**
+   * 山札が尽きた瞬間（反復6 で新設）
+   *
+   * 反復5 の申し送り「山札枯渇時の手札の中身とマナ余剰」は、
+   * **記録経路が無いまま観察項目に載っていた**（設計書 §7.12）。
+   * 枚数だけでは足りず、中身と余剰資源を併せて見る必要がある。
+   */
+  | { kind: 'draw_pile_exhausted'; runId: string; tick: number; hand: string[]; mana: number }
   | {
       /**
        * 決着時の集計スナップショット（反復4で追加、反復5でスキーマ v4 へ拡張）

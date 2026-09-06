@@ -42,13 +42,15 @@ describe('startRun', () => {
   it('プリセットごとに構成が変わる', () => {
     const swift = startRun('swift', new SeededRandom(1));
     const heavy = startRun('heavy', new SeededRandom(1));
-    const countReactor = (cards: string[]) => cards.filter((c) => c === 'reactor').length;
     const all = (s: typeof swift) => [...s.deck.hand, ...s.deck.drawPile];
-    // Task 14 再較正: 配置クールダウンが魔力炉だけになりマナが唯一の律速になったため、
-    // 8枚は過剰になった（盤面3〜4基で消費レートが飽和する）。速攻型4枚・重厚型5枚へ減らし、
-    // 空いた枠は石壁に充てている。枚数が違うこと自体がプリセットの性格差でもある
-    expect(countReactor(all(swift))).toBe(4);
-    expect(countReactor(all(heavy))).toBe(5);
+    // 反復6 で12枚版に作り直した際、魔力炉は両プリセットとも3枚で揃った
+    // （マナの律速が魔力炉だけになったのは変わらないが、12枚では両者とも
+    // 25%が上限になる）。プリセットの性格差は魔力炉の枚数ではなく、
+    // 主戦力の構成（速攻型は徹甲弩1枚、重厚型は徹甲弩2枚）に表れる
+    const countPiercer = (cards: string[]) => cards.filter((c) => c === 'piercer').length;
+    expect(countPiercer(all(swift))).toBe(1);
+    expect(countPiercer(all(heavy))).toBe(2);
+    expect([...all(swift)].sort()).not.toEqual([...all(heavy)].sort());
   });
 
   it('未知のプリセットIDは契約違反として例外', () => {
@@ -75,13 +77,17 @@ describe('startRunWithDeck', () => {
   });
 
   it('構築規則を満たさないデッキは契約違反として例外', () => {
-    expect(() => startRunWithDeck(cards.slice(0, 19), new SeededRandom(1))).toThrow(
+    expect(() => startRunWithDeck(cards.slice(0, DECK_SIZE - 1), new SeededRandom(1))).toThrow(
       'デッキが構築規則を満たしていません'
     );
   });
 
   it('例外メッセージに違反理由が含まれる', () => {
-    expect(() => startRunWithDeck(cards.slice(0, 19), new SeededRandom(1))).toThrow(/20/);
+    // toThrow は文字列を渡すと部分一致で判定するため、RegExp を組み立てる必要はない
+    // （security/detect-non-literal-regexp を避ける）
+    expect(() => startRunWithDeck(cards.slice(0, DECK_SIZE - 1), new SeededRandom(1))).toThrow(
+      String(DECK_SIZE)
+    );
   });
 });
 

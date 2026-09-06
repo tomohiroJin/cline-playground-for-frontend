@@ -125,6 +125,8 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
   const lastPreviewRef = useRef<string | undefined>(undefined);
   /** 直前に読み上げたウェーブ番号。切り替わった tick でだけ読み上げるためのガード */
   const lastAnnouncedWaveRef = useRef(0);
+  /** 山札が尽きたことを記録済みかどうか。1度だけ記録するためのガード（反復6） */
+  const drawPileExhaustedLoggedRef = useRef(false);
 
   // ラン開始の記録（StrictMode の二重マウントでも1回）
   useEffect(() => {
@@ -254,7 +256,12 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
         });
       }
       if (event.kind === 'ember') {
-        logRef.current.record({ kind: 'reactivated', runId, tick: state.tick });
+        logRef.current.record({
+          kind: 'reactivated',
+          runId,
+          tick: state.tick,
+          emberIndex: event.emberIndex,
+        });
       }
       // 判定項目5（unitsLost）と ライフ内訳（lifeLostToLeak）を、判定者が
       // run_tally の集計値から独立に数え直せるようにする生ログ（最終レビュー指摘1）。
@@ -274,17 +281,44 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       }
       // 手動の捨札は「押した回数」ではなくドメインが成立を認めた回数で残す
       // （最終レビュー指摘3）。run_tally.manualDiscards も同じイベントを数える。
+      // handIndex も event.handIndex（ドメインが成立時に名乗った添字）を
+      // そのまま使う（反復6・最終レビュー指摘1）。呼び出し時の添字を
+      // presentation 側で控えて対応付けると、同一 tick に複数の捨札要求が
+      // 来て一部が不成立になった場合にずれる（discardFromHand は添字で
+      // 手札を詰めるため、先に成立した捨札が後続の添字を無効化しうる）。
       if (event.kind === 'discarded') {
         logRef.current.record({
           kind: 'card_discarded_manual',
           runId,
           cardId: event.cardId,
           tick: state.tick,
+          handIndex: event.handIndex,
         });
       }
     });
     if (state.tick >= noticeUntilRef.current) setOverflowNotice(undefined);
   }, [state.events, state.tick, state.mana, runId]);
+
+  /**
+   * 山札が尽きた最初の tick を1度だけ記録する（反復6・設計書 §4.4 / §7.12）
+   *
+   * 反復5 の申し送り「山札枯渇時の手札の中身とマナ余剰」に記録経路が無かった。
+   * 枚数だけでは再生に足りないため、手札とマナ余剰を併せて残す。
+   * drawPile.length は0になった後も0のまま保たれるため、ガードは
+   * useRef のフラグだけで足りる（毎 tick 記録しない）。
+   */
+  useEffect(() => {
+    if (drawPileExhaustedLoggedRef.current) return;
+    if (state.deck.drawPile.length > 0) return;
+    drawPileExhaustedLoggedRef.current = true;
+    logRef.current.record({
+      kind: 'draw_pile_exhausted',
+      runId,
+      tick: state.tick,
+      hand: [...state.deck.hand],
+      mana: state.mana,
+    });
+  }, [state.deck.drawPile.length, state.deck.hand, state.mana, state.tick, runId]);
 
   // 次ウェーブ予告の記録（内容が切り替わった tick でだけ記録する。判定項目3
   // 「予告を見た後に配置を変えたか」の起点になるため、毎 tick 記録してはいけない）
@@ -413,6 +447,11 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
    * **ここでは記録しない。** 捨札が成立したかを知っているのはドメインだけで、
    * ここで数えると「押したが捨てられなかった」ぶんまで数えてしまう
    * （最終レビュー指摘3）。記録はドメインの `discarded` イベントを受けて行う。
+   * `handIndex` も event 側（`event.handIndex`）から取る（反復6）。ここで
+   * 押された添字を控えて後で対応付ける方式は、同一 tick に複数の捨札要求が
+   * 積まれ一部が不成立になった場合にずれるため採らない
+   * （反復6 最終レビュー指摘1・`combat-state.ts` の `discarded` イベントの
+   * docstring を参照）。
    */
   const discardCard = useCallback(
     (handIndex: number) => {
@@ -532,6 +571,7 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       tallyRef.current = emptyTally();
       setTally(tallyRef.current);
       inspectOpensRef.current = 0;
+      drawPileExhaustedLoggedRef.current = false;
       setRunSeed(seedToUse);
       const nextState = startRunWithDeck(cards, new SeededRandom(seedToUse));
       setState(nextState);

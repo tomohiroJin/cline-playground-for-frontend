@@ -353,7 +353,7 @@ describe('能動的な捨て札', () => {
 
   // 判定項目1（手動で捨てた回数）は出口条件（設計書 §8.6）の一部である。
   // 成立したかを知っているのはドメインだけなので、ここでイベントとして名乗る。
-  it('捨札が成立すると discarded イベントに捨てた札の id が載る', () => {
+  it('捨札が成立すると discarded イベントに捨てた札の id と handIndex が載る', () => {
     const state = createCombatState(
       createDeck(['arrow-tower', 'reactor', 'reactor', 'reactor'], () => 0),
       noWave
@@ -362,7 +362,28 @@ describe('能動的な捨て札', () => {
     const next = stepTick(state, [{ kind: 'discard', handIndex: 0 }], PLAINS_MAP);
 
     expect(next.events.filter((e) => e.kind === 'discarded')).toEqual([
-      { kind: 'discarded', cardId: discarded },
+      { kind: 'discarded', cardId: discarded, handIndex: 0 },
+    ]);
+  });
+
+  /**
+   * 反復6 最終レビュー指摘 I2 の再発防止テスト。
+   *
+   * 上のテストは添字0 しか検査していないため、`applyDiscard` の
+   * `handIndex: action.handIndex` を `handIndex: 0`（定数）に変異させても
+   * 全テストが緑のまま通ってしまっていた。添字1 を捨てて、
+   * `discarded` イベントの handIndex が実際に1であることを検査する。
+   */
+  it('添字1を捨てても、その添字がそのまま discarded イベントに載る（handIndex が定数0に固定されていないことの検査）', () => {
+    const state = createCombatState(
+      createDeck(['arrow-tower', 'reactor', 'ballista'], () => 0),
+      noWave
+    );
+    const discarded = state.deck.hand[1];
+    const next = stepTick(state, [{ kind: 'discard', handIndex: 1 }], PLAINS_MAP);
+
+    expect(next.events.filter((e) => e.kind === 'discarded')).toEqual([
+      { kind: 'discarded', cardId: discarded, handIndex: 1 },
     ]);
   });
 
@@ -370,5 +391,37 @@ describe('能動的な捨て札', () => {
     const state = createCombatState(createDeck(['reactor'], () => 0), noWave);
     const next = stepTick(state, [{ kind: 'discard', handIndex: 99 }], PLAINS_MAP);
     expect(next.events.filter((e) => e.kind === 'discarded')).toEqual([]);
+  });
+
+  /**
+   * 反復6・設計書 §4.4 の再発防止テスト。
+   *
+   * 同一 tick に「添字0」「添字2」の捨札要求が積まれた場合、1件目の適用で
+   * 手札が3枚→2枚に詰まり、2件目の添字2は範囲外になって黙って不成立になる
+   * （applyDiscard の cardId === undefined ガード）。この状態で
+   * `discarded` イベントの handIndex が呼び出し時の添字をそのまま返すと、
+   * presentation 側のキュー方式では成立しなかった添字2が誤って
+   * 以後の記録に紛れ込む（反復6 最終レビュー指摘1）。
+   * handIndex をドメインが成立時の値として名乗ることで、この経路を塞ぐ。
+   */
+  it('同一 tick に複数の捨札要求があっても、成立した分だけ成立時の handIndex で discarded が出る', () => {
+    // 手札3枚（INITIAL_HAND_SIZE）ちょうど。添字2 を残す
+    const state = createCombatState(
+      createDeck(['arrow-tower', 'reactor', 'ballista'], () => 0),
+      noWave
+    );
+    const firstCardId = state.deck.hand[0];
+    const next = stepTick(
+      state,
+      [
+        { kind: 'discard', handIndex: 0 },
+        { kind: 'discard', handIndex: 2 },
+      ],
+      PLAINS_MAP
+    );
+
+    expect(next.events.filter((e) => e.kind === 'discarded')).toEqual([
+      { kind: 'discarded', cardId: firstCardId, handIndex: 0 },
+    ]);
   });
 });

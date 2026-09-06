@@ -112,8 +112,15 @@ export type TickEvent =
    * 短時間に2回押して手札 index がずれた場合、実際には捨てていないのに
    * カウントだけが増える（上振れ方向にしか誤らない）。
    * 成立を知っているのはドメインだけなので、ここでイベントとして名乗る。
+   *
+   * `handIndex`（反復6・設計書 §4.4）: 成立したときに実際に消えた添字。
+   * `discardFromHand` は添字で消すため、同名札が手札に複数あると cardId
+   * だけでは手札配列を再現できない。呼び出し側（presentation）はアクションを
+   * 積んだ時点の添字しか知らず、同一 tick に複数の捨札要求が来て一部が
+   * 不成立になった場合はその添字と成立結果がずれる。成立した添字を
+   * 知っているのはドメインだけなので、cardId と同様にここで名乗る。
    */
-  | { kind: 'discarded'; cardId: string }
+  | { kind: 'discarded'; cardId: string; handIndex: number }
   | { kind: 'played'; cardId: string; pos?: CellPos }
   | { kind: 'rejected'; reason: 'cooldown' | 'mana' | 'target' | 'occupied' | 'pending' };
 
@@ -149,6 +156,15 @@ export interface CombatState {
 export const LIFE_INITIAL = 12;
 
 /**
+ * ステージクリア時のライフ回復（反復6・設計書 §4.1）
+ *
+ * 遠征はライフを3ステージに持ち越すため、回復が無いと層1 の失点が
+ * そのまま層3 の敗北を決める。**較正対象**（段階D）だが、
+ * 「回復する」という符号自体は設計の一部なので 0 や負にはしない。
+ */
+export const STAGE_CLEAR_HEAL = 3;
+
+/**
  * 溢れ1枚あたりのライフの対価（反復5・設計書 §5）
  *
  * 手札が上限のときに引いた札は墓地へ落ちるが、そこに値段が付いていなかったため
@@ -179,13 +195,19 @@ export const COUNTDOWN_TICKS = 90;
 export const countdownLeftAt = (tick: number): number =>
   Math.max(0, COUNTDOWN_TICKS - tick);
 
-/** ラン開始時の戦闘状態を作る */
+/**
+ * ラン開始時の戦闘状態を作る
+ *
+ * `initialLife` は遠征がステージ間でライフを持ち越すために使う（反復6）。
+ * 省略時は `LIFE_INITIAL`——**既存の呼び出し110箇所を無変更で通すため。**
+ */
 export const createCombatState = (
   deck: DeckState,
-  waves: readonly WaveDefinition[]
+  waves: readonly WaveDefinition[],
+  initialLife: number = LIFE_INITIAL
 ): CombatState => ({
   tick: 0,
-  life: LIFE_INITIAL,
+  life: initialLife,
   mana: MANA_INITIAL,
   placeCooldown: 0,
   ticksToDraw: DRAW_INTERVAL_TICKS,

@@ -1,9 +1,16 @@
 /**
  * 灰燼の城壁 - デッキ構築（ブリーフィング）
  *
- * 14種から20枚ちょうど、同名3枚まで。検証はドメインの validateDeck に委ね、
+ * 構築で選べる13種（徴発は反復6で retired になり選べない）から12枚ちょうど、
+ * 同名3枚まで。検証はドメインの validateDeck に委ね、
  * UI は結果を表示するだけにする（UI 側でだけ検証すると
  * 「テストは通るが UI で組めないデッキ」が生まれる）。
+ *
+ * **一覧に出すのは `BUILDABLE_CARD_IDS` に限る**（反復6 最終レビュー指摘 I6）。
+ * `CARD_IDS`（retired も含む全種）を出すと、構築で選べないはずの徴発が
+ * 一覧に表示され追加ボタンも押せてしまい、「開始」を押すまで理由が
+ * 分からない体験になる。validateDeck が retired を弾くのは多層防御の
+ * 内側であり、外側（UI で隠す）が実装されていて初めて機能する。
  *
  * 各カードに「効かない相手」を出すのは、読む量が多い画面で
  * 「何のために積むか」の手がかりを与えるため（設計書 §6.1）。
@@ -11,7 +18,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import {
-  CARD_IDS,
+  BUILDABLE_CARD_IDS,
   DECK_SIZE,
   PRESET_DECKS,
   getCardDefinition,
@@ -199,7 +206,7 @@ export const DeckBuilder: React.FC<Props> = ({ onStart, initialCards, initialSee
       </Controls>
 
       <Cards>
-        {CARD_IDS.map((id) => {
+        {BUILDABLE_CARD_IDS.map((id) => {
           const card = getCardDefinition(id);
           const count = counts.get(id) ?? 0;
           return (

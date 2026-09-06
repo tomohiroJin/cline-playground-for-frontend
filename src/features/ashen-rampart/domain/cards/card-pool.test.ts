@@ -2,7 +2,8 @@
  * カードプールのテスト
  *
  * 設計書の数値がそのままデータになっていること、プリセットデッキが
- * デッキ規則（20枚・同名上限はカードごと。魔力炉のみ無制限）を満たすことを検証する。
+ * デッキ規則（DECK_SIZE=12・同名上限はカードごとに MAX_COPIES。反復6 で
+ * 魔力炉の例外を外したため、現在は例外を持つカードは無い）を満たすことを検証する。
  */
 import {
   getCardDefinition,
@@ -10,6 +11,9 @@ import {
   PRESET_DECKS,
   DECK_SIZE,
   maxCopiesOf,
+  availabilityOf,
+  BUILDABLE_CARD_IDS,
+  ACQUIRABLE_CARD_IDS,
 } from './card-pool';
 import { placementKindOf } from './card-definition';
 import { validateDeck } from './deck-builder';
@@ -172,9 +176,9 @@ describe('カードの軸（設計書 §7）', () => {
     expect(getCardDefinition('stone-wall').maxCopies ?? 3).toBe(3);
   });
 
-  it('魔力炉だけが同名上限を持たない', () => {
+  it('同名上限に例外を持つカードは無い', () => {
     const unlimited = CARD_IDS.filter((id) => (getCardDefinition(id).maxCopies ?? 3) > 3);
-    expect(unlimited).toEqual(['reactor']);
+    expect(unlimited).toEqual([]);
   });
 });
 
@@ -183,7 +187,7 @@ describe('プリセットデッキ', () => {
     expect(Object.keys(PRESET_DECKS)).toEqual(['swift', 'heavy']);
   });
 
-  it.each(Object.entries(PRESET_DECKS))('%s は20枚ちょうど', (_id, deck) => {
+  it.each(Object.entries(PRESET_DECKS))('%s は DECK_SIZE 枚ちょうど', (_id, deck) => {
     expect(deck.cards).toHaveLength(DECK_SIZE);
   });
 
@@ -205,11 +209,25 @@ describe('プリセットデッキ', () => {
 });
 
 describe('プリセットの重コスト帯（反復5）', () => {
-  it('どのプリセットもコスト4以上を2枚以上持つ', () => {
-    // 速攻型は最大コスト3 で、選んだ人に重い札の判断が発生しなかった（設計書 §2.4）
+  it('どのプリセットもコスト4以上を1枚以上持つ', () => {
+    // 速攻型は最大コスト3 で、選んだ人に重い札の判断が発生しなかった（設計書 §2.4）。
+    //
+    // **反復6 で12枚デッキに縮めたことで、この較正ガードの閾値を 2枚以上 → 1枚以上
+    // へ緩めた。** ブリーフ指定の12枚版プリセット構成が原因で不可避（swift は
+    // 徹甲弩1枚のみでコスト4以上を満たす）。
+    //
+    // **⚠️ swift は緩めた閾値ちょうどに張り付いている（コスト4以上は徹甲弩1枚の
+    // み。heavy は3枚で余裕がある）。これ以上は緩められない。** 1枚未満に緩める
+    // 選択肢は無く、緩めればこのガードが「重い判断が一度も発生しない」という
+    // 反復5 の欠陥を検出できなくなる。
+    //
+    // 12枚版の正確な閾値較正は段階D で行う（card-pool.ts の PRESET_DECKS docstring
+    // 参照）。**段階D でプリセットを組み直す際は、このガード（境界値に張り付いて
+    // いること）を必ず再検討すること。** ここでは「重い判断が一度も発生しない」
+    // という反復5 の欠陥へ逆戻りしていないことだけを確かめる。
     Object.values(PRESET_DECKS).forEach((preset) => {
       const heavy = preset.cards.filter((id) => getCardDefinition(id).cost >= 4);
-      expect(heavy.length).toBeGreaterThanOrEqual(2);
+      expect(heavy.length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -226,5 +244,37 @@ describe('プリセットの重コスト帯（反復5）', () => {
     const heavy = PRESET_DECKS.heavy;
     if (!swift || !heavy) throw new Error('プリセットが見つかりません');
     expect(averageCost(heavy.cards)).toBeGreaterThan(averageCost(swift.cards));
+  });
+});
+
+describe('カードの入手経路（反復6）', () => {
+  it('既定は buildable', () => {
+    expect(availabilityOf('arrow-tower')).toBe('buildable');
+  });
+
+  it('BUILDABLE_CARD_IDS は buildable のみを含む', () => {
+    BUILDABLE_CARD_IDS.forEach((id) => {
+      expect(availabilityOf(id)).toBe('buildable');
+    });
+  });
+
+  it('ACQUIRABLE_CARD_IDS は retired を含まず、buildable をすべて含む', () => {
+    ACQUIRABLE_CARD_IDS.forEach((id) => {
+      expect(availabilityOf(id)).not.toBe('retired');
+    });
+    BUILDABLE_CARD_IDS.forEach((id) => {
+      expect(ACQUIRABLE_CARD_IDS).toContain(id);
+    });
+  });
+
+  it('未知のカードIDは例外', () => {
+    expect(() => availabilityOf('no-such-card')).toThrow('未知のカードIDです');
+  });
+
+  it('徴発は構築にも獲得にも出ないが、定義は残っている（反復6 §4.6）', () => {
+    expect(availabilityOf('levy')).toBe('retired');
+    expect(BUILDABLE_CARD_IDS).not.toContain('levy');
+    expect(ACQUIRABLE_CARD_IDS).not.toContain('levy');
+    expect(CARD_IDS).toContain('levy');
   });
 });

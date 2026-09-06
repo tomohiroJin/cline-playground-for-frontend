@@ -147,7 +147,7 @@ const choosePlacement = (
  * 「その札を」「その位置に」置いてよいかを一括で問う。札だけを見る条件
  * （壁と対空だけ）と位置だけを見る条件（経路外だけ）の両方を1つの型で表せる。
  */
-type PlacementFilter = (card: CardDefinition, pos: CellPos) => boolean;
+export type PlacementFilter = (card: CardDefinition, pos: CellPos) => boolean;
 
 /**
  * 盤面に置かない札（呪文・徴発）を述語に問うときの便宜上の位置
@@ -251,6 +251,21 @@ const restrictedGreedy = (
 export const greedyStrategy: Strategy = (state, map) => restrictedGreedy(state, map, () => true);
 
 /**
+ * 述語で札を絞った素直な戦略を作る（反復6・設計書 §8.2.6(j)）
+ *
+ * `offPathOnlyStrategy` / `noPureGroundAttackStrategy` と同じ `restrictedGreedy` を
+ * 外から使えるようにしたもの。ステージが宣言した要求軸を実際に要求するかを
+ * 監査するために、「特定の軸を持つ札を置かない戦略」を遠征側で組み立てる。
+ *
+ * `restrictedGreedy` そのものを公開しないのは、`state` と `map` を毎回渡す形だと
+ * `Strategy` として使えず、呼び出し側が必ずラップすることになるため。
+ */
+export const greedyExcept =
+  (allow: PlacementFilter): Strategy =>
+  (state, map) =>
+    restrictedGreedy(state, map, allow);
+
+/**
  * 経路外にしか置かない戦略（対照条件・ブロックが必要か）
  *
  * ブロックという行為が本当に必要かを測る。**デッキ構成では検査できない**——
@@ -342,9 +357,11 @@ export const DEPLOY_ONLY_UNTIL_TICK = 680;
  *   全要求充足デッキは 7/20 まで落ちていた）
  *
  * **測れるようにするには供給を終盤へ伸ばすしかないが、それは設計書 §2.3 が
- * 意図的に残している「無補給の後半」を崩す。** 山札20枚・ドロー40tick 周期という
- * 経済そのものが「後半は配り終わっている」ことを前提にしており、この戦略の
- * 無力さはその経済の帰結である。較正で直せる種類のズレではない。
+ * 意図的に残している「無補給の後半」を崩す。** 当時（反復5）の山札20枚・
+ * ドロー40tick 周期という経済そのものが「後半は配り終わっている」ことを
+ * 前提にしており、この戦略の無力さはその経済の帰結である。較正で直せる
+ * 種類のズレではない。**反復6 でデッキは12枚になった。この経済的帰結が
+ * 12枚でも成り立つかは未検証——段階D の12枚較正で確かめること。**
  *
  * 反復5 では「配備が終わった後にも判断が残るか」を自動検証から**実プレイの判定へ
  * 移した**（設計書 §8.2 の判定項目5 `unitsLost`・6「最後に出した tick ÷ 決着 tick」）。

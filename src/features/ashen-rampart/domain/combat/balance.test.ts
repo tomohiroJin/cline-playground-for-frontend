@@ -15,16 +15,27 @@
  *
  * 反復2 までの較正（総HP728・全エントリがレーン0・魔力炉8枚）は2レーン化で
  * 前提ごと失われたため、閾値・対照条件をすべて測り直してある。
+ *
+ * ⚠️ このファイルは **20枚デッキ時代（反復1〜5）の較正**である。
+ *
+ * 反復6 で本番の DECK_SIZE は 12 になったが、ここは LEGACY_DECK_SIZE = 20 と
+ * 凍結した PLAINS_WAVES を使い続ける。理由は2つ:
+ *
+ * 1. 設計書 §8.5 の宿題（鴉の間隔 10 と 18 で撃破位置がどれだけ動くか）は
+ *    反復4・5 と同じ条件でしか測れない。**その baseline はここにしかない**
+ * 2. 遠征の較正は前提（ステージ長・デッキ枚数・ライフ持ち越し）が全部違う。
+ *    同じファイルに混ぜるとどちらの結論なのか読めなくなる
+ *
+ * 遠征の較正は段階D で expedition-balance.test.ts として別に作る。
  */
-import { startRun } from '../../application/use-cases/start-run';
 import { SeededRandom } from '../../infrastructure/random/seeded-random';
 import { PLAINS_MAP } from '../board/stage-map';
 import { PLAINS_WAVES, totalEnemyHp, type WaveDefinition } from './waves';
 import { getEnemySpec } from './enemies';
 import { createCombatState, LIFE_INITIAL } from './combat-state';
 import { createDeck } from '../cards/deck';
-import { validateDeck } from '../cards/deck-builder';
-import { DECK_SIZE, maxCopiesOf, getCardDefinition } from '../cards/card-pool';
+import { MAX_COPIES, getCardDefinition } from '../cards/card-pool';
+import { countByCard } from '../cards/deck-builder';
 import {
   simulateRun,
   greedyStrategy,
@@ -44,6 +55,32 @@ jest.setTimeout(120_000);
 const SEEDS = Array.from({ length: 20 }, (_, index) => index + 1);
 
 const repeat = (id: string, count: number): string[] => Array.from({ length: count }, () => id);
+
+/** 20枚デッキ時代の枚数。本番の DECK_SIZE（12）とは独立に凍結する */
+const LEGACY_DECK_SIZE = 20;
+
+/**
+ * 反復5 時点の同名上限
+ *
+ * **本番の `maxCopiesOf` は使えない。** 反復6 で魔力炉の例外を外したため、
+ * `OFF_PATH_DOMINANT_DECK`（魔力炉5）が「不正なデッキ」になってしまう。
+ * このファイルが記録しているのは**反復5 時点の実測**であり、
+ * そのとき魔力炉は無制限だった。
+ */
+const legacyMaxCopiesOf = (id: string): number =>
+  id === 'reactor' ? LEGACY_DECK_SIZE : MAX_COPIES;
+
+/** 20枚デッキが反復5 時点の構築規則を満たすか */
+const legacyDeckErrors = (cards: readonly string[]): string[] => {
+  const errors: string[] = [];
+  if (cards.length !== LEGACY_DECK_SIZE) errors.push(`枚数が${cards.length}`);
+  const counts = new Map<string, number>();
+  cards.forEach((id) => counts.set(id, (counts.get(id) ?? 0) + 1));
+  counts.forEach((count, id) => {
+    if (count > legacyMaxCopiesOf(id)) errors.push(`${id}が${count}枚`);
+  });
+  return errors;
+};
 
 /**
  * 同じ条件を測り直さないための記憶
@@ -84,24 +121,61 @@ const minCardsPlayedOf = (
   strategyName = 'greedy'
 ): number => Math.min(...runAllSeeds(cards, strategy, strategyName).map((r) => r.cardsPlayed));
 
-const presetWinsCache = new Map<string, number>();
+/**
+ * 反復5 時点（20枚デッキ時代）のプリセット
+ *
+ * 本番の PRESET_DECKS は反復6 で12枚版に作り直された。このファイルが
+ * 記録しているのは20枚時代の較正なので、本番を参照すると
+ * 「12枚デッキを1160tick の単一ランで回す」というどこにも存在しない構成を
+ * 測ることになる（実測 swift 2/20）。
+ *
+ * **並び順も当時のまま。** createDeck のシャッフルは入力配列の順序に依存し、
+ * 枚数構成が同一でも並べ替えるだけで実測勝率が動く。
+ *
+ * 12枚版プリセットの較正は段階D で expedition-balance.test.ts が行う。
+ */
+const LEGACY_PRESET_DECKS: Readonly<Record<string, readonly string[]>> = {
+  swift: [
+    ...repeat('reactor', 4),
+    ...repeat('stone-wall', 3),
+    ...repeat('arrow-tower', 2),
+    ...repeat('ballista', 3),
+    ...repeat('cannon-tower', 2),
+    ...repeat('spike-trap', 2),
+    ...repeat('piercer', 2),
+    'forge',
+    'levy',
+  ],
+  heavy: [
+    ...repeat('reactor', 5),
+    ...repeat('stone-wall', 3),
+    ...repeat('piercer', 2),
+    ...repeat('catapult', 2),
+    ...repeat('ballista', 2),
+    ...repeat('snare-net', 3),
+    ...repeat('beacon', 2),
+    'levy',
+  ],
+};
 
-/** プリセットの勝利数。startRun 経由でプリセット定義そのものを検証する */
+/**
+ * プリセットの勝利数。反復5 時点の20枚版プリセット（LEGACY_PRESET_DECKS）を
+ * 直接デッキ化して検証する。
+ *
+ * **本番の `startRun`（`PRESET_DECKS` 経由）は使えない。** 反復6 で本番の
+ * プリセットは12枚版に作り直され、かつ徴発（levy）が retired になったため、
+ * `startRun` → `startRunWithDeck` → `validateDeck` が20枚版プリセット
+ * （徴発を含む）を「構築規則を満たさない」で例外にする。`winsOf` と同じく
+ * `createDeck` + `createCombatState` を直接使うことでこれを回避する。
+ */
 const presetWinsOf = (
   presetId: string,
   strategy: Strategy = greedyStrategy,
   strategyName = 'greedy'
 ): number => {
-  const key = `${strategyName}|${presetId}`;
-  const cached = presetWinsCache.get(key);
-  if (cached !== undefined) return cached;
-  const wins = SEEDS.filter(
-    (seed) =>
-      simulateRun(startRun(presetId, new SeededRandom(seed)), strategy, PLAINS_MAP).outcome ===
-      'won'
-  ).length;
-  presetWinsCache.set(key, wins);
-  return wins;
+  const cards = LEGACY_PRESET_DECKS[presetId];
+  if (!cards) throw new Error(`未知のプリセットです: ${presetId}`);
+  return winsOf(cards, strategy, strategyName);
 };
 
 // --- カードの性質を判定する述語（IDのハードコードは将来カードが増えたときに漏れる） ---
@@ -162,13 +236,15 @@ const FULL_DECK: readonly string[] = [
 /**
  * 経路外だけで勝ててしまうデッキ（反復5 の実プレイで判定者が自作したもの）
  *
- * **これはルール上まったく合法である。** 魔力炉だけ同名上限が無い
- * （`maxCopiesOf('reactor') === DECK_SIZE`）ため、魔力炉5＋攻撃塔5種を
- * 各3枚まで積むと、壁も罠も持たない塔だけのデッキが20枚で組める。
+ * **反復5 時点ではルール上まったく合法だった。** 当時は魔力炉だけ
+ * 同名上限が無く（`maxCopiesOf('reactor') === DECK_SIZE`。現在は
+ * `maxCopiesOf('reactor') === 3`——反復6 でこの例外を撤廃した）、
+ * 魔力炉5＋攻撃塔5種を各3枚まで積むと、壁も罠も持たない塔だけの
+ * デッキが20枚で組めていた。
  *
  * 実測（20シード）: **greedy 20/20・offPathOnly 12/20。**
  * `card-pool.ts` の「同名3枚上限と併せて単一の支配戦略が成立しない」は
- * 魔力炉の例外を勘定に入れておらず、成立していない。
+ * 魔力炉の例外を勘定に入れておらず、当時は成立していなかった。
  */
 const OFF_PATH_DOMINANT_DECK: readonly string[] = [
   ...repeat('reactor', 5),
@@ -195,12 +271,15 @@ const OFF_PATH_DOMINANT_DECK: readonly string[] = [
 const padToDeckSize = (cards: readonly string[]): string[] => {
   const padded = [...cards];
   [...new Set(cards)].filter(hasDamage).forEach((id) => {
-    while (padded.length < DECK_SIZE && padded.filter((c) => c === id).length < maxCopiesOf(id)) {
+    while (
+      padded.length < LEGACY_DECK_SIZE &&
+      padded.filter((c) => c === id).length < legacyMaxCopiesOf(id)
+    ) {
       padded.push(id);
     }
   });
-  while (padded.length < DECK_SIZE) padded.push('reactor');
-  return padded.slice(0, DECK_SIZE);
+  while (padded.length < LEGACY_DECK_SIZE) padded.push('reactor');
+  return padded.slice(0, LEGACY_DECK_SIZE);
 };
 
 /** FULL_DECK から述語を満たす札を抜き、20枚に戻した対照条件デッキ */
@@ -215,8 +294,8 @@ const deckWithout = (isExcluded: (id: string) => boolean): string[] =>
  */
 describe('対照条件の作り方', () => {
   it('全要求充足デッキは構築規則を満たし、対空・範囲・貫通・壁・マナ源を備えている', () => {
-    expect(FULL_DECK).toHaveLength(DECK_SIZE);
-    expect(validateDeck(FULL_DECK).errors).toEqual([]);
+    expect(FULL_DECK).toHaveLength(LEGACY_DECK_SIZE);
+    expect(legacyDeckErrors(FULL_DECK)).toEqual([]);
     // 「全要求を満たしている」ことをスペックから判定する（IDの並びを目視で信じない）
     expect(FULL_DECK.some(hasAntiAir)).toBe(true);
     expect(FULL_DECK.some(hasAreaDamage)).toBe(true);
@@ -231,8 +310,8 @@ describe('対照条件の作り方', () => {
     ['範囲攻撃', hasAreaDamage],
   ])('%s を抜いたデッキも 20枚の合法デッキで、その性質を1枚も持たない', (_name, isExcluded) => {
     const deck = deckWithout(isExcluded);
-    expect(deck).toHaveLength(DECK_SIZE);
-    expect(validateDeck(deck).errors).toEqual([]);
+    expect(deck).toHaveLength(LEGACY_DECK_SIZE);
+    expect(legacyDeckErrors(deck)).toEqual([]);
     expect(deck.filter(isExcluded)).toHaveLength(0);
   });
 
@@ -241,7 +320,28 @@ describe('対照条件の作り方', () => {
     const deck = deckWithout(hasMassAnswer);
     const attackers = [...new Set(deck)].filter(hasDamage);
     attackers.forEach((id) => {
-      expect(deck.filter((c) => c === id)).toHaveLength(maxCopiesOf(id));
+      expect(deck.filter((c) => c === id)).toHaveLength(legacyMaxCopiesOf(id));
+    });
+  });
+
+  /**
+   * padToDeckSize が入力を黙って切り捨てていないこと
+   *
+   * **敵対的検証で見つかった静かな失敗経路**: `padToDeckSize` は最後に
+   * `.slice(0, LEGACY_DECK_SIZE)` するため、入力が上限を超えていると黙って
+   * 末尾を落とし、対照条件は緑のまま意味だけが変わる。実際に生成器
+   * （`padToDeckSize`）を呼び、入力側にあった枚数が出力側でも維持されている
+   * ことを確かめる。「入力が20枚以下」を確認するだけ（生成器を一度も呼ばない）
+   * では `padToDeckSize` の中身をどう壊しても検出できない。
+   */
+  it('padToDeckSize は入力を切り捨てていない', () => {
+    const predicates = [hasAntiAir, hasMassAnswer, hasAreaDamage, hasPiercing];
+    predicates.forEach((isExcluded) => {
+      const kept = FULL_DECK.filter((id) => !isExcluded(id));
+      const deck = padToDeckSize(kept);
+      countByCard(kept).forEach((n, id) =>
+        expect(deck.filter((c) => c === id).length).toBeGreaterThanOrEqual(n)
+      );
     });
   });
 });
@@ -289,7 +389,7 @@ describe('較正ハーネスの性質（測定器の記録であって設計の�
   it('DEPLOY_ONLY_UNTIL_TICK までに、素直な戦略で進めると山札が尽きている', () => {
     // DEPLOY_ONLY_UNTIL_TICK は式から導出せず実数で置いている（意図的）。
     // その実数が「山札を尽きさせるのに十分な tick」だという根拠は、このテストだけが持つ。
-    // DECK_SIZE や DRAW_INTERVAL_TICKS が将来変わったとき、この診断が黙って
+    // LEGACY_DECK_SIZE や DRAW_INTERVAL_TICKS が将来変わったとき、この診断が黙って
     // 無関係な tick を測るようになることを防ぐ。
     //
     // 「ちょうどこの tick で尽きる」とまでは主張しない。FULL_DECK は徴発（levy）を
@@ -379,6 +479,10 @@ describe('較正の不変条件（反復3・反復5 で再測定）', () => {
    * `it.failing` は assertion が失敗する間だけ緑になり、**直った瞬間に赤くなる。**
    * 反復6 で支配デッキを解消したら、この行を通常の `it` へ戻すこと
    * （値を固定する形で書くと、直したときに気づけない）。
+   *
+   * **反復6 で魔力炉の上限を戻したため、このデッキは本番の構築規則では組めない。
+   * ここは反復5 時点の実測の記録として残す。12枚デッキ空間の支配戦略は
+   * 段階D で `expedition-balance.test.ts` が別に探索する**
    */
   it.failing('どのデッキでも、経路上に一切置かない戦略は 4/20 未満しか勝てない', () => {
     expect(
@@ -386,11 +490,11 @@ describe('較正の不変条件（反復3・反復5 で再測定）', () => {
     ).toBeLessThan(4);
   });
 
-  it('⚠️ 既知の欠陥: 塔だけの合法デッキが素直な戦略で全勝する', () => {
+  it('⚠️ 反復5 の規則で合法だった塔だけデッキが、素直な戦略で全勝する', () => {
     // 判定記録 2026-08-14 §4.3。**このデッキはデッキ構築の規則を1つも破っていない。**
     // 上限 18/20 は「良いデッキを組めば自動で勝てる」方向の悪化を検出するための
     // 閾値だが（全要求充足デッキの検査）、その閾値を超えるデッキが実在する。
-    expect(validateDeck(OFF_PATH_DOMINANT_DECK).errors).toEqual([]);
+    expect(legacyDeckErrors(OFF_PATH_DOMINANT_DECK)).toEqual([]);
     expect(winsOf(OFF_PATH_DOMINANT_DECK)).toBeGreaterThan(18);
   });
 
@@ -516,7 +620,7 @@ describe('支配戦略が存在しないこと', () => {
       ...repeat('spike-trap', 1),
       ...repeat('levy', 1),
     ];
-    expect(validateDeck(cards).errors).toEqual([]);
+    expect(legacyDeckErrors(cards)).toEqual([]);
     expect(winsOf(cards)).toBe(0);
   });
 });
@@ -537,6 +641,14 @@ describe('支配戦略が存在しないこと', () => {
  *
  * 上限・下限・偏りを別々のテストに分け、それぞれ2プリセットを独立にアサートする。
  * 論理和（どちらかが満たせば緑）にすると、片方が壊れても検出できない。
+ *
+ * **⚠️ 反復6 で本番の PRESET_DECKS は12枚版に作り直された。** ここで較正して
+ * いるのは反復5 時点（20枚デッキ時代）のプリセットであり、`LEGACY_PRESET_DECKS`
+ * （このファイルにローカルで凍結）を使う。本番の PRESET_DECKS をそのまま使うと
+ * 「12枚デッキを1160tick の単一ランで回す」というどこにも存在しない構成を測る
+ * ことになり（実測 swift 2/20）、通っている `it` の大半が「両方ほぼ勝てないので
+ * 自明に通る」空虚な assertion になってしまう。12枚版プリセットの較正は段階D で
+ * `expedition-balance.test.ts` が行う。
  */
 describe('プリセットの難度較正', () => {
   it.each(['swift', 'heavy'])('%s は素直な戦略では全勝しない（配分の余地が残っている）', (id) => {

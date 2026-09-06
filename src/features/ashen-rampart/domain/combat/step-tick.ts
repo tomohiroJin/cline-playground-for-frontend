@@ -143,8 +143,9 @@ const isCellOccupied = (state: CombatState, pos: CellPos): boolean =>
  *
  * 設置マスの概念を廃止し、砦セル以外なら守り手はどこにでも置ける（Task 8）。
  * 砦は全レーンの合流点で、置けると1体で両レーンを同時に塞げてしまうため
- * 唯一の例外として禁止する。魔力炉はコスト0・デッキ上限なしのため、
- * 経路に置けると無限の無料ブロッカーになる——経路外限定はその防止策。
+ * 唯一の例外として禁止する。魔力炉はコスト0のため、経路に置けると
+ * 無限の無料ブロッカーになる——経路外限定はその防止策
+ * （反復6 で同名上限の例外は外れたが、この制約はコストが理由であり無関係）。
  */
 export const canPlaceAt = (
   state: CombatState,
@@ -327,6 +328,12 @@ const applyCardEffect = (
  * 成立したときだけ `discarded` イベントを積む。捨札の挙動自体は変わらない
  * （イベントを足しただけ）。判定項目1 を「押した回数」ではなく
  * 「実際に捨てた回数」で数えるための唯一の根拠になる。
+ *
+ * `handIndex` も成立時の値をイベントへ載せる（反復6・設計書 §4.4）。
+ * `action.handIndex` は呼び出し側が押した時点の添字にすぎず、同一 tick に
+ * 複数の捨札要求が処理された場合、先に処理された捨札で手札が詰まって
+ * 後続の添字がずれうる。ここで弾かれた（cardId === undefined）場合は
+ * イベントを積まないため、呼び出し側は「成立した添字」だけを受け取る。
  */
 const applyDiscard = (
   draft: ActionsDraft,
@@ -335,7 +342,7 @@ const applyDiscard = (
   const cardId = draft.deck.hand[action.handIndex];
   if (cardId === undefined) return;
   draft.deck = discardFromHand(draft.deck, action.handIndex);
-  draft.events.push({ kind: 'discarded', cardId });
+  draft.events.push({ kind: 'discarded', cardId, handIndex: action.handIndex });
 };
 
 /**

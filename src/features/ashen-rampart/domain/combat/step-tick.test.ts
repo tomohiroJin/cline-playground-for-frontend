@@ -4,12 +4,13 @@
  * stepTick は乱数を取らない純粋関数であり、同じ入力からは常に同じ結果になる。
  * この決定性がリプレイと事故の事後判別を支えている。
  */
-import { createCombatState, LIFE_INITIAL, DRAW_INTERVAL_TICKS, COUNTDOWN_TICKS } from './combat-state';
+import { createCombatState, LIFE_INITIAL, DRAW_INTERVAL_TICKS, COUNTDOWN_TICKS, STAGE_CLEAR_HEAL } from './combat-state';
 import { stepTick } from './step-tick';
 import type { WaveDefinition } from './waves';
 import { PLAINS_MAP, offPathCells } from '../board/stage-map';
+import { PLAINS_WAVES } from './waves';
 import { createDeck } from '../cards/deck';
-import { getCardDefinition } from '../cards/card-pool';
+import { getCardDefinition, PRESET_DECKS } from '../cards/card-pool';
 
 const emptyDeck = { drawPile: [], hand: [], graveyard: [] };
 
@@ -161,5 +162,30 @@ describe('守り手のHP', () => {
     expect(unit).toBeDefined();
     expect(unit!.maxHp).toBe(getCardDefinition('arrow-tower').tower!.hp);
     expect(unit!.hp).toBe(unit!.maxHp);
+  });
+});
+
+describe('ステージ間で持ち越すライフ（反復6・設計書 §4.1）', () => {
+  const anyDeck = createDeck(PRESET_DECKS.swift.cards, () => 0.5);
+
+  it('初期ライフを省略すると LIFE_INITIAL で始まる（既存の呼び出しを壊さない）', () => {
+    expect(createCombatState(anyDeck, PLAINS_WAVES).life).toBe(LIFE_INITIAL);
+  });
+
+  it('初期ライフを渡すとその値で始まる', () => {
+    expect(createCombatState(anyDeck, PLAINS_WAVES, 7).life).toBe(7);
+  });
+
+  it('LIFE_INITIAL と異なる値で検査している（テスト自身の前提）', () => {
+    expect(LIFE_INITIAL).not.toBe(7);
+  });
+
+  it('初期ライフ0 でもそのまま作れる（決着判定は stepTick が行う）', () => {
+    expect(createCombatState(anyDeck, PLAINS_WAVES, 0).life).toBe(0);
+  });
+
+  it('STAGE_CLEAR_HEAL は正の整数（較正対象だが符号は変えない）', () => {
+    expect(Number.isInteger(STAGE_CLEAR_HEAL)).toBe(true);
+    expect(STAGE_CLEAR_HEAL).toBeGreaterThan(0);
   });
 });
