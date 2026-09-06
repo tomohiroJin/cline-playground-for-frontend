@@ -147,7 +147,7 @@ const choosePlacement = (
  * 「その札を」「その位置に」置いてよいかを一括で問う。札だけを見る条件
  * （壁と対空だけ）と位置だけを見る条件（経路外だけ）の両方を1つの型で表せる。
  */
-type PlacementFilter = (card: CardDefinition, pos: CellPos) => boolean;
+export type PlacementFilter = (card: CardDefinition, pos: CellPos) => boolean;
 
 /**
  * 盤面に置かない札（呪文・徴発）を述語に問うときの便宜上の位置
@@ -249,6 +249,21 @@ const restrictedGreedy = (
  * 人間の上手さを模さない。「雑に遊んでも勝ててしまうか」を測るための下限。
  */
 export const greedyStrategy: Strategy = (state, map) => restrictedGreedy(state, map, () => true);
+
+/**
+ * 述語で札を絞った素直な戦略を作る（反復6・設計書 §8.2.6(j)）
+ *
+ * `offPathOnlyStrategy` / `noPureGroundAttackStrategy` と同じ `restrictedGreedy` を
+ * 外から使えるようにしたもの。ステージが宣言した要求軸を実際に要求するかを
+ * 監査するために、「特定の軸を持つ札を置かない戦略」を遠征側で組み立てる。
+ *
+ * `restrictedGreedy` そのものを公開しないのは、`state` と `map` を毎回渡す形だと
+ * `Strategy` として使えず、呼び出し側が必ずラップすることになるため。
+ */
+export const greedyExcept =
+  (allow: PlacementFilter): Strategy =>
+  (state, map) =>
+    restrictedGreedy(state, map, allow);
 
 /**
  * 経路外にしか置かない戦略（対照条件・ブロックが必要か）
