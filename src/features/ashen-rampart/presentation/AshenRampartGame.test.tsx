@@ -428,7 +428,17 @@ describe('AshenRampartGame', () => {
     // 候補ボタンが無効になる」という旧テストは、両プリセットから徴発が抜けた
     // ことでいずれも到達できないシナリオを検査していたため、この構築規則の
     // 結線（DeckBuilder → validateDeck → StartButton）を確かめるテストへ
-    // 置き換える。
+    // 置き換えた。
+    //
+    // **反復6 最終レビュー指摘 I6 でさらに置き換える。** 上のテストは
+    // 「徴発 を1枚増やす」ボタンを直接クリックしていたが、これは
+    // `DeckBuilder` が `BUILDABLE_CARD_IDS` ではなく `CARD_IDS`（retired も
+    // 含む全種）を列挙していたための到達可能性であり、「徴発が構築画面に
+    // 出続けること」を仕様として固定してしまっていた。`BUILDABLE_CARD_IDS`
+    // へ直したことで徴発はボタンごと一覧から消えるため、
+    // 「一覧に出ない」ことを検査する形に置き換える。
+    // validateDeck が retired を弾くことは domain 側の既存テスト
+    // （deck-builder.test.ts）が守っている。
     //
     // **この置き換えで守備範囲が縮んだ。低下が無いのではなく、承知のうえで
     // 受け入れた。** 徴発が到達不能になったため、次の3点は反復7 で徴発を
@@ -439,15 +449,12 @@ describe('AshenRampartGame', () => {
     // - `AshenRampartGame.tsx` の `<LevyChoice options onChoose disabled />` の結線一式
     // - `LevyChoice` の `disabled` 挙動（presentation/LevyChoice.test.tsx にも
     //   `disabled` を検査するテストは無い）
-    it('徴発を加えると開始ボタンが無効になり、理由が表示される（入手経路チェック・反復6・結線の到達確認）', () => {
+    it('徴発は構築画面の一覧に出ない（BUILDABLE_CARD_IDS への絞り込み・反復6 最終レビュー指摘 I6）', () => {
       render(<AshenRampartGame />);
       fireEvent.click(screen.getByRole('button', { name: /速攻型 を読み込む/ }));
-      expect(screen.getByRole('button', { name: 'この構成で始める' })).toBeEnabled();
 
-      fireEvent.click(screen.getByRole('button', { name: '徴発 を1枚増やす' }));
-
-      expect(screen.getByRole('button', { name: 'この構成で始める' })).toBeDisabled();
-      expect(screen.getByText(/徴発は現在デッキに入れられません/)).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /徴発 を1枚増やす/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole('group', { name: /徴発/ })).not.toBeInTheDocument();
     });
   });
 

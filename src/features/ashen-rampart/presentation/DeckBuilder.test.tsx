@@ -10,7 +10,12 @@ import { render, screen, fireEvent, within } from '@testing-library/react';
 import { DeckBuilder } from './DeckBuilder';
 import { cardBadgesOf } from './card-text';
 import { getUnitVisual, roleLabelOf } from './unit-visual';
-import { CARD_IDS, DECK_SIZE, PRESET_DECKS, getCardDefinition } from '../domain/cards/card-pool';
+import {
+  BUILDABLE_CARD_IDS,
+  DECK_SIZE,
+  PRESET_DECKS,
+  getCardDefinition,
+} from '../domain/cards/card-pool';
 import { HEADER_CLEARANCE } from './layout-constants';
 
 describe('DeckBuilder', () => {
@@ -24,21 +29,21 @@ describe('DeckBuilder', () => {
     );
   });
 
-  it('14種すべてが名前とコスト付きで並ぶ', () => {
+  it('構築で選べる13種すべてが名前とコスト付きで並ぶ', () => {
     render(<DeckBuilder onStart={jest.fn()} />);
-    CARD_IDS.forEach((id) => {
+    BUILDABLE_CARD_IDS.forEach((id) => {
       const card = getCardDefinition(id);
       // eslint-disable-next-line security/detect-non-literal-regexp
       expect(screen.getByRole('group', { name: new RegExp(card.name) })).toBeInTheDocument();
     });
   });
 
-  it('14種すべてでコストが「目に見える文字」として出る（読み上げラベルだけに残さない）', () => {
+  it('構築で選べる13種すべてでコストが「目に見える文字」として出る（読み上げラベルだけに残さない）', () => {
     // 行の aria-label には元からコストが入っているため、可視表示を消しても
     // 名前でのクエリは通ってしまう（最終レビュー指摘D の退行が見逃された理由）。
     // getByText は aria-label を見ないので、可視テキストの有無だけを問える。
     render(<DeckBuilder onStart={jest.fn()} />);
-    CARD_IDS.forEach((id) => {
+    BUILDABLE_CARD_IDS.forEach((id) => {
       const card = getCardDefinition(id);
       const row = screen.getByRole('group', { name: `${card.name} コスト${card.cost}` });
       expect(within(row).getByText(`コスト${card.cost}`)).toBeInTheDocument();
@@ -102,7 +107,7 @@ describe('DeckBuilder', () => {
     expect(screen.getByText(`0 / ${DECK_SIZE}`)).toBeInTheDocument();
   });
 
-  it('プリセットを読み込むと20枚になり開始できる', () => {
+  it('プリセットを読み込むと12枚になり開始できる', () => {
     render(<DeckBuilder onStart={jest.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: /速攻型 を読み込む/ }));
     expect(screen.getByText(`${DECK_SIZE} / ${DECK_SIZE}`)).toBeInTheDocument();
@@ -141,7 +146,7 @@ describe('DeckBuilder', () => {
     expect(seed).toBeUndefined();
   });
 
-  it('20枚に足りないと理由が表示される', () => {
+  it('12枚に足りないと理由が表示される', () => {
     render(<DeckBuilder onStart={jest.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: '弓兵 を1枚増やす' }));
     // security/detect-non-literal-regexp を避けるため、動的な RegExp ではなく
@@ -179,16 +184,16 @@ describe('DeckBuilder', () => {
     expect(seed).toBe(777);
   });
 
-  it('14種すべてのカードに形アイコンが出る', () => {
+  it('構築で選べる13種すべてのカードに形アイコンが出る', () => {
     render(<DeckBuilder onStart={jest.fn()} />);
-    CARD_IDS.forEach((id) => {
+    BUILDABLE_CARD_IDS.forEach((id) => {
       expect(screen.getByTestId(`card-glyph-${id}`)).toBeInTheDocument();
     });
   });
 
-  it('14種すべてのカードに役割名が出る', () => {
+  it('構築で選べる13種すべてのカードに役割名が出る', () => {
     render(<DeckBuilder onStart={jest.fn()} />);
-    CARD_IDS.forEach((id) => {
+    BUILDABLE_CARD_IDS.forEach((id) => {
       const card = getCardDefinition(id);
       // eslint-disable-next-line security/detect-non-literal-regexp
       const cardRow = screen.getByRole('group', { name: new RegExp(card.name) });
@@ -202,7 +207,7 @@ describe('DeckBuilder', () => {
 
   it('属性バッジを持つカードにバッジが出る', () => {
     render(<DeckBuilder onStart={jest.fn()} />);
-    CARD_IDS.forEach((id) => {
+    BUILDABLE_CARD_IDS.forEach((id) => {
       const card = getCardDefinition(id);
       const badges = cardBadgesOf(id);
       if (badges.length === 0) return; // このカードはバッジがない
