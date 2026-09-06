@@ -624,6 +624,7 @@ export interface CounterfactualPair {
   ablated: ExpeditionSimulationResult | undefined;
   swapped: ExpeditionSimulationResult | undefined;
   lastOffer: readonly string[] | undefined;
+  lastOfferIndex: number | undefined;
   lastTaken: string | undefined;
   swappedTo: string | undefined;
   isClean: boolean;
@@ -684,8 +685,7 @@ describe('worstDemandAcquire（demandAware の裏返し）', () => {
 });
 
 describe('runCounterfactual（最後の獲得だけを差し替えた再生）', () => {
-  it('クリーンな組では、最後のステージより前の結果が実ランと完全に一致する', () => {
-    // 3ステージ到達＝提示2回の遠征を探す
+  it('クリーンな組では、差し替えた提示より前のステージが実ランと完全に一致する', () => {
     const clean = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
       .map((seed) => runCounterfactual({ ...base, seed }))
       .filter((p) => p.isClean && p.ablated);
@@ -693,11 +693,19 @@ describe('runCounterfactual（最後の獲得だけを差し替えた再生）',
 
     clean.forEach((pair) => {
       const ablated = pair.ablated;
-      if (!ablated) throw new Error('isClean なら ablated は存在する');
-      // 最後の獲得はステージ2 の後に起きるので、ステージ1 と 2 は
-      // 両腕で完全に同一でなければならない（前提 P1・P3・P4）
-      expect(ablated.stageOutcomes[0]).toEqual(pair.actual.stageOutcomes[0]);
-      expect(ablated.stageOutcomes[1]).toEqual(pair.actual.stageOutcomes[1]);
+      const cutIndex = pair.lastOfferIndex;
+      if (!ablated || cutIndex === undefined) {
+        throw new Error('isClean なら ablated と lastOfferIndex は存在する');
+      }
+      // **提示 i はステージ i の後に起きるので、影響を受けるのはステージ i+1 以降。**
+      // ステージ 0..i は両腕で完全に同一でなければならない（前提 P1・P3・P4）。
+      // 添字を固定で 0 と 1 に書くと、ステージ2 で敗北した遠征
+      //（提示は1回だけ＝ステージ1 の後）で誤って落ちる。
+      for (let j = 0; j <= cutIndex; j++) {
+        expect(ablated.stageOutcomes[j]).toEqual(pair.actual.stageOutcomes[j]);
+      }
+      // 差し替えた提示の直後のステージは、少なくとも実行されていれば比較対象になる
+      expect(cutIndex).toBeGreaterThanOrEqual(0);
     });
   });
 
@@ -798,6 +806,14 @@ export interface CounterfactualPair {
   /** 最後の提示で最も要求に合わない札を取った再生（`G1b`）。差し替え先が無ければ undefined */
   swapped: ExpeditionSimulationResult | undefined;
   lastOffer: readonly string[] | undefined;
+  /**
+   * 何回目の提示を差し替えたか（0始まり）
+   *
+   * **提示 i はステージ i の後に起きるので、影響を受けるのはステージ i+1 以降である。**
+   * ステージ i 以前の結果は両腕で完全に一致していなければならない（前提 P1・P3・P4）。
+   * この添字が無いと、テストは「どこまでが一致すべきか」を知れない。
+   */
+  lastOfferIndex: number | undefined;
   lastTaken: string | undefined;
   swappedTo: string | undefined;
   /**
@@ -867,6 +883,7 @@ export const runCounterfactual = (input: CounterfactualInput): CounterfactualPai
     ablated: undefined,
     swapped: undefined,
     lastOffer: undefined,
+    lastOfferIndex: undefined,
     lastTaken: undefined,
     swappedTo: undefined,
     isClean: false,
@@ -898,6 +915,7 @@ export const runCounterfactual = (input: CounterfactualInput): CounterfactualPai
     ablated: ablated.result,
     swapped: swapped?.result,
     lastOffer,
+    lastOfferIndex: lastIndex,
     lastTaken,
     swappedTo,
     isClean: isLastOffer && noExtraOffers,
