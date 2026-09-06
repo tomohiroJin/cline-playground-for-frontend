@@ -196,8 +196,8 @@ describe('mcnemarExactP（McNemar 正確検定の両側 p 値）', () => {
   });
 
   it('不一致数が大きいときの既知値（b+c=100, 60対40）', () => {
-    // R: 2*pbinom(40, 100, 0.5) = 0.0568893...
-    expect(mcnemarExactP(60, 40)).toBeCloseTo(0.0568893, 6);
+    // Python: 2*sum(comb(100,k) for k in range(41))/2**100 = 0.05688793364098079
+    expect(mcnemarExactP(60, 40)).toBeCloseTo(0.05688793364098079, 12);
   });
 
   it('負の入力は契約違反', () => {
@@ -298,8 +298,18 @@ Expected: PASS（10件）
 Run: 同上
 Expected: **FAIL**（既知値のテスト3件が半分の値になる）
 
-戻したあと、`logBinomialCoefficient` を使わず `Math.pow(2, -n)` を直接使う形に変える。
-Expected: **FAIL**（「b+c = 500 で桁あふれしない」が `0` を返して落ちる）
+戻したあと、対数空間をやめて**階乗による素朴な二項係数**に変える:
+
+```ts
+const fact = (m: number): number => (m <= 1 ? 1 : m * fact(m - 1));
+tail += (fact(n) / (fact(k) * fact(n - k))) * Math.pow(2, -n);
+```
+
+Expected: **FAIL**（「b+c = 500 で桁あふれしない」が `NaN` を返して落ちる）
+
+**`Math.pow(2, -n)` だけを直接使う形に変えても赤くならない。**
+`2^-500 ≈ 3e-151` はアンダーフローせず（0 になるのは n > 1074）、
+桁あふれするのは分子の階乗のほうだからである。
 
 確認できたら元に戻し、PASS を確認する。
 
