@@ -19,17 +19,66 @@ import {
   type ExpeditionSimulationResult,
 } from './expedition-simulation';
 
-/** 提示の中で、要求軸を満たす数が最も少ない札を選ぶ（同数ならコストが高いほう） */
-export const worstDemandAcquire: AcquireStrategy = (offer, nextDemands) => {
-  if (offer.length === 0) return undefined;
-  return [...offer].sort(
-    (a, b) => satisfiedCount(a, nextDemands) - satisfiedCount(b, nextDemands)
-      || getCardDefinition(b).cost - getCardDefinition(a).cost
-  )[0];
-};
-
 const satisfiedCount = (cardId: string, demands: readonly DemandAxis[]): number =>
   axesOf(cardId).filter((axis) => demands.includes(axis)).length;
+
+type SortDirection = 'ascending' | 'descending';
+
+/**
+ * 提示の中から軸スコア→コストの順に並べ替えて1枚選ぶ共通ロジック（G1 反復6 やり直し・設計書 §8.2.11）。
+ *
+ * `worstDemandAcquire` / `axisWorstAcquire` / `costWorstAcquire` の3戦略は
+ * 「軸スコアの向き」と「同点時のコストの向き」の組み合わせが違うだけで、
+ * 選定ロジック自体は同一である。3回書くと将来の修正が3か所に散るので、
+ * 向きだけをパラメータにして共通化する。
+ */
+const acquireBySortOrder = (
+  offer: readonly string[],
+  demands: readonly DemandAxis[],
+  axisOrder: SortDirection,
+  costOrder: SortDirection
+): string | undefined => {
+  if (offer.length === 0) return undefined;
+  const axisSign = axisOrder === 'descending' ? -1 : 1;
+  const costSign = costOrder === 'descending' ? -1 : 1;
+  return [...offer].sort((a, b) => {
+    const axisDiff = axisSign * (satisfiedCount(a, demands) - satisfiedCount(b, demands));
+    return axisDiff !== 0
+      ? axisDiff
+      : costSign * (getCardDefinition(a).cost - getCardDefinition(b).cost);
+  })[0];
+};
+
+/**
+ * 提示の中で、要求軸を満たす数が最も少ない札を選ぶ（同数ならコストが高いほう）
+ *
+ * 軸適合・コストの**両方**を基準の腕（`demandAwareAcquire`）から反転させた腕。
+ * 単独では「軸が悪いから」なのか「コストが高いから」なのかを分離できない
+ * （§8.2.11 反対解釈1）。分離には `axisWorstAcquire` / `costWorstAcquire` を使う。
+ */
+export const worstDemandAcquire: AcquireStrategy = (offer, nextDemands) =>
+  acquireBySortOrder(offer, nextDemands, 'ascending', 'descending');
+
+/**
+ * 軸スコアだけを基準の腕（`demandAwareAcquire`）から反転させた腕（軸昇順・同点ならコスト昇順＝最安）。
+ *
+ * `demandAwareAcquire` と比べたとき、コストの同点処理は**両方とも「昇順＝最安」で揃っている**。
+ * したがって `demandAwareAcquire` 対 `axisWorstAcquire` の差は**軸適合の効果だけ**を表す
+ * （§8.2.11 反対解釈1 の分離）。
+ */
+export const axisWorstAcquire: AcquireStrategy = (offer, nextDemands) =>
+  acquireBySortOrder(offer, nextDemands, 'ascending', 'ascending');
+
+/**
+ * コストの同点処理だけを基準の腕（`demandAwareAcquire`）から反転させた腕（軸降順＝基準と同じ・同点ならコスト降順＝最高）。
+ *
+ * 軸スコアの向きは `demandAwareAcquire` と**同じ**（降順＝良い軸を優先）。
+ * したがって `demandAwareAcquire` 対 `costWorstAcquire` の差は、軸スコアに差が付かず
+ * 同点処理まで下りた提示に限って現れる**コストの効果だけ**を表す
+ * （§8.2.11 反対解釈1 の分離）。
+ */
+export const costWorstAcquire: AcquireStrategy = (offer, nextDemands) =>
+  acquireBySortOrder(offer, nextDemands, 'descending', 'descending');
 
 export interface CounterfactualInput {
   initialDeck: readonly string[];
@@ -37,6 +86,8 @@ export interface CounterfactualInput {
   strategy: Strategy;
   acquire: AcquireStrategy;
   randomFactory: SeededRandomFactory;
+  /** 最後の提示で差し替える先の戦略。省略時は `worstDemandAcquire`（既存の挙動） */
+  counterfactualAcquire?: AcquireStrategy;
 }
 
 export interface CounterfactualPair {
@@ -44,7 +95,7 @@ export interface CounterfactualPair {
   actual: ExpeditionSimulationResult;
   /** 最後の獲得を抜いた再生（`G1a`）。獲得が1度も無ければ undefined */
   ablated: ExpeditionSimulationResult | undefined;
-  /** 最後の提示で最も要求に合わない札を取った再生（`G1b`）。差し替え先が無ければ undefined */
+  /** 最後の提示を反実仮想側の獲得戦略（`counterfactualAcquire`）で取り直した再生（`G1b`）。差し替え先が無ければ undefined */
   swapped: ExpeditionSimulationResult | undefined;
   lastOffer: readonly string[] | undefined;
   /**
@@ -140,8 +191,9 @@ export const runCounterfactual = (input: CounterfactualInput): CounterfactualPai
   ablatedScript[lastIndex] = undefined;
   const ablated = replay(input, ablatedScript);
 
-  const worst = worstDemandAcquire(lastOffer, demands[lastIndex] ?? [], []);
-  const swappedTo = worst === lastTaken ? undefined : worst;
+  const counterfactualAcquire = input.counterfactualAcquire ?? worstDemandAcquire;
+  const counterfactualPick = counterfactualAcquire(lastOffer, demands[lastIndex] ?? [], []);
+  const swappedTo = counterfactualPick === lastTaken ? undefined : counterfactualPick;
   const swapped = swappedTo === undefined
     ? undefined
     : replay(input, choices.map((c, i) => (i === lastIndex ? swappedTo : c)));

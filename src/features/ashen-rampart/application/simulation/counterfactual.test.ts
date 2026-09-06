@@ -2,7 +2,9 @@ import { PRESET_DECKS } from '../../domain/cards/card-pool';
 import { greedyStrategy } from '../../domain/combat/run-simulation';
 import { createSeededRandom } from '../../infrastructure/random/seeded-random';
 import { demandAwareAcquire, noAcquire } from './expedition-simulation';
-import { runCounterfactual, worstDemandAcquire } from './counterfactual';
+import {
+  runCounterfactual, worstDemandAcquire, axisWorstAcquire, costWorstAcquire,
+} from './counterfactual';
 
 const swift = PRESET_DECKS.swift?.cards ?? [];
 const base = {
@@ -29,6 +31,59 @@ describe('worstDemandAcquire（demandAware の裏返し）', () => {
 
   it('空の提示では undefined', () => {
     expect(worstDemandAcquire([], ['block'], [])).toBeUndefined();
+  });
+});
+
+describe('axisWorstAcquire（軸だけを反転させた腕）', () => {
+  it('要求軸を満たす数が最も少ない札を選ぶ', () => {
+    // piercer は 'heavy-hit' を満たす（axes=[anti-air, mass-answer, heavy-hit]）。
+    // reactor は何も満たさない（axes=[]）。軸が最少の reactor を選ぶ
+    const pick = axisWorstAcquire(['piercer', 'reactor'], ['heavy-hit'], []);
+    expect(pick).toBe('reactor');
+  });
+
+  it('軸スコアが同点なら最安の札を選ぶ（worstDemandAcquire とは逆）', () => {
+    // reactor（cost 0）・arrow-tower（cost 1）はどちらも 'heavy-hit' を満たさない（同点）
+    const offer = ['reactor', 'arrow-tower'];
+    const demands = ['heavy-hit'] as const;
+    expect(axisWorstAcquire(offer, demands, [])).toBe('reactor');
+    // 対比: worstDemandAcquire は同点なら最も高い札（arrow-tower）を選ぶ
+    expect(worstDemandAcquire(offer, demands, [])).toBe('arrow-tower');
+  });
+
+  it('空の提示では undefined', () => {
+    expect(axisWorstAcquire([], ['block'], [])).toBeUndefined();
+  });
+});
+
+describe('costWorstAcquire（コストの同点処理だけを反転させた腕）', () => {
+  it('要求軸を満たす数が最も多い札を選ぶ（demandAwareAcquire と同じ向き）', () => {
+    // piercer は 'anti-air' を満たす。arrow-tower は満たさない
+    const pick = costWorstAcquire(['piercer', 'arrow-tower'], ['anti-air'], []);
+    expect(pick).toBe('piercer');
+  });
+
+  it('軸スコアが同点なら最高コストの札を選ぶ（demandAwareAcquire とは逆）', () => {
+    // reactor（cost 0）・arrow-tower（cost 1）はどちらも 'heavy-hit' を満たさない（同点）
+    const offer = ['reactor', 'arrow-tower'];
+    const demands = ['heavy-hit'] as const;
+    expect(costWorstAcquire(offer, demands, [])).toBe('arrow-tower');
+    // 対比: demandAwareAcquire は同点なら最安（reactor）を選ぶ
+    expect(demandAwareAcquire(offer, demands, [])).toBe('reactor');
+  });
+
+  it('軸スコアに差があるとき、demandAwareAcquire と同じ札を選ぶ（コストでしか違わない）', () => {
+    // piercer（axes=3）と reactor（axes=0）は 'heavy-hit' で軸スコアに差が付く。
+    // このときコストの向きは選択に影響しないため、両戦略は一致する
+    const offer = ['piercer', 'reactor'];
+    const demands = ['heavy-hit'] as const;
+    expect(costWorstAcquire(offer, demands, [])).toBe(
+      demandAwareAcquire(offer, demands, [])
+    );
+  });
+
+  it('空の提示では undefined', () => {
+    expect(costWorstAcquire([], ['block'], [])).toBeUndefined();
   });
 });
 
