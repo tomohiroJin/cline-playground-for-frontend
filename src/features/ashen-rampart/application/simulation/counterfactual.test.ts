@@ -94,4 +94,25 @@ describe('runCounterfactual（最後の獲得だけを差し替えた再生）',
     const b = runCounterfactual({ ...base, seed: 7 });
     expect(b).toEqual(a);
   });
+
+  it('再生で提示が増える組は交絡として除外される（isClean=false）', () => {
+    // **このテストは `isClean` の `noExtraOffers` 節を守る唯一のテストである。**
+    // heavy プリセットはステージ2 で敗北することがあり（40シード中7回）、
+    // そのとき最後の獲得はステージ1 後の提示になる。獲得を抜いた再生で
+    // ステージ2 に勝ってしまうと、**実ランには存在しなかった2回目の提示**が
+    // 現れる。この組を測定に使うと、比較していない選択の差が結果に混ざる。
+    //
+    // swift プリセットでは 40/40 でステージ1・2 を必勝するため、この経路は
+    // 一度も通らない。**プリセットを変えるとこのテストは何も検査しなくなる。**
+    const heavy = PRESET_DECKS.heavy?.cards ?? [];
+    // 実測で要因が `!noExtraOffers` だと確認済みのシード（2026-09-06）
+    const confoundedSeeds = [20, 21, 34, 39, 54];
+    confoundedSeeds.forEach((seed) => {
+      const pair = runCounterfactual({
+        ...base, initialDeck: heavy, seed,
+      });
+      expect(pair.lastTaken).toBeDefined();
+      expect(pair.isClean).toBe(false);
+    });
+  });
 });
