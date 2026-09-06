@@ -11,7 +11,7 @@ import { PRESET_DECKS } from '../../domain/cards/card-pool';
 import { greedyStrategy } from '../../domain/combat/run-simulation';
 import { mcnemarExactP } from '../../domain/shared/mcnemar';
 import { createSeededRandom } from '../../infrastructure/random/seeded-random';
-import { demandAwareAcquire } from './expedition-simulation';
+import { demandAwareAcquire, type ExpeditionSimulationResult } from './expedition-simulation';
 import { runCounterfactual, type CounterfactualPair } from './counterfactual';
 
 /**
@@ -23,6 +23,9 @@ import { runCounterfactual, type CounterfactualPair } from './counterfactual';
  */
 const SEEDS = Number(process.env.ASHEN_RAMPART_G1_SEEDS ?? 250);
 const isEnabled = process.env.ASHEN_RAMPART_G1 === '1';
+
+/** ステージ2 未到達なら、抜いた／差し替えた獲得の影響先（ステージ3 直前）に構造上届かない */
+const MIN_STAGES_CLEARED_FOR_EFFECTIVE_N = 2;
 
 interface Contingency {
   /** 両腕とも踏破 */
@@ -55,18 +58,56 @@ const tabulate = (
   return table;
 };
 
-const describeTable = (label: string, table: Contingency): string => {
+/** `pick` で比較可能な（反実仮想が存在する）組だけを、その反実仮想と対にして残す */
+const toComparable = (
+  pairs: readonly CounterfactualPair[],
+  pick: (pair: CounterfactualPair) => CounterfactualPair['ablated']
+): { actual: CounterfactualPair; counterfactual: ExpeditionSimulationResult }[] =>
+  pairs.flatMap((pair) => {
+    const counterfactual = pick(pair);
+    return counterfactual === undefined ? [] : [{ actual: pair, counterfactual }];
+  });
+
+const describeTable = (
+  label: string,
+  pairs: readonly CounterfactualPair[],
+  pick: (pair: CounterfactualPair) => CounterfactualPair['ablated']
+): string => {
+  const table = tabulate(pairs, pick);
+  const comparable = toComparable(pairs, pick);
   const discordant = table.actualOnly + table.counterfactualOnly;
   const p = mcnemarExactP(table.actualOnly, table.counterfactualOnly);
   const total = discordant + table.bothCleared + table.neitherCleared;
+
+  // **有効 N（§8.2.6+(β)）**: stagesCleared < 2 の組は、実ランがステージ3 の
+  // 直前（獲得・差し替えが効く場所）へ到達していないため、両腕とも必ず失敗＝
+  // 「両方失敗」セルを膨らませるだけの無情報な組である。生の N だけでは
+  // 検出力（＝有効な情報を持つ組がどれだけあるか）を確かめられない。
+  const effectiveN = comparable.filter(
+    ({ actual }) => actual.actual.stagesCleared >= MIN_STAGES_CLEARED_FOR_EFFECTIVE_N
+  ).length;
+  const uninformativeN = total - effectiveN;
+
+  // **補助指標（§8.2.6(c)）**: stagesCleared の対応差（実ラン − 反実仮想）の平均。
+  // 主指標は cleared の二値に限定されている（§8.2.6(c)）ため、
+  // これは判定には使わない――以下の見出しに明記する。
+  const stagesClearedDiffMean = comparable.length === 0
+    ? 0
+    : comparable.reduce(
+      (sum, { actual, counterfactual }) => sum + (actual.actual.stagesCleared - counterfactual.stagesCleared),
+      0
+    ) / comparable.length;
+  const sign = stagesClearedDiffMean >= 0 ? '+' : '';
+
   return [
     `--- ${label} ---`,
-    `  組数 ${total}`,
+    `  組数 ${total}（有効 ${effectiveN} / 無情報 ${uninformativeN}）`,
     `  両方踏破 ${table.bothCleared} / 実ランのみ ${table.actualOnly}`
       + ` / 反実仮想のみ ${table.counterfactualOnly} / 両方失敗 ${table.neitherCleared}`,
     `  不一致 b+c = ${discordant}（${((discordant / Math.max(1, total)) * 100).toFixed(1)}%）`,
     `  McNemar 正確検定 両側 p = ${p.toFixed(6)}`,
     `  → §8.2.6(f) の通過要件: p < 0.05 かつ b+c >= 25`,
+    `  補助（判定に使わない）: stagesCleared の対応差 平均 ${sign}${stagesClearedDiffMean.toFixed(2)}`,
   ].join('\n');
 };
 
@@ -91,6 +132,9 @@ const describeTable = (label: string, table: Contingency): string => {
           randomFactory: createSeededRandom,
         });
         if (!pair.isClean) { excludedNotClean++; continue; }
+        // `swapped` が無い（提示内で最良と最悪が同一）だけでは組を除外しない。
+        // `ablated`（G1a）は `swapped` と独立に使えるため、この組も採用する。
+        // ここでの計数は「G1b 側で比較に使えない組がどれだけあるか」の報告用。
         if (pair.swapped === undefined) excludedNoSwap++;
         pairs.push(pair);
       }
@@ -101,16 +145,16 @@ const describeTable = (label: string, table: Contingency): string => {
         `  試行 ${SEEDS} / 採用 ${pairs.length}`,
         `  除外: 交絡（isClean=false）${excludedNotClean}`
           + ` / 提示内で最良と最悪が同一 ${excludedNoSwap}`,
-        describeTable(`${preset.id} G1b 主要対比`, tabulate(pairs, (p) => p.swapped)),
-        describeTable(`${preset.id} G1a 探索的`, tabulate(pairs, (p) => p.ablated)),
+        describeTable(`${preset.id} G1b 主要対比`, pairs, (p) => p.swapped),
+        describeTable(`${preset.id} G1a 探索的`, pairs, (p) => p.ablated),
       );
     });
 
     lines.unshift(
       '########## G1b 主要対比（両プリセット合算・これが判定の対象） ##########',
-      describeTable('G1b 合算', tabulate(allPairs, (p) => p.swapped)),
+      describeTable('G1b 合算', allPairs, (p) => p.swapped),
       '########## G1a 機構（探索的・多重比較の補正なしに解釈しない） ##########',
-      describeTable('G1a 合算', tabulate(allPairs, (p) => p.ablated)),
+      describeTable('G1a 合算', allPairs, (p) => p.ablated),
       '',
     );
     console.log(lines.join('\n'));
