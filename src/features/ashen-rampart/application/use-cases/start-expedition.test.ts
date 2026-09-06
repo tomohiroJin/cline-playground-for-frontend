@@ -1,8 +1,12 @@
 import { startExpedition, startStage } from './start-expedition';
+import { advanceStage } from './advance-stage';
 import { PRESET_DECKS, DECK_SIZE } from '../../domain/cards/card-pool';
-import { INITIAL_HAND_SIZE } from '../../domain/cards/deck';
+import { shuffle, INITIAL_HAND_SIZE } from '../../domain/cards/deck';
 import { COUNTDOWN_TICKS, LIFE_INITIAL } from '../../domain/combat/combat-state';
-import { currentStage, completeStage, declineOffer } from '../../domain/expedition/expedition-state';
+import {
+  currentStage, completeStage, declineOffer, chooseAcquisition,
+} from '../../domain/expedition/expedition-state';
+import { derivedSeed } from '../../domain/shared/derived-seed';
 import { ACQUIRED_INSERT_OFFSET } from './start-expedition';
 import { createSeededRandom } from '../../infrastructure/random/seeded-random';
 import type { SeededRandomFactory } from '../ports/random-port';
@@ -155,5 +159,90 @@ describe('startStage', () => {
   it('終了した遠征では契約違反', () => {
     const ended = completeStage(startExpedition(preset, 42, randomFactory), { won: false, lifeLeft: 0 });
     expect(() => startStage(ended, randomFactory)).toThrow('挑むステージがありません');
+  });
+
+  // 設計書 §8.2.6(g) の P1: 「両腕の基底12枚のシャッフルが全ステージで同一」。
+  // 検査方法として ground truth（shuffle(initialDeckCards, derivedSeed(...)) を
+  // 独立に計算して照合すること）が指定されている。上のテスト群はどれも
+  // 「結果が一致する」という間接証拠しか出しておらず、この方法を
+  // 実行していない。ここで直接検査する。
+  describe('P1（ground truth 照合）: 基底シャッフルは獲得内容に依存しない', () => {
+    it('ground truth と一致する（獲得なしのステージ1・手札と山札の両方）', () => {
+      const seed = 42;
+      const exp = startExpedition(preset, seed, randomFactory);
+      const combat = startStage(exp, randomFactory);
+
+      // shuffle・derivedSeed・createSeededRandom を実装から独立に組み立て、
+      // startStage の結果と照合する（実装内部の呼び出しを覗くのではなく、
+      // 同じ入力から同じ計算を再現して比較する）。
+      const groundTruthRandom = createSeededRandom(derivedSeed(seed, 'shuffle', exp.stageIndex));
+      const groundTruthShuffled = shuffle(preset, () => groundTruthRandom.random());
+
+      expect(combat.deck.hand).toEqual(groundTruthShuffled.slice(0, INITIAL_HAND_SIZE));
+      // ステージ1（stageIndex 0）は獲得がまだ無いため、山札も
+      // 残り9枚（12 − INITIAL_HAND_SIZE）と完全一致するはずである。
+      expect(combat.deck.drawPile).toEqual(groundTruthShuffled.slice(INITIAL_HAND_SIZE));
+    });
+
+    it('ground truth と一致する（獲得ありのステージ2・基底12枚のみで計算した ground truth）', () => {
+      // 上のテストは獲得が無いステージでしか検査していない。
+      // `exp.deckCards`（獲得を含む13枚）を誤ってシャッフルする変異は、
+      // 獲得が無いステージでは deckCards === initialDeckCards になるため
+      // 検出できない。獲得後のステージで、ground truth 側は必ず
+      // `exp.initialDeckCards`（基底12枚固定）から計算し、実装の出力と
+      // 照合することで、この変異を確実に検出する。
+      const seed = 42;
+      let exp = startExpedition(preset, seed, randomFactory);
+      exp = advanceStage(exp, { won: true, lifeLeft: 9 }, randomFactory);
+      const offeredCard = exp.offer[0];
+      if (offeredCard === undefined) {
+        throw new Error('テストの前提が崩れている: 3択が空であってはならない');
+      }
+      exp = chooseAcquisition(exp, offeredCard);
+      expect(exp.deckCards.length).toBe(preset.length + 1); // 前提: 獲得済みで13枚
+
+      const combat = startStage(exp, randomFactory);
+      const groundTruthRandom = createSeededRandom(derivedSeed(seed, 'shuffle', exp.stageIndex));
+      const groundTruthShuffled = shuffle(exp.initialDeckCards, () => groundTruthRandom.random());
+
+      expect(combat.deck.hand).toEqual(groundTruthShuffled.slice(0, INITIAL_HAND_SIZE));
+    });
+
+    it('獲得した札だけが違う2つの遠征でも、同じステージの初期手札は同一である', () => {
+      // シード99など一部のシードでは、シャッフル後に獲得札が並びのどこへ
+      // 落ちるかという偶然の位置関係により、`exp.deckCards`（獲得を含む配列）を
+      // 誤ってシャッフルする変異でも手札3枚がたまたま一致してしまい、
+      // この検査だけでは変異を検出できないことを実測で確認した
+      // （上の ground truth テストは初期手札を独立に計算するためこの偶然に
+      // 左右されず、その変異を確実に検出する）。ここでは実測で変異を
+      // 確実に検出できると確認済みのシード5を使う。
+      const seed = 5;
+      const won = { won: true, lifeLeft: 9 };
+
+      // 腕A・腕Bは同じシードから同じステージ1をクリアし、同じ3択を提示される
+      // （advanceStage の派生シードは stageIndex にのみ依存するため）。
+      const offeredA = advanceStage(startExpedition(preset, seed, randomFactory), won, randomFactory);
+      const offeredB = advanceStage(startExpedition(preset, seed, randomFactory), won, randomFactory);
+      expect(offeredA.offer).toEqual(offeredB.offer); // 前提: 同じ3択が出ている
+
+      const firstChoice = offeredA.offer[0];
+      const secondChoice = offeredA.offer[1];
+      if (firstChoice === undefined || secondChoice === undefined) {
+        throw new Error('テストの前提が崩れている: 3択に2種類以上の候補が必要');
+      }
+
+      // 腕Aと腕Bで、実際の獲得経路（chooseAcquisition）を通して
+      // 違う札を獲得させる。これで「獲得した札だけが違う2つの遠征」になる。
+      const expA = chooseAcquisition(offeredA, firstChoice);
+      const expB = chooseAcquisition(offeredB, secondChoice);
+      expect(expA.acquired).not.toEqual(expB.acquired); // 前提: 獲得内容が実際に違う
+      expect(expA.deckCards.length).toBe(expB.deckCards.length); // 前提: 枚数の違いによる交絡ではない
+
+      // P1 本体: 基底のシャッフルは獲得内容に依存しないので、
+      // 次ステージの初期手札は腕A・腕Bで同一のはずである。
+      const handA = startStage(expA, randomFactory).deck.hand;
+      const handB = startStage(expB, randomFactory).deck.hand;
+      expect(handA).toEqual(handB);
+    });
   });
 });
