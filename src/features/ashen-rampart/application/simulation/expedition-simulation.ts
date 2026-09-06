@@ -13,6 +13,7 @@
  * **最も打てない札を選び続ける戦略**であり、差の符号が解釈できない。
  */
 import type { RandomFn } from '../../domain/shared/random';
+import type { SeededRandomFactory } from '../ports/random-port';
 import { getCardDefinition } from '../../domain/cards/card-pool';
 import { simulateRun, type Strategy } from '../../domain/combat/run-simulation';
 import { startExpedition, startStage } from '../use-cases/start-expedition';
@@ -81,6 +82,14 @@ export interface ExpeditionSimulationInput {
   strategy: Strategy;
   /** 獲得の戦略（3択から何を選ぶか） */
   acquire: AcquireStrategy;
+  /**
+   * シードから乱数源を作る factory（反復6 最終レビュー指摘 I1）
+   *
+   * `startExpedition` / `startStage` / `advanceStage` が要求する。
+   * ここで受け取って渡すだけにし、application 層が
+   * `infrastructure/random/seeded-random` を直接 import しないようにする。
+   */
+  randomFactory: SeededRandomFactory;
 }
 
 /** 遠征を最後まで回す */
@@ -89,8 +98,9 @@ export const simulateExpedition = ({
   seed,
   strategy,
   acquire,
+  randomFactory,
 }: ExpeditionSimulationInput): ExpeditionSimulationResult => {
-  let exp: ExpeditionState = startExpedition(initialDeck, seed);
+  let exp: ExpeditionState = startExpedition(initialDeck, seed, randomFactory);
   const stageOutcomes: StageOutcome[] = [];
   let reachedTier3 = false;
 
@@ -99,7 +109,7 @@ export const simulateExpedition = ({
     if (!stage) break;
     if (stage.tier === 3) reachedTier3 = true;
 
-    const run = simulateRun(startStage(exp), strategy, stage.map);
+    const run = simulateRun(startStage(exp, randomFactory), strategy, stage.map);
     const won = run.outcome === 'won';
     stageOutcomes.push({
       stageId: stage.id,
@@ -109,7 +119,7 @@ export const simulateExpedition = ({
       cardsPlayed: run.cardsPlayed,
     });
 
-    exp = advanceStage(exp, { won, lifeLeft: run.lifeLeft });
+    exp = advanceStage(exp, { won, lifeLeft: run.lifeLeft }, randomFactory);
     if (exp.phase !== 'offer') continue;
 
     const nextDemands = currentStage(exp)?.demands ?? [];

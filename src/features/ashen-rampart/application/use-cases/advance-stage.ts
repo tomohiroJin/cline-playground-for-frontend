@@ -13,7 +13,7 @@
  * `completeStage` は勝つたびに `stageIndex` を進めるので、
  * 提示回数は `stageIndex - 1` で表せる——獲得したかどうかに依存しない。
  */
-import { SeededRandom } from '../../infrastructure/random/seeded-random';
+import type { SeededRandomFactory } from '../ports/random-port';
 import { derivedSeed } from '../../domain/shared/derived-seed';
 import { buildOffer } from '../../domain/expedition/acquisition';
 import {
@@ -22,12 +22,13 @@ import {
 
 export const advanceStage = (
   exp: ExpeditionState,
-  result: StageResult
+  result: StageResult,
+  randomFactory: SeededRandomFactory
 ): ExpeditionState => {
   const completed = completeStage(exp, result);
   if (completed.phase !== 'offer') return completed;
 
   const offerIndex = completed.stageIndex - 1;
-  const offerRandom = new SeededRandom(derivedSeed(completed.seed, 'offer', offerIndex));
+  const offerRandom = randomFactory(derivedSeed(completed.seed, 'offer', offerIndex));
   return presentOffer(completed, buildOffer(completed.deckCards, () => offerRandom.random()));
 };

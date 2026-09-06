@@ -3,6 +3,10 @@ import {
 } from './expedition-simulation';
 import { greedyStrategy } from '../../domain/combat/run-simulation';
 import { PRESET_DECKS } from '../../domain/cards/card-pool';
+import { createSeededRandom } from '../../infrastructure/random/seeded-random';
+import type { SeededRandomFactory } from '../ports/random-port';
+
+const randomFactory: SeededRandomFactory = createSeededRandom;
 
 describe('獲得戦略', () => {
   it('noAcquire は何も選ばない', () => {
@@ -56,14 +60,14 @@ describe('simulateExpedition', () => {
   const preset = PRESET_DECKS.swift.cards;
 
   it('遠征を最後まで回して結果を返す', () => {
-    const result = simulateExpedition({ initialDeck: preset, seed: 1, strategy: greedyStrategy, acquire: demandAwareAcquire });
+    const result = simulateExpedition({ randomFactory, initialDeck: preset, seed: 1, strategy: greedyStrategy, acquire: demandAwareAcquire });
     expect(['cleared', 'failed']).toContain(result.outcome);
     expect(result.stageOutcomes.length).toBeGreaterThan(0);
     expect(result.stagesCleared).toBeLessThanOrEqual(3);
   });
 
   it('踏破したら stagesCleared が 3 で reachedTier3 が true', () => {
-    const result = simulateExpedition({ initialDeck: preset, seed: 1, strategy: greedyStrategy, acquire: demandAwareAcquire });
+    const result = simulateExpedition({ randomFactory, initialDeck: preset, seed: 1, strategy: greedyStrategy, acquire: demandAwareAcquire });
     // 案A（else も検査する）を選ぶ。段階B・D でステージプールやバランスを変えると
     // このシードの決着が cleared から failed へ変わりうる。else を持たない if だけの
     // assertion は、その変化が起きた瞬間に「テストは緑のまま何も検査しない」状態に
@@ -78,19 +82,19 @@ describe('simulateExpedition', () => {
   });
 
   it('同じ入力からは同じ結果（決定的）', () => {
-    const args = { initialDeck: preset, seed: 5, strategy: greedyStrategy, acquire: demandAwareAcquire };
+    const args = { initialDeck: preset, seed: 5, strategy: greedyStrategy, acquire: demandAwareAcquire, randomFactory };
     const a = simulateExpedition(args);
     const b = simulateExpedition(args);
     expect(a).toEqual(b);
   });
 
   it('noAcquire ではデッキが増えない', () => {
-    const result = simulateExpedition({ initialDeck: preset, seed: 5, strategy: greedyStrategy, acquire: noAcquire });
+    const result = simulateExpedition({ randomFactory, initialDeck: preset, seed: 5, strategy: greedyStrategy, acquire: noAcquire });
     expect(result.acquired).toEqual([]);
   });
 
   it('demandAwareAcquire では、層2 に到達すれば1枚以上獲得している', () => {
-    const result = simulateExpedition({ initialDeck: preset, seed: 5, strategy: greedyStrategy, acquire: demandAwareAcquire });
+    const result = simulateExpedition({ randomFactory, initialDeck: preset, seed: 5, strategy: greedyStrategy, acquire: demandAwareAcquire });
     // 案A（else も検査する）を選ぶ。理由は上の「踏破したら...」と同じ。
     if (result.stagesCleared >= 1) {
       expect(result.acquired.length).toBeGreaterThanOrEqual(1);

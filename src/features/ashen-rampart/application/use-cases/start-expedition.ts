@@ -9,7 +9,7 @@
  * `StrictMode` で初期化子が二重に呼ばれ、ストリームが2回分進む。
  * ここは呼ばれるたびに派生シードから作り直すので冪等である。
  */
-import { SeededRandom } from '../../infrastructure/random/seeded-random';
+import type { SeededRandomFactory } from '../ports/random-port';
 import { derivedSeed } from '../../domain/shared/derived-seed';
 import { shuffle, INITIAL_HAND_SIZE, type DeckState } from '../../domain/cards/deck';
 import { validateDeck, validateRuntimeDeck } from '../../domain/cards/deck-builder';
@@ -43,13 +43,14 @@ const insertAcquired = (drawPile: readonly string[], acquired: readonly string[]
 /** 遠征を開始する。構築規則を満たさないデッキは契約違反 */
 export const startExpedition = (
   initialDeck: readonly string[],
-  seed: number
+  seed: number,
+  randomFactory: SeededRandomFactory
 ): ExpeditionState => {
   const validation = validateDeck(initialDeck);
   if (!validation.isValid) {
     throw new Error(`デッキが構築規則を満たしていません: ${validation.errors.join(' / ')}`);
   }
-  const drawRandom = new SeededRandom(derivedSeed(seed, 'stage-draw'));
+  const drawRandom = randomFactory(derivedSeed(seed, 'stage-draw'));
   return createExpedition(seed, initialDeck, drawStages(() => drawRandom.random()));
 };
 
@@ -59,9 +60,19 @@ export const startExpedition = (
  * 検証は `validateRuntimeDeck`——`validateDeck` は枚数ちょうどを要求するため、
  * 獲得で13枚になった時点で必ず落ちる（初版の設計が落ちた箇所）。
  */
-export const startStage = (exp: ExpeditionState): CombatState => {
+export const startStage = (
+  exp: ExpeditionState,
+  randomFactory: SeededRandomFactory
+): CombatState => {
   const stage = currentStage(exp);
-  // `phase === 'ended'` を明示的にチェックする理由:
+  // `phase === 'stage'` を要求する理由（反復6 最終レビュー指摘 I8）:
+  // 遷移ガードは `completeStage` / `presentOffer` / `declineOffer` /
+  // `chooseAcquisition` がいずれも phase を厳格に見ているのに対し、
+  // ここだけ `phase === 'ended'` の否定という緩い形だった。これだと
+  // 獲得が未解決の `'offer'` フェーズでも次ステージの戦闘を作れてしまい、
+  // 「獲得するか断るかを決めてから次へ進む」という遠征の進行規則を
+  // すり抜けられる。`'stage'` を明示的に要求することで非対称を閉じる。
+  //
   // 敗北による終了は `stageIndex` を進めない（`completeStage` 参照）ため、
   // `currentStage` は負けた直後のステージ定義をそのまま返し続け、
   // `!stage` だけでは「敗北で終了した遠征」を検出できない
@@ -69,14 +80,14 @@ export const startStage = (exp: ExpeditionState): CombatState => {
   // 敗北による終了はそうならない）。ブリーフ Step 3 の元コードはこの分岐を
   // 見落としており、Step 4 のテスト「終了した遠征では契約違反」が RED のまま
   // だった。ここで契約を明文化する。
-  if (exp.phase === 'ended' || !stage) {
+  if (exp.phase !== 'stage' || !stage) {
     throw new Error('挑むステージがありません');
   }
   const validation = validateRuntimeDeck(exp.deckCards);
   if (!validation.isValid) {
     throw new Error(`遠征中のデッキが不正です: ${validation.errors.join(' / ')}`);
   }
-  const shuffleRandom = new SeededRandom(derivedSeed(exp.seed, 'shuffle', exp.stageIndex));
+  const shuffleRandom = randomFactory(derivedSeed(exp.seed, 'shuffle', exp.stageIndex));
   // **基底（構築時の12枚）だけをシャッフルし、獲得札は山札の固定位置へ挿入する。**
   // 獲得を含めた配列をシャッフルすると、枚数が変わるだけで並びが全面的に変わり、
   // 獲得する腕としない腕を比較できなくなる（設計書 §8.2。G1 が反転した初版の欠陥）。
