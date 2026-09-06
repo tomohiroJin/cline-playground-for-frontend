@@ -366,6 +366,27 @@ describe('能動的な捨て札', () => {
     ]);
   });
 
+  /**
+   * 反復6 最終レビュー指摘 I2 の再発防止テスト。
+   *
+   * 上のテストは添字0 しか検査していないため、`applyDiscard` の
+   * `handIndex: action.handIndex` を `handIndex: 0`（定数）に変異させても
+   * 全テストが緑のまま通ってしまっていた。添字1 を捨てて、
+   * `discarded` イベントの handIndex が実際に1であることを検査する。
+   */
+  it('添字1を捨てても、その添字がそのまま discarded イベントに載る（handIndex が定数0に固定されていないことの検査）', () => {
+    const state = createCombatState(
+      createDeck(['arrow-tower', 'reactor', 'ballista'], () => 0),
+      noWave
+    );
+    const discarded = state.deck.hand[1];
+    const next = stepTick(state, [{ kind: 'discard', handIndex: 1 }], PLAINS_MAP);
+
+    expect(next.events.filter((e) => e.kind === 'discarded')).toEqual([
+      { kind: 'discarded', cardId: discarded, handIndex: 1 },
+    ]);
+  });
+
   it('存在しない index では discarded イベントが出ない（押した回数ではなく捨てた回数）', () => {
     const state = createCombatState(createDeck(['reactor'], () => 0), noWave);
     const next = stepTick(state, [{ kind: 'discard', handIndex: 99 }], PLAINS_MAP);

@@ -49,6 +49,31 @@ const emberDeckCards = (): string[] => [
   'cannon-tower',
 ];
 
+/**
+ * 燠火を2基置くための専用デッキ（反復6 最終レビュー指摘 I2 の再発防止用）
+ *
+ * emberIndex が定数0に固定されていないことを検査するには、2基目
+ * （emberIndex: 1）を再点火する経路が要る。シード160 はこのデッキの
+ * 初期手札が ['reactor', 'ember-blast', 'ember-blast'] になり、
+ * 魔力炉と業火2枚をドローを待たずに揃えられるため採用した
+ * （業火はコスト2で初期マナ2枚では1基しか置けず、2基目は魔力炉が
+ * 生むマナを待つ必要がある。実測で確認済み）。
+ */
+const twoEmberDeckCards = (): string[] => [
+  'ember-blast',
+  'ember-blast',
+  'reactor',
+  'reactor',
+  'reactor',
+  'arrow-tower',
+  'arrow-tower',
+  'stone-wall',
+  'stone-wall',
+  'stone-wall',
+  'ballista',
+  'cannon-tower',
+];
+
 describe('useAshenRampartGame', () => {
   beforeEach(() => jest.useFakeTimers());
   afterEach(() => jest.useRealTimers());
@@ -1181,6 +1206,82 @@ describe('useAshenRampartGame', () => {
       });
       const events = log.events.filter((e) => e.kind === 'reactivated');
       expect(events[0]).toMatchObject({ emberIndex: 0 });
+    });
+
+    /**
+     * 反復6 最終レビュー指摘 I2 の再発防止テスト。
+     *
+     * 上のテストは emberIndex: 0 しか検査していないため、
+     * `useAshenRampartGame.ts` の `emberIndex: event.emberIndex` を
+     * `emberIndex: 0`（定数）に変異させても全テストが緑のまま通ってしまっていた。
+     * 燠火を2基置き、2基目（emberIndex: 1）を再点火して検査する。
+     */
+    it('2基目の燠火（emberIndex 1）の再点火も、その添字のまま記録される（emberIndex が定数0に固定されていないことの検査）', () => {
+      const log = createMockPlayLog();
+      const { result } = renderHook(() =>
+        useAshenRampartGame({ cards: twoEmberDeckCards(), seed: 160, playLog: log })
+      );
+
+      // 魔力炉を置く（コスト0。以後マナを生む）
+      const reactorHandIndex = result.current.state.deck.hand.findIndex((id) => id === 'reactor');
+      expect(reactorHandIndex).toBeGreaterThanOrEqual(0);
+      act(() => result.current.selectCard(reactorHandIndex));
+      const reactorPos = result.current.placeableCells[0];
+      expect(reactorPos).toBeDefined();
+      act(() => result.current.interactCell(reactorPos!));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+
+      // 1基目の業火を置く（コスト2。初期マナ2で足りる）
+      const firstEmberHandIndex = result.current.state.deck.hand.findIndex(
+        (id) => id === 'ember-blast'
+      );
+      expect(firstEmberHandIndex).toBeGreaterThanOrEqual(0);
+      act(() => result.current.selectCard(firstEmberHandIndex));
+      const firstPlacePos = result.current.placeableCells[0];
+      expect(firstPlacePos).toBeDefined();
+      act(() => result.current.interactCell(firstPlacePos!));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+      expect(result.current.state.embers).toHaveLength(1);
+
+      // 2基目のコスト2ぶんのマナが貯まるまで進める（魔力炉は60tickごとに1マナ）
+      while (result.current.state.mana < 2) {
+        act(() => {
+          jest.advanceTimersByTime(TICK_INTERVAL_MS * 60);
+        });
+      }
+
+      // 2基目を置く（1基目とは異なるマスに置かれる）
+      const secondEmberHandIndex = result.current.state.deck.hand.findIndex(
+        (id) => id === 'ember-blast'
+      );
+      expect(secondEmberHandIndex).toBeGreaterThanOrEqual(0);
+      act(() => result.current.selectCard(secondEmberHandIndex));
+      const secondPlacePos = result.current.placeableCells[0];
+      expect(secondPlacePos).toBeDefined();
+      act(() => result.current.interactCell(secondPlacePos!));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+      expect(result.current.state.embers).toHaveLength(2);
+      const secondEmberPos = result.current.state.embers[1]!.pos;
+
+      // クールダウンが明けるまで進める（業火の再点火間隔は300 tick）
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS * 300);
+      });
+      expect(result.current.state.embers[1]!.cooldownLeft).toBe(0);
+
+      // 2基目のセルを選択なしでクリックすると、emberIndex: 1 で記録される
+      act(() => result.current.interactCell(secondEmberPos));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+      const events = log.events.filter((e) => e.kind === 'reactivated');
+      expect(events[0]).toMatchObject({ emberIndex: 1 });
     });
 
     it('手動の捨札が handIndex 付きで記録される', () => {
