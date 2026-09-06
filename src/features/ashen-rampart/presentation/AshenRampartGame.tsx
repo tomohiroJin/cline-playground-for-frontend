@@ -344,7 +344,7 @@ export const AshenRampartGame: React.FC = () => {
   };
 
   if (phase === 'building') {
-    // 指摘4: 直前に組んだデッキ・シードを引き継ぐ（20枚を毎回組み直させない）
+    // 指摘4: 直前に組んだデッキ・シードを引き継ぐ（12枚を毎回組み直させない）
     return (
       <DeckBuilder
         onStart={handleBuilderStart}
