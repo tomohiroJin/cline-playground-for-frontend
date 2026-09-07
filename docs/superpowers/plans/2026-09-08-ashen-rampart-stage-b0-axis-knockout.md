@@ -694,14 +694,13 @@ git commit -m "feat(ashen-rampart): 軸ノックアウト変種の導出を追�
 - [ ] **Step 1: 失敗するテストを書く**
 
 `src/features/ashen-rampart/domain/cards/card-pool.test.ts` の末尾に追記する。
-先頭の import に**次の4つを足す**こと（`CARD_IDS` / `BUILDABLE_CARD_IDS` /
-`ACQUIRABLE_CARD_IDS` / `getCardDefinition` / `DECK_SIZE` は既に import 済み）:
+**このファイルは既に `getCardDefinition` / `CARD_IDS` / `PRESET_DECKS` / `DECK_SIZE` /
+`maxCopiesOf` / `availabilityOf` / `BUILDABLE_CARD_IDS` / `ACQUIRABLE_CARD_IDS` を
+`./card-pool` から、`validateDeck` を `./deck-builder` から import している。**
+足すのは次の2つだけで、`validateDeck` と `DECK_SIZE` を二重に import しないこと:
 
-```ts
-import { KNOCKOUT_CARD_IDS } from './card-pool';        // 既存の import 文に追記する
-import { KNOCKOUT_ID_PREFIX } from './knockout-cards';
-import { validateDeck } from './deck-builder';
-```
+- 既存の `./card-pool` の import 文に `KNOCKOUT_CARD_IDS` を追記する
+- `import { KNOCKOUT_ID_PREFIX } from './knockout-cards';` を新しく足す
 
 ```ts
 describe('ノックアウト変種は監査からしか触れない（設計書 §8.2.15(m)）', () => {
