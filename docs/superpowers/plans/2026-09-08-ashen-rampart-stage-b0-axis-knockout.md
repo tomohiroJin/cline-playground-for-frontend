@@ -659,7 +659,14 @@ Expected: PASS
 `groundedTicks: undefined` に変え、テストを実行する。
 
 Run: `npx jest src/features/ashen-rampart/domain/cards/knockout-cards.test.ts`
-Expected: FAIL（「落網の groundedTicks は削除せず 0 にする」と「落とした軸だけを失い、他の軸は保つ」が赤くなる）
+Expected: FAIL（**「落網の groundedTicks は削除せず 0 にする」の1件だけ**が赤くなる）
+
+**「落とした軸だけを失い、他の軸は保つ」は赤くならない。** `axesOfCard` の anti-air 判定は
+`(groundedTicks ?? 0) > 0` なので、`undefined` と `0` を同一視するためである。
+**つまり極性の保存を単体テストで捕まえているのはこの1件だけであり**、
+振る舞いのレベルで捕まえるのは Task 6 の陰性対照である。この非対称は意図どおりで、
+1件だけ赤くなれば実効性の確認としては十分である。
+
 確認後、**必ず元に戻す**。
 
 - [ ] **Step 6: 型チェックと lint、コミット**
