@@ -25,6 +25,19 @@ const plainArrow: CardDefinition = {
   id: 'arrow', name: '弓', type: 'tower', cost: 1, description: '',
   tower: { hp: 8, range: 1.6, damage: 4, cooldownTicks: 8, splashRadius: 0, hitsFlying: false },
 };
+// mass-answer を **貫通だけ** で満たす札（範囲なし・damage 4 なので heavy-hit も付かない）
+const pierceOnly: CardDefinition = {
+  id: 'pierce', name: '貫', type: 'tower', cost: 4, description: '',
+  tower: {
+    hp: 14, range: 1.8, damage: 4, cooldownTicks: 12,
+    splashRadius: 0, hitsFlying: false, piercing: true,
+  },
+};
+// mass-answer を **燠火だけ** で満たす札（tower を持たないので他の軸は付かない）
+const blast: CardDefinition = {
+  id: 'blast', name: '燠', type: 'ember', cost: 2, description: '',
+  ember: { radius: 2, damage: 8, cooldownTicks: 300 },
+};
 
 const variantOf = (cards: readonly CardDefinition[], axis: Parameters<typeof knockoutIdOf>[0], baseId: string) =>
   deriveKnockouts(cards, THRESHOLDS).find((c) => c.id === knockoutIdOf(axis, baseId));
@@ -64,6 +77,8 @@ describe('落とした軸だけを失い、他の軸は保つ', () => {
     ['wall', wall],
     ['cannon', cannon],
     ['net', net],
+    ['pierce', pierceOnly],
+    ['blast', blast],
   ] as const)('%s のすべての変種', (baseId, card) => {
     const before = axesOfCard(card);
     deriveKnockouts([card], THRESHOLDS).forEach((variant) => {
@@ -105,11 +120,25 @@ describe('anti-air は極性を保つ（フィールドを消さない）', () =
   });
 });
 
-describe('mass-answer は範囲と貫通だけを消す', () => {
+describe('mass-answer は範囲・貫通・燠火の半径を消す（3経路すべてを検査する）', () => {
   it('splashRadius を 0 にし、1体あたりのダメージは保つ', () => {
     const v = variantOf([cannon], 'mass-answer', 'cannon');
     expect(v?.tower?.splashRadius).toBe(0);
     expect(v?.tower?.damage).toBe(12);
+  });
+
+  it('piercing を false にし、1体あたりのダメージは保つ', () => {
+    const v = variantOf([pierceOnly], 'mass-answer', 'pierce');
+    expect(v?.tower?.piercing).toBe(false);
+    expect(v?.tower?.damage).toBe(4);
+    expect(v?.tower?.range).toBe(1.8);
+  });
+
+  it('燠火は半径だけを 0 にし、ダメージと再点火間隔は保つ', () => {
+    const v = variantOf([blast], 'mass-answer', 'blast');
+    expect(v?.ember?.radius).toBe(0);
+    expect(v?.ember?.damage).toBe(8);
+    expect(v?.ember?.cooldownTicks).toBe(300);
   });
 });
 
