@@ -1,0 +1,135 @@
+# G3（要求軸の監査）の生の測定出力 — 2026-09-08
+
+判定票: 設計書 §8.2.16 / 事前登録: §8.2.15
+ビルド SHA: 534e6975e78eed084af5dcdfdde2de37aecee48b
+コマンド: ASHEN_RAMPART_G3=1 npx jest axis-demand-gate
+
+**この生出力をリポジトリに置くのは G3 が初めてである。**
+先行の G1'' / G2a の判定票は生出力ファイル名を記載しているが、それらは
+.superpowers/ 配下（gitignore 対象）にしか存在せず git 履歴に無い——
+`git clean -fdx` 一回で消える。敵対的検証の指摘を受けて慣行を改める。
+
+```
+zoxide: detected a possible configuration issue.
+Please ensure that zoxide is initialized right at the end of your shell configuration file (usually ~/.zshrc).
+
+If the issue persists, consider filing an issue at:
+https://github.com/ajeetdsouza/zoxide/issues
+
+Disable this message by setting _ZO_DOCTOR=0.
+
+npm notice run puzzle-game@1.0.0 npx
+npm notice run 'jest' src/features/ashen-rampart/application/simulation/axis-demand-gate.manual.test.ts
+  console.log
+    === 主要デッキ（シード 1251..1350）===
+    主要対比 5 本（Holm 補正あり・族サイズは固定）。それ以外は探索的（補正なし）
+    ◎=主要対比（Holm 補正あり） ★=宣言軸だが探索的 空白=非宣言軸
+    ※ 軸どうしの効果量を比較してはならない（二値2つ・用量2つで非可比。§8.2.15(o)）
+    ※ mass-answer 腕と heavy-hit 腕は独立な証拠ではない（どちらも火砲台×2 を書き換える）
+    測定不能 0 本（§8.2.15(k): 2本以上なら評価不能）
+      ★prov-t1-a  block        基準 100/100 ko 100/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -
+       prov-t1-a  anti-air     基準 100/100 ko 100/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -
+       prov-t1-a  mass-answer  基準 100/100 ko 100/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -
+       prov-t1-a  heavy-hit    基準 100/100 ko 100/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -
+       prov-t1-b  block        基準  93/100 ko  92/100 比 0.989 b=  1 c=  0 p=1.000e+0 holm=     -
+       prov-t1-b  anti-air     基準  93/100 ko  93/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -
+      ◎prov-t1-b  mass-answer  基準  93/100 ko  93/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=1.00000
+       prov-t1-b  heavy-hit    基準  93/100 ko  93/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -
+      ★prov-t2-a  block        基準  93/100 ko  94/100 比 1.011 b=  0 c=  1 p=1.000e+0 holm=     -
+       prov-t2-a  anti-air     基準  93/100 ko  93/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -
+      ◎prov-t2-a  mass-answer  基準  93/100 ko  93/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=1.00000
+       prov-t2-a  heavy-hit    基準  93/100 ko  93/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -
+      ★prov-t2-b  block        基準 100/100 ko 100/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -
+      ◎prov-t2-b  anti-air     基準 100/100 ko  84/100 比 0.840 b= 16 c=  0 p=3.052e-5 holm=0.00015
+       prov-t2-b  mass-answer  基準 100/100 ko 100/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -
+       prov-t2-b  heavy-hit    基準 100/100 ko 100/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -
+      ★prov-t3-a  block        基準  42/100 ko  36/100 比 0.857 b=  8 c=  2 p=1.094e-1 holm=     -
+      ◎prov-t3-a  anti-air     基準  42/100 ko  33/100 比 0.786 b= 10 c=  1 p=1.172e-2 holm=0.03516
+       prov-t3-a  mass-answer  基準  42/100 ko  29/100 比 0.690 b= 13 c=  0 p=2.441e-4 holm=     -
+      ★prov-t3-a  heavy-hit    基準  42/100 ko  36/100 比 0.857 b=  6 c=  0 p=3.125e-2 holm=     -
+      ★prov-t3-b  block        基準  43/100 ko  38/100 比 0.884 b=  5 c=  0 p=6.250e-2 holm=     -
+       prov-t3-b  anti-air     基準  43/100 ko  43/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -
+      ◎prov-t3-b  mass-answer  基準  43/100 ko  32/100 比 0.744 b= 11 c=  0 p=9.766e-4 holm=0.00391
+      ★prov-t3-b  heavy-hit    基準  43/100 ko  43/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -
+
+      at Object.log (src/features/ashen-rampart/application/simulation/axis-demand-gate.manual.test.ts:201:13)
+
+  console.log
+    === swift（探索的・補正なし）===
+    ◎=主要対比（Holm 補正あり） ★=宣言軸だが探索的 空白=非宣言軸
+    ※ 軸どうしの効果量を比較してはならない（二値2つ・用量2つで非可比。§8.2.15(o)）
+    ※ mass-answer 腕と heavy-hit 腕は独立な証拠ではない（どちらも火砲台×2 を書き換える）
+      ★prov-t1-a  block        基準 100/100 ko 100/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -
+       prov-t1-a  anti-air     基準 100/100 ko 100/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -  [測定不能: 貫通が飛行を絞らない（§8.2.15(a)5）]
+       prov-t1-a  mass-answer  基準 100/100 ko 100/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -
+       prov-t1-a  heavy-hit    基準 100/100 ko 100/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -
+       prov-t1-b  block        基準  95/100 ko  95/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -
+       prov-t1-b  anti-air     基準  95/100 ko  95/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -  [測定不能: 貫通が飛行を絞らない（§8.2.15(a)5）]
+      ◎prov-t1-b  mass-answer  基準  95/100 ko  95/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -
+       prov-t1-b  heavy-hit    基準  95/100 ko  95/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -
+      ★prov-t2-a  block        基準  99/100 ko  99/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -
+       prov-t2-a  anti-air     基準  99/100 ko  99/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -  [測定不能: 貫通が飛行を絞らない（§8.2.15(a)5）]
+      ◎prov-t2-a  mass-answer  基準  99/100 ko  99/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -
+       prov-t2-a  heavy-hit    基準  99/100 ko  99/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -
+      ★prov-t2-b  block        基準  98/100 ko  98/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -
+      ◎prov-t2-b  anti-air     基準  98/100 ko  88/100 比 0.898 b= 10 c=  0 p=1.953e-3 holm=     -  [測定不能: 貫通が飛行を絞らない（§8.2.15(a)5）]
+       prov-t2-b  mass-answer  基準  98/100 ko  98/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -
+       prov-t2-b  heavy-hit    基準  98/100 ko  98/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -
+      ★prov-t3-a  block        基準  64/100 ko  62/100 比 0.969 b=  3 c=  1 p=6.250e-1 holm=     -
+      ◎prov-t3-a  anti-air     基準  64/100 ko  37/100 比 0.578 b= 27 c=  0 p=1.490e-8 holm=     -  [測定不能: 貫通が飛行を絞らない（§8.2.15(a)5）]
+       prov-t3-a  mass-answer  基準  64/100 ko  56/100 比 0.875 b=  8 c=  0 p=7.813e-3 holm=     -
+      ★prov-t3-a  heavy-hit    基準  64/100 ko  63/100 比 0.984 b=  2 c=  1 p=1.000e+0 holm=     -
+      ★prov-t3-b  block        基準  52/100 ko  50/100 比 0.962 b=  2 c=  0 p=5.000e-1 holm=     -
+       prov-t3-b  anti-air     基準  52/100 ko  52/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -  [測定不能: 貫通が飛行を絞らない（§8.2.15(a)5）]
+      ◎prov-t3-b  mass-answer  基準  52/100 ko  48/100 比 0.923 b=  4 c=  0 p=1.250e-1 holm=     -
+      ★prov-t3-b  heavy-hit    基準  52/100 ko  51/100 比 0.981 b=  1 c=  0 p=1.000e+0 holm=     -
+
+      at log (src/features/ashen-rampart/application/simulation/axis-demand-gate.manual.test.ts:227:15)
+
+  console.log
+    === heavy（探索的・補正なし）===
+    ◎=主要対比（Holm 補正あり） ★=宣言軸だが探索的 空白=非宣言軸
+    ※ 軸どうしの効果量を比較してはならない（二値2つ・用量2つで非可比。§8.2.15(o)）
+    ※ mass-answer 腕と heavy-hit 腕は独立な証拠ではない（どちらも火砲台×2 を書き換える）
+      ★prov-t1-a  block        基準 100/100 ko 100/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -
+       prov-t1-a  anti-air     基準 100/100 ko 100/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -  [測定不能: 貫通が飛行を絞らない（§8.2.15(a)5）]
+       prov-t1-a  mass-answer  基準 100/100 ko 100/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -
+       prov-t1-a  heavy-hit    基準 100/100 ko 100/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -  [測定不能: 丸めで実効DPSがずれる（§8.2.15(a)6）]
+       prov-t1-b  block        基準  83/100 ko  82/100 比 0.988 b=  1 c=  0 p=1.000e+0 holm=     -
+       prov-t1-b  anti-air     基準  83/100 ko  83/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -  [測定不能: 貫通が飛行を絞らない（§8.2.15(a)5）]
+      ◎prov-t1-b  mass-answer  基準  83/100 ko  83/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -
+       prov-t1-b  heavy-hit    基準  83/100 ko  83/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -  [測定不能: 丸めで実効DPSがずれる（§8.2.15(a)6）]
+      ★prov-t2-a  block        基準  64/100 ko  65/100 比 1.016 b=  1 c=  2 p=1.000e+0 holm=     -
+       prov-t2-a  anti-air     基準  64/100 ko  64/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -  [測定不能: 貫通が飛行を絞らない（§8.2.15(a)5）]
+      ◎prov-t2-a  mass-answer  基準  64/100 ko  62/100 比 0.969 b=  2 c=  0 p=5.000e-1 holm=     -
+       prov-t2-a  heavy-hit    基準  64/100 ko  64/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -  [測定不能: 丸めで実効DPSがずれる（§8.2.15(a)6）]
+      ★prov-t2-b  block        基準  97/100 ko  97/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -
+      ◎prov-t2-b  anti-air     基準  97/100 ko  60/100 比 0.619 b= 37 c=  0 p=1.455e-11 holm=     -  [測定不能: 貫通が飛行を絞らない（§8.2.15(a)5）]
+       prov-t2-b  mass-answer  基準  97/100 ko  97/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -
+       prov-t2-b  heavy-hit    基準  97/100 ko  97/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -  [測定不能: 丸めで実効DPSがずれる（§8.2.15(a)6）]
+      ★prov-t3-a  block        基準  46/100 ko  31/100 比 0.674 b= 15 c=  0 p=6.104e-5 holm=     -
+      ◎prov-t3-a  anti-air     基準  46/100 ko  15/100 比 0.326 b= 31 c=  0 p=9.313e-10 holm=     -  [測定不能: 貫通が飛行を絞らない（§8.2.15(a)5）]
+       prov-t3-a  mass-answer  基準  46/100 ko  22/100 比 0.478 b= 24 c=  0 p=1.192e-7 holm=     -
+      ★prov-t3-a  heavy-hit    基準  46/100 ko  48/100 比 1.043 b=  0 c=  2 p=5.000e-1 holm=     -  [測定不能: 丸めで実効DPSがずれる（§8.2.15(a)6）]
+      ★prov-t3-b  block        基準  44/100 ko  28/100 比 0.636 b= 16 c=  0 p=3.052e-5 holm=     -
+       prov-t3-b  anti-air     基準  44/100 ko  44/100 比 1.000 b=  0 c=  0 p=1.000e+0 holm=     -  [測定不能: 貫通が飛行を絞らない（§8.2.15(a)5）]
+      ◎prov-t3-b  mass-answer  基準  44/100 ko  11/100 比 0.250 b= 33 c=  0 p=2.328e-10 holm=     -
+      ★prov-t3-b  heavy-hit    基準  44/100 ko  42/100 比 0.955 b=  2 c=  0 p=5.000e-1 holm=     -  [測定不能: 丸めで実効DPSがずれる（§8.2.15(a)6）]
+
+      at log (src/features/ashen-rampart/application/simulation/axis-demand-gate.manual.test.ts:227:15)
+
+PASS src/features/ashen-rampart/application/simulation/axis-demand-gate.manual.test.ts (562.309 s)
+  G3 要求軸の監査
+    ✓ 主要デッキ（全軸充足12枚） (154410 ms)
+    ✓ swift デッキ（探索的） (149341 ms)
+    ✓ heavy デッキ（探索的） (251511 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       3 passed, 3 total
+Snapshots:   0 total
+Time:        604.312 s
+Ran all test suites matching src/features/ashen-rampart/application/simulation/axis-demand-gate.manual.test.ts.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?
+
+[exited with code 0]
+```
