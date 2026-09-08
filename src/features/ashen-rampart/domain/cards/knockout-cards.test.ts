@@ -40,7 +40,7 @@ const blast: CardDefinition = {
 };
 
 const variantOf = (cards: readonly CardDefinition[], axis: Parameters<typeof knockoutIdOf>[0], baseId: string) =>
-  deriveKnockouts(cards, THRESHOLDS).find((c) => c.id === knockoutIdOf(axis, baseId));
+  deriveKnockouts(cards, THRESHOLDS).variants.find((c) => c.id === knockoutIdOf(axis, baseId));
 
 describe('ID の規約', () => {
   it('変種の ID は接頭辞 + 軸 + 基礎IDでできている', () => {
@@ -60,12 +60,12 @@ describe('変種を作る対象は axesOfCard と一致する', () => {
   it('軸を持たない札には変種を作らない', () => {
     // 弓兵は4軸のどれも持たない（HP8・damage4・単体・地上のみ）
     expect(axesOfCard(plainArrow)).toEqual([]);
-    expect(deriveKnockouts([plainArrow], THRESHOLDS)).toEqual([]);
+    expect(deriveKnockouts([plainArrow], THRESHOLDS).variants).toEqual([]);
   });
 
   it('軸を持つ札には、その軸ぶんだけ変種を作る', () => {
     expect(axesOfCard(cannon)).toEqual(['mass-answer', 'heavy-hit']);
-    expect(deriveKnockouts([cannon], THRESHOLDS).map((c) => c.id)).toEqual([
+    expect(deriveKnockouts([cannon], THRESHOLDS).variants.map((c) => c.id)).toEqual([
       knockoutIdOf('mass-answer', 'cannon'),
       knockoutIdOf('heavy-hit', 'cannon'),
     ]);
@@ -81,7 +81,7 @@ describe('落とした軸だけを失い、他の軸は保つ', () => {
     ['blast', blast],
   ] as const)('%s のすべての変種', (baseId, card) => {
     const before = axesOfCard(card);
-    deriveKnockouts([card], THRESHOLDS).forEach((variant) => {
+    deriveKnockouts([card], THRESHOLDS).variants.forEach((variant) => {
       const axis = before.find((a) => variant.id === knockoutIdOf(a, baseId));
       expect(axis).toBeDefined();
       const after = axesOfCard(variant);
@@ -164,19 +164,26 @@ describe('heavy-hit は DPS を保って分割する', () => {
     expect(v?.tower?.splashRadius).toBe(1);
   });
 
-  it('割り切れない札は静かに歪めず例外にする', () => {
+  it('割り切れない札は静かに歪めず、failures に記録する（最終レビュー I3）', () => {
     const odd: CardDefinition = {
       id: 'odd', name: '奇', type: 'tower', cost: 3, description: '',
       tower: { hp: 10, range: 1, damage: 13, cooldownTicks: 12, splashRadius: 0, hitsFlying: false },
     };
-    // damage 13 と cooldown 12 の公約数は 1 しかないので、DPS を保った分割ができない
-    expect(() => deriveKnockouts([odd], THRESHOLDS)).toThrow(/heavy-hit/);
+    // damage 13 と cooldown 12 の公約数は 1 しかないので、DPS を保った分割ができない。
+    // **例外を投げっぱなしにしない。** `deriveKnockouts` はトップレベル評価
+    // （`card-pool.ts`）から呼ばれるため、ここで投げると本番の起動が止まる。
+    // 「静かに歪めない」という意図は、欠落が `failures` へ残ることで守られる。
+    const result = deriveKnockouts([odd], THRESHOLDS);
+    expect(result.variants).toEqual([]);
+    expect(result.failures).toEqual([
+      { cardId: 'odd', axis: 'heavy-hit', reason: expect.stringContaining('heavy-hit') },
+    ]);
   });
 });
 
 describe('変種は入手経路を持たない', () => {
   it('すべての変種が retired である', () => {
-    deriveKnockouts([wall, cannon, net], THRESHOLDS).forEach((v) => {
+    deriveKnockouts([wall, cannon, net], THRESHOLDS).variants.forEach((v) => {
       expect(v.availability).toBe('retired');
     });
   });

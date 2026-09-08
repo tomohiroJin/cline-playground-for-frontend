@@ -15,6 +15,7 @@ import {
   BUILDABLE_CARD_IDS,
   ACQUIRABLE_CARD_IDS,
   KNOCKOUT_CARD_IDS,
+  KNOCKOUT_DERIVATION_FAILURES,
 } from './card-pool';
 import { placementKindOf } from './card-definition';
 import { validateDeck } from './deck-builder';
@@ -284,6 +285,13 @@ describe('カードの入手経路（反復6）', () => {
 describe('ノックアウト変種は監査からしか触れない（設計書 §8.2.15(m)）', () => {
   it('変種が1枚以上導出されている', () => {
     expect(KNOCKOUT_CARD_IDS.length).toBeGreaterThan(0);
+  });
+
+  it('ノックアウト変種の導出に失敗した札が無い（最終レビュー I3）', () => {
+    // ここに1件でも載ると、knockoutDeck（axis-knockout.ts）が該当の
+    // (カードID, 軸) を要求された瞬間に自己検査で例外を投げる（最終レビュー I2）。
+    // 空であることをここで固定し、赤くなる場所をこの1本に絞る。
+    expect(KNOCKOUT_DERIVATION_FAILURES).toEqual([]);
   });
 
   it('基礎札の ID は接頭辞を持たない（衝突が構文的に起こりえない）', () => {

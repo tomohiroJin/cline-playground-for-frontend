@@ -29,7 +29,7 @@
  */
 import type { CardAvailability, CardDefinition } from './card-definition';
 import { BLOCK_HP_THRESHOLD, HEAVY_HIT_DAMAGE_THRESHOLD } from './axis-of-card';
-import { deriveKnockouts, KNOCKOUT_ID_PREFIX } from './knockout-cards';
+import { deriveKnockouts, KNOCKOUT_ID_PREFIX, type KnockoutDerivation } from './knockout-cards';
 
 /** デッキの枚数（反復6 で 20 → 12。設計書 §4.6） */
 export const DECK_SIZE = 12;
@@ -200,11 +200,29 @@ const CARDS: readonly CardDefinition[] = [
  *
  * **監査専用のデータが domain と本番バンドルに載ることは認めている**
  * （数KB・機能影響なし。`levy` の `retired` と同じ扱い）。
+ *
+ * **`deriveKnockouts` はここでは例外を投げない（最終レビュー I3）。** 導出に
+ * 失敗した (カードID, 軸) は `KNOCKOUT_DERIVATION_FAILURES` に集まるだけで、
+ * トップレベル評価（本番の起動）を止めない。段階B で攻撃塔を1枚足したとき
+ * `damage`/`cooldownTicks` の公約数がたまたま無ければ、赤くなるのは
+ * `card-pool.test.ts` の1本だけであるべきで、feature 全体を巻き込んではならない。
  */
-const KNOCKOUT_CARDS: readonly CardDefinition[] = deriveKnockouts(CARDS, {
+const KNOCKOUT_DERIVATION: KnockoutDerivation = deriveKnockouts(CARDS, {
   blockHp: BLOCK_HP_THRESHOLD,
   heavyHitDamage: HEAVY_HIT_DAMAGE_THRESHOLD,
 });
+const KNOCKOUT_CARDS: readonly CardDefinition[] = KNOCKOUT_DERIVATION.variants;
+
+/**
+ * ノックアウト変種の導出に失敗した (カードID, 軸, 理由) の一覧
+ *
+ * **空であるべき。** `card-pool.test.ts` が空配列であることを検査する。
+ * ここに1件でも載ると、`knockoutDeck`（`axis-knockout.ts`）はその
+ * (カードID, 軸) を要求された瞬間に自己検査で例外を投げる——
+ * 「処置されていない腕を処置腕と呼ぶ」ことが構造的に起こらないようにするため。
+ */
+export const KNOCKOUT_DERIVATION_FAILURES: KnockoutDerivation['failures'] =
+  KNOCKOUT_DERIVATION.failures;
 
 /**
  * 合流順は「基礎札が後ろ＝勝つ」向きにする

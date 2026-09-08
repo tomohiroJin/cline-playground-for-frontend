@@ -6,7 +6,7 @@
  */
 import { KNOCKOUT_CARD_IDS } from '../cards/card-pool';
 import { knockoutIdOf } from '../cards/knockout-cards';
-import type { DemandAxis } from './stage-definition';
+import { axesOf, type DemandAxis } from './stage-definition';
 
 const KNOCKOUT_ID_SET: ReadonlySet<string> = new Set(KNOCKOUT_CARD_IDS);
 
@@ -17,11 +17,24 @@ const KNOCKOUT_ID_SET: ReadonlySet<string> = new Set(KNOCKOUT_CARD_IDS);
  * 配列の長さぶんだけ乱数を引き、中身に依存しない。したがって位置を保てば、
  * 同じシードで基準腕とノックアウト腕のシャッフル結果が1対1に対応する。
  * **フィルタして末尾に足す実装にしてはならない**（対応が壊れて陰性対照が成立しなくなる）。
+ *
+ * **置き換え対象は `axesOf` で自ら判定し、置き換え先は自ら存在を検査する。**
+ * 旧実装は ID 集合のメンバーシップ（`KNOCKOUT_ID_SET.has(variantId)`）だけで
+ * 判定していた——変種の導出が1件でも欠けると、その軸を持つ札は静かに
+ * 基礎札のまま残り、**処置されていない腕を処置腕と呼んで測定が進んでしまう**
+ * （最終レビュー I2）。`deriveKnockouts` は導出失敗を例外にせず `failures` へ
+ * 逃がす設計（I3）に変えたので、その逃げ道をここで塞ぐ。`axesOf(id)` が
+ * その軸を持つと言っているのに変種が無いのは、`knockout-cards.ts` の
+ * 導出漏れであり、ノックアウト腕を組む段階で気づかなければならない。
  */
 export const knockoutDeck = (cards: readonly string[], axis: DemandAxis): string[] =>
   cards.map((id) => {
+    if (!axesOf(id).includes(axis)) return id;
     const variantId = knockoutIdOf(axis, id);
-    return KNOCKOUT_ID_SET.has(variantId) ? variantId : id;
+    if (!KNOCKOUT_ID_SET.has(variantId)) {
+      throw new Error(`変種が導出されていません: ${id} / ${axis}`);
+    }
+    return variantId;
   });
 
 /**

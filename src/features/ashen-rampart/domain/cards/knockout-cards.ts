@@ -9,8 +9,12 @@
  * **`card-pool` を import してはならない**（循環になる。§8.2.15(m)）。
  * 判定述語は `axis-of-card.ts` の `axesOfCard` を使い、ここで再実装しない。
  *
- * **`heavy-hit` の分割で DPS がずれるくらいなら例外で落とす。**
- * 静かに歪めると、この道具は旧道具と同じ「量の交絡」に戻る。
+ * **`heavy-hit` の分割で DPS を保てない・軸の元になる `tower` が無いときは、
+ * 個々の導出（`derivedFor`）は例外を投げる。** 静かに歪めると、この道具は
+ * 旧道具と同じ「量の交絡」に戻るからである。ただし `deriveKnockouts` は
+ * その例外をトップレベルへ伝播させず `failures` として集める（最終レビュー
+ * I3・下記 docstring 参照）——ここが投げっぱなしだと `card-pool.ts` の
+ * トップレベル評価が本番の起動ごと止まる。
  */
 import type { CardDefinition } from './card-definition';
 import { axesOfCard, type DemandAxis } from './axis-of-card';
@@ -70,14 +74,19 @@ const splitFactorFor = (
   return undefined;
 };
 
-const withoutBlock = (card: CardDefinition, blockHp: number): CardDefinition | undefined => {
+const withoutBlock = (card: CardDefinition, blockHp: number): CardDefinition => {
   const spec = card.tower;
-  if (!spec) return undefined;
+  // **静かに undefined を返さない。** ここが undefined を返すと、呼び出し元の
+  // `deriveKnockouts` がその変種を黙って欠落させ、`knockoutDeck` はノックアウト
+  // されるはずの腕に基礎札をそのまま残してしまう（誰にも赤くならない失敗）。
+  if (!spec) {
+    throw new Error(`block のノックアウトを導出できません（tower を持たない）: ${card.id}`);
+  }
   // 最小介入。閾値の1つ下まで下げれば軸は落ちる（8 まで落とすのは必要量の5倍以上）
   return { ...asVariant(card, 'block'), tower: { ...spec, hp: blockHp - 1 } };
 };
 
-const withoutAntiAir = (card: CardDefinition): CardDefinition | undefined => {
+const withoutAntiAir = (card: CardDefinition): CardDefinition => {
   const tower = card.tower;
   const trap = card.trap;
   return {
@@ -89,7 +98,7 @@ const withoutAntiAir = (card: CardDefinition): CardDefinition | undefined => {
   };
 };
 
-const withoutMassAnswer = (card: CardDefinition): CardDefinition | undefined => {
+const withoutMassAnswer = (card: CardDefinition): CardDefinition => {
   const tower = card.tower;
   const ember = card.ember;
   return {
@@ -99,12 +108,11 @@ const withoutMassAnswer = (card: CardDefinition): CardDefinition | undefined => 
   };
 };
 
-const withoutHeavyHit = (
-  card: CardDefinition,
-  threshold: number
-): CardDefinition | undefined => {
+const withoutHeavyHit = (card: CardDefinition, threshold: number): CardDefinition => {
   const spec = card.tower;
-  if (!spec) return undefined;
+  if (!spec) {
+    throw new Error(`heavy-hit のノックアウトを導出できません（tower を持たない）: ${card.id}`);
+  }
   const factor = splitFactorFor(spec.damage, spec.cooldownTicks, threshold);
   if (factor === undefined) {
     throw new Error(
@@ -122,7 +130,7 @@ const derivedFor = (
   card: CardDefinition,
   axis: DemandAxis,
   thresholds: KnockoutThresholds
-): CardDefinition | undefined => {
+): CardDefinition => {
   switch (axis) {
     case 'block':
       return withoutBlock(card, thresholds.blockHp);
@@ -135,19 +143,46 @@ const derivedFor = (
   }
 };
 
+/** 導出できなかった (カードID, 軸, 理由) の一覧と、導出できた変種の一覧 */
+export interface KnockoutDerivation {
+  variants: CardDefinition[];
+  failures: readonly { cardId: string; axis: DemandAxis; reason: string }[];
+}
+
 /**
  * 基礎札の一覧から、軸ノックアウト変種をすべて導出する
  *
  * **変種を作るのは、その札が実際にその軸を持つときだけ。** 判定は `axesOfCard` に
  * 委ねるので、段階B で足す新カードも自動で拾われる（`axesOf` を ID 直書きに
  * しなかったのと同じ理由）。
+ *
+ * **失敗しても例外を投げない。** `card-pool.ts` はこの関数の結果をトップレベルで
+ * 評価するので、ここで投げると本番バンドルの起動そのものが止まる（段階B で
+ * カードを1枚足しただけで `damage`/`cooldownTicks` の公約数がたまたま無くなり、
+ * feature 全体のテストが同時に赤くなる、という事態を避ける）。**導出できなかった
+ * 分は `failures` に集め、呼び出し側が扱う。** 「静かに歪めない」という方針は
+ * `failures` に載ることで守られる——欠落は消えず、`card-pool.test.ts` の
+ * 1本が拾う。さらに `axis-knockout.ts` の `knockoutDeck` が、失敗した変種を
+ * 実際にノックアウト腕へ差し込もうとした瞬間に例外で落とす（自己検査）。
  */
 export const deriveKnockouts = (
   cards: readonly CardDefinition[],
   thresholds: KnockoutThresholds
-): CardDefinition[] =>
-  cards.flatMap((card) =>
-    axesOfCard(card)
-      .map((axis) => derivedFor(card, axis, thresholds))
-      .filter((variant): variant is CardDefinition => variant !== undefined)
-  );
+): KnockoutDerivation => {
+  const variants: CardDefinition[] = [];
+  const failures: { cardId: string; axis: DemandAxis; reason: string }[] = [];
+  cards.forEach((card) => {
+    axesOfCard(card).forEach((axis) => {
+      try {
+        variants.push(derivedFor(card, axis, thresholds));
+      } catch (error) {
+        failures.push({
+          cardId: card.id,
+          axis,
+          reason: error instanceof Error ? error.message : String(error),
+        });
+      }
+    });
+  });
+  return { variants, failures };
+};
