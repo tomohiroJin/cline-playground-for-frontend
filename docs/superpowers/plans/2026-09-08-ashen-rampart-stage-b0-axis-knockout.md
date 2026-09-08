@@ -1273,7 +1273,6 @@ git commit -m "feat(ashen-rampart): 全 tick のイベント列を返す simulat
  * 「壊れているのに緑」になっていた（実測: 登録した5項目の不一致 0/20 に対し、
  * 罠状態の不一致は最大 15/20）。
  */
-import { PLAINS_MAP } from '../../domain/board/stage-map';
 import { createDeck, shuffle } from '../../domain/cards/deck';
 import { baseIdOf } from '../../domain/cards/knockout-cards';
 import { createCombatState } from '../../domain/combat/combat-state';
