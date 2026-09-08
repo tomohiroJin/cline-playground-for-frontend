@@ -105,13 +105,23 @@ const heavyHitDpsPreserved = (cards: readonly string[], map: StageMap): boolean 
   });
 };
 
-/** §8.2.15(g) の3規則を機械的に当てる */
+/** §8.2.15(g) の3規則 ＋ M6（業火の測定不能規則）を機械的に当てる */
 const unmeasurableReason = (
   axis: DemandAxis,
   baseWins: number,
   cards: readonly string[],
   map: StageMap
 ): string => {
+  // **最終レビュー M6・先頭に置く。** 再点火（`applyReactivate`）は
+  // `getCardDefinition('ember-blast')` を ID 直書きで引くため、業火が入った
+  // デッキでは変種を差し込んでも2回目以降は基礎の半径2・8ダメージへ戻る
+  // （§8.2.15(a)2）。`AUDIT_FULL_DECK` は業火を含めない設計で守られているが、
+  // `measure()` は任意のデッキを受け取るため、業火入りのデッキ（例: 段階D で
+  // 本番の実デッキへ当て直すとき）が来ると mass-answer 行が測定不能マーク
+  // なしで嘘の数値を吐く。
+  if (axis === 'mass-answer' && cards.includes('ember-blast')) {
+    return '再点火が基礎札を読む（§8.2.15(a)2）';
+  }
   if (axis === 'anti-air' && hasPiercingCard(cards)) {
     return '貫通が飛行を絞らない（§8.2.15(a)5）';
   }
@@ -156,8 +166,12 @@ const render = (cells: readonly Cell[], holmByCell: ReadonlyMap<Cell, number>): 
     .map((cell) => {
       const ratio = cell.baseWins === 0 ? NaN : cell.koWins / cell.baseWins;
       const holm = holmByCell.get(cell);
+      // **最終レビュー I4。** `declared`（宣言軸）だけで ★ を付けると、宣言軸12本
+      // のうち7本が「★付きの探索的行」になり、主要5本より多くなる。主要対比
+      // （`isPrimary`）と宣言軸を別の記号に分け、転記時の読み違いを防ぐ。
+      const marker = isPrimary(cell) ? '◎' : cell.declared ? '★' : ' ';
       return (
-        `  ${cell.declared ? '★' : ' '}${cell.stageId.padEnd(10)} ${cell.axis.padEnd(12)}` +
+        `  ${marker}${cell.stageId.padEnd(10)} ${cell.axis.padEnd(12)}` +
         ` 基準 ${String(cell.baseWins).padStart(3)}/${N}` +
         ` ko ${String(cell.koWins).padStart(3)}/${N}` +
         ` 比 ${Number.isNaN(ratio) ? ' n/a ' : ratio.toFixed(3)}` +
@@ -188,6 +202,11 @@ const render = (cells: readonly Cell[], holmByCell: ReadonlyMap<Cell, number>): 
       [
         `=== 主要デッキ（シード ${SEED_FROM}..${SEED_FROM + N - 1}）===`,
         `主要対比 ${primary.length} 本（Holm 補正あり・族サイズは固定）。それ以外は探索的（補正なし）`,
+        `◎=主要対比（Holm 補正あり） ★=宣言軸だが探索的 空白=非宣言軸`,
+        // 最終レビュー I5: §8.2.15(o) が列挙した禁止のうち、判定票 §8.2.16 の
+        // 「交絡」欄を埋める現場で最も踏まれやすい2つをここに同行させる
+        `※ 軸どうしの効果量を比較してはならない（二値2つ・用量2つで非可比。§8.2.15(o)）`,
+        `※ mass-answer 腕と heavy-hit 腕は独立な証拠ではない（どちらも火砲台×2 を書き換える）`,
         `測定不能 ${unmeasurable.length} 本（§8.2.15(k): 2本以上なら評価不能）`,
         render(cells, holmByCell),
       ].join('\n')
@@ -195,6 +214,10 @@ const render = (cells: readonly Cell[], holmByCell: ReadonlyMap<Cell, number>): 
 
     // 構造的な検査のみ。合否の閾値は置かない（判定票へ転記する）
     expect(primary).toHaveLength(5);
+    // 最終レビュー M7: 24セルのうち1つでも出れば通っていた。網羅性を構造で固定する
+    // （閾値ではないので事前登録 §8.2.15(q) に抵触しない）
+    expect(cells).toHaveLength(PROVISIONAL_STAGES.length * DEMAND_AXES.length);
+    expect(cells.every((cell) => Number.isFinite(cell.p))).toBe(true);
   });
 
   it.each(Object.values(PRESET_DECKS).map((p) => [p.id, p.cards] as const))(
@@ -202,9 +225,17 @@ const render = (cells: readonly Cell[], holmByCell: ReadonlyMap<Cell, number>): 
     (presetId, cards) => {
       const cells = PROVISIONAL_STAGES.flatMap((stage) => measure(stage, cards));
       console.log(
-        [`=== ${presetId}（探索的・補正なし）===`, render(cells, new Map<Cell, number>())].join('\n')
+        [
+          `=== ${presetId}（探索的・補正なし）===`,
+          `◎=主要対比（Holm 補正あり） ★=宣言軸だが探索的 空白=非宣言軸`,
+          `※ 軸どうしの効果量を比較してはならない（二値2つ・用量2つで非可比。§8.2.15(o)）`,
+          `※ mass-answer 腕と heavy-hit 腕は独立な証拠ではない（どちらも火砲台×2 を書き換える）`,
+          render(cells, new Map<Cell, number>()),
+        ].join('\n')
       );
-      expect(cells.length).toBeGreaterThan(0);
+      // 最終レビュー M7: 構造 assert を強化する
+      expect(cells).toHaveLength(PROVISIONAL_STAGES.length * DEMAND_AXES.length);
+      expect(cells.every((cell) => Number.isFinite(cell.p))).toBe(true);
     }
   );
 });
