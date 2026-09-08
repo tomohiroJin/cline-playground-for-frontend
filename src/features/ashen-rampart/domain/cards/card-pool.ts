@@ -28,6 +28,8 @@
  * 足止めと石壁という2つの「止める」概念の重複も消える。
  */
 import type { CardAvailability, CardDefinition } from './card-definition';
+import { BLOCK_HP_THRESHOLD, HEAVY_HIT_DAMAGE_THRESHOLD } from './axis-of-card';
+import { deriveKnockouts, KNOCKOUT_ID_PREFIX } from './knockout-cards';
 
 /** デッキの枚数（反復6 で 20 → 12。設計書 §4.6） */
 export const DECK_SIZE = 12;
@@ -189,9 +191,42 @@ const CARDS: readonly CardDefinition[] = [
   },
 ];
 
-const CARD_MAP: ReadonlyMap<string, CardDefinition> = new Map(CARDS.map((c) => [c.id, c]));
+/**
+ * 軸ノックアウト変種（監査専用・設計書 §8.2.15）
+ *
+ * **`CARD_IDS` には入らない。** したがって構築（`BUILDABLE_CARD_IDS`）・
+ * 獲得（`ACQUIRABLE_CARD_IDS`）・UI・`validateDeck`（`CARD_IDS.includes` で
+ * 未知として弾く）からは到達できない。`getCardDefinition` からだけ引ける。
+ *
+ * **監査専用のデータが domain と本番バンドルに載ることは認めている**
+ * （数KB・機能影響なし。`levy` の `retired` と同じ扱い）。
+ */
+const KNOCKOUT_CARDS: readonly CardDefinition[] = deriveKnockouts(CARDS, {
+  blockHp: BLOCK_HP_THRESHOLD,
+  heavyHitDamage: HEAVY_HIT_DAMAGE_THRESHOLD,
+});
+
+/**
+ * 合流順は「基礎札が後ろ＝勝つ」向きにする
+ *
+ * `Map` は後勝ちなので、変種を後ろに置くと ID が衝突した瞬間に
+ * **本番の札が沈黙して上書きされる**（`CARD_IDS` は14件のままなので
+ * 到達不能性のテストも枚数のテストも通ってしまう）。事故っても
+ * 本番が壊れない向きにしてある。
+ */
+const CARD_MAP: ReadonlyMap<string, CardDefinition> = new Map(
+  [...KNOCKOUT_CARDS, ...CARDS].map((c) => [c.id, c])
+);
 
 export const CARD_IDS: readonly string[] = CARDS.map((c) => c.id);
+
+// 契約: 変種の ID は基礎札と衝突しない（衝突すると CARD_MAP が本番の札を失う）
+if (CARD_IDS.some((id) => id.startsWith(KNOCKOUT_ID_PREFIX))) {
+  throw new Error('基礎札の ID がノックアウトの接頭辞と衝突しています');
+}
+
+/** 監査が使う変種の ID 一覧（`CARD_IDS` とは素である） */
+export const KNOCKOUT_CARD_IDS: readonly string[] = KNOCKOUT_CARDS.map((c) => c.id);
 
 /** カード定義を取得する。未知の id は契約違反として例外 */
 export const getCardDefinition = (id: string): CardDefinition => {
