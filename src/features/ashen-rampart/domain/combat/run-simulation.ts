@@ -6,7 +6,7 @@
  */
 import type { CellPos, StageMap } from '../board/stage-map';
 import { allPathCells, isPathCell, laneOf } from '../board/stage-map';
-import type { CombatState } from './combat-state';
+import type { CombatState, TickEvent } from './combat-state';
 import { stepTick, placeableCells, type PlayerAction } from './step-tick';
 import { getCardDefinition } from '../cards/card-pool';
 import { HAND_LIMIT } from '../cards/deck';
@@ -26,17 +26,26 @@ export interface RunSimulationResult {
 /** 安全弁。ラン長 950 tick を大きく超えたら打ち切る */
 export const SIMULATION_MAX_TICKS = 3000;
 
-export const simulateRun = (
+/**
+ * ランを丸ごと回し、**全 tick のイベント列も返す**
+ *
+ * `CombatState.events` はその tick のぶんしか持たないので、
+ * 陰性対照（2つの腕のランが完全に一致するか）はこれが無いと検査できない。
+ * ループを2つ持たないため、`simulateRun` はこれに委譲する。
+ */
+export const simulateRunCollecting = (
   initial: CombatState,
   strategy: Strategy,
   map: StageMap
-): RunSimulationResult => {
+): RunSimulationResult & { eventLog: readonly TickEvent[] } => {
   let state = initial;
   let cardsPlayed = 0;
+  const eventLog: TickEvent[] = [];
   while (state.outcome === 'playing' && state.tick < SIMULATION_MAX_TICKS) {
     const actions = strategy(state, map);
     state = stepTick(state, actions, map);
     cardsPlayed += state.events.filter((e) => e.kind === 'played').length;
+    eventLog.push(...state.events);
   }
   return {
     outcome: state.outcome,
@@ -44,6 +53,22 @@ export const simulateRun = (
     lifeLeft: state.life,
     cardsPlayed,
     finalState: state,
+    eventLog,
+  };
+};
+
+export const simulateRun = (
+  initial: CombatState,
+  strategy: Strategy,
+  map: StageMap
+): RunSimulationResult => {
+  const collected = simulateRunCollecting(initial, strategy, map);
+  return {
+    outcome: collected.outcome,
+    ticks: collected.ticks,
+    lifeLeft: collected.lifeLeft,
+    cardsPlayed: collected.cardsPlayed,
+    finalState: collected.finalState,
   };
 };
 
