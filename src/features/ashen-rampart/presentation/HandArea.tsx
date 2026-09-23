@@ -10,10 +10,9 @@ import { getCardDefinition } from '../domain/cards/card-pool';
 import { HAND_LIMIT } from '../domain/cards/deck';
 import type { CombatState } from '../domain/combat/combat-state';
 import { DRAW_INTERVAL_TICKS, PLACE_COOLDOWN_TICKS } from '../domain/combat/combat-state';
-import { CardBadge } from './CardBadge';
 import { COLORS } from './theme';
 import { CardGlyph } from './CardGlyph';
-import { cardBadgesOf, cardStatsOf, toSeconds } from './card-text';
+import { cardStatsOf, toSeconds } from './card-text';
 import { getUnitVisual, roleLabelOf } from './unit-visual';
 
 const Bar = styled.div`
@@ -234,10 +233,8 @@ export const HandArea: React.FC<Props> = ({
                   {cardStatsOf(cardId).map((stat) => (
                     <span key={stat}>{stat}</span>
                   ))}
-                  {/* 最小幅360px で手札が1行1枚に折り返すため、反復4 §6.1 の手順1（属性バッジを1つに減らす）を適用した */}
-                  {cardBadgesOf(cardId).slice(0, 1).map((badge) => (
-                    <CardBadge key={badge}>{badge}</CardBadge>
-                  ))}
+                  {/* 最小幅360px で手札が1行1枚に折り返すため、反復4 §6.1 の手順2（属性バッジを落とす）まで適用した。
+                      手順1 では最悪ケースの開始手札（塔3枚）で折り返しが解消しなかった。構築画面（DeckCardRow）のバッジは残す */}
                 </StatRow>
               </Card>
               <DiscardButton

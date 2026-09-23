@@ -125,15 +125,15 @@ describe('HandArea', () => {
     expect(onDiscard).toHaveBeenCalledWith(0);
   });
 
-  it('手札のカードに形アイコン・数値・バッジが出る', () => {
+  it('手札のカードに形アイコン・数値は出るが、属性バッジは出ない', () => {
     // 手札に徹甲弩がある状態で描画する（既存のセットアップ流儀に合わせること）
     render(
       <HandArea state={stateWith(['piercer'])} selectedIndex={null} onSelect={jest.fn()} onDiscard={jest.fn()} />
     );
     expect(screen.getByTestId('card-glyph-piercer')).toBeInTheDocument();
     expect(screen.getByText('HP14')).toBeInTheDocument();
-    // 手札は反復4 §6.1 手順1により属性バッジを1つに絞る（対空・貫通のうち先頭の対空のみ出る）
-    expect(screen.getByText('対空')).toBeInTheDocument();
+    // 手札は反復4 §6.1 手順2により属性バッジを落とす（対空・貫通のどちらも出ない）
+    expect(screen.queryByText('対空')).not.toBeInTheDocument();
     expect(screen.queryByText('貫通')).not.toBeInTheDocument();
   });
 
