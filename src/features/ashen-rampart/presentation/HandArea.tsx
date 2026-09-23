@@ -230,11 +230,12 @@ export const HandArea: React.FC<Props> = ({
                 </CardHead>
                 <StatRow>
                   <span>コスト{card.cost}</span>
-                  {cardStatsOf(cardId).map((stat) => (
+                  {cardStatsOf(cardId).slice(0, 1).map((stat) => (
                     <span key={stat}>{stat}</span>
                   ))}
-                  {/* 最小幅360px で手札が1行1枚に折り返すため、反復4 §6.1 の手順2（属性バッジを落とす）まで適用した。
-                      手順1 では最悪ケースの開始手札（塔3枚）で折り返しが解消しなかった。構築画面（DeckCardRow）のバッジは残す */}
+                  {/* 最小幅360px で手札が1行1枚に折り返すため、反復4 §6.1 の手順3（主要数値を1つに減らす）まで適用した。
+                      手順2（属性バッジを落とす）でも最悪ケースの開始手札（塔3枚）で折り返しが解消しなかった。
+                      コスト・形アイコン・名前は削らない。構築画面（DeckCardRow）は対象外で両方の数値を残す */}
                 </StatRow>
               </Card>
               <DiscardButton
