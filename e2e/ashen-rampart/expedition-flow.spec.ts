@@ -13,7 +13,14 @@ const MIN_HEIGHT = 740;
 /** localStorage のキー（GamePageWrapper の注意事項ダイアログ用。primal-path-helper.ts と同じ命名） */
 const NOTICE_STORAGE_KEY = 'game-notice-accepted:/ashen-rampart';
 
-const startExpedition = async (page: Page): Promise<void> => {
+/**
+ * 360px 計測用の固定シード。
+ * 速攻型 でこのシードの開始手札は 弩砲・徹甲弩・火砲台 の塔3枚（数値とバッジを
+ * 最も多く持つ組み合わせ）で、360px の幅の最悪ケースになる（2026-09-23 に実ブラウザで確認）。
+ */
+const WIDEST_HAND_SEED = '748559145';
+
+const startExpedition = async (page: Page, seedText?: string): Promise<void> => {
   // ページ読み込み前に localStorage を設定する。注意事項ダイアログを既読にしつつ、
   // このゲーム固有のキーだけ消して各テストを未プレイ状態から始める。
   // localStorage を丸ごと clear すると既読フラグも消えてダイアログが復活するので避ける。
@@ -27,6 +34,10 @@ const startExpedition = async (page: Page): Promise<void> => {
   await page.goto('/ashen-rampart', { waitUntil: 'domcontentloaded', timeout: 90_000 });
   await expect(page.getByRole('button', { name: /速攻型 を読み込む/ })).toBeVisible({ timeout: 30_000 });
   await page.getByRole('button', { name: /速攻型 を読み込む/ }).click();
+  if (seedText !== undefined) {
+    // シードを指定して開始手札を固定する（未指定時は毎回ランダムのまま）
+    await page.getByLabel('シード（空欄なら毎回ランダム）').fill(seedText);
+  }
   await page.getByRole('button', { name: 'この構成で始める' }).click();
   await page.getByRole('button', { name: '開始' }).click();
 };
@@ -42,21 +53,23 @@ test.describe('灰燼の城壁 遠征', () => {
 
   test('最小幅360px で横スクロールが出ず、手札の1行あたりの枚数を記録する', async ({ page }, testInfo) => {
     await page.setViewportSize({ width: MIN_WIDTH, height: MIN_HEIGHT });
-    await startExpedition(page);
+    // 乱数任せの開始手札では最悪ケースを測れないため、幅を最も取る手札になるシードで固定する
+    await startExpedition(page, WIDEST_HAND_SEED);
     await expect(page.getByRole('group', { name: '手札' })).toBeVisible();
 
     const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
-    const cardTops = await page
+    const handCards = page
       .getByRole('group', { name: '手札' })
-      .getByRole('button', { name: / コスト\d/ })
-      .evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
+      .getByRole('button', { name: / コスト\d/ });
+    const cardTops = await handCards.evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
+    const handCardNames = await handCards.evaluateAll((els) => els.map((el) => el.getAttribute('aria-label') ?? ''));
     const cardsPerRow = Math.max(...Object.values(
       cardTops.reduce<Record<number, number>>((acc, top) => ({ ...acc, [top]: (acc[top] ?? 0) + 1 }), {})
     ));
 
     await page.screenshot({ path: testInfo.outputPath('ashen-rampart-360.png'), fullPage: true });
     await testInfo.attach('hand-layout-360', {
-      body: JSON.stringify({ scrollWidth, cardTops, cardsPerRow }),
+      body: JSON.stringify({ scrollWidth, cardTops, cardsPerRow, handCardNames }),
       contentType: 'application/json',
     });
 
