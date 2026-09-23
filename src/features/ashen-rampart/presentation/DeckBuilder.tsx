@@ -14,21 +14,16 @@
  *
  * 各カードに「効かない相手」を出すのは、読む量が多い画面で
  * 「何のために積むか」の手がかりを与えるため（設計書 §6.1）。
+ *
+ * 1行分の表示は DeckCardRow へ、シード欄は SeedField へ分割した
+ * （反復7 段階1・反復1 から持ち越した「行数」minor の5回目）。
  */
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import {
-  BUILDABLE_CARD_IDS,
-  DECK_SIZE,
-  PRESET_DECKS,
-  getCardDefinition,
-  maxCopiesOf,
-} from '../domain/cards/card-pool';
+import { BUILDABLE_CARD_IDS, DECK_SIZE, PRESET_DECKS } from '../domain/cards/card-pool';
 import { countByCard, costCurve, validateDeck } from '../domain/cards/deck-builder';
-import { cardBadgesOf, weaknessTextOf, towerStatsTextOf } from './card-text';
-import { CardBadge } from './CardBadge';
-import { CardGlyph } from './CardGlyph';
-import { getUnitVisual, roleLabelOf } from './unit-visual';
+import { DeckCardRow, Controls, StepButton } from './DeckCardRow';
+import { SeedField } from './SeedField';
 import { COLORS } from './theme';
 import { HEADER_CLEARANCE } from './layout-constants';
 
@@ -47,80 +42,6 @@ const Cards = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 8px;
-`;
-
-const CardRow = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 8px;
-  border: 1px solid ${COLORS.grid};
-  border-radius: 4px;
-`;
-
-const RowHead = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-`;
-
-const RoleTag = styled.span`
-  font-size: 11px;
-  opacity: 0.75;
-`;
-
-/**
- * 札の値段（設計書 §6.1「形アイコン・名前・コストは削らない。」）
- *
- * 下部の「コスト曲線」は既にデッキへ入れた札の分布であり、
- * いま検討している札の値段は読めない。行そのものに出す必要がある。
- * 読み上げラベル（CardRow の aria-label）にしか無い状態は、目で読む
- * プレイヤーにとって「消えている」のと同じ。
- */
-const Cost = styled.span`
-  font-size: 12px;
-  opacity: 0.9;
-`;
-
-const Controls = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-`;
-
-const StepButton = styled.button`
-  min-width: 44px;
-  min-height: 44px;
-  background: transparent;
-  color: ${COLORS.secondary};
-  border: 1px solid ${COLORS.secondary};
-  border-radius: 4px;
-  cursor: pointer;
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-`;
-
-const Weakness = styled.p`
-  margin: 0;
-  font-size: 12px;
-  color: ${COLORS.opportunity};
-`;
-
-/**
- * 守り手のHP・攻撃力の表示（指摘5）
- *
- * HPと攻撃力の逆相関（石壁60/0 → 弓兵8/4）は本反復で「カードが似ている」を
- * 解く唯一の新しい軸だが、盤面のHPバーでしか読めなかった。守り手でないカード
- * （魔力炉・罠・呪文・徴発）には表示しないため、Weakness と同じ色にはせず
- * 控えめな secondary + 低opacityで縁の下の情報として置く。
- */
-const Stats = styled.p`
-  margin: 0;
-  font-size: 12px;
-  color: ${COLORS.secondary};
-  opacity: 0.75;
 `;
 
 const Footer = styled.div`
@@ -170,13 +91,13 @@ interface Props {
   onStart: (cards: string[], seed?: number) => void;
   /** 直前に組んだデッキ（再挑戦時に空から組み直させない。指摘4） */
   initialCards?: readonly string[];
-  /** 直前に入力したシード文字列 */
-  initialSeedText?: string;
+  /** 直前の遠征で実際に使ったシード。欄には入れず、明示操作でだけ入れる */
+  lastSeed?: number;
 }
 
-export const DeckBuilder: React.FC<Props> = ({ onStart, initialCards, initialSeedText }) => {
+export const DeckBuilder: React.FC<Props> = ({ onStart, initialCards, lastSeed }) => {
   const [cards, setCards] = useState<string[]>(() => (initialCards ? [...initialCards] : []));
-  const [seedText, setSeedText] = useState(initialSeedText ?? '');
+  const [seedText, setSeedText] = useState('');
 
   const counts = countByCard(cards);
   const validation = validateDeck(cards);
@@ -206,45 +127,15 @@ export const DeckBuilder: React.FC<Props> = ({ onStart, initialCards, initialSee
       </Controls>
 
       <Cards>
-        {BUILDABLE_CARD_IDS.map((id) => {
-          const card = getCardDefinition(id);
-          const count = counts.get(id) ?? 0;
-          return (
-            <CardRow key={id} role="group" aria-label={`${card.name} コスト${card.cost}`}>
-              <RowHead>
-                <CardGlyph cardId={id} />
-                <strong>{card.name}</strong>
-                <Cost>コスト{card.cost}</Cost>
-                <RoleTag>{roleLabelOf(getUnitVisual(id).role)}</RoleTag>
-                {cardBadgesOf(id).map((badge) => (
-                  <CardBadge key={badge}>{badge}</CardBadge>
-                ))}
-              </RowHead>
-              <span>{card.description}</span>
-              {towerStatsTextOf(id) && <Stats>{towerStatsTextOf(id)}</Stats>}
-              <Weakness>{weaknessTextOf(id)}</Weakness>
-              <Controls>
-                <StepButton
-                  type="button"
-                  aria-label={`${card.name} を1枚減らす`}
-                  disabled={count === 0}
-                  onClick={() => remove(id)}
-                >
-                  −
-                </StepButton>
-                <span>{count}</span>
-                <StepButton
-                  type="button"
-                  aria-label={`${card.name} を1枚増やす`}
-                  disabled={count >= maxCopiesOf(id)}
-                  onClick={() => add(id)}
-                >
-                  ＋
-                </StepButton>
-              </Controls>
-            </CardRow>
-          );
-        })}
+        {BUILDABLE_CARD_IDS.map((id) => (
+          <DeckCardRow
+            key={id}
+            cardId={id}
+            count={counts.get(id) ?? 0}
+            onAdd={() => add(id)}
+            onRemove={() => remove(id)}
+          />
+        ))}
       </Cards>
 
       <Footer>
@@ -260,13 +151,7 @@ export const DeckBuilder: React.FC<Props> = ({ onStart, initialCards, initialSee
               </li>
             ))}
         </CurveList>
-        <label htmlFor="ashen-rampart-seed">シード（空欄なら毎回ランダム）</label>
-        <input
-          id="ashen-rampart-seed"
-          value={seedText}
-          inputMode="numeric"
-          onChange={(e) => setSeedText(e.target.value)}
-        />
+        <SeedField value={seedText} onChange={setSeedText} lastSeed={lastSeed} />
         <StartButton type="button" disabled={!validation.isValid} onClick={start}>
           この構成で始める
         </StartButton>

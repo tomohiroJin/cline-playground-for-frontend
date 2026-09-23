@@ -405,7 +405,7 @@ describe('AshenRampartGame', () => {
       expect(screen.getByRole('button', { name: '一時停止' })).toBeInTheDocument();
     });
 
-    it('もう一度挑む で構築画面に戻ると、直前のデッキとシードが引き継がれている（指摘4）', () => {
+    it('もう一度挑む で構築画面に戻ると、直前のデッキは引き継ぎ、シード欄は空で前回のシードが添えられる（指摘4）', () => {
       render(<AshenRampartGame />);
       startRunning(/速攻型 を読み込む/, '321');
       advanceUntilRunEnds();
@@ -418,7 +418,8 @@ describe('AshenRampartGame', () => {
       expect(screen.getByRole('button', { name: 'この構成で始める' })).toBeEnabled();
       expect(
         (screen.getByLabelText('シード（空欄なら毎回ランダム）') as HTMLInputElement).value
-      ).toBe('321');
+      ).toBe('');
+      expect(screen.getByText('前回のシード: 321')).toBeInTheDocument();
     });
 
     // 反復6 で徴発（levy）は構築・獲得の両プールから retired にした
