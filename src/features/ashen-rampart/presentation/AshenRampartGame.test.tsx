@@ -9,6 +9,10 @@
  * 前バージョンで「事前登録した記録項目を実際には収集できなかった」失敗があったため、
  * 「値を返すだけで配線されていない」状態を作らないことがこのテストの目的。
  *
+ * 反復7 段階1 で単発ランを遠征に置き換えた。決着画面（勝敗理由の記録・コピー・
+ * 再挑戦）は遠征の結果画面（ExpeditionSummary）へ移ったため、決着に依存する
+ * テストは `advanceUntilExpeditionEnds` で遠征の終わりまで進めてから検証する。
+ *
  * Task 14 で画面が「構築 → 説明 → ラン」の3段階に変わったため、決着画面へ
  * 到達するテストはすべて `startRunning` で構築・説明を通過させてからランを進める。
  *
@@ -26,7 +30,7 @@ import { PLAINS_MAP, laneOf } from '../domain/board/stage-map';
 import { DECK_SIZE } from '../domain/cards/card-pool';
 
 /** 判定用ログのコピー操作ボタン名。文言が長いため定数に切り出す（反復4で文言変更） */
-const COPY_BUTTON_NAME = '判定用の記録をコピー（3ラン分まとまっています）';
+const COPY_BUTTON_NAME = '判定用の記録をコピー（3遠征分まとまっています）';
 
 const readExportedLog = (): PlayLogExport => {
   const raw = localStorage.getItem(PLAY_LOG_STORAGE_KEY);
@@ -51,32 +55,40 @@ const startRunning = (presetLabel: RegExp = /速攻型 を読み込む/, seedTex
   fireEvent.click(screen.getByRole('button', { name: '開始' }));
 };
 
-/**
- * 何も配置せずに tick を進め、決着（この preset・シードでは敗北）まで到達させる
- *
- * 固定 tick 数で待つと、開始カウントダウン（COUNTDOWN_TICKS）の追加やウェーブの
- * 較正（敵数変更）でラン長が変わるたびに壊れる。決着画面の文言が現れるまで
- * 少しずつ進めることで「何 tick で決着するか」に依存しないようにする。
- * 上限（MAX_ADVANCE_TICKS）は現状のラン長（無配置・swift・seed1で700tick）に
- * 十分な余裕を持たせた値。到達しなければテスト自体を失敗させる。
- */
-const MAX_ADVANCE_TICKS = 1200;
 const ADVANCE_STEP_TICKS = 50;
+/** 3ステージ × 1ステージ最長 1200 tick を 50 tick 刻みで進め、決着ボタンと獲得の操作ぶんを足した上限 */
+const MAX_ADVANCE_STEPS = 100;
+const SUMMARY_HEADING = /遠征を踏破した|遠征は層\d で潰えた/;
 
-const isRunOver = (): boolean =>
-  screen.queryByText('砦は守られた') !== null || screen.queryByText('城壁は灰燼に帰した') !== null;
+const isExpeditionOver = (): boolean => screen.queryByText(SUMMARY_HEADING) !== null;
 
-const advanceUntilRunEnds = (): void => {
-  for (let advanced = 0; advanced < MAX_ADVANCE_TICKS; advanced += ADVANCE_STEP_TICKS) {
-    if (isRunOver()) return;
+/** 決着ボタンがあれば押し、獲得の3択が出ていれば先頭を選ぶ（何も配置しない進め方） */
+const settleOrChoose = (): void => {
+  const settle = screen.queryByRole('button', { name: /獲得へ進む|遠征の結果へ/ });
+  if (settle) {
+    fireEvent.click(settle);
+    return;
+  }
+  const offer = screen.queryAllByRole('button', { name: / を加える$/ })[0];
+  if (offer) fireEvent.click(offer);
+};
+
+/**
+ * 何も配置せずに遠征の結果画面まで進める
+ *
+ * 暫定ステージの層1 は総HP が小さく、無配置でも勝つことがある（反復6 §8.2.16 の
+ * prov-t1-a）。勝敗のどちらに転んでも結果画面へ着くよう、決着と獲得を都度処理する。
+ */
+const advanceUntilExpeditionEnds = (): void => {
+  for (let step = 0; step < MAX_ADVANCE_STEPS; step += 1) {
+    if (isExpeditionOver()) return;
+    settleOrChoose();
     act(() => {
       jest.advanceTimersByTime(TICK_INTERVAL_MS * ADVANCE_STEP_TICKS);
     });
   }
-  if (!isRunOver()) {
-    throw new Error(
-      `ランが ${MAX_ADVANCE_TICKS} tick 進めても決着しませんでした（ラン長の較正を確認すること）`
-    );
+  if (!isExpeditionOver()) {
+    throw new Error(`遠征が ${MAX_ADVANCE_STEPS} 段階進めても終わりませんでした（ステージ長を確認すること）`);
   }
 };
 
@@ -86,12 +98,12 @@ const advanceUntilRunEnds = (): void => {
  * 既存プリセット（速攻型・重厚型）はどちらも石壁を含まないため、経路セルへの
  * 守り手配置や射程リングの表示を検証するにはデッキ構築画面でカードを直接組む
  * 必要がある。反復6 で魔力炉の同名上限の例外が外れたため（もう17枚は積めない）、
- * 4種を3枚ずつの DECK_SIZE 枚に組み直した。この枚数構成・並び順・シード2の
+ * 4種を3枚ずつの DECK_SIZE 枚に組み直した。この枚数構成・並び順・シード3の
  * 組み合わせでは、シャッフル結果として石壁と弓兵の両方が初期手札3枚のうちに
- * 入ることを事前に確認済み（createDeck を直接呼ぶスクリプトで検証）。
+ * 入ることを事前に確認済み（遠征のステージ1、`startStage` の派生シードで検証）。
  * ドローを待つ必要がない。
  */
-const CUSTOM_DECK_SEED = '2';
+const CUSTOM_DECK_SEED = '3';
 
 const buildCustomDeck = (): void => {
   fireEvent.click(screen.getByRole('button', { name: '魔力炉 を1枚増やす' }));
@@ -124,14 +136,9 @@ const startRunningWithStoneWallDeck = buildCustomDeck;
  */
 const startRunningWithArrowTowerDeck = buildCustomDeck;
 
-/**
- * 決着画面で勝敗の理由を記録する（Task 12: 集計・再挑戦・ログコピーは記録後にだけ開くため、
- * それらのボタンへ到達する既存テストはすべて先にこれを呼ぶ必要がある）
- */
-const submitRunNote = (text = 'テスト用の記録'): void => {
-  fireEvent.change(screen.getByLabelText(/勝敗の理由を記録する/), {
-    target: { value: text },
-  });
+/** 遠征の結果画面で振り返りを記録する（結果・コピー・再挑戦は記録後にだけ開く） */
+const submitExpeditionNote = (text = 'テスト用の記録'): void => {
+  fireEvent.change(screen.getByLabelText(/遠征の振り返りを記録する/), { target: { value: text } });
   fireEvent.click(screen.getByRole('button', { name: '記録する' }));
 };
 
@@ -177,34 +184,25 @@ describe('AshenRampartGame', () => {
     );
   });
 
-  it('決着後に勝敗理由を入力して記録すると run_note が保存される', () => {
+  it('遠征の結果画面で振り返りを記録すると expedition_note が保存される', () => {
     render(<AshenRampartGame />);
     startRunning();
-    advanceUntilRunEnds();
+    advanceUntilExpeditionEnds();
 
-    const textarea = screen.getByLabelText(/勝敗の理由を記録する/);
-    fireEvent.change(textarea, { target: { value: '弓兵に頼りすぎて鴉に抜けられた' } });
-    fireEvent.click(screen.getByRole('button', { name: '記録する' }));
+    submitExpeditionNote('層1 で鴉に抜けられた');
 
-    expect(screen.getByText('記録しました')).toBeInTheDocument();
-    const exported = readExportedLog();
-    const notes = exported.events.filter((e) => e.kind === 'run_note');
-    expect(notes).toHaveLength(1);
-    expect(notes[0]).toMatchObject({ text: '弓兵に頼りすぎて鴉に抜けられた' });
+    const notes = readExportedLog().events.filter((e) => e.kind === 'expedition_note');
+    expect(notes).toEqual([expect.objectContaining({ text: '層1 で鴉に抜けられた' })]);
   });
 
-  it('空欄のまま記録しても run_note は保存されない', () => {
+  it('空欄のまま記録しても expedition_note は保存されない', () => {
     render(<AshenRampartGame />);
     startRunning();
-    advanceUntilRunEnds();
+    advanceUntilExpeditionEnds();
 
-    const textarea = screen.getByLabelText(/勝敗の理由を記録する/);
-    fireEvent.change(textarea, { target: { value: '   ' } });
-    fireEvent.click(screen.getByRole('button', { name: '記録する' }));
+    submitExpeditionNote('   ');
 
-    expect(screen.queryByText('記録しました')).not.toBeInTheDocument();
-    const exported = readExportedLog();
-    expect(exported.events.filter((e) => e.kind === 'run_note')).toHaveLength(0);
+    expect(readExportedLog().events.filter((e) => e.kind === 'expedition_note')).toHaveLength(0);
   });
 
   it(`「${COPY_BUTTON_NAME}」でクリップボードに exportLogJson の内容が渡る`, async () => {
@@ -216,8 +214,8 @@ describe('AshenRampartGame', () => {
 
     render(<AshenRampartGame />);
     startRunning();
-    advanceUntilRunEnds();
-    submitRunNote();
+    advanceUntilExpeditionEnds();
+    submitExpeditionNote();
 
     fireEvent.click(screen.getByRole('button', { name: COPY_BUTTON_NAME }));
 
@@ -225,52 +223,39 @@ describe('AshenRampartGame', () => {
     const copiedJson = writeText.mock.calls[0][0] as string;
     const parsed = JSON.parse(copiedJson) as PlayLogExport;
     expect(parsed.version).toBe(6);
-    expect(parsed.events.some((e) => e.kind === 'run_started')).toBe(true);
+    expect(parsed.events.some((e) => e.kind === 'expedition_started')).toBe(true);
     await screen.findByText('判定用の記録をコピーしました');
   });
 
-  it('決着画面で「もう一度挑む」を押すと構築画面に戻り、新しいデッキで再度ランを始められる', () => {
+  it('「デッキを組み直す」で構築画面に戻り、別のデッキで新しい遠征を始められる', () => {
     render(<AshenRampartGame />);
     startRunning();
-    advanceUntilRunEnds();
-    submitRunNote();
+    advanceUntilExpeditionEnds();
+    submitExpeditionNote();
 
-    fireEvent.click(screen.getByRole('button', { name: 'もう一度挑む' }));
-
-    // 構築画面に戻っている（デッキを組み直せる）
-    expect(screen.getByRole('button', { name: 'この構成で始める' })).toBeInTheDocument();
-
-    // 別のプリセット（重厚型）で再度始める。既読フラグは前のランで立っているため、
-    // ブリーフィングを経由せず直接盤面へ進む
+    fireEvent.click(screen.getByRole('button', { name: 'デッキを組み直す' }));
     fireEvent.click(screen.getByRole('button', { name: /重厚型 を読み込む/ }));
     fireEvent.click(screen.getByRole('button', { name: 'この構成で始める' }));
-    expect(screen.getByRole('button', { name: '一時停止' })).toBeInTheDocument();
 
-    const exported = readExportedLog();
-    const runStarted = exported.events.filter((e) => e.kind === 'run_started');
-    expect(runStarted).toHaveLength(2);
-    expect(runStarted[1]).toMatchObject({ deckCards: expect.any(Array) });
+    expect(screen.getByRole('button', { name: '一時停止' })).toBeInTheDocument();
+    expect(readExportedLog().events.filter((e) => e.kind === 'expedition_started')).toHaveLength(2);
   });
 
-  it('決着画面で「同じデッキで別のシードに挑む」を押すと、盤面に留まったまま新しいシードでランが始まる（指摘3の結線）', () => {
+  it('「同じデッキで別のシードに挑む」で構築画面を経ずに新しいシードの遠征が始まる', () => {
     render(<AshenRampartGame />);
-    startRunning();
-    advanceUntilRunEnds();
-    submitRunNote();
-
-    const seedBefore = (screen.getByLabelText('シード') as HTMLInputElement).value;
+    startRunning(/速攻型 を読み込む/, '11');
+    advanceUntilExpeditionEnds();
+    submitExpeditionNote();
 
     fireEvent.click(screen.getByRole('button', { name: '同じデッキで別のシードに挑む' }));
 
-    // 構築画面へは戻らず、盤面に留まったままランが再開している
     expect(screen.getByRole('button', { name: '一時停止' })).toBeInTheDocument();
-    const seedAfter = (screen.getByLabelText('シード') as HTMLInputElement).value;
-    expect(seedAfter).not.toBe(seedBefore);
-
-    const exported = readExportedLog();
-    const runStarted = exported.events.filter((e) => e.kind === 'run_started');
-    expect(runStarted).toHaveLength(2);
-    expect(runStarted[1]).toMatchObject({ seed: Number(seedAfter) });
+    const started = readExportedLog().events.filter((e) => e.kind === 'expedition_started');
+    expect(started).toHaveLength(2);
+    expect(started[1]).not.toMatchObject({ seed: 11 });
+    expect((screen.getByLabelText('シード') as HTMLInputElement).value).toBe(String(
+      (started[1] as { seed: number }).seed
+    ));
   });
 
   it('クリップボード API が使えない環境ではコンソールへ出力してエラーを漏らさない', async () => {
@@ -280,8 +265,8 @@ describe('AshenRampartGame', () => {
 
     render(<AshenRampartGame />);
     startRunning();
-    advanceUntilRunEnds();
-    submitRunNote();
+    advanceUntilExpeditionEnds();
+    submitExpeditionNote();
 
     fireEvent.click(screen.getByRole('button', { name: COPY_BUTTON_NAME }));
 
@@ -395,9 +380,9 @@ describe('AshenRampartGame', () => {
     it('2回目以降はブリーフィング（説明画面）をスキップする', () => {
       render(<AshenRampartGame />);
       startRunning();
-      advanceUntilRunEnds();
-      submitRunNote();
-      fireEvent.click(screen.getByRole('button', { name: 'もう一度挑む' }));
+      advanceUntilExpeditionEnds();
+      submitExpeditionNote();
+      fireEvent.click(screen.getByRole('button', { name: 'デッキを組み直す' }));
 
       fireEvent.click(screen.getByRole('button', { name: /速攻型 を読み込む/ }));
       fireEvent.click(screen.getByRole('button', { name: 'この構成で始める' }));
@@ -405,21 +390,21 @@ describe('AshenRampartGame', () => {
       expect(screen.getByRole('button', { name: '一時停止' })).toBeInTheDocument();
     });
 
-    it('もう一度挑む で構築画面に戻ると、直前のデッキは引き継ぎ、シード欄は空で前回のシードが添えられる（指摘4）', () => {
+    it('組み直しで構築画面に戻ると、デッキは引き継ぎ、シード欄は空で直前の遠征のシードが添えられる', () => {
       render(<AshenRampartGame />);
       startRunning(/速攻型 を読み込む/, '321');
-      advanceUntilRunEnds();
-      submitRunNote();
+      advanceUntilExpeditionEnds();
+      submitExpeditionNote();
+      fireEvent.click(screen.getByRole('button', { name: '同じデッキで別のシードに挑む' }));
+      const retriedSeed = (screen.getByLabelText('シード') as HTMLInputElement).value;
+      advanceUntilExpeditionEnds();
+      submitExpeditionNote();
 
-      fireEvent.click(screen.getByRole('button', { name: 'もう一度挑む' }));
+      fireEvent.click(screen.getByRole('button', { name: 'デッキを組み直す' }));
 
-      // カードを1枚も選び直さなくても既に DECK_SIZE 枚組まれており、開始できる
       expect(screen.getByText(`${DECK_SIZE} / ${DECK_SIZE}`)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'この構成で始める' })).toBeEnabled();
-      expect(
-        (screen.getByLabelText('シード（空欄なら毎回ランダム）') as HTMLInputElement).value
-      ).toBe('');
-      expect(screen.getByText('前回のシード: 321')).toBeInTheDocument();
+      expect((screen.getByLabelText('シード（空欄なら毎回ランダム）') as HTMLInputElement).value).toBe('');
+      expect(screen.getByText(`前回のシード: ${retriedSeed}`)).toBeInTheDocument();
     });
 
     // 反復6 で徴発（levy）は構築・獲得の両プールから retired にした
@@ -459,47 +444,49 @@ describe('AshenRampartGame', () => {
     });
   });
 
-  it('勝敗の理由を記録するまで集計は表示されない（Task 12: 判定汚染防止のための表示順序）', async () => {
+  // 「勝敗の理由を記録するまで集計は表示されない（Task 12: 判定汚染防止のための表示順序）」は
+  // 反復7 段階1 で ExpeditionSummary.test.tsx の「振り返りを記録するまで結果とボタンは伏せる」へ移った。
+
+  it('別のシードに挑むと、振り返りの欄と結果の鍵は次の遠征へ持ち越されない', () => {
     render(<AshenRampartGame />);
     startRunning();
-    advanceUntilRunEnds();
-
-    // 決着直後は「記録する」欄だけで、集計・再挑戦・ログコピーはまだ出ない
-    expect(screen.queryByText(/レーンへの配分/)).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'もう一度挑む' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: '同じデッキで別のシードに挑む' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: COPY_BUTTON_NAME })).not.toBeInTheDocument();
-
-    fireEvent.change(screen.getByLabelText(/勝敗の理由を記録する/), {
-      target: { value: '鴉を落とせなかった' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: '記録する' }));
-
-    // 記録した後にだけ集計・各ボタンが開く
-    expect(await screen.findByText(/レーンへの配分/)).toBeVisible();
-    expect(screen.getByRole('button', { name: 'もう一度挑む' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '同じデッキで別のシードに挑む' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: COPY_BUTTON_NAME })).toBeInTheDocument();
-  });
-
-  it('restart（同じデッキで別のシードに挑む）すると集計の鍵と記録欄が次のランへ持ち越されない', async () => {
-    render(<AshenRampartGame />);
-    startRunning();
-    advanceUntilRunEnds();
-    submitRunNote('1回目の記録');
-    expect(await screen.findByText(/レーンへの配分/)).toBeVisible();
+    advanceUntilExpeditionEnds();
+    submitExpeditionNote('1回目の記録');
 
     fireEvent.click(screen.getByRole('button', { name: '同じデッキで別のシードに挑む' }));
+    advanceUntilExpeditionEnds();
 
-    // 盤面に留まったまま新しいランが始まり、記録前の状態（集計非表示・欄が空）に戻っている
-    expect(screen.getByRole('button', { name: '一時停止' })).toBeInTheDocument();
-    advanceUntilRunEnds();
-    expect(screen.queryByText(/レーンへの配分/)).not.toBeInTheDocument();
-    expect((screen.getByLabelText(/勝敗の理由を記録する/) as HTMLTextAreaElement).value).toBe('');
+    expect(screen.queryByRole('button', { name: COPY_BUTTON_NAME })).not.toBeInTheDocument();
+    expect((screen.getByLabelText(/遠征の振り返りを記録する/) as HTMLTextAreaElement).value).toBe('');
   });
 
-  // 指摘C（対応不要・記録のみ）: ブリーフィング（StartOverlay）を再表示する手段が
-  // UI に無い（既読フラグは localStorage を消さない限り解除されない）。次の反復で扱う。
+  it('結果画面の「説明をもう一度見る」でブリーフィングが出て、閉じると結果画面へ戻る', () => {
+    render(<AshenRampartGame />);
+    startRunning();
+    advanceUntilExpeditionEnds();
+    submitExpeditionNote();
+
+    fireEvent.click(screen.getByRole('button', { name: '説明をもう一度見る' }));
+    expect(screen.getByRole('button', { name: '開始' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '開始' }));
+
+    expect(screen.queryByRole('button', { name: '開始' })).not.toBeInTheDocument();
+    // 記録済みの状態が残り、もう一度記録させない（expedition_note の重複を防ぐ）
+    expect(screen.getByRole('button', { name: COPY_BUTTON_NAME })).toBeInTheDocument();
+    expect(readExportedLog().events.filter((e) => e.kind === 'expedition_note')).toHaveLength(1);
+  });
+
+  it('遠征の各ステージは新しい手札で始まり、stage_started と run_started がステージごとに結び付く（Review Focus 3: ステージをまたいだ状態漏れ）', () => {
+    render(<AshenRampartGame />);
+    startRunning(/速攻型 を読み込む/, '11');
+    advanceUntilExpeditionEnds();
+
+    const events = readExportedLog().events;
+    const stages = events.filter((e) => e.kind === 'stage_started');
+    const runs = events.filter((e) => e.kind === 'run_started');
+    expect(runs).toHaveLength(stages.length);
+    runs.forEach((run, i) => expect(run).toMatchObject({ stageIndex: i }));
+  });
 
   it('置けないセルをクリックすると理由が盤面直下に出る', async () => {
     render(<AshenRampartGame />);
