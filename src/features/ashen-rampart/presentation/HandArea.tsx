@@ -234,7 +234,8 @@ export const HandArea: React.FC<Props> = ({
                   {cardStatsOf(cardId).map((stat) => (
                     <span key={stat}>{stat}</span>
                   ))}
-                  {cardBadgesOf(cardId).map((badge) => (
+                  {/* 最小幅360px で手札が1行1枚に折り返すため、反復4 §6.1 の手順1（属性バッジを1つに減らす）を適用した */}
+                  {cardBadgesOf(cardId).slice(0, 1).map((badge) => (
                     <CardBadge key={badge}>{badge}</CardBadge>
                   ))}
                 </StatRow>

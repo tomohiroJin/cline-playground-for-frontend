@@ -132,8 +132,9 @@ describe('HandArea', () => {
     );
     expect(screen.getByTestId('card-glyph-piercer')).toBeInTheDocument();
     expect(screen.getByText('HP14')).toBeInTheDocument();
+    // 手札は反復4 §6.1 手順1により属性バッジを1つに絞る（対空・貫通のうち先頭の対空のみ出る）
     expect(screen.getByText('対空')).toBeInTheDocument();
-    expect(screen.getByText('貫通')).toBeInTheDocument();
+    expect(screen.queryByText('貫通')).not.toBeInTheDocument();
   });
 
   it('カードの aria-label に役割が入る', () => {
