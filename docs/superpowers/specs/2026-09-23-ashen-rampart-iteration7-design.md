@@ -114,27 +114,41 @@
 
 | 部品 | 役割 |
 |---|---|
-| `RunView`（既存） | **1ステージの戦闘として再利用。** 固定値の代わりに `StageDefinition`（マップ・ウェーブ）と持ち越しライフを受け取る |
+| `StageView`（`RunView` を改名・縮小） | **1ステージの戦闘。** マップと初期状態（持ち越しライフ込み）を受け取る。決着時は勝敗と「獲得へ進む／遠征の結果へ」だけを出す。勝敗理由の記録・集計・再挑戦は `ExpeditionSummary` へ移す |
 | `useExpedition`（新設） | 遠征の状態の組み立て。**ユースケース経由で呼ぶ**（CLAUDE.md の層の規則） |
-| `ExpeditionBar`（新設） | 層 n/3・持ち越しライフ・次ステージの予告（§5.3） |
-| `OfferChoice`（新設） | 獲得3択と辞退 |
-| `ExpeditionSummary`（新設） | 遠征の決着・「同じデッキで別のシードに挑む」・判定用記録のコピー・ブリーフィング再表示 |
+| `ExpeditionBar`（新設） | 層 n/3・ステージ名・獲得した枚数。**次ステージの予告は段階3（§5.3）で足す**（暫定ステージは全て同じマップで、予告する違いがまだ無い） |
+| `OfferChoice`（新設） | 獲得3択。**辞退は出さない**（`declineOffer` の契約「UI には出さない」。較正の `noAcquire` 専用）。候補が0枚のときだけ `useExpedition` が自動で `declineOffer` する（全札が同名上限に達した場合。プレイヤーの選択ではない） |
+| `ExpeditionSummary`（新設） | 遠征の決着・振り返りの記録（記録するまで結果を伏せる）・判定用記録のコピー・「同じデッキで別のシードに挑む」・「デッキを組み直す」・「説明をもう一度見る」 |
 
-### 3.3 ログ スキーマ v5
+**ステージ単位の集計表示（`RunSummary`）は段階1 では画面に出さない。** 集計は従来どおり `run_tally` としてログに残る。
+遠征の結果画面にどう出すかは段階3 で予告と合わせて決める（2026-09-23 追記: 実装計画の作成時に判明）。
 
-`expedition_started` / `stage_started` / `card_offered` / `card_acquired` / `stage_ended` / `expedition_ended`
-を記録し、**判定項目1・2a・3・4・5・6・7・9(b) が遠征単位のコピー1回で揃う**ようにする。
-キーは `ashen-rampart:play-log-v5`。
+### 3.3 ログ スキーマ v6（2026-09-23 訂正: 初版は v5 と書いていたが、v5 は反復6 段階A で使用済み）
 
-**判定前に旧ログを消す手順を判定者向けの注意書きに書く**（`localStorage.removeItem('ashen-rampart:play-log-v4')`）。
-旧ビルドのログが混ざると数え直しがエラーにならず静かに0件になる。
+キーは `ashen-rampart:play-log-v6`、`SCHEMA_VERSION = 6`、`CURRENT_ITERATION = 7`。
+**キーを変えるので旧ログは読まれず混ざらない**（`local-storage-play-log.ts` の既存の方針）。判定前に消す作業は要らない。
+
+反復6 §9.1 の表を土台にし、軸に関わる欄（`demands[]` / `nextStageDemands[]`）を落とす。
+
+| イベント | 内容 | 支える判定項目 |
+|---|---|---|
+| `expedition_started` | `expeditionId` / `iteration` / `seed` / `stageIds[]` / `initialDeckCards[]` | 層別・再現 |
+| `stage_started` | `expeditionId` / `stageIndex` / `stageId` / `tier` / `life` / `deckCards[]` | 3・4 |
+| `run_started`（既存） | ＋ `expeditionId` / `stageIndex`（**ステージ内の全イベントは `runId` 経由でステージへ辿れる**。各イベントへの付与はしない） | 2a・3・5・6 |
+| `card_offered` | `expeditionId` / `offerIndex` / `offered[]` | 1 |
+| `card_acquired` | `expeditionId` / `offerIndex` / `cardId` / `offered[]`（選ばなかった札を残す） | 8（主観の検算） |
+| `run_tally`（既存） | ＋ `manaIncomeTotal`（初期マナ＋マナ獲得イベントの合計）/ `lastPlayMana`（最後に札を出した直後のマナ） | 6 |
+| `expedition_ended` | `expeditionId` / `outcome` / `stagesCleared` / `reachedTier3` / `acquired[]` / `life` | 7 |
+| `expedition_note` | `expeditionId` / `text` | 8・9(a) |
+
+**`stage_ended` は作らない。** `run_ended` と `run_tally`（`lifeLostToLeak` を含む）が `runId` でステージに結び付くので重複になる。
 
 ### 3.4 この段階で閉じる持ち越し
 
 | 項目 | 持ち越し | 対処 |
 |---|---|---|
 | ブリーフィング再表示の導線 | **5回目** | `ExpeditionSummary` に置く |
-| in-place restart 後のシード欄 | **5回目** | 「同じデッキで別のシードに挑む」を遠征単位で作り直す際に扱う |
+| in-place restart 後のシード欄 | **5回目** | 構築画面へ戻るとシード欄に**構築時の古い値**が残り（再挑戦で実際に使ったシードではない）、しかもそのまま始めると同一盤面になる。**シード欄は常に空で始め、「前回のシード: N」と「前回のシードを使う」ボタンを添える**（2026-09-23 に内容を特定） |
 | `DeckBuilder` の行数（現在284行） | **5回目** | 分割する |
 | 最小幅360px の実機確認 | 3回目 | Playwright で 360px 幅のスクリーンショット ＋ **ユーザーの実機で1回確認** |
 | 手札の幅を削る手順の実地検証 | 3回目 | 同上 |
@@ -342,7 +356,7 @@
 
 | 段階 | 内容 | 出口 |
 |---|---|---|
-| **1** | 陰性対照を manual へ移す → 遠征 UI（`useExpedition`・3部品・スキーマ v5）→ 持ち越し5件 | テスト緑・E2E・**ユーザーが1遠征を触る** |
+| **1** | 陰性対照を manual へ移す → 遠征 UI（`useExpedition`・`StageView`・3部品・スキーマ v6）→ 持ち越し5件 | テスト緑・E2E・**ユーザーが1遠征を触る** |
 | **2** | `applyDamage` 一本化 → 盾衛・癒し手 → `attackersFor` → 可視化5件 | テスト緑・**ユーザーが新敵を触る** |
 | **3** | 難度の3量（純粋関数）→ 本番6ステージ → 予告の導出 → 3レーン表示 → `demands` 削除 | 単調性テスト・導出テスト緑 |
 | **4** | 閾値のコミット → 調整帯で較正 → 確認帯で `C1`〜`C3` → 鴉の対抗仮説 | §6.3 の写像 |
