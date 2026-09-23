@@ -14,9 +14,12 @@ import {
   availabilityOf,
   BUILDABLE_CARD_IDS,
   ACQUIRABLE_CARD_IDS,
+  KNOCKOUT_CARD_IDS,
+  KNOCKOUT_DERIVATION_FAILURES,
 } from './card-pool';
 import { placementKindOf } from './card-definition';
 import { validateDeck } from './deck-builder';
+import { KNOCKOUT_ID_PREFIX } from './knockout-cards';
 
 describe('カードプール', () => {
   it('カードは14種ある', () => {
@@ -276,5 +279,65 @@ describe('カードの入手経路（反復6）', () => {
     expect(BUILDABLE_CARD_IDS).not.toContain('levy');
     expect(ACQUIRABLE_CARD_IDS).not.toContain('levy');
     expect(CARD_IDS).toContain('levy');
+  });
+});
+
+describe('ノックアウト変種は監査からしか触れない（設計書 §8.2.15(m)）', () => {
+  it('変種が1枚以上導出されている', () => {
+    expect(KNOCKOUT_CARD_IDS.length).toBeGreaterThan(0);
+  });
+
+  it('ノックアウト変種の導出に失敗した札が無い（最終レビュー I3）', () => {
+    // ここに1件でも載ると、knockoutDeck（axis-knockout.ts）が該当の
+    // (カードID, 軸) を要求された瞬間に自己検査で例外を投げる（最終レビュー I2）。
+    // 空であることをここで固定し、赤くなる場所をこの1本に絞る。
+    expect(KNOCKOUT_DERIVATION_FAILURES).toEqual([]);
+  });
+
+  it('基礎札の ID は接頭辞を持たない（衝突が構文的に起こりえない）', () => {
+    CARD_IDS.forEach((id) => {
+      expect(id.startsWith(KNOCKOUT_ID_PREFIX)).toBe(false);
+    });
+  });
+
+  it('変種は CARD_IDS に含まれない', () => {
+    KNOCKOUT_CARD_IDS.forEach((id) => {
+      expect(CARD_IDS).not.toContain(id);
+    });
+  });
+
+  it('変種は構築にも獲得にも出ない', () => {
+    KNOCKOUT_CARD_IDS.forEach((id) => {
+      expect(BUILDABLE_CARD_IDS).not.toContain(id);
+      expect(ACQUIRABLE_CARD_IDS).not.toContain(id);
+    });
+  });
+
+  it('変種は getCardDefinition から引ける（監査はこの経路だけを使う）', () => {
+    KNOCKOUT_CARD_IDS.forEach((id) => {
+      expect(getCardDefinition(id).id).toBe(id);
+    });
+  });
+
+  it('基礎札の定義が変種に上書きされていない', () => {
+    // Map は後勝ちなので、合流順を誤ると本番の札が静かに置き換わる
+    expect(getCardDefinition('stone-wall').tower?.hp).toBe(60);
+    expect(getCardDefinition('cannon-tower').tower?.damage).toBe(12);
+    expect(getCardDefinition('snare-net').trap?.groundedTicks).toBe(120);
+  });
+
+  it('CARD_IDS の枚数は変種を足しても14のまま', () => {
+    expect(CARD_IDS).toHaveLength(14);
+  });
+});
+
+describe('ノックアウト変種は構築規則を通らない', () => {
+  it('validateDeck は変種を未知のカードとして弾く', () => {
+    const koId = KNOCKOUT_CARD_IDS[0];
+    expect(koId).toBeDefined();
+    const deck = Array.from({ length: DECK_SIZE }, () => koId as string);
+    const result = validateDeck(deck);
+    expect(result.isValid).toBe(false);
+    expect(result.errors.some((e) => e.includes('未知のカード'))).toBe(true);
   });
 });

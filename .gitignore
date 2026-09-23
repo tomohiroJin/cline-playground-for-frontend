@@ -57,7 +57,12 @@ lint_output.txt
 /CLAUDE.md
 /GEMINI.md
 # シミュレーションレポート出力（開発支援ツール）
-reports/
+# 先頭の / でリポジトリ直下に限定する。generate-report.ts は
+# resolve(process.cwd(), 'reports') に書くのでルート固定である。
+# スラッシュ無しの `reports/` はどの階層の reports にも効き、
+# docs/superpowers/reports/ を巻き添えにしていた（追跡済みファイルが1つ
+# あるため「追跡されている」ように見え、新規ファイルだけが黙って無視された）。
+/reports/
 
 # AI CLI ツールの作業足場（SDD の briefs/reports/diffs/progress、ブレスト companion の HTML/state 等）。
 # 製品リポジトリに含めない（過去に git add -A でブレスト scratch が誤混入した事故の再発防止）

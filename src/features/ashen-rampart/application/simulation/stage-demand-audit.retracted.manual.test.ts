@@ -1,11 +1,14 @@
 /**
- * 暫定ステージが宣言した要求軸を実際に要求するかの監査（設計書 §8.2.6(j)）
+ * 【⚠️ 撤回済み】暫定ステージが宣言した要求軸を実際に要求するかの監査
  *
- * **これは測定であって合否判定ではない。閾値の assert を置かない。**
- * 数値は判定票へ人が転記する。
+ * **この測定は設計書 §8.2.15(a) で反証された。数値を根拠に使ってはならない。**
+ * 使っている `withoutAxisStrategy` は軸ではなく「デッキから抜けた火力の量」を
+ * 測っていた（飛行0体のステージで対空を落とすと差16）。
  *
- * CI には常駐させない（§8.2.6(e)）。実行するには:
- *   ASHEN_RAMPART_AUDIT=1 npx jest stage-demand-audit
+ * §8.2.7 の表を再現するためだけに残してある。現行の監査は
+ * `axis-demand-gate.manual.test.ts`（ゲート `G3`）である。
+ *
+ * 実行するには: ASHEN_RAMPART_AUDIT=1 npx jest stage-demand-audit
  */
 import { createDeck } from '../../domain/cards/deck';
 import { PRESET_DECKS } from '../../domain/cards/card-pool';

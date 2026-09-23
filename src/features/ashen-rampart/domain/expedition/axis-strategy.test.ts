@@ -1,3 +1,7 @@
+/**
+ * ⚠️ 反証済みの道具の回帰テストである（設計書 §8.2.15(a)）。
+ * `withoutAxisStrategy` は測定に使ってはならない。ここは挙動の凍結だけを目的とする。
+ */
 import { PLAINS_MAP } from '../board/stage-map';
 import { createCombatState } from '../combat/combat-state';
 import { createDeck } from '../cards/deck';
