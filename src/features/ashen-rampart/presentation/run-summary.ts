@@ -17,7 +17,12 @@ import { getCardDefinition } from '../domain/cards/card-pool';
 import { placementKindOf } from '../domain/cards/card-definition';
 // OVERFLOW_LIFE_COST は純粋な定数。副作用を持たないため presentation 層から
 // 直接 import してよい（依存方向の制約は「副作用の呼び出し」に対するもの）。
-import { OVERFLOW_LIFE_COST, type CombatState, type TickEvent } from '../domain/combat/combat-state';
+import {
+  MANA_INITIAL,
+  OVERFLOW_LIFE_COST,
+  type CombatState,
+  type TickEvent,
+} from '../domain/combat/combat-state';
 
 type RejectionReason = Extract<TickEvent, { kind: 'rejected' }>['reason'];
 
@@ -76,6 +81,10 @@ export interface RunTally {
    * 上振れしていた。
    */
   manualDiscards: number;
+  /** 反復7の判定項目6: マナ収入の合計（初期マナ＋魔力炉の産出） */
+  manaIncomeTotal: number;
+  /** 反復7の判定項目6: 最後に札を出した tick のマナ（支払い後） */
+  lastPlayMana: number;
 }
 
 export const emptyTally = (): RunTally => ({
@@ -97,6 +106,8 @@ export const emptyTally = (): RunTally => ({
   lastPlayTick: 0,
   drawPileExhaustedTick: 0,
   manualDiscards: 0,
+  manaIncomeTotal: MANA_INITIAL,
+  lastPlayMana: 0,
 });
 
 /** 撃破源に対応するカード id */
@@ -243,7 +254,15 @@ export const accumulateTick = (tally: RunTally, state: CombatState, map: StageMa
   // 出した tick でだけ更新する。
   if (state.events.some((e) => e.kind === 'played')) {
     next.lastPlayTick = state.tick;
+    next.lastPlayMana = state.mana;
   }
+
+  // 反復7の判定項目6 の分母。産出量はイベントの amount を足す
+  // （`runReactors` は現状 manaPerTick=1 で amount も 1。将来ずれたら amount 側を直すこと）
+  next.manaIncomeTotal += state.events.reduce(
+    (sum, e) => (e.kind === 'mana' ? sum + e.amount : sum),
+    0
+  );
 
   // 山札が尽きた tick。0 は「まだ尽きていない」を意味するため、
   // 最初に空になった時点だけを覚える（毎 tick 上書きすると最後の tick になる）。

@@ -390,6 +390,8 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       // 必ず同じ tick を指す（endTickRef 宣言のコメントを参照）。
       endTick: endTickRef.current,
       drawPileExhaustedTick: view.drawPileExhaustedTick,
+      manaIncomeTotal: settled.manaIncomeTotal,
+      lastPlayMana: settled.lastPlayMana,
     });
   }, [state.outcome, runId, cards]);
 

@@ -1,5 +1,5 @@
 /**
- * 灰燼の城壁 - 行動ログポート（スキーマ v5）
+ * 灰燼の城壁 - 行動ログポート（スキーマ v6）
  *
  * 反復0の教訓により、記録する項目はすべて判定に使う。
  * 判定に使わない項目は記録しない（設計書 §11 ログスキーマ v2）。
@@ -8,7 +8,7 @@
 import type { OverflowOrigin } from '../../domain/combat/combat-state';
 
 /** 現在の反復番号。反復を進めるたびに必ず更新する */
-export const CURRENT_ITERATION = 6;
+export const CURRENT_ITERATION = 7;
 
 export type PlayLogEventBody =
   | {
@@ -18,6 +18,15 @@ export type PlayLogEventBody =
       seed: number;
       /** 使用したデッキのカードID列（反復4の判定項目1「使われなかったカード種」の分母） */
       deckCards: string[];
+      /**
+       * 遠征のどのステージのランか（反復7）
+       *
+       * ステージ内のイベント（`card_played` 等）は `runId` しか持たない。
+       * `runId → (expeditionId, stageIndex)` をここで1回だけ結ぶことで、
+       * 全イベントへ識別子を付けずにステージ単位の集計（反復7の判定項目3・4）ができる。
+       */
+      expeditionId?: string;
+      stageIndex?: number;
     }
   | { kind: 'card_drawn'; runId: string; cardId: string; tick: number }
   | { kind: 'card_played'; runId: string; cardId: string; tick: number; mana: number; x?: number; y?: number }
@@ -78,6 +87,56 @@ export type PlayLogEventBody =
    * 枚数だけでは足りず、中身と余剰資源を併せて見る必要がある。
    */
   | { kind: 'draw_pile_exhausted'; runId: string; tick: number; hand: string[]; mana: number }
+  /** 遠征の開始（反復7）。`stageIds` は抽選済みの3ステージ */
+  | {
+      kind: 'expedition_started';
+      expeditionId: string;
+      iteration: number;
+      seed: number;
+      stageIds: string[];
+      initialDeckCards: string[];
+    }
+  /** ステージの開始（反復7の判定項目3・4）。`life` はそのステージ開始時の持ち越しライフ */
+  | {
+      kind: 'stage_started';
+      expeditionId: string;
+      stageIndex: number;
+      stageId: string;
+      tier: number;
+      life: number;
+      deckCards: string[];
+    }
+  /** 獲得の提示（反復7の判定項目1）。`offerIndex` は遠征内で0始まり */
+  | { kind: 'card_offered'; expeditionId: string; offerIndex: number; offered: string[] }
+  /**
+   * 獲得の選択（反復7）
+   *
+   * 選ばなかった札を `offered` に残す。選択の情報量は「何を捨てたか」の側にあり、
+   * 主観（反復7の判定項目8）の回答を検算する材料になる。
+   */
+  | {
+      kind: 'card_acquired';
+      expeditionId: string;
+      offerIndex: number;
+      cardId: string;
+      offered: string[];
+    }
+  /**
+   * 遠征の決着（反復7の判定項目7）
+   *
+   * `reachedTier3` は「層3 のステージに挑んだか」。層3 で敗れても true。
+   */
+  | {
+      kind: 'expedition_ended';
+      expeditionId: string;
+      outcome: 'cleared' | 'failed';
+      stagesCleared: number;
+      reachedTier3: boolean;
+      acquired: string[];
+      life: number;
+    }
+  /** 遠征の振り返り（反復7の判定項目8・9(a) の材料） */
+  | { kind: 'expedition_note'; expeditionId: string; text: string }
   | {
       /**
        * 決着時の集計スナップショット（反復4で追加、反復5でスキーマ v4 へ拡張）
@@ -127,6 +186,15 @@ export type PlayLogEventBody =
       endTick: number;
       /** 山札が尽きた tick。0 なら尽きなかった（反復5） */
       drawPileExhaustedTick: number;
+      /**
+       * 反復7の判定項目6: そのステージのマナ収入の合計（初期マナ＋魔力炉の産出）
+       *
+       * 反復6 §7.2: 魔力炉が最大3枚に減りステージも短いので、残マナの絶対値は比べられない。
+       * 「最後の1手の残マナ ÷ 総マナ収入」の分母。
+       */
+      manaIncomeTotal: number;
+      /** 反復7の判定項目6: 最後に札を出した直後のマナ。0 なら一度も出していないか使い切った */
+      lastPlayMana: number;
     };
 
 export type PlayLogEvent = PlayLogEventBody & { at: number };
@@ -144,3 +212,7 @@ export interface PlayLogPort {
 /** ラン識別子を生成する（決定性は不要。ドメイン乱数とは無関係） */
 export const createRunId = (): string =>
   `run-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+
+/** 遠征識別子を生成する（決定性は不要。ドメイン乱数とは無関係） */
+export const createExpeditionId = (): string =>
+  `exp-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
