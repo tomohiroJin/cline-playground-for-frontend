@@ -10,10 +10,22 @@ import { test, expect, type Page } from '@playwright/test';
 const MIN_WIDTH = 360;
 const MIN_HEIGHT = 740;
 
+/** localStorage のキー（GamePageWrapper の注意事項ダイアログ用。primal-path-helper.ts と同じ命名） */
+const NOTICE_STORAGE_KEY = 'game-notice-accepted:/ashen-rampart';
+
 const startExpedition = async (page: Page): Promise<void> => {
-  await page.goto('/ashen-rampart');
-  await page.evaluate(() => localStorage.clear());
-  await page.reload();
+  // ページ読み込み前に localStorage を設定する。注意事項ダイアログを既読にしつつ、
+  // このゲーム固有のキーだけ消して各テストを未プレイ状態から始める。
+  // localStorage を丸ごと clear すると既読フラグも消えてダイアログが復活するので避ける。
+  await page.addInitScript((noticeKey) => {
+    localStorage.setItem(noticeKey, 'true');
+    localStorage.removeItem('ashen-rampart:play-log-v6');
+    localStorage.removeItem('ashen-rampart:briefing-seen-v1');
+  }, NOTICE_STORAGE_KEY);
+
+  // webpack 初回バンドルコンパイルを考慮した長めのタイムアウト（reload はしない）
+  await page.goto('/ashen-rampart', { waitUntil: 'domcontentloaded', timeout: 90_000 });
+  await expect(page.getByRole('button', { name: /速攻型 を読み込む/ })).toBeVisible({ timeout: 30_000 });
   await page.getByRole('button', { name: /速攻型 を読み込む/ }).click();
   await page.getByRole('button', { name: 'この構成で始める' }).click();
   await page.getByRole('button', { name: '開始' }).click();
