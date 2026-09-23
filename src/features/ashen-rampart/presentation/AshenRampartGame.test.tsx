@@ -476,7 +476,12 @@ describe('AshenRampartGame', () => {
     expect(readExportedLog().events.filter((e) => e.kind === 'expedition_note')).toHaveLength(1);
   });
 
-  it('遠征の各ステージは新しい手札で始まり、stage_started と run_started がステージごとに結び付く（Review Focus 3: ステージをまたいだ状態漏れ）', () => {
+  // ステージをまたいだ遷移（獲得後に新しい手札で始まるか・isFinalStage・StageView の
+  // 再マウント）は ExpeditionView.test.tsx が StageView をスタブ化して決定的に検査する。
+  // このファイルは無配置で進めるため、速攻型・重厚型のどちらのシード（1〜500 で探索
+  // 済み）でも層1 を突破できず、ここではステージ1 止まりの決着しか作れない
+  // （Fix Round 1 の探索結果）。
+  it('遠征のステージ1 で stage_started と run_started が同じステージ番号で結び付く', () => {
     render(<AshenRampartGame />);
     startRunning(/速攻型 を読み込む/, '11');
     advanceUntilExpeditionEnds();
@@ -484,8 +489,11 @@ describe('AshenRampartGame', () => {
     const events = readExportedLog().events;
     const stages = events.filter((e) => e.kind === 'stage_started');
     const runs = events.filter((e) => e.kind === 'run_started');
-    expect(runs).toHaveLength(stages.length);
-    runs.forEach((run, i) => expect(run).toMatchObject({ stageIndex: i }));
+    expect(stages.length).toBeGreaterThanOrEqual(1);
+    expect(runs[0]).toMatchObject({
+      stageIndex: 0,
+      expeditionId: (stages[0] as { expeditionId: string }).expeditionId,
+    });
   });
 
   it('置けないセルをクリックすると理由が盤面直下に出る', async () => {
