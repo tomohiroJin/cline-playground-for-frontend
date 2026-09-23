@@ -67,6 +67,17 @@ describe('ExpeditionSummary', () => {
     );
   });
 
+  it('記録した後はボタンが無効になり、もう一度押しても onNote が再度呼ばれない（Minor 2）', () => {
+    const handlers = renderSummary(failedAtTier2());
+    submitNote('層2 の鴉で崩れた');
+
+    const submitButton = screen.getByRole('button', { name: '記録する' });
+    expect(submitButton).toBeDisabled();
+
+    fireEvent.click(submitButton);
+    expect(handlers.onNote).toHaveBeenCalledTimes(1);
+  });
+
   it('空白だけの記録は受け付けない', () => {
     const handlers = renderSummary(failedAtTier2());
     submitNote('   ');

@@ -83,7 +83,14 @@ export interface RunTally {
   manualDiscards: number;
   /** 反復7の判定項目6: マナ収入の合計（初期マナ＋魔力炉の産出） */
   manaIncomeTotal: number;
-  /** 反復7の判定項目6: 最後に札を出した tick のマナ（支払い後） */
+  /**
+   * 反復7の判定項目6: 最後に札を出した tick が終わった時点でのマナ
+   *
+   * 「出した直後（支払い後）」ではない。同じ tick の魔力炉の産出
+   * （runReactors、step-tick.ts）も乗った後の値であり、`card_played.mana`
+   * （play-log-port.ts）と同じ定義（useAshenRampartGame.ts が
+   * `mana: state.mana` を積む箇所も、この tick 終了後の state を見ている）。
+   */
   lastPlayMana: number;
 }
 

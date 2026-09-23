@@ -12,8 +12,21 @@ import type { CombatState } from '../domain/combat/combat-state';
 import { DRAW_INTERVAL_TICKS, PLACE_COOLDOWN_TICKS } from '../domain/combat/combat-state';
 import { COLORS } from './theme';
 import { CardGlyph } from './CardGlyph';
-import { cardStatsOf, toSeconds } from './card-text';
+import { CardBadge } from './CardBadge';
+import { cardBadgesOf, cardStatsOf, toSeconds } from './card-text';
 import { getUnitVisual, roleLabelOf } from './unit-visual';
+
+/**
+ * 手札を1行1枚に折り返す最小幅（判定はここから下の画面幅を対象にする）
+ *
+ * 反復4 §6.1・360px の実測（docs/superpowers/specs/
+ * 2026-09-23-ashen-rampart-iteration7-stage1-360px.json）で、最悪ケースの
+ * 開始手札（塔3枚）でも属性バッジ・2つ目の主要数値まで落とせば折り返しが
+ * 解消することを確認した。最終レビュー Important I2 により、この簡略化は
+ * DOM 自体からは削らず、この幅以下でだけ CSS で隠す（狭くない画面の情報量を
+ * 削らない）。
+ */
+const HAND_NARROW_MAX_WIDTH = 480;
 
 const Bar = styled.div`
   display: flex;
@@ -98,6 +111,28 @@ const StatRow = styled.span`
   gap: 4px;
   font-size: 11px;
   opacity: 0.85;
+`;
+
+/**
+ * 2つ目以降の主要数値（cardStatsOf の先頭以外）
+ *
+ * HAND_NARROW_MAX_WIDTH 以下でだけ隠す。DOM には常に出すため、
+ * jsdom（メディアクエリを解釈しない）でも通常の描画として検査できる。
+ */
+const Stat = styled.span<{ $isSecondary?: boolean }>`
+  @media (max-width: ${HAND_NARROW_MAX_WIDTH}px) {
+    display: ${({ $isSecondary }) => ($isSecondary ? 'none' : 'inline')};
+  }
+`;
+
+/** 属性バッジの並び。HAND_NARROW_MAX_WIDTH 以下でだけ隠す */
+const Badges = styled.span`
+  display: flex;
+  gap: 4px;
+
+  @media (max-width: ${HAND_NARROW_MAX_WIDTH}px) {
+    display: none;
+  }
 `;
 
 const CardSlot = styled.div`
@@ -230,12 +265,19 @@ export const HandArea: React.FC<Props> = ({
                 </CardHead>
                 <StatRow>
                   <span>コスト{card.cost}</span>
-                  {cardStatsOf(cardId).slice(0, 1).map((stat) => (
-                    <span key={stat}>{stat}</span>
+                  {cardStatsOf(cardId).map((stat, statIndex) => (
+                    <Stat key={stat} $isSecondary={statIndex > 0}>
+                      {stat}
+                    </Stat>
                   ))}
-                  {/* 最小幅360px で手札が1行1枚に折り返すため、反復4 §6.1 の手順3（主要数値を1つに減らす）まで適用した。
-                      手順2（属性バッジを落とす）でも最悪ケースの開始手札（塔3枚）で折り返しが解消しなかった。
-                      コスト・形アイコン・名前は削らない。構築画面（DeckCardRow）は対象外で両方の数値を残す */}
+                  {/* 狭い画面（HAND_NARROW_MAX_WIDTH 以下）では2つ目以降の数値とバッジを
+                      CSS で隠す。DOM からは削らない（Important I2）。E2E の360px計測で
+                      折り返しが解消することを確認する（Playwright はこの単体テストの対象外） */}
+                  <Badges>
+                    {cardBadgesOf(cardId).map((badge) => (
+                      <CardBadge key={badge}>{badge}</CardBadge>
+                    ))}
+                  </Badges>
                 </StatRow>
               </Card>
               <DiscardButton

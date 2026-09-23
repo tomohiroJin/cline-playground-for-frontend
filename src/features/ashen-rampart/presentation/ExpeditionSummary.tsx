@@ -99,6 +99,9 @@ export const ExpeditionSummary: React.FC<ExpeditionSummaryProps> = ({
 
   const handleSubmit = (event: React.FormEvent): void => {
     event.preventDefault();
+    // ボタンの disabled だけに頼らない（Minor 2）。textarea を readOnly にしても
+    // フォーム自体の送信経路が塞がるとは限らないため、ここでも二重記録を防ぐ
+    if (isUnlocked) return;
     const trimmed = noteText.trim();
     if (trimmed.length === 0) return;
     onNote(trimmed);
@@ -118,8 +121,14 @@ export const ExpeditionSummary: React.FC<ExpeditionSummaryProps> = ({
           id="ashen-rampart-expedition-note"
           value={noteText}
           onChange={(event) => setNoteText(event.target.value)}
+          readOnly={isUnlocked}
         />
-        <ActionButton type="submit">記録する</ActionButton>
+        {/* 記録後は再送信できないよう disabled にする（Minor 2）。
+            記録済みかどうかは isUnlocked の1箇所だけで判断し、textarea の
+            readOnly と食い違わないようにする */}
+        <ActionButton type="submit" disabled={isUnlocked}>
+          記録する
+        </ActionButton>
       </NoteForm>
       {isUnlocked && (
         <>

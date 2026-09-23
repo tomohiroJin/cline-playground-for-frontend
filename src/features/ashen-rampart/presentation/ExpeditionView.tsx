@@ -6,6 +6,7 @@
  * `expedition.phase` に従い、この部品は分岐して描くだけにする。
  */
 import React, { useState } from 'react';
+import styled from 'styled-components';
 import { nextWavePreview } from './wave-preview';
 import { useExpedition } from './useExpedition';
 import { StageView } from './StageView';
@@ -15,6 +16,8 @@ import { ExpeditionSummary } from './ExpeditionSummary';
 import { StartOverlay } from './StartOverlay';
 import { markBriefingSeen, readBriefingSeen } from './briefing-seen';
 import { currentStage } from '../domain/expedition/expedition-state';
+import { COLORS } from './theme';
+import { HEADER_CLEARANCE } from './layout-constants';
 
 interface Props {
   cards: string[];
@@ -25,6 +28,23 @@ interface Props {
 
 /** ラン開始前（tick 0 より前）を表す。先頭の非空ウェーブが選ばれる（旧 FIRST_WAVE_PREVIEW と同じ） */
 const BEFORE_START_TICK = -1;
+
+/**
+ * 獲得3択画面のレイアウト（最終レビュー指摘 Important I1）
+ *
+ * これまで帯と3択をむき出しのフラグメントで返していたため、
+ * StageView/ExpeditionSummary と違って上部余白（HEADER_CLEARANCE）と
+ * 背景（COLORS.dominant）を持たなかった。結果、固定表示の
+ * FloatingHomeButton（top:12px, left:12px, 40x40px）が「層 n / 3」に
+ * 重なり、ステージ画面 → 獲得画面の切り替え時にサイトの背景グラデーションが
+ * 一瞬見えていた（layout-constants.ts 参照）。
+ */
+const OfferLayout = styled.div`
+  min-height: 70vh;
+  padding-top: ${HEADER_CLEARANCE};
+  background: ${COLORS.dominant};
+  color: ${COLORS.secondary};
+`;
 
 export const ExpeditionView: React.FC<Props> = ({ cards, seed, onRetry, onRebuild }) => {
   const game = useExpedition({ cards, seed });
@@ -63,10 +83,10 @@ export const ExpeditionView: React.FC<Props> = ({ cards, seed, onRetry, onRebuil
   if (briefing) return briefing;
   if (expedition.phase === 'offer') {
     return (
-      <>
+      <OfferLayout data-testid="ashen-rampart-offer-layout" data-header-clearance={HEADER_CLEARANCE}>
         <ExpeditionBar expedition={expedition} />
         <OfferChoice offer={expedition.offer} onChoose={game.acquire} />
-      </>
+      </OfferLayout>
     );
   }
   if (!stage || !game.stageCombat) return null;

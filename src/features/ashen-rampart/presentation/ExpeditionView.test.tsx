@@ -17,6 +17,7 @@ import { ExpeditionView } from './ExpeditionView';
 import { markBriefingSeen } from './briefing-seen';
 import { PRESET_DECKS } from '../domain/cards/card-pool';
 import type { StageViewProps } from './StageView';
+import { HEADER_CLEARANCE } from './layout-constants';
 
 /** StageView スタブの実マウント回数。beforeEach でリセットする（"mock" 接頭辞は jest.mock のホイスト制約による） */
 let mockStageViewMounts = 0;
@@ -106,6 +107,17 @@ describe('ExpeditionView（Fix Round 2: ステージ跨ぎの遷移を決定的�
 
     expect(screen.getByText('遠征は層1 で潰えた')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: / を加える$/ })).not.toBeInTheDocument();
+  });
+
+  it('獲得の画面にフローティングホームボタンぶんの上部余白がある（最終レビュー指摘 I1）', () => {
+    render(<ExpeditionView cards={SWIFT_CARDS} seed={SEED} onRetry={jest.fn()} onRebuild={jest.fn()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: '勝ったことにする' }));
+
+    expect(screen.getByTestId('ashen-rampart-offer-layout')).toHaveAttribute(
+      'data-header-clearance',
+      HEADER_CLEARANCE
+    );
   });
 
   it('獲得の画面に辞退の手段が出ない（ボタンは「…を加える」だけ）', () => {

@@ -71,4 +71,23 @@ describe('StageView', () => {
     expect(screen.queryByLabelText(/勝敗の理由を記録する/)).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '同じデッキで別のシードに挑む' })).not.toBeInTheDocument();
   });
+
+  it('最終ステージでなければ、勝って決着した状態で開くと「獲得へ進む」が出て、押すと残ライフつきで onSettled が呼ばれる（Minor 1）', () => {
+    // outcome を最初から 'won' にしておく。ゲームループは outcome !== 'playing' では
+    // 回らない（useAshenRampartGame.ts）ため、tick を進めずとも決着パネルが即座に出る
+    const wonState: CombatState = { ...initial, outcome: 'won' };
+    const onSettled = renderStage(wonState, false);
+
+    expect(screen.getByRole('button', { name: SETTLE_TO_OFFER_LABEL })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: SETTLE_TO_OFFER_LABEL }));
+    expect(onSettled).toHaveBeenCalledWith({ won: true, lifeLeft: wonState.life });
+  });
+
+  it('最終ステージで勝って決着した状態で開くと「遠征の結果へ」が出る（Minor 1）', () => {
+    const wonState: CombatState = { ...initial, outcome: 'won' };
+    renderStage(wonState, true);
+
+    expect(screen.getByRole('button', { name: SETTLE_TO_SUMMARY_LABEL })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: SETTLE_TO_OFFER_LABEL })).not.toBeInTheDocument();
+  });
 });

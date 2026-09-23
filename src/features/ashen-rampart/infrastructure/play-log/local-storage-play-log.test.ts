@@ -67,19 +67,19 @@ describe('LocalStoragePlayLog', () => {
     expect(() => new LocalStoragePlayLog().record(runStarted)).not.toThrow();
   });
 
-  it('スキーマは v5 で、キーも v5 になる', () => {
+  it('スキーマは v6 で、キーも v6 になる', () => {
     const log = new LocalStoragePlayLog();
     log.record({ kind: 'run_note', runId: 'r1', text: 'テスト' });
     expect(PLAY_LOG_STORAGE_KEY).toBe('ashen-rampart:play-log-v6');
     expect(log.exportAll().version).toBe(6);
   });
 
-  it('v4 のキーに残っていた旧データは読みに行かず、v5 は空から始まって壊れない', () => {
-    // v4 時代のキー名を直書きする（PLAY_LOG_STORAGE_KEY は既に v5 を指すため、
+  it('v4 のキーに残っていた旧データは読みに行かず、v6 は空から始まって壊れない', () => {
+    // v4 時代のキー名を直書きする（PLAY_LOG_STORAGE_KEY は既に v6 を指すため、
     // 旧データを再現するには文字列で直接書く必要がある）
     localStorage.setItem('ashen-rampart:play-log-v4', JSON.stringify({ version: 4, events: [runStarted] }));
     const log = new LocalStoragePlayLog();
-    // v5 キーには何もないため、v4 の内容とは無関係に空ログから始まる
+    // v6 キーには何もないため、v4 の内容とは無関係に空ログから始まる
     expect(log.exportAll()).toEqual({ version: 6, events: [] });
     log.record(runStarted);
     expect(log.exportAll().events).toHaveLength(1);
@@ -87,8 +87,8 @@ describe('LocalStoragePlayLog', () => {
     expect(localStorage.getItem('ashen-rampart:play-log-v4')).not.toBeNull();
   });
 
-  describe('スキーマ v5（反復6）', () => {
-    it('保存キーとスキーマ版が両方 v5 になっている', () => {
+  describe('スキーマ v6（反復6）', () => {
+    it('保存キーとスキーマ版が両方 v6 になっている', () => {
       const log = new LocalStoragePlayLog();
       log.record({ kind: 'run_note', runId: 'r1', text: 'x' });
       expect(localStorage.getItem('ashen-rampart:play-log-v6')).not.toBeNull();

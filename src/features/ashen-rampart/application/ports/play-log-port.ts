@@ -15,6 +15,12 @@ export type PlayLogEventBody =
       kind: 'run_started';
       runId: string;
       iteration: number;
+      /**
+       * `expeditionId` が付くとき（反復7）、この値は**遠征のシード**であり、
+       * このステージ単体のシードではない。ステージのシャッフルは
+       * `derivedSeed(seed, 'shuffle', stageIndex)`（start-expedition.ts）で
+       * ここから導出する。
+       */
       seed: number;
       /** 使用したデッキのカードID列（反復4の判定項目1「使われなかったカード種」の分母） */
       deckCards: string[];
@@ -193,7 +199,13 @@ export type PlayLogEventBody =
        * 「最後の1手の残マナ ÷ 総マナ収入」の分母。
        */
       manaIncomeTotal: number;
-      /** 反復7の判定項目6: 最後に札を出した直後のマナ。0 なら一度も出していないか使い切った */
+      /**
+       * 反復7の判定項目6: 最後に札を出した tick が終わった時点でのマナ。
+       * 0 なら一度も出していないか使い切った
+       *
+       * 「出した直後（支払い後）」ではない。同じ tick の魔力炉の産出も
+       * 乗った後の値で、`card_played.mana`（このファイル）と同じ定義。
+       */
       lastPlayMana: number;
     };
 
