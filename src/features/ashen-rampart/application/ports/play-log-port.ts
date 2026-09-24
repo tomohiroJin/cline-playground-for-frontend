@@ -143,6 +143,16 @@ export type PlayLogEventBody =
     }
   /** 遠征の振り返り（反復7の判定項目8・9(a) の材料） */
   | { kind: 'expedition_note'; expeditionId: string; text: string }
+  /**
+   * 途中でやめた遠征（反復7 段階2・設計書 §4.0 c）
+   *
+   * ホームへ戻る・再読み込みで遠征が消えても、その場では何も記録できない
+   * （アンマウント時の記録は StrictMode の二重実行で誤発火する）。そこで
+   * **次の遠征を始めるとき**に、決着の無い遠征をこのイベントで閉じる。
+   * `lastStageIndex` は最後に始めたステージ番号。1つも始めていなければ -1。
+   * 判定では、この遠征を3遠征にも各項目の分母にも数えない（設計書 §2）。
+   */
+  | { kind: 'expedition_abandoned'; expeditionId: string; lastStageIndex: number }
   | {
       /**
        * 決着時の集計スナップショット（反復4で追加、反復5でスキーマ v4 へ拡張）

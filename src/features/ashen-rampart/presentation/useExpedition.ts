@@ -19,6 +19,7 @@ import {
 } from '../domain/expedition/expedition-state';
 import { startExpedition, startStage } from '../application/use-cases/start-expedition';
 import { advanceStage } from '../application/use-cases/advance-stage';
+import { recordAbandonedExpeditions } from '../application/use-cases/record-abandoned-expeditions';
 import { createSeededRandom } from '../infrastructure/random/seeded-random';
 import { LocalStoragePlayLog } from '../infrastructure/play-log/local-storage-play-log';
 import {
@@ -67,6 +68,16 @@ export const useExpedition = ({ cards, seed, playLog }: UseExpeditionOptions) =>
     loggedRef.current.add(key);
     record();
   }, []);
+
+  // 途中でやめた前の遠征を閉じる（反復7 段階2・設計書 §4.0 c）。
+  // アンマウント時の記録は StrictMode の二重実行で誤発火するため、次の遠征の開始時に行う。
+  // recordOnce で1回に絞り、さらにユースケース側も今回の遠征と記録済みの放棄を除くので、
+  // どちらか一方の防御が外れても二重にならない
+  useEffect(() => {
+    recordOnce('expedition_abandoned_scan', () => {
+      recordAbandonedExpeditions(logRef.current, expeditionId);
+    });
+  }, [recordOnce, expeditionId]);
 
   useEffect(() => {
     recordOnce('expedition_started', () =>
