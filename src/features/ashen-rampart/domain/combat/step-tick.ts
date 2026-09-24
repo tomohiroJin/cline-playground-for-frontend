@@ -6,7 +6,7 @@
  * ここにはタイマーも副作用も持ち込まない（設計書 §8.2）。
  *
  * 1 tick の処理順:
- *   操作 → マナ生成 → ドロー → 出現 → 移動 → 罠 → 射撃 → 漏れ → 勝敗
+ *   操作 → マナ生成 → ドロー → 出現 → 移動 → 敵の攻撃 → 敵の回復 → 罠 → 射撃 → 業火 → 漏れ → 勝敗
  *
  * `stepTick` 本体は上記の順で各段階のヘルパー関数を呼ぶだけの薄い関数にし、
  * 各段階の実装は module-private なヘルパーに切り出している（Task 7.5）。
@@ -35,6 +35,7 @@ import type {
 } from './combat-state';
 import { laneFor, goalFor, enemyPosition } from './enemy-position';
 import { applyDamage, canTowerHit, hitOn, type DamageDraft } from './damage';
+import { applyEnemyHeals } from './enemy-heal';
 
 // 既存の import 元（step-tick）を変えずに済ませるため再エクスポートする。
 // 反復1〜4 のテストが step-tick から positionOf / enemyPosition を取っている。
@@ -920,6 +921,9 @@ export const stepTick = (
   // 敵へのダメージはすべて applyDamage を通す（装甲と撃破源の帰属を1箇所で守る。反復7 段階2）
   const hpById = new Map<number, number>();
   moved.forEach((e) => hpById.set(e.id, e.hp));
+  // 敵の回復は種まきの直後・罠より前（反復7 段階2・設計書 §4.2 (2)）。
+  // 削られる前の HP に足すので、tick 内の蘇生経路が構造的に無い
+  applyEnemyHeals({ moved, hpById, map, tick, events });
   const draft: DamageDraft = { hpById, sourceById: new Map(), events };
   const statusById = new Map<number, EnemyStatusDraft>();
   const traps = applyTraps(afterActions.traps, moved, draft, { statusById, tick, map });

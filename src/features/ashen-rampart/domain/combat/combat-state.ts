@@ -93,6 +93,12 @@ export type TickEvent =
    * `raw` は軽減前、`dealt` は実際に削った量（最低0）。装甲は1ヒットごとに引く。
    */
   | { kind: 'armor-hit'; enemyId: number; raw: number; dealt: number; armor: number }
+  /**
+   * 癒し手の回復（反復7 段階2・設計書 §4.3 #2 の表示の材料）
+   *
+   * `amount` は実際に戻した量。0 のときは積まない。
+   */
+  | { kind: 'enemy-healed'; healerId: number; targetId: number; amount: number }
   | { kind: 'ember'; emberIndex: number }
   | { kind: 'defeat'; enemyId: number; source: DefeatSource }
   | { kind: 'leak'; enemyId: number }
