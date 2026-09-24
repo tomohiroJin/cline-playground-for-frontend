@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - 作業ディレクトリ: `/workspaces/claym/local/cline-playground-for-frontend`。対象は `src/features/ashen-rampart/`（以下 `F/` と略す）
-- ブランチ: `feature/ashen-rampart-iteration7-stage2`（段階1 の PR ブランチ `feature/ashen-rampart-iteration7-stage1` の先端 `a6496aa6` から切ってある）。**PR #211（段階1）はまだマージされていない。** PR は #211 がマージ済みなら `main` 向け、未マージなら `feature/ashen-rampart-iteration7-stage1` 向けに積む（Task 13）。`main` へ直接コミットしない。ブランチを切り替えない
+- ブランチ: `feature/ashen-rampart-iteration7-stage2`（段階1 の PR ブランチ `feature/ashen-rampart-iteration7-stage1` の先端 `a6496aa6` から切ってある）。**PR #211（段階1）はまだマージされていない。** PR は #211 がマージ済みなら `main` 向け、未マージなら `feature/ashen-rampart-iteration7-stage1` 向けに積む（Task 14）。`main` へ直接コミットしない。ブランチを切り替えない
 - `any` 禁止（`unknown` + 型ガード）。`dangerouslySetInnerHTML` 禁止。**他の `features/*` を import しない**（`features/primal-path` のコントラスト計算も使わない）
 - コメント・テスト名は日本語。相対 import の `../` は2階層まで
 - マジックナンバーは名前付き定数へ。関数は30行・引数3個を目安（超えるならオブジェクト引数）。コンポーネントは200行を目安
@@ -57,9 +57,12 @@
 19. **`attackersFor`** — 自分をブロックしている敵を進行度順に先に取り、残りの枠を射程攻撃者（進行度順）で埋める。**`balance.test.ts` の不変条件が赤くなったら閾値を動かさず、コントローラが止めてユーザーに報告する。** `it.failing`（支配デッキ）が赤くなったら設計書 §6.5 に従い「直った」と読み、`it` へ戻す
 20. **装甲の軽減表示** — 敵の頭上に SVG の文字 `-N (装甲M)`。**回復** — 癒し手から対象への緑の線と対象の上の `+N`（色だけに頼らない）。緑は `COLORS.heal`（敵の HP バーと同じ `#7fb069`）として `theme.ts` に足す。どちらも動きを付けない（`prefers-reduced-motion` でも見え方が同じ。寿命は `combat-effects` が既存の規則で揃える）
 21. **オーラの実効値** — 盤面外の `BoardInfoSlot` の能力表示に `攻撃5（素4）`・`支援で攻撃+1`・`射程2.2（素1.6）`・`高台で攻撃×1.3` の形で出す。`buildPlates(state, map?)` の `map` は省略可にし（既存の33呼び出しを壊さない）、本番の呼び出しは必ず渡す。射程リングも実効射程で描く
-22. **能力表示の導線** — **カード選択中に設置物のあるセルをタップすると能力表示を開く**（選択は保つ。配置も再点火もしない）。占有セルにはもともと置けない（`canPlaceAt`）ので失う操作は無い。`inspect_opened` に `duringCardSelection: boolean` を足す。敵の能力は凡例（`EnemyLegend`）に `装甲4`・`回復3（4秒ごと・周囲1.5）` と説明文で出す
+22. **能力表示の導線（設置物）** — **カード選択中に設置物のあるセルをタップすると能力表示を開く**（選択は保つ。配置も再点火もしない）。占有セルにはもともと置けない（`canPlaceAt`）ので失う操作は無い。`inspect_opened` に `duringCardSelection: boolean` を足す。敵の能力は凡例（`EnemyLegend`）に `装甲4`・`回復3（4秒ごと・周囲1.5）` と説明文で出し、**敵の能力表示は #25 で開けるようにする**（2026-09-24 改訂: 初版は敵を能力表示の対象にしておらず、判定項目9(b) が新敵を観測できなかった）
 23. **敵の射程の静的計算** — `F/domain/combat/enemy-reach.ts`。台本に出る「射程 > 0 かつ飛行でない」敵のレーンごとの最大射程で、経路の線分からの距離が射程以内の経路外セルを返す。**置けるセルがある間（カード選択中）だけ**盤面に出す。貫通と共有する `distanceToSegment` は `geometry.ts` へ移す
 24. **E2E の測り方** — 文書座標（`getBoundingClientRect().top + scrollY`）で測る（クリック時の自動スクロールを打ち消す）。最悪ケースのシード `748559145` に固定し、札の選択・拒否・配置・能力表示を操作で起こしてから30秒観測する
+25. **敵の能力表示の入口（2026-09-24 追加・ユーザー判断 案A）** — 入口は2つ: (a) 凡例の各項目を「`名前 の能力を見る`」ボタンにする（`min-height: 32px`・`aria-pressed`）。(b) **札を選んでいないとき**、敵のいる経路セルのタップでその敵の**種類**（`getEnemySpec`）の能力表示を開く。セルの優先順位は 再点火可能な燠火 → 設置物 → 敵 → 閉じる（**設置物が優先**）。**札を選んでいるときはセルから敵を開かない**（#22 のまま: 設置物 → 能力表示、それ以外 → 配置。経路に壁を置く操作を奪わない。選択中は凡例から開き、選択は保つ）。セルの敵は「マーカーの中心が入っているセル」（`Math.round(enemyPosition)`）で決め、複数いれば `state.enemies` の並びで最初の生存個体の種類を開く。中身は `敵 名前`・HP・速度（マス/秒）・飛行／地上・攻撃（間隔）・射程（または射程なし）・装甲・回復（間隔・半径）。`BoardInfoSlot` の同じ1行（36px 固定・横スクロール）に出し、設置物の能力表示と排他（同じものをもう一度選ぶと閉じる）。一時停止中は開かない
+26. **`enemy_inspected` と判定項目9(b) の再定義（2026-09-24 追加）** — `enemy_inspected { runId, enemyId, source: 'legend' | 'cell', duringCardSelection, tick }` を**開いたときだけ**1回記録する（状態更新関数の外）。`run_tally.inspectOpens` は設置物だけを数えたまま変えない。判定項目9(b) は「盾衛・癒し手の `enemy_inspected` を開いた回数」に定義し直す（設計書 §2。**測定の前に**変えた。予測は1回以上のまま）
+27. **ログのスキーマを v7 に上げる（2026-09-24 追加）** — `expedition_abandoned`・`enemy_inspected`・`inspect_opened.duringCardSelection` を足すので、これまでの変更（246a64fe・42cc7ea4・6852b0b9・c4bfa1ec）と同じくキーごと変える（`ashen-rampart:play-log-v7`・`SCHEMA_VERSION = 7`）。スキーマを最初に変える Task 1 の先頭で行う。`CURRENT_ITERATION` は 7 のまま。段階1 の試遊ログは v6 のキーに残り読まれない。E2E の初期化で消すキーも v7 にする
 
 ## Review Focus
 
@@ -68,6 +71,9 @@
 3. **カード選択中に再点火可能な燠火をタップする**— 再点火せず能力表示が開き、選択は保たれ、`reactivated` は記録されないこと → Task 11 のテスト
 4. **満タンの敵・自分自身・射程外への回復**— 回復イベントも HP の変化も出ないこと（満タンの敵が同じ tick に削られたとき、回復が先に入って「削られた後に戻る」ことが無い）→ Task 6 のテスト
 5. **拒否理由と能力表示と溢れ通知が同時に出る**— 盤面の下と手札の上の枠が同じ高さのまま両方を収めること → Task 3 の `BoardInfoSlot` / `HandNoticeSlot` のテストと E2E
+6. **札を選んだまま、敵のいる経路セルをタップする**— 敵の能力表示は開かず配置に回ること（経路に壁を置く操作を奪わない）。敵の能力は凡例からなら選択を保ったまま開け、`enemy_inspected` が `source: 'legend'`・`duringCardSelection: true` で1件だけ記録されること → Task 12 のテスト
+7. **設置物と敵の能力表示を交互に開く**— 必ずどちらか1つだけが枠の1行に出て、枠の高さ（60px）が変わらないこと。`enemy_inspected` は開いたときだけ記録され、閉じたときや一時停止中には記録されないこと → Task 12 のフック・`BoardInfoSlot` のテスト
+8. **ログのキーを v7 に変え忘れる経路**— 本番のアダプタ・E2E の初期化スクリプト（`expedition-flow.spec.ts` と `layout-stability.spec.ts`）・判定用の記録のコピー（`AshenRampartGame.test.tsx`）が同じ v7 を見ていること → Task 1 Step 4 の grep
 
 ---
 
@@ -75,7 +81,9 @@
 
 | ファイル | 種別 | 責務 |
 |---|---|---|
-| `F/application/ports/play-log-port.ts` | 変更 | `expedition_abandoned`、`inspect_opened.duringCardSelection` |
+| `F/infrastructure/play-log/local-storage-play-log.ts` | 変更 | スキーマ v7（キー `ashen-rampart:play-log-v7`） |
+| `e2e/ashen-rampart/expedition-flow.spec.ts` | 変更 | 初期化で消すログのキーを v7 に |
+| `F/application/ports/play-log-port.ts` | 変更 | `expedition_abandoned`、`inspect_opened.duringCardSelection`、`enemy_inspected` / `EnemyInspectSource` |
 | `F/application/use-cases/record-abandoned-expeditions.ts` | 新設 | 決着の無い遠征の検出（純粋）と記録（ユースケース） |
 | `F/presentation/useExpedition.ts` | 変更 | 次の遠征の開始時に放棄を1回だけ記録 |
 | `F/presentation/contrast.ts` | 新設 | WCAG のコントラスト比（純粋） |
@@ -86,9 +94,9 @@
 | `F/presentation/RunStatusBar.tsx` | 変更 | 3行固定のグリッド |
 | `F/presentation/HandNoticeSlot.tsx` | 新設 | 手札の上の通知（2行固定） |
 | `F/presentation/HandArea.tsx` | 変更 | 通知を `HandNoticeSlot` へ移す |
-| `F/presentation/BoardInfoSlot.tsx` | 新設 | 盤面の下の拒否理由と能力表示（60px固定） |
-| `F/presentation/InspectPanel.tsx` | 変更 | 1行固定・横スクロール、実効値のチップ |
-| `F/presentation/StageView.tsx` | 変更 | 枠の結線、`board-wrapper` の testid |
+| `F/presentation/BoardInfoSlot.tsx` | 新設 | 盤面の下の拒否理由と能力表示（60px固定。設置物・敵・導線のどれか1つを1行に） |
+| `F/presentation/InspectPanel.tsx` | 変更 | 1行固定・横スクロール、実効値のチップ、敵の能力表示（`EnemyInspectPanel` / `enemyChipsOf`） |
+| `F/presentation/StageView.tsx` | 変更 | 枠の結線、`board-wrapper` の testid、凡例と敵の能力表示の結線 |
 | `F/domain/combat/damage.ts` | 新設 | `applyDamage` と装甲・撃破源の規則 |
 | `F/domain/combat/step-tick.ts` | 変更 | 5経路を `applyDamage` へ、回復の呼び出し、`towerDamageBreakdown` |
 | `F/domain/combat/combat-state.ts` | 変更 | `armor-hit` / `enemy-healed` イベント、撃破源の契約コメント |
@@ -100,13 +108,15 @@
 | `F/domain/expedition/stage-pool.ts` | 変更 | 暫定ステージに新敵を出す |
 | `F/presentation/enemy-visual.ts` | 変更 | 盾衛・癒し手の見た目、`HP_BAR_COLOR = COLORS.heal` |
 | `F/presentation/theme.ts` | 変更 | `COLORS.heal` |
-| `F/presentation/EnemyLegend.tsx` | 変更 | 装甲・回復の表記と説明 |
+| `F/presentation/EnemyLegend.tsx` | 変更 | 装甲・回復の表記と説明、各項目を「名前 の能力を見る」ボタンに |
+| `F/presentation/enemy-at-cell.ts` | 新設 | そのセルにいる敵の種類（マーカーの中心・出現順の先頭） |
+| `F/presentation/card-text.ts` | 変更 | `TICKS_PER_SECOND` を export（敵の速度をマス/秒で出す） |
 | `F/presentation/combat-effects.ts` | 変更 | `armor` / `heal` エフェクト |
 | `F/presentation/EnemyEffectMarks.tsx` | 新設 | 装甲の文字・回復の線の描画 |
 | `F/presentation/BoardEffectLayer.tsx` | 変更 | 上の2種を描く |
 | `F/presentation/board-plates.ts` | 変更 | `buildPlates(state, map?)` と実効値 |
 | `F/presentation/RangeOverlay.tsx` | 変更 | 実効射程でリングを描く |
-| `F/presentation/useAshenRampartGame.ts` | 変更 | 選択中の能力表示、射程セル、`buildPlates` に `map` |
+| `F/presentation/useAshenRampartGame.ts` | 変更 | 選択中の能力表示、敵の能力表示（`inspectedEnemyId` / `inspectEnemy`・`enemy_inspected`）、射程セル、`buildPlates` に `map` |
 | `e2e/ashen-rampart/layout-stability.spec.ts` | 新設 | 戦闘中の盤面と手札の上端の不動（2幅） |
 
 ---
@@ -124,7 +134,7 @@ git status --short
 
 Expected: `feature/ashen-rampart-iteration7-stage2`・`段階1 の先端を含む`・作業ツリーが空。**違っていたら作業を始めずコントローラに報告する**（ブランチを切り替えない）。
 
-- [ ] **Step 2: PR #211 の状態を控える（Task 13 で PR の向き先に使う）**
+- [ ] **Step 2: PR #211 の状態を控える（Task 14 で PR の向き先に使う）**
 
 Run: `gh pr view 211 --json state,baseRefName --jq '.state + " " + .baseRefName'`
 Expected: `OPEN main` か `MERGED main`。結果をコントローラの台帳に書く。
@@ -134,7 +144,11 @@ Expected: `OPEN main` か `MERGED main`。結果をコントローラの台帳�
 ### Task 1: 途中でやめた遠征を記録する（設計書 §4.0 c）
 
 **Files:**
-- Modify: `F/application/ports/play-log-port.ts`（`expedition_note` の直後）
+- Modify: `F/infrastructure/play-log/local-storage-play-log.ts:13-17`（スキーマ v7）
+- Test: `F/infrastructure/play-log/local-storage-play-log.test.ts:28, 50, 59, 69-103`
+- Test: `F/presentation/AshenRampartGame.test.tsx:233`（`parsed.version`）
+- Modify: `e2e/ashen-rampart/expedition-flow.spec.ts:29`（初期化で消すキー）
+- Modify: `F/application/ports/play-log-port.ts`（冒頭の docstring の版、`expedition_note` の直後）
 - Create: `F/application/use-cases/record-abandoned-expeditions.ts`
 - Test: `F/application/use-cases/record-abandoned-expeditions.test.ts`（新設）
 - Modify: `F/presentation/useExpedition.ts:20-28, 62-82`
@@ -143,6 +157,7 @@ Expected: `OPEN main` か `MERGED main`。結果をコントローラの台帳�
 **Interfaces:**
 - Consumes: `PlayLogPort` / `PlayLogEvent` / `PlayLogEventBody`（`play-log-port.ts`）
 - Produces:
+  - `PLAY_LOG_STORAGE_KEY = 'ashen-rampart:play-log-v7'`、`SCHEMA_VERSION = 7`（`CURRENT_ITERATION` は 7 のまま）。段階2 のスキーマの変更（`expedition_abandoned`・`inspect_opened.duringCardSelection`（Task 11）・`enemy_inspected`（Task 12））はすべて v7 に載る
   - `PlayLogEventBody` に `{ kind: 'expedition_abandoned'; expeditionId: string; lastStageIndex: number }`
   - `NO_STAGE_STARTED = -1`
   - `interface AbandonedExpedition { expeditionId: string; lastStageIndex: number }`
@@ -152,8 +167,128 @@ Expected: `OPEN main` か `MERGED main`。結果をコントローラの台帳�
 判断: 検出は `application/use-cases/` に置く（`PlayLogExport` の型は `application/ports/` にあり、`domain/` から import できないため）。
 判断: `lastStageIndex` はステージ未開始なら `-1`（省略しない）。
 判断: 今回の遠征と、既に `expedition_abandoned` がある遠征は走査から除く（StrictMode と二重走査の対策）。
+判断: ログのスキーマを v7 に上げる（キー `ashen-rampart:play-log-v7`）。段階2 で種類とフィールドを足すので、これまでの変更（246a64fe・42cc7ea4・6852b0b9・c4bfa1ec）と同じくキーごと変える。段階1 の試遊ログは v6 のキーに残り、読まれない。段階2 のスキーマ変更はこのタスクで最初に入るので、版上げもここで先に行う。
 
-- [ ] **Step 1: イベント型を足す**
+- [ ] **Step 1: 失敗するテストに書き換える（スキーマ v7）**
+
+`local-storage-play-log.test.ts`:
+
+1. `expect(exported.version).toBe(6);`（28行）を `expect(exported.version).toBe(7);` にする
+2. `expect(new LocalStoragePlayLog().exportAll()).toEqual({ version: 6, events: [] });` の2箇所（50行・59行）を `{ version: 7, events: [] }` にする
+3. `it('スキーマは v6 で、キーも v6 になる', …)` から `describe('スキーマ v6（反復6）', …)` の終わり（69〜103行）までを次に置き換える:
+
+```ts
+  it('スキーマは v7 で、キーも v7 になる（反復7 段階2）', () => {
+    const log = new LocalStoragePlayLog();
+    log.record({ kind: 'run_note', runId: 'r1', text: 'テスト' });
+    expect(PLAY_LOG_STORAGE_KEY).toBe('ashen-rampart:play-log-v7');
+    expect(log.exportAll().version).toBe(7);
+  });
+
+  it('v4 のキーに残っていた旧データは読みに行かず、v7 は空から始まって壊れない', () => {
+    // v4 時代のキー名を直書きする（PLAY_LOG_STORAGE_KEY は既に v7 を指すため、
+    // 旧データを再現するには文字列で直接書く必要がある）
+    localStorage.setItem('ashen-rampart:play-log-v4', JSON.stringify({ version: 4, events: [runStarted] }));
+    const log = new LocalStoragePlayLog();
+    // v7 キーには何もないため、v4 の内容とは無関係に空ログから始まる
+    expect(log.exportAll()).toEqual({ version: 7, events: [] });
+    log.record(runStarted);
+    expect(log.exportAll().events).toHaveLength(1);
+    // v4 のキーは触れられず、そのまま残っている（移行処理は無いため）
+    expect(localStorage.getItem('ashen-rampart:play-log-v4')).not.toBeNull();
+  });
+
+  describe('スキーマ v7（反復7 段階2）', () => {
+    it('保存キーとスキーマ版が両方 v7 になっている', () => {
+      const log = new LocalStoragePlayLog();
+      log.record({ kind: 'run_note', runId: 'r1', text: 'x' });
+      expect(localStorage.getItem('ashen-rampart:play-log-v7')).not.toBeNull();
+      expect(log.exportAll().version).toBe(7);
+    });
+
+    it('旧スキーマ（v4）のキーは読まない', () => {
+      localStorage.setItem(
+        'ashen-rampart:play-log-v4',
+        JSON.stringify({ version: 4, events: [{ kind: 'run_note' }] })
+      );
+      expect(new LocalStoragePlayLog().exportAll().events).toEqual([]);
+    });
+
+    it('段階1 の試遊ログ（v6 のキー）は読まず、消しもしない', () => {
+      // 段階1 のログは expedition_abandoned も duringCardSelection も持たない。
+      // 混ざると判定の集計が「記録が無い」と「起きていない」を区別できなくなる
+      localStorage.setItem(
+        'ashen-rampart:play-log-v6',
+        JSON.stringify({ version: 6, events: [{ kind: 'run_note', runId: 'old', text: 'x', at: 0 }] })
+      );
+      const log = new LocalStoragePlayLog();
+      expect(log.exportAll()).toEqual({ version: 7, events: [] });
+      log.record({ kind: 'run_note', runId: 'r1', text: 'y' });
+      expect(localStorage.getItem('ashen-rampart:play-log-v6')).not.toBeNull();
+    });
+
+    it('CURRENT_ITERATION は 7 のまま（段階2 は反復7 の中の変更）', () => {
+      expect(CURRENT_ITERATION).toBe(7);
+    });
+  });
+```
+
+`AshenRampartGame.test.tsx` の `expect(parsed.version).toBe(6);`（233行）を `expect(parsed.version).toBe(7);` にする。
+
+- [ ] **Step 2: 落ちることを確かめる**
+
+Run: `npx jest infrastructure/play-log/local-storage-play-log`
+Expected: 12件中7件が FAIL。版とキーを検査する6件（「record した イベントが…」「破損データ…」「version が数値でない…」「スキーマは v7…」「v4 のキーに…v7 は空から…」「保存キーとスキーマ版が両方 v7」。`Expected: 7 / Received: 6` か v7 のキーが null）と、「段階1 の試遊ログ（v6 のキー）は読まず」（現行は v6 のキーを読むので version 6・events 1件）。残る5件（「record は localStorage に永続化する」「複数イベントは記録順」「書き込みに失敗しても」「旧スキーマ（v4）のキーは読まない」「CURRENT_ITERATION は 7 のまま」）は PASS
+
+- [ ] **Step 3: スキーマを v7 に上げる**
+
+`local-storage-play-log.ts` の `// スキーマ v6（反復7。…` から `const SCHEMA_VERSION = 6;` までを次に置き換える:
+
+```ts
+// スキーマ v7（反復7 段階2。expedition_abandoned・enemy_inspected と
+// inspect_opened.duringCardSelection を足したため、v6 のデータと混ざらないようキーを変更している）。
+// キーが別なので古いデータを読みに行かず、判定前に旧ログを消す作業も要らない。
+// 段階1 の試遊ログは v6 のキーに残り、読まれない（判定は段階2 以降のログだけで行う）。
+export const PLAY_LOG_STORAGE_KEY = 'ashen-rampart:play-log-v7';
+
+const SCHEMA_VERSION = 7;
+```
+
+`play-log-port.ts` の冒頭の ` * 灰燼の城壁 - 行動ログポート（スキーマ v6）` を ` * 灰燼の城壁 - 行動ログポート（スキーマ v7）` にする（`CURRENT_ITERATION = 7` は変えない）。
+
+`e2e/ashen-rampart/expedition-flow.spec.ts` の初期化スクリプトの `localStorage.removeItem('ashen-rampart:play-log-v6');` を `localStorage.removeItem('ashen-rampart:play-log-v7');` にする（消すのは今のキー。v6 のままだと前のテストのログが次のテストに残る）。
+
+- [ ] **Step 4: 通ることを確かめる**
+
+Run: `npx jest infrastructure/play-log/local-storage-play-log`
+Expected: PASS
+
+Run: `npx jest presentation/AshenRampartGame.test.tsx -t クリップボード`
+Expected: PASS（`「${COPY_BUTTON_NAME}」でクリップボードに exportLogJson の内容が渡る` の1件。ファイル全体は重いので `-t` で絞る）
+
+Run: `grep -rn "play-log-v6\|version).toBe(6)" src/features/ashen-rampart e2e/ashen-rampart`
+Expected: `local-storage-play-log.test.ts` の「段階1 の試遊ログ（v6 のキー）は読まず」の中の2行（`setItem` と `getItem`）だけ
+
+- [ ] **Step 5: コミット**
+
+```bash
+git add src/features/ashen-rampart/infrastructure/play-log/local-storage-play-log.ts \
+        src/features/ashen-rampart/infrastructure/play-log/local-storage-play-log.test.ts \
+        src/features/ashen-rampart/application/ports/play-log-port.ts \
+        src/features/ashen-rampart/presentation/AshenRampartGame.test.tsx \
+        e2e/ashen-rampart/expedition-flow.spec.ts
+git commit -F - <<'EOF'
+chore(ashen-rampart): 行動ログのスキーマを v7 に上げる
+
+- 段階2 で種類（expedition_abandoned・enemy_inspected）とフィールド（inspect_opened.duringCardSelection）を足すため、キーを ashen-rampart:play-log-v7 に変える
+- 段階1 の試遊ログは v6 のキーに残り、読まれない。CURRENT_ITERATION は 7 のまま
+- E2E の初期化で消すキーも v7 にする
+
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+EOF
+```
+
+- [ ] **Step 6: イベント型を足す**
 
 `play-log-port.ts` の `| { kind: 'expedition_note'; expeditionId: string; text: string }` の直後に足す:
 
@@ -170,7 +305,7 @@ Expected: `OPEN main` か `MERGED main`。結果をコントローラの台帳�
   | { kind: 'expedition_abandoned'; expeditionId: string; lastStageIndex: number }
 ```
 
-- [ ] **Step 2: 失敗するテストを書く**
+- [ ] **Step 7: 失敗するテストを書く**
 
 `F/application/use-cases/record-abandoned-expeditions.test.ts`:
 
@@ -222,7 +357,7 @@ const createLog = (initial: readonly PlayLogEvent[]): PlayLogPort & { recorded: 
     record: (event) => {
       recorded.push(event);
     },
-    exportAll: () => ({ version: 6, events: [...initial, ...recorded.map(at)] }),
+    exportAll: () => ({ version: 7, events: [...initial, ...recorded.map(at)] }),
   };
 };
 
@@ -286,12 +421,12 @@ describe('recordAbandonedExpeditions', () => {
 });
 ```
 
-- [ ] **Step 3: 落ちることを確かめる**
+- [ ] **Step 8: 落ちることを確かめる**
 
 Run: `npx jest application/use-cases/record-abandoned-expeditions`
 Expected: FAIL（`Cannot find module './record-abandoned-expeditions'`）
 
-- [ ] **Step 4: 実装する**
+- [ ] **Step 9: 実装する**
 
 `F/application/use-cases/record-abandoned-expeditions.ts`:
 
@@ -367,12 +502,12 @@ export const recordAbandonedExpeditions = (
 };
 ```
 
-- [ ] **Step 5: 通ることを確かめる**
+- [ ] **Step 10: 通ることを確かめる**
 
 Run: `npx jest application/use-cases/record-abandoned-expeditions`
 Expected: PASS（6件）
 
-- [ ] **Step 6: フックのテスト用ログを「記録したものを返す」形にし、失敗するテストを書く**
+- [ ] **Step 11: フックのテスト用ログを「記録したものを返す」形にし、失敗するテストを書く**
 
 `useExpedition.test.tsx` の `const createRecordingLog = …` から `setup` の定義の終わりまで（間の `kinds` を含む）を次に置き換える（既存の `setup()` / `setup(true)` の呼び出しはそのまま動く）:
 
@@ -394,7 +529,7 @@ const createRecordingLog = (
       records.push(event);
     },
     exportAll: () => ({
-      version: 6,
+      version: 7,
       events: [...preloaded, ...records].map((event) => ({ ...event, at: 0 })),
     }),
   };
@@ -496,17 +631,20 @@ describe('途中でやめた遠征（反復7 段階2・設計書 §4.0 c）', ()
     const { log } = setup(false, [startedEvent('exp-old')]);
 
     const order = log.records.map((e) => e.kind);
+    // 両方が記録されていることを先に確かめる（無いと indexOf が -1 になり、比較が空振りで通る）
+    expect(order).toContain('expedition_abandoned');
+    expect(order).toContain('expedition_started');
     expect(order.indexOf('expedition_abandoned')).toBeLessThan(order.indexOf('expedition_started'));
   });
 });
 ```
 
-- [ ] **Step 7: 落ちることを確かめる**
+- [ ] **Step 12: 落ちることを確かめる**
 
 Run: `npx jest presentation/useExpedition`
-Expected: 新しい6件のうち「正常に決着した」「既に放棄と記録された」以外の4件が FAIL（`expedition_abandoned` が0件）。既存のテストは PASS のまま
+Expected: 新しい6件のうち4件が FAIL（「前の遠征が決着していなければ…」「StrictMode の二重実行でも1件だけ…」「ステージを1つも始めずに…」は `expedition_abandoned` が0件、「放棄の記録は今回の expedition_started より前に並ぶ」は `toContain('expedition_abandoned')` で落ちる）。「正常に決着した遠征は対象外」「既に放棄と記録された遠征を二度記録しない」の2件は、記録が0件で期待どおりなので実装前から PASS。既存のテストは PASS のまま
 
-- [ ] **Step 8: フックに結線する**
+- [ ] **Step 13: フックに結線する**
 
 `useExpedition.ts`:
 
@@ -530,7 +668,7 @@ import { recordAbandonedExpeditions } from '../application/use-cases/record-aban
   }, [recordOnce, expeditionId]);
 ```
 
-- [ ] **Step 9: 通ることを確かめる**
+- [ ] **Step 14: 通ることを確かめる**
 
 Run: `npx jest presentation/useExpedition application/use-cases/record-abandoned-expeditions`
 Expected: PASS（既存と新規すべて）
@@ -538,7 +676,7 @@ Expected: PASS（既存と新規すべて）
 Run: `npm run typecheck`
 Expected: エラー0
 
-- [ ] **Step 10: コミット**
+- [ ] **Step 15: コミット**
 
 ```bash
 git add src/features/ashen-rampart/application/ports/play-log-port.ts \
@@ -573,7 +711,7 @@ EOF
 - Produces:
   - `relativeLuminance(hex: string): number` / `contrastRatio(a: string, b: string): number`
   - `BOARD_COLORS: { path; pathEdge; slot; rangeStripe; placeableHalo }`、`WCAG_NON_TEXT_CONTRAST_MIN = 3`、`PLACEABLE_HALO_PX = 4`
-  - `cellBackgroundOf(args: { isPath: boolean; isThreatened: boolean }): string`（Task 12 が `isThreatened: true` を使う）
+  - `cellBackgroundOf(args: { isPath: boolean; isThreatened: boolean }): string`（Task 13 が `isThreatened: true` を使う）
 
 判断: 経路 `#7d6d58`＋縁 `#a39076`、経路外 `#211c19` は据え置き（経路外に対し 3.37:1）。
 判断: 射程の色調は `dangerText` の斜線の模様（塗りにすると経路との 3:1 と両立しない）。
@@ -1597,7 +1735,7 @@ interface Sample {
 const startExpedition = async (page: Page): Promise<void> => {
   await page.addInitScript((noticeKey) => {
     localStorage.setItem(noticeKey, 'true');
-    localStorage.removeItem('ashen-rampart:play-log-v6');
+    localStorage.removeItem('ashen-rampart:play-log-v7');
     localStorage.removeItem('ashen-rampart:briefing-seen-v1');
   }, NOTICE_STORAGE_KEY);
   await page.goto('/ashen-rampart', { waitUntil: 'domcontentloaded', timeout: 90_000 });
@@ -2275,7 +2413,14 @@ const resolveDamage = (
   const damaged = resolveDamage(moved, draft, statusById);
 ```
 
-11. `grep -n "hpById.set\|sourceById.set" src/features/ashen-rampart/domain/combat/step-tick.ts` を実行し、**出力が空**であることを確かめる（書き込みは `damage.ts` だけ）
+11. ダメージの書き込みが `damage.ts` だけになったことを確かめる。`hpById.set` は種まき（その tick の開始時の HP を写す。ダメージではなく、Task 6 の回復もこの直後に入る）の1行だけが step-tick.ts に残るのが正しい:
+
+```bash
+grep -c "sourceById.set" src/features/ashen-rampart/domain/combat/step-tick.ts
+grep -n "hpById.set" src/features/ashen-rampart/domain/combat/step-tick.ts
+```
+
+Expected: 1行目は `0`。2行目は**ちょうど1行**で、その中身が `  moved.forEach((e) => hpById.set(e.id, e.hp));`（行番号は問わない）。2行以上出たら、置き換え漏れの経路か、コメントに残った `hpById.set`（削除した `SourceById` の docstring・`applyUnitShots` の「ここで別途 hpById.set しない」）がある。コメントなら Step 8 の 2・4 の指示どおり消えているはずなので、指示の実行漏れとして直す
 
 - [ ] **Step 9: 挙動が変わっていないことを確かめる**
 
@@ -3432,7 +3577,7 @@ describe('装甲と回復の描画（反復7 段階2・設計書 §4.3 #1 #2）'
 - [ ] **Step 6: 落ちることを確かめる**
 
 Run: `npx jest presentation/BoardEffectLayer`
-Expected: 新しい描画の2件が FAIL（要素が無い。`armor` / `heal` は既定の分岐で ✕ として描かれている）
+Expected: 新しい描画の2件が FAIL（`TypeError: Cannot read properties of undefined (reading 'x')`。`BoardEffectLayer` の最後の分岐（`unit-lost` の ✕）は `kind` を確かめずに `effect.pos.x` を読むため、`pos` を持たない `armor` / `heal` はそこで描画ごと例外になる。✕ が描かれるのではない）。「回復の色は危険色・好機色と別である」は Task 5 で `COLORS.heal` が入っているので PASS
 
 - [ ] **Step 7: 描画を足す**
 
@@ -3618,7 +3763,7 @@ describe('実効値（反復7 段階2・設計書 §4.3 #3）', () => {
 - [ ] **Step 2: 落ちることを確かめる**
 
 Run: `npx jest presentation/board-plates`
-Expected: 新しい4件が FAIL（`effective` が undefined）。「盤面を渡さなければ」は PASS
+Expected: 新しい5件のうち3件が FAIL（「篝火の隣の弓兵は攻撃5」「鍛冶場の隣の弓兵は射程2.2」「高台の弓兵は攻撃5」。`effective` が undefined）。「支援塔・壁には実効値を載せない」と「盤面を渡さなければ実効値は載らない」の2件は、実装前は `effective` がどこにも無いので PASS する（どちらも「載せてはいけない所に載せない」ことの退行検査で、Step 4 の後も PASS のままであることに意味がある）
 
 - [ ] **Step 3: 実効値を計算する**
 
@@ -3938,7 +4083,7 @@ EOF
 
 判断: カード選択中に設置物のあるセルをタップすると能力表示を開く（選択は保つ。配置も再点火もしない）。占有セルにはもともと置けない（`canPlaceAt` の `isCellOccupied`）ので失う操作は無い。
 判断: `inspect_opened` に `duringCardSelection` を足し、判定項目9(b) で「選択中に開いたか」を区別できるようにする。
-判断: 敵の能力は Task 5 の凡例で示す（敵マーカーはタップの対象にしない。マーカーは `pointer-events: none`）。
+判断: 敵の能力表示はこのタスクでは足さず、Task 12 で入れる（凡例のボタンと、選択なしで敵のいる経路セルをタップ）。このタスクの「選択中のタップ」の規則（設置物のあるセル → 能力表示、それ以外 → 配置）は Task 12 でも変えない。敵マーカー自体は `pointer-events: none` のまま（タップはセルが受ける）。
 
 **既存テストの期待値を変える箇所（理由つき）:**
 - `useAshenRampartGame.test.ts` 「カード選択中に設置物のあるセルをクリックすると能力表示ではなく配置が優先される（優先順位2）」→ **設計書 §4.3 #4 が振る舞いそのものを変える**ため、「能力表示が開き、選択は保たれ、配置（拒否）は起きない」に書き換える。検査の強さ（`rejected` の有無・設置物の数・`inspect_opened` の件数）は保つ
@@ -4163,7 +4308,809 @@ EOF
 
 ---
 
-### Task 12: 敵の攻撃射程を経路外セルの色調で示す（設計書 §4.3 #5）
+### Task 12: 敵の能力表示を凡例と盤面から開けるようにする（設計書 §4.3 #4・判定項目9(b)）
+
+**Files:**
+- Modify: `F/application/ports/play-log-port.ts`（`inspect_opened` の直後に `enemy_inspected`）
+- Modify: `F/presentation/card-text.ts:58`（`TICKS_PER_SECOND` を export）
+- Create: `F/presentation/enemy-at-cell.ts` / Test: `F/presentation/enemy-at-cell.test.ts`
+- Modify: `F/presentation/InspectPanel.tsx`（`enemyChipsOf`・`EnemyInspectPanel`）/ Test: `F/presentation/InspectPanel.test.tsx`（末尾に追記）
+- Modify: `F/presentation/BoardInfoSlot.tsx`（`inspectedEnemyId`・`INSPECT_HINT_TEXT`）/ Test: `F/presentation/BoardInfoSlot.test.tsx`
+- Modify: `F/presentation/EnemyLegend.tsx`（各項目をボタンに）/ Test: `F/presentation/EnemyLegend.test.tsx`（末尾に追記）
+- Modify: `F/presentation/useAshenRampartGame.ts`（`inspectedEnemyId`・`inspectEnemy`・`toggleInspect`・`interactCell`・`selectCard`・`togglePause`・`restart`）
+- Test: `F/presentation/useAshenRampartGame.test.ts`（`describe('反復4: 能力表示（射程リングと能力チップ）', …)` の末尾に追記）
+- Modify: `F/presentation/StageView.tsx`（結線）/ Test: `F/presentation/StageView.test.tsx`（末尾に追記）
+
+**Interfaces:**
+- Consumes: Task 3 の `BoardInfoSlot` / `INSPECT_ROW_HEIGHT_PX` / `BOARD_INFO_SLOT_HEIGHT_PX`、Task 5 の `abilityTextsOf(spec: EnemySpec): string[]`（`EnemyLegend.tsx`）と `EnemySpec.armor` / `EnemySpec.heal`、Task 11 の `toggleInspect(pos, isDuringCardSelection): boolean` / `interactCell` / `INSPECT_HINT_TEXT`
+- Produces:
+  - `export type EnemyInspectSource = 'legend' | 'cell'`、`PlayLogEventBody` に `{ kind: 'enemy_inspected'; runId: string; enemyId: string; source: EnemyInspectSource; duringCardSelection: boolean; tick: number }`
+  - `card-text.ts`: `export const TICKS_PER_SECOND = 10`（値は変えない）
+  - `enemyIdAtCell(enemies: readonly ActiveEnemy[], map: StageMap, pos: CellPos): string | undefined`（`enemy-at-cell.ts`）
+  - `enemyChipsOf(spec: EnemySpec): string[]`、`EnemyInspectPanel: React.FC<{ enemyId: string }>`、testid `enemy-inspect-panel`（`InspectPanel.tsx`）
+  - `BoardInfoSlot` の props に `inspectedEnemyId?: string`
+  - `EnemyLegend: React.FC<{ inspectedEnemyId?: string; onInspect?: (enemyId: string) => void }>`。各項目は `aria-label="${spec.name} の能力を見る"`・`aria-pressed` のボタン
+  - `useAshenRampartGame` の戻り値に `inspectedEnemyId: string | undefined` と `inspectEnemy: (enemyId: string) => void`
+
+判断: 判定項目9(b) は「盾衛・癒し手の能力表示（`enemy_inspected`）を開いた回数」に定義し直した（設計書 §2・2026-09-24。測定の前に変えた）。以前の定義（`inspect_opened`）は設置物しか数えず、新敵を観測できなかった。
+判断: 入口は2つ。(a) 凡例の各項目をボタンにする（動かないので 360px でも確実に押せる）。(b) **札を選んでいないとき**、敵のいる経路セルをタップするとその敵の種類の能力表示を開く。
+判断: セルのタップの優先順位（札を選んでいないとき）: 再点火可能な燠火 → 設置物の能力表示 → 敵の能力表示 → 何も無ければ両方を閉じる。**設置物のあるセルでは設置物が優先**（経路に置いた壁の上に敵がいても壁を開く。Task 11 までの挙動を変えない）。
+判断: **札を選んでいるときは敵の能力表示をセルから開かない**（Task 11 の規則のまま: 設置物のあるセル → 設置物の能力表示、それ以外 → 配置）。経路に壁を置く操作を奪わないため。選択中に敵を確かめたいときは凡例から開く（選択は保つ）。
+判断: そのセルの敵は「マーカーの中心が入っているセル」で決める（`Math.round(enemyPosition)`。`EnemyMarker` は中心を `pos + 0.5` に描くので、見えている位置と一致する）。複数いれば **`state.enemies` の並び（出現順）で最初の生存個体**の種類を開く（決定的。束ねたマーカーの代表個体 `stackEnemies` と同じ「先に出た方」）。
+判断: 見せるのは敵の**種類**の能力（`getEnemySpec`）で、個体の今の HP ではない（HP はマーカーのバーが示す）。中身は `敵 名前`・`HP`・`速度（マス/秒）`・`飛行／地上`・`攻撃N（M秒ごと）`・`射程N（経路の脇にも届く）` または `射程なし（塞いだ守り手だけ攻撃）`・`装甲N`・`回復N（M秒ごと・周囲R）`。装甲と回復は凡例と同じ `abilityTextsOf` で作る（凡例と能力表示の表記をずらさない）。
+判断: 能力表示は設置物と同じ `BoardInfoSlot` の1行（`INSPECT_ROW_HEIGHT_PX` = 36px 固定・折り返さず横スクロール）に出す。`InspectPanel.tsx` の `Panel` / `Chip` をそのまま使うので高さは同じで、1行に出すのは「設置物・敵・導線」のどれか1つだけ。枠の高さ（60px）は変わらない。
+判断: 設置物と敵の能力表示は排他（片方を開くと他方を閉じる。同じものをもう一度選ぶと閉じる）。フックが排他を保ち、`BoardInfoSlot` は両方渡っても設置物だけを出す（二重の防御）。
+判断: `enemy_inspected` は**開いたときだけ**1件記録する（閉じるときは記録しない。`inspect_opened` と同じ）。記録は状態更新関数の外。`run_tally.inspectOpens` は設置物だけを数えたまま変えない（集計の意味を変えない。9(b) はログの `enemy_inspected` から数える）。
+判断: 一時停止中は凡例からも開かない（設置物の能力表示と同じ。一時停止は選択と能力表示を閉じる）。札を選び直したときも敵の能力表示を閉じる（`selectCard` が設置物の能力表示を閉じるのと同じ理由）。
+判断: 凡例のボタンは `min-height: 32px`（WCAG 2.5.8 の最小 24px を満たす）。44px にすると 360px で7種が4行に折り返して手札が画面の下へ押し出されるため。押下中の縁取りは常に 1px の枠の色だけを変え、押しても大きさが変わらない。
+判断: 導線の文言を `札・敵・凡例をタップで能力表示（置いた札は選択中も可）` にする（27字。360px の枠に収まる。Task 11 の文言を置き換える）。
+
+- [ ] **Step 1: ログの型を足す**
+
+`play-log-port.ts` の `inspect_opened`（Task 11 で `duringCardSelection` を足した行）の直後に足す:
+
+```ts
+  /**
+   * 敵の種類の能力表示を開いた（反復7 段階2・設計書 §4.3 #4・判定項目9(b)）
+   *
+   * `source` は入口（凡例のボタンか、敵のいる盤面のセルか）。セルからは札を選んでいない
+   * ときしか開けないので、`source: 'cell'` の `duringCardSelection` は常に false。
+   * 判定項目9(b) は、このうち `enemyId` が盾衛（warden）・癒し手（mender）のものを数える。
+   * 閉じたときは記録しない。
+   */
+  | {
+      kind: 'enemy_inspected';
+      runId: string;
+      enemyId: string;
+      source: EnemyInspectSource;
+      duringCardSelection: boolean;
+      tick: number;
+    }
+```
+
+`PlayLogEventBody` の型定義の直前に足す:
+
+```ts
+/** 敵の能力表示を開いた入口（反復7 段階2） */
+export type EnemyInspectSource = 'legend' | 'cell';
+```
+
+`card-text.ts` の `const TICKS_PER_SECOND = 10;` を `export const TICKS_PER_SECOND = 10;` にする（敵の速度を「マス/秒」で出すため。値は変えない）。
+
+- [ ] **Step 2: 失敗するテストを書く（セルの敵と、能力表示の中身）**
+
+`F/presentation/enemy-at-cell.test.ts`:
+
+```ts
+/**
+ * そのセルにいる敵の種類（反復7 段階2・設計書 §4.3 #4）
+ */
+import { PLAINS_MAP } from '../domain/board/stage-map';
+import type { ActiveEnemy } from '../domain/combat/combat-state';
+import { enemyIdAtCell } from './enemy-at-cell';
+
+const enemy = (id: number, enemyId: string, progress: number, overrides: Partial<ActiveEnemy> = {}): ActiveEnemy => ({
+  id, enemyId, hp: 10, maxHp: 10, progress, spawnTick: 0,
+  laneIndex: 0, alive: true, leaked: false, groundedUntilTick: 0,
+  ...overrides,
+});
+
+describe('enemyIdAtCell', () => {
+  it('マーカーの中心が入っているセル（座標の四捨五入）の敵を返す', () => {
+    // 北レーンは y=2 を x=0→8 へ進む。progress 2.4 は x=2.4 で (2,2)、2.6 は x=2.6 で (3,2)
+    expect(enemyIdAtCell([enemy(1, 'grunt', 2.4)], PLAINS_MAP, { x: 2, y: 2 })).toBe('grunt');
+    expect(enemyIdAtCell([enemy(1, 'grunt', 2.6)], PLAINS_MAP, { x: 2, y: 2 })).toBeUndefined();
+    expect(enemyIdAtCell([enemy(1, 'grunt', 2.6)], PLAINS_MAP, { x: 3, y: 2 })).toBe('grunt');
+  });
+
+  it('同じセルに複数いれば、state.enemies の並びで最初の生存個体の種類を返す', () => {
+    const enemies = [
+      enemy(1, 'brute', 2, { alive: false }),
+      enemy(2, 'warden', 2.2),
+      enemy(3, 'mender', 1.8),
+    ];
+
+    expect(enemyIdAtCell(enemies, PLAINS_MAP, { x: 2, y: 2 })).toBe('warden');
+  });
+
+  it('レーンごとに座標を解く（南レーンの progress 4 は (3,5)）', () => {
+    expect(enemyIdAtCell([enemy(1, 'mender', 4, { laneIndex: 1 })], PLAINS_MAP, { x: 3, y: 5 })).toBe('mender');
+  });
+
+  it('敵のいないセルでは undefined', () => {
+    expect(enemyIdAtCell([enemy(1, 'grunt', 2)], PLAINS_MAP, { x: 4, y: 0 })).toBeUndefined();
+    expect(enemyIdAtCell([], PLAINS_MAP, { x: 2, y: 2 })).toBeUndefined();
+  });
+});
+```
+
+`InspectPanel.test.tsx`:
+
+1. import に足す（`import { InspectPanel } from './InspectPanel';` は `import { InspectPanel, EnemyInspectPanel, enemyChipsOf } from './InspectPanel';` にまとめる）:
+
+```tsx
+import { getEnemySpec } from '../domain/combat/enemies';
+import { appliedValueOf } from './applied-css';
+import { INSPECT_ROW_HEIGHT_PX } from './layout-constants';
+```
+
+2. 末尾に足す:
+
+```tsx
+describe('敵の能力表示（反復7 段階2・設計書 §4.3 #4）', () => {
+  it('盾衛: HP・速度・地上・攻撃・射程・装甲を値で出す', () => {
+    expect(enemyChipsOf(getEnemySpec('warden'))).toEqual([
+      'HP45',
+      '速度0.6マス/秒',
+      '地上',
+      '攻撃8（3秒ごと）',
+      '射程1.5（経路の脇にも届く）',
+      '装甲4',
+    ]);
+  });
+
+  it('癒し手: 射程なしと、回復の量・間隔・範囲を値で出す', () => {
+    expect(enemyChipsOf(getEnemySpec('mender'))).toEqual([
+      'HP18',
+      '速度1マス/秒',
+      '地上',
+      '攻撃1（2秒ごと）',
+      '射程なし（塞いだ守り手だけ攻撃）',
+      '回復3（4秒ごと・周囲1.5）',
+    ]);
+  });
+
+  it('飛行する敵には「飛行」と書き、能力の無い敵には装甲・回復を出さない', () => {
+    const chips = enemyChipsOf(getEnemySpec('raven'));
+
+    expect(chips).toContain('飛行');
+    expect(chips.some((chip) => /^装甲|^回復/.test(chip))).toBe(false);
+  });
+
+  it('パネルは「敵 名前」を見出しにし、設置物の能力表示と同じ1行の高さに固定する', () => {
+    render(<EnemyInspectPanel enemyId="mender" />);
+    const panel = screen.getByTestId('enemy-inspect-panel');
+
+    expect(panel).toHaveAttribute('role', 'status');
+    expect(panel).toHaveTextContent('敵 癒し手');
+    expect(panel).toHaveTextContent('回復3（4秒ごと・周囲1.5）');
+    expect(appliedValueOf(panel, 'height')).toBe(`${INSPECT_ROW_HEIGHT_PX}px`);
+    expect(appliedValueOf(panel, 'flex-wrap')).toBe('nowrap');
+  });
+});
+```
+
+`BoardInfoSlot.test.tsx`:
+
+1. Task 11 で「何も出ていないときも…」の `it` の末尾に足した2行（`// 選択中でも開けることを導線で伝える（反復7 段階2・§4.3 #4）` と `expect(INSPECT_HINT_TEXT).toMatch(/札を選んでいても/);`）を次に置き換える:
+
+```tsx
+    // 置いた札は選択中でも開けること、敵と凡例からも開けることを導線で伝える（反復7 段階2・§4.3 #4）
+    expect(INSPECT_HINT_TEXT).toMatch(/選択中も可/);
+    expect(INSPECT_HINT_TEXT).toMatch(/敵/);
+    expect(INSPECT_HINT_TEXT).toMatch(/凡例/);
+```
+
+2. 末尾に足す:
+
+```tsx
+describe('敵の能力表示の行（反復7 段階2・§4.3 #4）', () => {
+  it('敵の種類を渡すと、導線の代わりに同じ1行で敵の能力表示を出し、枠の高さは変わらない', () => {
+    render(<BoardInfoSlot inspectedEnemyId="warden" />);
+    const slot = screen.getByTestId('board-info-slot');
+
+    expect(within(slot).getByTestId('enemy-inspect-panel')).toHaveTextContent('装甲4');
+    expect(appliedValueOf(within(slot).getByTestId('enemy-inspect-panel'), 'height')).toBe(
+      `${INSPECT_ROW_HEIGHT_PX}px`
+    );
+    expect(appliedValueOf(slot, 'height')).toBe(`${BOARD_INFO_SLOT_HEIGHT_PX}px`);
+    expect(screen.queryByTestId('inspect-hint')).not.toBeInTheDocument();
+  });
+
+  it('設置物と敵が両方渡っても、1行に出すのは設置物だけ（行を2つにしない）', () => {
+    render(<BoardInfoSlot inspectedPlate={arrowPlate()} inspectedEnemyId="warden" />);
+
+    expect(screen.getByTestId('inspect-panel')).toBeInTheDocument();
+    expect(screen.queryByTestId('enemy-inspect-panel')).not.toBeInTheDocument();
+  });
+});
+```
+
+`EnemyLegend.test.tsx` の import に `fireEvent` を足し（`import { fireEvent, render, screen } from '@testing-library/react';`）、末尾に足す:
+
+```tsx
+describe('凡例から敵の能力表示を開く（反復7 段階2・§4.3 #4）', () => {
+  it('7種すべてが「名前 の能力を見る」ボタンになり、押すとその敵の ID を渡す', () => {
+    const onInspect = jest.fn();
+    render(<EnemyLegend onInspect={onInspect} />);
+
+    ENEMY_IDS.forEach((id) => {
+      fireEvent.click(screen.getByRole('button', { name: `${getEnemySpec(id).name} の能力を見る` }));
+    });
+
+    expect(onInspect.mock.calls.map(([id]) => id)).toEqual([...ENEMY_IDS]);
+  });
+
+  it('開いている種類のボタンだけが押された状態になる', () => {
+    render(<EnemyLegend inspectedEnemyId="mender" onInspect={jest.fn()} />);
+
+    expect(screen.getByRole('button', { name: '癒し手 の能力を見る' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: '盾衛 の能力を見る' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('onInspect を渡さなくても描画でき、押しても例外にならない（既存の呼び出しの互換）', () => {
+    render(<EnemyLegend />);
+
+    expect(() => fireEvent.click(screen.getByRole('button', { name: '盾衛 の能力を見る' }))).not.toThrow();
+  });
+});
+```
+
+- [ ] **Step 3: 落ちることを確かめる**
+
+Run: `npx jest presentation/enemy-at-cell presentation/InspectPanel presentation/BoardInfoSlot presentation/EnemyLegend`
+Expected: FAIL。`enemy-at-cell.test.ts` は `Cannot find module './enemy-at-cell'`。`InspectPanel.test.tsx` は新しい4件（`enemyChipsOf is not a function` と `EnemyInspectPanel` が undefined の描画エラー）。`BoardInfoSlot.test.tsx` は「何も出ていないときも…」（導線に「選択中も可」が無い）と「敵の種類を渡すと…」（`enemy-inspect-panel` が無い）の2件。「設置物と敵が両方渡っても…」は実装前でも設置物だけが出るので PASS（Step 4 の後も PASS のままであることに意味がある）。`EnemyLegend.test.tsx` は新しい3件すべて（ボタンが無いので `getByRole('button', …)` が見つけられない。「onInspect を渡さなくても…」も `expect(() => …).not.toThrow()` の中で例外になって FAIL）。既存のテストは PASS のまま
+
+- [ ] **Step 4: 能力表示・枠・凡例を実装する**
+
+`F/presentation/enemy-at-cell.ts`:
+
+```ts
+/**
+ * 灰燼の城壁 - そのセルにいる敵の種類（反復7 段階2・設計書 §4.3 #4）
+ *
+ * 札を選んでいないときに敵のいる経路セルをタップすると、その敵の種類の能力表示を開く。
+ * どの敵を開くかを決定的にするため、次の2つを固定する:
+ * - 「そのセルにいる」＝マーカーの中心が入っているセル。EnemyMarker は中心を (pos + 0.5) に
+ *   描くので、`Math.round(pos)` が見えている位置のセルになる
+ * - 複数いるときは state.enemies の並び（出現順）で最初の生存個体。束ねたマーカーの
+ *   代表個体（enemy-stack.ts）と同じく「先に出た方」
+ */
+import type { CellPos, StageMap } from '../domain/board/stage-map';
+import type { ActiveEnemy } from '../domain/combat/combat-state';
+import { enemyPosition } from '../domain/combat/enemy-position';
+
+export const enemyIdAtCell = (
+  enemies: readonly ActiveEnemy[],
+  map: StageMap,
+  pos: CellPos
+): string | undefined =>
+  enemies.find((enemy) => {
+    if (!enemy.alive) return false;
+    const at = enemyPosition(map, enemy);
+    return Math.round(at.x) === pos.x && Math.round(at.y) === pos.y;
+  })?.enemyId;
+```
+
+`InspectPanel.tsx`:
+
+1. import に足す:
+
+```tsx
+import { getEnemySpec, type EnemySpec } from '../domain/combat/enemies';
+import { abilityTextsOf } from './EnemyLegend';
+```
+
+（`import { toSeconds } from './card-text';` は `import { toSeconds, TICKS_PER_SECOND } from './card-text';` にする）
+
+2. ファイル末尾（`InspectPanel` の後）に足す:
+
+```tsx
+/** 速度の表示の桁（0.06 マス/tick × 10 = 0.6000000000000001 を 0.6 にする） */
+const SPEED_DISPLAY_DECIMALS = 1;
+
+/**
+ * 敵の種類の能力チップ（反復7 段階2・設計書 §4.3 #4・判定項目9(b)）
+ *
+ * 個体の今の HP ではなく種類の値を出す（HP はマーカーのバーが示す）。
+ * 装甲・回復は凡例と同じ abilityTextsOf で作り、凡例と表記をずらさない。
+ * 「射程 」（空白つき）で始めない（EnemyLegend.test.tsx が凡例の「射程 」の数を数えている）。
+ */
+export const enemyChipsOf = (spec: EnemySpec): string[] => [
+  `HP${spec.hp}`,
+  `速度${Number((spec.speed * TICKS_PER_SECOND).toFixed(SPEED_DISPLAY_DECIMALS))}マス/秒`,
+  spec.flying ? '飛行' : '地上',
+  `攻撃${spec.attack}（${toSeconds(spec.attackIntervalTicks)}秒ごと）`,
+  spec.attackRange > 0 ? `射程${spec.attackRange}（経路の脇にも届く）` : '射程なし（塞いだ守り手だけ攻撃）',
+  ...abilityTextsOf(spec),
+];
+
+/**
+ * 敵の能力表示（反復7 段階2）
+ *
+ * 設置物の能力表示と同じ Panel（高さ INSPECT_ROW_HEIGHT_PX・折り返さない）を使い、
+ * BoardInfoSlot の同じ1行に出す。枠の高さは変わらない。
+ */
+export const EnemyInspectPanel: React.FC<{ enemyId: string }> = ({ enemyId }) => {
+  const spec = getEnemySpec(enemyId);
+  return (
+    <Panel data-testid="enemy-inspect-panel" role="status">
+      <strong>敵 {spec.name}</strong>
+      {enemyChipsOf(spec).map((chip) => (
+        <Chip key={chip}>{chip}</Chip>
+      ))}
+    </Panel>
+  );
+};
+```
+
+`BoardInfoSlot.tsx`:
+
+1. `import { InspectPanel } from './InspectPanel';` を `import { InspectPanel, EnemyInspectPanel } from './InspectPanel';` にする
+2. `INSPECT_HINT_TEXT` を次にする:
+
+```tsx
+/**
+ * 能力表示が閉じているときの導線（反復7 段階2・§4.3 #4）
+ *
+ * 置いた札は札の選択中でも開ける。敵は盤面のセル（選択していないとき）と凡例から開ける。
+ * 27字。360px の枠（左右の余白を除いて約29字）に収まる長さにした。
+ */
+export const INSPECT_HINT_TEXT = '札・敵・凡例をタップで能力表示（置いた札は選択中も可）';
+```
+
+3. `interface Props { … }` から `BoardInfoSlot` の定義の終わりまでを次に置き換える:
+
+```tsx
+interface Props {
+  rejectionNotice?: string;
+  inspectedPlate?: PlateModel;
+  /** 能力表示を開いている敵の種類（反復7 段階2）。設置物と同時には開かない（フックが排他にする） */
+  inspectedEnemyId?: string;
+}
+
+/**
+ * 能力表示の行。設置物・敵・導線のどれか1つだけを、同じ高さ（INSPECT_ROW_HEIGHT_PX）の1行に出す。
+ * 両方渡っても設置物を出す（フックの排他が崩れても行を2つにして枠を溢れさせない）
+ */
+const inspectRowOf = ({ inspectedPlate, inspectedEnemyId }: Props): React.ReactNode => {
+  if (inspectedPlate) return <InspectPanel plate={inspectedPlate} />;
+  if (inspectedEnemyId) return <EnemyInspectPanel enemyId={inspectedEnemyId} />;
+  return <Hint data-testid="inspect-hint">{INSPECT_HINT_TEXT}</Hint>;
+};
+
+export const BoardInfoSlot: React.FC<Props> = (props) => (
+  <Slot data-testid="board-info-slot">
+    <RejectionLine data-testid="rejection-line" data-tone={REJECTION_NOTICE_TONE}>
+      {props.rejectionNotice ?? ''}
+    </RejectionLine>
+    {inspectRowOf(props)}
+  </Slot>
+);
+```
+
+`EnemyLegend.tsx`:
+
+1. `const Item = styled.li` … `;` を次に置き換える:
+
+```tsx
+const Item = styled.li`
+  display: flex;
+`;
+
+/**
+ * 凡例の1項目＝その敵の能力表示を開くボタン（反復7 段階2・設計書 §4.3 #4）
+ *
+ * 盤面の敵マーカーは小さく動き続けるので、狙って押すのは難しい（特に 360px）。
+ * 凡例は動かないので、いつでも確実に開ける入口になる。見た目は従来の凡例のままにし、
+ * 開いている種類だけ枠の色で示す（aria-pressed と対応）。枠は常に 1px なので押しても大きさは変わらない。
+ * 高さは 32px（WCAG 2.5.8 の最小 24px を満たす）。44px にすると 360px で7種が4行に折り返し、
+ * 手札が画面の下へ押し出される。
+ */
+const LEGEND_BUTTON_MIN_HEIGHT_PX = 32;
+
+const ItemButton = styled.button<{ $pressed: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: ${LEGEND_BUTTON_MIN_HEIGHT_PX}px;
+  padding: 0 6px;
+  font: inherit;
+  font-size: 12px;
+  color: ${COLORS.secondary};
+  background: transparent;
+  border: 1px solid ${({ $pressed }) => ($pressed ? COLORS.secondary : 'transparent')};
+  border-radius: 4px;
+  cursor: pointer;
+`;
+```
+
+2. `export const EnemyLegend: React.FC = () => (` から `<Note>射程を持つ敵は、経路の脇に置いた守り手も削ります。</Note>` の直前までを次に置き換える（`<Note>` の3行と `</>` 以降は Task 5 のまま）:
+
+```tsx
+interface Props {
+  /** いま能力表示を開いている敵の種類（反復7 段階2） */
+  inspectedEnemyId?: string;
+  /** 項目を押したとき（反復7 段階2）。省略時は何もしない（既存の呼び出しの互換） */
+  onInspect?: (enemyId: string) => void;
+}
+
+export const EnemyLegend: React.FC<Props> = ({ inspectedEnemyId, onInspect }) => (
+  <>
+    <List aria-label="敵の凡例">
+      {ENEMY_IDS.map((id) => {
+        const visual = getEnemyVisual(id);
+        const spec = getEnemySpec(id);
+        const isPressed = inspectedEnemyId === id;
+        return (
+          <Item key={id}>
+            <ItemButton
+              type="button"
+              aria-label={`${spec.name} の能力を見る`}
+              aria-pressed={isPressed}
+              $pressed={isPressed}
+              onClick={() => onInspect?.(id)}
+            >
+              <Swatch $color={visual.color} $clip={getShapeClipPath(visual.shape)} />
+              <span>
+                {visual.name}
+                {spec.flying ? '（飛行・弩砲のみ有効）' : ''}
+              </span>
+              {spec.attackRange > 0 && <Stat>射程 {spec.attackRange}</Stat>}
+              {abilityTextsOf(spec).map((text) => (
+                <Stat key={text}>{text}</Stat>
+              ))}
+            </ItemButton>
+          </Item>
+        );
+      })}
+    </List>
+```
+
+- [ ] **Step 5: 通ることを確かめる（部品）**
+
+Run: `npx jest presentation/enemy-at-cell presentation/InspectPanel presentation/BoardInfoSlot presentation/EnemyLegend`
+Expected: PASS（`EnemyLegend.test.tsx` の既存の `getByText('鴉（飛行・弩砲のみ有効）')`・`getAllByText(/射程 1\.5/)` が2件・`getAllByText(/射程 /)` の数は、ボタンの中に同じ文字があるので緑のまま）
+
+Run: `npm run typecheck`
+Expected: エラー0
+
+- [ ] **Step 6: 失敗するテストを書く（フックと画面）**
+
+`useAshenRampartGame.test.ts`:
+
+1. import に足す:
+
+```ts
+import { enemyPosition } from '../domain/combat/enemy-position';
+```
+
+2. `describe('反復4: 能力表示（射程リングと能力チップ）', …)` の末尾（最後の `it` の後・閉じ括弧の前）に足す（`placeTowerAt1_1` を使うため同じ describe の中に置く。`-t 能力表示` で絞れる）:
+
+```ts
+    describe('敵の能力表示（反復7 段階2・§4.3 #4・判定項目9(b)）', () => {
+      type GameResult = { current: ReturnType<typeof useAshenRampartGame> };
+
+      /** 最初に生きている敵が出るまで進め、その種類とマーカーの中心が入っているセルを返す */
+      const firstAliveEnemyCell = (result: GameResult): { enemyId: string; cell: CellPos } => {
+        const MAX_WAIT_TICKS = 300;
+        for (let i = 0; i < MAX_WAIT_TICKS; i += 1) {
+          const enemy = result.current.state.enemies.find((e) => e.alive);
+          if (enemy) {
+            const at = enemyPosition(result.current.map, enemy);
+            return { enemyId: enemy.enemyId, cell: { x: Math.round(at.x), y: Math.round(at.y) } };
+          }
+          act(() => {
+            jest.advanceTimersByTime(TICK_INTERVAL_MS);
+          });
+        }
+        throw new Error(`前提が壊れています: ${MAX_WAIT_TICKS} tick 以内に敵が出ません`);
+      };
+
+      const placeableIndexOf = (result: GameResult): number =>
+        result.current.state.deck.hand.findIndex(
+          (id) => placementKindOf(getCardDefinition(id)) !== 'none'
+        );
+
+      const enemyInspections = (log: { events: PlayLogEventBody[] }) =>
+        log.events.filter((e) => e.kind === 'enemy_inspected');
+
+      it('札を選ばずに敵のいるセルをタップすると、その種類の能力表示が開き、source: cell で1件記録する', () => {
+        const log = createMockPlayLog();
+        const result = placeTowerAt1_1(log);
+        const { enemyId, cell } = firstAliveEnemyCell(result);
+
+        act(() => result.current.interactCell(cell));
+
+        expect(result.current.inspectedEnemyId).toBe(enemyId);
+        expect(result.current.inspectedPlate).toBeUndefined();
+        expect(enemyInspections(log)).toEqual([
+          {
+            kind: 'enemy_inspected',
+            runId: expect.any(String),
+            enemyId,
+            source: 'cell',
+            duringCardSelection: false,
+            tick: result.current.state.tick,
+          },
+        ]);
+      });
+
+      it('同じ敵のセルをもう一度タップすると閉じ、閉じたことは記録しない', () => {
+        const log = createMockPlayLog();
+        const result = placeTowerAt1_1(log);
+        const { cell } = firstAliveEnemyCell(result);
+
+        act(() => result.current.interactCell(cell));
+        act(() => result.current.interactCell(cell));
+
+        expect(result.current.inspectedEnemyId).toBeUndefined();
+        expect(enemyInspections(log)).toHaveLength(1);
+      });
+
+      it('札を選んでいるときに敵のいるセルをタップすると配置に回り、敵の能力表示は開かない', () => {
+        const log = createMockPlayLog();
+        const result = placeTowerAt1_1(log);
+        const { cell } = firstAliveEnemyCell(result);
+        const index = placeableIndexOf(result);
+        expect(index).toBeGreaterThanOrEqual(0);
+
+        act(() => result.current.selectCard(index));
+        act(() => result.current.interactCell(cell));
+
+        // clickCell が選択を解く＝配置に回った（経路に壁を置く操作を奪わない）
+        expect(result.current.selectedIndex).toBeNull();
+        expect(result.current.inspectedEnemyId).toBeUndefined();
+        expect(enemyInspections(log)).toHaveLength(0);
+      });
+
+      it('凡例から開くと source: legend で記録し、札の選択は保たれる（選択中なら duringCardSelection: true）', () => {
+        const log = createMockPlayLog();
+        const result = placeTowerAt1_1(log);
+        const index = placeableIndexOf(result);
+        expect(index).toBeGreaterThanOrEqual(0);
+
+        act(() => result.current.selectCard(index));
+        act(() => result.current.inspectEnemy('warden'));
+
+        expect(result.current.inspectedEnemyId).toBe('warden');
+        expect(result.current.selectedIndex).toBe(index);
+        expect(enemyInspections(log)).toEqual([
+          expect.objectContaining({ enemyId: 'warden', source: 'legend', duringCardSelection: true }),
+        ]);
+
+        act(() => result.current.inspectEnemy('warden'));
+
+        expect(result.current.inspectedEnemyId).toBeUndefined();
+        expect(enemyInspections(log)).toHaveLength(1);
+      });
+
+      it('敵と設置物の能力表示は排他で、開くたびにそれぞれの種類を1件ずつ記録する', () => {
+        const log = createMockPlayLog();
+        const result = placeTowerAt1_1(log);
+
+        act(() => result.current.inspectEnemy('mender'));
+        act(() => result.current.interactCell({ x: 1, y: 1 }));
+
+        expect(result.current.inspectedPlate?.cardId).toBe('ballista');
+        expect(result.current.inspectedEnemyId).toBeUndefined();
+
+        act(() => result.current.inspectEnemy('mender'));
+
+        expect(result.current.inspectedEnemyId).toBe('mender');
+        expect(result.current.inspectedPlate).toBeUndefined();
+        expect(enemyInspections(log)).toHaveLength(2);
+        expect(log.events.filter((e) => e.kind === 'inspect_opened')).toHaveLength(1);
+      });
+
+      it('一時停止中は凡例からも開かず、一時停止すると開いていた敵の能力表示は閉じる', () => {
+        const log = createMockPlayLog();
+        const result = placeTowerAt1_1(log);
+
+        act(() => result.current.inspectEnemy('warden'));
+        act(() => result.current.togglePause());
+
+        expect(result.current.inspectedEnemyId).toBeUndefined();
+
+        act(() => result.current.inspectEnemy('mender'));
+
+        expect(result.current.inspectedEnemyId).toBeUndefined();
+        expect(enemyInspections(log)).toHaveLength(1);
+      });
+    });
+```
+
+`StageView.test.tsx` の末尾に足す:
+
+```tsx
+describe('敵の能力表示の結線（反復7 段階2・§4.3 #4）', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+    localStorage.clear();
+  });
+  afterEach(() => jest.useRealTimers());
+
+  it('凡例の「盾衛 の能力を見る」を押すと、盤面の下の枠に盾衛の能力表示が出て、もう一度押すと閉じる', () => {
+    renderStage(initial, false);
+    const button = screen.getByRole('button', { name: '盾衛 の能力を見る' });
+
+    fireEvent.click(button);
+
+    const slot = screen.getByTestId('board-info-slot');
+    expect(slot).toHaveTextContent('敵 盾衛');
+    expect(slot).toHaveTextContent('装甲4');
+    expect(button).toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.click(button);
+
+    expect(screen.queryByTestId('enemy-inspect-panel')).not.toBeInTheDocument();
+    expect(button).toHaveAttribute('aria-pressed', 'false');
+  });
+});
+```
+
+- [ ] **Step 7: 落ちることを確かめる**
+
+Run: `npx jest presentation/useAshenRampartGame.test.ts -t 敵の能力表示`
+Expected: 新しい6件のうち5件が FAIL（`inspectEnemy is not a function`、または `inspectedEnemyId` が undefined のまま・`enemy_inspected` が0件）。「札を選んでいるときに敵のいるセルをタップすると配置に回り…」は、実装前も選択中のタップは配置に回り敵の能力表示が存在しないので PASS（Step 8 の後も PASS のままであること＝配置を奪っていないことの検査）
+
+Run: `npx jest presentation/StageView`
+Expected: 新しい1件が FAIL（ボタンを押しても `onInspect` が結線されておらず、枠に `敵 盾衛` が出ない）
+
+- [ ] **Step 8: フックと画面に結線する**
+
+`useAshenRampartGame.ts`:
+
+1. import に足す:
+
+```ts
+import { enemyIdAtCell } from './enemy-at-cell';
+```
+
+（`type PlayLogPort,` の直後に `type EnemyInspectSource,` を足す）
+
+2. `const [inspectedKey, setInspectedKey] = useState<string | null>(null);` の直後に足す:
+
+```ts
+  // 敵の種類の能力表示（反復7 段階2・§4.3 #4）。設置物の能力表示（inspectedKey）とは排他
+  const [inspectedEnemyId, setInspectedEnemyId] = useState<string | null>(null);
+```
+
+3. `selectCard` の `setInspectedKey(null);`（直前のコメント「カードを選んだのに前の能力表示が残っていると誤読するため閉じる」）の直後に `setInspectedEnemyId(null);` を足す
+4. Task 11 の `toggleInspect` の `setInspectedKey(key);` の直前に `setInspectedEnemyId(null);` を足す（設置物を開いたら敵を閉じる）
+5. Task 11 の `interactCell` を docstring ごと次に置き換え、その直前に `toggleEnemyInspect` と `inspectEnemy` を足す:
+
+```ts
+  /**
+   * 敵の種類の能力表示を開閉する（反復7 段階2・設計書 §4.3 #4・判定項目9(b)）
+   *
+   * 同じ種類をもう一度選ぶと閉じる。開いたときだけ enemy_inspected を1件記録する
+   * （閉じたときは記録しない。inspect_opened と同じ）。記録は updater の外で行う
+   * （StrictMode の二重呼び出し対策。toggleInspect と同じ理由）。
+   * run_tally の inspectOpens には数えない（設置物の能力表示の回数のまま意味を変えない）。
+   */
+  const toggleEnemyInspect = useCallback(
+    (enemyId: string, source: EnemyInspectSource) => {
+      if (isPaused) return;
+      if (inspectedEnemyId === enemyId) {
+        setInspectedEnemyId(null);
+        return;
+      }
+      logRef.current.record({
+        kind: 'enemy_inspected',
+        runId,
+        enemyId,
+        source,
+        duringCardSelection: selectedIndex !== null,
+        tick: state.tick,
+      });
+      setInspectedKey(null);
+      setInspectedEnemyId(enemyId);
+    },
+    [isPaused, inspectedEnemyId, runId, selectedIndex, state.tick]
+  );
+
+  /** 凡例から敵の能力表示を開閉する（UI の入口。札の選択は保つ） */
+  const inspectEnemy = useCallback(
+    (enemyId: string) => toggleEnemyInspect(enemyId, 'legend'),
+    [toggleEnemyInspect]
+  );
+
+  /**
+   * 盤面セルへの唯一の入口（UI はこれだけを呼ぶ）
+   *
+   * カード選択中（反復7 段階2・設計書 §4.3 #4 で変更）:
+   *   設置物のあるセル → 能力表示（選択は保つ。配置も再点火もしない）
+   *   それ以外のセル → 配置（敵がいても配置。経路に壁を置く操作を奪わない。敵は凡例から開く）
+   *   占有セルには canPlaceAt がもともと置かせないので、能力表示に回しても失う操作は無い。
+   *   段階1 までは選択中のタップがすべて配置に抜け、能力表示が一度も開かれなかった（§3.8）。
+   * 選択なし（設計書 §5.2 の優先順位に敵を足した）:
+   *   再点火可能な燠火（cooldownLeft === 0）→ 再点火。それ以外の設置物 → 能力表示の開閉。
+   *   敵のいるセル → その敵の種類の能力表示の開閉（enemyIdAtCell）。
+   *   何も無いセル → 能力表示を閉じる。
+   */
+  const interactCell = useCallback(
+    (pos: CellPos) => {
+      if (isPaused) return;
+      if (selectedIndex !== null) {
+        if (!toggleInspect(pos, true)) clickCell(pos);
+        return;
+      }
+      const emberIndex = state.embers.findIndex(
+        (ember) => ember.pos.x === pos.x && ember.pos.y === pos.y && ember.cooldownLeft === 0
+      );
+      if (emberIndex !== -1) {
+        reactivate(emberIndex);
+        return;
+      }
+      if (toggleInspect(pos, false)) return;
+      const enemyId = enemyIdAtCell(state.enemies, map, pos);
+      if (enemyId !== undefined) {
+        toggleEnemyInspect(enemyId, 'cell');
+        return;
+      }
+      setInspectedKey(null);
+      setInspectedEnemyId(null);
+    },
+    [isPaused, selectedIndex, state.embers, state.enemies, map, clickCell, reactivate, toggleInspect, toggleEnemyInspect]
+  );
+```
+
+6. `togglePause` の `setInspectedKey(null);` の直後と、`restart` の `setInspectedKey(null);` の直後に、それぞれ `setInspectedEnemyId(null);` を足す
+7. 戻り値の `inspectedPlate,` の直後に足す:
+
+```ts
+    inspectedEnemyId: inspectedEnemyId ?? undefined,
+    inspectEnemy,
+```
+
+`StageView.tsx`:
+
+1. `<BoardInfoSlot rejectionNotice={game.rejectionNotice} inspectedPlate={game.inspectedPlate} />` を次にする:
+
+```tsx
+        <BoardInfoSlot
+          rejectionNotice={game.rejectionNotice}
+          inspectedPlate={game.inspectedPlate}
+          inspectedEnemyId={game.inspectedEnemyId}
+        />
+```
+
+2. `<EnemyLegend />` を `<EnemyLegend inspectedEnemyId={game.inspectedEnemyId} onInspect={game.inspectEnemy} />` にする
+
+- [ ] **Step 9: 通ることを確かめる**
+
+Run: `npx jest presentation/useAshenRampartGame.test.ts -t 能力表示`
+Expected: PASS（Task 11 の4件と、このタスクの6件を含む）
+
+Run: `npx jest presentation/StageView presentation/BoardInfoSlot presentation/EnemyLegend presentation/InspectPanel presentation/enemy-at-cell presentation/useAshenRampartGame.stage`
+Expected: PASS
+
+Run: `npm run typecheck`
+Expected: エラー0
+
+- [ ] **Step 10: コミット**
+
+```bash
+git add src/features/ashen-rampart/application/ports/play-log-port.ts \
+        src/features/ashen-rampart/presentation/card-text.ts \
+        src/features/ashen-rampart/presentation/enemy-at-cell.ts \
+        src/features/ashen-rampart/presentation/enemy-at-cell.test.ts \
+        src/features/ashen-rampart/presentation/InspectPanel.tsx \
+        src/features/ashen-rampart/presentation/InspectPanel.test.tsx \
+        src/features/ashen-rampart/presentation/BoardInfoSlot.tsx \
+        src/features/ashen-rampart/presentation/BoardInfoSlot.test.tsx \
+        src/features/ashen-rampart/presentation/EnemyLegend.tsx \
+        src/features/ashen-rampart/presentation/EnemyLegend.test.tsx \
+        src/features/ashen-rampart/presentation/useAshenRampartGame.ts \
+        src/features/ashen-rampart/presentation/useAshenRampartGame.test.ts \
+        src/features/ashen-rampart/presentation/StageView.tsx \
+        src/features/ashen-rampart/presentation/StageView.test.tsx
+git commit -F - <<'EOF'
+feat(ashen-rampart): 敵の能力表示を凡例と盤面から開けるようにし、enemy_inspected を記録する
+
+- 凡例の各項目を「名前 の能力を見る」ボタンにする（動かないので 360px でも押せる）
+- 札を選んでいないとき、敵のいる経路セルのタップでその敵の種類の能力表示を開く（設置物が優先）
+- 盤面の下の枠の同じ1行に HP・速度・飛行・攻撃・射程・装甲・回復を出し、設置物の能力表示と排他にする
+- enemy_inspected（入口・選択中か）を開いたときだけ記録する。判定項目9(b) はこれで新敵を数える
+
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+EOF
+```
+
+---
+
+### Task 13: 敵の攻撃射程を経路外セルの色調で示す（設計書 §4.3 #5）
 
 **Files:**
 - Create: `F/domain/combat/geometry.ts`
@@ -4351,7 +5298,7 @@ import { getCardDefinition, PRESET_DECKS } from '../domain/cards/card-pool';
 import { placementKindOf } from '../domain/cards/card-definition';
 import type { PlayLogPort } from '../application/ports/play-log-port';
 
-const silentLog: PlayLogPort = { record: () => undefined, exportAll: () => ({ version: 6, events: [] }) };
+const silentLog: PlayLogPort = { record: () => undefined, exportAll: () => ({ version: 7, events: [] }) };
 
 describe('threatenedCells', () => {
   it('カードを選ぶ前は空で、置ける札を選ぶと台本から求めた射程のセルになる', () => {
@@ -4517,7 +5464,7 @@ EOF
 
 ---
 
-### Task 13: 段階2 の出口（設計書 §4.4）
+### Task 14: 段階2 の出口（設計書 §4.4）
 
 - [ ] **Step 1: 全体の検証（コントローラが背景で回す）**
 
@@ -4543,8 +5490,8 @@ Expected: 4件 PASS（`expedition-flow.spec.ts` 2件・`layout-stability.spec.ts
 
 `docs/superpowers/specs/2026-09-23-ashen-rampart-iteration7-design.md`:
 
-1. §4.4 の直後に `### 4.5 実装計画で下した判断（2026-09-24）` を足し、本計画の「計画で下した判断」の24件を1行ずつ転記する（計画ファイルへのリンクを添える）
-2. §7 の持ち越し表の「反復7 での扱い」を更新する: オーラの実効値 → **閉じた**（能力表示に実効値、射程リングも実効射程）／能力表示の導線 → **閉じた**（カード選択中も設置物のタップで開く。`duringCardSelection` を記録）／`attackersFor` の押し出し → **閉じた**（ブロック優先。`balance.test.ts` の結果を1行で）／敵の攻撃射程の可視化 → **閉じた**（カード選択中に経路外セルへ斜線）
+1. §4.4 の直後に `### 4.5 実装計画で下した判断（2026-09-24）` を足し、本計画の「計画で下した判断」の27件を1行ずつ転記する（計画ファイルへのリンクを添える）
+2. §7 の持ち越し表の「反復7 での扱い」を更新する: オーラの実効値 → **閉じた**（能力表示に実効値、射程リングも実効射程）／能力表示の導線 → **閉じた**（カード選択中も設置物のタップで開く。`duringCardSelection` を記録。敵の種類の能力表示を凡例のボタンと、選択していないときの敵のいるセルから開く。`enemy_inspected` を記録）／`attackersFor` の押し出し → **閉じた**（ブロック優先。`balance.test.ts` の結果を1行で）／敵の攻撃射程の可視化 → **閉じた**（カード選択中に経路外セルへ斜線）
 3. §7.1 の #6 → **閉じた**（貫通に `canTowerHit`。対空ノックアウト変種の徹甲弩が鴉に当たらなくなった）、#10 → **閉じた**、#7 → Step 6 のユーザーの試遊で見たことを書く
 4. §8 の段階2 の行に「実装完了（2026-MM-DD・PR #N）。`npm run ci` 緑（コミット）。E2E 4本 緑。**ユーザーによる新敵の試遊は（済／未）**」を書く
 
@@ -4556,7 +5503,7 @@ git add docs/superpowers/specs/2026-09-23-ashen-rampart-iteration7-design.md \
 git commit -F - <<'EOF'
 docs(ashen-rampart): 段階2 の実装で下した判断と閉じた持ち越しを設計書へ記録する
 
-- 計画で決めた24件の判断を §4.5 に転記する
+- 計画で決めた27件の判断を §4.5 に転記する
 - 持ち越し4件と PR #201 minor 2件を閉じたことを反映する
 - 戦闘中の盤面と手札の上端の計測（2幅）の生データを保全する
 
@@ -4586,8 +5533,9 @@ Task 0 Step 2 で控えた PR #211 の状態で向き先を決める。**履歴�
 2. 札を選んだとき、**射程の斜線と置けるセルの縁取りが見分けられるか**。**道と置ける場所が見分けられるか**（§4.0 b）
 3. **戦闘中に盤面と手札が動かないか**（§4.0 a）
 4. 札を選んだまま置いた札をタップして**能力表示が開くか**、篝火の隣の塔で `攻撃5（素4）` が出るか
-5. （持ち越し）手元の実機（360px 相当）で1回開き、盤面と手札が読めるか
-6. 観察（PR #201 minor #7）: **同じ種類の敵（盾衛2体）が同じ瞬間に一斉に殴るのが不自然に見えるか**。見えたら §7.1 #7 に書く
+5. **凡例の「盾衛」「癒し手」を押して敵の能力表示が開くか**（装甲4・回復3（4秒ごと・周囲1.5）が読めるか）。札を選んでいないときに敵のいるマスをタップしても開くか。開いたとき盤面と手札が動かないか。試遊の後にログを見て `enemy_inspected` が `source: 'legend'` / `'cell'` で記録されていることを確かめる（判定項目9(b) の測定経路の動作確認。**判定ではないので回数は数えない**）
+6. （持ち越し）手元の実機（360px 相当）で1回開き、盤面と手札が読めるか。凡例のボタンが押せるか
+7. 観察（PR #201 minor #7）: **同じ種類の敵（盾衛2体）が同じ瞬間に一斉に殴るのが不自然に見えるか**。見えたら §7.1 #7 に書く
 
 **確認が取れるまで段階3 の計画を書かない。**
 
@@ -4595,6 +5543,7 @@ Task 0 Step 2 で控えた PR #211 の状態で向き先を決める。**履歴�
 
 ## 自己点検の記録
 
-- **設計書の網羅**: §4.0 a → Task 3（＋Task 13 の E2E）／§4.0 b → Task 2／§4.0 c → Task 1（§2 の分母の扱いは判定時の作業で、記録は Task 1）／§4.1 → Task 5・Task 8／§4.2 (1) → Task 4、(2) → Task 6、(3) → Task 7／§4.3 #1 #2 → Task 9、#3 → Task 10、#4 → Task 11（敵の能力は Task 5 の凡例）、#5 → Task 12／§4.4 → Task 13／§7.1 #6 → Task 4、#7 → Task 13 Step 7、#10 → Task 5
-- **型の一貫性**: `DamageDraft` / `hitOn` / `applyDamage`（Task 4）を Task 6 は使わず `hpById` を直接受ける（回復はダメージではないため撃破源に触れない）。`cellBackgroundOf` の引数は Task 2 と Task 12 で同じオブジェクト形。`buildPlates(state, map?)` は Task 10 で変え、Task 11 はそれを使う。`INSPECT_HINT_TEXT` は Task 3 で定義し Task 11 で文言だけ変える
-- **重いテスト**: `domain/combat` 全体（Task 4）・`balance.test.ts`（Task 7）・`application/simulation`（Task 8）・Playwright（Task 3・13）・`npm run ci`（Task 13）はすべてコントローラの手順にした
+- **設計書の網羅**: §2 判定項目9(b)（2026-09-24 再定義）→ Task 12（`enemy_inspected`）／§3.3 のスキーマ v7 → Task 1 Step 1〜5／§4.0 a → Task 3（＋Task 14 の E2E）／§4.0 b → Task 2／§4.0 c → Task 1（§2 の分母の扱いは判定時の作業で、記録は Task 1）／§4.1 → Task 5・Task 8／§4.2 (1) → Task 4、(2) → Task 6、(3) → Task 7／§4.3 #1 #2 → Task 9、#3 → Task 10、#4 → Task 11（設置物）・Task 12（敵。凡例の説明文は Task 5）、#5 → Task 13／§4.4 → Task 14／§7.1 #6 → Task 4、#7 → Task 14 Step 7、#10 → Task 5
+- **型の一貫性**: `DamageDraft` / `hitOn` / `applyDamage`（Task 4）を Task 6 は使わず `hpById` を直接受ける（回復はダメージではないため撃破源に触れない）。`cellBackgroundOf` の引数は Task 2 と Task 13 で同じオブジェクト形。`buildPlates(state, map?)` は Task 10 で変え、Task 11 はそれを使う。`INSPECT_HINT_TEXT` は Task 3 で定義し、Task 11 と Task 12 で文言だけ変える（Task 12 は Task 11 が足した `/札を選んでいても/` の検査を `/選択中も可/`・`/敵/`・`/凡例/` に置き換える）。`BoardInfoSlot` の props は Task 3 の `{ rejectionNotice?, inspectedPlate? }` に Task 12 が `inspectedEnemyId?` を足すだけ。`InspectPanel.tsx` の `Panel` / `Chip`（Task 3 で 36px 固定）を Task 12 の `EnemyInspectPanel` がそのまま使う。`abilityTextsOf(spec)` は Task 5 で `EnemyLegend.tsx` に定義し、Task 12 の `enemyChipsOf` が使う。`EnemyLegend` の props は Task 12 で `{ inspectedEnemyId?, onInspect? }`（省略可）になり、Task 13 は `<Note>射程を持つ敵は…</Note>` の文言だけを変える（Task 12 はこの行を残す）。`useAshenRampartGame` の `toggleInspect(pos, isDuringCardSelection)` と `interactCell` は Task 11 で作り、Task 12 が敵の分岐を足して `interactCell` を置き換える。`play-log-port.ts` は Task 1（`expedition_abandoned`・版の docstring）→ Task 11（`inspect_opened.duringCardSelection`）→ Task 12（`enemy_inspected`・`EnemyInspectSource`）の順に変わり、版上げ（v7）は Task 1 で先に済ませる。計画が書くテスト用のログの `version` はすべて 7
+- **重いテスト**: `domain/combat` 全体（Task 4）・`balance.test.ts`（Task 7）・`application/simulation`（Task 8）・Playwright（Task 3・14）・`npm run ci`（Task 14）はすべてコントローラの手順にした。`AshenRampartGame.test.tsx`（Task 1）と `useAshenRampartGame.test.ts`（Task 11・12）は `-t` で絞る
+- **敵対的検証の指摘への対応（2026-09-24 改訂）**: 敵の能力表示と9(b) の再定義 → Task 12・判断 #25 #26／スキーマ v7 → Task 1 Step 1〜5・判断 #27／Task 4 Step 8 の11の grep を「`sourceById.set` は0件、`hpById.set` は種まきの1行だけ」へ／Task 1 の並び順の検査に `toContain` を足し、落ちる件数を4件（うち並び順の1件は `toContain` で落ちる）と明記／Task 10 Step 2 の落ちる件数を3件に訂正／Task 9 Step 6 の失敗を ✕ ではなく `effect.pos.x` の TypeError と訂正
