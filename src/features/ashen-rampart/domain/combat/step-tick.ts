@@ -34,6 +34,7 @@ import type {
   DefeatSource,
 } from './combat-state';
 import { laneFor, goalFor, enemyPosition } from './enemy-position';
+import { applyDamage, canTowerHit, hitOn, type DamageDraft } from './damage';
 
 // 既存の import 元（step-tick）を変えずに済ませるため再エクスポートする。
 // 反復1〜4 のテストが step-tick から positionOf / enemyPosition を取っている。
@@ -233,14 +234,6 @@ interface PendingBlast {
   /** 発生源の燠火 index。撃破の帰属に使う */
   emberIndex: number;
 }
-
-/**
- * 敵ごとの「最後に削った者」
- *
- * hpById と対で更新する。hpById.set と sourceById.set は必ず同じ箇所で行う
- * （片方だけ更新すると帰属が前の tick の値のまま残る）。
- */
-type SourceById = Map<number, DefeatSource>;
 
 /**
  * 「プレイヤー操作」段階の作業用下書き。1 tick 分の操作をすべて畳み込む間だけ存在し、
@@ -599,8 +592,8 @@ type EnemyStatusDraft = { groundedUntilTick?: number };
  *   落網   … 飛行を地上化（ダメージなし）
  * 発動条件が逆のカードがあるため、対象判定は罠ごとに決める。
  *
- * 移動確定後の座標で判定する。ダメージは hpById に、状態変更は statusById に
- * 反映するが、生死・状態の確定はまだしない（射撃・業火と合算してから
+ * 移動確定後の座標で判定する。ダメージは下書き（DamageDraft）に、状態変更は
+ * statusById に反映するが、生死・状態の確定はまだしない（射撃・業火と合算してから
  * resolveDamage でまとめて行う）。いずれも罠・射撃・業火の3段階で共有する
  * 下書きなので、この関数はそれらを直接書き換える（1 tick 分の作業用 Map で
  * あり外部状態ではない）。
@@ -608,12 +601,8 @@ type EnemyStatusDraft = { groundedUntilTick?: number };
 const applyTraps = (
   traps: readonly PlacedTrap[],
   moved: readonly ActiveEnemy[],
-  hpById: Map<number, number>,
-  sourceById: SourceById,
-  statusById: Map<number, EnemyStatusDraft>,
-  tick: number,
-  map: StageMap,
-  events: TickEvent[]
+  draft: DamageDraft,
+  ctx: { statusById: Map<number, EnemyStatusDraft>; tick: number; map: StageMap }
 ): PlacedTrap[] =>
   traps.map((trap, trapIndex) => {
     if (trap.usesLeft <= 0) return trap;
@@ -624,24 +613,20 @@ const applyTraps = (
     moved.forEach((enemy) => {
       if (!enemy.alive || usesLeft <= 0) return;
       if (hitEnemyIds.includes(enemy.id)) return;
-      const flying = isEnemyFlying(enemy, tick);
+      const flying = isEnemyFlying(enemy, ctx.tick);
       // 落網は飛行のみ、それ以外の罠は地上のみに発動する
       const targetsFlying = spec.groundedTicks !== undefined;
       if (targetsFlying !== flying) return;
-      const pos = enemyPosition(map, enemy);
+      const pos = enemyPosition(ctx.map, enemy);
       if (Math.hypot(pos.x - trap.pos.x, pos.y - trap.pos.y) > TRAP_TRIGGER_DISTANCE) return;
-
-      if (spec.damage > 0) {
-        hpById.set(enemy.id, (hpById.get(enemy.id) ?? 0) - spec.damage);
-        sourceById.set(enemy.id, { kind: 'trap', index: trapIndex });
-      }
+      // 落網（damage 0）は applyDamage が何もしない（raw <= 0 は無操作）
+      applyDamage(draft, hitOn(enemy, spec.damage, { kind: 'trap', index: trapIndex }));
       if (spec.groundedTicks !== undefined) {
-        statusById.set(enemy.id, { groundedUntilTick: tick + spec.groundedTicks - 1 });
+        ctx.statusById.set(enemy.id, { groundedUntilTick: ctx.tick + spec.groundedTicks - 1 });
       }
-
       hitEnemyIds.push(enemy.id);
       usesLeft -= 1;
-      events.push({ kind: 'trap', trapIndex, targetId: enemy.id });
+      draft.events.push({ kind: 'trap', trapIndex, targetId: enemy.id });
     });
     return { ...trap, usesLeft, hitEnemyIds };
   });
@@ -655,27 +640,24 @@ const applyTraps = (
  * 今 tick に置いた守り手のダメージが0になるため、ここは順序も引数も変えてはいけない。
  */
 const applyUnitShots = (
-  state: CombatState,
-  units: readonly PlacedUnit[],
-  moved: readonly ActiveEnemy[],
-  map: StageMap,
-  hpById: Map<number, number>,
-  sourceById: SourceById,
-  events: TickEvent[],
-  tick: number
+  scene: { state: CombatState; units: readonly PlacedUnit[]; moved: readonly ActiveEnemy[] },
+  draft: DamageDraft,
+  ctx: { map: StageMap; tick: number }
 ): PlacedUnit[] => {
+  const { state, units, moved } = scene;
+  const { map, tick } = ctx;
   const stateForDamage: CombatState = { ...state, units: [...units] };
   return units.map((unit, unitIndex) => {
     const spec = getCardDefinition(unit.cardId).tower;
     if (!spec || spec.aura) return unit;
     if (unit.cooldownLeft > 0) return { ...unit, cooldownLeft: unit.cooldownLeft - 1 };
     const range = effectiveRange(stateForDamage, unitIndex, map);
-    const target = selectUnitTarget(unit, spec, range, moved, map, hpById, tick);
+    const target = selectUnitTarget(unit, spec, range, moved, map, draft.hpById, tick);
     if (!target) return unit;
     const { total: damage, auraBonus } = damageBreakdown(stateForDamage, unitIndex, map, target);
     const targetPos = enemyPosition(map, target);
     const distance = Math.hypot(targetPos.x - unit.pos.x, targetPos.y - unit.pos.y);
-    events.push({
+    draft.events.push({
       kind: 'shot',
       unitIndex,
       targetId: target.id,
@@ -683,34 +665,21 @@ const applyUnitShots = (
       // 素の射程を超えている＝鍛冶場のオーラで初めて届いた射撃
       beyondBaseRange: distance > spec.range,
     });
+    const source: DefeatSource = { kind: 'unit', index: unitIndex };
     // 貫通・範囲・単体は互いに排他な3つの当たり方（設計書 §7 の3軸）。
     // 貫通は標的自身も直線上の1点として applyPiercingDamage が拾うため、
-    // ここで別途 hpById.set しない（二重にダメージが乗ってしまう）。
+    // ここで別途 applyDamage しない（二重にダメージが乗ってしまう）。
     if (spec.piercing) {
       applyPiercingDamage(
-        { from: unit.pos, toward: targetPos, range },
+        { from: unit.pos, toward: targetPos, range, damage, hitsFlying: spec.hitsFlying, source },
         moved,
-        map,
-        damage,
-        hpById,
-        sourceById,
-        { kind: 'unit', index: unitIndex }
+        draft,
+        ctx
       );
     } else {
-      hpById.set(target.id, (hpById.get(target.id) ?? 0) - damage);
-      sourceById.set(target.id, { kind: 'unit', index: unitIndex });
+      applyDamage(draft, hitOn(target, damage, source));
       if (spec.splashRadius > 0) {
-        applySplashDamage(
-          target,
-          spec,
-          moved,
-          map,
-          hpById,
-          sourceById,
-          tick,
-          stateForDamage,
-          unitIndex
-        );
+        applySplashDamage({ target, spec, unitIndex, stateForDamage }, moved, draft, ctx);
       }
     }
     // 発射周期をちょうど cooldownTicks tick にするため -1 する
@@ -735,7 +704,7 @@ const selectUnitTarget = (
 ): ActiveEnemy | undefined =>
   [...moved]
     .filter((e) => e.alive && (hpById.get(e.id) ?? 0) > 0)
-    .filter((e) => spec.hitsFlying || !isEnemyFlying(e, tick))
+    .filter((e) => canTowerHit(spec, e, tick))
     .filter((e) => {
       const pos = enemyPosition(map, e);
       return Math.hypot(pos.x - unit.pos.x, pos.y - unit.pos.y) <= range;
@@ -750,26 +719,24 @@ const selectUnitTarget = (
  * 唯一の責務を持つという契約を、この呼び出し側でも崩さないため）。
  */
 const applySplashDamage = (
-  target: ActiveEnemy,
-  spec: NonNullable<CardDefinition['tower']>,
+  splash: {
+    target: ActiveEnemy;
+    spec: NonNullable<CardDefinition['tower']>;
+    unitIndex: number;
+    stateForDamage: CombatState;
+  },
   moved: readonly ActiveEnemy[],
-  map: StageMap,
-  hpById: Map<number, number>,
-  sourceById: SourceById,
-  tick: number,
-  stateForDamage: CombatState,
-  unitIndex: number
+  draft: DamageDraft,
+  ctx: { map: StageMap; tick: number }
 ): void => {
-  const center = enemyPosition(map, target);
+  const center = enemyPosition(ctx.map, splash.target);
   moved.forEach((other) => {
-    if (other.id === target.id || !other.alive) return;
-    if (!spec.hitsFlying && isEnemyFlying(other, tick)) return;
-    const pos = enemyPosition(map, other);
-    if (Math.hypot(pos.x - center.x, pos.y - center.y) <= spec.splashRadius) {
-      const damage = effectiveDamage(stateForDamage, unitIndex, map, other);
-      hpById.set(other.id, (hpById.get(other.id) ?? 0) - damage);
-      sourceById.set(other.id, { kind: 'unit', index: unitIndex });
-    }
+    if (other.id === splash.target.id || !other.alive) return;
+    if (!canTowerHit(splash.spec, other, ctx.tick)) return;
+    const pos = enemyPosition(ctx.map, other);
+    if (Math.hypot(pos.x - center.x, pos.y - center.y) > splash.spec.splashRadius) return;
+    const damage = effectiveDamage(splash.stateForDamage, splash.unitIndex, ctx.map, other);
+    applyDamage(draft, hitOn(other, damage, { kind: 'unit', index: splash.unitIndex }));
   });
 };
 
@@ -790,38 +757,45 @@ const distanceToSegment = (
 /** 貫通の当たり幅（セル）。この距離まで直線に近い敵に当たる */
 export const PIERCING_WIDTH = 0.5;
 
+/** 貫通の1射（標的の方向へ射程いっぱいに伸ばした線分） */
+interface PiercingShot {
+  from: CellPos;
+  toward: { x: number; y: number };
+  range: number;
+  damage: number;
+  hitsFlying: boolean;
+  source: DefeatSource;
+}
+
 /**
  * 貫通ダメージ
  *
  * 守り手から標的へ引いた直線上にいる敵すべてに、同じダメージを与える。
  * 標的より奥の敵にも当たるよう、線分は標的の先まで射程いっぱいに伸ばす。
- * 貫通する守り手（徹甲弩）は hitsFlying が常に true のため、飛行判定による
- * 絞り込みは行わない（applySplashDamage と異なり tick を引数に取らない）。
+ * **飛行の判定は範囲攻撃と同じ canTowerHit で行う**（反復7 段階2・PR #201 minor #6）。
+ * 現行の徹甲弩は hitsFlying: true なので結果は変わらないが、対空をノックアウトした
+ * 変種（knockout-cards.ts）が直線上の鴉に当たっていた。
  */
 const applyPiercingDamage = (
-  ctx: { from: CellPos; toward: { x: number; y: number }; range: number },
+  shot: PiercingShot,
   moved: readonly ActiveEnemy[],
-  map: StageMap,
-  damage: number,
-  hpById: Map<number, number>,
-  sourceById: SourceById,
-  source: DefeatSource
+  draft: DamageDraft,
+  ctx: { map: StageMap; tick: number }
 ): void => {
-  const dx = ctx.toward.x - ctx.from.x;
-  const dy = ctx.toward.y - ctx.from.y;
+  const dx = shot.toward.x - shot.from.x;
+  const dy = shot.toward.y - shot.from.y;
   const length = Math.hypot(dx, dy) || 1;
   const end = {
-    x: ctx.from.x + (dx / length) * ctx.range,
-    y: ctx.from.y + (dy / length) * ctx.range,
+    x: shot.from.x + (dx / length) * shot.range,
+    y: shot.from.y + (dy / length) * shot.range,
   };
   moved.forEach((enemy) => {
     if (!enemy.alive) return;
-    const current = hpById.get(enemy.id) ?? enemy.hp;
-    if (current <= 0) return;
-    const pos = enemyPosition(map, enemy);
-    if (distanceToSegment(pos, ctx.from, end) > PIERCING_WIDTH) return;
-    hpById.set(enemy.id, current - damage);
-    sourceById.set(enemy.id, source);
+    if ((draft.hpById.get(enemy.id) ?? enemy.hp) <= 0) return;
+    if (!canTowerHit(shot, enemy, ctx.tick)) return;
+    const pos = enemyPosition(ctx.map, enemy);
+    if (distanceToSegment(pos, shot.from, end) > PIERCING_WIDTH) return;
+    applyDamage(draft, hitOn(enemy, shot.damage, shot.source));
   });
 };
 
@@ -829,25 +803,21 @@ const applyPiercingDamage = (
  * 業火・燠火の即時ダメージ（地上敵のみ）
  *
  * 罠・射撃の後に反映する（tick 順序どおり）。プレイヤー操作段階で予約した
- * blasts をここでまとめて hpById に反映する。hpById は罠・射撃と共有する
- * 下書きのため、この関数もそれを直接書き換える。
+ * blasts をここでまとめて下書きに反映する。罠・射撃と共有する下書きのため、
+ * この関数もそれを直接書き換える。
  */
 const applyBlasts = (
   blasts: readonly PendingBlast[],
   moved: readonly ActiveEnemy[],
-  map: StageMap,
-  hpById: Map<number, number>,
-  sourceById: SourceById,
-  tick: number
+  draft: DamageDraft,
+  ctx: { map: StageMap; tick: number }
 ): void => {
   blasts.forEach((blast) => {
     moved.forEach((enemy) => {
-      if (!enemy.alive || isEnemyFlying(enemy, tick)) return;
-      const pos = enemyPosition(map, enemy);
-      if (Math.hypot(pos.x - blast.pos.x, pos.y - blast.pos.y) <= blast.radius) {
-        hpById.set(enemy.id, (hpById.get(enemy.id) ?? 0) - blast.damage);
-        sourceById.set(enemy.id, { kind: 'ember', index: blast.emberIndex });
-      }
+      if (!enemy.alive || isEnemyFlying(enemy, ctx.tick)) return;
+      const pos = enemyPosition(ctx.map, enemy);
+      if (Math.hypot(pos.x - blast.pos.x, pos.y - blast.pos.y) > blast.radius) return;
+      applyDamage(draft, hitOn(enemy, blast.damage, { kind: 'ember', index: blast.emberIndex }));
     });
   });
 };
@@ -862,10 +832,8 @@ const applyBlasts = (
  */
 const resolveDamage = (
   moved: readonly ActiveEnemy[],
-  hpById: ReadonlyMap<number, number>,
-  sourceById: ReadonlyMap<number, DefeatSource>,
-  statusById: ReadonlyMap<number, EnemyStatusDraft>,
-  events: TickEvent[]
+  draft: DamageDraft,
+  statusById: ReadonlyMap<number, EnemyStatusDraft>
 ): ActiveEnemy[] =>
   moved.map((enemy) => {
     if (!enemy.alive) return enemy;
@@ -874,15 +842,15 @@ const resolveDamage = (
       status === undefined
         ? enemy
         : { ...enemy, groundedUntilTick: status.groundedUntilTick ?? enemy.groundedUntilTick };
-    const hp = hpById.get(enemy.id) ?? withStatus.hp;
+    const hp = draft.hpById.get(enemy.id) ?? withStatus.hp;
     if (hp > 0) return { ...withStatus, hp };
-    const source = sourceById.get(enemy.id);
-    // 撃破源が無い hp<=0 は論理的に起こり得ない（誰かが削った結果でしか 0 にならない）。
+    const source = draft.sourceById.get(enemy.id);
+    // 撃破源が無い hp<=0 は論理的に起こり得ない（削った者がいなければ 0 にならない）。
     // 万一起きた場合に defeat を握り潰すと集計が静かに壊れるため、契約違反として落とす。
     if (!source) {
       throw new Error(`撃破源が記録されていません: enemyId=${enemy.id}`);
     }
-    events.push({ kind: 'defeat', enemyId: enemy.id, source });
+    draft.events.push({ kind: 'defeat', enemyId: enemy.id, source });
     return { ...withStatus, hp: 0, alive: false };
   });
 
@@ -949,20 +917,17 @@ export const stepTick = (
   const survivingUnits = applyEnemyAttacks(blockCtx, moved, events);
 
   // --- 罠 → 射撃 → 業火・燠火の順で hpById に下書きし、最後にまとめて反映する ---
+  // 敵へのダメージはすべて applyDamage を通す（装甲と撃破源の帰属を1箇所で守る。反復7 段階2）
   const hpById = new Map<number, number>();
-  const sourceById: SourceById = new Map();
   moved.forEach((e) => hpById.set(e.id, e.hp));
+  const draft: DamageDraft = { hpById, sourceById: new Map(), events };
   const statusById = new Map<number, EnemyStatusDraft>();
-  const traps = applyTraps(
-    afterActions.traps, moved, hpById, sourceById, statusById, tick, map, events
-  );
-  const units = applyUnitShots(
-    state, survivingUnits, moved, map, hpById, sourceById, events, tick
-  );
-  applyBlasts(afterActions.blasts, moved, map, hpById, sourceById, tick);
+  const traps = applyTraps(afterActions.traps, moved, draft, { statusById, tick, map });
+  const units = applyUnitShots({ state, units: survivingUnits, moved }, draft, { map, tick });
+  applyBlasts(afterActions.blasts, moved, draft, { map, tick });
 
   // --- ダメージ・状態反映 → 漏れ ---
-  const damaged = resolveDamage(moved, hpById, sourceById, statusById, events);
+  const damaged = resolveDamage(moved, draft, statusById);
   const { settled, life } = resolveLeaks(damaged, map, state.life, events);
 
   // --- 溢れの対価（反復5・設計書 §5）---

@@ -42,6 +42,12 @@ export interface EnemySpec {
    * 難度を動かしたいときは waves.ts の数・タイミングを使うこと。
    */
   attackRange: number;
+  /**
+   * 装甲（反復7 段階2・設計書 §4.1）。1ヒットごとにこの値を引く（最低0）
+   *
+   * 省略は0。軽減は domain/combat/damage.ts の applyDamage だけが行う。
+   */
+  armor?: number;
 }
 
 const ENEMIES: readonly EnemySpec[] = [

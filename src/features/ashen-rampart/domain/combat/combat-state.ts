@@ -65,6 +65,8 @@ export interface ActiveEnemy {
  * 契約: **最後に削った者に帰属する**（オーバーキル分は問わない）。
  * 罠・射撃・業火は同じ tick 内で順に hpById を削るため、
  * 最後の書き込み者を記録する。
+ * **装甲で 0 に抑えられた命中は「削った」に数えない**（反復7 段階2・設計書 §4.2）。
+ * 書き込みは damage.ts の applyDamage だけが行う。
  */
 export type DefeatSource =
   | { kind: 'unit'; index: number }
@@ -85,6 +87,12 @@ export type TickEvent =
       beyondBaseRange: boolean;
     }
   | { kind: 'trap'; trapIndex: number; targetId: number }
+  /**
+   * 装甲を持つ敵への1ヒット（反復7 段階2・設計書 §4.3 #1 の表示の材料）
+   *
+   * `raw` は軽減前、`dealt` は実際に削った量（最低0）。装甲は1ヒットごとに引く。
+   */
+  | { kind: 'armor-hit'; enemyId: number; raw: number; dealt: number; armor: number }
   | { kind: 'ember'; emberIndex: number }
   | { kind: 'defeat'; enemyId: number; source: DefeatSource }
   | { kind: 'leak'; enemyId: number }
