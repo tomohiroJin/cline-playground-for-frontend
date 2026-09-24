@@ -25,7 +25,7 @@ describe('LocalStoragePlayLog', () => {
     const log = new LocalStoragePlayLog();
     log.record(runStarted);
     const exported = log.exportAll();
-    expect(exported.version).toBe(6);
+    expect(exported.version).toBe(7);
     expect(exported.events).toHaveLength(1);
     expect(exported.events[0]).toMatchObject(runStarted);
     expect(typeof exported.events[0].at).toBe('number');
@@ -47,7 +47,7 @@ describe('LocalStoragePlayLog', () => {
   it('破損データが保存されている場合は空ログにフォールバックする', () => {
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
     localStorage.setItem(PLAY_LOG_STORAGE_KEY, 'broken-json');
-    expect(new LocalStoragePlayLog().exportAll()).toEqual({ version: 6, events: [] });
+    expect(new LocalStoragePlayLog().exportAll()).toEqual({ version: 7, events: [] });
     expect(consoleSpy).toHaveBeenCalled();
   });
 
@@ -56,7 +56,7 @@ describe('LocalStoragePlayLog', () => {
       PLAY_LOG_STORAGE_KEY,
       JSON.stringify({ version: '1', events: [runStarted] })
     );
-    expect(new LocalStoragePlayLog().exportAll()).toEqual({ version: 6, events: [] });
+    expect(new LocalStoragePlayLog().exportAll()).toEqual({ version: 7, events: [] });
   });
 
   it('書き込みに失敗してもエラーを投げない', () => {
@@ -67,32 +67,32 @@ describe('LocalStoragePlayLog', () => {
     expect(() => new LocalStoragePlayLog().record(runStarted)).not.toThrow();
   });
 
-  it('スキーマは v6 で、キーも v6 になる', () => {
+  it('スキーマは v7 で、キーも v7 になる（反復7 段階2）', () => {
     const log = new LocalStoragePlayLog();
     log.record({ kind: 'run_note', runId: 'r1', text: 'テスト' });
-    expect(PLAY_LOG_STORAGE_KEY).toBe('ashen-rampart:play-log-v6');
-    expect(log.exportAll().version).toBe(6);
+    expect(PLAY_LOG_STORAGE_KEY).toBe('ashen-rampart:play-log-v7');
+    expect(log.exportAll().version).toBe(7);
   });
 
-  it('v4 のキーに残っていた旧データは読みに行かず、v6 は空から始まって壊れない', () => {
-    // v4 時代のキー名を直書きする（PLAY_LOG_STORAGE_KEY は既に v6 を指すため、
+  it('v4 のキーに残っていた旧データは読みに行かず、v7 は空から始まって壊れない', () => {
+    // v4 時代のキー名を直書きする（PLAY_LOG_STORAGE_KEY は既に v7 を指すため、
     // 旧データを再現するには文字列で直接書く必要がある）
     localStorage.setItem('ashen-rampart:play-log-v4', JSON.stringify({ version: 4, events: [runStarted] }));
     const log = new LocalStoragePlayLog();
-    // v6 キーには何もないため、v4 の内容とは無関係に空ログから始まる
-    expect(log.exportAll()).toEqual({ version: 6, events: [] });
+    // v7 キーには何もないため、v4 の内容とは無関係に空ログから始まる
+    expect(log.exportAll()).toEqual({ version: 7, events: [] });
     log.record(runStarted);
     expect(log.exportAll().events).toHaveLength(1);
     // v4 のキーは触れられず、そのまま残っている（移行処理は無いため）
     expect(localStorage.getItem('ashen-rampart:play-log-v4')).not.toBeNull();
   });
 
-  describe('スキーマ v6（反復6）', () => {
-    it('保存キーとスキーマ版が両方 v6 になっている', () => {
+  describe('スキーマ v7（反復7 段階2）', () => {
+    it('保存キーとスキーマ版が両方 v7 になっている', () => {
       const log = new LocalStoragePlayLog();
       log.record({ kind: 'run_note', runId: 'r1', text: 'x' });
-      expect(localStorage.getItem('ashen-rampart:play-log-v6')).not.toBeNull();
-      expect(log.exportAll().version).toBe(6);
+      expect(localStorage.getItem('ashen-rampart:play-log-v7')).not.toBeNull();
+      expect(log.exportAll().version).toBe(7);
     });
 
     it('旧スキーマ（v4）のキーは読まない', () => {
@@ -103,7 +103,20 @@ describe('LocalStoragePlayLog', () => {
       expect(new LocalStoragePlayLog().exportAll().events).toEqual([]);
     });
 
-    it('CURRENT_ITERATION は 7', () => {
+    it('段階1 の試遊ログ（v6 のキー）は読まず、消しもしない', () => {
+      // 段階1 のログは expedition_abandoned も duringCardSelection も持たない。
+      // 混ざると判定の集計が「記録が無い」と「起きていない」を区別できなくなる
+      localStorage.setItem(
+        'ashen-rampart:play-log-v6',
+        JSON.stringify({ version: 6, events: [{ kind: 'run_note', runId: 'old', text: 'x', at: 0 }] })
+      );
+      const log = new LocalStoragePlayLog();
+      expect(log.exportAll()).toEqual({ version: 7, events: [] });
+      log.record({ kind: 'run_note', runId: 'r1', text: 'y' });
+      expect(localStorage.getItem('ashen-rampart:play-log-v6')).not.toBeNull();
+    });
+
+    it('CURRENT_ITERATION は 7 のまま（段階2 は反復7 の中の変更）', () => {
       expect(CURRENT_ITERATION).toBe(7);
     });
   });
