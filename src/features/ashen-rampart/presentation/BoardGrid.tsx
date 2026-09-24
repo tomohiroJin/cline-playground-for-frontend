@@ -25,6 +25,13 @@ import { roleLabelOf } from './unit-visual';
 import { BoardEffectLayer } from './BoardEffectLayer';
 import type { Effect } from './combat-effects';
 import { COLORS } from './theme';
+import {
+  BOARD_COLORS,
+  CELL_ARROW_OPACITY,
+  LANE_MARK_OPACITY,
+  PLACEABLE_HALO_PX,
+  cellBackgroundOf,
+} from './board-colors';
 
 /**
  * 設置済みセルに常時描く印の上限（台座・文字・状態バー）
@@ -52,11 +59,14 @@ const Frame = styled.div<{ $columns: number; $rows: number }>`
 
 const Cell = styled.button<{ $kind: string; $highlighted: boolean }>`
   position: relative;
-  border: 1px solid ${COLORS.grid};
-  background: ${({ $kind }) => ($kind === 'path' ? '#2a2320' : '#211c19')};
+  border: 1px solid ${({ $kind }) => ($kind === 'path' ? BOARD_COLORS.pathEdge : COLORS.grid)};
+  background: ${({ $kind }) => cellBackgroundOf({ isPath: $kind === 'path', isThreatened: false })};
   outline: ${({ $highlighted }) =>
     $highlighted ? `2px solid ${COLORS.opportunity}` : 'none'};
   outline-offset: -2px;
+  /* 経路を明るくしたので、琥珀の縁取りの内側に暗い縁を敷いて琥珀を読ませる（§4.0 b） */
+  box-shadow: ${({ $highlighted }) =>
+    $highlighted ? `inset 0 0 0 ${PLACEABLE_HALO_PX}px ${BOARD_COLORS.placeableHalo}` : 'none'};
   cursor: ${({ $highlighted }) => ($highlighted ? 'pointer' : 'default')};
   color: ${COLORS.secondary};
   font-size: 11px;
@@ -91,7 +101,7 @@ const LaneMark = styled.span<{ $shape: 'circle' | 'square' }>`
   width: 5px;
   height: 5px;
   background: ${COLORS.secondary};
-  opacity: 0.6;
+  opacity: ${LANE_MARK_OPACITY};
   border-radius: ${({ $shape }) => ($shape === 'circle' ? '50%' : '1px')};
   pointer-events: none;
 `;
@@ -103,7 +113,7 @@ const CellArrow = styled.span`
   bottom: 1px;
   font-size: 10px;
   color: ${COLORS.secondary};
-  opacity: 0.7;
+  opacity: ${CELL_ARROW_OPACITY};
   pointer-events: none;
 `;
 
