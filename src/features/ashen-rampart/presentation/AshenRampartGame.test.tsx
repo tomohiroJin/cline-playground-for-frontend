@@ -23,6 +23,7 @@
 import React from 'react';
 import { render, screen, fireEvent, act, waitFor, within } from '@testing-library/react';
 import { AshenRampartGame, HEADER_CLEARANCE } from './AshenRampartGame';
+import { EXPEDITION_ENDED_HEADING } from './ExpeditionSummary';
 import { PLAY_LOG_STORAGE_KEY } from '../infrastructure/play-log/local-storage-play-log';
 import type { PlayLogExport } from '../application/ports/play-log-port';
 import { TICK_INTERVAL_MS } from './useAshenRampartGame';
@@ -58,7 +59,14 @@ const startRunning = (presetLabel: RegExp = /速攻型 を読み込む/, seedTex
 const ADVANCE_STEP_TICKS = 50;
 /** 3ステージ × 1ステージ最長 1200 tick を 50 tick 刻みで進め、決着ボタンと獲得の操作ぶんを足した上限 */
 const MAX_ADVANCE_STEPS = 100;
-const SUMMARY_HEADING = /遠征を踏破した|遠征は層\d で潰えた/;
+/**
+ * 遠征が終わったことを示す見出し（PR #211 Fix C）
+ *
+ * 振り返りを記録する前は勝敗・到達層のどちらも読めない EXPEDITION_ENDED_HEADING
+ * だけが出る。ここでは「遠征が終わったか」だけを判定したいので、記録前の
+ * この見出しで判定すれば十分（結果そのもの `遠征を踏破した` 等は記録後にしか出ない）
+ */
+const SUMMARY_HEADING = EXPEDITION_ENDED_HEADING;
 
 const isExpeditionOver = (): boolean => screen.queryByText(SUMMARY_HEADING) !== null;
 

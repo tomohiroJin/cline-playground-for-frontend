@@ -15,6 +15,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ExpeditionView } from './ExpeditionView';
 import { markBriefingSeen } from './briefing-seen';
+import { EXPEDITION_ENDED_HEADING } from './ExpeditionSummary';
 import { PRESET_DECKS } from '../domain/cards/card-pool';
 import type { StageViewProps } from './StageView';
 import { HEADER_CLEARANCE } from './layout-constants';
@@ -57,6 +58,12 @@ const chooseFirstOffer = (): void => {
   fireEvent.click(screen.getAllByRole('button', { name: / を加える$/ })[0]!);
 };
 
+/** 遠征の結果画面で振り返りを記録する（記録するまで到達層・勝敗は伏せられている） */
+const submitExpeditionNote = (text = 'テスト用の記録'): void => {
+  fireEvent.change(screen.getByLabelText(/遠征の振り返りを記録する/), { target: { value: text } });
+  fireEvent.click(screen.getByRole('button', { name: '記録する' }));
+};
+
 describe('ExpeditionView（Fix Round 2: ステージ跨ぎの遷移を決定的に検査する）', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -83,7 +90,7 @@ describe('ExpeditionView（Fix Round 2: ステージ跨ぎの遷移を決定的�
     expect(mockStageViewMounts).toBe(2);
   });
 
-  it('2回勝って獲得すると最終ステージ（最終:true）になり、そこで勝つと「遠征を踏破した」が出る', () => {
+  it('2回勝って獲得すると最終ステージ（最終:true）になり、そこで勝つと結果は伏せられ、記録すると「遠征を踏破した」が出る', () => {
     render(<ExpeditionView cards={SWIFT_CARDS} seed={SEED} onRetry={jest.fn()} onRebuild={jest.fn()} />);
 
     fireEvent.click(screen.getByRole('button', { name: '勝ったことにする' }));
@@ -97,16 +104,25 @@ describe('ExpeditionView（Fix Round 2: ステージ跨ぎの遷移を決定的�
 
     fireEvent.click(screen.getByRole('button', { name: '勝ったことにする' }));
 
+    // 振り返りを記録するまでは、踏破したことも読めない見出しだけが出る
+    expect(screen.getByText(EXPEDITION_ENDED_HEADING)).toBeInTheDocument();
+    expect(screen.queryByText('遠征を踏破した')).not.toBeInTheDocument();
+
+    submitExpeditionNote();
     expect(screen.getByText('遠征を踏破した')).toBeInTheDocument();
   });
 
-  it('層1 で負けると獲得を経ずに「遠征は層1 で潰えた」が出る', () => {
+  it('層1 で負けると獲得を経ずに結果は伏せられ、記録すると「遠征は層1 で潰えた」が出る', () => {
     render(<ExpeditionView cards={SWIFT_CARDS} seed={SEED} onRetry={jest.fn()} onRebuild={jest.fn()} />);
 
     fireEvent.click(screen.getByRole('button', { name: '負けたことにする' }));
 
-    expect(screen.getByText('遠征は層1 で潰えた')).toBeInTheDocument();
+    expect(screen.getByText(EXPEDITION_ENDED_HEADING)).toBeInTheDocument();
+    expect(screen.queryByText('遠征は層1 で潰えた')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: / を加える$/ })).not.toBeInTheDocument();
+
+    submitExpeditionNote();
+    expect(screen.getByText('遠征は層1 で潰えた')).toBeInTheDocument();
   });
 
   it('獲得の画面にフローティングホームボタンぶんの上部余白がある（最終レビュー指摘 I1）', () => {

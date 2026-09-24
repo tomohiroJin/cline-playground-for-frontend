@@ -5,6 +5,11 @@
  * 集計」を遠征単位へ移したもの。結果（獲得した札・到達した層）を先に見せると、
  * 振り返り（反復7の判定項目8・9(a) の材料）が結果に引きずられる。
  *
+ * 敵対的検証（PR #211 Fix C）: 見出しに `expeditionHeadline` を直接出すと、
+ * 記録前でも勝敗と到達層が読めてしまい、docstring の意図と矛盾していた。
+ * 記録前は勝敗・到達層のどちらも読めない `EXPEDITION_ENDED_HEADING` だけを出し、
+ * 記録後（`isUnlocked`）に初めて `expeditionHeadline` の結果行を開く。
+ *
  * 「説明をもう一度見る」は反復1 から持ち越した minor（5回目）を閉じる導線。
  */
 import React, { useState } from 'react';
@@ -16,6 +21,9 @@ import { COLORS } from './theme';
 import { HEADER_CLEARANCE } from './layout-constants';
 
 export const COPY_LOG_LABEL = '判定用の記録をコピー（3遠征分まとまっています）';
+
+/** 振り返りを記録するまで出す見出し。勝敗・到達層のどちらも読めない文言にする */
+export const EXPEDITION_ENDED_HEADING = '遠征が終わった';
 
 export const expeditionHeadline = (exp: ExpeditionState): string =>
   exp.outcome === 'cleared' ? '遠征を踏破した' : `遠征は層${currentStage(exp)?.tier ?? '?'} で潰えた`;
@@ -114,7 +122,7 @@ export const ExpeditionSummary: React.FC<ExpeditionSummaryProps> = ({
 
   return (
     <Layout data-testid="ashen-rampart-expedition-summary">
-      <h2>{expeditionHeadline(expedition)}</h2>
+      <h2>{isUnlocked ? expeditionHeadline(expedition) : EXPEDITION_ENDED_HEADING}</h2>
       <NoteForm onSubmit={handleSubmit}>
         <label htmlFor="ashen-rampart-expedition-note">遠征の振り返りを記録する（記録すると結果が開きます）</label>
         <NoteInput

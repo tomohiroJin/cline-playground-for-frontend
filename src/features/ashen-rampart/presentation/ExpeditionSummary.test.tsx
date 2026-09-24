@@ -1,6 +1,6 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { ExpeditionSummary, COPY_LOG_LABEL, expeditionHeadline } from './ExpeditionSummary';
+import { ExpeditionSummary, COPY_LOG_LABEL, EXPEDITION_ENDED_HEADING, expeditionHeadline } from './ExpeditionSummary';
 import { PRESET_DECKS, getCardDefinition } from '../domain/cards/card-pool';
 import {
   chooseAcquisition,
@@ -50,10 +50,18 @@ describe('ExpeditionSummary', () => {
   it('振り返りを記録するまで結果とボタンは伏せる（記録が結果に引きずられないように）', () => {
     renderSummary(failedAtTier2());
 
-    expect(screen.getByText('遠征は層2 で潰えた')).toBeInTheDocument();
+    // 記録前は勝敗・到達層が一切わからない見出しだけを出す
+    expect(screen.getByText(EXPEDITION_ENDED_HEADING)).toBeInTheDocument();
+    expect(screen.queryByText(/潰えた/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/踏破/)).not.toBeInTheDocument();
     expect(screen.queryByText(/獲得した札/)).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: COPY_LOG_LABEL })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '同じデッキで別のシードに挑む' })).not.toBeInTheDocument();
+
+    submitNote('層2 の鴉で崩れた');
+
+    // 記録後は結果（到達した層）が開く
+    expect(screen.getByText('遠征は層2 で潰えた')).toBeInTheDocument();
   });
 
   it('記録すると onNote に渡り、結果（獲得した札）と各ボタンが開く', () => {
