@@ -58,7 +58,13 @@ interface Cell {
   unmeasurable: string;
 }
 
-/** そのデッキに貫通する札が含まれるか（含むと anti-air は測定不能） */
+/**
+ * そのデッキに貫通する札が含まれるか（含むと anti-air は測定不能とする既存ルール）
+ *
+ * 反復7 段階2 で `applyPiercingDamage` が `canTowerHit` を通すようになり、
+ * 前提だった「貫通が飛行を絞らない」欠陥（§8.2.15(a)5）自体は解消した。
+ * この判定ロジックとメッセージは当タスクの範囲外のため変えていない（再測定は別途）。
+ */
 const hasPiercingCard = (cards: readonly string[]): boolean =>
   cards.some((id) => getCardDefinition(id).tower?.piercing === true);
 
@@ -122,8 +128,10 @@ const unmeasurableReason = (
   if (axis === 'mass-answer' && cards.includes('ember-blast')) {
     return '再点火が基礎札を読む（§8.2.15(a)2）';
   }
+  // 反復7 段階2 で解消済みの欠陥（前提コメント参照）。ロジックは変えず、
+  // メッセージだけ最新の状況に合わせる
   if (axis === 'anti-air' && hasPiercingCard(cards)) {
-    return '貫通が飛行を絞らない（§8.2.15(a)5）';
+    return '貫通する札を含む（§8.2.15(a)5 の欠陥は解消済み。この道具はまだ未更新）';
   }
   if (axis === 'heavy-hit' && !heavyHitDpsPreserved(cards, map)) {
     return '丸めで実効DPSがずれる（§8.2.15(a)6）';
