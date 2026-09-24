@@ -14,6 +14,10 @@
  * まだ検査していない**（それは段階D の不変条件 C1 の仕事）。
  * G1 が「差が出ない」と判定した場合、原因が機構なのか
  * 「暫定台本が軸を要求していないこと」なのかを先に切り分けること。
+ *
+ * **反復7 段階2 で新敵を足した**（設計書 §4.1）。層1 は変えない。層2 に届いた遠征は
+ * 必ず盾衛か癒し手に、層3 では両方に出会う。数値は暫定で、段階3 で本番の6ステージに
+ * 置き換え、段階4 で較正する。射程を持つ盾衛は北レーンにだけ出す（enemies.test.ts）。
  */
 import { PLAINS_MAP } from '../board/stage-map';
 import type { WaveDefinition } from '../combat/waves';
@@ -37,14 +41,28 @@ const tier1Swarm: WaveDefinition[] = [
 
 const tier2Swarm: WaveDefinition[] = [
   { startTick: 0, entries: [{ enemyId: 'grunt', count: 2, spawnIntervalTicks: 8, laneIndex: 0 }] },
-  { startTick: 200, entries: [{ enemyId: 'runner', count: 3, spawnIntervalTicks: 6, laneIndex: 1 }] },
+  {
+    startTick: 200,
+    entries: [
+      { enemyId: 'runner', count: 3, spawnIntervalTicks: 6, laneIndex: 1 },
+      // 反復7 段階2: 盾衛（装甲4）。射程を持つので北レーン
+      { enemyId: 'warden', count: 2, spawnIntervalTicks: 20, laneIndex: 0 },
+    ],
+  },
   { startTick: 340, entries: [{ enemyId: 'swarm', count: 12, spawnIntervalTicks: 1, laneIndex: 1 }] },
 ];
 
 const tier2Raven: WaveDefinition[] = [
   { startTick: 0, entries: [{ enemyId: 'grunt', count: 2, spawnIntervalTicks: 8, laneIndex: 0 }] },
   { startTick: 200, entries: [{ enemyId: 'runner', count: 3, spawnIntervalTicks: 6, laneIndex: 1 }] },
-  { startTick: 340, entries: [{ enemyId: 'raven', count: 8, spawnIntervalTicks: 18, laneIndex: 1 }] },
+  {
+    startTick: 340,
+    entries: [
+      { enemyId: 'raven', count: 8, spawnIntervalTicks: 18, laneIndex: 1 },
+      // 反復7 段階2: 癒し手。鴉と同じ南レーンで、追い越していく鴉を回復する
+      { enemyId: 'mender', count: 2, spawnIntervalTicks: 40, laneIndex: 1 },
+    ],
+  },
 ];
 
 const tier3Raven: WaveDefinition[] = [
@@ -56,6 +74,9 @@ const tier3Raven: WaveDefinition[] = [
       { enemyId: 'brute', count: 3, spawnIntervalTicks: 15, laneIndex: 0 },
       { enemyId: 'raven', count: 6, spawnIntervalTicks: 18, laneIndex: 1 },
       { enemyId: 'grunt', count: 3, spawnIntervalTicks: 8, laneIndex: 0 },
+      // 反復7 段階2: 盾衛と癒し手を北レーンに出す（速度が違うので、癒し手が盾衛を回復するのは壁で止めたときに限られる）
+      { enemyId: 'warden', count: 2, spawnIntervalTicks: 20, laneIndex: 0 },
+      { enemyId: 'mender', count: 1, spawnIntervalTicks: 1, laneIndex: 0 },
     ],
   },
 ];
@@ -68,6 +89,9 @@ const tier3Swarm: WaveDefinition[] = [
     entries: [
       { enemyId: 'brute', count: 4, spawnIntervalTicks: 15, laneIndex: 0 },
       { enemyId: 'swarm', count: 10, spawnIntervalTicks: 1, laneIndex: 1 },
+      // 反復7 段階2: 盾衛と癒し手を北レーンに出す（速度が違うので、癒し手が盾衛を回復するのは壁で止めたときに限られる）
+      { enemyId: 'warden', count: 2, spawnIntervalTicks: 20, laneIndex: 0 },
+      { enemyId: 'mender', count: 1, spawnIntervalTicks: 1, laneIndex: 0 },
     ],
   },
 ];
