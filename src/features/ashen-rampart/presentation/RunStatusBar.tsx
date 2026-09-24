@@ -10,15 +10,45 @@ import type { CombatState } from '../domain/combat/combat-state';
 import { nextWavePreview } from './wave-preview';
 import { COLORS } from './theme';
 
+/** 1行目（ライフ・危険・一時停止）。一時停止ボタンの最小タップ高 44px に合わせる */
+export const STATUS_TOP_ROW_PX = 44;
+/** 2行目（次ウェーブ予告）。2行ぶんを常に予約し、3行目以降は隠す */
+export const STATUS_PREVIEW_ROW_PX = 40;
+/** 3行目（ライフが減った理由・シード）。シード欄の高さ 32px に合わせる */
+export const STATUS_REASON_ROW_PX = 32;
+const STATUS_LINE_HEIGHT_PX = 20;
+
+/**
+ * 状態帯（反復7 段階2・設計書 §4.0 a）
+ *
+ * 段階1 までは flex-wrap の1行に「危険」「ライフが減った理由」を足していたため、
+ * 幅によって行が増えて盤面が下がった。行の数と高さを固定したグリッドにし、
+ * 一時表示は空でも同じ欄を占める。はみ出す文字は省略記号で切る（title で全文を読める）。
+ */
 const Bar = styled.div`
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: ${STATUS_TOP_ROW_PX}px ${STATUS_PREVIEW_ROW_PX}px ${STATUS_REASON_ROW_PX}px;
   align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
+  column-gap: 12px;
   padding: 8px;
   background: ${COLORS.dominant};
   color: ${COLORS.secondary};
   border-bottom: 1px solid ${COLORS.grid};
+`;
+
+const SingleLine = styled.span`
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+const PreviewLine = styled.span`
+  grid-column: 1 / -1;
+  align-self: stretch;
+  line-height: ${STATUS_LINE_HEIGHT_PX}px;
+  overflow: hidden;
 `;
 
 const Life = styled.span<{ $danger: boolean }>`
@@ -29,7 +59,6 @@ const Life = styled.span<{ $danger: boolean }>`
 const PauseButton = styled.button`
   min-height: 44px;
   padding: 0 12px;
-  margin-left: auto;
   background: transparent;
   color: ${COLORS.secondary};
   border: 1px solid ${COLORS.secondary};
@@ -85,13 +114,18 @@ export const RunStatusBar: React.FC<Props> = ({
   const danger = state.life <= DANGER_LIFE || isLeaking;
 
   return (
-    <Bar>
-      <span>
-        砦 <Life $danger={danger} data-leaking={isLeaking}>残り {state.life}</Life>
-      </span>
-      {danger && <span>危険</span>}
-      {lifeLossReason && <span>{lifeLossReason}</span>}
-      <span>次: {preview}</span>
+    <Bar data-testid="run-status-bar">
+      <SingleLine>
+        砦 <Life $danger={danger} data-leaking={isLeaking}>残り {state.life}</Life>{' '}
+        <span data-testid="danger-slot">{danger ? '危険' : ''}</span>
+      </SingleLine>
+      <PauseButton type="button" onClick={onTogglePause}>
+        {isPaused ? '再開' : '一時停止'}
+      </PauseButton>
+      <PreviewLine>次: {preview}</PreviewLine>
+      <SingleLine data-testid="life-loss-reason-slot" title={lifeLossReason}>
+        {lifeLossReason ?? ''}
+      </SingleLine>
       <span>
         <label htmlFor="ashen-rampart-run-seed">シード</label>
         <SeedField
@@ -102,9 +136,6 @@ export const RunStatusBar: React.FC<Props> = ({
           onFocus={(event) => event.currentTarget.select()}
         />
       </span>
-      <PauseButton type="button" onClick={onTogglePause}>
-        {isPaused ? '再開' : '一時停止'}
-      </PauseButton>
     </Bar>
   );
 };

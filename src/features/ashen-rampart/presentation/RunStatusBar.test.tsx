@@ -5,10 +5,11 @@
  */
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { RunStatusBar } from './RunStatusBar';
+import { RunStatusBar, STATUS_TOP_ROW_PX, STATUS_PREVIEW_ROW_PX, STATUS_REASON_ROW_PX } from './RunStatusBar';
 import { createCombatState } from '../domain/combat/combat-state';
 import { PLAINS_WAVES } from '../domain/combat/waves';
 import { createDeck } from '../domain/cards/deck';
+import { appliedValueOf } from './applied-css';
 
 const state = createCombatState({ drawPile: [], hand: [], graveyard: [] }, PLAINS_WAVES);
 
@@ -126,6 +127,39 @@ describe('RunStatusBar', () => {
       );
       expect(screen.queryByText(/手札があふれ/)).not.toBeInTheDocument();
       expect(screen.queryByText(/砦に到達/)).not.toBeInTheDocument();
+    });
+  });
+
+  describe('高さを予約した枠（反復7 段階2・設計書 §4.0 a）', () => {
+    it('危険と理由の欄は空でも描かれ、3行の高さは固定される', () => {
+      render(<RunStatusBar state={state} isPaused={false} onTogglePause={jest.fn()} runSeed={1} />);
+
+      expect(screen.getByTestId('danger-slot')).toBeEmptyDOMElement();
+      expect(screen.getByTestId('life-loss-reason-slot')).toBeEmptyDOMElement();
+      expect(appliedValueOf(screen.getByTestId('run-status-bar'), 'grid-template-rows')).toBe(
+        `${STATUS_TOP_ROW_PX}px ${STATUS_PREVIEW_ROW_PX}px ${STATUS_REASON_ROW_PX}px`
+      );
+    });
+
+    it('理由が出ても同じ欄に入り、欄の数は変わらない', () => {
+      const { container, rerender } = render(
+        <RunStatusBar state={state} isPaused={false} onTogglePause={jest.fn()} runSeed={1} />
+      );
+      const before = container.querySelectorAll('[data-testid="run-status-bar"] > *').length;
+
+      rerender(
+        <RunStatusBar
+          state={{ ...state, life: 2 }}
+          isPaused={false}
+          onTogglePause={jest.fn()}
+          runSeed={1}
+          lifeLossReason="敵が砦に到達しました"
+        />
+      );
+
+      expect(screen.getByTestId('life-loss-reason-slot')).toHaveTextContent('敵が砦に到達しました');
+      expect(screen.getByTestId('danger-slot')).toHaveTextContent('危険');
+      expect(container.querySelectorAll('[data-testid="run-status-bar"] > *').length).toBe(before);
     });
   });
 });

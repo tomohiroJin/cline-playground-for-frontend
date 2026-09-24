@@ -18,7 +18,7 @@ import { useAshenRampartGame } from './useAshenRampartGame';
 import { RunStatusBar } from './RunStatusBar';
 import { BoardGrid } from './BoardGrid';
 import { HandArea } from './HandArea';
-import { InspectPanel } from './InspectPanel';
+import { BoardInfoSlot } from './BoardInfoSlot';
 import { EnemyLegend } from './EnemyLegend';
 import { LevyChoice } from './LevyChoice';
 import { BattleAnnouncer } from './BattleAnnouncer';
@@ -35,34 +35,19 @@ const Layout = styled.div`
   color: ${COLORS.secondary};
 `;
 
+/**
+ * 盤面・盤面の下の枠・凡例・決着
+ *
+ * `flex: 1` を持たせない（反復7 段階2・設計書 §4.0 a）。持たせると、中身が
+ * Layout の min-height（70vh）未満のとき手札が伸びた分だけ Center が縮み、
+ * 手札の上端が上がる。
+ */
 const Center = styled.div`
-  flex: 1;
   padding: 12px;
 `;
 
 const BoardWrapper = styled.div`
   position: relative;
-`;
-
-/**
- * 拒否理由の色トーン
- *
- * 拒否は「不便」であって砦が削られる「本当の危険」ではないため、赤は使わない。
- * 赤（danger / dangerText）はライフが削られる場面に予約されている
- * （theme.ts）。手札溢れ通知（HandArea.tsx の Notice）も同じ理由で opportunity
- * を使っており、それと揃えた。
- *
- * この定数から色（RejectionNotice の color）と data-tone 属性の両方を導出する。
- * 片方だけを変更できてしまうと「テストは緑だが検証している中身が違う」欠陥に
- * なるため、出どころを1つに絞っている。
- */
-const REJECTION_NOTICE_TONE = 'opportunity' as const;
-
-/** 拒否理由。盤面直下に置く（原因は盤面クリックなので視線が盤面にあるため） */
-const RejectionNotice = styled.p`
-  margin: 4px 0 0;
-  color: ${COLORS[REJECTION_NOTICE_TONE]};
-  text-align: center;
 `;
 
 const Result = styled.div`
@@ -146,6 +131,8 @@ export const StageView: React.FC<StageViewProps> = ({
 
   return (
     <Layout data-testid="ashen-rampart-layout" data-header-clearance={HEADER_CLEARANCE}>
+      {/* 徴発は構築・獲得の両プールから外れており（availability: 'retired'）遠征では描画されない。
+          盤面の上に残すが高さは変わらない（反復7 段階2 §4.0 a。§3.5 により徴発の UI は触らない） */}
       <LevyChoice options={game.levyOptions} onChoose={game.chooseLevy} disabled={isLevyBlocked} />
       {banner}
       <RunStatusBar
@@ -158,7 +145,7 @@ export const StageView: React.FC<StageViewProps> = ({
       />
       <Center>
         <BattleAnnouncer message={game.announcement} />
-        <BoardWrapper>
+        <BoardWrapper data-testid="board-wrapper">
           <BoardGrid
             map={game.map}
             state={game.state}
@@ -169,10 +156,7 @@ export const StageView: React.FC<StageViewProps> = ({
           />
           <CountdownDisplay tick={game.state.tick} />
         </BoardWrapper>
-        {game.rejectionNotice && (
-          <RejectionNotice data-tone={REJECTION_NOTICE_TONE}>{game.rejectionNotice}</RejectionNotice>
-        )}
-        {game.inspectedPlate && <InspectPanel plate={game.inspectedPlate} />}
+        <BoardInfoSlot rejectionNotice={game.rejectionNotice} inspectedPlate={game.inspectedPlate} />
         <EnemyLegend />
         {game.state.outcome !== 'playing' && (
           <Result>

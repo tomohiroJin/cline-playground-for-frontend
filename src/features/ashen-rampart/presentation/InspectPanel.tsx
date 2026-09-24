@@ -11,19 +11,31 @@ import { getCardDefinition } from '../domain/cards/card-pool';
 import { roleLabelOf } from './unit-visual';
 import { toSeconds } from './card-text';
 import { COLORS } from './theme';
+import { INSPECT_ROW_HEIGHT_PX } from './layout-constants';
 
+/**
+ * 能力表示の1行（反復7 段階2・設計書 §4.0 a）
+ *
+ * 高さを固定し、チップは折り返さず横へ流す（狭い画面では横にスクロールして読む）。
+ * 折り返すと、開くたびに枠の高さが変わって手札が動く。
+ */
 const Panel = styled.div`
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 6px;
-  padding: 6px 8px;
+  height: ${INSPECT_ROW_HEIGHT_PX}px;
+  box-sizing: border-box;
+  padding: 0 8px;
+  overflow-x: auto;
+  white-space: nowrap;
   color: ${COLORS.secondary};
   border: 1px solid ${COLORS.grid};
   border-radius: 4px;
 `;
 
 const Chip = styled.span`
+  flex-shrink: 0;
   font-size: 11px;
   opacity: 0.9;
 `;
