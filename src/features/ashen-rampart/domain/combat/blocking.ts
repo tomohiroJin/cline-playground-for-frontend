@@ -113,22 +113,26 @@ export const attackTargetIndexFor = (
 export const MAX_ATTACKERS_PER_UNIT = 3;
 
 /**
- * その守り手を殴っている敵（進行度の高い順に上限まで）
+ * その守り手を殴っている敵（ブロックしている敵を優先し、上限まで）
  *
- * **既知の非対称（設計書 §12.1.1 の申し送り。この反復では直さない）**:
- * 上限を `progress` 降順で切るため、**壁を通り過ぎた敵が、実際に壁でブロックされて
- * いる敵を枠から押し出す。** 実測では壁の手前で止まった雑兵3体がダメージ0 で、
- * 通り過ぎた雑兵3体だけが壁を殴っていた。設計書 §4.1 は標的の選択（ブロッカー優先）
- * しか規定していないため契約違反ではないが、石壁が受ける摩耗が想定より減る方向に効く。
- * 直すなら「ブロックしている敵を優先し、残り枠を射程攻撃者で埋める」形になるが、
- * `balance.test.ts` の不変条件5本を全部測り直すことになるため次の反復で扱う。
+ * **反復7 段階2 でブロック優先に直した**（設計書 §4.2 (3)・反復5 §12.1.1 の申し送り）。
+ * 以前は上限を `progress` 降順だけで切っていたため、壁を通り過ぎて射程で殴る敵が、
+ * 実際に壁でブロックされている敵を枠から押し出していた（実測では壁の手前の雑兵3体が
+ * ダメージ0 だった）。石壁の摩耗が想定より減る方向に効く。
+ *
+ * 直さなかった理由は「balance.test.ts の不変条件を測り直すことになる」だったが、
+ * 段階4 で較正を全面やり直すので解除条件は満たされている。
+ *
+ * 並び: 自分をブロックしている敵（進行度の高い順）→ 射程で殴る敵（進行度の高い順）。
  */
 export const attackersFor = (
   ctx: BlockContext,
   enemies: readonly ActiveEnemy[],
   unitIndex: number
-): ActiveEnemy[] =>
-  enemies
-    .filter((e) => attackTargetIndexFor(ctx, e) === unitIndex)
-    .sort((a, b) => b.progress - a.progress)
-    .slice(0, MAX_ATTACKERS_PER_UNIT);
+): ActiveEnemy[] => {
+  const byProgress = (a: ActiveEnemy, b: ActiveEnemy): number => b.progress - a.progress;
+  const targeting = enemies.filter((e) => attackTargetIndexFor(ctx, e) === unitIndex);
+  const blocked = targeting.filter((e) => blockerIndexFor(ctx, e) === unitIndex).sort(byProgress);
+  const ranged = targeting.filter((e) => blockerIndexFor(ctx, e) !== unitIndex).sort(byProgress);
+  return [...blocked, ...ranged].slice(0, MAX_ATTACKERS_PER_UNIT);
+};
