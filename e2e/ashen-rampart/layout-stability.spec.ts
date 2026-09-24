@@ -36,6 +36,11 @@ interface Sample {
   label: string;
   board: number;
   hand: number;
+  /** 拒否理由・手札通知・ライフ減少理由・危険表示の中身（何も出ていなければ空文字） */
+  rejectionLine: string;
+  handNotice: string;
+  lifeLossReason: string;
+  dangerSlot: string;
 }
 
 const startExpedition = async (page: Page): Promise<void> => {
@@ -53,17 +58,28 @@ const startExpedition = async (page: Page): Promise<void> => {
   await expect(page.getByTestId('board-wrapper')).toBeVisible();
 };
 
-/** 盤面と手札の上端（文書座標・px） */
+/**
+ * 盤面と手札の上端（文書座標・px）に加え、一時表示4枠の中身を記録する
+ *
+ * 位置だけでは「一時表示を起こしながら測ったか」が残らない（修正ラウンド1・
+ * レビュー指摘 Important 2）。枠の中身も毎回サンプルへ残し、後続の表明と
+ * 添付JSONの両方で「実際に一時表示が出た」ことを検証できるようにする。
+ */
 const measure = async (page: Page, label: string): Promise<Sample> => {
-  const tops = await page.evaluate(() => {
+  const result = await page.evaluate(() => {
     const topOf = (el: Element | null): number =>
       el ? el.getBoundingClientRect().top + window.scrollY : Number.NaN;
+    const textOf = (el: Element | null): string => el?.textContent ?? '';
     return {
       board: topOf(document.querySelector('[data-testid="board-wrapper"]')),
       hand: topOf(document.querySelector('[role="group"][aria-label="手札"]')),
+      rejectionLine: textOf(document.querySelector('[data-testid="rejection-line"]')),
+      handNotice: textOf(document.querySelector('[data-testid="hand-notice-slot"]')),
+      lifeLossReason: textOf(document.querySelector('[data-testid="life-loss-reason-slot"]')),
+      dangerSlot: textOf(document.querySelector('[data-testid="danger-slot"]')),
     };
   });
-  return { label, ...tops };
+  return { label, ...result };
 };
 
 /** 決着パネルが出たら「戦闘中」ではないので測らない */
@@ -71,6 +87,9 @@ const isPlaying = async (page: Page): Promise<boolean> =>
   (await page.getByRole('button', { name: /獲得へ進む|遠征の結果へ/ }).count()) === 0;
 
 const spreadOf = (values: readonly number[]): number => Math.max(...values) - Math.min(...values);
+
+/** どのサンプルかで一度でも中身が入っていたか（一時表示が実際に起きたかの表明に使う） */
+const wasEverShown = (values: readonly string[]): boolean => values.some((value) => value.trim().length > 0);
 
 for (const viewport of VIEWPORTS) {
   test(`${viewport.name}: 戦闘中に盤面と手札の上端が動かない`, async ({ page }, testInfo) => {
@@ -82,9 +101,11 @@ for (const viewport of VIEWPORTS) {
     await page.getByRole('button', { name: /弩砲 コスト2/ }).click();
     samples.push(await measure(page, '札を選択'));
 
-    // 砦のセルに置こうとして拒否理由を出す
+    // 砦のセルに置こうとして拒否理由を出す。表示は REJECTION_NOTICE_TICKS(6 tick=600ms)
+    // しか保たないため、固定の待ちではなく「出たこと」を表明してから測る
+    // （修正ラウンド1・レビュー指摘 Important 1。固定待ちだと出ないまま緑になりうる）
     await page.getByTestId('cell-8-3').click();
-    await page.waitForTimeout(SETTLE_MS);
+    await expect(page.getByTestId('rejection-line')).not.toBeEmpty();
     samples.push(await measure(page, '拒否理由'));
 
     // 経路外の (4,0) に置き、そのセルをタップして能力表示を開く。
@@ -113,5 +134,11 @@ for (const viewport of VIEWPORTS) {
     expect(samples.length).toBeGreaterThan(OBSERVE_SECONDS / 2);
     expect(spreadOf(samples.map((s) => s.board))).toBe(0);
     expect(spreadOf(samples.map((s) => s.hand))).toBe(0);
+
+    // 位置が動かなかったことだけでは「一時表示を起こしながら測ったか」が分からない
+    // （修正ラウンド1・レビュー指摘 Important 2）。手札の上の通知とライフ減少理由が
+    // 30秒の観測のうちどこかで実際に出たことを表明する
+    expect(wasEverShown(samples.map((s) => s.handNotice))).toBe(true);
+    expect(wasEverShown(samples.map((s) => s.lifeLossReason))).toBe(true);
   });
 }
