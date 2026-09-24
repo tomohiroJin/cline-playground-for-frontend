@@ -1,0 +1,16 @@
+{
+  "measuredAt": "2026-09-24",
+  "viewport": { "width": 360, "height": 740 },
+  "deck": "速攻型",
+  "seed": 748559145,
+  "seedReason": "開始手札が塔3枚（弩砲・徹甲弩・火砲台）で、手札の幅の最悪ケース",
+  "procedure": "反復4 §6.1（1: 属性バッジ2→1 / 2: 属性バッジを落とす / 3: 主要数値2→1）。形アイコン・名前・コストは削らない",
+  "steps": [
+    { "step": 0, "commit": "fc373bc4", "cardsPerRow": 1, "result": "fail", "note": "手札が1行1枚に折り返す（§6.1 の発動条件）" },
+    { "step": 1, "commit": "c95432af", "cardsPerRow": 1, "result": "fail", "note": "シード固定後に測り直した値。固定前の a624f45f はランダムシードで魔力炉2枚が並び偶然 pass した" },
+    { "step": 2, "commit": "048f4d1c", "cardsPerRow": 1, "result": "fail" },
+    { "step": 3, "commit": "b4370d1a", "cardsPerRow": 2, "result": "pass", "scrollWidth": 360, "cardTops": [640, 640, 697],
+      "handCardNames": ["攻撃塔 弩砲 コスト2", "攻撃塔 徹甲弩 コスト4", "攻撃塔 火砲台 コスト3"] }
+  ],
+  "conclusion": "手順3 まで適用して初めて最悪ケースで1行2枚になった。最終レビュー後（a81342ff）は幅 480px 以下でだけ属性バッジと2つ目の数値を隠す（DOM には残る）。同じシードで再計測して cardsPerRow=2・scrollWidth=360 を確認した"
+}

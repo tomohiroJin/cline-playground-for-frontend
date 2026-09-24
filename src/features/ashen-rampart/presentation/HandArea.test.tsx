@@ -125,13 +125,20 @@ describe('HandArea', () => {
     expect(onDiscard).toHaveBeenCalledWith(0);
   });
 
-  it('手札のカードに形アイコン・数値・バッジが出る', () => {
+  it('手札のカードに形アイコン・名前・両方の主要数値・属性バッジが出る（最終レビュー指摘 I2）', () => {
     // 手札に徹甲弩がある状態で描画する（既存のセットアップ流儀に合わせること）
     render(
       <HandArea state={stateWith(['piercer'])} selectedIndex={null} onSelect={jest.fn()} onDiscard={jest.fn()} />
     );
     expect(screen.getByTestId('card-glyph-piercer')).toBeInTheDocument();
+    // DOM には両方の主要数値（cardStatsOf の HP14・攻撃14）を常に出す。
+    // 狭い画面（HAND_NARROW_MAX_WIDTH 以下）でだけ2つ目を隠す CSS が付くが、
+    // jsdom はメディアクエリを解釈しないためここでは検査できない。
+    // 実際に隠れることは E2E の360px計測（docs/superpowers/specs/
+    // 2026-09-23-ashen-rampart-iteration7-stage1-360px.json）側で確認する。
     expect(screen.getByText('HP14')).toBeInTheDocument();
+    expect(screen.getByText('攻撃14')).toBeInTheDocument();
+    // 属性バッジ（対空・貫通）も同様に DOM には常に出す
     expect(screen.getByText('対空')).toBeInTheDocument();
     expect(screen.getByText('貫通')).toBeInTheDocument();
   });

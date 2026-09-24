@@ -83,7 +83,7 @@ describe('useAshenRampartGame', () => {
     renderHook(() => useAshenRampartGame({ cards: swiftCards(), seed: 1, playLog: log }));
     const started = log.events.filter((e) => e.kind === 'run_started');
     expect(started).toHaveLength(1);
-    expect(started[0]).toMatchObject({ seed: 1, iteration: 6 });
+    expect(started[0]).toMatchObject({ seed: 1, iteration: 7 });
   });
 
   it('StrictMode 下でもカードを1枚配置できる（指摘1の回帰: updater 内の副作用で操作が握り潰されていた）', () => {
@@ -778,7 +778,7 @@ describe('useAshenRampartGame', () => {
       advanceUntilOutcome(result);
       const tallies = log.events.filter((e) => e.kind === 'run_tally');
       expect(tallies).toHaveLength(1);
-      expect(tallies[0]).toMatchObject({ iteration: 6 });
+      expect(tallies[0]).toMatchObject({ iteration: 7 });
     });
 
     it('決着後に外部からの再レンダーで run_tally effect が再実行されても2件目は記録されない', () => {
@@ -1076,7 +1076,7 @@ describe('useAshenRampartGame', () => {
 
       const tally = log.events.find((e) => e.kind === 'run_tally');
       expect(tally).toMatchObject({
-        iteration: 6,
+        iteration: 7,
         manualDiscards: 2,
         inspectOpens: 2,
         rejectedTarget: 1,
