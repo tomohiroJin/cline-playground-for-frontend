@@ -1,12 +1,13 @@
 /**
- * 灰燼の城壁 - 敵定義（5種）
+ * 灰燼の城壁 - 敵定義（7種）
  *
  * 設計書 §6。カウンター要求を敵の性質で担う: 鴉(飛行)は対空手段（弩砲・徹甲弩・
  * 落網）を、俊足はテンポの速さを、重装は単体高火力を要求する。
+ * 反復7 段階2 で盾衛（装甲）と癒し手（回復）を加えた（設計書 §4.1）。
  *
  * 群れについて: 「範囲攻撃を要求する」は反復2 までの想定だが、反復3 の較正で
- * 明示的に否定されている（範囲攻撃を抜いても 10/20 勝つ。詳細は run-simulation.ts
- * の hasMassAnswer / balance.test.ts の「範囲攻撃と貫通のそれぞれの寄与」参照）。
+ * 明示的に否定されている（範囲攻撃を抜いても 10/20 勝つ。詳細は balance.test.ts の
+ * hasMassAnswer と「範囲攻撃と貫通のそれぞれの寄与」参照）。
  * 実際の拘束は「群れをまとめて削る手段（範囲攻撃 **または** 貫通）」であり、
  * どちらか一方を持てば足りる。
  *
@@ -14,6 +15,16 @@
  * （フィードバック#4への対応。「経路中盤から出現」という反復2 以前の仕様には
  * 戻していない。spawnAt 参照）。
  */
+/** 癒し手の回復（反復7 段階2・設計書 §4.1） */
+export interface EnemyHealSpec {
+  /** 1回に戻す HP（maxHp を超えない） */
+  amount: number;
+  /** 回復の間隔（tick）。`tick % intervalTicks === 0` の tick に回復する */
+  intervalTicks: number;
+  /** 回復が届く距離（セル）。自分自身は含めない */
+  radius: number;
+}
+
 export interface EnemySpec {
   id: string;
   name: string;
@@ -31,7 +42,7 @@ export interface EnemySpec {
    *
    * 0 なら、自分をブロックしている守り手しか殴らない（反復4 までの挙動）。
    * 0 より大きいと、進みながら射程内の守り手を削る（反復5・設計書 §4）。
-   * **持たせるのは北レーン専属の2種だけ。** 南（俊足・群れ・鴉）に持たせると、
+   * **持たせるのは北レーン専属の3種（雑兵・重装・盾衛）だけ。** 南（俊足・群れ・鴉）に持たせると、
    * 群れ22体が同時に削るため上限3 でも盤面が溶ける（設計書 §4.3）。
    *
    * **この値で難度は較正できない（反復5 の実測）。** 較正の測定器である
@@ -48,6 +59,8 @@ export interface EnemySpec {
    * 省略は0。軽減は domain/combat/damage.ts の applyDamage だけが行う。
    */
   armor?: number;
+  /** 回復（反復7 段階2）。持つのは癒し手だけ。処理は domain/combat/enemy-heal.ts */
+  heal?: EnemyHealSpec;
 }
 
 const ENEMIES: readonly EnemySpec[] = [
@@ -61,6 +74,13 @@ const ENEMIES: readonly EnemySpec[] = [
   // 一方 attackRange: 0 は意図した設定である——南レーン（俊足・群れ・鴉）に射程を
   // 持たせると群れ22体が上限3 でも盤面を溶かすため（設計書 §4.3）。ここを 0 以外にしないこと。
   { id: 'raven', name: '鴉', hp: 16, speed: 0.14, flying: true, attack: 2, attackIntervalTicks: 20, attackRange: 0 },
+  // 反復7 段階2（設計書 §4.1。数値はすべて較正対象）。
+  // 盾衛: 装甲4 は弓兵4 を素では通さず、篝火の隣なら1通す（オーラが「通る／通らない」を分ける）。
+  // 射程1.5 を持つので北レーンにしか出さない（enemies.test.ts の不変条件）。
+  // attackIntervalTicks は設計書に無く、重装と同じ 30 とした
+  { id: 'warden', name: '盾衛', hp: 45, speed: 0.06, flying: false, attack: 8, attackIntervalTicks: 30, attackRange: 1.5, armor: 4 },
+  // 癒し手: attack は設計書に無い。0 にすると壁の前で何もできず膠着するため（鴉と同じ理由）1 とした
+  { id: 'mender', name: '癒し手', hp: 18, speed: 0.1, flying: false, attack: 1, attackIntervalTicks: 20, attackRange: 0, heal: { amount: 3, intervalTicks: 40, radius: 1.5 } },
 ];
 
 const ENEMY_MAP: ReadonlyMap<string, EnemySpec> = new Map(ENEMIES.map((e) => [e.id, e]));

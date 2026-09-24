@@ -9,8 +9,9 @@
  */
 import React from 'react';
 import styled from 'styled-components';
-import { ENEMY_IDS, getEnemySpec } from '../domain/combat/enemies';
+import { ENEMY_IDS, getEnemySpec, type EnemySpec } from '../domain/combat/enemies';
 import { getEnemyVisual, getShapeClipPath } from './enemy-visual';
+import { toSeconds } from './card-text';
 import { COLORS } from './theme';
 
 const List = styled.ul`
@@ -49,6 +50,18 @@ const Note = styled.p`
   color: ${COLORS.secondary};
 `;
 
+/**
+ * 敵の能力を凡例の短い表記にする（反復7 段階2）
+ *
+ * 「射程 」で始めない（既存のテストが「射程 」の数で射程持ちを数えている）。
+ */
+export const abilityTextsOf = (spec: EnemySpec): string[] => [
+  ...(spec.armor ? [`装甲${spec.armor}`] : []),
+  ...(spec.heal
+    ? [`回復${spec.heal.amount}（${toSeconds(spec.heal.intervalTicks)}秒ごと・周囲${spec.heal.radius}）`]
+    : []),
+];
+
 export const EnemyLegend: React.FC = () => (
   <>
     <List aria-label="敵の凡例">
@@ -63,10 +76,15 @@ export const EnemyLegend: React.FC = () => (
               {spec.flying ? '（飛行・弩砲のみ有効）' : ''}
             </span>
             {spec.attackRange > 0 && <Stat>射程 {spec.attackRange}</Stat>}
+            {abilityTextsOf(spec).map((text) => (
+              <Stat key={text}>{text}</Stat>
+            ))}
           </Item>
         );
       })}
     </List>
     <Note>射程を持つ敵は、経路の脇に置いた守り手も削ります。</Note>
+    <Note>装甲: 1撃ごとにその値だけダメージを減らす（0 まで）。</Note>
+    <Note>回復: 一定の間隔で、周りの敵の HP を戻す。</Note>
   </>
 );

@@ -32,7 +32,7 @@ const hueDistance = (a: number, b: number): number => {
 };
 
 describe('getEnemyVisual', () => {
-  it('敵5種すべてに視覚表現がある', () => {
+  it('敵7種すべてに視覚表現がある', () => {
     ENEMY_IDS.forEach((id) => expect(() => getEnemyVisual(id)).not.toThrow());
   });
 

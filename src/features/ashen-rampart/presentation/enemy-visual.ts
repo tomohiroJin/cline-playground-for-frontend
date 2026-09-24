@@ -6,6 +6,7 @@
  * 形とサイズだけで見分けられることを要件とする（S1 の教訓）。
  */
 import { getEnemySpec } from '../domain/combat/enemies';
+import { COLORS } from './theme';
 
 export type EnemyShape = 'circle' | 'diamond' | 'hexagon' | 'triangle' | 'square';
 
@@ -30,6 +31,10 @@ const VISUALS: Readonly<Record<string, Omit<EnemyVisual, 'name'>>> = {
   brute: { shape: 'hexagon', color: '#9b59b6', sizePct: 7.5, ringColor: '#d7bde2' },
   // 鴉: 上向き三角。飛行を「地に着かない形」で示す
   raven: { shape: 'triangle', color: '#5dade2', sizePct: 5, ringColor: '#aed6f1' },
+  // 盾衛: 中サイズの四角＋明るい鋼のリング。装甲を「縁の厚み」で示す（群れの小さな四角とはサイズで分ける）
+  warden: { shape: 'square', color: '#4f7f8f', sizePct: 6.5, ringColor: '#c8d6dc' },
+  // 癒し手: 象牙色の菱形＋回復の緑のリング。回復の線（COLORS.heal）と同じ緑で役割を結ぶ
+  mender: { shape: 'diamond', color: '#f5f0e1', sizePct: 5.5, ringColor: COLORS.heal },
 };
 
 export const getEnemyVisual = (enemyId: string): EnemyVisual => {
@@ -45,7 +50,7 @@ export const getEnemyVisual = (enemyId: string): EnemyVisual => {
  *
  * 残量で色を変える（緑→黄→赤）と、観察者がその色を敵の種別と誤読した。
  */
-export const HP_BAR_COLOR = '#7fb069';
+export const HP_BAR_COLOR = COLORS.heal;
 
 /** 盤面に登場する敵の最大 HP。バーを絶対スケールで描くための基準 */
 export const MAX_ENEMY_HP = 60;
