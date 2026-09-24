@@ -62,6 +62,21 @@ describe('StageView', () => {
     expect(onSettled).toHaveBeenCalledWith({ won: false, lifeLeft: 0 });
   });
 
+  it('決着ボタンは押すと無効になり、もう一度押しても onSettled は再度呼ばれない（PR #211 Fix B）', () => {
+    // 二重クリックで settleStage が再描画前に2回呼ばれる経路をUI側でも塞ぐ
+    const onSettled = renderStage(aboutToLose(), false);
+    act(() => {
+      jest.advanceTimersByTime(TICK_INTERVAL_MS);
+    });
+
+    const settleButton = screen.getByRole('button', { name: SETTLE_TO_SUMMARY_LABEL });
+    fireEvent.click(settleButton);
+    expect(settleButton).toBeDisabled();
+
+    fireEvent.click(settleButton);
+    expect(onSettled).toHaveBeenCalledTimes(1);
+  });
+
   it('決着パネルには勝敗理由の記録欄・再挑戦・ログコピーを出さない（遠征の結果画面へ移した）', () => {
     renderStage(aboutToLose(), false);
     act(() => {

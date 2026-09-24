@@ -5,7 +5,7 @@
  * 遷移で、UI には出さない契約になっている（expedition-state.ts）。
  * 候補が0枚のときは useExpedition が自動で辞退するので、ここへは来ない。
  */
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import { getCardDefinition } from '../domain/cards/card-pool';
 import { cardStatsOf } from './card-text';
@@ -37,6 +37,10 @@ const Choice = styled.button`
   border: 1px solid ${COLORS.secondary};
   border-radius: 4px;
   cursor: pointer;
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 `;
 
 export const offerButtonLabel = (cardId: string): string => `${getCardDefinition(cardId).name} を加える`;
@@ -44,22 +48,38 @@ export const offerButtonLabel = (cardId: string): string => `${getCardDefinition
 export const OfferChoice: React.FC<{ offer: readonly string[]; onChoose: (cardId: string) => void }> = ({
   offer,
   onChoose,
-}) => (
-  <Panel aria-labelledby="ashen-rampart-offer-heading">
-    <h2 id="ashen-rampart-offer-heading">札を1枚選んでデッキに加える</h2>
-    <Choices>
-      {offer.map((cardId) => {
-        const card = getCardDefinition(cardId);
-        return (
-          <Choice key={cardId} type="button" aria-label={offerButtonLabel(cardId)} onClick={() => onChoose(cardId)}>
-            <span>
-              <CardGlyph cardId={cardId} /> <strong>{card.name}</strong> コスト{card.cost}
-            </span>
-            <span>{card.description}</span>
-            <span>{cardStatsOf(cardId).join(' ／ ')}</span>
-          </Choice>
-        );
-      })}
-    </Choices>
-  </Panel>
-);
+}) => {
+  // 1枚選んだ後は全ボタンを無効にする（PR #211 Fix A）。二重クリックで
+  // acquire が再描画前に2回呼ばれると card_acquired の記録・chooseAcquisition が
+  // 二重に走るため、LevyChoice と同じ考え方でUI側からも二重送信の経路を断つ
+  const [isChosen, setIsChosen] = useState(false);
+
+  return (
+    <Panel aria-labelledby="ashen-rampart-offer-heading">
+      <h2 id="ashen-rampart-offer-heading">札を1枚選んでデッキに加える</h2>
+      <Choices>
+        {offer.map((cardId) => {
+          const card = getCardDefinition(cardId);
+          return (
+            <Choice
+              key={cardId}
+              type="button"
+              aria-label={offerButtonLabel(cardId)}
+              disabled={isChosen}
+              onClick={() => {
+                setIsChosen(true);
+                onChoose(cardId);
+              }}
+            >
+              <span>
+                <CardGlyph cardId={cardId} /> <strong>{card.name}</strong> コスト{card.cost}
+              </span>
+              <span>{card.description}</span>
+              <span>{cardStatsOf(cardId).join(' ／ ')}</span>
+            </Choice>
+          );
+        })}
+      </Choices>
+    </Panel>
+  );
+};

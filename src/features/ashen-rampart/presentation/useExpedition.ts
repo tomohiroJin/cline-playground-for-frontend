@@ -133,23 +133,44 @@ export const useExpedition = ({ cards, seed, playLog }: UseExpeditionOptions) =>
     [expedition]
   );
 
+  /**
+   * 決着を1つの act（再描画前）で2回呼んでも例外にしない（PR #211 Fix B）
+   *
+   * 決着ボタンの二重クリック等で `setExpedition` の更新関数が再描画前に
+   * 2回積まれると、2回目は既に 'stage' でなくなった状態に対して
+   * `advanceStage` の `completeStage` が呼ばれ例外になる。'stage' 以外では
+   * 何もせず現在の状態を返すことで、2回目以降を無害化する
+   */
   const settleStage = useCallback((result: StageResult) => {
-    setExpedition((current) => resolveEmptyOffer(advanceStage(current, result, createSeededRandom)));
+    setExpedition((current) =>
+      current.phase === 'stage' ? resolveEmptyOffer(advanceStage(current, result, createSeededRandom)) : current
+    );
   }, []);
 
   const acquire = useCallback(
     (cardId: string) => {
       const offerIndex = expedition.stageIndex - 1;
-      logRef.current.record({
-        kind: 'card_acquired',
-        expeditionId,
-        offerIndex,
-        cardId,
-        offered: [...expedition.offer],
-      });
-      setExpedition((current) => chooseAcquisition(current, cardId));
+      // 記録は recordOnce で提示回ごとに1回へ絞る（PR #211 Fix A）。
+      // 二重クリック等で acquire が再描画前に2回呼ばれると、閉じ込めた
+      // expedition はどちらの呼び出しでも同じ提示回を指すため、記録だけを
+      // 見るとログが2件になっていた
+      recordOnce(`card_acquired:${offerIndex}`, () =>
+        logRef.current.record({
+          kind: 'card_acquired',
+          expeditionId,
+          offerIndex,
+          cardId,
+          offered: [...expedition.offer],
+        })
+      );
+      // 更新関数側でも 'offer' 以外・未提示の cardId を弾く。2回目の呼び出しが
+      // 再描画前に積まれると、1回目の chooseAcquisition で phase が
+      // 'stage' へ進んだ後の状態に対して2回目が実行され、契約違反で例外になる
+      setExpedition((current) =>
+        current.phase === 'offer' && current.offer.includes(cardId) ? chooseAcquisition(current, cardId) : current
+      );
     },
-    [expedition, expeditionId]
+    [expedition, expeditionId, recordOnce]
   );
 
   const noteExpedition = useCallback(

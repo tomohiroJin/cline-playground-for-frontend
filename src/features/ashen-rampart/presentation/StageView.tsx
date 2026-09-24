@@ -9,7 +9,7 @@
  * **ステージが変わるたびに key を変えて再マウントすること**（ExpeditionView）。
  * フックの ref（選択中カード・通知・集計）がステージをまたいで残らないようにする。
  */
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import type { StageMap } from '../domain/board/stage-map';
 import type { CombatState } from '../domain/combat/combat-state';
@@ -82,6 +82,10 @@ const ActionButton = styled.button`
   border: 1px solid ${COLORS.secondary};
   border-radius: 4px;
   cursor: pointer;
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 `;
 
 /** 決着ボタンの文言。勝って次のステージがあるときだけ獲得へ進む */
@@ -114,6 +118,10 @@ export const StageView: React.FC<StageViewProps> = ({
   onSettled,
 }) => {
   const game = useAshenRampartGame({ cards, seed, map, initialState, expeditionId, stageIndex });
+  // 決着ボタンは押すと無効にする（PR #211 Fix B）。二重クリックで settleStage が
+  // 再描画前に2回呼ばれると advanceStage が非'stage'フェーズに対して走るため、
+  // OfferChoice と同じ考え方でUI側からも二重送信の経路を断つ
+  const [isSettled, setIsSettled] = useState(false);
 
   // スペースキーで一時停止（設計書 §9.6）
   useEffect(() => {
@@ -171,7 +179,11 @@ export const StageView: React.FC<StageViewProps> = ({
             <p>{game.state.outcome === 'won' ? '砦は守られた' : '城壁は灰燼に帰した'}</p>
             <ActionButton
               type="button"
-              onClick={() => onSettled({ won: game.state.outcome === 'won', lifeLeft: game.state.life })}
+              disabled={isSettled}
+              onClick={() => {
+                setIsSettled(true);
+                onSettled({ won: game.state.outcome === 'won', lifeLeft: game.state.life });
+              }}
             >
               {game.state.outcome === 'won' && !isFinalStage ? SETTLE_TO_OFFER_LABEL : SETTLE_TO_SUMMARY_LABEL}
             </ActionButton>

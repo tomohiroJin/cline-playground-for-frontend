@@ -97,6 +97,36 @@ describe('useExpedition', () => {
     expect(kinds(log, 'stage_started')[1]).toMatchObject({ stageIndex: 1, tier: 2, life: 12 });
   });
 
+  it('settleStage を1つの act 内で2回呼んでも例外にならず、決着は1回分だけ進む（PR #211 Fix B）', () => {
+    // 二重クリック等で setExpedition の更新関数が再描画前に2回積まれても、
+    // 2回目は 'stage' 以外のフェーズに対して advanceStage を呼ばないことを確かめる
+    const { log, hook } = setup();
+
+    act(() => {
+      hook.result.current.settleStage(WIN);
+      hook.result.current.settleStage(WIN);
+    });
+
+    expect(hook.result.current.expedition.stageIndex).toBe(1);
+    expect(kinds(log, 'card_offered')).toHaveLength(1);
+  });
+
+  it('acquire を1つの act 内で2回呼んでも例外にならず、card_acquired は1回だけ記録される（PR #211 Fix A）', () => {
+    // 二重クリック等で acquire が再描画前に2回呼ばれても、2回目は
+    // 'offer' 以外のフェーズに対して chooseAcquisition を呼ばないことを確かめる
+    const { log, hook } = setup();
+    act(() => hook.result.current.settleStage(WIN));
+    const offered = [...hook.result.current.expedition.offer];
+
+    act(() => {
+      hook.result.current.acquire(offered[0]!);
+      hook.result.current.acquire(offered[0]!);
+    });
+
+    expect(kinds(log, 'card_acquired')).toHaveLength(1);
+    expect(hook.result.current.expedition.deckCards).toHaveLength(13);
+  });
+
   it('層1 で敗れると遠征が終わり、層3 未到達として expedition_ended が1回記録される', () => {
     const { log, hook } = setup();
     act(() => hook.result.current.settleStage(LOSS));
