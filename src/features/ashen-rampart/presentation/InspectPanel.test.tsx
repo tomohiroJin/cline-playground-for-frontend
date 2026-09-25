@@ -90,6 +90,13 @@ describe('InspectPanel', () => {
     });
   });
 
+  it('横スクロールバーが出ても縦スクロールバーは出さない', () => {
+    render(<InspectPanel plate={plateFor('ballista')} />);
+    const panel = screen.getByTestId('inspect-panel');
+
+    expect(appliedValueOf(panel, 'overflow-y')).toBe('hidden');
+  });
+
   describe('支援塔', () => {
     it('強化内容と効果範囲を出す（HP ではない。設計書 §5.2）', () => {
       render(<InspectPanel plate={plateFor('forge')} />);

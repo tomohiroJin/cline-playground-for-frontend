@@ -32,6 +32,7 @@ const Panel = styled.div`
   box-sizing: border-box;
   padding: 0 8px;
   overflow-x: auto;
+  overflow-y: hidden;
   white-space: nowrap;
   color: ${COLORS.secondary};
   border: 1px solid ${COLORS.grid};
