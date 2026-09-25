@@ -16,11 +16,13 @@
  * 被弾（unit-damaged）は高頻度な非致命の実害なので、danger より明度の
  * 高い dangerText を使い、消滅（致命）と視覚的な重みを分ける。
  * opportunity は BoardGrid が「再点火可能」の意味で使っているため使わない。
+ * 回復（反復7 段階2）は COLORS.heal（敵の HP バーと同じ緑）。装甲の軽減量は secondary の文字。
  */
 import React from 'react';
 import styled from 'styled-components';
 import type { StageMap } from '../domain/board/stage-map';
 import { EFFECT_DASH_PATTERN, EFFECT_STROKE_WIDTH, type Effect } from './combat-effects';
+import { ArmorMark, HealLink } from './EnemyEffectMarks';
 import { COLORS } from './theme';
 
 /** セルの中心へ寄せる補正（セル座標は左上基準のため） */
@@ -152,6 +154,8 @@ export const BoardEffectLayer: React.FC<Props> = ({ effects, map }) => (
           />
         );
       }
+      if (effect.kind === 'armor') return <ArmorMark key={effect.id} effect={effect} />;
+      if (effect.kind === 'heal') return <HealLink key={effect.id} effect={effect} />;
       if (effect.kind === 'unit-damaged') {
         // 被弾: 攻撃間隔ごとに出る高頻度の出来事なので、細い矩形の縁取りに
         // 留める。消滅（✕）と形で区別できるので、色（dangerText）だけに

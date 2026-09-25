@@ -277,3 +277,46 @@ describe('守り手のエフェクト', () => {
     expect(effects.some((e) => e.kind === 'leak')).toBe(true);
   });
 });
+
+describe('装甲と回復のエフェクト（反復7 段階2・設計書 §4.3 #1 #2）', () => {
+  it('armor-hit を敵の位置の「軽減量つき」のエフェクトに変換する', () => {
+    const state = stateWith(10, [{ kind: 'armor-hit', enemyId: 1, raw: 4, dealt: 0, armor: 4 }], {
+      enemies: [enemyAt(1, 2)],
+    });
+
+    const effects = advanceEffects([], state, PLAINS_MAP);
+
+    expect(effects).toEqual([
+      { kind: 'armor', id: '10-0', at: laneOf(PLAINS_MAP, 0)[2], dealt: 0, armor: 4, untilTick: 10 + EFFECT_LIFETIME.armor },
+    ]);
+  });
+
+  it('enemy-healed を癒し手から対象への線に変換する', () => {
+    const state = stateWith(10, [{ kind: 'enemy-healed', healerId: 1, targetId: 2, amount: 3 }], {
+      enemies: [enemyAt(1, 1), enemyAt(2, 2)],
+    });
+
+    const effects = advanceEffects([], state, PLAINS_MAP);
+
+    expect(effects).toEqual([
+      {
+        kind: 'heal',
+        id: '10-0',
+        from: laneOf(PLAINS_MAP, 0)[1],
+        to: laneOf(PLAINS_MAP, 0)[2],
+        amount: 3,
+        untilTick: 10 + EFFECT_LIFETIME.heal,
+      },
+    ]);
+  });
+
+  it('reduced-motion では他のエフェクトと同じ一律の寿命になる', () => {
+    const state = stateWith(10, [{ kind: 'armor-hit', enemyId: 1, raw: 4, dealt: 0, armor: 4 }], {
+      enemies: [enemyAt(1, 2)],
+    });
+
+    const [effect] = advanceEffects([], state, PLAINS_MAP, { reducedMotion: true });
+
+    expect(effect?.untilTick).toBe(10 + REDUCED_MOTION_LIFETIME);
+  });
+});

@@ -95,3 +95,33 @@ describe('BoardEffectLayer', () => {
     expect(container.querySelector('[data-effect="unit-lost"]')?.tagName).toBe('g');
   });
 });
+
+describe('装甲と回復の描画（反復7 段階2・設計書 §4.3 #1 #2）', () => {
+  it('装甲の命中は「-N (装甲M)」の文字で描く', () => {
+    const effects: Effect[] = [
+      { kind: 'armor', id: 'a', at: { x: 2, y: 2 }, dealt: 0, armor: 4, untilTick: 10 },
+      { kind: 'armor', id: 'b', at: { x: 3, y: 2 }, dealt: 1, armor: 4, untilTick: 10 },
+    ];
+    const { container } = render(<BoardEffectLayer effects={effects} map={PLAINS_MAP} />);
+
+    const marks = [...container.querySelectorAll('[data-effect="armor"]')].map((el) => el.textContent);
+    expect(marks).toEqual(['-0 (装甲4)', '-1 (装甲4)']);
+  });
+
+  it('回復は回復の色の線と「+N」の文字で描く（色だけに頼らない）', () => {
+    const effects: Effect[] = [
+      { kind: 'heal', id: 'h', from: { x: 1, y: 2 }, to: { x: 2, y: 2 }, amount: 3, untilTick: 10 },
+    ];
+    const { container } = render(<BoardEffectLayer effects={effects} map={PLAINS_MAP} />);
+
+    const heal = container.querySelector('[data-effect="heal"]');
+    expect(heal?.querySelector('line')?.getAttribute('stroke')).toBe(COLORS.heal);
+    expect(heal?.textContent).toBe('+3');
+  });
+
+  it('回復の色は危険色・好機色と別である（役割を分ける）', () => {
+    expect(COLORS.heal).not.toBe(COLORS.danger);
+    expect(COLORS.heal).not.toBe(COLORS.dangerText);
+    expect(COLORS.heal).not.toBe(COLORS.opportunity);
+  });
+});
