@@ -59,6 +59,21 @@ const emberDeckCards = (): string[] => [
  * （業火はコスト2で初期マナ2枚では1基しか置けず、2基目は魔力炉が
  * 生むマナを待つ必要がある。実測で確認済み）。
  */
+const auraDeckCards = (): string[] => [
+  'reactor',
+  'reactor',
+  'reactor',
+  'arrow-tower',
+  'arrow-tower',
+  'arrow-tower',
+  'beacon',
+  'beacon',
+  'beacon',
+  'stone-wall',
+  'stone-wall',
+  'stone-wall',
+];
+
 const twoEmberDeckCards = (): string[] => [
   'ember-blast',
   'ember-blast',
@@ -381,6 +396,66 @@ describe('useAshenRampartGame', () => {
       ).toBe(true);
       return result;
     };
+
+    /**
+     * 修正ラウンド1（レビュー Important 対応）: useAshenRampartGame.ts の
+     * inspectedPlate が buildPlates に map を渡さなくなる回帰を検出するテスト。
+     *
+     * 弓兵（コスト1・素のダメージ4）に篝火（コスト2・隣接する守り手の攻撃力を
+     * +25%）を隣接させ、弓兵の能力表示を開いて実効ダメージが 5
+     * （= round(4 × 1.25)）になることを検査する。map を外すと towerEffectiveOf
+     * が呼ばれず effective が undefined になるため、この値は取れない。
+     *
+     * auraDeckCards・シード2 の初期手札は ['arrow-tower','beacon','reactor']
+     * になる（3種を1枚ずつ含む唯一の組み合わせを探索して採用）。初期マナは2
+     * だが弓兵(1)+篝火(2)の合計は3必要なので、魔力炉を先に置いて最初のマナ
+     * （60 tick 目）を待ってから篝火を置く。
+     */
+    it('弓兵に篝火が隣接すると、能力表示の実効ダメージが素の値より上がる（修正ラウンド1）', () => {
+      const log = createMockPlayLog();
+      const { result } = renderHook(() =>
+        useAshenRampartGame({ cards: auraDeckCards(), seed: 2, playLog: log })
+      );
+
+      const reactorIndex = result.current.state.deck.hand.findIndex((id) => id === 'reactor');
+      expect(reactorIndex).toBeGreaterThanOrEqual(0);
+      act(() => result.current.selectCard(reactorIndex));
+      act(() => result.current.interactCell({ x: 3, y: 1 }));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+
+      const arrowIndex = result.current.state.deck.hand.findIndex((id) => id === 'arrow-tower');
+      expect(arrowIndex).toBeGreaterThanOrEqual(0);
+      act(() => result.current.selectCard(arrowIndex));
+      act(() => result.current.interactCell({ x: 1, y: 1 }));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+
+      // 魔力炉が最初のマナを生むのは配置から60 tick後。ここまでに2 tick
+      // （魔力炉と弓兵の配置）を使ったので、残り58 tick を進める。
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS * 58);
+      });
+
+      const beaconIndex = result.current.state.deck.hand.findIndex((id) => id === 'beacon');
+      expect(beaconIndex).toBeGreaterThanOrEqual(0);
+      act(() => result.current.selectCard(beaconIndex));
+      act(() => result.current.interactCell({ x: 2, y: 1 }));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+      expect(
+        result.current.state.units.some(
+          (u) => u.pos.x === 2 && u.pos.y === 1 && u.cardId === 'beacon'
+        )
+      ).toBe(true);
+
+      act(() => result.current.interactCell({ x: 1, y: 1 }));
+
+      expect(result.current.inspectedPlate?.effective?.damage).toBe(5);
+    });
 
     it('一時停止中はセルをクリックしても能力表示は開かない（優先順位1: 無反応）', () => {
       const log = createMockPlayLog();
