@@ -37,7 +37,7 @@ const Item = styled.li`
  * 高さは 32px（WCAG 2.5.8 の最小 24px を満たす）。44px にすると 360px で7種が4行に折り返し、
  * 手札が画面の下へ押し出される。
  */
-const LEGEND_BUTTON_MIN_HEIGHT_PX = 32;
+export const LEGEND_BUTTON_MIN_HEIGHT_PX = 32;
 
 const ItemButton = styled.button<{ $pressed: boolean }>`
   display: flex;

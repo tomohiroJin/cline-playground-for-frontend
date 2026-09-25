@@ -159,7 +159,7 @@ export const StageView: React.FC<StageViewProps> = ({
         <BoardInfoSlot
           rejectionNotice={game.rejectionNotice}
           inspectedPlate={game.inspectedPlate}
-          // 選択中に開いたパネルでは再点火チップを出さない（反復7 段階2・§4.3 #4）
+          // いま札を選んでいる間は再点火チップを出さない（反復7 段階2・§4.3 #4）
           isDuringCardSelection={game.selectedIndex !== null}
           inspectedEnemyId={game.inspectedEnemyId}
         />

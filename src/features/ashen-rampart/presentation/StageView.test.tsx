@@ -5,7 +5,8 @@ import React from 'react';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { StageView, SETTLE_TO_OFFER_LABEL, SETTLE_TO_SUMMARY_LABEL } from './StageView';
 import { PLAINS_MAP } from '../domain/board/stage-map';
-import { PRESET_DECKS } from '../domain/cards/card-pool';
+import { PRESET_DECKS, getCardDefinition } from '../domain/cards/card-pool';
+import { placementKindOf } from '../domain/cards/card-definition';
 import type { CombatState } from '../domain/combat/combat-state';
 import { startExpedition, startStage } from '../application/use-cases/start-expedition';
 import { createSeededRandom } from '../infrastructure/random/seeded-random';
@@ -143,14 +144,28 @@ describe('敵の能力表示の結線（反復7 段階2・§4.3 #4）', () => {
     };
     renderStage(stateWithEmber, false);
 
+    // 配置が要る札（placementKindOf が 'none' ではない）を、払えるものの中から選ぶ。
+    // 'none' の札（呪文・徴発）は選んだ瞬間に即座に使われて選択が外れ、次のセルタップは
+    // 「選択なし」の経路（再点火が優先）に落ちる。その経路では能力表示自体が開かないため、
+    // 「クリックで再点火が無い」が isDuringCardSelection の配線を経由せずに空虚に成立してしまう
+    // （修正ラウンド1・レビュー Minor 1）。選択を保つ札で検査することでこれを避ける。
+    const placeableIndex = stateWithEmber.deck.hand.findIndex(
+      (cardId) =>
+        placementKindOf(getCardDefinition(cardId)) !== 'none' &&
+        getCardDefinition(cardId).cost <= stateWithEmber.mana
+    );
+    expect(placeableIndex).toBeGreaterThanOrEqual(0);
     const cardButtons = screen.getAllByRole('button', { name: /コスト/ });
-    const selectable = cardButtons.find((button) => !button.hasAttribute('disabled'));
-    expect(selectable).toBeDefined();
-    fireEvent.click(selectable!);
+    const target = cardButtons[placeableIndex]!;
+    expect(target).not.toBeDisabled();
+    fireEvent.click(target);
 
     fireEvent.click(screen.getByTestId(`cell-${emberPos.x}-${emberPos.y}`));
 
+    // 選択が保たれたまま能力表示が実際に開いたことを確かめる。開いていなければ
+    // 「クリックで再点火が無い」は選択が外れて再点火経路に落ちただけの空虚な成功になる
     const slot = screen.getByTestId('board-info-slot');
+    expect(within(slot).getByTestId('inspect-panel')).toBeInTheDocument();
     expect(within(slot).queryByText('クリックで再点火')).not.toBeInTheDocument();
   });
 });

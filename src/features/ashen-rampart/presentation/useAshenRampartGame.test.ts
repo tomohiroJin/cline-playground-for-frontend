@@ -1333,6 +1333,12 @@ describe('useAshenRampartGame', () => {
         jest.advanceTimersByTime(TICK_INTERVAL_MS);
       });
 
+      // 敵の能力表示を1回開く（修正ラウンド1・レビュー Important）。
+      // inspectOpens は設置物の能力表示だけを数える約束で、敵の能力表示（enemy_inspected）は
+      // 数えてはいけない。この呼び出しを足しても inspectOpens が 2（設置物のみ）のまま
+      // 変わらないことが、その約束を守っている検査になる
+      act(() => result.current.inspectEnemy('warden'));
+
       advanceUntilOutcome(result);
 
       const tally = log.events.find((e) => e.kind === 'run_tally');

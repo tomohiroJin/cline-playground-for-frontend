@@ -3,8 +3,9 @@
  */
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { EnemyLegend } from './EnemyLegend';
+import { EnemyLegend, LEGEND_BUTTON_MIN_HEIGHT_PX } from './EnemyLegend';
 import { ENEMY_IDS, getEnemySpec } from '../domain/combat/enemies';
+import { appliedValueOf } from './applied-css';
 
 describe('EnemyLegend', () => {
   it('敵7種すべてが名前付きで並ぶ', () => {
@@ -86,5 +87,12 @@ describe('凡例から敵の能力表示を開く（反復7 段階2・§4.3 #4�
     render(<EnemyLegend />);
 
     expect(() => fireEvent.click(screen.getByRole('button', { name: '盾衛 の能力を見る' }))).not.toThrow();
+  });
+
+  it('ボタンの高さが WCAG 2.5.8 の最小 24px を満たす 32px になる（修正ラウンド1・Minor 3）', () => {
+    render(<EnemyLegend />);
+
+    const button = screen.getByRole('button', { name: '盾衛 の能力を見る' });
+    expect(appliedValueOf(button, 'min-height')).toBe(`${LEGEND_BUTTON_MIN_HEIGHT_PX}px`);
   });
 });
