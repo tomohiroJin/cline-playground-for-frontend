@@ -287,9 +287,14 @@ describe('敵の射程の色調（反復7 段階2・設計書 §4.3 #5）', () =
   });
 
   it('射程外のセルと経路セルには斜線を付けない', () => {
+    // cell-0-2 は経路セル（PLAINS_MAP の北レーン起点）。threatenedCells に含めても、
+    // 経路は「置いて塞ぐ場所」なので射程の警告の対象外にする（BoardGrid.tsx の !isPath 節）
     render(<BoardGrid {...defaultProps} threatenedCells={[{ x: 0, y: 2 }]} />);
 
     expect(screen.getByTestId('cell-1-1')).toHaveAttribute('data-threatened', 'false');
-    expect(appliedValueOf(screen.getByTestId('cell-0-2'), 'background')).toBe(BOARD_COLORS.path);
+    const pathCell = screen.getByTestId('cell-0-2');
+    expect(appliedValueOf(pathCell, 'background')).toBe(BOARD_COLORS.path);
+    expect(pathCell).toHaveAttribute('data-threatened', 'false');
+    expect(pathCell).not.toHaveAccessibleName(/敵の射程内/);
   });
 });
