@@ -12,6 +12,7 @@ import { PLAINS_MAP } from '../domain/board/stage-map';
 import { getCardDefinition, PRESET_DECKS } from '../domain/cards/card-pool';
 import { placementKindOf } from '../domain/cards/card-definition';
 import { COUNTDOWN_TICKS } from '../domain/combat/combat-state';
+import { enemyPosition } from '../domain/combat/enemy-position';
 import type { PlayLogEventBody, PlayLogPort } from '../application/ports/play-log-port';
 
 const createMockPlayLog = (): PlayLogPort & { events: PlayLogEventBody[] } => {
@@ -647,6 +648,137 @@ describe('useAshenRampartGame', () => {
 
       act(() => result.current.restart());
       expect(result.current.inspectedPlate).toBeUndefined();
+    });
+
+    describe('敵の能力表示（反復7 段階2・§4.3 #4・判定項目9(b)）', () => {
+      type GameResult = { current: ReturnType<typeof useAshenRampartGame> };
+
+      /** 最初に生きている敵が出るまで進め、その種類とマーカーの中心が入っているセルを返す */
+      const firstAliveEnemyCell = (result: GameResult): { enemyId: string; cell: CellPos } => {
+        const MAX_WAIT_TICKS = 300;
+        for (let i = 0; i < MAX_WAIT_TICKS; i += 1) {
+          const enemy = result.current.state.enemies.find((e) => e.alive);
+          if (enemy) {
+            const at = enemyPosition(result.current.map, enemy);
+            return { enemyId: enemy.enemyId, cell: { x: Math.round(at.x), y: Math.round(at.y) } };
+          }
+          act(() => {
+            jest.advanceTimersByTime(TICK_INTERVAL_MS);
+          });
+        }
+        throw new Error(`前提が壊れています: ${MAX_WAIT_TICKS} tick 以内に敵が出ません`);
+      };
+
+      const placeableIndexOf = (result: GameResult): number =>
+        result.current.state.deck.hand.findIndex(
+          (id) => placementKindOf(getCardDefinition(id)) !== 'none'
+        );
+
+      const enemyInspections = (log: { events: PlayLogEventBody[] }) =>
+        log.events.filter((e) => e.kind === 'enemy_inspected');
+
+      it('札を選ばずに敵のいるセルをタップすると、その種類の能力表示が開き、source: cell で1件記録する', () => {
+        const log = createMockPlayLog();
+        const result = placeTowerAt1_1(log);
+        const { enemyId, cell } = firstAliveEnemyCell(result);
+
+        act(() => result.current.interactCell(cell));
+
+        expect(result.current.inspectedEnemyId).toBe(enemyId);
+        expect(result.current.inspectedPlate).toBeUndefined();
+        expect(enemyInspections(log)).toEqual([
+          {
+            kind: 'enemy_inspected',
+            runId: expect.any(String),
+            enemyId,
+            source: 'cell',
+            duringCardSelection: false,
+            tick: result.current.state.tick,
+          },
+        ]);
+      });
+
+      it('同じ敵のセルをもう一度タップすると閉じ、閉じたことは記録しない', () => {
+        const log = createMockPlayLog();
+        const result = placeTowerAt1_1(log);
+        const { cell } = firstAliveEnemyCell(result);
+
+        act(() => result.current.interactCell(cell));
+        act(() => result.current.interactCell(cell));
+
+        expect(result.current.inspectedEnemyId).toBeUndefined();
+        expect(enemyInspections(log)).toHaveLength(1);
+      });
+
+      it('札を選んでいるときに敵のいるセルをタップすると配置に回り、敵の能力表示は開かない', () => {
+        const log = createMockPlayLog();
+        const result = placeTowerAt1_1(log);
+        const { cell } = firstAliveEnemyCell(result);
+        const index = placeableIndexOf(result);
+        expect(index).toBeGreaterThanOrEqual(0);
+
+        act(() => result.current.selectCard(index));
+        act(() => result.current.interactCell(cell));
+
+        // clickCell が選択を解く＝配置に回った（経路に壁を置く操作を奪わない）
+        expect(result.current.selectedIndex).toBeNull();
+        expect(result.current.inspectedEnemyId).toBeUndefined();
+        expect(enemyInspections(log)).toHaveLength(0);
+      });
+
+      it('凡例から開くと source: legend で記録し、札の選択は保たれる（選択中なら duringCardSelection: true）', () => {
+        const log = createMockPlayLog();
+        const result = placeTowerAt1_1(log);
+        const index = placeableIndexOf(result);
+        expect(index).toBeGreaterThanOrEqual(0);
+
+        act(() => result.current.selectCard(index));
+        act(() => result.current.inspectEnemy('warden'));
+
+        expect(result.current.inspectedEnemyId).toBe('warden');
+        expect(result.current.selectedIndex).toBe(index);
+        expect(enemyInspections(log)).toEqual([
+          expect.objectContaining({ enemyId: 'warden', source: 'legend', duringCardSelection: true }),
+        ]);
+
+        act(() => result.current.inspectEnemy('warden'));
+
+        expect(result.current.inspectedEnemyId).toBeUndefined();
+        expect(enemyInspections(log)).toHaveLength(1);
+      });
+
+      it('敵と設置物の能力表示は排他で、開くたびにそれぞれの種類を1件ずつ記録する', () => {
+        const log = createMockPlayLog();
+        const result = placeTowerAt1_1(log);
+
+        act(() => result.current.inspectEnemy('mender'));
+        act(() => result.current.interactCell({ x: 1, y: 1 }));
+
+        expect(result.current.inspectedPlate?.cardId).toBe('ballista');
+        expect(result.current.inspectedEnemyId).toBeUndefined();
+
+        act(() => result.current.inspectEnemy('mender'));
+
+        expect(result.current.inspectedEnemyId).toBe('mender');
+        expect(result.current.inspectedPlate).toBeUndefined();
+        expect(enemyInspections(log)).toHaveLength(2);
+        expect(log.events.filter((e) => e.kind === 'inspect_opened')).toHaveLength(1);
+      });
+
+      it('一時停止中は凡例からも開かず、一時停止すると開いていた敵の能力表示は閉じる', () => {
+        const log = createMockPlayLog();
+        const result = placeTowerAt1_1(log);
+
+        act(() => result.current.inspectEnemy('warden'));
+        act(() => result.current.togglePause());
+
+        expect(result.current.inspectedEnemyId).toBeUndefined();
+
+        act(() => result.current.inspectEnemy('mender'));
+
+        expect(result.current.inspectedEnemyId).toBeUndefined();
+        expect(enemyInspections(log)).toHaveLength(1);
+      });
     });
 
   });

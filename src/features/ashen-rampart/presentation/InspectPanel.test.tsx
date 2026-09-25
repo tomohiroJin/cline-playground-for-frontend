@@ -12,9 +12,12 @@
  */
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { InspectPanel } from './InspectPanel';
+import { InspectPanel, EnemyInspectPanel, enemyChipsOf } from './InspectPanel';
 import { buildPlates } from './board-plates';
 import { toSeconds } from './card-text';
+import { getEnemySpec } from '../domain/combat/enemies';
+import { appliedValueOf } from './applied-css';
+import { INSPECT_ROW_HEIGHT_PX } from './layout-constants';
 import type {
   CombatState,
   PlacedUnit,
@@ -195,7 +198,7 @@ describe('InspectPanel', () => {
       expect(screen.getByText('クリックで再点火')).toBeInTheDocument();
     });
 
-    it('カード選択中に開いたパネルでは、再点火可能でも「クリックで再点火」を出さない（反復7 段階2・§4.3 #4）', () => {
+    it('いま札を選んでいるときは、再点火可能でも「クリックで再点火」を出さない（反復7 段階2・§4.3 #4）', () => {
       // 選択中はタップが能力表示に回り再点火は起きない（interactCell の分岐）。
       // 「クリックで再点火」を出すと、選択中はタップしても再点火しないので嘘になる。
       const plate = buildPlates(stateWith({ embers: [{ pos: { x: 3, y: 3 }, cooldownLeft: 0 }] }))[0];
@@ -242,5 +245,47 @@ describe('オーラ・高台の実効値（反復7 段階2・設計書 §4.3 #3�
     expect(screen.getByText('攻撃4')).toBeInTheDocument();
     expect(screen.getByText('射程1.6')).toBeInTheDocument();
     expect(screen.queryByText(/支援で|高台で/)).not.toBeInTheDocument();
+  });
+});
+
+describe('敵の能力表示（反復7 段階2・設計書 §4.3 #4）', () => {
+  it('盾衛: HP・速度・地上・攻撃・射程・装甲を値で出す', () => {
+    expect(enemyChipsOf(getEnemySpec('warden'))).toEqual([
+      'HP45',
+      '速度0.6マス/秒',
+      '地上',
+      '攻撃8（3秒ごと）',
+      '射程1.5（経路の脇にも届く）',
+      '装甲4',
+    ]);
+  });
+
+  it('癒し手: 射程なしと、回復の量・間隔・範囲を値で出す', () => {
+    expect(enemyChipsOf(getEnemySpec('mender'))).toEqual([
+      'HP18',
+      '速度1マス/秒',
+      '地上',
+      '攻撃1（2秒ごと）',
+      '射程なし（塞いだ守り手だけ攻撃）',
+      '回復3（4秒ごと・周囲1.5）',
+    ]);
+  });
+
+  it('飛行する敵には「飛行」と書き、能力の無い敵には装甲・回復を出さない', () => {
+    const chips = enemyChipsOf(getEnemySpec('raven'));
+
+    expect(chips).toContain('飛行');
+    expect(chips.some((chip) => /^装甲|^回復/.test(chip))).toBe(false);
+  });
+
+  it('パネルは「敵 名前」を見出しにし、設置物の能力表示と同じ1行の高さに固定する', () => {
+    render(<EnemyInspectPanel enemyId="mender" />);
+    const panel = screen.getByTestId('enemy-inspect-panel');
+
+    expect(panel).toHaveAttribute('role', 'status');
+    expect(panel).toHaveTextContent('敵 癒し手');
+    expect(panel).toHaveTextContent('回復3（4秒ごと・周囲1.5）');
+    expect(appliedValueOf(panel, 'height')).toBe(`${INSPECT_ROW_HEIGHT_PX}px`);
+    expect(appliedValueOf(panel, 'flex-wrap')).toBe('nowrap');
   });
 });

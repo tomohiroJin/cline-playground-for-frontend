@@ -2,7 +2,7 @@
  * StageView（反復7 段階1）: 1ステージの戦闘と決着パネル
  */
 import React from 'react';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { StageView, SETTLE_TO_OFFER_LABEL, SETTLE_TO_SUMMARY_LABEL } from './StageView';
 import { PLAINS_MAP } from '../domain/board/stage-map';
 import { PRESET_DECKS } from '../domain/cards/card-pool';
@@ -104,5 +104,53 @@ describe('StageView', () => {
 
     expect(screen.getByRole('button', { name: SETTLE_TO_SUMMARY_LABEL })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: SETTLE_TO_OFFER_LABEL })).not.toBeInTheDocument();
+  });
+});
+
+describe('敵の能力表示の結線（反復7 段階2・§4.3 #4）', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+    localStorage.clear();
+  });
+  afterEach(() => jest.useRealTimers());
+
+  it('凡例の「盾衛 の能力を見る」を押すと、盤面の下の枠に盾衛の能力表示が出て、もう一度押すと閉じる', () => {
+    renderStage(initial, false);
+    const button = screen.getByRole('button', { name: '盾衛 の能力を見る' });
+
+    fireEvent.click(button);
+
+    const slot = screen.getByTestId('board-info-slot');
+    expect(slot).toHaveTextContent('敵 盾衛');
+    expect(slot).toHaveTextContent('装甲4');
+    expect(button).toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.click(button);
+
+    expect(screen.queryByTestId('enemy-inspect-panel')).not.toBeInTheDocument();
+    expect(button).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('札を選んだまま再点火できる燠火をタップしても、能力表示に「クリックで再点火」は出ない（isDuringCardSelection の配線）', () => {
+    // 選択中はタップが能力表示に回り再点火は起きない（interactCell の分岐）。BoardInfoSlot へ
+    // isDuringCardSelection を渡す配線（StageView.tsx）が外れると、この能力表示に
+    // 「クリックで再点火」が出てしまう（選択中はタップしても再点火しないので嘘になる）。
+    // コントローラの指摘どおり、この配線だけを検査する（この配線を一時的に外すと本テストは赤になる）。
+    const emberPos = { x: 1, y: 1 };
+    const stateWithEmber: CombatState = {
+      ...initial,
+      embers: [{ pos: emberPos, cooldownLeft: 0 }],
+    };
+    renderStage(stateWithEmber, false);
+
+    const cardButtons = screen.getAllByRole('button', { name: /コスト/ });
+    const selectable = cardButtons.find((button) => !button.hasAttribute('disabled'));
+    expect(selectable).toBeDefined();
+    fireEvent.click(selectable!);
+
+    fireEvent.click(screen.getByTestId(`cell-${emberPos.x}-${emberPos.y}`));
+
+    const slot = screen.getByTestId('board-info-slot');
+    expect(within(slot).queryByText('クリックで再点火')).not.toBeInTheDocument();
   });
 });

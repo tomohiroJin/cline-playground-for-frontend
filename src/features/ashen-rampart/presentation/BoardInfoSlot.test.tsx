@@ -27,8 +27,10 @@ describe('BoardInfoSlot', () => {
     expect(appliedValueOf(slot, 'height')).toBe(`${BOARD_INFO_SLOT_HEIGHT_PX}px`);
     expect(screen.getByTestId('rejection-line')).toBeEmptyDOMElement();
     expect(screen.getByTestId('inspect-hint')).toHaveTextContent(INSPECT_HINT_TEXT);
-    // 選択中でも開けることを導線で伝える（反復7 段階2・§4.3 #4）
-    expect(INSPECT_HINT_TEXT).toMatch(/札を選んでいても/);
+    // 置いた札は選択中でも開けること、敵と凡例からも開けることを導線で伝える（反復7 段階2・§4.3 #4）
+    expect(INSPECT_HINT_TEXT).toMatch(/選択中も可/);
+    expect(INSPECT_HINT_TEXT).toMatch(/敵/);
+    expect(INSPECT_HINT_TEXT).toMatch(/凡例/);
   });
 
   it('拒否理由と能力表示が同時に出ても、同じ枠の中に収まる', () => {
@@ -46,5 +48,26 @@ describe('BoardInfoSlot', () => {
 
     expect(appliedValueOf(panel, 'height')).toBe(`${INSPECT_ROW_HEIGHT_PX}px`);
     expect(appliedValueOf(panel, 'flex-wrap')).toBe('nowrap');
+  });
+});
+
+describe('敵の能力表示の行（反復7 段階2・§4.3 #4）', () => {
+  it('敵の種類を渡すと、導線の代わりに同じ1行で敵の能力表示を出し、枠の高さは変わらない', () => {
+    render(<BoardInfoSlot inspectedEnemyId="warden" />);
+    const slot = screen.getByTestId('board-info-slot');
+
+    expect(within(slot).getByTestId('enemy-inspect-panel')).toHaveTextContent('装甲4');
+    expect(appliedValueOf(within(slot).getByTestId('enemy-inspect-panel'), 'height')).toBe(
+      `${INSPECT_ROW_HEIGHT_PX}px`
+    );
+    expect(appliedValueOf(slot, 'height')).toBe(`${BOARD_INFO_SLOT_HEIGHT_PX}px`);
+    expect(screen.queryByTestId('inspect-hint')).not.toBeInTheDocument();
+  });
+
+  it('設置物と敵が両方渡っても、1行に出すのは設置物だけ（行を2つにしない）', () => {
+    render(<BoardInfoSlot inspectedPlate={arrowPlate()} inspectedEnemyId="warden" />);
+
+    expect(screen.getByTestId('inspect-panel')).toBeInTheDocument();
+    expect(screen.queryByTestId('enemy-inspect-panel')).not.toBeInTheDocument();
   });
 });

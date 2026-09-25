@@ -161,8 +161,9 @@ export const StageView: React.FC<StageViewProps> = ({
           inspectedPlate={game.inspectedPlate}
           // 選択中に開いたパネルでは再点火チップを出さない（反復7 段階2・§4.3 #4）
           isDuringCardSelection={game.selectedIndex !== null}
+          inspectedEnemyId={game.inspectedEnemyId}
         />
-        <EnemyLegend />
+        <EnemyLegend inspectedEnemyId={game.inspectedEnemyId} onInspect={game.inspectEnemy} />
         {game.state.outcome !== 'playing' && (
           <Result>
             <p>{game.state.outcome === 'won' ? '砦は守られた' : '城壁は灰燼に帰した'}</p>

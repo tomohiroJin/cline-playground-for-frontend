@@ -2,7 +2,7 @@
  * 敵凡例のテスト
  */
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { EnemyLegend } from './EnemyLegend';
 import { ENEMY_IDS, getEnemySpec } from '../domain/combat/enemies';
 
@@ -60,5 +60,31 @@ describe('敵の能力の表示（反復7 段階2・判定項目9(a) の自己�
 
     expect(screen.getAllByText(/^装甲\d/)).toHaveLength(1);
     expect(screen.getAllByText(/^回復\d/)).toHaveLength(1);
+  });
+});
+
+describe('凡例から敵の能力表示を開く（反復7 段階2・§4.3 #4）', () => {
+  it('7種すべてが「名前 の能力を見る」ボタンになり、押すとその敵の ID を渡す', () => {
+    const onInspect = jest.fn();
+    render(<EnemyLegend onInspect={onInspect} />);
+
+    ENEMY_IDS.forEach((id) => {
+      fireEvent.click(screen.getByRole('button', { name: `${getEnemySpec(id).name} の能力を見る` }));
+    });
+
+    expect(onInspect.mock.calls.map(([id]) => id)).toEqual([...ENEMY_IDS]);
+  });
+
+  it('開いている種類のボタンだけが押された状態になる', () => {
+    render(<EnemyLegend inspectedEnemyId="mender" onInspect={jest.fn()} />);
+
+    expect(screen.getByRole('button', { name: '癒し手 の能力を見る' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: '盾衛 の能力を見る' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('onInspect を渡さなくても描画でき、押しても例外にならない（既存の呼び出しの互換）', () => {
+    render(<EnemyLegend />);
+
+    expect(() => fireEvent.click(screen.getByRole('button', { name: '盾衛 の能力を見る' }))).not.toThrow();
   });
 });

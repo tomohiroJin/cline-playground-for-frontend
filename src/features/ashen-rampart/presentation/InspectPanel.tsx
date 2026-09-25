@@ -11,7 +11,9 @@ import { getCardDefinition } from '../domain/cards/card-pool';
 import type { TowerSpec } from '../domain/cards/card-definition';
 import { HIGH_GROUND_DAMAGE_MULT } from '../domain/combat/step-tick';
 import { roleLabelOf } from './unit-visual';
-import { toSeconds } from './card-text';
+import { toSeconds, TICKS_PER_SECOND } from './card-text';
+import { getEnemySpec, type EnemySpec } from '../domain/combat/enemies';
+import { abilityTextsOf } from './EnemyLegend';
 import { COLORS } from './theme';
 import { INSPECT_ROW_HEIGHT_PX } from './layout-constants';
 
@@ -126,7 +128,11 @@ const chipsOf = (plate: PlateModel, isDuringCardSelection: boolean): string[] =>
 
 interface Props {
   plate: PlateModel;
-  /** カード選択中に開いたパネルか（反復7 段階2・設計書 §4.3 #4）。省略時は false */
+  /**
+   * いま札を選んでいるか（開いた時点ではなく現在の状態。反復7 段階2・設計書 §4.3 #4）。
+   * 選択を解除すれば次のタップで再点火できるため、選択中は「クリックで再点火」チップを出さない。
+   * 省略時は false
+   */
   isDuringCardSelection?: boolean;
 }
 
@@ -140,3 +146,40 @@ export const InspectPanel: React.FC<Props> = ({ plate, isDuringCardSelection = f
     ))}
   </Panel>
 );
+
+/** 速度の表示の桁（0.06 マス/tick × 10 = 0.6000000000000001 を 0.6 にする） */
+const SPEED_DISPLAY_DECIMALS = 1;
+
+/**
+ * 敵の種類の能力チップ（反復7 段階2・設計書 §4.3 #4・判定項目9(b)）
+ *
+ * 個体の今の HP ではなく種類の値を出す（HP はマーカーのバーが示す）。
+ * 装甲・回復は凡例と同じ abilityTextsOf で作り、凡例と表記をずらさない。
+ * 「射程 」（空白つき）で始めない（EnemyLegend.test.tsx が凡例の「射程 」の数を数えている）。
+ */
+export const enemyChipsOf = (spec: EnemySpec): string[] => [
+  `HP${spec.hp}`,
+  `速度${Number((spec.speed * TICKS_PER_SECOND).toFixed(SPEED_DISPLAY_DECIMALS))}マス/秒`,
+  spec.flying ? '飛行' : '地上',
+  `攻撃${spec.attack}（${toSeconds(spec.attackIntervalTicks)}秒ごと）`,
+  spec.attackRange > 0 ? `射程${spec.attackRange}（経路の脇にも届く）` : '射程なし（塞いだ守り手だけ攻撃）',
+  ...abilityTextsOf(spec),
+];
+
+/**
+ * 敵の能力表示（反復7 段階2）
+ *
+ * 設置物の能力表示と同じ Panel（高さ INSPECT_ROW_HEIGHT_PX・折り返さない）を使い、
+ * BoardInfoSlot の同じ1行に出す。枠の高さは変わらない。
+ */
+export const EnemyInspectPanel: React.FC<{ enemyId: string }> = ({ enemyId }) => {
+  const spec = getEnemySpec(enemyId);
+  return (
+    <Panel data-testid="enemy-inspect-panel" role="status">
+      <strong>敵 {spec.name}</strong>
+      {enemyChipsOf(spec).map((chip) => (
+        <Chip key={chip}>{chip}</Chip>
+      ))}
+    </Panel>
+  );
+};

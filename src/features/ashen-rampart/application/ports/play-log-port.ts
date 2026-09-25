@@ -10,6 +10,9 @@ import type { OverflowOrigin } from '../../domain/combat/combat-state';
 /** 現在の反復番号。反復を進めるたびに必ず更新する */
 export const CURRENT_ITERATION = 7;
 
+/** 敵の能力表示を開いた入口（反復7 段階2） */
+export type EnemyInspectSource = 'legend' | 'cell';
+
 export type PlayLogEventBody =
   | {
       kind: 'run_started';
@@ -71,6 +74,22 @@ export type PlayLogEventBody =
    * 読むとき、選択中に開いたか（置き場所を決めながら確かめたか）を区別する。
    */
   | { kind: 'inspect_opened'; runId: string; cardId: string; tick: number; duringCardSelection: boolean }
+  /**
+   * 敵の種類の能力表示を開いた（反復7 段階2・設計書 §4.3 #4・判定項目9(b)）
+   *
+   * `source` は入口（凡例のボタンか、敵のいる盤面のセルか）。セルからは札を選んでいない
+   * ときしか開けないので、`source: 'cell'` の `duringCardSelection` は常に false。
+   * 判定項目9(b) は、このうち `enemyId` が盾衛（warden）・癒し手（mender）のものを数える。
+   * 閉じたときは記録しない。
+   */
+  | {
+      kind: 'enemy_inspected';
+      runId: string;
+      enemyId: string;
+      source: EnemyInspectSource;
+      duringCardSelection: boolean;
+      tick: number;
+    }
   /**
    * 手動の捨札（反復6 で `handIndex` を追加）
    *

@@ -8,7 +8,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import type { PlateModel } from './board-plates';
-import { InspectPanel } from './InspectPanel';
+import { InspectPanel, EnemyInspectPanel } from './InspectPanel';
 import { COLORS } from './theme';
 import {
   BOARD_INFO_GAP_PX,
@@ -25,8 +25,13 @@ import {
  */
 export const REJECTION_NOTICE_TONE = 'opportunity' as const;
 
-/** 能力表示が閉じているときの導線（札の選択中にも開けることを伝える。§4.3 #4） */
-export const INSPECT_HINT_TEXT = '置いた札をタップで能力を表示（札を選んでいても可）';
+/**
+ * 能力表示が閉じているときの導線（反復7 段階2・§4.3 #4）
+ *
+ * 置いた札は札の選択中でも開ける。敵は盤面のセル（選択していないとき）と凡例から開ける。
+ * 27字。360px の枠（左右の余白を除いて約29字）に収まる長さにした。
+ */
+export const INSPECT_HINT_TEXT = '札・敵・凡例をタップで能力表示（置いた札は選択中も可）';
 
 const Slot = styled.div`
   display: flex;
@@ -63,23 +68,37 @@ const Hint = styled.p`
 interface Props {
   rejectionNotice?: string;
   inspectedPlate?: PlateModel;
-  /** inspectedPlate をカード選択中に開いたか（反復7 段階2・設計書 §4.3 #4）。InspectPanel へそのまま渡す */
+  /**
+   * いま札を選んでいるか（開いた時点ではなく現在の状態。反復7 段階2・設計書 §4.3 #4）。
+   * 選択を解除すれば次のタップで再点火できるため、選択中は「クリックで再点火」チップを出さない
+   * （InspectPanel へそのまま渡す）
+   */
   isDuringCardSelection?: boolean;
+  /** 能力表示を開いている敵の種類（反復7 段階2）。設置物と同時には開かない（フックが排他にする） */
+  inspectedEnemyId?: string;
 }
 
-export const BoardInfoSlot: React.FC<Props> = ({
-  rejectionNotice,
+/**
+ * 能力表示の行。設置物・敵・導線のどれか1つだけを、同じ高さ（INSPECT_ROW_HEIGHT_PX）の1行に出す。
+ * 両方渡っても設置物を出す（フックの排他が崩れても行を2つにして枠を溢れさせない）
+ */
+const inspectRowOf = ({
   inspectedPlate,
+  inspectedEnemyId,
   isDuringCardSelection,
-}) => (
+}: Props): React.ReactNode => {
+  if (inspectedPlate) {
+    return <InspectPanel plate={inspectedPlate} isDuringCardSelection={isDuringCardSelection} />;
+  }
+  if (inspectedEnemyId) return <EnemyInspectPanel enemyId={inspectedEnemyId} />;
+  return <Hint data-testid="inspect-hint">{INSPECT_HINT_TEXT}</Hint>;
+};
+
+export const BoardInfoSlot: React.FC<Props> = (props) => (
   <Slot data-testid="board-info-slot">
     <RejectionLine data-testid="rejection-line" data-tone={REJECTION_NOTICE_TONE}>
-      {rejectionNotice ?? ''}
+      {props.rejectionNotice ?? ''}
     </RejectionLine>
-    {inspectedPlate ? (
-      <InspectPanel plate={inspectedPlate} isDuringCardSelection={isDuringCardSelection} />
-    ) : (
-      <Hint data-testid="inspect-hint">{INSPECT_HINT_TEXT}</Hint>
-    )}
+    {inspectRowOf(props)}
   </Slot>
 );
