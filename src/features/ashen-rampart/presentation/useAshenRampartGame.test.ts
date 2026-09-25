@@ -466,28 +466,82 @@ describe('useAshenRampartGame', () => {
       expect(result.current.inspectedPlate).toBeUndefined();
     });
 
-    it('カード選択中に設置物のあるセルをクリックすると能力表示ではなく配置が優先される（優先順位2）', () => {
+    it('カード選択中でも、設置物のあるセルをタップすると能力表示が開き、選択は保たれる（反復7 段階2・§4.3 #4）', () => {
       const log = createMockPlayLog();
       const result = placeTowerAt1_1(log);
-
-      // 手札に残る別の守り手（石壁）を選び、既に置いた (1,1) を再びクリックする。
-      // 配置(2)が能力表示(4)より先に評価されるため、能力表示は開かず、
-      // clickCell が動いて配置が試みられる（占有済みなのでドメイン側で拒否される。
-      // マナ不足で 'mana' 拒否になる場合もあるため、reason は問わず rejected の
-      // 発生だけを見る）
       const secondTowerIndex = result.current.state.deck.hand.findIndex((id) => id === 'stone-wall');
       expect(secondTowerIndex).toBeGreaterThanOrEqual(0);
+
       act(() => result.current.selectCard(secondTowerIndex));
       act(() => result.current.interactCell({ x: 1, y: 1 }));
-      expect(result.current.inspectedPlate).toBeUndefined();
+
+      expect(result.current.inspectedPlate?.cardId).toBe('ballista');
+      expect(result.current.selectedIndex).toBe(secondTowerIndex);
       act(() => {
         jest.advanceTimersByTime(TICK_INTERVAL_MS);
       });
-      expect(result.current.state.events.some((e) => e.kind === 'rejected')).toBe(true);
-      // 能力表示は一度も開かない（配置が優先されたことの証跡）
-      expect(log.events.filter((e) => e.kind === 'inspect_opened')).toHaveLength(0);
-      // 占有済みのため配置は成立せず、設置物は増えない
+      // 占有セルへの配置は元々成立しない（canPlaceAt）。ここでは配置自体が試みられない
+      expect(result.current.state.events.some((e) => e.kind === 'rejected')).toBe(false);
       expect(result.current.state.units).toHaveLength(1);
+      const opened = log.events.filter((e) => e.kind === 'inspect_opened');
+      expect(opened).toHaveLength(1);
+      expect(opened[0]).toMatchObject({ cardId: 'ballista', duringCardSelection: true });
+    });
+
+    it('カード選択中でも、空きセルのタップは従来どおり配置になる', () => {
+      const log = createMockPlayLog();
+      const result = placeTowerAt1_1(log);
+      const wallIndex = result.current.state.deck.hand.findIndex((id) => id === 'stone-wall');
+      const pathCell = { x: 3, y: 2 };
+
+      act(() => result.current.selectCard(wallIndex));
+      act(() => result.current.interactCell(pathCell));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+
+      expect(result.current.selectedIndex).toBeNull();
+      expect(log.events.filter((e) => e.kind === 'inspect_opened')).toHaveLength(0);
+      expect(result.current.state.events.some((e) => e.kind === 'played' || e.kind === 'rejected')).toBe(true);
+    });
+
+    it('選択なしで開いた能力表示は duringCardSelection: false で記録される', () => {
+      const log = createMockPlayLog();
+      const result = placeTowerAt1_1(log);
+
+      act(() => result.current.interactCell({ x: 1, y: 1 }));
+
+      expect(log.events.filter((e) => e.kind === 'inspect_opened')[0]).toMatchObject({
+        duringCardSelection: false,
+      });
+    });
+
+    it('カード選択中に再点火可能な燠火をタップしても再点火せず、能力表示が開く', () => {
+      const log = createMockPlayLog();
+      const { result } = renderHook(() =>
+        useAshenRampartGame({ cards: emberDeckCards(), seed: 59, playLog: log })
+      );
+      const emberHandIndex = result.current.state.deck.hand.findIndex((id) => id === 'ember-blast');
+      act(() => result.current.selectCard(emberHandIndex));
+      const placePos = result.current.placeableCells[0];
+      act(() => result.current.interactCell(placePos!));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS * 301);
+      });
+      const emberPos = result.current.state.embers[0]!.pos;
+      expect(result.current.state.embers[0]!.cooldownLeft).toBe(0);
+      const wallIndex = result.current.state.deck.hand.findIndex((id) => id === 'stone-wall');
+      expect(wallIndex).toBeGreaterThanOrEqual(0);
+
+      act(() => result.current.selectCard(wallIndex));
+      act(() => result.current.interactCell(emberPos));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+
+      expect(log.events.filter((e) => e.kind === 'reactivated')).toHaveLength(0);
+      expect(result.current.inspectedPlate?.cardId).toBe('ember-blast');
+      expect(result.current.selectedIndex).toBe(wallIndex);
     });
 
     it('再点火可能な燠火は能力表示より再点火が優先される。クールダウン中は能力表示が開く（優先順位3・4）', () => {

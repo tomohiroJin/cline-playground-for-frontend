@@ -194,6 +194,14 @@ describe('InspectPanel', () => {
       render(<InspectPanel plate={plate} />);
       expect(screen.getByText('クリックで再点火')).toBeInTheDocument();
     });
+
+    it('カード選択中に開いたパネルでは、再点火可能でも「クリックで再点火」を出さない（反復7 段階2・§4.3 #4）', () => {
+      // 選択中はタップが能力表示に回り再点火は起きない（interactCell の分岐）。
+      // 「クリックで再点火」を出すと、選択中はタップしても再点火しないので嘘になる。
+      const plate = buildPlates(stateWith({ embers: [{ pos: { x: 3, y: 3 }, cooldownLeft: 0 }] }))[0];
+      render(<InspectPanel plate={plate} isDuringCardSelection />);
+      expect(screen.queryByText('クリックで再点火')).not.toBeInTheDocument();
+    });
   });
 });
 

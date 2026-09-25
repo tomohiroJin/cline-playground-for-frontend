@@ -25,8 +25,8 @@ import {
  */
 export const REJECTION_NOTICE_TONE = 'opportunity' as const;
 
-/** 能力表示が閉じているときの導線 */
-export const INSPECT_HINT_TEXT = '置いた札をタップすると能力を表示';
+/** 能力表示が閉じているときの導線（札の選択中にも開けることを伝える。§4.3 #4） */
+export const INSPECT_HINT_TEXT = '置いた札をタップで能力を表示（札を選んでいても可）';
 
 const Slot = styled.div`
   display: flex;
@@ -63,15 +63,21 @@ const Hint = styled.p`
 interface Props {
   rejectionNotice?: string;
   inspectedPlate?: PlateModel;
+  /** inspectedPlate をカード選択中に開いたか（反復7 段階2・設計書 §4.3 #4）。InspectPanel へそのまま渡す */
+  isDuringCardSelection?: boolean;
 }
 
-export const BoardInfoSlot: React.FC<Props> = ({ rejectionNotice, inspectedPlate }) => (
+export const BoardInfoSlot: React.FC<Props> = ({
+  rejectionNotice,
+  inspectedPlate,
+  isDuringCardSelection,
+}) => (
   <Slot data-testid="board-info-slot">
     <RejectionLine data-testid="rejection-line" data-tone={REJECTION_NOTICE_TONE}>
       {rejectionNotice ?? ''}
     </RejectionLine>
     {inspectedPlate ? (
-      <InspectPanel plate={inspectedPlate} />
+      <InspectPanel plate={inspectedPlate} isDuringCardSelection={isDuringCardSelection} />
     ) : (
       <Hint data-testid="inspect-hint">{INSPECT_HINT_TEXT}</Hint>
     )}

@@ -64,7 +64,13 @@ export type PlayLogEventBody =
   | { kind: 'resumed'; runId: string; tick: number }
   | { kind: 'run_ended'; runId: string; outcome: 'won' | 'lost'; tick: number; handRemaining: string[] }
   | { kind: 'run_note'; runId: string; text: string }
-  | { kind: 'inspect_opened'; runId: string; cardId: string; tick: number }
+  /**
+   * 能力表示を開いた（反復4。反復7 段階2 で duringCardSelection を追加）
+   *
+   * 段階2 でカード選択中にも開けるようにした（設計書 §4.3 #4）。判定項目9(b) を
+   * 読むとき、選択中に開いたか（置き場所を決めながら確かめたか）を区別する。
+   */
+  | { kind: 'inspect_opened'; runId: string; cardId: string; tick: number; duringCardSelection: boolean }
   /**
    * 手動の捨札（反復6 で `handIndex` を追加）
    *

@@ -156,7 +156,12 @@ export const StageView: React.FC<StageViewProps> = ({
           />
           <CountdownDisplay tick={game.state.tick} />
         </BoardWrapper>
-        <BoardInfoSlot rejectionNotice={game.rejectionNotice} inspectedPlate={game.inspectedPlate} />
+        <BoardInfoSlot
+          rejectionNotice={game.rejectionNotice}
+          inspectedPlate={game.inspectedPlate}
+          // 選択中に開いたパネルでは再点火チップを出さない（反復7 段階2・§4.3 #4）
+          isDuringCardSelection={game.selectedIndex !== null}
+        />
         <EnemyLegend />
         {game.state.outcome !== 'playing' && (
           <Result>

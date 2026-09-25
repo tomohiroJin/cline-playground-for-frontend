@@ -27,6 +27,8 @@ describe('BoardInfoSlot', () => {
     expect(appliedValueOf(slot, 'height')).toBe(`${BOARD_INFO_SLOT_HEIGHT_PX}px`);
     expect(screen.getByTestId('rejection-line')).toBeEmptyDOMElement();
     expect(screen.getByTestId('inspect-hint')).toHaveTextContent(INSPECT_HINT_TEXT);
+    // 選択中でも開けることを導線で伝える（反復7 段階2・§4.3 #4）
+    expect(INSPECT_HINT_TEXT).toMatch(/札を選んでいても/);
   });
 
   it('拒否理由と能力表示が同時に出ても、同じ枠の中に収まる', () => {

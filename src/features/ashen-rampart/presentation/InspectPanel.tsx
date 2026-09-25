@@ -75,7 +75,7 @@ const attackChipsOf = (t: TowerSpec, effective: TowerEffective | undefined): str
 ];
 
 /** 役割ごとに出す能力を組み立てる（盤面に出さない詳細はすべてここへ集める） */
-const chipsOf = (plate: PlateModel): string[] => {
+const chipsOf = (plate: PlateModel, isDuringCardSelection: boolean): string[] => {
   const card = getCardDefinition(plate.cardId);
   if (card.tower) {
     const t = card.tower;
@@ -104,14 +104,21 @@ const chipsOf = (plate: PlateModel): string[] => {
     // 状態バーの分子分母（board-plates.ts）から残りクールダウンを戻す。
     // PlacedEmber そのものは PlateModel に載らないため、ここが唯一の経路。
     const cooldownLeftTicks = plate.statusMax - plate.statusNow;
+    // 選択なしのときは、再点火できる燠火はタップが再点火に横取りされて
+    // このパネルが開かない（設計書 §5.2 の優先順位）。反復7 段階2（§4.3 #4）で
+    // カード選択中はタップが能力表示に回るようになり、選択中は再点火できる
+    // 燠火でもこのパネルが開く。しかし選択中はタップしても再点火は起きないため、
+    // 「クリックで再点火」を出すとその場では嘘になる。選択を解除すれば同じ
+    // タップで再点火できるので、選択中はこのチップ自体を出さない。
     return [
       `ダメージ${card.ember.damage}`,
       `半径${card.ember.radius}`,
       `クールダウン${toSeconds(card.ember.cooldownTicks)}秒`,
-      // 設計書 §5.2 の優先順位により、再点火できる燠火はタップが再点火に
-      // 横取りされてこのパネルが開かない。つまり「クリックで再点火」を
-      // 固定で出すと、**それができない時にしか表示されない**嘘になる。
-      cooldownLeftTicks > 0 ? `再点火まで${toSeconds(cooldownLeftTicks)}秒` : 'クリックで再点火',
+      ...(cooldownLeftTicks > 0
+        ? [`再点火まで${toSeconds(cooldownLeftTicks)}秒`]
+        : isDuringCardSelection
+          ? []
+          : ['クリックで再点火']),
     ];
   }
   return [];
@@ -119,14 +126,16 @@ const chipsOf = (plate: PlateModel): string[] => {
 
 interface Props {
   plate: PlateModel;
+  /** カード選択中に開いたパネルか（反復7 段階2・設計書 §4.3 #4）。省略時は false */
+  isDuringCardSelection?: boolean;
 }
 
-export const InspectPanel: React.FC<Props> = ({ plate }) => (
+export const InspectPanel: React.FC<Props> = ({ plate, isDuringCardSelection = false }) => (
   <Panel data-testid="inspect-panel" role="status">
     <strong>
       {roleLabelOf(plate.visual.role)} {plate.visual.name}
     </strong>
-    {chipsOf(plate).map((chip) => (
+    {chipsOf(plate, isDuringCardSelection).map((chip) => (
       <Chip key={chip}>{chip}</Chip>
     ))}
   </Panel>
