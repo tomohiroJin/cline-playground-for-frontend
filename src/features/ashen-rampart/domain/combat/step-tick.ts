@@ -97,7 +97,8 @@ export const damageBreakdown = (
 /**
  * 守り手の実効ダメージ
  *
- * 倍率の二重適用を避けるため、damageBreakdown だけがダメージ算出の責務を持つ。
+ * 倍率の二重適用を避けるため、towerDamageBreakdown がダメージ算出の責務を持ち、
+ * 戦闘（damageBreakdown）と表示（board-plates）は同じ関数を通る。
  */
 export const effectiveDamage = (
   state: CombatState,

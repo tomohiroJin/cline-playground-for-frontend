@@ -243,6 +243,9 @@ describe('途中でやめた遠征（反復7 段階2・設計書 §4.0 c）', ()
     ]);
   });
 
+  // このテストが守るのは recordOnce による二重記録の防止。effect の順序により、
+  // 走査の時点で今回の expedition_started はまだ無いので、自己除外
+  // （id !== currentExpeditionId）そのものは record-abandoned-expeditions.test.ts が守る。
   it('StrictMode の二重実行でも1件だけで、今回の遠征自身は放棄にしない', () => {
     const { log, hook } = setup(true, [startedEvent('exp-old')]);
 
