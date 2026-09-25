@@ -6,8 +6,10 @@
  */
 import React from 'react';
 import styled from 'styled-components';
-import type { PlateModel } from './board-plates';
+import type { PlateModel, TowerEffective } from './board-plates';
 import { getCardDefinition } from '../domain/cards/card-pool';
+import type { TowerSpec } from '../domain/cards/card-definition';
+import { HIGH_GROUND_DAMAGE_MULT } from '../domain/combat/step-tick';
 import { roleLabelOf } from './unit-visual';
 import { toSeconds } from './card-text';
 import { COLORS } from './theme';
@@ -48,6 +50,30 @@ const Chip = styled.span`
  */
 const AURA_CELL_COUNT = 8;
 
+/** 実効値が素の値と違うときだけ「（素N）」を添える */
+const withBase = (label: string, effective: number, base: number): string =>
+  effective === base ? `${label}${base}` : `${label}${effective}（素${base}）`;
+
+/** 強化の出どころ（反復7 段階2）。札の名前ではなく働きで書く（支援札が増えても嘘にならない） */
+const boostChipsOf = (effective: TowerEffective | undefined): string[] =>
+  effective
+    ? [
+        ...(effective.auraDamageBonus > 0 ? [`支援で攻撃+${effective.auraDamageBonus}`] : []),
+        ...(effective.auraRangeBonus > 0 ? [`支援で射程+${effective.auraRangeBonus}`] : []),
+        ...(effective.isHighGround ? [`高台で攻撃×${HIGH_GROUND_DAMAGE_MULT}`] : []),
+      ]
+    : [];
+
+/** 攻撃塔のチップ。実効値があればそれを主に、素の値を括弧で添える */
+const attackChipsOf = (t: TowerSpec, effective: TowerEffective | undefined): string[] => [
+  withBase('攻撃', effective?.damage ?? t.damage, t.damage),
+  withBase('射程', effective?.range ?? t.range, t.range),
+  `間隔${toSeconds(t.cooldownTicks)}秒`,
+  t.hitsFlying ? '飛行に当たる' : '飛行に当たらない',
+  t.piercing ? '貫通' : t.splashRadius > 0 ? `範囲${t.splashRadius}` : '単体',
+  ...boostChipsOf(effective),
+];
+
 /** 役割ごとに出す能力を組み立てる（盤面に出さない詳細はすべてここへ集める） */
 const chipsOf = (plate: PlateModel): string[] => {
   const card = getCardDefinition(plate.cardId);
@@ -62,13 +88,7 @@ const chipsOf = (plate: PlateModel): string[] => {
       return [...parts, `効果範囲 隣接${AURA_CELL_COUNT}マス`];
     }
     if (t.damage === 0) return [`HP${t.hp}`, '攻撃しない'];
-    return [
-      `攻撃${t.damage}`,
-      `射程${t.range}`,
-      `間隔${toSeconds(t.cooldownTicks)}秒`,
-      t.hitsFlying ? '飛行に当たる' : '飛行に当たらない',
-      t.piercing ? '貫通' : t.splashRadius > 0 ? `範囲${t.splashRadius}` : '単体',
-    ];
+    return attackChipsOf(t, plate.effective);
   }
   if (card.trap) {
     return [

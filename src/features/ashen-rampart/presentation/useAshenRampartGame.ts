@@ -529,7 +529,7 @@ export const useAshenRampartGame = ({
         return;
       }
       const key = plateKeyOf(pos);
-      const plate = buildPlates(state).find((candidate) => candidate.key === key);
+      const plate = buildPlates(state, map).find((candidate) => candidate.key === key);
       if (!plate) {
         setInspectedKey(null);
         return;
@@ -549,7 +549,7 @@ export const useAshenRampartGame = ({
       inspectOpensRef.current += 1;
       setInspectedKey(key);
     },
-    [isPaused, selectedIndex, state, clickCell, reactivate, inspectedKey, runId]
+    [isPaused, selectedIndex, state, clickCell, reactivate, inspectedKey, runId, map]
   );
 
   // StrictMode は useState の関数型 updater を二重に呼び出すことがあるため、
@@ -618,7 +618,7 @@ export const useAshenRampartGame = ({
   const inspectedPlate: PlateModel | undefined =
     inspectedKey === null
       ? undefined
-      : buildPlates(state).find((plate) => plate.key === inspectedKey);
+      : buildPlates(state, map).find((plate) => plate.key === inspectedKey);
 
   return {
     state,

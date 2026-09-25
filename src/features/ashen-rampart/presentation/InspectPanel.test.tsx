@@ -25,6 +25,7 @@ import type {
 import { createCombatState } from '../domain/combat/combat-state';
 import { getCardDefinition } from '../domain/cards/card-pool';
 import type { DeckState } from '../domain/cards/deck';
+import { PLAINS_MAP } from '../domain/board/stage-map';
 
 /**
  * テスト用に必要な部分だけ持つ CombatState を組む
@@ -193,5 +194,45 @@ describe('InspectPanel', () => {
       render(<InspectPanel plate={plate} />);
       expect(screen.getByText('クリックで再点火')).toBeInTheDocument();
     });
+  });
+});
+
+describe('オーラ・高台の実効値（反復7 段階2・設計書 §4.3 #3）', () => {
+  const unit = (cardId: string, x: number, y: number): PlacedUnit => ({
+    cardId, pos: { x, y }, hp: 8, maxHp: 8, cooldownLeft: 0,
+  });
+  const plateAt = (units: PlacedUnit[], key: string) => {
+    const plate = buildPlates(stateWith({ units }), PLAINS_MAP).find((p) => p.key === key);
+    if (!plate) throw new Error(`前提が壊れています: ${key} に台座がありません`);
+    return plate;
+  };
+
+  it('篝火の隣の弓兵は、実効の攻撃と素の値、支援の内訳を出す', () => {
+    render(<InspectPanel plate={plateAt([unit('arrow-tower', 2, 1), unit('beacon', 1, 1)], '2,1')} />);
+
+    expect(screen.getByText('攻撃5（素4）')).toBeInTheDocument();
+    expect(screen.getByText('支援で攻撃+1')).toBeInTheDocument();
+  });
+
+  it('鍛冶場の隣の弓兵は、実効の射程を出す', () => {
+    render(<InspectPanel plate={plateAt([unit('arrow-tower', 2, 1), unit('forge', 1, 1)], '2,1')} />);
+
+    expect(screen.getByText('射程2.2（素1.6）')).toBeInTheDocument();
+    expect(screen.getByText('支援で射程+0.6')).toBeInTheDocument();
+  });
+
+  it('高台の弓兵は、高台の倍率を出す', () => {
+    render(<InspectPanel plate={plateAt([unit('arrow-tower', 2, 3)], '2,3')} />);
+
+    expect(screen.getByText('攻撃5（素4）')).toBeInTheDocument();
+    expect(screen.getByText('高台で攻撃×1.3')).toBeInTheDocument();
+  });
+
+  it('強化の無い塔は素の値だけを出す（盤面が渡っても表記は変わらない）', () => {
+    render(<InspectPanel plate={plateAt([unit('arrow-tower', 4, 0)], '4,0')} />);
+
+    expect(screen.getByText('攻撃4')).toBeInTheDocument();
+    expect(screen.getByText('射程1.6')).toBeInTheDocument();
+    expect(screen.queryByText(/支援で|高台で/)).not.toBeInTheDocument();
   });
 });

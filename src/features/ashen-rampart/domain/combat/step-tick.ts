@@ -55,17 +55,17 @@ export const SLOW_TERRAIN_MULT = 0.6;
 export const HIGH_GROUND_DAMAGE_MULT = 1.3;
 
 /**
- * 守り手の実効ダメージの内訳
+ * 守り手の実効ダメージの内訳（標的によらない）
  *
  * 篝火の貢献を測るため、オーラ抜きのダメージと実効ダメージを両方返す。
  * 丸めはそれぞれに適用する（合計してから丸めると差分がずれる）。
  * 倍率の二重適用を避けるため、この関数だけがダメージ算出の責務を持つ。
+ * 表示（board-plates.ts の実効値。反復7 段階2）も同じ関数を使い、画面と戦闘の数値をずらさない。
  */
-export const damageBreakdown = (
+export const towerDamageBreakdown = (
   state: CombatState,
   unitIndex: number,
-  map: StageMap,
-  _target: ActiveEnemy
+  map: StageMap
 ): { total: number; auraBonus: number } => {
   const unit = state.units[unitIndex];
   if (!unit) return { total: 0, auraBonus: 0 };
@@ -84,6 +84,14 @@ export const damageBreakdown = (
   const total = Math.round(spec.damage * highGround * (1 + auraBonus));
   return { total, auraBonus: total - base };
 };
+
+/** 守り手の実効ダメージの内訳（射撃の呼び出し側の互換のため標的を受け取る。標的は使わない） */
+export const damageBreakdown = (
+  state: CombatState,
+  unitIndex: number,
+  map: StageMap,
+  _target: ActiveEnemy
+): { total: number; auraBonus: number } => towerDamageBreakdown(state, unitIndex, map);
 
 /**
  * 守り手の実効ダメージ

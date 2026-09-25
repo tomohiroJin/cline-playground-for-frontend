@@ -9,6 +9,7 @@ import { CARD_IDS, getCardDefinition } from '../domain/cards/card-pool';
 import type { CombatState, PlacedUnit, PlacedTrap, PlacedReactor, PlacedEmber } from '../domain/combat/combat-state';
 import { createCombatState } from '../domain/combat/combat-state';
 import type { DeckState } from '../domain/cards/deck';
+import { PLAINS_MAP } from '../domain/board/stage-map';
 
 /**
  * テスト用に必要な部分だけ持つ CombatState を組む
@@ -177,5 +178,40 @@ describe('buildPlates', () => {
       })
     );
     expect(plates.map((p) => p.visual.glyph).sort()).toEqual(['弩', '燠', '炉', '網'].sort());
+  });
+});
+
+describe('実効値（反復7 段階2・設計書 §4.3 #3）', () => {
+  const unit = (cardId: string, x: number, y: number): PlacedUnit => ({
+    cardId, pos: { x, y }, hp: 8, maxHp: 8, cooldownLeft: 0,
+  });
+  const plateAt = (units: PlacedUnit[], key: string) =>
+    buildPlates(stateWith({ units }), PLAINS_MAP).find((plate) => plate.key === key);
+
+  it('篝火の隣の弓兵は攻撃5（素4 に +1）', () => {
+    expect(plateAt([unit('arrow-tower', 2, 1), unit('beacon', 1, 1)], '2,1')?.effective).toEqual({
+      damage: 5, range: 1.6, auraDamageBonus: 1, auraRangeBonus: 0, isHighGround: false,
+    });
+  });
+
+  it('鍛冶場の隣の弓兵は射程2.2（小数の誤差を落とす）', () => {
+    expect(plateAt([unit('arrow-tower', 2, 1), unit('forge', 1, 1)], '2,1')?.effective).toMatchObject({
+      range: 2.2, auraRangeBonus: 0.6,
+    });
+  });
+
+  it('高台の弓兵は攻撃5（4×1.3 を丸める）で、支援の加算は0', () => {
+    expect(plateAt([unit('arrow-tower', 2, 3)], '2,3')?.effective).toMatchObject({
+      damage: 5, auraDamageBonus: 0, isHighGround: true,
+    });
+  });
+
+  it('支援塔・壁には実効値を載せない', () => {
+    const plates = buildPlates(stateWith({ units: [unit('beacon', 1, 1), unit('stone-wall', 0, 2)] }), PLAINS_MAP);
+    plates.forEach((plate) => expect(plate.effective).toBeUndefined());
+  });
+
+  it('盤面を渡さなければ実効値は載らない（既存の呼び出しの互換）', () => {
+    expect(buildPlates(stateWith({ units: [unit('arrow-tower', 2, 1)] }))[0]?.effective).toBeUndefined();
   });
 });

@@ -164,7 +164,7 @@ export const BoardGrid: React.FC<Props> = ({
   // 敵は自身の laneIndex を持つため、map をそのまま渡してレーンごとに座標を解決させる
   const stacks = stackEnemies(state.enemies, map);
   const laneIndexByCell = buildLaneIndexByCell(map);
-  const plates = buildPlates(state);
+  const plates = buildPlates(state, map);
   const plateByCell = new Map(plates.map((plate) => [plate.key, plate]));
 
   return (
