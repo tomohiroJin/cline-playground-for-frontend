@@ -57,6 +57,7 @@ describe('癒し手の回復', () => {
     const next = stepTick(stateAt(BEFORE_HEAL_TICK, [mender(), grunt(20)]), [], PLAINS_MAP);
 
     expect(next.events.some((e) => e.kind === 'enemy-healed')).toBe(false);
+    expect(hpOf(next, 2)).toBe(20);
   });
 
   it('間隔でない tick には回復しない', () => {

@@ -119,6 +119,12 @@ for (const viewport of VIEWPORTS) {
     await expect(page.getByTestId('inspect-panel')).toBeVisible();
     samples.push(await measure(page, '能力表示'));
 
+    // 凡例から敵の能力表示を開く（設置物の能力表示と交互に開いても枠の高さが
+    // 変わらないことを測る。盾衛は層1 から凡例に出るため、この敵で確かめる）
+    await page.getByRole('button', { name: '盾衛 の能力を見る' }).click();
+    await expect(page.getByTestId('enemy-inspect-panel')).toBeVisible();
+    samples.push(await measure(page, '敵の能力表示'));
+
     // 時間経過で起きる一時表示（予告の切り替え・手札の満杯と溢れ・漏れ）を観測する
     for (let second = 1; second <= OBSERVE_SECONDS; second += 1) {
       await page.waitForTimeout(OBSERVE_INTERVAL_MS);

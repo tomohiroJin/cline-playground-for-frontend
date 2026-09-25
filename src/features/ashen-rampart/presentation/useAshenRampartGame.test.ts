@@ -779,6 +779,17 @@ describe('useAshenRampartGame', () => {
         expect(result.current.inspectedEnemyId).toBeUndefined();
         expect(enemyInspections(log)).toHaveLength(1);
       });
+
+      it('凡例で開いた敵の能力表示は、札を選んでいない何も無いセルをタップすると閉じる', () => {
+        const log = createMockPlayLog();
+        const result = placeTowerAt1_1(log);
+
+        act(() => result.current.inspectEnemy('warden'));
+        expect(result.current.inspectedEnemyId).toBe('warden');
+
+        act(() => result.current.interactCell({ x: 2, y: 2 })); // 何もない空マス
+        expect(result.current.inspectedEnemyId).toBeUndefined();
+      });
     });
 
   });
