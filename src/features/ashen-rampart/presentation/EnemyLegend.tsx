@@ -122,7 +122,7 @@ export const EnemyLegend: React.FC<Props> = ({ inspectedEnemyId, onInspect }) =>
         );
       })}
     </List>
-    <Note>射程を持つ敵は、経路の脇に置いた守り手も削ります。</Note>
+    <Note>射程を持つ敵は、経路の脇に置いた守り手も削ります。札を選ぶと、射程の届く場所に斜線が出ます。</Note>
     <Note>装甲: 1撃ごとにその値だけダメージを減らす（0 まで）。</Note>
     <Note>回復: 一定の間隔で、周りの敵の HP を戻す。</Note>
   </>

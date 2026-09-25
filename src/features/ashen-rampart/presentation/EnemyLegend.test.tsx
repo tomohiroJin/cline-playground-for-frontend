@@ -96,3 +96,11 @@ describe('凡例から敵の能力表示を開く（反復7 段階2・§4.3 #4�
     expect(appliedValueOf(button, 'min-height')).toBe(`${LEGEND_BUTTON_MIN_HEIGHT_PX}px`);
   });
 });
+
+describe('射程の色調の説明（反復7 段階2・設計書 §4.3 #5）', () => {
+  it('札を選ぶと射程の届く場所に斜線が出ることを説明する', () => {
+    render(<EnemyLegend />);
+
+    expect(screen.getByText(/札を選ぶと、射程の届く場所に斜線/)).toBeInTheDocument();
+  });
+});

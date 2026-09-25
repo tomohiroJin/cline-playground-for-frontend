@@ -57,10 +57,11 @@ const Frame = styled.div<{ $columns: number; $rows: number }>`
   container-type: inline-size;
 `;
 
-const Cell = styled.button<{ $kind: string; $highlighted: boolean }>`
+const Cell = styled.button<{ $kind: string; $highlighted: boolean; $threatened: boolean }>`
   position: relative;
   border: 1px solid ${({ $kind }) => ($kind === 'path' ? BOARD_COLORS.pathEdge : COLORS.grid)};
-  background: ${({ $kind }) => cellBackgroundOf({ isPath: $kind === 'path', isThreatened: false })};
+  background: ${({ $kind, $threatened }) =>
+    cellBackgroundOf({ isPath: $kind === 'path', isThreatened: $threatened })};
   outline: ${({ $highlighted }) =>
     $highlighted ? `2px solid ${COLORS.opportunity}` : 'none'};
   outline-offset: -2px;
@@ -133,6 +134,8 @@ interface Props {
   onCellClick: (pos: CellPos) => void;
   /** 能力表示の対象（未選択なら undefined） */
   inspectedPlate?: PlateModel;
+  /** 敵の射程が届く経路外セル（カード選択中のみ非空。反復7 段階2・§4.3 #5） */
+  threatenedCells?: readonly CellPos[];
 }
 
 const samePos = (a: CellPos, b: CellPos): boolean => a.x === b.x && a.y === b.y;
@@ -156,6 +159,7 @@ export const BoardGrid: React.FC<Props> = ({
   effects,
   onCellClick,
   inspectedPlate,
+  threatenedCells = [],
 }) => {
   const cells: CellPos[] = [];
   for (let y = 0; y < map.height; y++) {
@@ -175,6 +179,7 @@ export const BoardGrid: React.FC<Props> = ({
         const direction =
           laneIndex !== undefined ? pathDirectionAt(laneOf(map, laneIndex), pos) : undefined;
         const highlighted = placeableCells.some((c) => samePos(c, pos));
+        const threatened = !isPath && threatenedCells.some((c) => samePos(c, pos));
         const plate = plateByCell.get(plateKeyOf(pos));
         const terrain = isHighGround(map, pos) ? '高台' : isSlowCell(map, pos) ? '滞留' : '';
         const occupantText = plate
@@ -186,6 +191,7 @@ export const BoardGrid: React.FC<Props> = ({
           terrain,
           occupantText,
           highlighted ? 'ここに置ける' : '',
+          threatened ? '敵の射程内' : '',
         ]
           .filter(Boolean)
           .join(' ');
@@ -196,8 +202,10 @@ export const BoardGrid: React.FC<Props> = ({
             data-testid={`cell-${pos.x}-${pos.y}`}
             data-path={isPath ? 'true' : 'false'}
             data-lane={laneIndex}
+            data-threatened={threatened ? 'true' : 'false'}
             $kind={isPath ? 'path' : 'slot'}
             $highlighted={highlighted}
+            $threatened={threatened}
             aria-label={label}
             onClick={() => onCellClick(pos)}
           >

@@ -273,3 +273,23 @@ describe('道と置ける場所の見分け（反復7 段階2・設計書 §4.0 
     expect(appliedValueOf(screen.getByRole('img', { name: '重装' }), 'filter')).toContain(COLORS.dominant);
   });
 });
+
+describe('敵の射程の色調（反復7 段階2・設計書 §4.3 #5）', () => {
+  it('射程内の経路外セルは斜線を持ち、読み上げにも「敵の射程内」が入る', () => {
+    render(
+      <BoardGrid {...defaultProps} placeableCells={[{ x: 1, y: 1 }]} threatenedCells={[{ x: 1, y: 1 }]} />
+    );
+    const cell = screen.getByTestId('cell-1-1');
+
+    expect(cell).toHaveAttribute('data-threatened', 'true');
+    expect(cell).toHaveAccessibleName(/1,1 設置可 ここに置ける 敵の射程内/);
+    expect(appliedValueOf(cell, 'background')).toContain(BOARD_COLORS.rangeStripe);
+  });
+
+  it('射程外のセルと経路セルには斜線を付けない', () => {
+    render(<BoardGrid {...defaultProps} threatenedCells={[{ x: 0, y: 2 }]} />);
+
+    expect(screen.getByTestId('cell-1-1')).toHaveAttribute('data-threatened', 'false');
+    expect(appliedValueOf(screen.getByTestId('cell-0-2'), 'background')).toBe(BOARD_COLORS.path);
+  });
+});

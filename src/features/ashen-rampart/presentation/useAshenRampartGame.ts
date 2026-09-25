@@ -4,13 +4,14 @@
  * 時間を進めるのは setInterval だけで、ロジックは一切持たない（設計書 §8.2）。
  * 一時停止はループ制御であり、ドメインの状態ではない（§8.6）。
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CellPos, StageMap } from '../domain/board/stage-map';
 import { PLAINS_MAP } from '../domain/board/stage-map';
 import { getCardDefinition } from '../domain/cards/card-pool';
 import { placementKindOf } from '../domain/cards/card-definition';
 import type { CombatState } from '../domain/combat/combat-state';
 import { stepTick, placeableCells as computePlaceableCells, type PlayerAction } from '../domain/combat/step-tick';
+import { enemyReachCells } from '../domain/combat/enemy-reach';
 import { buildPlates, plateKeyOf, type PlateModel } from './board-plates';
 import { nextWavePreview } from './wave-preview';
 import { decideBattleAnnouncement } from './battle-announcement';
@@ -428,6 +429,11 @@ export const useAshenRampartGame = ({
     return computePlaceableCells(state, card, map);
   })();
 
+  // 敵の射程が届く経路外セル（反復7 段階2・§4.3 #5）。台本と地図だけから静的に求まるので
+  // ステージの間は一度だけ計算する。置けるセルがある間（カード選択中）だけ盤面に出す
+  const reachCells = useMemo(() => enemyReachCells(map, state.waves), [map, state.waves]);
+  const threatenedCells: readonly CellPos[] = placeableCells.length > 0 ? reachCells : [];
+
   const selectCard = useCallback(
     (handIndex: number) => {
       if (isPaused) return;
@@ -688,6 +694,7 @@ export const useAshenRampartGame = ({
     levyOptions: state.levyOptions,
     selectedIndex,
     placeableCells,
+    threatenedCells,
     isPaused,
     overflowNotice,
     effects,

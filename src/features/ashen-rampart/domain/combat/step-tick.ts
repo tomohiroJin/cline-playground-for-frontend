@@ -36,6 +36,7 @@ import type {
 import { laneFor, goalFor, enemyPosition } from './enemy-position';
 import { applyDamage, canTowerHit, hitOn, type DamageDraft } from './damage';
 import { applyEnemyHeals } from './enemy-heal';
+import { distanceToSegment } from './geometry';
 
 // 既存の import 元（step-tick）を変えずに済ませるため再エクスポートする。
 // 反復1〜4 のテストが step-tick から positionOf / enemyPosition を取っている。
@@ -747,20 +748,6 @@ const applySplashDamage = (
     const damage = effectiveDamage(splash.stateForDamage, splash.unitIndex, ctx.map, other);
     applyDamage(draft, hitOn(other, damage, { kind: 'unit', index: splash.unitIndex }));
   });
-};
-
-/** 点 p と線分 ab の距離（貫通の判定に使う） */
-const distanceToSegment = (
-  p: { x: number; y: number },
-  a: CellPos,
-  b: { x: number; y: number }
-): number => {
-  const dx = b.x - a.x;
-  const dy = b.y - a.y;
-  const lengthSq = dx * dx + dy * dy;
-  if (lengthSq === 0) return Math.hypot(p.x - a.x, p.y - a.y);
-  const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / lengthSq));
-  return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
 };
 
 /** 貫通の当たり幅（セル）。この距離まで直線に近い敵に当たる */

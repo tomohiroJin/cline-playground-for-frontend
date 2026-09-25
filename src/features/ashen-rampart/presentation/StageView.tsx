@@ -153,6 +153,7 @@ export const StageView: React.FC<StageViewProps> = ({
             effects={game.effects}
             onCellClick={game.interactCell}
             inspectedPlate={game.inspectedPlate}
+            threatenedCells={game.threatenedCells}
           />
           <CountdownDisplay tick={game.state.tick} />
         </BoardWrapper>
