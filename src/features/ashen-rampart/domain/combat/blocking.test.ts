@@ -71,6 +71,32 @@ describe('MAX_ATTACKERS_PER_UNIT', () => {
     const few = many.slice(0, 2);
     expect(attackersFor(ctxWith(units), few, 0)).toHaveLength(2);
   });
+
+  describe('ブロックしている敵を優先する（反復7 段階2・設計書 §4.2 (3)）', () => {
+    // 壁（lane[3] = (3,2)）の手前で止まった雑兵3体と、壁を通り過ぎて射程1.2 から
+    // 壁を殴れる雑兵。反復5 の実測では、通り過ぎた3体が止まった3体を枠から押し出していた
+    const blocked = [2.5, 2.6, 2.7].map((progress, i) => enemyAt(progress, { id: 100 + i }));
+    const passed = [4.0, 4.05, 4.1].map((progress, i) => enemyAt(progress, { id: 200 + i }));
+
+    it('前提: 通り過ぎた雑兵は壁にブロックされておらず、射程で壁を殴る', () => {
+      passed.forEach((enemy) => {
+        expect(blockerIndexFor(ctxWith(units), enemy)).toBeUndefined();
+        expect(attackTargetIndexFor(ctxWith(units), enemy)).toBe(0);
+      });
+    });
+
+    it('通り過ぎた敵の進行度が高くても、ブロックしている敵が枠を取る', () => {
+      const attackers = attackersFor(ctxWith(units), [...passed, ...blocked], 0);
+
+      expect(attackers.map((e) => e.id).sort()).toEqual([100, 101, 102]);
+    });
+
+    it('ブロック中の敵が枠より少なければ、残りを射程攻撃者で進行度順に埋める', () => {
+      const attackers = attackersFor(ctxWith(units), [...passed, blocked[0]!], 0);
+
+      expect(attackers.map((e) => e.id)).toEqual([100, 202, 201]);
+    });
+  });
 });
 
 describe('attackTargetIndexFor（反復5: 射程内の守り手を撃つ）', () => {

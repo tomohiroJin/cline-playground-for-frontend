@@ -29,7 +29,7 @@ describe('StartOverlay', () => {
     render(<StartOverlay preview="雑兵8" onStart={jest.fn()} />);
     expect(screen.getByText(/カードを選/)).toBeInTheDocument();
     expect(screen.getByText(/燠火/)).toBeInTheDocument();
-    expect(screen.getByText(/カード未選択時/)).toBeInTheDocument();
+    expect(screen.getByText(/範囲と能力が表示/)).toBeInTheDocument();
     expect(screen.getByText(/スペース/)).toBeInTheDocument();
   });
 

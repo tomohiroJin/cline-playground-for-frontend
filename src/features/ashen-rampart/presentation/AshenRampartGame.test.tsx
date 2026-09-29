@@ -230,7 +230,7 @@ describe('AshenRampartGame', () => {
     await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
     const copiedJson = writeText.mock.calls[0][0] as string;
     const parsed = JSON.parse(copiedJson) as PlayLogExport;
-    expect(parsed.version).toBe(6);
+    expect(parsed.version).toBe(7);
     expect(parsed.events.some((e) => e.kind === 'expedition_started')).toBe(true);
     await screen.findByText('判定用の記録をコピーしました');
   });
@@ -328,8 +328,8 @@ describe('AshenRampartGame', () => {
 
   it('設置物をカード未選択でタップすると、射程リングと能力チップが実画面に出て再タップで消える（結線の到達確認）', () => {
     // フック側テストは inspectedPlate が「返る」ことしか見ていない。
-    // AshenRampartGame から `inspectedPlate={game.inspectedPlate}` を外しても、
-    // あるいは `{game.inspectedPlate && <InspectPanel .../>}` を消しても、
+    // StageView から BoardInfoSlot への `inspectedPlate={game.inspectedPlate}` を外しても、
+    // あるいは BoardInfoSlot 内の `if (inspectedPlate) return <InspectPanel .../>` を消しても、
     // prop が optional なので型は通りテストも落ちなかった（最終レビュー指摘F）。
     // ここは実物のツリーを描いて、その2本の結線を同時に守る。
     render(<AshenRampartGame />);
@@ -534,7 +534,7 @@ describe('AshenRampartGame', () => {
     expect(notice).toBeVisible();
 
     // 拒否は「不便」であって砦が削られる「危険」ではないため、危険専用の色(danger系)を
-    // 使ってはいけない。data-tone は AshenRampartGame.tsx の REJECTION_NOTICE_TONE
+    // 使ってはいけない。data-tone は BoardInfoSlot.tsx の REJECTION_NOTICE_TONE
     // 定数から色（color）と同時に導出されているため、この属性が 'opportunity' から
     // 'dangerText'/'danger' 系のトークン名に変わったときは、実際の色も同時に
     // danger 系へ変わっている（色だけを変えることは構造的にできない）。

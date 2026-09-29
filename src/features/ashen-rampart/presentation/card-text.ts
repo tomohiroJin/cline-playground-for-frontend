@@ -55,7 +55,7 @@ export const towerStatsTextOf = (cardId: string): string | undefined => {
 };
 
 /** 1秒あたりの tick 数。表示用に秒へ丸めるときだけ使う */
-const TICKS_PER_SECOND = 10;
+export const TICKS_PER_SECOND = 10;
 
 /**
  * tick を表示用の秒へ丸める（切り上げ）

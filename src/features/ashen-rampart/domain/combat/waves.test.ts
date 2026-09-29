@@ -9,8 +9,8 @@ import { PLAINS_WAVES, totalEnemyCount, totalEnemyHp } from './waves';
 import { LIFE_INITIAL } from './combat-state';
 
 describe('敵定義', () => {
-  it('敵は5種ある', () => {
-    expect(ENEMY_IDS).toHaveLength(5);
+  it('敵は7種ある（反復7 段階2 で盾衛・癒し手を加えた）', () => {
+    expect(ENEMY_IDS).toHaveLength(7);
   });
 
   it('飛行するのは鴉だけ（属性のカウンター要求）', () => {
@@ -22,11 +22,31 @@ describe('敵定義', () => {
     expect(getEnemySpec('runner').speed).toBeGreaterThan(getEnemySpec('grunt').speed);
   });
 
-  it('重装は最も硬く最も遅い', () => {
+  it('重装は最も HP が多く、最も遅い（盾衛と同速。盾衛の硬さは HP ではなく装甲で表す）', () => {
     const hps = ENEMY_IDS.map((id) => getEnemySpec(id).hp);
     expect(getEnemySpec('brute').hp).toBe(Math.max(...hps));
     const speeds = ENEMY_IDS.map((id) => getEnemySpec(id).speed);
     expect(getEnemySpec('brute').speed).toBe(Math.min(...speeds));
+  });
+
+  it('装甲を持つのは盾衛だけで、その HP は重装より低い', () => {
+    const armored = ENEMY_IDS.filter((id) => (getEnemySpec(id).armor ?? 0) > 0);
+    expect(armored).toEqual(['warden']);
+    expect(getEnemySpec('warden').hp).toBeLessThan(getEnemySpec('brute').hp);
+  });
+
+  it('回復を持つのは癒し手だけ', () => {
+    expect(ENEMY_IDS.filter((id) => getEnemySpec(id).heal !== undefined)).toEqual(['mender']);
+  });
+
+  it('新敵の初期値は設計書 §4.1 のとおり（数値はすべて較正対象）', () => {
+    expect(getEnemySpec('warden')).toMatchObject({
+      name: '盾衛', hp: 45, armor: 4, speed: 0.06, attack: 8, attackRange: 1.5, flying: false,
+    });
+    expect(getEnemySpec('mender')).toMatchObject({
+      name: '癒し手', hp: 18, speed: 0.1, attackRange: 0, flying: false,
+      heal: { amount: 3, intervalTicks: 40, radius: 1.5 },
+    });
   });
 
   it('未知の敵IDは契約違反として例外', () => {

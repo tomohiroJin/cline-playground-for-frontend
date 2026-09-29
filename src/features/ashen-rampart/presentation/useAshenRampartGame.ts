@@ -4,13 +4,14 @@
  * 時間を進めるのは setInterval だけで、ロジックは一切持たない（設計書 §8.2）。
  * 一時停止はループ制御であり、ドメインの状態ではない（§8.6）。
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CellPos, StageMap } from '../domain/board/stage-map';
 import { PLAINS_MAP } from '../domain/board/stage-map';
 import { getCardDefinition } from '../domain/cards/card-pool';
 import { placementKindOf } from '../domain/cards/card-definition';
 import type { CombatState } from '../domain/combat/combat-state';
 import { stepTick, placeableCells as computePlaceableCells, type PlayerAction } from '../domain/combat/step-tick';
+import { enemyReachCells } from '../domain/combat/enemy-reach';
 import { buildPlates, plateKeyOf, type PlateModel } from './board-plates';
 import { nextWavePreview } from './wave-preview';
 import { decideBattleAnnouncement } from './battle-announcement';
@@ -25,7 +26,9 @@ import {
   createRunId,
   CURRENT_ITERATION,
   type PlayLogPort,
+  type EnemyInspectSource,
 } from '../application/ports/play-log-port';
+import { enemyIdAtCell } from './enemy-at-cell';
 
 export const TICK_INTERVAL_MS = 100;
 
@@ -122,6 +125,8 @@ export const useAshenRampartGame = ({
   // 能力表示の対象。座標ではなく plateKeyOf の文字列で持つ。設置物が壊れて
   // 消えたときに、次の描画で自動的に対象が失われる（別途クリアする処理が要らない）
   const [inspectedKey, setInspectedKey] = useState<string | null>(null);
+  // 敵の種類の能力表示（反復7 段階2・§4.3 #4）。設置物の能力表示（inspectedKey）とは排他
+  const [inspectedEnemyId, setInspectedEnemyId] = useState<string | null>(null);
   // 決着時に run_tally へ載せる集計用 ref（判定項目3）。
   // 手動の捨札は ref ではなく tally（ドメインの discarded イベント）から取る
   const inspectOpensRef = useRef(0);
@@ -424,6 +429,11 @@ export const useAshenRampartGame = ({
     return computePlaceableCells(state, card, map);
   })();
 
+  // 敵の射程が届く経路外セル（反復7 段階2・§4.3 #5）。台本と地図だけから静的に求まるので
+  // ステージの間は一度だけ計算する。置けるセルがある間（カード選択中）だけ盤面に出す
+  const reachCells = useMemo(() => enemyReachCells(map, state.waves), [map, state.waves]);
+  const threatenedCells: readonly CellPos[] = placeableCells.length > 0 ? reachCells : [];
+
   const selectCard = useCallback(
     (handIndex: number) => {
       if (isPaused) return;
@@ -432,6 +442,7 @@ export const useAshenRampartGame = ({
       const card = getCardDefinition(cardId);
       // カードを選んだのに前の能力表示が残っていると誤読するため閉じる
       setInspectedKey(null);
+      setInspectedEnemyId(null);
       if (placementKindOf(card) === 'none') {
         pendingRef.current.push({ kind: 'play-card', handIndex });
         setSelectedIndex(null);
@@ -504,21 +515,87 @@ export const useAshenRampartGame = ({
   );
 
   /**
+   * 能力表示を開閉する。そのセルに設置物が無ければ何もせず false を返す
+   *
+   * 記録は updater の外で行う（StrictMode の二重呼び出し対策。togglePause と同じ理由）。
+   */
+  const toggleInspect = useCallback(
+    (pos: CellPos, isDuringCardSelection: boolean): boolean => {
+      const key = plateKeyOf(pos);
+      const plate = buildPlates(state, map).find((candidate) => candidate.key === key);
+      if (!plate) return false;
+      if (inspectedKey === key) {
+        setInspectedKey(null);
+        return true;
+      }
+      logRef.current.record({
+        kind: 'inspect_opened',
+        runId,
+        cardId: plate.cardId,
+        tick: state.tick,
+        duringCardSelection: isDuringCardSelection,
+      });
+      inspectOpensRef.current += 1;
+      setInspectedEnemyId(null);
+      setInspectedKey(key);
+      return true;
+    },
+    [state, map, inspectedKey, runId]
+  );
+
+  /**
+   * 敵の種類の能力表示を開閉する（反復7 段階2・設計書 §4.3 #4・判定項目9(b)）
+   *
+   * 同じ種類をもう一度選ぶと閉じる。開いたときだけ enemy_inspected を1件記録する
+   * （閉じたときは記録しない。inspect_opened と同じ）。記録は updater の外で行う
+   * （StrictMode の二重呼び出し対策。toggleInspect と同じ理由）。
+   * run_tally の inspectOpens には数えない（設置物の能力表示の回数のまま意味を変えない）。
+   */
+  const toggleEnemyInspect = useCallback(
+    (enemyId: string, source: EnemyInspectSource) => {
+      if (isPaused) return;
+      if (inspectedEnemyId === enemyId) {
+        setInspectedEnemyId(null);
+        return;
+      }
+      logRef.current.record({
+        kind: 'enemy_inspected',
+        runId,
+        enemyId,
+        source,
+        duringCardSelection: selectedIndex !== null,
+        tick: state.tick,
+      });
+      setInspectedKey(null);
+      setInspectedEnemyId(enemyId);
+    },
+    [isPaused, inspectedEnemyId, runId, selectedIndex, state.tick]
+  );
+
+  /** 凡例から敵の能力表示を開閉する（UI の入口。札の選択は保つ） */
+  const inspectEnemy = useCallback(
+    (enemyId: string) => toggleEnemyInspect(enemyId, 'legend'),
+    [toggleEnemyInspect]
+  );
+
+  /**
    * 盤面セルへの唯一の入口（UI はこれだけを呼ぶ）
    *
-   * 優先順位: 配置 > 再点火 > 能力表示（設計書 §5.2）。既存の2つを先に評価するため、
-   * 能力表示を足しても従来の操作は1つも変わらない。カード選択中は配置を優先する
-   * （選択済みという明示的な意図を尊重するため）。選択していないときに限り、
-   * そのセルに再点火可能な燠火（cooldownLeft === 0）があれば再点火する。これが無いと
-   * 「終盤に手札もマナも尽きても燠火だけは操作対象として残る」という設計（設計書 §4）
-   * が UI から到達できない。再点火可能な燠火だけは能力表示を開けないが、
-   * クールダウン中の燠火（再点火できない）は他の設置物と同じく能力表示を開ける。
+   * カード選択中（反復7 段階2・設計書 §4.3 #4 で変更）:
+   *   設置物のあるセル → 能力表示（選択は保つ。配置も再点火もしない）
+   *   それ以外のセル → 配置（敵がいても配置。経路に壁を置く操作を奪わない。敵は凡例から開く）
+   *   占有セルには canPlaceAt がもともと置かせないので、能力表示に回しても失う操作は無い。
+   *   段階1 までは選択中のタップがすべて配置に抜け、能力表示が一度も開かれなかった（§3.8）。
+   * 選択なし（設計書 §5.2 の優先順位に敵を足した）:
+   *   再点火可能な燠火（cooldownLeft === 0）→ 再点火。それ以外の設置物 → 能力表示の開閉。
+   *   敵のいるセル → その敵の種類の能力表示の開閉（enemyIdAtCell）。
+   *   何も無いセル → 能力表示を閉じる。
    */
   const interactCell = useCallback(
     (pos: CellPos) => {
       if (isPaused) return;
       if (selectedIndex !== null) {
-        clickCell(pos);
+        if (!toggleInspect(pos, true)) clickCell(pos);
         return;
       }
       const emberIndex = state.embers.findIndex(
@@ -528,28 +605,16 @@ export const useAshenRampartGame = ({
         reactivate(emberIndex);
         return;
       }
-      const key = plateKeyOf(pos);
-      const plate = buildPlates(state).find((candidate) => candidate.key === key);
-      if (!plate) {
-        setInspectedKey(null);
+      if (toggleInspect(pos, false)) return;
+      const enemyId = enemyIdAtCell(state.enemies, map, pos);
+      if (enemyId !== undefined) {
+        toggleEnemyInspect(enemyId, 'cell');
         return;
       }
-      if (inspectedKey === key) {
-        setInspectedKey(null);
-        return;
-      }
-      // StrictMode は useState の関数型 updater を二重に呼ぶことがあるため、
-      // 記録は updater の外で行う（togglePause と同じ理由）
-      logRef.current.record({
-        kind: 'inspect_opened',
-        runId,
-        cardId: plate.cardId,
-        tick: state.tick,
-      });
-      inspectOpensRef.current += 1;
-      setInspectedKey(key);
+      setInspectedKey(null);
+      setInspectedEnemyId(null);
     },
-    [isPaused, selectedIndex, state, clickCell, reactivate, inspectedKey, runId]
+    [isPaused, selectedIndex, state.embers, state.enemies, map, clickCell, reactivate, toggleInspect, toggleEnemyInspect]
   );
 
   // StrictMode は useState の関数型 updater を二重に呼び出すことがあるため、
@@ -563,6 +628,7 @@ export const useAshenRampartGame = ({
     setIsPaused((current) => !current);
     setSelectedIndex(null);
     setInspectedKey(null);
+    setInspectedEnemyId(null);
   }, [isPaused, runId, state.tick]);
 
   /**
@@ -577,6 +643,7 @@ export const useAshenRampartGame = ({
       pendingRef.current = [];
       setSelectedIndex(null);
       setInspectedKey(null);
+      setInspectedEnemyId(null);
       setIsPaused(false);
       setOverflowNotice(undefined);
       setEffects([]);
@@ -618,7 +685,7 @@ export const useAshenRampartGame = ({
   const inspectedPlate: PlateModel | undefined =
     inspectedKey === null
       ? undefined
-      : buildPlates(state).find((plate) => plate.key === inspectedKey);
+      : buildPlates(state, map).find((plate) => plate.key === inspectedKey);
 
   return {
     state,
@@ -627,6 +694,7 @@ export const useAshenRampartGame = ({
     levyOptions: state.levyOptions,
     selectedIndex,
     placeableCells,
+    threatenedCells,
     isPaused,
     overflowNotice,
     effects,
@@ -645,5 +713,7 @@ export const useAshenRampartGame = ({
     exportLogJson,
     summary: summarize(tally, cards),
     inspectedPlate,
+    inspectedEnemyId: inspectedEnemyId ?? undefined,
+    inspectEnemy,
   };
 };

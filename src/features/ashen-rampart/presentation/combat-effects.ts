@@ -33,6 +33,10 @@ export const EFFECT_LIFETIME = {
   leak: 8,
   'unit-damaged': 3,
   'unit-lost': 8,
+  /** 装甲の軽減量（反復7 段階2）。文字を読む時間が要るので撃破と同じ長さ */
+  armor: 8,
+  /** 回復の線（反復7 段階2） */
+  heal: 5,
 } as const;
 
 /**
@@ -56,6 +60,8 @@ const EFFECT_PRIORITY: Record<Effect['kind'], number> = {
   ember: 2,
   shot: 1,
   'unit-damaged': 1,
+  armor: 2,
+  heal: 2,
 };
 
 /**
@@ -92,6 +98,8 @@ export const EFFECT_STROKE_WIDTH = {
   unitDamaged: 1,
   /** 消滅の ✕ マーク */
   unitLost: 3,
+  /** 回復の線（反復7 段階2） */
+  heal: 2,
 } as const;
 
 /** 貫通の守り手の射撃線に使う破線パターン */
@@ -119,7 +127,11 @@ export type Effect =
   | { kind: 'ember'; id: string; at: CellPos; radius: number; untilTick: number }
   | { kind: 'leak'; id: string; at: CellPos; untilTick: number }
   | { kind: 'unit-damaged'; id: string; pos: CellPos; untilTick: number }
-  | { kind: 'unit-lost'; id: string; pos: CellPos; untilTick: number };
+  | { kind: 'unit-lost'; id: string; pos: CellPos; untilTick: number }
+  /** 装甲に軽減された命中（反復7 段階2・§4.3 #1）。`-dealt (装甲armor)` と描く */
+  | { kind: 'armor'; id: string; at: CellPos; dealt: number; armor: number; untilTick: number }
+  /** 癒し手の回復（反復7 段階2・§4.3 #2）。癒し手から対象へ線を引く */
+  | { kind: 'heal'; id: string; from: CellPos; to: CellPos; amount: number; untilTick: number };
 
 /**
  * 敵の現在位置。既に消えた敵は undefined
@@ -144,6 +156,32 @@ const sourcePos = (state: CombatState, source: Extract<TickEvent, { kind: 'defea
 /** そのイベントに与える寿命。reduced-motion では一律にする */
 const lifetimeOf = (kind: Effect['kind'], reducedMotion: boolean): number =>
   reducedMotion ? REDUCED_MOTION_LIFETIME : EFFECT_LIFETIME[kind];
+
+/**
+ * 敵の装甲・回復のイベントをエフェクトへ変換する（反復7 段階2）
+ *
+ * toEffect がすでに長い（PR #201 minor #3）ため、新しい2種はここに分けた。
+ */
+const toEnemyEffect = (
+  event: TickEvent,
+  ctx: { state: CombatState; map: StageMap; id: string; reducedMotion: boolean }
+): Effect | undefined => {
+  const { state, map, id, reducedMotion } = ctx;
+  if (event.kind === 'armor-hit') {
+    const at = enemyPos(state, event.enemyId, map);
+    if (!at) return undefined;
+    const untilTick = state.tick + lifetimeOf('armor', reducedMotion);
+    return { kind: 'armor', id, at, dealt: event.dealt, armor: event.armor, untilTick };
+  }
+  if (event.kind === 'enemy-healed') {
+    const from = enemyPos(state, event.healerId, map);
+    const to = enemyPos(state, event.targetId, map);
+    if (!from || !to) return undefined;
+    const untilTick = state.tick + lifetimeOf('heal', reducedMotion);
+    return { kind: 'heal', id, from, to, amount: event.amount, untilTick };
+  }
+  return undefined;
+};
 
 /** 1件の TickEvent をエフェクトへ変換する。描かないイベントは undefined */
 const toEffect = (
@@ -211,7 +249,7 @@ const toEffect = (
       untilTick: tick + lifetimeOf('unit-lost', reducedMotion),
     };
   }
-  return undefined;
+  return toEnemyEffect(event, { state, map, id, reducedMotion });
 };
 
 /**

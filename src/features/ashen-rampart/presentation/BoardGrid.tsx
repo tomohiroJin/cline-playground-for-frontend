@@ -25,6 +25,13 @@ import { roleLabelOf } from './unit-visual';
 import { BoardEffectLayer } from './BoardEffectLayer';
 import type { Effect } from './combat-effects';
 import { COLORS } from './theme';
+import {
+  BOARD_COLORS,
+  CELL_ARROW_OPACITY,
+  LANE_MARK_OPACITY,
+  PLACEABLE_HALO_PX,
+  cellBackgroundOf,
+} from './board-colors';
 
 /**
  * 設置済みセルに常時描く印の上限（台座・文字・状態バー）
@@ -50,13 +57,17 @@ const Frame = styled.div<{ $columns: number; $rows: number }>`
   container-type: inline-size;
 `;
 
-const Cell = styled.button<{ $kind: string; $highlighted: boolean }>`
+const Cell = styled.button<{ $kind: string; $highlighted: boolean; $threatened: boolean }>`
   position: relative;
-  border: 1px solid ${COLORS.grid};
-  background: ${({ $kind }) => ($kind === 'path' ? '#2a2320' : '#211c19')};
+  border: 1px solid ${({ $kind }) => ($kind === 'path' ? BOARD_COLORS.pathEdge : COLORS.grid)};
+  background: ${({ $kind, $threatened }) =>
+    cellBackgroundOf({ isPath: $kind === 'path', isThreatened: $threatened })};
   outline: ${({ $highlighted }) =>
     $highlighted ? `2px solid ${COLORS.opportunity}` : 'none'};
   outline-offset: -2px;
+  /* 経路を明るくしたので、琥珀の縁取りの内側に暗い縁を敷いて琥珀を読ませる（§4.0 b） */
+  box-shadow: ${({ $highlighted }) =>
+    $highlighted ? `inset 0 0 0 ${PLACEABLE_HALO_PX}px ${BOARD_COLORS.placeableHalo}` : 'none'};
   cursor: ${({ $highlighted }) => ($highlighted ? 'pointer' : 'default')};
   color: ${COLORS.secondary};
   font-size: 11px;
@@ -91,7 +102,7 @@ const LaneMark = styled.span<{ $shape: 'circle' | 'square' }>`
   width: 5px;
   height: 5px;
   background: ${COLORS.secondary};
-  opacity: 0.6;
+  opacity: ${LANE_MARK_OPACITY};
   border-radius: ${({ $shape }) => ($shape === 'circle' ? '50%' : '1px')};
   pointer-events: none;
 `;
@@ -103,7 +114,7 @@ const CellArrow = styled.span`
   bottom: 1px;
   font-size: 10px;
   color: ${COLORS.secondary};
-  opacity: 0.7;
+  opacity: ${CELL_ARROW_OPACITY};
   pointer-events: none;
 `;
 
@@ -123,6 +134,8 @@ interface Props {
   onCellClick: (pos: CellPos) => void;
   /** 能力表示の対象（未選択なら undefined） */
   inspectedPlate?: PlateModel;
+  /** 敵の射程が届く経路外セル（カード選択中のみ非空。反復7 段階2・§4.3 #5） */
+  threatenedCells?: readonly CellPos[];
 }
 
 const samePos = (a: CellPos, b: CellPos): boolean => a.x === b.x && a.y === b.y;
@@ -146,6 +159,7 @@ export const BoardGrid: React.FC<Props> = ({
   effects,
   onCellClick,
   inspectedPlate,
+  threatenedCells = [],
 }) => {
   const cells: CellPos[] = [];
   for (let y = 0; y < map.height; y++) {
@@ -154,7 +168,7 @@ export const BoardGrid: React.FC<Props> = ({
   // 敵は自身の laneIndex を持つため、map をそのまま渡してレーンごとに座標を解決させる
   const stacks = stackEnemies(state.enemies, map);
   const laneIndexByCell = buildLaneIndexByCell(map);
-  const plates = buildPlates(state);
+  const plates = buildPlates(state, map);
   const plateByCell = new Map(plates.map((plate) => [plate.key, plate]));
 
   return (
@@ -165,6 +179,7 @@ export const BoardGrid: React.FC<Props> = ({
         const direction =
           laneIndex !== undefined ? pathDirectionAt(laneOf(map, laneIndex), pos) : undefined;
         const highlighted = placeableCells.some((c) => samePos(c, pos));
+        const threatened = !isPath && threatenedCells.some((c) => samePos(c, pos));
         const plate = plateByCell.get(plateKeyOf(pos));
         const terrain = isHighGround(map, pos) ? '高台' : isSlowCell(map, pos) ? '滞留' : '';
         const occupantText = plate
@@ -176,6 +191,7 @@ export const BoardGrid: React.FC<Props> = ({
           terrain,
           occupantText,
           highlighted ? 'ここに置ける' : '',
+          threatened ? '敵の射程内' : '',
         ]
           .filter(Boolean)
           .join(' ');
@@ -186,8 +202,10 @@ export const BoardGrid: React.FC<Props> = ({
             data-testid={`cell-${pos.x}-${pos.y}`}
             data-path={isPath ? 'true' : 'false'}
             data-lane={laneIndex}
+            data-threatened={threatened ? 'true' : 'false'}
             $kind={isPath ? 'path' : 'slot'}
             $highlighted={highlighted}
+            $threatened={threatened}
             aria-label={label}
             onClick={() => onCellClick(pos)}
           >

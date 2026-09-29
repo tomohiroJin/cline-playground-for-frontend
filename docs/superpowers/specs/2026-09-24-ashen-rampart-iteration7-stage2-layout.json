@@ -1,0 +1,680 @@
+[
+  {
+    "name": "layout-1280x800",
+    "status": "passed",
+    "commit": "a1fe58b4",
+    "measuredAt": "2026-09-28T03:56:54.366Z",
+    "data": {
+      "viewport": {
+        "name": "1280x800",
+        "width": 1280,
+        "height": 800
+      },
+      "samples": [
+        {
+          "label": "開始直後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "マナが2足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "札を選択",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "マナが2足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "拒否理由",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "そこには置けない",
+          "handNotice": "マナが2足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "配置",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "そこには置けない",
+          "handNotice": "マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "能力表示",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "そこには置けない",
+          "handNotice": "マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "敵の能力表示",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "1秒後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "2秒後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "3秒後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "4秒後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "5秒後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "6秒後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "7秒後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "8秒後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "9秒後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "10秒後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "11秒後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "12秒後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "13秒後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "14秒後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "15秒後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "石壁 を手札に持てず失いました手札がいっぱい。次のドローであふれてライフ-1",
+          "lifeLossReason": "手札があふれました",
+          "dangerSlot": ""
+        },
+        {
+          "label": "16秒後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "17秒後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "18秒後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "敵が砦に到達しました",
+          "dangerSlot": "危険"
+        },
+        {
+          "label": "19秒後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "魔力炉 を手札に持てず失いました手札がいっぱい。次のドローであふれてライフ-1",
+          "lifeLossReason": "手札があふれました",
+          "dangerSlot": ""
+        },
+        {
+          "label": "20秒後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "21秒後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "22秒後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "23秒後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "弩砲 を手札に持てず失いました手札がいっぱい。次のドローであふれてライフ-1",
+          "lifeLossReason": "手札があふれました",
+          "dangerSlot": ""
+        },
+        {
+          "label": "24秒後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "25秒後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "26秒後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "27秒後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "弓兵 を手札に持てず失いました手札がいっぱい。次のドローであふれてライフ-1",
+          "lifeLossReason": "手札があふれました",
+          "dangerSlot": ""
+        },
+        {
+          "label": "28秒後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "29秒後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "30秒後",
+          "board": 237,
+          "hand": 1077,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        }
+      ]
+    }
+  },
+  {
+    "name": "layout-360x740",
+    "status": "passed",
+    "commit": "a1fe58b4",
+    "measuredAt": "2026-09-28T03:57:27.169Z",
+    "data": {
+      "viewport": {
+        "name": "360x740",
+        "width": 360,
+        "height": 740
+      },
+      "samples": [
+        {
+          "label": "開始直後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "マナが2足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "札を選択",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "マナが2足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "拒否理由",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "そこには置けない",
+          "handNotice": "マナが2足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "配置",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "そこには置けない",
+          "handNotice": "マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "能力表示",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "そこには置けない",
+          "handNotice": "マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "敵の能力表示",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "そこには置けない",
+          "handNotice": "マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "1秒後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "2秒後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "3秒後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "4秒後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "5秒後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "6秒後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "7秒後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "8秒後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "9秒後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "10秒後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "11秒後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "12秒後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "13秒後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "14秒後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "15秒後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "石壁 を手札に持てず失いました手札がいっぱい。次のドローであふれてライフ-1",
+          "lifeLossReason": "手札があふれました",
+          "dangerSlot": ""
+        },
+        {
+          "label": "16秒後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "17秒後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "18秒後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "敵が砦に到達しました",
+          "dangerSlot": "危険"
+        },
+        {
+          "label": "19秒後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "魔力炉 を手札に持てず失いました手札がいっぱい。次のドローであふれてライフ-1",
+          "lifeLossReason": "手札があふれました",
+          "dangerSlot": ""
+        },
+        {
+          "label": "20秒後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "21秒後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "22秒後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "23秒後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "弩砲 を手札に持てず失いました手札がいっぱい。次のドローであふれてライフ-1",
+          "lifeLossReason": "手札があふれました",
+          "dangerSlot": ""
+        },
+        {
+          "label": "24秒後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "25秒後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "26秒後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "27秒後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "弓兵 を手札に持てず失いました手札がいっぱい。次のドローであふれてライフ-1",
+          "lifeLossReason": "手札があふれました",
+          "dangerSlot": ""
+        },
+        {
+          "label": "28秒後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "29秒後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        },
+        {
+          "label": "30秒後",
+          "board": 237,
+          "hand": 925.328125,
+          "rejectionLine": "",
+          "handNotice": "手札がいっぱい。次のドローであふれてライフ-1マナが4足りません",
+          "lifeLossReason": "",
+          "dangerSlot": ""
+        }
+      ]
+    }
+  }
+]

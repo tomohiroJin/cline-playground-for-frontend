@@ -15,6 +15,7 @@ import { CardGlyph } from './CardGlyph';
 import { CardBadge } from './CardBadge';
 import { cardBadgesOf, cardStatsOf, toSeconds } from './card-text';
 import { getUnitVisual, roleLabelOf } from './unit-visual';
+import { HandNoticeSlot } from './HandNoticeSlot';
 
 /**
  * 手札を1行1枚に折り返す最小幅（判定はここから下の画面幅を対象にする）
@@ -42,7 +43,7 @@ const Row = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 `;
 
 const Track = styled.div`
@@ -60,18 +61,6 @@ const Marker = styled.div<{ $ratio: number; $color: string; $warning?: boolean }
   width: ${({ $warning }) => ($warning ? '6px' : '3px')};
   height: 10px;
   background: ${({ $warning, $color }) => ($warning ? COLORS.danger : $color)};
-`;
-
-/**
- * 手札が上限のときの警告文言
- *
- * 色（Marker の危険色）だけに頼らず、文言でも「あふれる」と伝える
- * （.claude/rules/design-ui-ux-principles.md「色だけに依存しない情報伝達」）。
- */
-const OverflowWarning = styled.span`
-  /* COLORS.danger は背景とのコントラスト比が低くテキストに使えない（theme.ts 参照）。
-     文字色には dangerText を使う */
-  color: ${COLORS.dangerText};
 `;
 
 const Cards = styled.div`
@@ -182,11 +171,6 @@ const DiscardButton = styled.button`
   cursor: pointer;
 `;
 
-const Notice = styled.p`
-  margin: 0;
-  color: ${COLORS.opportunity};
-`;
-
 interface Props {
   state: CombatState;
   selectedIndex: number | null;
@@ -237,10 +221,8 @@ export const HandArea: React.FC<Props> = ({
             }
           />
         </Track>
-        {willOverflow && <OverflowWarning>手札がいっぱいです。このままだとあふれてライフを失います</OverflowWarning>}
       </Row>
-      {overflowNotice && <Notice>{overflowNotice} を手札に持てず失いました</Notice>}
-      {maxShortage > 0 && <p>マナが{maxShortage}足りません</p>}
+      <HandNoticeSlot overflowNotice={overflowNotice} willOverflow={willOverflow} maxShortage={maxShortage} />
       <Cards role="group" aria-label="手札">
         {state.deck.hand.map((cardId, index) => {
           const card = getCardDefinition(cardId);

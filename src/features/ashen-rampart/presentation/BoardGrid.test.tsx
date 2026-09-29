@@ -11,6 +11,9 @@ import { PLAINS_MAP, allPathCells, laneOf } from '../domain/board/stage-map';
 import { createCombatState } from '../domain/combat/combat-state';
 import { PLAINS_WAVES } from '../domain/combat/waves';
 import { createDeck } from '../domain/cards/deck';
+import { appliedValueOf } from './applied-css';
+import { BOARD_COLORS, PLACEABLE_HALO_PX } from './board-colors';
+import { COLORS } from './theme';
 
 const emptyState = createCombatState({ drawPile: [], hand: [], graveyard: [] }, PLAINS_WAVES);
 
@@ -235,5 +238,63 @@ describe('2レーンの盤面', () => {
     expect(bar).toHaveAttribute('role', 'progressbar');
     expect(bar).toHaveAttribute('aria-valuenow', '30');
     expect(bar).toHaveAttribute('aria-valuemax', '60');
+  });
+});
+
+describe('道と置ける場所の見分け（反復7 段階2・設計書 §4.0 b）', () => {
+  it('経路セルは経路の色と縁、経路外セルは経路外の色で描かれる（実際に効いている CSS を読む）', () => {
+    render(<BoardGrid {...defaultProps} />);
+    const pathCell = screen.getByTestId('cell-0-2');
+    const slotCell = screen.getByTestId('cell-1-1');
+
+    expect(appliedValueOf(pathCell, 'background')).toBe(BOARD_COLORS.path);
+    expect(appliedValueOf(pathCell, 'border')).toBe(`1px solid ${BOARD_COLORS.pathEdge}`);
+    expect(appliedValueOf(slotCell, 'background')).toBe(BOARD_COLORS.slot);
+  });
+
+  it('置けるセルは琥珀の縁取りの内側に暗い縁を持つ', () => {
+    render(<BoardGrid {...defaultProps} placeableCells={[{ x: 0, y: 2 }]} />);
+    const cell = screen.getByTestId('cell-0-2');
+
+    expect(appliedValueOf(cell, 'box-shadow')).toBe(
+      `inset 0 0 0 ${PLACEABLE_HALO_PX}px ${BOARD_COLORS.placeableHalo}`
+    );
+  });
+
+  it('敵マーカーは背景色で縁取られる（明るい経路の上でも輪郭が溶けない）', () => {
+    const withEnemy = {
+      ...emptyState,
+      enemies: [
+        { id: 1, enemyId: 'brute', hp: 60, maxHp: 60, progress: 1, spawnTick: 0, laneIndex: 0, alive: true, leaked: false, groundedUntilTick: 0 },
+      ],
+    };
+    render(<BoardGrid {...defaultProps} state={withEnemy} />);
+
+    expect(appliedValueOf(screen.getByRole('img', { name: '重装' }), 'filter')).toContain(COLORS.dominant);
+  });
+});
+
+describe('敵の射程の色調（反復7 段階2・設計書 §4.3 #5）', () => {
+  it('射程内の経路外セルは斜線を持ち、読み上げにも「敵の射程内」が入る', () => {
+    render(
+      <BoardGrid {...defaultProps} placeableCells={[{ x: 1, y: 1 }]} threatenedCells={[{ x: 1, y: 1 }]} />
+    );
+    const cell = screen.getByTestId('cell-1-1');
+
+    expect(cell).toHaveAttribute('data-threatened', 'true');
+    expect(cell).toHaveAccessibleName(/1,1 設置可 ここに置ける 敵の射程内/);
+    expect(appliedValueOf(cell, 'background')).toContain(BOARD_COLORS.rangeStripe);
+  });
+
+  it('射程外のセルと経路セルには斜線を付けない', () => {
+    // cell-0-2 は経路セル（PLAINS_MAP の北レーン起点）。threatenedCells に含めても、
+    // 経路は「置いて塞ぐ場所」なので射程の警告の対象外にする（BoardGrid.tsx の !isPath 節）
+    render(<BoardGrid {...defaultProps} threatenedCells={[{ x: 0, y: 2 }]} />);
+
+    expect(screen.getByTestId('cell-1-1')).toHaveAttribute('data-threatened', 'false');
+    const pathCell = screen.getByTestId('cell-0-2');
+    expect(appliedValueOf(pathCell, 'background')).toBe(BOARD_COLORS.path);
+    expect(pathCell).toHaveAttribute('data-threatened', 'false');
+    expect(pathCell).not.toHaveAccessibleName(/敵の射程内/);
   });
 });

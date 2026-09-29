@@ -19,6 +19,22 @@ import {
 } from './enemy-visual';
 import { COLORS } from './theme';
 
+/**
+ * 敵マーカーの縁取り（反復7 段階2・設計書 §4.0 b）
+ *
+ * 経路を明るくしたため、重装（紫）等は経路の地との差が小さくなった。
+ * 背景色で1px 縁取って輪郭を保つ。clip-path の形にも沿うよう drop-shadow を4方向に重ねる。
+ */
+const ENEMY_OUTLINE_PX = 1;
+const ENEMY_OUTLINE_FILTER = [
+  [ENEMY_OUTLINE_PX, 0],
+  [-ENEMY_OUTLINE_PX, 0],
+  [0, ENEMY_OUTLINE_PX],
+  [0, -ENEMY_OUTLINE_PX],
+]
+  .map(([x, y]) => `drop-shadow(${x}px ${y}px 0 ${COLORS.dominant})`)
+  .join(' ');
+
 const Wrapper = styled.div<{ $left: number; $top: number }>`
   position: absolute;
   left: ${({ $left }) => $left}%;
@@ -33,6 +49,7 @@ const Wrapper = styled.div<{ $left: number; $top: number }>`
      反復3 で守り手のHPバーが z-index:2 に入ったため、敵マーカーは
      さらに上の 3 に押し上げる（エフェクト・守り手HPのどちらにも埋もれない） */
   z-index: 3;
+  filter: ${ENEMY_OUTLINE_FILTER};
 `;
 
 /**

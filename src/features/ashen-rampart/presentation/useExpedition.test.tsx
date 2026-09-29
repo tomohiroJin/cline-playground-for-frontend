@@ -18,22 +18,34 @@ const SEED = 42;
 const WIN = { won: true, lifeLeft: 10 };
 const LOSS = { won: false, lifeLeft: 0 };
 
-const createRecordingLog = (): PlayLogPort & { records: PlayLogEventBody[] } => {
+/**
+ * 実物（LocalStoragePlayLog）と同じく「これまでに記録されたもの」を exportAll で返す
+ *
+ * 段階1 までは exportAll が空固定だったが、段階2 で放棄の検出がログを読み返すように
+ * なったため実物に合わせた。`preloaded` は前の遠征までにブラウザへ溜まっていたログ。
+ * `records` にはこのフックが記録したものだけが入る（既存の kinds() の数え方は変わらない）。
+ */
+const createRecordingLog = (
+  preloaded: readonly PlayLogEventBody[] = []
+): PlayLogPort & { records: PlayLogEventBody[] } => {
   const records: PlayLogEventBody[] = [];
   return {
     records,
     record: (event) => {
       records.push(event);
     },
-    exportAll: () => ({ version: 6, events: [] }),
+    exportAll: () => ({
+      version: 7,
+      events: [...preloaded, ...records].map((event) => ({ ...event, at: 0 })),
+    }),
   };
 };
 
 const kinds = (log: { records: PlayLogEventBody[] }, kind: PlayLogEventBody['kind']) =>
   log.records.filter((e) => e.kind === kind);
 
-const setup = (strict = false) => {
-  const log = createRecordingLog();
+const setup = (strict = false, preloaded: readonly PlayLogEventBody[] = []) => {
+  const log = createRecordingLog(preloaded);
   const wrapper = strict
     ? ({ children }: { children: React.ReactNode }) => <React.StrictMode>{children}</React.StrictMode>
     : undefined;
@@ -188,5 +200,93 @@ describe('resolveEmptyOffer', () => {
     const offered = presentOffer(offerPhase(), ['arrow-tower']);
 
     expect(resolveEmptyOffer(offered)).toBe(offered);
+  });
+});
+
+describe('途中でやめた遠征（反復7 段階2・設計書 §4.0 c）', () => {
+  const startedEvent = (expeditionId: string): PlayLogEventBody => ({
+    kind: 'expedition_started',
+    expeditionId,
+    iteration: 7,
+    seed: 1,
+    stageIds: ['prov-t1-a', 'prov-t2-a', 'prov-t3-a'],
+    initialDeckCards: swiftCards(),
+  });
+  const stageStartedEvent = (expeditionId: string, stageIndex: number): PlayLogEventBody => ({
+    kind: 'stage_started',
+    expeditionId,
+    stageIndex,
+    stageId: 'prov-t1-a',
+    tier: 1,
+    life: 12,
+    deckCards: swiftCards(),
+  });
+  const endedEvent = (expeditionId: string): PlayLogEventBody => ({
+    kind: 'expedition_ended',
+    expeditionId,
+    outcome: 'failed',
+    stagesCleared: 0,
+    reachedTier3: false,
+    acquired: [],
+    life: 0,
+  });
+
+  it('前の遠征が決着していなければ、次の遠征の開始時に expedition_abandoned を1件記録する', () => {
+    const { log } = setup(false, [
+      startedEvent('exp-old'),
+      stageStartedEvent('exp-old', 0),
+      stageStartedEvent('exp-old', 1),
+    ]);
+
+    expect(kinds(log, 'expedition_abandoned')).toEqual([
+      { kind: 'expedition_abandoned', expeditionId: 'exp-old', lastStageIndex: 1 },
+    ]);
+  });
+
+  // このテストが守るのは recordOnce による二重記録の防止。effect の順序により、
+  // 走査の時点で今回の expedition_started はまだ無いので、自己除外
+  // （id !== currentExpeditionId）そのものは record-abandoned-expeditions.test.ts が守る。
+  it('StrictMode の二重実行でも1件だけで、今回の遠征自身は放棄にしない', () => {
+    const { log, hook } = setup(true, [startedEvent('exp-old')]);
+
+    const abandoned = kinds(log, 'expedition_abandoned');
+    expect(abandoned).toHaveLength(1);
+    expect(abandoned[0]).toMatchObject({ expeditionId: 'exp-old' });
+    expect(abandoned).not.toContainEqual(
+      expect.objectContaining({ expeditionId: hook.result.current.expeditionId })
+    );
+  });
+
+  it('正常に決着した遠征は対象外', () => {
+    const { log } = setup(false, [startedEvent('exp-done'), endedEvent('exp-done')]);
+
+    expect(kinds(log, 'expedition_abandoned')).toEqual([]);
+  });
+
+  it('既に放棄と記録された遠征を二度記録しない', () => {
+    const { log } = setup(false, [
+      startedEvent('exp-old'),
+      { kind: 'expedition_abandoned', expeditionId: 'exp-old', lastStageIndex: -1 },
+    ]);
+
+    expect(kinds(log, 'expedition_abandoned')).toEqual([]);
+  });
+
+  it('ステージを1つも始めずにやめた遠征は lastStageIndex が -1', () => {
+    const { log } = setup(false, [startedEvent('exp-old')]);
+
+    expect(kinds(log, 'expedition_abandoned')).toEqual([
+      { kind: 'expedition_abandoned', expeditionId: 'exp-old', lastStageIndex: -1 },
+    ]);
+  });
+
+  it('放棄の記録は今回の expedition_started より前に並ぶ（ログを上から読むと時系列になる）', () => {
+    const { log } = setup(false, [startedEvent('exp-old')]);
+
+    const order = log.records.map((e) => e.kind);
+    // 両方が記録されていることを先に確かめる（無いと indexOf が -1 になり、比較が空振りで通る）
+    expect(order).toContain('expedition_abandoned');
+    expect(order).toContain('expedition_started');
+    expect(order.indexOf('expedition_abandoned')).toBeLessThan(order.indexOf('expedition_started'));
   });
 });

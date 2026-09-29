@@ -12,6 +12,7 @@ import { PLAINS_MAP } from '../domain/board/stage-map';
 import { getCardDefinition, PRESET_DECKS } from '../domain/cards/card-pool';
 import { placementKindOf } from '../domain/cards/card-definition';
 import { COUNTDOWN_TICKS } from '../domain/combat/combat-state';
+import { enemyPosition } from '../domain/combat/enemy-position';
 import type { PlayLogEventBody, PlayLogPort } from '../application/ports/play-log-port';
 
 const createMockPlayLog = (): PlayLogPort & { events: PlayLogEventBody[] } => {
@@ -59,6 +60,21 @@ const emberDeckCards = (): string[] => [
  * （業火はコスト2で初期マナ2枚では1基しか置けず、2基目は魔力炉が
  * 生むマナを待つ必要がある。実測で確認済み）。
  */
+const auraDeckCards = (): string[] => [
+  'reactor',
+  'reactor',
+  'reactor',
+  'arrow-tower',
+  'arrow-tower',
+  'arrow-tower',
+  'beacon',
+  'beacon',
+  'beacon',
+  'stone-wall',
+  'stone-wall',
+  'stone-wall',
+];
+
 const twoEmberDeckCards = (): string[] => [
   'ember-blast',
   'ember-blast',
@@ -382,6 +398,66 @@ describe('useAshenRampartGame', () => {
       return result;
     };
 
+    /**
+     * 修正ラウンド1（レビュー Important 対応）: useAshenRampartGame.ts の
+     * inspectedPlate が buildPlates に map を渡さなくなる回帰を検出するテスト。
+     *
+     * 弓兵（コスト1・素のダメージ4）に篝火（コスト2・隣接する守り手の攻撃力を
+     * +25%）を隣接させ、弓兵の能力表示を開いて実効ダメージが 5
+     * （= round(4 × 1.25)）になることを検査する。map を外すと towerEffectiveOf
+     * が呼ばれず effective が undefined になるため、この値は取れない。
+     *
+     * auraDeckCards・シード2 の初期手札は ['arrow-tower','beacon','reactor']
+     * になる（3種を1枚ずつ含む唯一の組み合わせを探索して採用）。初期マナは2
+     * だが弓兵(1)+篝火(2)の合計は3必要なので、魔力炉を先に置いて最初のマナ
+     * （60 tick 目）を待ってから篝火を置く。
+     */
+    it('弓兵に篝火が隣接すると、能力表示の実効ダメージが素の値より上がる（修正ラウンド1）', () => {
+      const log = createMockPlayLog();
+      const { result } = renderHook(() =>
+        useAshenRampartGame({ cards: auraDeckCards(), seed: 2, playLog: log })
+      );
+
+      const reactorIndex = result.current.state.deck.hand.findIndex((id) => id === 'reactor');
+      expect(reactorIndex).toBeGreaterThanOrEqual(0);
+      act(() => result.current.selectCard(reactorIndex));
+      act(() => result.current.interactCell({ x: 3, y: 1 }));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+
+      const arrowIndex = result.current.state.deck.hand.findIndex((id) => id === 'arrow-tower');
+      expect(arrowIndex).toBeGreaterThanOrEqual(0);
+      act(() => result.current.selectCard(arrowIndex));
+      act(() => result.current.interactCell({ x: 1, y: 1 }));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+
+      // 魔力炉が最初のマナを生むのは配置から60 tick後。ここまでに2 tick
+      // （魔力炉と弓兵の配置）を使ったので、残り58 tick を進める。
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS * 58);
+      });
+
+      const beaconIndex = result.current.state.deck.hand.findIndex((id) => id === 'beacon');
+      expect(beaconIndex).toBeGreaterThanOrEqual(0);
+      act(() => result.current.selectCard(beaconIndex));
+      act(() => result.current.interactCell({ x: 2, y: 1 }));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+      expect(
+        result.current.state.units.some(
+          (u) => u.pos.x === 2 && u.pos.y === 1 && u.cardId === 'beacon'
+        )
+      ).toBe(true);
+
+      act(() => result.current.interactCell({ x: 1, y: 1 }));
+
+      expect(result.current.inspectedPlate?.effective?.damage).toBe(5);
+    });
+
     it('一時停止中はセルをクリックしても能力表示は開かない（優先順位1: 無反応）', () => {
       const log = createMockPlayLog();
       const result = placeTowerAt1_1(log);
@@ -391,28 +467,82 @@ describe('useAshenRampartGame', () => {
       expect(result.current.inspectedPlate).toBeUndefined();
     });
 
-    it('カード選択中に設置物のあるセルをクリックすると能力表示ではなく配置が優先される（優先順位2）', () => {
+    it('カード選択中でも、設置物のあるセルをタップすると能力表示が開き、選択は保たれる（反復7 段階2・§4.3 #4）', () => {
       const log = createMockPlayLog();
       const result = placeTowerAt1_1(log);
-
-      // 手札に残る別の守り手（石壁）を選び、既に置いた (1,1) を再びクリックする。
-      // 配置(2)が能力表示(4)より先に評価されるため、能力表示は開かず、
-      // clickCell が動いて配置が試みられる（占有済みなのでドメイン側で拒否される。
-      // マナ不足で 'mana' 拒否になる場合もあるため、reason は問わず rejected の
-      // 発生だけを見る）
       const secondTowerIndex = result.current.state.deck.hand.findIndex((id) => id === 'stone-wall');
       expect(secondTowerIndex).toBeGreaterThanOrEqual(0);
+
       act(() => result.current.selectCard(secondTowerIndex));
       act(() => result.current.interactCell({ x: 1, y: 1 }));
-      expect(result.current.inspectedPlate).toBeUndefined();
+
+      expect(result.current.inspectedPlate?.cardId).toBe('ballista');
+      expect(result.current.selectedIndex).toBe(secondTowerIndex);
       act(() => {
         jest.advanceTimersByTime(TICK_INTERVAL_MS);
       });
-      expect(result.current.state.events.some((e) => e.kind === 'rejected')).toBe(true);
-      // 能力表示は一度も開かない（配置が優先されたことの証跡）
-      expect(log.events.filter((e) => e.kind === 'inspect_opened')).toHaveLength(0);
-      // 占有済みのため配置は成立せず、設置物は増えない
+      // 占有セルへの配置は元々成立しない（canPlaceAt）。ここでは配置自体が試みられない
+      expect(result.current.state.events.some((e) => e.kind === 'rejected')).toBe(false);
       expect(result.current.state.units).toHaveLength(1);
+      const opened = log.events.filter((e) => e.kind === 'inspect_opened');
+      expect(opened).toHaveLength(1);
+      expect(opened[0]).toMatchObject({ cardId: 'ballista', duringCardSelection: true });
+    });
+
+    it('カード選択中でも、空きセルのタップは従来どおり配置になる', () => {
+      const log = createMockPlayLog();
+      const result = placeTowerAt1_1(log);
+      const wallIndex = result.current.state.deck.hand.findIndex((id) => id === 'stone-wall');
+      const pathCell = { x: 3, y: 2 };
+
+      act(() => result.current.selectCard(wallIndex));
+      act(() => result.current.interactCell(pathCell));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+
+      expect(result.current.selectedIndex).toBeNull();
+      expect(log.events.filter((e) => e.kind === 'inspect_opened')).toHaveLength(0);
+      expect(result.current.state.events.some((e) => e.kind === 'played' || e.kind === 'rejected')).toBe(true);
+    });
+
+    it('選択なしで開いた能力表示は duringCardSelection: false で記録される', () => {
+      const log = createMockPlayLog();
+      const result = placeTowerAt1_1(log);
+
+      act(() => result.current.interactCell({ x: 1, y: 1 }));
+
+      expect(log.events.filter((e) => e.kind === 'inspect_opened')[0]).toMatchObject({
+        duringCardSelection: false,
+      });
+    });
+
+    it('カード選択中に再点火可能な燠火をタップしても再点火せず、能力表示が開く', () => {
+      const log = createMockPlayLog();
+      const { result } = renderHook(() =>
+        useAshenRampartGame({ cards: emberDeckCards(), seed: 59, playLog: log })
+      );
+      const emberHandIndex = result.current.state.deck.hand.findIndex((id) => id === 'ember-blast');
+      act(() => result.current.selectCard(emberHandIndex));
+      const placePos = result.current.placeableCells[0];
+      act(() => result.current.interactCell(placePos!));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS * 301);
+      });
+      const emberPos = result.current.state.embers[0]!.pos;
+      expect(result.current.state.embers[0]!.cooldownLeft).toBe(0);
+      const wallIndex = result.current.state.deck.hand.findIndex((id) => id === 'stone-wall');
+      expect(wallIndex).toBeGreaterThanOrEqual(0);
+
+      act(() => result.current.selectCard(wallIndex));
+      act(() => result.current.interactCell(emberPos));
+      act(() => {
+        jest.advanceTimersByTime(TICK_INTERVAL_MS);
+      });
+
+      expect(log.events.filter((e) => e.kind === 'reactivated')).toHaveLength(0);
+      expect(result.current.inspectedPlate?.cardId).toBe('ember-blast');
+      expect(result.current.selectedIndex).toBe(wallIndex);
     });
 
     it('再点火可能な燠火は能力表示より再点火が優先される。クールダウン中は能力表示が開く（優先順位3・4）', () => {
@@ -518,6 +648,148 @@ describe('useAshenRampartGame', () => {
 
       act(() => result.current.restart());
       expect(result.current.inspectedPlate).toBeUndefined();
+    });
+
+    describe('敵の能力表示（反復7 段階2・§4.3 #4・判定項目9(b)）', () => {
+      type GameResult = { current: ReturnType<typeof useAshenRampartGame> };
+
+      /** 最初に生きている敵が出るまで進め、その種類とマーカーの中心が入っているセルを返す */
+      const firstAliveEnemyCell = (result: GameResult): { enemyId: string; cell: CellPos } => {
+        const MAX_WAIT_TICKS = 300;
+        for (let i = 0; i < MAX_WAIT_TICKS; i += 1) {
+          const enemy = result.current.state.enemies.find((e) => e.alive);
+          if (enemy) {
+            const at = enemyPosition(result.current.map, enemy);
+            return { enemyId: enemy.enemyId, cell: { x: Math.round(at.x), y: Math.round(at.y) } };
+          }
+          act(() => {
+            jest.advanceTimersByTime(TICK_INTERVAL_MS);
+          });
+        }
+        throw new Error(`前提が壊れています: ${MAX_WAIT_TICKS} tick 以内に敵が出ません`);
+      };
+
+      const placeableIndexOf = (result: GameResult): number =>
+        result.current.state.deck.hand.findIndex(
+          (id) => placementKindOf(getCardDefinition(id)) !== 'none'
+        );
+
+      const enemyInspections = (log: { events: PlayLogEventBody[] }) =>
+        log.events.filter((e) => e.kind === 'enemy_inspected');
+
+      it('札を選ばずに敵のいるセルをタップすると、その種類の能力表示が開き、source: cell で1件記録する', () => {
+        const log = createMockPlayLog();
+        const result = placeTowerAt1_1(log);
+        const { enemyId, cell } = firstAliveEnemyCell(result);
+
+        act(() => result.current.interactCell(cell));
+
+        expect(result.current.inspectedEnemyId).toBe(enemyId);
+        expect(result.current.inspectedPlate).toBeUndefined();
+        expect(enemyInspections(log)).toEqual([
+          {
+            kind: 'enemy_inspected',
+            runId: expect.any(String),
+            enemyId,
+            source: 'cell',
+            duringCardSelection: false,
+            tick: result.current.state.tick,
+          },
+        ]);
+      });
+
+      it('同じ敵のセルをもう一度タップすると閉じ、閉じたことは記録しない', () => {
+        const log = createMockPlayLog();
+        const result = placeTowerAt1_1(log);
+        const { cell } = firstAliveEnemyCell(result);
+
+        act(() => result.current.interactCell(cell));
+        act(() => result.current.interactCell(cell));
+
+        expect(result.current.inspectedEnemyId).toBeUndefined();
+        expect(enemyInspections(log)).toHaveLength(1);
+      });
+
+      it('札を選んでいるときに敵のいるセルをタップすると配置に回り、敵の能力表示は開かない', () => {
+        const log = createMockPlayLog();
+        const result = placeTowerAt1_1(log);
+        const { cell } = firstAliveEnemyCell(result);
+        const index = placeableIndexOf(result);
+        expect(index).toBeGreaterThanOrEqual(0);
+
+        act(() => result.current.selectCard(index));
+        act(() => result.current.interactCell(cell));
+
+        // clickCell が選択を解く＝配置に回った（経路に壁を置く操作を奪わない）
+        expect(result.current.selectedIndex).toBeNull();
+        expect(result.current.inspectedEnemyId).toBeUndefined();
+        expect(enemyInspections(log)).toHaveLength(0);
+      });
+
+      it('凡例から開くと source: legend で記録し、札の選択は保たれる（選択中なら duringCardSelection: true）', () => {
+        const log = createMockPlayLog();
+        const result = placeTowerAt1_1(log);
+        const index = placeableIndexOf(result);
+        expect(index).toBeGreaterThanOrEqual(0);
+
+        act(() => result.current.selectCard(index));
+        act(() => result.current.inspectEnemy('warden'));
+
+        expect(result.current.inspectedEnemyId).toBe('warden');
+        expect(result.current.selectedIndex).toBe(index);
+        expect(enemyInspections(log)).toEqual([
+          expect.objectContaining({ enemyId: 'warden', source: 'legend', duringCardSelection: true }),
+        ]);
+
+        act(() => result.current.inspectEnemy('warden'));
+
+        expect(result.current.inspectedEnemyId).toBeUndefined();
+        expect(enemyInspections(log)).toHaveLength(1);
+      });
+
+      it('敵と設置物の能力表示は排他で、開くたびにそれぞれの種類を1件ずつ記録する', () => {
+        const log = createMockPlayLog();
+        const result = placeTowerAt1_1(log);
+
+        act(() => result.current.inspectEnemy('mender'));
+        act(() => result.current.interactCell({ x: 1, y: 1 }));
+
+        expect(result.current.inspectedPlate?.cardId).toBe('ballista');
+        expect(result.current.inspectedEnemyId).toBeUndefined();
+
+        act(() => result.current.inspectEnemy('mender'));
+
+        expect(result.current.inspectedEnemyId).toBe('mender');
+        expect(result.current.inspectedPlate).toBeUndefined();
+        expect(enemyInspections(log)).toHaveLength(2);
+        expect(log.events.filter((e) => e.kind === 'inspect_opened')).toHaveLength(1);
+      });
+
+      it('一時停止中は凡例からも開かず、一時停止すると開いていた敵の能力表示は閉じる', () => {
+        const log = createMockPlayLog();
+        const result = placeTowerAt1_1(log);
+
+        act(() => result.current.inspectEnemy('warden'));
+        act(() => result.current.togglePause());
+
+        expect(result.current.inspectedEnemyId).toBeUndefined();
+
+        act(() => result.current.inspectEnemy('mender'));
+
+        expect(result.current.inspectedEnemyId).toBeUndefined();
+        expect(enemyInspections(log)).toHaveLength(1);
+      });
+
+      it('凡例で開いた敵の能力表示は、札を選んでいない何も無いセルをタップすると閉じる', () => {
+        const log = createMockPlayLog();
+        const result = placeTowerAt1_1(log);
+
+        act(() => result.current.inspectEnemy('warden'));
+        expect(result.current.inspectedEnemyId).toBe('warden');
+
+        act(() => result.current.interactCell({ x: 2, y: 2 })); // 何もない空マス
+        expect(result.current.inspectedEnemyId).toBeUndefined();
+      });
     });
 
   });
@@ -1071,6 +1343,12 @@ describe('useAshenRampartGame', () => {
       act(() => {
         jest.advanceTimersByTime(TICK_INTERVAL_MS);
       });
+
+      // 敵の能力表示を1回開く（修正ラウンド1・レビュー Important）。
+      // inspectOpens は設置物の能力表示だけを数える約束で、敵の能力表示（enemy_inspected）は
+      // 数えてはいけない。この呼び出しを足しても inspectOpens が 2（設置物のみ）のまま
+      // 変わらないことが、その約束を守っている検査になる
+      act(() => result.current.inspectEnemy('warden'));
 
       advanceUntilOutcome(result);
 

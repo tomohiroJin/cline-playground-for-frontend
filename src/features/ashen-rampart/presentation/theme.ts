@@ -22,4 +22,9 @@ export const COLORS = {
   opportunity: '#e8a33d',
   /** 盤面のセル境界 */
   grid: '#3a322c',
+  /**
+   * 回復（反復7 段階2）。敵の HP バーと同じ緑にし、「緑＝HP が戻る」を1つの意味に揃える
+   * （design-ui-ux-principles: 緑=回復）
+   */
+  heal: '#7fb069',
 } as const;

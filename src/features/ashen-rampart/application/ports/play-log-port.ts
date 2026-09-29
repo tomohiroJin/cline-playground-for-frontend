@@ -1,5 +1,5 @@
 /**
- * 灰燼の城壁 - 行動ログポート（スキーマ v6）
+ * 灰燼の城壁 - 行動ログポート（スキーマ v7）
  *
  * 反復0の教訓により、記録する項目はすべて判定に使う。
  * 判定に使わない項目は記録しない（設計書 §11 ログスキーマ v2）。
@@ -9,6 +9,9 @@ import type { OverflowOrigin } from '../../domain/combat/combat-state';
 
 /** 現在の反復番号。反復を進めるたびに必ず更新する */
 export const CURRENT_ITERATION = 7;
+
+/** 敵の能力表示を開いた入口（反復7 段階2） */
+export type EnemyInspectSource = 'legend' | 'cell';
 
 export type PlayLogEventBody =
   | {
@@ -64,7 +67,29 @@ export type PlayLogEventBody =
   | { kind: 'resumed'; runId: string; tick: number }
   | { kind: 'run_ended'; runId: string; outcome: 'won' | 'lost'; tick: number; handRemaining: string[] }
   | { kind: 'run_note'; runId: string; text: string }
-  | { kind: 'inspect_opened'; runId: string; cardId: string; tick: number }
+  /**
+   * 能力表示を開いた（反復4。反復7 段階2 で duringCardSelection を追加）
+   *
+   * 段階2 でカード選択中にも開けるようにした（設計書 §4.3 #4）。判定項目9(b) を
+   * 読むとき、選択中に開いたか（置き場所を決めながら確かめたか）を区別する。
+   */
+  | { kind: 'inspect_opened'; runId: string; cardId: string; tick: number; duringCardSelection: boolean }
+  /**
+   * 敵の種類の能力表示を開いた（反復7 段階2・設計書 §4.3 #4・判定項目9(b)）
+   *
+   * `source` は入口（凡例のボタンか、敵のいる盤面のセルか）。セルからは札を選んでいない
+   * ときしか開けないので、`source: 'cell'` の `duringCardSelection` は常に false。
+   * 判定項目9(b) は、このうち `enemyId` が盾衛（warden）・癒し手（mender）のものを数える。
+   * 閉じたときは記録しない。
+   */
+  | {
+      kind: 'enemy_inspected';
+      runId: string;
+      enemyId: string;
+      source: EnemyInspectSource;
+      duringCardSelection: boolean;
+      tick: number;
+    }
   /**
    * 手動の捨札（反復6 で `handIndex` を追加）
    *
@@ -143,6 +168,16 @@ export type PlayLogEventBody =
     }
   /** 遠征の振り返り（反復7の判定項目8・9(a) の材料） */
   | { kind: 'expedition_note'; expeditionId: string; text: string }
+  /**
+   * 途中でやめた遠征（反復7 段階2・設計書 §4.0 c）
+   *
+   * ホームへ戻る・再読み込みで遠征が消えても、その場では何も記録できない
+   * （アンマウント時の記録は StrictMode の二重実行で誤発火する）。そこで
+   * **次の遠征を始めるとき**に、決着の無い遠征をこのイベントで閉じる。
+   * `lastStageIndex` は最後に始めたステージ番号。1つも始めていなければ -1。
+   * 判定では、この遠征を3遠征にも各項目の分母にも数えない（設計書 §2）。
+   */
+  | { kind: 'expedition_abandoned'; expeditionId: string; lastStageIndex: number }
   | {
       /**
        * 決着時の集計スナップショット（反復4で追加、反復5でスキーマ v4 へ拡張）

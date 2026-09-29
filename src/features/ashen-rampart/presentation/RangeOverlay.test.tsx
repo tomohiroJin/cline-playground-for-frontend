@@ -14,6 +14,7 @@ import { getCardDefinition } from '../domain/cards/card-pool';
 import type { CombatState, PlacedUnit, PlacedTrap } from '../domain/combat/combat-state';
 import { createCombatState } from '../domain/combat/combat-state';
 import type { DeckState } from '../domain/cards/deck';
+import { PLAINS_MAP } from '../domain/board/stage-map';
 
 /**
  * テスト用に必要な部分だけ持つ CombatState を組む
@@ -91,5 +92,26 @@ describe('RangeOverlay', () => {
     )[0];
     const { container } = render(<RangeOverlay plate={plate} columns={9} rows={7} />);
     expect(container).toBeEmptyDOMElement();
+  });
+});
+
+describe('実効射程のリング（反復7 段階2・設計書 §4.3 #3）', () => {
+  it('鍛冶場の隣の弓兵のリングは、実効射程 2.2 の2倍セル', () => {
+    const plates = buildPlates(
+      stateWith({
+        units: [
+          { cardId: 'arrow-tower', pos: { x: 4, y: 3 }, hp: 8, maxHp: 8, cooldownLeft: 0 },
+          { cardId: 'forge', pos: { x: 3, y: 3 }, hp: 8, maxHp: 8, cooldownLeft: 0 },
+        ],
+      }),
+      PLAINS_MAP
+    );
+    const plate = plates.find((p) => p.key === '4,3');
+    if (!plate) throw new Error('前提が壊れています: 4,3 に台座がありません');
+
+    render(<RangeOverlay plate={plate} columns={COLUMNS} rows={7} />);
+    const widthCqw = appliedLengthOf(screen.getByTestId('range-overlay-4-3'), 'width');
+
+    expect(widthCqw! / CELL_CQW).toBeCloseTo(2.2 * 2, 5);
   });
 });

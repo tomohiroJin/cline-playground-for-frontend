@@ -44,6 +44,9 @@ export const RangeOverlay: React.FC<Props> = ({ plate, columns, rows }) => {
   const tower = getCardDefinition(plate.cardId).tower;
   if (!tower) return null;
   const isRing = tower.range > 0;
+  // 鍛冶場の隣では実際に届く範囲が広がる。素の射程で描くと「届くのに覆われていない
+  // マス」が生まれるので、実効射程があればそれで描く（反復7 段階2・§4.3 #3）
+  const range = plate.effective?.range ?? tower.range;
   // 壁は射程0でオーラも持たない。描くものがない
   if (!isRing && !tower.aura) return null;
   /*
@@ -56,7 +59,7 @@ export const RangeOverlay: React.FC<Props> = ({ plate, columns, rows }) => {
     オーラ: チェビシェフ距離1の 3×3 なので、自分のセルを含めた
       `AURA_SIZE_CELLS` セルの正方形が正しい。
   */
-  const sizeCells = isRing ? tower.range * 2 : AURA_SIZE_CELLS;
+  const sizeCells = isRing ? range * 2 : AURA_SIZE_CELLS;
   const cellCqw = 100 / columns;
   return (
     <Ring

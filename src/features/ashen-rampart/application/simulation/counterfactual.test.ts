@@ -150,34 +150,5 @@ describe('runCounterfactual（最後の獲得だけを差し替えた再生）',
     expect(b).toEqual(a);
   });
 
-  it('再生で提示が増える組は交絡として除外される（isClean=false）', () => {
-    // **このテストは `isClean` の `noExtraOffers` 節を守る唯一のテストである。**
-    // heavy プリセットはステージ2 で敗北することがあり（40シード中7回）、
-    // そのとき最後の獲得はステージ1 後の提示になる。獲得を抜いた再生で
-    // ステージ2 に勝ってしまうと、**実ランには存在しなかった2回目の提示**が
-    // 現れる。この組を測定に使うと、比較していない選択の差が結果に混ざる。
-    //
-    // swift プリセットでは 40/40 でステージ1・2 を必勝するため、この経路は
-    // 一度も通らない。**プリセットを変えるとこのテストは何も検査しなくなる。**
-    const heavy = PRESET_DECKS.heavy?.cards ?? [];
-    // 実測で要因が `!noExtraOffers` だと確認済みのシード（2026-09-06）
-    const confoundedSeeds = [20, 21, 34, 39, 54];
-    confoundedSeeds.forEach((seed) => {
-      const pair = runCounterfactual({
-        ...base, initialDeck: heavy, seed,
-      });
-      expect(pair.lastTaken).toBeDefined();
-      // **発火要因を要因B（!noExtraOffers）に固定する。**
-      // stagesCleared < 2 は「実ランがステージ2 までに敗北した」ことを意味し、
-      // そのとき提示は1回しか起きていないので lastOfferIndex 0 は最後の提示であり、
-      // `isLastOffer` は必ず true。したがって isClean=false の原因は
-      // `noExtraOffers` 以外にありえない。
-      //
-      // **この2行が無いと、将来この組の発火要因が要因A（!isLastOffer）へ移ったとき、**
-      // **テストは緑のまま `noExtraOffers` 節が無防備に戻る**（レビュー指摘 R1）。
-      expect(pair.lastOfferIndex).toBe(0);
-      expect(pair.actual.stagesCleared).toBeLessThan(2);
-      expect(pair.isClean).toBe(false);
-    });
-  });
+  // 「再生で提示が増える組は交絡として除外される」は counterfactual-confound.test.ts へ移した（台本を固定するため）
 });

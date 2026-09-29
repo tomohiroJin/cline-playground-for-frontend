@@ -85,8 +85,9 @@ describe('AUDIT_FULL_DECK（B0-P5・設計書 §8.2.15(e)）', () => {
     expect(AUDIT_FULL_DECK).not.toContain('ember-blast');
   });
 
-  it('徹甲弩を含まない（貫通が飛行を絞らないため対空を消せない）', () => {
-    // applyPiercingDamage に飛行の絞り込みが無い（設計書 §8.2.15(a)5）
+  it('徹甲弩を含まない（デッキ構成は反復7 段階2 の範囲外。§8.2.15(a)5 の欠陥自体は解消済み）', () => {
+    // applyPiercingDamage は canTowerHit で飛行を判定する（反復7 段階2）。
+    // 対空を外した変種は正しく鴉に当たらなくなったが、AUDIT_FULL_DECK の構成は変えていない
     expect(AUDIT_FULL_DECK).not.toContain('piercer');
   });
 });

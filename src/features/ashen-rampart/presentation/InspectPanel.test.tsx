@@ -12,9 +12,12 @@
  */
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { InspectPanel } from './InspectPanel';
+import { InspectPanel, EnemyInspectPanel, enemyChipsOf } from './InspectPanel';
 import { buildPlates } from './board-plates';
 import { toSeconds } from './card-text';
+import { getEnemySpec } from '../domain/combat/enemies';
+import { appliedValueOf } from './applied-css';
+import { INSPECT_ROW_HEIGHT_PX } from './layout-constants';
 import type {
   CombatState,
   PlacedUnit,
@@ -25,6 +28,7 @@ import type {
 import { createCombatState } from '../domain/combat/combat-state';
 import { getCardDefinition } from '../domain/cards/card-pool';
 import type { DeckState } from '../domain/cards/deck';
+import { PLAINS_MAP } from '../domain/board/stage-map';
 
 /**
  * テスト用に必要な部分だけ持つ CombatState を組む
@@ -84,6 +88,13 @@ describe('InspectPanel', () => {
       render(<InspectPanel plate={plateFor('ballista')} />);
       expect(screen.getByText('単体')).toBeInTheDocument();
     });
+  });
+
+  it('横スクロールバーが出ても縦スクロールバーは出さない', () => {
+    render(<InspectPanel plate={plateFor('ballista')} />);
+    const panel = screen.getByTestId('inspect-panel');
+
+    expect(appliedValueOf(panel, 'overflow-y')).toBe('hidden');
   });
 
   describe('支援塔', () => {
@@ -193,5 +204,95 @@ describe('InspectPanel', () => {
       render(<InspectPanel plate={plate} />);
       expect(screen.getByText('クリックで再点火')).toBeInTheDocument();
     });
+
+    it('いま札を選んでいるときは、再点火可能でも「クリックで再点火」を出さない（反復7 段階2・§4.3 #4）', () => {
+      // 選択中はタップが能力表示に回り再点火は起きない（interactCell の分岐）。
+      // 「クリックで再点火」を出すと、選択中はタップしても再点火しないので嘘になる。
+      const plate = buildPlates(stateWith({ embers: [{ pos: { x: 3, y: 3 }, cooldownLeft: 0 }] }))[0];
+      render(<InspectPanel plate={plate} isDuringCardSelection />);
+      expect(screen.queryByText('クリックで再点火')).not.toBeInTheDocument();
+    });
+  });
+});
+
+describe('オーラ・高台の実効値（反復7 段階2・設計書 §4.3 #3）', () => {
+  const unit = (cardId: string, x: number, y: number): PlacedUnit => ({
+    cardId, pos: { x, y }, hp: 8, maxHp: 8, cooldownLeft: 0,
+  });
+  const plateAt = (units: PlacedUnit[], key: string) => {
+    const plate = buildPlates(stateWith({ units }), PLAINS_MAP).find((p) => p.key === key);
+    if (!plate) throw new Error(`前提が壊れています: ${key} に台座がありません`);
+    return plate;
+  };
+
+  it('篝火の隣の弓兵は、実効の攻撃と素の値、支援の内訳を出す', () => {
+    render(<InspectPanel plate={plateAt([unit('arrow-tower', 2, 1), unit('beacon', 1, 1)], '2,1')} />);
+
+    expect(screen.getByText('攻撃5（素4）')).toBeInTheDocument();
+    expect(screen.getByText('支援で攻撃+1')).toBeInTheDocument();
+  });
+
+  it('鍛冶場の隣の弓兵は、実効の射程を出す', () => {
+    render(<InspectPanel plate={plateAt([unit('arrow-tower', 2, 1), unit('forge', 1, 1)], '2,1')} />);
+
+    expect(screen.getByText('射程2.2（素1.6）')).toBeInTheDocument();
+    expect(screen.getByText('支援で射程+0.6')).toBeInTheDocument();
+  });
+
+  it('高台の弓兵は、高台の倍率を出す', () => {
+    render(<InspectPanel plate={plateAt([unit('arrow-tower', 2, 3)], '2,3')} />);
+
+    expect(screen.getByText('攻撃5（素4）')).toBeInTheDocument();
+    expect(screen.getByText('高台で攻撃×1.3')).toBeInTheDocument();
+  });
+
+  it('強化の無い塔は素の値だけを出す（盤面が渡っても表記は変わらない）', () => {
+    render(<InspectPanel plate={plateAt([unit('arrow-tower', 4, 0)], '4,0')} />);
+
+    expect(screen.getByText('攻撃4')).toBeInTheDocument();
+    expect(screen.getByText('射程1.6')).toBeInTheDocument();
+    expect(screen.queryByText(/支援で|高台で/)).not.toBeInTheDocument();
+  });
+});
+
+describe('敵の能力表示（反復7 段階2・設計書 §4.3 #4）', () => {
+  it('盾衛: HP・速度・地上・攻撃・射程・装甲を値で出す', () => {
+    expect(enemyChipsOf(getEnemySpec('warden'))).toEqual([
+      'HP45',
+      '速度0.6マス/秒',
+      '地上',
+      '攻撃8（3秒ごと）',
+      '射程1.5（経路の脇にも届く）',
+      '装甲4',
+    ]);
+  });
+
+  it('癒し手: 射程なしと、回復の量・間隔・範囲を値で出す', () => {
+    expect(enemyChipsOf(getEnemySpec('mender'))).toEqual([
+      'HP18',
+      '速度1マス/秒',
+      '地上',
+      '攻撃1（2秒ごと）',
+      '射程なし（塞いだ守り手だけ攻撃）',
+      '回復3（4秒ごと・周囲1.5）',
+    ]);
+  });
+
+  it('飛行する敵には「飛行」と書き、能力の無い敵には装甲・回復を出さない', () => {
+    const chips = enemyChipsOf(getEnemySpec('raven'));
+
+    expect(chips).toContain('飛行');
+    expect(chips.some((chip) => /^装甲|^回復/.test(chip))).toBe(false);
+  });
+
+  it('パネルは「敵 名前」を見出しにし、設置物の能力表示と同じ1行の高さに固定する', () => {
+    render(<EnemyInspectPanel enemyId="mender" />);
+    const panel = screen.getByTestId('enemy-inspect-panel');
+
+    expect(panel).toHaveAttribute('role', 'status');
+    expect(panel).toHaveTextContent('敵 癒し手');
+    expect(panel).toHaveTextContent('回復3（4秒ごと・周囲1.5）');
+    expect(appliedValueOf(panel, 'height')).toBe(`${INSPECT_ROW_HEIGHT_PX}px`);
+    expect(appliedValueOf(panel, 'flex-wrap')).toBe('nowrap');
   });
 });

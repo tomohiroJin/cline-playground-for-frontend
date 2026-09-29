@@ -58,7 +58,17 @@ interface Cell {
   unmeasurable: string;
 }
 
-/** そのデッキに貫通する札が含まれるか（含むと anti-air は測定不能） */
+/**
+ * そのデッキに貫通する札が含まれるか（含むと anti-air は測定不能とする既存ルール）
+ *
+ * 反復7 段階2 で `applyPiercingDamage` が `canTowerHit` を通すようになり、
+ * 前提だった「貫通が飛行を絞らない」欠陥（§8.2.15(a)5）自体は解消した。
+ * それでも判定ロジックは当タスクの範囲外のため変えていない（再測定は別途）。
+ * **測定表に出すメッセージ文字列（`unmeasurableReason` 内）も旧来の文言のまま残す。**
+ * `docs/superpowers/specs/2026-09-08-g3-measurement.txt` に保全済みの過去の測定出力が
+ * この文字列を12行含んでおり、再測定したときに過去の記録と文字列一致で照合できなくなるため
+ * （レビュー修正ラウンド1）。
+ */
 const hasPiercingCard = (cards: readonly string[]): boolean =>
   cards.some((id) => getCardDefinition(id).tower?.piercing === true);
 
@@ -122,6 +132,9 @@ const unmeasurableReason = (
   if (axis === 'mass-answer' && cards.includes('ember-blast')) {
     return '再点火が基礎札を読む（§8.2.15(a)2）';
   }
+  // 反復7 段階2 で `applyPiercingDamage` の欠陥自体は解消済み（前提コメント参照）だが、
+  // このメッセージは過去の測定出力（g3-measurement.txt）と文字列一致で照合するため、
+  // 旧来の文言のまま変えない（レビュー修正ラウンド1）
   if (axis === 'anti-air' && hasPiercingCard(cards)) {
     return '貫通が飛行を絞らない（§8.2.15(a)5）';
   }

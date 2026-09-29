@@ -49,8 +49,10 @@ export const knockoutDeck = (cards: readonly string[], axis: DemandAxis): string
  *
  * **業火を入れない。** 再点火が `getCardDefinition('ember-blast')` を ID 直書きで
  * 引くため、変種を置いても2回目以降は基礎の半径2・8ダメージに戻る（§8.2.15(a)2）。
- * **徹甲弩を入れない。** `applyPiercingDamage` が飛行を絞らないため、
- * `hitsFlying → false` にしても対空が消えない（§8.2.15(a)5）。
+ * **徹甲弩を入れない。** 反復7 段階2 で `applyPiercingDamage` が `canTowerHit` を
+ * 通すようになり、`hitsFlying → false` で対空が正しく消えるようになった
+ * （§8.2.15(a)5 の欠陥自体は解消済み）。それでも本デッキへは加えていない
+ * （デッキ構成の見直しは反復7 段階2 のこのタスクの範囲外）。
  *
  * 軸を1つも持たない札は 魔力炉×3・棘罠×1・弓兵×1 の計5枚。処置が掛かるのは残り7枚である。
  */

@@ -10,11 +10,13 @@ import type {
   PlayLogPort,
 } from '../../application/ports/play-log-port';
 
-// スキーマ v6（反復7。v5 のデータと混ざらないようキーを変更している）。
+// スキーマ v7（反復7 段階2。expedition_abandoned・enemy_inspected と
+// inspect_opened.duringCardSelection を足したため、v6 のデータと混ざらないようキーを変更している）。
 // キーが別なので古いデータを読みに行かず、判定前に旧ログを消す作業も要らない。
-export const PLAY_LOG_STORAGE_KEY = 'ashen-rampart:play-log-v6';
+// 段階1 の試遊ログは v6 のキーに残り、読まれない（判定は段階2 以降のログだけで行う）。
+export const PLAY_LOG_STORAGE_KEY = 'ashen-rampart:play-log-v7';
 
-const SCHEMA_VERSION = 6;
+const SCHEMA_VERSION = 7;
 
 const emptyExport = (): PlayLogExport => ({ version: SCHEMA_VERSION, events: [] });
 

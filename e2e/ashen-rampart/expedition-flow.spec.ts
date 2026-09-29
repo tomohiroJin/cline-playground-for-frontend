@@ -26,7 +26,7 @@ const startExpedition = async (page: Page, seedText?: string): Promise<void> => 
   // localStorage を丸ごと clear すると既読フラグも消えてダイアログが復活するので避ける。
   await page.addInitScript((noticeKey) => {
     localStorage.setItem(noticeKey, 'true');
-    localStorage.removeItem('ashen-rampart:play-log-v6');
+    localStorage.removeItem('ashen-rampart:play-log-v7');
     localStorage.removeItem('ashen-rampart:briefing-seen-v1');
   }, NOTICE_STORAGE_KEY);
 
