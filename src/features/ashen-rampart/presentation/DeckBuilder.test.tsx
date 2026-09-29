@@ -168,20 +168,12 @@ describe('DeckBuilder', () => {
     expect(screen.getByRole('button', { name: 'この構成で始める' })).toBeEnabled();
   });
 
-  it('initialSeedText を渡すと、シード欄がその値で始まる', () => {
-    const onStart = jest.fn();
-    render(
-      <DeckBuilder
-        onStart={onStart}
-        initialCards={PRESET_DECKS.swift!.cards}
-        initialSeedText="777"
-      />
-    );
+  it('lastSeed を渡してもシード欄は空で始まり、前回のシードとして添えられる', () => {
+    render(<DeckBuilder onStart={jest.fn()} lastSeed={777} />);
+
     const seedInput = screen.getByLabelText('シード（空欄なら毎回ランダム）') as HTMLInputElement;
-    expect(seedInput.value).toBe('777');
-    fireEvent.click(screen.getByRole('button', { name: 'この構成で始める' }));
-    const [, seed] = onStart.mock.calls[0] as [string[], number | undefined];
-    expect(seed).toBe(777);
+    expect(seedInput.value).toBe('');
+    expect(screen.getByText('前回のシード: 777')).toBeInTheDocument();
   });
 
   it('構築で選べる13種すべてのカードに形アイコンが出る', () => {

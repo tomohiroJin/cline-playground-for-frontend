@@ -16,6 +16,16 @@ import { PROVISIONAL_STAGES } from '../../domain/expedition/stage-pool';
 import { createSeededRandom } from '../../infrastructure/random/seeded-random';
 import type { StageDefinition } from '../../domain/expedition/stage-definition';
 
+/**
+ * CI には常駐させない（反復7 設計書 §1.1）
+ *
+ * 約47〜60秒かかり、§8.3 の実行時間予算をほぼ単独で使い切っていた。
+ * 反復7 は軸を難度の土台から外したので、この対照を毎回回す理由が無くなった。
+ * 道具（ノックアウト）を触ったときだけ次で実行する:
+ *   ASHEN_RAMPART_B0_SANITY=1 npx jest axis-knockout-sanity
+ */
+const isEnabled = process.env.ASHEN_RAMPART_B0_SANITY === '1';
+
 /** 陰性対照のシード帯（設計書 §8.2.15(f)） */
 const SEEDS = Array.from({ length: 20 }, (_, i) => 1251 + i);
 
@@ -35,7 +45,7 @@ const runOn = (stage: StageDefinition, cards: readonly string[], seed: number) =
   return simulateRunCollecting(createCombatState(deck, stage.waves), greedyStrategy, stage.map);
 };
 
-describe('B0-P1 陰性対照: 飛行が1体もいないステージで anti-air をノックアウトしてもランは変わらない', () => {
+(isEnabled ? describe : describe.skip)('B0-P1 陰性対照: 飛行が1体もいないステージで anti-air をノックアウトしてもランは変わらない', () => {
   jest.setTimeout(60000);
 
   it('飛行がいないステージが4つある（検査の前提）', () => {
@@ -65,7 +75,7 @@ describe('B0-P1 陰性対照: 飛行が1体もいないステージで anti-air 
   });
 });
 
-describe('B0-P3 シャッフルの位置対応', () => {
+(isEnabled ? describe : describe.skip)('B0-P3 シャッフルの位置対応', () => {
   it('同じシードなら、差し替えたデッキも同じ置換になる', () => {
     SEEDS.forEach((seed) => {
       const a = createSeededRandom(seed);

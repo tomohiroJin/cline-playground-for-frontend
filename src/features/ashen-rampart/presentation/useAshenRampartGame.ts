@@ -5,7 +5,7 @@
  * 一時停止はループ制御であり、ドメインの状態ではない（§8.6）。
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { CellPos } from '../domain/board/stage-map';
+import type { CellPos, StageMap } from '../domain/board/stage-map';
 import { PLAINS_MAP } from '../domain/board/stage-map';
 import { getCardDefinition } from '../domain/cards/card-pool';
 import { placementKindOf } from '../domain/cards/card-definition';
@@ -57,16 +57,33 @@ export interface UseAshenRampartGameOptions {
   /** 固定シード。省略すると毎ラン新しいシードになる */
   seed?: number;
   playLog?: PlayLogPort;
+  /** 盤面。省略時は PLAINS_MAP（既存テストの互換） */
+  map?: StageMap;
+  /** ステージの初期状態（持ち越しライフ込み）。省略時は cards と seed から作る */
+  initialState?: CombatState;
+  /** 遠征のどのステージか。run_started に載せる */
+  expeditionId?: string;
+  stageIndex?: number;
 }
 
-export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGameOptions) => {
+export const useAshenRampartGame = ({
+  cards,
+  seed,
+  playLog,
+  map = PLAINS_MAP,
+  initialState,
+  expeditionId,
+  stageIndex,
+}: UseAshenRampartGameOptions) => {
   const logRef = useRef<PlayLogPort>(playLog ?? new LocalStoragePlayLog());
   const [runId, setRunId] = useState(() => createRunId());
   // runSeed は初回レンダー内で解決した値を使う。同じレンダーの中で先に確定させることで、
   // 直後の state 初期化（startRunWithDeck）に同じシードを渡せる（seed ?? createSeed() の二重呼び出しを避ける）。
+  // 遠征ではステージの初期状態（持ち越しライフ・獲得札の挿入済み山札）を外から受け取る。
+  // 省略時は従来どおり cards と seed から単発ランを作る
   const [runSeed, setRunSeed] = useState<number>(() => seed ?? createSeed());
-  const [state, setState] = useState<CombatState>(() =>
-    startRunWithDeck(cards, new SeededRandom(runSeed))
+  const [state, setState] = useState<CombatState>(
+    () => initialState ?? startRunWithDeck(cards, new SeededRandom(runSeed))
   );
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isPaused, setIsPaused] = useState(false);
@@ -138,8 +155,9 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       iteration: CURRENT_ITERATION,
       seed: runSeed,
       deckCards: [...cards],
+      ...(expeditionId !== undefined ? { expeditionId, stageIndex } : {}),
     });
-  }, [runId, runSeed, cards]);
+  }, [runId, runSeed, cards, expeditionId, stageIndex]);
 
   // ゲームループ。一時停止中と決着後は進めない
   useEffect(() => {
@@ -149,18 +167,18 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       // ref の読み取り・クリアは updater の外（副作用なし）で行う（togglePause と同じ対策）
       const actions = pendingRef.current;
       pendingRef.current = [];
-      setState((current) => stepTick(current, actions, PLAINS_MAP));
+      setState((current) => stepTick(current, actions, map));
     }, TICK_INTERVAL_MS);
     return () => clearInterval(timer);
-  }, [isPaused, state.outcome]);
+  }, [isPaused, state.outcome, map]);
 
   // tick イベントを寿命付きエフェクトへ変換する。
   // events は毎 tick 置き換わるため、この tick のうちに座標へ解決する
   useEffect(() => {
     setEffects((current) =>
-      advanceEffects(current, state, PLAINS_MAP, { reducedMotion: prefersReducedMotion })
+      advanceEffects(current, state, map, { reducedMotion: prefersReducedMotion })
     );
-  }, [state, prefersReducedMotion]);
+  }, [state, prefersReducedMotion, map]);
 
   // 判定用の集計を累積する。events は毎 tick 消えるため tick ごとに足す。
   // accumulateTick は state.events / state.enemies だけを見るため prevState は渡さない
@@ -173,10 +191,10 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
     // ref を先に確定させる。この effect は run_tally の effect より前に定義されて
     // いるため、同じコミット内で必ず先に走る（React は effect を定義順に実行する）。
     // 二重計上は上の prevStateRef のガードが防ぐ。
-    tallyRef.current = accumulateTick(tallyRef.current, state, PLAINS_MAP);
+    tallyRef.current = accumulateTick(tallyRef.current, state, map);
     endTickRef.current = state.tick;
     setTally(tallyRef.current);
-  }, [state]);
+  }, [state, map]);
 
   // 拒否理由の通知。同一 tick に複数出た場合は最初の1件だけを出し、
   // 同じ理由が続いた場合は件数を添える（表示欄は1つしかないため）
@@ -390,6 +408,8 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
       // 必ず同じ tick を指す（endTickRef 宣言のコメントを参照）。
       endTick: endTickRef.current,
       drawPileExhaustedTick: view.drawPileExhaustedTick,
+      manaIncomeTotal: settled.manaIncomeTotal,
+      lastPlayMana: settled.lastPlayMana,
     });
   }, [state.outcome, runId, cards]);
 
@@ -401,7 +421,7 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
     if (placementKindOf(card) === 'none') return [];
     // 設置マスの規則が消え、カード種別ごとに置ける範囲が変わる（砦禁止・魔力炉は経路外限定等）。
     // 判定はドメイン（step-tick の placeableCells）に一元化し、ここでは呼ぶだけにする
-    return computePlaceableCells(state, card, PLAINS_MAP);
+    return computePlaceableCells(state, card, map);
   })();
 
   const selectCard = useCallback(
@@ -602,6 +622,7 @@ export const useAshenRampartGame = ({ cards, seed, playLog }: UseAshenRampartGam
 
   return {
     state,
+    map,
     runSeed,
     levyOptions: state.levyOptions,
     selectedIndex,

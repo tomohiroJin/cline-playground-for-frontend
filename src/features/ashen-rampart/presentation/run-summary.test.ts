@@ -9,7 +9,12 @@
  */
 import { PLAINS_MAP, laneOf } from '../domain/board/stage-map';
 import { createDeck } from '../domain/cards/deck';
-import { createCombatState, type CombatState, type TickEvent } from '../domain/combat/combat-state';
+import {
+  createCombatState,
+  MANA_INITIAL,
+  type CombatState,
+  type TickEvent,
+} from '../domain/combat/combat-state';
 import type { WaveDefinition } from '../domain/combat/waves';
 import { accumulateTick, emptyTally, summarize } from './run-summary';
 
@@ -239,5 +244,38 @@ describe('反復5 の集計項目', () => {
     );
     const later = accumulateTick(emptied, { ...stateWithEmptyDrawPile(), tick: 700 }, PLAINS_MAP);
     expect(later.drawPileExhaustedTick).toBe(680);
+  });
+});
+
+describe('マナ収入の集計（反復7の判定項目6）', () => {
+  const emptyDeck = { hand: [], drawPile: [], graveyard: [] };
+  const stateWith = (patch: Partial<CombatState>): CombatState => ({
+    ...createCombatState(emptyDeck, []),
+    ...patch,
+  });
+
+  it('初期値は初期マナで、魔力炉の産出イベントの量を足していく', () => {
+    const tick1 = stateWith({ tick: 1, events: [{ kind: 'mana', amount: 1 }] });
+    const tick2 = stateWith({
+      tick: 2,
+      events: [
+        { kind: 'mana', amount: 1 },
+        { kind: 'mana', amount: 1 },
+      ],
+    });
+
+    const tally = accumulateTick(accumulateTick(emptyTally(), tick1, PLAINS_MAP), tick2, PLAINS_MAP);
+
+    expect(emptyTally().manaIncomeTotal).toBe(MANA_INITIAL);
+    expect(tally.manaIncomeTotal).toBe(MANA_INITIAL + 3);
+  });
+
+  it('最後に札を出した tick のマナだけを覚え、出していない tick では上書きしない', () => {
+    const played = stateWith({ tick: 5, mana: 3, events: [{ kind: 'played', cardId: 'reactor' }] });
+    const idle = stateWith({ tick: 6, mana: 9, events: [] });
+
+    const tally = accumulateTick(accumulateTick(emptyTally(), played, PLAINS_MAP), idle, PLAINS_MAP);
+
+    expect(tally.lastPlayMana).toBe(3);
   });
 });
